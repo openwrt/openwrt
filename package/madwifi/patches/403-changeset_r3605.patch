@@ -1,6 +1,6 @@
 --- a/include/compat.h
 +++ b/include/compat.h
-@@ -182,6 +182,13 @@
+@@ -182,6 +182,13 @@ static inline int timeval_compare(struct
  #define DEV_ATH CTL_UNNUMBERED
  #endif
  
@@ -16,7 +16,7 @@
  #endif /* _ATH_COMPAT_H_ */
 --- a/net80211/ieee80211_linux.h
 +++ b/net80211/ieee80211_linux.h
-@@ -338,13 +338,6 @@
+@@ -338,13 +338,6 @@ typedef spinlock_t acl_lock_t;
  #define	ACL_LOCK_CHECK(_as)
  #endif
  
@@ -30,7 +30,7 @@
  /*
   * Per-node power-save queue definitions.  Beware of control
   * flow with IEEE80211_NODE_SAVEQ_LOCK/IEEE80211_NODE_SAVEQ_UNLOCK.
-@@ -388,16 +381,16 @@
+@@ -388,16 +381,16 @@ typedef spinlock_t acl_lock_t;
  	_skb = __skb_dequeue(&(_ni)->ni_savedq);		\
  	(_qlen) = skb_queue_len(&(_ni)->ni_savedq);		\
  } while (0)
@@ -59,7 +59,7 @@
  /*
 --- a/net80211/ieee80211_power.c
 +++ b/net80211/ieee80211_power.c
-@@ -243,7 +243,7 @@
+@@ -243,7 +243,7 @@ ieee80211_pwrsave(struct sk_buff *skb)
  	tail = skb_peek_tail(&ni->ni_savedq);
  	if (tail != NULL) {
  		age -= M_AGE_GET(tail);
