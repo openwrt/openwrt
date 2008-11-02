@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -3320,17 +3320,18 @@
+@@ -3320,17 +3320,18 @@ ath_hardstart(struct sk_buff *skb, struc
  	 * without affecting any other bridge ports. */
  	if (skb_cloned(skb)) {
  		/* Remember the original SKB so we can free up our references */
@@ -25,7 +25,7 @@
  	eh = (struct ether_header *)skb->data;
  
  #ifdef ATH_SUPERG_FF
-@@ -3601,6 +3602,8 @@
+@@ -3601,6 +3602,8 @@ ath_mgtstart(struct ieee80211com *ic, st
  	sc->sc_stats.ast_tx_mgmt++;
  	return 0;
  bad:

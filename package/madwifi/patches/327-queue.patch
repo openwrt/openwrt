@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8438,8 +8438,6 @@
+@@ -8438,8 +8438,6 @@ process_tx_again:
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -9,7 +9,7 @@
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-@@ -8486,8 +8484,6 @@
+@@ -8486,8 +8484,6 @@ process_tx_again:
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -18,7 +18,7 @@
  	if (sc->sc_softled)
  		ath_led_event(sc, ATH_LED_TX);
  }
-@@ -8520,8 +8516,6 @@
+@@ -8520,8 +8516,6 @@ process_tx_again:
  	ath_hal_intrset(sc->sc_ah, sc->sc_imask);
  	local_irq_restore(flags);
  
@@ -29,7 +29,7 @@
  }
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1132,7 +1132,7 @@
+@@ -1132,7 +1132,7 @@ ieee80211_deliver_data(struct ieee80211_
  	    (vap->iv_flags & IEEE80211_F_NOBRIDGE) == 0) {
  		struct sk_buff *skb1 = NULL;
  

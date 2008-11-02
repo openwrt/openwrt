@@ -8,7 +8,7 @@
  
  #undef ARRAY_SIZE
  #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-@@ -185,7 +186,7 @@
+@@ -185,7 +186,7 @@ sysctlbyname(const char *oid0, void *old
  #endif /* __linux__ */
  
  int
@@ -27,7 +27,7 @@
  
  #ifndef SIOCG80211STATS
  #define	SIOCG80211STATS	(SIOCDEVPRIVATE + 2)
-@@ -240,7 +241,7 @@
+@@ -240,7 +241,7 @@ print_sta_stats(FILE *fd, const u_int8_t
  }
  
  int
@@ -46,7 +46,7 @@
  
  static	int s = -1;
  static const char *progname;
-@@ -140,8 +141,9 @@
+@@ -140,8 +141,9 @@ usage(void)
  }
  
  #define	MAXCHAN	((int)(sizeof(struct ieee80211req_chanlist) * NBBY))
@@ -67,7 +67,7 @@
  
  static int
  setsysctrl(const char *dev, const char *control , u_long value)
-@@ -88,7 +89,7 @@
+@@ -88,7 +89,7 @@ static void usage(void)
  }
  
  int
@@ -86,7 +86,7 @@
  
  #undef ARRAY_SIZE
  #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-@@ -194,7 +195,7 @@
+@@ -194,7 +195,7 @@ sysctlbyname(const char *oid0, void *old
  #endif /* __linux__ */
  
  int
@@ -105,7 +105,7 @@
  
  static int s = -1;
  static const char *progname;
-@@ -213,8 +214,7 @@
+@@ -213,8 +214,7 @@ usage(void)
  	exit(-1);
  }
  
@@ -125,7 +125,7 @@
  
  static const struct {
  	u_int		phyerr;
-@@ -228,7 +229,7 @@
+@@ -228,7 +229,7 @@ catchalarm(int signo)
  }
  
  int
@@ -190,7 +190,7 @@
 +#endif
 --- a/tools/Makefile
 +++ b/tools/Makefile
-@@ -46,56 +46,55 @@
+@@ -46,56 +46,55 @@ ifeq ($(HAL),)
  HAL=   $(TOP)/hal
  endif
  
@@ -284,7 +284,7 @@
  
  /*
   * These are taken from ieee80211_node.h
-@@ -100,7 +101,7 @@
+@@ -100,7 +101,7 @@ size_t strlcat(char *, const char *, siz
  static int verbose = 0;
  
  int
@@ -303,7 +303,7 @@
  
  #undef ARRAY_SIZE
  #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-@@ -738,7 +739,8 @@
+@@ -738,7 +739,8 @@ static void usage(const char *n)
  		"unlawful radio transmissions!\n\n");
  }
  

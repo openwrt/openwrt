@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -184,7 +184,11 @@
+@@ -184,7 +184,11 @@ static void ath_recv_mgmt(struct ieee802
  	struct sk_buff *, int, int, u_int64_t);
  static void ath_setdefantenna(struct ath_softc *, u_int);
  static struct ath_txq *ath_txq_setup(struct ath_softc *, int, int);
@@ -13,7 +13,7 @@
  static int ath_hardstart(struct sk_buff *, struct net_device *);
  static int ath_mgtstart(struct ieee80211com *, struct sk_buff *);
  #ifdef ATH_SUPERG_COMP
-@@ -376,6 +380,9 @@
+@@ -376,6 +380,9 @@ static u_int32_t ath_set_clamped_maxtxpo
  		u_int32_t new_clamped_maxtxpower);
  static u_int32_t ath_get_real_maxtxpower(struct ath_softc *sc);
  
@@ -23,7 +23,7 @@
  /* calibrate every 30 secs in steady state but check every second at first. */
  static int ath_calinterval = ATH_SHORT_CALINTERVAL;
  static int ath_countrycode = CTRY_DEFAULT;	/* country code */
-@@ -547,7 +554,6 @@
+@@ -547,7 +554,6 @@ ath_attach(u_int16_t devid, struct net_d
  
  	atomic_set(&sc->sc_txbuf_counter, 0);
  
@@ -31,7 +31,7 @@
  	ATH_INIT_TQUEUE(&sc->sc_txtq,	  ath_tx_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bmisstq,  ath_bmiss_tasklet,	dev);
  	ATH_INIT_TQUEUE(&sc->sc_bstucktq, ath_bstuck_tasklet,	dev);
-@@ -821,6 +827,12 @@
+@@ -821,6 +827,12 @@ ath_attach(u_int16_t devid, struct net_d
  	dev->set_mac_address = ath_set_mac_address;
  	dev->change_mtu = ath_change_mtu;
  	dev->tx_queue_len = ATH_TXBUF - ATH_TXBUF_MGT_RESERVED;
@@ -44,7 +44,7 @@
  #ifdef USE_HEADERLEN_RESV
  	dev->hard_header_len += sizeof(struct ieee80211_qosframe) +
  				sizeof(struct llc) +
-@@ -2220,6 +2232,7 @@
+@@ -2220,6 +2232,7 @@ ath_intr(int irq, void *dev_id, struct p
  		(status & HAL_INT_GLOBAL)	? " HAL_INT_GLOBAL"	: ""
  		);
  
@@ -52,7 +52,7 @@
  	status &= sc->sc_imask;			/* discard unasked for bits */
  	/* As soon as we know we have a real interrupt we intend to service, 
  	 * we will check to see if we need an initial hardware TSF reading. 
-@@ -2277,7 +2290,21 @@
+@@ -2277,7 +2290,21 @@ ath_intr(int irq, void *dev_id, struct p
  		}
  		if (status & (HAL_INT_RX | HAL_INT_RXPHY)) {
  			ath_uapsd_processtriggers(sc, hw_tsf);
@@ -75,7 +75,7 @@
  		}
  		if (status & HAL_INT_TX) {
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -2303,6 +2330,11 @@
+@@ -2303,6 +2330,11 @@ ath_intr(int irq, void *dev_id, struct p
  				}
  			}
  #endif
@@ -87,7 +87,7 @@
  			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
  		}
  		if (status & HAL_INT_BMISS) {
-@@ -2515,6 +2547,7 @@
+@@ -2515,6 +2547,7 @@ ath_init(struct net_device *dev)
  	if (sc->sc_tx99 != NULL)
  		sc->sc_tx99->start(sc->sc_tx99);
  #endif
@@ -95,7 +95,7 @@
  
  done:
  	ATH_UNLOCK(sc);
-@@ -2555,6 +2588,9 @@
+@@ -2555,6 +2588,9 @@ ath_stop_locked(struct net_device *dev)
  		if (sc->sc_tx99 != NULL)
  			sc->sc_tx99->stop(sc->sc_tx99);
  #endif
@@ -105,7 +105,7 @@
  		netif_stop_queue(dev);	/* XXX re-enabled by ath_newstate */
  		dev->flags &= ~IFF_RUNNING;	/* NB: avoid recursion */
  		ieee80211_stop_running(ic);	/* stop all VAPs */
-@@ -4013,12 +4049,47 @@
+@@ -4013,12 +4049,47 @@ ath_key_set(struct ieee80211vap *vap, co
  	return ath_keyset(sc, k, mac, vap->iv_bss);
  }
  
@@ -153,7 +153,7 @@
  static void
  ath_key_update_begin(struct ieee80211vap *vap)
  {
-@@ -4032,14 +4103,9 @@
+@@ -4032,14 +4103,9 @@ ath_key_update_begin(struct ieee80211vap
  	 * When called from the rx tasklet we cannot use
  	 * tasklet_disable because it will block waiting
  	 * for us to complete execution.
@@ -170,7 +170,7 @@
  }
  
  static void
-@@ -4051,9 +4117,9 @@
+@@ -4051,9 +4117,9 @@ ath_key_update_end(struct ieee80211vap *
  #endif
  
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "End\n");
@@ -183,7 +183,7 @@
  }
  
  /*
-@@ -6360,15 +6426,25 @@
+@@ -6360,15 +6426,25 @@ ath_setdefantenna(struct ath_softc *sc, 
  	sc->sc_rxotherant = 0;
  }
  
@@ -213,7 +213,7 @@
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc ? sc->sc_ah : NULL;
  	struct ath_desc *ds;
-@@ -6378,8 +6454,10 @@
+@@ -6378,8 +6454,10 @@ ath_rx_tasklet(TQUEUE_ARG data)
  	unsigned int len;
  	int type;
  	u_int phyerr;
@@ -224,7 +224,7 @@
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* XXX ??? can this happen */
-@@ -6403,6 +6481,15 @@
+@@ -6403,6 +6481,15 @@ ath_rx_tasklet(TQUEUE_ARG data)
  			/* NB: never process the self-linked entry at the end */
  			break;
  		}
@@ -240,7 +240,7 @@
  		skb = bf->bf_skb;
  		if (skb == NULL) {
  			EPRINTF(sc, "Dropping; buffer contains NULL skbuff.\n");
-@@ -6450,6 +6537,7 @@
+@@ -6450,6 +6537,7 @@ ath_rx_tasklet(TQUEUE_ARG data)
  				sc->sc_stats.ast_rx_phyerr++;
  				phyerr = rs->rs_phyerr & 0x1f;
  				sc->sc_stats.ast_rx_phy[phyerr]++;
@@ -248,7 +248,7 @@
  			}
  			if (rs->rs_status & HAL_RXERR_DECRYPT) {
  				/*
-@@ -6645,9 +6733,39 @@
+@@ -6645,9 +6733,39 @@ rx_next:
  		STAILQ_INSERT_TAIL(&sc->sc_rxbuf, bf, bf_list);
  		ATH_RXBUF_UNLOCK_IRQ(sc);
  	} while (ath_rxbuf_init(sc, bf) == 0);
@@ -288,7 +288,7 @@
  #undef PA2DESC
  }
  
-@@ -8298,12 +8416,24 @@
+@@ -8298,12 +8416,24 @@ ath_tx_tasklet_q0(TQUEUE_ARG data)
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -313,7 +313,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8319,7 +8449,9 @@
+@@ -8319,7 +8449,9 @@ ath_tx_tasklet_q0123(TQUEUE_ARG data)
  {
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
@@ -323,7 +323,7 @@
  	/*
  	 * Process each active queue.
  	 */
-@@ -8340,6 +8472,16 @@
+@@ -8340,6 +8472,16 @@ ath_tx_tasklet_q0123(TQUEUE_ARG data)
  	if (sc->sc_uapsdq && txqactive(sc->sc_ah, sc->sc_uapsdq->axq_qnum))
  		ath_tx_processq(sc, sc->sc_uapsdq);
  
@@ -340,7 +340,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -8355,13 +8497,25 @@
+@@ -8355,13 +8497,25 @@ ath_tx_tasklet(TQUEUE_ARG data)
  	struct net_device *dev = (struct net_device *)data;
  	struct ath_softc *sc = dev->priv;
  	unsigned int i;
@@ -366,7 +366,7 @@
  	netif_wake_queue(dev);
  
  	if (sc->sc_softled)
-@@ -10296,9 +10450,9 @@
+@@ -10296,9 +10450,9 @@ ath_change_mtu(struct net_device *dev, i
  	dev->mtu = mtu;
  	if ((dev->flags & IFF_RUNNING) && !sc->sc_invalid) {
  		/* NB: the rx buffers may need to be reallocated */
@@ -391,7 +391,7 @@
  /*
   * Deduce if tasklets are available.  If not then
   * fall back to using the immediate work queue.
-@@ -616,6 +620,9 @@
+@@ -616,6 +620,9 @@ struct ath_rp {
  struct ath_softc {
  	struct ieee80211com sc_ic;		/* NB: must be first */
  	struct net_device *sc_dev;
@@ -401,7 +401,7 @@
  	void __iomem *sc_iobase;		/* address of the device */
  	struct semaphore sc_lock;		/* dev-level lock */
  	struct net_device_stats	sc_devstats;	/* device statistics */
-@@ -730,7 +737,6 @@
+@@ -730,7 +737,6 @@ struct ath_softc {
  	struct ath_buf *sc_rxbufcur;		/* current rx buffer */
  	u_int32_t *sc_rxlink;			/* link ptr in last RX desc */
  	spinlock_t sc_rxbuflock;
@@ -409,7 +409,7 @@
  	struct ATH_TQ_STRUCT sc_rxorntq;	/* rxorn intr tasklet */
  	u_int8_t sc_defant;			/* current default antenna */
  	u_int8_t sc_rxotherant;			/* RXs on non-default antenna */
-@@ -745,6 +751,7 @@
+@@ -745,6 +751,7 @@ struct ath_softc {
  	u_int sc_txintrperiod;			/* tx interrupt batching */
  	struct ath_txq sc_txq[HAL_NUM_TX_QUEUES];
  	struct ath_txq *sc_ac2q[WME_NUM_AC];	/* WME AC -> h/w qnum */
@@ -417,7 +417,7 @@
  	struct ATH_TQ_STRUCT sc_txtq;		/* tx intr tasklet */
  	u_int8_t sc_grppoll_str[GRPPOLL_RATE_STR_LEN];
  	struct ath_descdma sc_bdma;		/* beacon descriptors */
-@@ -858,6 +865,8 @@
+@@ -858,6 +865,8 @@ typedef void (*ath_callback) (struct ath
  #define	ATH_TXBUF_LOCK_CHECK(_sc)
  #endif
  
@@ -428,7 +428,7 @@
  #define	ATH_RXBUF_LOCK_DESTROY(_sc)
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1198,7 +1198,7 @@
+@@ -1198,7 +1198,7 @@ ieee80211_deliver_data(struct ieee80211_
  			/* attach vlan tag */
  			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;
  			if (vlan_hwaccel_receive_skb(skb, vap->iv_vlgrp, ni->ni_vlan) == NET_RX_DROP) {
@@ -437,7 +437,7 @@
  				 * device was too busy */
  				if (ni_tmp != NULL) {
  					/* node reference was leaked */
-@@ -1209,8 +1209,8 @@
+@@ -1209,8 +1209,8 @@ ieee80211_deliver_data(struct ieee80211_
  			skb = NULL; /* SKB is no longer ours */
  		} else {
  			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;
@@ -448,7 +448,7 @@
  				 * device was too busy */
  				if (ni_tmp != NULL) {
  					/* node reference was leaked */
-@@ -2322,8 +2322,8 @@
+@@ -2322,8 +2322,8 @@ forward_mgmt_to_app(struct ieee80211vap 
  		skb1->protocol = __constant_htons(0x0019);  /* ETH_P_80211_RAW */
  
  		ni_tmp = SKB_CB(skb1)->ni;
@@ -461,7 +461,7 @@
  				/* node reference was leaked */
 --- a/net80211/ieee80211_monitor.c
 +++ b/net80211/ieee80211_monitor.c
-@@ -584,8 +584,8 @@
+@@ -584,8 +584,8 @@ ieee80211_input_monitor(struct ieee80211
  			skb1->protocol = 
  				__constant_htons(0x0019); /* ETH_P_80211_RAW */
  
@@ -483,7 +483,7 @@
  #undef pskb_copy
  #undef skb_clone
  #undef skb_copy
-@@ -638,8 +638,8 @@
+@@ -638,8 +638,8 @@ int  vlan_hwaccel_receive_skb_debug(stru
  		grp, vlan_tag);
  }
  
@@ -494,7 +494,7 @@
  }
  
  struct sk_buff * alloc_skb_debug(unsigned int length, gfp_t gfp_mask,
-@@ -760,7 +760,7 @@
+@@ -760,7 +760,7 @@ struct sk_buff * skb_copy_expand_debug(c
  }
  
  EXPORT_SYMBOL(vlan_hwaccel_receive_skb_debug);
@@ -505,7 +505,7 @@
  EXPORT_SYMBOL(skb_clone_debug);
 --- a/net80211/ieee80211_skb.h
 +++ b/net80211/ieee80211_skb.h
-@@ -116,7 +116,7 @@
+@@ -116,7 +116,7 @@ int ieee80211_skb_references(void);
  int  vlan_hwaccel_receive_skb_debug(struct sk_buff *skb, 
  				    struct vlan_group *grp, unsigned short vlan_tag, 
  				    const char* func, int line);
@@ -514,7 +514,7 @@
  struct sk_buff * alloc_skb_debug(unsigned int length, gfp_t gfp_mask,
  				 const char *func, int line);
  struct sk_buff * dev_alloc_skb_debug(unsigned int length,
-@@ -151,7 +151,7 @@
+@@ -151,7 +151,7 @@ struct sk_buff * skb_copy_expand_debug(c
  #undef dev_queue_xmit
  #undef kfree_skb
  #undef kfree_skb_fast
@@ -523,7 +523,7 @@
  #undef pskb_copy
  #undef skb_clone
  #undef skb_copy
-@@ -168,8 +168,8 @@
+@@ -168,8 +168,8 @@ struct sk_buff * skb_copy_expand_debug(c
  	skb_copy_expand_debug(_skb, _newheadroom, _newtailroom, _gfp_mask, __func__, __LINE__)
  #define vlan_hwaccel_receive_skb(_skb, _grp, _tag) \
  	vlan_hwaccel_receive_skb_debug(_skb, _grp, _tag, __func__, __LINE__)

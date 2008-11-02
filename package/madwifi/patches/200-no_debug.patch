@@ -8,7 +8,7 @@
  #include "if_ath_debug.h"
  #include "opt_ah.h"
  
-@@ -368,8 +367,10 @@
+@@ -368,8 +367,10 @@ static unsigned int ath_get_dfs_cac_time
  static void ath_set_dfs_cac_time(struct ieee80211com *, unsigned int seconds);
  
  static unsigned int ath_test_radar(struct ieee80211com *);
@@ -20,7 +20,7 @@
  static u_int32_t ath_get_clamped_maxtxpower(struct ath_softc *sc);
  static u_int32_t ath_set_clamped_maxtxpower(struct ath_softc *sc, 
  		u_int32_t new_clamped_maxtxpower);
-@@ -520,9 +521,11 @@
+@@ -520,9 +521,11 @@ ath_attach(u_int16_t devid, struct net_d
  	u_int8_t csz;
  
  	sc->devid = devid;
@@ -32,7 +32,7 @@
  
  	/* Allocate space for dynamically determined maximum VAP count */
  	sc->sc_bslot = 
-@@ -1038,8 +1041,9 @@
+@@ -1038,8 +1041,9 @@ ath_attach(u_int16_t devid, struct net_d
  	ic->ic_vap_delete = ath_vap_delete;
  
  	ic->ic_test_radar           = ath_test_radar;
@@ -43,7 +43,7 @@
  	ic->ic_set_dfs_testmode     = ath_set_dfs_testmode;
  	ic->ic_get_dfs_testmode     = ath_get_dfs_testmode;
  
-@@ -1297,12 +1301,14 @@
+@@ -1297,12 +1301,14 @@ ath_vap_create(struct ieee80211com *ic, 
  		/* If no default VAP debug flags are passed, allow a few to
  		 * transfer down from the driver to new VAPs so we can have load
  		 * time debugging for VAPs too. */
@@ -58,7 +58,7 @@
  	}
  	ic->ic_debug = (sc->sc_default_ieee80211_debug & IEEE80211_MSG_IC);
  
-@@ -10496,9 +10502,11 @@
+@@ -10496,9 +10502,11 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  				/* XXX validate? */
  				sc->sc_ledpin = val;
  				break;
@@ -70,7 +70,7 @@
  				break;
  			case ATH_TXANTENNA:
  				/*
-@@ -10918,9 +10926,11 @@
+@@ -10918,9 +10926,11 @@ ath_dynamic_sysctl_register(struct ath_s
  	}
  
  	/* initialize values */
@@ -82,7 +82,7 @@
  	sc->sc_txantenna = 0;		/* default to auto-selection */
  	sc->sc_txintrperiod = ATH_TXQ_INTR_PERIOD;
  }
-@@ -11762,6 +11772,7 @@
+@@ -11762,6 +11772,7 @@ ath_test_radar(struct ieee80211com *ic)
  }
  
  /* This is called by a private ioctl (iwpriv) to dump the HAL obfuscation table */
@@ -90,7 +90,7 @@
  static unsigned int
  ath_dump_hal_map(struct ieee80211com *ic)
  {
-@@ -11770,7 +11781,7 @@
+@@ -11770,7 +11781,7 @@ ath_dump_hal_map(struct ieee80211com *ic
  	ath_hal_dump_map(sc->sc_ah);
  	return 0;
  }
@@ -150,7 +150,7 @@
  	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
 --- a/tools/do_multi.c
 +++ b/tools/do_multi.c
-@@ -10,16 +10,20 @@
+@@ -10,16 +10,20 @@ main(int argc, char *argv[])
  
      progname = basename(argv[0]);
  
@@ -173,7 +173,7 @@
      if(strcmp(progname, "athstats") == 0)
 --- a/tools/Makefile
 +++ b/tools/Makefile
-@@ -48,6 +48,8 @@
+@@ -48,6 +48,8 @@ endif
  
  all: compile
  
@@ -182,7 +182,7 @@
  ALLPROGS=	athstats 80211stats athkey athchans athctrl \
  	athdebug 80211debug wlanconfig ath_info
  
-@@ -55,7 +57,7 @@
+@@ -55,7 +57,7 @@ OBJS=	$(patsubst %,%.o,$(ALLPROGS))
  
  INCS=	-I. -I../ath -I$(HAL) -I$(TOP) -I$(ATH_HAL)
  CFLAGS=	-g -O2 -Wall
@@ -204,7 +204,7 @@
  #include <linux/wireless.h>
 --- a/Makefile.inc
 +++ b/Makefile.inc
-@@ -148,7 +148,8 @@
+@@ -148,7 +148,8 @@ ATH_RATE=	$(TOP)/ath_rate
  TOOLS=  $(TOP)/tools 
  
  WARNINGS = -Werror
@@ -236,7 +236,7 @@
  
 --- a/ath/if_ath_hal.h
 +++ b/ath/if_ath_hal.h
-@@ -1081,6 +1081,7 @@
+@@ -1081,6 +1081,7 @@ static inline HAL_BOOL ath_hal_disable(s
  
             tail -f /var/log/messages | sed -f hal_unmangle.sed 
   */
@@ -244,7 +244,7 @@
  static inline void ath_hal_dump_map(struct ath_hal *ah)
  {
  #ifdef CONFIG_KALLSYMS
-@@ -1345,7 +1346,7 @@
+@@ -1345,7 +1346,7 @@ static inline void ath_hal_dump_map(stru
  #endif				/* #ifndef CONFIG_KALLSYMS */
  
  }
@@ -255,7 +255,7 @@
  #endif				/* #ifndef _IF_ATH_HAL_H_ */
 --- a/net80211/ieee80211_var.h
 +++ b/net80211/ieee80211_var.h
-@@ -492,9 +492,10 @@
+@@ -492,9 +492,10 @@ struct ieee80211com {
  	/* inject a fake radar signal -- used while on a 802.11h DFS channels */
  	unsigned int (*ic_test_radar)(struct ieee80211com *);
  
@@ -269,7 +269,7 @@
  	unsigned int (*ic_get_dfs_cac_time)(struct ieee80211com *);
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -1548,6 +1548,7 @@
+@@ -1548,6 +1548,7 @@ ieee80211_get_txcont_power(struct net_de
  	return 0;
  }
  
@@ -277,7 +277,7 @@
  static int 
  ieee80211_ioctl_hal_map(struct net_device *dev, struct iw_request_info *info,
         void *w, char *extra)
-@@ -1558,7 +1559,7 @@
+@@ -1558,7 +1559,7 @@ ieee80211_ioctl_hal_map(struct net_devic
         params[0] = ic->ic_dump_hal_map(ic);
         return 0;
  }
@@ -286,7 +286,7 @@
  
  static int
  ieee80211_ioctl_radar(struct net_device *dev, struct iw_request_info *info,
-@@ -5258,8 +5259,10 @@
+@@ -5258,8 +5259,10 @@ static const struct iw_priv_args ieee802
  	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,   "getwmmparams" },
  	{ IEEE80211_IOCTL_RADAR,
  	  0, 0, "doth_radar" },
@@ -297,7 +297,7 @@
  	/*
  	 * These depends on sub-ioctl support which added in version 12.
  	 */
-@@ -5695,7 +5698,9 @@
+@@ -5695,7 +5698,9 @@ static const iw_handler ieee80211_priv_h
  	set_priv(IEEE80211_IOCTL_SETMLME, ieee80211_ioctl_setmlme),
  	set_priv(IEEE80211_IOCTL_SETKEY, ieee80211_ioctl_setkey),
  	set_priv(IEEE80211_IOCTL_DELKEY, ieee80211_ioctl_delkey),
@@ -309,7 +309,7 @@
  	set_priv(IEEE80211_IOCTL_WDSADDMAC, ieee80211_ioctl_wdsmac),
 --- a/ath/if_ath_debug.h
 +++ b/ath/if_ath_debug.h
-@@ -54,6 +54,10 @@
+@@ -54,6 +54,10 @@ enum {
  	ATH_DEBUG_GLOBAL	= (ATH_DEBUG_SKB|ATH_DEBUG_SKB_REF)
  };
  
@@ -320,7 +320,7 @@
  #ifdef AR_DEBUG
  
  /* DEBUG-ONLY DEFINITIONS */
-@@ -68,20 +72,9 @@
+@@ -68,20 +72,9 @@ enum {
  		ath_keyprint((_sc), __func__, _ix, _hk, _mac);		\
  } while (0)
  
@@ -341,7 +341,7 @@
  #define	WPRINTF(_sc, _fmt, ...) \
  		printk(KERN_WARNING "%s: %s: " _fmt, \
  			SC_DEV_NAME(_sc), __func__, ## __VA_ARGS__)
-@@ -89,5 +82,14 @@
+@@ -89,5 +82,14 @@ enum {
  #define	IPRINTF(_sc, _fmt, ...) \
  		printk(KERN_INFO "%s: %s: " _fmt, \
  			SC_DEV_NAME(_sc), __func__, ## __VA_ARGS__)
@@ -358,7 +358,7 @@
  #endif /* #ifndef _IF_ATH_DEBUG_H_ */
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -920,6 +920,9 @@
+@@ -920,6 +920,9 @@ node_cleanup(struct ieee80211_node *ni)
  	ni->ni_rxkeyoff = 0;
  }
  
@@ -368,7 +368,7 @@
  static void node_print_message(
  		u_int32_t flags,
  		int show_counter, 
-@@ -972,7 +975,7 @@
+@@ -972,7 +975,7 @@ static void node_print_message(
  			adjusted_refcount);
  	va_end(args);
  }
@@ -379,7 +379,7 @@
  #ifdef IEEE80211_DEBUG_REFCNT
 --- a/ath/if_ath_pci.c
 +++ b/ath/if_ath_pci.c
-@@ -134,8 +134,10 @@
+@@ -134,8 +134,10 @@ ath_pci_probe(struct pci_dev *pdev, cons
  	u16 vdevice;
  	int i;
  
@@ -391,7 +391,7 @@
  
  	/* XXX 32-bit addressing only */
  	if (pci_set_dma_mask(pdev, 0xffffffff)) {
-@@ -244,8 +246,10 @@
+@@ -244,8 +246,10 @@ ath_pci_probe(struct pci_dev *pdev, cons
  		sc->aps_sc.sc_ledpin = 1;
  	}
  

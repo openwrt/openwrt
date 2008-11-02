@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -2723,6 +2723,9 @@
+@@ -2723,6 +2723,9 @@ ar_device(int devid)
  static int
  ath_set_ack_bitrate(struct ath_softc *sc, int high)
  {
@@ -10,7 +10,7 @@
  	if (ar_device(sc->devid) == 5212 || ar_device(sc->devid) == 5213) {
  		/* set ack to be sent at low bit-rate */
  		/* registers taken from the OpenBSD 5212 HAL */
-@@ -10789,8 +10792,13 @@
+@@ -10789,8 +10792,13 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  				break;
  #endif
  			case ATH_ACKRATE:
@@ -28,7 +28,7 @@
  				ath_rp_record(sc,
 --- a/ath/if_athvar.h
 +++ b/ath/if_athvar.h
-@@ -681,6 +681,7 @@
+@@ -681,6 +681,7 @@ struct ath_softc {
  	unsigned int	sc_devstopped:1;	/* stopped due to of no tx bufs */
  	unsigned int	sc_stagbeacons:1;	/* use staggered beacons */
  	unsigned int	sc_dfswait:1;		/* waiting on channel for radar detect */

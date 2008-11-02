@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -1778,17 +1778,14 @@
+@@ -1778,17 +1778,14 @@ ath_uapsd_processtriggers(struct ath_sof
  			 * may have occurred in the intervening timeframe. */
  			bf->bf_channoise = ic->ic_channoise;
  
@@ -27,7 +27,7 @@
  			bus_dma_sync_single(sc->sc_bdev, bf->bf_skbaddr,
 --- a/ath/if_ath_radar.c
 +++ b/ath/if_ath_radar.c
-@@ -265,7 +265,7 @@
+@@ -265,7 +265,7 @@ int ath_radar_update(struct ath_softc *s
  		unsigned int new_rxfilt = old_rxfilt;
  
  		ath_hal_intrset(ah, old_ier & ~HAL_INT_GLOBAL);

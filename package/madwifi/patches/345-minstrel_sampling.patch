@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8101,6 +8101,7 @@
+@@ -8101,6 +8101,7 @@ ath_tx_start(struct net_device *dev, str
  		ath_hal_setupxtxdesc(sc->sc_ah, ds, mrr.rate1, mrr.retries1,
  				     mrr.rate2, mrr.retries2,
  				     mrr.rate3, mrr.retries3);
@@ -10,7 +10,7 @@
  #ifndef ATH_SUPERG_FF
 --- a/ath/if_athvar.h
 +++ b/ath/if_athvar.h
-@@ -446,6 +446,7 @@
+@@ -446,6 +446,7 @@ struct ath_buf {
  	u_int16_t bf_flags;				/* tx descriptor flags */
  	u_int64_t bf_tsf;
  	int16_t bf_channoise;
@@ -20,7 +20,7 @@
  	 *      multiple segments.
 --- a/ath_rate/minstrel/minstrel.c
 +++ b/ath_rate/minstrel/minstrel.c
-@@ -333,15 +333,19 @@
+@@ -333,15 +333,19 @@ ath_rate_findrate(struct ath_softc *sc, 
  		if (sn->static_rate_ndx >= 0) {
  			    ndx = sn->static_rate_ndx;
  		} else {
@@ -41,7 +41,7 @@
  				}
  
  				/* Don't look for slowest rate (i.e. slowest
-@@ -398,11 +402,14 @@
+@@ -398,11 +402,14 @@ ath_rate_get_mrr(struct ath_softc *sc, s
  		if (sn->num_rates <= 0)
  			return;
  
@@ -58,7 +58,7 @@
  				rc1 = sn->max_tp_rate;
  		} else {
  			rc1 = sn->max_tp_rate2;
-@@ -525,6 +532,9 @@
+@@ -525,6 +532,9 @@ ath_rate_tx_complete(struct ath_softc *s
  		if (tries <= tries1)
  			return;
  
@@ -70,7 +70,7 @@
  		tries = tries - tries1;
 --- a/net80211/ieee80211_rate.h
 +++ b/net80211/ieee80211_rate.h
-@@ -87,6 +87,7 @@
+@@ -87,6 +87,7 @@ struct ieee80211_mrr {
  	int retries2;
  	int rate3;
  	int retries3;

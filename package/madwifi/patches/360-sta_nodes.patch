@@ -5,7 +5,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net80211/ieee80211_proto.c
 +++ b/net80211/ieee80211_proto.c
-@@ -1348,7 +1348,7 @@
+@@ -1348,7 +1348,7 @@ __ieee80211_newstate(struct ieee80211vap
  				IEEE80211_SEND_MGMT(ni,
  					IEEE80211_FC0_SUBTYPE_DISASSOC,
  					IEEE80211_REASON_ASSOC_LEAVE);
@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  				break;
  			case IEEE80211_M_HOSTAP:
  				ieee80211_iterate_nodes(&ic->ic_sta,
-@@ -1358,12 +1358,14 @@
+@@ -1358,12 +1358,14 @@ __ieee80211_newstate(struct ieee80211vap
  				break;
  			}
  			goto reset;
@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  				break;
  			case IEEE80211_M_HOSTAP:
  				ieee80211_iterate_nodes(&ic->ic_sta,
-@@ -1376,7 +1378,6 @@
+@@ -1376,7 +1378,6 @@ __ieee80211_newstate(struct ieee80211vap
  		case IEEE80211_S_SCAN:
  			ieee80211_cancel_scan(vap);
  			goto reset;
@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		reset:
  			ieee80211_reset_bss(vap);
  			break;
-@@ -1429,10 +1430,12 @@
+@@ -1429,10 +1430,12 @@ __ieee80211_newstate(struct ieee80211vap
  					IEEE80211_SCAN_FOREVER,
  					vap->iv_des_nssid, vap->iv_des_ssid,
  					NULL);
@@ -51,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  				vap->iv_flags &= ~IEEE80211_F_SIBSS;	/* XXX */
  				if (ic->ic_roaming == IEEE80211_ROAMING_AUTO)
  					ieee80211_check_scan(vap,
-@@ -1511,7 +1514,7 @@
+@@ -1511,7 +1514,7 @@ __ieee80211_newstate(struct ieee80211vap
  				IEEE80211_FC0_SUBTYPE_ASSOC_REQ, 0);
  			break;
  		case IEEE80211_S_RUN:
@@ -60,7 +60,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			if (ic->ic_roaming == IEEE80211_ROAMING_AUTO) {
  				/* NB: caller specifies ASSOC/REASSOC by arg */
  				IEEE80211_SEND_MGMT(ni, arg ?
-@@ -1779,6 +1782,7 @@
+@@ -1779,6 +1782,7 @@ ieee80211_newstate(struct ieee80211vap *
  			  ieee80211_state_name[nstate], 
  			  ieee80211_state_name[dstate]);
  
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	case IEEE80211_S_ASSOC:
 --- a/net80211/ieee80211_linux.c
 +++ b/net80211/ieee80211_linux.c
-@@ -233,33 +233,59 @@
+@@ -233,33 +233,59 @@ ieee80211_vlan_vdetach(struct ieee80211v
  }
  
  void
@@ -149,7 +149,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  void
-@@ -269,18 +295,14 @@
+@@ -269,18 +295,14 @@ ieee80211_notify_node_leave(struct ieee8
  	struct net_device *dev = vap->iv_dev;
  	union iwreq_data wreq;
  
@@ -178,7 +178,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  void
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -2332,6 +2332,7 @@
+@@ -2332,6 +2332,7 @@ ieee80211_node_leave(struct ieee80211_no
  		count_suppchans(ic, ni, -1);
  	IEEE80211_UNLOCK_IRQ(ic);
  
@@ -186,7 +186,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	/*
  	 * Cleanup station state.  In particular clear various
  	 * state that might otherwise be reused if the node
-@@ -2339,7 +2340,7 @@
+@@ -2339,7 +2340,7 @@ ieee80211_node_leave(struct ieee80211_no
  	 * (and memory is reclaimed).
  	 */
  	ieee80211_sta_leave(ni);
@@ -208,7 +208,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  /* simple hash is enough for variation of macaddr */
 --- a/net80211/ieee80211_output.c
 +++ b/net80211/ieee80211_output.c
-@@ -2141,7 +2141,7 @@
+@@ -2141,7 +2141,7 @@ ieee80211_send_mgmt(struct ieee80211_nod
  
  	ieee80211_mgmt_output(ieee80211_ref_node(ni), skb, type);
  	if (timer)
@@ -219,7 +219,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return ret;
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -514,8 +514,9 @@
+@@ -514,8 +514,9 @@ ieee80211_ioctl_siwap(struct net_device 
  			vap->iv_flags |= IEEE80211_F_DESBSSID;
  
  		IEEE80211_ADDR_COPY(vap->iv_des_bssid, &ap_addr->sa_data);
@@ -232,7 +232,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
 --- a/net80211/ieee80211_linux.h
 +++ b/net80211/ieee80211_linux.h
-@@ -643,6 +643,7 @@
+@@ -643,6 +643,7 @@ void ieee80211_vlan_vdetach(struct ieee8
  #define	free_netdev(dev)	kfree(dev)
  #endif
  

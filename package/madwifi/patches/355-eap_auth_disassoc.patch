@@ -5,7 +5,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8332,6 +8332,14 @@
+@@ -8332,6 +8332,14 @@ ath_tx_processq(struct ath_softc *sc, st
  #endif
  				if (ts->ts_status & HAL_TXERR_XRETRY) {
  					sc->sc_stats.ast_tx_xretries++;
@@ -22,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  						DPRINTF(sc, ATH_DEBUG_UAPSD,
 --- a/net80211/ieee80211_linux.c
 +++ b/net80211/ieee80211_linux.c
-@@ -156,6 +156,7 @@
+@@ -156,6 +156,7 @@ ieee80211_getmgtframe(u_int8_t **frm, u_
  		if (off != 0)
  			skb_reserve(skb, align - off);
  
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		SKB_CB(skb)->next = NULL;
 --- a/net80211/ieee80211_linux.h
 +++ b/net80211/ieee80211_linux.h
-@@ -393,6 +393,7 @@
+@@ -393,6 +393,7 @@ typedef spinlock_t acl_lock_t;
  	void		(*next_destructor)(struct sk_buff *skb);
  #endif
  	struct sk_buff *next;			/* fast frame sk_buf chain */
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/net80211/ieee80211_output.c
 +++ b/net80211/ieee80211_output.c
-@@ -778,6 +778,8 @@
+@@ -778,6 +778,8 @@ ieee80211_encap(struct ieee80211_node *n
  	else
  		hdrsize = sizeof(struct ieee80211_frame);
  
@@ -51,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	switch (vap->iv_opmode) {
  	case IEEE80211_M_IBSS:
  	case IEEE80211_M_AHDEMO:
-@@ -1622,6 +1624,7 @@
+@@ -1622,6 +1624,7 @@ ieee80211_add_xr_param(u_int8_t *frm, st
  	ie->param_len = frm - &ie->param_oui[0];
  	return frm;
  }
@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #endif
  /*
   * Send a probe request frame with the specified ssid
-@@ -1886,6 +1889,7 @@
+@@ -1886,6 +1889,7 @@ ieee80211_send_mgmt(struct ieee80211_nod
  				sizeof(u_int16_t)+IEEE80211_CHALLENGE_LEN : 0));
  		if (skb == NULL)
  			senderr(ENOMEM, is_tx_nobuf);
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  		((__le16 *)frm)[0] =
  			(is_shared_key) ? htole16(IEEE80211_AUTH_ALG_SHARED)
-@@ -1960,6 +1964,7 @@
+@@ -1960,6 +1964,7 @@ ieee80211_send_mgmt(struct ieee80211_nod
  			vap->app_ie[IEEE80211_APPIE_FRAME_ASSOC_REQ].length);
  		if (skb == NULL)
  			senderr(ENOMEM, is_tx_nobuf);
