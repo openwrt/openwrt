@@ -13,8 +13,8 @@ PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
 ifneq ($(CONFIG_LINUX_2_6_27),)
-  PKG_VERSION:=2008-10-08
-  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/10
+  PKG_VERSION:=2008-11-03
+  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/11
 else
   PKG_VERSION:=2008-08-06
   PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
@@ -25,6 +25,7 @@ PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
+STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-mac80211)
 
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
