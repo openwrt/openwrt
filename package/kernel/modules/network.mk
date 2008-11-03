@@ -319,28 +319,16 @@ $(eval $(call KernelPackage,tun))
 define KernelPackage/ppp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
+  DEPENDS:=+LINUX_2_6:kmod-crc-ccitt
   KCONFIG:= \
 	CONFIG_PPP \
 	CONFIG_PPP_ASYNC \
 	CONFIG_SLHC \
-	CONFIG_CRC_CCITT
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp_async.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/ppp_generic.$(LINUX_KMOD_SUFFIX) \
   	$(LINUX_DIR)/drivers/net/slhc.$(LINUX_KMOD_SUFFIX)
-endef
-
-define KernelPackage/ppp/2.4
   AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
-endef
-
-define KernelPackage/ppp/2.6
-#  KCONFIG+= \
-#	CONFIG_SLHC \
-#	CONFIG_CRC_CCITT
-  FILES+= \
-	$(LINUX_DIR)/lib/crc-ccitt.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,crc-ccitt slhc ppp_generic ppp_async)
 endef
 
 define KernelPackage/ppp/description

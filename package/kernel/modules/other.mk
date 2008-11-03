@@ -22,6 +22,20 @@ endef
 
 $(eval $(call KernelPackage,crc-itu-t))
 
+define KernelPackage/crc-ccitt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CRC-CCITT support
+  KCONFIG:=CONFIG_CRC_CCITT
+  FILES:=$(LINUX_DIR)/lib/crc-ccitt.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,crc-ccitt)
+endef
+
+define KernelPackage/crc-ccitt/description
+ Kernel module for CRC-CCITT support
+endef
+
+$(eval $(call KernelPackage,crc-ccitt))
+
 
 define KernelPackage/crc7
   SUBMENU:=$(OTHER_MENU)
