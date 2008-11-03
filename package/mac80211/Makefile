@@ -44,6 +44,7 @@ endef
 # Ralink rt2x00 drivers
 RT61FW:=RT61_Firmware_V1.2.zip
 RT71FW:=RT71W_Firmware_V1.8.zip
+RT2860FW:=RT2860_Firmware_V11.zip
 
 define Download/rt61
   FILE:=$(RT61FW)
@@ -58,6 +59,13 @@ define Download/rt71w
   MD5SUM:=1e7a5dc574e0268574fcda3fd5cf52f7
 endef
 $(eval $(call Download,rt71w))
+
+define Download/rt2860
+  FILE:=$(RT2860FW)
+  URL:=http://www.ralinktech.com.tw/data/drivers
+  MD5SUM:=440a81756a52c53528f16faa41c40124
+endef
+$(eval $(call Download,rt2860))
 
 define KernelPackage/rt2x00/Default
   SUBMENU:=Wireless Drivers
@@ -189,6 +197,7 @@ define Build/Prepare
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
+	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2860FW)
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	$(if $(CONFIG_TARGET_brcm47xx),rm -rf $(PKG_BUILD_DIR)/include/linux/ssb)
 endef
@@ -222,6 +231,11 @@ endef
 define KernelPackage/rt73-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware/
+endef
+
+define KernelPackage/rt2800-pci/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2860.bin $(1)/lib/firmware/
 endef
 
 define KernelPackage/zd1211rw/install
