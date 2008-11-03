@@ -128,6 +128,14 @@ define KernelPackage/rt73-usb
   AUTOLOAD:=$(call AutoLoad,27,rt73usb)
 endef
 
+define KernelPackage/rt2800-pci
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci @LINUX_2_6_27
+  TITLE+= (RT2860 PCI)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
+endef
+
 ZD1211FW_NAME:=zd1211-firmware
 ZD1211FW_VERSION:=1.4
 define Download/zd1211rw
@@ -231,4 +239,5 @@ $(eval $(call KernelPackage,rt2500-pci))
 $(eval $(call KernelPackage,rt2500-usb))
 $(eval $(call KernelPackage,rt61-pci))
 $(eval $(call KernelPackage,rt73-usb))
+$(eval $(call KernelPackage,rt2800-pci))
 $(eval $(call KernelPackage,zd1211rw))
