@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM63xx
-FEATURES:=squashfs jffs2 broken usb atm
+FEATURES:=squashfs jffs2 usb atm
 LINUX_VERSION:=2.6.27.4
 
 include $(INCLUDE_DIR)/target.mk
