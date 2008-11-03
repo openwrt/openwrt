@@ -1,6 +1,6 @@
-diff -Nur openssl-0.9.8h/Configure openssl-0.9.8h-ocf/Configure
---- openssl-0.9.8h/Configure	2008-05-02 01:11:30.000000000 +0200
-+++ openssl-0.9.8h-ocf/Configure	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
+--- openssl-0.9.8i.orig/Configure	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/Configure	2008-10-01 04:16:12.000000000 +0200
 @@ -34,6 +34,8 @@
  #		(Default: KRB5_DIR/include)
  # --with-krb5-flavor  Declare what flavor of Kerberos 5 is used.  Currently
@@ -10,7 +10,7 @@ diff -Nur openssl-0.9.8h/Configure openssl-0.9.8h-ocf/Configure
  #
  # --test-sanity Make a number of sanity checks on the data in this file.
  #               This is a debugging tool for OpenSSL developers.
-@@ -539,6 +541,9 @@
+@@ -540,6 +542,9 @@
  ##### Compaq Non-Stop Kernel (Tandem)
  "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
  
@@ -20,7 +20,7 @@ diff -Nur openssl-0.9.8h/Configure openssl-0.9.8h-ocf/Configure
  );
  
  my @MK1MF_Builds=qw(VC-WIN64I VC-WIN64A
-@@ -588,6 +593,8 @@
+@@ -589,6 +594,8 @@
  my $no_asm=0;
  my $no_dso=0;
  my $no_gmp=0;
@@ -29,7 +29,7 @@ diff -Nur openssl-0.9.8h/Configure openssl-0.9.8h-ocf/Configure
  my @skip=();
  my $Makefile="Makefile";
  my $des_locl="crypto/des/des_locl.h";
-@@ -714,6 +721,14 @@
+@@ -716,6 +723,14 @@
  			{
  			exit(&test_sanity());
  			}
@@ -44,7 +44,7 @@ diff -Nur openssl-0.9.8h/Configure openssl-0.9.8h-ocf/Configure
  		elsif (/^reconfigure/ || /^reconf/)
  			{
  			if (open(IN,"<$Makefile"))
-@@ -922,6 +937,7 @@
+@@ -924,6 +939,7 @@
  			print " OPENSSL_NO_$ALGO";
  		
  			if (/^err$/)	{ $flags .= "-DOPENSSL_NO_ERR "; }
@@ -52,7 +52,7 @@ diff -Nur openssl-0.9.8h/Configure openssl-0.9.8h-ocf/Configure
  			elsif (/^asm$/)	{ $no_asm = 1; }
  			}
  		else
-@@ -1062,6 +1078,16 @@
+@@ -1064,6 +1080,16 @@
  		   $withargs{"krb5-dir"} ne "";
  	}
  
@@ -69,9 +69,9 @@ diff -Nur openssl-0.9.8h/Configure openssl-0.9.8h-ocf/Configure
  # The DSO code currently always implements all functions so that no
  # applications will have to worry about that from a compilation point
  # of view. However, the "method"s may return zero unless that platform
-diff -Nur openssl-0.9.8h/INSTALL openssl-0.9.8h-ocf/INSTALL
---- openssl-0.9.8h/INSTALL	2008-04-07 08:35:41.000000000 +0200
-+++ openssl-0.9.8h-ocf/INSTALL	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/INSTALL openssl-0.9.8i/INSTALL
+--- openssl-0.9.8i.orig/INSTALL	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/INSTALL	2008-10-01 04:16:12.000000000 +0200
 @@ -103,6 +103,12 @@
                  define preprocessor symbols, specify additional libraries,
                  library directories or other compiler options.
@@ -85,9 +85,9 @@ diff -Nur openssl-0.9.8h/INSTALL openssl-0.9.8h-ocf/INSTALL
  
   Installation in Detail
   ----------------------
-diff -Nur openssl-0.9.8h/Makefile.org openssl-0.9.8h-ocf/Makefile.org
---- openssl-0.9.8h/Makefile.org	2008-04-04 01:03:39.000000000 +0200
-+++ openssl-0.9.8h-ocf/Makefile.org	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/Makefile.org openssl-0.9.8i/Makefile.org
+--- openssl-0.9.8i.orig/Makefile.org	2008-10-01 04:16:02.000000000 +0200
++++ openssl-0.9.8i/Makefile.org	2008-10-01 04:16:12.000000000 +0200
 @@ -367,7 +367,7 @@
  
  links:
@@ -97,9 +97,9 @@ diff -Nur openssl-0.9.8h/Makefile.org openssl-0.9.8h-ocf/Makefile.org
  	@set -e; target=links; $(RECURSIVE_BUILD_CMD)
  
  gentests:
-diff -Nur openssl-0.9.8h/Makefile.shared openssl-0.9.8h-ocf/Makefile.shared
---- openssl-0.9.8h/Makefile.shared	2007-09-16 16:11:51.000000000 +0200
-+++ openssl-0.9.8h-ocf/Makefile.shared	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/Makefile.shared openssl-0.9.8i/Makefile.shared
+--- openssl-0.9.8i.orig/Makefile.shared	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/Makefile.shared	2008-10-01 04:16:12.000000000 +0200
 @@ -6,13 +6,13 @@
  # properly
  
@@ -118,9 +118,9 @@ diff -Nur openssl-0.9.8h/Makefile.shared openssl-0.9.8h-ocf/Makefile.shared
  
  # LIBNAME contains just the name of the library, without prefix ("lib"
  # on Unix, "cyg" for certain forms under Cygwin...) or suffix (.a, .so,
-diff -Nur openssl-0.9.8h/apps/apps.h openssl-0.9.8h-ocf/apps/apps.h
---- openssl-0.9.8h/apps/apps.h	2007-10-12 02:00:10.000000000 +0200
-+++ openssl-0.9.8h-ocf/apps/apps.h	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/apps/apps.h openssl-0.9.8i/apps/apps.h
+--- openssl-0.9.8i.orig/apps/apps.h	2008-10-01 04:16:02.000000000 +0200
++++ openssl-0.9.8i/apps/apps.h	2008-10-01 04:16:12.000000000 +0200
 @@ -112,7 +112,7 @@
  #ifndef HEADER_APPS_H
  #define HEADER_APPS_H
@@ -130,9 +130,9 @@ diff -Nur openssl-0.9.8h/apps/apps.h openssl-0.9.8h-ocf/apps/apps.h
  
  #include <openssl/bio.h>
  #include <openssl/x509.h>
-diff -Nur openssl-0.9.8h/apps/progs.h openssl-0.9.8h-ocf/apps/progs.h
---- openssl-0.9.8h/apps/progs.h	2008-04-04 01:03:41.000000000 +0200
-+++ openssl-0.9.8h-ocf/apps/progs.h	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/apps/progs.h openssl-0.9.8i/apps/progs.h
+--- openssl-0.9.8i.orig/apps/progs.h	2008-10-01 04:16:02.000000000 +0200
++++ openssl-0.9.8i/apps/progs.h	2008-10-01 04:16:12.000000000 +0200
 @@ -129,7 +129,9 @@
  #ifndef OPENSSL_NO_ENGINE
  	{FUNC_TYPE_GENERAL,"engine",engine_main},
@@ -143,9 +143,9 @@ diff -Nur openssl-0.9.8h/apps/progs.h openssl-0.9.8h-ocf/apps/progs.h
  	{FUNC_TYPE_GENERAL,"prime",prime_main},
  #ifndef OPENSSL_NO_MD2
  	{FUNC_TYPE_MD,"md2",dgst_main},
-diff -Nur openssl-0.9.8h/apps/speed.c openssl-0.9.8h-ocf/apps/speed.c
---- openssl-0.9.8h/apps/speed.c	2007-11-15 14:33:47.000000000 +0100
-+++ openssl-0.9.8h-ocf/apps/speed.c	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
+--- openssl-0.9.8i.orig/apps/speed.c	2008-10-01 04:16:02.000000000 +0200
++++ openssl-0.9.8i/apps/speed.c	2008-10-01 04:16:12.000000000 +0200
 @@ -292,7 +292,7 @@
    "evp","sha256","sha512",
    "aes-128 ige","aes-192 ige","aes-256 ige"};
@@ -519,9 +519,9 @@ diff -Nur openssl-0.9.8h/apps/speed.c openssl-0.9.8h-ocf/apps/speed.c
  				d=atof(sstrsep(&p,sep));
  				if(n)
  					dsa_results[k][1]=1/(1/dsa_results[k][1]+1/d);
-diff -Nur openssl-0.9.8h/config openssl-0.9.8h-ocf/config
---- openssl-0.9.8h/config	2007-08-01 13:21:35.000000000 +0200
-+++ openssl-0.9.8h-ocf/config	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/config openssl-0.9.8i/config
+--- openssl-0.9.8i.orig/config	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/config	2008-10-01 04:16:12.000000000 +0200
 @@ -48,10 +48,10 @@
  
  # First get uname entries that we use below
@@ -577,9 +577,9 @@ diff -Nur openssl-0.9.8h/config openssl-0.9.8h-ocf/config
    mips2-sgi-irix)
  	CPU=`(hinv -t cpu) 2>/dev/null | head -1 | sed 's/^CPU:[^R]*R\([0-9]*\).*/\1/'`
  	CPU=${CPU:-0}
-diff -Nur openssl-0.9.8h/crypto/cryptlib.h openssl-0.9.8h-ocf/crypto/cryptlib.h
---- openssl-0.9.8h/crypto/cryptlib.h	2005-05-21 15:19:44.000000000 +0200
-+++ openssl-0.9.8h-ocf/crypto/cryptlib.h	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/crypto/cryptlib.h openssl-0.9.8i/crypto/cryptlib.h
+--- openssl-0.9.8i.orig/crypto/cryptlib.h	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/crypto/cryptlib.h	2008-10-01 04:16:12.000000000 +0200
 @@ -62,7 +62,7 @@
  #include <stdlib.h>
  #include <string.h>
@@ -589,10 +589,10 @@ diff -Nur openssl-0.9.8h/crypto/cryptlib.h openssl-0.9.8h-ocf/crypto/cryptlib.h
  
  #ifdef OPENSSL_USE_APPLINK
  #define BIO_FLAGS_UPLINK 0x8000
-diff -Nur openssl-0.9.8h/crypto/engine/eng_all.c openssl-0.9.8h-ocf/crypto/engine/eng_all.c
---- openssl-0.9.8h/crypto/engine/eng_all.c	2007-01-04 23:55:25.000000000 +0100
-+++ openssl-0.9.8h-ocf/crypto/engine/eng_all.c	2008-07-12 04:18:53.000000000 +0200
-@@ -104,13 +104,13 @@
+diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_all.c openssl-0.9.8i/crypto/engine/eng_all.c
+--- openssl-0.9.8i.orig/crypto/engine/eng_all.c	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/crypto/engine/eng_all.c	2008-10-01 04:17:20.000000000 +0200
+@@ -104,7 +104,7 @@
  #endif
  #endif
  #ifndef OPENSSL_NO_HW
@@ -600,6 +600,8 @@ diff -Nur openssl-0.9.8h/crypto/engine/eng_all.c openssl-0.9.8h-ocf/crypto/engin
 +#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(HAVE_CRYPTODEV)
  	ENGINE_load_cryptodev();
  #endif
+ #if defined(OPENSSL_SYS_WIN32) && !defined(OPENSSL_NO_CAPIENG)
+@@ -113,7 +113,7 @@
  #endif
  	}
  
@@ -608,9 +610,9 @@ diff -Nur openssl-0.9.8h/crypto/engine/eng_all.c openssl-0.9.8h-ocf/crypto/engin
  void ENGINE_setup_bsd_cryptodev(void) {
  	static int bsd_cryptodev_default_loaded = 0;
  	if (!bsd_cryptodev_default_loaded) {
-diff -Nur openssl-0.9.8h/crypto/engine/eng_cryptodev.c openssl-0.9.8h-ocf/crypto/engine/eng_cryptodev.c
---- openssl-0.9.8h/crypto/engine/eng_cryptodev.c	2004-06-15 13:45:42.000000000 +0200
-+++ openssl-0.9.8h-ocf/crypto/engine/eng_cryptodev.c	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/crypto/engine/eng_cryptodev.c
+--- openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/crypto/engine/eng_cryptodev.c	2008-10-01 04:16:12.000000000 +0200
 @@ -68,6 +68,16 @@
  struct dev_crypto_state {
  	struct session_op d_sess;
@@ -1108,9 +1110,9 @@ diff -Nur openssl-0.9.8h/crypto/engine/eng_cryptodev.c openssl-0.9.8h-ocf/crypto
  	r = cryptodev_bn_mod_exp(r0, I, rsa->d, rsa->n, ctx, NULL);
  	BN_CTX_free(ctx);
  	return (r);
-diff -Nur openssl-0.9.8h/crypto/engine/eng_table.c openssl-0.9.8h-ocf/crypto/engine/eng_table.c
---- openssl-0.9.8h/crypto/engine/eng_table.c	2008-04-28 23:45:43.000000000 +0200
-+++ openssl-0.9.8h-ocf/crypto/engine/eng_table.c	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_table.c openssl-0.9.8i/crypto/engine/eng_table.c
+--- openssl-0.9.8i.orig/crypto/engine/eng_table.c	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/crypto/engine/eng_table.c	2008-10-01 04:16:12.000000000 +0200
 @@ -186,6 +186,8 @@
  		{
  		engine_unlocked_finish(e, 0);
@@ -1120,10 +1122,10 @@ diff -Nur openssl-0.9.8h/crypto/engine/eng_table.c openssl-0.9.8h-ocf/crypto/eng
  		}
  	}
  static IMPLEMENT_LHASH_DOALL_ARG_FN(int_unregister_cb,ENGINE_PILE *,ENGINE *)
-diff -Nur openssl-0.9.8h/crypto/engine/engine.h openssl-0.9.8h-ocf/crypto/engine/engine.h
---- openssl-0.9.8h/crypto/engine/engine.h	2005-11-06 18:48:59.000000000 +0100
-+++ openssl-0.9.8h-ocf/crypto/engine/engine.h	2008-07-12 04:18:53.000000000 +0200
-@@ -688,7 +688,7 @@
+diff -Naur openssl-0.9.8i.orig/crypto/engine/engine.h openssl-0.9.8i/crypto/engine/engine.h
+--- openssl-0.9.8i.orig/crypto/engine/engine.h	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/crypto/engine/engine.h	2008-10-01 04:16:12.000000000 +0200
+@@ -703,7 +703,7 @@
   * values. */
  void *ENGINE_get_static_state(void);
  
@@ -1132,9 +1134,9 @@ diff -Nur openssl-0.9.8h/crypto/engine/engine.h openssl-0.9.8h-ocf/crypto/engine
  void ENGINE_setup_bsd_cryptodev(void);
  #endif
  
-diff -Nur openssl-0.9.8h/crypto/evp/c_all.c openssl-0.9.8h-ocf/crypto/evp/c_all.c
---- openssl-0.9.8h/crypto/evp/c_all.c	2004-08-29 18:36:04.000000000 +0200
-+++ openssl-0.9.8h-ocf/crypto/evp/c_all.c	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/crypto/evp/c_all.c openssl-0.9.8i/crypto/evp/c_all.c
+--- openssl-0.9.8i.orig/crypto/evp/c_all.c	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/crypto/evp/c_all.c	2008-10-01 04:16:12.000000000 +0200
 @@ -83,7 +83,7 @@
  	OpenSSL_add_all_ciphers();
  	OpenSSL_add_all_digests();
@@ -1144,9 +1146,9 @@ diff -Nur openssl-0.9.8h/crypto/evp/c_all.c openssl-0.9.8h-ocf/crypto/evp/c_all.
  	ENGINE_setup_bsd_cryptodev();
  # endif
  #endif
-diff -Nur openssl-0.9.8h/crypto/evp/c_alld.c openssl-0.9.8h-ocf/crypto/evp/c_alld.c
---- openssl-0.9.8h/crypto/evp/c_alld.c	2005-04-30 23:51:40.000000000 +0200
-+++ openssl-0.9.8h-ocf/crypto/evp/c_alld.c	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/crypto/evp/c_alld.c openssl-0.9.8i/crypto/evp/c_alld.c
+--- openssl-0.9.8i.orig/crypto/evp/c_alld.c	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/crypto/evp/c_alld.c	2008-10-01 04:16:12.000000000 +0200
 @@ -81,7 +81,7 @@
  	EVP_add_digest(EVP_dss());
  #endif
@@ -1156,10 +1158,10 @@ diff -Nur openssl-0.9.8h/crypto/evp/c_alld.c openssl-0.9.8h-ocf/crypto/evp/c_all
  	EVP_add_digest(EVP_sha1());
  	EVP_add_digest_alias(SN_sha1,"ssl3-sha1");
  	EVP_add_digest_alias(SN_sha1WithRSAEncryption,SN_sha1WithRSA);
-diff -Nur openssl-0.9.8h/engines/Makefile openssl-0.9.8h-ocf/engines/Makefile
---- openssl-0.9.8h/engines/Makefile	2006-02-04 02:49:34.000000000 +0100
-+++ openssl-0.9.8h-ocf/engines/Makefile	2008-07-12 04:18:53.000000000 +0200
-@@ -93,6 +93,7 @@
+diff -Naur openssl-0.9.8i.orig/engines/Makefile openssl-0.9.8i/engines/Makefile
+--- openssl-0.9.8i.orig/engines/Makefile	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/engines/Makefile	2008-10-01 04:16:12.000000000 +0200
+@@ -96,6 +96,7 @@
  			( echo installing $$l; \
  			  if [ "$(PLATFORM)" != "Cygwin" ]; then \
  				case "$(CFLAGS)" in \
@@ -1167,9 +1169,9 @@ diff -Nur openssl-0.9.8h/engines/Makefile openssl-0.9.8h-ocf/engines/Makefile
  				*DSO_DLFCN*)	sfx="so";;	\
  				*DSO_DL*)	sfx="sl";;	\
  				*)		sfx="bad";;	\
-diff -Nur openssl-0.9.8h/util/domd openssl-0.9.8h-ocf/util/domd
---- openssl-0.9.8h/util/domd	2005-03-30 16:44:50.000000000 +0200
-+++ openssl-0.9.8h-ocf/util/domd	2008-07-12 04:18:53.000000000 +0200
+diff -Naur openssl-0.9.8i.orig/util/domd openssl-0.9.8i/util/domd
+--- openssl-0.9.8i.orig/util/domd	2008-10-01 04:16:01.000000000 +0200
++++ openssl-0.9.8i/util/domd	2008-10-01 04:16:13.000000000 +0200
 @@ -23,13 +23,17 @@
      done
      sed -e '/^# DO NOT DELETE.*/,$d' < Makefile > Makefile.tmp
