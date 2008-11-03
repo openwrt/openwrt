@@ -241,7 +241,6 @@ static void __init rb493_setup(void)
 
 	ar71xx_add_device_mdio(0x3fffff00);
 
-#if 0
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = 0;
 	ar71xx_eth0_data.speed = SPEED_100;
@@ -252,7 +251,6 @@ static void __init rb493_setup(void)
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
-#endif
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
@@ -262,6 +260,8 @@ static void __init rb493_setup(void)
 					rb4xx_gpio_buttons);
 
 	platform_device_register(&rb4xx_nand_device);
+
+	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
 }
 
 MIPS_MACHINE(MACH_AR71XX_RB_493, "MikroTik RouterBOARD 493/AH", rb493_setup);
