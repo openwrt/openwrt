@@ -387,19 +387,35 @@
  	return;
  }
  
-@@ -231,31 +272,22 @@ static void block2mtd_free_device(struct
- 	kfree(dev);
+@@ -288,47 +288,17 @@ static void block2mtd_sync(struct mtd_info *mtd)
  }
  
+ 
+-static void block2mtd_free_device(struct block2mtd_dev *dev)
+-{
+-	if (!dev)
+-		return;
+-
+-	kfree(dev->mtd.name);
+-
+-	if (dev->blkdev) {
+-		invalidate_mapping_pages(dev->blkdev->bd_inode->i_mapping,
+-					0, -1);
+-		close_bdev_excl(dev->blkdev);
+-	}
+-
+-	kfree(dev);
+-}
+-
 -
 -/* FIXME: ensure that mtd->size % erase_size == 0 */
 -static struct block2mtd_dev *add_device(char *devname, int erase_size, const char *mtdname)
 +static int _open_bdev(struct block2mtd_dev *dev)
  {
  	struct block_device *bdev;
- 	struct block2mtd_dev *dev;
- 	struct mtd_partition *part;
- 	char *name;
+- 	struct block2mtd_dev *dev;
+- 	struct mtd_partition *part;
+- 	char *name;
  
 -	if (!devname)
 -		return NULL;
@@ -422,7 +438,7 @@
  		if (devt) {
  			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
  		}
-@@ -263,17 +295,96 @@ static struct block2mtd_dev *add_device(
+@@ -263,17 +295,97 @@ static struct block2mtd_dev *add_device(
  #endif
  
  	if (IS_ERR(bdev)) {
@@ -504,6 +520,7 @@
 +{
 +	struct block2mtd_dev *dev;
 +	struct mtd_partition *part;
++	char *name;
 +
 +	if (!devname)
 +		return NULL;
