@@ -1,6 +1,6 @@
 --- a/fs/Kconfig
 +++ b/fs/Kconfig
-@@ -1477,6 +1477,9 @@
+@@ -1477,6 +1477,9 @@ config VXFS_FS
  	  To compile this as a module, choose M here: the module will be
  	  called freevxfs.  If unsure, say N.
  
@@ -12,7 +12,7 @@
  	depends on BLOCK
 --- a/fs/Makefile
 +++ b/fs/Makefile
-@@ -77,6 +77,7 @@
+@@ -77,6 +77,7 @@ obj-$(CONFIG_SQUASHFS)		+= squashfs/
  obj-y				+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/

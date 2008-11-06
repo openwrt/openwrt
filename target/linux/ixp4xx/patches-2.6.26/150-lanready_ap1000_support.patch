@@ -154,7 +154,7 @@
 +#endif
 --- a/arch/arm/mach-ixp4xx/ixdp425-pci.c
 +++ b/arch/arm/mach-ixp4xx/ixdp425-pci.c
-@@ -67,7 +67,7 @@
+@@ -67,7 +67,7 @@ int __init ixdp425_pci_init(void)
  {
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
  			machine_is_ixdp465() || machine_is_kixrp435() ||
@@ -165,7 +165,7 @@
  }
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -105,6 +105,14 @@
+@@ -105,6 +105,14 @@ config MACH_WRT300NV2
  	  WRT300N v2 router. For more information on this
  	  platform, see http://openwrt.org
  
@@ -182,7 +182,7 @@
  	help
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -21,6 +21,7 @@
+@@ -21,6 +21,7 @@ obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pron
  obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-pci.o
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
@@ -190,7 +190,7 @@
  
  obj-y	+= common.o
  
-@@ -40,6 +41,7 @@
+@@ -40,6 +41,7 @@ obj-$(CONFIG_MACH_PRONGHORN)	+= pronghor
  obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o

@@ -113,7 +113,7 @@
 +
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -86,6 +86,7 @@
+@@ -86,6 +86,7 @@ obj-$(CONFIG_GPIO_TXX9)		+= gpio_txx9.o
  
  obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
@@ -123,7 +123,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -880,6 +880,9 @@
+@@ -880,6 +880,9 @@ config MYLOADER
  config SYNC_R4K
  	bool
  

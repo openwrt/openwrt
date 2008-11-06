@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -78,6 +78,21 @@
+@@ -78,6 +78,21 @@ config MIPS_COBALT
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  	select GENERIC_HARDIRQS_NO__DO_IRQ
  
@@ -22,7 +22,7 @@
  config MACH_DECSTATION
  	bool "DECstations"
  	select BOOT_ELF32
-@@ -697,6 +712,7 @@
+@@ -697,6 +712,7 @@ source "arch/mips/sibyte/Kconfig"
  source "arch/mips/tx4927/Kconfig"
  source "arch/mips/tx4938/Kconfig"
  source "arch/mips/vr41xx/Kconfig"
@@ -32,7 +32,7 @@
  
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -283,6 +283,13 @@
+@@ -283,6 +283,13 @@ cflags-$(CONFIG_MIPS_COBALT)	+= -Iinclud
  load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
  
  #
@@ -63,7 +63,7 @@
  extern char *system_type;
 --- a/arch/mips/kernel/traps.c
 +++ b/arch/mips/kernel/traps.c
-@@ -1464,6 +1464,7 @@
+@@ -1464,6 +1464,7 @@ void __cpuinit per_cpu_trap_init(void)
  	 */
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq = (read_c0_intctl() >> 29) & 7;
@@ -73,7 +73,7 @@
  			cp0_perfcount_irq = -1;
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -48,3 +48,4 @@
+@@ -48,3 +48,4 @@ obj-$(CONFIG_TOSHIBA_RBTX4938)	+= fixup-
  obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
  obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o

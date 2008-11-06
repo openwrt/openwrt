@@ -1,6 +1,6 @@
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -678,3 +678,6 @@
+@@ -678,3 +678,6 @@ config CRYPTO_PRNG
  source "drivers/crypto/Kconfig"
  
  endif	# if CRYPTO
@@ -9,7 +9,7 @@
 +
 --- a/crypto/Makefile
 +++ b/crypto/Makefile
-@@ -72,6 +72,8 @@
+@@ -72,6 +72,8 @@ obj-$(CONFIG_CRYPTO_LZO) += lzo.o
  obj-$(CONFIG_CRYPTO_PRNG) += prng.o
  obj-$(CONFIG_CRYPTO_TEST) += tcrypt.o
  
@@ -44,7 +44,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -667,6 +677,61 @@
+@@ -667,6 +677,61 @@ void add_disk_randomness(struct gendisk 
  }
  #endif
  
@@ -108,7 +108,7 @@
  /*********************************************************************
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -191,6 +191,7 @@
+@@ -191,6 +191,7 @@ asmlinkage long sys_dup(unsigned int fil
  		ret = dupfd(file, 0, 0);
  	return ret;
  }
@@ -167,7 +167,7 @@
  struct rand_pool_info {
  	int	entropy_count;
  	int	buf_size;
-@@ -48,6 +73,10 @@
+@@ -48,6 +73,10 @@ extern void add_input_randomness(unsigne
  				 unsigned int value);
  extern void add_interrupt_randomness(int irq);
  

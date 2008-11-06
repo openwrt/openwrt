@@ -15,7 +15,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -89,6 +89,14 @@
+@@ -89,6 +89,14 @@ config MACH_SIDEWINDER
  	  Engineering Sidewinder board. For more information on this
  	  platform, see http://www.adiengineering.com
  
@@ -32,7 +32,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	help
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -19,6 +19,7 @@
+@@ -19,6 +19,7 @@ obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
  obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-pci.o
@@ -40,7 +40,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  
  obj-y	+= common.o
  
-@@ -36,6 +37,7 @@
+@@ -36,6 +37,7 @@ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-se
  obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
  obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o
  obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o
@@ -189,7 +189,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +MACHINE_END
 --- a/arch/arm/mach-ixp4xx/ixdp425-pci.c
 +++ b/arch/arm/mach-ixp4xx/ixdp425-pci.c
-@@ -66,7 +66,8 @@
+@@ -66,7 +66,8 @@ struct hw_pci ixdp425_pci __initdata = {
  int __init ixdp425_pci_init(void)
  {
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
@@ -201,7 +201,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  }
 --- a/arch/arm/tools/mach-types
 +++ b/arch/arm/tools/mach-types
-@@ -1276,7 +1276,7 @@
+@@ -1276,7 +1276,7 @@ oiab			MACH_OIAB		OIAB			1269
  smdk6400		MACH_SMDK6400		SMDK6400		1270
  nokia_n800		MACH_NOKIA_N800		NOKIA_N800		1271
  greenphone		MACH_GREENPHONE		GREENPHONE		1272

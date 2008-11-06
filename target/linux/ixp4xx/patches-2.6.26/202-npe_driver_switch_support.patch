@@ -1,6 +1,6 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -165,14 +165,15 @@
+@@ -165,14 +165,15 @@ struct port {
  	struct net_device *netdev;
  	struct napi_struct napi;
  	struct net_device_stats stat;
@@ -18,7 +18,7 @@
  };
  
  /* NPE message structure */
-@@ -316,12 +317,13 @@
+@@ -316,12 +317,13 @@ static void mdio_write(struct net_device
  	spin_unlock_irqrestore(&mdio_lock, flags);
  }
  
@@ -34,7 +34,7 @@
  
  	while (cycles < MAX_MII_RESET_RETRIES) {
  		if (!(mdio_read(dev, phy_id, MII_BMCR) & BMCR_RESET)) {
-@@ -335,12 +337,12 @@
+@@ -335,12 +337,12 @@ static void phy_reset(struct net_device 
  		cycles++;
  	}
  
@@ -50,7 +50,7 @@
  		__raw_writel(DEFAULT_TX_CNTRL0 & ~TX_CNTRL0_HALFDUPLEX,
  			     &port->regs->tx_control[0]);
  	else
-@@ -348,7 +350,7 @@
+@@ -348,7 +350,7 @@ static void eth_set_duplex(struct port *
  			     &port->regs->tx_control[0]);
  }
  
@@ -59,7 +59,7 @@
  static void phy_check_media(struct port *port, int init)
  {
  	if (mii_check_media(&port->mii, 1, init))
-@@ -367,7 +369,63 @@
+@@ -367,7 +369,63 @@ static void phy_check_media(struct port 
  		}
  	}
  }
@@ -123,7 +123,7 @@
  
  static void mdio_thread(struct work_struct *work)
  {
-@@ -792,9 +850,12 @@
+@@ -792,9 +850,12 @@ static int eth_ioctl(struct net_device *
  
  	if (!netif_running(dev))
  		return -EINVAL;
@@ -138,7 +138,7 @@
  	return err;
  }
  
-@@ -947,7 +1008,8 @@
+@@ -947,7 +1008,8 @@ static int eth_open(struct net_device *d
  		}
  	}
  
@@ -148,7 +148,7 @@
  
  	memset(&msg, 0, sizeof(msg));
  	msg.cmd = NPE_VLAN_SETRXQOSENTRY;
-@@ -1107,10 +1169,8 @@
+@@ -1107,10 +1169,8 @@ static int eth_close(struct net_device *
  		printk(KERN_CRIT "%s: unable to disable loopback\n",
  		       dev->name);
  
@@ -161,7 +161,7 @@
  
  	if (!ports_open)
  		qmgr_disable_irq(TXDONE_QUEUE);
-@@ -1120,6 +1180,42 @@
+@@ -1120,6 +1180,42 @@ static int eth_close(struct net_device *
  	return 0;
  }
  
@@ -204,7 +204,7 @@
  static int __devinit eth_init_one(struct platform_device *pdev)
  {
  	struct port *port;
-@@ -1192,20 +1288,7 @@
+@@ -1192,20 +1288,7 @@ static int __devinit eth_init_one(struct
  	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
  	udelay(50);
  
@@ -228,7 +228,7 @@
  	return 0;
 --- a/include/asm-arm/arch-ixp4xx/platform.h
 +++ b/include/asm-arm/arch-ixp4xx/platform.h
-@@ -95,12 +95,15 @@
+@@ -95,12 +95,15 @@ struct sys_timer;
  #define IXP4XX_ETH_NPEB		0x10
  #define IXP4XX_ETH_NPEC		0x20
  

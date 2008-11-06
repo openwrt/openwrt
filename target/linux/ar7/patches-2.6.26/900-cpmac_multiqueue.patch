@@ -19,7 +19,7 @@ because other drivers do it in the same way.
 
 --- a/drivers/net/cpmac.c
 +++ b/drivers/net/cpmac.c
-@@ -627,7 +627,7 @@
+@@ -627,7 +627,7 @@ static void cpmac_end_xmit(struct net_de
  		dev_kfree_skb_irq(desc->skb);
  		desc->skb = NULL;
  #ifdef CONFIG_NETDEVICES_MULTIQUEUE
@@ -28,7 +28,7 @@ because other drivers do it in the same way.
  			netif_wake_subqueue(dev, queue);
  #else
  		if (netif_queue_stopped(dev))
-@@ -638,7 +638,7 @@
+@@ -638,7 +638,7 @@ static void cpmac_end_xmit(struct net_de
  			printk(KERN_WARNING
  			       "%s: end_xmit: spurious interrupt\n", dev->name);
  #ifdef CONFIG_NETDEVICES_MULTIQUEUE
@@ -37,7 +37,7 @@ because other drivers do it in the same way.
  			netif_wake_subqueue(dev, queue);
  #else
  		if (netif_queue_stopped(dev))
-@@ -1124,7 +1124,7 @@
+@@ -1124,7 +1124,7 @@ static int external_switch;
  
  static int __devinit cpmac_probe(struct platform_device *pdev)
  {
@@ -46,7 +46,7 @@ because other drivers do it in the same way.
  	char *mdio_bus_id = "0";
  	struct resource *mem;
  	struct cpmac_priv *priv;
-@@ -1152,7 +1152,11 @@
+@@ -1152,7 +1152,11 @@ static int __devinit cpmac_probe(struct 
  		}
  	}
  
@@ -58,7 +58,7 @@ because other drivers do it in the same way.
  
  	if (!dev) {
  		printk(KERN_ERR "cpmac: Unable to allocate net_device\n");
-@@ -1179,7 +1183,9 @@
+@@ -1179,7 +1183,9 @@ static int __devinit cpmac_probe(struct 
  	dev->set_multicast_list = cpmac_set_multicast_list;
  	dev->tx_timeout         = cpmac_tx_timeout;
  	dev->ethtool_ops        = &cpmac_ethtool_ops;

@@ -1,6 +1,6 @@
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -632,6 +632,18 @@
+@@ -632,6 +632,18 @@ config SBC_EPX_C3_WATCHDOG
  
  # MIPS Architecture
  
@@ -21,7 +21,7 @@
  	depends on SGI_HAS_INDYDOG
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -91,6 +91,7 @@
+@@ -91,6 +91,7 @@ obj-$(CONFIG_SBC_EPX_C3_WATCHDOG) += sbc
  # M68KNOMMU Architecture
  
  # MIPS Architecture

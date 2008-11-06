@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -57,6 +57,11 @@
+@@ -57,6 +57,11 @@ config MTD_ROOTFS_SPLIT
  	depends on MTD_PARTITIONS
  	default y
  
@@ -14,7 +14,7 @@
  	depends on MTD_PARTITIONS
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -8,6 +8,7 @@
+@@ -8,6 +8,7 @@ mtd-y				:= mtdcore.o mtdsuper.o
  mtd-$(CONFIG_MTD_PARTITIONS)	+= mtdpart.o
  
  obj-$(CONFIG_MTD_CONCAT)	+= mtdconcat.o

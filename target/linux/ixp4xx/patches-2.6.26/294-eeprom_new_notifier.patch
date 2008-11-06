@@ -9,7 +9,7 @@
  
  /* Addresses to scan */
  static const unsigned short normal_i2c[] = { 0x50, 0x51, 0x52, 0x53, 0x54,
-@@ -41,26 +43,7 @@
+@@ -41,26 +43,7 @@ static const unsigned short normal_i2c[]
  /* Insmod parameters */
  I2C_CLIENT_INSMOD_1(eeprom);
  
@@ -37,7 +37,7 @@
  
  static int eeprom_attach_adapter(struct i2c_adapter *adapter);
  static int eeprom_detect(struct i2c_adapter *adapter, int address, int kind);
-@@ -197,6 +180,7 @@
+@@ -197,6 +180,7 @@ static int eeprom_detect(struct i2c_adap
  	data->valid = 0;
  	mutex_init(&data->update_lock);
  	data->nature = UNKNOWN;
@@ -45,7 +45,7 @@
  
  	/* Tell the I2C layer a new client has arrived */
  	if ((err = i2c_attach_client(new_client)))
-@@ -224,6 +208,9 @@
+@@ -224,6 +208,9 @@ static int eeprom_detect(struct i2c_adap
  	if (err)
  		goto exit_detach;
  
@@ -55,7 +55,7 @@
  	return 0;
  
  exit_detach:
-@@ -249,6 +236,41 @@
+@@ -249,6 +236,41 @@ static int eeprom_detach_client(struct i
  	return 0;
  }
  
@@ -173,7 +173,7 @@
 +#endif /* _LINUX_EEPROM_H */
 --- a/include/linux/notifier.h
 +++ b/include/linux/notifier.h
-@@ -253,5 +253,8 @@
+@@ -253,5 +253,8 @@ extern struct blocking_notifier_head reb
  #define VT_UPDATE		0x0004 /* A bigger update occurred */
  #define VT_PREWRITE		0x0005 /* A char is about to be written to the console */
  

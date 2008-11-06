@@ -8,7 +8,7 @@
  
  extern asmlinkage void handle_int(void);
  extern asmlinkage void handle_tlbm(void);
-@@ -1464,6 +1465,8 @@
+@@ -1464,6 +1465,8 @@ void __cpuinit per_cpu_trap_init(void)
  	 */
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq = (read_c0_intctl() >> 29) & 7;
@@ -19,7 +19,7 @@
  			cp0_perfcount_irq = -1;
 --- a/include/asm-mips/time.h
 +++ b/include/asm-mips/time.h
-@@ -53,6 +53,7 @@
+@@ -53,6 +53,7 @@ extern int (*perf_irq)(void);
  #ifdef CONFIG_CEVT_R4K
  extern int mips_clockevent_init(void);
  extern unsigned int __weak get_c0_compare_int(void);

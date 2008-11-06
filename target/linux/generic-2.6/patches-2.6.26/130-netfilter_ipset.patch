@@ -7517,7 +7517,7 @@
 +module_exit(ipt_SET_fini);
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -401,5 +401,122 @@
+@@ -401,5 +401,122 @@ config IP_NF_ARP_MANGLE
  	  Allows altering the ARP packet payload: source and destination
  	  hardware and network addresses.
  
@@ -7642,7 +7642,7 @@
  
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -49,6 +49,7 @@
+@@ -49,6 +49,7 @@ obj-$(CONFIG_IP_NF_MATCH_AH) += ipt_ah.o
  obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn.o
  obj-$(CONFIG_IP_NF_MATCH_RECENT) += ipt_recent.o
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
@@ -7650,7 +7650,7 @@
  
  obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
  
-@@ -62,6 +63,18 @@
+@@ -62,6 +63,18 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
  obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o

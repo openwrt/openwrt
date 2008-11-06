@@ -1,6 +1,6 @@
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -449,6 +449,23 @@
+@@ -449,6 +449,23 @@ config NETFILTER_XT_TARGET_CONNSECMARK
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -26,7 +26,7 @@
  	depends on NETFILTER_XTABLES && (IPV6 || IPV6=n)
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -48,6 +48,7 @@
+@@ -48,6 +48,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_NFQUEUE
  obj-$(CONFIG_NETFILTER_XT_TARGET_NOTRACK) += xt_NOTRACK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_RATEEST) += xt_RATEEST.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_SECMARK) += xt_SECMARK.o

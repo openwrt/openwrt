@@ -9,7 +9,7 @@
  struct fis_image_desc {
      unsigned char name[16];      // Null terminated name
      uint32_t	  flash_base;    // Address within FLASH of image
-@@ -32,7 +34,8 @@
+@@ -32,7 +34,8 @@ struct fis_list {
  	struct fis_list *next;
  };
  
@@ -19,7 +19,7 @@
  module_param(directory, int, 0);
  
  static inline int redboot_checksum(struct fis_image_desc *img)
-@@ -61,6 +64,8 @@
+@@ -61,6 +64,8 @@ static int parse_redboot_partitions(stru
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	static char nullstring[] = "unallocated";
  #endif

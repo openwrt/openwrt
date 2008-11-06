@@ -9,7 +9,7 @@
  struct fis_image_desc {
      unsigned char name[16];      // Null terminated name
      uint32_t	  flash_base;    // Address within FLASH of image
-@@ -43,6 +45,7 @@
+@@ -43,6 +45,7 @@ static int parse_redboot_partitions(stru
                               struct mtd_partition **pparts,
                               unsigned long fis_origin)
  {
@@ -17,7 +17,7 @@
  	int nrparts = 0;
  	struct fis_image_desc *buf;
  	struct mtd_partition *parts;
-@@ -211,14 +214,14 @@
+@@ -211,14 +214,14 @@ static int parse_redboot_partitions(stru
  		}
  	}
  #endif
@@ -34,7 +34,7 @@
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	if (nulllen > 0) {
  		strcpy(nullname, nullstring);
-@@ -237,6 +240,8 @@
+@@ -237,6 +240,8 @@ static int parse_redboot_partitions(stru
  	}
  #endif
  	for ( ; i<nrparts; i++) {
@@ -43,7 +43,7 @@
  		parts[i].size = fl->img->size;
  		parts[i].offset = fl->img->flash_base;
  		parts[i].name = names;
-@@ -270,6 +275,14 @@
+@@ -270,6 +275,14 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}

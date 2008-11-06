@@ -28,7 +28,7 @@ Signed-off-by: Jeff Garzik <jgarzik@redhat.com>
 
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -237,6 +237,7 @@
+@@ -237,6 +237,7 @@ obj-$(CONFIG_USB_CATC)          += usb/
  obj-$(CONFIG_USB_KAWETH)        += usb/
  obj-$(CONFIG_USB_PEGASUS)       += usb/
  obj-$(CONFIG_USB_RTL8150)       += usb/
@@ -38,7 +38,7 @@ Signed-off-by: Jeff Garzik <jgarzik@redhat.com>
  
 --- a/drivers/net/usb/Kconfig
 +++ b/drivers/net/usb/Kconfig
-@@ -154,6 +154,16 @@
+@@ -154,6 +154,16 @@ config USB_NET_AX8817X
  	  This driver creates an interface named "ethX", where X depends on
  	  what other networking devices you have in use.
  
@@ -57,7 +57,7 @@ Signed-off-by: Jeff Garzik <jgarzik@redhat.com>
  	tristate "CDC Ethernet support (smart devices such as cable modems)"
 --- a/drivers/net/usb/Makefile
 +++ b/drivers/net/usb/Makefile
-@@ -6,6 +6,7 @@
+@@ -6,6 +6,7 @@ obj-$(CONFIG_USB_CATC)		+= catc.o
  obj-$(CONFIG_USB_KAWETH)	+= kaweth.o
  obj-$(CONFIG_USB_PEGASUS)	+= pegasus.o
  obj-$(CONFIG_USB_RTL8150)	+= rtl8150.o

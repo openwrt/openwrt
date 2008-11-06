@@ -9,7 +9,7 @@
  
  static __initdata struct of_device_id kilauea_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -46,6 +48,13 @@
+@@ -46,6 +48,13 @@ static int __init kilauea_probe(void)
  
  	ppc_pci_flags = PPC_PCI_REASSIGN_ALL_RSRC;
  

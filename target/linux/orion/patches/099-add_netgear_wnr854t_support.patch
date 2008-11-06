@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-orion5x/Kconfig
 +++ b/arch/arm/mach-orion5x/Kconfig
-@@ -74,6 +74,12 @@
+@@ -74,6 +74,12 @@ config MACH_MSS2
  	  Say 'Y' here if you want your kernel to support the
  	  Maxtor Shared Storage II platform.
  
@@ -15,7 +15,7 @@
  endif
 --- a/arch/arm/mach-orion5x/Makefile
 +++ b/arch/arm/mach-orion5x/Makefile
-@@ -10,3 +10,4 @@
+@@ -10,3 +10,4 @@ obj-$(CONFIG_MACH_WRT350N_V2)	+= wrt350n
  obj-$(CONFIG_MACH_TS78XX)	+= ts78xx-setup.o
  obj-$(CONFIG_MACH_MV2120)	+= mv2120-setup.o
  obj-$(CONFIG_MACH_MSS2)		+= mss2-setup.o
@@ -189,7 +189,7 @@
 +MACHINE_END
 --- a/arch/arm/configs/orion5x_defconfig
 +++ b/arch/arm/configs/orion5x_defconfig
-@@ -166,6 +166,7 @@
+@@ -166,6 +166,7 @@ CONFIG_MACH_KUROBOX_PRO=y
  CONFIG_MACH_DNS323=y
  CONFIG_MACH_TS209=y
  CONFIG_MACH_LINKSTATION_PRO=y

@@ -1,6 +1,6 @@
 --- a/arch/ppc/platforms/4xx/Kconfig
 +++ b/arch/ppc/platforms/4xx/Kconfig
-@@ -53,6 +53,12 @@
+@@ -53,6 +53,12 @@ config WALNUT
  	help
  	  This option enables support for the IBM PPC405GP evaluation board.
  
@@ -13,7 +13,7 @@
  config XILINX_ML300
  	bool "Xilinx-ML300"
  	select XILINX_VIRTEX_II_PRO
-@@ -184,7 +190,7 @@
+@@ -184,7 +190,7 @@ config BOOKE
  
  config IBM_OCP
  	bool
@@ -22,7 +22,7 @@
  	default y
  
  config IBM_EMAC4
-@@ -194,7 +200,7 @@
+@@ -194,7 +200,7 @@ config IBM_EMAC4
  
  config BIOS_FIXUP
  	bool
@@ -31,7 +31,7 @@
  	default y
  
  # OAK doesn't exist but wanted to keep this around for any future 403GCX boards
-@@ -205,7 +211,7 @@
+@@ -205,7 +211,7 @@ config 403GCX
  
  config 405EP
  	bool
@@ -42,7 +42,7 @@
  config 405GP
 --- a/arch/ppc/platforms/4xx/Makefile
 +++ b/arch/ppc/platforms/4xx/Makefile
-@@ -14,6 +14,7 @@
+@@ -14,6 +14,7 @@ obj-$(CONFIG_REDWOOD_6)		+= redwood6.o
  obj-$(CONFIG_SYCAMORE)		+= sycamore.o
  obj-$(CONFIG_TAISHAN)		+= taishan.o
  obj-$(CONFIG_WALNUT)		+= walnut.o

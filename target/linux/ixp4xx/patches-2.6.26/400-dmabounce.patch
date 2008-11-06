@@ -1,6 +1,6 @@
 --- a/arch/arm/common/dmabounce.c
 +++ b/arch/arm/common/dmabounce.c
-@@ -117,6 +117,10 @@
+@@ -117,6 +117,10 @@ alloc_safe_buffer(struct dmabounce_devic
  	} else if (size <= device_info->large.size) {
  		pool = &device_info->large;
  	} else {
@@ -13,7 +13,7 @@
  
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -244,6 +244,11 @@
+@@ -244,6 +244,11 @@ config DMABOUNCE
  	default y
  	depends on PCI
  

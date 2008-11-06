@@ -1,6 +1,6 @@
 --- a/drivers/net/cpmac.c
 +++ b/drivers/net/cpmac.c
-@@ -948,7 +948,8 @@
+@@ -948,7 +948,8 @@ static void cpmac_adjust_link(struct net
  	int new_state = 0;
  
  	spin_lock(&priv->lock);
@@ -10,7 +10,7 @@
  		netif_start_queue(dev);
  		if (priv->phy->duplex != priv->oldduplex) {
  			new_state = 1;
-@@ -960,11 +961,11 @@
+@@ -960,11 +961,11 @@ static void cpmac_adjust_link(struct net
  			priv->oldspeed = priv->phy->speed;
  		}
  

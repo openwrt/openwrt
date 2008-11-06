@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -158,6 +158,14 @@
+@@ -158,6 +158,14 @@ config ARCH_PRPMC1100
  	  PrPCM1100 Processor Mezanine Module. For more information on
  	  this platform, see <file:Documentation/arm/IXP4xx>.
  
@@ -17,7 +17,7 @@
  	prompt "NAS100D"
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -22,6 +22,7 @@
+@@ -22,6 +22,7 @@ obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sid
  obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
@@ -25,7 +25,7 @@
  
  obj-y	+= common.o
  
-@@ -42,6 +43,7 @@
+@@ -42,6 +43,7 @@ obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewin
  obj-$(CONFIG_MACH_COMPEX)	+= compex-setup.o
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
@@ -272,7 +272,7 @@
 +subsys_initcall(tw5334_pci_init);
 --- a/include/asm-arm/arch-ixp4xx/uncompress.h
 +++ b/include/asm-arm/arch-ixp4xx/uncompress.h
-@@ -42,7 +42,8 @@
+@@ -42,7 +42,8 @@ static __inline__ void __arch_decomp_set
  	 */
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||

@@ -1,6 +1,6 @@
 --- a/fs/mini_fo/meta.c
 +++ b/fs/mini_fo/meta.c
-@@ -442,6 +442,11 @@
+@@ -442,6 +442,11 @@ int meta_write_d_entry(dentry_t *dentry,
  			   S_IRUSR | S_IWUSR);
  #endif
  	}
@@ -12,7 +12,7 @@
          /* open META-file for writing */
          meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
          if(!meta_file || IS_ERR(meta_file)) {
-@@ -535,6 +540,11 @@
+@@ -535,6 +540,11 @@ int meta_write_r_entry(dentry_t *dentry,
  			   meta_dentry, S_IRUSR | S_IWUSR);
  #endif
  	}
@@ -24,7 +24,7 @@
          /* open META-file for writing */
          meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
          if(!meta_file || IS_ERR(meta_file)) {
-@@ -671,14 +681,16 @@
+@@ -671,14 +681,16 @@ int meta_sync_d_list(dentry_t *dentry, i
  		}
  	}
  
@@ -44,7 +44,7 @@
  		dput(meta_dentry);
  		err = -1;
                  goto out;
-@@ -811,14 +823,16 @@
+@@ -811,14 +823,16 @@ int meta_sync_r_list(dentry_t *dentry, i
  		}
  	}
  

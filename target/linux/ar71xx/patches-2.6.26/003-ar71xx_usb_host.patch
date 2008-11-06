@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -81,6 +81,12 @@
+@@ -81,6 +81,12 @@ config USB_EHCI_BIG_ENDIAN_DESC
  	depends on USB_EHCI_HCD && (440EPX || ARCH_IXP4XX)
  	default y
  
@@ -13,7 +13,7 @@
  config USB_EHCI_FSL
  	bool "Support for Freescale on-chip EHCI USB controller"
  	depends on USB_EHCI_HCD && FSL_SOC
-@@ -152,6 +158,12 @@
+@@ -152,6 +158,12 @@ config USB_OHCI_HCD
  	  To compile this driver as a module, choose M here: the
  	  module will be called ohci-hcd.
  
@@ -28,7 +28,7 @@
  	depends on USB_OHCI_HCD && (STB03xxx || PPC_MPC52xx)
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1034,6 +1034,11 @@
+@@ -1034,6 +1034,11 @@ MODULE_LICENSE ("GPL");
  #define	PLATFORM_DRIVER		ixp4xx_ehci_driver
  #endif
  
@@ -42,7 +42,7 @@
  #error "missing bus glue for ehci-hcd"
 --- a/drivers/usb/host/ohci.h
 +++ b/drivers/usb/host/ohci.h
-@@ -538,6 +538,11 @@
+@@ -538,6 +538,11 @@ static inline struct usb_hcd *ohci_to_hc
  #define writel_be(val, addr)	out_be32((__force unsigned *)addr, val)
  #endif
  
@@ -56,7 +56,7 @@
  {
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -1057,6 +1057,11 @@
+@@ -1057,6 +1057,11 @@ MODULE_LICENSE ("GPL");
  #define SM501_OHCI_DRIVER	ohci_hcd_sm501_driver
  #endif
  
