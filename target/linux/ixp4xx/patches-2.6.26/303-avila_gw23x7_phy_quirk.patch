@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/avila-setup.c
 +++ b/arch/arm/mach-ixp4xx/avila-setup.c
-@@ -294,6 +294,7 @@
+@@ -294,6 +294,7 @@ static void __init avila_gw2345_setup(vo
  
  static void __init avila_gw2347_setup(void)
  {
@@ -8,7 +8,7 @@
  	platform_device_register(&avila_npeb_device);
  
  	avila_gpio_leds[0].gpio = AVILA_GW23X7_LED_USER_GPIO;
-@@ -338,6 +339,7 @@
+@@ -338,6 +339,7 @@ static void __init avila_gw2355_setup(vo
  
  static void __init avila_gw2357_setup(void)
  {
@@ -18,7 +18,7 @@
  	avila_gpio_leds[0].gpio = AVILA_GW23X7_LED_USER_GPIO;
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -348,6 +348,14 @@
+@@ -348,6 +348,14 @@ static void phy_reset(struct net_device 
  		return;
  	}
  
@@ -35,7 +35,7 @@
  	bmcr |= (BMCR_ANENABLE | BMCR_ANRESTART);
 --- a/include/asm-arm/arch-ixp4xx/platform.h
 +++ b/include/asm-arm/arch-ixp4xx/platform.h
-@@ -104,6 +104,8 @@
+@@ -104,6 +104,8 @@ struct eth_plat_info {
  	u8 txreadyq;
  	u8 hwaddr[6];
  	u32 phy_mask;

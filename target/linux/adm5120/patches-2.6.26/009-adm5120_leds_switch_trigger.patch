@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -207,4 +207,12 @@
+@@ -207,4 +207,12 @@ config LEDS_TRIGGER_NETDEV
  	  This allows LEDs to be controlled by network device activity.
  	  If unsure, say Y.
  
@@ -15,7 +15,7 @@
  endif # NEW_LEDS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -30,3 +30,4 @@
+@@ -30,3 +30,4 @@ obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= 
  obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
  obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
  obj-$(CONFIG_LEDS_TRIGGER_NETDEV)      += ledtrig-netdev.o

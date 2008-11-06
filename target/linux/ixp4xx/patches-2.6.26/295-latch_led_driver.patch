@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -117,6 +117,12 @@
+@@ -117,6 +117,12 @@ config LEDS_GPIO
  	  outputs. To be useful the particular board must have LEDs
  	  and they must be connected to the GPIO lines.
  
@@ -159,7 +159,7 @@
 +MODULE_LICENSE("GPL");
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -18,6 +18,7 @@
+@@ -18,6 +18,7 @@ obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.
  obj-$(CONFIG_LEDS_COBALT_QUBE)		+= leds-cobalt-qube.o
  obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-cobalt-raq.o
  obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
@@ -169,7 +169,7 @@
  obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
 --- a/include/linux/leds.h
 +++ b/include/linux/leds.h
-@@ -134,5 +134,18 @@
+@@ -134,5 +134,18 @@ struct gpio_led_platform_data {
  					unsigned long *delay_off);
  };
  

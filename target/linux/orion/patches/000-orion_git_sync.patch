@@ -1,6 +1,6 @@
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -2691,12 +2691,10 @@
+@@ -2691,12 +2691,10 @@ L:	libertas-dev@lists.infradead.org
  S:	Maintained
  
  MARVELL MV643XX ETHERNET DRIVER
@@ -18,7 +18,7 @@
  P:	Petr Vandrovec
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -84,6 +84,11 @@
+@@ -84,6 +84,11 @@ config STACKTRACE_SUPPORT
  	bool
  	default y
  
@@ -30,7 +30,7 @@
  config LOCKDEP_SUPPORT
  	bool
  	default y
-@@ -347,6 +352,16 @@
+@@ -347,6 +352,16 @@ config ARCH_L7200
  	  If you have any questions or comments about the Linux kernel port
  	  to this board, send e-mail to <sjhill@cotw.com>.
  
@@ -47,7 +47,7 @@
  config ARCH_KS8695
  	bool "Micrel/Kendin KS8695"
  	select GENERIC_GPIO
-@@ -365,6 +380,24 @@
+@@ -365,6 +380,24 @@ config ARCH_NS9XXX
  
  	  <http://www.digi.com/products/microprocessors/index.jsp>
  
@@ -72,7 +72,7 @@
  config ARCH_MXC
  	bool "Freescale MXC/iMX-based"
  	select ARCH_MTD_XIP
-@@ -381,7 +414,8 @@
+@@ -381,7 +414,8 @@ config ARCH_ORION5X
  	select PLAT_ORION
  	help
  	  Support for the following Marvell Orion 5x series SoCs:
@@ -82,7 +82,7 @@
  
  config ARCH_PNX4008
  	bool "Philips Nexperia PNX4008 Mobile"
-@@ -502,6 +536,10 @@
+@@ -502,6 +536,10 @@ source "arch/arm/mach-ixp2000/Kconfig"
  
  source "arch/arm/mach-ixp23xx/Kconfig"
  
@@ -93,7 +93,7 @@
  source "arch/arm/mach-pxa/Kconfig"
  
  source "arch/arm/mach-sa1100/Kconfig"
-@@ -514,6 +552,8 @@
+@@ -514,6 +552,8 @@ source "arch/arm/mach-omap2/Kconfig"
  
  source "arch/arm/mach-orion5x/Kconfig"
  
@@ -104,7 +104,7 @@
  
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -135,11 +135,14 @@
+@@ -135,11 +135,14 @@ endif
   machine-$(CONFIG_ARCH_NETX)	   := netx
   machine-$(CONFIG_ARCH_NS9XXX)	   := ns9xxx
   machine-$(CONFIG_ARCH_DAVINCI)	   := davinci
@@ -121,7 +121,7 @@
  # This is what happens if you forget the IOCS16 line.
 --- a/arch/arm/boot/compressed/head.S
 +++ b/arch/arm/boot/compressed/head.S
-@@ -623,8 +623,8 @@
+@@ -623,8 +623,8 @@ proc_types:
  		b	__armv4_mmu_cache_off
  		b	__armv4_mmu_cache_flush
  
@@ -4171,7 +4171,7 @@
  #
  CONFIG_ARM=y
  CONFIG_SYS_SUPPORTS_APM_EMULATION=y
-@@ -21,6 +21,7 @@
+@@ -21,6 +21,7 @@ CONFIG_RWSEM_GENERIC_SPINLOCK=y
  # CONFIG_ARCH_HAS_ILOG2_U64 is not set
  CONFIG_GENERIC_HWEIGHT=y
  CONFIG_GENERIC_CALIBRATE_DELAY=y
@@ -4179,7 +4179,7 @@
  CONFIG_ZONE_DMA=y
  CONFIG_VECTORS_BASE=0xffff0000
  CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
-@@ -40,24 +41,24 @@
+@@ -40,24 +41,24 @@ CONFIG_SYSVIPC_SYSCTL=y
  # CONFIG_POSIX_MQUEUE is not set
  # CONFIG_BSD_PROCESS_ACCT is not set
  # CONFIG_TASKSTATS is not set
@@ -4209,7 +4209,7 @@
  # CONFIG_KALLSYMS_EXTRA_PASS is not set
  CONFIG_HOTPLUG=y
  CONFIG_PRINTK=y
-@@ -73,20 +74,25 @@
+@@ -73,20 +74,25 @@ CONFIG_TIMERFD=y
  CONFIG_EVENTFD=y
  CONFIG_SHMEM=y
  CONFIG_VM_EVENT_COUNTERS=y
@@ -4240,7 +4240,7 @@
  CONFIG_MODULE_UNLOAD=y
  # CONFIG_MODULE_FORCE_UNLOAD is not set
  # CONFIG_MODVERSIONS is not set
-@@ -111,7 +117,6 @@
+@@ -111,7 +117,6 @@ CONFIG_DEFAULT_CFQ=y
  # CONFIG_DEFAULT_NOOP is not set
  CONFIG_DEFAULT_IOSCHED="cfq"
  CONFIG_CLASSIC_RCU=y
@@ -4248,7 +4248,7 @@
  
  #
  # System Type
-@@ -160,6 +165,7 @@
+@@ -160,6 +165,7 @@ CONFIG_MACH_RD88F5182=y
  CONFIG_MACH_KUROBOX_PRO=y
  CONFIG_MACH_DNS323=y
  CONFIG_MACH_TS209=y
@@ -4256,7 +4256,7 @@
  
  #
  # Boot options
-@@ -168,6 +174,7 @@
+@@ -168,6 +174,7 @@ CONFIG_MACH_TS209=y
  #
  # Power management
  #
@@ -4264,7 +4264,7 @@
  
  #
  # Processor Type
-@@ -177,8 +184,9 @@
+@@ -177,8 +184,9 @@ CONFIG_CPU_FEROCEON=y
  CONFIG_CPU_FEROCEON_OLD_ID=y
  CONFIG_CPU_32v5=y
  CONFIG_CPU_ABRT_EV5T=y
@@ -4275,7 +4275,7 @@
  CONFIG_CPU_TLB_V4WBI=y
  CONFIG_CPU_CP15=y
  CONFIG_CPU_CP15_MMU=y
-@@ -189,7 +197,6 @@
+@@ -189,7 +197,6 @@ CONFIG_CPU_CP15_MMU=y
  CONFIG_ARM_THUMB=y
  # CONFIG_CPU_ICACHE_DISABLE is not set
  # CONFIG_CPU_DCACHE_DISABLE is not set
@@ -4283,7 +4283,7 @@
  # CONFIG_OUTER_CACHE is not set
  
  #
-@@ -199,6 +206,7 @@
+@@ -199,6 +206,7 @@ CONFIG_PCI=y
  CONFIG_PCI_SYSCALL=y
  # CONFIG_ARCH_SUPPORTS_MSI is not set
  CONFIG_PCI_LEGACY=y
@@ -4291,7 +4291,7 @@
  # CONFIG_PCCARD is not set
  
  #
-@@ -221,6 +229,7 @@
+@@ -221,6 +229,7 @@ CONFIG_FLATMEM=y
  CONFIG_FLAT_NODE_MEM_MAP=y
  # CONFIG_SPARSEMEM_STATIC is not set
  # CONFIG_SPARSEMEM_VMEMMAP_ENABLE is not set
@@ -4299,7 +4299,7 @@
  CONFIG_SPLIT_PTLOCK_CPUS=4096
  # CONFIG_RESOURCES_64BIT is not set
  CONFIG_ZONE_DMA_FLAG=1
-@@ -238,7 +247,6 @@
+@@ -238,7 +247,6 @@ CONFIG_ZBOOT_ROM_BSS=0x0
  CONFIG_CMDLINE=""
  # CONFIG_XIP_KERNEL is not set
  # CONFIG_KEXEC is not set
@@ -4307,7 +4307,7 @@
  
  #
  # Floating point emulation
-@@ -311,8 +319,6 @@
+@@ -311,8 +319,6 @@ CONFIG_TCP_CONG_CUBIC=y
  CONFIG_DEFAULT_TCP_CONG="cubic"
  # CONFIG_TCP_MD5SIG is not set
  # CONFIG_IPV6 is not set
@@ -4316,7 +4316,7 @@
  # CONFIG_NETWORK_SECMARK is not set
  # CONFIG_NETFILTER is not set
  # CONFIG_IP_DCCP is not set
-@@ -335,6 +341,7 @@
+@@ -335,6 +341,7 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
  # Network testing
  #
  CONFIG_NET_PKTGEN=m
@@ -4324,7 +4324,7 @@
  # CONFIG_HAMRADIO is not set
  # CONFIG_CAN is not set
  # CONFIG_IRDA is not set
-@@ -362,6 +369,8 @@
+@@ -362,6 +369,8 @@ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug
  CONFIG_STANDALONE=y
  CONFIG_PREVENT_FIRMWARE_BUILD=y
  CONFIG_FW_LOADER=y
@@ -4333,7 +4333,7 @@
  # CONFIG_SYS_HYPERVISOR is not set
  # CONFIG_CONNECTOR is not set
  CONFIG_MTD=y
-@@ -371,6 +380,7 @@
+@@ -371,6 +380,7 @@ CONFIG_MTD_PARTITIONS=y
  # CONFIG_MTD_REDBOOT_PARTS is not set
  CONFIG_MTD_CMDLINE_PARTS=y
  # CONFIG_MTD_AFS_PARTS is not set
@@ -4341,7 +4341,7 @@
  
  #
  # User Modules And Translation Layers
-@@ -378,9 +388,8 @@
+@@ -378,9 +388,8 @@ CONFIG_MTD_CMDLINE_PARTS=y
  CONFIG_MTD_CHAR=y
  CONFIG_MTD_BLKDEVS=y
  CONFIG_MTD_BLOCK=y
@@ -4353,7 +4353,7 @@
  # CONFIG_INFTL is not set
  # CONFIG_RFD_FTL is not set
  # CONFIG_SSFDC is not set
-@@ -405,12 +414,12 @@
+@@ -405,12 +414,12 @@ CONFIG_MTD_MAP_BANK_WIDTH_4=y
  # CONFIG_MTD_MAP_BANK_WIDTH_32 is not set
  CONFIG_MTD_CFI_I1=y
  CONFIG_MTD_CFI_I2=y
@@ -4368,7 +4368,7 @@
  CONFIG_MTD_CFI_UTIL=y
  # CONFIG_MTD_RAM is not set
  # CONFIG_MTD_ROM is not set
-@@ -481,6 +490,9 @@
+@@ -481,6 +490,9 @@ CONFIG_MISC_DEVICES=y
  # CONFIG_EEPROM_93CX6 is not set
  # CONFIG_SGI_IOC4 is not set
  # CONFIG_TIFM_CORE is not set
@@ -4378,7 +4378,7 @@
  
  #
  # SCSI device support
-@@ -542,6 +554,7 @@
+@@ -542,6 +554,7 @@ CONFIG_SCSI_LOWLEVEL=y
  # CONFIG_SCSI_IPS is not set
  # CONFIG_SCSI_INITIO is not set
  # CONFIG_SCSI_INIA100 is not set
@@ -4386,7 +4386,7 @@
  # CONFIG_SCSI_STEX is not set
  # CONFIG_SCSI_SYM53C8XX_2 is not set
  # CONFIG_SCSI_IPR is not set
-@@ -556,7 +569,10 @@
+@@ -556,7 +569,10 @@ CONFIG_SCSI_LOWLEVEL=y
  # CONFIG_SCSI_SRP is not set
  CONFIG_ATA=y
  # CONFIG_ATA_NONSTANDARD is not set
@@ -4397,7 +4397,7 @@
  # CONFIG_SATA_SVW is not set
  # CONFIG_ATA_PIIX is not set
  CONFIG_SATA_MV=y
-@@ -566,7 +582,6 @@
+@@ -566,7 +582,6 @@ CONFIG_SATA_MV=y
  # CONFIG_SATA_PROMISE is not set
  # CONFIG_SATA_SX4 is not set
  # CONFIG_SATA_SIL is not set
@@ -4405,7 +4405,7 @@
  # CONFIG_SATA_SIS is not set
  # CONFIG_SATA_ULI is not set
  # CONFIG_SATA_VIA is not set
-@@ -611,6 +626,7 @@
+@@ -611,6 +626,7 @@ CONFIG_SATA_MV=y
  # CONFIG_PATA_VIA is not set
  # CONFIG_PATA_WINBOND is not set
  # CONFIG_PATA_PLATFORM is not set
@@ -4413,7 +4413,7 @@
  # CONFIG_MD is not set
  # CONFIG_FUSION is not set
  
-@@ -652,7 +668,7 @@
+@@ -652,7 +668,7 @@ CONFIG_NET_PCI=y
  # CONFIG_B44 is not set
  # CONFIG_FORCEDETH is not set
  # CONFIG_EEPRO100 is not set
@@ -4422,7 +4422,7 @@
  # CONFIG_FEALNX is not set
  # CONFIG_NATSEMI is not set
  # CONFIG_NE2K_PCI is not set
-@@ -668,9 +684,7 @@
+@@ -668,9 +684,7 @@ CONFIG_E100=y
  CONFIG_NETDEV_1000=y
  # CONFIG_ACENIC is not set
  # CONFIG_DL2K is not set
@@ -4433,7 +4433,7 @@
  # CONFIG_E1000E is not set
  # CONFIG_E1000E_ENABLED is not set
  # CONFIG_IP1000 is not set
-@@ -680,27 +694,15 @@
+@@ -680,27 +694,15 @@ CONFIG_E1000_NAPI=y
  # CONFIG_YELLOWFIN is not set
  # CONFIG_R8169 is not set
  # CONFIG_SIS190 is not set
@@ -4465,7 +4465,7 @@
  # CONFIG_TR is not set
  
  #
-@@ -708,6 +710,7 @@
+@@ -708,6 +710,7 @@ CONFIG_NETDEV_10000=y
  #
  # CONFIG_WLAN_PRE80211 is not set
  # CONFIG_WLAN_80211 is not set
@@ -4473,7 +4473,7 @@
  
  #
  # USB Network Adapters
-@@ -738,12 +741,9 @@
+@@ -738,12 +741,9 @@ CONFIG_INPUT=y
  #
  # Userland interfaces
  #
@@ -4488,7 +4488,7 @@
  # CONFIG_INPUT_EVBUG is not set
  
  #
-@@ -765,10 +765,8 @@
+@@ -765,10 +765,8 @@ CONFIG_INPUT_MOUSEDEV_SCREEN_Y=768
  #
  # Character devices
  #
@@ -4501,7 +4501,7 @@
  # CONFIG_SERIAL_NONSTANDARD is not set
  # CONFIG_NOZOMI is not set
  
-@@ -777,7 +775,7 @@
+@@ -777,7 +775,7 @@ CONFIG_HW_CONSOLE=y
  #
  CONFIG_SERIAL_8250=y
  CONFIG_SERIAL_8250_CONSOLE=y
@@ -4510,7 +4510,7 @@
  CONFIG_SERIAL_8250_NR_UARTS=4
  CONFIG_SERIAL_8250_RUNTIME_UARTS=2
  # CONFIG_SERIAL_8250_EXTENDED is not set
-@@ -792,7 +790,7 @@
+@@ -792,7 +790,7 @@ CONFIG_UNIX98_PTYS=y
  CONFIG_LEGACY_PTYS=y
  CONFIG_LEGACY_PTY_COUNT=16
  # CONFIG_IPMI_HANDLER is not set
@@ -4519,7 +4519,7 @@
  # CONFIG_NVRAM is not set
  # CONFIG_R3964 is not set
  # CONFIG_APPLICOM is not set
-@@ -804,13 +802,6 @@
+@@ -804,13 +802,6 @@ CONFIG_I2C_BOARDINFO=y
  CONFIG_I2C_CHARDEV=y
  
  #
@@ -4533,7 +4533,7 @@
  # I2C Hardware Bus support
  #
  # CONFIG_I2C_ALI1535 is not set
-@@ -837,6 +828,7 @@
+@@ -837,6 +828,7 @@ CONFIG_I2C_CHARDEV=y
  # CONFIG_I2C_VIA is not set
  # CONFIG_I2C_VIAPRO is not set
  # CONFIG_I2C_VOODOO3 is not set
@@ -4541,7 +4541,7 @@
  CONFIG_I2C_MV64XXX=y
  
  #
-@@ -847,19 +839,13 @@
+@@ -847,19 +839,13 @@ CONFIG_I2C_MV64XXX=y
  # CONFIG_SENSORS_PCF8574 is not set
  # CONFIG_PCF8575 is not set
  # CONFIG_SENSORS_PCF8591 is not set
@@ -4561,7 +4561,7 @@
  # CONFIG_W1 is not set
  # CONFIG_POWER_SUPPLY is not set
  CONFIG_HWMON=y
-@@ -872,6 +858,7 @@
+@@ -872,6 +858,7 @@ CONFIG_HWMON=y
  # CONFIG_SENSORS_ADM1031 is not set
  # CONFIG_SENSORS_ADM9240 is not set
  # CONFIG_SENSORS_ADT7470 is not set
@@ -4569,7 +4569,7 @@
  # CONFIG_SENSORS_ATXP1 is not set
  # CONFIG_SENSORS_DS1621 is not set
  # CONFIG_SENSORS_I5K_AMB is not set
-@@ -901,6 +888,7 @@
+@@ -901,6 +888,7 @@ CONFIG_HWMON=y
  # CONFIG_SENSORS_SMSC47M1 is not set
  # CONFIG_SENSORS_SMSC47M192 is not set
  # CONFIG_SENSORS_SMSC47B397 is not set
@@ -4577,7 +4577,7 @@
  # CONFIG_SENSORS_THMC50 is not set
  # CONFIG_SENSORS_VIA686A is not set
  # CONFIG_SENSORS_VT1211 is not set
-@@ -910,6 +898,7 @@
+@@ -910,6 +898,7 @@ CONFIG_HWMON=y
  # CONFIG_SENSORS_W83792D is not set
  # CONFIG_SENSORS_W83793 is not set
  # CONFIG_SENSORS_W83L785TS is not set
@@ -4585,7 +4585,7 @@
  # CONFIG_SENSORS_W83627HF is not set
  # CONFIG_SENSORS_W83627EHF is not set
  # CONFIG_HWMON_DEBUG_CHIP is not set
-@@ -925,14 +914,24 @@
+@@ -925,14 +914,24 @@ CONFIG_SSB_POSSIBLE=y
  # Multifunction device drivers
  #
  # CONFIG_MFD_SM501 is not set
@@ -4612,7 +4612,7 @@
  
  #
  # Graphics support
-@@ -949,12 +948,6 @@
+@@ -949,12 +948,6 @@ CONFIG_DAB=y
  # CONFIG_DISPLAY_SUPPORT is not set
  
  #
@@ -4625,7 +4625,7 @@
  # Sound
  #
  # CONFIG_SOUND is not set
-@@ -985,14 +978,18 @@
+@@ -985,14 +978,18 @@ CONFIG_USB_DEVICEFS=y
  CONFIG_USB_DEVICE_CLASS=y
  # CONFIG_USB_DYNAMIC_MINORS is not set
  # CONFIG_USB_OTG is not set
@@ -4644,7 +4644,7 @@
  # CONFIG_USB_OHCI_HCD is not set
  # CONFIG_USB_UHCI_HCD is not set
  # CONFIG_USB_SL811_HCD is not set
-@@ -1003,6 +1000,7 @@
+@@ -1003,6 +1000,7 @@ CONFIG_USB_EHCI_TT_NEWSCHED=y
  #
  # CONFIG_USB_ACM is not set
  CONFIG_USB_PRINTER=y
@@ -4652,7 +4652,7 @@
  
  #
  # NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
-@@ -1022,7 +1020,9 @@
+@@ -1022,7 +1020,9 @@ CONFIG_USB_STORAGE_SDDR09=y
  CONFIG_USB_STORAGE_SDDR55=y
  CONFIG_USB_STORAGE_JUMPSHOT=y
  # CONFIG_USB_STORAGE_ALAUDA is not set
@@ -4662,7 +4662,7 @@
  # CONFIG_USB_LIBUSUAL is not set
  
  #
-@@ -1060,6 +1060,7 @@
+@@ -1060,6 +1060,7 @@ CONFIG_USB_STORAGE_JUMPSHOT=y
  # CONFIG_USB_TRANCEVIBRATOR is not set
  # CONFIG_USB_IOWARRIOR is not set
  # CONFIG_USB_TEST is not set
@@ -4670,7 +4670,7 @@
  # CONFIG_USB_GADGET is not set
  # CONFIG_MMC is not set
  CONFIG_NEW_LEDS=y
-@@ -1076,6 +1077,7 @@
+@@ -1076,6 +1077,7 @@ CONFIG_LEDS_CLASS=y
  CONFIG_LEDS_TRIGGERS=y
  CONFIG_LEDS_TRIGGER_TIMER=y
  CONFIG_LEDS_TRIGGER_HEARTBEAT=y
@@ -4678,7 +4678,7 @@
  CONFIG_RTC_LIB=y
  CONFIG_RTC_CLASS=y
  CONFIG_RTC_HCTOSYS=y
-@@ -1105,6 +1107,7 @@
+@@ -1105,6 +1107,7 @@ CONFIG_RTC_DRV_RS5C372=y
  # CONFIG_RTC_DRV_PCF8583 is not set
  CONFIG_RTC_DRV_M41T80=y
  # CONFIG_RTC_DRV_M41T80_WDT is not set
@@ -4686,7 +4686,7 @@
  
  #
  # SPI RTC drivers
-@@ -1125,6 +1128,7 @@
+@@ -1125,6 +1128,7 @@ CONFIG_RTC_DRV_M41T80=y
  #
  # on-CPU RTC drivers
  #
@@ -4694,7 +4694,7 @@
  
  #
  # File systems
-@@ -1140,14 +1144,11 @@
+@@ -1140,14 +1144,11 @@ CONFIG_JBD=y
  # CONFIG_JFS_FS is not set
  # CONFIG_FS_POSIX_ACL is not set
  # CONFIG_XFS_FS is not set
@@ -4710,7 +4710,7 @@
  # CONFIG_AUTOFS_FS is not set
  # CONFIG_AUTOFS4_FS is not set
  # CONFIG_FUSE_FS is not set
-@@ -1155,8 +1156,8 @@
+@@ -1155,8 +1156,8 @@ CONFIG_DNOTIFY=y
  #
  # CD-ROM/DVD Filesystems
  #
@@ -4721,7 +4721,7 @@
  # CONFIG_ZISOFS is not set
  CONFIG_UDF_FS=m
  CONFIG_UDF_NLS=y
-@@ -1205,8 +1206,10 @@
+@@ -1205,8 +1206,10 @@ CONFIG_JFFS2_RTIME=y
  # CONFIG_JFFS2_RUBIN is not set
  CONFIG_CRAMFS=y
  # CONFIG_VXFS_FS is not set
@@ -4732,7 +4732,7 @@
  # CONFIG_SYSV_FS is not set
  # CONFIG_UFS_FS is not set
  CONFIG_NETWORK_FILESYSTEMS=y
-@@ -1214,7 +1217,6 @@
+@@ -1214,7 +1217,6 @@ CONFIG_NFS_FS=y
  CONFIG_NFS_V3=y
  # CONFIG_NFS_V3_ACL is not set
  # CONFIG_NFS_V4 is not set
@@ -4740,7 +4740,7 @@
  # CONFIG_NFSD is not set
  CONFIG_ROOT_NFS=y
  CONFIG_LOCKD=y
-@@ -1241,14 +1243,13 @@
+@@ -1241,14 +1243,13 @@ CONFIG_PARTITION_ADVANCED=y
  # CONFIG_MAC_PARTITION is not set
  CONFIG_MSDOS_PARTITION=y
  CONFIG_BSD_DISKLABEL=y
@@ -4760,7 +4760,7 @@
  # CONFIG_KARMA_PARTITION is not set
  # CONFIG_EFI_PARTITION is not set
  # CONFIG_SYSV68_PARTITION is not set
-@@ -1300,15 +1301,48 @@
+@@ -1300,15 +1301,48 @@ CONFIG_NLS_ISO8859_2=y
  # CONFIG_PRINTK_TIME is not set
  CONFIG_ENABLE_WARN_DEPRECATED=y
  CONFIG_ENABLE_MUST_CHECK=y
@@ -4811,7 +4811,7 @@
  
  #
  # Security options
-@@ -1317,50 +1351,79 @@
+@@ -1317,50 +1351,79 @@ CONFIG_DEBUG_USER=y
  # CONFIG_SECURITY is not set
  # CONFIG_SECURITY_FILE_CAPABILITIES is not set
  CONFIG_CRYPTO=y
@@ -4918,7 +4918,7 @@
  # CONFIG_CRYPTO_LZO is not set
  CONFIG_CRYPTO_HW=y
  # CONFIG_CRYPTO_DEV_HIFN_795X is not set
-@@ -1369,12 +1432,14 @@
+@@ -1369,12 +1432,14 @@ CONFIG_CRYPTO_HW=y
  # Library routines
  #
  CONFIG_BITREVERSE=y
@@ -4939,7 +4939,7 @@
  CONFIG_PLIST=y
 --- a/arch/arm/kernel/stacktrace.c
 +++ b/arch/arm/kernel/stacktrace.c
-@@ -36,6 +36,7 @@
+@@ -36,6 +36,7 @@ EXPORT_SYMBOL(walk_stackframe);
  #ifdef CONFIG_STACKTRACE
  struct stack_trace_data {
  	struct stack_trace *trace;
@@ -4947,7 +4947,7 @@
  	unsigned int skip;
  };
  
-@@ -43,27 +44,52 @@
+@@ -43,27 +44,52 @@ static int save_trace(struct stackframe 
  {
  	struct stack_trace_data *data = d;
  	struct stack_trace *trace = data->trace;
@@ -5056,7 +5056,7 @@
  		.text
  
  /*
-@@ -55,11 +47,12 @@
+@@ -55,11 +47,12 @@ ENTRY(memmove)
  		stmfd	sp!, {r5 - r8}
  		blt	5f
  
@@ -5070,7 +5070,7 @@
  	CALGN(	add	pc, r4, ip		)
  
  	PLD(	pld	[r1, #-4]		)
-@@ -138,8 +131,7 @@
+@@ -138,8 +131,7 @@ ENTRY(memmove)
  		subs	r2, r2, #28
  		blt	14f
  
@@ -5082,7 +5082,7 @@
  	CALGN(	bcc	15f			)
 --- a/arch/arm/lib/memset.S
 +++ b/arch/arm/lib/memset.S
-@@ -39,6 +39,9 @@
+@@ -39,6 +39,9 @@ ENTRY(memset)
  	mov	r3, r1
  	cmp	r2, #16
  	blt	4f
@@ -5092,7 +5092,7 @@
  /*
   * We need an extra register for this loop - save the return address and
   * use the LR
-@@ -64,6 +67,49 @@
+@@ -64,6 +67,49 @@ ENTRY(memset)
  	stmneia	r0!, {r1, r3, ip, lr}
  	ldr	lr, [sp], #4
  
@@ -5144,7 +5144,7 @@
  	tst	r2, #4
 --- a/arch/arm/lib/memzero.S
 +++ b/arch/arm/lib/memzero.S
-@@ -39,6 +39,9 @@
+@@ -39,6 +39,9 @@ ENTRY(__memzero)
   */
  	cmp	r1, #16			@ 1 we can skip this chunk if we
  	blt	4f			@ 1 have < 16 bytes
@@ -5154,7 +5154,7 @@
  /*
   * We need an extra register for this loop - save the return address and
   * use the LR
-@@ -64,6 +67,47 @@
+@@ -64,6 +67,47 @@ ENTRY(__memzero)
  	stmneia	r0!, {r2, r3, ip, lr}	@ 4
  	ldr	lr, [sp], #4		@ 1
  
@@ -8286,7 +8286,7 @@
 +}
 --- a/arch/arm/mach-orion5x/Kconfig
 +++ b/arch/arm/mach-orion5x/Kconfig
-@@ -44,6 +44,36 @@
+@@ -44,6 +44,36 @@ config MACH_LINKSTATION_PRO
  	  Buffalo Linkstation Pro/Live platform. Both v1 and
  	  v2 devices are supported.
  
@@ -8350,7 +8350,7 @@
  
  static int __init orion5x_cpu_win_can_remap(int win)
  {
-@@ -87,16 +88,22 @@
+@@ -87,16 +88,22 @@ static int __init orion5x_cpu_win_can_re
  static void __init setup_cpu_win(int win, u32 base, u32 size,
  				 u8 target, u8 attr, int remap)
  {
@@ -8378,7 +8378,7 @@
  	}
  }
  
-@@ -109,11 +116,11 @@
+@@ -109,11 +116,11 @@ void __init orion5x_setup_cpu_mbus_bridg
  	 * First, disable and clear windows.
  	 */
  	for (i = 0; i < 8; i++) {
@@ -8394,7 +8394,7 @@
  		}
  	}
  
-@@ -128,6 +135,7 @@
+@@ -128,6 +135,7 @@ void __init orion5x_setup_cpu_mbus_bridg
  		TARGET_PCIE, ATTR_PCIE_MEM, -1);
  	setup_cpu_win(3, ORION5X_PCI_MEM_PHYS_BASE, ORION5X_PCI_MEM_SIZE,
  		TARGET_PCI, ATTR_PCI_MEM, -1);
@@ -8402,7 +8402,7 @@
  
  	/*
  	 * Setup MBUS dram target info.
-@@ -147,8 +155,8 @@
+@@ -147,8 +155,8 @@ void __init orion5x_setup_cpu_mbus_bridg
  			w = &orion5x_mbus_dram_info.cs[cs++];
  			w->cs_index = i;
  			w->mbus_attr = 0xf & ~(1 << i);
@@ -8413,7 +8413,7 @@
  		}
  	}
  	orion5x_mbus_dram_info.num_cs = cs;
-@@ -156,25 +164,30 @@
+@@ -156,25 +164,30 @@ void __init orion5x_setup_cpu_mbus_bridg
  
  void __init orion5x_setup_dev_boot_win(u32 base, u32 size)
  {
@@ -8451,7 +8451,7 @@
  }
 --- a/arch/arm/mach-orion5x/common.c
 +++ b/arch/arm/mach-orion5x/common.c
-@@ -39,25 +39,22 @@
+@@ -39,25 +39,22 @@ static struct map_desc orion5x_io_desc[]
  		.virtual	= ORION5X_REGS_VIRT_BASE,
  		.pfn		= __phys_to_pfn(ORION5X_REGS_PHYS_BASE),
  		.length		= ORION5X_REGS_SIZE,
@@ -8484,7 +8484,7 @@
  	},
  };
  
-@@ -66,101 +63,32 @@
+@@ -66,101 +63,32 @@ void __init orion5x_map_io(void)
  	iotable_init(orion5x_io_desc, ARRAY_SIZE(orion5x_io_desc));
  }
  
@@ -8595,7 +8595,7 @@
  static struct platform_device orion5x_ehci0 = {
  	.name		= "orion-ehci",
  	.id		= 0,
-@@ -173,6 +101,27 @@
+@@ -173,6 +101,27 @@ static struct platform_device orion5x_eh
  	.num_resources	= ARRAY_SIZE(orion5x_ehci0_resources),
  };
  
@@ -8623,7 +8623,7 @@
  static struct platform_device orion5x_ehci1 = {
  	.name		= "orion-ehci",
  	.id		= 1,
-@@ -185,11 +134,15 @@
+@@ -185,11 +134,15 @@ static struct platform_device orion5x_eh
  	.num_resources	= ARRAY_SIZE(orion5x_ehci1_resources),
  };
  
@@ -8642,7 +8642,7 @@
  struct mv643xx_eth_shared_platform_data orion5x_eth_shared_data = {
  	.dram		= &orion5x_mbus_dram_info,
  	.t_clk		= ORION5X_TCLK,
-@@ -219,7 +172,7 @@
+@@ -219,7 +172,7 @@ static struct resource orion5x_eth_resou
  		.start	= IRQ_ORION5X_ETH_SUM,
  		.end	= IRQ_ORION5X_ETH_SUM,
  		.flags	= IORESOURCE_IRQ,
@@ -8651,7 +8651,7 @@
  };
  
  static struct platform_device orion5x_eth = {
-@@ -238,11 +191,10 @@
+@@ -238,11 +191,10 @@ void __init orion5x_eth_init(struct mv64
  	platform_device_register(&orion5x_eth);
  }
  
@@ -8665,7 +8665,7 @@
  static struct mv64xxx_i2c_pdata orion5x_i2c_pdata = {
  	.freq_m		= 8, /* assumes 166 MHz TCLK */
  	.freq_n		= 3,
-@@ -251,16 +203,15 @@
+@@ -251,16 +203,15 @@ static struct mv64xxx_i2c_pdata orion5x_
  
  static struct resource orion5x_i2c_resources[] = {
  	{
@@ -8691,7 +8691,7 @@
  	},
  };
  
-@@ -270,36 +221,41 @@
+@@ -270,36 +221,41 @@ static struct platform_device orion5x_i2
  	.num_resources	= ARRAY_SIZE(orion5x_i2c_resources),
  	.resource	= orion5x_i2c_resources,
  	.dev		= {
@@ -8750,7 +8750,7 @@
  };
  
  void __init orion5x_sata_init(struct mv_sata_platform_data *sata_data)
-@@ -309,23 +265,111 @@
+@@ -309,23 +265,111 @@ void __init orion5x_sata_init(struct mv_
  	platform_device_register(&orion5x_sata);
  }
  
@@ -8865,7 +8865,7 @@
  /*
   * Identify device ID and rev from PCIe configuration header space '0'.
   */
-@@ -350,8 +394,10 @@
+@@ -350,8 +394,10 @@ static void __init orion5x_id(u32 *dev, 
  	} else if (*dev == MV88F5181_DEV_ID) {
  		if (*rev == MV88F5181_REV_B1) {
  			*dev_name = "MV88F5181-Rev-B1";
@@ -8877,7 +8877,7 @@
  		}
  	} else {
  		*dev_name = "Device-Unknown";
-@@ -370,15 +416,6 @@
+@@ -370,15 +416,6 @@ void __init orion5x_init(void)
  	 * Setup Orion address map
  	 */
  	orion5x_setup_cpu_mbus_bridge();
@@ -8909,7 +8909,7 @@
  void orion5x_map_io(void);
  void orion5x_init_irq(void);
  void orion5x_init(void);
-@@ -23,13 +25,19 @@
+@@ -23,13 +25,19 @@ void orion5x_setup_dev1_win(u32 base, u3
  void orion5x_setup_dev2_win(u32 base, u32 size);
  void orion5x_setup_pcie_wa_win(u32 base, u32 size);
  
@@ -8933,7 +8933,7 @@
  
  void orion5x_pcie_id(u32 *dev, u32 *rev);
  int orion5x_pci_sys_setup(int nr, struct pci_sys_data *sys);
-@@ -40,26 +48,9 @@
+@@ -40,26 +48,9 @@ int orion5x_pci_map_irq(struct pci_dev *
   * Valid GPIO pins according to MPP setup, used by machine-setup.
   * (/mach-orion/gpio.c).
   */
@@ -8971,7 +8971,7 @@
  
  /*****************************************************************************
   * DB-88F5281 on board devices
-@@ -86,7 +87,7 @@
+@@ -86,7 +87,7 @@ static struct platform_device db88f5281_
  	.name		= "physmap-flash",
  	.id		= 0,
  	.dev		= {
@@ -8980,7 +8980,7 @@
  	},
  	.num_resources	= 1,
  	.resource	= &db88f5281_boot_flash_resource,
-@@ -110,7 +111,7 @@
+@@ -110,7 +111,7 @@ static struct platform_device db88f5281_
  	.name		= "physmap-flash",
  	.id		= 1,
  	.dev		= {
@@ -8989,7 +8989,7 @@
  	},
  	.num_resources	= 1,
  	.resource	= &db88f5281_nor_flash_resource,
-@@ -125,18 +126,15 @@
+@@ -125,18 +126,15 @@ static struct mtd_partition db88f5281_na
  		.name = "kernel",
  		.offset = 0,
  		.size = SZ_2M,
@@ -9011,7 +9011,7 @@
  		.name = "recovery",
  		.offset = (SZ_16M + SZ_8M),
  		.size = SZ_8M,
-@@ -288,7 +286,6 @@
+@@ -288,7 +286,6 @@ subsys_initcall(db88f5281_pci_init);
   ****************************************************************************/
  static struct mv643xx_eth_platform_data db88f5281_eth_data = {
  	.phy_addr	= 8,
@@ -9019,7 +9019,7 @@
  };
  
  /*****************************************************************************
-@@ -301,11 +298,28 @@
+@@ -301,11 +298,28 @@ static struct i2c_board_info __initdata 
  /*****************************************************************************
   * General Setup
   ****************************************************************************/
@@ -9053,7 +9053,7 @@
  };
  
  static void __init db88f5281_init(void)
-@@ -315,39 +329,31 @@
+@@ -315,39 +329,31 @@ static void __init db88f5281_init(void)
  	 */
  	orion5x_init();
  
@@ -9119,7 +9119,7 @@
  
  #define DNS323_GPIO_LED_RIGHT_AMBER	1
  #define DNS323_GPIO_LED_LEFT_AMBER	2
-@@ -52,8 +53,6 @@
+@@ -52,8 +53,6 @@ static int __init dns323_pci_map_irq(str
  	if (irq != -1)
  		return irq;
  
@@ -9128,7 +9128,7 @@
  	return -1;
  }
  
-@@ -81,7 +80,6 @@
+@@ -81,7 +80,6 @@ subsys_initcall(dns323_pci_init);
  
  static struct mv643xx_eth_platform_data dns323_eth_data = {
  	.phy_addr = 8,
@@ -9136,7 +9136,7 @@
  };
  
  /****************************************************************************
-@@ -119,7 +117,7 @@
+@@ -119,7 +117,7 @@ static struct mtd_partition dns323_parti
  		.name	= "u-boot",
  		.size	= 0x00030000,
  		.offset	= 0x007d0000,
@@ -9145,7 +9145,7 @@
  };
  
  static struct physmap_flash_data dns323_nor_flash_data = {
-@@ -137,7 +135,9 @@
+@@ -137,7 +135,9 @@ static struct resource dns323_nor_flash_
  static struct platform_device dns323_nor_flash = {
  	.name		= "physmap-flash",
  	.id		= 0,
@@ -9156,7 +9156,7 @@
  	.resource	= &dns323_nor_flash_resource,
  	.num_resources	= 1,
  };
-@@ -170,7 +170,9 @@
+@@ -170,7 +170,9 @@ static struct gpio_led_platform_data dns
  static struct platform_device dns323_gpio_leds = {
  	.name		= "leds-gpio",
  	.id		= -1,
@@ -9167,7 +9167,7 @@
  };
  
  /****************************************************************************
-@@ -183,35 +185,53 @@
+@@ -183,35 +185,53 @@ static struct gpio_keys_button dns323_bu
  		.gpio		= DNS323_GPIO_KEY_RESET,
  		.desc		= "Reset Button",
  		.active_low	= 1,
@@ -9231,7 +9231,7 @@
  };
  
  /*
-@@ -225,17 +245,15 @@
+@@ -225,17 +245,15 @@ static struct platform_device *dns323_pl
  static struct i2c_board_info __initdata dns323_i2c_devices[] = {
  	{
  		I2C_BOARD_INFO("g760a", 0x3e),
@@ -9252,7 +9252,7 @@
  };
  
  /* DNS-323 specific power off method */
-@@ -250,62 +268,35 @@
+@@ -250,62 +268,35 @@ static void __init dns323_init(void)
  	/* Setup basic Orion functions. Need to be called early. */
  	orion5x_init();
  
@@ -9336,7 +9336,7 @@
  /* Warning: D-Link uses a wrong mach-type (=526) in their bootloader */
 --- a/arch/arm/mach-orion5x/gpio.c
 +++ b/arch/arm/mach-orion5x/gpio.c
-@@ -24,9 +24,12 @@
+@@ -24,9 +24,12 @@ static DEFINE_SPINLOCK(gpio_lock);
  static unsigned long gpio_valid[BITS_TO_LONGS(GPIO_MAX)];
  static const char *gpio_label[GPIO_MAX];  /* non null for allocated GPIOs */
  
@@ -9351,7 +9351,7 @@
  }
  
  /*
-@@ -93,10 +96,10 @@
+@@ -93,10 +96,10 @@ int gpio_get_value(unsigned pin)
  {
  	int val, mask = 1 << pin;
  
@@ -9365,7 +9365,7 @@
  
  	return val & mask;
  }
-@@ -188,39 +191,39 @@
+@@ -188,39 +191,39 @@ void gpio_display(void)
  			printk("GPIO, free\n");
  		} else {
  			printk("GPIO, used by %s, ", gpio_label[i]);
@@ -9424,7 +9424,7 @@
  }
 --- a/arch/arm/mach-orion5x/irq.c
 +++ b/arch/arm/mach-orion5x/irq.c
-@@ -82,7 +82,7 @@
+@@ -82,7 +82,7 @@ static int orion5x_gpio_set_irq_type(u32
  	int pin = irq_to_gpio(irq);
  	struct irq_desc *desc;
  
@@ -9433,7 +9433,7 @@
  		printk(KERN_ERR "orion5x_gpio_set_irq_type failed "
  				"(irq %d, pin %d).\n", irq, pin);
  		return -EINVAL;
-@@ -117,7 +117,7 @@
+@@ -117,7 +117,7 @@ static int orion5x_gpio_set_irq_type(u32
  		/*
  		 * set initial polarity based on current input level
  		 */
@@ -9442,7 +9442,7 @@
  		    & (1 << pin))
  			orion5x_setbits(GPIO_IN_POL, (1 << pin)); /* falling */
  		else
-@@ -149,8 +149,8 @@
+@@ -149,8 +149,8 @@ static void orion5x_gpio_irq_handler(uns
  
  	BUG_ON(irq < IRQ_ORION5X_GPIO_0_7 || irq > IRQ_ORION5X_GPIO_24_31);
  	offs = (irq - IRQ_ORION5X_GPIO_0_7) * 8;
@@ -9453,7 +9453,7 @@
  
  	for (pin = offs; pin < offs + 8; pin++) {
  		if (cause & (1 << pin)) {
-@@ -158,9 +158,9 @@
+@@ -158,9 +158,9 @@ static void orion5x_gpio_irq_handler(uns
  			desc = irq_desc + irq;
  			if ((desc->status & IRQ_TYPE_SENSE_MASK) == IRQT_BOTHEDGE) {
  				/* Swap polarity (race with GPIO line) */
@@ -9465,7 +9465,7 @@
  			}
  			desc_handle_irq(irq, desc);
  		}
-@@ -175,9 +175,9 @@
+@@ -175,9 +175,9 @@ static void __init orion5x_init_gpio_irq
  	/*
  	 * Mask and clear GPIO IRQ interrupts
  	 */
@@ -9501,7 +9501,7 @@
  
  /*****************************************************************************
   * KUROBOX-PRO Info
-@@ -53,13 +56,11 @@
+@@ -53,13 +56,11 @@ static struct mtd_partition kurobox_pro_
  		.name	= "uImage",
  		.offset	= 0,
  		.size	= SZ_4M,
@@ -9517,7 +9517,7 @@
  		.name	= "extra",
  		.offset	= SZ_4M + SZ_64M,
  		.size	= SZ_256M - (SZ_4M + SZ_64M),
-@@ -132,8 +133,6 @@
+@@ -132,8 +133,6 @@ static int __init kurobox_pro_pci_map_ir
  	/*
  	 * PCI isn't used on the Kuro
  	 */
@@ -9526,7 +9526,7 @@
  	return -1;
  }
  
-@@ -161,7 +160,6 @@
+@@ -161,7 +160,6 @@ subsys_initcall(kurobox_pro_pci_init);
  
  static struct mv643xx_eth_platform_data kurobox_pro_eth_data = {
  	.phy_addr	= 8,
@@ -9534,7 +9534,7 @@
  };
  
  /*****************************************************************************
-@@ -175,12 +173,169 @@
+@@ -175,12 +173,169 @@ static struct i2c_board_info __initdata 
   * SATA
   ****************************************************************************/
  static struct mv_sata_platform_data kurobox_pro_sata_data = {
@@ -9705,7 +9705,7 @@
  
  static void __init kurobox_pro_init(void)
  {
-@@ -189,46 +344,32 @@
+@@ -189,46 +344,32 @@ static void __init kurobox_pro_init(void
  	 */
  	orion5x_init();
  
@@ -10486,7 +10486,7 @@
 +MACHINE_END
 --- a/arch/arm/mach-orion5x/pci.c
 +++ b/arch/arm/mach-orion5x/pci.c
-@@ -152,6 +152,8 @@
+@@ -152,6 +152,8 @@ static int __init pcie_setup(struct pci_
  	if (dev == MV88F5181_DEV_ID || dev == MV88F5182_DEV_ID) {
  		printk(KERN_NOTICE "Applying Orion-1/Orion-NAS PCIe config "
  				   "read transaction workaround\n");
@@ -10495,7 +10495,7 @@
  		pcie_ops.read = pcie_rd_conf_wa;
  	}
  
-@@ -240,13 +242,13 @@
+@@ -240,13 +242,13 @@ static int __init pcie_setup(struct pci_
   * PCI Address Decode Windows registers
   */
  #define PCI_BAR_SIZE_DDR_CS(n)	(((n) == 0) ? ORION5X_PCI_REG(0xc08) : \
@@ -10516,7 +10516,7 @@
  #define PCI_BAR_ENABLE		ORION5X_PCI_REG(0xc3c)
  #define PCI_ADDR_DECODE_CTRL	ORION5X_PCI_REG(0xd3c)
  
-@@ -266,7 +268,7 @@
+@@ -266,7 +268,7 @@ static DEFINE_SPINLOCK(orion5x_pci_lock)
  
  static int orion5x_pci_local_bus_nr(void)
  {
@@ -10525,7 +10525,7 @@
  	return((conf & PCI_P2P_BUS_MASK) >> PCI_P2P_BUS_OFFS);
  }
  
-@@ -276,11 +278,11 @@
+@@ -276,11 +278,11 @@ static int orion5x_pci_hw_rd_conf(int bu
  	unsigned long flags;
  	spin_lock_irqsave(&orion5x_pci_lock, flags);
  
@@ -10541,7 +10541,7 @@
  
  	if (size == 1)
  		*val = (*val >> (8*(where & 0x3))) & 0xff;
-@@ -300,9 +302,9 @@
+@@ -300,9 +302,9 @@ static int orion5x_pci_hw_wr_conf(int bu
  
  	spin_lock_irqsave(&orion5x_pci_lock, flags);
  
@@ -10554,7 +10554,7 @@
  
  	if (size == 4) {
  		__raw_writel(val, PCI_CONF_DATA);
-@@ -353,9 +355,9 @@
+@@ -353,9 +355,9 @@ static struct pci_ops pci_ops = {
  
  static void __init orion5x_pci_set_bus_nr(int nr)
  {
@@ -10566,7 +10566,7 @@
  		/*
  		 * PCI-X mode
  		 */
-@@ -372,7 +374,7 @@
+@@ -372,7 +374,7 @@ static void __init orion5x_pci_set_bus_n
  		 */
  		p2p &= ~PCI_P2P_BUS_MASK;
  		p2p |= (nr << PCI_P2P_BUS_OFFS);
@@ -10575,7 +10575,7 @@
  	}
  }
  
-@@ -399,7 +401,7 @@
+@@ -399,7 +401,7 @@ static void __init orion5x_setup_pci_win
  	 * First, disable windows.
  	 */
  	win_enable = 0xffffffff;
@@ -10584,7 +10584,7 @@
  
  	/*
  	 * Setup windows for DDR banks.
-@@ -425,10 +427,10 @@
+@@ -425,10 +427,10 @@ static void __init orion5x_setup_pci_win
  		 */
  		reg = PCI_CONF_REG_BAR_HI_CS(cs->cs_index);
  		orion5x_pci_hw_wr_conf(bus, 0, func, reg, 4, 0);
@@ -10599,7 +10599,7 @@
  
  		/*
  		 * Enable decode window for this chip select.
-@@ -439,7 +441,7 @@
+@@ -439,7 +441,7 @@ static void __init orion5x_setup_pci_win
  	/*
  	 * Re-enable decode windows.
  	 */
@@ -10618,7 +10618,7 @@
  
  /*****************************************************************************
   * RD-88F5182 Info
-@@ -125,6 +126,7 @@
+@@ -125,6 +126,7 @@ static int __init rd88f5182_dbgled_init(
  
  		leds_event = rd88f5182_dbgled_event;
  	}
@@ -10626,7 +10626,7 @@
  	return 0;
  }
  
-@@ -220,7 +222,6 @@
+@@ -220,7 +222,6 @@ subsys_initcall(rd88f5182_pci_init);
  
  static struct mv643xx_eth_platform_data rd88f5182_eth_data = {
  	.phy_addr	= 8,
@@ -10634,7 +10634,7 @@
  };
  
  /*****************************************************************************
-@@ -234,15 +235,34 @@
+@@ -234,15 +235,34 @@ static struct i2c_board_info __initdata 
   * Sata
   ****************************************************************************/
  static struct mv_sata_platform_data rd88f5182_sata_data = {
@@ -10673,7 +10673,7 @@
  };
  
  static void __init rd88f5182_init(void)
-@@ -252,35 +272,9 @@
+@@ -252,35 +272,9 @@ static void __init rd88f5182_init(void)
  	 */
  	orion5x_init();
  
@@ -10710,7 +10710,7 @@
  	 * MPP[20] PCI Clock to MV88F5182
  	 * MPP[21] PCI Clock to mini PCI CON11
  	 * MPP[22] USB 0 over current indication
-@@ -289,16 +283,23 @@
+@@ -289,16 +283,23 @@ static void __init rd88f5182_init(void)
  	 * MPP[25] USB 0 over current enable
  	 */
  
@@ -10839,7 +10839,7 @@
  };
  
  /*****************************************************************************
-@@ -164,12 +168,12 @@
+@@ -164,12 +168,12 @@ static int __init qnap_ts209_pci_map_irq
  }
  
  static struct hw_pci qnap_ts209_pci __initdata = {
@@ -10858,7 +10858,7 @@
  };
  
  static int __init qnap_ts209_pci_init(void)
-@@ -183,96 +187,6 @@
+@@ -183,96 +187,6 @@ static int __init qnap_ts209_pci_init(vo
  subsys_initcall(qnap_ts209_pci_init);
  
  /*****************************************************************************
@@ -10955,7 +10955,7 @@
   * RTC S35390A on I2C bus
   ****************************************************************************/
  
-@@ -280,7 +194,7 @@
+@@ -280,7 +194,7 @@ static void __init ts209_find_mac_addr(v
  
  static struct i2c_board_info __initdata qnap_ts209_i2c_rtc = {
  	I2C_BOARD_INFO("s35390a", 0x30),
@@ -10964,7 +10964,7 @@
  };
  
  /****************************************************************************
-@@ -297,70 +211,63 @@
+@@ -297,70 +211,63 @@ static struct gpio_keys_button qnap_ts20
  		.gpio		= QNAP_TS209_GPIO_KEY_MEDIA,
  		.desc		= "USB Copy Button",
  		.active_low	= 1,
@@ -11064,7 +11064,7 @@
  static void __init qnap_ts209_init(void)
  {
  	/*
-@@ -368,51 +275,33 @@
+@@ -368,51 +275,33 @@ static void __init qnap_ts209_init(void)
  	 */
  	orion5x_init();
  
@@ -11134,7 +11134,7 @@
  
  	/* Get RTC IRQ and register the chip */
  	if (gpio_request(TS209_RTC_GPIO, "rtc") == 0) {
-@@ -425,14 +314,12 @@
+@@ -425,14 +314,12 @@ static void __init qnap_ts209_init(void)
  		pr_warning("qnap_ts209_init: failed to get RTC IRQ\n");
  	i2c_register_board_info(0, &qnap_ts209_i2c_rtc, 1);
  
@@ -12044,7 +12044,7 @@
 +MACHINE_END
 --- a/arch/arm/mm/Kconfig
 +++ b/arch/arm/mm/Kconfig
-@@ -365,7 +365,7 @@
+@@ -365,7 +365,7 @@ config CPU_XSC3
  # Feroceon
  config CPU_FEROCEON
  	bool
@@ -12053,7 +12053,7 @@
  	default y
  	select CPU_32v5
  	select CPU_ABRT_EV5T
-@@ -373,7 +373,7 @@
+@@ -373,7 +373,7 @@ config CPU_FEROCEON
  	select CPU_CACHE_VIVT
  	select CPU_CP15_MMU
  	select CPU_COPY_FEROCEON if MMU
@@ -12062,7 +12062,7 @@
  
  config CPU_FEROCEON_OLD_ID
  	bool "Accept early Feroceon cores with an ARM926 ID"
-@@ -551,6 +551,11 @@
+@@ -551,6 +551,11 @@ config CPU_TLB_V4WBI
  	  ARM Architecture Version 4 TLB with writeback cache and invalidate
  	  instruction cache entry.
  
@@ -12074,7 +12074,7 @@
  config CPU_TLB_V6
  	bool
  
-@@ -709,6 +714,14 @@
+@@ -709,6 +714,14 @@ config OUTER_CACHE
  	bool
  	default n
  
@@ -12091,7 +12091,7 @@
  	depends on REALVIEW_EB_ARM11MP || MACH_REALVIEW_PB11MP || MACH_REALVIEW_PB1176
 --- a/arch/arm/mm/Makefile
 +++ b/arch/arm/mm/Makefile
-@@ -46,6 +46,7 @@
+@@ -46,6 +46,7 @@ obj-$(CONFIG_CPU_TLB_V3)	+= tlb-v3.o
  obj-$(CONFIG_CPU_TLB_V4WT)	+= tlb-v4.o
  obj-$(CONFIG_CPU_TLB_V4WB)	+= tlb-v4wb.o
  obj-$(CONFIG_CPU_TLB_V4WBI)	+= tlb-v4wbi.o
@@ -12099,7 +12099,7 @@
  obj-$(CONFIG_CPU_TLB_V6)	+= tlb-v6.o
  obj-$(CONFIG_CPU_TLB_V7)	+= tlb-v7.o
  
-@@ -73,4 +74,5 @@
+@@ -73,4 +74,5 @@ obj-$(CONFIG_CPU_FEROCEON)	+= proc-feroc
  obj-$(CONFIG_CPU_V6)		+= proc-v6.o
  obj-$(CONFIG_CPU_V7)		+= proc-v7.o
  
@@ -12460,7 +12460,7 @@
  	mov	pc, lr
  
  /*
-@@ -59,6 +79,13 @@
+@@ -59,6 +79,13 @@ ENTRY(cpu_feroceon_proc_fin)
  	mov	ip, #PSR_F_BIT | PSR_I_BIT | SVC_MODE
  	msr	cpsr_c, ip
  	bl	feroceon_flush_kern_cache_all
@@ -12474,7 +12474,7 @@
  	mrc	p15, 0, r0, c1, c0, 0		@ ctrl register
  	bic	r0, r0, #0x1000			@ ...i............
  	bic	r0, r0, #0x000e			@ ............wca.
-@@ -117,11 +144,19 @@
+@@ -117,11 +144,19 @@ ENTRY(feroceon_flush_user_cache_all)
   */
  ENTRY(feroceon_flush_kern_cache_all)
  	mov	r2, #VM_EXEC
@@ -12497,7 +12497,7 @@
  	mcrne	p15, 0, ip, c7, c5, 0		@ invalidate I cache
  	mcrne	p15, 0, ip, c7, c10, 4		@ drain WB
  	mov	pc, lr
-@@ -138,7 +173,6 @@
+@@ -138,7 +173,6 @@ __flush_whole_cache:
   */
  	.align	5
  ENTRY(feroceon_flush_user_cache_range)
@@ -12505,7 +12505,7 @@
  	sub	r3, r1, r0			@ calculate total size
  	cmp	r3, #CACHE_DLIMIT
  	bgt	__flush_whole_cache
-@@ -152,6 +186,7 @@
+@@ -152,6 +186,7 @@ ENTRY(feroceon_flush_user_cache_range)
  	cmp	r0, r1
  	blo	1b
  	tst	r2, #VM_EXEC
@@ -12513,7 +12513,7 @@
  	mcrne	p15, 0, ip, c7, c10, 4		@ drain WB
  	mov	pc, lr
  
-@@ -209,6 +244,20 @@
+@@ -209,6 +244,20 @@ ENTRY(feroceon_flush_kern_dcache_page)
  	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
  	mov	pc, lr
  
@@ -12534,7 +12534,7 @@
  /*
   *	dma_inv_range(start, end)
   *
-@@ -225,10 +274,10 @@
+@@ -225,10 +274,10 @@ ENTRY(feroceon_flush_kern_dcache_page)
  	.align	5
  ENTRY(feroceon_dma_inv_range)
  	tst	r0, #CACHE_DLINESIZE - 1
@@ -12546,7 +12546,7 @@
  1:	mcr	p15, 0, r0, c7, c6, 1		@ invalidate D entry
  	add	r0, r0, #CACHE_DLINESIZE
  	cmp	r0, r1
-@@ -236,6 +285,22 @@
+@@ -236,6 +285,22 @@ ENTRY(feroceon_dma_inv_range)
  	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
  	mov	pc, lr
  
@@ -12569,7 +12569,7 @@
  /*
   *	dma_clean_range(start, end)
   *
-@@ -256,6 +321,19 @@
+@@ -256,6 +321,19 @@ ENTRY(feroceon_dma_clean_range)
  	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
  	mov	pc, lr
  
@@ -12589,7 +12589,7 @@
  /*
   *	dma_flush_range(start, end)
   *
-@@ -274,6 +352,19 @@
+@@ -274,6 +352,19 @@ ENTRY(feroceon_dma_flush_range)
  	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
  	mov	pc, lr
  
@@ -12609,7 +12609,7 @@
  ENTRY(feroceon_cache_fns)
  	.long	feroceon_flush_kern_cache_all
  	.long	feroceon_flush_user_cache_all
-@@ -285,12 +376,33 @@
+@@ -285,12 +376,33 @@ ENTRY(feroceon_cache_fns)
  	.long	feroceon_dma_clean_range
  	.long	feroceon_dma_flush_range
  
@@ -12643,7 +12643,7 @@
  	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
  	mov	pc, lr
  
-@@ -306,16 +418,25 @@
+@@ -306,16 +418,25 @@ ENTRY(cpu_feroceon_dcache_clean_area)
  	.align	5
  ENTRY(cpu_feroceon_switch_mm)
  #ifdef CONFIG_MMU
@@ -12676,7 +12676,7 @@
  
  /*
   * cpu_feroceon_set_pte_ext(ptep, pte, ext)
-@@ -345,6 +466,9 @@
+@@ -345,6 +466,9 @@ ENTRY(cpu_feroceon_set_pte_ext)
  	str	r2, [r0]			@ hardware version
  	mov	r0, r0
  	mcr	p15, 0, r0, c7, c10, 1		@ clean D entry
@@ -12686,7 +12686,7 @@
  	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
  #endif
  	mov	pc, lr
-@@ -414,6 +538,21 @@
+@@ -414,6 +538,21 @@ cpu_feroceon_name:
  	.asciz	"Feroceon"
  	.size	cpu_feroceon_name, . - cpu_feroceon_name
  
@@ -12708,7 +12708,7 @@
  	.align
  
  	.section ".proc.info.init", #alloc, #execinstr
-@@ -421,15 +560,15 @@
+@@ -421,15 +560,15 @@ cpu_feroceon_name:
  #ifdef CONFIG_CPU_FEROCEON_OLD_ID
  	.type	__feroceon_old_id_proc_info,#object
  __feroceon_old_id_proc_info:
@@ -12728,7 +12728,7 @@
  		PMD_BIT4 | \
  		PMD_SECT_AP_WRITE | \
  		PMD_SECT_AP_READ
-@@ -445,17 +584,17 @@
+@@ -445,17 +584,17 @@ __feroceon_old_id_proc_info:
  	.size	__feroceon_old_id_proc_info, . - __feroceon_old_id_proc_info
  #endif
  
@@ -12750,7 +12750,7 @@
  		PMD_BIT4 | \
  		PMD_SECT_AP_WRITE | \
  		PMD_SECT_AP_READ
-@@ -463,9 +602,59 @@
+@@ -463,9 +602,59 @@ __feroceon_proc_info:
  	.long	cpu_arch_name
  	.long	cpu_elf_name
  	.long	HWCAP_SWP|HWCAP_HALF|HWCAP_THUMB|HWCAP_FAST_MULT|HWCAP_EDSP
@@ -12814,7 +12814,7 @@
 +	.size	__88fr131_proc_info, . - __88fr131_proc_info
 --- a/arch/arm/plat-orion/irq.c
 +++ b/arch/arm/plat-orion/irq.c
-@@ -36,8 +36,8 @@
+@@ -36,8 +36,8 @@ static void orion_irq_unmask(u32 irq)
  
  static struct irq_chip orion_irq_chip = {
  	.name		= "orion_irq",
@@ -12824,7 +12824,7 @@
  	.unmask		= orion_irq_unmask,
  };
  
-@@ -59,6 +59,7 @@
+@@ -59,6 +59,7 @@ void __init orion_irq_init(unsigned int 
  		set_irq_chip(irq, &orion_irq_chip);
  		set_irq_chip_data(irq, maskaddr);
  		set_irq_handler(irq, handle_level_irq);
@@ -12842,7 +12842,7 @@
  #define PCIE_STAT_OFF		0x1a04
  #define  PCIE_STAT_DEV_OFFS		20
  #define  PCIE_STAT_DEV_MASK		0x1f
-@@ -62,6 +63,11 @@
+@@ -62,6 +63,11 @@ int orion_pcie_link_up(void __iomem *bas
  	return !(readl(base + PCIE_STAT_OFF) & PCIE_STAT_LINK_DOWN);
  }
  
@@ -12856,7 +12856,7 @@
  	u32 stat = readl(base + PCIE_STAT_OFF);
 --- a/arch/arm/plat-orion/time.c
 +++ b/arch/arm/plat-orion/time.c
-@@ -74,7 +74,7 @@
+@@ -74,7 +74,7 @@ orion_clkevt_next_event(unsigned long de
  	/*
  	 * Clear and enable clockevent timer interrupt.
  	 */
@@ -12865,7 +12865,7 @@
  
  	u = readl(BRIDGE_MASK);
  	u |= BRIDGE_INT_TIMER1;
-@@ -138,7 +138,7 @@
+@@ -138,7 +138,7 @@ orion_clkevt_mode(enum clock_event_mode 
  		/*
  		 * ACK pending timer interrupt.
  		 */
@@ -12874,7 +12874,7 @@
  
  	}
  	local_irq_restore(flags);
-@@ -159,7 +159,7 @@
+@@ -159,7 +159,7 @@ static irqreturn_t orion_timer_interrupt
  	/*
  	 * ACK timer interrupt and call event handler.
  	 */
@@ -13373,7 +13373,7 @@
  	u16 byte_cnt;		/* Descriptor buffer byte count		*/
  	u16 buf_size;		/* Buffer size				*/
  	u32 cmd_sts;		/* Descriptor command status		*/
-@@ -441,7 +180,7 @@
+@@ -441,7 +180,7 @@ struct eth_rx_desc {
  	u32 buf_ptr;		/* Descriptor buffer pointer		*/
  };
  
@@ -13382,7 +13382,7 @@
  	u16 byte_cnt;		/* buffer byte count			*/
  	u16 l4i_chk;		/* CPU provided TCP checksum		*/
  	u32 cmd_sts;		/* Command/status field			*/
-@@ -449,7 +188,7 @@
+@@ -449,7 +188,7 @@ struct eth_tx_desc {
  	u32 buf_ptr;		/* pointer to buffer for this descriptor*/
  };
  #elif defined(__LITTLE_ENDIAN)
@@ -13391,7 +13391,7 @@
  	u32 cmd_sts;		/* Descriptor command status		*/
  	u16 buf_size;		/* Buffer size				*/
  	u16 byte_cnt;		/* Descriptor buffer byte count		*/
-@@ -457,7 +196,7 @@
+@@ -457,7 +196,7 @@ struct eth_rx_desc {
  	u32 next_desc_ptr;	/* Next descriptor pointer		*/
  };
  
@@ -13400,7 +13400,7 @@
  	u32 cmd_sts;		/* Command/status field			*/
  	u16 l4i_chk;		/* CPU provided TCP checksum		*/
  	u16 byte_cnt;		/* buffer byte count			*/
-@@ -468,18 +207,59 @@
+@@ -468,18 +207,59 @@ struct eth_tx_desc {
  #error One of __BIG_ENDIAN or __LITTLE_ENDIAN must be defined
  #endif
  
@@ -13470,7 +13470,7 @@
  	u64 good_octets_received;
  	u32 bad_octets_received;
  	u32 internal_mac_transmit_err;
-@@ -512,461 +292,282 @@
+@@ -512,461 +292,282 @@ struct mv643xx_mib_counters {
  	u32 late_collision;
  };
  
@@ -14124,7 +14124,7 @@
  				stats->rx_errors++;
  
  			dev_kfree_skb_irq(skb);
-@@ -975,668 +576,120 @@
+@@ -975,668 +576,120 @@ static int mv643xx_eth_receive_queue(str
  			 * The -4 is for the CRC in the trailer of the
  			 * received packet
  			 */
@@ -14869,7 +14869,7 @@
  		desc->l4i_chk = 0;
  		desc->byte_cnt = this_frag->size;
  		desc->buf_ptr = dma_map_page(NULL, this_frag->page,
-@@ -1651,37 +704,28 @@
+@@ -1651,37 +704,28 @@ static inline __be16 sum16_as_be(__sum16
  	return (__force __be16)sum;
  }
  
@@ -14917,7 +14917,7 @@
  	}
  
  	desc->byte_cnt = length;
-@@ -1690,13 +734,13 @@
+@@ -1690,13 +734,13 @@ static void eth_tx_submit_descs_for_skb(
  	if (skb->ip_summed == CHECKSUM_PARTIAL) {
  		BUG_ON(skb->protocol != htons(ETH_P_IP));
  
@@ -14935,7 +14935,7 @@
  			desc->l4i_chk = ntohs(sum16_as_be(udp_hdr(skb)->check));
  			break;
  		case IPPROTO_TCP:
-@@ -1707,7 +751,7 @@
+@@ -1707,7 +751,7 @@ static void eth_tx_submit_descs_for_skb(
  		}
  	} else {
  		/* Errata BTS #50, IHL must be 5 if no HW checksum */
@@ -14944,7 +14944,7 @@
  		desc->l4i_chk = 0;
  	}
  
-@@ -1717,1649 +761,1818 @@
+@@ -1717,1649 +761,1818 @@ static void eth_tx_submit_descs_for_skb(
  
  	/* ensure all descriptors are written before poking hardware */
  	wmb();
@@ -19429,7 +19429,7 @@
  
  static inline void __iomem *
  __arch_ioremap(unsigned long paddr, size_t size, unsigned int mtype)
-@@ -53,15 +52,12 @@
+@@ -53,15 +52,12 @@ static inline void __iomem *__io(unsigne
  /*****************************************************************************
   * Helpers to access Orion registers
   ****************************************************************************/
@@ -19632,7 +19632,7 @@
  #define v4wb_tlb_flags	(TLB_WB | TLB_DCLEAN | \
  			 TLB_V4_I_FULL | TLB_V4_D_FULL | \
  			 TLB_V4_D_PAGE)
-@@ -245,12 +264,14 @@
+@@ -245,12 +264,14 @@ extern struct cpu_tlb_fns cpu_tlb;
  #define possible_tlb_flags	(v3_possible_flags | \
  				 v4_possible_flags | \
  				 v4wbi_possible_flags | \
@@ -19647,7 +19647,7 @@
  				 v4wb_always_flags & \
  				 v6wbi_always_flags)
  
-@@ -417,6 +438,11 @@
+@@ -417,6 +438,11 @@ static inline void flush_pmd_entry(pmd_t
  	if (tlb_flag(TLB_DCLEAN))
  		asm("mcr	p15, 0, %0, c7, c10, 1	@ flush_pmd"
  			: : "r" (pmd) : "cc");
@@ -19659,7 +19659,7 @@
  	if (tlb_flag(TLB_WB))
  		dsb();
  }
-@@ -428,6 +454,10 @@
+@@ -428,6 +454,10 @@ static inline void clean_pmd_entry(pmd_t
  	if (tlb_flag(TLB_DCLEAN))
  		asm("mcr	p15, 0, %0, c7, c10, 1	@ flush_pmd"
  			: : "r" (pmd) : "cc");

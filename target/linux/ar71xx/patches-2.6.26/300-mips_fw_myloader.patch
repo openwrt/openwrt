@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -158,6 +158,7 @@
+@@ -158,6 +158,7 @@ endif
  #
  libs-$(CONFIG_ARC)		+= arch/mips/fw/arc/
  libs-$(CONFIG_CFE)		+= arch/mips/fw/cfe/
@@ -10,7 +10,7 @@
  libs-$(CONFIG_SIBYTE_CFE)	+= arch/mips/sibyte/cfe/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -874,6 +874,9 @@
+@@ -874,6 +874,9 @@ config MIPS_NILE4
  config MIPS_DISABLE_OBSOLETE_IDE
  	bool
  

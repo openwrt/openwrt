@@ -204,7 +204,7 @@
 +}
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -63,6 +63,22 @@
+@@ -63,6 +63,22 @@ config IP_NF_MATCH_IPP2P
  	help
  	  Module for matching traffic of various Peer-to-Peer applications
  
@@ -229,7 +229,7 @@
  	depends on IP_NF_IPTABLES
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -50,6 +50,7 @@
+@@ -50,6 +50,7 @@ obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn
  obj-$(CONFIG_IP_NF_MATCH_RECENT) += ipt_recent.o
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o

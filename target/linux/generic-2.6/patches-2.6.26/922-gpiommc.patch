@@ -611,7 +611,7 @@
 +module_exit(gpiommc_modexit);
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -130,3 +130,27 @@
+@@ -130,3 +130,27 @@ config MMC_SPI
  
  	  If unsure, or if your system has no SPI master driver, say N.
  
@@ -641,7 +641,7 @@
 +	  if configfs is available.
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -17,4 +17,4 @@
+@@ -17,4 +17,4 @@ obj-$(CONFIG_MMC_OMAP)		+= omap.o
  obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
  obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
  obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
@@ -823,7 +823,7 @@
 +be done automatically.
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -1818,6 +1818,11 @@
+@@ -1818,6 +1818,11 @@ L:	gigaset307x-common@lists.sourceforge.
  W:	http://gigaset307x.sourceforge.net/
  S:	Maintained
  

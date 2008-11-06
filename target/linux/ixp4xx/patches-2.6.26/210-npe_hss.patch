@@ -1,6 +1,6 @@
 --- a/drivers/net/wan/Kconfig
 +++ b/drivers/net/wan/Kconfig
-@@ -336,6 +336,15 @@
+@@ -336,6 +336,15 @@ config DSCC4_PCI_RST
  
  	  Say Y if your card supports this feature.
  
@@ -18,7 +18,7 @@
  	---help---
 --- a/drivers/net/wan/Makefile
 +++ b/drivers/net/wan/Makefile
-@@ -42,6 +42,7 @@
+@@ -42,6 +42,7 @@ obj-$(CONFIG_C101)		+= c101.o
  obj-$(CONFIG_WANXL)		+= wanxl.o
  obj-$(CONFIG_PCI200SYN)		+= pci200syn.o
  obj-$(CONFIG_PC300TOO)		+= pc300too.o

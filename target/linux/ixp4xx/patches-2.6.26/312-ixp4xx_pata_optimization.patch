@@ -63,7 +63,7 @@
  			dev->xfer_shift = ATA_SHIFT_PIO;
  			dev->flags |= ATA_DFLAG_PIO;
  		}
-@@ -48,6 +89,7 @@
+@@ -48,6 +89,7 @@ static unsigned int ixp4xx_mmio_data_xfe
  	unsigned int i;
  	unsigned int words = buflen >> 1;
  	u16 *buf16 = (u16 *) buf;
@@ -71,7 +71,7 @@
  	struct ata_port *ap = dev->link->ap;
  	void __iomem *mmio = ap->ioaddr.data_addr;
  	struct ixp4xx_pata_data *data = ap->host->dev->platform_data;
-@@ -55,8 +97,34 @@
+@@ -55,8 +97,34 @@ static unsigned int ixp4xx_mmio_data_xfe
  	/* set the expansion bus in 16bit mode and restore
  	 * 8 bit mode after the transaction.
  	 */
@@ -108,7 +108,7 @@
  
  	/* Transfer multiple of 2 bytes */
  	if (rw == READ)
-@@ -81,8 +149,24 @@
+@@ -81,8 +149,24 @@ static unsigned int ixp4xx_mmio_data_xfe
  		words++;
  	}
  

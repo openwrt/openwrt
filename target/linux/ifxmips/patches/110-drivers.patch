@@ -1,6 +1,6 @@
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -114,6 +114,10 @@
+@@ -114,6 +114,10 @@ obj-$(CONFIG_PS3_FLASH)		+= ps3flash.o
  obj-$(CONFIG_JS_RTC)		+= js-rtc.o
  js-rtc-y = rtc.o
  
@@ -13,14 +13,14 @@
  
 --- a/drivers/mtd/maps/Makefile
 +++ b/drivers/mtd/maps/Makefile
-@@ -67,3 +67,4 @@
+@@ -67,3 +67,4 @@ obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
 +obj-$(CONFIG_MTD_IFXMIPS)  += ifxmips.o
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -351,6 +351,12 @@
+@@ -351,6 +351,12 @@ config MACB
  
  source "drivers/net/arm/Kconfig"
  
@@ -35,7 +35,7 @@
  	depends on ARM || MIPS || SUPERH
 --- a/drivers/serial/Kconfig
 +++ b/drivers/serial/Kconfig
-@@ -1334,6 +1334,14 @@
+@@ -1334,6 +1334,14 @@ config SERIAL_OF_PLATFORM
  	  Currently, only 8250 compatible ports are supported, but
  	  others can easily be added.
  
@@ -52,14 +52,14 @@
  	depends on QUICC_ENGINE
 --- a/drivers/serial/Makefile
 +++ b/drivers/serial/Makefile
-@@ -68,3 +68,4 @@
+@@ -68,3 +68,4 @@ obj-$(CONFIG_SERIAL_OF_PLATFORM) += of_s
  obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
  obj-$(CONFIG_KGDB_SERIAL_CONSOLE) += kgdboc.o
  obj-$(CONFIG_SERIAL_QE) += ucc_uart.o
 +obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -97,6 +97,7 @@
+@@ -97,6 +97,7 @@ obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
@@ -69,7 +69,7 @@
  
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -256,4 +256,4 @@
+@@ -256,4 +256,4 @@ obj-$(CONFIG_NETXEN_NIC) += netxen/
  obj-$(CONFIG_NIU) += niu.o
  obj-$(CONFIG_VIRTIO_NET) += virtio_net.o
  obj-$(CONFIG_SFC) += sfc/
@@ -77,7 +77,7 @@
 +obj-$(CONFIG_IFXMIPS_MII0) += ifxmips_mii0.o
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -9,6 +9,9 @@
+@@ -9,6 +9,9 @@ menuconfig CRYPTO_HW
  	  If you say N, all options in this submenu will be skipped and disabled.
  
  if CRYPTO_HW
@@ -89,14 +89,14 @@
  	tristate "Support for VIA PadLock ACE"
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -4,3 +4,4 @@
+@@ -4,3 +4,4 @@ obj-$(CONFIG_CRYPTO_DEV_GEODE) += geode-
  obj-$(CONFIG_CRYPTO_DEV_HIFN_795X) += hifn_795x.o
  obj-$(CONFIG_CRYPTO_DEV_TALITOS) += talitos.o
  obj-$(CONFIG_CRYPTO_DEV_IXP4XX) += ixp4xx_crypto.o
 +obj-$(CONFIG_CRYPTO_DEV_IFXMIPS) += ifxdeu-aes.o ifxdeu-des.o ifxdeu-dma.o ifxdeu-generic.o ifxdeu-md5.o ifxdeu-sha1.o
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -305,3 +305,10 @@
+@@ -305,3 +305,10 @@ config SUPERH_ON_CHIP_R8A66597
  	help
  	   This driver enables support for the on-chip R8A66597 in the
  	   SH7366 and SH7723 processors.
@@ -109,7 +109,7 @@
 +       Danube USB Host Controller
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -153,6 +153,12 @@
+@@ -153,6 +153,12 @@ config LEDS_CLEVO_MAIL
  	  To compile this driver as a module, choose M here: the
  	  module will be called leds-clevo-mail.
  
@@ -124,7 +124,7 @@
  config LEDS_TRIGGERS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -22,6 +22,7 @@
+@@ -22,6 +22,7 @@ obj-$(CONFIG_LEDS_CM_X270)              
  obj-$(CONFIG_LEDS_CLEVO_MAIL)		+= leds-clevo-mail.o
  obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
  obj-$(CONFIG_LEDS_FSG)			+= leds-fsg.o
@@ -134,7 +134,7 @@
  obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -683,6 +683,12 @@
+@@ -683,6 +683,12 @@ config TXX9_WDT
  	help
  	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
  

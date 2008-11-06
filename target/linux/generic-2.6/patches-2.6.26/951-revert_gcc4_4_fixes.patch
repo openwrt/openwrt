@@ -236,7 +236,7 @@
 -#endif
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -51,7 +51,7 @@
+@@ -51,7 +51,7 @@ $(addprefix $(obj)/,$(zlib) gunzip_util.
  	$(addprefix $(obj)/,$(zliblinuxheader)) $(addprefix $(obj)/,$(zlibheader))
  
  src-libfdt := fdt.c fdt_ro.c fdt_wip.c fdt_sw.c fdt_rw.c fdt_strerror.c
@@ -247,7 +247,7 @@
  		gunzip_util.c elf_util.c $(zlib) devtree.c oflib.c ofconsole.c \
 --- a/arch/powerpc/kernel/prom_init_check.sh
 +++ b/arch/powerpc/kernel/prom_init_check.sh
-@@ -48,20 +48,6 @@
+@@ -48,20 +48,6 @@ do
  		fi
  	done
  
@@ -502,7 +502,7 @@
 -#endif
 --- a/arch/powerpc/lib/Makefile
 +++ b/arch/powerpc/lib/Makefile
-@@ -9,7 +9,7 @@
+@@ -9,7 +9,7 @@ endif
  ifeq ($(CONFIG_PPC_MERGE),y)
  obj-y			:= string.o alloc.o \
  			   checksum_$(CONFIG_WORD_SIZE).o
@@ -513,7 +513,7 @@
  
 --- a/arch/powerpc/Makefile
 +++ b/arch/powerpc/Makefile
-@@ -96,8 +96,6 @@
+@@ -96,8 +96,6 @@ endif
  else
  	KBUILD_CFLAGS += $(call cc-option,-mtune=power4)
  endif

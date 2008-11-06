@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/avila-setup.c
 +++ b/arch/arm/mach-ixp4xx/avila-setup.c
-@@ -132,6 +132,31 @@
+@@ -132,6 +132,31 @@ static struct platform_device avila_pata
  	.resource		= avila_pata_resources,
  };
  
@@ -32,7 +32,7 @@
  static struct platform_device *avila_devices[] __initdata = {
  	&avila_i2c_gpio,
  	&avila_flash,
-@@ -159,6 +184,8 @@
+@@ -159,6 +184,8 @@ static void __init avila_init(void)
  
  	platform_device_register(&avila_pata);
  

@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -59,6 +59,18 @@
+@@ -59,6 +59,18 @@ config BCM47XX
  	help
  	 Support for BCM47XX based boards
  
@@ -19,7 +19,7 @@
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-@@ -687,6 +699,7 @@
+@@ -687,6 +699,7 @@ config WR_PPMC
  
  endchoice
  
@@ -29,7 +29,7 @@
  source "arch/mips/jazz/Kconfig"
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -276,6 +276,13 @@
+@@ -276,6 +276,13 @@ libs-$(CONFIG_MIPS_XXS1500)	+= arch/mips
  load-$(CONFIG_MIPS_XXS1500)	+= 0xffffffff80100000
  
  #

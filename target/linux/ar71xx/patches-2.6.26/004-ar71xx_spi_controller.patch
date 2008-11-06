@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -52,6 +52,13 @@
+@@ -52,6 +52,13 @@ config SPI_MASTER
  comment "SPI Master Controller Drivers"
  	depends on SPI_MASTER
  
@@ -16,7 +16,7 @@
  	depends on (ARCH_AT91 || AVR32) && SPI_MASTER
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -11,6 +11,7 @@
+@@ -11,6 +11,7 @@ endif
  obj-$(CONFIG_SPI_MASTER)		+= spi.o
  
  # SPI master controller drivers (bus)

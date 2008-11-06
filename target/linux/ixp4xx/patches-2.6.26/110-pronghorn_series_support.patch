@@ -1,6 +1,6 @@
 --- a/arch/arm/configs/ixp4xx_defconfig
 +++ b/arch/arm/configs/ixp4xx_defconfig
-@@ -157,6 +157,8 @@
+@@ -157,6 +157,8 @@ CONFIG_ARCH_ADI_COYOTE=y
  CONFIG_MACH_GATEWAY7001=y
  CONFIG_MACH_WG302V1=y
  CONFIG_MACH_WG302V2=y
@@ -11,7 +11,7 @@
  CONFIG_MACH_IXDP465=y
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -65,6 +65,22 @@
+@@ -65,6 +65,22 @@ config MACH_WG302V2
  	  WG302 v2 or WAG302 v2 Access Points. For more information
  	  on this platform, see http://openwrt.org
  
@@ -36,7 +36,7 @@
  	help
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -17,6 +17,7 @@
+@@ -17,6 +17,7 @@ obj-pci-$(CONFIG_MACH_GATEWAY7001)	+= ga
  obj-pci-$(CONFIG_MACH_WG302V1)		+= wg302v1-pci.o
  obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
@@ -44,7 +44,7 @@
  
  obj-y	+= common.o
  
-@@ -32,6 +33,7 @@
+@@ -32,6 +33,7 @@ obj-$(CONFIG_MACH_GATEWAY7001)	+= gatewa
  obj-$(CONFIG_MACH_WG302V1)	+= wg302v1-setup.o
  obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
  obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
@@ -375,7 +375,7 @@
 +MACHINE_END
 --- a/include/asm-arm/arch-ixp4xx/uncompress.h
 +++ b/include/asm-arm/arch-ixp4xx/uncompress.h
-@@ -41,7 +41,8 @@
+@@ -41,7 +41,8 @@ static __inline__ void __arch_decomp_set
  	 * Some boards are using UART2 as console
  	 */
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||

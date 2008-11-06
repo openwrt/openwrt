@@ -1,6 +1,6 @@
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -1041,7 +1041,9 @@
+@@ -1041,7 +1041,9 @@ static int __xipram do_write_oneword(str
  	int retry_cnt = 0;
  
  	adr += chip->start;

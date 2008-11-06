@@ -12,7 +12,7 @@ Subject: [PATCH] Add support for the ethernet ports on IXP43x
 
 --- a/arch/arm/mach-ixp4xx/ixp4xx_npe.c
 +++ b/arch/arm/mach-ixp4xx/ixp4xx_npe.c
-@@ -575,8 +575,8 @@
+@@ -575,8 +575,8 @@ int npe_load_firmware(struct npe *npe, c
  		for (i = 0; i < image->size; i++)
  			image->data[i] = swab32(image->data[i]);
  
@@ -23,7 +23,7 @@ Subject: [PATCH] Add support for the ethernet ports on IXP43x
  			  "IXP42x\n");
  		goto err;
  	}
-@@ -598,7 +598,7 @@
+@@ -598,7 +598,7 @@ int npe_load_firmware(struct npe *npe, c
  		  "revision 0x%X:%X\n", (image->id >> 16) & 0xFF,
  		  (image->id >> 8) & 0xFF, image->id & 0xFF);
  
@@ -42,7 +42,7 @@ Subject: [PATCH] Add support for the ethernet ports on IXP43x
  #include <asm/arch/npe.h>
  #include <asm/arch/qmgr.h>
  
-@@ -1338,12 +1339,16 @@
+@@ -1338,12 +1339,16 @@ static struct platform_driver drv = {
  
  static int __init eth_init_module(void)
  {
@@ -65,7 +65,7 @@ Subject: [PATCH] Add support for the ethernet ports on IXP43x
  	return platform_driver_register(&drv);
 --- a/include/asm-arm/arch-ixp4xx/cpu.h
 +++ b/include/asm-arm/arch-ixp4xx/cpu.h
-@@ -34,6 +34,8 @@
+@@ -34,6 +34,8 @@ static inline u32 ixp4xx_read_feature_bi
  	val &= ~IXP4XX_FEATURE_RESERVED;
  	if (!cpu_is_ixp46x())
  		val &= ~IXP4XX_FEATURE_IXP46X_ONLY;

@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -348,6 +348,50 @@
+@@ -348,6 +348,50 @@ int phy_ethtool_gset(struct phy_device *
  }
  EXPORT_SYMBOL(phy_ethtool_gset);
  
@@ -51,7 +51,7 @@
  /**
   * phy_mii_ioctl - generic PHY MII ioctl interface
   * @phydev: the phy_device struct
-@@ -403,8 +447,8 @@
+@@ -403,8 +447,8 @@ int phy_mii_ioctl(struct phy_device *phy
  		}
  
  		phy_write(phydev, mii_data->reg_num, val);
@@ -62,7 +62,7 @@
  				&& val & BMCR_RESET
  				&& phydev->drv->config_init) {
  			phy_scan_fixups(phydev);
-@@ -524,7 +568,7 @@
+@@ -524,7 +568,7 @@ static void phy_force_reduction(struct p
  	int idx;
  
  	idx = phy_find_setting(phydev->speed, phydev->duplex);
@@ -73,7 +73,7 @@
  	idx = phy_find_valid(idx, phydev->supported);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -434,6 +434,7 @@
+@@ -434,6 +434,7 @@ void phy_start_machine(struct phy_device
  void phy_stop_machine(struct phy_device *phydev);
  int phy_ethtool_sset(struct phy_device *phydev, struct ethtool_cmd *cmd);
  int phy_ethtool_gset(struct phy_device *phydev, struct ethtool_cmd *cmd);
