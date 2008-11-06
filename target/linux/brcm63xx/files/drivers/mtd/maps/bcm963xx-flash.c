@@ -128,10 +128,6 @@ int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition **pparts
                nrparts++;
                namelen =+ 6;
        };
-       if (sparelen > 0){
-               nrparts++;
-               namelen =+ 6;
-       };
        // Ask kernel for more memory.
        parts = kmalloc(sizeof(*parts)*nrparts+10*nrparts, GFP_KERNEL);
        if (!parts){
@@ -145,24 +141,20 @@ int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition **pparts
        parts[curpart].size = master->erasesize;
        curpart++;
        if (kernellen > 0){
-               parts[curpart].name = "Kernel";
+               parts[curpart].name = "kernel";
                parts[curpart].offset = kerneladdr;
                parts[curpart].size = kernellen;
                curpart++;
        };
        if (rootfslen > 0){
-               parts[curpart].name = "Rootfs";
+               parts[curpart].name = "rootfs";
                parts[curpart].offset = rootfsaddr;
                parts[curpart].size = rootfslen;
+               if (sparelen > 0)
+                       parts[curpart].size += sparelen;
                curpart++;
        };
-       if (sparelen > 0){
-               parts[curpart].name = "OpenWrt";
-               parts[curpart].offset = spareaddr;
-               parts[curpart].size = sparelen;
-               curpart++;
-       };
-       parts[curpart].name = "NVRAM";
+       parts[curpart].name = "nvram";
        parts[curpart].offset = master->size - master->erasesize;
        parts[curpart].size = master->erasesize;
        for (i = 0; i < nrparts; i++) {
