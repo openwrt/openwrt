@@ -323,7 +323,7 @@ define KernelPackage/ppp
   KCONFIG:= \
 	CONFIG_PPP \
 	CONFIG_PPP_ASYNC \
-	CONFIG_SLHC \
+	CONFIG_SLHC
   FILES:= \
 	$(LINUX_DIR)/drivers/net/ppp_async.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/ppp_generic.$(LINUX_KMOD_SUFFIX) \
