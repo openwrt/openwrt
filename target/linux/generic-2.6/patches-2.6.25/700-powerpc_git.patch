@@ -1,6 +1,6 @@
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -930,6 +930,8 @@
+@@ -930,6 +930,8 @@ and is between 256 and 4096 characters. 
  
  	l2cr=		[PPC]
  
@@ -11,7 +11,7 @@
  
 --- a/Documentation/powerpc/booting-without-of.txt
 +++ b/Documentation/powerpc/booting-without-of.txt
-@@ -59,12 +59,39 @@
+@@ -59,12 +59,39 @@ Table of Contents
        p) Freescale Synchronous Serial Interface
  	  q) USB EHCI controllers
  
@@ -52,7 +52,7 @@
    Appendix A - Sample SOC node for MPC8540
  
  
-@@ -1269,10 +1296,6 @@
+@@ -1269,10 +1296,6 @@ platforms are moved over to use the flat
  
    Recommended properties:
  
@@ -63,7 +63,7 @@
      - phy-connection-type : a string naming the controller/PHY interface type,
        i.e., "mii" (default), "rmii", "gmii", "rgmii", "rgmii-id", "sgmii",
        "tbi", or "rtbi".  This property is only really needed if the connection
-@@ -1622,8 +1645,7 @@
+@@ -1622,8 +1645,7 @@ platforms are moved over to use the flat
     - device_type : should be "network", "hldc", "uart", "transparent"
       "bisync", "atm", or "serial".
     - compatible : could be "ucc_geth" or "fsl_atm" and so on.
@@ -73,7 +73,7 @@
     - reg : Offset and length of the register set for the device
     - interrupts : <a b> where a is the interrupt number and b is a
       field that represents an encoding of the sense and level
-@@ -1667,10 +1689,6 @@
+@@ -1667,10 +1689,6 @@ platforms are moved over to use the flat
     - phy-handle : The phandle for the PHY connected to this controller.
  
     Recommended properties:
@@ -84,7 +84,7 @@
     - phy-connection-type : a string naming the controller/PHY interface type,
       i.e., "mii" (default), "rmii", "gmii", "rgmii", "rgmii-id" (Internal
       Delay), "rgmii-txid" (delay on TX only), "rgmii-rxid" (delay on RX only),
-@@ -1680,8 +1698,7 @@
+@@ -1680,8 +1698,7 @@ platforms are moved over to use the flat
  	ucc@2000 {
  		device_type = "network";
  		compatible = "ucc_geth";
@@ -94,7 +94,7 @@
  		reg = <2000 200>;
  		interrupts = <a0 0>;
  		interrupt-parent = <700>;
-@@ -1995,7 +2012,6 @@
+@@ -1995,7 +2012,6 @@ platforms are moved over to use the flat
  		interrupts = <20 8>;
  		interrupt-parent = <&PIC>;
  		phy-handle = <&PHY0>;
@@ -102,7 +102,7 @@
  		fsl,cpm-command = <12000300>;
  	};
  
-@@ -2217,12 +2233,6 @@
+@@ -2217,12 +2233,6 @@ platforms are moved over to use the flat
  			  EMAC, that is the content of the current (bogus) "phy-port"
  			  property.
  
@@ -115,7 +115,7 @@
      Optional properties:
      - phy-address       : 1 cell, optional, MDIO address of the PHY. If absent,
  			  a search is performed.
-@@ -2246,7 +2256,6 @@
+@@ -2246,7 +2256,6 @@ platforms are moved over to use the flat
      Example:
  
  	EMAC0: ethernet@40000800 {
@@ -123,7 +123,7 @@
  		device_type = "network";
  		compatible = "ibm,emac-440gp", "ibm,emac";
  		interrupt-parent = <&UIC1>;
-@@ -2817,9 +2826,528 @@
+@@ -2817,9 +2826,528 @@ platforms are moved over to use the flat
  	   };
  
  
@@ -654,7 +654,7 @@
  ===================================================
  
  The device tree represents the busses and devices of a hardware
-@@ -2905,6 +3433,54 @@
+@@ -2905,6 +3433,54 @@ encodings listed below:
  	2 =  high to low edge sensitive type enabled
  	3 =  low to high edge sensitive type enabled
  
@@ -841,7 +841,7 @@
 +   Currently I am parsing it manually.
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
-@@ -49,6 +49,19 @@
+@@ -49,6 +49,19 @@ config IRQ_PER_CPU
  	bool
  	default y
  
@@ -861,7 +861,7 @@
  config RWSEM_GENERIC_SPINLOCK
  	bool
  
-@@ -81,6 +94,11 @@
+@@ -81,6 +94,11 @@ config GENERIC_FIND_NEXT_BIT
  	bool
  	default y
  
@@ -873,7 +873,7 @@
  config ARCH_NO_VIRT_TO_BUS
  	def_bool PPC64
  
-@@ -91,6 +109,7 @@
+@@ -91,6 +109,7 @@ config PPC
  	select HAVE_OPROFILE
  	select HAVE_KPROBES
  	select HAVE_KRETPROBES
@@ -881,7 +881,7 @@
  
  config EARLY_PRINTK
  	bool
-@@ -210,15 +229,6 @@
+@@ -210,15 +229,6 @@ source kernel/Kconfig.hz
  source kernel/Kconfig.preempt
  source "fs/Kconfig.binfmt"
  
@@ -897,7 +897,7 @@
  config HUGETLB_PAGE_SIZE_VARIABLE
  	bool
  	depends on HUGETLB_PAGE
-@@ -307,6 +317,16 @@
+@@ -307,6 +317,16 @@ config CRASH_DUMP
  
  	  Don't change this unless you know what you are doing.
  
@@ -914,7 +914,7 @@
  config PPCBUG_NVRAM
  	bool "Enable reading PPCBUG NVRAM during boot" if PPLUS || LOPEC
  	default y if PPC_PREP
-@@ -381,6 +401,26 @@
+@@ -381,6 +401,26 @@ config PPC_64K_PAGES
  	  while on hardware with such support, it will be used to map
  	  normal application pages.
  
@@ -941,7 +941,7 @@
  config PPC_SUBPAGE_PROT
  	bool "Support setting protections for 4k subpages"
  	depends on PPC_64K_PAGES
-@@ -490,6 +530,14 @@
+@@ -490,6 +530,14 @@ config FSL_PCI
   	bool
  	select PPC_INDIRECT_PCI
  
@@ -956,7 +956,7 @@
  # Yes MCA RS/6000s exist but Linux-PPC does not currently support any
  config MCA
  	bool
-@@ -663,22 +711,6 @@
+@@ -663,22 +711,6 @@ config CONSISTENT_SIZE
  	hex "Size of consistent memory pool" if CONSISTENT_SIZE_BOOL
  	default "0x00200000" if NOT_COHERENT_CACHE
  
@@ -981,7 +981,7 @@
  	depends on ADVANCED_OPTIONS && 8xx
 --- a/arch/powerpc/Kconfig.debug
 +++ b/arch/powerpc/Kconfig.debug
-@@ -269,7 +269,7 @@
+@@ -269,7 +269,7 @@ config PPC_EARLY_DEBUG_CPM_ADDR
  	hex "CPM UART early debug transmit descriptor address"
  	depends on PPC_EARLY_DEBUG_CPM
  	default "0xfa202008" if PPC_EP88XC
@@ -992,7 +992,7 @@
  	  This specifies the address of the transmit descriptor
 --- a/arch/powerpc/Makefile
 +++ b/arch/powerpc/Makefile
-@@ -71,13 +71,11 @@
+@@ -71,13 +71,11 @@ endif
  
  LDFLAGS_vmlinux	:= -Bstatic
  
@@ -1010,7 +1010,7 @@
  CPP		= $(CC) -E $(KBUILD_CFLAGS)
  
  CHECKFLAGS	+= -m$(CONFIG_WORD_SIZE) -D__powerpc__ -D__powerpc$(CONFIG_WORD_SIZE)__
-@@ -164,7 +162,7 @@
+@@ -164,7 +162,7 @@ boot := arch/$(ARCH)/boot
  $(BOOT_TARGETS): vmlinux
  	$(Q)$(MAKE) ARCH=ppc64 $(build)=$(boot) $(patsubst %,$(boot)/%,$@)
  
@@ -1021,7 +1021,7 @@
  define archhelp
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -40,6 +40,7 @@
+@@ -40,6 +40,7 @@ $(obj)/ebony.o: BOOTCFLAGS += -mcpu=405
  $(obj)/cuboot-taishan.o: BOOTCFLAGS += -mcpu=405
  $(obj)/cuboot-katmai.o: BOOTCFLAGS += -mcpu=405
  $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
@@ -1029,7 +1029,7 @@
  
  
  zlib       := inffast.c inflate.c inftrees.c
-@@ -64,7 +65,8 @@
+@@ -64,7 +65,8 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-bamboo.c cuboot-mpc7448hpc2.c cuboot-taishan.c \
  		fixed-head.S ep88xc.c ep405.c \
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
@@ -1039,7 +1039,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -192,7 +194,7 @@
+@@ -192,7 +194,7 @@ image-$(CONFIG_PPC_CHRP)		+= zImage.chrp
  image-$(CONFIG_PPC_EFIKA)		+= zImage.chrp
  image-$(CONFIG_PPC_PMAC)		+= zImage.pmac
  image-$(CONFIG_PPC_HOLLY)		+= zImage.holly
@@ -1048,7 +1048,7 @@
  image-$(CONFIG_PPC_ISERIES)		+= zImage.iseries
  image-$(CONFIG_DEFAULT_UIMAGE)		+= uImage
  
-@@ -216,6 +218,7 @@
+@@ -216,6 +218,7 @@ image-$(CONFIG_RAINIER)			+= cuImage.rai
  image-$(CONFIG_TAISHAN)			+= cuImage.taishan
  image-$(CONFIG_KATMAI)			+= cuImage.katmai
  image-$(CONFIG_WARP)			+= cuImage.warp
@@ -1056,7 +1056,7 @@
  
  # Board ports in arch/powerpc/platform/8xx/Kconfig
  image-$(CONFIG_PPC_MPC86XADS)		+= cuImage.mpc866ads
-@@ -255,6 +258,7 @@
+@@ -255,6 +258,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
  image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
  image-$(CONFIG_SBC8548)			+= cuImage.sbc8548
  image-$(CONFIG_SBC8560)			+= cuImage.sbc8560
@@ -1064,7 +1064,7 @@
  
  # Board ports in arch/powerpc/platform/embedded6xx/Kconfig
  image-$(CONFIG_STORCENTER)		+= cuImage.storcenter
-@@ -285,11 +289,11 @@
+@@ -285,11 +289,11 @@ $(obj)/zImage.%: vmlinux $(wrapperbits)
  	$(call if_changed,wrap,$*)
  
  # dtbImage% - a dtbImage is a zImage with an embedded device tree blob
@@ -1080,7 +1080,7 @@
  
  # This cannot be in the root of $(src) as the zImage rule always adds a $(obj)
  # prefix
-@@ -302,14 +306,24 @@
+@@ -302,14 +306,24 @@ $(obj)/zImage.iseries: vmlinux
  $(obj)/uImage: vmlinux $(wrapperbits)
  	$(call if_changed,wrap,uboot)
  
@@ -1111,7 +1111,7 @@
  
  # If there isn't a platform selected then just strip the vmlinux.
  ifeq (,$(image-y))
-@@ -326,7 +340,7 @@
+@@ -326,7 +340,7 @@ install: $(CONFIGURE) $(addprefix $(obj)
  
  # anything not in $(targets)
  clean-files += $(image-) $(initrd-) zImage zImage.initrd cuImage.* treeImage.* \
@@ -1122,7 +1122,7 @@
  clean-kernel := vmlinux.strip vmlinux.bin
 --- a/arch/powerpc/boot/bamboo.c
 +++ b/arch/powerpc/boot/bamboo.c
-@@ -33,7 +33,8 @@
+@@ -33,7 +33,8 @@ static void bamboo_fixups(void)
  	ibm440ep_fixup_clocks(sysclk, 11059200, 25000000);
  	ibm4xx_sdram_fixup_memsize();
  	ibm4xx_quiesce_eth((u32 *)0xef600e00, (u32 *)0xef600f00);
@@ -1142,7 +1142,7 @@
  
  struct cpm_scc {
  	u32 gsmrl;
-@@ -42,6 +43,22 @@
+@@ -42,6 +43,22 @@ struct cpm_param {
  	u16 tbase;
  	u8 rfcr;
  	u8 tfcr;
@@ -1165,7 +1165,7 @@
  };
  
  struct cpm_bd {
-@@ -54,10 +71,10 @@
+@@ -54,10 +71,10 @@ static void *cpcr;
  static struct cpm_param *param;
  static struct cpm_smc *smc;
  static struct cpm_scc *scc;
@@ -1179,7 +1179,7 @@
  
  static void (*do_cmd)(int op);
  static void (*enable_port)(void);
-@@ -119,20 +136,25 @@
+@@ -119,20 +136,25 @@ static int cpm_serial_open(void)
  
  	out_8(&param->rfcr, 0x10);
  	out_8(&param->tfcr, 0x10);
@@ -1210,7 +1210,7 @@
  
  	do_cmd(CPM_CMD_INIT_RX_TX);
  
-@@ -175,10 +197,12 @@
+@@ -175,10 +197,12 @@ static unsigned char cpm_serial_getc(voi
  
  int cpm_console_init(void *devp, struct serial_console_data *scdp)
  {
@@ -1226,7 +1226,7 @@
  
  	if (dt_is_compatible(devp, "fsl,cpm1-smc-uart")) {
  		is_smc = 1;
-@@ -202,63 +226,64 @@
+@@ -202,63 +226,64 @@ int cpm_console_init(void *devp, struct 
  	else
  		do_cmd = cpm1_cmd;
  
@@ -1327,7 +1327,7 @@
  	scdp->putc = cpm_serial_putc;
 --- a/arch/powerpc/boot/cuboot-pq2.c
 +++ b/arch/powerpc/boot/cuboot-pq2.c
-@@ -128,7 +128,7 @@
+@@ -128,7 +128,7 @@ static void fixup_pci(void)
  	u8 *soc_regs;
  	int i, len;
  	void *node, *parent_node;
@@ -1336,7 +1336,7 @@
  
  	node = finddevice("/pci");
  	if (!node || !dt_is_compatible(node, "fsl,pq2-pci"))
-@@ -141,7 +141,7 @@
+@@ -141,7 +141,7 @@ static void fixup_pci(void)
  
  	soc_regs = (u8 *)fsl_get_immr();
  	if (!soc_regs)
@@ -1345,7 +1345,7 @@
  
  	dt_get_reg_format(node, &naddr, &nsize);
  	if (naddr != 3 || nsize != 2)
-@@ -153,7 +153,7 @@
+@@ -153,7 +153,7 @@ static void fixup_pci(void)
  
  	dt_get_reg_format(parent_node, &naddr, &nsize);
  	if (naddr != 1 || nsize != 1)
@@ -1354,7 +1354,7 @@
  
  	len = getprop(node, "ranges", pci_ranges_buf,
  	              sizeof(pci_ranges_buf));
-@@ -170,14 +170,20 @@
+@@ -170,14 +170,20 @@ static void fixup_pci(void)
  	}
  
  	if (!mem || !mmio || !io)
@@ -1377,7 +1377,7 @@
  
  	out_be32(&pci_regs[1][0], mem_base->phys_addr | 1);
  	out_be32(&pci_regs[2][0], ~(mem->size[1] + mmio->size[1] - 1));
-@@ -201,8 +207,9 @@
+@@ -201,8 +207,9 @@ static void fixup_pci(void)
  	out_le32(&pci_regs[0][58], 0);
  	out_le32(&pci_regs[0][60], 0);
  
@@ -1389,7 +1389,7 @@
  
  	/* If PCI is disabled, drive RST high to enable. */
  	if (!(in_le32(&pci_regs[0][32]) & 1)) {
-@@ -228,7 +235,11 @@
+@@ -228,7 +235,11 @@ static void fixup_pci(void)
  	return;
  
  err:
@@ -1404,7 +1404,7 @@
  static void pq2_platform_fixups(void)
 --- a/arch/powerpc/boot/cuboot-rainier.c
 +++ b/arch/powerpc/boot/cuboot-rainier.c
-@@ -42,7 +42,8 @@
+@@ -42,7 +42,8 @@ static void rainier_fixups(void)
  	ibm440ep_fixup_clocks(sysclk, 11059200, 50000000);
  	ibm4xx_fixup_ebc_ranges("/plb/opb/ebc");
  	ibm4xx_denali_fixup_memsize();
@@ -1416,7 +1416,7 @@
  void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
 --- a/arch/powerpc/boot/cuboot-sequoia.c
 +++ b/arch/powerpc/boot/cuboot-sequoia.c
-@@ -42,7 +42,8 @@
+@@ -42,7 +42,8 @@ static void sequoia_fixups(void)
  	ibm440ep_fixup_clocks(sysclk, 11059200, 50000000);
  	ibm4xx_fixup_ebc_ranges("/plb/opb/ebc");
  	ibm4xx_denali_fixup_memsize();
@@ -1428,7 +1428,7 @@
  void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
 --- a/arch/powerpc/boot/cuboot-taishan.c
 +++ b/arch/powerpc/boot/cuboot-taishan.c
-@@ -40,7 +40,8 @@
+@@ -40,7 +40,8 @@ static void taishan_fixups(void)
  
  	ibm4xx_sdram_fixup_memsize();
  
@@ -1440,7 +1440,7 @@
  }
 --- a/arch/powerpc/boot/cuboot-warp.c
 +++ b/arch/powerpc/boot/cuboot-warp.c
-@@ -24,7 +24,7 @@
+@@ -24,7 +24,7 @@ static void warp_fixups(void)
  	ibm440ep_fixup_clocks(sysclk, 11059200, 50000000);
  	ibm4xx_sdram_fixup_memsize();
  	ibm4xx_fixup_ebc_ranges("/plb/opb/ebc");
@@ -1498,7 +1498,7 @@
 +}
 --- a/arch/powerpc/boot/devtree.c
 +++ b/arch/powerpc/boot/devtree.c
-@@ -350,3 +350,23 @@
+@@ -350,3 +350,23 @@ int dt_is_compatible(void *node, const c
  
  	return 0;
  }
@@ -3014,7 +3014,7 @@
   *
   * This file is licensed under
   * the terms of the GNU General Public License version 2.  This program
-@@ -17,6 +18,8 @@
+@@ -17,6 +18,8 @@ XXXX add flash parts, rtc, ??
  
   */
  
@@ -3023,7 +3023,7 @@
  / {
  	model = "KuroboxHD";
  	compatible = "linkstation";
-@@ -35,19 +38,19 @@
+@@ -35,19 +38,19 @@ XXXX add flash parts, rtc, ??
  
  		PowerPC,603e { /* Really 8241 */
  			device_type = "cpu";
@@ -3049,7 +3049,7 @@
  	};
  
  	soc10x { /* AFAICT need to make soc for 8245's uarts to be defined */
-@@ -56,26 +59,26 @@
+@@ -56,26 +59,26 @@ XXXX add flash parts, rtc, ??
  		device_type = "soc";
  		compatible = "mpc10x";
  		store-gathering = <0>; /* 0 == off, !0 == on */
@@ -3084,7 +3084,7 @@
  			};
  		};
  
-@@ -83,9 +86,9 @@
+@@ -83,9 +86,9 @@ XXXX add flash parts, rtc, ??
  			cell-index = <0>;
  			device_type = "serial";
  			compatible = "ns16550";
@@ -3097,7 +3097,7 @@
  			interrupts = <9 0>;
  			interrupt-parent = <&mpic>;
  		};
-@@ -94,10 +97,10 @@
+@@ -94,10 +97,10 @@ XXXX add flash parts, rtc, ??
  			cell-index = <1>;
  			device_type = "serial";
  			compatible = "ns16550";
@@ -3112,7 +3112,7 @@
  			interrupt-parent = <&mpic>;
  		};
  
-@@ -107,7 +110,7 @@
+@@ -107,7 +110,7 @@ XXXX add flash parts, rtc, ??
  			device_type = "open-pic";
  			compatible = "chrp,open-pic";
  			interrupt-controller;
@@ -3121,7 +3121,7 @@
  		};
  
  		pci0: pci@fec00000 {
-@@ -116,29 +119,29 @@
+@@ -116,29 +119,29 @@ XXXX add flash parts, rtc, ??
  			#interrupt-cells = <1>;
  			device_type = "pci";
  			compatible = "mpc10x-pci";
@@ -3179,7 +3179,7 @@
   *
   * This file is licensed under
   * the terms of the GNU General Public License version 2.  This program
-@@ -17,6 +18,8 @@
+@@ -17,6 +18,8 @@ XXXX add flash parts, rtc, ??
  
   */
  
@@ -3188,7 +3188,7 @@
  / {
  	model = "KuroboxHG";
  	compatible = "linkstation";
-@@ -35,19 +38,19 @@
+@@ -35,19 +38,19 @@ XXXX add flash parts, rtc, ??
  
  		PowerPC,603e { /* Really 8241 */
  			device_type = "cpu";
@@ -3214,7 +3214,7 @@
  	};
  
  	soc10x { /* AFAICT need to make soc for 8245's uarts to be defined */
-@@ -56,26 +59,26 @@
+@@ -56,26 +59,26 @@ XXXX add flash parts, rtc, ??
  		device_type = "soc";
  		compatible = "mpc10x";
  		store-gathering = <0>; /* 0 == off, !0 == on */
@@ -3249,7 +3249,7 @@
  			};
  		};
  
-@@ -83,9 +86,9 @@
+@@ -83,9 +86,9 @@ XXXX add flash parts, rtc, ??
  			cell-index = <0>;
  			device_type = "serial";
  			compatible = "ns16550";
@@ -3262,7 +3262,7 @@
  			interrupts = <9 0>;
  			interrupt-parent = <&mpic>;
  		};
-@@ -94,10 +97,10 @@
+@@ -94,10 +97,10 @@ XXXX add flash parts, rtc, ??
  			cell-index = <1>;
  			device_type = "serial";
  			compatible = "ns16550";
@@ -3277,7 +3277,7 @@
  			interrupt-parent = <&mpic>;
  		};
  
-@@ -107,7 +110,7 @@
+@@ -107,7 +110,7 @@ XXXX add flash parts, rtc, ??
  			device_type = "open-pic";
  			compatible = "chrp,open-pic";
  			interrupt-controller;
@@ -3286,7 +3286,7 @@
  		};
  
  		pci0: pci@fec00000 {
-@@ -116,29 +119,29 @@
+@@ -116,29 +119,29 @@ XXXX add flash parts, rtc, ??
  			#interrupt-cells = <1>;
  			device_type = "pci";
  			compatible = "mpc10x-pci";
@@ -9735,7 +9735,7 @@
 +};
 --- a/arch/powerpc/boot/ebony.c
 +++ b/arch/powerpc/boot/ebony.c
-@@ -75,7 +75,8 @@
+@@ -75,7 +75,8 @@ static void ebony_fixups(void)
  
  	ibm440gp_fixup_clocks(sysclk, 6 * 1843200);
  	ibm4xx_sdram_fixup_memsize();
@@ -9758,7 +9758,7 @@
  			exit(); \
 --- a/arch/powerpc/boot/mpc52xx-psc.c
 +++ b/arch/powerpc/boot/mpc52xx-psc.c
-@@ -51,14 +51,9 @@
+@@ -51,14 +51,9 @@ static unsigned char psc_getc(void)
  
  int mpc5200_psc_console_init(void *devp, struct serial_console_data *scdp)
  {
@@ -9777,7 +9777,7 @@
  	scdp->putc = psc_putc;
 --- a/arch/powerpc/boot/mpsc.c
 +++ b/arch/powerpc/boot/mpsc.c
-@@ -141,7 +141,7 @@
+@@ -141,7 +141,7 @@ int mpsc_console_init(void *devp, struct
  	if (mpscintr_base == NULL)
  		goto err_out;
  
@@ -9788,7 +9788,7 @@
  	reg_set = (int)v;
 --- a/arch/powerpc/boot/mv64x60.c
 +++ b/arch/powerpc/boot/mv64x60.c
-@@ -535,7 +535,7 @@
+@@ -535,7 +535,7 @@ u8 *mv64x60_get_bridge_pbase(void)
  	u32 v[2];
  	void *devp;
  
@@ -9797,7 +9797,7 @@
  	if (devp == NULL)
  		goto err_out;
  	if (getprop(devp, "reg", v, sizeof(v)) != sizeof(v))
-@@ -553,7 +553,7 @@
+@@ -553,7 +553,7 @@ u8 *mv64x60_get_bridge_base(void)
  	u32 v;
  	void *devp;
  
@@ -9808,7 +9808,7 @@
  	if (getprop(devp, "virtual-reg", &v, sizeof(v)) != sizeof(v))
 --- a/arch/powerpc/boot/mv64x60_i2c.c
 +++ b/arch/powerpc/boot/mv64x60_i2c.c
-@@ -185,7 +185,7 @@
+@@ -185,7 +185,7 @@ int mv64x60_i2c_open(void)
  	u32 v;
  	void *devp;
  
@@ -9819,7 +9819,7 @@
  	if (getprop(devp, "virtual-reg", &v, sizeof(v)) != sizeof(v))
 --- a/arch/powerpc/boot/ns16550.c
 +++ b/arch/powerpc/boot/ns16550.c
-@@ -55,15 +55,9 @@
+@@ -55,15 +55,9 @@ static u8 ns16550_tstc(void)
  int ns16550_console_init(void *devp, struct serial_console_data *scdp)
  {
  	int n;
@@ -9839,7 +9839,7 @@
  	if (n != sizeof(reg_shift))
 --- a/arch/powerpc/boot/ops.h
 +++ b/arch/powerpc/boot/ops.h
-@@ -95,6 +95,7 @@
+@@ -95,6 +95,7 @@ int dt_xlate_reg(void *node, int res, un
  int dt_xlate_addr(void *node, u32 *buf, int buflen, unsigned long *xlated_addr);
  int dt_is_compatible(void *node, const char *compat);
  void dt_get_reg_format(void *node, u32 *naddr, u32 *nsize);
@@ -9849,7 +9849,7 @@
  {
 --- a/arch/powerpc/boot/prpmc2800.c
 +++ b/arch/powerpc/boot/prpmc2800.c
-@@ -344,20 +344,20 @@
+@@ -344,20 +344,20 @@ static void prpmc2800_bridge_setup(u32 m
  			acc_bits);
  
  	/* Get the cpu -> pci i/o & mem mappings from the device tree */
@@ -9875,7 +9875,7 @@
  
  	enables = in_le32((u32 *)(bridge_base + MV64x60_CPU_BAR_ENABLE));
  	enables |= 0x0007fe00; /* Disable all cpu->pci windows */
-@@ -429,9 +429,9 @@
+@@ -429,9 +429,9 @@ static void prpmc2800_fixups(void)
  	setprop(devp, "model", model, l);
  
  	/* Set /cpus/PowerPC,7447/clock-frequency */
@@ -9887,7 +9887,7 @@
  	v[0] = bip->core_speed;
  	setprop(devp, "clock-frequency", &v[0], sizeof(v[0]));
  
-@@ -443,16 +443,17 @@
+@@ -443,16 +443,17 @@ static void prpmc2800_fixups(void)
  	v[1] = bip->mem_size;
  	setprop(devp, "reg", v, sizeof(v));
  
@@ -9923,7 +9923,7 @@
   *
   * The PS3 has a single processor with two threads.
   */
-@@ -47,8 +48,6 @@
+@@ -47,8 +48,6 @@ __system_reset_overlay:
  
  	mfspr	r3, 0x88
  	cntlzw.	r3, r3
@@ -9932,7 +9932,7 @@
  	beq	1f
  
  	/* Secondary goes to __secondary_hold in kernel. */
-@@ -57,8 +56,14 @@
+@@ -57,8 +56,14 @@ __system_reset_overlay:
  	mtctr	r4
  	bctr
  
@@ -9948,7 +9948,7 @@
  	or	31, 31, 31 /* db16cyc */
  	or	31, 31, 31 /* db16cyc */
  
-@@ -67,16 +72,18 @@
+@@ -67,16 +72,18 @@ __system_reset_overlay:
  	mtctr	r4
  	bctr
  
@@ -9988,7 +9988,7 @@
  	u64 in_4, u64 in_5, u64 *out_1, u64 *out_2);
  
  #ifdef DEBUG
-@@ -46,6 +46,7 @@
+@@ -46,6 +46,7 @@ BSS_STACK(4096);
   * edit the command line passed to vmlinux (by setting /chosen/bootargs).
   * The buffer is put in it's own section so that tools may locate it easier.
   */
@@ -9996,7 +9996,7 @@
  static char cmdline[COMMAND_LINE_SIZE]
  	__attribute__((__section__("__builtin_cmdline")));
  
-@@ -75,7 +76,7 @@
+@@ -75,7 +76,7 @@ static void ps3_exit(void)
  
  static int ps3_repository_read_rm_size(u64 *rm_size)
  {
@@ -10005,7 +10005,7 @@
  	u64 lpar_id;
  	u64 ppe_id;
  	u64 v2;
-@@ -114,16 +115,17 @@
+@@ -114,16 +115,17 @@ void ps3_copy_vectors(void)
  {
  	extern char __system_reset_kernel[];
  
@@ -10026,7 +10026,7 @@
  
  	console_ops.write = ps3_console_write;
  	platform_ops.exit = ps3_exit;
-@@ -151,6 +153,11 @@
+@@ -151,6 +153,11 @@ void platform_init(void)
  
  	printf(" flat tree at 0x%lx\n\r", ft_addr);
  
@@ -10040,7 +10040,7 @@
  	ps3_exit();
 --- a/arch/powerpc/boot/serial.c
 +++ b/arch/powerpc/boot/serial.c
-@@ -119,7 +119,7 @@
+@@ -119,7 +119,7 @@ int serial_console_init(void)
  
  	if (dt_is_compatible(devp, "ns16550"))
  		rc = ns16550_console_init(devp, &serial_cd);
@@ -10138,7 +10138,7 @@
 +}
 --- a/arch/powerpc/boot/treeboot-walnut.c
 +++ b/arch/powerpc/boot/treeboot-walnut.c
-@@ -68,7 +68,7 @@
+@@ -68,7 +68,7 @@ static void walnut_fixups(void)
  	ibm4xx_quiesce_eth((u32 *)0xef600800, NULL);
  	ibm4xx_fixup_ebc_ranges("/plb/ebc");
  	walnut_flashsel_fixup();
@@ -10182,7 +10182,7 @@
 +2:	b	_zimage_start_lib
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -174,7 +174,7 @@
+@@ -174,7 +174,7 @@ cuboot*)
      *-mpc83*)
          platformo=$object/cuboot-83xx.o
          ;;
@@ -10191,7 +10191,7 @@
          platformo=$object/cuboot-85xx-cpm2.o
          ;;
      *-mpc85*|*-tqm8540|*-sbc85*)
-@@ -199,6 +199,10 @@
+@@ -199,6 +199,10 @@ adder875-redboot)
      platformo="$object/fixed-head.o $object/redboot-8xx.o"
      binary=y
      ;;
@@ -10202,7 +10202,7 @@
  esac
  
  vmz="$tmpdir/`basename \"$kernel\"`.$ext"
-@@ -226,10 +230,13 @@
+@@ -226,10 +230,13 @@ if [ -n "$version" ]; then
      uboot_version="-n Linux-$version"
  fi
  
@@ -10217,7 +10217,7 @@
  	$uboot_version -d "$vmz" "$ofile"
      if [ -z "$cacheit" ]; then
  	rm -f "$vmz"
-@@ -298,15 +305,16 @@
+@@ -298,15 +305,16 @@ treeboot*)
      exit 0
      ;;
  ps3)
@@ -10243,7 +10243,7 @@
  
      system_reset_overlay=0x`${CROSS}nm "$ofile" \
          | grep ' __system_reset_overlay$'       \
-@@ -317,7 +325,7 @@
+@@ -317,7 +325,7 @@ ps3)
          | cut -d' ' -f1`
      system_reset_kernel=`printf "%d" $system_reset_kernel`
      overlay_dest="256"
@@ -49187,7 +49187,7 @@
  #
  # CONFIG_PPC64 is not set
  
-@@ -74,8 +74,6 @@
+@@ -74,8 +74,6 @@ CONFIG_IKCONFIG_PROC=y
  CONFIG_LOG_BUF_SHIFT=15
  # CONFIG_CGROUPS is not set
  # CONFIG_GROUP_SCHED is not set
@@ -49196,7 +49196,7 @@
  CONFIG_SYSFS_DEPRECATED=y
  CONFIG_SYSFS_DEPRECATED_V2=y
  # CONFIG_RELAY is not set
-@@ -243,7 +241,7 @@
+@@ -243,7 +241,7 @@ CONFIG_PCI_SYSCALL=y
  # CONFIG_PCIEPORTBUS is not set
  CONFIG_ARCH_SUPPORTS_MSI=y
  # CONFIG_PCI_MSI is not set
@@ -49205,7 +49205,7 @@
  # CONFIG_PCI_DEBUG is not set
  # CONFIG_PCCARD is not set
  # CONFIG_HOTPLUG_PCI is not set
-@@ -1328,6 +1326,7 @@
+@@ -1328,6 +1326,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -51096,7 +51096,7 @@
  #
  CONFIG_PPC64=y
  
-@@ -77,8 +77,6 @@
+@@ -77,8 +77,6 @@ CONFIG_IKCONFIG_PROC=y
  CONFIG_LOG_BUF_SHIFT=17
  # CONFIG_CGROUPS is not set
  # CONFIG_GROUP_SCHED is not set
@@ -51105,7 +51105,7 @@
  CONFIG_SYSFS_DEPRECATED=y
  CONFIG_SYSFS_DEPRECATED_V2=y
  # CONFIG_RELAY is not set
-@@ -276,7 +274,7 @@
+@@ -276,7 +274,7 @@ CONFIG_PCI_SYSCALL=y
  # CONFIG_PCIEPORTBUS is not set
  CONFIG_ARCH_SUPPORTS_MSI=y
  CONFIG_PCI_MSI=y
@@ -51114,7 +51114,7 @@
  # CONFIG_PCI_DEBUG is not set
  # CONFIG_PCCARD is not set
  # CONFIG_HOTPLUG_PCI is not set
-@@ -1596,6 +1594,7 @@
+@@ -1596,6 +1594,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -51133,7 +51133,7 @@
  #
  CONFIG_PPC64=y
  
-@@ -77,8 +77,6 @@
+@@ -77,8 +77,6 @@ CONFIG_IKCONFIG_PROC=y
  CONFIG_LOG_BUF_SHIFT=17
  # CONFIG_CGROUPS is not set
  # CONFIG_GROUP_SCHED is not set
@@ -51142,7 +51142,7 @@
  CONFIG_SYSFS_DEPRECATED=y
  CONFIG_SYSFS_DEPRECATED_V2=y
  # CONFIG_RELAY is not set
-@@ -261,7 +259,7 @@
+@@ -261,7 +259,7 @@ CONFIG_PCI_SYSCALL=y
  # CONFIG_PCIEPORTBUS is not set
  CONFIG_ARCH_SUPPORTS_MSI=y
  # CONFIG_PCI_MSI is not set
@@ -51151,7 +51151,7 @@
  # CONFIG_PCI_DEBUG is not set
  # CONFIG_PCCARD is not set
  # CONFIG_HOTPLUG_PCI is not set
-@@ -1065,6 +1063,7 @@
+@@ -1065,6 +1063,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -53638,7 +53638,7 @@
 -# CONFIG_PPC_CLOCK is not set
 --- a/arch/powerpc/configs/maple_defconfig
 +++ b/arch/powerpc/configs/maple_defconfig
-@@ -333,7 +333,7 @@
+@@ -333,7 +333,7 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
  CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
  CONFIG_STANDALONE=y
  CONFIG_PREVENT_FIRMWARE_BUILD=y
@@ -53647,7 +53647,7 @@
  # CONFIG_DEBUG_DRIVER is not set
  # CONFIG_DEBUG_DEVRES is not set
  # CONFIG_SYS_HYPERVISOR is not set
-@@ -374,6 +374,7 @@
+@@ -374,6 +374,7 @@ CONFIG_BLK_DEV_IDEDISK=y
  CONFIG_BLK_DEV_IDECD=y
  # CONFIG_BLK_DEV_IDETAPE is not set
  # CONFIG_BLK_DEV_IDEFLOPPY is not set
@@ -53655,7 +53655,7 @@
  CONFIG_IDE_TASK_IOCTL=y
  CONFIG_IDE_PROC_FS=y
  
-@@ -427,10 +428,129 @@
+@@ -427,10 +428,129 @@ CONFIG_IDE_ARCH_OBSOLETE_INIT=y
  # SCSI device support
  #
  # CONFIG_RAID_ATTRS is not set
@@ -53788,7 +53788,7 @@
  # CONFIG_MD is not set
  # CONFIG_FUSION is not set
  
-@@ -536,6 +656,7 @@
+@@ -536,6 +656,7 @@ CONFIG_USB_PEGASUS=y
  # CONFIG_HIPPI is not set
  # CONFIG_PPP is not set
  # CONFIG_SLIP is not set
@@ -53796,7 +53796,7 @@
  # CONFIG_SHAPER is not set
  # CONFIG_NETCONSOLE is not set
  # CONFIG_NETPOLL is not set
-@@ -783,12 +904,14 @@
+@@ -783,12 +904,14 @@ CONFIG_USB_UHCI_HCD=y
  #
  # may also be needed; see USB_STORAGE Help for more information
  #
@@ -65457,7 +65457,7 @@
  #
  # CONFIG_PPC64 is not set
  
-@@ -201,6 +201,7 @@
+@@ -201,6 +201,7 @@ CONFIG_PREEMPT_NONE=y
  # CONFIG_PREEMPT is not set
  CONFIG_BINFMT_ELF=y
  # CONFIG_BINFMT_MISC is not set
@@ -65465,7 +65465,7 @@
  CONFIG_MATH_EMULATION=y
  # CONFIG_IOMMU_HELPER is not set
  CONFIG_ARCH_ENABLE_MEMORY_HOTPLUG=y
-@@ -353,7 +354,90 @@
+@@ -353,7 +354,90 @@ CONFIG_PREVENT_FIRMWARE_BUILD=y
  # CONFIG_FW_LOADER is not set
  # CONFIG_SYS_HYPERVISOR is not set
  # CONFIG_CONNECTOR is not set
@@ -65557,7 +65557,7 @@
  CONFIG_OF_DEVICE=y
  # CONFIG_PARPORT is not set
  CONFIG_BLK_DEV=y
-@@ -362,6 +446,7 @@
+@@ -362,6 +446,7 @@ CONFIG_BLK_DEV=y
  CONFIG_BLK_DEV_LOOP=y
  # CONFIG_BLK_DEV_CRYPTOLOOP is not set
  # CONFIG_BLK_DEV_NBD is not set
@@ -65565,7 +65565,7 @@
  CONFIG_BLK_DEV_RAM=y
  CONFIG_BLK_DEV_RAM_COUNT=16
  CONFIG_BLK_DEV_RAM_SIZE=32768
-@@ -469,6 +554,15 @@
+@@ -469,6 +554,15 @@ CONFIG_NETDEV_10000=y
  #
  # CONFIG_WLAN_PRE80211 is not set
  # CONFIG_WLAN_80211 is not set
@@ -65581,7 +65581,7 @@
  # CONFIG_WAN is not set
  # CONFIG_PPP is not set
  # CONFIG_SLIP is not set
-@@ -563,6 +657,7 @@
+@@ -563,6 +657,7 @@ CONFIG_I2C_MPC=y
  # CONFIG_I2C_SIMTEC is not set
  # CONFIG_I2C_TAOS_EVM is not set
  # CONFIG_I2C_STUB is not set
@@ -65589,7 +65589,7 @@
  
  #
  # Miscellaneous I2C Chip support
-@@ -648,6 +743,11 @@
+@@ -648,6 +743,11 @@ CONFIG_WATCHDOG=y
  CONFIG_83xx_WDT=y
  
  #
@@ -65601,7 +65601,7 @@
  # Sonics Silicon Backplane
  #
  CONFIG_SSB_POSSIBLE=y
-@@ -664,6 +764,7 @@
+@@ -664,6 +764,7 @@ CONFIG_SSB_POSSIBLE=y
  # CONFIG_VIDEO_DEV is not set
  # CONFIG_DVB_CORE is not set
  CONFIG_DAB=y
@@ -65609,7 +65609,7 @@
  
  #
  # Graphics support
-@@ -686,6 +787,14 @@
+@@ -686,6 +787,14 @@ CONFIG_HID_SUPPORT=y
  CONFIG_HID=y
  # CONFIG_HID_DEBUG is not set
  # CONFIG_HIDRAW is not set
@@ -65624,7 +65624,7 @@
  CONFIG_USB_SUPPORT=y
  CONFIG_USB_ARCH_HAS_HCD=y
  # CONFIG_USB_ARCH_HAS_OHCI is not set
-@@ -715,8 +824,55 @@
+@@ -715,8 +824,55 @@ CONFIG_USB_EHCI_HCD_PPC_OF=y
  # CONFIG_USB_R8A66597_HCD is not set
  
  #
@@ -65680,7 +65680,7 @@
  # CONFIG_USB_GADGET is not set
  # CONFIG_MMC is not set
  # CONFIG_MEMSTICK is not set
-@@ -792,6 +948,7 @@
+@@ -792,6 +948,7 @@ CONFIG_TMPFS=y
  # CONFIG_BEFS_FS is not set
  # CONFIG_BFS_FS is not set
  # CONFIG_EFS_FS is not set
@@ -65688,7 +65688,7 @@
  # CONFIG_CRAMFS is not set
  # CONFIG_VXFS_FS is not set
  # CONFIG_MINIX_FS is not set
-@@ -862,6 +1019,7 @@
+@@ -862,6 +1019,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -72556,7 +72556,7 @@
  #
  # CONFIG_PPC64 is not set
  
-@@ -77,8 +77,6 @@
+@@ -77,8 +77,6 @@ CONFIG_IKCONFIG_PROC=y
  CONFIG_LOG_BUF_SHIFT=14
  # CONFIG_CGROUPS is not set
  # CONFIG_GROUP_SCHED is not set
@@ -72565,7 +72565,7 @@
  CONFIG_SYSFS_DEPRECATED=y
  CONFIG_SYSFS_DEPRECATED_V2=y
  # CONFIG_RELAY is not set
-@@ -272,7 +270,7 @@
+@@ -272,7 +270,7 @@ CONFIG_PCI_SYSCALL=y
  # CONFIG_PCIEPORTBUS is not set
  CONFIG_ARCH_SUPPORTS_MSI=y
  # CONFIG_PCI_MSI is not set
@@ -72574,7 +72574,7 @@
  # CONFIG_PCI_DEBUG is not set
  CONFIG_PCCARD=m
  # CONFIG_PCMCIA_DEBUG is not set
-@@ -1895,6 +1893,7 @@
+@@ -1895,6 +1893,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -73493,7 +73493,7 @@
  #
  # CONFIG_PPC64 is not set
  
-@@ -79,6 +79,7 @@
+@@ -79,6 +79,7 @@ CONFIG_FAIR_GROUP_SCHED=y
  CONFIG_USER_SCHED=y
  # CONFIG_CGROUP_SCHED is not set
  CONFIG_SYSFS_DEPRECATED=y
@@ -73501,7 +73501,7 @@
  # CONFIG_RELAY is not set
  # CONFIG_NAMESPACES is not set
  CONFIG_BLK_DEV_INITRD=y
-@@ -113,6 +114,7 @@
+@@ -113,6 +114,7 @@ CONFIG_SLUB=y
  CONFIG_HAVE_OPROFILE=y
  # CONFIG_KPROBES is not set
  CONFIG_HAVE_KPROBES=y
@@ -73509,7 +73509,7 @@
  CONFIG_PROC_PAGE_MONITOR=y
  CONFIG_SLABINFO=y
  CONFIG_RT_MUTEXES=y
-@@ -143,7 +145,6 @@
+@@ -143,7 +145,6 @@ CONFIG_DEFAULT_AS=y
  # CONFIG_DEFAULT_NOOP is not set
  CONFIG_DEFAULT_IOSCHED="anticipatory"
  CONFIG_CLASSIC_RCU=y
@@ -73517,7 +73517,7 @@
  CONFIG_PPC4xx_PCI_EXPRESS=y
  
  #
-@@ -161,12 +162,15 @@
+@@ -161,12 +162,15 @@ CONFIG_TAISHAN=y
  CONFIG_KATMAI=y
  CONFIG_RAINIER=y
  CONFIG_WARP=y
@@ -73533,7 +73533,7 @@
  CONFIG_IBM440EP_ERR42=y
  # CONFIG_IPIC is not set
  # CONFIG_MPIC is not set
-@@ -199,7 +203,6 @@
+@@ -199,7 +203,6 @@ CONFIG_HZ=250
  CONFIG_PREEMPT_NONE=y
  # CONFIG_PREEMPT_VOLUNTARY is not set
  # CONFIG_PREEMPT is not set
@@ -73541,7 +73541,7 @@
  CONFIG_BINFMT_ELF=y
  # CONFIG_BINFMT_MISC is not set
  CONFIG_MATH_EMULATION=y
-@@ -232,6 +235,7 @@
+@@ -232,6 +235,7 @@ CONFIG_ISA_DMA_API=y
  #
  CONFIG_ZONE_DMA=y
  CONFIG_PPC_INDIRECT_PCI=y
@@ -73549,7 +73549,7 @@
  CONFIG_PCI=y
  CONFIG_PCI_DOMAINS=y
  CONFIG_PCI_SYSCALL=y
-@@ -678,6 +682,7 @@
+@@ -678,6 +682,7 @@ CONFIG_USB_ARCH_HAS_EHCI=y
  # CONFIG_INFINIBAND is not set
  # CONFIG_EDAC is not set
  # CONFIG_RTC_CLASS is not set
@@ -73557,7 +73557,7 @@
  
  #
  # Userspace I/O
-@@ -805,6 +810,7 @@
+@@ -805,6 +810,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -73576,7 +73576,7 @@
  #
  CONFIG_PPC64=y
  
-@@ -84,8 +84,6 @@
+@@ -84,8 +84,6 @@ CONFIG_CGROUPS=y
  # CONFIG_CGROUP_NS is not set
  CONFIG_CPUSETS=y
  # CONFIG_GROUP_SCHED is not set
@@ -73585,7 +73585,7 @@
  # CONFIG_CGROUP_CPUACCT is not set
  # CONFIG_RESOURCE_COUNTERS is not set
  CONFIG_SYSFS_DEPRECATED=y
-@@ -289,6 +287,7 @@
+@@ -289,6 +287,7 @@ CONFIG_ARCH_HAS_WALK_MEMORY=y
  CONFIG_ARCH_ENABLE_MEMORY_HOTREMOVE=y
  CONFIG_KEXEC=y
  # CONFIG_CRASH_DUMP is not set
@@ -73593,7 +73593,7 @@
  CONFIG_IRQ_ALL_CPUS=y
  # CONFIG_NUMA is not set
  CONFIG_ARCH_SELECT_MEMORY_MODEL=y
-@@ -335,7 +334,7 @@
+@@ -335,7 +334,7 @@ CONFIG_PCI_SYSCALL=y
  # CONFIG_PCIEPORTBUS is not set
  CONFIG_ARCH_SUPPORTS_MSI=y
  CONFIG_PCI_MSI=y
@@ -73602,7 +73602,7 @@
  # CONFIG_PCI_DEBUG is not set
  CONFIG_PCCARD=y
  # CONFIG_PCMCIA_DEBUG is not set
-@@ -1881,6 +1880,7 @@
+@@ -1881,6 +1880,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -73621,7 +73621,7 @@
  #
  CONFIG_PPC64=y
  
-@@ -83,8 +83,6 @@
+@@ -83,8 +83,6 @@ CONFIG_CGROUPS=y
  CONFIG_CGROUP_NS=y
  CONFIG_CPUSETS=y
  # CONFIG_GROUP_SCHED is not set
@@ -73630,7 +73630,7 @@
  CONFIG_CGROUP_CPUACCT=y
  # CONFIG_RESOURCE_COUNTERS is not set
  CONFIG_SYSFS_DEPRECATED=y
-@@ -237,6 +235,7 @@
+@@ -237,6 +235,7 @@ CONFIG_ARCH_HAS_WALK_MEMORY=y
  CONFIG_ARCH_ENABLE_MEMORY_HOTREMOVE=y
  CONFIG_KEXEC=y
  # CONFIG_CRASH_DUMP is not set
@@ -73638,7 +73638,7 @@
  CONFIG_IRQ_ALL_CPUS=y
  CONFIG_NUMA=y
  CONFIG_NODES_SHIFT=4
-@@ -283,7 +282,7 @@
+@@ -283,7 +282,7 @@ CONFIG_PCI_SYSCALL=y
  # CONFIG_PCIEPORTBUS is not set
  CONFIG_ARCH_SUPPORTS_MSI=y
  CONFIG_PCI_MSI=y
@@ -73647,7 +73647,7 @@
  # CONFIG_PCI_DEBUG is not set
  # CONFIG_PCCARD is not set
  CONFIG_HOTPLUG_PCI=m
-@@ -1519,6 +1518,7 @@
+@@ -1519,6 +1518,7 @@ CONFIG_PLIST=y
  CONFIG_HAS_IOMEM=y
  CONFIG_HAS_IOPORT=y
  CONFIG_HAS_DMA=y
@@ -87815,7 +87815,7 @@
 -# CONFIG_PPC_CLOCK is not set
 --- a/arch/powerpc/kernel/Makefile
 +++ b/arch/powerpc/kernel/Makefile
-@@ -67,6 +67,7 @@
+@@ -67,6 +67,7 @@ obj-$(CONFIG_BOOTX_TEXT)	+= btext.o
  obj-$(CONFIG_SMP)		+= smp.o
  obj-$(CONFIG_KPROBES)		+= kprobes.o
  obj-$(CONFIG_PPC_UDBG_16550)	+= legacy_serial.o udbg_16550.o
@@ -87844,7 +87844,7 @@
  
  #define DEFINE(sym, val) \
  	asm volatile("\n->" #sym " %0 " #val : : "i" (val))
-@@ -60,7 +61,6 @@
+@@ -60,7 +61,6 @@ int main(void)
  	DEFINE(AUDITCONTEXT, offsetof(struct task_struct, audit_context));
  #else
  	DEFINE(THREAD_INFO, offsetof(struct task_struct, stack));
@@ -87852,7 +87852,7 @@
  #endif /* CONFIG_PPC64 */
  
  	DEFINE(KSP, offsetof(struct thread_struct, ksp));
-@@ -80,7 +80,6 @@
+@@ -80,7 +80,6 @@ int main(void)
  	DEFINE(PGDIR, offsetof(struct thread_struct, pgdir));
  #if defined(CONFIG_4xx) || defined(CONFIG_BOOKE)
  	DEFINE(THREAD_DBCR0, offsetof(struct thread_struct, dbcr0));
@@ -87860,7 +87860,7 @@
  #endif
  #ifdef CONFIG_SPE
  	DEFINE(THREAD_EVR0, offsetof(struct thread_struct, evr[0]));
-@@ -325,6 +324,9 @@
+@@ -325,6 +324,9 @@ int main(void)
  	DEFINE(PAGE_OFFSET_VSID, KERNEL_VSID(PAGE_OFFSET));
  	DEFINE(VMALLOC_START_ESID, GET_ESID(VMALLOC_START));
  	DEFINE(VMALLOC_START_VSID, KERNEL_VSID(VMALLOC_START));
@@ -87900,7 +87900,7 @@
   * Benjamin Herrenschmidt <benh@kernel.crashing.org>
   *
   * This program is free software; you can redistribute it and/or
-@@ -32,6 +32,9 @@
+@@ -32,6 +32,9 @@ _GLOBAL(__setup_cpu_440grx)
  	bl	__fixup_440A_mcheck
  	mtlr	r4
  	blr
@@ -87912,7 +87912,7 @@
  	b	__fixup_440A_mcheck
 --- a/arch/powerpc/kernel/cputable.c
 +++ b/arch/powerpc/kernel/cputable.c
-@@ -36,6 +36,8 @@
+@@ -36,6 +36,8 @@ extern void __setup_cpu_440epx(unsigned 
  extern void __setup_cpu_440gx(unsigned long offset, struct cpu_spec* spec);
  extern void __setup_cpu_440grx(unsigned long offset, struct cpu_spec* spec);
  extern void __setup_cpu_440spe(unsigned long offset, struct cpu_spec* spec);
@@ -87921,7 +87921,7 @@
  extern void __setup_cpu_603(unsigned long offset, struct cpu_spec* spec);
  extern void __setup_cpu_604(unsigned long offset, struct cpu_spec* spec);
  extern void __setup_cpu_750(unsigned long offset, struct cpu_spec* spec);
-@@ -1397,6 +1399,30 @@
+@@ -1397,6 +1399,30 @@ static struct cpu_spec __initdata cpu_sp
  		.machine_check		= machine_check_440A,
  		.platform		= "ppc440",
  	},
@@ -87952,7 +87952,7 @@
  #endif /* CONFIG_44x */
  #ifdef CONFIG_FSL_BOOKE
  #ifdef CONFIG_E200
-@@ -1512,7 +1538,7 @@
+@@ -1512,7 +1538,7 @@ struct cpu_spec * __init identify_cpu(un
  				*t = *s;
  			*PTRRELOC(&cur_cpu_spec) = &the_cpu_spec;
  #if defined(CONFIG_PPC64) || defined(CONFIG_BOOKE)
@@ -87993,7 +87993,7 @@
  
 --- a/arch/powerpc/kernel/entry_32.S
 +++ b/arch/powerpc/kernel/entry_32.S
-@@ -110,9 +110,9 @@
+@@ -110,9 +110,9 @@ transfer_to_handler:
  	stw	r11,PT_REGS(r12)
  #if defined(CONFIG_40x) || defined(CONFIG_BOOKE)
  	/* Check to see if the dbcr0 register is set up to debug.  Use the
@@ -88005,7 +88005,7 @@
  	beq+	3f
  	/* From user and task is ptraced - load up global dbcr0 */
  	li	r12,-1			/* clear all pending debug events */
-@@ -120,6 +120,12 @@
+@@ -120,6 +120,12 @@ transfer_to_handler:
  	lis	r11,global_dbcr0@ha
  	tophys(r11,r11)
  	addi	r11,r11,global_dbcr0@l
@@ -88018,7 +88018,7 @@
  	lwz	r12,0(r11)
  	mtspr	SPRN_DBCR0,r12
  	lwz	r12,4(r11)
-@@ -238,10 +244,10 @@
+@@ -238,10 +244,10 @@ ret_from_syscall:
  	stw	r11,_CCR(r1)
  syscall_exit_cont:
  #if defined(CONFIG_4xx) || defined(CONFIG_BOOKE)
@@ -88032,7 +88032,7 @@
  	bnel-	load_dbcr0
  #endif
  #ifdef CONFIG_44x
-@@ -666,10 +672,10 @@
+@@ -666,10 +672,10 @@ user_exc_return:		/* r10 contains MSR_KE
  
  restore_user:
  #if defined(CONFIG_4xx) || defined(CONFIG_BOOKE)
@@ -88046,7 +88046,7 @@
  	bnel-	load_dbcr0
  #endif
  
-@@ -879,6 +885,12 @@
+@@ -879,6 +885,12 @@ load_dbcr0:
  	mfspr	r10,SPRN_DBCR0
  	lis	r11,global_dbcr0@ha
  	addi	r11,r11,global_dbcr0@l
@@ -88059,7 +88059,7 @@
  	stw	r10,0(r11)
  	mtspr	SPRN_DBCR0,r0
  	lwz	r10,4(r11)
-@@ -891,7 +903,7 @@
+@@ -891,7 +903,7 @@ load_dbcr0:
  	.section .bss
  	.align	4
  global_dbcr0:
@@ -88088,7 +88088,7 @@
  
  	.section	".text"
  	.align 7
-@@ -88,6 +90,14 @@
+@@ -88,6 +90,14 @@ system_call_common:
  	addi	r9,r1,STACK_FRAME_OVERHEAD
  	ld	r11,exception_marker@toc(r2)
  	std	r11,-16(r9)		/* "regshere" marker */
@@ -88103,7 +88103,7 @@
  	li	r10,1
  	stb	r10,PACASOFTIRQEN(r13)
  	stb	r10,PACAHARDIRQEN(r13)
-@@ -102,7 +112,7 @@
+@@ -102,7 +112,7 @@ BEGIN_FW_FTR_SECTION
  	b	hardware_interrupt_entry
  2:
  END_FW_FTR_SECTION_IFSET(FW_FEATURE_ISERIES)
@@ -88112,7 +88112,7 @@
  	mfmsr	r11
  	ori	r11,r11,MSR_EE
  	mtmsrd	r11,1
-@@ -504,6 +514,10 @@
+@@ -504,6 +514,10 @@ BEGIN_FW_FTR_SECTION
  
  	li	r3,0
  	stb	r3,PACASOFTIRQEN(r13)	/* ensure we are soft-disabled */
@@ -88123,7 +88123,7 @@
  	ori	r10,r10,MSR_EE
  	mtmsrd	r10			/* hard-enable again */
  	addi	r3,r1,STACK_FRAME_OVERHEAD
-@@ -512,7 +526,7 @@
+@@ -512,7 +526,7 @@ BEGIN_FW_FTR_SECTION
  4:
  END_FW_FTR_SECTION_IFSET(FW_FEATURE_ISERIES)
  #endif
@@ -88132,7 +88132,7 @@
  
  	/* extract EE bit and use it to restore paca->hard_enabled */
  	ld	r3,_MSR(r1)
-@@ -580,6 +594,16 @@
+@@ -580,6 +594,16 @@ do_work:
  	bne	restore
  	/* here we are preempting the current task */
  1:
@@ -88159,7 +88159,7 @@
  
  /* 601 only have IBAT; cr0.eq is set on 601 when using this macro */
  #define LOAD_BAT(n, reg, RA, RB)	\
-@@ -268,8 +269,8 @@
+@@ -268,8 +269,8 @@ __secondary_hold_acknowledge:
  	li	r10,MSR_KERNEL & ~(MSR_IR|MSR_DR); /* can take exceptions */ \
  	MTMSRD(r10);			/* (except for mach check in rtas) */ \
  	stw	r0,GPR0(r11);	\
@@ -88170,7 +88170,7 @@
  	stw	r10,8(r11);	\
  	SAVE_4GPRS(3, r11);	\
  	SAVE_2GPRS(7, r11)
-@@ -763,23 +764,6 @@
+@@ -763,23 +764,6 @@ load_up_altivec:
  	b	fast_exception_return
  
  /*
@@ -88196,7 +88196,7 @@
   * and save the AltiVec registers in its thread_struct.
 --- a/arch/powerpc/kernel/head_44x.S
 +++ b/arch/powerpc/kernel/head_44x.S
-@@ -211,7 +211,7 @@
+@@ -211,7 +211,7 @@ skpinv:	addi	r4,r4,1				/* Increment */
  	SET_IVOR(12, WatchdogTimer);
  	SET_IVOR(13, DataTLBError);
  	SET_IVOR(14, InstructionTLBError);
@@ -88205,7 +88205,7 @@
  
  	/* Establish the interrupt vector base */
  	lis	r4,interrupt_base@h	/* IVPR only uses the high 16-bits */
-@@ -578,7 +578,7 @@
+@@ -578,7 +578,7 @@ interrupt_base:
  	b	InstructionStorage
  
  	/* Debug Interrupt */
@@ -88226,7 +88226,7 @@
  
  /*
   * We layout physical memory as follows:
-@@ -450,8 +449,8 @@
+@@ -450,8 +449,8 @@ bad_stack:
   */
  fast_exc_return_irq:			/* restores irq state too */
  	ld	r3,SOFTE(r1)
@@ -88236,7 +88236,7 @@
  	rldicl	r4,r12,49,63		/* get MSR_EE to LSB */
  	stb	r4,PACAHARDIRQEN(r13)	/* restore paca->hard_enabled */
  	b	1f
-@@ -621,7 +620,7 @@
+@@ -621,7 +620,7 @@ END_FW_FTR_SECTION_IFSET(FW_FEATURE_ISER
  	mtlr	r10
  
  	andi.	r10,r12,MSR_RI	/* check for unrecoverable exception */
@@ -88245,7 +88245,7 @@
  
  .machine	push
  .machine	"power4"
-@@ -643,6 +642,22 @@
+@@ -643,6 +642,22 @@ END_FW_FTR_SECTION_IFSET(FW_FEATURE_ISER
  	rfid
  	b	.	/* prevent speculative execution */
  
@@ -88268,7 +88268,7 @@
  unrecov_slb:
  	EXCEPTION_PROLOG_COMMON(0x4100, PACA_EXSLB)
  	DISABLE_INTS
-@@ -808,7 +823,7 @@
+@@ -808,7 +823,7 @@ _STATIC(load_up_altivec)
   * Hash table stuff
   */
  	.align	7
@@ -88277,7 +88277,7 @@
  	std	r3,_DAR(r1)
  	std	r4,_DSISR(r1)
  
-@@ -820,6 +835,27 @@
+@@ -820,6 +835,27 @@ BEGIN_FTR_SECTION
  END_FTR_SECTION_IFCLR(CPU_FTR_SLB)
  
  	/*
@@ -88305,7 +88305,7 @@
  	 * We need to set the _PAGE_USER bit if MSR_PR is set or if we are
  	 * accessing a userspace segment (even from the kernel). We assume
  	 * kernel addresses always have the high bit set.
-@@ -832,13 +868,6 @@
+@@ -832,13 +868,6 @@ END_FTR_SECTION_IFCLR(CPU_FTR_SLB)
  	rlwimi	r4,r5,22+2,31-2,31-2	/* Set _PAGE_EXEC if trap is 0x400 */
  
  	/*
@@ -88319,7 +88319,7 @@
  	 * r3 contains the faulting address
  	 * r4 contains the required access permissions
  	 * r5 contains the trap number
-@@ -848,7 +877,6 @@
+@@ -848,7 +877,6 @@ END_FTR_SECTION_IFCLR(CPU_FTR_SLB)
  	bl	.hash_page		/* build HPTE if possible */
  	cmpdi	r3,0			/* see if hash_page succeeded */
  
@@ -88327,7 +88327,7 @@
  BEGIN_FW_FTR_SECTION
  	/*
  	 * If we had interrupts soft-enabled at the point where the
-@@ -860,7 +888,7 @@
+@@ -860,7 +888,7 @@ BEGIN_FW_FTR_SECTION
  	 */
  	beq	13f
  END_FW_FTR_SECTION_IFSET(FW_FEATURE_ISERIES)
@@ -88336,7 +88336,7 @@
  BEGIN_FW_FTR_SECTION
  	/*
  	 * Here we have interrupts hard-disabled, so it is sufficient
-@@ -874,11 +902,12 @@
+@@ -874,11 +902,12 @@ END_FW_FTR_SECTION_IFCLR(FW_FEATURE_ISER
  
  	/*
  	 * hash_page couldn't handle it, set soft interrupt enable back
@@ -88351,7 +88351,7 @@
  	b	11f
  
  /* Here we have a page fault that hash_page can't handle. */
-@@ -1477,6 +1506,10 @@
+@@ -1477,6 +1506,10 @@ _INIT_STATIC(start_here_multiplatform)
  	addi	r2,r2,0x4000
  	add	r2,r2,r26
  
@@ -88362,7 +88362,7 @@
  	/* Do very early kernel initializations, including initial hash table,
  	 * stab and slb setup before we turn on relocation.	*/
  
-@@ -1505,10 +1538,6 @@
+@@ -1505,10 +1538,6 @@ _INIT_GLOBAL(start_here_common)
  	li	r0,0
  	stdu	r0,-STACK_FRAME_OVERHEAD(r1)
  
@@ -88403,7 +88403,7 @@
  #define DEBUG_SPRG		SPRN_SPRG6W
  
  #ifdef CONFIG_SMP
-@@ -212,9 +221,8 @@
+@@ -212,9 +221,8 @@ label:
   * save (and later restore) the MSR via SPRN_CSRR1, which will still have
   * the MSR_DE bit set.
   */
@@ -88415,7 +88415,7 @@
  	DEBUG_EXCEPTION_PROLOG;						      \
  									      \
  	/*								      \
-@@ -234,8 +242,8 @@
+@@ -234,8 +242,8 @@ label:
  	cmplw	r12,r10;						      \
  	blt+	2f;			/* addr below exception vectors */    \
  									      \
@@ -88426,7 +88426,7 @@
  	cmplw	r12,r10;						      \
  	bgt+	2f;			/* addr above exception vectors */    \
  									      \
-@@ -265,9 +273,9 @@
+@@ -265,9 +273,9 @@ label:
  2:	mfspr	r4,SPRN_DBSR;						      \
  	addi	r3,r1,STACK_FRAME_OVERHEAD;				      \
  	EXC_XFER_TEMPLATE(DebugException, 0x2002, (MSR_KERNEL & ~(MSR_ME|MSR_DE|MSR_CE)), NOCOPY, debug_transfer_to_handler, ret_from_debug_exc)
@@ -88439,7 +88439,7 @@
  	CRITICAL_EXCEPTION_PROLOG;					      \
  									      \
  	/*								      \
-@@ -287,8 +295,8 @@
+@@ -287,8 +295,8 @@ label:
  	cmplw	r12,r10;						      \
  	blt+	2f;			/* addr below exception vectors */    \
  									      \
@@ -88450,7 +88450,7 @@
  	cmplw	r12,r10;						      \
  	bgt+	2f;			/* addr above exception vectors */    \
  									      \
-@@ -318,7 +326,6 @@
+@@ -318,7 +326,6 @@ label:
  2:	mfspr	r4,SPRN_DBSR;						      \
  	addi	r3,r1,STACK_FRAME_OVERHEAD;				      \
  	EXC_XFER_TEMPLATE(DebugException, 0x2002, (MSR_KERNEL & ~(MSR_ME|MSR_DE|MSR_CE)), NOCOPY, crit_transfer_to_handler, ret_from_crit_exc)
@@ -88460,7 +88460,7 @@
  	START_EXCEPTION(InstructionStorage)				      \
 --- a/arch/powerpc/kernel/head_fsl_booke.S
 +++ b/arch/powerpc/kernel/head_fsl_booke.S
-@@ -68,7 +68,9 @@
+@@ -68,7 +68,9 @@ _ENTRY(_start);
  	mr	r29,r5
  	mr	r28,r6
  	mr	r27,r7
@@ -88470,7 +88470,7 @@
  
  /* We try to not make any assumptions about how the boot loader
   * setup or used the TLBs.  We invalidate all mappings from the
-@@ -167,7 +169,28 @@
+@@ -167,7 +169,28 @@ skpinv:	addi	r6,r6,1				/* Increment */
  	mtspr	SPRN_MAS0,r7
  	tlbre
  
@@ -88500,7 +88500,7 @@
  	lis	r7,0x1000	/* Set MAS0(TLBSEL) = 1 */
  	rlwimi	r7,r5,16,4,15	/* Setup MAS0 = TLBSEL | ESEL(r5) */
  	mtspr	SPRN_MAS0,r7
-@@ -177,12 +200,10 @@
+@@ -177,12 +200,10 @@ skpinv:	addi	r6,r6,1				/* Increment */
  	ori	r6,r6,(MAS1_TSIZE(BOOKE_PAGESZ_4K))@l
  	mtspr	SPRN_MAS1,r6
  	mfspr	r6,SPRN_MAS2
@@ -88515,7 +88515,7 @@
  	tlbwe
  
  	xori	r6,r4,1
-@@ -232,8 +253,7 @@
+@@ -232,8 +253,7 @@ skpinv:	addi	r6,r6,1				/* Increment */
  	ori	r6,r6,PAGE_OFFSET@l
  	rlwimi	r6,r7,0,20,31
  	mtspr	SPRN_MAS2,r6
@@ -88525,7 +88525,7 @@
  	tlbwe
  
  /* 7. Jump to KERNELBASE mapping */
-@@ -283,7 +303,10 @@
+@@ -283,7 +303,10 @@ skpinv:	addi	r6,r6,1				/* Increment */
  	SET_IVOR(12, WatchdogTimer);
  	SET_IVOR(13, DataTLBError);
  	SET_IVOR(14, InstructionTLBError);
@@ -88537,7 +88537,7 @@
  	SET_IVOR(32, SPEUnavailable);
  	SET_IVOR(33, SPEFloatingPointData);
  	SET_IVOR(34, SPEFloatingPointRound);
-@@ -718,7 +741,10 @@
+@@ -718,7 +741,10 @@ interrupt_base:
  
  
  	/* Debug Interrupt */
@@ -88551,7 +88551,7 @@
   * Local functions
 --- a/arch/powerpc/kernel/ibmebus.c
 +++ b/arch/powerpc/kernel/ibmebus.c
-@@ -183,7 +183,7 @@
+@@ -183,7 +183,7 @@ static int ibmebus_create_devices(const 
  		ret = ibmebus_create_device(child);
  		if (ret) {
  			printk(KERN_ERR "%s: failed to create device (%i)",
@@ -88560,7 +88560,7 @@
  			of_node_put(child);
  			break;
  		}
-@@ -269,7 +269,7 @@
+@@ -269,7 +269,7 @@ static ssize_t ibmebus_store_probe(struc
  	if (bus_find_device(&ibmebus_bus_type, NULL, path,
  			    ibmebus_match_path)) {
  		printk(KERN_WARNING "%s: %s has already been probed\n",
@@ -88569,7 +88569,7 @@
  		rc = -EEXIST;
  		goto out;
  	}
-@@ -279,7 +279,7 @@
+@@ -279,7 +279,7 @@ static ssize_t ibmebus_store_probe(struc
  		of_node_put(dn);
  	} else {
  		printk(KERN_WARNING "%s: no such device node: %s\n",
@@ -88578,7 +88578,7 @@
  		rc = -ENODEV;
  	}
  
-@@ -308,7 +308,7 @@
+@@ -308,7 +308,7 @@ static ssize_t ibmebus_store_remove(stru
  		return count;
  	} else {
  		printk(KERN_WARNING "%s: %s not on the bus\n",
@@ -88587,7 +88587,7 @@
  
  		kfree(path);
  		return -ENODEV;
-@@ -337,14 +337,14 @@
+@@ -337,14 +337,14 @@ static int __init ibmebus_bus_init(void)
  	err = of_bus_type_init(&ibmebus_bus_type, "ibmebus");
  	if (err) {
  		printk(KERN_ERR "%s: failed to register IBM eBus.\n",
@@ -88606,7 +88606,7 @@
  		return err;
 --- a/arch/powerpc/kernel/iommu.c
 +++ b/arch/powerpc/kernel/iommu.c
-@@ -520,7 +520,7 @@
+@@ -520,7 +520,7 @@ void iommu_free_table(struct iommu_table
  	unsigned int order;
  
  	if (!tbl || !tbl->it_map) {
@@ -88615,7 +88615,7 @@
  				node_name);
  		return;
  	}
-@@ -530,7 +530,7 @@
+@@ -530,7 +530,7 @@ void iommu_free_table(struct iommu_table
  	for (i = 0; i < (tbl->it_size/64); i++) {
  		if (tbl->it_map[i] != 0) {
  			printk(KERN_WARNING "%s: Unexpected TCEs for %s\n",
@@ -88626,7 +88626,7 @@
  	}
 --- a/arch/powerpc/kernel/irq.c
 +++ b/arch/powerpc/kernel/irq.c
-@@ -114,7 +114,7 @@
+@@ -114,7 +114,7 @@ static inline void set_soft_enabled(unsi
  	: : "r" (enable), "i" (offsetof(struct paca_struct, soft_enabled)));
  }
  
@@ -88635,7 +88635,7 @@
  {
  	/*
  	 * get_paca()->soft_enabled = en;
-@@ -174,6 +174,7 @@
+@@ -174,6 +174,7 @@ void local_irq_restore(unsigned long en)
  
  	__hard_irq_enable();
  }
@@ -88643,7 +88643,7 @@
  #endif /* CONFIG_PPC64 */
  
  int show_interrupts(struct seq_file *p, void *v)
-@@ -310,8 +311,21 @@
+@@ -310,8 +311,21 @@ void do_IRQ(struct pt_regs *regs)
  				handler = &__do_IRQ;
  			irqtp->task = curtp->task;
  			irqtp->flags = 0;
@@ -88665,7 +88665,7 @@
  			if (irqtp->flags)
  				set_bits(irqtp->flags, &curtp->flags);
  		} else
-@@ -357,7 +371,7 @@
+@@ -357,7 +371,7 @@ void irq_ctx_init(void)
  		memset((void *)softirq_ctx[i], 0, THREAD_SIZE);
  		tp = softirq_ctx[i];
  		tp->cpu = i;
@@ -88676,7 +88676,7 @@
  		tp = hardirq_ctx[i];
 --- a/arch/powerpc/kernel/isa-bridge.c
 +++ b/arch/powerpc/kernel/isa-bridge.c
-@@ -80,13 +80,13 @@
+@@ -80,13 +80,13 @@ static void __devinit pci_process_ISA_OF
  	 *			(size depending on dev->n_addr_cells)
  	 *   cell 5:		the size of the range
  	 */
@@ -88692,7 +88692,7 @@
  		goto inval_range;
  
  	isa_addr = range->isa_addr.a_lo;
-@@ -99,7 +99,7 @@
+@@ -99,7 +99,7 @@ static void __devinit pci_process_ISA_OF
  	 */
  	if ((pci_addr != 0) || (isa_addr != 0)) {
  		printk(KERN_ERR "unexpected isa to pci mapping: %s\n",
@@ -88703,7 +88703,7 @@
  
 --- a/arch/powerpc/kernel/lparcfg.c
 +++ b/arch/powerpc/kernel/lparcfg.c
-@@ -226,7 +226,7 @@
+@@ -226,7 +226,7 @@ static void parse_system_parameter_strin
  	unsigned char *local_buffer = kmalloc(SPLPAR_MAXLENGTH, GFP_KERNEL);
  	if (!local_buffer) {
  		printk(KERN_ERR "%s %s kmalloc failure at line %d \n",
@@ -88712,7 +88712,7 @@
  		return;
  	}
  
-@@ -243,14 +243,14 @@
+@@ -243,14 +243,14 @@ static void parse_system_parameter_strin
  	if (call_status != 0) {
  		printk(KERN_INFO
  		       "%s %s Error calling get-system-parameter (0x%x)\n",
@@ -88729,7 +88729,7 @@
  			kfree(local_buffer);
  			return;
  		}
-@@ -484,10 +484,10 @@
+@@ -484,10 +484,10 @@ static ssize_t lparcfg_write(struct file
  	current_weight = (resource >> 5 * 8) & 0xFF;
  
  	pr_debug("%s: current_entitled = %lu, current_weight = %u\n",
@@ -88742,7 +88742,7 @@
  
  	retval = plpar_hcall_norets(H_SET_PPP, *new_entitled_ptr,
  				    *new_weight_ptr);
-@@ -502,7 +502,7 @@
+@@ -502,7 +502,7 @@ static ssize_t lparcfg_write(struct file
  		retval = -EINVAL;
  	} else {
  		printk(KERN_WARNING "%s: received unknown hv return code %ld",
@@ -88793,7 +88793,7 @@
   */
  struct lppaca lppaca[] = {
  	[0 ... (NR_CPUS-1)] = {
-@@ -66,32 +65,17 @@
+@@ -66,32 +65,17 @@ struct slb_shadow slb_shadow[] __cacheli
   * processors.  The processor VPD array needs one entry per physical
   * processor (not thread).
   */
@@ -88843,7 +88843,7 @@
  #ifdef CONFIG_PPC32
  extern void transfer_to_handler(void);
  extern void do_IRQ(struct pt_regs *regs);
-@@ -58,7 +54,6 @@
+@@ -58,7 +54,6 @@ extern void program_check_exception(stru
  extern void single_step_exception(struct pt_regs *regs);
  extern int sys_sigreturn(struct pt_regs *regs);
  
@@ -88851,7 +88851,7 @@
  EXPORT_SYMBOL(clear_pages);
  EXPORT_SYMBOL(copy_page);
  EXPORT_SYMBOL(ISA_DMA_THRESHOLD);
-@@ -79,6 +74,7 @@
+@@ -79,6 +74,7 @@ EXPORT_SYMBOL(strncpy);
  EXPORT_SYMBOL(strcat);
  EXPORT_SYMBOL(strlen);
  EXPORT_SYMBOL(strcmp);
@@ -88859,14 +88859,14 @@
  
  EXPORT_SYMBOL(csum_partial);
  EXPORT_SYMBOL(csum_partial_copy_generic);
-@@ -192,3 +188,4 @@
+@@ -192,3 +188,4 @@ EXPORT_SYMBOL(intercept_table);
  EXPORT_SYMBOL(__mtdcr);
  EXPORT_SYMBOL(__mfdcr);
  #endif
 +EXPORT_SYMBOL(empty_zero_page);
 --- a/arch/powerpc/kernel/process.c
 +++ b/arch/powerpc/kernel/process.c
-@@ -868,11 +868,6 @@
+@@ -868,11 +868,6 @@ int sys_execve(unsigned long a0, unsigne
  	flush_spe_to_thread(current);
  	error = do_execve(filename, (char __user * __user *) a1,
  			  (char __user * __user *) a2, regs);
@@ -88878,7 +88878,7 @@
  	putname(filename);
  out:
  	return error;
-@@ -919,20 +914,6 @@
+@@ -919,20 +914,6 @@ int validate_sp(unsigned long sp, struct
  	return valid_irq_stack(sp, p, nbytes);
  }
  
@@ -88899,7 +88899,7 @@
  EXPORT_SYMBOL(validate_sp);
  
  unsigned long get_wchan(struct task_struct *p)
-@@ -944,15 +925,15 @@
+@@ -944,15 +925,15 @@ unsigned long get_wchan(struct task_stru
  		return 0;
  
  	sp = p->thread.ksp;
@@ -88918,7 +88918,7 @@
  			if (!in_sched_functions(ip))
  				return ip;
  		}
-@@ -981,12 +962,12 @@
+@@ -981,12 +962,12 @@ void show_stack(struct task_struct *tsk,
  	lr = 0;
  	printk("Call Trace:\n");
  	do {
@@ -88933,7 +88933,7 @@
  		if (!firstframe || ip != lr) {
  			printk("["REG"] ["REG"] ", sp, ip);
  			print_symbol("%s", ip);
-@@ -1000,8 +981,8 @@
+@@ -1000,8 +981,8 @@ void show_stack(struct task_struct *tsk,
  		 * See if this is an exception frame.
  		 * We look for the "regshere" marker in the current frame.
  		 */
@@ -88966,7 +88966,7 @@
  #include <asm/kexec.h>
  
  #ifdef DEBUG
-@@ -436,7 +437,7 @@
+@@ -436,7 +437,7 @@ early_param("mem", early_parse_mem);
   * The device tree may be allocated beyond our memory limit, or inside the
   * crash kernel region for kdump. If so, move it out of the way.
   */
@@ -88975,7 +88975,7 @@
  {
  	unsigned long start, size;
  	void *p;
-@@ -1040,6 +1041,87 @@
+@@ -1040,6 +1041,87 @@ static void __init early_reserve_mem(voi
  #endif
  }
  
@@ -89063,7 +89063,7 @@
  void __init early_init_devtree(void *params)
  {
  	DBG(" -> early_init_devtree(%p)\n", params);
-@@ -1052,6 +1134,11 @@
+@@ -1052,6 +1134,11 @@ void __init early_init_devtree(void *par
  	of_scan_flat_dt(early_init_dt_scan_rtas, NULL);
  #endif
  
@@ -89075,7 +89075,7 @@
  	/* Retrieve various informations from the /chosen node of the
  	 * device-tree, including the platform type, initrd location and
  	 * size, TCE reserve, and more ...
-@@ -1072,6 +1159,7 @@
+@@ -1072,6 +1159,7 @@ void __init early_init_devtree(void *par
  	reserve_kdump_trampoline();
  	reserve_crashkernel();
  	early_reserve_mem();
@@ -89083,7 +89083,7 @@
  
  	lmb_enforce_memory_limit(memory_limit);
  	lmb_analyze();
-@@ -1244,12 +1332,14 @@
+@@ -1244,12 +1332,14 @@ EXPORT_SYMBOL(of_node_put);
   */
  void of_attach_node(struct device_node *np)
  {
@@ -89100,7 +89100,7 @@
  }
  
  /*
-@@ -1260,8 +1350,9 @@
+@@ -1260,8 +1350,9 @@ void of_attach_node(struct device_node *
  void of_detach_node(struct device_node *np)
  {
  	struct device_node *parent;
@@ -89111,7 +89111,7 @@
  
  	parent = np->parent;
  	if (!parent)
-@@ -1292,7 +1383,7 @@
+@@ -1292,7 +1383,7 @@ void of_detach_node(struct device_node *
  	of_node_set_flag(np, OF_DETACHED);
  
  out_unlock:
@@ -89120,7 +89120,7 @@
  }
  
  #ifdef CONFIG_PPC_PSERIES
-@@ -1373,20 +1464,21 @@
+@@ -1373,20 +1464,21 @@ __initcall(prom_reconfig_setup);
  int prom_add_property(struct device_node* np, struct property* prop)
  {
  	struct property **next;
@@ -89145,7 +89145,7 @@
  
  #ifdef CONFIG_PROC_DEVICETREE
  	/* try to add to proc as well if it was initialized */
-@@ -1406,9 +1498,10 @@
+@@ -1406,9 +1498,10 @@ int prom_add_property(struct device_node
  int prom_remove_property(struct device_node *np, struct property *prop)
  {
  	struct property **next;
@@ -89157,7 +89157,7 @@
  	next = &np->properties;
  	while (*next) {
  		if (*next == prop) {
-@@ -1421,7 +1514,7 @@
+@@ -1421,7 +1514,7 @@ int prom_remove_property(struct device_n
  		}
  		next = &(*next)->next;
  	}
@@ -89166,7 +89166,7 @@
  
  	if (!found)
  		return -ENODEV;
-@@ -1447,9 +1540,10 @@
+@@ -1447,9 +1540,10 @@ int prom_update_property(struct device_n
  			 struct property *oldprop)
  {
  	struct property **next;
@@ -89178,7 +89178,7 @@
  	next = &np->properties;
  	while (*next) {
  		if (*next == oldprop) {
-@@ -1463,7 +1557,7 @@
+@@ -1463,7 +1557,7 @@ int prom_update_property(struct device_n
  		}
  		next = &(*next)->next;
  	}
@@ -89189,7 +89189,7 @@
  		return -ENODEV;
 --- a/arch/powerpc/kernel/prom_init.c
 +++ b/arch/powerpc/kernel/prom_init.c
-@@ -2240,6 +2240,14 @@
+@@ -2240,6 +2240,14 @@ static void __init fixup_device_tree_efi
  	if (rv != PROM_ERROR && (strcmp(prop, "chrp") == 0))
  		prom_setprop(node, "/", "device_type", "efika", sizeof("efika"));
  
@@ -89222,7 +89222,7 @@
  #include <asm/udbg.h>
  #include <asm/syscalls.h>
  #include <asm/smp.h>
-@@ -507,7 +507,7 @@
+@@ -507,7 +507,7 @@ int rtas_error_rc(int rtas_rc)
  			break;
  		default:
  			printk(KERN_ERR "%s: unexpected RTAS error %d\n",
@@ -89233,7 +89233,7 @@
  	}
 --- a/arch/powerpc/kernel/rtas_flash.c
 +++ b/arch/powerpc/kernel/rtas_flash.c
-@@ -807,7 +807,7 @@
+@@ -807,7 +807,7 @@ int __init rtas_flash_init(void)
  				rtas_block_ctor);
  	if (!flash_block_cache) {
  		printk(KERN_ERR "%s: failed to create block cache\n",
@@ -89244,7 +89244,7 @@
  	}
 --- a/arch/powerpc/kernel/rtas_pci.c
 +++ b/arch/powerpc/kernel/rtas_pci.c
-@@ -56,21 +56,6 @@
+@@ -56,21 +56,6 @@ static inline int config_access_valid(st
  	return 0;
  }
  
@@ -89266,7 +89266,7 @@
  int rtas_read_config(struct pci_dn *pdn, int where, int size, u32 *val)
  {
  	int returnval = -1;
-@@ -117,7 +102,7 @@
+@@ -117,7 +102,7 @@ static int rtas_pci_read_config(struct p
  	for (dn = busdn->child; dn; dn = dn->sibling) {
  		struct pci_dn *pdn = PCI_DN(dn);
  		if (pdn && pdn->devfn == devfn
@@ -89275,7 +89275,7 @@
  			return rtas_read_config(pdn, where, size, val);
  	}
  
-@@ -164,7 +149,7 @@
+@@ -164,7 +149,7 @@ static int rtas_pci_write_config(struct 
  	for (dn = busdn->child; dn; dn = dn->sibling) {
  		struct pci_dn *pdn = PCI_DN(dn);
  		if (pdn && pdn->devfn == devfn
@@ -89284,7 +89284,7 @@
  			return rtas_write_config(pdn, where, size, val);
  	}
  	return PCIBIOS_DEVICE_NOT_FOUND;
-@@ -326,7 +311,7 @@
+@@ -326,7 +311,7 @@ int pcibios_remove_root_bus(struct pci_c
  
  	res = b->resource[0];
  	if (!res->flags) {
@@ -89293,7 +89293,7 @@
  				b->name);
  		return 1;
  	}
-@@ -334,13 +319,13 @@
+@@ -334,13 +319,13 @@ int pcibios_remove_root_bus(struct pci_c
  	rc = pcibios_unmap_io_space(b);
  	if (rc) {
  		printk(KERN_ERR "%s: failed to unmap IO on bus %s\n",
@@ -89309,7 +89309,7 @@
  		return 1;
  	}
  
-@@ -348,13 +333,13 @@
+@@ -348,13 +333,13 @@ int pcibios_remove_root_bus(struct pci_c
  		res = b->resource[i];
  		if (!res->flags && i == 0) {
  			printk(KERN_ERR "%s: no MEM resource for PHB %s\n",
@@ -89343,7 +89343,7 @@
  #include <asm/xmon.h>
  #include <asm/cputhreads.h>
  
-@@ -167,6 +167,8 @@
+@@ -167,6 +167,8 @@ static int show_cpuinfo(struct seq_file 
  	unsigned short min;
  
  	if (cpu_id == NR_CPUS) {
@@ -89352,7 +89352,7 @@
  #if defined(CONFIG_SMP) && defined(CONFIG_PPC32)
  		unsigned long bogosum = 0;
  		int i;
-@@ -178,6 +180,13 @@
+@@ -178,6 +180,13 @@ static int show_cpuinfo(struct seq_file 
  		seq_printf(m, "timebase\t: %lu\n", ppc_tb_freq);
  		if (ppc_md.name)
  			seq_printf(m, "platform\t: %s\n", ppc_md.name);
@@ -89368,7 +89368,7 @@
  
 --- a/arch/powerpc/kernel/setup_32.c
 +++ b/arch/powerpc/kernel/setup_32.c
-@@ -172,6 +172,18 @@
+@@ -172,6 +172,18 @@ int __init ppc_setup_l2cr(char *str)
  }
  __setup("l2cr=", ppc_setup_l2cr);
  
@@ -89387,7 +89387,7 @@
  #ifdef CONFIG_GENERIC_NVRAM
  
  /* Generic nvram hooks used by drivers/char/gen_nvram.c */
-@@ -277,7 +289,7 @@
+@@ -277,7 +289,7 @@ void __init setup_arch(char **cmdline_p)
  	if (ppc_md.panic)
  		setup_panic();
  
@@ -89415,7 +89415,7 @@
  #include <asm/firmware.h>
  #include <asm/xmon.h>
  #include <asm/udbg.h>
-@@ -178,6 +179,9 @@
+@@ -178,6 +179,9 @@ void __init early_setup(unsigned long dt
  	/* Enable early debugging if any specified (see udbg.h) */
  	udbg_early_init();
  
@@ -89425,7 +89425,7 @@
   	DBG(" -> early_setup(), dt_ptr: 0x%lx\n", dt_ptr);
  
  	/*
-@@ -510,7 +514,7 @@
+@@ -510,7 +514,7 @@ void __init setup_arch(char **cmdline_p)
  	if (ppc_md.panic)
  		setup_panic();
  
@@ -89486,7 +89486,7 @@
 +}
 --- a/arch/powerpc/kernel/sys_ppc32.c
 +++ b/arch/powerpc/kernel/sys_ppc32.c
-@@ -368,11 +368,6 @@
+@@ -368,11 +368,6 @@ long compat_sys_execve(unsigned long a0,
  
  	error = compat_do_execve(filename, compat_ptr(a1), compat_ptr(a2), regs);
  
@@ -89518,7 +89518,7 @@
  #include <asm/sections.h>
 --- a/arch/powerpc/kernel/vio.c
 +++ b/arch/powerpc/kernel/vio.c
-@@ -139,7 +139,7 @@
+@@ -139,7 +139,7 @@ static int vio_bus_remove(struct device 
   */
  int vio_register_driver(struct vio_driver *viodrv)
  {
@@ -89527,7 +89527,7 @@
  		viodrv->driver.name);
  
  	/* fill in 'struct driver' fields */
-@@ -184,7 +184,7 @@
+@@ -184,7 +184,7 @@ struct vio_dev *vio_register_device_node
  	/* we need the 'device_type' property, in order to match with drivers */
  	if (of_node->type == NULL) {
  		printk(KERN_WARNING "%s: node %s missing 'device_type'\n",
@@ -89536,7 +89536,7 @@
  				of_node->name ? of_node->name : "<unknown>");
  		return NULL;
  	}
-@@ -192,7 +192,7 @@
+@@ -192,7 +192,7 @@ struct vio_dev *vio_register_device_node
  	unit_address = of_get_property(of_node, "reg", NULL);
  	if (unit_address == NULL) {
  		printk(KERN_WARNING "%s: node %s missing 'reg'\n",
@@ -89545,7 +89545,7 @@
  				of_node->name ? of_node->name : "<unknown>");
  		return NULL;
  	}
-@@ -227,7 +227,7 @@
+@@ -227,7 +227,7 @@ struct vio_dev *vio_register_device_node
  	/* register with generic device framework */
  	if (device_register(&viodev->dev)) {
  		printk(KERN_ERR "%s: failed to register device %s\n",
@@ -89554,7 +89554,7 @@
  		/* XXX free TCE table */
  		kfree(viodev);
  		return NULL;
-@@ -258,7 +258,7 @@
+@@ -258,7 +258,7 @@ static int __init vio_bus_init(void)
  	err = device_register(&vio_bus_device.dev);
  	if (err) {
  		printk(KERN_WARNING "%s: device_register returned %i\n",
@@ -89578,7 +89578,7 @@
  #include <asm-generic/vmlinux.lds.h>
  #include <asm/cache.h>
  
-@@ -33,7 +31,7 @@
+@@ -33,7 +31,7 @@ SECTIONS
   */
  
  	/* Text and gots */
@@ -89587,7 +89587,7 @@
  		ALIGN_FUNCTION();
  		*(.text.head)
  		_text = .;
-@@ -58,7 +56,7 @@
+@@ -58,7 +56,7 @@ SECTIONS
  	RODATA
  
  	/* Exception & bug tables */
@@ -89596,7 +89596,7 @@
  		__start___ex_table = .;
  		*(__ex_table)
  		__stop___ex_table = .;
-@@ -74,7 +72,7 @@
+@@ -74,7 +72,7 @@ SECTIONS
  	. = ALIGN(PAGE_SIZE);
  	__init_begin = .;
  
@@ -89605,7 +89605,7 @@
  		_sinittext = .;
  		INIT_TEXT
  		_einittext = .;
-@@ -83,11 +81,11 @@
+@@ -83,11 +81,11 @@ SECTIONS
  	/* .exit.text is discarded at runtime, not link time,
  	 * to deal with references from __bug_table
  	 */
@@ -89619,7 +89619,7 @@
  		INIT_DATA
  		__vtop_table_begin = .;
  		*(.vtop_fixup);
-@@ -103,19 +101,19 @@
+@@ -103,19 +101,19 @@ SECTIONS
  	}
  
  	. = ALIGN(16);
@@ -89642,7 +89642,7 @@
  		__con_initcall_start = .;
  		*(.con_initcall.init)
  		__con_initcall_end = .;
-@@ -124,14 +122,14 @@
+@@ -124,14 +122,14 @@ SECTIONS
  	SECURITY_INIT
  
  	. = ALIGN(8);
@@ -89659,7 +89659,7 @@
  		__start___fw_ftr_fixup = .;
  		*(__fw_ftr_fixup)
  		__stop___fw_ftr_fixup = .;
-@@ -139,14 +137,14 @@
+@@ -139,14 +137,14 @@ SECTIONS
  #endif
  #ifdef CONFIG_BLK_DEV_INITRD
  	. = ALIGN(PAGE_SIZE);
@@ -89676,7 +89676,7 @@
  		__per_cpu_start = .;
  		*(.data.percpu)
  		*(.data.percpu.shared_aligned)
-@@ -154,7 +152,7 @@
+@@ -154,7 +152,7 @@ SECTIONS
  	}
  
  	. = ALIGN(8);
@@ -89685,7 +89685,7 @@
  		__machine_desc_start = . ;
  		*(.machine.desc)
  		__machine_desc_end = . ;
-@@ -172,25 +170,24 @@
+@@ -172,25 +170,24 @@ SECTIONS
  	_sdata = .;
  
  #ifdef CONFIG_PPC32
@@ -89715,7 +89715,7 @@
  		__toc_start = .;
  		*(.got)
  		*(.toc)
-@@ -207,26 +204,26 @@
+@@ -207,26 +204,26 @@ SECTIONS
  #else
  	. = ALIGN(16384);
  #endif
@@ -89747,7 +89747,7 @@
  		__nosave_begin = .;
  		*(.data.nosave)
  		. = ALIGN(PAGE_SIZE);
-@@ -237,7 +234,7 @@
+@@ -237,7 +234,7 @@ SECTIONS
   * And finally the bss
   */
  
@@ -89758,7 +89758,7 @@
  		*(.dynbss)
 --- a/arch/powerpc/lib/rheap.c
 +++ b/arch/powerpc/lib/rheap.c
-@@ -54,7 +54,7 @@
+@@ -54,7 +54,7 @@ static int grow(rh_info_t * info, int ma
  
  	new_blocks = max_blocks - info->max_blocks;
  
@@ -89767,7 +89767,7 @@
  	if (block == NULL)
  		return -ENOMEM;
  
-@@ -258,7 +258,7 @@
+@@ -258,7 +258,7 @@ rh_info_t *rh_create(unsigned int alignm
  	if ((alignment & (alignment - 1)) != 0)
  		return ERR_PTR(-EINVAL);
  
@@ -89778,7 +89778,7 @@
  
 --- a/arch/powerpc/lib/string.S
 +++ b/arch/powerpc/lib/string.S
-@@ -75,6 +75,20 @@
+@@ -75,6 +75,20 @@ _GLOBAL(strcmp)
  	beq	1b
  	blr
  
@@ -89801,7 +89801,7 @@
  1:	lbzu	r0,1(r4)
 --- a/arch/powerpc/math-emu/fabs.c
 +++ b/arch/powerpc/math-emu/fabs.c
-@@ -9,7 +9,7 @@
+@@ -9,7 +9,7 @@ fabs(u32 *frD, u32 *frB)
  	frD[1] = frB[1];
  
  #ifdef DEBUG
@@ -89812,7 +89812,7 @@
  #endif
 --- a/arch/powerpc/math-emu/fadd.c
 +++ b/arch/powerpc/math-emu/fadd.c
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ fadd(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89823,7 +89823,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fadds.c
 +++ b/arch/powerpc/math-emu/fadds.c
-@@ -15,7 +15,7 @@
+@@ -15,7 +15,7 @@ fadds(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89834,7 +89834,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fcmpo.c
 +++ b/arch/powerpc/math-emu/fcmpo.c
-@@ -15,7 +15,7 @@
+@@ -15,7 +15,7 @@ fcmpo(u32 *ccr, int crfD, void *frA, voi
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89845,7 +89845,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fcmpu.c
 +++ b/arch/powerpc/math-emu/fcmpu.c
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ fcmpu(u32 *ccr, int crfD, void *frA, voi
  	long cmp;
  
  #ifdef DEBUG
@@ -89856,7 +89856,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fctiw.c
 +++ b/arch/powerpc/math-emu/fctiw.c
-@@ -16,7 +16,7 @@
+@@ -16,7 +16,7 @@ fctiw(u32 *frD, void *frB)
  	frD[1] = r;
  
  #ifdef DEBUG
@@ -89867,7 +89867,7 @@
  #endif
 --- a/arch/powerpc/math-emu/fctiwz.c
 +++ b/arch/powerpc/math-emu/fctiwz.c
-@@ -23,7 +23,7 @@
+@@ -23,7 +23,7 @@ fctiwz(u32 *frD, void *frB)
  	__FPU_FPSCR = fpscr;
  
  #ifdef DEBUG
@@ -89878,7 +89878,7 @@
  #endif
 --- a/arch/powerpc/math-emu/fdiv.c
 +++ b/arch/powerpc/math-emu/fdiv.c
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ fdiv(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89887,7 +89887,7 @@
  #endif
  
  	__FP_UNPACK_D(A, frA);
-@@ -28,13 +28,13 @@
+@@ -28,13 +28,13 @@ fdiv(void *frD, void *frA, void *frB)
  	if (A_c == FP_CLS_ZERO && B_c == FP_CLS_ZERO) {
  		ret |= EFLAG_VXZDZ;
  #ifdef DEBUG
@@ -89905,7 +89905,7 @@
  
 --- a/arch/powerpc/math-emu/fdivs.c
 +++ b/arch/powerpc/math-emu/fdivs.c
-@@ -15,7 +15,7 @@
+@@ -15,7 +15,7 @@ fdivs(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89914,7 +89914,7 @@
  #endif
  
  	__FP_UNPACK_D(A, frA);
-@@ -29,13 +29,13 @@
+@@ -29,13 +29,13 @@ fdivs(void *frD, void *frA, void *frB)
  	if (A_c == FP_CLS_ZERO && B_c == FP_CLS_ZERO) {
  		ret |= EFLAG_VXZDZ;
  #ifdef DEBUG
@@ -89932,7 +89932,7 @@
  
 --- a/arch/powerpc/math-emu/fmadd.c
 +++ b/arch/powerpc/math-emu/fmadd.c
-@@ -16,7 +16,7 @@
+@@ -16,7 +16,7 @@ fmadd(void *frD, void *frA, void *frB, v
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89943,7 +89943,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fmadds.c
 +++ b/arch/powerpc/math-emu/fmadds.c
-@@ -17,7 +17,7 @@
+@@ -17,7 +17,7 @@ fmadds(void *frD, void *frA, void *frB, 
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89954,7 +89954,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fmr.c
 +++ b/arch/powerpc/math-emu/fmr.c
-@@ -9,7 +9,7 @@
+@@ -9,7 +9,7 @@ fmr(u32 *frD, u32 *frB)
  	frD[1] = frB[1];
  
  #ifdef DEBUG
@@ -89965,7 +89965,7 @@
  #endif
 --- a/arch/powerpc/math-emu/fmsub.c
 +++ b/arch/powerpc/math-emu/fmsub.c
-@@ -16,7 +16,7 @@
+@@ -16,7 +16,7 @@ fmsub(void *frD, void *frA, void *frB, v
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89976,7 +89976,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fmsubs.c
 +++ b/arch/powerpc/math-emu/fmsubs.c
-@@ -17,7 +17,7 @@
+@@ -17,7 +17,7 @@ fmsubs(void *frD, void *frA, void *frB, 
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89987,7 +89987,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fmul.c
 +++ b/arch/powerpc/math-emu/fmul.c
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ fmul(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -89998,7 +89998,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fmuls.c
 +++ b/arch/powerpc/math-emu/fmuls.c
-@@ -15,7 +15,7 @@
+@@ -15,7 +15,7 @@ fmuls(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90009,7 +90009,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fnabs.c
 +++ b/arch/powerpc/math-emu/fnabs.c
-@@ -9,7 +9,7 @@
+@@ -9,7 +9,7 @@ fnabs(u32 *frD, u32 *frB)
  	frD[1] = frB[1];
  
  #ifdef DEBUG
@@ -90020,7 +90020,7 @@
  #endif
 --- a/arch/powerpc/math-emu/fneg.c
 +++ b/arch/powerpc/math-emu/fneg.c
-@@ -9,7 +9,7 @@
+@@ -9,7 +9,7 @@ fneg(u32 *frD, u32 *frB)
  	frD[1] = frB[1];
  
  #ifdef DEBUG
@@ -90031,7 +90031,7 @@
  #endif
 --- a/arch/powerpc/math-emu/fnmadd.c
 +++ b/arch/powerpc/math-emu/fnmadd.c
-@@ -16,7 +16,7 @@
+@@ -16,7 +16,7 @@ fnmadd(void *frD, void *frA, void *frB, 
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90042,7 +90042,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fnmadds.c
 +++ b/arch/powerpc/math-emu/fnmadds.c
-@@ -17,7 +17,7 @@
+@@ -17,7 +17,7 @@ fnmadds(void *frD, void *frA, void *frB,
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90053,7 +90053,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fnmsub.c
 +++ b/arch/powerpc/math-emu/fnmsub.c
-@@ -16,7 +16,7 @@
+@@ -16,7 +16,7 @@ fnmsub(void *frD, void *frA, void *frB, 
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90064,7 +90064,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fnmsubs.c
 +++ b/arch/powerpc/math-emu/fnmsubs.c
-@@ -17,7 +17,7 @@
+@@ -17,7 +17,7 @@ fnmsubs(void *frD, void *frA, void *frB,
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90075,7 +90075,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fres.c
 +++ b/arch/powerpc/math-emu/fres.c
-@@ -6,7 +6,7 @@
+@@ -6,7 +6,7 @@ int
  fres(void *frD, void *frB)
  {
  #ifdef DEBUG
@@ -90086,7 +90086,7 @@
  }
 --- a/arch/powerpc/math-emu/frsp.c
 +++ b/arch/powerpc/math-emu/frsp.c
-@@ -12,7 +12,7 @@
+@@ -12,7 +12,7 @@ frsp(void *frD, void *frB)
  	FP_DECL_D(B);
  
  #ifdef DEBUG
@@ -90097,7 +90097,7 @@
  	__FP_UNPACK_D(B, frB);
 --- a/arch/powerpc/math-emu/frsqrte.c
 +++ b/arch/powerpc/math-emu/frsqrte.c
-@@ -6,7 +6,7 @@
+@@ -6,7 +6,7 @@ int
  frsqrte(void *frD, void *frB)
  {
  #ifdef DEBUG
@@ -90108,7 +90108,7 @@
  }
 --- a/arch/powerpc/math-emu/fsel.c
 +++ b/arch/powerpc/math-emu/fsel.c
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,7 @@ fsel(u32 *frD, void *frA, u32 *frB, u32 
  	FP_DECL_D(A);
  
  #ifdef DEBUG
@@ -90119,7 +90119,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fsqrt.c
 +++ b/arch/powerpc/math-emu/fsqrt.c
-@@ -13,7 +13,7 @@
+@@ -13,7 +13,7 @@ fsqrt(void *frD, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90130,7 +90130,7 @@
  	__FP_UNPACK_D(B, frB);
 --- a/arch/powerpc/math-emu/fsqrts.c
 +++ b/arch/powerpc/math-emu/fsqrts.c
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ fsqrts(void *frD, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90141,7 +90141,7 @@
  	__FP_UNPACK_D(B, frB);
 --- a/arch/powerpc/math-emu/fsub.c
 +++ b/arch/powerpc/math-emu/fsub.c
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ fsub(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90152,7 +90152,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/fsubs.c
 +++ b/arch/powerpc/math-emu/fsubs.c
-@@ -15,7 +15,7 @@
+@@ -15,7 +15,7 @@ fsubs(void *frD, void *frA, void *frB)
  	int ret = 0;
  
  #ifdef DEBUG
@@ -90163,7 +90163,7 @@
  	__FP_UNPACK_D(A, frA);
 --- a/arch/powerpc/math-emu/lfd.c
 +++ b/arch/powerpc/math-emu/lfd.c
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,7 @@ lfd(void *frD, void *ea)
  	if (copy_from_user(frD, ea, sizeof(double)))
  		return -EFAULT;
  #ifdef DEBUG
@@ -90174,7 +90174,7 @@
  #endif
 --- a/arch/powerpc/math-emu/lfs.c
 +++ b/arch/powerpc/math-emu/lfs.c
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ lfs(void *frD, void *ea)
  	float f;
  
  #ifdef DEBUG
@@ -90185,7 +90185,7 @@
  	if (copy_from_user(&f, ea, sizeof(float)))
 --- a/arch/powerpc/math-emu/mcrfs.c
 +++ b/arch/powerpc/math-emu/mcrfs.c
-@@ -10,7 +10,7 @@
+@@ -10,7 +10,7 @@ mcrfs(u32 *ccr, u32 crfD, u32 crfS)
  	u32 value, clear;
  
  #ifdef DEBUG
@@ -90194,7 +90194,7 @@
  #endif
  
  	clear = 15 << ((7 - crfS) << 2);
-@@ -24,7 +24,7 @@
+@@ -24,7 +24,7 @@ mcrfs(u32 *ccr, u32 crfD, u32 crfS)
  	*ccr |= (value << ((7 - crfD) << 2));
  
  #ifdef DEBUG
@@ -90205,7 +90205,7 @@
  	return 0;
 --- a/arch/powerpc/math-emu/mffs.c
 +++ b/arch/powerpc/math-emu/mffs.c
-@@ -10,7 +10,7 @@
+@@ -10,7 +10,7 @@ mffs(u32 *frD)
  	frD[1] = __FPU_FPSCR;
  
  #ifdef DEBUG
@@ -90216,7 +90216,7 @@
  	return 0;
 --- a/arch/powerpc/math-emu/mtfsb0.c
 +++ b/arch/powerpc/math-emu/mtfsb0.c
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,7 @@ mtfsb0(int crbD)
  		__FPU_FPSCR &= ~(1 << (31 - crbD));
  
  #ifdef DEBUG
@@ -90227,7 +90227,7 @@
  	return 0;
 --- a/arch/powerpc/math-emu/mtfsb1.c
 +++ b/arch/powerpc/math-emu/mtfsb1.c
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,7 @@ mtfsb1(int crbD)
  		__FPU_FPSCR |= (1 << (31 - crbD));
  
  #ifdef DEBUG
@@ -90238,7 +90238,7 @@
  	return 0;
 --- a/arch/powerpc/math-emu/mtfsf.c
 +++ b/arch/powerpc/math-emu/mtfsf.c
-@@ -38,7 +38,7 @@
+@@ -38,7 +38,7 @@ mtfsf(unsigned int FM, u32 *frB)
  	__FPU_FPSCR |= (frB[1] & mask);
  
  #ifdef DEBUG
@@ -90249,7 +90249,7 @@
  	return 0;
 --- a/arch/powerpc/math-emu/mtfsfi.c
 +++ b/arch/powerpc/math-emu/mtfsfi.c
-@@ -16,7 +16,7 @@
+@@ -16,7 +16,7 @@ mtfsfi(unsigned int crfD, unsigned int I
  	__FPU_FPSCR |= (IMM & 0xf) << ((7 - crfD) << 2);
  
  #ifdef DEBUG
@@ -90260,7 +90260,7 @@
  	return 0;
 --- a/arch/powerpc/math-emu/stfd.c
 +++ b/arch/powerpc/math-emu/stfd.c
-@@ -7,7 +7,7 @@
+@@ -7,7 +7,7 @@ stfd(void *frS, void *ea)
  {
  #if 0
  #ifdef DEBUG
@@ -90271,7 +90271,7 @@
  #endif
 --- a/arch/powerpc/math-emu/stfiwx.c
 +++ b/arch/powerpc/math-emu/stfiwx.c
-@@ -6,7 +6,7 @@
+@@ -6,7 +6,7 @@ int
  stfiwx(u32 *frS, void *ea)
  {
  #ifdef DEBUG
@@ -90282,7 +90282,7 @@
  	if (copy_to_user(ea, &frS[1], sizeof(frS[1])))
 --- a/arch/powerpc/math-emu/stfs.c
 +++ b/arch/powerpc/math-emu/stfs.c
-@@ -15,7 +15,7 @@
+@@ -15,7 +15,7 @@ stfs(void *frS, void *ea)
  	int err;
  
  #ifdef DEBUG
@@ -90293,7 +90293,7 @@
  	__FP_UNPACK_D(A, frS);
 --- a/arch/powerpc/mm/40x_mmu.c
 +++ b/arch/powerpc/mm/40x_mmu.c
-@@ -97,7 +97,7 @@
+@@ -97,7 +97,7 @@ unsigned long __init mmu_mapin_ram(void)
  	phys_addr_t p;
  
  	v = KERNELBASE;
@@ -90304,7 +90304,7 @@
  	if (__map_without_ltlbs)
 --- a/arch/powerpc/mm/44x_mmu.c
 +++ b/arch/powerpc/mm/44x_mmu.c
-@@ -67,7 +67,7 @@
+@@ -67,7 +67,7 @@ unsigned long __init mmu_mapin_ram(void)
  
  	/* Pin in enough TLBs to cover any lowmem not covered by the
  	 * initial 256M mapping established in head_44x.S */
@@ -90315,7 +90315,7 @@
  
 --- a/arch/powerpc/mm/Makefile
 +++ b/arch/powerpc/mm/Makefile
-@@ -6,7 +6,7 @@
+@@ -6,7 +6,7 @@ ifeq ($(CONFIG_PPC64),y)
  EXTRA_CFLAGS	+= -mno-minimal-toc
  endif
  
@@ -90347,7 +90347,7 @@
  
  #define NUM_TLBCAMS	(16)
  
-@@ -165,15 +162,15 @@
+@@ -165,15 +162,15 @@ void invalidate_tlbcam_entry(int index)
  void __init cam_mapin_ram(unsigned long cam0, unsigned long cam1,
  		unsigned long cam2)
  {
@@ -90366,7 +90366,7 @@
  	}
  }
  
-@@ -196,35 +193,32 @@
+@@ -196,35 +193,32 @@ unsigned long __init mmu_mapin_ram(void)
  void __init
  adjust_total_lowmem(void)
  {
@@ -90418,7 +90418,7 @@
  		ram -= __cam2;
  	}
  
-@@ -232,6 +226,6 @@
+@@ -232,6 +226,6 @@ adjust_total_lowmem(void)
  			" CAM2=%ldMb residual: %ldMb\n",
  			__cam0 >> 20, __cam1 >> 20, __cam2 >> 20,
  			(total_lowmem - __cam0 - __cam1 - __cam2) >> 20);
@@ -90446,7 +90446,7 @@
  #include <asm/abs_addr.h>
  #include <asm/tlbflush.h>
  #include <asm/io.h>
-@@ -191,6 +192,29 @@
+@@ -191,6 +192,29 @@ int htab_bolt_mapping(unsigned long vsta
  	return ret < 0 ? ret : 0;
  }
  
@@ -90476,7 +90476,7 @@
  static int __init htab_dt_scan_seg_sizes(unsigned long node,
  					 const char *uname, int depth,
  					 void *data)
-@@ -434,6 +458,12 @@
+@@ -434,6 +458,12 @@ void create_section_mapping(unsigned lon
  			_PAGE_ACCESSED | _PAGE_DIRTY | _PAGE_COHERENT | PP_RWXX,
  			mmu_linear_psize, mmu_kernel_ssize));
  }
@@ -90507,7 +90507,7 @@
  #include <asm/sections.h>
  
  #include "mmu_decl.h"
-@@ -59,8 +59,8 @@
+@@ -59,8 +59,8 @@ DEFINE_PER_CPU(struct mmu_gather, mmu_ga
  unsigned long total_memory;
  unsigned long total_lowmem;
  
@@ -90518,7 +90518,7 @@
  
  int boot_mapsize;
  #ifdef CONFIG_PPC_PMAC
-@@ -95,10 +95,10 @@
+@@ -95,10 +95,10 @@ int __map_without_ltlbs;
  unsigned long __max_low_memory = MAX_LOW_MEM;
  
  /*
@@ -90531,7 +90531,7 @@
  
  /*
   * Check for command-line options that affect what MMU_init will do.
-@@ -131,10 +131,10 @@
+@@ -131,10 +131,10 @@ void __init MMU_init(void)
  
  	/* 601 can only access 16MB at the moment */
  	if (PVR_VER(mfspr(SPRN_PVR)) == 1)
@@ -90544,7 +90544,7 @@
  
  	/* parse args from command line */
  	MMU_setup();
-@@ -145,8 +145,8 @@
+@@ -145,8 +145,8 @@ void __init MMU_init(void)
  		printk(KERN_WARNING "Only using first contiguous memory region");
  	}
  
@@ -90555,7 +90555,7 @@
  
  #ifdef CONFIG_FSL_BOOKE
  	/* Freescale Book-E parts expect lowmem to be mapped by fixed TLB
-@@ -157,9 +157,10 @@
+@@ -157,9 +157,10 @@ void __init MMU_init(void)
  
  	if (total_lowmem > __max_low_memory) {
  		total_lowmem = __max_low_memory;
@@ -90567,7 +90567,7 @@
  		lmb_analyze();
  #endif /* CONFIG_HIGHMEM */
  	}
-@@ -184,8 +185,6 @@
+@@ -184,8 +185,6 @@ void __init MMU_init(void)
  	/* Map in I/O resources */
  	if (ppc_md.progress)
  		ppc_md.progress("MMU:setio", 0x302);
@@ -90576,7 +90576,7 @@
  
  	/* Initialize the context management stuff */
  	mmu_context_init();
-@@ -208,7 +207,7 @@
+@@ -208,7 +207,7 @@ void __init *early_get_page(void)
  		p = alloc_bootmem_pages(PAGE_SIZE);
  	} else {
  		p = __va(lmb_alloc_base(PAGE_SIZE, PAGE_SIZE,
@@ -90585,7 +90585,7 @@
  	}
  	return p;
  }
-@@ -276,7 +275,7 @@
+@@ -276,7 +275,7 @@ static int __init setup_kcore(void)
  
  		kcore_mem = kmalloc(sizeof(struct kcore_list), GFP_ATOMIC);
  		if (!kcore_mem)
@@ -90619,7 +90619,7 @@
  
  void free_initmem(void)
  {
-@@ -122,7 +121,7 @@
+@@ -122,7 +121,7 @@ static int __init setup_kcore(void)
  		/* GFP_ATOMIC to avoid might_sleep warnings during boot */
  		kcore_mem = kmalloc(sizeof(struct kcore_list), GFP_ATOMIC);
  		if (!kcore_mem)
@@ -91006,7 +91006,7 @@
  #include <asm/sections.h>
  #include <asm/vdso.h>
  
-@@ -111,7 +111,7 @@
+@@ -111,7 +111,7 @@ int memory_add_physaddr_to_nid(u64 start
  }
  #endif
  
@@ -91015,7 +91015,7 @@
  {
  	struct pglist_data *pgdata;
  	struct zone *zone;
-@@ -175,7 +175,6 @@
+@@ -175,7 +175,6 @@ void show_mem(void)
  
  	printk("Mem-info:\n");
  	show_free_areas();
@@ -91023,7 +91023,7 @@
  	for_each_online_pgdat(pgdat) {
  		unsigned long flags;
  		pgdat_resize_lock(pgdat, &flags);
-@@ -217,9 +216,11 @@
+@@ -217,9 +216,11 @@ void __init do_init_bootmem(void)
  	unsigned long total_pages;
  	int boot_mapsize;
  
@@ -91036,7 +91036,7 @@
  #endif
  
  	/*
-@@ -245,18 +246,18 @@
+@@ -245,18 +246,18 @@ void __init do_init_bootmem(void)
  	 * present.
  	 */
  #ifdef CONFIG_HIGHMEM
@@ -91059,7 +91059,7 @@
  				      lmb.reserved.region[i].base;
  			reserve_bootmem(lmb.reserved.region[i].base,
  					adjusted_size, BOOTMEM_DEFAULT);
-@@ -326,7 +327,7 @@
+@@ -326,7 +327,7 @@ void __init paging_init(void)
  	       (top_of_ram - total_ram) >> 20);
  	memset(max_zone_pfns, 0, sizeof(max_zone_pfns));
  #ifdef CONFIG_HIGHMEM
@@ -91068,7 +91068,7 @@
  	max_zone_pfns[ZONE_HIGHMEM] = top_of_ram >> PAGE_SHIFT;
  #else
  	max_zone_pfns[ZONE_DMA] = top_of_ram >> PAGE_SHIFT;
-@@ -381,7 +382,7 @@
+@@ -381,7 +382,7 @@ void __init mem_init(void)
  	{
  		unsigned long pfn, highmem_mapnr;
  
@@ -91079,7 +91079,7 @@
  			if (lmb_is_reserved(pfn << PAGE_SHIFT))
 --- a/arch/powerpc/mm/mmu_decl.h
 +++ b/arch/powerpc/mm/mmu_decl.h
-@@ -48,9 +48,11 @@
+@@ -48,9 +48,11 @@ extern unsigned int num_tlbcam_entries;
  
  extern unsigned long ioremap_bot;
  extern unsigned long __max_low_memory;
@@ -91107,7 +91107,7 @@
  
 --- a/arch/powerpc/mm/pgtable_32.c
 +++ b/arch/powerpc/mm/pgtable_32.c
-@@ -281,12 +281,13 @@
+@@ -281,12 +281,13 @@ int map_page(unsigned long va, phys_addr
   */
  void __init mapin_ram(void)
  {
@@ -91138,7 +91138,7 @@
  
  #include "mmu_decl.h"
  
-@@ -82,7 +82,6 @@
+@@ -82,7 +82,6 @@ unsigned long __init mmu_mapin_ram(void)
  #else
  	unsigned long tot, bl, done;
  	unsigned long max_size = (256<<20);
@@ -91146,7 +91146,7 @@
  
  	if (__map_without_bats) {
  		printk(KERN_DEBUG "RAM mapped without BATs\n");
-@@ -93,19 +92,13 @@
+@@ -93,19 +92,13 @@ unsigned long __init mmu_mapin_ram(void)
  
  	/* Make sure we don't map a block larger than the
  	   smallest alignment of the physical address. */
@@ -91167,7 +91167,7 @@
  	done = (unsigned long)bat_addrs[2].limit - KERNELBASE + 1;
  	if ((done < tot) && !bat_addrs[3].limit) {
  		/* use BAT3 to cover a bit more */
-@@ -113,7 +106,7 @@
+@@ -113,7 +106,7 @@ unsigned long __init mmu_mapin_ram(void)
  		for (bl = 128<<10; bl < max_size; bl <<= 1)
  			if (bl * 2 > tot)
  				break;
@@ -91176,7 +91176,7 @@
  		done = (unsigned long)bat_addrs[3].limit - KERNELBASE + 1;
  	}
  
-@@ -240,7 +233,7 @@
+@@ -240,7 +233,7 @@ void __init MMU_init_hw(void)
  	 */
  	if ( ppc_md.progress ) ppc_md.progress("hash:find piece", 0x322);
  	Hash = __va(lmb_alloc_base(Hash_size, Hash_size,
@@ -91205,7 +91205,7 @@
  #include <asm/iseries/hv_call.h>
 --- a/arch/powerpc/oprofile/cell/spu_task_sync.c
 +++ b/arch/powerpc/oprofile/cell/spu_task_sync.c
-@@ -68,7 +68,7 @@
+@@ -68,7 +68,7 @@ static struct cached_info *get_cached_in
  	if (spu_num >= num_spu_nodes) {
  		printk(KERN_ERR "SPU_PROF: "
  		       "%s, line %d: Invalid index %d into spu info cache\n",
@@ -91214,7 +91214,7 @@
  		ret_info = NULL;
  		goto out;
  	}
-@@ -115,7 +115,7 @@
+@@ -115,7 +115,7 @@ prepare_cached_spu_info(struct spu *spu,
  	if (!info) {
  		printk(KERN_ERR "SPU_PROF: "
  		       "%s, line %d: create vma_map failed\n",
@@ -91223,7 +91223,7 @@
  		retval = -ENOMEM;
  		goto err_alloc;
  	}
-@@ -123,7 +123,7 @@
+@@ -123,7 +123,7 @@ prepare_cached_spu_info(struct spu *spu,
  	if (!new_map) {
  		printk(KERN_ERR "SPU_PROF: "
  		       "%s, line %d: create vma_map failed\n",
@@ -91232,7 +91232,7 @@
  		retval = -ENOMEM;
  		goto err_alloc;
  	}
-@@ -171,7 +171,7 @@
+@@ -171,7 +171,7 @@ static int release_cached_info(int spu_i
  			printk(KERN_ERR "SPU_PROF: "
  				"%s, line %d: "
  				"Invalid index %d into spu info cache\n",
@@ -91241,7 +91241,7 @@
  			goto out;
  		}
  		end = spu_index + 1;
-@@ -273,7 +273,7 @@
+@@ -273,7 +273,7 @@ fail_no_image_cookie:
  
  	printk(KERN_ERR "SPU_PROF: "
  		"%s, line %d: Cannot find dcookie for SPU binary\n",
@@ -91250,7 +91250,7 @@
  	goto out;
  }
  
-@@ -467,7 +467,7 @@
+@@ -467,7 +467,7 @@ int spu_sync_stop(void)
  	if (ret) {
  		printk(KERN_ERR "SPU_PROF: "
  			"%s, line %d: spu_switch_event_unregister returned %d\n",
@@ -91261,7 +91261,7 @@
  
 --- a/arch/powerpc/oprofile/cell/vma_map.c
 +++ b/arch/powerpc/oprofile/cell/vma_map.c
-@@ -72,7 +72,7 @@
+@@ -72,7 +72,7 @@ vma_map_add(struct vma_to_fileoffset_map
  		kzalloc(sizeof(struct vma_to_fileoffset_map), GFP_KERNEL);
  	if (!new) {
  		printk(KERN_ERR "SPU_PROF: %s, line %d: malloc failed\n",
@@ -91270,7 +91270,7 @@
  		vma_map_free(map);
  		return NULL;
  	}
-@@ -134,19 +134,19 @@
+@@ -134,19 +134,19 @@ struct vma_to_fileoffset_map *create_vma
  	if (memcmp(ehdr.e_ident, expected, EI_PAD) != 0) {
  		printk(KERN_ERR "SPU_PROF: "
  		       "%s, line %d: Unexpected e_ident parsing SPU ELF\n",
@@ -91293,7 +91293,7 @@
  		goto fail;
  	}
  	phdr_start = spu_elf_start + ehdr.e_phoff;
-@@ -232,7 +232,7 @@
+@@ -232,7 +232,7 @@ struct vma_to_fileoffset_map *create_vma
  	if (overlay_tbl_offset < 0) {
  		printk(KERN_ERR "SPU_PROF: "
  		       "%s, line %d: Error finding SPU overlay table\n",
@@ -91304,7 +91304,7 @@
  	ovly_table = spu_elf_start + overlay_tbl_offset;
 --- a/arch/powerpc/oprofile/op_model_cell.c
 +++ b/arch/powerpc/oprofile/op_model_cell.c
-@@ -216,7 +216,7 @@
+@@ -216,7 +216,7 @@ static void pm_rtas_reset_signals(u32 no
  		 * failure to stop OProfile.
  		 */
  		printk(KERN_WARNING "%s: rtas returned: %d\n",
@@ -91313,7 +91313,7 @@
  }
  
  static int pm_rtas_activate_signals(u32 node, u32 count)
-@@ -255,7 +255,7 @@
+@@ -255,7 +255,7 @@ static int pm_rtas_activate_signals(u32 
  
  		if (unlikely(ret)) {
  			printk(KERN_WARNING "%s: rtas returned: %d\n",
@@ -91322,7 +91322,7 @@
  			return -EIO;
  		}
  	}
-@@ -560,7 +560,7 @@
+@@ -560,7 +560,7 @@ static int cell_reg_setup(struct op_coun
  		if (unlikely(spu_rtas_token == RTAS_UNKNOWN_SERVICE)) {
  			printk(KERN_ERR
  			       "%s: rtas token ibm,cbe-spu-perftools unknown\n",
@@ -91331,7 +91331,7 @@
  			return -EIO;
  		}
  	}
-@@ -576,7 +576,7 @@
+@@ -576,7 +576,7 @@ static int cell_reg_setup(struct op_coun
  	if (unlikely(pm_rtas_token == RTAS_UNKNOWN_SERVICE)) {
  		printk(KERN_ERR
  		       "%s: rtas token ibm,cbe-perftools unknown\n",
@@ -91340,7 +91340,7 @@
  		return -EIO;
  	}
  
-@@ -853,7 +853,7 @@
+@@ -853,7 +853,7 @@ static int pm_rtas_activate_spu_profilin
  
  	if (unlikely(ret)) {
  		printk(KERN_WARNING "%s: rtas returned: %d\n",
@@ -91349,7 +91349,7 @@
  		return -EIO;
  	}
  
-@@ -949,7 +949,7 @@
+@@ -949,7 +949,7 @@ static int cell_global_start_spu(struct 
  		if (unlikely(ret != 0)) {
  			printk(KERN_ERR
  			       "%s: rtas call ibm,cbe-spu-perftools failed, return = %d\n",
@@ -91358,7 +91358,7 @@
  			rtas_error = -EIO;
  			goto out;
  		}
-@@ -1061,7 +1061,7 @@
+@@ -1061,7 +1061,7 @@ static void cell_global_stop_spu(void)
  		if (unlikely(rtn_value != 0)) {
  			printk(KERN_ERR
  			       "%s: rtas call ibm,cbe-spu-perftools failed, return = %d\n",
@@ -91377,7 +91377,7 @@
  
  static struct device_node *bcsr_node;
  static void __iomem *bcsr_regs;
-@@ -119,5 +120,6 @@
+@@ -119,5 +120,6 @@ define_machine(ep405) {
  	.progress		= udbg_progress,
  	.init_IRQ		= uic_init_tree,
  	.get_irq		= uic_get_irq,
@@ -91403,7 +91403,7 @@
  
  static __initdata struct of_device_id kilauea_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -54,5 +55,6 @@
+@@ -54,5 +55,6 @@ define_machine(kilauea) {
  	.progress 			= udbg_progress,
  	.init_IRQ 			= uic_init_tree,
  	.get_irq 			= uic_get_irq,
@@ -91420,7 +91420,7 @@
  
  static __initdata struct of_device_id makalu_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -54,5 +55,6 @@
+@@ -54,5 +55,6 @@ define_machine(makalu) {
  	.progress 			= udbg_progress,
  	.init_IRQ 			= uic_init_tree,
  	.get_irq 			= uic_get_irq,
@@ -91437,7 +91437,7 @@
  
  static struct of_device_id xilinx_of_bus_ids[] __initdata = {
  	{ .compatible = "xlnx,plb-v46-1.00.a", },
-@@ -48,5 +49,6 @@
+@@ -48,5 +49,6 @@ define_machine(virtex) {
  	.probe			= virtex_probe,
  	.init_IRQ		= xilinx_intc_init_tree,
  	.get_irq		= xilinx_intc_get_irq,
@@ -91454,7 +91454,7 @@
  
  static __initdata struct of_device_id walnut_of_bus[] = {
  	{ .compatible = "ibm,plb3", },
-@@ -61,5 +62,6 @@
+@@ -61,5 +62,6 @@ define_machine(walnut) {
  	.progress		= udbg_progress,
  	.init_IRQ		= uic_init_tree,
  	.get_irq		= uic_get_irq,
@@ -91473,7 +91473,7 @@
  #endif /* __POWERPC_PLATFORMS_44X_44X_H */
 --- a/arch/powerpc/platforms/44x/Kconfig
 +++ b/arch/powerpc/platforms/44x/Kconfig
-@@ -67,6 +67,25 @@
+@@ -67,6 +67,25 @@ config WARP
  	  See http://www.pikatechnologies.com/ and follow the "PIKA for Computer
  	  Telephony Developers" link for more information.
  
@@ -91499,7 +91499,7 @@
  #config LUAN
  #	bool "Luan"
  #	depends on 44x
-@@ -122,6 +141,14 @@
+@@ -122,6 +141,14 @@ config 440SPe
  	bool
  	select IBM_NEW_EMAC_EMAC4
  
@@ -91541,7 +91541,7 @@
  
  static __initdata struct of_device_id bamboo_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -53,11 +52,11 @@
+@@ -53,11 +52,11 @@ static int __init bamboo_probe(void)
  }
  
  define_machine(bamboo) {
@@ -91637,7 +91637,7 @@
  
  static __initdata struct of_device_id ebony_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -66,6 +65,6 @@
+@@ -66,6 +65,6 @@ define_machine(ebony) {
  	.progress		= udbg_progress,
  	.init_IRQ		= uic_init_tree,
  	.get_irq		= uic_get_irq,
@@ -91727,7 +91727,7 @@
  
  static __initdata struct of_device_id katmai_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -58,6 +57,6 @@
+@@ -58,6 +57,6 @@ define_machine(katmai) {
  	.progress 			= udbg_progress,
  	.init_IRQ 			= uic_init_tree,
  	.get_irq 			= uic_get_irq,
@@ -91737,7 +91737,7 @@
  };
 --- a/arch/powerpc/platforms/44x/misc_44x.S
 +++ b/arch/powerpc/platforms/44x/misc_44x.S
-@@ -44,14 +44,3 @@
+@@ -44,14 +44,3 @@ _GLOBAL(as1_writeb)
  	sync
  	isync
  	blr
@@ -91763,7 +91763,7 @@
  
  static __initdata struct of_device_id rainier_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -57,6 +57,6 @@
+@@ -57,6 +57,6 @@ define_machine(rainier) {
  	.progress 			= udbg_progress,
  	.init_IRQ 			= uic_init_tree,
  	.get_irq 			= uic_get_irq,
@@ -91782,7 +91782,7 @@
  
  static __initdata struct of_device_id sequoia_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -58,6 +58,6 @@
+@@ -58,6 +58,6 @@ define_machine(sequoia) {
  	.progress 			= udbg_progress,
  	.init_IRQ 			= uic_init_tree,
  	.get_irq 			= uic_get_irq,
@@ -91802,7 +91802,7 @@
  
  static __initdata struct of_device_id taishan_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -68,6 +67,6 @@
+@@ -68,6 +67,6 @@ define_machine(taishan) {
  	.progress		= udbg_progress,
  	.init_IRQ		= uic_init_tree,
  	.get_irq		= uic_get_irq,
@@ -91820,7 +91820,7 @@
  
  #ifdef CONFIG_MTD_NAND_NDFC
  
-@@ -100,6 +101,6 @@
+@@ -100,6 +101,6 @@ static int warp_setup_nand_flash(void)
  
  	return 0;
  }
@@ -91841,7 +91841,7 @@
  
  static __initdata struct of_device_id warp_of_bus[] = {
  	{ .compatible = "ibm,plb4", },
-@@ -49,7 +47,7 @@
+@@ -49,7 +47,7 @@ define_machine(warp) {
  	.progress 	= udbg_progress,
  	.init_IRQ 	= uic_init_tree,
  	.get_irq 	= uic_get_irq,
@@ -91852,7 +91852,7 @@
  
 --- a/arch/powerpc/platforms/52xx/lite5200.c
 +++ b/arch/powerpc/platforms/52xx/lite5200.c
-@@ -63,7 +63,7 @@
+@@ -63,7 +63,7 @@ lite5200_fix_clock_config(void)
  	of_node_put(np);
  	if (!cdm) {
  		printk(KERN_ERR "%s() failed; expect abnormal behaviour\n",
@@ -91861,7 +91861,7 @@
  		return;
  	}
  
-@@ -98,7 +98,7 @@
+@@ -98,7 +98,7 @@ lite5200_fix_port_config(void)
  	of_node_put(np);
  	if (!gpio) {
  		printk(KERN_ERR "%s() failed. expect abnormal behavior\n",
@@ -91872,7 +91872,7 @@
  
 --- a/arch/powerpc/platforms/82xx/Kconfig
 +++ b/arch/powerpc/platforms/82xx/Kconfig
-@@ -11,7 +11,6 @@
+@@ -11,7 +11,6 @@ config MPC8272_ADS
  	select 8260
  	select FSL_SOC
  	select PQ2_ADS_PCI_PIC if PCI
@@ -91880,7 +91880,7 @@
  	help
  	  This option enables support for the MPC8272 ADS board
  
-@@ -22,7 +21,6 @@
+@@ -22,7 +21,6 @@ config PQ2FADS
  	select 8260
  	select FSL_SOC
  	select PQ2_ADS_PCI_PIC if PCI
@@ -91888,7 +91888,7 @@
  	help
  	  This option enables support for the PQ2FADS board
  
-@@ -31,7 +29,6 @@
+@@ -31,7 +29,6 @@ config EP8248E
  	select 8272
  	select 8260
  	select FSL_SOC
@@ -91898,7 +91898,7 @@
  	  This enables support for the Embedded Planet EP8248E board.
 --- a/arch/powerpc/platforms/83xx/mpc837x_rdb.c
 +++ b/arch/powerpc/platforms/83xx/mpc837x_rdb.c
-@@ -46,6 +46,7 @@
+@@ -46,6 +46,7 @@ static void __init mpc837x_rdb_setup_arc
  static struct of_device_id mpc837x_ids[] = {
  	{ .type = "soc", },
  	{ .compatible = "soc", },
@@ -91926,7 +91926,7 @@
  #define CONTROL_OTG_PORT           0x00000020
 --- a/arch/powerpc/platforms/83xx/usb.c
 +++ b/arch/powerpc/platforms/83xx/usb.c
-@@ -129,7 +129,7 @@
+@@ -129,7 +129,7 @@ int mpc831x_usb_cfg(void)
  	if (immr_node && of_device_is_compatible(immr_node, "fsl,mpc8315-immr"))
  		clrsetbits_be32(immap + MPC83XX_SCCR_OFFS,
  		                MPC8315_SCCR_USB_MASK,
@@ -91935,7 +91935,7 @@
  	else
  		clrsetbits_be32(immap + MPC83XX_SCCR_OFFS,
  		                MPC83XX_SCCR_USB_MASK,
-@@ -164,9 +164,15 @@
+@@ -164,9 +164,15 @@ int mpc831x_usb_cfg(void)
  	/* Using on-chip PHY */
  	if (prop && (!strcmp(prop, "utmi_wide") ||
  		     !strcmp(prop, "utmi"))) {
@@ -91955,7 +91955,7 @@
  		/* Set PHY_CLK_SEL to ULPI */
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
-@@ -19,7 +19,6 @@
+@@ -19,7 +19,6 @@ config MPC8540_ADS
  config MPC8560_ADS
  	bool "Freescale MPC8560 ADS"
  	select DEFAULT_UIMAGE
@@ -91963,7 +91963,7 @@
  	select CPM2
  	help
  	  This option enables support for the MPC 8560 ADS board
-@@ -46,6 +45,12 @@
+@@ -46,6 +45,12 @@ config MPC85xx_DS
  	help
  	  This option enables support for the MPC85xx DS (MPC8544 DS) board
  
@@ -91976,7 +91976,7 @@
  config STX_GP3
  	bool "Silicon Turnkey Express GP3"
  	help
-@@ -53,14 +58,12 @@
+@@ -53,14 +58,12 @@ config STX_GP3
  	  board.
  	select CPM2
  	select DEFAULT_UIMAGE
@@ -91991,7 +91991,7 @@
  	select TQM85xx
  
  config TQM8541
-@@ -68,7 +71,6 @@
+@@ -68,7 +71,6 @@ config TQM8541
  	help
  	  This option enables support for the TQ Components TQM8541 board.
  	select DEFAULT_UIMAGE
@@ -91999,7 +91999,7 @@
  	select TQM85xx
  	select CPM2
  
-@@ -77,7 +79,6 @@
+@@ -77,7 +79,6 @@ config TQM8555
  	help
  	  This option enables support for the TQ Components TQM8555 board.
  	select DEFAULT_UIMAGE
@@ -92007,7 +92007,7 @@
  	select TQM85xx
  	select CPM2
  
-@@ -86,7 +87,6 @@
+@@ -86,7 +87,6 @@ config TQM8560
  	help
  	  This option enables support for the TQ Components TQM8560 board.
  	select DEFAULT_UIMAGE
@@ -92015,7 +92015,7 @@
  	select TQM85xx
  	select CPM2
  
-@@ -99,7 +99,6 @@
+@@ -99,7 +99,6 @@ config SBC8548
  config SBC8560
  	bool "Wind River SBC8560"
  	select DEFAULT_UIMAGE
@@ -92025,7 +92025,7 @@
  
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
-@@ -10,3 +10,4 @@
+@@ -10,3 +10,4 @@ obj-$(CONFIG_STX_GP3)	  += stx_gp3.o
  obj-$(CONFIG_TQM85xx)	  += tqm85xx.o
  obj-$(CONFIG_SBC8560)     += sbc8560.o
  obj-$(CONFIG_SBC8548)     += sbc8548.o
@@ -92292,7 +92292,7 @@
 +};
 --- a/arch/powerpc/platforms/85xx/mpc85xx_ads.c
 +++ b/arch/powerpc/platforms/85xx/mpc85xx_ads.c
-@@ -165,7 +165,7 @@
+@@ -165,7 +165,7 @@ static void __init init_ioports(void)
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(mpc8560_ads_pins); i++) {
@@ -92320,7 +92320,7 @@
  #else
  #define DBG(fmt, args...)
  #endif
-@@ -183,6 +184,18 @@
+@@ -183,6 +184,18 @@ static int __init mpc8544_ds_probe(void)
  	}
  }
  
@@ -92341,7 +92341,7 @@
   */
 --- a/arch/powerpc/platforms/86xx/Kconfig
 +++ b/arch/powerpc/platforms/86xx/Kconfig
-@@ -11,6 +11,12 @@
+@@ -11,6 +11,12 @@ config MPC8641_HPCN
  	help
  	  This option enables support for the MPC8641 HPCN board.
  
@@ -92354,7 +92354,7 @@
  config MPC8610_HPCD
  	bool "Freescale MPC8610 HPCD"
  	select DEFAULT_UIMAGE
-@@ -24,7 +30,7 @@
+@@ -24,7 +30,7 @@ config MPC8641
  	select FSL_PCI if PCI
  	select PPC_UDBG_16550
  	select MPIC
@@ -92373,7 +92373,7 @@
  obj-$(CONFIG_MPC8610_HPCD)	+= mpc8610_hpcd.o
 --- a/arch/powerpc/platforms/86xx/mpc8610_hpcd.c
 +++ b/arch/powerpc/platforms/86xx/mpc8610_hpcd.c
-@@ -52,7 +52,7 @@
+@@ -52,7 +52,7 @@ static int __init mpc8610_declare_of_pla
  }
  machine_device_initcall(mpc86xx_hpcd, mpc8610_declare_of_platform_devices);
  
@@ -92382,7 +92382,7 @@
  mpc86xx_hpcd_init_irq(void)
  {
  	struct mpic *mpic1;
-@@ -200,7 +200,7 @@
+@@ -200,7 +200,7 @@ static int __init mpc86xx_hpcd_probe(voi
  	return 0;
  }
  
@@ -92393,7 +92393,7 @@
  	unsigned int temp;
 --- a/arch/powerpc/platforms/86xx/mpc86xx_hpcn.c
 +++ b/arch/powerpc/platforms/86xx/mpc86xx_hpcn.c
-@@ -55,7 +55,7 @@
+@@ -55,7 +55,7 @@ static void mpc86xx_8259_cascade(unsigne
  }
  #endif	/* CONFIG_PCI */
  
@@ -92402,7 +92402,7 @@
  mpc86xx_hpcn_init_irq(void)
  {
  	struct mpic *mpic1;
-@@ -162,7 +162,7 @@
+@@ -162,7 +162,7 @@ mpc86xx_hpcn_setup_arch(void)
  }
  
  
@@ -92411,7 +92411,7 @@
  mpc86xx_hpcn_show_cpuinfo(struct seq_file *m)
  {
  	struct device_node *root;
-@@ -190,13 +190,19 @@
+@@ -190,13 +190,19 @@ static int __init mpc86xx_hpcn_probe(voi
  {
  	unsigned long root = of_get_flat_dt_root();
  
@@ -92602,7 +92602,7 @@
 +};
 --- a/arch/powerpc/platforms/8xx/Kconfig
 +++ b/arch/powerpc/platforms/8xx/Kconfig
-@@ -18,7 +18,6 @@
+@@ -18,7 +18,6 @@ config MPC8XXFADS
  config MPC86XADS
  	bool "MPC86XADS"
  	select CPM1
@@ -92610,7 +92610,7 @@
  	help
  	  MPC86x Application Development System by Freescale Semiconductor.
  	  The MPC86xADS is meant to serve as a platform for s/w and h/w
-@@ -27,7 +26,6 @@
+@@ -27,7 +26,6 @@ config MPC86XADS
  config MPC885ADS
  	bool "MPC885ADS"
  	select CPM1
@@ -92618,7 +92618,7 @@
  	help
  	  Freescale Semiconductor MPC885 Application Development System (ADS).
  	  Also known as DUET.
-@@ -37,7 +35,6 @@
+@@ -37,7 +35,6 @@ config MPC885ADS
  config PPC_EP88XC
  	bool "Embedded Planet EP88xC (a.k.a. CWH-PPC-885XN-VE)"
  	select CPM1
@@ -92626,7 +92626,7 @@
  	help
  	  This enables support for the Embedded Planet EP88xC board.
  
-@@ -47,7 +44,6 @@
+@@ -47,7 +44,6 @@ config PPC_EP88XC
  config PPC_ADDER875
  	bool "Analogue & Micro Adder 875"
  	select CPM1
@@ -92636,7 +92636,7 @@
  	  This enables support for the Analogue & Micro Adder 875
 --- a/arch/powerpc/platforms/8xx/m8xx_setup.c
 +++ b/arch/powerpc/platforms/8xx/m8xx_setup.c
-@@ -111,17 +111,12 @@
+@@ -111,17 +111,12 @@ void __init mpc8xx_calibrate_decr(void)
  
  	/* Processor frequency is MHz.
  	 */
@@ -92657,7 +92657,7 @@
  	/* Perform some more timer/timebase initialization.  This used
 --- a/arch/powerpc/platforms/Kconfig
 +++ b/arch/powerpc/platforms/Kconfig
-@@ -290,13 +290,7 @@
+@@ -290,13 +290,7 @@ config CPM2
  config PPC_CPM_NEW_BINDING
  	bool
  	depends on CPM1 || CPM2
@@ -92674,7 +92674,7 @@
  	tristate "Axon DDR2 memory device driver"
 --- a/arch/powerpc/platforms/Kconfig.cputype
 +++ b/arch/powerpc/platforms/Kconfig.cputype
-@@ -41,11 +41,13 @@
+@@ -41,11 +41,13 @@ config 40x
  	bool "AMCC 40x"
  	select PPC_DCR_NATIVE
  	select PPC_UDBG_16550
@@ -92705,7 +92705,7 @@
  #include <asm/firmware.h>
  #include <asm/cell-regs.h>
  
-@@ -316,7 +316,7 @@
+@@ -316,7 +316,7 @@ static void cell_iommu_setup_stab(struct
  	segments = max(dbase + dsize, fbase + fsize) >> IO_SEGMENT_SHIFT;
  
  	pr_debug("%s: iommu[%d]: segments: %lu\n",
@@ -92714,7 +92714,7 @@
  
  	/* set up the segment table */
  	stab_size = segments * sizeof(unsigned long);
-@@ -343,7 +343,7 @@
+@@ -343,7 +343,7 @@ static unsigned long *cell_iommu_alloc_p
  				(1 << 12) / sizeof(unsigned long));
  
  	ptab_size = segments * pages_per_segment * sizeof(unsigned long);
@@ -92723,7 +92723,7 @@
  			iommu->nid, ptab_size, get_order(ptab_size));
  	page = alloc_pages_node(iommu->nid, GFP_KERNEL, get_order(ptab_size));
  	BUG_ON(!page);
-@@ -355,7 +355,7 @@
+@@ -355,7 +355,7 @@ static unsigned long *cell_iommu_alloc_p
  	n_pte_pages = (pages_per_segment * sizeof(unsigned long)) >> 12;
  
  	pr_debug("%s: iommu[%d]: stab at %p, ptab at %p, n_pte_pages: %lu\n",
@@ -92732,7 +92732,7 @@
  			n_pte_pages);
  
  	/* initialise the STEs */
-@@ -394,7 +394,7 @@
+@@ -394,7 +394,7 @@ static void cell_iommu_enable_hardware(s
  
  	if (cell_iommu_find_ioc(iommu->nid, &xlate_base))
  		panic("%s: missing IOC register mappings for node %d\n",
@@ -92743,7 +92743,7 @@
  	iommu->cmd_regs = iommu->xlate_regs + IOC_IOCmd_Offset;
 --- a/arch/powerpc/platforms/cell/pervasive.c
 +++ b/arch/powerpc/platforms/cell/pervasive.c
-@@ -65,7 +65,7 @@
+@@ -65,7 +65,7 @@ static void cbe_power_save(void)
  		break;
  	default:
  		printk(KERN_WARNING "%s: unknown configuration\n",
@@ -92754,7 +92754,7 @@
  	mtspr(SPRN_TSC_CELL, thread_switch_control);
 --- a/arch/powerpc/platforms/cell/ras.c
 +++ b/arch/powerpc/platforms/cell/ras.c
-@@ -132,7 +132,7 @@
+@@ -132,7 +132,7 @@ static int __init cbe_ptcal_enable_on_no
  				(unsigned int)(addr >> 32),
  				(unsigned int)(addr & 0xffffffff))) {
  		printk(KERN_ERR "%s: error enabling PTCAL on node %d!\n",
@@ -92763,7 +92763,7 @@
  		goto out_free_pages;
  	}
  
-@@ -162,7 +162,7 @@
+@@ -162,7 +162,7 @@ static int __init cbe_ptcal_enable(void)
  	if (!size)
  		return -ENODEV;
  
@@ -92772,7 +92772,7 @@
  	order = get_order(*size);
  	of_node_put(np);
  
-@@ -180,7 +180,7 @@
+@@ -180,7 +180,7 @@ static int __init cbe_ptcal_enable(void)
  		const u32 *nid = of_get_property(np, "node-id", NULL);
  		if (!nid) {
  			printk(KERN_ERR "%s: node %s is missing node-id?\n",
@@ -92781,7 +92781,7 @@
  			continue;
  		}
  		cbe_ptcal_enable_on_node(*nid, order);
-@@ -195,13 +195,13 @@
+@@ -195,13 +195,13 @@ static int cbe_ptcal_disable(void)
  	struct ptcal_area *area, *tmp;
  	int ret = 0;
  
@@ -92799,7 +92799,7 @@
  			continue;
 --- a/arch/powerpc/platforms/cell/spu_base.c
 +++ b/arch/powerpc/platforms/cell/spu_base.c
-@@ -165,7 +165,7 @@
+@@ -165,7 +165,7 @@ static int __spu_trap_data_seg(struct sp
  	struct spu_slb slb;
  	int psize;
  
@@ -92808,7 +92808,7 @@
  
  	slb.esid = (ea & ESID_MASK) | SLB_ESID_V;
  
-@@ -215,7 +215,7 @@
+@@ -215,7 +215,7 @@ static int __spu_trap_data_seg(struct sp
  extern int hash_page(unsigned long ea, unsigned long access, unsigned long trap); //XXX
  static int __spu_trap_data_map(struct spu *spu, unsigned long ea, u64 dsisr)
  {
@@ -92817,7 +92817,7 @@
  
  	/* Handle kernel space hash faults immediately.
  	   User hash faults need to be deferred to process context. */
-@@ -351,7 +351,7 @@
+@@ -351,7 +351,7 @@ spu_irq_class_1(int irq, void *data)
  		__spu_trap_data_seg(spu, dar);
  
  	spin_unlock(&spu->register_lock);
@@ -92826,7 +92826,7 @@
  			dar, dsisr);
  
  	if (stat & CLASS1_STORAGE_FAULT_INTR)
-@@ -726,7 +726,7 @@
+@@ -726,7 +726,7 @@ static int __init init_spu_base(void)
  
  	if (ret < 0) {
  		printk(KERN_WARNING "%s: Error initializing spus\n",
@@ -92837,7 +92837,7 @@
  
 --- a/arch/powerpc/platforms/cell/spu_callbacks.c
 +++ b/arch/powerpc/platforms/cell/spu_callbacks.c
-@@ -54,7 +54,7 @@
+@@ -54,7 +54,7 @@ long spu_sys_callback(struct spu_syscall
  	long (*syscall)(u64 a1, u64 a2, u64 a3, u64 a4, u64 a5, u64 a6);
  
  	if (s->nr_ret >= ARRAY_SIZE(spu_syscall_table)) {
@@ -92848,7 +92848,7 @@
  
 --- a/arch/powerpc/platforms/cell/spu_manage.c
 +++ b/arch/powerpc/platforms/cell/spu_manage.c
-@@ -92,7 +92,7 @@
+@@ -92,7 +92,7 @@ static int __init spu_map_interrupts_old
  
  	tmp = of_get_property(np->parent->parent, "node-id", NULL);
  	if (!tmp) {
@@ -92857,7 +92857,7 @@
  		nid = spu->node;
  	} else
  		nid = tmp[0];
-@@ -296,7 +296,7 @@
+@@ -296,7 +296,7 @@ static int __init of_enumerate_spus(int 
  		ret = fn(node);
  		if (ret) {
  			printk(KERN_WARNING "%s: Error initializing %s\n",
@@ -92866,7 +92866,7 @@
  			break;
  		}
  		n++;
-@@ -327,7 +327,7 @@
+@@ -327,7 +327,7 @@ static int __init of_create_spu(struct s
  		if (!legacy_map) {
  			legacy_map = 1;
  			printk(KERN_WARNING "%s: Legacy device tree found, "
@@ -92875,7 +92875,7 @@
  		}
  		ret = spu_map_device_old(spu);
  		if (ret) {
-@@ -342,7 +342,7 @@
+@@ -342,7 +342,7 @@ static int __init of_create_spu(struct s
  		if (!legacy_irq) {
  			legacy_irq = 1;
  			printk(KERN_WARNING "%s: Legacy device tree found, "
@@ -92886,7 +92886,7 @@
  		if (ret) {
 --- a/arch/powerpc/platforms/cell/spufs/coredump.c
 +++ b/arch/powerpc/platforms/cell/spufs/coredump.c
-@@ -133,8 +133,6 @@
+@@ -133,8 +133,6 @@ static struct spu_context *coredump_next
  		if (ctx->flags & SPU_CREATE_NOSCHED)
  			continue;
  
@@ -92895,7 +92895,7 @@
  		break;
  	}
  
-@@ -157,6 +155,9 @@
+@@ -157,6 +155,9 @@ int spufs_coredump_extra_notes_size(void
  			break;
  
  		size += rc;
@@ -92905,7 +92905,7 @@
  	}
  
  	return size;
-@@ -239,6 +240,9 @@
+@@ -239,6 +240,9 @@ int spufs_coredump_extra_notes_write(str
  		}
  
  		spu_release_saved(ctx);
@@ -92917,7 +92917,7 @@
  	return 0;
 --- a/arch/powerpc/platforms/cell/spufs/file.c
 +++ b/arch/powerpc/platforms/cell/spufs/file.c
-@@ -1337,7 +1337,7 @@
+@@ -1337,7 +1337,7 @@ static u64 spufs_signal1_type_get(struct
  	return ctx->ops->signal1_type_get(ctx);
  }
  DEFINE_SPUFS_ATTRIBUTE(spufs_signal1_type, spufs_signal1_type_get,
@@ -92926,7 +92926,7 @@
  
  
  static int spufs_signal2_type_set(void *data, u64 val)
-@@ -1359,7 +1359,7 @@
+@@ -1359,7 +1359,7 @@ static u64 spufs_signal2_type_get(struct
  	return ctx->ops->signal2_type_get(ctx);
  }
  DEFINE_SPUFS_ATTRIBUTE(spufs_signal2_type, spufs_signal2_type_get,
@@ -92935,7 +92935,7 @@
  
  #if SPUFS_MMAP_4K
  static unsigned long spufs_mss_mmap_nopfn(struct vm_area_struct *vma,
-@@ -1556,7 +1556,7 @@
+@@ -1556,7 +1556,7 @@ void spufs_mfc_callback(struct spu *spu)
  
  	wake_up_all(&ctx->mfc_wq);
  
@@ -92944,7 +92944,7 @@
  	if (ctx->mfc_fasync) {
  		u32 free_elements, tagstatus;
  		unsigned int mask;
-@@ -1790,7 +1790,7 @@
+@@ -1790,7 +1790,7 @@ static unsigned int spufs_mfc_poll(struc
  	if (tagstatus & ctx->tagwait)
  		mask |= POLLIN | POLLRDNORM;
  
@@ -92955,7 +92955,7 @@
  	return mask;
 --- a/arch/powerpc/platforms/cell/spufs/run.c
 +++ b/arch/powerpc/platforms/cell/spufs/run.c
-@@ -98,7 +98,7 @@
+@@ -98,7 +98,7 @@ static int spu_setup_isolated(struct spu
  			!= MFC_CNTL_PURGE_DMA_COMPLETE) {
  		if (time_after(jiffies, timeout)) {
  			printk(KERN_ERR "%s: timeout flushing MFC DMA queue\n",
@@ -92964,7 +92964,7 @@
  			ret = -EIO;
  			goto out;
  		}
-@@ -124,7 +124,7 @@
+@@ -124,7 +124,7 @@ static int spu_setup_isolated(struct spu
  				status_loading) {
  		if (time_after(jiffies, timeout)) {
  			printk(KERN_ERR "%s: timeout waiting for loader\n",
@@ -92973,7 +92973,7 @@
  			ret = -EIO;
  			goto out_drop_priv;
  		}
-@@ -134,7 +134,7 @@
+@@ -134,7 +134,7 @@ static int spu_setup_isolated(struct spu
  	if (!(status & SPU_STATUS_RUNNING)) {
  		/* If isolated LOAD has failed: run SPU, we will get a stop-and
  		 * signal later. */
@@ -92982,7 +92982,7 @@
  		ctx->ops->runcntl_write(ctx, SPU_RUNCNTL_RUNNABLE);
  		ret = -EACCES;
  		goto out_drop_priv;
-@@ -142,7 +142,7 @@
+@@ -142,7 +142,7 @@ static int spu_setup_isolated(struct spu
  
  	if (!(status & SPU_STATUS_ISOLATED_STATE)) {
  		/* This isn't allowed by the CBEA, but check anyway */
@@ -92991,7 +92991,7 @@
  		ctx->ops->runcntl_write(ctx, SPU_RUNCNTL_STOP);
  		ret = -EINVAL;
  		goto out_drop_priv;
-@@ -282,7 +282,7 @@
+@@ -282,7 +282,7 @@ static int spu_handle_restartsys(struct 
  		break;
  	default:
  		printk(KERN_WARNING "%s: unexpected return code %ld\n",
@@ -93000,7 +93000,7 @@
  		ret = 0;
  	}
  	return ret;
-@@ -323,6 +323,10 @@
+@@ -323,6 +323,10 @@ static int spu_process_callback(struct s
  			return -EINTR;
  	}
  
@@ -93013,7 +93013,7 @@
  	ctx->ops->npc_write(ctx, npc);
 --- a/arch/powerpc/platforms/cell/spufs/switch.c
 +++ b/arch/powerpc/platforms/cell/spufs/switch.c
-@@ -1815,6 +1815,7 @@
+@@ -1815,6 +1815,7 @@ static void save_csa(struct spu_state *p
  	save_mfc_csr_ato(prev, spu);	/* Step 24. */
  	save_mfc_tclass_id(prev, spu);	/* Step 25. */
  	set_mfc_tclass_id(prev, spu);	/* Step 26. */
@@ -93021,7 +93021,7 @@
  	purge_mfc_queue(prev, spu);	/* Step 27. */
  	wait_purge_complete(prev, spu);	/* Step 28. */
  	setup_mfc_sr1(prev, spu);	/* Step 30. */
-@@ -1831,7 +1832,6 @@
+@@ -1831,7 +1832,6 @@ static void save_csa(struct spu_state *p
  	save_ppuint_mb(prev, spu);	/* Step 41. */
  	save_ch_part1(prev, spu);	/* Step 42. */
  	save_spu_mb(prev, spu);	        /* Step 43. */
@@ -93031,7 +93031,7 @@
  
 --- a/arch/powerpc/platforms/celleb/beat.c
 +++ b/arch/powerpc/platforms/celleb/beat.c
-@@ -48,6 +48,7 @@
+@@ -48,6 +48,7 @@ void beat_power_off(void)
  }
  
  u64 beat_halt_code = 0x1000000000000000UL;
@@ -93039,7 +93039,7 @@
  
  void beat_halt(void)
  {
-@@ -94,9 +95,8 @@
+@@ -94,9 +95,8 @@ ssize_t beat_nvram_read(char *buf, size_
  		len = count;
  		if (len > BEAT_NVRW_CNT)
  			len = BEAT_NVRW_CNT;
@@ -93050,7 +93050,7 @@
  
  		p += len;
  		i += len;
-@@ -121,9 +121,8 @@
+@@ -121,9 +121,8 @@ ssize_t beat_nvram_write(char *buf, size
  		len = count;
  		if (len > BEAT_NVRW_CNT)
  			len = BEAT_NVRW_CNT;
@@ -93061,7 +93061,7 @@
  
  		p += len;
  		i += len;
-@@ -149,13 +148,14 @@
+@@ -149,13 +148,14 @@ int64_t beat_get_term_char(u64 vterm, u6
  	u64 db[2];
  	s64 ret;
  
@@ -93077,7 +93077,7 @@
  
  int64_t beat_put_term_char(u64 vterm, u64 len, u64 t1, u64 t2)
  {
-@@ -163,8 +163,9 @@
+@@ -163,8 +163,9 @@ int64_t beat_put_term_char(u64 vterm, u6
  
  	db[0] = t1;
  	db[1] = t2;
@@ -93088,7 +93088,7 @@
  
  void beat_power_save(void)
  {
-@@ -261,7 +262,3 @@
+@@ -261,7 +262,3 @@ static int __init beat_event_init(void)
  }
  
  device_initcall(beat_event_init);
@@ -93111,7 +93111,7 @@
  void beat_power_off(void);
 --- a/arch/powerpc/platforms/celleb/beat_wrapper.h
 +++ b/arch/powerpc/platforms/celleb/beat_wrapper.h
-@@ -197,7 +197,8 @@
+@@ -197,7 +197,8 @@ static inline s64 beat_put_characters_to
  	u64 b[2];
  
  	memcpy(b, buffer, len);
@@ -93135,7 +93135,7 @@
  #endif
  
  static DEFINE_SPINLOCK(beat_htab_lock);
-@@ -116,7 +116,8 @@
+@@ -116,7 +116,8 @@ static long beat_lpar_hpte_insert(unsign
  		hpte_r &= ~_PAGE_COHERENT;
  
  	spin_lock(&beat_htab_lock);
@@ -93147,7 +93147,7 @@
  		spin_unlock(&beat_htab_lock);
 --- a/arch/powerpc/platforms/celleb/interrupt.c
 +++ b/arch/powerpc/platforms/celleb/interrupt.c
-@@ -34,7 +34,7 @@
+@@ -34,7 +34,7 @@ static DEFINE_SPINLOCK(beatic_irq_mask_l
  static uint64_t	beatic_irq_mask_enable[(MAX_IRQS+255)/64];
  static uint64_t	beatic_irq_mask_ack[(MAX_IRQS+255)/64];
  
@@ -93156,7 +93156,7 @@
  
  /*
   * In this implementation, "virq" == "IRQ plug number",
-@@ -49,13 +49,13 @@
+@@ -49,13 +49,13 @@ static inline void beatic_update_irq_mas
  
  	off = (irq_plug / 256) * 4;
  	masks[0] = beatic_irq_mask_enable[off + 0]
@@ -93174,7 +93174,7 @@
  	if (beat_set_interrupt_mask(irq_plug&~255UL,
  		masks[0], masks[1], masks[2], masks[3]) != 0)
  		panic("Failed to set mask IRQ!");
-@@ -96,7 +96,8 @@
+@@ -96,7 +96,8 @@ static void beatic_end_irq(unsigned int 
  	s64 err;
  	unsigned long flags;
  
@@ -93184,7 +93184,7 @@
  		if ((err & 0xFFFFFFFF) != 0xFFFFFFF5) /* -11: wrong state */
  			panic("Failed to downcount IRQ! Error = %16lx", err);
  
-@@ -138,7 +139,8 @@
+@@ -138,7 +139,8 @@ static int beatic_pic_host_map(struct ir
  	struct irq_desc *desc = get_irq_desc(virq);
  	int64_t	err;
  
@@ -93194,7 +93194,7 @@
  		return -EIO;
  
  	desc->status |= IRQ_LEVEL;
-@@ -202,22 +204,22 @@
+@@ -202,22 +204,22 @@ static inline unsigned int beatic_get_ir
  		beat_detect_pending_interrupts(i, pending);
  		__asm__ ("cntlzd %0,%1":"=r"(ub):
  			"r"(pending[0] & beatic_irq_mask_enable[i/64+0]
@@ -93221,7 +93221,7 @@
  		if (ub != 64)
  			return i + ub + 192;
  	}
-@@ -250,7 +252,7 @@
+@@ -250,7 +252,7 @@ void __init beatic_init_IRQ(void)
  
  	/* Allocate an irq host */
  	beatic_host = irq_alloc_host(NULL, IRQ_HOST_MAP_NOMAP, 0,
@@ -93232,7 +93232,7 @@
  	irq_set_default_host(beatic_host);
 --- a/arch/powerpc/platforms/celleb/scc_epci.c
 +++ b/arch/powerpc/platforms/celleb/scc_epci.c
-@@ -161,9 +161,9 @@
+@@ -161,9 +161,9 @@ static PCI_IO_ADDR celleb_epci_make_conf
  	if (bus != hose->bus)
  		addr = celleb_epci_get_epci_cfg(hose) +
  		       (((bus->number & 0xff) << 16)
@@ -93245,7 +93245,7 @@
  	else
  		addr = celleb_epci_get_epci_cfg(hose) +
  		       (((devfn & 0xff) << 8) | (where & 0xff));
-@@ -174,7 +174,7 @@
+@@ -174,7 +174,7 @@ static PCI_IO_ADDR celleb_epci_make_conf
  }
  
  static int celleb_epci_read_config(struct pci_bus *bus,
@@ -93265,7 +93265,7 @@
  
  static struct {
  	uint32_t offset;
-@@ -84,7 +84,7 @@
+@@ -84,7 +84,7 @@ static int __init txx9_serial_config(cha
  	int	i;
  
  	for (;;) {
@@ -93276,7 +93276,7 @@
  		case 2:
 --- a/arch/powerpc/platforms/celleb/spu_priv1.c
 +++ b/arch/powerpc/platforms/celleb/spu_priv1.c
-@@ -183,8 +183,7 @@
+@@ -183,8 +183,7 @@ static u64 resource_allocation_enable_ge
  	return enable;
  }
  
@@ -93288,7 +93288,7 @@
  	.int_mask_set = int_mask_set,
 --- a/arch/powerpc/platforms/celleb/udbg_beat.c
 +++ b/arch/powerpc/platforms/celleb/udbg_beat.c
-@@ -54,7 +54,8 @@
+@@ -54,7 +54,8 @@ static int udbg_getc_poll_beat(void)
  	if (inbuflen == 0) {
  		/* get some more chars. */
  		inbuflen = 0;
@@ -93298,7 +93298,7 @@
  		if (rc != 0)
  			inbuflen = 0;	/* otherwise inbuflen is garbage */
  	}
-@@ -78,7 +79,7 @@
+@@ -78,7 +79,7 @@ static int udbg_getc_beat(void)
  		if (ch == -1) {
  			/* This shouldn't be needed...but... */
  			volatile unsigned long delay;
@@ -93309,7 +93309,7 @@
  			return ch;
 --- a/arch/powerpc/platforms/embedded6xx/mpc7448_hpc2.c
 +++ b/arch/powerpc/platforms/embedded6xx/mpc7448_hpc2.c
-@@ -117,11 +117,11 @@
+@@ -117,11 +117,11 @@ static void __init mpc7448_hpc2_init_IRQ
  	}
  
  	if (mpic_paddr == 0) {
@@ -93323,7 +93323,7 @@
  	    (u32) mpic_paddr);
  
  	mpic = mpic_alloc(tsi_pic, mpic_paddr,
-@@ -140,17 +140,17 @@
+@@ -140,17 +140,17 @@ static void __init mpc7448_hpc2_init_IRQ
  #ifdef CONFIG_PCI
  	tsi_pci = of_find_node_by_type(NULL, "pci");
  	if (tsi_pci == NULL) {
@@ -93346,7 +93346,7 @@
  	set_irq_data(cascade_pci_irq, mpic);
 --- a/arch/powerpc/platforms/embedded6xx/prpmc2800.c
 +++ b/arch/powerpc/platforms/embedded6xx/prpmc2800.c
-@@ -49,13 +49,13 @@
+@@ -49,13 +49,13 @@ static void __init prpmc2800_setup_arch(
  	 * ioremap mpp and gpp registers in case they are later
  	 * needed by prpmc2800_reset_board().
  	 */
@@ -93388,7 +93388,7 @@
  	b	.__start_initialization_iSeries	/* Start up the first processor */
 --- a/arch/powerpc/platforms/iseries/ipl_parms.h
 +++ b/arch/powerpc/platforms/iseries/ipl_parms.h
-@@ -65,6 +65,4 @@
+@@ -65,6 +65,4 @@ struct ItIplParmsReal {
  	u64	xRsvd13;		// Reserved			x38-x3F
  };
  
@@ -93418,7 +93418,7 @@
  	.xDesc = 0xc8a5d9c4,	/* "HvRD" ebcdic */
  	.xSize = sizeof(struct HvReleaseData),
  	.xVpdAreasPtrOffset = offsetof(struct naca_struct, xItVpdAreas),
-@@ -61,6 +61,63 @@
+@@ -61,6 +61,63 @@ struct naca_struct naca = {
  	.xRamDiskSize = 0,
  };
  
@@ -93482,7 +93482,7 @@
  extern void system_reset_iSeries(void);
  extern void machine_check_iSeries(void);
  extern void data_access_iSeries(void);
-@@ -129,7 +186,7 @@
+@@ -129,7 +186,7 @@ struct ItLpNaca itLpNaca = {
  };
  
  /* May be filled in by the hypervisor so cannot end up in the BSS */
@@ -93491,7 +93491,7 @@
  
  /* May be filled in by the hypervisor so cannot end up in the BSS */
  struct ItExtVpdPanel xItExtVpdPanel __attribute__((__section__(".data")));
-@@ -152,13 +209,54 @@
+@@ -152,13 +209,54 @@ u64    xMsVpd[3400] __attribute__((__sec
  
  /* Space for Recovery Log Buffer */
  /* May be filled in by the hypervisor so cannot end up in the BSS */
@@ -93548,7 +93548,7 @@
  /* The LparMap data is now located at offset 0x6000 in head.S
   * It was put there so that the HvReleaseData could address it
   * with a 32-bit offset as required by the iSeries hypervisor
-@@ -167,7 +265,7 @@
+@@ -167,7 +265,7 @@ struct SpCommArea xSpCommArea = {
   * the Naca via the HvReleaseData area.  The HvReleaseData has the
   * offset into the Naca of the pointer to the ItVpdAreas.
   */
@@ -93557,7 +93557,7 @@
  	.xSlicDesc = 0xc9a3e5c1,		/* "ItVA" */
  	.xSlicSize = sizeof(struct ItVpdAreas),
  	.xSlicVpdEntries = ItVpdMaxEntries,	/* # VPD array entries */
-@@ -185,7 +283,7 @@
+@@ -185,7 +283,7 @@ struct ItVpdAreas itVpdAreas = {
  	.xSlicVpdLens = {			/* VPD lengths */
  	        0,0,0,		        /*  0 - 2 */
  		sizeof(xItExtVpdPanel), /*       3 Extended VPD   */
@@ -93566,7 +93566,7 @@
  		0,			/*       5 */
  		sizeof(struct ItIplParmsReal),/* 6 length of IPL parms */
  		26992,			/*	 7 length of MS VPD */
-@@ -203,7 +301,7 @@
+@@ -203,7 +301,7 @@ struct ItVpdAreas itVpdAreas = {
  	.xSlicVpdAdrs = {			/* VPD addresses */
  		0,0,0,			/*	 0 -  2 */
  		&xItExtVpdPanel,        /*       3 Extended VPD */
@@ -93575,7 +93575,7 @@
  		0,			/*       5 */
  		&xItIplParmsReal,	/*	 6 IPL parms */
  		&xMsVpd,		/*	 7 MS Vpd */
-@@ -219,10 +317,3 @@
+@@ -219,10 +317,3 @@ struct ItVpdAreas itVpdAreas = {
  		0,0
  	}
  };
@@ -93607,7 +93607,7 @@
  #include <linux/kernel.h>
  #include <linux/list.h>
  #include <linux/string.h>
-@@ -586,7 +587,7 @@
+@@ -586,7 +587,7 @@ static inline struct device_node *xlate_
  		static unsigned long last_jiffies;
  		static int num_printed;
  
@@ -93618,7 +93618,7 @@
  		}
 --- a/arch/powerpc/platforms/iseries/release_data.h
 +++ b/arch/powerpc/platforms/iseries/release_data.h
-@@ -58,6 +58,6 @@
+@@ -58,6 +58,6 @@ struct HvReleaseData {
  	char	xRsvd3[20];	/* Reserved			x2C-x3F */
  };
  
@@ -93628,7 +93628,7 @@
  #endif /* _ISERIES_RELEASE_DATA_H */
 --- a/arch/powerpc/platforms/iseries/spcomm_area.h
 +++ b/arch/powerpc/platforms/iseries/spcomm_area.h
-@@ -31,6 +31,4 @@
+@@ -31,6 +31,4 @@ struct SpCommArea {
  	u8	xRsvd2[80];		// Reserved				030-07F
  };
  
@@ -93637,7 +93637,7 @@
  #endif /* _ISERIES_SPCOMM_AREA_H */
 --- a/arch/powerpc/platforms/iseries/vpd_areas.h
 +++ b/arch/powerpc/platforms/iseries/vpd_areas.h
-@@ -80,9 +80,9 @@
+@@ -80,9 +80,9 @@ struct ItVpdAreas {
  	u32	xPlicDmaLens[ItDmaMaxEntries];// Array of DMA lengths	080-0A7
  	u32	xPlicDmaToks[ItDmaMaxEntries];// Array of DMA tokens	0A8-0CF
  	u32	xSlicVpdLens[ItVpdMaxEntries];// Array of VPD lengths	0D0-12F
@@ -93651,7 +93651,7 @@
  #endif /* _ISERIES_VPD_AREAS_H */
 --- a/arch/powerpc/platforms/maple/pci.c
 +++ b/arch/powerpc/platforms/maple/pci.c
-@@ -592,50 +592,3 @@
+@@ -592,50 +592,3 @@ int maple_pci_get_legacy_ide_irq(struct 
  	}
  	return irq;
  }
@@ -93720,7 +93720,7 @@
  #include <asm/mpic.h>
  #include <asm/rtas.h>
  #include <asm/udbg.h>
-@@ -319,7 +319,7 @@
+@@ -319,7 +319,7 @@ static int __init maple_probe(void)
  	return 1;
  }
  
@@ -93748,7 +93748,7 @@
  
  static struct pasdma_status *dma_status;
  
-@@ -43,6 +46,8 @@
+@@ -43,6 +46,8 @@ static struct pci_dev *dma_pdev;
  
  static DECLARE_BITMAP(txch_free, MAX_TXCH);
  static DECLARE_BITMAP(rxch_free, MAX_RXCH);
@@ -93757,7 +93757,7 @@
  
  /* pasemi_read_iob_reg - read IOB register
   * @reg: Register to read (offset into PCI CFG space)
-@@ -373,6 +378,106 @@
+@@ -373,6 +378,106 @@ void pasemi_dma_free_buf(struct pasemi_d
  }
  EXPORT_SYMBOL(pasemi_dma_free_buf);
  
@@ -93864,7 +93864,7 @@
  static void *map_onedev(struct pci_dev *p, int index)
  {
  	struct device_node *dn;
-@@ -410,6 +515,7 @@
+@@ -410,6 +515,7 @@ int pasemi_dma_init(void)
  	struct resource res;
  	struct device_node *dn;
  	int i, intf, err = 0;
@@ -93872,7 +93872,7 @@
  	u32 tmp;
  
  	if (!machine_is(pasemi))
-@@ -478,6 +584,44 @@
+@@ -478,6 +584,44 @@ int pasemi_dma_init(void)
  	for (i = 0; i < MAX_RXCH; i++)
  		__set_bit(i, rxch_free);
  
@@ -93977,7 +93977,7 @@
  static u32 iob_l1_emptyval;
  static u32 iob_l2_emptyval;
  static u32 *iob_l2_base;
-@@ -219,7 +218,7 @@
+@@ -219,7 +218,7 @@ int __init iob_init(struct device_node *
  	for (i = 0; i < 64; i++) {
  		/* Each L1 covers 32MB, i.e. 8K entries = 32K of ram */
  		regword = IOBMAP_L1E_V | (__pa(iob_l2_base + i*0x2000) >> 12);
@@ -94006,7 +94006,7 @@
  #include "pmac.h"
 --- a/arch/powerpc/platforms/ps3/device-init.c
 +++ b/arch/powerpc/platforms/ps3/device-init.c
-@@ -499,41 +499,14 @@
+@@ -499,41 +499,14 @@ static int __init ps3_register_graphics_
  }
  
  /**
@@ -94050,7 +94050,7 @@
  	case PS3_DEV_TYPE_STOR_DISK:
  		result = ps3_setup_storage_dev(repo, PS3_MATCH_ID_STOR_DISK);
  
-@@ -572,6 +545,48 @@
+@@ -572,6 +545,48 @@ static int ps3_register_repository_devic
  	return result;
  }
  
@@ -94099,7 +94099,7 @@
  static void ps3_find_and_add_device(u64 bus_id, u64 dev_id)
  {
  	struct ps3_repository_device repo;
-@@ -601,7 +616,7 @@
+@@ -601,7 +616,7 @@ found:
  		pr_debug("%s:%u: device %lu:%lu found after %u retries\n",
  			 __func__, __LINE__, bus_id, dev_id, retries);
  
@@ -94108,7 +94108,7 @@
  	return;
  }
  
-@@ -905,8 +920,7 @@
+@@ -905,8 +920,7 @@ static int __init ps3_register_devices(v
  
  	ps3_register_graphics_devices();
  
@@ -94134,7 +94134,7 @@
  #include <asm/ps3fb.h>
 --- a/arch/powerpc/platforms/ps3/interrupt.c
 +++ b/arch/powerpc/platforms/ps3/interrupt.c
-@@ -709,7 +709,7 @@
+@@ -709,7 +709,7 @@ static unsigned int ps3_get_irq(void)
  	asm volatile("cntlzd %0,%1" : "=r" (plug) : "r" (x));
  	plug &= 0x3f;
  
@@ -94172,7 +94172,7 @@
  
 --- a/arch/powerpc/platforms/ps3/setup.c
 +++ b/arch/powerpc/platforms/ps3/setup.c
-@@ -95,6 +95,14 @@
+@@ -95,6 +95,14 @@ static void ps3_power_off(void)
  	ps3_sys_manager_power_off(); /* never returns */
  }
  
@@ -94187,7 +94187,7 @@
  static void ps3_panic(char *str)
  {
  	DBG("%s:%d %s\n", __func__, __LINE__, str);
-@@ -105,7 +113,8 @@
+@@ -105,7 +113,8 @@ static void ps3_panic(char *str)
  	printk("   Please press POWER button.\n");
  	printk("\n");
  
@@ -94197,7 +94197,7 @@
  }
  
  #if defined(CONFIG_FB_PS3) || defined(CONFIG_FB_PS3_MODULE) || \
-@@ -117,7 +126,7 @@
+@@ -117,7 +126,7 @@ static void __init prealloc(struct ps3_p
  
  	p->address = __alloc_bootmem(p->size, p->align, __pa(MAX_DMA_ADDRESS));
  	if (!p->address) {
@@ -94206,7 +94206,7 @@
  		       p->name);
  		return;
  	}
-@@ -266,6 +275,7 @@
+@@ -266,6 +275,7 @@ define_machine(ps3) {
  	.progress			= ps3_progress,
  	.restart			= ps3_restart,
  	.power_off			= ps3_power_off,
@@ -94224,7 +94224,7 @@
  
  #include "../cell/spufs/spufs.h"
  #include "platform.h"
-@@ -140,6 +141,12 @@
+@@ -140,6 +141,12 @@ static void _dump_areas(unsigned int spe
  	pr_debug("%s:%d: shadow:  %lxh\n", func, line, shadow);
  }
  
@@ -94239,14 +94239,14 @@
  	unsigned long id;
 --- a/arch/powerpc/platforms/pseries/Makefile
 +++ b/arch/powerpc/platforms/pseries/Makefile
-@@ -18,3 +18,4 @@
+@@ -18,3 +18,4 @@ obj-$(CONFIG_HOTPLUG_CPU)	+= hotplug-cpu
  obj-$(CONFIG_HVC_CONSOLE)	+= hvconsole.o
  obj-$(CONFIG_HVCS)		+= hvcserver.o
  obj-$(CONFIG_HCALL_STATS)	+= hvCall_inst.o
 +obj-$(CONFIG_PHYP_DUMP)	+= phyp_dump.o
 --- a/arch/powerpc/platforms/pseries/eeh.c
 +++ b/arch/powerpc/platforms/pseries/eeh.c
-@@ -945,7 +945,6 @@
+@@ -945,7 +945,6 @@ static void *early_enable_eeh(struct dev
  	unsigned int rets[3];
  	struct eeh_early_enable_info *info = data;
  	int ret;
@@ -94254,7 +94254,7 @@
  	const u32 *class_code = of_get_property(dn, "class-code", NULL);
  	const u32 *vendor_id = of_get_property(dn, "vendor-id", NULL);
  	const u32 *device_id = of_get_property(dn, "device-id", NULL);
-@@ -959,8 +958,8 @@
+@@ -959,8 +958,8 @@ static void *early_enable_eeh(struct dev
  	pdn->eeh_freeze_count = 0;
  	pdn->eeh_false_positives = 0;
  
@@ -94275,7 +94275,7 @@
  
  #ifdef DEBUG_LOW
  #define DBG_LOW(fmt...) do { udbg_printf(fmt); } while(0)
-@@ -203,7 +204,6 @@
+@@ -203,7 +204,6 @@ void __init find_udbg_vterm(void)
  	struct device_node *stdout_node;
  	const u32 *termno;
  	const char *name;
@@ -94283,7 +94283,7 @@
  
  	/* find the boot console from /chosen/stdout */
  	if (!of_chosen)
-@@ -219,8 +219,6 @@
+@@ -219,8 +219,6 @@ void __init find_udbg_vterm(void)
  		printk(KERN_WARNING "stdout node missing 'name' property!\n");
  		goto out;
  	}
@@ -94292,7 +94292,7 @@
  
  	/* Check if it's a virtual terminal */
  	if (strncmp(name, "vty", 3) != 0)
-@@ -234,15 +232,13 @@
+@@ -234,15 +232,13 @@ void __init find_udbg_vterm(void)
  		udbg_putc = udbg_putcLP;
  		udbg_getc = udbg_getcLP;
  		udbg_getc_poll = udbg_getc_pollLP;
@@ -94310,7 +94310,7 @@
  	}
  out:
  	of_node_put(stdout_node);
-@@ -520,6 +516,20 @@
+@@ -520,6 +516,20 @@ static void pSeries_lpar_hpte_invalidate
  	BUG_ON(lpar_rc != H_SUCCESS);
  }
  
@@ -94331,7 +94331,7 @@
  /* Flag bits for H_BULK_REMOVE */
  #define HBR_REQUEST	0x4000000000000000UL
  #define HBR_RESPONSE	0x8000000000000000UL
-@@ -597,6 +607,7 @@
+@@ -597,6 +607,7 @@ void __init hpte_init_lpar(void)
  	ppc_md.hpte_updateboltedpp = pSeries_lpar_hpte_updateboltedpp;
  	ppc_md.hpte_insert	= pSeries_lpar_hpte_insert;
  	ppc_md.hpte_remove	= pSeries_lpar_hpte_remove;
@@ -94341,7 +94341,7 @@
  }
 --- a/arch/powerpc/platforms/pseries/pci_dlpar.c
 +++ b/arch/powerpc/platforms/pseries/pci_dlpar.c
-@@ -123,7 +123,7 @@
+@@ -123,7 +123,7 @@ pcibios_pci_config_bridge(struct pci_dev
  	/* Add to children of PCI bridge dev->bus */
  	child_bus = pci_add_new_bus(dev->bus, dev, sec_busno);
  	if (!child_bus) {
@@ -94862,7 +94862,7 @@
 +early_param("phyp_dump_reserve_size", early_phyp_dump_reserve_size);
 --- a/arch/powerpc/platforms/pseries/pseries.h
 +++ b/arch/powerpc/platforms/pseries/pseries.h
-@@ -38,4 +38,6 @@
+@@ -38,4 +38,6 @@ extern void pSeries_final_fixup(void);
  /* Poweron flag used for enabling auto ups restart */
  extern unsigned long rtas_poweron_auto;
  
@@ -94871,7 +94871,7 @@
  #endif /* _PSERIES_PSERIES_H */
 --- a/arch/powerpc/platforms/pseries/reconfig.c
 +++ b/arch/powerpc/platforms/pseries/reconfig.c
-@@ -222,14 +222,14 @@
+@@ -222,14 +222,14 @@ static char * parse_next_property(char *
  	tmp = strchr(buf, ' ');
  	if (!tmp) {
  		printk(KERN_ERR "property parse failed in %s at line %d\n",
@@ -94888,7 +94888,7 @@
  		return NULL;
  	}
  
-@@ -238,12 +238,12 @@
+@@ -238,12 +238,12 @@ static char * parse_next_property(char *
  	*length = simple_strtoul(tmp, &tmp, 10);
  	if (*length == -1) {
  		printk(KERN_ERR "property parse failed in %s at line %d\n",
@@ -94903,7 +94903,7 @@
  		return NULL;
  	}
  
-@@ -252,12 +252,12 @@
+@@ -252,12 +252,12 @@ static char * parse_next_property(char *
  	tmp += *length;
  	if (tmp > end) {
  		printk(KERN_ERR "property parse failed in %s at line %d\n",
@@ -94920,7 +94920,7 @@
  	tmp++;
 --- a/arch/powerpc/platforms/pseries/scanlog.c
 +++ b/arch/powerpc/platforms/pseries/scanlog.c
-@@ -195,31 +195,30 @@
+@@ -195,31 +195,30 @@ const struct file_operations scanlog_fop
  static int __init scanlog_init(void)
  {
  	struct proc_dir_entry *ent;
@@ -94982,7 +94982,7 @@
  int fwnmi_active;  /* TRUE if an FWNMI handler is present */
  
  static void pseries_shared_idle_sleep(void);
-@@ -127,14 +124,60 @@
+@@ -127,14 +124,60 @@ void pseries_8259_cascade(unsigned int i
  	desc->chip->eoi(irq);
  }
  
@@ -95047,7 +95047,7 @@
  	int naddr, n, i, opplen;
  	struct mpic *mpic;
  
-@@ -167,43 +210,13 @@
+@@ -167,43 +210,13 @@ static void __init pseries_mpic_init_IRQ
  	mpic_init(mpic);
  
  	/* Look for cascade */
@@ -95097,7 +95097,7 @@
  }
  
  static void pseries_lpar_enable_pmcs(void)
-@@ -235,7 +248,7 @@
+@@ -235,7 +248,7 @@ static void __init pseries_discover_pic(
  			smp_init_pseries_mpic();
  			return;
  		} else if (strstr(typep, "ppc-xicp")) {
@@ -95106,7 +95106,7 @@
  			setup_kexec_cpu_down_xics();
  			smp_init_pseries_xics();
  			return;
-@@ -393,6 +406,7 @@
+@@ -393,6 +406,7 @@ static void pseries_dedicated_idle_sleep
  { 
  	unsigned int cpu = smp_processor_id();
  	unsigned long start_snooze;
@@ -95114,7 +95114,7 @@
  
  	/*
  	 * Indicate to the HV that we are idle. Now would be
-@@ -400,6 +414,7 @@
+@@ -400,6 +414,7 @@ static void pseries_dedicated_idle_sleep
  	 */
  	get_lppaca()->idle = 1;
  	get_lppaca()->donate_dedicated_cpu = 1;
@@ -95122,7 +95122,7 @@
  
  	/*
  	 * We come in with interrupts disabled, and need_resched()
-@@ -432,6 +447,8 @@
+@@ -432,6 +447,8 @@ static void pseries_dedicated_idle_sleep
  
  out:
  	HMT_medium();
@@ -95133,7 +95133,7 @@
  }
 --- a/arch/powerpc/platforms/pseries/xics.c
 +++ b/arch/powerpc/platforms/pseries/xics.c
-@@ -516,6 +516,8 @@
+@@ -516,6 +516,8 @@ static struct irq_chip xics_pic_lpar = {
  	.set_affinity = xics_set_affinity
  };
  
@@ -95142,7 +95142,7 @@
  
  static int xics_host_match(struct irq_host *h, struct device_node *node)
  {
-@@ -526,23 +528,13 @@
+@@ -526,23 +528,13 @@ static int xics_host_match(struct irq_ho
  	return !of_device_is_compatible(node, "chrp,iic");
  }
  
@@ -95170,7 +95170,7 @@
  	return 0;
  }
  
-@@ -561,27 +553,20 @@
+@@ -561,27 +553,20 @@ static int xics_host_xlate(struct irq_ho
  	return 0;
  }
  
@@ -95204,7 +95204,7 @@
  				   XICS_IRQ_SPURIOUS);
  	BUG_ON(xics_host == NULL);
  	irq_set_default_host(xics_host);
-@@ -655,52 +640,6 @@
+@@ -655,52 +640,6 @@ static void __init xics_init_one_node(st
  	}
  }
  
@@ -95257,7 +95257,7 @@
  void __init xics_init_IRQ(void)
  {
  	struct device_node *np;
-@@ -733,8 +672,6 @@
+@@ -733,8 +672,6 @@ void __init xics_init_IRQ(void)
  
  	xics_setup_cpu();
  
@@ -95268,7 +95268,7 @@
  
 --- a/arch/powerpc/platforms/pseries/xics.h
 +++ b/arch/powerpc/platforms/pseries/xics.h
-@@ -28,7 +28,4 @@
+@@ -28,7 +28,4 @@ struct xics_ipi_struct {
  
  extern struct xics_ipi_struct xics_ipi_message[NR_CPUS] __cacheline_aligned;
  
@@ -95278,7 +95278,7 @@
  #endif /* _POWERPC_KERNEL_XICS_H */
 --- a/arch/powerpc/sysdev/Makefile
 +++ b/arch/powerpc/sysdev/Makefile
-@@ -12,6 +12,7 @@
+@@ -12,6 +12,7 @@ obj-$(CONFIG_U3_DART)		+= dart_iommu.o
  obj-$(CONFIG_MMIO_NVRAM)	+= mmio_nvram.o
  obj-$(CONFIG_FSL_SOC)		+= fsl_soc.o
  obj-$(CONFIG_FSL_PCI)		+= fsl_pci.o
@@ -95286,7 +95286,7 @@
  obj-$(CONFIG_RAPIDIO)		+= fsl_rio.o
  obj-$(CONFIG_TSI108_BRIDGE)	+= tsi108_pci.o tsi108_dev.o
  obj-$(CONFIG_QUICC_ENGINE)	+= qe_lib/
-@@ -27,6 +28,7 @@
+@@ -27,6 +28,7 @@ obj-$(CONFIG_PPC_INDIRECT_PCI)	+= indire
  obj-$(CONFIG_PPC_I8259)		+= i8259.o
  obj-$(CONFIG_IPIC)		+= ipic.o
  obj-$(CONFIG_4xx)		+= uic.o
@@ -95306,7 +95306,7 @@
  cpm8xx_t __iomem *cpmp;  /* Pointer to comm processor space */
  immap_t __iomem *mpc8xx_immr;
  static cpic8xx_t __iomem *cpic_reg;
-@@ -229,12 +226,7 @@
+@@ -229,12 +226,7 @@ void __init cpm_reset(void)
  	out_be32(&siu_conf->sc_sdcr, 1);
  	immr_unmap(siu_conf);
  
@@ -95319,7 +95319,7 @@
  }
  
  static DEFINE_SPINLOCK(cmd_lock);
-@@ -257,7 +249,7 @@
+@@ -257,7 +249,7 @@ int cpm_command(u32 command, u8 opcode)
  		if ((in_be16(&cpmp->cp_cpcr) & CPM_CR_FLG) == 0)
  			goto out;
  
@@ -95328,7 +95328,7 @@
  	ret = -EIO;
  out:
  	spin_unlock_irqrestore(&cmd_lock, flags);
-@@ -293,110 +285,6 @@
+@@ -293,110 +285,6 @@ cpm_setbrg(uint brg, uint rate)
  			      CPM_BRG_EN | CPM_BRG_DIV16);
  }
  
@@ -95452,7 +95452,7 @@
  cpm_cpm2_t __iomem *cpmp; /* Pointer to comm processor space */
  
  /* We allocate this here because it is used almost exclusively for
-@@ -71,15 +67,17 @@
+@@ -71,15 +67,17 @@ void __init cpm2_reset(void)
  
  	/* Reclaim the DP memory for our use.
  	 */
@@ -95474,7 +95474,7 @@
  }
  
  static DEFINE_SPINLOCK(cmd_lock);
-@@ -99,7 +97,7 @@
+@@ -99,7 +97,7 @@ int cpm_command(u32 command, u8 opcode)
  		if ((in_be32(&cpmp->cp_cpcr) & CPM_CR_FLG) == 0)
  			goto out;
  
@@ -95483,7 +95483,7 @@
  	ret = -EIO;
  out:
  	spin_unlock_irqrestore(&cmd_lock, flags);
-@@ -347,95 +345,6 @@
+@@ -347,95 +345,6 @@ int cpm2_smc_clk_setup(enum cpm_clk_targ
  	return ret;
  }
  
@@ -95581,7 +95581,7 @@
  	u32 res[3];
 --- a/arch/powerpc/sysdev/cpm_common.c
 +++ b/arch/powerpc/sysdev/cpm_common.c
-@@ -58,7 +58,6 @@
+@@ -58,7 +58,6 @@ void __init udbg_init_cpm(void)
  }
  #endif
  
@@ -95589,7 +95589,7 @@
  static spinlock_t cpm_muram_lock;
  static rh_block_t cpm_boot_muram_rh_block[16];
  static rh_info_t cpm_muram_info;
-@@ -199,5 +198,3 @@
+@@ -199,5 +198,3 @@ dma_addr_t cpm_muram_dma(void __iomem *a
  	return muram_pbase + ((u8 __iomem *)addr - muram_vbase);
  }
  EXPORT_SYMBOL(cpm_muram_dma);
@@ -95747,7 +95747,7 @@
 +EXPORT_SYMBOL(fsl_upm_find);
 --- a/arch/powerpc/sysdev/fsl_soc.c
 +++ b/arch/powerpc/sysdev/fsl_soc.c
-@@ -75,6 +75,33 @@
+@@ -75,6 +75,33 @@ phys_addr_t get_immrbase(void)
  
  EXPORT_SYMBOL(get_immrbase);
  
@@ -95781,7 +95781,7 @@
  #if defined(CONFIG_CPM2) || defined(CONFIG_QUICC_ENGINE) || defined(CONFIG_8xx)
  
  static u32 brgfreq = -1;
-@@ -516,9 +543,9 @@
+@@ -516,9 +543,9 @@ arch_initcall(fsl_i2c_of_init);
  static int __init mpc83xx_wdt_init(void)
  {
  	struct resource r;
@@ -95793,7 +95793,7 @@
  	int ret;
  
  	np = of_find_compatible_node(NULL, "watchdog", "mpc83xx_wdt");
-@@ -528,19 +555,6 @@
+@@ -528,19 +555,6 @@ static int __init mpc83xx_wdt_init(void)
  		goto nodev;
  	}
  
@@ -95813,7 +95813,7 @@
  	memset(&r, 0, sizeof(r));
  
  	ret = of_address_to_resource(np, 0, &r);
-@@ -553,20 +567,16 @@
+@@ -553,20 +567,16 @@ static int __init mpc83xx_wdt_init(void)
  		goto err;
  	}
  
@@ -95835,7 +95835,7 @@
  	of_node_put(np);
  nodev:
  	return ret;
-@@ -735,547 +745,6 @@
+@@ -735,547 +745,6 @@ err:
  
  arch_initcall(fsl_usb_of_init);
  
@@ -96383,7 +96383,7 @@
  static int __init of_fsl_spi_probe(char *type, char *compatible, u32 sysclk,
  				   struct spi_board_info *board_infos,
  				   unsigned int num_board_infos,
-@@ -1371,25 +840,9 @@
+@@ -1371,25 +840,9 @@ int __init fsl_spi_init(struct spi_board
  	sysclk = get_brgfreq();
  #endif
  	if (sysclk == -1) {
@@ -96423,7 +96423,7 @@
  
 --- a/arch/powerpc/sysdev/mpic.c
 +++ b/arch/powerpc/sysdev/mpic.c
-@@ -175,13 +175,16 @@
+@@ -175,13 +175,16 @@ static inline void _mpic_write(enum mpic
  	switch(type) {
  #ifdef CONFIG_PPC_DCR
  	case mpic_access_dcr:
@@ -96443,7 +96443,7 @@
  	}
  }
  
-@@ -1000,7 +1003,7 @@
+@@ -1000,7 +1003,7 @@ struct mpic * __init mpic_alloc(struct d
  				const char *name)
  {
  	struct mpic	*mpic;
@@ -96452,7 +96452,7 @@
  	const char	*vers;
  	int		i;
  	int		intvec_top;
-@@ -1064,7 +1067,8 @@
+@@ -1064,7 +1067,8 @@ struct mpic * __init mpic_alloc(struct d
  
  	/* Look for protected sources */
  	if (node) {
@@ -96462,7 +96462,7 @@
  		const u32 *psrc =
  			of_get_property(node, "protected-sources", &psize);
  		if (psrc) {
-@@ -1107,8 +1111,7 @@
+@@ -1107,8 +1111,7 @@ struct mpic * __init mpic_alloc(struct d
  	 * in, try to obtain one
  	 */
  	if (paddr == 0 && !(mpic->flags & MPIC_USES_DCR)) {
@@ -96472,7 +96472,7 @@
  		BUG_ON(reg == NULL);
  		paddr = of_translate_address(node, reg);
  		BUG_ON(paddr == OF_BAD_ADDR);
-@@ -1137,12 +1140,13 @@
+@@ -1137,12 +1140,13 @@ struct mpic * __init mpic_alloc(struct d
  	 * MPICs, num sources as well. On ISU MPICs, sources are counted
  	 * as ISUs are added
  	 */
@@ -96490,7 +96490,7 @@
  
  	/* Map the per-CPU registers */
  	for (i = 0; i < mpic->num_cpus; i++) {
-@@ -1161,7 +1165,7 @@
+@@ -1161,7 +1165,7 @@ struct mpic * __init mpic_alloc(struct d
  	mpic->isu_mask = (1 << mpic->isu_shift) - 1;
  
  	/* Display version */
@@ -96499,7 +96499,7 @@
  	case 1:
  		vers = "1.0";
  		break;
-@@ -1321,7 +1325,7 @@
+@@ -1321,7 +1325,7 @@ void __init mpic_set_serial_int(struct m
  
  void mpic_irq_set_priority(unsigned int irq, unsigned int pri)
  {
@@ -96508,7 +96508,7 @@
  	struct mpic *mpic = mpic_find(irq, &is_ipi);
  	unsigned int src = mpic_irq_to_hw(irq);
  	unsigned long flags;
-@@ -1344,7 +1348,7 @@
+@@ -1344,7 +1348,7 @@ void mpic_irq_set_priority(unsigned int 
  
  unsigned int mpic_irq_get_priority(unsigned int irq)
  {
@@ -96517,7 +96517,7 @@
  	struct mpic *mpic = mpic_find(irq, &is_ipi);
  	unsigned int src = mpic_irq_to_hw(irq);
  	unsigned long flags;
-@@ -1406,11 +1410,6 @@
+@@ -1406,11 +1410,6 @@ void mpic_cpu_set_priority(int prio)
  	mpic_cpu_write(MPIC_INFO(CPU_CURRENT_TASK_PRI), prio);
  }
  
@@ -96529,7 +96529,7 @@
  void mpic_teardown_this_cpu(int secondary)
  {
  	struct mpic *mpic = mpic_primary;
-@@ -1430,6 +1429,10 @@
+@@ -1430,6 +1429,10 @@ void mpic_teardown_this_cpu(int secondar
  
  	/* Set current processor priority to max */
  	mpic_cpu_write(MPIC_INFO(CPU_CURRENT_TASK_PRI), 0xf);
@@ -96542,7 +96542,7 @@
  }
 --- a/arch/powerpc/sysdev/mv64x60_dev.c
 +++ b/arch/powerpc/sysdev/mv64x60_dev.c
-@@ -127,7 +127,7 @@
+@@ -127,7 +127,7 @@ static int __init mv64x60_mpsc_device_se
  	if (err)
  		return err;
  
@@ -96551,7 +96551,7 @@
  	if (!prop)
  		return -ENODEV;
  	port_number = *(int *)prop;
-@@ -136,6 +136,7 @@
+@@ -136,6 +136,7 @@ static int __init mv64x60_mpsc_device_se
  
  	pdata.cache_mgmt = 1; /* All current revs need this set */
  
@@ -96559,7 +96559,7 @@
  	prop = of_get_property(np, "max_idle", NULL);
  	if (prop)
  		pdata.max_idle = *prop;
-@@ -205,30 +206,24 @@
+@@ -205,30 +206,24 @@ error:
  /*
   * Create mv64x60_eth platform devices
   */
@@ -96597,7 +96597,7 @@
  {
  	struct resource r[1];
  	struct mv643xx_eth_platform_data pdata;
-@@ -239,16 +234,12 @@
+@@ -239,16 +234,12 @@ static int __init mv64x60_eth_device_set
  	const phandle *ph;
  	int err;
  
@@ -96615,7 +96615,7 @@
  	if (!prop)
  		return -ENODEV;
  	pdata.port_number = *prop;
-@@ -301,7 +292,7 @@
+@@ -301,7 +292,7 @@ static int __init mv64x60_eth_device_set
  
  	of_node_put(phy);
  
@@ -96624,7 +96624,7 @@
  	if (!pdev)
  		return -ENOMEM;
  
-@@ -345,21 +336,19 @@
+@@ -345,21 +336,19 @@ static int __init mv64x60_i2c_device_set
  
  	memset(&pdata, 0, sizeof(pdata));
  
@@ -96649,7 +96649,7 @@
  
  	pdev = platform_device_alloc(MV64XXX_I2C_CTLR_NAME, id);
  	if (!pdev)
-@@ -401,10 +390,7 @@
+@@ -401,10 +390,7 @@ static int __init mv64x60_wdt_device_set
  
  	memset(&pdata, 0, sizeof(pdata));
  
@@ -96661,7 +96661,7 @@
  
  	np = of_get_parent(np);
  	if (!np)
-@@ -441,27 +427,43 @@
+@@ -441,27 +427,43 @@ error:
  
  static int __init mv64x60_device_setup(void)
  {
@@ -96712,7 +96712,7 @@
  	if (np) {
  		if ((err = mv64x60_wdt_device_setup(np, id)))
  			goto error;
-@@ -489,10 +491,10 @@
+@@ -489,10 +491,10 @@ static int __init mv64x60_add_mpsc_conso
  	if (!np)
  		goto not_mpsc;
  
@@ -96727,7 +96727,7 @@
  
 --- a/arch/powerpc/sysdev/mv64x60_pci.c
 +++ b/arch/powerpc/sysdev/mv64x60_pci.c
-@@ -86,14 +86,14 @@
+@@ -86,14 +86,14 @@ static int __init mv64x60_sysfs_init(voi
  	struct platform_device *pdev;
  	const unsigned int *prop;
  
@@ -96744,7 +96744,7 @@
  	if (IS_ERR(pdev))
  		return PTR_ERR(pdev);
  
-@@ -166,6 +166,6 @@
+@@ -166,6 +166,6 @@ void __init mv64x60_pci_init(void)
  {
  	struct device_node *np;
  
@@ -96754,7 +96754,7 @@
  }
 --- a/arch/powerpc/sysdev/mv64x60_pic.c
 +++ b/arch/powerpc/sysdev/mv64x60_pic.c
-@@ -238,13 +238,13 @@
+@@ -238,13 +238,13 @@ void __init mv64x60_init_irq(void)
  	const unsigned int *reg;
  	unsigned long flags;
  
@@ -96772,7 +96772,7 @@
  	mv64x60_irq_reg_base = ioremap(paddr, reg[1]);
 --- a/arch/powerpc/sysdev/mv64x60_udbg.c
 +++ b/arch/powerpc/sysdev/mv64x60_udbg.c
-@@ -85,7 +85,7 @@
+@@ -85,7 +85,7 @@ static void mv64x60_udbg_init(void)
  	if (!stdout)
  		return;
  
@@ -96783,7 +96783,7 @@
  	}
 --- a/arch/powerpc/sysdev/ppc4xx_pci.c
 +++ b/arch/powerpc/sysdev/ppc4xx_pci.c
-@@ -527,6 +527,7 @@
+@@ -527,6 +527,7 @@ static void __init ppc4xx_probe_pcix_bri
   *
   * ibm,plb-pciex-440spe
   * ibm,plb-pciex-405ex
@@ -96791,7 +96791,7 @@
   *
   * Anything else will be rejected for now as they are all subtly
   * different unfortunately.
-@@ -645,7 +646,7 @@
+@@ -645,7 +646,7 @@ static int __init ppc440spe_pciex_core_i
  	int time_out = 20;
  
  	/* Set PLL clock receiver to LVPECL */
@@ -96800,7 +96800,7 @@
  
  	/* Shouldn't we do all the calibration stuff etc... here ? */
  	if (ppc440spe_pciex_check_reset(np))
-@@ -659,8 +660,7 @@
+@@ -659,8 +660,7 @@ static int __init ppc440spe_pciex_core_i
  	}
  
  	/* De-assert reset of PCIe PLL, wait for lock */
@@ -96810,7 +96810,7 @@
  	udelay(3);
  
  	while (time_out) {
-@@ -712,9 +712,8 @@
+@@ -712,9 +712,8 @@ static int ppc440spe_pciex_init_port_hw(
  		mtdcri(SDR0, port->sdr_base + PESDRn_440SPE_HSSL7SET1,
  		       0x35000000);
  	}
@@ -96822,7 +96822,7 @@
  
  	return 0;
  }
-@@ -775,6 +774,115 @@
+@@ -775,6 +774,115 @@ static struct ppc4xx_pciex_hwops ppc440s
  	.setup_utl	= ppc440speB_pciex_init_utl,
  };
  
@@ -96938,7 +96938,7 @@
  #endif /* CONFIG_44x */
  
  #ifdef CONFIG_40x
-@@ -830,17 +938,9 @@
+@@ -830,17 +938,9 @@ static int ppc405ex_pciex_init_port_hw(s
  	 * PCIe boards don't show this problem.
  	 * This has to be re-tested and fixed in a later release!
  	 */
@@ -96956,7 +96956,7 @@
  
  	dcr_write(port->dcrs, DCRO_PEGPL_CFG, 0x10000000);  /* guarded on */
  
-@@ -896,6 +996,8 @@
+@@ -896,6 +996,8 @@ static int __init ppc4xx_pciex_check_cor
  		else
  			ppc4xx_pciex_hwops = &ppc440speB_pcie_hwops;
  	}
@@ -96965,7 +96965,7 @@
  #endif /* CONFIG_44x    */
  #ifdef CONFIG_40x
  	if (of_device_is_compatible(np, "ibm,plb-pciex-405ex"))
-@@ -1042,8 +1144,7 @@
+@@ -1042,8 +1144,7 @@ static int __init ppc4xx_pciex_port_init
  		port->link = 0;
  	}
  
@@ -97255,7 +97255,7 @@
 +}
 --- a/arch/powerpc/sysdev/qe_lib/qe.c
 +++ b/arch/powerpc/sysdev/qe_lib/qe.c
-@@ -55,7 +55,7 @@
+@@ -55,7 +55,7 @@ struct qe_snum {
  /* We allocate this here because it is used almost exclusively for
   * the communication processor devices.
   */
@@ -97264,7 +97264,7 @@
  EXPORT_SYMBOL(qe_immr);
  
  static struct qe_snum snums[QE_NUM_OF_SNUM];	/* Dynamically allocated SNUMs */
-@@ -156,7 +156,7 @@
+@@ -156,7 +156,7 @@ EXPORT_SYMBOL(qe_issue_cmd);
   */
  static unsigned int brg_clk = 0;
  
@@ -97273,7 +97273,7 @@
  {
  	struct device_node *qe;
  	unsigned int size;
-@@ -180,6 +180,7 @@
+@@ -180,6 +180,7 @@ unsigned int get_brg_clk(void)
  
  	return brg_clk;
  }
@@ -97281,7 +97281,7 @@
  
  /* Program the BRG to the given sampling rate and multiplier
   *
-@@ -197,7 +198,7 @@
+@@ -197,7 +198,7 @@ int qe_setbrg(enum qe_clock brg, unsigne
  	if ((brg < QE_BRG1) || (brg > QE_BRG16))
  		return -EINVAL;
  
@@ -97290,7 +97290,7 @@
  
  	if (divisor > QE_BRGC_DIVISOR_MAX + 1) {
  		div16 = QE_BRGC_DIV16;
-@@ -415,12 +416,6 @@
+@@ -415,12 +416,6 @@ void qe_muram_dump(void)
  }
  EXPORT_SYMBOL(qe_muram_dump);
  
@@ -97313,7 +97313,7 @@
  #include <asm/prom.h>
  #include <sysdev/fsl_soc.h>
  
-@@ -41,7 +42,7 @@
+@@ -41,7 +42,7 @@ struct port_regs {
  #endif
  };
  
@@ -97322,7 +97322,7 @@
  static int num_par_io_ports = 0;
  
  int par_io_init(struct device_node *np)
-@@ -165,7 +166,7 @@
+@@ -165,7 +166,7 @@ int par_io_of_config(struct device_node 
  	}
  
  	ph = of_get_property(np, "pio-handle", NULL);
@@ -97331,7 +97331,7 @@
  		printk(KERN_ERR "pio-handle not available \n");
  		return -1;
  	}
-@@ -200,7 +201,7 @@
+@@ -200,7 +201,7 @@ static void dump_par_io(void)
  {
  	unsigned int i;
  
@@ -97342,7 +97342,7 @@
  			in_be32(&par_io[i].cpodr));
 --- a/arch/powerpc/sysdev/qe_lib/ucc_fast.c
 +++ b/arch/powerpc/sysdev/qe_lib/ucc_fast.c
-@@ -148,57 +148,57 @@
+@@ -148,57 +148,57 @@ int ucc_fast_init(struct ucc_fast_info *
  
  	/* check if the UCC port number is in range. */
  	if ((uf_info->ucc_num < 0) || (uf_info->ucc_num > UCC_MAX_NUM - 1)) {
@@ -97410,7 +97410,7 @@
  		return -ENOMEM;
  	}
  
-@@ -207,7 +207,7 @@
+@@ -207,7 +207,7 @@ int ucc_fast_init(struct ucc_fast_info *
  	/* Set the PHY base address */
  	uccf->uf_regs = ioremap(uf_info->regs, sizeof(struct ucc_fast));
  	if (uccf->uf_regs == NULL) {
@@ -97419,7 +97419,7 @@
  		return -ENOMEM;
  	}
  
-@@ -230,7 +230,7 @@
+@@ -230,7 +230,7 @@ int ucc_fast_init(struct ucc_fast_info *
  	/* Set UCC to fast type */
  	ret = ucc_set_type(uf_info->ucc_num, UCC_SPEED_TYPE_FAST);
  	if (ret) {
@@ -97428,7 +97428,7 @@
  		ucc_fast_free(uccf);
  		return ret;
  	}
-@@ -270,7 +270,7 @@
+@@ -270,7 +270,7 @@ int ucc_fast_init(struct ucc_fast_info *
  	    qe_muram_alloc(uf_info->utfs, UCC_FAST_VIRT_FIFO_REGS_ALIGNMENT);
  	if (IS_ERR_VALUE(uccf->ucc_fast_tx_virtual_fifo_base_offset)) {
  		printk(KERN_ERR "%s: cannot allocate MURAM for TX FIFO\n",
@@ -97437,7 +97437,7 @@
  		uccf->ucc_fast_tx_virtual_fifo_base_offset = 0;
  		ucc_fast_free(uccf);
  		return -ENOMEM;
-@@ -283,7 +283,7 @@
+@@ -283,7 +283,7 @@ int ucc_fast_init(struct ucc_fast_info *
  			   UCC_FAST_VIRT_FIFO_REGS_ALIGNMENT);
  	if (IS_ERR_VALUE(uccf->ucc_fast_rx_virtual_fifo_base_offset)) {
  		printk(KERN_ERR "%s: cannot allocate MURAM for RX FIFO\n",
@@ -97446,7 +97446,7 @@
  		uccf->ucc_fast_rx_virtual_fifo_base_offset = 0;
  		ucc_fast_free(uccf);
  		return -ENOMEM;
-@@ -314,7 +314,7 @@
+@@ -314,7 +314,7 @@ int ucc_fast_init(struct ucc_fast_info *
  		    ucc_set_qe_mux_rxtx(uf_info->ucc_num, uf_info->rx_clock,
  					COMM_DIR_RX)) {
  			printk(KERN_ERR "%s: illegal value for RX clock\n",
@@ -97455,7 +97455,7 @@
  			ucc_fast_free(uccf);
  			return -EINVAL;
  		}
-@@ -323,7 +323,7 @@
+@@ -323,7 +323,7 @@ int ucc_fast_init(struct ucc_fast_info *
  		    ucc_set_qe_mux_rxtx(uf_info->ucc_num, uf_info->tx_clock,
  					COMM_DIR_TX)) {
  			printk(KERN_ERR "%s: illegal value for TX clock\n",
@@ -97466,7 +97466,7 @@
  		}
 --- a/arch/powerpc/sysdev/qe_lib/ucc_slow.c
 +++ b/arch/powerpc/sysdev/qe_lib/ucc_slow.c
-@@ -142,7 +142,7 @@
+@@ -142,7 +142,7 @@ int ucc_slow_init(struct ucc_slow_info *
  
  	/* check if the UCC port number is in range. */
  	if ((us_info->ucc_num < 0) || (us_info->ucc_num > UCC_MAX_NUM - 1)) {
@@ -97475,7 +97475,7 @@
  		return -EINVAL;
  	}
  
-@@ -161,7 +161,7 @@
+@@ -161,7 +161,7 @@ int ucc_slow_init(struct ucc_slow_info *
  	uccs = kzalloc(sizeof(struct ucc_slow_private), GFP_KERNEL);
  	if (!uccs) {
  		printk(KERN_ERR "%s: Cannot allocate private data\n",
@@ -97484,7 +97484,7 @@
  		return -ENOMEM;
  	}
  
-@@ -170,7 +170,7 @@
+@@ -170,7 +170,7 @@ int ucc_slow_init(struct ucc_slow_info *
  	/* Set the PHY base address */
  	uccs->us_regs = ioremap(us_info->regs, sizeof(struct ucc_slow));
  	if (uccs->us_regs == NULL) {
@@ -97493,7 +97493,7 @@
  		return -ENOMEM;
  	}
  
-@@ -189,7 +189,7 @@
+@@ -189,7 +189,7 @@ int ucc_slow_init(struct ucc_slow_info *
  	uccs->us_pram_offset =
  		qe_muram_alloc(UCC_SLOW_PRAM_SIZE, ALIGNMENT_OF_UCC_SLOW_PRAM);
  	if (IS_ERR_VALUE(uccs->us_pram_offset)) {
@@ -97502,7 +97502,7 @@
  		ucc_slow_free(uccs);
  		return -ENOMEM;
  	}
-@@ -202,7 +202,7 @@
+@@ -202,7 +202,7 @@ int ucc_slow_init(struct ucc_slow_info *
  	/* Set UCC to slow type */
  	ret = ucc_set_type(us_info->ucc_num, UCC_SPEED_TYPE_SLOW);
  	if (ret) {
@@ -97511,7 +97511,7 @@
  		ucc_slow_free(uccs);
  		return ret;
  	}
-@@ -216,7 +216,7 @@
+@@ -216,7 +216,7 @@ int ucc_slow_init(struct ucc_slow_info *
  		qe_muram_alloc(us_info->rx_bd_ring_len * sizeof(struct qe_bd),
  				QE_ALIGNMENT_OF_BD);
  	if (IS_ERR_VALUE(uccs->rx_base_offset)) {
@@ -97520,7 +97520,7 @@
  			us_info->rx_bd_ring_len);
  		uccs->rx_base_offset = 0;
  		ucc_slow_free(uccs);
-@@ -227,7 +227,7 @@
+@@ -227,7 +227,7 @@ int ucc_slow_init(struct ucc_slow_info *
  		qe_muram_alloc(us_info->tx_bd_ring_len * sizeof(struct qe_bd),
  			QE_ALIGNMENT_OF_BD);
  	if (IS_ERR_VALUE(uccs->tx_base_offset)) {
@@ -97529,7 +97529,7 @@
  		uccs->tx_base_offset = 0;
  		ucc_slow_free(uccs);
  		return -ENOMEM;
-@@ -317,7 +317,7 @@
+@@ -317,7 +317,7 @@ int ucc_slow_init(struct ucc_slow_info *
  		if (ucc_set_qe_mux_rxtx(us_info->ucc_num, us_info->rx_clock,
  					COMM_DIR_RX)) {
  			printk(KERN_ERR "%s: illegal value for RX clock\n",
@@ -97538,7 +97538,7 @@
  			ucc_slow_free(uccs);
  			return -EINVAL;
  		}
-@@ -325,7 +325,7 @@
+@@ -325,7 +325,7 @@ int ucc_slow_init(struct ucc_slow_info *
  		if (ucc_set_qe_mux_rxtx(us_info->ucc_num, us_info->tx_clock,
  					COMM_DIR_TX)) {
  			printk(KERN_ERR "%s: illegal value for TX clock\n",
@@ -97549,7 +97549,7 @@
  		}
 --- a/arch/powerpc/sysdev/rtc_cmos_setup.c
 +++ b/arch/powerpc/sysdev/rtc_cmos_setup.c
-@@ -56,3 +56,5 @@
+@@ -56,3 +56,5 @@ static int  __init add_rtc(void)
  	return 0;
  }
  fs_initcall(add_rtc);
@@ -97557,7 +97557,7 @@
 +MODULE_LICENSE("GPL");
 --- a/arch/powerpc/sysdev/tsi108_dev.c
 +++ b/arch/powerpc/sysdev/tsi108_dev.c
-@@ -84,7 +84,7 @@
+@@ -84,7 +84,7 @@ static int __init tsi108_eth_of_init(voi
  
  		ret = of_address_to_resource(np, 0, &r[0]);
  		DBG("%s: name:start->end = %s:0x%lx-> 0x%lx\n",
@@ -97566,7 +97566,7 @@
  		if (ret)
  			goto err;
  
-@@ -93,7 +93,7 @@
+@@ -93,7 +93,7 @@ static int __init tsi108_eth_of_init(voi
  		r[1].end = irq_of_parse_and_map(np, 0);
  		r[1].flags = IORESOURCE_IRQ;
  		DBG("%s: name:start->end = %s:0x%lx-> 0x%lx\n",
@@ -97577,7 +97577,7 @@
  		    platform_device_register_simple("tsi-ethernet", i++, &r[0],
 --- a/arch/powerpc/sysdev/tsi108_pci.c
 +++ b/arch/powerpc/sysdev/tsi108_pci.c
-@@ -207,7 +207,7 @@
+@@ -207,7 +207,7 @@ int __init tsi108_setup_pci(struct devic
  	/* PCI Config mapping */
  	tsi108_pci_cfg_base = (u32)ioremap(cfg_phys, TSI108_PCI_CFG_SIZE);
  	tsi108_pci_cfg_phys = cfg_phys;
@@ -97586,7 +97586,7 @@
  	    tsi108_pci_cfg_base);
  
  	/* Fetch host bridge registers address */
-@@ -395,7 +395,7 @@
+@@ -395,7 +395,7 @@ static int pci_irq_host_xlate(struct irq
  static int pci_irq_host_map(struct irq_host *h, unsigned int virq,
  			  irq_hw_number_t hw)
  {	unsigned int irq;
@@ -97605,7 +97605,7 @@
  #endif
  
  #include "nonstdio.h"
-@@ -1244,15 +1243,12 @@
+@@ -1244,15 +1243,12 @@ static void get_function_bounds(unsigned
  
  static int xmon_depth_to_print = 64;
  
@@ -97625,7 +97625,7 @@
  #define REGS_OFFSET		16
  #endif
  
-@@ -1318,7 +1314,7 @@
+@@ -1318,7 +1314,7 @@ static void xmon_show_stack(unsigned lon
  		/* Look for "regshere" marker to see if this is
  		   an exception frame. */
  		if (mread(sp + MARKER_OFFSET, &marker, sizeof(unsigned long))
@@ -97634,7 +97634,7 @@
  			if (mread(sp + REGS_OFFSET, &regs, sizeof(regs))
  			    != sizeof(regs)) {
  				printf("Couldn't read registers at %lx\n",
-@@ -1598,7 +1594,6 @@
+@@ -1598,7 +1594,6 @@ void super_regs(void)
  		if (firmware_has_feature(FW_FEATURE_ISERIES)) {
  			struct paca_struct *ptrPaca;
  			struct lppaca *ptrLpPaca;
@@ -97642,7 +97642,7 @@
  
  			/* Dump out relevant Paca data areas. */
  			printf("Paca: \n");
-@@ -1611,15 +1606,6 @@
+@@ -1611,15 +1606,6 @@ void super_regs(void)
  			printf("    Saved Gpr3=%.16lx  Saved Gpr4=%.16lx \n",
  			       ptrLpPaca->saved_gpr3, ptrLpPaca->saved_gpr4);
  			printf("    Saved Gpr5=%.16lx \n", ptrLpPaca->saved_gpr5);
@@ -97671,7 +97671,7 @@
  
 --- a/arch/ppc/8xx_io/fec.c
 +++ b/arch/ppc/8xx_io/fec.c
-@@ -520,7 +520,7 @@
+@@ -520,7 +520,7 @@ fec_enet_interrupt(int irq, void * dev_i
  #ifdef	CONFIG_USE_MDIO
  			fec_enet_mii(dev);
  #else
@@ -97680,7 +97680,7 @@
  #endif	/* CONFIG_USE_MDIO */
  		}
  
-@@ -1441,7 +1441,7 @@
+@@ -1441,7 +1441,7 @@ irqreturn_t mii_link_interrupt(int irq, 
  		fecp->fec_ecntrl = ecntrl;	/* restore old settings */
  	}
  #else
@@ -97691,7 +97691,7 @@
  #ifndef CONFIG_RPXCLASSIC
 --- a/arch/ppc/kernel/head.S
 +++ b/arch/ppc/kernel/head.S
-@@ -701,23 +701,6 @@
+@@ -701,23 +701,6 @@ load_up_altivec:
  	b	fast_exception_return
  
  /*
@@ -97717,7 +97717,7 @@
   * and save the AltiVec registers in its thread_struct.
 --- a/arch/ppc/mm/init.c
 +++ b/arch/ppc/mm/init.c
-@@ -109,7 +109,6 @@
+@@ -109,7 +109,6 @@ void show_mem(void)
  
  	printk("Mem-info:\n");
  	show_free_areas();
@@ -97727,7 +97727,7 @@
  		total++;
 --- a/arch/ppc/platforms/radstone_ppc7d.c
 +++ b/arch/ppc/platforms/radstone_ppc7d.c
-@@ -512,7 +512,7 @@
+@@ -512,7 +512,7 @@ static void __init ppc7d_init_irq(void)
  {
  	int irq;
  
@@ -97736,7 +97736,7 @@
  	i8259_init(0, 0);
  	mv64360_init_irq();
  
-@@ -569,7 +569,7 @@
+@@ -569,7 +569,7 @@ static int __init ppc7d_map_irq(struct p
  	};
  	const long min_idsel = 10, max_idsel = 14, irqs_per_slot = 4;
  
@@ -97745,7 +97745,7 @@
  		 dev->vendor, dev->device, PCI_FUNC(dev->devfn), idsel, pin);
  
  	return PCI_IRQ_TABLE_LOOKUP;
-@@ -1300,7 +1300,7 @@
+@@ -1300,7 +1300,7 @@ static void ppc7d_init2(void)
  	u32 data;
  	u8 data8;
  
@@ -97754,7 +97754,7 @@
  
  	/* Wait for debugger? */
  	if (ppc7d_wait_debugger) {
-@@ -1333,7 +1333,7 @@
+@@ -1333,7 +1333,7 @@ static void ppc7d_init2(void)
          ppc_md.set_rtc_time = ppc7d_set_rtc_time;
          ppc_md.get_rtc_time = ppc7d_get_rtc_time;
  
@@ -97765,7 +97765,7 @@
  /* Called from machine_init(), early, before any of the __init functions
 --- a/arch/ppc/syslib/mpc52xx_setup.c
 +++ b/arch/ppc/syslib/mpc52xx_setup.c
-@@ -279,7 +279,7 @@
+@@ -279,7 +279,7 @@ int mpc52xx_match_psc_function(int psc_i
  
  int mpc52xx_set_psc_clkdiv(int psc_id, int clkdiv)
  {
@@ -97776,7 +97776,7 @@
  	u16 mclken_div;
 --- a/arch/sparc64/Kconfig
 +++ b/arch/sparc64/Kconfig
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,7 @@ config SPARC64
  	bool
  	default y
  	select HAVE_IDE
@@ -97786,7 +97786,7 @@
  	  Sun Microsystems, incorporated.  This port covers the newer 64-bit
 --- a/drivers/block/viodasd.c
 +++ b/drivers/block/viodasd.c
-@@ -69,7 +69,7 @@
+@@ -69,7 +69,7 @@ MODULE_LICENSE("GPL");
  enum {
  	PARTITION_SHIFT = 3,
  	MAX_DISKNO = HVMAXARCHITECTEDVIRTUALDISKS,
@@ -97797,7 +97797,7 @@
  static DEFINE_SPINLOCK(viodasd_spinlock);
 --- a/drivers/char/hvc_beat.c
 +++ b/drivers/char/hvc_beat.c
-@@ -78,8 +78,8 @@
+@@ -78,8 +78,8 @@ static int hvc_beat_put_chars(uint32_t v
  	for (rest = cnt; rest > 0; rest -= nlen) {
  		nlen = (rest > 16) ? 16 : rest;
  		memcpy(kb, buf, nlen);
@@ -97831,7 +97831,7 @@
  }
  
  /**
-@@ -117,20 +117,8 @@
+@@ -117,20 +117,8 @@ static inline u32 buffer_icap_get_bram(v
   **/
  static inline bool buffer_icap_busy(void __iomem *base_address)
  {
@@ -97865,7 +97865,7 @@
  /* Loads a partial bitstream from system memory. */
  int buffer_icap_set_configuration(struct hwicap_drvdata *drvdata, u32 *data,
  			     u32 Size);
-@@ -54,4 +52,7 @@
+@@ -54,4 +52,7 @@ int buffer_icap_set_configuration(struct
  int buffer_icap_get_configuration(struct hwicap_drvdata *drvdata, u32 *data,
  			     u32 Size);
  
@@ -97889,7 +97889,7 @@
  
  #define XHI_WFO_MAX_VACANCY 1024 /* Max Write FIFO Vacancy, in words */
  #define XHI_RFO_MAX_OCCUPANCY 256 /* Max Read FIFO Occupancy, in words */
-@@ -152,13 +145,35 @@
+@@ -152,13 +145,35 @@ static inline void fifo_icap_start_readb
  }
  
  /**
@@ -97928,7 +97928,7 @@
  
 --- a/drivers/char/xilinx_hwicap/fifo_icap.h
 +++ b/drivers/char/xilinx_hwicap/fifo_icap.h
-@@ -56,6 +56,7 @@
+@@ -56,6 +56,7 @@ int fifo_icap_set_configuration(
  		u32 *FrameBuffer,
  		u32 NumWords);
  
@@ -97978,7 +97978,7 @@
  /* An array, which is set to true when the device is registered. */
  static bool probed_devices[HWICAP_DEVICES];
  static struct mutex icap_sem;
-@@ -250,8 +246,26 @@
+@@ -250,8 +246,26 @@ static int hwicap_get_configuration_regi
  	 * Create the data to be written to the ICAP.
  	 */
  	buffer[index++] = XHI_DUMMY_PACKET;
@@ -98005,7 +98005,7 @@
  	buffer[index++] = hwicap_type_1_read(reg) | 1;
  	buffer[index++] = XHI_NOOP_PACKET;
  	buffer[index++] = XHI_NOOP_PACKET;
-@@ -587,7 +601,7 @@
+@@ -587,7 +601,7 @@ static int __devinit hwicap_setup(struct
  	probed_devices[id] = 1;
  	mutex_unlock(&icap_sem);
  
@@ -98014,7 +98014,7 @@
  
  	drvdata = kzalloc(sizeof(struct hwicap_drvdata), GFP_KERNEL);
  	if (!drvdata) {
-@@ -664,12 +678,14 @@
+@@ -664,12 +678,14 @@ static int __devinit hwicap_setup(struct
  static struct hwicap_driver_config buffer_icap_config = {
  	.get_configuration = buffer_icap_get_configuration,
  	.set_configuration = buffer_icap_set_configuration,
@@ -98029,7 +98029,7 @@
  	.reset = fifo_icap_reset,
  };
  
-@@ -690,7 +706,7 @@
+@@ -690,7 +706,7 @@ static int __devexit hwicap_remove(struc
  	dev_set_drvdata(dev, NULL);
  
  	mutex_lock(&icap_sem);
@@ -98038,7 +98038,7 @@
  	mutex_unlock(&icap_sem);
  	return 0;		/* success */
  }
-@@ -830,23 +846,12 @@
+@@ -830,23 +846,12 @@ static int __init hwicap_module_init(voi
  	icap_class = class_create(THIS_MODULE, "xilinx_config");
  	mutex_init(&icap_sem);
  
@@ -98068,7 +98068,7 @@
  
  	retval = platform_driver_register(&hwicap_platform_driver);
  
-@@ -871,7 +876,7 @@
+@@ -871,7 +876,7 @@ static int __init hwicap_module_init(voi
  
  static void __exit hwicap_module_cleanup(void)
  {
@@ -98079,7 +98079,7 @@
  
 --- a/drivers/char/xilinx_hwicap/xilinx_hwicap.h
 +++ b/drivers/char/xilinx_hwicap/xilinx_hwicap.h
-@@ -65,10 +65,27 @@
+@@ -65,10 +65,27 @@ struct hwicap_drvdata {
  };
  
  struct hwicap_driver_config {
@@ -98107,7 +98107,7 @@
  	void (*reset)(struct hwicap_drvdata *drvdata);
  };
  
-@@ -163,6 +180,13 @@
+@@ -163,6 +180,13 @@ struct config_registers {
  /* Constant to use for CRC check when CRC has been disabled */
  #define XHI_DISABLED_AUTO_CRC       0x0000DEFCUL
  
@@ -98332,7 +98332,7 @@
  struct fsl_elbc_ctrl;
  
  /* mtd information per set */
-@@ -261,7 +66,7 @@
+@@ -261,7 +66,7 @@ struct fsl_elbc_ctrl {
  
  	/* device info */
  	struct device *dev;
@@ -98341,7 +98341,7 @@
  	int irq;
  	wait_queue_head_t irq_wait;
  	unsigned int irq_status; /* status read from LTESR by irq handler */
-@@ -322,7 +127,7 @@
+@@ -322,7 +127,7 @@ static void set_addr(struct mtd_info *mt
  	struct nand_chip *chip = mtd->priv;
  	struct fsl_elbc_mtd *priv = chip->priv;
  	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
@@ -98350,7 +98350,7 @@
  	int buf_num;
  
  	ctrl->page = page_addr;
-@@ -363,7 +168,7 @@
+@@ -363,7 +168,7 @@ static int fsl_elbc_run_command(struct m
  	struct nand_chip *chip = mtd->priv;
  	struct fsl_elbc_mtd *priv = chip->priv;
  	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
@@ -98359,7 +98359,7 @@
  
  	/* Setup the FMR[OP] to execute without write protection */
  	out_be32(&lbc->fmr, priv->fmr | 3);
-@@ -406,7 +211,7 @@
+@@ -406,7 +211,7 @@ static void fsl_elbc_do_read(struct nand
  {
  	struct fsl_elbc_mtd *priv = chip->priv;
  	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
@@ -98368,7 +98368,7 @@
  
  	if (priv->page_size) {
  		out_be32(&lbc->fir,
-@@ -439,7 +244,7 @@
+@@ -439,7 +244,7 @@ static void fsl_elbc_cmdfunc(struct mtd_
  	struct nand_chip *chip = mtd->priv;
  	struct fsl_elbc_mtd *priv = chip->priv;
  	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
@@ -98377,7 +98377,7 @@
  
  	ctrl->use_mdr = 0;
  
-@@ -775,7 +580,7 @@
+@@ -775,7 +580,7 @@ static int fsl_elbc_wait(struct mtd_info
  {
  	struct fsl_elbc_mtd *priv = chip->priv;
  	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
@@ -98386,7 +98386,7 @@
  
  	if (ctrl->status != LTESR_CC)
  		return NAND_STATUS_FAIL;
-@@ -807,7 +612,7 @@
+@@ -807,7 +612,7 @@ static int fsl_elbc_chip_init_tail(struc
  	struct nand_chip *chip = mtd->priv;
  	struct fsl_elbc_mtd *priv = chip->priv;
  	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
@@ -98395,7 +98395,7 @@
  	unsigned int al;
  
  	/* calculate FMR Address Length field */
-@@ -922,7 +727,7 @@
+@@ -922,7 +727,7 @@ static void fsl_elbc_write_page(struct m
  static int fsl_elbc_chip_init(struct fsl_elbc_mtd *priv)
  {
  	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
@@ -98404,7 +98404,7 @@
  	struct nand_chip *chip = &priv->chip;
  
  	dev_dbg(priv->dev, "eLBC Set Information for bank %d\n", priv->bank);
-@@ -986,7 +791,7 @@
+@@ -986,7 +791,7 @@ static int fsl_elbc_chip_remove(struct f
  static int fsl_elbc_chip_probe(struct fsl_elbc_ctrl *ctrl,
                                 struct device_node *node)
  {
@@ -98413,7 +98413,7 @@
  	struct fsl_elbc_mtd *priv;
  	struct resource res;
  #ifdef CONFIG_MTD_PARTITIONS
-@@ -1083,7 +888,7 @@
+@@ -1083,7 +888,7 @@ err:
  
  static int __devinit fsl_elbc_ctrl_init(struct fsl_elbc_ctrl *ctrl)
  {
@@ -98422,7 +98422,7 @@
  
  	/* clear event registers */
  	setbits32(&lbc->ltesr, LTESR_NAND_MASK);
-@@ -1128,7 +933,7 @@
+@@ -1128,7 +933,7 @@ static int __devexit fsl_elbc_ctrl_remov
  static irqreturn_t fsl_elbc_ctrl_irq(int irqno, void *data)
  {
  	struct fsl_elbc_ctrl *ctrl = data;
@@ -98433,7 +98433,7 @@
  	if (status) {
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -219,7 +219,8 @@
+@@ -219,7 +219,8 @@ obj-$(CONFIG_SMC911X) += smc911x.o
  obj-$(CONFIG_BFIN_MAC) += bfin_mac.o
  obj-$(CONFIG_DM9000) += dm9000.o
  obj-$(CONFIG_FEC_8XX) += fec_8xx/
@@ -98445,7 +98445,7 @@
  
 --- a/drivers/net/iseries_veth.c
 +++ b/drivers/net/iseries_veth.c
-@@ -308,7 +308,8 @@
+@@ -308,7 +308,8 @@ static void veth_complete_allocation(voi
  
  static int veth_allocate_events(HvLpIndex rlp, int number)
  {
@@ -98491,7 +98491,7 @@
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR ("Olof Johansson <olof@lixom.net>");
  MODULE_DESCRIPTION("PA Semi PWRficient Ethernet driver");
-@@ -94,6 +79,8 @@
+@@ -94,6 +79,8 @@ static int debug = -1;	/* -1 == use DEFA
  module_param(debug, int, 0);
  MODULE_PARM_DESC(debug, "PA Semi MAC bitmapped debugging message enable value");
  
@@ -98500,7 +98500,7 @@
  static int translation_enabled(void)
  {
  #if defined(CONFIG_PPC_PASEMI_IOMMU_DMA_FORCE)
-@@ -322,6 +309,104 @@
+@@ -322,6 +309,104 @@ static int pasemi_mac_unmap_tx_skb(struc
  	return (nfrags + 3) & ~1;
  }
  
@@ -98605,7 +98605,7 @@
  static int pasemi_mac_setup_rx_resources(const struct net_device *dev)
  {
  	struct pasemi_mac_rxring *ring;
-@@ -445,7 +530,7 @@
+@@ -445,7 +530,7 @@ pasemi_mac_setup_tx_resources(const stru
  	cfg = PAS_DMA_TXCHAN_CFG_TY_IFACE |
  	      PAS_DMA_TXCHAN_CFG_TATTR(mac->dma_if) |
  	      PAS_DMA_TXCHAN_CFG_UP |
@@ -98614,7 +98614,7 @@
  
  	if (translation_enabled())
  		cfg |= PAS_DMA_TXCHAN_CFG_TRD | PAS_DMA_TXCHAN_CFG_TRR;
-@@ -810,13 +895,21 @@
+@@ -810,13 +895,21 @@ restart:
  		u64 mactx = TX_DESC(txring, i);
  		struct sk_buff *skb;
  
@@ -98639,7 +98639,7 @@
  		if (unlikely(mactx & XCT_MACTX_O))
  			/* Not yet transmitted */
  			break;
-@@ -1041,13 +1134,7 @@
+@@ -1041,13 +1134,7 @@ static int pasemi_mac_open(struct net_de
  {
  	struct pasemi_mac *mac = netdev_priv(dev);
  	unsigned int flags;
@@ -98654,7 +98654,7 @@
  
  	flags = PAS_MAC_CFG_TXP_FCE | PAS_MAC_CFG_TXP_FPC(3) |
  		PAS_MAC_CFG_TXP_SL(3) | PAS_MAC_CFG_TXP_COB(0xf) |
-@@ -1064,6 +1151,19 @@
+@@ -1064,6 +1151,19 @@ static int pasemi_mac_open(struct net_de
  	if (!mac->tx)
  		goto out_tx_ring;
  
@@ -98674,7 +98674,7 @@
  	/* 0x3ff with 33MHz clock is about 31us */
  	write_iob_reg(PAS_IOB_DMA_COM_TIMEOUTCFG,
  		      PAS_IOB_DMA_COM_TIMEOUTCFG_TCNT(0x3ff));
-@@ -1247,7 +1347,7 @@
+@@ -1247,7 +1347,7 @@ static int pasemi_mac_close(struct net_d
  {
  	struct pasemi_mac *mac = netdev_priv(dev);
  	unsigned int sta;
@@ -98683,7 +98683,7 @@
  
  	rxch = rx_ring(mac)->chan.chno;
  	txch = tx_ring(mac)->chan.chno;
-@@ -1292,6 +1392,13 @@
+@@ -1292,6 +1392,13 @@ static int pasemi_mac_close(struct net_d
  	free_irq(mac->tx->chan.irq, mac->tx);
  	free_irq(mac->rx->chan.irq, mac->rx);
  
@@ -98697,7 +98697,7 @@
  	/* Free resources */
  	pasemi_mac_free_rx_resources(mac);
  	pasemi_mac_free_tx_resources(mac);
-@@ -1299,35 +1406,113 @@
+@@ -1299,35 +1406,113 @@ static int pasemi_mac_close(struct net_d
  	return 0;
  }
  
@@ -98831,7 +98831,7 @@
  
  	nfrags = skb_shinfo(skb)->nr_frags;
  
-@@ -1350,24 +1535,46 @@
+@@ -1350,24 +1535,46 @@ static int pasemi_mac_start_tx(struct sk
  		}
  	}
  
@@ -98883,7 +98883,7 @@
  	TX_DESC(txring, fill) = mactx;
  	TX_DESC_INFO(txring, fill).dma = nfrags;
  	fill++;
-@@ -1441,12 +1648,33 @@
+@@ -1441,12 +1648,33 @@ static int pasemi_mac_poll(struct napi_s
  	return pkts;
  }
  
@@ -98918,7 +98918,7 @@
  
  	if (new_mtu < PE_MIN_MTU || new_mtu > PE_MAX_MTU)
  		return -EINVAL;
-@@ -1468,6 +1696,16 @@
+@@ -1468,6 +1696,16 @@ static int pasemi_mac_change_mtu(struct 
  		pasemi_mac_pause_rxint(mac);
  		pasemi_mac_clean_rx(rx_ring(mac), RX_RING_SIZE);
  		pasemi_mac_free_rx_buffers(mac);
@@ -98935,7 +98935,7 @@
  	}
  
  	/* Change maxf, i.e. what size frames are accepted.
-@@ -1482,6 +1720,7 @@
+@@ -1482,6 +1720,7 @@ static int pasemi_mac_change_mtu(struct 
  	/* MTU + ETH_HLEN + VLAN_HLEN + 2 64B cachelines */
  	mac->bufsz = new_mtu + ETH_HLEN + ETH_FCS_LEN + LOCAL_SKB_ALIGN + 128;
  
@@ -98943,7 +98943,7 @@
  	if (running) {
  		write_dma_reg(PAS_DMA_RXINT_RCMDSTA(mac->dma_if),
  			      rcmdsta | PAS_DMA_RXINT_RCMDSTA_EN);
-@@ -1494,7 +1733,7 @@
+@@ -1494,7 +1733,7 @@ static int pasemi_mac_change_mtu(struct 
  		pasemi_mac_intf_enable(mac);
  	}
  
@@ -98952,7 +98952,7 @@
  }
  
  static int __devinit
-@@ -1528,7 +1767,7 @@
+@@ -1528,7 +1767,7 @@ pasemi_mac_probe(struct pci_dev *pdev, c
  	netif_napi_add(dev, &mac->napi, pasemi_mac_poll, 64);
  
  	dev->features = NETIF_F_IP_CSUM | NETIF_F_LLTX | NETIF_F_SG |
@@ -98961,7 +98961,7 @@
  
  	mac->lro_mgr.max_aggr = LRO_MAX_AGGR;
  	mac->lro_mgr.max_desc = MAX_LRO_DESCRIPTORS;
-@@ -1588,8 +1827,12 @@
+@@ -1588,8 +1827,12 @@ pasemi_mac_probe(struct pci_dev *pdev, c
  	dev->mtu = PE_DEF_MTU;
  	/* 1500 MTU + ETH_HLEN + VLAN_HLEN + 2 64B cachelines */
  	mac->bufsz = dev->mtu + ETH_HLEN + ETH_FCS_LEN + LOCAL_SKB_ALIGN + 128;
@@ -98991,7 +98991,7 @@
  
  struct pasemi_mac_txring {
  	struct pasemi_dmachan chan; /* Must be first */
-@@ -51,6 +58,15 @@
+@@ -51,6 +58,15 @@ struct pasemi_mac_rxring {
  	struct pasemi_mac *mac;	/* Needed in intr handler */
  };
  
@@ -99007,7 +99007,7 @@
  struct pasemi_mac {
  	struct net_device *netdev;
  	struct pci_dev *pdev;
-@@ -60,10 +76,12 @@
+@@ -60,10 +76,12 @@ struct pasemi_mac {
  	struct napi_struct napi;
  
  	int		bufsz; /* RX ring buffer size */
@@ -99021,7 +99021,7 @@
  
  	u8		mac_addr[6];
  
-@@ -74,6 +92,7 @@
+@@ -74,6 +92,7 @@ struct pasemi_mac {
  
  	struct pasemi_mac_txring *tx;
  	struct pasemi_mac_rxring *rx;
@@ -99029,7 +99029,7 @@
  	char		tx_irq_name[10];		/* "eth%d tx" */
  	char		rx_irq_name[10];		/* "eth%d rx" */
  	int	link;
-@@ -90,6 +109,16 @@
+@@ -90,6 +109,16 @@ struct pasemi_mac_buffer {
  	dma_addr_t	dma;
  };
  
@@ -99046,7 +99046,7 @@
  
  /* PCI register offsets and formats */
  
-@@ -101,6 +130,7 @@
+@@ -101,6 +130,7 @@ enum {
  	PAS_MAC_CFG_ADR0 = 0x8c,
  	PAS_MAC_CFG_ADR1 = 0x90,
  	PAS_MAC_CFG_TXP = 0x98,
@@ -99054,7 +99054,7 @@
  	PAS_MAC_IPC_CHNL = 0x208,
  };
  
-@@ -172,6 +202,8 @@
+@@ -172,6 +202,8 @@ enum {
  #define PAS_MAC_CFG_TXP_TIFG(x)		(((x) << PAS_MAC_CFG_TXP_TIFG_S) & \
  					 PAS_MAC_CFG_TXP_TIFG_M)
  
@@ -99063,7 +99063,7 @@
  #define PAS_MAC_IPC_CHNL_DCHNO_M	0x003f0000
  #define PAS_MAC_IPC_CHNL_DCHNO_S	16
  #define PAS_MAC_IPC_CHNL_DCHNO(x)	(((x) << PAS_MAC_IPC_CHNL_DCHNO_S) & \
-@@ -181,4 +213,5 @@
+@@ -181,4 +213,5 @@ enum {
  #define PAS_MAC_IPC_CHNL_BCH(x)		(((x) << PAS_MAC_IPC_CHNL_BCH_S) & \
  					 PAS_MAC_IPC_CHNL_BCH_M)
  
@@ -99233,7 +99233,7 @@
 +
 --- a/drivers/net/ps3_gelic_net.c
 +++ b/drivers/net/ps3_gelic_net.c
-@@ -1266,6 +1266,85 @@
+@@ -1266,6 +1266,85 @@ int gelic_net_set_rx_csum(struct net_dev
  	return 0;
  }
  
@@ -99319,7 +99319,7 @@
  static struct ethtool_ops gelic_ether_ethtool_ops = {
  	.get_drvinfo	= gelic_net_get_drvinfo,
  	.get_settings	= gelic_ether_get_settings,
-@@ -1274,6 +1353,8 @@
+@@ -1274,6 +1353,8 @@ static struct ethtool_ops gelic_ether_et
  	.set_tx_csum	= ethtool_op_set_tx_csum,
  	.get_rx_csum	= gelic_net_get_rx_csum,
  	.set_rx_csum	= gelic_net_set_rx_csum,
@@ -99330,7 +99330,7 @@
  /**
 --- a/drivers/net/ps3_gelic_net.h
 +++ b/drivers/net/ps3_gelic_net.h
-@@ -182,12 +182,32 @@
+@@ -182,12 +182,32 @@ enum gelic_lv1_net_control_code {
  	GELIC_LV1_GET_ETH_PORT_STATUS	= 2,
  	GELIC_LV1_SET_NEGOTIATION_MODE	= 3,
  	GELIC_LV1_GET_VLAN_ID		= 4,
@@ -99365,7 +99365,7 @@
  	GELIC_LV1_ETHER_LINK_UP		= 0x0000000000000001L,
 --- a/drivers/net/ucc_geth.c
 +++ b/drivers/net/ucc_geth.c
-@@ -3853,7 +3853,13 @@
+@@ -3853,7 +3853,13 @@ static int ucc_geth_probe(struct of_devi
  
  	ugeth_vdbg("%s: IN", __FUNCTION__);
  
@@ -99382,7 +99382,7 @@
  		return -ENODEV;
 --- a/drivers/net/ucc_geth_mii.c
 +++ b/drivers/net/ucc_geth_mii.c
-@@ -203,9 +203,14 @@
+@@ -203,9 +203,14 @@ static int uec_mdio_probe(struct of_devi
  		if ((res.start >= tempres.start) &&
  		    (res.end <= tempres.end)) {
  			/* set this UCC to be the MII master */
@@ -99427,7 +99427,7 @@
 +obj-$(CONFIG_OF_I2C)	+= i2c.o
 --- a/drivers/of/base.c
 +++ b/drivers/of/base.c
-@@ -117,6 +117,32 @@
+@@ -117,6 +117,32 @@ int of_device_is_compatible(const struct
  EXPORT_SYMBOL(of_device_is_compatible);
  
  /**
@@ -99833,7 +99833,7 @@
  #include <asm/ps3.h>
  
  #include "vuart.h"
-@@ -187,6 +188,7 @@
+@@ -187,6 +188,7 @@ enum ps3_sys_manager_next_op {
   * controller, and bluetooth controller.
   * @PS3_SM_WAKE_RTC:
   * @PS3_SM_WAKE_RTC_ERROR:
@@ -99841,7 +99841,7 @@
   * @PS3_SM_WAKE_P_O_R: Power on reset.
   *
   * Additional wakeup sources when specifying PS3_SM_NEXT_OP_SYS_SHUTDOWN.
-@@ -200,10 +202,19 @@
+@@ -200,10 +202,19 @@ enum ps3_sys_manager_wake_source {
  	PS3_SM_WAKE_DEFAULT   = 0,
  	PS3_SM_WAKE_RTC       = 0x00000040,
  	PS3_SM_WAKE_RTC_ERROR = 0x00000080,
@@ -99861,7 +99861,7 @@
   * enum ps3_sys_manager_cmd - Command from system manager to guest.
   *
   * The guest completes the actions needed, then acks or naks the command via
-@@ -581,6 +592,23 @@
+@@ -581,6 +592,23 @@ fail_id:
  	return -EIO;
  }
  
@@ -99885,7 +99885,7 @@
  /**
   * ps3_sys_manager_final_power_off - The final platform machine_power_off routine.
   *
-@@ -601,13 +629,9 @@
+@@ -601,13 +629,9 @@ static void ps3_sys_manager_final_power_
  	ps3_vuart_cancel_async(dev);
  
  	ps3_sys_manager_send_next_op(dev, PS3_SM_NEXT_OP_SYS_SHUTDOWN,
@@ -99901,7 +99901,7 @@
  }
  
  /**
-@@ -638,14 +662,42 @@
+@@ -638,14 +662,42 @@ static void ps3_sys_manager_final_restar
  
  	ps3_sys_manager_send_attr(dev, 0);
  	ps3_sys_manager_send_next_op(dev, PS3_SM_NEXT_OP_SYS_REBOOT,
@@ -99959,7 +99959,7 @@
  #include <asm/ps3.h>
  
  /**
-@@ -50,10 +51,7 @@
+@@ -50,10 +51,7 @@ void ps3_sys_manager_power_off(void)
  	if (ps3_sys_manager_ops.power_off)
  		ps3_sys_manager_ops.power_off(ps3_sys_manager_ops.dev);
  
@@ -99971,7 +99971,7 @@
  }
  
  void ps3_sys_manager_restart(void)
-@@ -61,8 +59,14 @@
+@@ -61,8 +59,14 @@ void ps3_sys_manager_restart(void)
  	if (ps3_sys_manager_ops.restart)
  		ps3_sys_manager_ops.restart(ps3_sys_manager_ops.dev);
  
@@ -99990,7 +99990,7 @@
 +
 --- a/drivers/serial/cpm_uart/cpm_uart.h
 +++ b/drivers/serial/cpm_uart/cpm_uart.h
-@@ -92,6 +92,9 @@
+@@ -92,6 +92,9 @@ extern struct uart_cpm_port cpm_uart_por
  
  /* these are located in their respective files */
  void cpm_line_cr_cmd(struct uart_cpm_port *port, int cmd);
@@ -100002,7 +100002,7 @@
  void cpm_uart_freebuf(struct uart_cpm_port *pinfo);
 --- a/drivers/serial/cpm_uart/cpm_uart_core.c
 +++ b/drivers/serial/cpm_uart/cpm_uart_core.c
-@@ -966,24 +966,23 @@
+@@ -966,24 +966,23 @@ static int cpm_uart_init_port(struct dev
  	if (!mem)
  		return -ENOMEM;
  
@@ -100035,7 +100035,7 @@
  	}
  
  	pinfo->tx_nrfifos = TX_NUM_FIFO;
-@@ -1007,7 +1006,7 @@
+@@ -1007,7 +1006,7 @@ static int cpm_uart_init_port(struct dev
  	return cpm_uart_request_port(&pinfo->port);
  
  out_pram:
@@ -100055,7 +100055,7 @@
  #include "cpm_uart.h"
  
  /**************************************************************/
-@@ -54,6 +56,18 @@
+@@ -54,6 +56,18 @@ void cpm_line_cr_cmd(struct uart_cpm_por
  {
  	cpm_command(port->command, cmd);
  }
@@ -100086,7 +100086,7 @@
  
  #include <linux/serial_core.h>
  #include <linux/kernel.h>
-@@ -54,6 +57,55 @@
+@@ -54,6 +57,55 @@ void cpm_line_cr_cmd(struct uart_cpm_por
  {
  	cpm_command(port->command, cmd);
  }
@@ -100144,7 +100144,7 @@
  {
 --- a/drivers/serial/of_serial.c
 +++ b/drivers/serial/of_serial.c
-@@ -56,7 +56,9 @@
+@@ -56,7 +56,9 @@ static int __devinit of_platform_serial_
  	port->flags = UPF_SHARE_IRQ | UPF_BOOT_AUTOCONF | UPF_IOREMAP
  		| UPF_FIXED_PORT;
  	port->dev = &ofdev->dev;
@@ -100157,7 +100157,7 @@
  }
 --- a/drivers/serial/ucc_uart.c
 +++ b/drivers/serial/ucc_uart.c
-@@ -1270,10 +1270,18 @@
+@@ -1270,10 +1270,18 @@ static int ucc_uart_probe(struct of_devi
  
  	/* Get the UCC number (device ID) */
  	/* UCCs are numbered 1-7 */
@@ -100189,7 +100189,7 @@
  header-y += auxvec.h
  header-y += ioctls.h
  header-y += mman.h
-@@ -23,7 +24,6 @@
+@@ -23,7 +24,6 @@ header-y += sigcontext.h
  header-y += statfs.h
  header-y += ps3fb.h
  
@@ -100214,7 +100214,7 @@
  struct mschunks_map {
 --- a/include/asm-powerpc/bitops.h
 +++ b/include/asm-powerpc/bitops.h
-@@ -312,24 +312,26 @@
+@@ -312,24 +312,26 @@ static __inline__ int fls(unsigned int x
  	asm ("cntlzw %0,%1" : "=r" (lz) : "r" (x));
  	return 32 - lz;
  }
@@ -100325,7 +100325,7 @@
  	((PG << 26) | (SBC << 21) | (MCN << 6) | OP)
 --- a/include/asm-powerpc/cputhreads.h
 +++ b/include/asm-powerpc/cputhreads.h
-@@ -35,7 +35,7 @@
+@@ -35,7 +35,7 @@ static inline cpumask_t cpu_thread_mask_
  
  	res = CPU_MASK_NONE;
  	for (i = 0; i < NR_CPUS; i += threads_per_core) {
@@ -100336,7 +100336,7 @@
  	}
 --- a/include/asm-powerpc/dcr-native.h
 +++ b/include/asm-powerpc/dcr-native.h
-@@ -82,6 +82,19 @@
+@@ -82,6 +82,19 @@ static inline void __mtdcri(int base_add
  	spin_unlock_irqrestore(&dcr_ind_lock, flags);
  }
  
@@ -100356,7 +100356,7 @@
  #define mfdcri(base, reg)	__mfdcri(DCRN_ ## base ## _CONFIG_ADDR,	\
  					 DCRN_ ## base ## _CONFIG_DATA,	\
  					 reg)
-@@ -90,6 +103,10 @@
+@@ -90,6 +103,10 @@ static inline void __mtdcri(int base_add
  					 DCRN_ ## base ## _CONFIG_DATA,	\
  					 reg, data)
  
@@ -100454,7 +100454,7 @@
  #endif /* __DCR_REGS_H__ */
 --- a/include/asm-powerpc/exception.h
 +++ b/include/asm-powerpc/exception.h
-@@ -228,18 +228,18 @@
+@@ -228,18 +228,18 @@ label##_pSeries:							\
  BEGIN_FW_FTR_SECTION;				\
  	stb	r11,PACAHARDIRQEN(r13);		\
  END_FW_FTR_SECTION_IFCLR(FW_FEATURE_ISERIES);	\
@@ -100851,7 +100851,7 @@
 +#endif /* __ASM_POWERPC_GPIO_H */
 --- a/include/asm-powerpc/hw_irq.h
 +++ b/include/asm-powerpc/hw_irq.h
-@@ -27,7 +27,7 @@
+@@ -27,7 +27,7 @@ static inline unsigned long local_get_fl
  	return flags;
  }
  
@@ -100860,7 +100860,7 @@
  {
  	unsigned long flags, zero;
  
-@@ -39,14 +39,15 @@
+@@ -39,14 +39,15 @@ static inline unsigned long local_irq_di
  	return flags;
  }
  
@@ -100891,7 +100891,7 @@
  
  #define QE_IMMAP_SIZE	(1024 * 1024)	/* 1MB from 1MB+IMMR */
  
-@@ -468,7 +469,7 @@
+@@ -468,7 +469,7 @@ struct qe_immap {
  	u8			res18[0xC0000];	/* 0x140000 - 0x200000 */
  } __attribute__ ((packed));
  
@@ -101174,7 +101174,7 @@
  #endif /* _ASM_POWERPC_LMB_H */
 --- a/include/asm-powerpc/machdep.h
 +++ b/include/asm-powerpc/machdep.h
-@@ -68,6 +68,8 @@
+@@ -68,6 +68,8 @@ struct machdep_calls {
  				       unsigned long vflags,
  				       int psize, int ssize);
  	long		(*hpte_remove)(unsigned long hpte_group);
@@ -101183,7 +101183,7 @@
  	void		(*flush_hash_range)(unsigned long number, int local);
  
  	/* special for kexec, to be called in real mode, linar mapping is
-@@ -196,9 +198,6 @@
+@@ -196,9 +198,6 @@ struct machdep_calls {
  	   May be NULL. */
  	void		(*init)(void);
  
@@ -101254,7 +101254,7 @@
  	unsigned long vdso_base;
 --- a/include/asm-powerpc/mmu-hash32.h
 +++ b/include/asm-powerpc/mmu-hash32.h
-@@ -84,8 +84,6 @@
+@@ -84,8 +84,6 @@ typedef struct {
  	unsigned long vdso_base;
  } mm_context_t;
  
@@ -101265,7 +101265,7 @@
  #endif /* _ASM_POWERPC_MMU_HASH32_H_ */
 --- a/include/asm-powerpc/mmu-hash64.h
 +++ b/include/asm-powerpc/mmu-hash64.h
-@@ -469,9 +469,6 @@
+@@ -469,9 +469,6 @@ static inline unsigned long get_vsid(uns
  				 VSID_MODULUS_256M)
  #define KERNEL_VSID(ea)		VSID_SCRAMBLE(GET_ESID(ea))
  
@@ -101277,7 +101277,7 @@
  #endif /* _ASM_POWERPC_MMU_HASH64_H_ */
 --- a/include/asm-powerpc/paca.h
 +++ b/include/asm-powerpc/paca.h
-@@ -42,10 +42,7 @@
+@@ -42,10 +42,7 @@ struct task_struct;
   * Defines the layout of the paca.
   *
   * This structure is not directly accessed by firmware or the service
@@ -101289,7 +101289,7 @@
   */
  struct paca_struct {
  	/*
-@@ -55,14 +52,7 @@
+@@ -55,14 +52,7 @@ struct paca_struct {
  	 * avoid cacheline bouncing.
  	 */
  
@@ -101334,7 +101334,7 @@
   *
   * Hardware register layout and descriptor formats for the on-board
   * DMA engine on PA Semi PWRficient. Used by ethernet, function and security
-@@ -40,6 +40,11 @@
+@@ -40,6 +40,11 @@ enum {
  	PAS_DMA_COM_TXSTA = 0x104,	/* Transmit Status Register   */
  	PAS_DMA_COM_RXCMD = 0x108,	/* Receive Command Register   */
  	PAS_DMA_COM_RXSTA = 0x10c,	/* Receive Status Register    */
@@ -101346,7 +101346,7 @@
  };
  
  
-@@ -123,11 +128,16 @@
+@@ -123,11 +128,16 @@ enum {
  #define    PAS_DMA_TXCHAN_TCMDSTA_DA	0x00000100
  #define PAS_DMA_TXCHAN_CFG(c)     (0x304+(c)*_PAS_DMA_TXCHAN_STRIDE)
  #define    PAS_DMA_TXCHAN_CFG_TY_IFACE	0x00000000	/* Type = interface */
@@ -101364,7 +101364,7 @@
  #define    PAS_DMA_TXCHAN_CFG_WT_S	6
  #define    PAS_DMA_TXCHAN_CFG_WT(x)	(((x) << PAS_DMA_TXCHAN_CFG_WT_S) & \
  					 PAS_DMA_TXCHAN_CFG_WT_M)
-@@ -394,11 +404,62 @@
+@@ -394,11 +404,62 @@ enum {
  				 XCT_COPY_LLEN_M)
  #define XCT_COPY_SE		0x0000000000000001ull
  
@@ -101428,7 +101428,7 @@
  #define CTRL_CMD_REG_S		0
  #define CTRL_CMD_REG(x)		((((long)(x)) << CTRL_CMD_REG_S) & \
  				 CTRL_CMD_REG_M)
-@@ -461,6 +522,16 @@
+@@ -461,6 +522,16 @@ extern void *pasemi_dma_alloc_buf(struct
  extern void pasemi_dma_free_buf(struct pasemi_dmachan *chan, int size,
  				dma_addr_t *handle);
  
@@ -101447,7 +101447,7 @@
  
 --- a/include/asm-powerpc/pci-bridge.h
 +++ b/include/asm-powerpc/pci-bridge.h
-@@ -117,7 +117,7 @@
+@@ -117,7 +117,7 @@ struct pci_controller {
  
  #ifndef CONFIG_PPC64
  
@@ -101456,7 +101456,7 @@
  {
  	return bus->sysdata;
  }
-@@ -235,7 +235,7 @@
+@@ -235,7 +235,7 @@ extern void pcibios_fixup_new_pci_device
  
  extern int pcibios_remove_root_bus(struct pci_controller *phb);
  
@@ -101467,7 +101467,7 @@
  
 --- a/include/asm-powerpc/pgtable-ppc32.h
 +++ b/include/asm-powerpc/pgtable-ppc32.h
-@@ -98,9 +98,6 @@
+@@ -98,9 +98,6 @@ extern int icache_44x_need_flush;
  #define USER_PTRS_PER_PGD	(TASK_SIZE / PGDIR_SIZE)
  #define FIRST_USER_ADDRESS	0
  
@@ -101477,7 +101477,7 @@
  #define pte_ERROR(e) \
  	printk("%s:%d: bad pte %llx.\n", __FILE__, __LINE__, \
  		(unsigned long long)pte_val(e))
-@@ -420,7 +417,8 @@
+@@ -420,7 +417,8 @@ extern int icache_44x_need_flush;
  #define _PAGE_IO	(_PAGE_KERNEL | _PAGE_NO_CACHE | _PAGE_GUARDED)
  #define _PAGE_RAM	(_PAGE_KERNEL | _PAGE_HWEXEC)
  
@@ -101487,7 +101487,7 @@
  /* We want the debuggers to be able to set breakpoints anywhere, so
   * don't write protect the kernel text */
  #define _PAGE_RAM_TEXT	_PAGE_RAM
-@@ -692,7 +690,7 @@
+@@ -692,7 +690,7 @@ extern pgprot_t phys_mem_access_prot(str
  #define pmd_page_vaddr(pmd)	\
  	((unsigned long) (pmd_val(pmd) & PAGE_MASK))
  #define pmd_page(pmd)		\
@@ -101580,7 +101580,7 @@
 +#endif /* __ASM_POWERPC_PPC4xx_H__ */
 --- a/include/asm-powerpc/ps3.h
 +++ b/include/asm-powerpc/ps3.h
-@@ -434,8 +434,11 @@
+@@ -434,8 +434,11 @@ struct ps3_sys_manager_ops {
  };
  
  void ps3_sys_manager_register_ops(const struct ps3_sys_manager_ops *ops);
@@ -101596,7 +101596,7 @@
      const char *name;
 --- a/include/asm-powerpc/ptrace.h
 +++ b/include/asm-powerpc/ptrace.h
-@@ -58,6 +58,11 @@
+@@ -58,6 +58,11 @@ struct pt_regs {
  #define __ARCH_WANT_COMPAT_SYS_PTRACE
  
  #define STACK_FRAME_OVERHEAD	112	/* size of minimum stack frame */
@@ -101608,7 +101608,7 @@
  
  /* Size of dummy stack frame allocated when calling signal handler. */
  #define __SIGNAL_FRAMESIZE	128
-@@ -66,6 +71,10 @@
+@@ -66,6 +71,10 @@ struct pt_regs {
  #else /* __powerpc64__ */
  
  #define STACK_FRAME_OVERHEAD	16	/* size of minimum stack frame */
@@ -101621,7 +101621,7 @@
  #define __SIGNAL_FRAMESIZE	64
 --- a/include/asm-powerpc/qe.h
 +++ b/include/asm-powerpc/qe.h
-@@ -85,6 +85,7 @@
+@@ -85,6 +85,7 @@ extern int par_io_data_set(u8 port, u8 p
  /* QE internal API */
  int qe_issue_cmd(u32 cmd, u32 device, u8 mcn_protocol, u32 cmd_input);
  enum qe_clock qe_clock_source(const char *source);
@@ -101629,7 +101629,7 @@
  int qe_setbrg(enum qe_clock brg, unsigned int rate, unsigned int multiplier);
  int qe_get_snum(void);
  void qe_put_snum(u8 snum);
-@@ -92,7 +93,16 @@
+@@ -92,7 +93,16 @@ unsigned long qe_muram_alloc(int size, i
  int qe_muram_free(unsigned long offset);
  unsigned long qe_muram_alloc_fixed(unsigned long offset, int size);
  void qe_muram_dump(void);
@@ -101649,7 +101649,7 @@
   *
 --- a/include/asm-powerpc/rwsem.h
 +++ b/include/asm-powerpc/rwsem.h
-@@ -32,11 +32,20 @@
+@@ -32,11 +32,20 @@ struct rw_semaphore {
  #define RWSEM_ACTIVE_WRITE_BIAS		(RWSEM_WAITING_BIAS + RWSEM_ACTIVE_BIAS)
  	spinlock_t		wait_lock;
  	struct list_head	wait_list;
@@ -101672,7 +101672,7 @@
  
  #define DECLARE_RWSEM(name)		\
  	struct rw_semaphore name = __RWSEM_INITIALIZER(name)
-@@ -46,12 +55,15 @@
+@@ -46,12 +55,15 @@ extern struct rw_semaphore *rwsem_down_w
  extern struct rw_semaphore *rwsem_wake(struct rw_semaphore *sem);
  extern struct rw_semaphore *rwsem_downgrade_wake(struct rw_semaphore *sem);
  
@@ -101694,7 +101694,7 @@
  
  /*
   * lock for reading
-@@ -78,7 +90,7 @@
+@@ -78,7 +90,7 @@ static inline int __down_read_trylock(st
  /*
   * lock for writing
   */
@@ -101703,7 +101703,7 @@
  {
  	int tmp;
  
-@@ -88,6 +100,11 @@
+@@ -88,6 +100,11 @@ static inline void __down_write(struct r
  		rwsem_down_write_failed(sem);
  }
  
@@ -101745,7 +101745,7 @@
  #define __HAVE_ARCH_STRCAT
  #define __HAVE_ARCH_MEMSET
  #define __HAVE_ARCH_MEMCPY
-@@ -18,6 +19,7 @@
+@@ -18,6 +19,7 @@ extern char * strcpy(char *,const char *
  extern char * strncpy(char *,const char *, __kernel_size_t);
  extern __kernel_size_t strlen(const char *);
  extern int strcmp(const char *,const char *);
@@ -101755,7 +101755,7 @@
  extern void * memcpy(void *,const void *,__kernel_size_t);
 --- a/include/asm-powerpc/types.h
 +++ b/include/asm-powerpc/types.h
-@@ -84,6 +84,13 @@
+@@ -84,6 +84,13 @@ typedef unsigned long long u64;
  
  typedef __vector128 vector128;
  
@@ -101872,7 +101872,7 @@
 +#endif /* _LINUX_LMB_H */
 --- a/include/linux/of.h
 +++ b/include/linux/of.h
-@@ -62,6 +62,7 @@
+@@ -62,6 +62,7 @@ extern struct property *of_find_property
  					 int *lenp);
  extern int of_device_is_compatible(const struct device_node *device,
  				   const char *);
@@ -101981,7 +101981,7 @@
 +#endif /* __LINUX_OF_I2C_H */
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -141,4 +141,7 @@
+@@ -141,4 +141,7 @@ config HAS_DMA
  config CHECK_SIGNATURE
  	bool
  
@@ -101991,7 +101991,7 @@
  endmenu
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -70,6 +70,8 @@
+@@ -70,6 +70,8 @@ obj-$(CONFIG_FAULT_INJECTION) += fault-i
  
  lib-$(CONFIG_GENERIC_BUG) += bug.o
  

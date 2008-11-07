@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-at91/board-vlink.c
 +++ b/arch/arm/mach-at91/board-vlink.c
-@@ -99,7 +99,7 @@
+@@ -99,7 +99,7 @@ static struct at91_udc_data __initdata v
  */
  
  static struct at91_mmc_data __initdata vlink_mmc_data = {
@@ -9,7 +9,7 @@
  	.slot_b		= 0,
  	.wire4		= 1,
  //	.wp_pin		= AT91_PIN_PA17,
-@@ -136,6 +136,7 @@
+@@ -136,6 +136,7 @@ static struct spi_board_info vlink_spi_d
  
  static void __init vlink_board_init(void)
  {
@@ -17,7 +17,7 @@
  	/* Serial */
  	at91_add_device_serial();
  	/* Ethernet */
-@@ -157,36 +158,66 @@
+@@ -157,36 +158,66 @@ static void __init vlink_board_init(void
  //	at91_set_gpio_output(AT91_PIN_PB22, 1);	/* this MMC card slot can optionally use SPI signaling (CS3). */
  	at91_add_device_mmc(0, &vlink_mmc_data);
  #endif
@@ -112,7 +112,7 @@
  
  
  static inline void __iomem *pin_to_controller(unsigned pin)
-@@ -71,9 +72,13 @@
+@@ -71,9 +72,13 @@ int __init_or_module at91_set_GPIO_perip
  {
  	void __iomem	*pio = pin_to_controller(pin);
  	unsigned	mask = pin_to_mask(pin);
@@ -126,7 +126,7 @@
  	__raw_writel(mask, pio + PIO_IDR);
  	__raw_writel(mask, pio + (use_pullup ? PIO_PUER : PIO_PUDR));
  	__raw_writel(mask, pio + PIO_PER);
-@@ -130,10 +135,13 @@
+@@ -130,10 +135,13 @@ int __init_or_module at91_set_gpio_input
  {
  	void __iomem	*pio = pin_to_controller(pin);
  	unsigned	mask = pin_to_mask(pin);
@@ -140,7 +140,7 @@
  	__raw_writel(mask, pio + PIO_IDR);
  	__raw_writel(mask, pio + (use_pullup ? PIO_PUER : PIO_PUDR));
  	__raw_writel(mask, pio + PIO_ODR);
-@@ -151,10 +159,13 @@
+@@ -151,10 +159,13 @@ int __init_or_module at91_set_gpio_outpu
  {
  	void __iomem	*pio = pin_to_controller(pin);
  	unsigned	mask = pin_to_mask(pin);
@@ -154,7 +154,7 @@
  	__raw_writel(mask, pio + PIO_IDR);
  	__raw_writel(mask, pio + PIO_PUDR);
  	__raw_writel(mask, pio + (value ? PIO_SODR : PIO_CODR));
-@@ -262,6 +273,18 @@
+@@ -262,6 +273,18 @@ int at91_get_gpio_value(unsigned pin)
  }
  EXPORT_SYMBOL(at91_get_gpio_value);
  
@@ -175,7 +175,7 @@
  #ifdef CONFIG_PM
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
-@@ -1072,5 +1072,12 @@
+@@ -1072,5 +1072,12 @@ config AT91_SPIDEV
  	  The SPI driver gives user mode access to this serial
  	  bus on the AT91RM9200 processor.
  
@@ -190,7 +190,7 @@
  
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -100,6 +100,7 @@
+@@ -100,6 +100,7 @@ obj-$(CONFIG_GPIO_TB0219)	+= tb0219.o
  obj-$(CONFIG_TELCLOCK)		+= tlclk.o
  obj-$(CONFIG_AT91_SPI)		+= at91_spi.o
  obj-$(CONFIG_AT91_SPIDEV)	+= at91_spidev.o
@@ -536,7 +536,7 @@
 +MODULE_DESCRIPTION("FDL Versalink GPIO Driver");
 --- a/include/asm-arm/arch-at91/gpio.h
 +++ b/include/asm-arm/arch-at91/gpio.h
-@@ -199,6 +199,7 @@
+@@ -199,6 +199,7 @@ extern int __init_or_module at91_set_mul
  /* callable at any time */
  extern int at91_set_gpio_value(unsigned pin, int value);
  extern int at91_get_gpio_value(unsigned pin);

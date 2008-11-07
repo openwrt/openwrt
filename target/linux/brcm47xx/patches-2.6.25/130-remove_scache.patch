@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -228,7 +228,6 @@
+@@ -228,7 +228,6 @@ config MIPS_MALTA
  	select I8259
  	select MIPS_BOARDS_GEN
  	select MIPS_BONITO64
@@ -8,7 +8,7 @@
  	select PCI_GT64XXX_PCI0
  	select MIPS_MSC
  	select SWAP_IO_SPACE
-@@ -1421,13 +1420,6 @@
+@@ -1421,13 +1420,6 @@ config IP22_CPU_SCACHE
  	bool
  	select BOARD_SCACHE
  
@@ -24,7 +24,7 @@
  	select BOARD_SCACHE
 --- a/arch/mips/kernel/cpu-probe.c
 +++ b/arch/mips/kernel/cpu-probe.c
-@@ -704,6 +704,8 @@
+@@ -704,6 +704,8 @@ static inline void cpu_probe_mips(struct
  		break;
  	case PRID_IMP_25KF:
  		c->cputype = CPU_25KF;
@@ -35,7 +35,7 @@
  		c->cputype = CPU_34K;
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -1103,7 +1103,6 @@
+@@ -1103,7 +1103,6 @@ static void __init loongson2_sc_init(voi
  
  extern int r5k_sc_init(void);
  extern int rm7k_sc_init(void);
@@ -43,7 +43,7 @@
  
  static void __cpuinit setup_scache(void)
  {
-@@ -1157,29 +1156,17 @@
+@@ -1157,29 +1156,17 @@ static void __cpuinit setup_scache(void)
  #endif
  
  	default:
@@ -80,7 +80,7 @@
  
 --- a/arch/mips/mm/Makefile
 +++ b/arch/mips/mm/Makefile
-@@ -32,6 +32,5 @@
+@@ -32,6 +32,5 @@ obj-$(CONFIG_CPU_VR41XX)	+= c-r4k.o cex-
  obj-$(CONFIG_IP22_CPU_SCACHE)	+= sc-ip22.o
  obj-$(CONFIG_R5000_CPU_SCACHE)  += sc-r5k.o
  obj-$(CONFIG_RM7000_CPU_SCACHE)	+= sc-rm7k.o

@@ -1,6 +1,6 @@
 --- a/arch/mips/mm/init.c
 +++ b/arch/mips/mm/init.c
-@@ -205,32 +205,6 @@
+@@ -205,32 +205,6 @@ void kunmap_coherent(void)
  	preempt_check_resched();
  }
  
@@ -43,7 +43,7 @@
  #include <asm/io.h>
  
  /*
-@@ -64,13 +65,16 @@
+@@ -64,13 +65,16 @@ static inline void clear_user_page(void 
  		flush_data_cache_page((unsigned long)addr);
  }
  

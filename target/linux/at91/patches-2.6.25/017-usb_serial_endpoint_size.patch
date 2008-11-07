@@ -1,6 +1,6 @@
 --- a/drivers/usb/serial/usb-serial.c
 +++ b/drivers/usb/serial/usb-serial.c
-@@ -904,7 +904,7 @@
+@@ -904,7 +904,7 @@ int usb_serial_probe(struct usb_interfac
  			dev_err(&interface->dev, "No free urbs available\n");
  			goto probe_error;
  		}

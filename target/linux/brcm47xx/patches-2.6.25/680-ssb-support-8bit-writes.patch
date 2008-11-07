@@ -1,7 +1,7 @@
 Add support for 8bit reads/writes to SSB.
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -508,6 +508,14 @@
+@@ -508,6 +508,14 @@ error:
  	return err;
  }
  
@@ -16,7 +16,7 @@ Add support for 8bit reads/writes to SSB.
  static u16 ssb_ssb_read16(struct ssb_device *dev, u16 offset)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -524,6 +532,14 @@
+@@ -524,6 +532,14 @@ static u32 ssb_ssb_read32(struct ssb_dev
  	return readl(bus->mmio + offset);
  }
  
@@ -31,7 +31,7 @@ Add support for 8bit reads/writes to SSB.
  static void ssb_ssb_write16(struct ssb_device *dev, u16 offset, u16 value)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -542,8 +558,10 @@
+@@ -542,8 +558,10 @@ static void ssb_ssb_write32(struct ssb_d
  
  /* Ops for the plain SSB bus without a host-device (no PCI or PCMCIA). */
  static const struct ssb_bus_ops ssb_ssb_ops = {
@@ -44,7 +44,7 @@ Add support for 8bit reads/writes to SSB.
  };
 --- a/drivers/ssb/pci.c
 +++ b/drivers/ssb/pci.c
-@@ -577,6 +577,19 @@
+@@ -577,6 +577,19 @@ static inline int ssb_pci_assert_buspowe
  }
  #endif /* DEBUG */
  
@@ -64,7 +64,7 @@ Add support for 8bit reads/writes to SSB.
  static u16 ssb_pci_read16(struct ssb_device *dev, u16 offset)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -603,6 +616,19 @@
+@@ -603,6 +616,19 @@ static u32 ssb_pci_read32(struct ssb_dev
  	return ioread32(bus->mmio + offset);
  }
  
@@ -84,7 +84,7 @@ Add support for 8bit reads/writes to SSB.
  static void ssb_pci_write16(struct ssb_device *dev, u16 offset, u16 value)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -631,8 +657,10 @@
+@@ -631,8 +657,10 @@ static void ssb_pci_write32(struct ssb_d
  
  /* Not "static", as it's used in main.c */
  const struct ssb_bus_ops ssb_pci_ops = {
@@ -97,7 +97,7 @@ Add support for 8bit reads/writes to SSB.
  };
 --- a/drivers/ssb/pcmcia.c
 +++ b/drivers/ssb/pcmcia.c
-@@ -172,6 +172,22 @@
+@@ -172,6 +172,22 @@ static int select_core_and_segment(struc
  	return 0;
  }
  
@@ -120,7 +120,7 @@ Add support for 8bit reads/writes to SSB.
  static u16 ssb_pcmcia_read16(struct ssb_device *dev, u16 offset)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -206,6 +222,20 @@
+@@ -206,6 +222,20 @@ static u32 ssb_pcmcia_read32(struct ssb_
  	return (lo | (hi << 16));
  }
  
@@ -141,7 +141,7 @@ Add support for 8bit reads/writes to SSB.
  static void ssb_pcmcia_write16(struct ssb_device *dev, u16 offset, u16 value)
  {
  	struct ssb_bus *bus = dev->bus;
-@@ -238,8 +268,10 @@
+@@ -238,8 +268,10 @@ static void ssb_pcmcia_write32(struct ss
  
  /* Not "static", as it's used in main.c */
  const struct ssb_bus_ops ssb_pcmcia_ops = {
@@ -154,7 +154,7 @@ Add support for 8bit reads/writes to SSB.
  };
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -72,8 +72,10 @@
+@@ -72,8 +72,10 @@ struct ssb_device;
  /* Lowlevel read/write operations on the device MMIO.
   * Internal, don't use that outside of ssb. */
  struct ssb_bus_ops {
@@ -165,7 +165,7 @@ Add support for 8bit reads/writes to SSB.
  	void (*write16)(struct ssb_device *dev, u16 offset, u16 value);
  	void (*write32)(struct ssb_device *dev, u16 offset, u32 value);
  };
-@@ -348,6 +350,10 @@
+@@ -348,6 +350,10 @@ void ssb_device_disable(struct ssb_devic
  
  
  /* Device MMIO register read/write functions. */
@@ -176,7 +176,7 @@ Add support for 8bit reads/writes to SSB.
  static inline u16 ssb_read16(struct ssb_device *dev, u16 offset)
  {
  	return dev->ops->read16(dev, offset);
-@@ -356,6 +362,10 @@
+@@ -356,6 +362,10 @@ static inline u32 ssb_read32(struct ssb_
  {
  	return dev->ops->read32(dev, offset);
  }

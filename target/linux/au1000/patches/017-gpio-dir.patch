@@ -1,6 +1,6 @@
 --- a/arch/mips/au1000/common/gpio.c
 +++ b/arch/mips/au1000/common/gpio.c
-@@ -66,7 +66,8 @@
+@@ -66,7 +66,8 @@ static int au1xxx_gpio2_direction_input(
  static int au1xxx_gpio2_direction_output(unsigned gpio, int value)
  {
  	gpio -= AU1XXX_GPIO_BASE;
@@ -10,7 +10,7 @@
  	return 0;
  }
  
-@@ -95,6 +96,7 @@
+@@ -95,6 +96,7 @@ static int au1xxx_gpio1_direction_input(
  static int au1xxx_gpio1_direction_output(unsigned gpio, int value)
  {
  	gpio1->trioutclr = (0x01 & gpio);

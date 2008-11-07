@@ -1,6 +1,6 @@
 --- a/arch/cris/Makefile
 +++ b/arch/cris/Makefile
-@@ -33,7 +33,7 @@
+@@ -33,7 +33,7 @@ endif
  
  LD = $(CROSS_COMPILE)ld -mcrislinux
  
@@ -21,7 +21,7 @@
  subdir- := compressed rescue
  targets := Image
  
-@@ -14,7 +11,6 @@
+@@ -14,7 +11,6 @@ $(obj)/Image: vmlinux FORCE
  
  $(obj)/compressed/vmlinux: $(obj)/Image FORCE
  	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
@@ -45,7 +45,7 @@
  
  quiet_cmd_image = BUILD   $@
  cmd_image = cat $(obj)/decompress.bin $(obj)/piggy.gz > $@
-@@ -22,10 +18,10 @@
+@@ -22,10 +18,10 @@ $(obj)/decompress.bin: $(obj)/decompress
  	$(call if_changed,objcopy)
  
  $(obj)/head.o: $(obj)/head.S .config
@@ -93,7 +93,7 @@
  	beq	dram_init_finished
  	nop
  	
-@@ -36,91 +37,91 @@
+@@ -36,91 +37,91 @@ dram_init_finished:	
  		
  	;; Initiate the PA and PB ports
  
@@ -233,7 +233,7 @@
   * adaptation for Linux/CRIS Axis Communications AB, 1999
   *
   */
-@@ -99,12 +99,12 @@
+@@ -99,12 +99,12 @@ static void error(char *m);
  static void gzip_mark(void **);
  static void gzip_release(void **);
   
@@ -249,7 +249,7 @@
   
  #include "../../../../../lib/inflate.c"
  
-@@ -139,7 +139,7 @@
+@@ -139,7 +139,7 @@ static void gzip_release(void **ptr)
  /* decompressor info and error messages to serial console */
  
  static void
@@ -258,7 +258,7 @@
  {
  #ifndef CONFIG_ETRAX_DEBUG_PORT_NULL
  	while(*s) {
-@@ -209,9 +209,9 @@
+@@ -209,9 +209,9 @@ flush_window()
  static void
  error(char *x)
  {
@@ -271,7 +271,7 @@
  
  	while(1);	/* Halt */
  }
-@@ -257,14 +257,7 @@
+@@ -257,14 +257,7 @@ decompress_kernel()
  
  	makecrc();
  
@@ -290,7 +290,7 @@
  }
 --- a/arch/cris/arch-v10/mm/init.c
 +++ b/arch/cris/arch-v10/mm/init.c
-@@ -184,6 +184,9 @@
+@@ -184,6 +184,9 @@ paging_init(void)
  
  	free_area_init_node(0, &contig_page_data, zones_size, PAGE_OFFSET >> PAGE_SHIFT, 0);
  }

@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -53,6 +53,18 @@
+@@ -53,6 +53,18 @@ static void phy_device_release(struct de
  	phy_device_free(to_phy_device(dev));
  }
  
@@ -19,7 +19,7 @@
  struct phy_device* phy_device_create(struct mii_bus *bus, int addr, int phy_id)
  {
  	struct phy_device *dev;
-@@ -78,6 +90,8 @@
+@@ -78,6 +90,8 @@ struct phy_device* phy_device_create(str
  	dev->bus = bus;
  
  	dev->state = PHY_DOWN;
@@ -30,7 +30,7 @@
  
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -295,6 +295,17 @@
+@@ -295,6 +295,17 @@ struct phy_device {
  	void (*adjust_link)(struct net_device *dev);
  
  	void (*adjust_state)(struct net_device *dev);
@@ -50,7 +50,7 @@
  
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -595,6 +595,7 @@
+@@ -595,6 +595,7 @@ struct net_device
  	void			*ax25_ptr;	/* AX.25 specific data */
  	struct wireless_dev	*ieee80211_ptr;	/* IEEE 802.11 specific data,
  						   assign before registering */

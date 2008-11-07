@@ -1,6 +1,6 @@
 --- a/drivers/serial/atmel_serial.c
 +++ b/drivers/serial/atmel_serial.c
-@@ -214,6 +214,34 @@
+@@ -214,6 +214,34 @@ static void atmel_set_mctrl(struct uart_
  				at91_set_gpio_value(AT91_PIN_PA21, 0);
  			else
  				at91_set_gpio_value(AT91_PIN_PA21, 1);
@@ -35,7 +35,7 @@
  		}
  	}
  #endif
-@@ -251,8 +279,10 @@
+@@ -251,8 +279,10 @@ static u_int atmel_get_mctrl(struct uart
  	/*
  	 * The control signals are active low.
  	 */
@@ -48,7 +48,7 @@
  	if (!(status & ATMEL_US_CTS))
  		ret |= TIOCM_CTS;
  	if (!(status & ATMEL_US_DSR))
-@@ -260,6 +290,16 @@
+@@ -260,6 +290,16 @@ static u_int atmel_get_mctrl(struct uart
  	if (!(status & ATMEL_US_RI))
  		ret |= TIOCM_RI;
  
@@ -65,7 +65,7 @@
  	return ret;
  }
  
-@@ -453,6 +493,34 @@
+@@ -453,6 +493,34 @@ static void atmel_tx_chars(struct uart_p
  }
  
  /*
@@ -100,7 +100,7 @@
   * receive interrupt handler.
   */
  static void
-@@ -815,6 +883,23 @@
+@@ -815,6 +883,23 @@ static int atmel_startup(struct uart_por
  		return retval;
  	}
  
@@ -124,7 +124,7 @@
  	/*
  	 * Initialize DMA (if necessary)
  	 */
-@@ -834,6 +919,10 @@
+@@ -834,6 +919,10 @@ static int atmel_startup(struct uart_por
  					kfree(atmel_port->pdc_rx[0].buf);
  				}
  				free_irq(port->irq, port);
@@ -135,7 +135,7 @@
  				return -ENOMEM;
  			}
  			pdc->dma_addr = dma_map_single(port->dev,
-@@ -873,7 +962,11 @@
+@@ -873,7 +962,11 @@ static int atmel_startup(struct uart_por
  		retval = atmel_open_hook(port);
  		if (retval) {
  			free_irq(port->irq, port);
@@ -148,7 +148,7 @@
  		}
  	}
  
-@@ -947,6 +1040,10 @@
+@@ -947,6 +1040,10 @@ static void atmel_shutdown(struct uart_p
  	 * Free the interrupt
  	 */
  	free_irq(port->irq, port);

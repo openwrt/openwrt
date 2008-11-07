@@ -21,7 +21,7 @@ This is an ugly hack and needs to be rewritten before going upstream.
  #define PCI_ASSIGN_ALL_BUSSES	1
  
  unsigned int pci_probe = PCI_ASSIGN_ALL_BUSSES;
-@@ -75,8 +86,32 @@
+@@ -75,8 +86,32 @@ pcibios_align_resource(void *data, struc
  	res->start = start;
  }
  
@@ -55,7 +55,7 @@ This is an ugly hack and needs to be rewritten before going upstream.
  	if (request_resource(&iomem_resource, hose->mem_resource) < 0)
  		goto out;
  	if (request_resource(&ioport_resource, hose->io_resource) < 0) {
-@@ -84,9 +119,6 @@
+@@ -84,9 +119,6 @@ void __devinit register_pci_controller(s
  		goto out;
  	}
  
@@ -65,7 +65,7 @@ This is an ugly hack and needs to be rewritten before going upstream.
  	/*
  	 * Do not panic here but later - this might hapen before console init.
  	 */
-@@ -94,41 +126,47 @@
+@@ -94,41 +126,47 @@ void __devinit register_pci_controller(s
  		printk(KERN_WARNING
  		       "registering PCI controller with io_map_base unset\n");
  	}
@@ -136,7 +136,7 @@ This is an ugly hack and needs to be rewritten before going upstream.
  
  	/* Scan all of the recorded PCI controllers.  */
  	for (next_busno = 0, hose = hose_head; hose; hose = hose->next) {
-@@ -157,6 +195,7 @@
+@@ -157,6 +195,7 @@ static int __init pcibios_init(void)
  	if (!pci_probe_only)
  		pci_assign_unassigned_resources();
  	pci_fixup_irqs(common_swizzle, pcibios_map_irq);
@@ -146,7 +146,7 @@ This is an ugly hack and needs to be rewritten before going upstream.
  }
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -1191,9 +1191,7 @@
+@@ -1191,9 +1191,7 @@ static int __init ssb_modinit(void)
  /* ssb must be initialized after PCI but before the ssb drivers.
   * That means we must use some initcall between subsys_initcall
   * and device_initcall. */

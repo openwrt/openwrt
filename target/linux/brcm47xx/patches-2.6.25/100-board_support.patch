@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -50,8 +50,10 @@
+@@ -50,8 +50,10 @@ config BCM47XX
  	select SYS_SUPPORTS_32BIT_KERNEL
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  	select SSB
@@ -11,7 +11,7 @@
  	select SSB_PCICORE_HOSTMODE if PCI
  	select GENERIC_GPIO
  	select SYS_HAS_EARLY_PRINTK
-@@ -790,6 +792,7 @@
+@@ -790,6 +792,7 @@ config CSRC_SB1250
  
  config CFE
  	bool

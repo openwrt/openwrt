@@ -24,7 +24,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -68,6 +68,9 @@
+@@ -68,6 +68,9 @@ static void gpio_ensure_requested(struct
  	if (test_and_set_bit(FLAG_REQUESTED, &desc->flags) == 0) {
  		pr_warning("GPIO-%d autorequested\n", (int)(desc - gpio_desc));
  		desc_set_label(desc, "[auto]");
@@ -34,7 +34,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  	}
  }
  
-@@ -177,6 +180,9 @@
+@@ -177,6 +180,9 @@ int gpio_request(unsigned gpio, const ch
  	if (desc->chip == NULL)
  		goto done;
  
@@ -44,7 +44,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  	/* NOTE:  gpio_request() can be called in early boot,
  	 * before IRQs are enabled.
  	 */
-@@ -184,8 +190,10 @@
+@@ -184,8 +190,10 @@ int gpio_request(unsigned gpio, const ch
  	if (test_and_set_bit(FLAG_REQUESTED, &desc->flags) == 0) {
  		desc_set_label(desc, label ? : "?");
  		status = 0;
@@ -56,7 +56,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  
  done:
  	if (status)
-@@ -209,9 +217,10 @@
+@@ -209,9 +217,10 @@ void gpio_free(unsigned gpio)
  	spin_lock_irqsave(&gpio_lock, flags);
  
  	desc = &gpio_desc[gpio];
@@ -79,7 +79,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  
  /**
   * struct gpio_chip - abstract a GPIO controller
-@@ -48,6 +49,7 @@
+@@ -48,6 +49,7 @@ struct seq_file;
   */
  struct gpio_chip {
  	char			*label;

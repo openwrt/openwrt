@@ -32,7 +32,7 @@ and didn't make it with the ppc32 equivalent. Thanks.
 ---
 --- a/include/asm-ppc/io.h
 +++ b/include/asm-ppc/io.h
-@@ -413,11 +413,21 @@
+@@ -413,11 +413,21 @@ static inline unsigned int ioread16(void
  	return readw(addr);
  }
  
@@ -54,7 +54,7 @@ and didn't make it with the ppc32 equivalent. Thanks.
  static inline void iowrite8(u8 val, void __iomem *addr)
  {
  	writeb(val, addr);
-@@ -428,11 +438,21 @@
+@@ -428,11 +438,21 @@ static inline void iowrite16(u16 val, vo
  	writew(val, addr);
  }
  

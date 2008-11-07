@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/ohci-ssb.c
 +++ b/drivers/usb/host/ohci-ssb.c
-@@ -142,10 +142,59 @@
+@@ -142,10 +142,59 @@ static int ssb_ohci_attach(struct ssb_de
  	int err = -ENOMEM;
  	u32 tmp, flags = 0;
  
@@ -62,7 +62,7 @@
  
  	hcd = usb_create_hcd(&ssb_ohci_hc_driver, dev->dev,
  			dev->dev->bus_id);
-@@ -236,6 +285,7 @@
+@@ -236,6 +285,7 @@ static int ssb_ohci_resume(struct ssb_de
  static const struct ssb_device_id ssb_ohci_table[] = {
  	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOSTDEV, SSB_ANY_REV),
  	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOST, SSB_ANY_REV),

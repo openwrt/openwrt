@@ -1,6 +1,6 @@
 --- a/fs/Kconfig
 +++ b/fs/Kconfig
-@@ -1367,6 +1367,71 @@
+@@ -1367,6 +1367,71 @@ config CRAMFS
  
  	  If unsure, say N.
  
@@ -74,7 +74,7 @@
  	depends on BLOCK
 --- a/fs/Makefile
 +++ b/fs/Makefile
-@@ -73,6 +73,7 @@
+@@ -73,6 +73,7 @@ obj-$(CONFIG_JBD)		+= jbd/
  obj-$(CONFIG_JBD2)		+= jbd2/
  obj-$(CONFIG_EXT2_FS)		+= ext2/
  obj-$(CONFIG_CRAMFS)		+= cramfs/
@@ -4128,7 +4128,7 @@
  #include <linux/initrd.h>
  #include <linux/string.h>
  
-@@ -39,6 +40,7 @@
+@@ -39,6 +40,7 @@ static int __init crd_load(int in_fd, in
   * numbers could not be found.
   *
   * We currently check for the following magic numbers:
@@ -4136,7 +4136,7 @@
   * 	minix
   * 	ext2
   *	romfs
-@@ -53,6 +55,7 @@
+@@ -53,6 +55,7 @@ identify_ramdisk_image(int fd, int start
  	struct ext2_super_block *ext2sb;
  	struct romfs_super_block *romfsb;
  	struct cramfs_super *cramfsb;
@@ -4144,7 +4144,7 @@
  	int nblocks = -1;
  	unsigned char *buf;
  
-@@ -64,6 +67,7 @@
+@@ -64,6 +67,7 @@ identify_ramdisk_image(int fd, int start
  	ext2sb = (struct ext2_super_block *) buf;
  	romfsb = (struct romfs_super_block *) buf;
  	cramfsb = (struct cramfs_super *) buf;
@@ -4152,7 +4152,7 @@
  	memset(buf, 0xe5, size);
  
  	/*
-@@ -101,6 +105,15 @@
+@@ -101,6 +105,15 @@ identify_ramdisk_image(int fd, int start
  		goto done;
  	}
  

@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/mdio_bus.c
 +++ b/drivers/net/phy/mdio_bus.c
-@@ -132,6 +132,9 @@
+@@ -132,6 +132,9 @@ static int mdio_bus_match(struct device 
  	struct phy_device *phydev = to_phy_device(dev);
  	struct phy_driver *phydrv = to_phy_driver(drv);
  
@@ -12,7 +12,7 @@
  }
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -325,6 +325,11 @@
+@@ -325,6 +325,11 @@ struct phy_driver {
  	u32 features;
  	u32 flags;
  

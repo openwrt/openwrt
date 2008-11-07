@@ -1,6 +1,6 @@
 --- a/scripts/gen_initramfs_list.sh
 +++ b/scripts/gen_initramfs_list.sh
-@@ -125,7 +125,7 @@
+@@ -125,7 +125,7 @@ parse() {
  			str="${ftype} ${name} ${location} ${str}"
  			;;
  		"nod")
@@ -9,7 +9,7 @@
  			local maj=`field 5 ${dev}`
  			local min=`field 6 ${dev}`
  			maj=${maj%,}
-@@ -135,7 +135,7 @@
+@@ -135,7 +135,7 @@ parse() {
  			str="${ftype} ${name} ${str} ${dev} ${maj} ${min}"
  			;;
  		"slink")

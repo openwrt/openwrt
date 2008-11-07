@@ -1,6 +1,6 @@
 --- a/arch/mips/kernel/genex.S
 +++ b/arch/mips/kernel/genex.S
-@@ -51,6 +51,10 @@
+@@ -51,6 +51,10 @@ NESTED(except_vec1_generic, 0, sp)
  NESTED(except_vec3_generic, 0, sp)
  	.set	push
  	.set	noat
@@ -23,7 +23,7 @@
  /*
   * Special Variant of smp_call_function for use by cache functions:
   *
-@@ -97,6 +100,9 @@
+@@ -97,6 +100,9 @@ static void __cpuinit r4k_blast_dcache_p
  {
  	unsigned long  dc_lsize = cpu_dcache_line_size();
  
@@ -33,7 +33,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache_page = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -111,6 +117,9 @@
+@@ -111,6 +117,9 @@ static void __cpuinit r4k_blast_dcache_p
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -43,7 +43,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache_page_indexed = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -125,6 +134,9 @@
+@@ -125,6 +134,9 @@ static void __cpuinit r4k_blast_dcache_s
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -53,7 +53,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -630,6 +642,8 @@
+@@ -630,6 +642,8 @@ static void local_r4k_flush_cache_sigtra
  	unsigned long addr = (unsigned long) arg;
  
  	R4600_HIT_CACHEOP_WAR_IMPL;
@@ -62,7 +62,7 @@
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1215,6 +1229,17 @@
+@@ -1215,6 +1229,17 @@ static void __cpuinit coherency_setup(vo
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -80,7 +80,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1254,6 +1279,15 @@
+@@ -1254,6 +1279,15 @@ void __cpuinit r4k_cache_init(void)
  		break;
  	}
  
@@ -96,7 +96,7 @@
  	probe_pcache();
  	setup_scache();
  
-@@ -1303,5 +1337,13 @@
+@@ -1303,5 +1337,13 @@ void __cpuinit r4k_cache_init(void)
  	build_clear_page();
  	build_copy_page();
  	local_r4k___flush_cache_all(NULL);
@@ -112,7 +112,7 @@
  }
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -677,6 +677,9 @@
+@@ -677,6 +677,9 @@ static void __cpuinit build_r4000_tlb_re
  		/* No need for uasm_i_nop */
  	}
  
@@ -122,7 +122,7 @@
  #ifdef CONFIG_64BIT
  	build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
-@@ -1084,6 +1087,9 @@
+@@ -1084,6 +1087,9 @@ build_r4000_tlbchange_handler_head(u32 *
  				   struct uasm_reloc **r, unsigned int pte,
  				   unsigned int ptr)
  {
@@ -155,7 +155,7 @@
  /*
   * This macro return a properly sign-extended address suitable as base address
   * for indexed cache operations.  Two issues here:
-@@ -150,6 +164,7 @@
+@@ -150,6 +164,7 @@ static inline void flush_icache_line_ind
  static inline void flush_dcache_line_indexed(unsigned long addr)
  {
  	__dflush_prologue
@@ -163,7 +163,7 @@
  	cache_op(Index_Writeback_Inv_D, addr);
  	__dflush_epilogue
  }
-@@ -169,6 +184,7 @@
+@@ -169,6 +184,7 @@ static inline void flush_icache_line(uns
  static inline void flush_dcache_line(unsigned long addr)
  {
  	__dflush_prologue
@@ -171,7 +171,7 @@
  	cache_op(Hit_Writeback_Inv_D, addr);
  	__dflush_epilogue
  }
-@@ -176,6 +192,7 @@
+@@ -176,6 +192,7 @@ static inline void flush_dcache_line(uns
  static inline void invalidate_dcache_line(unsigned long addr)
  {
  	__dflush_prologue
@@ -179,7 +179,7 @@
  	cache_op(Hit_Invalidate_D, addr);
  	__dflush_epilogue
  }
-@@ -208,6 +225,7 @@
+@@ -208,6 +225,7 @@ static inline void flush_scache_line(uns
   */
  static inline void protected_flush_icache_line(unsigned long addr)
  {
@@ -187,7 +187,7 @@
  	protected_cache_op(Hit_Invalidate_I, addr);
  }
  
-@@ -219,6 +237,7 @@
+@@ -219,6 +237,7 @@ static inline void protected_flush_icach
   */
  static inline void protected_writeback_dcache_line(unsigned long addr)
  {
@@ -195,7 +195,7 @@
  	protected_cache_op(Hit_Writeback_Inv_D, addr);
  }
  
-@@ -339,8 +358,52 @@
+@@ -339,8 +358,52 @@ static inline void invalidate_tcache_pag
  		: "r" (base),						\
  		  "i" (op));
  
@@ -249,7 +249,7 @@
  static inline void blast_##pfx##cache##lsize(void)			\
  {									\
  	unsigned long start = INDEX_BASE;				\
-@@ -352,6 +415,7 @@
+@@ -352,6 +415,7 @@ static inline void blast_##pfx##cache##l
  									\
  	__##pfx##flush_prologue						\
  									\
@@ -257,7 +257,7 @@
  	for (ws = 0; ws < ws_end; ws += ws_inc)				\
  		for (addr = start; addr < end; addr += lsize * 32)	\
  			cache##lsize##_unroll32(addr|ws, indexop);	\
-@@ -366,6 +430,7 @@
+@@ -366,6 +430,7 @@ static inline void blast_##pfx##cache##l
  									\
  	__##pfx##flush_prologue						\
  									\
@@ -265,7 +265,7 @@
  	do {								\
  		cache##lsize##_unroll32(start, hitop);			\
  		start += lsize * 32;					\
-@@ -384,6 +449,8 @@
+@@ -384,6 +449,8 @@ static inline void blast_##pfx##cache##l
  	                       current_cpu_data.desc.waybit;		\
  	unsigned long ws, addr;						\
  									\
@@ -274,7 +274,7 @@
  	__##pfx##flush_prologue						\
  									\
  	for (ws = 0; ws < ws_end; ws += ws_inc)				\
-@@ -393,35 +460,37 @@
+@@ -393,35 +460,37 @@ static inline void blast_##pfx##cache##l
  	__##pfx##flush_epilogue						\
  }
  
@@ -329,7 +329,7 @@
  		prot##cache_op(hitop, addr);				\
  		if (addr == aend)					\
  			break;						\
-@@ -431,13 +500,13 @@
+@@ -431,13 +500,13 @@ static inline void prot##blast_##pfx##ca
  	__##pfx##flush_epilogue						\
  }
  

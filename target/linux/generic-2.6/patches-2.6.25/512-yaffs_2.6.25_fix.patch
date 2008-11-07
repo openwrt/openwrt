@@ -1,6 +1,6 @@
 --- a/fs/yaffs2/yaffs_fs.c
 +++ b/fs/yaffs2/yaffs_fs.c
-@@ -181,7 +181,13 @@
+@@ -181,7 +181,13 @@ static int yaffs_statfs(struct super_blo
  #else
  static int yaffs_statfs(struct super_block *sb, struct statfs *buf);
  #endif
@@ -14,7 +14,7 @@
  
  static void yaffs_put_inode(struct inode *inode);
  static void yaffs_delete_inode(struct inode *);
-@@ -284,7 +290,9 @@
+@@ -284,7 +290,9 @@ static struct file_operations yaffs_dir_
  
  static struct super_operations yaffs_super_ops = {
  	.statfs = yaffs_statfs,
@@ -24,7 +24,7 @@
  	.put_inode = yaffs_put_inode,
  	.put_super = yaffs_put_super,
  	.delete_inode = yaffs_delete_inode,
-@@ -844,11 +852,17 @@
+@@ -844,11 +852,17 @@ struct inode *yaffs_get_inode(struct sup
  	T(YAFFS_TRACE_OS,
  	  (KERN_DEBUG "yaffs_get_inode for object %d\n", obj->objectId));
  
@@ -42,7 +42,7 @@
  
  	return inode;
  }
-@@ -1427,6 +1441,39 @@
+@@ -1427,6 +1441,39 @@ static int yaffs_sync_fs(struct super_bl
  }
  
  
@@ -82,7 +82,7 @@
  static void yaffs_read_inode(struct inode *inode)
  {
  	/* NB This is called as a side effect of other functions, but
-@@ -1448,6 +1495,7 @@
+@@ -1448,6 +1495,7 @@ static void yaffs_read_inode(struct inod
  
  	yaffs_GrossUnlock(dev);
  }

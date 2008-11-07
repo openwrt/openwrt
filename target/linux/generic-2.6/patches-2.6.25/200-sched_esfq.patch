@@ -1,6 +1,6 @@
 --- a/include/linux/pkt_sched.h
 +++ b/include/linux/pkt_sched.h
-@@ -162,8 +162,37 @@
+@@ -162,8 +162,37 @@ struct tc_sfq_xstats
   *
   *	The only reason for this is efficiency, it is possible
   *	to change these parameters in compile time.
@@ -40,7 +40,7 @@
  enum
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
-@@ -139,6 +139,37 @@
+@@ -139,6 +139,37 @@ config NET_SCH_SFQ
  	  To compile this code as a module, choose M here: the
  	  module will be called sch_sfq.
  
@@ -80,7 +80,7 @@
  	---help---
 --- a/net/sched/Makefile
 +++ b/net/sched/Makefile
-@@ -23,6 +23,7 @@
+@@ -23,6 +23,7 @@ obj-$(CONFIG_NET_SCH_GRED)	+= sch_gred.o
  obj-$(CONFIG_NET_SCH_INGRESS)	+= sch_ingress.o 
  obj-$(CONFIG_NET_SCH_DSMARK)	+= sch_dsmark.o
  obj-$(CONFIG_NET_SCH_SFQ)	+= sch_sfq.o

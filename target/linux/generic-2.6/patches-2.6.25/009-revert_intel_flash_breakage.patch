@@ -1,6 +1,6 @@
 --- a/drivers/mtd/chips/cfi_cmdset_0001.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0001.c
-@@ -1008,7 +1008,7 @@
+@@ -1008,7 +1008,7 @@ static void __xipram xip_enable(struct m
  
  static int __xipram xip_wait_for_operation(
  		struct map_info *map, struct flchip *chip,
@@ -9,7 +9,7 @@
  {
  	struct cfi_private *cfi = map->fldrv_priv;
  	struct cfi_pri_intelext *cfip = cfi->cmdset_priv;
-@@ -1017,7 +1017,7 @@
+@@ -1017,7 +1017,7 @@ static int __xipram xip_wait_for_operati
  	flstate_t oldstate, newstate;
  
         	start = xip_currtime();
@@ -18,7 +18,7 @@
  	if (usec == 0)
  		usec = 500000;
  	done = 0;
-@@ -1127,8 +1127,8 @@
+@@ -1127,8 +1127,8 @@ static int __xipram xip_wait_for_operati
  #define XIP_INVAL_CACHED_RANGE(map, from, size)  \
  	INVALIDATE_CACHED_RANGE(map, from, size)
  
@@ -29,7 +29,7 @@
  
  #else
  
-@@ -1140,65 +1140,65 @@
+@@ -1140,65 +1140,65 @@ static int __xipram xip_wait_for_operati
  static int inval_cache_and_wait_for_operation(
  		struct map_info *map, struct flchip *chip,
  		unsigned long cmd_adr, unsigned long inval_adr, int inval_len,
@@ -130,7 +130,7 @@
  	/* Done and happy. */
   	chip->state = FL_STATUS;
  	return 0;
-@@ -1207,7 +1207,8 @@
+@@ -1207,7 +1207,8 @@ static int inval_cache_and_wait_for_oper
  #endif
  
  #define WAIT_TIMEOUT(map, chip, adr, udelay) \
@@ -140,7 +140,7 @@
  
  
  static int do_point_onechip (struct map_info *map, struct flchip *chip, loff_t adr, size_t len)
-@@ -1438,7 +1439,7 @@
+@@ -1438,7 +1439,7 @@ static int __xipram do_write_oneword(str
  
  	ret = INVAL_CACHE_AND_WAIT(map, chip, adr,
  				   adr, map_bankwidth(map),
@@ -149,7 +149,7 @@
  	if (ret) {
  		xip_enable(map, chip, adr);
  		printk(KERN_ERR "%s: word write error (status timeout)\n", map->name);
-@@ -1678,7 +1679,7 @@
+@@ -1678,7 +1679,7 @@ static int __xipram do_write_buffer(stru
  
  	ret = INVAL_CACHE_AND_WAIT(map, chip, cmd_adr,
  				   initial_adr, initial_len,
@@ -158,7 +158,7 @@
  	if (ret) {
  		map_write(map, CMD(0x70), cmd_adr);
  		chip->state = FL_STATUS;
-@@ -1813,7 +1814,7 @@
+@@ -1813,7 +1814,7 @@ static int __xipram do_erase_oneblock(st
  
  	ret = INVAL_CACHE_AND_WAIT(map, chip, adr,
  				   adr, len,

@@ -1,6 +1,6 @@
 --- a/drivers/net/arm/at91_ether.c
 +++ b/drivers/net/arm/at91_ether.c
-@@ -146,6 +146,7 @@
+@@ -146,6 +146,7 @@ static void update_linkspeed(struct net_
  	struct at91_private *lp = netdev_priv(dev);
  	unsigned int bmsr, bmcr, lpa, mac_cfg;
  	unsigned int speed, duplex;
@@ -8,7 +8,7 @@
  
  	if (!mii_link_ok(&lp->mii)) {		/* no link */
  		netif_carrier_off(dev);
-@@ -158,8 +159,15 @@
+@@ -158,8 +159,15 @@ static void update_linkspeed(struct net_
  	read_phy(lp->phy_address, MII_BMSR, &bmsr);
  	read_phy(lp->phy_address, MII_BMCR, &bmcr);
  	if (bmcr & BMCR_ANENABLE) {				/* AutoNegotiation is enabled */
