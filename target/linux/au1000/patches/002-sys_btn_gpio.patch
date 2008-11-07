@@ -37,7 +37,7 @@ Signed-off-by: Florian Fainelli <florian.fainelli@telecomint.eu>
  static struct resource mtx1_wdt_res[] = {
  	[0] = {
  		.start = 15,
-@@ -62,11 +85,13 @@
+@@ -62,11 +85,13 @@ static struct platform_device mtx1_gpio_
  
  static struct platform_device *mtx1_devs[] = {
  	&mtx1_gpio_leds,

@@ -1,6 +1,6 @@
 --- a/arch/mips/mm/init.c
 +++ b/arch/mips/mm/init.c
-@@ -211,7 +211,7 @@
+@@ -211,7 +211,7 @@ void copy_user_highpage(struct page *to,
  	void *vfrom, *vto;
  
  	vto = kmap_atomic(to, KM_USER1);
@@ -9,7 +9,7 @@
  	    page_mapped(from) && !Page_dcache_dirty(from)) {
  		vfrom = kmap_coherent(from, vaddr);
  		copy_page(vto, vfrom);
-@@ -235,7 +235,7 @@
+@@ -235,7 +235,7 @@ void copy_to_user_page(struct vm_area_st
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {
@@ -18,7 +18,7 @@
  	    page_mapped(page) && !Page_dcache_dirty(page)) {
  		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(vto, src, len);
-@@ -255,7 +255,7 @@
+@@ -255,7 +255,7 @@ void copy_from_user_page(struct vm_area_
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {
@@ -57,7 +57,7 @@
   * I-Cache snoops remote store.  This only matters on SMP.  Some multiprocessors
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -484,7 +484,7 @@
+@@ -484,7 +484,7 @@ static inline void local_r4k_flush_cache
  		 * Use kmap_coherent or kmap_atomic to do flushes for
  		 * another ASID than the current one.
  		 */
@@ -66,7 +66,7 @@
  			vaddr = kmap_coherent(page, addr);
  		else
  			vaddr = kmap_atomic(page, KM_USER0);
-@@ -505,7 +505,7 @@
+@@ -505,7 +505,7 @@ static inline void local_r4k_flush_cache
  	}
  
  	if (vaddr) {

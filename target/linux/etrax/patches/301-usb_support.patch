@@ -1,6 +1,6 @@
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,7 @@ obj-$(CONFIG_USB_UHCI_HCD)	+= host/
  obj-$(CONFIG_USB_SL811_HCD)	+= host/
  obj-$(CONFIG_USB_U132_HCD)	+= host/
  obj-$(CONFIG_USB_R8A66597_HCD)	+= host/
@@ -10,7 +10,7 @@
  obj-$(CONFIG_USB_PRINTER)	+= class/
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
-@@ -17,3 +17,5 @@
+@@ -17,3 +17,5 @@ obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
  obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
  obj-$(CONFIG_USB_R8A66597_HCD)	+= r8a66597-hcd.o
  

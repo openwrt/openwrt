@@ -23,7 +23,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -80,6 +80,33 @@
+@@ -80,6 +80,33 @@ static inline struct gpio_chip *gpio_to_
  	return gpio_desc[gpio].chip;
  }
  
@@ -57,7 +57,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  /**
   * gpiochip_add() - register a gpio_chip
   * @chip: the chip to register, with chip->base initialized
-@@ -88,38 +115,49 @@
+@@ -88,38 +115,49 @@ static inline struct gpio_chip *gpio_to_
   * Returns a negative errno if the chip can't be registered, such as
   * because the chip->base is invalid or already associated with a
   * different chip.  Otherwise it returns zero as a success code.

@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-at91/at91rm9200_devices.c
 +++ b/arch/arm/mach-at91/at91rm9200_devices.c
-@@ -717,6 +717,26 @@
+@@ -717,6 +717,26 @@ static void __init at91_add_device_watch
  static void __init at91_add_device_watchdog(void) {}
  #endif
  
@@ -29,7 +29,7 @@
   *  SSC -- Synchronous Serial Controller
 --- a/arch/arm/mach-at91/Makefile
 +++ b/arch/arm/mach-at91/Makefile
-@@ -60,7 +60,12 @@
+@@ -60,7 +60,12 @@ obj-$(CONFIG_MACH_AT91CAP9ADK)	+= board-
  obj-$(CONFIG_MACH_AT91EB01)	+= board-eb01.o
  
  # Drivers
@@ -153,7 +153,7 @@
 +__initcall(leds_init);
 --- a/include/asm-arm/arch-at91/board.h
 +++ b/include/asm-arm/arch-at91/board.h
-@@ -162,6 +162,11 @@
+@@ -162,6 +162,11 @@ extern void __init at91_add_device_ac97(
   /* ISI */
  extern void __init at91_add_device_isi(void);
  

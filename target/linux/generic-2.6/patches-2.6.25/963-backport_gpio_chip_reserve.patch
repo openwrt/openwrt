@@ -21,7 +21,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -43,6 +43,7 @@
+@@ -43,6 +43,7 @@ struct gpio_desc {
  /* flag symbols are bit numbers */
  #define FLAG_REQUESTED	0
  #define FLAG_IS_OUT	1
@@ -29,7 +29,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  
  #ifdef CONFIG_DEBUG_FS
  	const char		*label;
-@@ -88,9 +89,10 @@
+@@ -88,9 +89,10 @@ static int gpiochip_find_base(int ngpio)
  	int base = -ENOSPC;
  
  	for (i = ARCH_NR_GPIOS - 1; i >= 0 ; i--) {
@@ -42,7 +42,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  			spare++;
  			if (spare == ngpio) {
  				base = i;
-@@ -98,7 +100,8 @@
+@@ -98,7 +100,8 @@ static int gpiochip_find_base(int ngpio)
  			}
  		} else {
  			spare = 0;
@@ -52,7 +52,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		}
  	}
  
-@@ -108,6 +111,47 @@
+@@ -108,6 +111,47 @@ static int gpiochip_find_base(int ngpio)
  }
  
  /**
@@ -102,7 +102,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
   * Context: potentially before irqs or kmalloc will work
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -74,6 +74,7 @@
+@@ -74,6 +74,7 @@ struct gpio_chip {
  
  extern const char *gpiochip_is_requested(struct gpio_chip *chip,
  			unsigned offset);

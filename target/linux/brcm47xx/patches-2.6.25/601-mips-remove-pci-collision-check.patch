@@ -4,7 +4,7 @@ Remove this sanity check for now until we find a better solution.
 --mb
 --- a/arch/mips/pci/pci.c
 +++ b/arch/mips/pci/pci.c
-@@ -182,12 +182,10 @@
+@@ -182,12 +182,10 @@ static int pcibios_enable_resources(stru
  		if ((idx == PCI_ROM_RESOURCE) &&
  				(!(r->flags & IORESOURCE_ROM_ENABLE)))
  			continue;

@@ -27,7 +27,7 @@
  void plat_irq_dispatch(void)
  {
  	u32 cause;
-@@ -53,3 +63,19 @@
+@@ -53,3 +63,19 @@ void __init arch_init_irq(void)
  {
  	mips_cpu_irq_init();
  }
@@ -115,7 +115,7 @@
  	while (1)
  		cpu_relax();
  }
-@@ -50,12 +79,13 @@
+@@ -50,12 +79,13 @@ static void bcm47xx_machine_halt(void)
  {
  	/* Disable interrupts and watchdog and spin forever */
  	local_irq_disable();
@@ -131,7 +131,7 @@
  {
  	int i = 0;
  
-@@ -72,52 +102,141 @@
+@@ -72,52 +102,141 @@ static void str2eaddr(char *str, char *d
  	}
  }
  
@@ -343,7 +343,7 @@
  
  static char nvram_buf[NVRAM_SPACE];
  static int cfe_env;
-@@ -36,7 +36,7 @@
+@@ -36,7 +36,7 @@ extern char *cfe_env_get(char *nv_buf, c
  /* Probe for NVRAM header */
  static void __init early_nvram_init(void)
  {
@@ -362,7 +362,7 @@
 +obj-y := cfe_env.o gpio.o irq.o nvram.o prom.o serial.o setup.o time.o wgt634u.o
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -54,6 +54,7 @@
+@@ -54,6 +54,7 @@ config BCM47XX
  	select SSB_DRIVER_MIPS
  	select SSB_DRIVER_EXTIF
  	select SSB_DRIVER_PCICORE

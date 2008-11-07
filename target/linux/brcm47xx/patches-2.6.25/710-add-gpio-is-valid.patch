@@ -1,7 +1,7 @@
 Add gpio_is_valid() for bcm47xx
 --- a/arch/mips/bcm47xx/gpio.c
 +++ b/arch/mips/bcm47xx/gpio.c
-@@ -77,3 +77,15 @@
+@@ -77,3 +77,15 @@ int bcm47xx_gpio_direction_output(unsign
  }
  EXPORT_SYMBOL_GPL(bcm47xx_gpio_direction_output);
  
@@ -19,7 +19,7 @@ Add gpio_is_valid() for bcm47xx
 +EXPORT_SYMBOL_GPL(bcm47xx_gpio_is_valid);
 --- a/include/asm-mips/mach-bcm47xx/gpio.h
 +++ b/include/asm-mips/mach-bcm47xx/gpio.h
-@@ -17,6 +17,7 @@
+@@ -17,6 +17,7 @@ extern int bcm47xx_gpio_get_value(unsign
  extern void bcm47xx_gpio_set_value(unsigned gpio, int value);
  extern int bcm47xx_gpio_direction_input(unsigned gpio);
  extern int bcm47xx_gpio_direction_output(unsigned gpio, int value);
@@ -27,7 +27,7 @@ Add gpio_is_valid() for bcm47xx
  
  static inline int gpio_request(unsigned gpio, const char *label)
  {
-@@ -52,6 +53,8 @@
+@@ -52,6 +53,8 @@ static inline int gpio_direction_output(
  	return bcm47xx_gpio_direction_output(gpio, value);
  }
  

@@ -1,6 +1,6 @@
 --- a/Documentation/serial/driver
 +++ b/Documentation/serial/driver
-@@ -186,6 +186,17 @@
+@@ -186,6 +186,17 @@ hardware.
  	Locking: port_sem taken.
  	Interrupts: caller dependent.
  
@@ -20,7 +20,7 @@
  	bits.  Update read_status_mask and ignore_status_mask to indicate
 --- a/arch/avr32/Kconfig
 +++ b/arch/avr32/Kconfig
-@@ -47,6 +47,9 @@
+@@ -47,6 +47,9 @@ config RWSEM_GENERIC_SPINLOCK
  config GENERIC_TIME
  	def_bool y
  
@@ -30,7 +30,7 @@
  config RWSEM_XCHGADD_ALGORITHM
  	def_bool n
  
-@@ -70,6 +73,8 @@
+@@ -70,6 +73,8 @@ source "init/Kconfig"
  
  menu "System Type and features"
  
@@ -39,7 +39,7 @@
  config SUBARCH_AVR32B
  	bool
  config MMU
-@@ -83,6 +88,7 @@
+@@ -83,6 +88,7 @@ config PLATFORM_AT32AP
  	select MMU
  	select PERFORMANCE_COUNTERS
  	select HAVE_GPIO_LIB
@@ -47,7 +47,7 @@
  
  #
  # CPU types
-@@ -117,6 +123,9 @@
+@@ -117,6 +123,9 @@ endchoice
  if BOARD_ATSTK1000
  source "arch/avr32/boards/atstk1000/Kconfig"
  endif
@@ -57,7 +57,7 @@
  
  choice
  	prompt "Boot loader type"
-@@ -142,6 +151,9 @@
+@@ -142,6 +151,9 @@ config PHYS_OFFSET
  
  source "kernel/Kconfig.preempt"
  
@@ -67,7 +67,7 @@
  config HAVE_ARCH_BOOTMEM_NODE
  	def_bool n
  
-@@ -180,6 +192,10 @@
+@@ -180,6 +192,10 @@ config NMI_DEBUGGING
  	  be dumped to the console when a Non-Maskable Interrupt
  	  happens.
  
@@ -78,7 +78,7 @@
  # FPU emulation goes here
  
  source "kernel/Kconfig.hz"
-@@ -196,6 +212,11 @@
+@@ -196,6 +212,11 @@ endmenu
  
  menu "Power management options"
  
@@ -92,7 +92,7 @@
  source "drivers/cpufreq/Kconfig"
 --- a/arch/avr32/Makefile
 +++ b/arch/avr32/Makefile
-@@ -32,6 +32,7 @@
+@@ -32,6 +32,7 @@ core-$(CONFIG_LOADER_U_BOOT)		+= arch/av
  core-y					+= arch/avr32/kernel/
  core-y					+= arch/avr32/mm/
  drivers-$(CONFIG_OPROFILE)		+= arch/avr32/oprofile/
@@ -131,7 +131,7 @@
  /* Initialized by bootloader-specific startup code. */
  struct tag *bootloader_tags __initdata;
  
-@@ -37,11 +44,16 @@
+@@ -37,11 +44,16 @@ static struct eth_platform_data __initda
  static struct spi_board_info spi0_board_info[] __initdata = {
  	{
  		.modalias	= "mtd_dataflash",
@@ -149,7 +149,7 @@
  /*
   * The next two functions should go away as the boot loader is
   * supposed to initialize the macb address registers with a valid
-@@ -124,6 +136,7 @@
+@@ -124,6 +136,7 @@ static struct platform_device ngw_gpio_l
  	}
  };
  
@@ -157,7 +157,7 @@
  static struct i2c_gpio_platform_data i2c_gpio_data = {
  	.sda_pin		= GPIO_PIN_PA(6),
  	.scl_pin		= GPIO_PIN_PA(7),
-@@ -139,6 +152,7 @@
+@@ -139,6 +152,7 @@ static struct platform_device i2c_gpio_d
  		.platform_data	= &i2c_gpio_data,
  	},
  };
@@ -165,7 +165,7 @@
  
  static int __init atngw100_init(void)
  {
-@@ -157,6 +171,7 @@
+@@ -157,6 +171,7 @@ static int __init atngw100_init(void)
  	set_hw_addr(at32_add_device_eth(1, &eth_data[1]));
  
  	at32_add_device_spi(0, spi0_board_info, ARRAY_SIZE(spi0_board_info));
@@ -173,7 +173,7 @@
  	at32_add_device_usba(0, NULL);
  
  	for (i = 0; i < ARRAY_SIZE(ngw_leds); i++) {
-@@ -165,11 +180,15 @@
+@@ -165,11 +180,15 @@ static int __init atngw100_init(void)
  	}
  	platform_device_register(&ngw_gpio_leds);
  
@@ -191,7 +191,7 @@
  }
 --- a/arch/avr32/boards/atstk1000/Kconfig
 +++ b/arch/avr32/boards/atstk1000/Kconfig
-@@ -18,6 +18,10 @@
+@@ -18,6 +18,10 @@ config BOARD_ATSTK1004
  	bool "ATSTK1004"
  	select CPU_AT32AP7002
  
@@ -202,7 +202,7 @@
  endchoice
  
  
-@@ -102,4 +106,60 @@
+@@ -102,4 +106,60 @@ config BOARD_ATSTK1000_EXTDAC
  	depends on !BOARD_ATSTK100X_SW1_CUSTOM && !BOARD_ATSTK100X_SW3_CUSTOM
  	default y
  
@@ -265,7 +265,7 @@
  endif	# stk 1000
 --- a/arch/avr32/boards/atstk1000/Makefile
 +++ b/arch/avr32/boards/atstk1000/Makefile
-@@ -2,3 +2,4 @@
+@@ -2,3 +2,4 @@ obj-y				+= setup.o flash.o
  obj-$(CONFIG_BOARD_ATSTK1002)	+= atstk1002.o
  obj-$(CONFIG_BOARD_ATSTK1003)	+= atstk1003.o
  obj-$(CONFIG_BOARD_ATSTK1004)	+= atstk1004.o
@@ -363,7 +363,7 @@
  
  struct eth_addr {
  	u8 addr[6];
-@@ -83,6 +157,19 @@
+@@ -83,6 +157,19 @@ static struct spi_board_info spi1_board_
  } };
  #endif
  
@@ -383,7 +383,7 @@
  /*
   * The next two functions should go away as the boot loader is
   * supposed to initialize the macb address registers with a valid
-@@ -212,6 +299,12 @@
+@@ -212,6 +299,12 @@ static int __init atstk1002_init(void)
  
  	at32_add_system_devices();
  
@@ -396,7 +396,7 @@
  #ifdef	CONFIG_BOARD_ATSTK100X_SW2_CUSTOM
  	at32_add_device_usart(1);
  #else
-@@ -228,16 +321,30 @@
+@@ -228,16 +321,30 @@ static int __init atstk1002_init(void)
  #ifdef CONFIG_BOARD_ATSTK100X_SPI1
  	at32_add_device_spi(1, spi1_board_info, ARRAY_SIZE(spi1_board_info));
  #endif
@@ -444,7 +444,7 @@
  #ifdef CONFIG_BOARD_ATSTK1000_EXTDAC
  static struct at73c213_board_info at73c213_data = {
  	.ssc_id		= 0,
-@@ -59,6 +66,19 @@
+@@ -59,6 +66,19 @@ static struct spi_board_info spi1_board_
  } };
  #endif
  
@@ -464,7 +464,7 @@
  #ifdef CONFIG_BOARD_ATSTK1000_EXTDAC
  static void __init atstk1003_setup_extdac(void)
  {
-@@ -147,12 +167,22 @@
+@@ -147,12 +167,22 @@ static int __init atstk1003_init(void)
  	at32_add_device_spi(1, spi1_board_info, ARRAY_SIZE(spi1_board_info));
  #endif
  #ifndef CONFIG_BOARD_ATSTK100X_SW2_CUSTOM
@@ -504,7 +504,7 @@
  #ifdef CONFIG_BOARD_ATSTK1000_EXTDAC
  static struct at73c213_board_info at73c213_data = {
  	.ssc_id		= 0,
-@@ -130,14 +137,23 @@
+@@ -130,14 +137,23 @@ static int __init atstk1004_init(void)
  	at32_add_device_spi(1, spi1_board_info, ARRAY_SIZE(spi1_board_info));
  #endif
  #ifndef CONFIG_BOARD_ATSTK100X_SW2_CUSTOM
@@ -542,7 +542,7 @@
  #
  CONFIG_AVR32=y
  CONFIG_GENERIC_GPIO=y
-@@ -13,10 +13,10 @@
+@@ -13,10 +13,10 @@ CONFIG_HARDIRQS_SW_RESEND=y
  CONFIG_GENERIC_IRQ_PROBE=y
  CONFIG_RWSEM_GENERIC_SPINLOCK=y
  CONFIG_GENERIC_TIME=y
@@ -554,7 +554,7 @@
  CONFIG_GENERIC_HWEIGHT=y
  CONFIG_GENERIC_CALIBRATE_DELAY=y
  CONFIG_GENERIC_BUG=y
-@@ -37,17 +37,15 @@
+@@ -37,17 +37,15 @@ CONFIG_POSIX_MQUEUE=y
  CONFIG_BSD_PROCESS_ACCT=y
  CONFIG_BSD_PROCESS_ACCT_V3=y
  # CONFIG_TASKSTATS is not set
@@ -575,7 +575,7 @@
  CONFIG_BLK_DEV_INITRD=y
  CONFIG_INITRAMFS_SOURCE=""
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-@@ -61,11 +59,13 @@
+@@ -61,11 +59,13 @@ CONFIG_HOTPLUG=y
  CONFIG_PRINTK=y
  CONFIG_BUG=y
  CONFIG_ELF_CORE=y
@@ -589,7 +589,7 @@
  CONFIG_EVENTFD=y
  CONFIG_SHMEM=y
  CONFIG_VM_EVENT_COUNTERS=y
-@@ -73,6 +73,14 @@
+@@ -73,6 +73,14 @@ CONFIG_SLUB_DEBUG=y
  # CONFIG_SLAB is not set
  CONFIG_SLUB=y
  # CONFIG_SLOB is not set
@@ -604,7 +604,7 @@
  CONFIG_SLABINFO=y
  CONFIG_RT_MUTEXES=y
  # CONFIG_TINY_SHMEM is not set
-@@ -101,10 +109,15 @@
+@@ -101,10 +109,15 @@ CONFIG_IOSCHED_CFQ=y
  CONFIG_DEFAULT_CFQ=y
  # CONFIG_DEFAULT_NOOP is not set
  CONFIG_DEFAULT_IOSCHED="cfq"
@@ -620,7 +620,7 @@
  CONFIG_SUBARCH_AVR32B=y
  CONFIG_MMU=y
  CONFIG_PERFORMANCE_COUNTERS=y
-@@ -113,6 +126,7 @@
+@@ -113,6 +126,7 @@ CONFIG_CPU_AT32AP700X=y
  CONFIG_CPU_AT32AP7000=y
  # CONFIG_BOARD_ATSTK1000 is not set
  CONFIG_BOARD_ATNGW100=y
@@ -628,7 +628,7 @@
  CONFIG_LOADER_U_BOOT=y
  
  #
-@@ -121,6 +135,7 @@
+@@ -121,6 +135,7 @@ CONFIG_LOADER_U_BOOT=y
  # CONFIG_AP700X_32_BIT_SMC is not set
  CONFIG_AP700X_16_BIT_SMC=y
  # CONFIG_AP700X_8_BIT_SMC is not set
@@ -636,7 +636,7 @@
  CONFIG_LOAD_ADDRESS=0x10000000
  CONFIG_ENTRY_ADDRESS=0x90000000
  CONFIG_PHYS_OFFSET=0x10000000
-@@ -146,16 +161,26 @@
+@@ -146,16 +161,26 @@ CONFIG_SPLIT_PTLOCK_CPUS=4
  CONFIG_ZONE_DMA_FLAG=0
  CONFIG_VIRT_TO_BUS=y
  # CONFIG_OWNERSHIP_TRACE is not set
@@ -663,7 +663,7 @@
  
  #
  # CPU Frequency scaling
-@@ -164,9 +189,9 @@
+@@ -164,9 +189,9 @@ CONFIG_CPU_FREQ=y
  CONFIG_CPU_FREQ_TABLE=y
  # CONFIG_CPU_FREQ_DEBUG is not set
  # CONFIG_CPU_FREQ_STAT is not set
@@ -675,7 +675,7 @@
  # CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
  CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
  # CONFIG_CPU_FREQ_GOV_POWERSAVE is not set
-@@ -202,6 +227,7 @@
+@@ -202,6 +227,7 @@ CONFIG_XFRM=y
  CONFIG_XFRM_USER=y
  # CONFIG_XFRM_SUB_POLICY is not set
  # CONFIG_XFRM_MIGRATE is not set
@@ -683,7 +683,7 @@
  CONFIG_NET_KEY=y
  # CONFIG_NET_KEY_MIGRATE is not set
  CONFIG_INET=y
-@@ -260,82 +286,33 @@
+@@ -260,82 +286,33 @@ CONFIG_IPV6_SIT=y
  # CONFIG_NETWORK_SECMARK is not set
  CONFIG_NETFILTER=y
  # CONFIG_NETFILTER_DEBUG is not set
@@ -770,7 +770,7 @@
  CONFIG_IP_NF_FILTER=m
  CONFIG_IP_NF_TARGET_REJECT=m
  CONFIG_IP_NF_TARGET_LOG=m
-@@ -343,54 +320,25 @@
+@@ -343,54 +320,25 @@ CONFIG_IP_NF_TARGET_LOG=m
  CONFIG_NF_NAT=m
  CONFIG_NF_NAT_NEEDED=y
  CONFIG_IP_NF_TARGET_MASQUERADE=m
@@ -830,7 +830,7 @@
  # CONFIG_IP_DCCP is not set
  # CONFIG_IP_SCTP is not set
  # CONFIG_TIPC is not set
-@@ -407,7 +355,6 @@
+@@ -407,7 +355,6 @@ CONFIG_LLC=m
  # CONFIG_ECONET is not set
  # CONFIG_WAN_ROUTER is not set
  # CONFIG_NET_SCHED is not set
@@ -838,7 +838,7 @@
  
  #
  # Network testing
-@@ -415,6 +362,7 @@
+@@ -415,6 +362,7 @@ CONFIG_NET_CLS_ROUTE=y
  # CONFIG_NET_PKTGEN is not set
  # CONFIG_NET_TCPPROBE is not set
  # CONFIG_HAMRADIO is not set
@@ -846,7 +846,7 @@
  # CONFIG_IRDA is not set
  # CONFIG_BT is not set
  # CONFIG_AF_RXRPC is not set
-@@ -531,11 +479,18 @@
+@@ -531,11 +479,18 @@ CONFIG_BLK_DEV_NBD=m
  CONFIG_BLK_DEV_RAM=m
  CONFIG_BLK_DEV_RAM_COUNT=16
  CONFIG_BLK_DEV_RAM_SIZE=4096
@@ -868,7 +868,7 @@
  
  #
  # SCSI device support
-@@ -568,11 +523,13 @@
+@@ -568,11 +523,13 @@ CONFIG_PHYLIB=y
  # CONFIG_SMSC_PHY is not set
  # CONFIG_BROADCOM_PHY is not set
  # CONFIG_ICPLUS_PHY is not set
@@ -882,7 +882,7 @@
  # CONFIG_IBM_NEW_EMAC_ZMII is not set
  # CONFIG_IBM_NEW_EMAC_RGMII is not set
  # CONFIG_IBM_NEW_EMAC_TAH is not set
-@@ -599,7 +556,6 @@
+@@ -599,7 +556,6 @@ CONFIG_PPPOE=m
  # CONFIG_PPPOL2TP is not set
  # CONFIG_SLIP is not set
  CONFIG_SLHC=m
@@ -890,7 +890,7 @@
  # CONFIG_NETCONSOLE is not set
  # CONFIG_NETPOLL is not set
  # CONFIG_NET_POLL_CONTROLLER is not set
-@@ -633,6 +589,7 @@
+@@ -633,6 +589,7 @@ CONFIG_SLHC=m
  #
  CONFIG_SERIAL_ATMEL=y
  CONFIG_SERIAL_ATMEL_CONSOLE=y
@@ -898,7 +898,7 @@
  # CONFIG_SERIAL_ATMEL_TTYAT is not set
  CONFIG_SERIAL_CORE=y
  CONFIG_SERIAL_CORE_CONSOLE=y
-@@ -640,8 +597,6 @@
+@@ -640,8 +597,6 @@ CONFIG_UNIX98_PTYS=y
  # CONFIG_LEGACY_PTYS is not set
  # CONFIG_IPMI_HANDLER is not set
  # CONFIG_HW_RANDOM is not set
@@ -907,7 +907,7 @@
  # CONFIG_R3964 is not set
  # CONFIG_RAW_DRIVER is not set
  # CONFIG_TCG_TPM is not set
-@@ -659,6 +614,7 @@
+@@ -659,6 +614,7 @@ CONFIG_I2C_ALGOBIT=m
  #
  # I2C Hardware Bus support
  #
@@ -915,7 +915,7 @@
  CONFIG_I2C_GPIO=m
  # CONFIG_I2C_OCORES is not set
  # CONFIG_I2C_PARPORT_LIGHT is not set
-@@ -669,13 +625,12 @@
+@@ -669,13 +625,12 @@ CONFIG_I2C_GPIO=m
  #
  # Miscellaneous I2C Chip support
  #
@@ -931,7 +931,7 @@
  # CONFIG_SENSORS_MAX6875 is not set
  # CONFIG_SENSORS_TSL2550 is not set
  # CONFIG_I2C_DEBUG_CORE is not set
-@@ -702,9 +657,27 @@
+@@ -702,9 +657,27 @@ CONFIG_SPI_ATMEL=y
  # CONFIG_SPI_AT25 is not set
  CONFIG_SPI_SPIDEV=m
  # CONFIG_SPI_TLE62X0 is not set
@@ -959,7 +959,7 @@
  CONFIG_WATCHDOG=y
  # CONFIG_WATCHDOG_NOWAYOUT is not set
  
-@@ -757,10 +730,6 @@
+@@ -757,10 +730,6 @@ CONFIG_USB_SUPPORT=y
  #
  # NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
  #
@@ -970,7 +970,7 @@
  CONFIG_USB_GADGET=y
  # CONFIG_USB_GADGET_DEBUG is not set
  # CONFIG_USB_GADGET_DEBUG_FILES is not set
-@@ -787,21 +756,24 @@
+@@ -787,21 +756,24 @@ CONFIG_USB_FILE_STORAGE=m
  # CONFIG_USB_FILE_STORAGE_TEST is not set
  CONFIG_USB_G_SERIAL=m
  # CONFIG_USB_MIDI_GADGET is not set
@@ -997,7 +997,7 @@
  CONFIG_NEW_LEDS=y
  CONFIG_LEDS_CLASS=y
  
-@@ -844,19 +816,22 @@
+@@ -844,19 +816,22 @@ CONFIG_RTC_INTF_DEV=y
  # CONFIG_RTC_DRV_PCF8563 is not set
  # CONFIG_RTC_DRV_PCF8583 is not set
  # CONFIG_RTC_DRV_M41T80 is not set
@@ -1022,7 +1022,7 @@
  # CONFIG_RTC_DRV_M48T86 is not set
  # CONFIG_RTC_DRV_M48T59 is not set
  # CONFIG_RTC_DRV_V3020 is not set
-@@ -874,25 +849,23 @@
+@@ -874,25 +849,23 @@ CONFIG_RTC_DRV_AT32AP700X=y
  #
  # File systems
  #
@@ -1052,7 +1052,7 @@
  # CONFIG_AUTOFS_FS is not set
  # CONFIG_AUTOFS4_FS is not set
  CONFIG_FUSE_FS=m
-@@ -923,7 +896,7 @@
+@@ -923,7 +896,7 @@ CONFIG_SYSFS=y
  CONFIG_TMPFS=y
  # CONFIG_TMPFS_POSIX_ACL is not set
  # CONFIG_HUGETLB_PAGE is not set
@@ -1061,7 +1061,7 @@
  
  #
  # Miscellaneous filesystems
-@@ -948,8 +921,10 @@
+@@ -948,8 +921,10 @@ CONFIG_JFFS2_RTIME=y
  # CONFIG_JFFS2_RUBIN is not set
  # CONFIG_CRAMFS is not set
  # CONFIG_VXFS_FS is not set
@@ -1072,7 +1072,7 @@
  # CONFIG_SYSV_FS is not set
  # CONFIG_UFS_FS is not set
  CONFIG_NETWORK_FILESYSTEMS=y
-@@ -1030,11 +1005,6 @@
+@@ -1030,11 +1005,6 @@ CONFIG_NLS_ISO8859_1=m
  # CONFIG_NLS_KOI8_U is not set
  CONFIG_NLS_UTF8=m
  # CONFIG_DLM is not set
@@ -1084,7 +1084,7 @@
  
  #
  # Kernel hacking
-@@ -1053,6 +1023,7 @@
+@@ -1053,6 +1023,7 @@ CONFIG_SCHED_DEBUG=y
  # CONFIG_SCHEDSTATS is not set
  # CONFIG_TIMER_STATS is not set
  # CONFIG_SLUB_DEBUG_ON is not set
@@ -1092,7 +1092,7 @@
  # CONFIG_DEBUG_RT_MUTEXES is not set
  # CONFIG_RT_MUTEX_TESTER is not set
  # CONFIG_DEBUG_SPINLOCK is not set
-@@ -1069,9 +1040,10 @@
+@@ -1069,9 +1040,10 @@ CONFIG_DEBUG_BUGVERBOSE=y
  # CONFIG_DEBUG_LIST is not set
  # CONFIG_DEBUG_SG is not set
  CONFIG_FRAME_POINTER=y
@@ -1104,7 +1104,7 @@
  # CONFIG_LKDTM is not set
  # CONFIG_FAULT_INJECTION is not set
  # CONFIG_SAMPLES is not set
-@@ -1084,7 +1056,9 @@
+@@ -1084,7 +1056,9 @@ CONFIG_FRAME_POINTER=y
  # CONFIG_SECURITY_FILE_CAPABILITIES is not set
  CONFIG_CRYPTO=y
  CONFIG_CRYPTO_ALGAPI=y
@@ -1114,7 +1114,7 @@
  CONFIG_CRYPTO_HASH=y
  CONFIG_CRYPTO_MANAGER=y
  CONFIG_CRYPTO_HMAC=y
-@@ -1103,6 +1077,9 @@
+@@ -1103,6 +1077,9 @@ CONFIG_CRYPTO_CBC=y
  CONFIG_CRYPTO_PCBC=m
  # CONFIG_CRYPTO_LRW is not set
  # CONFIG_CRYPTO_XTS is not set
@@ -1124,7 +1124,7 @@
  # CONFIG_CRYPTO_CRYPTD is not set
  CONFIG_CRYPTO_DES=y
  # CONFIG_CRYPTO_FCRYPT is not set
-@@ -1117,12 +1094,14 @@
+@@ -1117,12 +1094,14 @@ CONFIG_CRYPTO_ARC4=m
  # CONFIG_CRYPTO_KHAZAD is not set
  # CONFIG_CRYPTO_ANUBIS is not set
  # CONFIG_CRYPTO_SEED is not set
@@ -1140,7 +1140,7 @@
  CONFIG_CRYPTO_HW=y
  
  #
-@@ -1137,10 +1116,7 @@
+@@ -1137,10 +1116,7 @@ CONFIG_CRC7=m
  # CONFIG_LIBCRC32C is not set
  CONFIG_ZLIB_INFLATE=y
  CONFIG_ZLIB_DEFLATE=y
@@ -1164,7 +1164,7 @@
  #
  CONFIG_AVR32=y
  CONFIG_GENERIC_GPIO=y
-@@ -13,10 +13,10 @@
+@@ -13,10 +13,10 @@ CONFIG_HARDIRQS_SW_RESEND=y
  CONFIG_GENERIC_IRQ_PROBE=y
  CONFIG_RWSEM_GENERIC_SPINLOCK=y
  CONFIG_GENERIC_TIME=y
@@ -1176,7 +1176,7 @@
  CONFIG_GENERIC_HWEIGHT=y
  CONFIG_GENERIC_CALIBRATE_DELAY=y
  CONFIG_GENERIC_BUG=y
-@@ -36,15 +36,15 @@
+@@ -36,15 +36,15 @@ CONFIG_SYSVIPC_SYSCTL=y
  CONFIG_POSIX_MQUEUE=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  # CONFIG_TASKSTATS is not set
@@ -1195,7 +1195,7 @@
  CONFIG_BLK_DEV_INITRD=y
  CONFIG_INITRAMFS_SOURCE=""
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-@@ -58,11 +58,13 @@
+@@ -58,11 +58,13 @@ CONFIG_HOTPLUG=y
  CONFIG_PRINTK=y
  CONFIG_BUG=y
  CONFIG_ELF_CORE=y
@@ -1209,7 +1209,7 @@
  CONFIG_EVENTFD=y
  CONFIG_SHMEM=y
  CONFIG_VM_EVENT_COUNTERS=y
-@@ -70,6 +72,14 @@
+@@ -70,6 +72,14 @@ CONFIG_SLUB_DEBUG=y
  # CONFIG_SLAB is not set
  CONFIG_SLUB=y
  # CONFIG_SLOB is not set
@@ -1224,7 +1224,7 @@
  CONFIG_SLABINFO=y
  CONFIG_RT_MUTEXES=y
  # CONFIG_TINY_SHMEM is not set
-@@ -98,10 +108,15 @@
+@@ -98,10 +108,15 @@ CONFIG_IOSCHED_CFQ=y
  CONFIG_DEFAULT_CFQ=y
  # CONFIG_DEFAULT_NOOP is not set
  CONFIG_DEFAULT_IOSCHED="cfq"
@@ -1240,7 +1240,7 @@
  CONFIG_SUBARCH_AVR32B=y
  CONFIG_MMU=y
  CONFIG_PERFORMANCE_COUNTERS=y
-@@ -113,12 +128,16 @@
+@@ -113,12 +128,16 @@ CONFIG_BOARD_ATSTK1000=y
  CONFIG_BOARD_ATSTK1002=y
  # CONFIG_BOARD_ATSTK1003 is not set
  # CONFIG_BOARD_ATSTK1004 is not set
@@ -1257,7 +1257,7 @@
  CONFIG_LOADER_U_BOOT=y
  
  #
-@@ -127,6 +146,7 @@
+@@ -127,6 +146,7 @@ CONFIG_LOADER_U_BOOT=y
  # CONFIG_AP700X_32_BIT_SMC is not set
  CONFIG_AP700X_16_BIT_SMC=y
  # CONFIG_AP700X_8_BIT_SMC is not set
@@ -1265,7 +1265,7 @@
  CONFIG_LOAD_ADDRESS=0x10000000
  CONFIG_ENTRY_ADDRESS=0x90000000
  CONFIG_PHYS_OFFSET=0x10000000
-@@ -152,16 +172,26 @@
+@@ -152,16 +172,26 @@ CONFIG_SPLIT_PTLOCK_CPUS=4
  CONFIG_ZONE_DMA_FLAG=0
  CONFIG_VIRT_TO_BUS=y
  # CONFIG_OWNERSHIP_TRACE is not set
@@ -1292,7 +1292,7 @@
  
  #
  # CPU Frequency scaling
-@@ -170,9 +200,9 @@
+@@ -170,9 +200,9 @@ CONFIG_CPU_FREQ=y
  CONFIG_CPU_FREQ_TABLE=y
  # CONFIG_CPU_FREQ_DEBUG is not set
  # CONFIG_CPU_FREQ_STAT is not set
@@ -1304,7 +1304,7 @@
  # CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
  CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
  # CONFIG_CPU_FREQ_GOV_POWERSAVE is not set
-@@ -208,6 +238,7 @@
+@@ -208,6 +238,7 @@ CONFIG_XFRM=y
  CONFIG_XFRM_USER=m
  # CONFIG_XFRM_SUB_POLICY is not set
  # CONFIG_XFRM_MIGRATE is not set
@@ -1312,7 +1312,7 @@
  CONFIG_NET_KEY=m
  # CONFIG_NET_KEY_MIGRATE is not set
  CONFIG_INET=y
-@@ -279,6 +310,7 @@
+@@ -279,6 +310,7 @@ CONFIG_LLC=m
  # CONFIG_NET_PKTGEN is not set
  # CONFIG_NET_TCPPROBE is not set
  # CONFIG_HAMRADIO is not set
@@ -1320,7 +1320,7 @@
  # CONFIG_IRDA is not set
  # CONFIG_BT is not set
  # CONFIG_AF_RXRPC is not set
-@@ -395,13 +427,18 @@
+@@ -395,13 +427,18 @@ CONFIG_BLK_DEV_NBD=m
  CONFIG_BLK_DEV_RAM=m
  CONFIG_BLK_DEV_RAM_COUNT=16
  CONFIG_BLK_DEV_RAM_SIZE=4096
@@ -1341,7 +1341,7 @@
  
  #
  # SCSI device support
-@@ -444,6 +481,7 @@
+@@ -444,6 +481,7 @@ CONFIG_SCSI_WAIT_SCAN=m
  # CONFIG_SCSI_LOWLEVEL is not set
  CONFIG_ATA=m
  # CONFIG_ATA_NONSTANDARD is not set
@@ -1349,7 +1349,7 @@
  CONFIG_PATA_AT32=m
  # CONFIG_PATA_PLATFORM is not set
  # CONFIG_MD is not set
-@@ -469,11 +507,13 @@
+@@ -469,11 +507,13 @@ CONFIG_PHYLIB=y
  # CONFIG_SMSC_PHY is not set
  # CONFIG_BROADCOM_PHY is not set
  # CONFIG_ICPLUS_PHY is not set
@@ -1363,7 +1363,7 @@
  # CONFIG_IBM_NEW_EMAC_ZMII is not set
  # CONFIG_IBM_NEW_EMAC_RGMII is not set
  # CONFIG_IBM_NEW_EMAC_TAH is not set
-@@ -500,7 +540,6 @@
+@@ -500,7 +540,6 @@ CONFIG_PPP_BSDCOMP=m
  # CONFIG_PPPOL2TP is not set
  # CONFIG_SLIP is not set
  CONFIG_SLHC=m
@@ -1371,7 +1371,7 @@
  # CONFIG_NETCONSOLE is not set
  # CONFIG_NETPOLL is not set
  # CONFIG_NET_POLL_CONTROLLER is not set
-@@ -568,6 +607,7 @@
+@@ -568,6 +607,7 @@ CONFIG_MOUSE_GPIO=m
  #
  CONFIG_SERIAL_ATMEL=y
  CONFIG_SERIAL_ATMEL_CONSOLE=y
@@ -1379,7 +1379,7 @@
  # CONFIG_SERIAL_ATMEL_TTYAT is not set
  CONFIG_SERIAL_CORE=y
  CONFIG_SERIAL_CORE_CONSOLE=y
-@@ -575,8 +615,6 @@
+@@ -575,8 +615,6 @@ CONFIG_UNIX98_PTYS=y
  # CONFIG_LEGACY_PTYS is not set
  # CONFIG_IPMI_HANDLER is not set
  # CONFIG_HW_RANDOM is not set
@@ -1388,7 +1388,7 @@
  # CONFIG_R3964 is not set
  # CONFIG_RAW_DRIVER is not set
  # CONFIG_TCG_TPM is not set
-@@ -594,6 +632,7 @@
+@@ -594,6 +632,7 @@ CONFIG_I2C_ALGOBIT=m
  #
  # I2C Hardware Bus support
  #
@@ -1396,7 +1396,7 @@
  CONFIG_I2C_GPIO=m
  # CONFIG_I2C_OCORES is not set
  # CONFIG_I2C_PARPORT_LIGHT is not set
-@@ -604,13 +643,12 @@
+@@ -604,13 +643,12 @@ CONFIG_I2C_GPIO=m
  #
  # Miscellaneous I2C Chip support
  #
@@ -1412,7 +1412,7 @@
  # CONFIG_SENSORS_MAX6875 is not set
  # CONFIG_SENSORS_TSL2550 is not set
  # CONFIG_I2C_DEBUG_CORE is not set
-@@ -637,9 +675,27 @@
+@@ -637,9 +675,27 @@ CONFIG_SPI_ATMEL=y
  # CONFIG_SPI_AT25 is not set
  CONFIG_SPI_SPIDEV=m
  # CONFIG_SPI_TLE62X0 is not set
@@ -1440,7 +1440,7 @@
  CONFIG_WATCHDOG=y
  # CONFIG_WATCHDOG_NOWAYOUT is not set
  
-@@ -732,12 +788,18 @@
+@@ -732,12 +788,18 @@ CONFIG_SND_PCM_OSS_PLUGINS=y
  #
  # Generic devices
  #
@@ -1459,7 +1459,7 @@
  # SPI devices
  #
  CONFIG_SND_AT73C213=m
-@@ -753,9 +815,14 @@
+@@ -753,9 +815,14 @@ CONFIG_SND_AT73C213_TARGET_BITRATE=48000
  #
  
  #
@@ -1474,7 +1474,7 @@
  # CONFIG_HID_SUPPORT is not set
  CONFIG_USB_SUPPORT=y
  # CONFIG_USB_ARCH_HAS_HCD is not set
-@@ -765,10 +832,6 @@
+@@ -765,10 +832,6 @@ CONFIG_USB_SUPPORT=y
  #
  # NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
  #
@@ -1485,7 +1485,7 @@
  CONFIG_USB_GADGET=y
  # CONFIG_USB_GADGET_DEBUG is not set
  # CONFIG_USB_GADGET_DEBUG_FILES is not set
-@@ -796,27 +859,31 @@
+@@ -796,27 +859,31 @@ CONFIG_USB_FILE_STORAGE=m
  # CONFIG_USB_FILE_STORAGE_TEST is not set
  CONFIG_USB_G_SERIAL=m
  # CONFIG_USB_MIDI_GADGET is not set
@@ -1519,7 +1519,7 @@
  CONFIG_LEDS_GPIO=m
  
  #
-@@ -853,19 +920,22 @@
+@@ -853,19 +920,22 @@ CONFIG_RTC_INTF_DEV=y
  # CONFIG_RTC_DRV_PCF8563 is not set
  # CONFIG_RTC_DRV_PCF8583 is not set
  # CONFIG_RTC_DRV_M41T80 is not set
@@ -1544,7 +1544,7 @@
  # CONFIG_RTC_DRV_M48T86 is not set
  # CONFIG_RTC_DRV_M48T59 is not set
  # CONFIG_RTC_DRV_V3020 is not set
-@@ -883,13 +953,13 @@
+@@ -883,13 +953,13 @@ CONFIG_RTC_DRV_AT32AP700X=y
  #
  # File systems
  #
@@ -1561,7 +1561,7 @@
  # CONFIG_JBD_DEBUG is not set
  # CONFIG_REISERFS_FS is not set
  # CONFIG_JFS_FS is not set
-@@ -897,12 +967,10 @@
+@@ -897,12 +967,10 @@ CONFIG_JBD=m
  # CONFIG_XFS_FS is not set
  # CONFIG_GFS2_FS is not set
  # CONFIG_OCFS2_FS is not set
@@ -1575,7 +1575,7 @@
  # CONFIG_AUTOFS_FS is not set
  # CONFIG_AUTOFS4_FS is not set
  CONFIG_FUSE_FS=m
-@@ -933,7 +1001,7 @@
+@@ -933,7 +1001,7 @@ CONFIG_SYSFS=y
  CONFIG_TMPFS=y
  # CONFIG_TMPFS_POSIX_ACL is not set
  # CONFIG_HUGETLB_PAGE is not set
@@ -1584,7 +1584,7 @@
  
  #
  # Miscellaneous filesystems
-@@ -957,8 +1025,10 @@
+@@ -957,8 +1025,10 @@ CONFIG_JFFS2_RTIME=y
  # CONFIG_JFFS2_RUBIN is not set
  # CONFIG_CRAMFS is not set
  # CONFIG_VXFS_FS is not set
@@ -1595,7 +1595,7 @@
  # CONFIG_SYSV_FS is not set
  # CONFIG_UFS_FS is not set
  CONFIG_NETWORK_FILESYSTEMS=y
-@@ -1028,11 +1098,6 @@
+@@ -1028,11 +1098,6 @@ CONFIG_NLS_ISO8859_1=m
  # CONFIG_NLS_KOI8_U is not set
  CONFIG_NLS_UTF8=m
  # CONFIG_DLM is not set
@@ -1607,7 +1607,7 @@
  
  #
  # Kernel hacking
-@@ -1051,6 +1116,7 @@
+@@ -1051,6 +1116,7 @@ CONFIG_SCHED_DEBUG=y
  # CONFIG_SCHEDSTATS is not set
  # CONFIG_TIMER_STATS is not set
  # CONFIG_SLUB_DEBUG_ON is not set
@@ -1615,7 +1615,7 @@
  # CONFIG_DEBUG_RT_MUTEXES is not set
  # CONFIG_RT_MUTEX_TESTER is not set
  # CONFIG_DEBUG_SPINLOCK is not set
-@@ -1067,9 +1133,10 @@
+@@ -1067,9 +1133,10 @@ CONFIG_DEBUG_BUGVERBOSE=y
  # CONFIG_DEBUG_LIST is not set
  # CONFIG_DEBUG_SG is not set
  CONFIG_FRAME_POINTER=y
@@ -1627,7 +1627,7 @@
  # CONFIG_LKDTM is not set
  # CONFIG_FAULT_INJECTION is not set
  # CONFIG_SAMPLES is not set
-@@ -1082,7 +1149,9 @@
+@@ -1082,7 +1149,9 @@ CONFIG_FORCED_INLINING=y
  # CONFIG_SECURITY_FILE_CAPABILITIES is not set
  CONFIG_CRYPTO=y
  CONFIG_CRYPTO_ALGAPI=m
@@ -1637,7 +1637,7 @@
  CONFIG_CRYPTO_HASH=m
  CONFIG_CRYPTO_MANAGER=m
  CONFIG_CRYPTO_HMAC=m
-@@ -1101,6 +1170,9 @@
+@@ -1101,6 +1170,9 @@ CONFIG_CRYPTO_CBC=m
  # CONFIG_CRYPTO_PCBC is not set
  # CONFIG_CRYPTO_LRW is not set
  # CONFIG_CRYPTO_XTS is not set
@@ -1647,7 +1647,7 @@
  # CONFIG_CRYPTO_CRYPTD is not set
  CONFIG_CRYPTO_DES=m
  # CONFIG_CRYPTO_FCRYPT is not set
-@@ -1115,12 +1187,14 @@
+@@ -1115,12 +1187,14 @@ CONFIG_CRYPTO_DES=m
  # CONFIG_CRYPTO_KHAZAD is not set
  # CONFIG_CRYPTO_ANUBIS is not set
  # CONFIG_CRYPTO_SEED is not set
@@ -1663,7 +1663,7 @@
  # CONFIG_CRYPTO_HW is not set
  
  #
-@@ -1135,6 +1209,7 @@
+@@ -1135,6 +1209,7 @@ CONFIG_CRC7=m
  # CONFIG_LIBCRC32C is not set
  CONFIG_ZLIB_INFLATE=y
  CONFIG_ZLIB_DEFLATE=y
@@ -1683,7 +1683,7 @@
  #
  CONFIG_AVR32=y
  CONFIG_GENERIC_GPIO=y
-@@ -13,10 +13,10 @@
+@@ -13,10 +13,10 @@ CONFIG_HARDIRQS_SW_RESEND=y
  CONFIG_GENERIC_IRQ_PROBE=y
  CONFIG_RWSEM_GENERIC_SPINLOCK=y
  CONFIG_GENERIC_TIME=y
@@ -1695,7 +1695,7 @@
  CONFIG_GENERIC_HWEIGHT=y
  CONFIG_GENERIC_CALIBRATE_DELAY=y
  CONFIG_GENERIC_BUG=y
-@@ -39,17 +39,15 @@
+@@ -39,17 +39,15 @@ CONFIG_BSD_PROCESS_ACCT_V3=y
  CONFIG_TASKSTATS=y
  CONFIG_TASK_DELAY_ACCT=y
  # CONFIG_TASK_XACCT is not set
@@ -1716,7 +1716,7 @@
  CONFIG_BLK_DEV_INITRD=y
  CONFIG_INITRAMFS_SOURCE=""
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-@@ -63,11 +61,13 @@
+@@ -63,11 +61,13 @@ CONFIG_HOTPLUG=y
  CONFIG_PRINTK=y
  CONFIG_BUG=y
  CONFIG_ELF_CORE=y
@@ -1730,7 +1730,7 @@
  CONFIG_EVENTFD=y
  CONFIG_SHMEM=y
  CONFIG_VM_EVENT_COUNTERS=y
-@@ -75,6 +75,14 @@
+@@ -75,6 +75,14 @@ CONFIG_VM_EVENT_COUNTERS=y
  # CONFIG_SLAB is not set
  CONFIG_SLUB=y
  # CONFIG_SLOB is not set
@@ -1745,7 +1745,7 @@
  CONFIG_SLABINFO=y
  CONFIG_RT_MUTEXES=y
  # CONFIG_TINY_SHMEM is not set
-@@ -103,10 +111,15 @@
+@@ -103,10 +111,15 @@ CONFIG_IOSCHED_CFQ=y
  CONFIG_DEFAULT_CFQ=y
  # CONFIG_DEFAULT_NOOP is not set
  CONFIG_DEFAULT_IOSCHED="cfq"
@@ -1761,7 +1761,7 @@
  CONFIG_SUBARCH_AVR32B=y
  CONFIG_MMU=y
  CONFIG_PERFORMANCE_COUNTERS=y
-@@ -118,12 +131,16 @@
+@@ -118,12 +131,16 @@ CONFIG_BOARD_ATSTK1000=y
  # CONFIG_BOARD_ATSTK1002 is not set
  CONFIG_BOARD_ATSTK1003=y
  # CONFIG_BOARD_ATSTK1004 is not set
@@ -1778,7 +1778,7 @@
  CONFIG_LOADER_U_BOOT=y
  
  #
-@@ -132,6 +149,7 @@
+@@ -132,6 +149,7 @@ CONFIG_LOADER_U_BOOT=y
  # CONFIG_AP700X_32_BIT_SMC is not set
  CONFIG_AP700X_16_BIT_SMC=y
  # CONFIG_AP700X_8_BIT_SMC is not set
@@ -1786,7 +1786,7 @@
  CONFIG_LOAD_ADDRESS=0x10000000
  CONFIG_ENTRY_ADDRESS=0x90000000
  CONFIG_PHYS_OFFSET=0x10000000
-@@ -157,16 +175,26 @@
+@@ -157,16 +175,26 @@ CONFIG_SPLIT_PTLOCK_CPUS=4
  CONFIG_ZONE_DMA_FLAG=0
  CONFIG_VIRT_TO_BUS=y
  # CONFIG_OWNERSHIP_TRACE is not set
@@ -1813,7 +1813,7 @@
  
  #
  # CPU Frequency scaling
-@@ -175,9 +203,9 @@
+@@ -175,9 +203,9 @@ CONFIG_CPU_FREQ=y
  CONFIG_CPU_FREQ_TABLE=y
  # CONFIG_CPU_FREQ_DEBUG is not set
  # CONFIG_CPU_FREQ_STAT is not set
@@ -1825,7 +1825,7 @@
  # CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
  CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
  # CONFIG_CPU_FREQ_GOV_POWERSAVE is not set
-@@ -260,6 +288,7 @@
+@@ -260,6 +288,7 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
  # CONFIG_NET_PKTGEN is not set
  # CONFIG_NET_TCPPROBE is not set
  # CONFIG_HAMRADIO is not set
@@ -1833,7 +1833,7 @@
  # CONFIG_IRDA is not set
  # CONFIG_BT is not set
  # CONFIG_AF_RXRPC is not set
-@@ -376,13 +405,18 @@
+@@ -376,13 +405,18 @@ CONFIG_BLK_DEV_NBD=m
  CONFIG_BLK_DEV_RAM=m
  CONFIG_BLK_DEV_RAM_COUNT=16
  CONFIG_BLK_DEV_RAM_SIZE=4096
@@ -1854,7 +1854,7 @@
  
  #
  # SCSI device support
-@@ -427,6 +461,7 @@
+@@ -427,6 +461,7 @@ CONFIG_SCSI_LOWLEVEL=y
  # CONFIG_SCSI_DEBUG is not set
  CONFIG_ATA=m
  # CONFIG_ATA_NONSTANDARD is not set
@@ -1862,7 +1862,7 @@
  CONFIG_PATA_AT32=m
  # CONFIG_PATA_PLATFORM is not set
  # CONFIG_MD is not set
-@@ -460,7 +495,6 @@
+@@ -460,7 +495,6 @@ CONFIG_PPP_BSDCOMP=m
  # CONFIG_PPPOL2TP is not set
  # CONFIG_SLIP is not set
  CONFIG_SLHC=m
@@ -1870,7 +1870,7 @@
  # CONFIG_NETCONSOLE is not set
  # CONFIG_NETPOLL is not set
  # CONFIG_NET_POLL_CONTROLLER is not set
-@@ -528,6 +562,7 @@
+@@ -528,6 +562,7 @@ CONFIG_MOUSE_GPIO=m
  #
  CONFIG_SERIAL_ATMEL=y
  CONFIG_SERIAL_ATMEL_CONSOLE=y
@@ -1878,7 +1878,7 @@
  # CONFIG_SERIAL_ATMEL_TTYAT is not set
  CONFIG_SERIAL_CORE=y
  CONFIG_SERIAL_CORE_CONSOLE=y
-@@ -535,8 +570,6 @@
+@@ -535,8 +570,6 @@ CONFIG_UNIX98_PTYS=y
  # CONFIG_LEGACY_PTYS is not set
  # CONFIG_IPMI_HANDLER is not set
  # CONFIG_HW_RANDOM is not set
@@ -1887,7 +1887,7 @@
  # CONFIG_R3964 is not set
  # CONFIG_RAW_DRIVER is not set
  # CONFIG_TCG_TPM is not set
-@@ -554,6 +587,7 @@
+@@ -554,6 +587,7 @@ CONFIG_I2C_ALGOBIT=m
  #
  # I2C Hardware Bus support
  #
@@ -1895,7 +1895,7 @@
  CONFIG_I2C_GPIO=m
  # CONFIG_I2C_OCORES is not set
  # CONFIG_I2C_PARPORT_LIGHT is not set
-@@ -564,13 +598,12 @@
+@@ -564,13 +598,12 @@ CONFIG_I2C_GPIO=m
  #
  # Miscellaneous I2C Chip support
  #
@@ -1911,7 +1911,7 @@
  # CONFIG_SENSORS_MAX6875 is not set
  # CONFIG_SENSORS_TSL2550 is not set
  # CONFIG_I2C_DEBUG_CORE is not set
-@@ -597,9 +630,27 @@
+@@ -597,9 +630,27 @@ CONFIG_SPI_ATMEL=y
  # CONFIG_SPI_AT25 is not set
  CONFIG_SPI_SPIDEV=m
  # CONFIG_SPI_TLE62X0 is not set
@@ -1939,7 +1939,7 @@
  CONFIG_WATCHDOG=y
  # CONFIG_WATCHDOG_NOWAYOUT is not set
  
-@@ -665,12 +716,18 @@
+@@ -665,12 +716,18 @@ CONFIG_SND_VERBOSE_PROCFS=y
  #
  # Generic devices
  #
@@ -1958,7 +1958,7 @@
  # SPI devices
  #
  CONFIG_SND_AT73C213=m
-@@ -686,9 +743,14 @@
+@@ -686,9 +743,14 @@ CONFIG_SND_AT73C213_TARGET_BITRATE=48000
  #
  
  #
@@ -1973,7 +1973,7 @@
  # CONFIG_HID_SUPPORT is not set
  CONFIG_USB_SUPPORT=y
  # CONFIG_USB_ARCH_HAS_HCD is not set
-@@ -698,10 +760,6 @@
+@@ -698,10 +760,6 @@ CONFIG_USB_SUPPORT=y
  #
  # NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
  #
@@ -1984,7 +1984,7 @@
  CONFIG_USB_GADGET=y
  # CONFIG_USB_GADGET_DEBUG is not set
  # CONFIG_USB_GADGET_DEBUG_FILES is not set
-@@ -729,27 +787,31 @@
+@@ -729,27 +787,31 @@ CONFIG_USB_FILE_STORAGE=m
  # CONFIG_USB_FILE_STORAGE_TEST is not set
  CONFIG_USB_G_SERIAL=m
  # CONFIG_USB_MIDI_GADGET is not set
@@ -2018,7 +2018,7 @@
  CONFIG_LEDS_GPIO=y
  
  #
-@@ -786,19 +848,22 @@
+@@ -786,19 +848,22 @@ CONFIG_RTC_INTF_DEV=y
  # CONFIG_RTC_DRV_PCF8563 is not set
  # CONFIG_RTC_DRV_PCF8583 is not set
  # CONFIG_RTC_DRV_M41T80 is not set
@@ -2043,7 +2043,7 @@
  # CONFIG_RTC_DRV_M48T86 is not set
  # CONFIG_RTC_DRV_M48T59 is not set
  # CONFIG_RTC_DRV_V3020 is not set
-@@ -816,13 +881,13 @@
+@@ -816,13 +881,13 @@ CONFIG_UIO=m
  #
  # File systems
  #
@@ -2060,7 +2060,7 @@
  # CONFIG_JBD_DEBUG is not set
  # CONFIG_REISERFS_FS is not set
  # CONFIG_JFS_FS is not set
-@@ -830,12 +895,10 @@
+@@ -830,12 +895,10 @@ CONFIG_JBD=m
  # CONFIG_XFS_FS is not set
  # CONFIG_GFS2_FS is not set
  # CONFIG_OCFS2_FS is not set
@@ -2074,7 +2074,7 @@
  # CONFIG_AUTOFS_FS is not set
  # CONFIG_AUTOFS4_FS is not set
  CONFIG_FUSE_FS=m
-@@ -866,7 +929,7 @@
+@@ -866,7 +929,7 @@ CONFIG_SYSFS=y
  CONFIG_TMPFS=y
  # CONFIG_TMPFS_POSIX_ACL is not set
  # CONFIG_HUGETLB_PAGE is not set
@@ -2083,7 +2083,7 @@
  
  #
  # Miscellaneous filesystems
-@@ -891,8 +954,10 @@
+@@ -891,8 +954,10 @@ CONFIG_JFFS2_RTIME=y
  # CONFIG_JFFS2_RUBIN is not set
  # CONFIG_CRAMFS is not set
  # CONFIG_VXFS_FS is not set
@@ -2094,7 +2094,7 @@
  # CONFIG_SYSV_FS is not set
  # CONFIG_UFS_FS is not set
  # CONFIG_NETWORK_FILESYSTEMS is not set
-@@ -943,11 +1008,6 @@
+@@ -943,11 +1008,6 @@ CONFIG_NLS_ISO8859_1=m
  # CONFIG_NLS_KOI8_U is not set
  CONFIG_NLS_UTF8=m
  # CONFIG_DLM is not set
@@ -2106,7 +2106,7 @@
  
  #
  # Kernel hacking
-@@ -965,6 +1025,7 @@
+@@ -965,6 +1025,7 @@ CONFIG_DETECT_SOFTLOCKUP=y
  CONFIG_SCHED_DEBUG=y
  # CONFIG_SCHEDSTATS is not set
  # CONFIG_TIMER_STATS is not set
@@ -2114,7 +2114,7 @@
  # CONFIG_DEBUG_RT_MUTEXES is not set
  # CONFIG_RT_MUTEX_TESTER is not set
  # CONFIG_DEBUG_SPINLOCK is not set
-@@ -981,9 +1042,10 @@
+@@ -981,9 +1042,10 @@ CONFIG_DEBUG_BUGVERBOSE=y
  # CONFIG_DEBUG_LIST is not set
  # CONFIG_DEBUG_SG is not set
  CONFIG_FRAME_POINTER=y
@@ -2126,7 +2126,7 @@
  # CONFIG_LKDTM is not set
  # CONFIG_FAULT_INJECTION is not set
  # CONFIG_SAMPLES is not set
-@@ -1009,6 +1071,7 @@
+@@ -1009,6 +1071,7 @@ CONFIG_CRC7=m
  CONFIG_AUDIT_GENERIC=y
  CONFIG_ZLIB_INFLATE=y
  CONFIG_ZLIB_DEFLATE=y
@@ -2146,7 +2146,7 @@
  #
  CONFIG_AVR32=y
  CONFIG_GENERIC_GPIO=y
-@@ -13,10 +13,10 @@
+@@ -13,10 +13,10 @@ CONFIG_HARDIRQS_SW_RESEND=y
  CONFIG_GENERIC_IRQ_PROBE=y
  CONFIG_RWSEM_GENERIC_SPINLOCK=y
  CONFIG_GENERIC_TIME=y
@@ -2158,7 +2158,7 @@
  CONFIG_GENERIC_HWEIGHT=y
  CONFIG_GENERIC_CALIBRATE_DELAY=y
  CONFIG_GENERIC_BUG=y
-@@ -34,15 +34,15 @@
+@@ -34,15 +34,15 @@ CONFIG_LOCALVERSION=""
  # CONFIG_POSIX_MQUEUE is not set
  # CONFIG_BSD_PROCESS_ACCT is not set
  # CONFIG_TASKSTATS is not set
@@ -2177,7 +2177,7 @@
  # CONFIG_BLK_DEV_INITRD is not set
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
  CONFIG_SYSCTL=y
-@@ -54,24 +54,37 @@
+@@ -54,24 +54,37 @@ CONFIG_HOTPLUG=y
  CONFIG_PRINTK=y
  CONFIG_BUG=y
  CONFIG_ELF_CORE=y
@@ -2215,7 +2215,7 @@
  CONFIG_SUBARCH_AVR32B=y
  CONFIG_MMU=y
  CONFIG_PERFORMANCE_COUNTERS=y
-@@ -83,10 +96,14 @@
+@@ -83,10 +96,14 @@ CONFIG_BOARD_ATSTK1000=y
  # CONFIG_BOARD_ATSTK1002 is not set
  # CONFIG_BOARD_ATSTK1003 is not set
  CONFIG_BOARD_ATSTK1004=y
@@ -2230,7 +2230,7 @@
  CONFIG_LOADER_U_BOOT=y
  
  #
-@@ -95,6 +112,7 @@
+@@ -95,6 +112,7 @@ CONFIG_LOADER_U_BOOT=y
  # CONFIG_AP700X_32_BIT_SMC is not set
  CONFIG_AP700X_16_BIT_SMC=y
  # CONFIG_AP700X_8_BIT_SMC is not set
@@ -2238,7 +2238,7 @@
  CONFIG_LOAD_ADDRESS=0x10000000
  CONFIG_ENTRY_ADDRESS=0x90000000
  CONFIG_PHYS_OFFSET=0x10000000
-@@ -120,34 +138,26 @@
+@@ -120,34 +138,26 @@ CONFIG_SPLIT_PTLOCK_CPUS=4
  CONFIG_ZONE_DMA_FLAG=0
  CONFIG_VIRT_TO_BUS=y
  # CONFIG_OWNERSHIP_TRACE is not set
@@ -2279,7 +2279,7 @@
  
  #
  # Bus options
-@@ -222,6 +232,7 @@
+@@ -222,6 +232,7 @@ CONFIG_DEFAULT_TCP_CONG="cubic"
  #
  # CONFIG_NET_PKTGEN is not set
  # CONFIG_HAMRADIO is not set
@@ -2287,7 +2287,7 @@
  # CONFIG_IRDA is not set
  # CONFIG_BT is not set
  # CONFIG_AF_RXRPC is not set
-@@ -321,6 +332,7 @@
+@@ -321,6 +332,7 @@ CONFIG_MTD_PHYSMAP_BANKWIDTH=2
  # CONFIG_MTD_UBI is not set
  # CONFIG_PARPORT is not set
  # CONFIG_MISC_DEVICES is not set
@@ -2295,7 +2295,7 @@
  
  #
  # SCSI device support
-@@ -358,6 +370,7 @@
+@@ -358,6 +370,7 @@ CONFIG_MTD_PHYSMAP_BANKWIDTH=2
  #
  CONFIG_SERIAL_ATMEL=y
  CONFIG_SERIAL_ATMEL_CONSOLE=y
@@ -2303,7 +2303,7 @@
  # CONFIG_SERIAL_ATMEL_TTYAT is not set
  CONFIG_SERIAL_CORE=y
  CONFIG_SERIAL_CORE_CONSOLE=y
-@@ -365,8 +378,6 @@
+@@ -365,8 +378,6 @@ CONFIG_UNIX98_PTYS=y
  # CONFIG_LEGACY_PTYS is not set
  # CONFIG_IPMI_HANDLER is not set
  # CONFIG_HW_RANDOM is not set
@@ -2312,7 +2312,7 @@
  # CONFIG_R3964 is not set
  # CONFIG_TCG_TPM is not set
  # CONFIG_I2C is not set
-@@ -389,9 +400,24 @@
+@@ -389,9 +400,24 @@ CONFIG_SPI_ATMEL=y
  # CONFIG_SPI_AT25 is not set
  # CONFIG_SPI_SPIDEV is not set
  # CONFIG_SPI_TLE62X0 is not set
@@ -2337,7 +2337,7 @@
  CONFIG_WATCHDOG=y
  # CONFIG_WATCHDOG_NOWAYOUT is not set
  
-@@ -471,10 +497,6 @@
+@@ -471,10 +497,6 @@ CONFIG_USB_SUPPORT=y
  #
  # NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
  #
@@ -2348,7 +2348,7 @@
  CONFIG_USB_GADGET=y
  # CONFIG_USB_GADGET_DEBUG_FILES is not set
  CONFIG_USB_GADGET_SELECTED=y
-@@ -499,7 +521,9 @@
+@@ -499,7 +521,9 @@ CONFIG_USB_ETH=y
  # CONFIG_USB_FILE_STORAGE is not set
  # CONFIG_USB_G_SERIAL is not set
  # CONFIG_USB_MIDI_GADGET is not set
@@ -2358,7 +2358,7 @@
  # CONFIG_NEW_LEDS is not set
  CONFIG_RTC_LIB=y
  CONFIG_RTC_CLASS=y
-@@ -519,15 +543,17 @@
+@@ -519,15 +543,17 @@ CONFIG_RTC_INTF_DEV=y
  #
  # SPI RTC drivers
  #
@@ -2378,7 +2378,7 @@
  # CONFIG_RTC_DRV_M48T86 is not set
  # CONFIG_RTC_DRV_M48T59 is not set
  # CONFIG_RTC_DRV_V3020 is not set
-@@ -545,9 +571,9 @@
+@@ -545,9 +571,9 @@ CONFIG_RTC_DRV_AT32AP700X=y
  #
  # File systems
  #
@@ -2389,7 +2389,7 @@
  # CONFIG_AUTOFS_FS is not set
  # CONFIG_AUTOFS4_FS is not set
  # CONFIG_FUSE_FS is not set
-@@ -580,7 +606,6 @@
+@@ -580,7 +606,6 @@ CONFIG_JFFS2_RTIME=y
  # CONFIG_NETWORK_FILESYSTEMS is not set
  # CONFIG_NLS is not set
  # CONFIG_DLM is not set
@@ -2397,7 +2397,7 @@
  
  #
  # Kernel hacking
-@@ -616,6 +641,7 @@
+@@ -616,6 +641,7 @@ CONFIG_CRC32=y
  # CONFIG_LIBCRC32C is not set
  CONFIG_ZLIB_INFLATE=y
  CONFIG_ZLIB_DEFLATE=y
@@ -4458,7 +4458,7 @@
 +#endif /* __AVR32_DW_DMAC_H__ */
 --- a/arch/avr32/kernel/Makefile
 +++ b/arch/avr32/kernel/Makefile
-@@ -9,6 +9,7 @@
+@@ -9,6 +9,7 @@ obj-y				+= syscall_table.o syscall-stub
  obj-y				+= setup.o traps.o semaphore.o ocd.o ptrace.o
  obj-y				+= signal.o sys_avr32.o process.o time.o
  obj-y				+= init_task.o switch_to.o cpu.o
@@ -4468,7 +4468,7 @@
  obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
 --- a/arch/avr32/kernel/avr32_ksyms.c
 +++ b/arch/avr32/kernel/avr32_ksyms.c
-@@ -29,7 +29,9 @@
+@@ -29,7 +29,9 @@ EXPORT_SYMBOL(__avr32_asr64);
   */
  EXPORT_SYMBOL(memset);
  EXPORT_SYMBOL(memcpy);
@@ -4478,7 +4478,7 @@
  
  /*
   * Userspace access stuff.
-@@ -41,6 +43,8 @@
+@@ -41,6 +43,8 @@ EXPORT_SYMBOL(strncpy_from_user);
  EXPORT_SYMBOL(__strncpy_from_user);
  EXPORT_SYMBOL(clear_user);
  EXPORT_SYMBOL(__clear_user);
@@ -4526,7 +4526,7 @@
 +EXPORT_SYMBOL(find_dma_controller);
 --- a/arch/avr32/kernel/entry-avr32b.S
 +++ b/arch/avr32/kernel/entry-avr32b.S
-@@ -74,50 +74,41 @@
+@@ -74,50 +74,41 @@ exception_vectors:
  	.align	2
  	bral	do_dtlb_modified
  
@@ -4588,7 +4588,7 @@
  
  	/* Second level lookup */
  	ld.w	r2, r3[r1 << 2]
-@@ -148,16 +139,55 @@
+@@ -148,16 +139,55 @@ pgtbl_lookup:
  	tlbmiss_restore
  	rete
  
@@ -4647,7 +4647,7 @@
  system_call:
  #ifdef CONFIG_PREEMPT
  	mask_interrupts
-@@ -266,18 +296,6 @@
+@@ -266,18 +296,6 @@ syscall_exit_work:
  	brcc	syscall_exit_cont
  	rjmp	enter_monitor_mode
  
@@ -4666,7 +4666,7 @@
  	/* This function expects to find offending PC in SYSREG_RAR_EX */
  	.type	save_full_context_ex, @function
  	.align	2
-@@ -741,26 +759,6 @@
+@@ -741,26 +759,6 @@ irq_level\level:
  
  	.section .irq.text,"ax",@progbits
  
@@ -4709,7 +4709,7 @@
  /*
   * This file handles the architecture-dependent parts of process handling..
   */
-@@ -54,6 +54,8 @@
+@@ -54,6 +54,8 @@ void machine_halt(void)
  
  void machine_power_off(void)
  {
@@ -4720,7 +4720,7 @@
  void machine_restart(char *cmd)
 --- a/arch/avr32/kernel/setup.c
 +++ b/arch/avr32/kernel/setup.c
-@@ -274,6 +274,8 @@
+@@ -274,6 +274,8 @@ static int __init early_parse_fbmem(char
  			printk(KERN_WARNING
  			       "Failed to allocate framebuffer memory\n");
  			fbmem_size = 0;
@@ -4731,7 +4731,7 @@
  
 --- a/arch/avr32/kernel/signal.c
 +++ b/arch/avr32/kernel/signal.c
-@@ -93,6 +93,9 @@
+@@ -93,6 +93,9 @@ asmlinkage int sys_rt_sigreturn(struct p
  	if (restore_sigcontext(regs, &frame->uc.uc_mcontext))
  		goto badframe;
  
@@ -5067,7 +5067,7 @@
 -device_initcall(init_timer_sysfs);
 --- a/arch/avr32/kernel/vmlinux.lds.S
 +++ b/arch/avr32/kernel/vmlinux.lds.S
-@@ -68,14 +68,6 @@
+@@ -68,14 +68,6 @@ SECTIONS
  		_evba = .;
  		_text = .;
  		*(.ex.text)
@@ -5082,7 +5082,7 @@
  		*(.irq.text)
  		KPROBES_TEXT
  		TEXT_TEXT
-@@ -107,6 +99,10 @@
+@@ -107,6 +99,10 @@ SECTIONS
  		 */
  		*(.data.init_task)
  
@@ -5095,7 +5095,7 @@
  		*(.data.cacheline_aligned)
 --- a/arch/avr32/lib/io-readsb.S
 +++ b/arch/avr32/lib/io-readsb.S
-@@ -41,7 +41,7 @@
+@@ -41,7 +41,7 @@ __raw_readsb:
  2:	sub	r10, -4
  	reteq	r12
  
@@ -5106,7 +5106,7 @@
  	brne	3b
 --- a/arch/avr32/mach-at32ap/Kconfig
 +++ b/arch/avr32/mach-at32ap/Kconfig
-@@ -26,6 +26,13 @@
+@@ -26,6 +26,13 @@ config AP700X_8_BIT_SMC
  
  endchoice
  
@@ -5218,7 +5218,7 @@
  
  #include <video/atmel_lcdc.h>
  
-@@ -91,25 +94,18 @@
+@@ -91,25 +94,18 @@ static struct clk devname##_##_name = {	
  
  static DEFINE_SPINLOCK(pm_lock);
  
@@ -5247,7 +5247,7 @@
  	div = PM_BFEXT(PLLDIV, control) + 1;
  	mul = PM_BFEXT(PLLMUL, control) + 1;
  
-@@ -120,6 +116,71 @@
+@@ -120,6 +116,71 @@ static unsigned long pll_get_rate(struct
  	return rate;
  }
  
@@ -5319,7 +5319,7 @@
  static unsigned long pll0_get_rate(struct clk *clk)
  {
  	u32 control;
-@@ -129,6 +190,41 @@
+@@ -129,6 +190,41 @@ static unsigned long pll0_get_rate(struc
  	return pll_get_rate(clk, control);
  }
  
@@ -5361,7 +5361,7 @@
  static unsigned long pll1_get_rate(struct clk *clk)
  {
  	u32 control;
-@@ -138,6 +234,49 @@
+@@ -138,6 +234,49 @@ static unsigned long pll1_get_rate(struc
  	return pll_get_rate(clk, control);
  }
  
@@ -5411,7 +5411,7 @@
  /*
   * The AT32AP7000 has five primary clock sources: One 32kHz
   * oscillator, two crystal oscillators and two PLLs.
-@@ -166,7 +305,10 @@
+@@ -166,7 +305,10 @@ static struct clk pll0 = {
  };
  static struct clk pll1 = {
  	.name		= "pll1",
@@ -5422,7 +5422,7 @@
  	.parent		= &osc0,
  };
  
-@@ -534,6 +676,14 @@
+@@ -534,6 +676,14 @@ static struct clk hramc_clk = {
  	.users		= 1,
  	.index		= 3,
  };
@@ -5437,7 +5437,7 @@
  
  static struct resource smc0_resource[] = {
  	PBMEM(0xfff03400),
-@@ -605,19 +755,32 @@
+@@ -605,19 +755,32 @@ static inline void set_ebi_sfr_bits(u32 
  }
  
  /* --------------------------------------------------------------------
@@ -5477,7 +5477,7 @@
  
  /* --------------------------------------------------------------------
   *  PIO
-@@ -669,7 +832,8 @@
+@@ -669,7 +832,8 @@ void __init at32_add_system_devices(void
  	platform_device_register(&pdc_device);
  	platform_device_register(&dmaca0_device);
  
@@ -5487,7 +5487,7 @@
  
  	platform_device_register(&pio0_device);
  	platform_device_register(&pio1_device);
-@@ -679,6 +843,81 @@
+@@ -679,6 +843,81 @@ void __init at32_add_system_devices(void
  }
  
  /* --------------------------------------------------------------------
@@ -5569,7 +5569,7 @@
   *  USART
   * -------------------------------------------------------------------- */
  
-@@ -951,7 +1190,8 @@
+@@ -951,7 +1190,8 @@ at32_add_device_spi(unsigned int id, str
  	switch (id) {
  	case 0:
  		pdev = &atmel_spi0_device;
@@ -5579,7 +5579,7 @@
  		select_peripheral(PA(1),  PERIPH_A, 0);	/* MOSI	 */
  		select_peripheral(PA(2),  PERIPH_A, 0);	/* SCK	 */
  		at32_spi_setup_slaves(0, b, n, spi0_pins);
-@@ -959,7 +1199,8 @@
+@@ -959,7 +1199,8 @@ at32_add_device_spi(unsigned int id, str
  
  	case 1:
  		pdev = &atmel_spi1_device;
@@ -5589,7 +5589,7 @@
  		select_peripheral(PB(1),  PERIPH_B, 0);	/* MOSI  */
  		select_peripheral(PB(5),  PERIPH_B, 0);	/* SCK   */
  		at32_spi_setup_slaves(1, b, n, spi1_pins);
-@@ -989,7 +1230,9 @@
+@@ -989,7 +1230,9 @@ static struct clk atmel_twi0_pclk = {
  	.index		= 2,
  };
  
@@ -5600,7 +5600,7 @@
  {
  	struct platform_device *pdev;
  
-@@ -1009,6 +1252,9 @@
+@@ -1009,6 +1252,9 @@ struct platform_device *__init at32_add_
  
  	atmel_twi0_pclk.dev = &pdev->dev;
  
@@ -5610,7 +5610,7 @@
  	platform_device_add(pdev);
  	return pdev;
  
-@@ -1032,7 +1278,8 @@
+@@ -1032,7 +1278,8 @@ static struct clk atmel_mci0_pclk = {
  	.index		= 9,
  };
  
@@ -5620,7 +5620,7 @@
  {
  	struct platform_device *pdev;
  
-@@ -1041,11 +1288,15 @@
+@@ -1041,11 +1288,15 @@ struct platform_device *__init at32_add_
  
  	pdev = platform_device_alloc("atmel_mci", id);
  	if (!pdev)
@@ -5638,7 +5638,7 @@
  
  	select_peripheral(PA(10), PERIPH_A, 0);	/* CLK	 */
  	select_peripheral(PA(11), PERIPH_A, 0);	/* CMD	 */
-@@ -1054,12 +1305,19 @@
+@@ -1054,12 +1305,19 @@ struct platform_device *__init at32_add_
  	select_peripheral(PA(14), PERIPH_A, 0);	/* DATA2 */
  	select_peripheral(PA(15), PERIPH_A, 0);	/* DATA3 */
  
@@ -5659,7 +5659,7 @@
  	platform_device_put(pdev);
  	return NULL;
  }
-@@ -1097,7 +1355,8 @@
+@@ -1097,7 +1355,8 @@ static struct clk atmel_lcdfb0_pixclk = 
  
  struct platform_device *__init
  at32_add_device_lcdc(unsigned int id, struct atmel_lcdfb_info *data,
@@ -5669,7 +5669,7 @@
  {
  	struct platform_device *pdev;
  	struct atmel_lcdfb_info *info;
-@@ -1124,37 +1383,77 @@
+@@ -1124,37 +1383,77 @@ at32_add_device_lcdc(unsigned int id, st
  	switch (id) {
  	case 0:
  		pdev = &atmel_lcdfb0_device;
@@ -5778,7 +5778,7 @@
  
  		clk_set_parent(&atmel_lcdfb0_pixclk, &pll0);
  		clk_set_rate(&atmel_lcdfb0_pixclk, clk_get_rate(&pll0));
-@@ -1351,9 +1650,39 @@
+@@ -1351,9 +1650,39 @@ static struct clk usba0_hclk = {
  	.index		= 6,
  };
  
@@ -5818,7 +5818,7 @@
  	struct platform_device *pdev;
  
  	if (id != 0)
-@@ -1367,13 +1696,20 @@
+@@ -1367,13 +1696,20 @@ at32_add_device_usba(unsigned int id, st
  					  ARRAY_SIZE(usba0_resource)))
  		goto out_free_pdev;
  
@@ -5845,7 +5845,7 @@
  
  	usba0_pclk.dev = &pdev->dev;
  	usba0_hclk.dev = &pdev->dev;
-@@ -1526,6 +1862,58 @@
+@@ -1526,6 +1862,58 @@ fail:
  #endif
  
  /* --------------------------------------------------------------------
@@ -5904,7 +5904,7 @@
   * AC97C
   * -------------------------------------------------------------------- */
  static struct resource atmel_ac97c0_resource[] __initdata = {
-@@ -1540,9 +1928,11 @@
+@@ -1540,9 +1928,11 @@ static struct clk atmel_ac97c0_pclk = {
  	.index		= 10,
  };
  
@@ -5917,7 +5917,7 @@
  
  	if (id != 0)
  		return NULL;
-@@ -1553,19 +1943,37 @@
+@@ -1553,19 +1943,37 @@ struct platform_device *__init at32_add_
  
  	if (platform_device_add_resources(pdev, atmel_ac97c0_resource,
  				ARRAY_SIZE(atmel_ac97c0_resource)))
@@ -5961,7 +5961,7 @@
  	platform_device_put(pdev);
  	return NULL;
  }
-@@ -1683,6 +2091,7 @@
+@@ -1683,6 +2091,7 @@ struct clk *at32_clock_list[] = {
  	&hmatrix_clk,
  	&ebi_clk,
  	&hramc_clk,
@@ -5969,7 +5969,7 @@
  	&smc0_pclk,
  	&smc0_mck,
  	&pdc_hclk,
-@@ -1694,7 +2103,10 @@
+@@ -1694,7 +2103,10 @@ struct clk *at32_clock_list[] = {
  	&pio2_mck,
  	&pio3_mck,
  	&pio4_mck,
@@ -5981,7 +5981,7 @@
  	&atmel_usart0_usart,
  	&atmel_usart1_usart,
  	&atmel_usart2_usart,
-@@ -1730,16 +2142,7 @@
+@@ -1730,16 +2142,7 @@ struct clk *at32_clock_list[] = {
  };
  unsigned int at32_nr_clocks = ARRAY_SIZE(at32_clock_list);
  
@@ -5999,7 +5999,7 @@
  {
  	u32 cpu_mask = 0, hsb_mask = 0, pba_mask = 0, pbb_mask = 0;
  	int i;
-@@ -1794,4 +2197,36 @@
+@@ -1794,4 +2197,36 @@ void __init at32_clock_init(void)
  	pm_writel(HSB_MASK, hsb_mask);
  	pm_writel(PBA_MASK, pba_mask);
  	pm_writel(PBB_MASK, pbb_mask);
@@ -6038,7 +6038,7 @@
 +core_initcall(sram_init);
 --- a/arch/avr32/mach-at32ap/cpufreq.c
 +++ b/arch/avr32/mach-at32ap/cpufreq.c
-@@ -108,5 +108,4 @@
+@@ -108,5 +108,4 @@ static int __init at32_cpufreq_init(void
  {
  	return cpufreq_register_driver(&at32_driver);
  }
@@ -6623,7 +6623,7 @@
 +late_initcall(gpio_dev_init);
 --- a/arch/avr32/mach-at32ap/hsmc.c
 +++ b/arch/avr32/mach-at32ap/hsmc.c
-@@ -278,4 +278,4 @@
+@@ -278,4 +278,4 @@ static int __init hsmc_init(void)
  {
  	return platform_driver_register(&hsmc_driver);
  }
@@ -6662,7 +6662,7 @@
  };
  
  extern struct platform_device at32_intc0_device;
-@@ -137,6 +142,74 @@
+@@ -137,6 +142,74 @@ fail:
  	panic("Interrupt controller initialization failed!\n");
  }
  
@@ -6790,7 +6790,7 @@
 +arch_initcall(pdc_init);
 --- a/arch/avr32/mach-at32ap/pio.c
 +++ b/arch/avr32/mach-at32ap/pio.c
-@@ -157,6 +157,82 @@
+@@ -157,6 +157,82 @@ fail:
  	dump_stack();
  }
  
@@ -6873,7 +6873,7 @@
  /*--------------------------------------------------------------------------*/
  
  /* GPIO API */
-@@ -318,6 +394,8 @@
+@@ -318,6 +394,8 @@ static void pio_bank_show(struct seq_fil
  		const char *label;
  
  		label = gpiochip_is_requested(chip, i);
@@ -7653,7 +7653,7 @@
  void show_mem(void)
  {
  	int total = 0, reserved = 0, cached = 0;
-@@ -109,19 +110,9 @@
+@@ -109,19 +110,9 @@ void __init paging_init(void)
  	zero_page = alloc_bootmem_low_pages_node(NODE_DATA(0),
  						 PAGE_SIZE);
  
@@ -7706,7 +7706,7 @@
  	cpu_sync_pipeline();
  
  	tlbehi = sysreg_read(TLBEHI);
-@@ -33,15 +33,17 @@
+@@ -33,15 +33,17 @@ void show_dtlb_entry(unsigned int index)
  
  	printk("%2u: %c %c %02x   %05x %05x %o  %o  %c %c %c %c\n",
  	       index,
@@ -7733,7 +7733,7 @@
  
  	sysreg_write(MMUCR, mmucr_save);
  	sysreg_write(TLBEHI, tlbehi_save);
-@@ -54,29 +56,33 @@
+@@ -54,29 +56,33 @@ void dump_dtlb(void)
  	unsigned int i;
  
  	printk("ID  V G ASID VPN   PFN   AP SZ C B W D\n");
@@ -7780,7 +7780,7 @@
  
  		rp = 32 - fls(tlbar);
  		if (rp == 32) {
-@@ -84,30 +90,14 @@
+@@ -84,30 +90,14 @@ static inline void set_replacement_point
  			sysreg_write(TLBARLO, -1L);
  		}
  
@@ -7813,7 +7813,7 @@
  }
  
  void update_mmu_cache(struct vm_area_struct *vma,
-@@ -120,39 +110,40 @@
+@@ -120,39 +110,40 @@ void update_mmu_cache(struct vm_area_str
  		return;
  
  	local_irq_save(flags);
@@ -7870,7 +7870,7 @@
  	}
  }
  
-@@ -190,17 +181,22 @@
+@@ -190,17 +181,22 @@ void flush_tlb_range(struct vm_area_stru
  
  		local_irq_save(flags);
  		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
@@ -7895,7 +7895,7 @@
  			if (mm != current->mm) {
  				saved_asid = get_asid();
  				set_asid(asid);
-@@ -218,33 +214,34 @@
+@@ -218,33 +214,34 @@ void flush_tlb_range(struct vm_area_stru
  }
  
  /*
@@ -7938,7 +7938,7 @@
  }
  
  void flush_tlb_mm(struct mm_struct *mm)
-@@ -280,7 +277,7 @@
+@@ -280,7 +277,7 @@ static void *tlb_start(struct seq_file *
  {
  	static unsigned long tlb_index;
  
@@ -7947,7 +7947,7 @@
  		return NULL;
  
  	tlb_index = 0;
-@@ -291,7 +288,7 @@
+@@ -291,7 +288,7 @@ static void *tlb_next(struct seq_file *t
  {
  	unsigned long *index = v;
  
@@ -7956,7 +7956,7 @@
  		return NULL;
  
  	++*pos;
-@@ -313,16 +310,16 @@
+@@ -313,16 +310,16 @@ static int tlb_show(struct seq_file *tlb
  	if (*index == 0)
  		seq_puts(tlb, "ID  V G ASID VPN   PFN   AP SZ C B W D\n");
  
@@ -7977,7 +7977,7 @@
  	cpu_sync_pipeline();
  
  	tlbehi = sysreg_read(TLBEHI);
-@@ -334,16 +331,18 @@
+@@ -334,16 +331,18 @@ static int tlb_show(struct seq_file *tlb
  	local_irq_restore(flags);
  
  	seq_printf(tlb, "%2lu: %c %c %02x   %05x %05x %o  %o  %c %c %c %c\n",
@@ -8018,7 +8018,7 @@
  
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
-@@ -706,7 +706,7 @@
+@@ -706,7 +706,7 @@ config NVRAM
  
  config RTC
  	tristate "Enhanced Real Time Clock Support"
@@ -8027,7 +8027,7 @@
  	---help---
  	  If you say Y here and create a character special file /dev/rtc with
  	  major number 10 and minor number 135 using mknod ("man mknod"), you
-@@ -776,7 +776,7 @@
+@@ -776,7 +776,7 @@ config SGI_IP27_RTC
  
  config GEN_RTC
  	tristate "Generic /dev/rtc emulation"
@@ -8038,7 +8038,7 @@
  	  major number 10 and minor number 135 using mknod ("man mknod"), you
 --- a/drivers/char/keyboard.c
 +++ b/drivers/char/keyboard.c
-@@ -1033,7 +1033,8 @@
+@@ -1033,7 +1033,8 @@ DECLARE_TASKLET_DISABLED(keyboard_taskle
  #if defined(CONFIG_X86) || defined(CONFIG_IA64) || defined(CONFIG_ALPHA) ||\
      defined(CONFIG_MIPS) || defined(CONFIG_PPC) || defined(CONFIG_SPARC) ||\
      defined(CONFIG_PARISC) || defined(CONFIG_SUPERH) ||\
@@ -8362,7 +8362,7 @@
 +arch_initcall(tcb_clksrc_init);
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -88,6 +88,14 @@
+@@ -88,6 +88,14 @@ config I2C_AT91
  	  to support combined I2C messages.  Use the i2c-gpio driver
  	  unless your system can cope with those limitations.
  
@@ -8379,7 +8379,7 @@
  	depends on SOC_AU1550 || SOC_AU1200
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -52,6 +52,7 @@
+@@ -52,6 +52,7 @@ obj-$(CONFIG_I2C_VIAPRO)	+= i2c-viapro.o
  obj-$(CONFIG_I2C_VOODOO3)	+= i2c-voodoo3.o
  obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
  obj-$(CONFIG_SCx200_I2C)	+= scx200_i2c.o
@@ -8948,7 +8948,7 @@
 +#endif /* __ATMELTWI_H__ */
 --- a/drivers/input/serio/Kconfig
 +++ b/drivers/input/serio/Kconfig
-@@ -88,6 +88,17 @@
+@@ -88,6 +88,17 @@ config SERIO_RPCKBD
  	  To compile this driver as a module, choose M here: the
  	  module will be called rpckbd.
  
@@ -8968,7 +8968,7 @@
  	depends on ARM_AMBA
 --- a/drivers/input/serio/Makefile
 +++ b/drivers/input/serio/Makefile
-@@ -12,6 +12,7 @@
+@@ -12,6 +12,7 @@ obj-$(CONFIG_SERIO_CT82C710)	+= ct82c710
  obj-$(CONFIG_SERIO_RPCKBD)	+= rpckbd.o
  obj-$(CONFIG_SERIO_SA1111)	+= sa1111ps2.o
  obj-$(CONFIG_SERIO_AMBAKMI)	+= ambakmi.o
@@ -9417,7 +9417,7 @@
 +#endif /* _AT32PSIF_H */
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
-@@ -22,6 +22,39 @@
+@@ -22,6 +22,39 @@ config ATMEL_PWM
  	  purposes including software controlled power-efficent backlights
  	  on LCD displays, motor control, and waveform generation.
  
@@ -9459,7 +9459,7 @@
  	depends on X86 && PCI && INPUT && EXPERIMENTAL
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -10,6 +10,7 @@
+@@ -10,6 +10,7 @@ obj-$(CONFIG_ACER_WMI)     += acer-wmi.o
  obj-$(CONFIG_ASUS_LAPTOP)     += asus-laptop.o
  obj-$(CONFIG_ATMEL_PWM)		+= atmel_pwm.o
  obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
@@ -9633,7 +9633,7 @@
 +arch_initcall(tc_init);
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -91,6 +91,16 @@
+@@ -91,6 +91,16 @@ config MMC_AT91
  
  	  If unsure, say N.
  
@@ -9652,7 +9652,7 @@
  	depends on ARCH_IMX
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -15,6 +15,7 @@
+@@ -15,6 +15,7 @@ obj-$(CONFIG_MMC_WBSD)		+= wbsd.o
  obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
  obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
@@ -11094,7 +11094,7 @@
 +#endif /* __DRIVERS_MMC_ATMEL_MCI_H__ */
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -272,12 +272,54 @@
+@@ -272,12 +272,54 @@ config MTD_NAND_CS553X
  
  	  If you say "m", the module will be called "cs553x_nand.ko".
  
@@ -11155,7 +11155,7 @@
  	tristate "Support for NAND Flash on CM-X270 modules"
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -24,7 +24,7 @@
+@@ -24,7 +24,7 @@ obj-$(CONFIG_MTD_NAND_TS7250)		+= ts7250
  obj-$(CONFIG_MTD_NAND_NANDSIM)		+= nandsim.o
  obj-$(CONFIG_MTD_NAND_CS553X)		+= cs553x_nand.o
  obj-$(CONFIG_MTD_NAND_NDFC)		+= ndfc.o
@@ -12097,14 +12097,14 @@
 +#endif
 --- a/drivers/mtd/nand/bf5xx_nand.c
 +++ b/drivers/mtd/nand/bf5xx_nand.c
-@@ -803,3 +803,4 @@
+@@ -803,3 +803,4 @@ module_exit(bf5xx_nand_exit);
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR(DRV_AUTHOR);
  MODULE_DESCRIPTION(DRV_DESC);
 +MODULE_ALIAS("platform:" DRV_NAME);
 --- a/drivers/mtd/nand/ndfc.c
 +++ b/drivers/mtd/nand/ndfc.c
-@@ -317,3 +317,5 @@
+@@ -317,3 +317,5 @@ module_exit(ndfc_nand_exit);
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Thomas Gleixner <tglx@linutronix.de>");
  MODULE_DESCRIPTION("Platform driver for NDFC");
@@ -12112,21 +12112,21 @@
 +MODULE_ALIAS("platform:ndfc-nand");
 --- a/drivers/mtd/nand/orion_nand.c
 +++ b/drivers/mtd/nand/orion_nand.c
-@@ -169,3 +169,4 @@
+@@ -169,3 +169,4 @@ module_exit(orion_nand_exit);
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Tzachi Perelstein");
  MODULE_DESCRIPTION("NAND glue for Orion platforms");
 +MODULE_ALIAS("platform:orion_nand");
 --- a/drivers/mtd/nand/plat_nand.c
 +++ b/drivers/mtd/nand/plat_nand.c
-@@ -161,3 +161,4 @@
+@@ -161,3 +161,4 @@ module_exit(plat_nand_exit);
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Vitaly Wool");
  MODULE_DESCRIPTION("Simple generic NAND driver");
 +MODULE_ALIAS("platform:gen_nand");
 --- a/drivers/mtd/nand/s3c2410.c
 +++ b/drivers/mtd/nand/s3c2410.c
-@@ -927,3 +927,6 @@
+@@ -927,3 +927,6 @@ module_exit(s3c2410_nand_exit);
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Ben Dooks <ben@simtec.co.uk>");
  MODULE_DESCRIPTION("S3C24XX MTD NAND driver");
@@ -12135,7 +12135,7 @@
 +MODULE_ALIAS("platform:s3c2440-nand");
 --- a/drivers/net/macb.c
 +++ b/drivers/net/macb.c
-@@ -1277,8 +1277,45 @@
+@@ -1277,8 +1277,45 @@ static int __exit macb_remove(struct pla
  	return 0;
  }
  
@@ -12183,7 +12183,7 @@
  	},
 --- a/drivers/parport/Kconfig
 +++ b/drivers/parport/Kconfig
-@@ -36,7 +36,7 @@
+@@ -36,7 +36,7 @@ if PARPORT
  config PARPORT_PC
  	tristate "PC-style hardware"
  	depends on (!SPARC64 || PCI) && !SPARC32 && !M32R && !FRV && \
@@ -12194,7 +12194,7 @@
  	  IBM PC compatible computers and some Alphas have PC-style
 --- a/drivers/pcmcia/Kconfig
 +++ b/drivers/pcmcia/Kconfig
-@@ -277,6 +277,13 @@
+@@ -277,6 +277,13 @@ config ELECTRA_CF
  	  Say Y here to support the CompactFlash controller on the
  	  PA Semi Electra eval board.
  
@@ -12210,7 +12210,7 @@
  
 --- a/drivers/pcmcia/Makefile
 +++ b/drivers/pcmcia/Makefile
-@@ -38,6 +38,7 @@
+@@ -38,6 +38,7 @@ obj-$(CONFIG_PCMCIA_VRC4173)			+= vrc417
  obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
  obj-$(CONFIG_AT91_CF)				+= at91_cf.o
  obj-$(CONFIG_ELECTRA_CF)			+= electra_cf.o
@@ -12756,7 +12756,7 @@
 +MODULE_AUTHOR("Hans-Christian Egtvedt <hcegtvedt@atmel.com>");
 --- a/drivers/rtc/rtc-at32ap700x.c
 +++ b/drivers/rtc/rtc-at32ap700x.c
-@@ -262,6 +262,7 @@
+@@ -262,6 +262,7 @@ static int __init at32_rtc_probe(struct 
  	}
  
  	platform_set_drvdata(pdev, rtc);
@@ -12764,7 +12764,7 @@
  
  	dev_info(&pdev->dev, "Atmel RTC for AT32AP700x at %08lx irq %ld\n",
  			(unsigned long)rtc->regs, rtc->irq);
-@@ -281,6 +282,8 @@
+@@ -281,6 +282,8 @@ static int __exit at32_rtc_remove(struct
  {
  	struct rtc_at32ap700x *rtc = platform_get_drvdata(pdev);
  
@@ -12775,7 +12775,7 @@
  	rtc_device_unregister(rtc->rtc);
 --- a/drivers/serial/atmel_serial.c
 +++ b/drivers/serial/atmel_serial.c
-@@ -957,6 +957,20 @@
+@@ -957,6 +957,20 @@ static void atmel_shutdown(struct uart_p
  }
  
  /*
@@ -12796,7 +12796,7 @@
   * Power / Clock management.
   */
  static void atmel_serial_pm(struct uart_port *port, unsigned int state,
-@@ -1190,6 +1204,7 @@
+@@ -1190,6 +1204,7 @@ static struct uart_ops atmel_pops = {
  	.break_ctl	= atmel_break_ctl,
  	.startup	= atmel_startup,
  	.shutdown	= atmel_shutdown,
@@ -12804,7 +12804,7 @@
  	.set_termios	= atmel_set_termios,
  	.type		= atmel_type,
  	.release_port	= atmel_release_port,
-@@ -1440,6 +1455,15 @@
+@@ -1440,6 +1455,15 @@ static struct uart_driver atmel_uart = {
  };
  
  #ifdef CONFIG_PM
@@ -12820,7 +12820,7 @@
  static int atmel_serial_suspend(struct platform_device *pdev,
  				pm_message_t state)
  {
-@@ -1447,7 +1471,7 @@
+@@ -1447,7 +1471,7 @@ static int atmel_serial_suspend(struct p
  	struct atmel_uart_port *atmel_port = to_atmel_uart_port(port);
  
  	if (device_may_wakeup(&pdev->dev)
@@ -12831,7 +12831,7 @@
  		uart_suspend_port(&atmel_uart, port);
 --- a/drivers/serial/serial_core.c
 +++ b/drivers/serial/serial_core.c
-@@ -552,6 +552,8 @@
+@@ -552,6 +552,8 @@ static void uart_flush_buffer(struct tty
  
  	spin_lock_irqsave(&port->lock, flags);
  	uart_circ_clear(&state->info->xmit);
@@ -12842,7 +12842,7 @@
  }
 --- a/drivers/spi/atmel_spi.c
 +++ b/drivers/spi/atmel_spi.c
-@@ -51,9 +51,7 @@
+@@ -51,9 +51,7 @@ struct atmel_spi {
  	u8			stopping;
  	struct list_head	queue;
  	struct spi_transfer	*current_transfer;
@@ -12853,7 +12853,7 @@
  
  	void			*buffer;
  	dma_addr_t		buffer_dma;
-@@ -133,48 +131,6 @@
+@@ -133,48 +131,6 @@ static void cs_deactivate(struct atmel_s
  		gpio_set_value(gpio, !active);
  }
  
@@ -12902,7 +12902,7 @@
  /*
   * Submit next transfer for DMA.
   * lock is held, spi irq is blocked
-@@ -184,78 +140,53 @@
+@@ -184,78 +140,53 @@ static void atmel_spi_next_xfer(struct s
  {
  	struct atmel_spi	*as = spi_master_get_devdata(master);
  	struct spi_transfer	*xfer;
@@ -13020,7 +13020,7 @@
  	 * transfer because we need to handle some difficult timing
  	 * issues otherwise. If we wait for ENDTX in one transfer and
  	 * then starts waiting for ENDRX in the next, it's difficult
-@@ -265,7 +196,17 @@
+@@ -265,7 +196,17 @@ static void atmel_spi_next_xfer(struct s
  	 *
  	 * It should be doable, though. Just not now...
  	 */
@@ -13038,7 +13038,7 @@
  	spi_writel(as, PTCR, SPI_BIT(TXTEN) | SPI_BIT(RXTEN));
  }
  
-@@ -363,7 +304,6 @@
+@@ -363,7 +304,6 @@ atmel_spi_msg_done(struct spi_master *ma
  	spin_lock(&as->lock);
  
  	as->current_transfer = NULL;
@@ -13046,7 +13046,7 @@
  
  	/* continue if needed */
  	if (list_empty(&as->queue) || as->stopping)
-@@ -447,7 +387,7 @@
+@@ -447,7 +387,7 @@ atmel_spi_interrupt(int irq, void *dev_i
  
  		spi_writel(as, IDR, pending);
  
@@ -13055,7 +13055,7 @@
  			msg->actual_length += xfer->len;
  
  			if (!msg->is_dma_mapped)
-@@ -457,7 +397,7 @@
+@@ -457,7 +397,7 @@ atmel_spi_interrupt(int irq, void *dev_i
  			if (xfer->delay_usecs)
  				udelay(xfer->delay_usecs);
  
@@ -13066,7 +13066,7 @@
  						xfer->cs_change);
 --- a/drivers/usb/gadget/Kconfig
 +++ b/drivers/usb/gadget/Kconfig
-@@ -118,10 +118,10 @@
+@@ -118,10 +118,10 @@ config USB_AMD5536UDC
  config USB_GADGET_ATMEL_USBA
  	boolean "Atmel USBA"
  	select USB_GADGET_DUALSPEED
@@ -13097,7 +13097,7 @@
  
  #ifdef CONFIG_USB_GADGET_DEBUG_FS
  #include <linux/debugfs.h>
-@@ -324,53 +326,28 @@
+@@ -324,53 +326,28 @@ static int vbus_is_present(struct usba_u
  	return 1;
  }
  
@@ -13167,7 +13167,7 @@
  static void next_fifo_transaction(struct usba_ep *ep, struct usba_request *req)
  {
  	unsigned int transaction_len;
-@@ -387,7 +364,7 @@
+@@ -387,7 +364,7 @@ static void next_fifo_transaction(struct
  		ep->ep.name, req, transaction_len,
  		req->last_transaction ? ", done" : "");
  
@@ -13176,7 +13176,7 @@
  	usba_ep_writel(ep, SET_STA, USBA_TX_PK_RDY);
  	req->req.actual += transaction_len;
  }
-@@ -476,7 +453,7 @@
+@@ -476,7 +453,7 @@ static void receive_data(struct usba_ep 
  			bytecount = req->req.length - req->req.actual;
  		}
  
@@ -13185,7 +13185,7 @@
  				ep->fifo, bytecount);
  		req->req.actual += bytecount;
  
-@@ -1029,33 +1006,6 @@
+@@ -1029,33 +1006,6 @@ static const struct usb_gadget_ops usba_
  	.set_selfpowered	= usba_udc_set_selfpowered,
  };
  
@@ -13219,7 +13219,7 @@
  static struct usb_endpoint_descriptor usba_ep0_desc = {
  	.bLength = USB_DT_ENDPOINT_SIZE,
  	.bDescriptorType = USB_DT_ENDPOINT,
-@@ -1074,7 +1024,6 @@
+@@ -1074,7 +1024,6 @@ static void nop_release(struct device *d
  static struct usba_udc the_udc = {
  	.gadget	= {
  		.ops		= &usba_udc_ops,
@@ -13227,7 +13227,7 @@
  		.ep_list	= LIST_HEAD_INIT(the_udc.gadget.ep_list),
  		.is_dualspeed	= 1,
  		.name		= "atmel_usba_udc",
-@@ -1231,7 +1180,7 @@
+@@ -1231,7 +1180,7 @@ static int do_test_mode(struct usba_udc 
  		} else {
  			usba_ep_writel(ep, CTL_ENB, USBA_EPT_ENABLE);
  			usba_writel(udc, TST, USBA_TST_PKT_MODE);
@@ -13236,7 +13236,7 @@
  					sizeof(test_packet_buffer));
  			usba_ep_writel(ep, SET_STA, USBA_TX_PK_RDY);
  			dev_info(dev, "Entering Test_Packet mode...\n");
-@@ -1530,13 +1479,13 @@
+@@ -1530,13 +1479,13 @@ restart:
  		DBG(DBG_HW, "Packet length: %u\n", pkt_len);
  		if (pkt_len != sizeof(crq)) {
  			pr_warning("udc: Invalid packet length %u "
@@ -13252,7 +13252,7 @@
  
  		/* Free up one bank in the FIFO so that we can
  		 * generate or receive a reply right away. */
-@@ -1688,6 +1637,7 @@
+@@ -1688,6 +1637,7 @@ static irqreturn_t usba_udc_irq(int irq,
  	DBG(DBG_INT, "irq, status=%#08x\n", status);
  
  	if (status & USBA_DET_SUSPEND) {
@@ -13260,7 +13260,7 @@
  		usba_writel(udc, INT_CLR, USBA_DET_SUSPEND);
  		DBG(DBG_BUS, "Suspend detected\n");
  		if (udc->gadget.speed != USB_SPEED_UNKNOWN
-@@ -1699,6 +1649,7 @@
+@@ -1699,6 +1649,7 @@ static irqreturn_t usba_udc_irq(int irq,
  	}
  
  	if (status & USBA_WAKE_UP) {
@@ -13268,7 +13268,7 @@
  		usba_writel(udc, INT_CLR, USBA_WAKE_UP);
  		DBG(DBG_BUS, "Wake Up CPU detected\n");
  	}
-@@ -1792,12 +1743,14 @@
+@@ -1792,12 +1743,14 @@ static irqreturn_t usba_vbus_irq(int irq
  	vbus = gpio_get_value(udc->vbus_pin);
  	if (vbus != udc->vbus_prev) {
  		if (vbus) {
@@ -13285,7 +13285,7 @@
  			spin_unlock(&udc->lock);
  			udc->driver->disconnect(&udc->gadget);
  			spin_lock(&udc->lock);
-@@ -1850,7 +1803,8 @@
+@@ -1850,7 +1803,8 @@ int usb_gadget_register_driver(struct us
  	/* If Vbus is present, enable the controller and wait for reset */
  	spin_lock_irqsave(&udc->lock, flags);
  	if (vbus_is_present(udc) && udc->vbus_prev == 0) {
@@ -13295,7 +13295,7 @@
  		usba_writel(udc, INT_ENB, USBA_END_OF_RESET);
  	}
  	spin_unlock_irqrestore(&udc->lock, flags);
-@@ -1883,7 +1837,8 @@
+@@ -1883,7 +1837,8 @@ int usb_gadget_unregister_driver(struct 
  	spin_unlock_irqrestore(&udc->lock, flags);
  
  	/* This will also disable the DP pullup */
@@ -13305,7 +13305,7 @@
  
  	driver->unbind(&udc->gadget);
  	udc->gadget.dev.driver = NULL;
-@@ -1908,7 +1863,7 @@
+@@ -1908,7 +1863,7 @@ static int __init usba_udc_probe(struct 
  
  	regs = platform_get_resource(pdev, IORESOURCE_MEM, CTRL_IOMEM_ID);
  	fifo = platform_get_resource(pdev, IORESOURCE_MEM, FIFO_IOMEM_ID);
@@ -13314,7 +13314,7 @@
  		return -ENXIO;
  
  	irq = platform_get_irq(pdev, 0);
-@@ -1953,19 +1908,48 @@
+@@ -1953,19 +1908,48 @@ static int __init usba_udc_probe(struct 
  
  	/* Make sure we start from a clean slate */
  	clk_enable(pclk);
@@ -13365,7 +13365,7 @@
  
  		list_add_tail(&ep->ep.ep_list, &udc->gadget.ep_list);
  	}
-@@ -1984,7 +1968,7 @@
+@@ -1984,7 +1968,7 @@ static int __init usba_udc_probe(struct 
  		goto err_device_add;
  	}
  
@@ -13374,7 +13374,7 @@
  		if (!gpio_request(pdata->vbus_pin, "atmel_usba_udc")) {
  			udc->vbus_pin = pdata->vbus_pin;
  
-@@ -2004,7 +1988,7 @@
+@@ -2004,7 +1988,7 @@ static int __init usba_udc_probe(struct 
  	}
  
  	usba_init_debugfs(udc);
@@ -13383,7 +13383,7 @@
  		usba_ep_init_debugfs(udc, &usba_ep[i]);
  
  	return 0;
-@@ -2012,6 +1996,8 @@
+@@ -2012,6 +1996,8 @@ static int __init usba_udc_probe(struct 
  err_device_add:
  	free_irq(irq, udc);
  err_request_irq:
@@ -13392,7 +13392,7 @@
  	iounmap(udc->fifo);
  err_map_fifo:
  	iounmap(udc->regs);
-@@ -2029,10 +2015,11 @@
+@@ -2029,10 +2015,11 @@ static int __exit usba_udc_remove(struct
  {
  	struct usba_udc *udc;
  	int i;
@@ -13405,7 +13405,7 @@
  		usba_ep_cleanup_debugfs(&usba_ep[i]);
  	usba_cleanup_debugfs(udc);
  
-@@ -2040,6 +2027,7 @@
+@@ -2040,6 +2027,7 @@ static int __exit usba_udc_remove(struct
  		gpio_free(udc->vbus_pin);
  
  	free_irq(udc->irq, udc);
@@ -13444,7 +13444,7 @@
  
  static inline void atmel_lcdfb_update_dma2d(struct atmel_lcdfb_info *sinfo,
  					struct fb_var_screeninfo *var)
-@@ -176,7 +178,7 @@
+@@ -176,7 +178,7 @@ static struct fb_fix_screeninfo atmel_lc
  	.type		= FB_TYPE_PACKED_PIXELS,
  	.visual		= FB_VISUAL_TRUECOLOR,
  	.xpanstep	= 0,
@@ -13453,7 +13453,7 @@
  	.ywrapstep	= 0,
  	.accel		= FB_ACCEL_NONE,
  };
-@@ -250,6 +252,8 @@
+@@ -250,6 +252,8 @@ static int atmel_lcdfb_alloc_video_memor
  		return -ENOMEM;
  	}
  
@@ -13462,7 +13462,7 @@
  	return 0;
  }
  
-@@ -634,7 +638,6 @@
+@@ -634,7 +638,6 @@ static int __init atmel_lcdfb_init_fbinf
  	struct fb_info *info = sinfo->info;
  	int ret = 0;
  
@@ -13470,7 +13470,7 @@
  	info->var.activate |= FB_ACTIVATE_FORCE | FB_ACTIVATE_NOW;
  
  	dev_info(info->device,
-@@ -764,6 +767,11 @@
+@@ -764,6 +767,11 @@ static int __init atmel_lcdfb_probe(stru
  		info->screen_base = ioremap(info->fix.smem_start, info->fix.smem_len);
  		if (!info->screen_base)
  			goto release_intmem;
@@ -13484,7 +13484,7 @@
  		ret = atmel_lcdfb_alloc_video_memory(sinfo);
 --- a/fs/fs-writeback.c
 +++ b/fs/fs-writeback.c
-@@ -385,8 +385,6 @@
+@@ -385,8 +385,6 @@ __writeback_single_inode(struct inode *i
   * WB_SYNC_HOLD is a hack for sys_sync(): reattach the inode to sb->s_dirty so
   * that it can be located for waiting on in __writeback_single_inode().
   *
@@ -13493,7 +13493,7 @@
   * If `bdi' is non-zero then we're being asked to writeback a specific queue.
   * This function assumes that the blockdev superblock's inodes are backed by
   * a variety of queues, so all inodes are searched.  For other superblocks,
-@@ -402,11 +400,12 @@
+@@ -402,11 +400,12 @@ __writeback_single_inode(struct inode *i
   * on the writer throttling path, and we get decent balancing between many
   * throttled threads: we don't want them all piling up on inode_sync_wait.
   */
@@ -13508,7 +13508,7 @@
  	if (!wbc->for_kupdate || list_empty(&sb->s_io))
  		queue_io(sb, wbc->older_than_this);
  
-@@ -485,8 +484,16 @@
+@@ -485,8 +484,16 @@ sync_sb_inodes(struct super_block *sb, s
  		if (!list_empty(&sb->s_more_io))
  			wbc->more_io = 1;
  	}
@@ -13525,7 +13525,7 @@
  
  /*
   * Start writeback of dirty pagecache data against all unlocked inodes.
-@@ -526,11 +533,8 @@
+@@ -526,11 +533,8 @@ restart:
  			 * be unmounted by the time it is released.
  			 */
  			if (down_read_trylock(&sb->s_umount)) {
@@ -13538,7 +13538,7 @@
  				up_read(&sb->s_umount);
  			}
  			spin_lock(&sb_lock);
-@@ -568,9 +572,7 @@
+@@ -568,9 +572,7 @@ void sync_inodes_sb(struct super_block *
  			(inodes_stat.nr_inodes - inodes_stat.nr_unused) +
  			nr_dirty + nr_unstable;
  	wbc.nr_to_write += wbc.nr_to_write / 2;		/* Bit more for luck */
@@ -13563,7 +13563,7 @@
  /* Add basic devices: system manager, interrupt controller, portmuxes, etc. */
  void at32_add_system_devices(void);
  
-@@ -36,11 +42,10 @@
+@@ -36,11 +42,10 @@ at32_add_device_spi(unsigned int id, str
  struct atmel_lcdfb_info;
  struct platform_device *
  at32_add_device_lcdc(unsigned int id, struct atmel_lcdfb_info *data,
@@ -13578,7 +13578,7 @@
  struct platform_device *
  at32_add_device_usba(unsigned int id, struct usba_platform_data *data);
  
-@@ -68,9 +73,27 @@
+@@ -68,9 +73,27 @@ struct platform_device *at32_add_device_
  struct platform_device *
  at32_add_device_ssc(unsigned int id, unsigned int flags);
  
@@ -13609,7 +13609,7 @@
  struct platform_device *at32_add_device_abdac(unsigned int id);
  
  struct cf_platform_data {
-@@ -84,4 +107,20 @@
+@@ -84,4 +107,20 @@ struct platform_device *
  at32_add_device_cf(unsigned int id, unsigned int extint,
  		struct cf_platform_data *data);
  
@@ -13699,7 +13699,7 @@
 +#endif /* __ASM_AVR32_ARCH_PM_H */
 --- a/include/asm-avr32/arch-at32ap/portmux.h
 +++ b/include/asm-avr32/arch-at32ap/portmux.h
-@@ -26,4 +26,16 @@
+@@ -26,4 +26,16 @@ void at32_select_periph(unsigned int pin
  void at32_select_gpio(unsigned int pin, unsigned long flags);
  void at32_reserve_pin(unsigned int pin);
  
@@ -14339,7 +14339,7 @@
  }
  
  #define __pte_free_tlb(tlb,pte)				\
-@@ -75,6 +89,10 @@
+@@ -75,6 +89,10 @@ do {							\
  	tlb_remove_page((tlb), pte);			\
  } while (0)
  
@@ -14353,7 +14353,7 @@
  #endif /* __ASM_AVR32_PGALLOC_H */
 --- a/include/asm-avr32/pgtable.h
 +++ b/include/asm-avr32/pgtable.h
-@@ -129,13 +129,6 @@
+@@ -129,13 +129,6 @@ extern struct page *empty_zero_page;
  
  #define _PAGE_FLAGS_CACHE_MASK	(_PAGE_CACHABLE | _PAGE_BUFFER | _PAGE_WT)
  
@@ -14367,7 +14367,7 @@
  /* Flags that may be modified by software */
  #define _PAGE_CHG_MASK		(PTE_MASK | _PAGE_ACCESSED | _PAGE_DIRTY \
  				 | _PAGE_FLAGS_CACHE_MASK)
-@@ -254,10 +247,14 @@
+@@ -254,10 +247,14 @@ static inline pte_t pte_mkyoung(pte_t pt
  }
  
  #define pmd_none(x)	(!pmd_val(x))
@@ -14386,7 +14386,7 @@
  
  /*
   * Permanent address of a page. We don't support highmem, so this is
-@@ -295,19 +292,16 @@
+@@ -295,19 +292,16 @@ static inline pte_t pte_modify(pte_t pte
  
  #define page_pte(page)	page_pte_prot(page, __pgprot(0))
  
@@ -14430,7 +14430,7 @@
 +#endif /* _ASM_SERIAL_H */
 --- a/include/asm-avr32/thread_info.h
 +++ b/include/asm-avr32/thread_info.h
-@@ -88,6 +88,7 @@
+@@ -88,6 +88,7 @@ static inline struct thread_info *curren
  #define TIF_MEMDIE		6
  #define TIF_RESTORE_SIGMASK	7	/* restore signal mask in do_signal */
  #define TIF_CPU_GOING_TO_SLEEP	8	/* CPU is entering sleep 0 mode */
@@ -14440,7 +14440,7 @@
  
 --- a/include/asm-avr32/tlbflush.h
 +++ b/include/asm-avr32/tlbflush.h
-@@ -26,7 +26,6 @@
+@@ -26,7 +26,6 @@ extern void flush_tlb_mm(struct mm_struc
  extern void flush_tlb_range(struct vm_area_struct *vma, unsigned long start,
  			    unsigned long end);
  extern void flush_tlb_page(struct vm_area_struct *vma, unsigned long page);
@@ -14714,7 +14714,7 @@
 +#endif
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1692,6 +1692,8 @@
+@@ -1692,6 +1692,8 @@ static inline void invalidate_remote_ino
  extern int invalidate_inode_pages2(struct address_space *mapping);
  extern int invalidate_inode_pages2_range(struct address_space *mapping,
  					 pgoff_t start, pgoff_t end);
@@ -14725,7 +14725,7 @@
  extern int filemap_flush(struct address_space *);
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
-@@ -188,6 +188,7 @@
+@@ -188,6 +188,7 @@ struct uart_ops {
  	void		(*break_ctl)(struct uart_port *, int ctl);
  	int		(*startup)(struct uart_port *);
  	void		(*shutdown)(struct uart_port *);
@@ -14760,7 +14760,7 @@
 +#endif /* __LINUX_USB_USBA_H */
 --- a/mm/Kconfig
 +++ b/mm/Kconfig
-@@ -187,7 +187,7 @@
+@@ -187,7 +187,7 @@ config BOUNCE
  config NR_QUICK
  	int
  	depends on QUICKLIST
@@ -14771,7 +14771,7 @@
  config VIRT_TO_BUS
 --- a/sound/Kconfig
 +++ b/sound/Kconfig
-@@ -63,6 +63,8 @@
+@@ -63,6 +63,8 @@ source "sound/aoa/Kconfig"
  
  source "sound/arm/Kconfig"
  
@@ -14782,7 +14782,7 @@
  endif
 --- a/sound/Makefile
 +++ b/sound/Makefile
-@@ -6,7 +6,7 @@
+@@ -6,7 +6,7 @@ obj-$(CONFIG_SOUND_PRIME) += sound_firmw
  obj-$(CONFIG_SOUND_PRIME) += oss/
  obj-$(CONFIG_DMASOUND) += oss/
  obj-$(CONFIG_SND) += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ \
@@ -15841,7 +15841,7 @@
 +#endif /* __SOUND_AVR32_AC97C_H */
 --- a/sound/oss/Kconfig
 +++ b/sound/oss/Kconfig
-@@ -654,3 +654,7 @@
+@@ -654,3 +654,7 @@ config SOUND_SH_DAC_AUDIO_CHANNEL
  	int "DAC channel"
  	default "1"
  	depends on SOUND_SH_DAC_AUDIO
@@ -15851,7 +15851,7 @@
 +	depends on SOUND_PRIME && AVR32
 --- a/sound/oss/Makefile
 +++ b/sound/oss/Makefile
-@@ -9,6 +9,7 @@
+@@ -9,6 +9,7 @@ obj-$(CONFIG_SOUND_OSS)		+= sound.o
  
  # Please leave it as is, cause the link order is significant !
  
@@ -16648,7 +16648,7 @@
 +#endif /* __SOUND_OSS_AT32_ABDAC_H__ */
 --- a/sound/spi/at73c213.c
 +++ b/sound/spi/at73c213.c
-@@ -737,7 +737,7 @@
+@@ -737,7 +737,7 @@ cleanup:
  /*
   * Device functions
   */
@@ -16657,7 +16657,7 @@
  {
  	/*
  	 * Continuous clock output.
-@@ -767,7 +767,7 @@
+@@ -767,7 +767,7 @@ static int snd_at73c213_ssc_init(struct 
  	return 0;
  }
  
@@ -16666,7 +16666,7 @@
  {
  	int retval;
  	unsigned char dac_ctrl = 0;
-@@ -933,7 +933,7 @@
+@@ -933,7 +933,7 @@ out:
  	return retval;
  }
  

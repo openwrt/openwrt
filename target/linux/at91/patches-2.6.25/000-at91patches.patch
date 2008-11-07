@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-at91/Kconfig
 +++ b/arch/arm/mach-at91/Kconfig
-@@ -12,18 +12,28 @@
+@@ -12,18 +12,28 @@ config ARCH_AT91RM9200
  
  config ARCH_AT91SAM9260
  	bool "AT91SAM9260 or AT91SAM9XE"
@@ -29,7 +29,7 @@
  
  config ARCH_AT91X40
  	bool "AT91x40"
-@@ -45,7 +55,7 @@
+@@ -45,7 +55,7 @@ config MACH_ONEARM
  	depends on ARCH_AT91RM9200
  	help
  	  Select this if you are using Ajeco's 1ARM Single Board Computer.
@@ -38,7 +38,7 @@
  
  config ARCH_AT91RM9200DK
  	bool "Atmel AT91RM9200-DK Development board"
-@@ -94,7 +104,7 @@
+@@ -94,7 +104,7 @@ config MACH_KB9200
  	depends on ARCH_AT91RM9200
  	help
  	  Select this if you are using KwikByte's KB920x board.
@@ -47,7 +47,7 @@
  
  config MACH_PICOTUX2XX
  	bool "picotux 200"
-@@ -109,6 +119,38 @@
+@@ -109,6 +119,38 @@ config MACH_KAFA
  	help
  	  Select this if you are using Sperry-Sun's KAFA board.
  
@@ -86,7 +86,7 @@
  endif
  
  # ----------------------------------------------------------
-@@ -133,6 +175,34 @@
+@@ -133,6 +175,34 @@ config MACH_AT91SAM9260EK
  	  Select this if you are using Atmel's AT91SAM9260-EK or AT91SAM9XE Evaluation Kit
  	  <http://www.atmel.com/dyn/products/tools_card.asp?tool_id=3933>
  
@@ -121,7 +121,7 @@
  endif
  
  # ----------------------------------------------------------
-@@ -163,6 +233,13 @@
+@@ -163,6 +233,13 @@ config MACH_AT91SAM9263EK
  	  Select this if you are using Atmel's AT91SAM9263-EK Evaluation Kit.
  	  <http://www.atmel.com/dyn/products/tools_card.asp?tool_id=4057>
  
@@ -135,7 +135,7 @@
  endif
  
  # ----------------------------------------------------------
-@@ -216,7 +293,7 @@
+@@ -216,7 +293,7 @@ comment "AT91 Board Options"
  
  config MTD_AT91_DATAFLASH_CARD
  	bool "Enable DataFlash Card support"
@@ -144,7 +144,7 @@
  	help
  	  Enable support for the DataFlash card.
  
-@@ -237,6 +314,19 @@
+@@ -237,6 +314,19 @@ config AT91_PROGRAMMABLE_CLOCKS
  	  Select this if you need to program one or more of the PCK0..PCK3
  	  programmable clock outputs.
  
@@ -166,7 +166,7 @@
         range 32 1024
 --- a/arch/arm/mach-at91/Makefile
 +++ b/arch/arm/mach-at91/Makefile
-@@ -28,16 +28,26 @@
+@@ -28,16 +28,26 @@ obj-$(CONFIG_MACH_CARMEVA)	+= board-carm
  obj-$(CONFIG_MACH_KB9200)	+= board-kb9202.o
  obj-$(CONFIG_MACH_ATEB9200)	+= board-eb9200.o
  obj-$(CONFIG_MACH_KAFA)		+= board-kafa.o
@@ -193,7 +193,7 @@
  
  # AT91SAM9RL board-specific support
  obj-$(CONFIG_MACH_AT91SAM9RLEK)	+= board-sam9rlek.o
-@@ -50,9 +60,11 @@
+@@ -50,9 +60,11 @@ obj-$(CONFIG_MACH_AT91EB01)	+= board-eb0
  
  # Drivers
  obj-y				+= leds.o
@@ -223,7 +223,7 @@
  
  #include "generic.h"
  #include "clock.h"
-@@ -288,6 +291,12 @@
+@@ -288,6 +291,12 @@ static void at91cap9_reset(void)
  	at91_sys_write(AT91_RSTC_CR, AT91_RSTC_KEY | AT91_RSTC_PROCRST | AT91_RSTC_PERRST);
  }
  
@@ -236,7 +236,7 @@
  /* --------------------------------------------------------------------
   *  AT91CAP9 processor initialization
   * -------------------------------------------------------------------- */
-@@ -298,6 +307,7 @@
+@@ -298,6 +307,7 @@ void __init at91cap9_initialize(unsigned
  	iotable_init(at91cap9_io_desc, ARRAY_SIZE(at91cap9_io_desc));
  
  	at91_arch_reset = at91cap9_reset;
@@ -244,7 +244,7 @@
  	at91_extern_irq = (1 << AT91CAP9_ID_IRQ0) | (1 << AT91CAP9_ID_IRQ1);
  
  	/* Init clock subsystem */
-@@ -308,6 +318,12 @@
+@@ -308,6 +318,12 @@ void __init at91cap9_initialize(unsigned
  
  	/* Register GPIO subsystem */
  	at91_gpio_init(at91cap9_gpio, 4);
@@ -282,7 +282,7 @@
  
  #include "generic.h"
  
-@@ -69,6 +71,9 @@
+@@ -69,6 +71,9 @@ void __init at91_add_device_usbh(struct 
  	if (!data)
  		return;
  
@@ -292,7 +292,7 @@
  	/* Enable VBus control for UHP ports */
  	for (i = 0; i < data->ports; i++) {
  		if (data->vbus_pin[i])
-@@ -84,6 +89,110 @@
+@@ -84,6 +89,110 @@ void __init at91_add_device_usbh(struct 
  
  
  /* --------------------------------------------------------------------
@@ -403,7 +403,7 @@
   *  Ethernet
   * -------------------------------------------------------------------- */
  
-@@ -246,7 +355,7 @@
+@@ -246,7 +355,7 @@ void __init at91_add_device_mmc(short mm
  		}
  
  		mmc0_data = *data;
@@ -412,7 +412,7 @@
  		platform_device_register(&at91cap9_mmc0_device);
  	} else {			/* MCI1 */
  		/* CLK */
-@@ -283,10 +392,15 @@
+@@ -283,10 +392,15 @@ static struct at91_nand_data nand_data;
  #define NAND_BASE	AT91_CHIPSELECT_3
  
  static struct resource nand_resources[] = {
@@ -429,7 +429,7 @@
  	}
  };
  
-@@ -344,6 +458,7 @@
+@@ -344,6 +458,7 @@ void __init at91_add_device_nand(struct 
  void __init at91_add_device_nand(struct at91_nand_data *data) {}
  #endif
  
@@ -437,7 +437,7 @@
  /* --------------------------------------------------------------------
   *  TWI (i2c)
   * -------------------------------------------------------------------- */
-@@ -532,17 +647,64 @@
+@@ -532,17 +647,64 @@ void __init at91_add_device_spi(struct s
  
  
  /* --------------------------------------------------------------------
@@ -504,7 +504,7 @@
  	platform_device_register(&at91cap9_rtt_device);
  }
  
-@@ -660,6 +822,9 @@
+@@ -660,6 +822,9 @@ void __init at91_add_device_lcdc(struct 
  	if (!data)
  		return;
  
@@ -514,7 +514,7 @@
  	at91_set_A_periph(AT91_PIN_PC1, 0);	/* LCDHSYNC */
  	at91_set_A_periph(AT91_PIN_PC2, 0);	/* LCDDOTCK */
  	at91_set_A_periph(AT91_PIN_PC3, 0);	/* LCDDEN */
-@@ -990,7 +1155,7 @@
+@@ -990,7 +1155,7 @@ static inline void configure_usart2_pins
  		at91_set_B_periph(AT91_PIN_PD6, 0);	/* CTS2 */
  }
  
@@ -523,7 +523,7 @@
  struct platform_device *atmel_default_console_device;	/* the serial console device */
  
  void __init at91_register_uart(unsigned id, unsigned portnr, unsigned pins)
-@@ -1031,8 +1196,6 @@
+@@ -1031,8 +1196,6 @@ void __init at91_set_serial_console(unsi
  {
  	if (portnr < ATMEL_MAX_UART)
  		atmel_default_console_device = at91_uarts[portnr];
@@ -532,7 +532,7 @@
  }
  
  void __init at91_add_device_serial(void)
-@@ -1043,6 +1206,9 @@
+@@ -1043,6 +1206,9 @@ void __init at91_add_device_serial(void)
  		if (at91_uarts[i])
  			platform_device_register(at91_uarts[i]);
  	}
@@ -542,7 +542,7 @@
  }
  #else
  void __init at91_register_uart(unsigned id, unsigned portnr, unsigned pins) {}
-@@ -1060,6 +1226,7 @@
+@@ -1060,6 +1226,7 @@ static int __init at91_add_standard_devi
  {
  	at91_add_device_rtt();
  	at91_add_device_watchdog();
@@ -552,7 +552,7 @@
  
 --- a/arch/arm/mach-at91/at91rm9200_devices.c
 +++ b/arch/arm/mach-at91/at91rm9200_devices.c
-@@ -513,7 +513,18 @@
+@@ -513,7 +513,18 @@ void __init at91_add_device_i2c(struct i
   *  SPI
   * -------------------------------------------------------------------- */
  
@@ -572,7 +572,7 @@
  static u64 spi_dmamask = DMA_BIT_MASK(32);
  
  static struct resource spi_resources[] = {
-@@ -530,7 +541,7 @@
+@@ -530,7 +541,7 @@ static struct resource spi_resources[] =
  };
  
  static struct platform_device at91rm9200_spi_device = {
@@ -581,7 +581,7 @@
  	.id		= 0,
  	.dev		= {
  				.dma_mask		= &spi_dmamask,
-@@ -563,6 +574,12 @@
+@@ -563,6 +574,12 @@ void __init at91_add_device_spi(struct s
  		else
  			at91_set_gpio_output(cs_pin, 1);
  
@@ -594,7 +594,7 @@
  
  		/* pass chip-select pin to driver */
  		devices[i].controller_data = (void *) cs_pin;
-@@ -577,6 +594,90 @@
+@@ -577,6 +594,90 @@ void __init at91_add_device_spi(struct s
  
  
  /* --------------------------------------------------------------------
@@ -685,7 +685,7 @@
   *  RTC
   * -------------------------------------------------------------------- */
  
-@@ -589,6 +690,7 @@
+@@ -589,6 +690,7 @@ static struct platform_device at91rm9200
  
  static void __init at91_add_device_rtc(void)
  {
@@ -693,7 +693,7 @@
  	platform_device_register(&at91rm9200_rtc_device);
  }
  #else
-@@ -1019,7 +1121,7 @@
+@@ -1019,7 +1121,7 @@ static inline void configure_usart3_pins
  		at91_set_B_periph(AT91_PIN_PB0, 0);	/* RTS3 */
  }
  
@@ -702,7 +702,7 @@
  struct platform_device *atmel_default_console_device;	/* the serial console device */
  
  void __init __deprecated at91_init_serial(struct at91_uart_config *config)
-@@ -1110,8 +1212,6 @@
+@@ -1110,8 +1212,6 @@ void __init at91_set_serial_console(unsi
  {
  	if (portnr < ATMEL_MAX_UART)
  		atmel_default_console_device = at91_uarts[portnr];
@@ -711,7 +711,7 @@
  }
  
  void __init at91_add_device_serial(void)
-@@ -1122,6 +1222,9 @@
+@@ -1122,6 +1222,9 @@ void __init at91_add_device_serial(void)
  		if (at91_uarts[i])
  			platform_device_register(at91_uarts[i]);
  	}
@@ -721,7 +721,7 @@
  }
  #else
  void __init __deprecated at91_init_serial(struct at91_uart_config *config) {}
-@@ -1141,6 +1244,7 @@
+@@ -1141,6 +1244,7 @@ static int __init at91_add_standard_devi
  {
  	at91_add_device_rtc();
  	at91_add_device_watchdog();
@@ -731,7 +731,7 @@
  
 --- a/arch/arm/mach-at91/at91rm9200_time.c
 +++ b/arch/arm/mach-at91/at91rm9200_time.c
-@@ -136,8 +136,6 @@
+@@ -136,8 +136,6 @@ clkevt32k_next_event(unsigned long delta
  	u32		alm;
  	int		status = 0;
  
@@ -758,7 +758,7 @@
  
  #include "generic.h"
  #include "clock.h"
-@@ -267,6 +269,11 @@
+@@ -267,6 +269,11 @@ static void at91sam9260_reset(void)
  	at91_sys_write(AT91_RSTC_CR, AT91_RSTC_KEY | AT91_RSTC_PROCRST | AT91_RSTC_PERRST);
  }
  
@@ -770,7 +770,7 @@
  
  /* --------------------------------------------------------------------
   *  AT91SAM9260 processor initialization
-@@ -304,6 +311,7 @@
+@@ -304,6 +311,7 @@ void __init at91sam9260_initialize(unsig
  		iotable_init(at91sam9260_sram_desc, ARRAY_SIZE(at91sam9260_sram_desc));
  
  	at91_arch_reset = at91sam9260_reset;
@@ -790,7 +790,7 @@
  
  #include "generic.h"
  
-@@ -288,10 +288,15 @@
+@@ -288,10 +288,15 @@ static struct at91_nand_data nand_data;
  #define NAND_BASE	AT91_CHIPSELECT_3
  
  static struct resource nand_resources[] = {
@@ -807,7 +807,7 @@
  	}
  };
  
-@@ -540,6 +545,90 @@
+@@ -540,6 +545,90 @@ void __init at91_add_device_spi(struct s
  
  
  /* --------------------------------------------------------------------
@@ -898,7 +898,7 @@
   *  RTT
   * -------------------------------------------------------------------- */
  
-@@ -553,13 +642,14 @@
+@@ -553,13 +642,14 @@ static struct resource rtt_resources[] =
  
  static struct platform_device at91sam9260_rtt_device = {
  	.name		= "at91_rtt",
@@ -914,7 +914,7 @@
  	platform_device_register(&at91sam9260_rtt_device);
  }
  
-@@ -962,7 +1052,7 @@
+@@ -962,7 +1052,7 @@ static inline void configure_usart5_pins
  	at91_set_A_periph(AT91_PIN_PB13, 0);		/* RXD5 */
  }
  
@@ -923,7 +923,7 @@
  struct platform_device *atmel_default_console_device;	/* the serial console device */
  
  void __init __deprecated at91_init_serial(struct at91_uart_config *config)
-@@ -1073,8 +1163,6 @@
+@@ -1073,8 +1163,6 @@ void __init at91_set_serial_console(unsi
  {
  	if (portnr < ATMEL_MAX_UART)
  		atmel_default_console_device = at91_uarts[portnr];
@@ -932,7 +932,7 @@
  }
  
  void __init at91_add_device_serial(void)
-@@ -1085,6 +1173,9 @@
+@@ -1085,6 +1173,9 @@ void __init at91_add_device_serial(void)
  		if (at91_uarts[i])
  			platform_device_register(at91_uarts[i]);
  	}
@@ -942,7 +942,7 @@
  }
  #else
  void __init __deprecated at91_init_serial(struct at91_uart_config *config) {}
-@@ -1103,6 +1194,7 @@
+@@ -1103,6 +1194,7 @@ static int __init at91_add_standard_devi
  {
  	at91_add_device_rtt();
  	at91_add_device_watchdog();
@@ -967,7 +967,7 @@
  
  #include "generic.h"
  #include "clock.h"
-@@ -245,6 +247,11 @@
+@@ -245,6 +247,11 @@ static void at91sam9261_reset(void)
  	at91_sys_write(AT91_RSTC_CR, AT91_RSTC_KEY | AT91_RSTC_PROCRST | AT91_RSTC_PERRST);
  }
  
@@ -979,7 +979,7 @@
  
  /* --------------------------------------------------------------------
   *  AT91SAM9261 processor initialization
-@@ -256,6 +263,7 @@
+@@ -256,6 +263,7 @@ void __init at91sam9261_initialize(unsig
  	iotable_init(at91sam9261_io_desc, ARRAY_SIZE(at91sam9261_io_desc));
  
  	at91_arch_reset = at91sam9261_reset;
@@ -998,7 +998,7 @@
  
  #include "generic.h"
  
-@@ -548,6 +548,55 @@
+@@ -548,6 +548,55 @@ void __init at91_add_device_lcdc(struct 
  
  
  /* --------------------------------------------------------------------
@@ -1054,7 +1054,7 @@
   *  RTT
   * -------------------------------------------------------------------- */
  
-@@ -561,13 +610,14 @@
+@@ -561,13 +610,14 @@ static struct resource rtt_resources[] =
  
  static struct platform_device at91sam9261_rtt_device = {
  	.name		= "at91_rtt",
@@ -1070,7 +1070,7 @@
  	platform_device_register(&at91sam9261_rtt_device);
  }
  
-@@ -938,7 +988,7 @@
+@@ -938,7 +988,7 @@ static inline void configure_usart2_pins
  		at91_set_B_periph(AT91_PIN_PA16, 0);	/* CTS2 */
  }
  
@@ -1079,7 +1079,7 @@
  struct platform_device *atmel_default_console_device;	/* the serial console device */
  
  void __init __deprecated at91_init_serial(struct at91_uart_config *config)
-@@ -1019,8 +1069,6 @@
+@@ -1019,8 +1069,6 @@ void __init at91_set_serial_console(unsi
  {
  	if (portnr < ATMEL_MAX_UART)
  		atmel_default_console_device = at91_uarts[portnr];
@@ -1088,7 +1088,7 @@
  }
  
  void __init at91_add_device_serial(void)
-@@ -1031,6 +1079,9 @@
+@@ -1031,6 +1079,9 @@ void __init at91_add_device_serial(void)
  		if (at91_uarts[i])
  			platform_device_register(at91_uarts[i]);
  	}
@@ -1098,7 +1098,7 @@
  }
  #else
  void __init __deprecated at91_init_serial(struct at91_uart_config *config) {}
-@@ -1050,6 +1101,7 @@
+@@ -1050,6 +1101,7 @@ static int __init at91_add_standard_devi
  {
  	at91_add_device_rtt();
  	at91_add_device_watchdog();
@@ -1123,7 +1123,7 @@
  
  #include "generic.h"
  #include "clock.h"
-@@ -271,6 +273,11 @@
+@@ -271,6 +273,11 @@ static void at91sam9263_reset(void)
  	at91_sys_write(AT91_RSTC_CR, AT91_RSTC_KEY | AT91_RSTC_PROCRST | AT91_RSTC_PERRST);
  }
  
@@ -1135,7 +1135,7 @@
  
  /* --------------------------------------------------------------------
   *  AT91SAM9263 processor initialization
-@@ -282,6 +289,7 @@
+@@ -282,6 +289,7 @@ void __init at91sam9263_initialize(unsig
  	iotable_init(at91sam9263_io_desc, ARRAY_SIZE(at91sam9263_io_desc));
  
  	at91_arch_reset = at91sam9263_reset;
@@ -1155,7 +1155,7 @@
  
  #include "generic.h"
  
-@@ -308,7 +308,7 @@
+@@ -308,7 +308,7 @@ void __init at91_add_device_mmc(short mm
  		}
  
  		mmc0_data = *data;
@@ -1164,7 +1164,7 @@
  		platform_device_register(&at91sam9263_mmc0_device);
  	} else {			/* MCI1 */
  		/* CLK */
-@@ -358,10 +358,15 @@
+@@ -358,10 +358,15 @@ static struct at91_nand_data nand_data;
  #define NAND_BASE	AT91_CHIPSELECT_3
  
  static struct resource nand_resources[] = {
@@ -1181,7 +1181,7 @@
  	}
  };
  
-@@ -783,6 +788,43 @@
+@@ -783,6 +788,43 @@ void __init at91_add_device_isi(void) {}
  
  
  /* --------------------------------------------------------------------
@@ -1225,7 +1225,7 @@
   *  RTT
   * -------------------------------------------------------------------- */
  
-@@ -818,7 +860,9 @@
+@@ -818,7 +860,9 @@ static struct platform_device at91sam926
  
  static void __init at91_add_device_rtt(void)
  {
@@ -1235,7 +1235,7 @@
  	platform_device_register(&at91sam9263_rtt1_device);
  }
  
-@@ -933,9 +977,6 @@
+@@ -933,9 +977,6 @@ static inline void configure_ssc1_pins(u
  }
  
  /*
@@ -1245,7 +1245,7 @@
   * SSC controllers are accessed through library code, instead of any
   * kind of all-singing/all-dancing driver.  For example one could be
   * used by a particular I2S audio codec's driver, while another one
-@@ -1146,7 +1187,7 @@
+@@ -1146,7 +1187,7 @@ static inline void configure_usart2_pins
  		at91_set_B_periph(AT91_PIN_PD6, 0);	/* CTS2 */
  }
  
@@ -1254,7 +1254,7 @@
  struct platform_device *atmel_default_console_device;	/* the serial console device */
  
  void __init __deprecated at91_init_serial(struct at91_uart_config *config)
-@@ -1227,8 +1268,6 @@
+@@ -1227,8 +1268,6 @@ void __init at91_set_serial_console(unsi
  {
  	if (portnr < ATMEL_MAX_UART)
  		atmel_default_console_device = at91_uarts[portnr];
@@ -1263,7 +1263,7 @@
  }
  
  void __init at91_add_device_serial(void)
-@@ -1239,9 +1278,12 @@
+@@ -1239,9 +1278,12 @@ void __init at91_add_device_serial(void)
  		if (at91_uarts[i])
  			platform_device_register(at91_uarts[i]);
  	}
@@ -1277,7 +1277,7 @@
  void __init at91_register_uart(unsigned id, unsigned portnr, unsigned pins) {}
  void __init at91_set_serial_console(unsigned portnr) {}
  void __init at91_add_device_serial(void) {}
-@@ -1257,6 +1299,7 @@
+@@ -1257,6 +1299,7 @@ static int __init at91_add_standard_devi
  {
  	at91_add_device_rtt();
  	at91_add_device_watchdog();
@@ -1539,7 +1539,7 @@
  
  #include "generic.h"
  #include "clock.h"
-@@ -244,6 +246,11 @@
+@@ -244,6 +246,11 @@ static void at91sam9rl_reset(void)
  	at91_sys_write(AT91_RSTC_CR, AT91_RSTC_KEY | AT91_RSTC_PROCRST | AT91_RSTC_PERRST);
  }
  
@@ -1551,7 +1551,7 @@
  
  /* --------------------------------------------------------------------
   *  AT91SAM9RL processor initialization
-@@ -274,6 +281,7 @@
+@@ -274,6 +281,7 @@ void __init at91sam9rl_initialize(unsign
  	iotable_init(at91sam9rl_sram_desc, ARRAY_SIZE(at91sam9rl_sram_desc));
  
  	at91_arch_reset = at91sam9rl_reset;
@@ -1670,7 +1670,7 @@
   *  MMC / SD
   * -------------------------------------------------------------------- */
  
-@@ -105,10 +200,15 @@
+@@ -105,10 +200,15 @@ static struct at91_nand_data nand_data;
  #define NAND_BASE	AT91_CHIPSELECT_3
  
  static struct resource nand_resources[] = {
@@ -1687,7 +1687,7 @@
  	}
  };
  
-@@ -385,6 +485,100 @@
+@@ -385,6 +485,100 @@ void __init at91_add_device_lcdc(struct 
  
  
  /* --------------------------------------------------------------------
@@ -1788,7 +1788,7 @@
   *  RTC
   * -------------------------------------------------------------------- */
  
-@@ -397,6 +591,7 @@
+@@ -397,6 +591,7 @@ static struct platform_device at91sam9rl
  
  static void __init at91_add_device_rtc(void)
  {
@@ -1796,7 +1796,7 @@
  	platform_device_register(&at91sam9rl_rtc_device);
  }
  #else
-@@ -418,13 +613,14 @@
+@@ -418,13 +613,14 @@ static struct resource rtt_resources[] =
  
  static struct platform_device at91sam9rl_rtt_device = {
  	.name		= "at91_rtt",
@@ -1812,7 +1812,7 @@
  	platform_device_register(&at91sam9rl_rtt_device);
  }
  
-@@ -539,9 +735,6 @@
+@@ -539,9 +735,6 @@ static inline void configure_ssc1_pins(u
  }
  
  /*
@@ -1822,7 +1822,7 @@
   * SSC controllers are accessed through library code, instead of any
   * kind of all-singing/all-dancing driver.  For example one could be
   * used by a particular I2S audio codec's driver, while another one
-@@ -802,7 +995,7 @@
+@@ -802,7 +995,7 @@ static inline void configure_usart3_pins
  		at91_set_B_periph(AT91_PIN_PD3, 0);	/* CTS3 */
  }
  
@@ -1831,7 +1831,7 @@
  struct platform_device *atmel_default_console_device;	/* the serial console device */
  
  void __init __deprecated at91_init_serial(struct at91_uart_config *config)
-@@ -893,8 +1086,6 @@
+@@ -893,8 +1086,6 @@ void __init at91_set_serial_console(unsi
  {
  	if (portnr < ATMEL_MAX_UART)
  		atmel_default_console_device = at91_uarts[portnr];
@@ -1840,7 +1840,7 @@
  }
  
  void __init at91_add_device_serial(void)
-@@ -905,6 +1096,9 @@
+@@ -905,6 +1096,9 @@ void __init at91_add_device_serial(void)
  		if (at91_uarts[i])
  			platform_device_register(at91_uarts[i]);
  	}
@@ -1850,7 +1850,7 @@
  }
  #else
  void __init __deprecated at91_init_serial(struct at91_uart_config *config) {}
-@@ -925,6 +1119,7 @@
+@@ -925,6 +1119,7 @@ static int __init at91_add_standard_devi
  	at91_add_device_rtc();
  	at91_add_device_rtt();
  	at91_add_device_watchdog();
@@ -2061,7 +2061,7 @@
  
  #include "generic.h"
  
-@@ -78,6 +76,12 @@
+@@ -78,6 +76,12 @@ static struct at91_usbh_data __initdata 
  	.ports		= 2,
  };
  
@@ -2074,7 +2074,7 @@
  
  /*
   * ADS7846 Touchscreen
-@@ -130,7 +134,7 @@
+@@ -130,7 +134,7 @@ static struct spi_board_info cap9adk_spi
  	{
  		.modalias	= "ads7846",
  		.chip_select	= 3,		/* can be 2 or 3, depending on J2 jumper */
@@ -2083,7 +2083,7 @@
  		.bus_num	= 0,
  		.platform_data	= &ads_info,
  		.irq		= AT91_PIN_PC4,
-@@ -324,8 +328,9 @@
+@@ -324,8 +328,9 @@ static void __init cap9adk_board_init(vo
  	/* Serial */
  	at91_add_device_serial();
  	/* USB Host */
@@ -2094,7 +2094,7 @@
  	/* SPI */
  	at91_add_device_spi(cap9adk_spi_devices, ARRAY_SIZE(cap9adk_spi_devices));
  	/* Touchscreen */
-@@ -341,7 +346,6 @@
+@@ -341,7 +346,6 @@ static void __init cap9adk_board_init(vo
  	/* I2C */
  	at91_add_device_i2c(NULL, 0);
  	/* LCD Controller */
@@ -2139,7 +2139,7 @@
  }
  
  static void __init carmeva_init_irq(void)
-@@ -117,6 +114,30 @@
+@@ -117,6 +114,30 @@ static struct spi_board_info carmeva_spi
  	},
  };
  
@@ -2170,7 +2170,7 @@
  static void __init carmeva_board_init(void)
  {
  	/* Serial */
-@@ -135,6 +156,8 @@
+@@ -135,6 +156,8 @@ static void __init carmeva_board_init(vo
  //	at91_add_device_cf(&carmeva_cf_data);
  	/* MMC */
  	at91_add_device_mmc(0, &carmeva_mmc_data);
@@ -2316,7 +2316,7 @@
 +MACHINE_END
 --- a/arch/arm/mach-at91/board-csb337.c
 +++ b/arch/arm/mach-at91/board-csb337.c
-@@ -61,6 +61,7 @@
+@@ -61,6 +61,7 @@ static void __init csb337_map_io(void)
  
  	/* Setup the LEDs */
  	at91_init_leds(AT91_PIN_PB0, AT91_PIN_PB1);
@@ -2324,7 +2324,7 @@
  
  	/* Setup the serial ports and console */
  	at91_init_serial(&csb337_uart_config);
-@@ -202,11 +203,11 @@
+@@ -202,11 +203,11 @@ static struct platform_device csb300_but
  
  static void __init csb300_add_device_buttons(void)
  {
@@ -2339,7 +2339,7 @@
  	at91_set_deglitch(AT91_PIN_PA21, 1);
  
  	platform_device_register(&csb300_button_device);
-@@ -233,7 +234,7 @@
+@@ -233,7 +234,7 @@ static struct gpio_led csb_leds[] = {
  		.gpio			= AT91_PIN_PB0,
  		.active_low		= 1,
  		.default_trigger	= "ide-disk",
@@ -2382,7 +2382,7 @@
  }
  
  static void __init csb637_init_irq(void)
-@@ -118,8 +107,19 @@
+@@ -118,8 +107,19 @@ static struct platform_device csb_flash 
  	.num_resources	= ARRAY_SIZE(csb_flash_resources),
  };
  
@@ -2430,7 +2430,7 @@
  static void __init dk_map_io(void)
  {
  	/* Initialize processor: 18.432 MHz crystal */
-@@ -64,8 +54,16 @@
+@@ -64,8 +54,16 @@ static void __init dk_map_io(void)
  	/* Setup the LEDs */
  	at91_init_leds(AT91_PIN_PB2, AT91_PIN_PB2);
  
@@ -2449,7 +2449,7 @@
  }
  
  static void __init dk_init_irq(void)
-@@ -73,6 +71,185 @@
+@@ -73,6 +71,185 @@ static void __init dk_init_irq(void)
  	at91rm9200_init_interrupts(NULL);
  }
  
@@ -2635,7 +2635,7 @@
  static struct at91_eth_data __initdata dk_eth_data = {
  	.phy_irq_pin	= AT91_PIN_PC4,
  	.is_rmii	= 1,
-@@ -164,7 +341,7 @@
+@@ -164,7 +341,7 @@ static struct at91_nand_data __initdata 
  #define DK_FLASH_SIZE	0x200000
  
  static struct physmap_flash_data dk_flash_data = {
@@ -2644,7 +2644,7 @@
  };
  
  static struct resource dk_flash_resource = {
-@@ -223,8 +400,12 @@
+@@ -223,8 +400,12 @@ static void __init dk_board_init(void)
  	platform_device_register(&dk_flash);
  	/* LEDs */
  	at91_gpio_leds(dk_leds, ARRAY_SIZE(dk_leds));
@@ -2907,7 +2907,7 @@
  static void __init ek_map_io(void)
  {
  	/* Initialize processor: 18.432 MHz crystal */
-@@ -64,8 +54,16 @@
+@@ -64,8 +54,16 @@ static void __init ek_map_io(void)
  	/* Setup the LEDs */
  	at91_init_leds(AT91_PIN_PB1, AT91_PIN_PB2);
  
@@ -2926,7 +2926,7 @@
  }
  
  static void __init ek_init_irq(void)
-@@ -73,6 +71,187 @@
+@@ -73,6 +71,187 @@ static void __init ek_init_irq(void)
  	at91rm9200_init_interrupts(NULL);
  }
  
@@ -3114,7 +3114,7 @@
  static struct at91_eth_data __initdata ek_eth_data = {
  	.phy_irq_pin	= AT91_PIN_PC4,
  	.is_rmii	= 1,
-@@ -122,7 +301,7 @@
+@@ -122,7 +301,7 @@ static struct i2c_board_info __initdata 
  #define EK_FLASH_SIZE	0x200000
  
  static struct physmap_flash_data ek_flash_data = {
@@ -3123,7 +3123,7 @@
  };
  
  static struct resource ek_flash_resource = {
-@@ -189,7 +368,7 @@
+@@ -189,7 +368,7 @@ static void __init ek_board_init(void)
  	/* LEDs */
  	at91_gpio_leds(ek_leds, ARRAY_SIZE(ek_leds));
  	/* VGA */
@@ -3322,7 +3322,7 @@
  
  static void __init kb9202_map_io(void)
  {
-@@ -59,8 +50,20 @@
+@@ -59,8 +50,20 @@ static void __init kb9202_map_io(void)
  	/* Set up the LEDs */
  	at91_init_leds(AT91_PIN_PC19, AT91_PIN_PC18);
  
@@ -3345,7 +3345,7 @@
  }
  
  static void __init kb9202_init_irq(void)
-@@ -111,6 +114,48 @@
+@@ -111,6 +114,48 @@ static struct at91_nand_data __initdata 
  	.partition_info	= nand_partitions,
  };
  
@@ -3394,7 +3394,7 @@
  static void __init kb9202_board_init(void)
  {
  	/* Serial */
-@@ -129,6 +174,8 @@
+@@ -129,6 +174,8 @@ static void __init kb9202_board_init(voi
  	at91_add_device_spi(NULL, 0);
  	/* NAND */
  	at91_add_device_nand(&kb9202_nand_data);
@@ -3920,7 +3920,7 @@
  }
  
  static void __init ek_init_irq(void)
-@@ -85,6 +89,35 @@
+@@ -85,6 +89,35 @@ static struct at91_udc_data __initdata e
  
  
  /*
@@ -3956,7 +3956,7 @@
   * SPI devices.
   */
  static struct spi_board_info ek_spi_devices[] = {
-@@ -110,6 +143,8 @@
+@@ -110,6 +143,8 @@ static struct spi_board_info ek_spi_devi
  		.chip_select	= 0,
  		.max_speed_hz	= 10 * 1000 * 1000,
  		.bus_num	= 1,
@@ -3965,7 +3965,7 @@
  	},
  #endif
  };
-@@ -172,6 +207,74 @@
+@@ -172,6 +207,74 @@ static struct at91_mmc_data __initdata e
  //	.vcc_pin	= ... not connected
  };
  
@@ -4040,7 +4040,7 @@
  static void __init ek_board_init(void)
  {
  	/* Serial */
-@@ -190,6 +293,16 @@
+@@ -190,6 +293,16 @@ static void __init ek_board_init(void)
  	at91_add_device_mmc(0, &ek_mmc_data);
  	/* I2C */
  	at91_add_device_i2c(NULL, 0);
@@ -4093,7 +4093,7 @@
  static void __init ek_map_io(void)
  {
  	/* Initialize processor: 18.432 MHz crystal */
-@@ -68,8 +60,11 @@
+@@ -68,8 +60,11 @@ static void __init ek_map_io(void)
  	/* Setup the LEDs */
  	at91_init_leds(AT91_PIN_PA13, AT91_PIN_PA14);
  
@@ -4107,7 +4107,7 @@
  }
  
  static void __init ek_init_irq(void)
-@@ -239,6 +234,35 @@
+@@ -239,6 +234,35 @@ static void __init ek_add_device_ts(void
  #endif
  
  /*
@@ -4143,7 +4143,7 @@
   * SPI devices
   */
  static struct spi_board_info ek_spi_devices[] = {
-@@ -252,10 +276,11 @@
+@@ -252,10 +276,11 @@ static struct spi_board_info ek_spi_devi
  	{
  		.modalias	= "ads7846",
  		.chip_select	= 2,
@@ -4156,7 +4156,7 @@
  	},
  #endif
  #if defined(CONFIG_MTD_AT91_DATAFLASH_CARD)
-@@ -271,6 +296,9 @@
+@@ -271,6 +296,9 @@ static struct spi_board_info ek_spi_devi
  		.chip_select	= 3,
  		.max_speed_hz	= 10 * 1000 * 1000,
  		.bus_num	= 0,
@@ -4166,7 +4166,7 @@
  	},
  #endif
  };
-@@ -408,24 +436,28 @@
+@@ -408,24 +436,28 @@ static struct gpio_keys_button ek_button
  		.code		= BTN_0,
  		.desc		= "Button 0",
  		.active_low	= 1,
@@ -4195,7 +4195,7 @@
  	}
  };
  
-@@ -445,13 +477,13 @@
+@@ -445,13 +477,13 @@ static struct platform_device ek_button_
  
  static void __init ek_add_device_buttons(void)
  {
@@ -4213,7 +4213,7 @@
  	at91_set_deglitch(AT91_PIN_PA24, 1);
  
  	platform_device_register(&ek_button_device);
-@@ -460,6 +492,29 @@
+@@ -460,6 +492,29 @@ static void __init ek_add_device_buttons
  static void __init ek_add_device_buttons(void) {}
  #endif
  
@@ -4243,7 +4243,7 @@
  static void __init ek_board_init(void)
  {
  	/* Serial */
-@@ -481,6 +536,9 @@
+@@ -481,6 +536,9 @@ static void __init ek_board_init(void)
  	at91_add_device_spi(ek_spi_devices, ARRAY_SIZE(ek_spi_devices));
  	/* Touchscreen */
  	ek_add_device_ts();
@@ -4253,7 +4253,7 @@
  #else
  	/* MMC */
  	at91_add_device_mmc(0, &ek_mmc_data);
-@@ -489,6 +547,11 @@
+@@ -489,6 +547,11 @@ static void __init ek_board_init(void)
  	at91_add_device_lcdc(&ek_lcdc_data);
  	/* Push Buttons */
  	ek_add_device_buttons();
@@ -4306,7 +4306,7 @@
  }
  
  static void __init ek_init_irq(void)
-@@ -141,7 +136,7 @@
+@@ -141,7 +136,7 @@ static struct spi_board_info ek_spi_devi
  	{
  		.modalias	= "ads7846",
  		.chip_select	= 3,
@@ -4315,7 +4315,7 @@
  		.bus_num	= 0,
  		.platform_data	= &ads_info,
  		.irq		= AT91SAM9263_ID_IRQ1,
-@@ -301,9 +296,9 @@
+@@ -301,9 +296,9 @@ static struct platform_device ek_button_
  
  static void __init ek_add_device_buttons(void)
  {
@@ -4327,7 +4327,7 @@
  	at91_set_deglitch(AT91_PIN_PC4, 1);
  
  	platform_device_register(&ek_button_device);
-@@ -341,7 +336,7 @@
+@@ -341,7 +336,7 @@ static struct gpio_led ek_leds[] = {
  		.name			= "ds3",
  		.gpio			= AT91_PIN_PB7,
  		.default_trigger	= "heartbeat",
@@ -4336,7 +4336,7 @@
  };
  
  
-@@ -374,6 +369,9 @@
+@@ -374,6 +369,9 @@ static void __init ek_board_init(void)
  	at91_add_device_ac97(&ek_ac97_data);
  	/* LEDs */
  	at91_gpio_leds(ek_leds, ARRAY_SIZE(ek_leds));
@@ -4387,7 +4387,7 @@
  }
  
  static void __init ek_init_irq(void)
-@@ -61,6 +56,14 @@
+@@ -61,6 +56,14 @@ static void __init ek_init_irq(void)
  
  
  /*
@@ -4402,7 +4402,7 @@
   * MCI (SD/MMC)
   */
  static struct at91_mmc_data __initdata ek_mmc_data = {
-@@ -180,6 +183,8 @@
+@@ -180,6 +183,8 @@ static void __init ek_board_init(void)
  {
  	/* Serial */
  	at91_add_device_serial();
@@ -4411,7 +4411,7 @@
  	/* I2C */
  	at91_add_device_i2c(NULL, 0);
  	/* NAND */
-@@ -190,6 +195,9 @@
+@@ -190,6 +195,9 @@ static void __init ek_board_init(void)
  	at91_add_device_mmc(0, &ek_mmc_data);
  	/* LCD Controller */
  	at91_add_device_lcdc(&ek_lcdc_data);
@@ -5278,7 +5278,7 @@
  
  
  /*
-@@ -113,12 +114,34 @@
+@@ -113,12 +114,34 @@ static void pmc_sys_mode(struct clk *clk
  		at91_sys_write(AT91_PMC_SCDR, clk->pmc_mask);
  }
  
@@ -5313,7 +5313,7 @@
  static struct clk uhpck = {
  	.name		= "uhpck",
  	.parent		= &pllb,
-@@ -254,6 +277,23 @@
+@@ -254,6 +277,23 @@ EXPORT_SYMBOL(clk_get_rate);
  
  /*------------------------------------------------------------------------*/
  
@@ -5337,7 +5337,7 @@
  #ifdef CONFIG_AT91_PROGRAMMABLE_CLOCKS
  
  /*
-@@ -362,7 +402,7 @@
+@@ -362,7 +402,7 @@ static void __init init_programmable_clo
  
  static int at91_clk_show(struct seq_file *s, void *unused)
  {
@@ -5346,7 +5346,7 @@
  	struct clk	*clk;
  
  	seq_printf(s, "SCSR = %8x\n", scsr = at91_sys_read(AT91_PMC_SCSR));
-@@ -370,7 +410,10 @@
+@@ -370,7 +410,10 @@ static int at91_clk_show(struct seq_file
  	seq_printf(s, "MOR  = %8x\n", at91_sys_read(AT91_CKGR_MOR));
  	seq_printf(s, "MCFR = %8x\n", at91_sys_read(AT91_CKGR_MCFR));
  	seq_printf(s, "PLLA = %8x\n", at91_sys_read(AT91_CKGR_PLLAR));
@@ -5358,7 +5358,7 @@
  	seq_printf(s, "MCKR = %8x\n", at91_sys_read(AT91_PMC_MCKR));
  	seq_printf(s, "SR   = %8x\n", sr = at91_sys_read(AT91_PMC_SR));
  
-@@ -383,6 +426,8 @@
+@@ -383,6 +426,8 @@ static int at91_clk_show(struct seq_file
  			state = (scsr & clk->pmc_mask) ? "on" : "off";
  		else if (clk->mode == pmc_periph_mode)
  			state = (pcsr & clk->pmc_mask) ? "on" : "off";
@@ -5367,7 +5367,7 @@
  		else if (clk->pmc_mask)
  			state = (sr & clk->pmc_mask) ? "on" : "off";
  		else if (clk == &clk32k || clk == &main_clk)
-@@ -583,6 +628,17 @@
+@@ -583,6 +628,17 @@ int __init at91_clock_init(unsigned long
  	uhpck.rate_hz = at91_usb_rate(&pllb, pllb.rate_hz, at91_pllb_usb_init);
  
  	/*
@@ -5385,7 +5385,7 @@
  	 * MCK and CPU derive from one of those primary clocks.
  	 * For now, assume this parentage won't change.
  	 */
-@@ -599,6 +655,9 @@
+@@ -599,6 +655,9 @@ int __init at91_clock_init(unsigned long
  	for (i = 0; i < ARRAY_SIZE(standard_pmc_clocks); i++)
  		list_add_tail(&standard_pmc_clocks[i]->node, &clocks);
  
@@ -5397,7 +5397,7 @@
  
 --- a/arch/arm/mach-at91/generic.h
 +++ b/arch/arm/mach-at91/generic.h
-@@ -41,6 +41,7 @@
+@@ -41,6 +41,7 @@ extern void __init at91_clock_associate(
   /* Power Management */
  extern void at91_irq_suspend(void);
  extern void at91_irq_resume(void);
@@ -5407,7 +5407,7 @@
  #define AT91RM9200_PQFP		3	/* AT91RM9200 PQFP package has 3 banks */
 --- a/arch/arm/mach-at91/gpio.c
 +++ b/arch/arm/mach-at91/gpio.c
-@@ -490,7 +490,8 @@
+@@ -490,7 +490,8 @@ postcore_initcall(at91_gpio_debugfs_init
  
  /*--------------------------------------------------------------------------*/
  
@@ -5417,7 +5417,7 @@
   * category than their parents, so it won't report false recursion.
   */
  static struct lock_class_key gpio_lock_class;
-@@ -557,6 +558,7 @@
+@@ -557,6 +558,7 @@ void __init at91_gpio_init(struct at91_g
  		data->regbase = data->offset + (void __iomem *)AT91_VA_BASE_SYS;
  
  		/* AT91SAM9263_ID_PIOCDE groups PIOC, PIOD, PIOE */
@@ -5784,7 +5784,7 @@
  
  static int at91_pm_valid_state(suspend_state_t state)
  {
-@@ -62,6 +194,7 @@
+@@ -62,6 +194,7 @@ static int at91_pm_begin(suspend_state_t
   * Verify that all the clocks are correct before entering
   * slow-clock mode.
   */
@@ -5792,7 +5792,7 @@
  static int at91_pm_verify_clocks(void)
  {
  	unsigned long scsr;
-@@ -107,24 +240,24 @@
+@@ -107,24 +240,24 @@ static int at91_pm_verify_clocks(void)
  }
  
  /*
@@ -5823,7 +5823,7 @@
  
  static int at91_pm_enter(suspend_state_t state)
  {
-@@ -158,11 +291,14 @@
+@@ -158,11 +291,14 @@ static int at91_pm_enter(suspend_state_t
  			 * turning off the main oscillator; reverse on wakeup.
  			 */
  			if (slow_clock) {
@@ -5840,7 +5840,7 @@
  				/* FALLTHROUGH leaving master clock alone */
  			}
  
-@@ -175,13 +311,15 @@
+@@ -175,13 +311,15 @@ static int at91_pm_enter(suspend_state_t
  		case PM_SUSPEND_STANDBY:
  			/*
  			 * NOTE: the Wait-for-Interrupt instruction needs to be
@@ -5860,7 +5860,7 @@
  
  		case PM_SUSPEND_ON:
  			asm("mcr p15, 0, r0, c7, c0, 4");	/* wait for interrupt */
-@@ -196,6 +334,7 @@
+@@ -196,6 +334,7 @@ static int at91_pm_enter(suspend_state_t
  			at91_sys_read(AT91_AIC_IPR) & at91_sys_read(AT91_AIC_IMR));
  
  error:
@@ -5868,7 +5868,7 @@
  	target_state = PM_SUSPEND_ON;
  	at91_irq_resume();
  	at91_gpio_resume();
-@@ -220,21 +359,20 @@
+@@ -220,21 +359,20 @@ static struct platform_suspend_ops at91_
  
  static int __init at91_pm_init(void)
  {
@@ -6186,7 +6186,7 @@
 +	.word .-at91_slow_clock
 --- a/arch/arm/mach-ks8695/Makefile
 +++ b/arch/arm/mach-ks8695/Makefile
-@@ -11,5 +11,8 @@
+@@ -11,5 +11,8 @@ obj-				:=
  # PCI support is optional
  obj-$(CONFIG_PCI)		+= pci.o
  
@@ -6197,7 +6197,7 @@
  obj-$(CONFIG_MACH_KS8695)	+= board-micrel.o
 --- a/arch/arm/mach-ks8695/devices.c
 +++ b/arch/arm/mach-ks8695/devices.c
-@@ -176,6 +176,27 @@
+@@ -176,6 +176,27 @@ static void __init ks8695_add_device_wat
  #endif
  
  
@@ -6227,7 +6227,7 @@
  /*
 --- a/arch/arm/mach-ks8695/gpio.c
 +++ b/arch/arm/mach-ks8695/gpio.c
-@@ -136,9 +136,9 @@
+@@ -136,9 +136,9 @@ int __init_or_module gpio_direction_outp
  	/* set line state */
  	x = __raw_readl(KS8695_GPIO_VA + KS8695_IOPD);
  	if (state)
@@ -6239,7 +6239,7 @@
  	__raw_writel(x, KS8695_GPIO_VA + KS8695_IOPD);
  
  	/* set pin as output */
-@@ -168,9 +168,9 @@
+@@ -168,9 +168,9 @@ void gpio_set_value(unsigned int pin, un
  	/* set output line state */
  	x = __raw_readl(KS8695_GPIO_VA + KS8695_IOPD);
  	if (state)
@@ -6251,7 +6251,7 @@
  	__raw_writel(x, KS8695_GPIO_VA + KS8695_IOPD);
  
  	local_irq_restore(flags);
-@@ -189,7 +189,7 @@
+@@ -189,7 +189,7 @@ int gpio_get_value(unsigned int pin)
  		return -EINVAL;
  
  	x = __raw_readl(KS8695_GPIO_VA + KS8695_IOPD);
@@ -6359,7 +6359,7 @@
 +__initcall(leds_init);
 --- a/arch/arm/mach-ks8695/pci.c
 +++ b/arch/arm/mach-ks8695/pci.c
-@@ -141,7 +141,7 @@
+@@ -141,7 +141,7 @@ static struct pci_ops ks8695_pci_ops = {
  	.write	= ks8695_pci_writeconfig,
  };
  
@@ -6370,7 +6370,7 @@
  }
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
-@@ -1056,5 +1056,21 @@
+@@ -1056,5 +1056,21 @@ config DEVPORT
  
  source "drivers/s390/char/Kconfig"
  
@@ -6394,7 +6394,7 @@
  
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -98,6 +98,8 @@
+@@ -98,6 +98,8 @@ obj-$(CONFIG_GPIO_DEVICE)	+= gpio_dev.o
  obj-$(CONFIG_GPIO_VR41XX)	+= vr41xx_giu.o
  obj-$(CONFIG_GPIO_TB0219)	+= tb0219.o
  obj-$(CONFIG_TELCLOCK)		+= tlclk.o
@@ -6981,7 +6981,7 @@
 +MODULE_DESCRIPTION("SPI /dev interface for Atmel AT91RM9200")
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -88,6 +88,14 @@
+@@ -88,6 +88,14 @@ config I2C_AT91
  	  to support combined I2C messages.  Use the i2c-gpio driver
  	  unless your system can cope with those limitations.
  
@@ -6996,7 +6996,7 @@
  config I2C_AU1550
  	tristate "Au1550/Au1200 SMBus interface"
  	depends on SOC_AU1550 || SOC_AU1200
-@@ -626,6 +634,14 @@
+@@ -626,6 +634,14 @@ config I2C_VOODOO3
  	  This driver can also be built as a module.  If so, the module
  	  will be called i2c-voodoo3.
  
@@ -7013,7 +7013,7 @@
  	depends on ISA
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -29,6 +29,7 @@
+@@ -29,6 +29,7 @@ obj-$(CONFIG_I2C_OMAP)		+= i2c-omap.o
  obj-$(CONFIG_I2C_PARPORT)	+= i2c-parport.o
  obj-$(CONFIG_I2C_PARPORT_LIGHT)	+= i2c-parport-light.o
  obj-$(CONFIG_I2C_PASEMI)	+= i2c-pasemi.o
@@ -7036,7 +7036,7 @@
  
  static struct clk *twi_clk;
  static void __iomem *twi_base;
-@@ -53,7 +56,7 @@
+@@ -53,7 +56,7 @@ static void __devinit at91_twi_hwinit(vo
  	at91_twi_write(AT91_TWI_CR, AT91_TWI_MSEN);	/* Set Master mode */
  
  	/* Calcuate clock dividers */
@@ -7045,7 +7045,7 @@
  	cdiv = cdiv + 1;	/* round up */
  	ckdiv = 0;
  	while (cdiv > 255) {
-@@ -61,11 +64,12 @@
+@@ -61,11 +64,12 @@ static void __devinit at91_twi_hwinit(vo
  		cdiv = cdiv >> 1;
  	}
  
@@ -7281,7 +7281,7 @@
 +MODULE_LICENSE("GPL");
 --- a/drivers/mmc/host/at91_mci.c
 +++ b/drivers/mmc/host/at91_mci.c
-@@ -659,13 +659,14 @@
+@@ -659,13 +659,14 @@ static void at91_mci_set_ios(struct mmc_
  	/* maybe switch power to the card */
  	if (host->board->vcc_pin) {
  		switch (ios->power_mode) {
@@ -7305,7 +7305,7 @@
  }
 --- a/drivers/mtd/devices/Kconfig
 +++ b/drivers/mtd/devices/Kconfig
-@@ -270,5 +270,17 @@
+@@ -270,5 +270,17 @@ config MTD_DOCPROBE_55AA
  	  LinuxBIOS or if you need to recover a DiskOnChip Millennium on which
  	  you have managed to wipe the first block.
  
@@ -7326,7 +7326,7 @@
 +endmenu
 --- a/drivers/mtd/devices/Makefile
 +++ b/drivers/mtd/devices/Makefile
-@@ -17,3 +17,4 @@
+@@ -17,3 +17,4 @@ obj-$(CONFIG_MTD_LART)		+= lart.o
  obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd.o
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
@@ -8009,7 +8009,7 @@
 +MODULE_DESCRIPTION("DataFlash driver for Atmel AT91RM9200");
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -273,12 +273,53 @@
+@@ -273,12 +273,53 @@ config MTD_NAND_CS553X
  	  If you say "m", the module will be called "cs553x_nand.ko".
  
  config MTD_NAND_AT91
@@ -8158,7 +8158,7 @@
   * Hardware specific access to control-lines
   */
  static void at91_nand_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
-@@ -44,6 +113,13 @@
+@@ -44,6 +113,13 @@ static void at91_nand_cmd_ctrl(struct mt
  	struct nand_chip *nand_chip = mtd->priv;
  	struct at91_nand_host *host = nand_chip->priv;
  
@@ -8172,7 +8172,7 @@
  	if (cmd == NAND_CMD_NONE)
  		return;
  
-@@ -65,27 +141,249 @@
+@@ -65,27 +141,249 @@ static int at91_nand_device_ready(struct
  }
  
  /*
@@ -8431,7 +8431,7 @@
  /*
   * Probe for the NAND device.
   */
-@@ -94,6 +392,8 @@
+@@ -94,6 +392,8 @@ static int __init at91_nand_probe(struct
  	struct at91_nand_host *host;
  	struct mtd_info *mtd;
  	struct nand_chip *nand_chip;
@@ -8440,7 +8440,7 @@
  	int res;
  
  #ifdef CONFIG_MTD_PARTITIONS
-@@ -108,8 +408,13 @@
+@@ -108,8 +408,13 @@ static int __init at91_nand_probe(struct
  		return -ENOMEM;
  	}
  
@@ -8456,7 +8456,7 @@
  	if (host->io_base == NULL) {
  		printk(KERN_ERR "at91_nand: ioremap failed\n");
  		kfree(host);
-@@ -119,6 +424,7 @@
+@@ -119,6 +424,7 @@ static int __init at91_nand_probe(struct
  	mtd = &host->mtd;
  	nand_chip = &host->nand_chip;
  	host->board = pdev->dev.platform_data;
@@ -8464,7 +8464,7 @@
  
  	nand_chip->priv = host;		/* link the private data structures */
  	mtd->priv = nand_chip;
-@@ -132,11 +438,40 @@
+@@ -132,11 +438,40 @@ static int __init at91_nand_probe(struct
  	if (host->board->rdy_pin)
  		nand_chip->dev_ready = at91_nand_device_ready;
  
@@ -8506,7 +8506,7 @@
  
  	platform_set_drvdata(pdev, host);
  	at91_nand_enable(host);
-@@ -149,8 +484,60 @@
+@@ -149,8 +484,60 @@ static int __init at91_nand_probe(struct
  		}
  	}
  
@@ -8569,7 +8569,7 @@
  		res = -ENXIO;
  		goto out;
  	}
-@@ -179,8 +566,11 @@
+@@ -179,8 +566,11 @@ static int __init at91_nand_probe(struct
  	if (!res)
  		return res;
  
@@ -8581,7 +8581,7 @@
  out:
  	at91_nand_disable(host);
  	platform_set_drvdata(pdev, NULL);
-@@ -192,7 +582,7 @@
+@@ -192,7 +582,7 @@ out:
  /*
   * Remove a NAND device.
   */
@@ -8590,7 +8590,7 @@
  {
  	struct at91_nand_host *host = platform_get_drvdata(pdev);
  	struct mtd_info *mtd = &host->mtd;
-@@ -208,8 +598,7 @@
+@@ -208,8 +598,7 @@ static int __devexit at91_nand_remove(st
  }
  
  static struct platform_driver at91_nand_driver = {
@@ -8600,7 +8600,7 @@
  	.driver		= {
  		.name	= "at91_nand",
  		.owner	= THIS_MODULE,
-@@ -218,7 +607,7 @@
+@@ -218,7 +607,7 @@ static struct platform_driver at91_nand_
  
  static int __init at91_nand_init(void)
  {
@@ -8609,7 +8609,7 @@
  }
  
  
-@@ -233,4 +622,4 @@
+@@ -233,4 +622,4 @@ module_exit(at91_nand_exit);
  
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Rick Bronson");
@@ -8617,7 +8617,7 @@
 +MODULE_DESCRIPTION("NAND/SmartMedia driver for AT91RM9200 / AT91SAM9 / AT91CAP9");
 --- a/drivers/net/arm/Kconfig
 +++ b/drivers/net/arm/Kconfig
-@@ -47,3 +47,10 @@
+@@ -47,3 +47,10 @@ config EP93XX_ETH
  	help
  	  This is a driver for the ethernet hardware included in EP93xx CPUs.
  	  Say Y if you are building a kernel for EP93xx based devices.
@@ -8630,14 +8630,14 @@
 +	  and enable Ethernet support, then select this option.
 --- a/drivers/net/arm/Makefile
 +++ b/drivers/net/arm/Makefile
-@@ -9,3 +9,4 @@
+@@ -9,3 +9,4 @@ obj-$(CONFIG_ARM_ETHER3)	+= ether3.o
  obj-$(CONFIG_ARM_ETHER1)	+= ether1.o
  obj-$(CONFIG_ARM_AT91_ETHER)	+= at91_ether.o
  obj-$(CONFIG_EP93XX_ETH)	+= ep93xx_eth.o
 +obj-$(CONFIG_ARM_KS8695_ETHER)	+= ks8695_ether.o
 --- a/drivers/net/arm/at91_ether.c
 +++ b/drivers/net/arm/at91_ether.c
-@@ -220,7 +220,7 @@
+@@ -220,7 +220,7 @@ static irqreturn_t at91ether_phy_interru
  		if (!(phy & (1 << 0)))
  			goto done;
  	}
@@ -8646,7 +8646,7 @@
  		read_phy(lp->phy_address, MII_TPISTATUS, &phy);		/* ack interrupt in Micrel PHY */
  		if (!(phy & ((1 << 2) | 1)))
  			goto done;
-@@ -286,7 +286,7 @@
+@@ -286,7 +286,7 @@ static void enable_phyirq(struct net_dev
  		dsintr = (1 << 15) | ( 1 << 14);
  		write_phy(lp->phy_address, MII_BCMINTR_REG, dsintr);
  	}
@@ -8655,7 +8655,7 @@
  		dsintr = (1 << 10) | ( 1 << 8);
  		write_phy(lp->phy_address, MII_TPISTATUS, dsintr);
  	}
-@@ -341,7 +341,7 @@
+@@ -341,7 +341,7 @@ static void disable_phyirq(struct net_de
  		dsintr = ~(1 << 14);
  		write_phy(lp->phy_address, MII_BCMINTR_REG, dsintr);
  	}
@@ -8664,7 +8664,7 @@
  		read_phy(lp->phy_address, MII_TPISTATUS, &dsintr);
  		dsintr = ~((1 << 10) | (1 << 8));
  		write_phy(lp->phy_address, MII_TPISTATUS, dsintr);
-@@ -820,7 +820,7 @@
+@@ -820,7 +820,7 @@ static int at91ether_tx(struct sk_buff *
  		lp->skb = skb;
  		lp->skb_length = skb->len;
  		lp->skb_physaddr = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
@@ -8673,7 +8673,7 @@
  
  		/* Set address of the data in the Transmit Address register */
  		at91_emac_write(AT91_EMAC_TAR, lp->skb_physaddr);
-@@ -843,34 +843,32 @@
+@@ -843,34 +843,32 @@ static int at91ether_tx(struct sk_buff *
   */
  static struct net_device_stats *at91ether_stats(struct net_device *dev)
  {
@@ -8723,7 +8723,7 @@
  }
  
  /*
-@@ -896,16 +894,16 @@
+@@ -896,16 +894,16 @@ static void at91ether_rx(struct net_devi
  
  			skb->protocol = eth_type_trans(skb, dev);
  			dev->last_rx = jiffies;
@@ -8743,7 +8743,7 @@
  
  		dlist->descriptors[lp->rxBuffIndex].addr &= ~EMAC_DESC_DONE;	/* reset ownership bit */
  		if (lp->rxBuffIndex == MAX_RX_DESCR-1)				/* wrap after last buffer */
-@@ -934,7 +932,7 @@
+@@ -934,7 +932,7 @@ static irqreturn_t at91ether_interrupt(i
  	if (intstatus & AT91_EMAC_TCOM) {	/* Transmit complete */
  		/* The TCOM bit is set even if the transmission failed. */
  		if (intstatus & (AT91_EMAC_TUND | AT91_EMAC_RTRY))
@@ -8752,7 +8752,7 @@
  
  		if (lp->skb) {
  			dev_kfree_skb_irq(lp->skb);
-@@ -978,15 +976,22 @@
+@@ -978,15 +976,22 @@ static int __init at91ether_setup(unsign
  	struct net_device *dev;
  	struct at91_private *lp;
  	unsigned int val;
@@ -8778,7 +8778,7 @@
  
  	/* Install the interrupt handler */
  	if (request_irq(dev->irq, at91ether_interrupt, 0, dev->name, dev)) {
-@@ -1043,7 +1048,9 @@
+@@ -1043,7 +1048,9 @@ static int __init at91ether_setup(unsign
  	} else if (machine_is_csb337()) {
  		/* mix link activity status into LED2 link state */
  		write_phy(phy_address, MII_LEDCTRL_REG, 0x0d22);
@@ -8789,7 +8789,7 @@
  	disable_mdi();
  	spin_unlock_irq(&lp->lock);
  
-@@ -1058,12 +1065,12 @@
+@@ -1058,12 +1065,12 @@ static int __init at91ether_setup(unsign
  	lp->phy_address = phy_address;	/* MDI address of PHY */
  
  	/* Register the network interface */
@@ -8805,7 +8805,7 @@
  	}
  
  	/* Determine current link speed */
-@@ -1101,6 +1108,8 @@
+@@ -1101,6 +1108,8 @@ static int __init at91ether_setup(unsign
  		printk(KERN_INFO "%s: National Semiconductor DP83848 PHY\n", dev->name);
  	else if (phy_type == MII_AC101L_ID)
  		printk(KERN_INFO "%s: Altima AC101L PHY\n", dev->name);
@@ -8814,7 +8814,7 @@
  	else if (phy_type == MII_KS8721_ID)
  		printk(KERN_INFO "%s: Micrel KS8721 PHY\n", dev->name);
  	else if (phy_type == MII_T78Q21x3_ID)
-@@ -1146,6 +1155,7 @@
+@@ -1146,6 +1155,7 @@ static int __init at91ether_probe(struct
  			case MII_DP83847_ID:		/* National Semiconductor DP83847:  */
  			case MII_DP83848_ID:		/* National Semiconductor DP83848:  */
  			case MII_AC101L_ID:		/* Altima AC101L: PHY_ID1 = 0x22, PHY_ID2 = 0x5520 */
@@ -8822,7 +8822,7 @@
  			case MII_KS8721_ID:		/* Micrel KS8721: PHY_ID1 = 0x22, PHY_ID2 = 0x1610 */
  			case MII_T78Q21x3_ID:		/* Teridian 78Q21x3: PHY_ID1 = 0x0E, PHY_ID2 = 7237 */
  			case MII_LAN83C185_ID:		/* SMSC LAN83C185: PHY_ID1 = 0x0007, PHY_ID2 = 0xC0A1 */
-@@ -1246,3 +1256,4 @@
+@@ -1246,3 +1256,4 @@ module_exit(at91ether_exit)
  MODULE_LICENSE("GPL");
  MODULE_DESCRIPTION("AT91RM9200 EMAC Ethernet driver");
  MODULE_AUTHOR("Andrew Victor");
@@ -8839,7 +8839,7 @@
  /* Micrel KS8721 PHY */
  #define MII_KS8721_ID		0x00221610
  
-@@ -84,7 +87,6 @@
+@@ -84,7 +87,6 @@ struct recv_desc_bufs
  
  struct at91_private
  {
@@ -9956,7 +9956,7 @@
 +#endif
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
-@@ -487,12 +487,12 @@
+@@ -487,12 +487,12 @@ config RTC_DRV_AT91RM9200
  	  this is powered by the backup power supply.
  
  config RTC_DRV_AT91SAM9
@@ -9985,7 +9985,7 @@
  
  #include <asm/arch/at91_rtc.h>
  
-@@ -307,12 +304,6 @@
+@@ -307,12 +304,6 @@ static int __init at91_rtc_probe(struct 
  		return ret;
  	}
  
@@ -10008,7 +10008,7 @@
  #include <asm/arch/at91_rtt.h>
  
  
-@@ -150,6 +151,9 @@
+@@ -150,6 +151,9 @@ static int at91_rtc_settime(struct devic
  	return 0;
  }
  
@@ -10018,7 +10018,7 @@
  static int at91_rtc_readalarm(struct device *dev, struct rtc_wkalrm *alrm)
  {
  	struct sam9_rtc *rtc = dev_get_drvdata(dev);
-@@ -176,6 +180,9 @@
+@@ -176,6 +180,9 @@ static int at91_rtc_readalarm(struct dev
  	return 0;
  }
  
@@ -10028,7 +10028,7 @@
  static int at91_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
  {
  	struct sam9_rtc *rtc = dev_get_drvdata(dev);
-@@ -321,10 +328,6 @@
+@@ -321,10 +328,6 @@ static int __init at91_rtc_probe(struct 
  	if (!rtc)
  		return -ENOMEM;
  
@@ -10041,7 +10041,7 @@
  	rtc->rtt += r->start;
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -113,6 +113,15 @@
+@@ -113,6 +113,15 @@ config SPI_GPIO
  
  	  If unsure, say N.
  
@@ -10059,7 +10059,7 @@
  	depends on SPI_MASTER && ARCH_IMX && EXPERIMENTAL
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -29,6 +29,7 @@
+@@ -29,6 +29,7 @@ obj-$(CONFIG_SPI_S3C24XX)		+= spi_s3c24x
  obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
  obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
  obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.o
@@ -10280,7 +10280,7 @@
 +MODULE_ALIAS("platform:at91_spi");
 --- a/drivers/usb/gadget/Kconfig
 +++ b/drivers/usb/gadget/Kconfig
-@@ -118,10 +118,10 @@
+@@ -118,10 +118,10 @@ config USB_AMD5536UDC
  config USB_GADGET_ATMEL_USBA
  	boolean "Atmel USBA"
  	select USB_GADGET_DUALSPEED
@@ -10295,7 +10295,7 @@
  	tristate
 --- a/drivers/usb/gadget/at91_udc.c
 +++ b/drivers/usb/gadget/at91_udc.c
-@@ -1827,7 +1827,7 @@
+@@ -1827,7 +1827,7 @@ static int at91udc_suspend(struct platfo
  	 */
  	if ((!udc->suspended && udc->addr)
  			|| !wake
@@ -10322,7 +10322,7 @@
  
  #ifdef CONFIG_USB_GADGET_DEBUG_FS
  #include <linux/debugfs.h>
-@@ -324,53 +326,6 @@
+@@ -324,53 +326,6 @@ static int vbus_is_present(struct usba_u
  	return 1;
  }
  
@@ -10376,7 +10376,7 @@
  static void next_fifo_transaction(struct usba_ep *ep, struct usba_request *req)
  {
  	unsigned int transaction_len;
-@@ -387,7 +342,7 @@
+@@ -387,7 +342,7 @@ static void next_fifo_transaction(struct
  		ep->ep.name, req, transaction_len,
  		req->last_transaction ? ", done" : "");
  
@@ -10385,7 +10385,7 @@
  	usba_ep_writel(ep, SET_STA, USBA_TX_PK_RDY);
  	req->req.actual += transaction_len;
  }
-@@ -476,7 +431,7 @@
+@@ -476,7 +431,7 @@ static void receive_data(struct usba_ep 
  			bytecount = req->req.length - req->req.actual;
  		}
  
@@ -10394,7 +10394,7 @@
  				ep->fifo, bytecount);
  		req->req.actual += bytecount;
  
-@@ -1029,33 +984,6 @@
+@@ -1029,33 +984,6 @@ static const struct usb_gadget_ops usba_
  	.set_selfpowered	= usba_udc_set_selfpowered,
  };
  
@@ -10428,7 +10428,7 @@
  static struct usb_endpoint_descriptor usba_ep0_desc = {
  	.bLength = USB_DT_ENDPOINT_SIZE,
  	.bDescriptorType = USB_DT_ENDPOINT,
-@@ -1074,7 +1002,6 @@
+@@ -1074,7 +1002,6 @@ static void nop_release(struct device *d
  static struct usba_udc the_udc = {
  	.gadget	= {
  		.ops		= &usba_udc_ops,
@@ -10436,7 +10436,7 @@
  		.ep_list	= LIST_HEAD_INIT(the_udc.gadget.ep_list),
  		.is_dualspeed	= 1,
  		.name		= "atmel_usba_udc",
-@@ -1231,7 +1158,7 @@
+@@ -1231,7 +1158,7 @@ static int do_test_mode(struct usba_udc 
  		} else {
  			usba_ep_writel(ep, CTL_ENB, USBA_EPT_ENABLE);
  			usba_writel(udc, TST, USBA_TST_PKT_MODE);
@@ -10445,7 +10445,7 @@
  					sizeof(test_packet_buffer));
  			usba_ep_writel(ep, SET_STA, USBA_TX_PK_RDY);
  			dev_info(dev, "Entering Test_Packet mode...\n");
-@@ -1530,13 +1457,13 @@
+@@ -1530,13 +1457,13 @@ restart:
  		DBG(DBG_HW, "Packet length: %u\n", pkt_len);
  		if (pkt_len != sizeof(crq)) {
  			pr_warning("udc: Invalid packet length %u "
@@ -10461,7 +10461,7 @@
  
  		/* Free up one bank in the FIFO so that we can
  		 * generate or receive a reply right away. */
-@@ -1908,7 +1835,7 @@
+@@ -1908,7 +1835,7 @@ static int __init usba_udc_probe(struct 
  
  	regs = platform_get_resource(pdev, IORESOURCE_MEM, CTRL_IOMEM_ID);
  	fifo = platform_get_resource(pdev, IORESOURCE_MEM, FIFO_IOMEM_ID);
@@ -10470,7 +10470,7 @@
  		return -ENXIO;
  
  	irq = platform_get_irq(pdev, 0);
-@@ -1956,16 +1883,44 @@
+@@ -1956,16 +1883,44 @@ static int __init usba_udc_probe(struct 
  	usba_writel(udc, CTRL, 0);
  	clk_disable(pclk);
  
@@ -10516,7 +10516,7 @@
  
  		list_add_tail(&ep->ep.ep_list, &udc->gadget.ep_list);
  	}
-@@ -1984,7 +1939,7 @@
+@@ -1984,7 +1939,7 @@ static int __init usba_udc_probe(struct 
  		goto err_device_add;
  	}
  
@@ -10525,7 +10525,7 @@
  		if (!gpio_request(pdata->vbus_pin, "atmel_usba_udc")) {
  			udc->vbus_pin = pdata->vbus_pin;
  
-@@ -2004,7 +1959,7 @@
+@@ -2004,7 +1959,7 @@ static int __init usba_udc_probe(struct 
  	}
  
  	usba_init_debugfs(udc);
@@ -10534,7 +10534,7 @@
  		usba_ep_init_debugfs(udc, &usba_ep[i]);
  
  	return 0;
-@@ -2012,6 +1967,8 @@
+@@ -2012,6 +1967,8 @@ static int __init usba_udc_probe(struct 
  err_device_add:
  	free_irq(irq, udc);
  err_request_irq:
@@ -10543,7 +10543,7 @@
  	iounmap(udc->fifo);
  err_map_fifo:
  	iounmap(udc->regs);
-@@ -2029,10 +1986,11 @@
+@@ -2029,10 +1986,11 @@ static int __exit usba_udc_remove(struct
  {
  	struct usba_udc *udc;
  	int i;
@@ -10558,7 +10558,7 @@
  
 --- a/drivers/usb/host/ohci-at91.c
 +++ b/drivers/usb/host/ohci-at91.c
-@@ -330,7 +330,7 @@
+@@ -330,7 +330,7 @@ ohci_hcd_at91_drv_suspend(struct platfor
  	 *
  	 * REVISIT: some boards will be able to turn VBUS off...
  	 */
@@ -10569,7 +10569,7 @@
  	}
 --- a/drivers/video/Kconfig
 +++ b/drivers/video/Kconfig
-@@ -889,6 +889,17 @@
+@@ -889,6 +889,17 @@ config FB_EPSON1355
  	  framebuffer.  Product specs at
  	  <http://www.erd.epson.com/vdc/html/products.htm>.
  
@@ -10589,7 +10589,7 @@
  	depends on FB
 --- a/drivers/video/Makefile
 +++ b/drivers/video/Makefile
-@@ -87,7 +87,8 @@
+@@ -87,7 +87,8 @@ obj-$(CONFIG_FB_G364)             += g36
  obj-$(CONFIG_FB_SA1100)           += sa1100fb.o
  obj-$(CONFIG_FB_HIT)              += hitfb.o
  obj-$(CONFIG_FB_EPSON1355)	  += epson1355fb.o
@@ -10610,7 +10610,7 @@
  #define ATMEL_LCDC_FIFO_SIZE		2048
  #else
  #define ATMEL_LCDC_FIFO_SIZE		512
-@@ -903,11 +903,45 @@
+@@ -903,11 +903,45 @@ static int __exit atmel_lcdfb_remove(str
  	return 0;
  }
  
@@ -10661,7 +10661,7 @@
  		.owner	= THIS_MODULE,
 --- a/drivers/video/backlight/Kconfig
 +++ b/drivers/video/backlight/Kconfig
-@@ -112,3 +112,11 @@
+@@ -112,3 +112,11 @@ config BACKLIGHT_CARILLO_RANCH
  	help
  	  If you have a Intel LE80578 (Carillo Ranch) say Y to enable the
  	  backlight driver.
@@ -10675,7 +10675,7 @@
 +	  backlight driver.
 --- a/drivers/video/backlight/Makefile
 +++ b/drivers/video/backlight/Makefile
-@@ -10,3 +10,4 @@
+@@ -10,3 +10,4 @@ obj-$(CONFIG_BACKLIGHT_LOCOMO)	+= locomo
  obj-$(CONFIG_BACKLIGHT_OMAP1)	+= omap1_bl.o
  obj-$(CONFIG_BACKLIGHT_PROGEAR) += progear_bl.o
  obj-$(CONFIG_BACKLIGHT_CARILLO_RANCH) += cr_bllcd.o
@@ -11507,7 +11507,7 @@
 +MODULE_LICENSE("GPL");
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -66,6 +66,14 @@
+@@ -66,6 +66,14 @@ config AT91RM9200_WATCHDOG
  	  Watchdog timer embedded into AT91RM9200 chips. This will reboot your
  	  system when the timeout is reached.
  
@@ -11524,7 +11524,7 @@
  	depends on FOOTBRIDGE
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -26,6 +26,7 @@
+@@ -26,6 +26,7 @@ obj-$(CONFIG_USBPCWATCHDOG) += pcwd_usb.
  
  # ARM Architecture
  obj-$(CONFIG_AT91RM9200_WATCHDOG) += at91rm9200_wdt.o
@@ -12556,7 +12556,7 @@
  
   /* USB Device */
  struct at91_udc_data {
-@@ -45,6 +46,9 @@
+@@ -45,6 +46,9 @@ struct at91_udc_data {
  };
  extern void __init at91_add_device_udc(struct at91_udc_data *data);
  
@@ -12566,7 +12566,7 @@
   /* Compact Flash */
  struct at91_cf_data {
  	u8	irq_pin;		/* I/O IRQ */
-@@ -158,6 +162,9 @@
+@@ -158,6 +162,9 @@ extern void __init at91_add_device_ac97(
   /* ISI */
  extern void __init at91_add_device_isi(void);
  
@@ -12578,7 +12578,7 @@
  extern void __init at91_gpio_leds(struct gpio_led *leds, int nr);
 --- a/include/asm-arm/arch-at91/cpu.h
 +++ b/include/asm-arm/arch-at91/cpu.h
-@@ -48,6 +48,17 @@
+@@ -48,6 +48,17 @@ static inline unsigned long at91_arch_id
  	return (at91_sys_read(AT91_DBGU_CIDR) & AT91_CIDR_ARCH);
  }
  
@@ -12596,7 +12596,7 @@
  
  #ifdef CONFIG_ARCH_AT91RM9200
  #define cpu_is_at91rm9200()	(at91_cpu_identify() == ARCH_ID_AT91RM9200)
-@@ -83,8 +94,12 @@
+@@ -83,8 +94,12 @@ static inline unsigned long at91_arch_id
  
  #ifdef CONFIG_ARCH_AT91CAP9
  #define cpu_is_at91cap9()	(at91_cpu_identify() == ARCH_ID_AT91CAP9)
@@ -12858,7 +12858,7 @@
  #elif defined(CONFIG_ARCH_AT91SAM9RL)
 --- a/include/asm-arm/arch-ks8695/devices.h
 +++ b/include/asm-arm/arch-ks8695/devices.h
-@@ -18,6 +18,11 @@
+@@ -18,6 +18,11 @@ extern void __init ks8695_add_device_wan
  extern void __init ks8695_add_device_lan(void);
  extern void __init ks8695_add_device_hpna(void);
  
@@ -12872,7 +12872,7 @@
  #define KS8695_MODE_MINIPCI	1
 --- a/include/linux/clk.h
 +++ b/include/linux/clk.h
-@@ -121,4 +121,24 @@
+@@ -121,4 +121,24 @@ int clk_set_parent(struct clk *clk, stru
   */
  struct clk *clk_get_parent(struct clk *clk);
  
@@ -12935,7 +12935,7 @@
 +
 --- a/include/video/atmel_lcdc.h
 +++ b/include/video/atmel_lcdc.h
-@@ -39,6 +39,7 @@
+@@ -39,6 +39,7 @@ struct atmel_lcdfb_info {
  	u8			bl_power;
  #endif
  	bool			lcdcon_is_backlight;
@@ -12969,7 +12969,7 @@
  static struct clk *pck1_clk;
  static struct clk *pllb_clk;
  
-@@ -276,7 +268,6 @@
+@@ -276,7 +268,6 @@ static struct platform_device *eti_b1_sn
  static int __init eti_b1_init(void)
  {
  	int ret;
@@ -12977,7 +12977,7 @@
  	struct at91_ssc_periph *ssc = eti_b1_dai.cpu_dai->private_data;
  
  	if (!request_mem_region(AT91RM9200_BASE_SSC1, SZ_16K, "soc-audio")) {
-@@ -310,19 +301,12 @@
+@@ -310,19 +301,12 @@ static int __init eti_b1_init(void)
  		goto fail_io_unmap;
  	}
  
@@ -13005,7 +13005,7 @@
  	 * Set PCK1 parent to PLLB and its rate to 12 Mhz.
 --- a/sound/spi/at73c213.c
 +++ b/sound/spi/at73c213.c
-@@ -114,7 +114,11 @@
+@@ -114,7 +114,11 @@ snd_at73c213_write_reg(struct snd_at73c2
  static struct snd_pcm_hardware snd_at73c213_playback_hw = {
  	.info		= SNDRV_PCM_INFO_INTERLEAVED |
  			  SNDRV_PCM_INFO_BLOCK_TRANSFER,

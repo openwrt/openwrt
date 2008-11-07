@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-at91/Kconfig
 +++ b/arch/arm/mach-at91/Kconfig
-@@ -151,6 +151,12 @@
+@@ -151,6 +151,12 @@ config MACH_TT9200
  	help
  	  Select this if you are using Toptech's TT9200 board.
  
@@ -15,7 +15,7 @@
  # ----------------------------------------------------------
 --- a/arch/arm/mach-at91/Makefile
 +++ b/arch/arm/mach-at91/Makefile
-@@ -29,6 +29,7 @@
+@@ -29,6 +29,7 @@ obj-$(CONFIG_MACH_KB9200)	+= board-kb920
  obj-$(CONFIG_MACH_ATEB9200)	+= board-eb9200.o
  obj-$(CONFIG_MACH_KAFA)		+= board-kafa.o
  obj-$(CONFIG_MACH_CHUB)		+= board-chub.o

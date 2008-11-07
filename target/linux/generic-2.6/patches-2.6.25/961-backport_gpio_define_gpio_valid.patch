@@ -18,7 +18,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 
 --- a/Documentation/gpio.txt
 +++ b/Documentation/gpio.txt
-@@ -107,6 +107,16 @@
+@@ -107,6 +107,16 @@ type of GPIO controller, and on one part
  The numbers need not be contiguous; either of those platforms could also
  use numbers 2000-2063 to identify GPIOs in a bank of I2C GPIO expanders.
  
@@ -37,7 +37,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -99,7 +99,7 @@
+@@ -99,7 +99,7 @@ int gpiochip_add(struct gpio_chip *chip)
  	 * dynamic allocation.  We don't currently support that.
  	 */
  
@@ -46,7 +46,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		status = -EINVAL;
  		goto fail;
  	}
-@@ -174,7 +174,7 @@
+@@ -174,7 +174,7 @@ int gpio_request(unsigned gpio, const ch
  
  	spin_lock_irqsave(&gpio_lock, flags);
  
@@ -55,7 +55,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		goto done;
  	desc = &gpio_desc[gpio];
  	if (desc->chip == NULL)
-@@ -209,7 +209,7 @@
+@@ -209,7 +209,7 @@ void gpio_free(unsigned gpio)
  	unsigned long		flags;
  	struct gpio_desc	*desc;
  
@@ -64,7 +64,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		WARN_ON(extra_checks);
  		return;
  	}
-@@ -245,7 +245,7 @@
+@@ -245,7 +245,7 @@ const char *gpiochip_is_requested(struct
  {
  	unsigned gpio = chip->base + offset;
  
@@ -73,7 +73,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		return NULL;
  	if (test_bit(FLAG_REQUESTED, &gpio_desc[gpio].flags) == 0)
  		return NULL;
-@@ -276,7 +276,7 @@
+@@ -276,7 +276,7 @@ int gpio_direction_input(unsigned gpio)
  
  	spin_lock_irqsave(&gpio_lock, flags);
  
@@ -82,7 +82,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		goto fail;
  	chip = desc->chip;
  	if (!chip || !chip->get || !chip->direction_input)
-@@ -314,7 +314,7 @@
+@@ -314,7 +314,7 @@ int gpio_direction_output(unsigned gpio,
  
  	spin_lock_irqsave(&gpio_lock, flags);
  
@@ -91,7 +91,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		goto fail;
  	chip = desc->chip;
  	if (!chip || !chip->set || !chip->direction_output)
-@@ -531,7 +531,7 @@
+@@ -531,7 +531,7 @@ static int gpiolib_show(struct seq_file 
  
  	/* REVISIT this isn't locked against gpio_chip removal ... */
  
@@ -115,7 +115,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  struct seq_file;
  struct module;
  
-@@ -99,6 +105,16 @@
+@@ -99,6 +105,16 @@ extern int __gpio_cansleep(unsigned gpio
  
  #else
  

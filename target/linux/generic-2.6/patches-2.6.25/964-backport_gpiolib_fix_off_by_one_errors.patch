@@ -17,7 +17,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -127,7 +127,7 @@
+@@ -127,7 +127,7 @@ int __init gpiochip_reserve(int start, i
  	unsigned long flags;
  	int i;
  
@@ -26,7 +26,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  		return -EINVAL;
  
  	spin_lock_irqsave(&gpio_lock, flags);
-@@ -170,7 +170,7 @@
+@@ -170,7 +170,7 @@ int gpiochip_add(struct gpio_chip *chip)
  	unsigned	id;
  	int		base = chip->base;
  
@@ -35,7 +35,7 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  			&& base >= 0) {
  		status = -EINVAL;
  		goto fail;
-@@ -207,7 +207,7 @@
+@@ -207,7 +207,7 @@ fail:
  	/* failures here can mean systems won't boot... */
  	if (status)
  		pr_err("gpiochip_add: gpios %d..%d (%s) not registered\n",
