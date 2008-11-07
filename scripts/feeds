@@ -48,6 +48,33 @@ sub parse_config() {
 	close FEEDS;
 }
 
+sub update_location($$)
+{
+	my $name = shift;
+	my $url  = shift;
+	my $old_url;
+
+	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
+
+	if( open LOC, "< ./feeds/$name.tmp/location" )
+	{
+		chomp($old_url = readline LOC);
+		close LOC;
+	}
+
+	if( !$old_url || $old_url ne $url )
+	{
+		if( open LOC, "> ./feeds/$name.tmp/location" )
+		{
+			print LOC $url, "\n";
+			close LOC;
+		}
+		return $old_url ? 1 : 0;
+	}
+
+	return 0;	
+}
+
 sub update_index($)
 {
 	my $name = shift;
@@ -62,11 +89,12 @@ sub update_index($)
 	return 0;
 }
 
-sub update_svn($$) {
+sub update_svn($$$) {
 	my $name = shift;
 	my $src = shift;
+	my $relocate = shift;
 
-	if (-d "./feeds/$name/.svn" ) {
+	if ( !$relocate && -d "./feeds/$name/.svn" ) {
 		system("(cd \"./feeds/$name\"; svn up)") == 0 or return 1;
 	} else {
 		system("rm -rf \"./feeds/$name\"");
@@ -76,30 +104,34 @@ sub update_svn($$) {
 	return 0;
 }
 
-sub update_cpy($$) {
+sub update_cpy($$$) {
 	my $name = shift;
 	my $src = shift;
+	my $relocate = shift;
 
+	$relocate && system("rm -rf \"./feeds/$name\"");
 	system("mkdir -p ./feeds/$name");
 	system("cp -Rf $src ./feeds");
 
 	return 0;
 }
 
-sub update_link($$) {
+sub update_link($$$) {
 	my $name = shift;
 	my $src = abs_path(shift);
+	my $relocate = shift;	# no-op
 
 	system("rm -f ./feeds/$name; ln -s $src ./feeds/$name");
 
 	return 0;
 }
 
-sub update_git($$) {
+sub update_git($$$) {
 	my $name = shift;
 	my $src = shift;
+	my $relocate = shift;
 
-	if (-d "./feeds/$name/.git" ) {
+	if ( !$relocate && -d "./feeds/$name/.git" ) {
 		system("GIT_DIR=./feeds/$name/.git git pull") == 0 or return 1;
 	} else {
 		system("rm -rf \"./feeds/$name\"");
@@ -416,7 +448,11 @@ sub update_feed($$$$)
 	my $name=shift;
 	my $src=shift;
 	my $perform_update=shift;
+	my $force_relocate=update_location( $name, "@$src" );
 
+	if( $force_relocate ) {
+		warn "Source of feed $name has changed, replacing copy\n";
+	}
 	$update_method{$type} or do {
 		warn "Unknown type '$type' in feed $name\n";
 		return 1;
@@ -425,7 +461,7 @@ sub update_feed($$$$)
 		my $failed = 1;
 		foreach my $feedsrc (@$src) {
 			warn "Updating feed '$name' from '$feedsrc' ...\n";
-			next unless &{$update_method{$type}}($name, $feedsrc) == 0;
+			next unless &{$update_method{$type}}($name, $feedsrc, $force_relocate) == 0;
 			$failed = 0;
 			last;
 		}
