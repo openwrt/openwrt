@@ -1,0 +1,41 @@
+--- a/drivers/mmc/host/gpiommc.c
++++ b/drivers/mmc/host/gpiommc.c
+@@ -8,11 +8,13 @@
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+ 
+-#include <linux/mmc/gpiommc.h>
+ #include <linux/platform_device.h>
+ #include <linux/list.h>
+ #include <linux/mutex.h>
++#include <linux/mmc/gpiommc.h>
++#include <linux/mmc/host.h>
+ #include <linux/spi/spi_gpio.h>
++#include <linux/spi/mmc_spi.h>
+ #include <linux/configfs.h>
+ #include <linux/gpio.h>
+ #include <asm/atomic.h>
+@@ -25,6 +27,7 @@ struct gpiommc_device {
+ 	struct platform_device *pdev;
+ 	struct platform_device *spi_pdev;
+ 	struct spi_board_info boardinfo;
++	struct mmc_spi_platform_data mmc_spi_data;
+ };
+ 
+ 
+@@ -46,6 +49,7 @@ static int gpiommc_boardinfo_setup(struc
+ 	bi->max_speed_hz = pdata->max_bus_speed;
+ 	bi->bus_num = master->bus_num;
+ 	bi->mode = pdata->mode;
++	bi->platform_data = &d->mmc_spi_data;
+ 
+ 	return 0;
+ }
+@@ -75,6 +79,7 @@ static int gpiommc_probe(struct platform
+ 	if (!d)
+ 		goto error;
+ 	d->pdev = pdev;
++	d->mmc_spi_data.ocr_mask = MMC_VDD_32_33 | MMC_VDD_33_34;
+ 
+ 	/* Create the SPI-GPIO device */
+ 	d->spi_pdev = platform_device_alloc(SPI_GPIO_PLATDEV_NAME,
