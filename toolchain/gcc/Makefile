@@ -23,11 +23,33 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=gcc
 PKG_VERSION:=$(call qstrip,$(CONFIG_GCC_VERSION))
 
+PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+
+ifeq ($(PKG_VERSION),3.4.6)
+  PKG_MD5SUM:=4a21ac777d4b5617283ce488b808da7b
+endif
+ifeq ($(PKG_VERSION),4.1.2)
+  PKG_MD5SUM:=a4a3eb15c96030906d8494959eeda23c
+endif
+ifeq ($(PKG_VERSION),4.2.0)
+  PKG_MD5SUM:=4798c23548dc791ea12a139e18940684
+endif
+ifeq ($(PKG_VERSION),4.2.1)
+  PKG_MD5SUM:=cba410e6ff70f7d7f4be7a0267707fd0
+endif
+ifeq ($(PKG_VERSION),4.2.2)
+  PKG_MD5SUM:=7ae33781417a35a2eb03ee098a9f4490
+endif
+ifeq ($(PKG_VERSION),4.2.3)
+  PKG_MD5SUM:=ef2a4d9991b3644115456ea05b2b8163
+endif
+ifeq ($(PKG_VERSION),4.2.4)
+  PKG_MD5SUM:=d79f553e7916ea21c556329eacfeaa16
+endif
+
 PATCH_DIR=./patches/$(PKG_VERSION)
-PKG_SOURCE_URL:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(PKG_VERSION) \
-	http://mirrors.rcn.net/pub/sourceware/gcc/releases/gcc-$(PKG_VERSION) \
-	ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(PKG_VERSION)
-PKG_SOURCE:=gcc-$(PKG_VERSION).tar.bz2
+
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 override CONFIG_AUTOREBUILD=
