@@ -12,37 +12,37 @@ PKG_VERSION:=$(call qstrip,$(CONFIG_UCLIBC_VERSION))
 PKG_EXTRAVERSION:=$(call qstrip,$(CONFIG_UCLIBC_EXTRA_VERSION))
 PKG_VERSION_SNAPSHOT:=$(call qstrip,$(CONFIG_UCLIBC_VERSION_SNAPSHOT))
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
-PKG_SOURCE_URL:=http://www.uclibc.org/downloads/snapshots
-PKG_SOURCE:=uClibc-snapshot.tar.bz2
+  PKG_SOURCE_URL:=http://www.uclibc.org/downloads/snapshots
+  PKG_SOURCE:=uClibc-snapshot.tar.bz2
 else
-PKG_SOURCE_URL:=http://www.uclibc.org/downloads
-PKG_SOURCE:=uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION).tar.bz2
+  PKG_SOURCE_URL:=http://www.uclibc.org/downloads
+  PKG_SOURCE:=uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION).tar.bz2
 endif
 PATCH_DIR:=./patches/$(PKG_VERSION)$(PKG_EXTRAVERSION)
 CONFIG_DIR:=./config/$(PKG_VERSION)$(PKG_EXTRAVERSION)
 
 ifeq ($(PKG_VERSION),0.9.28)
-ifeq ($(PKG_EXTRAVERSION),.2)
-PKG_MD5SUM:=959f25286e317f0d9e2103445c5a14c2
-endif
-ifeq ($(PKG_EXTRAVERSION),.3)
-PKG_MD5SUM:=428405a36b4662980d9343b32089b5a6
-endif
+  ifeq ($(PKG_EXTRAVERSION),.2)
+    PKG_MD5SUM:=959f25286e317f0d9e2103445c5a14c2
+  endif
+  ifeq ($(PKG_EXTRAVERSION),.3)
+    PKG_MD5SUM:=428405a36b4662980d9343b32089b5a6
+  endif
 endif
 
 ifeq ($(PKG_VERSION),0.9.29)
-ifeq ($(PKG_EXTRAVERSION),)
-# currently the default version, no special sub-directory needed
-PATCH_DIR:=./patches
-CONFIG_DIR:=./config
-PKG_MD5SUM:=61dc55f43b17a38a074f347e74095b20
-endif
+  ifeq ($(PKG_EXTRAVERSION),)
+    # currently the default version, no special sub-directory needed
+    PATCH_DIR:=./patches
+    CONFIG_DIR:=./config
+    PKG_MD5SUM:=61dc55f43b17a38a074f347e74095b20
+  endif
 endif
 
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
-PATCH_DIR:=
-CONFIG_DIR:=./config
-PKG_MD5SUM:=
+  PATCH_DIR:=
+  CONFIG_DIR:=./config
+  PKG_MD5SUM:=
 endif
 
 PKG_CAT:=bzcat
@@ -50,9 +50,9 @@ PKG_CAT:=bzcat
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
-PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_EXTRAVERSION)
+  PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_EXTRAVERSION)
 else
-PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
+  PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
 endif
 override CONFIG_AUTOREBUILD=
 
