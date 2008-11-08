@@ -204,7 +204,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	/* Build the tag */
 	strcpy(tag.tagver, IMAGETAG_VER);
 	strncpy(tag.sig1, IMAGETAG_MAGIC1, sizeof(tag.sig1) - 1);
-	strncpy(tag.sig2, IMAGETAG_MAGIC2, sizeof(tag.sig1) - 1);
+	strncpy(tag.sig2, IMAGETAG_MAGIC2, sizeof(tag.sig2) - 1);
 	strcpy(tag.chipid, chipid);
 	strcpy(tag.boardid, boardid);
 	strcpy(tag.bigendian, "1");
