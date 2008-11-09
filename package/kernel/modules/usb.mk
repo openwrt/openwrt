@@ -140,7 +140,7 @@ define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   KCONFIG:=CONFIG_USB_EHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,ehci-hcd)
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd)
 endef
 
 define KernelPackage/usb2/description
