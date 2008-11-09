@@ -18,7 +18,7 @@ ifneq ($(CONFIG_LINUX_2_6_27),)
 else
   PKG_VERSION:=2008-08-06
   PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
-  PATCH_DIR:=./patches-old
+  PATCH_DIR:=$(if $(CONFIG_TARGET_brcm47xx),./patches-brcm,./patches-old)
 endif
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
@@ -30,6 +30,7 @@ STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-mac8021
 define KernelPackage/mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=Linux 802.11 Wireless Networking Stack
+  URL:=http://linuxwireless.org/
   DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools @!TARGET_avr32
   FILES:= \
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
@@ -138,7 +139,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci @LINUX_2_6_27
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci @LINUX_2_6_27||@LINUX_2_6_28
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
@@ -156,7 +157,7 @@ $(eval $(call Download,zd1211rw))
 define KernelPackage/zd1211rw
   SUBMENU:=Wireless Drivers
   TITLE:=Zydas ZD1211 support
-  DEPENDS:=@LINUX_2_6_24||@LINUX_2_6_25||@LINUX_2_6_26||@LINUX_2_6_27 @USB_SUPPORT +kmod-usb-core +kmod-mac80211
+  DEPENDS:= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
 endef
@@ -164,9 +165,29 @@ endef
 define KernelPackage/ath5k
   SUBMENU:=Wireless Drivers
   TITLE:=Atheros 5xxx wireless cards support
+  URL:=http://linuxwireless.org/en/users/Drivers/ath5k
   DEPENDS+= @PCI_SUPPORT +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath5k/ath5k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath5k)
+endef
+
+define KernelPackage/ath5k/description
+This module adds support for wireless adapters based on
+Atheros 5xxx chipset.
+endef
+
+define KernelPackage/ath9k-new
+  SUBMENU:=Wireless Drivers
+  TITLE:=Atheros 802.11n wireless cards support
+  URL:=http://linuxwireless.org/en/users/Drivers/ath9k
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @LINUX_2_6_27||@LINUX_2_6_28 @!kmod-ath9k
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,ath9k)
+endef
+
+define KernelPackage/ath9k-new/description
+This module adds support for wireless adapters based on
+Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
 
 define KernelPackage/mac80211-hwsim
@@ -175,6 +196,76 @@ define KernelPackage/mac80211-hwsim
   DEPENDS+= +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,mac80211_hwsim)
+endef
+
+#Broadcom firmware
+PKG_B43_FWV4_NAME:=broadcom-wl
+PKG_B43_FWV4_VERSION:=4.150.10.5
+PKG_B43_FWV4_OBJECT:=driver/wl_apsta_mimo.o
+PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+PKG_B43_FWV4_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+
+PKG_B43_FWV3_NAME:=wl_apsta
+PKG_B43_FWV3_VERSION:=3.130.20.0
+PKG_B43_FWV3_SOURCE:=$(PKG_B43_FWV3_NAME)-$(PKG_B43_FWV3_VERSION).o
+PKG_B43_FWV3_SOURCE_URL:=http://downloads.openwrt.org/sources/
+PKG_B43_FWV3_MD5SUM:=e08665c5c5b66beb9c3b2dd54aa80cb3
+
+PKG_B43_FWCUTTER_NAME:=b43-fwcutter
+PKG_B43_FWCUTTER_VERSION:=011
+PKG_B43_FWCUTTER_SOURCE:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION).tar.bz2
+PKG_B43_FWCUTTER_SOURCE_URL:=http://bu3sch.de/b43/fwcutter/
+PKG_B43_FWCUTTER_MD5SUM:=3db2f4de85a459451f5b391cf67a8d44
+
+define Download/b43-common
+  FILE:=$(PKG_B43_FWCUTTER_SOURCE)
+  URL:=$(PKG_B43_FWCUTTER_SOURCE_URL)
+  MD5SUM:=$(PKG_B43_FWCUTTER_MD5SUM)
+endef
+$(eval $(call Download,b43-common))
+
+define Download/b43
+  FILE:=$(PKG_B43_FWV4_SOURCE)
+  URL:=$(PKG_B43_FWV4_SOURCE_URL)
+  MD5SUM:=$(PKG_B43_FWV4_MD5SUM)
+endef
+$(eval $(call Download,b43))
+
+define Download/b43legacy
+  FILE:=$(PKG_B43_FWV3_SOURCE)
+  URL:=$(PKG_B43_FWV3_SOURCE_URL)
+  MD5SUM:=$(PKG_B43_FWV3_MD5SUM)
+endef
+$(eval $(call Download,b43legacy))
+
+define KernelPackage/b43-common
+  SUBMENU:=Wireless Drivers
+  TITLE:=Generic stuff for Broadcom wireless devices
+  URL:=http://linuxwireless.org/en/users/Drivers/b43
+  DEPENDS:=@TARGET_brcm47xx +kmod-mac80211
+endef
+
+define KernelPackage/b43
+$(call KernelPackage/b43-common)
+  TITLE:=Broadcom 43xx wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43/b43.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,b43)
+endef
+
+define KernelPackage/b43/description
+Kernel module for Broadcom 43xx wireless support (mac80211 stack) new
+endef
+
+define KernelPackage/b43legacy
+$(call KernelPackage/b43-common)
+  TITLE:=Broadcom 43xx-legacy wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43legacy/b43legacy.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,b43legacy)
+endef
+
+define KernelPackage/b43legacy/description
+Kernel module for Broadcom 43xx-legacy wireless support (mac80211 stack) new
 endef
 
 BUILDFLAGS:= \
@@ -208,6 +299,10 @@ define Build/Prepare
 	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2860FW)
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	$(if $(CONFIG_TARGET_brcm47xx),rm -rf $(PKG_BUILD_DIR)/include/linux/ssb)
+	rm $(PKG_BUILD_DIR)/include/net/ieee80211_crypt.h
+	rm $(PKG_BUILD_DIR)/include/net/ieee80211.h
+	rm $(PKG_BUILD_DIR)/include/net/ieee80211_radiotap.h
+	rm $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-mac80211),)
@@ -251,6 +346,31 @@ define KernelPackage/zd1211rw/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
 endef
 
+define Build/b43-common
+	tar xjf "$(DL_DIR)/$(PKG_B43_FWCUTTER_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)" \
+		CFLAGS="-I$(STAGING_DIR_HOST)/include -include endian.h"
+endef
+
+define KernelPackage/b43/install
+	$(call Build/b43-common)
+	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	$(INSTALL_DIR) $(1)/lib/firmware/
+
+	$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/b43-fwcutter \
+	-w $(1)/lib/firmware/ \
+	$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/$(PKG_B43_FWV4_OBJECT)
+endef
+
+define KernelPackage/b43legacy/install
+	$(call Build/b43-common)
+	$(INSTALL_DIR) $(1)/lib/firmware/
+
+	$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/b43-fwcutter \
+	-w $(1)/lib/firmware/ \
+	$(DL_DIR)/$(PKG_B43_FWV3_SOURCE)
+endef
+
 $(eval $(call KernelPackage,ath5k))
 $(eval $(call KernelPackage,mac80211))
 $(eval $(call KernelPackage,rt2x00-lib))
@@ -264,3 +384,6 @@ $(eval $(call KernelPackage,rt73-usb))
 $(eval $(call KernelPackage,rt2800-pci))
 $(eval $(call KernelPackage,zd1211rw))
 $(eval $(call KernelPackage,mac80211-hwsim))
+$(eval $(call KernelPackage,ath9k-new))
+$(eval $(call KernelPackage,b43))
+$(eval $(call KernelPackage,b43legacy))

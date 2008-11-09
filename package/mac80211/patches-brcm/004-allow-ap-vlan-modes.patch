@@ -1,0 +1,25 @@
+Subject: mac80211: allow AP and VLAN modes
+
+This patch allows switching interfaces into AP/VLAN modes using
+cfg80211 (nl80211). Don't allow doing it with wext because then
+people will just attempt to do it manually (without hostapd) and
+complain that it doesn't work.
+
+Signed-off-by: Johannes Berg <johannes@sipsolutions.net>
+---
+ net/mac80211/cfg.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- everything.orig/net/mac80211/cfg.c	2008-08-06 21:38:13.000000000 +0200
++++ everything/net/mac80211/cfg.c	2008-08-06 21:38:24.000000000 +0200
+@@ -33,6 +33,10 @@ nl80211_type_to_mac80211_type(enum nl802
+ 	case NL80211_IFTYPE_MESH_POINT:
+ 		return IEEE80211_IF_TYPE_MESH_POINT;
+ #endif
++	case NL80211_IFTYPE_AP:
++		return IEEE80211_IF_TYPE_AP;
++	case NL80211_IFTYPE_AP_VLAN:
++		return IEEE80211_IF_TYPE_VLAN;
+ 	case NL80211_IFTYPE_WDS:
+ 		return IEEE80211_IF_TYPE_WDS;
+ 	default:
