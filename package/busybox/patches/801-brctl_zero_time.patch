@@ -1,0 +1,13 @@
+--- a/networking/brctl.c
++++ b/networking/brctl.c
+@@ -34,8 +34,9 @@ static ALWAYS_INLINE void strtotimeval(s
+ {
+ 	double secs;
+ #if BRCTL_USE_INTERNAL
++	errno = 0;
+ 	secs = /*bb_*/strtod(time_str, NULL);
+-	if (!secs)
++	if (errno)
+ #else
+ 	if (sscanf(time_str, "%lf", &secs) != 1)
+ #endif
