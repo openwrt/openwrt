@@ -169,6 +169,14 @@ define KernelPackage/ath5k
   AUTOLOAD:=$(call AutoLoad,27,ath5k)
 endef
 
+define KernelPackage/mac80211-hwsim
+  SUBMENU:=Wireless Drivers
+  TITLE:=mac80211 HW simulation device
+  DEPENDS+= +kmod-mac80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,mac80211_hwsim)
+endef
+
 BUILDFLAGS:= \
 	-I$(PKG_BUILD_DIR)/include \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
@@ -255,3 +263,4 @@ $(eval $(call KernelPackage,rt61-pci))
 $(eval $(call KernelPackage,rt73-usb))
 $(eval $(call KernelPackage,rt2800-pci))
 $(eval $(call KernelPackage,zd1211rw))
+$(eval $(call KernelPackage,mac80211-hwsim))
