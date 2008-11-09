@@ -71,6 +71,16 @@ ifeq ($(CONFIG_X86_VDI_IMAGES),y)
   endef
 endif
 
+ifeq ($(CONFIG_X86_VMDK_IMAGES),y)
+  define Image/Build/vmdk
+    # left here because the image builder doesnt need these
+    ifeq ($(1),ext2)
+		rm $(BIN_DIR)/openwrt-$(BOARD)-ext2.vmdk || true
+		qemu-img convert -f raw $(BIN_DIR)/openwrt-$(BOARD)-ext2.image \
+			-O vmdk $(BIN_DIR)/openwrt-$(BOARD)-ext2.vmdk
+    endif
+  endef
+endif
 
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
@@ -103,6 +113,7 @@ define Image/Build
 	$(call Image/Build/$(1))
 	$(call Image/Build/grub,$(1))
 	$(call Image/Build/vdi,$(1))
+	$(call Image/Build/vmdk,$(1))
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).fs
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-vmlinuz
 endef
@@ -115,3 +126,8 @@ ifeq ($(CONFIG_X86_VDI_IMAGES),y)
   ))
 endif
 
+ifeq ($(CONFIG_X86_VMDK_IMAGES),y)
+   $(eval $(call RequireCommand,qemu-img, \
+	You need qemu-img to generate VMware images. \
+   ))
+endif
