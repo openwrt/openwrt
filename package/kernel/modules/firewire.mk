@@ -48,7 +48,9 @@ $(eval $(call KernelPackage,ohci1394))
 define KernelPackage/sbp2
   $(call firewiredep,kmod-ohci1394)
   TITLE:=Support for SBP-2 devices over FireWire
-  KCONFIG:=CONFIG_IEEE1394_SBP2
+  KCONFIG:= \
+  	CONFIG_IEEE1394_SBP2 \
+	CONFIG_IEEE1394_SBP2_PHYS_DMA=n
   FILES:=$(LINUX_DIR)/drivers/ieee1394/sbp2.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,sbp2)
 endef
