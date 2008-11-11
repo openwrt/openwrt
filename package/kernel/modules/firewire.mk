@@ -17,6 +17,7 @@ endef
 define KernelPackage/ieee1394
   SUBMENU:=$(FIREWIRE_MENU)
   TITLE:=Support for FireWire
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_IEEE1394
   FILES:=$(LINUX_DIR)/drivers/ieee1394/ieee1394.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ieee1394)
