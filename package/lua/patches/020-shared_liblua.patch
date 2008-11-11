@@ -129,7 +129,7 @@ Index: lua-5.1.4/src/Makefile
 -$(LUA_T): $(LUA_O) $(LUA_A)
 -	$(CC) -o $@ $(MYLDFLAGS) $(LUA_O) $(LUA_A) $(LIBS)
 +$(LUA_SO): $(CORE_O) $(LIB_O)
-+	$(CC) -o $@.$(PKG_VERSION) -shared -soname="$@.$(PKG_VERSION)" $? -nostdlib -lgcc
++	$(CC) -o $@.$(PKG_VERSION) -shared -Wl,-soname="$@.$(PKG_VERSION)" $?
 +	ln -fs $@.$(PKG_VERSION) $@
 +
 +$(LUA_T): $(LUA_O) $(LUA_SO)
