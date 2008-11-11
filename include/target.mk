@@ -14,7 +14,7 @@ DEVICE_TYPE?=router
 # Default packages - the really basic set
 DEFAULT_PACKAGES:=base-files libgcc uclibc busybox dropbear mtd uci opkg
 # For router targets
-DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper bridge firewall
+DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
 # LuCI
 DEFAULT_PACKAGES.router+=luci-admin-full luci-admin-mini luci-i18n-english luci-app-firewall luci-sgi-cgi
 

@@ -49,14 +49,14 @@ config BUSYBOX_CONFIG_ARPING
 
 config BUSYBOX_CONFIG_BRCTL
 	bool "brctl"
-	default n
+	default y
 	help
 	  Manage ethernet bridges.
 	  Supports addbr/delbr and addif/delif.
 
 config BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
 	bool "Fancy options"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_BRCTL
 	help
 	  Add support for extended option like:
@@ -67,7 +67,7 @@ config BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
 
 config BUSYBOX_CONFIG_FEATURE_BRCTL_SHOW
 	bool "Support show, showmac and showstp"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_BRCTL && BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
 	help
 	  Add support for option which prints the current config:
