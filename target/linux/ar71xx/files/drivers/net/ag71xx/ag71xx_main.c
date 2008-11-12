@@ -85,7 +85,7 @@ static int ag71xx_ring_alloc(struct ag71xx_ring *ring, unsigned int size)
 
 	return 0;
 
-err:
+ err:
 	return err;
 }
 
@@ -341,7 +341,7 @@ static int ag71xx_open(struct net_device *dev)
 
 	return 0;
 
-err:
+ err:
 	ag71xx_rings_cleanup(ag);
 	return ret;
 }
@@ -419,7 +419,7 @@ static int ag71xx_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	return 0;
 
-err_drop:
+ err_drop:
 	dev->stats.tx_dropped++;
 
 	dev_kfree_skb(skb);
@@ -812,19 +812,19 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 
 	return 0;
 
-err_unregister_netdev:
+ err_unregister_netdev:
 	unregister_netdev(dev);
-err_free_irq:
+ err_free_irq:
 	free_irq(dev->irq, dev);
-err_unmap_mii_ctrl:
+ err_unmap_mii_ctrl:
 	iounmap(ag->mii_ctrl);
-err_unmap_base2:
+ err_unmap_base2:
 	iounmap(ag->mac_base2);
-err_unmap_base1:
+ err_unmap_base1:
 	iounmap(ag->mac_base);
-err_free_dev:
+ err_free_dev:
 	kfree(dev);
-err_out:
+ err_out:
 	platform_set_drvdata(pdev, NULL);
 	return err;
 }
@@ -871,9 +871,9 @@ static int __init ag71xx_module_init(void)
 
 	return 0;
 
-err_mdio_exit:
+ err_mdio_exit:
 	ag71xx_mdio_driver_exit();
-err_out:
+ err_out:
 	return ret;
 }
 
