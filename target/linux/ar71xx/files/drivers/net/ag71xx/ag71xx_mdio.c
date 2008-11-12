@@ -69,7 +69,7 @@ static int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
 
 	DBG("mii_read: addr=%04x, reg=%04x, value=%04x\n", addr, reg, ret);
 
-out:
+ out:
 	return ret;
 }
 
@@ -184,11 +184,11 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	ag71xx_mdio_bus = am;
 	return 0;
 
-err_iounmap:
+ err_iounmap:
 	iounmap(am->mdio_base);
-err_free_mdio:
+ err_free_mdio:
 	kfree(am);
-err_out:
+ err_out:
 	return err;
 }
 
