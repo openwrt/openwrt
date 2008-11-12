@@ -373,51 +373,84 @@
  	return err;
  }
  
-@@ -210,32 +246,109 @@ static int block2mtd_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -210,52 +246,29 @@ static int block2mtd_write(struct mtd_in
  static void block2mtd_sync(struct mtd_info *mtd)
  {
  	struct block2mtd_dev *dev = mtd->priv;
 -	sync_blockdev(dev->blkdev);
-+
+-	return;
+-}
+-
+-
+-static void block2mtd_free_device(struct block2mtd_dev *dev)
+-{
+-	if (!dev)
+-		return;
+-
+-	kfree(dev->mtd.name);
+ 
+-	if (dev->blkdev) {
+-		invalidate_mapping_pages(dev->blkdev->bd_inode->i_mapping,
+-					0, -1);
+-		close_bdev_excl(dev->blkdev);
+-	}
 +	read_lock(&dev->bdev_mutex);
 +	if (dev->blkdev)
 +		sync_blockdev(dev->blkdev);
 +	read_unlock(&dev->bdev_mutex);
-+
- 	return;
+ 
+-	kfree(dev);
++	return;
  }
  
  
+-/* FIXME: ensure that mtd->size % erase_size == 0 */
+-static struct block2mtd_dev *add_device(char *devname, int erase_size, const char *mtdname)
 +static int _open_bdev(struct block2mtd_dev *dev)
-+{
-+	struct block_device *bdev;
-+
-+	/* Get a handle on the device */
+ {
+ 	struct block_device *bdev;
+-	struct block2mtd_dev *dev;
+-	struct mtd_partition *part;
+-	char *name;
+-
+-	if (!devname)
+-		return NULL;
+-
+-	dev = kzalloc(sizeof(struct block2mtd_dev), GFP_KERNEL);
+-	if (!dev)
+-		return NULL;
+ 
+ 	/* Get a handle on the device */
+-	bdev = open_bdev_excl(devname, O_RDWR, NULL);
 +	bdev = open_bdev_excl(dev->devname, O_RDWR, NULL);
-+#ifndef MODULE
-+	if (IS_ERR(bdev)) {
-+
-+		/* We might not have rootfs mounted at this point. Try
-+		   to resolve the device name by other means. */
-+
+ #ifndef MODULE
+ 	if (IS_ERR(bdev)) {
+ 
+ 		/* We might not have rootfs mounted at this point. Try
+ 		   to resolve the device name by other means. */
+ 
+-		dev_t devt = name_to_dev_t(devname);
 +		dev_t devt = name_to_dev_t(dev->devname);
-+		if (devt) {
-+			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
-+		}
-+	}
-+#endif
-+
-+	if (IS_ERR(bdev)) {
+ 		if (devt) {
+ 			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
+ 		}
+@@ -263,17 +276,97 @@ static struct block2mtd_dev *add_device(
+ #endif
+ 
+ 	if (IS_ERR(bdev)) {
+-		ERROR("error: cannot open device %s", devname);
+-		goto devinit_err;
 +		ERROR("error: cannot open device %s", dev->devname);
 +		return 1;
-+	}
-+	dev->blkdev = bdev;
-+
-+	if (MAJOR(bdev->bd_dev) == MTD_BLOCK_MAJOR) {
-+		ERROR("attempting to use an MTD device as a block device");
+ 	}
+ 	dev->blkdev = bdev;
+ 
+ 	if (MAJOR(bdev->bd_dev) == MTD_BLOCK_MAJOR) {
+ 		ERROR("attempting to use an MTD device as a block device");
+-		goto devinit_err;
 +		return 1;
-+	}
-+
+ 	}
+ 
 +	return 0;
 +}
 +
@@ -434,12 +467,12 @@
 +	dev->blkdev = NULL;
 +}
 +
- static void block2mtd_free_device(struct block2mtd_dev *dev)
- {
- 	if (!dev)
- 		return;
- 
- 	kfree(dev->mtd.name);
++static void block2mtd_free_device(struct block2mtd_dev *dev)
++{
++	if (!dev)
++		return;
++
++	kfree(dev->mtd.name);
 +	_close_bdev(dev);
 +	kfree(dev);
 +}
@@ -457,11 +490,7 @@
 +
 +	/* get the device number for the whole disk */
 +	devt = MKDEV(MAJOR(dev->blkdev->bd_dev), 0);
- 
--	if (dev->blkdev) {
--		invalidate_mapping_pages(dev->blkdev->bd_inode->i_mapping,
--					0, -1);
--		close_bdev_excl(dev->blkdev);
++
 +	/* close the old block device */
 +	_close_bdev(dev);
 +
@@ -471,70 +500,42 @@
 +		err = -EINVAL;
 +	else {
 +		err = rescan_partitions(bdev->bd_disk, bdev);
- 	}
++	}
 +	if (bdev)
 +		close_bdev_excl(bdev);
- 
--	kfree(dev);
--}
++
 +	/* try to open the partition block device again */
 +	_open_bdev(dev);
 +	write_unlock(&dev->bdev_mutex);
- 
++
 +	return err;
 +}
- 
- /* FIXME: ensure that mtd->size % erase_size == 0 */
--static struct block2mtd_dev *add_device(char *devname, int erase_size, const char *mtdname)
++
++/* FIXME: ensure that mtd->size % erase_size == 0 */
 +static struct block2mtd_dev *add_device(char *devname, int erase_size, char *mtdname)
- {
--	struct block_device *bdev;
- 	struct block2mtd_dev *dev;
- 	struct mtd_partition *part;
- 	char *name;
-@@ -243,37 +356,17 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size, const cha
- 	if (!devname)
- 		return NULL;
- 
--	dev = kzalloc(sizeof(struct block2mtd_dev), GFP_KERNEL);
++{
++	struct block2mtd_dev *dev;
++	struct mtd_partition *part;
++	char *name;
++
++	if (!devname)
++		return NULL;
++
 +	dev = kzalloc(sizeof(struct block2mtd_dev) + strlen(devname) + 1, GFP_KERNEL);
- 	if (!dev)
- 		return NULL;
- 
--	/* Get a handle on the device */
--	bdev = open_bdev_excl(devname, O_RDWR, NULL);
--#ifndef MODULE
--	if (IS_ERR(bdev)) {
--
--		/* We might not have rootfs mounted at this point. Try
--		   to resolve the device name by other means. */
++	if (!dev)
++		return NULL;
++
 +	strcpy(dev->devname, devname);
- 
--		dev_t devt = name_to_dev_t(devname);
--		if (devt) {
--			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
--		}
--	}
--#endif
--
--	if (IS_ERR(bdev)) {
--		ERROR("error: cannot open device %s", devname);
++
 +	if (_open_bdev(dev))
- 		goto devinit_err;
--	}
--	dev->blkdev = bdev;
--
--	if (MAJOR(bdev->bd_dev) == MTD_BLOCK_MAJOR) {
--		ERROR("attempting to use an MTD device as a block device");
--		goto devinit_err;
--	}
- 
++		goto devinit_err;
++
  	mutex_init(&dev->write_mutex);
 +	rwlock_init(&dev->bdev_mutex);
  
  	if (!mtdname)
  		mtdname = devname;
-@@ -297,6 +408,7 @@ static struct block2mtd_dev *add_device(
+@@ -297,6 +390,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;

@@ -17,8 +17,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  create mode 100644 drivers/usb/host/ohci-bcm63xx.c
  create mode 100644 include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ohci.h
 
-diff --git a/arch/mips/bcm63xx/Kconfig b/arch/mips/bcm63xx/Kconfig
-index 7ca370a..f2ddb87 100644
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
 @@ -4,8 +4,14 @@ menu "CPU support"
@@ -36,8 +34,6 @@ index 7ca370a..f2ddb87 100644
 +	select USB_OHCI_BIG_ENDIAN_DESC
 +	select USB_OHCI_BIG_ENDIAN_MMIO
  endmenu
-diff --git a/arch/mips/bcm63xx/Makefile b/arch/mips/bcm63xx/Makefile
-index 456e915..75f0d54 100644
 --- a/arch/mips/bcm63xx/Makefile
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -1,4 +1,5 @@
@@ -46,9 +42,6 @@ index 456e915..75f0d54 100644
  obj-y		+= dev-pcmcia.o
 +obj-y		+= dev-usb-ohci.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
-diff --git a/arch/mips/bcm63xx/dev-usb-ohci.c b/arch/mips/bcm63xx/dev-usb-ohci.c
-new file mode 100644
-index 0000000..377e67c
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-usb-ohci.c
 @@ -0,0 +1,50 @@
@@ -102,9 +95,6 @@ index 0000000..377e67c
 +	ohci_resources[1].start = bcm63xx_get_irq_number(IRQ_OHCI0);
 +	return platform_device_register(&bcm63xx_ohci_device);
 +}
-diff --git a/drivers/usb/host/ohci-bcm63xx.c b/drivers/usb/host/ohci-bcm63xx.c
-new file mode 100644
-index 0000000..08807d9
 --- /dev/null
 +++ b/drivers/usb/host/ohci-bcm63xx.c
 @@ -0,0 +1,159 @@
@@ -267,8 +257,6 @@ index 0000000..08807d9
 +};
 +
 +MODULE_ALIAS("platform:bcm63xx_ohci");
-diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
-index 8990196..7e360ef 100644
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
 @@ -1050,6 +1050,11 @@ MODULE_LICENSE ("GPL");
@@ -283,11 +271,9 @@ index 8990196..7e360ef 100644
  #if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
      defined(CONFIG_CPU_SUBTYPE_SH7721) || \
      defined(CONFIG_CPU_SUBTYPE_SH7763)
-diff --git a/drivers/usb/host/ohci.h b/drivers/usb/host/ohci.h
-index faf622e..947e240 100644
 --- a/drivers/usb/host/ohci.h
 +++ b/drivers/usb/host/ohci.h
-@@ -549,6 +549,11 @@ static inline struct usb_hcd *ohci_to_hcd (const struct ohci_hcd *ohci)
+@@ -549,6 +549,11 @@ static inline struct usb_hcd *ohci_to_hc
  #define writel_be(val, addr)	out_be32((__force unsigned *)addr, val)
  #endif
  
@@ -299,7 +285,7 @@ index faf622e..947e240 100644
  static inline unsigned int _ohci_readl (const struct ohci_hcd *ohci,
  					__hc32 __iomem * regs)
  {
-@@ -654,7 +659,7 @@ static inline u32 hc32_to_cpup (const struct ohci_hcd *ohci, const __hc32 *x)
+@@ -654,7 +659,7 @@ static inline u32 hc32_to_cpup (const st
   * some big-endian SOC implementations.  Same thing happens with PSW access.
   */
  
@@ -308,9 +294,6 @@ index faf622e..947e240 100644
  #define big_endian_frame_no_quirk(ohci)	(ohci->flags & OHCI_QUIRK_FRAME_NO)
  #else
  #define big_endian_frame_no_quirk(ohci)	0
-diff --git a/include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ohci.h b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ohci.h
-new file mode 100644
-index 0000000..518a04d
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ohci.h
 @@ -0,0 +1,6 @@
@@ -320,6 +303,3 @@ index 0000000..518a04d
 +int bcm63xx_ohci_register(void);
 +
 +#endif /* BCM63XX_DEV_USB_OHCI_H_ */
--- 
-1.5.4.3
-

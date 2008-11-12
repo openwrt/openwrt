@@ -1,7 +1,6 @@
-diff -urN linux-2.6.27.4/arch/mips/bcm63xx/boards/Kconfig linux-2.6.27.4.new/arch/mips/bcm63xx/boards/Kconfig
---- linux-2.6.27.4/arch/mips/bcm63xx/boards/Kconfig	2008-11-03 20:00:41.000000000 +0100
-+++ linux-2.6.27.4.new/arch/mips/bcm63xx/boards/Kconfig	2008-11-03 20:02:45.000000000 +0100
-@@ -7,4 +7,9 @@
+--- a/arch/mips/bcm63xx/boards/Kconfig
++++ b/arch/mips/bcm63xx/boards/Kconfig
+@@ -7,4 +7,9 @@ config BOARD_BCM963XX
         bool "Generic Broadcom 963xx boards"
         help
  
@@ -11,15 +10,13 @@ diff -urN linux-2.6.27.4/arch/mips/bcm63xx/boards/Kconfig linux-2.6.27.4.new/arc
 +	  Boards using RedBoot.
 +
  endchoice
-diff -urN linux-2.6.27.4/arch/mips/bcm63xx/boards/Makefile linux-2.6.27.4.new/arch/mips/bcm63xx/boards/Makefile
---- linux-2.6.27.4/arch/mips/bcm63xx/boards/Makefile	2008-11-03 20:00:41.000000000 +0100
-+++ linux-2.6.27.4.new/arch/mips/bcm63xx/boards/Makefile	2008-11-03 20:01:34.000000000 +0100
+--- a/arch/mips/bcm63xx/boards/Makefile
++++ b/arch/mips/bcm63xx/boards/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_BOARD_BCM963XX)		+= board_bcm963xx.o
 +obj-$(CONFIG_BOARD_LIVEBOX)		+= board_livebox.o
-diff -urN linux-2.6.27.4/arch/mips/bcm63xx/boards/board_livebox.c linux-2.6.27.4.new/arch/mips/bcm63xx/boards/board_livebox.c
---- linux-2.6.27.4/arch/mips/bcm63xx/boards/board_livebox.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.27.4.new/arch/mips/bcm63xx/boards/board_livebox.c	2008-11-03 20:03:59.000000000 +0100
+--- /dev/null
++++ b/arch/mips/bcm63xx/boards/board_livebox.c
 @@ -0,0 +1,172 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public

@@ -21,8 +21,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  create mode 100644 include/asm-mips/mach-bcm63xx/bcm63xx_board.h
  create mode 100644 include/asm-mips/mach-bcm63xx/board_bcm963xx.h
 
-diff --git a/arch/mips/bcm63xx/Kconfig b/arch/mips/bcm63xx/Kconfig
-index be120f7..8c192e7 100644
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
 @@ -17,3 +17,5 @@ config BCM63XX_CPU_6358
@@ -31,8 +29,6 @@ index be120f7..8c192e7 100644
  endmenu
 +
 +source "arch/mips/bcm63xx/boards/Kconfig"
-diff --git a/arch/mips/bcm63xx/Makefile b/arch/mips/bcm63xx/Makefile
-index 5358093..10462ae 100644
 --- a/arch/mips/bcm63xx/Makefile
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -5,3 +5,5 @@ obj-y		+= dev-usb-ohci.o
@@ -41,9 +37,6 @@ index 5358093..10462ae 100644
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
 +
 +obj-y		+= boards/
-diff --git a/arch/mips/bcm63xx/boards/Kconfig b/arch/mips/bcm63xx/boards/Kconfig
-new file mode 100644
-index 0000000..da5eeaa
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/Kconfig
 @@ -0,0 +1,10 @@
@@ -57,16 +50,10 @@ index 0000000..da5eeaa
 +       help
 +
 +endchoice
-diff --git a/arch/mips/bcm63xx/boards/Makefile b/arch/mips/bcm63xx/boards/Makefile
-new file mode 100644
-index 0000000..af07c1a
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_BOARD_BCM963XX)		+= board_bcm963xx.o
-diff --git a/arch/mips/bcm63xx/boards/board_bcm963xx.c b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-new file mode 100644
-index 0000000..6e2b4ae
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
 @@ -0,0 +1,328 @@
@@ -398,8 +385,6 @@ index 0000000..6e2b4ae
 +	return 0;
 +}
 +
-diff --git a/arch/mips/bcm63xx/prom.c b/arch/mips/bcm63xx/prom.c
-index f0b49e8..d97ceed 100644
 --- a/arch/mips/bcm63xx/prom.c
 +++ b/arch/mips/bcm63xx/prom.c
 @@ -9,6 +9,7 @@
@@ -420,8 +405,6 @@ index f0b49e8..d97ceed 100644
  }
  
  void __init prom_free_prom_memory(void)
-diff --git a/arch/mips/bcm63xx/setup.c b/arch/mips/bcm63xx/setup.c
-index 4d8b127..c4516fb 100644
 --- a/arch/mips/bcm63xx/setup.c
 +++ b/arch/mips/bcm63xx/setup.c
 @@ -16,6 +16,7 @@
@@ -432,7 +415,7 @@ index 4d8b127..c4516fb 100644
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_regs.h>
  #include <bcm63xx_io.h>
-@@ -87,8 +88,9 @@ static void __bcm63xx_machine_reboot(char *p)
+@@ -87,8 +88,9 @@ static void __bcm63xx_machine_reboot(cha
  const char *get_system_type(void)
  {
  	static char buf[128];
@@ -466,9 +449,6 @@ index 4d8b127..c4516fb 100644
  }
 +
 +device_initcall(bcm63xx_register_devices);
-diff --git a/include/asm-mips/mach-bcm63xx/bcm63xx_board.h b/include/asm-mips/mach-bcm63xx/bcm63xx_board.h
-new file mode 100644
-index 0000000..fa3e7e6
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/bcm63xx_board.h
 @@ -0,0 +1,12 @@
@@ -484,9 +464,6 @@ index 0000000..fa3e7e6
 +int board_register_devices(void);
 +
 +#endif /* ! BCM63XX_BOARD_H_ */
-diff --git a/include/asm-mips/mach-bcm63xx/board_bcm963xx.h b/include/asm-mips/mach-bcm63xx/board_bcm963xx.h
-new file mode 100644
-index 0000000..17e4e7e
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/board_bcm963xx.h
 @@ -0,0 +1,50 @@
@@ -540,6 +517,3 @@ index 0000000..17e4e7e
 +};
 +
 +#endif /* ! BOARD_BCM963XX_H_ */
--- 
-1.5.4.3
-

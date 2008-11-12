@@ -69,7 +69,7 @@
  
  static struct page *page_read(struct address_space *mapping, int index)
  {
-@@ -510,7 +542,9 @@ static int block2mtd_setup2(const char *val)
+@@ -510,7 +542,9 @@ static int block2mtd_setup2(const char *
  	if (token[2] && (strlen(token[2]) + 1 > 80))
  		parse_err("mtd device name too long");
  
@@ -100,7 +100,7 @@
  	VMLINUX_SYMBOL(__per_cpu_start) = .;				\
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
-@@ -174,16 +174,8 @@ static int __init fs_names_setup(char *str)
+@@ -174,16 +174,8 @@ static int __init fs_names_setup(char *s
  	return 1;
  }
  
@@ -185,7 +185,7 @@
  static int __init kernel_init(void * unused)
  {
  	lock_kernel();
-@@ -873,7 +882,16 @@ static int __init kernel_init(void * unused)
+@@ -873,7 +882,16 @@ static int __init kernel_init(void * unu
  
  	if (sys_access((const char __user *) ramdisk_execute_command, 0) != 0) {
  		ramdisk_execute_command = NULL;

@@ -17,8 +17,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  create mode 100644 drivers/usb/host/ehci-bcm63xx.c
  create mode 100644 include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ehci.h
 
-diff --git a/arch/mips/bcm63xx/Kconfig b/arch/mips/bcm63xx/Kconfig
-index f2ddb87..be120f7 100644
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
 @@ -14,4 +14,6 @@ config BCM63XX_CPU_6358
@@ -28,19 +26,14 @@ index f2ddb87..be120f7 100644
 +	select USB_ARCH_HAS_EHCI
 +	select USB_EHCI_BIG_ENDIAN_MMIO
  endmenu
-diff --git a/arch/mips/bcm63xx/Makefile b/arch/mips/bcm63xx/Makefile
-index 75f0d54..99e335d 100644
 --- a/arch/mips/bcm63xx/Makefile
 +++ b/arch/mips/bcm63xx/Makefile
-@@ -2,4 +2,5 @@ obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o
+@@ -2,4 +2,5 @@ obj-y		+= clk.o cpu.o cs.o gpio.o irq.o 
  obj-y		+= dev-uart.o
  obj-y		+= dev-pcmcia.o
  obj-y		+= dev-usb-ohci.o
 +obj-y		+= dev-usb-ehci.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
-diff --git a/arch/mips/bcm63xx/dev-usb-ehci.c b/arch/mips/bcm63xx/dev-usb-ehci.c
-new file mode 100644
-index 0000000..7885405
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-usb-ehci.c
 @@ -0,0 +1,50 @@
@@ -94,9 +87,6 @@ index 0000000..7885405
 +	ehci_resources[1].start = bcm63xx_get_irq_number(IRQ_EHCI0);
 +	return platform_device_register(&bcm63xx_ehci_device);
 +}
-diff --git a/drivers/usb/host/ehci-bcm63xx.c b/drivers/usb/host/ehci-bcm63xx.c
-new file mode 100644
-index 0000000..2fef571
 --- /dev/null
 +++ b/drivers/usb/host/ehci-bcm63xx.c
 @@ -0,0 +1,152 @@
@@ -252,8 +242,6 @@ index 0000000..2fef571
 +};
 +
 +MODULE_ALIAS("platform:bcm63xx_ehci");
-diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
-index 8409e07..3230ba3 100644
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
 @@ -1040,6 +1040,11 @@ MODULE_LICENSE ("GPL");
@@ -268,11 +256,9 @@ index 8409e07..3230ba3 100644
  #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
      !defined(PS3_SYSTEM_BUS_DRIVER) && !defined(OF_PLATFORM_DRIVER)
  #error "missing bus glue for ehci-hcd"
-diff --git a/drivers/usb/host/ehci.h b/drivers/usb/host/ehci.h
-index 5799298..71d0eca 100644
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -755,6 +755,11 @@ ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
+@@ -755,6 +755,11 @@ ehci_port_speed(struct ehci_hcd *ehci, u
  #define writel_be(val, addr)	__raw_writel(val, (__force unsigned *)addr)
  #endif
  
@@ -284,9 +270,6 @@ index 5799298..71d0eca 100644
  static inline unsigned int ehci_readl(const struct ehci_hcd *ehci,
  		__u32 __iomem * regs)
  {
-diff --git a/include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ehci.h b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ehci.h
-new file mode 100644
-index 0000000..17fb519
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_usb_ehci.h
 @@ -0,0 +1,6 @@
@@ -296,6 +279,3 @@ index 0000000..17fb519
 +int bcm63xx_ehci_register(void);
 +
 +#endif /* BCM63XX_DEV_USB_EHCI_H_ */
--- 
-1.5.4.3
-

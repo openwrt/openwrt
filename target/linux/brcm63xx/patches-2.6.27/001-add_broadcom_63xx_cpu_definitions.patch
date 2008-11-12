@@ -10,8 +10,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  include/asm-mips/cpu.h       |    7 +++++++
  3 files changed, 36 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
-index e621fda..9775315 100644
 --- a/arch/mips/kernel/cpu-probe.c
 +++ b/arch/mips/kernel/cpu-probe.c
 @@ -153,6 +153,10 @@ void __init check_wait(void)
@@ -25,7 +23,7 @@ index e621fda..9775315 100644
  		cpu_wait = r4k_wait;
  		break;
  
-@@ -802,11 +806,28 @@ static inline void cpu_probe_broadcom(struct cpuinfo_mips *c)
+@@ -802,11 +806,28 @@ static inline void cpu_probe_broadcom(st
  	decode_configs(c);
  	switch (c->processor_id & 0xff00) {
  	case PRID_IMP_BCM3302:
@@ -54,7 +52,7 @@ index e621fda..9775315 100644
  	default:
  		c->cputype = CPU_UNKNOWN;
  		break;
-@@ -892,6 +913,10 @@ static __cpuinit const char *cpu_to_name(struct cpuinfo_mips *c)
+@@ -892,6 +913,10 @@ static __cpuinit const char *cpu_to_name
  	case CPU_SR71000:	name = "Sandcraft SR71000"; break;
  	case CPU_BCM3302:	name = "Broadcom BCM3302"; break;
  	case CPU_BCM4710:	name = "Broadcom BCM4710"; break;
@@ -65,11 +63,9 @@ index e621fda..9775315 100644
  	case CPU_PR4450:	name = "Philips PR4450"; break;
  	case CPU_LOONGSON2:	name = "ICT Loongson-2"; break;
  	default:
-diff --git a/arch/mips/mm/tlbex.c b/arch/mips/mm/tlbex.c
-index 979cf91..f6deda3 100644
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -317,6 +317,10 @@ static void __cpuinit build_tlb_write_entry(u32 **p, struct uasm_label **l,
+@@ -317,6 +317,10 @@ static void __cpuinit build_tlb_write_en
  	case CPU_BCM3302:
  	case CPU_BCM4710:
  	case CPU_LOONGSON2:
@@ -80,8 +76,6 @@ index 979cf91..f6deda3 100644
  		if (m4kc_tlbp_war())
  			uasm_i_nop(p);
  		tlbw(p);
-diff --git a/include/asm-mips/cpu.h b/include/asm-mips/cpu.h
-index 229a786..538bcde 100644
 --- a/include/asm-mips/cpu.h
 +++ b/include/asm-mips/cpu.h
 @@ -112,6 +112,12 @@
@@ -105,6 +99,3 @@ index 229a786..538bcde 100644
  
  	/*
  	 * MIPS64 class processors
--- 
-1.5.4.3
-

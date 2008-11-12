@@ -9,8 +9,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  arch/mips/pci/pci-bcm63xx.c |   44 +++++++
  2 files changed, 332 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/pci/ops-bcm63xx.c b/arch/mips/pci/ops-bcm63xx.c
-index f8dce9d..822ae17 100644
 --- a/arch/mips/pci/ops-bcm63xx.c
 +++ b/arch/mips/pci/ops-bcm63xx.c
 @@ -177,3 +177,291 @@ struct pci_ops bcm63xx_pci_ops = {
@@ -305,11 +303,9 @@ index f8dce9d..822ae17 100644
 +
 +DECLARE_PCI_FIXUP_ENABLE(PCI_ANY_ID, PCI_ANY_ID, bcm63xx_fixup);
 +#endif
-diff --git a/arch/mips/pci/pci-bcm63xx.c b/arch/mips/pci/pci-bcm63xx.c
-index 52bac8e..601700d 100644
 --- a/arch/mips/pci/pci-bcm63xx.c
 +++ b/arch/mips/pci/pci-bcm63xx.c
-@@ -28,7 +28,11 @@ static struct resource bcm_pci_mem_resource = {
+@@ -28,7 +28,11 @@ static struct resource bcm_pci_mem_resou
  static struct resource bcm_pci_io_resource = {
  	.name   = "bcm63xx PCI IO space",
  	.start  = BCM_PCI_IO_BASE_PA,
@@ -321,7 +317,7 @@ index 52bac8e..601700d 100644
  	.flags  = IORESOURCE_IO
  };
  
-@@ -38,6 +42,33 @@ struct pci_controller bcm63xx_controller = {
+@@ -38,6 +42,33 @@ struct pci_controller bcm63xx_controller
  	.mem_resource	= &bcm_pci_mem_resource,
  };
  
@@ -384,6 +380,3 @@ index 52bac8e..601700d 100644
  	/* mark memory space used for IO mapping as reserved */
  	request_mem_region(BCM_PCI_IO_BASE_PA, BCM_PCI_IO_SIZE,
  			   "bcm63xx PCI IO space");
--- 
-1.5.4.3
-
