@@ -13,9 +13,9 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
-@@ -262,6 +262,13 @@
- 	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
- 	  these boards and would like to use the flash chips on it, say 'Y'.
+@@ -257,6 +257,13 @@ config MTD_ALCHEMY
+ 	help
+ 	  Flash memory access on AMD Alchemy Pb/Db/RDK Reference Boards
  
 +config MTD_BCM963XX
 +        tristate "BCM963xx Flash device"
@@ -29,7 +29,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -39,7 +39,7 @@
+@@ -39,7 +39,7 @@ static inline int redboot_checksum(struc
  	return 1;
  }
  
@@ -38,7 +38,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
                               struct mtd_partition **pparts,
                               unsigned long fis_origin)
  {
-@@ -161,6 +161,14 @@
+@@ -162,6 +162,14 @@ static int parse_redboot_partitions(stru
  		goto out;
  	}
  
@@ -53,7 +53,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  	for (i = 0; i < numslots; i++) {
  		struct fis_list *new_fl, **prev;
  
-@@ -183,9 +191,8 @@
+@@ -184,9 +192,8 @@ static int parse_redboot_partitions(stru
  		new_fl->img = &buf[i];
                  if (fis_origin) {
                          buf[i].flash_base -= fis_origin;
@@ -64,9 +64,9 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  
  		/* I'm sure the JFFS2 code has done me permanent damage.
  		 * I now think the following is _normal_
---- linux-2.6.27/drivers/mtd/maps/Makefile	2008-10-10 00:13:53.000000000 +0200
-+++ linux-2.6.27.new/drivers/mtd/maps/Makefile	2008-10-20 14:22:52.000000000 +0200
-@@ -65,3 +65,4 @@
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -65,3 +65,4 @@ obj-$(CONFIG_MTD_PLATRAM)	+= plat-ram.o
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_INTEL_VR_NOR)	+= intel_vr_nor.o
  obj-$(CONFIG_MTD_BFIN_ASYNC)	+= bfin-async-flash.o

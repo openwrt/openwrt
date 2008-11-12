@@ -17,17 +17,12 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  create mode 100644 drivers/serial/bcm63xx_uart.c
  create mode 100644 include/asm-mips/mach-bcm63xx/bcm63xx_dev_uart.h
 
-diff --git a/arch/mips/bcm63xx/Makefile b/arch/mips/bcm63xx/Makefile
-index 4fc0a1c..8f3299e 100644
 --- a/arch/mips/bcm63xx/Makefile
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -1,2 +1,3 @@
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o
 +obj-y		+= dev-uart.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
-diff --git a/arch/mips/bcm63xx/dev-uart.c b/arch/mips/bcm63xx/dev-uart.c
-new file mode 100644
-index 0000000..5f3d89c
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-uart.c
 @@ -0,0 +1,41 @@
@@ -72,8 +67,6 @@ index 0000000..5f3d89c
 +	uart_resources[1].start = bcm63xx_get_irq_number(IRQ_UART0);
 +	return platform_device_register(&bcm63xx_uart_device);
 +}
-diff --git a/drivers/serial/Kconfig b/drivers/serial/Kconfig
-index 77cb342..52b31a4 100644
 --- a/drivers/serial/Kconfig
 +++ b/drivers/serial/Kconfig
 @@ -1421,4 +1421,23 @@ config SPORT_BAUD_RATE
@@ -100,11 +93,9 @@ index 77cb342..52b31a4 100644
 +	  you can make it the console by answering Y to this option.
 +
  endmenu
-diff --git a/drivers/serial/Makefile b/drivers/serial/Makefile
-index 7e7383e..84f6cfc 100644
 --- a/drivers/serial/Makefile
 +++ b/drivers/serial/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_SERIAL_CLPS711X) += clps711x.o
+@@ -24,6 +24,7 @@ obj-$(CONFIG_SERIAL_CLPS711X) += clps711
  obj-$(CONFIG_SERIAL_PXA) += pxa.o
  obj-$(CONFIG_SERIAL_PNX8XXX) += pnx8xxx_uart.o
  obj-$(CONFIG_SERIAL_SA1100) += sa1100.o
@@ -112,9 +103,6 @@ index 7e7383e..84f6cfc 100644
  obj-$(CONFIG_SERIAL_BFIN) += bfin_5xx.o
  obj-$(CONFIG_SERIAL_BFIN_SPORT) += bfin_sport_uart.o
  obj-$(CONFIG_SERIAL_SAMSUNG) += samsung.o
-diff --git a/drivers/serial/bcm63xx_uart.c b/drivers/serial/bcm63xx_uart.c
-new file mode 100644
-index 0000000..606f4d6
 --- /dev/null
 +++ b/drivers/serial/bcm63xx_uart.c
 @@ -0,0 +1,890 @@
@@ -1008,9 +996,6 @@ index 0000000..606f4d6
 +MODULE_AUTHOR("Maxime Bizon <mbizon@freebox.fr>");
 +MODULE_DESCRIPTION("Broadcom 63<xx integrated uart driver");
 +MODULE_LICENSE("GPL");
-diff --git a/include/asm-mips/mach-bcm63xx/bcm63xx_dev_uart.h b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_uart.h
-new file mode 100644
-index 0000000..bf348f5
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_uart.h
 @@ -0,0 +1,6 @@
@@ -1020,8 +1005,6 @@ index 0000000..bf348f5
 +int bcm63xx_uart_register(void);
 +
 +#endif /* BCM63XX_DEV_UART_H_ */
-diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
-index 3b2f6c0..f49ddff 100644
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
 @@ -155,6 +155,8 @@
@@ -1033,6 +1016,3 @@ index 3b2f6c0..f49ddff 100644
  #ifdef __KERNEL__
  
  #include <linux/compiler.h>
--- 
-1.5.4.3
-

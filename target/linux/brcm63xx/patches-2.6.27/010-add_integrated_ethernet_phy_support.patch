@@ -11,11 +11,9 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  3 files changed, 139 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/phy/bcm63xx.c
 
-diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index d55932a..a5d2c2d 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -56,6 +56,12 @@ config BROADCOM_PHY
+@@ -62,6 +62,12 @@ config BROADCOM_PHY
  	  Currently supports the BCM5411, BCM5421, BCM5461, BCM5464, BCM5481
  	  and BCM5482 PHYs.
  
@@ -28,21 +26,16 @@ index d55932a..a5d2c2d 100644
  config ICPLUS_PHY
  	tristate "Drivers for ICPlus PHYs"
  	---help---
-diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index eee329f..0d43f58 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -11,6 +11,7 @@ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
+@@ -12,6 +12,7 @@ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
  obj-$(CONFIG_SMSC_PHY)		+= smsc.o
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
 +obj-$(CONFIG_BCM63XX_PHY)	+= bcm63xx.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
- obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
- obj-$(CONFIG_FIXED_PHY)		+= fixed.o
-diff --git a/drivers/net/phy/bcm63xx.c b/drivers/net/phy/bcm63xx.c
-new file mode 100644
-index 0000000..4fed95e
+ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+ obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
 --- /dev/null
 +++ b/drivers/net/phy/bcm63xx.c
 @@ -0,0 +1,132 @@
@@ -178,6 +171,3 @@ index 0000000..4fed95e
 +
 +module_init(bcm63xx_phy_init);
 +module_exit(bcm63xx_phy_exit);
--- 
-1.5.4.3
-

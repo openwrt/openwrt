@@ -20,8 +20,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  create mode 100644 arch/mips/pci/pci-bcm63xx.h
  create mode 100644 include/asm-mips/mach-bcm63xx/bcm63xx_dev_pci.h
 
-diff --git a/arch/mips/bcm63xx/Kconfig b/arch/mips/bcm63xx/Kconfig
-index e6d2699..7ca370a 100644
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
 @@ -3,7 +3,9 @@ menu "CPU support"
@@ -34,8 +32,6 @@ index e6d2699..7ca370a 100644
  	bool "support 6358 CPU"
 +	select HW_HAS_PCI
  endmenu
-diff --git a/arch/mips/bcm63xx/setup.c b/arch/mips/bcm63xx/setup.c
-index 55c51a9..4d8b127 100644
 --- a/arch/mips/bcm63xx/setup.c
 +++ b/arch/mips/bcm63xx/setup.c
 @@ -105,4 +105,6 @@ void __init plat_mem_setup(void)
@@ -45,11 +41,9 @@ index 55c51a9..4d8b127 100644
 +	ioport_resource.start = 0;
 +	ioport_resource.end = ~0;
  }
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index c8c32f4..0b688a8 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -16,6 +16,8 @@ obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o pci-vr41xx.o
+@@ -16,6 +16,8 @@ obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o
  obj-$(CONFIG_MARKEINS)		+= ops-emma2rh.o pci-emma2rh.o fixup-emma2rh.o
  obj-$(CONFIG_PCI_TX4927)	+= ops-tx4927.o
  obj-$(CONFIG_BCM47XX)		+= pci-bcm47xx.o
@@ -58,9 +52,6 @@ index c8c32f4..0b688a8 100644
  
  #
  # These are still pretty much in the old state, watch, go blind.
-diff --git a/arch/mips/pci/fixup-bcm63xx.c b/arch/mips/pci/fixup-bcm63xx.c
-new file mode 100644
-index 0000000..3408630
 --- /dev/null
 +++ b/arch/mips/pci/fixup-bcm63xx.c
 @@ -0,0 +1,21 @@
@@ -85,9 +76,6 @@ index 0000000..3408630
 +{
 +	return 0;
 +}
-diff --git a/arch/mips/pci/ops-bcm63xx.c b/arch/mips/pci/ops-bcm63xx.c
-new file mode 100644
-index 0000000..f8dce9d
 --- /dev/null
 +++ b/arch/mips/pci/ops-bcm63xx.c
 @@ -0,0 +1,179 @@
@@ -270,9 +258,6 @@ index 0000000..f8dce9d
 +	.read   = bcm63xx_pci_read,
 +	.write  = bcm63xx_pci_write
 +};
-diff --git a/arch/mips/pci/pci-bcm63xx.c b/arch/mips/pci/pci-bcm63xx.c
-new file mode 100644
-index 0000000..52bac8e
 --- /dev/null
 +++ b/arch/mips/pci/pci-bcm63xx.c
 @@ -0,0 +1,178 @@
@@ -454,9 +439,6 @@ index 0000000..52bac8e
 +}
 +
 +arch_initcall(bcm63xx_pci_init);
-diff --git a/arch/mips/pci/pci-bcm63xx.h b/arch/mips/pci/pci-bcm63xx.h
-new file mode 100644
-index 0000000..a6e594e
 --- /dev/null
 +++ b/arch/mips/pci/pci-bcm63xx.h
 @@ -0,0 +1,27 @@
@@ -487,9 +469,6 @@ index 0000000..a6e594e
 +extern void __iomem *pci_iospace_start;
 +
 +#endif /* ! PCI_BCM63XX_H_ */
-diff --git a/include/asm-mips/mach-bcm63xx/bcm63xx_dev_pci.h b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_pci.h
-new file mode 100644
-index 0000000..c549344
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_pci.h
 @@ -0,0 +1,6 @@
@@ -499,6 +478,3 @@ index 0000000..c549344
 +extern int bcm63xx_pci_enabled;
 +
 +#endif /* BCM63XX_DEV_PCI_H_ */
--- 
-1.5.4.3
-

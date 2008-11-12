@@ -18,8 +18,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  create mode 100644 drivers/net/bcm63xx_enet.h
  create mode 100644 include/asm-mips/mach-bcm63xx/bcm63xx_dev_enet.h
 
-diff --git a/arch/mips/bcm63xx/Makefile b/arch/mips/bcm63xx/Makefile
-index 99e335d..5358093 100644
 --- a/arch/mips/bcm63xx/Makefile
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -3,4 +3,5 @@ obj-y		+= dev-uart.o
@@ -28,9 +26,6 @@ index 99e335d..5358093 100644
  obj-y		+= dev-usb-ehci.o
 +obj-y		+= dev-enet.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
-diff --git a/arch/mips/bcm63xx/dev-enet.c b/arch/mips/bcm63xx/dev-enet.c
-new file mode 100644
-index 0000000..c6e472e
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-enet.c
 @@ -0,0 +1,158 @@
@@ -192,11 +187,9 @@ index 0000000..c6e472e
 +		return ret;
 +	return 0;
 +}
-diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
-index bbd0e67..01f7e5a 100644
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -1840,6 +1840,15 @@ config NE_H8300
+@@ -1963,6 +1963,15 @@ config NE_H8300
  	  Say Y here if you want to use the NE2000 compatible
  	  controller on the Renesas H8/300 processor.
  
@@ -212,8 +205,6 @@ index bbd0e67..01f7e5a 100644
  source "drivers/net/fs_enet/Kconfig"
  
  endif # NET_ETHERNET
-diff --git a/drivers/net/Makefile b/drivers/net/Makefile
-index 284ed83..ab22f32 100644
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
 @@ -123,6 +123,7 @@ obj-$(CONFIG_SB1250_MAC) += sb1250-mac.o
@@ -224,9 +215,6 @@ index 284ed83..ab22f32 100644
  obj-$(CONFIG_AX88796) += ax88796.o
  
  obj-$(CONFIG_TSI108_ETH) += tsi108_eth.o
-diff --git a/drivers/net/bcm63xx_enet.c b/drivers/net/bcm63xx_enet.c
-new file mode 100644
-index 0000000..40c2565
 --- /dev/null
 +++ b/drivers/net/bcm63xx_enet.c
 @@ -0,0 +1,1894 @@
@@ -2124,9 +2112,6 @@ index 0000000..40c2565
 +MODULE_DESCRIPTION("BCM63xx internal ethernet mac driver");
 +MODULE_AUTHOR("Maxime Bizon <mbizon@freebox.fr>");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/net/bcm63xx_enet.h b/drivers/net/bcm63xx_enet.h
-new file mode 100644
-index 0000000..fe7ffc1
 --- /dev/null
 +++ b/drivers/net/bcm63xx_enet.h
 @@ -0,0 +1,294 @@
@@ -2424,9 +2409,6 @@ index 0000000..fe7ffc1
 +};
 +
 +#endif /* ! BCM63XX_ENET_H_ */
-diff --git a/include/asm-mips/mach-bcm63xx/bcm63xx_dev_enet.h b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_enet.h
-new file mode 100644
-index 0000000..d53f611
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_enet.h
 @@ -0,0 +1,45 @@
@@ -2475,6 +2457,3 @@ index 0000000..d53f611
 +				 const struct bcm63xx_enet_platform_data *pd);
 +
 +#endif /* ! BCM63XX_DEV_ENET_H_ */
--- 
-1.5.4.3
-

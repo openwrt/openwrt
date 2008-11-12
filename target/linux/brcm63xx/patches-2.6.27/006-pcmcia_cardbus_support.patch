@@ -18,8 +18,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  create mode 100644 drivers/pcmcia/bcm63xx_pcmcia.h
  create mode 100644 include/asm-mips/mach-bcm63xx/bcm63xx_dev_pcmcia.h
 
-diff --git a/arch/mips/bcm63xx/Makefile b/arch/mips/bcm63xx/Makefile
-index 8f3299e..456e915 100644
 --- a/arch/mips/bcm63xx/Makefile
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -1,3 +1,4 @@
@@ -27,9 +25,6 @@ index 8f3299e..456e915 100644
  obj-y		+= dev-uart.o
 +obj-y		+= dev-pcmcia.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
-diff --git a/arch/mips/bcm63xx/dev-pcmcia.c b/arch/mips/bcm63xx/dev-pcmcia.c
-new file mode 100644
-index 0000000..40ec4bc
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-pcmcia.c
 @@ -0,0 +1,135 @@
@@ -168,8 +163,6 @@ index 0000000..40ec4bc
 +	printk(KERN_ERR "unable to set pcmcia chip select");
 +	return ret;
 +}
-diff --git a/drivers/pcmcia/Kconfig b/drivers/pcmcia/Kconfig
-index e0f8840..5c640ca 100644
 --- a/drivers/pcmcia/Kconfig
 +++ b/drivers/pcmcia/Kconfig
 @@ -196,6 +196,10 @@ config PCMCIA_AU1X00
@@ -183,11 +176,9 @@ index e0f8840..5c640ca 100644
  config PCMCIA_SA1100
  	tristate "SA1100 support"
  	depends on ARM && ARCH_SA1100 && PCMCIA
-diff --git a/drivers/pcmcia/Makefile b/drivers/pcmcia/Makefile
-index 269a9e9..32b19b5 100644
 --- a/drivers/pcmcia/Makefile
 +++ b/drivers/pcmcia/Makefile
-@@ -33,6 +33,7 @@ obj-$(CONFIG_PCMCIA_PXA2XX)                     += pxa2xx_core.o pxa2xx_cs.o
+@@ -33,6 +33,7 @@ obj-$(CONFIG_PCMCIA_PXA2XX)             
  obj-$(CONFIG_M32R_PCC)				+= m32r_pcc.o
  obj-$(CONFIG_M32R_CFC)				+= m32r_cfc.o
  obj-$(CONFIG_PCMCIA_AU1X00)			+= au1x00_ss.o
@@ -195,9 +186,6 @@ index 269a9e9..32b19b5 100644
  obj-$(CONFIG_PCMCIA_VRC4171)			+= vrc4171_card.o
  obj-$(CONFIG_PCMCIA_VRC4173)			+= vrc4173_cardu.o
  obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
-diff --git a/drivers/pcmcia/bcm63xx_pcmcia.c b/drivers/pcmcia/bcm63xx_pcmcia.c
-new file mode 100644
-index 0000000..3a0b7fc
 --- /dev/null
 +++ b/drivers/pcmcia/bcm63xx_pcmcia.c
 @@ -0,0 +1,521 @@
@@ -722,9 +710,6 @@ index 0000000..3a0b7fc
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Maxime Bizon <mbizon@freebox.fr>");
 +MODULE_DESCRIPTION("Linux PCMCIA Card Services: bcm63xx Socket Controller");
-diff --git a/drivers/pcmcia/bcm63xx_pcmcia.h b/drivers/pcmcia/bcm63xx_pcmcia.h
-new file mode 100644
-index 0000000..85de866
 --- /dev/null
 +++ b/drivers/pcmcia/bcm63xx_pcmcia.h
 @@ -0,0 +1,65 @@
@@ -793,9 +778,6 @@ index 0000000..85de866
 +};
 +
 +#endif /* BCM63XX_PCMCIA_H_ */
-diff --git a/include/asm-mips/mach-bcm63xx/bcm63xx_dev_pcmcia.h b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_pcmcia.h
-new file mode 100644
-index 0000000..2beb396
 --- /dev/null
 +++ b/include/asm-mips/mach-bcm63xx/bcm63xx_dev_pcmcia.h
 @@ -0,0 +1,13 @@
@@ -812,6 +794,3 @@ index 0000000..2beb396
 +int bcm63xx_pcmcia_register(void);
 +
 +#endif /* BCM63XX_DEV_PCMCIA_H_ */
--- 
-1.5.4.3
-

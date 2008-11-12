@@ -11,7 +11,7 @@ BOARD:=magicbox
 BOARDNAME:=Magicbox
 FEATURES:=squashfs pci
 
-LINUX_VERSION:=2.6.26.7
+LINUX_VERSION:=2.6.26.8
 LINUX_KARCH:=ppc
 
 include $(INCLUDE_DIR)/target.mk
