@@ -179,10 +179,10 @@ static void __init rb433_setup(void)
 {
 	rb433_add_device_spi();
 
-	ar71xx_add_device_mdio(0xffffffec);
+	ar71xx_add_device_mdio(0xffffffe9);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0x00000003;
+	ar71xx_eth0_data.phy_mask = 0x00000006;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
