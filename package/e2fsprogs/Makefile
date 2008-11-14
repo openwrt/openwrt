@@ -27,7 +27,7 @@ $(call Package/e2fsprogs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3 filesystem utilities
-  DEPENDS:=+libblkid +libuuid
+  DEPENDS:=+libblkid +libuuid +libext2fs
 endef
 
 define Package/e2fsprogs/description
@@ -70,6 +70,17 @@ endef
 define Package/libblkid/description
  The blkid library which allows system programs like fsck and mount to 
  quickly and easily find block devices by filesystem UUID and LABEL.
+endef
+
+define Package/libext2fs
+$(call Package/e2fsprogs/Default)
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=ext2/ext3 filesystem library
+endef
+
+define Package/libext2fs/description
+libext2fs is a library which can access ext2 and ext3 filesystems.
 endef
 
 define Package/tune2fs
@@ -121,6 +132,10 @@ define Build/InstallDev
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(1)" \
 		install-libs
+	$(MAKE) -C $(PKG_BUILD_DIR)/lib/ext2fs \
+		BUILDCC="$(HOSTCC)" \
+		DESTDIR="$(1)" \
+		install
 endef
 
 define Package/e2fsprogs/install
@@ -130,7 +145,7 @@ define Package/e2fsprogs/install
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext2
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext3
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(foreach lib,com_err e2p ext2fs,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
+	$(CP) $(foreach lib,com_err e2p,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
 endef
 
 define Package/libuuid/install
@@ -146,6 +161,11 @@ endef
 define Package/libblkid/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libblkid.so.* $(1)/usr/lib/
+endef
+
+define Package/libext2fs/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libext2fs.so* $(1)/usr/lib/
 endef
 
 define Package/tune2fs/install
@@ -167,6 +187,7 @@ $(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,libblkid))
+$(eval $(call BuildPackage,libext2fs))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
