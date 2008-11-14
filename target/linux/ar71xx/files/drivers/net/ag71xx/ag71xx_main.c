@@ -268,6 +268,8 @@ static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
 #define MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | MAC_CFG1_SRX \
 			| MAC_CFG1_STX)
 
+#define FIFO_CFG0_INIT	(FIFO_CFG0_ALL << FIFO_CFG0_ENABLE_SHIFT)
+
 static void ag71xx_hw_init(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
@@ -287,7 +289,7 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
 		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
 
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, 0x00001f00);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
 
 	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
 

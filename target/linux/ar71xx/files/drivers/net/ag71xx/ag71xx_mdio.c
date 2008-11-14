@@ -50,7 +50,7 @@ static int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_ADDR,
-			((addr & 0xff) << MII_ADDR_S) | (reg & 0xff));
+			((addr & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_READ);
 
 	i = AG71XX_MDIO_RETRY;
@@ -81,7 +81,7 @@ static void ag71xx_mdio_mii_write(struct ag71xx_mdio *am,
 	DBG("mii_write: addr=%04x, reg=%04x, value=%04x\n", addr, reg, val);
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_ADDR,
-			((addr & 0xff) << MII_ADDR_S) | (reg & 0xff));
+			((addr & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CTRL, val);
 
 	i = AG71XX_MDIO_RETRY;
