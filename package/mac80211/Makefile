@@ -27,8 +27,10 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-mac80211)
 
+WMENU:=Wireless Drivers
+
 define KernelPackage/mac80211
-  SUBMENU:=Wireless Drivers
+  SUBMENU:=$(WMENU)
   TITLE:=Linux 802.11 Wireless Networking Stack
   URL:=http://linuxwireless.org/
   DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools @!TARGET_avr32
@@ -40,6 +42,49 @@ endef
 
 define KernelPackage/mac80211/description
 Linux 802.11 Wireless Networking Stack
+endef
+
+# Prism54 drivers
+P54FW:=2.7.0.0.arm
+
+define Download/p54
+  FILE:=$(P54FW)
+  URL:=http://prism54.org/firmware
+  MD5SUM:=09f9da7ea757173c9de1a0322a1f9782
+endef
+$(eval $(call Download,p54))
+
+define KernelPackage/p54/Default
+  SUBMENU:=$(WMENU)
+  TITLE:=Prism54 Drivers
+endef
+
+define KernelPackage/p54/description
+  Kernel module for Prism54 chipsets (mac80211)
+endef
+
+define KernelPackage/p54-common
+  $(call KernelPackage/p54/Default)
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT
+  TITLE+= (COMMON)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54common.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,p54common)
+endef
+
+define KernelPackage/p54-pci
+  $(call KernelPackage/p54/Default)
+  TITLE+= (PCI)
+  DEPENDS+= @PCI_SUPPORT +kmod-p54-common
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54pci.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,31,p54pci)
+endef
+
+define KernelPackage/p54-usb
+  $(call KernelPackage/p54/Default)
+  TITLE+= (USB)
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-p54-common
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54usb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,31,p54usb)
 endef
 
 # Ralink rt2x00 drivers
@@ -69,7 +114,7 @@ endef
 $(eval $(call Download,rt2860))
 
 define KernelPackage/rt2x00/Default
-  SUBMENU:=Wireless Drivers
+  SUBMENU:=$(WMENU)
   TITLE:=Ralink Drivers for RT2x00 cards
 endef
 
@@ -155,7 +200,7 @@ endef
 $(eval $(call Download,zd1211rw))
 
 define KernelPackage/zd1211rw
-  SUBMENU:=Wireless Drivers
+  SUBMENU:=$(WMENU)
   TITLE:=Zydas ZD1211 support
   DEPENDS:= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
@@ -163,7 +208,7 @@ define KernelPackage/zd1211rw
 endef
 
 define KernelPackage/ath5k
-  SUBMENU:=Wireless Drivers
+  SUBMENU:=$(WMENU)
   TITLE:=Atheros 5xxx wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath5k
   DEPENDS+= @PCI_SUPPORT +kmod-mac80211
@@ -177,7 +222,7 @@ Atheros 5xxx chipset.
 endef
 
 define KernelPackage/ath9k-new
-  SUBMENU:=Wireless Drivers
+  SUBMENU:=$(WMENU)
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
   DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @LINUX_2_6_27||@LINUX_2_6_28 @!kmod-ath9k
@@ -191,7 +236,7 @@ Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
 
 define KernelPackage/mac80211-hwsim
-  SUBMENU:=Wireless Drivers
+  SUBMENU:=$(WMENU)
   TITLE:=mac80211 HW simulation device
   DEPENDS+= +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.$(LINUX_KMOD_SUFFIX)
@@ -240,7 +285,7 @@ endef
 $(eval $(call Download,b43legacy))
 
 define KernelPackage/b43-common
-  SUBMENU:=Wireless Drivers
+  SUBMENU:=$(WMENU)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
   DEPENDS:=@TARGET_brcm47xx +kmod-mac80211
@@ -326,6 +371,11 @@ define KernelPackage/mac80211/install
 	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
 endef
 
+define KernelPackage/p54-common/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(P54FW) $(1)/lib/firmware/isl3886
+endef
+
 define KernelPackage/rt61-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2?61*.bin $(1)/lib/firmware/
@@ -373,6 +423,9 @@ endef
 
 $(eval $(call KernelPackage,ath5k))
 $(eval $(call KernelPackage,mac80211))
+$(eval $(call KernelPackage,p54-common))
+$(eval $(call KernelPackage,p54-pci))
+$(eval $(call KernelPackage,p54-usb))
 $(eval $(call KernelPackage,rt2x00-lib))
 $(eval $(call KernelPackage,rt2x00-pci))
 $(eval $(call KernelPackage,rt2x00-usb))
