@@ -213,6 +213,54 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define MAC_CFG2_IF_1000	BIT(9)
 #define MAC_CFG2_IF_10_100	BIT(8)
 
+#define FIFO_CFG0_WTM		BIT(0)	/* Watermark Module */
+#define FIFO_CFG0_RXS		BIT(1)	/* Rx System Module */
+#define FIFO_CFG0_RXF		BIT(2)	/* Rx Fabric Module */
+#define FIFO_CFG0_TXS		BIT(3)	/* Tx System Module */
+#define FIFO_CFG0_TXF		BIT(4)	/* Tx Fabric Module */
+#define FIFO_CFG0_ALL	(FIFO_CFG0_WTM | FIFO_CFG0_RXS | FIFO_CFG0_RXF \
+			| FIFO_CFG0_TXS | FIFO_CFG0_TXF)
+
+#define FIFO_CFG0_ENABLE_SHIFT	8
+
+#define FIFO_CFG4_DE		BIT(0)	/* Drop Event */
+#define FIFO_CFG4_DV		BIT(1)	/* RX_DV Event */
+#define FIFO_CFG4_FC		BIT(2)	/* False Carrier */
+#define FIFO_CFG4_CE		BIT(3)	/* Code Error */
+#define FIFO_CFG4_CRC		BIT(4)	/* CRC error */
+#define FIFO_CFG4_LM		BIT(5)	/* Length Mismatch */
+#define FIFO_CFG4_LO		BIT(6)	/* Length out of range */
+#define FIFO_CFG4_OK		BIT(7)	/* Packet is OK */
+#define FIFO_CFG4_MC		BIT(8)	/* Multicast Packet */
+#define FIFO_CFG4_BC		BIT(9)	/* Broadcast Packet */
+#define FIFO_CFG4_DR		BIT(10)	/* Dribble */
+#define FIFO_CFG4_LE		BIT(11)	/* Long Event */
+#define FIFO_CFG4_CF		BIT(12)	/* Control Frame */
+#define FIFO_CFG4_PF		BIT(13)	/* Pause Frame */
+#define FIFO_CFG4_UO		BIT(14)	/* Unsupported Opcode */
+#define FIFO_CFG4_VT		BIT(15)	/* VLAN tag detected */
+#define FIFO_CFG4_FT		BIT(16)	/* Frame Truncated */
+#define FIFO_CFG4_UC		BIT(17)	/* Unicast Packet */
+
+#define FIFO_CFG5_DE		BIT(0)	/* Drop Event */
+#define FIFO_CFG5_DV		BIT(1)	/* RX_DV Event */
+#define FIFO_CFG5_FC		BIT(2)	/* False Carrier */
+#define FIFO_CFG5_CE		BIT(3)	/* Code Error */
+#define FIFO_CFG5_LM		BIT(4)	/* Length Mismatch */
+#define FIFO_CFG5_LO		BIT(5)	/* Length Out of Range */
+#define FIFO_CFG5_OK		BIT(6)	/* Packet is OK */
+#define FIFO_CFG5_MC		BIT(7)	/* Multicast Packet */
+#define FIFO_CFG5_BC		BIT(8)	/* Broadcast Packet */
+#define FIFO_CFG5_DR		BIT(9)	/* Dribble */
+#define FIFO_CFG5_CF		BIT(10)	/* Control Frame */
+#define FIFO_CFG5_PF		BIT(11)	/* Pause Frame */
+#define FIFO_CFG5_UO		BIT(12)	/* Unsupported Opcode */
+#define FIFO_CFG5_VT		BIT(13)	/* VLAN tag detected */
+#define FIFO_CFG5_LE		BIT(14)	/* Long Event */
+#define FIFO_CFG5_FT		BIT(15)	/* Frame Truncated */
+#define FIFO_CFG5_SF		BIT(18)	/* Short Frame */
+#define FIFO_CFG5_BM		BIT(19)	/* Byte Mode */
+
 #define AG71XX_INT_TX_PS	BIT(0)
 #define AG71XX_INT_TX_UR	BIT(1)
 #define AG71XX_INT_TX_BE	BIT(3)
@@ -233,7 +281,7 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 
 #define MII_CMD_WRITE		0x0
 #define MII_CMD_READ		0x1
-#define MII_ADDR_S		8
+#define MII_ADDR_SHIFT		8
 #define MII_IND_BUSY		BIT(0)
 #define MII_IND_INVALID		BIT(2)
 
@@ -248,8 +296,6 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define RX_STATUS_PR		BIT(0)
 #define RX_STATUS_OF		BIT(1)
 #define RX_STATUS_BE		BIT(3)
-
-#define FIFO_CFG5_BYTE_PER_CLK	BIT(19)
 
 #define MII_CTRL_IF_MASK	3
 #define MII_CTRL_SPEED_SHIFT	4

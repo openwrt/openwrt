@@ -100,14 +100,14 @@ static void ag71xx_phy_link_update(struct ag71xx *ag)
 	ifctl &= ~(MAC_IFCTL_SPEED);
 
 	fifo5 = ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5);
-	fifo5 &= ~FIFO_CFG5_BYTE_PER_CLK;
+	fifo5 &= ~FIFO_CFG5_BM;
 
 	switch (ag->speed) {
 	case SPEED_1000:
 		mii_speed =  MII_CTRL_SPEED_1000;
 		cfg2 |= MAC_CFG2_IF_1000;
 		pll = PLL_VAL_1000;
-		fifo5 |= FIFO_CFG5_BYTE_PER_CLK;
+		fifo5 |= FIFO_CFG5_BM;
 		break;
 	case SPEED_100:
 		mii_speed = MII_CTRL_SPEED_100;
