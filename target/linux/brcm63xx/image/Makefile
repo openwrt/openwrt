@@ -75,6 +75,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96345GW2,6345)
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358)
+	# Comtrend 536
+	$(call Image/Build/CFE,$(1),96348GW-11,6348)
 endef
 
 $(eval $(call BuildImage))
