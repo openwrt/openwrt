@@ -1,0 +1,245 @@
+--- linux-2.6.27.5/drivers/net/korina.c	2008-11-07 18:55:34.000000000 +0100
++++ ../build_dir/linux-rb532/linux-2.6.27.5/drivers/net/korina.c	2008-11-16 00:38:19.000000000 +0100
+@@ -327,12 +327,11 @@
+ 
+ 	dmas = readl(&lp->rx_dma_regs->dmas);
+ 	if (dmas & (DMA_STAT_DONE | DMA_STAT_HALT | DMA_STAT_ERR)) {
+-		netif_rx_schedule_prep(dev, &lp->napi);
+-
+ 		dmasm = readl(&lp->rx_dma_regs->dmasm);
+ 		writel(dmasm | (DMA_STAT_DONE |
+ 				DMA_STAT_HALT | DMA_STAT_ERR),
+ 				&lp->rx_dma_regs->dmasm);
++		netif_rx_schedule(dev, &lp->napi);
+ 
+ 		if (dmas & DMA_STAT_ERR)
+ 			printk(KERN_ERR DRV_NAME "%s: DMA error\n", dev->name);
+@@ -350,14 +349,24 @@
+ 	struct dma_desc *rd = &lp->rd_ring[lp->rx_next_done];
+ 	struct sk_buff *skb, *skb_new;
+ 	u8 *pkt_buf;
+-	u32 devcs, pkt_len, dmas, rx_free_desc;
++	u32 devcs, pkt_len, dmas, pktuncrc_len;
+ 	int count;
+ 
+ 	dma_cache_inv((u32)rd, sizeof(*rd));
+ 
+ 	for (count = 0; count < limit; count++) {
+-
++		skb_new = NULL;
+ 		devcs = rd->devcs;
++		pkt_len = RCVPKT_LENGTH(devcs);
++		skb = lp->rx_skb[lp->rx_next_done];
++		
++		if ((devcs & ETH_RX_LD) != ETH_RX_LD) {
++			/* check that this is a whole packet
++			 * WARNING: DMA_FD bit incorrectly set
++			 * in Rc32434 (errata ref #077) */
++			dev->stats.rx_errors++;
++			dev->stats.rx_dropped++;
++		}
+ 
+ 		/* Update statistics counters */
+ 		if (devcs & ETH_RX_CRC)
+@@ -375,75 +384,79 @@
+ 		if (devcs & ETH_RX_MP)
+ 			dev->stats.multicast++;
+ 
+-		if ((devcs & ETH_RX_LD) != ETH_RX_LD) {
+-			/* check that this is a whole packet
+-			 * WARNING: DMA_FD bit incorrectly set
+-			 * in Rc32434 (errata ref #077) */
+-			dev->stats.rx_errors++;
+-			dev->stats.rx_dropped++;
+-		}
+-
+-		while ((rx_free_desc = KORINA_RBSIZE - (u32)DMA_COUNT(rd->control)) != 0) {
+-			/* init the var. used for the later
+-			 * operations within the while loop */
+-			skb_new = NULL;
+-			pkt_len = RCVPKT_LENGTH(devcs);
+-			skb = lp->rx_skb[lp->rx_next_done];
+-
+-			if ((devcs & ETH_RX_ROK)) {
+-				/* must be the (first and) last
+-				 * descriptor then */
+-				pkt_buf = (u8 *)lp->rx_skb[lp->rx_next_done]->data;
++		else if ((devcs & ETH_RX_ROK)) {
++			/* must be the (first and) last
++			 * descriptor then */
++			pkt_buf = (u8 *)lp->rx_skb[lp->rx_next_done]->data;
++			pktuncrc_len = pkt_len - 4;
+ 
+-				/* invalidate the cache */
+-				dma_cache_inv((unsigned long)pkt_buf, pkt_len - 4);
++			/* invalidate the cache */
++			dma_cache_inv((unsigned long)pkt_buf, pktuncrc_len);
+ 
+-				/* Malloc up new buffer. */
+-				skb_new = netdev_alloc_skb(dev, KORINA_RBSIZE + 2);
++			/* Malloc up new buffer. */
++			skb_new = netdev_alloc_skb(dev, KORINA_RBSIZE + 2);
+ 
+-				if (!skb_new)
+-					break;
++			if (skb_new) {
+ 				/* Do not count the CRC */
+-				skb_put(skb, pkt_len - 4);
++				skb_put(skb, pktuncrc_len);
+ 				skb->protocol = eth_type_trans(skb, dev);
+ 
+ 				/* Pass the packet to upper layers */
+ 				netif_receive_skb(skb);
++				
+ 				dev->last_rx = jiffies;
+ 				dev->stats.rx_packets++;
+-				dev->stats.rx_bytes += pkt_len;
+-
+-				/* Update the mcast stats */
+-				if (devcs & ETH_RX_MP)
+-					dev->stats.multicast++;
+-
++				dev->stats.rx_bytes += pktuncrc_len;
++				
+ 				lp->rx_skb[lp->rx_next_done] = skb_new;
++			} else {
++				dev->stats.rx_errors++;
++				dev->stats.rx_dropped++;
+ 			}
++		} else {
++			dev->stats.rx_errors++;
++			dev->stats.rx_dropped++;
++			
++			/* Update statistics counters */
++			if (devcs & ETH_RX_CRC)
++				dev->stats.rx_crc_errors++;
++			else if (devcs & ETH_RX_LOR)
++				dev->stats.rx_length_errors++;
++			else if (devcs & ETH_RX_LE)
++				dev->stats.rx_length_errors++;
++			else if (devcs & ETH_RX_OVR)
++				dev->stats.rx_over_errors++;
++			else if (devcs & ETH_RX_CV)
++				dev->stats.rx_frame_errors++;
++			else if (devcs & ETH_RX_CES)
++				dev->stats.rx_length_errors++;
++			else if (devcs & ETH_RX_MP)
++				dev->stats.multicast++;
++		}
+ 
+-			rd->devcs = 0;
++		rd->devcs = 0;
+ 
+-			/* Restore descriptor's curr_addr */
+-			if (skb_new)
+-				rd->ca = CPHYSADDR(skb_new->data);
+-			else
+-				rd->ca = CPHYSADDR(skb->data);
++		/* Restore descriptor's curr_addr */
++		if (skb_new)
++			rd->ca = CPHYSADDR(skb_new->data);
++		else
++			rd->ca = CPHYSADDR(skb->data);
+ 
+-			rd->control = DMA_COUNT(KORINA_RBSIZE) |
++		rd->control = DMA_COUNT(KORINA_RBSIZE) |
+ 				DMA_DESC_COD | DMA_DESC_IOD;
+-			lp->rd_ring[(lp->rx_next_done - 1) &
+-				KORINA_RDS_MASK].control &=
+-				~DMA_DESC_COD;
+-
+-			lp->rx_next_done = (lp->rx_next_done + 1) & KORINA_RDS_MASK;
+-			dma_cache_wback((u32)rd, sizeof(*rd));
+-			rd = &lp->rd_ring[lp->rx_next_done];
+-			writel(~DMA_STAT_DONE, &lp->rx_dma_regs->dmas);
+-		}
++		lp->rd_ring[(lp->rx_next_done - 1) &
++			KORINA_RDS_MASK].control &= ~DMA_DESC_COD;
++
++		lp->rx_next_done = (lp->rx_next_done + 1) & KORINA_RDS_MASK;
++		dma_cache_wback((u32)rd, sizeof(*rd));
++		rd = &lp->rd_ring[lp->rx_next_done];
++		writel(~DMA_STAT_DONE, &lp->rx_dma_regs->dmas);
+ 	}
+ 
+ 	dmas = readl(&lp->rx_dma_regs->dmas);
+ 
+ 	if (dmas & DMA_STAT_HALT) {
++		/* Mask off halt and errors bits */
+ 		writel(~(DMA_STAT_HALT | DMA_STAT_ERR),
+ 				&lp->rx_dma_regs->dmas);
+ 
+@@ -469,8 +482,9 @@
+ 	if (work_done < budget) {
+ 		netif_rx_complete(dev, napi);
+ 
++		/* Mask off interrupts */
+ 		writel(readl(&lp->rx_dma_regs->dmasm) &
+-			~(DMA_STAT_DONE | DMA_STAT_HALT | DMA_STAT_ERR),
++			(DMA_STAT_DONE | DMA_STAT_HALT | DMA_STAT_ERR),
+ 			&lp->rx_dma_regs->dmasm);
+ 	}
+ 	return work_done;
+@@ -534,10 +548,11 @@
+ {
+ 	struct korina_private *lp = netdev_priv(dev);
+ 	struct dma_desc *td = &lp->td_ring[lp->tx_next_done];
++	unsigned long flags;
+ 	u32 devcs;
+ 	u32 dmas;
+ 
+-	spin_lock(&lp->lock);
++	spin_lock_irqsave(&lp->lock, flags);
+ 
+ 	/* Process all desc that are done */
+ 	while (IS_DMA_FINISHED(td->control)) {
+@@ -610,7 +625,7 @@
+ 			~(DMA_STAT_FINI | DMA_STAT_ERR),
+ 			&lp->tx_dma_regs->dmasm);
+ 
+-	spin_unlock(&lp->lock);
++	spin_unlock_irqrestore(&lp->lock, flags);
+ }
+ 
+ static irqreturn_t
+@@ -624,11 +639,10 @@
+ 	dmas = readl(&lp->tx_dma_regs->dmas);
+ 
+ 	if (dmas & (DMA_STAT_FINI | DMA_STAT_ERR)) {
+-		korina_tx(dev);
+-
+ 		dmasm = readl(&lp->tx_dma_regs->dmasm);
+ 		writel(dmasm | (DMA_STAT_FINI | DMA_STAT_ERR),
+ 				&lp->tx_dma_regs->dmasm);
++		korina_tx(dev);
+ 
+ 		if (lp->tx_chain_status == desc_filled &&
+ 			(readl(&(lp->tx_dma_regs->dmandptr)) == 0)) {
+@@ -1078,11 +1092,18 @@
+ 
+ static int korina_probe(struct platform_device *pdev)
+ {
+-	struct korina_device *bif = platform_get_drvdata(pdev);
++	struct korina_device *bif;
+ 	struct korina_private *lp;
+ 	struct net_device *dev;
+ 	struct resource *r;
+ 	int rc;
++	DECLARE_MAC_BUF(mac);
++
++	bif = (struct korina_device *)pdev->dev.platform_data;
++	if (!bif) {
++		printk(KERN_ERR DRV_NAME ": missing platform_data\n");
++		return -ENODEV;
++	}
+ 
+ 	dev = alloc_etherdev(sizeof(struct korina_private));
+ 	if (!dev) {
+@@ -1172,6 +1193,7 @@
+ 			": cannot register net device %d\n", rc);
+ 		goto probe_err_register;
+ 	}
++	printk(KERN_INFO DRV_NAME ": registered %s, IRQ %d MAC %s\n", dev->name, dev->irq, print_mac(mac, dev->dev_addr));
+ out:
+ 	return rc;
+ 
