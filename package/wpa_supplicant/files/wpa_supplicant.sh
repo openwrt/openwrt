@@ -28,7 +28,7 @@ wpa_supplicant_setup_vif() {
 				;;
 			esac
 		;;
-		WPA|wpa|WPA2|wpa2i|8021x|8021X)
+		WPA|wpa|WPA2|wpa2|8021x|8021X)
 			proto='WPA2'
 			key_mgmt='WPA-EAP'
 			config_get ca_cert "$vif" ca_cert
