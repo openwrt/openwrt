@@ -188,7 +188,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  obj-$(CONFIG_OMAP_CF)				+= omap_cf.o
 --- /dev/null
 +++ b/drivers/pcmcia/bcm63xx_pcmcia.c
-@@ -0,0 +1,521 @@
+@@ -0,0 +1,522 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -670,6 +670,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
 +		.class		= PCI_CLASS_BRIDGE_CARDBUS << 8,
 +		.class_mask	= ~0,
 +	},
++	{}
 +};
 +
 +MODULE_DEVICE_TABLE(pci, bcm63xx_cb_table);

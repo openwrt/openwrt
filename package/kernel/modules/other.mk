@@ -140,6 +140,20 @@ endef
 
 $(eval $(call KernelPackage,pcmcia-core))
 
+define KernelPackage/pcmcia-bcm63xx
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Broadcom BCM63xx PCMCIA support
+  DEPENDS:=kmod-pcmcia-core @TARGET_brcm63xx
+  KCONFIG:=CONFIG_PCMCIA_BCM63XX
+  FILES:=$(LINUX_DIR)/drivers/pcmcia/bcm63xx_pcmcia.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,bcm63xx_pcmcia)
+endef
+
+define KernelPackage/pcmcia-bcm63xx/description
+  Kernel support for PCMCIA/CardBus controller on the BCM63xx SoC
+endef
+
+$(eval $(call KernelPackage,pcmcia-bcm63xx))
 
 define KernelPackage/pcmcia-serial
   SUBMENU:=$(OTHER_MENU)
