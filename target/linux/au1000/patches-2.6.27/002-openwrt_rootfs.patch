@@ -1,0 +1,12 @@
+diff -urN linux-2.6.27.5/arch/mips/au1000/mtx-1/platform.c linux-2.6.27.5.new/arch/mips/au1000/mtx-1/platform.c
+--- linux-2.6.27.5/arch/mips/au1000/mtx-1/platform.c	2008-11-07 18:55:34.000000000 +0100
++++ linux-2.6.27.5.new/arch/mips/au1000/mtx-1/platform.c	2008-11-15 15:33:31.000000000 +0100
+@@ -90,7 +90,7 @@
+ 
+ static struct mtd_partition mtx1_mtd_partitions[] = {
+ 	{
+-		.name	= "filesystem",
++		.name	= "rootfs",
+ 		.size	= 0x01C00000,
+ 		.offset	= 0,
+ 	},

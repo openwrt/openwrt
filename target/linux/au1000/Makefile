@@ -11,7 +11,7 @@ BOARD:=au1000
 BOARDNAME:=RMI/AMD AU1x00
 FEATURES:=jffs2 usb pci
 
-LINUX_VERSION:=2.6.25.20
+LINUX_VERSION:=2.6.27.5
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += yamonenv
@@ -28,4 +28,3 @@ define Kernel/BuildImage
 endef
 
 $(eval $(call BuildTarget))
-
