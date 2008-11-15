@@ -106,8 +106,7 @@ define KernelPackage/pcmcia-core/2.4
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core yenta_socket ds)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core ds)
 endef
 
 define KernelPackage/pcmcia-core/2.6
@@ -120,18 +119,8 @@ define KernelPackage/pcmcia-core/2.6
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic yenta_socket)
-endef
-
-define KernelPackage/pcmcia-core/au1000-2.6
-  FILES:= \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/au1x00_ss.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic au1x00_ss)
+	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic)
 endef
 
 define KernelPackage/pcmcia-core/description
@@ -139,6 +128,28 @@ define KernelPackage/pcmcia-core/description
 endef
 
 $(eval $(call KernelPackage,pcmcia-core))
+
+
+define KernelPackage/pcmcia-yenta
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=yenta socket driver
+  DEPENDS:=kmod-pcmcia-core
+  KCONFIG:=CONFIG_YENTA
+  FILES:=$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,yenta_socket)
+endef
+
+$(eval $(call KernelPackage,pcmcia-yenta))
+
+define KernelPackage/pcmcia-au1000
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RMI/AMD Au1000 PCMCIA support
+  DEPENDS:=kmod-pcmcia-core @TARGET_au1000
+  FILES:=$(LINUX_DIR)/drivers/pcmcia/au1x00_ss.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,au1x00_ss)
+endef
+
+$(eval $(call KernelPackage,pcmcia-au1000))
 
 define KernelPackage/pcmcia-bcm63xx
   SUBMENU:=$(OTHER_MENU)
