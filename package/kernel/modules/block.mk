@@ -67,6 +67,24 @@ endef
 
 $(eval $(call KernelPackage,ata-ixp4xx-cf))
 
+define KernelPackage/ata-rb532-cf
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=RB532 Compact Flash support
+  DEPENDS:=kmod-ata-core
+  KCONFIG:= \
+  	CONFIG_PATA_PLATFORM \
+  	CONFIG_PATA_RB532
+  FILES:=\
+  	$(LINUX_DIR)/drivers/ata/pata_platform.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/drivers/ata/pata_rb532_cf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,pata_platform pata_rb532_cf)
+endef
+
+define KernelPackage/ata-rb532-cf/description
+  RB532 Compact Flash support.
+endef
+
+$(eval $(call KernelPackage,ata-rb532-cf))
 
 define KernelPackage/ata-nvidia-sata
   SUBMENU:=$(BLOCK_MENU)
