@@ -93,18 +93,21 @@ of that (if supported by the driver).
 A full outline of the wireless configuration file with description of each field:
 
 \begin{Verbatim}
-config wifi-device     wifi device name
-    option type     broadcom, atheros, mac80211
-    option country  us, uk, fr, de, etc.
-    option channel  1-14
-    option maxassoc 1-128 (broadcom only)
-    option distance 1-n
+config wifi-device    wifi device name
+    option type       broadcom, atheros, mac80211
+    option country    us, uk, fr, de, etc.
+    option channel    1-14
+    option maxassoc   1-128 (broadcom only)
+    option distance   1-n
     option agmode     11b, 11g, 11a, 11bg (atheros only)
+    option rxantenna  0,1,2 (atheros, broadcom)
+    option txantenna  0,1,2 (atheros, broadcom)
 
 config wifi-iface
     option network  the interface you want wifi to bridge with 
     option device   wifi0, wifi1, wifi2, wifiN
     option mode     ap, sta, adhoc, monitor, or wds
+    option txpower  transmission power in dBm
     option ssid     ssid name
     option bssid    bssid address
     option encryption none, wep, psk, psk2, wpa, wpa2 
@@ -143,11 +146,11 @@ config wifi-iface
     \item \texttt{diversity} \\
 	Optional: Enable diversity for the Wi-Fi device. This feature is supported only on the atheros chipset.
 
-    \item \texttt{rxanteanna} \\
-	Optional: Antenna identifier (0, 1 or 2) for reception. This feature is supported only on the atheros chipset.
+    \item \texttt{rxantenna} \\
+	Optional: Antenna identifier (0, 1 or 2) for reception. This feature is supported by atheros and some broadcom chipsets.
 
-    \item \texttt{txanteanna} \\
-	Optional: Antenna identifier (0, 1 or 2) for emission. This feature is supported only on the atheros chipset.
+    \item \texttt{txantenna} \\
+	Optional: Antenna identifier (0, 1 or 2) for emission. This feature is supported by atheros and some broadcom chipsets.
 
 \end{itemize}
 
@@ -187,6 +190,9 @@ config wifi-iface
 
     \item \texttt{bssid}
 	Set the BSSID address to be used for wds to set the mac address of the other wds unit.
+
+    \item \texttt{txpower}
+	Set the transmission power to be used. The amount is specified in dBm.
 
     \item \texttt{encryption} \\
         Encryption setting. Accepts the following values:
