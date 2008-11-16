@@ -89,6 +89,9 @@ struct cpx_board {
 #define CPX_BOARD_AR71XX(_did, _flash, _mod, _name, _desc) \
 	CPX_BOARD(_did, _flash, _mod, _name, _desc, 0x20000, 0x8000)
 
+#define CPX_BOARD_AR23XX(_did, _flash, _mod, _name, _desc) \
+	CPX_BOARD(_did, _flash, _mod, _name, _desc, 0x10000, 0x10000)
+
 #define ALIGN(x,y)	((x)+((y)-1)) & ~((y)-1)
 
 char	*progname;
@@ -141,9 +144,17 @@ struct cpx_board boards[] = {
 	CPX_BOARD_ADM(DEVID_COMPEX_WPP54AG, 4,
 		"WPP54AG", "Compex WPP54AG",
 		"Outdoor Access Point"),
+
 	CPX_BOARD_AR71XX(DEVID_COMPEX_WP543, 2,
 		"WP543", "Compex WP543",
 		"BareBoard"),
+
+	CPX_BOARD_AR23XX(DEVID_COMPEX_NP25G, 4,
+		"NP25G", "Compex NetPassage 25G",
+		"Wireless 54Mbps XR Router"),
+	CPX_BOARD_AR23XX(DEVID_COMPEX_WPE53G, 4,
+		"WPE53G", "Compex NetPassage 25G",
+		"Wireless 54Mbps XR Access Point"),
 	{.model = NULL}
 };
 
