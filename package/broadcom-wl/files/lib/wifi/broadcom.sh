@@ -123,8 +123,7 @@ enable_broadcom() {
 	config_get macfilter "$device" macfilter
 	config_get maclist "$device" maclist
 	config_get macaddr "$device" macaddr
-	config_get txpower "$device" txpower
-	local vif_pre_up vif_post_up vif_do_up
+	local vif_pre_up vif_post_up vif_do_up txpower
 
 	_c=0
 	nas="$(which nas)"
@@ -153,6 +152,8 @@ enable_broadcom() {
 	esac
 
 	for vif in $vifs; do
+		config_get txpower "$vif" txpower
+
 		config_get mode "$vif" mode
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
