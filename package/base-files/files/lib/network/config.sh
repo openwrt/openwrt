@@ -232,6 +232,7 @@ setup_interface() {
 	config_get mtu "$config" mtu
 	config_get macaddr "$config" macaddr
 	grep "$iface:" /proc/net/dev > /dev/null && \
+		$DEBUG ifconfig "$iface" down && \
 		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
 	set_interface_ifname "$config" "$iface"
 
