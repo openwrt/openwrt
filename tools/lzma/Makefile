@@ -10,7 +10,7 @@ PKG_NAME:=lzma
 PKG_VERSION:=432
 
 PKG_SOURCE:=$(PKG_NAME)$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@SF/sevenzip
+PKG_SOURCE_URL:=http://kent.dl.sourceforge.net/sourceforge/sevenzip/
 PKG_MD5SUM:=155c1ebce5bc6710ae7ecc926226d9d7
 
 PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)/lzma
