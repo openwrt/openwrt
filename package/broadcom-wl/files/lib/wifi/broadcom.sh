@@ -237,7 +237,7 @@ enable_broadcom() {
 		
 		config_get ifname "$vif" ifname
 		#append if_up "ifconfig $ifname up" ";$N"
-		[ -z "$macaddr" ] || append if_up "ifconfig $ifname hw ether $macaddr" ";$N"
+
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
