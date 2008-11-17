@@ -17,23 +17,24 @@
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/vmalloc.h>
-
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-
 #include <linux/byteorder/generic.h>
+#include <linux/myloader.h>
 
-#include <prom/myloader.h>
-
-#define NAME_LEN_MAX		20
-#define NAME_MYLOADER		"MyLoader"
-#define NAME_PARTITION_TABLE	"Partition Table"
 #define BLOCK_LEN_MIN		0x10000
+#define PART_NAME_LEN		32
 
-int parse_myloader_partitions(struct mtd_info *master,
+struct part_data {
+	struct mylo_partition_table	tab;
+	char names[MYLO_MAX_PARTITIONS][PART_NAME_LEN];
+};
+
+int myloader_parse_partitions(struct mtd_info *master,
 			struct mtd_partition **pparts,
 			unsigned long origin)
 {
+	struct part_data *buf;
 	struct mylo_partition_table *tab;
 	struct mylo_partition *part;
 	struct mtd_partition *mtd_parts;
@@ -45,33 +46,42 @@ int parse_myloader_partitions(struct mtd_info *master,
 	unsigned long offset;
 	unsigned long blocklen;
 
-	tab = vmalloc(sizeof(*tab));
-	if (!tab) {
+	buf = vmalloc(sizeof(*buf));
+	if (!buf) {
 		return -ENOMEM;
 		goto out;
 	}
+	tab = &buf->tab;
 
 	blocklen = master->erasesize;
 	if (blocklen < BLOCK_LEN_MIN)
 		blocklen = BLOCK_LEN_MIN;
 
-	/* Partition Table is always located on the second erase block */
 	offset = blocklen;
-	printk(KERN_NOTICE "%s: searching for MyLoader partition table at "
-			"offset 0x%lx\n", master->name, offset);
 
-	ret = master->read(master, offset, sizeof(*tab), &retlen, (void *)tab);
-	if (ret)
-		goto out;
+	/* Find the partition table */
+	for (i = 0; i < 4; i++, offset += blocklen) {
+		printk(KERN_DEBUG "%s: searching for MyLoader partition table"
+				" at offset 0x%lx\n", master->name, offset);
 
-	if (retlen != sizeof(*tab)) {
-		ret = -EIO;
-		goto out_free_buf;
+		ret = master->read(master, offset, sizeof(*buf), &retlen,
+					(void *)buf);
+		if (ret)
+			goto out_free_buf;
+
+		if (retlen != sizeof(*buf)) {
+			ret = -EIO;
+			goto out_free_buf;
+		}
+
+		/* Check for Partition Table magic number */
+		if (tab->magic == le32_to_cpu(MYLO_MAGIC_PARTITIONS))
+			break;
+
 	}
 
-	/* Check for Partition Table magic number */
 	if (tab->magic != le32_to_cpu(MYLO_MAGIC_PARTITIONS)) {
-		printk(KERN_NOTICE "%s: no MyLoader partition table found\n",
+		printk(KERN_DEBUG "%s: no MyLoader partition table found\n",
 			master->name);
 		ret = 0;
 		goto out_free_buf;
@@ -91,7 +101,7 @@ int parse_myloader_partitions(struct mtd_info *master,
 	}
 
 	mtd_parts = kzalloc((num_parts * sizeof(*mtd_part) +
-				num_parts * NAME_LEN_MAX), GFP_KERNEL);
+				num_parts * PART_NAME_LEN), GFP_KERNEL);
 
 	if (!mtd_parts) {
 		ret = -ENOMEM;
@@ -101,21 +111,21 @@ int parse_myloader_partitions(struct mtd_info *master,
 	mtd_part = mtd_parts;
 	names = (char *)&mtd_parts[num_parts];
 
-	strncpy(names, NAME_MYLOADER, NAME_LEN_MAX-1);
+	strncpy(names, "myloader", PART_NAME_LEN);
 	mtd_part->name = names;
 	mtd_part->offset = 0;
-	mtd_part->size = blocklen;
+	mtd_part->size = offset;
 	mtd_part->mask_flags = MTD_WRITEABLE;
 	mtd_part++;
-	names += NAME_LEN_MAX;
+	names += PART_NAME_LEN;
 
-	strncpy(names, NAME_PARTITION_TABLE, NAME_LEN_MAX-1);
+	strncpy(names, "partition_table", PART_NAME_LEN);
 	mtd_part->name = names;
-	mtd_part->offset = blocklen;
+	mtd_part->offset = offset;
 	mtd_part->size = blocklen;
 	mtd_part->mask_flags = MTD_WRITEABLE;
 	mtd_part++;
-	names += NAME_LEN_MAX;
+	names += PART_NAME_LEN;
 
 	for (i = 0; i < MYLO_MAX_PARTITIONS; i++) {
 		part = &tab->partitions[i];
@@ -123,41 +133,45 @@ int parse_myloader_partitions(struct mtd_info *master,
 		if (le16_to_cpu(part->type) == PARTITION_TYPE_FREE)
 			continue;
 
-		sprintf(names, "partition%d", i);
+		if (buf->names[i][0])
+			strncpy(names, buf->names[i], PART_NAME_LEN);
+		else
+			snprintf(names, PART_NAME_LEN, "partition%d", i);
+
 		mtd_part->offset = le32_to_cpu(part->addr);
 		mtd_part->size = le32_to_cpu(part->size);
 		mtd_part->name = names;
 		mtd_part++;
-		names += NAME_LEN_MAX;
+		names += PART_NAME_LEN;
 	}
 
 	*pparts = mtd_parts;
 	ret = num_parts;
 
-out_free_buf:
-	vfree(tab);
-out:
+ out_free_buf:
+	vfree(buf);
+ out:
 	return ret;
 }
 
-static struct mtd_part_parser mylo_mtd_parser = {
-	.owner = THIS_MODULE,
-	.parse_fn = parse_myloader_partitions,
-	.name = NAME_MYLOADER,
+static struct mtd_part_parser myloader_mtd_parser = {
+	.owner		= THIS_MODULE,
+	.parse_fn	= myloader_parse_partitions,
+	.name		= "MyLoader",
 };
 
-static int __init mylo_mtd_parser_init(void)
+static int __init myloader_mtd_parser_init(void)
 {
-	return register_mtd_parser(&mylo_mtd_parser);
+	return register_mtd_parser(&myloader_mtd_parser);
 }
 
-static void __exit mylo_mtd_parser_exit(void)
+static void __exit myloader_mtd_parser_exit(void)
 {
-	deregister_mtd_parser(&mylo_mtd_parser);
+	deregister_mtd_parser(&myloader_mtd_parser);
 }
 
-module_init(mylo_mtd_parser_init);
-module_exit(mylo_mtd_parser_exit);
+module_init(myloader_mtd_parser_init);
+module_exit(myloader_mtd_parser_exit);
 
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_DESCRIPTION("Parsing code for MyLoader partition tables");
