@@ -48,6 +48,7 @@
 #define MAX_ARG_COUNT   32
 #define MAX_ARG_LEN     1024
 #define FILE_BUF_LEN    (16*1024)
+#define PART_NAME_LEN	32
 
 struct fw_block {
 	uint32_t	addr;
@@ -57,6 +58,11 @@ struct fw_block {
 	char		*name;  /* name of the file */
 	uint32_t	size;  	/* length of the file */
 	uint32_t	crc;    /* crc value of the file */
+};
+
+struct fw_part {
+	struct mylo_partition	mylo;
+	char			name[PART_NAME_LEN];
 };
 
 #define BLOCK_FLAG_HAVEHDR    0x0001
@@ -103,7 +109,7 @@ int	fw_num_blocks = 0;
 int	verblevel = 0;
 
 struct mylo_fw_header fw_header;
-struct mylo_partition fw_partitions[MYLO_MAX_PARTITIONS];
+struct fw_part fw_parts[MYLO_MAX_PARTITIONS];
 struct fw_block fw_blocks[MAX_FW_BLOCKS];
 struct cpx_board *board;
 
@@ -226,11 +232,12 @@ usage(int status)
 "                  define block at <addr> with length of <len>.\n"
 "                  valid <flag> values:\n"
 "                      h : add crc header before the file data.\n"
-"  -p <addr>:<len>[:<flags>[:<param>[:<file>]]]\n"
+"  -p <addr>:<len>[:<flags>[:<param>[:<name>[:<file>]]]]\n"
 "                  add partition at <addr>, with size of <len> to the\n"
-"                  partition table, set partition flags to <flags> and\n"
-"                  partition parameter to <param>. If the <file> is specified\n"
-"                  content of the file is also added to the firmware image.\n"
+"                  partition table, set partition name to <name>, partition \n"
+"                  flags to <flags> and partition parameter to <param>.\n"
+"                  If the <file> is specified content of the file will be \n"
+"                  added to the firmware image.\n"
 "                  valid <flag> values:\n"
 "                      a:  this is the active partition. The bootloader loads\n"
 "                          the firmware from this partition.\n"
@@ -447,7 +454,7 @@ process_partitions(void)
 	int i;
 
 	for (i = 0; i < fw_num_partitions; i++) {
-		part = &fw_partitions[i];
+		part = &fw_parts[i].mylo;
 
 		if (part->addr > flash_size) {
 			errmsg(0, "invalid partition at 0x%08X", part->addr);
@@ -611,26 +618,39 @@ int
 write_out_partitions(FILE *outfile, uint32_t *crc)
 {
 	struct mylo_partition_table p;
-	struct mylo_partition *p1, *p2;
+	char part_names[MYLO_MAX_PARTITIONS][PART_NAME_LEN];
+	int ret;
 	int i;
 
 	if (fw_num_partitions == 0)
 		return 0;
 
 	memset(&p, 0, sizeof(p));
+	memset(part_names, 0, sizeof(part_names));
 
 	p.magic = HOST_TO_LE32(MYLO_MAGIC_PARTITIONS);
 	for (i = 0; i < fw_num_partitions; i++) {
-		p1 = &p.partitions[i];
-		p2 = &fw_partitions[i];
-		p1->flags = HOST_TO_LE16(p2->flags);
-		p1->type = HOST_TO_LE16(PARTITION_TYPE_USED);
-		p1->addr = HOST_TO_LE32(p2->addr);
-		p1->size = HOST_TO_LE32(p2->size);
-		p1->param = HOST_TO_LE32(p2->param);
+		struct mylo_partition *mp;
+		struct fw_part *fp;
+
+		mp = &p.partitions[i];
+		fp = &fw_parts[i];
+		mp->flags = HOST_TO_LE16(fp->mylo.flags);
+		mp->type = HOST_TO_LE16(PARTITION_TYPE_USED);
+		mp->addr = HOST_TO_LE32(fp->mylo.addr);
+		mp->size = HOST_TO_LE32(fp->mylo.size);
+		mp->param = HOST_TO_LE32(fp->mylo.param);
+
+		memcpy(part_names[i], fp->name, PART_NAME_LEN);
 	}
 
-	return write_out_data(outfile, (uint8_t *)&p, sizeof(p), crc);
+	ret = write_out_data(outfile, (uint8_t *)&p, sizeof(p), crc);
+	if (ret)
+		return ret;
+
+	ret = write_out_data(outfile, (uint8_t *)part_names, sizeof(part_names),
+				crc);
+	return ret;
 }
 
 
@@ -649,7 +669,8 @@ write_out_blocks(FILE *outfile, uint32_t *crc)
 	if (fw_num_partitions > 0) {
 		desc.type = HOST_TO_LE32(FW_DESC_TYPE_USED);
 		desc.addr = HOST_TO_LE32(board->part_offset);
-		desc.dlen = HOST_TO_LE32(sizeof(struct mylo_partition_table));
+		desc.dlen = HOST_TO_LE32(sizeof(struct mylo_partition_table) +
+					(MYLO_MAX_PARTITIONS * PART_NAME_LEN));
 		desc.blen = HOST_TO_LE32(board->part_size);
 
 		if (write_out_desc(outfile, &desc, crc) != 0)
@@ -989,8 +1010,8 @@ parse_opt_partition(char ch, char *arg)
 	char *argv[MAX_ARG_COUNT];
 	int argc;
 	char *p;
-
 	struct mylo_partition *part;
+	struct fw_part *fp;
 
 	if (required_arg(ch, arg)) {
 		goto err_out;
@@ -1001,7 +1022,8 @@ parse_opt_partition(char ch, char *arg)
 		goto err_out;
 	}
 
-	part = &fw_partitions[fw_num_partitions++];
+	fp = &fw_parts[fw_num_partitions++];
+	part = &fp->mylo;
 
 	argc = parse_arg(arg, buf, argv);
 
@@ -1059,13 +1081,21 @@ parse_opt_partition(char ch, char *arg)
 		goto err_out;
 	}
 
+	p = argv[4];
+	if (is_empty_arg(p)) {
+		/* set default partition parameter */
+		fp->name[0] = '\0';
+	} else {
+		strncpy(fp->name, p, PART_NAME_LEN);
+	}
+
 #if 1
 	if (part->size == 0) {
 		part->size = flash_size - part->addr;
 	}
 
 	/* processing file parameter */
-	p = argv[4];
+	p = argv[5];
 	if (is_empty_arg(p) == 0) {
 		struct fw_block *b;
 
