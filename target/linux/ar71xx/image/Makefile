@@ -35,10 +35,8 @@ endef
 
 define Image/Build/MyLoader
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) \
-		-p0x30000:0xd0000:ahl:0x80060000 \
-		-p0x100000:0 \
-		-b0x30000:0xd0000:h:$(KDIR)/vmlinux.lzma \
-		-b0x100000:0::$(KDIR)/root.$(1) \
+		-p0x30000:0xc0000:ahl:0x80060000:kernel:$(KDIR)/vmlinux.lzma  \
+		-p0xf0000:0:::rootfs:$(KDIR)/root.$(1) \
 		$(call imgname,$(1),$(2)).img
 endef
 
