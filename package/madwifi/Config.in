@@ -2,7 +2,7 @@
 
 config MADWIFI_DEBUG
 	bool "Enable compilation of debugging features"
-	depends on EXPERIMENTAL && PACKAGE_kmod-madwifi
+	depends on DEVEL && PACKAGE_kmod-madwifi
 	default n
 
 choice
