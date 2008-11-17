@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mmc-over-gpio
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -34,6 +34,8 @@ define Build/Compile
 endef
 
 define KernelPackage/mmc-over-gpio/install
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DATA) ./files/mmc_over_gpio.config $(1)/etc/config/mmc_over_gpio
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/mmc_over_gpio.init $(1)/etc/init.d/mmc_over_gpio
 endef
