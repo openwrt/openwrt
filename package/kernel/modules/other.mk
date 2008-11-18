@@ -681,22 +681,3 @@ define KernelPackage/spi-dev/description
 endef
 
 $(eval $(call KernelPackage,spi-dev))
-
-define KernelPackage/crypto-dev-ixp4xx
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=IXP4xx crypto driver
-  DEPENDS:=\
-	@TARGET_ixp4xx +kmod-crypto-core +kmod-crypto-des +kmod-crypto-aead \
-	+kmod-crypto-authenc
-  KCONFIG:=\
-	CONFIG_CRYPTO_HW=y \
-	CONFIG_CRYPTO_DEV_IXP4XX
-  FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,ixp4xx_crypto)
-endef
-
-define KernelPackage/crypto-dev-ixp4xx/description
- Kernel support for the IXP4xx HW crypto engine.
-endef
-
-$(eval $(call KernelPackage,crypto-dev-ixp4xx))

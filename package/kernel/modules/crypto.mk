@@ -30,7 +30,7 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
   SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 endif
 
-# XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is 
+# XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is
 # always set, even if no hash modules are selected
 define KernelPackage/crypto-core
   SUBMENU:=$(CRYPTO_MENU)
@@ -114,6 +114,24 @@ define KernelPackage/crypto-hw-hifn-795x
 endef
 
 $(eval $(call KernelPackage,crypto-hw-hifn-795x))
+
+
+define KernelPackage/crypto-hw-ixp4xx
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=Intel IXP4xx hardware crypto module
+  DEPENDS:= \
+	@TARGET_ixp4xx +kmod-crypto-core +kmod-crypto-des +kmod-crypto-aead \
+	+kmod-crypto-authenc
+  KCONFIG:= CONFIG_CRYPTO_DEV_IXP4XX
+  FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,ixp4xx_crypto)
+endef
+
+define KernelPackage/crypto-hw-ixp4xx/description
+  Kernel support for the Intel IXP4xx HW crypto engine.
+endef
+
+$(eval $(call KernelPackage,crypto-hw-ixp4xx))
 
 
 define KernelPackage/crypto-aes
