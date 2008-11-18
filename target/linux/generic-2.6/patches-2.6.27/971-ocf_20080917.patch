@@ -1,23 +1,3 @@
---- a/crypto/Kconfig
-+++ b/crypto/Kconfig
-@@ -678,3 +678,6 @@ config CRYPTO_PRNG
- source "drivers/crypto/Kconfig"
- 
- endif	# if CRYPTO
-+
-+source "crypto/ocf/Kconfig"
-+
---- a/crypto/Makefile
-+++ b/crypto/Makefile
-@@ -72,6 +72,8 @@ obj-$(CONFIG_CRYPTO_LZO) += lzo.o
- obj-$(CONFIG_CRYPTO_PRNG) += prng.o
- obj-$(CONFIG_CRYPTO_TEST) += tcrypt.o
- 
-+obj-$(CONFIG_OCF_OCF) += ocf/
-+
- #
- # generic algorithms and the async_tx api
- #
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -129,6 +129,9 @@
@@ -44,7 +24,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -667,6 +677,61 @@ void add_disk_randomness(struct gendisk 
+@@ -668,6 +678,61 @@ void add_disk_randomness(struct gendisk 
  }
  #endif
  
@@ -60,7 +40,7 @@
 + */
 +void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
 +{
-+	mix_pool_bytes(&input_pool, buf, wordcount);
++	mix_pool_bytes(&input_pool, buf, wordcount*4);
 +
 +	credit_entropy_bits(&input_pool, ent_count);
 +
@@ -86,13 +66,13 @@
 +{
 +	int count;
 +
-+	wait_event_interruptible(random_write_wait,
++	wait_event_interruptible(random_write_wait, 
 +			 input_pool.entropy_count < random_write_wakeup_thresh);
 +
 +	count = random_write_wakeup_thresh - input_pool.entropy_count;
 +
 +        /* likely we got woken up due to a signal */
-+	if (count <= 0) count = random_read_wakeup_thresh;
++	if (count <= 0) count = random_read_wakeup_thresh; 
 +
 +	DEBUG_ENT("requesting %d bits from input_wait()er %d<%d\n",
 +		  count,
@@ -108,8 +88,8 @@
  /*********************************************************************
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -191,6 +191,7 @@ asmlinkage long sys_dup(unsigned int fil
- 		ret = dupfd(file, 0, 0);
+@@ -139,6 +139,7 @@ asmlinkage long sys_dup(unsigned int fil
+ 	}
  	return ret;
  }
 +EXPORT_SYMBOL(sys_dup);
@@ -211,7 +191,7 @@
 +
 --- /dev/null
 +++ b/crypto/ocf/Makefile
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,121 @@
 +# for SGlinux builds
 +-include $(ROOTDIR)/modules/.config
 +
@@ -256,6 +236,7 @@
 +$(_obj)-$(CONFIG_OCF_IXP4XX)  += ixp4xx$(_slash)
 +$(_obj)-$(CONFIG_OCF_TALITOS) += talitos$(_slash)
 +$(_obj)-$(CONFIG_OCF_PASEMI)  += pasemi$(_slash)
++$(_obj)-$(CONFIG_OCF_EP80579) += ep80579$(_slash)
 +$(_obj)-$(CONFIG_OCF_OCFNULL) += ocfnull$(_slash)
 +
 +ocf-objs := $(OCF_OBJS)
@@ -292,7 +273,7 @@
 +			diff -Nau /dev/null $$t | sed 's?^+++ \./?+++ linux/crypto/ocf/?'; \
 +		done > $$patch; \
 +		cat patches/linux-2.4.35-ocf.patch $$patch > $$patch24; \
-+		cat patches/linux-2.6.25-ocf.patch $$patch > $$patch26
++		cat patches/linux-2.6.26-ocf.patch $$patch > $$patch26
 +
 +.PHONY: tarball
 +tarball:
@@ -470,6 +451,116 @@
 +endif
 +
 --- /dev/null
++++ b/crypto/ocf/ep80579/Makefile
+@@ -0,0 +1,107 @@
++#########################################################################
++#
++#  Targets supported
++#  all     - builds everything and installs
++#  install - identical to all
++#  depend  - build dependencies
++#  clean   - clears derived objects except the .depend files
++#  distclean- clears all derived objects and the .depend file
++#  
++# @par
++# This file is provided under a dual BSD/GPLv2 license.  When using or 
++#   redistributing this file, you may do so under either license.
++# 
++#   GPL LICENSE SUMMARY
++# 
++#   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++# 
++#   This program is free software; you can redistribute it and/or modify 
++#   it under the terms of version 2 of the GNU General Public License as
++#   published by the Free Software Foundation.
++# 
++#   This program is distributed in the hope that it will be useful, but 
++#   WITHOUT ANY WARRANTY; without even the implied warranty of 
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
++#   General Public License for more details.
++# 
++#   You should have received a copy of the GNU General Public License 
++#   along with this program; if not, write to the Free Software 
++#   Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++#   The full GNU General Public License is included in this distribution 
++#   in the file called LICENSE.GPL.
++# 
++#   Contact Information:
++#   Intel Corporation
++# 
++#   BSD LICENSE 
++# 
++#   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++#   All rights reserved.
++# 
++#   Redistribution and use in source and binary forms, with or without 
++#   modification, are permitted provided that the following conditions 
++#   are met:
++# 
++#     * Redistributions of source code must retain the above copyright 
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above copyright 
++#       notice, this list of conditions and the following disclaimer in 
++#       the documentation and/or other materials provided with the 
++#       distribution.
++#     * Neither the name of Intel Corporation nor the names of its 
++#       contributors may be used to endorse or promote products derived 
++#       from this software without specific prior written permission.
++# 
++#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
++#   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
++#   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
++#   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
++#   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
++#   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
++#   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
++#   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
++#   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
++#   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
++#   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++# 
++# 
++#  version: Security.L.1.0.130
++############################################################################
++
++
++####################Common variables and definitions########################
++
++# Ensure The ENV_DIR environmental var is defined.
++ifndef ICP_ENV_DIR
++$(error ICP_ENV_DIR is undefined. Please set the path to your environment makefile \
++        "-> setenv ICP_ENV_DIR <path>")
++endif
++
++#Add your project environment Makefile
++include $(ICP_ENV_DIR)/environment.mk
++
++#include the makefile with all the default and common Make variable definitions
++include $(ICP_BUILDSYSTEM_PATH)/build_files/common.mk
++
++#Add the name for the executable, Library or Module output definitions
++OUTPUT_NAME= icp_ocf
++
++# List of Source Files to be compiled 
++SOURCES= icp_common.c icp_sym.c icp_asym.c
++
++#common includes between all supported OSes
++INCLUDES= -I $(ICP_API_DIR) -I$(ICP_LAC_API) \
++-I$(ICP_OCF_SRC_DIR)
++
++# The location of the os level makefile needs to be changed.
++include $(ICP_ENV_DIR)/$(ICP_OS)_$(ICP_OS_LEVEL).mk
++
++# On the line directly below list the outputs you wish to build for,
++# e.g "lib_static lib_shared exe module" as show below
++install: module
++
++###################Include rules makefiles########################
++include $(ICP_BUILDSYSTEM_PATH)/build_files/rules.mk
++###################End of Rules inclusion#########################
++
++
+--- /dev/null
 +++ b/crypto/ocf/pasemi/Makefile
 @@ -0,0 +1,12 @@
 +# for SGlinux builds
@@ -486,7 +577,7 @@
 +
 --- /dev/null
 +++ b/crypto/ocf/Config.in
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,34 @@
 +#############################################################################
 +
 +mainmenu_option next_comment
@@ -512,6 +603,8 @@
 +				CONFIG_OCF_TALITOS $CONFIG_OCF_OCF
 +dep_tristate '  pasemi (HW crypto engine)' \
 +				CONFIG_OCF_PASEMI $CONFIG_OCF_OCF
++dep_tristate '  ep80579 (HW crypto engine)' \
++				CONFIG_OCF_EP80579 $CONFIG_OCF_OCF
 +dep_tristate '  ocfnull (does no crypto)' \
 +				CONFIG_OCF_OCFNULL $CONFIG_OCF_OCF
 +dep_tristate '  ocf-bench (HW crypto in-kernel benchmark)' \
@@ -521,7 +614,7 @@
 +#############################################################################
 --- /dev/null
 +++ b/crypto/ocf/Kconfig
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,101 @@
 +menu "OCF Configuration"
 +
 +config OCF_OCF
@@ -597,10 +690,16 @@
 +	  OCF driver for Freescale's security engine (SEC/talitos).
 +
 +config OCF_PASEMI
-+        tristate "pasemi (HW crypto engine)"
-+        depends on OCF_OCF && PPC_PASEMI
-+        help
-+          OCF driver for for PA Semi PWRficient DMA Engine
++	tristate "pasemi (HW crypto engine)"
++	depends on OCF_OCF && PPC_PASEMI
++	help
++	  OCF driver for the PA Semi PWRficient DMA Engine
++
++config OCF_EP80579
++	tristate "ep80579 (HW crypto engine)"
++	depends on OCF_OCF
++	help
++	  OCF driver for the Intel EP80579 Integrated Processor Product Line.
 +
 +config OCF_OCFNULL
 +	tristate "ocfnull (fake crypto engine)"
@@ -619,7 +718,7 @@
 +endmenu
 --- /dev/null
 +++ b/crypto/ocf/README
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,167 @@
 +README - ocf-linux-20071215
 +---------------------------
 +
@@ -643,7 +742,7 @@
 +
 +          cd linux-2.4*; gunzip < ocf-linux-24-XXXXXXXX.patch.gz | patch -p1
 +          cd linux-2.6*; gunzip < ocf-linux-26-XXXXXXXX.patch.gz | patch -p1
-+
++    
 +      if you do one of the above,  then you can proceed to the next step,
 +      or you can do the above process by hand with using the patches against
 +      linux-2.4.35 and 2.6.23 to include the ocf code under crypto/ocf.
@@ -656,17 +755,18 @@
 +          cd ..
 +          patch -p1 < crypto/ocf/patches/linux-2.4.35-ocf.patch
 +
-+      for 2.6.23 (and later)
++      for 2.6.23 (and later),  find the kernel patch specific (or nearest)
++      to your kernel versions and then:
 +
-+          cd linux-2.6.23/crypto
++          cd linux-2.6.NN/crypto
 +          tar xvzf ocf-linux.tar.gz
 +          cd ..
-+          patch -p1 < crypto/ocf/patches/linux-2.6.23-ocf.patch
++          patch -p1 < crypto/ocf/patches/linux-2.6.NN-ocf.patch
 +
 +      It should be easy to take this patch and apply it to other more
 +      recent versions of the kernels.  The same patches should also work
 +      relatively easily on kernels as old as 2.6.11 and 2.4.18.
-+
++      
 +    * under 2.4 if you are on a non-x86 platform,  you may need to:
 +
 +        cp linux-2.X.x/include/asm-i386/kmap_types.h linux-2.X.x/include/asm-YYY
@@ -686,7 +786,7 @@
 +
 +              /usr/include/crypto/cryptodev.h
 +
-+    * patch your openssl-0.9.8g code with the openssl-0.9.8g.patch.
++    * patch your openssl-0.9.8i code with the openssl-0.9.8i.patch.
 +      (NOTE: there is no longer a need to patch ssh). The patch is against:
 +      openssl-0_9_8e
 +
@@ -694,7 +794,7 @@
 +      to older OCF releases.  This patch is unlikely to work on older
 +      openssl versions.
 +
-+      openssl-0.9.8g.patch
++      openssl-0.9.8i.patch
 +                - enables --with-cryptodev for non BSD systems
 +                - adds -cpu option to openssl speed for calculating CPU load
 +                  under linux
@@ -869,7 +969,7 @@
 + * MAX_COMMAND = base command + mac command + encrypt command +
 + *			mac-key + rc4-key
 + * MAX_RESULT  = base result + mac result + mac + encrypt result
-+ *
++ *			
 + *
 + */
 +#define	HIFN_MAX_COMMAND	(8 + 8 + 8 + 64 + 260)
@@ -1227,7 +1327,7 @@
 +
 +
 +/*********************************************************************
-+ * Structs for board commands
++ * Structs for board commands 
 + *
 + *********************************************************************/
 +
@@ -1437,7 +1537,7 @@
 +
 +	/*
 +	 *  Our current positions for insertion and removal from the desriptor
-+	 *  rings.
++	 *  rings. 
 +	 */
 +	int			cmdi, srci, dsti, resi;
 +	volatile int		cmdu, srcu, dstu, resu;
@@ -1559,7 +1659,7 @@
 + *
 + *  session_num
 + *  -----------
-+ *  A number between 0 and 2048 (for DRAM models) or a number between
++ *  A number between 0 and 2048 (for DRAM models) or a number between 
 + *  0 and 768 (for SRAM models).  Those who don't want to use session
 + *  numbers should leave value at zero and send a new crypt key and/or
 + *  new MAC key on every command.  If you use session numbers and
@@ -1573,7 +1673,7 @@
 + *  ----
 + *  Either fill in the mbuf pointer and npa=0 or
 + *	 fill packp[] and packl[] and set npa to > 0
-+ *
++ * 
 + *  mac_header_skip
 + *  ---------------
 + *  The number of bytes of the source_buf that are skipped over before
@@ -1661,7 +1761,7 @@
 + *  0 for success, negative values on error
 + *
 + *  Defines for negative error codes are:
-+ *
++ *  
 + *    HIFN_CRYPTO_BAD_INPUT  :  The passed in command had invalid settings.
 + *    HIFN_CRYPTO_RINGS_FULL :  All DMA rings were full and non-blocking
 + *                              behaviour was requested.
@@ -2465,7 +2565,7 @@
 +		sc->sc_dmaier |= HIFN_DMAIER_PUBDONE;
 +		WRITE_REG_1(sc, HIFN_1_DMA_IER, sc->sc_dmaier);
 +#ifdef HIFN_VULCANDEV
-+		sc->sc_pkdev = make_dev(&vulcanpk_cdevsw, 0,
++		sc->sc_pkdev = make_dev(&vulcanpk_cdevsw, 0, 
 +					UID_ROOT, GID_WHEEL, 0666,
 +					"vulcanpk");
 +		sc->sc_pkdev->si_drv1 = sc;
@@ -2664,7 +2764,7 @@
 + * "hifn_enable_crypto" is called to enable it.  The check is important,
 + * as enabling crypto twice will lock the board.
 + */
-+static int
++static int 
 +hifn_enable_crypto(struct hifn_softc *sc)
 +{
 +	u_int32_t dmacfg, ramcfg, encl, addr, i;
@@ -2756,7 +2856,7 @@
 + * Give initial values to the registers listed in the "Register Space"
 + * section of the HIFN Software Development reference manual.
 + */
-+static void
++static void 
 +hifn_init_pci_registers(struct hifn_softc *sc)
 +{
 +	DPRINTF("%s()\n", __FUNCTION__);
@@ -3141,7 +3241,7 @@
 +/*
 + * Initialize the descriptor rings.
 + */
-+static void
++static void 
 +hifn_init_dma(struct hifn_softc *sc)
 +{
 +	struct hifn_dma *dma = sc->sc_dma;
@@ -3429,10 +3529,10 @@
 +	dma->srci = idx;
 +	dma->srcu += src->nsegs;
 +	return (idx);
-+}
++} 
 +
 +
-+static int
++static int 
 +hifn_crypto(
 +	struct hifn_softc *sc,
 +	struct hifn_command *cmd,
@@ -4301,7 +4401,7 @@
 +		cmd->cklen = enccrd->crd_klen >> 3;
 +		cmd->cry_masks |= HIFN_CRYPT_CMD_NEW_KEY;
 +
-+		/*
++		/* 
 +		 * Need to specify the size for the AES key in the masks.
 +		 */
 +		if ((cmd->cry_masks & HIFN_CRYPT_CMD_ALG_MASK) ==
@@ -4858,9 +4958,9 @@
 +static ssize_t
 +cryptoid_show(struct device *dev,
 +	      struct device_attribute *attr,
-+	      char *buf)
-+{
-+	struct hipp_softc *sc;
++	      char *buf)						
++{								
++	struct hipp_softc *sc;					
 +
 +	sc = pci_get_drvdata(to_pci_dev (dev));
 +	return sprintf (buf, "%d\n", sc->sc_cid);
@@ -4992,13 +5092,13 @@
 +		crypto_unregister_all(sc->sc_cid);
 +	if (sc->sc_irq != -1)
 +		free_irq(sc->sc_irq, sc);
-+
++	
 +#if 0
 +	if (sc->sc_dma) {
 +		/* Turn off DMA polling */
 +		WRITE_REG_1(sc, HIFN_1_DMA_CNFG, HIFN_DMACNFG_MSTRESET |
 +			    HIFN_DMACNFG_DMARESET | HIFN_DMACNFG_MODE);
-+
++		
 +		pci_free_consistent(sc->sc_pcidev,
 +				    sizeof(*sc->sc_dma),
 +				    sc->sc_dma, sc->sc_dma_physaddr);
@@ -5151,7 +5251,7 @@
 @@ -0,0 +1,93 @@
 +/*
 + * Hifn HIPP-I/HIPP-II (7855/8155) driver.
-+ * Copyright (c) 2006 Michael Richardson <mcr@xelerance.com> *
++ * Copyright (c) 2006 Michael Richardson <mcr@xelerance.com> * 
 + *
 + * Redistribution and use in source and binary forms, with or without
 + * modification, are permitted provided that the following conditions
@@ -5374,7 +5474,7 @@
 +	0,	0,	0,	0,	0,	0,	0,	0,
 +	0,	0,	0,	0,	0,	0,	0,	0,
 +	0,	0,	0,	0,	0,	0,	0,	0,
-+	0,	0,	0,	0,	0,	0,	0,	0,
++	0,	0,	0,	0,	0,	0,	0,	0,	
 +};
 +
 +static void md5_calc(u_int8_t *, md5_ctxt *);
@@ -5409,7 +5509,7 @@
 +		for (i = gap; i + MD5_BUFLEN <= len; i += MD5_BUFLEN) {
 +			md5_calc((u_int8_t *)(input + i), ctxt);
 +		}
-+
++		
 +		ctxt->md5_i = len - i;
 +		bcopy((void *)(input + i), (void *)ctxt->md5_buf, ctxt->md5_i);
 +	} else {
@@ -5424,7 +5524,7 @@
 +{
 +	u_int gap;
 +
-+	/* Don't count up padding. Keep md5_n. */
++	/* Don't count up padding. Keep md5_n. */	
 +	gap = MD5_BUFLEN - ctxt->md5_i;
 +	if (gap > 8) {
 +		bcopy(md5_paddat,
@@ -5440,7 +5540,7 @@
 +		      MD5_BUFLEN - sizeof(ctxt->md5_n));
 +	}
 +
-+	/* 8 byte word */
++	/* 8 byte word */	
 +#if BYTE_ORDER == LITTLE_ENDIAN
 +	bcopy(&ctxt->md5_n8[0], &ctxt->md5_buf[56], 8);
 +#endif
@@ -5488,7 +5588,7 @@
 +	u_int32_t D = ctxt->md5_std;
 +#if BYTE_ORDER == LITTLE_ENDIAN
 +	u_int32_t *X = (u_int32_t *)b64;
-+#endif
++#endif	
 +#if BYTE_ORDER == BIG_ENDIAN
 +	/* 4 byte words */
 +	/* what a brute force but fast! */
@@ -5520,7 +5620,7 @@
 +	ROUND1(C, D, A, B, 10, Sc, 11); ROUND1(B, C, D, A, 11, Sd, 12);
 +	ROUND1(A, B, C, D, 12, Sa, 13); ROUND1(D, A, B, C, 13, Sb, 14);
 +	ROUND1(C, D, A, B, 14, Sc, 15); ROUND1(B, C, D, A, 15, Sd, 16);
-+
++	
 +	ROUND2(A, B, C, D,  1, Se, 17); ROUND2(D, A, B, C,  6, Sf, 18);
 +	ROUND2(C, D, A, B, 11, Sg, 19); ROUND2(B, C, D, A,  0, Sh, 20);
 +	ROUND2(A, B, C, D,  5, Se, 21); ROUND2(D, A, B, C, 10, Sf, 22);
@@ -5538,14 +5638,14 @@
 +	ROUND3(C, D, A, B,  3, Sk, 43); ROUND3(B, C, D, A,  6, Sl, 44);
 +	ROUND3(A, B, C, D,  9, Si, 45); ROUND3(D, A, B, C, 12, Sj, 46);
 +	ROUND3(C, D, A, B, 15, Sk, 47); ROUND3(B, C, D, A,  2, Sl, 48);
-+
-+	ROUND4(A, B, C, D,  0, Sm, 49); ROUND4(D, A, B, C,  7, Sn, 50);
-+	ROUND4(C, D, A, B, 14, So, 51); ROUND4(B, C, D, A,  5, Sp, 52);
-+	ROUND4(A, B, C, D, 12, Sm, 53); ROUND4(D, A, B, C,  3, Sn, 54);
-+	ROUND4(C, D, A, B, 10, So, 55); ROUND4(B, C, D, A,  1, Sp, 56);
-+	ROUND4(A, B, C, D,  8, Sm, 57); ROUND4(D, A, B, C, 15, Sn, 58);
-+	ROUND4(C, D, A, B,  6, So, 59); ROUND4(B, C, D, A, 13, Sp, 60);
-+	ROUND4(A, B, C, D,  4, Sm, 61); ROUND4(D, A, B, C, 11, Sn, 62);
++	
++	ROUND4(A, B, C, D,  0, Sm, 49); ROUND4(D, A, B, C,  7, Sn, 50);	
++	ROUND4(C, D, A, B, 14, So, 51); ROUND4(B, C, D, A,  5, Sp, 52);	
++	ROUND4(A, B, C, D, 12, Sm, 53); ROUND4(D, A, B, C,  3, Sn, 54);	
++	ROUND4(C, D, A, B, 10, So, 55); ROUND4(B, C, D, A,  1, Sp, 56);	
++	ROUND4(A, B, C, D,  8, Sm, 57); ROUND4(D, A, B, C, 15, Sn, 58);	
++	ROUND4(C, D, A, B,  6, So, 59); ROUND4(B, C, D, A, 13, Sp, 60);	
++	ROUND4(A, B, C, D,  4, Sm, 61); ROUND4(D, A, B, C, 11, Sn, 62);	
 +	ROUND4(C, D, A, B,  2, So, 63); ROUND4(B, C, D, A,  9, Sp, 64);
 +
 +	ctxt->md5_sta += A;
@@ -6004,7 +6104,7 @@
 +		sc->sc_needwakeup &= ~wakeup;
 +		crypto_unblock(sc->sc_cid, wakeup);
 +	}
-+
++	
 +	return IRQ_HANDLED;
 +}
 +
@@ -6540,7 +6640,7 @@
 +		/*
 +		 * Tell the hardware to copy the header to the output.
 +		 * The header is defined as the data from the end of
-+		 * the bypass to the start of data to be encrypted.
++		 * the bypass to the start of data to be encrypted. 
 +		 * Typically this is the inline IV.  Note that you need
 +		 * to do this even if src+dst are the same; it appears
 +		 * that w/o this bit the crypted data is written
@@ -6639,7 +6739,7 @@
 +					 * destination wil result in a
 +					 * destination particle list that does
 +					 * the necessary scatter DMA.
-+					 */
++					 */ 
 +					safestats.st_iovnotuniform++;
 +					err = EINVAL;
 +					goto errout;
@@ -6752,7 +6852,7 @@
 +		pci_unmap_operand(sc, &re->re_dst);
 +	pci_unmap_operand(sc, &re->re_src);
 +
-+	/*
++	/* 
 +	 * If result was written to a differet mbuf chain, swap
 +	 * it in as the return value and reclaim the original.
 +	 */
@@ -6802,14 +6902,14 @@
 +				 */
 +				re->re_sastate.sa_saved_indigest[0] =
 +					cpu_to_be32(re->re_sastate.sa_saved_indigest[0]);
-+				re->re_sastate.sa_saved_indigest[1] =
++				re->re_sastate.sa_saved_indigest[1] = 
 +					cpu_to_be32(re->re_sastate.sa_saved_indigest[1]);
 +				re->re_sastate.sa_saved_indigest[2] =
 +					cpu_to_be32(re->re_sastate.sa_saved_indigest[2]);
 +			} else {
 +				re->re_sastate.sa_saved_indigest[0] =
 +					cpu_to_le32(re->re_sastate.sa_saved_indigest[0]);
-+				re->re_sastate.sa_saved_indigest[1] =
++				re->re_sastate.sa_saved_indigest[1] = 
 +					cpu_to_le32(re->re_sastate.sa_saved_indigest[1]);
 +				re->re_sastate.sa_saved_indigest[2] =
 +					cpu_to_le32(re->re_sastate.sa_saved_indigest[2]);
@@ -6851,7 +6951,7 @@
 +	 * status reg in the read in case it is initialized.  Then read
 +	 * the data register until it changes from the first read.
 +	 * Once it changes read the data register until it changes
-+	 * again.  At this time the RNG is considered initialized.
++	 * again.  At this time the RNG is considered initialized. 
 +	 * This could take between 750ms - 1000ms in time.
 +	 */
 +	i = 0;
@@ -6889,7 +6989,7 @@
 +{
 +	DPRINTF(("%s()\n", __FUNCTION__));
 +
-+	WRITE_REG(sc, SAFE_RNG_CTRL,
++	WRITE_REG(sc, SAFE_RNG_CTRL, 
 +		READ_REG(sc, SAFE_RNG_CTRL) | SAFE_RNG_CTRL_SHORTEN);
 +}
 +
@@ -6911,7 +7011,7 @@
 +	int i, rc;
 +
 +	DPRINTF(("%s()\n", __FUNCTION__));
-+
++	
 +	safestats.st_rng++;
 +	/*
 +	 * Fetch the next block of data.
@@ -7131,9 +7231,9 @@
 +#endif
 +
 +	crp = (struct cryptop *)re->re_crp;
-+
++	
 +	re->re_desc.d_csr = 0;
-+
++	
 +	crp->crp_etype = EFAULT;
 +	crypto_done(crp);
 +	return(0);
@@ -7295,7 +7395,7 @@
 +		    ((base_bits + 7) / 8) - 1;
 +		modp = krp->krp_param[SAFE_CRK_PARAM_MOD].crp_p +
 +		    ((mod_bits + 7) / 8) - 1;
-+
++		
 +		for (i = 0; i < (mod_bits + 7) / 8; i++, basep--, modp--) {
 +			if (*modp < *basep)
 +				goto too_small;
@@ -8695,7 +8795,7 @@
 +#define	SAFE_SA_CMD1_AES192	0x03000000	/* 192-bit AES key */
 +#define	SAFE_SA_CMD1_AES256	0x04000000	/* 256-bit AES key */
 +
-+/*
++/* 
 + * Security Associate State Record (Rev 1).
 + */
 +struct safe_sastate {
@@ -10642,7 +10742,7 @@
 +
 +	/* XXX flush queues??? */
 +
-+	/*
++	/* 
 +	 * Reclaim dynamically allocated resources.
 +	 */
 +	if (crypto_drivers != NULL)
@@ -11001,12 +11101,12 @@
 + * The Freescale SEC (also known as 'talitos') resides on the
 + * internal bus, and runs asynchronous to the processor core.  It has
 + * a wide gamut of cryptographic acceleration features, including single-
-+ * pass IPsec (also known as algorithm chaining).  To properly utilize
-+ * all of the SEC's performance enhancing features, further reworking
++ * pass IPsec (also known as algorithm chaining).  To properly utilize 
++ * all of the SEC's performance enhancing features, further reworking 
 + * of higher level code (framework, applications) will be necessary.
 + *
 + * The following table shows which SEC version is present in which devices:
-+ *
++ * 
 + * Devices       SEC version
 + *
 + * 8272, 8248    SEC 1.0
@@ -11050,13 +11150,13 @@
 + *
 + * Channel ch0 may drive an aes operation to the aes unit (AESU),
 + * and, at the same time, ch1 may drive a message digest operation
-+ * to the mdeu. Each channel has an input descriptor FIFO, and the
++ * to the mdeu. Each channel has an input descriptor FIFO, and the 
 + * FIFO can contain, e.g. on the 8541E, up to 24 entries, before a
 + * a buffer overrun error is triggered. The controller is responsible
-+ * for fetching the data from descriptor pointers, and passing the
-+ * data to the appropriate EUs. The controller also writes the
-+ * cryptographic operation's result to memory. The SEC notifies
-+ * completion by triggering an interrupt and/or setting the 1st byte
++ * for fetching the data from descriptor pointers, and passing the 
++ * data to the appropriate EUs. The controller also writes the 
++ * cryptographic operation's result to memory. The SEC notifies 
++ * completion by triggering an interrupt and/or setting the 1st byte 
 + * of the hdr field to 0xff.
 + *
 + * TODO:
@@ -11093,7 +11193,7 @@
 +#include <cryptodev.h>
 +#include <uio.h>
 +
-+#define DRV_NAME "talitos"
++#define DRV_NAME "talitos" 
 +
 +#include "talitos_dev.h"
 +#include "talitos_soft.h"
@@ -11108,7 +11208,7 @@
 +static int talitos_freesession(device_t dev, u_int64_t tid);
 +static int talitos_process(device_t dev, struct cryptop *crp, int hint);
 +static void dump_talitos_status(struct talitos_softc *sc);
-+static int talitos_submit(struct talitos_softc *sc, struct talitos_desc *td,
++static int talitos_submit(struct talitos_softc *sc, struct talitos_desc *td, 
 +								int chsel);
 +static void talitos_doneprocessing(struct talitos_softc *sc);
 +static void talitos_init_device(struct talitos_softc *sc);
@@ -11166,26 +11266,26 @@
 +	v_hi = talitos_read(sc->sc_base_addr + TALITOS_ISR_HI);
 +	printk(KERN_INFO "%s: ISR          0x%08x_%08x\n",
 +			device_get_nameunit(sc->sc_cdev), v, v_hi);
-+	for (i = 0; i < sc->sc_num_channels; i++) {
-+		v = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET +
++	for (i = 0; i < sc->sc_num_channels; i++) { 
++		v = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 +			TALITOS_CH_CDPR);
-+		v_hi = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET +
++		v_hi = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 +			TALITOS_CH_CDPR_HI);
-+		printk(KERN_INFO "%s: CDPR     ch%d 0x%08x_%08x\n",
++		printk(KERN_INFO "%s: CDPR     ch%d 0x%08x_%08x\n", 
 +				device_get_nameunit(sc->sc_cdev), i, v, v_hi);
 +	}
-+	for (i = 0; i < sc->sc_num_channels; i++) {
-+		v = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET +
++	for (i = 0; i < sc->sc_num_channels; i++) { 
++		v = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 +			TALITOS_CH_CCPSR);
-+		v_hi = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET +
++		v_hi = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 +			TALITOS_CH_CCPSR_HI);
-+		printk(KERN_INFO "%s: CCPSR    ch%d 0x%08x_%08x\n",
++		printk(KERN_INFO "%s: CCPSR    ch%d 0x%08x_%08x\n", 
 +				device_get_nameunit(sc->sc_cdev), i, v, v_hi);
 +	}
 +	ptr = sc->sc_base_addr + TALITOS_CH_DESCBUF;
-+	for (i = 0; i < 16; i++) {
++	for (i = 0; i < 16; i++) { 
 +		v = talitos_read(ptr++); v_hi = talitos_read(ptr++);
-+		printk(KERN_INFO "%s: DESCBUF  ch0 0x%08x_%08x (tdp%02d)\n",
++		printk(KERN_INFO "%s: DESCBUF  ch0 0x%08x_%08x (tdp%02d)\n", 
 +				device_get_nameunit(sc->sc_cdev), v, v_hi, i);
 +	}
 +	return;
@@ -11193,7 +11293,7 @@
 +
 +
 +#ifdef CONFIG_OCF_RANDOMHARVEST
-+/*
++/* 
 + * pull random numbers off the RNG FIFO, not exceeding amount available
 + */
 +static int
@@ -11213,7 +11313,7 @@
 +		return 0;
 +	}
 +	/*
-+	 * OFL is number of available 64-bit words,
++	 * OFL is number of available 64-bit words, 
 +	 * shift and convert to a 32-bit word count
 +	 */
 +	v = talitos_read(sc->sc_base_addr + TALITOS_RNGSR_HI);
@@ -11221,16 +11321,16 @@
 +	if (maxwords > v)
 +		maxwords = v;
 +	for (rc = 0; rc < maxwords; rc++) {
-+		buf[rc] = talitos_read(sc->sc_base_addr +
++		buf[rc] = talitos_read(sc->sc_base_addr + 
 +			TALITOS_RNG_FIFO + rc*sizeof(u_int32_t));
 +	}
 +	if (maxwords & 1) {
-+		/*
++		/* 
 +		 * RNG will complain with an AE in the RNGISR
 +		 * if we don't complete the pairs of 32-bit reads
 +		 * to its 64-bit register based FIFO
 +		 */
-+		v = talitos_read(sc->sc_base_addr +
++		v = talitos_read(sc->sc_base_addr + 
 +			TALITOS_RNG_FIFO + rc*sizeof(u_int32_t));
 +	}
 +
@@ -11247,18 +11347,18 @@
 +	v = talitos_read(sc->sc_base_addr + TALITOS_RNGRCR_HI);
 +	v |= TALITOS_RNGRCR_HI_SR;
 +	talitos_write(sc->sc_base_addr + TALITOS_RNGRCR_HI, v);
-+	while ((talitos_read(sc->sc_base_addr + TALITOS_RNGSR_HI)
++	while ((talitos_read(sc->sc_base_addr + TALITOS_RNGSR_HI) 
 +		& TALITOS_RNGSR_HI_RD) == 0)
 +			cpu_relax();
 +	/*
 +	 * we tell the RNG to start filling the RNG FIFO
-+	 * by writing the RNGDSR
++	 * by writing the RNGDSR 
 +	 */
 +	v = talitos_read(sc->sc_base_addr + TALITOS_RNGDSR_HI);
 +	talitos_write(sc->sc_base_addr + TALITOS_RNGDSR_HI, v);
 +	/*
-+	 * 64 bits of data will be pushed onto the FIFO every
-+	 * 256 SEC cycles until the FIFO is full.  The RNG then
++	 * 64 bits of data will be pushed onto the FIFO every 
++	 * 256 SEC cycles until the FIFO is full.  The RNG then 
 +	 * attempts to keep the FIFO full.
 +	 */
 +	v = talitos_read(sc->sc_base_addr + TALITOS_RNGISR_HI);
@@ -11268,7 +11368,7 @@
 +		return;
 +	}
 +	/*
-+	 * n.b. we need to add a FIPS test here - if the RNG is going
++	 * n.b. we need to add a FIPS test here - if the RNG is going 
 +	 * to fail, it's going to fail at reset time
 +	 */
 +	return;
@@ -11314,7 +11414,7 @@
 +	}
 +	if (encini == NULL && macini == NULL)
 +		return EINVAL;
-+	if (encini) {
++	if (encini) {	
 +		/* validate key length */
 +		switch (encini->cri_alg) {
 +		case CRYPTO_DES_CBC:
@@ -11333,7 +11433,7 @@
 +				return EINVAL;
 +			break;
 +		default:
-+			DPRINTF("UNKNOWN encini->cri_alg %d\n",
++			DPRINTF("UNKNOWN encini->cri_alg %d\n", 
 +				encini->cri_alg);
 +			return EINVAL;
 +		}
@@ -11359,13 +11459,13 @@
 +			/* allocating session */
 +			sesn = sc->sc_nsessions;
 +			ses = (struct talitos_session *) kmalloc(
-+				(sesn + 1) * sizeof(struct talitos_session),
++				(sesn + 1) * sizeof(struct talitos_session), 
 +				SLAB_ATOMIC);
 +			if (ses == NULL)
 +				return ENOMEM;
 +			memset(ses, 0,
 +				(sesn + 1) * sizeof(struct talitos_session));
-+			memcpy(ses, sc->sc_sessions,
++			memcpy(ses, sc->sc_sessions, 
 +				sesn * sizeof(struct talitos_session));
 +			memset(sc->sc_sessions, 0,
 +				sesn * sizeof(struct talitos_session));
@@ -11408,7 +11508,7 @@
 +		}
 +	}
 +
-+	/* really should make up a template td here,
++	/* really should make up a template td here, 
 +	 * and only fill things like i/o and direction in process() */
 +
 +	/* assign session ID */
@@ -11439,10 +11539,10 @@
 +}
 +
 +/*
-+ * launch device processing - it will come back with done notification
-+ * in the form of an interrupt and/or HDR_DONE_BITS in header
++ * launch device processing - it will come back with done notification 
++ * in the form of an interrupt and/or HDR_DONE_BITS in header 
 + */
-+static int
++static int 
 +talitos_submit(
 +	struct talitos_softc *sc,
 +	struct talitos_desc *td,
@@ -11451,9 +11551,9 @@
 +	u_int32_t v;
 +
 +	v = dma_map_single(NULL, td, sizeof(*td), DMA_TO_DEVICE);
-+	talitos_write(sc->sc_base_addr +
++	talitos_write(sc->sc_base_addr + 
 +		chsel*TALITOS_CH_OFFSET + TALITOS_CH_FF, 0);
-+	talitos_write(sc->sc_base_addr +
++	talitos_write(sc->sc_base_addr + 
 +		chsel*TALITOS_CH_OFFSET + TALITOS_CH_FF_HI, v);
 +	return 0;
 +}
@@ -11469,7 +11569,7 @@
 +	struct talitos_desc *td;
 +	unsigned long flags;
 +	/* descriptor mappings */
-+	int hmac_key, hmac_data, cipher_iv, cipher_key,
++	int hmac_key, hmac_data, cipher_iv, cipher_key, 
 +		in_fifo, out_fifo, cipher_iv_out;
 +	static int chsel = -1;
 +
@@ -11485,7 +11585,7 @@
 +
 +	ses = &sc->sc_sessions[TALITOS_SESSION(crp->crp_sid)];
 +
-+        /* enter the channel scheduler */
++        /* enter the channel scheduler */ 
 +	spin_lock_irqsave(&sc->sc_chnfifolock[sc->sc_num_channels], flags);
 +
 +	/* reuse channel that already had/has requests for the required EU */
@@ -11497,19 +11597,19 @@
 +		/*
 +		 * haven't seen this algo the last sc_num_channels or more
 +		 * use round robin in this case
-+	 	 * nb: sc->sc_num_channels must be power of 2
++	 	 * nb: sc->sc_num_channels must be power of 2 
 +		 */
 +		chsel = (chsel + 1) & (sc->sc_num_channels - 1);
 +	} else {
 +		/*
-+		 * matches channel with same target execution unit;
++		 * matches channel with same target execution unit; 
 +		 * use same channel in this case
 +		 */
 +		chsel = i;
 +	}
 +	sc->sc_chnlastalg[chsel] = crp->crp_desc->crd_alg;
 +
-+        /* release the channel scheduler lock */
++        /* release the channel scheduler lock */ 
 +	spin_unlock_irqrestore(&sc->sc_chnfifolock[sc->sc_num_channels], flags);
 +
 +	/* acquire the selected channel fifo lock */
@@ -11518,7 +11618,7 @@
 +	/* find and reserve next available descriptor-cryptop pair */
 +	for (i = 0; i < sc->sc_chfifo_len; i++) {
 +		if (sc->sc_chnfifo[chsel][i].cf_desc.hdr == 0) {
-+			/*
++			/* 
 +			 * ensure correct descriptor formation by
 +			 * avoiding inadvertently setting "optional" entries
 +			 * e.g. not using "optional" dptr2 for MD/HMAC descs
@@ -11526,7 +11626,7 @@
 +			memset(&sc->sc_chnfifo[chsel][i].cf_desc,
 +				0, sizeof(*td));
 +			/* reserve it with done notification request bit */
-+			sc->sc_chnfifo[chsel][i].cf_desc.hdr |=
++			sc->sc_chnfifo[chsel][i].cf_desc.hdr |= 
 +				TALITOS_DONE_NOTIFY;
 +			break;
 +		}
@@ -11538,7 +11638,7 @@
 +		err = ERESTART;
 +		goto errout;
 +	}
-+
++	
 +	td = &sc->sc_chnfifo[chsel][i].cf_desc;
 +	sc->sc_chnfifo[chsel][i].cf_crp = crp;
 +
@@ -11633,10 +11733,10 @@
 +			err = EINVAL;
 +			goto errout;
 +		}
-+		td->ptr[in_fifo].ptr = dma_map_single(NULL, skb->data,
++		td->ptr[in_fifo].ptr = dma_map_single(NULL, skb->data, 
 +			skb->len, DMA_TO_DEVICE);
 +		td->ptr[in_fifo].len = skb->len;
-+		td->ptr[out_fifo].ptr = dma_map_single(NULL, skb->data,
++		td->ptr[out_fifo].ptr = dma_map_single(NULL, skb->data, 
 +			skb->len, DMA_TO_DEVICE);
 +		td->ptr[out_fifo].len = skb->len;
 +		td->ptr[hmac_data].ptr = dma_map_single(NULL, skb->data,
@@ -11709,7 +11809,7 @@
 +		 * copy both the header+IV.
 +		 */
 +		if (enccrd->crd_flags & CRD_F_ENCRYPT) {
-+			td->hdr |= TALITOS_DIR_OUTBOUND;
++			td->hdr |= TALITOS_DIR_OUTBOUND; 
 +			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT)
 +				iv = enccrd->crd_iv;
 +			else
@@ -11719,7 +11819,7 @@
 +				    enccrd->crd_inject, ivsize, iv);
 +			}
 +		} else {
-+			td->hdr |= TALITOS_DIR_INBOUND;
++			td->hdr |= TALITOS_DIR_INBOUND; 
 +			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT) {
 +				iv = enccrd->crd_iv;
 +				bcopy(enccrd->crd_iv, iv, ivsize);
@@ -11729,7 +11829,7 @@
 +				    enccrd->crd_inject, ivsize, iv);
 +			}
 +		}
-+		td->ptr[cipher_iv].ptr = dma_map_single(NULL, iv, ivsize,
++		td->ptr[cipher_iv].ptr = dma_map_single(NULL, iv, ivsize, 
 +			DMA_TO_DEVICE);
 +		td->ptr[cipher_iv].len = ivsize;
 +		/*
@@ -11747,16 +11847,16 @@
 +			|  TALITOS_MODE1_MDEU_INIT
 +			|  TALITOS_MODE1_MDEU_PAD;
 +		switch (maccrd->crd_alg) {
-+			case	CRYPTO_MD5:
++			case	CRYPTO_MD5:	
 +				td->hdr |= TALITOS_MODE1_MDEU_MD5;
 +				break;
-+			case	CRYPTO_MD5_HMAC:
++			case	CRYPTO_MD5_HMAC:	
 +				td->hdr |= TALITOS_MODE1_MDEU_MD5_HMAC;
 +				break;
-+			case	CRYPTO_SHA1:
++			case	CRYPTO_SHA1:	
 +				td->hdr |= TALITOS_MODE1_MDEU_SHA1;
 +				break;
-+			case	CRYPTO_SHA1_HMAC:
++			case	CRYPTO_SHA1_HMAC:	
 +				td->hdr |= TALITOS_MODE1_MDEU_SHA1_HMAC;
 +				break;
 +			default:
@@ -11773,7 +11873,7 @@
 +			 * crypt data is the difference in the skips.
 +			 */
 +			/* ipsec only for now */
-+			td->ptr[hmac_key].ptr = dma_map_single(NULL,
++			td->ptr[hmac_key].ptr = dma_map_single(NULL, 
 +				ses->ses_hmac, ses->ses_hmac_len, DMA_TO_DEVICE);
 +			td->ptr[hmac_key].len = ses->ses_hmac_len;
 +			td->ptr[in_fifo].ptr  += enccrd->crd_skip;
@@ -11782,7 +11882,7 @@
 +			td->ptr[out_fifo].len =  enccrd->crd_len;
 +			/* bytes of HMAC to postpend to ciphertext */
 +			td->ptr[out_fifo].extent =  ses->ses_mlen;
-+			td->ptr[hmac_data].ptr += maccrd->crd_skip;
++			td->ptr[hmac_data].ptr += maccrd->crd_skip; 
 +			td->ptr[hmac_data].len = enccrd->crd_skip - maccrd->crd_skip;
 +		}
 +		if (enccrd->crd_flags & CRD_F_KEY_EXPLICIT) {
@@ -11796,22 +11896,22 @@
 +				|  TALITOS_MODE0_MDEU_INIT
 +				|  TALITOS_MODE0_MDEU_PAD;
 +		switch (maccrd->crd_alg) {
-+			case	CRYPTO_MD5:
++			case	CRYPTO_MD5:	
 +				td->hdr |= TALITOS_MODE0_MDEU_MD5;
 +				DPRINTF("MD5  ses %d ch %d len %d\n",
-+					(u32)TALITOS_SESSION(crp->crp_sid),
++					(u32)TALITOS_SESSION(crp->crp_sid), 
 +					chsel, td->ptr[in_fifo].len);
 +				break;
-+			case	CRYPTO_MD5_HMAC:
++			case	CRYPTO_MD5_HMAC:	
 +				td->hdr |= TALITOS_MODE0_MDEU_MD5_HMAC;
 +				break;
-+			case	CRYPTO_SHA1:
++			case	CRYPTO_SHA1:	
 +				td->hdr |= TALITOS_MODE0_MDEU_SHA1;
 +				DPRINTF("SHA1 ses %d ch %d len %d\n",
-+					(u32)TALITOS_SESSION(crp->crp_sid),
++					(u32)TALITOS_SESSION(crp->crp_sid), 
 +					chsel, td->ptr[in_fifo].len);
 +				break;
-+			case	CRYPTO_SHA1_HMAC:
++			case	CRYPTO_SHA1_HMAC:	
 +				td->hdr |= TALITOS_MODE0_MDEU_SHA1_HMAC;
 +				break;
 +			default:
@@ -11826,16 +11926,16 @@
 +
 +		if ((maccrd->crd_alg == CRYPTO_MD5_HMAC) ||
 +		   (maccrd->crd_alg == CRYPTO_SHA1_HMAC)) {
-+			td->ptr[hmac_key].ptr = dma_map_single(NULL,
-+				ses->ses_hmac, ses->ses_hmac_len,
++			td->ptr[hmac_key].ptr = dma_map_single(NULL, 
++				ses->ses_hmac, ses->ses_hmac_len, 
 +				DMA_TO_DEVICE);
 +			td->ptr[hmac_key].len = ses->ses_hmac_len;
 +		}
-+	}
++	} 
 +	else {
 +		/* using process key (session data has duplicate) */
-+		td->ptr[cipher_key].ptr = dma_map_single(NULL,
-+			enccrd->crd_key, (enccrd->crd_klen + 7) / 8,
++		td->ptr[cipher_key].ptr = dma_map_single(NULL, 
++			enccrd->crd_key, (enccrd->crd_klen + 7) / 8, 
 +			DMA_TO_DEVICE);
 +		td->ptr[cipher_key].len = (enccrd->crd_klen + 7) / 8;
 +	}
@@ -11850,8 +11950,8 @@
 +	return err;
 +}
 +
-+/* go through all channels descriptors, notifying OCF what has
-+ * _and_hasn't_ successfully completed and reset the device
++/* go through all channels descriptors, notifying OCF what has 
++ * _and_hasn't_ successfully completed and reset the device 
 + * (otherwise it's up to decoding desc hdrs!)
 + */
 +static void talitos_errorprocessing(struct talitos_softc *sc)
@@ -11863,19 +11963,19 @@
 +	spin_lock_irqsave(&sc->sc_chnfifolock[sc->sc_num_channels], flags);
 +
 +	if (debug) dump_talitos_status(sc);
-+	/* go through descriptors, try and salvage those successfully done,
++	/* go through descriptors, try and salvage those successfully done, 
 +	 * and EIO those that weren't
 +	 */
 +	for (i = 0; i < sc->sc_num_channels; i++) {
 +		spin_lock_irqsave(&sc->sc_chnfifolock[i], flags);
 +		for (j = 0; j < sc->sc_chfifo_len; j++) {
 +			if (sc->sc_chnfifo[i][j].cf_desc.hdr) {
-+				if ((sc->sc_chnfifo[i][j].cf_desc.hdr
-+					& TALITOS_HDR_DONE_BITS)
++				if ((sc->sc_chnfifo[i][j].cf_desc.hdr 
++					& TALITOS_HDR_DONE_BITS) 
 +					!= TALITOS_HDR_DONE_BITS) {
 +					/* this one didn't finish */
 +					/* signify in crp->etype */
-+					sc->sc_chnfifo[i][j].cf_crp->crp_etype
++					sc->sc_chnfifo[i][j].cf_crp->crp_etype 
 +						= EIO;
 +				}
 +			} else
@@ -11918,8 +12018,8 @@
 +		spin_lock_irqsave(&sc->sc_chnfifolock[i], flags);
 +		for (j = 0; j < sc->sc_chfifo_len; j++) {
 +			/* descriptor has done bits set? */
-+			if ((sc->sc_chnfifo[i][j].cf_desc.hdr
-+				& TALITOS_HDR_DONE_BITS)
++			if ((sc->sc_chnfifo[i][j].cf_desc.hdr 
++				& TALITOS_HDR_DONE_BITS) 
 +				== TALITOS_HDR_DONE_BITS) {
 +				/* notify ocf */
 +				crypto_done(sc->sc_chnfifo[i][j].cf_crp);
@@ -11947,7 +12047,7 @@
 +{
 +	struct talitos_softc *sc = arg;
 +	u_int32_t v, v_hi;
-+
++	
 +	/* ack */
 +	v = talitos_read(sc->sc_base_addr + TALITOS_ISR);
 +	v_hi = talitos_read(sc->sc_base_addr + TALITOS_ISR_HI);
@@ -11979,11 +12079,11 @@
 +
 +	/* init all channels */
 +	for (i = 0; i < sc->sc_num_channels; i++) {
-+		v = talitos_read(sc->sc_base_addr +
++		v = talitos_read(sc->sc_base_addr + 
 +			i*TALITOS_CH_OFFSET + TALITOS_CH_CCCR_HI);
 +		v |= TALITOS_CH_CCCR_HI_CDWE
 +		  |  TALITOS_CH_CCCR_HI_CDIE;  /* invoke interrupt if done */
-+		talitos_write(sc->sc_base_addr +
++		talitos_write(sc->sc_base_addr + 
 +			i*TALITOS_CH_OFFSET + TALITOS_CH_CCCR_HI, v);
 +	}
 +	/* enable all interrupts */
@@ -12028,13 +12128,13 @@
 +
 +	/*
 +	 * Master reset
-+	 * errata documentation: warning: certain SEC interrupts
-+	 * are not fully cleared by writing the MCR:SWR bit,
-+	 * set bit twice to completely reset
++	 * errata documentation: warning: certain SEC interrupts 
++	 * are not fully cleared by writing the MCR:SWR bit, 
++	 * set bit twice to completely reset 
 +	 */
 +	talitos_reset_device_master(sc);	/* once */
 +	talitos_reset_device_master(sc);	/* and once again */
-+
++	
 +	/* reset all channels */
 +	for (i = 0; i < sc->sc_num_channels; i++) {
 +		v = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET +
@@ -12104,7 +12204,7 @@
 +	rc = request_irq(sc->sc_irq, talitos_intr, 0,
 +			device_get_nameunit(sc->sc_cdev), sc);
 +	if (rc) {
-+		printk(KERN_ERR "%s: failed to hook irq %d\n",
++		printk(KERN_ERR "%s: failed to hook irq %d\n", 
 +				device_get_nameunit(sc->sc_cdev), sc->sc_irq);
 +		sc->sc_irq = -1;
 +		goto out;
@@ -12166,17 +12266,17 @@
 +	memset(sc->sc_chnlastalg, 0, sc->sc_num_channels * sizeof(int));
 +
 +	sc->sc_chnfifo = (struct desc_cryptop_pair **) kmalloc(
-+		sc->sc_num_channels * sizeof(struct desc_cryptop_pair *),
++		sc->sc_num_channels * sizeof(struct desc_cryptop_pair *), 
 +		GFP_KERNEL);
 +	if (!sc->sc_chnfifo)
 +		goto out;
 +	for (i = 0; i < sc->sc_num_channels; i++) {
 +		sc->sc_chnfifo[i] = (struct desc_cryptop_pair *) kmalloc(
-+			sc->sc_chfifo_len * sizeof(struct desc_cryptop_pair),
++			sc->sc_chfifo_len * sizeof(struct desc_cryptop_pair), 
 +			GFP_KERNEL);
 +		if (!sc->sc_chnfifo[i])
 +			goto out;
-+		memset(sc->sc_chnfifo[i], 0,
++		memset(sc->sc_chnfifo[i], 0, 
 +			sc->sc_chfifo_len * sizeof(struct desc_cryptop_pair));
 +	}
 +
@@ -12436,7 +12536,7 @@
 +#define TALITOS_ID_SEC_2_1	0x40 /* cross ref with IP block revision reg */
 +
 +/*
-+ * following num_channels, channel-fifo-depth, exec-unit-mask, and
++ * following num_channels, channel-fifo-depth, exec-unit-mask, and 
 + * descriptor-types-mask are for forward-compatibility with openfirmware
 + * flat device trees
 + */
@@ -12464,11 +12564,11 @@
 +#define TALITOS_CHFIFOLEN_SEC_2_1	24
 +#define TALITOS_CHFIFOLEN_SEC_2_4	24
 +
-+/*
++/* 
 + *  exec-unit-mask : The bitmask representing what Execution Units (EUs)
-+ *  are available. EU information should be encoded following the SEC's
++ *  are available. EU information should be encoded following the SEC's 
 + *  EU_SEL0 bitfield documentation, i.e. as follows:
-+ *
++ * 
 + *    bit 31 = set if SEC permits no-EU selection (should be always set)
 + *    bit 30 = set if SEC has the ARC4 EU (AFEU)
 + *    bit 29 = set if SEC has the des/3des EU (DEU)
@@ -12477,7 +12577,7 @@
 + *    bit 26 = set if SEC has the public key EU (PKEU)
 + *    bit 25 = set if SEC has the aes EU (AESU)
 + *    bit 24 = set if SEC has the Kasumi EU (KEU)
-+ *
++ * 
 + */
 +#define TALITOS_HAS_EU_NONE		(1<<0)
 +#define TALITOS_HAS_EU_AFEU		(1<<1)
@@ -12498,8 +12598,8 @@
 +
 +/*
 + *  descriptor-types-mask : The bitmask representing what descriptors
-+ *  are available. Descriptor type information should be encoded
-+ *  following the SEC's Descriptor Header Dword DESC_TYPE field
++ *  are available. Descriptor type information should be encoded 
++ *  following the SEC's Descriptor Header Dword DESC_TYPE field 
 + *  documentation, i.e. as follows:
 + *
 + *    bit 0  = set if SEC supports the aesu_ctr_nonsnoop desc. type
@@ -12525,7 +12625,7 @@
 +#define TALITOS_HAS_DESCTYPES_SEC_2_0	0x01010ebf
 +#define TALITOS_HAS_DESCTYPES_SEC_2_1	0x012b0ebf
 +
-+/*
++/* 
 + * a TALITOS_xxx_HI address points to the low data bits (32-63) of the register
 + */
 +
@@ -12564,7 +12664,7 @@
 +#define TALITOS_CH_FF_HI	0x114c	/* Fetch FIFO's FETCH_ADRS */
 +#define TALITOS_CH_CDPR		0x1140	/* Crypto-Channel Pointer Status Reg */
 +#define TALITOS_CH_CDPR_HI	0x1144	/* Crypto-Channel Pointer Status Reg */
-+#define TALITOS_CH_DESCBUF	0x1180	/* (thru 11bf) Crypto-Channel
++#define TALITOS_CH_DESCBUF	0x1180	/* (thru 11bf) Crypto-Channel 
 +					 * Descriptor Buffer (debug) */
 +
 +/* execution unit register offset addresses and bits */
@@ -12986,7 +13086,7 @@
 +#endif
 +		}
 +	}
-+
++	
 +	kfree(buf);
 +
 +bad_alloc:
@@ -13963,7 +14063,7 @@
 +		IX_MBUF_MLEN(&q->ixp_q_mbuf) = IX_MBUF_PKT_LEN(&q->ixp_q_mbuf) =
 +			((IX_MBUF_MLEN(&q->ixp_q_mbuf) * 8) + 72 + 511) / 8;
 +		tbuf = kmalloc(IX_MBUF_MLEN(&q->ixp_q_mbuf), SLAB_ATOMIC);
-+
++		
 +		if (IX_MBUF_MDATA(&q->ixp_q_mbuf) == NULL) {
 +			printk("ixp: kmalloc(%u, SLAB_ATOMIC) failed\n",
 +					IX_MBUF_MLEN(&q->ixp_q_mbuf));
@@ -14530,7 +14630,7 @@
 +				&q->pkq_op,
 +				ixp_kperform_cb,
 +				&q->pkq_result);
-+
++	
 +		if (status == IX_CRYPTO_ACC_STATUS_SUCCESS) {
 +			dprintk("%s() - ixCryptoAccPkeEauPerform SUCCESS\n", __FUNCTION__);
 +			return; /* callback will return here for callback */
@@ -14827,7 +14927,7 @@
 +#include <linux/slab.h>
 +#include <linux/fs.h>
 +#include <linux/dcache.h>
-+#include <linux/fdtable.h>
++#include <linux/file.h>
 +#include <linux/mount.h>
 +#include <linux/miscdevice.h>
 +#include <linux/version.h>
@@ -14907,7 +15007,7 @@
 +	int hid = crid & ~(CRYPTOCAP_F_SOFTWARE | CRYPTOCAP_F_HARDWARE);
 +	int typ = crid & (CRYPTOCAP_F_SOFTWARE | CRYPTOCAP_F_HARDWARE);
 +	int caps = 0;
-+
++	
 +	/* if the user hasn't selected a driver, then just call newsession */
 +	if (hid == 0 && typ != 0)
 +		return 0;
@@ -14919,7 +15019,7 @@
 +		dprintk("%s: hid=%x typ=%x not matched\n", __FUNCTION__, hid, typ);
 +		return EINVAL;
 +	}
-+
++	
 +	/* the user didn't specify SW or HW, so the driver is ok */
 +	if (typ == 0)
 +		return 0;
@@ -15256,7 +15356,7 @@
 +	} while ((krp->krp_flags & CRYPTO_KF_DONE) == 0);
 +
 +	dprintk("%s finished WAITING error=%d\n", __FUNCTION__, error);
-+
++	
 +	kop->crk_crid = krp->krp_crid;		/* device that did the work */
 +	if (krp->krp_status != 0) {
 +		error = krp->krp_status;
@@ -15330,7 +15430,7 @@
 +	}
 +	return (0);
 +}
-+
++	
 +static struct csession *
 +cseadd(struct fcrypt *fcr, struct csession *cse)
 +{
@@ -16008,7 +16108,7 @@
 +	int		mackeylen;	/* mac key */
 +	caddr_t		mackey;
 +
-+  	u_int32_t	ses;		/* returns: session # */
++  	u_int32_t	ses;		/* returns: session # */ 
 +};
 +
 +struct session2_op {
@@ -16020,7 +16120,7 @@
 +	int		mackeylen;	/* mac key */
 +	caddr_t		mackey;
 +
-+  	u_int32_t	ses;		/* returns: session # */
++  	u_int32_t	ses;		/* returns: session # */ 
 +	int		crid;		/* driver id + flags (rw) */
 +	int		pad[4];		/* for future expansion */
 +};
@@ -16310,7 +16410,7 @@
 + * since it does no crypto at all.
 + *
 + * Written by David McCullough <david_mccullough@securecomputing.com>
-+ * Copyright (C) 2006-2007 David McCullough
++ * Copyright (C) 2006-2007 David McCullough 
 + *
 + * LICENSE TERMS
 + *
@@ -17087,7 +17187,7 @@
 +						offset_in_page(uiop->uio_iov[sg_num].iov_base+skip));
 +					sg_len += len;
 +					skip = 0;
-+				} else
++				} else 
 +					skip -= uiop->uio_iov[sg_num].iov_len;
 +			}
 +		} else {
@@ -17104,7 +17204,7 @@
 +		case SW_TYPE_BLKCIPHER: {
 +			unsigned char iv[EALG_MAX_BLOCK_LEN];
 +			unsigned char *ivp = iv;
-+			int ivsize =
++			int ivsize = 
 +				crypto_blkcipher_ivsize(crypto_blkcipher_cast(sw->sw_tfm));
 +			struct blkcipher_desc desc;
 +
@@ -17205,7 +17305,7 @@
 +						sw->u.hmac.sw_klen);
 +				crypto_hash_digest(&desc, sg, sg_len, result);
 +#endif /* #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19) */
-+
++				
 +			} else { /* SW_TYPE_HASH */
 +				crypto_hash_digest(&desc, sg, sg_len, result);
 +			}
@@ -17314,7 +17414,7 @@
 +
 +	for (i = CRYPTO_ALGORITHM_MIN; i <= CRYPTO_ALGORITHM_MAX; ++i)
 +	{
-+
++		
 +		algo = crypto_details[i].alg_name;
 +		if (!algo || !*algo)
 +		{
@@ -17769,7 +17869,7 @@
 +extern int rndtest_buf(unsigned char *buf);
 --- /dev/null
 +++ b/crypto/ocf/ocf-compat.h
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,270 @@
 +#ifndef _BSD_COMPAT_H_
 +#define _BSD_COMPAT_H_ 1
 +/****************************************************************************/
@@ -17895,7 +17995,9 @@
 +
 +#endif
 +
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
++#include <linux/fdtable.h>
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 +#define files_fdtable(files)	(files)
 +#endif
 +
@@ -18038,6 +18140,4029 @@
 +
 +/****************************************************************************/
 +#endif /* _BSD_COMPAT_H_ */
+--- /dev/null
++++ b/crypto/ocf/ep80579/icp_asym.c
+@@ -0,0 +1,1375 @@
++/***************************************************************************
++ *
++ * This file is provided under a dual BSD/GPLv2 license.  When using or 
++ *   redistributing this file, you may do so under either license.
++ * 
++ *   GPL LICENSE SUMMARY
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ * 
++ *   This program is free software; you can redistribute it and/or modify 
++ *   it under the terms of version 2 of the GNU General Public License as
++ *   published by the Free Software Foundation.
++ * 
++ *   This program is distributed in the hope that it will be useful, but 
++ *   WITHOUT ANY WARRANTY; without even the implied warranty of 
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
++ *   General Public License for more details.
++ * 
++ *   You should have received a copy of the GNU General Public License 
++ *   along with this program; if not, write to the Free Software 
++ *   Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++ *   The full GNU General Public License is included in this distribution 
++ *   in the file called LICENSE.GPL.
++ * 
++ *   Contact Information:
++ *   Intel Corporation
++ * 
++ *   BSD LICENSE 
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ *   All rights reserved.
++ * 
++ *   Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions 
++ *   are met:
++ * 
++ *     * Redistributions of source code must retain the above copyright 
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright 
++ *       notice, this list of conditions and the following disclaimer in 
++ *       the documentation and/or other materials provided with the 
++ *       distribution.
++ *     * Neither the name of Intel Corporation nor the names of its 
++ *       contributors may be used to endorse or promote products derived 
++ *       from this software without specific prior written permission.
++ * 
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ * 
++ * 
++ *  version: Security.L.1.0.130
++ *
++ ***************************************************************************/
++
++#include "icp_ocf.h"
++
++/*The following define values (containing the word 'INDEX') are used to find
++the index of each input buffer of the crypto_kop struct (see OCF cryptodev.h).
++These values were found through analysis of the OCF OpenSSL patch. If the
++calling program uses different input buffer positions, these defines will have
++to be changed.*/
++
++/*DIFFIE HELLMAN buffer index values*/
++#define ICP_DH_KRP_PARAM_PRIME_INDEX				(0)
++#define ICP_DH_KRP_PARAM_BASE_INDEX				(1)
++#define ICP_DH_KRP_PARAM_PRIVATE_VALUE_INDEX			(2)
++#define ICP_DH_KRP_PARAM_RESULT_INDEX				(3)
++
++/*MOD EXP buffer index values*/
++#define ICP_MOD_EXP_KRP_PARAM_BASE_INDEX			(0)
++#define ICP_MOD_EXP_KRP_PARAM_EXPONENT_INDEX			(1)
++#define ICP_MOD_EXP_KRP_PARAM_MODULUS_INDEX			(2)
++#define ICP_MOD_EXP_KRP_PARAM_RESULT_INDEX			(3)
++
++#define SINGLE_BYTE_VALUE					(4)
++
++/*MOD EXP CRT buffer index values*/
++#define ICP_MOD_EXP_CRT_KRP_PARAM_PRIME_P_INDEX			(0)
++#define ICP_MOD_EXP_CRT_KRP_PARAM_PRIME_Q_INDEX			(1)
++#define ICP_MOD_EXP_CRT_KRP_PARAM_I_INDEX			(2)
++#define ICP_MOD_EXP_CRT_KRP_PARAM_EXPONENT_DP_INDEX		(3)
++#define ICP_MOD_EXP_CRT_KRP_PARAM_EXPONENT_DQ_INDEX		(4)
++#define ICP_MOD_EXP_CRT_KRP_PARAM_COEFF_QINV_INDEX		(5)
++#define ICP_MOD_EXP_CRT_KRP_PARAM_RESULT_INDEX			(6)
++
++/*DSA sign buffer index values*/
++#define ICP_DSA_SIGN_KRP_PARAM_DGST_INDEX			(0)
++#define ICP_DSA_SIGN_KRP_PARAM_PRIME_P_INDEX			(1)
++#define ICP_DSA_SIGN_KRP_PARAM_PRIME_Q_INDEX			(2)
++#define ICP_DSA_SIGN_KRP_PARAM_G_INDEX				(3)
++#define ICP_DSA_SIGN_KRP_PARAM_X_INDEX				(4)
++#define ICP_DSA_SIGN_KRP_PARAM_R_RESULT_INDEX			(5)
++#define ICP_DSA_SIGN_KRP_PARAM_S_RESULT_INDEX			(6)
++
++/*DSA verify buffer index values*/
++#define ICP_DSA_VERIFY_KRP_PARAM_DGST_INDEX			(0)
++#define ICP_DSA_VERIFY_KRP_PARAM_PRIME_P_INDEX			(1)
++#define ICP_DSA_VERIFY_KRP_PARAM_PRIME_Q_INDEX			(2)
++#define ICP_DSA_VERIFY_KRP_PARAM_G_INDEX			(3)
++#define ICP_DSA_VERIFY_KRP_PARAM_PUBKEY_INDEX			(4)
++#define ICP_DSA_VERIFY_KRP_PARAM_SIG_R_INDEX			(5)
++#define ICP_DSA_VERIFY_KRP_PARAM_SIG_S_INDEX			(6)
++
++/*DSA sign prime Q vs random number K size check values*/
++#define DONT_RUN_LESS_THAN_CHECK				(0)
++#define FAIL_A_IS_GREATER_THAN_B				(1)
++#define FAIL_A_IS_EQUAL_TO_B					(1)
++#define SUCCESS_A_IS_LESS_THAN_B				(0)
++#define DSA_SIGN_RAND_GEN_VAL_CHECK_MAX_ITERATIONS		(500)
++
++/* We need to set a cryptokp success value just in case it is set or allocated
++   and not set to zero outside of this module */
++#define CRYPTO_OP_SUCCESS					(0)
++
++static int icp_ocfDrvDHComputeKey(struct cryptkop *krp);
++
++static int icp_ocfDrvModExp(struct cryptkop *krp);
++
++static int icp_ocfDrvModExpCRT(struct cryptkop *krp);
++
++static int
++icp_ocfDrvCheckALessThanB(CpaFlatBuffer * pK, CpaFlatBuffer * pQ, int *doCheck);
++
++static int icp_ocfDrvDsaSign(struct cryptkop *krp);
++
++static int icp_ocfDrvDsaVerify(struct cryptkop *krp);
++
++static void
++icp_ocfDrvDhP1CallBack(void *callbackTag,
++		       CpaStatus status,
++		       void *pOpData, CpaFlatBuffer * pLocalOctetStringPV);
++
++static void
++icp_ocfDrvModExpCallBack(void *callbackTag,
++			 CpaStatus status,
++			 void *pOpData, CpaFlatBuffer * pResult);
++
++static void
++icp_ocfDrvModExpCRTCallBack(void *callbackTag,
++			    CpaStatus status,
++			    void *pOpData, CpaFlatBuffer * pOutputData);
++
++static void
++icp_ocfDrvDsaVerifyCallBack(void *callbackTag,
++			    CpaStatus status,
++			    void *pOpData, CpaBoolean verifyStatus);
++
++static void
++icp_ocfDrvDsaRSSignCallBack(void *callbackTag,
++			    CpaStatus status,
++			    void *pOpData,
++			    CpaBoolean protocolStatus,
++			    CpaFlatBuffer * pR, CpaFlatBuffer * pS);
++
++/* Name        : icp_ocfDrvPkeProcess
++ *
++ * Description : This function will choose which PKE process to follow
++ * based on the input arguments
++ */
++int icp_ocfDrvPkeProcess(device_t dev, struct cryptkop *krp, int hint)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++
++	if (NULL == krp) {
++		DPRINTK("%s(): Invalid input parameters, cryptkop = %p\n",
++			__FUNCTION__, krp);
++		return EINVAL;
++	}
++
++	if (CPA_TRUE == atomic_read(&icp_ocfDrvIsExiting)) {
++		krp->krp_status = ECANCELED;
++		return ECANCELED;
++	}
++
++	switch (krp->krp_op) {
++	case CRK_DH_COMPUTE_KEY:
++		DPRINTK("%s() doing DH_COMPUTE_KEY\n", __FUNCTION__);
++		lacStatus = icp_ocfDrvDHComputeKey(krp);
++		if (CPA_STATUS_SUCCESS != lacStatus) {
++			EPRINTK("%s(): icp_ocfDrvDHComputeKey failed "
++				"(%d).\n", __FUNCTION__, lacStatus);
++			krp->krp_status = ECANCELED;
++			return ECANCELED;
++		}
++
++		break;
++
++	case CRK_MOD_EXP:
++		DPRINTK("%s() doing MOD_EXP \n", __FUNCTION__);
++		lacStatus = icp_ocfDrvModExp(krp);
++		if (CPA_STATUS_SUCCESS != lacStatus) {
++			EPRINTK("%s(): icp_ocfDrvModExp failed (%d).\n",
++				__FUNCTION__, lacStatus);
++			krp->krp_status = ECANCELED;
++			return ECANCELED;
++		}
++
++		break;
++
++	case CRK_MOD_EXP_CRT:
++		DPRINTK("%s() doing MOD_EXP_CRT \n", __FUNCTION__);
++		lacStatus = icp_ocfDrvModExpCRT(krp);
++		if (CPA_STATUS_SUCCESS != lacStatus) {
++			EPRINTK("%s(): icp_ocfDrvModExpCRT "
++				"failed (%d).\n", __FUNCTION__, lacStatus);
++			krp->krp_status = ECANCELED;
++			return ECANCELED;
++		}
++
++		break;
++
++	case CRK_DSA_SIGN:
++		DPRINTK("%s() doing DSA_SIGN \n", __FUNCTION__);
++		lacStatus = icp_ocfDrvDsaSign(krp);
++		if (CPA_STATUS_SUCCESS != lacStatus) {
++			EPRINTK("%s(): icp_ocfDrvDsaSign "
++				"failed (%d).\n", __FUNCTION__, lacStatus);
++			krp->krp_status = ECANCELED;
++			return ECANCELED;
++		}
++
++		break;
++
++	case CRK_DSA_VERIFY:
++		DPRINTK("%s() doing DSA_VERIFY \n", __FUNCTION__);
++		lacStatus = icp_ocfDrvDsaVerify(krp);
++		if (CPA_STATUS_SUCCESS != lacStatus) {
++			EPRINTK("%s(): icp_ocfDrvDsaVerify "
++				"failed (%d).\n", __FUNCTION__, lacStatus);
++			krp->krp_status = ECANCELED;
++			return ECANCELED;
++		}
++
++		break;
++
++	default:
++		EPRINTK("%s(): Asymettric function not "
++			"supported (%d).\n", __FUNCTION__, krp->krp_op);
++		krp->krp_status = EOPNOTSUPP;
++		return EOPNOTSUPP;
++	}
++
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvSwapBytes
++ *
++ * Description : This function is used to swap the byte order of a buffer.
++ * It has been seen that in general we are passed little endian byte order
++ * buffers, but LAC only accepts big endian byte order buffers.
++ */
++static void inline
++icp_ocfDrvSwapBytes(u_int8_t * num, u_int32_t buff_len_bytes)
++{
++
++	int i;
++	u_int8_t *end_ptr;
++	u_int8_t hold_val;
++
++	end_ptr = num + (buff_len_bytes - 1);
++	buff_len_bytes = buff_len_bytes >> 1;
++	for (i = 0; i < buff_len_bytes; i++) {
++		hold_val = *num;
++		*num = *end_ptr;
++		num++;
++		*end_ptr = hold_val;
++		end_ptr--;
++	}
++}
++
++/* Name        : icp_ocfDrvDHComputeKey
++ *
++ * Description : This function will map Diffie Hellman calls from OCF
++ * to the LAC API. OCF uses this function for Diffie Hellman Phase1 and
++ * Phase2. LAC has a separate Diffie Hellman Phase2 call, however both phases
++ * break down to a modular exponentiation.
++ */
++static int icp_ocfDrvDHComputeKey(struct cryptkop *krp)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	void *callbackTag = NULL;
++	CpaCyDhPhase1KeyGenOpData *pPhase1OpData = NULL;
++	CpaFlatBuffer *pLocalOctetStringPV = NULL;
++	uint32_t dh_prime_len_bytes = 0, dh_prime_len_bits = 0;
++
++	/* Input checks - check prime is a multiple of 8 bits to allow for
++	   allocation later */
++	dh_prime_len_bits =
++	    (krp->krp_param[ICP_DH_KRP_PARAM_PRIME_INDEX].crp_nbits);
++
++	/* LAC can reject prime lengths based on prime key sizes, we just
++	   need to make sure we can allocate space for the base and
++	   exponent buffers correctly */
++	if ((dh_prime_len_bits % NUM_BITS_IN_BYTE) != 0) {
++		APRINTK("%s(): Warning Prime number buffer size is not a "
++			"multiple of 8 bits\n", __FUNCTION__);
++	}
++
++	/* Result storage space should be the same size as the prime as this
++	   value can take up the same amount of storage space */
++	if (dh_prime_len_bits !=
++	    krp->krp_param[ICP_DH_KRP_PARAM_RESULT_INDEX].crp_nbits) {
++		DPRINTK("%s(): Return Buffer must be the same size "
++			"as the Prime buffer\n", __FUNCTION__);
++		krp->krp_status = EINVAL;
++		return EINVAL;
++	}
++	/* Switch to size in bytes */
++	BITS_TO_BYTES(dh_prime_len_bytes, dh_prime_len_bits);
++
++	callbackTag = krp;
++
++	pPhase1OpData = kmem_cache_zalloc(drvDH_zone, GFP_KERNEL);
++	if (NULL == pPhase1OpData) {
++		APRINTK("%s():Failed to get memory for key gen data\n",
++			__FUNCTION__);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	pLocalOctetStringPV = kmem_cache_zalloc(drvFlatBuffer_zone, GFP_KERNEL);
++	if (NULL == pLocalOctetStringPV) {
++		APRINTK("%s():Failed to get memory for pLocalOctetStringPV\n",
++			__FUNCTION__);
++		kmem_cache_free(drvDH_zone, pPhase1OpData);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	/* Link parameters */
++	pPhase1OpData->primeP.pData =
++	    krp->krp_param[ICP_DH_KRP_PARAM_PRIME_INDEX].crp_p;
++
++	pPhase1OpData->primeP.dataLenInBytes = dh_prime_len_bytes;
++
++	icp_ocfDrvSwapBytes(pPhase1OpData->primeP.pData, dh_prime_len_bytes);
++
++	pPhase1OpData->baseG.pData =
++	    krp->krp_param[ICP_DH_KRP_PARAM_BASE_INDEX].crp_p;
++
++	BITS_TO_BYTES(pPhase1OpData->baseG.dataLenInBytes,
++		      krp->krp_param[ICP_DH_KRP_PARAM_BASE_INDEX].crp_nbits);
++
++	icp_ocfDrvSwapBytes(pPhase1OpData->baseG.pData,
++			    pPhase1OpData->baseG.dataLenInBytes);
++
++	pPhase1OpData->privateValueX.pData =
++	    krp->krp_param[ICP_DH_KRP_PARAM_PRIVATE_VALUE_INDEX].crp_p;
++
++	BITS_TO_BYTES(pPhase1OpData->privateValueX.dataLenInBytes,
++		      krp->krp_param[ICP_DH_KRP_PARAM_PRIVATE_VALUE_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(pPhase1OpData->privateValueX.pData,
++			    pPhase1OpData->privateValueX.dataLenInBytes);
++
++	/* Output parameters */
++	pLocalOctetStringPV->pData =
++	    krp->krp_param[ICP_DH_KRP_PARAM_RESULT_INDEX].crp_p;
++
++	BITS_TO_BYTES(pLocalOctetStringPV->dataLenInBytes,
++		      krp->krp_param[ICP_DH_KRP_PARAM_RESULT_INDEX].crp_nbits);
++
++	lacStatus = cpaCyDhKeyGenPhase1(CPA_INSTANCE_HANDLE_SINGLE,
++					icp_ocfDrvDhP1CallBack,
++					callbackTag, pPhase1OpData,
++					pLocalOctetStringPV);
++
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		EPRINTK("%s(): DH Phase 1 Key Gen failed (%d).\n",
++			__FUNCTION__, lacStatus);
++		icp_ocfDrvFreeFlatBuffer(pLocalOctetStringPV);
++		kmem_cache_free(drvDH_zone, pPhase1OpData);
++	}
++
++	return lacStatus;
++}
++
++/* Name        : icp_ocfDrvModExp
++ *
++ * Description : This function will map ordinary Modular Exponentiation calls
++ * from OCF to the LAC API.
++ *
++ */
++static int icp_ocfDrvModExp(struct cryptkop *krp)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	void *callbackTag = NULL;
++	CpaCyLnModExpOpData *pModExpOpData = NULL;
++	CpaFlatBuffer *pResult = NULL;
++
++	if ((krp->krp_param[ICP_MOD_EXP_KRP_PARAM_MODULUS_INDEX].crp_nbits %
++	     NUM_BITS_IN_BYTE) != 0) {
++		DPRINTK("%s(): Warning - modulus buffer size (%d) is not a "
++			"multiple of 8 bits\n", __FUNCTION__,
++			krp->krp_param[ICP_MOD_EXP_KRP_PARAM_MODULUS_INDEX].
++			crp_nbits);
++	}
++
++	/* Result storage space should be the same size as the prime as this
++	   value can take up the same amount of storage space */
++	if (krp->krp_param[ICP_MOD_EXP_KRP_PARAM_MODULUS_INDEX].crp_nbits >
++	    krp->krp_param[ICP_MOD_EXP_KRP_PARAM_RESULT_INDEX].crp_nbits) {
++		APRINTK("%s(): Return Buffer size must be the same or"
++			" greater than the Modulus buffer\n", __FUNCTION__);
++		krp->krp_status = EINVAL;
++		return EINVAL;
++	}
++
++	callbackTag = krp;
++
++	pModExpOpData = kmem_cache_zalloc(drvLnModExp_zone, GFP_KERNEL);
++	if (NULL == pModExpOpData) {
++		APRINTK("%s():Failed to get memory for key gen data\n",
++			__FUNCTION__);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	pResult = kmem_cache_zalloc(drvFlatBuffer_zone, GFP_KERNEL);
++	if (NULL == pResult) {
++		APRINTK("%s():Failed to get memory for ModExp result\n",
++			__FUNCTION__);
++		kmem_cache_free(drvLnModExp_zone, pModExpOpData);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	/* Link parameters */
++	pModExpOpData->modulus.pData =
++	    krp->krp_param[ICP_MOD_EXP_KRP_PARAM_MODULUS_INDEX].crp_p;
++	BITS_TO_BYTES(pModExpOpData->modulus.dataLenInBytes,
++		      krp->krp_param[ICP_MOD_EXP_KRP_PARAM_MODULUS_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(pModExpOpData->modulus.pData,
++			    pModExpOpData->modulus.dataLenInBytes);
++
++	/*OCF patch to Openswan Pluto regularly sends the base value as 2
++	   bits in size. In this case, it has been found it is better to
++	   use the base size memory space as the input buffer (if the number
++	   is in bits is less than a byte, the number of bits is the input
++	   value) */
++	if (krp->krp_param[ICP_MOD_EXP_KRP_PARAM_BASE_INDEX].crp_nbits <
++	    NUM_BITS_IN_BYTE) {
++		DPRINTK("%s : base is small (%d)\n", __FUNCTION__, krp->
++			krp_param[ICP_MOD_EXP_KRP_PARAM_BASE_INDEX].crp_nbits);
++		pModExpOpData->base.dataLenInBytes = SINGLE_BYTE_VALUE;
++		pModExpOpData->base.pData =
++		    (uint8_t *) & (krp->
++				   krp_param[ICP_MOD_EXP_KRP_PARAM_BASE_INDEX].
++				   crp_nbits);
++		*((uint32_t *) pModExpOpData->base.pData) =
++		    htonl(*((uint32_t *) pModExpOpData->base.pData));
++
++	} else {
++
++		DPRINTK("%s : base is big (%d)\n", __FUNCTION__, krp->
++			krp_param[ICP_MOD_EXP_KRP_PARAM_BASE_INDEX].crp_nbits);
++		pModExpOpData->base.pData =
++		    krp->krp_param[ICP_MOD_EXP_KRP_PARAM_BASE_INDEX].crp_p;
++		BITS_TO_BYTES(pModExpOpData->base.dataLenInBytes,
++			      krp->krp_param[ICP_MOD_EXP_KRP_PARAM_BASE_INDEX].
++			      crp_nbits);
++		icp_ocfDrvSwapBytes(pModExpOpData->base.pData,
++				    pModExpOpData->base.dataLenInBytes);
++	}
++
++	pModExpOpData->exponent.pData =
++	    krp->krp_param[ICP_MOD_EXP_KRP_PARAM_EXPONENT_INDEX].crp_p;
++	BITS_TO_BYTES(pModExpOpData->exponent.dataLenInBytes,
++		      krp->krp_param[ICP_MOD_EXP_KRP_PARAM_EXPONENT_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(pModExpOpData->exponent.pData,
++			    pModExpOpData->exponent.dataLenInBytes);
++	/* Output parameters */
++	pResult->pData =
++	    krp->krp_param[ICP_MOD_EXP_KRP_PARAM_RESULT_INDEX].crp_p,
++	    BITS_TO_BYTES(pResult->dataLenInBytes,
++			  krp->krp_param[ICP_MOD_EXP_KRP_PARAM_RESULT_INDEX].
++			  crp_nbits);
++
++	lacStatus = cpaCyLnModExp(CPA_INSTANCE_HANDLE_SINGLE,
++				  icp_ocfDrvModExpCallBack,
++				  callbackTag, pModExpOpData, pResult);
++
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		EPRINTK("%s(): Mod Exp Operation failed (%d).\n",
++			__FUNCTION__, lacStatus);
++		krp->krp_status = ECANCELED;
++		icp_ocfDrvFreeFlatBuffer(pResult);
++		kmem_cache_free(drvLnModExp_zone, pModExpOpData);
++	}
++
++	return lacStatus;
++}
++
++/* Name        : icp_ocfDrvModExpCRT
++ *
++ * Description : This function will map ordinary Modular Exponentiation Chinese
++ * Remainder Theorem implementaion calls from OCF to the LAC API.
++ *
++ * Note : Mod Exp CRT for this driver is accelerated through LAC RSA type 2
++ * decrypt operation. Therefore P and Q input values must always be prime
++ * numbers. Although basic primality checks are done in LAC, it is up to the
++ * user to do any correct prime number checking before passing the inputs.
++ */
++
++static int icp_ocfDrvModExpCRT(struct cryptkop *krp)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	CpaCyRsaDecryptOpData *rsaDecryptOpData = NULL;
++	void *callbackTag = NULL;
++	CpaFlatBuffer *pOutputData = NULL;
++
++	/*Parameter input checks are all done by LAC, no need to repeat
++	   them here. */
++	callbackTag = krp;
++
++	rsaDecryptOpData = kmem_cache_zalloc(drvRSADecrypt_zone, GFP_KERNEL);
++	if (NULL == rsaDecryptOpData) {
++		APRINTK("%s():Failed to get memory"
++			" for MOD EXP CRT Op data struct\n", __FUNCTION__);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	rsaDecryptOpData->pRecipientPrivateKey
++	    = kmem_cache_zalloc(drvRSAPrivateKey_zone, GFP_KERNEL);
++	if (NULL == rsaDecryptOpData->pRecipientPrivateKey) {
++		APRINTK("%s():Failed to get memory for MOD EXP CRT"
++			" private key values struct\n", __FUNCTION__);
++		kmem_cache_free(drvRSADecrypt_zone, rsaDecryptOpData);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	rsaDecryptOpData->pRecipientPrivateKey->
++	    version = CPA_CY_RSA_VERSION_TWO_PRIME;
++	rsaDecryptOpData->pRecipientPrivateKey->
++	    privateKeyRepType = CPA_CY_RSA_PRIVATE_KEY_REP_TYPE_2;
++
++	pOutputData = kmem_cache_zalloc(drvFlatBuffer_zone, GFP_KERNEL);
++	if (NULL == pOutputData) {
++		APRINTK("%s():Failed to get memory"
++			" for MOD EXP CRT output data\n", __FUNCTION__);
++		kmem_cache_free(drvRSAPrivateKey_zone,
++				rsaDecryptOpData->pRecipientPrivateKey);
++		kmem_cache_free(drvRSADecrypt_zone, rsaDecryptOpData);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	rsaDecryptOpData->pRecipientPrivateKey->
++	    version = CPA_CY_RSA_VERSION_TWO_PRIME;
++	rsaDecryptOpData->pRecipientPrivateKey->
++	    privateKeyRepType = CPA_CY_RSA_PRIVATE_KEY_REP_TYPE_2;
++
++	/* Link parameters */
++	rsaDecryptOpData->inputData.pData =
++	    krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_I_INDEX].crp_p;
++	BITS_TO_BYTES(rsaDecryptOpData->inputData.dataLenInBytes,
++		      krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_I_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(rsaDecryptOpData->inputData.pData,
++			    rsaDecryptOpData->inputData.dataLenInBytes);
++
++	rsaDecryptOpData->pRecipientPrivateKey->privateKeyRep2.prime1P.pData =
++	    krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_PRIME_P_INDEX].crp_p;
++	BITS_TO_BYTES(rsaDecryptOpData->pRecipientPrivateKey->privateKeyRep2.
++		      prime1P.dataLenInBytes,
++		      krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_PRIME_P_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.prime1P.pData,
++			    rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.prime1P.dataLenInBytes);
++
++	rsaDecryptOpData->pRecipientPrivateKey->privateKeyRep2.prime2Q.pData =
++	    krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_PRIME_Q_INDEX].crp_p;
++	BITS_TO_BYTES(rsaDecryptOpData->pRecipientPrivateKey->privateKeyRep2.
++		      prime2Q.dataLenInBytes,
++		      krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_PRIME_Q_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.prime2Q.pData,
++			    rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.prime2Q.dataLenInBytes);
++
++	rsaDecryptOpData->pRecipientPrivateKey->
++	    privateKeyRep2.exponent1Dp.pData =
++	    krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_EXPONENT_DP_INDEX].crp_p;
++	BITS_TO_BYTES(rsaDecryptOpData->pRecipientPrivateKey->privateKeyRep2.
++		      exponent1Dp.dataLenInBytes,
++		      krp->
++		      krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_EXPONENT_DP_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.exponent1Dp.pData,
++			    rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.exponent1Dp.dataLenInBytes);
++
++	rsaDecryptOpData->pRecipientPrivateKey->
++	    privateKeyRep2.exponent2Dq.pData =
++	    krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_EXPONENT_DQ_INDEX].crp_p;
++	BITS_TO_BYTES(rsaDecryptOpData->pRecipientPrivateKey->
++		      privateKeyRep2.exponent2Dq.dataLenInBytes,
++		      krp->
++		      krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_EXPONENT_DQ_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.exponent2Dq.pData,
++			    rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.exponent2Dq.dataLenInBytes);
++
++	rsaDecryptOpData->pRecipientPrivateKey->
++	    privateKeyRep2.coefficientQInv.pData =
++	    krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_COEFF_QINV_INDEX].crp_p;
++	BITS_TO_BYTES(rsaDecryptOpData->pRecipientPrivateKey->
++		      privateKeyRep2.coefficientQInv.dataLenInBytes,
++		      krp->
++		      krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_COEFF_QINV_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.coefficientQInv.pData,
++			    rsaDecryptOpData->pRecipientPrivateKey->
++			    privateKeyRep2.coefficientQInv.dataLenInBytes);
++
++	/* Output Parameter */
++	pOutputData->pData =
++	    krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_RESULT_INDEX].crp_p;
++	BITS_TO_BYTES(pOutputData->dataLenInBytes,
++		      krp->krp_param[ICP_MOD_EXP_CRT_KRP_PARAM_RESULT_INDEX].
++		      crp_nbits);
++
++	lacStatus = cpaCyRsaDecrypt(CPA_INSTANCE_HANDLE_SINGLE,
++				    icp_ocfDrvModExpCRTCallBack,
++				    callbackTag, rsaDecryptOpData, pOutputData);
++
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		EPRINTK("%s(): Mod Exp CRT Operation failed (%d).\n",
++			__FUNCTION__, lacStatus);
++		krp->krp_status = ECANCELED;
++		icp_ocfDrvFreeFlatBuffer(pOutputData);
++		kmem_cache_free(drvRSAPrivateKey_zone,
++				rsaDecryptOpData->pRecipientPrivateKey);
++		kmem_cache_free(drvRSADecrypt_zone, rsaDecryptOpData);
++	}
++
++	return lacStatus;
++}
++
++/* Name        : icp_ocfDrvCheckALessThanB
++ *
++ * Description : This function will check whether the first argument is less
++ * than the second. It is used to check whether the DSA RS sign Random K
++ * value is less than the Prime Q value (as defined in the specification)
++ *
++ */
++static int
++icp_ocfDrvCheckALessThanB(CpaFlatBuffer * pK, CpaFlatBuffer * pQ, int *doCheck)
++{
++
++	uint8_t *MSB_K = pK->pData;
++	uint8_t *MSB_Q = pQ->pData;
++	uint32_t buffer_lengths_in_bytes = pQ->dataLenInBytes;
++
++	if (DONT_RUN_LESS_THAN_CHECK == *doCheck) {
++		return FAIL_A_IS_GREATER_THAN_B;
++	}
++
++/*Check MSBs
++if A == B, check next MSB
++if A > B, return A_IS_GREATER_THAN_B
++if A < B, return A_IS_LESS_THAN_B (success)
++*/
++	while (*MSB_K == *MSB_Q) {
++		MSB_K++;
++		MSB_Q++;
++
++		buffer_lengths_in_bytes--;
++		if (0 == buffer_lengths_in_bytes) {
++			DPRINTK("%s() Buffers have equal value!!\n",
++				__FUNCTION__);
++			return FAIL_A_IS_EQUAL_TO_B;
++		}
++
++	}
++
++	if (*MSB_K < *MSB_Q) {
++		return SUCCESS_A_IS_LESS_THAN_B;
++	} else {
++		return FAIL_A_IS_GREATER_THAN_B;
++	}
++
++}
++
++/* Name        : icp_ocfDrvDsaSign
++ *
++ * Description : This function will map DSA RS Sign from OCF to the LAC API.
++ *
++ * NOTE: From looking at OCF patch to OpenSSL and even the number of input
++ * parameters, OCF expects us to generate the random seed value. This value
++ * is generated and passed to LAC, however the number is discared in the
++ * callback and not returned to the user.
++ */
++static int icp_ocfDrvDsaSign(struct cryptkop *krp)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	CpaCyDsaRSSignOpData *dsaRsSignOpData = NULL;
++	void *callbackTag = NULL;
++	CpaCyRandGenOpData randGenOpData;
++	int primeQSizeInBytes = 0;
++	int doCheck = 0;
++	CpaFlatBuffer randData;
++	CpaBoolean protocolStatus = CPA_FALSE;
++	CpaFlatBuffer *pR = NULL;
++	CpaFlatBuffer *pS = NULL;
++
++	callbackTag = krp;
++
++	BITS_TO_BYTES(primeQSizeInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_PRIME_Q_INDEX].
++		      crp_nbits);
++
++	if (DSA_RS_SIGN_PRIMEQ_SIZE_IN_BYTES != primeQSizeInBytes) {
++		APRINTK("%s(): DSA PRIME Q size not equal to the "
++			"FIPS defined 20bytes, = %d\n",
++			__FUNCTION__, primeQSizeInBytes);
++		krp->krp_status = EDOM;
++		return EDOM;
++	}
++
++	dsaRsSignOpData = kmem_cache_zalloc(drvDSARSSign_zone, GFP_KERNEL);
++	if (NULL == dsaRsSignOpData) {
++		APRINTK("%s():Failed to get memory"
++			" for DSA RS Sign Op data struct\n", __FUNCTION__);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	dsaRsSignOpData->K.pData =
++	    kmem_cache_alloc(drvDSARSSignKValue_zone, GFP_ATOMIC);
++
++	if (NULL == dsaRsSignOpData->K.pData) {
++		APRINTK("%s():Failed to get memory"
++			" for DSA RS Sign Op Random value\n", __FUNCTION__);
++		kmem_cache_free(drvDSARSSign_zone, dsaRsSignOpData);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	pR = kmem_cache_zalloc(drvFlatBuffer_zone, GFP_KERNEL);
++	if (NULL == pR) {
++		APRINTK("%s():Failed to get memory"
++			" for DSA signature R\n", __FUNCTION__);
++		kmem_cache_free(drvDSARSSignKValue_zone,
++				dsaRsSignOpData->K.pData);
++		kmem_cache_free(drvDSARSSign_zone, dsaRsSignOpData);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	pS = kmem_cache_zalloc(drvFlatBuffer_zone, GFP_KERNEL);
++	if (NULL == pS) {
++		APRINTK("%s():Failed to get memory"
++			" for DSA signature S\n", __FUNCTION__);
++		icp_ocfDrvFreeFlatBuffer(pR);
++		kmem_cache_free(drvDSARSSignKValue_zone,
++				dsaRsSignOpData->K.pData);
++		kmem_cache_free(drvDSARSSign_zone, dsaRsSignOpData);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	/*link prime number parameter for ease of processing */
++	dsaRsSignOpData->P.pData =
++	    krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_PRIME_P_INDEX].crp_p;
++	BITS_TO_BYTES(dsaRsSignOpData->P.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_PRIME_P_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(dsaRsSignOpData->P.pData,
++			    dsaRsSignOpData->P.dataLenInBytes);
++
++	dsaRsSignOpData->Q.pData =
++	    krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_PRIME_Q_INDEX].crp_p;
++	BITS_TO_BYTES(dsaRsSignOpData->Q.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_PRIME_Q_INDEX].
++		      crp_nbits);
++
++	icp_ocfDrvSwapBytes(dsaRsSignOpData->Q.pData,
++			    dsaRsSignOpData->Q.dataLenInBytes);
++
++	/*generate random number with equal buffer size to Prime value Q,
++	   but value less than Q */
++	dsaRsSignOpData->K.dataLenInBytes = dsaRsSignOpData->Q.dataLenInBytes;
++
++	randGenOpData.generateBits = CPA_TRUE;
++	randGenOpData.lenInBytes = dsaRsSignOpData->K.dataLenInBytes;
++
++	icp_ocfDrvPtrAndLenToFlatBuffer(dsaRsSignOpData->K.pData,
++					dsaRsSignOpData->K.dataLenInBytes,
++					&randData);
++
++	doCheck = 0;
++	while (icp_ocfDrvCheckALessThanB(&(dsaRsSignOpData->K),
++					 &(dsaRsSignOpData->Q), &doCheck)) {
++
++		if (CPA_STATUS_SUCCESS
++		    != cpaCyRandGen(CPA_INSTANCE_HANDLE_SINGLE,
++				    NULL, NULL, &randGenOpData, &randData)) {
++			APRINTK("%s(): ERROR - Failed to generate DSA RS Sign K"
++				"value\n", __FUNCTION__);
++			icp_ocfDrvFreeFlatBuffer(pS);
++			icp_ocfDrvFreeFlatBuffer(pR);
++			kmem_cache_free(drvDSARSSignKValue_zone,
++					dsaRsSignOpData->K.pData);
++			kmem_cache_free(drvDSARSSign_zone, dsaRsSignOpData);
++			krp->krp_status = EAGAIN;
++			return EAGAIN;
++		}
++
++		doCheck++;
++		if (DSA_SIGN_RAND_GEN_VAL_CHECK_MAX_ITERATIONS == doCheck) {
++			APRINTK("%s(): ERROR - Failed to find DSA RS Sign K "
++				"value less than Q value\n", __FUNCTION__);
++			icp_ocfDrvFreeFlatBuffer(pS);
++			icp_ocfDrvFreeFlatBuffer(pR);
++			kmem_cache_free(drvDSARSSignKValue_zone,
++					dsaRsSignOpData->K.pData);
++			kmem_cache_free(drvDSARSSign_zone, dsaRsSignOpData);
++			krp->krp_status = EAGAIN;
++			return EAGAIN;
++		}
++
++	}
++	/*Rand Data - no need to swap bytes for pK */
++
++	/* Link parameters */
++	dsaRsSignOpData->G.pData =
++	    krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_G_INDEX].crp_p;
++	BITS_TO_BYTES(dsaRsSignOpData->G.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_G_INDEX].crp_nbits);
++
++	icp_ocfDrvSwapBytes(dsaRsSignOpData->G.pData,
++			    dsaRsSignOpData->G.dataLenInBytes);
++
++	dsaRsSignOpData->X.pData =
++	    krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_X_INDEX].crp_p;
++	BITS_TO_BYTES(dsaRsSignOpData->X.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_X_INDEX].crp_nbits);
++	icp_ocfDrvSwapBytes(dsaRsSignOpData->X.pData,
++			    dsaRsSignOpData->X.dataLenInBytes);
++
++	dsaRsSignOpData->M.pData =
++	    krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_DGST_INDEX].crp_p;
++	BITS_TO_BYTES(dsaRsSignOpData->M.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_DGST_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaRsSignOpData->M.pData,
++			    dsaRsSignOpData->M.dataLenInBytes);
++
++	/* Output Parameters */
++	pS->pData = krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_S_RESULT_INDEX].crp_p;
++	BITS_TO_BYTES(pS->dataLenInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_S_RESULT_INDEX].
++		      crp_nbits);
++
++	pR->pData = krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_R_RESULT_INDEX].crp_p;
++	BITS_TO_BYTES(pR->dataLenInBytes,
++		      krp->krp_param[ICP_DSA_SIGN_KRP_PARAM_R_RESULT_INDEX].
++		      crp_nbits);
++
++	lacStatus = cpaCyDsaSignRS(CPA_INSTANCE_HANDLE_SINGLE,
++				   icp_ocfDrvDsaRSSignCallBack,
++				   callbackTag, dsaRsSignOpData,
++				   &protocolStatus, pR, pS);
++
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		EPRINTK("%s(): DSA RS Sign Operation failed (%d).\n",
++			__FUNCTION__, lacStatus);
++		krp->krp_status = ECANCELED;
++		icp_ocfDrvFreeFlatBuffer(pS);
++		icp_ocfDrvFreeFlatBuffer(pR);
++		kmem_cache_free(drvDSARSSignKValue_zone,
++				dsaRsSignOpData->K.pData);
++		kmem_cache_free(drvDSARSSign_zone, dsaRsSignOpData);
++	}
++
++	return lacStatus;
++}
++
++/* Name        : icp_ocfDrvDsaVerify
++ *
++ * Description : This function will map DSA RS Verify from OCF to the LAC API.
++ *
++ */
++static int icp_ocfDrvDsaVerify(struct cryptkop *krp)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	CpaCyDsaVerifyOpData *dsaVerifyOpData = NULL;
++	void *callbackTag = NULL;
++	CpaBoolean verifyStatus = CPA_FALSE;
++
++	callbackTag = krp;
++
++	dsaVerifyOpData = kmem_cache_zalloc(drvDSAVerify_zone, GFP_KERNEL);
++	if (NULL == dsaVerifyOpData) {
++		APRINTK("%s():Failed to get memory"
++			" for DSA Verify Op data struct\n", __FUNCTION__);
++		krp->krp_status = ENOMEM;
++		return ENOMEM;
++	}
++
++	/* Link parameters */
++	dsaVerifyOpData->P.pData =
++	    krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_PRIME_P_INDEX].crp_p;
++	BITS_TO_BYTES(dsaVerifyOpData->P.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_PRIME_P_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaVerifyOpData->P.pData,
++			    dsaVerifyOpData->P.dataLenInBytes);
++
++	dsaVerifyOpData->Q.pData =
++	    krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_PRIME_Q_INDEX].crp_p;
++	BITS_TO_BYTES(dsaVerifyOpData->Q.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_PRIME_Q_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaVerifyOpData->Q.pData,
++			    dsaVerifyOpData->Q.dataLenInBytes);
++
++	dsaVerifyOpData->G.pData =
++	    krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_G_INDEX].crp_p;
++	BITS_TO_BYTES(dsaVerifyOpData->G.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_G_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaVerifyOpData->G.pData,
++			    dsaVerifyOpData->G.dataLenInBytes);
++
++	dsaVerifyOpData->Y.pData =
++	    krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_PUBKEY_INDEX].crp_p;
++	BITS_TO_BYTES(dsaVerifyOpData->Y.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_PUBKEY_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaVerifyOpData->Y.pData,
++			    dsaVerifyOpData->Y.dataLenInBytes);
++
++	dsaVerifyOpData->M.pData =
++	    krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_DGST_INDEX].crp_p;
++	BITS_TO_BYTES(dsaVerifyOpData->M.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_DGST_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaVerifyOpData->M.pData,
++			    dsaVerifyOpData->M.dataLenInBytes);
++
++	dsaVerifyOpData->R.pData =
++	    krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_SIG_R_INDEX].crp_p;
++	BITS_TO_BYTES(dsaVerifyOpData->R.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_SIG_R_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaVerifyOpData->R.pData,
++			    dsaVerifyOpData->R.dataLenInBytes);
++
++	dsaVerifyOpData->S.pData =
++	    krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_SIG_S_INDEX].crp_p;
++	BITS_TO_BYTES(dsaVerifyOpData->S.dataLenInBytes,
++		      krp->krp_param[ICP_DSA_VERIFY_KRP_PARAM_SIG_S_INDEX].
++		      crp_nbits);
++	icp_ocfDrvSwapBytes(dsaVerifyOpData->S.pData,
++			    dsaVerifyOpData->S.dataLenInBytes);
++
++	lacStatus = cpaCyDsaVerify(CPA_INSTANCE_HANDLE_SINGLE,
++				   icp_ocfDrvDsaVerifyCallBack,
++				   callbackTag, dsaVerifyOpData, &verifyStatus);
++
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		EPRINTK("%s(): DSA Verify Operation failed (%d).\n",
++			__FUNCTION__, lacStatus);
++		kmem_cache_free(drvDSAVerify_zone, dsaVerifyOpData);
++		krp->krp_status = ECANCELED;
++	}
++
++	return lacStatus;
++}
++
++/* Name        : icp_ocfDrvReadRandom
++ *
++ * Description : This function will map RNG functionality calls from OCF
++ * to the LAC API.
++ */
++int icp_ocfDrvReadRandom(void *arg, uint32_t * buf, int maxwords)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	CpaCyRandGenOpData randGenOpData;
++	CpaFlatBuffer randData;
++
++	if (NULL == buf) {
++		APRINTK("%s(): Invalid input parameters\n", __FUNCTION__);
++		return EINVAL;
++	}
++
++	/* maxwords here is number of integers to generate data for */
++	randGenOpData.generateBits = CPA_TRUE;
++
++	randGenOpData.lenInBytes = maxwords * sizeof(uint32_t);
++
++	icp_ocfDrvPtrAndLenToFlatBuffer((Cpa8U *) buf,
++					randGenOpData.lenInBytes, &randData);
++
++	lacStatus = cpaCyRandGen(CPA_INSTANCE_HANDLE_SINGLE,
++				 NULL, NULL, &randGenOpData, &randData);
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		EPRINTK("%s(): icp_LacSymRandGen failed (%d). \n",
++			__FUNCTION__, lacStatus);
++		return RETURN_RAND_NUM_GEN_FAILED;
++	}
++
++	return randGenOpData.lenInBytes / sizeof(uint32_t);
++}
++
++/* Name        : icp_ocfDrvDhP1Callback
++ *
++ * Description : When this function returns it signifies that the LAC
++ * component has completed the DH operation.
++ */
++static void
++icp_ocfDrvDhP1CallBack(void *callbackTag,
++		       CpaStatus status,
++		       void *pOpData, CpaFlatBuffer * pLocalOctetStringPV)
++{
++	struct cryptkop *krp = NULL;
++	CpaCyDhPhase1KeyGenOpData *pPhase1OpData = NULL;
++
++	if (NULL == callbackTag) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"callbackTag data is NULL\n", __FUNCTION__);
++		return;
++	}
++	krp = (struct cryptkop *)callbackTag;
++
++	if (NULL == pOpData) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"Operation Data is NULL\n", __FUNCTION__);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++	pPhase1OpData = (CpaCyDhPhase1KeyGenOpData *) pOpData;
++
++	if (NULL == pLocalOctetStringPV) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"pLocalOctetStringPV Data is NULL\n", __FUNCTION__);
++		memset(pPhase1OpData, 0, sizeof(CpaCyDhPhase1KeyGenOpData));
++		kmem_cache_free(drvDH_zone, pPhase1OpData);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++
++	if (CPA_STATUS_SUCCESS == status) {
++		krp->krp_status = CRYPTO_OP_SUCCESS;
++	} else {
++		APRINTK("%s(): Diffie Hellman Phase1 Key Gen failed - "
++			"Operation Status = %d\n", __FUNCTION__, status);
++		krp->krp_status = ECANCELED;
++	}
++
++	icp_ocfDrvSwapBytes(pLocalOctetStringPV->pData,
++			    pLocalOctetStringPV->dataLenInBytes);
++
++	icp_ocfDrvFreeFlatBuffer(pLocalOctetStringPV);
++	memset(pPhase1OpData, 0, sizeof(CpaCyDhPhase1KeyGenOpData));
++	kmem_cache_free(drvDH_zone, pPhase1OpData);
++
++	crypto_kdone(krp);
++
++	return;
++}
++
++/* Name        : icp_ocfDrvModExpCallBack
++ *
++ * Description : When this function returns it signifies that the LAC
++ * component has completed the Mod Exp operation.
++ */
++static void
++icp_ocfDrvModExpCallBack(void *callbackTag,
++			 CpaStatus status,
++			 void *pOpdata, CpaFlatBuffer * pResult)
++{
++	struct cryptkop *krp = NULL;
++	CpaCyLnModExpOpData *pLnModExpOpData = NULL;
++
++	if (NULL == callbackTag) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"callbackTag data is NULL\n", __FUNCTION__);
++		return;
++	}
++	krp = (struct cryptkop *)callbackTag;
++
++	if (NULL == pOpdata) {
++		DPRINTK("%s(): Invalid Mod Exp input parameters - "
++			"Operation Data is NULL\n", __FUNCTION__);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++	pLnModExpOpData = (CpaCyLnModExpOpData *) pOpdata;
++
++	if (NULL == pResult) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"pResult data is NULL\n", __FUNCTION__);
++		krp->krp_status = ECANCELED;
++		memset(pLnModExpOpData, 0, sizeof(CpaCyLnModExpOpData));
++		kmem_cache_free(drvLnModExp_zone, pLnModExpOpData);
++		crypto_kdone(krp);
++		return;
++	}
++
++	if (CPA_STATUS_SUCCESS == status) {
++		krp->krp_status = CRYPTO_OP_SUCCESS;
++	} else {
++		APRINTK("%s(): LAC Mod Exp Operation failed - "
++			"Operation Status = %d\n", __FUNCTION__, status);
++		krp->krp_status = ECANCELED;
++	}
++
++	icp_ocfDrvSwapBytes(pResult->pData, pResult->dataLenInBytes);
++
++	/*switch base size value back to original */
++	if (pLnModExpOpData->base.pData ==
++	    (uint8_t *) & (krp->
++			   krp_param[ICP_MOD_EXP_KRP_PARAM_BASE_INDEX].
++			   crp_nbits)) {
++		*((uint32_t *) pLnModExpOpData->base.pData) =
++		    ntohl(*((uint32_t *) pLnModExpOpData->base.pData));
++	}
++	icp_ocfDrvFreeFlatBuffer(pResult);
++	memset(pLnModExpOpData, 0, sizeof(CpaCyLnModExpOpData));
++	kmem_cache_free(drvLnModExp_zone, pLnModExpOpData);
++
++	crypto_kdone(krp);
++
++	return;
++
++}
++
++/* Name        : icp_ocfDrvModExpCRTCallBack
++ *
++ * Description : When this function returns it signifies that the LAC
++ * component has completed the Mod Exp CRT operation.
++ */
++static void
++icp_ocfDrvModExpCRTCallBack(void *callbackTag,
++			    CpaStatus status,
++			    void *pOpData, CpaFlatBuffer * pOutputData)
++{
++	struct cryptkop *krp = NULL;
++	CpaCyRsaDecryptOpData *pDecryptData = NULL;
++
++	if (NULL == callbackTag) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"callbackTag data is NULL\n", __FUNCTION__);
++		return;
++	}
++
++	krp = (struct cryptkop *)callbackTag;
++
++	if (NULL == pOpData) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"Operation Data is NULL\n", __FUNCTION__);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++	pDecryptData = (CpaCyRsaDecryptOpData *) pOpData;
++
++	if (NULL == pOutputData) {
++		DPRINTK("%s(): Invalid input parameter - "
++			"pOutputData is NULL\n", __FUNCTION__);
++		memset(pDecryptData->pRecipientPrivateKey, 0,
++		       sizeof(CpaCyRsaPrivateKey));
++		kmem_cache_free(drvRSAPrivateKey_zone,
++				pDecryptData->pRecipientPrivateKey);
++		memset(pDecryptData, 0, sizeof(CpaCyRsaDecryptOpData));
++		kmem_cache_free(drvRSADecrypt_zone, pDecryptData);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++
++	if (CPA_STATUS_SUCCESS == status) {
++		krp->krp_status = CRYPTO_OP_SUCCESS;
++	} else {
++		APRINTK("%s(): LAC Mod Exp CRT operation failed - "
++			"Operation Status = %d\n", __FUNCTION__, status);
++		krp->krp_status = ECANCELED;
++	}
++
++	icp_ocfDrvSwapBytes(pOutputData->pData, pOutputData->dataLenInBytes);
++
++	icp_ocfDrvFreeFlatBuffer(pOutputData);
++	memset(pDecryptData->pRecipientPrivateKey, 0,
++	       sizeof(CpaCyRsaPrivateKey));
++	kmem_cache_free(drvRSAPrivateKey_zone,
++			pDecryptData->pRecipientPrivateKey);
++	memset(pDecryptData, 0, sizeof(CpaCyRsaDecryptOpData));
++	kmem_cache_free(drvRSADecrypt_zone, pDecryptData);
++
++	crypto_kdone(krp);
++
++	return;
++}
++
++/* Name        : icp_ocfDrvDsaRSSignCallBack
++ *
++ * Description : When this function returns it signifies that the LAC
++ * component has completed the DSA RS sign operation.
++ */
++static void
++icp_ocfDrvDsaRSSignCallBack(void *callbackTag,
++			    CpaStatus status,
++			    void *pOpData,
++			    CpaBoolean protocolStatus,
++			    CpaFlatBuffer * pR, CpaFlatBuffer * pS)
++{
++	struct cryptkop *krp = NULL;
++	CpaCyDsaRSSignOpData *pSignData = NULL;
++
++	if (NULL == callbackTag) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"callbackTag data is NULL\n", __FUNCTION__);
++		return;
++	}
++
++	krp = (struct cryptkop *)callbackTag;
++
++	if (NULL == pOpData) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"Operation Data is NULL\n", __FUNCTION__);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++	pSignData = (CpaCyDsaRSSignOpData *) pOpData;
++
++	if (NULL == pR) {
++		DPRINTK("%s(): Invalid input parameter - "
++			"pR sign is NULL\n", __FUNCTION__);
++		icp_ocfDrvFreeFlatBuffer(pS);
++		kmem_cache_free(drvDSARSSign_zone, pSignData);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++
++	if (NULL == pS) {
++		DPRINTK("%s(): Invalid input parameter - "
++			"pS sign is NULL\n", __FUNCTION__);
++		icp_ocfDrvFreeFlatBuffer(pR);
++		kmem_cache_free(drvDSARSSign_zone, pSignData);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++
++	if (CPA_STATUS_SUCCESS != status) {
++		APRINTK("%s(): LAC DSA RS Sign operation failed - "
++			"Operation Status = %d\n", __FUNCTION__, status);
++		krp->krp_status = ECANCELED;
++	} else {
++		krp->krp_status = CRYPTO_OP_SUCCESS;
++
++		if (CPA_TRUE != protocolStatus) {
++			DPRINTK("%s(): LAC DSA RS Sign operation failed due "
++				"to protocol error\n", __FUNCTION__);
++			krp->krp_status = EIO;
++		}
++	}
++
++	/* Swap bytes only when the callback status is successful and
++	   protocolStatus is set to true */
++	if (CPA_STATUS_SUCCESS == status && CPA_TRUE == protocolStatus) {
++		icp_ocfDrvSwapBytes(pR->pData, pR->dataLenInBytes);
++		icp_ocfDrvSwapBytes(pS->pData, pS->dataLenInBytes);
++	}
++
++	icp_ocfDrvFreeFlatBuffer(pR);
++	icp_ocfDrvFreeFlatBuffer(pS);
++	memset(pSignData->K.pData, 0, pSignData->K.dataLenInBytes);
++	kmem_cache_free(drvDSARSSignKValue_zone, pSignData->K.pData);
++	memset(pSignData, 0, sizeof(CpaCyDsaRSSignOpData));
++	kmem_cache_free(drvDSARSSign_zone, pSignData);
++	crypto_kdone(krp);
++
++	return;
++}
++
++/* Name        : icp_ocfDrvDsaVerifyCallback
++ *
++ * Description : When this function returns it signifies that the LAC
++ * component has completed the DSA Verify operation.
++ */
++static void
++icp_ocfDrvDsaVerifyCallBack(void *callbackTag,
++			    CpaStatus status,
++			    void *pOpData, CpaBoolean verifyStatus)
++{
++
++	struct cryptkop *krp = NULL;
++	CpaCyDsaVerifyOpData *pVerData = NULL;
++
++	if (NULL == callbackTag) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"callbackTag data is NULL\n", __FUNCTION__);
++		return;
++	}
++
++	krp = (struct cryptkop *)callbackTag;
++
++	if (NULL == pOpData) {
++		DPRINTK("%s(): Invalid input parameters - "
++			"Operation Data is NULL\n", __FUNCTION__);
++		krp->krp_status = ECANCELED;
++		crypto_kdone(krp);
++		return;
++	}
++	pVerData = (CpaCyDsaVerifyOpData *) pOpData;
++
++	if (CPA_STATUS_SUCCESS != status) {
++		APRINTK("%s(): LAC DSA Verify operation failed - "
++			"Operation Status = %d\n", __FUNCTION__, status);
++		krp->krp_status = ECANCELED;
++	} else {
++		krp->krp_status = CRYPTO_OP_SUCCESS;
++
++		if (CPA_TRUE != verifyStatus) {
++			DPRINTK("%s(): DSA signature invalid\n", __FUNCTION__);
++			krp->krp_status = EIO;
++		}
++	}
++
++	/* Swap bytes only when the callback status is successful and
++	   verifyStatus is set to true */
++	/*Just swapping back the key values for now. Possibly all
++	   swapped buffers need to be reverted */
++	if (CPA_STATUS_SUCCESS == status && CPA_TRUE == verifyStatus) {
++		icp_ocfDrvSwapBytes(pVerData->R.pData,
++				    pVerData->R.dataLenInBytes);
++		icp_ocfDrvSwapBytes(pVerData->S.pData,
++				    pVerData->S.dataLenInBytes);
++	}
++
++	memset(pVerData, 0, sizeof(CpaCyDsaVerifyOpData));
++	kmem_cache_free(drvDSAVerify_zone, pVerData);
++	crypto_kdone(krp);
++
++	return;
++}
+--- /dev/null
++++ b/crypto/ocf/ep80579/icp_common.c
+@@ -0,0 +1,891 @@
++/***************************************************************************
++ *
++ * This file is provided under a dual BSD/GPLv2 license.  When using or 
++ *   redistributing this file, you may do so under either license.
++ * 
++ *   GPL LICENSE SUMMARY
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ * 
++ *   This program is free software; you can redistribute it and/or modify 
++ *   it under the terms of version 2 of the GNU General Public License as
++ *   published by the Free Software Foundation.
++ * 
++ *   This program is distributed in the hope that it will be useful, but 
++ *   WITHOUT ANY WARRANTY; without even the implied warranty of 
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
++ *   General Public License for more details.
++ * 
++ *   You should have received a copy of the GNU General Public License 
++ *   along with this program; if not, write to the Free Software 
++ *   Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++ *   The full GNU General Public License is included in this distribution 
++ *   in the file called LICENSE.GPL.
++ * 
++ *   Contact Information:
++ *   Intel Corporation
++ * 
++ *   BSD LICENSE 
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ *   All rights reserved.
++ * 
++ *   Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions 
++ *   are met:
++ * 
++ *     * Redistributions of source code must retain the above copyright 
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright 
++ *       notice, this list of conditions and the following disclaimer in 
++ *       the documentation and/or other materials provided with the 
++ *       distribution.
++ *     * Neither the name of Intel Corporation nor the names of its 
++ *       contributors may be used to endorse or promote products derived 
++ *       from this software without specific prior written permission.
++ * 
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ * 
++ * 
++ *  version: Security.L.1.0.130
++ *
++ ***************************************************************************/
++
++/*
++ * An OCF module that uses Intel® QuickAssist Integrated Accelerator to do the 
++ * crypto.
++ *
++ * This driver requires the ICP Access Library that is available from Intel in
++ * order to operate.
++ */
++
++#include "icp_ocf.h"
++
++#define ICP_OCF_COMP_NAME 			"ICP_OCF"
++#define ICP_OCF_VER_MAIN			(2)
++#define ICP_OCF_VER_MJR				(0)
++#define ICP_OCF_VER_MNR 			(0)
++
++#define MAX_DEREG_RETRIES 			(100)
++#define DEFAULT_DEREG_RETRIES 			(10)
++#define DEFAULT_DEREG_DELAY_IN_JIFFIES		(10)
++
++/* This defines the maximum number of sessions possible between OCF
++   and the OCF Tolapai Driver. If set to zero, there is no limit. */
++#define DEFAULT_OCF_TO_DRV_MAX_SESSION_COUNT	(0)
++#define NUM_SUPPORTED_CAPABILITIES		(21)
++
++/*Slabs zones*/
++struct kmem_cache *drvSessionData_zone = NULL;
++struct kmem_cache *drvOpData_zone = NULL;
++struct kmem_cache *drvDH_zone = NULL;
++struct kmem_cache *drvLnModExp_zone = NULL;
++struct kmem_cache *drvRSADecrypt_zone = NULL;
++struct kmem_cache *drvRSAPrivateKey_zone = NULL;
++struct kmem_cache *drvDSARSSign_zone = NULL;
++struct kmem_cache *drvDSARSSignKValue_zone = NULL;
++struct kmem_cache *drvDSAVerify_zone = NULL;
++
++/*Slab zones for flatbuffers and bufferlist*/
++struct kmem_cache *drvFlatBuffer_zone = NULL;
++
++static int icp_ocfDrvInit(void);
++static void icp_ocfDrvExit(void);
++static void icp_ocfDrvFreeCaches(void);
++static void icp_ocfDrvDeferedFreeLacSessionProcess(void *arg);
++
++int32_t icp_ocfDrvDriverId = INVALID_DRIVER_ID;
++
++/* Module parameter - gives the number of times LAC deregistration shall be
++   re-tried */
++int num_dereg_retries = DEFAULT_DEREG_RETRIES;
++
++/* Module parameter - gives the delay time in jiffies before a LAC session 
++   shall be attempted to be deregistered again */
++int dereg_retry_delay_in_jiffies = DEFAULT_DEREG_DELAY_IN_JIFFIES;
++
++/* Module parameter - gives the maximum number of sessions possible between
++   OCF and the OCF Tolapai Driver. If set to zero, there is no limit.*/
++int max_sessions = DEFAULT_OCF_TO_DRV_MAX_SESSION_COUNT;
++
++/* This is set when the module is removed from the system, no further
++   processing can take place if this is set */
++atomic_t icp_ocfDrvIsExiting = ATOMIC_INIT(0);
++
++/* This is used to show how many lac sessions were not deregistered*/
++atomic_t lac_session_failed_dereg_count = ATOMIC_INIT(0);
++
++/* This is used to track the number of registered sessions between OCF and
++ * and the OCF Tolapai driver, when max_session is set to value other than
++ * zero. This ensures that the max_session set for the OCF and the driver
++ * is equal to the LAC registered sessions */
++atomic_t num_ocf_to_drv_registered_sessions = ATOMIC_INIT(0);
++
++/* Head of linked list used to store session data */
++struct list_head icp_ocfDrvGlobalSymListHead;
++struct list_head icp_ocfDrvGlobalSymListHead_FreeMemList;
++
++spinlock_t icp_ocfDrvSymSessInfoListSpinlock = SPIN_LOCK_UNLOCKED;
++rwlock_t icp_kmem_cache_destroy_alloc_lock = RW_LOCK_UNLOCKED;
++
++struct workqueue_struct *icp_ocfDrvFreeLacSessionWorkQ;
++
++struct icp_drvBuffListInfo defBuffListInfo;
++
++static struct {
++	softc_device_decl sc_dev;
++} icpDev;
++
++static device_method_t icp_methods = {
++	/* crypto device methods */
++	DEVMETHOD(cryptodev_newsession, icp_ocfDrvNewSession),
++	DEVMETHOD(cryptodev_freesession, icp_ocfDrvFreeLACSession),
++	DEVMETHOD(cryptodev_process, icp_ocfDrvSymProcess),
++	DEVMETHOD(cryptodev_kprocess, icp_ocfDrvPkeProcess),
++};
++
++module_param(num_dereg_retries, int, S_IRUGO);
++module_param(dereg_retry_delay_in_jiffies, int, S_IRUGO);
++module_param(max_sessions, int, S_IRUGO);
++
++MODULE_PARM_DESC(num_dereg_retries,
++		 "Number of times to retry LAC Sym Session Deregistration. "
++		 "Default 10, Max 100");
++MODULE_PARM_DESC(dereg_retry_delay_in_jiffies, "Delay in jiffies "
++		 "(added to a schedule() function call) before a LAC Sym "
++		 "Session Dereg is retried. Default 10");
++MODULE_PARM_DESC(max_sessions, "This sets the maximum number of sessions "
++		 "between OCF and this driver. If this value is set to zero, "
++		 "max session count checking is disabled. Default is zero(0)");
++
++/* Name        : icp_ocfDrvInit
++ *
++ * Description : This function will register all the symmetric and asymmetric
++ * functionality that will be accelerated by the hardware. It will also
++ * get a unique driver ID from the OCF and initialise all slab caches
++ */
++static int __init icp_ocfDrvInit(void)
++{
++	int ocfStatus = 0;
++
++	IPRINTK("=== %s ver %d.%d.%d ===\n", ICP_OCF_COMP_NAME,
++		ICP_OCF_VER_MAIN, ICP_OCF_VER_MJR, ICP_OCF_VER_MNR);
++
++	if (MAX_DEREG_RETRIES < num_dereg_retries) {
++		EPRINTK("Session deregistration retry count set to greater "
++			"than %d", MAX_DEREG_RETRIES);
++		return -1;
++	}
++
++	/* Initialize and Start the Cryptographic component */
++	if (CPA_STATUS_SUCCESS !=
++	    cpaCyStartInstance(CPA_INSTANCE_HANDLE_SINGLE)) {
++		EPRINTK("Failed to initialize and start the instance "
++			"of the Cryptographic component.\n");
++		return -1;
++	}
++
++	/* Set the default size of BufferList to allocate */
++	memset(&defBuffListInfo, 0, sizeof(struct icp_drvBuffListInfo));
++	if (ICP_OCF_DRV_STATUS_SUCCESS !=
++	    icp_ocfDrvBufferListMemInfo(ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS,
++					&defBuffListInfo)) {
++		EPRINTK("Failed to get bufferlist memory info.\n");
++		return -1;
++	}
++
++	/*Register OCF Tolapai Driver with OCF */
++	memset(&icpDev, 0, sizeof(icpDev));
++	softc_device_init(&icpDev, "icp", 0, icp_methods);
++
++	icp_ocfDrvDriverId = crypto_get_driverid(softc_get_device(&icpDev),
++						 CRYPTOCAP_F_HARDWARE);
++
++	if (icp_ocfDrvDriverId < 0) {
++		EPRINTK("%s : ICP driver failed to register with OCF!\n",
++			__FUNCTION__);
++		return -ENODEV;
++	}
++
++	/*Create all the slab caches used by the OCF Tolapai Driver */
++	drvSessionData_zone =
++	    ICP_CACHE_CREATE("ICP Session Data", struct icp_drvSessionData);
++	ICP_CACHE_NULL_CHECK(drvSessionData_zone);
++
++	/* 
++	 * Allocation of the OpData includes the allocation space for meta data.
++	 * The memory after the opData structure is reserved for this meta data.
++	 */
++	drvOpData_zone =
++	    kmem_cache_create("ICP Op Data", sizeof(struct icp_drvOpData) +
++	            defBuffListInfo.metaSize ,0, SLAB_HWCACHE_ALIGN, NULL, NULL);
++
++
++	ICP_CACHE_NULL_CHECK(drvOpData_zone);
++
++	drvDH_zone = ICP_CACHE_CREATE("ICP DH data", CpaCyDhPhase1KeyGenOpData);
++	ICP_CACHE_NULL_CHECK(drvDH_zone);
++
++	drvLnModExp_zone =
++	    ICP_CACHE_CREATE("ICP ModExp data", CpaCyLnModExpOpData);
++	ICP_CACHE_NULL_CHECK(drvLnModExp_zone);
++
++	drvRSADecrypt_zone =
++	    ICP_CACHE_CREATE("ICP RSA decrypt data", CpaCyRsaDecryptOpData);
++	ICP_CACHE_NULL_CHECK(drvRSADecrypt_zone);
++
++	drvRSAPrivateKey_zone =
++	    ICP_CACHE_CREATE("ICP RSA private key data", CpaCyRsaPrivateKey);
++	ICP_CACHE_NULL_CHECK(drvRSAPrivateKey_zone);
++
++	drvDSARSSign_zone =
++	    ICP_CACHE_CREATE("ICP DSA Sign", CpaCyDsaRSSignOpData);
++	ICP_CACHE_NULL_CHECK(drvDSARSSign_zone);
++
++	/*too awkward to use a macro here */
++	drvDSARSSignKValue_zone =
++	    kmem_cache_create("ICP DSA Sign Rand Val",
++			      DSA_RS_SIGN_PRIMEQ_SIZE_IN_BYTES, 0,
++			      SLAB_HWCACHE_ALIGN, NULL, NULL);
++	ICP_CACHE_NULL_CHECK(drvDSARSSignKValue_zone);
++
++	drvDSAVerify_zone =
++	    ICP_CACHE_CREATE("ICP DSA Verify", CpaCyDsaVerifyOpData);
++	ICP_CACHE_NULL_CHECK(drvDSAVerify_zone);
++
++	drvFlatBuffer_zone =
++	    ICP_CACHE_CREATE("ICP Flat Buffers", CpaFlatBuffer);
++	ICP_CACHE_NULL_CHECK(drvFlatBuffer_zone);
++
++	/* Register the ICP symmetric crypto support. */
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_NULL_CBC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_DES_CBC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_3DES_CBC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_AES_CBC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_ARC4);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_MD5);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_MD5_HMAC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA1);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA1_HMAC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA2_256);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA2_256_HMAC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA2_384);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA2_384_HMAC);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA2_512);
++	ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(CRYPTO_SHA2_512_HMAC);
++
++	/* Register the ICP asymmetric algorithm support */
++	ICP_REGISTER_ASYM_FUNCTIONALITY_WITH_OCF(CRK_DH_COMPUTE_KEY);
++	ICP_REGISTER_ASYM_FUNCTIONALITY_WITH_OCF(CRK_MOD_EXP);
++	ICP_REGISTER_ASYM_FUNCTIONALITY_WITH_OCF(CRK_MOD_EXP_CRT);
++	ICP_REGISTER_ASYM_FUNCTIONALITY_WITH_OCF(CRK_DSA_SIGN);
++	ICP_REGISTER_ASYM_FUNCTIONALITY_WITH_OCF(CRK_DSA_VERIFY);
++
++	/* Register the ICP random number generator support */
++	if (OCF_REGISTRATION_STATUS_SUCCESS ==
++	    crypto_rregister(icp_ocfDrvDriverId, icp_ocfDrvReadRandom, NULL)) {
++		ocfStatus++;
++	}
++
++	if (OCF_ZERO_FUNCTIONALITY_REGISTERED == ocfStatus) {
++		DPRINTK("%s: Failed to register any device capabilities\n",
++			__FUNCTION__);
++		icp_ocfDrvFreeCaches();
++		icp_ocfDrvDriverId = INVALID_DRIVER_ID;
++		return -ECANCELED;
++	}
++
++	DPRINTK("%s: Registered %d of %d device capabilities\n",
++		__FUNCTION__, ocfStatus, NUM_SUPPORTED_CAPABILITIES);
++
++/*Session data linked list used during module exit*/
++	INIT_LIST_HEAD(&icp_ocfDrvGlobalSymListHead);
++	INIT_LIST_HEAD(&icp_ocfDrvGlobalSymListHead_FreeMemList);
++
++	icp_ocfDrvFreeLacSessionWorkQ =
++	    create_singlethread_workqueue("ocfLacDeregWorkQueue");
++
++	return 0;
++}
++
++/* Name        : icp_ocfDrvExit
++ *
++ * Description : This function will deregister all the symmetric sessions
++ * registered with the LAC component. It will also deregister all symmetric
++ * and asymmetric functionality that can be accelerated by the hardware via OCF
++ * and random number generation if it is enabled.
++ */
++static void icp_ocfDrvExit(void)
++{
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	struct icp_drvSessionData *sessionData = NULL;
++	struct icp_drvSessionData *tempSessionData = NULL;
++	int i, remaining_delay_time_in_jiffies = 0;
++	/* There is a possibility of a process or new session command being   */
++	/* sent before this variable is incremented. The aim of this variable */
++	/* is to stop a loop of calls creating a deadlock situation which     */
++	/* would prevent the driver from exiting.                             */
++
++	atomic_inc(&icp_ocfDrvIsExiting);
++
++	/*Existing sessions will be routed to another driver after these calls */
++	crypto_unregister_all(icp_ocfDrvDriverId);
++	crypto_runregister_all(icp_ocfDrvDriverId);
++
++	/*If any sessions are waiting to be deregistered, do that. This also 
++	   flushes the work queue */
++	destroy_workqueue(icp_ocfDrvFreeLacSessionWorkQ);
++
++	/*ENTER CRITICAL SECTION */
++	spin_lock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
++	list_for_each_entry_safe(tempSessionData, sessionData,
++				 &icp_ocfDrvGlobalSymListHead, listNode) {
++		for (i = 0; i < num_dereg_retries; i++) {
++			/*No harm if bad input - LAC will handle error cases */
++			if (ICP_SESSION_RUNNING == tempSessionData->inUse) {
++				lacStatus =
++				    cpaCySymRemoveSession
++				    (CPA_INSTANCE_HANDLE_SINGLE,
++				     tempSessionData->sessHandle);
++				if (CPA_STATUS_SUCCESS == lacStatus) {
++					/* Succesfully deregistered */
++					break;
++				} else if (CPA_STATUS_RETRY != lacStatus) {
++					atomic_inc
++					    (&lac_session_failed_dereg_count);
++					break;
++				}
++
++				/*schedule_timout returns the time left for completion if 
++				 * this task is set to TASK_INTERRUPTIBLE */
++				remaining_delay_time_in_jiffies =
++				    dereg_retry_delay_in_jiffies;
++				while (0 > remaining_delay_time_in_jiffies) {
++					remaining_delay_time_in_jiffies =
++					    schedule_timeout
++					    (remaining_delay_time_in_jiffies);
++				}
++
++				DPRINTK
++				    ("%s(): Retry %d to deregistrate the session\n",
++				     __FUNCTION__, i);
++			}
++		}
++
++		/*remove from current list */
++		list_del(&(tempSessionData->listNode));
++		/*add to free mem linked list */
++		list_add(&(tempSessionData->listNode),
++			 &icp_ocfDrvGlobalSymListHead_FreeMemList);
++
++	}
++
++	/*EXIT CRITICAL SECTION */
++	spin_unlock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
++
++	/*set back to initial values */
++	sessionData = NULL;
++	/*still have a reference in our list! */
++	tempSessionData = NULL;
++	/*free memory */
++	list_for_each_entry_safe(tempSessionData, sessionData,
++				 &icp_ocfDrvGlobalSymListHead_FreeMemList,
++				 listNode) {
++
++		list_del(&(tempSessionData->listNode));
++		/* Free allocated CpaCySymSessionCtx */
++		if (NULL != tempSessionData->sessHandle) {
++			kfree(tempSessionData->sessHandle);
++		}
++		memset(tempSessionData, 0, sizeof(struct icp_drvSessionData));
++		kmem_cache_free(drvSessionData_zone, tempSessionData);
++	}
++
++	if (0 != atomic_read(&lac_session_failed_dereg_count)) {
++		DPRINTK("%s(): %d LAC sessions were not deregistered "
++			"correctly. This is not a clean exit! \n",
++			__FUNCTION__,
++			atomic_read(&lac_session_failed_dereg_count));
++	}
++
++	icp_ocfDrvFreeCaches();
++	icp_ocfDrvDriverId = INVALID_DRIVER_ID;
++
++	/* Shutdown the Cryptographic component */
++	lacStatus = cpaCyStopInstance(CPA_INSTANCE_HANDLE_SINGLE);
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		DPRINTK("%s(): Failed to stop instance of the "
++			"Cryptographic component.(status == %d)\n",
++			__FUNCTION__, lacStatus);
++	}
++
++}
++
++/* Name        : icp_ocfDrvFreeCaches
++ *
++ * Description : This function deregisters all slab caches
++ */
++static void icp_ocfDrvFreeCaches(void)
++{
++	if (atomic_read(&icp_ocfDrvIsExiting) != CPA_TRUE) {
++		atomic_set(&icp_ocfDrvIsExiting, 1);
++	}
++
++	/*Sym Zones */
++	ICP_CACHE_DESTROY(drvSessionData_zone);
++	ICP_CACHE_DESTROY(drvOpData_zone);
++
++	/*Asym zones */
++	ICP_CACHE_DESTROY(drvDH_zone);
++	ICP_CACHE_DESTROY(drvLnModExp_zone);
++	ICP_CACHE_DESTROY(drvRSADecrypt_zone);
++	ICP_CACHE_DESTROY(drvRSAPrivateKey_zone);
++	ICP_CACHE_DESTROY(drvDSARSSignKValue_zone);
++	ICP_CACHE_DESTROY(drvDSARSSign_zone);
++	ICP_CACHE_DESTROY(drvDSAVerify_zone);
++
++	/*FlatBuffer and BufferList Zones */
++	ICP_CACHE_DESTROY(drvFlatBuffer_zone);
++
++}
++
++/* Name        : icp_ocfDrvDeregRetry
++ *
++ * Description : This function will try to farm the session deregistration
++ * off to a work queue. If it fails, nothing more can be done and it
++ * returns an error
++ */
++
++int icp_ocfDrvDeregRetry(CpaCySymSessionCtx sessionToDeregister)
++{
++	struct icp_ocfDrvFreeLacSession *workstore = NULL;
++
++	DPRINTK("%s(): Retry - Deregistering session (%p)\n",
++		__FUNCTION__, sessionToDeregister);
++
++	/*make sure the session is not available to be allocated during this
++	   process */
++	atomic_inc(&lac_session_failed_dereg_count);
++
++	/*Farm off to work queue */
++	workstore =
++	    kmalloc(sizeof(struct icp_ocfDrvFreeLacSession), GFP_ATOMIC);
++	if (NULL == workstore) {
++		DPRINTK("%s(): unable to free session - no memory available "
++			"for work queue\n", __FUNCTION__);
++		return ENOMEM;
++	}
++
++	workstore->sessionToDeregister = sessionToDeregister;
++
++	INIT_WORK(&(workstore->work), icp_ocfDrvDeferedFreeLacSessionProcess,
++		  workstore);
++	queue_work(icp_ocfDrvFreeLacSessionWorkQ, &(workstore->work));
++
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++
++}
++
++/* Name        : icp_ocfDrvDeferedFreeLacSessionProcess
++ *
++ * Description : This function will retry (module input parameter)
++ * 'num_dereg_retries' times to deregister any symmetric session that recieves a
++ * CPA_STATUS_RETRY message from the LAC component. This function is run in
++ * Thread context because it is called from a worker thread
++ */
++static void icp_ocfDrvDeferedFreeLacSessionProcess(void *arg)
++{
++	struct icp_ocfDrvFreeLacSession *workstore = NULL;
++	CpaCySymSessionCtx sessionToDeregister = NULL;
++	int i = 0;
++	int remaining_delay_time_in_jiffies = 0;
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++
++	workstore = (struct icp_ocfDrvFreeLacSession *)arg;
++	if (NULL == workstore) {
++		DPRINTK("%s() function called with null parameter \n",
++			__FUNCTION__);
++		return;
++	}
++
++	sessionToDeregister = workstore->sessionToDeregister;
++	kfree(workstore);
++
++	/*if exiting, give deregistration one more blast only */
++	if (atomic_read(&icp_ocfDrvIsExiting) == CPA_TRUE) {
++		lacStatus = cpaCySymRemoveSession(CPA_INSTANCE_HANDLE_SINGLE,
++						  sessionToDeregister);
++
++		if (lacStatus != CPA_STATUS_SUCCESS) {
++			DPRINTK("%s() Failed to Dereg LAC session %p "
++				"during module exit\n", __FUNCTION__,
++				sessionToDeregister);
++			return;
++		}
++
++		atomic_dec(&lac_session_failed_dereg_count);
++		return;
++	}
++
++	for (i = 0; i <= num_dereg_retries; i++) {
++		lacStatus = cpaCySymRemoveSession(CPA_INSTANCE_HANDLE_SINGLE,
++						  sessionToDeregister);
++
++		if (lacStatus == CPA_STATUS_SUCCESS) {
++			atomic_dec(&lac_session_failed_dereg_count);
++			return;
++		}
++		if (lacStatus != CPA_STATUS_RETRY) {
++			DPRINTK("%s() Failed to deregister session - lacStatus "
++				" = %d", __FUNCTION__, lacStatus);
++			break;
++		}
++
++		/*schedule_timout returns the time left for completion if this
++		   task is set to TASK_INTERRUPTIBLE */
++		remaining_delay_time_in_jiffies = dereg_retry_delay_in_jiffies;
++		while (0 > remaining_delay_time_in_jiffies) {
++			remaining_delay_time_in_jiffies =
++			    schedule_timeout(remaining_delay_time_in_jiffies);
++		}
++
++	}
++
++	DPRINTK("%s(): Unable to deregister session\n", __FUNCTION__);
++	DPRINTK("%s(): Number of unavailable LAC sessions = %d\n", __FUNCTION__,
++		atomic_read(&lac_session_failed_dereg_count));
++}
++
++/* Name        : icp_ocfDrvPtrAndLenToFlatBuffer 
++ *
++ * Description : This function converts a "pointer and length" buffer 
++ * structure to Fredericksburg Flat Buffer (CpaFlatBuffer) format.
++ *
++ * This function assumes that the data passed in are valid.
++ */
++inline void
++icp_ocfDrvPtrAndLenToFlatBuffer(void *pData, uint32_t len,
++				CpaFlatBuffer * pFlatBuffer)
++{
++	pFlatBuffer->pData = pData;
++	pFlatBuffer->dataLenInBytes = len;
++}
++
++/* Name        : icp_ocfDrvSingleSkBuffToFlatBuffer 
++ *
++ * Description : This function converts a single socket buffer (sk_buff)
++ * structure to a Fredericksburg Flat Buffer (CpaFlatBuffer) format.
++ *
++ * This function assumes that the data passed in are valid.
++ */
++static inline void
++icp_ocfDrvSingleSkBuffToFlatBuffer(struct sk_buff *pSkb,
++				   CpaFlatBuffer * pFlatBuffer)
++{
++	pFlatBuffer->pData = pSkb->data;
++	pFlatBuffer->dataLenInBytes = skb_headlen(pSkb);
++}
++
++/* Name        : icp_ocfDrvSkBuffToBufferList 
++ *
++ * Description : This function converts a socket buffer (sk_buff) structure to
++ * Fredericksburg Scatter/Gather (CpaBufferList) buffer format.
++ *
++ * This function assumes that the bufferlist has been allocated with the correct
++ * number of buffer arrays.
++ * 
++ */
++inline int
++icp_ocfDrvSkBuffToBufferList(struct sk_buff *pSkb, CpaBufferList * bufferList)
++{
++	CpaFlatBuffer *curFlatBuffer = NULL;
++	char *skbuffPageAddr = NULL;
++	struct sk_buff *pCurFrag = NULL;
++	struct skb_shared_info *pShInfo = NULL;
++	uint32_t page_offset = 0, i = 0;
++
++	DPRINTK("%s(): Entry Point\n", __FUNCTION__);
++
++	/*
++	 * In all cases, the first skb needs to be translated to FlatBuffer.
++	 * Perform a buffer translation for the first skbuff
++	 */
++	curFlatBuffer = bufferList->pBuffers;
++	icp_ocfDrvSingleSkBuffToFlatBuffer(pSkb, curFlatBuffer);
++
++	/* Set the userData to point to the original sk_buff */
++	bufferList->pUserData = (void *)pSkb;
++
++	/* We now know we'll have at least one element in the SGL */
++	bufferList->numBuffers = 1;
++
++	if (0 == skb_is_nonlinear(pSkb)) {
++		/* Is a linear buffer - therefore it's a single skbuff */
++		DPRINTK("%s(): Exit Point\n", __FUNCTION__);
++		return ICP_OCF_DRV_STATUS_SUCCESS;
++	}
++
++	curFlatBuffer++;
++	pShInfo = skb_shinfo(pSkb);
++	if (pShInfo->frag_list != NULL && pShInfo->nr_frags != 0) {
++		EPRINTK("%s():"
++			"Translation for a combination of frag_list "
++			"and frags[] array not supported!\n", __FUNCTION__);
++		return ICP_OCF_DRV_STATUS_FAIL;
++	} else if (pShInfo->frag_list != NULL) {
++		/*
++		 * Non linear skbuff supported through frag_list 
++		 * Perform translation for each fragment (sk_buff)
++		 * in the frag_list of the first sk_buff.
++		 */
++		for (pCurFrag = pShInfo->frag_list;
++		     pCurFrag != NULL; pCurFrag = pCurFrag->next) {
++			icp_ocfDrvSingleSkBuffToFlatBuffer(pCurFrag,
++							   curFlatBuffer);
++			curFlatBuffer++;
++			bufferList->numBuffers++;
++		}
++	} else if (pShInfo->nr_frags != 0) {
++		/*
++		 * Perform translation for each fragment in frags array
++		 * and add to the BufferList
++		 */
++		for (i = 0; i < pShInfo->nr_frags; i++) {
++			/* Get the page address and offset of this frag */
++			skbuffPageAddr = (char *)pShInfo->frags[i].page;
++			page_offset = pShInfo->frags[i].page_offset;
++
++			/* Convert a pointer and length to a flat buffer */
++			icp_ocfDrvPtrAndLenToFlatBuffer(skbuffPageAddr +
++							page_offset,
++							pShInfo->frags[i].size,
++							curFlatBuffer);
++			curFlatBuffer++;
++			bufferList->numBuffers++;
++		}
++	} else {
++		EPRINTK("%s():" "Could not recognize skbuff fragments!\n",
++			__FUNCTION__);
++		return ICP_OCF_DRV_STATUS_FAIL;
++	}
++
++	DPRINTK("%s(): Exit Point\n", __FUNCTION__);
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvBufferListToSkBuff 
++ *
++ * Description : This function converts a Fredericksburg Scatter/Gather 
++ * (CpaBufferList) buffer format to socket buffer structure.
++ */
++inline int
++icp_ocfDrvBufferListToSkBuff(CpaBufferList * bufferList, struct sk_buff **skb)
++{
++	DPRINTK("%s(): Entry Point\n", __FUNCTION__);
++
++	/* Retrieve the orignal skbuff */
++	*skb = (struct sk_buff *)bufferList->pUserData;
++	if (NULL == *skb) {
++		EPRINTK("%s():"
++			"Error on converting from a BufferList. "
++			"The BufferList does not contain an sk_buff.\n",
++			__FUNCTION__);
++		return ICP_OCF_DRV_STATUS_FAIL;
++	}
++	DPRINTK("%s(): Exit Point\n", __FUNCTION__);
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvPtrAndLenToBufferList
++ *
++ * Description : This function converts a "pointer and length" buffer
++ * structure to Fredericksburg Scatter/Gather Buffer (CpaBufferList) format.
++ *
++ * This function assumes that the data passed in are valid.
++ */
++inline void
++icp_ocfDrvPtrAndLenToBufferList(void *pDataIn, uint32_t length,
++				CpaBufferList * pBufferList)
++{
++	pBufferList->numBuffers = 1;
++	pBufferList->pBuffers->pData = pDataIn;
++	pBufferList->pBuffers->dataLenInBytes = length;
++}
++
++/* Name        : icp_ocfDrvBufferListToPtrAndLen
++ *
++ * Description : This function converts Fredericksburg Scatter/Gather Buffer
++ * (CpaBufferList) format to a "pointer and length" buffer structure.
++ *
++ * This function assumes that the data passed in are valid.
++ */
++inline void
++icp_ocfDrvBufferListToPtrAndLen(CpaBufferList * pBufferList,
++				void **ppDataOut, uint32_t * pLength)
++{
++	*ppDataOut = pBufferList->pBuffers->pData;
++	*pLength = pBufferList->pBuffers->dataLenInBytes;
++}
++
++/* Name        : icp_ocfDrvBufferListMemInfo
++ *
++ * Description : This function will set the number of flat buffers in 
++ * bufferlist, the size of memory to allocate for the pPrivateMetaData 
++ * member of the CpaBufferList.
++ */
++int
++icp_ocfDrvBufferListMemInfo(uint16_t numBuffers,
++			    struct icp_drvBuffListInfo *buffListInfo)
++{
++	buffListInfo->numBuffers = numBuffers;
++
++	if (CPA_STATUS_SUCCESS !=
++	    cpaCyBufferListGetMetaSize(CPA_INSTANCE_HANDLE_SINGLE,
++				       buffListInfo->numBuffers,
++				       &(buffListInfo->metaSize))) {
++		EPRINTK("%s() Failed to get buffer list meta size.\n",
++			__FUNCTION__);
++		return ICP_OCF_DRV_STATUS_FAIL;
++	}
++
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvGetSkBuffFrags
++ *
++ * Description : This function will determine the number of 
++ * fragments in a socket buffer(sk_buff).
++ */
++inline uint16_t icp_ocfDrvGetSkBuffFrags(struct sk_buff * pSkb)
++{
++	uint16_t numFrags = 0;
++	struct sk_buff *pCurFrag = NULL;
++	struct skb_shared_info *pShInfo = NULL;
++
++	if (NULL == pSkb)
++		return 0;
++
++	numFrags = 1;
++	if (0 == skb_is_nonlinear(pSkb)) {
++		/* Linear buffer - it's a single skbuff */
++		return numFrags;
++	}
++
++	pShInfo = skb_shinfo(pSkb);
++	if (NULL != pShInfo->frag_list && 0 != pShInfo->nr_frags) {
++		EPRINTK("%s(): Combination of frag_list "
++			"and frags[] array not supported!\n", __FUNCTION__);
++		return 0;
++	} else if (0 != pShInfo->nr_frags) {
++		numFrags += pShInfo->nr_frags;
++		return numFrags;
++	} else if (NULL != pShInfo->frag_list) {
++		for (pCurFrag = pShInfo->frag_list;
++		     pCurFrag != NULL; pCurFrag = pCurFrag->next) {
++			numFrags++;
++		}
++		return numFrags;
++	} else {
++		return 0;
++	}
++}
++
++/* Name        : icp_ocfDrvFreeFlatBuffer
++ *
++ * Description : This function will deallocate flat buffer.
++ */
++inline void icp_ocfDrvFreeFlatBuffer(CpaFlatBuffer * pFlatBuffer)
++{
++	if (pFlatBuffer != NULL) {
++		memset(pFlatBuffer, 0, sizeof(CpaFlatBuffer));
++		kmem_cache_free(drvFlatBuffer_zone, pFlatBuffer);
++	}
++}
++
++/* Name        : icp_ocfDrvAllocMetaData
++ *
++ * Description : This function will allocate memory for the
++ * pPrivateMetaData member of CpaBufferList.
++ */
++inline int
++icp_ocfDrvAllocMetaData(CpaBufferList * pBufferList,
++        const struct icp_drvOpData *pOpData)
++{
++	Cpa32U metaSize = 0;
++
++	if (pBufferList->numBuffers <= ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS){
++	    void *pOpDataStartAddr = (void *)pOpData;
++
++	    if (0 == defBuffListInfo.metaSize) {
++			pBufferList->pPrivateMetaData = NULL;
++			return ICP_OCF_DRV_STATUS_SUCCESS;
++		}
++		/*
++		 * The meta data allocation has been included as part of the 
++		 * op data.  It has been pre-allocated in memory just after the
++		 * icp_drvOpData structure.
++		 */
++		pBufferList->pPrivateMetaData = pOpDataStartAddr +
++		        sizeof(struct icp_drvOpData);
++	} else {
++		if (CPA_STATUS_SUCCESS !=
++		    cpaCyBufferListGetMetaSize(CPA_INSTANCE_HANDLE_SINGLE,
++					       pBufferList->numBuffers,
++					       &metaSize)) {
++			EPRINTK("%s() Failed to get buffer list meta size.\n",
++				__FUNCTION__);
++			return ICP_OCF_DRV_STATUS_FAIL;
++		}
++
++		if (0 == metaSize) {
++			pBufferList->pPrivateMetaData = NULL;
++			return ICP_OCF_DRV_STATUS_SUCCESS;
++		}
++
++		pBufferList->pPrivateMetaData = kmalloc(metaSize, GFP_ATOMIC);
++	}
++	if (NULL == pBufferList->pPrivateMetaData) {
++		EPRINTK("%s() Failed to allocate pPrivateMetaData.\n",
++			__FUNCTION__);
++		return ICP_OCF_DRV_STATUS_FAIL;
++	}
++
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvFreeMetaData
++ *
++ * Description : This function will deallocate pPrivateMetaData memory.
++ */
++inline void icp_ocfDrvFreeMetaData(CpaBufferList * pBufferList)
++{
++	if (NULL == pBufferList->pPrivateMetaData) {
++		return;
++	}
++
++	/*
++	 * Only free the meta data if the BufferList has more than 
++	 * ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS number of buffers.
++	 * Otherwise, the meta data shall be freed when the icp_drvOpData is
++	 * freed.
++	 */
++	if (ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS < pBufferList->numBuffers){
++		kfree(pBufferList->pPrivateMetaData);
++	}
++}
++
++module_init(icp_ocfDrvInit);
++module_exit(icp_ocfDrvExit);
++MODULE_LICENSE("Dual BSD/GPL");
++MODULE_AUTHOR("Intel");
++MODULE_DESCRIPTION("OCF Driver for Intel Quick Assist crypto acceleration");
+--- /dev/null
++++ b/crypto/ocf/ep80579/icp_ocf.h
+@@ -0,0 +1,363 @@
++/***************************************************************************
++ *
++ * This file is provided under a dual BSD/GPLv2 license.  When using or 
++ *   redistributing this file, you may do so under either license.
++ * 
++ *   GPL LICENSE SUMMARY
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ * 
++ *   This program is free software; you can redistribute it and/or modify 
++ *   it under the terms of version 2 of the GNU General Public License as
++ *   published by the Free Software Foundation.
++ * 
++ *   This program is distributed in the hope that it will be useful, but 
++ *   WITHOUT ANY WARRANTY; without even the implied warranty of 
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
++ *   General Public License for more details.
++ * 
++ *   You should have received a copy of the GNU General Public License 
++ *   along with this program; if not, write to the Free Software 
++ *   Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++ *   The full GNU General Public License is included in this distribution 
++ *   in the file called LICENSE.GPL.
++ * 
++ *   Contact Information:
++ *   Intel Corporation
++ * 
++ *   BSD LICENSE 
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ *   All rights reserved.
++ * 
++ *   Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions 
++ *   are met:
++ * 
++ *     * Redistributions of source code must retain the above copyright 
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright 
++ *       notice, this list of conditions and the following disclaimer in 
++ *       the documentation and/or other materials provided with the 
++ *       distribution.
++ *     * Neither the name of Intel Corporation nor the names of its 
++ *       contributors may be used to endorse or promote products derived 
++ *       from this software without specific prior written permission.
++ * 
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ * 
++ * 
++ *  version: Security.L.1.0.130
++ *
++ ***************************************************************************/
++
++/*
++ * OCF drv driver header file for the Intel ICP processor.
++ */
++
++#ifndef ICP_OCF_H
++#define ICP_OCF_H
++
++#include <linux/crypto.h>
++#include <linux/delay.h>
++#include <linux/skbuff.h>
++
++#include "cryptodev.h"
++#include "uio.h"
++
++#include "cpa.h"
++#include "cpa_cy_im.h"
++#include "cpa_cy_sym.h"
++#include "cpa_cy_rand.h"
++#include "cpa_cy_dh.h"
++#include "cpa_cy_rsa.h"
++#include "cpa_cy_ln.h"
++#include "cpa_cy_common.h"
++#include "cpa_cy_dsa.h"
++
++#define NUM_BITS_IN_BYTE (8)
++#define NUM_BITS_IN_BYTE_MINUS_ONE (NUM_BITS_IN_BYTE -1)
++#define INVALID_DRIVER_ID (-1)
++#define RETURN_RAND_NUM_GEN_FAILED (-1)
++
++/*This is define means only one operation can be chained to another
++(resulting in one chain of two operations)*/
++#define MAX_NUM_OF_CHAINED_OPS (1)
++/*This is the max block cipher initialisation vector*/
++#define MAX_IV_LEN_IN_BYTES (20)
++/*This is used to check whether the OCF to this driver session limit has
++  been disabled*/
++#define NO_OCF_TO_DRV_MAX_SESSIONS		(0)
++
++/*OCF values mapped here*/
++#define ICP_SHA1_DIGEST_SIZE_IN_BYTES 		(SHA1_HASH_LEN)
++#define ICP_SHA256_DIGEST_SIZE_IN_BYTES 	(SHA2_256_HASH_LEN)
++#define ICP_SHA384_DIGEST_SIZE_IN_BYTES 	(SHA2_384_HASH_LEN)
++#define ICP_SHA512_DIGEST_SIZE_IN_BYTES 	(SHA2_512_HASH_LEN)
++#define ICP_MD5_DIGEST_SIZE_IN_BYTES 		(MD5_HASH_LEN)
++#define ARC4_COUNTER_LEN 			(ARC4_BLOCK_LEN)
++
++#define OCF_REGISTRATION_STATUS_SUCCESS 	(0)
++#define OCF_ZERO_FUNCTIONALITY_REGISTERED 	(0)
++#define ICP_OCF_DRV_NO_CRYPTO_PROCESS_ERROR 	(0)
++#define ICP_OCF_DRV_STATUS_SUCCESS 		(0)
++#define ICP_OCF_DRV_STATUS_FAIL 		(1)
++
++/*Turn on/off debug options*/
++#define ICP_OCF_PRINT_DEBUG_MESSAGES		(0)
++#define ICP_OCF_PRINT_KERN_ALERT		(1)
++#define ICP_OCF_PRINT_KERN_ERRS			(1)
++
++/*DSA Prime Q size in bytes (as defined in the standard) */
++#define DSA_RS_SIGN_PRIMEQ_SIZE_IN_BYTES	(20)
++
++/*MACRO DEFINITIONS*/
++
++#define BITS_TO_BYTES(bytes, bits) 					\
++	bytes = (bits + NUM_BITS_IN_BYTE_MINUS_ONE) / NUM_BITS_IN_BYTE
++
++#define ICP_CACHE_CREATE(cache_ID, cache_name) 				\
++	kmem_cache_create(cache_ID, sizeof(cache_name),0, 		\
++		SLAB_HWCACHE_ALIGN, NULL, NULL);
++
++#define ICP_CACHE_NULL_CHECK(slab_zone)					\
++{									\
++	if(NULL == slab_zone){ 						\
++		icp_ocfDrvFreeCaches(); 				\
++		EPRINTK("%s() line %d: Not enough memory!\n", 		\
++			__FUNCTION__, __LINE__); 			\
++		return ENOMEM; 						\
++	}								\
++}
++
++#define ICP_CACHE_DESTROY(slab_zone) 	                                \
++{                                                                       \
++        if(NULL != slab_zone){						\
++                kmem_cache_destroy(slab_zone);				\
++                slab_zone = NULL;					\
++        }								\
++}
++
++#define ICP_REGISTER_SYM_FUNCTIONALITY_WITH_OCF(alg)			\
++{									\
++	if(OCF_REGISTRATION_STATUS_SUCCESS ==				\
++		crypto_register(icp_ocfDrvDriverId,			\
++				    alg,				\
++				    0,					\
++				    0)) {				\
++		ocfStatus++;						\
++	}								\
++}
++
++#define ICP_REGISTER_ASYM_FUNCTIONALITY_WITH_OCF(alg)			\
++{									\
++	if(OCF_REGISTRATION_STATUS_SUCCESS ==				\
++		crypto_kregister(icp_ocfDrvDriverId,			\
++				      alg,				\
++				      0)){				\
++		ocfStatus++;						\
++	}								\
++}
++
++#if ICP_OCF_PRINT_DEBUG_MESSAGES == 1
++#define DPRINTK(args...)      \
++{			      \
++                printk(args); \
++}
++
++#else				//ICP_OCF_PRINT_DEBUG_MESSAGES == 1
++
++#define DPRINTK(args...)
++
++#endif				//ICP_OCF_PRINT_DEBUG_MESSAGES == 1
++
++#if ICP_OCF_PRINT_KERN_ALERT == 1
++#define APRINTK(args...)      						\
++{			      						\
++       printk(KERN_ALERT args);						\
++}
++
++#else				//ICP_OCF_PRINT_KERN_ALERT == 1
++
++#define APRINTK(args...)
++
++#endif				//ICP_OCF_PRINT_KERN_ALERT == 1
++
++#if ICP_OCF_PRINT_KERN_ERRS == 1
++#define EPRINTK(args...)      \
++{			      \
++       printk(KERN_ERR args); \
++}
++
++#else				//ICP_OCF_PRINT_KERN_ERRS == 1
++
++#define EPRINTK(args...)
++
++#endif				//ICP_OCF_PRINT_KERN_ERRS == 1
++
++#define IPRINTK(args...)      \
++{			      \
++      printk(KERN_INFO args); \
++}
++
++/*END OF MACRO DEFINITIONS*/
++
++typedef enum {
++	ICP_OCF_DRV_ALG_CIPHER = 0,
++	ICP_OCF_DRV_ALG_HASH
++} icp_ocf_drv_alg_type_t;
++
++/* These are all defined in icp_common.c */
++extern atomic_t lac_session_failed_dereg_count;
++extern atomic_t icp_ocfDrvIsExiting;
++extern atomic_t num_ocf_to_drv_registered_sessions;
++
++/*These are use inputs used in icp_sym.c and icp_common.c
++  They are instantiated in icp_common.c*/
++extern int max_sessions;
++
++extern int32_t icp_ocfDrvDriverId;
++extern struct list_head icp_ocfDrvGlobalSymListHead;
++extern struct list_head icp_ocfDrvGlobalSymListHead_FreeMemList;
++extern struct workqueue_struct *icp_ocfDrvFreeLacSessionWorkQ;
++extern spinlock_t icp_ocfDrvSymSessInfoListSpinlock;
++extern rwlock_t icp_kmem_cache_destroy_alloc_lock;
++
++/*Slab zones for symettric functionality, instantiated in icp_common.c*/
++extern struct kmem_cache *drvSessionData_zone;
++extern struct kmem_cache *drvOpData_zone;
++
++/*Slabs zones for asymettric functionality, instantiated in icp_common.c*/
++extern struct kmem_cache *drvDH_zone;
++extern struct kmem_cache *drvLnModExp_zone;
++extern struct kmem_cache *drvRSADecrypt_zone;
++extern struct kmem_cache *drvRSAPrivateKey_zone;
++extern struct kmem_cache *drvDSARSSign_zone;
++extern struct kmem_cache *drvDSARSSignKValue_zone;
++extern struct kmem_cache *drvDSAVerify_zone;
++
++/*Slab zones for flatbuffers and bufferlist*/
++extern struct kmem_cache *drvFlatBuffer_zone;
++
++#define ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS     (16)
++
++struct icp_drvBuffListInfo {
++	Cpa16U numBuffers;
++	Cpa32U metaSize;
++	Cpa32U metaOffset;
++	Cpa32U buffListSize;
++};
++extern struct icp_drvBuffListInfo defBuffListInfo;
++
++/*
++* This struct is used to keep a reference to the relevant node in the list
++* of sessionData structs, to the buffer type required by OCF and to the OCF
++* provided crp struct that needs to be returned. All this info is needed in
++* the callback function.
++*
++* IV can sometimes be stored in non-contiguous memory (e.g. skbuff
++* linked/frag list, therefore a contiguous memory space for the IV data must be
++* created and passed to LAC
++*
++*/
++struct icp_drvOpData {
++	CpaCySymOpData lacOpData;
++	uint32_t digestSizeInBytes;
++	struct cryptop *crp;
++	uint8_t bufferType;
++	uint8_t ivData[MAX_IV_LEN_IN_BYTES];
++	uint16_t numBufferListArray;
++	CpaBufferList srcBuffer;
++	CpaFlatBuffer bufferListArray[ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS];
++	CpaBoolean verifyResult;
++};
++/*Values used to derisk chances of performs being called against
++deregistered sessions (for which the slab page has been reclaimed)
++This is not a fix - since page frames are reclaimed from a slab, one cannot
++rely on that memory not being re-used by another app.*/
++typedef enum {
++	ICP_SESSION_INITIALISED = 0x5C5C5C,
++	ICP_SESSION_RUNNING = 0x005C00,
++	ICP_SESSION_DEREGISTERED = 0xC5C5C5
++} usage_derisk;
++
++/*
++This is the OCF<->OCF_DRV session object:
++
++1.The first member is a listNode. These session objects are added to a linked
++  list in order to make it easier to remove them all at session exit time.
++2.The second member is used to give the session object state and derisk the
++  possibility of OCF batch calls executing against a deregistered session (as
++  described above).
++3.The third member is a LAC<->OCF_DRV session handle (initialised with the first
++  perform request for that session).
++4.The fourth is the LAC session context. All the parameters for this structure
++  are only known when the first perform request for this session occurs. That is
++  why the OCF Tolapai Driver only registers a new LAC session at perform time
++*/
++struct icp_drvSessionData {
++	struct list_head listNode;
++	usage_derisk inUse;
++	CpaCySymSessionCtx sessHandle;
++	CpaCySymSessionSetupData lacSessCtx;
++};
++
++/* This struct is required for deferred session
++ deregistration as a work queue function can
++ only have one argument*/
++struct icp_ocfDrvFreeLacSession {
++	CpaCySymSessionCtx sessionToDeregister;
++	struct work_struct work;
++};
++
++int icp_ocfDrvNewSession(device_t dev, uint32_t * sild, struct cryptoini *cri);
++
++int icp_ocfDrvFreeLACSession(device_t dev, uint64_t sid);
++
++int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint);
++
++int icp_ocfDrvPkeProcess(device_t dev, struct cryptkop *krp, int hint);
++
++int icp_ocfDrvReadRandom(void *arg, uint32_t * buf, int maxwords);
++
++int icp_ocfDrvDeregRetry(CpaCySymSessionCtx sessionToDeregister);
++
++int icp_ocfDrvSkBuffToBufferList(struct sk_buff *skb,
++				 CpaBufferList * bufferList);
++
++int icp_ocfDrvBufferListToSkBuff(CpaBufferList * bufferList,
++				 struct sk_buff **skb);
++
++void icp_ocfDrvPtrAndLenToFlatBuffer(void *pData, uint32_t len,
++				     CpaFlatBuffer * pFlatBuffer);
++
++void icp_ocfDrvPtrAndLenToBufferList(void *pDataIn, uint32_t length,
++				     CpaBufferList * pBufferList);
++
++void icp_ocfDrvBufferListToPtrAndLen(CpaBufferList * pBufferList,
++				     void **ppDataOut, uint32_t * pLength);
++
++int icp_ocfDrvBufferListMemInfo(uint16_t numBuffers,
++				struct icp_drvBuffListInfo *buffListInfo);
++
++uint16_t icp_ocfDrvGetSkBuffFrags(struct sk_buff *pSkb);
++
++void icp_ocfDrvFreeFlatBuffer(CpaFlatBuffer * pFlatBuffer);
++
++int icp_ocfDrvAllocMetaData(CpaBufferList * pBufferList, 
++                const struct icp_drvOpData *pOpData);
++
++void icp_ocfDrvFreeMetaData(CpaBufferList * pBufferList);
++
++#endif
++/* ICP_OCF_H */
+--- /dev/null
++++ b/crypto/ocf/ep80579/icp_sym.c
+@@ -0,0 +1,1382 @@
++/***************************************************************************
++ *
++ * This file is provided under a dual BSD/GPLv2 license.  When using or 
++ *   redistributing this file, you may do so under either license.
++ * 
++ *   GPL LICENSE SUMMARY
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ * 
++ *   This program is free software; you can redistribute it and/or modify 
++ *   it under the terms of version 2 of the GNU General Public License as
++ *   published by the Free Software Foundation.
++ * 
++ *   This program is distributed in the hope that it will be useful, but 
++ *   WITHOUT ANY WARRANTY; without even the implied warranty of 
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
++ *   General Public License for more details.
++ * 
++ *   You should have received a copy of the GNU General Public License 
++ *   along with this program; if not, write to the Free Software 
++ *   Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++ *   The full GNU General Public License is included in this distribution 
++ *   in the file called LICENSE.GPL.
++ * 
++ *   Contact Information:
++ *   Intel Corporation
++ * 
++ *   BSD LICENSE 
++ * 
++ *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
++ *   All rights reserved.
++ * 
++ *   Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions 
++ *   are met:
++ * 
++ *     * Redistributions of source code must retain the above copyright 
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above copyright 
++ *       notice, this list of conditions and the following disclaimer in 
++ *       the documentation and/or other materials provided with the 
++ *       distribution.
++ *     * Neither the name of Intel Corporation nor the names of its 
++ *       contributors may be used to endorse or promote products derived 
++ *       from this software without specific prior written permission.
++ * 
++ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
++ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
++ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
++ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
++ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
++ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
++ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
++ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
++ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
++ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
++ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ * 
++ * 
++ *  version: Security.L.1.0.130
++ *
++ ***************************************************************************/
++/*
++ * An OCF module that uses the API for Intel® QuickAssist Technology to do the
++ * cryptography.
++ *
++ * This driver requires the ICP Access Library that is available from Intel in
++ * order to operate.
++ */
++
++#include "icp_ocf.h"
++
++/*This is the call back function for all symmetric cryptographic processes.
++  Its main functionality is to free driver crypto operation structure and to 
++  call back to OCF*/
++static void
++icp_ocfDrvSymCallBack(void *callbackTag,
++		      CpaStatus status,
++		      const CpaCySymOp operationType,
++		      void *pOpData,
++		      CpaBufferList * pDstBuffer, CpaBoolean verifyResult);
++
++/*This function is used to extract crypto processing information from the OCF
++  inputs, so as that it may be passed onto LAC*/
++static int
++icp_ocfDrvProcessDataSetup(struct icp_drvOpData *drvOpData,
++			   struct cryptodesc *crp_desc);
++
++/*This function checks whether the crp_desc argument pertains to a digest or a
++  cipher operation*/
++static int icp_ocfDrvAlgCheck(struct cryptodesc *crp_desc);
++
++/*This function copies all the passed in session context information and stores
++  it in a LAC context structure*/
++static int
++icp_ocfDrvAlgorithmSetup(struct cryptoini *cri,
++			 CpaCySymSessionSetupData * lacSessCtx);
++
++/*This top level function is used to find a pointer to where a digest is 
++  stored/needs to be inserted. */
++static uint8_t *icp_ocfDrvDigestPointerFind(struct icp_drvOpData *drvOpData,
++					    struct cryptodesc *crp_desc);
++
++/*This function is called when a digest pointer has to be found within a
++  SKBUFF.*/
++static inline uint8_t *icp_ocfDrvSkbuffDigestPointerFind(struct icp_drvOpData
++							 *drvOpData,
++							 int offsetInBytes,
++							 uint32_t
++							 digestSizeInBytes);
++
++/*The following two functions are called if the SKBUFF digest pointer is not 
++  positioned in the linear portion of the buffer (i.e. it is in a linked SKBUFF
++   or page fragment).*/
++/*This function takes care of the page fragment case.*/
++static inline uint8_t *icp_ocfDrvDigestSkbNRFragsCheck(struct sk_buff *skb,
++						       struct skb_shared_info
++						       *skb_shared,
++						       int offsetInBytes,
++						       uint32_t
++						       digestSizeInBytes);
++
++/*This function takes care of the linked list case.*/
++static inline uint8_t *icp_ocfDrvDigestSkbFragListCheck(struct sk_buff *skb,
++							struct skb_shared_info
++							*skb_shared,
++							int offsetInBytes,
++							uint32_t
++							digestSizeInBytes);
++
++/*This function is used to free an OCF->OCF_DRV session object*/
++static void icp_ocfDrvFreeOCFSession(struct icp_drvSessionData *sessionData);
++
++/*max IOV buffs supported in a UIO structure*/
++#define NUM_IOV_SUPPORTED		(1)
++
++/* Name        : icp_ocfDrvSymCallBack
++ *
++ * Description : When this function returns it signifies that the LAC
++ * component has completed the relevant symmetric operation. 
++ *
++ * Notes : The callbackTag is a pointer to an icp_drvOpData. This memory
++ * object was passed to LAC for the cryptographic processing and contains all
++ * the relevant information for cleaning up buffer handles etc. so that the
++ * OCF Tolapai Driver portion of this crypto operation can be fully completed.
++ */
++static void
++icp_ocfDrvSymCallBack(void *callbackTag,
++		      CpaStatus status,
++		      const CpaCySymOp operationType,
++		      void *pOpData,
++		      CpaBufferList * pDstBuffer, CpaBoolean verifyResult)
++{
++	struct cryptop *crp = NULL;
++	struct icp_drvOpData *temp_drvOpData =
++	    (struct icp_drvOpData *)callbackTag;
++	uint64_t *tempBasePtr = NULL;
++	uint32_t tempLen = 0;
++
++	if (NULL == temp_drvOpData) {
++		DPRINTK("%s(): The callback from the LAC component"
++			" has failed due to Null userOpaque data"
++			"(status == %d).\n", __FUNCTION__, status);
++		DPRINTK("%s(): Unable to call OCF back! \n", __FUNCTION__);
++		return;
++	}
++
++	crp = temp_drvOpData->crp;
++	crp->crp_etype = ICP_OCF_DRV_NO_CRYPTO_PROCESS_ERROR;
++
++	if (NULL == pOpData) {
++		DPRINTK("%s(): The callback from the LAC component"
++			" has failed due to Null Symmetric Op data"
++			"(status == %d).\n", __FUNCTION__, status);
++		crp->crp_etype = ECANCELED;
++		crypto_done(crp);
++		return;
++	}
++
++	if (NULL == pDstBuffer) {
++		DPRINTK("%s(): The callback from the LAC component"
++			" has failed due to Null Dst Bufferlist data"
++			"(status == %d).\n", __FUNCTION__, status);
++		crp->crp_etype = ECANCELED;
++		crypto_done(crp);
++		return;
++	}
++
++	if (CPA_STATUS_SUCCESS == status) {
++
++		if (temp_drvOpData->bufferType == CRYPTO_F_SKBUF) {
++			if (ICP_OCF_DRV_STATUS_SUCCESS !=
++			    icp_ocfDrvBufferListToSkBuff(pDstBuffer,
++							 (struct sk_buff **)
++							 &(crp->crp_buf))) {
++				EPRINTK("%s(): BufferList to SkBuff "
++					"conversion error.\n", __FUNCTION__);
++				crp->crp_etype = EPERM;
++			}
++		} else {
++			icp_ocfDrvBufferListToPtrAndLen(pDstBuffer,
++							(void **)&tempBasePtr,
++							&tempLen);
++			crp->crp_olen = (int)tempLen;
++		}
++
++	} else {
++		DPRINTK("%s(): The callback from the LAC component has failed"
++			"(status == %d).\n", __FUNCTION__, status);
++
++		crp->crp_etype = ECANCELED;
++	}
++
++	if (temp_drvOpData->numBufferListArray >
++	    ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS) {
++		kfree(pDstBuffer->pBuffers);
++	}
++	icp_ocfDrvFreeMetaData(pDstBuffer);
++	kmem_cache_free(drvOpData_zone, temp_drvOpData);
++
++	/* Invoke the OCF callback function */
++	crypto_done(crp);
++
++	return;
++}
++
++/* Name        : icp_ocfDrvNewSession 
++ *
++ * Description : This function will create a new Driver<->OCF session
++ *
++ * Notes : LAC session registration happens during the first perform call.
++ * That is the first time we know all information about a given session.
++ */
++int icp_ocfDrvNewSession(device_t dev, uint32_t * sid, struct cryptoini *cri)
++{
++	struct icp_drvSessionData *sessionData = NULL;
++	uint32_t delete_session = 0;
++
++	/* The SID passed in should be our driver ID. We can return the     */
++	/* local ID (LID) which is a unique identifier which we can use     */
++	/* to differentiate between the encrypt/decrypt LAC session handles */
++	if (NULL == sid) {
++		EPRINTK("%s(): Invalid input parameters - NULL sid.\n",
++			__FUNCTION__);
++		return EINVAL;
++	}
++
++	if (NULL == cri) {
++		EPRINTK("%s(): Invalid input parameters - NULL cryptoini.\n",
++			__FUNCTION__);
++		return EINVAL;
++	}
++
++	if (icp_ocfDrvDriverId != *sid) {
++		EPRINTK("%s(): Invalid input parameters - bad driver ID\n",
++			__FUNCTION__);
++		EPRINTK("\t sid = 0x08%p \n \t cri = 0x08%p \n", sid, cri);
++		return EINVAL;
++	}
++
++	sessionData = kmem_cache_zalloc(drvSessionData_zone, GFP_ATOMIC);
++	if (NULL == sessionData) {
++		DPRINTK("%s():No memory for Session Data\n", __FUNCTION__);
++		return ENOMEM;
++	}
++
++	/*ENTER CRITICAL SECTION */
++	spin_lock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
++	/*put this check in the spinlock so no new sessions can be added to the
++	   linked list when we are exiting */
++	if (CPA_TRUE == atomic_read(&icp_ocfDrvIsExiting)) {
++		delete_session++;
++
++	} else if (NO_OCF_TO_DRV_MAX_SESSIONS != max_sessions) {
++		if (atomic_read(&num_ocf_to_drv_registered_sessions) >=
++		    (max_sessions -
++		     atomic_read(&lac_session_failed_dereg_count))) {
++			delete_session++;
++		} else {
++			atomic_inc(&num_ocf_to_drv_registered_sessions);
++			/* Add to session data linked list */
++			list_add(&(sessionData->listNode),
++				 &icp_ocfDrvGlobalSymListHead);
++		}
++
++	} else if (NO_OCF_TO_DRV_MAX_SESSIONS == max_sessions) {
++		list_add(&(sessionData->listNode),
++			 &icp_ocfDrvGlobalSymListHead);
++	}
++
++	sessionData->inUse = ICP_SESSION_INITIALISED;
++
++	/*EXIT CRITICAL SECTION */
++	spin_unlock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
++
++	if (delete_session) {
++		DPRINTK("%s():No Session handles available\n", __FUNCTION__);
++		kmem_cache_free(drvSessionData_zone, sessionData);
++		return EPERM;
++	}
++
++	if (ICP_OCF_DRV_STATUS_SUCCESS !=
++	    icp_ocfDrvAlgorithmSetup(cri, &(sessionData->lacSessCtx))) {
++		DPRINTK("%s():algorithm not supported\n", __FUNCTION__);
++		icp_ocfDrvFreeOCFSession(sessionData);
++		return EINVAL;
++	}
++
++	if (cri->cri_next) {
++		if (cri->cri_next->cri_next != NULL) {
++			DPRINTK("%s():only two chained algorithms supported\n",
++				__FUNCTION__);
++			icp_ocfDrvFreeOCFSession(sessionData);
++			return EPERM;
++		}
++
++		if (ICP_OCF_DRV_STATUS_SUCCESS !=
++		    icp_ocfDrvAlgorithmSetup(cri->cri_next,
++					     &(sessionData->lacSessCtx))) {
++			DPRINTK("%s():second algorithm not supported\n",
++				__FUNCTION__);
++			icp_ocfDrvFreeOCFSession(sessionData);
++			return EINVAL;
++		}
++
++		sessionData->lacSessCtx.symOperation =
++		    CPA_CY_SYM_OP_ALGORITHM_CHAINING;
++	}
++
++	*sid = (uint32_t) sessionData;
++
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvAlgorithmSetup
++ *
++ * Description : This function builds the session context data from the
++ * information supplied through OCF. Algorithm chain order and whether the
++ * session is Encrypt/Decrypt can only be found out at perform time however, so
++ * the session is registered with LAC at that time.
++ */
++static int
++icp_ocfDrvAlgorithmSetup(struct cryptoini *cri,
++			 CpaCySymSessionSetupData * lacSessCtx)
++{
++
++	lacSessCtx->sessionPriority = CPA_CY_PRIORITY_NORMAL;
++
++	switch (cri->cri_alg) {
++
++	case CRYPTO_NULL_CBC:
++		DPRINTK("%s(): NULL CBC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_CIPHER;
++		lacSessCtx->cipherSetupData.cipherAlgorithm =
++		    CPA_CY_SYM_CIPHER_NULL;
++		lacSessCtx->cipherSetupData.cipherKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->cipherSetupData.pCipherKey = cri->cri_key;
++		break;
++
++	case CRYPTO_DES_CBC:
++		DPRINTK("%s(): DES CBC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_CIPHER;
++		lacSessCtx->cipherSetupData.cipherAlgorithm =
++		    CPA_CY_SYM_CIPHER_DES_CBC;
++		lacSessCtx->cipherSetupData.cipherKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->cipherSetupData.pCipherKey = cri->cri_key;
++		break;
++
++	case CRYPTO_3DES_CBC:
++		DPRINTK("%s(): 3DES CBC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_CIPHER;
++		lacSessCtx->cipherSetupData.cipherAlgorithm =
++		    CPA_CY_SYM_CIPHER_3DES_CBC;
++		lacSessCtx->cipherSetupData.cipherKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->cipherSetupData.pCipherKey = cri->cri_key;
++		break;
++
++	case CRYPTO_AES_CBC:
++		DPRINTK("%s(): AES CBC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_CIPHER;
++		lacSessCtx->cipherSetupData.cipherAlgorithm =
++		    CPA_CY_SYM_CIPHER_AES_CBC;
++		lacSessCtx->cipherSetupData.cipherKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->cipherSetupData.pCipherKey = cri->cri_key;
++		break;
++
++	case CRYPTO_ARC4:
++		DPRINTK("%s(): ARC4\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_CIPHER;
++		lacSessCtx->cipherSetupData.cipherAlgorithm =
++		    CPA_CY_SYM_CIPHER_ARC4;
++		lacSessCtx->cipherSetupData.cipherKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->cipherSetupData.pCipherKey = cri->cri_key;
++		break;
++
++	case CRYPTO_SHA1:
++		DPRINTK("%s(): SHA1\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm = CPA_CY_SYM_HASH_SHA1;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_PLAIN;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA1_DIGEST_SIZE_IN_BYTES);
++
++		break;
++
++	case CRYPTO_SHA1_HMAC:
++		DPRINTK("%s(): SHA1_HMAC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm = CPA_CY_SYM_HASH_SHA1;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_AUTH;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA1_DIGEST_SIZE_IN_BYTES);
++		lacSessCtx->hashSetupData.authModeSetupData.authKey =
++		    cri->cri_key;
++		lacSessCtx->hashSetupData.authModeSetupData.authKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->hashSetupData.authModeSetupData.aadLenInBytes = 0;
++
++		break;
++
++	case CRYPTO_SHA2_256:
++		DPRINTK("%s(): SHA256\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm =
++		    CPA_CY_SYM_HASH_SHA256;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_PLAIN;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA256_DIGEST_SIZE_IN_BYTES);
++
++		break;
++
++	case CRYPTO_SHA2_256_HMAC:
++		DPRINTK("%s(): SHA256_HMAC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm =
++		    CPA_CY_SYM_HASH_SHA256;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_AUTH;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA256_DIGEST_SIZE_IN_BYTES);
++		lacSessCtx->hashSetupData.authModeSetupData.authKey =
++		    cri->cri_key;
++		lacSessCtx->hashSetupData.authModeSetupData.authKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->hashSetupData.authModeSetupData.aadLenInBytes = 0;
++
++		break;
++
++	case CRYPTO_SHA2_384:
++		DPRINTK("%s(): SHA384\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm =
++		    CPA_CY_SYM_HASH_SHA384;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_PLAIN;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA384_DIGEST_SIZE_IN_BYTES);
++
++		break;
++
++	case CRYPTO_SHA2_384_HMAC:
++		DPRINTK("%s(): SHA384_HMAC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm =
++		    CPA_CY_SYM_HASH_SHA384;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_AUTH;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA384_DIGEST_SIZE_IN_BYTES);
++		lacSessCtx->hashSetupData.authModeSetupData.authKey =
++		    cri->cri_key;
++		lacSessCtx->hashSetupData.authModeSetupData.authKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->hashSetupData.authModeSetupData.aadLenInBytes = 0;
++
++		break;
++
++	case CRYPTO_SHA2_512:
++		DPRINTK("%s(): SHA512\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm =
++		    CPA_CY_SYM_HASH_SHA512;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_PLAIN;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA512_DIGEST_SIZE_IN_BYTES);
++
++		break;
++
++	case CRYPTO_SHA2_512_HMAC:
++		DPRINTK("%s(): SHA512_HMAC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm =
++		    CPA_CY_SYM_HASH_SHA512;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_AUTH;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_SHA512_DIGEST_SIZE_IN_BYTES);
++		lacSessCtx->hashSetupData.authModeSetupData.authKey =
++		    cri->cri_key;
++		lacSessCtx->hashSetupData.authModeSetupData.authKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->hashSetupData.authModeSetupData.aadLenInBytes = 0;
++
++		break;
++
++	case CRYPTO_MD5:
++		DPRINTK("%s(): MD5\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm = CPA_CY_SYM_HASH_MD5;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_PLAIN;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_MD5_DIGEST_SIZE_IN_BYTES);
++
++		break;
++
++	case CRYPTO_MD5_HMAC:
++		DPRINTK("%s(): MD5_HMAC\n", __FUNCTION__);
++		lacSessCtx->symOperation = CPA_CY_SYM_OP_HASH;
++		lacSessCtx->hashSetupData.hashAlgorithm = CPA_CY_SYM_HASH_MD5;
++		lacSessCtx->hashSetupData.hashMode = CPA_CY_SYM_HASH_MODE_AUTH;
++		lacSessCtx->hashSetupData.digestResultLenInBytes =
++		    (cri->cri_mlen ?
++		     cri->cri_mlen : ICP_MD5_DIGEST_SIZE_IN_BYTES);
++		lacSessCtx->hashSetupData.authModeSetupData.authKey =
++		    cri->cri_key;
++		lacSessCtx->hashSetupData.authModeSetupData.authKeyLenInBytes =
++		    cri->cri_klen / NUM_BITS_IN_BYTE;
++		lacSessCtx->hashSetupData.authModeSetupData.aadLenInBytes = 0;
++
++		break;
++
++	default:
++		DPRINTK("%s(): ALG Setup FAIL\n", __FUNCTION__);
++		return ICP_OCF_DRV_STATUS_FAIL;
++	}
++
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvFreeOCFSession
++ *
++ * Description : This function deletes all existing Session data representing
++ * the Cryptographic session established between OCF and this driver. This
++ * also includes freeing the memory allocated for the session context. The
++ * session object is also removed from the session linked list.
++ */
++static void icp_ocfDrvFreeOCFSession(struct icp_drvSessionData *sessionData)
++{
++
++	sessionData->inUse = ICP_SESSION_DEREGISTERED;
++
++	/*ENTER CRITICAL SECTION */
++	spin_lock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
++
++	if (CPA_TRUE == atomic_read(&icp_ocfDrvIsExiting)) {
++		/*If the Driver is exiting, allow that process to
++		   handle any deletions */
++		/*EXIT CRITICAL SECTION */
++		spin_unlock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
++		return;
++	}
++
++	atomic_dec(&num_ocf_to_drv_registered_sessions);
++
++	list_del(&(sessionData->listNode));
++
++	/*EXIT CRITICAL SECTION */
++	spin_unlock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
++
++	if (NULL != sessionData->sessHandle) {
++		kfree(sessionData->sessHandle);
++	}
++	kmem_cache_free(drvSessionData_zone, sessionData);
++}
++
++/* Name        : icp_ocfDrvFreeLACSession
++ *
++ * Description : This attempts to deregister a LAC session. If it fails, the
++ * deregistation retry function is called.
++ */
++int icp_ocfDrvFreeLACSession(device_t dev, uint64_t sid)
++{
++	CpaCySymSessionCtx sessionToDeregister = NULL;
++	struct icp_drvSessionData *sessionData = NULL;
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	int retval = 0;
++
++	sessionData = (struct icp_drvSessionData *)CRYPTO_SESID2LID(sid);
++	if (NULL == sessionData) {
++		EPRINTK("%s(): OCF Free session called with Null Session ID.\n",
++			__FUNCTION__);
++		return EINVAL;
++	}
++
++	sessionToDeregister = sessionData->sessHandle;
++
++	if (ICP_SESSION_INITIALISED == sessionData->inUse) {
++		DPRINTK("%s() Session not registered with LAC\n", __FUNCTION__);
++	} else if (NULL == sessionData->sessHandle) {
++		EPRINTK
++		    ("%s(): OCF Free session called with Null Session Handle.\n",
++		     __FUNCTION__);
++		return EINVAL;
++	} else {
++		lacStatus = cpaCySymRemoveSession(CPA_INSTANCE_HANDLE_SINGLE,
++						  sessionToDeregister);
++		if (CPA_STATUS_RETRY == lacStatus) {
++			if (ICP_OCF_DRV_STATUS_SUCCESS !=
++			    icp_ocfDrvDeregRetry(&sessionToDeregister)) {
++				/* the retry function increments the 
++				   dereg failed count */
++				DPRINTK("%s(): LAC failed to deregister the "
++					"session. (localSessionId= %p)\n",
++					__FUNCTION__, sessionToDeregister);
++				retval = EPERM;
++			}
++
++		} else if (CPA_STATUS_SUCCESS != lacStatus) {
++			DPRINTK("%s(): LAC failed to deregister the session. "
++				"localSessionId= %p, lacStatus = %d\n",
++				__FUNCTION__, sessionToDeregister, lacStatus);
++			atomic_inc(&lac_session_failed_dereg_count);
++			retval = EPERM;
++		}
++	}
++
++	icp_ocfDrvFreeOCFSession(sessionData);
++	return retval;
++
++}
++
++/* Name        : icp_ocfDrvAlgCheck 
++ *
++ * Description : This function checks whether the cryptodesc argument pertains
++ * to a sym or hash function
++ */
++static int icp_ocfDrvAlgCheck(struct cryptodesc *crp_desc)
++{
++
++	if (crp_desc->crd_alg == CRYPTO_3DES_CBC ||
++	    crp_desc->crd_alg == CRYPTO_AES_CBC ||
++	    crp_desc->crd_alg == CRYPTO_DES_CBC ||
++	    crp_desc->crd_alg == CRYPTO_NULL_CBC ||
++	    crp_desc->crd_alg == CRYPTO_ARC4) {
++		return ICP_OCF_DRV_ALG_CIPHER;
++	}
++
++	return ICP_OCF_DRV_ALG_HASH;
++}
++
++/* Name        : icp_ocfDrvSymProcess 
++ *
++ * Description : This function will map symmetric functionality calls from OCF
++ * to the LAC API. It will also allocate memory to store the session context.
++ * 
++ * Notes: If it is the first perform call for a given session, then a LAC
++ * session is registered. After the session is registered, no checks as
++ * to whether session paramaters have changed (e.g. alg chain order) are
++ * done.
++ */
++int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
++{
++	struct icp_drvSessionData *sessionData = NULL;
++	struct icp_drvOpData *drvOpData = NULL;
++	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
++	Cpa32U sessionCtxSizeInBytes = 0;
++	uint16_t numBufferListArray = 0;
++
++	if (NULL == crp) {
++		DPRINTK("%s(): Invalid input parameters, cryptop is NULL\n",
++			__FUNCTION__);
++		return EINVAL;
++	}
++
++	if (NULL == crp->crp_desc) {
++		DPRINTK("%s(): Invalid input parameters, no crp_desc attached "
++			"to crp\n", __FUNCTION__);
++		crp->crp_etype = EINVAL;
++		return EINVAL;
++	}
++
++	if (NULL == crp->crp_buf) {
++		DPRINTK("%s(): Invalid input parameters, no buffer attached "
++			"to crp\n", __FUNCTION__);
++		crp->crp_etype = EINVAL;
++		return EINVAL;
++	}
++
++	if (CPA_TRUE == atomic_read(&icp_ocfDrvIsExiting)) {
++		crp->crp_etype = EFAULT;
++		return EFAULT;
++	}
++
++	sessionData = (struct icp_drvSessionData *)
++	    (CRYPTO_SESID2LID(crp->crp_sid));
++	if (NULL == sessionData) {
++		DPRINTK("%s(): Invalid input parameters, Null Session ID \n",
++			__FUNCTION__);
++		crp->crp_etype = EINVAL;
++		return EINVAL;
++	}
++
++/*If we get a request against a deregisted session, cancel operation*/
++	if (ICP_SESSION_DEREGISTERED == sessionData->inUse) {
++		DPRINTK("%s(): Session ID %d was deregistered \n",
++			__FUNCTION__, (int)(CRYPTO_SESID2LID(crp->crp_sid)));
++		crp->crp_etype = EFAULT;
++		return EFAULT;
++	}
++
++/*If none of the session states are set, then the session structure was either
++  not initialised properly or we are reading from a freed memory area (possible
++  due to OCF batch mode not removing queued requests against deregistered 
++  sessions*/
++	if (ICP_SESSION_INITIALISED != sessionData->inUse &&
++	    ICP_SESSION_RUNNING != sessionData->inUse) {
++		DPRINTK("%s(): Session - ID %d - not properly initialised or "
++			"memory freed back to the kernel \n",
++			__FUNCTION__, (int)(CRYPTO_SESID2LID(crp->crp_sid)));
++		crp->crp_etype = EINVAL;
++		return EINVAL;
++	}
++
++	/*For the below checks, remember error checking is already done in LAC.
++	   We're not validating inputs subsequent to registration */
++	if (sessionData->inUse == ICP_SESSION_INITIALISED) {
++		DPRINTK("%s(): Initialising session\n", __FUNCTION__);
++
++		if (NULL != crp->crp_desc->crd_next) {
++			if (ICP_OCF_DRV_ALG_CIPHER ==
++			    icp_ocfDrvAlgCheck(crp->crp_desc)) {
++
++				sessionData->lacSessCtx.algChainOrder =
++				    CPA_CY_SYM_ALG_CHAIN_ORDER_CIPHER_THEN_HASH;
++
++				if (crp->crp_desc->crd_flags & CRD_F_ENCRYPT) {
++					sessionData->lacSessCtx.cipherSetupData.
++					    cipherDirection =
++					    CPA_CY_SYM_CIPHER_DIRECTION_ENCRYPT;
++				} else {
++					sessionData->lacSessCtx.cipherSetupData.
++					    cipherDirection =
++					    CPA_CY_SYM_CIPHER_DIRECTION_DECRYPT;
++				}
++			} else {
++				sessionData->lacSessCtx.algChainOrder =
++				    CPA_CY_SYM_ALG_CHAIN_ORDER_HASH_THEN_CIPHER;
++
++				if (crp->crp_desc->crd_next->crd_flags &
++				    CRD_F_ENCRYPT) {
++					sessionData->lacSessCtx.cipherSetupData.
++					    cipherDirection =
++					    CPA_CY_SYM_CIPHER_DIRECTION_ENCRYPT;
++				} else {
++					sessionData->lacSessCtx.cipherSetupData.
++					    cipherDirection =
++					    CPA_CY_SYM_CIPHER_DIRECTION_DECRYPT;
++				}
++
++			}
++
++		} else if (ICP_OCF_DRV_ALG_CIPHER ==
++			   icp_ocfDrvAlgCheck(crp->crp_desc)) {
++			if (crp->crp_desc->crd_flags & CRD_F_ENCRYPT) {
++				sessionData->lacSessCtx.cipherSetupData.
++				    cipherDirection =
++				    CPA_CY_SYM_CIPHER_DIRECTION_ENCRYPT;
++			} else {
++				sessionData->lacSessCtx.cipherSetupData.
++				    cipherDirection =
++				    CPA_CY_SYM_CIPHER_DIRECTION_DECRYPT;
++			}
++
++		}
++
++		/*No action required for standalone Auth here */
++
++		/* Allocate memory for SymSessionCtx before the Session Registration */
++		lacStatus =
++		    cpaCySymSessionCtxGetSize(CPA_INSTANCE_HANDLE_SINGLE,
++					      &(sessionData->lacSessCtx),
++					      &sessionCtxSizeInBytes);
++		if (CPA_STATUS_SUCCESS != lacStatus) {
++			EPRINTK("%s(): cpaCySymSessionCtxGetSize failed - %d\n",
++				__FUNCTION__, lacStatus);
++			return EINVAL;
++		}
++		sessionData->sessHandle =
++		    kmalloc(sessionCtxSizeInBytes, GFP_ATOMIC);
++		if (NULL == sessionData->sessHandle) {
++			EPRINTK
++			    ("%s(): Failed to get memory for SymSessionCtx\n",
++			     __FUNCTION__);
++			return ENOMEM;
++		}
++
++		lacStatus = cpaCySymInitSession(CPA_INSTANCE_HANDLE_SINGLE,
++						icp_ocfDrvSymCallBack,
++						&(sessionData->lacSessCtx),
++						sessionData->sessHandle);
++
++		if (CPA_STATUS_SUCCESS != lacStatus) {
++			EPRINTK("%s(): cpaCySymInitSession failed -%d \n",
++				__FUNCTION__, lacStatus);
++			return EFAULT;
++		}
++
++		sessionData->inUse = ICP_SESSION_RUNNING;
++	}
++
++	drvOpData = kmem_cache_zalloc(drvOpData_zone, GFP_ATOMIC);
++	if (NULL == drvOpData) {
++		EPRINTK("%s():Failed to get memory for drvOpData\n",
++			__FUNCTION__);
++		crp->crp_etype = ENOMEM;
++		return ENOMEM;
++	}
++
++	drvOpData->lacOpData.pSessionCtx = sessionData->sessHandle;
++	drvOpData->digestSizeInBytes = sessionData->lacSessCtx.hashSetupData.
++	    digestResultLenInBytes;
++	drvOpData->crp = crp;
++
++	/* Set the default buffer list array memory allocation */
++	drvOpData->srcBuffer.pBuffers = drvOpData->bufferListArray;
++	drvOpData->numBufferListArray = ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS;
++
++	/* 
++	 * Allocate buffer list array memory allocation if the
++	 * data fragment is more than the default allocation
++	 */
++	if (crp->crp_flags & CRYPTO_F_SKBUF) {
++		numBufferListArray = icp_ocfDrvGetSkBuffFrags((struct sk_buff *)
++							      crp->crp_buf);
++		if (ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS < numBufferListArray) {
++			DPRINTK("%s() numBufferListArray more than default\n",
++				__FUNCTION__);
++			drvOpData->srcBuffer.pBuffers = NULL;
++			drvOpData->srcBuffer.pBuffers =
++			    kmalloc(numBufferListArray *
++				    sizeof(CpaFlatBuffer), GFP_ATOMIC);
++			if (NULL == drvOpData->srcBuffer.pBuffers) {
++				EPRINTK("%s() Failed to get memory for "
++					"pBuffers\n", __FUNCTION__);
++				kmem_cache_free(drvOpData_zone, drvOpData);
++				crp->crp_etype = ENOMEM;
++				return ENOMEM;
++			}
++			drvOpData->numBufferListArray = numBufferListArray;
++		}
++	}
++
++	/*
++	 * Check the type of buffer structure we got and convert it into
++	 * CpaBufferList format.
++	 */
++	if (crp->crp_flags & CRYPTO_F_SKBUF) {
++		if (ICP_OCF_DRV_STATUS_SUCCESS !=
++		    icp_ocfDrvSkBuffToBufferList((struct sk_buff *)crp->crp_buf,
++						 &(drvOpData->srcBuffer))) {
++			EPRINTK("%s():Failed to translate from SK_BUF "
++				"to bufferlist\n", __FUNCTION__);
++			crp->crp_etype = EINVAL;
++			goto err;
++		}
++
++		drvOpData->bufferType = CRYPTO_F_SKBUF;
++	} else if (crp->crp_flags & CRYPTO_F_IOV) {
++		/* OCF only supports IOV of one entry. */
++		if (NUM_IOV_SUPPORTED ==
++		    ((struct uio *)(crp->crp_buf))->uio_iovcnt) {
++
++			icp_ocfDrvPtrAndLenToBufferList(((struct uio *)(crp->
++									crp_buf))->
++							uio_iov[0].iov_base,
++							((struct uio *)(crp->
++									crp_buf))->
++							uio_iov[0].iov_len,
++							&(drvOpData->
++							  srcBuffer));
++
++			drvOpData->bufferType = CRYPTO_F_IOV;
++
++		} else {
++			DPRINTK("%s():Unable to handle IOVs with lengths of "
++				"greater than one!\n", __FUNCTION__);
++			crp->crp_etype = EINVAL;
++			goto err;
++		}
++
++	} else {
++		icp_ocfDrvPtrAndLenToBufferList(crp->crp_buf,
++						crp->crp_ilen,
++						&(drvOpData->srcBuffer));
++
++		drvOpData->bufferType = CRYPTO_BUF_CONTIG;
++	}
++
++	if (ICP_OCF_DRV_STATUS_SUCCESS !=
++	    icp_ocfDrvProcessDataSetup(drvOpData, drvOpData->crp->crp_desc)) {
++		crp->crp_etype = EINVAL;
++		goto err;
++	}
++
++	if (drvOpData->crp->crp_desc->crd_next != NULL) {
++		if (icp_ocfDrvProcessDataSetup(drvOpData, drvOpData->crp->
++					       crp_desc->crd_next)) {
++			crp->crp_etype = EINVAL;
++			goto err;
++		}
++
++	}
++
++	/* Allocate srcBuffer's private meta data */
++	if (ICP_OCF_DRV_STATUS_SUCCESS !=
++	    icp_ocfDrvAllocMetaData(&(drvOpData->srcBuffer), drvOpData)) {
++		EPRINTK("%s() icp_ocfDrvAllocMetaData failed\n", __FUNCTION__);
++		memset(&(drvOpData->lacOpData), 0, sizeof(CpaCySymOpData));
++		crp->crp_etype = EINVAL;
++		goto err;
++	}
++
++	/* Perform "in-place" crypto operation */
++	lacStatus = cpaCySymPerformOp(CPA_INSTANCE_HANDLE_SINGLE,
++				      (void *)drvOpData,
++				      &(drvOpData->lacOpData),
++				      &(drvOpData->srcBuffer),
++				      &(drvOpData->srcBuffer),
++				      &(drvOpData->verifyResult));
++	if (CPA_STATUS_RETRY == lacStatus) {
++		DPRINTK("%s(): cpaCySymPerformOp retry, lacStatus = %d\n",
++			__FUNCTION__, lacStatus);
++		memset(&(drvOpData->lacOpData), 0, sizeof(CpaCySymOpData));
++		crp->crp_etype = EINVAL;
++		goto err;
++	}
++	if (CPA_STATUS_SUCCESS != lacStatus) {
++		EPRINTK("%s(): cpaCySymPerformOp failed, lacStatus = %d\n",
++			__FUNCTION__, lacStatus);
++		memset(&(drvOpData->lacOpData), 0, sizeof(CpaCySymOpData));
++		crp->crp_etype = EINVAL;
++		goto err;
++	}
++
++	return 0;		//OCF success status value
++
++      err:
++	if (drvOpData->numBufferListArray > ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS) {
++		kfree(drvOpData->srcBuffer.pBuffers);
++	}
++	icp_ocfDrvFreeMetaData(&(drvOpData->srcBuffer));
++	kmem_cache_free(drvOpData_zone, drvOpData);
++
++	return crp->crp_etype;
++}
++
++/* Name        : icp_ocfDrvProcessDataSetup
++ *
++ * Description : This function will setup all the cryptographic operation data
++ *               that is required by LAC to execute the operation.
++ */
++static int icp_ocfDrvProcessDataSetup(struct icp_drvOpData *drvOpData,
++				      struct cryptodesc *crp_desc)
++{
++	CpaCyRandGenOpData randGenOpData;
++	CpaFlatBuffer randData;
++
++	drvOpData->lacOpData.packetType = CPA_CY_SYM_PACKET_TYPE_FULL;
++
++	/* Convert from the cryptop to the ICP LAC crypto parameters */
++	switch (crp_desc->crd_alg) {
++	case CRYPTO_NULL_CBC:
++		drvOpData->lacOpData.
++		    cryptoStartSrcOffsetInBytes = crp_desc->crd_skip;
++		drvOpData->lacOpData.
++		    messageLenToCipherInBytes = crp_desc->crd_len;
++		drvOpData->verifyResult = CPA_FALSE;
++		drvOpData->lacOpData.ivLenInBytes = NULL_BLOCK_LEN;
++		break;
++	case CRYPTO_DES_CBC:
++		drvOpData->lacOpData.
++		    cryptoStartSrcOffsetInBytes = crp_desc->crd_skip;
++		drvOpData->lacOpData.
++		    messageLenToCipherInBytes = crp_desc->crd_len;
++		drvOpData->verifyResult = CPA_FALSE;
++		drvOpData->lacOpData.ivLenInBytes = DES_BLOCK_LEN;
++		break;
++	case CRYPTO_3DES_CBC:
++		drvOpData->lacOpData.
++		    cryptoStartSrcOffsetInBytes = crp_desc->crd_skip;
++		drvOpData->lacOpData.
++		    messageLenToCipherInBytes = crp_desc->crd_len;
++		drvOpData->verifyResult = CPA_FALSE;
++		drvOpData->lacOpData.ivLenInBytes = DES3_BLOCK_LEN;
++		break;
++	case CRYPTO_ARC4:
++		drvOpData->lacOpData.
++		    cryptoStartSrcOffsetInBytes = crp_desc->crd_skip;
++		drvOpData->lacOpData.
++		    messageLenToCipherInBytes = crp_desc->crd_len;
++		drvOpData->verifyResult = CPA_FALSE;
++		drvOpData->lacOpData.ivLenInBytes = ARC4_COUNTER_LEN;
++		break;
++	case CRYPTO_AES_CBC:
++		drvOpData->lacOpData.
++		    cryptoStartSrcOffsetInBytes = crp_desc->crd_skip;
++		drvOpData->lacOpData.
++		    messageLenToCipherInBytes = crp_desc->crd_len;
++		drvOpData->verifyResult = CPA_FALSE;
++		drvOpData->lacOpData.ivLenInBytes = RIJNDAEL128_BLOCK_LEN;
++		break;
++	case CRYPTO_SHA1:
++	case CRYPTO_SHA1_HMAC:
++	case CRYPTO_SHA2_256:
++	case CRYPTO_SHA2_256_HMAC:
++	case CRYPTO_SHA2_384:
++	case CRYPTO_SHA2_384_HMAC:
++	case CRYPTO_SHA2_512:
++	case CRYPTO_SHA2_512_HMAC:
++	case CRYPTO_MD5:
++	case CRYPTO_MD5_HMAC:
++		drvOpData->lacOpData.
++		    hashStartSrcOffsetInBytes = crp_desc->crd_skip;
++		drvOpData->lacOpData.
++		    messageLenToHashInBytes = crp_desc->crd_len;
++		drvOpData->lacOpData.
++		    pDigestResult =
++		    icp_ocfDrvDigestPointerFind(drvOpData, crp_desc);
++
++		if (NULL == drvOpData->lacOpData.pDigestResult) {
++			DPRINTK("%s(): ERROR - could not calculate "
++				"Digest Result memory address\n", __FUNCTION__);
++			return ICP_OCF_DRV_STATUS_FAIL;
++		}
++
++		drvOpData->lacOpData.digestVerify = CPA_FALSE;
++		break;
++	default:
++		DPRINTK("%s(): Crypto process error - algorithm not "
++			"found \n", __FUNCTION__);
++		return ICP_OCF_DRV_STATUS_FAIL;
++	}
++
++	/* Figure out what the IV is supposed to be */
++	if ((crp_desc->crd_alg == CRYPTO_DES_CBC) ||
++	    (crp_desc->crd_alg == CRYPTO_3DES_CBC) ||
++	    (crp_desc->crd_alg == CRYPTO_AES_CBC)) {
++		/*ARC4 doesn't use an IV */
++		if (crp_desc->crd_flags & CRD_F_IV_EXPLICIT) {
++			/* Explicit IV provided to OCF */
++			drvOpData->lacOpData.pIv = crp_desc->crd_iv;
++		} else {
++			/* IV is not explicitly provided to OCF */
++
++			/* Point the LAC OP Data IV pointer to our allocated
++			   storage location for this session. */
++			drvOpData->lacOpData.pIv = drvOpData->ivData;
++
++			if ((crp_desc->crd_flags & CRD_F_ENCRYPT) &&
++			    ((crp_desc->crd_flags & CRD_F_IV_PRESENT) == 0)) {
++
++				/* Encrypting - need to create IV */
++				randGenOpData.generateBits = CPA_TRUE;
++				randGenOpData.lenInBytes = MAX_IV_LEN_IN_BYTES;
++
++				icp_ocfDrvPtrAndLenToFlatBuffer((Cpa8U *)
++								drvOpData->
++								ivData,
++								MAX_IV_LEN_IN_BYTES,
++								&randData);
++
++				if (CPA_STATUS_SUCCESS !=
++				    cpaCyRandGen(CPA_INSTANCE_HANDLE_SINGLE,
++						 NULL, NULL,
++						 &randGenOpData, &randData)) {
++					DPRINTK("%s(): ERROR - Failed to"
++						" generate"
++						" Initialisation Vector\n",
++						__FUNCTION__);
++					return ICP_OCF_DRV_STATUS_FAIL;
++				}
++
++				crypto_copyback(drvOpData->crp->
++						crp_flags,
++						drvOpData->crp->crp_buf,
++						crp_desc->crd_inject,
++						drvOpData->lacOpData.
++						ivLenInBytes,
++						(caddr_t) (drvOpData->lacOpData.
++							   pIv));
++			} else {
++				/* Reading IV from buffer */
++				crypto_copydata(drvOpData->crp->
++						crp_flags,
++						drvOpData->crp->crp_buf,
++						crp_desc->crd_inject,
++						drvOpData->lacOpData.
++						ivLenInBytes,
++						(caddr_t) (drvOpData->lacOpData.
++							   pIv));
++			}
++
++		}
++
++	}
++
++	return ICP_OCF_DRV_STATUS_SUCCESS;
++}
++
++/* Name        : icp_ocfDrvDigestPointerFind
++ *
++ * Description : This function is used to find the memory address of where the
++ * digest information shall be stored in. Input buffer types are an skbuff, iov
++ * or flat buffer. The address is found using the buffer data start address and
++ * an offset.
++ *
++ * Note: In the case of a linux skbuff, the digest address may exist within
++ * a memory space linked to from the start buffer. These linked memory spaces
++ * must be traversed by the data length offset in order to find the digest start
++ * address. Whether there is enough space for the digest must also be checked.
++ */
++
++static uint8_t *icp_ocfDrvDigestPointerFind(struct icp_drvOpData *drvOpData,
++					    struct cryptodesc *crp_desc)
++{
++
++	int offsetInBytes = crp_desc->crd_inject;
++	uint32_t digestSizeInBytes = drvOpData->digestSizeInBytes;
++	uint8_t *flat_buffer_base = NULL;
++	int flat_buffer_length = 0;
++	struct sk_buff *skb;
++
++	if (drvOpData->crp->crp_flags & CRYPTO_F_SKBUF) {
++		/*check if enough overall space to store hash */
++		skb = (struct sk_buff *)(drvOpData->crp->crp_buf);
++
++		if (skb->len < (offsetInBytes + digestSizeInBytes)) {
++			DPRINTK("%s() Not enough space for Digest"
++				" payload after the offset (%d), "
++				"digest size (%d) \n", __FUNCTION__,
++				offsetInBytes, digestSizeInBytes);
++			return NULL;
++		}
++
++		return icp_ocfDrvSkbuffDigestPointerFind(drvOpData,
++							 offsetInBytes,
++							 digestSizeInBytes);
++
++	} else {
++		/* IOV or flat buffer */
++		if (drvOpData->crp->crp_flags & CRYPTO_F_IOV) {
++			/*single IOV check has already been done */
++			flat_buffer_base = ((struct uio *)
++					    (drvOpData->crp->crp_buf))->
++			    uio_iov[0].iov_base;
++			flat_buffer_length = ((struct uio *)
++					      (drvOpData->crp->crp_buf))->
++			    uio_iov[0].iov_len;
++		} else {
++			flat_buffer_base = (uint8_t *) drvOpData->crp->crp_buf;
++			flat_buffer_length = drvOpData->crp->crp_ilen;
++		}
++
++		if (flat_buffer_length < (offsetInBytes + digestSizeInBytes)) {
++			DPRINTK("%s() Not enough space for Digest "
++				"(IOV/Flat Buffer) \n", __FUNCTION__);
++			return NULL;
++		} else {
++			return (uint8_t *) (flat_buffer_base + offsetInBytes);
++		}
++	}
++	DPRINTK("%s() Should not reach this point\n", __FUNCTION__);
++	return NULL;
++}
++
++/* Name        : icp_ocfDrvSkbuffDigestPointerFind
++ *
++ * Description : This function is used by icp_ocfDrvDigestPointerFind to process
++ * the non-linear portion of the skbuff if the fragmentation type is a linked
++ * list (frag_list is not NULL in the skb_shared_info structure)
++ */
++static inline uint8_t *icp_ocfDrvSkbuffDigestPointerFind(struct icp_drvOpData
++							 *drvOpData,
++							 int offsetInBytes,
++							 uint32_t
++							 digestSizeInBytes)
++{
++
++	struct sk_buff *skb = NULL;
++	struct skb_shared_info *skb_shared = NULL;
++
++	uint32_t skbuffisnonlinear = 0;
++
++	uint32_t skbheadlen = 0;
++
++	skb = (struct sk_buff *)(drvOpData->crp->crp_buf);
++	skbuffisnonlinear = skb_is_nonlinear(skb);
++
++	skbheadlen = skb_headlen(skb);
++
++	/*Linear skb checks */
++	if (skbheadlen > offsetInBytes) {
++
++		if (skbheadlen >= (offsetInBytes + digestSizeInBytes)) {
++			return (uint8_t *) (skb->data + offsetInBytes);
++		} else {
++			DPRINTK("%s() Auth payload stretches "
++				"accross contiguous memory\n", __FUNCTION__);
++			return NULL;
++		}
++	} else {
++		if (skbuffisnonlinear) {
++			offsetInBytes -= skbheadlen;
++		} else {
++			DPRINTK("%s() Offset outside of buffer boundaries\n",
++				__FUNCTION__);
++			return NULL;
++		}
++	}
++
++	/*Non Linear checks */
++	skb_shared = (struct skb_shared_info *)(skb->end);
++	if (unlikely(NULL == skb_shared)) {
++		DPRINTK("%s() skbuff shared info stucture is NULL! \n",
++			__FUNCTION__);
++		return NULL;
++	} else if ((0 != skb_shared->nr_frags) &&
++		   (skb_shared->frag_list != NULL)) {
++		DPRINTK("%s() skbuff nr_frags AND "
++			"frag_list not supported \n", __FUNCTION__);
++		return NULL;
++	}
++
++	/*TCP segmentation more likely than IP fragmentation */
++	if (likely(0 != skb_shared->nr_frags)) {
++		return icp_ocfDrvDigestSkbNRFragsCheck(skb, skb_shared,
++						       offsetInBytes,
++						       digestSizeInBytes);
++	} else if (skb_shared->frag_list != NULL) {
++		return icp_ocfDrvDigestSkbFragListCheck(skb, skb_shared,
++							offsetInBytes,
++							digestSizeInBytes);
++	} else {
++		DPRINTK("%s() skbuff is non-linear but does not show any "
++			"linked data\n", __FUNCTION__);
++		return NULL;
++	}
++
++}
++
++/* Name        : icp_ocfDrvDigestSkbNRFragsCheck
++ *
++ * Description : This function is used by icp_ocfDrvSkbuffDigestPointerFind to
++ * process the non-linear portion of the skbuff, if the fragmentation type is
++ * page fragments
++ */
++static inline uint8_t *icp_ocfDrvDigestSkbNRFragsCheck(struct sk_buff *skb,
++						       struct skb_shared_info
++						       *skb_shared,
++						       int offsetInBytes,
++						       uint32_t
++						       digestSizeInBytes)
++{
++	int i = 0;
++	/*nr_frags starts from 1 */
++	if (MAX_SKB_FRAGS < skb_shared->nr_frags) {
++		DPRINTK("%s error processing skbuff "
++			"page frame -- MAX FRAGS exceeded \n", __FUNCTION__);
++		return NULL;
++	}
++
++	for (i = 0; i < skb_shared->nr_frags; i++) {
++
++		if (offsetInBytes >= skb_shared->frags[i].size) {
++			/*offset still greater than data position */
++			offsetInBytes -= skb_shared->frags[i].size;
++		} else {
++			/* found the page containing start of hash */
++
++			if (NULL == skb_shared->frags[i].page) {
++				DPRINTK("%s() Linked page is NULL!\n",
++					__FUNCTION__);
++				return NULL;
++			}
++
++			if (offsetInBytes + digestSizeInBytes >
++			    skb_shared->frags[i].size) {
++				DPRINTK("%s() Auth payload stretches accross "
++					"contiguous memory\n", __FUNCTION__);
++				return NULL;
++			} else {
++				return (uint8_t *) (skb_shared->frags[i].page +
++						    skb_shared->frags[i].
++						    page_offset +
++						    offsetInBytes);
++			}
++		}
++		/*only possible if internal page sizes are set wrong */
++		if (offsetInBytes < 0) {
++			DPRINTK("%s error processing skbuff page frame "
++				"-- offset calculation \n", __FUNCTION__);
++			return NULL;
++		}
++	}
++	/*only possible if internal page sizes are set wrong */
++	DPRINTK("%s error processing skbuff page frame "
++		"-- ran out of page fragments, remaining offset = %d \n",
++		__FUNCTION__, offsetInBytes);
++	return NULL;
++
++}
++
++/* Name        : icp_ocfDrvDigestSkbFragListCheck
++ *
++ * Description : This function is used by icp_ocfDrvSkbuffDigestPointerFind to 
++ * process the non-linear portion of the skbuff, if the fragmentation type is 
++ * a linked list
++ * 
++ */
++static inline uint8_t *icp_ocfDrvDigestSkbFragListCheck(struct sk_buff *skb,
++							struct skb_shared_info
++							*skb_shared,
++							int offsetInBytes,
++							uint32_t
++							digestSizeInBytes)
++{
++
++	struct sk_buff *skb_list = skb_shared->frag_list;
++	/*check added for readability */
++	if (NULL == skb_list) {
++		DPRINTK("%s error processing skbuff "
++			"-- no more list! \n", __FUNCTION__);
++		return NULL;
++	}
++
++	for (; skb_list; skb_list = skb_list->next) {
++		if (NULL == skb_list) {
++			DPRINTK("%s error processing skbuff "
++				"-- no more list! \n", __FUNCTION__);
++			return NULL;
++		}
++
++		if (offsetInBytes >= skb_list->len) {
++			offsetInBytes -= skb_list->len;
++
++		} else {
++			if (offsetInBytes + digestSizeInBytes > skb_list->len) {
++				DPRINTK("%s() Auth payload stretches accross "
++					"contiguous memory\n", __FUNCTION__);
++				return NULL;
++			} else {
++				return (uint8_t *)
++				    (skb_list->data + offsetInBytes);
++			}
++
++		}
++
++		/*This check is only needed if internal skb_list length values
++		   are set wrong. */
++		if (0 > offsetInBytes) {
++			DPRINTK("%s() error processing skbuff object -- offset "
++				"calculation \n", __FUNCTION__);
++			return NULL;
++		}
++
++	}
++
++	/*catch all for unusual for-loop exit. 
++	   This code should never be reached */
++	DPRINTK("%s() Catch-All hit! Process error.\n", __FUNCTION__);
++	return NULL;
++}
 --- /dev/null
 +++ b/crypto/ocf/pasemi/pasemi.c
 @@ -0,0 +1,1009 @@
