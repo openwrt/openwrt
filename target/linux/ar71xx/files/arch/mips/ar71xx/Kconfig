@@ -6,6 +6,10 @@ config AR71XX_EARLY_SERIAL
 
 menu "Atheros AR71xx machine selection"
 
+config AR71XX_MACH_AW_NR580
+	bool "AzureWave AW-NR580 board support"
+	default y
+
 config AR71XX_MACH_GENERIC
 	bool "Generic AR71xx based machine support"
 	default y
