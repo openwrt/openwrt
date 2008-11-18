@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,14 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=0.6.4
+PKG_VERSION:=0.6.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_MD5SUM:=62876f2179f316db0621cc33adf04c19
+PKG_MD5SUM:=a33c0c1b1d0445fe3f60d23d637a80b7
 PKG_BUILD_DEPENDS:=PACKAGE_kmod-madwifi:madwifi PACKAGE_kmod-mac80211:mac80211 PACKAGE_kmod-mac80211:libnl
 
 include $(INCLUDE_DIR)/package.mk
