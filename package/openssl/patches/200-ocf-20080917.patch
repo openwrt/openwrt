@@ -1,7 +1,6 @@
-diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
---- openssl-0.9.8i.orig/Configure	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/Configure	2008-10-01 04:16:12.000000000 +0200
-@@ -34,6 +34,8 @@
+--- a/Configure
++++ b/Configure
+@@ -34,6 +34,8 @@ my $usage="Usage: Configure [no-<cipher>
  #		(Default: KRB5_DIR/include)
  # --with-krb5-flavor  Declare what flavor of Kerberos 5 is used.  Currently
  #		supported values are "MIT" and "Heimdal".  A value is required.
@@ -10,7 +9,7 @@ diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
  #
  # --test-sanity Make a number of sanity checks on the data in this file.
  #               This is a debugging tool for OpenSSL developers.
-@@ -540,6 +542,9 @@
+@@ -540,6 +542,9 @@ my %table=(
  ##### Compaq Non-Stop Kernel (Tandem)
  "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
  
@@ -20,7 +19,7 @@ diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
  );
  
  my @MK1MF_Builds=qw(VC-WIN64I VC-WIN64A
-@@ -589,6 +594,8 @@
+@@ -589,6 +594,8 @@ my $montasm=1;   # but "no-montasm" is d
  my $no_asm=0;
  my $no_dso=0;
  my $no_gmp=0;
@@ -29,7 +28,7 @@ diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
  my @skip=();
  my $Makefile="Makefile";
  my $des_locl="crypto/des/des_locl.h";
-@@ -716,6 +723,14 @@
+@@ -716,6 +723,14 @@ PROCESS_ARGS:
  			{
  			exit(&test_sanity());
  			}
@@ -44,7 +43,7 @@ diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
  		elsif (/^reconfigure/ || /^reconf/)
  			{
  			if (open(IN,"<$Makefile"))
-@@ -924,6 +939,7 @@
+@@ -924,6 +939,7 @@ foreach (sort (keys %disabled))
  			print " OPENSSL_NO_$ALGO";
  		
  			if (/^err$/)	{ $flags .= "-DOPENSSL_NO_ERR "; }
@@ -52,7 +51,7 @@ diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
  			elsif (/^asm$/)	{ $no_asm = 1; }
  			}
  		else
-@@ -1064,6 +1080,16 @@
+@@ -1064,6 +1080,16 @@ if (!$no_krb5)
  		   $withargs{"krb5-dir"} ne "";
  	}
  
@@ -69,9 +68,8 @@ diff -Naur openssl-0.9.8i.orig/Configure openssl-0.9.8i/Configure
  # The DSO code currently always implements all functions so that no
  # applications will have to worry about that from a compilation point
  # of view. However, the "method"s may return zero unless that platform
-diff -Naur openssl-0.9.8i.orig/INSTALL openssl-0.9.8i/INSTALL
---- openssl-0.9.8i.orig/INSTALL	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/INSTALL	2008-10-01 04:16:12.000000000 +0200
+--- a/INSTALL
++++ b/INSTALL
 @@ -103,6 +103,12 @@
                  define preprocessor symbols, specify additional libraries,
                  library directories or other compiler options.
@@ -85,10 +83,9 @@ diff -Naur openssl-0.9.8i.orig/INSTALL openssl-0.9.8i/INSTALL
  
   Installation in Detail
   ----------------------
-diff -Naur openssl-0.9.8i.orig/Makefile.org openssl-0.9.8i/Makefile.org
---- openssl-0.9.8i.orig/Makefile.org	2008-10-01 04:16:02.000000000 +0200
-+++ openssl-0.9.8i/Makefile.org	2008-10-01 04:16:12.000000000 +0200
-@@ -367,7 +367,7 @@
+--- a/Makefile.org
++++ b/Makefile.org
+@@ -367,7 +367,7 @@ files:
  
  links:
  	@$(PERL) $(TOP)/util/mkdir-p.pl include/openssl
@@ -97,9 +94,8 @@ diff -Naur openssl-0.9.8i.orig/Makefile.org openssl-0.9.8i/Makefile.org
  	@set -e; target=links; $(RECURSIVE_BUILD_CMD)
  
  gentests:
-diff -Naur openssl-0.9.8i.orig/Makefile.shared openssl-0.9.8i/Makefile.shared
---- openssl-0.9.8i.orig/Makefile.shared	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/Makefile.shared	2008-10-01 04:16:12.000000000 +0200
+--- a/Makefile.shared
++++ b/Makefile.shared
 @@ -6,13 +6,13 @@
  # properly
  
@@ -118,9 +114,206 @@ diff -Naur openssl-0.9.8i.orig/Makefile.shared openssl-0.9.8i/Makefile.shared
  
  # LIBNAME contains just the name of the library, without prefix ("lib"
  # on Unix, "cyg" for certain forms under Cygwin...) or suffix (.a, .so,
-diff -Naur openssl-0.9.8i.orig/apps/apps.h openssl-0.9.8i/apps/apps.h
---- openssl-0.9.8i.orig/apps/apps.h	2008-10-01 04:16:02.000000000 +0200
-+++ openssl-0.9.8i/apps/apps.h	2008-10-01 04:16:12.000000000 +0200
+--- a/config
++++ b/config
+@@ -48,10 +48,10 @@ done
+ 
+ # First get uname entries that we use below
+ 
+-MACHINE=`(uname -m) 2>/dev/null` || MACHINE="unknown"
+-RELEASE=`(uname -r) 2>/dev/null` || RELEASE="unknown"
+-SYSTEM=`(uname -s) 2>/dev/null`  || SYSTEM="unknown"
+-VERSION=`(uname -v) 2>/dev/null` || VERSION="unknown"
++[ "$MACHINE" ] || MACHINE=`(uname -m) 2>/dev/null` || MACHINE="unknown"
++[ "$RELEASE" ] || RELEASE=`(uname -r) 2>/dev/null` || RELEASE="unknown"
++[ "$SYSTEM" ]  || SYSTEM=`(uname -s) 2>/dev/null`  || SYSTEM="unknown"
++[ "$VERSION" ] || VERSION=`(uname -v) 2>/dev/null` || VERSION="unknown"
+ 
+ 
+ # Now test for ISC and SCO, since it is has a braindamaged uname.
+@@ -270,7 +270,7 @@ case "${SYSTEM}:${RELEASE}:${VERSION}:${
+ 		echo "ppc-apple-darwin${VERSION}"
+ 		;;
+ 	    *)
+-		echo "i386-apple-darwin${VERSION}"
++		echo "${MACHINE}-apple-darwin${VERSION}"
+ 		;;
+ 	esac
+ 	exit 0
+@@ -401,9 +401,9 @@ exit 0
+ 
+ # figure out if gcc is available and if so we use it otherwise
+ # we fallback to whatever cc does on the system
+-GCCVER=`(gcc -dumpversion) 2>/dev/null`
++CC="${CC:-gcc}"
++GCCVER=`(${CC} -dumpversion) 2>/dev/null`
+ if [ "$GCCVER" != "" ]; then
+-  CC=gcc
+   # then strip off whatever prefix egcs prepends the number with...
+   # Hopefully, this will work for any future prefixes as well.
+   GCCVER=`echo $GCCVER | LC_ALL=C sed 's/^[a-zA-Z]*\-//'`
+@@ -413,7 +413,7 @@ if [ "$GCCVER" != "" ]; then
+   # peak single digit before and after first dot, e.g. 2.95.1 gives 29
+   GCCVER=`echo $GCCVER | sed 's/\([0-9]\)\.\([0-9]\).*/\1\2/'`
+ else
+-  CC=cc
++  CC="${CC:-cc}"
+ fi
+ GCCVER=${GCCVER:-0}
+ if [ "$SYSTEM" = "HP-UX" ];then
+@@ -482,6 +482,9 @@ echo Operating system: $GUESSOS
+ # script above so we end up with values in vars but that would take
+ # more time that I want to waste at the moment
+ case "$GUESSOS" in
++  uClinux*)
++    OUT=uClinux-dist
++	;;
+   mips2-sgi-irix)
+ 	CPU=`(hinv -t cpu) 2>/dev/null | head -1 | sed 's/^CPU:[^R]*R\([0-9]*\).*/\1/'`
+ 	CPU=${CPU:-0}
+--- /dev/null
++++ b/makefile-uclinuxdist
+@@ -0,0 +1,138 @@
++#
++# this makefile gets recursed through by various bits of the build
++# so we need to only setup some things when invoked from outside
++# this directory.
++#
++# davidm@snapgear.com
++#
++
++IN_LIBSSL := true
++export IN_LIBSSL
++
++CONFIG_OPTS  := --prefix=// --install_prefix=$(shell pwd)/build/install
++
++ifdef CONFIG_USER_FLATFSD_FLATFSD
++CONFIG_OPTS += --openssldir=/etc/config
++else
++CONFIG_OPTS += --openssldir=/etc
++endif
++ifdef DISABLE_SHARED_SSL
++CONFIG_OPTS += no-shared
++else
++CONFIG_OPTS += shared
++endif
++
++CONFIG_OPTS += no-rc2
++CONFIG_OPTS += no-krb5
++CONFIG_OPTS += no-rc5
++CONFIG_OPTS += no-md2
++CONFIG_OPTS += no-idea
++#CONFIG_OPTS += no-pem
++#CONFIG_OPTS += no-md5
++#CONFIG_OPTS += no-sha
++#CONFIG_OPTS += no-hmac
++#CONFIG_OPTS += no-des
++#CONFIG_OPTS += no-aes
++#CONFIG_OPTS += no-bn
++CONFIG_OPTS += no-ec
++#CONFIG_OPTS += no-rsa
++#CONFIG_OPTS += no-dsa
++CONFIG_OPTS += no-ecdsa
++#CONFIG_OPTS += no-dh
++CONFIG_OPTS += no-ecdh
++CONFIG_OPTS += no-dso
++#CONFIG_OPTS += no-engine
++#CONFIG_OPTS += no-buffer
++#CONFIG_OPTS += no-bio
++#CONFIG_OPTS += no-stack
++#CONFIG_OPTS += no-lhash
++#CONFIG_OPTS += no-rand
++CONFIG_OPTS += no-err
++#CONFIG_OPTS += no-evp
++#CONFIG_OPTS += no-asn1
++#CONFIG_OPTS += no-x509
++#CONFIG_OPTS += no-x509v3
++#CONFIG_OPTS += no-txt_db
++#CONFIG_OPTS += no-pkcs7
++#CONFIG_OPTS += no-pkcs12
++#CONFIG_OPTS += no-comp
++#CONFIG_OPTS += no-ocsp
++#CONFIG_OPTS += no-ui
++#CONFIG_OPTS += no-store
++CONFIG_OPTS += no-pqueue
++
++# REVISIT: It would be better to have OPENSSL config options
++# which turn on this support as needed
++ifeq ($(CONFIG_USER_NESSUS_NASL)$(CONFIG_USER_SSH_SSH),)
++CONFIG_OPTS += no-ripemd
++CONFIG_OPTS += no-cast
++CONFIG_OPTS += no-rc4
++endif
++
++ifeq ($(CONFIG_USER_NESSUS_NASL)$(CONFIG_USER_SSH_SSH)$(CONFIG_PROP_SSCEP_SSCEP),)
++CONFIG_OPTS += no-bf
++endif
++
++ifeq ($(CONFIG_USER_OPENVPN_OPENVPN)$(CONFIG_USER_WGET),)
++CONFIG_OPTS += no-md4
++endif
++
++ifdef CONFIG_OCF_OCF
++CONFIG_OPTS += --with-cryptodev
++#CONFIG_OPTS += --with-cryptodev-digests
++endif
++
++#
++# if you want engines (they are dl loaded),  a few things
++# need to be setup,  you will also need to mod everything
++# to link against -ldl if it uses libcrypto.  By default we
++# disable it (cryptodev suport is still included).
++#
++ifdef YOU_WANT_DYNAMIC_HW_ENGINES_ENABLED
++LIBSSL_dlfcn = dlfcn
++else
++CONFIG_OPTS += no-hw
++LIBSSL_dlfcn =
++endif
++
++#
++# our libs aren't in the default location yet
++#
++LDFLAGS += -L$(ROOTDIR)/lib/libssl/build
++export LDFLAGS
++
++all: build/configured
++	$(MAKE) -C build
++	$(MAKE) -C build install_sw
++
++build/configured: makefile config Configure
++	rm -rf build
++	find . -type d > .dirs
++	find . ! -type d | grep -v ./makefile > .files
++	while read t; do mkdir -p build/$$t; done < .dirs
++	while read t; do ln -s `pwd`/$$t build/$$t; done < .files
++	rm -f .dirs .files
++	chmod +x build/config
++	cd build; MACHINE=uClinux-dist ./config $(CONFIG_OPTS)
++	$(MAKE) -C build depend
++	$(MAKE) -C build links
++	touch build/configured
++
++clean:
++	-rm -rf build
++
++romfs:
++	cd build/install/lib; \
++	for i in *.so*; do \
++		if [ -L $$i ]; then \
++			$(ROMFSINST) -s `find $$i -printf %l` /lib/$$i; \
++		elif [ -f $$i ]; then \
++			$(ROMFSINST) /lib/$$i; \
++		fi; \
++	done
++
++romfs_user:
++	$(ROMFSINST) -e CONFIG_USER_OPENSSL_APPS build/install/bin/openssl /bin/openssl
++	# $(ROMFSINST) -e CONFIG_USER_OPENSSL_APPS build/install/bin/c_rehash /bin/c_rehash
++
++
+--- a/apps/apps.h
++++ b/apps/apps.h
 @@ -112,7 +112,7 @@
  #ifndef HEADER_APPS_H
  #define HEADER_APPS_H
@@ -130,10 +323,9 @@ diff -Naur openssl-0.9.8i.orig/apps/apps.h openssl-0.9.8i/apps/apps.h
  
  #include <openssl/bio.h>
  #include <openssl/x509.h>
-diff -Naur openssl-0.9.8i.orig/apps/progs.h openssl-0.9.8i/apps/progs.h
---- openssl-0.9.8i.orig/apps/progs.h	2008-10-01 04:16:02.000000000 +0200
-+++ openssl-0.9.8i/apps/progs.h	2008-10-01 04:16:12.000000000 +0200
-@@ -129,7 +129,9 @@
+--- a/apps/progs.h
++++ b/apps/progs.h
+@@ -129,7 +129,9 @@ FUNCTION functions[] = {
  #ifndef OPENSSL_NO_ENGINE
  	{FUNC_TYPE_GENERAL,"engine",engine_main},
  #endif
@@ -143,10 +335,9 @@ diff -Naur openssl-0.9.8i.orig/apps/progs.h openssl-0.9.8i/apps/progs.h
  	{FUNC_TYPE_GENERAL,"prime",prime_main},
  #ifndef OPENSSL_NO_MD2
  	{FUNC_TYPE_MD,"md2",dgst_main},
-diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
---- openssl-0.9.8i.orig/apps/speed.c	2008-10-01 04:16:02.000000000 +0200
-+++ openssl-0.9.8i/apps/speed.c	2008-10-01 04:16:12.000000000 +0200
-@@ -292,7 +292,7 @@
+--- a/apps/speed.c
++++ b/apps/speed.c
+@@ -292,7 +292,7 @@ static const char *names[ALGOR_NUM]={
    "evp","sha256","sha512",
    "aes-128 ige","aes-192 ige","aes-256 ige"};
  static double results[ALGOR_NUM][SIZE_NUM];
@@ -155,7 +346,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  static double rsa_results[RSA_NUM][2];
  static double dsa_results[DSA_NUM][2];
  #ifndef OPENSSL_NO_ECDSA
-@@ -328,6 +328,79 @@
+@@ -328,6 +328,79 @@ static SIGRETTYPE sig_done(int sig)
  #define START	0
  #define STOP	1
  
@@ -235,7 +426,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  #if defined(OPENSSL_SYS_NETWARE)
  
     /* for NetWare the best we can do is use clock() which returns the
-@@ -358,6 +431,11 @@
+@@ -358,6 +431,11 @@ static double Time_F(int s)
  	{
  	double ret;
  
@@ -247,7 +438,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  #ifdef USE_TOD
  	if(usertime)
  		{
-@@ -832,6 +910,14 @@
+@@ -832,6 +910,14 @@ int MAIN(int argc, char **argv)
  			j--;	/* Otherwise, -elapsed gets confused with
  				   an algorithm. */
  			}
@@ -262,7 +453,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  		else if	((argc > 0) && (strcmp(*argv,"-evp") == 0))
  			{
  			argc--;
-@@ -1260,6 +1346,9 @@
+@@ -1260,6 +1346,9 @@ int MAIN(int argc, char **argv)
  #ifdef HAVE_FORK
  			BIO_printf(bio_err,"-multi n        run n benchmarks in parallel.\n");
  #endif
@@ -272,7 +463,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  			goto end;
  			}
  		argc--;
-@@ -1267,11 +1356,6 @@
+@@ -1267,11 +1356,6 @@ int MAIN(int argc, char **argv)
  		j++;
  		}
  
@@ -284,7 +475,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  	if (j == 0)
  		{
  		for (i=0; i<ALGOR_NUM; i++)
-@@ -1604,6 +1688,11 @@
+@@ -1604,6 +1688,11 @@ int MAIN(int argc, char **argv)
  	signal(SIGALRM,sig_done);
  #endif /* SIGALRM */
  
@@ -296,7 +487,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  #ifndef OPENSSL_NO_MD2
  	if (doit[D_MD2])
  		{
-@@ -2033,8 +2122,6 @@
+@@ -2033,8 +2122,6 @@ int MAIN(int argc, char **argv)
  				/* -O3 -fschedule-insns messes up an
  				 * optimization here!  names[D_EVP]
  				 * somehow becomes NULL */
@@ -305,7 +496,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  
  				EVP_CIPHER_CTX_init(&ctx);
  				if(decrypt)
-@@ -2043,6 +2130,9 @@
+@@ -2043,6 +2130,9 @@ int MAIN(int argc, char **argv)
  					EVP_EncryptInit_ex(&ctx,evp_cipher,NULL,key16,iv);
  				EVP_CIPHER_CTX_set_padding(&ctx, 0);
  
@@ -315,7 +506,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  				Time_F(START);
  				if(decrypt)
  					for (count=0,run=1; COND(save_count*4*lengths[0]/lengths[j]); count++)
-@@ -2107,6 +2197,8 @@
+@@ -2107,6 +2197,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -324,7 +515,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  			BIO_printf(bio_err,mr ? "+R1:%ld:%d:%.2f\n"
  				   : "%ld %d bit private RSA's in %.2fs\n",
  				   count,rsa_bits[j],d);
-@@ -2142,6 +2234,8 @@
+@@ -2142,6 +2234,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -333,7 +524,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  			BIO_printf(bio_err,mr ? "+R2:%ld:%d:%.2f\n"
  				   : "%ld %d bit public RSA's in %.2fs\n",
  				   count,rsa_bits[j],d);
-@@ -2201,6 +2295,8 @@
+@@ -2201,6 +2295,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -342,7 +533,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  			BIO_printf(bio_err,mr ? "+R3:%ld:%d:%.2f\n"
  				   : "%ld %d bit DSA signs in %.2fs\n",
  				   count,dsa_bits[j],d);
-@@ -2236,6 +2332,8 @@
+@@ -2236,6 +2332,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -351,7 +542,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  			BIO_printf(bio_err,mr ? "+R4:%ld:%d:%.2f\n"
  				   : "%ld %d bit DSA verify in %.2fs\n",
  				   count,dsa_bits[j],d);
-@@ -2530,14 +2628,23 @@
+@@ -2530,14 +2628,23 @@ show_res:
  			fprintf(stdout,"The 'numbers' are in 1000s of bytes per second processed.\n"); 
  			fprintf(stdout,"type        ");
  			}
@@ -376,7 +567,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  		if(mr)
  			fprintf(stdout,"+F:%d:%s",k,names[k]);
  		else
-@@ -2548,6 +2655,8 @@
+@@ -2548,6 +2655,8 @@ show_res:
  				fprintf(stdout," %11.2fk",results[k][j]/1e3);
  			else
  				fprintf(stdout,mr ? ":%.2f" : " %11.2f ",results[k][j]);
@@ -385,7 +576,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  			}
  		fprintf(stdout,"\n");
  		}
-@@ -2562,13 +2671,18 @@
+@@ -2562,13 +2671,18 @@ show_res:
  			j=0;
  			}
  		if(mr)
@@ -411,7 +602,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  		}
  #endif
  #ifndef OPENSSL_NO_DSA
-@@ -2582,12 +2696,18 @@
+@@ -2582,12 +2696,18 @@ show_res:
  			j=0;
  			}
  		if(mr)
@@ -435,7 +626,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  		}
  #endif
  #ifndef OPENSSL_NO_ECDSA
-@@ -2712,8 +2832,10 @@
+@@ -2712,8 +2832,10 @@ static void pkey_print_message(const cha
  
  static void print_result(int alg,int run_no,int count,double time_used)
  	{
@@ -448,7 +639,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  	results[alg][run_no]=((double)count)/time_used*lengths[run_no];
  	}
  
-@@ -2806,29 +2928,11 @@
+@@ -2806,29 +2928,11 @@ static int do_multi(int multi)
  				p=buf+3;
  				alg=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
@@ -481,7 +672,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  				}
  			else if(!strncmp(buf,"+F2:",4))
  				{
-@@ -2839,12 +2943,18 @@
+@@ -2839,12 +2943,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  
@@ -500,7 +691,7 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  				d=atof(sstrsep(&p,sep));
  				if(n)
  					rsa_results[k][1]=1/(1/rsa_results[k][1]+1/d);
-@@ -2860,12 +2970,18 @@
+@@ -2860,12 +2970,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  
@@ -519,67 +710,8 @@ diff -Naur openssl-0.9.8i.orig/apps/speed.c openssl-0.9.8i/apps/speed.c
  				d=atof(sstrsep(&p,sep));
  				if(n)
  					dsa_results[k][1]=1/(1/dsa_results[k][1]+1/d);
-diff -Naur openssl-0.9.8i.orig/config openssl-0.9.8i/config
---- openssl-0.9.8i.orig/config	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/config	2008-10-01 04:16:12.000000000 +0200
-@@ -48,10 +48,10 @@
- 
- # First get uname entries that we use below
- 
--MACHINE=`(uname -m) 2>/dev/null` || MACHINE="unknown"
--RELEASE=`(uname -r) 2>/dev/null` || RELEASE="unknown"
--SYSTEM=`(uname -s) 2>/dev/null`  || SYSTEM="unknown"
--VERSION=`(uname -v) 2>/dev/null` || VERSION="unknown"
-+[ "$MACHINE" ] || MACHINE=`(uname -m) 2>/dev/null` || MACHINE="unknown"
-+[ "$RELEASE" ] || RELEASE=`(uname -r) 2>/dev/null` || RELEASE="unknown"
-+[ "$SYSTEM" ]  || SYSTEM=`(uname -s) 2>/dev/null`  || SYSTEM="unknown"
-+[ "$VERSION" ] || VERSION=`(uname -v) 2>/dev/null` || VERSION="unknown"
- 
- 
- # Now test for ISC and SCO, since it is has a braindamaged uname.
-@@ -270,7 +270,7 @@
- 		echo "ppc-apple-darwin${VERSION}"
- 		;;
- 	    *)
--		echo "i386-apple-darwin${VERSION}"
-+		echo "${MACHINE}-apple-darwin${VERSION}"
- 		;;
- 	esac
- 	exit 0
-@@ -401,9 +401,9 @@
- 
- # figure out if gcc is available and if so we use it otherwise
- # we fallback to whatever cc does on the system
--GCCVER=`(gcc -dumpversion) 2>/dev/null`
-+CC="${CC:-gcc}"
-+GCCVER=`(${CC} -dumpversion) 2>/dev/null`
- if [ "$GCCVER" != "" ]; then
--  CC=gcc
-   # then strip off whatever prefix egcs prepends the number with...
-   # Hopefully, this will work for any future prefixes as well.
-   GCCVER=`echo $GCCVER | LC_ALL=C sed 's/^[a-zA-Z]*\-//'`
-@@ -413,7 +413,7 @@
-   # peak single digit before and after first dot, e.g. 2.95.1 gives 29
-   GCCVER=`echo $GCCVER | sed 's/\([0-9]\)\.\([0-9]\).*/\1\2/'`
- else
--  CC=cc
-+  CC="${CC:-cc}"
- fi
- GCCVER=${GCCVER:-0}
- if [ "$SYSTEM" = "HP-UX" ];then
-@@ -482,6 +482,9 @@
- # script above so we end up with values in vars but that would take
- # more time that I want to waste at the moment
- case "$GUESSOS" in
-+  uClinux*)
-+    OUT=uClinux-dist
-+	;;
-   mips2-sgi-irix)
- 	CPU=`(hinv -t cpu) 2>/dev/null | head -1 | sed 's/^CPU:[^R]*R\([0-9]*\).*/\1/'`
- 	CPU=${CPU:-0}
-diff -Naur openssl-0.9.8i.orig/crypto/cryptlib.h openssl-0.9.8i/crypto/cryptlib.h
---- openssl-0.9.8i.orig/crypto/cryptlib.h	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/crypto/cryptlib.h	2008-10-01 04:16:12.000000000 +0200
+--- a/crypto/cryptlib.h
++++ b/crypto/cryptlib.h
 @@ -62,7 +62,7 @@
  #include <stdlib.h>
  #include <string.h>
@@ -589,10 +721,9 @@ diff -Naur openssl-0.9.8i.orig/crypto/cryptlib.h openssl-0.9.8i/crypto/cryptlib.
  
  #ifdef OPENSSL_USE_APPLINK
  #define BIO_FLAGS_UPLINK 0x8000
-diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_all.c openssl-0.9.8i/crypto/engine/eng_all.c
---- openssl-0.9.8i.orig/crypto/engine/eng_all.c	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/crypto/engine/eng_all.c	2008-10-01 04:17:20.000000000 +0200
-@@ -104,7 +104,7 @@
+--- a/crypto/engine/eng_all.c
++++ b/crypto/engine/eng_all.c
+@@ -104,7 +104,7 @@ void ENGINE_load_builtin_engines(void)
  #endif
  #endif
  #ifndef OPENSSL_NO_HW
@@ -601,7 +732,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_all.c openssl-0.9.8i/crypto/eng
  	ENGINE_load_cryptodev();
  #endif
  #if defined(OPENSSL_SYS_WIN32) && !defined(OPENSSL_NO_CAPIENG)
-@@ -113,7 +113,7 @@
+@@ -113,7 +113,7 @@ void ENGINE_load_builtin_engines(void)
  #endif
  	}
  
@@ -610,10 +741,9 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_all.c openssl-0.9.8i/crypto/eng
  void ENGINE_setup_bsd_cryptodev(void) {
  	static int bsd_cryptodev_default_loaded = 0;
  	if (!bsd_cryptodev_default_loaded) {
-diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/crypto/engine/eng_cryptodev.c
---- openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/crypto/engine/eng_cryptodev.c	2008-10-01 04:16:12.000000000 +0200
-@@ -68,6 +68,16 @@
+--- a/crypto/engine/eng_cryptodev.c
++++ b/crypto/engine/eng_cryptodev.c
+@@ -68,6 +68,16 @@ ENGINE_load_cryptodev(void)
  struct dev_crypto_state {
  	struct session_op d_sess;
  	int d_fd;
@@ -630,7 +760,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  };
  
  static u_int32_t cryptodev_asymfeat = 0;
-@@ -75,9 +85,11 @@
+@@ -75,9 +85,11 @@ static u_int32_t cryptodev_asymfeat = 0;
  static int get_asym_dev_crypto(void);
  static int open_dev_crypto(void);
  static int get_dev_crypto(void);
@@ -642,7 +772,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  static int get_cryptodev_ciphers(const int **cnids);
  static int get_cryptodev_digests(const int **cnids);
  static int cryptodev_usable_ciphers(const int **nids);
-@@ -100,7 +112,7 @@
+@@ -100,7 +112,7 @@ static int cryptodev_asym(struct crypt_k
  static int cryptodev_bn_mod_exp(BIGNUM *r, const BIGNUM *a,
      const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
  static int cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I,
@@ -651,15 +781,20 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  static int cryptodev_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx);
  static int cryptodev_dsa_bn_mod_exp(DSA *dsa, BIGNUM *r, BIGNUM *a,
      const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
-@@ -133,6 +145,7 @@
+@@ -130,9 +142,12 @@ static struct {
+ 	int	ivmax;
+ 	int	keylen;
+ } ciphers[] = {
++	{ CRYPTO_ARC4,			NID_rc4,		0,	16, },
  	{ CRYPTO_DES_CBC,		NID_des_cbc,		8,	 8, },
  	{ CRYPTO_3DES_CBC,		NID_des_ede3_cbc,	8,	24, },
  	{ CRYPTO_AES_CBC,		NID_aes_128_cbc,	16,	16, },
++	{ CRYPTO_AES_CBC,		NID_aes_192_cbc,	16,	24, },
 +	{ CRYPTO_AES_CBC,		NID_aes_256_cbc,	16,	32, },
  	{ CRYPTO_BLF_CBC,		NID_bf_cbc,		8,	16, },
  	{ CRYPTO_CAST_CBC,		NID_cast5_cbc,		8,	16, },
  	{ CRYPTO_SKIPJACK_CBC,		NID_undef,		0,	 0, },
-@@ -142,14 +155,15 @@
+@@ -142,14 +157,15 @@ static struct {
  static struct {
  	int	id;
  	int	nid;
@@ -682,7 +817,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  };
  
  /*
-@@ -176,10 +190,17 @@
+@@ -176,10 +192,17 @@ open_dev_crypto(void)
  static int
  get_dev_crypto(void)
  {
@@ -703,7 +838,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  	if (ioctl(fd, CRIOGET, &retfd) == -1)
  		return (-1);
  
-@@ -202,6 +223,7 @@
+@@ -202,6 +225,7 @@ get_asym_dev_crypto(void)
  	return fd;
  }
  
@@ -711,7 +846,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  /*
   * XXXX this needs to be set for each alg - and determined from
   * a running card.
-@@ -245,6 +267,7 @@
+@@ -245,6 +269,7 @@ cipher_nid_to_cryptodev(int nid)
  			return (ciphers[i].id);
  	return (0);
  }
@@ -719,7 +854,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  
  /*
   * Find out what ciphers /dev/crypto will let us have a session for.
-@@ -264,7 +287,7 @@
+@@ -264,7 +289,7 @@ get_cryptodev_ciphers(const int **cnids)
  		return (0);
  	}
  	memset(&sess, 0, sizeof(sess));
@@ -728,7 +863,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  
  	for (i = 0; ciphers[i].id && count < CRYPTO_ALGORITHM_MAX; i++) {
  		if (ciphers[i].nid == NID_undef)
-@@ -303,10 +326,12 @@
+@@ -303,10 +328,12 @@ get_cryptodev_digests(const int **cnids)
  		return (0);
  	}
  	memset(&sess, 0, sizeof(sess));
@@ -741,7 +876,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  		sess.cipher = 0;
  		if (ioctl(fd, CIOCGSESSION, &sess) != -1 &&
  		    ioctl(fd, CIOCFSESSION, &sess.ses) != -1)
-@@ -351,6 +376,9 @@
+@@ -351,6 +378,9 @@ cryptodev_usable_ciphers(const int **nid
  static int
  cryptodev_usable_digests(const int **nids)
  {
@@ -751,7 +886,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  	/*
  	 * XXXX just disable all digests for now, because it sucks.
  	 * we need a better way to decide this - i.e. I may not
-@@ -365,6 +393,7 @@
+@@ -365,6 +395,7 @@ cryptodev_usable_digests(const int **nid
  	 */
  	*nids = NULL;
  	return (0);
@@ -759,16 +894,16 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  }
  
  static int
-@@ -427,16 +456,20 @@
+@@ -427,16 +458,20 @@ cryptodev_init_key(EVP_CIPHER_CTX *ctx, 
  {
  	struct dev_crypto_state *state = ctx->cipher_data;
  	struct session_op *sess = &state->d_sess;
 -	int cipher;
--
--	if ((cipher = cipher_nid_to_cryptodev(ctx->cipher->nid)) == NID_undef)
--		return (0);
 +	int cipher, i;
  
+-	if ((cipher = cipher_nid_to_cryptodev(ctx->cipher->nid)) == NID_undef)
+-		return (0);
+-
 -	if (ctx->cipher->iv_len > cryptodev_max_iv(cipher))
 -		return (0);
 +	for (i = 0; ciphers[i].id; i++)
@@ -787,10 +922,44 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  
  	memset(sess, 0, sizeof(struct session_op));
  
-@@ -563,6 +596,19 @@
+@@ -496,6 +531,20 @@ cryptodev_cleanup(EVP_CIPHER_CTX *ctx)
+  * gets called when libcrypto requests a cipher NID.
+  */
+ 
++/* RC4 */
++const EVP_CIPHER cryptodev_rc4 = {
++	NID_rc4,
++	1, 16, 0,
++	EVP_CIPH_VARIABLE_LENGTH,
++	cryptodev_init_key,
++	cryptodev_cipher,
++	cryptodev_cleanup,
++	sizeof(struct dev_crypto_state),
++	NULL,
++	NULL,
++	NULL
++};
++
+ /* DES CBC EVP */
+ const EVP_CIPHER cryptodev_des_cbc = {
+ 	NID_des_cbc,
+@@ -563,6 +612,32 @@ const EVP_CIPHER cryptodev_aes_cbc = {
  	NULL
  };
  
++const EVP_CIPHER cryptodev_aes_192_cbc = {
++	NID_aes_192_cbc,
++	16, 24, 16,
++	EVP_CIPH_CBC_MODE,
++	cryptodev_init_key,
++	cryptodev_cipher,
++	cryptodev_cleanup,
++	sizeof(struct dev_crypto_state),
++	EVP_CIPHER_set_asn1_iv,
++	EVP_CIPHER_get_asn1_iv,
++	NULL
++};
++
 +const EVP_CIPHER cryptodev_aes_256_cbc = {
 +	NID_aes_256_cbc,
 +	16, 32, 16,
@@ -807,17 +976,30 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  /*
   * Registered by the ENGINE when used to find out how to deal with
   * a particular NID in the ENGINE. this says what we'll do at the
-@@ -591,6 +637,9 @@
+@@ -576,6 +651,9 @@ cryptodev_engine_ciphers(ENGINE *e, cons
+ 		return (cryptodev_usable_ciphers(nids));
+ 
+ 	switch (nid) {
++	case NID_rc4:
++		*cipher = &cryptodev_rc4;
++		break;
+ 	case NID_des_ede3_cbc:
+ 		*cipher = &cryptodev_3des_cbc;
+ 		break;
+@@ -591,6 +669,12 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  	case NID_aes_128_cbc:
  		*cipher = &cryptodev_aes_cbc;
  		break;
++	case NID_aes_192_cbc:
++		*cipher = &cryptodev_aes_192_cbc;
++		break;
 +	case NID_aes_256_cbc:
 +		*cipher = &cryptodev_aes_256_cbc;
 +		break;
  	default:
  		*cipher = NULL;
  		break;
-@@ -598,6 +647,234 @@
+@@ -598,6 +682,234 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  	return (*cipher != NULL);
  }
  
@@ -1052,7 +1234,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  static int
  cryptodev_engine_digests(ENGINE *e, const EVP_MD **digest,
      const int **nids, int nid)
-@@ -606,10 +883,15 @@
+@@ -606,10 +918,15 @@ cryptodev_engine_digests(ENGINE *e, cons
  		return (cryptodev_usable_digests(nids));
  
  	switch (nid) {
@@ -1069,7 +1251,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  		*digest = NULL;
  		break;
  	}
-@@ -625,7 +907,7 @@
+@@ -625,7 +942,7 @@ static int
  bn2crparam(const BIGNUM *a, struct crparam *crp)
  {
  	int i, j, k;
@@ -1078,7 +1260,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  	u_char *b;
  
  	crp->crp_p = NULL;
-@@ -637,6 +919,7 @@
+@@ -637,6 +954,7 @@ bn2crparam(const BIGNUM *a, struct crpar
  	b = malloc(bytes);
  	if (b == NULL)
  		return (1);
@@ -1086,7 +1268,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  
  	crp->crp_p = b;
  	crp->crp_nbits = bits;
-@@ -681,7 +964,7 @@
+@@ -681,7 +999,7 @@ zapparams(struct crypt_kop *kop)
  {
  	int i;
  
@@ -1095,7 +1277,7 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  		if (kop->crk_param[i].crp_p)
  			free(kop->crk_param[i].crp_p);
  		kop->crk_param[i].crp_p = NULL;
-@@ -756,12 +1039,10 @@
+@@ -756,12 +1074,10 @@ err:
  }
  
  static int
@@ -1110,22 +1292,9 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_cryptodev.c openssl-0.9.8i/cryp
  	r = cryptodev_bn_mod_exp(r0, I, rsa->d, rsa->n, ctx, NULL);
  	BN_CTX_free(ctx);
  	return (r);
-diff -Naur openssl-0.9.8i.orig/crypto/engine/eng_table.c openssl-0.9.8i/crypto/engine/eng_table.c
---- openssl-0.9.8i.orig/crypto/engine/eng_table.c	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/crypto/engine/eng_table.c	2008-10-01 04:16:12.000000000 +0200
-@@ -186,6 +186,8 @@
- 		{
- 		engine_unlocked_finish(e, 0);
- 		pile->funct = NULL;
-+		/* "touch" this ENGINE_CIPHER */
-+		pile->uptodate = 0;
- 		}
- 	}
- static IMPLEMENT_LHASH_DOALL_ARG_FN(int_unregister_cb,ENGINE_PILE *,ENGINE *)
-diff -Naur openssl-0.9.8i.orig/crypto/engine/engine.h openssl-0.9.8i/crypto/engine/engine.h
---- openssl-0.9.8i.orig/crypto/engine/engine.h	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/crypto/engine/engine.h	2008-10-01 04:16:12.000000000 +0200
-@@ -703,7 +703,7 @@
+--- a/crypto/engine/engine.h
++++ b/crypto/engine/engine.h
+@@ -703,7 +703,7 @@ typedef int (*dynamic_bind_engine)(ENGIN
   * values. */
  void *ENGINE_get_static_state(void);
  
@@ -1134,10 +1303,9 @@ diff -Naur openssl-0.9.8i.orig/crypto/engine/engine.h openssl-0.9.8i/crypto/engi
  void ENGINE_setup_bsd_cryptodev(void);
  #endif
  
-diff -Naur openssl-0.9.8i.orig/crypto/evp/c_all.c openssl-0.9.8i/crypto/evp/c_all.c
---- openssl-0.9.8i.orig/crypto/evp/c_all.c	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/crypto/evp/c_all.c	2008-10-01 04:16:12.000000000 +0200
-@@ -83,7 +83,7 @@
+--- a/crypto/evp/c_all.c
++++ b/crypto/evp/c_all.c
+@@ -83,7 +83,7 @@ void OPENSSL_add_all_algorithms_noconf(v
  	OpenSSL_add_all_ciphers();
  	OpenSSL_add_all_digests();
  #ifndef OPENSSL_NO_ENGINE
@@ -1146,10 +1314,9 @@ diff -Naur openssl-0.9.8i.orig/crypto/evp/c_all.c openssl-0.9.8i/crypto/evp/c_al
  	ENGINE_setup_bsd_cryptodev();
  # endif
  #endif
-diff -Naur openssl-0.9.8i.orig/crypto/evp/c_alld.c openssl-0.9.8i/crypto/evp/c_alld.c
---- openssl-0.9.8i.orig/crypto/evp/c_alld.c	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/crypto/evp/c_alld.c	2008-10-01 04:16:12.000000000 +0200
-@@ -81,7 +81,7 @@
+--- a/crypto/evp/c_alld.c
++++ b/crypto/evp/c_alld.c
+@@ -81,7 +81,7 @@ void OpenSSL_add_all_digests(void)
  	EVP_add_digest(EVP_dss());
  #endif
  #endif
@@ -1158,10 +1325,9 @@ diff -Naur openssl-0.9.8i.orig/crypto/evp/c_alld.c openssl-0.9.8i/crypto/evp/c_a
  	EVP_add_digest(EVP_sha1());
  	EVP_add_digest_alias(SN_sha1,"ssl3-sha1");
  	EVP_add_digest_alias(SN_sha1WithRSAEncryption,SN_sha1WithRSA);
-diff -Naur openssl-0.9.8i.orig/engines/Makefile openssl-0.9.8i/engines/Makefile
---- openssl-0.9.8i.orig/engines/Makefile	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/engines/Makefile	2008-10-01 04:16:12.000000000 +0200
-@@ -96,6 +96,7 @@
+--- a/engines/Makefile
++++ b/engines/Makefile
+@@ -96,6 +96,7 @@ install:
  			( echo installing $$l; \
  			  if [ "$(PLATFORM)" != "Cygwin" ]; then \
  				case "$(CFLAGS)" in \
@@ -1169,23 +1335,22 @@ diff -Naur openssl-0.9.8i.orig/engines/Makefile openssl-0.9.8i/engines/Makefile
  				*DSO_DLFCN*)	sfx="so";;	\
  				*DSO_DL*)	sfx="sl";;	\
  				*)		sfx="bad";;	\
-diff -Naur openssl-0.9.8i.orig/util/domd openssl-0.9.8i/util/domd
---- openssl-0.9.8i.orig/util/domd	2008-10-01 04:16:01.000000000 +0200
-+++ openssl-0.9.8i/util/domd	2008-10-01 04:16:13.000000000 +0200
-@@ -23,13 +23,17 @@
+--- a/util/domd
++++ b/util/domd
+@@ -23,13 +23,17 @@ if [ "$D" = "gcc" ]; then
      done
      sed -e '/^# DO NOT DELETE.*/,$d' < Makefile > Makefile.tmp
      echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' >> Makefile.tmp
 -    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp
-+    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp &&
++    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp && \
      ${PERL} $TOP/util/clean-depend.pl < Makefile.tmp > Makefile.new
-+	RC=$?
++      RC=$?
      rm -f Makefile.tmp
  else
 -    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND $@
 +    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND $@ && \
      ${PERL} $TOP/util/clean-depend.pl < Makefile > Makefile.new
-+	RC=$?
++      RC=$?
  fi
  mv Makefile.new Makefile
  # unfake the presence of Kerberos
