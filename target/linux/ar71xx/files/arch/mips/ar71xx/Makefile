@@ -10,6 +10,7 @@
 
 obj-y	:= prom.o irq.o setup.o platform.o gpio.o ar71xx.o
 
+obj-$(CONFIG_AR71XX_MACH_AW_NR580)	+= mach-aw-nr580.o
 obj-$(CONFIG_AR71XX_MACH_GENERIC)	+= mach-generic.o
 obj-$(CONFIG_AR71XX_MACH_RB_4XX)	+= mach-rb-4xx.o
 obj-$(CONFIG_AR71XX_MACH_WP543)		+= mach-wp543.o
