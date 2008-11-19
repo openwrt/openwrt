@@ -19,6 +19,9 @@
   to this file, however, are subject to the LGPL or CPL terms.
 */
 
+#include <config.h>
+#include <common.h>
+
 #ifdef CONFIG_LZMA
 
 #include "LzmaDecode.h"
@@ -37,22 +40,31 @@
 
 #ifdef _LZMA_IN_CB
 
+#ifndef CFG_BOOTSTRAP_CODE
 #define RC_TEST { if (Buffer == BufferLim) \
   { SizeT size; int result = InCallback->Read(InCallback, &Buffer, &size); if (result != LZMA_RESULT_OK) { printf("ERROR, %s, %d\n", __FILE__, __LINE__); return result; } \
   BufferLim = Buffer + size; if (size == 0) { printf("ERROR, %s, %d\n", __FILE__, __LINE__); return LZMA_RESULT_DATA_ERROR; } }}
+#else //CFG_BOOTSTRAP_CODE
+#define RC_TEST { if (Buffer == BufferLim) \
+  { SizeT size; int result = InCallback->Read(InCallback, &Buffer, &size); if (result != LZMA_RESULT_OK) { return result; } \
+  BufferLim = Buffer + size; if (size == 0) { return LZMA_RESULT_DATA_ERROR; } }}
+#endif //CFG_BOOTSTRAP_CODE
 
 #define RC_INIT Buffer = BufferLim = 0; RC_INIT2
 
-#else
+#else //_LZMA_IN_CB
 
+#ifndef CFG_BOOTSTRAP_CODE
 #define RC_TEST { if (Buffer == BufferLim) { printf("ERROR, %s, %d\n", __FILE__, __LINE__); return LZMA_RESULT_DATA_ERROR; } }
+#else //CFG_BOOTSTRAP_CODE
+#define RC_TEST { if (Buffer == BufferLim) { return LZMA_RESULT_DATA_ERROR; } }
+#endif //CFG_BOOTSTRAP_CODE
 
 #define RC_INIT(buffer, bufferSize) Buffer = buffer; BufferLim = buffer + bufferSize; RC_INIT2
  
-#endif
+#endif //_LZMA_IN_CB
 
 #define RC_NORMALIZE if (Range < kTopValue) { RC_TEST; Range <<= 8; Code = (Code << 8) | RC_READ_BYTE; }
-
 #define IfBit0(p) RC_NORMALIZE; bound = (Range >> kNumBitModelTotalBits) * *(p); if (Code < bound)
 #define UpdateBit0(p) Range = bound; *(p) += (kBitModelTotal - *(p)) >> kNumMoveBits;
 #define UpdateBit1(p) Range -= bound; Code -= bound; *(p) -= (*(p)) >> kNumMoveBits;
@@ -124,13 +136,17 @@ int LzmaDecodeProperties(CLzmaProperties *propsRes, const unsigned char *propsDa
   unsigned char prop0;
   if (size < LZMA_PROPERTIES_SIZE)
   {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
     printf("ERROR: %s, %d\n", __FILE__, __LINE__);
+#endif
     return LZMA_RESULT_DATA_ERROR;
   }
   prop0 = propsData[0];
   if (prop0 >= (9 * 5 * 5))
   {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
     printf("ERROR: %s, %d\n", __FILE__, __LINE__);
+#endif
     return LZMA_RESULT_DATA_ERROR;
   }
   {
@@ -380,7 +396,9 @@ int LzmaDecode(CLzmaDecoderState *vs,
             if (nowPos == 0)
             #endif
             {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
               printf("ERROR: %s, %d\n", __FILE__, __LINE__);
+#endif
               return LZMA_RESULT_DATA_ERROR;
             }
             
@@ -540,7 +558,9 @@ int LzmaDecode(CLzmaDecoderState *vs,
       if (rep0 > nowPos)
       #endif
       {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
         printf("ERROR: %s, %d\n", __FILE__, __LINE__);
+#endif
         return LZMA_RESULT_DATA_ERROR;
       }
 
