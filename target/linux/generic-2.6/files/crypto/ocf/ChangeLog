@@ -1,0 +1,1960 @@
+2008-09-18 01:27  davidm
+
+	* Makefile, README, README.sglinux,
+	patches/linux-2.6.26-natt.patch, patches/linux-2.6.26-ocf.patch,
+	patches/openssl-0.9.8g.patch, patches/openssl-0.9.8i.patch: 
+	
+	Updates for a new OCF release with openssl-0.9.8i and linux-2.6.26
+	support.
+
+2008-09-18 00:19  davidm
+
+	* Config.in, Kconfig, Makefile, ep80579/Makefile,
+	ep80579/environment.mk, ep80579/icp_asym.c, ep80579/icp_common.c,
+	ep80579/icp_ocf.h, ep80579/icp_sym.c,
+	ep80579/linux_2.6_kernel_space.mk: 
+	
+	A new driver from Intel for their Intel QuickAssist enabled EP80579
+	Integrated Processor Product Line.
+	
+	Adrian Hoban  Brad Vrabete
+	
+
+2008-07-25 01:01  gerg
+
+	* ocf-compat.h: 
+	
+	From linux-2.6.26 onwards there is now a linux/fdtable.h include
+	that contains the file_fdtable() definition.
+
+2008-07-05 01:20  davidm
+
+	* Makefile, patches/linux-2.6.25-natt.patch,
+	patches/linux-2.6.25-ocf.patch: 
+	
+	A new ocf-linux release and some patches to send to the OS guys.
+
+2008-07-03 21:21  davidm
+
+	* crypto.c: 
+	
+	Clean up a some possible deadlock/busy wait issues with
+	locking/sleeping.  This has greatly improved openswan 2.6.14
+	reliability ;-)
+	
+	Make more of our state available in /sys for debugging.
+
+2008-06-23 20:38  davidm
+
+	* Config.in, Kconfig: 
+	
+	Some settings should be bool's John Gumb 
+
+2008-05-28 03:43  philipc
+
+	* ixp4xx/ixp4xx.c:  Revert previous checkin since the
+	callbacks are meant to complete the crypto request.  Before
+	reverting this, CONFIG_DEBUG_SLAB gives: slab error in
+	verify_redzone_free(): cache `ixp4xx_q': double free detected when
+	trying to ssh to the device.
+
+2008-04-27 19:31  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	We were not completing a crypto request under some error
+	conditions.
+
+2008-04-02 01:51  davidm
+
+	* talitos/talitos.c: 
+	
+	This patch is for crypto/ocf/talitos for use on linux 2.6.23.  It
+	is applied to the ocf-linux-20071215 release.
+	
+	Signed-off-by: Lee Nipper 
+
+2008-02-29 00:43  davidm
+
+	* crypto.c, ocf-compat.h, ixp4xx/ixp4xx.c: 
+	
+	freshen  up the 2.4 support,  some recent OCF changes and openswan
+	changes are not that old-os friendly.
+	
+	Force OCF to select HW/SW,  otherwise it may get stuck on the first
+	device.  This change means we will favour HW over SW,  but we will
+	use both as required.  Passing in a crid of 0 to crypto_newsession
+	effectively meant we were stuck on the first device registered with
+	OCF,  not good.  This only applied to ipsec,  cryptodev already did
+	the right thing.
+
+2008-01-31 07:37  gerg
+
+	* hifn/hifn7751.c: 
+	
+	The linux-2.6.24 modules build fails if the pci ID table doesn't
+	have a NULL entry at the end. So add one.
+
+2008-01-29 09:16  gerg
+
+	* cryptosoft.c, ocf-compat.h: 
+	
+	Added some compatability macros for scatterlist changes from 2.6.24
+	onwards.
+
+2007-12-16 07:31  davidm
+
+	* Makefile: 
+	
+	missed an openssl patch name change
+
+2007-12-16 07:27  davidm
+
+	* Makefile, README, README.sglinux, patches/linux-2.6.23-ocf.patch,
+	patches/openssl-0.9.8e.patch, patches/openssl-0.9.8g.patch,
+	patches/ssl.patch: 
+	
+	updates for a new ocf release and associated bits
+
+2007-12-16 06:36  davidm
+
+	* crypto.c: 
+	
+	Be very careful what you do while potentially in an driver unload
+	state or we will call through NULL pointers.
+	
+	Reported by Nawang Chhetan .
+
+2007-12-14 22:32  davidm
+
+	* cryptodev.c: 
+	
+	Add in an unlock_ioctl when available to help SMP systems a lot. 
+	Otherwise all ioctls get a BKL :-(
+	
+	Problem found by Egor N. Martovetsky 
+
+2007-12-14 18:29  davidm
+
+	* cryptosoft.c: 
+	
+	reformat the alg table to make it easier to read.
+
+2007-12-14 18:29  davidm
+
+	* crypto.c: 
+	
+	Fix more driver locking/sleeping bugs report by Nawang Chhetan
+	
+
+2007-12-12 21:36  davidm
+
+	* Config.in, Kconfig, Makefile, pasemi/Makefile, pasemi/pasemi.c,
+	pasemi/pasemi_fnu.h: 
+	
+	Here I'm including my PA Semi driver patch to OCF.  Please consider
+	it for inclusion into next OCF release.
+	
+	Egor N. Martovetsky 
+
+2007-12-05 00:37  davidm
+
+	* patches/: linux-2.4.35-ocf.patch, linux-2.6.22-ocf.patch: 
+	
+	More correct count setting if we get a signal
+	
+	Adrian Hoban 
+
+2007-12-05 00:02  davidm
+
+	* random.c: 
+	
+	OCF has a static array for holding random data. The random number
+	generator I have can write directly into physically contiguous
+	memory. Static memory comes from the heap and isn't physically
+	contiguous. I could use kmalloc'd memory and then copy into the OCF
+	static buf but I'd like to avoid a memory copy. The following patch
+	(Physically_Contig_Rand.patch) allows me to avoid a memory copy and
+	should not impact the other OCF drivers:
+	
+	Adrian Hoban 
+
+2007-12-05 00:01  davidm
+
+	* Kconfig: 
+	
+	Fix a typo in the Kconfig
+
+2007-11-23 19:15  davidm
+
+	* talitos/talitos_dev.h: 
+	
+	fix the DPRINTF macro so that it actually compiles.
+
+2007-11-22 19:41  davidm
+
+	* ocf-compat.h, talitos/talitos.c, talitos/talitos_dev.h: 
+	
+	Various updates to get talitos compiling and work on real-world (ie
+	ubuntu) kernels.
+
+2007-11-08 02:21  davidm
+
+	* crypto.c: 
+	
+	keep and eye on us being completely blocked.  If we have Q's to
+	process, but all the requests are blocked,  sleep.  We do not want
+	to busy loop until a driver unblocks as it uses valuable CPU
+	resources that could be doing something much more important ;-)
+
+2007-11-07 19:04  davidm
+
+	* hifn/hifn7751.c: 
+	
+	hifn driver was failing to unblock itself under some "out of
+	resources" conditions.	It would return ERESTART to signal it was
+	full but never call crypto_unblock to start things moving again.
+
+2007-11-06 02:09  davidm
+
+	* hifn/hifn7751.c: 
+	
+	Remove some bogus trace left in the driver for the overflow (too
+	busy) case.
+
+2007-10-12 21:10  gerg
+
+	* crypto.c, ixp4xx/ixp4xx.c: 
+	
+	Fix up use of kmem_cache_create() - it takes one less argument in
+	2.6.23 onwards.
+
+2007-10-03 02:41  gerg
+
+	* ixp4xx/Makefile: 
+	
+	The directory locations for includes in CSR-2.4 is different.  Need
+	to modify the CFLAGS accordingly if using CSR-2.4.
+
+2007-09-22 00:39  philipc
+
+	* ixp4xx/Makefile:  linux 2.4 make dep was failing.  This is
+	a quick fix to get it building, need to double check this.
+
+2007-09-19 00:13  mmccreat
+
+	* Config.in:  Add config option CONFIG_OCF_IXP4XX_SHA1_MD5,
+	that enables SHA1 and MD5 hashing to be done by the IXP4xx crypto
+	accelerator (although it is much slower than using cryptosoft).
+
+2007-09-18 21:45  mmccreat
+
+	* Makefile, random.c:  - Force the inclusion of autoconf.h,
+	which contains #defines for CONFIG_xxx	 options for OCF.  -
+	Removing additional -D option, now that we are including the
+	CONFIG_xxx   #defines.
+
+2007-09-18 21:44  mmccreat
+
+	* Kconfig:  Add config option CONFIG_OCF_IXP4XX_SHA1_MD5,
+	that enables SHA1 and MD5 hashing to be done by the IXP4xx crypto
+	accelerator (although it is much slower than using cryptosoft).
+
+2007-09-18 21:37  mmccreat
+
+	* cryptodev.h:  The CRYPTO_MAX_DATA_LEN limit should be
+	0xFFFF ie 64K - 1.
+
+2007-09-18 21:19  mmccreat
+
+	* ixp4xx/ixp4xx.c:  - Rework the code so that the correct IXP
+	function, ixCryptoAccHashPerform(), is	 used to calculate SHA1 and
+	MD5 hashes.    NB: The performance of using the IXP4xx hardware is
+	really, really poor    compared to using cryptosoft (and the kernel
+	crypto).  - Only support SHA1 and MD5 hashing if the
+	CONFIG_OCF_IXP4XX_SHA1_MD5 is	enabled.
+
+2007-08-30 21:42  davidm
+
+	* Makefile: 
+	
+	do not archive build files in the crypto-tools archive
+
+2007-08-22 19:19  mmccreat
+
+	* cryptodev.c:  Fix up the checking for key lengths, when the
+	key can be of unlimited size.
+
+2007-08-16 01:50  davidm
+
+	* Makefile: 
+	
+	Better 2.4 compat for "make dep" now working with fastdep.
+
+2007-07-28 08:25  davidm
+
+	* Makefile, README, README.sglinux, patches/crypto-tools.patch,
+	patches/linux-2.4.29-ocf.patch, patches/linux-2.4.35-ocf.patch,
+	patches/linux-2.6.11-ocf.patch, patches/linux-2.6.22-ocf.patch,
+	patches/ssl.patch: 
+	
+	Update all the patches and put the patch making target back into
+	the Makefile.
+
+2007-07-28 08:25  davidm
+
+	* hifn/hifn7751.c: 
+	
+	fix an unused variable warning when HARVESTING is disabled
+
+2007-07-27 21:33  davidm
+
+	* hifn/hifn7751.c, ixp4xx/ixp4xx.c, safe/safe.c, talitos/talitos.c:
+	
+	
+	Remove all the random code if OCF does not have radom harvesting
+	enabled.
+
+2007-07-26 00:36  davidm
+
+	* Kconfig, hifn/hifnHIPP.c, hifn/hifnHIPPvar.h: 
+	
+	Changes to get the hifn HIPP stub driver to build.
+
+2007-07-25 21:25  davidm
+
+	* Makefile, hifn/Makefile, hifn/hifnHIPP.c, hifn/hifnHIPPreg.h,
+	hifn/hifnHIPPvar.h, ixp4xx/Makefile, ocfnull/Makefile,
+	safe/Makefile, talitos/Makefile: 
+	
+	Bring in the hifnHIPP driver written by Xelerance.  This is the
+	super hifn chip with full protocol offload.
+	
+	Switch to much more traditional Makefile/subdir building.  The
+	Makefiles are nicer now,  but still not beautiful,  2.6 and 2.4
+	capable builds result in a certain amount of uglyiness.
+
+2007-07-24 21:46  davidm
+
+	* cryptodev.c: 
+	
+	Clean up all the driver id checking and session management so
+	adding/removing drivers all continues to run cleanly.
+
+2007-07-24 20:14  davidm
+
+	* talitos/talitos.c: 
+	
+	From: Ahsan Kabir 
+	
+	less than .1% packet corruption was detected using the talitos
+	driver. It turns out we don't need the cipher iv out len/ptr field
+	to do ESP IPsec. Therefore we set the len field as 0, which tells
+	the SEC not to do anything with this len/ptr field.
+	
+	Signed-off-by: Ahsan Kabir 
+	Signed-off-by: Kim Phillips 
+
+2007-07-24 08:25  davidm
+
+	* cryptosoft.c, ocf-bench.c, hifn/hifn7751.c, ixp4xx/ixp4xx.c,
+	safe/safe.c, talitos/talitos.c: 
+	
+	Switch the remaining GFP_ATOMIC to the newer and not deprecated
+	SLAB_ATOMIC
+
+2007-07-23 22:16  mmccreat
+
+	* ixp4xx/ixp4xx.c:  Add missing ";" from end of dprintk()
+	call!
+
+2007-07-21 01:16  davidm
+
+	* ocf-compat.h, rndtest.c, hifn/hifn7751.c, safe/safe.c: 
+	
+	pci_register_driver is nothing like it is depending on the kernel,
+	so we need a compat function to fix it up for all kernels before
+	2.6.10, and in different ways for older and not so older versions.
+
+2007-07-20 21:54  davidm
+
+	* safe/safe.c: 
+	
+	Make the debug macro ';' safe so you do not get compiler warnings
+
+2007-07-20 21:53  davidm
+
+	* talitos/: talitos.c, talitos_dev.h, talitos_soft.h: 
+	
+	update to the latest FreeBSD driver structure and fix up the code
+	as required.
+
+2007-07-20 03:07  davidm
+
+	* rndtest.c: 
+	
+	more headers needed to compile on 2.4
+
+2007-07-20 03:00  davidm
+
+	* cryptosoft.c: 
+	
+	Put in the 2.4 stubs to support compression
+
+2007-07-20 02:53  davidm
+
+	* crypto.c, ocf-compat.h: 
+	
+	move some more compat stuff into the compat header.
+
+2007-07-20 02:47  davidm
+
+	* talitos/talitos.c: 
+	
+	support of_platform_driver for newer, ARCH=powerpc based kernels. 
+	Signed-off-by: Kim Phillips 
+
+2007-07-20 02:46  davidm
+
+	* talitos/talitos.c: 
+	
+	From: Ahsan Kabir 
+	
+	When Talitos completes job both the channel and execution unit are
+	capable of generating interrupts.  Talitos used to take two
+	interrupts per request - one for channel completion and the other
+	for execution unit completion. This patch ensures that Talitos
+	takes interrupt only for channel completion. Execution unit will
+	generate interrupt only when there is error and the error
+	interrupts for execution units are not masked.
+	
+	Signed-off-by: Ahsan Kabir 
+	Signed-off-by: Kim Phillips 
+
+2007-07-20 02:37  davidm
+
+	* cryptodev.c: 
+	
+	Unless the user specifies,  select from both HW and SW.
+	
+	Clean up some debug to report the actual ioctl name.
+	
+	Compiler warning on newer compilers.
+
+2007-07-20 02:35  davidm
+
+	* cryptodev.h: 
+	
+	moved dprintk to the compat code,  seemed nicer in there.
+
+2007-07-20 02:35  davidm
+
+	* rndtest.c: 
+	
+	Need to clean up some warnings etc,  more includes
+
+2007-07-20 02:34  davidm
+
+	* ocf-compat.h, hifn/hifn7751.c, safe/safe.c: 
+	
+	new shared IRQ flags for 2.6.22 and a safer version of the debug
+	macro
+
+2007-07-20 00:52  davidm
+
+	* cryptosoft.c: 
+	
+	Implement compression based on the code from the openswan guys.
+
+2007-07-20 00:52  davidm
+
+	* criov.c: 
+	
+	Fix compiler warning on non-value returning void func.
+
+2007-07-18 22:55  davidm
+
+	* hifn/hifn7751.c, safe/safe.c: 
+	
+	Use pci_register_driver rather than pci_module_init. 
+	pci_module_init has been dropped in 2.6.22 yet pci_register_driver
+	has always existed and used to do some crazy hotplug junk.
+
+2007-07-18 21:55  gerg
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Added a missing ";" at the end of the ixp_kproces() prototype.	It
+	is IXP465 specific, only showed up when generateing for SG720.
+
+2007-07-17 00:37  davidm
+
+	* Makefile, cryptodev.c, random.c, rndtest.c, hifn/hifn7751.c,
+	ocfnull/ocfnull.c, safe/safe.c: 
+	
+	Fixup all the debug support for 2.4 kernels,  clean up the entropy
+	harvester to be far more robust.
+
+2007-07-14 02:19  davidm
+
+	* talitos/talitos.c: 
+	
+	Old patch that had not been applied Kim Phillips
+	
+
+2007-07-14 01:12  davidm
+
+	* Config.in, Kconfig, Makefile, cryptodev.c, cryptodev.h, random.c,
+	syscall.h: 
+	
+	Finally ditched all the syscall stuff.	You can now enable/disable
+	the random harvestor.  Pulled in most of random.c from openswan
+	project and fixed some obvious bugs (that were always there).
+
+2007-07-13 21:59  davidm
+
+	* ocf-compat.h: 
+	
+	Better error printing and checking for drivers
+
+2007-07-13 21:56  davidm
+
+	* cryptosoft.c: 
+	
+	Fix some incorrect debug (reporting wrong error type)
+
+2007-07-13 21:55  davidm
+
+	* hifn/hifn7751.c, safe/safe.c: 
+	
+	Make the code more similar to Free-BSD by reverting to the same
+	debug macros
+
+2007-07-13 21:53  davidm
+
+	* ocfnull/ocfnull.c: 
+	
+	Fix up the null driver to work again in the new framework.
+
+2007-07-06 23:54  mmccreat
+
+	* cryptodev.c, cryptodev.h, cryptosoft.c:  - Update OCF to
+	work with new Crypto API introduced in 2.6.19 kerneli, and add
+	macros so it work with older kernels.  - Add support for SHA256,
+	SHA384 and SHA512 HASH and HMAC algorithms.  - Cryptosoft: Only
+	register algorithms that the kernel has implementations for.
+
+2007-07-03 19:52  davidm
+
+	* Kconfig, README, README.sglinux, criov.c, crypto.c, cryptodev.c,
+	cryptodev.h, cryptosoft.c, ocf-bench.c, ocf-compat.h, random.c,
+	rndtest.c, uio.h, hifn/hifn7751.c, hifn/hifn7751reg.h,
+	hifn/hifn7751var.h, ixp4xx/ixp4xx.c, ocfnull/ocfnull.c,
+	safe/safe.c, safe/safevar.h, talitos/talitos.c: 
+	
+	Updated OCF to the lastest FreeBSD version.
+	
+	There was a lot of change in here,  some of which will help FIP's,
+	some which won't.
+	
+	Did lots of cleaning and diff reduction against the freebsd code. 
+	Still more cleaning to do.
+
+2007-06-01 21:58  gerg
+
+	* Config.in: 
+	
+	Put the regular old Config.in back, needed for puclic releases.
+
+2007-06-01 21:58  gerg
+
+	* Kconfig: 
+	
+	Change the CONFIG_OCF_IXP400 dependencies to be the same as they
+	where in the Config.in file.
+
+2007-05-28 21:40  gerg
+
+	* Config.in, Kconfig: 
+	
+	Switch all module configuration over to new style Kconfigs.
+
+2007-05-24 18:49  davidm
+
+	* cryptodev.c, random.c: 
+	
+	Work around some problems on redhat systems with errno redefinition
+
+2007-04-30 21:09  gerg
+
+	* cryptosoft.c: 
+	
+	The CRYPTO_TFM_MODE_ family of defines no longer exists from 2.6.21
+	onwards. As far as I can tell you don't need to pass it to the
+	crypto_alloc_tfm() function anymore.
+	
+	So define it to be 0 if it doesn't exist.
+
+2007-04-03 02:13  gerg
+
+	* syscall.h: 
+	
+	Added syscall macros for SH architecture. Just temporary, 'till
+	Dave fixes the OCF code to not use syscalls from the modules :-)
+
+2007-02-16 23:10  davidm
+
+	* syscall.h: 
+	
+	ensure the temprary 2.6 fix doesn't break 2.4
+
+2007-02-07 22:23  gerg
+
+	* cryptodev.c, random.c, syscall.h: 
+	
+	Temporary fix for new 2.6 kernels no longer defining in-kernel
+	system call functions. Define them locally for now until we fix
+	properly.
+
+2007-02-07 03:10  gerg
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Changes to support the different INIT_WORK() mechanism from kernels
+	2.6.20 onwards.
+
+2007-02-06 02:38  gerg
+
+	* crypto.c: 
+	
+	Cleaned up use of kmem_cache_t and use of SLAB_ATOMIC.
+
+2006-12-05 20:50  cpascoe
+
+	* hifn/hifn7751.c, safe/safe.c, talitos/talitos.c: 
+	
+	Remove pt_regs from OCF interrupt handlers for 2.6.19+
+
+2006-12-02 03:36  gerg
+
+	* criov.c, crypto.c, cryptodev.c, cryptosoft.c, ocf-bench.c,
+	random.c, rndtest.c, hifn/hifn7751.c, ixp4xx/ixp4xx.c,
+	ocfnull/ocfnull.c, safe/safe.c, talitos/talitos.c: 
+	
+	Can no longer include linux/config.h as of 2.6.19 kernels.  Need to
+	conditionally include it based on AUTOCONF_INCLUDED not being
+	defined.
+
+2006-10-13 21:52  cpascoe
+
+	* random.c: 
+	
+	Remove another race condition that may result in us running more
+	than one random thread if modules are reloaded during heavy system
+	load.
+
+2006-10-13 21:18  cpascoe
+
+	* random.c: 
+	
+	- Permit delivery of SIGKILL to the random thread.  - Do not exit
+	prematurely if poll() is interrupted.  - Improve exit conditions so
+	that we quit immediately, rather than loop   infinitely, if the
+	last RNG source is removed while we are trying to   fill our
+	buffer.
+
+2006-10-03 20:28  cpascoe
+
+	* crypto.c, crypto.c:  AutoMerged
+	>
+	> Zero the empty half of "new driver" buffer, and not past the end
+	of the old
+	> buffer that we are about to free.
+
+2006-10-03 20:28  cpascoe
+
+	* crypto.c: 
+	
+	Zero the empty half of "new driver" buffer, and not past the end of
+	the old buffer that we are about to free.
+
+2006-08-25 23:57  davidm
+
+	* cryptosoft.c: 
+	
+	Do not print errors for failed ALG requests unless debugging
+
+2006-07-14 21:44  davidm
+
+	* cryptodev.h: 
+	
+	2.6.11 and earlier did not have the files_fdtable macro.
+
+2006-06-21 21:26  gerg
+
+	* cryptodev.h, hifn/hifn7751.c, ocfnull/ocfnull.c, safe/safe.c,
+	talitos/talitos.c: 
+	
+	Fixed up more occurrances of MODULE_PARM() needing to be converted
+	to module_param() (as of 2.6.17 and onwards).
+
+2006-06-21 00:28  gerg
+
+	* cryptosoft.c: 
+	
+	Change use of MODULE_PARM to module_param() for 2.6.17+ kernels.
+
+2006-06-20 22:13  gerg
+
+	* crypto.c, cryptodev.c, cryptodev.h, ocf-bench.c, ixp4xx/ixp4xx.c:
+	
+	
+	As of 2.6.17 and onwards module_param is used in place of
+	MODULE_PARM.
+
+2006-06-06 00:31  gerg
+
+	* Makefile: 
+	
+	Fix Makefile to find includes is using CSR-2.1.
+
+2006-05-31 01:44  gerg
+
+	* cryptodev.h: 
+	
+	The vars "crypto_usercrypto", "crypto_userasymcrypto" are declared
+	as extern in the header file, but static in the c file. I guessed
+	that they should probably be truely static, so removed the extern
+	declarations from the header.
+
+2006-05-25 21:06  davidm
+
+	* talitos/talitos.c: 
+	
+	This fixes a situation that I never provably experienced, where a
+	descriptor in memory may be reserved within the proper lock, and
+	freed immediately after, only for a few cycles, right outside the
+	lock.  Kim Phillips 
+
+2006-05-15 19:49  davidm
+
+	* criov.c, crypto.c, cryptodev.c, cryptodev.h, cryptosoft.c,
+	ocf-bench.c, random.c, rndtest.c, uio.h, ixp4xx/ixp4xx.c: 
+	
+	Remove the "all rights reserved" from the Intel copyrights.
+
+2006-05-12 21:19  davidm
+
+	* Config.in, Kconfig, Makefile, cryptodev.c, ocf-bench.c,
+	ocfnull/ocfnull.c: 
+	
+	Add in a null OCF driver that does nothing at all,  useful for
+	measuring the cost of various parts of the ipsec stack.
+
+2006-05-12 21:17  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	make sure we do not overwrite a correctly set error type.
+
+2006-05-12 06:52  davidm
+
+	* crypto.c: 
+	
+	Fix a problem where a driver would return ERESTART (full) but then
+	unblock itself before the upper layer had marked it as blocked. 
+	This caused the code to get stuck in crypto_proc and process no
+	more requests.
+
+2006-05-12 06:47  davidm
+
+	* cryptosoft.c: 
+	
+	Implement CRD_F_KEY_EXPLICIT for cryptosoft so keys can be changed
+	on an active session.
+
+2006-05-10 20:09  davidm
+
+	* README, criov.c, crypto.c, cryptodev.h, cryptosoft.c,
+	ocf-bench.c, random.c, rndtest.c, uio.h, hifn/hifn7751.c,
+	ixp4xx/ixp4xx.c, safe/safe.c, safe/safevar.h: 
+	
+	update email addresses and other house cleaning
+
+2006-05-10 20:08  davidm
+
+	* cryptodev.c: 
+	
+	pull in better error checking from openswan modifications
+
+2006-05-10 19:11  davidm
+
+	* cryptosoft.c: 
+	
+	Fix an unused variable warning when various options are disabled.
+
+2006-05-10 19:10  davidm
+
+	* cryptodev.h: 
+	
+	Add support for 2.4 kernels for the new FD cloning operation
+
+2006-05-09 19:48  davidm
+
+	* hifn/hifn7751.c: 
+	
+	remove the hifn 7855 support,  this driver will never work with
+	that chip.
+
+2006-05-08 23:34  davidm
+
+	* hifn/hifn7751var.h: 
+	
+	Contiguous buffer support so that ocf-bench can run properly.
+
+2006-05-05 23:21  davidm
+
+	* hifn/hifn7751.c: 
+	
+	Add in contiguous buffer support so that ocf-bench and run on the
+	driver.
+
+2006-05-05 23:14  davidm
+
+	* ocf-bench.c: 
+	
+	Our requests were out of order,  need to do crypto then auth on
+	encrypt requests.  Some drivers enforce this.
+
+2006-05-04 23:21  davidm
+
+	* crypto.c: 
+	
+	Do not run "newsession" with lock,  since newsession may sleep on
+	some targets.  Handle the accounting so that things are not pulled
+	from underneath us.
+
+2006-05-04 23:20  davidm
+
+	* cryptodev.c: 
+	
+	Switch to a less optimal (marginally) solution for creating a new
+	fd that appears to work in far more versions of the kernel
+	including 64bit versions.
+
+2006-05-04 18:54  davidm
+
+	* ocf-bench.c: 
+	
+	Turn off the IXP access lib benchmarking by default as most people
+	don't have it.
+	
+	Paul Wouters 
+
+2006-04-01 08:23  davidm
+
+	* Makefile: 
+	
+	Remove more temp files when cleaning
+
+2006-04-01 08:12  davidm
+
+	* hifn/hifn7751reg.h: 
+	
+	7855 PCI id's as yet untested
+
+2006-04-01 08:08  davidm
+
+	* hifn/hifn7751.c: 
+	
+	add PCI id's for the 7855 and AES support,  card is untested still
+	as it requires 128MB of PCI memory !
+
+2006-03-31 08:38  davidm
+
+	* README.sglinux: 
+	
+	small update to instructions with corrected patch name
+
+2006-03-31 00:23  davidm
+
+	* Config.in: 
+	
+	Add the Talitos driver to the 2.4 config,  even though it probably
+	won't compile.
+
+2006-03-30 07:48  davidm
+
+	* Kconfig, Makefile, talitos/talitos.c, talitos/talitos_dev.h,
+	talitos/talitos_soft.h: 
+	
+	Please find attached the freescale SEC driver for OCF.	It's been
+	(most recently) tested on an SEC2.0 based MPC8541E
+	(cryptographically identical to the MPC8555E) under 2.6.15.2, with
+	openssl-0.9.8a and openswan-2.4.3 (2.4.5rc5 won't keep the security
+	association up for me for some reason).
+	
+	Please feel free to add it to your next release of OCF-Linux :-)
+	
+	Kim Phillips 
+
+2006-03-20 19:34  davidm
+
+	* safe/: safe.c, safevar.h: 
+	
+	Safenet 1141 v1.0 chips have a DMA lockup error if you access the
+	chip while DMA'ing.  As a work around you need to limit your DMA to
+	256 byte chunks using scatter/gather descriptors.  All the SG/SME
+	products have v1.0 chips and would lockup with more than two
+	outstanding packets at one time.
+	
+	Fix the KASSERT macro
+	
+	Add some more exhaustive initialisation.
+
+2006-03-15 21:58  davidm
+
+	* cryptodev.h, random.c: 
+	
+	Switch random support to "ints" since that is what the kernel uses
+	and not using the same thing is 64bit wise a bad idea.
+	
+	Fix FIP's code to ensure correct amount of data is passed in.
+	
+	Add work around for broken 64bit OS RNG support (disable it)
+	
+	General code cleanups.
+
+2006-03-15 21:55  davidm
+
+	* hifn/hifn7751.c: 
+	
+	Fixes for 64bit OS's,  make sure PCI address are within bus space,
+	make sure we order writes to the bus so that chip functions
+	correctly.  Some small cleanups.
+
+2006-03-15 21:48  davidm
+
+	* hifn/hifn7751var.h: 
+	
+	Remove unused field from structure
+
+2006-03-15 21:47  davidm
+
+	* safe/safe.c: 
+	
+	Make the code more 64bit OS compatible,  force PCI address space
+	and so on.
+
+2006-03-09 20:42  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	If we call ixpCryptoAccInit() and it fails,  just assume that it
+	has already been called.  This allows our "rc" scripts to be
+	openswan and freeswan compatible ore easily.
+
+2006-02-28 23:21  davidm
+
+	* README: 
+	
+	generalise it a bit so rel-dates don't get in the way
+
+2006-02-28 01:52  davidm
+
+	* README, patches/ssh.patch, patches/ssl.patch: 
+	
+	Updated the README and patches for a release
+
+2006-02-25 09:21  davidm
+
+	* README, README.sglinux: 
+	
+	updates for a new release of OCF,  ssl patches and so on.
+
+2006-02-25 08:44  davidm
+
+	* crypto.c: 
+	
+	We were calling the "process"routines with interrupts disabled.  I
+	can see no good reason for this and it provokes badness warnings in
+	2.6 under some conditions.
+	
+	I am going to run with the Q's unlocked for processing,  and
+	hopefully it will allow the system to be more responsive.  It
+	hasn't affected ipsec throughput in any way.  Userland throughput
+	(multi threaded) may have improved significantly though,  but it
+	needs more testing.
+
+2006-02-24 23:32  davidm
+
+	* cryptodev.c: 
+	
+	Whoa,  set the segments with uninitted values can't be good.  Clean
+	out the rest of the old code that was accidently left in.
+
+2006-02-22 01:02  davidm
+
+	* cryptodev.c: 
+	
+	Still not sure about this one,	but this is working for all the
+	cases I can see so far.  If it gets weird,  I am going to switch to
+	a simple clone and chain the sessions rather than a new fcr per fd.
+
+2006-02-20 22:12  davidm
+
+	* cryptodev.c: 
+	
+	Error handling case could free data that was not allocated
+	
+	Ronen Shitrit  Marvell Semiconductor Israel
+	Ltd
+
+2006-02-20 21:57  davidm
+
+	* cryptosoft.c: 
+	
+	Proper SHA/MD5 (non hmac) implementation,  remove some retrictions
+	for hashes (which only applied to crypto) and fix over zealous
+	error checking.
+	
+	Ronen Shitrit  Marvell Semiconductor Israel
+	Ltd
+
+2006-02-09 21:15  davidm
+
+	* cryptodev.c: 
+	
+	The code wasn't quite right and needed some fixing for proper file
+	accounting.
+
+2006-01-24 20:08  davidm
+
+	* crypto.c, cryptodev.c, hifn/hifn7751.c: 
+	
+	We implement our own open in the CRIOGET ioctl now which does
+	pretty much the same thing as the BSD version,	rather than use an
+	open system call which gets caught out by chroot.
+
+2006-01-06 00:42  gerg
+
+	* cryptosoft.c: 
+	
+	Moved "{" block marker inside the set of
+	"defined(CONFIG_CRYPTO_HMAC) || defined(CONFIG_CRYPTO_HMAC_MODULE)"
+	code (in function swcr_process) so that it compiled if these where
+	not defined.
+
+2005-11-11 01:44  davidm
+
+	* Makefile, README: 
+	
+	cleanups for a general release of OCF
+
+2005-11-11 01:18  davidm
+
+	* patches/ssl.patch: 
+	
+	Updated the ssl patch to the latest and greatest changed we have
+	made.
+
+2005-11-10 21:41  davidm
+
+	* Makefile, ixp4xx/ixp4xx.c: 
+	
+	Better debug for bad input.
+	
+	Have make clean do more cleaning and less talking.
+
+2005-11-03 20:53  davidm
+
+	* cryptosoft.c: 
+	
+	clean up some compilation errors with various options on/off
+
+2005-10-25 00:25  davidm
+
+	* Makefile: 
+	
+	Add a patch target that generates full kernel patches to add OCF
+	into either a 2.4 or 2.6 kernel as a single patch.
+
+2005-10-25 00:24  davidm
+
+	* Kconfig: 
+	
+	Make sure all OCF settings depend on OCF_OCF
+
+2005-09-23 02:45  davidm
+
+	* README, README.sglinux: 
+	
+	new crypto-tools archive to keep the tools up to date
+
+2005-09-23 02:08  davidm
+
+	* Makefile, README, README.sglinux: 
+	
+	updates for doing OCF releases
+
+2005-09-23 01:59  davidm
+
+	* patches/: ssh.patch, ssl.patch: 
+	
+	updated the patches for the latest in fixes etc to ssh/ssl for a
+	new OCF release before the openswan 2.4.1 merge.
+
+2005-09-21 00:57  davidm
+
+	* Makefile, cryptosoft.c, hifn/hifn7751.c, ixp4xx/ixp4xx.c: 
+	
+	Fixes for building cleanly under 2.6
+
+2005-09-13 23:11  davidm
+
+	* ocf-bench.c: 
+	
+	Add an exit function for cleaner 2.6 support.  Patch from Ronen
+	Shitrit 
+
+2005-07-30 00:23  davidm
+
+	* cryptosoft.c: 
+	
+	Add proper hooks for MD5/SHA and their HMAC countrparts processing
+	from cryptodev.
+
+2005-07-29 01:50  davidm
+
+	* cryptodev.c: 
+	
+	cryptodev did not support MD5 and SHA1,  only the HMAC versions
+
+2005-07-29 01:05  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	register for MD5,  return 16 bytes for MD5 and 12 for MD5_HMAC, 
+	likewise for SHA1 (only 20 is not HMAC).
+
+2005-07-28 21:52  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	First pass fix of userland MD5 processing.  We now do as well as
+	the safenet does,  I think.
+
+2005-07-27 06:23  davidm
+
+	* cryptodev.c: 
+	
+	udelay doesn't give up the current thread, thus the kernel will get
+	locked if a process is killed but the hardware never completes the
+	crypto request.
+
+2005-07-22 02:07  davidm
+
+	* crypto.c, cryptodev.h: 
+	
+	Implement queuing limits for input/output and OCF requests.
+	
+	Implement 2.6 style work queues instead of the 2.4 task_queues.
+
+2005-07-21 20:42  davidm
+
+	* cryptodev.h, ocf-bench.c, ixp4xx/ixp4xx.c: 
+	
+	Fix OCF to use work queues,  add 2.4 version of work queues to
+	cryptodev.h for use in ipsec and elsewhere.
+	
+	Problem and initial patch provided by David Vrabel
+	.  Cleaned up and 2.4 support added by me.
+
+2005-07-21 19:08  davidm
+
+	* random.c: 
+	
+	Fix spinlock initialisation, problem reported by Andy @
+	windsorcarclub.co.uk.
+
+2005-07-20 20:24  davidm
+
+	* cryptodev.c: 
+	
+	fix a silly spelling mistake
+
+2005-07-08 00:56  gerg
+
+	* Makefile: 
+	
+	Only build ocf-bench when CONFIG_OCF_BENCH is acrually enabled.
+
+2005-06-27 20:29  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Ok,  we need a simple implentation here or we go too slow for UDP
+	tests.	For now,  if the Q is full just ditch the packet,  someone
+	has to do it.
+
+2005-06-25 01:13  davidm
+
+	* safe/safe.c: 
+	
+	bytes swapping etc all seems wrong for safenet on BE,  these fixes
+	see both MD5 and SHA1 working with OpenSwan.
+
+2005-06-22 23:10  davidm
+
+	* random.c: 
+	
+	clean up some ifdef code a little
+
+2005-06-22 21:28  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Make sure we do not call blocking functions from ISR callable
+	routines.  In this case we were calling ixCryptoAccCtxUnregister.
+	
+	Run all the random numbers through SHA1 process to ensure more
+	uniform distribution of bits (NOTE:  it is not more random in any
+	way)
+
+2005-06-21 00:11  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	do not process requests from the register callback, gets the AES
+	code all messed up.
+	
+	Align caches on HW cache boundaries ot improve speed.
+	
+	More tracking or potential errors.
+
+2005-06-15 01:55  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	technically ixCryptoAccCtxRegister cannot be called from IRQ
+	context, so run it from the immediate BH.
+
+2005-06-14 23:13  davidm
+
+	* ocf-bench.c: 
+	
+	Fix some compile warnings/errors
+
+2005-06-14 20:52  davidm
+
+	* Config.in, Kconfig, Makefile, ocf-bench.c: 
+	
+	Add in kernel benchmark driver
+	
+	Support for building under CSR 1.4 and 2.0 is now complete
+
+2005-06-14 20:51  davidm
+
+	* crypto.c: 
+	
+	Do not use immediate processing for SW drivers otherwise we hold a
+	lock for too long.  Instead force BATCH processing.
+	
+	Problem found by David Vrabel 
+
+2005-06-14 20:46  davidm
+
+	* cryptodev.c: 
+	
+	Fix up AES minimum key size
+	
+	Make some more variables static
+
+2005-06-14 20:36  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Use kernel caches as they are more efficient and faster to obtain.
+	
+	Fix some spelling
+	
+	Tune PKE to only use the space required.  Turn off go fast options
+	to reduce any speed-related cracking.
+	
+	Only zero data that needs to be zeroed (save some cycles)
+
+2005-06-02 21:42  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Added optimisations ideas from Intel the improve the PKE
+	performance for 512 and 1024 bits operations.
+
+2005-06-01 02:13  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Looks like I found the ixp bug.  Using OSAL buffer routines on
+	non-OSAL buffers is a very very bad thing to do.  Must double check
+	all the API's I am using (ie., PKE) just to be sure.
+
+2005-05-31 21:38  davidm
+
+	* Config.in, Kconfig: 
+	
+	Updated/Added the menu wrapper for the config options
+
+2005-05-31 21:18  gerg
+
+	* Config.in: 
+	
+	Reworked the config.in so that each sub-module has its own
+	Config.in.  That way it is easier to make release trees with some
+	modules left in.
+
+2005-05-30 19:46  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	Not all the Pke code was appropriately ifdef'd
+
+2005-05-28 01:49  davidm
+
+	* cryptosoft.c: 
+	
+	We were not injecting data in the right places nor calling the
+	cipher code the best was under all situations.	We are now good
+	enought to do ESP/AH processing with 3DES and SHA1-HMAC.
+
+2005-05-28 01:42  davidm
+
+	* hifn/hifn7751.c: 
+	
+	Non atomic kmallocs at IRQ time are bad and cause lockups
+
+2005-05-21 08:31  davidm
+
+	* README, README.sglinux: 
+	
+	Some small updates to email and patches that no longer exist
+
+2005-05-21 08:25  davidm
+
+	* cryptosoft.c: 
+	
+	better error message on failure,  a lot of the error check we do
+	sems to break apps like cryptotest, not sure who is right yet.
+
+2005-05-21 00:55  davidm
+
+	* criov.c, crypto.c, cryptodev.c, cryptodev.h, cryptosoft.c,
+	random.c, rndtest.c, uio.h, hifn/hifn7751.c, ixp4xx/ixp4xx.c,
+	safe/safe.c, safe/safevar.h: 
+	
+	Convert to CyberGuard email addresses for OCF files.
+
+2005-05-21 00:28  davidm
+
+	* crypto.c, cryptodev.c, cryptosoft.c, hifn/hifn7751.c,
+	ixp4xx/ixp4xx.c, safe/safe.c: 
+	
+	final round of naming changes,	hifn driver also confirmed working
+	in SG710
+
+2005-05-20 23:50  davidm
+
+	* cryptosoft.c, random.c, uio.h, ixp4xx/ixp4xx.c: 
+	
+	more copyright/author updates etc for Intel
+
+2005-05-20 23:48  davidm
+
+	* criov.c, crypto.c, cryptodev.c, cryptodev.h, cryptosoft.c,
+	random.c, rndtest.c, uio.h, ixp4xx/ixp4xx.c, safe/safe.c,
+	safe/safevar.h: 
+	
+	updated copyrights to reflect Intels interest/investment in the
+	project
+
+2005-05-20 20:31  davidm
+
+	* hifn/: hifn7751.c, hifn7751var.h: 
+	
+	Most of a working SKB implementation now
+
+2005-05-20 20:30  davidm
+
+	* safe/: md5.c, md5.h, safe.c, sha1.c, sha1.h: 
+	
+	Full AH/ESP processing now working,  just added BSD sha/md5
+	routines as needed for now.
+
+2005-05-20 20:30  davidm
+
+	* random.c: 
+	
+	use the new BSD rndtest code rather than the old GPL fips code
+
+2005-05-20 20:28  davidm
+
+	* Makefile, fips.c, fips.h, rndtest.c, rndtest.h: 
+	
+	Get rid of the GPL version of the fips test and use a BSD licensed
+	version so no one can get upset and cry derivative :-)
+
+2005-05-20 08:19  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	High throughput improvements. Can now handle multiple simultaneous
+	requests.
+
+2005-05-20 00:55  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	
+	works with openswan/OCF for ipsec receive.
+	
+	fixes ESP/AUTH processing (esp. HMAC)
+	
+	This driver needs a rework for kernel IPSEC as it's current packet
+	at a time processing is not up to the task.
+
+2005-05-20 00:53  davidm
+
+	* cryptosoft.c: 
+	
+	working ESP/AUTH code now impleneted.  Can do RX processing for
+	openswan KLIPS.
+	
+	Fixes numerous problems in skb processing
+	
+	Fixes broken HMAC code and IV processing
+
+2005-05-14 01:44  davidm
+
+	* cryptodev.c, ixp4xx/ixp4xx.c: 
+	
+	Cleanup IXP key processing to guarantee only a single outstanding
+	request rather than relying on the intel driver to get it right. 
+	Stops us losing requests.
+	
+	Tighten up the cryptodev response to "no answer" so that we don't
+	take all the CPU.  Only happens if there is a driver bug.
+
+2005-05-14 00:07  davidm
+
+	* Config.in, Kconfig, Makefile, crypto.c, fips.c, fips.h, random.c,
+	ixp4xx/ixp4xx.c, tools/bench-ocf: 
+	
+	PKE and RNG support running on the ixp driver,	added PKE bench
+	marking to script.  Still some multi-thread problems in the PKE
+	code.
+	
+	Added FIP RNG checking option to config and code.
+
+2005-05-10 19:18  davidm
+
+	* Makefile, ixp4xx/ixp4xx.c: 
+	
+	Get the OCF stuff building for the 465 and CSR-2.0
+
+2005-04-27 19:18  davidm
+
+	* cryptodev.h, random.c, hifn/hifn7751.c, safe/safe.c: 
+	cleanup the random number interface some more
+
+2005-04-27 00:57  davidm
+
+	* cryptodev.h, cryptosoft.c, random.c, hifn/hifn7751.c,
+	ixp4xx/ixp4xx.c, patches/linux-2.4.29-add_true_randomness.patch,
+	patches/linux-2.6.11-add_true_randomness.patch, safe/safe.c,
+	safe/safevar.h: 
+	
+	Switch to a more "user" like random number handling.  Drivers no
+	longer poll for RNG data,  we pull it as needed to fill
+	/dev/random's entropy.
+	
+	Implement sk_buff handling within the OCF framework.
+	
+	fixup IV handling in cryptosoft.
+
+2005-04-27 00:41  davidm
+
+	* crypto.c: 
+	
+	Fix a race condition with the starting of kernel threads.  The
+	threads were running before the pid assignment in the parent.
+
+2005-03-24 23:57  davidm
+
+	* Makefile: 
+	include crypto-tools.patch in the release file
+	
+	
+
+2005-03-24 20:14  davidm
+
+	* safe/safe.c: 
+	Fixup compile time warnings due to some left over BSDisms
+	
+
+2005-03-24 00:53  davidm
+
+	* Makefile, README, README.sglinux, patches/linux-2.4.29-ocf.patch,
+	patches/linux-2.6.11-ocf.patch, patches/ocf-linux-2.4.29.patch,
+	patches/ocf-linux-2.6.11.patch: 
+	added cleaner patch names and a tarball target to aid releases
+	
+
+2005-03-24 00:28  davidm
+
+	* patches/crypto-tools.patch,
+	patches/linux-2.4.29-add_true_randomness.patch,
+	patches/linux-2.6.11-add_true_randomness.patch,
+	patches/ocf-linux-2.4.29.patch, patches/ocf-linux-2.6.11.patch,
+	patches/ssh.patch, patches/ssl.patch, tools/bench-ocf: 
+	move all the release file patches into CVS for simplicity
+	
+
+2005-03-23 20:37  davidm
+
+	* safe/safe.c: 
+	remove excessive debug from RNG routines so that you can turn on
+	debug and live through it
+	
+	
+
+2005-03-23 02:23  davidm
+
+	* safe/safe.c: 
+	fix memory corruption for mod_exp and the safenet,  we were copying
+	back more than the space available.
+	
+	
+
+2005-03-22 21:45  davidm
+
+	* crypto.c, cryptodev.c, cryptodev.h, safe/safe.c: 
+	fixup a major sync issues with key processing (callback called
+	before sleeping).  Improve its performance while we are there with
+	a CBIMM (callback immediate) option.
+	
+	
+
+2005-03-19 00:33  davidm
+
+	* random.c: 
+	A new randomness function for both 2.4 and 2.6 that replaces out
+	previous old solution for the hifn driver with more generic code
+	that works on both kernels.
+	
+		add_true_randomness(u_int32_t *buf, int nwords);
+	
+	
+
+2005-03-18 21:01  davidm
+
+	* Makefile, cryptodev.h, random.c, hifn/hifn7751.c, safe/safe.c: 
+	RNG support in both the safenet and the hifn plus the required
+	kernel support.
+	
+	"hd /dev/random" runs much much faster now :-)
+	
+	
+
+2005-03-17 23:29  toby
+
+	* cryptodev.c:  Make sure the CIOCASYMFEAT ioctl on
+	/dev/crypto copies out the capable features.
+
+2005-03-17 01:19  davidm
+
+	* safe/: safe.c, safereg.h, safevar.h: 
+	hardware PK acceleration on the safenet (CRK_MOD_EXP only)
+	
+
+2005-03-16 04:28  davidm
+
+	* criov.c, crypto.c, cryptodev.c, safe/safe.c: 
+	fixup the FBSD id stuff to compile :-) 
+
+2005-03-16 04:02  davidm
+
+	* README, README.sglinux, TODO: 
+	Updated with versions,	removed tabs,  new kernel versions, web
+	site etc 
+
+2005-03-16 03:45  davidm
+
+	* criov.c, crypto.c, cryptodev.c, cryptodev.h: 
+	more license formatting and version id's to help keep in touch with
+	FreeBSD 
+
+2005-03-16 03:16  davidm
+
+	* safe/safe.c: 
+	up to date with FreeBSD versioning, no changes to merge 
+
+2005-03-16 03:15  davidm
+
+	* safe/safe.c: 
+	include FreeBSD version info so I can track changes better
+	
+
+2005-03-16 03:11  davidm
+
+	* hifn/: hifn7751.c, hifn7751reg.h, hifn7751var.h: 
+	incorporate latest updates from FreeBSD:
+	
+	| Update support for 795x parts: | o rework pll setup code to
+	follow h/w specification | o add hint.hifn.X.pllconfig to specify
+	reference clock setup |   requirements; default is pci66 which
+	means the clock is |   derived from the PCI bus clock and the card
+	resides in a |	 66MHz slot | | Tested on 7955 and 7956 cards;
+	support for 7954 cards not enabled | since we have no cards to test
+	against.
+	
+	
+
+2005-03-16 02:50  davidm
+
+	* Config.in, Kconfig, README, crypto.c, cryptodev.c, cryptodev.h,
+	hifn/hifn7751.c, hifn/hifn7751var.h, safe/safe.c, safe/safevar.h: 
+	cleanups to build and run on 2.6.11 and 2.4.29 for a public release
+	
+	included configs locally to reduce patch to kernel and required
+	user effort.
+	
+	pci_dma_sync_single fix from Michele Baldessari
+	,	with modifications by me to work on all
+	kernels.
+	
+	
+
+2005-03-11 23:30  davidm
+
+	* Makefile: 
+	fix up the compiling again, I had outstanding commits for this one
+	:-) 
+
+2005-03-11 21:56  danield
+
+	* Makefile: Get ocf modules building again.  
+
+2004-12-25 07:12  davidm
+
+	* TODO: 
+	safenet is all good now AKAIK 
+
+2004-12-25 07:02  davidm
+
+	* Makefile, crypto.c, cryptodev.c, cryptosoft.c, uio.h: 
+	2.6 port of the OCF framework,	tested on Xscale and compiled for
+	x86
+	
+	
+
+2004-12-10 02:41  davidm
+
+	* hifn/hifn7751.c: 
+	Fix compilation as l_flags was not defined for LOCK in pci_remove
+	
+
+2004-12-06 19:15  davidm
+
+	* hifn/hifn7751.c, safe/safe.c: 
+	* Put locking into hifn_remove to ensure interrupts are not running
+	while we   remove the driver
+	
+	  Use del_timer_sync (need to ensure timer is not running on
+	another CPU
+	* when we delete it).
+	
+	Improvements suggested by Evgeniy Polyakov <johnpol@2ka.mipt.ru>
+	
+
+2004-12-02 09:16  davidm
+
+	* README, README.sglinux: 
+	* Fix up all tabs to be spaces * explain how to update the ocf
+	support in the patch to the current version.
+	
+	
+
+2004-12-02 09:11  davidm
+
+	* README: 
+	* fix some spelling/grammar * add more info on the ssl.patch file
+	and what it contains 
+
+2004-12-02 09:08  davidm
+
+	* README.sglinux: 
+	give some more instructions on the shar archive and extracting the
+	release.  
+
+2004-12-02 09:03  davidm
+
+	* README.sglinux: 
+	how to include crypto-tools into 3.1.6
+	
+	
+
+2004-12-02 08:48  davidm
+
+	* README.sglinux: 
+	updated for a new crypto patch for openssl-0.9.7e 
+
+2004-12-02 08:04  davidm
+
+	* README, README.sglinux: 
+	Clean up the README's to use the new SG Linux alpha and a specific
+	2.4.28 patch.
+	
+	
+
+2004-12-01 23:11  davidm
+
+	* Makefile, criov.c, crypto.c, cryptodev.c, cryptosoft.c,
+	hifn/Makefile, hifn/hifn7751.c, ixp4xx/Makefile, ixp4xx/ixp4xx.c,
+	safe/Makefile, safe/safe.c: 
+	Re-worked the Makefiles so that including the code into a standard
+	non-SG kernel is really easy.
+	
+	Fixed a non-initialised bug that was introduce into cryptosoft.c
+	with the additional error checking.
+	
+	
+
+2004-12-01 01:54  davidm
+
+	* TODO: 
+	updates based on things that have been fixed.  
+
+2004-12-01 01:53  davidm
+
+	* safe/: safe.c, safevar.h: 
+	Cleanup some old hacks based on the much cleaner port of the hifn
+	driver.  
+
+2004-12-01 01:53  davidm
+
+	* cryptosoft.c: 
+	fix some crashes due to bad buffer sizes etc.  
+
+2004-11-27 09:16  davidm
+
+	* crypto.c, cryptodev.c, ixp4xx/ixp4xx.c: 
+	Fixed some nasty problems that were stopping reliable behaviour:
+	
+	1) we were not initialising some of our lists/wait queues,  which  
+	 meant they appears to have things in them when in fact they did
+	not.	 This actually didn't seems to cause any problems but is
+	extremely bogus.
+	
+	2) While a process was waiting for the crypto engine,  if
+	itreceived a	signal we would lose sync with the engine and end
+	up allowing out-of-band    actions that were invalid (ie.,
+	unregistering a context that was still	  active in a crypto
+	operation).
+	
+	   Of source the CryptACC should probably deal with this as well
+	;-)
+	
+	
+
+2004-11-26 01:33  davidm
+
+	* TODO: 
+	We should also hook in the random number generators to linux
+	
+
+2004-11-26 01:33  davidm
+
+	* hifn/hifn7751.c: 
+	Changed all the accesses to DMS descriptors to not set the valid
+	bit until after everything else was set.  This got the driver
+	running smoothly, along with a fixup to the pci_map_uio which
+	wasn't settings lengths correctly.
+	
+	
+
+2004-11-25 21:15  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	document why using a new context for each packet is actually a
+	better idea than allocating one (actually two) per session.
+	
+	
+
+2004-11-25 08:48  davidm
+
+	* README, README.sglinux: 
+	updates from email with Intel to fix a few little things
+	
+
+2004-11-25 00:02  davidm
+
+	* README, README.sglinux, safe/safe.c: 
+	Some cleanups of doc and so on for Intel/General use 
+
+2004-11-23 07:58  davidm
+
+	* TODO: 
+	safenet is working on big endian machines now
+	
+	
+
+2004-11-23 07:56  davidm
+
+	* ixp4xx/: Makefile, ixp4xx.c: 
+	Reference the Intel library,  cleanup the IV sizes and turn on AES.
+	 Fix Makefile for new config options.
+	
+	
+
+2004-11-23 07:52  davidm
+
+	* Makefile: 
+	Complete the changes of ixp to ixp4xx (IXP4xx) as appropriate
+	
+
+2004-11-23 00:33  davidm
+
+	* Makefile, README, ixp4xx/Makefile: 
+	Changes all references to ixp to be ixp4xx at Intels request
+	
+
+2004-11-20 01:07  davidm
+
+	* safe/: safe.c, safereg.h: 
+	fully working safenet on BE machines 
+
+2004-11-19 01:03  davidm
+
+	* Makefile, hifn/Makefile, hifn/hifn7751.c, hifn/hifn7751reg.h,
+	hifn/hifn7751var.h: 
+	hifn driver code complete and compiling,  needs a test now ;-)
+	
+
+2004-11-18 21:45  davidm
+
+	* hifn/: Makefile, hifn7751.c, hifn7751var.h: 
+	Makefile for building the hifn driver 
+
+2004-11-18 21:44  davidm
+
+	* hifn/: hifn7751.c, hifn7751reg.h, hifn7751var.h: 
+	Checkin the orginal freebsd source for the hifn driver as a
+	reference in the future.
+	
+	
+
+2004-11-18 10:05  davidm
+
+	* Makefile, README, TODO, criov.c, crypto.c, cryptodev.c,
+	cryptodev.h, cryptosoft.c, uio.h, ixp4xx/Makefile, ixp4xx/ixp4xx.c,
+	safe/Makefile, safe/safe.c, safe/safevar.h: 
+	Clean up license and copyright info to be more acceptable (and
+	present) Clean up debug and trace Fixup memory freeing etc on
+	safenet Fix compiler warnings (some were bugs)
+	
+	
+
+2004-11-17 02:23  davidm
+
+	* safe/safe.c: 
+	working on Xscale (big endian) now but packet data is getting
+	stuffed up due to endian problems (at least now we are talking to
+	the chip correctly for BE).  Good enough to test packet throughput,
+	 no good for testing scp.
+	
+	
+
+2004-11-17 02:21  davidm
+
+	* criov.c: 
+	Make sure public symbols are exported by including the correct
+	header files 
+
+2004-11-17 02:15  davidm
+
+	* crypto.c: 
+	even better cleanup of kernel threads on exit 
+
+2004-11-17 02:15  davidm
+
+	* cryptosoft.c: 
+	return some trace to debug so it doesn't appear 
+
+2004-11-17 02:14  davidm
+
+	* Makefile: 
+	Make sure all drivers get built, not just IXP 
+
+2004-11-16 21:31  davidm
+
+	* crypto.c: 
+	Fix problem with reboots and driver not unloading cleanly,  we were
+	not handling signals correctly in the kernel threads, 
+
+2004-11-10 10:46  davidm
+
+	* ixp4xx/ixp4xx.c: 
+	fix serious context leak,  itturns out the context is still
+	considered busy while it is calling the perform callback,  so we
+	cleanup on closing the session and on allocating the next context
+	to work around this.
+	
+	
+
+2004-11-10 05:26  davidm
+
+	* crypto.c, cryptodev.c, ixp4xx/ixp4xx.c, safe/safe.c: 
+	cleaned out some debug,  found MAX tunnels bug,  traced it various
+	other cleanups.
+	
+	
+
+2004-11-10 04:02  davidm
+
+	* cryptodev.c, cryptosoft.c, ixp4xx/ixp4xx.c, safe/Makefile,
+	safe/safe.c: 
+	Fix up kmalloc usage to always zero resulting buffer everywhere   
+	(stops crashes in ixp)
+	
+	Add some function debug to ixp so you can see it working
+	
+	Fix safe driver to build and install in a real tree.
+	
+	
+
+2004-11-10 02:27  davidm
+
+	* Makefile, criov.c, crypto.c, cryptosoft.c, ixp4xx/Makefile,
+	ixp4xx/ixp4xx.c: 
+	Compiling OCF modules for the IXP crypto, needs testing now
+	
+
+2004-11-09 19:16  davidm
+
+	* criov.c, crypto.c, cryptodev.c, cryptodev.h, cryptosoft.c,
+	cryptosoft.h, uio.h, safe/safe.c, safe/safevar.h: 
+	The linux port of OCF with working safenet and software modules. 
+	Still some bugs with mutiple crypto threads using the safenet
+	driver.
+	
+	
+
+2004-11-09 18:49  davidm
+
+	* Makefile, criov.c, crypto.c, cryptodev.c, cryptodev.h,
+	cryptosoft.c, cryptosoft.h, uio.h, safe/Makefile, safe/safe.c,
+	safe/safereg.h, safe/safevar.h: 
+	Check in the orginal free-bsd sources for the OCF support.  This
+	allows us to diff against it later to see if we botched anything
+	major league.
+	
+	
+

@@ -1,0 +1,101 @@
+menu "OCF Configuration"
+
+config OCF_OCF
+	tristate "OCF (Open Cryptograhic Framework)"
+	help
+	  A linux port of the OpenBSD/FreeBSD crypto framework.
+
+config OCF_RANDOMHARVEST
+	bool "crypto random --- harvest entropy for /dev/random"
+	depends on OCF_OCF
+	help
+	  Includes code to harvest random numbers from devices that support it.
+
+config OCF_FIPS
+	bool "enable fips RNG checks"
+	depends on OCF_OCF && OCF_RANDOMHARVEST
+	help
+	  Run all RNG provided data through a fips check before
+	  adding it /dev/random's entropy pool.
+
+config OCF_CRYPTODEV
+	tristate "cryptodev (user space support)"
+	depends on OCF_OCF
+	help
+	  The user space API to access crypto hardware.
+
+config OCF_CRYPTOSOFT
+	tristate "cryptosoft (software crypto engine)"
+	depends on OCF_OCF
+	help
+	  A software driver for the OCF framework that uses
+	  the kernel CryptoAPI.
+
+config OCF_SAFE
+	tristate "safenet (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  A driver for a number of the safenet Excel crypto accelerators.
+	  Currently tested and working on the 1141 and 1741.
+
+config OCF_IXP4XX
+	tristate "IXP4xx (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  XScale IXP4xx crypto accelerator driver.  Requires the
+	  Intel Access library.
+
+config OCF_IXP4XX_SHA1_MD5
+	bool "IXP4xx SHA1 and MD5 Hashing"
+	depends on OCF_IXP4XX
+	help
+	  Allows the IXP4xx crypto accelerator to perform SHA1 and MD5 hashing.
+	  Note: this is MUCH slower than using cryptosoft (software crypto engine).
+
+config OCF_HIFN
+	tristate "hifn (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for various HIFN based crypto accelerators.
+	  (7951, 7955, 7956, 7751, 7811)
+
+config OCF_HIFNHIPP
+	tristate "Hifn HIPP (HW packet crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for various HIFN (HIPP) based crypto accelerators
+	  (7855)
+
+config OCF_TALITOS
+	tristate "talitos (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for Freescale's security engine (SEC/talitos).
+
+config OCF_PASEMI
+	tristate "pasemi (HW crypto engine)"
+	depends on OCF_OCF && PPC_PASEMI
+	help
+	  OCF driver for the PA Semi PWRficient DMA Engine
+
+config OCF_EP80579
+	tristate "ep80579 (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for the Intel EP80579 Integrated Processor Product Line.
+
+config OCF_OCFNULL
+	tristate "ocfnull (fake crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for measuring ipsec overheads (does no crypto)
+
+config OCF_BENCH
+	tristate "ocf-bench (HW crypto in-kernel benchmark)"
+	depends on OCF_OCF
+	help
+	  A very simple encryption test for the in-kernel interface
+	  of OCF.  Also includes code to benchmark the IXP Access library
+	  for comparison.
+
+endmenu
