@@ -335,7 +335,6 @@ define KernelPackage/crypto-test
   DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_TEST
   FILES:=$(LINUX_DIR)/crypto/tcrypt.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,09,tcrypt)
 endef
 
 $(eval $(call KernelPackage,crypto-test))
