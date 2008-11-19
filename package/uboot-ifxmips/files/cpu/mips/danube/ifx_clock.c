@@ -37,55 +37,52 @@
 
 unsigned int danube_get_ddr_hz(void)
 {
-        switch((*DANUBE_CGU_SYS) & 0x3){
-                case 0:
-                        return 166666667;
-                case 1:
-                        return 133333333;
-                case 2:
-                        return 111111111;
-                case 3:
-                        return 83333333;
-        }
+	switch((*DANUBE_CGU_SYS) & 0x3){
+		case 0:
+		default:
+			return 166666667;
+		case 1:
+			return 133333333;
+		case 2:
+			return 111111111;
+		case 3:
+			return 83333333;
+	}
 }
 
 
 uint danube_get_cpuclk(void)
 {
 #ifdef CONFIG_USE_EMULATOR
-        return EMULATOR_CPU_SPEED;
+	return EMULATOR_CPU_SPEED;
 #else //NOT CONFIG_USE_EMULATOR
-        unsigned int ddr_clock=danube_get_ddr_hz();
-        switch((*DANUBE_CGU_SYS) & 0xc){
-                case 0:
-                        return 333333333;
-                case 4:
-                        return ddr_clock;
-                case 8:
-                        return ddr_clock << 1;
-                default:
-			break;
-                        /*reserved*/
-        }
+	unsigned int ddr_clock=danube_get_ddr_hz();
+	switch((*DANUBE_CGU_SYS) & 0xc){
+		case 0:
+		default:
+			return 333333333;
+		case 4:
+			return ddr_clock;
+		case 8:
+			return ddr_clock << 1;
+	}
 #endif
-
 }
 
 
 uint danube_get_fpiclk(void)
 {
 #ifdef CONFIG_USE_EMULATOR
-        unsigned int  clkCPU;
-        clkCPU = danube_get_cpu_hz();
-        return clkCPU >> 2;
+	unsigned int  clkCPU;
+	clkCPU = danube_get_cpu_hz();
+	return clkCPU >> 2;
 #else //NOT CONFIG_USE_EMULATOR
-        unsigned int ddr_clock=danube_get_ddr_hz();
-        if ((*DANUBE_CGU_SYS) & 0x40){
-                return ddr_clock >> 1;
-        }
-        return ddr_clock;
+	unsigned int ddr_clock=danube_get_ddr_hz();
+	if ((*DANUBE_CGU_SYS) & 0x40){
+		return ddr_clock >> 1;
+	}
+	return ddr_clock;
 #endif
-
 }
 
 

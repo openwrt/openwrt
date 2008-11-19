@@ -23,30 +23,38 @@
 
 include $(TOPDIR)/config.mk
 
-LIB	= libbootstrap.a
+LIB	:= $(obj)libbootstrap.a
 
-#OBJS_PRINTF_ENABLED	= bootstrap_board.o time.o console.o LzmaWrapper.o LzmaDecode.o crc32.o ctype.o display_options.o string.o vsprintf.o lists.o devices.o
-#OBJS_PRINTF_DISBALED	= bootstrap_board.o LzmaDecode.o string.o crc32.o LzmaWrapper.o 
-
-OBJS	= bootstrap_board_$(BOARDDIR).o LzmaDecode.o string.o crc32.o LzmaWrapper.o 
+OBJS	:= board.o LzmaDecode.o string.o crc32.o LzmaWrapper.o
+CFLAGS	+= -DCFG_BOOTSTRAP_CODE
 
 ifeq ($(BOOTSTRAP_PRINTF_STATUS), BOOTSTRAP_PRINTF_ENABLED)
-#overwrite objs
-OBJS	= bootstrap_board_$(BOARDDIR).o time.o console.o LzmaWrapper.o LzmaDecode.o crc32.o ctype.o display_options.o string.o vsprintf.o lists.o devices.o
+OBJS	+= time.o console.o ctype.o display_options.o vsprintf.o lists.o devices.o
 CFLAGS += -DDEBUG_ENABLE_BOOTSTRAP_PRINTF
 endif
 
-all:	.depend $(LIB)
+SRCS	:= $(OBJS:.o=.c)
+OBJS	:= $(addprefix $(obj),$(OBJS))
 
-$(LIB):	$(OBJS)
-	$(AR) crv $@ $(OBJS)
+all:	$(SRCS) $(obj).depend $(LIB)
+
+$(LIB):	$(obj).depend $(OBJS)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
+
+vpath %.c ../common ../lib_generic ../lib_$(CPU)
+
+board_bootstrap.c:
+	ln -s ../lib_$(CPU)/board.c $@
+
+#LzmaDecode.c LzmaWrapper.c string.c crc32.c:
+#	ln -s ../lib_generic/$@ $@
 
 #########################################################################
 
-.depend:	Makefile $(OBJS:.o=.c)
-		echo "make libbootstrap.a with HEAD_SIZE $(HEAD_SIZE)"
-		$(CC) -M $(CFLAGS) $(OBJS:.o=.c) > $@
+#include $(SRCTREE)/rules.mk
+$(obj).depend:	$(SRCS)
+		$(CC) -M $(CFLAGS) $^ > $@
 
-sinclude .depend
+sinclude $(obj).depend
 
 #########################################################################

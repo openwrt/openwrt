@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
 PKG_VERSION:=1.1.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -31,12 +31,33 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	cp -r ./files/* $(PKG_BUILD_DIR)
+	cp -r $(CP_OPTS) ./files/* $(PKG_BUILD_DIR)
 	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 endef
 
+UBOOT_CONFIG:=danube
+
+UBOOT_MAKE_OPTS:=\
+	CROSS_COMPILE=$(TARGET_CROSS) \
+	CROSS_COMPILE_UCLIBC=1 \
+	COMPRESS=lzma \
+	PLATFORM_CPU=mips32r2 \
+	UBOOT_RAM_TEXT_BASE=0xA0400000
+
+define Build/Configure
+	$(MAKE) -s -C $(PKG_BUILD_DIR) \
+		$(UBOOT_MAKE_OPTS) \
+		$(UBOOT_CONFIG)_config
+endef
+
 define Build/Compile
-	cd $(PKG_BUILD_DIR);chmod a+x build_danube.sh;./build_danube.sh
+	$(MAKE) -s -C $(PKG_BUILD_DIR) \
+		$(UBOOT_MAKE_OPTS) \
+		ifx_all
+	if [ `stat -c%s $(PKG_BUILD_DIR)/u-boot.ifx` -gt 65536 ] ;\
+	then \
+		echo "u-boot.ifx file has exceeded 64MB in size."; exit 1; \
+	fi
 endef
 
 define Package/uboot-ifxmips/install

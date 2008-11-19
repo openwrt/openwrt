@@ -20,6 +20,7 @@
 ** $Date        $Author         $Comment
 ** 2 Nov 2006   Lin Mars        init version which derived from LzmaTest.c from
 **                              LZMA v4.43 SDK
+** 24 May 2007	Lin Mars	Fix issue for multiple lzma_inflate involved
 *******************************************************************************/
 #define LZMA_NO_STDIO
 #ifndef LZMA_NO_STDIO
@@ -40,8 +41,10 @@
 #include "LzmaDecode.h"
 #include "LzmaWrapper.h"
 
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
 static const char *kCantReadMessage = "Can not read from source buffer";
 static const char *kCantAllocateMessage = "Not enough buffer for decompression";
+#endif
 
 static size_t rpos=0, dpos=0;
 
@@ -76,9 +79,13 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
 
   int res;
 
+  rpos=0; dpos=0;
+
   if (sizeof(UInt32) < 4)
   {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
     printf("LZMA decoder needs correct UInt32\n");
+#endif
     return LZMA_RESULT_DATA_ERROR;
   }
 
@@ -86,7 +93,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
     long length=s_len;
     if ((long)(SizeT)length != length)
     {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
       printf("Too big compressed stream\n");
+#endif
       return LZMA_RESULT_DATA_ERROR;
     }
     compressedSize = (SizeT)(length - (LZMA_PROPERTIES_SIZE + 8));
@@ -96,7 +105,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
 
   if (!MyReadFileAndCheck(source, properties, sizeof(properties)))
   {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
     printf("%s\n", kCantReadMessage);
+#endif
     return LZMA_RESULT_DATA_ERROR;
   }
 
@@ -108,7 +119,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
       unsigned char b;
       if (!MyReadFileAndCheck(source, &b, 1))
       {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
         printf("%s\n", kCantReadMessage);
+#endif
         return LZMA_RESULT_DATA_ERROR;
       }
       if (b != 0xFF)
@@ -121,7 +134,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
     
     if (waitEOS)
     {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
       printf("Stream with EOS marker is not supported");
+#endif
       return LZMA_RESULT_DATA_ERROR;
     }
     outSizeFull = (SizeT)outSize;
@@ -129,7 +144,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
       outSizeFull |= (((SizeT)outSizeHigh << 16) << 16);
     else if (outSizeHigh != 0 || (UInt32)(SizeT)outSize != outSize)
     {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
       printf("Too big uncompressed stream");
+#endif
       return LZMA_RESULT_DATA_ERROR;
     }
   }
@@ -137,7 +154,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
   /* Decode LZMA properties and allocate memory */
   if (LzmaDecodeProperties(&state.Properties, properties, LZMA_PROPERTIES_SIZE) != LZMA_RESULT_OK)
   {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
     printf("Incorrect stream properties");
+#endif
     return LZMA_RESULT_DATA_ERROR;
   }
   state.Probs = (CProb *)malloc(LzmaGetNumProbs(&state.Properties) * sizeof(CProb));
@@ -168,7 +187,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
     )
   {
     free(state.Probs);
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
     printf("%s\n", kCantAllocateMessage);
+#endif
     return LZMA_RESULT_DATA_ERROR;
   }
 
@@ -181,7 +202,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
       outStream, outSizeFull, &outProcessed);
     if (res != 0)
     {
+#if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
       printf("\nDecoding error = %d\n", res);
+#endif
       res = 1;
     }
     else

@@ -38,10 +38,10 @@ SECTIONS
 	}
 
         . = ALIGN(4);
-        .rodata  : { *(.rodata) }
+        .rodata  : { *(.rodata*) }
 
         . = ALIGN(4);
-        .data  : { *(.data) }
+        .data  : { *(.data*) }
 
 	. = ALIGN(4);
 	.sdata  : { *(.sdata) }
