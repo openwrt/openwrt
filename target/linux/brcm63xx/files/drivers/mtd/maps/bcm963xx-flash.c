@@ -184,7 +184,7 @@ static int bcm963xx_detect_cfe(struct mtd_info *master)
        ret = master->read(master, idoffset, 8, &retlen, (void *)buf);
        buf[retlen] = 0;
        printk("bcm963xx: Read Signature value of %s\n", buf);
-       return strncmp(idstring,buf,8);
+       return strncmp(idstring, buf, 8);
 }
 
 static int __init bcm963xx_mtd_init(void)
