@@ -73,6 +73,7 @@ endef
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 	$(call Image/Build/CFE,$(1),96345GW2,6345)
+	$(call Image/Build/CFE,$(1),96348GW,6348)
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358)
 	# Comtrend 536
