@@ -192,6 +192,28 @@ endef
 
 $(eval $(call KernelPackage,pcmcia-serial))
 
+define KernelPackage/ssb
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Silicon Sonics Backplane glue code
+  DEPENDS:=@PCI_SUPPORT @!TARGET_brcm47xx
+  KCONFIG:=\
+	CONFIG_SSB \
+	CONFIG_SSB_B43_PCI_BRIDGE \
+	CONFIG_SSB_DRIVER_PCICORE_POSSIBLE \
+	CONFIG_SSB_PCIHOST \
+	CONFIG_SSB_PCIHOST_POSSIBLE \
+	CONFIG_SSB_POSSIBLE \
+	CONFIG_SSB_SPROM
+  FILES:=$(LINUX_DIR)/drivers/ssb/ssb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,29,ssb)
+endef
+
+define KernelPackage/ssb/description
+  Silicon Sonics Backplane glue code.
+endef
+
+$(eval $(call KernelPackage,ssb))
+
 
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
