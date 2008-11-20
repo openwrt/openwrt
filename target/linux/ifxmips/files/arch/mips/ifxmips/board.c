@@ -258,7 +258,7 @@ static int __init ifxmips_set_ethaddr(char *str)
 			goto out;
 		if ((i != 5) && (str[(3 * i) + 2] != ':'))
 			goto out;
-		ifxmips_ethaddr[i] = strict_strtoul(&str[3 * i], NULL, 16);
+		ifxmips_ethaddr[i] = simple_strtoul(&str[3 * i], NULL, 16);
 	}
 	if (is_valid_ether_addr(ifxmips_ethaddr))
 		cmdline_mac = 1;
