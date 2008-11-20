@@ -7,7 +7,7 @@
 
 define Profile/Broadcom
   NAME:=Broadcom WiFi (default)
-  PACKAGES:=kmod-net-bcm43xx
+  PACKAGES:=kmod-b43
 endef
 
 define Profile/Broadcom/Description
