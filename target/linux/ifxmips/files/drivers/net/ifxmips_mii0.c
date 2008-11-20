@@ -14,7 +14,7 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2005 Wu Qi Ming <Qi-Ming.Wu@infineon.com>
- *   Copyright (C) 2008 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2008 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/kernel.h>
@@ -22,7 +22,7 @@
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/interrupt.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/in.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
@@ -32,9 +32,9 @@
 #include <linux/mm.h>
 #include <linux/platform_device.h>
 #include <linux/ethtool.h>
-#include <asm/checksum.h>
 #include <linux/init.h>
-#include <asm/delay.h>
+#include <linux/delay.h>
+#include <asm/checksum.h>
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_dma.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
@@ -83,9 +83,9 @@ ifxmips_ifxmips_mii_open(struct net_device *dev)
 	struct dma_device_info* dma_dev = priv->dma_device;
 	int i;
 
-	for(i = 0; i < dma_dev->max_rx_chan_num; i++)
+	for (i = 0; i < dma_dev->max_rx_chan_num; i++)
 	{
-		if((dma_dev->rx_chan[i])->control == IFXMIPS_DMA_CH_ON)
+		if ((dma_dev->rx_chan[i])->control == IFXMIPS_DMA_CH_ON)
 			(dma_dev->rx_chan[i])->open(dma_dev->rx_chan[i]);
 	}
 	netif_start_queue(dev);
@@ -98,7 +98,7 @@ ifxmips_mii_release(struct net_device *dev){
 	struct dma_device_info* dma_dev = priv->dma_device;
 	int i;
 
-	for(i = 0; i < dma_dev->max_rx_chan_num; i++)
+	for (i = 0; i < dma_dev->max_rx_chan_num; i++)
 		dma_dev->rx_chan[i]->close(dma_dev->rx_chan[i]);
 	netif_stop_queue(dev);
 	return 0;
@@ -114,7 +114,7 @@ ifxmips_mii_hw_receive(struct net_device* dev,struct dma_device_info* dma_dev)
 
 	len = dma_device_read(dma_dev, &buf, (void**)&skb);
 
-	if(len >= ETHERNET_PACKET_DMA_BUFFER_SIZE)
+	if (len >= ETHERNET_PACKET_DMA_BUFFER_SIZE)
 	{
 		printk(KERN_INFO "ifxmips_mii0: packet too large %d\n",len);
 		goto ifxmips_mii_hw_receive_err_exit;
@@ -122,13 +122,13 @@ ifxmips_mii_hw_receive(struct net_device* dev,struct dma_device_info* dma_dev)
 
 	/* remove CRC */
 	len -= 4;
-	if(skb == NULL)
+	if (skb == NULL)
 	{
 		printk(KERN_INFO "ifxmips_mii0: cannot restore pointer\n");
 		goto ifxmips_mii_hw_receive_err_exit;
 	}
 
-	if(len > (skb->end - skb->tail))
+	if (len > (skb->end - skb->tail))
 	{
 		printk(KERN_INFO "ifxmips_mii0: BUG, len:%d end:%p tail:%p\n",
 			(len+4), skb->end, skb->tail);
@@ -145,9 +145,9 @@ ifxmips_mii_hw_receive(struct net_device* dev,struct dma_device_info* dma_dev)
 	return 0;
 
 ifxmips_mii_hw_receive_err_exit:
-	if(len == 0)
+	if (len == 0)
 	{
-		if(skb)
+		if (skb)
 			dev_kfree_skb_any(skb);
 		priv->stats.rx_errors++;
 		priv->stats.rx_dropped++;
@@ -185,7 +185,7 @@ ifxmips_mii_tx(struct sk_buff *skb, struct net_device *dev)
 
 	wmb();
 
-	if(ifxmips_mii_hw_tx(data, len, dev) != len)
+	if (ifxmips_mii_hw_tx(data, len, dev) != len)
 	{
 		dev_kfree_skb_any(skb);
 		priv->stats.tx_errors++;
@@ -205,7 +205,7 @@ ifxmips_mii_tx_timeout(struct net_device *dev)
 	struct ifxmips_mii_priv* priv = (struct ifxmips_mii_priv*)dev->priv;
 
 	priv->stats.tx_errors++;
-	for(i = 0; i < priv->dma_device->max_tx_chan_num; i++)
+	for (i = 0; i < priv->dma_device->max_tx_chan_num; i++)
 		priv->dma_device->tx_chan[i]->disable_irq(priv->dma_device->tx_chan[i]);
 	netif_wake_queue(dev);
 	return;
@@ -233,7 +233,7 @@ dma_intr_handler(struct dma_device_info* dma_dev, int status)
 		break;
 
 	case TRANSMIT_CPT_INT:
-		for(i = 0; i < dma_dev->max_tx_chan_num; i++)
+		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
 			dma_dev->tx_chan[i]->disable_irq(dma_dev->tx_chan[i]);
 
 		netif_wake_queue(ifxmips_mii0_dev);
@@ -250,7 +250,7 @@ ifxmips_etop_dma_buffer_alloc(int len, int *byte_offset, void **opt)
 	struct sk_buff *skb = NULL;
 
 	skb = dev_alloc_skb(ETHERNET_PACKET_DMA_BUFFER_SIZE);
-	if(skb == NULL)
+	if (skb == NULL)
 		return NULL;
 
 	buffer = (unsigned char*)(skb->data);
@@ -266,7 +266,7 @@ ifxmips_etop_dma_buffer_free(unsigned char *dataptr, void *opt)
 {
 	struct sk_buff *skb = NULL;
 
-	if(opt == NULL)
+	if (opt == NULL)
 	{
 		kfree(dataptr);
 	} else {
@@ -298,7 +298,7 @@ ifxmips_mii_dev_init(struct net_device *dev)
 	memset(dev->priv, 0, sizeof(struct ifxmips_mii_priv));
 	priv = dev->priv;
 	priv->dma_device = dma_device_reserve("PPE");
-	if(!priv->dma_device){
+	if (!priv->dma_device){
 		BUG();
 		return -ENODEV;
 	}
@@ -307,14 +307,14 @@ ifxmips_mii_dev_init(struct net_device *dev)
 	priv->dma_device->intr_handler = &dma_intr_handler;
 	priv->dma_device->max_rx_chan_num = 4;
 
-	for(i = 0; i < priv->dma_device->max_rx_chan_num; i++)
+	for (i = 0; i < priv->dma_device->max_rx_chan_num; i++)
 	{
 		priv->dma_device->rx_chan[i]->packet_size = ETHERNET_PACKET_DMA_BUFFER_SIZE;
 		priv->dma_device->rx_chan[i]->control = IFXMIPS_DMA_CH_ON;
 	}
 
-	for(i = 0; i < priv->dma_device->max_tx_chan_num; i++)
-		if(i == 0)
+	for (i = 0; i < priv->dma_device->max_tx_chan_num; i++)
+		if (i == 0)
 			priv->dma_device->tx_chan[i]->control = IFXMIPS_DMA_CH_ON;
 		else
 			priv->dma_device->tx_chan[i]->control = IFXMIPS_DMA_CH_OFF;
@@ -322,7 +322,7 @@ ifxmips_mii_dev_init(struct net_device *dev)
 	dma_device_register(priv->dma_device);
 
 	printk(KERN_INFO "ifxmips_mii0: using mac=");
-	for(i = 0; i < 6; i++)
+	for (i = 0; i < 6; i++)
 	{
 		dev->dev_addr[i] = mac_addr[i];
 		printk("%02X%c", dev->dev_addr[i], (i == 5)?('\n'):(':'));
@@ -336,9 +336,9 @@ ifxmips_mii_chip_init(int mode)
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_PPE);
 
-	if(mode == REV_MII_MODE)
+	if (mode == REV_MII_MODE)
 		ifxmips_w32_mask(PPE32_MII_MASK, PPE32_MII_REVERSE, IFXMIPS_PPE32_CFG);
-	else if(mode == MII_MODE)
+	else if (mode == MII_MODE)
 		ifxmips_w32_mask(PPE32_MII_MASK, PPE32_MII_NORMAL, IFXMIPS_PPE32_CFG);
 	ifxmips_w32(PPE32_PLEN_UNDER | PPE32_PLEN_OVER, IFXMIPS_PPE32_IG_PLEN_CTRL);
 	ifxmips_w32(PPE32_CGEN, IFXMIPS_PPE32_ENET_MAC_CFG);

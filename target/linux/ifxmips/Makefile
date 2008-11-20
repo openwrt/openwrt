@@ -10,6 +10,7 @@ ARCH:=mips
 BOARD:=ifxmips
 BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2
+SUBTARGETS:=generic nfs
 LINUX_VERSION:=2.6.26.8
 
 include $(INCLUDE_DIR)/target.mk
