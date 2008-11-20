@@ -32,7 +32,7 @@
 static inline int gpio_direction_input(unsigned gpio) {
 	ifxmips_port_set_open_drain(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
 	ifxmips_port_clear_altsel0(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
-    ifxmips_port_clear_altsel1(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
+	ifxmips_port_clear_altsel1(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
 	ifxmips_port_set_dir_in(GPIO_TO_PORT(gpio), GPIO_TO_GPIO(gpio));
 	return 0;
 }
@@ -73,17 +73,17 @@ static inline int irq_to_gpio(unsigned irq) {
 }
 
 static inline int gpio_cansleep(unsigned gpio) {
-        return 0;
+	return 0;
 }
 
 static inline int gpio_get_value_cansleep(unsigned gpio) {
-        might_sleep();
-        return gpio_get_value(gpio);
+	might_sleep();
+ 	return gpio_get_value(gpio);
 }
 
 static inline void gpio_set_value_cansleep(unsigned gpio, int value) {
-        might_sleep();
-        gpio_set_value(gpio, value);
+	might_sleep();
+	gpio_set_value(gpio, value);
 }
 
 static inline int gpio_is_valid(int number)

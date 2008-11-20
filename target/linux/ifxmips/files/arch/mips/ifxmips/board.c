@@ -13,7 +13,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/autoconf.h>
@@ -27,23 +27,23 @@
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/etherdevice.h>
+#include <linux/reboot.h>
+#include <linux/time.h>
+#include <linux/io.h>
+#include <linux/gpio.h>
 #include <asm/bootinfo.h>
-#include <asm/reboot.h>
-#include <asm/time.h>
 #include <asm/irq.h>
-#include <asm/io.h>
-#include <asm/gpio.h>
 #include <asm/ifxmips/ifxmips.h>
 
 #define MAX_BOARD_NAME_LEN		32
 #define MAX_IFXMIPS_DEVS		9
 
 #define SYSTEM_DANUBE			"Danube"
-#define SYSTEM_DANUBE_CHIPID1	0x10129083
-#define SYSTEM_DANUBE_CHIPID2	0x3012B083
+#define SYSTEM_DANUBE_CHIPID1	0x00129083
+#define SYSTEM_DANUBE_CHIPID2	0x0012B083
 
 #define SYSTEM_TWINPASS			"Twinpass"
-#define SYSTEM_TWINPASS_CHIPID	0x3012D083
+#define SYSTEM_TWINPASS_CHIPID	0x0012D083
 
 enum {
 	EASY50712,
@@ -54,7 +54,7 @@ enum {
 extern int ifxmips_pci_external_clock;
 
 static unsigned int chiprev;
-static int cmdline_mac = 0;
+static int cmdline_mac;
 char board_name[MAX_BOARD_NAME_LEN + 1] = { 0 };
 
 struct ifxmips_board {
@@ -73,14 +73,12 @@ struct ifxmips_board {
 spinlock_t ebu_lock = SPIN_LOCK_UNLOCKED;
 EXPORT_SYMBOL_GPL(ebu_lock);
 
-static unsigned char ifxmips_mii_mac[6];
-static int ifxmips_brn = 0;
+static unsigned char ifxmips_ethaddr[6];
+static int ifxmips_brn;
 
 static struct gpio_led_platform_data ifxmips_led_data;
 
-static struct platform_device
-ifxmips_led =
-{
+static struct platform_device ifxmips_led = {
 	.id = 0,
 	.name = "ifxmips_led",
 	.dev = {
@@ -88,49 +86,39 @@ ifxmips_led =
 	}
 };
 
-static struct platform_device
-ifxmips_gpio =
-{
+static struct platform_device ifxmips_gpio = {
 	.id = 0,
 	.name = "ifxmips_gpio",
 	.num_resources = 1,
 };
 
-static struct platform_device
-ifxmips_mii =
-{
+static struct platform_device ifxmips_mii = {
 	.id = 0,
 	.name = "ifxmips_mii0",
 	.dev = {
-		.platform_data = ifxmips_mii_mac,
+		.platform_data = ifxmips_ethaddr,
 	}
 };
 
-static struct platform_device
-ifxmips_wdt =
-{
+static struct platform_device ifxmips_wdt = {
 	.id = 0,
 	.name = "ifxmips_wdt",
 };
 
-static struct resource
-ifxmips_mtd_resource = {
+static struct resource ifxmips_mtd_resource = {
 	.start  = IFXMIPS_FLASH_START,
 	.end    = IFXMIPS_FLASH_START + IFXMIPS_FLASH_MAX - 1,
 	.flags  = IORESOURCE_MEM,
 };
 
-static struct platform_device
-ifxmips_mtd =
-{
+static struct platform_device ifxmips_mtd = {
 	.id = 0,
 	.name = "ifxmips_mtd",
 	.num_resources  = 1,
 	.resource   = &ifxmips_mtd_resource,
 };
 
-static struct platform_device
-ifxmips_gpio_dev = {
+static struct platform_device ifxmips_gpio_dev = {
 	.name     = "GPIODEV",
 	.id     = -1,
 	.num_resources    =	1,
@@ -154,7 +142,7 @@ static struct platform_device ifxmips_gpio_leds = {
 	.id = -1,
 	.dev = {
 		.platform_data = (void *) &ifxmips_gpio_led_data,
-	 }
+	}
 };
 #endif
 
@@ -189,15 +177,15 @@ static struct gpio_led easy4010_leds[] = {
 	{ .name = "ifx:green:test3", .gpio = 3,},
 };
 
-static struct ifxmips_board boards[] =
-{
+static struct ifxmips_board boards[] = {
 	{
 		.type = EASY50712,
 		.name = "EASY50712",
 		.system_type = SYSTEM_DANUBE_CHIPID1,
 		.devs = easy50712_devs,
 		.reset_resource = {.name = "reset", .start = 1, .end = 15,},
-		.gpiodev_resource =	{.name = "gpio", .start = (1 << 0) | (1 << 1),
+		.gpiodev_resource = { .name = "gpio",
+			.start = (1 << 0) | (1 << 1),
 			.end = (1 << 0) | (1 << 1)},
 		.ifxmips_leds = easy50712_leds,
 	}, {
@@ -206,7 +194,8 @@ static struct ifxmips_board boards[] =
 		.system_type = SYSTEM_TWINPASS_CHIPID,
 		.devs = easy4010_devs,
 		.reset_resource = {.name = "reset", .start = 1, .end = 15},
-		.gpiodev_resource =	{.name = "gpio", .start = (1 << 0) | (1 << 1),
+		.gpiodev_resource = { .name = "gpio",
+			.start = (1 << 0) | (1 << 1),
 			.end = (1 << 0) | (1 << 1)},
 		.ifxmips_leds = easy4010_leds,
 	}, {
@@ -220,12 +209,11 @@ static struct ifxmips_board boards[] =
 	},
 };
 
-const char*
-get_system_type(void)
+const char *get_system_type(void)
 {
-	chiprev = ifxmips_r32(IFXMIPS_MPS_CHIPID);
-	switch(chiprev)
-	{
+	chiprev = (ifxmips_r32(IFXMIPS_MPS_CHIPID) & 0x0FFFFFFF);
+
+	switch (chiprev) {
 	case SYSTEM_DANUBE_CHIPID1:
 	case SYSTEM_DANUBE_CHIPID2:
 		return SYSTEM_DANUBE;
@@ -237,100 +225,99 @@ get_system_type(void)
 	return BOARD_SYSTEM_TYPE;
 }
 
-static int __init
-ifxmips_set_board_type(char *str)
+static int __init ifxmips_set_board_type(char *str)
 {
 	str = strchr(str, '=');
-	if(!str)
+	if (!str)
 		goto out;
 	str++;
-	if(strlen(str) > MAX_BOARD_NAME_LEN)
+	if (strlen(str) > MAX_BOARD_NAME_LEN)
 		goto out;
 	strncpy(board_name, str, MAX_BOARD_NAME_LEN);
-	printk("bootloader told us, that this is a %s board\n", board_name);
+	printk(KERN_INFO "bootloader told us, that this is a %s board\n",
+		board_name);
 out:
 	return 1;
 }
 __setup("ifxmips_board", ifxmips_set_board_type);
 
-static int __init
-ifxmips_set_mii0_mac(char *str)
+static int __init ifxmips_set_ethaddr(char *str)
 {
 #define IS_HEX(x) \
-	(((x >='0' && x <= '9') || (x >='a' && x <= 'f') || (x >='A' && x <= 'F'))?(1):(0))
+	(((x >= '0' && x <= '9') || (x >= 'a' && x <= 'f') \
+		|| (x >= 'A' && x <= 'F'))?(1):(0))
 	int i;
 	str = strchr(str, '=');
-	if(!str)
+	if (!str)
 		goto out;
 	str++;
-	if(strlen(str) != 17)
+	if (strlen(str) != 17)
 		goto out;
-	for(i = 0; i < 6; i++)
-	{
-		if(!IS_HEX(str[3 * i]) || !IS_HEX(str[(3 * i) + 1]))
+	for (i = 0; i < 6; i++) {
+		if (!IS_HEX(str[3 * i]) || !IS_HEX(str[(3 * i) + 1]))
 			goto out;
-		if((i != 5) && (str[(3 * i) + 2] != ':'))
+		if ((i != 5) && (str[(3 * i) + 2] != ':'))
 			goto out;
-		ifxmips_mii_mac[i] = simple_strtoul(&str[3 * i], NULL, 16);
+		ifxmips_ethaddr[i] = strict_strtoul(&str[3 * i], NULL, 16);
 	}
-	if(is_valid_ether_addr(ifxmips_mii_mac))
+	if (is_valid_ether_addr(ifxmips_ethaddr))
 		cmdline_mac = 1;
 out:
 	return 1;
 }
-__setup("mii0_mac", ifxmips_set_mii0_mac);
+__setup("ethaddr", ifxmips_set_ethaddr);
 
-int
-ifxmips_find_brn_block(void){
+int ifxmips_find_brn_block(void)
+{
 	unsigned char temp[8];
-	memcpy_fromio(temp, (void*)KSEG1ADDR(IFXMIPS_FLASH_START + 0x800000 - 0x10000), 8);
-	if(memcmp(temp, "BRN-BOOT", 8) == 0)
-	{
-		if(!cmdline_mac)
-			memcpy_fromio(ifxmips_mii_mac, (void*)KSEG1ADDR(IFXMIPS_FLASH_START + 0x800000 - 0x10000 + 0x16), 6);
-		cmdline_mac = 1;
+	memcpy_fromio(temp,
+		(void *)KSEG1ADDR(IFXMIPS_FLASH_START + 0x800000 - 0x10000), 8);
+	if (memcmp(temp, "BRN-BOOT", 8) == 0) {
+		if (!cmdline_mac)
+			memcpy_fromio(ifxmips_ethaddr,
+				(void *)KSEG1ADDR(IFXMIPS_FLASH_START +
+					0x800000 - 0x10000 + 0x16), 6);
+		if (is_valid_ether_addr(ifxmips_ethaddr))
+			cmdline_mac = 1;
 		return 1;
 	} else {
 		return 0;
 	}
 }
 
-int
-ifxmips_has_brn_block(void)
+int ifxmips_has_brn_block(void)
 {
 	return ifxmips_brn;
 }
 EXPORT_SYMBOL(ifxmips_has_brn_block);
 
-struct ifxmips_board*
-ifxmips_find_board(void)
+struct ifxmips_board *ifxmips_find_board(void)
 {
 	int i;
-	if(!*board_name)
+	if (!*board_name)
 		return 0;
-	for(i = 0; i < ARRAY_SIZE(boards); i++)
-		if((boards[i].system_type == chiprev) && (!strcmp(boards[i].name, board_name)))
+	for (i = 0; i < ARRAY_SIZE(boards); i++)
+		if ((boards[i].system_type == chiprev) &&
+		    (!strcmp(boards[i].name, board_name)))
 			return &boards[i];
 	return 0;
 }
 
-int __init
-ifxmips_init_devices(void)
+int __init ifxmips_init_devices(void)
 {
 	struct ifxmips_board *board = ifxmips_find_board();
 
-	chiprev = ifxmips_r32(IFXMIPS_MPS_CHIPID);
+	chiprev = (ifxmips_r32(IFXMIPS_MPS_CHIPID) & 0x0FFFFFFF);
 	ifxmips_brn = ifxmips_find_brn_block();
 
-	if(!cmdline_mac)
-		random_ether_addr(ifxmips_mii_mac);
+	if (!cmdline_mac)
+		random_ether_addr(ifxmips_ethaddr);
 
-	if(!board)
-	{
-		switch(chiprev)
-		{
+	if (!board) {
+		switch (chiprev) {
 		case SYSTEM_DANUBE_CHIPID1:
 		case SYSTEM_DANUBE_CHIPID2:
+		default:
 			board = &boards[0];
 			break;
 		case SYSTEM_TWINPASS_CHIPID:
@@ -339,8 +326,7 @@ ifxmips_init_devices(void)
 		}
 	}
 
-	switch(board->type)
-	{
+	switch (board->type) {
 	case EASY50712:
 		board->num_devs = ARRAY_SIZE(easy50712_devs);
 		ifxmips_led_data.num_leds = ARRAY_SIZE(easy50712_leds);
@@ -368,13 +354,14 @@ ifxmips_init_devices(void)
 #endif
 	ifxmips_led_data.leds = board->ifxmips_leds;
 
-	printk("%s:%s[%d]adding %d devs\n", __FILE__, __func__, __LINE__, board->num_devs);
+	printk(KERN_INFO "%s:%s[%d]adding %d devs\n",
+		__FILE__, __func__, __LINE__, board->num_devs);
 
 	ifxmips_gpio.resource = &board->reset_resource;
 	ifxmips_gpio_dev.resource = &board->gpiodev_resource;
-	if(board->pci_external_clock)
+	if (board->pci_external_clock)
 		ifxmips_pci_external_clock = 1;
-	printk("using board definition %s\n", board->name);
+	printk(KERN_INFO "using board definition %s\n", board->name);
 	return platform_add_devices(board->devs, board->num_devs);
 }
 
