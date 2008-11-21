@@ -27,7 +27,7 @@
 #include <common.h>
 
 #if (CONFIG_COMMANDS & CFG_CMD_NET) && defined(CONFIG_NET_MULTI) \
-    && defined(CONFIG_DANUBE_SWITCH)
+	&& defined(CONFIG_DANUBE_SWITCH)
 
 #include <malloc.h>
 #include <net.h>
@@ -41,17 +41,19 @@
 #define TX_CHAN_NO   7
 #define RX_CHAN_NO   6
 
-#define NUM_RX_DESC	PKTBUFSRX                  
+#define NUM_RX_DESC	PKTBUFSRX
 #define NUM_TX_DESC	8
 #define MAX_PACKET_SIZE 	1536
 #define TOUT_LOOP	100
-#define PHY0_ADDR       1 /*fixme: set the correct value here*/ 
+#define PHY0_ADDR       1 /*fixme: set the correct value here*/
 
 #define DMA_WRITE_REG(reg, value) *((volatile u32 *)reg) = (u32)value
 #define DMA_READ_REG(reg, value)    value = (u32)*((volatile u32*)reg)
 
-#define SW_WRITE_REG(reg, value)  *((volatile u32*)reg) = (u32)value  	
+#define SW_WRITE_REG(reg, value)  *((volatile u32*)reg) = (u32)value
 #define SW_READ_REG(reg, value)   value = (u32)*((volatile u32*)reg)
+
+#define TANTOS_CHIP_ID 0x2599
 
 typedef struct
 {
@@ -59,19 +61,19 @@ typedef struct
 	{
 		struct
 		{
-			volatile u32 OWN                 :1;
-			volatile u32 C	                 :1;
-			volatile u32 Sop                 :1;
-			volatile u32 Eop	         :1;
-			volatile u32 reserved		 :3;
-			volatile u32 Byteoffset		 :2; 
-			volatile u32 reserve             :7;
-			volatile u32 DataLen             :16;
+			volatile u32 OWN	:1;
+			volatile u32 C		:1;
+			volatile u32 Sop	:1;
+			volatile u32 Eop	:1;
+			volatile u32 reserved	:3;
+			volatile u32 Byteoffset	:2;
+			volatile u32 reserve	:7;
+			volatile u32 DataLen	:16;
 		}field;
 
 		volatile u32 word;
 	}status;
-	
+
 	volatile u32 DataPtr;
 } danube_rx_descriptor_t;
 
@@ -81,18 +83,18 @@ typedef struct
 	{
 		struct
 		{
-			volatile u32 OWN                 :1;
-			volatile u32 C	                 :1;
-			volatile u32 Sop                 :1;
-			volatile u32 Eop	         :1;
-			volatile u32 Byteoffset		 :5; 
-			volatile u32 reserved            :7;
-			volatile u32 DataLen             :16;
+			volatile u32 OWN	:1;
+			volatile u32 C		:1;
+			volatile u32 Sop	:1;
+			volatile u32 Eop	:1;
+			volatile u32 Byteoffset	:5;
+			volatile u32 reserved	:7;
+			volatile u32 DataLen	:16;
 		}field;
 
 		volatile u32 word;
 	}status;
-	
+
 	volatile u32 DataPtr;
 } danube_tx_descriptor_t;
 
@@ -115,7 +117,8 @@ static void danube_dma_init(void);
 int danube_switch_initialize(bd_t * bis)
 {
 	struct eth_device *dev;
-      
+	unsigned short chipid;
+
 #if 0
 	printf("Entered danube_switch_initialize()\n");
 #endif
@@ -129,21 +132,21 @@ int danube_switch_initialize(bd_t * bis)
 
 	danube_dma_init();
 	danube_init_switch_chip(REV_MII_MODE);
-        
+
 #ifdef CLK_OUT2_25MHZ
-       *DANUBE_GPIO_P0_DIR=0x0000ae78;
-       *DANUBE_GPIO_P0_ALTSEL0=0x00008078; 
-       //joelin for Mii-1       *DANUBE_GPIO_P0_ALTSEL1=0x80000080;
-       *DANUBE_GPIO_P0_ALTSEL1=0x80000000; //joelin for Mii-1 
-       *DANUBE_CGU_IFCCR=0x00400010;
-       *DANUBE_GPIO_P0_OD=0x0000ae78;
-#endif        
-       
-        /*patch for 6996*/
-	
+	*DANUBE_GPIO_P0_DIR=0x0000ae78;
+	*DANUBE_GPIO_P0_ALTSEL0=0x00008078;
+	//joelin for Mii-1       *DANUBE_GPIO_P0_ALTSEL1=0x80000080;
+	*DANUBE_GPIO_P0_ALTSEL1=0x80000000; //joelin for Mii-1
+	*DANUBE_CGU_IFCCR=0x00400010;
+	*DANUBE_GPIO_P0_OD=0x0000ae78;
+#endif
+
+	/*patch for 6996*/
+
 	*DANUBE_RCU_RST_REQ |=1;
-        mdelay(200);
-	*DANUBE_RCU_RST_REQ &=(unsigned long)~1; 
+	mdelay(200);
+	*DANUBE_RCU_RST_REQ &=(unsigned long)~1;
 	mdelay(1);
 	/*while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
 	*DANUBE_PPE_ETOP_MDIO_ACC =0x80123602;
@@ -160,29 +163,76 @@ int danube_switch_initialize(bd_t * bis)
 
 	eth_register(dev);
 
-#if 0
-	printf("Leaving danube_switch_initialize()\n");
+	while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+	*DANUBE_PPE_ETOP_MDIO_ACC =0xc1010000;
+	while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+	chipid = (unsigned short)(*DANUBE_PPE_ETOP_MDIO_ACC & 0xffff);
+
+	if (chipid != TANTOS_CHIP_ID) // not tantos switch.
+	{
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x8001840F;
+		while((*DANUBE_PPE_ETOP_MDIO_ACC)&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x8003840F;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x8005840F;
+		//while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		//*DANUBE_PPE_ETOP_MDIO_ACC =0x8006840F;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x8007840F;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x8008840F;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x8001840F;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x80123602;
+#ifdef CLK_OUT2_25MHZ
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x80334000;
 #endif
-	while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-	*DANUBE_PPE_ETOP_MDIO_ACC =0x8001840F;
-	while((*DANUBE_PPE_ETOP_MDIO_ACC)&0x80000000);
-	*DANUBE_PPE_ETOP_MDIO_ACC =0x8003840F;
-	while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-	*DANUBE_PPE_ETOP_MDIO_ACC =0x8005840F;
-	//while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-	//*DANUBE_PPE_ETOP_MDIO_ACC =0x8006840F;
-	while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-	*DANUBE_PPE_ETOP_MDIO_ACC =0x8007840F;
-	while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-	*DANUBE_PPE_ETOP_MDIO_ACC =0x8008840F;
-	while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-	*DANUBE_PPE_ETOP_MDIO_ACC =0x8001840F;
-        while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-	*DANUBE_PPE_ETOP_MDIO_ACC =0x80123602; 
-#ifdef CLK_OUT2_25MHZ         
-        while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
-        *DANUBE_PPE_ETOP_MDIO_ACC =0x80334000;
-#endif
+	}
+	else // Tantos switch chip
+	{
+		//printf("Tantos Switch detected!!\n\r");
+
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x80a10004;
+
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x80c10004;
+
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x80f50773;
+
+		/* Software workaround. */
+		/* PHY reset from P0 to P4. */
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+
+		mdelay(1);
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x81218000;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		mdelay(1);
+		/* P0 */
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x81200400;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		mdelay(1);
+		/* P1 */
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x81200420;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		mdelay(1);
+		/* P2 */
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x81200440;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		mdelay(1);
+		/* P3 */
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x81200460;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		mdelay(1);
+		/* p4 */
+		*DANUBE_PPE_ETOP_MDIO_ACC =0x81200480;
+		while(*DANUBE_PPE_ETOP_MDIO_ACC&0x80000000);
+		mdelay(1);
+	}
 
 	return 1;
 }
@@ -193,34 +243,33 @@ int danube_switch_init(struct eth_device *dev, bd_t * bis)
 
 	tx_num=0;
 	rx_num=0;
-	
-		/* Reset DMA 
-		 */
+
+	/* Reset DMA */
 //	serial_puts("i \n\0");
 
-       *DANUBE_DMA_CS=RX_CHAN_NO;
-       *DANUBE_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
-       *DANUBE_DMA_CPOLL= 0x80000040;
-       /*set descriptor base*/
-       *DANUBE_DMA_CDBA=(u32)rx_des_ring;
-       *DANUBE_DMA_CDLEN=NUM_RX_DESC;
-       *DANUBE_DMA_CIE = 0;
-       *DANUBE_DMA_CCTRL=0x30000;
-	 	
-       *DANUBE_DMA_CS=TX_CHAN_NO;
-       *DANUBE_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
-       *DANUBE_DMA_CPOLL= 0x80000040;
-       *DANUBE_DMA_CDBA=(u32)tx_des_ring;
-       *DANUBE_DMA_CDLEN=NUM_TX_DESC;  
-       *DANUBE_DMA_CIE = 0;
-       *DANUBE_DMA_CCTRL=0x30100;
-	
+	*DANUBE_DMA_CS=RX_CHAN_NO;
+	*DANUBE_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
+	*DANUBE_DMA_CPOLL= 0x80000040;
+	/*set descriptor base*/
+	*DANUBE_DMA_CDBA=(u32)rx_des_ring;
+	*DANUBE_DMA_CDLEN=NUM_RX_DESC;
+	*DANUBE_DMA_CIE = 0;
+	*DANUBE_DMA_CCTRL=0x30000;
+
+	*DANUBE_DMA_CS=TX_CHAN_NO;
+	*DANUBE_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
+	*DANUBE_DMA_CPOLL= 0x80000040;
+	*DANUBE_DMA_CDBA=(u32)tx_des_ring;
+	*DANUBE_DMA_CDLEN=NUM_TX_DESC;
+	*DANUBE_DMA_CIE = 0;
+	*DANUBE_DMA_CCTRL=0x30100;
+
 	for(i=0;i < NUM_RX_DESC; i++)
 	{
 		danube_rx_descriptor_t * rx_desc = KSEG1ADDR(&rx_des_ring[i]);
-		rx_desc->status.word=0;	
+		rx_desc->status.word=0;
 		rx_desc->status.field.OWN=1;
-		rx_desc->status.field.DataLen=PKTSIZE_ALIGN;   /* 1536  */	
+		rx_desc->status.field.DataLen=PKTSIZE_ALIGN;   /* 1536  */
 		rx_desc->DataPtr=(u32)KSEG1ADDR(NetRxPackets[i]);
 	}
 
@@ -230,20 +279,20 @@ int danube_switch_init(struct eth_device *dev, bd_t * bis)
 		memset(tx_desc, 0, sizeof(tx_des_ring[0]));
 	}
 		/* turn on DMA rx & tx channel
-		 */
-	 *DANUBE_DMA_CS=RX_CHAN_NO;
-	 *DANUBE_DMA_CCTRL|=1;/*reset and turn on the channel*/
-	
+		*/
+	*DANUBE_DMA_CS=RX_CHAN_NO;
+	*DANUBE_DMA_CCTRL|=1;/*reset and turn on the channel*/
+
 	return 0;
 }
 
 void danube_switch_halt(struct eth_device *dev)
 {
-        int i; 
-		for(i=0;i<8;i++)
+	int i;
+	for(i=0;i<8;i++)
 	{
-	   *DANUBE_DMA_CS=i;
-	   *DANUBE_DMA_CCTRL&=~1;/*stop the dma channel*/
+		*DANUBE_DMA_CS=i;
+		*DANUBE_DMA_CCTRL&=~1;/*stop the dma channel*/
 	}
 //	udelay(1000000);
 }
@@ -251,17 +300,17 @@ void danube_switch_halt(struct eth_device *dev)
 int danube_switch_send(struct eth_device *dev, volatile void *packet,int length)
 {
 
-	int                    	i;
-	int 		 	res = -1;
+	int i;
+	int res = -1;
 
 	danube_tx_descriptor_t * tx_desc= KSEG1ADDR(&tx_des_ring[tx_num]);
-	
+
 	if (length <= 0)
 	{
 		printf ("%s: bad packet size: %d\n", dev->name, length);
 		goto Done;
 	}
-	
+
 	for(i=0; tx_desc->status.field.OWN==1; i++)
 	{
 		if(i>=TOUT_LOOP)
@@ -280,44 +329,40 @@ int danube_switch_send(struct eth_device *dev, volatile void *packet,int length)
 	if(length<60)
 		tx_desc->status.field.DataLen = 60;
 	else
-		tx_desc->status.field.DataLen = (u32)length;	
-	
+		tx_desc->status.field.DataLen = (u32)length;
+
 	asm("SYNC");
 	tx_desc->status.field.OWN=1;
-			 	
+
 	res=length;
 	tx_num++;
-        if(tx_num==NUM_TX_DESC) tx_num=0;
+	if(tx_num==NUM_TX_DESC) tx_num=0;
 	*DANUBE_DMA_CS=TX_CHAN_NO;
-	  
+
 	if(!(*DANUBE_DMA_CCTRL & 1))
-	*DANUBE_DMA_CCTRL|=1;
-        
+		*DANUBE_DMA_CCTRL|=1;
+
 Done:
 	return res;
 }
 
 int danube_switch_recv(struct eth_device *dev)
 {
-
-	int                    length  = 0;
-
+	int length  = 0;
 	danube_rx_descriptor_t * rx_desc;
-        int anchor_num=0;
-	int i;
+
 	for (;;)
 	{
-	        rx_desc = KSEG1ADDR(&rx_des_ring[rx_num]);
+		rx_desc = KSEG1ADDR(&rx_des_ring[rx_num]);
 
-	        if ((rx_desc->status.field.C == 0) || (rx_desc->status.field.OWN == 1))
+		if ((rx_desc->status.field.C == 0) || (rx_desc->status.field.OWN == 1))
 		{
-		   break;
+			break;
 		}
-		 
-                
+
 		length = rx_desc->status.field.DataLen;
 		if (length)
-		{		
+		{
 			NetReceive((void*)KSEG1ADDR(NetRxPackets[rx_num]), length - 4);
 		//	serial_putc('*');
 		}
@@ -342,10 +387,8 @@ int danube_switch_recv(struct eth_device *dev)
 
 static void danube_init_switch_chip(int mode)
 {
-        int i;
-        /*get and set mac address for MAC*/
-        static unsigned char addr[6];
-        char *tmp,*end; 
+	/*get and set mac address for MAC*/
+	char *tmp;
 	tmp = getenv ("ethaddr");
 	if (NULL == tmp) {
 		printf("Can't get environment ethaddr!!!\n");
@@ -353,58 +396,55 @@ static void danube_init_switch_chip(int mode)
 	} else {
 		printf("ethaddr=%s\n", tmp);
 	}
-        *DANUBE_PMU_PWDCR = *DANUBE_PMU_PWDCR & 0xFFFFEFDF;
-        *DANUBE_PPE32_ETOP_MDIO_CFG &= ~0x6;
-        *DANUBE_PPE32_ENET_MAC_CFG = 0x187;
-  
-  // turn on port0, set to rmii and turn off port1.
-	if(mode==REV_MII_MODE)
-		{
-		 *DANUBE_PPE32_ETOP_CFG = (*DANUBE_PPE32_ETOP_CFG & 0xfffffffc) | 0x0000000a;
-                } 
+	*DANUBE_PMU_PWDCR = *DANUBE_PMU_PWDCR & 0xFFFFEFDF;
+	*DANUBE_PPE32_ETOP_MDIO_CFG &= ~0x6;
+	*DANUBE_PPE32_ENET_MAC_CFG = 0x187;
+
+	// turn on port0, set to rmii and turn off port1.
+	if (mode==REV_MII_MODE)
+	{
+		*DANUBE_PPE32_ETOP_CFG = (*DANUBE_PPE32_ETOP_CFG & 0xfffffffc) | 0x0000000a;
+	}
 	else if (mode == MII_MODE)
-	        {
+	{
 		*DANUBE_PPE32_ETOP_CFG = (*DANUBE_PPE32_ETOP_CFG & 0xfffffffc) | 0x00000008;
-                }	  
+	}
 
 	*DANUBE_PPE32_ETOP_IG_PLEN_CTRL = 0x4005ee; // set packetlen.
-        *ENET_MAC_CFG|=1<<11;/*enable the crc*/
+	*ENET_MAC_CFG |= 1<<11; /*enable the crc*/
 	return;
 }
 
 
 static void danube_dma_init(void)
 {
-        int i;
 //	serial_puts("d \n\0");
 
-        *DANUBE_PMU_PWDCR &=~(1<<DANUBE_PMU_DMA_SHIFT);/*enable DMA from PMU*/
-		/* Reset DMA 
-		 */
-	*DANUBE_DMA_CTRL|=1; 
-        *DANUBE_DMA_IRNEN=0;/*disable all the interrupts first*/
+	*DANUBE_PMU_PWDCR &=~(1<<DANUBE_PMU_DMA_SHIFT);/*enable DMA from PMU*/
+	/* Reset DMA */
+	*DANUBE_DMA_CTRL|=1;
+	*DANUBE_DMA_IRNEN=0;/*disable all the interrupts first*/
 
-	/* Clear Interrupt Status Register 		 
-	*/
+	/* Clear Interrupt Status Register */
 	*DANUBE_DMA_IRNCR=0xfffff;
 	/*disable all the dma interrupts*/
 	*DANUBE_DMA_IRNEN=0;
 	/*disable channel 0 and channel 1 interrupts*/
-	
-	  *DANUBE_DMA_CS=RX_CHAN_NO;
-	  *DANUBE_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
-          *DANUBE_DMA_CPOLL= 0x80000040;
-          /*set descriptor base*/
-          *DANUBE_DMA_CDBA=(u32)rx_des_ring;
-          *DANUBE_DMA_CDLEN=NUM_RX_DESC;
-          *DANUBE_DMA_CIE = 0;
-          *DANUBE_DMA_CCTRL=0x30000;
-	 	
+
+	*DANUBE_DMA_CS=RX_CHAN_NO;
+	*DANUBE_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
+	*DANUBE_DMA_CPOLL= 0x80000040;
+	/*set descriptor base*/
+	*DANUBE_DMA_CDBA=(u32)rx_des_ring;
+	*DANUBE_DMA_CDLEN=NUM_RX_DESC;
+	*DANUBE_DMA_CIE = 0;
+	*DANUBE_DMA_CCTRL=0x30000;
+
 	*DANUBE_DMA_CS=TX_CHAN_NO;
 	*DANUBE_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
-        *DANUBE_DMA_CPOLL= 0x80000040;
+	*DANUBE_DMA_CPOLL= 0x80000040;
 	*DANUBE_DMA_CDBA=(u32)tx_des_ring;
-        *DANUBE_DMA_CDLEN=NUM_TX_DESC;  
+	*DANUBE_DMA_CDLEN=NUM_TX_DESC;
 	*DANUBE_DMA_CIE = 0;
 	*DANUBE_DMA_CCTRL=0x30100;
 	/*enable the poll function and set the poll counter*/
@@ -415,9 +455,5 @@ static void danube_dma_init(void)
 
 	return;
 }
-
-
-
-
 
 #endif
