@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -32,6 +32,16 @@ define Image/Build
 		-v XS5.ar2313.OpenWRT \
 		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt5-$(1).bin \
 		-s 0xBE030000
+
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B np25g \
+		-p0x020000:0x130000:ah:0x80041000:linux:$(KDIR)/vmlinux.bin.gz  \
+		-p0x150000:0x2a0000:::rootfs:$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		$(BIN_DIR)/openwrt-$(BOARD)-np25g-$(1).bin
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B wpe53g \
+		-p0x020000:0x130000:ah:0x80041000:linux:$(KDIR)/vmlinux.bin.gz  \
+		-p0x150000:0x2a0000:::rootfs:$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		$(BIN_DIR)/openwrt-$(BOARD)-wpe53g-$(1).bin
+
 endef
 
 $(eval $(call BuildImage))
