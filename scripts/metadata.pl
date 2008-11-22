@@ -374,6 +374,7 @@ sub mconf_depends($$) {
 	my $res;
 	my $dep = shift;
 	my $seen = shift;
+	my $condition = shift;
 	$dep or $dep = {};
 	$seen or $seen = {};
 
@@ -383,11 +384,10 @@ sub mconf_depends($$) {
 		my $m = "depends";
 		$depend =~ s/^([@\+]+)//;
 		my $flags = $1;
-		my $condition;
 		my $vdep;
 
 		if ($depend =~ /^(.+):(.+)$/) {
-			$condition = $1;
+			$condition and $condition = "$condition && $1" or $condition = $1;
 			$depend = $2;
 		}
 		next if $seen->{$depend};
@@ -400,13 +400,13 @@ sub mconf_depends($$) {
 				# thus if FOO depends on other config options, these dependencies
 				# will not be checked. To fix this, we simply emit all of FOO's
 				# depends here as well.
-				$package{$depend} and mconf_depends($package{$depend}->{depends}, 1, $dep, $seen);
+				$package{$depend} and mconf_depends($package{$depend}->{depends}, 1, $dep, $seen, $condition);
 
 				$m = "select";
 				next if $only_dep;
 			};
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
-			$condition and $depend = "$depend if $condition";
+			$condition and ($m =~ /select/ and $depend = "$depend if $condition" or $depend = "!($condition) || $depend");
 		}
 		$dep->{$depend} =~ /select/ or $dep->{$depend} = $m;
 	}
@@ -588,7 +588,11 @@ sub gen_package_mk() {
 						$dep{$pkg->{src}."->".$idx} = 1;
 					}
 					if ($condition) {
-						$depline .= " \$(if \$(CONFIG_$condition),$depstr)";
+						if ($condition =~ /^!(.+)/) {
+							$depline .= " \$(if \$(CONFIG_$1),,$depstr)";
+						} else {
+							$depline .= " \$(if \$(CONFIG_$condition),$depstr)";
+						}
 					} else {
 						$depline .= " $depstr";
 					}
@@ -637,7 +641,7 @@ sub parse_command() {
 	print <<EOF
 Available Commands:
 	$0 target_config [file] 	Target metadata in Kconfig format
-	$0 package_mk [file]    	Package metadata in makefile format
+	$0 package_mk [file]        Package metadata in makefile format
 	$0 package_config [file] 	Package metadata in Kconfig format
 	$0 kconfig [file] [config]	Kernel config overrides
 
