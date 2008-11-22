@@ -641,7 +641,7 @@ sub parse_command() {
 	print <<EOF
 Available Commands:
 	$0 target_config [file] 	Target metadata in Kconfig format
-	$0 package_mk [file]        Package metadata in makefile format
+	$0 package_mk [file]		Package metadata in makefile format
 	$0 package_config [file] 	Package metadata in Kconfig format
 	$0 kconfig [file] [config]	Kernel config overrides
 
