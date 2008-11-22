@@ -1,0 +1,46 @@
+--- fuse-2.7.3.orig/lib/helper.c	2008-11-22 03:25:11.000000000 +0100
++++ fuse-2.7.3/lib/helper.c	2008-11-22 04:06:35.000000000 +0100
+@@ -178,13 +178,41 @@
+ int fuse_daemonize(int foreground)
+ {
+ 	int res;
++	int fd;
+ 
+ 	if (!foreground) {
+-		res = daemon(0, 0);
++		/* uClibc daemon() has problems with pthread and friends */
++		/* workaround from http://www.mail-archive.com/uclibc@uclibc.org/msg01073.html */
++		/* res = daemon(0, 0); */
++		switch (res = fork()) {
++			case -1:
++				return(-1);
++			case 0:
++				break;
++			default:
++				_exit(0);
++		}
++
+ 		if (res == -1) {
+-			perror("fuse: failed to daemonize program\n");
++			perror("fuse: failed to fork()\n");
+ 			return -1;
+ 		}
++
++		res=setsid();
++
++		if (res == -1) {
++			perror("fuse: failed to setsid()\n");
++		}
++
++		chdir("/");
++
++		if (fd = open("/dev/null", O_RDWR, 0) != -1) {
++			dup2(fd, STDIN_FILENO);
++			dup2(fd, STDOUT_FILENO);
++			dup2(fd, STDERR_FILENO);
++			if (fd > 2)
++				close(fd);
++		}
+ 	}
+ 	return 0;
+ }
