@@ -425,7 +425,7 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 
 
 #ifdef CONFIG_MTD_PARTITIONS
-static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
+static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "MyLoader", NULL };
 #endif
 
 
