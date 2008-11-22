@@ -72,12 +72,12 @@ endef
 define Package/libgcc
 $(call Package/gcc/Default)
   TITLE:=GCC support library
-  DEPENDS:=@!TARGET_avr32 @!NATIVE_TOOLCHAIN
+  DEPENDS+=@!TARGET_avr32
 endef
 
 define Package/libssp
 $(call Package/gcc/Default)
-  DEPENDS:=@SSP_SUPPORT
+  DEPENDS+=@SSP_SUPPORT
   TITLE:=GCC support library
 endef
 
@@ -85,7 +85,7 @@ define Package/libstdcpp
 $(call Package/gcc/Default)
   NAME:=libstdc++
   TITLE:=GNU Standard C++ Library v3
-  DEPENDS:=@!NATIVE_TOOLCHAIN&&@INSTALL_LIBSTDCPP
+  DEPENDS+=@INSTALL_LIBSTDCPP
 endef
 
 define Package/uclibc/Default
