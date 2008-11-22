@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2007 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -82,6 +82,7 @@ define Download/default
   FILE:=$(PKG_SOURCE)
   URL:=$(PKG_SOURCE_URL)
   PROTO:=$(PKG_SOURCE_PROTO)
+  SUBDIR:=$(PKG_SOURCE_SUBDIR)
   VERSION:=$(PKG_SOURCE_VERSION)
   MD5SUM:=$(PKG_MD5SUM)
 endef
