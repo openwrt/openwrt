@@ -30,6 +30,10 @@
 #define DEVID_COMPEX_WPP54AG	0x0550
 #define DEVID_COMPEX_WPP54G	0x0555
 
+/* Devices based on the Atheros AR2317 */
+#define DEVID_COMPEX_NP25G	0x05E6
+#define DEVID_COMPEX_WPE53G	0x05DC
+
 /* Devices based on the Atheros AR71xx */
 #define DEVID_COMPEX_WP543	0x0640
 
