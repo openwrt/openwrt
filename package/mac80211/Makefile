@@ -288,7 +288,7 @@ define KernelPackage/b43-common
   SUBMENU:=$(WMENU)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
-  DEPENDS:=+kmod-mac80211 $(if !$(CONFIG_TARGET_brcm47xx),+kmod-ssb)
+  DEPENDS:=+kmod-mac80211 +!TARGET_brcm47xx:kmod-ssb
 endef
 
 define KernelPackage/b43
