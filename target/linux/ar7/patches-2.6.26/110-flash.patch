@@ -13,25 +13,14 @@
  comment "User Modules And Translation Layers"
  
  config MTD_CHAR
---- a/drivers/mtd/Makefile
-+++ b/drivers/mtd/Makefile
-@@ -13,6 +13,7 @@ obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdli
- obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
- obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
- obj-$(CONFIG_MTD_OF_PARTS)      += ofpart.o
-+obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
- 
- # 'Users' - code which presents functionality to userspace.
- obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o
 --- a/drivers/mtd/maps/physmap.c
 +++ b/drivers/mtd/maps/physmap.c
-@@ -87,7 +87,8 @@ static int physmap_flash_remove(struct p
+@@ -87,7 +87,7 @@
  
  static const char *rom_probe_types[] = { "cfi_probe", "jedec_probe", "map_rom", NULL };
  #ifdef CONFIG_MTD_PARTITIONS
 -static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
-+static const char *part_probe_types[] = {"cmdlinepart", "RedBoot",
-+					"ar7part", NULL };
++static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "ar7part", NULL };
  #endif
  
  static int physmap_flash_probe(struct platform_device *dev)
