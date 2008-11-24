@@ -347,6 +347,7 @@ void __init ar71xx_add_device_leds_gpio(int id, unsigned num_leds,
 	if (!pdev)
 		goto err_free_leds;
 
+	memset(&pdata, 0, sizeof(pdata));
 	pdata.num_leds = num_leds;
 	pdata.leds = leds;
 
@@ -387,6 +388,7 @@ void __init ar71xx_add_device_gpio_buttons(int id,
 	if (!pdev)
 		goto err_free_buttons;
 
+	memset(&pdata, 0, sizeof(pdata));
 	pdata.poll_interval = poll_interval;
 	pdata.nbuttons = nbuttons;
 	pdata.buttons = p;
