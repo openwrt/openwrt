@@ -77,6 +77,7 @@ define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
   DEPENDS:=+kmod-crypto-core
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PADLOCK \
 	CONFIG_CRYPTO_DEV_PADLOCK_AES \
 	CONFIG_CRYPTO_DEV_PADLOCK_SHA
@@ -94,6 +95,7 @@ define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
   DEPENDS:=+kmod-crypto-core
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
   FILES:=$(LINUX_DIR)/drivers/crypto/geode-aes.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,geode-aes)
@@ -107,6 +109,7 @@ define KernelPackage/crypto-hw-hifn-795x
   TITLE:=HIFN 795x crypto accelerator
   DEPENDS:=+kmod-crypto-core +kmod-crypto-des
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
 	CONFIG_CRYPTO_DEV_HIFN_795X_RNG=y
   FILES:=$(LINUX_DIR)/drivers/crypto/hifn_795x.$(LINUX_KMOD_SUFFIX)
