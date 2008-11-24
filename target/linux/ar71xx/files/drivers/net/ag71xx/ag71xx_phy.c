@@ -255,13 +255,10 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 		}
 
 		/* mask with MAC supported features */
-		phydev->supported &= (SUPPORTED_10baseT_Half
-			| SUPPORTED_10baseT_Full
-			| SUPPORTED_100baseT_Half
-			| SUPPORTED_100baseT_Full
-			| SUPPORTED_Autoneg
-			| SUPPORTED_MII
-			| SUPPORTED_TP);
+		if (pdata->has_gbit)
+			phydev->supported &= PHY_GBIT_FEATURES;
+		else
+			phydev->supported &= PHY_BASIC_FEATURES;
 
 		phydev->advertising = phydev->supported;
 

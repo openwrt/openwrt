@@ -28,6 +28,8 @@ struct ag71xx_platform_data {
 	u32		flush_reg;
 	u32		mii_if;
 	u8		mac_addr[ETH_ALEN];
+
+	u8		has_gbit:1;
 };
 
 struct ag71xx_mdio_platform_data {
