@@ -25,7 +25,7 @@ endef
 define Image/BuildKernel
 	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
 
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.lzma
+	$(STAGING_DIR_HOST)/bin/lzma e $(LINUX_DIR)/arch/avr32/boot/images/vmlinux.bin $(KDIR)/vmlinux.lzma
 	mkimage -A avr32 -O linux -T kernel -a 0x10000000 -C lzma \
 		-e 0x90000000 \
 		-n 'OpenWrt Linux-$(LINUX_VERSION)' \
