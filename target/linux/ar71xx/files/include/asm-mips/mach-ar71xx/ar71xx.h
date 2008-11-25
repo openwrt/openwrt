@@ -92,6 +92,17 @@ extern u32 ar71xx_ahb_freq;
 extern u32 ar71xx_cpu_freq;
 extern u32 ar71xx_ddr_freq;
 
+enum ar71xx_soc_type {
+	AR71XX_SOC_UNKNOWN,
+	AR71XX_SOC_AR7130,
+	AR71XX_SOC_AR7141,
+	AR71XX_SOC_AR7161,
+	AR71XX_SOC_AR9130,
+	AR71XX_SOC_AR9132
+};
+
+extern enum ar71xx_soc_type ar71xx_soc;
+
 /*
  * PLL block
  */
@@ -321,6 +332,7 @@ extern void ar71xx_ddr_flush(u32 reg);
 #define REV_ID_CHIP_AR7141	0xa1
 #define REV_ID_CHIP_AR7161	0xa2
 #define REV_ID_CHIP_AR9130	0xb0
+#define REV_ID_CHIP_AR9132	0xb1
 
 #define REV_ID_REVISION_MASK	0x3
 #define REV_ID_REVISION_SHIFT	2

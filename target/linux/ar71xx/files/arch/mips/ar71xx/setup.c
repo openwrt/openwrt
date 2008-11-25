@@ -44,6 +44,9 @@ EXPORT_SYMBOL_GPL(ar71xx_ahb_freq);
 u32 ar71xx_ddr_freq;
 EXPORT_SYMBOL_GPL(ar71xx_ddr_freq);
 
+enum ar71xx_soc_type ar71xx_soc;
+EXPORT_SYMBOL_GPL(ar71xx_soc);
+
 int (*ar71xx_pci_bios_init)(unsigned nr_irqs,
 			     struct ar71xx_pci_irq *map) __initdata;
 
@@ -105,21 +108,35 @@ static void __init ar71xx_detect_sys_type(void)
 
 	id = ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK;
 	rev = (id >> REV_ID_REVISION_SHIFT) & REV_ID_REVISION_MASK;
+
 	switch (id & REV_ID_CHIP_MASK) {
 	case REV_ID_CHIP_AR7130:
+		ar71xx_soc = AR71XX_SOC_AR7130;
 		chip = "7130";
 		break;
+
 	case REV_ID_CHIP_AR7141:
+		ar71xx_soc = AR71XX_SOC_AR7141;
 		chip = "7141";
 		break;
+
 	case REV_ID_CHIP_AR7161:
+		ar71xx_soc = AR71XX_SOC_AR7161;
 		chip = "7161";
 		break;
+
 	case REV_ID_CHIP_AR9130:
+		ar71xx_soc = AR71XX_SOC_AR9130;
 		chip = "9130";
 		break;
+
+	case REV_ID_CHIP_AR9132:
+		ar71xx_soc = AR71XX_SOC_AR9132;
+		chip = "9132";
+		break;
+
 	default:
-		chip = "71xx";
+		panic("ar71xx: unknown chip id:0x%02x\n", id);
 	}
 
 	sprintf(ar71xx_sys_type, "Atheros AR%s rev %u (id:0x%02x)",
@@ -152,11 +169,6 @@ static void __init ar71xx_detect_sys_frequency(void)
 	u32 freq;
 	u32 div;
 
-	if ((ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK) >=
-			REV_ID_CHIP_AR9130) {
-		return ar91xx_detect_sys_frequency();
-	}
-
 	pll = ar71xx_pll_rr(PLL_REG_CPU_PLL_CFG);
 
 	div = ((pll >> AR71XX_PLL_DIV_SHIFT) & AR71XX_PLL_DIV_MASK) + 1;
@@ -170,6 +182,25 @@ static void __init ar71xx_detect_sys_frequency(void)
 
 	div = (((pll >> AR71XX_AHB_DIV_SHIFT) & AR71XX_AHB_DIV_MASK) + 1) * 2;
 	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
+}
+
+static void __init detect_sys_frequency(void)
+{
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		ar71xx_detect_sys_frequency();
+		break;
+
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		ar91xx_detect_sys_frequency();
+		break;
+
+	default:
+		BUG();
+	}
 }
 
 #ifdef CONFIG_AR71XX_EARLY_SERIAL
@@ -222,7 +253,7 @@ void __init plat_mem_setup(void)
 
 	ar71xx_detect_mem_size();
 	ar71xx_detect_sys_type();
-	ar71xx_detect_sys_frequency();
+	detect_sys_frequency();
 
 	_machine_restart = ar71xx_restart;
 	_machine_halt = ar71xx_halt;
