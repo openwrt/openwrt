@@ -254,6 +254,7 @@ static int ar71xx_eth_instance __initdata;
 void __init ar71xx_add_device_eth(unsigned int id)
 {
 	struct platform_device *pdev;
+	struct ag71xx_platform_data *pdata;
 
 	switch (id) {
 	case 0:
@@ -271,10 +272,10 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			ar71xx_eth0_data.mii_if = MII0_CTRL_IF_RMII;
 			break;
 		default:
-			BUG();
+			printk(KERN_ERR "ar71xx: invalid PHY interface mode "
+					"for eth0\n");
+			return;
 		}
-		memcpy(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
-		ar71xx_eth0_data.mac_addr[5] += ar71xx_eth_instance;
 		pdev = &ar71xx_eth0_device;
 		break;
 	case 1:
@@ -286,21 +287,52 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			ar71xx_eth1_data.mii_if = MII1_CTRL_IF_RGMII;
 			break;
 		default:
-			BUG();
+			printk(KERN_ERR "ar71xx: invalid PHY interface mode "
+					"for eth1\n");
+			return;
 		}
-		memcpy(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, ETH_ALEN);
-		ar71xx_eth1_data.mac_addr[5] += ar71xx_eth_instance;
 		pdev = &ar71xx_eth1_device;
 		break;
 	default:
-		pdev = NULL;
+		printk(KERN_ERR "ar71xx: invalid ethernet id %d\n", id);
+		return;
+	}
+
+	pdata = pdev->dev.platform_data;
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+	case AR71XX_SOC_AR9132:
+		pdata->has_gbit = 1;
+		break;
+
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR9130:
+		break;
+
+	default:
+		BUG();
+	}
+
+	switch (pdata->phy_if_mode) {
+	case PHY_INTERFACE_MODE_GMII:
+	case PHY_INTERFACE_MODE_RGMII:
+		if (!pdata->has_gbit) {
+			printk(KERN_ERR "ar71xx: no gigabit available on eth%d\n",
+					id);
+			return;
+		}
+		/* fallthrough */
+	default:
 		break;
 	}
 
-	if (pdev) {
-		platform_device_register(pdev);
-		ar71xx_eth_instance++;
-	}
+	memcpy(pdata->mac_addr, ar71xx_mac_base, ETH_ALEN);
+	pdata->mac_addr[5] += ar71xx_eth_instance;
+
+	platform_device_register(pdev);
+	ar71xx_eth_instance++;
 }
 
 static struct resource ar71xx_spi_resources[] = {
@@ -432,7 +464,7 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 	if (t == ETH_ALEN)
 		ar71xx_set_mac_base(tmp);
 	else
-		printk(KERN_DEBUG "AR71XX: failed to parse mac address "
+		printk(KERN_DEBUG "ar71xx: failed to parse mac address "
 				"\"%s\"\n", mac_str);
 }
 
