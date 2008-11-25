@@ -1,3 +1,20 @@
+--- a/include/linux/netfilter_ipv4/Kbuild
++++ b/include/linux/netfilter_ipv4/Kbuild
+@@ -59,3 +59,14 @@
+ unifdef-y += ip_nat_rule.h
+ unifdef-y += ip_queue.h
+ unifdef-y += ip_tables.h
++
++unifdef-y += ip_set.h
++header-y  += ip_set_iphash.h
++header-y  += ip_set_ipmap.h
++header-y  += ip_set_ipporthash.h
++unifdef-y += ip_set_iptree.h
++unifdef-y += ip_set_iptreemap.h
++header-y  += ip_set_jhash.h
++header-y  += ip_set_macipmap.h
++unifdef-y += ip_set_nethash.h
++header-y  += ip_set_portmap.h
 Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ip_set.h
 ===================================================================
 --- /dev/null
