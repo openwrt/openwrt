@@ -46,6 +46,9 @@ static struct board_rec boards[] __initdata = {
 	}, {
 		.name		= "AW-NR580",
 		.mach_type	= MACH_AR71XX_AW_NR580,
+	}, {
+		.name		= "AP83",
+		.mach_type	= MACH_AR71XX_AP83,
 	}
 };
 
@@ -59,6 +62,10 @@ static __init char *ar71xx_prom_getargv(const char *name)
 
 	for (i = 0; i < ar71xx_prom_argc; i++) {
 		char *argv = ar71xx_prom_argv[i];
+
+		if (!argv)
+			continue;
+
 		if (strncmp(name, argv, len) == 0 && (argv)[len] == '=')
 			return argv + len + 1;
 	}
