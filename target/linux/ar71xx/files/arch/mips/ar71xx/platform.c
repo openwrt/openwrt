@@ -198,7 +198,7 @@ static struct resource ar71xx_eth0_resources[] = {
 
 struct ag71xx_platform_data ar71xx_eth0_data = {
 	.reset_bit	= RESET_MODULE_GE0_MAC,
-	.flush_reg	= DDR_REG_FLUSH_GE0,
+	.flush_reg	= AR71XX_DDR_REG_FLUSH_GE0,
 };
 
 static struct platform_device ar71xx_eth0_device = {
@@ -237,7 +237,7 @@ static struct resource ar71xx_eth1_resources[] = {
 
 struct ag71xx_platform_data ar71xx_eth1_data = {
 	.reset_bit	= RESET_MODULE_GE1_MAC,
-	.flush_reg	= DDR_REG_FLUSH_GE1,
+	.flush_reg	= AR71XX_DDR_REG_FLUSH_GE1,
 };
 
 static struct platform_device ar71xx_eth1_device = {

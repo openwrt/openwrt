@@ -316,14 +316,14 @@ static int __init __ar71xx_pci_bios_init(unsigned nr_irqs,
 	ar71xx_pcicfg_base = ioremap_nocache(AR71XX_PCI_CFG_BASE,
 						AR71XX_PCI_CFG_SIZE);
 
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN0, PCI_WIN0_OFFS);
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN1, PCI_WIN1_OFFS);
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN2, PCI_WIN2_OFFS);
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN3, PCI_WIN3_OFFS);
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN4, PCI_WIN4_OFFS);
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN5, PCI_WIN5_OFFS);
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN6, PCI_WIN6_OFFS);
-	ar71xx_ddr_wr(DDR_REG_PCI_WIN7, PCI_WIN7_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN0, PCI_WIN0_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN1, PCI_WIN1_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN2, PCI_WIN2_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN3, PCI_WIN3_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN4, PCI_WIN4_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN5, PCI_WIN5_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN6, PCI_WIN6_OFFS);
+	ar71xx_ddr_wr(AR71XX_DDR_REG_PCI_WIN7, PCI_WIN7_OFFS);
 
 	ar71xx_pci_delay();
 
