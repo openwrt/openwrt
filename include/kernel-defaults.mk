@@ -12,9 +12,6 @@ endif
 ifneq (,$(findstring rdc,$(BOARD)))
   KERNELNAME="bzImage"
 endif
-ifneq (,$(findstring ppc,$(BOARD)))
-  KERNELNAME="uImage"
-endif
 ifneq (,$(findstring avr32,$(BOARD)))
   KERNELNAME="uImage"
 endif
