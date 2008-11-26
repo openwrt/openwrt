@@ -27,7 +27,15 @@ define Image/Build/jffs2-128k
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
 		dd if=$(KDIR)/openwrt-kilauea.dtb bs=128k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-jffs2.img
+	) > $(BIN_DIR)/openwrt-$(BOARD)-kilauea-jffs2.img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv1 bs=1024k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv1-jffs2.img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv2 bs=1024k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv2-jffs2.img
 endef
 
 define Image/Build/squashfs
@@ -36,7 +44,15 @@ define Image/Build/squashfs
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
 		dd if=$(KDIR)/openwrt-kilauea.dtb bs=128k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
+	) > $(BIN_DIR)/openwrt-$(BOARD)-kilauea-$(1).img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv1 bs=1024k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv1-$(1).img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv2 bs=1024k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv2-$(1).img
 endef
 
 $(eval $(call BuildImage))
