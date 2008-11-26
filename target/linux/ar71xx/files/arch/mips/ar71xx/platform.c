@@ -172,6 +172,79 @@ void __init ar71xx_add_device_mdio(u32 phy_mask)
 	platform_device_register(&ar71xx_mdio_device);
 }
 
+static void ar71xx_set_pll(u32 cfg_reg, u32 pll_reg, u32 pll_val, u32 shift)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
+
+	t = __raw_readl(base + cfg_reg);
+	t &= ~(3 << shift);
+	t |=  (2 << shift);
+	__raw_writel(t, base + cfg_reg);
+	udelay(100);
+
+	__raw_writel(pll_val, base + pll_reg);
+
+	t |= (3 << shift);
+	__raw_writel(t, base + cfg_reg);
+	udelay(100);
+
+	t &= ~(3 << shift);
+	__raw_writel(t, base + cfg_reg);
+	udelay(100);
+
+	printk(KERN_DEBUG "ar71xx: pll_reg %#x: %#x\n",
+		(unsigned int)(base + pll_reg), __raw_readl(base + pll_reg));
+
+	iounmap(base);
+}
+
+static void ar71xx_set_pll_ge0(u32 val)
+{
+	ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG, AR71XX_PLL_REG_ETH0_INT_CLOCK,
+			val, AR71XX_ETH0_PLL_SHIFT);
+}
+
+static void ar71xx_set_pll_ge1(u32 val)
+{
+	ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG, AR71XX_PLL_REG_ETH1_INT_CLOCK,
+			 val, AR71XX_ETH1_PLL_SHIFT);
+}
+
+static void ar91xx_set_pll_ge0(u32 val)
+{
+	ar71xx_set_pll(AR91XX_PLL_REG_ETH_CONFIG, AR91XX_PLL_REG_ETH0_INT_CLOCK,
+			 val, AR91XX_ETH0_PLL_SHIFT);
+}
+
+static void ar91xx_set_pll_ge1(u32 val)
+{
+	ar71xx_set_pll(AR91XX_PLL_REG_ETH_CONFIG, AR91XX_PLL_REG_ETH1_INT_CLOCK,
+			 val, AR91XX_ETH1_PLL_SHIFT);
+}
+
+static void ar71xx_ddr_flush_ge0(void)
+{
+	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_GE0);
+}
+
+static void ar71xx_ddr_flush_ge1(void)
+{
+	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_GE1);
+}
+
+static void ar91xx_ddr_flush_ge0(void)
+{
+	ar71xx_ddr_flush(AR91XX_DDR_REG_FLUSH_GE0);
+}
+
+static void ar91xx_ddr_flush_ge1(void)
+{
+	ar71xx_ddr_flush(AR91XX_DDR_REG_FLUSH_GE1);
+}
+
 static struct resource ar71xx_eth0_resources[] = {
 	{
 		.name	= "mac_base",
@@ -198,7 +271,6 @@ static struct resource ar71xx_eth0_resources[] = {
 
 struct ag71xx_platform_data ar71xx_eth0_data = {
 	.reset_bit	= RESET_MODULE_GE0_MAC,
-	.flush_reg	= AR71XX_DDR_REG_FLUSH_GE0,
 };
 
 static struct platform_device ar71xx_eth0_device = {
@@ -237,7 +309,6 @@ static struct resource ar71xx_eth1_resources[] = {
 
 struct ag71xx_platform_data ar71xx_eth1_data = {
 	.reset_bit	= RESET_MODULE_GE1_MAC,
-	.flush_reg	= AR71XX_DDR_REG_FLUSH_GE1,
 };
 
 static struct platform_device ar71xx_eth1_device = {
@@ -301,14 +372,35 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	pdata = pdev->dev.platform_data;
 
 	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+		pdata->ddr_flush = id ? ar71xx_ddr_flush_ge1
+				      : ar71xx_ddr_flush_ge0;
+		pdata->set_pll =  id ? ar71xx_set_pll_ge1
+				     : ar71xx_set_pll_ge0;
+		break;
+
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
-	case AR71XX_SOC_AR9132:
+		pdata->ddr_flush = id ? ar71xx_ddr_flush_ge1
+				      : ar71xx_ddr_flush_ge0;
+		pdata->set_pll =  id ? ar71xx_set_pll_ge1
+				     : ar71xx_set_pll_ge0;
 		pdata->has_gbit = 1;
 		break;
 
-	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR9130:
+		pdata->ddr_flush = id ? ar91xx_ddr_flush_ge1
+				      : ar91xx_ddr_flush_ge0;
+		pdata->set_pll =  id ? ar91xx_set_pll_ge1
+				     : ar91xx_set_pll_ge0;
+		break;
+
+	case AR71XX_SOC_AR9132:
+		pdata->ddr_flush = id ? ar91xx_ddr_flush_ge1
+				      : ar91xx_ddr_flush_ge0;
+		pdata->set_pll =  id ? ar91xx_set_pll_ge1
+				      : ar91xx_set_pll_ge0;
+		pdata->has_gbit = 1;
 		break;
 
 	default:
@@ -319,7 +411,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	case PHY_INTERFACE_MODE_GMII:
 	case PHY_INTERFACE_MODE_RGMII:
 		if (!pdata->has_gbit) {
-			printk(KERN_ERR "ar71xx: no gigabit available on eth%d\n",
+			printk(KERN_ERR "ar71xx: no gbit available on eth%d\n",
 					id);
 			return;
 		}

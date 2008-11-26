@@ -37,7 +37,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.4.4"
+#define AG71XX_DRV_VERSION	"0.5.0"
 
 #define AG71XX_NAPI_TX		1
 
@@ -331,6 +331,8 @@ static inline u32 ag71xx_rr(struct ag71xx *ag, unsigned reg)
 		reg -= AG71XX_REG_MAC_IFCTL;
 		ret = __raw_readl(ag->mac_base2 + reg);
 		break;
+	default:
+		BUG();
 	}
 
 	return ret;
