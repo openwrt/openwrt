@@ -13,46 +13,6 @@
 
 #include "ag71xx.h"
 
-#define PLL_SEC_CONFIG		0x18050004
-#define PLL_ETH0_INT_CLOCK	0x18050010
-#define PLL_ETH1_INT_CLOCK	0x18050014
-#define PLL_ETH_EXT_CLOCK	0x18050018
-
-#define ag71xx_pll_shift(_ag)   (((_ag)->pdev->id) ? 19 : 17)
-#define ag71xx_pll_offset(_ag)	(((_ag)->pdev->id) ? PLL_ETH1_INT_CLOCK \
-						   : PLL_ETH0_INT_CLOCK)
-
-static void ag71xx_set_pll(struct ag71xx *ag, u32 pll_val)
-{
-	void __iomem *pll_reg = ioremap_nocache(ag71xx_pll_offset(ag), 4);
-	void __iomem *pll_cfg = ioremap_nocache(PLL_SEC_CONFIG, 4);
-	u32 s;
-	u32 t;
-
-	s = ag71xx_pll_shift(ag);
-
-	t = __raw_readl(pll_cfg);
-	t &= ~(3 << s);
-	t |=  (2 << s);
-	__raw_writel(t, pll_cfg);
-	udelay(100);
-
-	__raw_writel(pll_val, pll_reg);
-
-	t |= (3 << s);
-	__raw_writel(t, pll_cfg);
-	udelay(100);
-
-	t &= ~(3 << s);
-	__raw_writel(t, pll_cfg);
-	udelay(100);
-	DBG("%s: pll_reg %#x: %#x\n", ag->dev->name,
-			(unsigned int)pll_reg, __raw_readl(pll_reg));
-
-	iounmap(pll_cfg);
-	iounmap(pll_reg);
-}
-
 static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
 {
 	switch (ag->speed) {
@@ -79,6 +39,7 @@ static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
 
 static void ag71xx_phy_link_update(struct ag71xx *ag)
 {
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	u32 cfg2;
 	u32 ifctl;
 	u32 pll;
@@ -126,7 +87,7 @@ static void ag71xx_phy_link_update(struct ag71xx *ag)
 	}
 
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, 0x008001ff);
-	ag71xx_set_pll(ag, pll);
+	pdata->set_pll(pll);
 	ag71xx_mii_ctrl_set_speed(ag, mii_speed);
 
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);

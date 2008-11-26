@@ -149,7 +149,7 @@ static void __init ar91xx_detect_sys_frequency(void)
 	u32 freq;
 	u32 div;
 
-	pll = ar71xx_pll_rr(PLL_REG_CPU_PLL_CFG);
+	pll = ar71xx_pll_rr(AR91XX_PLL_REG_CPU_CONFIG);
 
 	div = ((pll >> AR91XX_PLL_DIV_SHIFT) & AR91XX_PLL_DIV_MASK);
 	freq = div * AR91XX_BASE_FREQ;
@@ -169,7 +169,7 @@ static void __init ar71xx_detect_sys_frequency(void)
 	u32 freq;
 	u32 div;
 
-	pll = ar71xx_pll_rr(PLL_REG_CPU_PLL_CFG);
+	pll = ar71xx_pll_rr(AR71XX_PLL_REG_CPU_CONFIG);
 
 	div = ((pll >> AR71XX_PLL_DIV_SHIFT) & AR71XX_PLL_DIV_MASK) + 1;
 	freq = div * AR71XX_BASE_FREQ;

@@ -25,11 +25,13 @@ struct ag71xx_platform_data {
 	int		speed;
 	int		duplex;
 	u32		reset_bit;
-	u32		flush_reg;
 	u32		mii_if;
 	u8		mac_addr[ETH_ALEN];
 
 	u8		has_gbit:1;
+
+	void		(* ddr_flush)(void);
+	void		(* set_pll)(u32 pll);
 };
 
 struct ag71xx_mdio_platform_data {

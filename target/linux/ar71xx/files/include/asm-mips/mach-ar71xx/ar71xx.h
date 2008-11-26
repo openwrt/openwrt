@@ -106,13 +106,10 @@ extern enum ar71xx_soc_type ar71xx_soc;
 /*
  * PLL block
  */
-#define PLL_REG_CPU_PLL_CFG	0x00
-#define PLL_REG_SEC_PLL_CFG	0x04
-#define PLL_REG_CPU_CLK_CTRL	0x08
-#define PLL_REG_ETH_INT0_CLK	0x10
-#define PLL_REG_ETH_INT1_CLK	0x14
-#define PLL_REG_ETH_EXT_CLK	0x18
-#define PLL_REG_PCI_CLK		0x1c
+#define AR71XX_PLL_REG_CPU_CONFIG	0x00
+#define AR71XX_PLL_REG_SEC_CONFIG	0x04
+#define AR71XX_PLL_REG_ETH0_INT_CLOCK	0x10
+#define AR71XX_PLL_REG_ETH1_INT_CLOCK	0x14
 
 #define AR71XX_PLL_DIV_SHIFT		3
 #define AR71XX_PLL_DIV_MASK		0x1f
@@ -123,12 +120,23 @@ extern enum ar71xx_soc_type ar71xx_soc;
 #define AR71XX_AHB_DIV_SHIFT		20
 #define AR71XX_AHB_DIV_MASK		0x7
 
+#define AR71XX_ETH0_PLL_SHIFT		17
+#define AR71XX_ETH1_PLL_SHIFT		19
+
+#define AR91XX_PLL_REG_CPU_CONFIG	0x00
+#define AR91XX_PLL_REG_ETH_CONFIG	0x04
+#define AR91XX_PLL_REG_ETH0_INT_CLOCK	0x14
+#define AR91XX_PLL_REG_ETH1_INT_CLOCK	0x18
+
 #define AR91XX_PLL_DIV_SHIFT		0
 #define AR91XX_PLL_DIV_MASK		0x3ff
 #define AR91XX_DDR_DIV_SHIFT		22
 #define AR91XX_DDR_DIV_MASK		0x3
 #define AR91XX_AHB_DIV_SHIFT		19
 #define AR91XX_AHB_DIV_MASK		0x1
+
+#define AR91XX_ETH0_PLL_SHIFT		20
+#define AR91XX_ETH1_PLL_SHIFT		22
 
 extern void __iomem *ar71xx_pll_base;
 

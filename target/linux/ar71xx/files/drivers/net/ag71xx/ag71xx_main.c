@@ -384,7 +384,7 @@ static int ag71xx_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	desc = &ring->descs[i];
 
 	spin_lock_irqsave(&ag->lock, flags);
-	ar71xx_ddr_flush(pdata->flush_reg);
+	pdata->ddr_flush();
 	spin_unlock_irqrestore(&ag->lock, flags);
 
 	if (!ag71xx_desc_empty(desc))
@@ -480,7 +480,7 @@ static void ag71xx_tx_packets(struct ag71xx *ag)
 	DBG("%s: processing TX ring\n", ag->dev->name);
 
 #ifdef AG71XX_NAPI_TX
-	ar71xx_ddr_flush(pdata->flush_reg);
+	pdata->ddr_flush();
 #endif
 
 	sent = 0;
@@ -523,7 +523,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 
 #ifndef AG71XX_NAPI_TX
 	spin_lock_irqsave(&ag->lock, flags);
-	ar71xx_ddr_flush(pdata->flush_reg);
+	pdata->ddr_flush();
 	spin_unlock_irqrestore(&ag->lock, flags);
 #endif
 
@@ -592,7 +592,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	int done;
 
 #ifdef AG71XX_NAPI_TX
-	ar71xx_ddr_flush(pdata->flush_reg);
+	pdata->ddr_flush();
 	ag71xx_tx_packets(ag);
 #endif
 
