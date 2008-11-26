@@ -140,15 +140,19 @@ static void ag71xx_phy_link_update(struct ag71xx *ag)
 			ag71xx_speed_str(ag),
 			(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
 
-	DBG("%s: fifo1=%#x, fifo2=%#x, fifo3=%#x, fifo4=%#x, fifo5=%#x\n",
+	DBG("%s: fifo_cfg0=%#x, fifo_cfg1=%#x, fifo_cfg2=%#x\n",
 		ag->dev->name,
+		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG0),
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG1),
-		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG2),
+		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG2));
+
+	DBG("%s: fifo_cfg3=%#x, fifo_cfg4=%#x, fifo_cfg5=%#x\n",
+		ag->dev->name,
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG3),
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG4),
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5));
 
-	DBG("%s: mac_cfg2=%#x, ifctl=%#x, mii_ctrl=%#x\n",
+	DBG("%s: mac_cfg2=%#x, mac_ifctl=%#x, mii_ctrl=%#x\n",
 		ag->dev->name,
 		ag71xx_rr(ag, AG71XX_REG_MAC_CFG2),
 		ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL),
