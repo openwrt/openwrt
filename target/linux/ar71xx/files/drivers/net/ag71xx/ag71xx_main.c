@@ -47,7 +47,7 @@ static void ag71xx_dump_regs(struct ag71xx *ag)
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG0),
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG1),
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG2));
-	DBG("%s: fifo_cfg3=%08x, fifo_cfg3=%08x, fifo_cfg5=%08x\n",
+	DBG("%s: fifo_cfg3=%08x, fifo_cfg4=%08x, fifo_cfg5=%08x\n",
 		ag->dev->name,
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG3),
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG4),
