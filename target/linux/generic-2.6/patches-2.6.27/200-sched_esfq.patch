@@ -678,7 +678,7 @@
 +	struct esfq_sched_data *q = qdisc_priv(sch);
 +	int err;
 +
-+	q->quantum = psched_mtu(sch->dev); /* default */
++	q->quantum = psched_mtu(qdisc_dev(sch)); /* default */
 +	if ((err = esfq_q_init(q, opt)))
 +		return err;
 +
@@ -702,7 +702,7 @@
 +
 +	/* set up new queue */
 +	memset(&new, 0, sizeof(struct esfq_sched_data));
-+	new.quantum = psched_mtu(sch->dev); /* default */
++	new.quantum = psched_mtu(qdisc_dev(sch)); /* default */
 +	if ((err = esfq_q_init(&new, opt)))
 +		return err;
 +
