@@ -19,6 +19,12 @@
 
 static void __init ap83_setup(void)
 {
+	ar71xx_add_device_mdio(0xfffffffe);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = 0x1;
+
+	ar71xx_add_device_eth(0);
 }
 
 MIPS_MACHINE(MACH_AR71XX_AP83, "Atheros AP83", ap83_setup);
