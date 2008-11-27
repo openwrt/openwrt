@@ -27,15 +27,13 @@ static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
 	return "?";
 }
 
-#if 1
-#define PLL_VAL_1000	0x00110000
-#define PLL_VAL_100	0x00001099
-#define PLL_VAL_10	0x00991099
-#else
-#define PLL_VAL_1000	0x01111000
-#define PLL_VAL_100	0x09991000
-#define PLL_VAL_10	0x09991999
-#endif
+#define AR71XX_PLL_VAL_1000	0x00110000
+#define AR71XX_PLL_VAL_100	0x00001099
+#define AR71XX_PLL_VAL_10	0x00991099
+
+#define AR91XX_PLL_VAL_1000	0x1a000000
+#define AR91XX_PLL_VAL_100	0x13000a44
+#define AR91XX_PLL_VAL_10	0x00441099
 
 static void ag71xx_phy_link_update(struct ag71xx *ag)
 {
@@ -67,26 +65,30 @@ static void ag71xx_phy_link_update(struct ag71xx *ag)
 	case SPEED_1000:
 		mii_speed =  MII_CTRL_SPEED_1000;
 		cfg2 |= MAC_CFG2_IF_1000;
-		pll = PLL_VAL_1000;
+		pll = pdata->is_ar91xx ? AR91XX_PLL_VAL_1000
+				       : AR71XX_PLL_VAL_1000;
 		fifo5 |= FIFO_CFG5_BM;
 		break;
 	case SPEED_100:
 		mii_speed = MII_CTRL_SPEED_100;
 		cfg2 |= MAC_CFG2_IF_10_100;
 		ifctl |= MAC_IFCTL_SPEED;
-		pll = PLL_VAL_100;
+		pll = pdata->is_ar91xx ? AR91XX_PLL_VAL_100
+				       : AR71XX_PLL_VAL_100;
 		break;
 	case SPEED_10:
 		mii_speed = MII_CTRL_SPEED_10;
 		cfg2 |= MAC_CFG2_IF_10_100;
-		pll = PLL_VAL_10;
+		pll = pdata->is_ar91xx ? AR91XX_PLL_VAL_10
+				       : AR71XX_PLL_VAL_10;
 		break;
 	default:
 		BUG();
 		return;
 	}
 
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, 0x008001ff);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3,
+			pdata->is_ar91xx ? 0x780fff : 0x008001ff);
 	pdata->set_pll(pll);
 	ag71xx_mii_ctrl_set_speed(ag, mii_speed);
 
