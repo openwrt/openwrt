@@ -3,50 +3,15 @@
 
 #include <bcm63xx_gpio.h>
 
-static inline int gpio_is_valid(int number)
-{
-	return (number >= BCM63XX_GPIO_COUNT) ? 0 : 1;
-}
+#define NR_BUILTIN_GPIO		BCM63XX_GPIO_COUNT
 
-static inline int gpio_request(unsigned gpio, const char *label)
-{
-	return 0;
-}
+#define gpio_to_irq(gpio)	NULL
 
-static inline void gpio_free(unsigned gpio)
-{
-}
+#define gpio_get_value __gpio_get_value
+#define gpio_set_value __gpio_set_value
 
-static inline int gpio_direction_input(unsigned gpio)
-{
-	bcm63xx_gpio_set_direction(gpio, GPIO_DIR_IN);
-	return 0;
-}
+#define gpio_cansleep __gpio_cansleep
 
-static inline int gpio_direction_output(unsigned gpio, int value)
-{
-	bcm63xx_gpio_set_direction(gpio, GPIO_DIR_OUT);
-	return 0;
-}
-
-static inline int gpio_get_value(unsigned gpio)
-{
-	return bcm63xx_gpio_get_datain(gpio);
-}
-
-static inline void gpio_set_value(unsigned gpio, int value)
-{
-	bcm63xx_gpio_set_dataout(gpio, value);
-}
-
-static inline int gpio_to_irq(unsigned gpio)
-{
-	return gpio;
-}
-
-static inline int irq_to_gpio(unsigned irq)
-{
-	return irq;
-}
+#include <asm-generic/gpio.h>
 
 #endif /* __ASM_MIPS_MACH_BCM63XX_GPIO_H */
