@@ -29,6 +29,7 @@ struct ag71xx_platform_data {
 	u8		mac_addr[ETH_ALEN];
 
 	u8		has_gbit:1;
+	u8		is_ar91xx:1;
 
 	void		(* ddr_flush)(void);
 	void		(* set_pll)(u32 pll);

@@ -393,6 +393,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 				      : ar91xx_ddr_flush_ge0;
 		pdata->set_pll =  id ? ar91xx_set_pll_ge1
 				     : ar91xx_set_pll_ge0;
+		pdata->is_ar91xx = 1;
 		break;
 
 	case AR71XX_SOC_AR9132:
@@ -400,6 +401,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 				      : ar91xx_ddr_flush_ge0;
 		pdata->set_pll =  id ? ar91xx_set_pll_ge1
 				      : ar91xx_set_pll_ge0;
+		pdata->is_ar91xx = 1;
 		pdata->has_gbit = 1;
 		break;
 
