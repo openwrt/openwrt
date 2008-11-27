@@ -198,12 +198,14 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define AG71XX_REG_INT_ENABLE	0x0198
 #define AG71XX_REG_INT_STATUS	0x019c
 
-#define MAC_CFG1_TXE		BIT(0)
-#define MAC_CFG1_STX		BIT(1)
-#define MAC_CFG1_RXE		BIT(2)
-#define MAC_CFG1_SRX		BIT(3)
-#define MAC_CFG1_LB		BIT(8)
-#define MAC_CFG1_SR		BIT(31)
+#define MAC_CFG1_TXE		BIT(0)	/* Tx Enable */
+#define MAC_CFG1_STX		BIT(1)	/* Synchronize Tx Enable */
+#define MAC_CFG1_RXE		BIT(2)	/* Rx Enable */
+#define MAC_CFG1_SRX		BIT(3)	/* Synchronize Rx Enable */
+#define MAC_CFG1_TFC		BIT(4)	/* Tx Flow Control Enable */
+#define MAC_CFG1_RFC		BIT(5)	/* Rx Flow Control Enable */
+#define MAC_CFG1_LB		BIT(8)	/* Loopback mode */
+#define MAC_CFG1_SR		BIT(31)	/* Soft Reset */
 
 #define MAC_CFG2_FDX		BIT(0)
 #define MAC_CFG2_CRC_EN		BIT(1)
