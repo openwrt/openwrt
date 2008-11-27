@@ -882,6 +882,7 @@ static int __init ag71xx_module_init(void)
 static void __exit ag71xx_module_exit(void)
 {
 	platform_driver_unregister(&ag71xx_driver);
+	ag71xx_mdio_driver_exit();
 }
 
 module_init(ag71xx_module_init);
