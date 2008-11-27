@@ -312,20 +312,6 @@ static int board_get_mac_address(u8 *mac)
 	return 0;
 }
 
-static struct mtd_partition mtd_partitions[] = {
-	{
-		.name		= "cfe",
-		.offset		= 0x0,
-		.size		= 0x40000,
-	}
-};
-
-static struct physmap_flash_data flash_data = {
-	.width			= 2,
-	.nr_parts		= ARRAY_SIZE(mtd_partitions),
-	.parts			= mtd_partitions,
-};
-
 static struct resource mtd_resources[] = {
 	{
 		.start		= 0,	/* filled at runtime */
@@ -335,12 +321,9 @@ static struct resource mtd_resources[] = {
 };
 
 static struct platform_device mtd_dev = {
-	.name			= "physmap-flash",
+	.name			= "bcm963xx-flash",
 	.resource		= mtd_resources,
 	.num_resources		= ARRAY_SIZE(mtd_resources),
-	.dev			= {
-		.platform_data	= &flash_data,
-	},
 };
 
 /*
