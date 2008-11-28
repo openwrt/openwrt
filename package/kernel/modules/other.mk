@@ -541,6 +541,22 @@ endef
 $(eval $(call KernelPackage,scx200-wdt))
 
 
+define KernelPackage/sc520-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Natsemi SC520 Watchdog support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SC520_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/sc520_wdt.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,sc520_wdt)
+endef
+
+define KernelPackage/sc520-wdt/description
+  Kernel module for SC520 Watchdog
+endef
+
+$(eval $(call KernelPackage,sc520-wdt))
+
+
 define KernelPackage/input-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Input device core
