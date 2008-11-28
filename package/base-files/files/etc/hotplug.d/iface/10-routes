@@ -54,7 +54,7 @@ add_route6() {
 		config_get gateway "$interface" gateway
 	}
 
-	/sbin/route -A inet6 add $target gw "$gateway" ${dev:+dev "$dev"} ${metric:+ metric "$metric"}
+	/sbin/route -A inet6 add $target ${gateway:+gw "$gateway"} ${dev:+dev "$dev"} ${metric:+ metric "$metric"}
 }
 
 case "$ACTION" in
