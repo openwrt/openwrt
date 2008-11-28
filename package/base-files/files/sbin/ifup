@@ -1,11 +1,23 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
-. /sbin/ifdown "$@"
+/sbin/ifdown "$@"
 
-config_get iftype "$1" type
+. /etc/functions.sh
+[ $# = 0 ] && { echo "  $0 <group>"; exit; }
+[ "x$1" = "x-a" ] && {
+	[ -e "/tmp/resolv.conf.auto" ] && rm /tmp/resolv.conf.auto
+	config_cb() {
+		[ interface != "$1" -o -z "$2" ] || eval "$0 $2"
+	}
+	config_load network
+	exit
+}
+
+include /lib/network
+scan_interfaces
+
 config_get ifname "$1" device
-
 for dev in $ifname; do
 	setup_interface "$dev" "$1"
 done
