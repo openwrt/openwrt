@@ -46,8 +46,15 @@ static void __init ap83_setup(void)
 
 	ar71xx_add_device_eth(0);
 
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap83_leds_gpio),
-					ap83_leds_gpio);
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth1_data.phy_mask = 0x0;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(1);
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
+					rb4xx_leds_gpio);
 
 }
 
