@@ -53,8 +53,8 @@ static void __init ap83_setup(void)
 
 	ar71xx_add_device_eth(1);
 
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
-					rb4xx_leds_gpio);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap83_leds_gpio),
+					ap83_leds_gpio);
 
 }
 
