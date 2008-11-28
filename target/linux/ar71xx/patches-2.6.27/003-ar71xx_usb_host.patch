@@ -13,7 +13,7 @@
  config USB_EHCI_FSL
  	bool "Support for Freescale on-chip EHCI USB controller"
  	depends on USB_EHCI_HCD && FSL_SOC
-@@ -152,6 +158,12 @@ config USB_OHCI_HCD
+@@ -141,6 +147,12 @@ config USB_OHCI_HCD
  	  To compile this driver as a module, choose M here: the
  	  module will be called ohci-hcd.
  
@@ -28,7 +28,7 @@
  	depends on USB_OHCI_HCD && (STB03xxx || PPC_MPC52xx)
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1040,6 +1040,11 @@ MODULE_LICENSE ("GPL");
+@@ -1039,6 +1039,11 @@ MODULE_LICENSE ("GPL");
  #define	PLATFORM_DRIVER		ixp4xx_ehci_driver
  #endif
  
