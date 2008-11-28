@@ -22,17 +22,17 @@ Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/Makefile
 --- linux-2.6.27.3.orig/arch/arm/mach-ixp4xx/Makefile	2008-11-05 19:31:20.000000000 +0000
 +++ linux-2.6.27.3/arch/arm/mach-ixp4xx/Makefile	2008-11-05 20:10:26.000000000 +0000
 @@ -24,6 +24,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
- obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_TW5334)		+= tw5334-pci.o
+ obj-pci-$(CONFIG_MACH_MI424WR)		+= mi424wr-pci.o
 +obj-pci-$(CONFIG_MACH_USR8200)		+= usr8200-pci.o
  
  obj-y	+= common.o
  
 @@ -46,6 +47,7 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
- obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
  obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
+ obj-$(CONFIG_MACH_MI424WR)	+= mi424wr-setup.o
 +obj-$(CONFIG_MACH_USR8200)	+= usr8200-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
