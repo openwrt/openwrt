@@ -265,8 +265,14 @@ static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
 	ag71xx_wr(ag, AG71XX_REG_MAC_ADDR2, t);
 }
 
-#define MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | MAC_CFG1_SRX \
-			| MAC_CFG1_STX)
+#define AR71XX_MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | \
+				 MAC_CFG1_SRX | MAC_CFG1_STX)
+#define AR71XX_FIFO_CFG5_INIT	0x0007ffef
+
+#define AR91XX_MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | \
+				 MAC_CFG1_SRX | MAC_CFG1_STX | \
+				 MAC_CFG1_TFC | MAC_CFG1_RFC)
+#define AR91XX_FIFO_CFG5_INIT	0x0007efef
 
 #define FIFO_CFG0_INIT	(FIFO_CFG0_ALL << FIFO_CFG0_ENABLE_SHIFT)
 
@@ -282,21 +288,26 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ar71xx_device_start(pdata->reset_bit);
 	mdelay(100);
 
-	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
+	/* setup MII interface type */
+	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
 
-	/* TODO: set max packet size */
-
+	/* setup MAC configuration registers */
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1,
+		pdata->is_ar91xx ? AR91XX_MAC_CFG1_INIT : AR71XX_MAC_CFG1_INIT);
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
 		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
 
+	/* setup max frame length */
+	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
+
+	/* setup FIFO configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
-
-	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
-
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, 0x0000ffff);
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, 0x0007ffef);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5,
+			pdata->is_ar91xx ? AR91XX_FIFO_CFG5_INIT
+					 : AR71XX_FIFO_CFG5_INIT);
 }
 
 static void ag71xx_hw_start(struct ag71xx *ag)
