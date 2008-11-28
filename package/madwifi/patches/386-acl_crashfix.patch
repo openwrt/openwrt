@@ -88,7 +88,7 @@ Signed-off-by: Sebastian Gottschall <brainslayer@dd-wrt.com>
  }
 --- a/net80211/ieee80211_linux.h
 +++ b/net80211/ieee80211_linux.h
-@@ -311,16 +311,15 @@ typedef spinlock_t ieee80211_scan_lock_t
+@@ -319,16 +319,15 @@ typedef spinlock_t ieee80211_scan_lock_t
  typedef spinlock_t acl_lock_t;
  #define	ACL_LOCK_INIT(_as, _name)	spin_lock_init(&(_as)->as_lock)
  #define	ACL_LOCK_DESTROY(_as)

@@ -16,7 +16,7 @@
  #endif /* _ATH_COMPAT_H_ */
 --- a/net80211/ieee80211_linux.h
 +++ b/net80211/ieee80211_linux.h
-@@ -337,13 +337,6 @@ typedef spinlock_t acl_lock_t;
+@@ -345,13 +345,6 @@ typedef spinlock_t acl_lock_t;
  #define	ACL_LOCK_CHECK(_as)
  #endif
  
@@ -30,7 +30,7 @@
  /*
   * Per-node power-save queue definitions.  Beware of control
   * flow with IEEE80211_NODE_SAVEQ_LOCK/IEEE80211_NODE_SAVEQ_UNLOCK.
-@@ -387,16 +380,16 @@ typedef spinlock_t acl_lock_t;
+@@ -395,16 +388,16 @@ typedef spinlock_t acl_lock_t;
  	_skb = __skb_dequeue(&(_ni)->ni_savedq);		\
  	(_qlen) = skb_queue_len(&(_ni)->ni_savedq);		\
  } while (0)
