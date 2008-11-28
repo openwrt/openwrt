@@ -15,7 +15,7 @@
  	depends on LEDS_CLASS && MACH_ARMCORE
 --- /dev/null
 +++ b/drivers/leds/leds-latch.c
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,149 @@
 +/*
 + * LEDs driver for Memory Latched Devices
 + *
@@ -44,7 +44,18 @@
 +	struct work_struct work;
 +	u8 new_level;
 +	u8 bit;
++	void (*set_led)(u8 bit, enum led_brightness value);
 +};
++
++static void latch_set_led(u8 bit, enum led_brightness value)
++{
++	if (value == LED_OFF)
++		mem_keep |= (0x1 << bit);
++	else
++		mem_keep &= ~(0x1 << bit);
++
++	writeb(mem_keep, iobase);
++}
 +
 +static void latch_led_set(struct led_classdev *led_cdev,
 +	enum led_brightness value)
@@ -54,12 +65,7 @@
 +
 +	spin_lock(mem_lock);
 +
-+	if (value == LED_OFF)
-+		mem_keep |= (0x1 << led_dat->bit);
-+	else
-+		mem_keep &= ~(0x1 << led_dat->bit);
-+
-+	writeb(mem_keep, iobase);
++	led_dat->set_led(led_dat->bit, value);
 +
 +	spin_unlock(mem_lock);
 +}
@@ -79,9 +85,6 @@
 +	if (!leds_data)
 +		return -ENOMEM;
 +
-+	iobase = ioremap_nocache(pdata->mem, 0x1000);
-+	writeb(0xFF, iobase);
-+
 +	for (i = 0; i < pdata->num_leds; i++) {
 +		cur_led = &pdata->leds[i];
 +		led_dat = &leds_data[i];
@@ -91,6 +94,7 @@
 +		led_dat->cdev.brightness_set = latch_led_set;
 +		led_dat->cdev.brightness = LED_OFF;
 +		led_dat->bit = cur_led->bit;
++		led_dat->set_led = pdata->set_led ? pdata->set_led : latch_set_led;
 +
 +		ret = led_classdev_register(&pdev->dev, &led_dat->cdev);
 +		if (ret < 0) {
@@ -98,6 +102,10 @@
 +		}
 +	}
 +
++	if (!pdata->set_led) {
++		iobase = ioremap_nocache(pdata->mem, 0x1000);
++		writeb(0xFF, iobase);
++	}
 +	platform_set_drvdata(pdev, leds_data);
 +
 +	return 0;
@@ -169,7 +177,7 @@
  obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
 --- a/include/linux/leds.h
 +++ b/include/linux/leds.h
-@@ -148,5 +148,18 @@ struct gpio_led_platform_data {
+@@ -148,5 +148,19 @@ struct gpio_led_platform_data {
  					unsigned long *delay_off);
  };
  
@@ -184,6 +192,7 @@
 +	int     num_leds;
 +	u32     mem;
 +	struct latch_led *leds;
++	void	(*set_led)(u8 bit, enum led_brightness value);
 +};
 +
  
