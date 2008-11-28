@@ -33,7 +33,7 @@
  	/* Allocate space for dynamically determined maximum VAP count */
  	sc->sc_bslot = 
  		kmalloc(ath_maxvaps * sizeof(struct ieee80211vap*), GFP_KERNEL);
-@@ -1508,6 +1520,28 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1507,6 +1519,28 @@ ath_vap_create(struct ieee80211com *ic, 
  	return vap;
  }
  
@@ -62,7 +62,7 @@
  static void
  ath_vap_delete(struct ieee80211vap *vap)
  {
-@@ -10819,6 +10853,12 @@ ath_ioctl(struct net_device *dev, struct
+@@ -10818,6 +10852,12 @@ ath_ioctl(struct net_device *dev, struct
   * is to add module parameters.
   */
  
@@ -75,7 +75,7 @@
  /*
   * Dynamic (i.e. per-device) sysctls.  These are automatically
   * mirrored in /proc/sys.
-@@ -10898,6 +10938,38 @@ ath_sysctl_get_intmit(struct ath_softc *
+@@ -10897,6 +10937,38 @@ ath_sysctl_get_intmit(struct ath_softc *
  }
  
  static int
@@ -114,7 +114,7 @@
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -11177,6 +11249,24 @@ static int maxint = 0x7fffffff;		/* 32-b
+@@ -11176,6 +11248,24 @@ static int maxint = 0x7fffffff;		/* 32-b
  
  static const ctl_table ath_sysctl_template[] = {
  	{ .ctl_name	= CTL_AUTO,
