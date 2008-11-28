@@ -300,3 +300,18 @@ define KernelPackage/pata-rb153-cf/description
 endef
 
 $(eval $(call KernelPackage,pata-rb153-cf))
+
+
+define KernelPackage/aoe
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=ATA over Ethernet support
+  KCONFIG:=CONFIG_ATA_OVER_ETH
+  FILES:=$(LINUX_DIR)/drivers/block/aoe/aoe.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,aoe)
+endef
+
+define KernelPackage/aoe/description
+  Kernel support for ATA over Ethernet
+endef
+
+$(eval $(call KernelPackage,aoe))
