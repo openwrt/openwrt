@@ -7,14 +7,15 @@
 -CONFIG_TARGET_DESCRIPTION="SlugOS NSLU2/BE (16MiB Flash)"
 +CONFIG_TARGET_DESCRIPTION="OpenWRT NSLU2 (16MiB Flash)"
  CONFIG_CROSS_COMPILE=""
+ CONFIG_AEABI=y
  CONFIG_CC_OPTIMIZE_FOR_SIZE=y
- # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
 @@ -143,7 +143,7 @@
  #    Overrides
  #
  CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
 -CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/mtdblock4 rootfstype=jffs2 console=ttyS0,115200"
 +CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/mtdblock4 rootfstype=squashfs,jffs2 console=ttyS0,115200 init=/etc/preinit noinitrd"
+ CONFIG_ENV_DEFAULT_CMDLINE_ALT_P=y
+-CONFIG_ENV_DEFAULT_CMDLINE_ALT="root=/dev/mtdblock4 rootfstype=jffs2 console=ttyS0,115200"
++CONFIG_ENV_DEFAULT_CMDLINE_ALT="root=/dev/mtdblock4 rootfstype=squashfs,jffs2 console=ttyS0,115200 init=/etc/preinit noinitrd"
  # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
- CONFIG_USES_NOR_BOOTFLASH=y
- CONFIG_RELOCATE_SIMPLE=y
