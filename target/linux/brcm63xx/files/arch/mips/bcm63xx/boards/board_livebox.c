@@ -41,12 +41,22 @@ static struct board_info __initdata board_livebox = {
 	.expected_cpu_id		= 0x6348,
 
 	.has_enet0			= 1,
+	.has_enet1			= 1,
 	.has_pci			= 1,
 
 	.enet0 = {
 		.has_phy		= 1,
 		.use_internal_phy	= 1,
 	},
+
+	.enet1 = {
+		.force_speed_100	= 1,
+		.force_duplex_full	= 1,
+	},
+
+	.has_ohci0			= 1,
+	.has_pccard			= 1,
+	.has_ehci0			= 1,
 };
 #endif
 
@@ -130,11 +140,50 @@ const char *board_get_name(void)
 /*
  * register & return a new board mac address
  */
+
 static int board_get_mac_address(u8 *mac)
 {
-	/* Not yet implemented */
+	u8 default_mac[ETH_ALEN] = {0x00, 0x07, 0x3A, 0x00, 0x00, 0x00};
+	u8 *p;
+	int count;
+
+	memcpy(mac, default_mac, ETH_ALEN);
+
+	p = mac + ETH_ALEN - 1;
+	count = mac_addr_used;
+
+	while (count--) {
+		do {
+			(*p)++;
+			if (*p != 0)
+				break;
+			p--;
+		} while (p != mac);
+	}
+
+	if (p == mac) {
+		printk(KERN_ERR PFX "unable to fetch mac address\n");
+		return -ENODEV;
+	}
+        mac_addr_used++;
+
 	return 0;
 }
+
+static struct resource mtd_resources[] = {
+	{
+		.start          = 0,    /* filled at runtime */
+		.end            = 0,    /* filled at runtime */
+		.flags          = IORESOURCE_MEM,
+	}
+};
+
+static struct platform_device mtd_dev = {
+	.name                   = "bcm963xx-flash",
+	.resource               = mtd_resources,
+	.num_resources          = ARRAY_SIZE(mtd_resources),
+};
+
 
 /*
  * third stage init callback, register all board devices.
@@ -166,6 +215,10 @@ int __init board_register_devices(void)
 	/* read base address of boot chip select (0) */
 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
 	val &= MPI_CSBASE_BASE_MASK;
+	mtd_resources[0].start = val;
+	mtd_resources[0].end = 0x1FFFFFFF;
+	
+	platform_device_register(&mtd_dev);
 
 	return 0;
 }
