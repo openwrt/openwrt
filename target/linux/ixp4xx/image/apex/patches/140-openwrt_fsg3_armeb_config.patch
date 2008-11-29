@@ -1,0 +1,21 @@
+--- apex-1.5.6/src/mach-ixp42x/slugos-fsg3-armeb_config	2007-06-02 10:06:45.000000000 +0930
++++ apex-1.5.6/src/mach-ixp42x/slugos-fsg3-armeb_config~	2007-06-03 02:22:18.000000000 +0930
+@@ -17,7 +17,7 @@
+ #
+ # General Setup
+ #
+-CONFIG_TARGET_DESCRIPTION="SlugOS FSG3/BE"
++CONFIG_TARGET_DESCRIPTION="OpenWRT FSG3"
+ CONFIG_CROSS_COMPILE=""
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ # CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
+@@ -143,7 +143,7 @@
+ #    Overrides
+ #
+ CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
+-CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/sda1 rootdelay=10 console=ttyS0,115200"
++CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/sda1 rootdelay=10 console=ttyS0,115200 init=/etc/preinit noinitrd"
+ CONFIG_ENV_DEFAULT_CMDLINE_ALT_P=y
+-CONFIG_ENV_DEFAULT_CMDLINE_ALT="root=/dev/sda2 rootdelay=10 console=ttyS0,115200"
++CONFIG_ENV_DEFAULT_CMDLINE_ALT="root=/dev/mtdblock2 rootfstype=squashfs console=ttyS0,115200 init=/etc/preinit noinitrd"
+ # CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
