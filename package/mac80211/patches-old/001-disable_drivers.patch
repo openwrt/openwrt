@@ -1,7 +1,6 @@
-diff -urN compat-wireless-2008-08-06/config.mk compat-wireless-2008-08-06.new/config.mk
 --- compat-wireless-2008-08-06/config.mk	2008-07-18 06:11:03.000000000 +0200
-+++ compat-wireless-2008-08-06.new/config.mk	2008-11-15 00:21:17.000000000 +0100
-@@ -72,70 +72,8 @@
++++ compat-wireless-2008-08-06.new/config.mk	2008-11-28 21:10:31.000000000 +0100
+@@ -72,70 +72,34 @@
  CONFIG_ATH5K=m
  CONFIG_ATH5K_DEBUG=n
  
@@ -13,25 +12,40 @@ diff -urN compat-wireless-2008-08-06/config.mk compat-wireless-2008-08-06.new/co
 -CONFIG_IWL4965=m
 -CONFIG_IWL4965_HT=y
 -CONFIG_B43=m
--# B43 uses PCMCIA only for Compact Flash. The Cardbus cards uses PCI
--# Example, bcm4318:
--# http://www.multicap.biz/wireless-lan/indoor-wlan-hardware/sdc-cf10g-80211g-compact-flash-module
++# CONFIG_B43=m
++CONFIG_B43_NPHY=y
+ # B43 uses PCMCIA only for Compact Flash. The Cardbus cards uses PCI
+ # Example, bcm4318:
+ # http://www.multicap.biz/wireless-lan/indoor-wlan-hardware/sdc-cf10g-80211g-compact-flash-module
 -CONFIG_B43_PCMCIA=y
--CONFIG_B43_DMA=y
++# CONFIG_B43_PCMCIA=y
+ CONFIG_B43_DMA=y
 -CONFIG_B43_PIO=y
--# B43_PIO selects SSB_BLOCKIO
++# CONFIG_B43_PIO=y
+ # B43_PIO selects SSB_BLOCKIO
 -CONFIG_SSB_BLOCKIO=y
 -CONFIG_B43_DMA_AND_PIO_MODE=y
 -CONFIG_B43_PCI_AUTOSELECT=y
 -CONFIG_B43_PCICORE_AUTOSELECT=y
 -#CONFIG_B43_RFKILL=n
 -CONFIG_B43_LEDS=y
--# CONFIG_B43_DEBUG is not set
--
++# CONFIG_SSB_BLOCKIO=y
++# CONFIG_B43_DMA_AND_PIO_MODE=y
++# CONFIG_B43_PCI_AUTOSELECT=y
++# CONFIG_B43_PCICORE_AUTOSELECT=y
++# CONFIG_B43_RFKILL=y
++# CONFIG_B43_LEDS=y
+ # CONFIG_B43_DEBUG is not set
+ 
 -CONFIG_B43LEGACY=m
 -CONFIG_B43LEGACY_PCI_AUTOSELECT=y
 -CONFIG_B43LEGACY_PCICORE_AUTOSELECT=y
--CONFIG_B43LEGACY_DMA=y
++# CONFIG_B43LEGACY=m
++# CONFIG_B43LEGACY_RFKILL=y
++# CONFIG_B43LEGACY_LEDS=y
++# CONFIG_B43LEGACY_PCI_AUTOSELECT=y
++# CONFIG_B43LEGACY_PCICORE_AUTOSELECT=y
+ CONFIG_B43LEGACY_DMA=y
 -CONFIG_B43LEGACY_PIO=y
 -CONFIG_B43LEGACY_DMA_AND_PIO_MODE=y
 -
@@ -57,7 +71,9 @@ diff -urN compat-wireless-2008-08-06/config.mk compat-wireless-2008-08-06.new/co
 -CONFIG_IPW2200_QOS=y
 -
 -NEED_IEEE80211=y
--
++# CONFIG_B43LEGACY_PIO=y
++# CONFIG_B43LEGACY_DMA_AND_PIO_MODE=y
+ 
  CONFIG_P54_PCI=m
  
 -CONFIG_SSB_PCIHOST_POSSIBLE=y
@@ -72,7 +88,7 @@ diff -urN compat-wireless-2008-08-06/config.mk compat-wireless-2008-08-06.new/co
  CONFIG_RT2X00_LIB_PCI=m
  CONFIG_RT2400PCI=m
  CONFIG_RT2500PCI=m
-@@ -159,31 +97,7 @@
+@@ -159,31 +123,7 @@
  ifneq ($(CONFIG_USB),)
  CONFIG_ZD1211RW=m
  
@@ -104,7 +120,7 @@ diff -urN compat-wireless-2008-08-06/config.mk compat-wireless-2008-08-06.new/co
  
  # RT2500USB does not require firmware
  CONFIG_RT2500USB=m
-@@ -212,36 +126,6 @@
+@@ -212,36 +152,6 @@
  # p54
  CONFIG_P54_COMMON=m
  

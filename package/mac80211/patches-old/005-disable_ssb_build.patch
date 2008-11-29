@@ -1,0 +1,10 @@
+--- a/Makefile	2008-07-18 06:11:03.000000000 +0200
++++ b/Makefile	2008-11-28 19:31:58.000000000 +0100
+@@ -19,7 +19,6 @@
+ obj-y := net/wireless/ net/mac80211/
+ ifeq ($(ONLY_CORE),)
+ obj-y += net/ieee80211/ \
+-	drivers/ssb/ \
+ 	drivers/misc/ \
+ 	drivers/net/usb/ \
+ 	drivers/net/wireless/
