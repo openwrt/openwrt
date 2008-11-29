@@ -1,9 +1,22 @@
-automatically generated from wireless-testing..rt2x00/experimental
-do not edit
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Thu, 20 Nov 2008 22:42:04 +0000 (+0100)
+Subject: rt2x00: Add rt2800pci and rt2800usb (BROKEN)
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Fivd%2Frt2x00.git;a=commitdiff_plain;h=760e9f904b54ab91cd78aac6188851cfaac5c795
 
+rt2x00: Add rt2800pci and rt2800usb (BROKEN)
+
+incomplete code...
+
+Signed-off-by: Mattias Nissler <mattias.nissler@gmx.de>
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+
+diff --git a/drivers/net/wireless/rt2x00/Makefile b/drivers/net/wireless/rt2x00/Makefile
+index 917cb4f..99cec67 100644
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
-@@ -14,5 +14,7 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00u
+@@ -14,5 +14,7 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00usb.o
  obj-$(CONFIG_RT2400PCI)			+= rt2400pci.o
  obj-$(CONFIG_RT2500PCI)			+= rt2500pci.o
  obj-$(CONFIG_RT61PCI)			+= rt61pci.o
@@ -11,240 +24,12 @@ do not edit
  obj-$(CONFIG_RT2500USB)			+= rt2500usb.o
  obj-$(CONFIG_RT73USB)			+= rt73usb.o
 +obj-$(CONFIG_RT2800USB)			+= rt2800usb.o
---- a/drivers/net/wireless/rt2x00/rt2500usb.c
-+++ b/drivers/net/wireless/rt2x00/rt2500usb.c
-@@ -36,6 +36,13 @@
- #include "rt2500usb.h"
- 
- /*
-+ * Allow hardware encryption to be disabled.
-+ */
-+static int modparam_nohwcrypt = 0;
-+module_param_named(nohwcrypt, modparam_nohwcrypt, bool, S_IRUGO);
-+MODULE_PARM_DESC(nohwcrypt, "Disable hardware encryption.");
-+
-+/*
-  * Register access.
-  * All access to the CSR registers will go through the methods
-  * rt2500usb_register_read and rt2500usb_register_write.
-@@ -343,6 +350,85 @@ static void rt2500usb_init_led(struct rt
- /*
-  * Configuration handlers.
-  */
-+
-+/*
-+ * rt2500usb does not differentiate between shared and pairwise
-+ * keys, so we should use the same function for both key types.
-+ */
-+static int rt2500usb_config_key(struct rt2x00_dev *rt2x00dev,
-+				struct rt2x00lib_crypto *crypto,
-+				struct ieee80211_key_conf *key)
-+{
-+	int timeout;
-+	u32 mask;
-+	u16 reg;
-+
-+	/* Support up to 4 keys */
-+	if (key->hw_key_idx >= 4)
-+		return -ENOSPC;
-+
-+	if (crypto->cmd == SET_KEY) {
-+		/*
-+		 * Pairwise key will always be entry 0, but this
-+		 * could collide with a shared key on the same
-+		 * position...
-+		 */
-+		mask = TXRX_CSR0_KEY_ID.bit_mask;
-+
-+		rt2500usb_register_read(rt2x00dev, TXRX_CSR0, &reg);
-+
-+		if ((reg & mask) && (reg & mask) == mask)
-+			return -ENOSPC;
-+
-+		reg = rt2x00_get_field16(reg, TXRX_CSR0_KEY_ID);
-+
-+		key->hw_key_idx += reg ? ffz(reg) : 0;
-+
-+		/*
-+		 * The encryption key doesn't fit within the CSR cache,
-+		 * this means we should allocate it seperately and use
-+		 * rt2x00usb_vendor_request() to send the key to the hardware.
-+		 */
-+		reg = KEY_ENTRY(key->hw_key_idx);
-+		timeout = REGISTER_TIMEOUT32(sizeof(crypto->key));
-+		rt2x00usb_vendor_request_large_buff(rt2x00dev, USB_MULTI_WRITE,
-+						    USB_VENDOR_REQUEST_OUT, reg,
-+						    crypto->key,
-+						    sizeof(crypto->key),
-+						    timeout);
-+
-+		/*
-+		 * The driver does not support the IV/EIV generation
-+		 * in hardware. However it doesn't support the IV/EIV
-+		 * inside the ieee80211 frame either, but requires it
-+		 * to be provided seperately for the descriptor.
-+		 * rt2x00lib will cut the IV/EIV data out of all frames
-+		 * given to us by mac80211, but we must tell mac80211
-+		 * to generate the IV/EIV data.
-+		 */
-+		key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
-+		key->flags |= IEEE80211_KEY_FLAG_GENERATE_MMIC;
-+	}
-+
-+	/*
-+	 * TXRX_CSR0_KEY_ID contains only single-bit fields to indicate
-+	 * a particular key is valid.
-+	 */
-+	rt2500usb_register_read(rt2x00dev, TXRX_CSR0, &reg);
-+	rt2x00_set_field16(&reg, TXRX_CSR0_ALGORITHM, crypto->cipher);
-+	rt2x00_set_field16(&reg, TXRX_CSR0_IV_OFFSET, IEEE80211_HEADER);
-+
-+	mask = rt2x00_get_field16(reg, TXRX_CSR0_KEY_ID);
-+	if (crypto->cmd == SET_KEY)
-+		mask |= 1 << key->hw_key_idx;
-+	else if (crypto->cmd == DISABLE_KEY)
-+		mask &= ~(1 << key->hw_key_idx);
-+	rt2x00_set_field16(&reg, TXRX_CSR0_KEY_ID, mask);
-+	rt2500usb_register_write(rt2x00dev, TXRX_CSR0, reg);
-+
-+	return 0;
-+}
-+
- static void rt2500usb_config_filter(struct rt2x00_dev *rt2x00dev,
- 				    const unsigned int filter_flags)
- {
-@@ -864,7 +950,7 @@ static int rt2500usb_init_registers(stru
- 
- 	rt2500usb_register_read(rt2x00dev, TXRX_CSR0, &reg);
- 	rt2x00_set_field16(&reg, TXRX_CSR0_IV_OFFSET, IEEE80211_HEADER);
--	rt2x00_set_field16(&reg, TXRX_CSR0_KEY_ID, 0xff);
-+	rt2x00_set_field16(&reg, TXRX_CSR0_KEY_ID, 0);
- 	rt2500usb_register_write(rt2x00dev, TXRX_CSR0, reg);
- 
- 	rt2500usb_register_read(rt2x00dev, MAC_CSR18, &reg);
-@@ -1086,7 +1172,7 @@ static void rt2500usb_write_tx_desc(stru
- 	 * Start writing the descriptor words.
- 	 */
- 	rt2x00_desc_read(txd, 1, &word);
--	rt2x00_set_field32(&word, TXD_W1_IV_OFFSET, IEEE80211_HEADER);
-+	rt2x00_set_field32(&word, TXD_W1_IV_OFFSET, txdesc->iv_offset);
- 	rt2x00_set_field32(&word, TXD_W1_AIFS, txdesc->aifs);
- 	rt2x00_set_field32(&word, TXD_W1_CWMIN, txdesc->cw_min);
- 	rt2x00_set_field32(&word, TXD_W1_CWMAX, txdesc->cw_max);
-@@ -1099,6 +1185,11 @@ static void rt2500usb_write_tx_desc(stru
- 	rt2x00_set_field32(&word, TXD_W2_PLCP_LENGTH_HIGH, txdesc->length_high);
- 	rt2x00_desc_write(txd, 2, word);
- 
-+	if (test_bit(ENTRY_TXD_ENCRYPT, &txdesc->flags)) {
-+		_rt2x00_desc_write(txd, 3, skbdesc->iv);
-+		_rt2x00_desc_write(txd, 4, skbdesc->eiv);
-+	}
-+
- 	rt2x00_desc_read(txd, 0, &word);
- 	rt2x00_set_field32(&word, TXD_W0_RETRY_LIMIT, txdesc->retry_limit);
- 	rt2x00_set_field32(&word, TXD_W0_MORE_FRAG,
-@@ -1113,7 +1204,8 @@ static void rt2500usb_write_tx_desc(stru
- 			   test_bit(ENTRY_TXD_FIRST_FRAGMENT, &txdesc->flags));
- 	rt2x00_set_field32(&word, TXD_W0_IFS, txdesc->ifs);
- 	rt2x00_set_field32(&word, TXD_W0_DATABYTE_COUNT, skb->len);
--	rt2x00_set_field32(&word, TXD_W0_CIPHER, CIPHER_NONE);
-+	rt2x00_set_field32(&word, TXD_W0_CIPHER, txdesc->cipher);
-+	rt2x00_set_field32(&word, TXD_W0_KEY_ID, txdesc->key_idx);
- 	rt2x00_desc_write(txd, 0, word);
- }
- 
-@@ -1225,6 +1317,7 @@ static void rt2500usb_kick_tx_queue(stru
- static void rt2500usb_fill_rxdone(struct queue_entry *entry,
- 				  struct rxdone_entry_desc *rxdesc)
- {
-+	struct rt2x00_dev *rt2x00dev = entry->queue->rt2x00dev;
- 	struct queue_entry_priv_usb *entry_priv = entry->priv_data;
- 	struct skb_frame_desc *skbdesc = get_skb_frame_desc(entry->skb);
- 	__le32 *rxd =
-@@ -1252,6 +1345,31 @@ static void rt2500usb_fill_rxdone(struct
- 	if (rt2x00_get_field32(word0, RXD_W0_PHYSICAL_ERROR))
- 		rxdesc->flags |= RX_FLAG_FAILED_PLCP_CRC;
- 
-+	if (test_bit(CONFIG_SUPPORT_HW_CRYPTO, &rt2x00dev->flags)) {
-+		rxdesc->cipher = rt2x00_get_field32(word0, RXD_W0_CIPHER);
-+		if (rt2x00_get_field32(word0, RXD_W0_CIPHER_ERROR))
-+			rxdesc->cipher_status = RX_CRYPTO_FAIL_KEY;
-+	}
-+
-+	if (rxdesc->cipher != CIPHER_NONE) {
-+		_rt2x00_desc_read(rxd, 2, &rxdesc->iv);
-+		_rt2x00_desc_read(rxd, 3, &rxdesc->eiv);
-+		/* ICV is located at the end of frame */
-+
-+		/*
-+		 * Hardware has stripped IV/EIV data from 802.11 frame during
-+		 * decryption. It has provided the data seperately but rt2x00lib
-+		 * should decide if it should be reinserted.
-+		 */
-+		rxdesc->flags |= RX_FLAG_IV_STRIPPED;
-+		if (rxdesc->cipher != CIPHER_TKIP)
-+			rxdesc->flags |= RX_FLAG_MMIC_STRIPPED;
-+		if (rxdesc->cipher_status == RX_CRYPTO_SUCCESS)
-+			rxdesc->flags |= RX_FLAG_DECRYPTED;
-+		else if (rxdesc->cipher_status == RX_CRYPTO_FAIL_MIC)
-+			rxdesc->flags |= RX_FLAG_MMIC_ERROR;
-+	}
-+
- 	/*
- 	 * Obtain the status about this packet.
- 	 * When frame was received with an OFDM bitrate,
-@@ -1259,8 +1377,8 @@ static void rt2500usb_fill_rxdone(struct
- 	 * a CCK bitrate the signal is the rate in 100kbit/s.
- 	 */
- 	rxdesc->signal = rt2x00_get_field32(word1, RXD_W1_SIGNAL);
--	rxdesc->rssi = rt2x00_get_field32(word1, RXD_W1_RSSI) -
--	    entry->queue->rt2x00dev->rssi_offset;
-+	rxdesc->rssi =
-+	    rt2x00_get_field32(word1, RXD_W1_RSSI) - rt2x00dev->rssi_offset;
- 	rxdesc->size = rt2x00_get_field32(word0, RXD_W0_DATABYTE_COUNT);
- 
- 	if (rt2x00_get_field32(word0, RXD_W0_OFDM))
-@@ -1750,6 +1868,8 @@ static int rt2500usb_probe_hw(struct rt2
- 	__set_bit(DRIVER_REQUIRE_ATIM_QUEUE, &rt2x00dev->flags);
- 	__set_bit(DRIVER_REQUIRE_BEACON_GUARD, &rt2x00dev->flags);
- 	__set_bit(DRIVER_REQUIRE_SCHEDULED, &rt2x00dev->flags);
-+	if (!modparam_nohwcrypt)
-+		__set_bit(CONFIG_SUPPORT_HW_CRYPTO, &rt2x00dev->flags);
- 	__set_bit(CONFIG_DISABLE_LINK_TUNING, &rt2x00dev->flags);
- 
- 	/*
-@@ -1769,6 +1889,7 @@ static const struct ieee80211_ops rt2500
- 	.config			= rt2x00mac_config,
- 	.config_interface	= rt2x00mac_config_interface,
- 	.configure_filter	= rt2x00mac_configure_filter,
-+	.set_key		= rt2x00mac_set_key,
- 	.get_stats		= rt2x00mac_get_stats,
- 	.bss_info_changed	= rt2x00mac_bss_info_changed,
- 	.conf_tx		= rt2x00mac_conf_tx,
-@@ -1791,6 +1912,8 @@ static const struct rt2x00lib_ops rt2500
- 	.get_tx_data_len	= rt2500usb_get_tx_data_len,
- 	.kick_tx_queue		= rt2500usb_kick_tx_queue,
- 	.fill_rxdone		= rt2500usb_fill_rxdone,
-+	.config_shared_key	= rt2500usb_config_key,
-+	.config_pairwise_key	= rt2500usb_config_key,
- 	.config_filter		= rt2500usb_config_filter,
- 	.config_intf		= rt2500usb_config_intf,
- 	.config_erp		= rt2500usb_config_erp,
---- a/drivers/net/wireless/rt2x00/rt2500usb.h
-+++ b/drivers/net/wireless/rt2x00/rt2500usb.h
-@@ -447,6 +447,9 @@
- #define SEC_CSR30			0x04bc
- #define SEC_CSR31			0x04be
- 
-+#define KEY_ENTRY(__idx) \
-+	( SEC_CSR0 + ((__idx) * 16) )
-+
- /*
-  * PHY control registers.
-  */
+diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
+new file mode 100644
+index 0000000..65e9915
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -0,0 +1,2556 @@
+@@ -0,0 +1,2576 @@
 +/*
 +	Copyright (C) 2004 - 2008 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -302,46 +87,37 @@ do not edit
 + * the access attempt is considered to have failed,
 + * and we will print an error.
 + */
-+static u32 rt2800pci_bbp_check(struct rt2x00_dev *rt2x00dev)
-+{
-+	u32 reg;
-+	unsigned int i;
-+
-+	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2x00pci_register_read(rt2x00dev, BBP_CSR_CFG, &reg);
-+		if (!rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY))
-+			break;
-+		udelay(REGISTER_BUSY_DELAY);
-+	}
-+
-+	return reg;
-+}
++#define WAIT_FOR_BBP(__dev, __reg) \
++	rt2x00pci_regbusy_read((__dev), BBP_CSR_CFG, BBP_CSR_CFG_BUSY, (__reg))
++#define WAIT_FOR_RF(__dev, __reg) \
++	rt2x00pci_regbusy_read((__dev), RF_CSR_CFG0, RF_CSR_CFG0_BUSY, (__reg))
++#define WAIT_FOR_MCU(__dev, __reg) \
++	rt2x00pci_regbusy_read((__dev), H2M_MAILBOX_CSR, \
++			       H2M_MAILBOX_CSR_OWNER, (__reg))
 +
 +static void rt2800pci_bbp_write(struct rt2x00_dev *rt2x00dev,
 +				const unsigned int word, const u8 value)
 +{
 +	u32 reg;
 +
++	mutex_lock(&rt2x00dev->csr_mutex);
++
 +	/*
-+	 * Wait until the BBP becomes ready.
++	 * Wait until the BBP becomes available, afterwards we
++	 * can safely write the new data into the register.
 +	 */
-+	reg = rt2800pci_bbp_check(rt2x00dev);
-+	if (rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY)) {
-+		ERROR(rt2x00dev, "PHY_CSR3 register busy. Write failed.\n");
-+		return;
++	if (WAIT_FOR_BBP(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_VALUE, value);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 0);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_BBP_RW_MODE, 1);
++
++		rt2x00pci_register_write(rt2x00dev, BBP_CSR_CFG, reg);
 +	}
 +
-+	/*
-+	 * Write the data into the BBP.
-+	 */
-+	reg = 0;
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_VALUE, value);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 0);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_BBP_RW_MODE, 1);
-+
-+	rt2x00pci_register_write(rt2x00dev, BBP_CSR_CFG, reg);
++	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
 +static void rt2800pci_bbp_read(struct rt2x00_dev *rt2x00dev,
@@ -349,67 +125,86 @@ do not edit
 +{
 +	u32 reg;
 +
-+	/*
-+	 * Wait until the BBP becomes ready.
-+	 */
-+	reg = rt2800pci_bbp_check(rt2x00dev);
-+	if (rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY)) {
-+		ERROR(rt2x00dev, "PHY_CSR3 register busy. Read failed.\n");
-+		return;
-+	}
++	mutex_lock(&rt2x00dev->csr_mutex);
 +
 +	/*
-+	 * Write the request into the BBP.
++	 * Wait until the BBP becomes available, afterwards we
++	 * can safely write the read request into the register.
++	 * After the data has been written, we wait until hardware
++	 * returns the correct value, if at any time the register
++	 * doesn't become available in time, reg will be 0xffffffff
++	 * which means we return 0xff to the caller.
 +	 */
-+	reg = 0;
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 1);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_BBP_RW_MODE, 1);
++	if (WAIT_FOR_BBP(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 1);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_BBP_RW_MODE, 1);
 +
-+	rt2x00pci_register_write(rt2x00dev, BBP_CSR_CFG, reg);
++		rt2x00pci_register_write(rt2x00dev, BBP_CSR_CFG, reg);
 +
-+	/*
-+	 * Wait until the BBP becomes ready.
-+	 */
-+	reg = rt2800pci_bbp_check(rt2x00dev);
-+	if (rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY)) {
-+		ERROR(rt2x00dev, "PHY_CSR3 register busy. Read failed.\n");
-+		*value = 0xff;
-+		return;
++		WAIT_FOR_BBP(rt2x00dev, &reg);
 +	}
 +
 +	*value = rt2x00_get_field32(reg, BBP_CSR_CFG_VALUE);
++
++	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
 +static void rt2800pci_rf_write(struct rt2x00_dev *rt2x00dev,
 +			       const unsigned int word, const u32 value)
 +{
 +	u32 reg;
-+	unsigned int i;
 +
 +	if (!word)
 +		return;
 +
-+	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2x00pci_register_read(rt2x00dev, RF_CSR_CFG0, &reg);
-+		if (!rt2x00_get_field32(reg, RF_CSR_CFG0_BUSY))
-+			goto rf_write;
-+		udelay(REGISTER_BUSY_DELAY);
++	mutex_lock(&rt2x00dev->csr_mutex);
++
++	/*
++	 * Wait until the RF becomes available, afterwards we
++	 * can safely write the new data into the register.
++	 */
++	if (WAIT_FOR_RF(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_REG_VALUE_BW, value);
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_STANDBYMODE, 0);
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_SEL, 0);
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_BUSY, 1);
++
++		rt2x00pci_register_write(rt2x00dev, RF_CSR_CFG0, reg);
++		rt2x00_rf_write(rt2x00dev, word, value);
 +	}
 +
-+	ERROR(rt2x00dev, "RF_CSR_CFG0 register busy. Write failed.\n");
-+	return;
++	mutex_unlock(&rt2x00dev->csr_mutex);
++}
 +
-+rf_write:
-+	reg = 0;
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_REG_VALUE_BW, value);
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_STANDBYMODE, 0);
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_SEL, 0);
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_BUSY, 1);
++static void rt2800pci_mcu_request(struct rt2x00_dev *rt2x00dev,
++				  const u8 command, const u8 token,
++				  const u8 arg0, const u8 arg1)
++{
++	u32 reg;
 +
-+	rt2x00pci_register_write(rt2x00dev, RF_CSR_CFG0, reg);
-+	rt2x00_rf_write(rt2x00dev, word, value);
++	mutex_lock(&rt2x00dev->csr_mutex);
++
++	/*
++	 * Wait until the MCU becomes available, afterwards we
++	 * can safely write the new data into the register.
++	 */
++	if (WAIT_FOR_MCU(rt2x00dev, &reg)) {
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_OWNER, 1);
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_CMD_TOKEN, token);
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG0, arg0);
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG1, arg1);
++		rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CSR, reg);
++
++		reg = 0;
++		rt2x00_set_field32(&reg, HOST_CMD_CSR_HOST_COMMAND, command);
++		rt2x00pci_register_write(rt2x00dev, HOST_CMD_CSR, reg);
++	}
++
++	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
 +static void rt2800pci_eepromregister_read(struct eeprom_93cx6 *eeprom)
@@ -440,37 +235,6 @@ do not edit
 +			   !!eeprom->reg_chip_select);
 +
 +	rt2x00pci_register_write(rt2x00dev, E2PROM_CSR, reg);
-+}
-+
-+static void rt2800pci_mcu_request(struct rt2x00_dev *rt2x00dev,
-+				  const u8 command, const u8 token,
-+				  const u8 arg0, const u8 arg1)
-+{
-+	unsigned int i;
-+	u32 reg;
-+
-+	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2x00pci_register_read(rt2x00dev, H2M_MAILBOX_CSR, &reg);
-+		if (!rt2x00_get_field32(reg, H2M_MAILBOX_CSR_OWNER))
-+			goto mcu_write;
-+		udelay(REGISTER_BUSY_DELAY);
-+	}
-+
-+	ERROR(rt2x00dev, "mcu request error. "
-+	      "Request 0x%02x failed for token 0x%02x.\n",
-+	      command, token);
-+	return;
-+
-+mcu_write:
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_OWNER, 1);
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_CMD_TOKEN, token);
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG0, arg0);
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG1, arg1);
-+	rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CSR, reg);
-+
-+	reg = 0;
-+	rt2x00_set_field32(&reg, HOST_CMD_CSR_HOST_COMMAND, command);
-+	rt2x00pci_register_write(rt2x00dev, HOST_CMD_CSR, reg);
 +}
 +
 +#ifdef CONFIG_RT2X00_LIB_DEBUGFS
@@ -735,7 +499,8 @@ do not edit
 +			   !(filter_flags & FIF_PLCPFAIL));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_TO_ME,
 +			   !(filter_flags & FIF_PROMISC_IN_BSS));
-+	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD, 0);
++	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD,
++			   !(filter_flags & FIF_OTHER_BSS));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_VER_ERROR, 1);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_MULTICAST,
 +			   !(filter_flags & FIF_ALLMULTI));
@@ -1344,31 +1109,41 @@ do not edit
 +/*
 + * Initialization functions.
 + */
-+static void rt2800pci_init_rxentry(struct rt2x00_dev *rt2x00dev,
-+				   struct queue_entry *entry)
++static bool rt2800pci_get_entry_state(struct queue_entry *entry)
++{
++	struct queue_entry_priv_pci *entry_priv = entry->priv_data;
++	u32 word;
++
++	if (entry->queue->qid == QID_RX) {
++		rt2x00_desc_read(entry_priv->desc, 1, &word);
++
++		return (!rt2x00_get_field32(word, RXD_W1_DMA_DONE));
++	} else {
++		rt2x00_desc_read(entry_priv->desc, 0, &word);
++
++		return (!rt2x00_get_field32(word, TXD_W1_DMA_DONE));
++	}
++}
++
++static void rt2800pci_clear_entry(struct queue_entry *entry)
 +{
 +	struct queue_entry_priv_pci *entry_priv = entry->priv_data;
 +	struct skb_frame_desc *skbdesc = get_skb_frame_desc(entry->skb);
 +	u32 word;
 +
-+	rt2x00_desc_read(entry_priv->desc, 0, &word);
-+	rt2x00_set_field32(&word, RXD_W0_SDP0, skbdesc->skb_dma);
-+	rt2x00_desc_write(entry_priv->desc, 0, word);
++	if (entry->queue->qid == QID_RX) {
++		rt2x00_desc_read(entry_priv->desc, 0, &word);
++		rt2x00_set_field32(&word, RXD_W0_SDP0, skbdesc->skb_dma);
++		rt2x00_desc_write(entry_priv->desc, 0, word);
 +
-+	rt2x00_desc_read(entry_priv->desc, 1, &word);
-+	rt2x00_set_field32(&word, RXD_W1_DMA_DONE, 0);
-+	rt2x00_desc_write(entry_priv->desc, 1, word);
-+}
-+
-+static void rt2800pci_init_txentry(struct rt2x00_dev *rt2x00dev,
-+				   struct queue_entry *entry)
-+{
-+	struct queue_entry_priv_pci *entry_priv = entry->priv_data;
-+	u32 word;
-+
-+	rt2x00_desc_read(entry_priv->desc, 1, &word);
-+	rt2x00_set_field32(&word, TXD_W1_DMA_DONE, 1);
-+	rt2x00_desc_write(entry_priv->desc, 1, word);
++		rt2x00_desc_read(entry_priv->desc, 1, &word);
++		rt2x00_set_field32(&word, RXD_W1_DMA_DONE, 0);
++		rt2x00_desc_write(entry_priv->desc, 1, word);
++	} else {
++		rt2x00_desc_read(entry_priv->desc, 1, &word);
++		rt2x00_set_field32(&word, TXD_W1_DMA_DONE, 1);
++		rt2x00_desc_write(entry_priv->desc, 1, word);
++	}
 +}
 +
 +static int rt2800pci_init_queues(struct rt2x00_dev *rt2x00dev)
@@ -1772,7 +1547,7 @@ do not edit
 +static void rt2800pci_toggle_irq(struct rt2x00_dev *rt2x00dev,
 +				 enum dev_state state)
 +{
-+	int mask = (state == STATE_RADIO_IRQ_OFF);
++	int mask = (state == STATE_RADIO_IRQ_ON);
 +	u32 reg;
 +
 +	/*
@@ -2082,11 +1857,13 @@ do not edit
 +}
 +
 +static void rt2800pci_kick_tx_queue(struct rt2x00_dev *rt2x00dev,
-+				    const enum data_queue_qid queue)
++				    const enum data_queue_qid queue_idx)
 +{
++	struct data_queue *queue;
++	unsigned int idx, qidx = 0;
 +	u32 reg;
 +
-+	if (queue == QID_BEACON) {
++	if (queue_idx == QID_BEACON) {
 +		rt2x00pci_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
 +		if (!rt2x00_get_field32(reg, BCN_TIME_CFG_BEACON_GEN)) {
 +			rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_TICKING, 1);
@@ -2097,7 +1874,18 @@ do not edit
 +		return;
 +	}
 +
-+	/* FIXME: How can be kick normal TX queues? */
++	if (queue_idx > QID_HCCA && queue_idx != QID_MGMT)
++		return;
++
++	queue = rt2x00queue_get_queue(rt2x00dev, queue_idx);
++	idx = queue->index[Q_INDEX];
++
++	if (queue_idx == QID_MGMT)
++		qidx = 5;
++	else
++		qidx = queue_idx;
++
++	rt2x00pci_register_write(rt2x00dev, TX_CTX_IDX(qidx), idx);
 +}
 +
 +/*
@@ -2191,8 +1979,25 @@ do not edit
 +static irqreturn_t rt2800pci_interrupt(int irq, void *dev_instance)
 +{
 +	struct rt2x00_dev *rt2x00dev = dev_instance;
++	u32 reg;
 +
-+	/* FIXME */
++	/* Read status and ACK all interrupts */
++	rt2x00pci_register_read(rt2x00dev, INT_SOURCE_CSR, &reg);
++	rt2x00pci_register_write(rt2x00dev, INT_SOURCE_CSR, reg);
++
++	if (!reg)
++		return IRQ_NONE;
++
++	if (!test_bit(DEVICE_STATE_ENABLED_RADIO, &rt2x00dev->flags))
++		return IRQ_HANDLED;
++
++	/*
++	 * 1 - Rx ring done interrupt.
++	 */
++	if (rt2x00_get_field32(reg, INT_SOURCE_CSR_RX_DONE))
++		rt2x00pci_rxdone(rt2x00dev);
++
++	/* TODO: TX DONE */
 +
 +	return IRQ_HANDLED;
 +}
@@ -2701,8 +2506,8 @@ do not edit
 +	.load_firmware		= rt2800pci_load_firmware,
 +	.initialize		= rt2x00pci_initialize,
 +	.uninitialize		= rt2x00pci_uninitialize,
-+	.init_rxentry		= rt2800pci_init_rxentry,
-+	.init_txentry		= rt2800pci_init_txentry,
++	.get_entry_state	= rt2800pci_get_entry_state,
++	.clear_entry		= rt2800pci_clear_entry,
 +	.set_device_state	= rt2800pci_set_device_state,
 +	.rfkill_poll		= rt2800pci_rfkill_poll,
 +	.link_stats		= rt2800pci_link_stats,
@@ -2801,9 +2606,12 @@ do not edit
 +
 +module_init(rt2800pci_init);
 +module_exit(rt2800pci_exit);
+diff --git a/drivers/net/wireless/rt2x00/rt2800pci.h b/drivers/net/wireless/rt2x00/rt2800pci.h
+new file mode 100644
+index 0000000..66593ed
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
-@@ -0,0 +1,1862 @@
+@@ -0,0 +1,1871 @@
 +/*
 +	Copyright (C) 2004 - 2008 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -3116,6 +2924,15 @@ do not edit
 +#define TX_MAX_CNT5			0x0284
 +#define TX_CTX_IDX5			0x0288
 +#define TX_DTX_IDX5			0x028c
++
++/*
++ * Queue register offset macros
++ */
++#define TX_QUEUE_REG_OFFSET		0x10
++#define TX_BASE_PTR(__x)		TX_BASE_PTR0 + ((__x) * TX_QUEUE_REG_OFFSET)
++#define TX_MAX_CNT(__x)			TX_MAX_CNT0 + ((__x) * TX_QUEUE_REG_OFFSET)
++#define TX_CTX_IDX(__x)			TX_CTX_IDX0 + ((__x) * TX_QUEUE_REG_OFFSET)
++#define TX_DTX_IDX(__x)			TX_DTX_IDX0 + ((__x) * TX_QUEUE_REG_OFFSET)
 +
 +/*
 + * RX register offsets
@@ -4666,9 +4483,12 @@ do not edit
 +	clamp_t(char, __txpower, MIN_A_TXPOWER, MAX_A_TXPOWER)
 +
 +#endif /* RT2800PCI_H */
+diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
+new file mode 100644
+index 0000000..761a7ec
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -0,0 +1,2594 @@
+@@ -0,0 +1,2498 @@
 +/*
 +	Copyright (C) 2004 - 2008 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -4717,7 +4537,7 @@ do not edit
 +/*
 + * Register access.
 + * All access to the CSR registers will go through the methods
-+ * rt2800usb_register_read and rt2800usb_register_write.
++ * rt2x00usb_register_read and rt2x00usb_register_write.
 + * BBP and RF register require indirect register access,
 + * and use the CSR registers BBPCSR and RFCSR to achieve this.
 + * These indirect registers work with busy bits,
@@ -4726,113 +4546,38 @@ do not edit
 + * between each attampt. When the busy bit is still set at that time,
 + * the access attempt is considered to have failed,
 + * and we will print an error.
-+ * The _lock versions must be used if you already hold the usb_cache_mutex
++ * The _lock versions must be used if you already hold the csr_mutex
 + */
-+static inline void rt2800usb_register_read(struct rt2x00_dev *rt2x00dev,
-+					   const unsigned int offset,
-+					   u32 *value)
-+{
-+	__le32 reg;
-+	rt2x00usb_vendor_request_buff(rt2x00dev, USB_MULTI_READ,
-+				      USB_VENDOR_REQUEST_IN, offset,
-+				      &reg, sizeof(u32), REGISTER_TIMEOUT);
-+	*value = le32_to_cpu(reg);
-+}
-+
-+static inline void rt2800usb_register_read_lock(struct rt2x00_dev *rt2x00dev,
-+						const unsigned int offset,
-+						u32 *value)
-+{
-+	__le32 reg;
-+	rt2x00usb_vendor_req_buff_lock(rt2x00dev, USB_MULTI_READ,
-+				       USB_VENDOR_REQUEST_IN, offset,
-+				       &reg, sizeof(u32), REGISTER_TIMEOUT);
-+	*value = le32_to_cpu(reg);
-+}
-+
-+static inline void rt2800usb_register_multiread(struct rt2x00_dev *rt2x00dev,
-+						const unsigned int offset,
-+						void *value, const u32 length)
-+{
-+	int timeout = REGISTER_TIMEOUT * (length / sizeof(u32));
-+	rt2x00usb_vendor_request_buff(rt2x00dev, USB_MULTI_READ,
-+				      USB_VENDOR_REQUEST_IN, offset,
-+				      value, length, timeout);
-+}
-+
-+static inline void rt2800usb_register_write(struct rt2x00_dev *rt2x00dev,
-+					    const unsigned int offset,
-+					    u32 value)
-+{
-+	__le32 reg = cpu_to_le32(value);
-+	rt2x00usb_vendor_request_buff(rt2x00dev, USB_MULTI_WRITE,
-+				      USB_VENDOR_REQUEST_OUT, offset,
-+				      &reg, sizeof(u32), REGISTER_TIMEOUT);
-+}
-+
-+static inline void rt2800usb_register_write_lock(struct rt2x00_dev *rt2x00dev,
-+						 const unsigned int offset,
-+						 u32 value)
-+{
-+	__le32 reg = cpu_to_le32(value);
-+	rt2x00usb_vendor_req_buff_lock(rt2x00dev, USB_MULTI_WRITE,
-+				       USB_VENDOR_REQUEST_OUT, offset,
-+				      &reg, sizeof(u32), REGISTER_TIMEOUT);
-+}
-+
-+static inline void rt2800usb_register_multiwrite(struct rt2x00_dev *rt2x00dev,
-+						 const unsigned int offset,
-+						 void *value, const u32 length)
-+{
-+	int timeout = REGISTER_TIMEOUT * (length / sizeof(u32));
-+	rt2x00usb_vendor_request_buff(rt2x00dev, USB_MULTI_WRITE,
-+				      USB_VENDOR_REQUEST_OUT, offset,
-+				      value, length, timeout);
-+}
-+
-+static u32 rt2800usb_bbp_check(struct rt2x00_dev *rt2x00dev)
-+{
-+	u32 reg;
-+	unsigned int i;
-+
-+	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read_lock(rt2x00dev, BBP_CSR_CFG, &reg);
-+		if (!rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY))
-+			break;
-+		udelay(REGISTER_BUSY_DELAY);
-+	}
-+
-+	return reg;
-+}
++#define WAIT_FOR_BBP(__dev, __reg) \
++	rt2x00usb_regbusy_read((__dev), BBP_CSR_CFG, BBP_CSR_CFG_BUSY, (__reg))
++#define WAIT_FOR_RF(__dev, __reg) \
++	rt2x00usb_regbusy_read((__dev), RF_CSR_CFG0, RF_CSR_CFG0_BUSY, (__reg))
++#define WAIT_FOR_MCU(__dev, __reg) \
++	rt2x00usb_regbusy_read((__dev), H2M_MAILBOX_CSR, \
++			       H2M_MAILBOX_CSR_OWNER, (__reg))
 +
 +static void rt2800usb_bbp_write(struct rt2x00_dev *rt2x00dev,
 +				const unsigned int word, const u8 value)
 +{
 +	u32 reg;
 +
-+	mutex_lock(&rt2x00dev->usb_cache_mutex);
++	mutex_lock(&rt2x00dev->csr_mutex);
 +
 +	/*
-+	 * Wait until the BBP becomes ready.
++	 * Wait until the BBP becomes available, afterwards we
++	 * can safely write the new data into the register.
 +	 */
-+	reg = rt2800usb_bbp_check(rt2x00dev);
-+	if (rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY)) {
-+		ERROR(rt2x00dev, "BBP_CSR_CFG register busy. Write failed.\n");
-+		mutex_unlock(&rt2x00dev->usb_cache_mutex);
-+		return;
++	if (WAIT_FOR_BBP(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_VALUE, value);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 0);
++
++		rt2x00usb_register_write_lock(rt2x00dev, BBP_CSR_CFG, reg);
 +	}
 +
-+	/*
-+	 * Write the data into the BBP.
-+	 */
-+	reg = 0;
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_VALUE, value);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 0);
-+
-+	rt2800usb_register_write_lock(rt2x00dev, BBP_CSR_CFG, reg);
-+	mutex_unlock(&rt2x00dev->usb_cache_mutex);
++	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
 +static void rt2800usb_bbp_read(struct rt2x00_dev *rt2x00dev,
@@ -4840,113 +4585,93 @@ do not edit
 +{
 +	u32 reg;
 +
-+	mutex_lock(&rt2x00dev->usb_cache_mutex);
++	mutex_lock(&rt2x00dev->csr_mutex);
 +
 +	/*
-+	 * Wait until the BBP becomes ready.
++	 * Wait until the BBP becomes available, afterwards we
++	 * can safely write the read request into the register.
++	 * After the data has been written, we wait until hardware
++	 * returns the correct value, if at any time the register
++	 * doesn't become available in time, reg will be 0xffffffff
++	 * which means we return 0xff to the caller.
 +	 */
-+	reg = rt2800usb_bbp_check(rt2x00dev);
-+	if (rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY)) {
-+		ERROR(rt2x00dev, "BBP_CSR_CFG register busy. Read failed.\n");
-+		mutex_unlock(&rt2x00dev->usb_cache_mutex);
-+		return;
-+	}
++	if (WAIT_FOR_BBP(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
++		rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 1);
 +
-+	/*
-+	 * Write the request into the BBP.
-+	 */
-+	reg = 0;
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_REGNUM, word);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_BUSY, 1);
-+	rt2x00_set_field32(&reg, BBP_CSR_CFG_READ_CONTROL, 1);
++		rt2x00usb_register_write_lock(rt2x00dev, BBP_CSR_CFG, reg);
 +
-+	rt2800usb_register_write_lock(rt2x00dev, BBP_CSR_CFG, reg);
-+
-+	/*
-+	 * Wait until the BBP becomes ready.
-+	 */
-+	reg = rt2800usb_bbp_check(rt2x00dev);
-+	if (rt2x00_get_field32(reg, BBP_CSR_CFG_BUSY)) {
-+		ERROR(rt2x00dev, "BBP_CSR_CFG register busy. Read failed.\n");
-+		*value = 0xff;
-+		return;
++		WAIT_FOR_BBP(rt2x00dev, &reg);
 +	}
 +
 +	*value = rt2x00_get_field32(reg, BBP_CSR_CFG_VALUE);
-+	mutex_unlock(&rt2x00dev->usb_cache_mutex);
++
++	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
 +static void rt2800usb_rf_write(struct rt2x00_dev *rt2x00dev,
 +			       const unsigned int word, const u32 value)
 +{
 +	u32 reg;
-+	unsigned int i;
 +
 +	if (!word)
 +		return;
 +
-+	mutex_lock(&rt2x00dev->usb_cache_mutex);
++	mutex_lock(&rt2x00dev->csr_mutex);
 +
-+	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read_lock(rt2x00dev, RF_CSR_CFG0, &reg);
-+		if (!rt2x00_get_field32(reg, RF_CSR_CFG0_BUSY))
-+			goto rf_write;
-+		udelay(REGISTER_BUSY_DELAY);
++	/*
++	 * Wait until the RF becomes available, afterwards we
++	 * can safely write the new data into the register.
++	 */
++	if (WAIT_FOR_RF(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_REG_VALUE_BW, value);
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_STANDBYMODE, 0);
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_SEL, 0);
++		rt2x00_set_field32(&reg, RF_CSR_CFG0_BUSY, 1);
++
++		rt2x00usb_register_write_lock(rt2x00dev, RF_CSR_CFG0, reg);
++		rt2x00_rf_write(rt2x00dev, word, value);
 +	}
 +
-+	mutex_unlock(&rt2x00dev->usb_cache_mutex);
-+	ERROR(rt2x00dev, "RF_CSR_CFG0 register busy. Write failed.\n");
-+	return;
-+
-+rf_write:
-+	reg = 0;
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_REG_VALUE_BW, value);
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_STANDBYMODE, 0);
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_SEL, 0);
-+	rt2x00_set_field32(&reg, RF_CSR_CFG0_BUSY, 1);
-+
-+	rt2800usb_register_write_lock(rt2x00dev, RF_CSR_CFG0, reg);
-+	rt2x00_rf_write(rt2x00dev, word, value);
-+	mutex_unlock(&rt2x00dev->usb_cache_mutex);
++	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
 +static void rt2800usb_mcu_request(struct rt2x00_dev *rt2x00dev,
 +				  const u8 command, const u8 token,
 +				  const u8 arg0, const u8 arg1)
 +{
-+	unsigned int i;
 +	u32 reg;
 +
-+	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read(rt2x00dev, H2M_MAILBOX_CSR, &reg);
-+		if (!rt2x00_get_field32(reg, H2M_MAILBOX_CSR_OWNER))
-+			goto mcu_write;
-+		udelay(REGISTER_BUSY_DELAY);
++	mutex_lock(&rt2x00dev->csr_mutex);
++
++	/*
++	 * Wait until the MCU becomes available, afterwards we
++	 * can safely write the new data into the register.
++	 */
++	if (WAIT_FOR_MCU(rt2x00dev, &reg)) {
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_OWNER, 1);
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_CMD_TOKEN, token);
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG0, arg0);
++		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG1, arg1);
++		rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_CSR, reg);
++
++		reg = 0;
++		rt2x00_set_field32(&reg, HOST_CMD_CSR_HOST_COMMAND, command);
++		rt2x00usb_register_write(rt2x00dev, HOST_CMD_CSR, reg);
 +	}
 +
-+	ERROR(rt2x00dev, "mcu request error. "
-+	      "Request 0x%02x failed for token 0x%02x.\n",
-+	      command, token);
-+	return;
-+
-+mcu_write:
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_OWNER, 1);
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_CMD_TOKEN, token);
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG0, arg0);
-+	rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG1, arg1);
-+	rt2800usb_register_write(rt2x00dev, H2M_MAILBOX_CSR, reg);
-+
-+	reg = 0;
-+	rt2x00_set_field32(&reg, HOST_CMD_CSR_HOST_COMMAND, command);
-+	rt2800usb_register_write(rt2x00dev, HOST_CMD_CSR, reg);
++	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
 +#ifdef CONFIG_RT2X00_LIB_DEBUGFS
 +static const struct rt2x00debug rt2800usb_rt2x00debug = {
 +	.owner	= THIS_MODULE,
 +	.csr	= {
-+		.read		= rt2800usb_register_read,
-+		.write		= rt2800usb_register_write,
++		.read		= rt2x00usb_register_read,
++		.write		= rt2x00usb_register_write,
 +		.flags		= RT2X00DEBUGFS_OFFSET,
 +		.word_base	= CSR_REG_BASE,
 +		.word_size	= sizeof(u32),
@@ -5021,7 +4746,7 @@ do not edit
 +	    container_of(led_cdev, struct rt2x00_led, led_dev);
 +	u32 reg;
 +
-+	rt2800usb_register_read(led->rt2x00dev, LED_CFG, &reg);
++	rt2x00usb_register_read(led->rt2x00dev, LED_CFG, &reg);
 +	rt2x00_set_field32(&reg, LED_CFG_ON_PERIOD, *delay_on);
 +	rt2x00_set_field32(&reg, LED_CFG_OFF_PERIOD, *delay_off);
 +	rt2x00_set_field32(&reg, LED_CFG_SLOW_BLINK_PERIOD, 3);
@@ -5029,7 +4754,7 @@ do not edit
 +	rt2x00_set_field32(&reg, LED_CFG_G_LED_MODE, 12);
 +	rt2x00_set_field32(&reg, LED_CFG_Y_LED_MODE, 3);
 +	rt2x00_set_field32(&reg, LED_CFG_LED_POLAR, 1);
-+	rt2800usb_register_write(led->rt2x00dev, LED_CFG, reg);
++	rt2x00usb_register_write(led->rt2x00dev, LED_CFG, reg);
 +
 +	return 0;
 +}
@@ -5066,7 +4791,7 @@ do not edit
 +	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_BSS_IDX,
 +			   (crypto->cmd == SET_KEY) ? crypto->bssidx : 0);
 +	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_RX_WIUDF, 0);
-+	rt2800usb_register_write(rt2x00dev, offset, reg);
++	rt2x00usb_register_write(rt2x00dev, offset, reg);
 +}
 +
 +static int rt2800usb_config_shared_key(struct rt2x00_dev *rt2x00dev,
@@ -5120,10 +4845,10 @@ do not edit
 +	field.bit_mask = 0x7 << field.bit_offset;
 +
 +	offset = SHARED_KEY_MODE_ENTRY(key->hw_key_idx / 8);
-+	rt2800usb_register_read(rt2x00dev, offset, &reg);
++	rt2x00usb_register_read(rt2x00dev, offset, &reg);
 +	rt2x00_set_field32(&reg, field,
 +			   (crypto->cmd == SET_KEY) ? crypto->cipher : 0);
-+	rt2800usb_register_write(rt2x00dev, offset, reg);
++	rt2x00usb_register_write(rt2x00dev, offset, reg);
 +
 +	/*
 +	 * Update WCID information
@@ -5194,14 +4919,15 @@ do not edit
 +	 * and broadcast frames will always be accepted since
 +	 * there is no filter for it at this time.
 +	 */
-+	rt2800usb_register_read(rt2x00dev, RX_FILTER_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, RX_FILTER_CFG, &reg);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_CRC_ERROR,
 +			   !(filter_flags & FIF_FCSFAIL));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_PHY_ERROR,
 +			   !(filter_flags & FIF_PLCPFAIL));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_TO_ME,
 +			   !(filter_flags & FIF_PROMISC_IN_BSS));
-+	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD, 0);
++	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD,
++			   !(filter_flags & FIF_OTHER_BSS));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_VER_ERROR, 1);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_MULTICAST,
 +			   !(filter_flags & FIF_ALLMULTI));
@@ -5223,7 +4949,7 @@ do not edit
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_BAR, 1);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_CNTL,
 +			   !(filter_flags & FIF_CONTROL));
-+	rt2800usb_register_write(rt2x00dev, RX_FILTER_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, RX_FILTER_CFG, reg);
 +}
 +
 +static void rt2800usb_config_intf(struct rt2x00_dev *rt2x00dev,
@@ -5242,16 +4968,16 @@ do not edit
 +		 * bits which (when set to 0) will invalidate the entire beacon.
 +		 */
 +		beacon_base = HW_BEACON_OFFSET(intf->beacon->entry_idx);
-+		rt2800usb_register_write(rt2x00dev, beacon_base, 0);
++		rt2x00usb_register_write(rt2x00dev, beacon_base, 0);
 +
 +		/*
 +		 * Enable synchronisation.
 +		 */
-+		rt2800usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
++		rt2x00usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
 +		rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_TICKING, 1);
 +		rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_SYNC, conf->sync);
 +		rt2x00_set_field32(&reg, BCN_TIME_CFG_TBTT_ENABLE, 1);
-+		rt2800usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
++		rt2x00usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +	}
 +
 +	if (flags & CONFIG_UPDATE_MAC) {
@@ -5259,7 +4985,7 @@ do not edit
 +		rt2x00_set_field32(&reg, MAC_ADDR_DW1_UNICAST_TO_ME_MASK, 0xff);
 +		conf->mac[1] = cpu_to_le32(reg);
 +
-+		rt2800usb_register_multiwrite(rt2x00dev, MAC_ADDR_DW0,
++		rt2x00usb_register_multiwrite(rt2x00dev, MAC_ADDR_DW0,
 +					      conf->mac, sizeof(conf->mac));
 +	}
 +
@@ -5269,7 +4995,7 @@ do not edit
 +		rt2x00_set_field32(&reg, MAC_BSSID_DW1_BSS_BCN_NUM, 0);
 +		conf->bssid[1] = cpu_to_le32(reg);
 +
-+		rt2800usb_register_multiwrite(rt2x00dev, MAC_BSSID_DW0,
++		rt2x00usb_register_multiwrite(rt2x00dev, MAC_BSSID_DW0,
 +					      conf->bssid, sizeof(conf->bssid));
 +	}
 +}
@@ -5279,40 +5005,40 @@ do not edit
 +{
 +	u32 reg;
 +
-+	rt2800usb_register_read(rt2x00dev, TX_TIMEOUT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_TIMEOUT_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_TIMEOUT_CFG_RX_ACK_TIMEOUT,
 +			   erp->ack_timeout);
-+	rt2800usb_register_write(rt2x00dev, TX_TIMEOUT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_TIMEOUT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, AUTO_RSP_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, AUTO_RSP_CFG, &reg);
 +	rt2x00_set_field32(&reg, AUTO_RSP_CFG_BAC_ACK_POLICY,
 +			   !!erp->short_preamble);
 +	rt2x00_set_field32(&reg, AUTO_RSP_CFG_AR_PREAMBLE,
 +			   !!erp->short_preamble);
-+	rt2800usb_register_write(rt2x00dev, AUTO_RSP_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, AUTO_RSP_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_CTRL,
 +			   erp->cts_protection ? 2 : 0);
-+	rt2800usb_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, LEGACY_BASIC_RATE,
++	rt2x00usb_register_write(rt2x00dev, LEGACY_BASIC_RATE,
 +				 erp->basic_rates);
-+	rt2800usb_register_write(rt2x00dev, HT_BASIC_RATE,
++	rt2x00usb_register_write(rt2x00dev, HT_BASIC_RATE,
 +				 erp->basic_rates >> 32);
 +
-+	rt2800usb_register_read(rt2x00dev, BKOFF_SLOT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, BKOFF_SLOT_CFG, &reg);
 +	rt2x00_set_field32(&reg, BKOFF_SLOT_CFG_SLOT_TIME, erp->slot_time);
 +	rt2x00_set_field32(&reg, BKOFF_SLOT_CFG_CC_DELAY_TIME, 2);
-+	rt2800usb_register_write(rt2x00dev, BKOFF_SLOT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, BKOFF_SLOT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, XIFS_TIME_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, XIFS_TIME_CFG, &reg);
 +	rt2x00_set_field32(&reg, XIFS_TIME_CFG_CCKM_SIFS_TIME, erp->sifs);
 +	rt2x00_set_field32(&reg, XIFS_TIME_CFG_OFDM_SIFS_TIME, erp->sifs);
 +	rt2x00_set_field32(&reg, XIFS_TIME_CFG_OFDM_XIFS_TIME, 4);
 +	rt2x00_set_field32(&reg, XIFS_TIME_CFG_EIFS, erp->eifs);
 +	rt2x00_set_field32(&reg, XIFS_TIME_CFG_BB_RXEND_ENABLE, 1);
-+	rt2800usb_register_write(rt2x00dev, XIFS_TIME_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, XIFS_TIME_CFG, reg);
 +}
 +
 +static void rt2800usb_config_ant(struct rt2x00_dev *rt2x00dev,
@@ -5501,10 +5227,10 @@ do not edit
 +			rt2800usb_bbp_write(rt2x00dev, 75, 0x50);
 +		}
 +
-+		rt2800usb_register_read(rt2x00dev, TX_BAND_CFG, &reg);
++		rt2x00usb_register_read(rt2x00dev, TX_BAND_CFG, &reg);
 +		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_A, 0);
 +		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_BG, 1);
-+		rt2800usb_register_write(rt2x00dev, TX_BAND_CFG, reg);
++		rt2x00usb_register_write(rt2x00dev, TX_BAND_CFG, reg);
 +	} else {
 +		rt2800usb_bbp_write(rt2x00dev, 82, 0xf2);
 +
@@ -5513,13 +5239,13 @@ do not edit
 +		else
 +			rt2800usb_bbp_write(rt2x00dev, 75, 0x50);
 +
-+		rt2800usb_register_read(rt2x00dev, TX_BAND_CFG, &reg);
++		rt2x00usb_register_read(rt2x00dev, TX_BAND_CFG, &reg);
 +		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_A, 1);
 +		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_BG, 0);
-+		rt2800usb_register_write(rt2x00dev, TX_BAND_CFG, reg);
++		rt2x00usb_register_write(rt2x00dev, TX_BAND_CFG, reg);
 +	}
 +
-+	rt2800usb_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
++	rt2x00usb_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
 +
 +	msleep(1);
 +}
@@ -5535,7 +5261,7 @@ do not edit
 +	rt2x00_set_field8(&reg, BBP1_TX_POWER, 0);
 +	rt2800usb_bbp_write(rt2x00dev, 1, r1);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_PWR_CFG_0, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_PWR_CFG_0, &reg);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_0_1MBS, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_0_2MBS, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_0_55MBS, value);
@@ -5544,9 +5270,9 @@ do not edit
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_0_9MBS, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_0_12MBS, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_0_18MBS, value);
-+	rt2800usb_register_write(rt2x00dev, TX_PWR_CFG_0, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_PWR_CFG_0, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_PWR_CFG_1, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_PWR_CFG_1, &reg);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_1_24MBS, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_1_36MBS, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_1_48MBS, value);
@@ -5555,9 +5281,9 @@ do not edit
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_1_MCS1, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_1_MCS2, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_1_MCS3, value);
-+	rt2800usb_register_write(rt2x00dev, TX_PWR_CFG_1, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_PWR_CFG_1, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_PWR_CFG_2, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_PWR_CFG_2, &reg);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_2_MCS4, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_2_MCS5, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_2_MCS6, value);
@@ -5566,9 +5292,9 @@ do not edit
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_2_MCS9, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_2_MCS10, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_2_MCS11, value);
-+	rt2800usb_register_write(rt2x00dev, TX_PWR_CFG_2, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_PWR_CFG_2, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_PWR_CFG_3, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_PWR_CFG_3, &reg);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_3_MCS12, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_3_MCS13, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_3_MCS14, value);
@@ -5577,14 +5303,14 @@ do not edit
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_3_UKNOWN2, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_3_UKNOWN3, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_3_UKNOWN4, value);
-+	rt2800usb_register_write(rt2x00dev, TX_PWR_CFG_3, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_PWR_CFG_3, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_PWR_CFG_4, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_PWR_CFG_4, &reg);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_4_UKNOWN5, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_4_UKNOWN6, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_4_UKNOWN7, value);
 +	rt2x00_set_field32(&reg, TX_PWR_CFG_4_UKNOWN8, value);
-+	rt2800usb_register_write(rt2x00dev, TX_PWR_CFG_4, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_PWR_CFG_4, reg);
 +}
 +
 +static void rt2800usb_config_retry_limit(struct rt2x00_dev *rt2x00dev,
@@ -5592,7 +5318,7 @@ do not edit
 +{
 +	u32 reg;
 +
-+	rt2800usb_register_read(rt2x00dev, TX_RTY_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_RTY_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_RTY_CFG_SHORT_RTY_LIMIT,
 +			   libconf->conf->short_frame_max_tx_count);
 +	rt2x00_set_field32(&reg, TX_RTY_CFG_LONG_RTY_LIMIT,
@@ -5601,7 +5327,7 @@ do not edit
 +	rt2x00_set_field32(&reg, TX_RTY_CFG_NON_AGG_RTY_MODE, 0);
 +	rt2x00_set_field32(&reg, TX_RTY_CFG_AGG_RTY_MODE, 0);
 +	rt2x00_set_field32(&reg, TX_RTY_CFG_TX_AUTO_FB_ENABLE, 1);
-+	rt2800usb_register_write(rt2x00dev, TX_RTY_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_RTY_CFG, reg);
 +}
 +
 +static void rt2800usb_config_duration(struct rt2x00_dev *rt2x00dev,
@@ -5609,10 +5335,10 @@ do not edit
 +{
 +	u32 reg;
 +
-+	rt2800usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_INTERVAL,
 +			   libconf->conf->beacon_int * 16);
-+	rt2800usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +}
 +
 +static void rt2800usb_config(struct rt2x00_dev *rt2x00dev,
@@ -5644,13 +5370,13 @@ do not edit
 +	/*
 +	 * Update FCS error count from register.
 +	 */
-+	rt2800usb_register_read(rt2x00dev, RX_STA_CNT0, &reg);
++	rt2x00usb_register_read(rt2x00dev, RX_STA_CNT0, &reg);
 +	qual->rx_failed = rt2x00_get_field32(reg, RX_STA_CNT0_CRC_ERR);
 +
 +	/*
 +	 * Update False CCA count from register.
 +	 */
-+	rt2800usb_register_read(rt2x00dev, RX_STA_CNT1, &reg);
++	rt2x00usb_register_read(rt2x00dev, RX_STA_CNT1, &reg);
 +	qual->false_cca = rt2x00_get_field32(reg, RX_STA_CNT1_FALSE_CCA);
 +}
 +
@@ -5742,7 +5468,7 @@ do not edit
 +	 * Wait for stable hardware.
 +	 */
 +	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read(rt2x00dev, MAC_CSR0, &reg);
++		rt2x00usb_register_read(rt2x00dev, MAC_CSR0, &reg);
 +		if (reg && reg != ~0)
 +			break;
 +		msleep(1);
@@ -5762,8 +5488,8 @@ do not edit
 +					    data, len,
 +					    REGISTER_TIMEOUT32(len));
 +
-+	rt2800usb_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
-+	rt2800usb_register_write(rt2x00dev, H2M_MAILBOX_STATUS, ~0);
++	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
++	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_STATUS, ~0);
 +
 +	/*
 +	 * Send firmware request to device to load firmware,
@@ -5781,7 +5507,7 @@ do not edit
 +	 * Wait for device to stabilize.
 +	 */
 +	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read(rt2x00dev, PBF_SYS_CTRL, &reg);
++		rt2x00usb_register_read(rt2x00dev, PBF_SYS_CTRL, &reg);
 +		if (rt2x00_get_field32(reg, PBF_SYS_CTRL_READY))
 +			break;
 +		msleep(1);
@@ -5795,8 +5521,8 @@ do not edit
 +	/*
 +	 * Initialize firmware.
 +	 */
-+	rt2800usb_register_write(rt2x00dev, H2M_BBP_AGENT, 0);
-+	rt2800usb_register_write(rt2x00dev, H2M_MAILBOX_CSR, 0);
++	rt2x00usb_register_write(rt2x00dev, H2M_BBP_AGENT, 0);
++	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_CSR, 0);
 +	msleep(1);
 +
 +	return 0;
@@ -5814,7 +5540,7 @@ do not edit
 +	 * Wait untill BBP and RF are ready.
 +	 */
 +	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read(rt2x00dev, MAC_CSR0, &reg);
++		rt2x00usb_register_read(rt2x00dev, MAC_CSR0, &reg);
 +		if (reg && reg != ~0)
 +			break;
 +		msleep(1);
@@ -5825,53 +5551,53 @@ do not edit
 +		return -EBUSY;
 +	}
 +
-+	rt2800usb_register_read(rt2x00dev, PBF_SYS_CTRL, &reg);
-+	rt2800usb_register_write(rt2x00dev, PBF_SYS_CTRL, reg & ~0x00002000);
++	rt2x00usb_register_read(rt2x00dev, PBF_SYS_CTRL, &reg);
++	rt2x00usb_register_write(rt2x00dev, PBF_SYS_CTRL, reg & ~0x00002000);
 +
-+	rt2800usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
++	rt2x00usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
 +	rt2x00_set_field32(&reg, MAC_SYS_CTRL_RESET_CSR, 1);
 +	rt2x00_set_field32(&reg, MAC_SYS_CTRL_RESET_BBP, 1);
-+	rt2800usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
++	rt2x00usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, USB_DMA_CFG, 0x00000000);
++	rt2x00usb_register_write(rt2x00dev, USB_DMA_CFG, 0x00000000);
 +
 +	rt2x00usb_vendor_request_sw(rt2x00dev, USB_DEVICE_MODE, 0,
 +				    USB_MODE_RESET, REGISTER_TIMEOUT);
 +
-+	rt2800usb_register_write(rt2x00dev, MAC_SYS_CTRL, 0x00000000);
++	rt2x00usb_register_write(rt2x00dev, MAC_SYS_CTRL, 0x00000000);
 +
-+	rt2800usb_register_read(rt2x00dev, BCN_OFFSET0, &reg);
++	rt2x00usb_register_read(rt2x00dev, BCN_OFFSET0, &reg);
 +	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN0, 0xe0); /* 0x3800 */
 +	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN1, 0xe8); /* 0x3a00 */
 +	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN2, 0xf0); /* 0x3c00 */
 +	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN3, 0xf8); /* 0x3e00 */
-+	rt2800usb_register_write(rt2x00dev, BCN_OFFSET0, reg);
++	rt2x00usb_register_write(rt2x00dev, BCN_OFFSET0, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, BCN_OFFSET1, &reg);
++	rt2x00usb_register_read(rt2x00dev, BCN_OFFSET1, &reg);
 +	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN4, 0xc8); /* 0x3200 */
 +	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN5, 0xd0); /* 0x3400 */
 +	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN6, 0x77); /* 0x1dc0 */
 +	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN7, 0x6f); /* 0x1bc0 */
-+	rt2800usb_register_write(rt2x00dev, BCN_OFFSET1, reg);
++	rt2x00usb_register_write(rt2x00dev, BCN_OFFSET1, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, LEGACY_BASIC_RATE, 0x0000013f);
-+	rt2800usb_register_write(rt2x00dev, HT_BASIC_RATE, 0x00008003);
++	rt2x00usb_register_write(rt2x00dev, LEGACY_BASIC_RATE, 0x0000013f);
++	rt2x00usb_register_write(rt2x00dev, HT_BASIC_RATE, 0x00008003);
 +
-+	rt2800usb_register_write(rt2x00dev, MAC_SYS_CTRL, 0x00000000);
++	rt2x00usb_register_write(rt2x00dev, MAC_SYS_CTRL, 0x00000000);
 +
-+	rt2800usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_INTERVAL, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_TICKING, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_SYNC, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_TBTT_ENABLE, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_GEN, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_TX_TIME_COMPENSATE, 0);
-+	rt2800usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, TX_SW_CFG0, 0x00040a06);
-+	rt2800usb_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
++	rt2x00usb_register_write(rt2x00dev, TX_SW_CFG0, 0x00040a06);
++	rt2x00usb_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_LINK_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_LINK_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_LINK_CFG_REMOTE_MFB_LIFETIME, 32);
 +	rt2x00_set_field32(&reg, TX_LINK_CFG_MFB_ENABLE, 0);
 +	rt2x00_set_field32(&reg, TX_LINK_CFG_REMOTE_UMFS_ENABLE, 0);
@@ -5880,31 +5606,31 @@ do not edit
 +	rt2x00_set_field32(&reg, TX_LINK_CFG_TX_CF_ACK_EN, 1);
 +	rt2x00_set_field32(&reg, TX_LINK_CFG_REMOTE_MFB, 0);
 +	rt2x00_set_field32(&reg, TX_LINK_CFG_REMOTE_MFS, 0);
-+	rt2800usb_register_write(rt2x00dev, TX_LINK_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_LINK_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_TIMEOUT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_TIMEOUT_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_TIMEOUT_CFG_MPDU_LIFETIME, 9);
 +	rt2x00_set_field32(&reg, TX_TIMEOUT_CFG_TX_OP_TIMEOUT, 10);
-+	rt2800usb_register_write(rt2x00dev, TX_TIMEOUT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_TIMEOUT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, MAX_LEN_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, MAX_LEN_CFG, &reg);
 +	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_MPDU, AGGREGATION_SIZE);
 +	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
 +	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_PSDU, 0);
 +	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_MPDU, 0);
-+	rt2800usb_register_write(rt2x00dev, MAX_LEN_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, MAX_LEN_CFG, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, PBF_MAX_PCNT, 0x1f3fbf9f);
++	rt2x00usb_register_write(rt2x00dev, PBF_MAX_PCNT, 0x1f3fbf9f);
 +
-+	rt2800usb_register_read(rt2x00dev, AUTO_RSP_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, AUTO_RSP_CFG, &reg);
 +	rt2x00_set_field32(&reg, AUTO_RSP_CFG_AUTORESPONDER, 1);
 +	rt2x00_set_field32(&reg, AUTO_RSP_CFG_CTS_40_MMODE, 0);
 +	rt2x00_set_field32(&reg, AUTO_RSP_CFG_CTS_40_MREF, 0);
 +	rt2x00_set_field32(&reg, AUTO_RSP_CFG_DUAL_CTS_EN, 0);
 +	rt2x00_set_field32(&reg, AUTO_RSP_CFG_ACK_CTS_PSM_BIT, 0);
-+	rt2800usb_register_write(rt2x00dev, AUTO_RSP_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, AUTO_RSP_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, CCK_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, CCK_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_PROTECT_RATE, 3);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_PROTECT_NAV, 1);
@@ -5914,9 +5640,9 @@ do not edit
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_MM40, 0);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_GF40, 1);
-+	rt2800usb_register_write(rt2x00dev, CCK_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, CCK_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_RATE, 3);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_NAV, 1);
@@ -5926,9 +5652,9 @@ do not edit
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_MM40, 0);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_GF40, 1);
-+	rt2800usb_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, MM20_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, MM20_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, MM20_PROT_CFG_PROTECT_RATE, 0x4004);
 +	rt2x00_set_field32(&reg, MM20_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, MM20_PROT_CFG_PROTECT_NAV, 1);
@@ -5938,9 +5664,9 @@ do not edit
 +	rt2x00_set_field32(&reg, MM20_PROT_CFG_TX_OP_ALLOW_MM40, 0);
 +	rt2x00_set_field32(&reg, MM20_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, MM20_PROT_CFG_TX_OP_ALLOW_GF40, 0);
-+	rt2800usb_register_write(rt2x00dev, MM20_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, MM20_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, MM40_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, MM40_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, MM40_PROT_CFG_PROTECT_RATE, 0x4084);
 +	rt2x00_set_field32(&reg, MM40_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, MM40_PROT_CFG_PROTECT_NAV, 1);
@@ -5950,9 +5676,9 @@ do not edit
 +	rt2x00_set_field32(&reg, MM40_PROT_CFG_TX_OP_ALLOW_MM40, 1);
 +	rt2x00_set_field32(&reg, MM40_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, MM40_PROT_CFG_TX_OP_ALLOW_GF40, 1);
-+	rt2800usb_register_write(rt2x00dev, MM40_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, MM40_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, GF20_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, GF20_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, GF20_PROT_CFG_PROTECT_RATE, 0x4004);
 +	rt2x00_set_field32(&reg, GF20_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, GF20_PROT_CFG_PROTECT_NAV, 1);
@@ -5962,9 +5688,9 @@ do not edit
 +	rt2x00_set_field32(&reg, GF20_PROT_CFG_TX_OP_ALLOW_MM40, 0);
 +	rt2x00_set_field32(&reg, GF20_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, GF20_PROT_CFG_TX_OP_ALLOW_GF40, 0);
-+	rt2800usb_register_write(rt2x00dev, GF20_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, GF20_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, GF40_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, GF40_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, GF40_PROT_CFG_PROTECT_RATE, 0x4084);
 +	rt2x00_set_field32(&reg, GF40_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, GF40_PROT_CFG_PROTECT_NAV, 1);
@@ -5974,11 +5700,11 @@ do not edit
 +	rt2x00_set_field32(&reg, GF40_PROT_CFG_TX_OP_ALLOW_MM40, 1);
 +	rt2x00_set_field32(&reg, GF40_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, GF40_PROT_CFG_TX_OP_ALLOW_GF40, 1);
-+	rt2800usb_register_write(rt2x00dev, GF40_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, GF40_PROT_CFG, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, PBF_CFG, 0xf40006);
++	rt2x00usb_register_write(rt2x00dev, PBF_CFG, 0xf40006);
 +
-+	rt2800usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_TX_DMA, 0);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_TX_DMA_BUSY, 0);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_RX_DMA, 0);
@@ -5988,34 +5714,34 @@ do not edit
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_BIG_ENDIAN, 0);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_RX_HDR_SCATTER, 0);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_HDR_SEG_LEN, 0);
-+	rt2800usb_register_write(rt2x00dev, WPDMA_GLO_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, WPDMA_GLO_CFG, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, TXOP_CTRL_CFG, 0x0000583f);
-+	rt2800usb_register_write(rt2x00dev, TXOP_HLDR_ET, 0x00000002);
++	rt2x00usb_register_write(rt2x00dev, TXOP_CTRL_CFG, 0x0000583f);
++	rt2x00usb_register_write(rt2x00dev, TXOP_HLDR_ET, 0x00000002);
 +
-+	rt2800usb_register_read(rt2x00dev, TX_RTS_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_RTS_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_RTS_CFG_AUTO_RTS_RETRY_LIMIT, 32);
 +	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_FBK_EN, 0);
-+	rt2800usb_register_write(rt2x00dev, TX_RTS_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_RTS_CFG, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, EXP_ACK_TIME, 0x002400ca);
-+	rt2800usb_register_write(rt2x00dev, PWR_PIN_CFG, 0x00000003);
++	rt2x00usb_register_write(rt2x00dev, EXP_ACK_TIME, 0x002400ca);
++	rt2x00usb_register_write(rt2x00dev, PWR_PIN_CFG, 0x00000003);
 +
 +	/*
 +	 * ASIC will keep garbage value after boot, clear encryption keys.
 +	 */
 +	for (i = 0; i < 254; i++) {
 +		u32 wcid[2] = { 0xffffffff, 0x0000ffff };
-+		rt2800usb_register_multiwrite(rt2x00dev, MAC_WCID_ENTRY(i),
++		rt2x00usb_register_multiwrite(rt2x00dev, MAC_WCID_ENTRY(i),
 +					      wcid, sizeof(wcid));
 +	}
 +
 +	for (i = 0; i < 4; i++)
-+		rt2800usb_register_write(rt2x00dev,
++		rt2x00usb_register_write(rt2x00dev,
 +					 SHARED_KEY_MODE_ENTRY(i), 0);
 +
 +	for (i = 0; i < 256; i++)
-+		rt2800usb_register_write(rt2x00dev, MAC_WCID_ATTR_ENTRY(i), 1);
++		rt2x00usb_register_write(rt2x00dev, MAC_WCID_ATTR_ENTRY(i), 1);
 +
 +	/*
 +	 * Clear all beacons
@@ -6023,20 +5749,20 @@ do not edit
 +	 * the first byte since that byte contains the VALID and OWNER
 +	 * bits which (when set to 0) will invalidate the entire beacon.
 +	 */
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE0, 0);
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE1, 0);
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE2, 0);
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE3, 0);
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE4, 0);
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE5, 0);
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE6, 0);
-+	rt2800usb_register_write(rt2x00dev, HW_BEACON_BASE7, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE0, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE1, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE2, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE3, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE4, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE5, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE6, 0);
++	rt2x00usb_register_write(rt2x00dev, HW_BEACON_BASE7, 0);
 +
-+	rt2800usb_register_read(rt2x00dev, USB_CYC_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, USB_CYC_CFG, &reg);
 +	rt2x00_set_field32(&reg, USB_CYC_CFG_CLOCK_CYCLE, 30);
-+	rt2800usb_register_write(rt2x00dev, USB_CYC_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, USB_CYC_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, HT_FBK_CFG0, &reg);
++	rt2x00usb_register_read(rt2x00dev, HT_FBK_CFG0, &reg);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG0_HTMCS0FBK, 0);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG0_HTMCS1FBK, 0);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG0_HTMCS2FBK, 1);
@@ -6045,9 +5771,9 @@ do not edit
 +	rt2x00_set_field32(&reg, HT_FBK_CFG0_HTMCS5FBK, 4);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG0_HTMCS6FBK, 5);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG0_HTMCS7FBK, 6);
-+	rt2800usb_register_write(rt2x00dev, HT_FBK_CFG0, reg);
++	rt2x00usb_register_write(rt2x00dev, HT_FBK_CFG0, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, HT_FBK_CFG1, &reg);
++	rt2x00usb_register_read(rt2x00dev, HT_FBK_CFG1, &reg);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG1_HTMCS8FBK, 8);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG1_HTMCS9FBK, 8);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG1_HTMCS10FBK, 9);
@@ -6056,9 +5782,9 @@ do not edit
 +	rt2x00_set_field32(&reg, HT_FBK_CFG1_HTMCS13FBK, 12);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG1_HTMCS14FBK, 13);
 +	rt2x00_set_field32(&reg, HT_FBK_CFG1_HTMCS15FBK, 14);
-+	rt2800usb_register_write(rt2x00dev, HT_FBK_CFG1, reg);
++	rt2x00usb_register_write(rt2x00dev, HT_FBK_CFG1, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, LG_FBK_CFG0, &reg);
++	rt2x00usb_register_read(rt2x00dev, LG_FBK_CFG0, &reg);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS0FBK, 8);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS1FBK, 8);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS2FBK, 10);
@@ -6067,26 +5793,26 @@ do not edit
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS5FBK, 13);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS6FBK, 14);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS7FBK, 15);
-+	rt2800usb_register_write(rt2x00dev, LG_FBK_CFG0, reg);
++	rt2x00usb_register_write(rt2x00dev, LG_FBK_CFG0, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, LG_FBK_CFG1, &reg);
++	rt2x00usb_register_read(rt2x00dev, LG_FBK_CFG1, &reg);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_CCKMCS0FBK, 0);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_CCKMCS1FBK, 0);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_CCKMCS2FBK, 1);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_CCKMCS3FBK, 2);
-+	rt2800usb_register_write(rt2x00dev, LG_FBK_CFG1, reg);
++	rt2x00usb_register_write(rt2x00dev, LG_FBK_CFG1, reg);
 +
 +	/*
 +	 * We must clear the error counters.
 +	 * These registers are cleared on read,
 +	 * so we may pass a useless variable to store the value.
 +	 */
-+	rt2800usb_register_read(rt2x00dev, RX_STA_CNT0, &reg);
-+	rt2800usb_register_read(rt2x00dev, RX_STA_CNT1, &reg);
-+	rt2800usb_register_read(rt2x00dev, RX_STA_CNT2, &reg);
-+	rt2800usb_register_read(rt2x00dev, TX_STA_CNT0, &reg);
-+	rt2800usb_register_read(rt2x00dev, TX_STA_CNT1, &reg);
-+	rt2800usb_register_read(rt2x00dev, TX_STA_CNT2, &reg);
++	rt2x00usb_register_read(rt2x00dev, RX_STA_CNT0, &reg);
++	rt2x00usb_register_read(rt2x00dev, RX_STA_CNT1, &reg);
++	rt2x00usb_register_read(rt2x00dev, RX_STA_CNT2, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_STA_CNT0, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_STA_CNT1, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_STA_CNT2, &reg);
 +
 +	return 0;
 +}
@@ -6097,7 +5823,7 @@ do not edit
 +	u32 reg;
 +
 +	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read(rt2x00dev, MAC_STATUS_CFG, &reg);
++		rt2x00usb_register_read(rt2x00dev, MAC_STATUS_CFG, &reg);
 +		if (!rt2x00_get_field32(reg, MAC_STATUS_CFG_BBP_RF_BUSY))
 +			return 0;
 +
@@ -6178,11 +5904,11 @@ do not edit
 +{
 +	u32 reg;
 +
-+	rt2800usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
++	rt2x00usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
 +	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_RX,
 +			   (state == STATE_RADIO_RX_ON) ||
 +			   (state == STATE_RADIO_RX_ON_LINK));
-+	rt2800usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
++	rt2x00usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
 +}
 +
 +static int rt2800usb_wait_wpdma_ready(struct rt2x00_dev *rt2x00dev)
@@ -6191,7 +5917,7 @@ do not edit
 +	u32 reg;
 +
 +	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-+		rt2800usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
++		rt2x00usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
 +		if (!rt2x00_get_field32(reg, WPDMA_GLO_CFG_TX_DMA_BUSY) &&
 +		    !rt2x00_get_field32(reg, WPDMA_GLO_CFG_RX_DMA_BUSY))
 +			return 0;
@@ -6216,35 +5942,35 @@ do not edit
 +		     rt2800usb_init_bbp(rt2x00dev)))
 +		return -EIO;
 +
-+	rt2800usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
++	rt2x00usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
 +	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_TX, 1);
-+	rt2800usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
++	rt2x00usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
 +
 +	udelay(50);
 +
-+	rt2800usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_TX_WRITEBACK_DONE, 1);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_RX_DMA, 1);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_TX_DMA, 1);
-+	rt2800usb_register_write(rt2x00dev, WPDMA_GLO_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, WPDMA_GLO_CFG, reg);
 +
 +
-+	rt2800usb_register_read(rt2x00dev, USB_DMA_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, USB_DMA_CFG, &reg);
 +	rt2x00_set_field32(&reg, USB_DMA_CFG_PHY_CLEAR, 0);
 +	/* Don't use bulk in aggregation when working with USB 1.1 */
 +	rt2x00_set_field32(&reg, USB_DMA_CFG_RX_BULK_AGG_EN,
-+			   (rt2x00dev->usb_maxpacket == 512));
++			   (rt2x00dev->rx->usb_maxpacket == 512));
 +	rt2x00_set_field32(&reg, USB_DMA_CFG_RX_BULK_AGG_TIMEOUT, 128);
 +	/* FIXME: Calculate this value based on Aggregation defines */
 +	rt2x00_set_field32(&reg, USB_DMA_CFG_RX_BULK_AGG_LIMIT, 21);
 +	rt2x00_set_field32(&reg, USB_DMA_CFG_RX_BULK_EN, 1);
 +	rt2x00_set_field32(&reg, USB_DMA_CFG_TX_BULK_EN, 1);
-+	rt2800usb_register_write(rt2x00dev, USB_DMA_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, USB_DMA_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
++	rt2x00usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
 +	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_TX, 1);
 +	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_RX, 1);
-+	rt2800usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
++	rt2x00usb_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
 +
 +	/*
 +	 * Initialize LED control
@@ -6273,14 +5999,14 @@ do not edit
 +{
 +	u32 reg;
 +
-+	rt2800usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_TX_DMA, 0);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_RX_DMA, 0);
-+	rt2800usb_register_write(rt2x00dev, WPDMA_GLO_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, WPDMA_GLO_CFG, reg);
 +
-+	rt2800usb_register_write(rt2x00dev, MAC_SYS_CTRL, 0);
-+	rt2800usb_register_write(rt2x00dev, PWR_PIN_CFG, 0);
-+	rt2800usb_register_write(rt2x00dev, TX_PIN_CFG, 0);
++	rt2x00usb_register_write(rt2x00dev, MAC_SYS_CTRL, 0);
++	rt2x00usb_register_write(rt2x00dev, PWR_PIN_CFG, 0);
++	rt2x00usb_register_write(rt2x00dev, TX_PIN_CFG, 0);
 +
 +	/* Wait for DMA, ignore error */
 +	rt2800usb_wait_wpdma_ready(rt2x00dev);
@@ -6291,7 +6017,7 @@ do not edit
 +static int rt2800usb_set_state(struct rt2x00_dev *rt2x00dev,
 +			       enum dev_state state)
 +{
-+	rt2800usb_register_write(rt2x00dev, AUTOWAKEUP_CFG, 0);
++	rt2x00usb_register_write(rt2x00dev, AUTOWAKEUP_CFG, 0);
 +
 +	if (state == STATE_AWAKE)
 +		rt2800usb_mcu_request(rt2x00dev, MCU_WAKEUP, 0xff, 0, 0);
@@ -6457,11 +6183,11 @@ do not edit
 +	 * Disable beaconing while we are reloading the beacon data,
 +	 * otherwise we might be sending out invalid data.
 +	 */
-+	rt2800usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_TICKING, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_TBTT_ENABLE, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_GEN, 0);
-+	rt2800usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +
 +	/*
 +	 * Write entire beacon with descriptor to register.
@@ -6479,8 +6205,7 @@ do not edit
 +	entry->skb = NULL;
 +}
 +
-+static int rt2800usb_get_tx_data_len(struct rt2x00_dev *rt2x00dev,
-+				     struct sk_buff *skb)
++static int rt2800usb_get_tx_data_len(struct queue_entry *entry)
 +{
 +	int length;
 +
@@ -6488,8 +6213,8 @@ do not edit
 +	 * The length _must_ be a multiple of 4,
 +	 * but it must _not_ be a multiple of the USB packet size.
 +	 */
-+	length = roundup(skb->len, 4);
-+	length += (4 * !(length % rt2x00dev->usb_maxpacket));
++	length = roundup(entry->skb->len, 4);
++	length += (4 * !(length % entry->queue->usb_maxpacket));
 +
 +	return length;
 +}
@@ -6504,12 +6229,12 @@ do not edit
 +		return;
 +	}
 +
-+	rt2800usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
 +	if (!rt2x00_get_field32(reg, BCN_TIME_CFG_BEACON_GEN)) {
 +		rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_TICKING, 1);
 +		rt2x00_set_field32(&reg, BCN_TIME_CFG_TBTT_ENABLE, 1);
 +		rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_GEN, 1);
-+		rt2800usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
++		rt2x00usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +	}
 +}
 +
@@ -6719,7 +6444,7 @@ do not edit
 +	 * Identify RF chipset.
 +	 */
 +	value = rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RF_TYPE);
-+	rt2800usb_register_read(rt2x00dev, MAC_CSR0, &reg);
++	rt2x00usb_register_read(rt2x00dev, MAC_CSR0, &reg);
 +	rev = rt2x00_get_field32(reg, MAC_CSR0_ASIC_REV);
 +	rt2x00_set_chip(rt2x00dev, RT2870, value, rev);
 +
@@ -6957,33 +6682,33 @@ do not edit
 +	struct rt2x00_dev *rt2x00dev = hw->priv;
 +	u32 reg;
 +
-+	rt2800usb_register_read(rt2x00dev, TX_RTS_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, TX_RTS_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_THRES, value);
-+	rt2800usb_register_write(rt2x00dev, TX_RTS_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, TX_RTS_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, CCK_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, CCK_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_RTS_TH_EN, 1);
-+	rt2800usb_register_write(rt2x00dev, CCK_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, CCK_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_RTS_TH_EN, 1);
-+	rt2800usb_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, MM20_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, MM20_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, MM20_PROT_CFG_RTS_TH_EN, 1);
-+	rt2800usb_register_write(rt2x00dev, MM20_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, MM20_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, MM40_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, MM40_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, MM40_PROT_CFG_RTS_TH_EN, 1);
-+	rt2800usb_register_write(rt2x00dev, MM40_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, MM40_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, GF20_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, GF20_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, GF20_PROT_CFG_RTS_TH_EN, 1);
-+	rt2800usb_register_write(rt2x00dev, GF20_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, GF20_PROT_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, GF40_PROT_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, GF40_PROT_CFG, &reg);
 +	rt2x00_set_field32(&reg, GF40_PROT_CFG_RTS_TH_EN, 1);
-+	rt2800usb_register_write(rt2x00dev, GF40_PROT_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, GF40_PROT_CFG, reg);
 +
 +	return 0;
 +}
@@ -7015,43 +6740,43 @@ do not edit
 +		field.bit_offset = queue_idx * 16;
 +		field.bit_mask = 0xffff << field.bit_offset;
 +
-+		rt2800usb_register_read(rt2x00dev, WMM_TXOP0_CFG, &reg);
++		rt2x00usb_register_read(rt2x00dev, WMM_TXOP0_CFG, &reg);
 +		rt2x00_set_field32(&reg, field, queue->txop);
-+		rt2800usb_register_write(rt2x00dev, WMM_TXOP0_CFG, reg);
++		rt2x00usb_register_write(rt2x00dev, WMM_TXOP0_CFG, reg);
 +	} else if (queue_idx < 4) {
 +		field.bit_offset = (queue_idx - 2) * 16;
 +		field.bit_mask = 0xffff << field.bit_offset;
 +
-+		rt2800usb_register_read(rt2x00dev, WMM_TXOP1_CFG, &reg);
++		rt2x00usb_register_read(rt2x00dev, WMM_TXOP1_CFG, &reg);
 +		rt2x00_set_field32(&reg, field, queue->txop);
-+		rt2800usb_register_write(rt2x00dev, WMM_TXOP1_CFG, reg);
++		rt2x00usb_register_write(rt2x00dev, WMM_TXOP1_CFG, reg);
 +	}
 +
 +	/* Update WMM registers */
 +	field.bit_offset = queue_idx * 4;
 +	field.bit_mask = 0xf << field.bit_offset;
 +
-+	rt2800usb_register_read(rt2x00dev, WMM_AIFSN_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, WMM_AIFSN_CFG, &reg);
 +	rt2x00_set_field32(&reg, field, queue->aifs);
-+	rt2800usb_register_write(rt2x00dev, WMM_AIFSN_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, WMM_AIFSN_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, WMM_CWMIN_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, WMM_CWMIN_CFG, &reg);
 +	rt2x00_set_field32(&reg, field, queue->cw_min);
-+	rt2800usb_register_write(rt2x00dev, WMM_CWMIN_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, WMM_CWMIN_CFG, reg);
 +
-+	rt2800usb_register_read(rt2x00dev, WMM_CWMAX_CFG, &reg);
++	rt2x00usb_register_read(rt2x00dev, WMM_CWMAX_CFG, &reg);
 +	rt2x00_set_field32(&reg, field, queue->cw_max);
-+	rt2800usb_register_write(rt2x00dev, WMM_CWMAX_CFG, reg);
++	rt2x00usb_register_write(rt2x00dev, WMM_CWMAX_CFG, reg);
 +
 +	/* Update EDCA registers */
 +	if (queue_idx < 4) {
 +		offset = EDCA_AC0_CFG + (sizeof(u32) * queue_idx);
 +
-+		rt2800usb_register_read(rt2x00dev, offset, &reg);
++		rt2x00usb_register_read(rt2x00dev, offset, &reg);
 +		rt2x00_set_field32(&reg, EDCA_AC0_CFG_AIFSN, queue->aifs);
 +		rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMIN, queue->cw_min);
 +		rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMAX, queue->cw_max);
-+		rt2800usb_register_write(rt2x00dev, offset, reg);
++		rt2x00usb_register_write(rt2x00dev, offset, reg);
 +	}
 +
 +	return 0;
@@ -7070,9 +6795,9 @@ do not edit
 +	u64 tsf;
 +	u32 reg;
 +
-+	rt2800usb_register_read(rt2x00dev, TSF_TIMER_DW1, &reg);
++	rt2x00usb_register_read(rt2x00dev, TSF_TIMER_DW1, &reg);
 +	tsf = (u64) rt2x00_get_field32(reg, TSF_TIMER_DW1_HIGH_WORD) << 32;
-+	rt2800usb_register_read(rt2x00dev, TSF_TIMER_DW0, &reg);
++	rt2x00usb_register_read(rt2x00dev, TSF_TIMER_DW0, &reg);
 +	tsf |= rt2x00_get_field32(reg, TSF_TIMER_DW0_LOW_WORD);
 +
 +	return tsf;
@@ -7106,8 +6831,7 @@ do not edit
 +	.load_firmware		= rt2800usb_load_firmware,
 +	.initialize		= rt2x00usb_initialize,
 +	.uninitialize		= rt2x00usb_uninitialize,
-+	.init_rxentry		= rt2x00usb_init_rxentry,
-+	.init_txentry		= rt2x00usb_init_txentry,
++	.clear_entry		= rt2x00usb_clear_entry,
 +	.set_device_state	= rt2800usb_set_device_state,
 +	.link_stats		= rt2800usb_link_stats,
 +	.reset_tuner		= rt2800usb_reset_tuner,
@@ -7263,6 +6987,9 @@ do not edit
 +
 +module_init(rt2800usb_init);
 +module_exit(rt2800usb_exit);
+diff --git a/drivers/net/wireless/rt2x00/rt2800usb.h b/drivers/net/wireless/rt2x00/rt2800usb.h
+new file mode 100644
+index 0000000..1843217
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.h
 @@ -0,0 +1,1884 @@
@@ -9150,9 +8877,11 @@ do not edit
 +	clamp_t(char, __txpower, MIN_A_TXPOWER, MAX_A_TXPOWER)
 +
 +#endif /* RT2800USB_H */
+diff --git a/drivers/net/wireless/rt2x00/rt2x00.h b/drivers/net/wireless/rt2x00/rt2x00.h
+index 780ba73..f462424 100644
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -97,6 +97,7 @@
+@@ -107,6 +107,7 @@
   */
  #define ACK_SIZE		14
  #define IEEE80211_HEADER	24
@@ -9160,7 +8889,7 @@ do not edit
  #define PLCP			48
  #define BEACON			100
  #define PREAMBLE		144
-@@ -127,6 +128,11 @@ struct rt2x00_chip {
+@@ -137,6 +138,11 @@ struct rt2x00_chip {
  #define RT2561		0x0302
  #define RT2661		0x0401
  #define RT2571		0x1300
@@ -9172,9 +8901,11 @@ do not edit
  
  	u16 rf;
  	u32 rev;
+diff --git a/drivers/net/wireless/rt2x00/rt2x00dev.c b/drivers/net/wireless/rt2x00/rt2x00dev.c
+index 7fc1d76..853cc51 100644
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -658,7 +658,9 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
+@@ -659,7 +659,9 @@ void rt2x00lib_rxdone(struct rt2x00_dev *rt2x00dev,
  		if (((rxdesc.dev_flags & RXDONE_SIGNAL_PLCP) &&
  		     (rate->plcp == rxdesc.signal)) ||
  		    ((rxdesc.dev_flags & RXDONE_SIGNAL_BITRATE) &&
@@ -9185,7 +8916,7 @@ do not edit
  			idx = i;
  			break;
  		}
-@@ -690,6 +692,7 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
+@@ -691,6 +693,7 @@ void rt2x00lib_rxdone(struct rt2x00_dev *rt2x00dev,
  	rx_status->qual =
  	    rt2x00lib_calculate_link_signal(rt2x00dev, rxdesc.rssi);
  	rx_status->signal = rxdesc.rssi;
@@ -9193,35 +8924,35 @@ do not edit
  	rx_status->flag = rxdesc.flags;
  	rx_status->antenna = rt2x00dev->link.ant.active.rx;
  
-@@ -721,72 +724,84 @@ const struct rt2x00_rate rt2x00_supporte
+@@ -722,72 +725,84 @@ const struct rt2x00_rate rt2x00_supported_rates[12] = {
  		.bitrate = 10,
  		.ratemask = BIT(0),
  		.plcp = 0x00,
 +		.mcs = RATE_MCS(RATE_MODE_CCK, 0),
  	},
  	{
- 		.flags = DEV_RATE_CCK | DEV_RATE_SHORT_PREAMBLE | DEV_RATE_BASIC,
+ 		.flags = DEV_RATE_CCK | DEV_RATE_SHORT_PREAMBLE,
  		.bitrate = 20,
  		.ratemask = BIT(1),
  		.plcp = 0x01,
 +		.mcs = RATE_MCS(RATE_MODE_CCK, 1),
  	},
  	{
- 		.flags = DEV_RATE_CCK | DEV_RATE_SHORT_PREAMBLE | DEV_RATE_BASIC,
+ 		.flags = DEV_RATE_CCK | DEV_RATE_SHORT_PREAMBLE,
  		.bitrate = 55,
  		.ratemask = BIT(2),
  		.plcp = 0x02,
 +		.mcs = RATE_MCS(RATE_MODE_CCK, 2),
  	},
  	{
- 		.flags = DEV_RATE_CCK | DEV_RATE_SHORT_PREAMBLE | DEV_RATE_BASIC,
+ 		.flags = DEV_RATE_CCK | DEV_RATE_SHORT_PREAMBLE,
  		.bitrate = 110,
  		.ratemask = BIT(3),
  		.plcp = 0x03,
 +		.mcs = RATE_MCS(RATE_MODE_CCK, 3),
  	},
  	{
- 		.flags = DEV_RATE_OFDM | DEV_RATE_BASIC,
+ 		.flags = DEV_RATE_OFDM,
  		.bitrate = 60,
  		.ratemask = BIT(4),
  		.plcp = 0x0b,
@@ -9235,7 +8966,7 @@ do not edit
 +		.mcs = RATE_MCS(RATE_MODE_OFDM, 1),
  	},
  	{
- 		.flags = DEV_RATE_OFDM | DEV_RATE_BASIC,
+ 		.flags = DEV_RATE_OFDM,
  		.bitrate = 120,
  		.ratemask = BIT(6),
  		.plcp = 0x0a,
@@ -9249,7 +8980,7 @@ do not edit
 +		.mcs = RATE_MCS(RATE_MODE_OFDM, 3),
  	},
  	{
- 		.flags = DEV_RATE_OFDM | DEV_RATE_BASIC,
+ 		.flags = DEV_RATE_OFDM,
  		.bitrate = 240,
  		.ratemask = BIT(8),
  		.plcp = 0x09,
@@ -9278,9 +9009,11 @@ do not edit
  	},
  };
  
+diff --git a/drivers/net/wireless/rt2x00/rt2x00lib.h b/drivers/net/wireless/rt2x00/rt2x00lib.h
+index 9399733..b6aa417 100644
 --- a/drivers/net/wireless/rt2x00/rt2x00lib.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00lib.h
-@@ -49,6 +49,7 @@ struct rt2x00_rate {
+@@ -48,6 +48,7 @@ struct rt2x00_rate {
  	unsigned short ratemask;
  
  	unsigned short plcp;
@@ -9288,7 +9021,7 @@ do not edit
  };
  
  extern const struct rt2x00_rate rt2x00_supported_rates[12];
-@@ -69,6 +70,9 @@ static inline int rt2x00_get_rate_preamb
+@@ -68,6 +69,9 @@ static inline int rt2x00_get_rate_preamble(const u16 hw_value)
  	return (hw_value & 0xff00);
  }
  
@@ -9298,9 +9031,11 @@ do not edit
  /*
   * Radio control handlers.
   */
+diff --git a/drivers/net/wireless/rt2x00/rt2x00queue.c b/drivers/net/wireless/rt2x00/rt2x00queue.c
+index b8de9d2..effe93e 100644
 --- a/drivers/net/wireless/rt2x00/rt2x00queue.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
-@@ -303,6 +303,19 @@ static void rt2x00queue_create_tx_descri
+@@ -303,6 +303,19 @@ static void rt2x00queue_create_tx_descriptor(struct queue_entry *entry,
  	}
  
  	/*
@@ -9320,7 +9055,7 @@ do not edit
  	 * PLCP setup
  	 * Length calculation depends on OFDM/CCK rate.
  	 */
-@@ -342,6 +355,20 @@ static void rt2x00queue_create_tx_descri
+@@ -342,6 +355,20 @@ static void rt2x00queue_create_tx_descriptor(struct queue_entry *entry,
  		if (rt2x00_get_rate_preamble(rate->hw_value))
  			txdesc->signal |= 0x08;
  	}
@@ -9341,9 +9076,11 @@ do not edit
  }
  
  static void rt2x00queue_write_tx_descriptor(struct queue_entry *entry,
+diff --git a/drivers/net/wireless/rt2x00/rt2x00queue.h b/drivers/net/wireless/rt2x00/rt2x00queue.h
+index 2e99ab5..1772cdd 100644
 --- a/drivers/net/wireless/rt2x00/rt2x00queue.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00queue.h
-@@ -147,12 +147,14 @@ static inline struct skb_frame_desc* get
+@@ -147,12 +147,14 @@ static inline struct skb_frame_desc* get_skb_frame_desc(struct sk_buff *skb)
   *
   * @RXDONE_SIGNAL_PLCP: Signal field contains the plcp value.
   * @RXDONE_SIGNAL_BITRATE: Signal field contains the bitrate value.
@@ -9420,6 +9157,8 @@ do not edit
  	short retry_limit;
  	short aifs;
  	short ifs;
+diff --git a/drivers/net/wireless/rt2x00/rt2x00reg.h b/drivers/net/wireless/rt2x00/rt2x00reg.h
+index c2fba7c..52cc166 100644
 --- a/drivers/net/wireless/rt2x00/rt2x00reg.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00reg.h
 @@ -67,6 +67,16 @@ enum tsf_sync {

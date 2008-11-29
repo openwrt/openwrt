@@ -1,6 +1,8 @@
+diff --git a/config.mk b/config.mk
+index d94a976..a624bdf 100644
 --- a/config.mk
 +++ b/config.mk
-@@ -146,6 +146,7 @@ CONFIG_ADM8211=m
+@@ -156,6 +156,7 @@ CONFIG_ADM8211=m
  CONFIG_RT2X00_LIB_PCI=m
  CONFIG_RT2400PCI=m
  CONFIG_RT2500PCI=m
@@ -8,3 +10,11 @@
  NEED_RT2X00=y
  
  # Two rt2x00 drivers require firmware: rt61pci and rt73usb. They depend on
+@@ -197,6 +198,7 @@ CONFIG_RTL8187=m
+ # RT2500USB does not require firmware
+ CONFIG_RT2500USB=m
+ CONFIG_RT2X00_LIB_USB=m
++CONFIG_RT2X00_LIB_CRYPTO=y
+ NEED_RT2X00=y
+ # RT73USB requires firmware
+ ifneq ($(CONFIG_CRC_ITU_T),)

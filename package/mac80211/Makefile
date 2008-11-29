@@ -13,12 +13,12 @@ PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
 ifneq ($(CONFIG_LINUX_2_6_27),)
-  PKG_VERSION:=2008-11-03
-  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/11
+  PKG_VERSION:=2008-11-29
+  PKG_SOURCE_URL:=http://wireless.kernel.org/download/compat-wireless-2.6/
 else
   PKG_VERSION:=2008-08-06
   PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
-  PATCH_DIR:=$(if $(CONFIG_TARGET_brcm47xx),./patches-brcm,./patches-old)
+  PATCH_DIR:=./patches-old
 endif
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
@@ -288,7 +288,7 @@ define KernelPackage/b43-common
   SUBMENU:=$(WMENU)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
-  DEPENDS:=+kmod-mac80211 +!TARGET_brcm47xx:kmod-ssb
+  DEPENDS:=+kmod-mac80211 +!TARGET_brcm47xx:kmod-ssb @LINUX_2_6_25||@LINUX_2_6_26||@LINUX_2_6_27||@LINUX_2_6_28
 endef
 
 define KernelPackage/b43
@@ -316,7 +316,9 @@ endef
 BUILDFLAGS:= \
 	-I$(PKG_BUILD_DIR)/include \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
-	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS) \
+	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS) \
+	$(if $(CONFIG_RFKILL),-DCONFIG_B43_RFKILL -DCONFIG_B43LEGACY_RFKILL) \
+	$(if $(CONFIG_PCMCIA),-DCONFIG_B43_PCMCIA) \
 	$(if $(CONFIG_DEBUG_FS), -DCONFIG_MAC80211_DEBUGFS) \
 	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
 
@@ -330,6 +332,13 @@ MAKE_OPTS:= \
 	CONFIG_MAC80211_RC_MINSTREL=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	CONFIG_MAC80211_DEBUGFS=$(CONFIG_DEBUG_FS) \
+	CONFIG_B43_PCMCIA=$(CONFIG_PCMCIA) \
+	CONFIG_B43_RFKILL=$(CONFIG_RFKILL) \
+	CONFIG_B43LEGACY_RFKILL=$(CONFIG_RFKILL) \
+	CONFIG_B43LEGACY_LEDS=$(CONFIG_LEDS_TRIGGERS) \
+	CONFIG_B43_LEDS=$(CONFIG_LEDS_TRIGGERS) \
+	$(if $(CONFIG_PACKAGE_kmod-b43),CONFIG_B43=m) \
+	$(if $(CONFIG_PACKAGE_kmod-b43legacy),CONFIG_B43LEGACY=m) \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=:
 
@@ -343,8 +352,7 @@ define Build/Prepare
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
 	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2860FW)
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
-	$(if $(CONFIG_TARGET_brcm47xx),rm -rf $(PKG_BUILD_DIR)/include/linux/ssb)
-	rm $(PKG_BUILD_DIR)/include/net/ieee80211_crypt.h
+	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm $(PKG_BUILD_DIR)/include/net/ieee80211.h
 	rm $(PKG_BUILD_DIR)/include/net/ieee80211_radiotap.h
 	rm $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
