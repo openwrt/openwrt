@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/libertas
   SUBMENU:=Other modules
-  DEPENDS:=@TARGET_olpc +kmod-ieee80211
+  DEPENDS:=+kmod-ieee80211
   TITLE:=Marvell 88W8015 Wireless Driver
   FILES:= \
 	$(PKG_BUILD_DIR)/libertas.$(LINUX_KMOD_SUFFIX)  \
@@ -25,9 +25,9 @@ define KernelPackage/libertas
 endef
 
 define Download/firmware
-  URL:=http://dev.laptop.org/pub/firmware/libertas
-  FILE:=usb8388-5.220.11.p5.bin
-  MD5SUM=37cc814d5a475fcf8f8fbe89a9c5d546
+  URL:=http://dev.laptop.org/pub/firmware/libertas/
+  FILE:=usb8388-5.110.22.p20.bin
+  #MD5SUM=37cc814d5a475fcf8f8fbe89a9c5d546
 endef
 
 define Build/Prepare
@@ -44,13 +44,13 @@ define Build/Compile
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		CONFIG_LIBERTAS=m \
 		CONFIG_LIBERTAS_USB=m \
-		EXTRA_CFLAGS="-I$(PKG_BUILD_DIR) -DCONFIG_LIBERTAS_DEBUG -include compat.h -I$(STAGING_DIR)/usr/include/mac80211" \
+		EXTRA_CFLAGS="-I$(PKG_BUILD_DIR) -DCONFIG_LIBERTAS_DEBUG -I$(STAGING_DIR)/usr/include/mac80211" \
 		modules 
 endef
 
 define KernelPackage/libertas/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_BIN) $(DL_DIR)/usb8388-5.220.11.p5.bin $(1)/lib/firmware/usb8388.bin
+	$(INSTALL_BIN) $(DL_DIR)/usb8388-5.110.22.p20.bin $(1)/lib/firmware/usb8388.bin
 	$(INSTALL_DATA) ./files/LICENSE $(1)/lib/firmware/
 endef
 

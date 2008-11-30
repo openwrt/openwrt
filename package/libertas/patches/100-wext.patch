@@ -1,0 +1,81 @@
+Index: kmod-libertas/scan.c
+===================================================================
+--- kmod-libertas.orig/scan.c	2008-11-30 17:44:39.000000000 +0100
++++ kmod-libertas/scan.c	2008-11-30 17:46:08.000000000 +0100
+@@ -13,6 +13,13 @@
+ #include "scan.h"
+ #include "cmd.h"
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27) 
++#define IWE(func, ...) func(&iweinfo, __VA_ARGS__)
++static struct iw_request_info iweinfo = { 0, 0 };
++#else
++#define IWE(func, ...) func(__VA_ARGS__)
++#endif
++
+ //! Approximate amount of data needed to pass a scan result back to iwlist
+ #define MAX_SCAN_CELL_SIZE  (IW_EV_ADDR_LEN             \
+                              + IW_ESSID_MAX_SIZE        \
+@@ -807,7 +814,7 @@
+ 	iwe.cmd = SIOCGIWESSID;
+ 	iwe.u.data.flags = 1;
+ 	iwe.u.data.length = min((uint32_t) bss->ssid_len, (uint32_t) IW_ESSID_MAX_SIZE);
+-	start = iwe_stream_add_point(start, stop, &iwe, bss->ssid);
++	start = IWE(iwe_stream_add_point, start, stop, &iwe, bss->ssid);
+ 
+ 	/* Mode */
+ 	iwe.cmd = SIOCGIWMODE;
+@@ -862,7 +869,7 @@
+ 		iwe.u.data.flags = IW_ENCODE_DISABLED;
+ 	}
+ 	iwe.u.data.length = 0;
+-	start = iwe_stream_add_point(start, stop, &iwe, bss->ssid);
++	start = IWE(iwe_stream_add_point, start, stop, &iwe, bss->ssid);
+ 
+ 	current_val = start + IW_EV_LCP_LEN;
+ 
+@@ -874,7 +881,7 @@
+ 	for (j = 0; bss->rates[j] && (j < sizeof(bss->rates)); j++) {
+ 		/* Bit rate given in 500 kb/s units */
+ 		iwe.u.bitrate.value = bss->rates[j] * 500000;
+-		current_val = iwe_stream_add_value(start, current_val,
++		current_val = IWE(iwe_stream_add_value, start, current_val,
+ 					 stop, &iwe, IW_EV_PARAM_LEN);
+ 	}
+ 	if ((bss->mode == IW_MODE_ADHOC) && priv->adhoccreate
+@@ -882,7 +889,7 @@
+ 			     priv->curbssparams.ssid_len,
+ 			     bss->ssid, bss->ssid_len)) {
+ 		iwe.u.bitrate.value = 22 * 500000;
+-		current_val = iwe_stream_add_value(start, current_val,
++		current_val = IWE(iwe_stream_add_value, start, current_val,
+ 						   stop, &iwe, IW_EV_PARAM_LEN);
+ 	}
+ 	/* Check if we added any event */
+@@ -895,7 +902,7 @@
+ 		memcpy(buf, bss->wpa_ie, bss->wpa_ie_len);
+ 		iwe.cmd = IWEVGENIE;
+ 		iwe.u.data.length = bss->wpa_ie_len;
+-		start = iwe_stream_add_point(start, stop, &iwe, buf);
++		start = IWE(iwe_stream_add_point, start, stop, &iwe, buf);
+ 	}
+ 
+ 	memset(&iwe, 0, sizeof(iwe));
+@@ -904,7 +911,7 @@
+ 		memcpy(buf, bss->rsn_ie, bss->rsn_ie_len);
+ 		iwe.cmd = IWEVGENIE;
+ 		iwe.u.data.length = bss->rsn_ie_len;
+-		start = iwe_stream_add_point(start, stop, &iwe, buf);
++		start = IWE(iwe_stream_add_point, start, stop, &iwe, buf);
+ 	}
+ 
+ 	if (bss->mesh) {
+@@ -915,7 +922,7 @@
+ 		p += snprintf(p, MAX_CUSTOM_LEN, "mesh-type: olpc");
+ 		iwe.u.data.length = p - custom;
+ 		if (iwe.u.data.length)
+-			start = iwe_stream_add_point(start, stop, &iwe, custom);
++			start = IWE(iwe_stream_add_point, start, stop, &iwe, custom);
+ 	}
+ 
+ out:
