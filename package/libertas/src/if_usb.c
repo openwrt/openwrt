@@ -6,7 +6,9 @@
 #include <linux/firmware.h>
 #include <linux/netdevice.h>
 #include <linux/usb.h>
-//#include <asm/olpc.h>
+#ifdef CONFIG_OLPC
+#include <asm/olpc.h>
+#endif
 
 #define DRV_NAME "usb8xxx"
 

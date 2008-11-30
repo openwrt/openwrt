@@ -11,7 +11,9 @@
 #include <linux/if_arp.h>
 #include <linux/kthread.h>
 #include <linux/kfifo.h>
-//#include <asm/olpc.h>
+#ifdef CONFIG_OLPC
+#include <asm/olpc.h>
+#endif
 
 #include <net/iw_handler.h>
 #include <net/ieee80211.h>
