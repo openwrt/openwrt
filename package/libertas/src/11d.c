@@ -46,13 +46,11 @@ static struct chan_freq_power channel_freq_power_UN_BG[] = {
 static u8 lbs_region_2_code(u8 *region)
 {
 	u8 i;
-	u8 size = sizeof(region_code_mapping)/
-		  sizeof(struct region_code_mapping);
 
 	for (i = 0; region[i] && i < COUNTRY_CODE_LEN; i++)
 		region[i] = toupper(region[i]);
 
-	for (i = 0; i < size; i++) {
+	for (i = 0; i < ARRAY_SIZE(region_code_mapping); i++) {
 		if (!memcmp(region, region_code_mapping[i].region,
 			    COUNTRY_CODE_LEN))
 			return (region_code_mapping[i].code);
@@ -65,9 +63,8 @@ static u8 lbs_region_2_code(u8 *region)
 static u8 *lbs_code_2_region(u8 code)
 {
 	u8 i;
-	u8 size = sizeof(region_code_mapping)
-		  / sizeof(struct region_code_mapping);
-	for (i = 0; i < size; i++) {
+
+	for (i = 0; i < ARRAY_SIZE(region_code_mapping); i++) {
 		if (region_code_mapping[i].code == code)
 			return (region_code_mapping[i].region);
 	}
@@ -82,7 +79,7 @@ static u8 *lbs_code_2_region(u8 code)
  *  @param nrchan   number of channels
  *  @return 	      the nrchan-th chan number
 */
-static u8 lbs_get_chan_11d(u8 band, u8 firstchan, u8 nrchan, u8 *chan)
+static u8 lbs_get_chan_11d(u8 firstchan, u8 nrchan, u8 *chan)
 /*find the nrchan-th chan after the firstchan*/
 {
 	u8 i;
@@ -90,8 +87,7 @@ static u8 lbs_get_chan_11d(u8 band, u8 firstchan, u8 nrchan, u8 *chan)
 	u8 cfp_no;
 
 	cfp = channel_freq_power_UN_BG;
-	cfp_no = sizeof(channel_freq_power_UN_BG) /
-	    sizeof(struct chan_freq_power);
+	cfp_no = ARRAY_SIZE(channel_freq_power_UN_BG);
 
 	for (i = 0; i < cfp_no; i++) {
 		if ((cfp + i)->channel == firstchan) {
@@ -138,19 +134,15 @@ static u8 lbs_channel_known_11d(u8 chan,
 	return 0;
 }
 
-u32 lbs_chan_2_freq(u8 chan, u8 band)
+u32 lbs_chan_2_freq(u8 chan)
 {
 	struct chan_freq_power *cf;
-	u16 cnt;
 	u16 i;
 	u32 freq = 0;
 
 	cf = channel_freq_power_UN_BG;
-	cnt =
-	    sizeof(channel_freq_power_UN_BG) /
-	    sizeof(struct chan_freq_power);
 
-	for (i = 0; i < cnt; i++) {
+	for (i = 0; i < ARRAY_SIZE(channel_freq_power_UN_BG); i++) {
 		if (chan == cf[i].channel)
 			freq = cf[i].freq;
 	}
@@ -272,7 +264,7 @@ static void lbs_generate_parsed_region_chan_11d(struct region_channel *region_ch
  *  @param chan                 chan
  *  @return 	                TRUE;FALSE
 */
-static u8 lbs_region_chan_supported_11d(u8 region, u8 band, u8 chan)
+static u8 lbs_region_chan_supported_11d(u8 region, u8 chan)
 {
 	struct chan_freq_power *cfp;
 	int cfp_no;
@@ -281,7 +273,7 @@ static u8 lbs_region_chan_supported_11d(u8 region, u8 band, u8 chan)
 
 	lbs_deb_enter(LBS_DEB_11D);
 
-	cfp = lbs_get_region_cfp_table(region, band, &cfp_no);
+	cfp = lbs_get_region_cfp_table(region, &cfp_no);
 	if (cfp == NULL)
 		return 0;
 
@@ -375,7 +367,7 @@ static int parse_domain_info_11d(struct ieeetypes_countryinfofullset*
 		for (i = 0; idx < MAX_NO_OF_CHAN && i < nrchan; i++) {
 			/*step4: channel is supported? */
 
-			if (!lbs_get_chan_11d(band, firstchan, i, &curchan)) {
+			if (!lbs_get_chan_11d(firstchan, i, &curchan)) {
 				/* Chan is not found in UN table */
 				lbs_deb_11d("chan is not supported: %d \n", i);
 				break;
@@ -383,8 +375,7 @@ static int parse_domain_info_11d(struct ieeetypes_countryinfofullset*
 
 			lastchan = curchan;
 
-			if (lbs_region_chan_supported_11d
-			    (region, band, curchan)) {
+			if (lbs_region_chan_supported_11d(region, curchan)) {
 				/*step5: Check if curchan is supported by mrvl in region */
 				parsed_region_chan->chanpwr[idx].chan = curchan;
 				parsed_region_chan->chanpwr[idx].pwr =
@@ -562,8 +553,7 @@ done:
  *  @param resp    pointer to command response buffer
  *  @return 	   0; -1
  */
-int lbs_ret_802_11d_domain_info(struct lbs_private *priv,
-				 struct cmd_ds_command *resp)
+int lbs_ret_802_11d_domain_info(struct cmd_ds_command *resp)
 {
 	struct cmd_ds_802_11d_domain_info *domaininfo = &resp->params.domaininforesp;
 	struct mrvlietypes_domainparamset *domain = &domaininfo->domain;

@@ -6,6 +6,7 @@
 #include <linux/firmware.h>
 #include <linux/netdevice.h>
 #include <linux/usb.h>
+//#include <asm/olpc.h>
 
 #define DRV_NAME "usb8xxx"
 
@@ -38,8 +39,6 @@ static void if_usb_receive_fwload(struct urb *urb);
 static int if_usb_prog_firmware(struct if_usb_card *cardp);
 static int if_usb_host_to_card(struct lbs_private *priv, uint8_t type,
 			       uint8_t *payload, uint16_t nb);
-static int if_usb_get_int_status(struct lbs_private *priv, uint8_t *);
-static int if_usb_read_event_cause(struct lbs_private *);
 static int usb_tx_block(struct if_usb_card *cardp, uint8_t *payload,
 			uint16_t nb);
 static void if_usb_free(struct if_usb_card *cardp);
@@ -104,12 +103,13 @@ static void if_usb_free(struct if_usb_card *cardp)
 
 static void if_usb_setup_firmware(struct lbs_private *priv)
 {
+	struct if_usb_card *cardp = priv->card;
 	struct cmd_ds_set_boot2_ver b2_cmd;
 	struct cmd_ds_802_11_fw_wake_method wake_method;
 
 	b2_cmd.hdr.size = cpu_to_le16(sizeof(b2_cmd));
 	b2_cmd.action = 0;
-	b2_cmd.version = priv->boot2_version;
+	b2_cmd.version = cardp->boot2_version;
 
 	if (lbs_cmd_with_response(priv, CMD_SET_BOOT2_VER, &b2_cmd))
 		lbs_deb_usb("Setting boot2 version failed\n");
@@ -232,9 +232,7 @@ static int if_usb_probe(struct usb_interface *intf,
 	cardp->priv->fw_ready = 1;
 
 	priv->hw_host_to_card = if_usb_host_to_card;
-	priv->hw_get_int_status = if_usb_get_int_status;
-	priv->hw_read_event_cause = if_usb_read_event_cause;
-	priv->boot2_version = udev->descriptor.bcdDevice;
+	cardp->boot2_version = udev->descriptor.bcdDevice;
 
 	if_usb_submit_rx_urb(cardp);
 
@@ -366,6 +364,13 @@ static int if_usb_reset_device(struct if_usb_card *cardp)
 	msleep(100);
 	ret = usb_reset_device(cardp->udev);
 	msleep(100);
+
+#ifdef CONFIG_OLPC
+	if (ret && machine_is_olpc()) {
+		printk(KERN_CRIT "Resetting OLPC wireless via EC...\n");
+		olpc_ec_cmd(0x25, NULL, 0, NULL, 0);
+	}
+#endif
 
 	lbs_deb_leave_args(LBS_DEB_USB, "ret %d", ret);
 
@@ -581,7 +586,6 @@ static inline void process_cmdtypedata(int recvlength, struct sk_buff *skb,
 	skb_pull(skb, MESSAGE_HEADER_LEN);
 
 	lbs_process_rxed_packet(priv, skb);
-	priv->upld_len = (recvlength - MESSAGE_HEADER_LEN);
 }
 
 static inline void process_cmdrequest(int recvlength, uint8_t *recvbuff,
@@ -589,6 +593,8 @@ static inline void process_cmdrequest(int recvlength, uint8_t *recvbuff,
 				      struct if_usb_card *cardp,
 				      struct lbs_private *priv)
 {
+	u8 i;
+
 	if (recvlength > LBS_CMD_BUFFER_SIZE) {
 		lbs_deb_usbd(&cardp->udev->dev,
 			     "The receive buffer is too large\n");
@@ -600,12 +606,15 @@ static inline void process_cmdrequest(int recvlength, uint8_t *recvbuff,
 		BUG();
 
 	spin_lock(&priv->driver_lock);
-	cardp->usb_int_cause |= MRVDRV_CMD_UPLD_RDY;
-	priv->upld_len = (recvlength - MESSAGE_HEADER_LEN);
-	memcpy(priv->upld_buf, recvbuff + MESSAGE_HEADER_LEN, priv->upld_len);
 
+	i = (priv->resp_idx == 0) ? 1 : 0;
+	BUG_ON(priv->resp_len[i]);
+	priv->resp_len[i] = (recvlength - MESSAGE_HEADER_LEN);
+	memcpy(priv->resp_buf[i], recvbuff + MESSAGE_HEADER_LEN,
+		priv->resp_len[i]);
 	kfree_skb(skb);
-	lbs_interrupt(priv);
+	lbs_notify_command_response(priv, i);
+
 	spin_unlock(&priv->driver_lock);
 
 	lbs_deb_usbd(&cardp->udev->dev,
@@ -628,6 +637,7 @@ static void if_usb_receive(struct urb *urb)
 	uint8_t *recvbuff = NULL;
 	uint32_t recvtype = 0;
 	__le32 *pkt = (__le32 *)(skb->data + IPFIELD_ALIGN_OFFSET);
+	uint32_t event;
 
 	lbs_deb_enter(LBS_DEB_USB);
 
@@ -659,26 +669,20 @@ static void if_usb_receive(struct urb *urb)
 		break;
 
 	case CMD_TYPE_INDICATION:
-		/* Event cause handling */
-		spin_lock(&priv->driver_lock);
-
-		cardp->usb_event_cause = le32_to_cpu(pkt[1]);
-
-		lbs_deb_usbd(&cardp->udev->dev,"**EVENT** 0x%X\n",
-			     cardp->usb_event_cause);
+		/* Event handling */
+		event = le32_to_cpu(pkt[1]);
+		lbs_deb_usbd(&cardp->udev->dev, "**EVENT** 0x%X\n", event);
+		kfree_skb(skb);
 
 		/* Icky undocumented magic special case */
-		if (cardp->usb_event_cause & 0xffff0000) {
-			lbs_send_tx_feedback(priv);
-			spin_unlock(&priv->driver_lock);
-			break;
-		}
-		cardp->usb_event_cause <<= 3;
-		cardp->usb_int_cause |= MRVDRV_CARDEVENT;
-		kfree_skb(skb);
-		lbs_interrupt(priv);
-		spin_unlock(&priv->driver_lock);
-		goto rx_exit;
+		if (event & 0xffff0000) {
+			u32 trycount = (event & 0xffff0000) >> 16;
+
+			lbs_send_tx_feedback(priv, trycount);
+		} else
+			lbs_queue_event(priv, event & 0xFF);
+		break;
+
 	default:
 		lbs_deb_usbd(&cardp->udev->dev, "Unknown command type 0x%X\n",
 			     recvtype);
@@ -719,30 +723,6 @@ static int if_usb_host_to_card(struct lbs_private *priv, uint8_t type,
 	memcpy((cardp->ep_out_buf + MESSAGE_HEADER_LEN), payload, nb);
 
 	return usb_tx_block(cardp, cardp->ep_out_buf, nb + MESSAGE_HEADER_LEN);
-}
-
-/* called with priv->driver_lock held */
-static int if_usb_get_int_status(struct lbs_private *priv, uint8_t *ireg)
-{
-	struct if_usb_card *cardp = priv->card;
-
-	*ireg = cardp->usb_int_cause;
-	cardp->usb_int_cause = 0;
-
-	lbs_deb_usbd(&cardp->udev->dev, "Int cause is 0x%X\n", *ireg);
-
-	return 0;
-}
-
-static int if_usb_read_event_cause(struct lbs_private *priv)
-{
-	struct if_usb_card *cardp = priv->card;
-
-	priv->eventcause = cardp->usb_event_cause;
-	/* Re-submit rx urb here to avoid event lost issue */
-	if_usb_submit_rx_urb(cardp);
-
-	return 0;
 }
 
 /**
@@ -953,6 +933,7 @@ static struct usb_driver if_usb_driver = {
 	.id_table = if_usb_table,
 	.suspend = if_usb_suspend,
 	.resume = if_usb_resume,
+	.reset_resume = if_usb_resume,
 };
 
 static int __init if_usb_init_module(void)

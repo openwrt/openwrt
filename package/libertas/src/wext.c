@@ -16,11 +16,11 @@
 #include "decl.h"
 #include "defs.h"
 #include "dev.h"
-#include "join.h"
 #include "wext.h"
+#include "scan.h"
 #include "assoc.h"
 #include "cmd.h"
-
+#include "ioctl.h"
 
 static inline void lbs_postpone_association_work(struct lbs_private *priv)
 {
@@ -579,6 +579,9 @@ static int lbs_get_range(struct net_device *dev, struct iw_request_info *info,
 	       range->num_bitrates);
 
 	range->num_frequency = 0;
+
+	range->scan_capa = IW_SCAN_CAPA_ESSID;
+
 	if (priv->enable11d &&
 	    (priv->connect_status == LBS_CONNECTED ||
 	    priv->mesh_connect_status == LBS_CONNECTED)) {
@@ -602,7 +605,7 @@ static int lbs_get_range(struct net_device *dev, struct iw_request_info *info,
 			lbs_deb_wext("chan_no %d\n", chan_no);
 			range->freq[range->num_frequency].i = (long)chan_no;
 			range->freq[range->num_frequency].m =
-			    (long)lbs_chan_2_freq(chan_no, band) * 100000;
+			    (long)lbs_chan_2_freq(chan_no) * 100000;
 			range->freq[range->num_frequency].e = 1;
 			range->num_frequency++;
 		}
@@ -653,13 +656,10 @@ static int lbs_get_range(struct net_device *dev, struct iw_request_info *info,
 	range->num_encoding_sizes = 2;
 	range->max_encoding_tokens = 4;
 
-	range->min_pmp = 1000000;
-	range->max_pmp = 120000000;
-	range->min_pmt = 1000;
-	range->max_pmt = 1000000;
-	range->pmp_flags = IW_POWER_PERIOD;
-	range->pmt_flags = IW_POWER_TIMEOUT;
-	range->pm_capa = IW_POWER_PERIOD | IW_POWER_TIMEOUT | IW_POWER_ALL_R;
+	/*
+	 * Right now we support only "iwconfig ethX power on|off"
+	 */
+	range->pm_capa = IW_POWER_ON;
 
 	/*
 	 * Minimum version we recommend
@@ -781,21 +781,14 @@ static int lbs_get_power(struct net_device *dev, struct iw_request_info *info,
 			  struct iw_param *vwrq, char *extra)
 {
 	struct lbs_private *priv = dev->priv;
-	int mode;
 
 	lbs_deb_enter(LBS_DEB_WEXT);
 
-	mode = priv->psmode;
-
-	if ((vwrq->disabled = (mode == LBS802_11POWERMODECAM))
-	    || priv->connect_status == LBS_DISCONNECTED)
-	{
-		goto out;
-	}
-
 	vwrq->value = 0;
+	vwrq->flags = 0;
+	vwrq->disabled = priv->psmode == LBS802_11POWERMODECAM
+		|| priv->connect_status == LBS_DISCONNECTED;
 
-out:
 	lbs_deb_leave(LBS_DEB_WEXT);
 	return 0;
 }
@@ -817,6 +810,7 @@ static struct iw_statistics *lbs_get_wireless_stats(struct net_device *dev)
 	int stats_valid = 0;
 	u8 rssi;
 	u32 tx_retries;
+	struct cmd_ds_802_11_get_log log;
 
 	lbs_deb_enter(LBS_DEB_WEXT);
 
@@ -860,7 +854,11 @@ static struct iw_statistics *lbs_get_wireless_stats(struct net_device *dev)
 	/* Quality by TX errors */
 	priv->wstats.discard.retries = priv->stats.tx_errors;
 
-	tx_retries = le32_to_cpu(priv->logmsg.retry);
+	memset(&log, 0, sizeof(log));
+	log.hdr.size = cpu_to_le16(sizeof(log));
+	lbs_cmd_with_response(priv, CMD_802_11_GET_LOG, &log);
+
+	tx_retries = le32_to_cpu(log.retry);
 
 	if (tx_retries > 75)
 		tx_qual = (90 - tx_retries) * POOR / 15;
@@ -876,10 +874,9 @@ static struct iw_statistics *lbs_get_wireless_stats(struct net_device *dev)
 		    (PERFECT - VERY_GOOD) / 50 + VERY_GOOD;
 	quality = min(quality, tx_qual);
 
-	priv->wstats.discard.code = le32_to_cpu(priv->logmsg.wepundecryptable);
-	priv->wstats.discard.fragment = le32_to_cpu(priv->logmsg.rxfrag);
+	priv->wstats.discard.code = le32_to_cpu(log.wepundecryptable);
 	priv->wstats.discard.retries = tx_retries;
-	priv->wstats.discard.misc = le32_to_cpu(priv->logmsg.ackfailure);
+	priv->wstats.discard.misc = le32_to_cpu(log.ackfailure);
 
 	/* Calculate quality */
 	priv->wstats.qual.qual = min_t(u8, quality, 100);
@@ -888,8 +885,6 @@ static struct iw_statistics *lbs_get_wireless_stats(struct net_device *dev)
 
 	/* update stats asynchronously for future calls */
 	lbs_prepare_and_send_command(priv, CMD_802_11_RSSI, 0,
-					0, 0, NULL);
-	lbs_prepare_and_send_command(priv, CMD_802_11_GET_LOG, 0,
 					0, 0, NULL);
 out:
 	if (!stats_valid) {
@@ -2065,29 +2060,6 @@ static int lbs_set_wap(struct net_device *dev, struct iw_request_info *info,
 	return ret;
 }
 
-void lbs_get_fwversion(struct lbs_private *priv, char *fwversion, int maxlen)
-{
-	char fwver[32];
-
-	mutex_lock(&priv->lock);
-
-	if (priv->fwreleasenumber[3] == 0)
-		sprintf(fwver, "%u.%u.%u",
-			priv->fwreleasenumber[2],
-			priv->fwreleasenumber[1],
-			priv->fwreleasenumber[0]);
-	else
-		sprintf(fwver, "%u.%u.%u.p%u",
-			priv->fwreleasenumber[2],
-			priv->fwreleasenumber[1],
-			priv->fwreleasenumber[0],
-			priv->fwreleasenumber[3]);
-
-	mutex_unlock(&priv->lock);
-	snprintf(fwversion, maxlen, fwver);
-}
-
-
 /*
  * iwconfig settable callbacks
  */
@@ -2206,14 +2178,63 @@ static const iw_handler mesh_wlan_handler[] = {
 	(iw_handler) lbs_get_encodeext,/* SIOCGIWENCODEEXT */
 	(iw_handler) NULL,		/* SIOCSIWPMKSA */
 };
+
+#define INT_PARAM              (IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1)
+#define INT16_PARAM            (IW_PRIV_TYPE_INT | 16)
+#define CHAR128_PARAM          (IW_PRIV_TYPE_CHAR | 128)
+
+static const struct iw_priv_args lbs_private_args[] = {
+	/* { cmd, set_args, get_args, name } */
+	{ LBS_SETNONE_GETNONE, 0, 0, "" },
+	    { LBS_SUBCMD_FWT_RESET, 0, 0, "fwt_reset"},
+	    { LBS_SUBCMD_BT_RESET, 0, 0, "bt_reset"},
+	{ LBS_SETNONE_GETONEINT, 0, INT_PARAM, ""},
+	    { LBS_SUBCMD_GET_REGION, 0, INT_PARAM, "getregioncode"},
+	    { LBS_SUBCMD_FWT_CLEANUP, 0, INT_PARAM, "fwt_cleanup"},
+	    { LBS_SUBCMD_FWT_TIME, 0, INT_PARAM, "fwt_time"},
+	    { LBS_SUBCMD_MESH_GET_TTL, 0, INT_PARAM, "mesh_get_ttl"},
+	    { LBS_SUBCMD_BT_GET_INVERT, 0, INT_PARAM, "bt_get_invert"},
+	    { LBS_SUBCMD_MESH_GET_BCAST_RATE, 0, INT_PARAM, "mesh_get_bcastr"},
+	    { LBS_SUBCMD_MESH_GET_RREQ_DELAY, 0, INT_PARAM, "get_rreq_delay"},
+	    { LBS_SUBCMD_MESH_GET_ROUTE_EXP, 0, INT_PARAM, "get_route_exp"},
+	{ LBS_SETONEINT_GETNONE, INT_PARAM, 0, ""},
+	    { LBS_SUBCMD_SET_REGION, INT_PARAM, 0, "setregioncode"},
+	    { LBS_SUBCMD_MESH_SET_TTL, INT_PARAM, 0, "mesh_set_ttl"},
+	    { LBS_SUBCMD_BT_SET_INVERT, INT_PARAM, 0, "bt_set_invert"},
+	    { LBS_SUBCMD_MESH_SET_BCAST_RATE, INT_PARAM, 0, "mesh_set_bcastr"},
+	    { LBS_SUBCMD_MESH_SET_RREQ_DELAY, INT_PARAM, 0, "set_rreq_delay"},
+	    { LBS_SUBCMD_MESH_SET_ROUTE_EXP, INT_PARAM, 0, "set_route_exp"},
+	{ LBS_SET128CHAR_GET128CHAR, CHAR128_PARAM, CHAR128_PARAM, ""},
+	    { LBS_SUBCMD_BT_ADD, CHAR128_PARAM, CHAR128_PARAM, "bt_add"},
+	    { LBS_SUBCMD_BT_DEL, CHAR128_PARAM, CHAR128_PARAM, "bt_del"},
+	    { LBS_SUBCMD_BT_LIST, CHAR128_PARAM, CHAR128_PARAM, "bt_list"},
+	    { LBS_SUBCMD_FWT_ADD, CHAR128_PARAM, CHAR128_PARAM, "fwt_add"},
+	    { LBS_SUBCMD_FWT_DEL, CHAR128_PARAM, CHAR128_PARAM, "fwt_del"},
+	    { LBS_SUBCMD_FWT_LOOKUP, CHAR128_PARAM, CHAR128_PARAM, "fwt_lookup"},
+	    { LBS_SUBCMD_FWT_LIST_NEIGHBOR, CHAR128_PARAM, CHAR128_PARAM, "fwt_list_neigh"},
+	    { LBS_SUBCMD_FWT_LIST, CHAR128_PARAM, CHAR128_PARAM, "fwt_list"},
+	    { LBS_SUBCMD_FWT_LIST_ROUTE, CHAR128_PARAM, CHAR128_PARAM, "fwt_list_route"},
+	    { LBS_SUBCMD_MESH_SET_LINK_COSTS, CHAR128_PARAM, CHAR128_PARAM, "set_link_costs"},
+	    { LBS_SUBCMD_MESH_GET_LINK_COSTS, CHAR128_PARAM, CHAR128_PARAM, "get_link_costs"},
+	{ LBS_SET_GET_SIXTEEN_INT, INT16_PARAM, INT16_PARAM, ""},
+	    { LBS_LED_GPIO_CTRL, INT16_PARAM, INT16_PARAM, "ledgpio"},
+	    { LBS_BCN_CTRL, INT16_PARAM, INT16_PARAM, "bcn_control"},
+	    { LBS_LED_BEHAVIOR_CTRL, INT16_PARAM, INT16_PARAM, "ledbhv"},
+};
+
+
 struct iw_handler_def lbs_handler_def = {
 	.num_standard	= ARRAY_SIZE(lbs_handler),
 	.standard	= (iw_handler *) lbs_handler,
 	.get_wireless_stats = lbs_get_wireless_stats,
+	.num_private_args = ARRAY_SIZE(lbs_private_args),
+	.private_args	= lbs_private_args,
 };
 
 struct iw_handler_def mesh_handler_def = {
 	.num_standard	= ARRAY_SIZE(mesh_wlan_handler),
 	.standard	= (iw_handler *) mesh_wlan_handler,
 	.get_wireless_stats = lbs_get_wireless_stats,
+	.num_private_args = ARRAY_SIZE(lbs_private_args),
+	.private_args	= lbs_private_args,
 };
