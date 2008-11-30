@@ -16,18 +16,14 @@ extern int usb_disabled(void);
 
 static void ar71xx_start_ehci(struct platform_device *pdev)
 {
-}
-
-static void ar71xx_stop_ehci(struct platform_device *pdev)
-{
 	/*
 	 * TODO: implement
 	 */
 }
 
-int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
-			  struct usb_hcd **hcd_out,
-			  struct platform_device *pdev)
+static int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
+				 struct usb_hcd **hcd_out,
+				 struct platform_device *pdev)
 {
 	struct usb_hcd *hcd;
 	struct ehci_hcd *ehci;
@@ -70,70 +66,56 @@ int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
 		goto err_release_region;
 	}
 
-	ar71xx_start_ehci(pdev);
-
 	ehci		= hcd_to_ehci(hcd);
 	ehci->caps	= hcd->regs;
 	ehci->regs	= hcd->regs + HC_LENGTH(readl(&ehci->caps->hc_capbase));
 	ehci->hcs_params = readl(&ehci->caps->hcs_params);
 
+	ar71xx_start_ehci(pdev);
+
 	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
 	if (ret)
-		goto err_stop_ehc;
+		goto err_iounmap;
 
 	return 0;
 
-err_stop_ehc:
-	ar71xx_stop_ehci(pdev);
+ err_iounmap:
 	iounmap(hcd->regs);
 
-err_release_region:
+ err_release_region:
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
-err_put_hcd:
+ err_put_hcd:
 	usb_put_hcd(hcd);
 	return ret;
 }
 
-/* may be called without controller electrically present */
-/* may be called with controller, bus, and devices active */
-
-/**
- * usb_ehci_ar71xx_remove - shutdown processing for AR71xx-based HCDs
- * @dev: USB Host Controller being removed
- * Context: !in_interrupt()
- *
- * Reverses the effect of usb_hcd_ar71xx_probe(), first invoking
- * the HCD's stop() method.  It is always called from a thread
- * context, normally "rmmod", "apmd", or something similar.
- *
- */
 static void usb_ehci_ar71xx_remove(struct usb_hcd *hcd,
 				   struct platform_device *pdev)
 {
 	usb_remove_hcd(hcd);
-	ar71xx_stop_ehci(pdev);
 	iounmap(hcd->regs);
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
 	usb_put_hcd(hcd);
 }
 
 static const struct hc_driver ehci_ar71xx_hc_driver = {
-	.description	= hcd_name,
-	.product_desc	= "Atheros AR71xx built-in EHCI controller",
-	.hcd_priv_size	= sizeof(struct ehci_hcd),
+	.description		= hcd_name,
+	.product_desc		= "Atheros AR71xx built-in EHCI controller",
+	.hcd_priv_size		= sizeof(struct ehci_hcd),
+
 	/*
 	 * generic hardware linkage
 	 */
-	.irq		= ehci_irq,
-	.flags		= HCD_MEMORY | HCD_USB2,
+	.irq			= ehci_irq,
+	.flags			= HCD_MEMORY | HCD_USB2,
 
 	/*
 	 * basic lifecycle operations
 	 */
-	.reset		= ehci_init,
-	.start		= ehci_run,
-	.stop		= ehci_stop,
-	.shutdown	= ehci_shutdown,
+	.reset			= ehci_init,
+	.start			= ehci_run,
+	.stop			= ehci_stop,
+	.shutdown		= ehci_shutdown,
 
 	/*
 	 * managing i/o requests and associated device resources
@@ -145,7 +127,7 @@ static const struct hc_driver ehci_ar71xx_hc_driver = {
 	/*
 	 * scheduling support
 	 */
-	.get_frame_number = ehci_get_frame,
+	.get_frame_number	= ehci_get_frame,
 
 	/*
 	 * root hub support
@@ -181,11 +163,9 @@ static int ehci_hcd_ar71xx_drv_remove(struct platform_device *pdev)
 static struct platform_driver ehci_hcd_ar71xx_driver = {
 	.probe		= ehci_hcd_ar71xx_drv_probe,
 	.remove		= ehci_hcd_ar71xx_drv_remove,
-	.shutdown	= usb_hcd_platform_shutdown,
 	.driver = {
 		.name	= "ar71xx-ehci",
-		.bus	= &platform_bus_type
 	}
 };
 
-MODULE_ALIAS("ar71xx-ehci");
+MODULE_ALIAS("platform:ar71xx-ehci");
