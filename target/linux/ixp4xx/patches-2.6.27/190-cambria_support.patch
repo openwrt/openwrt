@@ -1,47 +1,3 @@
---- a/arch/arm/mach-ixp4xx/Kconfig
-+++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -25,6 +25,14 @@ config MACH_AVILA
- 	  Avila Network Platform. For more information on this platform,
- 	  see <file:Documentation/arm/IXP4xx>.
- 
-+config MACH_CAMBRIA
-+	bool "Cambria"
-+	select PCI
-+	help
-+	  Say 'Y' here if you want your kernel to support the Gateworks
-+	  Cambria series. For more information on this platform,
-+	  see <file:Documentation/arm/IXP4xx>.
-+
- config MACH_LOFT
-     bool "Loft"
-     depends on MACH_AVILA
-@@ -208,7 +216,7 @@ config CPU_IXP46X
- 
- config CPU_IXP43X
- 	bool
--	depends on MACH_KIXRP435
-+	depends on MACH_KIXRP435 || MACH_CAMBRIA
- 	default y
- 
- config MACH_GTWX5715
---- a/arch/arm/mach-ixp4xx/Makefile
-+++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -7,6 +7,7 @@ obj-pci-n	:=
- 
- obj-pci-$(CONFIG_ARCH_IXDP4XX)		+= ixdp425-pci.o
- obj-pci-$(CONFIG_MACH_AVILA)		+= avila-pci.o
-+obj-pci-$(CONFIG_MACH_CAMBRIA)		+= cambria-pci.o
- obj-pci-$(CONFIG_MACH_IXDPG425)		+= ixdpg425-pci.o
- obj-pci-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-pci.o
- obj-pci-$(CONFIG_MACH_GTWX5715)		+= gtwx5715-pci.o
-@@ -28,6 +29,7 @@ obj-y	+= common.o
- 
- obj-$(CONFIG_ARCH_IXDP4XX)	+= ixdp425-setup.o
- obj-$(CONFIG_MACH_AVILA)	+= avila-setup.o
-+obj-$(CONFIG_MACH_CAMBRIA)	+= cambria-setup.o
- obj-$(CONFIG_MACH_IXDPG425)	+= coyote-setup.o
- obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-setup.o
- obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/cambria-pci.c
 @@ -0,0 +1,74 @@
@@ -121,49 +77,47 @@
 +subsys_initcall(cambria_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/cambria-setup.c
-@@ -0,0 +1,444 @@
+@@ -0,0 +1,429 @@
 +/*
 + * arch/arm/mach-ixp4xx/cambria-setup.c
 + *
 + * Board setup for the Gateworks Cambria series
 + *
-+ * Copyright (C) 2008 Imre Kaloz <Kaloz@openwrt.org>
++ * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
 + *
 + * based on coyote-setup.c:
 + *      Copyright (C) 2003-2005 MontaVista Software, Inc.
 + *
-+ * Author: Imre Kaloz <Kaloz@openwrt.org>
++ * Author: Imre Kaloz <kaloz@openwrt.org>
 + */
 +
-+#include <linux/kernel.h>
-+#include <linux/init.h>
 +#include <linux/device.h>
++#include <linux/i2c.h>
++#include <linux/i2c-gpio.h>
++#include <linux/i2c/at24.h>
 +#include <linux/if_ether.h>
-+#include <linux/socket.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/leds.h>
++#include <linux/memory.h>
 +#include <linux/netdevice.h>
 +#include <linux/serial.h>
-+#include <linux/tty.h>
 +#include <linux/serial_8250.h>
 +#include <linux/slab.h>
-+#ifdef CONFIG_SENSORS_EEPROM
-+# include <linux/i2c.h>
-+# include <linux/eeprom.h>
-+#endif
++#include <linux/socket.h>
++#include <linux/types.h>
++#include <linux/tty.h>
 +
-+#include <linux/leds.h>
-+#include <linux/i2c-gpio.h>
-+#include <asm/types.h>
-+#include <asm/setup.h>
-+#include <asm/memory.h>
 +#include <mach/hardware.h>
 +#include <asm/irq.h>
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
 +#include <asm/mach/flash.h>
++#include <asm/setup.h>
 +
 +struct cambria_board_info {
 +	unsigned char	*model;
-+	void		(* setup)(void);
++	void		(*setup)(void);
 +};
 +
 +static struct cambria_board_info *cambria_info __initdata;
@@ -198,6 +152,30 @@
 +	.dev = {
 +		.platform_data	= &cambria_i2c_gpio_data,
 +	},
++};
++
++static struct eth_plat_info cambria_npec_data = {
++	.phy		= 1,
++	.rxq		= 4,
++	.txreadyq	= 21,
++};
++
++static struct eth_plat_info cambria_npea_data = {
++	.phy		= 2,
++	.rxq		= 2,
++	.txreadyq	= 19,
++};
++
++static struct platform_device cambria_npec_device = {
++	.name			= "ixp4xx_eth",
++	.id			= IXP4XX_ETH_NPEC,
++	.dev.platform_data	= &cambria_npec_data,
++};
++
++static struct platform_device cambria_npea_device = {
++	.name			= "ixp4xx_eth",
++	.id			= IXP4XX_ETH_NPEA,
++	.dev.platform_data	= &cambria_npea_data,
 +};
 +
 +static struct resource cambria_uart_resource = {
@@ -257,30 +235,6 @@
 +	.resource		= cambria_pata_resources,
 +};
 +
-+static struct eth_plat_info cambria_npec_data = {
-+	.phy		= 1,
-+	.rxq		= 4,
-+	.txreadyq	= 21,
-+};
-+
-+static struct eth_plat_info cambria_npea_data = {
-+	.phy		= 2,
-+	.rxq		= 2,
-+	.txreadyq	= 19,
-+};
-+
-+static struct platform_device cambria_npec_device = {
-+	.name			= "ixp4xx_eth",
-+	.id			= IXP4XX_ETH_NPEC,
-+	.dev.platform_data	= &cambria_npec_data,
-+};
-+
-+static struct platform_device cambria_npea_device = {
-+	.name			= "ixp4xx_eth",
-+	.id			= IXP4XX_ETH_NPEA,
-+	.dev.platform_data	= &cambria_npea_data,
-+};
-+
 +static struct gpio_led cambria_gpio_leds[] = {
 +	{
 +		.name		= "user",  /* green led */
@@ -299,7 +253,6 @@
 +	.id		= -1,
 +	.dev.platform_data = &cambria_gpio_leds_data,
 +};
-+
 +
 +static struct latch_led cambria_latch_leds[] = {
 +	{
@@ -408,7 +361,6 @@
 +	platform_device_register(&cambria_npea_device);
 +}
 +
-+#ifdef CONFIG_SENSORS_EEPROM
 +static void __init cambria_gw2350_setup(void)
 +{
 +	platform_device_register(&cambria_npec_device);
@@ -449,66 +401,57 @@
 +
 +	for (i = 0; i < ARRAY_SIZE(cambria_boards); i++) {
 +		struct cambria_board_info *info = &cambria_boards[i];
-+		if (strncmp(info->model, model, strlen(info->model)) == 0)
++		if (strcmp(info->model, model) == 0)
 +			return info;
 +	}
 +
 +	return NULL;
 +}
 +
-+struct cambria_eeprom_header {
-+	unsigned char mac0[ETH_ALEN];
-+	unsigned char mac1[ETH_ALEN];
-+	unsigned char res0[4];
-+	unsigned char magic[2];
-+	unsigned char config[14];
-+	unsigned char model[16];
++static struct at24_iface *at24_if;
++
++static int at24_setup(struct at24_iface *iface, void *context)
++{
++	char mac_addr[ETH_ALEN];
++	char model[6];
++
++	at24_if = iface;
++
++	/* Read MAC addresses */
++	if (at24_if->read(at24_if, mac_addr, 0x0, 6) == 6) {
++		memcpy(&cambria_npec_data.hwaddr, mac_addr, ETH_ALEN);
++	}
++	if (at24_if->read(at24_if, mac_addr, 0x6, 6) == 6) {
++		memcpy(&cambria_npea_data.hwaddr, mac_addr, ETH_ALEN);
++	}
++
++	/* Read the first 6 bytes of the model number */
++	if (at24_if->read(at24_if, model, 0x20, 6) == 6) {
++		cambria_info = cambria_find_board_info(model);
++	}
++
++	return 0;
++}
++
++static struct at24_platform_data cambria_eeprom_info = {
++	.byte_len	= 1024,
++	.page_size	= 16,
++	.flags		= AT24_FLAG_READONLY,
++	.setup		= at24_setup,
 +};
 +
-+static int __init cambria_eeprom_notify(struct notifier_block *self,
-+		unsigned long event, void *t)
-+{
-+	struct eeprom_data *ee = t;
-+	struct cambria_eeprom_header hdr;
-+
-+	if (cambria_info)
-+		return NOTIFY_DONE;
-+
-+	/* The eeprom is at address 0x51 */
-+	if (event != EEPROM_REGISTER || ee->client.addr != 0x51)
-+		return NOTIFY_DONE;
-+
-+	ee->attr->read(&ee->client.dev.kobj, ee->attr, (char *)&hdr,
-+		0, sizeof(hdr));
-+
-+	if (hdr.magic[0] != 'G' || hdr.magic[1] != 'W')
-+		return NOTIFY_DONE;
-+
-+	memcpy(&cambria_npec_data.hwaddr, hdr.mac0, ETH_ALEN);
-+	memcpy(&cambria_npea_data.hwaddr, hdr.mac1, ETH_ALEN);
-+
-+	cambria_info = cambria_find_board_info(hdr.model);
-+
-+	return NOTIFY_OK;
-+}
-+
-+static struct notifier_block cambria_eeprom_notifier __initdata = {
-+       .notifier_call = cambria_eeprom_notify
++static struct i2c_board_info __initdata cambria_i2c_board_info[] = {
++/*	{
++		I2C_BOARD_INFO("rtc-ds1672", 0x68),
++	},*/
++	{
++		I2C_BOARD_INFO("ad7418", 0x28),
++	},
++	{
++		I2C_BOARD_INFO("24c08", 0x51),
++		.platform_data	= &cambria_eeprom_info
++	},
 +};
-+
-+static void __init cambria_register_eeprom_notifier(void)
-+{
-+	register_eeprom_notifier(&cambria_eeprom_notifier);
-+}
-+
-+static void __init cambria_unregister_eeprom_notifier(void)
-+{
-+	unregister_eeprom_notifier(&cambria_eeprom_notifier);
-+}
-+#else /* CONFIG_SENSORS_EEPROM */
-+static inline void cambria_register_eeprom_notifier(void) {};
-+static inline void cambria_unregister_eeprom_notifier(void) {};
-+#endif /* CONFIG_SENSORS_EEPROM */
 +
 +static void __init cambria_init(void)
 +{
@@ -531,7 +474,8 @@
 +	cambria_pata_data.cs0_cfg = IXP4XX_EXP_CS3;
 +	cambria_pata_data.cs1_cfg = IXP4XX_EXP_CS3;
 +
-+	cambria_register_eeprom_notifier();
++	i2c_register_board_info(0, cambria_i2c_board_info,
++				ARRAY_SIZE(cambria_i2c_board_info));
 +}
 +
 +static int __init cambria_model_setup(void)
@@ -549,12 +493,10 @@
 +		cambria_gw23xx_setup();
 +	}
 +
-+	cambria_unregister_eeprom_notifier();
 +	return 0;
 +}
 +late_initcall(cambria_model_setup);
 +
-+#ifdef CONFIG_MACH_CAMBRIA
 +MACHINE_START(CAMBRIA, "Gateworks Cambria series")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
 +	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
@@ -565,15 +507,47 @@
 +	.boot_params	= 0x0100,
 +	.init_machine	= cambria_init,
 +MACHINE_END
-+#endif
---- a/arch/arm/mach-ixp4xx/include/mach/hardware.h
-+++ b/arch/arm/mach-ixp4xx/include/mach/hardware.h
-@@ -18,7 +18,7 @@
- #define __ASM_ARCH_HARDWARE_H__
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -25,6 +25,14 @@ config MACH_AVILA
+ 	  Avila Network Platform. For more information on this platform,
+ 	  see <file:Documentation/arm/IXP4xx>.
  
- #define PCIBIOS_MIN_IO		0x00001000
--#define PCIBIOS_MIN_MEM		(cpu_is_ixp43x() ? 0x40000000 : 0x48000000)
-+#define PCIBIOS_MIN_MEM		(cpu_is_ixp43x() ? 0x48000000 : 0x48000000)
++config MACH_CAMBRIA
++	bool "Cambria"
++	select PCI
++	help
++	  Say 'Y' here if you want your kernel to support the Gateworks
++	  Cambria series. For more information on this platform,
++	  see <file:Documentation/arm/IXP4xx>.
++
+ config MACH_LOFT
+     bool "Loft"
+     depends on MACH_AVILA
+@@ -208,7 +216,7 @@ config CPU_IXP46X
  
- /*
-  * We override the standard dma-mask routines for bouncing.
+ config CPU_IXP43X
+ 	bool
+-	depends on MACH_KIXRP435
++	depends on MACH_KIXRP435 || MACH_CAMBRIA
+ 	default y
+ 
+ config MACH_GTWX5715
+--- a/arch/arm/mach-ixp4xx/Makefile
++++ b/arch/arm/mach-ixp4xx/Makefile
+@@ -7,6 +7,7 @@ obj-pci-n	:=
+ 
+ obj-pci-$(CONFIG_ARCH_IXDP4XX)		+= ixdp425-pci.o
+ obj-pci-$(CONFIG_MACH_AVILA)		+= avila-pci.o
++obj-pci-$(CONFIG_MACH_CAMBRIA)		+= cambria-pci.o
+ obj-pci-$(CONFIG_MACH_IXDPG425)		+= ixdpg425-pci.o
+ obj-pci-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-pci.o
+ obj-pci-$(CONFIG_MACH_GTWX5715)		+= gtwx5715-pci.o
+@@ -29,6 +30,7 @@ obj-y	+= common.o
+ 
+ obj-$(CONFIG_ARCH_IXDP4XX)	+= ixdp425-setup.o
+ obj-$(CONFIG_MACH_AVILA)	+= avila-setup.o
++obj-$(CONFIG_MACH_CAMBRIA)	+= cambria-setup.o
+ obj-$(CONFIG_MACH_IXDPG425)	+= coyote-setup.o
+ obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-setup.o
+ obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o

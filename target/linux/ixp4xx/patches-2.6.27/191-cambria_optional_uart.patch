@@ -1,14 +1,14 @@
 --- a/arch/arm/mach-ixp4xx/cambria-setup.c
 +++ b/arch/arm/mach-ixp4xx/cambria-setup.c
-@@ -36,6 +36,7 @@
- #include <asm/mach-types.h>
+@@ -34,6 +34,7 @@
  #include <asm/mach/arch.h>
  #include <asm/mach/flash.h>
+ #include <asm/setup.h>
 +#include <linux/irq.h>
  
  struct cambria_board_info {
  	unsigned char	*model;
-@@ -105,6 +106,43 @@ static struct platform_device cambria_ua
+@@ -127,6 +128,43 @@ static struct platform_device cambria_ua
  	.resource	= &cambria_uart_resource,
  };
  
@@ -52,8 +52,8 @@
  static struct resource cambria_pata_resources[] = {
  	{
  		.flags	= IORESOURCE_MEM
-@@ -287,6 +325,19 @@ static void __init cambria_gw23xx_setup(
- #ifdef CONFIG_SENSORS_EEPROM
+@@ -283,6 +321,19 @@ static void __init cambria_gw23xx_setup(
+ 
  static void __init cambria_gw2350_setup(void)
  {
 +	*IXP4XX_EXP_CS2 = 0xbfff0003;
@@ -72,7 +72,7 @@
  	platform_device_register(&cambria_npec_device);
  	platform_device_register(&cambria_npea_device);
  
-@@ -294,10 +345,26 @@ static void __init cambria_gw2350_setup(
+@@ -290,10 +341,26 @@ static void __init cambria_gw2350_setup(
  	platform_device_register(&cambria_usb1_device);
  
  	platform_device_register(&cambria_gpio_leds_device);
