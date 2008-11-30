@@ -1,7 +1,5 @@
-Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/Kconfig
-===================================================================
---- linux-2.6.27.3.orig/arch/arm/mach-ixp4xx/Kconfig	2008-11-05 19:31:20.000000000 +0000
-+++ linux-2.6.27.3/arch/arm/mach-ixp4xx/Kconfig	2008-11-05 20:10:26.000000000 +0000
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
 @@ -97,6 +97,14 @@ config MACH_SIDEWINDER
  	  Engineering Sidewinder board. For more information on this
  	  platform, see http://www.adiengineering.com
@@ -17,11 +15,9 @@ Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/Kconfig
  config MACH_COMPEX
  	bool "Compex WP18 / NP18A"
  	select PCI
-Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/Makefile
-===================================================================
---- linux-2.6.27.3.orig/arch/arm/mach-ixp4xx/Makefile	2008-11-05 19:31:20.000000000 +0000
-+++ linux-2.6.27.3/arch/arm/mach-ixp4xx/Makefile	2008-11-05 20:10:26.000000000 +0000
-@@ -24,6 +24,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
+--- a/arch/arm/mach-ixp4xx/Makefile
++++ b/arch/arm/mach-ixp4xx/Makefile
+@@ -25,6 +25,7 @@ obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_TW5334)		+= tw5334-pci.o
  obj-pci-$(CONFIG_MACH_MI424WR)		+= mi424wr-pci.o
@@ -29,7 +25,7 @@ Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/Makefile
  
  obj-y	+= common.o
  
-@@ -46,6 +47,7 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
+@@ -48,6 +49,7 @@ obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
  obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
  obj-$(CONFIG_MACH_MI424WR)	+= mi424wr-setup.o
@@ -37,10 +33,8 @@ Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/Makefile
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
-Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/usr8200-pci.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.3/arch/arm/mach-ixp4xx/usr8200-pci.c	2008-11-05 22:51:20.000000000 +0000
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/usr8200-pci.c
 @@ -0,0 +1,78 @@
 +/*
 + * arch/arch/mach-ixp4xx/usr8200-pci.c
@@ -120,10 +114,8 @@ Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/usr8200-pci.c
 +}
 +
 +subsys_initcall(usr8200_pci_init);
-Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/usr8200-setup.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.27.3/arch/arm/mach-ixp4xx/usr8200-setup.c	2008-11-05 20:23:32.000000000 +0000
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/usr8200-setup.c
 @@ -0,0 +1,187 @@
 +/*
 + * arch/arm/mach-ixp4xx/usr8200-setup.c
@@ -312,10 +304,8 @@ Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/usr8200-setup.c
 +	.boot_params	= 0x0100,
 +	.init_machine	= usr8200_init,
 +MACHINE_END
-Index: linux-2.6.27.3/arch/arm/mach-ixp4xx/include/mach/uncompress.h
-===================================================================
---- linux-2.6.27.3.orig/arch/arm/mach-ixp4xx/include/mach/uncompress.h	2008-11-05 20:11:38.000000000 +0000
-+++ linux-2.6.27.3/arch/arm/mach-ixp4xx/include/mach/uncompress.h	2008-11-05 20:12:11.000000000 +0000
+--- a/arch/arm/mach-ixp4xx/include/mach/uncompress.h
++++ b/arch/arm/mach-ixp4xx/include/mach/uncompress.h
 @@ -43,7 +43,7 @@ static __inline__ void __arch_decomp_set
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||
