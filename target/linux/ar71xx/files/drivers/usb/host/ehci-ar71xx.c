@@ -1,12 +1,15 @@
 /*
- * EHCI HCD (Host Controller Driver) for USB.
+ *  Bus Glue for Atheros AR71xx built-in EHCI controller.
  *
- * Copyright (C) 2007 Atheros Communications, Inc.
- * Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
- * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
- * Bus Glue for Atheros AR71xx built-in EHCI controller
+ *  Parts of this file are based on Atheros' 2.6.15 BSP
+ *	Copyright (C) 2007 Atheros Communications, Inc.
  *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  */
 
 #include <linux/platform_device.h>
@@ -14,16 +17,16 @@
 
 extern int usb_disabled(void);
 
-static void ar71xx_start_ehci(struct platform_device *pdev)
+static void ehci_ar71xx_setup(void)
 {
 	/*
 	 * TODO: implement
 	 */
 }
 
-static int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
-				 struct usb_hcd **hcd_out,
-				 struct platform_device *pdev)
+static int ehci_ar71xx_probe(const struct hc_driver *driver,
+			     struct usb_hcd **hcd_out,
+			     struct platform_device *pdev)
 {
 	struct usb_hcd *hcd;
 	struct ehci_hcd *ehci;
@@ -39,17 +42,17 @@ static int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
 	}
 	irq = res->start;
 
-	hcd = usb_create_hcd(driver, &pdev->dev, pdev->dev.bus_id);
-	if (!hcd)
-		return -ENOMEM;
-
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
 		dev_dbg(&pdev->dev, "no base address specified for %s\n",
 			pdev->dev.bus_id);
-		ret = -ENODEV;
-		goto err_put_hcd;
+		return -ENODEV;
 	}
+
+	hcd = usb_create_hcd(driver, &pdev->dev, pdev->dev.bus_id);
+	if (!hcd)
+		return -ENOMEM;
+
 	hcd->rsrc_start	= res->start;
 	hcd->rsrc_len	= res->end - res->start + 1;
 
@@ -66,12 +69,13 @@ static int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
 		goto err_release_region;
 	}
 
-	ehci		= hcd_to_ehci(hcd);
-	ehci->caps	= hcd->regs;
-	ehci->regs	= hcd->regs + HC_LENGTH(readl(&ehci->caps->hc_capbase));
-	ehci->hcs_params = readl(&ehci->caps->hcs_params);
+	ehci = hcd_to_ehci(hcd);
+	ehci->caps = hcd->regs;
+	ehci->regs = hcd->regs +
+			HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
+	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
 
-	ar71xx_start_ehci(pdev);
+	ehci_ar71xx_setup();
 
 	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
 	if (ret)
@@ -89,8 +93,8 @@ static int usb_ehci_ar71xx_probe(const struct hc_driver *driver,
 	return ret;
 }
 
-static void usb_ehci_ar71xx_remove(struct usb_hcd *hcd,
-				   struct platform_device *pdev)
+static void ehci_ar71xx_remove(struct usb_hcd *hcd,
+			       struct platform_device *pdev)
 {
 	usb_remove_hcd(hcd);
 	iounmap(hcd->regs);
@@ -140,32 +144,30 @@ static const struct hc_driver ehci_ar71xx_hc_driver = {
 #endif
 };
 
-static int ehci_hcd_ar71xx_drv_probe(struct platform_device *pdev)
+static int ehci_ar71xx_driver_probe(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd = NULL;
-	int ret;
 
-	ret = -ENODEV;
-	if (!usb_disabled())
-		ret = usb_ehci_ar71xx_probe(&ehci_ar71xx_hc_driver, &hcd, pdev);
+	if (usb_disabled())
+		return -ENODEV;
 
-	return ret;
+	return ehci_ar71xx_probe(&ehci_ar71xx_hc_driver, &hcd, pdev);
 }
 
-static int ehci_hcd_ar71xx_drv_remove(struct platform_device *pdev)
+static int ehci_ar71xx_driver_remove(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
 
-	usb_ehci_ar71xx_remove(hcd, pdev);
+	ehci_ar71xx_remove(hcd, pdev);
 	return 0;
 }
 
-static struct platform_driver ehci_hcd_ar71xx_driver = {
-	.probe		= ehci_hcd_ar71xx_drv_probe,
-	.remove		= ehci_hcd_ar71xx_drv_remove,
+MODULE_ALIAS("platform:ar71xx-ehci");
+
+static struct platform_driver ehci_ar71xx_driver = {
+	.probe		= ehci_ar71xx_driver_probe,
+	.remove		= ehci_ar71xx_driver_remove,
 	.driver = {
 		.name	= "ar71xx-ehci",
 	}
 };
-
-MODULE_ALIAS("platform:ar71xx-ehci");
