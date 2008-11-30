@@ -257,7 +257,7 @@ static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
 	u32 t;
 
 	t = (((u32) mac[0]) << 24) | (((u32) mac[1]) << 16)
-	  | (((u32) mac[2]) << 8) | ((u32) mac[2]);
+	  | (((u32) mac[2]) << 8) | ((u32) mac[3]);
 
 	ag71xx_wr(ag, AG71XX_REG_MAC_ADDR1, t);
 
