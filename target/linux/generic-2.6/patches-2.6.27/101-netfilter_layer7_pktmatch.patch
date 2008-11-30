@@ -1,5 +1,3 @@
-diff --git a/include/linux/netfilter/xt_layer7.h b/include/linux/netfilter/xt_layer7.h
-index 147cd64..c38d3c4 100644
 --- a/include/linux/netfilter/xt_layer7.h
 +++ b/include/linux/netfilter/xt_layer7.h
 @@ -8,6 +8,7 @@ struct xt_layer7_info {
@@ -10,11 +8,9 @@ index 147cd64..c38d3c4 100644
  };
  
  #endif /* _XT_LAYER7_H */
-diff --git a/net/netfilter/xt_layer7.c b/net/netfilter/xt_layer7.c
-index a9b88d3..e0e962d 100644
 --- a/net/netfilter/xt_layer7.c
 +++ b/net/netfilter/xt_layer7.c
-@@ -314,33 +314,35 @@ static int match_no_append(struct nf_conn * conntrack,
+@@ -314,33 +314,35 @@ static int match_no_append(struct nf_con
  }
  
  /* add the new app data to the conntrack.  Return number of bytes added. */

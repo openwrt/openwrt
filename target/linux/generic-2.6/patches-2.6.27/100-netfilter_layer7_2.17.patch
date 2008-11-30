@@ -1,6 +1,3 @@
-diff --git a/include/linux/netfilter/xt_layer7.h b/include/linux/netfilter/xt_layer7.h
-new file mode 100644
-index 0000000..147cd64
 --- /dev/null
 +++ b/include/linux/netfilter/xt_layer7.h
 @@ -0,0 +1,13 @@
@@ -17,8 +14,6 @@ index 0000000..147cd64
 +};
 +
 +#endif /* _XT_LAYER7_H */
-diff --git a/include/net/netfilter/nf_conntrack.h b/include/net/netfilter/nf_conntrack.h
-index b76a868..2a0bb9b 100644
 --- a/include/net/netfilter/nf_conntrack.h
 +++ b/include/net/netfilter/nf_conntrack.h
 @@ -118,6 +118,22 @@ struct nf_conn
@@ -44,11 +39,9 @@ index b76a868..2a0bb9b 100644
  	/* Storage reserved for other modules: */
  	union nf_conntrack_proto proto;
  
-diff --git a/net/netfilter/Kconfig b/net/netfilter/Kconfig
-index 25dcef9..29fe15d 100644
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -795,6 +795,27 @@ config NETFILTER_XT_MATCH_STATE
+@@ -757,6 +757,27 @@ config NETFILTER_XT_MATCH_STATE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -75,24 +68,20 @@ index 25dcef9..29fe15d 100644
 +
  config NETFILTER_XT_MATCH_STATISTIC
  	tristate '"statistic" match support'
- 	depends on NETFILTER_ADVANCED
-diff --git a/net/netfilter/Makefile b/net/netfilter/Makefile
-index da3d909..c15b75d 100644
+ 	depends on NETFILTER_XTABLES
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -84,6 +84,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_RECENT) += xt_recent.o
+@@ -78,6 +78,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_RATEEST)
+ obj-$(CONFIG_NETFILTER_XT_MATCH_REALM) += xt_realm.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_SCTP) += xt_sctp.o
- obj-$(CONFIG_NETFILTER_XT_MATCH_SOCKET) += xt_socket.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STATE) += xt_state.o
 +obj-$(CONFIG_NETFILTER_XT_MATCH_LAYER7) += xt_layer7.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STATISTIC) += xt_statistic.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STRING) += xt_string.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_TCPMSS) += xt_tcpmss.o
-diff --git a/net/netfilter/nf_conntrack_core.c b/net/netfilter/nf_conntrack_core.c
-index 622d7c6..32959cc 100644
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -201,6 +201,14 @@ destroy_conntrack(struct nf_conntrack *nfct)
+@@ -206,6 +206,14 @@ destroy_conntrack(struct nf_conntrack *n
  	 * too. */
  	nf_ct_remove_expectations(ct);
  
@@ -107,11 +96,9 @@ index 622d7c6..32959cc 100644
  	/* We overload first tuple to link into unconfirmed list. */
  	if (!nf_ct_is_confirmed(ct)) {
  		BUG_ON(hlist_unhashed(&ct->tuplehash[IP_CT_DIR_ORIGINAL].hnode));
-diff --git a/net/netfilter/nf_conntrack_standalone.c b/net/netfilter/nf_conntrack_standalone.c
-index 98106d4..774acad 100644
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -165,6 +165,12 @@ static int ct_seq_show(struct seq_file *s, void *v)
+@@ -162,6 +162,12 @@ static int ct_seq_show(struct seq_file *
  		return -ENOSPC;
  #endif
  
@@ -124,9 +111,6 @@ index 98106d4..774acad 100644
  	if (seq_printf(s, "use=%u\n", atomic_read(&ct->ct_general.use)))
  		return -ENOSPC;
  
-diff --git a/net/netfilter/regexp/regexp.c b/net/netfilter/regexp/regexp.c
-new file mode 100644
-index 0000000..9006988
 --- /dev/null
 +++ b/net/netfilter/regexp/regexp.c
 @@ -0,0 +1,1197 @@
@@ -1327,9 +1311,6 @@ index 0000000..9006988
 +#endif
 +
 +
-diff --git a/net/netfilter/regexp/regexp.h b/net/netfilter/regexp/regexp.h
-new file mode 100644
-index 0000000..a72eba7
 --- /dev/null
 +++ b/net/netfilter/regexp/regexp.h
 @@ -0,0 +1,41 @@
@@ -1374,9 +1355,6 @@ index 0000000..a72eba7
 +void regerror(char *s);
 +
 +#endif
-diff --git a/net/netfilter/regexp/regmagic.h b/net/netfilter/regexp/regmagic.h
-new file mode 100644
-index 0000000..5acf447
 --- /dev/null
 +++ b/net/netfilter/regexp/regmagic.h
 @@ -0,0 +1,5 @@
@@ -1385,9 +1363,6 @@ index 0000000..5acf447
 + * number; the start node begins in the second byte.
 + */
 +#define	MAGIC	0234
-diff --git a/net/netfilter/regexp/regsub.c b/net/netfilter/regexp/regsub.c
-new file mode 100644
-index 0000000..339631f
 --- /dev/null
 +++ b/net/netfilter/regexp/regsub.c
 @@ -0,0 +1,95 @@
@@ -1486,9 +1461,6 @@ index 0000000..339631f
 +	}
 +	*dst++ = '\0';
 +}
-diff --git a/net/netfilter/xt_layer7.c b/net/netfilter/xt_layer7.c
-new file mode 100644
-index 0000000..a9b88d3
 --- /dev/null
 +++ b/net/netfilter/xt_layer7.c
 @@ -0,0 +1,651 @@
