@@ -1,5 +1,5 @@
---- /dev/null	2008-04-22 17:51:32.000000000 -0400
-+++ b/arch/arm/mach-ixp4xx/mi424wr-pci.c	2008-09-19 10:59:48.000000000 -0400
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/mi424wr-pci.c
 @@ -0,0 +1,71 @@
 +/*
 + * arch/arm/mach-ixp4xx/mi424wr-pci.c
@@ -72,8 +72,8 @@
 +
 +subsys_initcall(mi424wr_pci_init);
 +
---- /dev/null	2008-04-22 17:51:32.000000000 -0400
-+++ b/arch/arm/mach-ixp4xx/mi424wr-setup.c	2008-09-19 10:45:52.000000000 -0400
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/mi424wr-setup.c
 @@ -0,0 +1,344 @@
 +/*
 + * arch/arm/mach-ixp4xx/mi424wr-setup.c
@@ -419,9 +419,9 @@
 +	.init_machine	= mi424wr_init,
 +MACHINE_END
 +
---- a/arch/arm/mach-ixp4xx/Makefile	2008-07-15 14:20:22.000000000 -0400
-+++ b/arch/arm/mach-ixp4xx/Makefile	2008-07-13 17:29:53.000000000 -0400
-@@ -24,6 +24,7 @@
+--- a/arch/arm/mach-ixp4xx/Makefile
++++ b/arch/arm/mach-ixp4xx/Makefile
+@@ -23,6 +23,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_TW5334)		+= tw5334-pci.o
@@ -429,7 +429,7 @@
  
  obj-y	+= common.o
  
-@@ -46,6 +47,7 @@
+@@ -44,6 +45,7 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
  obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
@@ -437,9 +437,9 @@
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
---- a/arch/arm/mach-ixp4xx/Kconfig	2008-07-05 18:53:22.000000000 -0400
-+++ b/arch/arm/mach-ixp4xx/Kconfig	2008-07-13 17:28:37.000000000 -0400
-@@ -237,6 +237,13 @@
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -229,6 +229,13 @@ config MACH_GTWX5715
  		"High Speed" UART is n/c (as far as I can tell)
  		20 Pin ARM/Xscale JTAG interface on J2
  
@@ -453,9 +453,9 @@
  comment "IXP4xx Options"
  
  config DMABOUNCE
---- a/arch/arm/configs/ixp4xx_defconfig	2008-07-05 18:53:22.000000000 -0400
-+++ b/arch/arm/configs/ixp4xx_defconfig	2008-07-13 17:24:39.000000000 -0400
-@@ -172,6 +172,7 @@
+--- a/arch/arm/configs/ixp4xx_defconfig
++++ b/arch/arm/configs/ixp4xx_defconfig
+@@ -172,6 +172,7 @@ CONFIG_MACH_FSG=y
  CONFIG_CPU_IXP46X=y
  CONFIG_CPU_IXP43X=y
  CONFIG_MACH_GTWX5715=y
