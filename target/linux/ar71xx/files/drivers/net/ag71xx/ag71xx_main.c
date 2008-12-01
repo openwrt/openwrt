@@ -28,6 +28,21 @@ static int ag71xx_debug = -1;
 module_param(ag71xx_debug, int, 0);
 MODULE_PARM_DESC(ag71xx_debug, "Debug level (-1=defaults,0=none,...,16=all)");
 
+static void ag71xx_dump_dma_regs(struct ag71xx *ag)
+{
+	DBG("%s: dma_tx_ctrl=%08x, dma_tx_desc=%08x, dma_tx_status=%08x\n",
+		ag->dev->name,
+		ag71xx_rr(ag, AG71XX_REG_TX_CTRL),
+		ag71xx_rr(ag, AG71XX_REG_TX_DESC),
+		ag71xx_rr(ag, AG71XX_REG_TX_STATUS));
+
+	DBG("%s: dma_rx_ctrl=%08x, dma_rx_desc=%08x, dma_rx_status=%08x\n",
+		ag->dev->name,
+		ag71xx_rr(ag, AG71XX_REG_RX_CTRL),
+		ag71xx_rr(ag, AG71XX_REG_RX_DESC),
+		ag71xx_rr(ag, AG71XX_REG_RX_STATUS));
+}
+
 static void ag71xx_dump_regs(struct ag71xx *ag)
 {
 	DBG("%s: mac_cfg1=%08x, mac_cfg2=%08x, ipg=%08x, hdx=%08x, mfl=%08x\n",
@@ -276,6 +291,33 @@ static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
 
 #define FIFO_CFG0_INIT	(FIFO_CFG0_ALL << FIFO_CFG0_ENABLE_SHIFT)
 
+static void ag71xx_dma_reset(struct ag71xx *ag)
+{
+	int i;
+
+	ag71xx_dump_dma_regs(ag);
+
+	/* stop RX and TX */
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
+	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
+
+	/* clear descriptor addresses */
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, 0);
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, 0);
+
+	/* clear pending RX/TX interrupts */
+	for (i = 0; i < 256; i++) {
+		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
+		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+	}
+
+	/* clear pending errors */
+	ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_BE | RX_STATUS_OF);
+	ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_BE | TX_STATUS_UR);
+
+	ag71xx_dump_dma_regs(ag);
+}
+
 static void ag71xx_hw_init(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
@@ -288,9 +330,6 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ar71xx_device_start(pdata->reset_bit);
 	mdelay(100);
 
-	/* setup MII interface type */
-	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
-
 	/* setup MAC configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1,
 		pdata->is_ar91xx ? AR91XX_MAC_CFG1_INIT : AR71XX_MAC_CFG1_INIT);
@@ -300,6 +339,9 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	/* setup max frame length */
 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
+	/* setup MII interface type */
+	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
+
 	/* setup FIFO configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
@@ -308,6 +350,8 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5,
 			pdata->is_ar91xx ? AR91XX_FIFO_CFG5_INIT
 					 : AR71XX_FIFO_CFG5_INIT);
+
+	ag71xx_dma_reset(ag);
 }
 
 static void ag71xx_hw_start(struct ag71xx *ag)
@@ -321,12 +365,10 @@ static void ag71xx_hw_start(struct ag71xx *ag)
 
 static void ag71xx_hw_stop(struct ag71xx *ag)
 {
-	/* stop RX and TX */
-	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
-	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
-
 	/* disable all interrupts */
 	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
+
+	ag71xx_dma_reset(ag);
 }
 
 static int ag71xx_open(struct net_device *dev)
