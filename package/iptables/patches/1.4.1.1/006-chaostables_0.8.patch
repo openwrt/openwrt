@@ -46,7 +46,7 @@ Index: iptables-1.4.0/extensions/libxt_CHAOS.c
 +		"CHAOS target v%s options:\n"
 +		"  --delude     Enable DELUDE processing for TCP\n"
 +		"  --tarpit     Enable TARPIT processing for TCP\n",
-+		IPTABLES_VERSION);
++		XTABLES_VERSION);
 +	return;
 +}
 +
@@ -107,7 +107,7 @@ Index: iptables-1.4.0/extensions/libxt_CHAOS.c
 +}
 +
 +static struct xtables_target chaos_tg_reg = {
-+	.version       = IPTABLES_VERSION,
++	.version       = XTABLES_VERSION,
 +	.name          = "CHAOS",
 +	.family        = AF_INET,
 +	.size          = XT_ALIGN(sizeof(struct xt_chaos_target_info)),
@@ -195,7 +195,7 @@ Index: iptables-1.4.0/extensions/libxt_DELUDE.c
 +}
 +
 +static struct xtables_target delude_tg_reg = {
-+	.version       = IPTABLES_VERSION,
++	.version       = XTABLES_VERSION,
 +	.name          = "DELUDE",
 +	.family        = AF_INET,
 +	.size          = XT_ALIGN(0),
@@ -269,7 +269,7 @@ Index: iptables-1.4.0/extensions/libxt_portscan.c
 +		"  --synscan    Match TCP SYN scans\n"
 +		"  --cnscan     Match TCP Connect scans\n"
 +		"  --grscan     Match Banner Grabbing scans\n",
-+		IPTABLES_VERSION);
++		XTABLES_VERSION);
 +	return;
 +}
 +
@@ -341,7 +341,7 @@ Index: iptables-1.4.0/extensions/libxt_portscan.c
 +}
 +
 +static struct xtables_match portscan_mt_reg = {
-+	.version       = IPTABLES_VERSION,
++	.version       = XTABLES_VERSION,
 +	.name          = "portscan",
 +	.family        = AF_INET,
 +	.size          = XT_ALIGN(sizeof(struct xt_portscan_match_info)),

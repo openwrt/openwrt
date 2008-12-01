@@ -1,24 +1,13 @@
-Index: iptables-1.4.0/extensions/Makefile
-===================================================================
---- iptables-1.4.0.orig/extensions/Makefile
-+++ iptables-1.4.0/extensions/Makefile
-@@ -19,6 +19,10 @@ PF6_EXT_SE_SLIB:=$(PF6_EXT_SELINUX_SLIB)
- PFX_EXT_SE_SLIB:=$(PFX_EXT_SELINUX_SLIB)
- endif
- 
-+
-+# ipp2p
-+PF_EXT_SLIB += ipp2p
-+
- # Optionals
- PF_EXT_SLIB_OPTS:=$(foreach T,$(wildcard extensions/.*-test),$(shell KERNEL_DIR=$(KERNEL_DIR) $(T)))
- PF6_EXT_SLIB_OPTS:=$(foreach T,$(wildcard extensions/.*-test6),$(shell KERNEL_DIR=$(KERNEL_DIR) $(T)))
-Index: iptables-1.4.0/extensions/libipt_ipp2p.c
-===================================================================
---- /dev/null
-+++ iptables-1.4.0/extensions/libipt_ipp2p.c
-@@ -0,0 +1,398 @@
-+
+diff -Nur iptables-1.4.1.1/extensions/.ipp2p-test iptables-1.4.1.1-owrt/extensions/.ipp2p-test
+--- iptables-1.4.1.1/extensions/.ipp2p-test	1970-01-01 01:00:00.000000000 +0100
++++ iptables-1.4.1.1-owrt/extensions/.ipp2p-test	2008-10-10 00:10:50.000000000 +0200
+@@ -0,0 +1,2 @@
++#! /bin/sh
++[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_ipp2p.h ] && echo ipp2p
+diff -Nur iptables-1.4.1.1/extensions/libipt_ipp2p.c iptables-1.4.1.1-owrt/extensions/libipt_ipp2p.c
+--- iptables-1.4.1.1/extensions/libipt_ipp2p.c	1970-01-01 01:00:00.000000000 +0100
++++ iptables-1.4.1.1-owrt/extensions/libipt_ipp2p.c	2008-10-10 00:10:50.000000000 +0200
+@@ -0,0 +1,424 @@
 +#include <stdio.h>
 +#include <netdb.h>
 +#include <string.h>
@@ -29,6 +18,15 @@ Index: iptables-1.4.0/extensions/libipt_ipp2p.c
 +#include <iptables.h>
 +
 +#include <linux/netfilter_ipv4/ipt_ipp2p.h>
++
++#ifndef XTABLES_VERSION
++#define XTABLES_VERSION IPTABLES_VERSION
++#endif
++
++#ifdef IPT_LIB_DIR
++#define xtables_target iptables_target
++#define xtables_register_target register_target
++#endif
 +
 +static void
 +help(void)
@@ -81,24 +79,34 @@ Index: iptables-1.4.0/extensions/libipt_ipp2p.c
 +        {0}
 +};
 +
-+	
 +
 +static void
++#ifdef _XTABLES_H
 +init(struct xt_entry_match *m)
++#else
++init(struct ipt_entry_match *t, unsigned int *nfcache)
++#endif
 +{
 +    struct ipt_p2p_info *info = (struct ipt_p2p_info *)m->data;
++
++#ifndef _XTABLES_H
++    *nfcache |= NFC_UNKNOWN;
++#endif
 +
 +    /*init the module with default values*/
 +    info->cmd = 0;
 +    info->debug = 0;
 +
 +}
-+	
++
 +
 +static int
 +parse(int c, char **argv, int invert, unsigned int *flags,
-+	const void *entry,
-+	struct xt_entry_match **match)
++#ifdef _XTABLES_H
++      const void *entry, struct xt_entry_match **match)
++#else
++      const struct ipt_entry *entry, unsigned int *nfcache, struct ipt_entry_match **match)
++#endif
 +{
 +    struct ipt_p2p_info *info = (struct ipt_p2p_info *)(*match)->data;
 +    
@@ -108,10 +116,13 @@ Index: iptables-1.4.0/extensions/libipt_ipp2p.c
 +		    exit_error(PARAMETER_PROBLEM,
 +				"ipp2p: `--ipp2p' may only be "
 +				"specified once!");
++
 +/*	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
 +		    exit_error(PARAMETER_PROBLEM,
 +				"ipp2p: `--ipp2p-data' may only be "
-+				"specified alone!");*/
++				"specified alone!");
++*/
++
 +	    if ((*flags) != 0)
 +		    exit_error(PARAMETER_PROBLEM,
 +				"ipp2p: `--ipp2p' may only be "
@@ -329,11 +340,14 @@ Index: iptables-1.4.0/extensions/libipt_ipp2p.c
 +	    "\nipp2p-parameter problem: for ipp2p usage type: iptables -m ipp2p --help\n");
 +}
 +
-+
-+
 +static void
++#ifdef _XTABLES_H
 +print(const void *ip,
-+        const struct xt_entry_match *match,
++      const struct xt_entry_match *match,
++#else
++print(const struct ipt_ip *ip,
++      const struct ipt_entry_match *match,
++#endif
 +	int numeric)
 +{
 +    struct ipt_p2p_info *info = (struct ipt_p2p_info *)match->data;
@@ -360,11 +374,15 @@ Index: iptables-1.4.0/extensions/libipt_ipp2p.c
 +    if (info->debug != 0) printf(" --debug");
 +    printf(" ");
 +}
-+			    						   
-+
 +
 +static void
-+save(const void *ip, const struct xt_entry_match *match)
++#ifdef _XTABLES_H
++save(const void *ip,
++     const struct xt_entry_match *match)
++#else
++save(const struct ipt_ip *ip,
++     const struct ipt_entry_match *match)
++#endif
 +{
 +    struct ipt_p2p_info *info = (struct ipt_p2p_info *)match->data;
 +    
@@ -390,22 +408,20 @@ Index: iptables-1.4.0/extensions/libipt_ipp2p.c
 +}
 +
 +		
-+
-+
 +static 
-+struct iptables_match ipp2p= 
++struct xtables_match ipp2p= 
 +{ 
-+    .family         = AF_INET,	
++    .next           = NULL,
 +    .name           = "ipp2p",
-+    .version        = IPTABLES_VERSION,
++    .version        = XTABLES_VERSION,
 +    .size           = IPT_ALIGN(sizeof(struct ipt_p2p_info)),
 +    .userspacesize  = IPT_ALIGN(sizeof(struct ipt_p2p_info)),
-+    .help           = help,
-+    .init           = init,
-+    .parse          = parse,
-+    .final_check    = final_check,
-+    .print          = print,
-+    .save           = save,
++    .help           = &help,
++    .init           = &init,
++    .parse          = &parse,
++    .final_check    = &final_check,
++    .print          = &print,
++    .save           = &save,
 +    .extra_opts     = opts
 +};
 +					    
@@ -413,42 +429,53 @@ Index: iptables-1.4.0/extensions/libipt_ipp2p.c
 +
 +void _init(void)
 +{
-+    register_match(&ipp2p);
++    xtables_register_match(&ipp2p);
 +}
 +
-Index: iptables-1.4.0/include/linux/netfilter_ipv4/ipt_ipp2p.h
-===================================================================
---- /dev/null
-+++ iptables-1.4.0/include/linux/netfilter_ipv4/ipt_ipp2p.h
-@@ -0,0 +1,31 @@
-+#ifndef __IPT_IPP2P_H
-+#define __IPT_IPP2P_H
-+#define IPP2P_VERSION "0.8.1_rc1"
+diff -Nur iptables-1.4.1.1/extensions/libipt_ipp2p.man iptables-1.4.1.1-owrt/extensions/libipt_ipp2p.man
+--- iptables-1.4.1.1/extensions/libipt_ipp2p.man	1970-01-01 01:00:00.000000000 +0100
++++ iptables-1.4.1.1-owrt/extensions/libipt_ipp2p.man	2008-10-10 00:10:50.000000000 +0200
+@@ -0,0 +1,43 @@
++This module matches certain packets in P2P flows. It is not
++designed to match all packets belonging to a P2P connection - 
++use IPP2P together with CONNMARK for this purpose. Also visit
++http://www.ipp2p.org for detailed information.
 +
-+struct ipt_p2p_info {
-+    int cmd;
-+    int debug;
-+};
++Use it together with -p tcp or -p udp to search these protocols
++only or without -p switch to search packets of both protocols.
 +
-+#endif //__IPT_IPP2P_H
-+
-+#define SHORT_HAND_IPP2P	1 /* --ipp2p switch*/
-+//#define SHORT_HAND_DATA		4 /* --ipp2p-data switch*/
-+#define SHORT_HAND_NONE		5 /* no short hand*/
-+
-+#define IPP2P_EDK		(1 << 1)
-+#define IPP2P_DATA_KAZAA	(1 << 2)
-+#define IPP2P_DATA_EDK		(1 << 3)
-+#define IPP2P_DATA_DC		(1 << 4)
-+#define IPP2P_DC		(1 << 5)
-+#define IPP2P_DATA_GNU		(1 << 6)
-+#define IPP2P_GNU		(1 << 7)
-+#define IPP2P_KAZAA		(1 << 8)
-+#define IPP2P_BIT		(1 << 9)
-+#define IPP2P_APPLE		(1 << 10)
-+#define IPP2P_SOUL		(1 << 11)
-+#define IPP2P_WINMX		(1 << 12)
-+#define IPP2P_ARES		(1 << 13)
-+#define IPP2P_MUTE		(1 << 14)
-+#define IPP2P_WASTE		(1 << 15)
-+#define IPP2P_XDCC		(1 << 16)
++IPP2P provides the following options:
++.TP
++.B "--edk "
++Matches as many eDonkey/eMule packets as possible.
++.TP
++.B "--kazaa "
++Matches as many KaZaA packets as possible.
++.TP
++.B "--gnu "
++Matches as many Gnutella packets as possible.
++.TP
++.B "--dc "
++Matches as many Direct Connect packets as possible.
++.TP
++.B "--bit "
++Matches BitTorrent packets.
++.TP
++.B "--apple "
++Matches AppleJuice packets.
++.TP
++.B "--soul "
++Matches some SoulSeek packets. Considered as beta, use careful!
++.TP
++.B "--winmx "
++Matches some WinMX packets. Considered as beta, use careful!
++.TP
++.B "--ares "
++Matches Ares and AresLite packets. Use together with -j DROP only.
++.TP
++.B "--ipp2p "
++Short hand for: --edk --kazaa --gnu --dc
++.TP
++.B "--debug "
++Prints some information about each hit into kernel logfile. May 
++produce huge logfiles so beware!

@@ -1,10 +1,11 @@
---- iptables-1.4.0rc1/extensions/libipt_layer7.c	1969-12-31 18:00:00.000000000 -0600
-+++ iptables-1.4.0rc1-layer7/extensions/libipt_layer7.c	2007-11-19 06:06:56.000000000 -0600
-@@ -0,0 +1,393 @@
+diff -Nur iptables.old/extensions/libxt_layer7.c iptables.new/extensions/libxt_layer7.c
+--- iptables.old/extensions/libxt_layer7.c	1970-01-01 01:00:00.000000000 +0100
++++ iptables.new/extensions/libxt_layer7.c	2008-08-22 16:00:52.000000000 +0200
+@@ -0,0 +1,368 @@
 +/* 
-+   Shared library add-on to iptables to add layer 7 matching support. 
++   Shared library add-on to iptables for layer 7 matching support. 
 +  
-+   By Matthew Strait <quadong@users.sf.net>, Oct 2003.
++   By Matthew Strait <quadong@users.sf.net>, Oct 2003-Aug 2008.
 +
 +   http://l7-filter.sf.net 
 +
@@ -13,8 +14,6 @@
 +   as published by the Free Software Foundation; either version
 +   2 of the License, or (at your option) any later version.
 +   http://www.gnu.org/licenses/gpl.txt
-+
-+   Based on libipt_string.c (C) 2000 Emmanuel Roger <winfield@freegates.be>
 +*/
 +
 +#define _GNU_SOURCE
@@ -26,7 +25,7 @@
 +#include <ctype.h>
 +#include <dirent.h>
 +
-+#include <iptables.h>
++#include <xtables.h>
 +#include <linux/netfilter/xt_layer7.h>
 +
 +#define MAX_FN_LEN 256
@@ -37,22 +36,20 @@
 +static void help(void)
 +{
 +	printf(
-+	"LAYER7 match v%s options:\n"
-+	"--l7dir <directory>  : Look for patterns here instead of /etc/l7-protocols/\n"
-+	"                       (--l7dir must be specified before --l7proto if used!)\n"
-+	"--l7proto [!] <name> : Match the protocol defined in /etc/l7-protocols/name.pat\n",
-+	IPTABLES_VERSION);
-+	fputc('\n', stdout);
++	"layer7 match options:\n"
++	"    --l7dir <directory> : Look for patterns here instead of /etc/l7-protocols/\n"
++	"                          (--l7dir must be specified before --l7proto if used)\n"
++	"[!] --l7proto <name>: Match named protocol using /etc/l7-protocols/.../name.pat\n");
 +}
 +
-+static struct option opts[] = {
-+	{ .name = "l7proto", .has_arg = 1, .flag = 0, .val = '1' },
-+	{ .name = "l7dir",   .has_arg = 1, .flag = 0, .val = '2' },
-+	{ .name = 0 }
++static const struct option opts[] = {
++	{ .name = "l7proto", .has_arg = 1, .val = 'p' },
++	{ .name = "l7dir",   .has_arg = 1, .val = 'd' },
++	{ .name = NULL }
 +};
 +
 +/* reads filename, puts protocol info into layer7_protocol_info, number of protocols to numprotos */
-+int parse_protocol_file(char * filename, const char * protoname, struct xt_layer7_info *info)
++static int parse_protocol_file(char * filename, const char * protoname, struct xt_layer7_info *info)
 +{
 +	FILE * f;
 +	char * line = NULL;
@@ -123,12 +120,6 @@
 +	fclose(f);
 +
 +	return 1;
-+
-+/*
-+	fprintf(stderr, "protocol: %s\npattern: %s\n\n", 
-+			info->protocol,
-+			info->pattern);
-+*/
 +}
 +
 +static int hex2dec(char c)
@@ -152,7 +143,7 @@
 +static char * pre_process(char * s)
 +{
 +	char * result = malloc(strlen(s) + 1);
-+	int sindex = 0, rindex = 0;
++	int sindex = 0, rrindex = 0;
 +        while( sindex < strlen(s) )
 +        {
 +            if( sindex + 3 < strlen(s) &&
@@ -160,10 +151,10 @@
 +                isxdigit(s[sindex + 2]) && isxdigit(s[sindex + 3]) ) 
 +                {
 +                        /* carefully remember to call tolower here... */
-+                        result[rindex] = tolower( hex2dec(s[sindex + 2])*16 +
++                        result[rrindex] = tolower( hex2dec(s[sindex + 2])*16 +
 +                                                  hex2dec(s[sindex + 3] ) );
 +
-+			switch ( result[rindex] )
++			switch ( result[rrindex] )
 +			{
 +			case 0x24:
 +			case 0x28:
@@ -180,7 +171,7 @@
 +				fprintf(stderr, 
 +					"Warning: layer7 regexp contains a control character, %c, in hex (\\x%c%c).\n"
 +					"I recommend that you write this as %c or \\%c, depending on what you meant.\n",
-+					result[rindex], s[sindex + 2], s[sindex + 3], result[rindex], result[rindex]);
++					result[rrindex], s[sindex + 2], s[sindex + 3], result[rrindex], result[rrindex]);
 +				break;
 +			case 0x00:
 +				fprintf(stderr, 
@@ -194,18 +185,18 @@
 +                        sindex += 3; /* 4 total */
 +                }
 +                else
-+                        result[rindex] = tolower(s[sindex]);
++                        result[rrindex] = tolower(s[sindex]);
 +
 +		sindex++; 
-+		rindex++;
++		rrindex++;
 +        }
-+	result[rindex] = '\0';
++	result[rrindex] = '\0';
 +
 +	return result;
 +}
 +
 +#define MAX_SUBDIRS 128
-+char ** readl7dir(char * dirname)
++static char ** readl7dir(char * dirname)
 +{
 +        DIR             * scratchdir;
 +        struct dirent   ** namelist;
@@ -259,18 +250,15 @@
 +	return subdirs;
 +}
 +
-+static void
-+parse_layer7_protocol(const char *s, struct xt_layer7_info *info)
++static void parse_layer7_protocol(const char *s, struct xt_layer7_info *info)
 +{
 +	char filename[MAX_FN_LEN];
 +	char * dir = NULL;
 +	char ** subdirs;
 +	int n = 0, done = 0;
 +
-+	if(strlen(l7dir) > 0)
-+		dir = l7dir;
-+	else
-+		dir = "/etc/l7-protocols";
++	if(strlen(l7dir) > 0) dir = l7dir;
++	else                  dir = "/etc/l7-protocols";
 +
 +	subdirs = readl7dir(dir);
 +
@@ -278,24 +266,16 @@
 +	{
 +		int c = snprintf(filename, MAX_FN_LEN, "%s/%s/%s.pat", dir, subdirs[n], s);
 +
-+		//fprintf(stderr, "Trying to find pattern in %s ... ", filename);
-+
 +		if(c > MAX_FN_LEN)
-+		{
 +			exit_error(OTHER_PROBLEM, 
 +				"Filename beginning with %s is too long!\n", filename);
-+		}
 +
 +		/* read in the pattern from the file */
-+		if(parse_protocol_file(filename, s, info))
-+		{
-+			//fprintf(stderr, "found\n");
++		if(parse_protocol_file(filename, s, info)){
 +			done = 1;
 +			break;
 +		}
 +		
-+		//fprintf(stderr, "not found\n");
-+
 +		n++;
 +	}
 +
@@ -316,18 +296,14 @@
 +		(struct xt_layer7_info *)(*match)->data;
 +
 +	switch (c) {
-+	case '1':
-+		check_inverse(optarg, &invert, &optind, 0);
++	case 'p':
 +		parse_layer7_protocol(argv[optind-1], layer7info);
 +		if (invert)
-+			layer7info->invert = 1;
++			layer7info->invert = true;
 +		*flags = 1;
 +		break;
 +
-+	case '2':
-+		/* not going to use this, but maybe we need to strip a ! anyway (?) */
-+		check_inverse(optarg, &invert, &optind, 0);
-+
++	case 'd':
 +		if(strlen(argv[optind-1]) >= MAX_FN_LEN)
 +			exit_error(PARAMETER_PROBLEM, "directory name too long\n");
 +
@@ -364,7 +340,6 @@
 +      int numeric)
 +{
 +	printf("LAYER7 ");
-+
 +	print_protocol(((struct xt_layer7_info *)match->data)->protocol,
 +		  ((struct xt_layer7_info *)match->data)->invert, numeric);
 +}
@@ -374,14 +349,15 @@
 +        const struct xt_layer7_info *info =
 +            (const struct xt_layer7_info*) match->data;
 +
-+        printf("--l7proto %s%s ", (info->invert)   ? "! ": "", info->protocol);
++        printf("--l7proto %s%s ", (info->invert)? "! ":"", info->protocol);
 +}
 +
-+static struct iptables_match layer7 = { 
++static struct xtables_match layer7 = { 
++    .family        = AF_INET,
 +    .name          = "layer7",
-+    .version       = IPTABLES_VERSION,
-+    .size          = IPT_ALIGN(sizeof(struct xt_layer7_info)),
-+    .userspacesize = IPT_ALIGN(sizeof(struct xt_layer7_info)),
++    .version       = XTABLES_VERSION,
++    .size          = XT_ALIGN(sizeof(struct xt_layer7_info)),
++    .userspacesize = XT_ALIGN(sizeof(struct xt_layer7_info)),
 +    .help          = &help,
 +    .parse         = &parse,
 +    .final_check   = &final_check,
@@ -392,10 +368,11 @@
 +
 +void _init(void)
 +{
-+	register_match(&layer7);
++	xtables_register_match(&layer7);
 +}
---- iptables-1.4.0rc1/extensions/libipt_layer7.man	1969-12-31 18:00:00.000000000 -0600
-+++ iptables-1.4.0rc1-layer7/extensions/libipt_layer7.man	2007-11-19 05:49:46.000000000 -0600
+diff -Nur iptables.old/extensions/libxt_layer7.man iptables.new/extensions/libxt_layer7.man
+--- iptables.old/extensions/libxt_layer7.man	1970-01-01 01:00:00.000000000 +0100
++++ iptables.new/extensions/libxt_layer7.man	2008-08-22 16:00:52.000000000 +0200
 @@ -0,0 +1,14 @@
 +This module matches packets based on the application layer data of 
 +their connections.  It uses regular expression matching to compare 
@@ -411,8 +388,3 @@
 +Use \fIdirectory\fP instead of /etc/l7-protocols/.  This option must be 
 +specified before --l7proto.
 +
---- iptables-1.4.0rc1/extensions/.layer7-test	1969-12-31 18:00:00.000000000 -0600
-+++ iptables-1.4.0rc1-layer7/extensions/.layer7-test	2007-11-19 06:18:58.000000000 -0600
-@@ -0,0 +1,2 @@
-+#! /bin/sh
-+[ -f $KERNEL_DIR/include/linux/netfilter/xt_layer7.h ] && echo layer7
