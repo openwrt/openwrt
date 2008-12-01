@@ -441,9 +441,9 @@
 +};
 +
 +static struct i2c_board_info __initdata cambria_i2c_board_info[] = {
-+/*	{
-+		I2C_BOARD_INFO("rtc-ds1672", 0x68),
-+	},*/
++	{
++		I2C_BOARD_INFO("ds1672", 0x68),
++	},
 +	{
 +		I2C_BOARD_INFO("ad7418", 0x28),
 +	},
