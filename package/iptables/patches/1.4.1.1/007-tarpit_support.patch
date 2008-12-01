@@ -43,7 +43,7 @@ Index: iptables-1.4.0/extensions/libxt_TARPIT.c
 +static struct xtables_target tarpit_target = {
 +	.family		= AF_INET,
 +	.name		= "TARPIT",
-+	.version	= IPTABLES_VERSION,
++	.version	= XTABLES_VERSION,
 +	.size		= XT_ALIGN(0),
 +	.userspacesize	= XT_ALIGN(0),
 +	.help		= TARPIT_help,
