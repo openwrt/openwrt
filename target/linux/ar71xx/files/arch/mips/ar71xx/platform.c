@@ -569,7 +569,7 @@ static int __init ar71xx_machine_setup(void)
 	ar71xx_add_device_uart();
 	ar71xx_add_device_wdt();
 
-	mips_machine_setup();
+	mips_machine_setup(ar71xx_mach_type);
 	return 0;
 }
 

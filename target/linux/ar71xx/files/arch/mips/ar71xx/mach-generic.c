@@ -66,4 +66,4 @@ static void __init ar71xx_generic_init(void)
 			ar71xx_generic_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_AR71XX_GENERIC, "Generic AR71xx board", ar71xx_generic_init);
+MIPS_MACHINE(AR71XX_MACH_GENERIC, "Generic AR71xx board", ar71xx_generic_init);

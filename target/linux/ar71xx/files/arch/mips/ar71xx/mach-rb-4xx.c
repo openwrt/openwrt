@@ -173,7 +173,7 @@ static void __init rb411_setup(void)
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_AR71XX_RB_411, "MikroTik RouterBOARD 411/A/AH", rb411_setup);
+MIPS_MACHINE(AR71XX_MACH_RB_411, "MikroTik RouterBOARD 411/A/AH", rb411_setup);
 
 static void __init rb433_setup(void)
 {
@@ -204,7 +204,7 @@ static void __init rb433_setup(void)
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_AR71XX_RB_433, "MikroTik RouterBOARD 433/AH", rb433_setup);
+MIPS_MACHINE(AR71XX_MACH_RB_433, "MikroTik RouterBOARD 433/AH", rb433_setup);
 
 static void __init rb450_setup(void)
 {
@@ -233,7 +233,7 @@ static void __init rb450_setup(void)
 	platform_device_register(&rb4xx_nand_device);
 }
 
-MIPS_MACHINE(MACH_AR71XX_RB_450, "MikroTik RouterBOARD 450", rb450_setup);
+MIPS_MACHINE(AR71XX_MACH_RB_450, "MikroTik RouterBOARD 450", rb450_setup);
 
 static void __init rb493_setup(void)
 {
@@ -264,5 +264,5 @@ static void __init rb493_setup(void)
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_AR71XX_RB_493, "MikroTik RouterBOARD 493/AH", rb493_setup);
+MIPS_MACHINE(AR71XX_MACH_RB_493, "MikroTik RouterBOARD 493/AH", rb493_setup);
 

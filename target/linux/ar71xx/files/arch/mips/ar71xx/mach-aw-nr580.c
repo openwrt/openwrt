@@ -36,4 +36,4 @@ static void __init aw_nr580_setup(void)
 					ARRAY_SIZE(aw_nr580_spi_info));
 }
 
-MIPS_MACHINE(MACH_AR71XX_AW_NR580, "AzureWave AW-NR580", aw_nr580_setup);
+MIPS_MACHINE(AR71XX_MACH_AW_NR580, "AzureWave AW-NR580", aw_nr580_setup);

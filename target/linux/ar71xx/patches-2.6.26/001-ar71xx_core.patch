@@ -14,27 +14,6 @@
  # temporary until string.h is fixed
  cflags-y += -ffreestanding
  
---- a/include/asm-mips/bootinfo.h
-+++ b/include/asm-mips/bootinfo.h
-@@ -79,6 +79,18 @@
- #define  MACH_LASAT_200		1	/* Masquerade PRO/SP200 */
- 
- /*
-+ * Valid machtype for Atheros AR71xx based boards
-+ */
-+#define MACH_AR71XX_GENERIC	0
-+#define MACH_AR71XX_WP543	1	/* Compex WP543 */
-+#define MACH_AR71XX_RB_411	2	/* MikroTik RouterBOARD 411/411A/411AH */
-+#define MACH_AR71XX_RB_433	3	/* MikroTik RouterBOARD 433/433AH */
-+#define MACH_AR71XX_RB_450	4	/* MikroTik RouterBOARD 450 */
-+#define MACH_AR71XX_RB_493	5	/* Mikrotik RouterBOARD 493/493AH */
-+#define MACH_AR71XX_AW_NR580	6	/* AzureWave AW-NR580 */
-+#define MACH_AR71XX_AP83	7	/* Atheros AP83 */
-+
-+/*
-  * Valid machtype for group NEC EMMA2RH
-  */
- #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -21,6 +21,24 @@ choice
