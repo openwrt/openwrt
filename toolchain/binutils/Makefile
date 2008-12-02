@@ -12,9 +12,6 @@ PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 PKG_SOURCE_URL:=@GNU/binutils/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),2.16.1)
-  PKG_MD5SUM:=6a9d529efb285071dad10e1f3d2b2967
-endif
 ifeq ($(PKG_VERSION),2.17)
   PKG_MD5SUM:=e26e2e06b6e4bf3acf1dc8688a94c0d1
 endif
