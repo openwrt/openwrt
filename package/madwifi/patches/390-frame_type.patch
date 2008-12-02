@@ -1,0 +1,13 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -4421,7 +4421,9 @@
+ 		if (memcmp(eth->h_dest, dev->dev_addr, ETH_ALEN))
+ 			skb->pkt_type = PACKET_OTHERHOST;
+
+-	return eth->h_proto;
++	if (ntohs(eth->h_proto) >= 1536)
++		return eth->h_proto;
++	return htons(ETH_P_802_2);
+ }
+ #endif
+
