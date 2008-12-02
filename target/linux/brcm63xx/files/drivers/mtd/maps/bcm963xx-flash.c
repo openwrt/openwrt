@@ -162,7 +162,7 @@ static int bcm963xx_probe(struct platform_device *pdev)
 		printk(KERN_ERR PFX "Failed to ioremap\n");
 		return -EIO;
 	}
-	printk(KERN_INFO PFX "0x%08x at 0x%08x\n", r->end - r->start, r->start);
+	printk(KERN_INFO PFX "0x%08x at 0x%08x\n", (r->end - r->start) + 1, r->start);
 
 	simple_map_init(&bcm963xx_map);
 
