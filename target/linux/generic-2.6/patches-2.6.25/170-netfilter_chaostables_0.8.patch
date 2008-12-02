@@ -1,3 +1,13 @@
+--- a/include/linux/netfilter/Kbuild
++++ b/include/linux/netfilter/Kbuild
+@@ -3,6 +3,7 @@
+ header-y += nfnetlink_conntrack.h
+ header-y += nfnetlink_log.h
+ header-y += nfnetlink_queue.h
++header-y += xt_CHAOS.h
+ header-y += xt_CLASSIFY.h
+ header-y += xt_CONNMARK.h
+ header-y += xt_CONNSECMARK.h
 --- /dev/null
 +++ b/include/linux/netfilter/oot_conntrack.h
 @@ -0,0 +1,5 @@
