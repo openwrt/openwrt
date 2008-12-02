@@ -69,6 +69,18 @@ static void ag71xx_dump_regs(struct ag71xx *ag)
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5));
 }
 
+static inline void ag71xx_dump_intr(struct ag71xx *ag, char *label, u32 intr)
+{
+	DBG("%s: %s intr=%08x %s%s%s%s%s%s\n",
+		ag->dev->name, label, intr,
+		(intr & AG71XX_INT_TX_PS) ? "TXPS " : "",
+		(intr & AG71XX_INT_TX_UR) ? "TXUR " : "",
+		(intr & AG71XX_INT_TX_BE) ? "TXBE " : "",
+		(intr & AG71XX_INT_RX_PR) ? "RXPR " : "",
+		(intr & AG71XX_INT_RX_OF) ? "RXOF " : "",
+		(intr & AG71XX_INT_RX_BE) ? "RXBE " : "");
+}
+
 static void ag71xx_ring_free(struct ag71xx_ring *ring)
 {
 	kfree(ring->buf);
@@ -314,6 +326,14 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 	/* clear pending errors */
 	ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_BE | RX_STATUS_OF);
 	ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_BE | TX_STATUS_UR);
+
+	if (ag71xx_rr(ag, AG71XX_REG_RX_STATUS))
+		printk(KERN_ALERT "%s: unable to clear DMA Rx status\n",
+			ag->dev->name);
+
+	if (ag71xx_rr(ag, AG71XX_REG_TX_STATUS))
+		printk(KERN_ALERT "%s: unable to clear DMA Tx status\n",
+			ag->dev->name);
 
 	ag71xx_dump_dma_regs(ag);
 }
@@ -693,7 +713,9 @@ static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
 	u32 status;
 
 	status = ag71xx_rr(ag, AG71XX_REG_INT_STATUS);
+	ag71xx_dump_intr(ag, "raw", status);
 	status &= ag71xx_rr(ag, AG71XX_REG_INT_ENABLE);
+	ag71xx_dump_intr(ag, "masked", status);
 
 	if (unlikely(!status))
 		return IRQ_NONE;
