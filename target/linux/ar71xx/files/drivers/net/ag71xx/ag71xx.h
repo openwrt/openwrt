@@ -37,7 +37,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.4"
+#define AG71XX_DRV_VERSION	"0.5.5"
 
 #define AG71XX_NAPI_TX		1
 
@@ -287,17 +287,17 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define MII_IND_BUSY		BIT(0)
 #define MII_IND_INVALID		BIT(2)
 
-#define TX_CTRL_TXE		BIT(0)
+#define TX_CTRL_TXE		BIT(0)	/* Tx Enable */
 
-#define TX_STATUS_PS		BIT(0)
-#define TX_STATUS_UR		BIT(1)
-#define TX_STATUS_BE		BIT(3)
+#define TX_STATUS_PS		BIT(0)	/* Packet Sent */
+#define TX_STATUS_UR		BIT(1)	/* Tx Underrun */
+#define TX_STATUS_BE		BIT(3)	/* Bus Error */
 
-#define RX_CTRL_RXE		BIT(0)
+#define RX_CTRL_RXE		BIT(0)	/* Rx Enable */
 
-#define RX_STATUS_PR		BIT(0)
-#define RX_STATUS_OF		BIT(1)
-#define RX_STATUS_BE		BIT(3)
+#define RX_STATUS_PR		BIT(0)	/* Packet Received */
+#define RX_STATUS_OF		BIT(2)	/* Rx Overflow */
+#define RX_STATUS_BE		BIT(3)	/* Bus Error */
 
 #define MII_CTRL_IF_MASK	3
 #define MII_CTRL_SPEED_SHIFT	4
