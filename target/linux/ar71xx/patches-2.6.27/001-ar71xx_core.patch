@@ -14,27 +14,6 @@
  # temporary until string.h is fixed
  cflags-y += -ffreestanding
  
---- a/include/asm-mips/bootinfo.h
-+++ b/include/asm-mips/bootinfo.h
-@@ -57,6 +57,18 @@
- #define	MACH_MIKROTIK_RB532	0	/* Mikrotik RouterBoard 532 	*/
- #define MACH_MIKROTIK_RB532A	1	/* Mikrotik RouterBoard 532A 	*/
- 
-+/*
-+ * Valid machtype for Atheros AR71xx based boards
-+ */
-+#define MACH_AR71XX_GENERIC	0
-+#define MACH_AR71XX_WP543	1	/* Compex WP543 */
-+#define MACH_AR71XX_RB_411	2	/* MikroTik RouterBOARD 411/411A/411AH */
-+#define MACH_AR71XX_RB_433	3	/* MikroTik RouterBOARD 433/433AH */
-+#define MACH_AR71XX_RB_450	4	/* MikroTik RouterBOARD 450 */
-+#define MACH_AR71XX_RB_493	5	/* MikroTik RouterBOARD 493 */
-+#define MACH_AR71XX_AW_NR580	6	/* AzureWave AW-NR580 */
-+#define MACH_AR71XX_AP83	7	/* Atheros AP83 */
-+
- #define CL_SIZE			COMMAND_LINE_SIZE
- 
- extern char *system_type;
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -22,6 +22,23 @@ choice

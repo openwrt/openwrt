@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/include/asm-mips/mips_machine.h
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,47 @@
 +/*
 + *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
 + *
@@ -16,8 +16,6 @@
 +#include <linux/init.h>
 +#include <linux/list.h>
 +
-+#include <asm/bootinfo.h>
-+
 +#define MIPS_MACHINE_NAME_LEN	64
 +
 +struct mips_machine {
@@ -28,7 +26,7 @@
 +};
 +
 +void mips_machine_register(struct mips_machine *) __init;
-+void mips_machine_setup(void) __init;
++void mips_machine_setup(unsigned long machtype) __init;
 +
 +extern unsigned char mips_machine_name[MIPS_MACHINE_NAME_LEN];
 +
@@ -90,14 +88,14 @@
 +	list_add_tail(&mach->list, &mips_machines);
 +}
 +
-+void __init mips_machine_setup(void)
++void __init mips_machine_setup(unsigned long machtype)
 +{
 +	struct mips_machine *mach;
 +
-+	mach = mips_machine_find(mips_machtype);
++	mach = mips_machine_find(machtype);
 +	if (!mach) {
 +		printk(KERN_ALERT "MIPS: no machine registered for "
-+			"machtype %lu\n", mips_machtype);
++			"machtype %lu\n", machtype);
 +		return;
 +	}
 +

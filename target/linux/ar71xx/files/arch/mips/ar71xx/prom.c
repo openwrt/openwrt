@@ -33,22 +33,22 @@ static char **ar71xx_prom_envp __initdata;
 static struct board_rec boards[] __initdata = {
 	{
 		.name		= "411",
-		.mach_type	= MACH_AR71XX_RB_411,
+		.mach_type	= AR71XX_MACH_RB_411,
 	}, {
 		.name		= "433",
-		.mach_type	= MACH_AR71XX_RB_433,
+		.mach_type	= AR71XX_MACH_RB_433,
 	}, {
 		.name		= "450",
-		.mach_type	= MACH_AR71XX_RB_450,
+		.mach_type	= AR71XX_MACH_RB_450,
 	}, {
 		.name		= "493",
-		.mach_type	= MACH_AR71XX_RB_493,
+		.mach_type	= AR71XX_MACH_RB_493,
 	}, {
 		.name		= "AW-NR580",
-		.mach_type	= MACH_AR71XX_AW_NR580,
+		.mach_type	= AR71XX_MACH_AW_NR580,
 	}, {
 		.name		= "AP83",
-		.mach_type	= MACH_AR71XX_AP83,
+		.mach_type	= AR71XX_MACH_AP83,
 	}
 };
 
@@ -96,7 +96,7 @@ static __init unsigned long find_board_byname(char *name)
 		if (strcmp(name, boards[i].name) == 0)
 			return boards[i].mach_type;
 
-	return MACH_AR71XX_GENERIC;
+	return AR71XX_MACH_GENERIC;
 }
 
 static int ar71xx_prom_init_myloader(void)
@@ -109,7 +109,7 @@ static int ar71xx_prom_init_myloader(void)
 
 	switch (mylo->did) {
 	case DEVID_COMPEX_WP543:
-		mips_machtype = MACH_AR71XX_WP543;
+		ar71xx_mach_type = AR71XX_MACH_WP543;
 		break;
 	default:
 		printk(KERN_WARNING "prom: unknown device id: %x\n",
@@ -132,7 +132,7 @@ static void ar71xx_prom_init_generic(void)
 	if (!p)
 		p = ar71xx_prom_getargv("board");
 	if (p)
-		mips_machtype = find_board_byname(p);
+		ar71xx_mach_type = find_board_byname(p);
 
 	p = ar71xx_prom_getenv("ethaddr");
 	if (!p)
@@ -148,7 +148,7 @@ void __init prom_init(void)
 			(unsigned int)fw_arg0, (unsigned int)fw_arg1,
 			(unsigned int)fw_arg2, (unsigned int)fw_arg3);
 
-	mips_machtype = MACH_AR71XX_GENERIC;
+	ar71xx_mach_type = AR71XX_MACH_GENERIC;
 
 	if (ar71xx_prom_init_myloader())
 		return;

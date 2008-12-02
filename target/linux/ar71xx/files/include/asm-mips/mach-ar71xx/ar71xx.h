@@ -103,6 +103,17 @@ enum ar71xx_soc_type {
 
 extern enum ar71xx_soc_type ar71xx_soc;
 
+extern unsigned long ar71xx_mach_type;
+
+#define AR71XX_MACH_GENERIC	0
+#define AR71XX_MACH_WP543	1	/* Compex WP543 */
+#define AR71XX_MACH_RB_411	2	/* MikroTik RouterBOARD 411/411A/411AH */
+#define AR71XX_MACH_RB_433	3	/* MikroTik RouterBOARD 433/433AH */
+#define AR71XX_MACH_RB_450	4	/* MikroTik RouterBOARD 450 */
+#define AR71XX_MACH_RB_493	5	/* Mikrotik RouterBOARD 493/493AH */
+#define AR71XX_MACH_AW_NR580	6	/* AzureWave AW-NR580 */
+#define AR71XX_MACH_AP83	7	/* Atheros AP83 */
+
 /*
  * PLL block
  */

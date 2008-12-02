@@ -35,6 +35,8 @@
 #define AR71XX_MEM_SIZE_MIN	0x0200000
 #define AR71XX_MEM_SIZE_MAX	0x8000000
 
+unsigned long ar71xx_mach_type;
+
 u32 ar71xx_cpu_freq;
 EXPORT_SYMBOL_GPL(ar71xx_cpu_freq);
 
