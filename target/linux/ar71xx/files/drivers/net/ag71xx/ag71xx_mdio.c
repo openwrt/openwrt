@@ -159,13 +159,9 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	am->mii_bus.write = ag71xx_mdio_write;
 	am->mii_bus.reset = ag71xx_mdio_reset;
 	am->mii_bus.irq = am->mii_irq;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
-	am->mii_bus.id = 0;
-#else
-	snprintf(am->mii_bus.id, MII_BUS_ID_SIZE, "%x", 0);
-#endif
 	am->mii_bus.priv = am;
 	am->mii_bus.dev = &pdev->dev;
+	snprintf(am->mii_bus.id, MII_BUS_ID_SIZE, "%x", 0);
 
 	pdata = pdev->dev.platform_data;
 	if (pdata)
