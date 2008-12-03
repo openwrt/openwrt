@@ -204,7 +204,8 @@ define KernelPackage/ssb
 	CONFIG_SSB_PCIHOST=y \
 	CONFIG_SSB_PCIHOST_POSSIBLE=y \
 	CONFIG_SSB_POSSIBLE=y \
-	CONFIG_SSB_SPROM=y
+	CONFIG_SSB_SPROM=y \
+	CONFIG_SSB_SILENT=y
   FILES:=$(LINUX_DIR)/drivers/ssb/ssb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,29,ssb)
 endef
