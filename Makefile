@@ -53,7 +53,7 @@ clean: FORCE
 	$(_SINGLE)$(SUBMAKE) target/linux/clean
 
 dirclean: clean
-	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST)
+	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST) $(BUILD_DIR_TOOLCHAIN)
 	rm -rf $(TMP_DIR)
 
 tmp/.prereq_packages: .config
