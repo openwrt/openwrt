@@ -22254,7 +22254,7 @@
    for (insn = BB_HEAD (bb); ; insn = NEXT_INSN (insn))
      {
        int n_ops, i, alt, predicated;
-@@ -1630,7 +1633,60 @@ copyprop_hardreg_forward_1 (basic_block 
+@@ -1630,7 +1633,62 @@ copyprop_hardreg_forward_1 (basic_block 
  	      || (predicated && recog_data.operand_type[i] == OP_OUT))
  	    recog_data.operand_type[i] = OP_INOUT;
  	}
@@ -22268,6 +22268,7 @@
 +         are modified these tests will fail.
 +      */
 +      
++#ifdef IFCVT_ALLOW_MODIFY_TEST_IN_INSN
 +      if ( IFCVT_ALLOW_MODIFY_TEST_IN_INSN
 +           && predicated )
 +        { 
@@ -22311,6 +22312,7 @@
 +        {
 +          prev_pred_insn_skipped = 0;
 +        }
++#endif /* IFCVT_ALLOW_MODIFY_TEST_IN_INSN */
 +      
        /* For each earlyclobber operand, zap the value data.  */
        for (i = 0; i < n_ops; i++)
