@@ -211,9 +211,6 @@ enable_atheros() {
 		config_get distance "$device" distance
 		[ -n "$distance" ] && athctrl -i "$device" -d "$distance" >&-
 
-		config_get txpwr "$vif" txpower
-		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
-
 		config_get rate "$vif" rate
 		[ -n "$rate" ] && iwconfig "$ifname" rate "${rate%%.*}"
 
@@ -277,6 +274,11 @@ enable_atheros() {
 		esac
 
 		ifconfig "$ifname" up
+
+		# TXPower settings only work if device is up already
+		config_get txpwr "$vif" txpower
+		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
+
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
