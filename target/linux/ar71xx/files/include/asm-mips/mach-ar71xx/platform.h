@@ -39,6 +39,10 @@ struct ag71xx_mdio_platform_data {
 	u32		phy_mask;
 };
 
+struct ar71xx_ehci_platform_data {
+	u8		is_ar91xx;
+};
+
 struct ar71xx_spi_platform_data {
 	unsigned	bus_num;
 	unsigned	num_chipselect;

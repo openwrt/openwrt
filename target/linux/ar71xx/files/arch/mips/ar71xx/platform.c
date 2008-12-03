@@ -68,7 +68,10 @@ static struct resource ar71xx_ehci_resources[] = {
 	},
 };
 
+
 static u64 ar71xx_ehci_dmamask = DMA_BIT_MASK(32);
+static struct ar71xx_ehci_platform_data ar71xx_ehci_data;
+
 static struct platform_device ar71xx_ehci_device = {
 	.name		= "ar71xx-ehci",
 	.id		= -1,
@@ -77,6 +80,7 @@ static struct platform_device ar71xx_ehci_device = {
 	.dev = {
 		.dma_mask		= &ar71xx_ehci_dmamask,
 		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data		= &ar71xx_ehci_data,
 	},
 };
 
@@ -84,7 +88,7 @@ static struct platform_device ar71xx_ehci_device = {
 	(RESET_MODULE_USB_HOST | RESET_MODULE_USB_PHY \
 	| RESET_MODULE_USB_OHCI_DLL)
 
-void __init ar71xx_add_device_usb(void)
+static void ar71xx_usb_setup(void)
 {
 	ar71xx_device_stop(AR71XX_USB_RESET_MASK);
 	mdelay(1000);
@@ -97,9 +101,28 @@ void __init ar71xx_add_device_usb(void)
 	ar71xx_usb_ctrl_wr(USB_CTRL_REG_FLADJ, 0x20c00);
 
 	mdelay(900);
+}
 
-	platform_device_register(&ar71xx_ohci_device);
-	platform_device_register(&ar71xx_ehci_device);
+void __init ar71xx_add_device_usb(void)
+{
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		ar71xx_usb_setup();
+		platform_device_register(&ar71xx_ohci_device);
+		platform_device_register(&ar71xx_ehci_device);
+		break;
+
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		ar71xx_ehci_data.is_ar91xx = 1;
+		platform_device_register(&ar71xx_ehci_device);
+		break;
+
+	default:
+		BUG();
+	}
 }
 
 #ifdef CONFIG_AR71XX_EARLY_SERIAL
