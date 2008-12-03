@@ -27,7 +27,7 @@ static u8 ar71xx_mac_base[ETH_ALEN] __initdata;
 /*
  * OHCI (USB full speed host controller)
  */
-static struct resource ar71xx_usb_ohci_resources[] = {
+static struct resource ar71xx_ohci_resources[] = {
 	[0] = {
 		.start	= AR71XX_OHCI_BASE,
 		.end	= AR71XX_OHCI_BASE + AR71XX_OHCI_SIZE - 1,
@@ -41,11 +41,11 @@ static struct resource ar71xx_usb_ohci_resources[] = {
 };
 
 static u64 ar71xx_ohci_dmamask = DMA_BIT_MASK(32);
-static struct platform_device ar71xx_usb_ohci_device = {
+static struct platform_device ar71xx_ohci_device = {
 	.name		= "ar71xx-ohci",
 	.id		= -1,
-	.resource	= ar71xx_usb_ohci_resources,
-	.num_resources	= ARRAY_SIZE(ar71xx_usb_ohci_resources),
+	.resource	= ar71xx_ohci_resources,
+	.num_resources	= ARRAY_SIZE(ar71xx_ohci_resources),
 	.dev = {
 		.dma_mask		= &ar71xx_ohci_dmamask,
 		.coherent_dma_mask	= DMA_BIT_MASK(32),
@@ -55,7 +55,7 @@ static struct platform_device ar71xx_usb_ohci_device = {
 /*
  * EHCI (USB full speed host controller)
  */
-static struct resource ar71xx_usb_ehci_resources[] = {
+static struct resource ar71xx_ehci_resources[] = {
 	[0] = {
 		.start	= AR71XX_EHCI_BASE,
 		.end	= AR71XX_EHCI_BASE + AR71XX_EHCI_SIZE - 1,
@@ -69,11 +69,11 @@ static struct resource ar71xx_usb_ehci_resources[] = {
 };
 
 static u64 ar71xx_ehci_dmamask = DMA_BIT_MASK(32);
-static struct platform_device ar71xx_usb_ehci_device = {
+static struct platform_device ar71xx_ehci_device = {
 	.name		= "ar71xx-ehci",
 	.id		= -1,
-	.resource	= ar71xx_usb_ehci_resources,
-	.num_resources	= ARRAY_SIZE(ar71xx_usb_ehci_resources),
+	.resource	= ar71xx_ehci_resources,
+	.num_resources	= ARRAY_SIZE(ar71xx_ehci_resources),
 	.dev = {
 		.dma_mask		= &ar71xx_ehci_dmamask,
 		.coherent_dma_mask	= DMA_BIT_MASK(32),
@@ -98,8 +98,8 @@ void __init ar71xx_add_device_usb(void)
 
 	mdelay(900);
 
-	platform_device_register(&ar71xx_usb_ohci_device);
-	platform_device_register(&ar71xx_usb_ehci_device);
+	platform_device_register(&ar71xx_ohci_device);
+	platform_device_register(&ar71xx_ehci_device);
 }
 
 #ifdef CONFIG_AR71XX_EARLY_SERIAL
