@@ -15,6 +15,8 @@
 #include <linux/platform_device.h>
 #include <linux/delay.h>
 
+#include <asm/mach-ar71xx/platform.h>
+
 extern int usb_disabled(void);
 
 static void ehci_ar71xx_setup(void)
