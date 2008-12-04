@@ -22,6 +22,9 @@
 
 static DEFINE_SPINLOCK(ar71xx_gpio_lock);
 
+unsigned long ar71xx_gpio_count;
+EXPORT_SYMBOL(ar71xx_gpio_count);
+
 void __ar71xx_gpio_set_value(unsigned gpio, int value)
 {
 	unsigned long flags;
@@ -128,6 +131,22 @@ void __init ar71xx_gpio_init(void)
 	if (!request_mem_region(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE,
 				"AR71xx GPIO controller"))
 		panic("cannot allocate AR71xx GPIO registers page");
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		ar71xx_gpio_chip.ngpio = AR71XX_GPIO_COUNT;
+		break;
+
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		ar71xx_gpio_chip.ngpio = AR91XX_GPIO_COUNT;
+		break;
+
+	default:
+		BUG();
+	}
 
 	err = gpiochip_add(&ar71xx_gpio_chip);
 	if (err)
