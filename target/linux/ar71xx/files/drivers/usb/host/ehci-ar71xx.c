@@ -19,11 +19,51 @@
 
 extern int usb_disabled(void);
 
-static void ehci_ar71xx_setup(void)
+static int ehci_ar71xx_init(struct usb_hcd *hcd)
 {
-	/*
-	 * TODO: implement
-	 */
+	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+	int ret;
+
+	ehci->caps = hcd->regs;
+	ehci->regs = hcd->regs +
+			HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
+	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
+
+	ehci->sbrn = 0x20;
+
+	ehci_reset(ehci);
+
+	ret = ehci_init(hcd);
+	if (ret)
+		return ret;
+
+	ehci_port_power(ehci, 0);
+
+	return 0;
+}
+
+static int ehci_ar91xx_init(struct usb_hcd *hcd)
+{
+	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+	int ret;
+
+	ehci->caps = hcd->regs + 0x100;
+	ehci->regs = hcd->regs + 0x100 +
+			HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
+	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
+
+	hcd->has_tt = 1;
+	ehci->sbrn = 0x20;
+
+	ehci_reset(ehci);
+
+	ret = ehci_init(hcd);
+	if (ret)
+		return ret;
+
+	ehci_port_power(ehci, 0);
+
+	return 0;
 }
 
 static int ehci_ar71xx_probe(const struct hc_driver *driver,
@@ -31,7 +71,6 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
 			     struct platform_device *pdev)
 {
 	struct usb_hcd *hcd;
-	struct ehci_hcd *ehci;
 	struct resource *res;
 	int irq;
 	int ret;
@@ -71,14 +110,6 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
 		goto err_release_region;
 	}
 
-	ehci = hcd_to_ehci(hcd);
-	ehci->caps = hcd->regs;
-	ehci->regs = hcd->regs +
-			HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
-	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
-
-	ehci_ar71xx_setup();
-
 	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
 	if (ret)
 		goto err_iounmap;
@@ -109,51 +140,80 @@ static const struct hc_driver ehci_ar71xx_hc_driver = {
 	.product_desc		= "Atheros AR71xx built-in EHCI controller",
 	.hcd_priv_size		= sizeof(struct ehci_hcd),
 
-	/*
-	 * generic hardware linkage
-	 */
 	.irq			= ehci_irq,
 	.flags			= HCD_MEMORY | HCD_USB2,
 
-	/*
-	 * basic lifecycle operations
-	 */
-	.reset			= ehci_init,
+	.reset			= ehci_ar71xx_init,
 	.start			= ehci_run,
 	.stop			= ehci_stop,
 	.shutdown		= ehci_shutdown,
 
-	/*
-	 * managing i/o requests and associated device resources
-	 */
 	.urb_enqueue		= ehci_urb_enqueue,
 	.urb_dequeue		= ehci_urb_dequeue,
 	.endpoint_disable	= ehci_endpoint_disable,
 
-	/*
-	 * scheduling support
-	 */
 	.get_frame_number	= ehci_get_frame,
 
-	/*
-	 * root hub support
-	 */
 	.hub_status_data	= ehci_hub_status_data,
 	.hub_control		= ehci_hub_control,
 #ifdef CONFIG_PM
 	.hub_suspend		= ehci_hub_suspend,
 	.hub_resume		= ehci_hub_resume,
 #endif
+	.relinquish_port	= ehci_relinquish_port,
+	.port_handed_over	= ehci_port_handed_over,
+};
+
+static const struct hc_driver ehci_ar91xx_hc_driver = {
+	.description		= hcd_name,
+	.product_desc		= "Atheros AR91xx built-in EHCI controller",
+	.hcd_priv_size		= sizeof(struct ehci_hcd),
+	.irq			= ehci_irq,
+	.flags			= HCD_MEMORY | HCD_USB2,
+
+	.reset			= ehci_ar91xx_init,
+	.start			= ehci_run,
+	.stop			= ehci_stop,
+	.shutdown		= ehci_shutdown,
+
+	.urb_enqueue		= ehci_urb_enqueue,
+	.urb_dequeue		= ehci_urb_dequeue,
+	.endpoint_disable	= ehci_endpoint_disable,
+
+	.get_frame_number	= ehci_get_frame,
+
+	.hub_status_data	= ehci_hub_status_data,
+	.hub_control		= ehci_hub_control,
+#ifdef CONFIG_PM
+	.hub_suspend		= ehci_hub_suspend,
+	.hub_resume		= ehci_hub_resume,
+#endif
+	.relinquish_port	= ehci_relinquish_port,
+	.port_handed_over	= ehci_port_handed_over,
 };
 
 static int ehci_ar71xx_driver_probe(struct platform_device *pdev)
 {
+	struct ar71xx_ehci_platform_data *pdata;
 	struct usb_hcd *hcd = NULL;
+	int ret;
 
 	if (usb_disabled())
 		return -ENODEV;
 
-	return ehci_ar71xx_probe(&ehci_ar71xx_hc_driver, &hcd, pdev);
+	pdata = pdev->dev.platform_data;
+	if (!pdata) {
+		dev_err(&pdev->dev, "no platform data specified for %s\n",
+			pdev->dev.bus_id);
+		return -ENODEV;
+	}
+
+	if (pdata->is_ar91xx)
+		ret = ehci_ar71xx_probe(&ehci_ar91xx_hc_driver, &hcd, pdev);
+	else
+		ret = ehci_ar71xx_probe(&ehci_ar71xx_hc_driver, &hcd, pdev);
+
+	return ret;
 }
 
 static int ehci_ar71xx_driver_remove(struct platform_device *pdev)
