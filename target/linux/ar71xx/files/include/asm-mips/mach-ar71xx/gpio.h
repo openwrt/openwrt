@@ -18,6 +18,7 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
+extern unsigned long ar71xx_gpio_count;
 extern void __ar71xx_gpio_set_value(unsigned gpio, int value);
 extern int __ar71xx_gpio_get_value(unsigned gpio);
 
@@ -33,7 +34,7 @@ static inline int irq_to_gpio(unsigned irq)
 
 static inline int gpio_get_value(unsigned gpio)
 {
-	if (gpio < AR71XX_GPIO_COUNT)
+	if (gpio < ar71xx_gpio_count)
 		return __ar71xx_gpio_get_value(gpio);
 
 	return __gpio_get_value(gpio);
@@ -41,7 +42,7 @@ static inline int gpio_get_value(unsigned gpio)
 
 static inline void gpio_set_value(unsigned gpio, int value)
 {
-	if (gpio < AR71XX_GPIO_COUNT)
+	if (gpio < ar71xx_gpio_count)
 		__ar71xx_gpio_set_value(gpio, value);
 	else
 		__gpio_set_value(gpio, value);
