@@ -108,7 +108,7 @@ static void __init ar71xx_detect_sys_type(void)
 	u32 id;
 	u32 rev;
 
-	id = ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK;
+	id = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) & REV_ID_MASK;
 	rev = (id >> REV_ID_REVISION_SHIFT) & REV_ID_REVISION_MASK;
 
 	switch (id & REV_ID_CHIP_MASK) {

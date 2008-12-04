@@ -26,8 +26,8 @@ static void ar71xx_pci_irq_dispatch(void)
 {
 	u32 pending;
 
-	pending = ar71xx_reset_rr(RESET_REG_PCI_INT_STATUS) &
-	    ar71xx_reset_rr(RESET_REG_PCI_INT_ENABLE);
+	pending = ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_STATUS) &
+	    ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
 
 	if (pending & PCI_INT_DEV0)
 		do_IRQ(AR71XX_PCI_IRQ_DEV0);
@@ -45,15 +45,15 @@ static void ar71xx_pci_irq_dispatch(void)
 static void ar71xx_pci_irq_unmask(unsigned int irq)
 {
 	irq -= AR71XX_PCI_IRQ_BASE;
-	ar71xx_reset_wr(RESET_REG_PCI_INT_ENABLE,
-		ar71xx_reset_rr(RESET_REG_PCI_INT_ENABLE) | (1 << irq));
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE,
+		ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE) | (1 << irq));
 }
 
 static void ar71xx_pci_irq_mask(unsigned int irq)
 {
 	irq -= AR71XX_PCI_IRQ_BASE;
-	ar71xx_reset_wr(RESET_REG_PCI_INT_ENABLE,
-		ar71xx_reset_rr(RESET_REG_PCI_INT_ENABLE) & ~(1 << irq));
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE,
+		ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE) & ~(1 << irq));
 }
 
 static struct irq_chip ar71xx_pci_irq_chip = {
@@ -72,8 +72,8 @@ static void __init ar71xx_pci_irq_init(void)
 {
 	int i;
 
-	ar71xx_reset_wr(RESET_REG_PCI_INT_ENABLE, 0);
-	ar71xx_reset_wr(RESET_REG_PCI_INT_STATUS, 0);
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE, 0);
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_STATUS, 0);
 
 	for (i = AR71XX_PCI_IRQ_BASE;
 	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++) {
@@ -167,8 +167,8 @@ static void ar71xx_misc_irq_dispatch(void)
 {
 	u32 pending;
 
-	pending = ar71xx_reset_rr(RESET_REG_MISC_INT_STATUS)
-	    & ar71xx_reset_rr(RESET_REG_MISC_INT_ENABLE);
+	pending = ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS)
+	    & ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 
 	if (pending & MISC_INT_UART)
 		do_IRQ(AR71XX_MISC_IRQ_UART);
@@ -201,15 +201,15 @@ static void ar71xx_misc_irq_dispatch(void)
 static void ar71xx_misc_irq_unmask(unsigned int irq)
 {
 	irq -= AR71XX_MISC_IRQ_BASE;
-	ar71xx_reset_wr(RESET_REG_MISC_INT_ENABLE,
-		ar71xx_reset_rr(RESET_REG_MISC_INT_ENABLE) | (1 << irq));
+	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE,
+		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE) | (1 << irq));
 }
 
 static void ar71xx_misc_irq_mask(unsigned int irq)
 {
 	irq -= AR71XX_MISC_IRQ_BASE;
-	ar71xx_reset_wr(RESET_REG_MISC_INT_ENABLE,
-		ar71xx_reset_rr(RESET_REG_MISC_INT_ENABLE) & ~(1 << irq));
+	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE,
+		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE) & ~(1 << irq));
 }
 
 struct irq_chip ar71xx_misc_irq_chip = {
@@ -228,8 +228,8 @@ static void __init ar71xx_misc_irq_init(void)
 {
 	int i;
 
-	ar71xx_reset_wr(RESET_REG_MISC_INT_ENABLE, 0);
-	ar71xx_reset_wr(RESET_REG_MISC_INT_STATUS, 0);
+	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, 0);
+	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_STATUS, 0);
 
 	for (i = AR71XX_MISC_IRQ_BASE;
 	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++) {
