@@ -56,6 +56,7 @@ static void __init ap83_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap83_leds_gpio),
 					ap83_leds_gpio);
 
+	ar71xx_add_device_usb();
 }
 
 MIPS_MACHINE(AR71XX_MACH_AP83, "Atheros AP83", ap83_setup);
