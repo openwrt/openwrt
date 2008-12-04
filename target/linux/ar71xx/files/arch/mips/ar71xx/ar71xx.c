@@ -35,8 +35,8 @@ void ar71xx_device_stop(u32 mask)
 	unsigned long flags;
 
 	local_irq_save(flags);
-	ar71xx_reset_wr(RESET_REG_RESET_MODULE,
-			ar71xx_reset_rr(RESET_REG_RESET_MODULE) | mask);
+	ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE,
+			ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE) | mask);
 	local_irq_restore(flags);
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_stop);
@@ -46,8 +46,8 @@ void ar71xx_device_start(u32 mask)
 	unsigned long flags;
 
 	local_irq_save(flags);
-	ar71xx_reset_wr(RESET_REG_RESET_MODULE,
-			ar71xx_reset_rr(RESET_REG_RESET_MODULE) & ~mask);
+	ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE,
+			ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE) & ~mask);
 	local_irq_restore(flags);
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
