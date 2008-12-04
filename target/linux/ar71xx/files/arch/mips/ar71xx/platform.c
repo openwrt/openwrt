@@ -103,6 +103,18 @@ static void ar71xx_usb_setup(void)
 	mdelay(900);
 }
 
+static void ar91xx_usb_setup(void)
+{
+	ar71xx_device_stop(RESET_MODULE_USBSUS_OVERRIDE);
+	mdelay(10);
+
+	ar71xx_device_start(RESET_MODULE_USB_HOST);
+	mdelay(10);
+
+	ar71xx_device_start(RESET_MODULE_USB_PHY);
+	mdelay(10);
+}
+
 void __init ar71xx_add_device_usb(void)
 {
 	switch (ar71xx_soc) {
@@ -116,6 +128,7 @@ void __init ar71xx_add_device_usb(void)
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
+		ar91xx_usb_setup();
 		ar71xx_ehci_data.is_ar91xx = 1;
 		platform_device_register(&ar71xx_ehci_device);
 		break;
