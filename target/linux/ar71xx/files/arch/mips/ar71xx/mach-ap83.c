@@ -20,6 +20,8 @@
 #define AP83_GPIO_LED_WLAN	6
 #define AP83_GPIO_LED_POWER	14
 #define AP83_GPIO_LED_JUMPSTART	15
+#define AP83_GPIO_BTN_JUMPSTART	12
+#define AP83_GPIO_BTN_RESET	21
 
 static struct gpio_led ap83_leds_gpio[] __initdata = {
 	{
@@ -35,6 +37,24 @@ static struct gpio_led ap83_leds_gpio[] __initdata = {
 		.gpio		= AP83_GPIO_LED_WLAN,
 		.active_low	= 0,
 	},
+};
+
+static struct gpio_button ap83_gpio_buttons[] __initdata = {
+	{
+		.desc		= "soft_reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= AP83_GPIO_BTN_RESET,
+		.active_low	= 1,
+	} , }
+		.desc		= "jumpstart",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= AP83_GPIO_BTN_JUMPSTART,
+		.active_low	= 1,
+	}
 };
 
 static void __init ap83_setup(void)
@@ -55,6 +75,9 @@ static void __init ap83_setup(void)
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap83_leds_gpio),
 					ap83_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, 20, ARRAY_SIZE(ap83_gpio_buttons),
+					ap83_gpio_buttons);
 
 	ar71xx_add_device_usb();
 }
