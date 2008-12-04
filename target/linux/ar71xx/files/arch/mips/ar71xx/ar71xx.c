@@ -33,22 +33,58 @@ EXPORT_SYMBOL_GPL(ar71xx_usb_ctrl_base);
 void ar71xx_device_stop(u32 mask)
 {
 	unsigned long flags;
+	u32 t;
 
-	local_irq_save(flags);
-	ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE,
-			ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE) | mask);
-	local_irq_restore(flags);
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE, t | mask);
+		local_irq_restore(flags);
+		break;
+
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR91XX_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR91XX_RESET_REG_RESET_MODULE, t | mask);
+		local_irq_restore(flags);
+		break;
+
+	default:
+		BUG();
+	}
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_stop);
 
 void ar71xx_device_start(u32 mask)
 {
 	unsigned long flags;
+	u32 t;
 
-	local_irq_save(flags);
-	ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE,
-			ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE) & ~mask);
-	local_irq_restore(flags);
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE, t & ~mask);
+		local_irq_restore(flags);
+		break;
+
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR91XX_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR91XX_RESET_REG_RESET_MODULE, t & ~mask);
+		local_irq_restore(flags);
+		break;
+
+	default:
+		BUG();
+	}
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
 
