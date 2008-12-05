@@ -37,7 +37,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.7"
+#define AG71XX_DRV_VERSION	"0.5.8"
 
 #define AG71XX_NAPI_TX		1
 
@@ -308,13 +308,18 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 
 static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
 {
+	void __iomem *r;
+
 	switch (reg) {
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
-		__raw_writel(value, ag->mac_base + reg);
+		r = ag->mac_base + reg;
+		__raw_writel(value, r);
+		__raw_readl(r);
 		break;
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
-		reg -= AG71XX_REG_MAC_IFCTL;
-		__raw_writel(value, ag->mac_base2 + reg);
+		r = ag->mac_base2 + reg - AG71XX_REG_MAC_IFCTL;
+		__raw_writel(value, r);
+		__raw_readl(r);
 		break;
 	default:
 		BUG();
@@ -323,15 +328,17 @@ static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
 
 static inline u32 ag71xx_rr(struct ag71xx *ag, unsigned reg)
 {
+	void __iomem *r;
 	u32 ret;
 
 	switch (reg) {
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
-		ret = __raw_readl(ag->mac_base + reg);
+		r = ag->mac_base + reg;
+		ret = __raw_readl(r);
 		break;
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
-		reg -= AG71XX_REG_MAC_IFCTL;
-		ret = __raw_readl(ag->mac_base2 + reg);
+		r = ag->mac_base2 + reg - AG71XX_REG_MAC_IFCTL;
+		ret = __raw_readl(r);
 		break;
 	default:
 		BUG();
@@ -348,10 +355,12 @@ static inline void ag71xx_sb(struct ag71xx *ag, unsigned reg, u32 mask)
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
 		r = ag->mac_base + reg;
 		__raw_writel(__raw_readl(r) | mask, r);
+		__raw_readl(r);
 		break;
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
 		r = ag->mac_base2 + reg - AG71XX_REG_MAC_IFCTL;
 		__raw_writel(__raw_readl(r) | mask, r);
+		__raw_readl(r);
 		break;
 	default:
 		BUG();
@@ -366,10 +375,12 @@ static inline void ag71xx_cb(struct ag71xx *ag, unsigned reg, u32 mask)
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
 		r = ag->mac_base + reg;
 		__raw_writel(__raw_readl(r) & ~mask, r);
+		__raw_readl(r);
 		break;
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
 		r = ag->mac_base2 + reg - AG71XX_REG_MAC_IFCTL;
 		__raw_writel(__raw_readl(r) & ~mask, r);
+		__raw_readl(r);
 		break;
 	default:
 		BUG();
@@ -389,6 +400,7 @@ static inline void ag71xx_int_disable(struct ag71xx *ag, u32 ints)
 static inline void ag71xx_mii_ctrl_wr(struct ag71xx *ag, u32 value)
 {
 	__raw_writel(value, ag->mii_ctrl);
+	__raw_readl(ag->mii_ctrl);
 }
 
 static inline u32 ag71xx_mii_ctrl_rr(struct ag71xx *ag)
