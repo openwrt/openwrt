@@ -624,6 +624,8 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 			break;
 		}
 
+		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
+
 		skb = ring->buf[i].skb;
 		pktlen = ag71xx_desc_pktlen(desc);
 		pktlen -= ETH_FCS_LEN;
@@ -642,8 +644,6 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 
 		ring->buf[i].skb = NULL;
 		done++;
-
-		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
 
 		ring->curr++;
 		if ((ring->curr - ring->dirty) > (AG71XX_RX_RING_SIZE / 4))
@@ -679,10 +679,16 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 
 	/* TODO: add OOM handler */
 
-	status = ag71xx_rr(ag, AG71XX_REG_INT_STATUS);
-	status &= AG71XX_INT_POLL;
+	status = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
+	if (unlikely(status & RX_STATUS_OF)) {
+		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_OF);
+		dev->stats.rx_fifo_errors++;
 
-	if ((done < limit) && (!status)) {
+		/* restart RX */
+		ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
+	}
+
+	if ((done < limit) && ((status & RX_STATUS_PR) == 0)) {
 		DBG("%s: disable polling mode, done=%d, status=%x\n",
 			dev->name, done, status);
 
@@ -693,17 +699,6 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		ag71xx_int_enable(ag, AG71XX_INT_POLL);
 		spin_unlock_irqrestore(&ag->lock, flags);
 		return 0;
-	}
-
-	if (status & AG71XX_INT_RX_OF) {
-		if (netif_msg_rx_err(ag))
-			printk(KERN_ALERT "%s: rx owerflow, restarting dma\n",
-				dev->name);
-
-		/* ack interrupt */
-		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_OF);
-		/* restart RX */
-		ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
 	}
 
 	DBG("%s: stay in polling mode, done=%d, status=%x\n",
