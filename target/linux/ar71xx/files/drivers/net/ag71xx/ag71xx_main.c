@@ -627,7 +627,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 
 		skb->dev = dev;
 		skb->protocol = eth_type_trans(skb, dev);
-		skb->ip_summed = CHECKSUM_UNNECESSARY;
+		skb->ip_summed = CHECKSUM_NONE;
 
 		netif_receive_skb(skb);
 
