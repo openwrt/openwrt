@@ -196,6 +196,9 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 			break;
 		}
 
+		dma_map_single(NULL, skb->data, AG71XX_RX_PKT_SIZE,
+				DMA_FROM_DEVICE);
+
 		skb->dev = ag->dev;
 		skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
 
@@ -234,8 +237,12 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 				break;
 			}
 
+			dma_map_single(NULL, skb->data, AG71XX_RX_PKT_SIZE,
+					DMA_FROM_DEVICE);
+
 			skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
 			skb->dev = ag->dev;
+
 			ring->buf[i].skb = skb;
 			ring->descs[i].data = virt_to_phys(skb->data);
 		}
@@ -468,7 +475,7 @@ static int ag71xx_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		goto err_drop;
 	}
 
-	dma_cache_wback_inv((unsigned long)skb->data, skb->len);
+	dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
 
 	ring->buf[i].skb = skb;
 
@@ -621,8 +628,6 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		pktlen = ag71xx_desc_pktlen(desc);
 		pktlen -= ETH_FCS_LEN;
 
-		/* TODO: move it into the refill function */
-		dma_cache_wback_inv((unsigned long)skb->data, pktlen);
 		skb_put(skb, pktlen);
 
 		skb->dev = dev;
