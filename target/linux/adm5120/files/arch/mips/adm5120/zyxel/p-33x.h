@@ -14,9 +14,9 @@
 #include <linux/gpio.h>
 #include <linux/irq.h>
 
-#include <asm/bootinfo.h>
+#include <asm/mips_machine.h>
 
-#include <asm/mach-adm5120/adm5120_board.h>
+#include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_platform.h>
 
 extern void p33x_generic_setup(void) __init;

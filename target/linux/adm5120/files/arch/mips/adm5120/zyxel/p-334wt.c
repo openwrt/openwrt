@@ -30,4 +30,4 @@ static void __init p334wt_setup(void)
 					p334wt_gpio_leds);
 }
 
-ADM5120_BOARD(MACH_ADM5120_P334WT, "ZyXEL Prestige 334WT", p334wt_setup);
+MIPS_MACHINE(MACH_ADM5120_P334WT, "ZyXEL Prestige 334WT", p334wt_setup);

@@ -71,4 +71,4 @@ static void __init rb153_setup(void)
 	adm5120_add_device_switch(5, rb153_vlans);
 }
 
-ADM5120_BOARD(MACH_ADM5120_RB_153, "Mikrotik RouterBOARD 153", rb153_setup);
+MIPS_MACHINE(MACH_ADM5120_RB_153, "Mikrotik RouterBOARD 153", rb153_setup);

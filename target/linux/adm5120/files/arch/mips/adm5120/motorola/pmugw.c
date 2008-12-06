@@ -15,10 +15,9 @@
 #include <linux/irq.h>
 #include <linux/etherdevice.h>
 
-#include <asm/bootinfo.h>
+#include <asm/mips_machine.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
-#include <asm/mach-adm5120/adm5120_board.h>
 #include <asm/mach-adm5120/adm5120_platform.h>
 #include <asm/mach-adm5120/adm5120_info.h>
 
@@ -97,6 +96,6 @@ void __init pmugw_setup(void)
 	adm5120_add_device_switch(5, pmugw_vlans);
 }
 
-ADM5120_BOARD(MACH_ADM5120_PMUGW,
+MIPS_MACHINE(MACH_ADM5120_PMUGW,
 		"Motorola Powerline MU Gateway",
 		pmugw_setup);

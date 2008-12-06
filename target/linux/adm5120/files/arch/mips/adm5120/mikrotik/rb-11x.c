@@ -32,4 +32,4 @@ static void __init rb11x_setup(void)
 					rb11x_gpio_leds);
 }
 
-ADM5120_BOARD(MACH_ADM5120_RB_11X, "Mikrotik RouterBOARD 111/112", rb11x_setup);
+MIPS_MACHINE(MACH_ADM5120_RB_11X, "Mikrotik RouterBOARD 111/112", rb11x_setup);
