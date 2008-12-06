@@ -132,8 +132,8 @@ void __init cas6xx_setup(void)
 	adm5120_add_device_switch(1, NULL);
 }
 
-ADM5120_BOARD(MACH_ADM5120_CAS630, "Cellvision CAS-630/630W", cas6xx_setup);
-ADM5120_BOARD(MACH_ADM5120_CAS670, "Cellvision CAS-670/670W", cas6xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS630, "Cellvision CAS-630/630W", cas6xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS670, "Cellvision CAS-670/670W", cas6xx_setup);
 #endif
 
 void __init cas7xx_setup(void)
@@ -146,7 +146,7 @@ void __init cas7xx_setup(void)
 }
 
 #if 0
-ADM5120_BOARD(MACH_ADM5120_CAS700, "Cellvision CAS-700/700W", cas7xx_setup);
-ADM5120_BOARD(MACH_ADM5120_CAS790, "Cellvision CAS-790", cas7xx_setup);
-ADM5120_BOARD(MACH_ADM5120_CAS861, "Cellvision CAS-861/861W", cas7xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS700, "Cellvision CAS-700/700W", cas7xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS790, "Cellvision CAS-790", cas7xx_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS861, "Cellvision CAS-861/861W", cas7xx_setup);
 #endif

@@ -23,11 +23,12 @@
 
 #include <asm/reboot.h>
 #include <asm/time.h>
+#include <asm/mips_machine.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_defs.h>
 #include <asm/mach-adm5120/adm5120_switch.h>
-#include <asm/mach-adm5120/adm5120_board.h>
+#include <asm/mach-adm5120/adm5120_platform.h>
 
 void (*adm5120_board_reset)(void);
 
@@ -50,6 +51,11 @@ static void __init adm5120_report(void)
 	printk(KERN_INFO "Bootdev  : %s flash\n",
 		adm5120_nand_boot ? "NAND":"NOR");
 	printk(KERN_INFO "Prom     : %s\n", prom_names[adm5120_prom_type]);
+}
+
+const char *get_system_type(void)
+{
+	return mips_machine_name;
 }
 
 static void adm5120_restart(char *command)
@@ -89,3 +95,25 @@ void __init plat_mem_setup(void)
 
 	set_io_port_base(KSEG1);
 }
+
+static int __init adm5120_board_setup(void)
+{
+	adm5120_gpio_init();
+
+	mips_machine_setup(adm5120_mach_type);
+
+	return 0;
+}
+arch_initcall(adm5120_board_setup);
+
+static void __init adm5120_generic_board_setup(void)
+{
+	adm5120_add_device_uart(0);
+	adm5120_add_device_uart(1);
+
+	adm5120_add_device_flash(0);
+	adm5120_add_device_switch(6, NULL);
+}
+
+MIPS_MACHINE(MACH_ADM5120_GENERIC, "Generic ADM5120 board",
+		adm5120_generic_board_setup);

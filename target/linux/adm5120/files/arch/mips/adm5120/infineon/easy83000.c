@@ -19,6 +19,6 @@ static void __init easy83000_setup(void)
 	/* TODO: add VINAX device */
 }
 
-ADM5120_BOARD(MACH_ADM5120_EASY83000,
+MIPS_MACHINE(MACH_ADM5120_EASY83000,
 		"Infineon EASY 83000 Reference Board",
 		easy83000_setup);

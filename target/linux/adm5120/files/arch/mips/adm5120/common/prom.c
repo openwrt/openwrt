@@ -15,8 +15,9 @@
 #include <linux/mm.h>
 #include <linux/io.h>
 
-#include <asm/bootinfo.h>
 #include <asm/addrspace.h>
+#include <asm/bootinfo.h>
+#include <asm/mips_machine.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
 #include <asm/mach-adm5120/adm5120_defs.h>
@@ -203,35 +204,35 @@ static void __init prom_detect_machtype(void)
 {
 	if (bootbase_present()) {
 		adm5120_prom_type = ADM5120_PROM_BOOTBASE;
-		mips_machtype = detect_machtype_bootbase();
+		adm5120_mach_type = detect_machtype_bootbase();
 		return;
 	}
 
 	if (cfe_present()) {
 		adm5120_prom_type = ADM5120_PROM_CFE;
-		mips_machtype = detect_machtype_cfe();
+		adm5120_mach_type = detect_machtype_cfe();
 		return;
 	}
 
 	if (myloader_present()) {
 		adm5120_prom_type = ADM5120_PROM_MYLOADER;
-		mips_machtype = detect_machtype_myloader();
+		adm5120_mach_type = detect_machtype_myloader();
 		return;
 	}
 
 	if (routerboot_present()) {
 		adm5120_prom_type = ADM5120_PROM_ROUTERBOOT;
-		mips_machtype = detect_machtype_routerboot();
+		adm5120_mach_type = detect_machtype_routerboot();
 		return;
 	}
 
 	if (generic_prom_present()) {
 		adm5120_prom_type = ADM5120_PROM_GENERIC;
-		mips_machtype = detect_machtype_generic();
+		adm5120_mach_type = detect_machtype_generic();
 		return;
 	}
 
-	mips_machtype = MACH_ADM5120_GENERIC;
+	adm5120_mach_type = MACH_ADM5120_GENERIC;
 }
 
 /* TODO: this is an ugly hack for RouterBOARDS */

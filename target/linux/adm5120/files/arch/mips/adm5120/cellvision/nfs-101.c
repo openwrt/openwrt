@@ -25,4 +25,4 @@ static void __init nfs101_setup(void)
 	adm5120_add_device_switch(5, nfs101_vlans);
 }
 
-ADM5120_BOARD(MACH_ADM5120_NFS101U, "Cellvision NFS-101U/101WU", nfs101_setup);
+MIPS_MACHINE(MACH_ADM5120_NFS101U, "Cellvision NFS-101U/101WU", nfs101_setup);
