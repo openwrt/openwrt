@@ -1,5 +1,3 @@
-diff --git a/arch/powerpc/platforms/40x/Kconfig b/arch/powerpc/platforms/40x/Kconfig
-index a9260e2..72ba3a7 100644
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
 @@ -14,6 +14,15 @@
@@ -45,8 +43,6 @@ index a9260e2..72ba3a7 100644
  config 405GPR
  	bool
  
-diff --git a/arch/powerpc/platforms/40x/Makefile b/arch/powerpc/platforms/40x/Makefile
-index 5533a5c..1d93273 100644
 --- a/arch/powerpc/platforms/40x/Makefile
 +++ b/arch/powerpc/platforms/40x/Makefile
 @@ -3,3 +3,4 @@ obj-$(CONFIG_MAKALU)				+= makalu.o
@@ -54,9 +50,6 @@ index 5533a5c..1d93273 100644
  obj-$(CONFIG_XILINX_VIRTEX_GENERIC_BOARD)	+= virtex.o
  obj-$(CONFIG_EP405)				+= ep405.o
 +obj-$(CONFIG_PPC40x_SIMPLE)		+= ppc40x_simple.o
-diff --git a/arch/powerpc/platforms/40x/ppc40x_simple.c b/arch/powerpc/platforms/40x/ppc40x_simple.c
-new file mode 100644
-index 0000000..4498a86
 --- /dev/null
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
 @@ -0,0 +1,80 @@
