@@ -553,15 +553,10 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 static void ag71xx_tx_packets(struct ag71xx *ag)
 {
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	unsigned int sent;
 
 	DBG("%s: processing TX ring\n", ag->dev->name);
-
-#ifdef AG71XX_NAPI_TX
-	pdata->ddr_flush();
-#endif
 
 	sent = 0;
 	while (ring->dirty != ring->curr) {
@@ -595,17 +590,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 {
 	struct net_device *dev = ag->dev;
 	struct ag71xx_ring *ring = &ag->rx_ring;
-#ifndef AG71XX_NAPI_TX
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-	unsigned long flags;
-#endif
 	int done = 0;
-
-#ifndef AG71XX_NAPI_TX
-	spin_lock_irqsave(&ag->lock, flags);
-	pdata->ddr_flush();
-	spin_unlock_irqrestore(&ag->lock, flags);
-#endif
 
 	DBG("%s: rx packets, limit=%d, curr=%u, dirty=%u\n",
 			dev->name, limit, ring->curr, ring->dirty);
@@ -661,18 +646,14 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 static int ag71xx_poll(struct napi_struct *napi, int limit)
 {
 	struct ag71xx *ag = container_of(napi, struct ag71xx, napi);
-#ifdef AG71XX_NAPI_TX
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-#endif
 	struct net_device *dev = ag->dev;
 	unsigned long flags;
 	u32 status;
 	int done;
 
-#ifdef AG71XX_NAPI_TX
 	pdata->ddr_flush();
 	ag71xx_tx_packets(ag);
-#endif
 
 	DBG("%s: processing RX ring\n", dev->name);
 	done = ag71xx_rx_packets(ag, limit);
@@ -736,11 +717,6 @@ static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
 		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_UR);
 		DBG("%s: TX underrun\n", dev->name);
 	}
-#endif
-
-#ifndef AG71XX_NAPI_TX
-	if (likely(status & AG71XX_INT_TX_PS))
-		ag71xx_tx_packets(ag);
 #endif
 
 	if (likely(status & AG71XX_INT_POLL)) {
