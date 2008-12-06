@@ -1,6 +1,5 @@
-diff -Nur a/arch/powerpc/boot/cuboot-magicboxv2.c b/arch/powerpc/boot/cuboot-magicboxv2.c
---- a/arch/powerpc/boot/cuboot-magicboxv2.c	1970-01-01 01:00:00.000000000 +0100
-+++ b/arch/powerpc/boot/cuboot-magicboxv2.c	2008-11-26 09:29:02.000000000 +0100
+--- /dev/null
++++ b/arch/powerpc/boot/cuboot-magicboxv2.c
 @@ -0,0 +1,40 @@
 +/*
 + * Old U-boot compatibility for Magicbox v2
@@ -42,9 +41,8 @@ diff -Nur a/arch/powerpc/boot/cuboot-magicboxv2.c b/arch/powerpc/boot/cuboot-mag
 +	fdt_init(_dtb_start);
 +	serial_console_init();
 +}
-diff -Nur a/arch/powerpc/boot/dts/magicboxv2.dts b/arch/powerpc/boot/dts/magicboxv2.dts
---- a/arch/powerpc/boot/dts/magicboxv2.dts	1970-01-01 01:00:00.000000000 +0100
-+++ b/arch/powerpc/boot/dts/magicboxv2.dts	2008-11-26 09:28:10.000000000 +0100
+--- /dev/null
++++ b/arch/powerpc/boot/dts/magicboxv2.dts
 @@ -0,0 +1,250 @@
 +/*
 + * Device Tree Source for Magicbox v2
@@ -296,10 +294,9 @@ diff -Nur a/arch/powerpc/boot/dts/magicboxv2.dts b/arch/powerpc/boot/dts/magicbo
 +		linux,stdout-path = "/plb/opb/serial@ef600300";
 +	};
 +};
-diff -Nur a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
---- a/arch/powerpc/boot/Makefile	2008-11-26 09:15:15.000000000 +0100
-+++ b/arch/powerpc/boot/Makefile	2008-11-26 09:17:01.000000000 +0100
-@@ -69,7 +69,7 @@
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -69,7 +69,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
@@ -308,7 +305,7 @@ diff -Nur a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -214,6 +214,7 @@
+@@ -214,6 +214,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_MAGICBOXV1)		+= cuImage.magicboxv1
@@ -316,10 +313,9 @@ diff -Nur a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
  
  # Board ports in arch/powerpc/platform/44x/Kconfig
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
-diff -Nur a/arch/powerpc/platforms/40x/Kconfig b/arch/powerpc/platforms/40x/Kconfig
---- a/arch/powerpc/platforms/40x/Kconfig	2008-11-26 09:15:15.000000000 +0100
-+++ b/arch/powerpc/platforms/40x/Kconfig	2008-11-26 09:16:08.000000000 +0100
-@@ -51,6 +51,16 @@
+--- a/arch/powerpc/platforms/40x/Kconfig
++++ b/arch/powerpc/platforms/40x/Kconfig
+@@ -51,6 +51,16 @@ config MAGICBOXV1
  	help
  	  This option enables support for the Magicbox v1 board.
  
@@ -336,10 +332,9 @@ diff -Nur a/arch/powerpc/platforms/40x/Kconfig b/arch/powerpc/platforms/40x/Kcon
  config MAKALU
  	bool "Makalu"
  	depends on 40x
-diff -Nur a/arch/powerpc/platforms/40x/ppc40x_simple.c b/arch/powerpc/platforms/40x/ppc40x_simple.c
---- a/arch/powerpc/platforms/40x/ppc40x_simple.c	2008-11-26 09:15:15.000000000 +0100
-+++ b/arch/powerpc/platforms/40x/ppc40x_simple.c	2008-11-26 09:15:46.000000000 +0100
-@@ -52,7 +52,8 @@
+--- a/arch/powerpc/platforms/40x/ppc40x_simple.c
++++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
+@@ -52,7 +52,8 @@ machine_device_initcall(ppc40x_simple, p
   */
  static char *board[] __initdata = {
  	"amcc,acadia",

@@ -1,8 +1,6 @@
-diff --git a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
-index 6403275..5f4a59c 100644
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -68,7 +68,8 @@ src-plat := of.c cuboot-52xx.c cuboot-824x.c cuboot-83xx.c cuboot-85xx.c holly.c
+@@ -68,7 +68,8 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		fixed-head.S ep88xc.c ep405.c cuboot-c2k.c \
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
@@ -12,7 +10,7 @@ index 6403275..5f4a59c 100644
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -211,6 +212,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImage
+@@ -211,6 +212,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImag
  # Board ports in arch/powerpc/platform/40x/Kconfig
  image-$(CONFIG_EP405)			+= dtbImage.ep405
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
@@ -20,9 +18,6 @@ index 6403275..5f4a59c 100644
  
  # Board ports in arch/powerpc/platform/44x/Kconfig
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
-diff --git a/arch/powerpc/boot/cuboot-acadia.c b/arch/powerpc/boot/cuboot-acadia.c
-new file mode 100644
-index 0000000..0634aba
 --- /dev/null
 +++ b/arch/powerpc/boot/cuboot-acadia.c
 @@ -0,0 +1,174 @@
