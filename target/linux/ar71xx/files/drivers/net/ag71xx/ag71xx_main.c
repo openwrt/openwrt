@@ -687,9 +687,16 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
 	}
 
-	if ((done < limit) && ((status & RX_STATUS_PR) == 0)) {
-		DBG("%s: disable polling mode, done=%d, status=%x\n",
-			dev->name, done, status);
+	if (done < limit) {
+		if (status & RX_STATUS_PR)
+			goto more;
+
+		status = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
+		if (status & TX_STATUS_PS)
+			goto more;
+
+		DBG("%s: disable polling mode, done=%d, limit=%d\n",
+			dev->name, done, limit);
 
 		netif_rx_complete(dev, napi);
 
@@ -697,12 +704,13 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		spin_lock_irqsave(&ag->lock, flags);
 		ag71xx_int_enable(ag, AG71XX_INT_POLL);
 		spin_unlock_irqrestore(&ag->lock, flags);
-		return 0;
+		return done;
 	}
 
-	DBG("%s: stay in polling mode, done=%d, status=%x\n",
-			dev->name, done, status);
-	return 1;
+ more:
+	DBG("%s: stay in polling mode, done=%d, limit=%d\n",
+			dev->name, done, limit);
+	return done;
 }
 
 static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
