@@ -551,6 +551,24 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	return -EOPNOTSUPP;
 }
 
+static void ag71xx_tx_timeout(struct net_device *dev)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+	if (netif_msg_tx_err(ag))
+		printk(KERN_DEBUG "%s: tx timeout\n", ag->dev->name);
+
+	schedule_work(&ag->restart_work);
+}
+
+static void ag71xx_restart_work_func(struct work_struct *work)
+{
+	struct ag71xx *ag = container_of(work, struct ag71xx, restart_work);
+
+	ag71xx_stop(ag->dev);
+	ag71xx_open(ag->dev);
+}
+
 static void ag71xx_tx_packets(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
@@ -823,6 +841,9 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	dev->set_multicast_list = ag71xx_set_multicast_list;
 	dev->do_ioctl = ag71xx_do_ioctl;
 	dev->ethtool_ops = &ag71xx_ethtool_ops;
+
+	dev->tx_timeout = ag71xx_tx_timeout;
+	INIT_WORK(&ag->restart_work, ag71xx_restart_work_func);
 
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
 
