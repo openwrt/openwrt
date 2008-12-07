@@ -38,7 +38,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.11"
+#define AG71XX_DRV_VERSION	"0.5.12"
 
 #define AG71XX_NAPI_WEIGHT	64
 
