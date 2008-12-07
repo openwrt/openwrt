@@ -235,7 +235,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_PROXY
 	bool "Support for reverse proxy"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows you to define URLs that will be forwarded
