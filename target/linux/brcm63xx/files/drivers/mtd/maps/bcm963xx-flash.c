@@ -156,13 +156,13 @@ static int bcm963xx_probe(struct platform_device *pdev)
 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0); 
 	bcm963xx_map.phys = r->start;
 	bcm963xx_map.size = (r->end - r->start);
-	bcm963xx_map.virt = ioremap(r->start, r->end - r->start);
+	bcm963xx_map.virt = ioremap(r->start, r->end - r->start + 1);
 
 	if (!bcm963xx_map.virt) {
 		printk(KERN_ERR PFX "Failed to ioremap\n");
 		return -EIO;
 	}
-	printk(KERN_INFO PFX "0x%08x at 0x%08x\n", (r->end - r->start) + 1, r->start);
+	printk(KERN_INFO PFX "0x%08x at 0x%08x\n", bcm963xx_map.size, bcm963xx_map.phys);
 
 	simple_map_init(&bcm963xx_map);
 
