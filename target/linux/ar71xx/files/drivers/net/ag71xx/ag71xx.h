@@ -28,6 +28,7 @@
 #include <linux/phy.h>
 #include <linux/skbuff.h>
 #include <linux/dma-mapping.h>
+#include <linux/workqueue.h>
 
 #include <linux/bitops.h>
 
@@ -37,7 +38,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.10"
+#define AG71XX_DRV_VERSION	"0.5.11"
 
 #define AG71XX_NAPI_WEIGHT	64
 
@@ -124,6 +125,8 @@ struct ag71xx {
 	unsigned int		link;
 	unsigned int		speed;
 	int 			duplex;
+
+	struct work_struct	restart_work;
 };
 
 extern struct ethtool_ops ag71xx_ethtool_ops;
