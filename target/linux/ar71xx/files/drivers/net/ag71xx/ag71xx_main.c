@@ -231,11 +231,8 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 			struct sk_buff *skb;
 
 			skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE);
-			if (skb == NULL) {
-				printk(KERN_ERR "%s: no memory for skb\n",
-					ag->dev->name);
+			if (skb == NULL)
 				break;
-			}
 
 			dma_map_single(NULL, skb->data, AG71XX_RX_PKT_SIZE,
 					DMA_FROM_DEVICE);
@@ -443,6 +440,7 @@ static int ag71xx_stop(struct net_device *dev)
 	ag71xx_phy_stop(ag);
 
 	napi_disable(&ag->napi);
+	del_timer_sync(&ag->oom_timer);
 
 	spin_unlock_irqrestore(&ag->lock, flags);
 
@@ -549,6 +547,14 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	}
 
 	return -EOPNOTSUPP;
+}
+
+static void ag71xx_oom_timer_handler(unsigned long data)
+{
+	struct net_device *dev = (struct net_device *) data;
+	struct ag71xx *ag = netdev_priv(dev);
+
+	netif_rx_schedule(dev, &ag->napi);
 }
 
 static void ag71xx_tx_timeout(struct net_device *dev)
@@ -664,6 +670,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	struct ag71xx *ag = container_of(napi, struct ag71xx, napi);
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct net_device *dev = ag->dev;
+	struct ag71xx_ring *rx_ring;
 	unsigned long flags;
 	u32 status;
 	int done;
@@ -674,7 +681,9 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	DBG("%s: processing RX ring\n", dev->name);
 	done = ag71xx_rx_packets(ag, limit);
 
-	/* TODO: add OOM handler */
+	rx_ring = &ag->rx_ring;
+	if (rx_ring->buf[rx_ring->dirty % AG71XX_RX_RING_SIZE].skb == NULL)
+		goto oom;
 
 	status = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
 	if (unlikely(status & RX_STATUS_OF)) {
@@ -702,13 +711,21 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		spin_lock_irqsave(&ag->lock, flags);
 		ag71xx_int_enable(ag, AG71XX_INT_POLL);
 		spin_unlock_irqrestore(&ag->lock, flags);
-		return done;
+		return 0;
 	}
 
  more:
 	DBG("%s: stay in polling mode, done=%d, limit=%d\n",
 			dev->name, done, limit);
-	return done;
+	return 1;
+
+ oom:
+	if (netif_msg_rx_err(ag))
+		printk(KERN_DEBUG "%s: out of memory\n", dev->name);
+
+	mod_timer(&ag->oom_timer, jiffies + AG71XX_OOM_REFILL);
+	netif_rx_complete(dev, napi);
+	return 0;
 }
 
 static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
@@ -841,6 +858,10 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 
 	dev->tx_timeout = ag71xx_tx_timeout;
 	INIT_WORK(&ag->restart_work, ag71xx_restart_work_func);
+
+	init_timer(&ag->oom_timer);
+	ag->oom_timer.data = (unsigned long) dev;
+	ag->oom_timer.function = ag71xx_oom_timer_handler;
 
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
 
