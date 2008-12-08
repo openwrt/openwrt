@@ -38,9 +38,10 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.12"
+#define AG71XX_DRV_VERSION	"0.5.13"
 
 #define AG71XX_NAPI_WEIGHT	64
+#define AG71XX_OOM_REFILL	(1 + HZ/10)
 
 #define AG71XX_INT_ERR	(AG71XX_INT_RX_BE | AG71XX_INT_TX_BE)
 #define AG71XX_INT_TX	(AG71XX_INT_TX_PS)
@@ -127,6 +128,7 @@ struct ag71xx {
 	int 			duplex;
 
 	struct work_struct	restart_work;
+	struct timer_list	oom_timer;
 };
 
 extern struct ethtool_ops ag71xx_ethtool_ops;
