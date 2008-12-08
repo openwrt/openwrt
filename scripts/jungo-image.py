@@ -3,7 +3,7 @@
 # Copyright 2008 (C) Jose Vasconcellos <jvasco@verizon.net>
 #
 # A script that can communicate with jungo-based routers
-# (such as MI424-WR, USR8200 and WRV54G to backup the installed
+# (such as MI424-WR, USR8200 and WRV54G) to backup the installed
 # firmware and replace the boot loader.
 #
 # Tested with Python 2.5 on Linux and Windows
@@ -15,10 +15,12 @@ Valid options:
 \t-f | --file: use <filename> to store dump contents
 \t-u | --user: provide username (default admin)
 \t-p | --pass: provide password (default password1)
-\t-P | --proto: set transfer protocol (default tftp)
+\t-P | --proto: set transfer protocol (default http)
+\t     --port: set port for http (default 8080)
 \t-s | --server: IP address of tftp server
 \t-w | --write: initiate loading of redboot (default no modification to flash)
-\t-v | --verbose: display additional information
+\t-q | --quiet: don't display unnecessary information
+\t-v | --verbose: display progress information
 \t-V | --version: display version information
 """
 
@@ -43,11 +45,13 @@ password = "password1"
 proto = "http"
 imagefile = "redboot.bin"
 dumpfile = ""
-verbose = 0
+verbose = 1
 no_dump = 0
 dumplen = 0x10000
 write_image = 0
-flashsize=8*1024*1024
+flashsize=4*1024*1024
+#device="br0"
+device="ixp0"
 
 ####################
 
@@ -58,6 +62,7 @@ def start_server():
 ####################
 
 def get_flash_size():
+    global flashsize
     tn.write("cat /proc/mtd\n")
     # wait for prompt
     buf = tn.read_until("Returned 0", 3)
@@ -65,6 +70,10 @@ def get_flash_size():
         i = buf.find('mtd0:')
         if i > 0:
             flashsize = int(buf[i+6:].split()[0],16)
+        else:
+            print "Can't find mtd0!"
+    else:
+        print "Can't access /proc/mtd!"
 
 def image_dump(tn, dumpfile):
     if not dumpfile:
@@ -74,25 +83,30 @@ def image_dump(tn, dumpfile):
         if i < 0:
 	    platform="jungo"
 	else:
-	    platform=buf[i+9:].split()[0]
+	    line=buf[i+9:]
+	    i=line.find('\n')
+	    platform=line[:i].split()[-1]
 
-        tn.write("ifconfig br0\n");
+        tn.write("ifconfig -v %s\n" % device);
         buf = tn.read_until("Returned 0")
 
-        i = buf.find("MAC=")
-        if i < 0:
-            print "No MAC address found! (use -f option)"
-            sys.exit(1)
-        dumpfile = "%s-%s.bin" % (platform, buf[i+4:i+21].replace(':',''))
+	i = buf.find("mac = 0")
+	if i > 0:
+	    i += 6
+	else:
+	    print "No MAC address found! (use -f option)"
+	    sys.exit(1)
+        dumpfile = "%s-%s.bin" % (platform, buf[i:i+17].replace(':',''))
     else:
         tn.write("\n")
 
-    print "Dumping flash contents (%dMB) to %s\n" % (flashsize/1048576, dumpfile)
+    print "Dumping flash contents (%dMB) to %s" % (flashsize/1048576, dumpfile)
     f = open(dumpfile, "wb")
 
-    for addr in range(flashsize/dumplen):
+    t=flashsize/dumplen
+    for addr in range(t):
 	if verbose:
-	    sys.stdout.write('.')
+	    sys.stdout.write('\r%d%%'%(100*addr/t))
 	    sys.stdout.flush()
 
         tn.write("flash_dump -r 0x%x -l %d -4\n" % (addr*dumplen, dumplen))
@@ -114,6 +128,8 @@ def image_dump(tn, dumpfile):
 	tn.read_until(">",1)
 
     f.close()
+    if verbose:
+	print ""
 
 def telnet_option(sock,cmd,option):
     #print "Option: %d %d" % (ord(cmd), ord(option))
@@ -133,8 +149,9 @@ def usage():
 ####################
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hdf:u:p:P:s:vVw", \
-	["help", "dump", "file=", "user=", "pass=", "proto=","server=", "verbose", "version", "write"])
+    opts, args = getopt.getopt(sys.argv[1:], "hdf:u:qp:P:s:vVw", \
+	["help", "dump", "file=", "user=", "pass=", "proto=", "proto=",
+	 "quiet=", "server=", "verbose", "version", "write"])
 except getopt.GetoptError:
     # print help information and exit:
     usage()
@@ -145,7 +162,7 @@ for o, a in opts:
 	usage()
 	sys.exit(1)
     if o in ("-V", "--version"):
-	print "%s: 0.6" % sys.argv[0]
+	print "%s: 0.7" % sys.argv[0]
 	sys.exit(1)
     if o in ("-d", "--no-dump"):
 	no_dump = 1
@@ -159,8 +176,12 @@ for o, a in opts:
 	password = a
     if o in ("-P", "--proto"):
 	proto = a
+    if o in ("--port"):
+	PORT = a
     if o in ("-w", "--write"):
 	write_image = 1
+    if o in ("-q", "--quiet"):
+	verbose = 0
     if o in ("-v", "--verbose"):
 	verbose = 1
 
@@ -201,21 +222,35 @@ get_flash_size()
 if not no_dump:
     image_dump(tn, dumpfile)
 
-# write image file image
-if not server:
-    server = tn.get_socket().getsockname()[0]
-if proto == "http":
-    cmd = "load -u %s://%s:%d/%s -r 0\n" % (proto, server, PORT, imagefile)
-else:
-    cmd = "load -u %s://%s/%s -r 0\n" % (proto, server, imagefile)
-print cmd
 if write_image:
+    if not os.access(imagefile, os.R_OK):
+	print "File access error: %s" % (imagefile)
+	sys.exit(3)
+
+    splitpath = os.path.split(imagefile)
+    # make sure we're in the directory where the image is located
+    if splitpath[0]:
+	os.chdir(splitpath[0])
+
+    # write image file image
+    if not server:
+        server = tn.get_socket().getsockname()[0]
+    if proto == "http":
+        cmd = "load -u %s://%s:%d/%s -r 0\n" % (proto, server, PORT, splitpath[1])
+    else:
+        cmd = "load -u %s://%s/%s -r 0\n" % (proto, server, splitpath[1])
+
     if proto == "http":
         start_server()
 
+    if verbose:
+	print "Unlocking flash..."
     tn.write("unlock 0 0x%x\n" % flashsize)
     buf = tn.read_until("Returned 0")
 
+    if verbose:
+	print "Writing new image..."
+    print cmd,
     tn.write(cmd)
     buf = tn.read_until("Returned 0")
 
