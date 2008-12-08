@@ -112,6 +112,8 @@ static struct board_info __initdata board_96348gw = {
 		.force_speed_100	= 1,
 		.force_duplex_full	= 1,
 	},
+
+	.has_ohci0 = 1,
 };
 #endif
 
