@@ -1,0 +1,42 @@
+--- a/drivers/net/arm/ixp4xx_eth.c
++++ b/drivers/net/arm/ixp4xx_eth.c
+@@ -322,8 +322,12 @@ static void phy_reset(struct net_device 
+ 	struct port *port = netdev_priv(dev);
+ 	int phy_id = port->mii[idx].phy_id;
+ 	int cycles = 0;
++	u16 bmcr;
+ 
+-	mdio_write(dev, phy_id, MII_BMCR, port->mii_bmcr[idx] | BMCR_RESET);
++	/* reset the PHY */
++	bmcr = mdio_read(dev, phy_id, MII_BMCR);
++	bmcr |= BMCR_ANENABLE;
++	mdio_write(dev, phy_id, MII_BMCR, bmcr | BMCR_RESET);
+ 
+ 	while (cycles < MAX_MII_RESET_RETRIES) {
+ 		if (!(mdio_read(dev, phy_id, MII_BMCR) & BMCR_RESET)) {
+@@ -331,13 +335,23 @@ static void phy_reset(struct net_device 
+ 			printk(KERN_DEBUG "%s: phy_reset() took %i cycles\n",
+ 			       dev->name, cycles);
+ #endif
+-			return;
++			break;
+ 		}
+ 		udelay(1);
+ 		cycles++;
+ 	}
+ 
+-	printk(KERN_ERR "%s: MII reset failed on PHY%2d\n", dev->name, phy_id);
++	if (cycles == MAX_MII_RESET_RETRIES) {
++		printk(KERN_ERR "%s: MII reset failed on PHY%2d\n", dev->name,
++								phy_id);
++		return;
++	}
++
++	/* restart auto negotiation */
++	bmcr = mdio_read(dev, phy_id, MII_BMCR);
++	bmcr |= (BMCR_ANENABLE | BMCR_ANRESTART);
++	mdio_write(dev, phy_id, MII_BMCR, bmcr);
++
+ }
+ 
+ static void eth_set_duplex(struct port *port, int full_duplex)
