@@ -1,0 +1,318 @@
+--- a/net/netfilter/Kconfig
++++ b/net/netfilter/Kconfig
+@@ -469,6 +469,23 @@ config NETFILTER_XT_TARGET_SECMARK
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config NETFILTER_XT_TARGET_TARPIT
++	tristate '"TARPIT" target support'
++	depends on NETFILTER_XTABLES
++	---help---
++	  Adds a TARPIT target to iptables, which captures and holds
++	  incoming TCP connections using no local per-connection resources.
++	  Connections are accepted, but immediately switched to the persist
++	  state (0 byte window), in which the remote side stops sending data
++	  and asks to continue every 60-240 seconds. Attempts to close the
++	  connection are ignored, forcing the remote side to time out the
++	  connection in 12-24 minutes.
++
++	  This offers similar functionality to LaBrea
++	  <http://www.hackbusters.net/LaBrea/>, but does not require dedicated
++	  hardware or IPs. Any TCP port that you would normally DROP or REJECT
++	  can instead become a tarpit.
++
+ config NETFILTER_XT_TARGET_TCPMSS
+ 	tristate '"TCPMSS" target support'
+ 	depends on (IPV6 || IPV6=n)
+--- a/net/netfilter/Makefile
++++ b/net/netfilter/Makefile
+@@ -51,6 +51,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_NFQUEUE
+ obj-$(CONFIG_NETFILTER_XT_TARGET_NOTRACK) += xt_NOTRACK.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_RATEEST) += xt_RATEEST.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_SECMARK) += xt_SECMARK.o
++obj-$(CONFIG_NETFILTER_XT_TARGET_TARPIT) += xt_TARPIT.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_TPROXY) += xt_TPROXY.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_TCPMSS) += xt_TCPMSS.o
+ obj-$(CONFIG_NETFILTER_XT_TARGET_TCPOPTSTRIP) += xt_TCPOPTSTRIP.o
+--- /dev/null
++++ b/net/netfilter/xt_TARPIT.c
+@@ -0,0 +1,279 @@
++/*
++ * Kernel module to capture and hold incoming TCP connections using
++ * no local per-connection resources.
++ *
++ * Based on ipt_REJECT.c and offering functionality similar to
++ * LaBrea <http://www.hackbusters.net/LaBrea/>.
++ *
++ * Copyright (c) 2002 Aaron Hopkins <tools@die.net>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ * Goal:
++ * - Allow incoming TCP connections to be established.
++ * - Passing data should result in the connection being switched to the
++ *   persist state (0 byte window), in which the remote side stops sending
++ *   data and asks to continue every 60 seconds.
++ * - Attempts to shut down the connection should be ignored completely, so
++ *   the remote side ends up having to time it out.
++ *
++ * This means:
++ * - Reply to TCP SYN,!ACK,!RST,!FIN with SYN-ACK, window 5 bytes
++ * - Reply to TCP SYN,ACK,!RST,!FIN with RST to prevent spoofing
++ * - Reply to TCP !SYN,!RST,!FIN with ACK, window 0 bytes, rate-limited
++ */
++
++#include <linux/version.h>
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <net/ip.h>
++#include <net/tcp.h>
++#include <net/icmp.h>
++struct in_device;
++#include <net/route.h>
++#include <linux/random.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++/* Stolen from ip_finish_output2 */
++static int ip_direct_send(struct sk_buff *skb)
++{
++	struct dst_entry *dst = skb->dst;
++
++        if (dst->hh != NULL)
++		return neigh_hh_output(dst->hh, skb);
++	else if (dst->neighbour != NULL)
++		return dst->neighbour->output(skb);
++
++	if (net_ratelimit())
++		printk(KERN_DEBUG "TARPIT ip_direct_send: no header cache and no neighbor!\n");
++
++	kfree_skb(skb);
++	return -EINVAL;
++}
++
++
++/* Send reply */
++static void tarpit_tcp(const struct sk_buff *oskb, struct rtable *ort,
++                       unsigned int local)
++{
++	struct sk_buff *nskb;
++	struct rtable *nrt;
++	struct tcphdr *otcph, *ntcph;
++	struct flowi fl = {};
++	unsigned int otcplen;
++	u_int16_t tmp;
++
++	const struct iphdr *oiph = ip_hdr(oskb);
++	struct iphdr *niph;
++
++	/* A truncated TCP header is not going to be useful */
++	if (oskb->len < ip_hdrlen(oskb) + sizeof(struct tcphdr))
++		return;
++
++	otcph   = (void *)oiph + ip_hdrlen(oskb);
++	otcplen = oskb->len - ip_hdrlen(oskb);
++
++	/* No replies for RST or FIN */
++	if (otcph->rst || otcph->fin)
++		return;
++
++	/* No reply to !SYN,!ACK.  Rate-limit replies to !SYN,ACKs */
++	if (!otcph->syn && (!otcph->ack || !xrlim_allow(&ort->u.dst, 1*HZ)))
++		return;
++
++	/* Check checksum. */
++	if (tcp_v4_check(otcplen, oiph->saddr, oiph->daddr,
++	    csum_partial((char *)otcph, otcplen, 0)) != 0)
++		return;
++
++	/*
++	 * Copy skb (even if skb is about to be dropped, we cannot just
++	 * clone it because there may be other things, such as tcpdump,
++	 * interested in it)
++	 */
++	nskb = skb_copy(oskb, GFP_ATOMIC);
++	if (nskb == NULL)
++		return;
++
++	niph = ip_hdr(nskb);
++
++	/* This packet will not be the same as the other: clear nf fields */
++	nf_conntrack_put(nskb->nfct);
++	nskb->nfct = NULL;
++#ifdef CONFIG_NETFILTER_DEBUG
++	nskb->nf_debug = 0;
++#endif
++
++	ntcph = (void *)niph + ip_hdrlen(nskb);
++
++	/* Truncate to length (no data) */
++	ntcph->doff = sizeof(struct tcphdr)/4;
++	skb_trim(nskb, ip_hdrlen(nskb) + sizeof(struct tcphdr));
++	niph->tot_len = htons(nskb->len);
++
++	/* Swap source and dest */
++	niph->daddr = xchg(&niph->saddr, niph->daddr);
++	tmp = ntcph->source;
++	ntcph->source = ntcph->dest;
++	ntcph->dest = tmp;
++
++	/* Use supplied sequence number or make a new one */
++	ntcph->seq = otcph->ack ? otcph->ack_seq
++		: htonl(secure_tcp_sequence_number(niph->saddr,
++						   niph->daddr,
++						   ntcph->source,
++						   ntcph->dest));
++
++	/* Our SYN-ACKs must have a >0 window */
++	ntcph->window = (otcph->syn && !otcph->ack) ? htons(5) : 0;
++
++	ntcph->urg_ptr = 0;
++
++	/* Reset flags */
++	((u_int8_t *)ntcph)[13] = 0;
++
++	if (otcph->syn && otcph->ack) {
++		ntcph->rst = 1;
++		ntcph->ack_seq = 0;
++	} else {
++		ntcph->syn = otcph->syn;
++		ntcph->ack = 1;
++		ntcph->ack_seq = htonl(ntohl(otcph->seq) + otcph->syn);
++	}
++
++	/* Adjust TCP checksum */
++	ntcph->check = 0;
++	ntcph->check = tcp_v4_check(sizeof(struct tcphdr),
++				   niph->saddr,
++				   niph->daddr,
++				   csum_partial((char *)ntcph,
++						sizeof(struct tcphdr), 0));
++
++	fl.nl_u.ip4_u.daddr = niph->daddr;
++	fl.nl_u.ip4_u.saddr = local ? niph->saddr : 0;
++	fl.nl_u.ip4_u.tos = RT_TOS(niph->tos) | RTO_CONN;
++	fl.oif = 0;
++
++	if (ip_route_output_key(&init_net, &nrt, &fl))
++		goto free_nskb;
++
++	dst_release(nskb->dst);
++	nskb->dst = &nrt->u.dst;
++
++	/* Adjust IP TTL */
++	niph->ttl = dst_metric(nskb->dst, RTAX_HOPLIMIT);
++
++	/* Set DF, id = 0 */
++	niph->frag_off = htons(IP_DF);
++	niph->id = 0;
++
++	/* Adjust IP checksum */
++	niph->check = 0;
++	niph->check = ip_fast_csum((unsigned char *)niph, niph->ihl);
++
++	/* "Never happens" */
++	if (nskb->len > dst_mtu(nskb->dst))
++		goto free_nskb;
++
++	ip_direct_send(nskb);
++	return;
++
++ free_nskb:
++	kfree_skb(nskb);
++}
++
++static unsigned int xt_tarpit_target(struct sk_buff *skb,
++                                     const struct net_device *in,
++                                     const struct net_device *out,
++                                     unsigned int hooknum,
++                                     const struct xt_target *target,
++                                     const void *targinfo)
++{
++	const struct iphdr *iph   = ip_hdr(skb);
++	struct rtable *rt         = (void *)skb->dst;
++
++	/* Do we have an input route cache entry? */
++	if (rt == NULL)
++		return NF_DROP;
++
++	/* No replies to physical multicast/broadcast */
++	if (skb->pkt_type != PACKET_HOST && skb->pkt_type != PACKET_OTHERHOST)
++		return NF_DROP;
++
++	/* Now check at the protocol level */
++	if (rt->rt_flags & (RTCF_BROADCAST | RTCF_MULTICAST))
++		return NF_DROP;
++
++	/*
++	 * Our naive response construction does not deal with IP
++	 * options, and probably should not try.
++	 */
++	if (iph->ihl * 4 != sizeof(struct iphdr))
++		return NF_DROP;
++
++	/* We are not interested in fragments */
++	if (iph->frag_off & htons(IP_OFFSET))
++		return NF_DROP;
++
++	tarpit_tcp(skb, rt, hooknum == NF_INET_LOCAL_IN);
++	return NF_DROP;
++}
++
++static bool xt_tarpit_check(const char *tablename, const void *entry,
++                            const struct xt_target *target, void *targinfo,
++                            unsigned int hook_mask)
++{
++	bool invalid;
++
++	if (strcmp(tablename, "raw") == 0 && hook_mask == NF_INET_PRE_ROUTING)
++		return true;
++	if (strcmp(tablename, "filter") != 0)
++		return false;
++	invalid = hook_mask & ~((1 << NF_INET_LOCAL_IN) | (1 << NF_INET_FORWARD));
++	return !invalid;
++}
++
++static struct xt_target xt_tarpit_reg = {
++	.name       = "TARPIT",
++	.family     = AF_INET,
++	.proto      = IPPROTO_TCP,
++	.target     = xt_tarpit_target,
++	.checkentry = xt_tarpit_check,
++	.me         = THIS_MODULE,
++};
++
++static int __init xt_tarpit_init(void)
++{
++	return xt_register_target(&xt_tarpit_reg);
++}
++
++static void __exit xt_tarpit_exit(void)
++{
++	xt_unregister_target(&xt_tarpit_reg);
++}
++
++module_init(xt_tarpit_init);
++module_exit(xt_tarpit_exit);
++MODULE_DESCRIPTION("netfilter xt_TARPIT target module");
++MODULE_AUTHOR("Jan Engelhardt <jengelh@gmx.de>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("ipt_TARPIT");

@@ -1,0 +1,92 @@
+--- a/fs/yaffs2/yaffs_fs.c
++++ b/fs/yaffs2/yaffs_fs.c
+@@ -181,7 +181,13 @@ static int yaffs_statfs(struct super_blo
+ #else
+ static int yaffs_statfs(struct super_block *sb, struct statfs *buf);
+ #endif
++
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25))
++static struct inode *yaffs_iget(struct super_block *sb, unsigned long ino);
++#else
+ static void yaffs_read_inode(struct inode *inode);
++#endif
++
+ 
+ static void yaffs_put_inode(struct inode *inode);
+ static void yaffs_delete_inode(struct inode *);
+@@ -284,7 +290,9 @@ static struct file_operations yaffs_dir_
+ 
+ static struct super_operations yaffs_super_ops = {
+ 	.statfs = yaffs_statfs,
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25))
+ 	.read_inode = yaffs_read_inode,
++#endif
+ 	.put_inode = yaffs_put_inode,
+ 	.put_super = yaffs_put_super,
+ 	.delete_inode = yaffs_delete_inode,
+@@ -844,11 +852,17 @@ struct inode *yaffs_get_inode(struct sup
+ 	T(YAFFS_TRACE_OS,
+ 	  (KERN_DEBUG "yaffs_get_inode for object %d\n", obj->objectId));
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25))
++	inode = yaffs_iget(sb, obj->objectId);
++	if (IS_ERR(inode))
++		return NULL;
++#else
+ 	inode = iget(sb, obj->objectId);
+ 
+ 	/* NB Side effect: iget calls back to yaffs_read_inode(). */
+ 	/* iget also increments the inode's i_count */
+ 	/* NB You can't be holding grossLock or deadlock will happen! */
++#endif
+ 
+ 	return inode;
+ }
+@@ -1427,6 +1441,39 @@ static int yaffs_sync_fs(struct super_bl
+ }
+ 
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25))
++static struct inode *yaffs_iget(struct super_block *sb, unsigned long ino)
++{
++	yaffs_Object *obj;
++	yaffs_Device *dev = yaffs_SuperToDevice(sb);
++	struct inode *inode;
++
++	T(YAFFS_TRACE_OS,
++	  (KERN_DEBUG "yaffs_iget for %lu\n", ino));
++
++	inode = iget_locked(sb, ino);
++	if (!inode)
++		return ERR_PTR(-ENOMEM);
++	if (!(inode->i_state & I_NEW))
++		return inode;
++
++	/* NB This is called as a side effect of other functions, but
++	 * we had to release the lock to prevent deadlocks, so
++	 * need to lock again.
++	 */
++
++	yaffs_GrossLock(dev);
++
++	obj = yaffs_FindObjectByNumber(dev, inode->i_ino);
++
++	yaffs_FillInodeFromObject(inode, obj);
++
++	yaffs_GrossUnlock(dev);
++
++	unlock_new_inode(inode);
++	return inode;
++}
++#else
+ static void yaffs_read_inode(struct inode *inode)
+ {
+ 	/* NB This is called as a side effect of other functions, but
+@@ -1448,6 +1495,7 @@ static void yaffs_read_inode(struct inod
+ 
+ 	yaffs_GrossUnlock(dev);
+ }
++#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)) */
+ 
+ static LIST_HEAD(yaffs_dev_list);
+ 

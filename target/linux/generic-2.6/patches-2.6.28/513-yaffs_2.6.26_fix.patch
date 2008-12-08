@@ -1,0 +1,69 @@
+--- a/fs/yaffs2/yaffs_fs.c
++++ b/fs/yaffs2/yaffs_fs.c
+@@ -76,6 +76,12 @@ extern const char *yaffs_guts_c_version;
+ 
+ #endif
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
++#define YPROC_ROOT	&proc_root
++#else
++#define YPROC_ROOT	NULL
++#endif
++
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+ #define WRITE_SIZE_STR "writesize"
+ #define WRITE_SIZE(mtd) (mtd)->writesize
+@@ -189,7 +195,9 @@ static void yaffs_read_inode(struct inod
+ #endif
+ 
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
+ static void yaffs_put_inode(struct inode *inode);
++#endif
+ static void yaffs_delete_inode(struct inode *);
+ static void yaffs_clear_inode(struct inode *);
+ 
+@@ -293,7 +301,9 @@ static struct super_operations yaffs_sup
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25))
+ 	.read_inode = yaffs_read_inode,
+ #endif
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
+ 	.put_inode = yaffs_put_inode,
++#endif
+ 	.put_super = yaffs_put_super,
+ 	.delete_inode = yaffs_delete_inode,
+ 	.clear_inode = yaffs_clear_inode,
+@@ -437,6 +447,7 @@ static struct dentry *yaffs_lookup(struc
+ 
+ }
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
+ /* For now put inode is just for debugging
+  * Put inode is called when the inode **structure** is put.
+  */
+@@ -447,6 +458,7 @@ static void yaffs_put_inode(struct inode
+ 	   atomic_read(&inode->i_count)));
+ 
+ }
++#endif
+ 
+ /* clear is called to tell the fs to release any per-inode data it holds */
+ static void yaffs_clear_inode(struct inode *inode)
+@@ -2279,7 +2291,7 @@ static int __init init_yaffs_fs(void)
+ 	/* Install the proc_fs entry */
+ 	my_proc_entry = create_proc_entry("yaffs",
+ 					       S_IRUGO | S_IFREG,
+-					       &proc_root);
++					       YPROC_ROOT);
+ 
+ 	if (my_proc_entry) {
+ 		my_proc_entry->write_proc = yaffs_proc_write;
+@@ -2325,7 +2337,7 @@ static void __exit exit_yaffs_fs(void)
+ 	T(YAFFS_TRACE_ALWAYS, ("yaffs " __DATE__ " " __TIME__
+ 			       " removing. \n"));
+ 
+-	remove_proc_entry("yaffs", &proc_root);
++	remove_proc_entry("yaffs", YPROC_ROOT);
+ 
+ 	fsinst = fs_to_install;
+ 
