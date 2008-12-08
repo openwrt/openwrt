@@ -649,8 +649,6 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		done++;
 
 		ring->curr++;
-		if ((ring->curr - ring->dirty) > (AG71XX_RX_RING_SIZE / 4))
-			ag71xx_ring_rx_refill(ag);
 	}
 
 	ag71xx_ring_rx_refill(ag);
