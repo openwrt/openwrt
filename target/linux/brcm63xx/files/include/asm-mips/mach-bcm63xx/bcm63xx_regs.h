@@ -724,5 +724,69 @@
 #define DMIPSPLLCFG_N2_SHIFT		29
 #define DMIPSPLLCFG_N2_MASK		(0x7 << DMIPSPLLCFG_N2_SHIFT)
 
-#endif /* BCM63XX_REGS_H_ */
+/*************************************************************************
+ * _REG relative to RSET_SPI
+ *************************************************************************/
 
+#define SPI_MSG_CTL			0x00
+#define SPI_FD_RW			0
+#define SPI_HD_W			1
+#define SPI_HD_R			2
+#define SPI_MSG_TYPE_SHIFT		14
+#define SPI_BYTE_CNT_SHIFT		0
+
+#define SPI_MSG_DATA			0x02
+#define SPI_MSG_DATA_SIZE		0x21e
+
+#define SPI_RX_FIFO			0x400
+#define SPI_RX_FIFO_SIZE		0x220
+
+#define SPI_CMD				0x700
+#define SPI_CMD_NOOP			0
+#define SPI_CMD_SOFT_RESET		1
+#define SPI_CMD_HARD_RESET		2
+#define SPI_CMD_START_IMMEDIATE		3
+#define SPI_CMD_COMMAND_SHIFT		0
+#define SPI_CMD_COMMAND_MASK		0x000f
+#define SPI_CMD_DEVICE_ID_SHIFT		4
+#define SPI_CMD_PREPEND_BYTE_CNT_SHIFT	8
+#define SPI_CMD_ONE_BYTE_SHIFT		11
+#define SPI_CMD_ONE_WIRE_SHIFT		12
+#define SPI_DEV_ID_0			0
+#define SPI_DEV_ID_1			1
+#define SPI_DEV_ID_2			2
+#define SPI_DEV_ID_3			3
+
+#define SPI_INT_STATUS			0x702
+#define SPI_MASK_INT_STATUS		0x703
+
+#define SPI_INT_MASK			0x704
+#define SPI_INTR_CMD_DONE		0x01
+#define SPI_INTR_RX_OVERFLOW		0x02
+#define SPI_INTR_INTR_TX_UNDERFLOW	0x04
+#define SPI_INTR_TX_OVERFLOW		0x08
+#define SPI_INTR_RX_UNDERFLOW		0x10
+#define SPI_INTR_CLEAR_ALL		0x1f
+
+#define SPI_STATUS			0x705
+#define SPI_RX_EMPTY			0x02
+#define SPI_CMD_BUSY			0x04
+#define SPI_SERIAL_BUSY			0x08
+
+#define SPI_CLK_CFG			0x706
+#define SPI_CLK_0_391MHZ		1
+#define SPI_CLK_0_781MHZ		2 /* default */
+#define SPI_CLK_1_563MHZ		3
+#define SPI_CLK_3_125MHZ		4
+#define SPI_CLK_6_250MHZ		5
+#define SPI_CLK_12_50MHZ		6
+#define SPI_CLK_MASK			0x07
+#define SPI_SSOFFTIME_MASK		0x38
+#define SPI_SSOFFTIME_SHIFT		3
+#define SPI_BYTE_SWAP			0x80
+
+#define SPI_FILL_BYTE			0x707
+#define SPI_MSG_TAIL			0x709
+#define SPI_RX_TAIL			0x70B
+
+#endif /* BCM63XX_REGS_H_ */
