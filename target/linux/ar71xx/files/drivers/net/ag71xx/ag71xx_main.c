@@ -721,8 +721,6 @@ static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
 
 	status = ag71xx_rr(ag, AG71XX_REG_INT_STATUS);
 	ag71xx_dump_intr(ag, "raw", status);
-	status &= ag71xx_rr(ag, AG71XX_REG_INT_ENABLE);
-	ag71xx_dump_intr(ag, "masked", status);
 
 	if (unlikely(!status))
 		return IRQ_NONE;
