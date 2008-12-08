@@ -1,0 +1,47 @@
+--- a/arch/arm/mach-ixp4xx/wg302v1-setup.c
++++ b/arch/arm/mach-ixp4xx/wg302v1-setup.c
+@@ -115,6 +115,36 @@ static struct platform_device *wg302v1_d
+ 	&wg302v1_eth[0],
+ };
+ 
++static char wg302v1_mem_fixup[] __initdata = "mem=32M ";
++
++static void __init wg302v1_fixup(struct machine_desc *desc,
++		struct tag *tags, char **cmdline, struct meminfo *mi)
++
++{
++	struct tag *t = tags;
++	char *p = *cmdline;
++
++	/* Find the end of the tags table, taking note of any cmdline tag. */
++	for (; t->hdr.size; t = tag_next(t)) {
++		if (t->hdr.tag == ATAG_CMDLINE) {
++			p = t->u.cmdline.cmdline;
++		}
++	}
++
++	/* Overwrite the end of the table with a new cmdline tag. */
++	t->hdr.tag = ATAG_CMDLINE;
++	t->hdr.size = (sizeof (struct tag_header) +
++		strlen(wg302v1_mem_fixup) + strlen(p) + 1 + 4) >> 2;
++	strlcpy(t->u.cmdline.cmdline, wg302v1_mem_fixup, COMMAND_LINE_SIZE);
++	strlcpy(t->u.cmdline.cmdline + strlen(wg302v1_mem_fixup), p,
++		COMMAND_LINE_SIZE - strlen(wg302v1_mem_fixup));
++
++	/* Terminate the table. */
++	t = tag_next(t);
++	t->hdr.tag = ATAG_NONE;
++	t->hdr.size = 0;
++}
++
+ static void __init wg302v1_init(void)
+ {
+ 	ixp4xx_sys_init();
+@@ -133,6 +163,7 @@ MACHINE_START(WG302V1, "Netgear WG302 v1
+ 	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
+ 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+ 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
++	.fixup		= wg302v1_fixup,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+ 	.timer		= &ixp4xx_timer,
