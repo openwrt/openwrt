@@ -738,13 +738,6 @@ static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
 		}
 	}
 
-#if 0
-	if (unlikely(status & AG71XX_INT_TX_UR)) {
-		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_UR);
-		DBG("%s: TX underrun\n", dev->name);
-	}
-#endif
-
 	if (likely(status & AG71XX_INT_POLL)) {
 		ag71xx_int_disable(ag, AG71XX_INT_POLL);
 		DBG("%s: enable polling mode\n", dev->name);
