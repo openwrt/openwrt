@@ -38,7 +38,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.13"
+#define AG71XX_DRV_VERSION	"0.5.14"
 
 #define AG71XX_NAPI_WEIGHT	64
 #define AG71XX_OOM_REFILL	(1 + HZ/10)
@@ -227,7 +227,7 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define FIFO_CFG4_DV		BIT(1)	/* RX_DV Event */
 #define FIFO_CFG4_FC		BIT(2)	/* False Carrier */
 #define FIFO_CFG4_CE		BIT(3)	/* Code Error */
-#define FIFO_CFG4_CRC		BIT(4)	/* CRC error */
+#define FIFO_CFG4_CR		BIT(4)	/* CRC error */
 #define FIFO_CFG4_LM		BIT(5)	/* Length Mismatch */
 #define FIFO_CFG4_LO		BIT(6)	/* Length out of range */
 #define FIFO_CFG4_OK		BIT(7)	/* Packet is OK */
@@ -258,6 +258,8 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define FIFO_CFG5_VT		BIT(13)	/* VLAN tag detected */
 #define FIFO_CFG5_LE		BIT(14)	/* Long Event */
 #define FIFO_CFG5_FT		BIT(15)	/* Frame Truncated */
+#define FIFO_CFG5_16		BIT(16)	/* unknown */
+#define FIFO_CFG5_17		BIT(17)	/* unknown */
 #define FIFO_CFG5_SF		BIT(18)	/* Short Frame */
 #define FIFO_CFG5_BM		BIT(19)	/* Byte Mode */
 

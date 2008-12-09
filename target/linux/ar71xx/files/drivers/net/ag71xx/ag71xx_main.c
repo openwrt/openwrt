@@ -296,17 +296,6 @@ static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
 	ag71xx_wr(ag, AG71XX_REG_MAC_ADDR2, t);
 }
 
-#define AR71XX_MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | \
-				 MAC_CFG1_SRX | MAC_CFG1_STX)
-#define AR71XX_FIFO_CFG5_INIT	0x0007ffef
-
-#define AR91XX_MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | \
-				 MAC_CFG1_SRX | MAC_CFG1_STX | \
-				 MAC_CFG1_TFC | MAC_CFG1_RFC)
-#define AR91XX_FIFO_CFG5_INIT	0x0007efef
-
-#define FIFO_CFG0_INIT	(FIFO_CFG0_ALL << FIFO_CFG0_ENABLE_SHIFT)
-
 static void ag71xx_dma_reset(struct ag71xx *ag)
 {
 	int i;
@@ -342,6 +331,25 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 	ag71xx_dump_dma_regs(ag);
 }
 
+#define MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | \
+			 MAC_CFG1_SRX | MAC_CFG1_STX)
+
+#define FIFO_CFG0_INIT	(FIFO_CFG0_ALL << FIFO_CFG0_ENABLE_SHIFT)
+
+#define FIFO_CFG4_INIT	(FIFO_CFG4_DE | FIFO_CFG4_DV | FIFO_CFG4_FC | \
+			 FIFO_CFG4_CE | FIFO_CFG4_CR | FIFO_CFG4_LM | \
+			 FIFO_CFG4_LO | FIFO_CFG4_OK | FIFO_CFG4_MC | \
+			 FIFO_CFG4_BC | FIFO_CFG4_DR | FIFO_CFG4_LE | \
+			 FIFO_CFG4_CF | FIFO_CFG4_PF | FIFO_CFG4_UO | \
+			 FIFO_CFG4_VT)
+
+#define FIFO_CFG5_INIT	(FIFO_CFG5_DE | FIFO_CFG5_DV | FIFO_CFG5_FC | \
+			 FIFO_CFG5_CE | FIFO_CFG5_LO | FIFO_CFG5_OK | \
+			 FIFO_CFG5_MC | FIFO_CFG5_BC | FIFO_CFG5_DR | \
+			 FIFO_CFG5_CF | FIFO_CFG5_PF | FIFO_CFG5_VT | \
+			 FIFO_CFG5_LE | FIFO_CFG5_FT | FIFO_CFG5_16 | \
+			 FIFO_CFG5_17 | FIFO_CFG5_SF)
+
 static void ag71xx_hw_init(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
@@ -355,8 +363,7 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	mdelay(100);
 
 	/* setup MAC configuration registers */
-	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1,
-		pdata->is_ar91xx ? AR91XX_MAC_CFG1_INIT : AR71XX_MAC_CFG1_INIT);
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
 		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
 
@@ -370,10 +377,8 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, 0x0000ffff);
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5,
-			pdata->is_ar91xx ? AR91XX_FIFO_CFG5_INIT
-					 : AR71XX_FIFO_CFG5_INIT);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, FIFO_CFG4_INIT);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, FIFO_CFG5_INIT);
 
 	ag71xx_dma_reset(ag);
 }
