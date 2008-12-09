@@ -115,11 +115,11 @@
  pc_cmp_samechan(struct ieee80211com *ic, struct ieee80211_channel *a,
  		struct ieee80211_channel *b)
  {
-@@ -455,6 +468,7 @@ pc_cmp(const void *_a, const void *_b)
- 		return res;					\
- } while (0)
+@@ -457,6 +470,7 @@ pc_cmp(const void *_a, const void *_b)
  
-+	EVALUATE_CRITERION(idletime, a, b);
  	EVALUATE_CRITERION(radar, a, b);
  	EVALUATE_CRITERION(keepmode, params, a, b);
++	EVALUATE_CRITERION(idletime, a, b);
  	EVALUATE_CRITERION(sc, ic, a, b);
+ 	/* XXX: rssi useless? pick_channel evaluates it anyway */
+ 	EVALUATE_CRITERION(rssi, params->ss->ss_priv, a, b);
