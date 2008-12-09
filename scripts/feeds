@@ -83,7 +83,7 @@ sub update_index($)
 	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
 
 	system("$mk -s prepare-mk TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
-	system("$mk -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=4 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
+	system("$mk -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPS=\"$ENV{TOPDIR}/include/package*.mk\" SCAN_DEPTH=5 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
 	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");
 
 	return 0;
