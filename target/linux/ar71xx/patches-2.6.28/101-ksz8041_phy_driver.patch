@@ -1,0 +1,24 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -83,6 +83,11 @@ config MVSWITCH_PHY
+ 	---help---
+ 	  Currently supports the Marvell 88E6060 switch.
+ 
++config MICREL_PHY
++	tristate "Drivers for Micrel/Kendin PHYs"
++	---help---
++	  Currently has a driver for the KSZ8041
++
+ config FIXED_PHY
+ 	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
+ 	depends on PHYLIB=y
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
+ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+ obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
++obj-$(CONFIG_MICREL_PHY)	+= micrel.o
+ obj-$(CONFIG_FIXED_PHY)		+= fixed.o
+ obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
+ obj-$(CONFIG_MDIO_OF_GPIO)	+= mdio-ofgpio.o
