@@ -105,7 +105,7 @@ define KernelPackage/pcmcia-core/2.4
 #	CONFIG_CARDBUS
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pcmcia_core ds)
 endef
 
