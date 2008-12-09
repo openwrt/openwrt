@@ -21,6 +21,7 @@
 #include <linux/platform_device.h>
 #include <linux/kernel.h>
 #include <linux/reboot.h>
+#include <linux/delay.h>
 #include <asm/bootinfo.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
@@ -279,15 +280,21 @@ static void ar5315_power_off(void)
 
 static void ar5315_restart(char *command)
 {
-	for(;;) {
-		/* reset the system */
-		sysRegWrite(AR5315_COLD_RESET,AR5317_RESET_SYSTEM);
+	void (*mips_reset_vec)(void) = (void *) 0xbfc00000;
 
-		/*
-		 * Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
-		 */
-		gpio_direction_output(AR5315_RESET_GPIO, 0);
-	}
+	/* reset the system */
+	sysRegWrite(AR5315_COLD_RESET,AR5317_RESET_SYSTEM);
+
+	/* Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
+	 * give it some time to attempt a gpio based hardware reset
+	 * (atheros reference design workaround) */
+	gpio_direction_output(AR5315_RESET_GPIO, 0);
+	mdelay(100);
+
+	/* Some boards (e.g. Senao EOC-2610) don't implement the reset logic
+	 * workaround. Attempt to jump to the mips reset location -
+	 * the boot loader itself might be able to recover the system */
+	mips_reset_vec();
 }
 
 
