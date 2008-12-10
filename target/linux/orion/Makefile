@@ -11,13 +11,13 @@ BOARD:=orion
 BOARDNAME:=Marvell Orion
 FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.26.8
+LINUX_VERSION:=2.6.28-rc7
 
 include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:="uImage"
 
-DEFAULT_PACKAGES += kmod-madwifi
+DEFAULT_PACKAGES += kmod-ath9k-new hostapd-mini
 
 define Kernel/Configure
 	$(call Kernel/Configure/Default)
