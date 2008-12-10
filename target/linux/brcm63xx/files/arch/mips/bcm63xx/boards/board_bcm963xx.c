@@ -115,6 +115,31 @@ static struct board_info __initdata board_96348gw = {
 
 	.has_ohci0 = 1,
 };
+
+static struct board_info __initdata board_FAST2404 = {
+        .name                           = "F@ST2404",
+        .expected_cpu_id                = 0x6348,
+
+        .has_enet0                      = 1,
+        .has_enet1                      = 1,
+        .has_pci                        = 1,
+
+        .enet0 = {
+                .has_phy                = 1,
+                .use_internal_phy       = 1,
+        },
+
+        .enet1 = {
+                .force_speed_100        = 1,
+                .force_duplex_full      = 1,
+        },
+
+
+        .has_ohci0 = 1,
+        .has_pccard = 1,
+        .has_ehci0 = 1,
+};
+
 #endif
 
 /*
@@ -179,6 +204,7 @@ static const struct board_info __initdata *bcm963xx_boards[] = {
 	&board_96348gw,
 	&board_96348gw_10,
 	&board_96348gw_11,
+	&board_FAST2404,
 #endif
 
 #ifdef CONFIG_BCM63XX_CPU_6358
