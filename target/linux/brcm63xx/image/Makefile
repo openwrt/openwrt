@@ -78,7 +78,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96358VW,6358)
 	# Comtrend 536
 	$(call Image/Build/CFE,$(1),96348GW-11,6348)
-	# DG834G
+	# DG834GT
 	$(call Image/Build/CFE,$(1),96348GW-10,6348)
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348)
