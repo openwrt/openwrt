@@ -12,8 +12,8 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
-ifneq ($(CONFIG_LINUX_2_6_27),)
-  PKG_VERSION:=2008-11-29
+ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
+  PKG_VERSION:=2008-12-09
   PKG_SOURCE_URL:=http://wireless.kernel.org/download/compat-wireless-2.6/
 else
   PKG_VERSION:=2008-08-06
