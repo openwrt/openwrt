@@ -184,7 +184,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci @LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= @BROKEN @PCI_SUPPORT +kmod-rt2x00-pci @LINUX_2_6_27||@LINUX_2_6_28
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
