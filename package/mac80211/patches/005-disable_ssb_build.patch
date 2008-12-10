@@ -1,8 +1,6 @@
-diff --git a/Makefile b/Makefile
-index 6a5eff4..225c711 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -20,8 +20,7 @@ NOSTDINC_FLAGS := -I$(M)/include/ -include $(M)/include/net/compat.h $(CFLAGS)
+@@ -20,8 +20,7 @@ NOSTDINC_FLAGS := -I$(M)/include/ -inclu
  obj-y := net/wireless/ net/mac80211/
  ifeq ($(ONLY_CORE),)
  obj-$(CONFIG_B44) += drivers/net/b44.o
