@@ -56,6 +56,7 @@ define KernelPackage/crypto-core
 	$(LINUX_DIR)/crypto/crypto_hash.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/cryptomgr.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,01, \
+	aead \
 	crypto_algapi \
 	cryptomgr \
 	crypto_hash \
