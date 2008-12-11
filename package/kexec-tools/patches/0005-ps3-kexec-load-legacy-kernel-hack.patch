@@ -1,0 +1,187 @@
+Hack to load PS3 legacy kernels (2.6.16 and fc7 installer) with the 2.6.23
+mainline linux kernel.
+
+---
+ kexec/arch/ppc64/fs2dt.c           |   47 +++++++++++++++++++++++++++++++++++++
+ kexec/arch/ppc64/kexec-elf-ppc64.c |   44 ++++++++++++++++++++++++++++++++++
+ kexec/arch/ppc64/kexec-ppc64.c     |    5 +++
+ kexec/arch/ppc64/kexec-ppc64.h     |    2 +
+ 4 files changed, 98 insertions(+)
+
+--- a/kexec/arch/ppc64/fs2dt.c
++++ b/kexec/arch/ppc64/fs2dt.c
+@@ -262,6 +262,33 @@ static void putprops(char *fn, struct di
+ 			die("unrecoverable error: could not read \"%s\": %s\n",
+ 			    pathname, strerror(errno));
+ 
++		/* ps3 legacy - Add 'PS3PF' to compatible */
++
++		if (ps3_legacy && !strcmp(dp->d_name, "compatible")) {
++			static const char s[] = "PS3PF";
++			char *const tmp = (char *)dt + len;
++
++			memcpy(tmp, s, sizeof(s));
++			len += sizeof(s);
++			*dt_len = len;
++
++			fprintf(stdout, "ps3 legacy: Changed dt entry "
++				"/compatible: <%s> -> <%s %s>\n",
++				(char *)dt, (char *)dt, tmp);
++		}
++
++		/* ps3 legacy - force memory.reg to 224 MiB */
++
++		if (ps3_legacy && !strcmp(dp->d_name, "reg") && len == 16) {
++			uint64_t tmp = *((uint64_t *)dt + 1);
++
++			*((uint64_t *)dt + 1) = 0xe000000ULL;
++			fprintf(stdout, "ps3 legacy: Changed dt entry "
++				"/memory/reg: <%llx> -> <%llx>\n",
++				(unsigned long long)tmp,
++				*((unsigned long long *)dt + 1));
++		}
++
+ 		checkprop(fn, dt, len);
+ 
+ 		dt += (len + 3)/4;
+@@ -360,6 +387,26 @@ static void putnode(void)
+ 		reserve(initrd_base, initrd_size);
+ 	}
+ 
++	/* ps3 legacy - add entry linux,platform <801> */
++
++	if (ps3_legacy && !strcmp(basename,"/chosen/")) {
++		int len = 4;
++		static const uint32_t data = 0x801UL;
++
++		*dt++ = 3;
++		*dt++ = len;
++		*dt++ = propnum("linux,platform");
++
++		if ((len >= 8) && ((unsigned long)dt & 0x4))
++			dt++;
++
++		memcpy(dt,&data,len);
++		dt += (len + 3)/4;
++
++		fprintf(stdout, "ps3 legacy: Added dt entry "
++			"/chosen/linux,platform = <801>\n");
++	}
++
+ 	/* Add cmdline to the second kernel.  Check to see if the new
+ 	 * cmdline has a root=.  If not, use the old root= cmdline.  */
+ 	if (!strcmp(basename,"/chosen/")) {
+--- a/kexec/arch/ppc64/kexec-elf-ppc64.c
++++ b/kexec/arch/ppc64/kexec-elf-ppc64.c
+@@ -45,6 +45,7 @@
+ uint64_t initrd_base, initrd_size;
+ unsigned char reuse_initrd = 0;
+ const char *ramdisk;
++int ps3_legacy = -1; /* default to probe */
+ 
+ int create_flatten_tree(struct kexec_info *, unsigned char **, unsigned long *,
+ 			char *);
+@@ -76,6 +77,33 @@ void arch_reuse_initrd(void)
+ 	reuse_initrd = 1;
+ }
+ 
++/**
++ * ps3_legacy_probe - Probe kernel version.
++ */
++
++static int ps3_legacy_probe(const char *p, off_t len)
++{
++	static const char d1[] = "linux,platform";    /* legacy 2.6.16 */
++	static const char d2[] = "2.6.21-1.3194.fc7"; /* fedora 7 installer */
++	const char *const end = p + len - sizeof(d2);
++
++	while(p < end) {
++		if (p[0] == d1[0] && !memcmp(p, d1, sizeof(d1) - 1)) {
++			fprintf(stdout, "ps3 legacy: Legacy kernel found: "
++				"'%s'\n", d1);
++			break;
++		}
++		if (p[0] == d2[0] && !memcmp(p, d2, sizeof(d2) - 1)) {
++			fprintf(stdout, "ps3 legacy: Legacy kernel found: "
++				"'%s'\n", d2);
++			break;
++		}
++		p++;
++	}
++
++	return (p != end);
++}
++
+ int elf_ppc64_load(int argc, char **argv, const char *buf, off_t len,
+ 			struct kexec_info *info)
+ {
+@@ -102,6 +130,8 @@ int elf_ppc64_load(int argc, char **argv
+ #define OPT_RAMDISK     (OPT_ARCH_MAX+1)
+ #define OPT_DEVICETREEBLOB     (OPT_ARCH_MAX+2)
+ #define OPT_ARGS_IGNORE		(OPT_ARCH_MAX+3)
++#define OPT_PS3_LEGACY (OPT_ARCH_MAX+4)
++#define OPT_PS3_LEGACY_NO (OPT_ARCH_MAX+5)
+ 
+ 	static const struct option options[] = {
+ 		KEXEC_ARCH_OPTIONS
+@@ -111,6 +141,8 @@ int elf_ppc64_load(int argc, char **argv
+ 		{ "initrd",             1, NULL, OPT_RAMDISK },
+ 		{ "devicetreeblob",     1, NULL, OPT_DEVICETREEBLOB },
+ 		{ "args-linux",		0, NULL, OPT_ARGS_IGNORE },
++		{ "ps3-legacy",         0, NULL, OPT_PS3_LEGACY },
++		{ "ps3-no-legacy",      0, NULL, OPT_PS3_LEGACY_NO },
+ 		{ 0,                    0, NULL, 0 },
+ 	};
+ 
+@@ -146,9 +178,18 @@ int elf_ppc64_load(int argc, char **argv
+ 			break;
+ 		case OPT_ARGS_IGNORE:
+ 			break;
++		case OPT_PS3_LEGACY:
++			ps3_legacy = 1;
++			break;
++		case OPT_PS3_LEGACY_NO:
++			ps3_legacy = 0;
++			break;
+ 		}
+ 	}
+ 
++	if (ps3_legacy == -1)
++		ps3_legacy = ps3_legacy_probe(buf, len);
++
+ 	cmdline_len = 0;
+ 	if (cmdline)
+ 		cmdline_len = strlen(cmdline) + 1;
+@@ -158,6 +199,9 @@ int elf_ppc64_load(int argc, char **argv
+ 	if (ramdisk && reuse_initrd)
+ 		die("Can't specify --ramdisk or --initrd with --reuseinitrd\n");
+ 
++	if (ps3_legacy && devicetreeblob)
++		die("Can't specify --devicetreeblob with --ps3-legacy\n");
++
+ 	setup_memory_ranges(info->kexec_flags);
+ 
+ 	/* Need to append some command line parameters internally in case of
+--- a/kexec/arch/ppc64/kexec-ppc64.c
++++ b/kexec/arch/ppc64/kexec-ppc64.c
+@@ -650,6 +650,11 @@ void arch_usage(void)
+ 	fprintf(stderr, "     --initrd=<filename> same as --ramdisk.\n");
+ 	fprintf(stderr, "     --devicetreeblob=<filename> Specify device tree blob file.\n");
+ 	fprintf(stderr, "     --elf64-core-headers Prepare core headers in ELF64 format\n");
++	fprintf(stderr, "     --ps3-legacy    Make fixups needed to boot PS3 legacy kernels.\n");
++	fprintf(stderr, "                     The default is to probe the kernel type.\n");
++	fprintf(stderr, "     --ps3-no-legacy Do not make fixups needed to boot PS3 legacy\n");
++	fprintf(stderr, "                     kernels. The default is to probe the kernel\n");
++	fprintf(stderr, "                     type.\n");
+ }
+ 
+ struct arch_options_t arch_options = {
+--- a/kexec/arch/ppc64/kexec-ppc64.h
++++ b/kexec/arch/ppc64/kexec-ppc64.h
+@@ -41,4 +41,6 @@ typedef struct mem_rgns {
+ 
+ extern mem_rgns_t usablemem_rgns;
+ 
++extern int ps3_legacy;
++
+ #endif /* KEXEC_PPC64_H */
