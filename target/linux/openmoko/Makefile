@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=openmoko
 BOARDNAME:=Openmoko
-FEATURES:=squashfs usb
+FEATURES:=usb
 
 LINUX_VERSION:=2.6.24.7
 

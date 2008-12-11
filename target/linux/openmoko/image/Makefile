@@ -5,8 +5,16 @@
 # See /LICENSE for more information.
 #
 
+JFFS2_BLOCKSIZE := 128k
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
+
+define Image/mkfs/jffs2/sub
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --pad --little-endian --pagesize=0x800 --no-cleanmarkers -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(1) -d $(TARGET_DIR)
+	$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(1))
+	$(call Image/Build,jffs2-$(1))
+endef
 
 define Build/Clean
 endef
@@ -23,6 +31,7 @@ define Image/BuildKernel
 endef
 
 define Image/Build
+	cp $(KDIR)/root.jffs2-128k $(BIN_DIR)/openwrt-$(BOARD)-rootfs
 endef
 
 $(eval $(call BuildImage))
