@@ -72,6 +72,7 @@ ifeq ($(DUMP),)
 		echo "Priority: $(PRIORITY)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
 		echo "Architecture: $(PKGARCH)"; \
+		echo "Installed-Size: 1"; \
 		echo -n "Description: "; getvar $(call shvar,Package/$(1)/description) | sed -e 's,^[[:space:]]*, ,g'; \
  	) >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
@@ -84,6 +85,8 @@ ifeq ($(DUMP),)
 	mkdir -p $(PACKAGE_DIR)
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
 	$(RSTRIP) $$(IDIR_$(1))
+	SIZE=`cd $$(IDIR_$(1)); du -bs --exclude=./CONTROL . 2>/dev/null | cut -f1`; \
+	$(SED) "s|^\(Installed-Size:\).*|\1 $$$$SIZE|g" $$(IDIR_$(1))/CONTROL/control
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 	@[ -f $$(IPKG_$(1)) ] || false 
 
