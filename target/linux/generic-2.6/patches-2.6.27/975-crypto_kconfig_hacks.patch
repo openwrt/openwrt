@@ -1,0 +1,27 @@
+--- a/crypto/Kconfig	2008-12-12 00:28:55.000000000 +0100
++++ b/crypto/Kconfig	2008-12-12 00:29:33.000000000 +0100
+@@ -22,20 +22,20 @@
+ comment "Crypto core or helper"
+ 
+ config CRYPTO_ALGAPI
+-	tristate
++	tristate "ALG API"
+ 	help
+ 	  This option provides the API for cryptographic algorithms.
+ 
+ config CRYPTO_AEAD
+-	tristate
++	tristate "AEAD"
+ 	select CRYPTO_ALGAPI
+ 
+ config CRYPTO_BLKCIPHER
+-	tristate
++	tristate "Block cipher"
+ 	select CRYPTO_ALGAPI
+ 
+ config CRYPTO_HASH
+-	tristate
++	tristate "HASH"
+ 	select CRYPTO_ALGAPI
+ 
+ config CRYPTO_MANAGER
