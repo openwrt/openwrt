@@ -122,7 +122,7 @@ $(eval $(call KernelPackage,ipsec))
 define KernelPackage/ipsec4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4)
-  DEPENDS:=kmod-ipsec +kmod-iptunnel4 +kmod-crypto-aead
+  DEPENDS:=kmod-ipsec +kmod-iptunnel4
   KCONFIG:= \
 	CONFIG_INET_AH \
 	CONFIG_INET_ESP \
@@ -154,7 +154,7 @@ $(eval $(call KernelPackage,ipsec4))
 define KernelPackage/ipsec6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv6)
-  DEPENDS:=kmod-ipsec +kmod-iptunnel6 +kmod-crypto-aead
+  DEPENDS:=kmod-ipsec +kmod-iptunnel6
   KCONFIG:= \
 	CONFIG_INET6_AH \
 	CONFIG_INET6_ESP \
