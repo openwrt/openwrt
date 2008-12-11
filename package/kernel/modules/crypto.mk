@@ -58,9 +58,9 @@ define KernelPackage/crypto-core
   AUTOLOAD:=$(call AutoLoad,01, \
 	crypto_algapi \
 	aead \
+	$(BLKCIPHER_PREFIX)blkcipher \
 	cryptomgr \
 	crypto_hash \
-	$(BLKCIPHER_PREFIX)blkcipher \
 	cbc \
 	ecb \
 	deflate \
