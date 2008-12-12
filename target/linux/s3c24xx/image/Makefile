@@ -16,7 +16,7 @@ MAKE += -j5
 
 
 define Image/BuildKernel
-	$(TARGET_CROSS)objcopy -O binary -R .note -R .comment -S $(KDIR)/linux-2.6.26/arch/arm/boot/compressed/vmlinux linux.bin
+	$(TARGET_CROSS)objcopy -O binary -R .note -R .comment -S $(LINUX_DIR)/arch/arm/boot/compressed/vmlinux linux.bin
 	mkimage -A arm -O linux -T kernel -C none -a 30008000 -e 30008000 -n "Openmoko Kernel Image Freerunner (Neo1973(GTA02))" -d linux.bin uImage
 
 	cp uImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-uImage
