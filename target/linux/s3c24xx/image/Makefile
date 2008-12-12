@@ -4,12 +4,12 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-#JFFS2_BLOCKSIZE=16k
-#JFFS2OPTS += -n --faketime -x lzo 
-JFFS2OPTS += --little-endian --eraseblock=0x20000 --pagesize=0x800 --no-cleanmarkers --pad -n 
+JFFS2_BLOCKSIZE=128k
+JFFS2OPTS += --little-endian --pagesize=0x800 --no-cleanmarkers --pad
 MAKE += -j5
 
 #:mkfs.jffs2 -x lzo --root=/data/moko/build/tmp/rootfs --faketime --output=/data/moko/build/tmp/deploy/glibc/images/fic-gta01/OpenMoko-openmoko-devel-image-glibc-P1-August-Snapshot-20070829-fic-gta01.rootfs.jffs2 --little-endian --eraseblock=0x4000 --pad -n
