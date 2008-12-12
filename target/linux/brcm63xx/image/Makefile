@@ -37,6 +37,14 @@ define Image/Build/CFE
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin)
 endef
 
+define Image/Build/RedBoot
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(1)-vmlinux.elf
+	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
+	dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(1)-vmlinux.lzma bs=65536 conv=sync
+	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(1)-vmlinux.gz bs=65536 conv=sync
+endef
+
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
@@ -67,11 +75,11 @@ define Image/Prepare
 	rm -f $(KDIR)/fs_mark
 	touch $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
-
 endef
 
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
 	$(call Image/Build/CFE,$(1),96345GW2,6345)
 	$(call Image/Build/CFE,$(1),96348GW,6348)
 	# Neufbox4
@@ -82,6 +90,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96348GW-10,6348)
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348)
+	# Inventel Livebox
+	$(call Image/Build/RedBoot,livebox)
 endef
 
 $(eval $(call BuildImage))
