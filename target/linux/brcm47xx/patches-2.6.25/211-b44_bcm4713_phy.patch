@@ -1,0 +1,14 @@
+--- a/drivers/net/b44.c	2008-11-16 15:33:32.000000000 +0100
++++ b/drivers/net/b44.c	2008-11-18 10:36:18.000000000 +0100
+@@ -2094,6 +2094,11 @@
+ 		return -EINVAL;
+ 	}
+ 
++	if (bp->sdev->id.coreid == 0x806 && bp->sdev->id.revision == 0x0) {
++		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++		bp->dma_offset = 0;
++	}
++
+ 	memcpy(bp->dev->perm_addr, bp->dev->dev_addr, bp->dev->addr_len);
+ 
+ 	bp->imask = IMASK_DEF;
