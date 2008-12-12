@@ -20,6 +20,5 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += xglamo enlightenment
 
 $(eval $(call BuildTarget))
