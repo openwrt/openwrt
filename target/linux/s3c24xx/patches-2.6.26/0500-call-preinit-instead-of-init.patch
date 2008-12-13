@@ -1,0 +1,11 @@
+diff -ruN linux-2.6.26.orig/init/main.c linux-2.6.26/init/main.c
+--- linux-2.6.26.orig/init/main.c	2008-12-13 02:37:23.000000000 +0100
++++ linux-2.6.26/init/main.c	2008-12-13 02:40:28.000000000 +0100
+@@ -827,6 +827,7 @@
+ 		printk(KERN_WARNING "Failed to execute %s.  Attempting "
+ 					"defaults...\n", execute_command);
+ 	}
++	run_init_process("/sbin/preinit");
+ 	run_init_process("/sbin/init");
+ 	run_init_process("/etc/init");
+ 	run_init_process("/bin/init");
