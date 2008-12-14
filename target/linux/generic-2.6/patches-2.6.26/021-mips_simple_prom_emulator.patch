@@ -18,8 +18,8 @@
  
 +#ifdef CONFIG_PROM_EMU
 +EXPORT(prom_emu_argv)
-+	.dw	0
-+	.dw	prom_emu_cmdline
++	.word	0
++	.word	prom_emu_cmdline
 +	.ascii	"CMDLINE:"
 +EXPORT(prom_emu_cmdline)
 +	.fill	0x400
