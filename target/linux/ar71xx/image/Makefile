@@ -39,14 +39,14 @@ endef
 define Image/Build/AP81
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gz
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
+	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
 		0x80060000 \
 		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(2).bin.gz $(KDIR)/vmlinux-$(2).uImage
+		-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage
 	( \
-		dd if=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=2752k conv=sync; \
+		dd if=$(KDIR)/vmlinux-$(2).uImage bs=768k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=3008k conv=sync; \
 	) > $(call imgname,$(1),$(2)).bin
 	cp $(call imgname,$(1),$(2)).bin $(call imgname,$(1),$(2)).webui
 	echo -n $(4) >> $(call imgname,$(1),$(2)).webui
