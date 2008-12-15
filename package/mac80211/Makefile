@@ -13,7 +13,7 @@ PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
 ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
-  PKG_VERSION:=2008-12-10
+  PKG_VERSION:=2008-12-11
   PKG_SOURCE_URL:=http://wireless.kernel.org/download/compat-wireless-2.6/
 else
   PKG_VERSION:=2008-08-06
