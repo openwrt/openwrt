@@ -23,6 +23,7 @@
 #include <asm/traps.h>
 #include <asm/time.h>		/* for mips_hpt_frequency */
 #include <asm/reboot.h>		/* for _machine_{restart,halt} */
+#include <asm/mips_machine.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
@@ -270,3 +271,16 @@ void __init plat_time_init(void)
 {
 	mips_hpt_frequency = ar71xx_cpu_freq / 2;
 }
+
+static int __init ar71xx_machine_setup(void)
+{
+	ar71xx_gpio_init();
+
+	ar71xx_add_device_uart();
+	ar71xx_add_device_wdt();
+
+	mips_machine_setup(ar71xx_mach_type);
+	return 0;
+}
+
+arch_initcall(ar71xx_machine_setup);

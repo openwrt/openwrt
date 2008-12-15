@@ -74,4 +74,12 @@ extern void ar71xx_add_device_gpio_buttons(int id,
 				   unsigned nbuttons,
 				   struct gpio_button *buttons) __init;
 
+#ifdef CONFIG_AR71XX_EARLY_SERIAL
+static inline void ar71xx_add_device_uart(void) {}
+#else
+extern void ar71xx_add_device_uart(void) __init;
+#endif
+
+extern void ar71xx_add_device_wdt(void) __init;
+
 #endif /* __ASM_MACH_AR71XX_PLATFORM_H */
