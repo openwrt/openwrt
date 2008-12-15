@@ -1,0 +1,49 @@
+This patch adds a new configuration option (overlay_root) specifying 
+what mount point opkg should check for available storage space.
+
+Signed-off-by: Nicolas Thill <nico@openwrt.org>
+
+
+diff -ruN opkg-4564-old/libopkg/opkg_conf.c opkg-4564-new/libopkg/opkg_conf.c
+--- opkg-4564-old/libopkg/opkg_conf.c	2008-08-04 19:18:51.000000000 +0200
++++ opkg-4564-new/libopkg/opkg_conf.c	2008-12-12 02:26:35.000000000 +0100
+@@ -64,6 +64,7 @@
+ 	  { "offline_root", OPKG_OPT_TYPE_STRING, &conf->offline_root },
+ 	  { "offline_root_post_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_post_script_cmd },
+ 	  { "offline_root_pre_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_pre_script_cmd },
++	  { "overlay_root", OPKG_OPT_TYPE_STRING, &conf->overlay_root },
+ 	  { "proxy_passwd", OPKG_OPT_TYPE_STRING, &conf->proxy_passwd },
+ 	  { "proxy_user", OPKG_OPT_TYPE_STRING, &conf->proxy_user },
+ 	  { "query-all", OPKG_OPT_TYPE_BOOL, &conf->query_all },
+diff -ruN opkg-4564-old/libopkg/opkg_conf.h opkg-4564-new/libopkg/opkg_conf.h
+--- opkg-4564-old/libopkg/opkg_conf.h	2008-08-04 19:18:51.000000000 +0200
++++ opkg-4564-new/libopkg/opkg_conf.h	2008-12-12 02:25:33.000000000 +0100
+@@ -67,6 +67,7 @@
+      char *offline_root;
+      char *offline_root_pre_script_cmd;
+      char *offline_root_post_script_cmd;
++     char *overlay_root;
+      int query_all;
+      int verbosity;
+      int noaction;
+Binary files opkg-4564-old/libopkg/opkg_conf.o and opkg-4564-new/libopkg/opkg_conf.o differ
+diff -ruN opkg-4564-old/libopkg/opkg_install.c opkg-4564-new/libopkg/opkg_install.c
+--- opkg-4564-old/libopkg/opkg_install.c	2008-08-04 19:18:51.000000000 +0200
++++ opkg-4564-new/libopkg/opkg_install.c	2008-12-12 02:29:13.000000000 +0100
+@@ -525,9 +525,15 @@
+      * 3) return a proper error code instead of 1
+      */
+      int comp_size, blocks_available;
++     char *root;
+     
+      if (!conf->force_space && pkg->installed_size != NULL) {
+-	  blocks_available = get_available_blocks(conf->default_dest->root_dir);
++          if (conf->overlay_root != NULL) {
++               root = conf->overlay_root;
++          } else {
++               root = conf->default_dest->root_dir;
++          }
++	  blocks_available = get_available_blocks(root);
+ 
+ 	  comp_size = strtoul(pkg->installed_size, NULL, 0);
+ 	  /* round up a blocks count without doing fancy-but-slow casting jazz */ 
