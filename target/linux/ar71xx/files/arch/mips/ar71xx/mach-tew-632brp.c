@@ -20,6 +20,9 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/platform.h>
 
+#define TEW_632BRP_GPIO_LED_WPS		3
+#define TEW_632BRP_GPIO_LED_WLAN	6
+
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition tew_632brp_partitions[] = {
 	{
@@ -69,6 +72,18 @@ static struct spi_board_info tew_632brp_spi_info[] = {
 	}
 };
 
+static struct gpio_led tew_632brp_leds_gpio[] __initdata = {
+	{
+		.name		= "tew-632brp:blue:wps",
+		.gpio		= TEW_632BRP_GPIO_LED_WPS,
+		.active_low	= 1,
+	}, {
+		.name		= "tew-632brp:green:wlan",
+		.gpio		= TEW_632BRP_GPIO_LED_WLAN,
+		.active_low	= 1,
+	}
+};
+
 static void __init tew_632brp_setup(void)
 {
 	ar71xx_add_device_mdio(0xfffffffe);
@@ -82,6 +97,9 @@ static void __init tew_632brp_setup(void)
 
 	ar71xx_add_device_spi(NULL, tew_632brp_spi_info,
 					ARRAY_SIZE(tew_632brp_spi_info));
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tew_632brp_leds_gpio),
+					tew_632brp_leds_gpio);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TRENDnet TEW-632BRP", tew_632brp_setup);
