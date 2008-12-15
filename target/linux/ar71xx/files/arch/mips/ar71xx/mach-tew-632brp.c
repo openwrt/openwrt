@@ -14,6 +14,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 
@@ -22,6 +23,9 @@
 
 #define TEW_632BRP_GPIO_LED_WPS		3
 #define TEW_632BRP_GPIO_LED_WLAN	6
+#define TEW_632BRP_GPIO_BTN_RESET	21
+
+#define TEW_632BRP_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition tew_632brp_partitions[] = {
@@ -84,6 +88,16 @@ static struct gpio_led tew_632brp_leds_gpio[] __initdata = {
 	}
 };
 
+static struct gpio_button tew_632brp_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= TEW_632BRP_GPIO_BTN_RESET,
+	}
+};
+
 static void __init tew_632brp_setup(void)
 {
 	ar71xx_add_device_mdio(0xfffffffe);
@@ -100,6 +114,10 @@ static void __init tew_632brp_setup(void)
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tew_632brp_leds_gpio),
 					tew_632brp_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, TEW_632BRP_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(tew_632brp_gpio_buttons),
+					tew_632brp_gpio_buttons);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TRENDnet TEW-632BRP", tew_632brp_setup);
