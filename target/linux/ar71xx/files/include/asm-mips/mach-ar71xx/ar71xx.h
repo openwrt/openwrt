@@ -114,6 +114,7 @@ extern unsigned long ar71xx_mach_type;
 #define AR71XX_MACH_AW_NR580	6	/* AzureWave AW-NR580 */
 #define AR71XX_MACH_AP83	7	/* Atheros AP83 */
 #define AR71XX_MACH_TEW_632BRP	8	/* TRENDnet TEW-632BRP */
+#define AR71XX_MACH_ROUTERSTATION 9	/* Ubiquiti RouterStation */
 
 /*
  * PLL block
