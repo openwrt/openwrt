@@ -68,7 +68,7 @@
  		platform_set_drvdata(pdev, NULL);
 --- a/drivers/net/ag71xx/ag71xx.h
 +++ b/drivers/net/ag71xx/ag71xx.h
-@@ -101,7 +101,7 @@ struct ag71xx_ring {
+@@ -102,7 +102,7 @@ struct ag71xx_ring {
  };
  
  struct ag71xx_mdio {
@@ -79,7 +79,7 @@
  };
 --- a/drivers/net/ag71xx/ag71xx_main.c
 +++ b/drivers/net/ag71xx/ag71xx_main.c
-@@ -807,7 +807,7 @@ static int __init ag71xx_probe(struct pl
+@@ -797,7 +797,7 @@ static int __init ag71xx_probe(struct pl
  	ag = netdev_priv(dev);
  	ag->pdev = pdev;
  	ag->dev = dev;
