@@ -21,6 +21,7 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/platform.h>
 
+#define TEW_632BRP_GPIO_LED_STATUS	1
 #define TEW_632BRP_GPIO_LED_WPS		3
 #define TEW_632BRP_GPIO_LED_WLAN	6
 #define TEW_632BRP_GPIO_BTN_RESET	21
@@ -78,6 +79,10 @@ static struct spi_board_info tew_632brp_spi_info[] = {
 
 static struct gpio_led tew_632brp_leds_gpio[] __initdata = {
 	{
+		.name		= "tew-632brp:green:status",
+		.gpio		= TEW_632BRP_GPIO_LED_STATUS,
+		.active_low	= 1,
+	}, {
 		.name		= "tew-632brp:blue:wps",
 		.gpio		= TEW_632BRP_GPIO_LED_WPS,
 		.active_low	= 1,
