@@ -18,7 +18,6 @@
 #include <linux/platform_device.h>
 #include <linux/serial_8250.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/platform.h>
 
@@ -138,9 +137,7 @@ void __init ar71xx_add_device_usb(void)
 	}
 }
 
-#ifdef CONFIG_AR71XX_EARLY_SERIAL
-static void __init ar71xx_add_device_uart(void) {};
-#else
+#ifndef CONFIG_AR71XX_EARLY_SERIAL
 static struct resource ar71xx_uart_resources[] = {
 	{
 		.start	= AR71XX_UART_BASE,
@@ -172,7 +169,7 @@ static struct platform_device ar71xx_uart_device = {
 	},
 };
 
-static void __init ar71xx_add_device_uart(void)
+void __init ar71xx_add_device_uart(void)
 {
 	ar71xx_uart_data[0].uartclk = ar71xx_ahb_freq;
 	platform_device_register(&ar71xx_uart_device);
@@ -597,16 +594,3 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 		printk(KERN_DEBUG "ar71xx: failed to parse mac address "
 				"\"%s\"\n", mac_str);
 }
-
-static int __init ar71xx_machine_setup(void)
-{
-	ar71xx_gpio_init();
-
-	ar71xx_add_device_uart();
-	ar71xx_add_device_wdt();
-
-	mips_machine_setup(ar71xx_mach_type);
-	return 0;
-}
-
-arch_initcall(ar71xx_machine_setup);
