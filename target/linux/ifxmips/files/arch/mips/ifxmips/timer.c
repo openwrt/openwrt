@@ -369,7 +369,7 @@ ifxmips_request_timer(unsigned int timer, unsigned int flag, unsigned long value
 	if (TIMER_FLAG_MASK_HANDLE (flag) != TIMER_FLAG_NO_HANDLE) {
 		if (TIMER_FLAG_MASK_HANDLE (flag) == TIMER_FLAG_SIGNAL)
 			timer_dev.timer[timer - FIRST_TIMER].arg1 =
-				(unsigned long) find_task_by_pid ((int) arg1);
+				(unsigned long) find_task_by_vpid ((int) arg1);
 
 		irnen_reg = 1 << (timer - FIRST_TIMER);
 

@@ -14,7 +14,7 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2007 Xu Liang, infineon
- *   Copyright (C) 2008 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2008 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/kernel.h>
@@ -24,8 +24,8 @@
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
 #include <linux/init.h>
-#include <asm/uaccess.h>
-#include <asm/unistd.h>
+#include <linux/uaccess.h>
+#include <linux/unistd.h>
 #include <asm/irq.h>
 #include <asm/div64.h>
 #include <linux/errno.h>
@@ -204,7 +204,7 @@ cgu_get_fpi_bus_clock(int fpi)
 
 void cgu_setup_pci_clk(int external_clock)
 {
-	//set clock to 33Mhz 
+	//set clock to 33Mhz
 	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~0xf00000, IFXMIPS_CGU_IFCCR);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | 0x800000, IFXMIPS_CGU_IFCCR);
 	if(external_clock)

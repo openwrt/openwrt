@@ -13,15 +13,15 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
- *   Copyright (C) 2004 peng.liu@infineon.com 
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2004 peng.liu@infineon.com
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/init.h>
 
 #include <asm/time.h>
 #include <asm/traps.h>
-#include <asm/cpu.h>
+#include <linux/cpu.h>
 #include <asm/irq.h>
 #include <asm/bootinfo.h>
 #include <asm/ifxmips/ifxmips.h>
@@ -33,17 +33,18 @@
 static unsigned int r4k_offset;
 static unsigned int r4k_cur;
 
+/* required in arch/mips/kernel/kspd.c */
+unsigned long cpu_khz;
+
 extern void ifxmips_reboot_setup(void);
 
-unsigned int
-ifxmips_get_cpu_ver(void)
+unsigned int ifxmips_get_cpu_ver(void)
 {
 	return (ifxmips_r32(IFXMIPS_MPS_CHIPID) & 0xF0000000) >> 28;
 }
 EXPORT_SYMBOL(ifxmips_get_cpu_ver);
 
-static __inline__ u32
-ifxmips_get_counter_resolution(void)
+static inline u32 ifxmips_get_counter_resolution(void)
 {
 	u32 res;
 	__asm__ __volatile__(
@@ -56,27 +57,27 @@ ifxmips_get_counter_resolution(void)
 		: "=&r" (res)
 		: /* no input */
 		: "memory");
-		instruction_hazard();
-		return res;
+	instruction_hazard();
+	return res;
 }
 
-void __init
-plat_time_init(void)
+void __init plat_time_init(void)
 {
 	mips_hpt_frequency = ifxmips_get_cpu_hz() / ifxmips_get_counter_resolution();
 	r4k_cur = (read_c0_count() + r4k_offset);
 	write_c0_compare(r4k_cur);
 
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_GPT | IFXMIPS_PMU_PWDCR_FPI);
-	ifxmips_w32(0x100, IFXMIPS_GPTU_GPT_CLC); // set clock divider to 1
+	ifxmips_w32(0x100, IFXMIPS_GPTU_GPT_CLC); /* set clock divider to 1 */
+	cpu_khz = ifxmips_get_cpu_hz();
 }
 
-void __init
-plat_mem_setup(void)
+void __init plat_mem_setup(void)
 {
 	u32 status;
-	prom_printf("This %s has a cpu rev of 0x%X\n", get_system_type(), ifxmips_get_cpu_ver());
+	prom_printf("This %s system has a cpu rev of %d\n", get_system_type(), ifxmips_get_cpu_ver());
 
+	/* make sure to have no "reverse endian" for user mode! */
 	status = read_c0_status();
 	status &= (~(1<<25));
 	write_c0_status(status);

@@ -14,7 +14,7 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
  *   Copyright (C) 2005 infineon
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 #ifndef _IFXMIPS_IRQ__
 #define _IFXMIPS_IRQ__
@@ -63,8 +63,8 @@
 #define IFXMIPS_DMA_CH18_INT		(INT_NUM_IM2_IRL0 + 16)
 #define IFXMIPS_DMA_CH19_INT		(INT_NUM_IM2_IRL0 + 21)
 
-#define IFXMIPS_USB_INT				(INT_NUM_IM4_IRL0 + 22)
-#define IFXMIPS_USB_OC_INT			(INT_NUM_IM4_IRL0 + 23)
+#define IFXMIPS_USB_INT			(INT_NUM_IM4_IRL0 + 22)
+#define IFXMIPS_USB_OC_INT		(INT_NUM_IM4_IRL0 + 23)
 
 
 extern void ifxmips_mask_and_ack_irq(unsigned int irq_nr);

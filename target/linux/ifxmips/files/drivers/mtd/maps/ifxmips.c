@@ -26,11 +26,12 @@
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/cfi.h>
+#include <linux/magic.h>
+#include <linux/platform_device.h>
+
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_prom.h>
 #include <asm/ifxmips/ifxmips_ebu.h>
-#include <linux/magic.h>
-#include <linux/platform_device.h>
 
 #ifndef CONFIG_MTD_PARTITIONS
 #error Please enable CONFIG_MTD_PARTITIONS

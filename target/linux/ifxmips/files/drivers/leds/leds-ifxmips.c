@@ -25,65 +25,61 @@
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <asm/uaccess.h>
-#include <asm/unistd.h>
+#include <linux/uaccess.h>
+#include <linux/unistd.h>
 #include <linux/errno.h>
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_gpio.h>
-#include <asm/ifxmips/ifxmips_pmu.h>
 #include <linux/leds.h>
 #include <linux/delay.h>
 
-#define DRVNAME							"ifxmips_led"
+#include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_gpio.h>
+#include <asm/ifxmips/ifxmips_pmu.h>
+
+#define DRVNAME					"ifxmips_led"
 
 #define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_FALLING
 //#define IFXMIPS_LED_CLK_EDGE			IFXMIPS_LED_RISING
 
-#define IFXMIPS_LED_SPEED				IFXMIPS_LED_8HZ
+#define IFXMIPS_LED_SPEED			IFXMIPS_LED_8HZ
 
 #define IFXMIPS_LED_GPIO_PORT			0
 
-#define IFXMIPS_MAX_LED					24
+#define IFXMIPS_MAX_LED				24
 
 struct ifxmips_led {
 	struct led_classdev cdev;
 	u8 bit;
 };
 
-void
-ifxmips_led_set (unsigned int led)
+void ifxmips_led_set (unsigned int led)
 {
 	led &= 0xffffff;
 	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CPU0) | led, IFXMIPS_LED_CPU0);
 }
 EXPORT_SYMBOL(ifxmips_led_set);
 
-void
-ifxmips_led_clear (unsigned int led)
+void ifxmips_led_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CPU0) & led, IFXMIPS_LED_CPU0);
 }
 EXPORT_SYMBOL(ifxmips_led_clear);
 
-void
-ifxmips_led_blink_set (unsigned int led)
+void ifxmips_led_blink_set (unsigned int led)
 {
 	led &= 0xffffff;
 	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON0) | led, IFXMIPS_LED_CON0);
 }
 EXPORT_SYMBOL(ifxmips_led_blink_set);
 
-void
-ifxmips_led_blink_clear (unsigned int led)
+void ifxmips_led_blink_clear (unsigned int led)
 {
 	led = ~(led & 0xffffff);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_LED_CON0) & led, IFXMIPS_LED_CON0);
 }
 EXPORT_SYMBOL(ifxmips_led_blink_clear);
 
-void
-ifxmips_ledapi_set(struct led_classdev *led_cdev, enum led_brightness value)
+void ifxmips_ledapi_set(struct led_classdev *led_cdev, enum led_brightness value)
 {
 	struct ifxmips_led *led_dev = container_of(led_cdev, struct ifxmips_led, cdev);
 
@@ -93,14 +89,12 @@ ifxmips_ledapi_set(struct led_classdev *led_cdev, enum led_brightness value)
 		ifxmips_led_clear(1 << led_dev->bit);
 }
 
-void
-ifxmips_led_setup_gpio (void)
+void ifxmips_led_setup_gpio (void)
 {
 	int i = 0;
 
 	/* we need to setup pins SH,D,ST (4,5,6) */
-	for (i = 4; i < 7; i++)
-	{
+	for (i = 4; i < 7; i++) {
 		ifxmips_port_set_altsel0(IFXMIPS_LED_GPIO_PORT, i);
 		ifxmips_port_clear_altsel1(IFXMIPS_LED_GPIO_PORT, i);
 		ifxmips_port_set_dir_out(IFXMIPS_LED_GPIO_PORT, i);
@@ -108,8 +102,7 @@ ifxmips_led_setup_gpio (void)
 	}
 }
 
-static int
-ifxmips_led_probe(struct platform_device *dev)
+static int ifxmips_led_probe(struct platform_device *dev)
 {
 	int i = 0;
 
@@ -142,12 +135,11 @@ ifxmips_led_probe(struct platform_device *dev)
 	/* per default, the leds are turned on */
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_LED);
 
-	for(i = 0; i < IFXMIPS_MAX_LED; i++)
-	{
+	for (i = 0; i < IFXMIPS_MAX_LED; i++) {
 		struct ifxmips_led *tmp = kzalloc(sizeof(struct ifxmips_led), GFP_KERNEL);
 		tmp->cdev.brightness_set = ifxmips_ledapi_set;
 		tmp->cdev.name = kmalloc(sizeof("ifxmips:led:00"), GFP_KERNEL);
-		sprintf((char*)tmp->cdev.name, "ifxmips:led:%02d", i);
+		sprintf((char *)tmp->cdev.name, "ifxmips:led:%02d", i);
 		tmp->cdev.default_trigger = NULL;
 		tmp->bit = i;
 		led_classdev_register(&dev->dev, &tmp->cdev);
@@ -156,14 +148,12 @@ ifxmips_led_probe(struct platform_device *dev)
 	return 0;
 }
 
-static int
-ifxmips_led_remove(struct platform_device *pdev)
+static int ifxmips_led_remove(struct platform_device *pdev)
 {
 	return 0;
 }
 
-static struct
-platform_driver ifxmips_led_driver = {
+static struct platform_driver ifxmips_led_driver = {
 	.probe = ifxmips_led_probe,
 	.remove = ifxmips_led_remove,
 	.driver = {
@@ -172,8 +162,7 @@ platform_driver ifxmips_led_driver = {
 	},
 };
 
-int __init
-ifxmips_led_init (void)
+int __init ifxmips_led_init (void)
 {
 	int ret = platform_driver_register(&ifxmips_led_driver);
 	if (ret)
@@ -182,8 +171,7 @@ ifxmips_led_init (void)
 	return ret;
 }
 
-void __exit
-ifxmips_led_exit (void)
+void __exit ifxmips_led_exit (void)
 {
 	platform_driver_unregister(&ifxmips_led_driver);
 }

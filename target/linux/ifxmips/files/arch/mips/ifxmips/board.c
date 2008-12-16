@@ -70,7 +70,7 @@ struct ifxmips_board {
 	int num_devs;
 };
 
-spinlock_t ebu_lock = SPIN_LOCK_UNLOCKED;
+DEFINE_SPINLOCK(ebu_lock);
 EXPORT_SYMBOL_GPL(ebu_lock);
 
 static unsigned char ifxmips_ethaddr[6];
@@ -245,7 +245,7 @@ static int __init ifxmips_set_ethaddr(char *str)
 {
 #define IS_HEX(x) \
 	(((x >= '0' && x <= '9') || (x >= 'a' && x <= 'f') \
-		|| (x >= 'A' && x <= 'F'))?(1):(0))
+		|| (x >= 'A' && x <= 'F')) ? (1) : (0))
 	int i;
 	str = strchr(str, '=');
 	if (!str)
@@ -354,8 +354,8 @@ int __init ifxmips_init_devices(void)
 #endif
 	ifxmips_led_data.leds = board->ifxmips_leds;
 
-	printk(KERN_INFO "%s:%s[%d]adding %d devs\n",
-		__FILE__, __func__, __LINE__, board->num_devs);
+	printk(KERN_INFO "%s: adding %d devs\n",
+		__func__, board->num_devs);
 
 	ifxmips_gpio.resource = &board->reset_resource;
 	ifxmips_gpio_dev.resource = &board->gpiodev_resource;

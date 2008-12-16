@@ -20,12 +20,12 @@
 #ifndef _IFXMIPS_DMA_H__
 #define _IFXMIPS_DMA_H__
 
-#define RCV_INT							1
+#define RCV_INT						1
 #define TX_BUF_FULL_INT					2
 #define TRANSMIT_CPT_INT				4
 #define IFXMIPS_DMA_CH_ON				1
 #define IFXMIPS_DMA_CH_OFF				0
-#define IFXMIPS_DMA_CH_DEFAULT_WEIGHT	100
+#define IFXMIPS_DMA_CH_DEFAULT_WEIGHT			100
 
 enum attr_t{
 	TX = 0,
@@ -34,9 +34,9 @@ enum attr_t{
 	DEFAULT = 3,
 };
 
-#define DMA_OWN							1
-#define CPU_OWN							0
-#define DMA_MAJOR						250
+#define DMA_OWN						1
+#define CPU_OWN						0
+#define DMA_MAJOR					250
 
 #define DMA_DESC_OWN_CPU				0x0
 #define DMA_DESC_OWN_DMA				0x80000000
@@ -44,12 +44,12 @@ enum attr_t{
 #define DMA_DESC_SOP_SET				0x20000000
 #define DMA_DESC_EOP_SET				0x10000000
 
-#define MISCFG_MASK						0x40
-#define RDERR_MASK						0x20
-#define CHOFF_MASK						0x10
-#define DESCPT_MASK						0x8
-#define DUR_MASK						0x4
-#define EOP_MASK						0x2
+#define MISCFG_MASK					0x40
+#define RDERR_MASK					0x20
+#define CHOFF_MASK					0x10
+#define DESCPT_MASK					0x8
+#define DUR_MASK					0x4
+#define EOP_MASK					0x2
 
 #define DMA_DROP_MASK					(1<<31)
 
@@ -57,7 +57,7 @@ enum attr_t{
 #define IFXMIPS_DMA_TX					1
 
 typedef struct dma_chan_map {
-	char dev_name[15];
+	const char *dev_name;
 	enum attr_t dir;
 	int pri;
 	int irq;
@@ -75,7 +75,7 @@ typedef struct rx_desc{
 	volatile u32 C:1;
 	volatile u32 OWN:1;
 	volatile u32 Data_Pointer;
-	/*fix me:should be 28 bits here, 32 bits just for host simulatiuon purpose*/
+	/* fix me:should be 28 bits here, 32 bits just for host simulation purpose */
 }_rx_desc;
 
 typedef struct tx_desc{
@@ -86,9 +86,9 @@ typedef struct tx_desc{
 	volatile u32 SoP:1;
 	volatile u32 C:1;
 	volatile u32 OWN:1;
-	volatile u32 Data_Pointer;//fix me:should be 28 bits here
+	volatile u32 Data_Pointer;/* fix me:should be 28 bits here */
 }_tx_desc;
-#else //BIG
+#else /* BIG */
 typedef struct rx_desc{
 	union
 	{
@@ -128,64 +128,64 @@ typedef struct tx_desc{
 #endif //ENDIAN
 
 typedef struct dma_channel_info{
-   /*relative channel number*/
-   int rel_chan_no;
-   /*class for this channel for QoS*/
-   int pri;
-   /*specify byte_offset*/
-   int byte_offset;
-   /*direction*/
-   int dir;
-   /*irq number*/
-   int irq;
-   /*descriptor parameter*/
-   int desc_base;
-   int desc_len;
-   int curr_desc;
-   int prev_desc;/*only used if it is a tx channel*/
-   /*weight setting for WFQ algorithm*/
-   int weight;
-   int default_weight;
-   int packet_size;
-   int burst_len;
-   /*on or off of this channel*/
-   int control;
-   /**optional information for the upper layer devices*/
+	/*relative channel number*/
+	int rel_chan_no;
+	/*class for this channel for QoS*/
+	int pri;
+	/*specify byte_offset*/
+	int byte_offset;
+	/*direction*/
+	int dir;
+	/*irq number*/
+	int irq;
+	/*descriptor parameter*/
+	int desc_base;
+	int desc_len;
+	int curr_desc;
+	int prev_desc;/*only used if it is a tx channel*/
+	/*weight setting for WFQ algorithm*/
+	int weight;
+	int default_weight;
+	int packet_size;
+	int burst_len;
+	/*on or off of this channel*/
+	int control;
+	/**optional information for the upper layer devices*/
 #if defined(CONFIG_IFXMIPS_ETHERNET_D2) || defined(CONFIG_IFXMIPS_PPA)
-   void* opt[64];
+	void* opt[64];
 #else
-   void* opt[25];
+	void* opt[25];
 #endif
-   /*Pointer to the peripheral device who is using this channel*/
-   void* dma_dev;
-   /*channel operations*/
-   void (*open)(struct dma_channel_info* pCh);
-   void (*close)(struct dma_channel_info* pCh);
-   void (*reset)(struct dma_channel_info* pCh);
-   void (*enable_irq)(struct dma_channel_info* pCh);
-   void (*disable_irq)(struct dma_channel_info* pCh);
+	/*Pointer to the peripheral device who is using this channel*/
+	void* dma_dev;
+	/*channel operations*/
+	void (*open)(struct dma_channel_info* pCh);
+	void (*close)(struct dma_channel_info* pCh);
+	void (*reset)(struct dma_channel_info* pCh);
+	void (*enable_irq)(struct dma_channel_info* pCh);
+	void (*disable_irq)(struct dma_channel_info* pCh);
 }_dma_channel_info;
 
 typedef struct dma_device_info{
-    /*device name of this peripheral*/
-    char device_name[15];
-    int reserved;
-    int tx_burst_len;
-    int rx_burst_len;
-    int default_weight;
-    int  current_tx_chan;
+	/*device name of this peripheral*/
+	char device_name[15];
+	int reserved;
+	int tx_burst_len;
+	int rx_burst_len;
+	int default_weight;
+	int  current_tx_chan;
 	int  current_rx_chan;
-    int  num_tx_chan;
-    int  num_rx_chan;
-    int  max_rx_chan_num;
-    int  max_tx_chan_num;
-    _dma_channel_info* tx_chan[20];
-    _dma_channel_info* rx_chan[20];
-    /*functions, optional*/
-    u8* (*buffer_alloc)(int len,int* offset, void** opt);
-    void (*buffer_free)(u8* dataptr, void* opt);
-    int (*intr_handler)(struct dma_device_info* info, int status);
-    void * priv;		/* used by peripheral driver only */
+	int  num_tx_chan;
+	int  num_rx_chan;
+	int  max_rx_chan_num;
+	int  max_tx_chan_num;
+	_dma_channel_info* tx_chan[20];
+	_dma_channel_info* rx_chan[20];
+	/*functions, optional*/
+	u8* (*buffer_alloc)(int len,int* offset, void** opt);
+	void (*buffer_free)(u8* dataptr, void* opt);
+	int (*intr_handler)(struct dma_device_info* info, int status);
+	void * priv;		/* used by peripheral driver only */
 }_dma_device_info;
 
 _dma_device_info* dma_device_reserve(char* dev_name);
@@ -200,3 +200,4 @@ int dma_device_read(struct dma_device_info* info, u8** dataptr, void** opt);
 
 int dma_device_write(struct dma_device_info* info, u8* dataptr, int len, void* opt);
 #endif
+
