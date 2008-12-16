@@ -163,7 +163,7 @@ struct dma_channel_info {
 
 struct dma_device_info {
 	/* device name of this peripheral */
-	const char *device_name;
+	char device_name[15];
 	int reserved;
 	int tx_burst_len;
 	int rx_burst_len;

@@ -552,7 +552,7 @@ int map_dma_chan(struct dma_chan_map *map)
 	int result;
 
 	for (i = 0; i < MAX_DMA_DEVICE_NUM; i++)
-		dma_devs[i].device_name = &global_device_name[i];
+		strcpy(dma_devs[i].device_name, global_device_name[i]);
 
 	for (i = 0; i < MAX_DMA_CHANNEL_NUM; i++) {
 		dma_chan[i].irq = map[i].irq;

@@ -19,9 +19,10 @@
 
 #include <linux/init.h>
 
-#include <linux/time.h>
+
 #include <linux/cpu.h>
 
+#include <asm/time.h>
 #include <asm/traps.h>
 #include <asm/irq.h>
 #include <asm/bootinfo.h>
