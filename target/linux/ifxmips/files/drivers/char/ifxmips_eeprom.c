@@ -16,11 +16,11 @@
  *   This driver was originally based on the INCA-IP driver, but due to
  *   fundamental conceptual drawbacks there has been changed a lot.
  *
- *   Based on INCA-IP driver Copyright (c) 2003 Gary Jennejohn <gj@denx.de>
- *   Based on the VxWorks drivers Copyright (c) 2002, Infineon Technologies.
+ *   Based on INCA-IP driver Copyright(c) 2003 Gary Jennejohn <gj@denx.de>
+ *   Based on the VxWorks drivers Copyright(c) 2002, Infineon Technologies.
  *
- *   Copyright (C) 2006 infineon
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright(C) 2006 infineon
+ *   Copyright(C) 2007 John Crispin <blogic@openwrt.org>
  *
  */
 
@@ -43,38 +43,38 @@
 #include <linux/delay.h>
 #include <linux/spinlock.h>
 #include <linux/slab.h>
-#include <asm/system.h>
-#include <asm/io.h>
-#include <asm/irq.h>
-#include <asm/uaccess.h>
-#include <asm/bitops.h>
+#include <linux/io.h>
+#include <linux/irq.h>
+#include <linux/uaccess.h>
+#include <linux/bitops.h>
 
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
 
+#include <asm/system.h>
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/ifxmips/ifx_ssc_defines.h>
 #include <asm/ifxmips/ifx_ssc.h>
 
 /* allow the user to set the major device number */
-static int ifxmips_eeprom_maj = 0;
+static int ifxmips_eeprom_maj;
 
-extern int ifx_ssc_init (void);
-extern int ifx_ssc_open (struct inode *inode, struct file *filp);
-extern int ifx_ssc_close (struct inode *inode, struct file *filp);
-extern void ifx_ssc_cleanup_module (void);
-extern int ifx_ssc_ioctl (struct inode *inode, struct file *filp,
+extern int ifx_ssc_init(void);
+extern int ifx_ssc_open(struct inode *inode, struct file *filp);
+extern int ifx_ssc_close(struct inode *inode, struct file *filp);
+extern void ifx_ssc_cleanup_module(void);
+extern int ifx_ssc_ioctl(struct inode *inode, struct file *filp,
 			  unsigned int cmd, unsigned long data);
-extern ssize_t ifx_ssc_kwrite (int port, const char *kbuf, size_t len);
-extern ssize_t ifx_ssc_kread (int port, char *kbuf, size_t len);
+extern ssize_t ifx_ssc_kwrite(int port, const char *kbuf, size_t len);
+extern ssize_t ifx_ssc_kread(int port, char *kbuf, size_t len);
 
-extern int ifx_ssc_cs_low (unsigned int pin);
-extern int ifx_ssc_cs_high (unsigned int pin);
-extern int ifx_ssc_txrx (char *tx_buf, unsigned int tx_len, char *rx_buf, unsigned int rx_len);
-extern int ifx_ssc_tx (char *tx_buf, unsigned int tx_len);
-extern int ifx_ssc_rx (char *rx_buf, unsigned int rx_len);
+extern int ifx_ssc_cs_low(unsigned int pin);
+extern int ifx_ssc_cs_high(unsigned int pin);
+extern int ifx_ssc_txrx(char *tx_buf, unsigned int tx_len, char *rx_buf, unsigned int rx_len);
+extern int ifx_ssc_tx(char *tx_buf, unsigned int tx_len);
+extern int ifx_ssc_rx(char *rx_buf, unsigned int rx_len);
 
 #define EEPROM_CS IFX_SSC_WHBGPOSTAT_OUT0_POS
 
@@ -88,8 +88,7 @@ extern int ifx_ssc_rx (char *rx_buf, unsigned int rx_len);
 #define EEPROM_PAGE_SIZE		4
 #define EEPROM_SIZE			512
 
-static int
-eeprom_rdsr (void)
+static int eeprom_rdsr(void)
 {
 	int ret = 0;
 	unsigned char cmd = EEPROM_RDSR;
@@ -108,15 +107,13 @@ eeprom_rdsr (void)
 	return ret;
 }
 
-void
-eeprom_wip_over (void)
+void eeprom_wip_over(void)
 {
 	while (eeprom_rdsr())
-		printk("waiting for eeprom\n");
+		printk(KERN_INFO "waiting for eeprom\n");
 }
 
-static int
-eeprom_wren (void)
+static int eeprom_wren(void)
 {
 	unsigned char cmd = EEPROM_WREN;
 	int ret = 0;
@@ -136,8 +133,7 @@ eeprom_wren (void)
 	return ret;
 }
 
-static int
-eeprom_wrsr (void)
+static int eeprom_wrsr(void)
 {
 	int ret = 0;
 	unsigned char cmd[2];
@@ -146,9 +142,8 @@ eeprom_wrsr (void)
 	cmd[0] = EEPROM_WRSR;
 	cmd[1] = 0;
 
-	if ((ret = eeprom_wren()))
-	{
-		printk ("eeprom_wren fails\n");
+	if ((ret = eeprom_wren())) {
+		printk(KERN_ERR "eeprom_wren fails\n");
 		goto out1;
 	}
 
@@ -171,23 +166,21 @@ eeprom_wrsr (void)
 	return ret;
 
 out:
-	local_irq_restore (flag);
-	eeprom_wip_over ();
+	local_irq_restore(flag);
+	eeprom_wip_over();
 
 out1:
 	return ret;
 }
 
-static int
-eeprom_read (unsigned int addr, unsigned char *buf, unsigned int len)
+static int eeprom_read(unsigned int addr, unsigned char *buf, unsigned int len)
 {
 	int ret = 0;
 	unsigned char write_buf[2];
 	unsigned int eff = 0;
 	unsigned long flag;
 
-	while (1)
-	{
+	while (1) {
 		eeprom_wip_over();
 		eff = EEPROM_PAGE_SIZE - (addr % EEPROM_PAGE_SIZE);
 		eff = (eff < len) ? eff : len;
@@ -196,13 +189,13 @@ eeprom_read (unsigned int addr, unsigned char *buf, unsigned int len)
 		if ((ret = ifx_ssc_cs_low(EEPROM_CS)) < 0)
 			goto out;
 
-		write_buf[0] = EEPROM_READ | ((unsigned char) ((addr & 0x100) >> 5));
+		write_buf[0] = EEPROM_READ | ((unsigned char)((addr & 0x100) >> 5));
 		write_buf[1] = (addr & 0xff);
 
-		if ((ret = ifx_ssc_txrx (write_buf, 2, buf, eff)) != eff)
-		{
-			printk("ssc_txrx fails %d\n", ret);
-			ifx_ssc_cs_high (EEPROM_CS);
+		ret = ifx_ssc_txrx(write_buf, 2, buf, eff);
+		if (ret != eff) {
+			printk(KERN_ERR "ssc_txrx fails %d\n", ret);
+			ifx_ssc_cs_high(EEPROM_CS);
 			goto out;
 		}
 
@@ -210,7 +203,8 @@ eeprom_read (unsigned int addr, unsigned char *buf, unsigned int len)
 		len -= ret;
 		addr += ret;
 
-		if ((ret = ifx_ssc_cs_high(EEPROM_CS)))
+		ret = ifx_ssc_cs_high(EEPROM_CS);
+		if (ret)
 			goto out;
 
 		local_irq_restore(flag);
@@ -220,13 +214,12 @@ eeprom_read (unsigned int addr, unsigned char *buf, unsigned int len)
 	}
 
 out:
-	local_irq_restore (flag);
+	local_irq_restore(flag);
 out2:
 	return ret;
 }
 
-static int
-eeprom_write (unsigned int addr, unsigned char *buf, unsigned int len)
+static int eeprom_write(unsigned int addr, unsigned char *buf, unsigned int len)
 {
 	int ret = 0;
 	unsigned int eff = 0;
@@ -234,23 +227,21 @@ eeprom_write (unsigned int addr, unsigned char *buf, unsigned int len)
 	int i;
 	unsigned char rx_buf[EEPROM_PAGE_SIZE];
 
-	while (1)
-	{
+	while (1) {
 		eeprom_wip_over();
 
-		if ((ret = eeprom_wren()))
-		{
-			printk("eeprom_wren fails\n");
+		if ((ret = eeprom_wren())) {
+			printk(KERN_ERR "eeprom_wren fails\n");
 			goto out;
 		}
 
-		write_buf[0] = EEPROM_WRITE | ((unsigned char) ((addr & 0x100) >> 5));
+		write_buf[0] = EEPROM_WRITE | ((unsigned char)((addr & 0x100) >> 5));
 		write_buf[1] = (addr & 0xff);
 
 		eff = EEPROM_PAGE_SIZE - (addr % EEPROM_PAGE_SIZE);
 		eff = (eff < len) ? eff : len;
 
-		printk("EEPROM Write:\n");
+		printk(KERN_INFO "EEPROM Write:\n");
 		for (i = 0; i < eff; i++) {
 			printk("%2x ", buf[i]);
 			if ((i % 16) == 15)
@@ -261,16 +252,14 @@ eeprom_write (unsigned int addr, unsigned char *buf, unsigned int len)
 		if ((ret = ifx_ssc_cs_low(EEPROM_CS)))
 			goto out;
 
-		if ((ret = ifx_ssc_tx (write_buf, 2)) < 0)
-		{
-			printk("ssc_tx fails %d\n", ret);
+		if ((ret = ifx_ssc_tx(write_buf, 2)) < 0) {
+			printk(KERN_ERR "ssc_tx fails %d\n", ret);
 			ifx_ssc_cs_high(EEPROM_CS);
 			goto out;
 		}
 
-		if ((ret = ifx_ssc_tx (buf, eff)) != eff)
-		{
-			printk("ssc_tx fails %d\n", ret);
+		if ((ret = ifx_ssc_tx(buf, eff)) != eff) {
+			printk(KERN_ERR "ssc_tx fails %d\n", ret);
 			ifx_ssc_cs_high(EEPROM_CS);
 			goto out;
 		}
@@ -279,16 +268,14 @@ eeprom_write (unsigned int addr, unsigned char *buf, unsigned int len)
 		len -= ret;
 		addr += ret;
 
-		if ((ret = ifx_ssc_cs_high (EEPROM_CS)))
+		if ((ret = ifx_ssc_cs_high(EEPROM_CS)))
 			goto out;
 
-		printk ("<==");
+		printk(KERN_INFO "<==");
 		eeprom_read((addr - eff), rx_buf, eff);
 		for (i = 0; i < eff; i++)
-		{
-			printk ("[%x]", rx_buf[i]);
-		}
-		printk ("\n");
+			printk("[%x]", rx_buf[i]);
+		printk("\n");
 
 		if (len <= 0)
 			break;
@@ -298,81 +285,71 @@ out:
 	return ret;
 }
 
-int
-ifxmips_eeprom_open (struct inode *inode, struct file *filp)
+int ifxmips_eeprom_open(struct inode *inode, struct file *filp)
 {
 	filp->f_pos = 0;
 	return 0;
 }
 
-int
-ifxmips_eeprom_close (struct inode *inode, struct file *filp)
+int ifxmips_eeprom_close(struct inode *inode, struct file *filp)
 {
 	return 0;
 }
 
-int
-ifxmips_eeprom_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigned long data)
+int ifxmips_eeprom_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long data)
 {
 	return 0;
 }
 
-ssize_t
-ifxmips_eeprom_read (char *buf, size_t len, unsigned int addr)
+ssize_t ifxmips_eeprom_read(char *buf, size_t len, unsigned int addr)
 {
 	int ret = 0;
 	unsigned int data;
 
-	printk("addr:=%d\n", addr);
-	printk("len:=%d\n", len);
+	printk(KERN_INFO "addr:=%d\n", addr);
+	printk(KERN_INFO "len:=%d\n", len);
 
-	if ((addr + len) > EEPROM_SIZE)
-	{
-		printk("invalid len\n");
+	if ((addr + len) > EEPROM_SIZE) {
+		printk(KERN_ERR "invalid len\n");
 		addr = 0;
 		len = EEPROM_SIZE / 2;
 	}
 
-	if ((ret = ifx_ssc_open((struct inode *) 0, NULL)))
-	{
-		printk("ifxmips_eeprom_open fails\n");
+	if ((ret = ifx_ssc_open((struct inode *)0, NULL))) {
+		printk(KERN_ERR "ifxmips_ssc_open fails\n");
 		goto out;
 	}
 
 	data = (unsigned int)IFX_SSC_MODE_RXTX;
 
-	if ((ret = ifx_ssc_ioctl((struct inode *) 0, NULL, IFX_SSC_RXTX_MODE_SET, (unsigned long) &data)))
-	{
-		printk("set RXTX mode fails\n");
+	if ((ret = ifx_ssc_ioctl((struct inode *)0, NULL, IFX_SSC_RXTX_MODE_SET, (unsigned long) &data))) {
+		printk(KERN_ERR "set RXTX mode fails\n");
 		goto out;
 	}
 
-	if ((ret = eeprom_wrsr()))
-	{
-		printk("EEPROM reset fails\n");
+	if ((ret = eeprom_wrsr())) {
+		printk(KERN_ERR "EEPROM reset fails\n");
 		goto out;
 	}
 
-	if ((ret = eeprom_read(addr, buf, len)))
-	{
-		printk("eeprom read fails\n");
+	if ((ret = eeprom_read(addr, buf, len))) {
+		printk(KERN_ERR "eeprom read fails\n");
 		goto out;
 	}
 
 out:
-	if (ifx_ssc_close((struct inode *) 0, NULL))
-		printk("ifxmips_eeprom_close fails\n");
+	if (ifx_ssc_close((struct inode *)0, NULL))
+		printk(KERN_ERR "ifxmips_ssc_close fails\n");
 
 	return len;
 }
 EXPORT_SYMBOL(ifxmips_eeprom_read);
 
-static ssize_t
-ifxmips_eeprom_fops_read (struct file *filp, char *ubuf, size_t len, loff_t * off)
+static ssize_t ifxmips_eeprom_fops_read(struct file *filp, char *ubuf, size_t len, loff_t *off)
 {
 	int ret = 0;
 	unsigned char ssc_rx_buf[EEPROM_SIZE];
-	long flag;
+	unsigned long flag;
 
 	if (*off >= EEPROM_SIZE)
 		return 0;
@@ -385,15 +362,13 @@ ifxmips_eeprom_fops_read (struct file *filp, char *ubuf, size_t len, loff_t * of
 
 	local_irq_save(flag);
 
-	if ((ret = ifxmips_eeprom_read(ssc_rx_buf, len, *off)) < 0)
-	{
-		printk("read fails, err=%x\n", ret);
+	if ((ret = ifxmips_eeprom_read(ssc_rx_buf, len, *off)) < 0) {
+		printk(KERN_ERR "read fails, err=%x\n", ret);
 		local_irq_restore(flag);
 		return ret;
 	}
 
-	if (copy_to_user((void*)ubuf, ssc_rx_buf, ret) != 0)
-	{
+	if (copy_to_user((void *)ubuf, ssc_rx_buf, ret) != 0) {
 		local_irq_restore(flag);
 		ret = -EFAULT;
 	}
@@ -404,46 +379,42 @@ ifxmips_eeprom_fops_read (struct file *filp, char *ubuf, size_t len, loff_t * of
 	return len;
 }
 
-ssize_t
-ifxmips_eeprom_write (char *buf, size_t len, unsigned int addr)
+ssize_t ifxmips_eeprom_write(char *buf, size_t len, unsigned int addr)
 {
 	int ret = 0;
 	unsigned int data;
 
-	if ((ret = ifx_ssc_open ((struct inode *) 0, NULL)))
-	{
-		printk ("ifxmips_eeprom_open fails\n");
+	if ((ret = ifx_ssc_open((struct inode *)0, NULL))) {
+		printk(KERN_ERR "ifxmips_ssc_open fails\n");
 		goto out;
 	}
 
 	data = (unsigned int) IFX_SSC_MODE_RXTX;
 
-	if ((ret = ifx_ssc_ioctl ((struct inode *) 0, NULL, IFX_SSC_RXTX_MODE_SET, (unsigned long) &data)))
-	{
-		printk ("set RXTX mode fails\n");
+	if ((ret = ifx_ssc_ioctl((struct inode *)0, NULL, IFX_SSC_RXTX_MODE_SET, (unsigned long) &data))) {
+		printk(KERN_ERR "set RXTX mode fails\n");
 		goto out;
 	}
 
-	if ((ret = eeprom_wrsr ())) {
-		printk ("EEPROM reset fails\n");
+	if ((ret = eeprom_wrsr())) {
+		printk(KERN_ERR "EEPROM reset fails\n");
 		goto out;
 	}
 
-	if ((ret = eeprom_write (addr, buf, len))) {
-		printk ("eeprom write fails\n");
+	if ((ret = eeprom_write(addr, buf, len))) {
+		printk(KERN_ERR "eeprom write fails\n");
 		goto out;
 	}
 
 out:
-	if (ifx_ssc_close ((struct inode *) 0, NULL))
-		printk ("ifxmips_eeprom_close fails\n");
+	if (ifx_ssc_close((struct inode *)0, NULL))
+		printk(KERN_ERR "ifxmips_ssc_close fails\n");
 
 	return ret;
 }
 EXPORT_SYMBOL(ifxmips_eeprom_write);
 
-static ssize_t
-ifxmips_eeprom_fops_write (struct file *filp, const char *ubuf, size_t len, loff_t * off)
+static ssize_t ifxmips_eeprom_fops_write(struct file *filp, const char *ubuf, size_t len, loff_t *off)
 {
 	int ret = 0;
 	unsigned char ssc_tx_buf[EEPROM_SIZE];
@@ -454,10 +425,10 @@ ifxmips_eeprom_fops_write (struct file *filp, const char *ubuf, size_t len, loff
 	if (len + *off > EEPROM_SIZE)
 		len = EEPROM_SIZE - *off;
 
-	if ((ret = copy_from_user (ssc_tx_buf, ubuf, len)))
+	if ((ret = copy_from_user(ssc_tx_buf, ubuf, len)))
 		return EFAULT;
 
-	ret = ifxmips_eeprom_write (ssc_tx_buf, len, *off);
+	ret = ifxmips_eeprom_write(ssc_tx_buf, len, *off);
 
 	if (ret > 0)
 		*off = ret;
@@ -465,8 +436,7 @@ ifxmips_eeprom_fops_write (struct file *filp, const char *ubuf, size_t len, loff
 	return ret;
 }
 
-loff_t
-ifxmips_eeprom_llseek (struct file * filp, loff_t off, int whence)
+loff_t ifxmips_eeprom_llseek(struct file *filp, loff_t off, int whence)
 {
 	loff_t newpos;
 	switch (whence) {
@@ -491,51 +461,47 @@ ifxmips_eeprom_llseek (struct file * filp, loff_t off, int whence)
 }
 
 static struct file_operations ifxmips_eeprom_fops = {
-      owner:THIS_MODULE,
-      llseek:ifxmips_eeprom_llseek,
-      read:ifxmips_eeprom_fops_read,
-      write:ifxmips_eeprom_fops_write,
-      ioctl:ifxmips_eeprom_ioctl,
-      open:ifxmips_eeprom_open,
-      release:ifxmips_eeprom_close,
+	.owner = THIS_MODULE,
+	.llseek = ifxmips_eeprom_llseek,
+	.read = ifxmips_eeprom_fops_read,
+	.write = ifxmips_eeprom_fops_write,
+	.ioctl = ifxmips_eeprom_ioctl,
+	.open = ifxmips_eeprom_open,
+	.release = ifxmips_eeprom_close,
 };
 
-int __init
-ifxmips_eeprom_init (void)
+int __init ifxmips_eeprom_init(void)
 {
 	int ret = 0;
 
 	ifxmips_eeprom_maj = register_chrdev(0, "eeprom", &ifxmips_eeprom_fops);
 
-	if (ifxmips_eeprom_maj < 0)
-	{
-		printk("failed to register eeprom device\n");
+	if (ifxmips_eeprom_maj < 0) {
+		printk(KERN_ERR "failed to register eeprom device\n");
 		ret = -EINVAL;
-		
+
 		goto out;
 	}
 
-	printk("ifxmips_eeprom : /dev/eeprom mayor %d\n", ifxmips_eeprom_maj);
+	printk(KERN_INFO "ifxmips_eeprom : /dev/eeprom mayor %d\n", ifxmips_eeprom_maj);
 
 out:
 	return ret;
 }
 
-void __exit
-ifxmips_eeprom_cleanup_module (void)
+void __exit ifxmips_eeprom_cleanup_module(void)
 {
-	/*if (unregister_chrdev (ifxmips_eeprom_maj, "eeprom")) {
-		printk ("Unable to unregister major %d for the EEPROM\n",
+	/*if (unregister_chrdev(ifxmips_eeprom_maj, "eeprom")) {
+		printk(KERN_ERR "Unable to unregister major %d for the EEPROM\n",
 			maj);
 	}*/
 }
 
-module_exit (ifxmips_eeprom_cleanup_module);
-module_init (ifxmips_eeprom_init);
+module_exit(ifxmips_eeprom_cleanup_module);
+module_init(ifxmips_eeprom_init);
 
-MODULE_LICENSE ("GPL");
-MODULE_AUTHOR ("Peng Liu");
-MODULE_DESCRIPTION ("IFAP EEPROM driver");
-MODULE_SUPPORTED_DEVICE ("ifxmips_eeprom");
-
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Peng Liu");
+MODULE_DESCRIPTION("IFAP EEPROM driver");
+MODULE_SUPPORTED_DEVICE("ifxmips_eeprom");
 

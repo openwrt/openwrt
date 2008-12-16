@@ -16,7 +16,7 @@
  *   Copyright (C) 2004 btxu Generate from INCA-IP project
  *   Copyright (C) 2005 Jin-Sze.Sow Comments edited
  *   Copyright (C) 2006 Huang Xiaogang Modification & verification on Danube chip
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/module.h>
@@ -35,9 +35,8 @@
 #include <linux/netlink.h>
 #include <linux/platform_device.h>
 #include <net/sock.h>
-#include <asm/uaccess.h>
-#include <asm/semaphore.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
+#include <linux/semaphore.h>
 #include <asm/ifxmips/ifxmips.h>
 
 #define MAX_PORTS			2

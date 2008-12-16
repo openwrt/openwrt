@@ -23,8 +23,7 @@
 #include <asm/io.h>
 #include <asm/ifxmips/ifxmips.h>
 
-static void
-ifxmips_machine_restart(char *command)
+static void ifxmips_machine_restart(char *command)
 {
 	printk(KERN_NOTICE "System restart\n");
 	local_irq_disable();
@@ -33,24 +32,21 @@ ifxmips_machine_restart(char *command)
 	for(;;);
 }
 
-static void
-ifxmips_machine_halt(void)
+static void ifxmips_machine_halt(void)
 {
 	printk(KERN_NOTICE "System halted.\n");
 	local_irq_disable();
 	for(;;);
 }
 
-static void
-ifxmips_machine_power_off(void)
+static void ifxmips_machine_power_off(void)
 {
 	printk (KERN_NOTICE "Please turn off the power now.\n");
 	local_irq_disable();
 	for(;;);
 }
 
-void
-ifxmips_reboot_setup(void)
+void ifxmips_reboot_setup(void)
 {
 	_machine_restart = ifxmips_machine_restart;
 	_machine_halt = ifxmips_machine_halt;

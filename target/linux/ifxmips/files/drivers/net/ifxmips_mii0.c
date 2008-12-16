@@ -48,43 +48,39 @@ struct ifxmips_mii_priv {
 static struct net_device *ifxmips_mii0_dev;
 static unsigned char mac_addr[MAX_ADDR_LEN];
 
-void
-ifxmips_write_mdio(u32 phy_addr, u32 phy_reg, u16 phy_data)
+void ifxmips_write_mdio(u32 phy_addr, u32 phy_reg, u16 phy_data)
 {
 	u32 val = MDIO_ACC_REQUEST |
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET) |
 		phy_data;
 
-	while(ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
 	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
 }
 EXPORT_SYMBOL(ifxmips_write_mdio);
 
-unsigned short
-ifxmips_read_mdio(u32 phy_addr, u32 phy_reg)
+unsigned short ifxmips_read_mdio(u32 phy_addr, u32 phy_reg)
 {
 	u32 val = MDIO_ACC_REQUEST | MDIO_ACC_READ |
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET);
 
-	while(ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST) ;
 	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
-	while(ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST){};
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST) ;
 	val = ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
 	return val;
 }
 EXPORT_SYMBOL(ifxmips_read_mdio);
 
-int
-ifxmips_ifxmips_mii_open(struct net_device *dev)
+int ifxmips_ifxmips_mii_open(struct net_device *dev)
 {
-	struct ifxmips_mii_priv* priv = (struct ifxmips_mii_priv*)dev->priv;
-	struct dma_device_info* dma_dev = priv->dma_device;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
+	struct dma_device_info *dma_dev = priv->dma_device;
 	int i;
 
-	for (i = 0; i < dma_dev->max_rx_chan_num; i++)
-	{
+	for (i = 0; i < dma_dev->max_rx_chan_num; i++) {
 		if ((dma_dev->rx_chan[i])->control == IFXMIPS_DMA_CH_ON)
 			(dma_dev->rx_chan[i])->open(dma_dev->rx_chan[i]);
 	}
@@ -92,10 +88,10 @@ ifxmips_ifxmips_mii_open(struct net_device *dev)
 	return 0;
 }
 
-int
-ifxmips_mii_release(struct net_device *dev){
-	struct ifxmips_mii_priv* priv = (struct ifxmips_mii_priv*)dev->priv;
-	struct dma_device_info* dma_dev = priv->dma_device;
+int ifxmips_mii_release(struct net_device *dev)
+{
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
+	struct dma_device_info *dma_dev = priv->dma_device;
 	int i;
 
 	for (i = 0; i < dma_dev->max_rx_chan_num; i++)
@@ -104,32 +100,28 @@ ifxmips_mii_release(struct net_device *dev){
 	return 0;
 }
 
-int
-ifxmips_mii_hw_receive(struct net_device* dev,struct dma_device_info* dma_dev)
+int ifxmips_mii_hw_receive(struct net_device *dev, struct dma_device_info *dma_dev)
 {
-	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv*)dev->priv;
-	unsigned char* buf = NULL;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
+	unsigned char *buf = NULL;
 	struct sk_buff *skb = NULL;
 	int len = 0;
 
-	len = dma_device_read(dma_dev, &buf, (void**)&skb);
+	len = dma_device_read(dma_dev, &buf, (void **)&skb);
 
-	if (len >= ETHERNET_PACKET_DMA_BUFFER_SIZE)
-	{
-		printk(KERN_INFO "ifxmips_mii0: packet too large %d\n",len);
+	if (len >= ETHERNET_PACKET_DMA_BUFFER_SIZE) {
+		printk(KERN_INFO "ifxmips_mii0: packet too large %d\n", len);
 		goto ifxmips_mii_hw_receive_err_exit;
 	}
 
 	/* remove CRC */
 	len -= 4;
-	if (skb == NULL)
-	{
+	if (skb == NULL) {
 		printk(KERN_INFO "ifxmips_mii0: cannot restore pointer\n");
 		goto ifxmips_mii_hw_receive_err_exit;
 	}
 
-	if (len > (skb->end - skb->tail))
-	{
+	if (len > (skb->end - skb->tail)) {
 		printk(KERN_INFO "ifxmips_mii0: BUG, len:%d end:%p tail:%p\n",
 			(len+4), skb->end, skb->tail);
 		goto ifxmips_mii_hw_receive_err_exit;
@@ -145,8 +137,7 @@ ifxmips_mii_hw_receive(struct net_device* dev,struct dma_device_info* dma_dev)
 	return 0;
 
 ifxmips_mii_hw_receive_err_exit:
-	if (len == 0)
-	{
+	if (len == 0) {
 		if (skb)
 			dev_kfree_skb_any(skb);
 		priv->stats.rx_errors++;
@@ -157,52 +148,48 @@ ifxmips_mii_hw_receive_err_exit:
 	}
 }
 
-int
-ifxmips_mii_hw_tx(char *buf, int len, struct net_device *dev)
+int ifxmips_mii_hw_tx(char *buf, int len, struct net_device *dev)
 {
 	int ret = 0;
 	struct ifxmips_mii_priv *priv = dev->priv;
-	struct dma_device_info* dma_dev = priv->dma_device;
+	struct dma_device_info *dma_dev = priv->dma_device;
 	ret = dma_device_write(dma_dev, buf, len, priv->skb);
 	return ret;
 }
 
-int
-ifxmips_mii_tx(struct sk_buff *skb, struct net_device *dev)
+int ifxmips_mii_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	int len;
 	char *data;
 	struct ifxmips_mii_priv *priv = dev->priv;
-	struct dma_device_info* dma_dev = priv->dma_device;
+	struct dma_device_info *dma_dev = priv->dma_device;
 
 	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
 	data = skb->data;
 	priv->skb = skb;
 	dev->trans_start = jiffies;
-	// TODO we got more than 1 dma channel, so we should do something intelligent
-	// here to select one
+	/* TODO: we got more than 1 dma channel,
+	   so we should do something intelligent here to select one */
 	dma_dev->current_tx_chan = 0;
 
 	wmb();
 
-	if (ifxmips_mii_hw_tx(data, len, dev) != len)
-	{
+	if (ifxmips_mii_hw_tx(data, len, dev) != len) {
 		dev_kfree_skb_any(skb);
 		priv->stats.tx_errors++;
 		priv->stats.tx_dropped++;
 	} else {
 		priv->stats.tx_packets++;
-		priv->stats.tx_bytes+=len;
+		priv->stats.tx_bytes += len;
 	}
 
 	return 0;
 }
 
-void
-ifxmips_mii_tx_timeout(struct net_device *dev)
+void ifxmips_mii_tx_timeout(struct net_device *dev)
 {
 	int i;
-	struct ifxmips_mii_priv* priv = (struct ifxmips_mii_priv*)dev->priv;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
 
 	priv->stats.tx_errors++;
 	for (i = 0; i < priv->dma_device->max_tx_chan_num; i++)
@@ -211,13 +198,11 @@ ifxmips_mii_tx_timeout(struct net_device *dev)
 	return;
 }
 
-int
-dma_intr_handler(struct dma_device_info* dma_dev, int status)
+int dma_intr_handler(struct dma_device_info *dma_dev, int status)
 {
 	int i;
 
-	switch(status)
-	{
+	switch (status) {
 	case RCV_INT:
 		ifxmips_mii_hw_receive(ifxmips_mii0_dev, dma_dev);
 		break;
@@ -225,9 +210,8 @@ dma_intr_handler(struct dma_device_info* dma_dev, int status)
 	case TX_BUF_FULL_INT:
 		printk(KERN_INFO "ifxmips_mii0: tx buffer full\n");
 		netif_stop_queue(ifxmips_mii0_dev);
-		for (i = 0; i < dma_dev->max_tx_chan_num; i++)
-		{
-			if ((dma_dev->tx_chan[i])->control==IFXMIPS_DMA_CH_ON)
+		for (i = 0; i < dma_dev->max_tx_chan_num; i++) {
+			if ((dma_dev->tx_chan[i])->control == IFXMIPS_DMA_CH_ON)
 				dma_dev->tx_chan[i]->enable_irq(dma_dev->tx_chan[i]);
 		}
 		break;
@@ -243,8 +227,7 @@ dma_intr_handler(struct dma_device_info* dma_dev, int status)
 	return 0;
 }
 
-unsigned char*
-ifxmips_etop_dma_buffer_alloc(int len, int *byte_offset, void **opt)
+unsigned char *ifxmips_etop_dma_buffer_alloc(int len, int *byte_offset, void **opt)
 {
 	unsigned char *buffer = NULL;
 	struct sk_buff *skb = NULL;
@@ -253,36 +236,32 @@ ifxmips_etop_dma_buffer_alloc(int len, int *byte_offset, void **opt)
 	if (skb == NULL)
 		return NULL;
 
-	buffer = (unsigned char*)(skb->data);
+	buffer = (unsigned char *)(skb->data);
 	skb_reserve(skb, 2);
-	*(int*)opt = (int)skb;
+	*(int *)opt = (int)skb;
 	*byte_offset = 2;
 
 	return buffer;
 }
 
-void
-ifxmips_etop_dma_buffer_free(unsigned char *dataptr, void *opt)
+void ifxmips_etop_dma_buffer_free(unsigned char *dataptr, void *opt)
 {
 	struct sk_buff *skb = NULL;
 
-	if (opt == NULL)
-	{
+	if (opt == NULL) {
 		kfree(dataptr);
 	} else {
-		skb = (struct sk_buff*)opt;
+		skb = (struct sk_buff *)opt;
 		dev_kfree_skb_any(skb);
 	}
 }
 
-static struct net_device_stats*
-ifxmips_get_stats(struct net_device *dev)
+static struct net_device_stats *ifxmips_get_stats(struct net_device *dev)
 {
 	return (struct net_device_stats *)dev->priv;
 }
 
-static int
-ifxmips_mii_dev_init(struct net_device *dev)
+static int ifxmips_mii_dev_init(struct net_device *dev)
 {
 	int i;
 	struct ifxmips_mii_priv *priv;
@@ -298,7 +277,7 @@ ifxmips_mii_dev_init(struct net_device *dev)
 	memset(dev->priv, 0, sizeof(struct ifxmips_mii_priv));
 	priv = dev->priv;
 	priv->dma_device = dma_device_reserve("PPE");
-	if (!priv->dma_device){
+	if (!priv->dma_device) {
 		BUG();
 		return -ENODEV;
 	}
@@ -307,8 +286,7 @@ ifxmips_mii_dev_init(struct net_device *dev)
 	priv->dma_device->intr_handler = &dma_intr_handler;
 	priv->dma_device->max_rx_chan_num = 4;
 
-	for (i = 0; i < priv->dma_device->max_rx_chan_num; i++)
-	{
+	for (i = 0; i < priv->dma_device->max_rx_chan_num; i++) {
 		priv->dma_device->rx_chan[i]->packet_size = ETHERNET_PACKET_DMA_BUFFER_SIZE;
 		priv->dma_device->rx_chan[i]->control = IFXMIPS_DMA_CH_ON;
 	}
@@ -322,16 +300,14 @@ ifxmips_mii_dev_init(struct net_device *dev)
 	dma_device_register(priv->dma_device);
 
 	printk(KERN_INFO "ifxmips_mii0: using mac=");
-	for (i = 0; i < 6; i++)
-	{
+	for (i = 0; i < 6; i++) {
 		dev->dev_addr[i] = mac_addr[i];
 		printk("%02X%c", dev->dev_addr[i], (i == 5)?('\n'):(':'));
 	}
 	return 0;
 }
 
-static void
-ifxmips_mii_chip_init(int mode)
+static void ifxmips_mii_chip_init(int mode)
 {
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_DMA);
 	ifxmips_pmu_enable(IFXMIPS_PMU_PWDCR_PPE);
@@ -345,19 +321,17 @@ ifxmips_mii_chip_init(int mode)
 	wmb();
 }
 
-static int
-ifxmips_mii_probe(struct platform_device *dev)
+static int ifxmips_mii_probe(struct platform_device *dev)
 {
 	int result = 0;
-	unsigned char *mac = (unsigned char*)dev->dev.platform_data;
+	unsigned char *mac = (unsigned char *)dev->dev.platform_data;
 	ifxmips_mii0_dev = alloc_etherdev(sizeof(struct ifxmips_mii_priv));
 	ifxmips_mii0_dev->init = ifxmips_mii_dev_init;
 	memcpy(mac_addr, mac, 6);
 	strcpy(ifxmips_mii0_dev->name, "eth%d");
 	ifxmips_mii_chip_init(REV_MII_MODE);
 	result = register_netdev(ifxmips_mii0_dev);
-	if (result)
-	{
+	if (result) {
 		printk(KERN_INFO "ifxmips_mii0: error %i registering device \"%s\"\n", result, ifxmips_mii0_dev->name);
 		goto out;
 	}
@@ -368,10 +342,9 @@ out:
 	return result;
 }
 
-static int
-ifxmips_mii_remove(struct platform_device *dev)
+static int ifxmips_mii_remove(struct platform_device *dev)
 {
-	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv*)ifxmips_mii0_dev->priv;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)ifxmips_mii0_dev->priv;
 
 	printk(KERN_INFO "ifxmips_mii0: ifxmips_mii0 cleanup\n");
 
@@ -383,8 +356,7 @@ ifxmips_mii_remove(struct platform_device *dev)
 	return 0;
 }
 
-static struct
-platform_driver ifxmips_mii_driver = {
+static struct platform_driver ifxmips_mii_driver = {
 	.probe = ifxmips_mii_probe,
 	.remove = ifxmips_mii_remove,
 	.driver = {
@@ -393,8 +365,7 @@ platform_driver ifxmips_mii_driver = {
 	},
 };
 
-int __init
-ifxmips_mii_init(void)
+int __init ifxmips_mii_init(void)
 {
 	int ret = platform_driver_register(&ifxmips_mii_driver);
 	if (ret)
@@ -402,8 +373,7 @@ ifxmips_mii_init(void)
 	return ret;
 }
 
-static void __exit
-ifxmips_mii_cleanup(void)
+static void __exit ifxmips_mii_cleanup(void)
 {
 	platform_driver_unregister(&ifxmips_mii_driver);
 }
@@ -414,3 +384,4 @@ module_exit(ifxmips_mii_cleanup);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 MODULE_DESCRIPTION("ethernet map driver for IFXMIPS boards");
+

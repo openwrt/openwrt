@@ -24,9 +24,9 @@
  config MACH_DECSTATION
  	bool "DECstations"
  	select BOOT_ELF32
-@@ -697,6 +714,7 @@ source "arch/mips/sibyte/Kconfig"
- source "arch/mips/tx4927/Kconfig"
- source "arch/mips/tx4938/Kconfig"
+@@ -607,6 +624,7 @@ source "arch/mips/sgi-ip27/Kconfig"
+ source "arch/mips/sibyte/Kconfig"
+ source "arch/mips/txx9/Kconfig"
  source "arch/mips/vr41xx/Kconfig"
 +source "arch/mips/ifxmips/Kconfig"
  
@@ -50,9 +50,9 @@
  core-$(CONFIG_MACH_DECSTATION)	+= arch/mips/dec/
 --- a/include/asm-mips/bootinfo.h
 +++ b/include/asm-mips/bootinfo.h
-@@ -94,6 +94,12 @@
- #define MACH_MSP7120_FPGA       5	/* PMC-Sierra MSP7120 Emulation */
- #define MACH_MSP_OTHER        255	/* PMC-Sierra unknown board type */
+@@ -57,6 +57,12 @@
+ #define	MACH_MIKROTIK_RB532	0	/* Mikrotik RouterBoard 532 	*/
+ #define MACH_MIKROTIK_RB532A	1	/* Mikrotik RouterBoard 532A 	*/
  
 +/*
 + * Valid machtype for group IFXMIPS
@@ -65,8 +65,8 @@
  extern char *system_type;
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -48,3 +48,4 @@ obj-$(CONFIG_TOSHIBA_RBTX4938)	+= fixup-
- obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc30x.o
+@@ -51,3 +51,4 @@ obj-$(CONFIG_VICTOR_MPC30X)	+= fixup-mpc
  obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
+ obj-$(CONFIG_MIKROTIK_RB532)	+= pci-rc32434.o ops-rc32434.o fixup-rc32434.o
 +obj-$(CONFIG_IFXMIPS)		+= pci-ifxmips.o ops-ifxmips.o
