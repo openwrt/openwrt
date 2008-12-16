@@ -1,5 +1,5 @@
 /*
- *   include/asm-mips/mach-ifxmips/irq.h 
+ *   include/asm-mips/mach-ifxmips/irq.h
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,15 +15,14 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  *
  */
 
 #ifndef __IFXMIPS_IRQ_H
 #define __IFXMIPS_IRQ_H
 
-#define NR_IRQS    256
+#define NR_IRQS 256
 #include_next <irq.h>
 
 #endif
-

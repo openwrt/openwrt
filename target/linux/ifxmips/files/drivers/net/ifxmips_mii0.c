@@ -55,7 +55,8 @@ void ifxmips_write_mdio(u32 phy_addr, u32 phy_reg, u16 phy_data)
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET) |
 		phy_data;
 
-	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST);
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST)
+		;
 	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
 }
 EXPORT_SYMBOL(ifxmips_write_mdio);
@@ -66,9 +67,11 @@ unsigned short ifxmips_read_mdio(u32 phy_addr, u32 phy_reg)
 		((phy_addr & MDIO_ACC_ADDR_MASK) << MDIO_ACC_ADDR_OFFSET) |
 		((phy_reg & MDIO_ACC_REG_MASK) << MDIO_ACC_REG_OFFSET);
 
-	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST) ;
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST)
+		;
 	ifxmips_w32(val, IFXMIPS_PPE32_MDIO_ACC);
-	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST) ;
+	while (ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_REQUEST)
+		;
 	val = ifxmips_r32(IFXMIPS_PPE32_MDIO_ACC) & MDIO_ACC_VAL_MASK;
 	return val;
 }
@@ -302,7 +305,7 @@ static int ifxmips_mii_dev_init(struct net_device *dev)
 	printk(KERN_INFO "ifxmips_mii0: using mac=");
 	for (i = 0; i < 6; i++) {
 		dev->dev_addr[i] = mac_addr[i];
-		printk("%02X%c", dev->dev_addr[i], (i == 5)?('\n'):(':'));
+		printk("%02X%c", dev->dev_addr[i], (i == 5) ? ('\n') : (':'));
 	}
 	return 0;
 }
