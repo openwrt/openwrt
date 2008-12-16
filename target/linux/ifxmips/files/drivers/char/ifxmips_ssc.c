@@ -1251,24 +1251,13 @@ static int ssc_session(char *tx_buf, u32 tx_len, char *rx_buf, u32 rx_len)
 	else
 		eff_size = tx_len;
 
-	//4 bytes alignment,  required by driver
-	/* change by TaiCheng */
-	//if (in_irq()){
-	if (1) {
-		ssc_tx_buf = kmalloc(sizeof(char) *
-					 ((eff_size + 3) & (~3)),
-					  GFP_ATOMIC);
-		ssc_rx_buf = kmalloc(sizeof(char) *
-					 ((eff_size + 3) & (~3)),
-					  GFP_ATOMIC);
-	} else {
-		ssc_tx_buf = kmalloc(sizeof(char) *
-					 ((eff_size + 3) & (~3)),
-					  GFP_KERNEL);
-		ssc_rx_buf = kmalloc(sizeof(char) *
-					 ((eff_size + 3) & (~3)),
-					  GFP_KERNEL);
-	}
+	/* 4 bytes alignment, required by driver */
+	ssc_tx_buf = kmalloc(sizeof(char) *
+				 ((eff_size + 3) & (~3)),
+				  GFP_ATOMIC);
+	ssc_rx_buf = kmalloc(sizeof(char) *
+				 ((eff_size + 3) & (~3)),
+				  GFP_ATOMIC);
 	if (ssc_tx_buf == NULL || ssc_rx_buf == NULL) {
 		printk("no memory for size of %d\n", eff_size);
 		ret = -ENOMEM;

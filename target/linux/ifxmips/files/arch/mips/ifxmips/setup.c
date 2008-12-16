@@ -19,11 +19,13 @@
 
 #include <linux/init.h>
 
-#include <asm/time.h>
-#include <asm/traps.h>
+#include <linux/time.h>
 #include <linux/cpu.h>
+
+#include <asm/traps.h>
 #include <asm/irq.h>
 #include <asm/bootinfo.h>
+
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/ifxmips/ifxmips_pmu.h>

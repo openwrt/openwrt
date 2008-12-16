@@ -37,13 +37,13 @@ extern void ifxmips_enable_irq(unsigned int irq_nr);
 extern void ifxmips_disable_irq(unsigned int irq_nr);
 
 u64 *g_desc_list;
-_dma_device_info dma_devs[MAX_DMA_DEVICE_NUM];
-_dma_channel_info dma_chan[MAX_DMA_CHANNEL_NUM];
+struct dma_device_info dma_devs[MAX_DMA_DEVICE_NUM];
+struct dma_channel_info dma_chan[MAX_DMA_CHANNEL_NUM];
 
 static const char *global_device_name[MAX_DMA_DEVICE_NUM] =
 	{ "PPE", "DEU", "SPI", "SDIO", "MCTRL0", "MCTRL1" };
 
-_dma_chan_map default_dma_map[MAX_DMA_CHANNEL_NUM] = {
+struct dma_chan_map default_dma_map[MAX_DMA_CHANNEL_NUM] = {
 	{"PPE", IFXMIPS_DMA_RX, 0, IFXMIPS_DMA_CH0_INT, 0},
 	{"PPE", IFXMIPS_DMA_TX, 0, IFXMIPS_DMA_CH1_INT, 0},
 	{"PPE", IFXMIPS_DMA_RX, 1, IFXMIPS_DMA_CH2_INT, 1},
@@ -66,7 +66,7 @@ _dma_chan_map default_dma_map[MAX_DMA_CHANNEL_NUM] = {
 	{"MCTRL1", IFXMIPS_DMA_TX, 1, IFXMIPS_DMA_CH19_INT, 1}
 };
 
-_dma_chan_map *chan_map = default_dma_map;
+struct dma_chan_map *chan_map = default_dma_map;
 volatile u32 g_ifxmips_dma_int_status;
 volatile int g_ifxmips_dma_in_process; /* 0=not in process, 1=in process */
 
@@ -87,7 +87,7 @@ void common_buffer_free(u8 *dataptr, void *opt)
 	kfree(dataptr);
 }
 
-void enable_ch_irq(_dma_channel_info *pCh)
+void enable_ch_irq(struct dma_channel_info *pCh)
 {
 	int chan_no = (int)(pCh - dma_chan);
 	unsigned long flag;
@@ -100,7 +100,7 @@ void enable_ch_irq(_dma_channel_info *pCh)
 	ifxmips_enable_irq(pCh->irq);
 }
 
-void disable_ch_irq(_dma_channel_info *pCh)
+void disable_ch_irq(struct dma_channel_info *pCh)
 {
 	unsigned long flag;
 	int chan_no = (int) (pCh - dma_chan);
@@ -114,7 +114,7 @@ void disable_ch_irq(_dma_channel_info *pCh)
 	ifxmips_mask_and_ack_irq(pCh->irq);
 }
 
-void open_chan(_dma_channel_info *pCh)
+void open_chan(struct dma_channel_info *pCh)
 {
 	unsigned long flag;
 	int chan_no = (int)(pCh - dma_chan);
@@ -127,7 +127,7 @@ void open_chan(_dma_channel_info *pCh)
 	local_irq_restore(flag);
 }
 
-void close_chan(_dma_channel_info *pCh)
+void close_chan(struct dma_channel_info *pCh)
 {
 	unsigned long flag;
 	int chan_no = (int) (pCh - dma_chan);
@@ -139,7 +139,7 @@ void close_chan(_dma_channel_info *pCh)
 	local_irq_restore(flag);
 }
 
-void reset_chan(_dma_channel_info *pCh)
+void reset_chan(struct dma_channel_info *pCh)
 {
 	int chan_no = (int) (pCh - dma_chan);
 
@@ -149,8 +149,8 @@ void reset_chan(_dma_channel_info *pCh)
 
 void rx_chan_intr_handler(int chan_no)
 {
-	_dma_device_info *pDev = (_dma_device_info *)dma_chan[chan_no].dma_dev;
-	_dma_channel_info *pCh = &dma_chan[chan_no];
+	struct dma_device_info *pDev = (struct dma_device_info *)dma_chan[chan_no].dma_dev;
+	struct dma_channel_info *pCh = &dma_chan[chan_no];
 	struct rx_desc *rx_desc_p;
 	int tmp;
 	unsigned long flag;
@@ -179,8 +179,8 @@ void rx_chan_intr_handler(int chan_no)
 
 inline void tx_chan_intr_handler(int chan_no)
 {
-	_dma_device_info *pDev = (_dma_device_info *)dma_chan[chan_no].dma_dev;
-	_dma_channel_info *pCh = &dma_chan[chan_no];
+	struct dma_device_info *pDev = (struct dma_device_info *)dma_chan[chan_no].dma_dev;
+	struct dma_channel_info *pCh = &dma_chan[chan_no];
 	int tmp;
 	unsigned long flag;
 
@@ -242,11 +242,11 @@ void do_dma_tasklet(unsigned long unused)
 
 irqreturn_t dma_interrupt(int irq, void *dev_id)
 {
-	_dma_channel_info *pCh;
+	struct dma_channel_info *pCh;
 	int chan_no = 0;
 	int tmp;
 
-	pCh = (_dma_channel_info *)dev_id;
+	pCh = (struct dma_channel_info *)dev_id;
 	chan_no = (int)(pCh - dma_chan);
 	if (chan_no < 0 || chan_no > 19)
 		BUG();
@@ -265,7 +265,7 @@ irqreturn_t dma_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-_dma_device_info *dma_device_reserve(char *dev_name)
+struct dma_device_info *dma_device_reserve(char *dev_name)
 {
 	int i;
 
@@ -282,21 +282,21 @@ _dma_device_info *dma_device_reserve(char *dev_name)
 }
 EXPORT_SYMBOL(dma_device_reserve);
 
-void dma_device_release(_dma_device_info *dev)
+void dma_device_release(struct dma_device_info *dev)
 {
 	dev->reserved = 0;
 }
 EXPORT_SYMBOL(dma_device_release);
 
-void dma_device_register(_dma_device_info *dev)
+void dma_device_register(struct dma_device_info *dev)
 {
 	int i, j;
 	int chan_no = 0;
 	u8 *buffer;
 	int byte_offset;
 	unsigned long flag;
-	_dma_device_info *pDev;
-	_dma_channel_info *pCh;
+	struct dma_device_info *pDev;
+	struct dma_channel_info *pCh;
 	struct rx_desc *rx_desc_p;
 	struct tx_desc *tx_desc_p;
 
@@ -331,7 +331,7 @@ void dma_device_register(_dma_device_info *dev)
 
 			for (j = 0; j < pCh->desc_len; j++) {
 				rx_desc_p = (struct rx_desc *)pCh->desc_base + j;
-				pDev = (_dma_device_info *)(pCh->dma_dev);
+				pDev = (struct dma_device_info *)(pCh->dma_dev);
 				buffer = pDev->buffer_alloc(pCh->packet_size, &byte_offset, (void *)&(pCh->opt[j]));
 				if (!buffer)
 					break;
@@ -364,11 +364,11 @@ void dma_device_register(_dma_device_info *dev)
 }
 EXPORT_SYMBOL(dma_device_register);
 
-void dma_device_unregister(_dma_device_info *dev)
+void dma_device_unregister(struct dma_device_info *dev)
 {
 	int i, j;
 	int chan_no;
-	_dma_channel_info *pCh;
+	struct dma_channel_info *pCh;
 	struct rx_desc *rx_desc_p;
 	struct tx_desc *tx_desc_p;
 	unsigned long flag;
@@ -442,7 +442,7 @@ int dma_device_read(struct dma_device_info *dma_dev, u8 **dataptr, void **opt)
 	int len;
 	int byte_offset = 0;
 	void *p = NULL;
-	_dma_channel_info *pCh = dma_dev->rx_chan[dma_dev->current_rx_chan];
+	struct dma_channel_info *pCh = dma_dev->rx_chan[dma_dev->current_rx_chan];
 	struct rx_desc *rx_desc_p;
 
 	/* get the rx data first */
@@ -488,13 +488,13 @@ int dma_device_write(struct dma_device_info *dma_dev, u8 *dataptr, int len, void
 {
 	unsigned long flag;
 	u32 tmp, byte_offset;
-	_dma_channel_info *pCh;
+	struct dma_channel_info *pCh;
 	int chan_no;
 	struct tx_desc *tx_desc_p;
 	local_irq_save(flag);
 
 	pCh = dma_dev->tx_chan[dma_dev->current_tx_chan];
-	chan_no = (int)(pCh - (_dma_channel_info *) dma_chan);
+	chan_no = (int)(pCh - (struct dma_channel_info *) dma_chan);
 
 	tx_desc_p = (struct tx_desc *)pCh->desc_base + pCh->prev_desc;
 	while (tx_desc_p->status.field.OWN == CPU_OWN && tx_desc_p->status.field.C) {
@@ -546,13 +546,13 @@ int dma_device_write(struct dma_device_info *dma_dev, u8 *dataptr, int len, void
 }
 EXPORT_SYMBOL(dma_device_write);
 
-int map_dma_chan(_dma_chan_map *map)
+int map_dma_chan(struct dma_chan_map *map)
 {
 	int i, j;
 	int result;
 
 	for (i = 0; i < MAX_DMA_DEVICE_NUM; i++)
-		strcpy(dma_devs[i].device_name, global_device_name[i]);
+		dma_devs[i].device_name = &global_device_name[i];
 
 	for (i = 0; i < MAX_DMA_CHANNEL_NUM; i++) {
 		dma_chan[i].irq = map[i].irq;

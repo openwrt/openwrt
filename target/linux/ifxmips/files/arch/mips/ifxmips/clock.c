@@ -70,33 +70,31 @@ unsigned int ifxmips_clocks[] = {CLOCK_167M, CLOCK_133M, CLOCK_111M, CLOCK_83M }
 
 #define DDR_HZ ifxmips_clocks[ifxmips_r32(IFXMIPS_CGU_SYS) & 0x3]
 
-
-static inline unsigned int
-get_input_clock(int pll)
+static inline unsigned int get_input_clock(int pll)
 {
-	switch(pll)
-	{
+	switch (pll) {
 	case 0:
-		if(ifxmips_r32(IFXMIPS_CGU_PLL0_CFG) & CGU_PLL0_SRC)
+		if (ifxmips_r32(IFXMIPS_CGU_PLL0_CFG) & CGU_PLL0_SRC)
 			return BASIS_INPUT_CRYSTAL_USB;
-		else if(CGU_PLL0_PHASE_DIVIDER_ENABLE)
+		else if (CGU_PLL0_PHASE_DIVIDER_ENABLE)
 			return BASIC_INPUT_CLOCK_FREQUENCY_1;
 		else
 			return BASIC_INPUT_CLOCK_FREQUENCY_2;
 	case 1:
-		if(CGU_PLL1_SRC)
+		if (CGU_PLL1_SRC)
 			return BASIS_INPUT_CRYSTAL_USB;
-		else if(CGU_PLL0_PHASE_DIVIDER_ENABLE)
+		else if (CGU_PLL0_PHASE_DIVIDER_ENABLE)
 			return BASIC_INPUT_CLOCK_FREQUENCY_1;
 		else
 			return BASIC_INPUT_CLOCK_FREQUENCY_2;
 	case 2:
-		switch(CGU_PLL2_SRC)
-		{
+		switch (CGU_PLL2_SRC) {
 		case 0:
 			return cgu_get_pll0_fdiv();
 		case 1:
-			return CGU_PLL2_PHASE_DIVIDER_ENABLE ? BASIC_INPUT_CLOCK_FREQUENCY_1 : BASIC_INPUT_CLOCK_FREQUENCY_2;
+			return CGU_PLL2_PHASE_DIVIDER_ENABLE ?
+				BASIC_INPUT_CLOCK_FREQUENCY_1 :
+				BASIC_INPUT_CLOCK_FREQUENCY_2;
 		case 2:
 			return BASIS_INPUT_CRYSTAL_USB;
 		}
@@ -105,8 +103,7 @@ get_input_clock(int pll)
 	}
 }
 
-static inline unsigned int
-cal_dsm(int pll, unsigned int num, unsigned int den)
+static inline unsigned int cal_dsm(int pll, unsigned int num, unsigned int den)
 {
 	u64 res, clock = get_input_clock(pll);
 
@@ -115,8 +112,8 @@ cal_dsm(int pll, unsigned int num, unsigned int den)
 	return res;
 }
 
-static inline unsigned int
-mash_dsm(int pll, unsigned int M, unsigned int N, unsigned int K)
+static inline unsigned int mash_dsm(int pll, unsigned int M, unsigned int N,
+	unsigned int K)
 {
 	unsigned int num = ((N + 1) << 10) + K;
 	unsigned int den = (M + 1) << 10;
@@ -124,8 +121,8 @@ mash_dsm(int pll, unsigned int M, unsigned int N, unsigned int K)
 	return cal_dsm(pll, num, den);
 }
 
-static inline unsigned int
-ssff_dsm_1(int pll, unsigned int M,	unsigned int N, unsigned int K)
+static inline unsigned int ssff_dsm_1(int pll, unsigned int M, unsigned int N,
+	unsigned int K)
 {
 	unsigned int num = ((N + 1) << 11) + K + 512;
 	unsigned int den = (M + 1) << 11;
@@ -133,8 +130,8 @@ ssff_dsm_1(int pll, unsigned int M,	unsigned int N, unsigned int K)
 	return cal_dsm(pll, num, den);
 }
 
-static inline unsigned int
-ssff_dsm_2(int pll, unsigned int M,	unsigned int N, unsigned int K)
+static inline unsigned int ssff_dsm_2(int pll, unsigned int M, unsigned int N,
+	unsigned int K)
 {
 	unsigned int num = K >= 512 ?
 		((N + 1) << 12) + K - 512 : ((N + 1) << 12) + K + 3584;
@@ -143,22 +140,20 @@ ssff_dsm_2(int pll, unsigned int M,	unsigned int N, unsigned int K)
 	return cal_dsm(pll, num, den);
 }
 
-static inline unsigned int
-dsm(int pll, unsigned int M, unsigned int N, unsigned int K,
-	unsigned int dsmsel, unsigned int phase_div_en)
+static inline unsigned int dsm(int pll, unsigned int M, unsigned int N,
+	unsigned int K, unsigned int dsmsel, unsigned int phase_div_en)
 {
-	if(!dsmsel)
+	if (!dsmsel)
 		return mash_dsm(pll, M, N, K);
-	else if(!phase_div_en)
+	else if (!phase_div_en)
 		return mash_dsm(pll, M, N, K);
 	else
 		return ssff_dsm_2(pll, M, N, K);
 }
 
-static inline unsigned int
-cgu_get_pll0_fosc(void)
+static inline unsigned int cgu_get_pll0_fosc(void)
 {
-	if(CGU_PLL0_BYPASS)
+	if (CGU_PLL0_BYPASS)
 		return get_input_clock(0);
 	else
 		return !CGU_PLL0_CFG_FRAC_EN
@@ -168,19 +163,16 @@ cgu_get_pll0_fosc(void)
 				CGU_PLL0_CFG_DSMSEL, CGU_PLL0_PHASE_DIVIDER_ENABLE);
 }
 
-static unsigned int
-cgu_get_pll0_fdiv(void)
+static unsigned int cgu_get_pll0_fdiv(void)
 {
-	register unsigned int div = CGU_PLL2_CFG_INPUT_DIV + 1;
+	unsigned int div = CGU_PLL2_CFG_INPUT_DIV + 1;
 	return (cgu_get_pll0_fosc() + (div >> 1)) / div;
 }
 
-unsigned int
-cgu_get_io_region_clock(void)
+unsigned int cgu_get_io_region_clock(void)
 {
-	register unsigned int ret = cgu_get_pll0_fosc();
-	switch(ifxmips_r32(IFXMIPS_CGU_PLL2_CFG) & CGU_SYS_DDR_SEL)
-	{
+	unsigned int ret = cgu_get_pll0_fosc();
+	switch (ifxmips_r32(IFXMIPS_CGU_PLL2_CFG) & CGU_SYS_DDR_SEL) {
 	default:
 	case 0:
 		return (ret + 1) / 2;
@@ -193,36 +185,36 @@ cgu_get_io_region_clock(void)
 	}
 }
 
-unsigned int
-cgu_get_fpi_bus_clock(int fpi)
+unsigned int cgu_get_fpi_bus_clock(int fpi)
 {
-	register unsigned int ret = cgu_get_io_region_clock();
-	if((fpi == 2) && (ifxmips_r32(IFXMIPS_CGU_SYS) & CGU_SYS_FPI_SEL))
+	unsigned int ret = cgu_get_io_region_clock();
+	if ((fpi == 2) && (ifxmips_r32(IFXMIPS_CGU_SYS) & CGU_SYS_FPI_SEL))
 		ret >>= 1;
 	return ret;
 }
 
 void cgu_setup_pci_clk(int external_clock)
 {
-	//set clock to 33Mhz
-	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~0xf00000, IFXMIPS_CGU_IFCCR);
-	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | 0x800000, IFXMIPS_CGU_IFCCR);
-	if(external_clock)
-	{
-		ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~ (1 << 16), IFXMIPS_CGU_IFCCR);
+	/* set clock to 33Mhz */
+	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~0xf00000,
+		IFXMIPS_CGU_IFCCR);
+	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | 0x800000,
+		IFXMIPS_CGU_IFCCR);
+	if (external_clock) 	{
+		ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~(1 << 16),
+			IFXMIPS_CGU_IFCCR);
 		ifxmips_w32((1 << 30), IFXMIPS_CGU_PCICR);
 	} else {
-		ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | (1 << 16), IFXMIPS_CGU_IFCCR);
+		ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | (1 << 16),
+			IFXMIPS_CGU_IFCCR);
 		ifxmips_w32((1 << 31) | (1 << 30), IFXMIPS_CGU_PCICR);
 	}
 }
 
-unsigned int
-ifxmips_get_cpu_hz(void)
+unsigned int ifxmips_get_cpu_hz(void)
 {
 	unsigned int ddr_clock = DDR_HZ;
-	switch(ifxmips_r32(IFXMIPS_CGU_SYS) & 0xc)
-	{
+	switch (ifxmips_r32(IFXMIPS_CGU_SYS) & 0xc) {
 	case 0:
 		return CLOCK_333M;
 	case 4:
@@ -232,11 +224,10 @@ ifxmips_get_cpu_hz(void)
 }
 EXPORT_SYMBOL(ifxmips_get_cpu_hz);
 
-unsigned int
-ifxmips_get_fpi_hz(void)
+unsigned int ifxmips_get_fpi_hz(void)
 {
 	unsigned int ddr_clock = DDR_HZ;
-	if(ifxmips_r32(IFXMIPS_CGU_SYS) & 0x40)
+	if (ifxmips_r32(IFXMIPS_CGU_SYS) & 0x40)
 		return ddr_clock >> 1;
 	return ddr_clock;
 }

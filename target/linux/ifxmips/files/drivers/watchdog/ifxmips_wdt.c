@@ -3,7 +3,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -23,36 +23,35 @@
 #include <linux/miscdevice.h>
 #include <linux/watchdog.h>
 #include <linux/platform_device.h>
-#include <asm/uaccess.h>
-#include <asm-mips/ifxmips/ifxmips_cgu.h>
-#include <asm-mips/ifxmips/ifxmips.h>
+#include <linux/uaccess.h>
 
-#define IFXMIPS_WDT_PW1                  0x00BE0000
-#define IFXMIPS_WDT_PW2                  0x00DC0000
+#include <asm/ifxmips/ifxmips_cgu.h>
+#include <asm/ifxmips/ifxmips.h>
+
+#define IFXMIPS_WDT_PW1			0x00BE0000
+#define IFXMIPS_WDT_PW2			0x00DC0000
 
 #ifndef CONFIG_WATCHDOG_NOWAYOUT
-static int wdt_ok_to_close = 0;
+static int wdt_ok_to_close;
 #endif
 
-int wdt_timeout = 30;
+static int wdt_timeout = 30;
 
-int
-ifxmips_wdt_enable(unsigned int timeout)
+int ifxmips_wdt_enable(unsigned int timeout)
 {
 	u32 fpi;
 	fpi = cgu_get_io_region_clock();
 	ifxmips_w32(IFXMIPS_WDT_PW1, IFXMIPS_BIU_WDT_CR);
 	ifxmips_w32(IFXMIPS_WDT_PW2 |
-		(0x3 << 26) | // PWL
-		(0x3 << 24) | // CLKDIV
-		(0x1 << 31) | // enable
-		((timeout * (fpi / 0x40000)) + 0x1000), // reload 
+		(0x3 << 26) | /* PWL */
+		(0x3 << 24) | /* CLKDIV */
+		(0x1 << 31) | /* enable */
+		((timeout * (fpi / 0x40000)) + 0x1000), /* reload */
 		IFXMIPS_BIU_WDT_CR);
 	return 0;
 }
 
-void
-ifxmips_wdt_disable(void)
+void ifxmips_wdt_disable(void)
 {
 #ifndef CONFIG_WATCHDOG_NOWAYOUT
 	wdt_ok_to_close = 0;
@@ -61,22 +60,20 @@ ifxmips_wdt_disable(void)
 	ifxmips_w32(IFXMIPS_WDT_PW2, IFXMIPS_BIU_WDT_CR);
 }
 
-static ssize_t
-ifxmips_wdt_write(struct file *file, const char __user *data, size_t len,
-		 loff_t *ppos)
+static ssize_t ifxmips_wdt_write(struct file *file, const char __user *data,
+		size_t len, loff_t *ppos)
 {
 	size_t i;
 
-	if(!len)
+	if (!len)
 		return 0;
 
 #ifndef CONFIG_WATCHDOG_NOWAYOUT
-	for(i = 0; i != len; i++)
-	{
+	for (i = 0; i != len; i++) {
 		char c;
-		if(get_user(c, data + i))
+		if (get_user(c, data + i))
 			return -EFAULT;
-		if(c == 'V')
+		if (c == 'V')
 			wdt_ok_to_close = 1;
 	}
 #endif
@@ -89,14 +86,12 @@ static struct watchdog_info ident = {
 	.identity = "ifxmips Watchdog",
 };
 
-static int
-ifxmips_wdt_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
-		 unsigned long arg)
+static int ifxmips_wdt_ioctl(struct inode *inode, struct file *file,
+		unsigned int cmd, unsigned long arg)
 {
 	int ret = -ENOTTY;
 
-	switch(cmd)
-	{
+	switch (cmd) {
 	case WDIOC_GETSUPPORT:
 		ret = copy_to_user((struct watchdog_info __user *)arg, &ident,
 				sizeof(ident)) ? -EFAULT : 0;
@@ -107,7 +102,7 @@ ifxmips_wdt_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 		break;
 
 	case WDIOC_SETTIMEOUT:
-		ret = get_user(wdt_timeout, (int __user*)arg);
+		ret = get_user(wdt_timeout, (int __user *)arg);
 		break;
 
 	case WDIOC_KEEPALIVE:
@@ -118,8 +113,7 @@ ifxmips_wdt_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 	return ret;
 }
 
-static int
-ifxmips_wdt_open(struct inode *inode, struct file *file)
+static int ifxmips_wdt_open(struct inode *inode, struct file *file)
 {
 	ifxmips_wdt_enable(wdt_timeout);
 	return nonseekable_open(inode, file);
@@ -128,11 +122,12 @@ ifxmips_wdt_open(struct inode *inode, struct file *file)
 static int ifxmips_wdt_release(struct inode *inode, struct file *file)
 {
 #ifndef CONFIG_WATCHDOG_NOWAYOUT
-	if(wdt_ok_to_close)
+	if (wdt_ok_to_close)
 		ifxmips_wdt_disable();
 	else
 #endif
-		printk("ifxmips_wdt: watchdog closed without warning, rebooting system\n");
+		printk(KERN_ERR "ifxmips_wdt: watchdog closed without warning,"
+			" rebooting system\n");
 	return 0;
 }
 
@@ -150,20 +145,18 @@ static struct miscdevice ifxmips_wdt_miscdev = {
 	.fops		= &ifxmips_wdt_fops,
 };
 
-static int
-ifxmips_wdt_probe(struct platform_device *dev)
+static int ifxmips_wdt_probe(struct platform_device *dev)
 {
 	int err;
 	err = misc_register(&ifxmips_wdt_miscdev);
-	if(err)
-		printk("ifxmips_wdt: error creating device\n");
+	if (err)
+		printk(KERN_INFO "ifxmips_wdt: error creating device\n");
 	else
-		printk("ifxmips_wdt: loaded\n");
+		printk(KERN_INFO "ifxmips_wdt: loaded\n");
 	return err;
 }
 
-static int
-ifxmips_wdt_remove(struct platform_device *dev)
+static int ifxmips_wdt_remove(struct platform_device *dev)
 {
 	ifxmips_wdt_disable();
 	misc_deregister(&ifxmips_wdt_miscdev);
@@ -180,17 +173,15 @@ static struct platform_driver ifxmips_wdt_driver = {
 	},
 };
 
-static int __init
-init_ifxmips_wdt(void)
+static int __init init_ifxmips_wdt(void)
 {
 	int ret = platform_driver_register(&ifxmips_wdt_driver);
-	if(ret)
+	if (ret)
 		printk(KERN_INFO "ifxmips_wdt: error registering platfom driver!");
 	return ret;
 }
 
-static void __exit
-exit_ifxmips_wdt(void)
+static void __exit exit_ifxmips_wdt(void)
 {
 	platform_driver_unregister(&ifxmips_wdt_driver);
 }

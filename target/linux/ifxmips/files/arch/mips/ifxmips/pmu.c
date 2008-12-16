@@ -13,7 +13,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/kernel.h>
@@ -21,21 +21,21 @@
 #include <linux/version.h>
 #include <asm/ifxmips/ifxmips.h>
 
-void
-ifxmips_pmu_enable(unsigned int module)
+void ifxmips_pmu_enable(unsigned int module)
 {
 	int err = 1000000;
 
-	ifxmips_w32(ifxmips_r32(IFXMIPS_PMU_PWDCR) & ~module, IFXMIPS_PMU_PWDCR);
-	while (--err && (ifxmips_r32(IFXMIPS_PMU_PWDSR) & module)) {}
+	ifxmips_w32(ifxmips_r32(IFXMIPS_PMU_PWDCR) & ~module,
+		IFXMIPS_PMU_PWDCR);
+	while (--err && (ifxmips_r32(IFXMIPS_PMU_PWDSR) & module))
+		;
 
 	if (!err)
 		panic("activating PMU module failed!");
 }
 EXPORT_SYMBOL(ifxmips_pmu_enable);
 
-void
-ifxmips_pmu_disable(unsigned int module)
+void ifxmips_pmu_disable(unsigned int module)
 {
 	ifxmips_w32(ifxmips_r32(IFXMIPS_PMU_PWDCR) | module, IFXMIPS_PMU_PWDCR);
 }

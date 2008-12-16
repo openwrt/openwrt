@@ -13,18 +13,18 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 #ifndef _IFXMIPS_PMU_H__
 #define _IFXMIPS_PMU_H__
 
-#define IFXMIPS_PMU_PWDCR_DMA    0x20
-#define IFXMIPS_PMU_PWDCR_LED    0x800
-#define IFXMIPS_PMU_PWDCR_GPT    0x1000
-#define IFXMIPS_PMU_PWDCR_PPE    0x2000
-#define IFXMIPS_PMU_PWDCR_FPI    0x4000
+#define IFXMIPS_PMU_PWDCR_DMA		0x20
+#define IFXMIPS_PMU_PWDCR_LED		0x800
+#define IFXMIPS_PMU_PWDCR_GPT		0x1000
+#define IFXMIPS_PMU_PWDCR_PPE		0x2000
+#define IFXMIPS_PMU_PWDCR_FPI		0x4000
 
-void ifxmips_pmu_enable (unsigned int module);
-void ifxmips_pmu_disable (unsigned int module);
+void ifxmips_pmu_enable(unsigned int module);
+void ifxmips_pmu_disable(unsigned int module);
 
 #endif

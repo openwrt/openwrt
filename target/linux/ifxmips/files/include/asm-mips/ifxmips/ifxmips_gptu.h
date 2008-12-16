@@ -141,21 +141,15 @@ struct gptu_ioctl_param {
  */
 typedef void (*timer_callback)(unsigned long arg);
 
+xtern int ifxmips_request_timer(unsigned int, unsigned int, unsigned long, unsigned long, unsigned long);
+extern int ifxmips_free_timer(unsigned int);
+extern int ifxmips_start_timer(unsigned int, int);
+extern int ifxmips_stop_timer(unsigned int);
+extern int ifxmips_reset_counter_flags(u32 timer, u32 flags);
+extern int ifxmips_get_count_value(unsigned int, unsigned long *);
+extern u32 ifxmips_cal_divider(unsigned long);
+extern int ifxmips_set_timer(unsigned int, unsigned int, int, int, unsigned int, unsigned long, unsigned long);
+extern int ifxmips_set_counter(unsigned int timer, unsigned int flag,
+	u32 reload, unsigned long arg1, unsigned long arg2);
 
-#if defined(__KERNEL__)
-    extern int ifxmips_request_timer(unsigned int, unsigned int, unsigned long, unsigned long, unsigned long);
-    extern int ifxmips_free_timer(unsigned int);
-    extern int ifxmips_start_timer(unsigned int, int);
-    extern int ifxmips_stop_timer(unsigned int);
-    extern int ifxmips_reset_counter_flags(u32 timer, u32 flags);
-    extern int ifxmips_get_count_value(unsigned int, unsigned long *);
-
-    extern u32 cal_divider(unsigned long);
-
-    extern int set_timer(unsigned int, unsigned int, int, int, unsigned int, unsigned long, unsigned long);
-extern int set_counter (unsigned int timer, unsigned int flag, u32 reload, unsigned long arg1, unsigned long arg2);
-//    extern int set_counter(unsigned int, int, int, int, unsigned int, unsigned int, unsigned long, unsigned long);
-#endif  //  defined(__KERNEL__)
-
-
-#endif  //  __DANUBE_GPTU_DEV_H__2005_07_26__10_19__
+#endif /* __DANUBE_GPTU_DEV_H__2005_07_26__10_19__ */
