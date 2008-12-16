@@ -18,8 +18,8 @@
 
 #include <linux/kernel.h>
 #include <linux/pm.h>
-#include <linux/reboot.h>
 #include <linux/io.h>
+#include <asm/reboot.h>
 #include <asm/system.h>
 #include <asm/ifxmips/ifxmips.h>
 

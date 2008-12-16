@@ -141,7 +141,7 @@ struct gptu_ioctl_param {
  */
 typedef void (*timer_callback)(unsigned long arg);
 
-xtern int ifxmips_request_timer(unsigned int, unsigned int, unsigned long, unsigned long, unsigned long);
+extern int ifxmips_request_timer(unsigned int, unsigned int, unsigned long, unsigned long, unsigned long);
 extern int ifxmips_free_timer(unsigned int);
 extern int ifxmips_start_timer(unsigned int, int);
 extern int ifxmips_stop_timer(unsigned int);
