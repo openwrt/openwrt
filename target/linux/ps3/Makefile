@@ -10,7 +10,7 @@ ARCH:=powerpc
 BOARD:=ps3
 BOARDNAME:=Sony PS3 Game Console
 
-LINUX_VERSION:=2.6.27.8
+LINUX_VERSION:=2.6.27.9
 
 KERNEL_CC:=
 
