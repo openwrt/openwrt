@@ -83,6 +83,10 @@ define Image/Build/Profile/TEW632BRP
 	$(call Image/Build/Template/AP81/$(1),tew-632brp,board=TEW-632BRP,"AP81-AR9130-RT-070614-00")
 endef
 
+define Image/Build/Profile/TEW652BRP
+	$(call Image/Build/Template/AP81/$(1),tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
+endef
+
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
@@ -93,6 +97,7 @@ define Image/Build
 
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
+	$(call Image/Build/Profile/TEW652BRP,$(1))
 endef
 
 $(eval $(call BuildImage))
