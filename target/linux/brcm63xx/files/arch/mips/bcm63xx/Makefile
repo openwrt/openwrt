@@ -4,6 +4,7 @@ obj-y		+= dev-pcmcia.o
 obj-y		+= dev-usb-ohci.o
 obj-y		+= dev-usb-ehci.o
 obj-y		+= dev-enet.o
+obj-y		+= dev-wdt.o
 obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
 
 obj-y		+= boards/
