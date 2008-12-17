@@ -1,0 +1,29 @@
+--- a/drivers/watchdog/Makefile	2008-12-05 21:03:02.000000000 +0100
++++ b/drivers/watchdog/Makefile	2008-12-14 23:42:27.000000000 +0100
+@@ -102,6 +102,7 @@
+ obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
+ obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
++obj-$(CONFIG_BCM63XX_WDT) += bcm63xx_wdt.o
+ 
+ # PARISC Architecture
+ 
+--- a/drivers/watchdog/Kconfig	2008-12-05 21:03:02.000000000 +0100
++++ b/drivers/watchdog/Kconfig	2008-12-14 23:43:55.000000000 +0100
+@@ -704,6 +704,16 @@
+ 	help
+ 	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
+ 
++config BCM63XX_WDT
++	tristate "Broadcom BCM63xx hardware watchdog"
++	depends on BCM63XX
++	help
++	  Watchdog driver for the built in watchdog hardware in Broadcom
++	  BCM63xx SoC.
++
++	  To compile thi driver as a loadable module, choose M here.
++	  The module will be called bcm63xx_wdt.
++
+ # PARISC Architecture
+ 
+ # POWERPC Architecture
