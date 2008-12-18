@@ -23,20 +23,23 @@ define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
 
-	-$(STAGING_DIR_HOST)/bin/mkfwimage -k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
+	-$(STAGING_DIR_HOST)/bin/mkfwimage \
+		-B XS2 -v XS2.ar2316.OpenWrt \
+		-k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-v XS2.ar2316.OpenWRT \
 		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt2-$(1).bin
-	-$(STAGING_DIR_HOST)/bin/mkfwimage -k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
+
+	-$(STAGING_DIR_HOST)/bin/mkfwimage \
+		-B XS5 -v XS5.ar2313.OpenWrt \
+		-k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-v XS5.ar2313.OpenWRT \
-		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt5-$(1).bin \
-		-s 0xBE030000
+		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt5-$(1).bin
 
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B np25g \
 		-p0x020000:0x130000:ah:0x80041000:linux:$(KDIR)/vmlinux.bin.gz  \
 		-p0x150000:0x2a0000:::rootfs:$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
 		$(BIN_DIR)/openwrt-$(BOARD)-np25g-$(1).bin
+
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B wpe53g \
 		-p0x020000:0x130000:ah:0x80041000:linux:$(KDIR)/vmlinux.bin.gz  \
 		-p0x150000:0x2a0000:::rootfs:$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
