@@ -22,7 +22,9 @@ define Target/Description
 endef
 
 ifeq ($(CONFIG_TARGET_ps3_petitboot),y)
-# no generic patches required
+# no patches required
+# provide facility for specific patches
+PATCH_DIR=patches-petitboot
 define Kernel/Prepare
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	$(call PatchDir,$(PATCH_DIR),)
