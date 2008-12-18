@@ -31,6 +31,48 @@
 #include <limits.h>
 #include "fw.h"
 
+typedef struct fw_layout_data {
+	char		name[PATH_MAX];
+	u_int32_t	kern_start;
+	u_int32_t	kern_len;
+	u_int32_t	root_start;
+	u_int32_t	root_len;
+	u_int32_t	kern_entry;
+	u_int32_t	firmware_max_length;
+} fw_layout_t;
+
+fw_layout_t fw_layout_data[] = {
+	{
+		.name		=	"XS2",
+		.kern_start	=	0xbfc30000,
+		.kern_len	=	0x00140000,
+		.root_start	=	0xbfc30000 + 0x00140000,
+		.root_len	=	0x002C0000,
+		.kern_entry	=	0x80041000,
+		.firmware_max_length=	0x00390000,
+	},
+	{
+		.name		=	"XS5",
+		.kern_start	=	0xbe030000,
+		.kern_len	=	0x00140000,
+		.root_start	=	0xbe030000 + 0x00140000,
+		.root_len	=	0x002C0000,
+		.kern_entry	=	0x80041000,
+		.firmware_max_length=	0x00390000,
+	},
+	{
+		.name		=	"RS",
+		.kern_start	=	0x00000000,
+		.kern_len	=	0x00140000,
+		.root_start	=	0x00000000,
+		.root_len	=	0x002C0000,
+		.kern_entry	=	0x80060000,
+		.firmware_max_length=	0x00140000 + 0x002C0000,
+	},
+	{	.name		=	"",
+	},
+};
+
 typedef struct part_data {
 	char 	partition_name[64];
 	int  	partition_index;
@@ -48,10 +90,8 @@ typedef struct part_data {
 #define DEFAULT_OUTPUT_FILE 	"firmware-image.bin"
 #define DEFAULT_VERSION		"UNKNOWN"
 
-#define OPTIONS "hv:o:r:k:s:"
+#define OPTIONS "B:hv:o:r:k:"
 
-#define FIRMWARE_MAX_LENGTH	(0x390000)
-#define partition_startaddr	(0xBFC30000)
 static int debug = 0;
 
 typedef struct image_info {
@@ -133,6 +173,7 @@ static void usage(const char* progname)
 	     "\t-o <output file>\t - firmware output file, default: %s\n"
 	     "\t-k <kernel file>\t\t - kernel file\n"
 	     "\t-r <rootfs file>\t\t - rootfs file\n"
+	     "\t-B <board name>\t\t - choose firmware layout for specified board (XS2, XS5, RS)\n"
 	     "\t-h\t\t\t - this help\n", VERSION,
 	     progname, DEFAULT_VERSION, DEFAULT_OUTPUT_FILE);
 }
@@ -173,30 +214,43 @@ static u_int32_t filelength(const char* file)
 	return (ret);
 }
 
-static int create_image_layout(const char* kernelfile, const char* rootfsfile, image_info_t* im)
+static int create_image_layout(const char* kernelfile, const char* rootfsfile, char* board_name, image_info_t* im)
 {
 	part_data_t* kernel = &im->parts[0];
 	part_data_t* rootfs = &im->parts[1];
 
+	fw_layout_t* p;
+
+	p = &fw_layout_data[0];
+	while ((strlen(p->name) != 0) && (strncmp(p->name, board_name, sizeof(board_name)) != 0))
+		p++;
+	if (p->name == NULL) {
+		printf("BUG! Unable to find default fw layout!\n");
+		exit(-1);
+	}
+
+	printf("board = %s\n", p->name);
 	strcpy(kernel->partition_name, "kernel");
 	kernel->partition_index = 1;
-	kernel->partition_baseaddr = partition_startaddr;
+	kernel->partition_baseaddr = p->kern_start;
 	if ( (kernel->partition_length = filelength(kernelfile)) < 0) return (-1);
-	kernel->partition_memaddr = 0x80041000;
-	kernel->partition_entryaddr = 0x80041000;
+	kernel->partition_memaddr = p->kern_entry;
+	kernel->partition_entryaddr = p->kern_entry;
 	strncpy(kernel->filename, kernelfile, sizeof(kernel->filename));
 
-	if (filelength(rootfsfile) + kernel->partition_length > FIRMWARE_MAX_LENGTH)
+	if (filelength(rootfsfile) + kernel->partition_length > p->firmware_max_length)
 		return (-2);
 
 	strcpy(rootfs->partition_name, "rootfs");
 	rootfs->partition_index = 2;
-	rootfs->partition_baseaddr = partition_startaddr + kernel->partition_length;
-	rootfs->partition_length = FIRMWARE_MAX_LENGTH - kernel->partition_length;
+	rootfs->partition_baseaddr = p->root_start;
+	rootfs->partition_length = p->firmware_max_length - kernel->partition_length;
 	rootfs->partition_memaddr = 0x00000000;
 	rootfs->partition_entryaddr = 0x00000000;
 	strncpy(rootfs->filename, rootfsfile, sizeof(rootfs->filename));
 
+printf("kernel: %d %d\n", kernel->partition_length, kernel->partition_baseaddr);
+printf("root: %d %d\n", rootfs->partition_length, rootfs->partition_baseaddr);
 	im->part_count = 2;
 
 	return 0;
@@ -313,12 +367,14 @@ int main(int argc, char* argv[])
 {
 	char kernelfile[PATH_MAX];
 	char rootfsfile[PATH_MAX];
+	char board_name[PATH_MAX];
 	int o, rc;
 	image_info_t im;
 
 	memset(&im, 0, sizeof(im));
 	memset(kernelfile, 0, sizeof(kernelfile));
 	memset(rootfsfile, 0, sizeof(rootfsfile));
+	memset(board_name, 0, sizeof(board_name));
 
 	strcpy(im.outputfile, DEFAULT_OUTPUT_FILE);
 	strcpy(im.version, DEFAULT_VERSION);
@@ -345,13 +401,14 @@ int main(int argc, char* argv[])
 			if (optarg)
 				strncpy(rootfsfile, optarg, sizeof(rootfsfile));
 			break;
-		case 's':
+		case 'B':
 			if (optarg)
-				#undef partition_startaddr
-				#define partition_startaddr	(optarg)
+				strncpy(board_name, optarg, sizeof(board_name));
 			break;
 		}
 	}
+	if (strlen(board_name) == 0)
+		strcpy(board_name, "XS2"); /* default to XS2 */
 
 	if (strlen(kernelfile) == 0)
 	{
@@ -367,7 +424,7 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 
-	if ((rc = create_image_layout(kernelfile, rootfsfile, &im)) != 0)
+	if ((rc = create_image_layout(kernelfile, rootfsfile, board_name, &im)) != 0)
 	{
 		ERROR("Failed creating firmware layout description - error code: %d\n", rc);
 		return -3;
