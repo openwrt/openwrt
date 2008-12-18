@@ -21,11 +21,13 @@ define Target/Description
 	Build bootloader images for the Sony PS3 Game Console
 endef
 
+ifeq ($(CONFIG_TARGET_ps3_petitboot),y)
 # no generic patches required
 define Kernel/Prepare
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	$(call PatchDir,$(PATCH_DIR),)
 endef
+endif
 
 KERNELNAME:="zImage"
 
