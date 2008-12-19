@@ -12,7 +12,7 @@ BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2
 SUBTARGETS:=generic nfs
 LINUX_VERSION:=2.6.26.8
-#LINUX_VERSION:=2.6.27.9
+#LINUX_VERSION:=2.6.27.10
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=uboot-ifxmips

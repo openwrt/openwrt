@@ -1,6 +1,6 @@
---- a/drivers/watchdog/Makefile	2008-12-05 21:03:02.000000000 +0100
-+++ b/drivers/watchdog/Makefile	2008-12-14 23:42:27.000000000 +0100
-@@ -102,6 +102,7 @@
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -102,6 +102,7 @@ obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
@@ -8,9 +8,9 @@
  
  # PARISC Architecture
  
---- a/drivers/watchdog/Kconfig	2008-12-05 21:03:02.000000000 +0100
-+++ b/drivers/watchdog/Kconfig	2008-12-14 23:43:55.000000000 +0100
-@@ -704,6 +704,16 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -704,6 +704,16 @@ config TXX9_WDT
  	help
  	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
  
