@@ -30,7 +30,8 @@ define Package/libpcap/description
  packet capture.
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += \
+	-ffunction-sections -fdata-sections
 
 CONFIGURE_ARGS += \
 	--enable-shared \
