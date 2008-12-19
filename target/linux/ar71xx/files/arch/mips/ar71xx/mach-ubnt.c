@@ -33,5 +33,5 @@ static void __init routerstation_setup(void)
 					ARRAY_SIZE(routerstation_spi_info));
 }
 
-MIPS_MACHINE(AR71XX_MACH_ROUTERSTATION, "Ubiquiti RouterStation",
-					routerstation_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "Ubiquiti RouterStation",
+				  routerstation_setup);
