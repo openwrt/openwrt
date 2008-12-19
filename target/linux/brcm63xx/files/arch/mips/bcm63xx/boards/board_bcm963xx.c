@@ -35,6 +35,25 @@ static unsigned int mac_addr_used = 0;
 static struct board_info board;
 
 /*
+ * known 6338 boards
+ */
+
+#ifdef CONFIG_BCM63XX_CPU_6338
+static struct board_info __initdata board_96338gw = {
+	.name				= "96338GW",
+	.expected_cpu_id		= 0x6338,
+
+	.has_enet0			= 1,
+	.enet0 = {
+		.has_phy		= 1,
+		.use_internal_phy	= 1,
+	},
+
+	.has_ohci0			= 1,
+};
+#endif
+
+/*
  * known 6348 boards
  */
 #ifdef CONFIG_BCM63XX_CPU_6348
@@ -200,6 +219,9 @@ static struct board_info __initdata board_96358vw2 = {
  * all boards
  */
 static const struct board_info __initdata *bcm963xx_boards[] = {
+#ifdef CONFIG_BCM63XX_CPU_6338
+	&board_96338gw,
+#endif
 #ifdef CONFIG_BCM63XX_CPU_6348
 	&board_96348r,
 	&board_96348gw,
