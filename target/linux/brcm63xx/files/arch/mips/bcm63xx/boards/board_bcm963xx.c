@@ -21,6 +21,7 @@
 #include <bcm63xx_board.h>
 #include <bcm63xx_dev_pci.h>
 #include <bcm63xx_dev_uart.h>
+#include <bcm63xx_dev_wdt.h>
 #include <bcm63xx_dev_enet.h>
 #include <bcm63xx_dev_pcmcia.h>
 #include <bcm63xx_dev_usb_ohci.h>
@@ -385,6 +386,7 @@ int __init board_register_devices(void)
 	u32 val;
 
 	bcm63xx_uart_register();
+	bcm63xx_wdt_register();
 
 	if (board.has_pccard)
 		bcm63xx_pcmcia_register();
