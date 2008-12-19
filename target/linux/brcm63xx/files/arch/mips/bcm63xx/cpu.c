@@ -26,6 +26,29 @@ static unsigned int bcm63xx_cpu_freq;
 static unsigned int bcm63xx_memory_size;
 
 /*
+ * 6338 register sets and irqs
+ */
+
+static const unsigned long bcm96338_regs_base[] = {
+	[RSET_PERF]		= BCM_6338_PERF_BASE,
+	[RSET_TIMER]		= BCM_6338_TIMER_BASE,
+	[RSET_WDT]		= BCM_6338_WDT_BASE,
+	[RSET_UART0]		= BCM_6338_UART0_BASE,
+	[RSET_GPIO]		= BCM_6338_GPIO_BASE,
+	[RSET_SPI]		= BCM_6338_SPI_BASE,
+};
+
+static const int bcm96338_irqs[] = {
+	[IRQ_TIMER]		= BCM_6338_TIMER_IRQ,
+	[IRQ_UART0]		= BCM_6338_UART0_IRQ,
+	[IRQ_DSL]		= BCM_6338_DSL_IRQ,
+	[IRQ_ENET0]		= BCM_6338_ENET0_IRQ,
+	[IRQ_ENET_PHY]		= BCM_6338_ENET_PHY_IRQ,
+	[IRQ_ENET0_RXDMA]	= BCM_6338_ENET0_RXDMA_IRQ,
+	[IRQ_ENET0_TXDMA]	= BCM_6338_ENET0_TXDMA_IRQ,
+};
+
+/*
  * 6348 register sets and irqs
  */
 static const unsigned long bcm96348_regs_base[] = {
@@ -137,6 +160,10 @@ static unsigned int detect_cpu_clock(void)
 {
 	unsigned int tmp, n1 = 0, n2 = 0, m1 = 0;
 
+	if (BCMCPU_IS_6338()) {
+		return 240000000;
+	}
+
 	/*
 	 * frequency depends on PLL configuration:
 	 */
@@ -170,7 +197,7 @@ static unsigned int detect_memory_size(void)
 	unsigned int cols = 0, rows = 0, is_32bits = 0, banks = 0;
 	u32 val;
 
-	if (BCMCPU_IS_6348()) {
+	if (BCMCPU_IS_6338() || BCMCPU_IS_6348()) {
 		val = bcm_sdram_readl(SDRAM_CFG_REG);
 		rows = (val & SDRAM_CFG_ROW_MASK) >> SDRAM_CFG_ROW_SHIFT;
 		cols = (val & SDRAM_CFG_COL_MASK) >> SDRAM_CFG_COL_SHIFT;
@@ -204,6 +231,11 @@ void __init bcm63xx_cpu_init(void)
 	expected_cpu_id = 0;
 
 	switch (c->cputype) {
+	case CPU_BCM6338:
+		expected_cpu_id = BCM6338_CPU_ID;
+		bcm63xx_regs_base = bcm96338_regs_base;
+		bcm63xx_irqs = bcm96338_irqs;
+		break;
 	case CPU_BCM6348:
 		expected_cpu_id = BCM6348_CPU_ID;
 		bcm63xx_regs_base = bcm96348_regs_base;
