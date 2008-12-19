@@ -9,6 +9,7 @@
  * compile time if only one CPU support is enabled (idea stolen from
  * arm mach-types)
  */
+#define BCM6338_CPU_ID		0x6338
 #define BCM6348_CPU_ID		0x6348
 #define BCM6358_CPU_ID		0x6358
 
@@ -16,6 +17,19 @@ void __init bcm63xx_cpu_init(void);
 u16 __bcm63xx_get_cpu_id(void);
 u16 bcm63xx_get_cpu_rev(void);
 unsigned int bcm63xx_get_cpu_freq(void);
+
+#ifdef CONFIG_BCM63XX_CPU_6338
+# ifdef bcm63xx_get_cpu_id
+#  undef bcm63xx_get_cpu_id
+#  define bcm63xx_get_cpu_id()	__bcm63xx_get_cpu_id()
+#  define BCMCPU_RUNTIME_DETECT
+# else
+#  define bcm63xx_get_cpu_id()	BCM6338_CPU_ID
+# endif
+# define BCMCPU_IS_6338()	(bcm63xx_get_cpu_id() == BCM6338_CPU_ID)
+#else
+# define BCMCPU_IS_6338()	(0)
+#endif
 
 #ifdef CONFIG_BCM63XX_CPU_6348
 # ifdef bcm63xx_get_cpu_id
@@ -88,6 +102,19 @@ enum bcm63xx_regs_set {
 #define RSET_PCMCIA_SIZE		12
 
 /*
+ * 6338 register sets base address
+ */
+
+#define BCM_6338_PERF_BASE		(0xfffe0000)
+#define BCM_6338_TIMER_BASE		(0xfffe0000)
+#define BCM_6338_WDT_BASE		(0xfffe001c)
+#define BCM_6338_UART0_BASE		(0xfffe0300)
+#define BCM_6338_GPIO_BASE		(0xfffe0400)
+#define BCM_6338_SPI_BASE		(0xfffe0c00)
+#define BCM_6338_SAR_BASE		(0xfffe2000)
+#define BCM_6338_MEMC_BASE		(0xfffe3100)
+
+/*
  * 6348 register sets base address
  */
 #define BCM_6348_DSL_LMEM_BASE		(0xfff00000)
@@ -147,6 +174,24 @@ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
 #ifdef BCMCPU_RUNTIME_DETECT
 	return bcm63xx_regs_base[set];
 #else
+#ifdef CONFIG_BCM63XX_CPU_6338
+	switch (set) {
+	case RSET_PERF:
+		return BCM_6338_PERF_BASE;
+	case RSET_TIMER:
+		return BCM_6338_TIMER_BASE;
+	case RSET_WDT:
+		return BCM_6338_WDT_BASE;
+	case RSET_UART0:
+		return BCM_6338_UART0_BASE;
+	case RSET_GPIO:
+		return BCM_6338_GPIO_BASE;
+	case RSET_SPI:
+		return BCM_6338_SPI_BASE;
+	case RSET_MEMC:
+		return BCM_6338_MEMC_BASE;
+	}
+#endif
 #ifdef CONFIG_BCM63XX_CPU_6348
 	switch (set) {
 	case RSET_DSL_LMEM:
@@ -265,6 +310,27 @@ enum bcm63xx_irq {
 	IRQ_PCI,
 	IRQ_PCMCIA,
 };
+
+/*
+ * 6338 irqs
+ */
+#define BCM_6338_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
+#define BCM_6338_SPI_IR			(IRQ_INTERNAL_BASE + 1)
+#define BCM_6338_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
+#define BCM_6338_DG_IRQ			(IRQ_INTERNAL_BASE + 4)
+#define BCM_6338_DSL_IRQ		(IRQ_INTERNAL_BASE + 5)
+#define BCM_6338_ATM_IRQ		(IRQ_INTERNAL_BASE + 6)
+#define BCM_6338_USBS_IRQ		(IRQ_INTERNAL_BASE + 7)
+#define BCM_6338_ENET0_IRQ		(IRQ_INTERNAL_BASE + 8)
+#define BCM_6338_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 9)
+#define BCM_6338_SDRAM_IRQ		(IRQ_INTERNAL_BASE + 10)
+#define BCM_6338_USB_CNTL_RX_DMA_IRQ	(IRQ_INTERNAL_BASE + 11)
+#define BCM_6338_USB_CNTL_TX_DMA_IRQ	(IRQ_INTERNAL_BASE + 12)
+#define BCM_6338_USB_BULK_RX_DMA_IRQ	(IRQ_INTERNAL_BASE + 13)
+#define BCM_6338_USB_BULK_TX_DMA_IRQ	(IRQ_INTERNAL_BASE + 14)
+#define BCM_6338_ENET0_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 15)
+#define BCM_6338_ENET0_TXDMA_IRQ	(IRQ_INTERNAL_BASE + 16)
+#define BCM_6338_SDIO_IRQ		(IRQ_INTERNAL_BASE + 17)
 
 /*
  * 6348 irqs
