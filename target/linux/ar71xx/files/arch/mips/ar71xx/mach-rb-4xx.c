@@ -150,8 +150,21 @@ static inline void rb4xx_add_device_spi(void) {}
 static inline void rb433_add_device_spi(void) {}
 #endif
 
+static void __init rb4xx_generic_setup(void)
+{
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
+					rb4xx_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(rb4xx_gpio_buttons),
+					rb4xx_gpio_buttons);
+
+	platform_device_register(&rb4xx_nand_device);
+}
+
 static void __init rb411_setup(void)
 {
+	rb4xx_generic_setup();
 	rb4xx_add_device_spi();
 
 	ar71xx_add_device_mdio(0xfffffffe);
@@ -161,15 +174,6 @@ static void __init rb411_setup(void)
 
 	ar71xx_add_device_eth(0);
 
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
-					rb4xx_leds_gpio);
-
-	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(rb4xx_gpio_buttons),
-					rb4xx_gpio_buttons);
-
-	platform_device_register(&rb4xx_nand_device);
-
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
 }
 
@@ -177,6 +181,7 @@ MIPS_MACHINE(AR71XX_MACH_RB_411, "MikroTik RouterBOARD 411/A/AH", rb411_setup);
 
 static void __init rb433_setup(void)
 {
+	rb4xx_generic_setup();
 	rb433_add_device_spi();
 
 	ar71xx_add_device_mdio(0xffffffe9);
@@ -192,15 +197,6 @@ static void __init rb433_setup(void)
 	ar71xx_add_device_eth(1);
 	ar71xx_add_device_eth(0);
 
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
-					rb4xx_leds_gpio);
-
-	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(rb4xx_gpio_buttons),
-					rb4xx_gpio_buttons);
-
-	platform_device_register(&rb4xx_nand_device);
-
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
 }
 
@@ -208,6 +204,7 @@ MIPS_MACHINE(AR71XX_MACH_RB_433, "MikroTik RouterBOARD 433/AH", rb433_setup);
 
 static void __init rb450_setup(void)
 {
+	rb4xx_generic_setup();
 	rb4xx_add_device_spi();
 
 	ar71xx_add_device_mdio(0xffffffe0);
@@ -222,21 +219,13 @@ static void __init rb450_setup(void)
 
 	ar71xx_add_device_eth(1);
 	ar71xx_add_device_eth(0);
-
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
-					rb4xx_leds_gpio);
-
-	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(rb4xx_gpio_buttons),
-					rb4xx_gpio_buttons);
-
-	platform_device_register(&rb4xx_nand_device);
 }
 
 MIPS_MACHINE(AR71XX_MACH_RB_450, "MikroTik RouterBOARD 450", rb450_setup);
 
 static void __init rb493_setup(void)
 {
+	rb4xx_generic_setup();
 	rb4xx_add_device_spi();
 
 	ar71xx_add_device_mdio(0x3fffff00);
@@ -252,17 +241,7 @@ static void __init rb493_setup(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
 
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
-					rb4xx_leds_gpio);
-
-	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(rb4xx_gpio_buttons),
-					rb4xx_gpio_buttons);
-
-	platform_device_register(&rb4xx_nand_device);
-
 	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
 }
 
 MIPS_MACHINE(AR71XX_MACH_RB_493, "MikroTik RouterBOARD 493/AH", rb493_setup);
-
