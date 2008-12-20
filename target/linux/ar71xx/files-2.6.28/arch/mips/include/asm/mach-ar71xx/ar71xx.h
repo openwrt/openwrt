@@ -201,9 +201,8 @@ extern void ar71xx_add_device_usb(void) __init;
 
 #define GPIO_FUNC_STEREO_EN	BIT(17)
 #define GPIO_FUNC_SLIC_EN	BIT(16)
-#define GPIO_FUNC_SPI_CS1_EN	BIT(15)
-#define GPIO_FUNC_SPI_CS0_EN	BIT(14)
-#define GPIO_FUNC_SPI_EN	BIT(13)
+#define GPIO_FUNC_SPI_CS2_EN	BIT(13)
+#define GPIO_FUNC_SPI_CS1_EN	BIT(12)
 #define GPIO_FUNC_UART_EN	BIT(8)
 #define GPIO_FUNC_USB_OC_EN	BIT(4)
 #define GPIO_FUNC_USB_CLK_EN	BIT(0)

@@ -481,8 +481,6 @@ void __init ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 				struct spi_board_info const *info,
 				unsigned n)
 {
-	ar71xx_gpio_function_enable(GPIO_FUNC_SPI_EN);
-
 	spi_register_board_info(info, n);
 	ar71xx_spi_device.dev.platform_data = pdata;
 	platform_device_register(&ar71xx_spi_device);
