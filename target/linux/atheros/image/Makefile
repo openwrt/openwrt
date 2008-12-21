@@ -25,7 +25,7 @@ define Image/Build
 
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B XS2 -v XS2.ar2316.OpenWrt \
-		-k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma
+		-k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
 		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt2-$(1).bin
 
