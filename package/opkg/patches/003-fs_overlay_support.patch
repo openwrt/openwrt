@@ -4,10 +4,9 @@ what mount point opkg should check for available storage space.
 Signed-off-by: Nicolas Thill <nico@openwrt.org>
 
 
-diff -ruN opkg-4564-old/libopkg/opkg_conf.c opkg-4564-new/libopkg/opkg_conf.c
---- opkg-4564-old/libopkg/opkg_conf.c	2008-08-04 19:18:51.000000000 +0200
-+++ opkg-4564-new/libopkg/opkg_conf.c	2008-12-12 02:26:35.000000000 +0100
-@@ -64,6 +64,7 @@
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -64,6 +64,7 @@ int opkg_init_options_array(const opkg_c
  	  { "offline_root", OPKG_OPT_TYPE_STRING, &conf->offline_root },
  	  { "offline_root_post_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_post_script_cmd },
  	  { "offline_root_pre_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_pre_script_cmd },
@@ -15,10 +14,9 @@ diff -ruN opkg-4564-old/libopkg/opkg_conf.c opkg-4564-new/libopkg/opkg_conf.c
  	  { "proxy_passwd", OPKG_OPT_TYPE_STRING, &conf->proxy_passwd },
  	  { "proxy_user", OPKG_OPT_TYPE_STRING, &conf->proxy_user },
  	  { "query-all", OPKG_OPT_TYPE_BOOL, &conf->query_all },
-diff -ruN opkg-4564-old/libopkg/opkg_conf.h opkg-4564-new/libopkg/opkg_conf.h
---- opkg-4564-old/libopkg/opkg_conf.h	2008-08-04 19:18:51.000000000 +0200
-+++ opkg-4564-new/libopkg/opkg_conf.h	2008-12-12 02:25:33.000000000 +0100
-@@ -67,6 +67,7 @@
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -67,6 +67,7 @@ struct opkg_conf
       char *offline_root;
       char *offline_root_pre_script_cmd;
       char *offline_root_post_script_cmd;
@@ -26,24 +24,37 @@ diff -ruN opkg-4564-old/libopkg/opkg_conf.h opkg-4564-new/libopkg/opkg_conf.h
       int query_all;
       int verbosity;
       int noaction;
-Binary files opkg-4564-old/libopkg/opkg_conf.o and opkg-4564-new/libopkg/opkg_conf.o differ
-diff -ruN opkg-4564-old/libopkg/opkg_install.c opkg-4564-new/libopkg/opkg_install.c
---- opkg-4564-old/libopkg/opkg_install.c	2008-08-04 19:18:51.000000000 +0200
-+++ opkg-4564-new/libopkg/opkg_install.c	2008-12-12 02:29:13.000000000 +0100
-@@ -525,9 +525,15 @@
+--- a/libopkg/opkg_install.c
++++ b/libopkg/opkg_install.c
+@@ -524,10 +524,13 @@ static int verify_pkg_installable(opkg_c
+      *    my diddling with the .opk file size below isn't going to cut it.
       * 3) return a proper error code instead of 1
       */
-      int comp_size, blocks_available;
-+     char *root;
-     
+-     int comp_size, blocks_available;
+-    
++     int comp_size, blocks_available = -1;
++
       if (!conf->force_space && pkg->installed_size != NULL) {
 -	  blocks_available = get_available_blocks(conf->default_dest->root_dir);
-+          if (conf->overlay_root != NULL) {
-+               root = conf->overlay_root;
-+          } else {
-+               root = conf->default_dest->root_dir;
-+          }
-+	  blocks_available = get_available_blocks(root);
++          if (conf->overlay_root != NULL)
++               blocks_available = get_available_blocks(conf->overlay_root);
++          if (blocks_available < 0)
++               blocks_available = get_available_blocks(conf->default_dest->root_dir);
  
  	  comp_size = strtoul(pkg->installed_size, NULL, 0);
  	  /* round up a blocks count without doing fancy-but-slow casting jazz */ 
+--- a/libopkg/opkg_utils.c
++++ b/libopkg/opkg_utils.c
+@@ -30,10 +30,8 @@ int get_available_blocks(char * filesyst
+ {
+      struct statfs sfs;
+ 
+-     if(statfs(filesystem, &sfs)){
+-	  fprintf(stderr, "bad statfs\n");
+-	  return 0;
+-     }
++     if(statfs(filesystem, &sfs))
++	  return -1;
+      /*    fprintf(stderr, "reported fs type %x\n", sfs.f_type); */
+      return ((sfs.f_bavail * sfs.f_bsize) / 1024);
+ }
