@@ -70,7 +70,7 @@ $(eval $(call KernelPackage,ata-ixp4xx-cf))
 define KernelPackage/ata-rb532-cf
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=RB532 Compact Flash support
-  DEPENDS:=kmod-ata-core
+  DEPENDS:=@TARGET_rb532 kmod-ata-core
   KCONFIG:= \
   	CONFIG_PATA_PLATFORM \
   	CONFIG_PATA_RB532
