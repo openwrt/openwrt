@@ -7,8 +7,7 @@
 
 define Profile/NAS100d
   NAME:=Iomega NAS 100d
-  PACKAGES:=kmod-ixp4xx-npe \
-	kmod-madwifi wireless-tools \
+  PACKAGES:=kmod-madwifi wireless-tools \
 	kmod-scsi-core \
 	kmod-ata-core kmod-ata-artop \
 	kmod-usb-core kmod-usb2 kmod-usb-storage \

@@ -674,25 +674,6 @@ endef
 $(eval $(call KernelPackage,ne2k-pci))
 
 
-define KernelPackage/ixp4xx-npe
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Intel(R) IXP4xx ethernet support
-  DEPENDS:=@TARGET_ixp4xx
-  KCONFIG:=CONFIG_IXP4XX_MAC
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/ixp4xx/ixp4xx_npe.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/ixp4xx/ixp4xx_qmgr.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/ixp4xx/ixp4xx_mac.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,ixp4xx_npe ixp4xx_qmgr ixp4xx_mac)
-endef
-
-define KernelPackage/ixp4xx-npe/description
- Kernel modules for Intel(R) IXP4xx onboard ethernet.
-endef
-
-$(eval $(call KernelPackage,ixp4xx-npe))
-
-
 define KernelPackage/e100
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/100+ cards kernel support
