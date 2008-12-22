@@ -9,14 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpa_supplicant
-PKG_VERSION:=0.6.3
+PKG_VERSION:=0.6.6
 PKG_RELEASE:=1
-PKG_MD5SUM:=b51b2975f21006f85f7297f3fb1acde1
+PKG_MD5SUM:=cd0b386bdf4b0b3b01516e36cb6977d1
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
-PKG_BUILD_DEPENDS:=madwifi
+PKG_BUILD_DEPENDS:=PACKAGE_kmod-madwifi:madwifi
 
 include $(INCLUDE_DIR)/package.mk
 STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-madwifi CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK)
