@@ -17,7 +17,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  	 * If this is specified, %wpa_supplicant will open a control interface
 --- a/wpa_supplicant/config_file.c
 +++ b/wpa_supplicant/config_file.c
-@@ -312,6 +312,13 @@
+@@ -313,6 +313,13 @@
  	return 0;
  }
  
@@ -31,7 +31,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  
  static int wpa_config_process_fast_reauth(struct wpa_config *config, char *pos)
  {
-@@ -445,6 +452,9 @@
+@@ -446,6 +453,9 @@
  	if (os_strncmp(pos, "ap_scan=", 8) == 0)
  		return wpa_config_process_ap_scan(config, pos + 8);
  
@@ -41,7 +41,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  	if (os_strncmp(pos, "fast_reauth=", 12) == 0)
  		return wpa_config_process_fast_reauth(config, pos + 12);
  
-@@ -810,6 +820,8 @@
+@@ -819,6 +831,8 @@
  		fprintf(f, "eapol_version=%d\n", config->eapol_version);
  	if (config->ap_scan != DEFAULT_AP_SCAN)
  		fprintf(f, "ap_scan=%d\n", config->ap_scan);
@@ -52,7 +52,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  #ifdef EAP_TLS_OPENSSL
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -555,6 +555,9 @@
+@@ -601,6 +601,9 @@
  	if (wpa_s->conf->ap_scan == 2 || wpa_s->disconnected)
  		return;
  
@@ -62,7 +62,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  	while (selected == NULL) {
  		for (prio = 0; prio < wpa_s->conf->num_prio; prio++) {
  			selected = wpa_supplicant_select_bss(
-@@ -567,6 +570,7 @@
+@@ -613,6 +616,7 @@
  			wpa_printf(MSG_DEBUG, "No APs found - clear blacklist "
  				   "and try again");
  			wpa_blacklist_clear(wpa_s);
@@ -70,7 +70,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  		} else if (selected == NULL) {
  			break;
  		}
-@@ -594,10 +598,12 @@
+@@ -640,10 +644,12 @@
  		rsn_preauth_scan_results(wpa_s->wpa, wpa_s->scan_res);
  	} else {
  		wpa_printf(MSG_DEBUG, "No suitable AP found.");
@@ -84,7 +84,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  	return;
  
  req_scan:
-@@ -804,6 +810,9 @@
+@@ -847,6 +853,9 @@
  	}
  	if (wpa_s->wpa_state >= WPA_ASSOCIATED)
  		wpa_supplicant_req_scan(wpa_s, 0, 100000);
@@ -97,14 +97,14 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
 @@ -334,6 +334,7 @@
- 	struct wpa_client_mlme mlme;
- 	int use_client_mlme;
- 	int driver_4way_handshake;
+	struct wpa_client_mlme mlme;
+	int use_client_mlme;
+	int driver_4way_handshake;
 +	struct os_time last_scan_results;
- };
- 
- 
-@@ -381,6 +382,7 @@
+
+	int pending_mic_error_report;
+	int pending_mic_error_pairwise;
+@@ -385,6 +387,7 @@
  
  /* scan.c */
  void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec);
@@ -147,7 +147,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  			   "first without requesting a new scan to speed up "
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1417,6 +1417,9 @@
+@@ -1441,6 +1441,9 @@
  {
  	struct wpa_supplicant *wpa_s = ctx;
  
