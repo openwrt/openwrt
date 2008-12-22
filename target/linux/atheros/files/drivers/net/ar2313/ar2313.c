@@ -1121,6 +1121,9 @@ static int ar2313_open(struct net_device *dev)
 {
 	struct ar2313_private *sp = netdev_priv(dev);
 
+	/* reset the hardware, in case the MAC address changed */
+	ar2313_reset_reg(dev);
+
 	dev->mtu = 1500;
 	netif_start_queue(dev);
 
