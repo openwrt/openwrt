@@ -84,7 +84,6 @@ static void __init ar71xx_pci_irq_init(void)
 
 	setup_irq(AR71XX_CPU_IRQ_PCI, &ar71xx_pci_irqaction);
 }
-
 #endif /* CONFIG_PCI */
 
 static void ar71xx_gpio_irq_dispatch(void)
@@ -241,6 +240,13 @@ static void __init ar71xx_misc_irq_init(void)
 	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
 }
 
+static void ar913x_wmac_irq_dispatch(void)
+{
+	do_IRQ(AR71XX_CPU_IRQ_WMAC);
+}
+
+static void (* ar71xx_ip2_irq_handler)(void) = spurious_interrupt;
+
 asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned long pending;
@@ -250,10 +256,8 @@ asmlinkage void plat_irq_dispatch(void)
 	if (pending & STATUSF_IP7)
 		do_IRQ(AR71XX_CPU_IRQ_TIMER);
 
-#ifdef CONFIG_PCI
 	else if (pending & STATUSF_IP2)
-		ar71xx_pci_irq_dispatch();
-#endif
+		ar71xx_ip2_irq_handler();
 
 	else if (pending & STATUSF_IP4)
 		do_IRQ(AR71XX_CPU_IRQ_GE0);
@@ -277,9 +281,22 @@ void __init arch_init_irq(void)
 
 	ar71xx_misc_irq_init();
 
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
 #ifdef CONFIG_PCI
-	ar71xx_pci_irq_init();
+		ar71xx_pci_irq_init();
+		ar71xx_ip2_irq_handler = ar71xx_pci_irq_dispatch;
 #endif
+		break;
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		ar71xx_ip2_irq_handler = ar913x_wmac_irq_dispatch;
+		break;
+	default:
+		BUG();
+	}
 
 	ar71xx_gpio_irq_init();
 }
