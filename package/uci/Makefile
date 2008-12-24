@@ -56,6 +56,11 @@ UCI_MAKEOPTS = \
 		CPPFLAGS="-I$(PKG_BUILD_DIR) -I$(STAGING_DIR)/usr/include" \
 		OS="Linux"
 
+# work around a nasty gcc bug
+ifneq ($(CONFIG_GCC_VERSION_4_2_4),)
+  UCI_MAKEOPTS += WOPTS=""
+endif
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) $(UCI_MAKEOPTS)
 	$(MAKE) -C $(PKG_BUILD_DIR)/lua $(UCI_MAKEOPTS)
