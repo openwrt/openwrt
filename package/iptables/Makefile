@@ -254,6 +254,7 @@ ifeq ($(KERNEL),2.4)
   endef
 endif
 
+TARGET_CPPFLAGS := -I$(PKG_BUILD_DIR)/include $(TARGET_CPPFLAGS)
 TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += --enable-devel --with-xtlibdir=/usr/lib/iptables 
 
