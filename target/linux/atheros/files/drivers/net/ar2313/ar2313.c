@@ -1120,9 +1120,21 @@ static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 static int ar2313_open(struct net_device *dev)
 {
 	struct ar2313_private *sp = netdev_priv(dev);
+	unsigned int ethsal, ethsah;
 
 	/* reset the hardware, in case the MAC address changed */
-	ar2313_reset_reg(dev);
+	ethsah = ((((u_int) (dev->dev_addr[5]) << 8) & (u_int) 0x0000FF00) |
+			  (((u_int) (dev->dev_addr[4]) << 0) & (u_int) 0x000000FF));
+
+	ethsal = ((((u_int) (dev->dev_addr[3]) << 24) & (u_int) 0xFF000000) |
+			  (((u_int) (dev->dev_addr[2]) << 16) & (u_int) 0x00FF0000) |
+			  (((u_int) (dev->dev_addr[1]) << 8) & (u_int) 0x0000FF00) |
+			  (((u_int) (dev->dev_addr[0]) << 0) & (u_int) 0x000000FF));
+
+	sp->eth_regs->mac_addr[0] = ethsah;
+	sp->eth_regs->mac_addr[1] = ethsal;
+
+	mdelay(10);
 
 	dev->mtu = 1500;
 	netif_start_queue(dev);
