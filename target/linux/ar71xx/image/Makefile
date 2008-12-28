@@ -79,6 +79,10 @@ define Image/Build/Profile/WP543
 	$(call Image/Build/Template/Compex/$(1),wp543)
 endef
 
+define Image/Build/Profile/DIR615C1
+	$(call Image/Build/Template/AP81/$(1),dir-615c1,board=TEW-632BRP,"AP81-AR9130-RT-070614-02")
+endef
+
 define Image/Build/Profile/TEW632BRP
 	$(call Image/Build/Template/AP81/$(1),tew-632brp,board=TEW-632BRP,"AP81-AR9130-RT-070614-00")
 endef
@@ -95,9 +99,10 @@ define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(IMGNAME)-root.$(1) bs=128k conv=sync
 
-	$(call Image/Build/Profile/WP543,$(1))
+	$(call Image/Build/Profile/DIR615C1,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/WP543,$(1))
 endef
 
 $(eval $(call BuildImage))
