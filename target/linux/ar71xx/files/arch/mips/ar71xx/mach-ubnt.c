@@ -25,7 +25,7 @@
 
 #define UBNT_BUTTONS_POLL_INTERVAL	20
 
-static struct spi_board_info ubnt_rs_spi_info[] = {
+static struct spi_board_info ubnt_spi_info[] = {
 	{
 		.bus_num	= 0,
 		.chip_select	= 0,
@@ -74,8 +74,8 @@ static struct gpio_button ubnt_rs_gpio_buttons[] __initdata = {
 
 static void __init ubnt_rs_setup(void)
 {
-	ar71xx_add_device_spi(NULL, ubnt_rs_spi_info,
-				    ARRAY_SIZE(ubnt_rs_spi_info));
+	ar71xx_add_device_spi(NULL, ubnt_spi_info,
+				    ARRAY_SIZE(ubnt_spi_info));
 
 	ar71xx_add_device_mdio(~(UBNT_RS_WAN_PHYMASK | UBNT_RS_LAN_PHYMASK));
 
@@ -104,3 +104,11 @@ static void __init ubnt_rs_setup(void)
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "Ubiquiti RouterStation", ubnt_rs_setup);
+
+static void __init ubnt_lsx_setup(void)
+{
+	ar71xx_add_device_spi(NULL, ubnt_spi_info,
+				    ARRAY_SIZE(ubnt_spi_info));
+}
+
+MIPS_MACHINE(AR71XX_MACH_UBNT_LSX, "Ubiquiti LSX", ubnt_lsx_setup);
