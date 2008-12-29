@@ -59,6 +59,17 @@ define Image/Build/MyLoader
 		$(call imgname,$(1),$(2)).img
 endef
 
+define Image/Build/UBNT
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
+	-$(STAGING_DIR_HOST)/bin/mkfwimage \
+		-B $(4) -v $(5).ar7100.OpenWrt \
+		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt-$(2)-$(1).bin
+endef
+
 define Image/Build/Template/Compex
 	$(call Image/Build/MyLoader,$(1),$(2))
 endef
@@ -73,6 +84,14 @@ endef
 
 define Image/Build/Template/AP81/squashfs
 	$(call Image/Build/Template/AP81,squashfs,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/UBNT
+	$(call Image/Build/UBNT,$(1),$(2),$(3),$(4),$(5))
+endef
+
+define Image/Build/Template/UBNT/squashfs
+	$(call Image/Build/Template/UBNT,squashfs,$(1),$(2),$(3))
 endef
 
 define Image/Build/Profile/WP543
@@ -91,6 +110,10 @@ define Image/Build/Profile/TEW652BRP
 	$(call Image/Build/Template/AP81/$(1),tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
 endef
 
+define Image/Build/Profile/UBNTRS
+	$(call Image/Build/Template/UBNT,$(1),rs,board=UBNT-RS,RS,RSx)
+endef
+
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
@@ -102,6 +125,7 @@ define Image/Build
 	$(call Image/Build/Profile/DIR615C1,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/UBNTRS,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 endef
 
