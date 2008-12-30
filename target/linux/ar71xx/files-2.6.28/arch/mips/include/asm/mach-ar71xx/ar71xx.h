@@ -119,6 +119,7 @@ extern unsigned long ar71xx_mach_type;
 #define AR71XX_MACH_TEW_632BRP	8	/* TRENDnet TEW-632BRP */
 #define AR71XX_MACH_UBNT_RS	9	/* Ubiquiti RouterStation */
 #define AR71XX_MACH_UBNT_LSX	10	/* Ubiquiti LSX */
+#define AR71XX_MACH_WNR2000	11	/* NETGEAR WNR2000 */
 
 /*
  * PLL block
