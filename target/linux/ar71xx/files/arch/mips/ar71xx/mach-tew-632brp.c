@@ -123,6 +123,8 @@ static void __init tew_632brp_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, TEW_632BRP_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(tew_632brp_gpio_buttons),
 					tew_632brp_gpio_buttons);
+
+	ar91xx_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TRENDnet TEW-632BRP", tew_632brp_setup);

@@ -592,3 +592,27 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 		printk(KERN_DEBUG "ar71xx: failed to parse mac address "
 				"\"%s\"\n", mac_str);
 }
+
+static struct resource ar91xx_wmac_resources[] = {
+	{
+		.start	= AR91XX_WMAC_BASE,
+		.end	= AR91XX_WMAC_BASE + AR91XX_WMAC_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	}, {
+		.start	= AR71XX_CPU_IRQ_WMAC,
+		.end	= AR71XX_CPU_IRQ_WMAC,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device ar91xx_wmac_device = {
+	.name		= "ath9k",
+	.id		= -1,
+	.resource	= ar91xx_wmac_resources,
+	.num_resources	= ARRAY_SIZE(ar91xx_wmac_resources),
+};
+
+void __init ar91xx_add_device_wmac(void)
+{
+	platform_device_register(&ar91xx_wmac_device);
+}
