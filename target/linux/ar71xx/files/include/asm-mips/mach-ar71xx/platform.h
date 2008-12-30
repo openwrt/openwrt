@@ -82,4 +82,6 @@ extern void ar71xx_add_device_uart(void) __init;
 
 extern void ar71xx_add_device_wdt(void) __init;
 
+extern void ar91xx_add_device_wmac(void) __init;
+
 #endif /* __ASM_MACH_AR71XX_PLATFORM_H */
