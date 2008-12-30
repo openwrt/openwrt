@@ -575,7 +575,7 @@ $(eval $(call KernelPackage,usb-net-asix))
 
 
 define KernelPackage/usb-net-hso
-  $(call usbdep,kmod-usb-net @LINUX_2_6_26)
+  $(call usbdep,kmod-usb-net @LINUX_2_6 @!LINUX_2_6_21 @!LINUX_2_6_23 @!LINUX_2_6_24 @!LINUX_2_6_25)
   TITLE:=Kernel module for Option USB High Speed Mobile Devices
   KCONFIG:= \
 	CONFIG_RFKILL \
