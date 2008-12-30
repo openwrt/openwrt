@@ -184,10 +184,18 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @BROKEN @PCI_SUPPORT +kmod-rt2x00-pci @LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= +kmod-rt2x00-pci @LINUX_2_6_27||@LINUX_2_6_28
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
+endef
+
+define KernelPackage/rt2800-usb
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= +kmod-rt2x00-usb @LINUX_2_6_27||@LINUX_2_6_28
+  TITLE+= (RT2870 USB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800usb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,rt2800usb)
 endef
 
 ZD1211FW_NAME:=zd1211-firmware
@@ -443,6 +451,7 @@ $(eval $(call KernelPackage,rt2500-usb))
 $(eval $(call KernelPackage,rt61-pci))
 $(eval $(call KernelPackage,rt73-usb))
 $(eval $(call KernelPackage,rt2800-pci))
+$(eval $(call KernelPackage,rt2800-usb))
 $(eval $(call KernelPackage,zd1211rw))
 $(eval $(call KernelPackage,mac80211-hwsim))
 $(eval $(call KernelPackage,ath9k-new))
