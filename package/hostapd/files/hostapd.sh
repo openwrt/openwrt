@@ -74,20 +74,20 @@ hostapd_setup_vif() {
 	config_get ssid "$vif" ssid
 	config_get device "$vif" device
 	config_get channel "$device" channel
-	config_get agmode "$device" agmode
-	case "$agmode" in
-		11a) agmode=a;;
-		11b) agmode=b;;
-		11g) agmode=g;;
+	config_get hwmode "$device" hwmode
+	case "$hwmode" in
+		11a) hwmode=a;;
+		11b) hwmode=b;;
+		11g) hwmode=g;;
 		*)
-			agmode=
-			[ "$channel" -gt 14 ] && agmode=a
+			hwmode=
+			[ "$channel" -gt 14 ] && hwmode=a
 		;;
 	esac
 	cat > /var/run/hostapd-$ifname.conf <<EOF
 driver=$driver
 interface=$ifname
-hw_mode=${agmode:-g}
+hw_mode=${hwmode:-g}
 channel=$channel
 ${bridge:+bridge=$bridge}
 ssid=$ssid
