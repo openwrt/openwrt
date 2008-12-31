@@ -41,6 +41,7 @@ create_zone() {
 	config_set $ZONE_LIST $1 1 
 
 	$IPTABLES -N zone_$1
+	$IPTABLES -N zone_$1_MSSFIX
 	$IPTABLES -N zone_$1_ACCEPT
 	$IPTABLES -N zone_$1_DROP
 	$IPTABLES -N zone_$1_REJECT
@@ -60,6 +61,7 @@ addif() {
 	[ -n "$dev" -a "$dev" == "$1" ] && return
 	logger "adding $1 to firewall zone $2"
 	$IPTABLES -A input -i $1 -j zone_$2
+	$IPTABLES -I zone_$2_MSSFIX 1 -o $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 	$IPTABLES -I zone_$2_ACCEPT 1 -o $1 -j ACCEPT
 	$IPTABLES -I zone_$2_DROP 1 -o $1 -j DROP
 	$IPTABLES -I zone_$2_REJECT 1 -o $1 -j reject
@@ -147,7 +149,6 @@ fw_defaults() {
 	$IPTABLES -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 	
 	$IPTABLES -A FORWARD -m state --state INVALID -j DROP
-	$IPTABLES -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 	$IPTABLES -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 	
 	$IPTABLES -A INPUT -i lo -j ACCEPT
@@ -250,9 +251,11 @@ fw_forwarding() {
 
 	config_get src $1 src
 	config_get dest $1 dest
+	config_get_bool mtu_fix $1 mtu_fix 0
 	[ -n "$src" ] && z_src=zone_${src}_forward || z_src=forward
 	[ -n "$dest" ] && z_dest=zone_${dest}_ACCEPT || z_dest=ACCEPT
 	$IPTABLES -I $z_src 1 -j $z_dest
+	[ "$mtu_fix" -gt 0 -a -n "$dest" ] && $IPTABLES -I $z_src 1 -j zone_${dest}_MSSFIX
 }
 
 fw_redirect() {
