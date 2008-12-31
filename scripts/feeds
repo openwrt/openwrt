@@ -89,55 +89,52 @@ sub update_index($)
 	return 0;
 }
 
-sub update_svn($$$) {
+my %update_method = (
+	'src-svn' => {
+		'init'		=> "svn checkout '%s' '%s'",
+		'update'	=> "svn update",
+		'controldir'	=> ".svn"},
+	'src-cpy' => {
+		'init'		=> "cp -Rf '%s' '%s'",
+		'update'	=> ""},
+	'src-link' => {
+		'init'		=> "ln -s '%s' '%s'",
+		'update'	=> ""},
+	'src-git' => {
+		'init'		=> "git clone --depth 1 '%s' '%s'",
+		'update'	=> "git pull",
+		'controldir'	=> ".git"},
+	'src-bzr' => {
+		'init'		=> "bzr checkout --lightweight '%s' '%s'",
+		'update'	=> "bzr update",
+		'controldir'	=> ".bzr"},
+	'src-hg' => {
+		'init'		=> "hg clone '%s' '%s'",
+		'update'	=> "hg pull --update",
+		'controldir'	=> ".hg"}
+);
+
+# src-git: pull broken
+# src-cpy: broken if `basename $src` != $name
+
+sub update_feed_via($$$$) {
+	my $type = shift;
 	my $name = shift;
 	my $src = shift;
 	my $relocate = shift;
+	
+	my $m = $update_method{$type};
+	my $localpath = "./feeds/$name";
+	my $safepath = $localpath;
+	$safepath =~ s/'/'\\''/;
 
-	if ( !$relocate && -d "./feeds/$name/.svn" ) {
-		system("(cd \"./feeds/$name\"; svn up)") == 0 or return 1;
+	if( $relocate || !$m->{'update'} || !-d "$localpath/$m->{'controldir'}" ) {
+		system("rm -rf '$safepath'");
+		system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
 	} else {
-		system("rm -rf \"./feeds/$name\"");
-		system("svn co $src \"./feeds/$name\"") == 0 or return 1;
+		system("cd '$safepath'; $m->{'update'}") == 0 or return 1;
 	}
-
-	return 0;
-}
-
-sub update_cpy($$$) {
-	my $name = shift;
-	my $src = shift;
-	my $relocate = shift;
-
-	$relocate && system("rm -rf \"./feeds/$name\"");
-	system("mkdir -p ./feeds/$name");
-	system("cp -Rf $src ./feeds");
-
-	return 0;
-}
-
-sub update_link($$$) {
-	my $name = shift;
-	my $src = abs_path(shift);
-	my $relocate = shift;	# no-op
-
-	system("rm -f ./feeds/$name; ln -s $src ./feeds/$name");
-
-	return 0;
-}
-
-sub update_git($$$) {
-	my $name = shift;
-	my $src = shift;
-	my $relocate = shift;
-
-	if ( !$relocate && -d "./feeds/$name/.git" ) {
-		system("GIT_DIR=./feeds/$name/.git git pull") == 0 or return 1;
-	} else {
-		system("rm -rf \"./feeds/$name\"");
-		system("git clone --depth 1 $src ./feeds/$name") == 0 or return 1;
-	}
-
+	
 	return 0;
 }
 
@@ -259,6 +256,8 @@ my %install_method = (
 	'src-cpy' => \&install_generic,
 	'src-link' => \&install_generic,
 	'src-git' => \&install_generic,
+	'src-bzr' => \&install_generic,
+	'src-hg' => \&install_generic,
 );
 
 my %feed;
@@ -435,13 +434,6 @@ sub uninstall {
 	return 0;
 }
 
-my %update_method = (
-	'src-svn' => \&update_svn,
-	'src-cpy' => \&update_cpy,
-	'src-link' => \&update_link,
-	'src-git' => \&update_git
-);
-
 sub update_feed($$$$)
 {
 	my $type=shift;
@@ -461,7 +453,7 @@ sub update_feed($$$$)
 		my $failed = 1;
 		foreach my $feedsrc (@$src) {
 			warn "Updating feed '$name' from '$feedsrc' ...\n";
-			next unless &{$update_method{$type}}($name, $feedsrc, $force_relocate) == 0;
+			next unless update_feed_via($type, $name, $feedsrc, $force_relocate) == 0;
 			$failed = 0;
 			last;
 		}
