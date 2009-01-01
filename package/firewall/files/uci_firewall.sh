@@ -217,6 +217,16 @@ fw_rule() {
 	config_get proto $1 proto
 	config_get target $1 target
 	config_get ruleset $1 ruleset
+
+	src_port_first=${src_port%-*}
+	src_port_last=${src_port#*-}
+	[ "$src_port_first" -ne "$src_port_last" ] && { \
+		src_port="$src_port_first:$src_port_last"; }
+
+	dest_port_first=${dest_port%-*}
+	dest_port_last=${dest_port#*-}
+	[ "$dest_port_first" -ne "$dest_port_last" ] && { \
+		dest_port="$dest_port_first:$dest_port_last"; }
 	
 	ZONE=input
 	TARGET=$target
