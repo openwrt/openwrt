@@ -31,7 +31,7 @@ scan_atheros() {
 		esac
 	done
 
-	case "${adhoc:+1}:${sta:+1}:${ap+1}" in
+	case "${adhoc:+1}:${sta:+1}:${ap:+1}" in
 		# valid mode combinations
 		1::) wds="";;
 		1::1);;
