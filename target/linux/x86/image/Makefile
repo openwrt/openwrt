@@ -66,7 +66,7 @@ ifeq ($(CONFIG_X86_VDI_IMAGES),y)
     # left here because the image builder doesnt need these
     ifeq ($(1),ext2)
 		rm $(BIN_DIR)/openwrt-$(BOARD)-ext2.vdi || true
-		vditool DD $(BIN_DIR)/openwrt-$(BOARD)-ext2.vdi $(BIN_DIR)/openwrt-$(BOARD)-ext2.image
+		VBoxManage convertfromraw -format VDI $(BIN_DIR)/openwrt-$(BOARD)-ext2.image $(BIN_DIR)/openwrt-$(BOARD)-ext2.vdi
     endif
   endef
 endif
@@ -121,8 +121,8 @@ endef
 $(eval $(call BuildImage))
 
 ifeq ($(CONFIG_X86_VDI_IMAGES),y)
-  $(eval $(call RequireCommand,vditool, \
-	You need vditool to generate VirtualBox images. \
+  $(eval $(call RequireCommand,VBoxManage, \
+	You need VBoxManage to generate VirtualBox images. \
   ))
 endif
 

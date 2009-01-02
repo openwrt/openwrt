@@ -36,7 +36,7 @@ config X86_GRUB_BOOTOPTS
 
 
 config X86_VDI_IMAGES
-    bool "Build VirtualBox image files (VDI). Requires vditool"
+    bool "Build VirtualBox image files (VDI). Requires VBoxManage"
     depends TARGET_x86
     depends TARGET_ROOTFS_EXT2FS
     depends X86_GRUB_IMAGES
