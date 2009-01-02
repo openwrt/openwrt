@@ -15,7 +15,7 @@ LINUX_VERSION:=2.6.26.8
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += kmod-madwifi
+DEFAULT_PACKAGES += hostapd-mini kmod-madwifi
 
 define Target/Description
 	Build firmware images for Atheros AR71xx based boards

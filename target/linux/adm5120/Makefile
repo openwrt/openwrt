@@ -15,11 +15,7 @@ INITRAMFS_EXTRA_FILES:=
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += admswconfig
-DEFAULT_PACKAGES += \
-	kmod-input-core \
-	kmod-input-polldev \
-	kmod-input-gpio-buttons \
-	kmod-button-hotplug
+DEFAULT_PACKAGES += admswconfig hostapd-mini kmod-input-core \
+		    kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
 
 $(eval $(call BuildTarget))

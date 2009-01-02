@@ -14,6 +14,6 @@ FEATURES:=jffs2 pci tgz
 LINUX_VERSION:=2.6.24.7
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += kmod-madwifi
+DEFAULT_PACKAGES += hostapd-mini kmod-madwifi
 
 $(eval $(call BuildTarget))

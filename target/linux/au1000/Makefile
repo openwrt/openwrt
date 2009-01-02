@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,7 +14,7 @@ FEATURES:=jffs2 usb pci
 LINUX_VERSION:=2.6.27.10
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += yamonenv
+DEFAULT_PACKAGES += hostapd-mini yamonenv
 
 define Target/Description
 	Build firmware for AMD Alchemy 1500 boards
