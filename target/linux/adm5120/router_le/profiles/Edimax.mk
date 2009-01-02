@@ -7,6 +7,7 @@
 
 define Profile/BR6104K
 	NAME:=Edimax BR-6104K (Unofficial)
+	PACKAGES:=-hostapd-mini
 endef
 
 define Profile/BR6104K/Description
@@ -15,7 +16,7 @@ endef
 
 define Profile/BR6104KP
 	NAME:=Edimax BR-6104KP (Unofficial)
-	PACKAGES:=kmod-usb-core kmod-usb-adm5120
+	PACKAGES:=-hostapd-mini kmod-usb-core kmod-usb-adm5120
 endef
 
 define Profile/BR6104KP/Description
@@ -24,6 +25,7 @@ endef
 
 define Profile/BR6104WG
 	NAME:=Edimax BR-6104Wg (Unofficial, No WiFi)
+	PACKAGES:=-hostapd-mini
 endef
 
 define Profile/BR6104WG/Description
@@ -32,6 +34,7 @@ endef
 
 define Profile/BR6114WG
 	NAME:=Edimax BR-6114WG (Unofficial, No WiFi)
+	PACKAGES:=-hostapd-mini
 endef
 
 define Profile/BR6114WG/Description
