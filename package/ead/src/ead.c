@@ -330,7 +330,7 @@ handle_ping(struct ead_packet *pkt, int len, int *nstate)
 
 	msg->len = htonl(sizeof(struct ead_msg_pong) + slen);
 	strncpy(pong->name, dev_name, slen);
-	pong->name[len] = 0;
+	pong->name[slen] = 0;
 	pong->auth_type = htons(EAD_AUTH_MD5);
 
 	return true;
