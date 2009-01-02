@@ -368,7 +368,8 @@ sub package_depends($$) {
 	return $ret;
 }
 
-sub mconf_depends($$) {
+sub mconf_depends {
+	my $pkgname = shift;
 	my $depends = shift;
 	my $only_dep = shift;
 	my $res;
@@ -387,7 +388,13 @@ sub mconf_depends($$) {
 		my $vdep;
 
 		if ($depend =~ /^(.+):(.+)$/) {
-			$condition and $condition = "$condition && $1" or $condition = $1;
+			if ($1 ne "PACKAGE_$pkgname") {
+				if ($condition) {
+					$condition = "$condition && $1";
+				} else {
+					$condition = $1;
+				}
+			}
 			$depend = $2;
 		}
 		next if $seen->{$depend};
@@ -400,13 +407,19 @@ sub mconf_depends($$) {
 				# thus if FOO depends on other config options, these dependencies
 				# will not be checked. To fix this, we simply emit all of FOO's
 				# depends here as well.
-				$package{$depend} and mconf_depends($package{$depend}->{depends}, 1, $dep, $seen, $condition);
+				$package{$depend} and mconf_depends($pkgname, $package{$depend}->{depends}, 1, $dep, $seen, $condition);
 
 				$m = "select";
 				next if $only_dep;
 			};
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
-			$condition and ($m =~ /select/ and $depend = "$depend if $condition" or $depend = "!($condition) || $depend");
+			if ($condition) {
+				if ($m =~ /select/) {
+					$depend = "$depend if $condition";
+				} else {
+					$depend = "!($condition) || $depend";
+				}
+			}
 		}
 		$dep->{$depend} =~ /select/ or $dep->{$depend} = $m;
 	}
@@ -468,7 +481,7 @@ sub print_package_config_category($) {
 			foreach my $default (split /\s*,\s*/, $pkg->{default}) {
 				print "\t\tdefault $default\n";
 			}
-			print mconf_depends($pkg->{depends}, 0);
+			print mconf_depends($pkg->{name}, $pkg->{depends}, 0);
 			print "\t\thelp\n";
 			print $pkg->{description};
 			print "\n";
