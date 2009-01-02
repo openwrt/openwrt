@@ -2,6 +2,7 @@
 
 choice
 	prompt "Binutils Version" if TOOLCHAINOPTS
+	default BINUTILS_VERSION_2_18 if TARGET_avr32
 	default BINUTILS_VERSION_2_17
 	help
 	  Select the version of binutils you wish to use.
@@ -26,4 +27,5 @@ config BINUTILS_VERSION
 	prompt "Binutils Version" if (TOOLCHAINOPTS && NULL)
 	default "2.17"            if BINUTILS_VERSION_2_17
 	default "2.18"            if BINUTILS_VERSION_2_18
+	default "2.18"            if TARGET_avr32
 	default "2.17"
