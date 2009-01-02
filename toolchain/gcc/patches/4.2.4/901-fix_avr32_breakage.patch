@@ -1,0 +1,19 @@
+--- a/gcc/config/avr32/lib1funcs.S
++++ b/gcc/config/avr32/lib1funcs.S
+@@ -1,6 +1,6 @@
+ /* Macro for moving immediate value to register. */	
+ .macro mov_imm	reg, imm
+-.if	(((\imm & 0xfffff) == \imm) || ((\imm | 0xfff00000) == \imm))
++.if	((\imm & 0xfffff) == \imm)
+ 	mov	\reg, \imm
+ #if __AVR32_UC__ >= 2
+ .elseif	((\imm & 0xffff) == 0)
+@@ -547,7 +547,7 @@
+ #endif
+         
+ __avr32_f64_mul_res_inf:        /* Return INF. */
+-	mov	r11, 0xfff00000
++	mov_imm	r11, 0xfff00000
+         bld     lr, 31
+         bst     r11, 31
+         mov     r10, 0
