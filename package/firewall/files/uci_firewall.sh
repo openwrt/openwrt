@@ -77,6 +77,7 @@ addif() {
 delif() {
 	logger "removing $1 from firewall zone $2"
 	$IPTABLES -D input -i $1 -j zone_$2
+	$IPTABLES -D zone_$2_MSSFIX -o $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 	$IPTABLES -D zone_$2_ACCEPT -o $1 -j ACCEPT
 	$IPTABLES -D zone_$2_DROP -o $1 -j DROP
 	$IPTABLES -D zone_$2_REJECT -o $1 -j reject
