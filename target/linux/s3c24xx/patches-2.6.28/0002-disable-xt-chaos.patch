@@ -1,0 +1,16 @@
+Does not compile. --mb
+
+---
+Index: linux-2.6.28/net/netfilter/Kconfig
+===================================================================
+--- linux-2.6.28.orig/net/netfilter/Kconfig	2009-01-02 00:42:52.000000000 +0100
++++ linux-2.6.28/net/netfilter/Kconfig	2009-01-02 00:43:19.000000000 +0100
+@@ -314,7 +314,7 @@ if NETFILTER_XTABLES
+ 
+ config NETFILTER_XT_TARGET_CHAOS
+ 	tristate '"CHAOS" target support'
+-	depends on NETFILTER_XTABLES
++	depends on NETFILTER_XTABLES && BROKEN
+ 	help
+ 	  This option adds a `CHAOS' target.
+ 
