@@ -143,7 +143,10 @@ static bool
 handle_pong(void)
 {
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
-	int len = msg->len - sizeof(struct ead_msg_pong);
+	int len = ntohl(msg->len) - sizeof(struct ead_msg_pong);
+
+	if (len <= 0)
+		return false;
 
 	pong->name[len] = 0;
 	auth_type = ntohs(pong->auth_type);
