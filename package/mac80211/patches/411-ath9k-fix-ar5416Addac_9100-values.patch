@@ -1,0 +1,27 @@
+From 36e057a8e3a0a811e24d42ed4d404f23bbd18107 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 2 Jan 2009 16:16:33 +0100
+Subject: [RFC 11/12] ath9k: fix ar5416Addac_9100 values
+
+Writing the register at offset 0x98c4 causes a deadlock on the AR913x
+SoCs. Although i don't have detailed knowledge about these registers, but if i
+change the register offset according to the 'ar5416Addac' table, it
+works. Additionally there is no reference to the 0x98c4 elsewhere.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
+---
+ drivers/net/wireless/ath9k/initvals.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/ath9k/initvals.h
++++ b/drivers/net/wireless/ath9k/initvals.h
+@@ -659,7 +659,7 @@ static const u32 ar5416Addac_9100[][2] =
+     {0x0000989c,  0x00000000 },
+     {0x0000989c,  0x00000000 },
+     {0x0000989c,  0x00000000 },
+-    {0x000098c4,  0x00000000 },
++    {0x000098cc,  0x00000000 },
+ };
+ 
+ /* ar5416 - howl ar5416_howl.ini */
