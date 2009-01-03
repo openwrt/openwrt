@@ -11,7 +11,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ead
 PKG_RELEASE:=1
 
-PKG_BUILD_DEPENDS:=pcap
+PKG_BUILD_DEPENDS:=libpcap
 
 include $(INCLUDE_DIR)/package.mk
 
