@@ -1,0 +1,12 @@
+Index: linux-2.6.28/init/main.c
+===================================================================
+--- linux-2.6.28.orig/init/main.c	2009-01-03 13:03:03.000000000 +0100
++++ linux-2.6.28/init/main.c	2009-01-03 13:03:14.000000000 +0100
+@@ -825,6 +825,7 @@ static int noinline init_post(void)
+ 		printk(KERN_WARNING "Failed to execute %s.  Attempting "
+ 					"defaults...\n", execute_command);
+ 	}
++	run_init_process("/etc/preinit");
+ 	run_init_process("/sbin/init");
+ 	run_init_process("/etc/init");
+ 	run_init_process("/bin/init");
