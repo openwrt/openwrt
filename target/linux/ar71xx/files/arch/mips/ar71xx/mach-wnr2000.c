@@ -81,6 +81,8 @@ static void __init wnr2000_setup(void)
 {
 	ar71xx_add_device_spi(NULL, wnr2000_spi_info,
 					ARRAY_SIZE(wnr2000_spi_info));
+
+	ar91xx_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "NETGEAR WNR2000", wnr2000_setup);
