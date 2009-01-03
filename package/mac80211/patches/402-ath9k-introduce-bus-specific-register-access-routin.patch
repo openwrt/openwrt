@@ -1,0 +1,89 @@
+From 0ef95ef08ca82a87c85a1656f434a03a98bfab5b Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 2 Jan 2009 16:07:50 +0100
+Subject: [RFC 02/12] ath9k: introduce bus specific register access routines
+
+The AHB bus will require different code for register access, so we make
+them replaceable as well.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
+---
+ drivers/net/wireless/ath9k/ath9k.h |    4 ++--
+ drivers/net/wireless/ath9k/core.h  |   17 +++++++++++++++++
+ drivers/net/wireless/ath9k/main.c  |   13 +++++++++++++
+ 3 files changed, 32 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath9k/ath9k.h
+@@ -587,8 +587,8 @@ struct ath9k_country_entry {
+ 	u8 iso[3];
+ };
+ 
+-#define REG_WRITE(_ah, _reg, _val) iowrite32(_val, _ah->ah_sh + _reg)
+-#define REG_READ(_ah, _reg) ioread32(_ah->ah_sh + _reg)
++#define REG_WRITE(_ah, _reg, _val) 	ath_reg_write(_ah, _reg, _val)
++#define REG_READ(_ah, _reg) 		ath_reg_read(_ah, _reg)
+ 
+ #define SM(_v, _f)  (((_v) << _f##_S) & _f)
+ #define MS(_v, _f)  (((_v) & _f) >> _f##_S)
+--- a/drivers/net/wireless/ath9k/core.h
++++ b/drivers/net/wireless/ath9k/core.h
+@@ -718,6 +718,9 @@ struct ath_bus_ops {
+ 				    size_t size,
+ 				    void *p,
+ 				    dma_addr_t da);
++
++	u32		(*reg_read)(struct ath_hal *ah, unsigned reg);
++	void		(*reg_write)(struct ath_hal *ah, unsigned reg, u32 val);
+ };
+ 
+ struct ath_softc {
+@@ -826,4 +829,18 @@ static inline void ath_dma_free(struct a
+ 	sc->bus_ops->dma_free(sc, size, p, da);
+ }
+ 
++static inline u32 ath_reg_read(struct ath_hal *ah, unsigned reg)
++{
++	struct ath_softc *sc = ah->ah_sc;
++
++	return sc->bus_ops->reg_read(ah, reg);
++}
++
++static inline void ath_reg_write(struct ath_hal *ah, unsigned reg, u32 val)
++{
++	struct ath_softc *sc = ah->ah_sc;
++
++	sc->bus_ops->reg_write(ah, reg, val);
++}
++
+ #endif /* CORE_H */
+--- a/drivers/net/wireless/ath9k/main.c
++++ b/drivers/net/wireless/ath9k/main.c
+@@ -2595,6 +2595,16 @@ static void ath_pci_dma_free(struct ath_
+ 	pci_free_consistent(sc->pdev, size, p, da);
+ }
+ 
++static u32 ath_pci_reg_read(struct ath_hal *ah, unsigned reg)
++{
++	return ioread32(ah->ah_sh + reg);
++}
++
++static void ath_pci_reg_write(struct ath_hal *ah, unsigned reg, u32 val)
++{
++	iowrite32(val, ah->ah_sh + reg);
++}
++
+ static struct ath_bus_ops ath_pci_bus_ops  = {
+ 	.dma_map_single_to_device = ath_pci_map_single_to_device,
+ 	.dma_unmap_single_to_device = ath_pci_unmap_single_to_device,
+@@ -2605,6 +2615,9 @@ static struct ath_bus_ops ath_pci_bus_op
+ 	.dma_sync_single_for_cpu = ath_pci_sync_single_for_cpu,
+ 	.dma_alloc = ath_pci_dma_alloc,
+ 	.dma_free = ath_pci_dma_free,
++
++	.reg_read = ath_pci_reg_read,
++	.reg_write = ath_pci_reg_write,
+ };
+ 
+ static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
