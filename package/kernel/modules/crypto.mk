@@ -30,41 +30,29 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
   SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 endif
 
+CRYPTO_MODULES = \
+	ALGAPI=crypto_algapi \
+	AEAD=aead \
+	BLKCIPHER=$(BLKCIPHER_PREFIX)blkcipher \
+	MANAGER=cryptomgr \
+	HASH=crypto_hash \
+	CBC=cbc \
+	ECB=ecb \
+	HMAC=hmac \
+	DEFLATE=deflate
+
+crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
+crypto_file=$(if $($(call crypto_confvar,$(1))),$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).$(LINUX_KMOD_SUFFIX))
+crypto_name=$(if $($(call crypto_confvar,$(1))),$(word 2,$(subst =,$(space),$(1))))
+
 # XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is
 # always set, even if no hash modules are selected
 define KernelPackage/crypto-core
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=Core CryptoAPI modules
-  KCONFIG:= \
-	CONFIG_CRYPTO=y \
-	CONFIG_CRYPTO_AEAD \
-	CONFIG_CRYPTO_ALGAPI \
-	CONFIG_CRYPTO_BLKCIPHER \
-	CONFIG_CRYPTO_CBC \
-	CONFIG_CRYPTO_DEFLATE \
-	CONFIG_CRYPTO_ECB \
-	CONFIG_CRYPTO_HASH \
-	CONFIG_CRYPTO_HMAC \
-	CONFIG_CRYPTO_MANAGER
-  FILES:= \
-	$(LINUX_DIR)/crypto/crypto_algapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/aead.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/$(BLKCIPHER_PREFIX)blkcipher.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/cbc.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/deflate.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/ecb.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/crypto_hash.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/cryptomgr.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,01, \
-	crypto_algapi \
-	aead \
-	$(BLKCIPHER_PREFIX)blkcipher \
-	cryptomgr \
-	crypto_hash \
-	cbc \
-	ecb \
-	deflate \
-  )
+  KCONFIG:=CONFIG_CRYPTO=y $(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
+  FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
+  AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod))))
 endef
 
 define KernelPackage/crypto-core/2.4
