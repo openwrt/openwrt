@@ -14,7 +14,7 @@
 #ifndef __EAD_H
 #define __EAD_H
 
-#define EAD_DEBUGLEVEL	1
+#define EAD_DEBUGLEVEL	2
 
 #include <stdint.h>
 #include <stddef.h>

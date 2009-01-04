@@ -16,6 +16,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -293,12 +294,13 @@ send_command(const char *command)
 static int
 usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s <node> <username>[:<password>]\n"
+	fprintf(stderr, "Usage: %s [-b <addr>] <node> <username>[:<password>] <command>\n"
 		"\n"
-		"\n<node>:     Node ID (4 digits hex)\n"
-		"\n<username>: Username to authenticate with\n"
+		"\t-b <addr>:  Set the broadcast address to <addr>\n"
+		"\t<node>:     Node ID (4 digits hex)\n"
+		"\t<username>: Username to authenticate with\n"
 		"\n"
-		"\nPassing no arguments shows a list of active nodes on the network\n"
+		"\tPassing no arguments shows a list of active nodes on the network\n"
 		"\n", prog);
 	return -1;
 }
@@ -309,6 +311,8 @@ int main(int argc, char **argv)
 	int val = 1;
 	char *st = NULL;
 	const char *command = NULL;
+	const char *prog = argv[0];
+	int ch;
 
 	msg->magic = htonl(EAD_MAGIC);
 	msg->tid = 0;
@@ -324,12 +328,22 @@ int main(int argc, char **argv)
 	local.sin_addr.s_addr = INADDR_ANY;
 	local.sin_port = 0;
 
+	while ((ch = getopt(argc, argv, "b:")) != -1) {
+		switch(ch) {
+		case 'b':
+			inet_aton(optarg, &remote.sin_addr);
+			break;
+		}
+	}
+	argv += optind;
+	argc -= optind;
+
 	switch(argc) {
-	case 4:
-		command = argv[3];
-		/* fall through */
 	case 3:
-		username = argv[2];
+		command = argv[2];
+		/* fall through */
+	case 2:
+		username = argv[1];
 		st = strchr(username, ':');
 		if (st) {
 			*st = 0;
@@ -340,15 +354,15 @@ int main(int argc, char **argv)
 			memset(st, 0, strlen(st));
 		}
 		/* fall through */
-	case 2:
-		nid = strtoul(argv[1], &st, 16);
-		if (st && st[0] != 0)
-			return usage(argv[0]);
-		/* fall through */
 	case 1:
+		nid = strtoul(argv[0], &st, 16);
+		if (st && st[0] != 0)
+			return usage(prog);
+		/* fall through */
+	case 0:
 		break;
 	default:
-		return usage(argv[0]);
+		return usage(prog);
 	}
 
 	msg->nid = htons(nid);
