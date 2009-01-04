@@ -52,9 +52,9 @@ SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
 ifeq ($(CONFIG_SSP_SUPPORT),y)
-  SSP:=--enable-ssp
+  SSP:=--enable-libssp
 else
-  SSP:=--disable-ssp
+  SSP:=--disable-libssp
 endif
 
 EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-biarch --enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-uclibc)
