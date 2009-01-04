@@ -46,7 +46,7 @@ fw_layout_t fw_layout_data[] = {
 		.name		=	"XS2",
 		.kern_start	=	0xbfc30000,
 		.kern_len	=	0x00140000,
-		.root_start	=	0xbfc30000 + 0x00140000,
+		.root_start	=	0xbfc30000,
 		.root_len	=	0x002C0000,
 		.kern_entry	=	0x80041000,
 		.firmware_max_length=	0x00390000,
@@ -55,7 +55,7 @@ fw_layout_t fw_layout_data[] = {
 		.name		=	"XS5",
 		.kern_start	=	0xbe030000,
 		.kern_len	=	0x00140000,
-		.root_start	=	0xbe030000 + 0x00140000,
+		.root_start	=	0xbe030000,
 		.root_len	=	0x002C0000,
 		.kern_entry	=	0x80041000,
 		.firmware_max_length=	0x00390000,
@@ -243,14 +243,14 @@ static int create_image_layout(const char* kernelfile, const char* rootfsfile, c
 
 	strcpy(rootfs->partition_name, "rootfs");
 	rootfs->partition_index = 2;
-	rootfs->partition_baseaddr = p->root_start;
+	rootfs->partition_baseaddr = kernel->partition_baseaddr + kernel->partition_length;
 	rootfs->partition_length = p->firmware_max_length - kernel->partition_length;
 	rootfs->partition_memaddr = 0x00000000;
 	rootfs->partition_entryaddr = 0x00000000;
 	strncpy(rootfs->filename, rootfsfile, sizeof(rootfs->filename));
 
-printf("kernel: %d %d\n", kernel->partition_length, kernel->partition_baseaddr);
-printf("root: %d %d\n", rootfs->partition_length, rootfs->partition_baseaddr);
+printf("kernel: %d 0x%08x\n", kernel->partition_length, kernel->partition_baseaddr);
+printf("root: %d 0x%08x\n", rootfs->partition_length, rootfs->partition_baseaddr);
 	im->part_count = 2;
 
 	return 0;
