@@ -85,4 +85,4 @@ static void __init wnr2000_setup(void)
 	ar91xx_add_device_wmac();
 }
 
-MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "NETGEAR WNR2000", wnr2000_setup);
+MIPS_MACHINE(AR71XX_MACH_WNR2000, "NETGEAR WNR2000", wnr2000_setup);
