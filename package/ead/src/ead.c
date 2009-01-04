@@ -622,22 +622,21 @@ ead_pcap_reopen(bool first)
 {
 	static char errbuf[PCAP_ERRBUF_SIZE] = "";
 
-	if (pcap_fp_rx != pcap_fp)
+	if (pcap_fp_rx && (pcap_fp_rx != pcap_fp))
 		pcap_close(pcap_fp_rx);
 
 	if (pcap_fp)
 		pcap_close(pcap_fp);
 
-	pcap_fp_rx = pcap_fp;
+	pcap_fp_rx = NULL;
 	do {
 		pcap_fp = pcap_open_live(ifname, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
 #ifdef linux
-		if (brname) {
+		if (brname)
 			pcap_fp_rx = pcap_open_live(brname, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
-			if (!pcap_fp_rx)
-				pcap_fp_rx = pcap_fp;
-		}
 #endif
+		if (!pcap_fp_rx)
+			pcap_fp_rx = pcap_fp;
 		pcap_setfilter(pcap_fp_rx, &pktfilter);
 		if (first && !pcap_fp) {
 			DEBUG(1, "WARNING: unable to open interface '%s'\n", ifname);
