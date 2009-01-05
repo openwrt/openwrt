@@ -140,8 +140,9 @@ define KernelPackage/net-hermes
   KCONFIG:=CONFIG_HERMES
   FILES:= \
 	$(LINUX_DIR)/drivers/net/wireless/hermes.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/wireless/orinoco.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hermes orinoco)
+	$(LINUX_DIR)/drivers/net/wireless/orinoco.$(LINUX_KMOD_SUFFIX) \
+    $(if $(CONFIG_LINUX_2_6_28),$(LINUX_DIR)/drivers/net/wireless/hermes_dld.$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(if $(CONFIG_LINUX_2_6_28),$(call AutoLoad,50,hermes hermes_dld orinoco),$(call AutoLoad,50,hermes orinoco))
 endef
 
 define KernelPackage/net-hermes/description
