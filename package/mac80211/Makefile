@@ -19,7 +19,7 @@ ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
 else
   PKG_VERSION:=2008-08-06
   PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
-  PKG_MD5SUM:=a9b594dc8d06d0eb91f6547e0c7754a6
+  PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
   PATCH_DIR:=./patches-old
 endif
 
