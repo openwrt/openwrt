@@ -560,7 +560,7 @@ sub gen_package_mk() {
 		}
 
 		my $hasdeps = 0;
-		my $depline = "";
+		my %deplines;
 		foreach my $deps (@srcdeps) {
 			my $idx;
 			my $condition;
@@ -588,9 +588,10 @@ sub gen_package_mk() {
 				}
 				undef $idx if $idx =~ /^(kernel)|(base-files)$/;
 				if ($idx) {
+					my $depline;
 					next if $pkg->{src} eq $pkg_dep->{src};
 					next if $dep{$pkg->{src}."->".$idx};
-					next if $dep{$pkg->{src}."->($dep)".$idx};
+					next if $dep{$pkg->{src}."->($dep)".$idx} and $pkg_dep->{vdepends};
 					my $depstr;
 
 					if ($pkg_dep->{vdepends}) {
@@ -602,16 +603,20 @@ sub gen_package_mk() {
 					}
 					if ($condition) {
 						if ($condition =~ /^!(.+)/) {
-							$depline .= " \$(if \$(CONFIG_$1),,$depstr)";
+							$depline = "\$(if \$(CONFIG_$1),,$depstr)";
 						} else {
-							$depline .= " \$(if \$(CONFIG_$condition),$depstr)";
+							$depline = "\$(if \$(CONFIG_$condition),$depstr)";
 						}
 					} else {
-						$depline .= " $depstr";
+						$depline = $depstr;
+					}
+					if ($depline) {
+						$deplines{$idx.$dep} = $depline;
 					}
 				}
 			}
 		}
+		my $depline = join(" ", values %deplines);
 		if ($depline) {
 			$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/compile += $depline\n";
 		}
