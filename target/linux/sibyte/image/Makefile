@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/image.mk
 #endef
 
 define Image/BuildKernel
-	cp $(KDIR)/vmlinux $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
+	cp $(LINUX_DIR)/vmlinux $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
 endef
 
 define Image/Build
