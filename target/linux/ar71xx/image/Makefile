@@ -40,16 +40,22 @@ define Image/Build/AP81
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-		0x80060000 \
-		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage
-	( \
-		dd if=$(KDIR)/vmlinux-$(2).uImage bs=768k conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=3008k conv=sync; \
-	) > $(call imgname,$(1),$(2)).bin
-	cp $(call imgname,$(1),$(2)).bin $(call imgname,$(1),$(2)).webui
-	echo -n $(4) >> $(call imgname,$(1),$(2)).webui
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 786432 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 3080192 ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=768k conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=3008k conv=sync; \
+		) > $(call imgname,$(1),$(2)).bin; \
+		cp $(call imgname,$(1),$(2)).bin $(call imgname,$(1),$(2)).webui; \
+		echo -n $(4) >> $(call imgname,$(1),$(2)).webui; \
+	fi; fi
 endef
 
 define Image/Build/MyLoader
