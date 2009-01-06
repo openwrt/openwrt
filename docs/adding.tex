@@ -478,3 +478,113 @@ module_exit(device_mtd_cleanup);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Me, myself and I <memyselfandi@domain.tld");
 \end{verbatim}
+
+\subsection{Adding your target in OpenWrt}
+
+Once you spotted the key changes that were made to the Linux kernel
+to support your target, you will want to create a target in OpenWrt
+for your hardware. This can be useful to benefit from the toolchain
+that OpenWrt builds as well as the resulting user-space and kernel
+configuration options.
+
+Provided that your target is already known to OpenWrt, it will be
+as simple as creating a \texttt{target/linux/board} directory
+where you will be creating the following directories and files.
+
+Here for example, is a \texttt{target/linux/board/Makefile}:
+
+\begin{Verbatim}[frame=single,numbers=left]
+#
+# Copyright (C) 2009 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+
+ARCH:=mips
+BOARD:=board
+BOARDNAME:=Eval board
+FEATURES:=squashfs jffs2 pci usb
+
+LINUX_VERSION:=2.6.27.10
+
+include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES += hostapd-mini
+
+define Target/Description
+        Build firmware images for Evaluation board
+endef
+
+$(eval $(call BuildTarget))
+\end{Verbatim}
+
+\begin{itemize}
+    \item \texttt{ARCH} \\
+        The name of the architecture known by Linux and uClibc
+    \item \texttt{BOARD} \\
+        The name of your board that will be used as a package and build directory identifier
+    \item \texttt{BOARDNAME} \\
+        Expanded name that will appear in menuconfig
+    \item \texttt{FEATURES} \\
+        Set of features to build filesystem images, USB, PCI, VIDEO kernel support
+    \item \texttt{LINUX\_VERSION} \\
+        Linux kernel version to use for this target
+    \item \texttt{DEFAULT\_PACKAGES} \\
+        Set of packages to be built by default
+\end{itemize}
+
+A partial kernel configuration which is either named \texttt{config-default} or which matches the kernel version \texttt{config-2.6.x} should be present in \texttt{target/linux/board/}.
+This kernel configuration will only contain the relevant symbols to support your target and can be changed using \texttt{make kernel\_menuconfig}.
+
+To patch the kernel sources with the patches required to support your hardware, you will have to drop them in \texttt{patches} or in \texttt{patches-2.6.x} if there are specific
+changes between kernel versions. Additionnaly, if you want to avoid creating a patch that will create files, you can put those files into \texttt{files} or \texttt{files-2.6.x}
+with the same directory structure that the kernel uses (e.g: drivers/mtd/maps, arch/mips ..).
+
+The build system will require you to create a \texttt{target/linux/board/image/Makefile}:
+
+\begin{Verbatim}[frame=single,numbers=left]
+#
+# Copyright (C) 2009 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/image.mk
+
+define Image/BuildKernel
+        cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
+        gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
+        $(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
+        dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma bs=65536 conv=sync
+        dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(BOARD)-vmlinux.gz bs=65536 conv=sync
+endef
+
+define Image/Build/squashfs
+    $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+endef
+
+define Image/Build
+        $(call Image/Build/$(1))
+        dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
+
+        -$(STAGING_DIR_HOST)/bin/mkfwimage \
+                -B XS2 -v XS2.ar2316.OpenWrt \
+                -k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
+                -r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+                -o $(BIN_DIR)/openwrt-$(BOARD)-ubnt2-$(1).bin
+endef
+
+$(eval $(call BuildImage))
+
+\end{Verbatim}
+
+\begin{itemize}
+    \item \texttt{Image/BuildKernel} \\
+        This template defines changes to be made to the ELF kernel file
+    \item \texttt{Image/Build} \\
+	This template defines the final changes to apply to the rootfs and kernel, either combined or separated
+	firmware creation tools can be called here as well.
+\end{itemize}
