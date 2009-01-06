@@ -27,7 +27,7 @@
 #include <linux/init.h>
 #include <asm/uaccess.h>
 #include <asm/checksum.h>
-
+#include <net/ip6_checksum.h>
 #include <linux/in6.h>
 #include "siit.h"
 
