@@ -42,7 +42,7 @@ start() {
 	mkdir -p /var/lock
 	mkdir -p /var/state
 	mkdir -p /tmp/.uci
-	chown 0700 /tmp/.uci
+	chmod 0700 /tmp/.uci
 	touch /var/log/wtmp
 	touch /var/log/lastlog
 	touch /tmp/resolv.conf.auto
