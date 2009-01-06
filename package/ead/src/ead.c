@@ -65,10 +65,20 @@
 #define DEBUG(n, format, ...) do {} while(0)
 #endif
 
+struct ead_instance {
+	struct list_head list;
+	char ifname[16];
+	int pid;
+	char id;
+#ifdef linux
+	char bridge[16];
+	bool br_check;
+#endif
+};
+
 static char ethmac[6] = "\x00\x13\x37\x00\x00\x00"; /* last 3 bytes will be randomized */
 static pcap_t *pcap_fp = NULL;
 static pcap_t *pcap_fp_rx = NULL;
-static const char *ifname = DEFAULT_IFNAME;
 static char pktbuf_b[PCAP_MRU];
 static struct ead_packet *pktbuf = (struct ead_packet *)pktbuf_b;
 static u16_t nid = 0xffff; /* node id */
@@ -85,20 +95,7 @@ static unsigned char pw_saltbuf[MAXSALTLEN];
 static struct list_head instances;
 static const char *dev_name = DEFAULT_DEVNAME;
 static bool nonfork = false;
-
-#ifdef linux
-static const char *brname = NULL;
-#endif
-
-struct ead_instance {
-	struct list_head list;
-	char name[16];
-	int pid;
-#ifdef linux
-	char bridge[16];
-	bool br_check;
-#endif
-};
+static struct ead_instance *instance = NULL;
 
 static struct t_pwent tpe = {
 	.name = username,
@@ -112,6 +109,20 @@ struct t_confent *tce = NULL;
 static struct t_server *ts = NULL;
 static struct t_num A, *B = NULL;
 unsigned char *skey;
+
+static void
+get_random_bytes(void *ptr, int len)
+{
+	int fd;
+
+	fd = open("/dev/urandom", O_RDONLY);
+	if (fd < 0) {
+		perror("open");
+		exit(1);
+	}
+	read(fd, ptr, len);
+	close(fd);
+}
 
 static bool
 prepare_password(void)
@@ -539,6 +550,11 @@ parse_message(struct ead_packet *pkt, int len)
 		(state != type))
 		return;
 
+	if ((type != EAD_TYPE_PING) &&
+		((ntohs(pkt->msg.sid) & EAD_INSTANCE_MASK) >>
+		 EAD_INSTANCE_SHIFT) != instance->id)
+		return;
+
 	switch(type) {
 	case EAD_TYPE_PING:
 		handler = handle_ping;
@@ -574,6 +590,7 @@ parse_message(struct ead_packet *pkt, int len)
 	pktbuf->msg.magic = htonl(EAD_MAGIC);
 	pktbuf->msg.type = htonl(type + 1);
 	pktbuf->msg.nid = htons(nid);
+	pktbuf->msg.sid = pkt->msg.sid;
 	pktbuf->msg.len = 0;
 
 	if (handler(pkt, len, &nstate)) {
@@ -630,16 +647,16 @@ ead_pcap_reopen(bool first)
 
 	pcap_fp_rx = NULL;
 	do {
-		pcap_fp = pcap_open_live(ifname, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
+		pcap_fp = pcap_open_live(instance->ifname, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
 #ifdef linux
-		if (brname)
-			pcap_fp_rx = pcap_open_live(brname, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
+		if (instance->bridge[0])
+			pcap_fp_rx = pcap_open_live(instance->bridge, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
 #endif
 		if (!pcap_fp_rx)
 			pcap_fp_rx = pcap_fp;
 		pcap_setfilter(pcap_fp_rx, &pktfilter);
 		if (first && !pcap_fp) {
-			DEBUG(1, "WARNING: unable to open interface '%s'\n", ifname);
+			DEBUG(1, "WARNING: unable to open interface '%s'\n", instance->ifname);
 			first = false;
 		}
 		if (!pcap_fp)
@@ -712,12 +729,8 @@ start_server(struct ead_instance *i)
 		}
 	}
 
+	instance = i;
 	signal(SIGCHLD, instance_handle_sigchld);
-	ifname = i->name;
-#ifdef linux
-	if (i->bridge[0])
-		brname = i->bridge;
-#endif
 	ead_pcap_reopen(true);
 	ead_pktloop();
 	pcap_close(pcap_fp);
@@ -779,7 +792,7 @@ check_bridge_port(const char *br, const char *port, void *arg)
 	list_for_each(p, &instances) {
 		in = list_entry(p, struct ead_instance, list);
 
-		if (strcmp(in->name, port) != 0)
+		if (strcmp(in->ifname, port) != 0)
 			continue;
 
 		in->br_check = true;
@@ -787,7 +800,7 @@ check_bridge_port(const char *br, const char *port, void *arg)
 			break;
 
 		strncpy(in->bridge, br, sizeof(in->bridge));
-		DEBUG(2, "assigning port %s to bridge %s\n", in->name, in->bridge);
+		DEBUG(2, "assigning port %s to bridge %s\n", in->ifname, in->bridge);
 		stop_server(in, false);
 	}
 	return 0;
@@ -817,7 +830,7 @@ check_all_interfaces(void)
 		if (in->br_check) {
 			in->br_check = false;
 		} else if (in->bridge[0]) {
-			DEBUG(2, "removing port %s from bridge %s\n", in->name, in->bridge);
+			DEBUG(2, "removing port %s from bridge %s\n", in->ifname, in->bridge);
 			in->bridge[0] = 0;
 			stop_server(in, false);
 		}
@@ -830,10 +843,10 @@ int main(int argc, char **argv)
 {
 	struct ead_instance *in;
 	struct timeval tv;
-	int fd, ch;
 	const char *pidfile = NULL;
 	bool background = false;
 	int n_iface = 0;
+	int fd, ch;
 
 	if (argc == 1)
 		return usage(argv[0]);
@@ -853,9 +866,9 @@ int main(int argc, char **argv)
 			in = malloc(sizeof(struct ead_instance));
 			memset(in, 0, sizeof(struct ead_instance));
 			INIT_LIST_HEAD(&in->list);
-			strncpy(in->name, optarg, sizeof(in->name) - 1);
+			strncpy(in->ifname, optarg, sizeof(in->ifname) - 1);
 			list_add(&in->list, &instances);
-			n_iface++;
+			in->id = n_iface++;
 			break;
 		case 'D':
 			dev_name = optarg;
@@ -902,13 +915,7 @@ int main(int argc, char **argv)
 	}
 
 	/* randomize the mac address */
-	fd = open("/dev/urandom", O_RDONLY);
-	if (fd < 0) {
-		perror("open");
-		exit(1);
-	}
-	read(fd, ethmac + 3, 3);
-	close(fd);
+	get_random_bytes(ethmac + 3, 3);
 	nid = *(((u16_t *) ethmac) + 2);
 
 	start_servers(false);

@@ -114,12 +114,16 @@ struct ead_msg_encrypted {
 #define EAD_DATA(_msg, _type) (&((_msg)->data[0]._type))
 #define EAD_ENC_DATA(_msg, _type) (&((_msg)->data[0].enc.data[0]._type))
 
+/* for ead_msg::sid */
+#define EAD_INSTANCE_MASK	0xf000
+#define EAD_INSTANCE_SHIFT	12
+
 struct ead_msg {
 	uint32_t magic;
 	uint32_t len;
 	uint32_t type;
 	uint16_t nid; /* node id */
-	uint16_t tid; /* transaction id */
+	uint16_t sid; /* session id */
 	uint32_t ip; /* source ip for responses from the server */
 	union {
 		struct ead_msg_pong pong;
