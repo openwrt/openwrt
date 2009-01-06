@@ -44,6 +44,9 @@ static uint16_t nid = 0xffff;
 struct sockaddr_in local, remote;
 static int s = 0;
 static int sockflags;
+static struct in_addr serverip = {
+	.s_addr = 0x01010101 /* dummy */
+};
 
 static unsigned char *skey = NULL;
 static unsigned char bbuf[MAXPARAMLEN];
@@ -80,6 +83,7 @@ send_packet(int type, bool (*handler)(void), unsigned int max)
 	int res = 0;
 
 	type = htonl(type);
+	memcpy(&msg->ip, &serverip.s_addr, sizeof(msg->ip));
 	set_nonblock(0);
 	sendto(s, msgbuf, sizeof(struct ead_msg) + ntohl(msg->len), 0, (struct sockaddr *) &remote, sizeof(remote));
 	set_nonblock(1);
@@ -294,8 +298,9 @@ send_command(const char *command)
 static int
 usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s [-b <addr>] <node> <username>[:<password>] <command>\n"
+	fprintf(stderr, "Usage: %s [-s <addr>] [-b <addr>] <node> <username>[:<password>] <command>\n"
 		"\n"
+		"\t-s <addr>:  Set the server's source address to <addr>\n"
 		"\t-b <addr>:  Set the broadcast address to <addr>\n"
 		"\t<node>:     Node ID (4 digits hex)\n"
 		"\t<username>: Username to authenticate with\n"
@@ -328,11 +333,16 @@ int main(int argc, char **argv)
 	local.sin_addr.s_addr = INADDR_ANY;
 	local.sin_port = 0;
 
-	while ((ch = getopt(argc, argv, "b:")) != -1) {
+	while ((ch = getopt(argc, argv, "b:s:h")) != -1) {
 		switch(ch) {
+		case 's':
+			inet_aton(optarg, &serverip);
+			break;
 		case 'b':
 			inet_aton(optarg, &remote.sin_addr);
 			break;
+		case 'h':
+			return usage(prog);
 		}
 	}
 	argv += optind;

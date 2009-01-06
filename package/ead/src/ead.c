@@ -250,7 +250,7 @@ ead_send_packet_clone(struct ead_packet *pkt)
 	len = sizeof(struct ead_packet) - sizeof(struct ether_header) + ntohl(pktbuf->msg.len);
 	pktbuf->len[0] = len >> 8;
 	pktbuf->len[1] = len & 0xff;
-	memcpy(pktbuf->srcipaddr, pkt->destipaddr, 4);
+	memcpy(pktbuf->srcipaddr, &pkt->msg.ip, 4);
 	memcpy(pktbuf->destipaddr, pkt->srcipaddr, 4);
 
 	/* ip checksum */
