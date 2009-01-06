@@ -67,6 +67,7 @@ TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(STAGING_DIR_HOST)/bin:$(STAGING_DIR)/host/bi
 TARGET_CFLAGS:=$(TARGET_OPTIMIZATION)$(if $(CONFIG_DEBUG), -g3)
 TARGET_CPPFLAGS:=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
 TARGET_LDFLAGS:=-L$(TOOLCHAIN_DIR)/lib -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
+LIBGCC_S=$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so),-lgcc_s,$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.a))
 
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   -include $(TOOLCHAIN_DIR)/info.mk
