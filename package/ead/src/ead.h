@@ -14,7 +14,7 @@
 #ifndef __EAD_H
 #define __EAD_H
 
-#define EAD_DEBUGLEVEL	2
+#define EAD_DEBUGLEVEL	1
 
 #include <stdint.h>
 #include <stddef.h>
@@ -120,6 +120,7 @@ struct ead_msg {
 	uint32_t type;
 	uint16_t nid; /* node id */
 	uint16_t tid; /* transaction id */
+	uint32_t ip; /* source ip for responses from the server */
 	union {
 		struct ead_msg_pong pong;
 		struct ead_msg_user user;
