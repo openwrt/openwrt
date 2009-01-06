@@ -198,14 +198,12 @@ define KernelPackage/net-prism54/description
 endef
 
 # Prism54 FullMAC firmware (jbnore.free.fr seems to be rather slow, so we use daemonizer.de)
-#PRISM54_FW:=p54pcifm_1.0.4.3.arm
 PRISM54_FW:=1.0.4.3.arm
 
 define Download/net-prism54
-	FILE:=$(PRISM54_FW)
-#	URL:=http://jbnote.free.fr/prism54usb/data/firmwares/
-	URL:=http://daemonizer.de/prism54/prism54-fw/fw-fullmac/
-	MD5SUM:=8bd4310971772a486b9784c77f8a6df9
+  FILE:=$(PRISM54_FW)
+  URL:=http://daemonizer.de/prism54/prism54-fw/fw-fullmac/
+  MD5SUM:=8bd4310971772a486b9784c77f8a6df9
 endef
 
 define KernelPackage/net-prism54/install
