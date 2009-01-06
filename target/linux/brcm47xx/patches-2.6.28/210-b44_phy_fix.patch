@@ -1,0 +1,50 @@
+diff --git a/drivers/net/b44.c b/drivers/net/b44.c
+--- a/drivers/net/b44.c
++++ b/drivers/net/b44.c
+@@ -384,7 +384,7 @@ static void b44_set_flow_ctrl(struct b44 *bp, u32 local, u32 remote)
+ 	__b44_set_flow_ctrl(bp, pause_enab);
+ }
+ 
+-#ifdef SSB_DRIVER_MIPS
++#ifdef CONFIG_SSB_DRIVER_MIPS
+ extern char *nvram_get(char *name);
+ static void b44_wap54g10_workaround(struct b44 *bp)
+ {
+@@ -2068,6 +2068,28 @@ out:
+ 	return err;
+ }
+ 
++#ifdef CONFIG_SSB_DRIVER_MIPS
++static void b44_wrtsl54gs_workaround(struct b44 *bp)
++{
++	const char *str;
++
++	/*
++	 * workaround for physical wiring in Linksys WRSL54GS
++	 * see https://dev.openwrt.org/ticket/2662 and 3903
++	 * eth1 PHY is probably on BCM5325 switch accessed via eth0
++	 */
++	str = nvram_get("boardnum");
++	if (!str)
++		return;
++	if (simple_strtoul(str, NULL, 0) == 42) {
++		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++	}
++	return;
++}
++#else
++static void b44_wrtsl54gs_workaround(struct b44 *bp) { }
++#endif
++
+ static int __devinit b44_get_invariants(struct b44 *bp)
+ {
+ 	struct ssb_device *sdev = bp->sdev;
+@@ -2089,6 +2111,8 @@ static int __devinit b44_get_invariants(struct b44 *bp)
+ 	 * valid PHY address. */
+ 	bp->phy_addr &= 0x1F;
+ 
++	b44_wrtsl54gs_workaround(bp);
++
+ 	memcpy(bp->dev->dev_addr, addr, 6);
+ 
+ 	if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
