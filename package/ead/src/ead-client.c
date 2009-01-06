@@ -407,12 +407,11 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Device did not accept user name\n");
 		return 1;
 	}
+	timeout = EAD_TIMEOUT_LONG;
 	if (!get_prime()) {
 		fprintf(stderr, "Failed to get user password info\n");
 		return 1;
 	}
-
-	timeout = EAD_TIMEOUT_LONG;
 	if (!send_a()) {
 		fprintf(stderr, "Failed to send local authentication data\n");
 		return 1;
