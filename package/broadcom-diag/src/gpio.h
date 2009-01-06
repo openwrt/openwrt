@@ -32,10 +32,12 @@ static inline u32 gpio_control(u32 mask, u32 value)
 	return ssb_gpio_control(&ssb, mask, value);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
 static inline u32 gpio_intmask(u32 mask, u32 value)
 {
 	return ssb_gpio_intmask(&ssb, mask, value);
 }
+#endif
 
 static inline u32 gpio_intpolarity(u32 mask, u32 value)
 {
