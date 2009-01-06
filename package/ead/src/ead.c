@@ -344,7 +344,7 @@ handle_set_username(struct ead_packet *pkt, int len, int *nstate)
 
 	set_state(EAD_TYPE_SET_USERNAME); /* clear old state */
 	strncpy(username, user->username, sizeof(username));
-	username[sizeof(username)] = 0;
+	username[sizeof(username) - 1] = 0;
 
 	msg = &pktbuf->msg;
 	msg->len = 0;
