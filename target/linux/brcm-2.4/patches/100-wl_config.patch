@@ -1,0 +1,66 @@
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -445,16 +445,12 @@ struct net_device
+ 	/* bridge stuff */
+ 	struct net_bridge_port	*br_port;
+ 
+-#ifdef CONFIG_NET_FASTROUTE
+ #define NETDEV_FASTROUTE_HMASK 0xF
+ 	/* Semi-private data. Keep it at the end of device struct. */
+ 	rwlock_t		fastpath_lock;
+ 	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
+-#endif
+-#ifdef CONFIG_NET_DIVERT
+ 	/* this will get initialized at each interface type init routine */
+ 	struct divert_blk	*divert;
+-#endif /* CONFIG_NET_DIVERT */
+ };
+ 
+ /* 2.6 compatibility */
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -83,7 +83,6 @@
+ #define NET_CALLER(arg) __builtin_return_address(0)
+ #endif
+ 
+-#ifdef CONFIG_NETFILTER
+ struct nf_conntrack {
+ 	atomic_t use;
+ 	void (*destroy)(struct nf_conntrack *);
+@@ -92,7 +91,6 @@ struct nf_conntrack {
+ struct nf_ct_info {
+ 	struct nf_conntrack *master;
+ };
+-#endif
+ #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+ struct nf_info;
+ #endif
+@@ -201,7 +199,6 @@ struct sk_buff {
+ 	unsigned char 	*end;			/* End pointer					*/
+ 
+ 	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
+-#ifdef CONFIG_NETFILTER
+ 	/* Can be used for communication between hooks. */
+         unsigned long	nfmark;
+ 	/* Cache info */
+@@ -211,7 +208,6 @@ struct sk_buff {
+ #ifdef CONFIG_NETFILTER_DEBUG
+         unsigned int nf_debug;
+ #endif
+-#endif /*CONFIG_NETFILTER*/
+ 
+ #if defined(CONFIG_HIPPI)
+ 	union{
+@@ -219,12 +215,8 @@ struct sk_buff {
+ 	} private;
+ #endif
+ 
+-#ifdef CONFIG_NET_SCHED
+        __u32           tc_index;               /* traffic control index */
+-#endif
+-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+        struct nf_info	*nf_info;
+-#endif
+ };
+ 
+ #ifdef __KERNEL__

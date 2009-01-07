@@ -232,6 +232,14 @@ enable_broadcom() {
 			append vif_post_up "monitor $monitor" "$N"
 			append vif_post_up "passive $passive" "$N"
 		}
+
+		[ "$mode" = "adhoc" ] && {
+			config_get bssid "$vif" bssid
+			[ -n "$bssid" ] && {
+				append vif_pre_up "des_bssid $bssid" "$N"
+				append vif_pre_up "allow_mode 1" "$N"
+			}
+		} || append vif_pre_up "allow_mode 0" "$N"
 		
 		append vif_post_up "enabled 1" "$N"
 		
