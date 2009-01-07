@@ -721,3 +721,18 @@ define KernelPackage/spi-dev/description
 endef
 
 $(eval $(call KernelPackage,spi-dev))
+
+define KernelPackage/cs5535-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=AMD CS5535/CS5536 GPIO driver
+  DEPENDS:=@LINUX_2_6 @TARGET_x86
+  KCONFIG:=CONFIG_CS5535_GPIO
+  FILES:=$(LINUX_DIR)/drivers/char/cs5535_gpio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,cs5535_gpio)
+endef
+
+define KernelPackage/cs5535-gpio/description
+ This package contains the AMD CS5535/CS5536 GPIO driver
+endef
+
+$(eval $(call KernelPackage,cs5535-gpio))
