@@ -1,0 +1,90 @@
+From 4167fb37cceda6a5ebfbfc4431abc69a1857ce43 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 5 Jan 2009 10:59:29 +0100
+Subject: [PATCH 04/11] ath9k: introduce bus specific cleanup routine
+
+We have left only some PCI specific cleanup code. We have to convert
+them as well.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
+---
+ drivers/net/wireless/ath9k/core.h |    6 ++++++
+ drivers/net/wireless/ath9k/main.c |   30 ++++++++++++++++--------------
+ 2 files changed, 22 insertions(+), 14 deletions(-)
+
+--- a/drivers/net/wireless/ath9k/core.h
++++ b/drivers/net/wireless/ath9k/core.h
+@@ -695,6 +695,7 @@ enum PROT_MODE {
+ 
+ struct ath_bus_ops {
+ 	void		(*read_cachesize)(struct ath_softc *sc, int *csz);
++	void		(*cleanup)(struct ath_softc *sc);
+ };
+ 
+ struct ath_softc {
+@@ -760,4 +761,9 @@ static inline void ath_read_cachesize(st
+ 	sc->bus_ops->read_cachesize(sc, csz);
+ }
+ 
++static inline void ath_bus_cleanup(struct ath_softc *sc)
++{
++	sc->bus_ops->cleanup(sc);
++}
++
+ #endif /* CORE_H */
+--- a/drivers/net/wireless/ath9k/main.c
++++ b/drivers/net/wireless/ath9k/main.c
+@@ -1267,13 +1267,7 @@ static int ath_start_rfkill_poll(struct 
+ 			rfkill_free(sc->rf_kill.rfkill);
+ 
+ 			/* Deinitialize the device */
+-			ath_detach(sc);
+-			if (to_pci_dev(sc->dev)->irq)
+-				free_irq(to_pci_dev(sc->dev)->irq, sc);
+-			pci_iounmap(to_pci_dev(sc->dev), sc->mem);
+-			pci_release_region(to_pci_dev(sc->dev), 0);
+-			pci_disable_device(to_pci_dev(sc->dev));
+-			ieee80211_free_hw(sc->hw);
++			ath_bus_cleanup(sc);
+ 			return -EIO;
+ 		} else {
+ 			sc->sc_flags |= SC_OP_RFKILL_REGISTERED;
+@@ -2529,8 +2523,22 @@ ath_rf_name(u16 rf_version)
+ 	return "????";
+ }
+ 
++static void ath_pci_cleanup(struct ath_softc *sc)
++{
++	struct pci_dev *pdev = to_pci_dev(sc->dev);
++
++	ath_detach(sc);
++	if (pdev->irq)
++		free_irq(pdev->irq, sc);
++	pci_iounmap(pdev, sc->mem);
++	pci_release_region(pdev, 0);
++	pci_disable_device(pdev);
++	ieee80211_free_hw(sc->hw);
++}
++
+ static struct ath_bus_ops ath_pci_bus_ops = {
+ 	.read_cachesize = ath_pci_read_cachesize,
++	.cleanup = ath_pci_cleanup,
+ };
+ 
+ static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+@@ -2667,13 +2675,7 @@ static void ath_pci_remove(struct pci_de
+ 	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
+ 	struct ath_softc *sc = hw->priv;
+ 
+-	ath_detach(sc);
+-	if (pdev->irq)
+-		free_irq(pdev->irq, sc);
+-	pci_iounmap(pdev, sc->mem);
+-	pci_release_region(pdev, 0);
+-	pci_disable_device(pdev);
+-	ieee80211_free_hw(hw);
++	ath_pci_cleanup(sc);
+ }
+ 
+ #ifdef CONFIG_PM
