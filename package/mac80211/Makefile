@@ -231,16 +231,16 @@ This module adds support for wireless adapters based on
 Atheros 5xxx chipset.
 endef
 
-define KernelPackage/ath9k-new
+define KernelPackage/ath9k
   SUBMENU:=$(WMENU)
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @LINUX_2_6_27||@LINUX_2_6_28 @!kmod-ath9k
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @LINUX_2_6_27||@LINUX_2_6_28
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath9k)
 endef
 
-define KernelPackage/ath9k-new/description
+define KernelPackage/ath9k/description
 This module adds support for wireless adapters based on
 Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
@@ -456,6 +456,6 @@ $(eval $(call KernelPackage,rt2800-pci))
 $(eval $(call KernelPackage,rt2800-usb))
 $(eval $(call KernelPackage,zd1211rw))
 $(eval $(call KernelPackage,mac80211-hwsim))
-$(eval $(call KernelPackage,ath9k-new))
+$(eval $(call KernelPackage,ath9k))
 $(eval $(call KernelPackage,b43))
 $(eval $(call KernelPackage,b43legacy))
