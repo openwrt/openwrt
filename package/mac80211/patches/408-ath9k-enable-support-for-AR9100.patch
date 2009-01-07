@@ -1,7 +1,7 @@
-From 35c21a4ce13a08030f3acb491f353ad959873fe2 Mon Sep 17 00:00:00 2001
+From c09de7514f7020370e256d6739c1c27ecb356542 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Fri, 2 Jan 2009 16:14:41 +0100
-Subject: [RFC 09/12] ath9k: enable support for AR9100
+Date: Mon, 5 Jan 2009 11:10:28 +0100
+Subject: [PATCH 08/11] ath9k: enable support for AR9100
 
 Because we have support for the AR9100 devices now, we can enable them.
 
@@ -13,7 +13,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 
 --- a/drivers/net/wireless/ath9k/hw.c
 +++ b/drivers/net/wireless/ath9k/hw.c
-@@ -389,6 +389,8 @@ static const char *ath9k_hw_devname(u16 
+@@ -373,6 +373,8 @@ static const char *ath9k_hw_devname(u16 
  		return "Atheros 5418";
  	case AR9160_DEVID_PCI:
  		return "Atheros 9160";
@@ -22,7 +22,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	case AR9280_DEVID_PCI:
  	case AR9280_DEVID_PCIE:
  		return "Atheros 9280";
-@@ -1192,6 +1194,7 @@ struct ath_hal *ath9k_hw_attach(u16 devi
+@@ -1176,6 +1178,7 @@ struct ath_hal *ath9k_hw_attach(u16 devi
  	switch (devid) {
  	case AR5416_DEVID_PCI:
  	case AR5416_DEVID_PCIE:

@@ -1,10 +1,9 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id: Makefile 7440 2007-06-02 02:22:01Z nbd $
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -13,9 +12,11 @@ PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
 ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
-  PKG_VERSION:=2009-01-02
-  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/01
-  PKG_MD5SUM:=77effa32de567a7bbaa0ed73cd578fe9
+  PKG_VERSION:=2009-01-07
+  PKG_SOURCE_URL:= \
+	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/01 \
+	http://wireless.kernel.org/download/compat-wireless-2.6
+  PKG_MD5SUM:=2788149d630d48686f7ca79131cdbe8c
 else
   PKG_VERSION:=2008-08-06
   PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08

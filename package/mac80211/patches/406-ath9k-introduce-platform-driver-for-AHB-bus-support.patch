@@ -1,7 +1,7 @@
-From 9456893748c407d9fed06046308177edaca38450 Mon Sep 17 00:00:00 2001
+From 9b3c1b50a35455e28c5b2fede615a304df42e758 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Fri, 2 Jan 2009 16:12:30 +0100
-Subject: [RFC 07/12] ath9k: introduce platform driver for AHB bus support
+Date: Mon, 5 Jan 2009 11:03:17 +0100
+Subject: [PATCH 06/11] ath9k: introduce platform driver for AHB bus support
 
 This patch adds the platform_driver itself, and modifies the main driver
 to register it.
@@ -10,10 +10,10 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 ---
  drivers/net/wireless/ath9k/Makefile |    1 +
- drivers/net/wireless/ath9k/ahb.c    |  258 +++++++++++++++++++++++++++++++++++
- drivers/net/wireless/ath9k/core.h   |    8 +
+ drivers/net/wireless/ath9k/ahb.c    |  179 +++++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath9k/core.h   |    9 ++
  drivers/net/wireless/ath9k/main.c   |   10 ++
- 4 files changed, 277 insertions(+), 0 deletions(-)
+ 4 files changed, 199 insertions(+), 0 deletions(-)
 
 --- a/drivers/net/wireless/ath9k/Makefile
 +++ b/drivers/net/wireless/ath9k/Makefile
@@ -27,7 +27,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  obj-$(CONFIG_ATH9K) += ath9k.o
 --- /dev/null
 +++ b/drivers/net/wireless/ath9k/ahb.c
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,179 @@
 +/*
 + * Copyright (c) 2008 Atheros Communications Inc.
 + * Copyright (c) 2009 Gabor Juhos <juhosg@openwrt.org>
@@ -52,63 +52,6 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +#include "reg.h"
 +#include "hw.h"
 +
-+static dma_addr_t ath_ahb_map_single_to_device(struct ath_softc *sc,
-+					       void *p, size_t size)
-+{
-+	return dma_map_single(NULL, p, size, DMA_TO_DEVICE);
-+}
-+
-+static void ath_ahb_unmap_single_to_device(struct ath_softc *sc,
-+					   dma_addr_t da, size_t size)
-+{
-+	dma_unmap_single(NULL, da, size, DMA_TO_DEVICE);
-+}
-+
-+static dma_addr_t ath_ahb_map_single_from_device(struct ath_softc *sc,
-+						 void *p, size_t size)
-+{
-+	return dma_map_single(NULL, p, size, DMA_FROM_DEVICE);
-+}
-+
-+static void ath_ahb_unmap_single_from_device(struct ath_softc *sc,
-+					     dma_addr_t da, size_t size)
-+{
-+	dma_unmap_single(NULL, da, size, DMA_FROM_DEVICE);
-+}
-+
-+static int ath_ahb_dma_mapping_error(struct ath_softc *sc, dma_addr_t da)
-+{
-+	return dma_mapping_error(NULL, da);
-+}
-+
-+static void ath_ahb_sync_single_for_cpu(struct ath_softc *sc, dma_addr_t da,
-+				       size_t size)
-+{
-+	dma_sync_single_for_cpu(NULL, da, size, DMA_FROM_DEVICE);
-+}
-+
-+static void *ath_ahb_dma_alloc(struct ath_softc *sc, size_t size,
-+			       dma_addr_t *pda)
-+{
-+	return dma_alloc_coherent(NULL, size, pda, GFP_KERNEL);
-+}
-+
-+static void ath_ahb_dma_free(struct ath_softc *sc, size_t size, void *p,
-+			     dma_addr_t da)
-+{
-+	dma_free_coherent(NULL, size, p, da);
-+}
-+
-+static void ath_ahb_reg_write(struct ath_hal *ah, unsigned reg, u32 val)
-+{
-+	__raw_writel(val, ah->ah_sh + reg);
-+}
-+
-+static u32 ath_ahb_reg_read(struct ath_hal *ah, unsigned reg)
-+{
-+	return __raw_readl(ah->ah_sh + reg);
-+}
-+
 +/* return bus cachesize in 4B word units */
 +static void ath_ahb_read_cachesize(struct ath_softc *sc, int *csz)
 +{
@@ -117,36 +60,17 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +
 +static void ath_ahb_cleanup(struct ath_softc *sc)
 +{
-+	struct platform_device *pdev = to_platform_device(sc->dev);
 +	struct ieee80211_hw *hw = sc->hw;
-+	struct resource *res;
 +
-+	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-+	if (res)
-+		free_irq(res->start, sc);
++	free_irq(sc->irq, sc);
 +
 +	ath_detach(sc);
 +	iounmap(sc->mem);
 +	ieee80211_free_hw(hw);
-+	platform_set_drvdata(pdev, NULL);
 +}
 +
 +static struct ath_bus_ops ath_ahb_bus_ops  = {
-+	.dma_map_single_to_device = ath_ahb_map_single_to_device,
-+	.dma_unmap_single_to_device = ath_ahb_unmap_single_to_device,
-+	.dma_map_single_from_device = ath_ahb_map_single_from_device,
-+	.dma_unmap_single_from_device = ath_ahb_unmap_single_from_device,
-+	.dma_map_single_to_device = ath_ahb_map_single_to_device,
-+	.dma_mapping_error = ath_ahb_dma_mapping_error,
-+	.dma_sync_single_for_cpu = ath_ahb_sync_single_for_cpu,
-+	.dma_alloc = ath_ahb_dma_alloc,
-+	.dma_free = ath_ahb_dma_free,
-+
-+	.reg_read = ath_ahb_reg_read,
-+	.reg_write = ath_ahb_reg_write,
-+
 +	.read_cachesize = ath_ahb_read_cachesize,
-+
 +	.cleanup = ath_ahb_cleanup,
 +};
 +
@@ -208,6 +132,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	sc->dev = &pdev->dev;
 +	sc->mem = mem;
 +	sc->bus_ops = &ath_ahb_bus_ops;
++	sc->irq = irq;
 +
 +	ret = ath_attach(AR5416_AR9100_DEVID, sc);
 +	if (ret != 0) {
@@ -252,13 +177,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	struct ieee80211_hw *hw = platform_get_drvdata(pdev);
 +
 +	if (hw) {
-+		struct resource *res;
 +		struct ath_softc *sc = hw->priv;
 +
-+		res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-+		if (res)
-+			free_irq(res->start, sc);
-+
++		free_irq(sc->irq, sc);
 +		ath_detach(sc);
 +		iounmap(sc->mem);
 +		ieee80211_free_hw(hw);
@@ -288,7 +209,15 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +}
 --- a/drivers/net/wireless/ath9k/core.h
 +++ b/drivers/net/wireless/ath9k/core.h
-@@ -874,4 +874,12 @@ static inline int ath_pci_init(void) { r
+@@ -705,6 +705,7 @@ struct ath_softc {
+ 	struct tasklet_struct bcon_tasklet;
+ 	struct ath_hal *sc_ah;
+ 	void __iomem *mem;
++	int irq;
+ 	spinlock_t sc_resetlock;
+ 	struct mutex mutex;
+ 
+@@ -782,4 +783,12 @@ static inline int ath_pci_init(void) { r
  static inline void ath_pci_exit(void) {};
  #endif
  
@@ -303,7 +232,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  #endif /* CORE_H */
 --- a/drivers/net/wireless/ath9k/main.c
 +++ b/drivers/net/wireless/ath9k/main.c
-@@ -2533,8 +2533,17 @@ static int __init ath9k_init(void)
+@@ -2514,8 +2514,17 @@ static int __init ath9k_init(void)
  		goto err_rate_unregister;
  	}
  
@@ -321,7 +250,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
   err_rate_unregister:
  	ath_rate_control_unregister();
   err_out:
-@@ -2544,6 +2553,7 @@ module_init(ath9k_init);
+@@ -2525,6 +2534,7 @@ module_init(ath9k_init);
  
  static void __exit ath9k_exit(void)
  {
