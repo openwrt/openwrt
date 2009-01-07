@@ -1,0 +1,85 @@
+From 1306e6b6d72b2bc0b91bcdd15b1d982965210bda Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 5 Jan 2009 10:57:42 +0100
+Subject: [PATCH 03/11] ath9k: introduce bus specific cache size routine
+
+The PCI specific bus_read_cachesize routine won't work on the AHB bus,
+we have to replace it with a suitable one later.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
+---
+ drivers/net/wireless/ath9k/core.h |   10 ++++++++++
+ drivers/net/wireless/ath9k/main.c |    9 +++++++--
+ 2 files changed, 17 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath9k/core.h
++++ b/drivers/net/wireless/ath9k/core.h
+@@ -693,6 +693,10 @@ enum PROT_MODE {
+ #define SC_OP_RFKILL_SW_BLOCKED	BIT(12)
+ #define SC_OP_RFKILL_HW_BLOCKED	BIT(13)
+ 
++struct ath_bus_ops {
++	void		(*read_cachesize)(struct ath_softc *sc, int *csz);
++};
++
+ struct ath_softc {
+ 	struct ieee80211_hw *hw;
+ 	struct device *dev;
+@@ -743,6 +747,7 @@ struct ath_softc {
+ #ifdef CONFIG_ATH9K_DEBUG
+ 	struct ath9k_debug sc_debug;
+ #endif
++	struct ath_bus_ops *bus_ops;
+ };
+ 
+ int ath_reset(struct ath_softc *sc, bool retry_tx);
+@@ -750,4 +755,9 @@ int ath_get_hal_qnum(u16 queue, struct a
+ int ath_get_mac80211_qnum(u32 queue, struct ath_softc *sc);
+ int ath_cabq_update(struct ath_softc *);
+ 
++static inline void ath_read_cachesize(struct ath_softc *sc, int *csz)
++{
++	sc->bus_ops->read_cachesize(sc, csz);
++}
++
+ #endif /* CORE_H */
+--- a/drivers/net/wireless/ath9k/main.c
++++ b/drivers/net/wireless/ath9k/main.c
+@@ -42,7 +42,7 @@ static void ath_detach(struct ath_softc 
+ 
+ /* return bus cachesize in 4B word units */
+ 
+-static void bus_read_cachesize(struct ath_softc *sc, int *csz)
++static void ath_pci_read_cachesize(struct ath_softc *sc, int *csz)
+ {
+ 	u8 u8tmp;
+ 
+@@ -1338,7 +1338,7 @@ static int ath_init(u16 devid, struct at
+ 	 * Cache line size is used to size and align various
+ 	 * structures used to communicate with the hardware.
+ 	 */
+-	bus_read_cachesize(sc, &csz);
++	ath_read_cachesize(sc, &csz);
+ 	/* XXX assert csz is non-zero */
+ 	sc->sc_cachelsz = csz << 2;	/* convert to bytes */
+ 
+@@ -2529,6 +2529,10 @@ ath_rf_name(u16 rf_version)
+ 	return "????";
+ }
+ 
++static struct ath_bus_ops ath_pci_bus_ops = {
++	.read_cachesize = ath_pci_read_cachesize,
++};
++
+ static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+ {
+ 	void __iomem *mem;
+@@ -2617,6 +2621,7 @@ static int ath_pci_probe(struct pci_dev 
+ 	sc->hw = hw;
+ 	sc->dev = &pdev->dev;
+ 	sc->mem = mem;
++	sc->bus_ops = &ath_pci_bus_ops;
+ 
+ 	if (ath_attach(id->device, sc) != 0) {
+ 		ret = -ENODEV;
