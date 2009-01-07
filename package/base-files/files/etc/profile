@@ -2,7 +2,8 @@
 [ -f /etc/banner ] && cat /etc/banner
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-export HOME=/root
+export HOME=$(grep -e "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
+export HOME=${HOME:-/root}
 export PS1='\u@\h:\w\$ '
 
 [ -x /bin/more ] || alias more=less
