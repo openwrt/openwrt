@@ -762,7 +762,11 @@ typedef struct wl_instance_info {
 #define WLC_NVOTPW				274
 #define WLC_OTPW				275
 #define WLC_SET_LOCALE				278
-#define WLC_LAST				279	/* do not change - use get_var/set_var */
+#define WLC_GET_ALLOW_MODE			279
+#define WLC_SET_ALLOW_MODE			280
+#define WLC_GET_DESIRED_BSSID			281
+#define WLC_SET_DESIRED_BSSID			282
+#define WLC_LAST				283	/* do not change - use get_var/set_var */
 
 /*
  * Minor kludge alert:

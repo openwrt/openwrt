@@ -66,6 +66,7 @@ typedef enum {
 	PARAM_TYPE =    0x00f,
 	INT =    0x001,
 	STRING = 0x002,
+	MAC =    0x003,
 
 	/* options */
 	PARAM_OPTIONS = 0x0f0,
@@ -106,11 +107,13 @@ static int wlc_ioctl(wlc_param param, void *data, void *value)
 		return wl_ioctl(interface, ioc, NULL, 0);
 	}
 	switch(param & PARAM_TYPE) {
+		case MAC:
+			return wl_ioctl(interface, ((param & SET) ? (ioc) : (ioc >> 16)) & 0xffff, value, 6);
 		case INT:
 			return wl_ioctl(interface, ((param & SET) ? (ioc) : (ioc >> 16)) & 0xffff, value, sizeof(int));
 		case STRING:
 			return wl_ioctl(interface, ((param & SET) ? (ioc) : (ioc >> 16)) & 0xffff, value, BUFSIZE);
-	}	
+	}
 	return 0;
 }
 
@@ -124,12 +127,20 @@ static int wlc_iovar(wlc_param param, void *data, void *value)
 		switch(param & PARAM_TYPE) {
 			case INT:
 				ret = wl_iovar_setint(interface, iov, *val);
+				break;
+			case MAC:
+				ret = wl_iovar_set(interface, iov, value, 6);
+				break;
 		}
 	}
 	if (param & GET) {
 		switch(param & PARAM_TYPE) {
 			case INT:
 				ret = wl_iovar_getint(interface, iov, val);
+				break;
+			case MAC:
+				ret = wl_iovar_get(interface, iov, value, 6);
+				break;
 		}
 	}
 
@@ -859,6 +870,41 @@ static const struct wlc_call wlc_calls[] = {
 		.handler = wlc_afterburner,
 		.desc = "Broadcom Afterburner"
 	},
+	{
+		.name = "join_once",
+		.param = INT,
+		.handler = wlc_iovar,
+		.data.str = "IBSS_join_once",
+		.desc = "Prevent unwanted IBSS merges"
+	},
+	{
+		.name = "bssid",
+		.param = MAC,
+		.handler = wlc_iovar,
+		.data.str = "cur_etheraddr",
+		.desc = "BSSID"
+	},
+	{
+		.name = "default_bssid",
+		.param = MAC,
+		.handler = wlc_iovar,
+		.data.str = "perm_etheraddr",
+		.desc = "Default BSSID (read-only)"
+	},
+	{
+		.name = "allow_mode",
+		.param = INT,
+		.data.num = ((WLC_GET_ALLOW_MODE << 16) | WLC_SET_ALLOW_MODE),
+		.handler = wlc_ioctl,
+		.desc = "STA/IBSS assoc mode"
+	},
+	{
+		.name = "des_bssid",
+		.param = MAC,
+		.data.num = ((WLC_GET_DESIRED_BSSID << 16) | WLC_SET_DESIRED_BSSID),
+		.handler = wlc_ioctl,
+		.desc = "Desired BSSID"
+	},
 };
 #define wlc_calls_size (sizeof(wlc_calls) / sizeof(struct wlc_call))
 
@@ -882,6 +928,7 @@ static int do_command(const struct wlc_call *cmd, char *arg)
 	int ret = 0;
 	char *format, *end;
 	int intval;
+	void *ptr = (void *) buf;
 
 	if (debug >= 10) {
 		fprintf(stderr, "do_command %-16s\t'%s'\n", cmd->name, arg);
@@ -906,6 +953,11 @@ static int do_command(const struct wlc_call *cmd, char *arg)
 					break;
 				case STRING:
 					fprintf(stdout, "%s\n", buf);
+					break;
+				case MAC:
+					my_ether_ntoa(buf, buf + 6);
+					fprintf(stdout, "%s\n", buf + 6);
+					break;
 			}
 		}
 	} else { /* SET */
@@ -923,9 +975,17 @@ static int do_command(const struct wlc_call *cmd, char *arg)
 			case STRING:
 				strncpy(buf, arg, BUFSIZE);
 				buf[BUFSIZE - 1] = 0;
+				break;
+			case MAC:
+				ptr = ether_aton(arg);
+				if (!ptr) {
+					fprintf(stderr, "%s: Invalid mac address '%s'\n", cmd->name, arg);
+					return -1;
+				}
+				break;
 		}
 
-		ret = cmd->handler(cmd->param | SET, (void *) &cmd->data, (void *) buf);
+		ret = cmd->handler(cmd->param | SET, (void *) &cmd->data, ptr);
 	}
 	
 	if ((debug > 0) && (ret != 0)) 
