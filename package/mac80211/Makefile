@@ -32,11 +32,16 @@ STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-mac8021
 
 WMENU:=Wireless Drivers
 
-define KernelPackage/mac80211
+define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
-  TITLE:=Linux 802.11 Wireless Networking Stack
   URL:=http://linuxwireless.org/
-  DEPENDS:=@LINUX_2_6 +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools @!TARGET_avr32
+  DEPENDS:=@LINUX_2_6 @!TARGET_avr32
+endef
+
+define KernelPackage/mac80211
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Linux 802.11 Wireless Networking Stack
+  DEPENDS+= +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
   FILES:= \
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
@@ -58,7 +63,7 @@ endef
 $(eval $(call Download,p54))
 
 define KernelPackage/p54/Default
-  SUBMENU:=$(WMENU)
+  $(call KernelPackage/mac80211/Default)
   TITLE:=Prism54 Drivers
 endef
 
@@ -117,7 +122,7 @@ endef
 $(eval $(call Download,rt2860))
 
 define KernelPackage/rt2x00/Default
-  SUBMENU:=$(WMENU)
+  $(call KernelPackage/mac80211/Default)
   TITLE:=Ralink Drivers for RT2x00 cards
 endef
 
@@ -211,15 +216,15 @@ endef
 $(eval $(call Download,zd1211rw))
 
 define KernelPackage/zd1211rw
-  SUBMENU:=$(WMENU)
+  $(call KernelPackage/mac80211/Default)
   TITLE:=Zydas ZD1211 support
-  DEPENDS:= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
 endef
 
 define KernelPackage/ath5k
-  SUBMENU:=$(WMENU)
+  $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 5xxx wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath5k
   DEPENDS+= @PCI_SUPPORT +kmod-mac80211
@@ -228,12 +233,12 @@ define KernelPackage/ath5k
 endef
 
 define KernelPackage/ath5k/description
-This module adds support for wireless adapters based on
-Atheros 5xxx chipset.
+ This module adds support for wireless adapters based on
+ Atheros 5xxx chipset.
 endef
 
 define KernelPackage/ath9k
-  SUBMENU:=$(WMENU)
+  $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
   DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @LINUX_2_6_27||@LINUX_2_6_28
@@ -247,7 +252,7 @@ Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
 
 define KernelPackage/mac80211-hwsim
-  SUBMENU:=$(WMENU)
+  $(call KernelPackage/mac80211/Default)
   TITLE:=mac80211 HW simulation device
   DEPENDS+= +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.$(LINUX_KMOD_SUFFIX)
@@ -296,10 +301,10 @@ endef
 $(eval $(call Download,b43legacy))
 
 define KernelPackage/b43-common
-  SUBMENU:=$(WMENU)
+  $(call KernelPackage/mac80211/Default)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
-  DEPENDS:=+kmod-mac80211 +!TARGET_brcm47xx:kmod-ssb @TARGET_brcm47xx||@TARGET_brcm63xx @LINUX_2_6_25||@LINUX_2_6_26||@LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= +kmod-mac80211 +!TARGET_brcm47xx:kmod-ssb @TARGET_brcm47xx||@TARGET_brcm63xx @LINUX_2_6_25||@LINUX_2_6_26||@LINUX_2_6_27||@LINUX_2_6_28
 endef
 
 define KernelPackage/b43
