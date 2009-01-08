@@ -276,3 +276,17 @@ endef
 
 $(eval $(call KernelPackage,ssb-gige))
 
+define KernelPackage/hfcmulti
+  TITLE:=HFC multiport cards (HFC-4S/8S/E1)
+  KCONFIG:=CONFIG_MISDN_HFCMULTI
+  DEPENDS:=+kmod-misdn
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  FILES:=$(LINUX_DIR)/drivers/isdn/hardware/mISDN/hfcmulti.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,31,hfcmulti)
+endef
+
+define KernelPackage/hfcmulti/description
+  HFC multiport cards (HFC-4S/8S/E1) support
+endef
+
+$(eval $(call KernelPackage,hfcmulti))
