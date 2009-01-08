@@ -38,7 +38,6 @@ MAKE_OPTS:= \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
 	SUBDIRS="$(PKG_BUILD_DIR)" \
 	EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
-	LINUXINCLUDE="-I$(LINUX_DIR)/include -include linux/autoconf.h" \
 	$(EXTRA_KCONFIG)
 
 define Build/Prepare
