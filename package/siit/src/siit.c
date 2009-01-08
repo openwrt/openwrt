@@ -27,7 +27,9 @@
 #include <linux/init.h>
 #include <asm/uaccess.h>
 #include <asm/checksum.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,0)
 #include <net/ip6_checksum.h>
+#endif
 #include <linux/in6.h>
 #include "siit.h"
 
