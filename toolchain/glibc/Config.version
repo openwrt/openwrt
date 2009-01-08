@@ -1,0 +1,15 @@
+config GLIBC_VERSION
+	string
+	depends on USE_GLIBC
+	default "2.3.6"  if GLIBC_VERSION_2_3_6
+	default "2.6.1"  if GLIBC_VERSION_2_6_1
+	default "2.7"    if GLIBC_VERSION_2_7
+	default "2.7"
+
+config GLIBC_PORTS
+	bool
+	depends on USE_GLIBC
+	default y  if GLIBC_VERSION_2_3_6 && (arm || armeb || mips || mipsel)
+	default y  if GLIBC_VERSION_2_6_1 && (arm || armeb || mips || mipsel || powerpc)
+	default y  if GLIBC_VERSION_2_7 && (arm || armeb || mips || mipsel || powerpc)
+	default n

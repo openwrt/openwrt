@@ -31,7 +31,7 @@ include $(INCLUDE_DIR)/package-bin.mk
 include $(INCLUDE_DIR)/autotools.mk
 
 override MAKEFLAGS=
-CONFIG_SITE:=$(INCLUDE_DIR)/site/$(patsubst %gnueabi,%,$(REAL_GNU_TARGET_NAME))
+CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 ifneq ($(CONFIG_LINUX_2_4),)
   CONFIG_SITE:=$(subst linux-,linux2.4-,$(CONFIG_SITE))
 endif

@@ -1,0 +1,11 @@
+diff -ruN eglibc-2.7-orig/ports/sysdeps/unix/sysv/linux/arm/ioperm.c eglibc-2.7/ports/sysdeps/unix/sysv/linux/arm/ioperm.c
+--- eglibc-2.7-orig/ports/sysdeps/unix/sysv/linux/arm/ioperm.c	2006-08-17 03:23:58.000000000 +0200
++++ eglibc-2.7/ports/sysdeps/unix/sysv/linux/arm/ioperm.c	2008-11-04 16:12:24.375864916 +0100
+@@ -45,7 +45,6 @@
+ #include <sys/mman.h>
+ 
+ #include <linux/version.h>
+-#include <asm/page.h>
+ #include <sys/sysctl.h>
+ 
+ #define PATH_ARM_SYSTYPE	"/etc/arm_systype"

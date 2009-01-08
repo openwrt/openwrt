@@ -1,0 +1,12 @@
+diff -ruN glibc-2.3.6-orig/sysdeps/powerpc/powerpc32/Makefile glibc-2.3.6/sysdeps/powerpc/powerpc32/Makefile
+--- glibc-2.3.6-orig/sysdeps/powerpc/powerpc32/Makefile	2003-07-12 00:46:12.000000000 +0200
++++ glibc-2.3.6/sysdeps/powerpc/powerpc32/Makefile	2008-11-10 16:02:12.760497684 +0100
+@@ -21,7 +21,7 @@
+ ifneq ($(elf),no)
+ # The initfini generation code doesn't work in the presence of -fPIC, so
+ # we use -fpic instead which is much better.
+-CFLAGS-initfini.s = -g0 -fpic -O1
++CFLAGS-initfini.s = -fpic -O1 $(fno-unit-at-a-time)
+ 
+ # There is no benefit to using sdata for these objects, and the user
+ # of the library should be able to control what goes into sdata.

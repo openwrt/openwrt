@@ -1,0 +1,168 @@
+#
+# Copyright (C) 2006-2008 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=eglibc
+PKG_VERSION:=$(call qstrip,$(CONFIG_EGLIBC_VERSION))
+PKG_REVISION:=$(call qstrip,$(CONFIG_EGLIBC_REVISION))
+
+PKG_SOURCE_PROTO:=svn
+PKG_SOURCE_VERSION:=$(PKG_REVISION)
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)-r$(PKG_REVISION)
+PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
+ifeq ($(PKG_VERSION),2.6.1)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_6
+endif
+ifeq ($(PKG_VERSION),2.7)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_7
+endif
+ifeq ($(PKG_VERSION),2.8)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_8
+endif
+ifeq ($(PKG_VERSION),2.9)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_9
+endif
+ifeq ($(PKG_VERSION),trunk)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/trunk
+endif
+
+PATCH_DIR:=./patches/$(PKG_VERSION)
+
+STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
+BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
+PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_SOURCE_SUBDIR)
+
+override CONFIG_AUTOREBUILD=
+
+include $(INCLUDE_DIR)/host-build.mk
+
+STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.eglibc_built
+STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.eglibc_installed
+
+PKG_BUILD_DIR1:=$(PKG_BUILD_DIR)-initial
+PKG_BUILD_DIR2:=$(PKG_BUILD_DIR)-final
+
+# XXX: {e,}glibc does not build w/ -Os
+# http://sourceware.org/bugzilla/show_bug.cgi?id=5203
+EGLIBC_CFLAGS:=$(subst -Os,-O2,$(TARGET_CFLAGS))
+
+EGLIBC_CONFIGURE:= \
+	BUILD_CC="$(HOSTCC)" \
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="$(EGLIBC_CFLAGS)" \
+	$(PKG_BUILD_DIR)/libc/configure \
+		--prefix=/usr \
+		--build=$(GNU_HOST_NAME) \
+		--host=$(REAL_GNU_TARGET_NAME) \
+		--with-headers=$(TOOLCHAIN_DIR)/usr/include \
+		--disable-profile \
+		--without-gd \
+		--without-cvs \
+		--enable-add-ons \
+
+ifeq ($(CONFIG_SOFT_FLOAT),)
+  EGLIBC_CONFIGURE+= --with-fp
+else
+  EGLIBC_CONFIGURE+= --without-fp
+endif
+
+EGLIBC_MAKE:= \
+	$(MAKE) \
+
+
+define Build/SetToolchainInfo
+	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.eglibc.org/,' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,^\(LIBC_PATCHVER\)=.*,\1=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
+endef
+
+define Stage1/Configure
+	mkdir -p $(PKG_BUILD_DIR1)
+	$(CP) $(PKG_BUILD_DIR)/libc/option-groups.config $(PKG_BUILD_DIR1)/
+	( cd $(PKG_BUILD_DIR1); rm -f config.cache; \
+		$(EGLIBC_CONFIGURE) \
+	);
+endef
+
+define Stage1/Compile
+endef
+
+define Stage1/Install
+	mkdir -p $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/{include,lib}
+	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR1) \
+		install_root="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev" \
+		install-bootstrap-headers=yes \
+		install-headers 
+	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR1) \
+		csu/subdir_lib
+	( cd $(PKG_BUILD_DIR1); \
+		$(CP) csu/crt1.o csu/crti.o csu/crtn.o $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/lib/ \
+	)
+	$(TARGET_CC) -nostdlib -nostartfiles -shared -x c /dev/null \
+		-o $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/lib/libc.so
+endef
+
+define Stage2/Configure
+	mkdir -p $(PKG_BUILD_DIR2)
+	$(CP) $(PKG_BUILD_DIR)/libc/option-groups.config $(PKG_BUILD_DIR2)/
+	( cd $(PKG_BUILD_DIR2); rm -f config.cache; \
+		$(EGLIBC_CONFIGURE) \
+	);
+endef
+
+define Stage2/Compile
+	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR2) all
+endef
+
+define Stage2/Install
+	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR2) \
+		install_root="$(TOOLCHAIN_DIR)" \
+		install
+	( cd $(TOOLCHAIN_DIR) ; \
+		for d in lib usr/lib ; do \
+		  for f in libc.so libpthread.so libgcc_s.so ; do \
+		    if [ -f $$$$d/$$$$f -a ! -L $$$$d/$$$$f ] ; then \
+		      $(SED) 's,/usr/lib/,,g;s,/lib/,,g' $$$$d/$$$$f ; \
+		    fi \
+		  done \
+		done \
+	)
+endef
+
+define Build/Prepare
+	$(call Build/SetToolchainInfo)
+	$(call Build/Prepare/Default)
+	ln -snf $(PKG_SOURCE_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	$(SED) 's,y,n,' $(PKG_BUILD_DIR)/libc/option-groups.defaults
+	grep 'CONFIG_EGLIBC_OPTION_' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_EGLIBC_\\(.*\\),\\1\\2,g" > $(PKG_BUILD_DIR)/libc/option-groups.config
+	ln -sf ../ports $(PKG_BUILD_DIR)/libc/
+	( cd $(PKG_BUILD_DIR)/libc; autoconf --force )
+	$(call Stage1/Configure)
+	$(call Stage1/Compile)
+	$(call Stage1/Install)
+endef
+
+define Build/Configure
+endef
+
+define Build/Compile
+	$(call Stage2/Configure)
+	$(call Stage2/Compile)
+	$(call Stage2/Install)
+endef
+
+define Build/Install
+endef
+
+define Build/Clean
+	rm -rf $(PKG_BUILD_DIR) $(PKG_BUILD_DIR1) $(PKG_BUILD_DIR2) \
+		$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev \
+		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+endef
+
+$(eval $(call HostBuild))

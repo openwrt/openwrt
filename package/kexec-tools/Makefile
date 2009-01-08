@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -37,7 +37,7 @@ define Package/kexec-tools/config
 endef
 
 CONFIGURE_ARGS = \
-		--target=$(CONFIG_KEXEC_TOOLS_TARGET_NAME)-linux-uclibc \
+		--target=$(CONFIG_KEXEC_TOOLS_TARGET_NAME)-linux-$(TARGET_SUFFIX) \
 		--host=$(GNU_TARGET_NAME)-uclibc \
 		--build=$(GNU_HOST_NAME) \
 		--program-prefix="" \
@@ -49,7 +49,9 @@ CONFIGURE_ARGS = \
 		--libexecdir=/usr/lib \
 		--sysconfdir=/etc \
 
-CONFIGURE_VARS += BUILD_CC=$(HOSTCC)
+CONFIGURE_VARS += \
+	BUILD_CC=$(HOSTCC) \
+	TARGET_CC=$(TARGET_CC) \
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) all

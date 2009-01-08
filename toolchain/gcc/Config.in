@@ -40,6 +40,7 @@ config EXTRA_GCC_CONFIG_OPTIONS
 
 config SSP_SUPPORT
 	bool
+	depends !GCC_VERSION_3_4_6
 	prompt "Enable Smash Stacking Protection support" if TOOLCHAINOPTS
 	default n
 	help

@@ -1,0 +1,26 @@
+From http://svn.exactcode.de/t2/trunk/package/base/glibc32/make-install-lib-all.patch
+Rule to install all needed libraries, not just the ones installed by install-lib,
+yet not install programs.  
+Needed because we can't use the main install target, as we can't build programs before
+we have the final gcc installed; linking fails because libeh.a is not present,
+and glibc insists on linking programs with that library.
+
+diff -Naur glibc-2.3.4.orig/Makerules glibc-2.3.4/Makerules
+--- glibc-2.3.4.orig/Makerules	2004-12-15 20:52:39.000000000 +0200
++++ glibc-2.3.4/Makerules	2005-02-19 15:16:31.415125176 +0200
+@@ -844,6 +844,13 @@
+ installed-libcs := $(foreach o,$(filter-out .os,$(object-suffixes-for-libc)),\
+ 			     $(inst_libdir)/$(patsubst %,$(libtype$o),\
+ 						     $(libprefix)$(libc-name)))
++
++install-lib-all: $(inst_slibdir)/libc.so$(libc.so-version) \
++		$(inst_slibdir)/libc-$(version).so \
++		$(inst_libdir)/libc.so \
++		$(inst_libdir)/libc.a \
++		install-lib
++
+ install: $(installed-libcs)
+ $(installed-libcs): $(inst_libdir)/lib$(libprefix)%: lib $(+force)
+ 	$(make-target-directory)
+
+Signed-off-by: Robert P. J. Day <rpjday@mindspring.com>

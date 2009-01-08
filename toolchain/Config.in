@@ -41,6 +41,30 @@ menuconfig EXTRA_TARGET_ARCH
 
 source "toolchain/binutils/Config.in"
 source "toolchain/gcc/Config.in"
+
+choice
+	prompt "LIBC implementation" if TOOLCHAINOPTS
+	default USE_UCLIBC
+	help
+	  Select the LIBC implementation.
+
+	config USE_EGLIBC
+		bool "Use eglibc"
+		depends !avr32
+		select NO_STRIP
+	
+	config USE_GLIBC
+		bool "Use glibc"
+		depends !avr32
+		select NO_STRIP
+	
+	config USE_UCLIBC
+		bool "Use uClibc"
+
+endchoice
+
+source "toolchain/eglibc/Config.in"
+source "toolchain/glibc/Config.in"
 source "toolchain/uClibc/Config.in"
 
 config GDB
@@ -82,7 +106,7 @@ config TARGET_OPTIMIZATION
 	prompt "Target Optimizations" if TOOLCHAINOPTS
 	default "-O2 -pipe -march=i686 -funit-at-a-time" if TARGET_x86_mediacenter
 	default "-O2 -pipe -march=i486 -funit-at-a-time" if TARGET_x86
-	default "-Os -pipe -march=i486 -funit-at-a-time" if TARGET_rdc
+	default "-Os -pipe -march=i486 -funit-at-a-time" if TARGET_rdc || TARGET_uml
 	default "-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time" if TARGET_ar71xx
 	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if mipsel || mips
 	default "-Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time" if TARGET_ixp4xx || TARGET_iop32x || TARGET_pxa || TARGET_orion
@@ -91,5 +115,32 @@ config TARGET_OPTIMIZATION
 	help
 	  Optimizations to use when building for the target host.
 
+config USE_UCLIBC
+	bool
+	default y if !TOOLCHAINOPTS
+
 source "toolchain/gcc/Config.version"
+
+source "toolchain/eglibc/Config.version"
+source "toolchain/glibc/Config.version"
 source "toolchain/uClibc/Config.version"
+
+config LIBC
+	string
+	default "eglibc"  if USE_EGLIBC
+	default "glibc"   if USE_GLIBC
+	default "uClibc"  if USE_UCLIBC
+
+config LIBC_VERSION
+	string
+	default EGLIBC_VERSION  if USE_EGLIBC
+	default GLIBC_VERSION   if USE_GLIBC
+	default UCLIBC_VERSION  if USE_UCLIBC
+
+config TARGET_SUFFIX
+	string
+	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && EABI_SUPPORT
+	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !EABI_SUPPORT
+	default "uclibc-gnueabi"  if USE_UCLIBC && EABI_SUPPORT
+	default "uclibc"          if USE_UCLIBC && !EABI_SUPPORT
+
