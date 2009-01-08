@@ -1,8 +1,8 @@
 config UCLIBC_VERSION
 	string
+	depends on USE_UCLIBC
 	default ""           if UCLIBC_VERSION_snapshot
 	default "0.9.28"     if UCLIBC_VERSION_0_9_28
 	default "0.9.29"     if UCLIBC_VERSION_0_9_29
 	default "0.9.29"
-
 

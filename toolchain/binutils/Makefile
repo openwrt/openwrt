@@ -23,20 +23,28 @@ PATCH_DIR:=./patches/$(PKG_VERSION)
 
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
+
 override CONFIG_AUTOREBUILD=
 
 include $(INCLUDE_DIR)/host-build.mk
 
-EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-uclibc)
+EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX))
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/
+endef
 
 define Build/Configure
-	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/
 	(cd $(PKG_BUILD_DIR); \
 		./configure \
-		--prefix=$(STAGING_DIR_HOST) \
+		--prefix=$(TOOLCHAIN_DIR)/usr \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
+		--with-sysroot=$(TOOLCHAIN_DIR) \
+		--disable-multilib \
 		--disable-werror \
 		--disable-nls \
 		$(EXTRA_TARGET) \
@@ -51,6 +59,12 @@ endef
 
 define Build/Install
 	$(MAKE) -C $(PKG_BUILD_DIR) install
+endef
+
+define Build/Clean
+	rm -rf \
+		$(PKG_BUILD_DIR) \
+		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef
 
 $(eval $(call HostBuild))

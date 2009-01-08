@@ -54,6 +54,7 @@ ifeq ($(PKG_VERSION_SNAPSHOT),y)
 else
   PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
 endif
+
 override CONFIG_AUTOREBUILD=
 
 include $(INCLUDE_DIR)/host-build.mk
@@ -76,12 +77,13 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 		-e 's/cris.*/cris/' \
 )
 
-# Remove me when there are no 2.6.23 targets
-ifeq ($(findstring 86,$(ARCH)),86)
-  ifneq ($(LINUX_2_6_23),y)
-	UCLIBC_TARGET_ARCH:=x86
-  endif
-endif
+
+define Build/SetToolchainInfo
+	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.uclibc.org/,' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,^\(LIBC_PATCHVER\)=.*,\1=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
+endef
 
 define Build/Prepare/Snapshot
 	$(PKG_UNPACK)
@@ -94,25 +96,27 @@ endef
 define Build/Prepare/V_0_9_28
 	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
 		$(PKG_BUILD_DIR)/.config
-ifeq ($(CONFIG_SOFT_FLOAT),y)
+ ifeq ($(CONFIG_SOFT_FLOAT),y)
 	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(PKG_BUILD_DIR)/.config
-endif
-ifeq ($(CONFIG_C99_MATH),y)
+ endif
+ ifeq ($(CONFIG_C99_MATH),y)
 	$(SED) 's,.*DO_C99_MATH.*,DO_C99_MATH=y,g' $(PKG_BUILD_DIR)/.config
-endif
+ endif
 endef
 
 define Build/Prepare
+	$(call Build/SetToolchainInfo)
 	@echo prepare uClibc version $(PKG_VERSION)$(PKG_EXTRAVERSION)  
-ifeq ($(PKG_VERSION_SNAPSHOT),y)
+ ifeq ($(PKG_VERSION_SNAPSHOT),y)
 	$(call Build/Prepare/Snapshot)
-else
+ else
 	$(call Build/Prepare/Default)
-endif
+	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+ endif
 	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD)) $(PKG_BUILD_DIR)/.config
-ifeq ($(PKG_VERSION),0.9.28)
+ ifeq ($(PKG_VERSION),0.9.28)
 	$(call Build/Prepare/V_0_9_28)
-endif
+ endif
 	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(LINUX_HEADERS_DIR)/include\",g' \
 		-e 's,.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
@@ -120,33 +124,11 @@ endif
 		-e 's,^.*CONFIG_ARM_OABI.*,CONFIG_ARM_OABI=$(if $(CONFIG_EABI_SUPPORT),n,y),g' \
 		-e 's,^.*UCLIBC_HAS_SHADOW.*,UCLIBC_HAS_SHADOW=$(if $(CONFIG_SHADOW_PASSWORDS),y,n),g' \
 		$(PKG_BUILD_DIR)/.config
-	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/include
-	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/usr/lib
-	mkdir -p $(BUILD_DIR_HOST)/uClibc_dev/lib
-#	if [ ! -f $(BUILD_DIR_HOST)/uClibc_dev/usr/include/linux/version.h ] ; then \
-#		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/* $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
-#		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/* $(TOOLCHAIN_DIR)/include/ ; \
-#		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/* $(PKG_BUILD_DIR)/include/ ; \
-#	fi;
-	if [ ! -f $(BUILD_DIR_HOST)/uClibc_dev/usr/include/linux/version.h ] ; then \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-$(UCLIBC_TARGET_ARCH) $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/linux $(BUILD_DIR_HOST)/uClibc_dev/usr/include/; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm $(TOOLCHAIN_DIR)/include/ ; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-$(UCLIBC_TARGET_ARCH) $(TOOLCHAIN_DIR)/include/ ; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic $(TOOLCHAIN_DIR)/include/ ; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/linux $(TOOLCHAIN_DIR)/include/ ; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm $(PKG_BUILD_DIR)/include/ ; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-$(UCLIBC_TARGET_ARCH) $(PKG_BUILD_DIR)/include/ ; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic $(PKG_BUILD_DIR)/include/ ; \
-		cp -pLR $(BUILD_DIR_TOOLCHAIN)/linux/include/linux $(PKG_BUILD_DIR)/include/ ; \
-	fi;
 	$(MAKE) -C $(PKG_BUILD_DIR)/extra/config conf KBUILD_HAVE_NLS= HOSTCFLAGS="-DKBUILD_NO_NLS"
 	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
-		PREFIX=$(BUILD_DIR_HOST)/uClibc_dev/ \
+		PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
 		DEVEL_PREFIX=/usr/ \
-		RUNTIME_PREFIX=$(BUILD_DIR_HOST)/uClibc_dev/ \
+		RUNTIME_PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
 		HOSTCC="$(HOSTCC)" \
 		CPU_CFLAGS="$(TARGET_CFLAGS)" \
 		pregen install_dev;
@@ -157,7 +139,7 @@ endef
 
 UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
-	DEVEL_PREFIX=/ \
+	DEVEL_PREFIX=/usr/ \
 	RUNTIME_PREFIX=/ \
 	HOSTCC="$(HOSTCC)" \
 	CPU_CFLAGS="$(TARGET_CFLAGS)"
@@ -165,24 +147,36 @@ UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 define Build/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
 	$(UCLIBC_MAKE) PREFIX= all
-	$(UCLIBC_MAKE) PREFIX=$(STAGING_DIR_HOST)/ install_runtime install_dev
-	$(SED) 's,UCLIBC_VERSION=.*,UCLIBC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
-	$(SED) 's,UCLIBC_PATCHVER=.*,UCLIBC_PATCHVER=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
-	rm -rf $(TOOLCHAIN_DIR)/lib/libc.so
-	ln -s libc.so.0 $(TOOLCHAIN_DIR)/lib/libc.so
+	$(UCLIBC_MAKE) PREFIX="$(TOOLCHAIN_DIR)/" install_runtime install_dev
+	ln -sf ../../lib/libc.so.0 $(TOOLCHAIN_DIR)/usr/lib/libc.so
+#	( cd $(TOOLCHAIN_DIR) ; \
+#		for d in lib usr/lib ; do \
+#		  for f in libc.so libpthread.so libgcc_s.so ; do \
+#		    if [ -f $$$$d/$$$$f -a ! -L $$$$d/$$$$f ] ; then \
+#		      $(SED) 's,/usr/lib/,,g;s,/lib/,,g' $$$$d/$$$$f ; \
+#		    fi \
+#		  done \
+#		done \
+#	)
 endef
 
 define Build/Install
 	$(UCLIBC_MAKE) PREFIX= utils
-	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/target-utils
+	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/usr/bin
 	$(INSTALL_BIN) \
 		$(PKG_BUILD_DIR)/utils/ldd \
+		$(TOOLCHAIN_DIR)/usr/bin/
+	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/sbin
+	$(INSTALL_BIN) \
 		$(PKG_BUILD_DIR)/utils/ldconfig \
-		$(TOOLCHAIN_DIR)/target-utils/
+		$(TOOLCHAIN_DIR)/sbin/
 endef
 
 define Build/Clean
-	rm -rf $(PKG_BUILD_DIR) $(BUILD_DIR_HOST)/uClibc_dev
+	rm -rf \
+		$(PKG_BUILD_DIR) \
+		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME) \
+		$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev
 endef
 
 $(eval $(call HostBuild))

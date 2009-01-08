@@ -1,26 +1,49 @@
 # 
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 # Main makefile for the toolchain
 #
+# Steps:
+# 1) toolchain/binutils/install
+#    build & install binutils
+# 2) toolchain/gcc/prepare
+#    build & install a minimal gcc, needed for steps 3 & 4
+# 3) toolchain/kernel-headers/install
+#    install kernel headers, needed for step 4
+# 4) toolchain/libc/prepare
+#    build & install libc headers & support files, needed for step 5
+# 5) toolchain/gcc/compile
+#    build & install an initial gcc, needed for step 6
+# 6) toolchain/libc/compile
+#    build & install the final libc
+# 7) toolchain/gcc/install
+#    build & install the final gcc
+# 8) toolchain/libc/install
+#    build & install libc utilities
+#
+
 curdir:=toolchain
 
 # subdirectories to descend into
-$(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc uClibc)
-$(curdir)/builddirs-compile:=. $(filter-out kernel-headers,$($(curdir)/builddirs))
+$(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc $(LIBC) $(if $(CONFIG_GLIBC_PORTS),glibc-ports))
+$(curdir)/builddirs-compile:=$($(curdir)/builddirs-prepare)
 $(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
 # builddir dependencies
-$(curdir)/uClibc/prepare:=$(curdir)/kernel-headers/prepare
+$(curdir)/$(LIBC)/prepare:=$(curdir)/kernel-headers/install
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
-  $(curdir)/binutils/prepare:=$(curdir)/uClibc/prepare
   $(curdir)/gcc/prepare:=$(curdir)/binutils/install
-  $(curdir)/uClibc/compile:=$(curdir)/gcc/compile
-  $(curdir)/gcc/install:=$(curdir)/uClibc/compile
-  $(curdir)/uClibc/install:=$(curdir)/gcc/install
+  $(curdir)/kernel-headers/install:=$(curdir)/gcc/prepare
+  $(curdir)/gcc/compile:=$(curdir)/$(LIBC)/prepare
+  $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/compile
+  $(curdir)/gcc/install:=$(curdir)/$(LIBC)/compile
+  $(curdir)/$(LIBC)/install:=$(curdir)/gcc/install
+  ifneq ($(CONFIG_GLIBC_PORTS),)
+    $(curdir)/glibc/prepare:=$(curdir)/glibc-ports/prepare
+  endif
 endif
 
 ifneq ($(ARCH),)
@@ -29,7 +52,7 @@ ifneq ($(ARCH),)
 		set -x; \
 		mkdir -p "$$dir"; \
 		cd "$$dir"; \
-		mkdir -p bin lib include stamp; \
+		mkdir -p stamp lib usr/include usr/lib ; \
 	); done
 	@grep GCC_VERSION $@ >/dev/null 2>&1 || $(INSTALL_DATA) $(TOPDIR)/toolchain/info.mk $@
 	@touch $@

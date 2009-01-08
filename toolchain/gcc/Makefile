@@ -1,8 +1,8 @@
-# Makefile for to build a gcc/uClibc toolchain
 #
 # Copyright (C) 2002-2003 Erik Andersen <andersen@uclibc.org>
 # Copyright (C) 2004 Manuel Novoa III <mjn3@uclibc.org>
 # Copyright (C) 2005-2006 Felix Fietkau <nbd@openwrt.org>
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,111 +40,163 @@ PATCH_DIR=./patches/$(PKG_VERSION)
 
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
+
 override CONFIG_AUTOREBUILD=
 
 include $(INCLUDE_DIR)/host-build.mk
 
 STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed
-BUILD_DIR1:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-initial
-BUILD_DIR2:=$(BUILD_DIR_HOST)/gcc-$(PKG_VERSION)-final
+
+PKG_BUILD_DIR0:=$(PKG_BUILD_DIR)-minimal
+PKG_BUILD_DIR1:=$(PKG_BUILD_DIR)-initial
+PKG_BUILD_DIR2:=$(PKG_BUILD_DIR)-final
 
 SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
-ifeq ($(CONFIG_SSP_SUPPORT),y)
-  SSP:=--enable-libssp
+GCC_CONFIGURE_COMMON:= \
+	SHELL="$(BASH)" \
+	$(PKG_BUILD_DIR)/configure \
+		--prefix=$(TOOLCHAIN_DIR)/usr \
+		--build=$(GNU_HOST_NAME) \
+		--host=$(GNU_HOST_NAME) \
+		--target=$(REAL_GNU_TARGET_NAME) \
+		--with-gnu-ld \
+		--enable-target-optspace \
+		--disable-libmudflap \
+		--disable-multilib \
+		--disable-nls \
+		$(SOFT_FLOAT_CONFIG_OPTION) \
+		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
+
+ifneq ($(CONFIG_SSP_SUPPORT),)
+	GCC_CONFIGURE_COMMON+= \
+		--enable-libssp
 else
-  SSP:=--disable-libssp
+	GCC_CONFIGURE_COMMON+= \
+		--disable-libssp
 endif
 
-EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-biarch --enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-uclibc)
+ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
+	GCC_CONFIGURE_COMMON+= \
+		--enable-biarch \
+		--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX)
+endif
 
-define Stage1/Configure
-	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
-	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
-	mkdir -p $(BUILD_DIR1)
-	(cd $(BUILD_DIR1); rm -f config.cache; \
-		SHELL="$(BASH)" \
-		$(PKG_BUILD_DIR)/configure \
-		--prefix=$(TOOLCHAIN_DIR) \
-		--build=$(GNU_HOST_NAME) \
-		--host=$(GNU_HOST_NAME) \
-		--target=$(REAL_GNU_TARGET_NAME) \
+ifeq ($(LIBC),uClibc)
+	GCC_CONFIGURE_COMMON+= \
+		--disable-__cxa_atexit
+else
+	GCC_CONFIGURE_COMMON+= \
+		--enable-__cxa_atexit
+endif
+
+GCC_CONFIGURE_STAGE0:= \
+	$(GCC_CONFIGURE_COMMON) \
+		--with-newlib \
+		--without-headers \
+		--enable-languages=c \
+		--disable-libgomp \
+		--disable-libssp \
+		--disable-shared \
+		--disable-threads \
+
+GCC_CONFIGURE_STAGE1:= \
+	$(GCC_CONFIGURE_COMMON) \
+		--with-newlib \
+		--with-sysroot=$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev \
 		--enable-languages=c \
 		--disable-shared \
-		--with-sysroot=$(BUILD_DIR_HOST)/uClibc_dev/ \
-		--disable-__cxa_atexit \
-		--enable-target-optspace \
-		--with-gnu-ld \
-		--disable-nls \
-		--disable-libmudflap \
-		--disable-multilib \
-		$(SSP) \
-		$(EXTRA_TARGET) \
-		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
-	);
-endef
-define Stage1/Compile
-	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR1) all-gcc
-endef
-define Stage1/Install
-	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR1) install-gcc
-endef
+		--disable-threads \
 
-define Stage2/Configure
-	mkdir -p $(BUILD_DIR2) $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)
-	# Important!  Required for limits.h to be fixed.
-	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
-	ln -sf ../include $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
-	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
-	ln -sf ../lib $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
-	(cd $(BUILD_DIR2); rm -f config.cache; \
-		SHELL="$(BASH)" \
-		$(PKG_BUILD_DIR)/configure \
-		--prefix=$(TOOLCHAIN_DIR) \
-		--build=$(GNU_HOST_NAME) \
-		--host=$(GNU_HOST_NAME) \
-		--target=$(REAL_GNU_TARGET_NAME) \
+GCC_CONFIGURE_STAGE2:= \
+	$(GCC_CONFIGURE_COMMON) \
 		--enable-languages=$(TARGET_LANGUAGES) \
 		--enable-shared \
-		--disable-__cxa_atexit \
-		--enable-target-optspace \
-		--with-gnu-ld \
-		--disable-nls \
-		--disable-libmudflap \
-		--disable-multilib \
-		$(SSP) \
-		$(EXTRA_TARGET) \
-		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
+		--enable-threads \
+		--with-slibdir=$(TOOLCHAIN_DIR)/lib \
+
+GCC_MAKE:= \
+	export SHELL="$(BASH)"; \
+	$(MAKE) \
+
+
+define Build/SetToolchainInfo
+	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
+endef
+
+
+define Stage0/Configure
+	mkdir -p $(PKG_BUILD_DIR0)
+	(cd $(PKG_BUILD_DIR0); rm -f config.cache; \
+		$(GCC_CONFIGURE_STAGE0) \
+	);
+endef
+
+define Stage0/Compile
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR0) all-gcc
+endef
+
+define Stage0/Install
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR0) install-gcc
+endef
+
+
+define Stage1/Configure
+	mkdir -p $(PKG_BUILD_DIR1)
+	(cd $(PKG_BUILD_DIR1); rm -f config.cache; \
+		$(GCC_CONFIGURE_STAGE1) \
+	);
+endef
+
+define Stage1/Compile
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) all-build-libiberty all-gcc
+endef
+
+define Stage1/Install
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) install-gcc
+	# XXX: glibc insists on linking against libgcc_eh
+	( cd $(TOOLCHAIN_DIR)/usr/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
+		[ -e libgcc_eh.a ] || ln -sf libgcc.a libgcc_eh.a ; \
+	)
+endef
+
+
+define Stage2/Configure
+	mkdir -p $(PKG_BUILD_DIR2) $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)
+	# Important!  Required for limits.h to be fixed.
+	rm -rf $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/sys-include
+	ln -sf ../include $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/sys-include
+	rm -rf $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
+	ln -sf ../lib $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
+	(cd $(PKG_BUILD_DIR2); rm -f config.cache; \
+		$(GCC_CONFIGURE_STAGE2) \
 	);
 endef
 
 define Stage2/Compile
-	export SHELL="\$(BASH)"; \$(MAKE) -C \$(BUILD_DIR2) all
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR2) all
 endef
 
 define SetupExtraArch
-	for app in $(TOOLCHAIN_DIR)/bin/$(OPTIMIZE_FOR_CPU)*-{gcc,gcc-*,g++}; do \
+	for app in $(TOOLCHAIN_DIR)/usr/bin/$(OPTIMIZE_FOR_CPU)*-{gcc,gcc-*,g++}; do \
 		[ -e $$$$app ] || continue; \
 		old_base=$$$$(basename $$$$app); \
 		new_base=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-$$$${old_base##$(OPTIMIZE_FOR_CPU)-}; \
 		sed -e "s/@CC_BASE@/$$$$old_base/" \
 			-e 's/@EXTRA_ARCH_OPTS@/$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_OPTS))/' \
 			 ./files/alternate-arch-cc.in > \
-			 $(TOOLCHAIN_DIR)/bin/$$$$new_base; \
-		chmod a+x $(TOOLCHAIN_DIR)/bin/$$$$new_base; \
+			 $(TOOLCHAIN_DIR)/usr/bin/$$$$new_base; \
+		chmod a+x $(TOOLCHAIN_DIR)/usr/bin/$$$$new_base; \
 	done
 endef
 
 define Stage2/Install
-	$(MAKE) -C $(BUILD_DIR2) \
-		SHELL="$(BASH)" \
-		install
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR2) install
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
-	(cd $(TOOLCHAIN_DIR); \
+	(cd $(TOOLCHAIN_DIR)/usr; \
 		ln -sf $(REAL_GNU_TARGET_NAME) $(GNU_TARGET_NAME); \
 		cd bin; \
 		for app in $(REAL_GNU_TARGET_NAME)-* ; do \
@@ -155,21 +207,28 @@ define Stage2/Install
 	$(if $(CONFIG_EXTRA_TARGET_ARCH),$(call SetupExtraArch))
 endef
 
+
 define Build/Prepare
+	$(call Build/SetToolchainInfo)
 	$(call Build/Prepare/Default)
+	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/
 	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(PKG_BUILD_DIR)/gcc/version.c
 	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(PKG_BUILD_DIR)/gcc/version.c
 	(cd $(PKG_BUILD_DIR)/libstdc++-v3; autoconf;);
 	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(PKG_BUILD_DIR)/libstdc++-v3/configure
+	$(call Stage0/Configure)
+	$(call Stage0/Compile)
+	$(call Stage0/Install)
 endef
 
 define Build/Configure
-	$(call Stage1/Configure)
 endef
 
 define Build/Compile
+	$(call Stage1/Configure)
 	$(call Stage1/Compile)
-	$(if $(wildcard $(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-gcc),,$(call Stage1/Install))
+	$(call Stage1/Install)
 endef
 
 define Build/Install
@@ -181,11 +240,13 @@ endef
 define Build/Clean
 	rm -rf \
 		$(PKG_BUILD_DIR) \
-		$(BUILD_DIR1) \
-		$(BUILD_DIR2) \
-		$(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME) \
-		$(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gc* \
-		$(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-c*
+		$(PKG_BUILD_DIR0) \
+		$(PKG_BUILD_DIR1) \
+		$(PKG_BUILD_DIR2) \
+		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME) \
+		$(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME) \
+		$(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-gc* \
+		$(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-c*
 endef
 
 $(eval $(call HostBuild))
