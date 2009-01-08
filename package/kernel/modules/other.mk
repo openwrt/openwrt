@@ -725,7 +725,7 @@ $(eval $(call KernelPackage,spi-dev))
 define KernelPackage/cs5535-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver
-  DEPENDS:=@LINUX_2_6 @TARGET_x86
+  DEPENDS:=@TARGET_x86||@TARGET_olpc
   KCONFIG:=CONFIG_CS5535_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/cs5535_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,cs5535_gpio)
