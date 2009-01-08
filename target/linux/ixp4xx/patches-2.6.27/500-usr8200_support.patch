@@ -116,7 +116,7 @@
 +subsys_initcall(usr8200_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/usr8200-setup.c
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,211 @@
 +/*
 + * arch/arm/mach-ixp4xx/usr8200-setup.c
 + *
@@ -215,29 +215,35 @@
 +	.resource	= usr8200_uart_resources,
 +};
 +
-+/*
-+static struct i2c_gpio_platform_data usr8200_i2c_gpio_data = {
-+	.sda_pin	= 9,
-+	.scl_pin	= 10,
-+};
-+
-+static struct platform_device usr8200_i2c_gpio = {
-+	.name		= "i2c-gpio",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &usr8200_i2c_gpio_data,
-+	},
-+};
-+
 +static struct gpio_led usr8200_led_pin[] = {
 +	{
-+		.name		= "usr8200:green:status",
-+		.gpio		= 7,
++		.name		= "usr8200:usb1",
++		.gpio		= 0,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:usb2",
++		.gpio		= 1,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:ieee1394",
++		.gpio		= 2,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:internal",
++		.gpio		= 3,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:power",
++		.gpio		= 14,
 +	}
 +};
 +
 +static struct gpio_led_platform_data usr8200_led_data = {
-+	.num_leds		= 1,
++	.num_leds		= ARRAY_SIZE(usr8200_led_pin),
 +	.leds			= usr8200_led_pin,
 +};
 +
@@ -246,14 +252,14 @@
 +	.id			= -1,
 +	.dev.platform_data	= &usr8200_led_data,
 +};
-+*/
 +
 +static struct eth_plat_info usr8200_plat_eth[] = {
-+	{
-+		.phy		= 16,
++	{ /* NPEC - LAN with Marvell 88E6060 switch */
++		.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
++		.phy_mask	= 0x0F0000,
 +		.rxq		= 4,
 +		.txreadyq	= 21,
-+	}, {
++	}, { /* NPEB - WAN */
 +		.phy		= 9,
 +		.rxq		= 3,
 +		.txreadyq	= 20,
@@ -272,13 +278,23 @@
 +	}
 +};
 +
++static struct resource usr8200_rtc_resources = {
++	.flags		= IORESOURCE_MEM
++};
++
++static struct platform_device usr8200_rtc = {
++	.name		= "rtc7301",
++	.id		= 0,
++	.resource	= &usr8200_rtc_resources,
++};
++
 +static struct platform_device *usr8200_devices[] __initdata = {
 +	&usr8200_flash,
 +	&usr8200_uart,
-+/*	&usr8200_led,
-+	&usr8200_i2c_gpio, */
++	&usr8200_led,
 +	&usr8200_eth[0],
 +	&usr8200_eth[1],
++	&usr8200_rtc,
 +};
 +
 +static void __init usr8200_init(void)
@@ -286,10 +302,18 @@
 +	ixp4xx_sys_init();
 +
 +	usr8200_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-+	usr8200_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_64M - 1;
++	usr8200_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_16M - 1;
++
++	usr8200_rtc_resources.start = IXP4XX_EXP_BUS_BASE(2);
++	usr8200_rtc_resources.end = IXP4XX_EXP_BUS_BASE(2) + 0x01ff;
 +
 +	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
-+	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
++	*IXP4XX_EXP_CS2 = IXP4XX_EXP_BUS_SIZE(0) | IXP4XX_EXP_BUS_WR_EN |
++	                  IXP4XX_EXP_BUS_CS_EN | IXP4XX_EXP_BUS_BYTE_EN;
++	*IXP4XX_GPIO_GPCLKR = 0x01100000;
++
++	/* configure button as input */
++	gpio_line_config(12, IXP4XX_GPIO_IN);
 +
 +	platform_add_devices(usr8200_devices, ARRAY_SIZE(usr8200_devices));
 +}
