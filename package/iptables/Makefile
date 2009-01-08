@@ -256,7 +256,10 @@ endif
 
 TARGET_CPPFLAGS := -I$(PKG_BUILD_DIR)/include $(TARGET_CPPFLAGS)
 TARGET_CFLAGS += $(FPIC)
-CONFIGURE_ARGS += --enable-devel --with-xtlibdir=/usr/lib/iptables 
+CONFIGURE_ARGS += \
+	--enable-devel \
+	--with-kernel="$(LINUX_DIR)" \
+	--with-xtlibdir=/usr/lib/iptables 
 
 define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)
