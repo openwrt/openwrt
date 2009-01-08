@@ -80,6 +80,27 @@ endef
 
 $(eval $(call KernelPackage,capi))
 
+define KernelPackage/misdn
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=mISDN (ISDN) Support
+  KCONFIG:= \
+  	CONFIG_ISDN=y \
+  	CONFIG_MISDN \
+	CONFIG_MISDN_DSP \
+	CONFIG_MISDN_L1OIP
+  FILES:= \
+  	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_dsp.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/mISDN/l1oip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,mISDN_core mISDN_dsp l1oip)
+endef
+
+define KernelPackage/misdn/description
+  Modular ISDN driver support
+endef
+
+$(eval $(call KernelPackage,misdn))
+
 
 define KernelPackage/ipip
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
