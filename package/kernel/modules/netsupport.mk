@@ -71,7 +71,7 @@ define KernelPackage/capi
 	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
+  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi capifs)
 endef
 
 define KernelPackage/capi/description
