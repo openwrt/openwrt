@@ -1,7 +1,7 @@
-From 2084ddcc2e2e85d10b210202d8368126b0beaddd Mon Sep 17 00:00:00 2001
+From d1550cd72b9bddd43a355229aaa330b54c28d92e Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:13:04 +0100
-Subject: [PATCH 10/11] ath9k: fix ar5416Addac_9100 values
+Subject: [PATCH v2 09/11] ath9k: fix ar5416Addac_9100 values
 
 Writing the register at offset 0x98c4 causes a deadlock on the AR913x
 SoCs. Although i don't have detailed knowledge about these registers,

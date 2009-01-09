@@ -1,7 +1,7 @@
-From 9b3c1b50a35455e28c5b2fede615a304df42e758 Mon Sep 17 00:00:00 2001
+From ace011bdb2676f594824c81a5a5b5089dc0c3e0b Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:03:17 +0100
-Subject: [PATCH 06/11] ath9k: introduce platform driver for AHB bus support
+Subject: [PATCH v2 06/11] ath9k: introduce platform driver for AHB bus support
 
 This patch adds the platform_driver itself, and modifies the main driver
 to register it.
@@ -10,10 +10,10 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 ---
  drivers/net/wireless/ath9k/Makefile |    1 +
- drivers/net/wireless/ath9k/ahb.c    |  179 +++++++++++++++++++++++++++++++++++
- drivers/net/wireless/ath9k/core.h   |    9 ++
+ drivers/net/wireless/ath9k/ahb.c    |  160 +++++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath9k/core.h   |    8 ++
  drivers/net/wireless/ath9k/main.c   |   10 ++
- 4 files changed, 199 insertions(+), 0 deletions(-)
+ 4 files changed, 179 insertions(+), 0 deletions(-)
 
 --- a/drivers/net/wireless/ath9k/Makefile
 +++ b/drivers/net/wireless/ath9k/Makefile
@@ -27,7 +27,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  obj-$(CONFIG_ATH9K) += ath9k.o
 --- /dev/null
 +++ b/drivers/net/wireless/ath9k/ahb.c
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,160 @@
 +/*
 + * Copyright (c) 2008 Atheros Communications Inc.
 + * Copyright (c) 2009 Gabor Juhos <juhosg@openwrt.org>
@@ -60,13 +60,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +
 +static void ath_ahb_cleanup(struct ath_softc *sc)
 +{
-+	struct ieee80211_hw *hw = sc->hw;
-+
-+	free_irq(sc->irq, sc);
-+
-+	ath_detach(sc);
 +	iounmap(sc->mem);
-+	ieee80211_free_hw(hw);
 +}
 +
 +static struct ath_bus_ops ath_ahb_bus_ops  = {
@@ -113,16 +107,6 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +		ret = -ENOMEM;
 +		goto err_iounmap;
 +	}
-+
-+	hw->flags = IEEE80211_HW_RX_INCLUDES_FCS |
-+		IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING |
-+		IEEE80211_HW_SIGNAL_DBM |
-+		IEEE80211_HW_NOISE_DBM;
-+
-+	hw->wiphy->interface_modes =
-+		BIT(NL80211_IFTYPE_AP) |
-+		BIT(NL80211_IFTYPE_STATION) |
-+		BIT(NL80211_IFTYPE_ADHOC);
 +
 +	SET_IEEE80211_DEV(hw, &pdev->dev);
 +	platform_set_drvdata(pdev, hw);
@@ -179,10 +163,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	if (hw) {
 +		struct ath_softc *sc = hw->priv;
 +
-+		free_irq(sc->irq, sc);
-+		ath_detach(sc);
-+		iounmap(sc->mem);
-+		ieee80211_free_hw(hw);
++		ath_cleanup(sc);
 +		platform_set_drvdata(pdev, NULL);
 +	}
 +
@@ -205,19 +186,11 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +
 +void ath_ahb_exit(void)
 +{
-+	platform_driver_register(&ath_ahb_driver);
++	platform_driver_unregister(&ath_ahb_driver);
 +}
 --- a/drivers/net/wireless/ath9k/core.h
 +++ b/drivers/net/wireless/ath9k/core.h
-@@ -705,6 +705,7 @@ struct ath_softc {
- 	struct tasklet_struct bcon_tasklet;
- 	struct ath_hal *sc_ah;
- 	void __iomem *mem;
-+	int irq;
- 	spinlock_t sc_resetlock;
- 	struct mutex mutex;
- 
-@@ -782,4 +783,12 @@ static inline int ath_pci_init(void) { r
+@@ -784,4 +784,12 @@ static inline int ath_pci_init(void) { r
  static inline void ath_pci_exit(void) {};
  #endif
  
@@ -232,7 +205,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  #endif /* CORE_H */
 --- a/drivers/net/wireless/ath9k/main.c
 +++ b/drivers/net/wireless/ath9k/main.c
-@@ -2514,8 +2514,17 @@ static int __init ath9k_init(void)
+@@ -2522,8 +2522,17 @@ static int __init ath9k_init(void)
  		goto err_rate_unregister;
  	}
  
@@ -250,7 +223,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
   err_rate_unregister:
  	ath_rate_control_unregister();
   err_out:
-@@ -2525,6 +2534,7 @@ module_init(ath9k_init);
+@@ -2533,6 +2542,7 @@ module_init(ath9k_init);
  
  static void __exit ath9k_exit(void)
  {

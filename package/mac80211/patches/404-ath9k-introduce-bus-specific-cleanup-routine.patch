@@ -1,7 +1,7 @@
-From 4167fb37cceda6a5ebfbfc4431abc69a1857ce43 Mon Sep 17 00:00:00 2001
+From 7524b77fe24a4464b08a2ac987ec22711a4f2027 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 10:59:29 +0100
-Subject: [PATCH 04/11] ath9k: introduce bus specific cleanup routine
+Subject: [PATCH v2 04/11] ath9k: introduce bus specific cleanup routine
 
 We have left only some PCI specific cleanup code. We have to convert
 them as well.
@@ -9,9 +9,9 @@ them as well.
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 ---
- drivers/net/wireless/ath9k/core.h |    6 ++++++
- drivers/net/wireless/ath9k/main.c |   30 ++++++++++++++++--------------
- 2 files changed, 22 insertions(+), 14 deletions(-)
+ drivers/net/wireless/ath9k/core.h |    7 +++++++
+ drivers/net/wireless/ath9k/main.c |   37 +++++++++++++++++++++++--------------
+ 2 files changed, 30 insertions(+), 14 deletions(-)
 
 --- a/drivers/net/wireless/ath9k/core.h
 +++ b/drivers/net/wireless/ath9k/core.h
@@ -23,7 +23,15 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  };
  
  struct ath_softc {
-@@ -760,4 +761,9 @@ static inline void ath_read_cachesize(st
+@@ -704,6 +705,7 @@ struct ath_softc {
+ 	struct tasklet_struct bcon_tasklet;
+ 	struct ath_hal *sc_ah;
+ 	void __iomem *mem;
++	int irq;
+ 	spinlock_t sc_resetlock;
+ 	struct mutex mutex;
+ 
+@@ -760,4 +762,9 @@ static inline void ath_read_cachesize(st
  	sc->bus_ops->read_cachesize(sc, csz);
  }
  
@@ -35,7 +43,15 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  #endif /* CORE_H */
 --- a/drivers/net/wireless/ath9k/main.c
 +++ b/drivers/net/wireless/ath9k/main.c
-@@ -1267,13 +1267,7 @@ static int ath_start_rfkill_poll(struct 
+@@ -39,6 +39,7 @@ static struct pci_device_id ath_pci_id_t
+ };
+ 
+ static void ath_detach(struct ath_softc *sc);
++static void ath_cleanup(struct ath_softc *sc);
+ 
+ /* return bus cachesize in 4B word units */
+ 
+@@ -1267,13 +1268,7 @@ static int ath_start_rfkill_poll(struct 
  			rfkill_free(sc->rf_kill.rfkill);
  
  			/* Deinitialize the device */
@@ -46,11 +62,26 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -			pci_release_region(to_pci_dev(sc->dev), 0);
 -			pci_disable_device(to_pci_dev(sc->dev));
 -			ieee80211_free_hw(sc->hw);
-+			ath_bus_cleanup(sc);
++			ath_cleanup(sc);
  			return -EIO;
  		} else {
  			sc->sc_flags |= SC_OP_RFKILL_REGISTERED;
-@@ -2529,8 +2523,22 @@ ath_rf_name(u16 rf_version)
+@@ -1284,6 +1279,14 @@ static int ath_start_rfkill_poll(struct 
+ }
+ #endif /* CONFIG_RFKILL */
+ 
++static void ath_cleanup(struct ath_softc *sc)
++{
++	ath_detach(sc);
++	free_irq(sc->irq, sc);
++	ath_bus_cleanup(sc);
++	ieee80211_free_hw(sc->hw);
++}
++
+ static void ath_detach(struct ath_softc *sc)
+ {
+ 	struct ieee80211_hw *hw = sc->hw;
+@@ -2529,8 +2532,18 @@ ath_rf_name(u16 rf_version)
  	return "????";
  }
  
@@ -58,13 +89,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +{
 +	struct pci_dev *pdev = to_pci_dev(sc->dev);
 +
-+	ath_detach(sc);
-+	if (pdev->irq)
-+		free_irq(pdev->irq, sc);
 +	pci_iounmap(pdev, sc->mem);
 +	pci_release_region(pdev, 0);
 +	pci_disable_device(pdev);
-+	ieee80211_free_hw(sc->hw);
 +}
 +
  static struct ath_bus_ops ath_pci_bus_ops = {
@@ -73,7 +100,16 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  };
  
  static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
-@@ -2667,13 +2675,7 @@ static void ath_pci_remove(struct pci_de
+@@ -2637,6 +2650,8 @@ static int ath_pci_probe(struct pci_dev 
+ 		goto bad4;
+ 	}
+ 
++	sc->irq = pdev->irq;
++
+ 	ah = sc->sc_ah;
+ 	printk(KERN_INFO
+ 	       "%s: Atheros AR%s MAC/BB Rev:%x "
+@@ -2667,13 +2682,7 @@ static void ath_pci_remove(struct pci_de
  	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
  	struct ath_softc *sc = hw->priv;
  
@@ -84,7 +120,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -	pci_release_region(pdev, 0);
 -	pci_disable_device(pdev);
 -	ieee80211_free_hw(hw);
-+	ath_pci_cleanup(sc);
++	ath_cleanup(sc);
  }
  
  #ifdef CONFIG_PM
