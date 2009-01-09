@@ -1,7 +1,7 @@
-From d95e670cd1395ffd8410bed809b6d060f2183d6b Mon Sep 17 00:00:00 2001
+From 39c2811d18b39991f49c16dcd9ed1a81200371ad Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:01:09 +0100
-Subject: [PATCH 05/11] ath9k: move PCI code into separate file
+Subject: [PATCH v2 05/11] ath9k: move PCI code into separate file
 
 Now that we have converted all bus specific routines to replaceable, we
 can move the PCI specific codes into a separate file.
@@ -10,9 +10,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 ---
  drivers/net/wireless/ath9k/Makefile |    1 +
- drivers/net/wireless/ath9k/core.h   |   18 ++-
- drivers/net/wireless/ath9k/main.c   |  299 +++--------------------------------
- drivers/net/wireless/ath9k/pci.c    |  289 +++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath9k/core.h   |   19 ++-
+ drivers/net/wireless/ath9k/main.c   |  300 +++--------------------------------
+ drivers/net/wireless/ath9k/pci.c    |  287 +++++++++++++++++++++++++++++++++
  4 files changed, 328 insertions(+), 279 deletions(-)
 
 --- a/drivers/net/wireless/ath9k/Makefile
@@ -36,13 +36,14 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  #include <net/mac80211.h>
  #include <linux/leds.h>
  #include <linux/rfkill.h>
-@@ -766,4 +766,20 @@ static inline void ath_bus_cleanup(struc
+@@ -767,4 +767,21 @@ static inline void ath_bus_cleanup(struc
  	sc->bus_ops->cleanup(sc);
  }
  
 +extern struct ieee80211_ops ath9k_ops;
 +
 +irqreturn_t ath_isr(int irq, void *dev);
++void ath_cleanup(struct ath_softc *sc);
 +int ath_attach(u16 devid, struct ath_softc *sc);
 +void ath_detach(struct ath_softc *sc);
 +const char *ath_mac_bb_name(u32 mac_bb_version);
@@ -59,7 +60,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  #endif /* CORE_H */
 --- a/drivers/net/wireless/ath9k/main.c
 +++ b/drivers/net/wireless/ath9k/main.c
-@@ -28,38 +28,6 @@ MODULE_DESCRIPTION("Support for Atheros 
+@@ -28,39 +28,6 @@ MODULE_DESCRIPTION("Support for Atheros 
  MODULE_SUPPORTED_DEVICE("Atheros 802.11n WLAN cards");
  MODULE_LICENSE("Dual BSD/GPL");
  
@@ -74,6 +75,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -};
 -
 -static void ath_detach(struct ath_softc *sc);
+-static void ath_cleanup(struct ath_softc *sc);
 -
 -/* return bus cachesize in 4B word units */
 -
@@ -98,7 +100,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  static void ath_cache_conf_rate(struct ath_softc *sc,
  				struct ieee80211_conf *conf)
  {
-@@ -497,7 +465,7 @@ static void ath9k_tasklet(unsigned long 
+@@ -498,7 +465,7 @@ static void ath9k_tasklet(unsigned long 
  	ath9k_hw_set_interrupts(sc->sc_ah, sc->sc_imask);
  }
  
@@ -107,16 +109,25 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	struct ath_softc *sc = dev;
  	struct ath_hal *ah = sc->sc_ah;
-@@ -1278,7 +1246,7 @@ static int ath_start_rfkill_poll(struct 
+@@ -1279,7 +1246,7 @@ static int ath_start_rfkill_poll(struct 
  }
  #endif /* CONFIG_RFKILL */
+ 
+-static void ath_cleanup(struct ath_softc *sc)
++void ath_cleanup(struct ath_softc *sc)
+ {
+ 	ath_detach(sc);
+ 	free_irq(sc->irq, sc);
+@@ -1287,7 +1254,7 @@ static void ath_cleanup(struct ath_softc
+ 	ieee80211_free_hw(sc->hw);
+ }
  
 -static void ath_detach(struct ath_softc *sc)
 +void ath_detach(struct ath_softc *sc)
  {
  	struct ieee80211_hw *hw = sc->hw;
  	int i = 0;
-@@ -1529,7 +1497,7 @@ bad:
+@@ -1538,7 +1505,7 @@ bad:
  	return error;
  }
  
@@ -125,7 +136,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	struct ieee80211_hw *hw = sc->hw;
  	int error = 0;
-@@ -2448,7 +2416,7 @@ static int ath9k_ampdu_action(struct iee
+@@ -2457,7 +2424,7 @@ static int ath9k_ampdu_action(struct iee
  	return ret;
  }
  
@@ -134,7 +145,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	.tx 		    = ath9k_tx,
  	.start 		    = ath9k_start,
  	.stop 		    = ath9k_stop,
-@@ -2492,7 +2460,7 @@ static struct {
+@@ -2501,7 +2468,7 @@ static struct {
  /*
   * Return the MAC/BB name. "????" is returned if the MAC/BB is unknown.
   */
@@ -143,7 +154,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  ath_mac_bb_name(u32 mac_bb_version)
  {
  	int i;
-@@ -2509,7 +2477,7 @@ ath_mac_bb_name(u32 mac_bb_version)
+@@ -2518,7 +2485,7 @@ ath_mac_bb_name(u32 mac_bb_version)
  /*
   * Return the RF name. "????" is returned if the RF is unknown.
   */
@@ -152,7 +163,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  ath_rf_name(u16 rf_version)
  {
  	int i;
-@@ -2523,236 +2491,7 @@ ath_rf_name(u16 rf_version)
+@@ -2532,234 +2499,7 @@ ath_rf_name(u16 rf_version)
  	return "????";
  }
  
@@ -160,13 +171,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -{
 -	struct pci_dev *pdev = to_pci_dev(sc->dev);
 -
--	ath_detach(sc);
--	if (pdev->irq)
--		free_irq(pdev->irq, sc);
 -	pci_iounmap(pdev, sc->mem);
 -	pci_release_region(pdev, 0);
 -	pci_disable_device(pdev);
--	ieee80211_free_hw(sc->hw);
 -}
 -
 -static struct ath_bus_ops ath_pci_bus_ops = {
@@ -278,6 +285,8 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -		goto bad4;
 -	}
 -
+-	sc->irq = pdev->irq;
+-
 -	ah = sc->sc_ah;
 -	printk(KERN_INFO
 -	       "%s: Atheros AR%s MAC/BB Rev:%x "
@@ -308,7 +317,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
 -	struct ath_softc *sc = hw->priv;
 -
--	ath_pci_cleanup(sc);
+-	ath_cleanup(sc);
 -}
 -
 -#ifdef CONFIG_PM
@@ -390,7 +399,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	int error;
  
-@@ -2764,26 +2503,30 @@ static int __init init_ath_pci(void)
+@@ -2771,26 +2511,30 @@ static int __init init_ath_pci(void)
  		printk(KERN_ERR
  			"Unable to register rate control algorithm: %d\n",
  			error);
@@ -433,7 +442,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +module_exit(ath9k_exit);
 --- /dev/null
 +++ b/drivers/net/wireless/ath9k/pci.c
-@@ -0,0 +1,289 @@
+@@ -0,0 +1,287 @@
 +/*
 + * Copyright (c) 2008 Atheros Communications Inc.
 + *
@@ -489,13 +498,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +{
 +	struct pci_dev *pdev = to_pci_dev(sc->dev);
 +
-+	ath_detach(sc);
-+	if (pdev->irq)
-+		free_irq(pdev->irq, sc);
 +	pci_iounmap(pdev, sc->mem);
 +	pci_release_region(pdev, 0);
 +	pci_disable_device(pdev);
-+	ieee80211_free_hw(sc->hw);
 +}
 +
 +static struct ath_bus_ops ath_pci_bus_ops = {
@@ -607,6 +612,8 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +		goto bad4;
 +	}
 +
++	sc->irq = pdev->irq;
++
 +	ah = sc->sc_ah;
 +	printk(KERN_INFO
 +	       "%s: Atheros AR%s MAC/BB Rev:%x "
@@ -637,7 +644,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
 +	struct ath_softc *sc = hw->priv;
 +
-+	ath_pci_cleanup(sc);
++	ath_cleanup(sc);
 +}
 +
 +#ifdef CONFIG_PM

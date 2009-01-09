@@ -1,7 +1,7 @@
-From 491719852fb049d0a65dc05550b645b62d799453 Mon Sep 17 00:00:00 2001
+From 891bd8d155bbdabac3c69486fc854984ee90761c Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:11:28 +0100
-Subject: [PATCH 09/11] ath9k: remove (u16) casts from rtc register access
+Subject: [PATCH v2 08/11] ath9k: remove (u16) casts from rtc register access
 
 The RTC register offsets don't fit into 'u16' on the AR913x, so we have
 to remove the existing casts.
@@ -14,7 +14,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 
 --- a/drivers/net/wireless/ath9k/hw.c
 +++ b/drivers/net/wireless/ath9k/hw.c
-@@ -1010,7 +1010,7 @@ static void ath9k_hw_init_pll(struct ath
+@@ -1008,7 +1008,7 @@ static void ath9k_hw_init_pll(struct ath
  				pll |= SM(0xb, AR_RTC_PLL_DIV);
  		}
  	}
@@ -23,7 +23,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  
  	udelay(RTC_PLL_SETTLE_DELAY);
  
-@@ -1550,11 +1550,11 @@ static bool ath9k_hw_set_reset(struct at
+@@ -1547,11 +1547,11 @@ static bool ath9k_hw_set_reset(struct at
  			rst_flags |= AR_RTC_RC_MAC_COLD;
  	}
  
@@ -38,7 +38,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  		DPRINTF(ah->ah_sc, ATH_DBG_RESET,
  			"RTC stuck in MAC reset\n");
  		return false;
-@@ -1576,8 +1576,8 @@ static bool ath9k_hw_set_reset_power_on(
+@@ -1573,8 +1573,8 @@ static bool ath9k_hw_set_reset_power_on(
  	REG_WRITE(ah, AR_RTC_FORCE_WAKE, AR_RTC_FORCE_WAKE_EN |
  		  AR_RTC_FORCE_WAKE_ON_INT);
  
@@ -49,7 +49,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  
  	if (!ath9k_hw_wait(ah,
  			   AR_RTC_STATUS,
-@@ -2602,7 +2602,7 @@ static void ath9k_set_power_sleep(struct
+@@ -2599,7 +2599,7 @@ static void ath9k_set_power_sleep(struct
  		if (!AR_SREV_9100(ah))
  			REG_WRITE(ah, AR_RC, AR_RC_AHB | AR_RC_HOSTIF);
  

@@ -1,7 +1,7 @@
-From d0d8545c85b03c2e7e3c9957a94d0d6fc8168bef Mon Sep 17 00:00:00 2001
+From 317e9ea5007e3ff18b52f973c1b3a3f2c84bcae1 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:05:05 +0100
-Subject: [PATCH 07/11] ath9k: get EEPROM contents from platform data on AHB bus
+Subject: [PATCH v2 07/11] ath9k: get EEPROM contents from platform data on AHB bus
 
 On the AR913x SOCs we have to provide EEPROM contents via platform_data,
 because accessing the flash via MMIO is not safe. Additionally different
@@ -27,8 +27,8 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  #include "core.h"
  #include "reg.h"
  #include "hw.h"
-@@ -39,9 +40,29 @@ static void ath_ahb_cleanup(struct ath_s
- 	ieee80211_free_hw(hw);
+@@ -33,9 +34,29 @@ static void ath_ahb_cleanup(struct ath_s
+ 	iounmap(sc->mem);
  }
  
 +static bool ath_ahb_eeprom_read(struct ath_hal *ah, u32 off, u16 *data)
@@ -57,7 +57,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  };
  
  static int ath_ahb_probe(struct platform_device *pdev)
-@@ -54,6 +75,12 @@ static int ath_ahb_probe(struct platform
+@@ -48,6 +69,12 @@ static int ath_ahb_probe(struct platform
  	int ret = 0;
  	struct ath_hal *ah;
  
@@ -151,8 +151,8 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	else
 --- a/drivers/net/wireless/ath9k/pci.c
 +++ b/drivers/net/wireless/ath9k/pci.c
-@@ -62,9 +62,27 @@ static void ath_pci_cleanup(struct ath_s
- 	ieee80211_free_hw(sc->hw);
+@@ -58,9 +58,27 @@ static void ath_pci_cleanup(struct ath_s
+ 	pci_disable_device(pdev);
  }
  
 +static bool ath_pci_eeprom_read(struct ath_hal *ah, u32 off, u16 *data)
