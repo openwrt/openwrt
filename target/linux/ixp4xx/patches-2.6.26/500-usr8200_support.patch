@@ -17,18 +17,18 @@
  	select PCI
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -24,6 +24,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
- obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
+@@ -25,6 +25,7 @@ obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_TW5334)		+= tw5334-pci.o
+ obj-pci-$(CONFIG_MACH_MI424WR)		+= mi424wr-pci.o
 +obj-pci-$(CONFIG_MACH_USR8200)		+= usr8200-pci.o
  
  obj-y	+= common.o
  
-@@ -46,6 +47,7 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
- obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
+@@ -48,6 +49,7 @@ obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
  obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
+ obj-$(CONFIG_MACH_MI424WR)	+= mi424wr-setup.o
 +obj-$(CONFIG_MACH_USR8200)	+= usr8200-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
@@ -63,17 +63,17 @@
 +#include <linux/irq.h>
 +
 +#include <asm/mach-types.h>
-+#include <asm/hardware.h>
++#include <mach/hardware.h>
 +
 +#include <asm/mach/pci.h>
 +
 +void __init usr8200_pci_preinit(void)
 +{
-+	set_irq_type(IRQ_IXP4XX_GPIO7, IRQT_LOW);
-+	set_irq_type(IRQ_IXP4XX_GPIO8, IRQT_LOW);
-+	set_irq_type(IRQ_IXP4XX_GPIO9, IRQT_LOW);
-+	set_irq_type(IRQ_IXP4XX_GPIO10, IRQT_LOW);
-+	set_irq_type(IRQ_IXP4XX_GPIO11, IRQT_LOW);
++	set_irq_type(IRQ_IXP4XX_GPIO7, IRQ_TYPE_LEVEL_LOW);
++	set_irq_type(IRQ_IXP4XX_GPIO8, IRQ_TYPE_LEVEL_LOW);
++	set_irq_type(IRQ_IXP4XX_GPIO9, IRQ_TYPE_LEVEL_LOW);
++	set_irq_type(IRQ_IXP4XX_GPIO10, IRQ_TYPE_LEVEL_LOW);
++	set_irq_type(IRQ_IXP4XX_GPIO11, IRQ_TYPE_LEVEL_LOW);
 +
 +	ixp4xx_pci_preinit();
 +}
@@ -116,7 +116,7 @@
 +subsys_initcall(usr8200_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/usr8200-setup.c
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,211 @@
 +/*
 + * arch/arm/mach-ixp4xx/usr8200-setup.c
 + *
@@ -145,7 +145,7 @@
 +#include <linux/leds.h>
 +
 +#include <asm/setup.h>
-+#include <asm/hardware.h>
++#include <mach/hardware.h>
 +#include <asm/irq.h>
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
@@ -215,29 +215,35 @@
 +	.resource	= usr8200_uart_resources,
 +};
 +
-+/*
-+static struct i2c_gpio_platform_data usr8200_i2c_gpio_data = {
-+	.sda_pin	= 9,
-+	.scl_pin	= 10,
-+};
-+
-+static struct platform_device usr8200_i2c_gpio = {
-+	.name		= "i2c-gpio",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &usr8200_i2c_gpio_data,
-+	},
-+};
-+
 +static struct gpio_led usr8200_led_pin[] = {
 +	{
-+		.name		= "usr8200:green:status",
-+		.gpio		= 7,
++		.name		= "usr8200:usb1",
++		.gpio		= 0,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:usb2",
++		.gpio		= 1,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:ieee1394",
++		.gpio		= 2,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:internal",
++		.gpio		= 3,
++		.active_low	= 1,
++	},
++	{
++		.name		= "usr8200:power",
++		.gpio		= 14,
 +	}
 +};
 +
 +static struct gpio_led_platform_data usr8200_led_data = {
-+	.num_leds		= 1,
++	.num_leds		= ARRAY_SIZE(usr8200_led_pin),
 +	.leds			= usr8200_led_pin,
 +};
 +
@@ -246,14 +252,14 @@
 +	.id			= -1,
 +	.dev.platform_data	= &usr8200_led_data,
 +};
-+*/
 +
 +static struct eth_plat_info usr8200_plat_eth[] = {
-+	{
-+		.phy		= 16,
++	{ /* NPEC - LAN with Marvell 88E6060 switch */
++		.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
++		.phy_mask	= 0x0F0000,
 +		.rxq		= 4,
 +		.txreadyq	= 21,
-+	}, {
++	}, { /* NPEB - WAN */
 +		.phy		= 9,
 +		.rxq		= 3,
 +		.txreadyq	= 20,
@@ -272,13 +278,23 @@
 +	}
 +};
 +
++static struct resource usr8200_rtc_resources = {
++	.flags		= IORESOURCE_MEM
++};
++
++static struct platform_device usr8200_rtc = {
++	.name		= "rtc7301",
++	.id		= 0,
++	.resource	= &usr8200_rtc_resources,
++};
++
 +static struct platform_device *usr8200_devices[] __initdata = {
 +	&usr8200_flash,
 +	&usr8200_uart,
-+/*	&usr8200_led,
-+	&usr8200_i2c_gpio, */
++	&usr8200_led,
 +	&usr8200_eth[0],
 +	&usr8200_eth[1],
++	&usr8200_rtc,
 +};
 +
 +static void __init usr8200_init(void)
@@ -286,10 +302,18 @@
 +	ixp4xx_sys_init();
 +
 +	usr8200_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-+	usr8200_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_64M - 1;
++	usr8200_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_16M - 1;
++
++	usr8200_rtc_resources.start = IXP4XX_EXP_BUS_BASE(2);
++	usr8200_rtc_resources.end = IXP4XX_EXP_BUS_BASE(2) + 0x01ff;
 +
 +	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
-+	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
++	*IXP4XX_EXP_CS2 = IXP4XX_EXP_BUS_SIZE(0) | IXP4XX_EXP_BUS_WR_EN |
++	                  IXP4XX_EXP_BUS_CS_EN | IXP4XX_EXP_BUS_BYTE_EN;
++	*IXP4XX_GPIO_GPCLKR = 0x01100000;
++
++	/* configure button as input */
++	gpio_line_config(12, IXP4XX_GPIO_IN);
 +
 +	platform_add_devices(usr8200_devices, ARRAY_SIZE(usr8200_devices));
 +}
@@ -304,8 +328,8 @@
 +	.boot_params	= 0x0100,
 +	.init_machine	= usr8200_init,
 +MACHINE_END
---- a/include/asm-arm/arch-ixp4xx/uncompress.h
-+++ b/include/asm-arm/arch-ixp4xx/uncompress.h
+--- a/arch/arm/mach-ixp4xx/include/mach/uncompress.h
++++ b/arch/arm/mach-ixp4xx/include/mach/uncompress.h
 @@ -43,7 +43,7 @@ static __inline__ void __arch_decomp_set
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||
