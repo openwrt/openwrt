@@ -141,6 +141,6 @@ config TARGET_SUFFIX
 	string
 	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && EABI_SUPPORT
 	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !EABI_SUPPORT
-	default "uclibc-gnueabi"  if USE_UCLIBC && EABI_SUPPORT
+	default "uclibcgnueabi"   if USE_UCLIBC && EABI_SUPPORT
 	default "uclibc"          if USE_UCLIBC && !EABI_SUPPORT
 
