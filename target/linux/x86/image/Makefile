@@ -49,9 +49,9 @@ ifneq ($(HOST_OS),Darwin)
   define Image/Prepare/grub
 	# for the image builder
 	$(CP) \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-openwrt/stage1 \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-openwrt/stage2 \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-openwrt/e2fs_stage1_5 \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-*/stage1 \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-*/stage2 \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-*/e2fs_stage1_5 \
 		$(KDIR)/
   endef
 else
