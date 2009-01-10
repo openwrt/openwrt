@@ -100,7 +100,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  static void ath_cache_conf_rate(struct ath_softc *sc,
  				struct ieee80211_conf *conf)
  {
-@@ -498,7 +465,7 @@ static void ath9k_tasklet(unsigned long 
+@@ -500,7 +467,7 @@ static void ath9k_tasklet(unsigned long 
  	ath9k_hw_set_interrupts(sc->sc_ah, sc->sc_imask);
  }
  
@@ -109,7 +109,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	struct ath_softc *sc = dev;
  	struct ath_hal *ah = sc->sc_ah;
-@@ -1279,7 +1246,7 @@ static int ath_start_rfkill_poll(struct 
+@@ -1281,7 +1248,7 @@ static int ath_start_rfkill_poll(struct 
  }
  #endif /* CONFIG_RFKILL */
  
@@ -118,7 +118,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	ath_detach(sc);
  	free_irq(sc->irq, sc);
-@@ -1287,7 +1254,7 @@ static void ath_cleanup(struct ath_softc
+@@ -1289,7 +1256,7 @@ static void ath_cleanup(struct ath_softc
  	ieee80211_free_hw(sc->hw);
  }
  
@@ -127,7 +127,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	struct ieee80211_hw *hw = sc->hw;
  	int i = 0;
-@@ -1538,7 +1505,7 @@ bad:
+@@ -1543,7 +1510,7 @@ bad:
  	return error;
  }
  
@@ -136,7 +136,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	struct ieee80211_hw *hw = sc->hw;
  	int error = 0;
-@@ -2457,7 +2424,7 @@ static int ath9k_ampdu_action(struct iee
+@@ -2466,7 +2433,7 @@ static int ath9k_ampdu_action(struct iee
  	return ret;
  }
  
@@ -145,7 +145,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	.tx 		    = ath9k_tx,
  	.start 		    = ath9k_start,
  	.stop 		    = ath9k_stop,
-@@ -2501,7 +2468,7 @@ static struct {
+@@ -2510,7 +2477,7 @@ static struct {
  /*
   * Return the MAC/BB name. "????" is returned if the MAC/BB is unknown.
   */
@@ -154,7 +154,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  ath_mac_bb_name(u32 mac_bb_version)
  {
  	int i;
-@@ -2518,7 +2485,7 @@ ath_mac_bb_name(u32 mac_bb_version)
+@@ -2527,7 +2494,7 @@ ath_mac_bb_name(u32 mac_bb_version)
  /*
   * Return the RF name. "????" is returned if the RF is unknown.
   */
@@ -163,7 +163,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  ath_rf_name(u16 rf_version)
  {
  	int i;
-@@ -2532,234 +2499,7 @@ ath_rf_name(u16 rf_version)
+@@ -2541,234 +2508,7 @@ ath_rf_name(u16 rf_version)
  	return "????";
  }
  
@@ -399,7 +399,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  {
  	int error;
  
-@@ -2771,26 +2511,30 @@ static int __init init_ath_pci(void)
+@@ -2780,26 +2520,30 @@ static int __init init_ath_pci(void)
  		printk(KERN_ERR
  			"Unable to register rate control algorithm: %d\n",
  			error);

@@ -1,9 +1,7 @@
+From 42d5399c2743dbd1ddaaadc8cb04adbfc65cc970 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sun, 28 Dec 2008 12:48:46 +0000 (+0100)
-Subject: rt2x00: Implement support for 802.11n
-X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Fivd%2Frt2x00.git;a=commitdiff_plain;h=1ddf4bdad5f51a799ee580e125dda19dd18daa39
-
-rt2x00: Implement support for 802.11n
+Date: Sat, 10 Jan 2009 11:01:10 +0100
+Subject: [PATCH] rt2x00: Implement support for 802.11n
 
 Extend rt2x00lib capabilities to support 802.11n,
 it still lacks aggregation support, but that can
@@ -11,6 +9,17 @@ be added in the future.
 
 Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
+ drivers/net/wireless/rt2x00/Kconfig        |    3 +
+ drivers/net/wireless/rt2x00/Makefile       |    1 +
+ drivers/net/wireless/rt2x00/rt2x00.h       |    5 ++
+ drivers/net/wireless/rt2x00/rt2x00config.c |    5 ++
+ drivers/net/wireless/rt2x00/rt2x00dev.c    |   91 ++++++++++++++++++++-------
+ drivers/net/wireless/rt2x00/rt2x00ht.c     |   69 +++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2x00lib.h    |   24 +++++++
+ drivers/net/wireless/rt2x00/rt2x00queue.c  |    1 +
+ drivers/net/wireless/rt2x00/rt2x00queue.h  |   26 +++++++-
+ 9 files changed, 197 insertions(+), 28 deletions(-)
+ create mode 100644 drivers/net/wireless/rt2x00/rt2x00ht.c
 
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
@@ -24,7 +33,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  obj-$(CONFIG_RT2X00_LIB_PCI)		+= rt2x00pci.o
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -107,6 +107,7 @@
+@@ -108,6 +108,7 @@
   */
  #define ACK_SIZE		14
  #define IEEE80211_HEADER	24
@@ -32,7 +41,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  #define PLCP			48
  #define BEACON			100
  #define PREAMBLE		144
-@@ -356,6 +357,7 @@ static inline struct rt2x00_intf* vif_to
+@@ -357,6 +358,7 @@ static inline struct rt2x00_intf* vif_to
   *	for @tx_power_a, @tx_power_bg and @channels.
   * @channels: Device/chipset specific channel values (See &struct rf_channel).
   * @channels_info: Additional information for channels (See &struct channel_info).
@@ -40,7 +49,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   */
  struct hw_mode_spec {
  	unsigned int supported_bands;
-@@ -369,6 +371,8 @@ struct hw_mode_spec {
+@@ -370,6 +372,8 @@ struct hw_mode_spec {
  	unsigned int num_channels;
  	const struct rf_channel *channels;
  	const struct channel_info *channels_info;
@@ -49,7 +58,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  };
  
  /*
-@@ -603,6 +607,7 @@ enum rt2x00_flags {
+@@ -604,6 +608,7 @@ enum rt2x00_flags {
  	CONFIG_EXTERNAL_LNA_BG,
  	CONFIG_DOUBLE_ANTENNA,
  	CONFIG_DISABLE_LINK_TUNING,
@@ -59,12 +68,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  /*
 --- a/drivers/net/wireless/rt2x00/rt2x00config.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00config.c
-@@ -173,6 +173,12 @@ void rt2x00lib_config(struct rt2x00_dev 
+@@ -173,6 +173,11 @@ void rt2x00lib_config(struct rt2x00_dev 
  	libconf.conf = conf;
  
  	if (ieee80211_flags & IEEE80211_CONF_CHANGE_CHANNEL) {
-+		if ((conf->ht.channel_type == NL80211_CHAN_HT40MINUS) ||
-+		    (conf->ht.channel_type == NL80211_CHAN_HT40PLUS))
++		if (conf_is_ht40(conf))
 +			__set_bit(CONFIG_CHANNEL_HT40, &rt2x00dev->flags);
 +		else
 +			__clear_bit(CONFIG_CHANNEL_HT40, &rt2x00dev->flags);
@@ -74,18 +82,113 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  		       sizeof(libconf.rf));
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -384,7 +384,9 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
- 		if (((rxdesc.dev_flags & RXDONE_SIGNAL_PLCP) &&
- 		     (rate->plcp == rxdesc.signal)) ||
- 		    ((rxdesc.dev_flags & RXDONE_SIGNAL_BITRATE) &&
+@@ -315,18 +315,54 @@ void rt2x00lib_txdone(struct queue_entry
+ }
+ EXPORT_SYMBOL_GPL(rt2x00lib_txdone);
+ 
++static int rt2x00lib_rxdone_read_signal(struct rt2x00_dev *rt2x00dev,
++					struct rxdone_entry_desc *rxdesc)
++{
++	struct ieee80211_supported_band *sband;
++	const struct rt2x00_rate *rate;
++	unsigned int i;
++	int signal;
++	int type;
++
++	/*
++	 * For non-HT rates the MCS value needs to contain the
++	 * actually used rate modulation (CCK or OFDM).
++	 */
++	if (rxdesc->dev_flags & RXDONE_SIGNAL_MCS)
++		signal = RATE_MCS(rxdesc->rate_mode, rxdesc->signal);
++	else
++		signal = rxdesc->signal;
++
++	type = (rxdesc->dev_flags & RXDONE_SIGNAL_MASK);
++
++	sband = &rt2x00dev->bands[rt2x00dev->curr_band];
++	for (i = 0; i < sband->n_bitrates; i++) {
++		rate = rt2x00_get_rate(sband->bitrates[i].hw_value);
++
++		if (((type == RXDONE_SIGNAL_PLCP) &&
++		     (rate->plcp == signal)) ||
++		    ((type == RXDONE_SIGNAL_BITRATE) &&
++		      (rate->bitrate == signal)) ||
++		    ((type == RXDONE_SIGNAL_MCS) &&
++		      (rate->mcs == signal))) {
++			return i;
++		}
++	}
++
++	WARNING(rt2x00dev, "Frame received with unrecognized signal, "
++		"signal=0x%.4x, type=%d.\n", signal, type);
++	return 0;
++}
++
+ void rt2x00lib_rxdone(struct rt2x00_dev *rt2x00dev,
+ 		      struct queue_entry *entry)
+ {
+ 	struct rxdone_entry_desc rxdesc;
+ 	struct sk_buff *skb;
+ 	struct ieee80211_rx_status *rx_status = &rt2x00dev->rx_status;
+-	struct ieee80211_supported_band *sband;
+-	const struct rt2x00_rate *rate;
+ 	unsigned int header_length;
+ 	unsigned int align;
+-	unsigned int i;
+-	int idx = -1;
++	int rate_idx;
+ 
+ 	/*
+ 	 * Allocate a new sk_buffer. If no new buffer available, drop the
+@@ -375,26 +411,17 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
+ 	skb_trim(entry->skb, rxdesc.size);
+ 
+ 	/*
+-	 * Update RX statistics.
+-	 */
+-	sband = &rt2x00dev->bands[rt2x00dev->curr_band];
+-	for (i = 0; i < sband->n_bitrates; i++) {
+-		rate = rt2x00_get_rate(sband->bitrates[i].hw_value);
+-
+-		if (((rxdesc.dev_flags & RXDONE_SIGNAL_PLCP) &&
+-		     (rate->plcp == rxdesc.signal)) ||
+-		    ((rxdesc.dev_flags & RXDONE_SIGNAL_BITRATE) &&
 -		      (rate->bitrate == rxdesc.signal))) {
-+		      (rate->bitrate == rxdesc.signal)) ||
-+		    ((rxdesc.dev_flags & RXDONE_SIGNAL_MCS) &&
-+		      (rate->mcs == rxdesc.signal))) {
- 			idx = i;
- 			break;
- 		}
-@@ -439,72 +441,84 @@ const struct rt2x00_rate rt2x00_supporte
+-			idx = i;
+-			break;
+-		}
+-	}
+-
+-	if (idx < 0) {
+-		WARNING(rt2x00dev, "Frame received with unrecognized signal,"
+-			"signal=0x%.2x, type=%d.\n", rxdesc.signal,
+-			(rxdesc.dev_flags & RXDONE_SIGNAL_MASK));
+-		idx = 0;
++	 * Check if the frame was received using HT. In that case,
++	 * the rate is the MCS index and should be passed to mac80211
++	 * directly. Otherwise we need to translate the signal to
++	 * the correct bitrate index.
++	 */
++	if (rxdesc.rate_mode == RATE_MODE_CCK ||
++	    rxdesc.rate_mode == RATE_MODE_OFDM) {
++		rate_idx = rt2x00lib_rxdone_read_signal(rt2x00dev, &rxdesc);
++	} else {
++		rxdesc.flags |= RX_FLAG_HT;
++		rate_idx = rxdesc.signal;
+ 	}
+ 
+ 	/*
+@@ -404,7 +431,7 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
+ 	rt2x00debug_update_crypto(rt2x00dev, &rxdesc);
+ 
+ 	rx_status->mactime = rxdesc.timestamp;
+-	rx_status->rate_idx = idx;
++	rx_status->rate_idx = rate_idx;
+ 	rx_status->qual = rt2x00link_calculate_signal(rt2x00dev, rxdesc.rssi);
+ 	rx_status->signal = rxdesc.rssi;
+ 	rx_status->noise = rxdesc.noise;
+@@ -439,72 +466,84 @@ const struct rt2x00_rate rt2x00_supporte
  		.bitrate = 10,
  		.ratemask = BIT(0),
  		.plcp = 0x00,
@@ -170,7 +273,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	},
  };
  
-@@ -582,6 +596,8 @@ static int rt2x00lib_probe_hw_modes(stru
+@@ -580,6 +619,8 @@ static int rt2x00lib_probe_hw_modes(stru
  		rt2x00dev->bands[IEEE80211_BAND_2GHZ].bitrates = rates;
  		hw->wiphy->bands[IEEE80211_BAND_2GHZ] =
  		    &rt2x00dev->bands[IEEE80211_BAND_2GHZ];
@@ -179,7 +282,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	}
  
  	/*
-@@ -598,6 +614,8 @@ static int rt2x00lib_probe_hw_modes(stru
+@@ -596,6 +637,8 @@ static int rt2x00lib_probe_hw_modes(stru
  		rt2x00dev->bands[IEEE80211_BAND_5GHZ].bitrates = &rates[4];
  		hw->wiphy->bands[IEEE80211_BAND_5GHZ] =
  		    &rt2x00dev->bands[IEEE80211_BAND_5GHZ];
@@ -239,7 +342,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	txdesc->stbc = 0;	/* FIXME: What value is needed? */
 +
 +	txdesc->mcs = rt2x00_get_rate_mcs(hwrate->mcs);
-+	if (rt2x00_get_rate_preamble(rate->hw_value))
++	if (rate->flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE)
 +		txdesc->mcs |= 0x08;
 +
 +	/*
@@ -270,8 +373,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  };
  
  extern const struct rt2x00_rate rt2x00_supported_rates[12];
-@@ -68,6 +69,14 @@ static inline int rt2x00_get_rate_preamb
- 	return (hw_value & 0xff00);
+@@ -57,6 +58,14 @@ static inline const struct rt2x00_rate *
+ 	return &rt2x00_supported_rates[hw_value & 0xff];
  }
  
 +#define RATE_MCS(__mode, __mcs) \
@@ -285,7 +388,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  /*
   * Radio control handlers.
   */
-@@ -341,6 +350,21 @@ static inline void rt2x00crypto_rx_inser
+@@ -330,6 +339,21 @@ static inline void rt2x00crypto_rx_inser
  #endif /* CONFIG_RT2X00_LIB_CRYPTO */
  
  /*
@@ -350,7 +453,23 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  /**
   * struct rxdone_entry_desc: RX Entry descriptor
-@@ -243,6 +245,9 @@ struct txdone_entry_desc {
+@@ -177,6 +179,7 @@ enum rxdone_entry_desc_flags {
+  * @size: Data size of the received frame.
+  * @flags: MAC80211 receive flags (See &enum mac80211_rx_flags).
+  * @dev_flags: Ralink receive flags (See &enum rxdone_entry_desc_flags).
++ * @rate_mode: Rate mode (See @enum rate_modulation).
+  * @cipher: Cipher type used during decryption.
+  * @cipher_status: Decryption status.
+  * @iv: IV/EIV data used during decryption.
+@@ -190,6 +193,7 @@ struct rxdone_entry_desc {
+ 	int size;
+ 	int flags;
+ 	int dev_flags;
++	u16 rate_mode;
+ 	u8 cipher;
+ 	u8 cipher_status;
+ 
+@@ -243,6 +247,9 @@ struct txdone_entry_desc {
   * @ENTRY_TXD_ENCRYPT_PAIRWISE: Use pairwise key table (instead of shared).
   * @ENTRY_TXD_ENCRYPT_IV: Generate IV/EIV in hardware.
   * @ENTRY_TXD_ENCRYPT_MMIC: Generate MIC in hardware.
@@ -360,7 +479,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   */
  enum txentry_desc_flags {
  	ENTRY_TXD_RTS_FRAME,
-@@ -258,6 +263,9 @@ enum txentry_desc_flags {
+@@ -258,6 +265,9 @@ enum txentry_desc_flags {
  	ENTRY_TXD_ENCRYPT_PAIRWISE,
  	ENTRY_TXD_ENCRYPT_IV,
  	ENTRY_TXD_ENCRYPT_MMIC,
@@ -370,7 +489,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  };
  
  /**
-@@ -271,7 +279,11 @@ enum txentry_desc_flags {
+@@ -271,7 +281,11 @@ enum txentry_desc_flags {
   * @length_low: PLCP length low word.
   * @signal: PLCP signal.
   * @service: PLCP service.
@@ -382,7 +501,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   * @retry_limit: Max number of retries.
   * @aifs: AIFS value.
   * @ifs: IFS value.
-@@ -291,7 +303,11 @@ struct txentry_desc {
+@@ -291,7 +305,11 @@ struct txentry_desc {
  	u16 signal;
  	u16 service;
  
