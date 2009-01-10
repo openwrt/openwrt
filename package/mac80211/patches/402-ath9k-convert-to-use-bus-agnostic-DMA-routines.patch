@@ -95,7 +95,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  		}
 --- a/drivers/net/wireless/ath9k/main.c
 +++ b/drivers/net/wireless/ath9k/main.c
-@@ -1709,9 +1709,8 @@ int ath_descdma_setup(struct ath_softc *
+@@ -1717,9 +1717,8 @@ int ath_descdma_setup(struct ath_softc *
  	}
  
  	/* allocate descriptors */
@@ -107,7 +107,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	if (dd->dd_desc == NULL) {
  		error = -ENOMEM;
  		goto fail;
-@@ -1757,8 +1756,8 @@ int ath_descdma_setup(struct ath_softc *
+@@ -1765,8 +1764,8 @@ int ath_descdma_setup(struct ath_softc *
  	}
  	return 0;
  fail2:
@@ -118,7 +118,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  fail:
  	memset(dd, 0, sizeof(*dd));
  	return error;
-@@ -1771,8 +1770,8 @@ void ath_descdma_cleanup(struct ath_soft
+@@ -1779,8 +1778,8 @@ void ath_descdma_cleanup(struct ath_soft
  			 struct ath_descdma *dd,
  			 struct list_head *head)
  {
@@ -177,7 +177,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  
  		skb_put(skb, ds->ds_rxstat.rs_datalen);
  		skb->protocol = cpu_to_be16(ETH_P_CONTROL);
-@@ -601,16 +599,15 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -607,16 +605,15 @@ int ath_rx_tasklet(struct ath_softc *sc,
  
  		/* We will now give hardware our shiny new allocated skb */
  		bf->bf_mpdu = requeue_skb;

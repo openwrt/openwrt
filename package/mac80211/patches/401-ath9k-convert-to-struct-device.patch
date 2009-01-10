@@ -97,7 +97,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	*csz = (int)u8tmp;
  
  	/*
-@@ -1267,11 +1268,11 @@ static int ath_start_rfkill_poll(struct 
+@@ -1269,11 +1270,11 @@ static int ath_start_rfkill_poll(struct 
  
  			/* Deinitialize the device */
  			ath_detach(sc);
@@ -114,7 +114,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  			ieee80211_free_hw(sc->hw);
  			return -EIO;
  		} else {
-@@ -1708,7 +1709,7 @@ int ath_descdma_setup(struct ath_softc *
+@@ -1716,7 +1717,7 @@ int ath_descdma_setup(struct ath_softc *
  	}
  
  	/* allocate descriptors */
@@ -123,7 +123,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  			      dd->dd_desc_len,
  			      &dd->dd_desc_paddr);
  	if (dd->dd_desc == NULL) {
-@@ -1756,7 +1757,7 @@ int ath_descdma_setup(struct ath_softc *
+@@ -1764,7 +1765,7 @@ int ath_descdma_setup(struct ath_softc *
  	}
  	return 0;
  fail2:
@@ -132,7 +132,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  		dd->dd_desc_len, dd->dd_desc, dd->dd_desc_paddr);
  fail:
  	memset(dd, 0, sizeof(*dd));
-@@ -1770,7 +1771,7 @@ void ath_descdma_cleanup(struct ath_soft
+@@ -1778,7 +1779,7 @@ void ath_descdma_cleanup(struct ath_soft
  			 struct ath_descdma *dd,
  			 struct list_head *head)
  {
@@ -141,7 +141,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  		dd->dd_desc_len, dd->dd_desc, dd->dd_desc_paddr);
  
  	INIT_LIST_HEAD(head);
-@@ -2615,7 +2616,7 @@ static int ath_pci_probe(struct pci_dev 
+@@ -2624,7 +2625,7 @@ static int ath_pci_probe(struct pci_dev 
  
  	sc = hw->priv;
  	sc->hw = hw;
@@ -185,7 +185,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  				 sc->rx.bufsize,
  				 PCI_DMA_FROMDEVICE);
  
-@@ -599,10 +601,11 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -605,10 +607,11 @@ int ath_rx_tasklet(struct ath_softc *sc,
  
  		/* We will now give hardware our shiny new allocated skb */
  		bf->bf_mpdu = requeue_skb;

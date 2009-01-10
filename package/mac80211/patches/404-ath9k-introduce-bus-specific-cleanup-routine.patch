@@ -51,7 +51,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  
  /* return bus cachesize in 4B word units */
  
-@@ -1267,13 +1268,7 @@ static int ath_start_rfkill_poll(struct 
+@@ -1269,13 +1270,7 @@ static int ath_start_rfkill_poll(struct 
  			rfkill_free(sc->rf_kill.rfkill);
  
  			/* Deinitialize the device */
@@ -66,7 +66,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  			return -EIO;
  		} else {
  			sc->sc_flags |= SC_OP_RFKILL_REGISTERED;
-@@ -1284,6 +1279,14 @@ static int ath_start_rfkill_poll(struct 
+@@ -1286,6 +1281,14 @@ static int ath_start_rfkill_poll(struct 
  }
  #endif /* CONFIG_RFKILL */
  
@@ -81,7 +81,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  static void ath_detach(struct ath_softc *sc)
  {
  	struct ieee80211_hw *hw = sc->hw;
-@@ -2529,8 +2532,18 @@ ath_rf_name(u16 rf_version)
+@@ -2538,8 +2541,18 @@ ath_rf_name(u16 rf_version)
  	return "????";
  }
  
@@ -100,7 +100,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  };
  
  static int ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
-@@ -2637,6 +2650,8 @@ static int ath_pci_probe(struct pci_dev 
+@@ -2646,6 +2659,8 @@ static int ath_pci_probe(struct pci_dev 
  		goto bad4;
  	}
  
@@ -109,7 +109,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	ah = sc->sc_ah;
  	printk(KERN_INFO
  	       "%s: Atheros AR%s MAC/BB Rev:%x "
-@@ -2667,13 +2682,7 @@ static void ath_pci_remove(struct pci_de
+@@ -2676,13 +2691,7 @@ static void ath_pci_remove(struct pci_de
  	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
  	struct ath_softc *sc = hw->priv;
  

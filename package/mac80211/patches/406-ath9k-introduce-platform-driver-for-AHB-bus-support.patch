@@ -205,7 +205,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  #endif /* CORE_H */
 --- a/drivers/net/wireless/ath9k/main.c
 +++ b/drivers/net/wireless/ath9k/main.c
-@@ -2522,8 +2522,17 @@ static int __init ath9k_init(void)
+@@ -2531,8 +2531,17 @@ static int __init ath9k_init(void)
  		goto err_rate_unregister;
  	}
  
@@ -223,7 +223,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
   err_rate_unregister:
  	ath_rate_control_unregister();
   err_out:
-@@ -2533,6 +2542,7 @@ module_init(ath9k_init);
+@@ -2542,6 +2551,7 @@ module_init(ath9k_init);
  
  static void __exit ath9k_exit(void)
  {
