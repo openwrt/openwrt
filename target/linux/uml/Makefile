@@ -27,6 +27,8 @@ LINUX_VERSION:=2.6.26.8
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += hostapd-mini kmod-mac80211-hwsim
+
 endif
 
 $(eval $(call BuildTarget))
