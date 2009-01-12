@@ -31,8 +31,20 @@ define KernelPackage/sound-core/2.4
   AUTOLOAD:=$(call AutoLoad,30,soundcore)
 endef
 
-define KernelPackage/sound-core/2.6
-  FILES:= \
+# allow 2.6 targets to override the soundcore stuff
+SOUNDCORE_LOAD ?= \
+	soundcore \
+	snd \
+	snd-page-alloc \
+	snd-hwdep \
+	snd-seq-device \
+	snd-rawmidi \
+	snd-timer \
+	snd-pcm \
+	$(if $(CONFIG_SND_MIXER_OSS),snd-mixer-oss) \
+	$(if $(CONFIG_SND_PCM_OSS),snd-pcm-oss)
+
+SOUNDCORE_FILES ?= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-page-alloc.$(LINUX_KMOD_SUFFIX) \
@@ -43,18 +55,10 @@ define KernelPackage/sound-core/2.6
 	$(LINUX_DIR)/sound/core/snd-pcm.$(LINUX_KMOD_SUFFIX) \
 	$(if $(CONFIG_SND_MIXER_OSS),$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.$(LINUX_KMOD_SUFFIX)) \
 	$(if $(CONFIG_SND_PCM_OSS),$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,30, \
-	soundcore \
-	snd \
-	snd-page-alloc \
-	snd-hwdep \
-	snd-seq-device \
-	snd-rawmidi \
-	snd-timer \
-	snd-pcm \
-	$(if $(CONFIG_SND_MIXER_OSS),snd-mixer-oss) \
-	$(if $(CONFIG_SND_PCM_OSS),snd-pcm-oss) \
-  )
+
+define KernelPackage/sound-core/2.6
+  FILES:=$(SOUNDCORE_FILES)
+  AUTOLOAD:=$(call AutoLoad,30,$(SOUNDCORE_LOAD))
 endef
 
 define KernelPackage/sound-core/uml-2.6
