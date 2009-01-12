@@ -1,0 +1,10 @@
+diff -ruN gcc-4.1.2.orig/gcc/config/cris/t-linux gcc-4.1.2/gcc/config/cris/t-linux
+--- gcc-4.1.2.orig/gcc/config/cris/t-linux	2005-10-12 21:40:28.000000000 +0200
++++ gcc-4.1.2/gcc/config/cris/t-linux	2009-01-12 14:52:34.669331678 +0100
+@@ -1,6 +1,2 @@
+ TARGET_LIBGCC2_CFLAGS += -fPIC
+ CRTSTUFF_T_CFLAGS_S = $(TARGET_LIBGCC2_CFLAGS)
+-
+-# We *know* we have a limits.h in the glibc library, with extra
+-# definitions needed for e.g. libgfortran.
+-LIMITS_H_TEST = :
