@@ -17,18 +17,18 @@
  	select PCI
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -25,6 +25,7 @@ obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt
+@@ -24,6 +24,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
+ obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_TW5334)		+= tw5334-pci.o
- obj-pci-$(CONFIG_MACH_MI424WR)		+= mi424wr-pci.o
 +obj-pci-$(CONFIG_MACH_USR8200)		+= usr8200-pci.o
  
  obj-y	+= common.o
  
-@@ -48,6 +49,7 @@ obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv
+@@ -46,6 +47,7 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
+ obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
  obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
- obj-$(CONFIG_MACH_MI424WR)	+= mi424wr-setup.o
 +obj-$(CONFIG_MACH_USR8200)	+= usr8200-setup.o
  
  obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
@@ -328,8 +328,8 @@
 +	.boot_params	= 0x0100,
 +	.init_machine	= usr8200_init,
 +MACHINE_END
---- a/arch/arm/mach-ixp4xx/include/mach/uncompress.h
-+++ b/arch/arm/mach-ixp4xx/include/mach/uncompress.h
+--- a/include/asm-arm/arch-ixp4xx/uncompress.h
++++ b/include/asm-arm/arch-ixp4xx/uncompress.h
 @@ -43,7 +43,7 @@ static __inline__ void __arch_decomp_set
  	if (machine_is_adi_coyote() || machine_is_gtwx5715() ||
  			 machine_is_gateway7001() || machine_is_wg302v2() ||
