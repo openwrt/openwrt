@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -104,6 +104,14 @@ define Build/Install/post/lzma
 		$(BUILD_DIR_TOOLCHAIN)/linux/include/asm-mips/asm.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux/include/asm-mips/regdef.h \
 		$(TOOLCHAIN_DIR)/usr/include/asm/
+endef
+
+# XXX: the following is needed to build final gcc on cris
+define Build/Install/post/cris
+	mkdir -p $(TOOLCHAIN_DIR)/usr/include/asm/arch
+	$(CP) \
+		$(PKG_BUILD_DIR)/include/asm-cris/arch/ptrace.h \
+		$(TOOLCHAIN_DIR)/usr/include/asm/arch/
 endef
 
 define Build/Install/post/mips
