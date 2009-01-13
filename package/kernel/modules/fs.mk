@@ -277,7 +277,7 @@ define KernelPackage/fs-vfat
 	CONFIG_VFAT_FS
   FILES:= \
 	$(LINUX_DIR)/fs/fat/fat.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/vfat/vfat.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/$(if $(CONFIG_LINUX_2_6_28),fat,vfat)/vfat.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
 $(call KernelPackage/nls/Depends)
 endef
