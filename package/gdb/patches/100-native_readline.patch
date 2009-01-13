@@ -1,0 +1,322 @@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -15590,236 +15590,40 @@ maintainer-clean-rcs: 
+ 
+ 
+ .PHONY: configure-readline maybe-configure-readline
+-maybe-configure-readline:
+-@if readline
+-maybe-configure-readline: configure-readline
+-configure-readline:
+-	@test ! -f readline/Makefile || exit 0; \
+-	[ -d readline ] || mkdir readline; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(HOST_EXPORTS) \
+-	echo Configuring in readline; \
+-	cd readline || exit 1; \
+-	case $(srcdir) in \
+-	  \.) \
+-	    srcdiroption="--srcdir=."; \
+-	    libsrcdir=".";; \
+-	  /* | [A-Za-z]:[\\/]*) \
+-	    srcdiroption="--srcdir=$(srcdir)/readline"; \
+-	    libsrcdir="$$s/readline";; \
+-	  *) \
+-	    srcdiroption="--srcdir=../$(srcdir)/readline"; \
+-	    libsrcdir="$$s/readline";; \
+-	esac; \
+-	$(SHELL) $${libsrcdir}/configure \
+-	  $(HOST_CONFIGARGS) $${srcdiroption}  \
+-	  || exit 1
+-@endif readline
++maybe-configure-readline: ;
+ 
+ .PHONY: all-readline maybe-all-readline
+-maybe-all-readline:
+-@if readline
+-TARGET-readline=all
+-maybe-all-readline: all-readline
+-all-readline: configure-readline
+-	@r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	(cd readline && $(MAKE) $(FLAGS_TO_PASS)  \
+-	  $(TARGET-readline))
+-@endif readline
++maybe-all-readline: ;
+ 
+ .PHONY: check-readline maybe-check-readline
+-maybe-check-readline:
+-@if readline
+-maybe-check-readline: check-readline
+-
+-check-readline:
+-	@r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	(cd readline && $(MAKE) $(FLAGS_TO_PASS) check)
+-
+-@endif readline
++maybe-check-readline: ;
+ 
+ .PHONY: install-readline maybe-install-readline
+-maybe-install-readline:
+-@if readline
+-maybe-install-readline: install-readline
+-
+-install-readline: installdirs
+-	@r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	(cd readline && $(MAKE) $(FLAGS_TO_PASS) install)
+-
+-@endif readline
++maybe-install-readline: ;
+ 
+ # Other targets (info, dvi, etc.)
+ 
+ .PHONY: maybe-info-readline info-readline
+-maybe-info-readline:
+-@if readline
+-maybe-info-readline: info-readline
+-
+-info-readline: \
+-    configure-readline 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing info in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          info) \
+-	  || exit 1
+-
+-@endif readline
++maybe-info-readline: ;
+ 
+ .PHONY: maybe-dvi-readline dvi-readline
+-maybe-dvi-readline:
+-@if readline
+-maybe-dvi-readline: dvi-readline
+-
+-dvi-readline: \
+-    configure-readline 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing dvi in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          dvi) \
+-	  || exit 1
+-
+-@endif readline
++maybe-dvi-readline: ;
+ 
+ .PHONY: maybe-TAGS-readline TAGS-readline
+-maybe-TAGS-readline:
+-@if readline
+-maybe-TAGS-readline: TAGS-readline
+-
+-TAGS-readline: \
+-    configure-readline 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing TAGS in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          TAGS) \
+-	  || exit 1
+-
+-@endif readline
++maybe-TAGS-readline: ;
+ 
+ .PHONY: maybe-install-info-readline install-info-readline
+-maybe-install-info-readline:
+-@if readline
+-maybe-install-info-readline: install-info-readline
+-
+-install-info-readline: \
+-    configure-readline \
+-    info-readline 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing install-info in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          install-info) \
+-	  || exit 1
+-
+-@endif readline
++maybe-install-info-readline: ;
+ 
+ .PHONY: maybe-installcheck-readline installcheck-readline
+-maybe-installcheck-readline:
+-@if readline
+-maybe-installcheck-readline: installcheck-readline
+-
+-installcheck-readline: \
+-    configure-readline 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing installcheck in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          installcheck) \
+-	  || exit 1
+-
+-@endif readline
++maybe-installcheck-readline: ;
+ 
+ .PHONY: maybe-mostlyclean-readline mostlyclean-readline
+-maybe-mostlyclean-readline:
+-@if readline
+-maybe-mostlyclean-readline: mostlyclean-readline
+-
+-mostlyclean-readline: 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing mostlyclean in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          mostlyclean) \
+-	  || exit 1
+-
+-@endif readline
++maybe-mostlyclean-readline: ;
+ 
+ .PHONY: maybe-clean-readline clean-readline
+-maybe-clean-readline:
+-@if readline
++maybe-clean-readline: ;
++@if readline-disabled
+ maybe-clean-readline: clean-readline
+ 
+ clean-readline: 
+@@ -15844,53 +15648,9 @@ clean-readline: 
+ 
+ .PHONY: maybe-distclean-readline distclean-readline
+ maybe-distclean-readline:
+-@if readline
+-maybe-distclean-readline: distclean-readline
+-
+-distclean-readline: 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing distclean in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          distclean) \
+-	  || exit 1
+-
+-@endif readline
+ 
+ .PHONY: maybe-maintainer-clean-readline maintainer-clean-readline
+-maybe-maintainer-clean-readline:
+-@if readline
+-maybe-maintainer-clean-readline: maintainer-clean-readline
+-
+-maintainer-clean-readline: 
+-	@[ -f ./readline/Makefile ] || exit 0; \
+-	r=`${PWD_COMMAND}`; export r; \
+-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+-	$(SET_LIB_PATH) \
+-	$(HOST_EXPORTS) \
+-	for flag in $(EXTRA_HOST_FLAGS) ; do \
+-	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+-	done; \
+-	echo "Doing maintainer-clean in readline" ; \
+-	(cd readline && \
+-	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+-	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+-	          "RANLIB=$${RANLIB}" \
+-	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" \
+-	          maintainer-clean) \
+-	  || exit 1
+-
+-@endif readline
++maybe-maintainer-clean-readline: ;
+ 
+ 
+ .PHONY: configure-release maybe-configure-release
+--- a/gdb/Makefile.in
++++ b/gdb/Makefile.in
+@@ -121,10 +121,10 @@ BFD_SRC = $(srcdir)/$(BFD_DIR)
+ BFD_CFLAGS = -I$(BFD_DIR) -I$(BFD_SRC)
+ 
+ # Where is the READLINE library?  Typically in ../readline.
+-READLINE_DIR = ../readline
+-READLINE = $(READLINE_DIR)/libreadline.a
++READLINE =
+ READLINE_SRC = $(srcdir)/$(READLINE_DIR)
+-READLINE_CFLAGS = -I$(READLINE_SRC)/..
++READLINE_CFLAGS =
++READLINE_LDFLAGS = -lreadline
+ 
+ WARN_CFLAGS = @WARN_CFLAGS@
+ WERROR_CFLAGS = @WERROR_CFLAGS@
