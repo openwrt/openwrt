@@ -307,6 +307,9 @@ directly as the Nth argument to \texttt{BuildPackage}.
             Which packages must be built/installed before this package. To reference a dependency defined in the
 			same Makefile, use \textit{<dependency name>}. If defined as an external package, use 
 			\textit{+<dependency name>}. For a kernel version dependency use: \textit{@LINUX\_2\_<minor version>}
+		\item \texttt{BUILDONLY} (optional) \\
+			Set this option to 1 if you do NOT want your package to appear in menuconfig.
+			This is useful for packages which are only used as build dependencies.
     \end{itemize}
 
 \textbf{\texttt{Package/\textit{<name>}/conffiles} (optional):} \\
