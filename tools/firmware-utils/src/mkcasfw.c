@@ -167,7 +167,7 @@ struct board_info {
 
 /* Trendnet products */
 #define MODEL_TN_U100		0x01000081 /* NFS-101U */
-#define MODEL_TN_U200		0x01000081 /* NFS-202U */
+#define MODEL_TN_U200		0x01000082 /* NFS-202U */
 
 /*
  * Globals
