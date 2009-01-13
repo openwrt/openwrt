@@ -106,6 +106,13 @@ config DEBUG
 	help
 		Disables stripping and adds -g3 to the CFLAGS
 
+config DEBUG_DIR
+	bool "Install debugging binaries into a staging directory"
+	default n
+	help
+		This will install all compiled package binaries into build_dir/target-*/debug-*/,
+		useful for cross-debugging via gdb/gdbserver
+
 config NO_STRIP
 	bool "Install unstripped binary on the target (useful for native compiling/debugging)"
 	default n
