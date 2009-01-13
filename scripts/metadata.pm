@@ -88,6 +88,7 @@ sub parse_package_metadata($) {
 			}
 		};
 		/^Depends: \s*(.+)\s*$/ and $pkg->{depends} = [ split /\s+/, $1 ];
+		/^Build-Only: \s*(.+)\s*$/ and $pkg->{buildonly} = 1;
 		/^Build-Depends: \s*(.+)\s*$/ and $pkg->{builddepends} = [ split /\s+/, $1 ];
 		/^Category: \s*(.+)\s*$/ and do {
 			$pkg->{category} = $1;
