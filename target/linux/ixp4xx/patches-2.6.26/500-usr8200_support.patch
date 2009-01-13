@@ -35,7 +35,7 @@
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/usr8200-pci.c
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,79 @@
 +/*
 + * arch/arch/mach-ixp4xx/usr8200-pci.c
 + *
@@ -62,8 +62,9 @@
 +#include <linux/init.h>
 +#include <linux/irq.h>
 +
++#include <asm/irq.h>
 +#include <asm/mach-types.h>
-+#include <mach/hardware.h>
++#include <asm/hardware.h>
 +
 +#include <asm/mach/pci.h>
 +
@@ -145,7 +146,7 @@
 +#include <linux/leds.h>
 +
 +#include <asm/setup.h>
-+#include <mach/hardware.h>
++#include <asm/hardware.h>
 +#include <asm/irq.h>
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
