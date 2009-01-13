@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/host-build.mk
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		gdb_cv_func_sigsetjmp=yes \
+		CFLAGS="-O2" \
 		$(PKG_BUILD_DIR)/configure \
 		--prefix=$(TOOLCHAIN_DIR)/usr \
 		--build=$(GNU_HOST_NAME) \
@@ -48,8 +49,8 @@ endef
 
 define Build/Clean
 	rm -rf \
-		$(PKG_BUILD_DIR)
-		$(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)gdb
+		$(PKG_BUILD_DIR) \
+		$(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)gdb \
 		$(TOOLCHAIN_DIR)/usr/bin/$(GNU_TARGET_NAME)-gdb
 endef
 
