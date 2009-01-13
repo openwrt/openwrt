@@ -1,0 +1,21 @@
+--- a/libm/s_floor.c
++++ b/libm/s_floor.c
+@@ -81,3 +81,18 @@ libm_hidden_proto(floor)
+ 	return x;
+ }
+ libm_hidden_def(floor)
++
++
++libm_hidden_proto(trunc)
++double
++trunc(double x)
++{
++	if (!finite (x))
++		return x;
++
++	if (x < 0.0)
++		return - floor (-x);
++	else
++		return floor (x);
++}
++libm_hidden_def(trunc)
