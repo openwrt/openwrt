@@ -31,6 +31,7 @@ define Package/Default
   SUBMENUDEP:=
   TITLE:=
   KCONFIG:=
+  BUILDONLY:=
 endef
 
 Build/Patch:=$(Build/Patch/Default)

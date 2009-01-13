@@ -398,6 +398,7 @@ sub mconf_depends {
 			$depend = $2;
 		}
 		next if $seen->{$depend};
+		next if $package{$depend} and $package{$depend}->{buildonly};
 		$seen->{$depend} = 1;
 		if ($vdep = $package{$depend}->{vdepends}) {
 			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
@@ -442,6 +443,7 @@ sub print_package_config_category($) {
 
 	foreach my $spkg (sort {uc($a) cmp uc($b)} keys %spkg) {
 		foreach my $pkg (@{$spkg{$spkg}}) {
+			next if $pkg->{buildonly};
 			my $menu = $pkg->{submenu};
 			if ($menu) {
 				$menu_dep{$menu} or $menu_dep{$menu} = $pkg->{submenudep};
@@ -543,6 +545,7 @@ sub gen_package_mk() {
 			$config = "\$(CONFIG_PACKAGE_$name)"
 		}
 		if ($config) {
+			$pkg->{buildonly} and $config = "";
 			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
 			$pkg->{prereq} and print "prereq-$config += $pkg->{subdir}$pkg->{src}\n";
 		}
