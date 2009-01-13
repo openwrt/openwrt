@@ -1,10 +1,12 @@
-From ace011bdb2676f594824c81a5a5b5089dc0c3e0b Mon Sep 17 00:00:00 2001
+From 23f9e44a18b5a2dfaa1326aa30dd07e1449e8b5f Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:03:17 +0100
-Subject: [PATCH v2 06/11] ath9k: introduce platform driver for AHB bus support
+Subject: [PATCH v3 06/11] ath9k: introduce platform driver for AHB bus support
 
 This patch adds the platform_driver itself, and modifies the main driver
 to register it.
+
+Changes-licensed-under: ISC
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
@@ -14,6 +16,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  drivers/net/wireless/ath9k/core.h   |    8 ++
  drivers/net/wireless/ath9k/main.c   |   10 ++
  4 files changed, 179 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/net/wireless/ath9k/ahb.c
 
 --- a/drivers/net/wireless/ath9k/Makefile
 +++ b/drivers/net/wireless/ath9k/Makefile

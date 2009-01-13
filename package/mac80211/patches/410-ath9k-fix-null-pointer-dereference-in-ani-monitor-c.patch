@@ -1,12 +1,14 @@
-From a6411f449091c272ca08146238b91a0835306179 Mon Sep 17 00:00:00 2001
+From ea298030ddc0089f308eec39571355aa359a1563 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:14:14 +0100
-Subject: [PATCH v2 10/11] ath9k: fix null pointer dereference in ani monitor code
+Subject: [PATCH v3 10/11] ath9k: fix null pointer dereference in ani monitor code
 
 In 'ath9k_ani_reset' the 'ahp->ah_curani' will be initialized only
 if 'DO_ANI(ah)' true. In 'ath9k_hw_ani_monitor' we are using
 'ahp->ah_curani' unconditionally, and it will cause a NULL pointer
 dereference on AR9100.
+
+Changes-licensed-under: ISC
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>

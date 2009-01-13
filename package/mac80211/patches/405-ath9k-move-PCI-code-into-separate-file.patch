@@ -1,10 +1,12 @@
-From 39c2811d18b39991f49c16dcd9ed1a81200371ad Mon Sep 17 00:00:00 2001
+From 4803193b165c67abcd7cb10dd0c178dbcffb6cc7 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:01:09 +0100
-Subject: [PATCH v2 05/11] ath9k: move PCI code into separate file
+Subject: [PATCH v3 05/11] ath9k: move PCI code into separate file
 
 Now that we have converted all bus specific routines to replaceable, we
 can move the PCI specific codes into a separate file.
+
+Changes-licensed-under: ISC
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
@@ -14,6 +16,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  drivers/net/wireless/ath9k/main.c   |  300 +++--------------------------------
  drivers/net/wireless/ath9k/pci.c    |  287 +++++++++++++++++++++++++++++++++
  4 files changed, 328 insertions(+), 279 deletions(-)
+ create mode 100644 drivers/net/wireless/ath9k/pci.c
 
 --- a/drivers/net/wireless/ath9k/Makefile
 +++ b/drivers/net/wireless/ath9k/Makefile

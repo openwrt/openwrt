@@ -1,10 +1,12 @@
-From 1306e6b6d72b2bc0b91bcdd15b1d982965210bda Mon Sep 17 00:00:00 2001
+From b9aae7ff9c6ca6864434882cce9c9c6fea88220b Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 10:57:42 +0100
-Subject: [PATCH v2 03/11] ath9k: introduce bus specific cache size routine
+Subject: [PATCH v3 03/11] ath9k: introduce bus specific cache size routine
 
 The PCI specific bus_read_cachesize routine won't work on the AHB bus,
 we have to replace it with a suitable one later.
+
+Changes-licensed-under: ISC
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>

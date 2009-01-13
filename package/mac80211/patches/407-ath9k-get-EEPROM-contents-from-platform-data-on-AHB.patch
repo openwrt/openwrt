@@ -1,11 +1,13 @@
-From 317e9ea5007e3ff18b52f973c1b3a3f2c84bcae1 Mon Sep 17 00:00:00 2001
+From 5941741f36a3870e8d22760e290ae7ea45293cdd Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 5 Jan 2009 11:05:05 +0100
-Subject: [PATCH v2 07/11] ath9k: get EEPROM contents from platform data on AHB bus
+Subject: [PATCH v3 07/11] ath9k: get EEPROM contents from platform data on AHB bus
 
 On the AR913x SOCs we have to provide EEPROM contents via platform_data,
 because accessing the flash via MMIO is not safe. Additionally different
 boards may store the radio calibration data at different locations.
+
+Changes-licensed-under: ISC
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
@@ -16,6 +18,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  drivers/net/wireless/ath9k/pci.c    |   18 ++++++++++++
  include/linux/ath9k_platform.h      |   28 +++++++++++++++++++
  5 files changed, 77 insertions(+), 48 deletions(-)
+ create mode 100644 include/linux/ath9k_platform.h
 
 --- a/drivers/net/wireless/ath9k/ahb.c
 +++ b/drivers/net/wireless/ath9k/ahb.c
