@@ -160,6 +160,7 @@ define Package/base-files$(TARGET)/install
 		$(SED) 's/$$$$/:13848:0:99999:7:::/' $(1)/etc/shadow \
 	)
 	$(SED) 's,$$$$R,$(REVISION),g' $(1)/etc/banner
+	mkdir -p $(1)/CONTROL
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
 	mkdir -p $(1)/jffs
