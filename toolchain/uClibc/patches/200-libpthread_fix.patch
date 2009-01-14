@@ -33,3 +33,24 @@
  
  lib-a-$(UCLIBC_HAS_THREADS) += $(top_builddir)lib/libpthread.a
  lib-so-$(UCLIBC_HAS_THREADS) += $(top_builddir)lib/libpthread.so
+--- a/libpthread/linuxthreads/pthread.c
++++ b/libpthread/linuxthreads/pthread.c
+@@ -32,6 +32,8 @@
+ #include "smp.h"
+ #include <not-cancel.h>
+ 
++#define HAVE_Z_NODELETE
++
+ /* Sanity check.  */
+ #if !defined __SIGRTMIN || (__SIGRTMAX - __SIGRTMIN) < 3
+ # error "This must not happen"
+@@ -976,7 +978,9 @@ static void pthread_onexit_process(int r
+     request.req_args.exit.code = retcode;
+     TEMP_FAILURE_RETRY(write_not_cancel(__pthread_manager_request,
+ 					(char *) &request, sizeof(request)));
++#ifdef notyet
+     suspend(self);
++#endif
+     /* Main thread should accumulate times for thread manager and its
+        children, so that timings for main thread account for all threads. */
+     if (self == __pthread_main_thread)
