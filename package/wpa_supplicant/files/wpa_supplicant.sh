@@ -58,6 +58,7 @@ wpa_supplicant_setup_vif() {
 	config_get bridge "$vif" bridge
 	config_get ssid "$vif" ssid
 	cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
+ctrl_interface=/var/run/wpa_supplicant-$ifname
 network={
 	scan_ssid=1
 	ssid="$ssid"
