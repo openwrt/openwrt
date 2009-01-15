@@ -36,6 +36,7 @@ static const unsigned long bcm96338_regs_base[] = {
 	[RSET_UART0]		= BCM_6338_UART0_BASE,
 	[RSET_GPIO]		= BCM_6338_GPIO_BASE,
 	[RSET_SPI]		= BCM_6338_SPI_BASE,
+	[RSET_MEMC]		= BCM_6338_MEMC_BASE,
 };
 
 static const int bcm96338_irqs[] = {
