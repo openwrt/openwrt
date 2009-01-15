@@ -1,4 +1,6 @@
 set_3g_led() {
+	# set on WRT54G3G only
+	[ -d /proc/diag ] || return 0
 	grep WRT54G3G /proc/diag/model >/dev/null || return 0
 	echo "$1" > /proc/diag/led/3g_green
 	echo "$2" > /proc/diag/led/3g_blue
