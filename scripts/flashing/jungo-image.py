@@ -150,7 +150,7 @@ def usage():
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "hdf:u:qp:P:s:vVw", \
-	["help", "dump", "file=", "user=", "pass=", "proto=", "proto=",
+	["help", "dump", "file=", "user=", "pass=", "port=", "proto=",
 	 "quiet=", "server=", "verbose", "version", "write"])
 except getopt.GetoptError:
     # print help information and exit:
@@ -161,28 +161,28 @@ for o, a in opts:
     if o in ("-h", "--help"):
 	usage()
 	sys.exit(1)
-    if o in ("-V", "--version"):
-	print "%s: 0.7" % sys.argv[0]
+    elif o in ("-V", "--version"):
+	print "%s: 0.8" % sys.argv[0]
 	sys.exit(1)
-    if o in ("-d", "--no-dump"):
+    elif o in ("-d", "--no-dump"):
 	no_dump = 1
-    if o in ("-f", "--file"):
+    elif o in ("-f", "--file"):
 	dumpfile = a
-    if o in ("-s", "--server"):
+    elif o in ("-s", "--server"):
 	server = a
-    if o in ("-u", "--user"):
+    elif o in ("-u", "--user"):
 	user = a
-    if o in ("-p", "--pass"):
+    elif o in ("-p", "--pass"):
 	password = a
-    if o in ("-P", "--proto"):
+    elif o in ("-P", "--proto"):
 	proto = a
-    if o in ("--port"):
-	PORT = a
-    if o in ("-w", "--write"):
+    elif o == "--port":
+	PORT = int(a)
+    elif o in ("-w", "--write"):
 	write_image = 1
-    if o in ("-q", "--quiet"):
+    elif o in ("-q", "--quiet"):
 	verbose = 0
-    if o in ("-v", "--verbose"):
+    elif o in ("-v", "--verbose"):
 	verbose = 1
 
 # make sure we have enough arguments
@@ -252,7 +252,7 @@ if write_image:
 	print "Writing new image..."
     print cmd,
     tn.write(cmd)
-    buf = tn.read_until("Returned 0")
+    buf = tn.read_until("Returned 0",10)
 
 tn.write("exit\n")
 tn.close()
