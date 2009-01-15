@@ -11,7 +11,7 @@ BOARD:=ar71xx
 BOARDNAME:=Atheros AR71xx
 FEATURES:=squashfs tgz
 
-LINUX_VERSION:=2.6.27.10
+LINUX_VERSION:=2.6.27.11
 
 include $(INCLUDE_DIR)/target.mk
 

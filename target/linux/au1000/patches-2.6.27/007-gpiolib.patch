@@ -1,14 +1,12 @@
-diff -urN linux-2.6.27.7/arch/mips/au1000/Kconfig linux-2.6.27.7.new/arch/mips/au1000/Kconfig
---- linux-2.6.27.7/arch/mips/au1000/Kconfig	2008-11-21 00:02:37.000000000 +0100
-+++ linux-2.6.27.7.new/arch/mips/au1000/Kconfig	2008-12-08 11:44:09.000000000 +0100
-@@ -134,3 +134,4 @@
+--- a/arch/mips/au1000/Kconfig
++++ b/arch/mips/au1000/Kconfig
+@@ -134,3 +134,4 @@ config SOC_AU1X00
  	select SYS_HAS_CPU_MIPS32_R1
  	select SYS_SUPPORTS_32BIT_KERNEL
  	select SYS_SUPPORTS_APM_EMULATION
 +	select ARCH_REQUIRE_GPIOLIB
-diff -urN linux-2.6.27.7/arch/mips/au1000/common/gpio.c linux-2.6.27.7.new/arch/mips/au1000/common/gpio.c
---- linux-2.6.27.7/arch/mips/au1000/common/gpio.c	2008-11-21 00:02:37.000000000 +0100
-+++ linux-2.6.27.7.new/arch/mips/au1000/common/gpio.c	2008-12-08 11:58:30.000000000 +0100
+--- a/arch/mips/au1000/common/gpio.c
++++ b/arch/mips/au1000/common/gpio.c
 @@ -1,5 +1,5 @@
  /*
 - *  Copyright (C) 2007, OpenWrt.org, Florian Fainelli <florian@openwrt.org>
@@ -312,9 +310,8 @@ diff -urN linux-2.6.27.7/arch/mips/au1000/common/gpio.c linux-2.6.27.7.new/arch/
  }
 -EXPORT_SYMBOL(au1xxx_gpio_direction_output);
 +arch_initcall(au1000_gpio_init);
-diff -urN linux-2.6.27.7/include/asm-mips/mach-au1x00/gpio.h linux-2.6.27.7.new/include/asm-mips/mach-au1x00/gpio.h
---- linux-2.6.27.7/include/asm-mips/mach-au1x00/gpio.h	2008-11-21 00:02:37.000000000 +0100
-+++ linux-2.6.27.7.new/include/asm-mips/mach-au1x00/gpio.h	2008-12-08 11:43:37.000000000 +0100
+--- a/include/asm-mips/mach-au1x00/gpio.h
++++ b/include/asm-mips/mach-au1x00/gpio.h
 @@ -1,69 +1,21 @@
  #ifndef _AU1XXX_GPIO_H_
  #define _AU1XXX_GPIO_H_

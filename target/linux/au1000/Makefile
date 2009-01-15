@@ -11,7 +11,7 @@ BOARD:=au1000
 BOARDNAME:=RMI/AMD AU1x00
 FEATURES:=jffs2 usb pci
 
-LINUX_VERSION:=2.6.27.10
+LINUX_VERSION:=2.6.27.11
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += hostapd-mini yamonenv
