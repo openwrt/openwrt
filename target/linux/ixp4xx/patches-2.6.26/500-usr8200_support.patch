@@ -117,7 +117,7 @@
 +subsys_initcall(usr8200_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/usr8200-setup.c
-@@ -0,0 +1,211 @@
+@@ -0,0 +1,212 @@
 +/*
 + * arch/arm/mach-ixp4xx/usr8200-setup.c
 + *
@@ -286,6 +286,7 @@
 +static struct platform_device usr8200_rtc = {
 +	.name		= "rtc7301",
 +	.id		= 0,
++	.num_resources	= 1,
 +	.resource	= &usr8200_rtc_resources,
 +};
 +
