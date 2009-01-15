@@ -756,20 +756,64 @@
  * _REG relative to RSET_SPI
  *************************************************************************/
 
-#define SPI_MSG_CTL			0x00
+/* BCM 6338 SPI core */
+#define SPI_BCM_6338_SPI_CMD		0x00
+#define SPI_BCM_6338_SPI_INT_STATUS	0x02
+#define SPI_BCM_6338_SPI_MASK_INT_ST	0x03
+#define SPI_BCM_6338_SPI_INT_MASK	0x04
+#define SPI_BCM_6338_SPI_ST		0x05
+#define SPI_BCM_6338_SPI_CLK_CFG	0x06
+#define SPI_BCM_6338_SPI_FILL_BYTE	0x07
+#define SPI_BCM_6338_SPI_MSG_TAIL	0x09
+#define SPI_BCM_6338_SPI_RX_TAIL	0x0b
+#define SPI_BCM_6338_SPI_MSG_CTL	0x40
+#define SPI_BCM_6338_SPI_MSG_DATA	0x41
+#define SPI_BCM_6338_SPI_MSG_DATA_SIZE	0x3f
+#define SPI_BCM_6338_SPI_RX_DATA	0x80
+#define SPI_BCM_6338_SPI_RX_DATA_SIZE	0x3f
+
+/* BCM 6348 SPI core */
+#define SPI_BCM_6348_SPI_CMD1		0x00
+#define SPI_BCM_6348_SPI_CMD2		0x04
+#define SPI_BCM_6348_SPI_TAIL		0x08
+#define SPI_BCM_6348_SPI_MSG_DATA	0x40
+#define SPI_BCM_6348_SPI_MSG_DATA_SIZE	0x3f
+#define SPI_BCM_6348_SPI_RX_DATA	0x80
+#define SPI_BCM_6348_SPI_RX_DATA_SIZE	0x3f
+
+/* BCM 6358 SPI core */
+#define SPI_BCM_6358_MSG_CTL		0x00
+
+#define SPI_BCM_6358_SPI_MSG_DATA	0x02
+#define SPI_BCM_6358_SPI_MSG_DATA_SIZE	0x21e
+
+#define SPI_BCM_6358_SPI_RX_FIFO	0x400
+#define SPI_BCM_6358_SPI_RX_FIFO_SIZE	0x220
+
+#define SPI_BCM_6358_SPI_CMD		0x700
+
+#define SPI_BCM_6358_SPI_INT_STATUS	0x702
+#define SPI_BCM_6358_SPI_MASK_INT_ST	0x703
+
+#define SPI_BCM_6358_SPI_INT_MASK	0x704
+
+#define SPI_BCM_6358_SPI_STATUS		0x705
+
+#define SPI_BCM_6358_SPI_CLK_CFG	0x706
+
+#define SPI_BCM_6358_SPI_FILL_BYTE	0x707
+#define SPI_BCM_6358_SPI_MSG_TAIL	0x709
+#define SPI_BCM_6358_SPI_RX_TAIL	0x70B
+
+/* Shared SPI definitions */
+
+/* Message configuration */
 #define SPI_FD_RW			0
 #define SPI_HD_W			1
 #define SPI_HD_R			2
 #define SPI_MSG_TYPE_SHIFT		14
-#define SPI_BYTE_CNT_SHIFT		0
 
-#define SPI_MSG_DATA			0x02
-#define SPI_MSG_DATA_SIZE		0x21e
-
-#define SPI_RX_FIFO			0x400
-#define SPI_RX_FIFO_SIZE		0x220
-
-#define SPI_CMD				0x700
+/* Command */
 #define SPI_CMD_NOOP			0
 #define SPI_CMD_SOFT_RESET		1
 #define SPI_CMD_HARD_RESET		2
@@ -785,10 +829,7 @@
 #define SPI_DEV_ID_2			2
 #define SPI_DEV_ID_3			3
 
-#define SPI_INT_STATUS			0x702
-#define SPI_MASK_INT_STATUS		0x703
-
-#define SPI_INT_MASK			0x704
+/* Interrupt mask */
 #define SPI_INTR_CMD_DONE		0x01
 #define SPI_INTR_RX_OVERFLOW		0x02
 #define SPI_INTR_TX_UNDERFLOW		0x04
@@ -796,12 +837,12 @@
 #define SPI_INTR_RX_UNDERFLOW		0x10
 #define SPI_INTR_CLEAR_ALL		0x1f
 
-#define SPI_STATUS			0x705
+/* Status */
 #define SPI_RX_EMPTY			0x02
 #define SPI_CMD_BUSY			0x04
 #define SPI_SERIAL_BUSY			0x08
 
-#define SPI_CLK_CFG			0x706
+/* Clock configuration */
 #define SPI_CLK_0_391MHZ		1
 #define SPI_CLK_0_781MHZ		2 /* default */
 #define SPI_CLK_1_563MHZ		3
@@ -813,8 +854,5 @@
 #define SPI_SSOFFTIME_SHIFT		3
 #define SPI_BYTE_SWAP			0x80
 
-#define SPI_FILL_BYTE			0x707
-#define SPI_MSG_TAIL			0x709
-#define SPI_RX_TAIL			0x70B
 
 #endif /* BCM63XX_REGS_H_ */
