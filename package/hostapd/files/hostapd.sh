@@ -85,6 +85,7 @@ hostapd_setup_vif() {
 		;;
 	esac
 	cat > /var/run/hostapd-$ifname.conf <<EOF
+ctrl_interface=/var/run/hostapd-$ifname
 driver=$driver
 interface=$ifname
 hw_mode=${hwmode:-g}
