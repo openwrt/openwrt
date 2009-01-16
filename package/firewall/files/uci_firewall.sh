@@ -55,39 +55,56 @@ create_zone() {
 }
 
 addif() {
-	local dev
-	config_get dev core $2
-	[ -n "$dev" -a "$dev" != "$1" ] && delif "$dev" "$2"
-	[ -n "$dev" -a "$dev" == "$1" ] && return
-	logger "adding $1 to firewall zone $2"
-	$IPTABLES -A input -i $1 -j zone_$2
-	$IPTABLES -I zone_$2_MSSFIX 1 -o $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-	$IPTABLES -I zone_$2_ACCEPT 1 -o $1 -j ACCEPT
-	$IPTABLES -I zone_$2_DROP 1 -o $1 -j DROP
-	$IPTABLES -I zone_$2_REJECT 1 -o $1 -j reject
-	$IPTABLES -I zone_$2_ACCEPT 1 -i $1 -j ACCEPT
-	$IPTABLES -I zone_$2_DROP 1 -i $1 -j DROP
-	$IPTABLES -I zone_$2_REJECT 1 -i $1 -j reject
-	$IPTABLES -I zone_$2_nat 1 -t nat -o $1 -j MASQUERADE 
-	$IPTABLES -I PREROUTING 1 -t nat -i $1 -j zone_$2_prerouting 
-	$IPTABLES -A forward -i $1 -j zone_$2_forward
-	uci_set_state firewall core "$2" "$1"
+	local network="$1"
+	local ifname="$2"
+	local zone="$3"
+
+	local n_if n_zone
+	config_get n_if core "${network}_ifname"
+	config_get n_zone core "${network}_zone"
+	[ -n "$n_zone" ] && {
+		if [ "$n_zone" != "$zone" ]; then
+			delif "$network" "$n_if" "$n_zone"
+		else
+			return
+		fi
+	}
+
+	logger "adding $network ($ifname) to firewall zone $zone"
+	$IPTABLES -A input -i "$ifname" -j zone_${zone}
+	$IPTABLES -I zone_${zone}_MSSFIX 1 -o "$ifname" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+	$IPTABLES -I zone_${zone}_ACCEPT 1 -o "$ifname" -j ACCEPT
+	$IPTABLES -I zone_${zone}_DROP 1 -o "$ifname" -j DROP
+	$IPTABLES -I zone_${zone}_REJECT 1 -o "$ifname" -j reject
+	$IPTABLES -I zone_${zone}_ACCEPT 1 -i "$ifname" -j ACCEPT
+	$IPTABLES -I zone_${zone}_DROP 1 -i "$ifname" -j DROP
+	$IPTABLES -I zone_${zone}_REJECT 1 -i "$ifname" -j reject
+	$IPTABLES -I zone_${zone}_nat 1 -t nat -o "$ifname" -j MASQUERADE 
+	$IPTABLES -I PREROUTING 1 -t nat -i "$ifname" -j zone_${zone}_prerouting 
+	$IPTABLES -A forward -i "$ifname" -j zone_${zone}_forward
+	uci_set_state firewall core "${network}_ifname" "$ifname"
+	uci_set_state firewall core "${network}_zone" "$zone"
 }
 
 delif() {
-	logger "removing $1 from firewall zone $2"
-	$IPTABLES -D input -i $1 -j zone_$2
-	$IPTABLES -D zone_$2_MSSFIX -o $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-	$IPTABLES -D zone_$2_ACCEPT -o $1 -j ACCEPT
-	$IPTABLES -D zone_$2_DROP -o $1 -j DROP
-	$IPTABLES -D zone_$2_REJECT -o $1 -j reject
-	$IPTABLES -D zone_$2_ACCEPT -i $1 -j ACCEPT
-	$IPTABLES -D zone_$2_DROP -i $1 -j DROP
-	$IPTABLES -D zone_$2_REJECT -i $1 -j reject
-	$IPTABLES -D zone_$2_nat -t nat -o $1 -j MASQUERADE 
-	$IPTABLES -D PREROUTING -t nat -i $1 -j zone_$2_prerouting 
-	$IPTABLES -D forward -i $1 -j zone_$2_forward
-	uci_revert_state firewall core "$2"
+	local network="$1"
+	local ifname="$2"
+	local zone="$3"
+
+	logger "removing $network ($ifname) from firewall zone $zone"
+	$IPTABLES -D input -i "$ifname" -j zone_$zone
+	$IPTABLES -D zone_${zone}_MSSFIX -o "$ifname" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+	$IPTABLES -D zone_${zone}_ACCEPT -o "$ifname" -j ACCEPT
+	$IPTABLES -D zone_${zone}_DROP -o "$ifname" -j DROP
+	$IPTABLES -D zone_${zone}_REJECT -o "$ifname" -j reject
+	$IPTABLES -D zone_${zone}_ACCEPT -i "$ifname" -j ACCEPT
+	$IPTABLES -D zone_${zone}_DROP -i "$ifname" -j DROP
+	$IPTABLES -D zone_${zone}_REJECT -i "$ifname" -j reject
+	$IPTABLES -D zone_${zone}_nat -t nat -o "$ifname" -j MASQUERADE 
+	$IPTABLES -D PREROUTING -t nat -i "$ifname" -j zone_${zone}_prerouting 
+	$IPTABLES -D forward -i "$ifname" -j zone_${zone}_forward
+	uci_revert_state firewall core "${network}_ifname"
+	uci_revert_state firewall core "${network}_zone"
 }
 
 load_synflood() {
