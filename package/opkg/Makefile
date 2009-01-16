@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=opkg
 PKG_REV:=4564
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
@@ -59,6 +59,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		HOST_CPU="$(ARCH)" \
 		all install
 endef
 
