@@ -159,16 +159,19 @@ fw_defaults() {
 	$IPTABLES -t mangle -X
 	$IPTABLES -t nat -X
 	$IPTABLES -X
-	
-	$IPTABLES -A INPUT -m state --state INVALID -j DROP
+
+	config_get_bool drop_invalid $1 drop_invalid 1
+
+	[ "$drop_invalid" -gt 0 ] && {
+		$IPTABLES -A INPUT -m state --state INVALID -j DROP
+		$IPTABLES -A OUTPUT -m state --state INVALID -j DROP
+		$IPTABLES -A FORWARD -m state --state INVALID -j DROP
+	}
+
 	$IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-		
-	$IPTABLES -A OUTPUT -m state --state INVALID -j DROP
 	$IPTABLES -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-	
-	$IPTABLES -A FORWARD -m state --state INVALID -j DROP
 	$IPTABLES -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-	
+
 	$IPTABLES -A INPUT -i lo -j ACCEPT
 	$IPTABLES -A OUTPUT -o lo -j ACCEPT
 
