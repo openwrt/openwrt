@@ -1,4 +1,4 @@
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=6.3
+PKG_VERSION:=6.8
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=05b928f41fa5b482e49ca2c24762a0ae
+PKG_MD5SUM:=c9da266b884fb8fa54df786dfaadbc7a
 PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/gdb
 PKG_CAT:=bzcat
 
@@ -42,12 +42,14 @@ endef
 
 TARGET_CPPFLAGS += -I$(STAGING_DIR)/usr/include
 TARGET_LDFLAGS += -L$(STAGING_DIR)/usr/lib
+CONFIGURE_ARGS += --with-system-readline
 
 export ac_cv_search_tgetent=$(TARGET_LDFLAGS) -lncurses -lreadline
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		CPPFLAGS="$(TARGET_CPPFLAGS)" \
 		all install-gdb
 endef
 
