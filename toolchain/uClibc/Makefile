@@ -94,7 +94,7 @@ define Build/Prepare/Snapshot
 endef
 
 define Build/Prepare/V_0_9_28
-	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
+	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(BUILD_DIR_TOOLCHAIN)/linux\",g' \
 		$(PKG_BUILD_DIR)/.config
  ifeq ($(CONFIG_SOFT_FLOAT),y)
 	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(PKG_BUILD_DIR)/.config
@@ -117,7 +117,7 @@ define Build/Prepare
  ifeq ($(PKG_VERSION),0.9.28)
 	$(call Build/Prepare/V_0_9_28)
  endif
-	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(LINUX_HEADERS_DIR)/include\",g' \
+	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include\",g' \
 		-e 's,.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,y),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
 		-e 's,^.*CONFIG_ARM_EABI.*,CONFIG_ARM_EABI=$(if $(CONFIG_EABI_SUPPORT),y,n),g' \
