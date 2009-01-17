@@ -34,7 +34,7 @@ _SINGLE=export MAKEFLAGS=$(space);
 ARCH:=$(call qstrip,$(shell echo $(CONFIG_ARCH) | sed -e 's/i[3-9]86/i386/'))
 BOARD:=$(call qstrip,$(CONFIG_TARGET_BOARD))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
-TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))
 BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 GCCV:=$(call qstrip,$(CONFIG_GCC_VERSION))
 LIBC:=$(call qstrip,$(CONFIG_LIBC))
