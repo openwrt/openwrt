@@ -18,6 +18,9 @@ endif
 ifeq ($(PKG_VERSION),2.18)
   PKG_MD5SUM:=9d22ee4dafa3a194457caf4706f9cf01
 endif
+ifeq ($(PKG_VERSION),2.19)
+  PKG_MD5SUM:=17a52219dee5a76c1a9d9b0bfd337d66
+endif
 
 PATCH_DIR:=./patches/$(PKG_VERSION)
 
