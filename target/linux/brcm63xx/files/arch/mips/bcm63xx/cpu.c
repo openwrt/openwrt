@@ -271,7 +271,7 @@ void __init bcm63xx_cpu_init(void)
 
 	printk(KERN_INFO "Detected Broadcom 0x%04x CPU revision %02x\n",
 	       bcm63xx_cpu_id, bcm63xx_cpu_rev);
-	printk(KERN_INFO "CPU frequency is %u MHz\n",
+	printk(KERN_INFO "CPU frequency is %u Hz\n",
 	       bcm63xx_cpu_freq);
 	printk(KERN_INFO "%uMB of RAM installed\n",
 	       bcm63xx_memory_size >> 20);
