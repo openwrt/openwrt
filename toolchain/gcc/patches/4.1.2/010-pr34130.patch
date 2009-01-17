@@ -1,0 +1,16 @@
+Index: gcc-4.1.2/gcc/fold-const.c
+===================================================================
+--- gcc-4.1.2.orig/gcc/fold-const.c	2007-11-21 18:53:42.000000000 +0100
++++ gcc-4.1.2/gcc/fold-const.c	2007-11-21 18:56:26.000000000 +0100
+@@ -5339,7 +5339,10 @@
+             }
+           break;
+         }
+-      /* FALLTHROUGH */
++   /* If the constant is negative, we cannot simplify this.  */
++   if (tree_int_cst_sgn (c) == -1)
++     break;
++   /* FALLTHROUGH */
+     case NEGATE_EXPR:
+       if ((t1 = extract_muldiv (op0, c, code, wide_type)) != 0)
+ 	return fold_build1 (tcode, ctype, fold_convert (ctype, t1));
