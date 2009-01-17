@@ -1,0 +1,31 @@
+Index: uClibc-0.9.29/extra/scripts/gen_bits_syscall_h.sh
+===================================================================
+--- uClibc-0.9.29.orig/extra/scripts/gen_bits_syscall_h.sh	2006-12-12 04:30:02.000000000 +0100
++++ uClibc-0.9.29/extra/scripts/gen_bits_syscall_h.sh	2008-03-10 23:20:52.000000000 +0100
+@@ -24,8 +24,8 @@
+ ( echo "#include <asm/unistd.h>";
+   echo "#include <asm/unistd.h>" |
+   $CC -E $CC_SYSNUM_ARGS $INCLUDE_OPTS - |
+-  sed -ne 's/^[ ]*#define[ ]*__NR_\([A-Za-z0-9_]*\).*/UCLIBC_\1 __NR_\1/gp' \
+-      -e 's/^[ ]*#undef[ ]*__NR_\([A-Za-z0-9_]*\).*/UNDEFUCLIBC_\1 __NR_\1/gp' # needed to strip out any kernel-internal defines
++  sed -ne 's/^[ ]*#define[ ]*\(__ARM_NR_\|__NR_\)\([A-Za-z0-9_]*\).*/UCLIBC\1\2 \1\2/gp' \
++      -e 's/^[ ]*#undef[ ]*\(__ARM_NR_\|__NR_\)\([A-Za-z0-9_]*\).*/UNDEFUCLIBC\1\2 \1\2/gp' # needed to strip out any kernel-internal defines
+ ) |
+ $CC -E $INCLUDE_OPTS - |
+ ( echo "/* WARNING!!! AUTO-GENERATED FILE!!! DO NOT EDIT!!! */" ; echo ;
+@@ -35,10 +35,10 @@
+   echo "#ifndef _SYSCALL_H" ;
+   echo "# error \"Never use <bits/sysnum.h> directly; include <sys/syscall.h> instead.\"" ;
+   echo "#endif" ; echo ;
+-  sed -ne 's/^UCLIBC_\([A-Za-z0-9_]*\) *\(.*\)/#undef __NR_\1\
+-#define __NR_\1 \2\
+-#define SYS_\1 __NR_\1/gp' \
+-     -e 's/^UNDEFUCLIBC_\([A-Za-z0-9_]*\).*/#undef __NR_\1/gp'
++  sed -ne 's/^UCLIBC\(__ARM_NR_\|__NR_\)\([A-Za-z0-9_]*\) *\(.*\)/#undef \1\2\
++#define \1\2 \3\
++#define SYS_\2 \1\2/gp' \
++     -e 's/^UNDEFUCLIBC\(__ARM_NR_\|__NR_\)\([A-Za-z0-9_]*\).*/#undef \1\2/gp'
+   echo ;
+   echo "#endif" ;
+ )
+
