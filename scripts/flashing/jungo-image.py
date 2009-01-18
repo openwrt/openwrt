@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2008 (C) Jose Vasconcellos <jvasco@verizon.net>
+# Copyright 2008, 2009 (C) Jose Vasconcellos <jvasco@verizon.net>
 #
 # A script that can communicate with jungo-based routers
 # (such as MI424-WR, USR8200 and WRV54G) to backup the installed
@@ -8,20 +8,20 @@
 #
 # Tested with Python 2.5 on Linux and Windows
 #
-"""Usage: %s [options] <IP_address> [redboot.bin]
+"""Usage: %s [options] <IP_address> [image.bin | url]
 Valid options:
 \t-h | --help: usage statement
-\t-d | --no-dump: don't create a flash dump
+\t-d | --dump: create a flash dump
 \t-f | --file: use <filename> to store dump contents
 \t-u | --user: provide username (default admin)
 \t-p | --pass: provide password (default password1)
-\t-P | --proto: set transfer protocol (default http)
 \t     --port: set port for http (default 8080)
-\t-s | --server: IP address of tftp server
-\t-w | --write: initiate loading of redboot (default no modification to flash)
 \t-q | --quiet: don't display unnecessary information
-\t-v | --verbose: display progress information
+\t-r | --reboot: reboot target on successful transfer
 \t-V | --version: display version information
+
+If no image (or url) is given, a flash dump is created.
+A built-in http server is used when an image file is provided.
 """
 
 import os
@@ -36,44 +36,43 @@ import thread
 import SocketServer
 import SimpleHTTPServer
 
-server = ""
+reboot = 0
 HOST = "192.168.1.1"
 PORT = 8080
 user = "admin"
 #password = getpass.getpass()
 password = "password1"
 proto = "http"
-imagefile = "redboot.bin"
+url = ""
+imagefile = ""
 dumpfile = ""
 verbose = 1
-no_dump = 0
+do_dump = 0
 dumplen = 0x10000
-write_image = 0
 flashsize=4*1024*1024
 #device="br0"
 device="ixp0"
 
 ####################
 
-def start_server():
+def start_server(server):
     httpd = SocketServer.TCPServer((server,PORT),SimpleHTTPServer.SimpleHTTPRequestHandler)
     thread.start_new_thread(httpd.serve_forever,())
 
 ####################
 
 def get_flash_size():
-    global flashsize
     tn.write("cat /proc/mtd\n")
     # wait for prompt
     buf = tn.read_until("Returned 0", 3)
     if buf:
         i = buf.find('mtd0:')
         if i > 0:
-            flashsize = int(buf[i+6:].split()[0],16)
-        else:
-            print "Can't find mtd0!"
+            return int(buf[i+6:].split()[0],16)
+        print "Can't find mtd0!"
     else:
         print "Can't access /proc/mtd!"
+    sys.exit(2)
 
 def image_dump(tn, dumpfile):
     if not dumpfile:
@@ -149,9 +148,9 @@ def usage():
 ####################
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hdf:u:qp:P:s:vVw", \
-	["help", "dump", "file=", "user=", "pass=", "port=", "proto=",
-	 "quiet=", "server=", "verbose", "version", "write"])
+    opts, args = getopt.getopt(sys.argv[1:], "hdf:qp:P:rvV", \
+	["help", "dump", "file=", "user=", "pass=", "port=",
+	 "quiet=", "reboot", "verbose", "version"])
 except getopt.GetoptError:
     # print help information and exit:
     usage()
@@ -162,26 +161,22 @@ for o, a in opts:
 	usage()
 	sys.exit(1)
     elif o in ("-V", "--version"):
-	print "%s: 0.8" % sys.argv[0]
+	print "%s: 0.9" % sys.argv[0]
 	sys.exit(1)
     elif o in ("-d", "--no-dump"):
-	no_dump = 1
+	do_dump = 1
     elif o in ("-f", "--file"):
 	dumpfile = a
-    elif o in ("-s", "--server"):
-	server = a
     elif o in ("-u", "--user"):
 	user = a
     elif o in ("-p", "--pass"):
 	password = a
-    elif o in ("-P", "--proto"):
-	proto = a
     elif o == "--port":
 	PORT = int(a)
-    elif o in ("-w", "--write"):
-	write_image = 1
     elif o in ("-q", "--quiet"):
 	verbose = 0
+    elif o in ("-r", "--reboot"):
+	reboot = 1
     elif o in ("-v", "--verbose"):
 	verbose = 1
 
@@ -190,7 +185,12 @@ if len(args) > 0:
     HOST = args[0]
 
 if len(args) == 2:
-    imagefile = args[1]
+    if args[1].split(':')[0] in ("tftp", "http", "ftp"):
+        url = args[1]
+    else:
+        imagefile = args[1]
+else:
+    do_dump = 1;
 
 ####################
 # create a telnet session to the router
@@ -217,31 +217,30 @@ buf = tn.read_until("> ", 3)
 if not buf:
     telnet_timeout()
 
-get_flash_size()
+flashsize = get_flash_size()
 
-if not no_dump:
+if do_dump:
     image_dump(tn, dumpfile)
 
-if write_image:
-    if not os.access(imagefile, os.R_OK):
-	print "File access error: %s" % (imagefile)
-	sys.exit(3)
-
+if imagefile or url:
     splitpath = os.path.split(imagefile)
-    # make sure we're in the directory where the image is located
-    if splitpath[0]:
-	os.chdir(splitpath[0])
 
-    # write image file image
-    if not server:
-        server = tn.get_socket().getsockname()[0]
-    if proto == "http":
-        cmd = "load -u %s://%s:%d/%s -r 0\n" % (proto, server, PORT, splitpath[1])
+    # create load command
+    if url:
+        cmd = "load -u %s -r 0\n" % (url)
     else:
-        cmd = "load -u %s://%s/%s -r 0\n" % (proto, server, splitpath[1])
+        server = tn.get_socket().getsockname()[0]
+        cmd = "load -u http://%s:%d/%s -r 0\n" % (server, PORT, splitpath[1])
 
-    if proto == "http":
-        start_server()
+        if not os.access(imagefile, os.R_OK):
+            print "File access error: %s" % (imagefile)
+            sys.exit(3)
+
+        # make sure we're in the directory where the image is located
+        if splitpath[0]:
+            os.chdir(splitpath[0])
+
+        start_server(server)
 
     if verbose:
 	print "Unlocking flash..."
@@ -254,5 +253,14 @@ if write_image:
     tn.write(cmd)
     buf = tn.read_until("Returned 0",10)
 
+    # wait till the transfer completed
+    buf = tn.read_until("Download completed successfully",20)
+    if buf:
+	print "Flash update complete!"
+        if reboot:
+            tn.write("reboot\n")
+            print "Rebooting..."
+
 tn.write("exit\n")
 tn.close()
+
