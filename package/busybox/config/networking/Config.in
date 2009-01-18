@@ -66,12 +66,12 @@ config BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
 	  This adds about 600 bytes.
 
 config BUSYBOX_CONFIG_FEATURE_BRCTL_SHOW
-	bool "Support show, showmac and showstp"
+	bool "Support show"
 	default y
 	depends on BUSYBOX_CONFIG_BRCTL && BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
 	help
 	  Add support for option which prints the current config:
-	    showmacs, showstp, show
+	    show
 
 config BUSYBOX_CONFIG_DNSD
 	bool "dnsd"
