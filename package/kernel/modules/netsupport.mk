@@ -216,19 +216,22 @@ endef
 
 $(eval $(call KernelPackage,ipsec6))
 
-
-# NOTE: tunnel4 is not selectable by itself, so enable ipip for that
 define KernelPackage/iptunnel4
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=IPv4 tunneling
-  DEPENDS:= @LINUX_2_6
-  KCONFIG:= \
-	CONFIG_NET_IPIP \
-	CONFIG_INET_TUNNEL
-  FILES:= $(foreach mod,tunnel4, \
-	$(LINUX_DIR)/net/ipv4/$(mod).$(LINUX_KMOD_SUFFIX) \
-  )
-  AUTOLOAD:=$(call AutoLoad,31,tunnel4)
+  TITLE:=IP in IP encapsulation support
+  KCONFIG:=$(CONFIG_NET_IPIP)
+  SUBMENU:=$(NSMENU)
+endef
+
+define KernelPackage/iptunnel4/2.4
+  FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ipip)
+endef
+
+define KernelPackage/iptunnel4/2.6
+  FILES:= \
+	$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ipip tunnel4)
 endef
 
 define KernelPackage/iptunnel4/description
@@ -236,7 +239,6 @@ define KernelPackage/iptunnel4/description
 endef
 
 $(eval $(call KernelPackage,iptunnel4))
-
 
 define KernelPackage/iptunnel6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
