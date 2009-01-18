@@ -121,7 +121,7 @@ define KernelPackage/ipip
   DEPENDS:=+kmod-iptunnel4
   KCONFIG:=CONFIG_NET_IPIP
   FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ipip)
+  AUTOLOAD:=$(call AutoLoad,32,ipip)
 endef
 
 define KernelPackage/ipip/description
