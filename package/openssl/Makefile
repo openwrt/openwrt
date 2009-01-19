@@ -9,15 +9,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=0.9.8i
-PKG_RELEASE:=3
+PKG_VERSION:=0.9.8j
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
 	ftp://ftp.webmonster.de/pub/openssl/source/ \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_MD5SUM:=561e00f18821c74b2b86c8c7786f9d8b
+PKG_MD5SUM:=a5cb5f6c3d11affb387ecf7a997cac0c
 
 PKG_BUILD_DEPENDS:=ocf-crypto-headers
 
@@ -70,10 +70,10 @@ endef
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
 					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
 ifeq ($(BOARD),ixp4xx)
-OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-threads zlib-dynamic \
+OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic \
 					no-sse2 no-perlasm --with-cryptodev
 else
-OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-threads zlib-dynamic \
+OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic \
 					no-engines no-sse2 no-perlasm
 endif
 

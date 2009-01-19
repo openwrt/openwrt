@@ -1,13 +1,11 @@
-Index: openssl-0.9.8e/Makefile.org
-===================================================================
---- openssl-0.9.8e.orig/Makefile.org	2007-06-04 13:23:32.048861728 +0200
-+++ openssl-0.9.8e/Makefile.org	2007-06-04 13:23:32.857738760 +0200
-@@ -104,7 +104,7 @@
- ZLIB_INCLUDE=
- LIBZLIB=
+--- openssl-0.9.8j/Makefile.org	2008-12-30 14:26:26.000000000 +0100
++++ openssl-0.9.8j.patched/Makefile.org	2009-01-17 13:41:52.610868317 +0100
+@@ -131,7 +131,7 @@
  
--DIRS=   crypto ssl engines apps test tools
-+DIRS=   crypto ssl apps
- SHLIBDIRS= crypto ssl
+ BASEADDR=
+ 
+-DIRS=   crypto fips ssl engines apps test tools
++DIRS=   crypto fips ssl apps
+ SHLIBDIRS= crypto ssl fips
  
  # dirs in crypto to build

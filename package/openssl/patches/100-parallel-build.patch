@@ -1,0 +1,24 @@
+diff -uNr openssl-0.9.8j.ORIG/Makefile.org openssl-0.9.8j/Makefile.org
+--- openssl-0.9.8j.ORIG/Makefile.org	2009-01-07 18:06:31.000000000 +0000
++++ openssl-0.9.8j/Makefile.org	2009-01-07 18:08:38.000000000 +0000
+@@ -333,15 +333,15 @@
+ 		dir=crypto; target=all; $(BUILD_ONE_CMD)
+ build_fips:
+ 	@dir=fips; target=all; [ -z "$(FIPSCANLIB)" ] || $(BUILD_ONE_CMD)
+-build_ssl:
++build_ssl: build_crypto
+ 	@dir=ssl; target=all; $(BUILD_ONE_CMD)
+-build_engines:
++build_engines: build_crypto
+ 	@dir=engines; target=all; $(BUILD_ONE_CMD)
+-build_apps:
++build_apps: build_libs
+ 	@dir=apps; target=all; $(BUILD_ONE_CMD)
+-build_tests:
++build_tests: build_libs
+ 	@dir=test; target=all; $(BUILD_ONE_CMD)
+-build_tools:
++build_tools: build_libs
+ 	@dir=tools; target=all; $(BUILD_ONE_CMD)
+ 
+ all_testapps: build_libs build_testapps
