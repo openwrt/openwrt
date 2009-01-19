@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=apex
 PKG_VERSION:=1.5.14
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -57,6 +57,16 @@ define Build/Compile
 		ARCH=arm \
 		all
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/apex.bin $(TARGET)/apex-fsg3-armeb.bin
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH=arm \
+		slugos-nas100d-armeb_config
+	$(SED) 's,.*CONFIG_AEABI.*,$(if $(CONFIG_EABI_SUPPORT),CONFIG_AEABI=y,# CONFIG_AEABI is not set),' $(PKG_BUILD_DIR)/.config
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		KBUILD_HAVE_NLS=no \
+		ARCH=arm \
+		all
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/apex.bin $(TARGET)/apex-nas100d-armeb.bin
 endef
 
 define Build/InstallDev
