@@ -130,6 +130,7 @@ define Build/Prepare
 		DEVEL_PREFIX=/usr/ \
 		RUNTIME_PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
 		HOSTCC="$(HOSTCC)" \
+		CC="$(TARGET_CC)" \
 		CPU_CFLAGS="$(TARGET_CFLAGS)" \
 		pregen install_dev;
 endef
