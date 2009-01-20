@@ -117,6 +117,14 @@ config NO_STRIP
 	bool "Install unstripped binary on the target (useful for native compiling/debugging)"
 	default n
 
+comment "Kernel build options"
+
+config KERNEL_KALLSYMS
+	bool "Compile the kernel with symbol table information"
+	default n
+	help
+		This will give you more information in stack traces from kernel oopses
+
 endmenu
 
 menuconfig DEVEL
