@@ -62,18 +62,42 @@ else
   define Build/Prepare/all
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include
 	cp -pLR \
-		$(BUILD_DIR_TOOLCHAIN)/linux/include/asm \
-		$(BUILD_DIR_TOOLCHAIN)/linux/include/asm-generic \
-		$(BUILD_DIR_TOOLCHAIN)/linux/include/asm-$(LINUX_KARCH) \
-		$(BUILD_DIR_TOOLCHAIN)/linux/include/linux \
+		$(PKG_BUILD_DIR)/include/asm \
+		$(PKG_BUILD_DIR)/include/asm-generic \
+		$(PKG_BUILD_DIR)/include/asm-$(LINUX_KARCH) \
+		$(PKG_BUILD_DIR)/include/linux \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
   endef
 endif
 
+# XXX: the following is needed to build lzma-loader
+define Build/Prepare/lzma
+	$(CP) \
+		$(PKG_BUILD_DIR)/include/asm-mips/asm.h \
+		$(PKG_BUILD_DIR)/include/asm-mips/regdef.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
+endef
+
+# XXX: the following is needed to build final gcc on cris
+define Build/Prepare/post/cris
+	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch
+	$(CP) \
+		$(PKG_BUILD_DIR)/include/asm-cris/arch/ptrace.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch/
+endef
+
+define Build/Prepare/post/mips
+	$(call Build/Prepare/lzma)
+endef
+
+define Build/Prepare/post/mipsel
+	$(call Build/Prepare/lzma)
+endef
+
 define Build/Prepare
 	$(call Kernel/Prepare/Default)
+	ln -sf linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
-	ln -sf linux-$(LINUX_VERSION) $(LINUX_HEADERS_DIR)
 	yes '' | $(KMAKE) oldconfig
 	$(KMAKE) include/linux/version.h include/asm
 	if [ -d $(PKG_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
@@ -83,6 +107,7 @@ define Build/Prepare
 	fi
 	$(call Build/Prepare/pre/$(ARCH))
 	$(call Build/Prepare/all)
+	$(call Build/Prepare/post/$(ARCH))
 endef
 
 define Build/Configure
@@ -91,40 +116,8 @@ endef
 define Build/Compile
 endef
 
-define Build/Install/all
-	mkdir -p $(TOOLCHAIN_DIR)/usr/include
-	$(CP) \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/* \
-		$(TOOLCHAIN_DIR)/usr/include/
-endef
-
-# XXX: the following is needed to build lzma-loader
-define Build/Install/post/lzma
-	$(CP) \
-		$(BUILD_DIR_TOOLCHAIN)/linux/include/asm-mips/asm.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux/include/asm-mips/regdef.h \
-		$(TOOLCHAIN_DIR)/usr/include/asm/
-endef
-
-# XXX: the following is needed to build final gcc on cris
-define Build/Install/post/cris
-	mkdir -p $(TOOLCHAIN_DIR)/usr/include/asm/arch
-	$(CP) \
-		$(PKG_BUILD_DIR)/include/asm-cris/arch/ptrace.h \
-		$(TOOLCHAIN_DIR)/usr/include/asm/arch/
-endef
-
-define Build/Install/post/mips
-	$(call Build/Install/post/lzma)
-endef
-
-define Build/Install/post/mipsel
-	$(call Build/Install/post/lzma)
-endef
-
 define Build/Install
-	$(call Build/Install/all)
-	$(call Build/Install/post/$(ARCH))
+	$(CP) $(BUILD_DIR_TOOLCHAIN)/linux-dev/* $(TOOLCHAIN_DIR)/
 endef
 
 define Build/Clean
