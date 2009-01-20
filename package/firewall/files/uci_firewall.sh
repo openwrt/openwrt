@@ -154,9 +154,7 @@ fw_defaults() {
 	$IPTABLES -P FORWARD DROP
 
 	$IPTABLES -F
-	$IPTABLES -t mangle -F
 	$IPTABLES -t nat -F
-	$IPTABLES -t mangle -X
 	$IPTABLES -t nat -X
 	$IPTABLES -X
 
@@ -419,9 +417,7 @@ fw_init() {
 
 fw_stop() {
 	$IPTABLES -F
-	$IPTABLES -t mangle -F
 	$IPTABLES -t nat -F
-	$IPTABLES -t mangle -X
 	$IPTABLES -t nat -X
 	$IPTABLES -X
 	$IPTABLES -P INPUT ACCEPT
