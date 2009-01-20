@@ -9,19 +9,19 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=testing-20080324
+PKG_VERSION:=2.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
-PKG_MD5SUM:=9f442520b0e238ae5beb4ebea0867377
+PKG_MD5SUM:=d9f2ecd3c3307905f24130a25816e6cc
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@i386||@TARGET_ps3||@mipsel||@mips +zlib
+  DEPENDS:=@armeb||@i386||@TARGET_ps3||@mipsel||@mips +zlib
   TITLE:=Kernel boots kernel
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
   MENU:=1
