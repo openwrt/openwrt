@@ -1,0 +1,12 @@
+diff -ruN linux-2.6.28.orig/drivers/serial/samsung.c linux-2.6.28/drivers/serial/samsung.c
+--- linux-2.6.28.orig/drivers/serial/samsung.c	2009-01-19 21:52:17.000000000 +0100
++++ linux-2.6.28/drivers/serial/samsung.c	2009-01-19 21:53:42.000000000 +0100
+@@ -882,7 +882,7 @@
+ 
+ static struct uart_driver s3c24xx_uart_drv = {
+ 	.owner		= THIS_MODULE,
+-	.dev_name	= "s3c2410_serial",
++	.dev_name	= "ttySAC",
+ 	.nr		= CONFIG_SERIAL_SAMSUNG_UARTS,
+ 	.cons		= S3C24XX_SERIAL_CONSOLE,
+ 	.driver_name	= S3C24XX_SERIAL_NAME,
