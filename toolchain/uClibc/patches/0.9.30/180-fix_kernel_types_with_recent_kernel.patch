@@ -32,3 +32,18 @@ index 6609dd3..8641a48 100644
 -- 
 1.5.6.5
 
+diff -ruN uClibc-0.9.30-old/libc/sysdeps/linux/x86_64/bits/kernel_types.h uClibc-0.9.30-new/libc/sysdeps/linux/x86_64/bits/kernel_types.h
+--- uClibc-0.9.30-old/libc/sysdeps/linux/x86_64/bits/kernel_types.h	2008-07-23 13:23:36.000000000 +0200
++++ uClibc-0.9.30-new/libc/sysdeps/linux/x86_64/bits/kernel_types.h	2009-01-21 16:33:27.000000000 +0100
+@@ -4,8 +4,10 @@
+  * our private content, and not the kernel header, will win.
+  *  -Erik
+  */
+-#ifndef _ASM_X86_64_POSIX_TYPES_H
++#if !defined(_ASM_X86_64_POSIX_TYPES_H) && \
++    !defined(_ASM_X86_POSIX_TYPES_64_H)
+ #define _ASM_X86_64_POSIX_TYPES_H
++#define _ASM_X86_POSIX_TYPES_64_H
+ 
+ typedef unsigned long	__kernel_dev_t;
+ typedef unsigned long	__kernel_ino_t;
