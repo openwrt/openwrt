@@ -24,7 +24,7 @@ CFLAGS += -Dloff_t=off_t -D__BYTE_ORDER=BYTE_ORDER -include getline.h -include e
 endif
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/util LINUXDIR="$(LINUX_HEADERS_DIR)" CFLAGS="$(CFLAGS)" TARGETS=mkfs.jffs2
+	$(MAKE) -C $(PKG_BUILD_DIR)/util CFLAGS="$(CFLAGS)" TARGETS=mkfs.jffs2
 endef
 
 define Build/Install
