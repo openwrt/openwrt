@@ -1,0 +1,13 @@
+diff -ruN uClibc-0.9.29-old/Rules.mak uClibc-0.9.29-new/Rules.mak
+--- uClibc-0.9.29-old/Rules.mak	2009-01-17 16:18:36.662982000 +0100
++++ uClibc-0.9.29-new/Rules.mak	2009-01-17 19:14:02.473165330 +0100
+@@ -498,7 +498,8 @@
+ 
+ # Sigh, some stupid versions of gcc can't seem to cope with '-iwithprefix include'
+ #CFLAGS+=-iwithprefix include
+-CFLAGS+=-isystem $(shell $(CC) -print-file-name=include)
++CC_IPREFIX:=$(shell $(CC) -print-file-name=include)
++CFLAGS+=-isystem $(CC_IPREFIX) -isystem $(CC_IPREFIX)-fixed
+ 
+ ifneq ($(DOASSERTS),y)
+ CFLAGS+=-DNDEBUG

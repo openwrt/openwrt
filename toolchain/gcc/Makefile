@@ -2,7 +2,7 @@
 # Copyright (C) 2002-2003 Erik Andersen <andersen@uclibc.org>
 # Copyright (C) 2004 Manuel Novoa III <mjn3@uclibc.org>
 # Copyright (C) 2005-2006 Felix Fietkau <nbd@openwrt.org>
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,12 @@ endif
 ifeq ($(PKG_VERSION),4.2.4)
   PKG_MD5SUM:=d79f553e7916ea21c556329eacfeaa16
 endif
+ifeq ($(PKG_VERSION),4.3.1)
+  PKG_MD5SUM:=4afa0290cc3a41ac8822666f1110de98
+endif
+ifeq ($(PKG_VERSION),4.3.2)
+  PKG_MD5SUM:=5dfac5da961ecd5f227c3175859a486d
+endif
 
 PATCH_DIR=./patches/$(PKG_VERSION)
 
@@ -63,11 +69,20 @@ GCC_CONFIGURE_COMMON:= \
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--with-gnu-ld \
 		--enable-target-optspace \
+		--disable-libgomp \
 		--disable-libmudflap \
 		--disable-multilib \
 		--disable-nls \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
+
+ifneq ($(CONFIG_GCC_VERSION_4_3),)
+	GCC_BUILD_TARGET_LIBGCC:=y
+	GCC_CONFIGURE_COMMON+= \
+		--with-gmp=$(TOPDIR)/staging_dir/host \
+		--with-mpfr=$(TOPDIR)/staging_dir/host \
+		--disable-decimal-float
+endif
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
 	GCC_CONFIGURE_COMMON+= \
@@ -96,7 +111,6 @@ GCC_CONFIGURE_STAGE0:= \
 		--with-newlib \
 		--without-headers \
 		--enable-languages=c \
-		--disable-libgomp \
 		--disable-libssp \
 		--disable-shared \
 		--disable-threads \
@@ -151,11 +165,18 @@ define Stage1/Configure
 endef
 
 define Stage1/Compile
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) all-build-libiberty all-gcc
+	$(CP) $(BUILD_DIR_TOOLCHAIN)/linux-dev/* $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) \
+		all-build-libiberty \
+		all-gcc \
+		$(if $(GCC_BUILD_TARGET_LIBGCC),all-target-libgcc)
 endef
 
 define Stage1/Install
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) install-gcc
+	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) \
+		install-gcc \
+		$(if $(GCC_BUILD_TARGET_LIBGCC),install-target-libgcc)
+	
 	# XXX: glibc insists on linking against libgcc_eh
 	( cd $(TOOLCHAIN_DIR)/usr/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
 		[ -e libgcc_eh.a ] || ln -sf libgcc.a libgcc_eh.a ; \

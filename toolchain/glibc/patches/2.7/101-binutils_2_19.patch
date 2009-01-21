@@ -1,0 +1,12 @@
+diff -ruN glibc-2.7-old/sysdeps/i386/fpu/ftestexcept.c glibc-2.7-new/sysdeps/i386/fpu/ftestexcept.c
+--- glibc-2.7-old/sysdeps/i386/fpu/ftestexcept.c	2004-03-05 11:14:48.000000000 +0100
++++ glibc-2.7-new/sysdeps/i386/fpu/ftestexcept.c	2009-01-21 03:33:43.000000000 +0100
+@@ -26,7 +26,7 @@
+ int
+ fetestexcept (int excepts)
+ {
+-  int temp;
++  short temp;
+   int xtemp = 0;
+ 
+   /* Get current exceptions.  */
