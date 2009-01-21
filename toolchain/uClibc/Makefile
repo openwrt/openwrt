@@ -39,6 +39,12 @@ ifeq ($(PKG_VERSION),0.9.29)
   endif
 endif
 
+ifeq ($(PKG_VERSION),0.9.30)
+  ifeq ($(PKG_EXTRAVERSION),)
+    PKG_MD5SUM:=e5766e2566e0297adebebbcc0aba1f2d
+  endif
+endif
+
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
   PATCH_DIR:=
   CONFIG_DIR:=./config
@@ -132,7 +138,8 @@ define Build/Prepare
 		HOSTCC="$(HOSTCC)" \
 		CC="$(TARGET_CC)" \
 		CPU_CFLAGS="$(TARGET_CFLAGS)" \
-		pregen install_dev;
+		pregen \
+		$(if $(CONFIG_UCLIBC_VERSION_0_9_28),install_dev,install_headers)
 endef
 
 define Build/Configure
