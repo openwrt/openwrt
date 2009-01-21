@@ -78,12 +78,27 @@ define Build/Prepare/lzma
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
 endef
 
-# XXX: the following is needed to build final gcc on cris
+# XXX: the following are needed to build a cris toolchain
 define Build/Prepare/post/cris
+	$(CP) \
+		$(PKG_BUILD_DIR)/include/linux/user.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
+	$(CP) \
+		$(PKG_BUILD_DIR)/include/asm-cris/elf.h \
+		$(PKG_BUILD_DIR)/include/asm-cris/page.h \
+		$(PKG_BUILD_DIR)/include/asm-cris/user.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch
 	$(CP) \
+		$(PKG_BUILD_DIR)/include/asm-cris/arch/elf.h \
+		$(PKG_BUILD_DIR)/include/asm-cris/arch/page.h \
 		$(PKG_BUILD_DIR)/include/asm-cris/arch/ptrace.h \
+		$(PKG_BUILD_DIR)/include/asm-cris/arch/user.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch/
+	$(CP) \
+		$(PKG_BUILD_DIR)/include/asm-generic/memory_model.h \
+		$(PKG_BUILD_DIR)/include/asm-generic/page.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm-generic/
 endef
 
 define Build/Prepare/post/mips
