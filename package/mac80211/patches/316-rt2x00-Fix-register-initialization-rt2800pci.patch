@@ -1,0 +1,55 @@
+From c3a42af4455fd75735c218ffac392ef86a3a250f Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 17 Jan 2009 19:18:38 +0100
+Subject: [PATCH] rt2x00: Fix register initialization (rt2800pci)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800pci.c |   19 +++++++++++++++----
+ 1 files changed, 15 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -602,9 +602,12 @@ static void rt2800pci_config_ant(struct 
+ 	 */
+ 	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH)) {
+ 	case 1:
++		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 0);
+ 		rt2x00_set_field8(&r3, BBP3_RX_ANTENNA, 0);
+ 		break;
+ 	case 2:
++		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 16);
++		break;
+ 	case 3:
+ 		/* Do nothing */
+ 		break;
+@@ -1371,7 +1374,7 @@ static int rt2800pci_init_registers(stru
+ 	 * ASIC will keep garbage value after boot, clear encryption keys.
+ 	 */
+ 	for (i = 0; i < 254; i++) {
+-		u32 wcid[2] = { 0xffffffff, 0x0000ffff };
++		u32 wcid[2] = { 0xffffffff, 0x00ffffff };
+ 		rt2x00pci_register_multiwrite(rt2x00dev, MAC_WCID_ENTRY(i),
+ 					      wcid, sizeof(wcid));
+ 	}
+@@ -2158,9 +2161,17 @@ static int rt2800pci_validate_eeprom(str
+ 	}
+ 
+ 	rt2x00_eeprom_read(rt2x00dev, EEPROM_NIC, &word);
+-	if (word != 0) {
+-		/* NIC configuration must always be 0. */
+-		word = 0;
++	if (word == 0xffff) {
++		rt2x00_set_field16(&word, EEPROM_NIC_HW_RADIO, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_DYNAMIC_TX_AGC, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_EXTERNAL_LNA_BG, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_EXTERNAL_LNA_A, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_CARDBUS_ACCEL, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_SB_BG, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_SB_A, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_WPS_PBC, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_BG, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_A, 0);
+ 		rt2x00_eeprom_write(rt2x00dev, EEPROM_NIC, word);
+ 		EEPROM(rt2x00dev, "NIC: 0x%04x\n", word);
+ 	}

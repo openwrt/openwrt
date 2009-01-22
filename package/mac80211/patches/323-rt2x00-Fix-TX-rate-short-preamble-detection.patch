@@ -1,0 +1,51 @@
+From 4f9ea5700c714afce77e410d1c0c114c42d5a910 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sun, 18 Jan 2009 20:17:10 +0100
+Subject: [PATCH] rt2x00: Fix TX rate short preamble detection
+
+Mac80211 provides 2 structures to handle bitrates, namely
+ieee80211_rate and ieee80211_tx_rate. To determine the short preamble
+mode for an outgoing frame, the flag IEEE80211_TX_RC_USE_SHORT_PREAMBLE
+must be checked on ieee80211_tx_rate and not ieee80211_rate (which rt2x00 did).
+
+This fixes a regression which was triggered in 2.6.29-rcX as reported by Chris Clayton.
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2x00queue.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2x00queue.c
++++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
+@@ -186,10 +186,11 @@ static void rt2x00queue_create_tx_descri
+ 
+ static void rt2x00queue_create_tx_descriptor_plcp(struct queue_entry *entry,
+ 						  struct txentry_desc *txdesc,
+-						  struct ieee80211_rate *rate)
++						  const struct rt2x00_rate *hwrate)
+ {
+ 	struct rt2x00_dev *rt2x00dev = entry->queue->rt2x00dev;
+-	const struct rt2x00_rate *hwrate = rt2x00_get_rate(rate->hw_value);
++	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(entry->skb);
++	struct ieee80211_tx_rate *txrate = &tx_info->control.rates[0];
+ 	unsigned int data_length;
+ 	unsigned int duration;
+ 	unsigned int residual;
+@@ -232,7 +233,7 @@ static void rt2x00queue_create_tx_descri
+ 		 * When preamble is enabled we should set the
+ 		 * preamble bit for the signal.
+ 		 */
+-		if (rate->flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE)
++		if (txrate->flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE)
+ 			txdesc->signal |= 0x08;
+ 	}
+ }
+@@ -327,7 +328,7 @@ static void rt2x00queue_create_tx_descri
+ 	rt2x00crypto_create_tx_descriptor(entry, txdesc);
+ 	rt2x00ht_create_tx_descriptor(entry, txdesc, rate);
+ 	rt2x00queue_create_tx_descriptor_seq(entry, txdesc);
+-	rt2x00queue_create_tx_descriptor_plcp(entry, txdesc, rate);
++	rt2x00queue_create_tx_descriptor_plcp(entry, txdesc, hwrate);
+ }
+ 
+ static void rt2x00queue_write_tx_descriptor(struct queue_entry *entry,

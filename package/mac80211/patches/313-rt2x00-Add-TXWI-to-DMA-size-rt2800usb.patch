@@ -1,0 +1,22 @@
+From fa9b5f135ba5e7877d1e3e970d39fcfa07f4004b Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 10 Jan 2009 20:07:13 +0100
+Subject: [PATCH] rt2x00: Add TXWI to DMA size (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -1684,7 +1684,8 @@ static void rt2800usb_write_tx_desc(stru
+ 	 * Initialize TX descriptor
+ 	 */
+ 	rt2x00_desc_read(txi, 0, &word);
+-	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_TX_PKT_LEN, skb->len);
++	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_TX_PKT_LEN,
++			   roundup(skb->len + TXWI_DESC_SIZE, 4));
+ 	rt2x00_set_field32(&word, TXINFO_W0_WIV, 1);
+ 	rt2x00_set_field32(&word, TXINFO_W0_QSEL, 2);
+ 	rt2x00_set_field32(&word, TXINFO_W0_SW_USE_LAST_ROUND, 0);

@@ -1,0 +1,112 @@
+From e9a3a3b9744f0204ec4beec8f9bea3c11ce6f54b Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 10 Jan 2009 19:21:46 +0100
+Subject: [PATCH] rt2x00: Fix TX descriptor usage (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |   46 ++++++++++---------------------
+ drivers/net/wireless/rt2x00/rt2800usb.h |    1 +
+ 2 files changed, 16 insertions(+), 31 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -1635,8 +1635,8 @@ static void rt2800usb_write_tx_desc(stru
+ 				    struct txentry_desc *txdesc)
+ {
+ 	struct skb_frame_desc *skbdesc = get_skb_frame_desc(skb);
+-	__le32 *txd = skbdesc->desc;
+-	__le32 *txwi = txd + TXD_DESC_SIZE;
++	__le32 *txi = skbdesc->desc;
++	__le32 *txwi = txi + TXINFO_DESC_SIZE;
+ 	u32 word;
+ 
+ 	/*
+@@ -1683,31 +1683,15 @@ static void rt2800usb_write_tx_desc(stru
+ 	/*
+ 	 * Initialize TX descriptor
+ 	 */
+-	rt2x00_desc_read(txd, 0, &word);
+-	rt2x00_set_field32(&word, TXD_W0_SD_PTR0, skbdesc->skb_dma);
+-	rt2x00_desc_write(txd, 0, word);
+-
+-	rt2x00_desc_read(txd, 1, &word);
+-	rt2x00_set_field32(&word, TXD_W1_SD_LEN1, skb->len);
+-	rt2x00_set_field32(&word, TXD_W1_LAST_SEC1, 1);
+-	rt2x00_set_field32(&word, TXD_W1_BURST,
++	rt2x00_desc_read(txi, 0, &word);
++	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_TX_PKT_LEN, skb->len);
++	rt2x00_set_field32(&word, TXINFO_W0_WIV, 1);
++	rt2x00_set_field32(&word, TXINFO_W0_QSEL, 2);
++	rt2x00_set_field32(&word, TXINFO_W0_SW_USE_LAST_ROUND, 0);
++	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_NEXT_VALID, 0);
++	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_TX_BURST,
+ 			   test_bit(ENTRY_TXD_BURST, &txdesc->flags));
+-	rt2x00_set_field32(&word, TXD_W1_SD_LEN0,
+-			   rt2x00dev->hw->extra_tx_headroom);
+-	rt2x00_set_field32(&word, TXD_W1_LAST_SEC0,
+-			   !test_bit(ENTRY_TXD_MORE_FRAG, &txdesc->flags));
+-	rt2x00_set_field32(&word, TXD_W1_DMA_DONE, 0);
+-	rt2x00_desc_write(txd, 1, word);
+-
+-	rt2x00_desc_read(txd, 2, &word);
+-	rt2x00_set_field32(&word, TXD_W2_SD_PTR1,
+-			   skbdesc->skb_dma + rt2x00dev->hw->extra_tx_headroom);
+-	rt2x00_desc_write(txd, 2, word);
+-
+-	rt2x00_desc_read(txd, 3, &word);
+-	rt2x00_set_field32(&word, TXD_W3_WIV, 1);
+-	rt2x00_set_field32(&word, TXD_W3_QSEL, 2);
+-	rt2x00_desc_write(txd, 3, word);
++	rt2x00_desc_write(txi, 0, word);
+ }
+ 
+ /*
+@@ -1881,9 +1865,9 @@ static void rt2800usb_fill_rxdone(struct
+ 	rxdesc->size = rt2x00_get_field32(rxwi0, RXWI_W0_MPDU_TOTAL_BYTE_COUNT);
+ 
+ 	/*
+-	 * Remove TXWI descriptor from start of buffer.
++	 * Remove RXWI descriptor from start of buffer.
+ 	 */
+-	skb_pull(entry->skb, TXWI_DESC_SIZE + skbdesc->desc_len);
++	skb_pull(entry->skb, RXWI_DESC_SIZE + skbdesc->desc_len);
+ 	skb_trim(entry->skb, rxdesc->size);
+ }
+ 
+@@ -2146,7 +2130,7 @@ static int rt2800usb_probe_hw_mode(struc
+ 	    IEEE80211_HW_SIGNAL_DBM |
+ 	    IEEE80211_HW_SUPPORTS_PS |
+ 	    IEEE80211_HW_PS_NULLFUNC_STACK;
+-	rt2x00dev->hw->extra_tx_headroom = TXD_DESC_SIZE + TXINFO_DESC_SIZE;
++	rt2x00dev->hw->extra_tx_headroom = TXINFO_DESC_SIZE + TXWI_DESC_SIZE;
+ 
+ 	SET_IEEE80211_DEV(rt2x00dev->hw, rt2x00dev->dev);
+ 	SET_IEEE80211_PERM_ADDR(rt2x00dev->hw,
+@@ -2445,14 +2429,14 @@ static const struct data_queue_desc rt28
+ static const struct data_queue_desc rt2800usb_queue_tx = {
+ 	.entry_num		= TX_ENTRIES,
+ 	.data_size		= DATA_FRAME_SIZE,
+-	.desc_size		= TXD_DESC_SIZE,
++	.desc_size		= TXINFO_DESC_SIZE + TXWI_DESC_SIZE,
+ 	.priv_size		= sizeof(struct queue_entry_priv_usb),
+ };
+ 
+ static const struct data_queue_desc rt2800usb_queue_bcn = {
+ 	.entry_num		= 8 * BEACON_ENTRIES,
+ 	.data_size		= MGMT_FRAME_SIZE,
+-	.desc_size		= TXWI_DESC_SIZE,
++	.desc_size		= TXINFO_DESC_SIZE + TXWI_DESC_SIZE,
+ 	.priv_size		= sizeof(struct queue_entry_priv_usb),
+ };
+ 
+--- a/drivers/net/wireless/rt2x00/rt2800usb.h
++++ b/drivers/net/wireless/rt2x00/rt2800usb.h
+@@ -1744,6 +1744,7 @@ struct hw_key_entry {
+ #define TXINFO_W0_USB_DMA_TX_PKT_LEN	FIELD32(0x0000ffff)
+ #define TXINFO_W0_WIV			FIELD32(0x01000000)
+ #define TXINFO_W0_QSEL			FIELD32(0x06000000)
++#define TXINFO_W0_SW_USE_LAST_ROUND	FIELD32(0x08000000)
+ #define TXINFO_W0_USB_DMA_NEXT_VALID	FIELD32(0x40000000)
+ #define TXINFO_W0_USB_DMA_TX_BURST	FIELD32(0x80000000)
+ 

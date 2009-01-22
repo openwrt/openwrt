@@ -1,0 +1,80 @@
+From ecce227dab27aaf2d1c81a605d3e6e6f6d55908a Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sun, 18 Jan 2009 20:20:08 +0100
+Subject: [PATCH] rt2x00: Fix preamble detection (rt2x00ht)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2x00ht.c    |   14 +++++++-------
+ drivers/net/wireless/rt2x00/rt2x00lib.h   |    4 ++--
+ drivers/net/wireless/rt2x00/rt2x00queue.c |    2 +-
+ 3 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2x00ht.c
++++ b/drivers/net/wireless/rt2x00/rt2x00ht.c
+@@ -31,10 +31,10 @@
+ 
+ void rt2x00ht_create_tx_descriptor(struct queue_entry *entry,
+ 				   struct txentry_desc *txdesc,
+-				   struct ieee80211_rate *rate)
++				   const struct rt2x00_rate *hwrate)
+ {
+ 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(entry->skb);
+-	const struct rt2x00_rate *hwrate = rt2x00_get_rate(rate->hw_value);
++	struct ieee80211_tx_rate *txrate = &tx_info->control.rates[0];
+ 
+ 	if (tx_info->control.sta)
+ 		txdesc->mpdu_density =
+@@ -46,7 +46,7 @@ void rt2x00ht_create_tx_descriptor(struc
+ 	txdesc->stbc = 0;	/* FIXME: What value is needed? */
+ 
+ 	txdesc->mcs = rt2x00_get_rate_mcs(hwrate->mcs);
+-	if (rate->flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE)
++	if (txrate->flags & IEEE80211_TX_RC_USE_SHORT_PREAMBLE)
+ 		txdesc->mcs |= 0x08;
+ 
+ 	/*
+@@ -58,12 +58,12 @@ void rt2x00ht_create_tx_descriptor(struc
+ 	/*
+ 	 * Determine HT Mix/Greenfield rate mode
+ 	 */
+-	if (tx_info->control.rates[0].flags & IEEE80211_TX_RC_MCS)
++	if (txrate->flags & IEEE80211_TX_RC_MCS)
+ 		txdesc->rate_mode = RATE_MODE_HT_MIX;
+-	if (tx_info->control.rates[0].flags & IEEE80211_TX_RC_GREEN_FIELD)
++	if (txrate->flags & IEEE80211_TX_RC_GREEN_FIELD)
+ 		txdesc->rate_mode = RATE_MODE_HT_GREENFIELD;
+-	if (tx_info->control.rates[0].flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
++	if (txrate->flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
+ 		__set_bit(ENTRY_TXD_HT_BW_40, &txdesc->flags);
+-	if (tx_info->control.rates[0].flags & IEEE80211_TX_RC_SHORT_GI)
++	if (txrate->flags & IEEE80211_TX_RC_SHORT_GI)
+ 		__set_bit(ENTRY_TXD_HT_SHORT_GI, &txdesc->flags);
+ }
+--- a/drivers/net/wireless/rt2x00/rt2x00lib.h
++++ b/drivers/net/wireless/rt2x00/rt2x00lib.h
+@@ -344,11 +344,11 @@ static inline void rt2x00crypto_rx_inser
+ #ifdef CONFIG_RT2X00_LIB_HT
+ void rt2x00ht_create_tx_descriptor(struct queue_entry *entry,
+ 				   struct txentry_desc *txdesc,
+-				   struct ieee80211_rate *rate);
++				   const struct rt2x00_rate *hwrate);
+ #else
+ static inline void rt2x00ht_create_tx_descriptor(struct queue_entry *entry,
+ 						 struct txentry_desc *txdesc,
+-						 struct ieee80211_rate *rate)
++						 const struct rt2x00_rate *hwrate)
+ {
+ }
+ #endif /* CONFIG_RT2X00_LIB_HT */
+--- a/drivers/net/wireless/rt2x00/rt2x00queue.c
++++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
+@@ -326,7 +326,7 @@ static void rt2x00queue_create_tx_descri
+ 	 * Apply TX descriptor handling by components
+ 	 */
+ 	rt2x00crypto_create_tx_descriptor(entry, txdesc);
+-	rt2x00ht_create_tx_descriptor(entry, txdesc, rate);
++	rt2x00ht_create_tx_descriptor(entry, txdesc, hwrate);
+ 	rt2x00queue_create_tx_descriptor_seq(entry, txdesc);
+ 	rt2x00queue_create_tx_descriptor_plcp(entry, txdesc, hwrate);
+ }

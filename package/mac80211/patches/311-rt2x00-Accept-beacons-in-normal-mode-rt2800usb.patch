@@ -1,0 +1,22 @@
+From 6a27df44711605e730a92b1029fe54d6c988ed13 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 10 Jan 2009 14:51:24 +0100
+Subject: [PATCH] rt2x00: Accept beacons in normal mode (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -447,8 +447,7 @@ static void rt2800usb_config_filter(stru
+ 			   !(filter_flags & FIF_PLCPFAIL));
+ 	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_TO_ME,
+ 			   !(filter_flags & FIF_PROMISC_IN_BSS));
+-	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD,
+-			   !(filter_flags & FIF_OTHER_BSS));
++	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD, 0);
+ 	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_VER_ERROR, 1);
+ 	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_MULTICAST,
+ 			   !(filter_flags & FIF_ALLMULTI));

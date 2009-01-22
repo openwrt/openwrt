@@ -1,0 +1,69 @@
+From fa9b7fc2e662e086a7c0e045e541f773bf34c555 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 10 Jan 2009 14:31:00 +0100
+Subject: [PATCH] rt2x00: Add powersaving support (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |   36 ++++++++++++++++++++++++++++++-
+ 1 files changed, 35 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -860,6 +860,36 @@ static void rt2800usb_config_duration(st
+ 	rt2x00usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
+ }
+ 
++static void rt2800usb_config_ps(struct rt2x00_dev *rt2x00dev,
++				struct rt2x00lib_conf *libconf)
++{
++	enum dev_state state =
++	    (libconf->conf->flags & IEEE80211_CONF_PS) ?
++		STATE_SLEEP : STATE_AWAKE;
++	u32 reg;
++
++	if (state == STATE_SLEEP) {
++		rt2x00usb_register_write(rt2x00dev, AUTOWAKEUP_CFG, 0);
++
++		rt2x00usb_register_read(rt2x00dev, AUTOWAKEUP_CFG, &reg);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTO_LEAD_TIME, 5);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE,
++				   libconf->conf->listen_interval - 1);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTOWAKE, 1);
++		rt2x00usb_register_write(rt2x00dev, AUTOWAKEUP_CFG, reg);
++
++		rt2800usb_mcu_request(rt2x00dev, MCU_SLEEP, 0xff, 0, 0);
++	} else {
++		rt2800usb_mcu_request(rt2x00dev, MCU_WAKEUP, 0xff, 0, 0);
++
++		rt2x00usb_register_read(rt2x00dev, AUTOWAKEUP_CFG, &reg);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTO_LEAD_TIME, 0);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE, 0);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTOWAKE, 0);
++		rt2x00usb_register_write(rt2x00dev, AUTOWAKEUP_CFG, reg);
++	}
++}
++
+ static void rt2800usb_config(struct rt2x00_dev *rt2x00dev,
+ 			     struct rt2x00lib_conf *libconf,
+ 			     const unsigned int flags)
+@@ -876,6 +906,8 @@ static void rt2800usb_config(struct rt2x
+ 		rt2800usb_config_retry_limit(rt2x00dev, libconf);
+ 	if (flags & IEEE80211_CONF_CHANGE_BEACON_INTERVAL)
+ 		rt2800usb_config_duration(rt2x00dev, libconf);
++	if (flags & IEEE80211_CONF_CHANGE_PS)
++		rt2800usb_config_ps(rt2x00dev, libconf);
+ }
+ 
+ /*
+@@ -2112,7 +2144,9 @@ static int rt2800usb_probe_hw_mode(struc
+ 	 */
+ 	rt2x00dev->hw->flags =
+ 	    IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING |
+-	    IEEE80211_HW_SIGNAL_DBM;
++	    IEEE80211_HW_SIGNAL_DBM |
++	    IEEE80211_HW_SUPPORTS_PS |
++	    IEEE80211_HW_PS_NULLFUNC_STACK;
+ 	rt2x00dev->hw->extra_tx_headroom = TXD_DESC_SIZE + TXINFO_DESC_SIZE;
+ 
+ 	SET_IEEE80211_DEV(rt2x00dev->hw, rt2x00dev->dev);

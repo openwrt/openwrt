@@ -1,0 +1,154 @@
+From 6d9ef2042aff47309dbe973da5723c4972ed95bb Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 17 Jan 2009 20:27:40 +0100
+Subject: [PATCH] rt2x00: More register fixes (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |   59 +++++++++++++++----------------
+ drivers/net/wireless/rt2x00/rt2800usb.h |    8 ++--
+ 2 files changed, 33 insertions(+), 34 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -2261,33 +2261,34 @@ static int rt2800usb_set_rts_threshold(s
+ {
+ 	struct rt2x00_dev *rt2x00dev = hw->priv;
+ 	u32 reg;
++	bool enabled = (value < IEEE80211_MAX_RTS_THRESHOLD);
+ 
+ 	rt2x00usb_register_read(rt2x00dev, TX_RTS_CFG, &reg);
+ 	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_THRES, value);
+ 	rt2x00usb_register_write(rt2x00dev, TX_RTS_CFG, reg);
+ 
+ 	rt2x00usb_register_read(rt2x00dev, CCK_PROT_CFG, &reg);
+-	rt2x00_set_field32(&reg, CCK_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, CCK_PROT_CFG_RTS_TH_EN, enabled);
+ 	rt2x00usb_register_write(rt2x00dev, CCK_PROT_CFG, reg);
+ 
+ 	rt2x00usb_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
+-	rt2x00_set_field32(&reg, OFDM_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, OFDM_PROT_CFG_RTS_TH_EN, enabled);
+ 	rt2x00usb_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
+ 
+ 	rt2x00usb_register_read(rt2x00dev, MM20_PROT_CFG, &reg);
+-	rt2x00_set_field32(&reg, MM20_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, MM20_PROT_CFG_RTS_TH_EN, enabled);
+ 	rt2x00usb_register_write(rt2x00dev, MM20_PROT_CFG, reg);
+ 
+ 	rt2x00usb_register_read(rt2x00dev, MM40_PROT_CFG, &reg);
+-	rt2x00_set_field32(&reg, MM40_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, MM40_PROT_CFG_RTS_TH_EN, enabled);
+ 	rt2x00usb_register_write(rt2x00dev, MM40_PROT_CFG, reg);
+ 
+ 	rt2x00usb_register_read(rt2x00dev, GF20_PROT_CFG, &reg);
+-	rt2x00_set_field32(&reg, GF20_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, GF20_PROT_CFG_RTS_TH_EN, enabled);
+ 	rt2x00usb_register_write(rt2x00dev, GF20_PROT_CFG, reg);
+ 
+ 	rt2x00usb_register_read(rt2x00dev, GF40_PROT_CFG, &reg);
+-	rt2x00_set_field32(&reg, GF40_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, GF40_PROT_CFG_RTS_TH_EN, enabled);
+ 	rt2x00usb_register_write(rt2x00dev, GF40_PROT_CFG, reg);
+ 
+ 	return 0;
+@@ -2313,24 +2314,23 @@ static int rt2800usb_conf_tx(struct ieee
+ 	if (retval)
+ 		return retval;
+ 
++	/*
++	 * We only need to perform additional register initialization
++	 * for WMM queues/
++	 */
++	if (queue_idx >= 4)
++		return 0;
++
+ 	queue = rt2x00queue_get_queue(rt2x00dev, queue_idx);
+ 
+ 	/* Update WMM TXOP register */
+-	if (queue_idx < 2) {
+-		field.bit_offset = queue_idx * 16;
+-		field.bit_mask = 0xffff << field.bit_offset;
+-
+-		rt2x00usb_register_read(rt2x00dev, WMM_TXOP0_CFG, &reg);
+-		rt2x00_set_field32(&reg, field, queue->txop);
+-		rt2x00usb_register_write(rt2x00dev, WMM_TXOP0_CFG, reg);
+-	} else if (queue_idx < 4) {
+-		field.bit_offset = (queue_idx - 2) * 16;
+-		field.bit_mask = 0xffff << field.bit_offset;
+-
+-		rt2x00usb_register_read(rt2x00dev, WMM_TXOP1_CFG, &reg);
+-		rt2x00_set_field32(&reg, field, queue->txop);
+-		rt2x00usb_register_write(rt2x00dev, WMM_TXOP1_CFG, reg);
+-	}
++	offset = WMM_TXOP0_CFG + (sizeof(u32) * (!!(queue_idx & 2)));
++	field.bit_offset = (queue_idx & 1) * 16;
++	field.bit_mask = 0xffff << field.bit_offset;
++
++	rt2x00usb_register_read(rt2x00dev, offset, &reg);
++	rt2x00_set_field32(&reg, field, queue->txop);
++	rt2x00usb_register_write(rt2x00dev, offset, reg);
+ 
+ 	/* Update WMM registers */
+ 	field.bit_offset = queue_idx * 4;
+@@ -2349,15 +2349,14 @@ static int rt2800usb_conf_tx(struct ieee
+ 	rt2x00usb_register_write(rt2x00dev, WMM_CWMAX_CFG, reg);
+ 
+ 	/* Update EDCA registers */
+-	if (queue_idx < 4) {
+-		offset = EDCA_AC0_CFG + (sizeof(u32) * queue_idx);
++	offset = EDCA_AC0_CFG + (sizeof(u32) * queue_idx);
+ 
+-		rt2x00usb_register_read(rt2x00dev, offset, &reg);
+-		rt2x00_set_field32(&reg, EDCA_AC0_CFG_AIFSN, queue->aifs);
+-		rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMIN, queue->cw_min);
+-		rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMAX, queue->cw_max);
+-		rt2x00usb_register_write(rt2x00dev, offset, reg);
+-	}
++	rt2x00usb_register_read(rt2x00dev, offset, &reg);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_TX_OP, queue->txop);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_AIFSN, queue->aifs);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMIN, queue->cw_min);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMAX, queue->cw_max);
++	rt2x00usb_register_write(rt2x00dev, offset, reg);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/wireless/rt2x00/rt2800usb.h
++++ b/drivers/net/wireless/rt2x00/rt2800usb.h
+@@ -670,7 +670,7 @@
+  * EDCA_AC0_CFG:
+  */
+ #define EDCA_AC0_CFG			0x1300
+-#define EDCA_AC0_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC0_CFG_TX_OP		FIELD32(0x000000ff)
+ #define EDCA_AC0_CFG_AIFSN		FIELD32(0x00000f00)
+ #define EDCA_AC0_CFG_CWMIN		FIELD32(0x0000f000)
+ #define EDCA_AC0_CFG_CWMAX		FIELD32(0x000f0000)
+@@ -679,7 +679,7 @@
+  * EDCA_AC1_CFG:
+  */
+ #define EDCA_AC1_CFG			0x1304
+-#define EDCA_AC1_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC1_CFG_TX_OP		FIELD32(0x000000ff)
+ #define EDCA_AC1_CFG_AIFSN		FIELD32(0x00000f00)
+ #define EDCA_AC1_CFG_CWMIN		FIELD32(0x0000f000)
+ #define EDCA_AC1_CFG_CWMAX		FIELD32(0x000f0000)
+@@ -688,7 +688,7 @@
+  * EDCA_AC2_CFG:
+  */
+ #define EDCA_AC2_CFG			0x1308
+-#define EDCA_AC2_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC2_CFG_TX_OP		FIELD32(0x000000ff)
+ #define EDCA_AC2_CFG_AIFSN		FIELD32(0x00000f00)
+ #define EDCA_AC2_CFG_CWMIN		FIELD32(0x0000f000)
+ #define EDCA_AC2_CFG_CWMAX		FIELD32(0x000f0000)
+@@ -697,7 +697,7 @@
+  * EDCA_AC3_CFG:
+  */
+ #define EDCA_AC3_CFG			0x130c
+-#define EDCA_AC3_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC3_CFG_TX_OP		FIELD32(0x000000ff)
+ #define EDCA_AC3_CFG_AIFSN		FIELD32(0x00000f00)
+ #define EDCA_AC3_CFG_CWMIN		FIELD32(0x0000f000)
+ #define EDCA_AC3_CFG_CWMAX		FIELD32(0x000f0000)

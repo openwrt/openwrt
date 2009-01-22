@@ -1,0 +1,54 @@
+From ac8402781662b40a9f69bc33a3ec20292331e940 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 17 Jan 2009 20:36:44 +0100
+Subject: [PATCH] rt2x00: Add LED_MODE_ASUS support
+
+When the led mode is asus, the activity led mode must
+be registered otherwise the second LED will not be enabled.
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2400pci.c |    4 +++-
+ drivers/net/wireless/rt2x00/rt2500pci.c |    4 +++-
+ drivers/net/wireless/rt2x00/rt2500usb.c |    4 +++-
+ 3 files changed, 9 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2400pci.c
++++ b/drivers/net/wireless/rt2x00/rt2400pci.c
+@@ -1395,7 +1395,9 @@ static int rt2400pci_init_eeprom(struct 
+ 	value = rt2x00_get_field16(eeprom, EEPROM_ANTENNA_LED_MODE);
+ 
+ 	rt2400pci_init_led(rt2x00dev, &rt2x00dev->led_radio, LED_TYPE_RADIO);
+-	if (value == LED_MODE_TXRX_ACTIVITY || value == LED_MODE_DEFAULT)
++	if (value == LED_MODE_TXRX_ACTIVITY ||
++	    value == LED_MODE_DEFAULT ||
++	    value == LED_MODE_ASUS)
+ 		rt2400pci_init_led(rt2x00dev, &rt2x00dev->led_qual,
+ 				   LED_TYPE_ACTIVITY);
+ #endif /* CONFIG_RT2X00_LIB_LEDS */
+--- a/drivers/net/wireless/rt2x00/rt2500pci.c
++++ b/drivers/net/wireless/rt2x00/rt2500pci.c
+@@ -1552,7 +1552,9 @@ static int rt2500pci_init_eeprom(struct 
+ 	value = rt2x00_get_field16(eeprom, EEPROM_ANTENNA_LED_MODE);
+ 
+ 	rt2500pci_init_led(rt2x00dev, &rt2x00dev->led_radio, LED_TYPE_RADIO);
+-	if (value == LED_MODE_TXRX_ACTIVITY || value == LED_MODE_DEFAULT)
++	if (value == LED_MODE_TXRX_ACTIVITY ||
++	    value == LED_MODE_DEFAULT ||
++	    value == LED_MODE_ASUS)
+ 		rt2500pci_init_led(rt2x00dev, &rt2x00dev->led_qual,
+ 				   LED_TYPE_ACTIVITY);
+ #endif /* CONFIG_RT2X00_LIB_LEDS */
+--- a/drivers/net/wireless/rt2x00/rt2500usb.c
++++ b/drivers/net/wireless/rt2x00/rt2500usb.c
+@@ -1603,7 +1603,9 @@ static int rt2500usb_init_eeprom(struct 
+ 	value = rt2x00_get_field16(eeprom, EEPROM_ANTENNA_LED_MODE);
+ 
+ 	rt2500usb_init_led(rt2x00dev, &rt2x00dev->led_radio, LED_TYPE_RADIO);
+-	if (value == LED_MODE_TXRX_ACTIVITY || value == LED_MODE_DEFAULT)
++	if (value == LED_MODE_TXRX_ACTIVITY ||
++	    value == LED_MODE_DEFAULT ||
++	    value == LED_MODE_ASUS)
+ 		rt2500usb_init_led(rt2x00dev, &rt2x00dev->led_qual,
+ 				   LED_TYPE_ACTIVITY);
+ #endif /* CONFIG_RT2X00_LIB_LEDS */
