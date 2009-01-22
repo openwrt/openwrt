@@ -1,0 +1,69 @@
+From 059fef55f609bded8e83ec8b54729a2f500db938 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 10 Jan 2009 14:29:21 +0100
+Subject: [PATCH] rt2x00: Add powersaving support (rt2800pci)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800pci.c |   36 ++++++++++++++++++++++++++++++-
+ 1 files changed, 35 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -880,6 +880,36 @@ static void rt2800pci_config_duration(st
+ 	rt2x00pci_register_write(rt2x00dev, BCN_TIME_CFG, reg);
+ }
+ 
++static void rt2800pci_config_ps(struct rt2x00_dev *rt2x00dev,
++				struct rt2x00lib_conf *libconf)
++{
++	enum dev_state state =
++	    (libconf->conf->flags & IEEE80211_CONF_PS) ?
++		STATE_SLEEP : STATE_AWAKE;
++	u32 reg;
++
++	if (state == STATE_SLEEP) {
++		rt2x00pci_register_write(rt2x00dev, AUTOWAKEUP_CFG, 0);
++
++		rt2x00pci_register_read(rt2x00dev, AUTOWAKEUP_CFG, &reg);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTO_LEAD_TIME, 5);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE,
++				   libconf->conf->listen_interval - 1);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTOWAKE, 1);
++		rt2x00pci_register_write(rt2x00dev, AUTOWAKEUP_CFG, reg);
++
++		rt2800pci_mcu_request(rt2x00dev, MCU_SLEEP, 0xff, 0, 0);
++	} else {
++		rt2800pci_mcu_request(rt2x00dev, MCU_WAKEUP, 0xff, 0, 0);
++
++		rt2x00pci_register_read(rt2x00dev, AUTOWAKEUP_CFG, &reg);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTO_LEAD_TIME, 0);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE, 0);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTOWAKE, 0);
++		rt2x00pci_register_write(rt2x00dev, AUTOWAKEUP_CFG, reg);
++	}
++}
++
+ static void rt2800pci_config(struct rt2x00_dev *rt2x00dev,
+ 			     struct rt2x00lib_conf *libconf,
+ 			     const unsigned int flags)
+@@ -896,6 +926,8 @@ static void rt2800pci_config(struct rt2x
+ 		rt2800pci_config_retry_limit(rt2x00dev, libconf);
+ 	if (flags & IEEE80211_CONF_CHANGE_BEACON_INTERVAL)
+ 		rt2800pci_config_duration(rt2x00dev, libconf);
++	if (flags & IEEE80211_CONF_CHANGE_PS)
++		rt2800pci_config_ps(rt2x00dev, libconf);
+ }
+ 
+ /*
+@@ -2346,7 +2378,9 @@ static int rt2800pci_probe_hw_mode(struc
+ 	 */
+ 	rt2x00dev->hw->flags =
+ 	    IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING |
+-	    IEEE80211_HW_SIGNAL_DBM;
++	    IEEE80211_HW_SIGNAL_DBM |
++	    IEEE80211_HW_SUPPORTS_PS |
++	    IEEE80211_HW_PS_NULLFUNC_STACK;
+ 	rt2x00dev->hw->extra_tx_headroom = TXWI_DESC_SIZE;
+ 
+ 	SET_IEEE80211_DEV(rt2x00dev->hw, rt2x00dev->dev);

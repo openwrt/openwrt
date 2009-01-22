@@ -1,0 +1,30 @@
+From 827feb9f680fff5a4f1e04740357ea2c92e10b06 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Tue, 13 Jan 2009 21:29:37 +0100
+Subject: [PATCH] rt2x00: Wait for WPDMA between CRS and BBP init (rt2800pci)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800pci.c |    4 +---
+ 1 files changed, 1 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -1622,6 +1622,7 @@ static int rt2800pci_enable_radio(struct
+ 	if (unlikely(rt2800pci_wait_wpdma_ready(rt2x00dev) ||
+ 		     rt2800pci_init_queues(rt2x00dev) ||
+ 		     rt2800pci_init_registers(rt2x00dev) ||
++		     rt2800pci_wait_wpdma_ready(rt2x00dev) ||
+ 		     rt2800pci_init_bbp(rt2x00dev)))
+ 		return -EIO;
+ 
+@@ -1630,9 +1631,6 @@ static int rt2800pci_enable_radio(struct
+ 	 */
+ 	rt2800pci_mcu_request(rt2x00dev, MCU_BOOT_SIGNAL, 0xff, 0, 0);
+ 
+-	/* Wait for DMA, ignore error */
+-	rt2800pci_wait_wpdma_ready(rt2x00dev);
+-
+ 	/*
+ 	 * Enable RX.
+ 	 */
