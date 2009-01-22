@@ -68,7 +68,8 @@ endef
 define Image/Build/UBNT
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).lzma
+	dd if=$(KDIR)/vmlinux-$(2).lzma of=$(KDIR)/vmlinux-$(2).bin.lzma bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).ar7100.OpenWrt \
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
