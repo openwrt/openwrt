@@ -67,6 +67,15 @@ disable_atheros() (
 
 enable_atheros() {
 	local device="$1"
+	# Can only set the country code to one setting for the entire system. The last country code is the one that will be applied.
+	config_get country "$device" country
+	[ -z "$country" ] && country="0"
+	local cc="0"
+	[ -e /proc/sys/dev/$device/countrycode ] && cc="$(cat /proc/sys/dev/$device/countrycode)"
+	if [ ! "$cc" = "$country" ] ; then
+		rmmod ath_pci
+		insmod ath_pci countrycode=$country
+	fi
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
 
@@ -278,10 +287,6 @@ enable_atheros() {
 
 		ifconfig "$ifname" up
 
-		# TXPower settings only work if device is up already
-		config_get txpwr "$vif" txpower
-		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
-
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
@@ -292,6 +297,11 @@ enable_atheros() {
 		[ -n "$ssid" ] && iwconfig "$ifname" essid on
 		iwconfig "$ifname" essid "$ssid"
 		set_wifi_up "$vif" "$ifname"
+
+		# TXPower settings only work if device is up already
+		config_get txpwr "$vif" txpower
+		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
+
 		case "$mode" in
 			ap)
 				config_get_bool isolate "$vif" isolate 0
