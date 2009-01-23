@@ -1,0 +1,96 @@
+From d2216933a12c38ab23ee1170c1c143002a825046 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Thu, 22 Jan 2009 21:16:08 +0100
+Subject: [PATCH] rt2x00: Update chipset ID handling (rt2800pci)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800pci.c |   22 ++++++++++++++++------
+ drivers/net/wireless/rt2x00/rt2800pci.h |    8 +++++---
+ 2 files changed, 21 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -984,7 +984,7 @@ static void rt2800pci_reset_tuner(struct
+ static void rt2800pci_link_tuner(struct rt2x00_dev *rt2x00dev,
+ 				 struct link_qual *qual, const u32 count)
+ {
+-	if (rt2x00_rev(&rt2x00dev->chip) == RT2860_VERSION_C)
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION)
+ 		return;
+ 
+ 	/*
+@@ -1272,7 +1272,11 @@ static int rt2800pci_init_registers(stru
+ 
+ 	rt2x00pci_register_read(rt2x00dev, MAX_LEN_CFG, &reg);
+ 	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_MPDU, AGGREGATION_SIZE);
+-	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
++	if (rt2x00_rev(&rt2x00dev->chip) >= RT2880E_VERSION &&
++	    rt2x00_rev(&rt2x00dev->chip) < RT3070_VERSION)
++		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 2);
++	else
++		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
+ 	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_PSDU, 0);
+ 	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_MPDU, 0);
+ 	rt2x00pci_register_write(rt2x00dev, MAX_LEN_CFG, reg);
+@@ -1523,12 +1527,12 @@ static int rt2800pci_init_bbp(struct rt2
+ 	rt2800pci_bbp_write(rt2x00dev, 103, 0x00);
+ 	rt2800pci_bbp_write(rt2x00dev, 105, 0x05);
+ 
+-	if (rt2x00_rev(&rt2x00dev->chip) == RT2860_VERSION_C) {
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION) {
+ 		rt2800pci_bbp_write(rt2x00dev, 69, 0x16);
+ 		rt2800pci_bbp_write(rt2x00dev, 73, 0x12);
+ 	}
+ 
+-	if (rt2x00_rev(&rt2x00dev->chip) == RT2860_VERSION_D)
++	if (rt2x00_rev(&rt2x00dev->chip) > RT2860D_VERSION)
+ 		rt2800pci_bbp_write(rt2x00dev, 84, 0x19);
+ 
+ 	for (i = 0; i < EEPROM_BBP_SIZE; i++) {
+@@ -1637,6 +1641,11 @@ static int rt2800pci_enable_radio(struct
+ 	/*
+ 	 * Enable RX.
+ 	 */
++	rt2x00pci_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
++	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_TX, 1);
++	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_RX, 0);
++	rt2x00pci_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
++
+ 	rt2x00pci_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
+ 	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_TX_DMA, 1);
+ 	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_RX_DMA, 1);
+@@ -2253,13 +2262,14 @@ static int rt2800pci_init_eeprom(struct 
+ 			     PCI_CONFIG_HEADER_DEVICE, &device);
+ 	value = rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RF_TYPE);
+ 	rt2x00pci_register_read(rt2x00dev, MAC_CSR0, &reg);
+-	reg = rt2x00_get_field32(reg, MAC_CSR0_ASIC_REV);
+ 	rt2x00_set_chip(rt2x00dev, device, value, reg);
+ 
+ 	if (!rt2x00_rf(&rt2x00dev->chip, RF2820) &&
+ 	    !rt2x00_rf(&rt2x00dev->chip, RF2850) &&
+ 	    !rt2x00_rf(&rt2x00dev->chip, RF2720) &&
+-	    !rt2x00_rf(&rt2x00dev->chip, RF2750)) {
++	    !rt2x00_rf(&rt2x00dev->chip, RF2750) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF3020) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF2020)) {
+ 		ERROR(rt2x00dev, "Invalid RF chipset detected.\n");
+ 		return -ENODEV;
+ 	}
+--- a/drivers/net/wireless/rt2x00/rt2800pci.h
++++ b/drivers/net/wireless/rt2x00/rt2800pci.h
+@@ -47,9 +47,11 @@
+ /*
+  * RT2860 version
+  */
+-#define RT2860_VERSION_C		0x0100
+-#define RT2860_VERSION_D		0x0101
+-#define RT2860_VERSION_E		0x0200
++#define RT2860C_VERSION			0x28600100
++#define RT2860D_VERSION			0x28600101
++#define RT2880E_VERSION			0x28720200
++#define RT2883_VERSION			0x28830300
++#define RT3070_VERSION			0x30700200
+ 
+ /*
+  * Signal information.

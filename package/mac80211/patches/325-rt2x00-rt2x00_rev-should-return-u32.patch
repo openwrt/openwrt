@@ -1,0 +1,25 @@
+From 3dc31edfe4bad6048f097cd4a088499500db9a2e Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Thu, 22 Jan 2009 21:01:56 +0100
+Subject: [PATCH] rt2x00: rt2x00_rev() should return u32
+
+The "rev" field in chipset definition is an u32,
+which means that rt2x00_rev() which returns that field
+should be of the same type.
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2x00.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/rt2x00/rt2x00.h
+@@ -878,7 +878,7 @@ static inline char rt2x00_rf(const struc
+ 	return (chipset->rf == chip);
+ }
+ 
+-static inline u16 rt2x00_rev(const struct rt2x00_chip *chipset)
++static inline u32 rt2x00_rev(const struct rt2x00_chip *chipset)
+ {
+ 	return chipset->rev;
+ }

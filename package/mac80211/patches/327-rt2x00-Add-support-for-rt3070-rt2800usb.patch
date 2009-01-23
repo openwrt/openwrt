@@ -1,0 +1,683 @@
+From 84706fce3026650c49c6290e0e6525b45795027c Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Thu, 22 Jan 2009 21:16:46 +0100
+Subject: [PATCH] rt2x00: Add support for rt3070 (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |  384 +++++++++++++++++++++++++++----
+ drivers/net/wireless/rt2x00/rt2800usb.h |   57 +++++-
+ drivers/net/wireless/rt2x00/rt2x00.h    |    6 +
+ 3 files changed, 404 insertions(+), 43 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -59,6 +59,8 @@ MODULE_PARM_DESC(nohwcrypt, "Disable har
+  */
+ #define WAIT_FOR_BBP(__dev, __reg) \
+ 	rt2x00usb_regbusy_read((__dev), BBP_CSR_CFG, BBP_CSR_CFG_BUSY, (__reg))
++#define WAIT_FOR_RFCSR(__dev, __reg) \
++	rt2x00usb_regbusy_read((__dev), RF_CSR_CFG, RF_CSR_CFG_BUSY, (__reg))
+ #define WAIT_FOR_RF(__dev, __reg) \
+ 	rt2x00usb_regbusy_read((__dev), RF_CSR_CFG0, RF_CSR_CFG0_BUSY, (__reg))
+ #define WAIT_FOR_MCU(__dev, __reg) \
+@@ -120,6 +122,61 @@ static void rt2800usb_bbp_read(struct rt
+ 	mutex_unlock(&rt2x00dev->csr_mutex);
+ }
+ 
++static void rt2800usb_rfcsr_write(struct rt2x00_dev *rt2x00dev,
++				  const unsigned int word, const u8 value)
++{
++	u32 reg;
++
++	mutex_lock(&rt2x00dev->csr_mutex);
++
++	/*
++	 * Wait until the RFCSR becomes available, afterwards we
++	 * can safely write the new data into the register.
++	 */
++	if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, RF_CSR_CFG_DATA, value);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE, 1);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY, 1);
++
++		rt2x00usb_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
++	}
++
++	mutex_unlock(&rt2x00dev->csr_mutex);
++}
++
++static void rt2800usb_rfcsr_read(struct rt2x00_dev *rt2x00dev,
++				 const unsigned int word, u8 *value)
++{
++	u32 reg;
++
++	mutex_lock(&rt2x00dev->csr_mutex);
++
++	/*
++	 * Wait until the RFCSR becomes available, afterwards we
++	 * can safely write the read request into the register.
++	 * After the data has been written, we wait until hardware
++	 * returns the correct value, if at any time the register
++	 * doesn't become available in time, reg will be 0xffffffff
++	 * which means we return 0xff to the caller.
++	 */
++	if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE, 0);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY, 1);
++
++		rt2x00usb_register_write_lock(rt2x00dev, BBP_CSR_CFG, reg);
++
++		WAIT_FOR_RFCSR(rt2x00dev, &reg);
++	}
++
++	*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
++
++	mutex_unlock(&rt2x00dev->csr_mutex);
++}
++
+ static void rt2800usb_rf_write(struct rt2x00_dev *rt2x00dev,
+ 			       const unsigned int word, const u32 value)
+ {
+@@ -635,42 +692,24 @@ static void rt2800usb_config_lna_gain(st
+ 	rt2x00dev->lna_gain = lna_gain;
+ }
+ 
+-static void rt2800usb_config_channel(struct rt2x00_dev *rt2x00dev,
+-				     struct rf_channel *rf,
+-				     struct channel_info *info)
++static void rt2800usb_config_channel_rt2x(struct rt2x00_dev *rt2x00dev,
++					  struct rf_channel *rf,
++					  struct channel_info *info)
+ {
+-	u32 reg;
+-	unsigned int tx_pin;
+ 	u16 eeprom;
+ 
+-	tx_pin = 0;
+-	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 1);
+-	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A0_EN, 1);
+-	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G0_EN, 1);
+-	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 1);
+-	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 1);
+-	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_RFTR_EN, 1);
+-	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_TRSW_EN, 1);
+-
+ 	rt2x00_set_field32(&rf->rf4, RF4_FREQ_OFFSET, rt2x00dev->freq_offset);
+ 
+ 	/*
+ 	 * Determine antenna settings from EEPROM
+ 	 */
+ 	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
+-	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1) {
++	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1)
+ 		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_TX1, 1);
+-		/* Turn off unused PA or LNA when only 1T or 1R */
+-		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A1_EN, 0);
+-		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 0);
+-	}
+ 
+ 	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 1) {
+ 		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX1, 1);
+ 		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX2, 1);
+-		/* Turn off unused PA or LNA when only 1T or 1R */
+-		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 0);
+-		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 0);
+ 	} else if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 2)
+ 		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX2, 1);
+ 
+@@ -698,15 +737,11 @@ static void rt2800usb_config_channel(str
+ 
+ 		rt2x00_set_field32(&rf->rf4, RF4_TXPOWER_A,
+ 				   TXPOWER_A_TO_DEV(info->tx_power2));
+-
+-		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A0_EN, 1);
+ 	} else {
+ 		rt2x00_set_field32(&rf->rf3, RF3_TXPOWER_G,
+ 				   TXPOWER_G_TO_DEV(info->tx_power1));
+ 		rt2x00_set_field32(&rf->rf4, RF4_TXPOWER_G,
+ 				   TXPOWER_G_TO_DEV(info->tx_power2));
+-
+-		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G0_EN, 1);
+ 	}
+ 
+ 	rt2x00_set_field32(&rf->rf4, RF4_BW40,
+@@ -730,6 +765,81 @@ static void rt2800usb_config_channel(str
+ 	rt2800usb_rf_write(rt2x00dev, 2, rf->rf2);
+ 	rt2800usb_rf_write(rt2x00dev, 3, rf->rf3 & ~0x00000004);
+ 	rt2800usb_rf_write(rt2x00dev, 4, rf->rf4);
++}
++
++static void rt2800usb_config_channel_rt3x(struct rt2x00_dev *rt2x00dev,
++					  struct rf_channel *rf,
++					  struct channel_info *info)
++{
++	u8 rfcsr;
++
++	rt2800usb_rfcsr_write(rt2x00dev, 2, rf->rf1);
++	rt2800usb_rfcsr_write(rt2x00dev, 2, rf->rf3);
++
++	rt2800usb_rfcsr_read(rt2x00dev, 6, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR6_R, rf->rf2);
++	rt2800usb_rfcsr_write(rt2x00dev, 6, rfcsr);
++
++	rt2800usb_rfcsr_read(rt2x00dev, 12, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR12_TX_POWER,
++			  TXPOWER_G_TO_DEV(info->tx_power1));
++	rt2800usb_rfcsr_write(rt2x00dev, 12, rfcsr);
++
++	rt2800usb_rfcsr_read(rt2x00dev, 23, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR23_FREQ_OFFSET, rt2x00dev->freq_offset);
++	rt2800usb_rfcsr_write(rt2x00dev, 23, rfcsr);
++
++	if (test_bit(CONFIG_CHANNEL_HT40, &rt2x00dev->flags))
++		rt2800usb_rfcsr_write(rt2x00dev, 24, rt2x00dev->calibration_bw40);
++	else
++		rt2800usb_rfcsr_write(rt2x00dev, 24, rt2x00dev->calibration_bw20);
++
++	rt2800usb_rfcsr_read(rt2x00dev, 23, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR7_RF_TUNING, 1);
++	rt2800usb_rfcsr_write(rt2x00dev, 23, rfcsr);
++}
++
++static void rt2800usb_config_channel(struct rt2x00_dev *rt2x00dev,
++				     struct rf_channel *rf,
++				     struct channel_info *info)
++{
++	u32 reg;
++	unsigned int tx_pin;
++	u16 eeprom;
++
++	if (rt2x00_rev(&rt2x00dev->chip) != RT3070_VERSION)
++		rt2800usb_config_channel_rt2x(rt2x00dev, rf, info);
++	else
++		rt2800usb_config_channel_rt3x(rt2x00dev, rf, info);
++
++	tx_pin = 0;
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A0_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G0_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_RFTR_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_TRSW_EN, 1);
++
++	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
++
++	/* Turn off unused PA or LNA when only 1T or 1R */
++	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1) {
++		
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A1_EN, 0);
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 0);
++	}
++
++	/* Turn off unused PA or LNA when only 1T or 1R */
++	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 1) {
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 0);
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 0);
++	}
++
++	if (rf->channel > 14)
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A0_EN, 1);
++	else
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G0_EN, 1);
+ 
+ 	/*
+ 	 * Change BBP settings
+@@ -935,8 +1045,12 @@ static void rt2800usb_link_stats(struct 
+ 
+ static u8 rt2800usb_get_default_vgc(struct rt2x00_dev *rt2x00dev)
+ {
+-	if (rt2x00dev->curr_band == IEEE80211_BAND_2GHZ)
+-		return 0x2e + rt2x00dev->lna_gain;
++	if (rt2x00dev->curr_band == IEEE80211_BAND_2GHZ) {
++		if (rt2x00_rev(&rt2x00dev->chip) == RT3070_VERSION)
++			return 0x1c + (2 * rt2x00dev->lna_gain);
++		else
++			return 0x2e + rt2x00dev->lna_gain;
++	}
+ 
+ 	if (!test_bit(CONFIG_CHANNEL_HT40, &rt2x00dev->flags))
+ 		return 0x32 + (rt2x00dev->lna_gain * 5) / 3;
+@@ -964,7 +1078,7 @@ static void rt2800usb_reset_tuner(struct
+ static void rt2800usb_link_tuner(struct rt2x00_dev *rt2x00dev,
+ 				 struct link_qual *qual, const u32 count)
+ {
+-	if (rt2x00_rev(&rt2x00dev->chip) == RT2870_VERSION_C)
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION)
+ 		return;
+ 
+ 	/*
+@@ -1145,8 +1259,14 @@ static int rt2800usb_init_registers(stru
+ 	rt2x00_set_field32(&reg, BCN_TIME_CFG_TX_TIME_COMPENSATE, 0);
+ 	rt2x00usb_register_write(rt2x00dev, BCN_TIME_CFG, reg);
+ 
+-	rt2x00usb_register_write(rt2x00dev, TX_SW_CFG0, 0x00040a06);
+-	rt2x00usb_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
++	if (rt2x00_rev(&rt2x00dev->chip) == RT3070_VERSION) {
++		rt2x00usb_register_write(rt2x00dev, TX_SW_CFG0, 0x00000400);
++		rt2x00usb_register_write(rt2x00dev, TX_SW_CFG1, 0x00000000);
++		rt2x00usb_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
++	} else {
++		rt2x00usb_register_write(rt2x00dev, TX_SW_CFG0, 0x00040a06);
++		rt2x00usb_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
++	}
+ 
+ 	rt2x00usb_register_read(rt2x00dev, TX_LINK_CFG, &reg);
+ 	rt2x00_set_field32(&reg, TX_LINK_CFG_REMOTE_MFB_LIFETIME, 32);
+@@ -1166,7 +1286,11 @@ static int rt2800usb_init_registers(stru
+ 
+ 	rt2x00usb_register_read(rt2x00dev, MAX_LEN_CFG, &reg);
+ 	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_MPDU, AGGREGATION_SIZE);
+-	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
++	if (rt2x00_rev(&rt2x00dev->chip) >= RT2880E_VERSION &&
++	    rt2x00_rev(&rt2x00dev->chip) < RT3070_VERSION)
++		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 2);
++	else
++		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
+ 	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_PSDU, 0);
+ 	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_MPDU, 0);
+ 	rt2x00usb_register_write(rt2x00dev, MAX_LEN_CFG, reg);
+@@ -1427,13 +1551,16 @@ static int rt2800usb_init_bbp(struct rt2
+ 	rt2800usb_bbp_write(rt2x00dev, 103, 0x00);
+ 	rt2800usb_bbp_write(rt2x00dev, 105, 0x05);
+ 
+-	if (rt2x00_rev(&rt2x00dev->chip) == RT2870_VERSION_C) {
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION) {
+ 		rt2800usb_bbp_write(rt2x00dev, 69, 0x16);
+ 		rt2800usb_bbp_write(rt2x00dev, 73, 0x12);
+ 	}
+ 
+-	if (rt2x00_rev(&rt2x00dev->chip) != RT2870_VERSION_D)
+-		rt2800usb_bbp_write(rt2x00dev, 84, 0x19);
++	if (rt2x00_rev(&rt2x00dev->chip) == RT3070_VERSION) {
++		rt2800usb_bbp_write(rt2x00dev, 70, 0x0a);
++		rt2800usb_bbp_write(rt2x00dev, 84, 0x99);
++		rt2800usb_bbp_write(rt2x00dev, 105, 0x05);
++	}
+ 
+ 	for (i = 0; i < EEPROM_BBP_SIZE; i++) {
+ 		rt2x00_eeprom_read(rt2x00dev, EEPROM_BBP_START + i, &eeprom);
+@@ -1448,6 +1575,134 @@ static int rt2800usb_init_bbp(struct rt2
+ 	return 0;
+ }
+ 
++static u8 rt2800usb_init_rx_filter(struct rt2x00_dev *rt2x00dev,
++				   bool bw40, u8 rfcsr24, u8 filter_target)
++{
++	unsigned int i;
++	u8 bbp;
++	u8 rfcsr;
++	u8 passband;
++	u8 stopband;
++	u8 overtuned = 0;
++
++	rt2800usb_rfcsr_write(rt2x00dev, 24, rfcsr24);
++
++	if (bw40) {
++		rt2800usb_bbp_read(rt2x00dev, 4, &bbp);
++		rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 0x10);
++		rt2800usb_bbp_write(rt2x00dev, 4, bbp);
++	}
++
++	rt2800usb_rfcsr_read(rt2x00dev, 22, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR22_BASEBAND_LOOPBACK, 1);
++	rt2800usb_rfcsr_write(rt2x00dev, 22, rfcsr);
++
++	/*
++	 * Set power & frequency of passband test tone
++	 */
++	rt2800usb_bbp_write(rt2x00dev, 24, 0);
++
++	for (i = 0; i < 100; i++) {
++		rt2800usb_bbp_write(rt2x00dev, 25, 0x90);
++		msleep(1);
++
++		rt2800usb_bbp_read(rt2x00dev, 55, &passband);
++		if (passband)
++			break;
++	}
++
++	/*
++	 * Set power & frequency of stopband test tone
++	 */
++	rt2800usb_bbp_write(rt2x00dev, 24, 0x06);
++
++	for (i = 0; i < 100; i++) {
++		rt2800usb_bbp_write(rt2x00dev, 25, 0x90);
++		msleep(1);
++
++		rt2800usb_bbp_read(rt2x00dev, 55, &stopband);
++
++		if ((passband - stopband) <= filter_target) {
++			rfcsr24++;
++			overtuned += ((passband - stopband) == filter_target);
++		} else
++			break;
++
++		rt2800usb_rfcsr_write(rt2x00dev, 24, rfcsr24);
++	}
++
++	rfcsr24 -= !!overtuned;
++
++	rt2800usb_rfcsr_write(rt2x00dev, 24, rfcsr24);
++	return rfcsr24;
++}
++
++static int rt2800usb_init_rfcsr(struct rt2x00_dev *rt2x00dev)
++{
++	u8 rfcsr;
++	u8 bbp;
++
++	if (rt2x00_rev(&rt2x00dev->chip) != RT3070_VERSION)
++		return 0;
++
++	/*
++	 * Init RF calibration.
++	 */
++	rt2800usb_rfcsr_read(rt2x00dev, 30, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR30_RF_CALIBRATION, 1);
++	rt2800usb_rfcsr_write(rt2x00dev, 30, rfcsr);
++	msleep(1);
++	rt2x00_set_field8(&rfcsr, RFCSR30_RF_CALIBRATION, 0);
++	rt2800usb_rfcsr_write(rt2x00dev, 30, rfcsr);
++
++	rt2800usb_rfcsr_write(rt2x00dev, 4, 0x40);
++	rt2800usb_rfcsr_write(rt2x00dev, 5, 0x03);
++	rt2800usb_rfcsr_write(rt2x00dev, 6, 0x02);
++	rt2800usb_rfcsr_write(rt2x00dev, 7, 0x70);
++	rt2800usb_rfcsr_write(rt2x00dev, 9, 0x0f);
++	rt2800usb_rfcsr_write(rt2x00dev, 10, 0x71);
++	rt2800usb_rfcsr_write(rt2x00dev, 11, 0x21);
++	rt2800usb_rfcsr_write(rt2x00dev, 12, 0x7b);
++	rt2800usb_rfcsr_write(rt2x00dev, 14, 0x90);
++	rt2800usb_rfcsr_write(rt2x00dev, 15, 0x58);
++	rt2800usb_rfcsr_write(rt2x00dev, 16, 0xb3);
++	rt2800usb_rfcsr_write(rt2x00dev, 17, 0x92);
++	rt2800usb_rfcsr_write(rt2x00dev, 18, 0x2c);
++	rt2800usb_rfcsr_write(rt2x00dev, 19, 0x02);
++	rt2800usb_rfcsr_write(rt2x00dev, 20, 0xba);
++	rt2800usb_rfcsr_write(rt2x00dev, 21, 0xdb);
++	rt2800usb_rfcsr_write(rt2x00dev, 24, 0x16);
++	rt2800usb_rfcsr_write(rt2x00dev, 25, 0x01);
++	rt2800usb_rfcsr_write(rt2x00dev, 27, 0x03);
++	rt2800usb_rfcsr_write(rt2x00dev, 29, 0x1f);
++
++	/*
++	 * Set RX Filter calibration for 20MHz and 40MHz
++	 */
++	rt2x00dev->calibration_bw20 =
++	    rt2800usb_init_rx_filter(rt2x00dev, false, 0x07, 0x16);
++	rt2x00dev->calibration_bw40 =
++	    rt2800usb_init_rx_filter(rt2x00dev, true, 0x27, 0x19);
++
++	/*
++	 * Set back to initial state
++	 */
++	rt2800usb_bbp_write(rt2x00dev, 24, 0);
++
++	rt2800usb_rfcsr_read(rt2x00dev, 22, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR22_BASEBAND_LOOPBACK, 0);
++	rt2800usb_rfcsr_write(rt2x00dev, 22, rfcsr);
++
++	/*
++	 * set BBP back to BW20
++	 */
++	rt2800usb_bbp_read(rt2x00dev, 4, &bbp);
++	rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 0);
++	rt2800usb_bbp_write(rt2x00dev, 4, bbp);
++
++	return 0;
++}
++
+ /*
+  * Device state switch handlers.
+  */
+@@ -1491,7 +1746,8 @@ static int rt2800usb_enable_radio(struct
+ 	 */
+ 	if (unlikely(rt2800usb_wait_wpdma_ready(rt2x00dev) ||
+ 		     rt2800usb_init_registers(rt2x00dev) ||
+-		     rt2800usb_init_bbp(rt2x00dev)))
++		     rt2800usb_init_bbp(rt2x00dev) ||
++		     rt2800usb_init_rfcsr(rt2x00dev)))
+ 		return -EIO;
+ 
+ 	rt2x00usb_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
+@@ -1982,7 +2238,6 @@ static int rt2800usb_validate_eeprom(str
+ static int rt2800usb_init_eeprom(struct rt2x00_dev *rt2x00dev)
+ {
+ 	u32 reg;
+-	u16 rev;
+ 	u16 value;
+ 	u16 eeprom;
+ 
+@@ -1996,8 +2251,7 @@ static int rt2800usb_init_eeprom(struct 
+ 	 */
+ 	value = rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RF_TYPE);
+ 	rt2x00usb_register_read(rt2x00dev, MAC_CSR0, &reg);
+-	rev = rt2x00_get_field32(reg, MAC_CSR0_ASIC_REV);
+-	rt2x00_set_chip(rt2x00dev, RT2870, value, rev);
++	rt2x00_set_chip(rt2x00dev, RT2870, value, reg);
+ 
+ 	/*
+ 	 * The check for rt2860 is not a typo, some rt2870 hardware
+@@ -2012,7 +2266,9 @@ static int rt2800usb_init_eeprom(struct 
+ 	if (!rt2x00_rf(&rt2x00dev->chip, RF2820) &&
+ 	    !rt2x00_rf(&rt2x00dev->chip, RF2850) &&
+ 	    !rt2x00_rf(&rt2x00dev->chip, RF2720) &&
+-	    !rt2x00_rf(&rt2x00dev->chip, RF2750)) {
++	    !rt2x00_rf(&rt2x00dev->chip, RF2750) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF3020) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF2020)) {
+ 		ERROR(rt2x00dev, "Invalid RF chipset detected.\n");
+ 		return -ENODEV;
+ 	}
+@@ -2127,6 +2383,27 @@ static const struct rf_channel rf_vals[]
+ 	{ 216, 0x15002ccc, 0x15004982, 0x1509be55, 0x150c0a23 },
+ };
+ 
++/*
++ * RF value list for rt3070
++ * Supports: 2.4 GHz
++ */
++static const struct rf_channel rf_vals_3070[] = {
++	{1,  241, 2, 2 },
++	{2,  241, 2, 7 },
++	{3,  242, 2, 2 },
++	{4,  242, 2, 7 },
++	{5,  243, 2, 2 },
++	{6,  243, 2, 7 },
++	{7,  244, 2, 2 },
++	{8,  244, 2, 7 },
++	{9,  245, 2, 2 },
++	{10, 245, 2, 7 },
++	{11, 246, 2, 2 },
++	{12, 246, 2, 7 },
++	{13, 247, 2, 2 },
++	{14, 248, 2, 4 },
++};
++
+ static int rt2800usb_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
+ {
+ 	struct hw_mode_spec *spec = &rt2x00dev->spec;
+@@ -2184,6 +2461,10 @@ static int rt2800usb_probe_hw_mode(struc
+ 		spec->supported_bands |= SUPPORT_BAND_5GHZ;
+ 		spec->num_channels = ARRAY_SIZE(rf_vals);
+ 		spec->channels = rf_vals;
++	} else if (rt2x00_rf(&rt2x00dev->chip, RF3020) ||
++		   rt2x00_rf(&rt2x00dev->chip, RF2020)) {
++		spec->num_channels = ARRAY_SIZE(rf_vals_3070);
++		spec->channels = rf_vals_3070;
+ 	}
+ 
+ 	/*
+@@ -2473,6 +2754,12 @@ static const struct rt2x00_ops rt2800usb
+  * rt2800usb module information.
+  */
+ static struct usb_device_id rt2800usb_device_table[] = {
++	/* Abocom */
++	{ USB_DEVICE(0x07b8, 0x3070), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x07b8, 0x3071), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x07b8, 0x2870), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x07b8, 0x2770), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x1482, 0x3c09), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Amit */
+ 	{ USB_DEVICE(0x15c5, 0x0008), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* ASUS */
+@@ -2483,9 +2770,12 @@ static struct usb_device_id rt2800usb_de
+ 	{ USB_DEVICE(0x13d3, 0x3247), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Belkin */
+ 	{ USB_DEVICE(0x050d, 0x8053), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x050d, 0x805c), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Conceptronic */
+ 	{ USB_DEVICE(0x14b2, 0x3c06), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x14b2, 0x3c07), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x14b2, 0x3c09), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x14b2, 0x3c12), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x14b2, 0x3c23), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x14b2, 0x3c25), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x14b2, 0x3c27), USB_DEVICE_DATA(&rt2800usb_ops) },
+@@ -2494,9 +2784,12 @@ static struct usb_device_id rt2800usb_de
+ 	{ USB_DEVICE(0x07aa, 0x002f), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x07aa, 0x003c), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x07aa, 0x003f), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x18c5, 0x0012), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* D-Link */
+ 	{ USB_DEVICE(0x07d1, 0x3c09), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x07d1, 0x3c11), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Edimax */
++	{ USB_DEVICE(0x7392, 0x7711), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* EnGenius */
+ 	{ USB_DEVICE(0X1740, 0x9701), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x1740, 0x9702), USB_DEVICE_DATA(&rt2800usb_ops) },
+@@ -2507,13 +2800,21 @@ static struct usb_device_id rt2800usb_de
+ 	{ USB_DEVICE(0x0e66, 0x0003), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Linksys */
+ 	{ USB_DEVICE(0x1737, 0x0071), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Logitec */
++	{ USB_DEVICE(0x0789, 0x0162), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0789, 0x0163), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0789, 0x0164), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Philips */
+ 	{ USB_DEVICE(0x0471, 0x200f), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Planex */
+ 	{ USB_DEVICE(0x2019, 0xed06), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x2019, 0xab25), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Ralink */
+ 	{ USB_DEVICE(0x148f, 0x2770), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x148f, 0x2870), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x148f, 0x3070), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Samsung */
++	{ USB_DEVICE(0x04e8, 0x2018), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Siemens */
+ 	{ USB_DEVICE(0x129b, 0x1828), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Sitecom */
+@@ -2533,6 +2834,9 @@ static struct usb_device_id rt2800usb_de
+ 	/* ZCOM */
+ 	{ USB_DEVICE(0x0cde, 0x0022), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x0cde, 0x0025), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Zinwell */
++	{ USB_DEVICE(0x5a57, 0x0280), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x5a57, 0x0282), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Zyxel */
+ 	{ USB_DEVICE(0x0586, 0x3416), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ 0, }
+--- a/drivers/net/wireless/rt2x00/rt2800usb.h
++++ b/drivers/net/wireless/rt2x00/rt2800usb.h
+@@ -47,9 +47,11 @@
+ /*
+  * RT2870 version
+  */
+-#define RT2870_VERSION_C		0x0100
+-#define RT2870_VERSION_D		0x0101
+-#define RT2870_VERSION_E		0x0200
++#define RT2860C_VERSION			0x28600100
++#define RT2860D_VERSION			0x28600101
++#define RT2880E_VERSION			0x28720200
++#define RT2883_VERSION			0x28830300
++#define RT3070_VERSION			0x30700200
+ 
+ /*
+  * Signal information.
+@@ -383,6 +385,15 @@
+ #define PBF_DBG				0x043c
+ 
+ /*
++ * RF registers
++ */
++#define	RF_CSR_CFG			0x0500
++#define RF_CSR_CFG_DATA			FIELD32(0x000000ff)
++#define RF_CSR_CFG_REGNUM		FIELD32(0x00001f00)
++#define RF_CSR_CFG_WRITE		FIELD32(0x00010000)
++#define RF_CSR_CFG_BUSY			FIELD32(0x00020000)
++
++/*
+  * MAC Control/Status Registers(CSR).
+  * Some values are set in TU, whereas 1 TU == 1024 us.
+  */
+@@ -1482,6 +1493,46 @@ struct hw_key_entry {
+ #define BBP3_RX_ANTENNA			FIELD8(0x18)
+ 
+ /*
++ * BBP 4: Bandwidth
++ */
++#define BBP4_BANDWIDTH			FIELD8(0x18)
++
++/*
++ * RFCSR registers
++ * The wordsize of the RFCSR is 8 bits.
++ */
++
++/*
++ * RFCSR 6:
++ */
++#define RFCSR6_R			FIELD8(0x03)
++
++/*
++ * RFCSR 7:
++ */
++#define RFCSR7_RF_TUNING		FIELD8(0x01)
++
++/*
++ * RFCSR 12:
++ */
++#define RFCSR12_TX_POWER		FIELD8(0x1f)
++
++/*
++ * RFCSR 22:
++ */
++#define RFCSR22_BASEBAND_LOOPBACK	FIELD8(0x01)
++
++/*
++ * RFCSR 23:
++ */
++#define RFCSR23_FREQ_OFFSET		FIELD8(0x7f)
++
++/*
++ * RFCSR 30:
++ */
++#define RFCSR30_RF_CALIBRATION		FIELD8(0x80)
++
++/*
+  * RF registers
+  */
+ 
+--- a/drivers/net/wireless/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/rt2x00/rt2x00.h
+@@ -780,6 +780,12 @@ struct rt2x00_dev {
+ 	u8 freq_offset;
+ 
+ 	/*
++	 * Calibration information (for rt2800usb).
++	 */
++	u8 calibration_bw20;
++	u8 calibration_bw40;
++
++	/*
+ 	 * Low level statistics which will have
+ 	 * to be kept up to date while device is running.
+ 	 */

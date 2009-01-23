@@ -412,13 +412,13 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  #ifdef CONFIG_RT2X00_LIB_RFKILL
 --- a/drivers/net/wireless/rt2x00/rt2x00queue.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
-@@ -325,6 +325,7 @@ static void rt2x00queue_create_tx_descri
+@@ -326,6 +326,7 @@ static void rt2x00queue_create_tx_descri
  	 * Apply TX descriptor handling by components
  	 */
  	rt2x00crypto_create_tx_descriptor(entry, txdesc);
 +	rt2x00ht_create_tx_descriptor(entry, txdesc, rate);
  	rt2x00queue_create_tx_descriptor_seq(entry, txdesc);
- 	rt2x00queue_create_tx_descriptor_plcp(entry, txdesc, rate);
+ 	rt2x00queue_create_tx_descriptor_plcp(entry, txdesc, hwrate);
  }
 --- a/drivers/net/wireless/rt2x00/rt2x00queue.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00queue.h
