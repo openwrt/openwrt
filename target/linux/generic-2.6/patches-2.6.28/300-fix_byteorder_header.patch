@@ -20,8 +20,6 @@ Signed-off-by: Harvey Harrison <harvey.harrison@gmail.com>
  include/linux/byteorder.h          |   84 ++++++++++++++++++------------------
  5 files changed, 48 insertions(+), 48 deletions(-)
 
-diff --git a/arch/avr32/include/asm/byteorder.h b/arch/avr32/include/asm/byteorder.h
-index 8e3af02..b7d6dd1 100644
 --- a/arch/avr32/include/asm/byteorder.h
 +++ b/arch/avr32/include/asm/byteorder.h
 @@ -7,7 +7,7 @@
@@ -33,8 +31,6 @@ index 8e3af02..b7d6dd1 100644
  #define __SWAB_64_THRU_32__
  
  #ifdef __CHECKER__
-diff --git a/arch/mips/include/asm/byteorder.h b/arch/mips/include/asm/byteorder.h
-index 2988d29..8ad8a5b 100644
 --- a/arch/mips/include/asm/byteorder.h
 +++ b/arch/mips/include/asm/byteorder.h
 @@ -12,9 +12,9 @@
@@ -49,8 +45,6 @@ index 2988d29..8ad8a5b 100644
  #else
  # error "MIPS, but neither __MIPSEB__, nor __MIPSEL__???"
  #endif
-diff --git a/arch/sh/include/asm/byteorder.h b/arch/sh/include/asm/byteorder.h
-index f5fa065..4aa5f1d 100644
 --- a/arch/sh/include/asm/byteorder.h
 +++ b/arch/sh/include/asm/byteorder.h
 @@ -9,9 +9,9 @@
@@ -65,8 +59,6 @@ index f5fa065..4aa5f1d 100644
  #endif
  
  #define __SWAB_64_THRU_32__
-diff --git a/arch/sparc/include/asm/byteorder.h b/arch/sparc/include/asm/byteorder.h
-index 5a70f13..5b8347e 100644
 --- a/arch/sparc/include/asm/byteorder.h
 +++ b/arch/sparc/include/asm/byteorder.h
 @@ -4,7 +4,7 @@
@@ -78,8 +70,6 @@ index 5a70f13..5b8347e 100644
  
  #ifdef CONFIG_SPARC32
  #define __SWAB_64_THRU_32__
-diff --git a/include/linux/byteorder.h b/include/linux/byteorder.h
-index 29f002d..3599fbc 100644
 --- a/include/linux/byteorder.h
 +++ b/include/linux/byteorder.h
 @@ -4,33 +4,33 @@
@@ -106,11 +96,8 @@ index 29f002d..3599fbc 100644
 +# ifndef __LITTLE_ENDIAN_BITFIELD
 +#  define __LITTLE_ENDIAN_BITFIELD
 +# endif
- #endif
- 
--#ifdef __BIG_ENDIAN
--# undef __BIG_ENDIAN
--# define __BIG_ENDIAN 4321
++#endif
++
 +#ifdef __KERN_BIG_ENDIAN
 +# ifndef __BIG_ENDIAN
 +#  define __BIG_ENDIAN 4321
@@ -120,6 +107,11 @@ index 29f002d..3599fbc 100644
 +# endif
  #endif
  
+-#ifdef __BIG_ENDIAN
+-# undef __BIG_ENDIAN
+-# define __BIG_ENDIAN 4321
+-#endif
+-
 -#if defined(__LITTLE_ENDIAN) && !defined(__LITTLE_ENDIAN_BITFIELD)
 -# define __LITTLE_ENDIAN_BITFIELD
 -#endif
@@ -247,7 +239,7 @@ index 29f002d..3599fbc 100644
  	return (__force __u16)*p;
  #else
  	return __swab16p((__force __u16 *)p);
-@@ -180,7 +180,7 @@ static inline __u16 __le16_to_cpup(const __le16 *p)
+@@ -180,7 +180,7 @@ static inline __u16 __le16_to_cpup(const
  
  static inline __u32 __le32_to_cpup(const __le32 *p)
  {
@@ -256,7 +248,7 @@ index 29f002d..3599fbc 100644
  	return (__force __u32)*p;
  #else
  	return __swab32p((__force __u32 *)p);
-@@ -189,7 +189,7 @@ static inline __u32 __le32_to_cpup(const __le32 *p)
+@@ -189,7 +189,7 @@ static inline __u32 __le32_to_cpup(const
  
  static inline __u64 __le64_to_cpup(const __le64 *p)
  {
@@ -265,7 +257,7 @@ index 29f002d..3599fbc 100644
  	return (__force __u64)*p;
  #else
  	return __swab64p((__force __u64 *)p);
-@@ -198,7 +198,7 @@ static inline __u64 __le64_to_cpup(const __le64 *p)
+@@ -198,7 +198,7 @@ static inline __u64 __le64_to_cpup(const
  
  static inline __le16 __cpu_to_le16p(const __u16 *p)
  {
@@ -274,7 +266,7 @@ index 29f002d..3599fbc 100644
  	return (__force __le16)*p;
  #else
  	return (__force __le16)__swab16p(p);
-@@ -207,7 +207,7 @@ static inline __le16 __cpu_to_le16p(const __u16 *p)
+@@ -207,7 +207,7 @@ static inline __le16 __cpu_to_le16p(cons
  
  static inline __le32 __cpu_to_le32p(const __u32 *p)
  {
@@ -283,7 +275,7 @@ index 29f002d..3599fbc 100644
  	return (__force __le32)*p;
  #else
  	return (__force __le32)__swab32p(p);
-@@ -216,7 +216,7 @@ static inline __le32 __cpu_to_le32p(const __u32 *p)
+@@ -216,7 +216,7 @@ static inline __le32 __cpu_to_le32p(cons
  
  static inline __le64 __cpu_to_le64p(const __u64 *p)
  {
@@ -292,7 +284,7 @@ index 29f002d..3599fbc 100644
  	return (__force __le64)*p;
  #else
  	return (__force __le64)__swab64p(p);
-@@ -225,7 +225,7 @@ static inline __le64 __cpu_to_le64p(const __u64 *p)
+@@ -225,7 +225,7 @@ static inline __le64 __cpu_to_le64p(cons
  
  static inline __u16 __be16_to_cpup(const __be16 *p)
  {
@@ -301,7 +293,7 @@ index 29f002d..3599fbc 100644
  	return (__force __u16)*p;
  #else
  	return __swab16p((__force __u16 *)p);
-@@ -234,7 +234,7 @@ static inline __u16 __be16_to_cpup(const __be16 *p)
+@@ -234,7 +234,7 @@ static inline __u16 __be16_to_cpup(const
  
  static inline __u32 __be32_to_cpup(const __be32 *p)
  {
@@ -310,7 +302,7 @@ index 29f002d..3599fbc 100644
  	return (__force __u32)*p;
  #else
  	return __swab32p((__force __u32 *)p);
-@@ -243,7 +243,7 @@ static inline __u32 __be32_to_cpup(const __be32 *p)
+@@ -243,7 +243,7 @@ static inline __u32 __be32_to_cpup(const
  
  static inline __u64 __be64_to_cpup(const __be64 *p)
  {
@@ -319,7 +311,7 @@ index 29f002d..3599fbc 100644
  	return (__force __u64)*p;
  #else
  	return __swab64p((__force __u64 *)p);
-@@ -252,7 +252,7 @@ static inline __u64 __be64_to_cpup(const __be64 *p)
+@@ -252,7 +252,7 @@ static inline __u64 __be64_to_cpup(const
  
  static inline __be16 __cpu_to_be16p(const __u16 *p)
  {
@@ -328,7 +320,7 @@ index 29f002d..3599fbc 100644
  	return (__force __be16)*p;
  #else
  	return (__force __be16)__swab16p(p);
-@@ -261,7 +261,7 @@ static inline __be16 __cpu_to_be16p(const __u16 *p)
+@@ -261,7 +261,7 @@ static inline __be16 __cpu_to_be16p(cons
  
  static inline __be32 __cpu_to_be32p(const __u32 *p)
  {
@@ -337,7 +329,7 @@ index 29f002d..3599fbc 100644
  	return (__force __be32)*p;
  #else
  	return (__force __be32)__swab32p(p);
-@@ -270,7 +270,7 @@ static inline __be32 __cpu_to_be32p(const __u32 *p)
+@@ -270,7 +270,7 @@ static inline __be32 __cpu_to_be32p(cons
  
  static inline __be64 __cpu_to_be64p(const __u64 *p)
  {
