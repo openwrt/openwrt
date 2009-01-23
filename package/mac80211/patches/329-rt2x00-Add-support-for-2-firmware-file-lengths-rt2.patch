@@ -1,0 +1,58 @@
+From cac151e6e6aa50ecb5d965aa5e2840d0e69f8efa Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Thu, 22 Jan 2009 22:02:32 +0100
+Subject: [PATCH] rt2x00: Add support for 2 firmware file lengths (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |   32 +++++++++++++++++++++++++++++-
+ 1 files changed, 30 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -1128,6 +1128,34 @@ static int rt2800usb_load_firmware(struc
+ 	unsigned int i;
+ 	int status;
+ 	u32 reg;
++	u32 offset;
++	u32 length;
++	u16 chipset = (rt2x00_rev(&rt2x00dev->chip) >> 16) & 0xffff;
++
++	/*
++	 * Firmware files:
++	 * There are 2 variations of the rt2870 firmware.
++	 * a) size: 4kb
++	 * b) size: 8kb
++	 * Note that (b) contains 2 seperate firmware blobs of 4k
++	 * within the file. The first blob is the same firmware as (a),
++	 * but the second blob is for the additional chipsets.
++	 */
++	if (len < 4096) {
++		ERROR(rt2x00dev, "Unsupported firmware file (len=%zu)\n", len);
++		return -ENOENT;
++	}
++
++	if ((chipset == 0x2860) || (chipset == 0x2872) || (chipset == 0x3070)) {
++		offset = 0;
++		length = 4096;
++	} else if (len == 8192) {
++		offset = 4096;
++		length = 4096;
++	} else {
++		ERROR(rt2x00dev, "Unsupported firmware file (len=%zu)\n", len);
++		return -ENOENT;
++	}
+ 
+ 	/*
+ 	 * Wait for stable hardware.
+@@ -1150,8 +1178,8 @@ static int rt2800usb_load_firmware(struc
+ 	rt2x00usb_vendor_request_large_buff(rt2x00dev, USB_MULTI_WRITE,
+ 					    USB_VENDOR_REQUEST_OUT,
+ 					    FIRMWARE_IMAGE_BASE,
+-					    data, len,
+-					    REGISTER_TIMEOUT32(len));
++					    data + offset, length,
++					    REGISTER_TIMEOUT32(length));
+ 
+ 	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
+ 	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_STATUS, ~0);
