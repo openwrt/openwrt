@@ -88,7 +88,7 @@
  /*********************************************************************
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -140,6 +140,7 @@ asmlinkage long sys_dup(unsigned int fil
+@@ -140,6 +140,7 @@ SYSCALL_DEFINE1(dup, unsigned int, filde
  	}
  	return ret;
  }
