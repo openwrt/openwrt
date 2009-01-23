@@ -2,7 +2,7 @@
  *  Parse MyLoader-style flash partition tables and produce a Linux partition
  *  array to match.
  *
- *  Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2007-2009 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This file was based on drivers/mtd/redboot.c
  *  Author: Red Hat, Inc. - David Woodhouse <dwmw2@cambridge.redhat.com>
@@ -133,7 +133,7 @@ int myloader_parse_partitions(struct mtd_info *master,
 		if (le16_to_cpu(part->type) == PARTITION_TYPE_FREE)
 			continue;
 
-		if (buf->names[i][0])
+		if ((buf->names[i][0]) && (buf->names[i][0] != '\xff'))
 			strncpy(names, buf->names[i], PART_NAME_LEN);
 		else
 			snprintf(names, PART_NAME_LEN, "partition%d", i);
