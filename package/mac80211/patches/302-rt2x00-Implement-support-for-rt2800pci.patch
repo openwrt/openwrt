@@ -1,6 +1,6 @@
-From dda25991ee4dc0a2ebe2e3b50857971fe1d878c4 Mon Sep 17 00:00:00 2001
+From 659988a6bb83536c5d0a01b0b58378cc1856c975 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sat, 10 Jan 2009 11:03:23 +0100
+Date: Fri, 23 Jan 2009 17:13:03 +0100
 Subject: [PATCH] rt2x00: Implement support for rt2800pci
 
 Add support for the rt2800pci chipset.
@@ -14,10 +14,10 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig     |   15 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800pci.c | 2707 +++++++++++++++++++++++++++++++
- drivers/net/wireless/rt2x00/rt2800pci.h | 1879 +++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.c | 2763 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.h | 1881 +++++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00.h    |    4 +
- 5 files changed, 4606 insertions(+), 0 deletions(-)
+ 5 files changed, 4664 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.h
 
@@ -32,9 +32,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  obj-$(CONFIG_RT73USB)			+= rt73usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -0,0 +1,2707 @@
+@@ -0,0 +1,2763 @@
 +/*
-+	Copyright (C) 2004 - 2008 rt2x00 SourceForge Project
++	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
 +
 +	This program is free software; you can redistribute it and/or modify
@@ -502,8 +502,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +			   !(filter_flags & FIF_PLCPFAIL));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_TO_ME,
 +			   !(filter_flags & FIF_PROMISC_IN_BSS));
-+	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD,
-+			   !(filter_flags & FIF_OTHER_BSS));
++	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD, 0);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_VER_ERROR, 1);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_MULTICAST,
 +			   !(filter_flags & FIF_ALLMULTI));
@@ -638,9 +637,12 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 */
 +	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH)) {
 +	case 1:
++		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 0);
 +		rt2x00_set_field8(&r3, BBP3_RX_ANTENNA, 0);
 +		break;
 +	case 2:
++		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 16);
++		break;
 +	case 3:
 +		/* Do nothing */
 +		break;
@@ -915,6 +917,36 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +}
 +
++static void rt2800pci_config_ps(struct rt2x00_dev *rt2x00dev,
++				struct rt2x00lib_conf *libconf)
++{
++	enum dev_state state =
++	    (libconf->conf->flags & IEEE80211_CONF_PS) ?
++		STATE_SLEEP : STATE_AWAKE;
++	u32 reg;
++
++	if (state == STATE_SLEEP) {
++		rt2x00pci_register_write(rt2x00dev, AUTOWAKEUP_CFG, 0);
++
++		rt2x00pci_register_read(rt2x00dev, AUTOWAKEUP_CFG, &reg);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTO_LEAD_TIME, 5);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE,
++				   libconf->conf->listen_interval - 1);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTOWAKE, 1);
++		rt2x00pci_register_write(rt2x00dev, AUTOWAKEUP_CFG, reg);
++
++		rt2800pci_mcu_request(rt2x00dev, MCU_SLEEP, 0xff, 0, 0);
++	} else {
++		rt2800pci_mcu_request(rt2x00dev, MCU_WAKEUP, 0xff, 0, 0);
++
++		rt2x00pci_register_read(rt2x00dev, AUTOWAKEUP_CFG, &reg);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTO_LEAD_TIME, 0);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_TBCN_BEFORE_WAKE, 0);
++		rt2x00_set_field32(&reg, AUTOWAKEUP_CFG_AUTOWAKE, 0);
++		rt2x00pci_register_write(rt2x00dev, AUTOWAKEUP_CFG, reg);
++	}
++}
++
 +static void rt2800pci_config(struct rt2x00_dev *rt2x00dev,
 +			     struct rt2x00lib_conf *libconf,
 +			     const unsigned int flags)
@@ -931,6 +963,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		rt2800pci_config_retry_limit(rt2x00dev, libconf);
 +	if (flags & IEEE80211_CONF_CHANGE_BEACON_INTERVAL)
 +		rt2800pci_config_duration(rt2x00dev, libconf);
++	if (flags & IEEE80211_CONF_CHANGE_PS)
++		rt2800pci_config_ps(rt2x00dev, libconf);
 +}
 +
 +/*
@@ -985,7 +1019,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +static void rt2800pci_link_tuner(struct rt2x00_dev *rt2x00dev,
 +				 struct link_qual *qual, const u32 count)
 +{
-+	if (rt2x00_rev(&rt2x00dev->chip) == RT2860_VERSION_C)
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION)
 +		return;
 +
 +	/*
@@ -1034,6 +1068,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +{
 +	unsigned int i;
 +	u32 reg;
++
++	if (len != 8192) {
++		ERROR(rt2x00dev, "Invalid firmware file length (len=%zu)\n", len);
++		return -ENOENT;
++	}
 +
 +	/*
 +	 * Wait for stable hardware.
@@ -1273,7 +1312,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	rt2x00pci_register_read(rt2x00dev, MAX_LEN_CFG, &reg);
 +	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_MPDU, AGGREGATION_SIZE);
-+	rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
++	if (rt2x00_rev(&rt2x00dev->chip) >= RT2880E_VERSION &&
++	    rt2x00_rev(&rt2x00dev->chip) < RT3070_VERSION)
++		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 2);
++	else
++		rt2x00_set_field32(&reg, MAX_LEN_CFG_MAX_PSDU, 1);
 +	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_PSDU, 0);
 +	rt2x00_set_field32(&reg, MAX_LEN_CFG_MIN_MPDU, 0);
 +	rt2x00pci_register_write(rt2x00dev, MAX_LEN_CFG, reg);
@@ -1375,7 +1418,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 * ASIC will keep garbage value after boot, clear encryption keys.
 +	 */
 +	for (i = 0; i < 254; i++) {
-+		u32 wcid[2] = { 0xffffffff, 0x0000ffff };
++		u32 wcid[2] = { 0xffffffff, 0x00ffffff };
 +		rt2x00pci_register_multiwrite(rt2x00dev, MAC_WCID_ENTRY(i),
 +					      wcid, sizeof(wcid));
 +	}
@@ -1524,12 +1567,12 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2800pci_bbp_write(rt2x00dev, 103, 0x00);
 +	rt2800pci_bbp_write(rt2x00dev, 105, 0x05);
 +
-+	if (rt2x00_rev(&rt2x00dev->chip) == RT2860_VERSION_C) {
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION) {
 +		rt2800pci_bbp_write(rt2x00dev, 69, 0x16);
 +		rt2800pci_bbp_write(rt2x00dev, 73, 0x12);
 +	}
 +
-+	if (rt2x00_rev(&rt2x00dev->chip) == RT2860_VERSION_D)
++	if (rt2x00_rev(&rt2x00dev->chip) > RT2860D_VERSION)
 +		rt2800pci_bbp_write(rt2x00dev, 84, 0x19);
 +
 +	for (i = 0; i < EEPROM_BBP_SIZE; i++) {
@@ -1626,6 +1669,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	if (unlikely(rt2800pci_wait_wpdma_ready(rt2x00dev) ||
 +		     rt2800pci_init_queues(rt2x00dev) ||
 +		     rt2800pci_init_registers(rt2x00dev) ||
++		     rt2800pci_wait_wpdma_ready(rt2x00dev) ||
 +		     rt2800pci_init_bbp(rt2x00dev)))
 +		return -EIO;
 +
@@ -1634,12 +1678,14 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 */
 +	rt2800pci_mcu_request(rt2x00dev, MCU_BOOT_SIGNAL, 0xff, 0, 0);
 +
-+	/* Wait for DMA, ignore error */
-+	rt2800pci_wait_wpdma_ready(rt2x00dev);
-+
 +	/*
 +	 * Enable RX.
 +	 */
++	rt2x00pci_register_read(rt2x00dev, MAC_SYS_CTRL, &reg);
++	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_TX, 1);
++	rt2x00_set_field32(&reg, MAC_SYS_CTRL_ENABLE_RX, 0);
++	rt2x00pci_register_write(rt2x00dev, MAC_SYS_CTRL, reg);
++
 +	rt2x00pci_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_TX_DMA, 1);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_RX_DMA, 1);
@@ -2164,9 +2210,17 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	}
 +
 +	rt2x00_eeprom_read(rt2x00dev, EEPROM_NIC, &word);
-+	if (word != 0) {
-+		/* NIC configuration must always be 0. */
-+		word = 0;
++	if (word == 0xffff) {
++		rt2x00_set_field16(&word, EEPROM_NIC_HW_RADIO, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_DYNAMIC_TX_AGC, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_EXTERNAL_LNA_BG, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_EXTERNAL_LNA_A, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_CARDBUS_ACCEL, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_SB_BG, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_SB_A, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_WPS_PBC, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_BG, 0);
++		rt2x00_set_field16(&word, EEPROM_NIC_BW40M_A, 0);
 +		rt2x00_eeprom_write(rt2x00dev, EEPROM_NIC, word);
 +		EEPROM(rt2x00dev, "NIC: 0x%04x\n", word);
 +	}
@@ -2248,13 +2302,14 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +			     PCI_CONFIG_HEADER_DEVICE, &device);
 +	value = rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RF_TYPE);
 +	rt2x00pci_register_read(rt2x00dev, MAC_CSR0, &reg);
-+	reg = rt2x00_get_field32(reg, MAC_CSR0_ASIC_REV);
 +	rt2x00_set_chip(rt2x00dev, device, value, reg);
 +
 +	if (!rt2x00_rf(&rt2x00dev->chip, RF2820) &&
 +	    !rt2x00_rf(&rt2x00dev->chip, RF2850) &&
 +	    !rt2x00_rf(&rt2x00dev->chip, RF2720) &&
-+	    !rt2x00_rf(&rt2x00dev->chip, RF2750)) {
++	    !rt2x00_rf(&rt2x00dev->chip, RF2750) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF3020) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF2020)) {
 +		ERROR(rt2x00dev, "Invalid RF chipset detected.\n");
 +		return -ENODEV;
 +	}
@@ -2381,7 +2436,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 */
 +	rt2x00dev->hw->flags =
 +	    IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING |
-+	    IEEE80211_HW_SIGNAL_DBM;
++	    IEEE80211_HW_SIGNAL_DBM |
++	    IEEE80211_HW_SUPPORTS_PS |
++	    IEEE80211_HW_PS_NULLFUNC_STACK;
 +	rt2x00dev->hw->extra_tx_headroom = TXWI_DESC_SIZE;
 +
 +	SET_IEEE80211_DEV(rt2x00dev->hw, rt2x00dev->dev);
@@ -2499,33 +2556,34 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +{
 +	struct rt2x00_dev *rt2x00dev = hw->priv;
 +	u32 reg;
++	bool enabled = (value < IEEE80211_MAX_RTS_THRESHOLD);
 +
 +	rt2x00pci_register_read(rt2x00dev, TX_RTS_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_THRES, value);
 +	rt2x00pci_register_write(rt2x00dev, TX_RTS_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, CCK_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, CCK_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, CCK_PROT_CFG_RTS_TH_EN, enabled);
 +	rt2x00pci_register_write(rt2x00dev, CCK_PROT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, OFDM_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, OFDM_PROT_CFG_RTS_TH_EN, enabled);
 +	rt2x00pci_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, MM20_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, MM20_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, MM20_PROT_CFG_RTS_TH_EN, enabled);
 +	rt2x00pci_register_write(rt2x00dev, MM20_PROT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, MM40_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, MM40_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, MM40_PROT_CFG_RTS_TH_EN, enabled);
 +	rt2x00pci_register_write(rt2x00dev, MM40_PROT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, GF20_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, GF20_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, GF20_PROT_CFG_RTS_TH_EN, enabled);
 +	rt2x00pci_register_write(rt2x00dev, GF20_PROT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, GF40_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, GF40_PROT_CFG_RTS_TH_EN, 1);
++	rt2x00_set_field32(&reg, GF40_PROT_CFG_RTS_TH_EN, enabled);
 +	rt2x00pci_register_write(rt2x00dev, GF40_PROT_CFG, reg);
 +
 +	return 0;
@@ -2551,24 +2609,23 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	if (retval)
 +		return retval;
 +
++	/*
++	 * We only need to perform additional register initialization
++	 * for WMM queues/
++	 */
++	if (queue_idx >= 4)
++		return 0;
++
 +	queue = rt2x00queue_get_queue(rt2x00dev, queue_idx);
 +
 +	/* Update WMM TXOP register */
-+	if (queue_idx < 2) {
-+		field.bit_offset = queue_idx * 16;
-+		field.bit_mask = 0xffff << field.bit_offset;
++	offset = WMM_TXOP0_CFG + (sizeof(u32) * (!!(queue_idx & 2)));
++	field.bit_offset = (queue_idx & 1) * 16;
++	field.bit_mask = 0xffff << field.bit_offset;
 +
-+		rt2x00pci_register_read(rt2x00dev, WMM_TXOP0_CFG, &reg);
-+		rt2x00_set_field32(&reg, field, queue->txop);
-+		rt2x00pci_register_write(rt2x00dev, WMM_TXOP0_CFG, reg);
-+	} else if (queue_idx < 4) {
-+		field.bit_offset = (queue_idx - 2) * 16;
-+		field.bit_mask = 0xffff << field.bit_offset;
-+
-+		rt2x00pci_register_read(rt2x00dev, WMM_TXOP1_CFG, &reg);
-+		rt2x00_set_field32(&reg, field, queue->txop);
-+		rt2x00pci_register_write(rt2x00dev, WMM_TXOP1_CFG, reg);
-+	}
++	rt2x00pci_register_read(rt2x00dev, offset, &reg);
++	rt2x00_set_field32(&reg, field, queue->txop);
++	rt2x00pci_register_write(rt2x00dev, offset, reg);
 +
 +	/* Update WMM registers */
 +	field.bit_offset = queue_idx * 4;
@@ -2587,15 +2644,14 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_write(rt2x00dev, WMM_CWMAX_CFG, reg);
 +
 +	/* Update EDCA registers */
-+	if (queue_idx < 4) {
-+		offset = EDCA_AC0_CFG + (sizeof(u32) * queue_idx);
++	offset = EDCA_AC0_CFG + (sizeof(u32) * queue_idx);
 +
-+		rt2x00pci_register_read(rt2x00dev, offset, &reg);
-+		rt2x00_set_field32(&reg, EDCA_AC0_CFG_AIFSN, queue->aifs);
-+		rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMIN, queue->cw_min);
-+		rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMAX, queue->cw_max);
-+		rt2x00pci_register_write(rt2x00dev, offset, reg);
-+	}
++	rt2x00pci_register_read(rt2x00dev, offset, &reg);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_TX_OP, queue->txop);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_AIFSN, queue->aifs);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMIN, queue->cw_min);
++	rt2x00_set_field32(&reg, EDCA_AC0_CFG_CWMAX, queue->cw_max);
++	rt2x00pci_register_write(rt2x00dev, offset, reg);
 +
 +	return 0;
 +}
@@ -2742,9 +2798,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +module_exit(rt2800pci_exit);
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
-@@ -0,0 +1,1879 @@
+@@ -0,0 +1,1881 @@
 +/*
-+	Copyright (C) 2004 - 2008 rt2x00 SourceForge Project
++	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
 +
 +	This program is free software; you can redistribute it and/or modify
@@ -2792,9 +2848,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +/*
 + * RT2860 version
 + */
-+#define RT2860_VERSION_C		0x0100
-+#define RT2860_VERSION_D		0x0101
-+#define RT2860_VERSION_E		0x0200
++#define RT2860C_VERSION			0x28600100
++#define RT2860D_VERSION			0x28600101
++#define RT2880E_VERSION			0x28720200
++#define RT2883_VERSION			0x28830300
++#define RT3070_VERSION			0x30700200
 +
 +/*
 + * Signal information.
@@ -3412,7 +3470,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * EDCA_AC0_CFG:
 + */
 +#define EDCA_AC0_CFG			0x1300
-+#define EDCA_AC0_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC0_CFG_TX_OP		FIELD32(0x000000ff)
 +#define EDCA_AC0_CFG_AIFSN		FIELD32(0x00000f00)
 +#define EDCA_AC0_CFG_CWMIN		FIELD32(0x0000f000)
 +#define EDCA_AC0_CFG_CWMAX		FIELD32(0x000f0000)
@@ -3421,7 +3479,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * EDCA_AC1_CFG:
 + */
 +#define EDCA_AC1_CFG			0x1304
-+#define EDCA_AC1_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC1_CFG_TX_OP		FIELD32(0x000000ff)
 +#define EDCA_AC1_CFG_AIFSN		FIELD32(0x00000f00)
 +#define EDCA_AC1_CFG_CWMIN		FIELD32(0x0000f000)
 +#define EDCA_AC1_CFG_CWMAX		FIELD32(0x000f0000)
@@ -3430,7 +3488,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * EDCA_AC2_CFG:
 + */
 +#define EDCA_AC2_CFG			0x1308
-+#define EDCA_AC2_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC2_CFG_TX_OP		FIELD32(0x000000ff)
 +#define EDCA_AC2_CFG_AIFSN		FIELD32(0x00000f00)
 +#define EDCA_AC2_CFG_CWMIN		FIELD32(0x0000f000)
 +#define EDCA_AC2_CFG_CWMAX		FIELD32(0x000f0000)
@@ -3439,7 +3497,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * EDCA_AC3_CFG:
 + */
 +#define EDCA_AC3_CFG			0x130c
-+#define EDCA_AC3_CFG_AC_TX_OP		FIELD32(0x000000ff)
++#define EDCA_AC3_CFG_TX_OP		FIELD32(0x000000ff)
 +#define EDCA_AC3_CFG_AIFSN		FIELD32(0x00000f00)
 +#define EDCA_AC3_CFG_CWMIN		FIELD32(0x0000f000)
 +#define EDCA_AC3_CFG_CWMAX		FIELD32(0x000f0000)
