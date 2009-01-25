@@ -12,11 +12,11 @@ PKG_NAME:=mac80211
 PKG_RELEASE:=1
 
 ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
-  PKG_VERSION:=2009-01-23
+  PKG_VERSION:=2009-01-24
   PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/01 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-  PKG_MD5SUM:=f4c8df5e077432d7018112849e36f438
+  PKG_MD5SUM:=5d5179b9bd2536b99dfc7e9aef34df91
 else
   PKG_VERSION:=2008-08-06
   PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
