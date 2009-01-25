@@ -1,0 +1,13 @@
+--- a/drivers/amba/bus.c
++++ b/drivers/amba/bus.c
+@@ -17,6 +17,10 @@
+ #include <asm/io.h>
+ #include <asm/sizes.h>
+ 
++#ifndef NO_IRQ
++#define NO_IRQ		(-1)
++#endif
++
+ #define to_amba_device(d)	container_of(d, struct amba_device, dev)
+ #define to_amba_driver(d)	container_of(d, struct amba_driver, drv)
+ 
