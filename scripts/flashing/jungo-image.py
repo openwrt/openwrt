@@ -69,15 +69,21 @@ def get_flash_size():
         i = buf.find('mtd0:')
         if i > 0:
             return int(buf[i+6:].split()[0],16)
-        print "Can't find mtd0!"
+        # use different command
+        tn.write("flash_layout\n")
+        buf = tn.read_until("Returned 0", 3)
+        i = buf.rfind('Range ')
+        if i > 0:
+            return int(buf[i+17:].split()[0],16)
+        print "Can't determine flash size!"
     else:
-        print "Can't access /proc/mtd!"
+        print "Unable to obtain flash size!"
     sys.exit(2)
 
 def image_dump(tn, dumpfile):
     if not dumpfile:
         tn.write("ver\n");
-        buf = tn.read_until("Returned 0")
+        buf = tn.read_until("Returned 0",2)
         i = buf.find("Platform:")
         if i < 0:
 	    platform="jungo"
@@ -86,12 +92,12 @@ def image_dump(tn, dumpfile):
 	    i=line.find('\n')
 	    platform=line[:i].split()[-1]
 
-        tn.write("ifconfig -v %s\n" % device);
-        buf = tn.read_until("Returned 0")
+        tn.write("rg_conf_print /dev/%s/mac\n" % device);
+        buf = tn.read_until("Returned 0",3)
 
-	i = buf.find("mac = 0")
+	i = buf.find("mac(")
 	if i > 0:
-	    i += 6
+	    i += 4
 	else:
 	    print "No MAC address found! (use -f option)"
 	    sys.exit(1)
@@ -161,7 +167,7 @@ for o, a in opts:
 	usage()
 	sys.exit(1)
     elif o in ("-V", "--version"):
-	print "%s: 0.9" % sys.argv[0]
+	print "%s: 0.10" % sys.argv[0]
 	sys.exit(1)
     elif o in ("-d", "--no-dump"):
 	do_dump = 1
@@ -245,7 +251,7 @@ if imagefile or url:
     if verbose:
 	print "Unlocking flash..."
     tn.write("unlock 0 0x%x\n" % flashsize)
-    buf = tn.read_until("Returned 0")
+    buf = tn.read_until("Returned 0",5)
 
     if verbose:
 	print "Writing new image..."
