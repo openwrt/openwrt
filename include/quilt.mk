@@ -126,7 +126,7 @@ define Build/Quilt
 
   $(STAMP_CONFIGURED): $(STAMP_CHECKED) FORCE
   $(STAMP_CHECKED): $(STAMP_PATCHED)
-	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); if quilt next >/dev/null 2>&1; then quilt push -a; else quilt top; fi >/dev/null 2>&1); fi
+	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); if quilt next >/dev/null 2>&1; then quilt push -a; else quilt top >/dev/null 2>&1; fi); fi
 	touch $$@
 
   quilt-check: $(STAMP_PREPARED) FORCE
