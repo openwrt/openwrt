@@ -27,23 +27,20 @@ $(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/*.h $(STAGING_DIR_HOST)/include/
 	touch $@
 
-$(STAGING_DIR_HOST)/bin/md5sum: $(STAGING_DIR)/.prepared
-	@MD5SUM=`which md5sum 2>/dev/null`; \
-	if [ "$@" != "$$MD5SUM" ]; then \
-		if [ -x "$$MD5SUM" ]; then \
-			ln -sf "$$MD5SUM" "$@"; \
-		else \
-			cp $(SCRIPT_DIR)/md5sum $(STAGING_DIR_HOST)/bin/; \
-		fi; \
-	fi
+define PrepareCommand
+$(STAGING_DIR_HOST)/bin/$(1): $(STAGING_DIR)/.prepared
+	@mkdir -p "$$(dir $$@)"; rm -f "$$@"
+	@export FILE="$$$$(which $(2) 2>/dev/null | grep -v 'not found' | head -n1)"; [ -n "$$$$FILE" ] || { \
+		echo "Command $(1) not found."; false; \
+	}; ln -s "$$$$FILE" "$$@"
 
-$(STAGING_DIR_HOST)/bin/find: $(STAGING_DIR)/.prepared
-	if [ -x "$(FIND)" -a "$(FIND)" != "$@" ]; then \
-		ln -sf "$(FIND)" $@; \
-	fi
+endef
 
+$(eval $(call PrepareCommand,find,gfind find))
+$(eval $(call PrepareCommand,md5sum,md5sum $(SCRIPT_DIR)/md5sum))
+$(eval $(call PrepareCommand,cp,gcp cp))
 
-$(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum)
+$(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum cp)
 $(curdir)//prepare = $(STAGING_DIR)/.prepared $($(curdir)/cmddeps)
 $(curdir)//compile = $(STAGING_DIR)/.prepared $($(curdir)/cmddeps)
 
