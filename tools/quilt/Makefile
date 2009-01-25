@@ -15,6 +15,11 @@ PKG_MD5SUM:=d33d2442bd34387260b1c1db3e623af0
 
 include $(INCLUDE_DIR)/host-build.mk
 
+define Build/Configure
+	$(call Build/Configure/Default)
+	[ -f $(PKG_BUILD_DIR)/Makefile ]
+endef
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) SHELL="$(BASH)"
 endef
