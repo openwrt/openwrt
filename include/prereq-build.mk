@@ -37,6 +37,20 @@ $(eval $(call Require,case-sensitive-fs, \
 	OpenWrt can only be built on a case-sensitive filesystem \
 ))
 
+define Require/getopt
+	getopt --help 2>&1 | grep long >/dev/null
+endef
+$(eval $(call Require,getopt, \
+	Please install GNU getopt \
+))
+
+define Require/fileutils
+	gcp --help || cp --help
+endef
+$(eval $(call Require,fileutils, \
+	Please install GNU fileutils \
+))
+
 define Require/working-gcc
 	echo 'int main(int argc, char **argv) { return 0; }' | \
 		gcc -x c -o $(TMP_DIR)/a.out -
