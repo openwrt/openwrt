@@ -223,6 +223,7 @@ define Image/Build/Profile/NFS101U
 	$(call Image/Build/Template/Cellvision/$(1),dns-120,nfs-101u)
 	$(call Image/Build/Template/Cellvision/$(1),mu-5000fs,nfs-101u)
 	$(call Image/Build/Template/Cellvision/$(1),tn-u100,nfs-101u)
+	$(call Image/Build/Template/Cellvision/$(1),cr-nsadp,nfs-101u)
 endef
 
 define Image/Build/Profile/NFS101WU
