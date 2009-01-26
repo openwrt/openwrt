@@ -58,7 +58,7 @@
  }
  
  static __inline 
-@@ -1201,142 +1196,6 @@ void ieee80211_wds_addif(struct ieee8021
+@@ -1204,142 +1199,6 @@ void ieee80211_wds_addif(struct ieee8021
  	schedule_work(&ni->ni_create);
  }
  
@@ -201,7 +201,7 @@
  /* Add the specified station to the station table.
   * Allocates a new ieee80211_node* that has a reference count of one
   * If tmp is 0, it is added to the node table and the reference is used.
-@@ -1382,34 +1241,6 @@ ieee80211_dup_bss(struct ieee80211vap *v
+@@ -1385,34 +1244,6 @@ ieee80211_dup_bss(struct ieee80211vap *v
  	return ni;
  }
  
@@ -236,7 +236,7 @@
  /* NB: A node reference is acquired here; the caller MUST release it. */
  #ifdef IEEE80211_DEBUG_REFCNT
  #define	ieee80211_find_node_locked(nt, mac) \
-@@ -1427,7 +1258,6 @@ ieee80211_find_node_locked(struct ieee80
+@@ -1430,7 +1261,6 @@ ieee80211_find_node_locked(struct ieee80
  {
  	struct ieee80211_node *ni;
  	int hash;
@@ -244,7 +244,7 @@
  
  	IEEE80211_NODE_TABLE_LOCK_ASSERT(nt);
  
-@@ -1442,48 +1272,11 @@ ieee80211_find_node_locked(struct ieee80
+@@ -1445,48 +1275,11 @@ ieee80211_find_node_locked(struct ieee80
  			return ni;
  		}
  	}
@@ -293,7 +293,7 @@
  ieee80211_find_node_debug(struct ieee80211_node_table *nt,
  	const u_int8_t *macaddr, const char *func, int line)
  #else
-@@ -1835,7 +1628,6 @@ ieee80211_node_table_cleanup(struct ieee
+@@ -1838,7 +1631,6 @@ ieee80211_node_table_cleanup(struct ieee
  		ic->ic_node_cleanup(ni);
  #endif
  	}
@@ -301,7 +301,7 @@
  	IEEE80211_SCAN_LOCK_DESTROY(nt);
  	IEEE80211_NODE_TABLE_LOCK_DESTROY(nt);
  }
-@@ -2402,8 +2194,6 @@ ieee80211_node_leave(struct ieee80211_no
+@@ -2404,8 +2196,6 @@ ieee80211_node_leave(struct ieee80211_no
  	 * so no more references are generated
  	 */
  	if (nt) {
