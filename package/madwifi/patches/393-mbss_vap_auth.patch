@@ -182,7 +182,7 @@
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
  	if (ni == NULL) {
-@@ -1961,13 +2012,29 @@ remove_worse_nodes(void *arg, struct iee
+@@ -1961,13 +2012,32 @@ remove_worse_nodes(void *arg, struct iee
  		}
  }
  
@@ -195,6 +195,9 @@
 +		return;
 +
 +	if (ni->ni_vap == rni->ni_vap)
++		return;
++
++	if (!IEEE80211_ADDR_EQ(rni->ni_macaddr, ni->ni_macaddr))
 +		return;
 +
 +	ieee80211_node_leave(ni);
