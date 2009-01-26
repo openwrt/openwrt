@@ -114,7 +114,7 @@ endef
 
 define Profile/NFS101U
 	NAME:=Cellvision NFS-101U Network File Server (Experimental)
-	PACKAGES:=-hostapd-mini
+	PACKAGES:=-hostapd-mini kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/NFS101U/Description
@@ -123,7 +123,7 @@ endef
 
 define Profile/NFS101WU
 	NAME:=Cellvision NFS-101WU Network File Server (Experimental)
-	PACKAGES:=-hostapd-mini
+	PACKAGES:=-hostapd-mini kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/NFS101WU/Description
