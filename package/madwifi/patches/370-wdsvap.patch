@@ -903,7 +903,7 @@
  }
  
  /* This is overridden by ath_node_alloc in ath/if_ath.c, and so
-@@ -1134,6 +1145,62 @@ ieee80211_alloc_node(struct ieee80211vap
+@@ -1134,6 +1145,65 @@ ieee80211_alloc_node(struct ieee80211vap
  	return ni;
  }
  
@@ -957,6 +957,9 @@
 +	if (ni->ni_subif)
 +		return;
 +
++	if (!ni->ni_table)
++		return;
++
 +	ieee80211_ref_node(ni);
 +	ni->ni_subif = ni->ni_vap;
 +	IEEE80211_INIT_WORK(&ni->ni_create, ieee80211_wds_do_addif);
@@ -966,7 +969,7 @@
  /* Add wds address to the node table */
  int
  #ifdef IEEE80211_DEBUG_REFCNT
-@@ -1553,22 +1620,39 @@ ieee80211_find_rxnode(struct ieee80211co
+@@ -1553,22 +1623,39 @@ ieee80211_find_rxnode(struct ieee80211co
  	((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_PS_POLL)
  	struct ieee80211_node_table *nt;
  	struct ieee80211_node *ni;
@@ -1015,7 +1018,7 @@
  #endif
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
-@@ -1596,9 +1680,19 @@ ieee80211_find_txnode_debug(struct ieee8
+@@ -1596,9 +1683,19 @@ ieee80211_find_txnode_debug(struct ieee8
  ieee80211_find_txnode(struct ieee80211vap *vap, const u_int8_t *mac)
  #endif
  {
@@ -1035,7 +1038,7 @@
  	/*
  	 * The destination address should be in the node table
  	 * unless we are operating in station mode or this is a
-@@ -1669,6 +1763,11 @@ ieee80211_free_node(struct ieee80211_nod
+@@ -1669,6 +1766,11 @@ ieee80211_free_node(struct ieee80211_nod
  {
  	struct ieee80211vap *vap = ni->ni_vap;
  
@@ -1047,7 +1050,7 @@
  	atomic_dec(&ni->ni_ic->ic_node_counter);
  	node_print_message(IEEE80211_MSG_NODE|IEEE80211_MSG_NODE_REF,
  			   1 /* show counter */, 
-@@ -1781,22 +1880,6 @@ restart:
+@@ -1781,22 +1883,6 @@ restart:
  		    jiffies > ni->ni_rxfragstamp + HZ) {
  			ieee80211_dev_kfree_skb(&ni->ni_rxfrag);
  		}
@@ -1070,7 +1073,7 @@
  		ni->ni_inact--;
  		if (ni->ni_associd != 0 || isadhoc) {
  			struct ieee80211vap *vap = ni->ni_vap;
-@@ -2263,6 +2346,36 @@ ieee80211_node_leave_11g(struct ieee8021
+@@ -2263,6 +2349,35 @@ ieee80211_node_leave_11g(struct ieee8021
  	}
  }
  
@@ -1081,14 +1084,13 @@
 +	struct ieee80211vap *vap;
 +	struct ieee80211com *ic;
 +
++	/* wait for full initialization before we start the teardown
++	 * otherwise we could leak interfaces */
++	while (ni->ni_subif == ni->ni_vap)
++		schedule();
++
 +	rtnl_lock();
 +	vap = ni->ni_subif;
-+
-+	/* if addif is waiting for the timer to fire, cancel! */
-+	if (vap == ni->ni_vap) {
-+		ni->ni_subif = NULL;
-+		goto done;
-+	}
 +
 +	if (!vap)
 +		goto done;
@@ -1107,7 +1109,7 @@
  /*
   * Handle bookkeeping for a station/neighbor leaving
   * the bss when operating in ap or adhoc modes.
-@@ -2279,6 +2392,12 @@ ieee80211_node_leave(struct ieee80211_no
+@@ -2279,6 +2394,12 @@ ieee80211_node_leave(struct ieee80211_no
  			ni, "station with aid %d leaves (refcnt %u)",
  			IEEE80211_NODE_AID(ni), atomic_read(&ni->ni_refcnt));
  
