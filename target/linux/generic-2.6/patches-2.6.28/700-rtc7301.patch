@@ -1,6 +1,6 @@
---- a/drivers/rtc/Kconfig	2009-01-18 19:04:38.000000000 -0500
-+++ b/drivers/rtc/Kconfig	2009-01-18 19:08:35.000000000 -0500
-@@ -497,6 +497,15 @@
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -497,6 +497,15 @@ config RTC_DRV_WM8350
  	  This driver can also be built as a module. If so, the module
  	  will be called "rtc-wm8350".
  
@@ -16,9 +16,9 @@
  comment "on-CPU RTC drivers"
  
  config RTC_DRV_OMAP
---- a/drivers/rtc/Makefile	2009-01-18 19:04:47.000000000 -0500
-+++ b/drivers/rtc/Makefile	2009-01-18 19:08:31.000000000 -0500
-@@ -58,6 +58,7 @@
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -58,6 +58,7 @@ obj-$(CONFIG_RTC_DRV_R9701)	+= rtc-r9701
  obj-$(CONFIG_RTC_DRV_RS5C313)	+= rtc-rs5c313.o
  obj-$(CONFIG_RTC_DRV_RS5C348)	+= rtc-rs5c348.o
  obj-$(CONFIG_RTC_DRV_RS5C372)	+= rtc-rs5c372.o
@@ -26,8 +26,8 @@
  obj-$(CONFIG_RTC_DRV_RX8581)	+= rtc-rx8581.o
  obj-$(CONFIG_RTC_DRV_S35390A)	+= rtc-s35390a.o
  obj-$(CONFIG_RTC_DRV_S3C)	+= rtc-s3c.o
---- /dev/null	2008-11-10 20:11:01.000000000 -0500
-+++ b/drivers/rtc/rtc-rtc7301.c	2009-01-18 18:54:06.000000000 -0500
+--- /dev/null
++++ b/drivers/rtc/rtc-rtc7301.c
 @@ -0,0 +1,219 @@
 +/*
 + * Driver for Epson RTC-7301SF/DG
