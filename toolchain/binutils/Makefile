@@ -24,6 +24,7 @@ endif
 
 PATCH_DIR:=./patches/$(PKG_VERSION)
 
+REAL_STAGING_DIR_HOST:=$(STAGING_DIR_HOST)
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 
@@ -62,6 +63,7 @@ endef
 
 define Build/Install
 	$(MAKE) -C $(PKG_BUILD_DIR) install
+	$(CP) $(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
 endef
 
 define Build/Clean
