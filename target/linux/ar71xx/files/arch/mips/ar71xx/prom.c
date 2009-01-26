@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx SoC specific prom routines
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -67,6 +67,9 @@ static struct board_rec boards[] __initdata = {
 	}, {
 		.name		= "MZK-W300NH",
 		.mach_type	= AR71XX_MACH_MZK_W300NH,
+	}, {
+		.name		= "MZK-W04NU",
+		.mach_type	= AR71XX_MACH_MZK_W04NU,
 	}
 };
 

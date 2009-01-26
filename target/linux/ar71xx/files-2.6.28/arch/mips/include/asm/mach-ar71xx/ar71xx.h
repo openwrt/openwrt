@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx SoC specific definitions
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  Parts of this file are based on Atheros' 2.6.15 BSP
@@ -122,6 +122,7 @@ extern unsigned long ar71xx_mach_type;
 #define AR71XX_MACH_WNR2000	11	/* NETGEAR WNR2000 */
 #define AR71XX_MACH_PB42	12	/* Atheros PB42 */
 #define AR71XX_MACH_MZK_W300NH	13	/* Planex MZK-W300NH */
+#define AR71XX_MACH_MZK_W04NU	14	/* Planex MZK-W04NU */
 
 /*
  * PLL block
