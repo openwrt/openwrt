@@ -1,7 +1,7 @@
 /*
  *  TrendNET TEW-632BRP board support
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #define TEW_632BRP_GPIO_LED_STATUS	1
 #define TEW_632BRP_GPIO_LED_WPS		3
 #define TEW_632BRP_GPIO_LED_WLAN	6
+#define TEW_632BRP_GPIO_BTN_WPS		12
 #define TEW_632BRP_GPIO_BTN_RESET	21
 
 #define TEW_632BRP_BUTTONS_POLL_INTERVAL	20
@@ -100,6 +101,12 @@ static struct gpio_button tew_632brp_gpio_buttons[] __initdata = {
 		.code		= BTN_0,
 		.threshold	= 5,
 		.gpio		= TEW_632BRP_GPIO_BTN_RESET,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= TEW_632BRP_GPIO_BTN_WPS,
 	}
 };
 
