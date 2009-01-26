@@ -30,6 +30,20 @@
  #include <ctype.h>
  #include <sys/types.h>
  #include <sys/param.h>
+@@ -998,9 +1002,10 @@ mkfile_output (struct commandline *cmd)
+ 	abort ();
+       temp = rindex (cmd->infile, '.');
+       cp = stpcpy (mkfilename, "Makefile.");
+-      if (temp != NULL)
+-	*((char *) stpncpy (cp, cmd->infile, temp - cmd->infile)) = '\0';
+-      else
++      if (temp != NULL) {
++	strncpy (cp, cmd->infile, temp - cmd->infile);
++	cp[temp - cmd->infile - 1] = '\0';
++      } else
+ 	stpcpy (cp, cmd->infile);
+ 
+     }
 --- a/libc/sunrpc/rpc_scan.c
 +++ b/libc/sunrpc/rpc_scan.c
 @@ -39,7 +39,11 @@
