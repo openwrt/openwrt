@@ -680,14 +680,10 @@
  			}
  			break;
  		case IEEE80211_M_IBSS:
-@@ -540,16 +548,32 @@ ieee80211_input(struct ieee80211vap * va
+@@ -540,16 +548,28 @@ ieee80211_input(struct ieee80211vap * va
  				vap->iv_stats.is_rx_notassoc++;
  				goto err;
  			}
-+
-+			/* subif isn't fully set up yet, drop the frame */
-+			if (ni->ni_subif == ni->ni_vap)
-+				goto err;
 +
  			/*
  			 * If we're a 4 address packet, make sure we have an entry in
@@ -716,7 +712,7 @@
  
  				if (!(vap->iv_flags_ext & IEEE80211_FEXT_WDS)) {
  					IEEE80211_DISCARD(vap, IEEE80211_MSG_INPUT,
-@@ -557,7 +581,6 @@ ieee80211_input(struct ieee80211vap * va
+@@ -557,7 +577,6 @@ ieee80211_input(struct ieee80211vap * va
  					goto err;
  				}
  				wh4 = (struct ieee80211_frame_addr4 *)skb->data;
@@ -724,7 +720,7 @@
  				ni_wds = ieee80211_find_wds_node(nt, wh4->i_addr4);
  				/* Last call increments ref count if !NULL */
  				if ((ni_wds != NULL) && (ni_wds != ni)) {
-@@ -608,6 +631,11 @@ ieee80211_input(struct ieee80211vap * va
+@@ -608,6 +627,11 @@ ieee80211_input(struct ieee80211vap * va
  			goto out;
  		}
  
@@ -736,7 +732,7 @@
  		/*
  		 * Handle privacy requirements.  Note that we
  		 * must not be preempted from here until after
-@@ -680,8 +708,12 @@ ieee80211_input(struct ieee80211vap * va
+@@ -680,8 +704,12 @@ ieee80211_input(struct ieee80211vap * va
  		if (! accept_data_frame(vap, ni, key, skb, eh))
  			goto out;
  
@@ -751,15 +747,19 @@
  		IEEE80211_NODE_STAT(ni, rx_data);
  		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
  		ic->ic_lastdata = jiffies;
-@@ -1114,6 +1146,13 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1114,6 +1142,17 @@ ieee80211_deliver_data(struct ieee80211_
  		dev = vap->iv_xrvap->iv_dev;
  #endif
  
 +	/* if the node has a wds subif, move data frames there,
 +	 * but keep EAP traffic on the master */
 +	if (ni->ni_subif && ((eh)->ether_type != __constant_htons(ETHERTYPE_PAE))) {
-+		vap = ni->ni_subif;
-+		dev = vap->iv_dev;
++		if (ni->ni_vap == ni->ni_subif) {
++			ieee80211_dev_kfree_skb(&skb);
++		} else {
++			vap = ni->ni_subif;
++			dev = vap->iv_dev;
++		}
 +	}
 +
  	/* perform as a bridge within the vap */

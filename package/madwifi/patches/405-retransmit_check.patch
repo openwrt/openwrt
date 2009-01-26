@@ -11,7 +11,7 @@
  #define	IEEE80211_QOS_TXOP			0x00ff
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -436,7 +436,7 @@ ieee80211_input(struct ieee80211vap * va
+@@ -428,7 +428,7 @@ ieee80211_input(struct ieee80211vap * va
  				tid = 0;
  			rxseq = le16toh(*(__le16 *)wh->i_seq);
  			if ((wh->i_fc[1] & IEEE80211_FC1_RETRY) &&

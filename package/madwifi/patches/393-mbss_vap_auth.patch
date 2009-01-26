@@ -249,7 +249,7 @@
  
  	KASSERT(skb->len >= sizeof(struct ieee80211_frame_min),
  		("frame length too short: %u", skb->len));
-@@ -848,10 +847,11 @@ ieee80211_input(struct ieee80211vap * va
+@@ -844,10 +843,11 @@ ieee80211_input(struct ieee80211vap * va
  err:
  	vap->iv_devstats.rx_errors++;
  out:
@@ -263,7 +263,7 @@
  	return type;
  #undef HAS_SEQ
  }
-@@ -933,16 +933,23 @@ int
+@@ -929,16 +929,23 @@ int
  ieee80211_input_all(struct ieee80211com *ic,
  	struct sk_buff *skb, int rssi, u_int64_t rtsf)
  {
@@ -287,7 +287,7 @@
  		if (TAILQ_NEXT(vap, iv_next) != NULL) {
  			skb1 = skb_copy(skb, GFP_ATOMIC);
  			if (skb1 == NULL) {
-@@ -954,8 +961,10 @@ ieee80211_input_all(struct ieee80211com 
+@@ -950,8 +957,10 @@ ieee80211_input_all(struct ieee80211com 
  			skb1 = skb;
  			skb = NULL;
  		}
