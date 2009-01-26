@@ -15,6 +15,7 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
+#include <linux/etherdevice.h>
 #include <linux/platform_device.h>
 #include <linux/serial_8250.h>
 #include <linux/ath9k_platform.h>
@@ -456,8 +457,15 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		break;
 	}
 
-	memcpy(pdata->mac_addr, ar71xx_mac_base, ETH_ALEN);
-	pdata->mac_addr[5] += ar71xx_eth_instance;
+	if (is_valid_ether_addr(ar71xx_mac_base)) {
+		memcpy(pdata->mac_addr, ar71xx_mac_base, ETH_ALEN);
+		pdata->mac_addr[5] += ar71xx_eth_instance;
+	} else {
+		random_ether_addr(pdata->mac_addr);
+		printk(KERN_DEBUG
+			"ar71xx: using random MAC address for eth%d\n",
+			ar71xx_eth_instance);
+	}
 
 	platform_device_register(pdev);
 	ar71xx_eth_instance++;

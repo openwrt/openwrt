@@ -868,16 +868,9 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	ag->oom_timer.data = (unsigned long) dev;
 	ag->oom_timer.function = ag71xx_oom_timer_handler;
 
-	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
+	memcpy(dev->dev_addr, pdata->mac_addr, ETH_ALEN);
 
-	if (is_valid_ether_addr(pdata->mac_addr))
-		memcpy(dev->dev_addr, pdata->mac_addr, ETH_ALEN);
-	else {
-		dev->dev_addr[0] = 0xde;
-		dev->dev_addr[1] = 0xad;
-		get_random_bytes(&dev->dev_addr[2], 3);
-		dev->dev_addr[5] = pdev->id & 0xff;
-	}
+	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
 
 	err = register_netdev(dev);
 	if (err) {
