@@ -19,7 +19,7 @@
  	if (ni == NULL) {
  		ni = ieee80211_alloc_node_table(vap, se->se_macaddr);
  		IEEE80211_DPRINTF(vap, IEEE80211_MSG_ASSOC,
-@@ -1391,6 +1394,53 @@ ieee80211_add_neighbor(struct ieee80211v
+@@ -1394,6 +1397,53 @@ ieee80211_add_neighbor(struct ieee80211v
  	return ni;
  }
  
@@ -73,7 +73,7 @@
  /*
   * Return the node for the sender of a frame; if the sender is unknown return 
   * NULL. The caller is expected to deal with this. (The frame is sent to all 
-@@ -1400,10 +1450,10 @@ ieee80211_add_neighbor(struct ieee80211v
+@@ -1403,10 +1453,10 @@ ieee80211_add_neighbor(struct ieee80211v
   */
  struct ieee80211_node *
  #ifdef IEEE80211_DEBUG_REFCNT
@@ -86,7 +86,7 @@
  	const struct ieee80211_frame_min *wh)
  #endif
  {
-@@ -1411,9 +1461,8 @@ ieee80211_find_rxnode(struct ieee80211co
+@@ -1414,9 +1464,8 @@ ieee80211_find_rxnode(struct ieee80211co
  	((wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
  #define	IS_PSPOLL(wh) \
  	((wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) == IEEE80211_FC0_SUBTYPE_PS_POLL)
@@ -98,7 +98,7 @@
  	const u_int8_t *addr;
  
  	if (IS_CTL(wh) && !IS_PSPOLL(wh) /*&& !IS_RTS(ah)*/)
-@@ -1426,32 +1475,24 @@ ieee80211_find_rxnode(struct ieee80211co
+@@ -1429,32 +1478,25 @@ ieee80211_find_rxnode(struct ieee80211co
  
  	/* XXX check ic_bss first in station mode */
  	/* XXX 4-address frames? */
@@ -118,6 +118,7 @@
 -				else
 -					return NULL;
 +					ni = ieee80211_ref_node(avp->iv_wdsnode);
++				return ni;
  			}
 +			if (!(vap->iv_flags_ext & IEEE80211_FEXT_WDS))
 +				return NULL;
@@ -140,7 +141,7 @@
  }
  #ifdef IEEE80211_DEBUG_REFCNT
  EXPORT_SYMBOL(ieee80211_find_rxnode_debug);
-@@ -1476,15 +1517,14 @@ ieee80211_find_txnode(struct ieee80211va
+@@ -1479,15 +1521,14 @@ ieee80211_find_txnode(struct ieee80211va
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_node_table *nt;
  	struct ieee80211_node *ni = NULL;
@@ -157,7 +158,7 @@
  
  	/*
  	 * The destination address should be in the node table
-@@ -1502,11 +1542,22 @@ ieee80211_find_txnode(struct ieee80211va
+@@ -1505,11 +1546,22 @@ ieee80211_find_txnode(struct ieee80211va
  	/* XXX: Can't hold lock across dup_bss due to recursive locking. */
  	nt = &vap->iv_ic->ic_sta;
  	IEEE80211_NODE_TABLE_LOCK_IRQ(nt);
@@ -182,7 +183,7 @@
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
  	if (ni == NULL) {
-@@ -1961,13 +2012,32 @@ remove_worse_nodes(void *arg, struct iee
+@@ -1964,13 +2016,32 @@ remove_worse_nodes(void *arg, struct iee
  		}
  }
  
