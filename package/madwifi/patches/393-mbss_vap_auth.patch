@@ -98,7 +98,7 @@
  	const u_int8_t *addr;
  
  	if (IS_CTL(wh) && !IS_PSPOLL(wh) /*&& !IS_RTS(ah)*/)
-@@ -1426,32 +1475,21 @@ ieee80211_find_rxnode(struct ieee80211co
+@@ -1426,32 +1475,24 @@ ieee80211_find_rxnode(struct ieee80211co
  
  	/* XXX check ic_bss first in station mode */
  	/* XXX 4-address frames? */
@@ -119,8 +119,11 @@
 -					return NULL;
 +					ni = ieee80211_ref_node(avp->iv_wdsnode);
  			}
++			if (!(vap->iv_flags_ext & IEEE80211_FEXT_WDS))
++				return NULL;
++		} else {
++			return NULL;
  		}
-+		return ni;
  	}
  
 -#ifdef IEEE80211_DEBUG_REFCNT
@@ -137,7 +140,7 @@
  }
  #ifdef IEEE80211_DEBUG_REFCNT
  EXPORT_SYMBOL(ieee80211_find_rxnode_debug);
-@@ -1476,15 +1514,14 @@ ieee80211_find_txnode(struct ieee80211va
+@@ -1476,15 +1517,14 @@ ieee80211_find_txnode(struct ieee80211va
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_node_table *nt;
  	struct ieee80211_node *ni = NULL;
@@ -154,7 +157,7 @@
  
  	/*
  	 * The destination address should be in the node table
-@@ -1502,11 +1539,22 @@ ieee80211_find_txnode(struct ieee80211va
+@@ -1502,11 +1542,22 @@ ieee80211_find_txnode(struct ieee80211va
  	/* XXX: Can't hold lock across dup_bss due to recursive locking. */
  	nt = &vap->iv_ic->ic_sta;
  	IEEE80211_NODE_TABLE_LOCK_IRQ(nt);
@@ -179,7 +182,7 @@
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
  	if (ni == NULL) {
-@@ -1961,13 +2009,29 @@ remove_worse_nodes(void *arg, struct iee
+@@ -1961,13 +2012,29 @@ remove_worse_nodes(void *arg, struct iee
  		}
  }
  
@@ -211,19 +214,29 @@
  
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -227,15 +227,22 @@ ieee80211_input(struct ieee80211vap * va
- 	if (!dev)
- 		goto out;
+@@ -216,16 +216,14 @@ ieee80211_input(struct ieee80211vap * va
  
+ 	type = -1;			/* undefined */
+ 
+-	if (!vap)
+-		goto out;
++	if (!vap || !vap->iv_bss || !vap->iv_dev || !vap->iv_ic)
++		goto discard;
+ 
+ 	ic = vap->iv_ic;
+-	if (!ic)
+-		goto out;
+-
+ 	dev = vap->iv_dev;
+-	if (!dev)
+-		goto out;
++
 +	if ((vap->iv_dev->flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING))
-+		goto out;
-+
-+	if (!vap->iv_bss)
-+		goto out;
-+
++		goto discard;
+ 
  	/* initialize ni as in the previous API */
  	if (ni_or_null == NULL) {
-                /* This function does not 'own' vap->iv_bss, so we cannot
+@@ -233,9 +231,10 @@ ieee80211_input(struct ieee80211vap * va
                  * guarantee its existence during the following call, hence
                  * briefly grab our own reference. */
  		ni = ieee80211_ref_node(vap->iv_bss);
@@ -236,7 +249,21 @@
  
  	KASSERT(skb->len >= sizeof(struct ieee80211_frame_min),
  		("frame length too short: %u", skb->len));
-@@ -933,16 +940,23 @@ int
+@@ -848,10 +847,11 @@ ieee80211_input(struct ieee80211vap * va
+ err:
+ 	vap->iv_devstats.rx_errors++;
+ out:
+-	if (skb != NULL)
+-		ieee80211_dev_kfree_skb(&skb);
+ 	if (ni_or_null == NULL)
+ 		ieee80211_unref_node(&ni);
++discard:
++	if (skb != NULL)
++		ieee80211_dev_kfree_skb(&skb);
+ 	return type;
+ #undef HAS_SEQ
+ }
+@@ -933,16 +933,23 @@ int
  ieee80211_input_all(struct ieee80211com *ic,
  	struct sk_buff *skb, int rssi, u_int64_t rtsf)
  {
@@ -260,7 +287,7 @@
  		if (TAILQ_NEXT(vap, iv_next) != NULL) {
  			skb1 = skb_copy(skb, GFP_ATOMIC);
  			if (skb1 == NULL) {
-@@ -954,8 +968,10 @@ ieee80211_input_all(struct ieee80211com 
+@@ -954,8 +961,10 @@ ieee80211_input_all(struct ieee80211com 
  			skb1 = skb;
  			skb = NULL;
  		}
@@ -272,7 +299,7 @@
  	if (skb != NULL)		/* no vaps, reclaim skb */
  		ieee80211_dev_kfree_skb(&skb);
  	return type;
-@@ -1146,11 +1162,9 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1146,11 +1155,9 @@ ieee80211_deliver_data(struct ieee80211_
  			 * sending it will not work; just let it be
  			 * delivered normally.
  			 */
