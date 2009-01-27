@@ -1,8 +1,6 @@
-Index: wireless_tools.29/iwlib.c
-===================================================================
---- wireless_tools.29.orig/iwlib.c	2007-06-04 13:22:18.700012448 +0200
-+++ wireless_tools.29/iwlib.c	2007-06-04 13:22:18.773001352 +0200
-@@ -667,6 +667,7 @@
+--- a/iwlib.c
++++ b/iwlib.c
+@@ -667,6 +667,7 @@ iw_get_basic_config(int			skfd,
  {
    struct iwreq		wrq;
  
@@ -10,11 +8,9 @@ Index: wireless_tools.29/iwlib.c
    memset((char *) info, 0, sizeof(struct wireless_config));
  
    /* Get wireless name */
-Index: wireless_tools.29/Makefile
-===================================================================
---- wireless_tools.29.orig/Makefile	2007-06-04 13:22:18.707011384 +0200
-+++ wireless_tools.29/Makefile	2007-06-04 13:22:18.774001200 +0200
-@@ -73,8 +73,8 @@
+--- a/Makefile
++++ b/Makefile
+@@ -73,8 +73,8 @@ DYNAMIC_LINK= libiw.so
  # Install directories
  INSTALL_DIR= $(PREFIX)/sbin/
  INSTALL_LIB= $(PREFIX)/lib/
@@ -25,7 +21,7 @@ Index: wireless_tools.29/Makefile
  
  # Various commands
  RM = rm -f
-@@ -102,9 +102,9 @@
+@@ -102,9 +102,9 @@ ifdef BUILD_WE_ESSENTIAL
  endif
  
  # Other flags
