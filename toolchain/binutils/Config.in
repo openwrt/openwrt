@@ -14,6 +14,7 @@ choice
 		bool "binutils 2.18"
 
 	config BINUTILS_VERSION_2_19
+		depends !TARGET_avr32
 		bool "binutils 2.19"
 
 endchoice
