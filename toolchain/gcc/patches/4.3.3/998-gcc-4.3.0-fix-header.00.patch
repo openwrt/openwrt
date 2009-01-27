@@ -1,0 +1,15 @@
+\\\\
+\\ gcc PR33200
+Index: gcc-4.3.0/gcc/config.gcc
+===================================================================
+--- gcc-4.3.0/gcc/config.gcc	(revision 131628)
++++ gcc-4.3.0/gcc/config.gcc	(working copy)
+@@ -2302,7 +2305,7 @@ sh-*-symbianelf* | sh[12346l]*-*-symbian
+ 	if test x${enable_incomplete_targets} = xyes ; then
+ 		tm_defines="$tm_defines SUPPORT_SH1=1 SUPPORT_SH2E=1 SUPPORT_SH4=1 SUPPORT_SH4_SINGLE=1 SUPPORT_SH2A=1 SUPPORT_SH2A_SINGLE=1 SUPPORT_SH5_32MEDIA=1 SUPPORT_SH5_32MEDIA_NOFPU=1 SUPPORT_SH5_64MEDIA=1 SUPPORT_SH5_64MEDIA_NOFPU=1"
+ 	fi
+-	use_fixproto=yes
++	# XXX: why? use_fixproto=yes
+ 	;;
+ sh-*-rtemscoff*)
+ 	tmake_file="sh/t-sh t-rtems sh/t-rtems"
