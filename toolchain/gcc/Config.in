@@ -30,6 +30,10 @@ choice
 		depends !LINUX_2_4
 		bool "gcc 4.3.2"
 
+	config GCC_VERSION_4_3_3
+		depends !LINUX_2_4
+		bool "gcc 4.3.3"
+
 endchoice
 
 config EABI_SUPPORT
