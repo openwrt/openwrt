@@ -98,7 +98,7 @@ define Image/Build/Template/UBNT
 endef
 
 define Image/Build/Template/UBNT/squashfs
-	$(call Image/Build/Template/UBNT,squashfs,$(1),$(2),$(3))
+	$(call Image/Build/Template/UBNT,squashfs,$(1),$(2),$(3),$(4))
 endef
 
 define Image/Build/Profile/WP543
@@ -118,7 +118,7 @@ define Image/Build/Profile/TEW652BRP
 endef
 
 define Image/Build/Profile/UBNTRS
-	$(call Image/Build/Template/UBNT,$(1),rs,board=UBNT-RS,RS,RSx)
+	$(call Image/Build/Template/UBNT/$(1),rs,board=UBNT-RS,RS,RSx)
 endef
 
 define Image/Build/squashfs
