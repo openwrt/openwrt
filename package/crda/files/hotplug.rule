@@ -1,0 +1,6 @@
+#!/bin/sh
+# Copyright (C) 2009 OpenWrt.org
+
+[ change = "$ACTION" -a regulatory.0 = "$DEVICENAME" ] && {
+	/sbin/crda
+}
