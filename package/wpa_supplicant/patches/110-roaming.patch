@@ -1,9 +1,7 @@
 This patch decreases the timeouts for assoc/auth to more realistic values. Improves roaming speed
-Index: wpa_supplicant-0.6.6/wpa_supplicant/events.c
-===================================================================
---- wpa_supplicant-0.6.6.orig/wpa_supplicant/events.c	2008-02-23 03:45:24.000000000 +0100
-+++ wpa_supplicant-0.6.6/wpa_supplicant/events.c	2008-07-09 15:13:37.000000000 +0200
-@@ -807,7 +807,7 @@
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -807,7 +807,7 @@ static void wpa_supplicant_event_assoc(s
  		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
  	} else if (!ft_completed) {
  		/* Timeout for receiving the first EAPOL packet */
@@ -12,11 +10,9 @@ Index: wpa_supplicant-0.6.6/wpa_supplicant/events.c
  	}
  	wpa_supplicant_cancel_scan(wpa_s);
  
-Index: wpa_supplicant-0.6.6/wpa_supplicant/scan.c
-===================================================================
---- wpa_supplicant-0.6.6.orig/wpa_supplicant/scan.c	2008-02-23 03:45:24.000000000 +0100
-+++ wpa_supplicant-0.6.6/wpa_supplicant/scan.c	2008-07-09 15:13:37.000000000 +0200
-@@ -145,6 +145,7 @@
+--- a/wpa_supplicant/scan.c
++++ b/wpa_supplicant/scan.c
+@@ -145,6 +145,7 @@ static void wpa_supplicant_scan(void *el
  		return;
  	}
  
@@ -24,7 +20,7 @@ Index: wpa_supplicant-0.6.6/wpa_supplicant/scan.c
  	if (wpa_s->use_client_mlme) {
  		ieee80211_sta_set_probe_req_ie(wpa_s, extra_ie, extra_ie_len);
  		ret = ieee80211_sta_req_scan(wpa_s, ssid ? ssid->ssid : NULL,
-@@ -157,7 +158,7 @@
+@@ -157,7 +158,7 @@ static void wpa_supplicant_scan(void *el
  
  	if (ret) {
  		wpa_printf(MSG_WARNING, "Failed to initiate AP scan.");
@@ -33,11 +29,9 @@ Index: wpa_supplicant-0.6.6/wpa_supplicant/scan.c
  	}
  }
  
-Index: wpa_supplicant-0.6.6/wpa_supplicant/wpa_supplicant.c
-===================================================================
---- wpa_supplicant-0.6.6/wpa_supplicant/wpa_supplicant.c-old	2008-09-20 22:37:09.000000000 -0400
-+++ wpa_supplicant-0.6.6/wpa_supplicant/wpa_supplicant.c	2008-09-20 22:37:43.000000000 -0400
-@@ -1118,10 +1118,10 @@
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -1118,10 +1118,10 @@ void wpa_supplicant_associate(struct wpa
  
  		if (assoc_failed) {
  			/* give IBSS a bit more time */

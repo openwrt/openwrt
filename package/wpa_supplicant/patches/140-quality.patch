@@ -1,8 +1,6 @@
-Index: wpa_supplicant-0.6.6/wpa_supplicant/wpa_supplicant.c
-===================================================================
---- wpa_supplicant-0.6.6.orig/wpa_supplicant/wpa_supplicant.c	2008-07-24 16:28:58.000000000 +0200
-+++ wpa_supplicant-0.6.6/wpa_supplicant/wpa_supplicant.c	2008-07-24 16:47:40.000000000 +0200
-@@ -1206,7 +1206,7 @@
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -1206,7 +1206,7 @@ static int wpa_supplicant_get_scan_resul
  {
  #define SCAN_AP_LIMIT 128
  	struct wpa_scan_result *results;
@@ -11,7 +9,7 @@ Index: wpa_supplicant-0.6.6/wpa_supplicant/wpa_supplicant.c
  	struct wpa_scan_results *res;
  
  	results = os_malloc(SCAN_AP_LIMIT * sizeof(struct wpa_scan_result));
-@@ -1303,6 +1303,21 @@
+@@ -1303,6 +1303,21 @@ static int wpa_supplicant_get_scan_resul
  		res->res[res->num++] = r;
  	}
  
