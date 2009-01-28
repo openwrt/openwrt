@@ -515,7 +515,7 @@ void __init ar71xx_add_device_leds_gpio(int id, unsigned num_leds,
 
 	memset(&pdata, 0, sizeof(pdata));
 	pdata.num_leds = num_leds;
-	pdata.leds = leds;
+	pdata.leds = p;
 
 	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
 	if (err)
