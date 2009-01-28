@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,9 +9,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpa_supplicant
-PKG_VERSION:=0.6.6
+PKG_VERSION:=0.6.7
 PKG_RELEASE:=1
-PKG_MD5SUM:=cd0b386bdf4b0b3b01516e36cb6977d1
+PKG_MD5SUM:=b61f6e94b63f92173f4286b5e6a84140
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -45,7 +45,7 @@ define Package/wpa-cli
 endef
 
 define Package/wpa-cli/Description
- WPA Supplicant control utility 
+ WPA Supplicant control utility
 endef
 
 CONFIG=$(firstword $(wildcard ./files/config.$(BOARD) ./files/config.$(ARCH) ./config))
