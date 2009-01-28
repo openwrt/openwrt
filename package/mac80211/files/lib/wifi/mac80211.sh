@@ -4,13 +4,13 @@ append DRIVERS "mac80211"
 scan_mac80211() {
 	local device="$1"
 	local adhoc sta ap
-	
+
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
-	
+
 		config_get ifname "$vif" ifname
 		config_set "$vif" ifname "${ifname:-$device}"
-		
+
 		config_get mode "$vif" mode
 		case "$mode" in
 			adhoc|sta|ap|monitor)
@@ -29,17 +29,17 @@ disable_mac80211() (
 
 	set_wifi_down "$device"
 	# kill all running hostapd and wpa_supplicant processes that
-	# are running on atheros/mac80211 vifs 
+	# are running on atheros/mac80211 vifs
 	for pid in `pidof hostapd wpa_supplicant`; do
 		grep wlan /proc/$pid/cmdline >/dev/null && \
 			kill $pid
 	done
-	
+
 	include /lib/network
 	cd /proc/sys/net
 	for dev in *; do
 		grep "$device" "$dev/%parent" >/dev/null 2>/dev/null && {
-			ifconfig "$dev" down 
+			ifconfig "$dev" down
 			unbridge "$dev"
 		}
 	done
@@ -50,7 +50,7 @@ enable_mac80211() {
 	local device="$1"
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
-	
+
 	local first=1
 	for vif in $vifs; do
 		ifconfig "$ifname" down 2>/dev/null
@@ -58,7 +58,7 @@ enable_mac80211() {
 		config_get enc "$vif" encryption
 		config_get eap_type "$vif" eap_type
 		config_get mode "$vif" mode
-		
+
 		config_get ifname "$vif" ifname
 		[ $? -ne 0 ] && {
 			echo "enable_mac80211($device): Failed to set up $mode vif $ifname" >&2
@@ -82,7 +82,7 @@ enable_mac80211() {
 		else
 			iwconfig "$ifname" mode $mode >/dev/null 2>/dev/null
 		fi
-	
+
 		wpa=
 		case "$enc" in
 			WEP|wep)
@@ -105,7 +105,7 @@ enable_mac80211() {
 		case "$mode" in
 			adhoc)
 				config_get addr "$vif" bssid
-				[ -z "$addr" ] || { 
+				[ -z "$addr" ] || {
 					iwconfig "$ifname" ap "$addr"
 				}
 			;;
@@ -128,7 +128,7 @@ enable_mac80211() {
 		fi
 
 		ifconfig "$ifname" up
-		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
+		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null
 
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
