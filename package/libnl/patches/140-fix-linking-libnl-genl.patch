@@ -1,7 +1,6 @@
-diff -U 3 -H -d -r -N -- libnl-1.1.o/include/netlink/genl/mngt.h libnl-1.1/include/netlink/genl/mngt.h
---- libnl-1.1.o/include/netlink/genl/mngt.h	2008-01-14 18:48:45.000000000 +0300
-+++ libnl-1.1/include/netlink/genl/mngt.h	2008-08-18 19:18:54.000000000 +0400
-@@ -22,6 +22,15 @@
+--- a/include/netlink/genl/mngt.h
++++ b/include/netlink/genl/mngt.h
+@@ -22,6 +22,15 @@ extern "C" {
  
  struct nl_cache_ops;
  
@@ -17,10 +16,9 @@ diff -U 3 -H -d -r -N -- libnl-1.1.o/include/netlink/genl/mngt.h libnl-1.1/inclu
  /**
   * @ingroup genl_mngt
   * Generic Netlink Command
-diff -U 3 -H -d -r -N -- libnl-1.1.o/include/netlink-types.h libnl-1.1/include/netlink-types.h
---- libnl-1.1.o/include/netlink-types.h	2008-01-14 18:48:45.000000000 +0300
-+++ libnl-1.1/include/netlink-types.h	2008-08-18 19:18:30.000000000 +0400
-@@ -95,15 +95,6 @@
+--- a/include/netlink-types.h
++++ b/include/netlink-types.h
+@@ -95,15 +95,6 @@ struct nl_cache_mngr
  
  struct nl_parser_param;
  
@@ -36,9 +34,8 @@ diff -U 3 -H -d -r -N -- libnl-1.1.o/include/netlink-types.h libnl-1.1/include/n
  #define LOOSE_FLAG_COMPARISON	1
  
  #define NL_OBJ_MARK		1
-diff -U 3 -H -d -r -N -- libnl-1.1.o/src/nl-list-caches.c libnl-1.1/src/nl-list-caches.c
---- libnl-1.1.o/src/nl-list-caches.c	2008-01-14 18:48:45.000000000 +0300
-+++ libnl-1.1/src/nl-list-caches.c	2008-08-18 19:20:05.000000000 +0400
+--- a/src/nl-list-caches.c
++++ b/src/nl-list-caches.c
 @@ -10,6 +10,7 @@
   */
  
@@ -47,9 +44,8 @@ diff -U 3 -H -d -r -N -- libnl-1.1.o/src/nl-list-caches.c libnl-1.1/src/nl-list-
  
  static void print_usage(void)
  {
-diff -U 3 -H -d -r -N -- libnl-1.1.o/src/utils.c libnl-1.1/src/utils.c
---- libnl-1.1.o/src/utils.c	2008-01-14 18:48:45.000000000 +0300
-+++ libnl-1.1/src/utils.c	2008-08-18 19:20:39.000000000 +0400
+--- a/src/utils.c
++++ b/src/utils.c
 @@ -12,6 +12,7 @@
  #include "utils.h"
  
@@ -58,9 +54,8 @@ diff -U 3 -H -d -r -N -- libnl-1.1.o/src/utils.c libnl-1.1/src/utils.c
  
  int nltool_init(int argc, char *argv[])
  {
-diff -U 3 -H -d -r -N -- libnl-1.1.o/src/utils.h libnl-1.1/src/utils.h
---- libnl-1.1.o/src/utils.h	2008-01-14 18:48:45.000000000 +0300
-+++ libnl-1.1/src/utils.h	2008-08-18 19:21:11.000000000 +0400
+--- a/src/utils.h
++++ b/src/utils.h
 @@ -22,7 +22,6 @@
  #include <sys/types.h>
  #include <sys/socket.h>

@@ -10,11 +10,9 @@ Make valgrind happy ...
 Signed-off-by: Patrick McHardy <kaber@trash.net>
 ---
 
-diff --git a/lib/route/route_utils.c b/lib/route/route_utils.c
-index a12d169..1386cda 100644
 --- a/lib/route/route_utils.c
 +++ b/lib/route/route_utils.c
-@@ -63,6 +63,11 @@ static void __init init_routing_table_names(void)
+@@ -63,6 +63,11 @@ static void __init init_routing_table_na
  	add_routing_table_name(RT_TABLE_LOCAL, "local");
  };
  
@@ -26,7 +24,7 @@ index a12d169..1386cda 100644
  int rtnl_route_read_table_names(const char *path)
  {
  	__trans_list_clear(&table_names);
-@@ -104,6 +109,11 @@ static void __init init_proto_names(void)
+@@ -104,6 +109,11 @@ static void __init init_proto_names(void
  	add_proto_name(RTPROT_STATIC, "static");
  };
  
