@@ -1,6 +1,5 @@
-diff -ruN a/arch/arm/mach-ixp4xx/common.c b/arch/arm/mach-ixp4xx/common.c
---- a/arch/arm/mach-ixp4xx/common.c	2008-10-08 20:24:05.000000000 -0700
-+++ b/arch/arm/mach-ixp4xx/common.c	2009-01-16 20:55:10.000000000 -0800
+--- a/arch/arm/mach-ixp4xx/common.c
++++ b/arch/arm/mach-ixp4xx/common.c
 @@ -36,6 +36,7 @@
  #include <asm/pgtable.h>
  #include <asm/page.h>
@@ -9,7 +8,7 @@ diff -ruN a/arch/arm/mach-ixp4xx/common.c b/arch/arm/mach-ixp4xx/common.c
  
  #include <asm/mach/map.h>
  #include <asm/mach/irq.h>
-@@ -374,12 +375,39 @@
+@@ -374,12 +375,39 @@ static struct platform_device *ixp46x_de
  unsigned long ixp4xx_exp_bus_size;
  EXPORT_SYMBOL(ixp4xx_exp_bus_size);
  
@@ -49,10 +48,9 @@ diff -ruN a/arch/arm/mach-ixp4xx/common.c b/arch/arm/mach-ixp4xx/common.c
  	if (cpu_is_ixp46x()) {
  		int region;
  
-diff -ruN a/arch/arm/Kconfig b/arch/arm/Kconfig
---- a/arch/arm/Kconfig	2009-01-18 19:45:37.000000000 +0100
-+++ b/arch/arm/Kconfig	2009-01-28 15:30:22.000000000 +0100
-@@ -355,6 +355,7 @@
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -355,6 +355,7 @@ config ARCH_IXP4XX
  	select GENERIC_GPIO
  	select GENERIC_TIME
  	select GENERIC_CLOCKEVENTS
@@ -60,10 +58,9 @@ diff -ruN a/arch/arm/Kconfig b/arch/arm/Kconfig
  	select DMABOUNCE if PCI
  	help
  	  Support for Intel's IXP4XX (XScale) family of processors.
-diff -ruN a/arch/arm/mach-ixp4xx/Kconfig b/arch/arm/mach-ixp4xx/Kconfig
---- a/arch/arm/mach-ixp4xx/Kconfig	2008-12-31 10:29:21.000000000 -0800
-+++ b/arch/arm/mach-ixp4xx/Kconfig	2009-01-16 15:17:54.000000000 -0800
-@@ -28,6 +28,7 @@
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -28,6 +28,7 @@ config MACH_AVILA
  config MACH_CAMBRIA
  	bool "Cambria"
  	select PCI
@@ -71,10 +68,8 @@ diff -ruN a/arch/arm/mach-ixp4xx/Kconfig b/arch/arm/mach-ixp4xx/Kconfig
  	help
  	  Say 'Y' here if you want your kernel to support the Gateworks
  	  Cambria series. For more information on this platform,
-
-diff -ruN a/include/asm-arm/arch-ixp4xx/gpio.h b/include/asm-arm/arch-ixp4xx/gpio.h
---- a/arch/arm/mach-ixp4xx/include/mach/gpio.h	2008-10-08 20:24:05.000000000 -0700
-+++ b/arch/arm/mach-ixp4xx/include/mach/gpio.h	2009-01-16 20:55:25.000000000 -0800
+--- a/arch/arm/mach-ixp4xx/include/mach/gpio.h
++++ b/arch/arm/mach-ixp4xx/include/mach/gpio.h
 @@ -27,47 +27,31 @@
  
  #include <linux/kernel.h>
