@@ -2,13 +2,15 @@ Don't do broadcast SSID scans, if all configured SSIDs use scan_ssid=1. Improves
 
 --- a/wpa_supplicant/scan.c
 +++ b/wpa_supplicant/scan.c
-@@ -48,11 +48,23 @@ static void wpa_supplicant_scan(void *el
- 	int enabled, scan_req = 0, ret;
+@@ -73,6 +73,7 @@ static void wpa_supplicant_scan(void *el
+ 	struct wpabuf *wps_ie = NULL;
  	const u8 *extra_ie = NULL;
  	size_t extra_ie_len = 0;
 +	int scan_ssid_all = 1;
- 
- 	if (wpa_s->disconnected && !wpa_s->scan_req)
+ 	int wps = 0;
+ #ifdef CONFIG_WPS
+ 	enum wps_request_type req_type = WPS_REQ_ENROLLEE_INFO;
+@@ -82,6 +83,17 @@ static void wpa_supplicant_scan(void *el
  		return;
  
  	enabled = 0;
@@ -26,7 +28,7 @@ Don't do broadcast SSID scans, if all configured SSIDs use scan_ssid=1. Improves
  	ssid = wpa_s->conf->ssid;
  	while (ssid) {
  		if (!ssid->disabled) {
-@@ -125,6 +137,10 @@ static void wpa_supplicant_scan(void *el
+@@ -154,6 +166,10 @@ static void wpa_supplicant_scan(void *el
  		return;
  	}
  
