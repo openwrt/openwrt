@@ -54,20 +54,10 @@
  	select GENERIC_GPIO
  	select GENERIC_TIME
  	select GENERIC_CLOCKEVENTS
-+	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select ARCH_REQUIRE_GPIOLIB
  	select DMABOUNCE if PCI
  	help
  	  Support for Intel's IXP4XX (XScale) family of processors.
---- a/arch/arm/mach-ixp4xx/Kconfig
-+++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -28,6 +28,7 @@ config MACH_AVILA
- config MACH_CAMBRIA
- 	bool "Cambria"
- 	select PCI
-+	select GPIOLIB
- 	help
- 	  Say 'Y' here if you want your kernel to support the Gateworks
- 	  Cambria series. For more information on this platform,
 --- a/arch/arm/mach-ixp4xx/include/mach/gpio.h
 +++ b/arch/arm/mach-ixp4xx/include/mach/gpio.h
 @@ -27,47 +27,31 @@
