@@ -404,7 +404,7 @@ $(eval $(call KernelPackage,ledtrig-adm5120-switch))
 define KernelPackage/leds-net48xx
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Soekris Net48xx LED support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@TARGET_x86 +kmod-scx200-gpio
   KCONFIG:=CONFIG_LEDS_NET48XX
   FILES:=$(LINUX_DIR)/drivers/leds/leds-net48xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,leds-net48xx)
@@ -514,7 +514,7 @@ $(eval $(call KernelPackage,nsc-gpio))
 define KernelPackage/scx200-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SCX200 GPIO support
-  DEPENDS:=@TARGET_x86 kmod-nsc-gpio
+  DEPENDS:=@TARGET_x86 +kmod-nsc-gpio
   KCONFIG:=CONFIG_SCx200_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/scx200_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,scx200_gpio)
