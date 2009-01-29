@@ -420,7 +420,7 @@ $(eval $(call KernelPackage,leds-net48xx))
 define KernelPackage/leds-wrap
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PCengines WRAP LED support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@TARGET_x86 +kmod-scx200-gpio
   KCONFIG:=CONFIG_LEDS_WRAP
   FILES:=$(LINUX_DIR)/drivers/leds/leds-wrap.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,leds-wrap)
