@@ -124,6 +124,12 @@ config KERNEL_KALLSYMS
 	default n
 	help
 		This will give you more information in stack traces from kernel oopses
+config KERNEL_PROFILING
+	bool "Compile the kernel with profiling enabled"
+	default n
+	help
+		Enable the extended profiling support mechanisms used by profilers such
+		as OProfile.
 
 endmenu
 
