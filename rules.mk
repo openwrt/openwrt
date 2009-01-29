@@ -81,10 +81,10 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
 endif
 
 ifeq ($(CONFIG_SOFT_FLOAT),y)
-SOFT_FLOAT_CONFIG_OPTION:=--with-float=soft
-TARGET_CFLAGS+=-msoft-float
+  SOFT_FLOAT_CONFIG_OPTION:=--with-float=soft
+  TARGET_CFLAGS+= -msoft-float
 else
-SOFT_FLOAT_CONFIG_OPTION:=
+  SOFT_FLOAT_CONFIG_OPTION:=
 endif
 
 export PATH:=$(TARGET_PATH)
