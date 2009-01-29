@@ -45,6 +45,14 @@ define Image/Build/RedBoot
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(1)-vmlinux.gz bs=65536 conv=sync
 endef
 
+define Image/Build/CFEOLD
+	$(TOPDIR)/scripts/brcmImage.pl -t -p	\
+		-b $(2) -c $(3)			\
+		-k $(KDIR)/vmlinux.lzma.cfe	\
+		-r $(KDIR)/root.$(1)		\
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin
+endef
+
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
@@ -86,6 +94,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96358VW,6358)
 	# Comtrend 536
 	$(call Image/Build/CFE,$(1),96348GW-11,6348)
+	# Davolink DV201AMR
+	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
 	# DG834GT
 	$(call Image/Build/CFE,$(1),96348GW-10,6348)
 	# Sagem F@ST2404
