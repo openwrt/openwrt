@@ -8,9 +8,10 @@
 +						reg = <0x0 0x200000>;
  					};
 -					partition@180000 {
-+					partition@200000 {
- 						label = "root";
+-						label = "root";
 -						reg = <0x180000 0x200000>;
++					partition@200000 {
++						label = "rootfs";
 +						reg = <0x200000 0x3c00000>;
  					};
 -					partition@380000 {

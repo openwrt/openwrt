@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+#
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,6 +11,7 @@ JFFS2_BLOCKSIZE=256k
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/powerpc/boot/cuImage.taishan $(KDIR)/uImage
+		dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
 endef
 
 define Image/BuildKernel
@@ -33,7 +34,12 @@ define Image/Build/squashfs
 	( \
 		dd if=$(KDIR)/uImage bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
+	) > $(BIN_DIR)/openwrt-$(BOARD)-taishan-$(1).img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
+		dd if=$(KDIR)/openwrt-canyonlands.dtb bs=128k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-canyonlands-$(1).img
 endef
 
 $(eval $(call BuildImage))
