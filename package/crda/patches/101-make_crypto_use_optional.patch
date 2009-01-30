@@ -1,0 +1,13 @@
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,9 @@ LDLIBS += `pkg-config --libs openssl`
+ 
+ reglib.o: keys-ssl.c
+ 
+-else
++endif
++
++ifeq ($(USE_GCRYPT),1)
+ CFLAGS += -DUSE_GCRYPT
+ LDLIBS += -lgcrypt
+ 
