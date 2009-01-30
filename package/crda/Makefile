@@ -15,7 +15,7 @@ PKG_VERSION:=1.0.1
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/crda
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=03554b71eef2626795befa17eb1d8b9e
-PKG_BUILD_DEPENDS:=mac80211 libnl openssl
+PKG_BUILD_DEPENDS:=mac80211 libnl
 
 PKG_REGULATORY_NAME:=regulatory
 PKG_REGULATORY_VERSION:=2009.01.15
@@ -54,9 +54,9 @@ define Build/Compile
 	$(MAKE_VARS) \
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_FLAGS) \
-		USE_OPENSSL=1 \
+		NLLIBS="$(STAGING_DIR)/usr/lib/libnl.a -lm" \
 		REG_BIN="$(DL_DIR)/$(PKG_REGULATORY_SOURCE)" \
-		$(1)
+		crda
 endef
 
 define Package/crda/install
