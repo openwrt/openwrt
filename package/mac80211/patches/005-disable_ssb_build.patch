@@ -5,8 +5,8 @@
  ifeq ($(ONLY_CORE),)
  obj-$(CONFIG_B44) += drivers/net/b44.o
 -obj-y += drivers/ssb/ \
--	drivers/misc/ \
-+obj-y += drivers/misc/ \
+-	drivers/misc/eeprom/ \
++obj-y += drivers/misc/eeprom/ \
  	drivers/net/usb/ \
  	drivers/net/wireless/
  endif
