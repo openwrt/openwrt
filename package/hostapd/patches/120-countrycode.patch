@@ -1,0 +1,10 @@
+--- a/hostapd/hostapd.c
++++ b/hostapd/hostapd.c
+@@ -1535,7 +1535,6 @@ static int setup_interface(struct hostap
+ 	    hostapd_set_ieee80211d(hapd, 1) < 0) {
+ 		printf("Failed to set ieee80211d (%d)\n",
+ 		       hapd->iconf->ieee80211d);
+-		return -1;
+ 	}
+ 
+ 	if (hapd->iconf->bridge_packets != INTERNAL_BRIDGE_DO_NOT_CONTROL &&
