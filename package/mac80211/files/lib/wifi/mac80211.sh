@@ -50,6 +50,7 @@ enable_mac80211() {
 	local device="$1"
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
+	config_get txpower "$device" txpower
 
 	local first=1
 	for vif in $vifs; do
@@ -112,10 +113,11 @@ enable_mac80211() {
 		esac
 		config_get ssid "$vif" ssid
 
-		config_get txpwr "$vif" txpower
-		if [ -n "$txpwr" ]; then
-			iwconfig "$ifname" txpower "${txpwr%%.*}"
-		fi
+		config_get vif_txpower "$vif" txpower
+		# use vif_txpower (from wifi-iface) to override txpower (from
+		# wifi-device) if the latter doesn't exist
+		txpower="${txpower:-$vif_txpower}"
+		[ -z "$txpower" ] || iwconfig "$ifname" txpower "${txpower%%.*}"
 
 		config_get frag "$vif" frag
 		if [ -n "$frag" ]; then
