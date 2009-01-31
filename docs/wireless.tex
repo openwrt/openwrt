@@ -102,12 +102,13 @@ config wifi-device    wifi device name
     option hwmode     11b, 11g, 11a, 11bg (atheros, mac80211)
     option rxantenna  0,1,2 (atheros, broadcom)
     option txantenna  0,1,2 (atheros, broadcom)
+    option txpower  transmission power in dBm
 
 config wifi-iface
     option network  the interface you want wifi to bridge with
     option device   wifi0, wifi1, wifi2, wifiN
     option mode     ap, sta, adhoc, monitor, or wds
-    option txpower  transmission power in dBm
+    option txpower  (deprecated) transmission power in dBm
     option ssid     ssid name
     option bssid    bssid address
     option encryption none, wep, psk, psk2, wpa, wpa2
@@ -152,6 +153,9 @@ config wifi-iface
     \item \texttt{txantenna} \\
 	Optional: Antenna identifier (0, 1 or 2) for emission. This feature is supported by atheros and some broadcom chipsets.
 
+    \item \texttt{txpower}
+	Set the transmission power to be used. The amount is specified in dBm.
+
 \end{itemize}
 
 \paragraph{Options for the \texttt{wifi-iface}:}
@@ -192,7 +196,7 @@ config wifi-iface
 	Set the BSSID address to be used for wds to set the mac address of the other wds unit.
 
     \item \texttt{txpower}
-	Set the transmission power to be used. The amount is specified in dBm.
+	(Deprecated, set in wifi-device) Set the transmission power to be used. The amount is specified in dBm.
 
     \item \texttt{encryption} \\
         Encryption setting. Accepts the following values:
