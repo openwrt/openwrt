@@ -399,3 +399,68 @@ define KernelPackage/ebtables/description
 endef
 
 $(eval $(call KernelPackage,ebtables))
+
+
+define KernelPackage/nfnetlink
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netlink-based userspace interface
+  DEPENDS:=@LINUX_2_6 +kmod-ipt-core
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_NETFILTER_NETLINK
+  AUTOLOAD:=$(call AutoLoad,48,nfnetlink)
+endef
+
+define KernelPackage/nfnetlink/description
+ Kernel modules support for a netlink-based userspace interface
+endef
+
+$(eval $(call KernelPackage,nfnetlink))
+
+
+define KernelPackage/nfnetlink-log
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter LOG over NFNETLINK interface
+  DEPENDS:=@LINUX_2_6 +kmod-nfnetlink
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_log.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_NETFILTER_NETLINK_LOG
+  AUTOLOAD:=$(call AutoLoad,48,nfnetlink_log)
+endef
+
+define KernelPackage/nfnetlink-log/description
+ Kernel modules support for logging packets via NFNETLINK
+endef
+
+$(eval $(call KernelPackage,nfnetlink-log))
+
+
+define KernelPackage/nfnetlink-queue
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter QUEUE over NFNETLINK interface
+  DEPENDS:=@LINUX_2_6 +kmod-nfnetlink
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_queue.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_NETFILTER_NETLINK_QUEUE
+  AUTOLOAD:=$(call AutoLoad,48,nfnetlink_queue)
+endef
+
+define KernelPackage/nfnetlink-queue/description
+ Kernel modules support for queueing packets via NFNETLINK
+endef
+
+$(eval $(call KernelPackage,nfnetlink-queue))
+
+
+define KernelPackage/nf-conntrack-netlink
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Connection tracking netlink interface
+  DEPENDS:=@LINUX_2_6 +kmod-nfnetlink +kmod-ipt-conntrack
+  FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_NF_CT_NETLINK
+  AUTOLOAD:=$(call AutoLoad,49,nf_conntrack_netlink)
+endef
+
+define KernelPackage/nf-conntrack-netlink/description
+ Kernel modules support for a netlink-based connection tracking 
+ userspace interface
+endef
+
+$(eval $(call KernelPackage,nf-conntrack-netlink))
