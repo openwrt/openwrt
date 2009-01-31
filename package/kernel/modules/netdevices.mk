@@ -254,6 +254,10 @@ define KernelPackage/tg3
   DEPENDS:=@LINUX_2_6
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   AUTOLOAD:=$(call AutoLoad,50,tg3)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.27)),1)
+  FILES+=$(LINUX_DIR)/drivers/net/phy/libphy.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,libphy tg3)
+endif
 endef
 
 define KernelPackage/tg3/description
