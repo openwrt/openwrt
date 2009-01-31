@@ -78,12 +78,13 @@ enable_atheros() {
 	fi
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
+	config_get txpower "$device" txpower
 
 	[ auto = "$channel" ] && channel=0
 
 	local first=1
 	for vif in $vifs; do
-		local start_hostapd
+		local start_hostapd vif_txpower
 		nosbeacon=
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
@@ -299,8 +300,14 @@ enable_atheros() {
 		set_wifi_up "$vif" "$ifname"
 
 		# TXPower settings only work if device is up already
-		config_get txpwr "$vif" txpower
-		[ -n "$txpwr" ] && iwconfig "$ifname" txpower "${txpwr%%.*}"
+		# while atheros hardware theoretically is capable of per-vif (even per-packet) txpower
+		# adjustment it does not work with the current atheros hal/madwifi driver
+
+		config_get vif_txpower "$vif" txpower
+		# use vif_txpower (from wifi-iface) instead of txpower (from wifi-device) if
+		# the latter doesn't exist
+		txpower="${txpower:-$vif_txpower}"
+		[ -z "$txpower" ] || iwconfig "$ifname" txpower "${txpower%%.*}"
 
 		case "$mode" in
 			ap)

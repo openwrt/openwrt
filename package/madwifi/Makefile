@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2008 OpenWrt.org
+#
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,7 +13,7 @@ PKG_NAME:=madwifi
 
 ifneq ($(CONFIG_MADWIFI_UPSTREAM),)
   PKG_VERSION:=0.9.4
-  PKG_RELEASE:=1
+  PKG_RELEASE:=2
 
   PKG_SOURCE:=madwifi-$(PKG_VERSION).tar.gz
   PKG_SOURCE_URL:=http://downloads.sourceforge.net/madwifi/
@@ -26,7 +26,7 @@ else
 # PKG_BRANCH:=madwifi-dfs
   PKG_REV:=3314
   PKG_VERSION:=r$(PKG_REV)
-  PKG_RELEASE:=1
+  PKG_RELEASE:=2
 
   PKG_SOURCE_PROTO:=svn
   PKG_SOURCE_VERSION:=$(PKG_REV)
