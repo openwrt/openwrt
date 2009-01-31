@@ -96,6 +96,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96348GW-11,6348)
 	# Davolink DV201AMR
 	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
+	# USR 9108
+	$(call Image/Build/CFE,$(1),96348GW-A,6348)
 	# DG834GT
 	$(call Image/Build/CFE,$(1),96348GW-10,6348)
 	# Sagem F@ST2404
