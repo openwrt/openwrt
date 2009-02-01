@@ -258,6 +258,13 @@ void __init plat_mem_setup(void)
 	ar71xx_detect_sys_type();
 	detect_sys_frequency();
 
+	printk(KERN_INFO
+		"%s, CPU:%u.%03u MHz, AHB:%u.%03u MHz, DDR:%u.%03u MHz\n",
+		ar71xx_sys_type,
+		ar71xx_cpu_freq / 1000000, (ar71xx_cpu_freq / 1000) % 1000,
+		ar71xx_ahb_freq / 1000000, (ar71xx_ahb_freq / 1000) % 1000,
+		ar71xx_ddr_freq / 1000000, (ar71xx_ddr_freq / 1000) % 1000);
+
 	_machine_restart = ar71xx_restart;
 	_machine_halt = ar71xx_halt;
 	pm_power_off = ar71xx_halt;
