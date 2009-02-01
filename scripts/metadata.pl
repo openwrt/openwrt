@@ -375,7 +375,7 @@ sub mconf_depends {
 	my $res;
 	my $dep = shift;
 	my $seen = shift;
-	my $condition = shift;
+	my $parent_condition = shift;
 	$dep or $dep = {};
 	$seen or $seen = {};
 
@@ -386,11 +386,12 @@ sub mconf_depends {
 		$depend =~ s/^([@\+]+)//;
 		my $flags = $1;
 		my $vdep;
+		my $condition;
 
 		if ($depend =~ /^(.+):(.+)$/) {
 			if ($1 ne "PACKAGE_$pkgname") {
-				if ($condition) {
-					$condition = "$condition && $1";
+				if ($parent_condition) {
+					$condition = "$parent_condition && $1";
 				} else {
 					$condition = $1;
 				}
