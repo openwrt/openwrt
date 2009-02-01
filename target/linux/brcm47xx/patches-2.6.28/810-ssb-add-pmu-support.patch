@@ -13,8 +13,8 @@ Index: linux-2.6.28.2/drivers/ssb/Makefile
 Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-01 19:51:46.000000000 +0100
-@@ -0,0 +1,259 @@
++++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-01 21:16:15.000000000 +0100
+@@ -0,0 +1,378 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom ChipCommon Power Management Unit driver
@@ -89,7 +89,7 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +				u32 crystalfreq)
 +{
 +	struct ssb_bus *bus = cc->dev->bus;
-+	const struct pmu0_plltab_entry *e;
++	const struct pmu0_plltab_entry *e = NULL;
 +	u32 pmuctl, tmp, pllctl;
 +	unsigned int i;
 +
@@ -97,7 +97,8 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +		/* The 5354 crystal freq is 25MHz */
 +		crystalfreq = 25000;
 +	}
-+	e = pmu0_plltab_find_entry(crystalfreq);
++	if (crystalfreq)
++		e = pmu0_plltab_find_entry(crystalfreq);
 +	if (!e)
 +		e = pmu0_plltab_find_entry(SSB_PMU0_DEFAULT_XTALFREQ);
 +	BUG_ON(!e);
@@ -111,7 +112,7 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +		return;
 +	}
 +
-+	ssb_printk(KERN_INFO PFX "Programming PLL to %u.%u MHz\n",
++	ssb_printk(KERN_INFO PFX "Programming PLL to %u.%03u MHz\n",
 +		   (crystalfreq / 1000), (crystalfreq % 1000));
 +
 +	/* First turn the PLL off. */
@@ -208,25 +209,113 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +	}
 +}
 +
++struct pmu_res_updown_tab_entry {
++	u8 resource;	/* The resource number */
++	u16 updown;	/* The updown value */
++};
++
++enum pmu_res_depend_tab_task {
++	PMU_RES_DEP_SET = 1,
++	PMU_RES_DEP_ADD,
++	PMU_RES_DEP_REMOVE,
++};
++
++struct pmu_res_depend_tab_entry {
++	u8 resource;	/* The resource number */
++	u8 task;	/* SET | ADD | REMOVE */
++	u32 depend;	/* The depend mask */
++};
++
++static const struct pmu_res_updown_tab_entry pmu_res_updown_tab_4328a0[] = {
++	{ .resource = SSB_PLLRES_4328_EXT_SWITCHER_PWM,		.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_BB_SWITCHER_PWM,		.updown = 0x1F01, },
++	{ .resource = SSB_PLLRES_4328_BB_SWITCHER_BURST,	.updown = 0x010F, },
++	{ .resource = SSB_PLLRES_4328_BB_EXT_SWITCHER_BURST,	.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_ILP_REQUEST,		.updown = 0x0202, },
++	{ .resource = SSB_PLLRES_4328_RADIO_SWITCHER_PWM,	.updown = 0x0F01, },
++	{ .resource = SSB_PLLRES_4328_RADIO_SWITCHER_BURST,	.updown = 0x0F01, },
++	{ .resource = SSB_PLLRES_4328_ROM_SWITCH,		.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_PA_REF_LDO,		.updown = 0x0F01, },
++	{ .resource = SSB_PLLRES_4328_RADIO_LDO,		.updown = 0x0F01, },
++	{ .resource = SSB_PLLRES_4328_AFE_LDO,			.updown = 0x0F01, },
++	{ .resource = SSB_PLLRES_4328_PLL_LDO,			.updown = 0x0F01, },
++	{ .resource = SSB_PLLRES_4328_BG_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_TX_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_RX_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_XTAL_PU,			.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_XTAL_EN,			.updown = 0xA001, },
++	{ .resource = SSB_PLLRES_4328_BB_PLL_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_RF_PLL_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PLLRES_4328_BB_PLL_PU,		.updown = 0x0701, },
++};
++
++static const struct pmu_res_depend_tab_entry pmu_res_depend_tab_4328a0[] = {
++	{
++		/* Adjust ILP Request to avoid forcing EXT/BB into burst mode. */
++		.resource = SSB_PLLRES_4328_ILP_REQUEST,
++		.task = PMU_RES_DEP_SET,
++		.depend = ((1 << SSB_PLLRES_4328_EXT_SWITCHER_PWM) |
++			   (1 << SSB_PLLRES_4328_BB_SWITCHER_PWM)),
++	},
++};
++
++static const struct pmu_res_updown_tab_entry pmu_res_updown_tab_4325a0[] = {
++	{ .resource = SSB_PLLRES_4325_XTAL_PU,			.updown = 0x1501, },
++};
++
++static const struct pmu_res_depend_tab_entry pmu_res_depend_tab_4325a0[] = {
++	{
++		/* Adjust HT-Available dependencies. */
++		.resource = SSB_PLLRES_4325_HT_AVAIL,
++		.task = PMU_RES_DEP_ADD,
++		.depend = ((1 << SSB_PLLRES_4325_RX_PWRSW_PU) |
++			   (1 << SSB_PLLRES_4325_TX_PWRSW_PU) |
++			   (1 << SSB_PLLRES_4325_LOGEN_PWRSW_PU) |
++			   (1 << SSB_PLLRES_4325_AFE_PWRSW_PU)),
++	},
++};
++
 +static void ssb_pmu_resources_init(struct ssb_chipcommon *cc)
 +{
 +	struct ssb_bus *bus = cc->dev->bus;
 +	u32 min_msk = 0, max_msk = 0;
++	unsigned int i;
++	const struct pmu_res_updown_tab_entry *updown_tab = NULL;
++	unsigned int updown_tab_size;
++	const struct pmu_res_depend_tab_entry *depend_tab = NULL;
++	unsigned int depend_tab_size;
 +
 +	switch (bus->chip_id) {
 +	case 0x4312:
 +		/* We keep the default settings:
 +		 * min_msk = 0xCBB
 +		 * max_msk = 0x7FFFF
-+		 * updown table size = 0
-+		 * depend table size = 0
 +		 */
 +		break;
 +	case 0x4325:
-+		//TODO
++		/* Power OTP down later. */
++		min_msk = (1 << SSB_PLLRES_4325_CBUCK_BURST) |
++			  (1 << SSB_PLLRES_4325_LNLDO2_PU);
++		if (chipco_read32(cc, SSB_CHIPCO_CHIPSTAT) &
++		    SSB_CHIPCO_CHST_4325_PMUTOP_2B)
++			min_msk |= (1 << SSB_PLLRES_4325_CLDO_CBUCK_BURST);
++		/* The PLL may turn on, if it decides so. */
++		max_msk = 0xFFFFF;
++		updown_tab = pmu_res_updown_tab_4325a0;
++		updown_tab_size = ARRAY_SIZE(pmu_res_updown_tab_4325a0);
++		depend_tab = pmu_res_depend_tab_4325a0;
++		depend_tab_size = ARRAY_SIZE(pmu_res_depend_tab_4325a0);
 +		break;
 +	case 0x4328:
-+		//TODO
++		min_msk = (1 << SSB_PLLRES_4328_EXT_SWITCHER_PWM) |
++			  (1 << SSB_PLLRES_4328_BB_SWITCHER_PWM) |
++			  (1 << SSB_PLLRES_4328_XTAL_EN);
++		/* The PLL may turn on, if it decides so. */
++		max_msk = 0xFFFFF;
++		updown_tab = pmu_res_updown_tab_4328a0;
++		updown_tab_size = ARRAY_SIZE(pmu_res_updown_tab_4328a0);
++		depend_tab = pmu_res_depend_tab_4328a0;
++		depend_tab_size = ARRAY_SIZE(pmu_res_depend_tab_4328a0);
 +		break;
 +	case 0x5354:
 +		/* The PLL may turn on, if it decides so. */
@@ -237,7 +326,37 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +			   "ERROR: PMU resource config unknown for device %04X\n",
 +			   bus->chip_id);
 +	}
-+	//TODO table upload
++
++	if (updown_tab) {
++		for (i = 0; i < updown_tab_size; i++) {
++			chipco_write32(cc, SSB_CHIPCO_PMU_RES_TABSEL,
++				       updown_tab[i].resource);
++			chipco_write32(cc, SSB_CHIPCO_PMU_RES_UPDNTM,
++				       updown_tab[i].updown);
++		}
++	}
++	if (depend_tab) {
++		for (i = 0; i < depend_tab_size; i++) {
++			chipco_write32(cc, SSB_CHIPCO_PMU_RES_TABSEL,
++				       depend_tab[i].resource);
++			switch (depend_tab[i].task) {
++			case PMU_RES_DEP_SET:
++				chipco_write32(cc, SSB_CHIPCO_PMU_RES_DEPMSK,
++					       depend_tab[i].depend);
++				break;
++			case PMU_RES_DEP_ADD:
++				chipco_set32(cc, SSB_CHIPCO_PMU_RES_DEPMSK,
++					     depend_tab[i].depend);
++				break;
++			case PMU_RES_DEP_REMOVE:
++				chipco_mask32(cc, SSB_CHIPCO_PMU_RES_DEPMSK,
++					      ~(depend_tab[i].depend));
++				break;
++			default:
++				SSB_WARN_ON(1);
++			}
++		}
++	}
 +
 +	/* Set the resource masks. */
 +	if (min_msk)
@@ -309,7 +428,7 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon.c
 Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
 ===================================================================
 --- linux-2.6.28.2.orig/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-01 13:22:59.000000000 +0100
-+++ linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-01 19:17:25.000000000 +0100
++++ linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-01 21:09:37.000000000 +0100
 @@ -181,6 +181,16 @@
  #define SSB_CHIPCO_PROG_WAITCNT		0x0124
  #define SSB_CHIPCO_FLASH_CFG		0x0128
@@ -327,7 +446,7 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
  #define SSB_CHIPCO_UART0_DATA		0x0300
  #define SSB_CHIPCO_UART0_IMR		0x0304
  #define SSB_CHIPCO_UART0_FCR		0x0308
-@@ -197,6 +207,156 @@
+@@ -197,6 +207,172 @@
  #define SSB_CHIPCO_UART1_LSR		0x0414
  #define SSB_CHIPCO_UART1_MSR		0x0418
  #define SSB_CHIPCO_UART1_SCRATCH	0x041C
@@ -481,10 +600,26 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
 +#define SSB_PLLRES_5354_BB_PLL_FILTBYP		17
 +#define SSB_PLLRES_5354_RF_PLL_FILTBYP		18
 +#define SSB_PLLRES_5354_BB_PLL_PU		19
++
++
++
++/** Chip specific Chip-Status register contents. */
++#define SSB_CHIPCO_CHST_4325_SPROM_OTP_SEL	0x00000003
++#define SSB_CHIPCO_CHST_4325_DEFCIS_SEL		0 /* OTP is powered up, use def. CIS, no SPROM */
++#define SSB_CHIPCO_CHST_4325_SPROM_SEL		1 /* OTP is powered up, SPROM is present */
++#define SSB_CHIPCO_CHST_4325_OTP_SEL		2 /* OTP is powered up, no SPROM */
++#define SSB_CHIPCO_CHST_4325_OTP_PWRDN		3 /* OTP is powered down, SPROM is present */
++#define SSB_CHIPCO_CHST_4325_SDIO_USB_MODE	0x00000004
++#define SSB_CHIPCO_CHST_4325_SDIO_USB_MODE_SHIFT  2
++#define SSB_CHIPCO_CHST_4325_RCAL_VALID		0x00000008
++#define SSB_CHIPCO_CHST_4325_RCAL_VALID_SHIFT	3
++#define SSB_CHIPCO_CHST_4325_RCAL_VALUE		0x000001F0
++#define SSB_CHIPCO_CHST_4325_RCAL_VALUE_SHIFT	4
++#define SSB_CHIPCO_CHST_4325_PMUTOP_2B 		0x00000200 /* 1 for 2b, 0 for to 2a */
  
  
  
-@@ -353,11 +513,20 @@
+@@ -353,11 +529,20 @@
  struct ssb_device;
  struct ssb_serial_port;
  
@@ -505,7 +640,7 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
  };
  
  static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
-@@ -365,6 +534,17 @@ static inline bool ssb_chipco_available(
+@@ -365,6 +550,17 @@ static inline bool ssb_chipco_available(
  	return (cc->dev != NULL);
  }
  
@@ -523,7 +658,7 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
  extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
  
  extern void ssb_chipco_suspend(struct ssb_chipcommon *cc);
-@@ -406,4 +586,8 @@ extern int ssb_chipco_serial_init(struct
+@@ -406,4 +602,8 @@ extern int ssb_chipco_serial_init(struct
  				  struct ssb_serial_port *ports);
  #endif /* CONFIG_SSB_SERIAL */
  
