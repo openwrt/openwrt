@@ -143,6 +143,8 @@ while($scanning) {
 
 $box or die " not found!\n";
 
+alarm(0);
+
 {
 	package ADAM2FTP;
 	use base qw(Net::FTP);
