@@ -102,11 +102,13 @@ define Kernel/CompileModules/Default
 	+$(MAKE) $(KERNEL_MAKEOPTS) modules
 endef
 
+OBJCOPY_STRIP = -R .reginfo -R .note -R .comment -R .mdebug -R .note.gnu.build-id
+
 define Kernel/CompileImage/Default
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
 	+$(MAKE) $(KERNEL_MAKEOPTS) $(KERNELNAME)
-	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
-	$(KERNEL_CROSS)objcopy -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux.elf
+	$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
+	$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux.elf
 endef
 
 define Kernel/Clean/Default
