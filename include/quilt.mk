@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -18,6 +18,8 @@ ifeq ($(MAKECMDGOALS),refresh)
   override QUILT=1
 endif
 
+QUILT_CMD:=quilt --quiltrc=-
+
 define filter_series
 sed -e s,\\\#.*,, $(1) | grep -E \[a-zA-Z0-9\]
 endef
@@ -30,8 +32,8 @@ define PatchDir/Quilt
 	@for patch in $$$$( (cd $(1) && if [ -f series ]; then $(call filter_series,series); else ls; fi; ) 2>/dev/null ); do ( \
 		cp "$(1)/$$$$patch" $(PKG_BUILD_DIR); \
 		cd $(PKG_BUILD_DIR); \
-		quilt import -P$(2)$$$$patch -p 1 "$$$$patch"; \
-		quilt push -f >/dev/null 2>/dev/null; \
+		$(QUILT_CMD) import -P$(2)$$$$patch -p 1 "$$$$patch"; \
+		$(QUILT_CMD) push -f >/dev/null 2>/dev/null; \
 		rm -f "$$$$patch"; \
 	); done
 	$(if $(2),@echo $(2) >> $(PKG_BUILD_DIR)/patches/.subdirs)
@@ -106,7 +108,7 @@ define Build/Quilt
   $(STAMP_PATCHED): $(STAMP_PREPARED)
 	@( \
 		cd $(PKG_BUILD_DIR)/patches; \
-		quilt pop -a -f >/dev/null 2>/dev/null; \
+		$(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null; \
 		if [ -s ".subdirs" ]; then \
 			rm -f series; \
 			for file in $$$$(cat .subdirs); do \
@@ -126,7 +128,7 @@ define Build/Quilt
 
   $(STAMP_CONFIGURED): $(STAMP_CHECKED) FORCE
   $(STAMP_CHECKED): $(STAMP_PATCHED)
-	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); if quilt next >/dev/null 2>&1; then quilt push -a; else quilt top >/dev/null 2>&1; fi); fi
+	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); if $(QUILT_CMD) next >/dev/null 2>&1; then $(QUILT_CMD) push -a; else $(QUILT_CMD) top >/dev/null 2>&1; fi); fi
 	touch $$@
 
   quilt-check: $(STAMP_PREPARED) FORCE
@@ -144,10 +146,10 @@ define Build/Quilt
 	}
 
   refresh: quilt-check
-	@cd $(PKG_BUILD_DIR); quilt pop -a -f >/dev/null 2>/dev/null
-	@cd $(PKG_BUILD_DIR); while quilt next 2>/dev/null >/dev/null && quilt push; do \
-		QUILT_DIFF_OPTS="-p" quilt refresh -p ab --no-index --quiltrc=/dev/null --no-timestamps; \
-	done; ! quilt next 2>/dev/null >/dev/null
+	@cd $(PKG_BUILD_DIR); $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null
+	@cd $(PKG_BUILD_DIR); while $(QUILT_CMD) next 2>/dev/null >/dev/null && $(QUILT_CMD) push; do \
+		QUILT_DIFF_OPTS="-p" $(QUILT_CMD) refresh -p ab --no-index --no-timestamps; \
+	done; ! $(QUILT_CMD) next 2>/dev/null >/dev/null
 	$(Quilt/Refresh)
 	
   update: quilt-check
