@@ -13,7 +13,7 @@ Index: linux-2.6.28.2/drivers/ssb/Makefile
 Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-02 20:57:13.000000000 +0100
++++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-02 20:59:48.000000000 +0100
 @@ -0,0 +1,481 @@
 +/*
 + * Sonics Silicon Backplane
@@ -119,15 +119,15 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +	switch (bus->chip_id) {
 +	case 0x4328:
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
-+			      ~(1 << SSB_PLLRES_4328_BB_PLL_PU));
++			      ~(1 << SSB_PMURES_4328_BB_PLL_PU));
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
-+			      ~(1 << SSB_PLLRES_4328_BB_PLL_PU));
++			      ~(1 << SSB_PMURES_4328_BB_PLL_PU));
 +		break;
 +	case 0x5354:
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
-+			      ~(1 << SSB_PLLRES_5354_BB_PLL_PU));
++			      ~(1 << SSB_PMURES_5354_BB_PLL_PU));
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
-+			      ~(1 << SSB_PLLRES_5354_BB_PLL_PU));
++			      ~(1 << SSB_PMURES_5354_BB_PLL_PU));
 +		break;
 +	default:
 +		SSB_WARN_ON(1);
@@ -260,11 +260,11 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +	switch (bus->chip_id) {
 +	case 0x4325:
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
-+			      ~((1 << SSB_PLLRES_4325_BBPLL_PWRSW_PU) |
-+			        (1 << SSB_PLLRES_4325_HT_AVAIL)));
++			      ~((1 << SSB_PMURES_4325_BBPLL_PWRSW_PU) |
++			        (1 << SSB_PMURES_4325_HT_AVAIL)));
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
-+			      ~((1 << SSB_PLLRES_4325_BBPLL_PWRSW_PU) |
-+			        (1 << SSB_PLLRES_4325_HT_AVAIL)));
++			      ~((1 << SSB_PMURES_4325_BBPLL_PWRSW_PU) |
++			        (1 << SSB_PMURES_4325_HT_AVAIL)));
 +		/* Adjust the BBPLL to 2 on all channels later. */
 +		buffer_strength = 0x222222;
 +		break;
@@ -332,51 +332,51 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +};
 +
 +static const struct pmu_res_updown_tab_entry pmu_res_updown_tab_4328a0[] = {
-+	{ .resource = SSB_PLLRES_4328_EXT_SWITCHER_PWM,		.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_BB_SWITCHER_PWM,		.updown = 0x1F01, },
-+	{ .resource = SSB_PLLRES_4328_BB_SWITCHER_BURST,	.updown = 0x010F, },
-+	{ .resource = SSB_PLLRES_4328_BB_EXT_SWITCHER_BURST,	.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_ILP_REQUEST,		.updown = 0x0202, },
-+	{ .resource = SSB_PLLRES_4328_RADIO_SWITCHER_PWM,	.updown = 0x0F01, },
-+	{ .resource = SSB_PLLRES_4328_RADIO_SWITCHER_BURST,	.updown = 0x0F01, },
-+	{ .resource = SSB_PLLRES_4328_ROM_SWITCH,		.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_PA_REF_LDO,		.updown = 0x0F01, },
-+	{ .resource = SSB_PLLRES_4328_RADIO_LDO,		.updown = 0x0F01, },
-+	{ .resource = SSB_PLLRES_4328_AFE_LDO,			.updown = 0x0F01, },
-+	{ .resource = SSB_PLLRES_4328_PLL_LDO,			.updown = 0x0F01, },
-+	{ .resource = SSB_PLLRES_4328_BG_FILTBYP,		.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_TX_FILTBYP,		.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_RX_FILTBYP,		.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_XTAL_PU,			.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_XTAL_EN,			.updown = 0xA001, },
-+	{ .resource = SSB_PLLRES_4328_BB_PLL_FILTBYP,		.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_RF_PLL_FILTBYP,		.updown = 0x0101, },
-+	{ .resource = SSB_PLLRES_4328_BB_PLL_PU,		.updown = 0x0701, },
++	{ .resource = SSB_PMURES_4328_EXT_SWITCHER_PWM,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_BB_SWITCHER_PWM,		.updown = 0x1F01, },
++	{ .resource = SSB_PMURES_4328_BB_SWITCHER_BURST,	.updown = 0x010F, },
++	{ .resource = SSB_PMURES_4328_BB_EXT_SWITCHER_BURST,	.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_ILP_REQUEST,		.updown = 0x0202, },
++	{ .resource = SSB_PMURES_4328_RADIO_SWITCHER_PWM,	.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_RADIO_SWITCHER_BURST,	.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_ROM_SWITCH,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_PA_REF_LDO,		.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_RADIO_LDO,		.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_AFE_LDO,			.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_PLL_LDO,			.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_BG_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_TX_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_RX_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_XTAL_PU,			.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_XTAL_EN,			.updown = 0xA001, },
++	{ .resource = SSB_PMURES_4328_BB_PLL_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_RF_PLL_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_BB_PLL_PU,		.updown = 0x0701, },
 +};
 +
 +static const struct pmu_res_depend_tab_entry pmu_res_depend_tab_4328a0[] = {
 +	{
 +		/* Adjust ILP Request to avoid forcing EXT/BB into burst mode. */
-+		.resource = SSB_PLLRES_4328_ILP_REQUEST,
++		.resource = SSB_PMURES_4328_ILP_REQUEST,
 +		.task = PMU_RES_DEP_SET,
-+		.depend = ((1 << SSB_PLLRES_4328_EXT_SWITCHER_PWM) |
-+			   (1 << SSB_PLLRES_4328_BB_SWITCHER_PWM)),
++		.depend = ((1 << SSB_PMURES_4328_EXT_SWITCHER_PWM) |
++			   (1 << SSB_PMURES_4328_BB_SWITCHER_PWM)),
 +	},
 +};
 +
 +static const struct pmu_res_updown_tab_entry pmu_res_updown_tab_4325a0[] = {
-+	{ .resource = SSB_PLLRES_4325_XTAL_PU,			.updown = 0x1501, },
++	{ .resource = SSB_PMURES_4325_XTAL_PU,			.updown = 0x1501, },
 +};
 +
 +static const struct pmu_res_depend_tab_entry pmu_res_depend_tab_4325a0[] = {
 +	{
 +		/* Adjust HT-Available dependencies. */
-+		.resource = SSB_PLLRES_4325_HT_AVAIL,
++		.resource = SSB_PMURES_4325_HT_AVAIL,
 +		.task = PMU_RES_DEP_ADD,
-+		.depend = ((1 << SSB_PLLRES_4325_RX_PWRSW_PU) |
-+			   (1 << SSB_PLLRES_4325_TX_PWRSW_PU) |
-+			   (1 << SSB_PLLRES_4325_LOGEN_PWRSW_PU) |
-+			   (1 << SSB_PLLRES_4325_AFE_PWRSW_PU)),
++		.depend = ((1 << SSB_PMURES_4325_RX_PWRSW_PU) |
++			   (1 << SSB_PMURES_4325_TX_PWRSW_PU) |
++			   (1 << SSB_PMURES_4325_LOGEN_PWRSW_PU) |
++			   (1 << SSB_PMURES_4325_AFE_PWRSW_PU)),
 +	},
 +};
 +
@@ -399,11 +399,11 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +		break;
 +	case 0x4325:
 +		/* Power OTP down later. */
-+		min_msk = (1 << SSB_PLLRES_4325_CBUCK_BURST) |
-+			  (1 << SSB_PLLRES_4325_LNLDO2_PU);
++		min_msk = (1 << SSB_PMURES_4325_CBUCK_BURST) |
++			  (1 << SSB_PMURES_4325_LNLDO2_PU);
 +		if (chipco_read32(cc, SSB_CHIPCO_CHIPSTAT) &
 +		    SSB_CHIPCO_CHST_4325_PMUTOP_2B)
-+			min_msk |= (1 << SSB_PLLRES_4325_CLDO_CBUCK_BURST);
++			min_msk |= (1 << SSB_PMURES_4325_CLDO_CBUCK_BURST);
 +		/* The PLL may turn on, if it decides so. */
 +		max_msk = 0xFFFFF;
 +		updown_tab = pmu_res_updown_tab_4325a0;
@@ -412,9 +412,9 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +		depend_tab_size = ARRAY_SIZE(pmu_res_depend_tab_4325a0);
 +		break;
 +	case 0x4328:
-+		min_msk = (1 << SSB_PLLRES_4328_EXT_SWITCHER_PWM) |
-+			  (1 << SSB_PLLRES_4328_BB_SWITCHER_PWM) |
-+			  (1 << SSB_PLLRES_4328_XTAL_EN);
++		min_msk = (1 << SSB_PMURES_4328_EXT_SWITCHER_PWM) |
++			  (1 << SSB_PMURES_4328_BB_SWITCHER_PWM) |
++			  (1 << SSB_PMURES_4328_XTAL_EN);
 +		/* The PLL may turn on, if it decides so. */
 +		max_msk = 0xFFFFF;
 +		updown_tab = pmu_res_updown_tab_4328a0;
@@ -531,7 +531,7 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon.c
 Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
 ===================================================================
 --- linux-2.6.28.2.orig/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-01 13:22:59.000000000 +0100
-+++ linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-01 21:09:37.000000000 +0100
++++ linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-02 21:00:08.000000000 +0100
 @@ -181,6 +181,16 @@
  #define SSB_CHIPCO_PROG_WAITCNT		0x0124
  #define SSB_CHIPCO_FLASH_CFG		0x0128
@@ -620,89 +620,89 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
 +#define SSB_PMU1_PLLCTL5			5
 +
 +/* BCM4312 PLL resource numbers. */
-+#define SSB_PLLRES_4312_SWITCHER_BURST		0
-+#define SSB_PLLRES_4312_SWITCHER_PWM    	1
-+#define SSB_PLLRES_4312_PA_REF_LDO		2
-+#define SSB_PLLRES_4312_CORE_LDO_BURST		3
-+#define SSB_PLLRES_4312_CORE_LDO_PWM		4
-+#define SSB_PLLRES_4312_RADIO_LDO		5
-+#define SSB_PLLRES_4312_ILP_REQUEST		6
-+#define SSB_PLLRES_4312_BG_FILTBYP		7
-+#define SSB_PLLRES_4312_TX_FILTBYP		8
-+#define SSB_PLLRES_4312_RX_FILTBYP		9
-+#define SSB_PLLRES_4312_XTAL_PU			10
-+#define SSB_PLLRES_4312_ALP_AVAIL		11
-+#define SSB_PLLRES_4312_BB_PLL_FILTBYP		12
-+#define SSB_PLLRES_4312_RF_PLL_FILTBYP		13
-+#define SSB_PLLRES_4312_HT_AVAIL		14
++#define SSB_PMURES_4312_SWITCHER_BURST		0
++#define SSB_PMURES_4312_SWITCHER_PWM    	1
++#define SSB_PMURES_4312_PA_REF_LDO		2
++#define SSB_PMURES_4312_CORE_LDO_BURST		3
++#define SSB_PMURES_4312_CORE_LDO_PWM		4
++#define SSB_PMURES_4312_RADIO_LDO		5
++#define SSB_PMURES_4312_ILP_REQUEST		6
++#define SSB_PMURES_4312_BG_FILTBYP		7
++#define SSB_PMURES_4312_TX_FILTBYP		8
++#define SSB_PMURES_4312_RX_FILTBYP		9
++#define SSB_PMURES_4312_XTAL_PU			10
++#define SSB_PMURES_4312_ALP_AVAIL		11
++#define SSB_PMURES_4312_BB_PLL_FILTBYP		12
++#define SSB_PMURES_4312_RF_PLL_FILTBYP		13
++#define SSB_PMURES_4312_HT_AVAIL		14
 +
 +/* BCM4325 PLL resource numbers. */
-+#define SSB_PLLRES_4325_BUCK_BOOST_BURST	0
-+#define SSB_PLLRES_4325_CBUCK_BURST		1
-+#define SSB_PLLRES_4325_CBUCK_PWM		2
-+#define SSB_PLLRES_4325_CLDO_CBUCK_BURST	3
-+#define SSB_PLLRES_4325_CLDO_CBUCK_PWM		4
-+#define SSB_PLLRES_4325_BUCK_BOOST_PWM		5
-+#define SSB_PLLRES_4325_ILP_REQUEST		6
-+#define SSB_PLLRES_4325_ABUCK_BURST		7
-+#define SSB_PLLRES_4325_ABUCK_PWM		8
-+#define SSB_PLLRES_4325_LNLDO1_PU		9
-+#define SSB_PLLRES_4325_LNLDO2_PU		10
-+#define SSB_PLLRES_4325_LNLDO3_PU		11
-+#define SSB_PLLRES_4325_LNLDO4_PU		12
-+#define SSB_PLLRES_4325_XTAL_PU			13
-+#define SSB_PLLRES_4325_ALP_AVAIL		14
-+#define SSB_PLLRES_4325_RX_PWRSW_PU		15
-+#define SSB_PLLRES_4325_TX_PWRSW_PU		16
-+#define SSB_PLLRES_4325_RFPLL_PWRSW_PU		17
-+#define SSB_PLLRES_4325_LOGEN_PWRSW_PU		18
-+#define SSB_PLLRES_4325_AFE_PWRSW_PU		19
-+#define SSB_PLLRES_4325_BBPLL_PWRSW_PU		20
-+#define SSB_PLLRES_4325_HT_AVAIL		21
++#define SSB_PMURES_4325_BUCK_BOOST_BURST	0
++#define SSB_PMURES_4325_CBUCK_BURST		1
++#define SSB_PMURES_4325_CBUCK_PWM		2
++#define SSB_PMURES_4325_CLDO_CBUCK_BURST	3
++#define SSB_PMURES_4325_CLDO_CBUCK_PWM		4
++#define SSB_PMURES_4325_BUCK_BOOST_PWM		5
++#define SSB_PMURES_4325_ILP_REQUEST		6
++#define SSB_PMURES_4325_ABUCK_BURST		7
++#define SSB_PMURES_4325_ABUCK_PWM		8
++#define SSB_PMURES_4325_LNLDO1_PU		9
++#define SSB_PMURES_4325_LNLDO2_PU		10
++#define SSB_PMURES_4325_LNLDO3_PU		11
++#define SSB_PMURES_4325_LNLDO4_PU		12
++#define SSB_PMURES_4325_XTAL_PU			13
++#define SSB_PMURES_4325_ALP_AVAIL		14
++#define SSB_PMURES_4325_RX_PWRSW_PU		15
++#define SSB_PMURES_4325_TX_PWRSW_PU		16
++#define SSB_PMURES_4325_RFPLL_PWRSW_PU		17
++#define SSB_PMURES_4325_LOGEN_PWRSW_PU		18
++#define SSB_PMURES_4325_AFE_PWRSW_PU		19
++#define SSB_PMURES_4325_BBPLL_PWRSW_PU		20
++#define SSB_PMURES_4325_HT_AVAIL		21
 +
 +/* BCM4328 PLL resource numbers. */
-+#define SSB_PLLRES_4328_EXT_SWITCHER_PWM	0
-+#define SSB_PLLRES_4328_BB_SWITCHER_PWM		1
-+#define SSB_PLLRES_4328_BB_SWITCHER_BURST	2
-+#define SSB_PLLRES_4328_BB_EXT_SWITCHER_BURST	3
-+#define SSB_PLLRES_4328_ILP_REQUEST		4
-+#define SSB_PLLRES_4328_RADIO_SWITCHER_PWM	5
-+#define SSB_PLLRES_4328_RADIO_SWITCHER_BURST	6
-+#define SSB_PLLRES_4328_ROM_SWITCH		7
-+#define SSB_PLLRES_4328_PA_REF_LDO		8
-+#define SSB_PLLRES_4328_RADIO_LDO		9
-+#define SSB_PLLRES_4328_AFE_LDO			10
-+#define SSB_PLLRES_4328_PLL_LDO			11
-+#define SSB_PLLRES_4328_BG_FILTBYP		12
-+#define SSB_PLLRES_4328_TX_FILTBYP		13
-+#define SSB_PLLRES_4328_RX_FILTBYP		14
-+#define SSB_PLLRES_4328_XTAL_PU			15
-+#define SSB_PLLRES_4328_XTAL_EN			16
-+#define SSB_PLLRES_4328_BB_PLL_FILTBYP		17
-+#define SSB_PLLRES_4328_RF_PLL_FILTBYP		18
-+#define SSB_PLLRES_4328_BB_PLL_PU		19
++#define SSB_PMURES_4328_EXT_SWITCHER_PWM	0
++#define SSB_PMURES_4328_BB_SWITCHER_PWM		1
++#define SSB_PMURES_4328_BB_SWITCHER_BURST	2
++#define SSB_PMURES_4328_BB_EXT_SWITCHER_BURST	3
++#define SSB_PMURES_4328_ILP_REQUEST		4
++#define SSB_PMURES_4328_RADIO_SWITCHER_PWM	5
++#define SSB_PMURES_4328_RADIO_SWITCHER_BURST	6
++#define SSB_PMURES_4328_ROM_SWITCH		7
++#define SSB_PMURES_4328_PA_REF_LDO		8
++#define SSB_PMURES_4328_RADIO_LDO		9
++#define SSB_PMURES_4328_AFE_LDO			10
++#define SSB_PMURES_4328_PLL_LDO			11
++#define SSB_PMURES_4328_BG_FILTBYP		12
++#define SSB_PMURES_4328_TX_FILTBYP		13
++#define SSB_PMURES_4328_RX_FILTBYP		14
++#define SSB_PMURES_4328_XTAL_PU			15
++#define SSB_PMURES_4328_XTAL_EN			16
++#define SSB_PMURES_4328_BB_PLL_FILTBYP		17
++#define SSB_PMURES_4328_RF_PLL_FILTBYP		18
++#define SSB_PMURES_4328_BB_PLL_PU		19
 +
 +/* BCM5354 PLL resource numbers. */
-+#define SSB_PLLRES_5354_EXT_SWITCHER_PWM	0
-+#define SSB_PLLRES_5354_BB_SWITCHER_PWM		1
-+#define SSB_PLLRES_5354_BB_SWITCHER_BURST	2
-+#define SSB_PLLRES_5354_BB_EXT_SWITCHER_BURST	3
-+#define SSB_PLLRES_5354_ILP_REQUEST		4
-+#define SSB_PLLRES_5354_RADIO_SWITCHER_PWM	5
-+#define SSB_PLLRES_5354_RADIO_SWITCHER_BURST	6
-+#define SSB_PLLRES_5354_ROM_SWITCH		7
-+#define SSB_PLLRES_5354_PA_REF_LDO		8
-+#define SSB_PLLRES_5354_RADIO_LDO		9
-+#define SSB_PLLRES_5354_AFE_LDO			10
-+#define SSB_PLLRES_5354_PLL_LDO			11
-+#define SSB_PLLRES_5354_BG_FILTBYP		12
-+#define SSB_PLLRES_5354_TX_FILTBYP		13
-+#define SSB_PLLRES_5354_RX_FILTBYP		14
-+#define SSB_PLLRES_5354_XTAL_PU			15
-+#define SSB_PLLRES_5354_XTAL_EN			16
-+#define SSB_PLLRES_5354_BB_PLL_FILTBYP		17
-+#define SSB_PLLRES_5354_RF_PLL_FILTBYP		18
-+#define SSB_PLLRES_5354_BB_PLL_PU		19
++#define SSB_PMURES_5354_EXT_SWITCHER_PWM	0
++#define SSB_PMURES_5354_BB_SWITCHER_PWM		1
++#define SSB_PMURES_5354_BB_SWITCHER_BURST	2
++#define SSB_PMURES_5354_BB_EXT_SWITCHER_BURST	3
++#define SSB_PMURES_5354_ILP_REQUEST		4
++#define SSB_PMURES_5354_RADIO_SWITCHER_PWM	5
++#define SSB_PMURES_5354_RADIO_SWITCHER_BURST	6
++#define SSB_PMURES_5354_ROM_SWITCH		7
++#define SSB_PMURES_5354_PA_REF_LDO		8
++#define SSB_PMURES_5354_RADIO_LDO		9
++#define SSB_PMURES_5354_AFE_LDO			10
++#define SSB_PMURES_5354_PLL_LDO			11
++#define SSB_PMURES_5354_BG_FILTBYP		12
++#define SSB_PMURES_5354_TX_FILTBYP		13
++#define SSB_PMURES_5354_RX_FILTBYP		14
++#define SSB_PMURES_5354_XTAL_PU			15
++#define SSB_PMURES_5354_XTAL_EN			16
++#define SSB_PMURES_5354_BB_PLL_FILTBYP		17
++#define SSB_PMURES_5354_RF_PLL_FILTBYP		18
++#define SSB_PMURES_5354_BB_PLL_PU		19
 +
 +
 +
