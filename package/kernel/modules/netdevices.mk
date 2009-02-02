@@ -8,6 +8,20 @@
 
 NETWORK_DEVICES_MENU:=Network Devices
 
+define KernelPackage/libphy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=PHY library
+  KCONFIG:=CONFIG_PHYLIB
+  FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,libphy)
+endef
+
+define KernelPackage/libphy/description
+  PHY library
+endef
+
+$(eval $(call KernelPackage,libphy))
+
 define KernelPackage/natsemi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=National Semiconductor DP8381x series
@@ -251,13 +265,9 @@ define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
   FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_TIGON3
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 +LINUX_2_6_27:kmod-libphy +LINUX_2_6_28:kmod-libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   AUTOLOAD:=$(call AutoLoad,50,tg3)
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.27)),1)
-  FILES+=$(LINUX_DIR)/drivers/net/phy/libphy.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,libphy tg3)
-endif
 endef
 
 define KernelPackage/tg3/description
