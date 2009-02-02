@@ -13,11 +13,25 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/platform.h>
+
+#define MZK_W04NU_GPIO_LED_USB		0
+#define MZK_W04NU_GPIO_LED_STATUS	1
+#define MZK_W04NU_GPIO_LED_WPS		3
+#define MZK_W04NU_GPIO_LED_WLAN		6
+#define MZK_W04NU_GPIO_LED_AP		15
+#define MZK_W04NU_GPIO_LED_ROUTER	16
+
+#define MZK_W04NU_GPIO_BTN_APROUTER	5
+#define MZK_W04NU_GPIO_BTN_WPS		12
+#define MZK_W04NU_GPIO_BTN_RESET	21
+
+#define MZK_W04NU_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition mzk_w04nu_partitions[] = {
@@ -68,6 +82,59 @@ static struct spi_board_info mzk_w04nu_spi_info[] = {
 	}
 };
 
+static struct gpio_led mzk_w04nu_leds_gpio[] __initdata = {
+	{
+		.name		= "mzk-w04nu:green:status",
+		.gpio		= MZK_W04NU_GPIO_LED_STATUS,
+		.active_low	= 1,
+	}, {
+		.name		= "mzk-w04nu:blue:wps",
+		.gpio		= MZK_W04NU_GPIO_LED_WPS,
+		.active_low	= 1,
+	}, {
+		.name		= "mzk-w04nu:green:wlan",
+		.gpio		= MZK_W04NU_GPIO_LED_WLAN,
+		.active_low	= 1,
+	}, {
+		.name		= "mzk-w04nu:green:usb",
+		.gpio		= MZK_W04NU_GPIO_LED_USB,
+		.active_low	= 1,
+	}, {
+		.name		= "mzk-w04nu:green:ap",
+		.gpio		= MZK_W04NU_GPIO_LED_AP,
+		.active_low	= 1,
+	}, {
+		.name		= "mzk-w04nu:green:router",
+		.gpio		= MZK_W04NU_GPIO_LED_ROUTER,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_button mzk_w04nu_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= MZK_W04NU_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= MZK_W04NU_GPIO_BTN_WPS,
+		.active_low	= 1,
+	}, {
+		.desc		= "aprouter",
+		.type		= EV_KEY,
+		.code		= BTN_2,
+		.threshold	= 5,
+		.gpio		= MZK_W04NU_GPIO_BTN_APROUTER,
+		.active_low	= 0,
+	}
+};
+
 static void __init mzk_w04nu_setup(void)
 {
 	ar71xx_add_device_mdio(0x0);
@@ -86,6 +153,12 @@ static void __init mzk_w04nu_setup(void)
 	ar71xx_add_device_spi(NULL, mzk_w04nu_spi_info,
 					ARRAY_SIZE(mzk_w04nu_spi_info));
 
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(mzk_w04nu_leds_gpio),
+					mzk_w04nu_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, MZK_W04NU_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(mzk_w04nu_gpio_buttons),
+					mzk_w04nu_gpio_buttons);
 	ar71xx_add_device_usb();
 
 	ar91xx_add_device_wmac();
