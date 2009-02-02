@@ -131,10 +131,11 @@ endef
 $(eval $(call KernelPackage,ata-via-sata))
 
 
+# XXX: broken on 2.6.28 due to module name/path changes
 define KernelPackage/ide-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=IDE (ATA/ATAPI) device support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT @LINUX_2_6_28:BROKEN
   KCONFIG:= \
 	CONFIG_IDE \
 	CONFIG_IDE_GENERIC \
