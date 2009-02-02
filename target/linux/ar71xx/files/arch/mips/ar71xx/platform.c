@@ -595,6 +595,10 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 	t = sscanf(mac_str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
 			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
 
+	if (t != ETH_ALEN)
+		t = sscanf(mac_str, "%02hhx.%02hhx.%02hhx.%02hhx.%02hhx.%02hhx",
+			&tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4], &tmp[5]);
+
 	if (t == ETH_ALEN)
 		ar71xx_set_mac_base(tmp);
 	else
