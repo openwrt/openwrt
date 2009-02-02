@@ -12,10 +12,17 @@
 #include "cellvision.h"
 
 static struct adm5120_pci_irq nfs101_pci_irqs[] __initdata = {
-	/* FIXME: not tested */
+	/* miniPCI slot */
 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
+
+	/* ALi USB controller */
 	PCIIRQ(3, 0, 2, ADM5120_IRQ_PCI2),
-	PCIIRQ(3, 3, 1, ADM5120_IRQ_PCI1)
+	PCIIRQ(3, 3, 1, ADM5120_IRQ_PCI1),
+
+	/* NEC USB controller */
+	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI1),
+	PCIIRQ(3, 1, 2, ADM5120_IRQ_PCI2),
+	PCIIRQ(3, 2, 3, ADM5120_IRQ_PCI2),
 };
 
 static u8 nfs101_vlans[6] __initdata = {
