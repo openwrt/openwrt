@@ -1,0 +1,17 @@
+--- a/gcc/config/i386/linux.h
++++ b/gcc/config/i386/linux.h
+@@ -218,6 +218,8 @@ Boston, MA 02111-1307, USA.  */
+ /* Do code reading to identify a signal frame, and set the frame
+    state data appropriately.  See unwind-dw2.c for the structs.  */
+ 
++#ifndef inhibit_libc
++
+ #ifdef IN_LIBGCC2
+ /* There's no sys/ucontext.h for some (all?) libc1, so no
+    signal-turned-exceptions for them.  There's also no configure-run for
+@@ -282,3 +284,5 @@ Boston, MA 02111-1307, USA.  */
+   } while (0)
+ #endif /* not USE_GNULIBC_1 */
+ #endif /* IN_LIBGCC2 */
++
++#endif /* !inhibit_libc */
