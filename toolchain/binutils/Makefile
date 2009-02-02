@@ -34,6 +34,12 @@ include $(INCLUDE_DIR)/host-build.mk
 
 EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX))
 
+ifneq ($(CONFIG_SSP_SUPPORT),)
+	LIB_SSP:=--enable-libssp
+else
+	LIB_SSP:=--disable-libssp
+endif
+
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
@@ -51,6 +57,7 @@ define Build/Configure
 		--disable-multilib \
 		--disable-werror \
 		--disable-nls \
+		$(LIB_SSP) \
 		$(EXTRA_TARGET) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) \
