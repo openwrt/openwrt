@@ -13,8 +13,8 @@ Index: linux-2.6.28.2/drivers/ssb/Makefile
 Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-01 21:16:15.000000000 +0100
-@@ -0,0 +1,378 @@
++++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-02 20:57:13.000000000 +0100
+@@ -0,0 +1,481 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom ChipCommon Power Management Unit driver
@@ -176,11 +176,116 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +	chipco_write32(cc, SSB_CHIPCO_PMU_CTL, pmuctl);
 +}
 +
++struct pmu1_plltab_entry {
++	u16 freq;	/* Crystal frequency in kHz.*/
++	u8 xf;		/* Crystal frequency value for PMU control */
++	u8 ndiv_int;
++	u32 ndiv_frac;
++	u8 p1div;
++	u8 p2div;
++};
++
++static const struct pmu1_plltab_entry pmu1_plltab[] = {
++	{ .freq = 12000, .xf =  1, .p1div = 3, .p2div = 22, .ndiv_int =  0x9, .ndiv_frac = 0xFFFFEF, },
++	{ .freq = 13000, .xf =  2, .p1div = 1, .p2div =  6, .ndiv_int =  0xb, .ndiv_frac = 0x483483, },
++	{ .freq = 14400, .xf =  3, .p1div = 1, .p2div = 10, .ndiv_int =  0xa, .ndiv_frac = 0x1C71C7, },
++	{ .freq = 15360, .xf =  4, .p1div = 1, .p2div =  5, .ndiv_int =  0xb, .ndiv_frac = 0x755555, },
++	{ .freq = 16200, .xf =  5, .p1div = 1, .p2div = 10, .ndiv_int =  0x5, .ndiv_frac = 0x6E9E06, },
++	{ .freq = 16800, .xf =  6, .p1div = 1, .p2div = 10, .ndiv_int =  0x5, .ndiv_frac = 0x3CF3CF, },
++	{ .freq = 19200, .xf =  7, .p1div = 1, .p2div =  9, .ndiv_int =  0x5, .ndiv_frac = 0x17B425, },
++	{ .freq = 19800, .xf =  8, .p1div = 1, .p2div = 11, .ndiv_int =  0x4, .ndiv_frac = 0xA57EB,  },
++	{ .freq = 20000, .xf =  9, .p1div = 1, .p2div = 11, .ndiv_int =  0x4, .ndiv_frac = 0,        },
++	{ .freq = 24000, .xf = 10, .p1div = 3, .p2div = 11, .ndiv_int =  0xa, .ndiv_frac = 0,        },
++	{ .freq = 25000, .xf = 11, .p1div = 5, .p2div = 16, .ndiv_int =  0xb, .ndiv_frac = 0,        },
++	{ .freq = 26000, .xf = 12, .p1div = 1, .p2div =  2, .ndiv_int = 0x10, .ndiv_frac = 0xEC4EC4, },
++	{ .freq = 30000, .xf = 13, .p1div = 3, .p2div =  8, .ndiv_int =  0xb, .ndiv_frac = 0,        },
++	{ .freq = 38400, .xf = 14, .p1div = 1, .p2div =  5, .ndiv_int =  0x4, .ndiv_frac = 0x955555, },
++	{ .freq = 40000, .xf = 15, .p1div = 1, .p2div =  2, .ndiv_int =  0xb, .ndiv_frac = 0,        },
++};
++
++#define SSB_PMU1_DEFAULT_XTALFREQ	15360
++
++static const struct pmu1_plltab_entry * pmu1_plltab_find_entry(u32 crystalfreq)
++{
++	const struct pmu1_plltab_entry *e;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(pmu1_plltab); i++) {
++		e = &pmu1_plltab[i];
++		if (e->freq == crystalfreq)
++			return e;
++	}
++
++	return NULL;
++}
++
 +/* Tune the PLL to the crystal speed. crystalfreq is in kHz. */
 +static void ssb_pmu1_pllinit_r0(struct ssb_chipcommon *cc,
 +				u32 crystalfreq)
 +{
-+	WARN_ON(1);
++	struct ssb_bus *bus = cc->dev->bus;
++	const struct pmu1_plltab_entry *e = NULL;
++	u32 buffer_strength = 0;
++	u32 tmp, pllctl, pmuctl;
++	unsigned int i;
++
++	if (bus->chip_id == 0x4312) {
++		/* We do not touch the BCM4312 PLL and assume
++		 * the default crystal settings work out-of-the-box. */
++		cc->pmu.crystalfreq = 20000;
++		return;
++	}
++
++	if (crystalfreq)
++		e = pmu1_plltab_find_entry(crystalfreq);
++	if (!e)
++		e = pmu1_plltab_find_entry(SSB_PMU1_DEFAULT_XTALFREQ);
++	BUG_ON(!e);
++	crystalfreq = e->freq;
++	cc->pmu.crystalfreq = e->freq;
++
++	/* Check if the PLL already is programmed to this frequency. */
++	pmuctl = chipco_read32(cc, SSB_CHIPCO_PMU_CTL);
++	if (((pmuctl & SSB_CHIPCO_PMU_CTL_XTALFREQ) >> SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT) == e->xf) {
++		/* We're already there... */
++		return;
++	}
++
++	ssb_printk(KERN_INFO PFX "Programming PLL to %u.%03u MHz\n",
++		   (crystalfreq / 1000), (crystalfreq % 1000));
++
++WARN_ON(1); //TODO not fully implemented, yet.
++return;
++	/* First turn the PLL off. */
++	switch (bus->chip_id) {
++	case 0x4325:
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
++			      ~((1 << SSB_PLLRES_4325_BBPLL_PWRSW_PU) |
++			        (1 << SSB_PLLRES_4325_HT_AVAIL)));
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
++			      ~((1 << SSB_PLLRES_4325_BBPLL_PWRSW_PU) |
++			        (1 << SSB_PLLRES_4325_HT_AVAIL)));
++		/* Adjust the BBPLL to 2 on all channels later. */
++		buffer_strength = 0x222222;
++		break;
++	default:
++		SSB_WARN_ON(1);
++	}
++	for (i = 1500; i; i--) {
++		tmp = chipco_read32(cc, SSB_CHIPCO_CLKCTLST);
++		if (!(tmp & SSB_CHIPCO_CLKCTLST_HAVEHT))
++			break;
++		udelay(10);
++	}
++	tmp = chipco_read32(cc, SSB_CHIPCO_CLKCTLST);
++	if (tmp & SSB_CHIPCO_CLKCTLST_HAVEHT)
++		ssb_printk(KERN_EMERG PFX "Failed to turn the PLL off!\n");
++
++	/* Set p1div and p2div. */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL0);
++	//TODO
++	ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL0, pllctl);
++
 +	//TODO
 +}
 +
@@ -369,8 +474,6 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +{
 +	struct ssb_bus *bus = cc->dev->bus;
 +	u32 pmucap;
-+
-+if (bus->chip_id != 0x5354) return; //FIXME currently only 5354 code implemented.
 +
 +	if (!(cc->capabilities & SSB_CHIPCO_CAP_PMU))
 +		return;
