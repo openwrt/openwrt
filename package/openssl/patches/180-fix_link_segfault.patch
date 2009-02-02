@@ -1,0 +1,18 @@
+--- a/Makefile.shared
++++ b/Makefile.shared
+@@ -93,7 +93,6 @@ LINK_APP=	\
+     LDCMD="$${LDCMD:-$(CC)}"; LDFLAGS="$${LDFLAGS:-$(CFLAGS)}"; \
+     LIBPATH=`for x in $$LIBDEPS; do if echo $$x | grep '^ *-L' > /dev/null 2>&1; then echo $$x | sed -e 's/^ *-L//'; fi; done | uniq`; \
+     LIBPATH=`echo $$LIBPATH | sed -e 's/ /:/g'`; \
+-    LD_LIBRARY_PATH=$$LIBPATH:$$LD_LIBRARY_PATH \
+     $${LDCMD} $${LDFLAGS} -o $${APPNAME:=$(APPNAME)} $(OBJECTS) $${LIBDEPS} )
+ 
+ LINK_SO=	\
+@@ -103,7 +102,6 @@ LINK_SO=	\
+     SHAREDFLAGS="$${SHAREDFLAGS:-$(CFLAGS) $(SHARED_LDFLAGS)}"; \
+     LIBPATH=`for x in $$LIBDEPS; do if echo $$x | grep '^ *-L' > /dev/null 2>&1; then echo $$x | sed -e 's/^ *-L//'; fi; done | uniq`; \
+     LIBPATH=`echo $$LIBPATH | sed -e 's/ /:/g'`; \
+-    LD_LIBRARY_PATH=$$LIBPATH:$$LD_LIBRARY_PATH \
+     $${SHAREDCMD} $${SHAREDFLAGS} \
+ 	-o $$SHLIB$$SHLIB_SOVER$$SHLIB_SUFFIX \
+ 	$$ALLSYMSFLAGS $$SHOBJECTS $$NOALLSYMSFLAGS $$LIBDEPS \
