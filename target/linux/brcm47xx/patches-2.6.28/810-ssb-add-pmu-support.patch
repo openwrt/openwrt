@@ -1,3 +1,11 @@
+Sent to mainline on 2009 Feb 03.
+
+For further modifications, please use separate patch files. This simpifies
+keeping track of what is upstream and what is not. Thanks.
+
+--mb
+
+
 Index: linux-2.6.28.2/drivers/ssb/Makefile
 ===================================================================
 --- linux-2.6.28.2.orig/drivers/ssb/Makefile	2009-02-01 13:09:04.000000000 +0100
@@ -13,8 +21,8 @@ Index: linux-2.6.28.2/drivers/ssb/Makefile
 Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-02 20:59:48.000000000 +0100
-@@ -0,0 +1,481 @@
++++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-03 19:07:23.000000000 +0100
+@@ -0,0 +1,508 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom ChipCommon Power Management Unit driver
@@ -254,17 +262,15 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +	ssb_printk(KERN_INFO PFX "Programming PLL to %u.%03u MHz\n",
 +		   (crystalfreq / 1000), (crystalfreq % 1000));
 +
-+WARN_ON(1); //TODO not fully implemented, yet.
-+return;
 +	/* First turn the PLL off. */
 +	switch (bus->chip_id) {
 +	case 0x4325:
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
 +			      ~((1 << SSB_PMURES_4325_BBPLL_PWRSW_PU) |
-+			        (1 << SSB_PMURES_4325_HT_AVAIL)));
++				(1 << SSB_PMURES_4325_HT_AVAIL)));
 +		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
 +			      ~((1 << SSB_PMURES_4325_BBPLL_PWRSW_PU) |
-+			        (1 << SSB_PMURES_4325_HT_AVAIL)));
++				(1 << SSB_PMURES_4325_HT_AVAIL)));
 +		/* Adjust the BBPLL to 2 on all channels later. */
 +		buffer_strength = 0x222222;
 +		break;
@@ -283,10 +289,39 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +
 +	/* Set p1div and p2div. */
 +	pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL0);
-+	//TODO
++	pllctl &= ~(SSB_PMU1_PLLCTL0_P1DIV | SSB_PMU1_PLLCTL0_P2DIV);
++	pllctl |= ((u32)e->p1div << SSB_PMU1_PLLCTL0_P1DIV_SHIFT) & SSB_PMU1_PLLCTL0_P1DIV;
++	pllctl |= ((u32)e->p2div << SSB_PMU1_PLLCTL0_P2DIV_SHIFT) & SSB_PMU1_PLLCTL0_P2DIV;
 +	ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL0, pllctl);
 +
-+	//TODO
++	/* Set ndiv int and ndiv mode */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL2);
++	pllctl &= ~(SSB_PMU1_PLLCTL2_NDIVINT | SSB_PMU1_PLLCTL2_NDIVMODE);
++	pllctl |= ((u32)e->ndiv_int << SSB_PMU1_PLLCTL2_NDIVINT_SHIFT) & SSB_PMU1_PLLCTL2_NDIVINT;
++	pllctl |= (1 << SSB_PMU1_PLLCTL2_NDIVMODE_SHIFT) & SSB_PMU1_PLLCTL2_NDIVMODE;
++	ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL2, pllctl);
++
++	/* Set ndiv frac */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL3);
++	pllctl &= ~SSB_PMU1_PLLCTL3_NDIVFRAC;
++	pllctl |= ((u32)e->ndiv_frac << SSB_PMU1_PLLCTL3_NDIVFRAC_SHIFT) & SSB_PMU1_PLLCTL3_NDIVFRAC;
++	ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL3, pllctl);
++
++	/* Change the drive strength, if required. */
++	if (buffer_strength) {
++		pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL5);
++		pllctl &= ~SSB_PMU1_PLLCTL5_CLKDRV;
++		pllctl |= (buffer_strength << SSB_PMU1_PLLCTL5_CLKDRV_SHIFT) & SSB_PMU1_PLLCTL5_CLKDRV;
++		ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL5, pllctl);
++	}
++
++	/* Tune the crystalfreq and the divisor. */
++	pmuctl = chipco_read32(cc, SSB_CHIPCO_PMU_CTL);
++	pmuctl &= ~(SSB_CHIPCO_PMU_CTL_ILP_DIV | SSB_CHIPCO_PMU_CTL_XTALFREQ);
++	pmuctl |= ((((u32)e->freq + 127) / 128 - 1) << SSB_CHIPCO_PMU_CTL_ILP_DIV_SHIFT)
++			& SSB_CHIPCO_PMU_CTL_ILP_DIV;
++	pmuctl |= ((u32)e->xf << SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT) & SSB_CHIPCO_PMU_CTL_XTALFREQ;
++	chipco_write32(cc, SSB_CHIPCO_PMU_CTL, pmuctl);
 +}
 +
 +static void ssb_pmu_pll_init(struct ssb_chipcommon *cc)
@@ -531,7 +566,7 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon.c
 Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
 ===================================================================
 --- linux-2.6.28.2.orig/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-01 13:22:59.000000000 +0100
-+++ linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-02 21:00:08.000000000 +0100
++++ linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-03 18:43:33.000000000 +0100
 @@ -181,6 +181,16 @@
  #define SSB_CHIPCO_PROG_WAITCNT		0x0124
  #define SSB_CHIPCO_FLASH_CFG		0x0128
@@ -549,7 +584,7 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
  #define SSB_CHIPCO_UART0_DATA		0x0300
  #define SSB_CHIPCO_UART0_IMR		0x0304
  #define SSB_CHIPCO_UART0_FCR		0x0308
-@@ -197,6 +207,172 @@
+@@ -197,6 +207,196 @@
  #define SSB_CHIPCO_UART1_LSR		0x0414
  #define SSB_CHIPCO_UART1_MSR		0x0418
  #define SSB_CHIPCO_UART1_SCRATCH	0x041C
@@ -613,11 +648,35 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
 +
 +/* PMU rev 1 PLL registers */
 +#define SSB_PMU1_PLLCTL0			0
++#define  SSB_PMU1_PLLCTL0_P1DIV			0x00F00000 /* P1 div */
++#define  SSB_PMU1_PLLCTL0_P1DIV_SHIFT		20
++#define  SSB_PMU1_PLLCTL0_P2DIV			0x0F000000 /* P2 div */
++#define  SSB_PMU1_PLLCTL0_P2DIV_SHIFT		24
 +#define SSB_PMU1_PLLCTL1			1
++#define  SSB_PMU1_PLLCTL1_M1DIV			0x000000FF /* M1 div */
++#define  SSB_PMU1_PLLCTL1_M1DIV_SHIFT		0
++#define  SSB_PMU1_PLLCTL1_M2DIV			0x0000FF00 /* M2 div */
++#define  SSB_PMU1_PLLCTL1_M2DIV_SHIFT		8
++#define  SSB_PMU1_PLLCTL1_M3DIV			0x00FF0000 /* M3 div */
++#define  SSB_PMU1_PLLCTL1_M3DIV_SHIFT		16
++#define  SSB_PMU1_PLLCTL1_M4DIV			0xFF000000 /* M4 div */
++#define  SSB_PMU1_PLLCTL1_M4DIV_SHIFT		24
 +#define SSB_PMU1_PLLCTL2			2
++#define  SSB_PMU1_PLLCTL2_M5DIV			0x000000FF /* M5 div */
++#define  SSB_PMU1_PLLCTL2_M5DIV_SHIFT		0
++#define  SSB_PMU1_PLLCTL2_M6DIV			0x0000FF00 /* M6 div */
++#define  SSB_PMU1_PLLCTL2_M6DIV_SHIFT		8
++#define  SSB_PMU1_PLLCTL2_NDIVMODE		0x000E0000 /* NDIV mode */
++#define  SSB_PMU1_PLLCTL2_NDIVMODE_SHIFT	17
++#define  SSB_PMU1_PLLCTL2_NDIVINT		0x1FF00000 /* NDIV int */
++#define  SSB_PMU1_PLLCTL2_NDIVINT_SHIFT		20
 +#define SSB_PMU1_PLLCTL3			3
++#define  SSB_PMU1_PLLCTL3_NDIVFRAC		0x00FFFFFF /* NDIV frac */
++#define  SSB_PMU1_PLLCTL3_NDIVFRAC_SHIFT	0
 +#define SSB_PMU1_PLLCTL4			4
 +#define SSB_PMU1_PLLCTL5			5
++#define  SSB_PMU1_PLLCTL5_CLKDRV		0xFFFFFF00 /* clk drv */
++#define  SSB_PMU1_PLLCTL5_CLKDRV_SHIFT		8
 +
 +/* BCM4312 PLL resource numbers. */
 +#define SSB_PMURES_4312_SWITCHER_BURST		0
@@ -722,7 +781,7 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
  
  
  
-@@ -353,11 +529,20 @@
+@@ -353,11 +553,20 @@
  struct ssb_device;
  struct ssb_serial_port;
  
@@ -743,7 +802,7 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
  };
  
  static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
-@@ -365,6 +550,17 @@ static inline bool ssb_chipco_available(
+@@ -365,6 +574,17 @@ static inline bool ssb_chipco_available(
  	return (cc->dev != NULL);
  }
  
@@ -761,7 +820,7 @@ Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
  extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
  
  extern void ssb_chipco_suspend(struct ssb_chipcommon *cc);
-@@ -406,4 +602,8 @@ extern int ssb_chipco_serial_init(struct
+@@ -406,4 +626,8 @@ extern int ssb_chipco_serial_init(struct
  				  struct ssb_serial_port *ports);
  #endif /* CONFIG_SSB_SERIAL */
  
