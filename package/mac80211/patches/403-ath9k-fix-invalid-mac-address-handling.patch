@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath9k/hw.c
 +++ b/drivers/net/wireless/ath9k/hw.c
-@@ -499,11 +499,18 @@ static int ath9k_hw_init_macaddr(struct 
+@@ -500,11 +500,18 @@ static int ath9k_hw_init_macaddr(struct 
  		ahp->ah_macaddr[2 * i] = eeval >> 8;
  		ahp->ah_macaddr[2 * i + 1] = eeval & 0xff;
  	}
