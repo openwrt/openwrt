@@ -115,9 +115,15 @@ static __init char *ar71xx_prom_getenv(const char *envname)
 	if (!is_valid_ram_addr(ar71xx_prom_envp))
 		return NULL;
 
-	for (env = ar71xx_prom_envp; is_valid_ram_addr(*env); env++)
+	for (env = ar71xx_prom_envp; is_valid_ram_addr(*env); env++) {
 		if (strncmp(envname, *env, len) == 0 && (*env)[len] == '=')
 			return *env + len + 1;
+
+		/* RedBoot env comes in pointer pairs - key, value */
+		if (strncmp(envname, *env, len) == 0 && (*env)[len] == 0)
+			if (is_valid_ram_addr(*(++env)))
+				return *env;
+	}
 
 	return NULL;
 }
