@@ -73,18 +73,31 @@ static struct board_rec boards[] __initdata = {
 	}
 };
 
+static inline int is_valid_ram_addr(void *addr)
+{
+	if (((u32) addr > KSEG0) &&
+	    ((u32) addr < (KSEG0 + AR71XX_MEM_SIZE_MAX)))
+		return 1;
+
+	if (((u32) addr > KSEG1) &&
+	    ((u32) addr < (KSEG1 + AR71XX_MEM_SIZE_MAX)))
+		return 1;
+
+	return 0;
+}
+
 static __init char *ar71xx_prom_getargv(const char *name)
 {
 	int len = strlen(name);
 	int i;
 
-	if (!ar71xx_prom_argv)
+	if (!is_valid_ram_addr(ar71xx_prom_argv))
 		return NULL;
 
 	for (i = 0; i < ar71xx_prom_argc; i++) {
 		char *argv = ar71xx_prom_argv[i];
 
-		if (!argv)
+		if (!is_valid_ram_addr(argv))
 			continue;
 
 		if (strncmp(name, argv, len) == 0 && (argv)[len] == '=')
@@ -99,10 +112,10 @@ static __init char *ar71xx_prom_getenv(const char *envname)
 	int len = strlen(envname);
 	char **env;
 
-	if (!ar71xx_prom_envp)
+	if (!is_valid_ram_addr(ar71xx_prom_envp))
 		return NULL;
 
-	for (env = ar71xx_prom_envp; *env != NULL; env++)
+	for (env = ar71xx_prom_envp; is_valid_ram_addr(*env); env++)
 		if (strncmp(envname, *env, len) == 0 && (*env)[len] == '=')
 			return *env + len + 1;
 
