@@ -1,0 +1,22 @@
+--- a/configure
++++ b/configure
+@@ -2313,7 +2313,7 @@ case "${target}" in
+     noconfigdirs="$noconfigdirs target-libffi target-qthreads"
+     libgloss_dir=arm
+     ;;
+-  arm*-*-linux-gnueabi)
++  arm*-*-linux-*gnueabi)
+     noconfigdirs="$noconfigdirs target-qthreads"
+     case ${with_newlib} in
+       no) noconfigdirs="$noconfigdirs target-newlib target-libgloss"
+--- a/configure.ac
++++ b/configure.ac
+@@ -562,7 +562,7 @@ case "${target}" in
+     noconfigdirs="$noconfigdirs target-libffi target-qthreads"
+     libgloss_dir=arm
+     ;;
+-  arm*-*-linux-gnueabi)
++  arm*-*-linux-*gnueabi)
+     noconfigdirs="$noconfigdirs target-qthreads"
+     case ${with_newlib} in
+       no) noconfigdirs="$noconfigdirs target-newlib target-libgloss"
