@@ -19,7 +19,8 @@ system_config() {
 
 	config_get log_ip "$cfg" log_ip 
 	config_get log_size "$cfg" log_size
-	syslogd -C${log_size:-16} ${log_ip:+-L -R $log_ip}
+	config_get log_port "$cfg" log_port
+	syslogd -C${log_size:-16} ${log_ip:+-L -R $log_ip${log_port:+:$log_port}}
 	klogd
 }
 
