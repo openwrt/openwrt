@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx SoC specific setup
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  Parts of this file are based on Atheros' 2.6.15 BSP
@@ -32,9 +32,6 @@
 #define AR71XX_SYS_TYPE_LEN	64
 #define AR71XX_BASE_FREQ	40000000
 #define AR91XX_BASE_FREQ	5000000
-
-#define AR71XX_MEM_SIZE_MIN	0x0200000
-#define AR71XX_MEM_SIZE_MAX	0x8000000
 
 unsigned long ar71xx_mach_type;
 
