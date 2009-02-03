@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -50,8 +50,6 @@ ifeq ($(PKG_VERSION_SNAPSHOT),y)
   CONFIG_DIR:=./config
   PKG_MD5SUM:=
 endif
-
-PKG_CAT:=bzcat
 
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)

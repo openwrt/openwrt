@@ -35,12 +35,30 @@ override CONFIG_AUTOREBUILD=
 
 include $(INCLUDE_DIR)/host-build.mk
 
-EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX))
+BINUTILS_CONFIGURE:= \
+	./configure \
+		--prefix=$(TOOLCHAIN_DIR)/usr \
+		--build=$(GNU_HOST_NAME) \
+		--host=$(GNU_HOST_NAME) \
+		--target=$(REAL_GNU_TARGET_NAME) \
+		--with-sysroot=$(TOOLCHAIN_DIR) \
+		--disable-multilib \
+		--disable-werror \
+		--disable-nls \
+		$(SOFT_FLOAT_CONFIG_OPTION) \
+		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) \
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
-	LIB_SSP:=--enable-libssp
+  BINUTILS_CONFIGURE+= \
+		--enable-libssp
 else
-	LIB_SSP:=--disable-libssp
+  BINUTILS_CONFIGURE+= \
+		--disable-libssp
+endif
+
+ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
+  BINUTILS_CONFIGURE+= \
+		--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX)
 endif
 
 define Build/Prepare
@@ -51,19 +69,7 @@ endef
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
-		./configure \
-		--prefix=$(TOOLCHAIN_DIR)/usr \
-		--build=$(GNU_HOST_NAME) \
-		--host=$(GNU_HOST_NAME) \
-		--target=$(REAL_GNU_TARGET_NAME) \
-		--with-sysroot=$(TOOLCHAIN_DIR) \
-		--disable-multilib \
-		--disable-werror \
-		--disable-nls \
-		$(LIB_SSP) \
-		$(EXTRA_TARGET) \
-		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) \
+		$(BINUTILS_CONFIGURE) \
 	);
 endef
 

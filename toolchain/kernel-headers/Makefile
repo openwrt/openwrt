@@ -32,6 +32,10 @@ ifeq ($(strip $(BOARD)),uml)
   LINUX_KARCH:=$(ARCH)
 endif
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.18)),1)
+  LINUX_HAS_HEADERS_INSTALL:=y
+endif
+
 KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
 	ARCH=$(LINUX_KARCH) \
 	KBUILD_HAVE_NLS=no \
@@ -50,7 +54,7 @@ define Build/Prepare/pre/powerpc
 	fi
 endef
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.18)),1)
+ifneq ($(LINUX_HAS_HEADERS_INSTALL),)
   define Build/Prepare/all
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr
 	$(KMAKE) \

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,6 +14,7 @@ PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REVISION)
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)-r$(PKG_REVISION)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
+
 ifeq ($(PKG_VERSION),2.6.1)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_6
 endif
@@ -65,9 +66,11 @@ EGLIBC_CONFIGURE:= \
 		--enable-add-ons \
 
 ifeq ($(CONFIG_SOFT_FLOAT),)
-  EGLIBC_CONFIGURE+= --with-fp
+  EGLIBC_CONFIGURE+= \
+	--with-fp
 else
-  EGLIBC_CONFIGURE+= --without-fp
+  EGLIBC_CONFIGURE+= \
+	--without-fp
 endif
 
 EGLIBC_MAKE:= \
