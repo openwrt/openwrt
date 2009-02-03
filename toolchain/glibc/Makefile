@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -21,7 +21,6 @@ endif
 
 PKG_SOURCE_URL:=@GNU/glibc/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_CAT:=bzcat
 
 PATCH_DIR:=./patches/$(PKG_VERSION)
 
@@ -51,7 +50,7 @@ endif
 # http://sourceware.org/bugzilla/show_bug.cgi?id=5203
 GLIBC_CFLAGS:=$(subst -Os,-O2,$(TARGET_CFLAGS))
 
-GLIBC_CONFIGURE_COMMON:= \
+GLIBC_CONFIGURE:= \
 	BUILD_CC="$(HOSTCC)" \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(GLIBC_CFLAGS)" \
@@ -70,20 +69,20 @@ GLIBC_CONFIGURE_COMMON:= \
 		--without-cvs \
 
 ifeq ($(CONFIG_SOFT_FLOAT),)
-  GLIBC_CONFIGURE_COMMON+= \
+  GLIBC_CONFIGURE+= \
 		--with-fp
 else
-  GLIBC_CONFIGURE_COMMON+= \
+  GLIBC_CONFIGURE+= \
 		--without-fp
 endif
 
 GLIBC_CONFIGURE_STAGE1:= \
-	$(GLIBC_CONFIGURE_COMMON) \
+	$(GLIBC_CONFIGURE) \
 		--disable-sanity-checks \
 		--enable-hacker-mode \
 	
 GLIBC_CONFIGURE_STAGE2:= \
-	$(GLIBC_CONFIGURE_COMMON) \
+	$(GLIBC_CONFIGURE) \
 
 GLIBC_MAKE:= \
 	$(MAKE) \

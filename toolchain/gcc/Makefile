@@ -63,7 +63,7 @@ PKG_BUILD_DIR2:=$(PKG_BUILD_DIR)-final
 SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
-GCC_CONFIGURE_COMMON:= \
+GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
 	$(PKG_BUILD_DIR)/configure \
 		--prefix=$(TOOLCHAIN_DIR)/usr \
@@ -80,37 +80,37 @@ GCC_CONFIGURE_COMMON:= \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 
 ifneq ($(CONFIG_GCC_VERSION_4_3),)
-	GCC_BUILD_TARGET_LIBGCC:=y
-	GCC_CONFIGURE_COMMON+= \
+  GCC_BUILD_TARGET_LIBGCC:=y
+  GCC_CONFIGURE+= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--disable-decimal-float
 endif
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
-	GCC_CONFIGURE_COMMON+= \
+  GCC_CONFIGURE+= \
 		--enable-libssp
 else
-	GCC_CONFIGURE_COMMON+= \
+  GCC_CONFIGURE+= \
 		--disable-libssp
 endif
 
 ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
-	GCC_CONFIGURE_COMMON+= \
+  GCC_CONFIGURE+= \
 		--enable-biarch \
 		--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX)
 endif
 
 ifeq ($(LIBC),uClibc)
-	GCC_CONFIGURE_COMMON+= \
+  GCC_CONFIGURE+= \
 		--disable-__cxa_atexit
 else
-	GCC_CONFIGURE_COMMON+= \
+  GCC_CONFIGURE+= \
 		--enable-__cxa_atexit
 endif
 
 GCC_CONFIGURE_STAGE0:= \
-	$(GCC_CONFIGURE_COMMON) \
+	$(GCC_CONFIGURE) \
 		--with-newlib \
 		--without-headers \
 		--enable-languages=c \
@@ -119,7 +119,7 @@ GCC_CONFIGURE_STAGE0:= \
 		--disable-threads \
 
 GCC_CONFIGURE_STAGE1:= \
-	$(GCC_CONFIGURE_COMMON) \
+	$(GCC_CONFIGURE) \
 		--with-newlib \
 		--with-sysroot=$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev \
 		--enable-languages=c \
@@ -127,7 +127,7 @@ GCC_CONFIGURE_STAGE1:= \
 		--disable-threads \
 
 GCC_CONFIGURE_STAGE2:= \
-	$(GCC_CONFIGURE_COMMON) \
+	$(GCC_CONFIGURE) \
 		--enable-languages=$(TARGET_LANGUAGES) \
 		--enable-shared \
 		--enable-threads \
