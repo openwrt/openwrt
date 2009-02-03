@@ -29,6 +29,10 @@ define Package/dnsmasq/description
  It is intended to provide coupled DNS and DHCP service to a LAN.
 endef
 
+define Package/dnsmasq/conffiles
+/etc/config/dhcp
+endef
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
