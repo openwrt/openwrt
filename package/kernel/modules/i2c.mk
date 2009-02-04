@@ -79,7 +79,7 @@ $(eval $(call KernelPackage,i2c-algo-pcf))
 define KernelPackage/i2c-gpio
   SUBMENU:=$(I2C_MENU)
   TITLE:=GPIO-based bitbanging I2C
-  DEPENDS:=@GPIO_SUPPORT kmod-i2c-core +kmod-i2c-algo-bit
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-algo-bit
   KCONFIG:=CONFIG_I2C_GPIO
   FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,59,i2c-gpio)
@@ -96,7 +96,7 @@ $(eval $(call KernelPackage,i2c-gpio))
 define KernelPackage/i2c-scx200
   SUBMENU:=$(I2C_MENU)
   TITLE:=Geode SCx200 I2C using GPIO pins
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 kmod-i2c-core +kmod-i2c-algo-bit
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-algo-bit
   KCONFIG:=CONFIG_SCx200_I2C
   FILES:=$(LINUX_DIR)/drivers/i2c/busses/scx200_i2c.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,59,scx200_i2c)
@@ -112,7 +112,7 @@ $(eval $(call KernelPackage,i2c-scx200))
 define KernelPackage/i2c-scx200-acb
   SUBMENU:=$(I2C_MENU)
   TITLE:=Geode SCx200 ACCESS.bus support
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 kmod-i2c-core +kmod-i2c-algo-bit
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-algo-bit
   KCONFIG:=CONFIG_SCx200_ACB
   FILES:=$(LINUX_DIR)/drivers/i2c/busses/scx200_acb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,59,scx200_acb)
