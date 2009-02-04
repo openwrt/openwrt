@@ -34,9 +34,6 @@
 typedef struct fw_layout_data {
 	char		name[PATH_MAX];
 	u_int32_t	kern_start;
-	u_int32_t	kern_len;
-	u_int32_t	root_start;
-	u_int32_t	root_len;
 	u_int32_t	kern_entry;
 	u_int32_t	firmware_max_length;
 } fw_layout_t;
@@ -45,29 +42,20 @@ fw_layout_t fw_layout_data[] = {
 	{
 		.name		=	"XS2",
 		.kern_start	=	0xbfc30000,
-		.kern_len	=	0x00140000,
-		.root_start	=	0xbfc30000 + 0x00140000,
-		.root_len	=	0x002C0000,
 		.kern_entry	=	0x80041000,
 		.firmware_max_length=	0x00390000,
 	},
 	{
 		.name		=	"XS5",
 		.kern_start	=	0xbe030000,
-		.kern_len	=	0x00140000,
-		.root_start	=	0xbe030000 + 0x00140000,
-		.root_len	=	0x002C0000,
 		.kern_entry	=	0x80041000,
 		.firmware_max_length=	0x00390000,
 	},
 	{
 		.name		=	"RS",
-		.kern_start	=	0x00000000,
-		.kern_len	=	0x00140000,
-		.root_start	=	0x00000000,
-		.root_len	=	0x002C0000,
+		.kern_start	=	0xbf030000,
 		.kern_entry	=	0x80060000,
-		.firmware_max_length=	0x00140000 + 0x002C0000,
+		.firmware_max_length=	0x00640000,
 	},
 	{	.name		=	"",
 	},
