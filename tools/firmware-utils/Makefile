@@ -14,6 +14,10 @@ define cc
 	$(CC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/bin/$(1) src/$(1).c $(2)
 endef
 
+define cc2
+	$(CC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/bin/$(firstword $(1)) $(foreach src,$(1),src/$(src).c) $(2)
+endef
+
 define Build/Compile
 	mkdir -p $(PKG_BUILD_DIR)/bin
 	$(call cc,addpattern)
@@ -34,6 +38,7 @@ define Build/Compile
 	$(call cc,imagetag)
 	$(call cc,add_header)
 	$(call cc,makeamitbin)
+	$(call cc2,mkplanexfw sha1)
 endef
 
 define Build/Install
