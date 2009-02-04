@@ -45,19 +45,19 @@
  
  quiet_cmd_image = BUILD   $@
  cmd_image = cat $(obj)/decompress.bin $(obj)/piggy.gz > $@
-@@ -22,10 +18,10 @@ $(obj)/decompress.bin: $(obj)/decompress
+@@ -21,12 +17,6 @@
+ $(obj)/decompress.bin: $(obj)/decompress.o FORCE
  	$(call if_changed,objcopy)
  
- $(obj)/head.o: $(obj)/head.S .config
+-$(obj)/head.o: $(obj)/head.S .config
 -	@$(CC) -D__ASSEMBLY__ -traditional -c $< -o $@
-+	@$(CC) -Iinclude  -D__ASSEMBLY__ -traditional -Wa,--em=criself -c $< -o $@
- 
- $(obj)/misc.o: $(obj)/misc.c .config
+-
+-$(obj)/misc.o: $(obj)/misc.c .config
 -	@$(CC) -D__KERNEL__ -c $< -o $@
-+	@$(CC) -Iinclude -D__KERNEL__ -Wa,--em=criself -c $< -o $@
- 
+-
  $(obj)/vmlinux: $(obj)/piggy.gz $(obj)/decompress.bin FORCE
  	$(call if_changed,image)
+ 
 --- a/arch/cris/arch-v10/boot/compressed/decompress.ld
 +++ b/arch/cris/arch-v10/boot/compressed/decompress.ld
 @@ -1,4 +1,4 @@
