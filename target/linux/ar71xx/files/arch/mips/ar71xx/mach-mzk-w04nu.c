@@ -45,22 +45,22 @@ static struct mtd_partition mzk_w04nu_partitions[] = {
 		.offset		= 0x040000,
 		.size		= 0x010000,
 	} , {
-		.name		= "uImage",
+		.name		= "kernel",
 		.offset		= 0x050000,
 		.size		= 0x160000,
 	} , {
 		.name		= "rootfs",
 		.offset		= 0x1b0000,
-		.size		= 0x610000,
-	} , {
-		.name		= "config",
-		.offset		= 0x7c0000,
-		.size		= 0x020000,
+		.size		= 0x630000,
 	} , {
 		.name		= "art",
 		.offset		= 0x7e0000,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "firmware",
+		.offset		= 0x050000,
+		.size		= 0x770000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
