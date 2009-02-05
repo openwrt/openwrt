@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -77,6 +77,29 @@ define Image/Build/UBNT
 		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt-$(2)-$(1).bin
 endef
 
+define Image/Build/Planex
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
+	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gzip
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.gzip"` -gt 1441792 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.gzip is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6356992 ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.gzip $(KDIR)/vmlinux-$(2).uImage; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1408k conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=6208k conv=sync; \
+		) > $(call imgname,$(1),$(2)).bin; \
+		$(STAGING_DIR_HOST)/bin/mkplanexfw -v 2.00.00 \
+			-i $(call imgname,$(1),$(2)).bin \
+			-o $(call imgname,$(1),$(2)).webui; \
+	fi; fi
+endef
+
 define Image/Build/Template/Compex
 	$(call Image/Build/MyLoader,$(1),$(2))
 endef
@@ -101,6 +124,14 @@ define Image/Build/Template/UBNT/squashfs
 	$(call Image/Build/Template/UBNT,squashfs,$(1),$(2),$(3),$(4))
 endef
 
+define Image/Build/Template/Planex
+	$(call Image/Build/Planex,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/Planex/squashfs
+	$(call Image/Build/Template/Planex,squashfs,$(1),$(2))
+endef
+
 define Image/Build/Profile/WP543
 	$(call Image/Build/Template/Compex/$(1),wp543)
 endef
@@ -121,6 +152,10 @@ define Image/Build/Profile/UBNTRS
 	$(call Image/Build/Template/UBNT/$(1),rs,board=UBNT-RS,RS,RSx)
 endef
 
+define Image/Build/Profile/MZKW04NU
+	$(call Image/Build/Template/Planex/$(1),mzk-w04nu,board=MZK-W04NU)
+endef
+
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
@@ -130,6 +165,7 @@ define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(IMGNAME)-root.$(1) bs=128k conv=sync
 
 	$(call Image/Build/Profile/DIR615C1,$(1))
+	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/UBNTRS,$(1))
