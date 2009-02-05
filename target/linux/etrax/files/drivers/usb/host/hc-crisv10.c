@@ -1037,8 +1037,8 @@ void crisv10_hcd_ctl_status_irq(struct crisv10_irq_reg *reg)
   DBFENTER;
   ASSERT(crisv10_hcd);
 
-  irq_dbg("ctr_status_irq, controller status: %s\n",
-	  hcd_status_to_str(reg->r_usb_status));
+/*  irq_dbg("ctr_status_irq, controller status: %s\n",
+	  hcd_status_to_str(reg->r_usb_status));*/
   
   /* FIXME: What should we do if we get ourun or perror? Dump the EP and SB
      list for the corresponding epid? */
