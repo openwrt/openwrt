@@ -1,5 +1,20 @@
 --- a/drivers/net/ag71xx/ag71xx_mdio.c
 +++ b/drivers/net/ag71xx/ag71xx_mdio.c
+@@ -32,12 +32,12 @@ static inline u32 ag71xx_mdio_rr(struct 
+ static void ag71xx_mdio_dump_regs(struct ag71xx_mdio *am)
+ {
+ 	DBG("%s: mii_cfg=%08x, mii_cmd=%08x, mii_addr=%08x\n",
+-		am->mii_bus.name,
++		am->mii_bus->name,
+ 		ag71xx_mdio_rr(am, AG71XX_REG_MII_CFG),
+ 		ag71xx_mdio_rr(am, AG71XX_REG_MII_CMD),
+ 		ag71xx_mdio_rr(am, AG71XX_REG_MII_ADDR));
+ 	DBG("%s: mii_ctrl=%08x, mii_status=%08x, mii_ind=%08x\n",
+-		am->mii_bus.name,
++		am->mii_bus->name,
+ 		ag71xx_mdio_rr(am, AG71XX_REG_MII_CTRL),
+ 		ag71xx_mdio_rr(am, AG71XX_REG_MII_STATUS),
+ 		ag71xx_mdio_rr(am, AG71XX_REG_MII_IND));
 @@ -57,7 +57,7 @@ static int ag71xx_mdio_mii_read(struct a
  	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
  		if (i-- == 0) {
