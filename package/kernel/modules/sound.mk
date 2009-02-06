@@ -91,6 +91,22 @@ endef
 
 $(eval $(call KernelPackage,sound-i8x0))
 
+define KernelPackage/sound-ps3
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=PS3 Audio
+  DEPENDS:=kmod-sound-core
+  KCONFIG:=CONFIG_SND_PS3 \
+		CONFIG_SND_PPC
+  FILES:=$(LINUX_DIR)/sound/ppc/snd_ps3.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,35, snd_ps3)
+endef
+
+define KernelPackage/sound-ps3/description
+ support for the integrated PS3 audio device
+endef
+
+$(eval $(call KernelPackage,sound-ps3))
+
 define KernelPackage/sound-cs5535audio
   SUBMENU:=$(SOUND_MENU)
   TITLE:=CS5535 PCI Controller
