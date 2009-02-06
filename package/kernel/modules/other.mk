@@ -195,7 +195,7 @@ $(eval $(call KernelPackage,pcmcia-serial))
 define KernelPackage/ssb
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Silicon Sonics Backplane glue code
-  DEPENDS:=@PCI_SUPPORT @!TARGET_brcm47xx
+  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT @!TARGET_brcm47xx
   KCONFIG:=\
 	CONFIG_SSB \
 	CONFIG_SSB_B43_PCI_BRIDGE=y \
