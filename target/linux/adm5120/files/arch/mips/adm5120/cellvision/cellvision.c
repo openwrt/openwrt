@@ -123,7 +123,6 @@ void __init cas7xx_flash_setup(void)
 	cellvision_flash_setup();
 }
 
-#if 0
 void __init cas6xx_setup(void)
 {
 	cas6xx_flash_setup();
@@ -134,7 +133,6 @@ void __init cas6xx_setup(void)
 
 MIPS_MACHINE(MACH_ADM5120_CAS630, "Cellvision CAS-630/630W", cas6xx_setup);
 MIPS_MACHINE(MACH_ADM5120_CAS670, "Cellvision CAS-670/670W", cas6xx_setup);
-#endif
 
 void __init cas7xx_setup(void)
 {
