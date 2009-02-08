@@ -1,9 +1,8 @@
-diff -urN linux-2.6.17/drivers/net/Kconfig linux-2.6.17.new/drivers/net/Kconfig
---- linux-2.6.17/drivers/net/Kconfig	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/drivers/net/Kconfig	2006-09-25 13:14:27.000000000 +0200
-@@ -1358,6 +1358,24 @@
- 	  <file:Documentation/networking/net-modules.txt>.  The module will be
- 	  called apricot.
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -1449,6 +1449,24 @@ config APRICOT
+ 	  To compile this driver as a module, choose M here. The module
+ 	  will be called apricot.
  
 +config R6040
 +	tristate "RDC Fast-Ethernet support (EXPERIMENTAL)"
@@ -24,16 +23,15 @@ diff -urN linux-2.6.17/drivers/net/Kconfig linux-2.6.17.new/drivers/net/Kconfig
 +	depends on R6040
 +	default y
  config B44
- 	tristate "Broadcom 4400 ethernet support (EXPERIMENTAL)"
- 	depends on NET_PCI && PCI && EXPERIMENTAL
-diff -urN linux-2.6.17/drivers/net/Makefile linux-2.6.17.new/drivers/net/Makefile
---- linux-2.6.17/drivers/net/Makefile	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/drivers/net/Makefile	2006-09-25 13:14:45.000000000 +0200
-@@ -106,6 +106,7 @@
+ 	tristate "Broadcom 440x/47xx ethernet support"
+ 	depends on SSB_POSSIBLE
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -116,6 +116,7 @@ obj-$(CONFIG_LNE390) += lne390.o 8390.o
  obj-$(CONFIG_NE3210) += ne3210.o 8390.o
- obj-$(CONFIG_NET_SB1250_MAC) += sb1250-mac.o
+ obj-$(CONFIG_SB1250_MAC) += sb1250-mac.o
  obj-$(CONFIG_B44) += b44.o
 +obj-$(CONFIG_R6040) += r6040.o
  obj-$(CONFIG_FORCEDETH) += forcedeth.o
- obj-$(CONFIG_NE_H8300) += ne-h8300.o 8390.o
- 
+ obj-$(CONFIG_NE_H8300) += ne-h8300.o
+ obj-$(CONFIG_AX88796) += ax88796.o

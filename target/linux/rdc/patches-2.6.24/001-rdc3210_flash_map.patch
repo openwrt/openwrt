@@ -1,7 +1,6 @@
-diff -urN linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17.new/drivers/mtd/maps/Kconfig
---- linux-2.6.17/drivers/mtd/maps/Kconfig	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/drivers/mtd/maps/Kconfig	2006-09-24 20:28:11.000000000 +0200
-@@ -76,6 +76,50 @@
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -117,6 +117,50 @@ config MTD_PNC2000
  	  PNC-2000 is the name of Network Camera product from PHOTRON
  	  Ltd. in Japan. It uses CFI-compliant flash.
  
@@ -52,11 +51,10 @@ diff -urN linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17.new/drivers/mtd/map
  config MTD_SC520CDP
  	tristate "CFI Flash device mapped on AMD SC520 CDP"
  	depends on X86 && MTD_CFI && MTD_CONCAT
-diff -urN linux-2.6.17/drivers/mtd/maps/Makefile linux-2.6.17.new/drivers/mtd/maps/Makefile
---- linux-2.6.17/drivers/mtd/maps/Makefile	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/drivers/mtd/maps/Makefile	2006-09-24 20:26:10.000000000 +0200
-@@ -28,6 +28,7 @@
- obj-$(CONFIG_MTD_PHYSMAP)	+= physmap.o
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -30,6 +30,7 @@ obj-$(CONFIG_MTD_PMC_MSP_EVM)   += pmcms
+ obj-$(CONFIG_MTD_PMC_MSP_RAMROOT)+= pmcmsp-ramroot.o
  obj-$(CONFIG_MTD_PNC2000)	+= pnc2000.o
  obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
 +obj-$(CONFIG_MTD_RDC3210)	+= rdc3210.o
