@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/arch/mips/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/arch/mips/Kconfig
-+++ linux-2.6.21.7/arch/mips/Kconfig
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
 @@ -159,6 +159,17 @@ config BASLER_EXCITE_PROTOTYPE
  	  note that a kernel built with this option selected will not be
  	  able to run on normal units.
@@ -28,10 +26,8 @@ Index: linux-2.6.21.7/arch/mips/Kconfig
  source "arch/mips/ddb5xxx/Kconfig"
  source "arch/mips/gt64120/ev64120/Kconfig"
  source "arch/mips/jazz/Kconfig"
-Index: linux-2.6.21.7/arch/mips/Makefile
-===================================================================
---- linux-2.6.21.7.orig/arch/mips/Makefile
-+++ linux-2.6.21.7/arch/mips/Makefile
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
 @@ -267,6 +267,13 @@ libs-$(CONFIG_MIPS_XXS1500)	+= arch/mips
  load-$(CONFIG_MIPS_XXS1500)	+= 0xffffffff80100000
  
@@ -46,10 +42,8 @@ Index: linux-2.6.21.7/arch/mips/Makefile
  # Cobalt Server
  #
  core-$(CONFIG_MIPS_COBALT)	+= arch/mips/cobalt/
-Index: linux-2.6.21.7/include/asm-mips/bootinfo.h
-===================================================================
---- linux-2.6.21.7.orig/include/asm-mips/bootinfo.h
-+++ linux-2.6.21.7/include/asm-mips/bootinfo.h
+--- a/include/asm-mips/bootinfo.h
++++ b/include/asm-mips/bootinfo.h
 @@ -213,6 +213,12 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
