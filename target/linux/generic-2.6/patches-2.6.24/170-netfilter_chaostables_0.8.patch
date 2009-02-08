@@ -1,6 +1,6 @@
 --- a/include/linux/netfilter/Kbuild
 +++ b/include/linux/netfilter/Kbuild
-@@ -3,6 +3,7 @@
+@@ -3,6 +3,7 @@ header-y += nf_conntrack_tuple_common.h
  header-y += nfnetlink_conntrack.h
  header-y += nfnetlink_log.h
  header-y += nfnetlink_queue.h
@@ -105,7 +105,7 @@
 +#define xt_request_find_match xt_request_find_match_lo
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -265,6 +265,14 @@
+@@ -265,6 +265,14 @@ config NETFILTER_XTABLES
  
  # alphabetically ordered list of targets
  
@@ -120,7 +120,7 @@
  config NETFILTER_XT_TARGET_CLASSIFY
  	tristate '"CLASSIFY" target support'
  	depends on NETFILTER_XTABLES
-@@ -292,6 +300,14 @@
+@@ -292,6 +300,14 @@ config NETFILTER_XT_TARGET_CONNMARK
  	  <file:Documentation/kbuild/modules.txt>.  The module will be called
  	  ipt_CONNMARK.ko.  If unsure, say `N'.
  
@@ -135,7 +135,7 @@
  config NETFILTER_XT_TARGET_DSCP
  	tristate '"DSCP" target support'
  	depends on NETFILTER_XTABLES
-@@ -556,6 +572,14 @@
+@@ -556,6 +572,14 @@ config NETFILTER_XT_MATCH_POLICY
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -152,7 +152,7 @@
  	depends on NETFILTER_XTABLES
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -49,6 +49,8 @@
+@@ -49,6 +49,8 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_NOTRACK
  obj-$(CONFIG_NETFILTER_XT_TARGET_SECMARK) += xt_SECMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_TCPMSS) += xt_TCPMSS.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_TRACE) += xt_TRACE.o
@@ -161,7 +161,7 @@
  
  # matches
  obj-$(CONFIG_NETFILTER_XT_MATCH_COMMENT) += xt_comment.o
-@@ -79,3 +81,4 @@
+@@ -79,3 +81,4 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_STRING) 
  obj-$(CONFIG_NETFILTER_XT_MATCH_TCPMSS) += xt_tcpmss.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_TIME) += xt_time.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_U32) += xt_u32.o
@@ -843,7 +843,7 @@
 +MODULE_ALIAS("ipt_portscan");
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
-@@ -1564,6 +1564,8 @@
+@@ -1564,6 +1564,8 @@ __u32 secure_tcp_sequence_number(__be32 
  	return seq;
  }
  

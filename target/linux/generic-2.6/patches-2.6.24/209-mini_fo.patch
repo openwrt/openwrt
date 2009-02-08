@@ -1,6 +1,6 @@
 --- a/fs/Kconfig
 +++ b/fs/Kconfig
-@@ -468,6 +468,9 @@
+@@ -468,6 +468,9 @@ config OCFS2_DEBUG_FS
  	  this option for debugging only as it is likely to decrease
  	  performance of the filesystem.
  
@@ -12,7 +12,7 @@
  	help
 --- a/fs/Makefile
 +++ b/fs/Makefile
-@@ -76,6 +76,7 @@
+@@ -76,6 +76,7 @@ obj-$(CONFIG_SQUASHFS)		+= squashfs/
  obj-y				+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/

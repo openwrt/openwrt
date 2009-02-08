@@ -1,6 +1,6 @@
 --- a/arch/mips/kernel/gdb-stub.c
 +++ b/arch/mips/kernel/gdb-stub.c
-@@ -656,6 +656,7 @@
+@@ -656,6 +656,7 @@ void set_async_breakpoint(unsigned long 
  	*epc = (unsigned long)async_breakpoint;
  }
  
@@ -8,7 +8,7 @@
  static void kgdb_wait(void *arg)
  {
  	unsigned flags;
-@@ -668,6 +669,7 @@
+@@ -668,6 +669,7 @@ static void kgdb_wait(void *arg)
  
  	local_irq_restore(flags);
  }

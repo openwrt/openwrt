@@ -893,7 +893,7 @@
 +
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -63,6 +63,12 @@
+@@ -63,6 +63,12 @@ config IP_NF_MATCH_IPRANGE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -908,7 +908,7 @@
  	depends on IP_NF_IPTABLES
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -50,6 +50,8 @@
+@@ -50,6 +50,8 @@ obj-$(CONFIG_IP_NF_MATCH_RECENT) += ipt_
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  
