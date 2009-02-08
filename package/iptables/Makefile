@@ -20,7 +20,7 @@ endif
 
 ifeq ($(CONFIG_LINUX_2_6),y)
   PKG_VERSION:=1.4.1.1
-  PKG_RELEASE:=1
+  PKG_RELEASE:=2
   PKG_MD5SUM:=723fa88d8a0915e184f99e03e9bf06cb
 endif
 
@@ -259,7 +259,7 @@ TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
 	--enable-devel \
 	--with-kernel="$(LINUX_DIR)" \
-	--with-xtlibdir=/usr/lib/iptables 
+	--with-xtlibdir=/usr/lib/iptables
 
 define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)
