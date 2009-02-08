@@ -2721,7 +2721,7 @@
  #include <linux/compiler.h>
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -70,6 +70,16 @@
+@@ -70,6 +70,16 @@ obj-$(CONFIG_R3964)		+= n_r3964.o
  obj-$(CONFIG_APPLICOM)		+= applicom.o
  obj-$(CONFIG_SONYPI)		+= sonypi.o
  obj-$(CONFIG_RTC)		+= rtc.o
@@ -2740,7 +2740,7 @@
  obj-$(CONFIG_EFI_RTC)		+= efirtc.o
 --- a/drivers/serial/Kconfig
 +++ b/drivers/serial/Kconfig
-@@ -280,6 +280,56 @@
+@@ -280,6 +280,56 @@ config SERIAL_8250_RM9K
  
  comment "Non-8250 serial port support"
  
@@ -2799,7 +2799,7 @@
  	depends on ARM_AMBA && (BROKEN || !ARCH_VERSATILE)
 --- a/drivers/serial/Makefile
 +++ b/drivers/serial/Makefile
-@@ -62,5 +62,7 @@
+@@ -62,5 +62,7 @@ obj-$(CONFIG_SERIAL_SGI_IOC3) += ioc3_se
  obj-$(CONFIG_SERIAL_ATMEL) += atmel_serial.o
  obj-$(CONFIG_SERIAL_UARTLITE) += uartlite.o
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o

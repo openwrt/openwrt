@@ -1,6 +1,6 @@
 --- a/drivers/net/sl351x_gmac.c
 +++ b/drivers/net/sl351x_gmac.c
-@@ -127,6 +127,7 @@
+@@ -127,6 +127,7 @@ static	char _debug_prefetch_buf[_DEBUG_P
  static int	gmac_initialized = 0;
  TOE_INFO_T toe_private_data;
  static int		do_again = 0;
@@ -8,7 +8,7 @@
  spinlock_t gmac_fq_lock;
  unsigned int FLAG_SWITCH;
  
-@@ -1065,7 +1066,8 @@
+@@ -1065,7 +1066,8 @@ static void toe_init_gmac(struct net_dev
  	    tp->intr3_enabled = 	0xffffffff;
  	    tp->intr4_selected = 	GMAC0_INT_BITS | CLASS_RX_FULL_INT_BITS |
  	    						HWFQ_EMPTY_INT_BIT | SWFQ_EMPTY_INT_BIT;
@@ -18,7 +18,7 @@
  
  	    data = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_0_REG) & ~tp->intr0_selected;
  	    writel(data, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_0_REG);
-@@ -1115,7 +1117,7 @@
+@@ -1115,7 +1117,7 @@ static void toe_init_gmac(struct net_dev
  	    	tp->intr3_enabled	|= 	0xffffffff;
  	    	tp->intr4_selected 	|= 	CLASS_RX_FULL_INT_BITS |
  	    							HWFQ_EMPTY_INT_BIT | SWFQ_EMPTY_INT_BIT;
@@ -27,7 +27,7 @@
  		}
  	    data = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_0_REG) | tp->intr0_selected;
  	    writel(data, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_0_REG);
-@@ -2408,7 +2410,7 @@
+@@ -2408,7 +2410,7 @@ static inline void toe_gmac_fill_free_q(
  	// unsigned short max_cnt=TOE_SW_FREEQ_DESC_NUM>>1;
  
  	fq_rwptr.bits32 = readl(TOE_GLOBAL_BASE + GLOBAL_SWFQ_RWPTR_REG);
@@ -36,7 +36,7 @@
  	//while ((max_cnt--) && (unsigned short)RWPTR_ADVANCE_ONE(fq_rwptr.bits.wptr,
  	//				TOE_SW_FREEQ_DESC_NUM) != fq_rwptr.bits.rptr) {
  	while ((unsigned short)RWPTR_ADVANCE_ONE(fq_rwptr.bits.wptr,
-@@ -2428,10 +2430,47 @@
+@@ -2428,10 +2430,47 @@ static inline void toe_gmac_fill_free_q(
  		SET_WPTR(TOE_GLOBAL_BASE+GLOBAL_SWFQ_RWPTR_REG, fq_rwptr.bits.wptr);
  		toe_private_data.fq_rx_rwptr.bits32 = fq_rwptr.bits32;
  	}
@@ -85,7 +85,7 @@
  /*----------------------------------------------------------------------
  * toe_gmac_interrupt
  *----------------------------------------------------------------------*/
-@@ -2492,6 +2531,7 @@
+@@ -2492,6 +2531,7 @@ if (1)
  		writel(status3 & tp->intr3_enabled, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_3_REG);
  	if (status4)
  		writel(status4 & tp->intr4_enabled, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_4_REG);
@@ -93,7 +93,7 @@
  #if 0
  	/* handle freeq interrupt first */
  	if (status4 & tp->intr4_enabled) {
-@@ -2536,10 +2576,31 @@
+@@ -2536,10 +2576,31 @@ if (1)
  			}
  				if (netif_running(dev) && (status1 & DEFAULT_Q0_INT_BIT) && (tp->intr1_enabled & DEFAULT_Q0_INT_BIT))
  				{
@@ -128,7 +128,7 @@
          				// class-Q & TOE-Q are implemented in future
          				//data32 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_1_REG);
          				//data32 &= ~DEFAULT_Q0_INT_BIT;
-@@ -2549,7 +2610,8 @@
+@@ -2549,7 +2610,8 @@ if (1)
  						//tp->total_q_cnt_napi=0;
  						//rx_time = jiffies;
  						//rx_old_bytes = isPtr->rx_bytes;
@@ -138,7 +138,7 @@
          			}
  			}
  		}
-@@ -2569,9 +2631,31 @@
+@@ -2569,9 +2631,31 @@ if (1)
  
  			if (netif_running(dev) && (status1 & DEFAULT_Q1_INT_BIT) && (tp->intr1_enabled & DEFAULT_Q1_INT_BIT))
  			{
@@ -172,7 +172,7 @@
           			// disable GMAC-0 rx interrupt
          			// class-Q & TOE-Q are implemented in future
          			//data32 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_1_REG);
-@@ -2583,9 +2667,13 @@
+@@ -2583,9 +2667,13 @@ if (1)
  					//rx_time = jiffies;
  					//rx_old_bytes = isPtr->rx_bytes;
             			__netif_rx_schedule(dev);
@@ -186,7 +186,7 @@
  	}
  
  	// Interrupt Status 0
-@@ -3306,8 +3394,10 @@
+@@ -3306,8 +3394,10 @@ next_rx:
  		SET_RPTR(&tp->default_qhdr->word1, rwptr.bits.rptr);
       	tp->rx_rwptr.bits32 = rwptr.bits32;
  
@@ -198,7 +198,7 @@
  }
  
  /*----------------------------------------------------------------------
-@@ -4217,6 +4307,7 @@
+@@ -4217,6 +4307,7 @@ static int gmac_rx_poll(struct net_devic
      GMAC_RXDESC_T   	*curr_desc;
  	struct sk_buff 		*skb;
      DMA_RWPTR_T			rwptr;
@@ -206,7 +206,7 @@
  	unsigned int 		pkt_size;
  	unsigned int        desc_count;
  	unsigned int        good_frame, chksum_status, rx_status;
-@@ -4231,7 +4322,7 @@
+@@ -4231,7 +4322,7 @@ static int gmac_rx_poll(struct net_devic
  	//unsigned long long	rx_time;
  
  
@@ -215,7 +215,7 @@
  #if 1
  	if (do_again)
  	{
-@@ -4516,6 +4607,30 @@
+@@ -4516,6 +4607,30 @@ static int gmac_rx_poll(struct net_devic
  #endif
          //toe_gmac_fill_free_q();
          netif_rx_complete(dev);

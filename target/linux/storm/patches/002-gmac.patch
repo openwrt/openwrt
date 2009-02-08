@@ -18558,7 +18558,7 @@
 +#endif // __SL351x_TOE_H
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -2131,6 +2131,42 @@
+@@ -2131,6 +2131,42 @@ config ACENIC_OMIT_TIGON_I
  
  	  The safe and default value for this is N.
  
@@ -18603,7 +18603,7 @@
  	depends on PCI
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -236,4 +236,8 @@
+@@ -236,4 +236,8 @@ obj-$(CONFIG_NETCONSOLE) += netconsole.o
  
  obj-$(CONFIG_FS_ENET) += fs_enet/
  

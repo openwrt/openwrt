@@ -13,7 +13,7 @@
  #endif
  #define GMAX_TX_INTR_DISABLED			1
  #define DO_HW_CHKSUM					1
-@@ -124,12 +126,17 @@
+@@ -124,12 +126,17 @@ static	char _debug_prefetch_buf[_DEBUG_P
   *************************************************************/
  static int	gmac_initialized = 0;
  TOE_INFO_T toe_private_data;
@@ -33,7 +33,7 @@
  
  #undef CONFIG_SL351x_RXTOE
  extern NAT_CFG_T nat_cfg;
-@@ -2443,7 +2450,8 @@
+@@ -2443,7 +2450,8 @@ static irqreturn_t toe_gmac_interrupt (i
  	toe = (TOE_INFO_T *)&toe_private_data;
  //	handle NAPI
  #ifdef CONFIG_SL_NAPI
@@ -43,7 +43,7 @@
  {
  /* disable GMAC interrupt */
      //toe_gmac_disable_interrupt(tp->irq);
-@@ -2530,7 +2538,7 @@
+@@ -2530,7 +2538,7 @@ if (storlink_ctl.pauseoff == 1)
  				{
  					if (likely(netif_rx_schedule_prep(dev)))
          			{
@@ -52,7 +52,7 @@
          				// disable GMAC-0 rx interrupt
          				// class-Q & TOE-Q are implemented in future
          				//data32 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_1_REG);
-@@ -2563,7 +2571,7 @@
+@@ -2563,7 +2571,7 @@ if (storlink_ctl.pauseoff == 1)
  			{
  				if (likely(netif_rx_schedule_prep(dev)))
          		{
@@ -61,7 +61,7 @@
           			// disable GMAC-0 rx interrupt
          			// class-Q & TOE-Q are implemented in future
          			//data32 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_1_REG);
-@@ -4217,7 +4225,7 @@
+@@ -4217,7 +4225,7 @@ static int gmac_rx_poll(struct net_devic
  	GMAC_INFO_T			*tp = (GMAC_INFO_T *)dev->priv;
  	unsigned int		status4;
  	volatile DMA_RWPTR_T	fq_rwptr;
@@ -70,7 +70,7 @@
  	//unsigned long		rx_old_bytes;
  	struct net_device_stats *isPtr = (struct net_device_stats *)&tp->ifStatics;
  	//unsigned long long	rx_time;
-@@ -4479,7 +4487,7 @@
+@@ -4479,7 +4487,7 @@ static int gmac_rx_poll(struct net_devic
  
  	if (rwptr.bits.rptr == rwptr.bits.wptr)
  	{

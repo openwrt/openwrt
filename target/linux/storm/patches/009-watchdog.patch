@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-sl2312/sl3516_device.c
 +++ b/arch/arm/mach-sl2312/sl3516_device.c
-@@ -76,9 +76,30 @@
+@@ -76,9 +76,30 @@ static struct platform_device sata0_devi
  	.resource       = sl3516_sata0_resources,
  };
  
@@ -33,7 +33,7 @@
  static int __init sl3516_init(void)
 --- a/drivers/char/watchdog/Kconfig
 +++ b/drivers/char/watchdog/Kconfig
-@@ -171,6 +171,17 @@
+@@ -171,6 +171,17 @@ config EP93XX_WATCHDOG
  	  To compile this driver as a module, choose M here: the
  	  module will be called ep93xx_wdt.
  
@@ -53,7 +53,7 @@
  	depends on ARCH_OMAP16XX || ARCH_OMAP24XX
 --- a/drivers/char/watchdog/Makefile
 +++ b/drivers/char/watchdog/Makefile
-@@ -36,6 +36,7 @@
+@@ -36,6 +36,7 @@ obj-$(CONFIG_S3C2410_WATCHDOG) += s3c241
  obj-$(CONFIG_SA1100_WATCHDOG) += sa1100_wdt.o
  obj-$(CONFIG_MPCORE_WATCHDOG) += mpcore_wdt.o
  obj-$(CONFIG_EP93XX_WATCHDOG) += ep93xx_wdt.o
