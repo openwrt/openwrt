@@ -6,10 +6,8 @@ added mods from Stefan Eletzhofer and Lothar Weissmann
 # Patch managed by http://www.mn-logistik.de/unsupported/pxa250/patcher
 #
 
-Index: linux-2.6.21.7/arch/arm/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/Kconfig
-+++ linux-2.6.21.7/arch/arm/Kconfig
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
 @@ -800,7 +800,7 @@ config KEXEC
  
  endmenu
@@ -32,10 +30,8 @@ Index: linux-2.6.21.7/arch/arm/Kconfig
  endif
  
  menu "Floating point emulation"
-Index: linux-2.6.21.7/arch/arm/mach-pxa/Makefile
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mach-pxa/Makefile
-+++ linux-2.6.21.7/arch/arm/mach-pxa/Makefile
+--- a/arch/arm/mach-pxa/Makefile
++++ b/arch/arm/mach-pxa/Makefile
 @@ -32,6 +32,7 @@ obj-$(CONFIG_LEDS) += $(led-y)
  # Misc features
  obj-$(CONFIG_PM) += pm.o sleep.o
@@ -44,10 +40,8 @@ Index: linux-2.6.21.7/arch/arm/mach-pxa/Makefile
  
  ifeq ($(CONFIG_PXA27x),y)
  obj-$(CONFIG_PM) += standby.o
-Index: linux-2.6.21.7/arch/arm/mach-pxa/cpu-pxa.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/arch/arm/mach-pxa/cpu-pxa.c
++++ b/arch/arm/mach-pxa/cpu-pxa.c
 @@ -0,0 +1,321 @@
 +/*
 + *  linux/arch/arm/mach-pxa/cpu-pxa.c
@@ -370,10 +364,8 @@ Index: linux-2.6.21.7/arch/arm/mach-pxa/cpu-pxa.c
 +module_init(pxa_cpu_init);
 +module_exit(pxa_cpu_exit);
 +
-Index: linux-2.6.21.7/Documentation/cpu-freq/user-guide.txt
-===================================================================
---- linux-2.6.21.7.orig/Documentation/cpu-freq/user-guide.txt
-+++ linux-2.6.21.7/Documentation/cpu-freq/user-guide.txt
+--- a/Documentation/cpu-freq/user-guide.txt
++++ b/Documentation/cpu-freq/user-guide.txt
 @@ -18,7 +18,7 @@
  Contents:
  ---------

@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/sound/soc/pxa/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/sound/soc/pxa/Kconfig
-+++ linux-2.6.21.7/sound/soc/pxa/Kconfig
+--- a/sound/soc/pxa/Kconfig
++++ b/sound/soc/pxa/Kconfig
 @@ -16,6 +16,7 @@ config SND_PXA2XX_SOC_AC97
  	tristate
  	select AC97_BUS
@@ -23,10 +21,8 @@ Index: linux-2.6.21.7/sound/soc/pxa/Kconfig
 +	  Say Y if you want to add support for SoC audio on Gumstix
 +
  endmenu
-Index: linux-2.6.21.7/sound/soc/pxa/Makefile
-===================================================================
---- linux-2.6.21.7.orig/sound/soc/pxa/Makefile
-+++ linux-2.6.21.7/sound/soc/pxa/Makefile
+--- a/sound/soc/pxa/Makefile
++++ b/sound/soc/pxa/Makefile
 @@ -12,9 +12,11 @@ snd-soc-corgi-objs := corgi.o
  snd-soc-poodle-objs := poodle.o
  snd-soc-tosa-objs := tosa.o
@@ -39,10 +35,8 @@ Index: linux-2.6.21.7/sound/soc/pxa/Makefile
  obj-$(CONFIG_SND_PXA2XX_SOC_SPITZ) += snd-soc-spitz.o
 +obj-$(CONFIG_SND_PXA2XX_SOC_GUMSTIX) += snd-soc-gumstix.o
  
-Index: linux-2.6.21.7/sound/soc/pxa/gumstix.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/sound/soc/pxa/gumstix.c
++++ b/sound/soc/pxa/gumstix.c
 @@ -0,0 +1,109 @@
 +/*
 + * gumstix.c  --  SoC audio for Gumstix
@@ -153,10 +147,8 @@ Index: linux-2.6.21.7/sound/soc/pxa/gumstix.c
 +MODULE_AUTHOR("Craig Hughes <craig@gumstix.com>");
 +MODULE_DESCRIPTION("ALSA SoC Gumstix");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.21.7/sound/soc/codecs/ac97.c
-===================================================================
---- linux-2.6.21.7.orig/sound/soc/codecs/ac97.c
-+++ linux-2.6.21.7/sound/soc/codecs/ac97.c
+--- a/sound/soc/codecs/ac97.c
++++ b/sound/soc/codecs/ac97.c
 @@ -43,7 +43,7 @@ static int ac97_prepare(struct snd_pcm_s
  #define STD_AC97_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_11025 |\
  		SNDRV_PCM_RATE_22050 | SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_48000)
@@ -175,10 +167,8 @@ Index: linux-2.6.21.7/sound/soc/codecs/ac97.c
  static unsigned int ac97_read(struct snd_soc_codec *codec,
  	unsigned int reg)
  {
-Index: linux-2.6.21.7/sound/soc/codecs/ac97.h
-===================================================================
---- linux-2.6.21.7.orig/sound/soc/codecs/ac97.h
-+++ linux-2.6.21.7/sound/soc/codecs/ac97.h
+--- a/sound/soc/codecs/ac97.h
++++ b/sound/soc/codecs/ac97.h
 @@ -14,5 +14,6 @@
  #define __LINUX_SND_SOC_AC97_H
  
@@ -186,10 +176,8 @@ Index: linux-2.6.21.7/sound/soc/codecs/ac97.h
 +extern struct snd_soc_codec_dai ac97_dai;
  
  #endif
-Index: linux-2.6.21.7/sound/soc/pxa/pxa2xx-ac97.c
-===================================================================
---- linux-2.6.21.7.orig/sound/soc/pxa/pxa2xx-ac97.c
-+++ linux-2.6.21.7/sound/soc/pxa/pxa2xx-ac97.c
+--- a/sound/soc/pxa/pxa2xx-ac97.c
++++ b/sound/soc/pxa/pxa2xx-ac97.c
 @@ -154,18 +154,26 @@ static void pxa2xx_ac97_warm_reset(struc
  
  static void pxa2xx_ac97_cold_reset(struct snd_ac97 *ac97)

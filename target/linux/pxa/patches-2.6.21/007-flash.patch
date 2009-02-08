@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/mtd/maps/gumstix-flash.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/mtd/maps/gumstix-flash.c
++++ b/drivers/mtd/maps/gumstix-flash.c
 @@ -0,0 +1,136 @@
 +/*
 + * Map driver for the Gumstix platform
@@ -139,10 +137,8 @@ Index: linux-2.6.21.7/drivers/mtd/maps/gumstix-flash.c
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Gumstix, Inc. <gumstix-users@lists.sf.net>");
 +MODULE_DESCRIPTION("MTD map driver for the Gumstix Platform");
-Index: linux-2.6.21.7/drivers/mtd/maps/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/mtd/maps/Kconfig
-+++ linux-2.6.21.7/drivers/mtd/maps/Kconfig
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
 @@ -131,6 +131,13 @@ config MTD_SBC_GXX
  	  More info at
  	  <http://www.arcomcontrols.com/products/icp/pc104/processors/SBC_GX1.htm>.
@@ -157,10 +153,8 @@ Index: linux-2.6.21.7/drivers/mtd/maps/Kconfig
  config MTD_LUBBOCK
  	tristate "CFI Flash device mapped on Intel Lubbock XScale eval board"
  	depends on ARCH_LUBBOCK && MTD_CFI_INTELEXT && MTD_PARTITIONS
-Index: linux-2.6.21.7/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/mtd/maps/Makefile
-+++ linux-2.6.21.7/drivers/mtd/maps/Makefile
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_MTD_ICHXROM)	+= ichxrom.o
  obj-$(CONFIG_MTD_CK804XROM)	+= ck804xrom.o
  obj-$(CONFIG_MTD_TSUNAMI)	+= tsunami_flash.o

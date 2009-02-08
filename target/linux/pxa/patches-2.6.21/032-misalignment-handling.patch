@@ -1,8 +1,6 @@
 Change the default alingment handling to not be silent failure
-Index: linux-2.6.21.7/arch/arm/mm/alignment.c
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mm/alignment.c
-+++ linux-2.6.21.7/arch/arm/mm/alignment.c
+--- a/arch/arm/mm/alignment.c
++++ b/arch/arm/mm/alignment.c
 @@ -797,6 +797,8 @@ static int __init alignment_init(void)
  	res->write_proc = proc_alignment_write;
  #endif
@@ -12,10 +10,8 @@ Index: linux-2.6.21.7/arch/arm/mm/alignment.c
  	hook_fault_code(1, do_alignment, SIGILL, "alignment exception");
  	hook_fault_code(3, do_alignment, SIGILL, "alignment exception");
  
-Index: linux-2.6.21.7/arch/arm/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/Kconfig
-+++ linux-2.6.21.7/arch/arm/Kconfig
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
 @@ -709,6 +709,19 @@ config ALIGNMENT_TRAP
  	  correct operation of some network protocols. With an IP-only
  	  configuration it is safe to say N, otherwise say Y.

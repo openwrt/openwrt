@@ -1,6 +1,6 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -505,6 +505,8 @@
+@@ -505,6 +505,8 @@ config PCI_HOST_VIA82C505
  	depends on PCI && ARCH_SHARK
  	default y
  
@@ -11,7 +11,7 @@
  source "drivers/pcmcia/Kconfig"
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
-@@ -81,3 +81,4 @@
+@@ -81,3 +81,4 @@ obj-$(CONFIG_GENERIC_TIME)	+= clocksourc
  obj-$(CONFIG_DMA_ENGINE)	+= dma/
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/

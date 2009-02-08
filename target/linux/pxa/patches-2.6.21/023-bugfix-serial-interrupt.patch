@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/serial/pxa.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/serial/pxa.c
-+++ linux-2.6.21.7/drivers/serial/pxa.c
+--- a/drivers/serial/pxa.c
++++ b/drivers/serial/pxa.c
 @@ -235,15 +235,19 @@ static inline irqreturn_t serial_pxa_irq
  	struct uart_pxa_port *up = dev_id;
  	unsigned int iir, lsr;

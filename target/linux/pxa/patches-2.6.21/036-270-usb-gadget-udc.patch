@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/usb/gadget/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/Kconfig
-+++ linux-2.6.21.7/drivers/usb/gadget/Kconfig
+--- a/drivers/usb/gadget/Kconfig
++++ b/drivers/usb/gadget/Kconfig
 @@ -129,6 +129,28 @@ config USB_PXA2XX_SMALL
  	default y if USB_ETH
  	default y if USB_G_SERIAL
@@ -31,10 +29,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/Kconfig
  config USB_GADGET_GOKU
  	boolean "Toshiba TC86C001 'Goku-S'"
  	depends on PCI
-Index: linux-2.6.21.7/drivers/usb/gadget/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/Makefile
-+++ linux-2.6.21.7/drivers/usb/gadget/Makefile
+--- a/drivers/usb/gadget/Makefile
++++ b/drivers/usb/gadget/Makefile
 @@ -7,6 +7,7 @@ obj-$(CONFIG_USB_PXA2XX)	+= pxa2xx_udc.o
  obj-$(CONFIG_USB_GOKU)		+= goku_udc.o
  obj-$(CONFIG_USB_OMAP)		+= omap_udc.o
@@ -43,10 +39,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/Makefile
  obj-$(CONFIG_USB_AT91)		+= at91_udc.o
  obj-$(CONFIG_USB_GADGET_GUMSTIX)	+= gumstix_gadget.o
  
-Index: linux-2.6.21.7/drivers/usb/gadget/pxa27x_udc.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/usb/gadget/pxa27x_udc.c
++++ b/drivers/usb/gadget/pxa27x_udc.c
 @@ -0,0 +1,2352 @@
 +/*
 + * linux/drivers/usb/gadget/pxa27x_udc.c
@@ -2400,10 +2394,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/pxa27x_udc.c
 +MODULE_AUTHOR("Frank Becker, Robert Schwebel, David Brownell");
 +MODULE_LICENSE("GPL");
 +
-Index: linux-2.6.21.7/drivers/usb/gadget/pxa27x_udc.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/usb/gadget/pxa27x_udc.h
++++ b/drivers/usb/gadget/pxa27x_udc.h
 @@ -0,0 +1,332 @@
 +/*
 + * linux/drivers/usb/gadget/pxa27x_udc.h

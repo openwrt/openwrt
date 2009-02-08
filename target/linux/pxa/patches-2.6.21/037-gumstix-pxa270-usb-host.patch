@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mach-pxa/gumstix.c
-+++ linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
+--- a/arch/arm/mach-pxa/gumstix.c
++++ b/arch/arm/mach-pxa/gumstix.c
 @@ -22,6 +22,7 @@
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
@@ -45,10 +43,8 @@ Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
  	pxa_set_udc_info(&gumstix_udc_info);
  #if defined(CONFIG_FB_PXA_ALPS_CDOLLAR) | defined(CONFIG_FB_PXA_SHARP_LQ043_PSP) | defined(CONFIG_FB_PXA_SAMSUNG_LTE430WQ_F0C)
  	set_pxa_fb_info(&gumstix_fb_info);
-Index: linux-2.6.21.7/drivers/usb/gadget/ether.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/ether.c
-+++ linux-2.6.21.7/drivers/usb/gadget/ether.c
+--- a/drivers/usb/gadget/ether.c
++++ b/drivers/usb/gadget/ether.c
 @@ -260,6 +260,8 @@ MODULE_PARM_DESC(host_addr, "Host Ethern
  
  #ifdef CONFIG_USB_GADGET_PXA27X
@@ -216,10 +212,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/ether.c
  		}
  	}
  #endif
-Index: linux-2.6.21.7/drivers/usb/gadget/file_storage.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/file_storage.c
-+++ linux-2.6.21.7/drivers/usb/gadget/file_storage.c
+--- a/drivers/usb/gadget/file_storage.c
++++ b/drivers/usb/gadget/file_storage.c
 @@ -280,6 +280,12 @@ MODULE_LICENSE("Dual BSD/GPL");
  #define DRIVER_PRODUCT_ID	0xa4a5	// Linux-USB File-backed Storage Gadget
  
@@ -274,10 +268,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/file_storage.c
  	fsg->state = FSG_STATE_TERMINATED;	// The thread is dead
  	fsg_unbind(gadget);
  	close_all_backing_files(fsg);
-Index: linux-2.6.21.7/drivers/usb/gadget/serial.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/serial.c
-+++ linux-2.6.21.7/drivers/usb/gadget/serial.c
+--- a/drivers/usb/gadget/serial.c
++++ b/drivers/usb/gadget/serial.c
 @@ -126,6 +126,10 @@ static int debug = 1;
  #define GS_LOG2_NOTIFY_INTERVAL		5	/* 1 << 5 == 32 msec */
  #define GS_NOTIFY_MAXPACKET		8
@@ -322,10 +314,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/serial.c
  		if (!ep) {
  			printk(KERN_ERR "gs_bind: cannot run ACM on %s\n", gadget->name);
  			goto autoconf_fail;
-Index: linux-2.6.21.7/drivers/usb/gadget/zero.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/zero.c
-+++ linux-2.6.21.7/drivers/usb/gadget/zero.c
+--- a/drivers/usb/gadget/zero.c
++++ b/drivers/usb/gadget/zero.c
 @@ -212,6 +212,11 @@ module_param (loopdefault, bool, S_IRUGO
  #define STRING_SOURCE_SINK		250
  #define STRING_LOOPBACK			251

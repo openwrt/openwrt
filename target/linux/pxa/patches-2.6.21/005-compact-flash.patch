@@ -1,17 +1,13 @@
-Index: linux-2.6.21.7/drivers/pcmcia/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/pcmcia/Makefile
-+++ linux-2.6.21.7/drivers/pcmcia/Makefile
+--- a/drivers/pcmcia/Makefile
++++ b/drivers/pcmcia/Makefile
 @@ -69,4 +69,4 @@ sa1100_cs-$(CONFIG_SA1100_SIMPAD)		+= sa
  pxa2xx_cs-$(CONFIG_ARCH_LUBBOCK)		+= pxa2xx_lubbock.o sa1111_generic.o
  pxa2xx_cs-$(CONFIG_MACH_MAINSTONE)		+= pxa2xx_mainstone.o
  pxa2xx_cs-$(CONFIG_PXA_SHARPSL)			+= pxa2xx_sharpsl.o
 -
 +pxa2xx_cs-$(CONFIG_ARCH_GUMSTIX)		+= pxa2xx_gumstix.o
-Index: linux-2.6.21.7/drivers/pcmcia/pxa2xx_gumstix.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/pcmcia/pxa2xx_gumstix.c
++++ b/drivers/pcmcia/pxa2xx_gumstix.c
 @@ -0,0 +1,272 @@
 +/*
 + * linux/drivers/pcmcia/pxa2xx_gumstix.c

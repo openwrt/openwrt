@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/net/smc91x.h
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/smc91x.h
-+++ linux-2.6.21.7/drivers/net/smc91x.h
+--- a/drivers/net/smc91x.h
++++ b/drivers/net/smc91x.h
 @@ -55,6 +55,21 @@
  #define SMC_insw(a, r, p, l)	readsw((a) + (r), p, l)
  #define SMC_outsw(a, r, p, l)	writesw((a) + (r), p, l)

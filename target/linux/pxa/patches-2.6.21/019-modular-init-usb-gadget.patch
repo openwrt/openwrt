@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/usb/gadget/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/Kconfig
-+++ linux-2.6.21.7/drivers/usb/gadget/Kconfig
+--- a/drivers/usb/gadget/Kconfig
++++ b/drivers/usb/gadget/Kconfig
 @@ -56,6 +56,14 @@ config USB_GADGET_DEBUG_FILES
  config	USB_GADGET_SELECTED
  	boolean
@@ -17,10 +15,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/Kconfig
  #
  # USB Peripheral Controller Support
  #
-Index: linux-2.6.21.7/drivers/usb/gadget/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/Makefile
-+++ linux-2.6.21.7/drivers/usb/gadget/Makefile
+--- a/drivers/usb/gadget/Makefile
++++ b/drivers/usb/gadget/Makefile
 @@ -8,6 +8,7 @@ obj-$(CONFIG_USB_GOKU)		+= goku_udc.o
  obj-$(CONFIG_USB_OMAP)		+= omap_udc.o
  obj-$(CONFIG_USB_LH7A40X)	+= lh7a40x_udc.o
@@ -29,10 +25,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/Makefile
  
  #
  # USB gadget drivers
-Index: linux-2.6.21.7/drivers/usb/gadget/pxa2xx_udc.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/usb/gadget/pxa2xx_udc.c
-+++ linux-2.6.21.7/drivers/usb/gadget/pxa2xx_udc.c
+--- a/drivers/usb/gadget/pxa2xx_udc.c
++++ b/drivers/usb/gadget/pxa2xx_udc.c
 @@ -2752,8 +2752,16 @@ static struct platform_driver udc_driver
  	},
  };
@@ -50,10 +44,8 @@ Index: linux-2.6.21.7/drivers/usb/gadget/pxa2xx_udc.c
  	printk(KERN_INFO "%s: version %s\n", driver_name, DRIVER_VERSION);
  	return platform_driver_register(&udc_driver);
  }
-Index: linux-2.6.21.7/drivers/usb/gadget/gumstix_gadget.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/usb/gadget/gumstix_gadget.c
++++ b/drivers/usb/gadget/gumstix_gadget.c
 @@ -0,0 +1,49 @@
 +/*
 + *  Gumstix USB gadget intialization driver

@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/net/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/Kconfig
-+++ linux-2.6.21.7/drivers/net/Kconfig
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
 @@ -959,6 +959,12 @@ config SMC91X
  	  module, say M here and read <file:Documentation/modules.txt> as well
  	  as <file:Documentation/networking/net-modules.txt>.
@@ -15,10 +13,8 @@ Index: linux-2.6.21.7/drivers/net/Kconfig
  config SMC9194
  	tristate "SMC 9194 support"
  	depends on NET_VENDOR_SMC && (ISA || MAC && BROKEN)
-Index: linux-2.6.21.7/drivers/net/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/Makefile
-+++ linux-2.6.21.7/drivers/net/Makefile
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
 @@ -201,6 +201,7 @@ obj-$(CONFIG_PASEMI_MAC) += pasemi_mac.o
  
  obj-$(CONFIG_MACB) += macb.o
@@ -27,10 +23,8 @@ Index: linux-2.6.21.7/drivers/net/Makefile
  obj-$(CONFIG_ARM) += arm/
  obj-$(CONFIG_DEV_APPLETALK) += appletalk/
  obj-$(CONFIG_TR) += tokenring/
-Index: linux-2.6.21.7/drivers/net/smc91x.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/smc91x.c
-+++ linux-2.6.21.7/drivers/net/smc91x.c
+--- a/drivers/net/smc91x.c
++++ b/drivers/net/smc91x.c
 @@ -2373,6 +2373,10 @@ static struct platform_driver smc_driver
  	},
  };
@@ -53,10 +47,8 @@ Index: linux-2.6.21.7/drivers/net/smc91x.c
  	return platform_driver_register(&smc_driver);
  }
  
-Index: linux-2.6.21.7/drivers/net/gumstix-smc91x.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/net/gumstix-smc91x.c
++++ b/drivers/net/gumstix-smc91x.c
 @@ -0,0 +1,143 @@
 +/*
 + *  Gumstix SMC91C111 chip intialization driver

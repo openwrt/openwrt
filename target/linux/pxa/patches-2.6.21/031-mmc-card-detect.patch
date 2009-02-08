@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mach-pxa/gumstix.c
-+++ linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
+--- a/arch/arm/mach-pxa/gumstix.c
++++ b/arch/arm/mach-pxa/gumstix.c
 @@ -29,19 +29,55 @@
  
  #include "generic.h"
@@ -61,10 +59,8 @@ Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
  };
  
  static struct pxa2xx_udc_mach_info gumstix_udc_info __initdata = {
-Index: linux-2.6.21.7/include/asm-arm/arch-pxa/gumstix.h
-===================================================================
---- linux-2.6.21.7.orig/include/asm-arm/arch-pxa/gumstix.h
-+++ linux-2.6.21.7/include/asm-arm/arch-pxa/gumstix.h
+--- a/include/asm-arm/arch-pxa/gumstix.h
++++ b/include/asm-arm/arch-pxa/gumstix.h
 @@ -36,6 +36,12 @@
  #define GPIO_GUMSTIX_USB_GPIOx_CON_MD	(GPIO_GUMSTIX_USB_GPIOx | GPIO_OUT)
  #define GPIO_GUMSTIX_USB_GPIOx_DIS_MD	(GPIO_GUMSTIX_USB_GPIOx | GPIO_IN)
