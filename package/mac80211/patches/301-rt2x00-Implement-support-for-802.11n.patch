@@ -1,6 +1,6 @@
-From adf33d3a207846709e2a5fb006f17dbc9225f7a9 Mon Sep 17 00:00:00 2001
+From 2c0af6ef6263ad5b581429953ad1b98e6d522e69 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Fri, 23 Jan 2009 17:10:06 +0100
+Date: Wed, 4 Feb 2009 20:10:23 +0100
 Subject: [PATCH] rt2x00: Implement support for 802.11n
 
 Extend rt2x00lib capabilities to support 802.11n,
@@ -11,14 +11,14 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig        |    3 +
  drivers/net/wireless/rt2x00/Makefile       |    1 +
- drivers/net/wireless/rt2x00/rt2x00.h       |    5 ++
+ drivers/net/wireless/rt2x00/rt2x00.h       |    4 +
  drivers/net/wireless/rt2x00/rt2x00config.c |    5 ++
  drivers/net/wireless/rt2x00/rt2x00dev.c    |   91 ++++++++++++++++++++-------
  drivers/net/wireless/rt2x00/rt2x00ht.c     |   69 +++++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00lib.h    |   24 +++++++
  drivers/net/wireless/rt2x00/rt2x00queue.c  |    1 +
- drivers/net/wireless/rt2x00/rt2x00queue.h  |   26 +++++++-
- 9 files changed, 197 insertions(+), 28 deletions(-)
+ drivers/net/wireless/rt2x00/rt2x00queue.h  |   33 ++++++++--
+ 9 files changed, 201 insertions(+), 30 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2x00ht.c
 
 --- a/drivers/net/wireless/rt2x00/Makefile
@@ -33,15 +33,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  obj-$(CONFIG_RT2X00_LIB_PCI)		+= rt2x00pci.o
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -108,6 +108,7 @@
-  */
- #define ACK_SIZE		14
- #define IEEE80211_HEADER	24
-+#define AGGREGATION_SIZE	3840
- #define PLCP			48
- #define BEACON			100
- #define PREAMBLE		144
-@@ -357,6 +358,7 @@ static inline struct rt2x00_intf* vif_to
+@@ -357,6 +357,7 @@ static inline struct rt2x00_intf* vif_to
   *	for @tx_power_a, @tx_power_bg and @channels.
   * @channels: Device/chipset specific channel values (See &struct rf_channel).
   * @channels_info: Additional information for channels (See &struct channel_info).
@@ -49,7 +41,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   */
  struct hw_mode_spec {
  	unsigned int supported_bands;
-@@ -370,6 +372,8 @@ struct hw_mode_spec {
+@@ -370,6 +371,8 @@ struct hw_mode_spec {
  	unsigned int num_channels;
  	const struct rf_channel *channels;
  	const struct channel_info *channels_info;
@@ -58,7 +50,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  };
  
  /*
-@@ -603,6 +607,7 @@ enum rt2x00_flags {
+@@ -606,6 +609,7 @@ enum rt2x00_flags {
  	CONFIG_EXTERNAL_LNA_BG,
  	CONFIG_DOUBLE_ANTENNA,
  	CONFIG_DISABLE_LINK_TUNING,
@@ -82,7 +74,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  		       sizeof(libconf.rf));
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -315,18 +315,54 @@ void rt2x00lib_txdone(struct queue_entry
+@@ -316,18 +316,54 @@ void rt2x00lib_txdone(struct queue_entry
  }
  EXPORT_SYMBOL_GPL(rt2x00lib_txdone);
  
@@ -141,7 +133,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  	/*
  	 * Allocate a new sk_buffer. If no new buffer available, drop the
-@@ -375,26 +411,17 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
+@@ -376,26 +412,17 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
  	skb_trim(entry->skb, rxdesc.size);
  
  	/*
@@ -179,7 +171,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	}
  
  	/*
-@@ -404,7 +431,7 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
+@@ -405,7 +432,7 @@ void rt2x00lib_rxdone(struct rt2x00_dev 
  	rt2x00debug_update_crypto(rt2x00dev, &rxdesc);
  
  	rx_status->mactime = rxdesc.timestamp;
@@ -188,7 +180,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	rx_status->qual = rt2x00link_calculate_signal(rt2x00dev, rxdesc.rssi);
  	rx_status->signal = rxdesc.rssi;
  	rx_status->noise = rxdesc.noise;
-@@ -439,72 +466,84 @@ const struct rt2x00_rate rt2x00_supporte
+@@ -440,72 +467,84 @@ const struct rt2x00_rate rt2x00_supporte
  		.bitrate = 10,
  		.ratemask = BIT(0),
  		.plcp = 0x00,
@@ -273,7 +265,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	},
  };
  
-@@ -580,6 +619,8 @@ static int rt2x00lib_probe_hw_modes(stru
+@@ -581,6 +620,8 @@ static int rt2x00lib_probe_hw_modes(stru
  		rt2x00dev->bands[IEEE80211_BAND_2GHZ].bitrates = rates;
  		hw->wiphy->bands[IEEE80211_BAND_2GHZ] =
  		    &rt2x00dev->bands[IEEE80211_BAND_2GHZ];
@@ -282,7 +274,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	}
  
  	/*
-@@ -596,6 +637,8 @@ static int rt2x00lib_probe_hw_modes(stru
+@@ -597,6 +638,8 @@ static int rt2x00lib_probe_hw_modes(stru
  		rt2x00dev->bands[IEEE80211_BAND_5GHZ].bitrates = &rates[4];
  		hw->wiphy->bands[IEEE80211_BAND_5GHZ] =
  		    &rt2x00dev->bands[IEEE80211_BAND_5GHZ];
@@ -338,7 +330,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	else
 +		txdesc->mpdu_density = 0;
 +
-+	txdesc->ba_size = 0;	/* FIXME: What value is needed? */
++	txdesc->ba_size = 7;	/* FIXME: What value is needed? */
 +	txdesc->stbc = 0;	/* FIXME: What value is needed? */
 +
 +	txdesc->mcs = rt2x00_get_rate_mcs(hwrate->mcs);
@@ -388,7 +380,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  /*
   * Radio control handlers.
   */
-@@ -330,6 +339,21 @@ static inline void rt2x00crypto_rx_inser
+@@ -341,6 +350,21 @@ static inline void rt2x00crypto_rx_inser
  #endif /* CONFIG_RT2X00_LIB_CRYPTO */
  
  /*
@@ -422,7 +414,22 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  }
 --- a/drivers/net/wireless/rt2x00/rt2x00queue.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00queue.h
-@@ -145,6 +145,7 @@ static inline struct skb_frame_desc* get
+@@ -35,9 +35,12 @@
+  * for USB devices this restriction does not apply, but the value of
+  * 2432 makes sense since it is big enough to contain the maximum fragment
+  * size according to the ieee802.11 specs.
++ * The aggregation size depends on support from the driver, but should
++ * be something around 3840 bytes.
+  */
+-#define DATA_FRAME_SIZE	2432
+-#define MGMT_FRAME_SIZE	256
++#define DATA_FRAME_SIZE		2432
++#define MGMT_FRAME_SIZE		256
++#define AGGREGATION_SIZE	3840
+ 
+ /**
+  * DOC: Number of entries per queue
+@@ -145,6 +148,7 @@ static inline struct skb_frame_desc* get
   *
   * @RXDONE_SIGNAL_PLCP: Signal field contains the plcp value.
   * @RXDONE_SIGNAL_BITRATE: Signal field contains the bitrate value.
@@ -430,7 +437,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   * @RXDONE_MY_BSS: Does this frame originate from device's BSS.
   * @RXDONE_CRYPTO_IV: Driver provided IV/EIV data.
   * @RXDONE_CRYPTO_ICV: Driver provided ICV data.
-@@ -152,9 +153,10 @@ static inline struct skb_frame_desc* get
+@@ -152,9 +156,10 @@ static inline struct skb_frame_desc* get
  enum rxdone_entry_desc_flags {
  	RXDONE_SIGNAL_PLCP = 1 << 0,
  	RXDONE_SIGNAL_BITRATE = 1 << 1,
@@ -444,7 +451,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  };
  
  /**
-@@ -163,7 +165,7 @@ enum rxdone_entry_desc_flags {
+@@ -163,7 +168,7 @@ enum rxdone_entry_desc_flags {
   * from &rxdone_entry_desc to a signal value type.
   */
  #define RXDONE_SIGNAL_MASK \
@@ -453,7 +460,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  /**
   * struct rxdone_entry_desc: RX Entry descriptor
-@@ -177,6 +179,7 @@ enum rxdone_entry_desc_flags {
+@@ -177,6 +182,7 @@ enum rxdone_entry_desc_flags {
   * @size: Data size of the received frame.
   * @flags: MAC80211 receive flags (See &enum mac80211_rx_flags).
   * @dev_flags: Ralink receive flags (See &enum rxdone_entry_desc_flags).
@@ -461,7 +468,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   * @cipher: Cipher type used during decryption.
   * @cipher_status: Decryption status.
   * @iv: IV/EIV data used during decryption.
-@@ -190,6 +193,7 @@ struct rxdone_entry_desc {
+@@ -190,6 +196,7 @@ struct rxdone_entry_desc {
  	int size;
  	int flags;
  	int dev_flags;
@@ -469,7 +476,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	u8 cipher;
  	u8 cipher_status;
  
-@@ -243,6 +247,9 @@ struct txdone_entry_desc {
+@@ -243,6 +250,9 @@ struct txdone_entry_desc {
   * @ENTRY_TXD_ENCRYPT_PAIRWISE: Use pairwise key table (instead of shared).
   * @ENTRY_TXD_ENCRYPT_IV: Generate IV/EIV in hardware.
   * @ENTRY_TXD_ENCRYPT_MMIC: Generate MIC in hardware.
@@ -479,7 +486,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   */
  enum txentry_desc_flags {
  	ENTRY_TXD_RTS_FRAME,
-@@ -258,6 +265,9 @@ enum txentry_desc_flags {
+@@ -258,6 +268,9 @@ enum txentry_desc_flags {
  	ENTRY_TXD_ENCRYPT_PAIRWISE,
  	ENTRY_TXD_ENCRYPT_IV,
  	ENTRY_TXD_ENCRYPT_MMIC,
@@ -489,7 +496,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  };
  
  /**
-@@ -271,7 +281,11 @@ enum txentry_desc_flags {
+@@ -271,7 +284,11 @@ enum txentry_desc_flags {
   * @length_low: PLCP length low word.
   * @signal: PLCP signal.
   * @service: PLCP service.
@@ -501,7 +508,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   * @retry_limit: Max number of retries.
   * @aifs: AIFS value.
   * @ifs: IFS value.
-@@ -291,7 +305,11 @@ struct txentry_desc {
+@@ -291,7 +308,11 @@ struct txentry_desc {
  	u16 signal;
  	u16 service;
  

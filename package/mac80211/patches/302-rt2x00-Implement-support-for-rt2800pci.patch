@@ -1,6 +1,6 @@
-From 659988a6bb83536c5d0a01b0b58378cc1856c975 Mon Sep 17 00:00:00 2001
+From f2219a0f2f2f61656d2c3a524836f6f1e646ea33 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Fri, 23 Jan 2009 17:13:03 +0100
+Date: Wed, 4 Feb 2009 20:43:00 +0100
 Subject: [PATCH] rt2x00: Implement support for rt2800pci
 
 Add support for the rt2800pci chipset.
@@ -14,10 +14,10 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig     |   15 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800pci.c | 2763 +++++++++++++++++++++++++++++++
- drivers/net/wireless/rt2x00/rt2800pci.h | 1881 +++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.c | 2785 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.h | 1877 +++++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00.h    |    4 +
- 5 files changed, 4664 insertions(+), 0 deletions(-)
+ 5 files changed, 4682 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.h
 
@@ -32,7 +32,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  obj-$(CONFIG_RT73USB)			+= rt73usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -0,0 +1,2763 @@
+@@ -0,0 +1,2785 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -364,20 +364,40 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +				       struct rt2x00lib_crypto *crypto,
 +				       struct ieee80211_key_conf *key)
 +{
++	struct mac_wcid_entry wcid_entry;
++	struct mac_iveiv_entry iveiv_entry;
 +	u32 offset;
 +	u32 reg;
 +
 +	offset = MAC_WCID_ATTR_ENTRY(crypto->aid);
 +
-+	reg = 0;
++	rt2x00pci_register_read(rt2x00dev, offset, &reg);
 +	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_KEYTAB,
 +			   !!(key->flags & IEEE80211_KEY_FLAG_PAIRWISE));
-+	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_PAIRKEY_MODE,
-+			   crypto->cipher);
++	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_CIPHER, crypto->cipher);
 +	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_BSS_IDX,
-+			   (crypto->cmd == SET_KEY) ? crypto->bssidx : 0);
++			   (crypto->cmd == SET_KEY) * crypto->bssidx);
 +	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_RX_WIUDF, 0);
 +	rt2x00pci_register_write(rt2x00dev, offset, reg);
++
++	offset = MAC_IVEIV_ENTRY(crypto->aid);
++
++	memset(&iveiv_entry, 0, sizeof(iveiv_entry));
++	if ((crypto->cipher == CIPHER_TKIP) ||
++	    (crypto->cipher == CIPHER_TKIP_NO_MIC) ||
++	    (crypto->cipher == CIPHER_AES))
++		iveiv_entry.iv[3] |= 0x20;
++	iveiv_entry.iv[3] |= key->keyidx << 6;
++	rt2x00pci_register_multiwrite(rt2x00dev, offset,
++				      &iveiv_entry, sizeof(iveiv_entry));
++
++	offset = MAC_WCID_ENTRY(crypto->aid);
++
++	memset(&wcid_entry, 0, sizeof(wcid_entry));
++	if (crypto->cmd == SET_KEY)
++		memcpy(&wcid_entry, crypto->address, ETH_ALEN);
++	rt2x00pci_register_multiwrite(rt2x00dev, offset,
++				      &wcid_entry, sizeof(wcid_entry));
 +}
 +
 +static int rt2800pci_config_shared_key(struct rt2x00_dev *rt2x00dev,
@@ -387,10 +407,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	struct hw_key_entry key_entry;
 +	struct rt2x00_field32 field;
 +	u32 offset;
-+	u32 mask;
 +	u32 reg;
 +
 +	if (crypto->cmd == SET_KEY) {
++		key->hw_key_idx = (4 * crypto->bssidx) + key->keyidx;
++
 +		memcpy(key_entry.key, crypto->key,
 +		       sizeof(key_entry.key));
 +		memcpy(key_entry.tx_mic, crypto->tx_mic,
@@ -401,34 +422,22 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		offset = SHARED_KEY_ENTRY(key->hw_key_idx);
 +		rt2x00pci_register_multiwrite(rt2x00dev, offset,
 +					      &key_entry, sizeof(key_entry));
-+
-+		/*
-+		 * The driver does not support the IV/EIV generation
-+		 * in hardware. However it doesn't support the IV/EIV
-+		 * inside the ieee80211 frame either, but requires it
-+		 * to be provided seperately for the descriptor.
-+		 * rt2x00lib will cut the IV/EIV data out of all frames
-+		 * given to us by mac80211, but we must tell mac80211
-+		 * to generate the IV/EIV data.
-+		 */
-+		key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
 +	}
 +
 +	/*
 +	 * The cipher types are stored over multiple registers
 +	 * starting with SHARED_KEY_MODE_BASE each word will have
-+	 * 32 bits and contains the cipher types for 2 modes each.
++	 * 32 bits and contains the cipher types for 2 bssidx each.
 +	 * Using the correct defines correctly will cause overhead,
 +	 * so just calculate the correct offset.
 +	 */
-+	mask = key->hw_key_idx % 8;
-+	field.bit_offset = (3 * mask);
++	field.bit_offset = (4 * key->keyidx);
 +	field.bit_mask = 0x7 << field.bit_offset;
 +
 +	offset = SHARED_KEY_MODE_ENTRY(key->hw_key_idx / 8);
 +	rt2x00pci_register_read(rt2x00dev, offset, &reg);
 +	rt2x00_set_field32(&reg, field,
-+			   (crypto->cmd == SET_KEY) ? crypto->cipher : 0);
++			   (crypto->cmd == SET_KEY) * crypto->cipher);
 +	rt2x00pci_register_write(rt2x00dev, offset, reg);
 +
 +	/*
@@ -446,13 +455,13 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	struct hw_key_entry key_entry;
 +	u32 offset;
 +
-+	/*
-+	 * 1 pairwise key is possible per AID, this means that the AID
-+	 * equals our hw_key_idx.
-+	 */
-+	key->hw_key_idx = crypto->aid;
-+
 +	if (crypto->cmd == SET_KEY) {
++		/*
++		 * 1 pairwise key is possible per AID, this means that the AID
++		 * equals our hw_key_idx.
++		 */
++		key->hw_key_idx = crypto->aid;
++
 +		memcpy(key_entry.key, crypto->key,
 +		       sizeof(key_entry.key));
 +		memcpy(key_entry.tx_mic, crypto->tx_mic,
@@ -463,17 +472,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		offset = PAIRWISE_KEY_ENTRY(key->hw_key_idx);
 +		rt2x00pci_register_multiwrite(rt2x00dev, offset,
 +					      &key_entry, sizeof(key_entry));
-+
-+		/*
-+		 * The driver does not support the IV/EIV generation
-+		 * in hardware. However it doesn't support the IV/EIV
-+		 * inside the ieee80211 frame either, but requires it
-+		 * to be provided seperately for the descriptor.
-+		 * rt2x00lib will cut the IV/EIV data out of all frames
-+		 * given to us by mac80211, but we must tell mac80211
-+		 * to generate the IV/EIV data.
-+		 */
-+		key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
 +	}
 +
 +	/*
@@ -521,7 +519,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_PSPOLL,
 +			   !(filter_flags & FIF_CONTROL));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_BA, 1);
-+	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_BAR, 1);
++	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_BAR, 0);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_CNTL,
 +			   !(filter_flags & FIF_CONTROL));
 +	rt2x00pci_register_write(rt2x00dev, RX_FILTER_CFG, reg);
@@ -582,7 +580,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	rt2x00pci_register_read(rt2x00dev, TX_TIMEOUT_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_TIMEOUT_CFG_RX_ACK_TIMEOUT,
-+			   erp->ack_timeout);
++			   DIV_ROUND_UP(erp->ack_timeout, erp->slot_time));
 +	rt2x00pci_register_write(rt2x00dev, TX_TIMEOUT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, AUTO_RSP_CFG, &reg);
@@ -599,8 +597,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	rt2x00pci_register_write(rt2x00dev, LEGACY_BASIC_RATE,
 +				 erp->basic_rates);
-+	rt2x00pci_register_write(rt2x00dev, HT_BASIC_RATE,
-+				 erp->basic_rates >> 32);
++	rt2x00pci_register_write(rt2x00dev, HT_BASIC_RATE, 0x00008003);
 +
 +	rt2x00pci_register_read(rt2x00dev, BKOFF_SLOT_CFG, &reg);
 +	rt2x00_set_field32(&reg, BKOFF_SLOT_CFG_SLOT_TIME, erp->slot_time);
@@ -980,12 +977,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 */
 +	rt2x00pci_register_read(rt2x00dev, RX_STA_CNT0, &reg);
 +	qual->rx_failed = rt2x00_get_field32(reg, RX_STA_CNT0_CRC_ERR);
-+
-+	/*
-+	 * Update False CCA count from register.
-+	 */
-+	rt2x00pci_register_read(rt2x00dev, RX_STA_CNT1, &reg);
-+	qual->false_cca = rt2x00_get_field32(reg, RX_STA_CNT1_FALSE_CCA);
 +}
 +
 +static u8 rt2800pci_get_default_vgc(struct rt2x00_dev *rt2x00dev)
@@ -1038,9 +1029,24 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	return FIRMWARE_RT2860;
 +}
 +
-+static u16 rt2800pci_get_firmware_crc(const void *data, const size_t len)
++static int rt2800pci_check_firmware(struct rt2x00_dev *rt2x00dev,
++				    const u8 *data, const size_t len)
 +{
++	u16 fw_crc;
 +	u16 crc;
++
++	/*
++	 * Only support 8kb firmware files.
++	 */
++	if (len != 8192)
++		return FW_BAD_LENGTH;
++
++	/*
++	 * The last 2 bytes in the firmware array are the crc checksum itself,
++	 * this means that we should never pass those 2 bytes to the crc
++	 * algorithm.
++	 */
++	fw_crc = (data[len - 2] << 8 | data[len - 1]);
 +
 +	/*
 +	 * Use the crc ccitt algorithm.
@@ -1048,9 +1054,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 * used bit ordering reversion on the both the firmware bytes
 +	 * before input input as well as on the final output.
 +	 * Obviously using crc ccitt directly is much more efficient.
-+	 * The last 2 bytes in the firmware array are the crc checksum itself,
-+	 * this means that we should never pass those 2 bytes to the crc
-+	 * algorithm.
 +	 */
 +	crc = crc_ccitt(~0, data, len - 2);
 +
@@ -1060,19 +1063,16 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 * will be swapped, use swab16 to convert the crc to the correct
 +	 * value.
 +	 */
-+	return swab16(crc);
++	crc = swab16(crc);
++
++	return (fw_crc == crc) ? FW_OK : FW_BAD_CRC;
 +}
 +
 +static int rt2800pci_load_firmware(struct rt2x00_dev *rt2x00dev,
-+				   const void *data, const size_t len)
++				   const u8 *data, const size_t len)
 +{
 +	unsigned int i;
 +	u32 reg;
-+
-+	if (len != 8192) {
-+		ERROR(rt2x00dev, "Invalid firmware file length (len=%zu)\n", len);
-+		return -ENOENT;
-+	}
 +
 +	/*
 +	 * Wait for stable hardware.
@@ -1201,26 +1201,31 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_write(rt2x00dev, TX_BASE_PTR0, entry_priv->desc_dma);
 +	rt2x00pci_register_write(rt2x00dev, TX_MAX_CNT0, rt2x00dev->tx[0].limit);
 +	rt2x00pci_register_write(rt2x00dev, TX_CTX_IDX0, 0);
++	rt2x00pci_register_write(rt2x00dev, TX_DTX_IDX0, 0);
 +
 +	entry_priv = rt2x00dev->tx[1].entries[0].priv_data;
 +	rt2x00pci_register_write(rt2x00dev, TX_BASE_PTR1, entry_priv->desc_dma);
 +	rt2x00pci_register_write(rt2x00dev, TX_MAX_CNT1, rt2x00dev->tx[1].limit);
 +	rt2x00pci_register_write(rt2x00dev, TX_CTX_IDX1, 0);
++	rt2x00pci_register_write(rt2x00dev, TX_DTX_IDX1, 0);
 +
 +	entry_priv = rt2x00dev->tx[2].entries[0].priv_data;
 +	rt2x00pci_register_write(rt2x00dev, TX_BASE_PTR2, entry_priv->desc_dma);
 +	rt2x00pci_register_write(rt2x00dev, TX_MAX_CNT2, rt2x00dev->tx[2].limit);
 +	rt2x00pci_register_write(rt2x00dev, TX_CTX_IDX2, 0);
++	rt2x00pci_register_write(rt2x00dev, TX_DTX_IDX2, 0);
 +
 +	entry_priv = rt2x00dev->tx[3].entries[0].priv_data;
 +	rt2x00pci_register_write(rt2x00dev, TX_BASE_PTR3, entry_priv->desc_dma);
 +	rt2x00pci_register_write(rt2x00dev, TX_MAX_CNT3, rt2x00dev->tx[3].limit);
 +	rt2x00pci_register_write(rt2x00dev, TX_CTX_IDX3, 0);
++	rt2x00pci_register_write(rt2x00dev, TX_DTX_IDX3, 0);
 +
 +	entry_priv = rt2x00dev->rx->entries[0].priv_data;
 +	rt2x00pci_register_write(rt2x00dev, RX_BASE_PTR, entry_priv->desc_dma);
 +	rt2x00pci_register_write(rt2x00dev, RX_MAX_CNT, rt2x00dev->rx[0].limit);
 +	rt2x00pci_register_write(rt2x00dev, RX_CRX_IDX, 0);
++	rt2x00pci_register_write(rt2x00dev, RX_DRX_IDX, 0);
 +
 +	/*
 +	 * Enable global DMA configuration
@@ -1291,7 +1296,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_TX_TIME_COMPENSATE, 0);
 +	rt2x00pci_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +
-+	rt2x00pci_register_write(rt2x00dev, TX_SW_CFG0, 0x00040a06);
++	rt2x00pci_register_write(rt2x00dev, TX_SW_CFG0, 0x00000000);
 +	rt2x00pci_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
 +
 +	rt2x00pci_register_read(rt2x00dev, TX_LINK_CFG, &reg);
@@ -1332,25 +1337,25 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_write(rt2x00dev, AUTO_RSP_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, CCK_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, CCK_PROT_CFG_PROTECT_RATE, 3);
++	rt2x00_set_field32(&reg, CCK_PROT_CFG_PROTECT_RATE, 8);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_PROTECT_NAV, 1);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_CCK, 1);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_OFDM, 1);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_MM20, 1);
-+	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_MM40, 0);
++	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_MM40, 1);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, CCK_PROT_CFG_TX_OP_ALLOW_GF40, 1);
 +	rt2x00pci_register_write(rt2x00dev, CCK_PROT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, OFDM_PROT_CFG, &reg);
-+	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_RATE, 3);
++	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_RATE, 8);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_CTRL, 0);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_PROTECT_NAV, 1);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_CCK, 1);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_OFDM, 1);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_MM20, 1);
-+	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_MM40, 0);
++	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_MM40, 1);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_GF20, 1);
 +	rt2x00_set_field32(&reg, OFDM_PROT_CFG_TX_OP_ALLOW_GF40, 1);
 +	rt2x00pci_register_write(rt2x00dev, OFDM_PROT_CFG, reg);
@@ -1470,12 +1475,12 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_read(rt2x00dev, LG_FBK_CFG0, &reg);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS0FBK, 8);
 +	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS1FBK, 8);
-+	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS2FBK, 10);
-+	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS3FBK, 11);
-+	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS4FBK, 12);
-+	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS5FBK, 13);
-+	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS6FBK, 14);
-+	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS7FBK, 15);
++	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS2FBK, 3);
++	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS3FBK, 10);
++	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS4FBK, 11);
++	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS5FBK, 12);
++	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS6FBK, 13);
++	rt2x00_set_field32(&reg, LG_FBK_CFG0_OFDMMCS7FBK, 14);
 +	rt2x00pci_register_write(rt2x00dev, LG_FBK_CFG0, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, LG_FBK_CFG1, &reg);
@@ -1820,7 +1825,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 */
 +	rt2x00_desc_read(txwi, 0, &word);
 +	rt2x00_set_field32(&word, TXWI_W0_FRAG,
-+			   test_bit(ENTRY_TXD_FIRST_FRAGMENT, &txdesc->flags) ||
 +			   test_bit(ENTRY_TXD_MORE_FRAG, &txdesc->flags));
 +	rt2x00_set_field32(&word, TXWI_W0_MIMO_PS, 0);
 +	rt2x00_set_field32(&word, TXWI_W0_CF_ACK, 0);
@@ -1957,6 +1961,24 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_write(rt2x00dev, TX_CTX_IDX(qidx), idx);
 +}
 +
++static void rt2800pci_kill_tx_queue(struct rt2x00_dev *rt2x00dev,
++				    const enum data_queue_qid qid)
++{
++	u32 reg;
++
++	if (qid == QID_BEACON) {
++		rt2x00pci_register_write(rt2x00dev, BCN_TIME_CFG, 0);
++		return;
++	}
++
++	rt2x00pci_register_read(rt2x00dev, WPDMA_RST_IDX, &reg);
++	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX0, (qid == QID_AC_BE));
++	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX1, (qid == QID_AC_BK));
++	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX2, (qid == QID_AC_VI));
++	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX3, (qid == QID_AC_VO));
++	rt2x00pci_register_write(rt2x00dev, WPDMA_RST_IDX, reg);
++}
++
 +/*
 + * RX control handlers
 + */
@@ -2032,8 +2054,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	rxdesc->rssi =
 +	    (rt2x00_get_field32(rxwi2, RXWI_W2_RSSI0) +
-+	     rt2x00_get_field32(rxwi2, RXWI_W2_RSSI1) +
-+	     rt2x00_get_field32(rxwi2, RXWI_W2_RSSI2)) / 3;
++	     rt2x00_get_field32(rxwi2, RXWI_W2_RSSI1)) / 2;
 +
 +	rxdesc->noise =
 +	    (rt2x00_get_field32(rxwi3, RXWI_W3_SNR0) +
@@ -2179,7 +2200,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	eeprom.data = rt2x00dev;
 +	eeprom.register_read = rt2800pci_eepromregister_read;
 +	eeprom.register_write = rt2800pci_eepromregister_write;
-+	eeprom.width = rt2x00_get_field32(reg, E2PROM_CSR_TYPE_93C46) ?
++	eeprom.width = !rt2x00_get_field32(reg, E2PROM_CSR_TYPE) ?
 +	    PCI_EEPROM_WIDTH_93C46 : PCI_EEPROM_WIDTH_93C66;
 +	eeprom.reg_data_in = 0;
 +	eeprom.reg_data_out = 0;
@@ -2692,7 +2713,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	.irq_handler		= rt2800pci_interrupt,
 +	.probe_hw		= rt2800pci_probe_hw,
 +	.get_firmware_name	= rt2800pci_get_firmware_name,
-+	.get_firmware_crc	= rt2800pci_get_firmware_crc,
++	.check_firmware		= rt2800pci_check_firmware,
 +	.load_firmware		= rt2800pci_load_firmware,
 +	.initialize		= rt2x00pci_initialize,
 +	.uninitialize		= rt2x00pci_uninitialize,
@@ -2707,6 +2728,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	.write_tx_data		= rt2x00pci_write_tx_data,
 +	.write_beacon		= rt2800pci_write_beacon,
 +	.kick_tx_queue		= rt2800pci_kick_tx_queue,
++	.kill_tx_queue		= rt2800pci_kill_tx_queue,
 +	.fill_rxdone		= rt2800pci_fill_rxdone,
 +	.config_shared_key	= rt2800pci_config_shared_key,
 +	.config_pairwise_key	= rt2800pci_config_pairwise_key,
@@ -2798,7 +2820,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +module_exit(rt2800pci_exit);
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
-@@ -0,0 +1,1881 @@
+@@ -0,0 +1,1877 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -2890,7 +2912,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +/*
 + * E2PROM_CSR: EEPROM control register.
 + * RELOAD: Write 1 to reload eeprom content.
-+ * TYPE_93C46: 1: 93c46, 0:93c66.
++ * TYPE: 0: 93c46, 1:93c66.
 + * LOAD_STATUS: 1:loading, 0:done.
 + */
 +#define E2PROM_CSR			0x0004
@@ -2898,7 +2920,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define E2PROM_CSR_CHIP_SELECT		FIELD32(0x00000002)
 +#define E2PROM_CSR_DATA_IN		FIELD32(0x00000004)
 +#define E2PROM_CSR_DATA_OUT		FIELD32(0x00000008)
-+#define E2PROM_CSR_TYPE_93C46		FIELD32(0x00000020)
++#define E2PROM_CSR_TYPE			FIELD32(0x00000030)
 +#define E2PROM_CSR_LOAD_STATUS		FIELD32(0x00000040)
 +#define E2PROM_CSR_RELOAD		FIELD32(0x00000080)
 +
@@ -4088,17 +4110,37 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define MPDU_DENSITY_CNT_RX_ZERO_DEL	FIELD32(0xffff0000)
 +
 +/*
-+ * Security key table memory, base address = 0x1800
++ * Security key table memory.
++ * MAC_WCID_BASE: 8-bytes (use only 6 bytes) * 256 entry
++ * PAIRWISE_KEY_TABLE_BASE: 32-byte * 256 entry
++ * MAC_IVEIV_TABLE_BASE: 8-byte * 256-entry
++ * MAC_WCID_ATTRIBUTE_BASE: 4-byte * 256-entry
++ * SHARED_KEY_TABLE_BASE: 32-byte * 16-entry
++ * SHARED_KEY_MODE_BASE: 4-byte * 16-entry
 + */
-+struct hw_pairwise_ta_entry {
-+	u8 address[6];
-+	u8 reserved[2];
-+} __attribute__ ((packed));
++#define MAC_WCID_BASE			0x1800
++#define PAIRWISE_KEY_TABLE_BASE		0x4000
++#define MAC_IVEIV_TABLE_BASE		0x6000
++#define MAC_WCID_ATTRIBUTE_BASE		0x6800
++#define SHARED_KEY_TABLE_BASE		0x6c00
++#define SHARED_KEY_MODE_BASE		0x7000
 +
-+struct wcid_entry {
-+	u8 rx_ba_bitmat7;
-+	u8 rx_ba_bitmat0;
++#define MAC_WCID_ENTRY(__idx) \
++	( MAC_WCID_BASE + ((__idx) * sizeof(struct mac_wcid_entry)) )
++#define PAIRWISE_KEY_ENTRY(__idx) \
++	( PAIRWISE_KEY_TABLE_BASE + ((__idx) * sizeof(struct hw_key_entry)) )
++#define MAC_IVEIV_ENTRY(__idx) \
++	( MAC_IVEIV_TABLE_BASE + ((__idx) & sizeof(struct mac_iveiv_entry)) )
++#define MAC_WCID_ATTR_ENTRY(__idx) \
++	( MAC_WCID_ATTRIBUTE_BASE + ((__idx) * sizeof(u32)) )
++#define SHARED_KEY_ENTRY(__idx) \
++	( SHARED_KEY_TABLE_BASE + ((__idx) * sizeof(struct hw_key_entry)) )
++#define SHARED_KEY_MODE_ENTRY(__idx) \
++	( SHARED_KEY_MODE_BASE + ((__idx) * sizeof(u32)) )
++
++struct mac_wcid_entry {
 +	u8 mac[6];
++	u8 reserved[2];
 +} __attribute__ ((packed));
 +
 +struct hw_key_entry {
@@ -4107,45 +4149,21 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	u8 rx_mic[8];
 +} __attribute__ ((packed));
 +
++struct mac_iveiv_entry {
++	u8 iv[8];
++} __attribute__ ((packed));
++
 +/*
-+ * Security key table memory.
-+ * MAC_WCID_BASE: 8-bytes (use only 6 bytes) * 256 entry
-+ * PAIRWISE_KEY_TABLE_BASE: 32-byte * 256 entry
-+ * PAIRWISE_IVEIV_TABLE_BASE: 8-byte * 256-entry
-+ * MAC_IVEIV_TABLE_BASE: 8-byte * 256-entry
-+ * MAC_WCID_ATTRIBUTE_BASE: 4-byte * 256-entry
-+ * SHARED_KEY_TABLE_BASE: 32-byte * 16-entry
-+ * SHARED_KEY_MODE_BASE: 32-byte * 16-entry
++ * MAC_IVEIV:
 + */
-+#define MAC_WCID_BASE			0x1800
-+#define PAIRWISE_KEY_TABLE_BASE		0x4000
-+#define PAIRWISE_IVEIV_TABLE_BASE	0x6000
-+#define MAC_IVEIV_TABLE_BASE		0x6000
-+#define MAC_WCID_ATTRIBUTE_BASE		0x6800
-+#define SHARED_KEY_TABLE_BASE		0x6c00
-+#define SHARED_KEY_MODE_BASE		0x7000
-+
-+#define SHARED_KEY_ENTRY(__idx) \
-+	( SHARED_KEY_TABLE_BASE + \
-+		((__idx) * sizeof(struct hw_key_entry)) )
-+#define SHARED_KEY_MODE_ENTRY(__idx) \
-+	( SHARED_KEY_MODE_BASE + ((__idx) * sizeof(u32)) )
-+#define PAIRWISE_KEY_ENTRY(__idx) \
-+	( PAIRWISE_KEY_TABLE_BASE + \
-+		((__idx) * sizeof(struct hw_key_entry)) )
-+
-+#define MAC_WCID_ENTRY(__idx) \
-+	( MAC_WCID_BASE + (2 * sizeof(u32) * (__idx)) )
-+#define MAC_WCID_ATTR_ENTRY(__idx) \
-+	( MAC_WCID_ATTRIBUTE_BASE + ((__idx) * sizeof(u32)) )
++#define MAC_IVEIV_EIV			FIELD32(0x20000000)
++#define MAC_IVEIV_KEYIDX		FIELD32(0xc0000000)
 +
 +/*
 + * MAC_WCID_ATTRIBUTE:
-+ * KEYTAB: 0: shared key table, 1: pairwise key table
-+ * BSS_IDX: multipleBSS index for the WCID
 + */
 +#define MAC_WCID_ATTRIBUTE_KEYTAB	FIELD32(0x00000001)
-+#define MAC_WCID_ATTRIBUTE_PAIRKEY_MODE	FIELD32(0x0000000e)
++#define MAC_WCID_ATTRIBUTE_CIPHER	FIELD32(0x0000000e)
 +#define MAC_WCID_ATTRIBUTE_BSS_IDX	FIELD32(0x00000070)
 +#define MAC_WCID_ATTRIBUTE_RX_WIUDF	FIELD32(0x00000380)
 +
@@ -4682,7 +4700,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#endif /* RT2800PCI_H */
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -139,6 +139,10 @@ struct rt2x00_chip {
+@@ -138,6 +138,10 @@ struct rt2x00_chip {
  #define RT2561		0x0302
  #define RT2661		0x0401
  #define RT2571		0x1300
