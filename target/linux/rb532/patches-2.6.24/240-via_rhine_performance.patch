@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/drivers/net/via-rhine.c
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/via-rhine.c
-+++ linux-2.6.23.17/drivers/net/via-rhine.c
+--- a/drivers/net/via-rhine.c
++++ b/drivers/net/via-rhine.c
 @@ -33,6 +33,8 @@
  #define DRV_VERSION	"1.4.3"
  #define DRV_RELDATE	"2007-03-06"
@@ -52,7 +50,7 @@ Index: linux-2.6.23.17/drivers/net/via-rhine.c
  
  /*
  		Theory of Operation
-@@ -927,7 +934,7 @@ static void alloc_rbufs(struct net_devic
+@@ -922,7 +929,7 @@ static void alloc_rbufs(struct net_devic
  
  	/* Fill in the Rx buffers.  Handle allocation failure gracefully. */
  	for (i = 0; i < RX_RING_SIZE; i++) {
@@ -61,7 +59,7 @@ Index: linux-2.6.23.17/drivers/net/via-rhine.c
  		rp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -1484,7 +1491,9 @@ static int rhine_rx(struct net_device *d
+@@ -1485,7 +1492,9 @@ static int rhine_rx(struct net_device *d
  			struct sk_buff *skb;
  			/* Length should omit the CRC */
  			int pkt_len = data_size - 4;
@@ -72,7 +70,7 @@ Index: linux-2.6.23.17/drivers/net/via-rhine.c
  			/* Check if the packet is long enough to accept without
  			   copying to a minimally-sized skbuff. */
  			if (pkt_len < rx_copybreak &&
-@@ -1503,7 +1512,9 @@ static int rhine_rx(struct net_device *d
+@@ -1504,7 +1513,9 @@ static int rhine_rx(struct net_device *d
  							       rp->rx_skbuff_dma[entry],
  							       rp->rx_buf_sz,
  							       PCI_DMA_FROMDEVICE);
@@ -83,7 +81,7 @@ Index: linux-2.6.23.17/drivers/net/via-rhine.c
  				skb = rp->rx_skbuff[entry];
  				if (skb == NULL) {
  					printk(KERN_ERR "%s: Inconsistent Rx "
-@@ -1517,6 +1528,14 @@ static int rhine_rx(struct net_device *d
+@@ -1518,6 +1529,14 @@ static int rhine_rx(struct net_device *d
  						 rp->rx_skbuff_dma[entry],
  						 rp->rx_buf_sz,
  						 PCI_DMA_FROMDEVICE);
