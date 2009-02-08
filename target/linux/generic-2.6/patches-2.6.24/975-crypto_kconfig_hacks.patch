@@ -1,6 +1,6 @@
---- linux-2.6.24.7/crypto/Kconfig	2008-05-07 01:22:34.000000000 +0200
-+++ linux-2.6.24.7.new/crypto/Kconfig	2009-01-06 12:14:43.000000000 +0100
-@@ -20,7 +20,7 @@
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -20,7 +20,7 @@ menuconfig CRYPTO
  if CRYPTO
  
  config CRYPTO_ALGAPI
@@ -9,7 +9,7 @@
  	help
  	  This option provides the API for cryptographic algorithms.
  
-@@ -29,15 +29,15 @@
+@@ -29,15 +29,15 @@ config CRYPTO_ABLKCIPHER
  	select CRYPTO_BLKCIPHER
  
  config CRYPTO_AEAD

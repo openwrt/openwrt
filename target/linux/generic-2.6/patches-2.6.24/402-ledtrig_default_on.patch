@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -156,4 +156,11 @@
+@@ -156,4 +156,11 @@ config LEDS_TRIGGER_MORSE
  	tristate "LED Morse Trigger"
  	depends on LEDS_TRIGGERS
  
@@ -14,7 +14,7 @@
  endif # NEW_LEDS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -26,3 +26,4 @@
+@@ -26,3 +26,4 @@ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledt
  obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= ledtrig-ide-disk.o
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
  obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o

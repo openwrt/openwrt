@@ -769,7 +769,7 @@
 +}
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -14,7 +14,7 @@
+@@ -14,7 +14,7 @@ lib-$(CONFIG_SMP) += cpumask.o
  lib-y	+= kobject.o kref.o klist.o
  
  obj-y += div64.o sort.o parser.o halfmd4.o debug_locks.o random32.o \
@@ -778,7 +778,7 @@
  
  ifeq ($(CONFIG_DEBUG_KOBJECT),y)
  CFLAGS_kobject.o += -DDEBUG
-@@ -64,6 +64,7 @@
+@@ -64,6 +64,7 @@ obj-$(CONFIG_SMP) += percpu_counter.o
  obj-$(CONFIG_AUDIT_GENERIC) += audit.o
  
  obj-$(CONFIG_SWIOTLB) += swiotlb.o
