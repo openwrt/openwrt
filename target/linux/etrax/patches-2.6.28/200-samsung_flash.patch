@@ -1,0 +1,13 @@
+Index: linux-2.6.28.2/drivers/mtd/chips/cfi_cmdset_0002.c
+===================================================================
+--- linux-2.6.28.2.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2009-02-04 13:42:19.000000000 +0100
++++ linux-2.6.28.2/drivers/mtd/chips/cfi_cmdset_0002.c	2009-02-04 13:44:11.000000000 +0100
+@@ -364,7 +364,7 @@
+ 			return NULL;
+ 		}
+ 
+-		if (extp->MajorVersion != '1' ||
++		if (extp->MajorVersion < '1' || extp->MajorVersion > '3' ||
+ 		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
+ 		        if (cfi->mfr == MANUFACTURER_SAMSUNG &&
+ 			    (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
