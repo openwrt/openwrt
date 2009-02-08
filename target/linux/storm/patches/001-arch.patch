@@ -1,6 +1,6 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -220,6 +220,9 @@
+@@ -220,6 +220,9 @@ config ARCH_EP93XX
  	help
  	  This enables support for the Cirrus EP93xx series of CPUs.
  
@@ -10,7 +10,7 @@
  config ARCH_FOOTBRIDGE
  	bool "FootBridge"
  	select FOOTBRIDGE
-@@ -414,6 +417,8 @@
+@@ -414,6 +417,8 @@ source "arch/arm/mach-ep93xx/Kconfig"
  
  source "arch/arm/mach-footbridge/Kconfig"
  
@@ -19,7 +19,7 @@
  source "arch/arm/mach-integrator/Kconfig"
  
  source "arch/arm/mach-iop32x/Kconfig"
-@@ -549,6 +554,16 @@
+@@ -549,6 +554,16 @@ config PCI
  config PCI_SYSCALL
  	def_bool PCI
  
@@ -36,7 +36,7 @@
  # Select the host bridge type
  config PCI_HOST_VIA82C505
  	bool
-@@ -988,6 +1003,10 @@
+@@ -988,6 +1003,10 @@ if ALIGNMENT_TRAP || !CPU_CP15_MMU
  source "drivers/mtd/Kconfig"
  endif
  
@@ -47,7 +47,7 @@
  source "drivers/parport/Kconfig"
  
  source "drivers/pnp/Kconfig"
-@@ -997,7 +1016,7 @@
+@@ -997,7 +1016,7 @@ source "drivers/block/Kconfig"
  if PCMCIA || ARCH_CLPS7500 || ARCH_IOP32X || ARCH_IOP33X || ARCH_IXP4XX \
  	|| ARCH_L7200 || ARCH_LH7A40X || ARCH_PXA || ARCH_RPC \
  	|| ARCH_S3C2410 || ARCH_SA1100 || ARCH_SHARK || FOOTBRIDGE \
@@ -58,7 +58,7 @@
  
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -72,6 +72,7 @@
+@@ -72,6 +72,7 @@ tune-$(CONFIG_CPU_ARM920T)	:=-mtune=arm9
  tune-$(CONFIG_CPU_ARM922T)	:=-mtune=arm9tdmi
  tune-$(CONFIG_CPU_ARM925T)	:=-mtune=arm9tdmi
  tune-$(CONFIG_CPU_ARM926T)	:=-mtune=arm9tdmi
@@ -66,7 +66,7 @@
  tune-$(CONFIG_CPU_SA110)	:=-mtune=strongarm110
  tune-$(CONFIG_CPU_SA1100)	:=-mtune=strongarm1100
  tune-$(CONFIG_CPU_XSCALE)	:=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
-@@ -111,6 +112,7 @@
+@@ -111,6 +112,7 @@ endif
   machine-$(CONFIG_ARCH_PXA)	   := pxa
   machine-$(CONFIG_ARCH_L7200)	   := l7200
   machine-$(CONFIG_ARCH_INTEGRATOR) := integrator
@@ -76,7 +76,7 @@
   machine-$(CONFIG_ARCH_IOP32X)	   := iop32x
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -19,6 +19,10 @@
+@@ -19,6 +19,10 @@ ifeq ($(CONFIG_ARCH_SHARK),y)
  OBJS		+= head-shark.o ofw-shark.o
  endif
  
@@ -116,7 +116,7 @@
  #else
  		.macro	loadsp,	rb
  		addruart \rb
-@@ -116,7 +127,28 @@
+@@ -116,7 +127,28 @@ start:
  		.rept	8
  		mov	r0, r0
  		.endr
@@ -146,7 +146,7 @@
  		b	1f
  		.word	0x016f2818		@ Magic numbers to help the loader
  		.word	start			@ absolute load/run zImage address
-@@ -458,6 +490,39 @@
+@@ -458,6 +490,39 @@ __armv7_mmu_cache_on:
  		mcr	p15, 0, r0, c7, c5, 4	@ ISB
  		mov	pc, r12
  
@@ -186,7 +186,7 @@
  __arm6_mmu_cache_on:
  		mov	r12, lr
  		bl	__setup_mmu
-@@ -625,6 +690,16 @@
+@@ -625,6 +690,16 @@ proc_types:
  
  		@ These match on the architecture ID
  
@@ -203,7 +203,7 @@
  		.word	0x00020000		@ ARMv4T
  		.word	0x000f0000
  		b	__armv4_mmu_cache_on
-@@ -712,6 +787,23 @@
+@@ -712,6 +787,23 @@ __armv7_mmu_cache_off:
  		mcr	p15, 0, r0, c8, c7, 0	@ invalidate whole TLB
  		mov	pc, r12
  
@@ -227,7 +227,7 @@
  __arm6_mmu_cache_off:
  		mov	r0, #0x00000030		@ ARM6 control reg.
  		b	__armv3_mmu_cache_off
-@@ -759,6 +851,17 @@
+@@ -759,6 +851,17 @@ __armv4_mpu_cache_flush:
  		mcr	p15, 0, ip, c7, c10, 4	@ drain WB
  		mov	pc, lr
  		
@@ -275,7 +275,7 @@
 +#endif
 --- a/arch/arm/boot/compressed/misc.c
 +++ b/arch/arm/boot/compressed/misc.c
-@@ -30,7 +30,7 @@
+@@ -30,7 +30,7 @@ static void putstr(const char *ptr);
  #include <asm/arch/uncompress.h>
  
  #ifdef CONFIG_DEBUG_ICEDCC
@@ -284,7 +284,7 @@
  #ifdef CONFIG_CPU_V6
  
  static void icedcc_putc(int ch)
-@@ -69,6 +69,7 @@
+@@ -69,6 +69,7 @@ static void icedcc_putc(int ch)
  #define flush()	do { } while (0)
  #endif
  
@@ -292,7 +292,7 @@
  static void putstr(const char *ptr)
  {
  	char c;
-@@ -81,11 +82,36 @@
+@@ -81,11 +82,36 @@ static void putstr(const char *ptr)
  
  	flush();
  }
@@ -329,7 +329,7 @@
  /*
   * Optimised C version of memzero for the ARM.
   */
-@@ -346,6 +372,9 @@
+@@ -346,6 +372,9 @@ ulg
  decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
  		  int arch_id)
  {
@@ -339,7 +339,7 @@
  	output_data		= (uch *)output_start;	/* Points to kernel start */
  	free_mem_ptr		= free_mem_ptr_p;
  	free_mem_ptr_end	= free_mem_ptr_end_p;
-@@ -353,6 +382,33 @@
+@@ -353,6 +382,33 @@ decompress_kernel(ulg output_start, ulg 
  
  	arch_decomp_setup();
  
@@ -373,7 +373,7 @@
  	makecrc();
  	putstr("Uncompressing Linux...");
  	gunzip();
-@@ -374,4 +430,119 @@
+@@ -374,4 +430,119 @@ int main()
  	return 0;
  }
  #endif
@@ -515,7 +515,7 @@
  /*
   * No architecture-specific irq_finish function defined in arm/arch/irqs.h.
   */
-@@ -111,8 +113,11 @@
+@@ -111,8 +113,11 @@ static struct irq_desc bad_irq_desc = {
  asmlinkage void __exception asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
  {
  	struct pt_regs *old_regs = set_irq_regs(regs);
@@ -530,7 +530,7 @@
  	 * than crashing, do something sensible.
 --- a/arch/arm/kernel/process.c
 +++ b/arch/arm/kernel/process.c
-@@ -117,7 +117,7 @@
+@@ -117,7 +117,7 @@ void arm_machine_restart(char mode)
  void (*pm_idle)(void);
  EXPORT_SYMBOL(pm_idle);
  
@@ -539,7 +539,7 @@
  EXPORT_SYMBOL(pm_power_off);
  
  void (*arm_pm_restart)(char str) = arm_machine_restart;
-@@ -188,13 +188,37 @@
+@@ -188,13 +188,37 @@ __setup("reboot=", reboot_setup);
  
  void machine_halt(void)
  {
@@ -580,7 +580,7 @@
  void machine_restart(char * __unused)
 --- a/arch/arm/kernel/time.c
 +++ b/arch/arm/kernel/time.c
-@@ -502,8 +502,13 @@
+@@ -502,8 +502,13 @@ static int __init timer_init_sysfs(void)
  
  device_initcall(timer_init_sysfs);
  
@@ -4273,7 +4273,7 @@
 +
 --- a/arch/arm/mm/Kconfig
 +++ b/arch/arm/mm/Kconfig
-@@ -187,6 +187,26 @@
+@@ -187,6 +187,26 @@ config CPU_ARM926T
  	  Say Y if you want support for the ARM926T processor.
  	  Otherwise, say N.
  
@@ -4300,7 +4300,7 @@
  # ARM940T
  config CPU_ARM940T
  	bool "Support ARM940T processor" if ARCH_INTEGRATOR
-@@ -461,6 +481,9 @@
+@@ -461,6 +481,9 @@ config CPU_CACHE_VIVT
  config CPU_CACHE_VIPT
  	bool
  
@@ -4310,7 +4310,7 @@
  if MMU
  # The copy-page model
  config CPU_COPY_V3
-@@ -475,6 +498,12 @@
+@@ -475,6 +498,12 @@ config CPU_COPY_V4WB
  config CPU_COPY_V6
  	bool
  
@@ -4323,7 +4323,7 @@
  # This selects the TLB model
  config CPU_TLB_V3
  	bool
-@@ -534,6 +563,14 @@
+@@ -534,6 +563,14 @@ config CPU_CP15_MPU
  config IO_36
  	bool
  
@@ -4338,7 +4338,7 @@
  comment "Processor Features"
  
  config ARM_THUMB
-@@ -600,7 +637,7 @@
+@@ -600,7 +637,7 @@ config CPU_DCACHE_SIZE
  
  config CPU_DCACHE_WRITETHROUGH
  	bool "Force write through D-cache"
@@ -4349,7 +4349,7 @@
  	  Say Y here to use the data cache in writethrough mode. Unless you
 --- a/arch/arm/mm/Makefile
 +++ b/arch/arm/mm/Makefile
-@@ -32,6 +32,7 @@
+@@ -32,6 +32,7 @@ obj-$(CONFIG_CPU_CACHE_V4WT)	+= cache-v4
  obj-$(CONFIG_CPU_CACHE_V4WB)	+= cache-v4wb.o
  obj-$(CONFIG_CPU_CACHE_V6)	+= cache-v6.o
  obj-$(CONFIG_CPU_CACHE_V7)	+= cache-v7.o
@@ -4357,7 +4357,7 @@
  
  obj-$(CONFIG_CPU_COPY_V3)	+= copypage-v3.o
  obj-$(CONFIG_CPU_COPY_V4WT)	+= copypage-v4wt.o
-@@ -40,6 +41,7 @@
+@@ -40,6 +41,7 @@ obj-$(CONFIG_CPU_COPY_V6)	+= copypage-v6
  obj-$(CONFIG_CPU_SA1100)	+= copypage-v4mc.o
  obj-$(CONFIG_CPU_XSCALE)	+= copypage-xscale.o
  obj-$(CONFIG_CPU_XSC3)		+= copypage-xsc3.o
@@ -4365,7 +4365,7 @@
  
  obj-$(CONFIG_CPU_TLB_V3)	+= tlb-v3.o
  obj-$(CONFIG_CPU_TLB_V4WT)	+= tlb-v4.o
-@@ -47,6 +49,7 @@
+@@ -47,6 +49,7 @@ obj-$(CONFIG_CPU_TLB_V4WB)	+= tlb-v4wb.o
  obj-$(CONFIG_CPU_TLB_V4WBI)	+= tlb-v4wbi.o
  obj-$(CONFIG_CPU_TLB_V6)	+= tlb-v6.o
  obj-$(CONFIG_CPU_TLB_V7)	+= tlb-v7.o
@@ -4373,7 +4373,7 @@
  
  obj-$(CONFIG_CPU_ARM610)	+= proc-arm6_7.o
  obj-$(CONFIG_CPU_ARM710)	+= proc-arm6_7.o
-@@ -60,6 +63,7 @@
+@@ -60,6 +63,7 @@ obj-$(CONFIG_CPU_ARM925T)	+= proc-arm925
  obj-$(CONFIG_CPU_ARM926T)	+= proc-arm926.o
  obj-$(CONFIG_CPU_ARM940T)	+= proc-arm940.o
  obj-$(CONFIG_CPU_ARM946E)	+= proc-arm946.o
@@ -4903,7 +4903,7 @@
  
  #include "mm.h"
  
-@@ -252,6 +253,11 @@
+@@ -252,6 +253,11 @@ bootmem_init_node(int node, int initrd_n
  		initrd_end = initrd_start + phys_initrd_size;
  	}
  #endif
@@ -5426,7 +5426,7 @@
 +	.size	fa_tlb_fns, . - fa_tlb_fns
 --- a/arch/arm/tools/mach-types
 +++ b/arch/arm/tools/mach-types
-@@ -208,7 +208,8 @@
+@@ -208,7 +208,8 @@ karo			ARCH_KARO		KARO			190
  fester			SA1100_FESTER		FESTER			191
  gpi			ARCH_GPI		GPI			192
  smdk2410		ARCH_SMDK2410		SMDK2410		193
@@ -8643,7 +8643,7 @@
  #define v4wbi_tlb_flags	(TLB_WB | TLB_DCLEAN | \
  			 TLB_V4_I_FULL | TLB_V4_D_FULL | \
  			 TLB_V4_I_PAGE | TLB_V4_D_PAGE)
-@@ -246,12 +287,14 @@
+@@ -246,12 +287,14 @@ extern struct cpu_tlb_fns cpu_tlb;
  				 v4_possible_flags | \
  				 v4wbi_possible_flags | \
  				 v4wb_possible_flags | \
@@ -8658,7 +8658,7 @@
  				 v6wbi_always_flags)
  
  #define tlb_flag(f)	((always_tlb_flags & (f)) || (__tlb_flag & possible_tlb_flags & (f)))
-@@ -261,6 +304,9 @@
+@@ -261,6 +304,9 @@ static inline void local_flush_tlb_all(v
  	const int zero = 0;
  	const unsigned int __tlb_flag = __cpu_tlb_flags;
  
@@ -8668,7 +8668,7 @@
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -281,6 +327,13 @@
+@@ -281,6 +327,13 @@ static inline void local_flush_tlb_all(v
  		dsb();
  		isb();
  	}
@@ -8682,7 +8682,7 @@
  }
  
  static inline void local_flush_tlb_mm(struct mm_struct *mm)
-@@ -289,6 +342,9 @@
+@@ -289,6 +342,9 @@ static inline void local_flush_tlb_mm(st
  	const int asid = ASID(mm);
  	const unsigned int __tlb_flag = __cpu_tlb_flags;
  
@@ -8692,7 +8692,7 @@
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -317,6 +373,14 @@
+@@ -317,6 +373,14 @@ static inline void local_flush_tlb_mm(st
  		asm("mcr p15, 0, %0, c7, c5, 6" : : "r" (zero) : "cc");
  		dsb();
  	}
@@ -8707,7 +8707,7 @@
  }
  
  static inline void
-@@ -327,6 +391,9 @@
+@@ -327,6 +391,9 @@ local_flush_tlb_page(struct vm_area_stru
  
  	uaddr = (uaddr & PAGE_MASK) | ASID(vma->vm_mm);
  
@@ -8717,7 +8717,7 @@
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -357,6 +424,13 @@
+@@ -357,6 +424,13 @@ local_flush_tlb_page(struct vm_area_stru
  		asm("mcr p15, 0, %0, c7, c5, 6" : : "r" (zero) : "cc");
  		dsb();
  	}
@@ -8731,7 +8731,7 @@
  }
  
  static inline void local_flush_tlb_kernel_page(unsigned long kaddr)
-@@ -366,6 +440,9 @@
+@@ -366,6 +440,9 @@ static inline void local_flush_tlb_kerne
  
  	kaddr &= PAGE_MASK;
  
@@ -8741,7 +8741,7 @@
  	if (tlb_flag(TLB_WB))
  		dsb();
  
-@@ -386,6 +463,12 @@
+@@ -386,6 +463,12 @@ static inline void local_flush_tlb_kerne
  		asm("mcr p15, 0, %0, c8, c6, 1" : : "r" (kaddr) : "cc");
  	if (tlb_flag(TLB_V6_I_PAGE))
  		asm("mcr p15, 0, %0, c8, c5, 1" : : "r" (kaddr) : "cc");
@@ -8754,7 +8754,7 @@
  
  	if (tlb_flag(TLB_V6_I_FULL | TLB_V6_D_FULL |
  		     TLB_V6_I_PAGE | TLB_V6_D_PAGE |
-@@ -412,6 +495,7 @@
+@@ -412,6 +495,7 @@ static inline void local_flush_tlb_kerne
   */
  static inline void flush_pmd_entry(pmd_t *pmd)
  {
@@ -8762,7 +8762,7 @@
  	const unsigned int __tlb_flag = __cpu_tlb_flags;
  
  	if (tlb_flag(TLB_DCLEAN))
-@@ -419,15 +503,30 @@
+@@ -419,15 +503,30 @@ static inline void flush_pmd_entry(pmd_t
  			: : "r" (pmd) : "cc");
  	if (tlb_flag(TLB_WB))
  		dsb();
@@ -8795,7 +8795,7 @@
  #undef tlb_flag
 --- a/include/asm-arm/xor.h
 +++ b/include/asm-arm/xor.h
-@@ -139,3 +139,18 @@
+@@ -139,3 +139,18 @@ static struct xor_block_template xor_blo
  		xor_speed(&xor_block_8regs);	\
  		xor_speed(&xor_block_32regs);	\
  	} while (0)
@@ -8816,7 +8816,7 @@
 +#endif
 --- a/include/linux/apm_bios.h
 +++ b/include/linux/apm_bios.h
-@@ -217,4 +217,24 @@
+@@ -217,4 +217,24 @@ extern struct apm_info	apm_info;
  #define APM_IOC_STANDBY		_IO('A', 1)
  #define APM_IOC_SUSPEND		_IO('A', 2)
  
@@ -8843,7 +8843,7 @@
  #endif	/* LINUX_APM_H */
 --- a/kernel/time.c
 +++ b/kernel/time.c
-@@ -76,6 +76,7 @@
+@@ -76,6 +76,7 @@ asmlinkage long sys_time(time_t __user *
   * why not move it into the appropriate arch directory (for those
   * architectures that need it).
   */
@@ -8851,7 +8851,7 @@
   
  asmlinkage long sys_stime(time_t __user *tptr)
  {
-@@ -87,6 +88,10 @@
+@@ -87,6 +88,10 @@ asmlinkage long sys_stime(time_t __user 
  
  	tv.tv_nsec = 0;
  

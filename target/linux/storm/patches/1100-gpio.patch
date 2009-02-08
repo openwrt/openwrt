@@ -359,7 +359,7 @@
 +
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
-@@ -1064,5 +1064,12 @@
+@@ -1071,5 +1071,12 @@ config DEVPORT
  
  source "drivers/s390/char/Kconfig"
  
@@ -374,7 +374,7 @@
  
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -115,6 +115,7 @@
+@@ -116,6 +116,7 @@ obj-$(CONFIG_IPMI_HANDLER)	+= ipmi/
  
  obj-$(CONFIG_HANGCHECK_TIMER)	+= hangcheck-timer.o
  obj-$(CONFIG_TCG_TPM)		+= tpm/

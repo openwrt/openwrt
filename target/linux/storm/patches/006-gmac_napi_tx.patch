@@ -15,7 +15,7 @@
  
  #ifndef CONFIG_SL351x_RXTOE
  //#define CONFIG_SL351x_RXTOE	1
-@@ -126,7 +130,6 @@
+@@ -126,7 +130,6 @@ static	char _debug_prefetch_buf[_DEBUG_P
   *************************************************************/
  static int	gmac_initialized = 0;
  TOE_INFO_T toe_private_data;
@@ -23,7 +23,7 @@
  static int rx_poll_enabled;
  spinlock_t gmac_fq_lock;
  unsigned int FLAG_SWITCH;
-@@ -190,7 +193,7 @@
+@@ -190,7 +193,7 @@ void mac_get_sw_tx_weight(struct net_dev
  void mac_set_sw_tx_weight(struct net_device *dev, char *weight);
  void mac_get_hw_tx_weight(struct net_device *dev, char *weight);
  void mac_set_hw_tx_weight(struct net_device *dev, char *weight);
@@ -32,7 +32,7 @@
  
  #ifdef VITESSE_G5SWITCH
  extern int Get_Set_port_status(void);
-@@ -295,12 +298,14 @@
+@@ -295,12 +298,14 @@ static int __init gmac_init_module(void)
  	for(j = 0; i<CONFIG_MAC_NUM; j++)
  	{
  		i=j;
@@ -47,7 +47,7 @@
  
  		tp = (GMAC_INFO_T *)&toe_private_data.gmac[i];
  		tp->dev = NULL;
-@@ -459,7 +464,7 @@
+@@ -459,7 +464,7 @@ void mac_init_drv(void)
  		toe->gmac[1].dma_base_addr = TOE_GMAC1_DMA_BASE;
          toe->gmac[0].auto_nego_cfg = 1;
          toe->gmac[1].auto_nego_cfg = 1;
@@ -56,7 +56,7 @@
          toe->gmac[0].speed_cfg = GMAC_SPEED_1000;
          toe->gmac[1].speed_cfg = GMAC_SPEED_1000;
  #else
-@@ -508,7 +513,7 @@
+@@ -508,7 +513,7 @@ void mac_init_drv(void)
  		// Write GLOBAL_QUEUE_THRESHOLD_REG
  		threshold.bits32 = 0;
  		threshold.bits.swfq_empty = (TOE_SW_FREEQ_DESC_NUM > 256) ? 255 :
@@ -65,7 +65,7 @@
  		threshold.bits.hwfq_empty = (TOE_HW_FREEQ_DESC_NUM > 256) ? 256/4 :
  		                                        TOE_HW_FREEQ_DESC_NUM/4;
  		threshold.bits.toe_class = (TOE_TOE_DESC_NUM > 256) ? 256/4 :
-@@ -613,18 +618,25 @@
+@@ -613,18 +618,25 @@ static void toe_init_free_queue(void)
  	rwptr_reg.bits.rptr = 0;
  	toe->fq_rx_rwptr.bits32 = rwptr_reg.bits32;
  	writel(rwptr_reg.bits32, TOE_GLOBAL_BASE + GLOBAL_SWFQ_RWPTR_REG);
@@ -93,7 +93,7 @@
  		// toe->rx_skb[i] = skb;
  		sw_desc_ptr->word2.buf_adr = (unsigned int)__pa(skb->data);
  //   		consistent_sync((unsigned int)desc_ptr, sizeof(GMAC_RXDESC_T), PCI_DMA_TODEVICE);
-@@ -851,14 +863,14 @@
+@@ -851,14 +863,14 @@ static void toe_init_hwtx_queue(void)
  *----------------------------------------------------------------------*/
  static void toe_init_default_queue(void)
  {
@@ -112,7 +112,7 @@
  	if (!desc_ptr)
  	{
  		printk("%s::DMA_MALLOC fail !\n",__func__);
-@@ -866,14 +878,17 @@
+@@ -866,14 +878,17 @@ static void toe_init_default_queue(void)
  	}
  	memset((void *)desc_ptr, 0, TOE_DEFAULT_Q0_DESC_NUM * sizeof(GMAC_RXDESC_T));
  	toe->gmac[0].default_desc_base = (unsigned int)desc_ptr;
@@ -131,7 +131,7 @@
  	if (!desc_ptr)
  	{
  		printk("%s::DMA_MALLOC fail !\n",__func__);
-@@ -1071,12 +1086,16 @@
+@@ -1071,12 +1086,16 @@ static void toe_init_gmac(struct net_dev
  
  	    data = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_0_REG) & ~tp->intr0_selected;
  	    writel(data, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_0_REG);
@@ -148,7 +148,7 @@
  	    data = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_4_REG) & ~tp->intr4_selected;
  	    writel(data, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_4_REG);
  	}
-@@ -1176,11 +1195,11 @@
+@@ -1176,11 +1195,11 @@ static int toe_gmac_init_chip(struct net
  	GMAC_CONFIG2_T	config2_val;
  	GMAC_CONFIG0_T	config0,config0_mask;
  	GMAC_CONFIG1_T	config1;
@@ -162,7 +162,7 @@
  //	GMAC_HASH_ENABLE_REG0_T hash_ctrl;
  //
  #if 0 /* mac address will be set in late_initcall */
-@@ -1202,24 +1221,23 @@
+@@ -1202,24 +1221,23 @@ static int toe_gmac_init_chip(struct net
  	//	config1.bits32 = 0x002004;	//next version
  	/* set flow control threshold */
  	config1.bits32 = 0;
@@ -195,7 +195,7 @@
  	//	gmac_write_reg(tp->base_addr,GMAC_MCAST_FIL0,0x0,0xffffffff);
  	//  gmac_write_reg(tp->base_addr,GMAC_MCAST_FIL1,0x0,0xffffffff);
  
-@@ -1249,7 +1267,7 @@
+@@ -1249,7 +1267,7 @@ static int toe_gmac_init_chip(struct net
  	config0.bits.dis_rx = 1;  /* disable rx */
  	config0.bits.dis_tx = 1;  /* disable tx */
  	config0.bits.loop_back = 0; /* enable/disable GMAC loopback */
@@ -204,7 +204,7 @@
  	config0.bits.rgmii_en = 0;
  	config0.bits.rgmm_edge = 1;
  	config0.bits.rxc_inv = 0;
-@@ -1342,6 +1360,9 @@
+@@ -1342,6 +1360,9 @@ static int toe_gmac_init_chip(struct net
  	gmac_write_reg(tp->dma_base_addr, GMAC_AHB_WEIGHT_REG, ahb_weight.bits32, ahb_weight_mask.bits32);
  	#endif
  
@@ -214,7 +214,7 @@
  	#if defined(CONFIG_SL351x_NAT) || defined(CONFIG_SL351x_RXTOE)
  	gmac_write_reg(tp->dma_base_addr, GMAC_SPR0, IPPROTO_TCP, 0xffffffff);
  	#endif
-@@ -1552,7 +1573,7 @@
+@@ -1552,7 +1573,7 @@ static  void toe_gmac_tx_complete(GMAC_I
  		rwptr.bits32 = readl(swtxq->rwptr_reg);
  		if (rwptr.bits.rptr == swtxq->finished_idx)
  			break;
@@ -223,7 +223,7 @@
  //   		consistent_sync((void *)curr_desc, sizeof(GMAC_TXDESC_T), PCI_DMA_FROMDEVICE);
  		word0.bits32 = curr_desc->word0.bits32;
  		word1.bits32 = curr_desc->word1.bits32;
-@@ -1573,6 +1594,7 @@
+@@ -1573,6 +1594,7 @@ static  void toe_gmac_tx_complete(GMAC_I
  				swtxq->finished_idx = RWPTR_ADVANCE_ONE(swtxq->finished_idx, swtxq->total_desc_num);
  				curr_desc = (GMAC_TXDESC_T *)swtxq->desc_base + swtxq->finished_idx;
  				word0.bits32 = curr_desc->word0.bits32;
@@ -231,7 +231,7 @@
  #ifdef _DUMP_TX_TCP_CONTENT
  				if (curr_desc->word0.bits.buffer_size < 16)
  				{
-@@ -1592,12 +1614,12 @@
+@@ -1592,12 +1614,12 @@ static  void toe_gmac_tx_complete(GMAC_I
  			word0.bits.status_tx_ok = 0;
  			if (swtxq->tx_skb[swtxq->finished_idx])
  			{
@@ -248,7 +248,7 @@
  			curr_desc->word0.bits32 = word0.bits32;
    			swtxq->curr_finished_desc = (GMAC_TXDESC_T *)curr_desc;
   			swtxq->total_finished++;
-@@ -1624,31 +1646,29 @@
+@@ -1624,31 +1646,29 @@ static  void toe_gmac_tx_complete(GMAC_I
  *----------------------------------------------------------------------*/
  static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
@@ -294,7 +294,7 @@
  	total_pages = snd_pages;
  #endif
  
-@@ -1664,13 +1684,6 @@
+@@ -1664,13 +1684,6 @@ static int gmac_start_xmit(struct sk_buf
      }
  #endif
  
@@ -308,7 +308,7 @@
  #ifdef GMAC_USE_TXQ0
  	#define tx_qid 	0
  #endif
-@@ -1703,9 +1716,9 @@
+@@ -1703,9 +1716,9 @@ static int gmac_start_xmit(struct sk_buf
  	toe_gmac_tx_complete(tp, tx_qid, dev, 0);
  
  	if (wptr >= swtxq->finished_idx)
@@ -320,7 +320,7 @@
  	if (free_desc < snd_pages)
  	{
  //		spin_unlock(&tp->tx_mutex);
-@@ -2063,9 +2076,10 @@
+@@ -2063,9 +2076,10 @@ void mac_start_txdma(struct net_device *
  struct net_device_stats * gmac_get_stats(struct net_device *dev)
  {
      GMAC_INFO_T *tp = (GMAC_INFO_T *)dev->priv;
@@ -333,7 +333,7 @@
  
      if (netif_running(dev))
      {
-@@ -2073,10 +2087,14 @@
+@@ -2073,10 +2087,14 @@ struct net_device_stats * gmac_get_stats
          // spin_lock_irqsave(&tp->lock,flags);
          pkt_drop = gmac_read_reg(tp->base_addr,GMAC_IN_DISCARDS);
          pkt_error = gmac_read_reg(tp->base_addr,GMAC_IN_ERRORS);
@@ -348,7 +348,7 @@
      return &tp->ifStatics;
  }
  
-@@ -2401,36 +2419,63 @@
+@@ -2401,36 +2419,63 @@ static int gmac_close(struct net_device 
  * toe_gmac_fill_free_q
  * allocate buffers for free queue.
  *----------------------------------------------------------------------*/
@@ -425,7 +425,7 @@
  }
  // EXPORT_SYMBOL(toe_gmac_fill_free_q);
  
-@@ -2442,14 +2487,14 @@
+@@ -2442,14 +2487,14 @@ static void gmac_registers(const char *m
  	unsigned int		status3;
  	unsigned int		status4;
  
@@ -442,7 +442,7 @@
  	printk("status: s0:%08X, s1:%08X, s2:%08X, s3:%08X, s4:%08X\n",
  		   status0, status1, status2, status3, status4);
  
-@@ -2468,8 +2513,9 @@
+@@ -2468,8 +2513,9 @@ static void gmac_registers(const char *m
  	status3 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_3_REG);
  	status4 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_4_REG);
  
@@ -454,7 +454,7 @@
  }
  /*----------------------------------------------------------------------
  * toe_gmac_interrupt
-@@ -2485,75 +2531,44 @@
+@@ -2485,75 +2531,44 @@ static irqreturn_t toe_gmac_interrupt (i
  	unsigned int		status3;
  	unsigned int		status4;
  
@@ -549,7 +549,7 @@
  	{
  		#define G1_INTR0_BITS	(GMAC1_HWTQ13_EOF_INT_BIT | GMAC1_HWTQ12_EOF_INT_BIT | GMAC1_HWTQ11_EOF_INT_BIT | GMAC1_HWTQ10_EOF_INT_BIT)
  		#define G0_INTR0_BITS	(GMAC0_HWTQ03_EOF_INT_BIT | GMAC0_HWTQ02_EOF_INT_BIT | GMAC0_HWTQ01_EOF_INT_BIT | GMAC0_HWTQ00_EOF_INT_BIT)
-@@ -2563,7 +2578,7 @@
+@@ -2563,7 +2578,7 @@ if (1)
  		// because they should pass packets to upper layer
  		if (tp->port_id == 0)
  		{
@@ -558,7 +558,7 @@
  			{
  				if (status1 & GMAC0_HWTQ03_EOF_INT_BIT)
  					tp->hwtxq[3].eof_cnt++;
-@@ -2574,50 +2589,51 @@
+@@ -2574,50 +2589,51 @@ if (1)
  				if (status1 & GMAC0_HWTQ00_EOF_INT_BIT)
  					tp->hwtxq[0].eof_cnt++;
  			}
@@ -646,7 +646,7 @@
  			{
  				if (status1 & GMAC1_HWTQ13_EOF_INT_BIT)
  					tp->hwtxq[3].eof_cnt++;
-@@ -2629,14 +2645,14 @@
+@@ -2629,14 +2645,14 @@ if (1)
  					tp->hwtxq[0].eof_cnt++;
  			}
  
@@ -665,7 +665,7 @@
  
  					BUG_ON(rx_poll_enabled == 1);
  
-@@ -2646,7 +2662,7 @@
+@@ -2646,7 +2662,7 @@ if (1)
  					data32 &= ~(DEFAULT_Q1_INT_BIT);
  					writel(data32, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_1_REG);
  
@@ -674,7 +674,7 @@
  					data32  = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_4_REG);
  					data32 &= ~DEFAULT_Q1_INT_BIT;
  					writel(data32, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_4_REG);
-@@ -2656,24 +2672,21 @@
+@@ -2656,24 +2672,21 @@ if (1)
  					writel(data32, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_SELECT_4_REG);
  #endif
  
@@ -706,7 +706,7 @@
  	}
  
  	// Interrupt Status 0
-@@ -2814,676 +2827,93 @@
+@@ -2814,676 +2827,93 @@ if (1)
  		}
  	}
  
@@ -1457,7 +1457,7 @@
  	{
  		case GMAC_PHY_GMII:
  		mii_write(tp->phy_addr,0x04,0x05e1); /* advertisement 100M full duplex, pause capable on */
-@@ -3552,6 +2982,7 @@
+@@ -3552,6 +2982,7 @@ void gmac_set_phy_status(struct net_devi
  		status.bits.link = LINK_DOWN;
  		//		clear_bit(__LINK_STATE_START, &dev->state);
  		printk("Link Down (0x%04x) ", reg_val);
@@ -1465,7 +1465,7 @@
  		if(Giga_switch == 1)
  		{
  				wan_port_id = 1;
-@@ -3565,6 +2996,7 @@
+@@ -3565,6 +2996,7 @@ void gmac_set_phy_status(struct net_devi
  				storlink_ctl.link[ tp->port_id] = 0;
  #endif
  		}
@@ -1473,7 +1473,7 @@
  	}
  	else
  	{
-@@ -3572,6 +3004,7 @@
+@@ -3572,6 +3004,7 @@ void gmac_set_phy_status(struct net_devi
  		status.bits.link = LINK_UP;
  		//		set_bit(__LINK_STATE_START, &dev->state);
  		printk("Link Up (0x%04x) ",reg_val);
@@ -1481,7 +1481,7 @@
  		if(Giga_switch == 1)
  		{
  				wan_port_id = 1;
-@@ -3585,6 +3018,7 @@
+@@ -3585,6 +3018,7 @@ void gmac_set_phy_status(struct net_devi
  				storlink_ctl.link[ tp->port_id] = 1;
  #endif
  		}
@@ -1489,7 +1489,7 @@
  	}
  	//    value = mii_read(PHY_ADDR,0x05);
  
-@@ -3863,6 +3297,7 @@
+@@ -3863,6 +3297,7 @@ void gmac_get_phy_status(struct net_devi
  			}
  		}
  		status.bits.link = LINK_UP; /* link up */
@@ -1497,7 +1497,7 @@
  		if(Giga_switch==1)
  		{
  				wan_port_id = 1;
-@@ -3874,6 +3309,7 @@
+@@ -3874,6 +3309,7 @@ void gmac_get_phy_status(struct net_devi
  				storlink_ctl.link[ tp->port_id] = 1;
  #endif
  		}
@@ -1505,7 +1505,7 @@
  		if ((ability & 0x20)==0x20)
  		{
  			if (tp->flow_control_enable == 0)
-@@ -3914,6 +3350,7 @@
+@@ -3914,6 +3350,7 @@ void gmac_get_phy_status(struct net_devi
  	else
  	{
  		status.bits.link = LINK_DOWN; /* link down */
@@ -1513,7 +1513,7 @@
  		if(Giga_switch == 1)
  		{
  				wan_port_id = 1;
-@@ -3925,6 +3362,7 @@
+@@ -3925,6 +3362,7 @@ void gmac_get_phy_status(struct net_devi
  				storlink_ctl.link[ tp->port_id] = 0;
  #endif
  		}
@@ -1521,7 +1521,7 @@
  		if (tp->pre_phy_status == LINK_UP)
  		{
  			printk("GMAC-%d LINK_Down......\n",tp->port_id);
-@@ -4298,86 +3736,102 @@
+@@ -4298,86 +3736,102 @@ static void gmac_set_rx_mode(struct net_
  }
  
  #ifdef CONFIG_SL_NAPI
@@ -1685,7 +1685,7 @@
  		{
  			good_frame = 0;
  			if (curr_desc->word0.bits32 & GMAC_RXDESC_0_T_derr)
-@@ -4388,7 +3842,6 @@
+@@ -4388,7 +3842,6 @@ static int gmac_rx_poll(struct net_devic
  			{
  				if (rx_status == 4 || rx_status == 7)
  					isPtr->rx_crc_errors++;
@@ -1693,7 +1693,7 @@
  			}
  #ifdef SL351x_GMAC_WORKAROUND
  			else if (pkt_size < 60)
-@@ -4407,17 +3860,32 @@
+@@ -4407,17 +3860,32 @@ static int gmac_rx_poll(struct net_devic
  				}
  			}
  #endif
@@ -1731,7 +1731,7 @@
  
  #ifdef SL351x_GMAC_WORKAROUND
  			if (tp->short_frames_cnt >= GMAC_SHORT_FRAME_THRESHOLD)
-@@ -4432,225 +3900,118 @@
+@@ -4432,225 +3900,118 @@ static int gmac_rx_poll(struct net_devic
  			}
  			tp->short_frames_cnt = 0;
  #endif
@@ -2015,7 +2015,7 @@
  }
  #endif
  
-@@ -5114,6 +4475,7 @@
+@@ -5114,6 +4475,7 @@ void sl351x_poll_gmac_hanged_status(u32 
  			{
  				sl351x_nat_workaround_cnt++;
  				sl351x_nat_workaround_handler();
@@ -2023,7 +2023,7 @@
  			}
  #endif
  #endif
-@@ -5124,6 +4486,7 @@
+@@ -5124,6 +4486,7 @@ void sl351x_poll_gmac_hanged_status(u32 
  	}
  
  do_workaround:
@@ -2031,7 +2031,7 @@
  
  	gmac_initialized = 0;
  	if (hanged_state)
-@@ -5290,6 +4653,7 @@
+@@ -5290,6 +4653,7 @@ static void sl351x_gmac_release_swtx_q(v
  	GMAC_SWTXQ_T	*swtxq;
  	DMA_RWPTR_T		rwptr;
  
@@ -2039,7 +2039,7 @@
  	toe = (TOE_INFO_T *)&toe_private_data;
  	tp = (GMAC_INFO_T *)&toe->gmac[0];
  	for (i=0; i<GMAC_NUM; i++, tp++)
-@@ -5341,6 +4705,7 @@
+@@ -5341,6 +4705,7 @@ static void sl351x_gmac_release_rx_q(voi
  	volatile GMAC_RXDESC_T	*curr_desc;
  	struct sk_buff			*skb;
  
@@ -2047,7 +2047,7 @@
  	toe = (TOE_INFO_T *)&toe_private_data;
  	tp = (GMAC_INFO_T *)&toe->gmac[0];
  	for (i=0; i<GMAC_NUM; i++, tp++)
-@@ -5374,6 +4739,7 @@
+@@ -5374,6 +4739,7 @@ static void sl351x_gmac_release_class_q(
  	volatile GMAC_RXDESC_T	*curr_desc;
  	struct sk_buff			*skb;
  
@@ -2055,7 +2055,7 @@
  	toe = (TOE_INFO_T *)&toe_private_data;
  	classq = (CLASSQ_INFO_T *)&toe->classq[0];
  	for (i=0; i<TOE_CLASS_QUEUE_NUM; i++, classq++)
-@@ -5410,6 +4776,7 @@
+@@ -5410,6 +4776,7 @@ static void sl351x_gmac_release_toe_q(vo
  	GMAC_RXDESC_T	*toe_curr_desc;
  	struct sk_buff			*skb;
  
