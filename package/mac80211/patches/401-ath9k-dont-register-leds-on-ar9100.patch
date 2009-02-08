@@ -1,16 +1,16 @@
 --- a/drivers/net/wireless/ath9k/main.c
 +++ b/drivers/net/wireless/ath9k/main.c
-@@ -989,6 +989,9 @@ static void ath_unregister_led(struct at
+@@ -1026,6 +1026,9 @@ static void ath_unregister_led(struct at
  
  static void ath_deinit_leds(struct ath_softc *sc)
  {
 +	if (AR_SREV_9100(sc->sc_ah))
 +		return;
 +
+ 	cancel_delayed_work_sync(&sc->ath_led_blink_work);
  	ath_unregister_led(&sc->assoc_led);
  	sc->sc_flags &= ~SC_OP_LED_ASSOCIATED;
- 	ath_unregister_led(&sc->tx_led);
-@@ -1002,6 +1005,9 @@ static void ath_init_leds(struct ath_sof
+@@ -1040,6 +1043,9 @@ static void ath_init_leds(struct ath_sof
  	char *trigger;
  	int ret;
  
