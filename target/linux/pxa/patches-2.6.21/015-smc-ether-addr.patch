@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/net/smc91x.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/smc91x.c
-+++ linux-2.6.21.7/drivers/net/smc91x.c
+--- a/drivers/net/smc91x.c
++++ b/drivers/net/smc91x.c
 @@ -1815,6 +1815,39 @@ static int __init smc_findirq(void __iom
  	return probe_irq_off(cookie);
  }

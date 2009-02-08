@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/sound/pci/ac97/ac97_codec.c
-===================================================================
---- linux-2.6.21.7.orig/sound/pci/ac97/ac97_codec.c
-+++ linux-2.6.21.7/sound/pci/ac97/ac97_codec.c
+--- a/sound/pci/ac97/ac97_codec.c
++++ b/sound/pci/ac97/ac97_codec.c
 @@ -158,7 +158,7 @@ static const struct ac97_codec_id snd_ac
  { 0x4e534300, 0xffffffff, "LM4540,43,45,46,48",	NULL,		NULL }, // only guess --jk
  { 0x4e534331, 0xffffffff, "LM4549",		NULL,		NULL },
@@ -11,10 +9,8 @@ Index: linux-2.6.21.7/sound/pci/ac97/ac97_codec.c
  { 0x53494c20, 0xffffffe0, "Si3036,8",		mpatch_si3036,	mpatch_si3036, AC97_MODEM_PATCH },
  { 0x54524102, 0xffffffff, "TR28022",		NULL,		NULL },
  { 0x54524106, 0xffffffff, "TR28026",		NULL,		NULL },
-Index: linux-2.6.21.7/sound/pci/ac97/ac97_patch.c
-===================================================================
---- linux-2.6.21.7.orig/sound/pci/ac97/ac97_patch.c
-+++ linux-2.6.21.7/sound/pci/ac97/ac97_patch.c
+--- a/sound/pci/ac97/ac97_patch.c
++++ b/sound/pci/ac97/ac97_patch.c
 @@ -29,6 +29,10 @@
  #include <linux/slab.h>
  #include <linux/mutex.h>

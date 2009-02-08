@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mach-pxa/gumstix.c
-+++ linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
+--- a/arch/arm/mach-pxa/gumstix.c
++++ b/arch/arm/mach-pxa/gumstix.c
 @@ -25,6 +25,7 @@
  #include <asm/arch/udc.h>
  #include <asm/arch/mmc.h>
@@ -110,10 +108,8 @@ Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
  	(void) platform_add_devices(devices, ARRAY_SIZE(devices));
  }
  
-Index: linux-2.6.21.7/drivers/video/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/video/Kconfig
-+++ linux-2.6.21.7/drivers/video/Kconfig
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
 @@ -1495,6 +1495,37 @@ config FB_PXA
  
  	  If unsure, say N.
@@ -152,10 +148,8 @@ Index: linux-2.6.21.7/drivers/video/Kconfig
  config FB_PXA_PARAMETERS
  	bool "PXA LCD command line parameters"
  	default n
-Index: linux-2.6.21.7/drivers/video/pxafb.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/video/pxafb.c
-+++ linux-2.6.21.7/drivers/video/pxafb.c
+--- a/drivers/video/pxafb.c
++++ b/drivers/video/pxafb.c
 @@ -22,6 +22,7 @@
   *
   */

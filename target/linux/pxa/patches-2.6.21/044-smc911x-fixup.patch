@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/net/smc911x.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/smc911x.c
-+++ linux-2.6.21.7/drivers/net/smc911x.c
+--- a/drivers/net/smc911x.c
++++ b/drivers/net/smc911x.c
 @@ -76,6 +76,7 @@ static const char version[] =
  #include <linux/etherdevice.h>
  #include <linux/skbuff.h>
@@ -154,10 +152,8 @@ Index: linux-2.6.21.7/drivers/net/smc911x.c
  	return platform_driver_register(&smc911x_driver);
  }
  
-Index: linux-2.6.21.7/drivers/net/gumstix-smc911x.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/drivers/net/gumstix-smc911x.c
++++ b/drivers/net/gumstix-smc911x.c
 @@ -0,0 +1,148 @@
 +/*
 + *  Gumstix SMC911x chip intialization driver
@@ -307,10 +303,8 @@ Index: linux-2.6.21.7/drivers/net/gumstix-smc911x.c
 +MODULE_AUTHOR("Craig Hughes <craig@gumstix.com>");
 +MODULE_DESCRIPTION("Gumstix board SMC911x chip initialization driver");
 +MODULE_VERSION("1:0.1");
-Index: linux-2.6.21.7/drivers/net/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/Kconfig
-+++ linux-2.6.21.7/drivers/net/Kconfig
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
 @@ -1020,6 +1020,13 @@ config SMC911X
  	  called smc911x.  If you want to compile it as a module, say M 
  	  here and read <file:Documentation/modules.txt>
@@ -325,10 +319,8 @@ Index: linux-2.6.21.7/drivers/net/Kconfig
  config NET_VENDOR_RACAL
  	bool "Racal-Interlan (Micom) NI cards"
  	depends on NET_ETHERNET && ISA
-Index: linux-2.6.21.7/drivers/net/Makefile
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/Makefile
-+++ linux-2.6.21.7/drivers/net/Makefile
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
 @@ -202,6 +202,7 @@ obj-$(CONFIG_PASEMI_MAC) += pasemi_mac.o
  obj-$(CONFIG_MACB) += macb.o
  
@@ -337,10 +329,8 @@ Index: linux-2.6.21.7/drivers/net/Makefile
  obj-$(CONFIG_ARM) += arm/
  obj-$(CONFIG_DEV_APPLETALK) += appletalk/
  obj-$(CONFIG_TR) += tokenring/
-Index: linux-2.6.21.7/include/asm-arm/arch-pxa/gumstix.h
-===================================================================
---- linux-2.6.21.7.orig/include/asm-arm/arch-pxa/gumstix.h
-+++ linux-2.6.21.7/include/asm-arm/arch-pxa/gumstix.h
+--- a/include/asm-arm/arch-pxa/gumstix.h
++++ b/include/asm-arm/arch-pxa/gumstix.h
 @@ -52,7 +52,7 @@
  #define GPIO_GUMSTIX_ETH0_RST		80
  #define GPIO_GUMSTIX_ETH0		36
@@ -350,10 +340,8 @@ Index: linux-2.6.21.7/include/asm-arm/arch-pxa/gumstix.h
  #define GPIO_GUMSTIX_ETH0		99
  #endif
  #define GPIO_GUMSTIX_ETH1_RST		52
-Index: linux-2.6.21.7/drivers/net/smc911x.h
-===================================================================
---- linux-2.6.21.7.orig/drivers/net/smc911x.h
-+++ linux-2.6.21.7/drivers/net/smc911x.h
+--- a/drivers/net/smc911x.h
++++ b/drivers/net/smc911x.h
 @@ -33,7 +33,9 @@
   * Use the DMA feature on PXA chips
   */

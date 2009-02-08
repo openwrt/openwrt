@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/arch/arm/mach-pxa/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mach-pxa/Kconfig
-+++ linux-2.6.21.7/arch/arm/mach-pxa/Kconfig
+--- a/arch/arm/mach-pxa/Kconfig
++++ b/arch/arm/mach-pxa/Kconfig
 @@ -5,6 +5,10 @@ menu "Intel PXA2xx Implementations"
  choice
  	prompt "Select target board"
@@ -48,10 +46,8 @@ Index: linux-2.6.21.7/arch/arm/mach-pxa/Kconfig
  config PXA25x
  	bool
  	help
-Index: linux-2.6.21.7/arch/arm/mach-pxa/Makefile
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mach-pxa/Makefile
-+++ linux-2.6.21.7/arch/arm/mach-pxa/Makefile
+--- a/arch/arm/mach-pxa/Makefile
++++ b/arch/arm/mach-pxa/Makefile
 @@ -8,6 +8,7 @@ obj-$(CONFIG_PXA25x) += pxa25x.o
  obj-$(CONFIG_PXA27x) += pxa27x.o
  

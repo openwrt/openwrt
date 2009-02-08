@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/include/sound/pcm_params.h
-===================================================================
---- linux-2.6.21.7.orig/include/sound/pcm_params.h
-+++ linux-2.6.21.7/include/sound/pcm_params.h
+--- a/include/sound/pcm_params.h
++++ b/include/sound/pcm_params.h
 @@ -179,16 +179,8 @@ static inline int snd_mask_single(const 
  	return 1;
  }
@@ -21,10 +19,8 @@ Index: linux-2.6.21.7/include/sound/pcm_params.h
  
  static inline int snd_mask_refine_first(struct snd_mask *mask)
  {
-Index: linux-2.6.21.7/sound/core/pcm_lib.c
-===================================================================
---- linux-2.6.21.7.orig/sound/core/pcm_lib.c
-+++ linux-2.6.21.7/sound/core/pcm_lib.c
+--- a/sound/core/pcm_lib.c
++++ b/sound/core/pcm_lib.c
 @@ -2128,3 +2128,18 @@ snd_pcm_sframes_t snd_pcm_lib_readv(stru
  }
  
@@ -44,10 +40,8 @@ Index: linux-2.6.21.7/sound/core/pcm_lib.c
 +}
 +
 +EXPORT_SYMBOL(snd_mask_refine);
-Index: linux-2.6.21.7/sound/core/pcm_native.c
-===================================================================
---- linux-2.6.21.7.orig/sound/core/pcm_native.c
-+++ linux-2.6.21.7/sound/core/pcm_native.c
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
 @@ -3450,3 +3450,9 @@ const struct file_operations snd_pcm_f_o
  		.fasync =		snd_pcm_fasync,
  	}

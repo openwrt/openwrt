@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/video/pxafb.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/video/pxafb.c
-+++ linux-2.6.21.7/drivers/video/pxafb.c
+--- a/drivers/video/pxafb.c
++++ b/drivers/video/pxafb.c
 @@ -191,6 +191,10 @@ static int pxafb_bpp_to_lccr3(struct fb_
          case 4:  ret = LCCR3_4BPP; break;
          case 8:  ret = LCCR3_8BPP; break;
@@ -205,10 +203,8 @@ Index: linux-2.6.21.7/drivers/video/pxafb.c
  					dev_info(dev, "overriding bit depth: %d\n", bpp);
  					break;
  				default:
-Index: linux-2.6.21.7/include/asm-arm/arch-pxa/pxa-regs.h
-===================================================================
---- linux-2.6.21.7.orig/include/asm-arm/arch-pxa/pxa-regs.h
-+++ linux-2.6.21.7/include/asm-arm/arch-pxa/pxa-regs.h
+--- a/include/asm-arm/arch-pxa/pxa-regs.h
++++ b/include/asm-arm/arch-pxa/pxa-regs.h
 @@ -1323,6 +1323,8 @@
  #define GPIO83_NSTXD		83	/* NSSP transmit */
  #define GPIO84_NSRXD		84	/* NSSP receive */
@@ -240,10 +236,8 @@ Index: linux-2.6.21.7/include/asm-arm/arch-pxa/pxa-regs.h
  
  #define FDADR0		__REG(0x44000200)  /* DMA Channel 0 Frame Descriptor Address Register */
  #define FSADR0		__REG(0x44000204)  /* DMA Channel 0 Frame Source Address Register */
-Index: linux-2.6.21.7/include/asm-arm/arch-pxa/pxafb.h
-===================================================================
---- linux-2.6.21.7.orig/include/asm-arm/arch-pxa/pxafb.h
-+++ linux-2.6.21.7/include/asm-arm/arch-pxa/pxafb.h
+--- a/include/asm-arm/arch-pxa/pxafb.h
++++ b/include/asm-arm/arch-pxa/pxafb.h
 @@ -25,6 +25,7 @@ struct pxafb_mode_info {
  	u_short		xres;
  	u_short		yres;
@@ -263,10 +257,8 @@ Index: linux-2.6.21.7/include/asm-arm/arch-pxa/pxafb.h
  };
  
  struct pxafb_mach_info {
-Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
-===================================================================
---- linux-2.6.21.7.orig/arch/arm/mach-pxa/gumstix.c
-+++ linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
+--- a/arch/arm/mach-pxa/gumstix.c
++++ b/arch/arm/mach-pxa/gumstix.c
 @@ -146,7 +146,8 @@ static struct pxafb_mode_info gumstix_fb
  	.pixclock	= 110000,
  	.xres		= 480,
@@ -287,10 +279,8 @@ Index: linux-2.6.21.7/arch/arm/mach-pxa/gumstix.c
  	.sync		= 0, // Hsync and Vsync both active low
  };
  
-Index: linux-2.6.21.7/drivers/video/cfbfillrect.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/video/cfbfillrect.c
-+++ linux-2.6.21.7/drivers/video/cfbfillrect.c
+--- a/drivers/video/cfbfillrect.c
++++ b/drivers/video/cfbfillrect.c
 @@ -62,7 +62,10 @@ pixel_to_pat( u32 bpp, u32 pixel)
  		return 0x0001001001001001ul*pixel;
  	case 16:
@@ -322,10 +312,8 @@ Index: linux-2.6.21.7/drivers/video/cfbfillrect.c
  	unsigned long __iomem *dst;
  	int dst_idx, left;
  
-Index: linux-2.6.21.7/drivers/video/cfbimgblt.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/video/cfbimgblt.c
-+++ linux-2.6.21.7/drivers/video/cfbimgblt.c
+--- a/drivers/video/cfbimgblt.c
++++ b/drivers/video/cfbimgblt.c
 @@ -83,7 +83,7 @@ static inline void color_imageblit(const
  	/* Draw the penguin */
  	u32 __iomem *dst, *dst2;
@@ -362,10 +350,8 @@ Index: linux-2.6.21.7/drivers/video/cfbimgblt.c
  	u32 width = image->width;
  	u32 dx = image->dx, dy = image->dy;
  	u8 __iomem *dst1;
-Index: linux-2.6.21.7/drivers/video/cfbcopyarea.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/video/cfbcopyarea.c
-+++ linux-2.6.21.7/drivers/video/cfbcopyarea.c
+--- a/drivers/video/cfbcopyarea.c
++++ b/drivers/video/cfbcopyarea.c
 @@ -365,8 +365,8 @@ void cfb_copyarea(struct fb_info *p, con
  	dst = src = (unsigned long __iomem *)((unsigned long)p->screen_base & ~(bytes-1));
  	dst_idx = src_idx = 8*((unsigned long)p->screen_base & (bytes-1));
@@ -395,10 +381,8 @@ Index: linux-2.6.21.7/drivers/video/cfbcopyarea.c
  			dst_idx += bits_per_line;
  			src_idx += bits_per_line;
  		}
-Index: linux-2.6.21.7/drivers/video/console/fbcon.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/video/console/fbcon.c
-+++ linux-2.6.21.7/drivers/video/console/fbcon.c
+--- a/drivers/video/console/fbcon.c
++++ b/drivers/video/console/fbcon.c
 @@ -983,9 +983,10 @@ static const char *fbcon_startup(void)
  
  	DPRINTK("mode:   %s\n", info->fix.id);
@@ -412,10 +396,8 @@ Index: linux-2.6.21.7/drivers/video/console/fbcon.c
  
  #ifdef CONFIG_ATARI
  	if (MACH_IS_ATARI) {
-Index: linux-2.6.21.7/Documentation/fb/pxafb.txt
-===================================================================
---- linux-2.6.21.7.orig/Documentation/fb/pxafb.txt
-+++ linux-2.6.21.7/Documentation/fb/pxafb.txt
+--- a/Documentation/fb/pxafb.txt
++++ b/Documentation/fb/pxafb.txt
 @@ -9,11 +9,13 @@ For example:
  or on the kernel command line
  	video=pxafb:mode:640x480-8,passive

@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/net/bluetooth/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/net/bluetooth/Kconfig
-+++ linux-2.6.21.7/net/bluetooth/Kconfig
+--- a/net/bluetooth/Kconfig
++++ b/net/bluetooth/Kconfig
 @@ -30,6 +30,12 @@ menuconfig BT
  	  Bluetooth kernel modules are provided in the BlueZ packages.
  	  For more information, see <http://www.bluez.org/>.
@@ -15,10 +13,8 @@ Index: linux-2.6.21.7/net/bluetooth/Kconfig
  config BT_L2CAP
  	tristate "L2CAP protocol support"
  	depends on BT
-Index: linux-2.6.21.7/net/bluetooth/Makefile
-===================================================================
---- linux-2.6.21.7.orig/net/bluetooth/Makefile
-+++ linux-2.6.21.7/net/bluetooth/Makefile
+--- a/net/bluetooth/Makefile
++++ b/net/bluetooth/Makefile
 @@ -9,5 +9,6 @@ obj-$(CONFIG_BT_RFCOMM)	+= rfcomm/
  obj-$(CONFIG_BT_BNEP)	+= bnep/
  obj-$(CONFIG_BT_CMTP)	+= cmtp/
@@ -26,10 +22,8 @@ Index: linux-2.6.21.7/net/bluetooth/Makefile
 +obj-$(CONFIG_BT_GUMSTIX)+= gumstix_bluetooth.o
  
  bluetooth-objs := af_bluetooth.o hci_core.o hci_conn.o hci_event.o hci_sock.o hci_sysfs.o lib.o
-Index: linux-2.6.21.7/net/bluetooth/af_bluetooth.c
-===================================================================
---- linux-2.6.21.7.orig/net/bluetooth/af_bluetooth.c
-+++ linux-2.6.21.7/net/bluetooth/af_bluetooth.c
+--- a/net/bluetooth/af_bluetooth.c
++++ b/net/bluetooth/af_bluetooth.c
 @@ -327,12 +327,20 @@ static struct net_proto_family bt_sock_f
  	.create	= bt_sock_create,
  };
@@ -51,10 +45,8 @@ Index: linux-2.6.21.7/net/bluetooth/af_bluetooth.c
  	err = bt_sysfs_init();
  	if (err < 0)
  		return err;
-Index: linux-2.6.21.7/net/bluetooth/gumstix_bluetooth.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/bluetooth/gumstix_bluetooth.c
++++ b/net/bluetooth/gumstix_bluetooth.c
 @@ -0,0 +1,50 @@
 +/*
 + *  Gumstix bluetooth module intialization driver
