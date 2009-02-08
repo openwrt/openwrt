@@ -11,7 +11,7 @@ BOARD:=sibyte
 BOARDNAME:=Broadcom/SiByte SB-1
 FEATURES:=broken
 
-LINUX_VERSION:=2.6.28.2
+LINUX_VERSION:=2.6.28.4
 
 include $(INCLUDE_DIR)/target.mk
 
