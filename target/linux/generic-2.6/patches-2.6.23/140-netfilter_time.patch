@@ -204,7 +204,7 @@
 +}
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -78,6 +78,22 @@
+@@ -78,6 +78,22 @@ config IP_NF_MATCH_TOS
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -229,7 +229,7 @@
  	depends on IP_NF_IPTABLES
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -44,6 +44,7 @@
+@@ -44,6 +44,7 @@ obj-$(CONFIG_IP_NF_RAW) += iptable_raw.o
  obj-$(CONFIG_IP_NF_MATCH_IPRANGE) += ipt_iprange.o
  obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o

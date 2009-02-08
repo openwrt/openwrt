@@ -638,7 +638,7 @@
 +#endif				/* _SYS_TIMEPPS_H_ */
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -3011,6 +3011,13 @@
+@@ -3011,6 +3011,13 @@ P:	James Chapman
  M:	jchapman@katalix.com
  S:	Maintained
  
@@ -654,7 +654,7 @@
  M:	rml@tech9.net
 --- a/drivers/Kconfig
 +++ b/drivers/Kconfig
-@@ -52,6 +52,8 @@
+@@ -52,6 +52,8 @@ source "drivers/i2c/Kconfig"
  
  source "drivers/spi/Kconfig"
  
@@ -665,7 +665,7 @@
  source "drivers/power/Kconfig"
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
-@@ -63,6 +63,7 @@
+@@ -63,6 +63,7 @@ obj-$(CONFIG_INPUT)		+= input/
  obj-$(CONFIG_I2O)		+= message/
  obj-$(CONFIG_RTC_LIB)		+= rtc/
  obj-y				+= i2c/
@@ -675,7 +675,7 @@
  obj-$(CONFIG_HWMON)		+= hwmon/
 --- a/drivers/char/lp.c
 +++ b/drivers/char/lp.c
-@@ -746,6 +746,27 @@
+@@ -746,6 +746,27 @@ static struct console lpcons = {
  
  #endif /* console on line printer */
  
@@ -703,7 +703,7 @@
  /* --- initialisation code ------------------------------------- */
  
  static int parport_nr[LP_NO] = { [0 ... LP_NO-1] = LP_PARPORT_UNSPEC };
-@@ -817,6 +838,38 @@
+@@ -817,6 +838,38 @@ static int lp_register(int nr, struct pa
  	}
  #endif
  
@@ -742,7 +742,7 @@
  	return 0;
  }
  
-@@ -860,6 +913,14 @@
+@@ -860,6 +913,14 @@ static void lp_detach (struct parport *p
  		console_registered = NULL;
  	}
  #endif /* CONFIG_LP_CONSOLE */
@@ -1716,7 +1716,7 @@
 +}
 --- a/drivers/serial/8250.c
 +++ b/drivers/serial/8250.c
-@@ -2118,6 +2118,8 @@
+@@ -2118,6 +2118,8 @@ serial8250_set_termios(struct uart_port 
  		up->ier |= UART_IER_MSI;
  	if (up->capabilities & UART_CAP_UUE)
  		up->ier |= UART_IER_UUE | UART_IER_RTOIE;
@@ -1735,7 +1735,7 @@
  
  #include <asm/irq.h>
  #include <asm/uaccess.h>
-@@ -633,6 +634,54 @@
+@@ -633,6 +634,54 @@ static int uart_get_info(struct uart_sta
  	return 0;
  }
  
@@ -1790,7 +1790,7 @@
  static int uart_set_info(struct uart_state *state,
  			 struct serial_struct __user *newinfo)
  {
-@@ -807,11 +856,19 @@
+@@ -807,11 +856,19 @@ static int uart_set_info(struct uart_sta
  			(port->flags & UPF_LOW_LATENCY) ? 1 : 0;
  
   check_and_exit:
@@ -1811,7 +1811,7 @@
  		    old_custom_divisor != port->custom_divisor) {
  			/*
  			 * If they're setting up a custom divisor or speed,
-@@ -2110,6 +2167,12 @@
+@@ -2110,6 +2167,12 @@ uart_configure_port(struct uart_driver *
  		port->ops->config_port(port, flags);
  	}
  
@@ -1824,7 +1824,7 @@
  	if (port->type != PORT_UNKNOWN) {
  		unsigned long flags;
  
-@@ -2359,6 +2422,12 @@
+@@ -2359,6 +2422,12 @@ int uart_remove_one_port(struct uart_dri
  	mutex_unlock(&state->mutex);
  
  	/*
@@ -1839,7 +1839,7 @@
  	tty_unregister_device(drv->tty_driver, port->line);
 --- a/include/linux/Kbuild
 +++ b/include/linux/Kbuild
-@@ -295,6 +295,7 @@
+@@ -295,6 +295,7 @@ unifdef-y += pmu.h
  unifdef-y += poll.h
  unifdef-y += ppp_defs.h
  unifdef-y += ppp-comp.h
@@ -1849,7 +1849,7 @@
  unifdef-y += quota.h
 --- a/include/linux/parport.h
 +++ b/include/linux/parport.h
-@@ -100,6 +100,7 @@
+@@ -100,6 +100,7 @@ typedef enum {
  #include <linux/proc_fs.h>
  #include <linux/spinlock.h>
  #include <linux/wait.h>
@@ -1857,7 +1857,7 @@
  #include <asm/system.h>
  #include <asm/ptrace.h>
  #include <asm/semaphore.h>
-@@ -327,6 +328,11 @@
+@@ -327,6 +328,11 @@ struct parport {
  
  	struct list_head full_list;
  	struct parport *slaves[3];
@@ -1869,7 +1869,7 @@
  };
  
  #define DEFAULT_SPIN_TIME 500 /* us */
-@@ -517,6 +523,12 @@
+@@ -517,6 +523,12 @@ extern int parport_daisy_select (struct 
  /* Lowlevel drivers _can_ call this support function to handle irqs.  */
  static __inline__ void parport_generic_irq(int irq, struct parport *port)
  {
@@ -2091,7 +2091,7 @@
  
  struct uart_port;
  struct uart_info;
-@@ -236,6 +237,9 @@
+@@ -236,6 +237,9 @@ struct uart_port {
  	unsigned char		regshift;		/* reg offset shift */
  	unsigned char		iotype;			/* io access style */
  	unsigned char		unused1;
@@ -2101,7 +2101,7 @@
  
  #define UPIO_PORT		(0)
  #define UPIO_HUB6		(1)
-@@ -280,7 +284,8 @@
+@@ -280,7 +284,8 @@ struct uart_port {
  #define UPF_IOREMAP		((__force upf_t) (1 << 31))
  
  #define UPF_CHANGE_MASK		((__force upf_t) (0x17fff))
@@ -2111,7 +2111,7 @@
  
  	unsigned int		mctrl;			/* current modem ctrl settings */
  	unsigned int		timeout;		/* character-based timeout */
-@@ -312,6 +317,10 @@
+@@ -312,6 +317,10 @@ struct uart_state {
  	struct uart_info	*info;
  	struct uart_port	*port;
  
@@ -2122,7 +2122,7 @@
  	struct mutex		mutex;
  };
  
-@@ -476,13 +485,22 @@
+@@ -476,13 +485,22 @@ uart_handle_dcd_change(struct uart_port 
  {
  	struct uart_info *info = port->info;
  

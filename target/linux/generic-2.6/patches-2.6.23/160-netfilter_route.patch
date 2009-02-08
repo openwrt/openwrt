@@ -518,7 +518,7 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -552,5 +552,22 @@
+@@ -552,5 +552,22 @@ config IP_NF_TARGET_SET
  	  To compile it as a module, choose M here.  If unsure, say N.
  
  
@@ -543,7 +543,7 @@
  
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -61,6 +61,7 @@
+@@ -61,6 +61,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
  obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
@@ -553,7 +553,7 @@
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
 --- a/net/ipv6/ndisc.c
 +++ b/net/ipv6/ndisc.c
-@@ -154,6 +154,8 @@
+@@ -154,6 +154,8 @@ struct neigh_table nd_tbl = {
  	.gc_thresh3 =	1024,
  };
  
@@ -897,7 +897,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
-@@ -209,5 +209,18 @@
+@@ -209,5 +209,18 @@ config IP6_NF_RAW
  	  If you want to compile it as a module, say M here and read
  	  <file:Documentation/kbuild/modules.txt>.  If unsure, say `N'.
  
@@ -918,7 +918,7 @@
  
 --- a/net/ipv6/netfilter/Makefile
 +++ b/net/ipv6/netfilter/Makefile
-@@ -20,6 +20,7 @@
+@@ -20,6 +20,7 @@ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_
  obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
  obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
  obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o

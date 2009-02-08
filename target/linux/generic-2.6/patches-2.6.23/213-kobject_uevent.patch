@@ -1,6 +1,6 @@
 --- a/lib/kobject_uevent.c
 +++ b/lib/kobject_uevent.c
-@@ -40,9 +40,22 @@
+@@ -40,9 +40,22 @@ u64 uevent_seqnum;
  char uevent_helper[UEVENT_HELPER_PATH_LEN] = "/sbin/hotplug";
  static DEFINE_SPINLOCK(sequence_lock);
  #if defined(CONFIG_NET)
@@ -24,7 +24,7 @@
  /**
   * kobject_uevent_env - send an uevent with environmental data
   *
-@@ -159,9 +172,7 @@
+@@ -159,9 +172,7 @@ int kobject_uevent_env(struct kobject *k
  	}
  
  	/* we will send an event, request a new sequence number */

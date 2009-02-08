@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -81,6 +81,12 @@
+@@ -81,6 +81,12 @@ config LEDS_WRAP
  	help
  	  This option enables support for the PCEngines WRAP programmable LEDs.
  
@@ -15,7 +15,7 @@
  	depends LEDS_CLASS && ARCH_H1940
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -14,6 +14,7 @@
+@@ -14,6 +14,7 @@ obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c2
  obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o
  obj-$(CONFIG_LEDS_NET48XX)		+= leds-net48xx.o
  obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o

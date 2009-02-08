@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -60,6 +60,11 @@
+@@ -60,6 +60,11 @@ config ICPLUS_PHY
  	---help---
  	  Currently supports the IP175C PHY.
  
@@ -14,7 +14,7 @@
  	---help---
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -12,4 +12,5 @@
+@@ -12,4 +12,5 @@ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o

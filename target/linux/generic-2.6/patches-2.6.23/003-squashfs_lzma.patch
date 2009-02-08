@@ -38,7 +38,7 @@
  static void squashfs_put_super(struct super_block *);
  static int squashfs_statfs(struct dentry *, struct kstatfs *);
  static int squashfs_symlink_readpage(struct file *file, struct page *page);
-@@ -64,7 +81,11 @@
+@@ -64,7 +81,11 @@ static int squashfs_get_sb(struct file_s
  			const char *, void *, struct vfsmount *);
  
  
@@ -50,7 +50,7 @@
  
  static struct file_system_type squashfs_fs_type = {
  	.owner = THIS_MODULE,
-@@ -249,6 +270,15 @@
+@@ -249,6 +270,15 @@ SQSH_EXTERN unsigned int squashfs_read_d
  	if (compressed) {
  		int zlib_err;
  
@@ -66,7 +66,7 @@
  		stream.next_in = c_buffer;
  		stream.avail_in = c_byte;
  		stream.next_out = buffer;
-@@ -263,7 +293,7 @@
+@@ -263,7 +293,7 @@ SQSH_EXTERN unsigned int squashfs_read_d
  			bytes = 0;
  		} else
  			bytes = stream.total_out;
@@ -75,7 +75,7 @@
  		up(&msblk->read_data_mutex);
  	}
  
-@@ -2045,15 +2075,19 @@
+@@ -2045,15 +2075,19 @@ static int __init init_squashfs_fs(void)
  	printk(KERN_INFO "squashfs: version 3.0 (2006/03/15) "
  		"Phillip Lougher\n");
  
@@ -95,7 +95,7 @@
  		destroy_inodecache();
  	}
  
-@@ -2064,7 +2098,9 @@
+@@ -2064,7 +2098,9 @@ out:
  
  static void __exit exit_squashfs_fs(void)
  {
