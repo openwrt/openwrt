@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/include/linux/ip.h
-===================================================================
---- linux-2.6.21.7.orig/include/linux/ip.h
-+++ linux-2.6.21.7/include/linux/ip.h
+--- a/include/linux/ip.h
++++ b/include/linux/ip.h
 @@ -104,6 +104,16 @@ struct iphdr {
  	/*The options start here. */
  };
@@ -19,10 +17,8 @@ Index: linux-2.6.21.7/include/linux/ip.h
  struct ip_auth_hdr {
  	__u8  nexthdr;
  	__u8  hdrlen;		/* This one is measured in 32 bit units! */
-Index: linux-2.6.21.7/include/linux/skbuff.h
-===================================================================
---- linux-2.6.21.7.orig/include/linux/skbuff.h
-+++ linux-2.6.21.7/include/linux/skbuff.h
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
 @@ -966,6 +966,16 @@ static inline void skb_reserve(struct sk
  	skb->tail += len;
  }
@@ -40,10 +36,8 @@ Index: linux-2.6.21.7/include/linux/skbuff.h
  /*
   * CPUs often take a performance hit when accessing unaligned memory
   * locations. The actual performance hit varies, it can be small if the
-Index: linux-2.6.21.7/include/net/ip.h
-===================================================================
---- linux-2.6.21.7.orig/include/net/ip.h
-+++ linux-2.6.21.7/include/net/ip.h
+--- a/include/net/ip.h
++++ b/include/net/ip.h
 @@ -43,6 +43,11 @@ struct inet_skb_parm
  #define IPSKB_REROUTED		16
  };

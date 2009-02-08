@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/net/netfilter/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/net/netfilter/Kconfig
-+++ linux-2.6.21.7/net/netfilter/Kconfig
+--- a/net/netfilter/Kconfig
++++ b/net/netfilter/Kconfig
 @@ -414,6 +414,23 @@ config NETFILTER_XT_TARGET_CONNSECMARK
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -26,10 +24,8 @@ Index: linux-2.6.21.7/net/netfilter/Kconfig
  config NETFILTER_XT_TARGET_TCPMSS
  	tristate '"TCPMSS" target support'
  	depends on NETFILTER_XTABLES && (IPV6 || IPV6=n)
-Index: linux-2.6.21.7/net/netfilter/Makefile
-===================================================================
---- linux-2.6.21.7.orig/net/netfilter/Makefile
-+++ linux-2.6.21.7/net/netfilter/Makefile
+--- a/net/netfilter/Makefile
++++ b/net/netfilter/Makefile
 @@ -45,6 +45,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_NFQUEUE
  obj-$(CONFIG_NETFILTER_XT_TARGET_NFLOG) += xt_NFLOG.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_NOTRACK) += xt_NOTRACK.o
@@ -38,10 +34,8 @@ Index: linux-2.6.21.7/net/netfilter/Makefile
  obj-$(CONFIG_NETFILTER_XT_TARGET_TCPMSS) += xt_TCPMSS.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSECMARK) += xt_CONNSECMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_CHAOS) += xt_CHAOS.o
-Index: linux-2.6.21.7/net/netfilter/xt_TARPIT.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/netfilter/xt_TARPIT.c
++++ b/net/netfilter/xt_TARPIT.c
 @@ -0,0 +1,280 @@
 +/*
 + * Kernel module to capture and hold incoming TCP connections using

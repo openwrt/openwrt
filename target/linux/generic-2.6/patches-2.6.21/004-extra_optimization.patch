@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/Makefile
-===================================================================
---- linux-2.6.21.7.orig/Makefile
-+++ linux-2.6.21.7/Makefile
+--- a/Makefile
++++ b/Makefile
 @@ -507,6 +507,9 @@ CFLAGS          += $(call cc-option, -fn
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)

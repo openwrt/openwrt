@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ip_nat.h
-===================================================================
---- linux-2.6.21.7.orig/include/linux/netfilter_ipv4/ip_nat.h
-+++ linux-2.6.21.7/include/linux/netfilter_ipv4/ip_nat.h
+--- a/include/linux/netfilter_ipv4/ip_nat.h
++++ b/include/linux/netfilter_ipv4/ip_nat.h
 @@ -64,6 +64,13 @@ struct ip_nat_info
  
  struct ip_conntrack;
@@ -16,10 +14,8 @@ Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ip_nat.h
  /* Set up the info structure to map into this range. */
  extern unsigned int ip_nat_setup_info(struct ip_conntrack *conntrack,
  				      const struct ip_nat_range *range,
-Index: linux-2.6.21.7/include/linux/rtnetlink.h
-===================================================================
---- linux-2.6.21.7.orig/include/linux/rtnetlink.h
-+++ linux-2.6.21.7/include/linux/rtnetlink.h
+--- a/include/linux/rtnetlink.h
++++ b/include/linux/rtnetlink.h
 @@ -293,6 +293,8 @@ struct rtnexthop
  #define RTNH_F_DEAD		1	/* Nexthop is dead (used by multipath)	*/
  #define RTNH_F_PERVASIVE	2	/* Do recursive gateway lookup	*/
@@ -29,10 +25,8 @@ Index: linux-2.6.21.7/include/linux/rtnetlink.h
  
  /* Macros to handle hexthops */
  
-Index: linux-2.6.21.7/include/net/flow.h
-===================================================================
---- linux-2.6.21.7.orig/include/net/flow.h
-+++ linux-2.6.21.7/include/net/flow.h
+--- a/include/net/flow.h
++++ b/include/net/flow.h
 @@ -19,6 +19,8 @@ struct flowi {
  		struct {
  			__be32			daddr;
@@ -51,10 +45,8 @@ Index: linux-2.6.21.7/include/net/flow.h
  #define fl4_tos		nl_u.ip4_u.tos
  #define fl4_scope	nl_u.ip4_u.scope
  
-Index: linux-2.6.21.7/net/ipv4/route.c
-===================================================================
---- linux-2.6.21.7.orig/net/ipv4/route.c
-+++ linux-2.6.21.7/net/ipv4/route.c
+--- a/net/ipv4/route.c
++++ b/net/ipv4/route.c
 @@ -1208,6 +1208,7 @@ void ip_rt_redirect(__be32 old_gw, __be3
  
  				/* Gateway is different ... */

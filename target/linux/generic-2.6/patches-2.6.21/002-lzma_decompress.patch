@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/include/linux/LzmaDecode.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/LzmaDecode.h
++++ b/include/linux/LzmaDecode.h
 @@ -0,0 +1,100 @@
 +/*
 +  LzmaDecode.h
@@ -103,10 +101,8 @@ Index: linux-2.6.21.7/include/linux/LzmaDecode.h
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-Index: linux-2.6.21.7/lib/LzmaDecode.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/lib/LzmaDecode.c
++++ b/lib/LzmaDecode.c
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -771,10 +767,8 @@ Index: linux-2.6.21.7/lib/LzmaDecode.c
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-Index: linux-2.6.21.7/lib/Makefile
-===================================================================
---- linux-2.6.21.7.orig/lib/Makefile
-+++ linux-2.6.21.7/lib/Makefile
+--- a/lib/Makefile
++++ b/lib/Makefile
 @@ -12,7 +12,7 @@ lib-$(CONFIG_SMP) += cpumask.o
  
  lib-y	+= kobject.o kref.o kobject_uevent.o klist.o

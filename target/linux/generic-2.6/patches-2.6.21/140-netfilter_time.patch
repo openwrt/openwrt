@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_time.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_time.h
++++ b/include/linux/netfilter_ipv4/ipt_time.h
 @@ -0,0 +1,18 @@
 +#ifndef __ipt_time_h_included__
 +#define __ipt_time_h_included__
@@ -21,10 +19,8 @@ Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_time.h
 +
 +
 +#endif /* __ipt_time_h_included__ */
-Index: linux-2.6.21.7/net/ipv4/netfilter/ipt_time.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/ipv4/netfilter/ipt_time.c
++++ b/net/ipv4/netfilter/ipt_time.c
 @@ -0,0 +1,178 @@
 +/*
 +  This is a module which is used for time matching
@@ -204,10 +200,8 @@ Index: linux-2.6.21.7/net/ipv4/netfilter/ipt_time.c
 +	r->tm_mon=i;
 +	r->tm_mday=work-__spm[i]+1;
 +}
-Index: linux-2.6.21.7/net/ipv4/netfilter/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/net/ipv4/netfilter/Kconfig
-+++ linux-2.6.21.7/net/ipv4/netfilter/Kconfig
+--- a/net/ipv4/netfilter/Kconfig
++++ b/net/ipv4/netfilter/Kconfig
 @@ -260,6 +260,22 @@ config IP_NF_MATCH_TOS
  
  	  To compile it as a module, choose M here.  If unsure, say N.
@@ -231,10 +225,8 @@ Index: linux-2.6.21.7/net/ipv4/netfilter/Kconfig
  config IP_NF_MATCH_RECENT
  	tristate "recent match support"
  	depends on IP_NF_IPTABLES
-Index: linux-2.6.21.7/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.6.21.7.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.6.21.7/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -86,6 +86,7 @@ obj-$(CONFIG_IP_NF_RAW) += iptable_raw.o
  obj-$(CONFIG_IP_NF_MATCH_IPRANGE) += ipt_iprange.o
  obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o

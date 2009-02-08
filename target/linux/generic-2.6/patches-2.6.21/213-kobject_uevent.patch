@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/lib/kobject_uevent.c
-===================================================================
---- linux-2.6.21.7.orig/lib/kobject_uevent.c
-+++ linux-2.6.21.7/lib/kobject_uevent.c
+--- a/lib/kobject_uevent.c
++++ b/lib/kobject_uevent.c
 @@ -30,9 +30,22 @@ u64 uevent_seqnum;
  char uevent_helper[UEVENT_HELPER_PATH_LEN] = "/sbin/hotplug";
  static DEFINE_SPINLOCK(sequence_lock);

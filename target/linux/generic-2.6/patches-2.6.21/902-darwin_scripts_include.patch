@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/scripts/genksyms/parse.c_shipped
-===================================================================
---- linux-2.6.21.7.orig/scripts/genksyms/parse.c_shipped
-+++ linux-2.6.21.7/scripts/genksyms/parse.c_shipped
+--- a/scripts/genksyms/parse.c_shipped
++++ b/scripts/genksyms/parse.c_shipped
 @@ -144,7 +144,9 @@
  
  
@@ -12,10 +10,8 @@ Index: linux-2.6.21.7/scripts/genksyms/parse.c_shipped
  #include "genksyms.h"
  
  static int is_typedef;
-Index: linux-2.6.21.7/scripts/genksyms/parse.y
-===================================================================
---- linux-2.6.21.7.orig/scripts/genksyms/parse.y
-+++ linux-2.6.21.7/scripts/genksyms/parse.y
+--- a/scripts/genksyms/parse.y
++++ b/scripts/genksyms/parse.y
 @@ -24,7 +24,9 @@
  %{
  
@@ -26,10 +22,8 @@ Index: linux-2.6.21.7/scripts/genksyms/parse.y
  #include "genksyms.h"
  
  static int is_typedef;
-Index: linux-2.6.21.7/scripts/kallsyms.c
-===================================================================
---- linux-2.6.21.7.orig/scripts/kallsyms.c
-+++ linux-2.6.21.7/scripts/kallsyms.c
+--- a/scripts/kallsyms.c
++++ b/scripts/kallsyms.c
 @@ -30,6 +30,35 @@
  #include <stdlib.h>
  #include <string.h>
@@ -66,10 +60,8 @@ Index: linux-2.6.21.7/scripts/kallsyms.c
  
  #define KSYM_NAME_LEN		127
  
-Index: linux-2.6.21.7/scripts/kconfig/Makefile
-===================================================================
---- linux-2.6.21.7.orig/scripts/kconfig/Makefile
-+++ linux-2.6.21.7/scripts/kconfig/Makefile
+--- a/scripts/kconfig/Makefile
++++ b/scripts/kconfig/Makefile
 @@ -87,6 +87,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
  # we really need to do so. (Do not call gcc as part of make mrproper)
  HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
@@ -80,10 +72,8 @@ Index: linux-2.6.21.7/scripts/kconfig/Makefile
  
  HOST_EXTRACFLAGS += -DLOCALE
  
-Index: linux-2.6.21.7/scripts/mod/file2alias.c
-===================================================================
---- linux-2.6.21.7.orig/scripts/mod/file2alias.c
-+++ linux-2.6.21.7/scripts/mod/file2alias.c
+--- a/scripts/mod/file2alias.c
++++ b/scripts/mod/file2alias.c
 @@ -37,7 +37,21 @@ typedef unsigned char	__u8;
   * even potentially has different endianness and word sizes, since
   * we handle those differences explicitly below */
@@ -106,10 +96,8 @@ Index: linux-2.6.21.7/scripts/mod/file2alias.c
  
  #define ADD(str, sep, cond, field)                              \
  do {                                                            \
-Index: linux-2.6.21.7/scripts/mod/mk_elfconfig.c
-===================================================================
---- linux-2.6.21.7.orig/scripts/mod/mk_elfconfig.c
-+++ linux-2.6.21.7/scripts/mod/mk_elfconfig.c
+--- a/scripts/mod/mk_elfconfig.c
++++ b/scripts/mod/mk_elfconfig.c
 @@ -1,7 +1,11 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -122,10 +110,8 @@ Index: linux-2.6.21.7/scripts/mod/mk_elfconfig.c
  
  int
  main(int argc, char **argv)
-Index: linux-2.6.21.7/scripts/mod/modpost.h
-===================================================================
---- linux-2.6.21.7.orig/scripts/mod/modpost.h
-+++ linux-2.6.21.7/scripts/mod/modpost.h
+--- a/scripts/mod/modpost.h
++++ b/scripts/mod/modpost.h
 @@ -7,7 +7,11 @@
  #include <sys/mman.h>
  #include <fcntl.h>
@@ -138,10 +124,8 @@ Index: linux-2.6.21.7/scripts/mod/modpost.h
  
  #include "elfconfig.h"
  
-Index: linux-2.6.21.7/scripts/mod/sumversion.c
-===================================================================
---- linux-2.6.21.7.orig/scripts/mod/sumversion.c
-+++ linux-2.6.21.7/scripts/mod/sumversion.c
+--- a/scripts/mod/sumversion.c
++++ b/scripts/mod/sumversion.c
 @@ -8,6 +8,9 @@
  #include <errno.h>
  #include <string.h>
