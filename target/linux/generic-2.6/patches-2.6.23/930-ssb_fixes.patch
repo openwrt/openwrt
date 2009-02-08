@@ -2,7 +2,7 @@ This patch ports ssb to the 2.6.23 kernel.
 
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
-@@ -223,3 +223,5 @@
+@@ -223,3 +223,5 @@ void ssb_mipscore_init(struct ssb_mipsco
  	ssb_mips_serial_init(mcore);
  	ssb_mips_flash_detect(mcore);
  }
@@ -10,7 +10,7 @@ This patch ports ssb to the 2.6.23 kernel.
 +EXPORT_SYMBOL(ssb_mips_irq);
 --- a/include/linux/mod_devicetable.h
 +++ b/include/linux/mod_devicetable.h
-@@ -352,4 +352,19 @@
+@@ -352,4 +352,19 @@ struct parisc_device_id {
  #define PA_HVERSION_ANY_ID	0xffff
  #define PA_SVERSION_ANY_ID	0xffffffff
  
@@ -32,7 +32,7 @@ This patch ports ssb to the 2.6.23 kernel.
  #endif /* LINUX_MOD_DEVICETABLE_H */
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -321,14 +321,16 @@
+@@ -321,14 +321,16 @@ static int ssb_bus_match(struct device *
  	return 0;
  }
  
@@ -53,7 +53,7 @@ This patch ports ssb to the 2.6.23 kernel.
  			     ssb_dev->id.revision);
 --- a/drivers/ssb/scan.c
 +++ b/drivers/ssb/scan.c
-@@ -391,12 +391,14 @@
+@@ -391,12 +391,14 @@ int ssb_bus_scan(struct ssb_bus *bus,
  			if (bus->bustype == SSB_BUSTYPE_PCI) {
  				/* Ignore PCI cores on PCI-E cards.
  				 * Ignore PCI-E cores on PCI cards. */
@@ -74,7 +74,7 @@ This patch ports ssb to the 2.6.23 kernel.
  			if (bus->pcicore.dev) {
 --- a/drivers/ssb/driver_pcicore.c
 +++ b/drivers/ssb/driver_pcicore.c
-@@ -362,7 +362,7 @@
+@@ -362,7 +362,7 @@ static int pcicore_is_in_hostmode(struct
  	    chipid_top != 0x5300)
  		return 0;
  

@@ -403,7 +403,7 @@
 +MODULE_LICENSE("GPL");
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -112,6 +112,129 @@
+@@ -112,6 +112,129 @@ config EQUALIZER
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
  
@@ -535,7 +535,7 @@
  	select CRC32
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -131,6 +131,7 @@
+@@ -131,6 +131,7 @@ obj-$(CONFIG_SLHC) += slhc.o
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -579,7 +579,7 @@
 +#endif /* _IP6T_IMQ_H */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -295,6 +295,10 @@
+@@ -295,6 +295,10 @@ struct sk_buff {
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -590,7 +590,7 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -1725,6 +1729,10 @@
+@@ -1725,6 +1729,10 @@ static inline void __nf_copy(struct sk_b
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -613,7 +613,7 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1462,7 +1465,11 @@
+@@ -1462,7 +1465,11 @@ static int dev_gso_segment(struct sk_buf
  int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	if (likely(!skb->next)) {
@@ -700,7 +700,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -333,6 +333,17 @@
+@@ -333,6 +333,17 @@ config IP_NF_MANGLE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -720,7 +720,7 @@
  	depends on IP_NF_MANGLE
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -58,6 +58,7 @@
+@@ -58,6 +58,7 @@ obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_i
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TOS.o
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
@@ -802,7 +802,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv6/netfilter/Kconfig
 +++ b/net/ipv6/netfilter/Kconfig
-@@ -173,6 +173,15 @@
+@@ -173,6 +173,15 @@ config IP6_NF_MANGLE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -820,7 +820,7 @@
  	depends on IP6_NF_MANGLE
 --- a/net/ipv6/netfilter/Makefile
 +++ b/net/ipv6/netfilter/Makefile
-@@ -13,6 +13,7 @@
+@@ -13,6 +13,7 @@ obj-$(CONFIG_IP6_NF_MATCH_EUI64) += ip6t
  obj-$(CONFIG_IP6_NF_MATCH_OWNER) += ip6t_owner.o
  obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
  obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
@@ -830,7 +830,7 @@
  obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -191,6 +191,11 @@
+@@ -191,6 +191,11 @@ static inline int qdisc_restart(struct n
  	return ret;
  }
  
@@ -842,7 +842,7 @@
  void __qdisc_run(struct net_device *dev)
  {
  	do {
-@@ -620,3 +625,4 @@
+@@ -620,3 +625,4 @@ EXPORT_SYMBOL(qdisc_destroy);
  EXPORT_SYMBOL(qdisc_reset);
  EXPORT_SYMBOL(qdisc_lock_tree);
  EXPORT_SYMBOL(qdisc_unlock_tree);

@@ -1,6 +1,6 @@
 --- a/drivers/w1/masters/Kconfig
 +++ b/drivers/w1/masters/Kconfig
-@@ -42,5 +42,15 @@
+@@ -42,5 +42,15 @@ config W1_MASTER_DS1WM
  	  in HP iPAQ devices like h5xxx, h2200, and ASIC3-based like
  	  hx4700.
  
@@ -18,7 +18,7 @@
  
 --- a/drivers/w1/masters/Makefile
 +++ b/drivers/w1/masters/Makefile
-@@ -6,3 +6,4 @@
+@@ -6,3 +6,4 @@ obj-$(CONFIG_W1_MASTER_MATROX)		+= matro
  obj-$(CONFIG_W1_MASTER_DS2490)		+= ds2490.o
  obj-$(CONFIG_W1_MASTER_DS2482)		+= ds2482.o
  obj-$(CONFIG_W1_MASTER_DS1WM)		+= ds1wm.o

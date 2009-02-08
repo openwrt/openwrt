@@ -1,6 +1,6 @@
 --- a/include/linux/rtnetlink.h
 +++ b/include/linux/rtnetlink.h
-@@ -293,6 +293,8 @@
+@@ -293,6 +293,8 @@ struct rtnexthop
  #define RTNH_F_DEAD		1	/* Nexthop is dead (used by multipath)	*/
  #define RTNH_F_PERVASIVE	2	/* Do recursive gateway lookup	*/
  #define RTNH_F_ONLINK		4	/* Gateway is forced on link	*/
@@ -11,7 +11,7 @@
  
 --- a/include/net/flow.h
 +++ b/include/net/flow.h
-@@ -19,6 +19,8 @@
+@@ -19,6 +19,8 @@ struct flowi {
  		struct {
  			__be32			daddr;
  			__be32			saddr;
@@ -20,7 +20,7 @@
  			__u8			tos;
  			__u8			scope;
  		} ip4_u;
-@@ -43,6 +45,8 @@
+@@ -43,6 +45,8 @@ struct flowi {
  #define fl6_flowlabel	nl_u.ip6_u.flowlabel
  #define fl4_dst		nl_u.ip4_u.daddr
  #define fl4_src		nl_u.ip4_u.saddr
@@ -31,7 +31,7 @@
  
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -1116,6 +1116,7 @@
+@@ -1116,6 +1116,7 @@ void ip_rt_redirect(__be32 old_gw, __be3
  
  				/* Gateway is different ... */
  				rt->rt_gateway		= new_gw;
@@ -39,7 +39,7 @@
  
  				/* Redirect received -> path was valid */
  				dst_confirm(&rth->u.dst);
-@@ -1551,6 +1552,7 @@
+@@ -1551,6 +1552,7 @@ static int ip_route_input_mc(struct sk_b
  	rth->fl.fl4_tos	= tos;
  	rth->fl.mark    = skb->mark;
  	rth->fl.fl4_src	= saddr;
@@ -47,7 +47,7 @@
  	rth->rt_src	= saddr;
  #ifdef CONFIG_NET_CLS_ROUTE
  	rth->u.dst.tclassid = itag;
-@@ -1561,6 +1563,7 @@
+@@ -1561,6 +1563,7 @@ static int ip_route_input_mc(struct sk_b
  	dev_hold(rth->u.dst.dev);
  	rth->idev	= in_dev_get(rth->u.dst.dev);
  	rth->fl.oif	= 0;
@@ -55,7 +55,7 @@
  	rth->rt_gateway	= daddr;
  	rth->rt_spec_dst= spec_dst;
  	rth->rt_type	= RTN_MULTICAST;
-@@ -1624,7 +1627,7 @@
+@@ -1624,7 +1627,7 @@ static void ip_handle_martian_source(str
  static inline int __mkroute_input(struct sk_buff *skb,
  				  struct fib_result* res,
  				  struct in_device *in_dev,
@@ -64,7 +64,7 @@
  				  struct rtable **result)
  {
  
-@@ -1659,6 +1662,7 @@
+@@ -1659,6 +1662,7 @@ static inline int __mkroute_input(struct
  		flags |= RTCF_DIRECTSRC;
  
  	if (out_dev == in_dev && err && !(flags & (RTCF_NAT | RTCF_MASQ)) &&
@@ -72,7 +72,7 @@
  	    (IN_DEV_SHARED_MEDIA(out_dev) ||
  	     inet_addr_onlink(out_dev, saddr, FIB_RES_GW(*res))))
  		flags |= RTCF_DOREDIRECT;
-@@ -1692,6 +1696,7 @@
+@@ -1692,6 +1696,7 @@ static inline int __mkroute_input(struct
  	rth->fl.mark    = skb->mark;
  	rth->fl.fl4_src	= saddr;
  	rth->rt_src	= saddr;
@@ -80,7 +80,7 @@
  	rth->rt_gateway	= daddr;
  	rth->rt_iif 	=
  		rth->fl.iif	= in_dev->dev->ifindex;
-@@ -1699,6 +1704,7 @@
+@@ -1699,6 +1704,7 @@ static inline int __mkroute_input(struct
  	dev_hold(rth->u.dst.dev);
  	rth->idev	= in_dev_get(rth->u.dst.dev);
  	rth->fl.oif 	= 0;
@@ -88,7 +88,7 @@
  	rth->rt_spec_dst= spec_dst;
  
  	rth->u.dst.input = ip_forward;
-@@ -1720,19 +1726,21 @@
+@@ -1720,19 +1726,21 @@ static inline int ip_mkroute_input(struc
  				   struct fib_result* res,
  				   const struct flowi *fl,
  				   struct in_device *in_dev,
@@ -113,7 +113,7 @@
  	if (err)
  		return err;
  
-@@ -1752,18 +1760,18 @@
+@@ -1752,18 +1760,18 @@ static inline int ip_mkroute_input(struc
   */
  
  static int ip_route_input_slow(struct sk_buff *skb, __be32 daddr, __be32 saddr,
@@ -135,7 +135,7 @@
  	unsigned	flags = 0;
  	u32		itag = 0;
  	struct rtable * rth;
-@@ -1796,6 +1804,12 @@
+@@ -1796,6 +1804,12 @@ static int ip_route_input_slow(struct sk
  	if (BADCLASS(daddr) || ZERONET(daddr) || LOOPBACK(daddr))
  		goto martian_destination;
  
@@ -148,7 +148,7 @@
  	/*
  	 *	Now we are ready to route packet.
  	 */
-@@ -1805,6 +1819,10 @@
+@@ -1805,6 +1819,10 @@ static int ip_route_input_slow(struct sk
  		goto no_route;
  	}
  	free_res = 1;
@@ -159,7 +159,7 @@
  
  	RT_CACHE_STAT_INC(in_slow_tot);
  
-@@ -1829,7 +1847,7 @@
+@@ -1829,7 +1847,7 @@ static int ip_route_input_slow(struct sk
  	if (res.type != RTN_UNICAST)
  		goto martian_destination;
  
@@ -168,7 +168,7 @@
  	if (err == -ENOBUFS)
  		goto e_nobufs;
  	if (err == -EINVAL)
-@@ -1844,6 +1862,8 @@
+@@ -1844,6 +1862,8 @@ out:	return err;
  brd_input:
  	if (skb->protocol != htons(ETH_P_IP))
  		goto e_inval;
@@ -177,7 +177,7 @@
  
  	if (ZERONET(saddr))
  		spec_dst = inet_select_addr(dev, 0, RT_SCOPE_LINK);
-@@ -1884,6 +1904,7 @@
+@@ -1884,6 +1904,7 @@ local_input:
  	rth->u.dst.dev	= &loopback_dev;
  	dev_hold(rth->u.dst.dev);
  	rth->idev	= in_dev_get(rth->u.dst.dev);
@@ -185,7 +185,7 @@
  	rth->rt_gateway	= daddr;
  	rth->rt_spec_dst= spec_dst;
  	rth->u.dst.input= ip_local_deliver;
-@@ -1933,8 +1954,9 @@
+@@ -1933,8 +1954,9 @@ martian_source:
  	goto e_inval;
  }
  
@@ -197,7 +197,7 @@
  {
  	struct rtable * rth;
  	unsigned	hash;
-@@ -1949,6 +1971,7 @@
+@@ -1949,6 +1971,7 @@ int ip_route_input(struct sk_buff *skb, 
  		if (rth->fl.fl4_dst == daddr &&
  		    rth->fl.fl4_src == saddr &&
  		    rth->fl.iif == iif &&
@@ -205,7 +205,7 @@
  		    rth->fl.oif == 0 &&
  		    rth->fl.mark == skb->mark &&
  		    rth->fl.fl4_tos == tos) {
-@@ -1995,7 +2018,19 @@
+@@ -1995,7 +2018,19 @@ int ip_route_input(struct sk_buff *skb, 
  		rcu_read_unlock();
  		return -EINVAL;
  	}
@@ -226,7 +226,7 @@
  }
  
  static inline int __mkroute_output(struct rtable **result,
-@@ -2067,6 +2102,7 @@
+@@ -2067,6 +2102,7 @@ static inline int __mkroute_output(struc
  	rth->fl.fl4_tos	= tos;
  	rth->fl.fl4_src	= oldflp->fl4_src;
  	rth->fl.oif	= oldflp->oif;
@@ -234,7 +234,7 @@
  	rth->fl.mark    = oldflp->mark;
  	rth->rt_dst	= fl->fl4_dst;
  	rth->rt_src	= fl->fl4_src;
-@@ -2145,6 +2181,7 @@
+@@ -2145,6 +2181,7 @@ static int ip_route_output_slow(struct r
  	struct flowi fl = { .nl_u = { .ip4_u =
  				      { .daddr = oldflp->fl4_dst,
  					.saddr = oldflp->fl4_src,
@@ -242,7 +242,7 @@
  					.tos = tos & IPTOS_RT_MASK,
  					.scope = ((tos & RTO_ONLINK) ?
  						  RT_SCOPE_LINK :
-@@ -2248,6 +2285,7 @@
+@@ -2248,6 +2285,7 @@ static int ip_route_output_slow(struct r
  		dev_out = &loopback_dev;
  		dev_hold(dev_out);
  		fl.oif = loopback_dev.ifindex;
@@ -250,7 +250,7 @@
  		res.type = RTN_LOCAL;
  		flags |= RTCF_LOCAL;
  		goto make_route;
-@@ -2255,7 +2293,7 @@
+@@ -2255,7 +2293,7 @@ static int ip_route_output_slow(struct r
  
  	if (fib_lookup(&fl, &res)) {
  		res.fi = NULL;
@@ -259,7 +259,7 @@
  			/* Apparently, routing tables are wrong. Assume,
  			   that the destination is on link.
  
-@@ -2295,6 +2333,7 @@
+@@ -2295,6 +2333,7 @@ static int ip_route_output_slow(struct r
  		dev_out = &loopback_dev;
  		dev_hold(dev_out);
  		fl.oif = dev_out->ifindex;
@@ -267,7 +267,7 @@
  		if (res.fi)
  			fib_info_put(res.fi);
  		res.fi = NULL;
-@@ -2302,13 +2341,12 @@
+@@ -2302,13 +2341,12 @@ static int ip_route_output_slow(struct r
  		goto make_route;
  	}
  
@@ -284,7 +284,7 @@
  
  	if (!fl.fl4_src)
  		fl.fl4_src = FIB_RES_PREFSRC(res);
-@@ -2345,6 +2383,7 @@
+@@ -2345,6 +2383,7 @@ int __ip_route_output_key(struct rtable 
  		    rth->fl.fl4_src == flp->fl4_src &&
  		    rth->fl.iif == 0 &&
  		    rth->fl.oif == flp->oif &&
@@ -292,7 +292,7 @@
  		    rth->fl.mark == flp->mark &&
  		    !((rth->fl.fl4_tos ^ flp->fl4_tos) &
  			    (IPTOS_RT_MASK | RTO_ONLINK))) {
-@@ -3030,3 +3069,4 @@
+@@ -3030,3 +3069,4 @@ int __init ip_rt_init(void)
  EXPORT_SYMBOL(__ip_select_ident);
  EXPORT_SYMBOL(ip_route_input);
  EXPORT_SYMBOL(ip_route_output_key);

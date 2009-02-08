@@ -1,6 +1,6 @@
 --- a/fs/Kconfig
 +++ b/fs/Kconfig
-@@ -458,6 +458,9 @@
+@@ -458,6 +458,9 @@ config OCFS2_DEBUG_MASKLOG
  	  This option will enlarge your kernel, but it allows debugging of
  	  ocfs2 filesystem issues.
  
@@ -12,7 +12,7 @@
  	help
 --- a/fs/Makefile
 +++ b/fs/Makefile
-@@ -76,6 +76,7 @@
+@@ -76,6 +76,7 @@ obj-$(CONFIG_SQUASHFS)		+= squashfs/
  obj-$(CONFIG_RAMFS)		+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/

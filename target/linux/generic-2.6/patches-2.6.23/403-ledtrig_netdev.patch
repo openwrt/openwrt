@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -150,4 +150,11 @@
+@@ -150,4 +150,11 @@ config LEDS_TRIGGER_DEFAULT_ON
  	  This allows LEDs to be initialised in the ON state.
  	  If unsure, say Y.
  
@@ -14,7 +14,7 @@
  endif # NEW_LEDS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -25,3 +25,4 @@
+@@ -25,3 +25,4 @@ obj-$(CONFIG_LEDS_TRIGGER_IDE_DISK)	+= l
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
  obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
  obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o

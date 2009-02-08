@@ -4,7 +4,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
 
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -100,3 +100,16 @@
+@@ -100,3 +100,16 @@ config MMC_TIFM_SD
            To compile this driver as a module, choose M here: the
  	  module will be called tifm_sd.
  
@@ -23,7 +23,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
 +
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -15,4 +15,5 @@
+@@ -15,4 +15,5 @@ obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
  obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
  obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
@@ -1497,7 +1497,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #include "bus.h"
  
  #define dev_to_mmc_card(d)	container_of(d, struct mmc_card, dev)
-@@ -34,6 +35,8 @@
+@@ -34,6 +35,8 @@ static ssize_t mmc_type_show(struct devi
  		return sprintf(buf, "MMC\n");
  	case MMC_TYPE_SD:
  		return sprintf(buf, "SD\n");
@@ -1506,7 +1506,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	default:
  		return -EFAULT;
  	}
-@@ -55,36 +58,37 @@
+@@ -55,36 +58,37 @@ static int mmc_bus_match(struct device *
  }
  
  static int
@@ -1562,7 +1562,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  static int mmc_bus_probe(struct device *dev)
-@@ -176,6 +180,11 @@
+@@ -176,6 +180,11 @@ static void mmc_release_card(struct devi
  {
  	struct mmc_card *card = dev_to_mmc_card(dev);
  
@@ -1574,7 +1574,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	kfree(card);
  }
  
-@@ -221,15 +230,25 @@
+@@ -221,15 +230,25 @@ int mmc_add_card(struct mmc_card *card)
  		if (mmc_card_blockaddr(card))
  			type = "SDHC";
  		break;
@@ -1604,7 +1604,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	card->dev.uevent_suppress = 1;
  
-@@ -261,8 +280,13 @@
+@@ -261,8 +280,13 @@ int mmc_add_card(struct mmc_card *card)
  void mmc_remove_card(struct mmc_card *card)
  {
  	if (mmc_card_present(card)) {
@@ -1659,7 +1659,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
   * Internal function. Schedule delayed work in the MMC work queue.
   */
  static int mmc_schedule_delayed_work(struct delayed_work *work,
-@@ -68,6 +79,11 @@
+@@ -68,6 +79,11 @@ void mmc_request_done(struct mmc_host *h
  	struct mmc_command *cmd = mrq->cmd;
  	int err = cmd->error;
  
@@ -1671,7 +1671,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	if (err && cmd->retries) {
  		pr_debug("%s: req failed (CMD%u): %d, retrying...\n",
  			mmc_hostname(host), cmd->opcode, err);
-@@ -76,6 +92,8 @@
+@@ -76,6 +92,8 @@ void mmc_request_done(struct mmc_host *h
  		cmd->error = 0;
  		host->ops->request(host, mrq);
  	} else {
@@ -1680,7 +1680,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		pr_debug("%s: req done (CMD%u): %d: %08x %08x %08x %08x\n",
  			mmc_hostname(host), cmd->opcode, err,
  			cmd->resp[0], cmd->resp[1],
-@@ -118,7 +136,7 @@
+@@ -118,7 +136,7 @@ mmc_start_request(struct mmc_host *host,
  			"tsac %d ms nsac %d\n",
  			mmc_hostname(host), mrq->data->blksz,
  			mrq->data->blocks, mrq->data->flags,
@@ -1689,7 +1689,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			mrq->data->timeout_clks);
  	}
  
-@@ -130,6 +148,8 @@
+@@ -130,6 +148,8 @@ mmc_start_request(struct mmc_host *host,
  
  	WARN_ON(!host->claimed);
  
@@ -1698,7 +1698,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	mrq->cmd->error = 0;
  	mrq->cmd->mrq = mrq;
  	if (mrq->data) {
-@@ -199,7 +219,7 @@
+@@ -199,7 +219,7 @@ int mmc_wait_for_cmd(struct mmc_host *ho
  {
  	struct mmc_request mrq;
  
@@ -1707,7 +1707,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	memset(&mrq, 0, sizeof(struct mmc_request));
  
-@@ -220,17 +240,24 @@
+@@ -220,17 +240,24 @@ EXPORT_SYMBOL(mmc_wait_for_cmd);
   *	mmc_set_data_timeout - set the timeout for a data command
   *	@data: data phase for command
   *	@card: the MMC card associated with the data transfer
@@ -1735,7 +1735,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	 * SD cards use a 100 multiplier rather than 10
  	 */
  	mult = mmc_card_sd(card) ? 100 : 10;
-@@ -239,7 +266,7 @@
+@@ -239,7 +266,7 @@ void mmc_set_data_timeout(struct mmc_dat
  	 * Scale up the multiplier (and therefore the timeout) by
  	 * the r2w factor for writes.
  	 */
@@ -1744,7 +1744,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		mult <<= card->csd.r2w_factor;
  
  	data->timeout_ns = card->csd.tacc_ns * mult;
-@@ -255,7 +282,7 @@
+@@ -255,7 +282,7 @@ void mmc_set_data_timeout(struct mmc_dat
  		timeout_us += data->timeout_clks * 1000 /
  			(card->host->ios.clock / 1000);
  
@@ -1753,7 +1753,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			limit_us = 250000;
  		else
  			limit_us = 100000;
-@@ -272,15 +299,20 @@
+@@ -272,15 +299,20 @@ void mmc_set_data_timeout(struct mmc_dat
  EXPORT_SYMBOL(mmc_set_data_timeout);
  
  /**
@@ -1777,7 +1777,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	might_sleep();
  
-@@ -288,19 +320,24 @@
+@@ -288,19 +320,24 @@ void mmc_claim_host(struct mmc_host *hos
  	spin_lock_irqsave(&host->lock, flags);
  	while (1) {
  		set_current_state(TASK_UNINTERRUPTIBLE);
@@ -1805,7 +1805,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  /**
   *	mmc_release_host - release a host
-@@ -313,7 +350,7 @@
+@@ -313,7 +350,7 @@ void mmc_release_host(struct mmc_host *h
  {
  	unsigned long flags;
  
@@ -1814,7 +1814,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	spin_lock_irqsave(&host->lock, flags);
  	host->claimed = 0;
-@@ -433,19 +470,32 @@
+@@ -433,19 +470,32 @@ static void mmc_power_up(struct mmc_host
  	int bit = fls(host->ocr_avail) - 1;
  
  	host->ios.vdd = bit;
@@ -1850,7 +1850,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	mmc_delay(2);
  }
  
-@@ -453,8 +503,10 @@
+@@ -453,8 +503,10 @@ static void mmc_power_off(struct mmc_hos
  {
  	host->ios.clock = 0;
  	host->ios.vdd = 0;
@@ -1863,7 +1863,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	host->ios.power_mode = MMC_POWER_OFF;
  	host->ios.bus_width = MMC_BUS_WIDTH_1;
  	host->ios.timing = MMC_TIMING_LEGACY;
-@@ -511,7 +563,7 @@
+@@ -511,7 +563,7 @@ void mmc_attach_bus(struct mmc_host *hos
  	BUG_ON(!host);
  	BUG_ON(!ops);
  
@@ -1872,7 +1872,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	spin_lock_irqsave(&host->lock, flags);
  
-@@ -535,8 +587,8 @@
+@@ -535,8 +587,8 @@ void mmc_detach_bus(struct mmc_host *hos
  
  	BUG_ON(!host);
  
@@ -1883,7 +1883,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	spin_lock_irqsave(&host->lock, flags);
  
-@@ -564,7 +616,7 @@
+@@ -564,7 +616,7 @@ void mmc_detect_change(struct mmc_host *
  #ifdef CONFIG_MMC_DEBUG
  	unsigned long flags;
  	spin_lock_irqsave(&host->lock, flags);
@@ -1892,7 +1892,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	spin_unlock_irqrestore(&host->lock, flags);
  #endif
  
-@@ -597,24 +649,38 @@
+@@ -597,24 +649,38 @@ void mmc_rescan(struct work_struct *work
  
  		mmc_send_if_cond(host, host->ocr_avail);
  
@@ -1944,7 +1944,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	} else {
  		if (host->bus_ops->detect && !host->bus_dead)
  			host->bus_ops->detect(host);
-@@ -725,22 +791,38 @@
+@@ -725,22 +791,38 @@ static int __init mmc_init(void)
  		return -ENOMEM;
  
  	ret = mmc_register_bus();
@@ -1991,7 +1991,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  MODULE_LICENSE("GPL");
 --- a/drivers/mmc/core/core.h
 +++ b/drivers/mmc/core/core.h
-@@ -48,5 +48,7 @@
+@@ -48,5 +48,7 @@ void mmc_rescan(struct work_struct *work
  void mmc_start_host(struct mmc_host *host);
  void mmc_stop_host(struct mmc_host *host);
  
@@ -2009,7 +2009,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  #include <linux/mmc/host.h>
  
-@@ -100,6 +101,9 @@
+@@ -100,6 +101,9 @@ int mmc_add_host(struct mmc_host *host)
  {
  	int err;
  
@@ -2019,7 +2019,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	if (!idr_pre_get(&mmc_host_idr, GFP_KERNEL))
  		return -ENOMEM;
  
-@@ -112,6 +116,8 @@
+@@ -112,6 +116,8 @@ int mmc_add_host(struct mmc_host *host)
  	snprintf(host->class_dev.bus_id, BUS_ID_SIZE,
  		 "mmc%d", host->index);
  
@@ -2028,7 +2028,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	err = device_add(&host->class_dev);
  	if (err)
  		return err;
-@@ -137,6 +143,8 @@
+@@ -137,6 +143,8 @@ void mmc_remove_host(struct mmc_host *ho
  
  	device_del(&host->class_dev);
  
@@ -2039,7 +2039,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	spin_unlock(&mmc_host_lock);
 --- a/drivers/mmc/core/mmc.c
 +++ b/drivers/mmc/core/mmc.c
-@@ -161,13 +161,12 @@
+@@ -161,13 +161,12 @@ static int mmc_read_ext_csd(struct mmc_c
  {
  	int err;
  	u8 *ext_csd;
@@ -2055,7 +2055,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	/*
  	 * As the ext_csd is so large and mostly unused, we don't store the
-@@ -176,13 +175,19 @@
+@@ -176,13 +175,19 @@ static int mmc_read_ext_csd(struct mmc_c
  	ext_csd = kmalloc(512, GFP_KERNEL);
  	if (!ext_csd) {
  		printk(KERN_ERR "%s: could not allocate a buffer to "
@@ -2079,7 +2079,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		/*
  		 * High capacity cards should have this "magic" size
  		 * stored in their CSD.
-@@ -197,18 +202,30 @@
+@@ -197,18 +202,30 @@ static int mmc_read_ext_csd(struct mmc_c
  				"EXT_CSD, performance might "
  				"suffer.\n",
  				mmc_hostname(card->host));
@@ -2118,7 +2118,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	switch (ext_csd[EXT_CSD_CARD_TYPE]) {
  	case EXT_CSD_CARD_TYPE_52 | EXT_CSD_CARD_TYPE_26:
-@@ -246,7 +263,7 @@
+@@ -246,7 +263,7 @@ static int mmc_init_card(struct mmc_host
  	unsigned int max_dtr;
  
  	BUG_ON(!host);
@@ -2127,7 +2127,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	/*
  	 * Since we're changing the OCR value, we seem to
-@@ -258,19 +275,33 @@
+@@ -258,19 +275,33 @@ static int mmc_init_card(struct mmc_host
  
  	/* The extra bit indicates that we support high capacity */
  	err = mmc_send_op_cond(host, ocr | (1 << 30), NULL);
@@ -2165,7 +2165,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  		card = oldcard;
  	} else {
-@@ -278,8 +309,10 @@
+@@ -278,8 +309,10 @@ static int mmc_init_card(struct mmc_host
  		 * Allocate card structure.
  		 */
  		card = mmc_alloc_card(host);
@@ -2177,7 +2177,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  		card->type = MMC_TYPE_MMC;
  		card->rca = 1;
-@@ -287,43 +320,47 @@
+@@ -287,43 +320,47 @@ static int mmc_init_card(struct mmc_host
  	}
  
  	/*
@@ -2238,7 +2238,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			goto free_card;
  	}
  
-@@ -334,7 +371,7 @@
+@@ -334,7 +371,7 @@ static int mmc_init_card(struct mmc_host
  		(host->caps & MMC_CAP_MMC_HIGHSPEED)) {
  		err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
  			EXT_CSD_HS_TIMING, 1);
@@ -2247,7 +2247,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			goto free_card;
  
  		mmc_card_set_highspeed(card);
-@@ -363,7 +400,7 @@
+@@ -363,7 +400,7 @@ static int mmc_init_card(struct mmc_host
  		(host->caps & MMC_CAP_4_BIT_DATA)) {
  		err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
  			EXT_CSD_BUS_WIDTH, EXT_CSD_BUS_WIDTH_4);
@@ -2256,7 +2256,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			goto free_card;
  
  		mmc_set_bus_width(card->host, MMC_BUS_WIDTH_4);
-@@ -372,14 +409,14 @@
+@@ -372,14 +409,14 @@ static int mmc_init_card(struct mmc_host
  	if (!oldcard)
  		host->card = card;
  
@@ -2273,7 +2273,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  /*
-@@ -413,7 +450,7 @@
+@@ -413,7 +450,7 @@ static void mmc_detect(struct mmc_host *
  
  	mmc_release_host(host);
  
@@ -2282,7 +2282,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		mmc_remove(host);
  
  		mmc_claim_host(host);
-@@ -480,7 +517,8 @@
+@@ -480,7 +517,8 @@ static void mmc_suspend(struct mmc_host 
  	BUG_ON(!host->card);
  
  	mmc_claim_host(host);
@@ -2292,7 +2292,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	host->card->state &= ~MMC_STATE_HIGHSPEED;
  	mmc_release_host(host);
  }
-@@ -502,7 +540,7 @@
+@@ -502,7 +540,7 @@ static void mmc_resume(struct mmc_host *
  	err = mmc_init_card(host, host->ocr, host->card);
  	mmc_release_host(host);
  
@@ -2301,7 +2301,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		mmc_remove(host);
  
  		mmc_claim_host(host);
-@@ -536,11 +574,20 @@
+@@ -536,11 +574,20 @@ int mmc_attach_mmc(struct mmc_host *host
  	int err;
  
  	BUG_ON(!host);
@@ -2323,7 +2323,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	 * Sanity check the voltages that the card claims to
  	 * support.
  	 */
-@@ -565,7 +612,7 @@
+@@ -565,7 +612,7 @@ int mmc_attach_mmc(struct mmc_host *host
  	 * Detect and init the card.
  	 */
  	err = mmc_init_card(host, host->ocr, NULL);
@@ -2332,7 +2332,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		goto err;
  
  	mmc_release_host(host);
-@@ -587,6 +634,6 @@
+@@ -587,6 +634,6 @@ err:
  	printk(KERN_ERR "%s: error %d whilst initialising MMC card\n",
  		mmc_hostname(host), err);
  
@@ -2350,7 +2350,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #include <linux/scatterlist.h>
  
  #include <linux/mmc/host.h>
-@@ -40,10 +39,10 @@
+@@ -40,10 +39,10 @@ static int _mmc_select_card(struct mmc_h
  	}
  
  	err = mmc_wait_for_cmd(host, &cmd, MMC_CMD_RETRIES);
@@ -2363,7 +2363,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_select_card(struct mmc_card *card)
-@@ -63,23 +62,36 @@
+@@ -63,23 +62,36 @@ int mmc_go_idle(struct mmc_host *host)
  	int err;
  	struct mmc_command cmd;
  
@@ -2406,7 +2406,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	return err;
  }
-@@ -94,23 +106,33 @@
+@@ -94,23 +106,33 @@ int mmc_send_op_cond(struct mmc_host *ho
  	memset(&cmd, 0, sizeof(struct mmc_command));
  
  	cmd.opcode = MMC_SEND_OP_COND;
@@ -2446,7 +2446,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		*rocr = cmd.resp[0];
  
  	return err;
-@@ -131,12 +153,12 @@
+@@ -131,12 +153,12 @@ int mmc_all_send_cid(struct mmc_host *ho
  	cmd.flags = MMC_RSP_R2 | MMC_CMD_BCR;
  
  	err = mmc_wait_for_cmd(host, &cmd, MMC_CMD_RETRIES);
@@ -2461,7 +2461,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_set_relative_addr(struct mmc_card *card)
-@@ -154,46 +176,52 @@
+@@ -154,46 +176,52 @@ int mmc_set_relative_addr(struct mmc_car
  	cmd.flags = MMC_RSP_R1 | MMC_CMD_AC;
  
  	err = mmc_wait_for_cmd(card->host, &cmd, MMC_CMD_RETRIES);
@@ -2530,7 +2530,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	memset(&mrq, 0, sizeof(struct mmc_request));
  	memset(&cmd, 0, sizeof(struct mmc_command));
-@@ -202,28 +230,117 @@
+@@ -202,28 +230,117 @@ int mmc_send_ext_csd(struct mmc_card *ca
  	mrq.cmd = &cmd;
  	mrq.data = &data;
  
@@ -2657,7 +2657,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_switch(struct mmc_card *card, u8 set, u8 index, u8 value)
-@@ -241,13 +358,13 @@
+@@ -241,13 +358,13 @@ int mmc_switch(struct mmc_card *card, u8
  		  (index << 16) |
  		  (value << 8) |
  		  set;
@@ -2674,7 +2674,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_send_status(struct mmc_card *card, u32 *status)
-@@ -261,16 +378,20 @@
+@@ -261,16 +378,20 @@ int mmc_send_status(struct mmc_card *car
  	memset(&cmd, 0, sizeof(struct mmc_command));
  
  	cmd.opcode = MMC_SEND_STATUS;
@@ -2701,7 +2701,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
 --- a/drivers/mmc/core/mmc_ops.h
 +++ b/drivers/mmc/core/mmc_ops.h
-@@ -22,6 +22,9 @@
+@@ -22,6 +22,9 @@ int mmc_send_csd(struct mmc_card *card, 
  int mmc_send_ext_csd(struct mmc_card *card, u8 *ext_csd);
  int mmc_switch(struct mmc_card *card, u8 set, u8 index, u8 value);
  int mmc_send_status(struct mmc_card *card, u32 *status);
@@ -2713,7 +2713,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -166,8 +166,6 @@
+@@ -166,8 +166,6 @@ static int mmc_decode_scr(struct mmc_car
  	unsigned int scr_struct;
  	u32 resp[4];
  
@@ -2722,7 +2722,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	resp[3] = card->raw_scr[1];
  	resp[2] = card->raw_scr[0];
  
-@@ -193,30 +191,38 @@
+@@ -193,30 +191,38 @@ static int mmc_read_switch(struct mmc_ca
  	u8 *status;
  
  	if (card->scr.sda_vsn < SCR_SPEC_VER_1)
@@ -2767,7 +2767,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		goto out;
  	}
  
-@@ -238,28 +244,28 @@
+@@ -238,28 +244,28 @@ static int mmc_switch_hs(struct mmc_card
  	u8 *status;
  
  	if (card->scr.sda_vsn < SCR_SPEC_VER_1)
@@ -2803,7 +2803,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		goto out;
  
  	if ((status[16] & 0xF) != 1) {
-@@ -292,7 +298,7 @@
+@@ -292,7 +298,7 @@ static int mmc_sd_init_card(struct mmc_h
  	unsigned int max_dtr;
  
  	BUG_ON(!host);
@@ -2812,7 +2812,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	/*
  	 * Since we're changing the OCR value, we seem to
-@@ -309,23 +315,37 @@
+@@ -309,23 +315,37 @@ static int mmc_sd_init_card(struct mmc_h
  	 * block-addressed SDHC cards.
  	 */
  	err = mmc_send_if_cond(host, ocr);
@@ -2855,7 +2855,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  		card = oldcard;
  	} else {
-@@ -333,32 +353,36 @@
+@@ -333,32 +353,36 @@ static int mmc_sd_init_card(struct mmc_h
  		 * Allocate card structure.
  		 */
  		card = mmc_alloc_card(host);
@@ -2900,7 +2900,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			goto free_card;
  
  		mmc_decode_cid(card);
-@@ -367,16 +391,18 @@
+@@ -367,16 +391,18 @@ static int mmc_sd_init_card(struct mmc_h
  	/*
  	 * Select card, as all following commands rely on that.
  	 */
@@ -2923,7 +2923,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			goto free_card;
  
  		err = mmc_decode_scr(card);
-@@ -387,7 +413,7 @@
+@@ -387,7 +413,7 @@ static int mmc_sd_init_card(struct mmc_h
  		 * Fetch switch information from card.
  		 */
  		err = mmc_read_switch(card);
@@ -2932,7 +2932,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			goto free_card;
  	}
  
-@@ -395,7 +421,7 @@
+@@ -395,7 +421,7 @@ static int mmc_sd_init_card(struct mmc_h
  	 * Attempt to change to high-speed (if supported)
  	 */
  	err = mmc_switch_hs(card);
@@ -2941,7 +2941,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		goto free_card;
  
  	/*
-@@ -418,7 +444,7 @@
+@@ -418,7 +444,7 @@ static int mmc_sd_init_card(struct mmc_h
  	if ((host->caps & MMC_CAP_4_BIT_DATA) &&
  		(card->scr.bus_widths & SD_SCR_BUS_WIDTH_4)) {
  		err = mmc_app_set_bus_width(card, MMC_BUS_WIDTH_4);
@@ -2950,7 +2950,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			goto free_card;
  
  		mmc_set_bus_width(host, MMC_BUS_WIDTH_4);
-@@ -442,14 +468,14 @@
+@@ -442,14 +468,14 @@ static int mmc_sd_init_card(struct mmc_h
  	if (!oldcard)
  		host->card = card;
  
@@ -2967,7 +2967,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  /*
-@@ -483,7 +509,7 @@
+@@ -483,7 +509,7 @@ static void mmc_sd_detect(struct mmc_hos
  
  	mmc_release_host(host);
  
@@ -2976,7 +2976,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		mmc_sd_remove(host);
  
  		mmc_claim_host(host);
-@@ -552,7 +578,8 @@
+@@ -552,7 +578,8 @@ static void mmc_sd_suspend(struct mmc_ho
  	BUG_ON(!host->card);
  
  	mmc_claim_host(host);
@@ -2986,7 +2986,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	host->card->state &= ~MMC_STATE_HIGHSPEED;
  	mmc_release_host(host);
  }
-@@ -574,7 +601,7 @@
+@@ -574,7 +601,7 @@ static void mmc_sd_resume(struct mmc_hos
  	err = mmc_sd_init_card(host, host->ocr, host->card);
  	mmc_release_host(host);
  
@@ -2995,7 +2995,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		mmc_sd_remove(host);
  
  		mmc_claim_host(host);
-@@ -608,11 +635,22 @@
+@@ -608,11 +635,22 @@ int mmc_attach_sd(struct mmc_host *host,
  	int err;
  
  	BUG_ON(!host);
@@ -3019,7 +3019,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	 * Sanity check the voltages that the card claims to
  	 * support.
  	 */
-@@ -644,7 +682,7 @@
+@@ -644,7 +682,7 @@ int mmc_attach_sd(struct mmc_host *host,
  	 * Detect and init the card.
  	 */
  	err = mmc_sd_init_card(host, host->ocr, NULL);
@@ -3028,7 +3028,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		goto err;
  
  	mmc_release_host(host);
-@@ -666,6 +704,6 @@
+@@ -666,6 +704,6 @@ err:
  	printk(KERN_ERR "%s: error %d whilst initialising SD card\n",
  		mmc_hostname(host), err);
  
@@ -3046,7 +3046,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #include <linux/scatterlist.h>
  
  #include <linux/mmc/host.h>
-@@ -33,21 +32,21 @@
+@@ -33,21 +32,21 @@ static int mmc_app_cmd(struct mmc_host *
  
  	if (card) {
  		cmd.arg = card->rca << 16;
@@ -3074,7 +3074,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  /**
-@@ -73,7 +72,7 @@
+@@ -73,7 +72,7 @@ int mmc_wait_for_app_cmd(struct mmc_host
  	BUG_ON(!cmd);
  	BUG_ON(retries < 0);
  
@@ -3083,7 +3083,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	/*
  	 * We have to resend MMC_APP_CMD for each attempt so
-@@ -83,8 +82,14 @@
+@@ -83,8 +82,14 @@ int mmc_wait_for_app_cmd(struct mmc_host
  		memset(&mrq, 0, sizeof(struct mmc_request));
  
  		err = mmc_app_cmd(host, card);
@@ -3099,7 +3099,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  		memset(&mrq, 0, sizeof(struct mmc_request));
  
-@@ -97,8 +102,14 @@
+@@ -97,8 +102,14 @@ int mmc_wait_for_app_cmd(struct mmc_host
  		mmc_wait_for_req(host, &mrq);
  
  		err = cmd->error;
@@ -3115,7 +3115,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	}
  
  	return err;
-@@ -127,14 +138,14 @@
+@@ -127,14 +138,14 @@ int mmc_app_set_bus_width(struct mmc_car
  		cmd.arg = SD_BUS_WIDTH_4;
  		break;
  	default:
@@ -3133,7 +3133,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
-@@ -147,23 +158,36 @@
+@@ -147,23 +158,36 @@ int mmc_send_app_op_cond(struct mmc_host
  	memset(&cmd, 0, sizeof(struct mmc_command));
  
  	cmd.opcode = SD_APP_OP_COND;
@@ -3176,7 +3176,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		*rocr = cmd.resp[0];
  
  	return err;
-@@ -174,6 +198,7 @@
+@@ -174,6 +198,7 @@ int mmc_send_if_cond(struct mmc_host *ho
  	struct mmc_command cmd;
  	int err;
  	static const u8 test_pattern = 0xAA;
@@ -3184,7 +3184,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	/*
  	 * To support SD 2.0 cards, we must always invoke SD_SEND_IF_COND
-@@ -182,16 +207,21 @@
+@@ -182,16 +207,21 @@ int mmc_send_if_cond(struct mmc_host *ho
  	 */
  	cmd.opcode = SD_SEND_IF_COND;
  	cmd.arg = ((ocr & 0xFF8000) != 0) << 8 | test_pattern;
@@ -3211,7 +3211,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_send_relative_addr(struct mmc_host *host, unsigned int *rca)
-@@ -209,12 +239,12 @@
+@@ -209,12 +239,12 @@ int mmc_send_relative_addr(struct mmc_ho
  	cmd.flags = MMC_RSP_R6 | MMC_CMD_BCR;
  
  	err = mmc_wait_for_cmd(host, &cmd, MMC_CMD_RETRIES);
@@ -3226,7 +3226,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_app_send_scr(struct mmc_card *card, u32 *scr)
-@@ -229,8 +259,10 @@
+@@ -229,8 +259,10 @@ int mmc_app_send_scr(struct mmc_card *ca
  	BUG_ON(!card->host);
  	BUG_ON(!scr);
  
@@ -3238,7 +3238,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		return err;
  
  	memset(&mrq, 0, sizeof(struct mmc_request));
-@@ -242,7 +274,7 @@
+@@ -242,7 +274,7 @@ int mmc_app_send_scr(struct mmc_card *ca
  
  	cmd.opcode = SD_APP_SEND_SCR;
  	cmd.arg = 0;
@@ -3247,7 +3247,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	data.blksz = 8;
  	data.blocks = 1;
-@@ -252,19 +284,19 @@
+@@ -252,19 +284,19 @@ int mmc_app_send_scr(struct mmc_card *ca
  
  	sg_init_one(&sg, scr, 8);
  
@@ -3273,7 +3273,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  }
  
  int mmc_sd_switch(struct mmc_card *card, int mode, int group,
-@@ -278,6 +310,8 @@
+@@ -278,6 +310,8 @@ int mmc_sd_switch(struct mmc_card *card,
  	BUG_ON(!card);
  	BUG_ON(!card->host);
  
@@ -3282,7 +3282,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	mode = !!mode;
  	value &= 0xF;
  
-@@ -292,7 +326,7 @@
+@@ -292,7 +326,7 @@ int mmc_sd_switch(struct mmc_card *card,
  	cmd.arg = mode << 31 | 0x00FFFFFF;
  	cmd.arg &= ~(0xF << (group * 4));
  	cmd.arg |= value << (group * 4);
@@ -3291,7 +3291,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	data.blksz = 64;
  	data.blocks = 1;
-@@ -302,15 +336,15 @@
+@@ -302,15 +336,15 @@ int mmc_sd_switch(struct mmc_card *card,
  
  	sg_init_one(&sg, resp, 64);
  
@@ -5403,7 +5403,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
 +
 --- a/include/linux/mmc/card.h
 +++ b/include/linux/mmc/card.h
-@@ -55,7 +55,28 @@
+@@ -55,7 +55,28 @@ struct sd_switch_caps {
  	unsigned int		hs_max_dtr;
  };
  
@@ -5432,7 +5432,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  /*
   * MMC device
-@@ -67,11 +88,13 @@
+@@ -67,11 +88,13 @@ struct mmc_card {
  	unsigned int		type;		/* card type */
  #define MMC_TYPE_MMC		0		/* MMC card */
  #define MMC_TYPE_SD		1		/* SD card */
@@ -5446,7 +5446,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	u32			raw_cid[4];	/* raw card CID */
  	u32			raw_csd[4];	/* raw card CSD */
  	u32			raw_scr[2];	/* raw card SCR */
-@@ -80,10 +103,19 @@
+@@ -80,10 +103,19 @@ struct mmc_card {
  	struct mmc_ext_csd	ext_csd;	/* mmc v4 extended card specific */
  	struct sd_scr		scr;		/* extra SD information */
  	struct sd_switch_caps	sw_caps;	/* switch (CMD6) caps */
@@ -5468,7 +5468,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #define mmc_card_readonly(c)	((c)->state & MMC_STATE_READONLY)
 --- a/include/linux/mmc/core.h
 +++ b/include/linux/mmc/core.h
-@@ -25,14 +25,20 @@
+@@ -25,14 +25,20 @@ struct mmc_command {
  #define MMC_RSP_CRC	(1 << 2)		/* expect valid crc */
  #define MMC_RSP_BUSY	(1 << 3)		/* card may send busy */
  #define MMC_RSP_OPCODE	(1 << 4)		/* response contains opcode */
@@ -5491,7 +5491,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
   * patterns of the above flags.  One additional valid pattern
   * is all zeros, which means we don't expect a response.
   */
-@@ -41,12 +47,30 @@
+@@ -41,12 +47,30 @@ struct mmc_command {
  #define MMC_RSP_R1B	(MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE|MMC_RSP_BUSY)
  #define MMC_RSP_R2	(MMC_RSP_PRESENT|MMC_RSP_136|MMC_RSP_CRC)
  #define MMC_RSP_R3	(MMC_RSP_PRESENT)
@@ -5522,7 +5522,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
   * These are the command types.
   */
  #define mmc_cmd_type(cmd)	((cmd)->flags & MMC_CMD_MASK)
-@@ -54,12 +78,19 @@
+@@ -54,12 +78,19 @@ struct mmc_command {
  	unsigned int		retries;	/* max number of retries */
  	unsigned int		error;		/* command error */
  
@@ -5548,7 +5548,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	struct mmc_data		*data;		/* data segment associated with cmd */
  	struct mmc_request	*mrq;		/* associated request */
-@@ -76,7 +107,6 @@
+@@ -76,7 +107,6 @@ struct mmc_data {
  #define MMC_DATA_WRITE	(1 << 8)
  #define MMC_DATA_READ	(1 << 9)
  #define MMC_DATA_STREAM	(1 << 10)
@@ -5556,7 +5556,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	unsigned int		bytes_xfered;
  
-@@ -104,9 +134,20 @@
+@@ -104,9 +134,20 @@ extern int mmc_wait_for_cmd(struct mmc_h
  extern int mmc_wait_for_app_cmd(struct mmc_host *, struct mmc_card *,
  	struct mmc_command *, int);
  
@@ -5590,7 +5590,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #include <linux/mmc/core.h>
  
  struct mmc_ios {
-@@ -51,6 +53,7 @@
+@@ -51,6 +53,7 @@ struct mmc_host_ops {
  	void	(*request)(struct mmc_host *host, struct mmc_request *req);
  	void	(*set_ios)(struct mmc_host *host, struct mmc_ios *ios);
  	int	(*get_ro)(struct mmc_host *host);
@@ -5598,7 +5598,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  };
  
  struct mmc_card;
-@@ -87,9 +90,10 @@
+@@ -87,9 +90,10 @@ struct mmc_host {
  
  #define MMC_CAP_4_BIT_DATA	(1 << 0)	/* Can the host do 4 bit transfers */
  #define MMC_CAP_MULTIWRITE	(1 << 1)	/* Can accurately report bytes sent to card on error */
@@ -5612,7 +5612,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	/* host specific block data */
  	unsigned int		max_seg_size;	/* see blk_queue_max_segment_size */
-@@ -106,23 +110,30 @@
+@@ -106,23 +110,30 @@ struct mmc_host {
  	struct mmc_ios		ios;		/* current io bus settings */
  	u32			ocr;		/* the current OCR setting */
  
@@ -5651,7 +5651,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	unsigned long		private[0] ____cacheline_aligned;
  };
-@@ -137,6 +148,8 @@
+@@ -137,6 +148,8 @@ static inline void *mmc_priv(struct mmc_
  	return (void *)host->private;
  }
  
@@ -5660,7 +5660,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #define mmc_dev(x)	((x)->parent)
  #define mmc_classdev(x)	(&(x)->class_dev)
  #define mmc_hostname(x)	((x)->class_dev.bus_id)
-@@ -147,5 +160,11 @@
+@@ -147,5 +160,11 @@ extern int mmc_resume_host(struct mmc_ho
  extern void mmc_detect_change(struct mmc_host *, unsigned long delay);
  extern void mmc_request_done(struct mmc_host *, struct mmc_request *);
  
@@ -5749,7 +5749,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  /* These are unpacked versions of the actual responses */
  
  struct _mmc_csd {
-@@ -182,6 +207,7 @@
+@@ -182,6 +207,7 @@ struct _mmc_csd {
   */
  #define CCC_BASIC		(1<<0)	/* (0) Basic protocol functions */
  					/* (CMD0,1,2,3,4,7,9,10,12,13,15) */
@@ -5757,7 +5757,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #define CCC_STREAM_READ		(1<<1)	/* (1) Stream read commands */
  					/* (CMD11) */
  #define CCC_BLOCK_READ		(1<<2)	/* (2) Block read commands */
-@@ -227,6 +253,7 @@
+@@ -227,6 +253,7 @@ struct _mmc_csd {
  #define EXT_CSD_BUS_WIDTH	183	/* R/W */
  #define EXT_CSD_HS_TIMING	185	/* R/W */
  #define EXT_CSD_CARD_TYPE	196	/* RO */
@@ -6117,7 +6117,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
 +#endif
 --- a/include/linux/mod_devicetable.h
 +++ b/include/linux/mod_devicetable.h
-@@ -22,6 +22,18 @@
+@@ -22,6 +22,18 @@ struct pci_device_id {
  };
  
  
@@ -6138,7 +6138,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  #define IEEE1394_MATCH_SPECIFIER_ID	0x0004
 --- a/drivers/mmc/card/Kconfig
 +++ b/drivers/mmc/card/Kconfig
-@@ -32,3 +32,10 @@
+@@ -32,3 +32,10 @@ config MMC_BLOCK_BOUNCE
  
  	  If unsure, say Y here.
  
@@ -6151,7 +6151,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
 +
 --- a/drivers/mmc/card/Makefile
 +++ b/drivers/mmc/card/Makefile
-@@ -9,3 +9,5 @@
+@@ -9,3 +9,5 @@ endif
  obj-$(CONFIG_MMC_BLOCK)		+= mmc_block.o
  mmc_block-objs			:= block.o queue.o
  
@@ -6169,7 +6169,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  /*
   * There is one mmc_blk_data per slot.
-@@ -80,6 +83,9 @@
+@@ -80,6 +83,9 @@ static void mmc_blk_put(struct mmc_blk_d
  	mutex_lock(&open_lock);
  	md->usage--;
  	if (md->usage == 0) {
@@ -6179,7 +6179,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		put_disk(md->disk);
  		kfree(md);
  	}
-@@ -151,17 +157,19 @@
+@@ -151,17 +157,19 @@ static u32 mmc_sd_num_wr_blocks(struct m
  
  	cmd.opcode = MMC_APP_CMD;
  	cmd.arg = card->rca << 16;
@@ -6202,7 +6202,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  	memset(&data, 0, sizeof(struct mmc_data));
  
-@@ -192,7 +200,7 @@
+@@ -192,7 +200,7 @@ static u32 mmc_sd_num_wr_blocks(struct m
  
  	mmc_wait_for_req(card->host, &mrq);
  
@@ -6211,7 +6211,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		return (u32)-1;
  
  	blocks = ntohl(blocks);
-@@ -220,17 +228,15 @@
+@@ -220,17 +228,15 @@ static int mmc_blk_issue_rq(struct mmc_q
  		brq.cmd.arg = req->sector;
  		if (!mmc_card_blockaddr(card))
  			brq.cmd.arg <<= 9;
@@ -6231,7 +6231,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		/*
  		 * If the host doesn't support multiple block writes, force
  		 * block writes to single block. SD cards are excepted from
-@@ -243,8 +249,12 @@
+@@ -243,8 +249,12 @@ static int mmc_blk_issue_rq(struct mmc_q
  			brq.data.blocks = 1;
  
  		if (brq.data.blocks > 1) {
@@ -6246,7 +6246,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			readcmd = MMC_READ_MULTIPLE_BLOCK;
  			writecmd = MMC_WRITE_MULTIPLE_BLOCK;
  		} else {
-@@ -261,6 +271,8 @@
+@@ -261,6 +271,8 @@ static int mmc_blk_issue_rq(struct mmc_q
  			brq.data.flags |= MMC_DATA_WRITE;
  		}
  
@@ -6255,7 +6255,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		brq.data.sg = mq->sg;
  		brq.data.sg_len = mmc_queue_map_sg(mq);
  
-@@ -302,7 +314,7 @@
+@@ -302,7 +314,7 @@ static int mmc_blk_issue_rq(struct mmc_q
  			goto cmd_err;
  		}
  
@@ -6264,7 +6264,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			do {
  				int err;
  
-@@ -315,7 +327,13 @@
+@@ -315,7 +327,13 @@ static int mmc_blk_issue_rq(struct mmc_q
  					       req->rq_disk->disk_name, err);
  					goto cmd_err;
  				}
@@ -6279,7 +6279,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  #if 0
  			if (cmd.resp[0] & ~0x00000900)
-@@ -394,9 +412,6 @@
+@@ -394,9 +412,6 @@ static int mmc_blk_issue_rq(struct mmc_q
  	return 0;
  }
  
@@ -6289,7 +6289,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  static inline int mmc_blk_readonly(struct mmc_card *card)
  {
-@@ -510,7 +525,7 @@
+@@ -510,7 +525,7 @@ mmc_blk_set_blksize(struct mmc_blk_data 
  	mmc_claim_host(card->host);
  	cmd.opcode = MMC_SET_BLOCKLEN;
  	cmd.arg = 1 << md->block_bits;
@@ -6298,7 +6298,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	err = mmc_wait_for_cmd(card->host, &cmd, 5);
  	mmc_release_host(card->host);
  
-@@ -562,17 +577,12 @@
+@@ -562,17 +577,12 @@ static void mmc_blk_remove(struct mmc_ca
  	struct mmc_blk_data *md = mmc_get_drvdata(card);
  
  	if (md) {
@@ -6339,7 +6339,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  /*
   * Prepare a MMC request. This just filters out odd stuff.
   */
-@@ -159,6 +166,7 @@
+@@ -159,6 +166,7 @@ int mmc_init_queue(struct mmc_queue *mq,
  				ret = -ENOMEM;
  				goto cleanup_queue;
  			}
@@ -6347,7 +6347,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  
  			mq->bounce_sg = kmalloc(sizeof(struct scatterlist) *
  				bouncesz / 512, GFP_KERNEL);
-@@ -166,6 +174,7 @@
+@@ -166,6 +174,7 @@ int mmc_init_queue(struct mmc_queue *mq,
  				ret = -ENOMEM;
  				goto cleanup_queue;
  			}
@@ -6355,7 +6355,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  		}
  	}
  #endif
-@@ -183,6 +192,7 @@
+@@ -183,6 +192,7 @@ int mmc_init_queue(struct mmc_queue *mq,
  			ret = -ENOMEM;
  			goto cleanup_queue;
  		}
@@ -6363,7 +6363,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  	}
  
  	init_MUTEX(&mq->thread_sem);
-@@ -302,12 +312,12 @@
+@@ -302,12 +312,12 @@ static void copy_sg(struct scatterlist *
  		BUG_ON(dst_len == 0);
  
  		if (dst_size == 0) {
@@ -6378,7 +6378,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
  			src_size = src->length;
  		}
  
-@@ -353,9 +363,7 @@
+@@ -353,9 +363,7 @@ unsigned int mmc_queue_map_sg(struct mmc
  		return 1;
  	}
  
@@ -7552,7 +7552,7 @@ This is a port of the MMC-SPI driver from 2.6.24.3
 +MODULE_LICENSE("GPL");
 --- a/drivers/mmc/core/Makefile
 +++ b/drivers/mmc/core/Makefile
-@@ -8,5 +8,7 @@
+@@ -8,5 +8,7 @@ endif
  
  obj-$(CONFIG_MMC)		+= mmc_core.o
  mmc_core-y			:= core.o sysfs.o bus.o host.o \

@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -508,6 +508,9 @@
+@@ -508,6 +508,9 @@ CFLAGS          += $(call cc-option, -fn
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
  

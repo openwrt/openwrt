@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -65,6 +65,12 @@
+@@ -65,6 +65,12 @@ config ADM6996_PHY
  	---help---
  	  Currently supports the ADM6996F switch
  
@@ -15,7 +15,7 @@
  	---help---
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -13,4 +13,5 @@
+@@ -13,4 +13,5 @@ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
@@ -36,7 +36,7 @@
  /**
   * mdiobus_register - bring up all the PHYs on a given bus and attach them to bus
   * @bus: target mii_bus
-@@ -85,6 +91,7 @@
+@@ -85,6 +91,7 @@ int mdiobus_register(struct mii_bus *bus
  
  			phydev->dev.parent = bus->dev;
  			phydev->dev.bus = &mdio_bus_type;

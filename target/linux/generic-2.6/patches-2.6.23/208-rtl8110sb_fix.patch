@@ -1,6 +1,6 @@
 --- a/drivers/net/r8169.c
 +++ b/drivers/net/r8169.c
-@@ -1459,7 +1459,7 @@
+@@ -1459,7 +1459,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8169,
  		.region		= 1,
  		.align		= 0,
@@ -9,7 +9,7 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow
  	},
-@@ -1467,7 +1467,7 @@
+@@ -1467,7 +1467,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8168,
  		.region		= 2,
  		.align		= 8,
@@ -18,7 +18,7 @@
  				  TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= TxErr | TxOK | RxOK | RxOverflow
  	},
-@@ -1475,7 +1475,7 @@
+@@ -1475,7 +1475,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8101,
  		.region		= 2,
  		.align		= 8,
@@ -27,7 +27,7 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow
  	}
-@@ -2779,10 +2779,12 @@
+@@ -2779,10 +2779,12 @@ static irqreturn_t rtl8169_interrupt(int
  			break;
  		}
  

@@ -1,6 +1,6 @@
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -481,16 +481,16 @@
+@@ -481,16 +481,16 @@ static void sdhci_finish_data(struct sdh
  	 * Controller doesn't count down when in single block mode.
  	 */
  	if (data->blocks == 1)
@@ -20,7 +20,7 @@
  	}
  
  	if (data->stop) {
-@@ -498,7 +498,7 @@
+@@ -498,7 +498,7 @@ static void sdhci_finish_data(struct sdh
  		 * The controller needs a reset of internal state machines
  		 * upon error conditions.
  		 */
@@ -29,7 +29,7 @@
  			sdhci_reset(host, SDHCI_RESET_CMD);
  			sdhci_reset(host, SDHCI_RESET_DATA);
  		}
-@@ -533,7 +533,7 @@
+@@ -533,7 +533,7 @@ static void sdhci_send_command(struct sd
  			printk(KERN_ERR "%s: Controller never released "
  				"inhibit bit(s).\n", mmc_hostname(host->mmc));
  			sdhci_dumpregs(host);
@@ -38,7 +38,7 @@
  			tasklet_schedule(&host->finish_tasklet);
  			return;
  		}
-@@ -554,7 +554,7 @@
+@@ -554,7 +554,7 @@ static void sdhci_send_command(struct sd
  	if ((cmd->flags & MMC_RSP_136) && (cmd->flags & MMC_RSP_BUSY)) {
  		printk(KERN_ERR "%s: Unsupported response type!\n",
  			mmc_hostname(host->mmc));
@@ -47,7 +47,7 @@
  		tasklet_schedule(&host->finish_tasklet);
  		return;
  	}
-@@ -601,7 +601,7 @@
+@@ -601,7 +601,7 @@ static void sdhci_finish_command(struct 
  		}
  	}
  
@@ -56,7 +56,7 @@
  
  	if (host->data && host->data_early)
  		sdhci_finish_data(host);
-@@ -722,7 +722,7 @@
+@@ -722,7 +722,7 @@ static void sdhci_request(struct mmc_hos
  	host->mrq = mrq;
  
  	if (!(readl(host->ioaddr + SDHCI_PRESENT_STATE) & SDHCI_CARD_PRESENT)) {
@@ -65,7 +65,7 @@
  		tasklet_schedule(&host->finish_tasklet);
  	} else
  		sdhci_send_command(host, mrq->cmd);
-@@ -831,7 +831,7 @@
+@@ -831,7 +831,7 @@ static void sdhci_tasklet_card(unsigned 
  			sdhci_reset(host, SDHCI_RESET_CMD);
  			sdhci_reset(host, SDHCI_RESET_DATA);
  
@@ -74,7 +74,7 @@
  			tasklet_schedule(&host->finish_tasklet);
  		}
  	}
-@@ -859,9 +859,9 @@
+@@ -859,9 +859,9 @@ static void sdhci_tasklet_finish(unsigne
  	 * The controller needs a reset of internal state machines
  	 * upon error conditions.
  	 */
@@ -87,7 +87,7 @@
  
  		/* Some controllers need this kick or reset won't work here */
  		if (host->chip->quirks & SDHCI_QUIRK_CLOCK_BEFORE_RESET) {
-@@ -906,13 +906,13 @@
+@@ -906,13 +906,13 @@ static void sdhci_timeout_timer(unsigned
  		sdhci_dumpregs(host);
  
  		if (host->data) {
@@ -104,7 +104,7 @@
  
  			tasklet_schedule(&host->finish_tasklet);
  		}
-@@ -941,13 +941,12 @@
+@@ -941,13 +941,12 @@ static void sdhci_cmd_irq(struct sdhci_h
  	}
  
  	if (intmask & SDHCI_INT_TIMEOUT)
@@ -123,7 +123,7 @@
  		tasklet_schedule(&host->finish_tasklet);
  	else if (intmask & SDHCI_INT_RESPONSE)
  		sdhci_finish_command(host);
-@@ -974,13 +973,11 @@
+@@ -974,13 +973,11 @@ static void sdhci_data_irq(struct sdhci_
  	}
  
  	if (intmask & SDHCI_INT_DATA_TIMEOUT)
@@ -141,7 +141,7 @@
  		sdhci_finish_data(host);
  	else {
  		if (intmask & (SDHCI_INT_DATA_AVAIL | SDHCI_INT_SPACE_AVAIL))
-@@ -1312,7 +1309,7 @@
+@@ -1312,7 +1309,7 @@ static int __devinit sdhci_probe_slot(st
  	mmc->ops = &sdhci_ops;
  	mmc->f_min = host->max_clk / 256;
  	mmc->f_max = host->max_clk;
