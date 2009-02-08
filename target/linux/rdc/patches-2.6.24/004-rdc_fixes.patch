@@ -1,7 +1,6 @@
-diff -urN linux-2.6.24/arch/x86/Kconfig linux-2.6.24.new/arch/x86/Kconfig
---- linux-2.6.24/arch/x86/Kconfig	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/x86/Kconfig	2008-02-11 18:24:27.000000000 +0100
-@@ -300,6 +300,17 @@
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -304,6 +304,17 @@ config X86_VSMP
  	  supposed to run on these EM64T-based machines.  Only choose this option
  	  if you have one of these machines.
  
@@ -19,10 +18,9 @@ diff -urN linux-2.6.24/arch/x86/Kconfig linux-2.6.24.new/arch/x86/Kconfig
  endchoice
  
  config SCHED_NO_NO_OMIT_FRAME_POINTER
-diff -urN linux-2.6.24/arch/x86/kernel/reboot_fixups_32.c linux-2.6.24.new/arch/x86/kernel/reboot_fixups_32.c
---- linux-2.6.24/arch/x86/kernel/reboot_fixups_32.c	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/x86/kernel/reboot_fixups_32.c	2008-02-11 18:26:18.000000000 +0100
-@@ -30,6 +30,17 @@
+--- a/arch/x86/kernel/reboot_fixups_32.c
++++ b/arch/x86/kernel/reboot_fixups_32.c
+@@ -30,6 +30,17 @@ static void cs5536_warm_reset(struct pci
  	udelay(50); /* shouldn't get here but be safe and spin a while */
  }
  
@@ -40,7 +38,7 @@ diff -urN linux-2.6.24/arch/x86/kernel/reboot_fixups_32.c linux-2.6.24.new/arch/
  struct device_fixup {
  	unsigned int vendor;
  	unsigned int device;
-@@ -40,6 +51,7 @@
+@@ -40,6 +51,7 @@ static struct device_fixup fixups_table[
  { PCI_VENDOR_ID_CYRIX, PCI_DEVICE_ID_CYRIX_5530_LEGACY, cs5530a_warm_reset },
  { PCI_VENDOR_ID_AMD, PCI_DEVICE_ID_AMD_CS5536_ISA, cs5536_warm_reset },
  { PCI_VENDOR_ID_NS, PCI_DEVICE_ID_NS_SC1100_BRIDGE, cs5530a_warm_reset },
@@ -48,10 +46,9 @@ diff -urN linux-2.6.24/arch/x86/kernel/reboot_fixups_32.c linux-2.6.24.new/arch/
  };
  
  /*
-diff -urN linux-2.6.24/arch/x86/Makefile_32 linux-2.6.24.new/arch/x86/Makefile_32
---- linux-2.6.24/arch/x86/Makefile_32	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/arch/x86/Makefile_32	2008-02-11 18:25:12.000000000 +0100
-@@ -99,6 +99,11 @@
+--- a/arch/x86/Makefile_32
++++ b/arch/x86/Makefile_32
+@@ -99,6 +99,11 @@ mflags-$(CONFIG_X86_ES7000)	:= -Iinclude
  mcore-$(CONFIG_X86_ES7000)	:= arch/x86/mach-default
  core-$(CONFIG_X86_ES7000)	:= arch/x86/mach-es7000/
  
@@ -63,9 +60,8 @@ diff -urN linux-2.6.24/arch/x86/Makefile_32 linux-2.6.24.new/arch/x86/Makefile_3
  # Xen paravirtualization support
  core-$(CONFIG_XEN)		+= arch/x86/xen/
  
-diff -urN linux-2.6.24/include/asm-x86/timex.h linux-2.6.24.new/include/asm-x86/timex.h
---- linux-2.6.24/include/asm-x86/timex.h	2008-01-24 23:58:37.000000000 +0100
-+++ linux-2.6.24.new/include/asm-x86/timex.h	2008-02-11 18:25:43.000000000 +0100
+--- a/include/asm-x86/timex.h
++++ b/include/asm-x86/timex.h
 @@ -7,6 +7,8 @@
  
  #ifdef CONFIG_X86_ELAN
