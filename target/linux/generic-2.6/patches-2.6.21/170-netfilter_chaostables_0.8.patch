@@ -1,6 +1,6 @@
 --- a/include/linux/netfilter/Kbuild
 +++ b/include/linux/netfilter/Kbuild
-@@ -3,6 +3,7 @@
+@@ -3,6 +3,7 @@ header-y += nf_conntrack_tuple_common.h
  header-y += nfnetlink_conntrack.h
  header-y += nfnetlink_log.h
  header-y += nfnetlink_queue.h
@@ -8,20 +8,16 @@
  header-y += xt_CLASSIFY.h
  header-y += xt_comment.h
  header-y += xt_connbytes.h
-Index: linux-2.6.21.7/include/linux/netfilter/oot_conntrack.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/netfilter/oot_conntrack.h
++++ b/include/linux/netfilter/oot_conntrack.h
 @@ -0,0 +1,5 @@
 +#if defined(CONFIG_IP_NF_CONNTRACK) || defined(CONFIG_IP_NF_CONNTRACK_MODULE)
 +#	include <linux/netfilter_ipv4/ip_conntrack.h>
 +#else /* linux-2.6.20+ */
 +#	include <net/netfilter/nf_nat_rule.h>
 +#endif
-Index: linux-2.6.21.7/include/linux/netfilter/oot_trans.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/netfilter/oot_trans.h
++++ b/include/linux/netfilter/oot_trans.h
 @@ -0,0 +1,14 @@
 +/* Out of tree workarounds */
 +#include <linux/version.h>
@@ -37,10 +33,8 @@ Index: linux-2.6.21.7/include/linux/netfilter/oot_trans.h
 +#	define tcp_v4_check(tcph, tcph_sz, s, d, csp) \
 +		tcp_v4_check((tcph_sz), (s), (d), (csp))
 +#endif
-Index: linux-2.6.21.7/include/linux/netfilter/xt_CHAOS.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/netfilter/xt_CHAOS.h
++++ b/include/linux/netfilter/xt_CHAOS.h
 @@ -0,0 +1,14 @@
 +#ifndef _LINUX_NETFILTER_XT_CHAOS_H
 +#define _LINUX_NETFILTER_XT_CHAOS_H 1
@@ -56,10 +50,8 @@ Index: linux-2.6.21.7/include/linux/netfilter/xt_CHAOS.h
 +};
 +
 +#endif /* _LINUX_NETFILTER_XT_CHAOS_H */
-Index: linux-2.6.21.7/include/linux/netfilter/xt_portscan.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/netfilter/xt_portscan.h
++++ b/include/linux/netfilter/xt_portscan.h
 @@ -0,0 +1,8 @@
 +#ifndef _LINUX_NETFILTER_XT_PORTSCAN_H
 +#define _LINUX_NETFILTER_XT_PORTSCAN_H 1
@@ -69,10 +61,8 @@ Index: linux-2.6.21.7/include/linux/netfilter/xt_portscan.h
 +};
 +
 +#endif /* _LINUX_NETFILTER_XT_PORTSCAN_H */
-Index: linux-2.6.21.7/net/netfilter/find_match.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/netfilter/find_match.c
++++ b/net/netfilter/find_match.c
 @@ -0,0 +1,39 @@
 +/*
 +    xt_request_find_match
@@ -113,10 +103,8 @@ Index: linux-2.6.21.7/net/netfilter/find_match.c
 +
 +/* In case it goes into mainline, let this out-of-tree package compile */
 +#define xt_request_find_match xt_request_find_match_lo
-Index: linux-2.6.21.7/net/netfilter/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/net/netfilter/Kconfig
-+++ linux-2.6.21.7/net/netfilter/Kconfig
+--- a/net/netfilter/Kconfig
++++ b/net/netfilter/Kconfig
 @@ -287,6 +287,14 @@ config NETFILTER_XTABLES
  
  # alphabetically ordered list of targets
@@ -162,10 +150,8 @@ Index: linux-2.6.21.7/net/netfilter/Kconfig
  config NETFILTER_XT_MATCH_MULTIPORT
  	tristate "Multiple port match support"
  	depends on NETFILTER_XTABLES
-Index: linux-2.6.21.7/net/netfilter/Makefile
-===================================================================
---- linux-2.6.21.7.orig/net/netfilter/Makefile
-+++ linux-2.6.21.7/net/netfilter/Makefile
+--- a/net/netfilter/Makefile
++++ b/net/netfilter/Makefile
 @@ -47,6 +47,8 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_NOTRACK
  obj-$(CONFIG_NETFILTER_XT_TARGET_SECMARK) += xt_SECMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_TCPMSS) += xt_TCPMSS.o
@@ -180,10 +166,8 @@ Index: linux-2.6.21.7/net/netfilter/Makefile
  obj-$(CONFIG_NETFILTER_XT_MATCH_PHYSDEV) += xt_physdev.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_HASHLIMIT) += xt_hashlimit.o
 +obj-$(CONFIG_NETFILTER_XT_MATCH_PORTSCAN) += xt_portscan.o
-Index: linux-2.6.21.7/net/netfilter/xt_CHAOS.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/netfilter/xt_CHAOS.c
++++ b/net/netfilter/xt_CHAOS.c
 @@ -0,0 +1,200 @@
 +/*
 + *	CHAOS target for netfilter
@@ -385,10 +369,8 @@ Index: linux-2.6.21.7/net/netfilter/xt_CHAOS.c
 +MODULE_DESCRIPTION("netfilter \"CHAOS\" target");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("ipt_CHAOS");
-Index: linux-2.6.21.7/net/netfilter/xt_DELUDE.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/netfilter/xt_DELUDE.c
++++ b/net/netfilter/xt_DELUDE.c
 @@ -0,0 +1,197 @@
 +/*
 + *	DELUDE target
@@ -587,10 +569,8 @@ Index: linux-2.6.21.7/net/netfilter/xt_DELUDE.c
 +MODULE_DESCRIPTION("netfilter \"DELUDE\" target");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("ipt_DELUDE");
-Index: linux-2.6.21.7/net/netfilter/xt_portscan.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/netfilter/xt_portscan.c
++++ b/net/netfilter/xt_portscan.c
 @@ -0,0 +1,269 @@
 +/*
 + *	portscan match for netfilter

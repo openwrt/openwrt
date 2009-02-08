@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_ROUTE.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_ROUTE.h
++++ b/include/linux/netfilter_ipv4/ipt_ROUTE.h
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ipt_ROUTE target
 + *
@@ -26,10 +24,8 @@ Index: linux-2.6.21.7/include/linux/netfilter_ipv4/ipt_ROUTE.h
 +#define IPT_ROUTE_TEE             0x02
 +
 +#endif /*_IPT_ROUTE_H_target*/
-Index: linux-2.6.21.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h
++++ b/include/linux/netfilter_ipv6/ip6t_ROUTE.h
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ip6t_ROUTE target
 + *
@@ -54,10 +50,8 @@ Index: linux-2.6.21.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h
 +#define IP6T_ROUTE_TEE             0x02
 +
 +#endif /*_IP6T_ROUTE_H_target*/
-Index: linux-2.6.21.7/net/ipv4/netfilter/ipt_ROUTE.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/ipv4/netfilter/ipt_ROUTE.c
++++ b/net/ipv4/netfilter/ipt_ROUTE.c
 @@ -0,0 +1,483 @@
 +/*
 + * This implements the ROUTE target, which enables you to setup unusual
@@ -542,10 +536,8 @@ Index: linux-2.6.21.7/net/ipv4/netfilter/ipt_ROUTE.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.6.21.7/net/ipv4/netfilter/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/net/ipv4/netfilter/Kconfig
-+++ linux-2.6.21.7/net/ipv4/netfilter/Kconfig
+--- a/net/ipv4/netfilter/Kconfig
++++ b/net/ipv4/netfilter/Kconfig
 @@ -807,5 +807,22 @@ config IP_NF_TARGET_SET
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -569,10 +561,8 @@ Index: linux-2.6.21.7/net/ipv4/netfilter/Kconfig
 +
  endmenu
  
-Index: linux-2.6.21.7/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.6.21.7.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.6.21.7/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -102,6 +102,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
  obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
@@ -581,10 +571,8 @@ Index: linux-2.6.21.7/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
  obj-$(CONFIG_IP_NF_TARGET_SAME) += ipt_SAME.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
-Index: linux-2.6.21.7/net/ipv6/ipv6_syms.c
-===================================================================
---- linux-2.6.21.7.orig/net/ipv6/ipv6_syms.c
-+++ linux-2.6.21.7/net/ipv6/ipv6_syms.c
+--- a/net/ipv6/ipv6_syms.c
++++ b/net/ipv6/ipv6_syms.c
 @@ -10,6 +10,7 @@ EXPORT_SYMBOL(icmpv6_send);
  EXPORT_SYMBOL(icmpv6_statistics);
  EXPORT_SYMBOL(icmpv6_err_convert);
@@ -593,10 +581,8 @@ Index: linux-2.6.21.7/net/ipv6/ipv6_syms.c
  EXPORT_SYMBOL(register_inet6addr_notifier);
  EXPORT_SYMBOL(unregister_inet6addr_notifier);
  EXPORT_SYMBOL(ip6_route_output);
-Index: linux-2.6.21.7/net/ipv6/netfilter/ip6t_ROUTE.c
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/net/ipv6/netfilter/ip6t_ROUTE.c
++++ b/net/ipv6/netfilter/ip6t_ROUTE.c
 @@ -0,0 +1,330 @@
 +/*
 + * This implements the ROUTE v6 target, which enables you to setup unusual
@@ -928,10 +914,8 @@ Index: linux-2.6.21.7/net/ipv6/netfilter/ip6t_ROUTE.c
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.21.7/net/ipv6/netfilter/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/net/ipv6/netfilter/Kconfig
-+++ linux-2.6.21.7/net/ipv6/netfilter/Kconfig
+--- a/net/ipv6/netfilter/Kconfig
++++ b/net/ipv6/netfilter/Kconfig
 @@ -209,5 +209,18 @@ config IP6_NF_RAW
  	  If you want to compile it as a module, say M here and read
  	  <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -951,10 +935,8 @@ Index: linux-2.6.21.7/net/ipv6/netfilter/Kconfig
 +
  endmenu
  
-Index: linux-2.6.21.7/net/ipv6/netfilter/Makefile
-===================================================================
---- linux-2.6.21.7.orig/net/ipv6/netfilter/Makefile
-+++ linux-2.6.21.7/net/ipv6/netfilter/Makefile
+--- a/net/ipv6/netfilter/Makefile
++++ b/net/ipv6/netfilter/Makefile
 @@ -20,6 +20,7 @@ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_
  obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
  obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o

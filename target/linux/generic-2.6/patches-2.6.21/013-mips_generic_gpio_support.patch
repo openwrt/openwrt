@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/arch/mips/defconfig
-===================================================================
---- linux-2.6.21.7.orig/arch/mips/defconfig
-+++ linux-2.6.21.7/arch/mips/defconfig
+--- a/arch/mips/defconfig
++++ b/arch/mips/defconfig
 @@ -69,6 +69,7 @@ CONFIG_GENERIC_FIND_NEXT_BIT=y
  CONFIG_GENERIC_HWEIGHT=y
  CONFIG_GENERIC_CALIBRATE_DELAY=y
@@ -10,10 +8,8 @@ Index: linux-2.6.21.7/arch/mips/defconfig
  CONFIG_SCHED_NO_NO_OMIT_FRAME_POINTER=y
  # CONFIG_GENERIC_HARDIRQS_NO__DO_IRQ is not set
  CONFIG_ARC=y
-Index: linux-2.6.21.7/arch/mips/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/arch/mips/Kconfig
-+++ linux-2.6.21.7/arch/mips/Kconfig
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
 @@ -869,6 +869,10 @@ config GENERIC_TIME
  	bool
  	default y
@@ -25,10 +21,8 @@ Index: linux-2.6.21.7/arch/mips/Kconfig
  config SCHED_NO_NO_OMIT_FRAME_POINTER
  	bool
  	default y
-Index: linux-2.6.21.7/include/asm-mips/gpio.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/asm-mips/gpio.h
++++ b/include/asm-mips/gpio.h
 @@ -0,0 +1,6 @@
 +#ifndef _ASM_MIPS_GPIO_H
 +#define _ASM_MIPS_GPIO_H

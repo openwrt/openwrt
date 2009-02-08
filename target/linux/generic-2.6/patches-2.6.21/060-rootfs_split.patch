@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/mtd/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/drivers/mtd/Kconfig
-+++ linux-2.6.21.7/drivers/mtd/Kconfig
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
 @@ -49,6 +49,16 @@ config MTD_PARTITIONS
  	  devices. Partitioning on NFTL 'devices' is a different - that's the
  	  'normal' form of partitioning used on a block device.
@@ -19,10 +17,8 @@ Index: linux-2.6.21.7/drivers/mtd/Kconfig
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	depends on MTD_PARTITIONS
-Index: linux-2.6.21.7/drivers/mtd/mtdpart.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/mtd/mtdpart.c
-+++ linux-2.6.21.7/drivers/mtd/mtdpart.c
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
 @@ -20,6 +20,8 @@
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>

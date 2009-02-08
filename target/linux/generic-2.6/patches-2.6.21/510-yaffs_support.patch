@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/fs/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/fs/Kconfig
-+++ linux-2.6.21.7/fs/Kconfig
+--- a/fs/Kconfig
++++ b/fs/Kconfig
 @@ -419,6 +419,7 @@ config FS_POSIX_ACL
  
  source "fs/xfs/Kconfig"
@@ -10,10 +8,8 @@ Index: linux-2.6.21.7/fs/Kconfig
  
  config OCFS2_FS
  	tristate "OCFS2 file system support"
-Index: linux-2.6.21.7/fs/Makefile
-===================================================================
---- linux-2.6.21.7.orig/fs/Makefile
-+++ linux-2.6.21.7/fs/Makefile
+--- a/fs/Makefile
++++ b/fs/Makefile
 @@ -116,3 +116,4 @@ obj-$(CONFIG_HPPFS)		+= hppfs/
  obj-$(CONFIG_DEBUG_FS)		+= debugfs/
  obj-$(CONFIG_OCFS2_FS)		+= ocfs2/

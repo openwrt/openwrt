@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/include/net/xfrmudp.h
-===================================================================
 --- /dev/null
-+++ linux-2.6.21.7/include/net/xfrmudp.h
++++ b/include/net/xfrmudp.h
 @@ -0,0 +1,10 @@
 +/*
 + * pointer to function for type that xfrm4_input wants, to permit
@@ -13,10 +11,8 @@ Index: linux-2.6.21.7/include/net/xfrmudp.h
 +extern int udp4_register_esp_rcvencap(xfrm4_rcv_encap_t func
 +				      , xfrm4_rcv_encap_t *oldfunc);
 +extern int udp4_unregister_esp_rcvencap(xfrm4_rcv_encap_t func);
-Index: linux-2.6.21.7/net/ipv4/Kconfig
-===================================================================
---- linux-2.6.21.7.orig/net/ipv4/Kconfig
-+++ linux-2.6.21.7/net/ipv4/Kconfig
+--- a/net/ipv4/Kconfig
++++ b/net/ipv4/Kconfig
 @@ -266,6 +266,12 @@ config NET_IPGRE_BROADCAST
  	  Network), but can be distributed all over the Internet. If you want
  	  to do that, say Y here and to "IP multicast routing" below.
@@ -30,10 +26,8 @@ Index: linux-2.6.21.7/net/ipv4/Kconfig
  config IP_MROUTE
  	bool "IP: multicast routing"
  	depends on IP_MULTICAST
-Index: linux-2.6.21.7/net/ipv4/udp.c
-===================================================================
---- linux-2.6.21.7.orig/net/ipv4/udp.c
-+++ linux-2.6.21.7/net/ipv4/udp.c
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
 @@ -101,12 +101,15 @@
  #include <net/route.h>
  #include <net/checksum.h>

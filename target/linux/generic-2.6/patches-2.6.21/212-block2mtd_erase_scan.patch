@@ -1,7 +1,5 @@
-Index: linux-2.6.21.7/drivers/mtd/devices/block2mtd.c
-===================================================================
---- linux-2.6.21.7.orig/drivers/mtd/devices/block2mtd.c
-+++ linux-2.6.21.7/drivers/mtd/devices/block2mtd.c
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
 @@ -112,7 +112,7 @@ static int _block2mtd_erase(struct block
  		if (IS_ERR(page))
  			return PTR_ERR(page);
