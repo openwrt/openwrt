@@ -1,0 +1,40 @@
+From 6ad5c6dd7471b066e5f83aeec3919296c1fd817a Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sat, 7 Feb 2009 15:21:48 +0100
+Subject: [PATCH] rt2x00: uncomment get_tsf
+
+The atomic requirement for get_tsf() has been removed
+by mac80211. This means the USB drivers can add support
+for the callback function again.
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt73usb.c |   10 ----------
+ 1 files changed, 0 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt73usb.c
++++ b/drivers/net/wireless/rt2x00/rt73usb.c
+@@ -2241,13 +2241,6 @@ static int rt73usb_conf_tx(struct ieee80
+ 	return 0;
+ }
+ 
+-#if 0
+-/*
+- * Mac80211 demands get_tsf must be atomic.
+- * This is not possible for rt73usb since all register access
+- * functions require sleeping. Untill mac80211 no longer needs
+- * get_tsf to be atomic, this function should be disabled.
+- */
+ static u64 rt73usb_get_tsf(struct ieee80211_hw *hw)
+ {
+ 	struct rt2x00_dev *rt2x00dev = hw->priv;
+@@ -2261,9 +2254,6 @@ static u64 rt73usb_get_tsf(struct ieee80
+ 
+ 	return tsf;
+ }
+-#else
+-#define rt73usb_get_tsf	NULL
+-#endif
+ 
+ static const struct ieee80211_ops rt73usb_mac80211_ops = {
+ 	.tx			= rt2x00mac_tx,
