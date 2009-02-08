@@ -1,7 +1,6 @@
-diff -urN linux-2.6.24.7/drivers/leds/Kconfig linux-2.6.24.7.new/drivers/leds/Kconfig
---- linux-2.6.24.7/drivers/leds/Kconfig	2008-07-15 15:27:55.000000000 +0200
-+++ linux-2.6.24.7.new/drivers/leds/Kconfig	2008-07-15 15:35:24.000000000 +0200
-@@ -120,6 +120,12 @@
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -120,6 +120,12 @@ config LEDS_CM_X270
  	help
  	  This option enables support for the CM-X270 LEDs.
  
@@ -14,10 +13,9 @@ diff -urN linux-2.6.24.7/drivers/leds/Kconfig linux-2.6.24.7.new/drivers/leds/Kc
  comment "LED Triggers"
  
  config LEDS_TRIGGERS
-diff -urN linux-2.6.24.7/drivers/leds/Makefile linux-2.6.24.7.new/drivers/leds/Makefile
---- linux-2.6.24.7/drivers/leds/Makefile	2008-07-15 15:27:55.000000000 +0200
-+++ linux-2.6.24.7.new/drivers/leds/Makefile	2008-07-15 15:35:38.000000000 +0200
-@@ -20,6 +20,7 @@
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -20,6 +20,7 @@ obj-$(CONFIG_LEDS_COBALT_QUBE)		+= leds-
  obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-cobalt-raq.o
  obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
  obj-$(CONFIG_LEDS_CM_X270)              += leds-cm-x270.o

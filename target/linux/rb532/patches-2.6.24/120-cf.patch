@@ -1,8 +1,6 @@
-Index: linux-2.6.23.17/drivers/block/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/block/Kconfig
-+++ linux-2.6.23.17/drivers/block/Kconfig
-@@ -426,6 +426,14 @@ config SUNVDC
+--- a/drivers/block/Kconfig
++++ b/drivers/block/Kconfig
+@@ -408,6 +408,14 @@ config SUNVDC
  	  Support for virtual disk devices as a client under Sun
  	  Logical Domains.
  
@@ -17,10 +15,8 @@ Index: linux-2.6.23.17/drivers/block/Kconfig
  source "drivers/s390/block/Kconfig"
  
  config XILINX_SYSACE
-Index: linux-2.6.23.17/drivers/block/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/block/Makefile
-+++ linux-2.6.23.17/drivers/block/Makefile
+--- a/drivers/block/Makefile
++++ b/drivers/block/Makefile
 @@ -21,6 +21,7 @@ obj-$(CONFIG_BLK_DEV_DAC960)	+= DAC960.o
  obj-$(CONFIG_XILINX_SYSACE)	+= xsysace.o
  obj-$(CONFIG_CDROM_PKTCDVD)	+= pktcdvd.o

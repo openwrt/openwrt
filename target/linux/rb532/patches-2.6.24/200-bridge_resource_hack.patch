@@ -1,7 +1,5 @@
-Index: linux-2.6.23.17/arch/mips/pci/pci.c
-===================================================================
---- linux-2.6.23.17.orig/arch/mips/pci/pci.c
-+++ linux-2.6.23.17/arch/mips/pci/pci.c
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
 @@ -64,8 +64,10 @@ pcibios_align_resource(void *data, struc
  		/*
  		 * Put everything into 0x00-0xff region modulo 0x400

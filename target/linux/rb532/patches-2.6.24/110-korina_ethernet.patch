@@ -1,10 +1,8 @@
-Index: linux-2.6.23.17/drivers/net/Kconfig
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/Kconfig
-+++ linux-2.6.23.17/drivers/net/Kconfig
-@@ -348,6 +348,13 @@ config AX88796
- 	  AX88796 driver, using platform bus to provide
- 	  chip detection and resources
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -362,6 +362,13 @@ config AX88796_93CX6
+ 	help
+ 	  Select this if your platform comes with an external 93CX6 eeprom.
  
 +config KORINA
 +	tristate "Korina Local Ethernet support"
@@ -16,11 +14,9 @@ Index: linux-2.6.23.17/drivers/net/Kconfig
  config MACE
  	tristate "MACE (Power Mac ethernet) support"
  	depends on PPC_PMAC && PPC32
-Index: linux-2.6.23.17/drivers/net/Makefile
-===================================================================
---- linux-2.6.23.17.orig/drivers/net/Makefile
-+++ linux-2.6.23.17/drivers/net/Makefile
-@@ -25,6 +25,8 @@ ucc_geth_driver-objs := ucc_geth.o ucc_g
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -30,6 +30,8 @@ ucc_geth_driver-objs := ucc_geth.o ucc_g
  #
  obj-$(CONFIG_PLIP) += plip.o
  
