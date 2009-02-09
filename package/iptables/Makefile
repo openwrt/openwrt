@@ -211,9 +211,6 @@ define Package/iptables-mod-extra/description
  - libipt_recent
  - iptable_raw
  - libipt_NOTRACK
- - libipt_TARPIT
- - libipt_DELUDE
- - libipt_CHAOS
 endef
 
 define Package/iptables-mod-ipset
