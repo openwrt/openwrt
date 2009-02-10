@@ -14,8 +14,8 @@ PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
-	http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/ \
-	http://matt.ucc.asn.au/dropbear/releases/
+	http://matt.ucc.asn.au/dropbear/releases/ \
+	http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/
 PKG_MD5SUM:=1045df60c2bdbd39c707238305a1e9e5
 
 include $(INCLUDE_DIR)/package.mk
