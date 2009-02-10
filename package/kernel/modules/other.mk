@@ -705,6 +705,21 @@ endef
 
 $(eval $(call KernelPackage,spi-gpio-old))
 
+define KernelPackage/spi-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPIO-based bitbanging SPI Master
+  DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
+  KCONFIG:=CONFIG_SPI_GPIO
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
+endef
+
+define KernelPackage/spi-gpio/description
+ This package contains the GPIO-based bitbanging SPI Master
+endef
+
+$(eval $(call KernelPackage,spi-gpio))
+
 define KernelPackage/spi-dev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=User mode SPI device driver
