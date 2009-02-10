@@ -50,8 +50,8 @@ CONFIGURE_ARGS = \
 		--sysconfdir=/etc \
 
 CONFIGURE_VARS += \
-	BUILD_CC=$(HOSTCC) \
-	TARGET_CC=$(TARGET_CC) \
+	BUILD_CC="$(HOSTCC)" \
+	TARGET_CC="$(TARGET_CC)" \
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) all
