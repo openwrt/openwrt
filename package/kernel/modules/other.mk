@@ -690,20 +690,20 @@ endef
 
 $(eval $(call KernelPackage,spi-bitbang))
 
-define KernelPackage/spi-gpio
+define KernelPackage/spi-gpio-old
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=GPIO based bitbanging SPI controller
+  TITLE:=Old GPIO based bitbanging SPI controller (DEPRECATED)
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
-  KCONFIG:=CONFIG_SPI_GPIO
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
+  KCONFIG:=CONFIG_SPI_GPIO_OLD
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio_old.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,92,spi_gpio_old)
 endef
 
-define KernelPackage/spi-gpio/description
+define KernelPackage/spi-gpio-old/description
  This package contains the GPIO based bitbanging SPI controller driver
 endef
 
-$(eval $(call KernelPackage,spi-gpio))
+$(eval $(call KernelPackage,spi-gpio-old))
 
 define KernelPackage/spi-dev
   SUBMENU:=$(OTHER_MENU)

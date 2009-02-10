@@ -1,5 +1,7 @@
---- /dev/null
-+++ b/drivers/mmc/host/gpiommc.c
+Index: linux-2.6.28.2/drivers/mmc/host/gpiommc.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.28.2/drivers/mmc/host/gpiommc.c	2009-02-10 17:16:16.000000000 +0100
 @@ -0,0 +1,608 @@
 +/*
 + * Driver an MMC/SD card on a bitbanging GPIO SPI bus.
@@ -15,7 +17,7 @@
 +#include <linux/platform_device.h>
 +#include <linux/list.h>
 +#include <linux/mutex.h>
-+#include <linux/spi/spi_gpio.h>
++#include <linux/spi/spi_gpio_old.h>
 +#include <linux/configfs.h>
 +#include <linux/gpio.h>
 +#include <asm/atomic.h>
@@ -609,8 +611,10 @@
 +	platform_driver_unregister(&gpiommc_plat_driver);
 +}
 +module_exit(gpiommc_modexit);
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
+Index: linux-2.6.28.2/drivers/mmc/host/Kconfig
+===================================================================
+--- linux-2.6.28.2.orig/drivers/mmc/host/Kconfig	2009-02-10 17:16:15.000000000 +0100
++++ linux-2.6.28.2/drivers/mmc/host/Kconfig	2009-02-10 17:16:16.000000000 +0100
 @@ -192,3 +192,28 @@ config MMC_TMIO
  	help
  	  This provides support for the SD/MMC cell found in TC6393XB,
@@ -640,16 +644,20 @@
 +	help
 +	  This option automatically enables configfs support for gpiommc
 +	  if configfs is available.
---- a/drivers/mmc/host/Makefile
-+++ b/drivers/mmc/host/Makefile
+Index: linux-2.6.28.2/drivers/mmc/host/Makefile
+===================================================================
+--- linux-2.6.28.2.orig/drivers/mmc/host/Makefile	2009-02-10 17:16:15.000000000 +0100
++++ linux-2.6.28.2/drivers/mmc/host/Makefile	2009-02-10 17:16:16.000000000 +0100
 @@ -22,4 +22,5 @@ obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
  obj-$(CONFIG_MMC_S3C)   	+= s3cmci.o
  obj-$(CONFIG_MMC_SDRICOH_CS)	+= sdricoh_cs.o
  obj-$(CONFIG_MMC_TMIO)		+= tmio_mmc.o
 +obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
  
---- /dev/null
-+++ b/include/linux/mmc/gpiommc.h
+Index: linux-2.6.28.2/include/linux/mmc/gpiommc.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.28.2/include/linux/mmc/gpiommc.h	2009-02-10 17:16:16.000000000 +0100
 @@ -0,0 +1,71 @@
 +/*
 + * Device driver for MMC/SD cards driven over a GPIO bus.
@@ -722,8 +730,10 @@
 +int gpiommc_next_id(void);
 +
 +#endif /* LINUX_GPIOMMC_H_ */
---- /dev/null
-+++ b/Documentation/gpiommc.txt
+Index: linux-2.6.28.2/Documentation/gpiommc.txt
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.28.2/Documentation/gpiommc.txt	2009-02-10 17:16:16.000000000 +0100
 @@ -0,0 +1,97 @@
 +GPIOMMC - Driver for an MMC/SD card on a bitbanging GPIO SPI bus
 +================================================================
@@ -822,8 +832,10 @@
 +(/config/gpiommc/my_mmc in this example).
 +There's no need to first unregister the device before removing it. That will
 +be done automatically.
---- a/MAINTAINERS
-+++ b/MAINTAINERS
+Index: linux-2.6.28.2/MAINTAINERS
+===================================================================
+--- linux-2.6.28.2.orig/MAINTAINERS	2009-02-10 17:16:15.000000000 +0100
++++ linux-2.6.28.2/MAINTAINERS	2009-02-10 17:16:16.000000000 +0100
 @@ -1911,6 +1911,11 @@ W:	http://moinejf.free.fr
  L:	video4linux-list@redhat.com
  S:	Maintained
