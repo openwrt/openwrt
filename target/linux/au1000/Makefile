@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,6 +10,7 @@ ARCH:=mipsel
 BOARD:=au1000
 BOARDNAME:=RMI/AMD AU1x00
 FEATURES:=jffs2 usb pci
+SUBTARGETS=au1500 au1550
 
 LINUX_VERSION:=2.6.27.15
 
@@ -17,8 +18,8 @@ include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += hostapd-mini yamonenv
 
 define Target/Description
-	Build firmware for AMD Alchemy 1500 boards
-	(e.g. 4G-Systems Mesh/Access Cube ...)
+	Build firmware for RMI/AMD Alchemy 1500,1550 boards
+	(e.g. 4G-Systems Mesh/Access Cube, DBAu1550 ...)
 endef
 
 define Kernel/BuildImage
