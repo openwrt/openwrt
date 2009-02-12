@@ -47,7 +47,7 @@
 -	snprintf(am->mii_bus.id, MII_BUS_ID_SIZE, "%x", 0);
 +	am->mii_bus = mdiobus_alloc();
 +	if (am->mii_bus == NULL) {
-+		err = -NOMEM;
++		err = -ENOMEM;
 +		goto err_iounmap;
 +	}
 +
