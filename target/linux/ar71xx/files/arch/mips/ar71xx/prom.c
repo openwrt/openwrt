@@ -168,9 +168,9 @@ static void ar71xx_prom_init_generic(void)
 	ar71xx_prom_argv = (char **)fw_arg1;
 	ar71xx_prom_envp = (char **)fw_arg2;
 
-	p = ar71xx_prom_getenv("board");
+	p = ar71xx_prom_getargv("board");
 	if (!p)
-		p = ar71xx_prom_getargv("board");
+		p = ar71xx_prom_getenv("board");
 	if (p)
 		ar71xx_mach_type = find_board_byname(p);
 
