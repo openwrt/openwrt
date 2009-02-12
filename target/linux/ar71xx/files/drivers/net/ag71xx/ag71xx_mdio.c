@@ -170,6 +170,8 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		am->mii_irq[i] = PHY_POLL;
 
+	ag71xx_mdio_wr(am, AG71XX_REG_MAC_CFG1, 0);
+
 	err = mdiobus_register(&am->mii_bus);
 	if (err)
 		goto err_iounmap;
