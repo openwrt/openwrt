@@ -34,7 +34,7 @@ static struct spi_board_info ubnt_spi_info[] = {
 	}
 };
 
-static struct ar71xx_pci_irq ubnt_rs_pci_irqs[] __initdata = {
+static struct ar71xx_pci_irq ubnt_pci_irqs[] __initdata = {
 	{
 		.slot	= 0,
 		.pin	= 1,
@@ -93,7 +93,7 @@ static void __init ubnt_rs_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar71xx_pci_init(ARRAY_SIZE(ubnt_rs_pci_irqs), ubnt_rs_pci_irqs);
+	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_rs_leds_gpio),
 					ubnt_rs_leds_gpio);
@@ -109,6 +109,26 @@ static void __init ubnt_lsx_setup(void)
 {
 	ar71xx_add_device_spi(NULL, ubnt_spi_info,
 				    ARRAY_SIZE(ubnt_spi_info));
+
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSX, "Ubiquiti LSX", ubnt_lsx_setup);
+
+#define UBNT_LSSR71_PHY_MASK	(1 << 1)
+
+static void __init ubnt_lssr71_setup(void)
+{
+	ar71xx_add_device_spi(NULL, ubnt_spi_info,
+				    ARRAY_SIZE(ubnt_spi_info));
+
+	ar71xx_add_device_mdio(~UBNT_LSSR71_PHY_MASK);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = UBNT_LSSR71_PHY_MASK;
+
+	ar71xx_add_device_eth(0);
+
+	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
+}
+
+MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
