@@ -33,7 +33,7 @@
  			break;
  		}
  		udelay(AG71XX_MDIO_DELAY);
-@@ -154,23 +154,27 @@ static int __init ag71xx_mdio_probe(stru
+@@ -154,27 +154,33 @@ static int __init ag71xx_mdio_probe(stru
  		goto err_free_mdio;
  	}
  
@@ -46,8 +46,10 @@
 -	am->mii_bus.parent = &pdev->dev;
 -	snprintf(am->mii_bus.id, MII_BUS_ID_SIZE, "%x", 0);
 +	am->mii_bus = mdiobus_alloc();
-+	if (am->mii_bus == NULL)
++	if (am->mii_bus == NULL) {
++		err = -NOMEM;
 +		goto err_iounmap;
++	}
 +
 +	am->mii_bus->name = "ag71xx_mdio";
 +	am->mii_bus->read = ag71xx_mdio_read;
@@ -66,12 +68,26 @@
  	for (i = 0; i < PHY_MAX_ADDR; i++)
  		am->mii_irq[i] = PHY_POLL;
  
+ 	ag71xx_mdio_wr(am, AG71XX_REG_MAC_CFG1, 0);
+ 
 -	err = mdiobus_register(&am->mii_bus);
 +	err = mdiobus_register(am->mii_bus);
  	if (err)
- 		goto err_iounmap;
+-		goto err_iounmap;
++		goto err_free_bus;
  
-@@ -194,7 +198,8 @@ static int __exit ag71xx_mdio_remove(str
+ 	ag71xx_mdio_dump_regs(am);
+ 
+@@ -182,6 +188,8 @@ static int __init ag71xx_mdio_probe(stru
+ 	ag71xx_mdio_bus = am;
+ 	return 0;
+ 
++ err_free_bus:
++	mdiobus_free(am->mii_bus);
+  err_iounmap:
+ 	iounmap(am->mdio_base);
+  err_free_mdio:
+@@ -196,7 +204,8 @@ static int __exit ag71xx_mdio_remove(str
  
  	if (am) {
  		ag71xx_mdio_bus = NULL;
