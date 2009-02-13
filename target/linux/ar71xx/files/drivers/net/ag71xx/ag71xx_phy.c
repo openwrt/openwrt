@@ -138,12 +138,8 @@ static void ag71xx_phy_link_adjust(struct net_device *dev)
 		}
 	}
 
-	if (phydev->link != ag->link) {
-		if (phydev->link)
-			netif_schedule(dev);
-
+	if (phydev->link != ag->link)
 		status_change = 1;
-	}
 
 	ag->link = phydev->link;
 	ag->duplex = phydev->duplex;
