@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx built-in ethernet mac driver
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  Based on Atheros' AG7100 driver
@@ -177,36 +177,61 @@ void ag71xx_phy_stop(struct ag71xx *ag)
 	}
 }
 
-int ag71xx_phy_connect(struct ag71xx *ag)
+static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
+{
+	struct net_device *dev = ag->dev;
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+	int ret = 0;
+
+	/* use fixed settings */
+	switch (pdata->speed) {
+	case SPEED_10:
+	case SPEED_100:
+	case SPEED_1000:
+		break;
+	default:
+		printk(KERN_ERR "%s: invalid speed specified\n",
+			dev->name);
+		ret = -EINVAL;
+		break;
+	}
+
+	return ret;
+}
+
+static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 {
 	struct net_device *dev = ag->dev;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct phy_device *phydev = NULL;
 	int phy_count = 0;
 	int phy_addr;
+	int ret = 0;
 
-	if (ag->mii_bus && pdata->phy_mask) {
-		/* TODO: use mutex of the mdio bus? */
-		for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
-			if (!(pdata->phy_mask & (1 << phy_addr)))
-				continue;
+	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
+		if (!(pdata->phy_mask & (1 << phy_addr)))
+			continue;
 
-			if (ag->mii_bus->phy_map[phy_addr] == NULL)
-				continue;
+		if (ag->mii_bus->phy_map[phy_addr] == NULL)
+			continue;
 
-			DBG("%s: PHY found at %s, uid=%08x\n",
-				dev->name,
-				ag->mii_bus->phy_map[phy_addr]->dev.bus_id,
-				ag->mii_bus->phy_map[phy_addr]->phy_id);
+		DBG("%s: PHY found at %s, uid=%08x\n",
+			dev->name,
+			ag->mii_bus->phy_map[phy_addr]->dev.bus_id,
+			ag->mii_bus->phy_map[phy_addr]->phy_id);
 
-			if (phydev == NULL)
-				phydev = ag->mii_bus->phy_map[phy_addr];
+		if (phydev == NULL)
+			phydev = ag->mii_bus->phy_map[phy_addr];
 
-			phy_count++;
-		}
+		phy_count++;
 	}
 
 	switch (phy_count) {
+	case 0:
+		printk(KERN_ERR "%s: no PHY found with phy_mask=%08x\n",
+			dev->name, pdata->phy_mask);
+		ret = -ENODEV;
+		break;
 	case 1:
 		ag->phy_dev = phy_connect(dev, phydev->dev.bus_id,
 			&ag71xx_phy_link_adjust, 0, pdata->phy_if_mode);
@@ -236,24 +261,23 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 		break;
 
 	default:
-		switch (pdata->speed) {
-		case SPEED_10:
-		case SPEED_100:
-		case SPEED_1000:
-			break;
-		default:
-			printk(KERN_ERR "%s: invalid speed specified\n",
-				dev->name);
-			return -EINVAL;
-		}
-
-		ag->phy_dev = NULL;
 		printk(KERN_DEBUG "%s: connected to %d PHYs\n",
 			dev->name, phy_count);
+		ret = ag71xx_phy_connect_fixed(ag);
 		break;
 	}
 
-	return 0;
+	return ret;
+}
+
+int ag71xx_phy_connect(struct ag71xx *ag)
+{
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+
+	if (pdata->phy_mask)
+		return ag71xx_phy_connect_multi(ag);
+
+	return ag71xx_phy_connect_fixed(ag);
 }
 
 void ag71xx_phy_disconnect(struct ag71xx *ag)
