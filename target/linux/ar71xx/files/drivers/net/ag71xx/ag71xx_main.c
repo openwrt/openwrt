@@ -716,13 +716,13 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		spin_lock_irqsave(&ag->lock, flags);
 		ag71xx_int_enable(ag, AG71XX_INT_POLL);
 		spin_unlock_irqrestore(&ag->lock, flags);
-		return 0;
+		return done;
 	}
 
  more:
 	DBG("%s: stay in polling mode, done=%d, limit=%d\n",
 			dev->name, done, limit);
-	return 1;
+	return done;
 
  oom:
 	if (netif_msg_rx_err(ag))
@@ -730,7 +730,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 
 	mod_timer(&ag->oom_timer, jiffies + AG71XX_OOM_REFILL);
 	netif_rx_complete(dev, napi);
-	return 0;
+	return done;
 }
 
 static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
