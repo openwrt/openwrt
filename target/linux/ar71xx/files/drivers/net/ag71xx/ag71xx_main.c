@@ -730,7 +730,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 
 	mod_timer(&ag->oom_timer, jiffies + AG71XX_OOM_REFILL);
 	netif_rx_complete(dev, napi);
-	return done;
+	return 0;
 }
 
 static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
