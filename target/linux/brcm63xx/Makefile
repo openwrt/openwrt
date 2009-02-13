@@ -9,17 +9,17 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM63xx
-FEATURES:=squashfs jffs2 usb atm
+FEATURES:=squashfs jffs2 usb atm pci
 LINUX_VERSION:=2.6.27.15
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += hostapd-mini
+DEFAULT_PACKAGES += hostapd-mini kmod-ssb
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
 	currently supports BCM6348 and BCM6358 based devices.
-	(e.g. Inventel Livebox, Siemens SE515)
+	(e.g. Inventel Livebox, Siemens SE515, Neufbox 4)
 endef
 
 $(eval $(call BuildTarget))
