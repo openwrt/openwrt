@@ -89,6 +89,7 @@ define Kernel/Configure/Default
 	echo "$(if $(CONFIG_KERNEL_KALLSYMS),CONFIG_KALLSYMS=y,# CONFIG_KALLSYMS is not set)" >> $(LINUX_DIR)/.config.target
 	echo "$(if $(CONFIG_KERNEL_PROFILING),CONFIG_PROFILING=y,# CONFIG_PROFILING is not set)" >> $(LINUX_DIR)/.config.target
 	echo "# CONFIG_KALLSYMS_EXTRA_PASS is not set" >> $(LINUX_DIR)/.config.target
+	echo "# CONFIG_KALLSYMS_ALL is not set" >> $(LINUX_DIR)/.config.target
 	echo "# CONFIG_KPROBES is not set" >> $(LINUX_DIR)/.config.target
 	$(SCRIPT_DIR)/metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config > $(LINUX_DIR)/.config.override
 	$(SCRIPT_DIR)/kconfig.pl 'm+' $(LINUX_DIR)/.config.target $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config
