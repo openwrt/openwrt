@@ -102,7 +102,7 @@ struct ag71xx_ring {
 };
 
 struct ag71xx_mdio {
-	struct mii_bus	mii_bus;
+	struct mii_bus	*mii_bus;
 	int		mii_irq[PHY_MAX_ADDR];
 	void __iomem	*mdio_base;
 };

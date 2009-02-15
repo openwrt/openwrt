@@ -32,12 +32,12 @@ static inline u32 ag71xx_mdio_rr(struct ag71xx_mdio *am, unsigned reg)
 static void ag71xx_mdio_dump_regs(struct ag71xx_mdio *am)
 {
 	DBG("%s: mii_cfg=%08x, mii_cmd=%08x, mii_addr=%08x\n",
-		am->mii_bus.name,
+		am->mii_bus->name,
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_CFG),
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_CMD),
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_ADDR));
 	DBG("%s: mii_ctrl=%08x, mii_status=%08x, mii_ind=%08x\n",
-		am->mii_bus.name,
+		am->mii_bus->name,
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_CTRL),
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_STATUS),
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_IND));
@@ -57,7 +57,7 @@ static int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
 	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
 		if (i-- == 0) {
 			printk(KERN_ERR "%s: mii_read timed out\n",
-				am->mii_bus.name);
+				am->mii_bus->name);
 			ret = 0xffff;
 			goto out;
 		}
@@ -88,7 +88,7 @@ static void ag71xx_mdio_mii_write(struct ag71xx_mdio *am,
 	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
 		if (i-- == 0) {
 			printk(KERN_ERR "%s: mii_write timed out\n",
-				am->mii_bus.name);
+				am->mii_bus->name);
 			break;
 		}
 		udelay(AG71XX_MDIO_DELAY);
@@ -154,27 +154,33 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 		goto err_free_mdio;
 	}
 
-	am->mii_bus.name = "ag71xx_mdio";
-	am->mii_bus.read = ag71xx_mdio_read;
-	am->mii_bus.write = ag71xx_mdio_write;
-	am->mii_bus.reset = ag71xx_mdio_reset;
-	am->mii_bus.irq = am->mii_irq;
-	am->mii_bus.priv = am;
-	am->mii_bus.dev = &pdev->dev;
-	snprintf(am->mii_bus.id, MII_BUS_ID_SIZE, "%x", 0);
+	am->mii_bus = mdiobus_alloc();
+	if (am->mii_bus == NULL) {
+		err = -ENOMEM;
+		goto err_iounmap;
+	}
+
+	am->mii_bus->name = "ag71xx_mdio";
+	am->mii_bus->read = ag71xx_mdio_read;
+	am->mii_bus->write = ag71xx_mdio_write;
+	am->mii_bus->reset = ag71xx_mdio_reset;
+	am->mii_bus->irq = am->mii_irq;
+	am->mii_bus->priv = am;
+	am->mii_bus->parent = &pdev->dev;
+	snprintf(am->mii_bus->id, MII_BUS_ID_SIZE, "%x", 0);
 
 	pdata = pdev->dev.platform_data;
 	if (pdata)
-		am->mii_bus.phy_mask = pdata->phy_mask;
+		am->mii_bus->phy_mask = pdata->phy_mask;
 
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		am->mii_irq[i] = PHY_POLL;
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MAC_CFG1, 0);
 
-	err = mdiobus_register(&am->mii_bus);
+	err = mdiobus_register(am->mii_bus);
 	if (err)
-		goto err_iounmap;
+		goto err_free_bus;
 
 	ag71xx_mdio_dump_regs(am);
 
@@ -182,6 +188,8 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	ag71xx_mdio_bus = am;
 	return 0;
 
+ err_free_bus:
+	mdiobus_free(am->mii_bus);
  err_iounmap:
 	iounmap(am->mdio_base);
  err_free_mdio:
@@ -196,7 +204,8 @@ static int __exit ag71xx_mdio_remove(struct platform_device *pdev)
 
 	if (am) {
 		ag71xx_mdio_bus = NULL;
-		mdiobus_unregister(&am->mii_bus);
+		mdiobus_unregister(am->mii_bus);
+		mdiobus_free(am->mii_bus);
 		iounmap(am->mdio_base);
 		kfree(am);
 		platform_set_drvdata(pdev, NULL);
