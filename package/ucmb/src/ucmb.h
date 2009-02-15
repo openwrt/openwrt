@@ -3,6 +3,7 @@
 
 struct ucmb_platform_data {
 	const char *name;
+	unsigned long gpio_cs;
 	unsigned int gpio_sck;
 	unsigned int gpio_miso;
 	unsigned int gpio_mosi;

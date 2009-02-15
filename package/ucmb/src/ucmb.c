@@ -16,6 +16,7 @@
 #include <linux/spi/spi_gpio.h>
 #include <linux/spi/spi_bitbang.h>
 #include <linux/gfp.h>
+#include <linux/delay.h>
 
 
 #define PFX	"ucmb: "
@@ -39,12 +40,34 @@ struct ucmb {
 	struct platform_device spi_gpio_pdev;
 };
 
+struct ucmb_message_hdr {
+	__le16 magic;		/* UCMB_MAGIC */
+	__le16 len;		/* Payload length (excluding header) */
+} __attribute__((packed));
+
+struct ucmb_status {
+	__le16 magic;		/* UCMB_MAGIC */
+	__le16 code;		/* enum ucmb_status_code */
+} __attribute__((packed));
+
+#define UCMB_MAGIC		0x1337
+#define UCMB_MAX_MSG_LEN	0x200
+
+enum ucmb_status_code {
+	UCMB_STAT_OK = 0,
+	UCMB_STAT_EPROTO,	/* Protocol format error */
+	UCMB_STAT_ENOMEM,	/* Out of memory */
+	UCMB_STAT_E2BIG,	/* Message too big */
+};
+
+
 static int ucmb_spi_busnum_count = 1337;
 
 
 static struct ucmb_platform_data ucmb_list[] = {
 	{ //FIXME don't define it here.
 		.name		= "ucmb",
+		.gpio_cs	= 3,
 		.gpio_sck	= 0,
 		.gpio_miso	= 1,
 		.gpio_mosi	= 2,
@@ -72,6 +95,21 @@ static struct spi_driver ucmb_spi_driver = {
 	.remove		= __devexit_p(ucmb_spi_remove),
 };
 
+static int ucmb_status_code_to_errno(enum ucmb_status_code code)
+{
+	switch (code) {
+	case UCMB_STAT_OK:
+		return 0;
+	case UCMB_STAT_EPROTO:
+		return -EPROTO;
+	case UCMB_STAT_ENOMEM:
+		return -ENOMEM;
+	case UCMB_STAT_E2BIG:
+		return -E2BIG;
+	}
+	return -EBUSY;
+}
+
 static inline struct ucmb * filp_to_ucmb(struct file *filp)
 {
 	return container_of(filp->f_op, struct ucmb, mdev_fops);
@@ -83,10 +121,14 @@ static ssize_t ucmb_read(struct file *filp, char __user *user_buf,
 {
 	struct ucmb *ucmb = filp_to_ucmb(filp);
 	u8 *buf;
-	int err;
+	int res, err;
+	struct ucmb_message_hdr hdr;
+	struct ucmb_status status = { .magic = cpu_to_le16(UCMB_MAGIC), };
 
 	err = -E2BIG;
 	if (size > PAGE_SIZE)
+		goto out;
+	if (size > UCMB_MAX_MSG_LEN)
 		goto out;
 
 	err = -ENOMEM;
@@ -94,18 +136,33 @@ static ssize_t ucmb_read(struct file *filp, char __user *user_buf,
 	if (!buf)
 		goto out;
 
+	err = spi_read(ucmb->sdev, (u8 *)&hdr, sizeof(hdr));
+	if (err)
+		goto out_free;
+	err = -EPROTO;
+	if (hdr.magic != cpu_to_le16(UCMB_MAGIC))
+		goto out_free;
+	err = -ENOBUFS;
+	if (size < le16_to_cpu(hdr.len))
+		goto out_free;
+	size = le16_to_cpu(hdr.len);
 	err = spi_read(ucmb->sdev, buf, size);
 	if (err)
 		goto out_free;
 
 	err = -EFAULT;
 	if (copy_to_user(user_buf, buf, size))
-		goto out_free;
+		goto out_send_status;
 
 	err = 0;
 
+out_send_status:
+	status.code = err ? UCMB_STAT_ENOMEM : UCMB_STAT_OK;
+	res = spi_write(ucmb->sdev, (u8 *)&status, sizeof(status));
+	if (res && !err)
+		err = res;
 out_free:
-	__free_page((unsigned long)buf);
+	free_page((unsigned long)buf);
 out:
 	return err ? err : size;
 }
@@ -117,21 +174,57 @@ static ssize_t ucmb_write(struct file *filp, const char __user *user_buf,
 	struct ucmb *ucmb = filp_to_ucmb(filp);
 	u8 *buf;
 	int err;
+	struct ucmb_message_hdr hdr = { .magic = cpu_to_le16(UCMB_MAGIC), };
+	struct ucmb_status status;
+	struct spi_transfer spi_hdr_xfer;
+	struct spi_transfer spi_data_xfer;
+	struct spi_message spi_msg;
 
 	err = -ENOMEM;
 	buf = (char *)__get_free_page(GFP_KERNEL);
 	if (!buf)
 		goto out;
 
-	size = min(PAGE_SIZE, size);
+	size = min_t(size_t, PAGE_SIZE, size);
+	size = min_t(size_t, UCMB_MAX_MSG_LEN, size);
 	err = -EFAULT;
 	if (copy_from_user(buf, user_buf, size))
 		goto out_free;
+	hdr.len = cpu_to_le16(size);
 
-	err = spi_write(ucmb->sdev, buf, size);
+	spi_message_init(&spi_msg);
+
+	memset(&spi_hdr_xfer, 0, sizeof(spi_hdr_xfer));
+	spi_hdr_xfer.tx_buf = &hdr;
+	spi_hdr_xfer.len = sizeof(hdr);
+	spi_message_add_tail(&spi_hdr_xfer, &spi_msg);
+
+	memset(&spi_data_xfer, 0, sizeof(spi_data_xfer));
+	spi_data_xfer.tx_buf = buf;
+	spi_data_xfer.len = size;
+	spi_message_add_tail(&spi_data_xfer, &spi_msg);
+
+	/* Send the message, including header. */
+	err = spi_sync(ucmb->sdev, &spi_msg);
+	if (err)
+		goto out_free;
+
+	/* The microcontroller deserves some time to process the message. */
+	msleep(1);
+
+	/* Get the status code. */
+	err = spi_read(ucmb->sdev, (u8 *)&status, sizeof(status));
+	if (err)
+		goto out_free;
+	err = -EPROTO;
+	if (status.magic != cpu_to_le16(UCMB_MAGIC))
+		goto out_free;
+	err = ucmb_status_code_to_errno(le16_to_cpu(status.code));
+	if (err)
+		goto out_free;
 
 out_free:
-	__free_page((unsigned long)buf);
+	free_page((unsigned long)buf);
 out:
 	return err ? err : size;
 }
@@ -187,12 +280,12 @@ static int __devinit ucmb_probe(struct platform_device *pdev)
 		printk(KERN_ERR PFX "Failed to allocate SPI device\n");
 		goto err_unreg_spi_gpio_pdev;
 	}
-	ucmb->sdev->max_speed_hz = 5000000;
+	ucmb->sdev->max_speed_hz = 500000;
 	ucmb->sdev->chip_select = 0;
 	ucmb->sdev->mode = SPI_MODE_0;
 	strlcpy(ucmb->sdev->modalias, "ucmb", /* We are the SPI driver. */
 		sizeof(ucmb->sdev->modalias));
-	ucmb->sdev->controller_data = (void *)SPI_GPIO_NO_CHIPSELECT;
+	ucmb->sdev->controller_data = (void *)pdata->gpio_cs;
 	err = spi_add_device(ucmb->sdev);
 	if (err) {
 		printk(KERN_ERR PFX "Failed to add SPI device\n");
