@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
   PKG_VERSION:=2009-02-07
@@ -53,14 +53,22 @@ Linux 802.11 Wireless Networking Stack
 endef
 
 # Prism54 drivers
-P54FW:=2.7.0.0.arm
+P54PCIFW:=2.13.12.0.arm
+P54USBFW:=2.13.24.0.lm86.arm
 
-define Download/p54
-  FILE:=$(P54FW)
-  URL:=http://prism54.org/firmware
-  MD5SUM:=09f9da7ea757173c9de1a0322a1f9782
+define Download/p54usb
+  FILE:=$(P54USBFW)
+  URL:=http://daemonizer.de/prism54/prism54-fw/fw-usb
+  MD5SUM:=2e847782bb36d5b0863db8b2f12c2228
 endef
-$(eval $(call Download,p54))
+$(eval $(call Download,p54usb))
+
+define Download/p54pci
+  FILE:=$(P54PCIFW)
+  URL:=http://daemonizer.de/prism54/prism54-fw/fw-softmac
+  MD5SUM:=ff7536af2092b1c4b21315bd103ef4c4
+endef
+$(eval $(call Download,p54pci))
 
 define KernelPackage/p54/Default
   $(call KernelPackage/mac80211/Default)
@@ -73,7 +81,7 @@ endef
 
 define KernelPackage/p54-common
   $(call KernelPackage/p54/Default)
-  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT
+  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT +kmod-mac80211
   TITLE+= (COMMON)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54common.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,p54common)
@@ -395,9 +403,14 @@ define KernelPackage/mac80211/install
 	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
 endef
 
-define KernelPackage/p54-common/install
+define KernelPackage/p54-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(P54FW) $(1)/lib/firmware/isl3886
+	$(INSTALL_DATA) $(DL_DIR)/$(P54PCIFW) $(1)/lib/firmware/isl3886pci
+endef
+
+define KernelPackage/p54-usb/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(P54USBFW) $(1)/lib/firmware/isl3886usb
 endef
 
 define KernelPackage/rt61-pci/install
