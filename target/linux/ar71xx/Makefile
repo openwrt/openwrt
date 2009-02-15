@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,7 +11,7 @@ BOARD:=ar71xx
 BOARDNAME:=Atheros AR71xx
 FEATURES:=squashfs tgz
 
-LINUX_VERSION:=2.6.27.17
+LINUX_VERSION:=2.6.28.5
 
 include $(INCLUDE_DIR)/target.mk
 
