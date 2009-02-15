@@ -4,10 +4,8 @@ Port of the SPI-GPIO driver from 2.6.29-rc4.
 
 
 
-Index: linux-2.6.28.2/drivers/spi/spi_gpio.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/drivers/spi/spi_gpio.c	2009-02-10 17:56:59.000000000 +0100
+--- /dev/null
++++ b/drivers/spi/spi_gpio.c
 @@ -0,0 +1,360 @@
 +/*
 + * spi_gpio.c - SPI master driver using generic bitbanged GPIO
@@ -369,10 +367,8 @@ Index: linux-2.6.28.2/drivers/spi/spi_gpio.c
 +MODULE_DESCRIPTION("SPI master driver using generic bitbanged GPIO ");
 +MODULE_AUTHOR("David Brownell");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.28.2/include/linux/spi/spi_gpio.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/include/linux/spi/spi_gpio.h	2009-02-10 17:56:49.000000000 +0100
+--- /dev/null
++++ b/include/linux/spi/spi_gpio.h
 @@ -0,0 +1,60 @@
 +#ifndef __LINUX_SPI_GPIO_H
 +#define __LINUX_SPI_GPIO_H
@@ -434,10 +430,8 @@ Index: linux-2.6.28.2/include/linux/spi/spi_gpio.h
 +};
 +
 +#endif /* __LINUX_SPI_GPIO_H */
-Index: linux-2.6.28.2/drivers/spi/Kconfig
-===================================================================
---- linux-2.6.28.2.orig/drivers/spi/Kconfig	2009-02-10 17:57:10.000000000 +0100
-+++ linux-2.6.28.2/drivers/spi/Kconfig	2009-02-10 18:08:31.000000000 +0100
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
 @@ -100,6 +100,22 @@ config SPI_BUTTERFLY
  	  inexpensive battery powered microcontroller evaluation board.
  	  This same cable can be used to flash new firmware.
@@ -461,10 +455,8 @@ Index: linux-2.6.28.2/drivers/spi/Kconfig
  config SPI_IMX
  	tristate "Freescale iMX SPI controller"
  	depends on ARCH_IMX && EXPERIMENTAL
-Index: linux-2.6.28.2/drivers/spi/Makefile
-===================================================================
---- linux-2.6.28.2.orig/drivers/spi/Makefile	2009-02-10 17:58:46.000000000 +0100
-+++ linux-2.6.28.2/drivers/spi/Makefile	2009-02-10 18:08:31.000000000 +0100
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
 @@ -16,6 +16,7 @@ obj-$(CONFIG_SPI_BFIN)			+= spi_bfin5xx.
  obj-$(CONFIG_SPI_BITBANG)		+= spi_bitbang.o
  obj-$(CONFIG_SPI_AU1550)		+= au1550_spi.o
