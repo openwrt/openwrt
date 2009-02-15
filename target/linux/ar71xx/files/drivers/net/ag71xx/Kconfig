@@ -5,3 +5,10 @@ config AG71XX
 	help
 	  If you wish to compile a kernel for AR71xx/91xx and enable
 	  ethernet support, then you should always answer Y to this.
+
+config AG71XX_DEBUG
+	bool "Atheros AR71xx built-in ethernet driver debugging"
+	depends on AG71XX
+	default n
+	help
+	  Atheros AR71xx built-in ethernet driver debugging messages.

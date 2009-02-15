@@ -63,8 +63,7 @@
 
 #define AG71XX_RX_RING_SIZE	128
 
-#undef AG71XX_DEBUG
-#ifdef AG71XX_DEBUG
+#ifdef CONFIG_AG71XX_DEBUG
 #define DBG(fmt, args...)	printk(KERN_DEBUG fmt, ## args)
 #else
 #define DBG(fmt, args...)	do {} while (0)
