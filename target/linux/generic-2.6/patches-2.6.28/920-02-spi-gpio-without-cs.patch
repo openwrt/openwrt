@@ -4,10 +4,8 @@ Optionally omit the CS signal, if there's only one device on the bus.
 
 
 
-Index: linux-2.6.28.2/drivers/spi/spi_gpio.c
-===================================================================
---- linux-2.6.28.2.orig/drivers/spi/spi_gpio.c	2009-02-11 18:48:23.000000000 +0100
-+++ linux-2.6.28.2/drivers/spi/spi_gpio.c	2009-02-11 18:48:50.000000000 +0100
+--- a/drivers/spi/spi_gpio.c
++++ b/drivers/spi/spi_gpio.c
 @@ -178,8 +178,10 @@ static void spi_gpio_chipselect(struct s
  	if (is_active)
  		setsck(spi, spi->mode & SPI_CPOL);
@@ -54,10 +52,8 @@ Index: linux-2.6.28.2/drivers/spi/spi_gpio.c
  	spi_bitbang_cleanup(spi);
  }
  
-Index: linux-2.6.28.2/include/linux/spi/spi_gpio.h
-===================================================================
---- linux-2.6.28.2.orig/include/linux/spi/spi_gpio.h	2009-02-11 18:48:23.000000000 +0100
-+++ linux-2.6.28.2/include/linux/spi/spi_gpio.h	2009-02-11 18:58:31.000000000 +0100
+--- a/include/linux/spi/spi_gpio.h
++++ b/include/linux/spi/spi_gpio.h
 @@ -25,10 +25,16 @@
   *	...
   *	};

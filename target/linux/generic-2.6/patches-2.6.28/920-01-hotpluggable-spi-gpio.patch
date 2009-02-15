@@ -4,10 +4,8 @@ Fix spi-gpio for hotplug.
 
 
 
-Index: linux-2.6.28.2/drivers/spi/spi_gpio.c
-===================================================================
---- linux-2.6.28.2.orig/drivers/spi/spi_gpio.c	2009-02-11 17:58:42.000000000 +0100
-+++ linux-2.6.28.2/drivers/spi/spi_gpio.c	2009-02-11 18:48:23.000000000 +0100
+--- a/drivers/spi/spi_gpio.c
++++ b/drivers/spi/spi_gpio.c
 @@ -213,7 +213,7 @@ static void spi_gpio_cleanup(struct spi_
  	spi_bitbang_cleanup(spi);
  }

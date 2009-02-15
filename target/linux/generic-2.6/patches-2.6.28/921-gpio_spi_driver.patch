@@ -6,10 +6,8 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
 
 
 
-Index: linux-2.6.28.2/include/linux/spi/spi_gpio_old.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/include/linux/spi/spi_gpio_old.h	2009-02-10 17:59:21.000000000 +0100
+--- /dev/null
++++ b/include/linux/spi/spi_gpio_old.h
 @@ -0,0 +1,73 @@
 +/*
 + * spi_gpio interface to platform code
@@ -84,10 +82,8 @@ Index: linux-2.6.28.2/include/linux/spi/spi_gpio_old.h
 +int spi_gpio_next_id(void);
 +
 +#endif /* _LINUX_SPI_SPI_GPIO */
-Index: linux-2.6.28.2/drivers/spi/spi_gpio_old.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/drivers/spi/spi_gpio_old.c	2009-02-10 17:59:21.000000000 +0100
+--- /dev/null
++++ b/drivers/spi/spi_gpio_old.c
 @@ -0,0 +1,251 @@
 +/*
 + * Bitbanging SPI bus driver using GPIO API
@@ -340,10 +336,8 @@ Index: linux-2.6.28.2/drivers/spi/spi_gpio_old.c
 +MODULE_AUTHOR("Michael Buesch");
 +MODULE_DESCRIPTION("Platform independent GPIO bitbanging SPI driver");
 +MODULE_LICENSE("GPL v2");
-Index: linux-2.6.28.2/drivers/spi/Kconfig
-===================================================================
---- linux-2.6.28.2.orig/drivers/spi/Kconfig	2009-02-10 17:58:37.000000000 +0100
-+++ linux-2.6.28.2/drivers/spi/Kconfig	2009-02-10 17:59:21.000000000 +0100
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
 @@ -116,6 +116,15 @@ config SPI_GPIO
  	  GPIO operations, you should be able to leverage that for better
  	  speed with a custom version of this driver; see the source code.
@@ -360,10 +354,8 @@ Index: linux-2.6.28.2/drivers/spi/Kconfig
  config SPI_IMX
  	tristate "Freescale iMX SPI controller"
  	depends on ARCH_IMX && EXPERIMENTAL
-Index: linux-2.6.28.2/drivers/spi/Makefile
-===================================================================
---- linux-2.6.28.2.orig/drivers/spi/Makefile	2009-02-10 17:59:04.000000000 +0100
-+++ linux-2.6.28.2/drivers/spi/Makefile	2009-02-10 17:59:51.000000000 +0100
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
 @@ -17,6 +17,7 @@ obj-$(CONFIG_SPI_BITBANG)		+= spi_bitban
  obj-$(CONFIG_SPI_AU1550)		+= au1550_spi.o
  obj-$(CONFIG_SPI_BUTTERFLY)		+= spi_butterfly.o
