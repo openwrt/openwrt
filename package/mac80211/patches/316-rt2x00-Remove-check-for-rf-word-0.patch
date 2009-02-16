@@ -1,0 +1,152 @@
+From 14aaed532a6d18af35466d8f440e96597a8d203a Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sun, 8 Feb 2009 17:05:01 +0100
+Subject: [PATCH] rt2x00: Remove check for rf word 0
+
+The only way rf_write() can be called with word 0 is
+when the user sends the wrong word index through debugfs.
+However the values which are send through debugfs are
+validated using the RF_BASE and RF_SIZE macro values,
+the most logical solution is to increase RF_BASE with 4
+and decrease RF_SIZE with 4 (RF_SIZE has always been
+1 word too big)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2400pci.c |    3 ---
+ drivers/net/wireless/rt2x00/rt2400pci.h |    4 ++--
+ drivers/net/wireless/rt2x00/rt2500pci.c |    3 ---
+ drivers/net/wireless/rt2x00/rt2500pci.h |    4 ++--
+ drivers/net/wireless/rt2x00/rt2500usb.c |    3 ---
+ drivers/net/wireless/rt2x00/rt2500usb.h |    4 ++--
+ drivers/net/wireless/rt2x00/rt61pci.c   |    3 ---
+ drivers/net/wireless/rt2x00/rt61pci.h   |    4 ++--
+ drivers/net/wireless/rt2x00/rt73usb.c   |    3 ---
+ drivers/net/wireless/rt2x00/rt73usb.h   |    4 ++--
+ 10 files changed, 10 insertions(+), 25 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2400pci.c
++++ b/drivers/net/wireless/rt2x00/rt2400pci.c
+@@ -114,9 +114,6 @@ static void rt2400pci_rf_write(struct rt
+ {
+ 	u32 reg;
+ 
+-	if (!word)
+-		return;
+-
+ 	mutex_lock(&rt2x00dev->csr_mutex);
+ 
+ 	/*
+--- a/drivers/net/wireless/rt2x00/rt2400pci.h
++++ b/drivers/net/wireless/rt2x00/rt2400pci.h
+@@ -48,8 +48,8 @@
+ #define EEPROM_SIZE			0x0100
+ #define BBP_BASE			0x0000
+ #define BBP_SIZE			0x0020
+-#define RF_BASE				0x0000
+-#define RF_SIZE				0x0010
++#define RF_BASE				0x0004
++#define RF_SIZE				0x000c
+ 
+ /*
+  * Number of TX queues.
+--- a/drivers/net/wireless/rt2x00/rt2500pci.c
++++ b/drivers/net/wireless/rt2x00/rt2500pci.c
+@@ -114,9 +114,6 @@ static void rt2500pci_rf_write(struct rt
+ {
+ 	u32 reg;
+ 
+-	if (!word)
+-		return;
+-
+ 	mutex_lock(&rt2x00dev->csr_mutex);
+ 
+ 	/*
+--- a/drivers/net/wireless/rt2x00/rt2500pci.h
++++ b/drivers/net/wireless/rt2x00/rt2500pci.h
+@@ -59,8 +59,8 @@
+ #define EEPROM_SIZE			0x0200
+ #define BBP_BASE			0x0000
+ #define BBP_SIZE			0x0040
+-#define RF_BASE				0x0000
+-#define RF_SIZE				0x0014
++#define RF_BASE				0x0004
++#define RF_SIZE				0x0010
+ 
+ /*
+  * Number of TX queues.
+--- a/drivers/net/wireless/rt2x00/rt2500usb.c
++++ b/drivers/net/wireless/rt2x00/rt2500usb.c
+@@ -204,9 +204,6 @@ static void rt2500usb_rf_write(struct rt
+ {
+ 	u16 reg;
+ 
+-	if (!word)
+-		return;
+-
+ 	mutex_lock(&rt2x00dev->csr_mutex);
+ 
+ 	/*
+--- a/drivers/net/wireless/rt2x00/rt2500usb.h
++++ b/drivers/net/wireless/rt2x00/rt2500usb.h
+@@ -59,8 +59,8 @@
+ #define EEPROM_SIZE			0x006a
+ #define BBP_BASE			0x0000
+ #define BBP_SIZE			0x0060
+-#define RF_BASE				0x0000
+-#define RF_SIZE				0x0014
++#define RF_BASE				0x0004
++#define RF_SIZE				0x0010
+ 
+ /*
+  * Number of TX queues.
+--- a/drivers/net/wireless/rt2x00/rt61pci.c
++++ b/drivers/net/wireless/rt2x00/rt61pci.c
+@@ -123,9 +123,6 @@ static void rt61pci_rf_write(struct rt2x
+ {
+ 	u32 reg;
+ 
+-	if (!word)
+-		return;
+-
+ 	mutex_lock(&rt2x00dev->csr_mutex);
+ 
+ 	/*
+--- a/drivers/net/wireless/rt2x00/rt61pci.h
++++ b/drivers/net/wireless/rt2x00/rt61pci.h
+@@ -50,8 +50,8 @@
+ #define EEPROM_SIZE			0x0100
+ #define BBP_BASE			0x0000
+ #define BBP_SIZE			0x0080
+-#define RF_BASE				0x0000
+-#define RF_SIZE				0x0014
++#define RF_BASE				0x0004
++#define RF_SIZE				0x0010
+ 
+ /*
+  * Number of TX queues.
+--- a/drivers/net/wireless/rt2x00/rt73usb.c
++++ b/drivers/net/wireless/rt2x00/rt73usb.c
+@@ -122,9 +122,6 @@ static void rt73usb_rf_write(struct rt2x
+ {
+ 	u32 reg;
+ 
+-	if (!word)
+-		return;
+-
+ 	mutex_lock(&rt2x00dev->csr_mutex);
+ 
+ 	/*
+--- a/drivers/net/wireless/rt2x00/rt73usb.h
++++ b/drivers/net/wireless/rt2x00/rt73usb.h
+@@ -50,8 +50,8 @@
+ #define EEPROM_SIZE			0x0100
+ #define BBP_BASE			0x0000
+ #define BBP_SIZE			0x0080
+-#define RF_BASE				0x0000
+-#define RF_SIZE				0x0014
++#define RF_BASE				0x0004
++#define RF_SIZE				0x0010
+ 
+ /*
+  * Number of TX queues.
