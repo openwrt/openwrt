@@ -131,3 +131,20 @@ endef
 
 $(eval $(call KernelPackage,video-pwc))
 
+define KernelPackage/video-uvc
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=USB Video Class (UVC) support
+  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_25 @!LINUX_2_6_24 @!LINUX_2_6_23 @USB_SUPPORT +kmod-usb-core +kmod-video-core
+  KCONFIG:= \
+	CONFIG_USB_VIDEO_CLASS \
+	CONFIG_USB_VIDEO_CLASS_INPUT_EVDEV=y
+  FILES:=$(LINUX_DIR)/drivers/media/video/uvc/uvcvideo.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
+endef
+
+
+define KernelPackage/video-uvc/description
+ Kernel modules for supporting USB Video Class (UVC) devices.
+endef
+
+$(eval $(call KernelPackage,video-uvc))
