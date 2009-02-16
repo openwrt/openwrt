@@ -7,13 +7,13 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +++ b/drivers/net/wireless/ath5k/phy.c
 @@ -4,6 +4,7 @@
   * Copyright (c) 2004-2007 Reyk Floeter <reyk@openbsd.org>
-  * Copyright (c) 2006-2007 Nick Kossifidis <mickflemm@gmail.com>
+  * Copyright (c) 2006-2009 Nick Kossifidis <mickflemm@gmail.com>
   * Copyright (c) 2007-2008 Jiri Slaby <jirislaby@gmail.com>
 + * Copyright (c) 2008-2009 Felix Fietkau <nbd@openwrt.org>
   *
   * Permission to use, copy, modify, and distribute this software for any
   * purpose with or without fee is hereby granted, provided that the above
-@@ -2383,31 +2384,449 @@ unsigned int ath5k_hw_get_def_antenna(st
+@@ -1438,31 +1439,449 @@ unsigned int ath5k_hw_get_def_antenna(st
   */
  
  /*
@@ -330,12 +330,18 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +		/* need to extrapolate above this pdgain? */
 +		if (target_idx <= max_idx)
 +			continue;
-+
+ 
+-	txpower = AR5K_TUNE_DEFAULT_TXPOWER * 2;
+-	if (max_power > txpower)
+-		txpower = max_power > AR5K_TUNE_MAX_TXPOWER ?
+-		    AR5K_TUNE_MAX_TXPOWER : max_power;
 +		if (pcdacL[vpd_size - 1] > pcdacL[vpd_size - 2])
 +			vpd_step = pcdacL[vpd_size - 1] - pcdacL[vpd_size - 2];
 +		else
 +			vpd_step = 1;
-+
+ 
+-	for (i = 0; i < AR5K_MAX_RATES; i++)
+-		rates[i] = txpower;
 +		while ((s < (s16) target_idx) && (n_pdadc < 128)) {
 +			int tmp = pcdacL[vpd_size - 1] +
 +				(s - max_idx) * vpd_step;
@@ -343,7 +349,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +			s++;
 +		}
 +	}
-+
+ 
+-	/* XXX setup target powers by rate */
 +	while (i < AR5K_EEPROM_N_PD_GAINS) {
 +		gain_boundaries[i] = gain_boundaries[i - 1];
 +		i++;
@@ -374,14 +381,10 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	}
 +	ath5k_hw_reg_write(ah, reg, AR5K_PHY_TPC_RG1);
  
--	txpower = AR5K_TUNE_DEFAULT_TXPOWER * 2;
--	if (max_power > txpower)
--		txpower = max_power > AR5K_TUNE_MAX_TXPOWER ?
--		    AR5K_TUNE_MAX_TXPOWER : max_power;
 +	/*
 +	 * Write TX power values
 +	 */
-+	reg = AR5K_PHY_PCDAC_TXPOWER_BASE_2413;
++	reg = AR5K_PHY_PDADC_TXPOWER_BASE;
 +	for (i = 0; i < (AR5K_EEPROM_POWER_TABLE_SIZE / 2); i++) {
 +		ath5k_hw_reg_write(ah,
 +			((pdadc_out[4*i + 0] & 0xff) << 0) |
@@ -425,13 +428,10 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	}
 +	ah->ah_txpower.txp_min = ch_pmin;
 +	ah->ah_txpower.txp_max = ch_pmax;
- 
--	for (i = 0; i < AR5K_MAX_RATES; i++)
--		rates[i] = txpower;
++
 +	return 0;
 +}
- 
--	/* XXX setup target powers by rate */
++
 +static void
 +ath5k_setup_rate_table(struct ath5k_hw *ah, u16 max_pwr,
 +                       struct ath5k_rate_pcal_info *rate_info)
@@ -441,7 +441,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +
 +	max_pwr *= 2;
 +	max_pwr = min(max_pwr, (u16) ah->ah_txpower.txp_max);
- 
++
 +	/* apply rate limits */
 +	rates = ah->ah_txpower.txp_rates;
 +	for (i = 0; i < 5; i++) {
@@ -479,7 +479,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	n = ARRAY_SIZE(ah->ah_txpower.txp_pcdac);
  	min = AR5K_EEPROM_PCDAC_START;
  	max = AR5K_EEPROM_PCDAC_STOP;
-@@ -2418,51 +2837,64 @@ static void ath5k_txpower_table(struct a
+@@ -1473,51 +1892,64 @@ static void ath5k_txpower_table(struct a
  #else
  		min;
  #endif
@@ -568,7 +568,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	}
  
  	ath5k_hw_reg_write(ah, AR5K_TXPOWER_OFDM(3, 24) |
-@@ -2481,12 +2913,19 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
+@@ -1536,12 +1968,19 @@ ath5k_hw_txpower(struct ath5k_hw *ah, st
  		AR5K_TXPOWER_CCK(13, 16) | AR5K_TXPOWER_CCK(12, 8) |
  		AR5K_TXPOWER_CCK(11, 0), AR5K_PHY_TXPOWER_RATE4);
  
@@ -592,7 +592,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
 --- a/drivers/net/wireless/ath5k/ath5k.h
 +++ b/drivers/net/wireless/ath5k/ath5k.h
-@@ -207,7 +207,7 @@
+@@ -204,7 +204,7 @@
  #define AR5K_TUNE_CWMAX_11B			1023
  #define AR5K_TUNE_CWMAX_XR			7
  #define AR5K_TUNE_NOISE_FLOOR			-72
@@ -601,9 +601,9 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define AR5K_TUNE_DEFAULT_TXPOWER		30
  #define AR5K_TUNE_TPC_TXPOWER			true
  #define AR5K_TUNE_ANT_DIVERSITY			true
-@@ -1115,11 +1115,23 @@ struct ath5k_hw {
+@@ -1085,11 +1085,23 @@ struct ath5k_hw {
  	struct ath5k_gain	ah_gain;
- 	u32			ah_offset[AR5K_MAX_RF_BANKS];
+ 	u8			ah_offset[AR5K_MAX_RF_BANKS];
  
 +
  	struct {
@@ -628,7 +628,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	} ah_txpower;
 --- a/drivers/net/wireless/ath5k/reg.h
 +++ b/drivers/net/wireless/ath5k/reg.h
-@@ -1549,6 +1549,15 @@
+@@ -1552,6 +1552,15 @@
  
  
  /*===5212 Specific PCU registers===*/
@@ -644,7 +644,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  /*
   * XR (eXtended Range) mode register
-@@ -2578,6 +2587,12 @@
+@@ -2550,6 +2559,12 @@
  #define	AR5K_PHY_TPC_RG1		0xa258
  #define	AR5K_PHY_TPC_RG1_NUM_PD_GAIN	0x0000c000
  #define	AR5K_PHY_TPC_RG1_NUM_PD_GAIN_S	14
