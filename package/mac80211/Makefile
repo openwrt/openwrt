@@ -384,6 +384,7 @@ endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-mac80211),)
  define Build/Compile/kmod
+	rm -rf $(PKG_BUILD_DIR)/modules
 	$(MAKE) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
  endef
 endif
