@@ -52,6 +52,21 @@ endef
 $(eval $(call KernelPackage,crc7))
 
 
+define KernelPackage/crc16
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CRC16 support
+  KCONFIG:=CONFIG_CRC16
+  FILES:=$(LINUX_DIR)/lib/crc16.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,crc16)
+endef
+
+define KernelPackage/crc16/description
+ Kernel module for CRC16 support
+endef
+
+$(eval $(call KernelPackage,crc16))
+
+
 define KernelPackage/eeprom-93cx6
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM 93CX6 support
