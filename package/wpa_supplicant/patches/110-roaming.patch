@@ -1,7 +1,7 @@
 This patch decreases the timeouts for assoc/auth to more realistic values. Improves roaming speed
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -846,7 +846,7 @@ static void wpa_supplicant_event_assoc(s
+@@ -849,7 +849,7 @@ static void wpa_supplicant_event_assoc(s
  		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
  	} else if (!ft_completed) {
  		/* Timeout for receiving the first EAPOL packet */
@@ -26,9 +26,9 @@ This patch decreases the timeouts for assoc/auth to more realistic values. Impro
  		wpa_printf(MSG_WARNING, "Failed to initiate AP scan.");
 -		wpa_supplicant_req_scan(wpa_s, 10, 0);
 +		wpa_supplicant_req_scan(wpa_s, 3, 0);
- 	}
+ 	} else
+ 		wpa_s->scan_runs++;
  }
- 
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
 @@ -1160,10 +1160,10 @@ void wpa_supplicant_associate(struct wpa

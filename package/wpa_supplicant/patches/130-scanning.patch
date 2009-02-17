@@ -39,7 +39,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  	{ INT(fast_reauth) },
  #ifdef EAP_TLS_OPENSSL
  	{ STR(opensc_engine_path) },
-@@ -834,6 +842,8 @@ static void wpa_config_write_global(FILE
+@@ -835,6 +843,8 @@ static void wpa_config_write_global(FILE
  		fprintf(f, "eapol_version=%d\n", config->eapol_version);
  	if (config->ap_scan != DEFAULT_AP_SCAN)
  		fprintf(f, "ap_scan=%d\n", config->ap_scan);
@@ -50,7 +50,25 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  #ifdef EAP_TLS_OPENSSL
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -633,6 +633,9 @@ static void wpa_supplicant_event_scan_re
+@@ -536,7 +536,7 @@ wpa_supplicant_select_bss_non_wpa(struct
+ 					   "BSSID mismatch");
+ 				continue;
+ 			}
+-			
++
+ 			if (!(ssid->key_mgmt & WPA_KEY_MGMT_NONE) &&
+ 			    !(ssid->key_mgmt & WPA_KEY_MGMT_WPS) &&
+ 			    !(ssid->key_mgmt & WPA_KEY_MGMT_IEEE8021X_NO_WPA))
+@@ -546,7 +546,7 @@ wpa_supplicant_select_bss_non_wpa(struct
+ 				continue;
+ 			}
+ 
+-			if ((ssid->key_mgmt & 
++			if ((ssid->key_mgmt &
+ 			     (WPA_KEY_MGMT_IEEE8021X | WPA_KEY_MGMT_PSK |
+ 			      WPA_KEY_MGMT_FT_IEEE8021X | WPA_KEY_MGMT_FT_PSK |
+ 			      WPA_KEY_MGMT_IEEE8021X_SHA256 |
+@@ -635,6 +635,9 @@ static void wpa_supplicant_event_scan_re
  	    wpa_s->disconnected)
  		return;
  
@@ -60,15 +78,15 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  	while (selected == NULL) {
  		for (prio = 0; prio < wpa_s->conf->num_prio; prio++) {
  			selected = wpa_supplicant_select_bss(
-@@ -645,6 +648,7 @@ static void wpa_supplicant_event_scan_re
+@@ -647,6 +650,7 @@ static void wpa_supplicant_event_scan_re
  			wpa_printf(MSG_DEBUG, "No APs found - clear blacklist "
  				   "and try again");
  			wpa_blacklist_clear(wpa_s);
-+			memset(&wpa_s->last_scan_results, 0, sizeof(wpa_s->last_scan_results));
++ 			memset(&wpa_s->last_scan_results, 0, sizeof(wpa_s->last_scan_results));
+ 			wpa_s->blacklist_cleared++;
  		} else if (selected == NULL) {
  			break;
- 		}
-@@ -679,10 +683,12 @@ static void wpa_supplicant_event_scan_re
+@@ -682,10 +686,12 @@ static void wpa_supplicant_event_scan_re
  		rsn_preauth_scan_results(wpa_s->wpa, wpa_s->scan_res);
  	} else {
  		wpa_printf(MSG_DEBUG, "No suitable AP found.");
@@ -82,7 +100,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  	return;
  
  req_scan:
-@@ -886,6 +892,9 @@ static void wpa_supplicant_event_disasso
+@@ -889,6 +895,9 @@ static void wpa_supplicant_event_disasso
  	}
  	if (wpa_s->wpa_state >= WPA_ASSOCIATED)
  		wpa_supplicant_req_scan(wpa_s, 0, 100000);
@@ -94,7 +112,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  		bssid = wpa_s->pending_bssid;
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -349,6 +349,7 @@ struct wpa_supplicant {
+@@ -350,6 +350,7 @@ struct wpa_supplicant {
  	struct wpa_client_mlme mlme;
  	int use_client_mlme;
  	int driver_4way_handshake;
@@ -102,7 +120,7 @@ Add a scan result cache to improve roaming speed if the driver gave us a backgro
  
  	int pending_mic_error_report;
  	int pending_mic_error_pairwise;
-@@ -402,6 +403,7 @@ int wpa_supplicant_scard_init(struct wpa
+@@ -405,6 +406,7 @@ int wpa_supplicant_scard_init(struct wpa
  
  /* scan.c */
  void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec);
