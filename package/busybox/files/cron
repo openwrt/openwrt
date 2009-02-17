@@ -3,7 +3,7 @@
 START=50
 
 start () {
-	[ -z $(ls /etc/crontabs/) ] && exit 1
+	[ -z "$(ls /etc/crontabs/)" ] && exit 1
 	mkdir -p /var/spool/cron
 	[ -L /var/spool/cron/crontabs ] || ln -s /etc/crontabs /var/spool/cron/crontabs
 	crond -c /etc/crontabs
