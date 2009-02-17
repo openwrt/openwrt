@@ -9,12 +9,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=genext2fs
-PKG_VERSION:=1.4rc1
+PKG_VERSION:=1.4.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://superb-west.dl.sourceforge.net/sourceforge/
-PKG_MD5SUM:=664431bf6737df1c265500e1f0b5d40c
-PKG_CAT:=zcat
+PKG_SOURCE_URL:=@SF/genext2fs
+PKG_MD5SUM:=b7b6361bcce2cedff1ae437fadafe53b
 
 include $(INCLUDE_DIR)/host-build.mk
 
