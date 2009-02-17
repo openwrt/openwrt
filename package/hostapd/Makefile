@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,14 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=0.6.7
+PKG_VERSION:=0.6.8
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_MD5SUM:=0ce66cd5768235b5d2299f9efb9225d8
+PKG_MD5SUM:=4b183183e20af1386017e9f499184ee1
 PKG_BUILD_DEPENDS:=PACKAGE_kmod-madwifi:madwifi PACKAGE_kmod-mac80211:mac80211 PACKAGE_kmod-mac80211:libnl
 
 include $(INCLUDE_DIR)/package.mk
@@ -54,7 +54,7 @@ endef
 #endef
 
 define Package/hostapd/description
- This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS 
+ This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS
  Authenticator.
 endef
 
@@ -68,7 +68,7 @@ endef
 #endef
 
 define Package/hostapd-mini/description
- This package contains a minimal IEEE 802.1x/WPA/EAP/RADIUS Authenticator 
+ This package contains a minimal IEEE 802.1x/WPA/EAP/RADIUS Authenticator
  (WPA-PSK only).
 endef
 
@@ -79,7 +79,7 @@ define Package/hostapd-utils
 endef
 
 define Package/hostapd-utils/description
- This package contains a command line utility to control the 
+ This package contains a command line utility to control the
  IEEE 802.1x/WPA/EAP/RADIUS Authenticator.
 endef
 
@@ -112,7 +112,7 @@ define Package/InstallTemplate
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd/hostapd $$(1)/usr/sbin/
 # config is managed through uci
 #	$(INSTALL_DIR) $$(1)/etc
-#	$(INSTALL_CONF) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd/hostapd.conf $$(1)/etc/hostapd.conf 
+#	$(INSTALL_CONF) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd/hostapd.conf $$(1)/etc/hostapd.conf
 endef
 
 define Package/Template
