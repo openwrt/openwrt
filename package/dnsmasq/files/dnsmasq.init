@@ -182,7 +182,6 @@ dhcp_boot_add() {
 	local cfg="$1"
 
 	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
 
 	config_get filename "$cfg" filename
 	[ -n "$filename" ] || return 0
@@ -193,7 +192,7 @@ dhcp_boot_add() {
 	config_get serveraddress "$cfg" serveraddress
 	[ -n "$serveraddress" ] || return 0
 
-	append args "--dhcp-boot=net:$name,$filename,$servername,$serveraddress"
+	append args "--dhcp-boot=${name:+net:$name,}$filename,$servername,$serveraddress"
 
 	dhcp_option_add "$cfg" "$name"
 }
