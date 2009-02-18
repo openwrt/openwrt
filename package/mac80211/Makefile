@@ -268,12 +268,30 @@ define KernelPackage/mac80211-hwsim
 endef
 
 #Broadcom firmware
-PKG_B43_FWV4_NAME:=broadcom-wl
-PKG_B43_FWV4_VERSION:=4.150.10.5
-PKG_B43_FWV4_OBJECT:=driver/wl_apsta_mimo.o
-PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
-PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_B43_FWV4_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+ifneq ($(CONFIG_B43_EXPERIMENTAL),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=4.178.10.4
+  PKG_B43_FWV4_OBJECT:=wrt610n_v1.00.00.018_us/release/src/wl/linux/wl.o
+  PKG_B43_FWV4_SOURCE:=wrt610n_v1.00.00.018_us.tgz
+  PKG_B43_FWV4_SOURCE_URL:=ftp://ftp.linksys.com/opensourcecode/wrt610n/1.00.00.018/
+  PKG_B43_FWV4_MD5SUM:=adb206204a610c2055db1f387f813f59
+else
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=4.150.10.5
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/driver/wl_apsta_mimo.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+  PKG_B43_FWV4_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+endif
+ifneq ($(CONFIG_B43_OPENFIRMWARE),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=5.1
+  PKG_B43_FWV4_OBJECT:=openfwwf-$(PKG_B43_FWV4_VERSION)
+  PKG_B43_FWV4_SOURCE:=openfwwf-$(PKG_B43_FWV4_VERSION).tar.gz
+  PKG_B43_FWV4_SOURCE_URL:=http://www.ing.unibs.it/openfwwf/firmware/
+  PKG_B43_FWV4_MD5SUM:=b2e99ececc27cb70b818170cc5557fd5
+endif
+
 
 PKG_B43_FWV3_NAME:=wl_apsta
 PKG_B43_FWV3_VERSION:=3.130.20.0
@@ -281,16 +299,32 @@ PKG_B43_FWV3_SOURCE:=$(PKG_B43_FWV3_NAME)-$(PKG_B43_FWV3_VERSION).o
 PKG_B43_FWV3_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_B43_FWV3_MD5SUM:=e08665c5c5b66beb9c3b2dd54aa80cb3
 
-PKG_B43_FWCUTTER_NAME:=b43-fwcutter
-PKG_B43_FWCUTTER_VERSION:=011
-PKG_B43_FWCUTTER_SOURCE:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION).tar.bz2
-PKG_B43_FWCUTTER_SOURCE_URL:=http://bu3sch.de/b43/fwcutter/
-PKG_B43_FWCUTTER_MD5SUM:=3db2f4de85a459451f5b391cf67a8d44
+ifneq ($(CONFIG_B43_EXPERIMENTAL)$(CONFIG_B43_OPENFIRMWARE),)
+  PKG_B43_FWCUTTER_NAME:=b43-fwcutter
+  PKG_B43_FWCUTTER_VERSION:=3e69531aa65b8f664a0ab00dfc3e2eefeb0cb417
+  PKG_B43_FWCUTTER_SOURCE:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION).tar.bz2
+  PKG_B43_FWCUTTER_PROTO:=git
+  PKG_B43_FWCUTTER_SOURCE_URL:=http://git.bu3sch.de/git/b43-tools.git
+  PKG_B43_FWCUTTER_SUBDIR:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)
+  PKG_B43_FWCUTTER_OBJECT:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/fwcutter/
+else
+  PKG_B43_FWCUTTER_NAME:=b43-fwcutter
+  PKG_B43_FWCUTTER_VERSION:=011
+  PKG_B43_FWCUTTER_SOURCE:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION).tar.bz2
+  PKG_B43_FWCUTTER_PROTO:=default
+  PKG_B43_FWCUTTER_SOURCE_URL:=http://bu3sch.de/b43/fwcutter/
+  PKG_B43_FWCUTTER_MD5SUM:=3db2f4de85a459451f5b391cf67a8d44
+  PKG_B43_FWCUTTER_SUBDIR:=b43-fwcutter-$(PKG_B43_FWCUTTER_VERSION)
+  PKG_B43_FWCUTTER_OBJECT:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/
+endif
 
 define Download/b43-common
   FILE:=$(PKG_B43_FWCUTTER_SOURCE)
   URL:=$(PKG_B43_FWCUTTER_SOURCE_URL)
   MD5SUM:=$(PKG_B43_FWCUTTER_MD5SUM)
+  PROTO:=$(PKG_B43_FWCUTTER_PROTO)
+  VERSION:=$(PKG_B43_FWCUTTER_VERSION)
+  SUBDIR:=$(PKG_B43_FWCUTTER_SUBDIR)
 endef
 $(eval $(call Download,b43-common))
 
@@ -320,6 +354,10 @@ $(call KernelPackage/b43-common)
   TITLE:=Broadcom 43xx wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43/b43.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,b43)
+endef
+
+define KernelPackage/b43/config
+	source "$(SOURCE)/Config.in"
 endef
 
 define KernelPackage/b43/description
@@ -436,27 +474,42 @@ endef
 
 define Build/b43-common
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWCUTTER_SOURCE)" -C "$(PKG_BUILD_DIR)"
-	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)" \
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_OBJECT)" \
 		CFLAGS="-I$(STAGING_DIR_HOST)/include -include endian.h"
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_OBJECT)/b43-fwcutter $(STAGING_DIR_HOST)/bin/
+ifneq ($(CONFIG_B43_OPENFIRMWARE),)
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_SUBDIR)/assembler/"
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_SUBDIR)/assembler/b43-asm $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_SUBDIR)/assembler/b43-asm.bin $(STAGING_DIR_HOST)/bin/
+endif
 endef
 
 define KernelPackage/b43/install
+	rm -rf $(1)/lib/firmware/
 	$(call Build/b43-common)
+ifneq ($(CONFIG_B43_EXPERIMENTAL)$(CONFIG_B43_OPENFIRMWARE),)
+	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+else
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+endif
 	$(INSTALL_DIR) $(1)/lib/firmware/
-
-	$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/b43-fwcutter \
-	-w $(1)/lib/firmware/ \
-	$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/$(PKG_B43_FWV4_OBJECT)
+ifneq ($(CONFIG_B43_OPENFIRMWARE),)
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/"
+	$(INSTALL_DIR) $(1)/lib/firmware/b43-open/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/ucode5.fw $(1)/lib/firmware/b43-open/ucode5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0bsinitvals5.fw $(1)/lib/firmware/b43-open/b0g0bsinitvals5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0initvals5.fw $(1)/lib/firmware/b43-open/b0g0initvals5.fw
+else
+	b43-fwcutter --unsupported -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)
+endif
 endef
 
 define KernelPackage/b43legacy/install
 	$(call Build/b43-common)
 	$(INSTALL_DIR) $(1)/lib/firmware/
 
-	$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/b43-fwcutter \
-	-w $(1)/lib/firmware/ \
-	$(DL_DIR)/$(PKG_B43_FWV3_SOURCE)
+	b43-fwcutter --unsupported -w $(1)/lib/firmware/ $(DL_DIR)/$(PKG_B43_FWV3_SOURCE)
 endef
 
 $(eval $(call KernelPackage,ath5k))
