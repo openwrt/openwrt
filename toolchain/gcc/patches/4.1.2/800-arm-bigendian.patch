@@ -3,10 +3,8 @@ Adds support for arm*b-linux* big-endian ARM targets
 
 See http://gcc.gnu.org/PR16350
 
-Index: gcc-4.1.1/gcc/config/arm/linux-elf.h
-===================================================================
---- gcc-4.1.1.orig/gcc/config/arm/linux-elf.h
-+++ gcc-4.1.1/gcc/config/arm/linux-elf.h
+--- a/gcc/config/arm/linux-elf.h
++++ b/gcc/config/arm/linux-elf.h
 @@ -28,19 +28,33 @@
  #undef  TARGET_VERSION
  #define TARGET_VERSION  fputs (" (ARM GNU/Linux with ELF)", stderr);
@@ -44,7 +42,7 @@ Index: gcc-4.1.1/gcc/config/arm/linux-elf.h
  
  /* Now we define the strings used to build the spec file.  */
  #undef  LIB_SPEC
-@@ -61,7 +75,7 @@
+@@ -65,7 +79,7 @@
     %{rdynamic:-export-dynamic} \
     %{!dynamic-linker:-dynamic-linker " LINUX_TARGET_INTERPRETER "} \
     -X \
@@ -53,10 +51,8 @@ Index: gcc-4.1.1/gcc/config/arm/linux-elf.h
     SUBTARGET_EXTRA_LINK_SPEC
  
  #undef  LINK_SPEC
-Index: gcc-4.1.1/gcc/config.gcc
-===================================================================
---- gcc-4.1.1.orig/gcc/config.gcc
-+++ gcc-4.1.1/gcc/config.gcc
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
 @@ -672,6 +672,11 @@ arm*-*-netbsd*)
  	;;
  arm*-*-linux*)			# ARM GNU/Linux with ELF
@@ -68,11 +64,9 @@ Index: gcc-4.1.1/gcc/config.gcc
 +	esac
  	tmake_file="${tmake_file} t-linux arm/t-arm"
  	case ${target} in
- 	arm*-*-linux-gnueabi)
-Index: gcc-4.1.1/gcc/config/arm/linux-eabi.h
-===================================================================
---- gcc-4.1.1.orig/gcc/config/arm/linux-eabi.h
-+++ gcc-4.1.1/gcc/config/arm/linux-eabi.h
+ 	arm*-*-linux-gnueabi | arm*-*-linux-uclibcgnueabi)
+--- a/gcc/config/arm/linux-eabi.h
++++ b/gcc/config/arm/linux-eabi.h
 @@ -20,6 +20,17 @@
     the Free Software Foundation, 51 Franklin Street, Fifth Floor,
     Boston, MA 02110-1301, USA.  */
@@ -100,10 +94,8 @@ Index: gcc-4.1.1/gcc/config/arm/linux-eabi.h
  
  /* Use ld-linux.so.3 so that it will be possible to run "classic"
     GNU/Linux binaries on an EABI system.  */
-Index: gcc-4.1.1/gcc/config/arm/bpabi.h
-===================================================================
---- gcc-4.1.1.orig/gcc/config/arm/bpabi.h
-+++ gcc-4.1.1/gcc/config/arm/bpabi.h
+--- a/gcc/config/arm/bpabi.h
++++ b/gcc/config/arm/bpabi.h
 @@ -33,9 +33,19 @@
  #undef FPUTYPE_DEFAULT
  #define FPUTYPE_DEFAULT FPUTYPE_VFP

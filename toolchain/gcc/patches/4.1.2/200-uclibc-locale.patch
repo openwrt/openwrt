@@ -1,6 +1,6 @@
---- gcc-4.1.0-dist/libstdc++-v3/acinclude.m4
-+++ gcc-4.1.0/libstdc++-v3/acinclude.m4
-@@ -1071,7 +1071,7 @@
+--- a/libstdc++-v3/acinclude.m4
++++ b/libstdc++-v3/acinclude.m4
+@@ -1003,7 +1003,7 @@ AC_DEFUN([GLIBCXX_ENABLE_CLOCALE], [
    AC_MSG_CHECKING([for C locale to use])
    GLIBCXX_ENABLE(clocale,auto,[@<:@=MODEL@:>@],
      [use MODEL for target locale package],
@@ -9,7 +9,7 @@
    
    # If they didn't use this option switch, or if they specified --enable
    # with no specific model, we'll have to look for one.  If they
-@@ -1087,6 +1087,9 @@
+@@ -1019,6 +1019,9 @@ AC_DEFUN([GLIBCXX_ENABLE_CLOCALE], [
    # Default to "generic".
    if test $enable_clocale_flag = auto; then
      case ${target_os} in
@@ -19,7 +19,7 @@
        linux* | gnu* | kfreebsd*-gnu | knetbsd*-gnu)
          AC_EGREP_CPP([_GLIBCXX_ok], [
          #include <features.h>
-@@ -1230,6 +1233,40 @@
+@@ -1162,6 +1165,40 @@ AC_DEFUN([GLIBCXX_ENABLE_CLOCALE], [
        CTIME_CC=config/locale/generic/time_members.cc
        CLOCALE_INTERNAL_H=config/locale/generic/c++locale_internal.h
        ;;
@@ -60,8 +60,8 @@
    esac
  
    # This is where the testsuite looks for locale catalogs, using the
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/c++locale_internal.h
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/c++locale_internal.h
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/c++locale_internal.h
 @@ -0,0 +1,63 @@
 +// Prototypes for GLIBC thread locale __-prefixed functions -*- C++ -*-
 +
@@ -126,8 +126,8 @@
 +#endif 
 +
 +#endif // GLIBC 2.3 and later
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/c_locale.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/c_locale.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/c_locale.cc
 @@ -0,0 +1,152 @@
 +// Wrapper for underlying C-language localization -*- C++ -*-
 +
@@ -281,8 +281,8 @@
 +{
 +  const char* const* const locale::_S_categories = __gnu_cxx::category_names;
 +}  // namespace std
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/c_locale.h
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/c_locale.h
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/c_locale.h
 @@ -0,0 +1,117 @@
 +// Wrapper for underlying C-language localization -*- C++ -*-
 +
@@ -401,8 +401,8 @@
 +}
 +
 +#endif
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/codecvt_members.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/codecvt_members.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/codecvt_members.cc
 @@ -0,0 +1,306 @@
 +// std::codecvt implementation details, GNU version -*- C++ -*-
 +
@@ -710,8 +710,8 @@
 +  }
 +#endif
 +}
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/collate_members.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/collate_members.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/collate_members.cc
 @@ -0,0 +1,80 @@
 +// std::collate implementation details, GNU version -*- C++ -*-
 +
@@ -793,8 +793,8 @@
 +    { return __wcsxfrm_l(__to, __from, __n, _M_c_locale_collate); }
 +#endif
 +}
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/ctype_members.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/ctype_members.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/ctype_members.cc
 @@ -0,0 +1,314 @@
 +// std::ctype implementation details, GNU version -*- C++ -*-
 +
@@ -1110,8 +1110,8 @@
 +  }
 +#endif //  _GLIBCXX_USE_WCHAR_T
 +}
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/messages_members.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/messages_members.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/messages_members.cc
 @@ -0,0 +1,100 @@
 +// std::messages implementation details, GNU version -*- C++ -*-
 +
@@ -1213,8 +1213,8 @@
 +    }
 +#endif
 +}
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/messages_members.h
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/messages_members.h
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/messages_members.h
 @@ -0,0 +1,121 @@
 +// std::messages implementation details, GNU version -*- C++ -*-
 +
@@ -1337,8 +1337,8 @@
 +	   this->_S_create_c_locale(this->_M_c_locale_messages, __s); 
 +	 }
 +     }
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/monetary_members.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/monetary_members.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/monetary_members.cc
 @@ -0,0 +1,692 @@
 +// std::moneypunct implementation details, GNU version -*- C++ -*-
 +
@@ -2032,8 +2032,8 @@
 +    }
 +#endif
 +}
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/numeric_members.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/numeric_members.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/numeric_members.cc
 @@ -0,0 +1,173 @@
 +// std::numpunct implementation details, GNU version -*- C++ -*-
 +
@@ -2208,8 +2208,8 @@
 +    { delete _M_data; }
 + #endif
 +}
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/time_members.cc
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/time_members.cc
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/time_members.cc
 @@ -0,0 +1,406 @@
 +// std::time_get, std::time_put implementation, GNU version -*- C++ -*-
 +
@@ -2617,8 +2617,8 @@
 +    }
 +#endif
 +}
---- gcc-4.1.0-dist/libstdc++-v3/config/locale/uclibc/time_members.h
-+++ gcc-4.1.0/libstdc++-v3/config/locale/uclibc/time_members.h
+--- /dev/null
++++ b/libstdc++-v3/config/locale/uclibc/time_members.h
 @@ -0,0 +1,76 @@
 +// std::time_get, std::time_put implementation, GNU version -*- C++ -*-
 +
@@ -2696,8 +2696,8 @@
 +      delete _M_data; 
 +      _S_destroy_c_locale(_M_c_locale_timepunct); 
 +    }
---- gcc-4.1.0-dist/libstdc++-v3/config/os/uclibc/ctype_base.h
-+++ gcc-4.1.0/libstdc++-v3/config/os/uclibc/ctype_base.h
+--- /dev/null
++++ b/libstdc++-v3/config/os/uclibc/ctype_base.h
 @@ -0,0 +1,64 @@
 +// Locale support -*- C++ -*-
 +
@@ -2763,8 +2763,8 @@
 +    static const mask punct 	= _ISpunct;
 +    static const mask alnum 	= _ISalpha | _ISdigit;
 +  };
---- gcc-4.1.0-dist/libstdc++-v3/config/os/uclibc/ctype_inline.h
-+++ gcc-4.1.0/libstdc++-v3/config/os/uclibc/ctype_inline.h
+--- /dev/null
++++ b/libstdc++-v3/config/os/uclibc/ctype_inline.h
 @@ -0,0 +1,69 @@
 +// Locale support -*- C++ -*-
 +
@@ -2835,8 +2835,8 @@
 +      ++__low;
 +    return __low;
 +  }
---- gcc-4.1.0-dist/libstdc++-v3/config/os/uclibc/ctype_noninline.h
-+++ gcc-4.1.0/libstdc++-v3/config/os/uclibc/ctype_noninline.h
+--- /dev/null
++++ b/libstdc++-v3/config/os/uclibc/ctype_noninline.h
 @@ -0,0 +1,92 @@
 +// Locale support -*- C++ -*-
 +
@@ -2930,8 +2930,8 @@
 +      }
 +    return __high;
 +  }
---- gcc-4.1.0-dist/libstdc++-v3/config/os/uclibc/os_defines.h
-+++ gcc-4.1.0/libstdc++-v3/config/os/uclibc/os_defines.h
+--- /dev/null
++++ b/libstdc++-v3/config/os/uclibc/os_defines.h
 @@ -0,0 +1,44 @@
 +// Specific definitions for GNU/Linux  -*- C++ -*-
 +
@@ -2977,9 +2977,9 @@
 +#define __NO_STRING_INLINES
 +
 +#endif
---- gcc-4.1.0-dist/libstdc++-v3/configure
-+++ gcc-4.1.0/libstdc++-v3/configure
-@@ -4005,6 +4005,11 @@
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -4005,6 +4005,11 @@ linux-gnu*)
    lt_cv_deplibs_check_method=pass_all
    ;;
  
@@ -2991,7 +2991,7 @@
  netbsd* | knetbsd*-gnu)
    if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
      lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
-@@ -5740,7 +5745,7 @@
+@@ -5740,7 +5745,7 @@ if test "${enable_clocale+set}" = set; t
    enableval="$enable_clocale"
  
        case "$enableval" in
@@ -3000,7 +3000,7 @@
         *) { { echo "$as_me:$LINENO: error: Unknown argument to enable/disable clocale" >&5
  echo "$as_me: error: Unknown argument to enable/disable clocale" >&2;}
     { (exit 1); exit 1; }; } ;;
-@@ -5765,6 +5770,9 @@
+@@ -5765,6 +5770,9 @@ fi;
    # Default to "generic".
    if test $enable_clocale_flag = auto; then
      case ${target_os} in
@@ -3010,7 +3010,7 @@
        linux* | gnu* | kfreebsd*-gnu | knetbsd*-gnu)
          cat >conftest.$ac_ext <<_ACEOF
  /* confdefs.h.  */
-@@ -5995,6 +6003,76 @@
+@@ -5995,6 +6003,76 @@ echo "${ECHO_T}IEEE 1003.1" >&6
        CTIME_CC=config/locale/generic/time_members.cc
        CLOCALE_INTERNAL_H=config/locale/generic/c++locale_internal.h
        ;;
@@ -3087,9 +3087,9 @@
    esac
  
    # This is where the testsuite looks for locale catalogs, using the
---- gcc-4.1.0-dist/libstdc++-v3/configure.host
-+++ gcc-4.1.0/libstdc++-v3/configure.host
-@@ -261,6 +261,12 @@
+--- a/libstdc++-v3/configure.host
++++ b/libstdc++-v3/configure.host
+@@ -270,6 +270,12 @@ case "${host_os}" in
      ;;
  esac
  
@@ -3102,9 +3102,9 @@
  
  # Set any OS-dependent and CPU-dependent bits.
  # THIS TABLE IS SORTED.  KEEP IT THAT WAY.
---- gcc-4.1.0-dist/libstdc++-v3/crossconfig.m4
-+++ gcc-4.1.0/libstdc++-v3/crossconfig.m4
-@@ -143,6 +143,99 @@
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -143,6 +143,99 @@ case "${host}" in
  	;;
      esac
      ;;
@@ -3204,7 +3204,7 @@
    *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-knetbsd*-gnu)
      AC_CHECK_HEADERS([nan.h ieeefp.h endian.h sys/isa_defs.h \
        machine/endian.h machine/param.h sys/machine.h sys/types.h \
-@@ -157,7 +250,7 @@
+@@ -157,7 +250,7 @@ case "${host}" in
      AC_DEFINE(HAVE_INT64_T)
      case "$target" in
        *-uclinux*)
@@ -3213,9 +3213,9 @@
          ;;
        *)
          AC_DEFINE(_GLIBCXX_USE_LFS)
---- gcc-4.1.0-dist/libstdc++-v3/include/c_compatibility/wchar.h
-+++ gcc-4.1.0/libstdc++-v3/include/c_compatibility/wchar.h
-@@ -101,7 +101,9 @@
+--- a/libstdc++-v3/include/c_compatibility/wchar.h
++++ b/libstdc++-v3/include/c_compatibility/wchar.h
+@@ -101,7 +101,9 @@ using std::wmemcmp;
  using std::wmemcpy;
  using std::wmemmove;
  using std::wmemset;
@@ -3225,9 +3225,9 @@
  
  #if _GLIBCXX_USE_C99
  using std::wcstold;
---- gcc-4.1.0-dist/libstdc++-v3/include/c_std/std_cwchar.h
-+++ gcc-4.1.0/libstdc++-v3/include/c_std/std_cwchar.h
-@@ -180,7 +180,9 @@
+--- a/libstdc++-v3/include/c_std/std_cwchar.h
++++ b/libstdc++-v3/include/c_std/std_cwchar.h
+@@ -180,7 +180,9 @@ namespace std
    using ::wcscoll;
    using ::wcscpy;
    using ::wcscspn;

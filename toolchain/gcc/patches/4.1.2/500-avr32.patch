@@ -1,7 +1,6 @@
-diff -Nur gcc-4.1.2/config.sub gcc-4.1.2-owrt/config.sub
---- gcc-4.1.2/config.sub	2005-12-16 13:57:40.000000000 +0100
-+++ gcc-4.1.2-owrt/config.sub	2007-05-24 12:03:28.000000000 +0200
-@@ -239,7 +239,7 @@
+--- a/config.sub
++++ b/config.sub
+@@ -239,7 +239,7 @@ case $basic_machine in
  	| alpha | alphaev[4-8] | alphaev56 | alphaev6[78] | alphapca5[67] \
  	| alpha64 | alpha64ev[4-8] | alpha64ev56 | alpha64ev6[78] | alpha64pca5[67] \
  	| am33_2.0 \
@@ -10,7 +9,7 @@ diff -Nur gcc-4.1.2/config.sub gcc-4.1.2-owrt/config.sub
  	| bfin \
  	| c4x | clipper \
  	| d10v | d30v | dlx | dsp16xx \
-@@ -316,7 +316,7 @@
+@@ -316,7 +316,7 @@ case $basic_machine in
  	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
  	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* \
  	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
@@ -19,10 +18,9 @@ diff -Nur gcc-4.1.2/config.sub gcc-4.1.2-owrt/config.sub
  	| bfin-* | bs2000-* \
  	| c[123]* | c30-* | [cjt]90-* | c4x-* | c54x-* | c55x-* | c6x-* \
  	| clipper-* | craynv-* | cydra-* \
-diff -Nur gcc-4.1.2/configure.in gcc-4.1.2-owrt/configure.in
---- gcc-4.1.2/configure.in	2006-11-21 18:48:36.000000000 +0100
-+++ gcc-4.1.2-owrt/configure.in	2007-05-24 12:03:28.000000000 +0200
-@@ -497,6 +497,9 @@
+--- a/configure.in
++++ b/configure.in
+@@ -497,6 +497,9 @@ case "${target}" in
    arm-*-riscix*)
      noconfigdirs="$noconfigdirs ld target-libgloss ${libgcj}"
      ;;
@@ -32,10 +30,9 @@ diff -Nur gcc-4.1.2/configure.in gcc-4.1.2-owrt/configure.in
    avr-*-*)
      noconfigdirs="$noconfigdirs target-libiberty target-libstdc++-v3 ${libgcj}"
      ;;
-diff -Nur gcc-4.1.2/gcc/builtins.c gcc-4.1.2-owrt/gcc/builtins.c
---- gcc-4.1.2/gcc/builtins.c	2006-10-06 19:06:52.000000000 +0200
-+++ gcc-4.1.2-owrt/gcc/builtins.c	2007-05-24 12:03:28.000000000 +0200
-@@ -9228,7 +9228,7 @@
+--- a/gcc/builtins.c
++++ b/gcc/builtins.c
+@@ -9228,7 +9228,7 @@ validate_arglist (tree arglist, ...)
  
    do
      {
@@ -44,10 +41,9 @@ diff -Nur gcc-4.1.2/gcc/builtins.c gcc-4.1.2-owrt/gcc/builtins.c
        switch (code)
  	{
  	case 0:
-diff -Nur gcc-4.1.2/gcc/calls.c gcc-4.1.2-owrt/gcc/calls.c
---- gcc-4.1.2/gcc/calls.c	2007-01-29 18:08:31.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/calls.c	2007-05-24 12:03:28.000000000 +0200
-@@ -3434,7 +3434,7 @@
+--- a/gcc/calls.c
++++ b/gcc/calls.c
+@@ -3434,7 +3434,7 @@ emit_library_call_value_1 (int retval, r
    for (; count < nargs; count++)
      {
        rtx val = va_arg (p, rtx);
@@ -56,9 +52,8 @@ diff -Nur gcc-4.1.2/gcc/calls.c gcc-4.1.2-owrt/gcc/calls.c
  
        /* We cannot convert the arg value to the mode the library wants here;
  	 must do it earlier where we know the signedness of the arg.  */
-diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.c gcc-4.1.2-owrt/gcc/config/avr32/avr32.c
---- gcc-4.1.2/gcc/config/avr32/avr32.c	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/avr32.c	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/avr32.c
 @@ -0,0 +1,7273 @@
 +/*
 +   Target hooks and helper functions for AVR32.
@@ -7333,9 +7328,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.c gcc-4.1.2-owrt/gcc/config/avr32/avr
 +  set_optab_libfunc (lshr_optab, DImode, "__avr32_lsr64");
 +  set_optab_libfunc (ashr_optab, DImode, "__avr32_asr64");
 +}
-diff -Nur gcc-4.1.2/gcc/config/avr32/avr32-elf.h gcc-4.1.2-owrt/gcc/config/avr32/avr32-elf.h
---- gcc-4.1.2/gcc/config/avr32/avr32-elf.h	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/avr32-elf.h	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/avr32-elf.h
 @@ -0,0 +1,82 @@
 +/*
 +   Elf specific definitions.
@@ -7419,9 +7413,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/avr32-elf.h gcc-4.1.2-owrt/gcc/config/avr32
 +	builtin_define ("__AVR32_HAS_BRANCH_PRED__");		\
 +    }								\
 +  while (0)
-diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.h gcc-4.1.2-owrt/gcc/config/avr32/avr32.h
---- gcc-4.1.2/gcc/config/avr32/avr32.h	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/avr32.h	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/avr32.h
 @@ -0,0 +1,3322 @@
 +/*
 +   Definitions of target machine for AVR32.
@@ -10745,9 +10738,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.h gcc-4.1.2-owrt/gcc/config/avr32/avr
 +#endif
 +
 +#endif
-diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.md gcc-4.1.2-owrt/gcc/config/avr32/avr32.md
---- gcc-4.1.2/gcc/config/avr32/avr32.md	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/avr32.md	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/avr32.md
 @@ -0,0 +1,4694 @@
 +;;   AVR32 machine description file.
 +;;   Copyright 2003-2006 Atmel Corporation.
@@ -15443,14 +15435,12 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.md gcc-4.1.2-owrt/gcc/config/avr32/av
 +
 +;; Load the FP coprocessor patterns
 +(include "fpcp.md")
-diff -Nur gcc-4.1.2/gcc/config/avr32/avr32-modes.def gcc-4.1.2-owrt/gcc/config/avr32/avr32-modes.def
---- gcc-4.1.2/gcc/config/avr32/avr32-modes.def	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/avr32-modes.def	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/avr32-modes.def
 @@ -0,0 +1 @@
 +VECTOR_MODES (INT, 4);        /*            V4QI V2HI */
-diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.opt gcc-4.1.2-owrt/gcc/config/avr32/avr32.opt
---- gcc-4.1.2/gcc/config/avr32/avr32.opt	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/avr32.opt	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/avr32.opt
 @@ -0,0 +1,78 @@
 +; Options for the ATMEL AVR32 port of the compiler.
 +
@@ -15530,9 +15520,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/avr32.opt gcc-4.1.2-owrt/gcc/config/avr32/a
 +Specify the AVR32 architecture name
 +
 +
-diff -Nur gcc-4.1.2/gcc/config/avr32/avr32-protos.h gcc-4.1.2-owrt/gcc/config/avr32/avr32-protos.h
---- gcc-4.1.2/gcc/config/avr32/avr32-protos.h	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/avr32-protos.h	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/avr32-protos.h
 @@ -0,0 +1,175 @@
 +/*
 +   Prototypes for exported functions defined in avr32.c
@@ -15709,9 +15698,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/avr32-protos.h gcc-4.1.2-owrt/gcc/config/av
 +void avr32_override_options (void);
 +
 +#endif /* AVR32_PROTOS_H */
-diff -Nur gcc-4.1.2/gcc/config/avr32/crti.asm gcc-4.1.2-owrt/gcc/config/avr32/crti.asm
---- gcc-4.1.2/gcc/config/avr32/crti.asm	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/crti.asm	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/crti.asm
 @@ -0,0 +1,64 @@
 +/*
 +   Init/fini stuff for AVR32.
@@ -15777,9 +15765,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/crti.asm gcc-4.1.2-owrt/gcc/config/avr32/cr
 +1:	.long	0b - _GLOBAL_OFFSET_TABLE_		
 +2:	
 +
-diff -Nur gcc-4.1.2/gcc/config/avr32/crtn.asm gcc-4.1.2-owrt/gcc/config/avr32/crtn.asm
---- gcc-4.1.2/gcc/config/avr32/crtn.asm	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/crtn.asm	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/crtn.asm
 @@ -0,0 +1,44 @@
 +/*   Copyright (C) 2001 Free Software Foundation, Inc.
 +    Written By Nick Clifton
@@ -15825,9 +15812,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/crtn.asm gcc-4.1.2-owrt/gcc/config/avr32/cr
 +	.section	".fini"
 +	ldm	sp++, r6, pc
 +		
-diff -Nur gcc-4.1.2/gcc/config/avr32/fpcp.md gcc-4.1.2-owrt/gcc/config/avr32/fpcp.md
---- gcc-4.1.2/gcc/config/avr32/fpcp.md	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/fpcp.md	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/fpcp.md
 @@ -0,0 +1,551 @@
 +;;   AVR32 machine description file for Floating-Point instructions.
 +;;   Copyright 2003-2006 Atmel Corporation.
@@ -16380,9 +16366,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/fpcp.md gcc-4.1.2-owrt/gcc/config/avr32/fpc
 +  [(set_attr "type" "fstm")
 +   (set_attr "length" "4")
 +   (set_attr "cc" "none")])
-diff -Nur gcc-4.1.2/gcc/config/avr32/lib1funcs.S gcc-4.1.2-owrt/gcc/config/avr32/lib1funcs.S
---- gcc-4.1.2/gcc/config/avr32/lib1funcs.S	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/lib1funcs.S	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/lib1funcs.S
 @@ -0,0 +1,1678 @@
 +/*#define __IEEE_LARGE_FLOATS__*/
 +
@@ -18062,9 +18047,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/lib1funcs.S gcc-4.1.2-owrt/gcc/config/avr32
 +.Linf_sf:	
 +	.long	0xff000000
 +
-diff -Nur gcc-4.1.2/gcc/config/avr32/lib2funcs.S gcc-4.1.2-owrt/gcc/config/avr32/lib2funcs.S
---- gcc-4.1.2/gcc/config/avr32/lib2funcs.S	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/lib2funcs.S	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/lib2funcs.S
 @@ -0,0 +1,21 @@
 +	.align	4
 +	.global __nonlocal_goto
@@ -18087,9 +18071,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/lib2funcs.S gcc-4.1.2-owrt/gcc/config/avr32
 +
 +
 +		
-diff -Nur gcc-4.1.2/gcc/config/avr32/linux-elf.h gcc-4.1.2-owrt/gcc/config/avr32/linux-elf.h
---- gcc-4.1.2/gcc/config/avr32/linux-elf.h	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/linux-elf.h	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/linux-elf.h
 @@ -0,0 +1,154 @@
 +/*
 +   Linux/Elf specific definitions.
@@ -18245,9 +18228,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/linux-elf.h gcc-4.1.2-owrt/gcc/config/avr32
 +
 +#define LINK_GCC_C_SEQUENCE_SPEC \
 +  "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
-diff -Nur gcc-4.1.2/gcc/config/avr32/predicates.md gcc-4.1.2-owrt/gcc/config/avr32/predicates.md
---- gcc-4.1.2/gcc/config/avr32/predicates.md	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/predicates.md	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/predicates.md
 @@ -0,0 +1,303 @@
 +;;   AVR32 predicates file.
 +;;   Copyright 2003-2006 Atmel Corporation.
@@ -18552,9 +18534,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/predicates.md gcc-4.1.2-owrt/gcc/config/avr
 +  (and (match_operand 0 "immediate_operand")
 +       (match_test "CONST_OK_FOR_CONSTRAINT_P(INTVAL(op), 'K', \"Ku02\")")))
 +
-diff -Nur gcc-4.1.2/gcc/config/avr32/simd.md gcc-4.1.2-owrt/gcc/config/avr32/simd.md
---- gcc-4.1.2/gcc/config/avr32/simd.md	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/simd.md	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/simd.md
 @@ -0,0 +1,145 @@
 +;;   AVR32 machine description file for SIMD instructions.
 +;;   Copyright 2003-2006 Atmel Corporation.
@@ -18701,9 +18682,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/simd.md gcc-4.1.2-owrt/gcc/config/avr32/sim
 +  "psubadd.h\t%0, %1:b, %2:b"
 +  [(set_attr "length" "4")
 +   (set_attr "type" "alu")])
-diff -Nur gcc-4.1.2/gcc/config/avr32/t-avr32 gcc-4.1.2-owrt/gcc/config/avr32/t-avr32
---- gcc-4.1.2/gcc/config/avr32/t-avr32	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/t-avr32	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/t-avr32
 @@ -0,0 +1,63 @@
 +
 +MD_INCLUDES= 	$(srcdir)/config/avr32/avr32.md \
@@ -18768,9 +18748,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/t-avr32 gcc-4.1.2-owrt/gcc/config/avr32/t-a
 +
 +
 +
-diff -Nur gcc-4.1.2/gcc/config/avr32/t-elf gcc-4.1.2-owrt/gcc/config/avr32/t-elf
---- gcc-4.1.2/gcc/config/avr32/t-elf	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/t-elf	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/t-elf
 @@ -0,0 +1,16 @@
 +
 +# Assemble startup files.
@@ -18788,9 +18767,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/t-elf gcc-4.1.2-owrt/gcc/config/avr32/t-elf
 +
 +LIBGCC = stmp-multilib
 +INSTALL_LIBGCC = install-multilib
-diff -Nur gcc-4.1.2/gcc/config/avr32/uclinux-elf.h gcc-4.1.2-owrt/gcc/config/avr32/uclinux-elf.h
---- gcc-4.1.2/gcc/config/avr32/uclinux-elf.h	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/config/avr32/uclinux-elf.h	2007-05-24 12:03:28.000000000 +0200
+--- /dev/null
++++ b/gcc/config/avr32/uclinux-elf.h
 @@ -0,0 +1,20 @@
 +
 +/* Run-time Target Specification.  */
@@ -18812,9 +18790,8 @@ diff -Nur gcc-4.1.2/gcc/config/avr32/uclinux-elf.h gcc-4.1.2-owrt/gcc/config/avr
 +
 +#undef TARGET_DEFAULT
 +#define TARGET_DEFAULT (AVR32_FLAG_NO_INIT_GOT)
-diff -Nur gcc-4.1.2/gcc/config/host-linux.c gcc-4.1.2-owrt/gcc/config/host-linux.c
---- gcc-4.1.2/gcc/config/host-linux.c	2005-08-01 19:43:33.000000000 +0200
-+++ gcc-4.1.2-owrt/gcc/config/host-linux.c	2007-05-24 12:03:28.000000000 +0200
+--- a/gcc/config/host-linux.c
++++ b/gcc/config/host-linux.c
 @@ -26,6 +26,9 @@
  #include "hosthooks.h"
  #include "hosthooks-def.h"
@@ -18825,10 +18802,9 @@ diff -Nur gcc-4.1.2/gcc/config/host-linux.c gcc-4.1.2-owrt/gcc/config/host-linux
  
  /* Linux has a feature called exec-shield-randomize that perturbs the
     address of non-fixed mapped segments by a (relatively) small amount.
-diff -Nur gcc-4.1.2/gcc/config.gcc gcc-4.1.2-owrt/gcc/config.gcc
---- gcc-4.1.2/gcc/config.gcc	2006-10-16 01:12:23.000000000 +0200
-+++ gcc-4.1.2-owrt/gcc/config.gcc	2007-05-24 12:03:28.000000000 +0200
-@@ -751,6 +751,24 @@
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -751,6 +751,24 @@ avr-*-*)
  	tm_file="avr/avr.h dbxelf.h"
  	use_fixproto=yes
  	;;
@@ -18853,7 +18829,7 @@ diff -Nur gcc-4.1.2/gcc/config.gcc gcc-4.1.2-owrt/gcc/config.gcc
  bfin*-elf*)
  	tm_file="${tm_file} dbxelf.h elfos.h bfin/elf.h"
          tmake_file=bfin/t-bfin-elf
-@@ -1614,6 +1632,9 @@
+@@ -1614,6 +1632,9 @@ pdp11-*-bsd)
  pdp11-*-*)
  	use_fixproto=yes
  	;;
@@ -18863,7 +18839,7 @@ diff -Nur gcc-4.1.2/gcc/config.gcc gcc-4.1.2-owrt/gcc/config.gcc
  # port not yet contributed
  #powerpc-*-openbsd*)
  #	tmake_file="${tmake_file} rs6000/t-fprules "
-@@ -2575,6 +2596,21 @@
+@@ -2581,6 +2602,21 @@ case "${target}" in
  		fi
  		;;
  
@@ -18885,10 +18861,9 @@ diff -Nur gcc-4.1.2/gcc/config.gcc gcc-4.1.2-owrt/gcc/config.gcc
  	fr*-*-*linux*)
  		supported_defaults=cpu
  		case "$with_cpu" in
-diff -Nur gcc-4.1.2/gcc/doc/extend.texi gcc-4.1.2-owrt/gcc/doc/extend.texi
---- gcc-4.1.2/gcc/doc/extend.texi	2007-01-28 20:26:29.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/doc/extend.texi	2007-05-24 12:03:28.000000000 +0200
-@@ -1887,7 +1887,7 @@
+--- a/gcc/doc/extend.texi
++++ b/gcc/doc/extend.texi
+@@ -1887,7 +1887,7 @@ this attribute to work correctly.
  
  @item interrupt
  @cindex interrupt handler functions
@@ -18897,7 +18872,7 @@ diff -Nur gcc-4.1.2/gcc/doc/extend.texi gcc-4.1.2-owrt/gcc/doc/extend.texi
  ports to indicate that the specified function is an interrupt handler.
  The compiler will generate function entry and exit sequences suitable
  for use in an interrupt handler when this attribute is present.
-@@ -1906,6 +1906,15 @@
+@@ -1906,6 +1906,15 @@ void f () __attribute__ ((interrupt ("IR
  
  Permissible values for this parameter are: IRQ, FIQ, SWI, ABORT and UNDEF@.
  
@@ -18913,7 +18888,7 @@ diff -Nur gcc-4.1.2/gcc/doc/extend.texi gcc-4.1.2-owrt/gcc/doc/extend.texi
  @item interrupt_handler
  @cindex interrupt handler functions on the Blackfin, m68k, H8/300 and SH processors
  Use this attribute on the Blackfin, m68k, H8/300, H8/300H, H8S, and SH to
-@@ -5807,6 +5816,7 @@
+@@ -5807,6 +5816,7 @@ instructions, but allow the compiler to 
  @menu
  * Alpha Built-in Functions::
  * ARM Built-in Functions::
@@ -18921,7 +18896,7 @@ diff -Nur gcc-4.1.2/gcc/doc/extend.texi gcc-4.1.2-owrt/gcc/doc/extend.texi
  * Blackfin Built-in Functions::
  * FR-V Built-in Functions::
  * X86 Built-in Functions::
-@@ -6045,6 +6055,54 @@
+@@ -6045,6 +6055,54 @@ long long __builtin_arm_wxor (long long,
  long long __builtin_arm_wzero ()
  @end smallexample
  
@@ -18976,10 +18951,9 @@ diff -Nur gcc-4.1.2/gcc/doc/extend.texi gcc-4.1.2-owrt/gcc/doc/extend.texi
  @node Blackfin Built-in Functions
  @subsection Blackfin Built-in Functions
  
-diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
---- gcc-4.1.2/gcc/doc/invoke.texi	2006-09-25 23:21:58.000000000 +0200
-+++ gcc-4.1.2-owrt/gcc/doc/invoke.texi	2007-05-24 12:03:28.000000000 +0200
-@@ -185,7 +185,7 @@
+--- a/gcc/doc/invoke.texi
++++ b/gcc/doc/invoke.texi
+@@ -185,7 +185,7 @@ in the following sections.
  -fno-default-inline  -fvisibility-inlines-hidden @gol
  -Wabi  -Wctor-dtor-privacy @gol
  -Wnon-virtual-dtor  -Wreorder @gol
@@ -18988,7 +18962,7 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  -Wno-non-template-friend  -Wold-style-cast @gol
  -Woverloaded-virtual  -Wno-pmf-conversions @gol
  -Wsign-promo}
-@@ -569,6 +569,10 @@
+@@ -569,6 +569,10 @@ Objective-C and Objective-C++ Dialects}.
  -mauto-incdec  -minmax  -mlong-calls  -mshort @gol
  -msoft-reg-count=@var{count}}
  
@@ -18999,7 +18973,7 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  @emph{MCore Options}
  @gccoptlist{-mhardlit  -mno-hardlit  -mdiv  -mno-div  -mrelax-immediates @gol
  -mno-relax-immediates  -mwide-bitfields  -mno-wide-bitfields @gol
-@@ -1797,14 +1801,6 @@
+@@ -1797,14 +1801,6 @@ to filter out those warnings.
  @opindex Wno-deprecated
  Do not warn about usage of deprecated features.  @xref{Deprecated Features}.
  
@@ -19014,7 +18988,7 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  @item -Wno-non-template-friend @r{(C++ only)}
  @opindex Wno-non-template-friend
  Disable warnings when non-templatized friend functions are declared
-@@ -2662,13 +2658,11 @@
+@@ -2662,13 +2658,11 @@ get these warnings.
  If you want to warn about code which uses the uninitialized value of the
  variable in its own initializer, use the @option{-Winit-self} option.
  
@@ -19033,7 +19007,7 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  
  Note that there may be no warning about a variable that is used only
  to compute a value that itself is never used, because such
-@@ -5935,10 +5929,6 @@
+@@ -5935,10 +5929,6 @@ If number of candidates in the set is sm
  we always try to remove unnecessary ivs from the set during its
  optimization when a new iv is added to the set.
  
@@ -19044,7 +19018,7 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  @item vect-max-version-checks
  The maximum number of runtime checks that can be performed when doing
  loop versioning in the vectorizer.  See option ftree-vect-loop-version
-@@ -7115,7 +7105,7 @@
+@@ -7115,7 +7105,7 @@ platform.
  * ARC Options::
  * ARM Options::
  * AVR Options::
@@ -19053,7 +19027,7 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  * CRIS Options::
  * CRX Options::
  * Darwin Options::
-@@ -7578,81 +7568,55 @@
+@@ -7578,81 +7568,55 @@ comply to the C standards, but it will p
  size.
  @end table
  
@@ -19177,7 +19151,7 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  @end table
  
  @node CRIS Options
-@@ -11341,6 +11305,7 @@
+@@ -11341,6 +11305,7 @@ conventions that adheres to the March 19
  Application Binary Interface, PowerPC processor supplement.  This is the
  default unless you configured GCC using @samp{powerpc-*-eabiaix}.
  
@@ -19185,10 +19159,9 @@ diff -Nur gcc-4.1.2/gcc/doc/invoke.texi gcc-4.1.2-owrt/gcc/doc/invoke.texi
  @item -mcall-sysv-eabi
  @opindex mcall-sysv-eabi
  Specify both @option{-mcall-sysv} and @option{-meabi} options.
-diff -Nur gcc-4.1.2/gcc/doc/md.texi gcc-4.1.2-owrt/gcc/doc/md.texi
---- gcc-4.1.2/gcc/doc/md.texi	2005-12-16 14:11:58.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/doc/md.texi	2007-05-24 12:03:28.000000000 +0200
-@@ -1686,6 +1686,59 @@
+--- a/gcc/doc/md.texi
++++ b/gcc/doc/md.texi
+@@ -1686,6 +1686,59 @@ A memory reference suitable for iWMMXt l
  A memory reference suitable for the ARMv4 ldrsb instruction.
  @end table
  
@@ -19248,7 +19221,7 @@ diff -Nur gcc-4.1.2/gcc/doc/md.texi gcc-4.1.2-owrt/gcc/doc/md.texi
  @item AVR family---@file{avr.h}
  @table @code
  @item l
-@@ -2132,102 +2185,6 @@
+@@ -2132,102 +2185,6 @@ range of 1 to 2047.
  
  @end table
  
@@ -19351,10 +19324,9 @@ diff -Nur gcc-4.1.2/gcc/doc/md.texi gcc-4.1.2-owrt/gcc/doc/md.texi
  @item M32C---@file{m32c.c}
  
  @item Rsp
-diff -Nur gcc-4.1.2/gcc/expr.c gcc-4.1.2-owrt/gcc/expr.c
---- gcc-4.1.2/gcc/expr.c	2006-11-02 18:18:52.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/expr.c	2007-05-24 12:03:28.000000000 +0200
-@@ -3401,18 +3401,19 @@
+--- a/gcc/expr.c
++++ b/gcc/expr.c
+@@ -3401,18 +3401,19 @@ emit_single_push_insn (enum machine_mode
      }
    else
      {
@@ -19382,10 +19354,9 @@ diff -Nur gcc-4.1.2/gcc/expr.c gcc-4.1.2-owrt/gcc/expr.c
    dest = gen_rtx_MEM (mode, dest_addr);
  
    if (type != 0)
-diff -Nur gcc-4.1.2/gcc/genoutput.c gcc-4.1.2-owrt/gcc/genoutput.c
---- gcc-4.1.2/gcc/genoutput.c	2005-06-25 04:02:01.000000000 +0200
-+++ gcc-4.1.2-owrt/gcc/genoutput.c	2007-05-24 12:03:28.000000000 +0200
-@@ -383,7 +383,7 @@
+--- a/gcc/genoutput.c
++++ b/gcc/genoutput.c
+@@ -383,7 +383,7 @@ output_insn_data (void)
  	}
  
        if (d->name && d->name[0] != '*')
@@ -19394,10 +19365,9 @@ diff -Nur gcc-4.1.2/gcc/genoutput.c gcc-4.1.2-owrt/gcc/genoutput.c
        else
  	printf ("    0,\n");
  
-diff -Nur gcc-4.1.2/gcc/longlong.h gcc-4.1.2-owrt/gcc/longlong.h
---- gcc-4.1.2/gcc/longlong.h	2005-12-06 11:02:57.000000000 +0100
-+++ gcc-4.1.2-owrt/gcc/longlong.h	2007-05-24 12:03:28.000000000 +0200
-@@ -227,6 +227,39 @@
+--- a/gcc/longlong.h
++++ b/gcc/longlong.h
+@@ -227,6 +227,39 @@ UDItype __umulsidi3 (USItype, USItype);
  #define UDIV_TIME 100
  #endif /* __arm__ */
  
@@ -19437,10 +19407,9 @@ diff -Nur gcc-4.1.2/gcc/longlong.h gcc-4.1.2-owrt/gcc/longlong.h
  #if defined (__hppa) && W_TYPE_SIZE == 32
  #define add_ssaaaa(sh, sl, ah, al, bh, bl) \
    __asm__ ("add %4,%5,%1\n\taddc %2,%3,%0"				\
-diff -Nur gcc-4.1.2/libstdc++-v3/acinclude.m4 gcc-4.1.2-owrt/libstdc++-v3/acinclude.m4
---- gcc-4.1.2/libstdc++-v3/acinclude.m4	2007-01-29 11:51:01.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/acinclude.m4	2007-05-24 12:03:28.000000000 +0200
-@@ -125,6 +125,15 @@
+--- a/libstdc++-v3/acinclude.m4
++++ b/libstdc++-v3/acinclude.m4
+@@ -125,6 +125,15 @@ AC_DEFUN([GLIBCXX_CONFIGURE], [
    ## other macros from doing the same.  This should be automated.)  -pme
    need_libmath=no
  
@@ -19456,7 +19425,7 @@ diff -Nur gcc-4.1.2/libstdc++-v3/acinclude.m4 gcc-4.1.2-owrt/libstdc++-v3/acincl
    # Find platform-specific directories containing configuration info.
    # Also possibly modify flags used elsewhere, as needed by the platform.
    GLIBCXX_CHECK_HOST
-@@ -1040,8 +1049,8 @@
+@@ -1043,8 +1052,8 @@ AC_DEFUN([GLIBCXX_ENABLE_CLOCALE], [
            #endif
            int main()
            {
@@ -19467,7 +19436,7 @@ diff -Nur gcc-4.1.2/libstdc++-v3/acinclude.m4 gcc-4.1.2-owrt/libstdc++-v3/acincl
                int i;
                int j;
                __locale_t        loc;
-@@ -1916,6 +1925,14 @@
+@@ -1953,6 +1962,14 @@ AC_DEFUN([AC_LC_MESSAGES], [
    ])
  ])
  
@@ -19482,9 +19451,8 @@ diff -Nur gcc-4.1.2/libstdc++-v3/acinclude.m4 gcc-4.1.2-owrt/libstdc++-v3/acincl
  # Macros from the top-level gcc directory.
  m4_include([../config/tls.m4])
  
-diff -Nur gcc-4.1.2/libstdc++-v3/config/os/gnu-linux/ctype_base.h gcc-4.1.2-owrt/libstdc++-v3/config/os/gnu-linux/ctype_base.h
---- gcc-4.1.2/libstdc++-v3/config/os/gnu-linux/ctype_base.h	2005-08-17 04:28:44.000000000 +0200
-+++ gcc-4.1.2-owrt/libstdc++-v3/config/os/gnu-linux/ctype_base.h	2007-05-24 12:03:28.000000000 +0200
+--- a/libstdc++-v3/config/os/gnu-linux/ctype_base.h
++++ b/libstdc++-v3/config/os/gnu-linux/ctype_base.h
 @@ -43,8 +43,8 @@
    struct ctype_base
    {
@@ -19496,10 +19464,9 @@ diff -Nur gcc-4.1.2/libstdc++-v3/config/os/gnu-linux/ctype_base.h gcc-4.1.2-owrt
      // NB: Offsets into ctype<char>::_M_table force a particular size
      // on the mask type. Because of this, we don't use an enum.
      typedef unsigned short 	mask;   
-diff -Nur gcc-4.1.2/libstdc++-v3/configure.host gcc-4.1.2-owrt/libstdc++-v3/configure.host
---- gcc-4.1.2/libstdc++-v3/configure.host	2007-01-28 21:12:40.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/configure.host	2007-05-24 12:03:28.000000000 +0200
-@@ -214,8 +214,15 @@
+--- a/libstdc++-v3/configure.host
++++ b/libstdc++-v3/configure.host
+@@ -214,8 +214,15 @@ case "${host_os}" in
    freebsd*)
      os_include_dir="os/bsd/freebsd"
      ;;
@@ -19516,10 +19483,9 @@ diff -Nur gcc-4.1.2/libstdc++-v3/configure.host gcc-4.1.2-owrt/libstdc++-v3/conf
      ;;
    hpux*)
      os_include_dir="os/hpux"
-diff -Nur gcc-4.1.2/libstdc++-v3/include/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/include/Makefile.in
---- gcc-4.1.2/libstdc++-v3/include/Makefile.in	2006-01-10 18:14:00.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/include/Makefile.in	2007-05-24 12:03:28.000000000 +0200
-@@ -36,6 +36,7 @@
+--- a/libstdc++-v3/include/Makefile.in
++++ b/libstdc++-v3/include/Makefile.in
+@@ -36,6 +36,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -19527,10 +19493,9 @@ diff -Nur gcc-4.1.2/libstdc++-v3/include/Makefile.in gcc-4.1.2-owrt/libstdc++-v3
  DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
  	$(top_srcdir)/fragment.am
  subdir = include
-diff -Nur gcc-4.1.2/libstdc++-v3/libmath/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/libmath/Makefile.in
---- gcc-4.1.2/libstdc++-v3/libmath/Makefile.in	2006-01-10 18:14:00.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/libmath/Makefile.in	2007-05-24 12:03:28.000000000 +0200
-@@ -37,6 +37,7 @@
+--- a/libstdc++-v3/libmath/Makefile.in
++++ b/libstdc++-v3/libmath/Makefile.in
+@@ -37,6 +37,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -19538,10 +19503,9 @@ diff -Nur gcc-4.1.2/libstdc++-v3/libmath/Makefile.in gcc-4.1.2-owrt/libstdc++-v3
  subdir = libmath
  DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-diff -Nur gcc-4.1.2/libstdc++-v3/libsupc++/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/libsupc++/Makefile.in
---- gcc-4.1.2/libstdc++-v3/libsupc++/Makefile.in	2006-01-10 18:14:00.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/libsupc++/Makefile.in	2007-05-24 12:03:28.000000000 +0200
-@@ -38,6 +38,7 @@
+--- a/libstdc++-v3/libsupc++/Makefile.in
++++ b/libstdc++-v3/libsupc++/Makefile.in
+@@ -38,6 +38,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -19549,10 +19513,9 @@ diff -Nur gcc-4.1.2/libstdc++-v3/libsupc++/Makefile.in gcc-4.1.2-owrt/libstdc++-
  DIST_COMMON = $(glibcxxinstall_HEADERS) $(srcdir)/Makefile.am \
  	$(srcdir)/Makefile.in $(top_srcdir)/fragment.am
  subdir = libsupc++
-diff -Nur gcc-4.1.2/libstdc++-v3/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/Makefile.in
---- gcc-4.1.2/libstdc++-v3/Makefile.in	2006-01-10 18:14:00.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/Makefile.in	2007-05-24 12:03:28.000000000 +0200
-@@ -36,6 +36,7 @@
+--- a/libstdc++-v3/Makefile.in
++++ b/libstdc++-v3/Makefile.in
+@@ -36,6 +36,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -19560,10 +19523,9 @@ diff -Nur gcc-4.1.2/libstdc++-v3/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/Makefil
  DIST_COMMON = README $(am__configure_deps) $(srcdir)/../config.guess \
  	$(srcdir)/../config.sub $(srcdir)/../install-sh \
  	$(srcdir)/../ltmain.sh $(srcdir)/../missing \
-diff -Nur gcc-4.1.2/libstdc++-v3/po/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/po/Makefile.in
---- gcc-4.1.2/libstdc++-v3/po/Makefile.in	2006-01-10 18:14:00.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/po/Makefile.in	2007-05-24 12:03:28.000000000 +0200
-@@ -36,6 +36,7 @@
+--- a/libstdc++-v3/po/Makefile.in
++++ b/libstdc++-v3/po/Makefile.in
+@@ -36,6 +36,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -19571,10 +19533,9 @@ diff -Nur gcc-4.1.2/libstdc++-v3/po/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/po/M
  DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
  	$(top_srcdir)/fragment.am
  subdir = po
-diff -Nur gcc-4.1.2/libstdc++-v3/src/Makefile.in gcc-4.1.2-owrt/libstdc++-v3/src/Makefile.in
---- gcc-4.1.2/libstdc++-v3/src/Makefile.in	2006-01-10 18:14:00.000000000 +0100
-+++ gcc-4.1.2-owrt/libstdc++-v3/src/Makefile.in	2007-05-24 12:03:28.000000000 +0200
-@@ -36,6 +36,7 @@
+--- a/libstdc++-v3/src/Makefile.in
++++ b/libstdc++-v3/src/Makefile.in
+@@ -36,6 +36,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
