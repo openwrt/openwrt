@@ -1,6 +1,6 @@
---- trunk/gcc/config/arm/arm.c	2006/09/19 13:18:27	117055
-+++ trunk/gcc/config/arm/arm.c	2006/09/19 13:19:24	117056
-@@ -15415,6 +15415,15 @@
+--- a/gcc/config/arm/arm.c
++++ b/gcc/config/arm/arm.c
+@@ -15371,6 +15371,15 @@ arm_unwind_emit_set (FILE * asm_out_file
  	  /* Move from sp to reg.  */
  	  asm_fprintf (asm_out_file, "\t.movsp %r\n", REGNO (e0));
  	}

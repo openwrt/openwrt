@@ -1,7 +1,6 @@
-diff -ur gcc.old/libstdc++-v3/configure gcc.dev/libstdc++-v3/configure
---- gcc.old/libstdc++-v3/configure	2006-06-29 23:26:47.000000000 +0200
-+++ gcc.dev/libstdc++-v3/configure	2006-06-05 15:48:03.000000000 +0200
-@@ -5745,7 +5745,7 @@
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -5745,7 +5745,7 @@ if test "${enable_clocale+set}" = set; t
    enableval="$enable_clocale"
  
        case "$enableval" in
@@ -10,7 +9,7 @@ diff -ur gcc.old/libstdc++-v3/configure gcc.dev/libstdc++-v3/configure
         *) { { echo "$as_me:$LINENO: error: Unknown argument to enable/disable clocale" >&5
  echo "$as_me: error: Unknown argument to enable/disable clocale" >&2;}
     { (exit 1); exit 1; }; } ;;
-@@ -6524,23 +6525,6 @@
+@@ -6524,23 +6524,6 @@ echo $ECHO_N "checking for enabled long 
  echo "${ECHO_T}$enable_long_long" >&6
  
  
@@ -34,4 +33,3 @@ diff -ur gcc.old/libstdc++-v3/configure gcc.dev/libstdc++-v3/configure
    # Test wchar.h for mbstate_t, which is needed for char_traits and fpos.
  
  for ac_header in wchar.h
-
