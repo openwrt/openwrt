@@ -7,10 +7,8 @@ Sanitize the value to a 0/1 boolean.
 
 
 
-Index: linux-2.6.28.5/drivers/spi/spi_gpio.c
-===================================================================
---- linux-2.6.28.5.orig/drivers/spi/spi_gpio.c	2009-02-15 16:21:11.000000000 +0100
-+++ linux-2.6.28.5/drivers/spi/spi_gpio.c	2009-02-15 16:21:47.000000000 +0100
+--- a/drivers/spi/spi_gpio.c
++++ b/drivers/spi/spi_gpio.c
 @@ -114,7 +114,7 @@ static inline void setmosi(const struct 
  
  static inline int getmiso(const struct spi_device *spi)
