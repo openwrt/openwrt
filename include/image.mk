@@ -62,7 +62,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 
   ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
     define Image/mkfs/tgz
-		$(TAR) -zcf $(BIN_DIR)/openwrt-$(BOARD)-rootfs.tgz --owner=root --group=root -C $(TARGET_DIR)/ .
+		$(TAR) -zcf $(BIN_DIR)/openwrt-$(BOARD)-rootfs.tgz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
     endef
   endif
 
