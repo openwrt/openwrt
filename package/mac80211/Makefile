@@ -289,7 +289,7 @@ ifneq ($(CONFIG_B43_OPENFIRMWARE),)
   PKG_B43_FWV4_OBJECT:=openfwwf-$(PKG_B43_FWV4_VERSION)
   PKG_B43_FWV4_SOURCE:=openfwwf-$(PKG_B43_FWV4_VERSION).tar.gz
   PKG_B43_FWV4_SOURCE_URL:=http://www.ing.unibs.it/openfwwf/firmware/
-  PKG_B43_FWV4_MD5SUM:=b2e99ececc27cb70b818170cc5557fd5
+  PKG_B43_FWV4_MD5SUM:=3510c133393bb4911c4aa35742cefcfd
 endif
 
 
