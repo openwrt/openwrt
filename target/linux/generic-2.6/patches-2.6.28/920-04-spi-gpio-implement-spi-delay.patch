@@ -4,10 +4,8 @@ Implement the SPI-GPIO delay function for busses that need speed limitation.
 
 
 
-Index: linux-2.6.28.5/drivers/spi/spi_gpio.c
-===================================================================
---- linux-2.6.28.5.orig/drivers/spi/spi_gpio.c	2009-02-15 18:53:47.000000000 +0100
-+++ linux-2.6.28.5/drivers/spi/spi_gpio.c	2009-02-15 19:08:58.000000000 +0100
+--- a/drivers/spi/spi_gpio.c
++++ b/drivers/spi/spi_gpio.c
 @@ -21,6 +21,7 @@
  #include <linux/init.h>
  #include <linux/platform_device.h>
