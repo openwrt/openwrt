@@ -271,10 +271,10 @@ endef
 ifneq ($(CONFIG_B43_EXPERIMENTAL),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=4.178.10.4
-  PKG_B43_FWV4_OBJECT:=wrt610n_v1.00.00.018_us/release/src/wl/linux/wl.o
-  PKG_B43_FWV4_SOURCE:=wrt610n_v1.00.00.018_us.tgz
-  PKG_B43_FWV4_SOURCE_URL:=ftp://ftp.linksys.com/opensourcecode/wrt610n/1.00.00.018/
-  PKG_B43_FWV4_MD5SUM:=adb206204a610c2055db1f387f813f59
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+  PKG_B43_FWV4_MD5SUM:=14477e8cbbb91b11896affac9b219fdb
 else
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=4.150.10.5
@@ -488,7 +488,7 @@ endef
 define KernelPackage/b43/install
 	rm -rf $(1)/lib/firmware/
 	$(call Build/b43-common)
-ifneq ($(CONFIG_B43_EXPERIMENTAL)$(CONFIG_B43_OPENFIRMWARE),)
+ifneq ($(CONFIG_B43_OPENFIRMWARE),)
 	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
 else
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
