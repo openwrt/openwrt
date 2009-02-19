@@ -14,12 +14,21 @@ hotplug_event() {
 		config_get proto $ifc proto
 		[ "$proto" = "dhcp" ] || continue
 		[ ifup = "$1" ] && {
+			config_get userdns "$ifc" dns
+			[ -n "$userdns" ] && {
+				for i in $userdns; do
+					echo "custom dns $i"
+					echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
+				done
+				dns="$userdns"
+			}
 			uci_set_state network "$ifc" ipaddr "$ip"
 			uci_set_state network "$ifc" netmask "${subnet:-255.255.255.0}"
 			uci_set_state network "$ifc" dnsdomain "$domain"
 			uci_set_state network "$ifc" dns "$dns"
 			uci_set_state network "$ifc" gateway "$router"
 		}
+		
 		env -i ACTION="$1" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug-call iface
 	done
 }
@@ -45,22 +54,28 @@ case "$1" in
 			echo "deleting old routes"
 			$(route -n | awk '/^0.0.0.0\W{9}('$valid')\W/ {next} /^0.0.0.0/ {print "route del -net "$1" gw "$2";"}')
 		}
-		
-		[ -n "$dns" ] && {
+
+		[ -n "$dns" ] && \
 			echo -n > "${RESOLV_CONF}.tmp"
-			${domain:+echo search $domain} >> "${RESOLV_CONF}.tmp"
-			for i in $dns ; do
-				echo "adding dns $i"
-				echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
-			done
-			mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
-		}
 		
 		if [ "$1" = "renew" ]; then
 			hotplug_event update
 		else
 			hotplug_event ifup
 		fi
+		
+		[ -n "$dns" ] && {
+			[ -s "${RESOLV_CONF}.tmp" ] || {
+				for i in $dns ; do
+					echo "adding dns $i"
+					echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
+				done
+			}
+
+			${domain:+echo search $domain} >> "${RESOLV_CONF}.tmp"
+
+			mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
+		}
 		
 		# user rules
 		[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
