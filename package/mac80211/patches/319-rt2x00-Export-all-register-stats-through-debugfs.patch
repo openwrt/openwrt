@@ -22,7 +22,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 
 --- a/drivers/net/wireless/rt2x00/rt2x00debug.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00debug.c
-@@ -545,9 +545,9 @@ static struct dentry *rt2x00debug_create
+@@ -547,9 +547,9 @@ static struct dentry *rt2x00debug_create
  		return NULL;
  
  	blob->data = data;
@@ -35,7 +35,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	blob->size = strlen(blob->data);
  
  	return debugfs_create_blob(name, S_IRUSR, intf->driver_folder, blob);
-@@ -568,14 +568,27 @@ static struct dentry *rt2x00debug_create
+@@ -570,14 +570,27 @@ static struct dentry *rt2x00debug_create
  		return NULL;
  
  	blob->data = data;

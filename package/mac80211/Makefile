@@ -9,16 +9,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
-PKG_RELEASE:=2
 
 ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
-  PKG_VERSION:=2009-02-15
+  PKG_VERSION:=2009-02-19
+  PKG_RELEASE:=1
   PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/02 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-  PKG_MD5SUM:=65b4c3ccd23aa9fa4604fe63b03cce28
+  PKG_MD5SUM:=850c8502203c518f0175fd061bed0ec2
 else
   PKG_VERSION:=2008-08-06
+  PKG_RELEASE:=2
   PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
   PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
   PATCH_DIR:=./patches-old
@@ -415,7 +416,7 @@ define Build/Prepare
 	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2860FW)
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
-	rm $(PKG_BUILD_DIR)/include/net/ieee80211.h
+	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
 	rm $(PKG_BUILD_DIR)/include/net/ieee80211_radiotap.h
 	rm $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
 endef
