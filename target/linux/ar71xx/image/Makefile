@@ -71,7 +71,7 @@ define Image/Build/UBNT
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).lzma
 	dd if=$(KDIR)/vmlinux-$(2).lzma of=$(KDIR)/vmlinux-$(2).bin.lzma bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(4) -v $(5).ar7100.OpenWrt \
+		-B $(4) -v $(5).ar7100.OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
 		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt-$(2)-$(1).bin
