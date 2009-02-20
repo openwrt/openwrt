@@ -166,6 +166,14 @@ config BUILD_SUFFIX
 	help
 		Build suffix to append to the BUILD_DIR variable, i.e: build_dir_suffix
 
+config TARGET_ROOTFS_DIR
+	string
+	prompt "Override the default TARGET_ROOTFS_DIR variable" if DEVEL
+	default ""
+	help
+		Override the default TARGET_ROOTFS_DIR variable content $(BUILD_DIR) with custom path.
+		Use this option to re-define the location of the target root file system directory.
+
 config CCACHE
 	bool
 	prompt "Use ccache" if DEVEL
