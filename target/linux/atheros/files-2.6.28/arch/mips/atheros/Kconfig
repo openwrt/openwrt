@@ -1,0 +1,27 @@
+config ATHEROS_AR5312
+	bool "Atheros 5312/2312+ support"
+	depends on ATHEROS
+	default y
+
+config ATHEROS_AR5315
+	bool "Atheros 5315/2315+ support"
+	depends on ATHEROS
+	select DMA_NONCOHERENT
+	select CEVT_R4K
+	select CSRC_R4K
+	select IRQ_CPU
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select GENERIC_GPIO
+	default y
+
+config ATHEROS_AR5315_PCI
+	bool "PCI support"
+	select HW_HAS_PCI
+	select PCI
+	select USB_ARCH_HAS_HCD
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+	depends on ATHEROS_AR5315
+	default n
