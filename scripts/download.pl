@@ -32,7 +32,8 @@ sub localmirrors {
 		while (<CONFIG>) {
 			/^CONFIG_LOCALMIRROR="(.+)"/ and do {
 				chomp;
-				push @mlist, $1;
+				my @local_mirrors = split(/;/, $1);
+				push @mlist, @local_mirrors;
 			};
 		}
 		close CONFIG;
@@ -65,9 +66,15 @@ sub download
 	if( $mirror =~ /^file:\/\// ) {
 		my $cache = $mirror;
 		$cache =~ s/file:\/\///g;
-		print "Checking local cache: $cache\n";
-		system("mkdir -p $target/");
-		system("cp -f $cache/$filename $target/$filename.dl") == 0 or return;
+		if(system("test -d $cache")) {
+			print STDERR "Wrong local cache directory -$cache-.\n";
+			cleanup();
+			return;
+		}
+		if(! -d $target) {
+			system("mkdir -p $target/");
+		}
+		system("cp -vf $cache/$filename $target/$filename.dl") == 0 or return;
 		system("$md5cmd $target/$filename.dl > \"$target/$filename.md5sum\" ") == 0 or return;
 	} else {
 		open WGET, "wget -t5 --timeout=20 $options -O- \"$mirror/$filename\" |" or die "Cannot launch wget.\n";
