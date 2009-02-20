@@ -1,0 +1,11 @@
+--- a/drivers/net/ar2313/ar2313.c
++++ b/drivers/net/ar2313/ar2313.c
+@@ -291,7 +291,7 @@ int __init ar2313_probe(struct platform_
+ 	sp->mii_bus.write = mdiobus_write;
+ 	sp->mii_bus.reset = mdiobus_reset;
+ 	sp->mii_bus.name = "ar2313_eth_mii";
+-	sp->mii_bus.id = 0;
++	snprintf(sp->mii_bus.id, MII_BUS_ID_SIZE, "0");
+ 	sp->mii_bus.irq = kmalloc(sizeof(int), GFP_KERNEL);
+ 	*sp->mii_bus.irq = PHY_POLL;
+ 
