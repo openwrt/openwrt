@@ -1,7 +1,6 @@
-diff -ruN uClibc-0.9.29-old/Rules.mak uClibc-0.9.29-new/Rules.mak
---- uClibc-0.9.29-old/Rules.mak	2009-01-17 16:18:36.662982000 +0100
-+++ uClibc-0.9.29-new/Rules.mak	2009-01-17 19:14:02.473165330 +0100
-@@ -498,7 +498,8 @@
+--- a/Rules.mak
++++ b/Rules.mak
+@@ -498,7 +498,8 @@ CFLAGS += -I$(KERNEL_HEADERS)
  
  # Sigh, some stupid versions of gcc can't seem to cope with '-iwithprefix include'
  #CFLAGS+=-iwithprefix include

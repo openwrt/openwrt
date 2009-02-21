@@ -1,5 +1,3 @@
-diff --git a/Rules.mak b/Rules.mak
-index d054bbb..55381cf 100644
 --- a/Rules.mak
 +++ b/Rules.mak
 @@ -313,6 +313,12 @@ ifeq ($(TARGET_ARCH),frv)
@@ -15,9 +13,6 @@ index d054bbb..55381cf 100644
  # Keep the check_gcc from being needlessly executed
  ifndef PIEFLAG
  ifneq ($(UCLIBC_BUILD_PIE),y)
-diff --git a/extra/Configs/Config.avr32 b/extra/Configs/Config.avr32
-new file mode 100644
-index 0000000..8d70e6e
 --- /dev/null
 +++ b/extra/Configs/Config.avr32
 @@ -0,0 +1,31 @@
@@ -52,8 +47,6 @@ index 0000000..8d70e6e
 +config LINKRELAX
 +	bool "Enable linker optimizations"
 +	default y
-diff --git a/extra/Configs/Config.in b/extra/Configs/Config.in
-index 8eab394..10c9f7b 100644
 --- a/extra/Configs/Config.in
 +++ b/extra/Configs/Config.in
 @@ -16,6 +16,9 @@ config TARGET_alpha
@@ -77,15 +70,10 @@ index 8eab394..10c9f7b 100644
  if TARGET_bfin
  source "extra/Configs/Config.bfin"
  endif
-diff --git a/extra/Configs/defconfigs/avr32 b/extra/Configs/defconfigs/avr32
-new file mode 100644
-index 0000000..0b890a2
 --- /dev/null
 +++ b/extra/Configs/defconfigs/avr32
 @@ -0,0 +1 @@
 +TARGET_avr32=y
-diff --git a/include/elf.h b/include/elf.h
-index 19805d7..ab90160 100644
 --- a/include/elf.h
 +++ b/include/elf.h
 @@ -354,6 +354,8 @@ typedef struct
@@ -153,11 +141,9 @@ index 19805d7..ab90160 100644
  
  /* Renesas H8/300 Relocations */
  #define R_H8_NONE       0
-diff --git a/ldso/include/dl-string.h b/ldso/include/dl-string.h
-index 32c5bf8..eb43bd9 100644
 --- a/ldso/include/dl-string.h
 +++ b/ldso/include/dl-string.h
-@@ -285,7 +285,8 @@ static __always_inline char * _dl_simple_ltoahex(char * local, unsigned long i)
+@@ -285,7 +285,8 @@ static __always_inline char * _dl_simple
  /* On some arches constant strings are referenced through the GOT.
   * This requires that load_addr must already be defined... */
  #if defined(mc68000)  || defined(__arm__) || defined(__thumb__) || \
@@ -167,8 +153,6 @@ index 32c5bf8..eb43bd9 100644
  # define CONSTANT_STRING_GOT_FIXUP(X) \
  	if ((X) < (const char *) load_addr) (X) += load_addr
  # define NO_EARLY_SEND_STDERR
-diff --git a/ldso/include/dl-syscall.h b/ldso/include/dl-syscall.h
-index b42416a..4404219 100644
 --- a/ldso/include/dl-syscall.h
 +++ b/ldso/include/dl-syscall.h
 @@ -55,69 +55,69 @@
@@ -256,7 +240,7 @@ index b42416a..4404219 100644
                          size_t, bufsiz);
  
  #ifdef __UCLIBC_HAS_SSP__
-@@ -146,14 +146,14 @@ static inline _syscall2(int, _dl_gettimeofday, struct timeval *, tv,
+@@ -146,14 +146,14 @@ static inline _syscall2(int, _dl_gettime
  #if defined(__UCLIBC_MMAP_HAS_6_ARGS__) && defined(__NR_mmap)
  
  # define __NR__dl_mmap __NR_mmap
@@ -273,7 +257,7 @@ index b42416a..4404219 100644
                          int, prot, int, flags, int, fd, off_t, offset);
  
  /* Some architectures always use 12 as page shift for mmap2() eventhough the
-@@ -164,7 +164,7 @@ static inline _syscall6(__ptr_t, __syscall_mmap2, __ptr_t, addr, size_t, len,
+@@ -164,7 +164,7 @@ static inline _syscall6(__ptr_t, __sysca
  # define MMAP2_PAGE_SHIFT 12
  #endif
  
@@ -282,7 +266,7 @@ index b42416a..4404219 100644
                                int flags, int fd, unsigned long offset)
  {
  	if (offset & ((1 << MMAP2_PAGE_SHIFT) - 1))
-@@ -177,8 +177,8 @@ static inline void * _dl_mmap(void * addr, unsigned long size, int prot,
+@@ -177,8 +177,8 @@ static inline void * _dl_mmap(void * add
  #elif defined(__NR_mmap)
  
  # define __NR__dl_mmap_real __NR_mmap
@@ -293,9 +277,6 @@ index b42416a..4404219 100644
                                int flags, int fd, unsigned long offset)
  {
  	unsigned long buffer[6];
-diff --git a/ldso/ldso/avr32/dl-debug.h b/ldso/ldso/avr32/dl-debug.h
-new file mode 100644
-index 0000000..fe35539
 --- /dev/null
 +++ b/ldso/ldso/avr32/dl-debug.h
 @@ -0,0 +1,45 @@
@@ -344,9 +325,6 @@ index 0000000..fe35539
 +    "R_AVR32_RELATIVE", "R_AVR32_GLOB_DAT", "R_AVR32_JMP_SLOT",
 +    "R_AVR32_ALIGN",
 +};
-diff --git a/ldso/ldso/avr32/dl-startup.h b/ldso/ldso/avr32/dl-startup.h
-new file mode 100644
-index 0000000..3b9a641
 --- /dev/null
 +++ b/ldso/ldso/avr32/dl-startup.h
 @@ -0,0 +1,112 @@
@@ -462,9 +440,6 @@ index 0000000..3b9a641
 + * _dl_boot2, we can just return the address we're supposed to
 + * call.  */
 +#define START()	return _dl_elf_main;
-diff --git a/ldso/ldso/avr32/dl-syscalls.h b/ldso/ldso/avr32/dl-syscalls.h
-new file mode 100644
-index 0000000..996bb87
 --- /dev/null
 +++ b/ldso/ldso/avr32/dl-syscalls.h
 @@ -0,0 +1,6 @@
@@ -474,9 +449,6 @@ index 0000000..996bb87
 +extern int _dl_errno;
 +#undef __set_errno
 +#define __set_errno(X) {(_dl_errno) = (X);}
-diff --git a/ldso/ldso/avr32/dl-sysdep.h b/ldso/ldso/avr32/dl-sysdep.h
-new file mode 100644
-index 0000000..1a30172
 --- /dev/null
 +++ b/ldso/ldso/avr32/dl-sysdep.h
 @@ -0,0 +1,105 @@
@@ -585,9 +557,6 @@ index 0000000..1a30172
 +		*reloc_addr = load_off + rpnt->r_addend;
 +	} while (--relative_count);
 +}
-diff --git a/ldso/ldso/avr32/elfinterp.c b/ldso/ldso/avr32/elfinterp.c
-new file mode 100644
-index 0000000..196292b
 --- /dev/null
 +++ b/ldso/ldso/avr32/elfinterp.c
 @@ -0,0 +1,191 @@
@@ -782,9 +751,6 @@ index 0000000..196292b
 +	return _dl_parse(rpnt->dyn, rpnt->dyn->symbol_scope, rel_addr, rel_size,
 +			 _dl_do_reloc);
 +}
-diff --git a/ldso/ldso/avr32/resolve.S b/ldso/ldso/avr32/resolve.S
-new file mode 100644
-index 0000000..e3cb7f4
 --- /dev/null
 +++ b/ldso/ldso/avr32/resolve.S
 @@ -0,0 +1,28 @@
@@ -816,8 +782,6 @@ index 0000000..e3cb7f4
 +	popm	r8-r12,lr
 +	mov	pc, ip
 +	.size	_dl_linux_resolve, . - _dl_linux_resolve
-diff --git a/ldso/ldso/dl-startup.c b/ldso/ldso/dl-startup.c
-index 5cf1d04..d4294ec 100644
 --- a/ldso/ldso/dl-startup.c
 +++ b/ldso/ldso/dl-startup.c
 @@ -217,7 +217,9 @@ DL_START(unsigned long args)
@@ -831,11 +795,9 @@ index 5cf1d04..d4294ec 100644
  
  	/* OK, now do the relocations.  We do not do a lazy binding here, so
  	   that once we are done, we have considerably more flexibility. */
-diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
-index f4e6cac..9cdc3fe 100644
 --- a/libc/inet/resolv.c
 +++ b/libc/inet/resolv.c
-@@ -1643,7 +1643,7 @@ int attribute_hidden __read_etc_hosts_r(FILE * fp, const char * name, int type,
+@@ -1643,7 +1643,7 @@ int attribute_hidden __read_etc_hosts_r(
  			*result=result_buf;
  			ret=NETDB_SUCCESS;
  #ifdef __UCLIBC_HAS_IPV6__
@@ -844,7 +806,7 @@ index f4e6cac..9cdc3fe 100644
  			DPRINTF("Found INET6\n");
  			addr_list6[0] = in6;
  			addr_list6[1] = 0;
-@@ -1658,8 +1658,8 @@ int attribute_hidden __read_etc_hosts_r(FILE * fp, const char * name, int type,
+@@ -1658,8 +1658,8 @@ int attribute_hidden __read_etc_hosts_r(
  		} else {
  			DPRINTF("Error\n");
  			ret=TRY_AGAIN;
@@ -855,9 +817,6 @@ index f4e6cac..9cdc3fe 100644
  
  		if (action!=GETHOSTENT) {
  			fclose(fp);
-diff --git a/libc/string/avr32/Makefile b/libc/string/avr32/Makefile
-new file mode 100644
-index 0000000..e19e9d9
 --- /dev/null
 +++ b/libc/string/avr32/Makefile
 @@ -0,0 +1,26 @@
@@ -887,9 +846,6 @@ index 0000000..e19e9d9
 +include $(top_builddir)Rules.mak
 +include ../Makefile.in
 +include $(top_srcdir)Makerules
-diff --git a/libc/string/avr32/bcopy.S b/libc/string/avr32/bcopy.S
-new file mode 100644
-index 0000000..87c1e04
 --- /dev/null
 +++ b/libc/string/avr32/bcopy.S
 @@ -0,0 +1,26 @@
@@ -919,9 +875,6 @@ index 0000000..87c1e04
 +	.size	bcopy, . - bcopy
 +
 +#endif /* __UCLIBC_SUSV3_LEGACY__ */
-diff --git a/libc/string/avr32/bzero.S b/libc/string/avr32/bzero.S
-new file mode 100644
-index 0000000..c999e65
 --- /dev/null
 +++ b/libc/string/avr32/bzero.S
 @@ -0,0 +1,22 @@
@@ -947,9 +900,6 @@ index 0000000..c999e65
 +	.size	bzero, . - bzero
 +
 +#endif /* __UCLIBC_SUSV3_LEGACY__ */
-diff --git a/libc/string/avr32/memcmp.S b/libc/string/avr32/memcmp.S
-new file mode 100644
-index 0000000..ae6cc91
 --- /dev/null
 +++ b/libc/string/avr32/memcmp.S
 @@ -0,0 +1,61 @@
@@ -1014,9 +964,6 @@ index 0000000..ae6cc91
 +#ifdef __UCLIBC_SUSV3_LEGACY__
 +strong_alias(memcmp,bcmp)
 +#endif
-diff --git a/libc/string/avr32/memcpy.S b/libc/string/avr32/memcpy.S
-new file mode 100644
-index 0000000..bf091ab
 --- /dev/null
 +++ b/libc/string/avr32/memcpy.S
 @@ -0,0 +1,111 @@
@@ -1131,9 +1078,6 @@ index 0000000..bf091ab
 +	.size	memcpy, . - memcpy
 +
 +libc_hidden_def(memcpy)
-diff --git a/libc/string/avr32/memmove.S b/libc/string/avr32/memmove.S
-new file mode 100644
-index 0000000..98287c5
 --- /dev/null
 +++ b/libc/string/avr32/memmove.S
 @@ -0,0 +1,116 @@
@@ -1253,9 +1197,6 @@ index 0000000..98287c5
 +	.size	memmove, . - memmove
 +
 +libc_hidden_def(memmove)
-diff --git a/libc/string/avr32/memset.S b/libc/string/avr32/memset.S
-new file mode 100644
-index 0000000..33cfaed
 --- /dev/null
 +++ b/libc/string/avr32/memset.S
 @@ -0,0 +1,70 @@
@@ -1329,9 +1270,6 @@ index 0000000..33cfaed
 +	.size	memset, . - memset
 +
 +libc_hidden_def(memset)
-diff --git a/libc/string/avr32/strcmp.S b/libc/string/avr32/strcmp.S
-new file mode 100644
-index 0000000..f73bd43
 --- /dev/null
 +++ b/libc/string/avr32/strcmp.S
 @@ -0,0 +1,91 @@
@@ -1426,9 +1364,6 @@ index 0000000..f73bd43
 +strong_alias(strcmp, strcoll)
 +libc_hidden_def(strcoll)
 +#endif
-diff --git a/libc/string/avr32/strlen.S b/libc/string/avr32/strlen.S
-new file mode 100644
-index 0000000..5223e53
 --- /dev/null
 +++ b/libc/string/avr32/strlen.S
 @@ -0,0 +1,62 @@
@@ -1494,9 +1429,6 @@ index 0000000..5223e53
 +	.size	strlen, . - strlen
 +
 +libc_hidden_def(strlen)
-diff --git a/libc/sysdeps/linux/avr32/Makefile b/libc/sysdeps/linux/avr32/Makefile
-new file mode 100644
-index 0000000..338abc0
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/Makefile
 @@ -0,0 +1,25 @@
@@ -1525,9 +1457,6 @@ index 0000000..338abc0
 +include $(top_builddir)Rules.mak
 +include Makefile.arch
 +include $(top_srcdir)Makerules
-diff --git a/libc/sysdeps/linux/avr32/Makefile.arch b/libc/sysdeps/linux/avr32/Makefile.arch
-new file mode 100644
-index 0000000..44fc01e
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/Makefile.arch
 @@ -0,0 +1,13 @@
@@ -1544,9 +1473,6 @@ index 0000000..44fc01e
 +		sigrestorer.S syscall.S vfork.S
 +
 +include $(top_srcdir)/libc/sysdeps/linux/Makefile.commonarch
-diff --git a/libc/sysdeps/linux/avr32/__longjmp.S b/libc/sysdeps/linux/avr32/__longjmp.S
-new file mode 100644
-index 0000000..6154bb2
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/__longjmp.S
 @@ -0,0 +1,21 @@
@@ -1571,9 +1497,6 @@ index 0000000..6154bb2
 +	.size	__longjmp, . - __longjmp
 +
 +libc_hidden_def(__longjmp)
-diff --git a/libc/sysdeps/linux/avr32/bits/atomic.h b/libc/sysdeps/linux/avr32/bits/atomic.h
-new file mode 100644
-index 0000000..e6be41f
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/atomic.h
 @@ -0,0 +1,120 @@
@@ -1697,9 +1620,6 @@ index 0000000..e6be41f
 +	})
 +
 +#endif /* _AVR32_BITS_ATOMIC_H */
-diff --git a/libc/sysdeps/linux/avr32/bits/byteswap.h b/libc/sysdeps/linux/avr32/bits/byteswap.h
-new file mode 100644
-index 0000000..1c030b9
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/byteswap.h
 @@ -0,0 +1,70 @@
@@ -1773,9 +1693,6 @@ index 0000000..1c030b9
 +#endif
 +
 +#endif /* _BITS_BYTESWAP_H */
-diff --git a/libc/sysdeps/linux/avr32/bits/endian.h b/libc/sysdeps/linux/avr32/bits/endian.h
-new file mode 100644
-index 0000000..7bb6358
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/endian.h
 @@ -0,0 +1,7 @@
@@ -1786,9 +1703,6 @@ index 0000000..7bb6358
 +#endif
 +
 +#define __BYTE_ORDER __BIG_ENDIAN
-diff --git a/libc/sysdeps/linux/avr32/bits/fcntl.h b/libc/sysdeps/linux/avr32/bits/fcntl.h
-new file mode 100644
-index 0000000..1abff17
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/fcntl.h
 @@ -0,0 +1,165 @@
@@ -1957,9 +1871,6 @@ index 0000000..1abff17
 +# define POSIX_FADV_DONTNEED    4 /* Don't need these pages.  */
 +# define POSIX_FADV_NOREUSE     5 /* Data will be accessed once.  */
 +#endif
-diff --git a/libc/sysdeps/linux/avr32/bits/kernel_stat.h b/libc/sysdeps/linux/avr32/bits/kernel_stat.h
-new file mode 100644
-index 0000000..f97d23b
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/kernel_stat.h
 @@ -0,0 +1,67 @@
@@ -2030,9 +1941,6 @@ index 0000000..f97d23b
 +};
 +
 +#endif /* _BITS_STAT_STRUCT_H */
-diff --git a/libc/sysdeps/linux/avr32/bits/kernel_types.h b/libc/sysdeps/linux/avr32/bits/kernel_types.h
-new file mode 100644
-index 0000000..f7d8b52
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/kernel_types.h
 @@ -0,0 +1,55 @@
@@ -2091,9 +1999,6 @@ index 0000000..f7d8b52
 +} __kernel_fsid_t;
 +
 +#endif /* __ASM_AVR32_POSIX_TYPES_H */
-diff --git a/libc/sysdeps/linux/avr32/bits/mman.h b/libc/sysdeps/linux/avr32/bits/mman.h
-new file mode 100644
-index 0000000..5f6e3c3
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/mman.h
 @@ -0,0 +1,103 @@
@@ -2200,9 +2105,6 @@ index 0000000..5f6e3c3
 +# define POSIX_MADV_WILLNEED	3 /* Will need these pages.  */
 +# define POSIX_MADV_DONTNEED	4 /* Don't need these pages.  */
 +#endif
-diff --git a/libc/sysdeps/linux/avr32/bits/setjmp.h b/libc/sysdeps/linux/avr32/bits/setjmp.h
-new file mode 100644
-index 0000000..78348a3
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/setjmp.h
 @@ -0,0 +1,30 @@
@@ -2236,9 +2138,6 @@ index 0000000..78348a3
 +  ((void *)(address) < (void *)(jmpbuf[__JMP_BUF_SP]))
 +
 +#endif /* _BITS_SETJMP_H */
-diff --git a/libc/sysdeps/linux/avr32/bits/stackinfo.h b/libc/sysdeps/linux/avr32/bits/stackinfo.h
-new file mode 100644
-index 0000000..29b8452
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/stackinfo.h
 @@ -0,0 +1,28 @@
@@ -2270,9 +2169,6 @@ index 0000000..29b8452
 +#define _STACK_GROWS_DOWN	1
 +
 +#endif	/* stackinfo.h */
-diff --git a/libc/sysdeps/linux/avr32/bits/syscalls.h b/libc/sysdeps/linux/avr32/bits/syscalls.h
-new file mode 100644
-index 0000000..22ac059
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/syscalls.h
 @@ -0,0 +1,143 @@
@@ -2419,9 +2315,6 @@ index 0000000..22ac059
 +
 +#endif /* __ASSEMBLER__ */
 +#endif /* _BITS_SYSCALLS_H */
-diff --git a/libc/sysdeps/linux/avr32/bits/uClibc_arch_features.h b/libc/sysdeps/linux/avr32/bits/uClibc_arch_features.h
-new file mode 100644
-index 0000000..e95e8a5
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/uClibc_arch_features.h
 @@ -0,0 +1,45 @@
@@ -2470,16 +2363,10 @@ index 0000000..e95e8a5
 +#define __UCLIBC_HAVE_SIGNED_ZERO__
 +
 +#endif /* _BITS_UCLIBC_ARCH_FEATURES_H */
-diff --git a/libc/sysdeps/linux/avr32/bits/wordsize.h b/libc/sysdeps/linux/avr32/bits/wordsize.h
-new file mode 100644
-index 0000000..1b5842a
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bits/wordsize.h
 @@ -0,0 +1 @@
 +#define __WORDSIZE	32
-diff --git a/libc/sysdeps/linux/avr32/brk.c b/libc/sysdeps/linux/avr32/brk.c
-new file mode 100644
-index 0000000..a54b49a
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/brk.c
 @@ -0,0 +1,31 @@
@@ -2514,9 +2401,6 @@ index 0000000..a54b49a
 +	return 0;
 +}
 +libc_hidden_def(brk)
-diff --git a/libc/sysdeps/linux/avr32/bsd-_setjmp.S b/libc/sysdeps/linux/avr32/bsd-_setjmp.S
-new file mode 100644
-index 0000000..be66a10
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bsd-_setjmp.S
 @@ -0,0 +1,16 @@
@@ -2536,9 +2420,6 @@ index 0000000..be66a10
 +	mov	r11, 0
 +	bral	__GI___sigsetjmp
 +	.size	_setjmp, . - _setjmp
-diff --git a/libc/sysdeps/linux/avr32/bsd-setjmp.S b/libc/sysdeps/linux/avr32/bsd-setjmp.S
-new file mode 100644
-index 0000000..4635eeb
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/bsd-setjmp.S
 @@ -0,0 +1,16 @@
@@ -2558,9 +2439,6 @@ index 0000000..4635eeb
 +	mov	r11, 1
 +	bral	__GI___sigsetjmp
 +	.size	setjmp, . - setjmp
-diff --git a/libc/sysdeps/linux/avr32/clone.c b/libc/sysdeps/linux/avr32/clone.c
-new file mode 100644
-index 0000000..e43b0f3
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/clone.c
 @@ -0,0 +1,41 @@
@@ -2605,9 +2483,6 @@ index 0000000..e43b0f3
 +	__set_errno (-err);
 +	return -1;
 +}
-diff --git a/libc/sysdeps/linux/avr32/crt1.S b/libc/sysdeps/linux/avr32/crt1.S
-new file mode 100644
-index 0000000..ca1fa7a
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/crt1.S
 @@ -0,0 +1,97 @@
@@ -2708,9 +2583,6 @@ index 0000000..ca1fa7a
 +3:	.long	0		/* Linux executable */
 +	.long	2,6,0		/* Earliest compatible kernel */
 +4:	.align	4
-diff --git a/libc/sysdeps/linux/avr32/crti.S b/libc/sysdeps/linux/avr32/crti.S
-new file mode 100644
-index 0000000..660f47c
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/crti.S
 @@ -0,0 +1,26 @@
@@ -2740,9 +2612,6 @@ index 0000000..660f47c
 +	.align	2
 +2:	.long	1b - _GLOBAL_OFFSET_TABLE_
 +3:
-diff --git a/libc/sysdeps/linux/avr32/crtn.S b/libc/sysdeps/linux/avr32/crtn.S
-new file mode 100644
-index 0000000..f7d1040
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/crtn.S
 @@ -0,0 +1,14 @@
@@ -2760,9 +2629,6 @@ index 0000000..f7d1040
 +	.type	_fini, @function
 +	ldm	sp++, r6, pc
 +	.size	_fini, . - _fini
-diff --git a/libc/sysdeps/linux/avr32/mmap.c b/libc/sysdeps/linux/avr32/mmap.c
-new file mode 100644
-index 0000000..2ee025a
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/mmap.c
 @@ -0,0 +1,33 @@
@@ -2799,9 +2665,6 @@ index 0000000..2ee025a
 +	return mmap2(addr, len, prot, flags, fd, pgoff);
 +}
 +libc_hidden_def(mmap)
-diff --git a/libc/sysdeps/linux/avr32/setjmp.S b/libc/sysdeps/linux/avr32/setjmp.S
-new file mode 100644
-index 0000000..7d0354b
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/setjmp.S
 @@ -0,0 +1,29 @@
@@ -2834,9 +2697,6 @@ index 0000000..7d0354b
 +	.size	__sigsetjmp, . - __sigsetjmp
 +
 +libc_hidden_def(__sigsetjmp)
-diff --git a/libc/sysdeps/linux/avr32/sigaction.c b/libc/sysdeps/linux/avr32/sigaction.c
-new file mode 100644
-index 0000000..a97ff3d
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/sigaction.c
 @@ -0,0 +1,59 @@
@@ -2899,9 +2759,6 @@ index 0000000..a97ff3d
 +weak_alias(__libc_sigaction, sigaction)
 +libc_hidden_weak(sigaction)
 +#endif
-diff --git a/libc/sysdeps/linux/avr32/sigrestorer.S b/libc/sysdeps/linux/avr32/sigrestorer.S
-new file mode 100644
-index 0000000..df6a1ba
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/sigrestorer.S
 @@ -0,0 +1,15 @@
@@ -2920,9 +2777,6 @@ index 0000000..df6a1ba
 +__default_rt_sa_restorer:
 +	mov	r8, __NR_rt_sigreturn
 +	scall
-diff --git a/libc/sysdeps/linux/avr32/sys/elf.h b/libc/sysdeps/linux/avr32/sys/elf.h
-new file mode 100644
-index 0000000..faa7310
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/sys/elf.h
 @@ -0,0 +1,26 @@
@@ -2952,9 +2806,6 @@ index 0000000..faa7310
 +#include <sys/procfs.h>
 +
 +#endif	/* sys/elf.h */
-diff --git a/libc/sysdeps/linux/avr32/sys/procfs.h b/libc/sysdeps/linux/avr32/sys/procfs.h
-new file mode 100644
-index 0000000..3b37363
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/sys/procfs.h
 @@ -0,0 +1,123 @@
@@ -3081,9 +2932,6 @@ index 0000000..3b37363
 +__END_DECLS
 +
 +#endif	/* sys/procfs.h */
-diff --git a/libc/sysdeps/linux/avr32/sys/ucontext.h b/libc/sysdeps/linux/avr32/sys/ucontext.h
-new file mode 100644
-index 0000000..82c7fe2
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/sys/ucontext.h
 @@ -0,0 +1,90 @@
@@ -3177,9 +3025,6 @@ index 0000000..82c7fe2
 +} ucontext_t;
 +
 +#endif /* sys/ucontext.h */
-diff --git a/libc/sysdeps/linux/avr32/sys/user.h b/libc/sysdeps/linux/avr32/sys/user.h
-new file mode 100644
-index 0000000..c0b3d38
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/sys/user.h
 @@ -0,0 +1,46 @@
@@ -3229,9 +3074,6 @@ index 0000000..c0b3d38
 +};
 +
 +#endif /* _SYS_USER_H */
-diff --git a/libc/sysdeps/linux/avr32/syscall.S b/libc/sysdeps/linux/avr32/syscall.S
-new file mode 100644
-index 0000000..55c1b1f
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/syscall.S
 @@ -0,0 +1,71 @@
@@ -3306,9 +3148,6 @@ index 0000000..55c1b1f
 +
 +
 +	.size	syscall, . - syscall
-diff --git a/libc/sysdeps/linux/avr32/vfork.S b/libc/sysdeps/linux/avr32/vfork.S
-new file mode 100644
-index 0000000..03ca99f
 --- /dev/null
 +++ b/libc/sysdeps/linux/avr32/vfork.S
 @@ -0,0 +1,58 @@
@@ -3370,9 +3209,6 @@ index 0000000..03ca99f
 +
 +weak_alias(__vfork,vfork)
 +libc_hidden_weak(vfork)
-diff --git a/libpthread/linuxthreads.old/sysdeps/avr32/pt-machine.h b/libpthread/linuxthreads.old/sysdeps/avr32/pt-machine.h
-new file mode 100644
-index 0000000..eccf329
 --- /dev/null
 +++ b/libpthread/linuxthreads.old/sysdeps/avr32/pt-machine.h
 @@ -0,0 +1,73 @@
@@ -3449,9 +3285,6 @@ index 0000000..eccf329
 +}
 +
 +#endif /* pt-machine.h */
-diff --git a/libpthread/linuxthreads/sysdeps/avr32/pt-machine.h b/libpthread/linuxthreads/sysdeps/avr32/pt-machine.h
-new file mode 100644
-index 0000000..fe12bf8
 --- /dev/null
 +++ b/libpthread/linuxthreads/sysdeps/avr32/pt-machine.h
 @@ -0,0 +1,73 @@
@@ -3528,8 +3361,6 @@ index 0000000..fe12bf8
 +}
 +
 +#endif /* pt-machine.h */
-diff --git a/utils/ldd.c b/utils/ldd.c
-index 75ad628..e34acd9 100644
 --- a/utils/ldd.c
 +++ b/utils/ldd.c
 @@ -44,6 +44,11 @@

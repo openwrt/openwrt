@@ -1,8 +1,6 @@
-Index: uClibc-0.9.29/include/string.h
-===================================================================
---- uClibc-0.9.29.orig/include/string.h	2007-12-30 00:44:19.638696968 +0100
-+++ uClibc-0.9.29/include/string.h	2007-12-30 01:12:52.097715154 +0100
-@@ -320,18 +320,40 @@
+--- a/include/string.h
++++ b/include/string.h
+@@ -320,18 +320,40 @@ extern char *index (__const char *__s, i
  /* Find the last occurrence of C in S (same as strrchr).  */
  extern char *rindex (__const char *__s, int __c)
       __THROW __attribute_pure__ __nonnull ((1));
@@ -51,11 +49,9 @@ Index: uClibc-0.9.29/include/string.h
  # endif
  
  /* Return the position of the first bit set in I, or 0 if none are set.
-Index: uClibc-0.9.29/include/strings.h
-===================================================================
---- uClibc-0.9.29.orig/include/strings.h	2007-12-30 00:49:00.462700217 +0100
-+++ uClibc-0.9.29/include/strings.h	2007-12-30 00:52:57.844227820 +0100
-@@ -58,11 +58,36 @@
+--- a/include/strings.h
++++ b/include/strings.h
+@@ -58,11 +58,36 @@ extern char *rindex (__const char *__s, 
   * They are replaced as proposed by SuSv3. Don't sync this part
   * with glibc and keep it in sync with string.h.  */
  
