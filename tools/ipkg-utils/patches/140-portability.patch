@@ -1,8 +1,6 @@
-Index: ipkg-utils-1.7/ipkg-build
-===================================================================
---- ipkg-utils-1.7.orig/ipkg-build	2007-06-30 15:21:37.621213250 +0200
-+++ ipkg-utils-1.7/ipkg-build	2007-06-30 15:21:51.862103250 +0200
-@@ -11,6 +11,8 @@
+--- a/ipkg-build
++++ b/ipkg-build
+@@ -11,6 +11,8 @@ set -e
  
  version=1.0
  
@@ -11,10 +9,8 @@ Index: ipkg-utils-1.7/ipkg-build
  ipkg_extract_value() {
  	sed -e "s/^[^:]*:[[:space:]]*//"
  }
-Index: ipkg-utils-1.7/ipkg-make-index
-===================================================================
---- ipkg-utils-1.7.orig/ipkg-make-index	2007-06-30 15:21:37.225188500 +0200
-+++ ipkg-utils-1.7/ipkg-make-index	2007-06-30 15:21:51.866103500 +0200
+--- a/ipkg-make-index
++++ b/ipkg-make-index
 @@ -1,4 +1,4 @@
 -#!/usr/bin/python
 +#!/usr/bin/env python

@@ -1,7 +1,6 @@
-diff -Nur lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.cpp
---- lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp	2005-09-22 10:55:34.000000000 +0200
-+++ lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.cpp	2006-03-25 11:04:53.000000000 +0100
-@@ -274,12 +274,17 @@
+--- a/C/7zip/Compress/LZMA/LZMADecoder.cpp
++++ b/C/7zip/Compress/LZMA/LZMADecoder.cpp
+@@ -274,12 +274,17 @@ STDMETHODIMP CDecoder::SetDecoderPropert
    Byte remainder = (Byte)(properties[0] / 9);
    int lp = remainder % 5;
    int pb = remainder / 5;
@@ -22,10 +21,9 @@ diff -Nur lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp lzma.patched/C/7zip/Compress
    if (!_outWindowStream.Create(dictionarySize))
      return E_OUTOFMEMORY;
    if (!_literalDecoder.Create(lp, lc))
-diff -Nur lzma/C/7zip/Compress/LZMA/LZMADecoder.h lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.h
---- lzma/C/7zip/Compress/LZMA/LZMADecoder.h	2005-09-19 08:10:06.000000000 +0200
-+++ lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.h	2006-03-25 11:04:53.000000000 +0100
-@@ -228,6 +228,7 @@
+--- a/C/7zip/Compress/LZMA/LZMADecoder.h
++++ b/C/7zip/Compress/LZMA/LZMADecoder.h
+@@ -228,6 +228,7 @@ public:
        ICompressProgressInfo *progress);
  
    STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
@@ -33,9 +31,8 @@ diff -Nur lzma/C/7zip/Compress/LZMA/LZMADecoder.h lzma.patched/C/7zip/Compress/L
  
    STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
  
-diff -Nur lzma/C/7zip/Compress/LZMA_Lib/makefile lzma.patched/C/7zip/Compress/LZMA_Lib/makefile
---- lzma/C/7zip/Compress/LZMA_Lib/makefile	1970-01-01 01:00:00.000000000 +0100
-+++ lzma.patched/C/7zip/Compress/LZMA_Lib/makefile	2006-03-25 11:29:46.000000000 +0100
+--- /dev/null
++++ b/C/7zip/Compress/LZMA_Lib/makefile
 @@ -0,0 +1,92 @@
 +PROG = liblzma.a
 +CXX = g++ -O3 -Wall
@@ -129,9 +126,8 @@ diff -Nur lzma/C/7zip/Compress/LZMA_Lib/makefile lzma.patched/C/7zip/Compress/LZ
 +clean:
 +	-$(RM) $(PROG) $(OBJS)
 +
-diff -Nur lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma.patched/C/7zip/Compress/LZMA_Lib/ZLib.cpp
---- lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp	1970-01-01 01:00:00.000000000 +0100
-+++ lzma.patched/C/7zip/Compress/LZMA_Lib/ZLib.cpp	2006-03-25 11:04:53.000000000 +0100
+--- /dev/null
++++ b/C/7zip/Compress/LZMA_Lib/ZLib.cpp
 @@ -0,0 +1,273 @@
 +/*
 + * lzma zlib simplified wrapper

@@ -1,13 +1,11 @@
-diff -urN mtd.old/include/asm/types.h mtd.dev/include/asm/types.h
---- mtd.old/include/asm/types.h	1970-01-01 01:00:00.000000000 +0100
-+++ mtd.dev/include/asm/types.h	2006-09-27 16:50:03.000000000 +0200
+--- /dev/null
++++ b/include/asm/types.h
 @@ -0,0 +1,3 @@
 +#ifdef linux
 +#include_next <asm/types.h>
 +#endif
-diff -urN mtd.old/util/mkfs.jffs2.c mtd.dev/util/mkfs.jffs2.c
---- mtd.old/util/mkfs.jffs2.c	2004-11-27 00:00:13.000000000 +0100
-+++ mtd.dev/util/mkfs.jffs2.c	2006-09-27 16:51:56.000000000 +0200
+--- a/util/mkfs.jffs2.c
++++ b/util/mkfs.jffs2.c
 @@ -68,6 +68,7 @@
  #include <zlib.h>
  #undef crc32
@@ -16,7 +14,7 @@ diff -urN mtd.old/util/mkfs.jffs2.c mtd.dev/util/mkfs.jffs2.c
  
  /* Do not use the wierd XPG version of basename */
  #undef basename
-@@ -1032,7 +1033,7 @@
+@@ -1032,7 +1033,7 @@ static void recursive_populate_directory
  			case S_IFDIR:
  				if (verbose) {
  					printf("\td %04o %9lu %5d:%-3d %s\n",
@@ -25,7 +23,7 @@ diff -urN mtd.old/util/mkfs.jffs2.c mtd.dev/util/mkfs.jffs2.c
  							(int) (e->sb.st_uid), (int) (e->sb.st_gid),
  							e->name);
  				}
-@@ -1041,7 +1042,7 @@
+@@ -1041,7 +1042,7 @@ static void recursive_populate_directory
  			case S_IFSOCK:
  				if (verbose) {
  					printf("\ts %04o %9lu %5d:%-3d %s\n",
@@ -34,7 +32,7 @@ diff -urN mtd.old/util/mkfs.jffs2.c mtd.dev/util/mkfs.jffs2.c
  							(int) e->sb.st_uid, (int) e->sb.st_gid, e->name);
  				}
  				write_pipe(e);
-@@ -1049,7 +1050,7 @@
+@@ -1049,7 +1050,7 @@ static void recursive_populate_directory
  			case S_IFIFO:
  				if (verbose) {
  					printf("\tp %04o %9lu %5d:%-3d %s\n",
@@ -43,7 +41,7 @@ diff -urN mtd.old/util/mkfs.jffs2.c mtd.dev/util/mkfs.jffs2.c
  							(int) e->sb.st_uid, (int) e->sb.st_gid, e->name);
  				}
  				write_pipe(e);
-@@ -1075,7 +1076,7 @@
+@@ -1075,7 +1076,7 @@ static void recursive_populate_directory
  			case S_IFLNK:
  				if (verbose) {
  					printf("\tl %04o %9lu %5d:%-3d %s -> %s\n",
@@ -52,7 +50,7 @@ diff -urN mtd.old/util/mkfs.jffs2.c mtd.dev/util/mkfs.jffs2.c
  							(int) e->sb.st_uid, (int) e->sb.st_gid, e->name,
  							e->link);
  				}
-@@ -1084,7 +1085,7 @@
+@@ -1084,7 +1085,7 @@ static void recursive_populate_directory
  			case S_IFREG:
  				if (verbose) {
  					printf("\tf %04o %9lu %5d:%-3d %s\n",

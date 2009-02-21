@@ -1,6 +1,5 @@
-diff -ur lua-luci-5.1.3/src/luaconf.h lua-luci-5.1.3-new/src/luaconf.h
---- lua-luci-5.1.3/src/luaconf.h	2008-04-14 13:19:54.000000000 +0200
-+++ lua-luci-5.1.3-new/src/luaconf.h	2008-04-14 13:19:17.000000000 +0200
+--- a/src/luaconf.h
++++ b/src/luaconf.h
 @@ -38,7 +38,6 @@
  #if defined(LUA_USE_LINUX)
  #define LUA_USE_POSIX
@@ -9,11 +8,9 @@ diff -ur lua-luci-5.1.3/src/luaconf.h lua-luci-5.1.3-new/src/luaconf.h
  #endif
  
  #if defined(LUA_USE_MACOSX)
-Nur in lua-luci-5.1.3-new/src: luaconf.h.orig.
-diff -ur lua-luci-5.1.3/src/Makefile lua-luci-5.1.3-new/src/Makefile
---- lua-luci-5.1.3/src/Makefile	2008-04-14 13:19:57.000000000 +0200
-+++ lua-luci-5.1.3-new/src/Makefile	2008-04-14 13:19:17.000000000 +0200
-@@ -17,6 +17,7 @@
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -17,6 +17,7 @@ LIBS= -lm $(MYLIBS)
  MYCFLAGS=
  MYLDFLAGS=
  MYLIBS=
@@ -21,7 +18,7 @@ diff -ur lua-luci-5.1.3/src/Makefile lua-luci-5.1.3-new/src/Makefile
  
  # == END OF USER SETTINGS. NO NEED TO CHANGE ANYTHING BELOW THIS LINE =========
  
-@@ -86,7 +87,7 @@
+@@ -86,7 +87,7 @@ echo:
  	@echo "MYLIBS = $(MYLIBS)"
  
  # convenience targets for popular platforms
@@ -30,7 +27,7 @@ diff -ur lua-luci-5.1.3/src/Makefile lua-luci-5.1.3-new/src/Makefile
  none:
  	@echo "Please choose a platform:"
  	@echo "   $(PLATS)"
-@@ -101,16 +102,16 @@
+@@ -101,16 +102,16 @@ bsd:
  	$(MAKE) all MYCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E"
  
  freebsd:
@@ -50,4 +47,3 @@ diff -ur lua-luci-5.1.3/src/Makefile lua-luci-5.1.3-new/src/Makefile
  # use this on Mac OS X 10.3-
  #	$(MAKE) all MYCFLAGS=-DLUA_USE_MACOSX
  
-Nur in lua-luci-5.1.3-new/src: Makefile.orig.

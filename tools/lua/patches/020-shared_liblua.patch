@@ -1,8 +1,6 @@
-Index: lua-5.1.4/Makefile
-===================================================================
---- lua-5.1.4.orig/Makefile	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/Makefile	2008-08-24 16:48:42.000000000 +0200
-@@ -42,8 +42,8 @@
+--- a/Makefile
++++ b/Makefile
+@@ -42,8 +42,8 @@ PLATS= aix ansi bsd freebsd generic linu
  
  # What to install.
  TO_BIN= lua luac
@@ -13,7 +11,7 @@ Index: lua-5.1.4/Makefile
  TO_MAN= lua.1 luac.1
  
  # Lua version and release.
-@@ -63,6 +63,7 @@
+@@ -63,6 +63,7 @@ install: dummy
  	cd src && $(INSTALL_EXEC) $(TO_BIN) $(INSTALL_BIN)
  	cd src && $(INSTALL_DATA) $(TO_INC) $(INSTALL_INC)
  	cd src && $(INSTALL_DATA) $(TO_LIB) $(INSTALL_LIB)
@@ -21,11 +19,9 @@ Index: lua-5.1.4/Makefile
  	cd doc && $(INSTALL_DATA) $(TO_MAN) $(INSTALL_MAN)
  
  ranlib:
-Index: lua-5.1.4/src/ldo.h
-===================================================================
---- lua-5.1.4.orig/src/ldo.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/ldo.h	2008-08-24 16:48:42.000000000 +0200
-@@ -46,7 +46,7 @@
+--- a/src/ldo.h
++++ b/src/ldo.h
+@@ -46,7 +46,7 @@ LUAI_FUNC int luaD_pcall (lua_State *L, 
  LUAI_FUNC int luaD_poscall (lua_State *L, StkId firstResult);
  LUAI_FUNC void luaD_reallocCI (lua_State *L, int newsize);
  LUAI_FUNC void luaD_reallocstack (lua_State *L, int newsize);
@@ -34,10 +30,8 @@ Index: lua-5.1.4/src/ldo.h
  
  LUAI_FUNC void luaD_throw (lua_State *L, int errcode);
  LUAI_FUNC int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud);
-Index: lua-5.1.4/src/lfunc.h
-===================================================================
---- lua-5.1.4.orig/src/lfunc.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lfunc.h	2008-08-24 16:48:42.000000000 +0200
+--- a/src/lfunc.h
++++ b/src/lfunc.h
 @@ -18,7 +18,7 @@
                           cast(int, sizeof(TValue *)*((n)-1)))
  
@@ -47,10 +41,8 @@ Index: lua-5.1.4/src/lfunc.h
  LUAI_FUNC Closure *luaF_newCclosure (lua_State *L, int nelems, Table *e);
  LUAI_FUNC Closure *luaF_newLclosure (lua_State *L, int nelems, Table *e);
  LUAI_FUNC UpVal *luaF_newupval (lua_State *L);
-Index: lua-5.1.4/src/lmem.h
-===================================================================
---- lua-5.1.4.orig/src/lmem.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lmem.h	2008-08-24 16:48:42.000000000 +0200
+--- a/src/lmem.h
++++ b/src/lmem.h
 @@ -38,9 +38,9 @@
     ((v)=cast(t *, luaM_reallocv(L, v, oldn, n, sizeof(t))))
  
@@ -63,10 +55,8 @@ Index: lua-5.1.4/src/lmem.h
  LUAI_FUNC void *luaM_growaux_ (lua_State *L, void *block, int *size,
                                 size_t size_elem, int limit,
                                 const char *errormsg);
-Index: lua-5.1.4/src/lstring.h
-===================================================================
---- lua-5.1.4.orig/src/lstring.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lstring.h	2008-08-24 16:48:42.000000000 +0200
+--- a/src/lstring.h
++++ b/src/lstring.h
 @@ -25,7 +25,7 @@
  
  LUAI_FUNC void luaS_resize (lua_State *L, int newsize);
@@ -76,11 +66,9 @@ Index: lua-5.1.4/src/lstring.h
  
  
  #endif
-Index: lua-5.1.4/src/lundump.h
-===================================================================
---- lua-5.1.4.orig/src/lundump.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lundump.h	2008-08-24 16:48:42.000000000 +0200
-@@ -17,7 +17,7 @@
+--- a/src/lundump.h
++++ b/src/lundump.h
+@@ -17,7 +17,7 @@ LUAI_FUNC Proto* luaU_undump (lua_State*
  LUAI_FUNC void luaU_header (char* h);
  
  /* dump one chunk; from ldump.c */
@@ -89,11 +77,9 @@ Index: lua-5.1.4/src/lundump.h
  
  #ifdef luac_c
  /* print one chunk; from print.c */
-Index: lua-5.1.4/src/Makefile
-===================================================================
---- lua-5.1.4.orig/src/Makefile	2008-08-24 16:48:20.000000000 +0200
-+++ lua-5.1.4/src/Makefile	2008-08-24 16:48:42.000000000 +0200
-@@ -23,6 +23,7 @@
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -23,6 +23,7 @@ MYLIBS=
  PLATS= aix ansi bsd freebsd generic linux macosx mingw posix solaris
  
  LUA_A=	liblua.a
@@ -101,7 +87,7 @@ Index: lua-5.1.4/src/Makefile
  CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
  	lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o  \
  	lundump.o lvm.o lzio.o lnum.o
-@@ -33,11 +34,12 @@
+@@ -33,11 +34,12 @@ LUA_T=	lua
  LUA_O=	lua.o
  
  LUAC_T=	luac
@@ -116,7 +102,7 @@ Index: lua-5.1.4/src/Makefile
  
  default: $(PLAT)
  
-@@ -47,14 +49,23 @@
+@@ -47,14 +49,23 @@ o:	$(ALL_O)
  
  a:	$(ALL_A)
  
@@ -143,7 +129,7 @@ Index: lua-5.1.4/src/Makefile
  	$(CC) -o $@ $(MYLDFLAGS) $(LUAC_O) $(LUA_A) $(LIBS)
  
  clean:
-@@ -96,7 +107,7 @@
+@@ -96,7 +107,7 @@ generic:
  	$(MAKE) all MYCFLAGS=
  
  linux:

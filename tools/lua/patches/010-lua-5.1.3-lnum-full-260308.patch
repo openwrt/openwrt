@@ -1,8 +1,6 @@
-Index: lua-5.1.4/src/Makefile
-===================================================================
---- lua-5.1.4.orig/src/Makefile	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/Makefile	2008-08-24 16:48:20.000000000 +0200
-@@ -25,7 +25,7 @@
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -25,7 +25,7 @@ PLATS= aix ansi bsd freebsd generic linu
  LUA_A=	liblua.a
  CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
  	lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o  \
@@ -11,7 +9,7 @@ Index: lua-5.1.4/src/Makefile
  LIB_O=	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o \
  	lstrlib.o loadlib.o linit.o
  
-@@ -148,6 +148,7 @@
+@@ -148,6 +148,7 @@ llex.o: llex.c lua.h luaconf.h ldo.h lob
  lmathlib.o: lmathlib.c lua.h luaconf.h lauxlib.h lualib.h
  lmem.o: lmem.c lua.h luaconf.h ldebug.h lstate.h lobject.h llimits.h \
    ltm.h lzio.h lmem.h ldo.h
@@ -19,7 +17,7 @@ Index: lua-5.1.4/src/Makefile
  loadlib.o: loadlib.c lua.h luaconf.h lauxlib.h lualib.h
  lobject.o: lobject.c lua.h luaconf.h ldo.h lobject.h llimits.h lstate.h \
    ltm.h lzio.h lmem.h lstring.h lgc.h lvm.h
-@@ -179,4 +180,18 @@
+@@ -179,4 +180,18 @@ lzio.o: lzio.c lua.h luaconf.h llimits.h
  print.o: print.c ldebug.h lstate.h lua.h luaconf.h lobject.h llimits.h \
    ltm.h lzio.h lmem.h lopcodes.h lundump.h
  
@@ -38,10 +36,8 @@ Index: lua-5.1.4/src/Makefile
 +print.c: lnum.h
 +
  # (end of Makefile)
-Index: lua-5.1.4/src/lapi.c
-===================================================================
---- lua-5.1.4.orig/src/lapi.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lapi.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lapi.c
++++ b/src/lapi.c
 @@ -28,7 +28,7 @@
  #include "ltm.h"
  #include "lundump.h"
@@ -51,7 +47,7 @@ Index: lua-5.1.4/src/lapi.c
  
  
  const char lua_ident[] =
-@@ -241,12 +241,13 @@
+@@ -241,12 +241,13 @@ LUA_API void lua_pushvalue (lua_State *L
  
  LUA_API int lua_type (lua_State *L, int idx) {
    StkId o = index2adr(L, idx);
@@ -66,7 +62,7 @@ Index: lua-5.1.4/src/lapi.c
    return (t == LUA_TNONE) ? "no value" : luaT_typenames[t];
  }
  
-@@ -264,6 +265,14 @@
+@@ -264,6 +265,14 @@ LUA_API int lua_isnumber (lua_State *L, 
  }
  
  
@@ -81,7 +77,7 @@ Index: lua-5.1.4/src/lapi.c
  LUA_API int lua_isstring (lua_State *L, int idx) {
    int t = lua_type(L, idx);
    return (t == LUA_TSTRING || t == LUA_TNUMBER);
-@@ -309,31 +318,66 @@
+@@ -309,31 +318,66 @@ LUA_API int lua_lessthan (lua_State *L, 
  }
  
  
@@ -158,7 +154,7 @@ Index: lua-5.1.4/src/lapi.c
  LUA_API int lua_toboolean (lua_State *L, int idx) {
    const TValue *o = index2adr(L, idx);
    return !l_isfalse(o);
-@@ -364,6 +408,7 @@
+@@ -364,6 +408,7 @@ LUA_API size_t lua_objlen (lua_State *L,
      case LUA_TSTRING: return tsvalue(o)->len;
      case LUA_TUSERDATA: return uvalue(o)->len;
      case LUA_TTABLE: return luaH_getn(hvalue(o));
@@ -166,7 +162,7 @@ Index: lua-5.1.4/src/lapi.c
      case LUA_TNUMBER: {
        size_t l;
        lua_lock(L);  /* `luaV_tostring' may create a new string */
-@@ -426,6 +471,8 @@
+@@ -426,6 +471,8 @@ LUA_API void lua_pushnil (lua_State *L) 
  }
  
  
@@ -175,7 +171,7 @@ Index: lua-5.1.4/src/lapi.c
  LUA_API void lua_pushnumber (lua_State *L, lua_Number n) {
    lua_lock(L);
    setnvalue(L->top, n);
-@@ -434,12 +481,22 @@
+@@ -434,12 +481,22 @@ LUA_API void lua_pushnumber (lua_State *
  }
  
  
@@ -200,7 +196,7 @@ Index: lua-5.1.4/src/lapi.c
  
  
  LUA_API void lua_pushlstring (lua_State *L, const char *s, size_t len) {
-@@ -569,7 +626,7 @@
+@@ -569,7 +626,7 @@ LUA_API void lua_rawgeti (lua_State *L, 
    lua_lock(L);
    o = index2adr(L, idx);
    api_check(L, ttistable(o));
@@ -209,7 +205,7 @@ Index: lua-5.1.4/src/lapi.c
    api_incr_top(L);
    lua_unlock(L);
  }
-@@ -597,6 +654,9 @@
+@@ -597,6 +654,9 @@ LUA_API int lua_getmetatable (lua_State 
      case LUA_TUSERDATA:
        mt = uvalue(obj)->metatable;
        break;
@@ -219,7 +215,7 @@ Index: lua-5.1.4/src/lapi.c
      default:
        mt = G(L)->mt[ttype(obj)];
        break;
-@@ -687,7 +747,7 @@
+@@ -687,7 +747,7 @@ LUA_API void lua_rawseti (lua_State *L, 
    api_checknelems(L, 1);
    o = index2adr(L, idx);
    api_check(L, ttistable(o));
@@ -228,7 +224,7 @@ Index: lua-5.1.4/src/lapi.c
    luaC_barriert(L, hvalue(o), L->top-1);
    L->top--;
    lua_unlock(L);
-@@ -721,7 +781,7 @@
+@@ -721,7 +781,7 @@ LUA_API int lua_setmetatable (lua_State 
        break;
      }
      default: {
@@ -237,7 +233,7 @@ Index: lua-5.1.4/src/lapi.c
        break;
      }
    }
-@@ -1085,3 +1145,32 @@
+@@ -1085,3 +1145,32 @@ LUA_API const char *lua_setupvalue (lua_
    return name;
  }
  
@@ -270,10 +266,8 @@ Index: lua-5.1.4/src/lapi.c
 +  else lua_pushnumber( L, nvalue_fast(o) );
 +  return 1;
 +}
-Index: lua-5.1.4/src/lapi.h
-===================================================================
---- lua-5.1.4.orig/src/lapi.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lapi.h	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lapi.h
++++ b/src/lapi.h
 @@ -13,4 +13,6 @@
  
  LUAI_FUNC void luaA_pushobject (lua_State *L, const TValue *o);
@@ -281,10 +275,8 @@ Index: lua-5.1.4/src/lapi.h
 +int lua_pushvalue_as_number (lua_State *L, int idx);
 +
  #endif
-Index: lua-5.1.4/src/lauxlib.c
-===================================================================
---- lua-5.1.4.orig/src/lauxlib.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lauxlib.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lauxlib.c
++++ b/src/lauxlib.c
 @@ -23,7 +23,7 @@
  #include "lua.h"
  
@@ -294,7 +286,7 @@ Index: lua-5.1.4/src/lauxlib.c
  
  #define FREELIST_REF	0	/* free list of references */
  
-@@ -66,7 +66,7 @@
+@@ -66,7 +66,7 @@ LUALIB_API int luaL_typerror (lua_State 
  
  
  static void tag_error (lua_State *L, int narg, int tag) {
@@ -303,7 +295,7 @@ Index: lua-5.1.4/src/lauxlib.c
  }
  
  
-@@ -188,8 +188,8 @@
+@@ -188,8 +188,8 @@ LUALIB_API lua_Number luaL_optnumber (lu
  
  LUALIB_API lua_Integer luaL_checkinteger (lua_State *L, int narg) {
    lua_Integer d = lua_tointeger(L, narg);
@@ -314,7 +306,7 @@ Index: lua-5.1.4/src/lauxlib.c
    return d;
  }
  
-@@ -200,6 +200,16 @@
+@@ -200,6 +200,16 @@ LUALIB_API lua_Integer luaL_optinteger (
  }
  
  
@@ -331,11 +323,9 @@ Index: lua-5.1.4/src/lauxlib.c
  LUALIB_API int luaL_getmetafield (lua_State *L, int obj, const char *event) {
    if (!lua_getmetatable(L, obj))  /* no metatable? */
      return 0;
-Index: lua-5.1.4/src/lauxlib.h
-===================================================================
---- lua-5.1.4.orig/src/lauxlib.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lauxlib.h	2008-08-24 16:48:20.000000000 +0200
-@@ -57,6 +57,12 @@
+--- a/src/lauxlib.h
++++ b/src/lauxlib.h
+@@ -57,6 +57,12 @@ LUALIB_API lua_Number (luaL_optnumber) (
  LUALIB_API lua_Integer (luaL_checkinteger) (lua_State *L, int numArg);
  LUALIB_API lua_Integer (luaL_optinteger) (lua_State *L, int nArg,
                                            lua_Integer def);
@@ -348,10 +338,8 @@ Index: lua-5.1.4/src/lauxlib.h
  
  LUALIB_API void (luaL_checkstack) (lua_State *L, int sz, const char *msg);
  LUALIB_API void (luaL_checktype) (lua_State *L, int narg, int t);
-Index: lua-5.1.4/src/lbaselib.c
-===================================================================
---- lua-5.1.4.orig/src/lbaselib.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lbaselib.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lbaselib.c
++++ b/src/lbaselib.c
 @@ -18,7 +18,9 @@
  
  #include "lauxlib.h"
@@ -363,7 +351,7 @@ Index: lua-5.1.4/src/lbaselib.c
  
  
  
-@@ -54,20 +56,25 @@
+@@ -54,20 +56,25 @@ static int luaB_tonumber (lua_State *L) 
    int base = luaL_optint(L, 2, 10);
    if (base == 10) {  /* standard conversion */
      luaL_checkany(L, 1);
@@ -394,7 +382,7 @@ Index: lua-5.1.4/src/lbaselib.c
          lua_pushnumber(L, (lua_Number)n);
          return 1;
        }
-@@ -144,7 +151,7 @@
+@@ -144,7 +151,7 @@ static int luaB_setfenv (lua_State *L) {
    luaL_checktype(L, 2, LUA_TTABLE);
    getfunc(L, 0);
    lua_pushvalue(L, 2);
@@ -403,7 +391,7 @@ Index: lua-5.1.4/src/lbaselib.c
      /* change environment of current thread */
      lua_pushthread(L);
      lua_insert(L, -2);
-@@ -209,7 +216,7 @@
+@@ -209,7 +216,7 @@ static int luaB_collectgarbage (lua_Stat
        return 1;
      }
      default: {
@@ -412,7 +400,7 @@ Index: lua-5.1.4/src/lbaselib.c
        return 1;
      }
    }
-@@ -631,6 +638,8 @@
+@@ -631,6 +638,8 @@ static void base_open (lua_State *L) {
    luaL_register(L, "_G", base_funcs);
    lua_pushliteral(L, LUA_VERSION);
    lua_setglobal(L, "_VERSION");  /* set global _VERSION */
@@ -421,10 +409,8 @@ Index: lua-5.1.4/src/lbaselib.c
    /* `ipairs' and `pairs' need auxliliary functions as upvalues */
    auxopen(L, "ipairs", luaB_ipairs, ipairsaux);
    auxopen(L, "pairs", luaB_pairs, luaB_next);
-Index: lua-5.1.4/src/lcode.c
-===================================================================
---- lua-5.1.4.orig/src/lcode.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lcode.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lcode.c
++++ b/src/lcode.c
 @@ -22,13 +22,18 @@
  #include "lopcodes.h"
  #include "lparser.h"
@@ -446,7 +432,7 @@ Index: lua-5.1.4/src/lcode.c
  }
  
  
-@@ -231,12 +236,16 @@
+@@ -231,12 +236,16 @@ static int addk (FuncState *fs, TValue *
    TValue *idx = luaH_set(L, fs->h, k);
    Proto *f = fs->f;
    int oldsize = f->sizek;
@@ -467,7 +453,7 @@ Index: lua-5.1.4/src/lcode.c
      luaM_growvector(L, f->k, fs->nk, f->sizek, TValue,
                      MAXARG_Bx, "constant table overflow");
      while (oldsize < f->sizek) setnilvalue(&f->k[oldsize++]);
-@@ -261,6 +270,21 @@
+@@ -261,6 +270,21 @@ int luaK_numberK (FuncState *fs, lua_Num
  }
  
  
@@ -489,7 +475,7 @@ Index: lua-5.1.4/src/lcode.c
  static int boolK (FuncState *fs, int b) {
    TValue o;
    setbvalue(&o, b);
-@@ -359,6 +383,16 @@
+@@ -359,6 +383,16 @@ static void discharge2reg (FuncState *fs
        luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.nval));
        break;
      }
@@ -506,7 +492,7 @@ Index: lua-5.1.4/src/lcode.c
      case VRELOCABLE: {
        Instruction *pc = &getcode(fs, e);
        SETARG_A(*pc, reg);
-@@ -444,6 +478,10 @@
+@@ -444,6 +478,10 @@ void luaK_exp2val (FuncState *fs, expdes
  int luaK_exp2RK (FuncState *fs, expdesc *e) {
    luaK_exp2val(fs, e);
    switch (e->k) {
@@ -517,7 +503,7 @@ Index: lua-5.1.4/src/lcode.c
      case VKNUM:
      case VTRUE:
      case VFALSE:
-@@ -451,6 +489,10 @@
+@@ -451,6 +489,10 @@ int luaK_exp2RK (FuncState *fs, expdesc 
        if (fs->nk <= MAXINDEXRK) {  /* constant fit in RK operand? */
          e->u.s.info = (e->k == VNIL)  ? nilK(fs) :
                        (e->k == VKNUM) ? luaK_numberK(fs, e->u.nval) :
@@ -528,7 +514,7 @@ Index: lua-5.1.4/src/lcode.c
                                          boolK(fs, (e->k == VTRUE));
          e->k = VK;
          return RKASK(e->u.s.info);
-@@ -540,7 +582,10 @@
+@@ -540,7 +582,10 @@ void luaK_goiftrue (FuncState *fs, expde
    int pc;  /* pc of last jump */
    luaK_dischargevars(fs, e);
    switch (e->k) {
@@ -540,7 +526,7 @@ Index: lua-5.1.4/src/lcode.c
        pc = NO_JUMP;  /* always true; do nothing */
        break;
      }
-@@ -598,7 +643,10 @@
+@@ -598,7 +643,10 @@ static void codenot (FuncState *fs, expd
        e->k = VTRUE;
        break;
      }
@@ -552,7 +538,7 @@ Index: lua-5.1.4/src/lcode.c
        e->k = VFALSE;
        break;
      }
-@@ -634,25 +682,70 @@
+@@ -634,25 +682,70 @@ void luaK_indexed (FuncState *fs, expdes
  
  static int constfolding (OpCode op, expdesc *e1, expdesc *e2) {
    lua_Number v1, v2, r;
@@ -628,7 +614,7 @@ Index: lua-5.1.4/src/lcode.c
    e1->u.nval = r;
    return 1;
  }
-@@ -696,7 +789,8 @@
+@@ -696,7 +789,8 @@ static void codecomp (FuncState *fs, OpC
  
  void luaK_prefix (FuncState *fs, UnOpr op, expdesc *e) {
    expdesc e2;
@@ -638,11 +624,9 @@ Index: lua-5.1.4/src/lcode.c
    switch (op) {
      case OPR_MINUS: {
        if (!isnumeral(e))
-Index: lua-5.1.4/src/lcode.h
-===================================================================
---- lua-5.1.4.orig/src/lcode.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lcode.h	2008-08-24 16:48:20.000000000 +0200
-@@ -71,6 +71,6 @@
+--- a/src/lcode.h
++++ b/src/lcode.h
+@@ -71,6 +71,6 @@ LUAI_FUNC void luaK_prefix (FuncState *f
  LUAI_FUNC void luaK_infix (FuncState *fs, BinOpr op, expdesc *v);
  LUAI_FUNC void luaK_posfix (FuncState *fs, BinOpr op, expdesc *v1, expdesc *v2);
  LUAI_FUNC void luaK_setlist (FuncState *fs, int base, int nelems, int tostore);
@@ -650,11 +634,9 @@ Index: lua-5.1.4/src/lcode.h
 +LUAI_FUNC int luaK_integerK (FuncState *fs, lua_Integer r);
  
  #endif
-Index: lua-5.1.4/src/ldebug.c
-===================================================================
---- lua-5.1.4.orig/src/ldebug.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/ldebug.c	2008-08-24 16:48:20.000000000 +0200
-@@ -183,7 +183,7 @@
+--- a/src/ldebug.c
++++ b/src/ldebug.c
+@@ -183,7 +183,7 @@ static void collectvalidlines (lua_State
      int *lineinfo = f->l.p->lineinfo;
      int i;
      for (i=0; i<f->l.p->sizelineinfo; i++)
@@ -663,7 +645,7 @@ Index: lua-5.1.4/src/ldebug.c
      sethvalue(L, L->top, t); 
    }
    incr_top(L);
-@@ -566,7 +566,7 @@
+@@ -566,7 +566,7 @@ static int isinstack (CallInfo *ci, cons
  
  void luaG_typeerror (lua_State *L, const TValue *o, const char *op) {
    const char *name = NULL;
@@ -672,7 +654,7 @@ Index: lua-5.1.4/src/ldebug.c
    const char *kind = (isinstack(L->ci, o)) ?
                           getobjname(L, L->ci, cast_int(o - L->base), &name) :
                           NULL;
-@@ -594,8 +594,8 @@
+@@ -594,8 +594,8 @@ void luaG_aritherror (lua_State *L, cons
  
  
  int luaG_ordererror (lua_State *L, const TValue *p1, const TValue *p2) {
@@ -683,11 +665,9 @@ Index: lua-5.1.4/src/ldebug.c
    if (t1[2] == t2[2])
      luaG_runerror(L, "attempt to compare two %s values", t1);
    else
-Index: lua-5.1.4/src/ldo.c
-===================================================================
---- lua-5.1.4.orig/src/ldo.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/ldo.c	2008-08-24 16:48:20.000000000 +0200
-@@ -219,9 +219,9 @@
+--- a/src/ldo.c
++++ b/src/ldo.c
+@@ -219,9 +219,9 @@ static StkId adjust_varargs (lua_State *
      luaC_checkGC(L);
      htab = luaH_new(L, nvar, 1);  /* create `arg' table */
      for (i=0; i<nvar; i++)  /* put extra arguments into `arg' table */
@@ -699,11 +679,9 @@ Index: lua-5.1.4/src/ldo.c
    }
  #endif
    /* move fixed parameters to final position */
-Index: lua-5.1.4/src/ldump.c
-===================================================================
---- lua-5.1.4.orig/src/ldump.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/ldump.c	2008-08-24 16:48:20.000000000 +0200
-@@ -52,6 +52,11 @@
+--- a/src/ldump.c
++++ b/src/ldump.c
+@@ -52,6 +52,11 @@ static void DumpNumber(lua_Number x, Dum
   DumpVar(x,D);
  }
  
@@ -715,7 +693,7 @@ Index: lua-5.1.4/src/ldump.c
  static void DumpVector(const void* b, int n, size_t size, DumpState* D)
  {
   DumpInt(n,D);
-@@ -93,8 +98,11 @@
+@@ -93,8 +98,11 @@ static void DumpConstants(const Proto* f
  	DumpChar(bvalue(o),D);
  	break;
     case LUA_TNUMBER:
@@ -728,10 +706,8 @@ Index: lua-5.1.4/src/ldump.c
     case LUA_TSTRING:
  	DumpString(rawtsvalue(o),D);
  	break;
-Index: lua-5.1.4/src/liolib.c
-===================================================================
---- lua-5.1.4.orig/src/liolib.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/liolib.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/liolib.c
++++ b/src/liolib.c
 @@ -9,6 +9,7 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -750,7 +726,7 @@ Index: lua-5.1.4/src/liolib.c
  
  #define IO_INPUT	1
  #define IO_OUTPUT	2
-@@ -269,6 +271,13 @@
+@@ -269,6 +271,13 @@ static int io_lines (lua_State *L) {
  ** =======================================================
  */
  
@@ -764,7 +740,7 @@ Index: lua-5.1.4/src/liolib.c
  
  static int read_number (lua_State *L, FILE *f) {
    lua_Number d;
-@@ -279,6 +288,43 @@
+@@ -279,6 +288,43 @@ static int read_number (lua_State *L, FI
    else return 0;  /* read fails */
  }
  
@@ -808,7 +784,7 @@ Index: lua-5.1.4/src/liolib.c
  
  static int test_eof (lua_State *L, FILE *f) {
    int c = getc(f);
-@@ -352,6 +398,14 @@
+@@ -352,6 +398,14 @@ static int g_read (lua_State *L, FILE *f
            case 'n':  /* number */
              success = read_number(L, f);
              break;
@@ -823,7 +799,7 @@ Index: lua-5.1.4/src/liolib.c
            case 'l':  /* line */
              success = read_line(L, f);
              break;
-@@ -412,9 +466,10 @@
+@@ -412,9 +466,10 @@ static int g_write (lua_State *L, FILE *
    int status = 1;
    for (; nargs--; arg++) {
      if (lua_type(L, arg) == LUA_TNUMBER) {
@@ -837,7 +813,7 @@ Index: lua-5.1.4/src/liolib.c
      }
      else {
        size_t l;
-@@ -457,7 +512,7 @@
+@@ -457,7 +512,7 @@ static int f_setvbuf (lua_State *L) {
    static const char *const modenames[] = {"no", "full", "line", NULL};
    FILE *f = tofile(L);
    int op = luaL_checkoption(L, 2, NULL, modenames);
@@ -846,10 +822,8 @@ Index: lua-5.1.4/src/liolib.c
    int res = setvbuf(f, NULL, mode[op], sz);
    return pushresult(L, res == 0, NULL);
  }
-Index: lua-5.1.4/src/llex.c
-===================================================================
---- lua-5.1.4.orig/src/llex.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/llex.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/llex.c
++++ b/src/llex.c
 @@ -22,6 +22,7 @@
  #include "lstring.h"
  #include "ltable.h"
@@ -877,7 +851,7 @@ Index: lua-5.1.4/src/llex.c
      NULL
  };
  
-@@ -90,7 +95,11 @@
+@@ -90,7 +95,11 @@ static const char *txtToken (LexState *l
    switch (token) {
      case TK_NAME:
      case TK_STRING:
@@ -889,7 +863,7 @@ Index: lua-5.1.4/src/llex.c
        save(ls, '\0');
        return luaZ_buffer(ls->buff);
      default:
-@@ -173,23 +182,27 @@
+@@ -173,23 +182,27 @@ static void buffreplace (LexState *ls, c
      if (p[n] == from) p[n] = to;
  }
  
@@ -922,7 +896,7 @@ Index: lua-5.1.4/src/llex.c
    lua_assert(isdigit(ls->current));
    do {
      save_and_next(ls);
-@@ -200,8 +213,9 @@
+@@ -200,8 +213,9 @@ static void read_numeral (LexState *ls, 
      save_and_next(ls);
    save(ls, '\0');
    buffreplace(ls, '.', ls->decpoint);  /* follow locale for decimal point */
@@ -934,7 +908,7 @@ Index: lua-5.1.4/src/llex.c
  }
  
  
-@@ -329,6 +343,7 @@
+@@ -329,6 +343,7 @@ static void read_string (LexState *ls, i
  }
  
  
@@ -942,7 +916,7 @@ Index: lua-5.1.4/src/llex.c
  static int llex (LexState *ls, SemInfo *seminfo) {
    luaZ_resetbuffer(ls->buff);
    for (;;) {
-@@ -400,8 +415,7 @@
+@@ -400,8 +415,7 @@ static int llex (LexState *ls, SemInfo *
          }
          else if (!isdigit(ls->current)) return '.';
          else {
@@ -952,7 +926,7 @@ Index: lua-5.1.4/src/llex.c
          }
        }
        case EOZ: {
-@@ -414,8 +428,7 @@
+@@ -414,8 +428,7 @@ static int llex (LexState *ls, SemInfo *
            continue;
          }
          else if (isdigit(ls->current)) {
@@ -962,11 +936,9 @@ Index: lua-5.1.4/src/llex.c
          }
          else if (isalpha(ls->current) || ls->current == '_') {
            /* identifier or reserved word */
-Index: lua-5.1.4/src/llex.h
-===================================================================
---- lua-5.1.4.orig/src/llex.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/llex.h	2008-08-24 16:48:20.000000000 +0200
-@@ -29,19 +29,22 @@
+--- a/src/llex.h
++++ b/src/llex.h
+@@ -29,19 +29,22 @@ enum RESERVED {
    TK_RETURN, TK_THEN, TK_TRUE, TK_UNTIL, TK_WHILE,
    /* other terminal symbols */
    TK_CONCAT, TK_DOTS, TK_EQ, TK_GE, TK_LE, TK_NE, TK_NUMBER,
@@ -994,11 +966,9 @@ Index: lua-5.1.4/src/llex.h
    TString *ts;
  } SemInfo;  /* semantics information */
  
-Index: lua-5.1.4/src/llimits.h
-===================================================================
---- lua-5.1.4.orig/src/llimits.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/llimits.h	2008-08-24 16:48:20.000000000 +0200
-@@ -49,6 +49,7 @@
+--- a/src/llimits.h
++++ b/src/llimits.h
+@@ -49,6 +49,7 @@ typedef LUAI_USER_ALIGNMENT_T L_Umaxalig
  
  /* result of a `usual argument conversion' over lua_Number */
  typedef LUAI_UACNUMBER l_uacNumber;
@@ -1006,7 +976,7 @@ Index: lua-5.1.4/src/llimits.h
  
  
  /* internal assertions for in-house debugging */
-@@ -80,7 +81,6 @@
+@@ -80,7 +81,6 @@ typedef LUAI_UACNUMBER l_uacNumber;
  #define cast_int(i)	cast(int, (i))
  
  
@@ -1014,10 +984,8 @@ Index: lua-5.1.4/src/llimits.h
  /*
  ** type for virtual-machine instructions
  ** must be an unsigned with (at least) 4 bytes (see details in lopcodes.h)
-Index: lua-5.1.4/src/lmathlib.c
-===================================================================
---- lua-5.1.4.orig/src/lmathlib.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lmathlib.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lmathlib.c
++++ b/src/lmathlib.c
 @@ -4,7 +4,6 @@
  ** See Copyright Notice in lua.h
  */
@@ -1262,7 +1230,7 @@ Index: lua-5.1.4/src/lmathlib.c
    return 1;
  }
  
-@@ -138,19 +234,20 @@
+@@ -138,19 +234,20 @@ static int math_rad (lua_State *L) {
  
  static int math_frexp (lua_State *L) {
    int e;
@@ -1285,7 +1253,7 @@ Index: lua-5.1.4/src/lmathlib.c
    int n = lua_gettop(L);  /* number of arguments */
    lua_Number dmin = luaL_checknumber(L, 1);
    int i;
-@@ -165,6 +262,7 @@
+@@ -165,6 +262,7 @@ static int math_min (lua_State *L) {
  
  
  static int math_max (lua_State *L) {
@@ -1293,7 +1261,7 @@ Index: lua-5.1.4/src/lmathlib.c
    int n = lua_gettop(L);  /* number of arguments */
    lua_Number dmax = luaL_checknumber(L, 1);
    int i;
-@@ -182,25 +280,20 @@
+@@ -182,25 +280,20 @@ static int math_random (lua_State *L) {
    /* the `%' avoids the (rare) case of r==1, and is needed also because on
       some systems (SunOS!) `rand()' may return a value larger than RAND_MAX */
    lua_Number r = (lua_Number)(rand()%RAND_MAX) / (lua_Number)RAND_MAX;
@@ -1333,7 +1301,7 @@ Index: lua-5.1.4/src/lmathlib.c
    }
    return 1;
  }
-@@ -211,6 +304,66 @@
+@@ -211,6 +304,66 @@ static int math_randomseed (lua_State *L
    return 0;
  }
  
@@ -1400,7 +1368,7 @@ Index: lua-5.1.4/src/lmathlib.c
  
  static const luaL_Reg mathlib[] = {
    {"abs",   math_abs},
-@@ -241,6 +394,18 @@
+@@ -241,6 +394,18 @@ static const luaL_Reg mathlib[] = {
    {"sqrt",  math_sqrt},
    {"tanh",   math_tanh},
    {"tan",   math_tan},
@@ -1419,7 +1387,7 @@ Index: lua-5.1.4/src/lmathlib.c
    {NULL, NULL}
  };
  
-@@ -252,8 +417,10 @@
+@@ -252,8 +417,10 @@ LUALIB_API int luaopen_math (lua_State *
    luaL_register(L, LUA_MATHLIBNAME, mathlib);
    lua_pushnumber(L, PI);
    lua_setfield(L, -2, "pi");
@@ -1431,10 +1399,8 @@ Index: lua-5.1.4/src/lmathlib.c
  #if defined(LUA_COMPAT_MOD)
    lua_getfield(L, -1, "fmod");
    lua_setfield(L, -2, "mod");
-Index: lua-5.1.4/src/lnum.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ lua-5.1.4/src/lnum.c	2008-08-24 16:48:20.000000000 +0200
+--- /dev/null
++++ b/src/lnum.c
 @@ -0,0 +1,312 @@
 +/*
 +** $Id: lnum.c,v ... $
@@ -1748,10 +1714,8 @@ Index: lua-5.1.4/src/lnum.c
 +  return 0;
 +}
 +
-Index: lua-5.1.4/src/lnum.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ lua-5.1.4/src/lnum.h	2008-08-24 16:48:20.000000000 +0200
+--- /dev/null
++++ b/src/lnum.h
 @@ -0,0 +1,116 @@
 +/*
 +** $Id: lnum.h,v ... $
@@ -1869,10 +1833,8 @@ Index: lua-5.1.4/src/lnum.h
 +{ lua_Integer _i; if (tt_integer_valued(o,&_i)) setivalue(o,_i); }
 +
 +#endif
-Index: lua-5.1.4/src/lnum_config.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ lua-5.1.4/src/lnum_config.h	2008-08-24 16:48:20.000000000 +0200
+--- /dev/null
++++ b/src/lnum_config.h
 @@ -0,0 +1,221 @@
 +/*
 +** $Id: lnum_config.h,v ... $
@@ -2095,10 +2057,8 @@ Index: lua-5.1.4/src/lnum_config.h
 +
 +#endif
 +
-Index: lua-5.1.4/src/lobject.c
-===================================================================
---- lua-5.1.4.orig/src/lobject.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lobject.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lobject.c
++++ b/src/lobject.c
 @@ -21,7 +21,8 @@
  #include "lstate.h"
  #include "lstring.h"
@@ -2109,7 +2069,7 @@ Index: lua-5.1.4/src/lobject.c
  
  
  const TValue luaO_nilobject_ = {{NULL}, LUA_TNIL};
-@@ -70,12 +71,31 @@
+@@ -70,12 +71,31 @@ int luaO_log2 (unsigned int x) {
  
  
  int luaO_rawequalObj (const TValue *t1, const TValue *t2) {
@@ -2143,7 +2103,7 @@ Index: lua-5.1.4/src/lobject.c
      case LUA_TBOOLEAN:
        return bvalue(t1) == bvalue(t2);  /* boolean true must be 1 !! */
      case LUA_TLIGHTUSERDATA:
-@@ -86,21 +106,6 @@
+@@ -86,21 +106,6 @@ int luaO_rawequalObj (const TValue *t1, 
    }
  }
  
@@ -2165,7 +2125,7 @@ Index: lua-5.1.4/src/lobject.c
  static void pushstr (lua_State *L, const char *str) {
    setsvalue2s(L, L->top, luaS_new(L, str));
    incr_top(L);
-@@ -131,7 +136,11 @@
+@@ -131,7 +136,11 @@ const char *luaO_pushvfstring (lua_State
          break;
        }
        case 'd': {
@@ -2178,15 +2138,13 @@ Index: lua-5.1.4/src/lobject.c
          incr_top(L);
          break;
        }
-@@ -212,3 +221,4 @@
+@@ -212,3 +221,4 @@ void luaO_chunkid (char *out, const char
      }
    }
  }
 +
-Index: lua-5.1.4/src/lobject.h
-===================================================================
---- lua-5.1.4.orig/src/lobject.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lobject.h	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lobject.h
++++ b/src/lobject.h
 @@ -17,7 +17,11 @@
  
  
@@ -2200,7 +2158,7 @@ Index: lua-5.1.4/src/lobject.h
  
  #define NUM_TAGS	(LAST_TAG+1)
  
-@@ -59,7 +63,12 @@
+@@ -59,7 +63,12 @@ typedef struct GCheader {
  typedef union {
    GCObject *gc;
    void *p;
@@ -2213,7 +2171,7 @@ Index: lua-5.1.4/src/lobject.h
    int b;
  } Value;
  
-@@ -77,7 +86,11 @@
+@@ -77,7 +86,11 @@ typedef struct lua_TValue {
  
  /* Macros to test type */
  #define ttisnil(o)	(ttype(o) == LUA_TNIL)
@@ -2226,7 +2184,7 @@ Index: lua-5.1.4/src/lobject.h
  #define ttisstring(o)	(ttype(o) == LUA_TSTRING)
  #define ttistable(o)	(ttype(o) == LUA_TTABLE)
  #define ttisfunction(o)	(ttype(o) == LUA_TFUNCTION)
-@@ -90,7 +103,25 @@
+@@ -90,7 +103,25 @@ typedef struct lua_TValue {
  #define ttype(o)	((o)->tt)
  #define gcvalue(o)	check_exp(iscollectable(o), (o)->value.gc)
  #define pvalue(o)	check_exp(ttislightuserdata(o), (o)->value.p)
@@ -2253,7 +2211,7 @@ Index: lua-5.1.4/src/lobject.h
  #define rawtsvalue(o)	check_exp(ttisstring(o), &(o)->value.gc->ts)
  #define tsvalue(o)	(&rawtsvalue(o)->tsv)
  #define rawuvalue(o)	check_exp(ttisuserdata(o), &(o)->value.gc->u)
-@@ -116,8 +147,27 @@
+@@ -116,8 +147,27 @@ typedef struct lua_TValue {
  /* Macros to set values */
  #define setnilvalue(obj) ((obj)->tt=LUA_TNIL)
  
@@ -2283,7 +2241,7 @@ Index: lua-5.1.4/src/lobject.h
  
  #define setpvalue(obj,x) \
    { TValue *i_o=(obj); i_o->value.p=(x); i_o->tt=LUA_TLIGHTUSERDATA; }
-@@ -155,9 +205,6 @@
+@@ -155,9 +205,6 @@ typedef struct lua_TValue {
      i_o->value.gc=cast(GCObject *, (x)); i_o->tt=LUA_TPROTO; \
      checkliveness(G(L),i_o); }
  
@@ -2293,7 +2251,7 @@ Index: lua-5.1.4/src/lobject.h
  #define setobj(L,obj1,obj2) \
    { const TValue *o2=(obj2); TValue *o1=(obj1); \
      o1->value = o2->value; o1->tt=o2->tt; \
-@@ -185,8 +232,11 @@
+@@ -185,8 +232,11 @@ typedef struct lua_TValue {
  
  #define setttype(obj, tt) (ttype(obj) = (tt))
  
@@ -2307,7 +2265,7 @@ Index: lua-5.1.4/src/lobject.h
  
  
  
-@@ -370,12 +420,10 @@
+@@ -370,12 +420,10 @@ LUAI_FUNC int luaO_log2 (unsigned int x)
  LUAI_FUNC int luaO_int2fb (unsigned int x);
  LUAI_FUNC int luaO_fb2int (int x);
  LUAI_FUNC int luaO_rawequalObj (const TValue *t1, const TValue *t2);
@@ -2320,11 +2278,9 @@ Index: lua-5.1.4/src/lobject.h
 -
  #endif
  
-Index: lua-5.1.4/src/loslib.c
-===================================================================
---- lua-5.1.4.orig/src/loslib.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/loslib.c	2008-08-24 16:48:20.000000000 +0200
-@@ -186,15 +186,30 @@
+--- a/src/loslib.c
++++ b/src/loslib.c
+@@ -186,15 +186,30 @@ static int os_time (lua_State *L) {
    }
    if (t == (time_t)(-1))
      lua_pushnil(L);
@@ -2357,10 +2313,8 @@ Index: lua-5.1.4/src/loslib.c
    return 1;
  }
  
-Index: lua-5.1.4/src/lparser.c
-===================================================================
---- lua-5.1.4.orig/src/lparser.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lparser.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lparser.c
++++ b/src/lparser.c
 @@ -33,7 +33,6 @@
  
  #define luaY_checklimit(fs,v,l,m)	if ((v)>(l)) errorlimit(fs,l,m)
@@ -2369,7 +2323,7 @@ Index: lua-5.1.4/src/lparser.c
  /*
  ** nodes for block list (list of active blocks)
  */
-@@ -72,7 +71,7 @@
+@@ -72,7 +71,7 @@ static void errorlimit (FuncState *fs, i
    const char *msg = (fs->f->linedefined == 0) ?
      luaO_pushfstring(fs->L, "main function has more than %d %s", limit, what) :
      luaO_pushfstring(fs->L, "function at line %d has more than %d %s",
@@ -2378,7 +2332,7 @@ Index: lua-5.1.4/src/lparser.c
    luaX_lexerror(fs->ls, msg, 0);
  }
  
-@@ -733,6 +732,18 @@
+@@ -733,6 +732,18 @@ static void simpleexp (LexState *ls, exp
        v->u.nval = ls->t.seminfo.r;
        break;
      }
@@ -2397,7 +2351,7 @@ Index: lua-5.1.4/src/lparser.c
      case TK_STRING: {
        codestring(ls, v, ls->t.seminfo.ts);
        break;
-@@ -1079,7 +1090,7 @@
+@@ -1079,7 +1090,7 @@ static void fornum (LexState *ls, TStrin
    if (testnext(ls, ','))
      exp1(ls);  /* optional step */
    else {  /* default step = 1 */
@@ -2406,11 +2360,9 @@ Index: lua-5.1.4/src/lparser.c
      luaK_reserveregs(fs, 1);
    }
    forbody(ls, base, line, 1, 1);
-Index: lua-5.1.4/src/lparser.h
-===================================================================
---- lua-5.1.4.orig/src/lparser.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lparser.h	2008-08-24 16:48:20.000000000 +0200
-@@ -31,7 +31,11 @@
+--- a/src/lparser.h
++++ b/src/lparser.h
+@@ -31,7 +31,11 @@ typedef enum {
    VRELOCABLE,	/* info = instruction pc */
    VNONRELOC,	/* info = result register */
    VCALL,	/* info = instruction pc */
@@ -2423,7 +2375,7 @@ Index: lua-5.1.4/src/lparser.h
  } expkind;
  
  typedef struct expdesc {
-@@ -39,6 +43,7 @@
+@@ -39,6 +43,7 @@ typedef struct expdesc {
    union {
      struct { int info, aux; } s;
      lua_Number nval;
@@ -2431,11 +2383,9 @@ Index: lua-5.1.4/src/lparser.h
    } u;
    int t;  /* patch list of `exit when true' */
    int f;  /* patch list of `exit when false' */
-Index: lua-5.1.4/src/lstrlib.c
-===================================================================
---- lua-5.1.4.orig/src/lstrlib.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/lstrlib.c	2008-08-24 16:48:20.000000000 +0200
-@@ -43,8 +43,8 @@
+--- a/src/lstrlib.c
++++ b/src/lstrlib.c
+@@ -43,8 +43,8 @@ static ptrdiff_t posrelat (ptrdiff_t pos
  static int str_sub (lua_State *L) {
    size_t l;
    const char *s = luaL_checklstring(L, 1, &l);
@@ -2446,7 +2396,7 @@ Index: lua-5.1.4/src/lstrlib.c
    if (start < 1) start = 1;
    if (end > (ptrdiff_t)l) end = (ptrdiff_t)l;
    if (start <= end)
-@@ -106,8 +106,8 @@
+@@ -106,8 +106,8 @@ static int str_rep (lua_State *L) {
  static int str_byte (lua_State *L) {
    size_t l;
    const char *s = luaL_checklstring(L, 1, &l);
@@ -2457,7 +2407,7 @@ Index: lua-5.1.4/src/lstrlib.c
    int n, i;
    if (posi <= 0) posi = 1;
    if ((size_t)pose > l) pose = l;
-@@ -496,7 +496,7 @@
+@@ -496,7 +496,7 @@ static int str_find_aux (lua_State *L, i
    size_t l1, l2;
    const char *s = luaL_checklstring(L, 1, &l1);
    const char *p = luaL_checklstring(L, 2, &l2);
@@ -2466,7 +2416,7 @@ Index: lua-5.1.4/src/lstrlib.c
    if (init < 0) init = 0;
    else if ((size_t)(init) > l1) init = (ptrdiff_t)l1;
    if (find && (lua_toboolean(L, 4) ||  /* explicit request? */
-@@ -690,7 +690,7 @@
+@@ -690,7 +690,7 @@ static int str_gsub (lua_State *L) {
  ** maximum size of each format specification (such as '%-099.99d')
  ** (+10 accounts for %99.99x plus margin of error)
  */
@@ -2475,7 +2425,7 @@ Index: lua-5.1.4/src/lstrlib.c
  
  
  static void addquoted (lua_State *L, luaL_Buffer *b, int arg) {
-@@ -747,9 +747,9 @@
+@@ -747,9 +747,9 @@ static const char *scanformat (lua_State
  static void addintlen (char *form) {
    size_t l = strlen(form);
    char spec = form[l - 1];
@@ -2488,7 +2438,7 @@ Index: lua-5.1.4/src/lstrlib.c
  }
  
  
-@@ -777,12 +777,12 @@
+@@ -777,12 +777,12 @@ static int str_format (lua_State *L) {
          }
          case 'd':  case 'i': {
            addintlen(form);
@@ -2503,10 +2453,8 @@ Index: lua-5.1.4/src/lstrlib.c
            break;
          }
          case 'e':  case 'E': case 'f':
-Index: lua-5.1.4/src/ltable.c
-===================================================================
---- lua-5.1.4.orig/src/ltable.c	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/ltable.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/ltable.c
++++ b/src/ltable.c
 @@ -33,6 +33,7 @@
  #include "lobject.h"
  #include "lstate.h"
@@ -2542,7 +2490,7 @@ Index: lua-5.1.4/src/ltable.c
  #define dummynode		(&dummynode_)
  
  static const Node dummynode_ = {
-@@ -80,27 +71,46 @@
+@@ -80,27 +71,46 @@ static const Node dummynode_ = {
  
  /*
  ** hash for lua_Numbers
@@ -2598,7 +2546,7 @@ Index: lua-5.1.4/src/ltable.c
      case LUA_TSTRING:
        return hashstr(t, rawtsvalue(key));
      case LUA_TBOOLEAN:
-@@ -116,16 +126,20 @@
+@@ -116,16 +126,20 @@ static Node *mainposition (const Table *
  /*
  ** returns the index for `key' if `key' is an appropriate key to live in
  ** the array part of the table, -1 otherwise.
@@ -2627,7 +2575,7 @@ Index: lua-5.1.4/src/ltable.c
  }
  
  
-@@ -137,8 +151,8 @@
+@@ -137,8 +151,8 @@ static int arrayindex (const TValue *key
  static int findindex (lua_State *L, Table *t, StkId key) {
    int i;
    if (ttisnil(key)) return -1;  /* first iteration */
@@ -2638,7 +2586,7 @@ Index: lua-5.1.4/src/ltable.c
      return i-1;  /* yes; that's the index (corrected to C) */
    else {
      Node *n = mainposition(t, key);
-@@ -163,7 +177,7 @@
+@@ -163,7 +177,7 @@ int luaH_next (lua_State *L, Table *t, S
    int i = findindex(L, t, key);  /* find original element */
    for (i++; i < t->sizearray; i++) {  /* try first array part */
      if (!ttisnil(&t->array[i])) {  /* a non-nil value? */
@@ -2647,7 +2595,7 @@ Index: lua-5.1.4/src/ltable.c
        setobj2s(L, key+1, &t->array[i]);
        return 1;
      }
-@@ -209,8 +223,8 @@
+@@ -209,8 +223,8 @@ static int computesizes (int nums[], int
  
  
  static int countint (const TValue *key, int *nums) {
@@ -2658,7 +2606,7 @@ Index: lua-5.1.4/src/ltable.c
      nums[ceillog2(k)]++;  /* count as such */
      return 1;
    }
-@@ -308,7 +322,7 @@
+@@ -308,7 +322,7 @@ static void resize (lua_State *L, Table 
      /* re-insert elements from vanishing slice */
      for (i=nasize; i<oldasize; i++) {
        if (!ttisnil(&t->array[i]))
@@ -2667,7 +2615,7 @@ Index: lua-5.1.4/src/ltable.c
      }
      /* shrink array */
      luaM_reallocvector(L, t->array, oldasize, nasize, TValue);
-@@ -409,7 +423,9 @@
+@@ -409,7 +423,9 @@ static TValue *newkey (lua_State *L, Tab
      othern = mainposition(t, key2tval(mp));
      if (othern != mp) {  /* is colliding node out of its main position? */
        /* yes; move colliding node into free position */
@@ -2678,7 +2626,7 @@ Index: lua-5.1.4/src/ltable.c
        gnext(othern) = n;  /* redo the chain with `n' in place of `mp' */
        *n = *mp;  /* copy colliding node into free pos. (mp->next also goes) */
        gnext(mp) = NULL;  /* now `mp' is free */
-@@ -432,17 +448,18 @@
+@@ -432,17 +448,18 @@ static TValue *newkey (lua_State *L, Tab
  /*
  ** search function for integers
  */
@@ -2702,7 +2650,7 @@ Index: lua-5.1.4/src/ltable.c
      } while (n);
      return luaO_nilobject;
    }
-@@ -470,14 +487,12 @@
+@@ -470,14 +487,12 @@ const TValue *luaH_get (Table *t, const 
    switch (ttype(key)) {
      case LUA_TNIL: return luaO_nilobject;
      case LUA_TSTRING: return luaH_getstr(t, rawtsvalue(key));
@@ -2722,7 +2670,7 @@ Index: lua-5.1.4/src/ltable.c
      default: {
        Node *n = mainposition(t, key);
        do {  /* check whether `key' is somewhere in the chain */
-@@ -498,20 +513,25 @@
+@@ -498,20 +513,25 @@ TValue *luaH_set (lua_State *L, Table *t
      return cast(TValue *, p);
    else {
      if (ttisnil(key)) luaG_runerror(L, "table index is nil");
@@ -2753,7 +2701,7 @@ Index: lua-5.1.4/src/ltable.c
      return newkey(L, t, &k);
    }
  }
-@@ -533,20 +553,21 @@
+@@ -533,20 +553,21 @@ static int unbound_search (Table *t, uns
    unsigned int i = j;  /* i is zero or a present index */
    j++;
    /* find `i' and `j' such that i is present and j is not */
@@ -2780,10 +2728,8 @@ Index: lua-5.1.4/src/ltable.c
      else i = m;
    }
    return i;
-Index: lua-5.1.4/src/ltable.h
-===================================================================
---- lua-5.1.4.orig/src/ltable.h	2008-08-24 16:46:37.000000000 +0200
-+++ lua-5.1.4/src/ltable.h	2008-08-24 16:48:20.000000000 +0200
+--- a/src/ltable.h
++++ b/src/ltable.h
 @@ -18,8 +18,8 @@
  #define key2tval(n)	(&(n)->i_key.tvk)
  
@@ -2795,10 +2741,8 @@ Index: lua-5.1.4/src/ltable.h
  LUAI_FUNC const TValue *luaH_getstr (Table *t, TString *key);
  LUAI_FUNC TValue *luaH_setstr (lua_State *L, Table *t, TString *key);
  LUAI_FUNC const TValue *luaH_get (Table *t, const TValue *key);
-Index: lua-5.1.4/src/ltm.c
-===================================================================
---- lua-5.1.4.orig/src/ltm.c	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/ltm.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/ltm.c
++++ b/src/ltm.c
 @@ -19,7 +19,6 @@
  #include "ltm.h"
  
@@ -2807,7 +2751,7 @@ Index: lua-5.1.4/src/ltm.c
  const char *const luaT_typenames[] = {
    "nil", "boolean", "userdata", "number",
    "string", "table", "function", "userdata", "thread",
-@@ -67,6 +66,9 @@
+@@ -67,6 +66,9 @@ const TValue *luaT_gettmbyobj (lua_State
      case LUA_TUSERDATA:
        mt = uvalue(o)->metatable;
        break;
@@ -2817,10 +2761,8 @@ Index: lua-5.1.4/src/ltm.c
      default:
        mt = G(L)->mt[ttype(o)];
    }
-Index: lua-5.1.4/src/lua.c
-===================================================================
---- lua-5.1.4.orig/src/lua.c	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/lua.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lua.c
++++ b/src/lua.c
 @@ -16,7 +16,7 @@
  
  #include "lauxlib.h"
@@ -2830,7 +2772,7 @@ Index: lua-5.1.4/src/lua.c
  
  
  static lua_State *globalL = NULL;
-@@ -382,6 +382,15 @@
+@@ -382,6 +382,15 @@ int main (int argc, char **argv) {
      l_message(argv[0], "cannot create state: not enough memory");
      return EXIT_FAILURE;
    }
@@ -2846,10 +2788,8 @@ Index: lua-5.1.4/src/lua.c
    s.argc = argc;
    s.argv = argv;
    status = lua_cpcall(L, &pmain, &s);
-Index: lua-5.1.4/src/lua.h
-===================================================================
---- lua-5.1.4.orig/src/lua.h	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/lua.h	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lua.h
++++ b/src/lua.h
 @@ -19,7 +19,7 @@
  #define LUA_VERSION	"Lua 5.1"
  #define LUA_RELEASE	"Lua 5.1.4"
@@ -2859,7 +2799,7 @@ Index: lua-5.1.4/src/lua.h
  #define LUA_AUTHORS 	"R. Ierusalimschy, L. H. de Figueiredo & W. Celes"
  
  
-@@ -71,6 +71,16 @@
+@@ -71,6 +71,16 @@ typedef void * (*lua_Alloc) (void *ud, v
  */
  #define LUA_TNONE		(-1)
  
@@ -2876,7 +2816,7 @@ Index: lua-5.1.4/src/lua.h
  #define LUA_TNIL		0
  #define LUA_TBOOLEAN		1
  #define LUA_TLIGHTUSERDATA	2
-@@ -139,6 +149,8 @@
+@@ -139,6 +149,8 @@ LUA_API int             (lua_isuserdata)
  LUA_API int             (lua_type) (lua_State *L, int idx);
  LUA_API const char     *(lua_typename) (lua_State *L, int tp);
  
@@ -2885,7 +2825,7 @@ Index: lua-5.1.4/src/lua.h
  LUA_API int            (lua_equal) (lua_State *L, int idx1, int idx2);
  LUA_API int            (lua_rawequal) (lua_State *L, int idx1, int idx2);
  LUA_API int            (lua_lessthan) (lua_State *L, int idx1, int idx2);
-@@ -244,6 +256,19 @@
+@@ -244,6 +256,19 @@ LUA_API lua_Alloc (lua_getallocf) (lua_S
  LUA_API void lua_setallocf (lua_State *L, lua_Alloc f, void *ud);
  
  
@@ -2905,7 +2845,7 @@ Index: lua-5.1.4/src/lua.h
  
  /* 
  ** ===============================================================
-@@ -268,7 +293,12 @@
+@@ -268,7 +293,12 @@ LUA_API void lua_setallocf (lua_State *L
  #define lua_isboolean(L,n)	(lua_type(L, (n)) == LUA_TBOOLEAN)
  #define lua_isthread(L,n)	(lua_type(L, (n)) == LUA_TTHREAD)
  #define lua_isnone(L,n)		(lua_type(L, (n)) == LUA_TNONE)
@@ -2919,15 +2859,13 @@ Index: lua-5.1.4/src/lua.h
  
  #define lua_pushliteral(L, s)	\
  	lua_pushlstring(L, "" s, (sizeof(s)/sizeof(char))-1)
-@@ -386,3 +416,4 @@
+@@ -386,3 +416,4 @@ struct lua_Debug {
  
  
  #endif
 +
-Index: lua-5.1.4/src/luaconf.h
-===================================================================
---- lua-5.1.4.orig/src/luaconf.h	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/luaconf.h	2008-08-24 16:48:20.000000000 +0200
+--- a/src/luaconf.h
++++ b/src/luaconf.h
 @@ -10,7 +10,9 @@
  
  #include <limits.h>
@@ -3123,7 +3061,7 @@ Index: lua-5.1.4/src/luaconf.h
  /*
  @@ LUAI_USER_ALIGNMENT_T is a type that requires maximum alignment.
  ** CHANGE it if your system requires alignments larger than double. (For
-@@ -728,28 +652,6 @@
+@@ -728,28 +652,6 @@ union luai_Cast { double l_d; long l_l; 
  #define luai_userstateyield(L,n)	((void)L)
  
  
@@ -3152,11 +3090,9 @@ Index: lua-5.1.4/src/luaconf.h
  /* =================================================================== */
  
  /*
-Index: lua-5.1.4/src/lundump.c
-===================================================================
---- lua-5.1.4.orig/src/lundump.c	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/lundump.c	2008-08-24 16:48:20.000000000 +0200
-@@ -73,6 +73,13 @@
+--- a/src/lundump.c
++++ b/src/lundump.c
+@@ -73,6 +73,13 @@ static lua_Number LoadNumber(LoadState* 
   return x;
  }
  
@@ -3170,7 +3106,7 @@ Index: lua-5.1.4/src/lundump.c
  static TString* LoadString(LoadState* S)
  {
   size_t size;
-@@ -119,6 +126,9 @@
+@@ -119,6 +126,9 @@ static void LoadConstants(LoadState* S, 
     case LUA_TNUMBER:
  	setnvalue(o,LoadNumber(S));
  	break;
@@ -3180,7 +3116,7 @@ Index: lua-5.1.4/src/lundump.c
     case LUA_TSTRING:
  	setsvalue2n(S->L,o,LoadString(S));
  	break;
-@@ -223,5 +233,22 @@
+@@ -223,5 +233,22 @@ void luaU_header (char* h)
   *h++=(char)sizeof(size_t);
   *h++=(char)sizeof(Instruction);
   *h++=(char)sizeof(lua_Number);
@@ -3204,10 +3140,8 @@ Index: lua-5.1.4/src/lundump.c
 +#endif
 +    );
  }
-Index: lua-5.1.4/src/lvm.c
-===================================================================
---- lua-5.1.4.orig/src/lvm.c	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/lvm.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lvm.c
++++ b/src/lvm.c
 @@ -25,22 +25,35 @@
  #include "ltable.h"
  #include "ltm.h"
@@ -3254,7 +3188,7 @@ Index: lua-5.1.4/src/lvm.c
  }
  
  
-@@ -49,8 +62,7 @@
+@@ -49,8 +62,7 @@ int luaV_tostring (lua_State *L, StkId o
      return 0;
    else {
      char s[LUAI_MAXNUMBER2STR];
@@ -3264,7 +3198,7 @@ Index: lua-5.1.4/src/lvm.c
      setsvalue2s(L, obj, luaS_new(L, s));
      return 1;
    }
-@@ -218,59 +230,127 @@
+@@ -218,59 +230,127 @@ static int l_strcmp (const TString *ls, 
  }
  
  
@@ -3417,7 +3351,7 @@ Index: lua-5.1.4/src/lvm.c
    return !l_isfalse(L->top);
  }
  
-@@ -310,30 +390,6 @@
+@@ -310,30 +390,6 @@ void luaV_concat (lua_State *L, int tota
  }
  
  
@@ -3448,7 +3382,7 @@ Index: lua-5.1.4/src/lvm.c
  /*
  ** some macros for common tasks in `luaV_execute'
  */
-@@ -357,17 +413,154 @@
+@@ -357,17 +413,154 @@ static void Arith (lua_State *L, StkId r
  #define Protect(x)	{ L->savedpc = pc; {x;}; base = L->base; }
  
  
@@ -3612,7 +3546,7 @@ Index: lua-5.1.4/src/lvm.c
  
  
  void luaV_execute (lua_State *L, int nexeccalls) {
-@@ -468,38 +661,45 @@
+@@ -468,38 +661,45 @@ void luaV_execute (lua_State *L, int nex
          continue;
        }
        case OP_ADD: {
@@ -3671,7 +3605,7 @@ Index: lua-5.1.4/src/lvm.c
          continue;
        }
        case OP_NOT: {
-@@ -511,11 +711,11 @@
+@@ -511,11 +711,11 @@ void luaV_execute (lua_State *L, int nex
          const TValue *rb = RB(i);
          switch (ttype(rb)) {
            case LUA_TTABLE: {
@@ -3685,7 +3619,7 @@ Index: lua-5.1.4/src/lvm.c
              break;
            }
            default: {  /* try metamethod */
-@@ -648,14 +848,30 @@
+@@ -648,14 +848,30 @@ void luaV_execute (lua_State *L, int nex
          }
        }
        case OP_FORLOOP: {
@@ -3724,7 +3658,7 @@ Index: lua-5.1.4/src/lvm.c
          }
          continue;
        }
-@@ -664,13 +880,21 @@
+@@ -664,13 +880,21 @@ void luaV_execute (lua_State *L, int nex
          const TValue *plimit = ra+1;
          const TValue *pstep = ra+2;
          L->savedpc = pc;  /* next steps may throw errors */
@@ -3747,7 +3681,7 @@ Index: lua-5.1.4/src/lvm.c
          dojump(L, pc, GETARG_sBx(i));
          continue;
        }
-@@ -707,7 +931,7 @@
+@@ -707,7 +931,7 @@ void luaV_execute (lua_State *L, int nex
            luaH_resizearray(L, h, last);  /* pre-alloc it at once */
          for (; n > 0; n--) {
            TValue *val = ra+n;
@@ -3756,10 +3690,8 @@ Index: lua-5.1.4/src/lvm.c
            luaC_barriert(L, h, val);
          }
          continue;
-Index: lua-5.1.4/src/lvm.h
-===================================================================
---- lua-5.1.4.orig/src/lvm.h	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/lvm.h	2008-08-24 16:48:20.000000000 +0200
+--- a/src/lvm.h
++++ b/src/lvm.h
 @@ -15,11 +15,9 @@
  
  #define tostring(L,o) ((ttype(o) == LUA_TSTRING) || (luaV_tostring(L, o)))
@@ -3774,10 +3706,8 @@ Index: lua-5.1.4/src/lvm.h
  
  
  LUAI_FUNC int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r);
-Index: lua-5.1.4/src/print.c
-===================================================================
---- lua-5.1.4.orig/src/print.c	2008-08-24 16:46:38.000000000 +0200
-+++ lua-5.1.4/src/print.c	2008-08-24 16:48:20.000000000 +0200
+--- a/src/print.c
++++ b/src/print.c
 @@ -14,6 +14,7 @@
  #include "lobject.h"
  #include "lopcodes.h"
@@ -3786,7 +3716,7 @@ Index: lua-5.1.4/src/print.c
  
  #define PrintFunction	luaU_print
  
-@@ -59,8 +60,16 @@
+@@ -59,8 +60,16 @@ static void PrintConstant(const Proto* f
    case LUA_TBOOLEAN:
  	printf(bvalue(o) ? "true" : "false");
  	break;

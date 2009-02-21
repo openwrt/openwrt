@@ -1,5 +1,5 @@
---- /tmp/ipkg-build	2008-08-01 09:36:41.000000000 +0200
-+++ ipkg-utils-1.7/ipkg-build	2008-08-06 15:04:52.000000000 +0200
+--- a/ipkg-build
++++ b/ipkg-build
 @@ -10,7 +10,8 @@
  set -e
  
@@ -10,7 +10,7 @@
  TAR="${TAR:-$(which tar)}"
  
  ipkg_extract_value() {
-@@ -49,7 +50,7 @@
+@@ -49,7 +50,7 @@ pkg_appears_sane() {
  
  	PKG_ERROR=0
  
@@ -19,7 +19,7 @@
  	if [ -n "$cvs_dirs" ]; then
  	    if [ "$noclean" = "1" ]; then
  		echo "*** Warning: The following CVS directories where found.
-@@ -62,7 +63,7 @@
+@@ -62,7 +63,7 @@ You probably want to remove them: " >&2
  	    fi
  	fi
  
@@ -28,7 +28,7 @@
  	if [ -n "$tilde_files" ]; then
  	    if [ "$noclean" = "1" ]; then
  		echo "*** Warning: The following files have names ending in '~'.
-@@ -75,7 +76,7 @@
+@@ -75,7 +76,7 @@ You probably want to remove them: " >&2
  	    fi
  	fi
  
