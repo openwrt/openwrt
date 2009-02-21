@@ -59,14 +59,6 @@ parse_matching_rule() {
 			*:dsthost)
 				append "$var" "-d $value"
 			;;
-			*:ipp2p)
-				add_insmod ipt_ipp2p
-				append "$var" "-m ipp2p"
-				case "$value" in
-					all) append "$var" "--edk --dc --kazaa --gnu --bit";;
-					*) append "$var" "--$value";;
-				esac
-			;;
 			*:layer7)
 				add_insmod ipt_layer7
 				add_insmod xt_layer7
