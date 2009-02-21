@@ -3,8 +3,6 @@ the new to the old ssb API. This patch is needed as long the old ssb
 version is used in the kernel for broadcom devices. After upgrading to
 ssb version out of kernel 2.6.27 or later this patch is not needed any more.
 
-diff --git a/drivers/net/wireless/b43/dma.c b/drivers/net/wireless/b43/dma.c
-index 098f886..8a09a1d 100644
 --- a/drivers/net/wireless/b43/dma.c
 +++ b/drivers/net/wireless/b43/dma.c
 @@ -328,11 +328,11 @@ static inline
@@ -69,7 +67,7 @@ index 098f886..8a09a1d 100644
  	gfp_t flags = GFP_KERNEL;
  
  	/* The specs call for 4K buffers for 30- and 32-bit DMA with 4K
-@@ -391,14 +392,11 @@ static int alloc_ringmemory(struct b43_dmaring *ring)
+@@ -391,14 +392,11 @@ static int alloc_ringmemory(struct b43_d
  	 * For unknown reasons - possibly a hardware error - the BCM4311 rev
  	 * 02, which uses 64-bit DMA, needs the ring buffer in very low memory,
  	 * which accounts for the GFP_DMA flag below.
@@ -86,7 +84,7 @@ index 098f886..8a09a1d 100644
  	if (!ring->descbase) {
  		b43err(ring->dev->wl, "DMA ringmemory allocation failed\n");
  		return -ENOMEM;
-@@ -410,13 +408,10 @@ static int alloc_ringmemory(struct b43_dmaring *ring)
+@@ -410,13 +408,10 @@ static int alloc_ringmemory(struct b43_d
  
  static void free_ringmemory(struct b43_dmaring *ring)
  {
@@ -103,7 +101,7 @@ index 098f886..8a09a1d 100644
  }
  
  /* Reset the RX DMA channel */
-@@ -523,7 +518,7 @@ static bool b43_dma_mapping_error(struct b43_dmaring *ring,
+@@ -523,7 +518,7 @@ static bool b43_dma_mapping_error(struct
  				  dma_addr_t addr,
  				  size_t buffersize, bool dma_to_device)
  {
@@ -112,7 +110,7 @@ index 098f886..8a09a1d 100644
  		return 1;
  
  	switch (ring->type) {
-@@ -849,10 +844,10 @@ struct b43_dmaring *b43_setup_dmaring(struct b43_wldev *dev,
+@@ -849,10 +844,10 @@ struct b43_dmaring *b43_setup_dmaring(st
  			goto err_kfree_meta;
  
  		/* test for ability to dma to txhdr_cache */
@@ -127,7 +125,7 @@ index 098f886..8a09a1d 100644
  
  		if (b43_dma_mapping_error(ring, dma_test,
  					  b43_txhdr_size(dev), 1)) {
-@@ -864,10 +859,10 @@ struct b43_dmaring *b43_setup_dmaring(struct b43_wldev *dev,
+@@ -864,10 +859,10 @@ struct b43_dmaring *b43_setup_dmaring(st
  			if (!ring->txhdr_cache)
  				goto err_kfree_meta;
  
@@ -142,7 +140,7 @@ index 098f886..8a09a1d 100644
  
  			if (b43_dma_mapping_error(ring, dma_test,
  						  b43_txhdr_size(dev), 1)) {
-@@ -878,9 +873,9 @@ struct b43_dmaring *b43_setup_dmaring(struct b43_wldev *dev,
+@@ -878,9 +873,9 @@ struct b43_dmaring *b43_setup_dmaring(st
  			}
  		}
  
@@ -155,11 +153,9 @@ index 098f886..8a09a1d 100644
  	}
  
  	err = alloc_ringmemory(ring);
-diff --git a/drivers/net/wireless/b43legacy/dma.c b/drivers/net/wireless/b43legacy/dma.c
-index fb6819e..87b1049 100644
 --- a/drivers/net/wireless/b43legacy/dma.c
 +++ b/drivers/net/wireless/b43legacy/dma.c
-@@ -393,13 +393,13 @@ dma_addr_t map_descbuffer(struct b43legacy_dmaring *ring,
+@@ -393,13 +393,13 @@ dma_addr_t map_descbuffer(struct b43lega
  	dma_addr_t dmaaddr;
  
  	if (tx)
@@ -179,7 +175,7 @@ index fb6819e..87b1049 100644
  
  	return dmaaddr;
  }
-@@ -411,13 +411,13 @@ void unmap_descbuffer(struct b43legacy_dmaring *ring,
+@@ -411,13 +411,13 @@ void unmap_descbuffer(struct b43legacy_d
  		      int tx)
  {
  	if (tx)
@@ -199,7 +195,7 @@ index fb6819e..87b1049 100644
  }
  
  static inline
-@@ -427,8 +427,8 @@ void sync_descbuffer_for_cpu(struct b43legacy_dmaring *ring,
+@@ -427,8 +427,8 @@ void sync_descbuffer_for_cpu(struct b43l
  {
  	B43legacy_WARN_ON(ring->tx);
  
@@ -210,7 +206,7 @@ index fb6819e..87b1049 100644
  }
  
  static inline
-@@ -438,8 +438,8 @@ void sync_descbuffer_for_device(struct b43legacy_dmaring *ring,
+@@ -438,8 +438,8 @@ void sync_descbuffer_for_device(struct b
  {
  	B43legacy_WARN_ON(ring->tx);
  
@@ -221,7 +217,7 @@ index fb6819e..87b1049 100644
  }
  
  static inline
-@@ -458,11 +458,10 @@ void free_descriptor_buffer(struct b43legacy_dmaring *ring,
+@@ -458,11 +458,10 @@ void free_descriptor_buffer(struct b43le
  
  static int alloc_ringmemory(struct b43legacy_dmaring *ring)
  {
@@ -237,7 +233,7 @@ index fb6819e..87b1049 100644
  	if (!ring->descbase) {
  		b43legacyerr(ring->dev->wl, "DMA ringmemory allocation"
  			     " failed\n");
-@@ -475,8 +474,10 @@ static int alloc_ringmemory(struct b43legacy_dmaring *ring)
+@@ -475,8 +474,10 @@ static int alloc_ringmemory(struct b43le
  
  static void free_ringmemory(struct b43legacy_dmaring *ring)
  {
@@ -250,7 +246,7 @@ index fb6819e..87b1049 100644
  }
  
  /* Reset the RX DMA channel */
-@@ -588,7 +589,7 @@ static bool b43legacy_dma_mapping_error(struct b43legacy_dmaring *ring,
+@@ -588,7 +589,7 @@ static bool b43legacy_dma_mapping_error(
  					 size_t buffersize,
  					 bool dma_to_device)
  {
@@ -259,7 +255,7 @@ index fb6819e..87b1049 100644
  		return 1;
  
  	switch (ring->type) {
-@@ -905,9 +906,9 @@ struct b43legacy_dmaring *b43legacy_setup_dmaring(struct b43legacy_wldev *dev,
+@@ -905,9 +906,9 @@ struct b43legacy_dmaring *b43legacy_setu
  			goto err_kfree_meta;
  
  		/* test for ability to dma to txhdr_cache */
@@ -272,7 +268,7 @@ index fb6819e..87b1049 100644
  
  		if (b43legacy_dma_mapping_error(ring, dma_test,
  					sizeof(struct b43legacy_txhdr_fw3), 1)) {
-@@ -919,7 +920,7 @@ struct b43legacy_dmaring *b43legacy_setup_dmaring(struct b43legacy_wldev *dev,
+@@ -919,7 +920,7 @@ struct b43legacy_dmaring *b43legacy_setu
  			if (!ring->txhdr_cache)
  				goto err_kfree_meta;
  
@@ -281,7 +277,7 @@ index fb6819e..87b1049 100644
  					ring->txhdr_cache,
  					sizeof(struct b43legacy_txhdr_fw3),
  					DMA_TO_DEVICE);
-@@ -929,9 +930,9 @@ struct b43legacy_dmaring *b43legacy_setup_dmaring(struct b43legacy_wldev *dev,
+@@ -929,9 +930,9 @@ struct b43legacy_dmaring *b43legacy_setu
  				goto err_kfree_txhdr_cache;
  		}
  

@@ -1,6 +1,6 @@
---- compat-wireless-2008-08-06/config.mk	2008-07-18 06:11:03.000000000 +0200
-+++ compat-wireless-2008-08-06.new/config.mk	2008-11-28 21:10:31.000000000 +0100
-@@ -72,70 +72,34 @@
+--- a/config.mk
++++ b/config.mk
+@@ -72,70 +72,34 @@ ifneq ($(CONFIG_PCI),)
  CONFIG_ATH5K=m
  CONFIG_ATH5K_DEBUG=n
  
@@ -88,7 +88,7 @@
  CONFIG_RT2X00_LIB_PCI=m
  CONFIG_RT2400PCI=m
  CONFIG_RT2500PCI=m
-@@ -159,31 +123,7 @@
+@@ -159,31 +123,7 @@ CONFIG_EEPROM_93CX6=m
  ifneq ($(CONFIG_USB),)
  CONFIG_ZD1211RW=m
  
@@ -120,7 +120,7 @@
  
  # RT2500USB does not require firmware
  CONFIG_RT2500USB=m
-@@ -212,36 +152,6 @@
+@@ -212,36 +152,6 @@ endif
  # p54
  CONFIG_P54_COMMON=m
  
