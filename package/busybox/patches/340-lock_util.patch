@@ -1,6 +1,6 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -220,6 +220,7 @@
+@@ -220,6 +220,7 @@ USE_LN(APPLET_NOEXEC(ln, ln, _BB_DIR_BIN
  USE_LOAD_POLICY(APPLET(load_policy, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
  USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_LOADKMAP(APPLET(loadkmap, _BB_DIR_SBIN, _BB_SUID_NEVER))
@@ -22,7 +22,7 @@
  #define logger_full_usage "\n\n" \
 --- a/miscutils/Config.in
 +++ b/miscutils/Config.in
-@@ -364,6 +364,12 @@
+@@ -364,6 +364,12 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  	  This is dangerous stuff, so you should probably say N.
  
@@ -37,7 +37,7 @@
  	default n
 --- a/miscutils/Kbuild
 +++ b/miscutils/Kbuild
-@@ -20,6 +20,7 @@
+@@ -20,6 +20,7 @@ lib-$(CONFIG_INOTIFYD)    += inotifyd.o
  lib-$(CONFIG_FEATURE_LAST_SMALL)+= last.o
  lib-$(CONFIG_FEATURE_LAST_FANCY)+= last_fancy.o
  lib-$(CONFIG_LESS)        += less.o

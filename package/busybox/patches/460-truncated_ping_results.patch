@@ -1,6 +1,6 @@
 --- a/networking/ping.c
 +++ b/networking/ping.c
-@@ -91,7 +91,7 @@
+@@ -91,7 +91,7 @@ static void ping4(len_and_sockaddr *lsa)
  	struct sockaddr_in pingaddr;
  	struct icmp *pkt;
  	int pingsock, c;
@@ -9,7 +9,7 @@
  
  	pingsock = create_icmp_socket();
  	pingaddr = lsa->u.sin;
-@@ -101,7 +101,7 @@
+@@ -101,7 +101,7 @@ static void ping4(len_and_sockaddr *lsa)
  	pkt->icmp_type = ICMP_ECHO;
  	pkt->icmp_cksum = in_cksum((unsigned short *) pkt, sizeof(packet));
  
@@ -18,7 +18,7 @@
  			   (struct sockaddr *) &pingaddr, sizeof(pingaddr));
  
  	/* listen for replies */
-@@ -135,7 +135,7 @@
+@@ -135,7 +135,7 @@ static void ping6(len_and_sockaddr *lsa)
  	struct icmp6_hdr *pkt;
  	int pingsock, c;
  	int sockopt;
@@ -27,7 +27,7 @@
  
  	pingsock = create_icmp6_socket();
  	pingaddr = lsa->u.sin6;
-@@ -147,7 +147,7 @@
+@@ -147,7 +147,7 @@ static void ping6(len_and_sockaddr *lsa)
  	sockopt = offsetof(struct icmp6_hdr, icmp6_cksum);
  	setsockopt(pingsock, SOL_RAW, IPV6_CHECKSUM, &sockopt, sizeof(sockopt));
  

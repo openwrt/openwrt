@@ -1,6 +1,6 @@
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -352,7 +352,7 @@
+@@ -352,7 +352,7 @@ int udhcpc_main(int argc ATTRIBUTE_UNUSE
  
  			switch (state) {
  			case INIT_SELECTING:
@@ -9,7 +9,7 @@
  					if (packet_num == 0)
  						xid = random_xid();
  
-@@ -382,7 +382,7 @@
+@@ -382,7 +382,7 @@ int udhcpc_main(int argc ATTRIBUTE_UNUSE
  				continue;
  			case RENEW_REQUESTED:
  			case REQUESTING:
