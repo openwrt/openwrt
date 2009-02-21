@@ -1,8 +1,6 @@
-Index: binutils-2.17/ld/configure.tgt
-===================================================================
---- binutils-2.17.orig/ld/configure.tgt	2008-06-06 20:41:04.000000000 +0100
-+++ binutils-2.17/ld/configure.tgt	2008-06-06 20:40:23.000000000 +0100
-@@ -92,8 +92,10 @@
+--- a/ld/configure.tgt
++++ b/ld/configure.tgt
+@@ -92,8 +92,10 @@ cr16c-*-elf*)           targ_emul=elf32c
  cris-*-*aout*)		targ_emul=crisaout
  			targ_extra_emuls="criself crislinux"
  			targ_extra_libpath=$targ_extra_emuls ;;

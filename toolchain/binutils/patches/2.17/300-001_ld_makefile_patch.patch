@@ -26,11 +26,9 @@ esac
 exit 0
 
 @DPATCH@
-Index: binutils-2.17/ld/Makefile.am
-===================================================================
---- binutils-2.17.orig/ld/Makefile.am	2007-06-28 09:19:34.837940280 +0200
-+++ binutils-2.17/ld/Makefile.am	2007-06-28 09:19:35.795794664 +0200
-@@ -20,7 +20,7 @@
+--- a/ld/Makefile.am
++++ b/ld/Makefile.am
+@@ -20,7 +20,7 @@ AM_CFLAGS = $(WARN_CFLAGS)
  # We put the scripts in the directory $(scriptdir)/ldscripts.
  # We can't put the scripts in $(datadir) because the SEARCH_DIR
  # directives need to be different for native and cross linkers.
@@ -39,11 +37,9 @@ Index: binutils-2.17/ld/Makefile.am
  
  EMUL = @EMUL@
  EMULATION_OFILES = @EMULATION_OFILES@
-Index: binutils-2.17/ld/Makefile.in
-===================================================================
---- binutils-2.17.orig/ld/Makefile.in	2007-06-28 09:19:34.844939216 +0200
-+++ binutils-2.17/ld/Makefile.in	2007-06-28 09:19:35.796794512 +0200
-@@ -269,7 +269,7 @@
+--- a/ld/Makefile.in
++++ b/ld/Makefile.in
+@@ -269,7 +269,7 @@ AM_CFLAGS = $(WARN_CFLAGS)
  # We put the scripts in the directory $(scriptdir)/ldscripts.
  # We can't put the scripts in $(datadir) because the SEARCH_DIR
  # directives need to be different for native and cross linkers.

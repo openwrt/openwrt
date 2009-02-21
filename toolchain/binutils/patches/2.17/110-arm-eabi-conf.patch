@@ -1,8 +1,6 @@
-Index: binutils-2.17/configure
-===================================================================
---- binutils-2.17.orig/configure	2007-06-28 09:19:35.030910944 +0200
-+++ binutils-2.17/configure	2007-06-28 09:19:35.592825520 +0200
-@@ -1305,7 +1305,7 @@
+--- a/configure
++++ b/configure
+@@ -1305,7 +1305,7 @@ case "${target}" in
    arm-*-elf* | strongarm-*-elf* | xscale-*-elf* | arm*-*-eabi* )
      noconfigdirs="$noconfigdirs target-libffi target-qthreads"
      ;;
@@ -11,11 +9,9 @@ Index: binutils-2.17/configure
      noconfigdirs="$noconfigdirs target-libffi target-qthreads"
      noconfigdirs="$noconfigdirs target-libjava target-libobjc"
      ;;
-Index: binutils-2.17/configure.in
-===================================================================
---- binutils-2.17.orig/configure.in	2007-06-28 09:19:35.031910792 +0200
-+++ binutils-2.17/configure.in	2007-06-28 09:19:35.593825368 +0200
-@@ -497,7 +497,7 @@
+--- a/configure.in
++++ b/configure.in
+@@ -497,7 +497,7 @@ case "${target}" in
    arm-*-elf* | strongarm-*-elf* | xscale-*-elf* | arm*-*-eabi* )
      noconfigdirs="$noconfigdirs target-libffi target-qthreads"
      ;;

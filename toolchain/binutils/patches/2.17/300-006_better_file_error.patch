@@ -24,11 +24,9 @@ esac
 exit 0
 
 @DPATCH@
-Index: binutils-2.17/bfd/opncls.c
-===================================================================
---- binutils-2.17.orig/bfd/opncls.c	2007-06-28 09:19:34.818943168 +0200
-+++ binutils-2.17/bfd/opncls.c	2007-06-28 09:19:35.993764568 +0200
-@@ -158,6 +158,13 @@
+--- a/bfd/opncls.c
++++ b/bfd/opncls.c
+@@ -158,6 +158,13 @@ bfd_fopen (const char *filename, const c
  {
    bfd *nbfd;
    const bfd_target *target_vec;
