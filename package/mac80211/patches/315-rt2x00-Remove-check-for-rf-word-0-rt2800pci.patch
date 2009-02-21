@@ -1,4 +1,4 @@
-From 0ae19587caba638b15ca8ea735a21d148459bd47 Mon Sep 17 00:00:00 2001
+From 7519f0a01c65f7b34eeff9411aa90373e082e501 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
 Date: Sun, 8 Feb 2009 17:08:28 +0100
 Subject: [PATCH] rt2x00: Remove check for rf word 0 (rt2800pci)
@@ -9,9 +9,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800pci.h |    4 ++--
  2 files changed, 2 insertions(+), 5 deletions(-)
 
+diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
+index ddea65b..86ed55c 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -125,9 +125,6 @@ static void rt2800pci_rf_write(struct rt
+@@ -125,9 +125,6 @@ static void rt2800pci_rf_write(struct rt2x00_dev *rt2x00dev,
  {
  	u32 reg;
  
@@ -21,6 +23,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	mutex_lock(&rt2x00dev->csr_mutex);
  
  	/*
+diff --git a/drivers/net/wireless/rt2x00/rt2800pci.h b/drivers/net/wireless/rt2x00/rt2800pci.h
+index 0682a6a..f8bc958 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.h
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
 @@ -68,8 +68,8 @@
@@ -34,3 +38,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  /*
   * Number of TX queues.
+-- 
+1.6.0
+

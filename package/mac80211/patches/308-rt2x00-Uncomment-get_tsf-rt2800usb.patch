@@ -1,4 +1,4 @@
-From 0779847f2c13b0170e4905138a61f7f98164a41e Mon Sep 17 00:00:00 2001
+From b44184b2fd4075f85193b9e61a885b8c057dd4bc Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
 Date: Sat, 7 Feb 2009 15:22:52 +0100
 Subject: [PATCH] rt2x00: Uncomment get_tsf (rt2800usb)
@@ -8,9 +8,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.c |   10 ----------
  1 files changed, 0 insertions(+), 10 deletions(-)
 
+diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
+index 004dc57..ab00d4d 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -2696,13 +2696,6 @@ static int rt2800usb_conf_tx(struct ieee
+@@ -2696,13 +2696,6 @@ static int rt2800usb_conf_tx(struct ieee80211_hw *hw, u16 queue_idx,
  	return 0;
  }
  
@@ -24,7 +26,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  static u64 rt2800usb_get_tsf(struct ieee80211_hw *hw)
  {
  	struct rt2x00_dev *rt2x00dev = hw->priv;
-@@ -2716,9 +2709,6 @@ static u64 rt2800usb_get_tsf(struct ieee
+@@ -2716,9 +2709,6 @@ static u64 rt2800usb_get_tsf(struct ieee80211_hw *hw)
  
  	return tsf;
  }
@@ -34,3 +36,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  static const struct ieee80211_ops rt2800usb_mac80211_ops = {
  	.tx			= rt2x00mac_tx,
+-- 
+1.6.0
+

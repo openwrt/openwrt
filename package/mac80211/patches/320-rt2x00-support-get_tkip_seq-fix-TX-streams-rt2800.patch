@@ -1,4 +1,4 @@
-From 0479f29b2d4d8e95eece75e9bfda9a6a5e7bc77e Mon Sep 17 00:00:00 2001
+From e65441d3066e5a37b480e6fc8f0e9fbc43e86ba4 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
 Date: Sat, 14 Feb 2009 19:56:24 +0100
 Subject: [PATCH] rt2x00: support get_tkip_seq, fix TX streams (rt2800usb)
@@ -9,9 +9,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.h |    6 ------
  2 files changed, 22 insertions(+), 7 deletions(-)
 
+diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
+index ff24173..7ec1270 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -1465,6 +1465,8 @@ static int rt2800usb_init_registers(stru
+@@ -1465,6 +1465,8 @@ static int rt2800usb_init_registers(struct rt2x00_dev *rt2x00dev)
  
  	rt2x00usb_register_read(rt2x00dev, TX_RTS_CFG, &reg);
  	rt2x00_set_field32(&reg, TX_RTS_CFG_AUTO_RTS_RETRY_LIMIT, 32);
@@ -20,7 +22,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_FBK_EN, 0);
  	rt2x00usb_register_write(rt2x00dev, TX_RTS_CFG, reg);
  
-@@ -2521,7 +2523,10 @@ static int rt2800usb_probe_hw_mode(struc
+@@ -2521,7 +2523,10 @@ static int rt2800usb_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  	spec->ht.ampdu_factor = 3;
  	spec->ht.ampdu_density = 4;
  	spec->ht.mcs.tx_params =
@@ -32,7 +34,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH)) {
  	case 3:
-@@ -2625,6 +2630,21 @@ static int rt2800usb_probe_hw(struct rt2
+@@ -2625,6 +2630,21 @@ static int rt2800usb_probe_hw(struct rt2x00_dev *rt2x00dev)
  /*
   * IEEE80211 stack callback functions.
   */
@@ -54,7 +56,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  static int rt2800usb_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
  {
  	struct rt2x00_dev *rt2x00dev = hw->priv;
-@@ -2754,6 +2774,7 @@ static const struct ieee80211_ops rt2800
+@@ -2754,6 +2774,7 @@ static const struct ieee80211_ops rt2800usb_mac80211_ops = {
  	.configure_filter	= rt2x00mac_configure_filter,
  	.set_key		= rt2x00mac_set_key,
  	.get_stats		= rt2x00mac_get_stats,
@@ -62,6 +64,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	.set_rts_threshold	= rt2800usb_set_rts_threshold,
  	.bss_info_changed	= rt2x00mac_bss_info_changed,
  	.conf_tx		= rt2800usb_conf_tx,
+diff --git a/drivers/net/wireless/rt2x00/rt2800usb.h b/drivers/net/wireless/rt2x00/rt2800usb.h
+index f94c8f8..e4e0a3d 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.h
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.h
 @@ -1339,12 +1339,6 @@ struct mac_iveiv_entry {
@@ -77,3 +81,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
   * MAC_WCID_ATTRIBUTE:
   */
  #define MAC_WCID_ATTRIBUTE_KEYTAB	FIELD32(0x00000001)
+-- 
+1.6.0
+

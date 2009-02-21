@@ -1,4 +1,4 @@
-From baa4f570de0978ba12be3b8596f063232c54538d Mon Sep 17 00:00:00 2001
+From 9a8e2f3909f43e4541ffa63985812aaa6b4c03be Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
 Date: Sun, 8 Feb 2009 12:32:51 +0100
 Subject: [PATCH] rt2x00: Remove invalid RX antenna init (rt2800usb)
@@ -8,9 +8,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.c |    1 -
  1 files changed, 0 insertions(+), 1 deletions(-)
 
+diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
+index b9ef5ea..012f4de 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -638,7 +638,6 @@ static void rt2800usb_config_ant(struct 
+@@ -638,7 +638,6 @@ static void rt2800usb_config_ant(struct rt2x00_dev *rt2x00dev,
  	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH)) {
  	case 1:
  		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 0);
@@ -18,3 +20,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  		break;
  	case 2:
  		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 2);
+-- 
+1.6.0
+

@@ -1,16 +1,18 @@
-From 4009f1317cb51ac89f37241de48970f2ee6a8ec5 Mon Sep 17 00:00:00 2001
+From d91bfd139f98e60222e7556b696b8caa66f658bb Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sat, 7 Feb 2009 17:18:03 +0100
-Subject: [PATCH] rt2x00: Fix MCS rx_mask (rt2800pci)
+Date: Sat, 7 Feb 2009 17:18:34 +0100
+Subject: [PATCH] rt2x00: Fix MCS rx_mask (rt2800usb)
 
 Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
- drivers/net/wireless/rt2x00/rt2800pci.c |   22 ++++++++++++++++++++--
+ drivers/net/wireless/rt2x00/rt2800usb.c |   22 ++++++++++++++++++++--
  1 files changed, 20 insertions(+), 2 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800pci.c
-+++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -2193,6 +2193,13 @@ static int rt2800pci_validate_eeprom(str
+diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
+index ab00d4d..1709e87 100644
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -2215,6 +2215,13 @@ static int rt2800usb_validate_eeprom(struct rt2x00_dev *rt2x00dev)
  		rt2x00_set_field16(&word, EEPROM_ANTENNA_RF_TYPE, RF2820);
  		rt2x00_eeprom_write(rt2x00dev, EEPROM_ANTENNA, word);
  		EEPROM(rt2x00dev, "Antenna: 0x%04x\n", word);
@@ -24,7 +26,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	}
  
  	rt2x00_eeprom_read(rt2x00dev, EEPROM_NIC, &word);
-@@ -2416,6 +2423,7 @@ static int rt2800pci_probe_hw_mode(struc
+@@ -2465,6 +2472,7 @@ static int rt2800usb_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  	char *tx_power1;
  	char *tx_power2;
  	unsigned int i;
@@ -32,16 +34,16 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  	/*
  	 * Initialize all hw fields.
-@@ -2432,6 +2440,8 @@ static int rt2800pci_probe_hw_mode(struc
+@@ -2481,6 +2489,8 @@ static int rt2800usb_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  				rt2x00_eeprom_addr(rt2x00dev,
  						   EEPROM_MAC_ADDR_0));
  
 +	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
 +
  	/*
- 	 * Initialize hw_mode information.
+ 	 * Initialize HT information.
  	 */
-@@ -2463,11 +2473,19 @@ static int rt2800pci_probe_hw_mode(struc
+@@ -2495,11 +2505,19 @@ static int rt2800usb_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  	    IEEE80211_HT_CAP_PSMP_SUPPORT;
  	spec->ht.ampdu_factor = 3;
  	spec->ht.ampdu_density = 4;
@@ -61,5 +63,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	}
 +
  	/*
- 	 * Create channel information array
+ 	 * Initialize hw_mode information.
  	 */
+-- 
+1.6.0
+
