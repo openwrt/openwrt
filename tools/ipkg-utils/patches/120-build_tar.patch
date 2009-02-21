@@ -3,11 +3,9 @@ This patch from aorlinsk fixes an issue with order in options passed to tar
   http://openwrt.org/forum/viewtopic.php?pid=8332#p8332
 
 
-Index: ipkg-utils-1.7/ipkg-build
-===================================================================
---- ipkg-utils-1.7.orig/ipkg-build	2007-06-30 14:19:16.519409000 +0200
-+++ ipkg-utils-1.7/ipkg-build	2007-06-30 14:20:12.722921500 +0200
-@@ -184,7 +184,7 @@
+--- a/ipkg-build
++++ b/ipkg-build
+@@ -184,7 +184,7 @@ while getopts "cg:ho:v" opt; do
  	g ) group=$OPTARG
  	    ogargs="$ogargs --group=$group"
  	    ;;
@@ -16,7 +14,7 @@ Index: ipkg-utils-1.7/ipkg-build
              ;;
          C ) noclean=1
              ;;
-@@ -243,8 +243,8 @@
+@@ -243,8 +243,8 @@ tmp_dir=$dest_dir/IPKG_BUILD.$$
  mkdir $tmp_dir
  
  echo $CONTROL > $tmp_dir/tarX
@@ -27,7 +25,7 @@ Index: ipkg-utils-1.7/ipkg-build
  rm $tmp_dir/tarX
  
  echo "2.0" > $tmp_dir/debian-binary
-@@ -254,7 +254,7 @@
+@@ -254,7 +254,7 @@ rm -f $pkg_file
  if [ "$outer" = "ar" ] ; then
    ( cd $tmp_dir && ar -crf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
  else

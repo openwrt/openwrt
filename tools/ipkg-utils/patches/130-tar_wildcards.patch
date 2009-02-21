@@ -1,6 +1,6 @@
---- ipkg-utils-1.7/ipkg.py.orig	2006-06-29 14:16:00.000000000 +0200
-+++ ipkg-utils-1.7/ipkg.py	2006-06-29 14:36:01.000000000 +0200
-@@ -93,9 +93,9 @@
+--- a/ipkg.py
++++ b/ipkg.py
+@@ -93,9 +93,9 @@ class Package:
              self.filename = os.path.basename(fn)
  	    ## sys.stderr.write("  extracting control.tar.gz from %s\n"% (fn,)) 
              if self.isdeb:
@@ -12,7 +12,7 @@
              line = control.readline()
              while 1:
                  if not line: break
-@@ -122,7 +122,7 @@
+@@ -122,7 +122,7 @@ class Package:
              if self.isdeb:
                  data = os.popen("ar p "+fn+" data.tar.gz | tar tfz -","r")
              else:
