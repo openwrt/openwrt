@@ -1,8 +1,6 @@
-Index: uClibc-0.9.29/extra/scripts/gen_bits_syscall_h.sh
-===================================================================
---- uClibc-0.9.29.orig/extra/scripts/gen_bits_syscall_h.sh	2006-12-12 04:30:02.000000000 +0100
-+++ uClibc-0.9.29/extra/scripts/gen_bits_syscall_h.sh	2008-03-10 23:20:52.000000000 +0100
-@@ -24,8 +24,8 @@
+--- a/extra/scripts/gen_bits_syscall_h.sh
++++ b/extra/scripts/gen_bits_syscall_h.sh
+@@ -24,8 +24,8 @@ esac
  ( echo "#include <asm/unistd.h>";
    echo "#include <asm/unistd.h>" |
    $CC -E $CC_SYSNUM_ARGS $INCLUDE_OPTS - |
@@ -13,7 +11,7 @@ Index: uClibc-0.9.29/extra/scripts/gen_bits_syscall_h.sh
  ) |
  $CC -E $INCLUDE_OPTS - |
  ( echo "/* WARNING!!! AUTO-GENERATED FILE!!! DO NOT EDIT!!! */" ; echo ;
-@@ -35,10 +35,10 @@
+@@ -35,10 +35,10 @@ $CC -E $INCLUDE_OPTS - |
    echo "#ifndef _SYSCALL_H" ;
    echo "# error \"Never use <bits/sysnum.h> directly; include <sys/syscall.h> instead.\"" ;
    echo "#endif" ; echo ;
@@ -28,4 +26,3 @@ Index: uClibc-0.9.29/extra/scripts/gen_bits_syscall_h.sh
    echo ;
    echo "#endif" ;
  )
-

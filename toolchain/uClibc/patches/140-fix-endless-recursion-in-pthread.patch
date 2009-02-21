@@ -1,7 +1,6 @@
-diff -urN uClibc-0.9.29.orig/libpthread/linuxthreads.old/pthread.c uClibc-0.9.29/libpthread/linuxthreads.old/pthread.c
---- uClibc-0.9.29.orig/libpthread/linuxthreads.old/pthread.c	2008-09-18 06:18:00.000000000 +0200
-+++ uClibc-0.9.29/libpthread/linuxthreads.old/pthread.c	2008-09-18 06:19:06.000000000 +0200
-@@ -335,9 +335,9 @@
+--- a/libpthread/linuxthreads.old/pthread.c
++++ b/libpthread/linuxthreads.old/pthread.c
+@@ -335,9 +335,9 @@ struct pthread_functions __pthread_funct
      .ptr_pthread_raise = pthread_raise,
      .ptr__pthread_cleanup_push = _pthread_cleanup_push,
      .ptr__pthread_cleanup_pop = _pthread_cleanup_pop

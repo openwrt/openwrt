@@ -1,7 +1,5 @@
-Index: uClibc-0.9.29/libc/string/mips/sysdep.h
-===================================================================
---- uClibc-0.9.29.orig/libc/string/mips/sysdep.h	2007-12-30 20:10:30.969471579 +0100
-+++ uClibc-0.9.29/libc/string/mips/sysdep.h	2007-12-30 20:10:37.717856150 +0100
+--- a/libc/string/mips/sysdep.h
++++ b/libc/string/mips/sysdep.h
 @@ -29,7 +29,7 @@
    .globl name;                                                                \
    .align 2;                                                                   \
@@ -11,11 +9,9 @@ Index: uClibc-0.9.29/libc/string/mips/sysdep.h
  
  #undef END
  #define END(function)                                   \
-Index: uClibc-0.9.29/Rules.mak
-===================================================================
---- uClibc-0.9.29.orig/Rules.mak	2007-12-30 20:22:54.727521234 +0100
-+++ uClibc-0.9.29/Rules.mak	2007-12-30 20:23:05.320124876 +0100
-@@ -399,7 +399,7 @@
+--- a/Rules.mak
++++ b/Rules.mak
+@@ -399,7 +399,7 @@ ifneq ($(HAVE_SHARED),y)
  CFLAGS += -DSTATIC
  endif
  

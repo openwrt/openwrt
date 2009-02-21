@@ -1,7 +1,5 @@
-Index: uclibc/libc/inet/ifaddrs.c
-===================================================================
---- uclibc.orig/libc/inet/ifaddrs.c
-+++ uclibc/libc/inet/ifaddrs.c
+--- a/libc/inet/ifaddrs.c
++++ b/libc/inet/ifaddrs.c
 @@ -38,6 +38,7 @@
  #include <unistd.h>
  
@@ -61,10 +59,8 @@ Index: uclibc/libc/inet/ifaddrs.c
 -#endif /* unused code */
 -
  #endif /* __ASSUME_NETLINK_SUPPORT */
-Index: uclibc/libc/inet/netlinkaccess.h
-===================================================================
---- uclibc.orig/libc/inet/netlinkaccess.h
-+++ uclibc/libc/inet/netlinkaccess.h
+--- a/libc/inet/netlinkaccess.h
++++ b/libc/inet/netlinkaccess.h
 @@ -61,14 +61,11 @@ struct netlink_handle
  };
  
@@ -80,10 +76,8 @@ Index: uclibc/libc/inet/netlinkaccess.h
  
  extern int __netlink_open (struct netlink_handle *h) attribute_hidden;
  extern void __netlink_close (struct netlink_handle *h) attribute_hidden;
-Index: uclibc/include/ifaddrs.h
-===================================================================
 --- /dev/null
-+++ uclibc/include/ifaddrs.h
++++ b/include/ifaddrs.h
 @@ -0,0 +1,74 @@
 +/* ifaddrs.h -- declarations for getting network interface addresses
 +   Copyright (C) 2002 Free Software Foundation, Inc.
@@ -159,4 +153,3 @@ Index: uclibc/include/ifaddrs.h
 +__END_DECLS
 +
 +#endif /* ifaddrs.h */
-

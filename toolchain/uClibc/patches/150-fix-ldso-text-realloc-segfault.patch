@@ -1,7 +1,6 @@
-diff -urN uClibc-0.9.29.old/ldso/ldso/ldso.c uClibc-0.9.29/ldso/ldso/ldso.c
---- uClibc-0.9.29.old/ldso/ldso/ldso.c	2008-09-25 01:02:42.000000000 +0200
-+++ uClibc-0.9.29/ldso/ldso/ldso.c	2008-09-24 23:55:11.000000000 +0200
-@@ -286,15 +286,20 @@
+--- a/ldso/ldso/ldso.c
++++ b/ldso/ldso/ldso.c
+@@ -286,15 +286,20 @@ void _dl_get_ready_to_run(struct elf_res
  			_dl_debug_early("calling mprotect on the application program\n");
  			/* Now cover the application program. */
  			if (app_tpnt->dynamic_info[DT_TEXTREL]) {

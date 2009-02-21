@@ -1,6 +1,5 @@
-diff -ur uClibc-0.9.29/libc/sysdeps/linux/common/sched_getaffinity.c uClibc-0.9.29-patched/libc/sysdeps/linux/common/sched_getaffinity.c
---- uClibc-0.9.29/libc/sysdeps/linux/common/sched_getaffinity.c	2007-02-12 16:52:32.000000000 -0600
-+++ uClibc-0.9.29-patched/libc/sysdeps/linux/common/sched_getaffinity.c	2007-05-09 18:05:09.397411811 -0500
+--- a/libc/sysdeps/linux/common/sched_getaffinity.c
++++ b/libc/sysdeps/linux/common/sched_getaffinity.c
 @@ -29,6 +29,7 @@
  #include <sys/param.h>
  #include <sys/types.h>
@@ -9,7 +8,7 @@ diff -ur uClibc-0.9.29/libc/sysdeps/linux/common/sched_getaffinity.c uClibc-0.9.
  libc_hidden_proto(memset)
  
  #define __NR___syscall_sched_getaffinity __NR_sched_getaffinity
-@@ -48,5 +49,15 @@
+@@ -48,5 +49,15 @@ int sched_getaffinity(pid_t pid, size_t 
  	}
  	return res;
  }
@@ -25,9 +24,8 @@ diff -ur uClibc-0.9.29/libc/sysdeps/linux/common/sched_getaffinity.c uClibc-0.9.
  #endif
 +
 +#endif
-diff -ur uClibc-0.9.29/libc/sysdeps/linux/common/sched_setaffinity.c uClibc-0.9.29-patched/libc/sysdeps/linux/common/sched_setaffinity.c
---- uClibc-0.9.29/libc/sysdeps/linux/common/sched_setaffinity.c	2007-02-12 16:52:32.000000000 -0600
-+++ uClibc-0.9.29-patched/libc/sysdeps/linux/common/sched_setaffinity.c	2007-05-09 18:05:09.397411811 -0500
+--- a/libc/sysdeps/linux/common/sched_setaffinity.c
++++ b/libc/sysdeps/linux/common/sched_setaffinity.c
 @@ -31,6 +31,7 @@
  #include <sys/types.h>
  #include <alloca.h>
@@ -36,7 +34,7 @@ diff -ur uClibc-0.9.29/libc/sysdeps/linux/common/sched_setaffinity.c uClibc-0.9.
  libc_hidden_proto(getpid)
  
  #define __NR___syscall_sched_setaffinity __NR_sched_setaffinity
-@@ -74,5 +75,14 @@
+@@ -74,5 +75,14 @@ int sched_setaffinity(pid_t pid, size_t 
  
  	return INLINE_SYSCALL (sched_setaffinity, 3, pid, cpusetsize, cpuset);
  }

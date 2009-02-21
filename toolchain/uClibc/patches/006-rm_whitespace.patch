@@ -1,6 +1,5 @@
-diff -urN uClibc-0.9.29-0rig/include/assert.h uClibc-0.9.29/include/assert.h
---- uClibc-0.9.29-0rig/include/assert.h	2005-11-03 23:42:46.000000000 +0100
-+++ uClibc-0.9.29/include/assert.h	2007-08-13 19:10:57.000000000 +0200
+--- a/include/assert.h
++++ b/include/assert.h
 @@ -31,7 +31,7 @@
  #define	_ASSERT_H	1
  #include <features.h>
@@ -10,7 +9,7 @@ diff -urN uClibc-0.9.29-0rig/include/assert.h uClibc-0.9.29/include/assert.h
  # define __ASSERT_VOID_CAST static_cast<void>
  #else
  # define __ASSERT_VOID_CAST (void)
-@@ -59,13 +59,17 @@
+@@ -59,13 +59,17 @@ __END_DECLS
    (__ASSERT_VOID_CAST ((expr) ? 0 :					      \
  		       (__assert (__STRING(expr), __FILE__, __LINE__,    \
  				       __ASSERT_FUNCTION), 0)))
@@ -30,10 +29,9 @@ diff -urN uClibc-0.9.29-0rig/include/assert.h uClibc-0.9.29/include/assert.h
  #   define __ASSERT_FUNCTION	__PRETTY_FUNCTION__
  # else
  #  if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
-diff -urN uClibc-0.9.29-0rig/include/complex.h uClibc-0.9.29/include/complex.h
---- uClibc-0.9.29-0rig/include/complex.h	2002-05-09 10:15:21.000000000 +0200
-+++ uClibc-0.9.29/include/complex.h	2007-08-13 17:55:29.000000000 +0200
-@@ -33,7 +33,7 @@
+--- a/include/complex.h
++++ b/include/complex.h
+@@ -33,7 +33,7 @@ __BEGIN_DECLS
  /* We might need to add support for more compilers here.  But since ISO
     C99 is out hopefully all maintained compilers will soon provide the data
     types `float complex' and `double complex'.  */
@@ -42,9 +40,8 @@ diff -urN uClibc-0.9.29-0rig/include/complex.h uClibc-0.9.29/include/complex.h
  # define _Complex __complex__
  #endif
  
-diff -urN uClibc-0.9.29-0rig/include/features.h uClibc-0.9.29/include/features.h
---- uClibc-0.9.29-0rig/include/features.h	2006-11-29 22:10:04.000000000 +0100
-+++ uClibc-0.9.29/include/features.h	2007-08-13 17:55:51.000000000 +0200
+--- a/include/features.h
++++ b/include/features.h
 @@ -143,7 +143,7 @@
  
  /* Convenience macros to test the versions of glibc and gcc.
@@ -72,9 +69,8 @@ diff -urN uClibc-0.9.29-0rig/include/features.h uClibc-0.9.29/include/features.h
      && !defined __OPTIMIZE_SIZE__ && !defined __NO_INLINE__
  # define __USE_EXTERN_INLINES	1
  #endif
-diff -urN uClibc-0.9.29-0rig/include/tgmath.h uClibc-0.9.29/include/tgmath.h
---- uClibc-0.9.29-0rig/include/tgmath.h	2002-05-09 10:15:21.000000000 +0200
-+++ uClibc-0.9.29/include/tgmath.h	2007-08-13 17:56:17.000000000 +0200
+--- a/include/tgmath.h
++++ b/include/tgmath.h
 @@ -34,7 +34,7 @@
     do not try this for now and instead concentrate only on GNU CC.  Once
     we have more information support for other compilers might follow.  */
