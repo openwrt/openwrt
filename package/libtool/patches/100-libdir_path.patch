@@ -1,8 +1,6 @@
-Index: libtool-1.5.24/Makefile.in
-===================================================================
---- libtool-1.5.24.orig/Makefile.in	2007-12-28 17:45:43.195523115 +0100
-+++ libtool-1.5.24/Makefile.in	2007-12-28 17:45:58.032368617 +0100
-@@ -789,6 +789,7 @@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -789,6 +789,7 @@ $(srcdir)/ltmain.sh: $(srcdir)/ltmain.in
  	-rm -f ltmain.shT
  	date=`$(SHELL) $(srcdir)/mkstamp < $(srcdir)/ChangeLog` && \
  	sed -e 's/@''PACKAGE@/@PACKAGE@/' -e 's/@''VERSION@/@VERSION@/' \
@@ -10,11 +8,9 @@ Index: libtool-1.5.24/Makefile.in
  	    -e "s%@""TIMESTAMP@%$$date%" $(srcdir)/ltmain.in > ltmain.shT
  	mv -f ltmain.shT $@ || \
  	(rm -f $@ && cp ltmain.shT $@ && rm -f ltmain.shT)
-Index: libtool-1.5.24/ltmain.in
-===================================================================
---- libtool-1.5.24.orig/ltmain.in	2007-12-28 17:45:43.203523567 +0100
-+++ libtool-1.5.24/ltmain.in	2007-12-28 17:45:58.036368842 +0100
-@@ -5669,7 +5669,7 @@
+--- a/ltmain.in
++++ b/ltmain.in
+@@ -5669,7 +5669,7 @@ fi\
  		  $echo "$modename: \`$deplib' is not a valid libtool archive" 1>&2
  		  exit $EXIT_FAILURE
  		fi
@@ -23,7 +19,7 @@ Index: libtool-1.5.24/ltmain.in
  		;;
  	      *) newdependency_libs="$newdependency_libs $deplib" ;;
  	      esac
-@@ -5694,7 +5694,7 @@
+@@ -5694,7 +5694,7 @@ fi\
  		$echo "$modename: \`$lib' is not a valid libtool archive" 1>&2
  		exit $EXIT_FAILURE
  	      fi
@@ -32,11 +28,9 @@ Index: libtool-1.5.24/ltmain.in
  	    done
  	    dlprefiles="$newdlprefiles"
  	  else
-Index: libtool-1.5.24/Makefile.am
-===================================================================
---- libtool-1.5.24.orig/Makefile.am	2007-12-28 17:46:04.428733124 +0100
-+++ libtool-1.5.24/Makefile.am	2007-12-28 17:46:38.494674431 +0100
-@@ -67,6 +67,7 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -67,6 +67,7 @@ $(srcdir)/ltmain.sh: $(srcdir)/ltmain.in
  	-rm -f ltmain.shT
  	date=`$(SHELL) $(srcdir)/mkstamp < $(srcdir)/ChangeLog` && \
  	sed -e 's/@''PACKAGE@/@PACKAGE@/' -e 's/@''VERSION@/@VERSION@/' \
