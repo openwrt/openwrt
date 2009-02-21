@@ -237,7 +237,7 @@ define KernelPackage/ipt-imq
 	imq \
 	$(IPT_IMQ-m) \
   ))
-  DEPENDS:= kmod-ipt-core @!LINUX_2_6_27 @!LINUX_2_6_28
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-imq/description
