@@ -1,6 +1,6 @@
 --- a/networking/udhcp/clientpacket.c
 +++ b/networking/udhcp/clientpacket.c
-@@ -101,6 +101,7 @@
+@@ -101,6 +101,7 @@ int send_decline(uint32_t xid, uint32_t 
  int send_discover(uint32_t xid, uint32_t requested)
  {
  	struct dhcpMessage packet;
@@ -8,7 +8,7 @@
  
  	init_packet(&packet, DHCPDISCOVER);
  	packet.xid = xid;
-@@ -113,6 +114,7 @@
+@@ -113,6 +114,7 @@ int send_discover(uint32_t xid, uint32_t
  
  	add_param_req_option(&packet);
  

@@ -1,6 +1,6 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -257,6 +257,7 @@
+@@ -257,6 +257,7 @@ USE_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_
  USE_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_NEVER))
  USE_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
@@ -22,7 +22,7 @@
  #define netstat_full_usage "\n\n" \
 --- a/networking/Config.in
 +++ b/networking/Config.in
-@@ -602,6 +602,12 @@
+@@ -602,6 +602,12 @@ config NC
  	  A simple Unix utility which reads and writes data across network
  	  connections.
  
@@ -37,7 +37,7 @@
  	default n
 --- a/networking/Kbuild
 +++ b/networking/Kbuild
-@@ -24,6 +24,7 @@
+@@ -24,6 +24,7 @@ lib-$(CONFIG_IP)           += ip.o
  lib-$(CONFIG_IPCALC)       += ipcalc.o
  lib-$(CONFIG_NAMEIF)       += nameif.o
  lib-$(CONFIG_NC)           += nc.o

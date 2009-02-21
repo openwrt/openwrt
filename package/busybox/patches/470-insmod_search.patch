@@ -123,7 +123,7 @@
  #if ENABLE_FEATURE_INSMOD_LOADINKMEM
  #define LOADBITS 0
  #else
-@@ -184,7 +280,6 @@
+@@ -184,7 +280,6 @@ static int insmod_ng_main(int argc, char
  /* Microblaze */
  #if defined(__microblaze__)
  #define USE_SINGLE
@@ -131,7 +131,7 @@
  #define MATCH_MACHINE(x) (x == EM_XILINX_MICROBLAZE)
  #define SHT_RELM	SHT_RELA
  #define Elf32_RelM	Elf32_Rela
-@@ -452,7 +547,7 @@
+@@ -452,7 +547,7 @@ enum {
  /* The system calls unchanged between 2.0 and 2.1.  */
  
  unsigned long create_module(const char *, size_t);
@@ -140,7 +140,7 @@
  
  
  #endif /* module.h */
-@@ -652,7 +747,7 @@
+@@ -652,7 +747,7 @@ static struct obj_symbol *arch_new_symbo
  
  static enum obj_reloc arch_apply_relocation(struct obj_file *f,
  				      struct obj_section *targsec,
@@ -149,7 +149,7 @@
  				      struct obj_symbol *sym,
  				      ElfW(RelM) *rel, ElfW(Addr) value);
  
-@@ -673,6 +768,7 @@
+@@ -673,6 +768,7 @@ static int obj_gpl_license(struct obj_fi
  #define SPFX	""
  #endif
  
@@ -157,7 +157,7 @@
  enum { STRVERSIONLEN = 64 };
  
  /*======================================================================*/
-@@ -788,28 +884,6 @@
+@@ -788,28 +884,6 @@ static char *m_filename;
  static char *m_fullName;
  
  
@@ -186,7 +186,7 @@
  
  /*======================================================================*/
  
-@@ -835,32 +909,20 @@
+@@ -835,32 +909,20 @@ static struct obj_symbol *arch_new_symbo
  static enum obj_reloc
  arch_apply_relocation(struct obj_file *f,
  				struct obj_section *targsec,
@@ -220,7 +220,7 @@
  #if defined(USE_PLT_ENTRIES)
  	ElfW(Addr) plt = ifile->plt ? ifile->plt->header.sh_addr : 0;
  	unsigned long *ip;
-@@ -954,7 +1016,6 @@
+@@ -954,7 +1016,6 @@ arch_apply_relocation(struct obj_file *f
  
  		case R_386_PLT32:
  		case R_386_PC32:
@@ -228,7 +228,7 @@
  			*loc += v - dot;
  			break;
  
-@@ -973,6 +1034,9 @@
+@@ -973,6 +1034,9 @@ arch_apply_relocation(struct obj_file *f
  
  		case R_386_GOT32:
  			goto bb_use_got;
@@ -238,7 +238,7 @@
  			break;
  
  #elif defined(__microblaze__)
-@@ -1759,7 +1823,7 @@
+@@ -1759,7 +1823,7 @@ static int arch_list_add(ElfW(RelM) *rel
  
  #if defined(USE_SINGLE)
  
@@ -247,7 +247,7 @@
  			     int offset, int size)
  {
  	if (single->allocated == 0) {
-@@ -1907,7 +1971,7 @@
+@@ -1907,7 +1971,7 @@ static void arch_create_got(struct obj_f
  #if defined(USE_GOT_ENTRIES)
  			if (got_allocate) {
  				got_offset += arch_single_init(
@@ -256,7 +256,7 @@
  						got_offset, GOT_ENTRY_SIZE);
  
  				got_needed = 1;
-@@ -1921,7 +1985,7 @@
+@@ -1921,7 +1985,7 @@ static void arch_create_got(struct obj_f
  						plt_offset, PLT_ENTRY_SIZE);
  #else
  				plt_offset += arch_single_init(
@@ -265,7 +265,7 @@
  						plt_offset, PLT_ENTRY_SIZE);
  #endif
  				plt_needed = 1;
-@@ -1959,8 +2023,7 @@
+@@ -1959,8 +2023,7 @@ static unsigned long obj_elf_hash_n(cons
  	while (n > 0) {
  		ch = *name++;
  		h = (h << 4) + ch;
@@ -275,7 +275,7 @@
  			h ^= g >> 24;
  			h &= ~g;
  		}
-@@ -2039,7 +2102,7 @@
+@@ -2039,7 +2102,7 @@ obj_add_symbol(struct obj_file *f, const
  	int n_type = ELF_ST_TYPE(info);
  	int n_binding = ELF_ST_BIND(info);
  
@@ -284,7 +284,7 @@
  		if (f->symbol_cmp(sym->name, name) == 0) {
  			int o_secidx = sym->secidx;
  			int o_info = sym->info;
-@@ -2098,14 +2161,14 @@
+@@ -2098,14 +2161,14 @@ obj_add_symbol(struct obj_file *f, const
  				return sym;
  			}
  		}
@@ -301,7 +301,7 @@
  		if (symidx >= f->local_symtab_size)
  			bb_error_msg("local symbol %s with index %ld exceeds local_symtab_size %ld",
  					name, (long) symidx, (long) f->local_symtab_size);
-@@ -3228,7 +3291,7 @@
+@@ -3228,7 +3291,7 @@ static int obj_relocate(struct obj_file 
  
  			/* Do it! */
  			switch (arch_apply_relocation
@@ -310,7 +310,7 @@
  			) {
  			case obj_reloc_ok:
  				break;
-@@ -3307,11 +3370,11 @@
+@@ -3307,11 +3370,11 @@ static int obj_create_image(struct obj_f
  
  /*======================================================================*/
  
@@ -324,7 +324,7 @@
  	char *shstrtab;
  
  	/* Read the file header.  */
-@@ -3583,7 +3646,7 @@
+@@ -3583,7 +3646,7 @@ static int obj_gpl_license(struct obj_fi
  		while (ptr < endptr) {
  			value = strchr(ptr, '=');
  			if (value && strncmp(ptr, "license", value-ptr) == 0) {
@@ -333,7 +333,7 @@
  				if (license)
  					*license = value+1;
  				for (i = 0; i < ARRAY_SIZE(gpl_licenses); ++i) {
-@@ -3687,9 +3750,6 @@
+@@ -3687,9 +3750,6 @@ static void check_tainted_module(struct 
   * start of some sections.  this info is used by ksymoops to do better
   * debugging.
   */
@@ -343,7 +343,7 @@
  static int
  get_module_version(struct obj_file *f, char str[STRVERSIONLEN])
  {
-@@ -3722,8 +3782,7 @@
+@@ -3722,8 +3782,7 @@ add_ksymoops_symbols(struct obj_file *f,
  	struct obj_symbol *sym;
  	char *name, *absolute_filename;
  	char str[STRVERSIONLEN];
@@ -353,7 +353,7 @@
  	struct stat statbuf;
  
  	/* WARNING: was using realpath, but replaced by readlink to stop using
-@@ -3910,145 +3969,57 @@
+@@ -3910,145 +3969,57 @@ static void print_load_map(struct obj_fi
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -521,7 +521,7 @@
  
  	f = obj_load(fp, LOADBITS);
  
-@@ -4075,7 +4046,7 @@
+@@ -4075,7 +4046,7 @@ int insmod_main(int argc, char **argv)
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -530,7 +530,7 @@
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4117,7 +4088,7 @@
+@@ -4117,7 +4088,7 @@ int insmod_main(int argc, char **argv)
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -539,7 +539,7 @@
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4126,7 +4097,7 @@
+@@ -4126,7 +4097,7 @@ int insmod_main(int argc, char **argv)
  	m_size = obj_load_size(f);
  
  	m_addr = create_module(m_name, m_size);
@@ -548,7 +548,7 @@
  		case EEXIST:
  			bb_error_msg_and_die("a module named %s already exists", m_name);
  		case ENOMEM:
-@@ -4142,36 +4113,37 @@
+@@ -4142,36 +4113,37 @@ int insmod_main(int argc, char **argv)
  	 * now we can load them directly into the kernel memory
  	 */
  	if (!obj_load_progbits(fp, f, (char*)m_addr)) {
@@ -594,7 +594,7 @@
  }
  
  #endif /* ENABLE_FEATURE_2_4_MODULES */
-@@ -4183,15 +4155,8 @@
+@@ -4183,15 +4155,8 @@ int insmod_main(int argc, char **argv)
  #if ENABLE_FEATURE_2_6_MODULES
  
  #include <sys/mman.h>
@@ -610,7 +610,7 @@
  
  /* We use error numbers in a loose translation... */
  static const char *moderror(int err)
-@@ -4210,22 +4175,32 @@
+@@ -4210,22 +4175,32 @@ static const char *moderror(int err)
  	}
  }
  
@@ -651,7 +651,7 @@
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4235,41 +4210,47 @@
+@@ -4235,41 +4210,47 @@ static int insmod_ng_main(int argc ATTRI
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
