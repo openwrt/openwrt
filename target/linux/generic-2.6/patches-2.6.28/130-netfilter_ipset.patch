@@ -7534,7 +7534,7 @@
 +module_exit(ipt_SET_fini);
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -400,5 +400,122 @@ config IP_NF_ARP_MANGLE
+@@ -394,5 +394,122 @@ config IP_NF_ARP_MANGLE
  
  endif # IP_NF_ARPTABLES
  
@@ -7665,9 +7665,9 @@
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
 +obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
  
- obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
- 
-@@ -65,6 +66,18 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
+ # targets
+ obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
+@@ -63,6 +64,18 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
  obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o

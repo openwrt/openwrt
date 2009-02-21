@@ -85,8 +85,8 @@ endef
 define KernelPackage/ipt-filter/description
  Netfilter (IPv4) kernel modules for packet content inspection
  Includes:
- - ipt_ipp2p
  - ipt_layer7
+ - ipt_string
 endef
 
 $(eval $(call KernelPackage,ipt-filter))
