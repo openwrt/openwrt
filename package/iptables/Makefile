@@ -102,7 +102,7 @@ endef
 define Package/iptables-mod-filter/description
  iptables extensions for packet content inspection.
  Includes:
- - libipt_ipp2p
+ - libipt_string
  - libipt_layer7
 endef
 
