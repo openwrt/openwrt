@@ -1,4 +1,4 @@
-From 8a82217f8847eb908bd7fa04d29f263da5d94e16 Mon Sep 17 00:00:00 2001
+From 393ae935075d0d253e1855e5fed6db92b1766a91 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
 Date: Sun, 15 Feb 2009 20:59:48 +0100
 Subject: [PATCH] rt2x00: Add support for MCS32 (rt2800pci)
@@ -8,9 +8,11 @@ Signed-off-by: Ivo van Doorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800pci.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
+diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
+index 6e98c3d..63d6499 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -2484,6 +2484,7 @@ static int rt2800pci_probe_hw_mode(struc
+@@ -2484,6 +2484,7 @@ static int rt2800pci_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  		spec->ht.mcs.rx_mask[1] = 0xff;
  	case 1:
  		spec->ht.mcs.rx_mask[0] = 0xff;
@@ -18,3 +20,6 @@ Signed-off-by: Ivo van Doorn@gmail.com>
  		break;
  	}
  
+-- 
+1.6.0
+

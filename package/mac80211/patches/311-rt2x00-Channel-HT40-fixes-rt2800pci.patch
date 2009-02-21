@@ -1,4 +1,4 @@
-From 1dabaea63944d04d03f29817f7641bcb3ed22014 Mon Sep 17 00:00:00 2001
+From 1c042f183a52db009c2c0940ecff04ae954318e2 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
 Date: Sun, 8 Feb 2009 00:08:37 +0100
 Subject: [PATCH] rt2x00: Channel HT40+/- fixes (rt2800pci)
@@ -9,9 +9,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800pci.h |    3 +-
  2 files changed, 36 insertions(+), 36 deletions(-)
 
+diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
+index 95eb053..ddea65b 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -603,7 +603,7 @@ static void rt2800pci_config_ant(struct 
+@@ -603,7 +603,7 @@ static void rt2800pci_config_ant(struct rt2x00_dev *rt2x00dev,
  		rt2x00_set_field8(&r3, BBP3_RX_ANTENNA, 0);
  		break;
  	case 2:
@@ -20,7 +22,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  		break;
  	case 3:
  		/* Do nothing */
-@@ -653,6 +653,7 @@ static void rt2800pci_config_lna_gain(st
+@@ -653,6 +653,7 @@ static void rt2800pci_config_lna_gain(struct rt2x00_dev *rt2x00dev,
  }
  
  static void rt2800pci_config_channel(struct rt2x00_dev *rt2x00dev,
@@ -28,7 +30,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  				     struct rf_channel *rf,
  				     struct channel_info *info)
  {
-@@ -660,34 +661,20 @@ static void rt2800pci_config_channel(str
+@@ -660,34 +661,20 @@ static void rt2800pci_config_channel(struct rt2x00_dev *rt2x00dev,
  	unsigned int tx_pin;
  	u16 eeprom;
  
@@ -64,7 +66,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	} else if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 2)
  		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX2, 1);
  
-@@ -715,19 +702,14 @@ static void rt2800pci_config_channel(str
+@@ -715,19 +702,14 @@ static void rt2800pci_config_channel(struct rt2x00_dev *rt2x00dev,
  
  		rt2x00_set_field32(&rf->rf4, RF4_TXPOWER_A,
  				   TXPOWER_A_TO_DEV(info->tx_power2));
@@ -85,7 +87,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  	rt2800pci_rf_write(rt2x00dev, 1, rf->rf1);
  	rt2800pci_rf_write(rt2x00dev, 2, rf->rf2);
-@@ -764,11 +746,6 @@ static void rt2800pci_config_channel(str
+@@ -764,11 +746,6 @@ static void rt2800pci_config_channel(struct rt2x00_dev *rt2x00dev,
  			rt2800pci_bbp_write(rt2x00dev, 82, 0x84);
  			rt2800pci_bbp_write(rt2x00dev, 75, 0x50);
  		}
@@ -97,7 +99,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	} else {
  		rt2800pci_bbp_write(rt2x00dev, 82, 0xf2);
  
-@@ -776,13 +753,35 @@ static void rt2800pci_config_channel(str
+@@ -776,13 +753,35 @@ static void rt2800pci_config_channel(struct rt2x00_dev *rt2x00dev,
  			rt2800pci_bbp_write(rt2x00dev, 75, 0x46);
  		else
  			rt2800pci_bbp_write(rt2x00dev, 75, 0x50);
@@ -137,7 +139,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	rt2x00pci_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
  
  	msleep(1);
-@@ -917,8 +916,8 @@ static void rt2800pci_config(struct rt2x
+@@ -917,8 +916,8 @@ static void rt2800pci_config(struct rt2x00_dev *rt2x00dev,
  	rt2800pci_config_lna_gain(rt2x00dev, libconf);
  
  	if (flags & IEEE80211_CONF_CHANGE_CHANNEL)
@@ -148,7 +150,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	if (flags & IEEE80211_CONF_CHANGE_POWER)
  		rt2800pci_config_txpower(rt2x00dev, libconf->conf->power_level);
  	if (flags & IEEE80211_CONF_CHANGE_RETRY_LIMITS)
-@@ -2724,14 +2723,14 @@ static const struct rt2x00lib_ops rt2800
+@@ -2724,14 +2723,14 @@ static const struct rt2x00lib_ops rt2800pci_rt2x00_ops = {
  
  static const struct data_queue_desc rt2800pci_queue_rx = {
  	.entry_num		= RX_ENTRIES,
@@ -165,6 +167,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  	.desc_size		= TXD_DESC_SIZE,
  	.priv_size		= sizeof(struct queue_entry_priv_pci),
  };
+diff --git a/drivers/net/wireless/rt2x00/rt2800pci.h b/drivers/net/wireless/rt2x00/rt2800pci.h
+index 39f045c..0682a6a 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.h
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
 @@ -791,6 +791,7 @@
@@ -184,3 +188,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  /*
   * EEPROM content.
+-- 
+1.6.0
+
