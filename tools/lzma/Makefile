@@ -7,14 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lzma
-PKG_VERSION:=432
+PKG_VERSION:=4.32
 
-PKG_SOURCE:=$(PKG_NAME)$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://kent.dl.sourceforge.net/sourceforge/sevenzip/
-PKG_MD5SUM:=155c1ebce5bc6710ae7ecc926226d9d7
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
+PKG_MD5SUM:=5587d6ac230ad1903d504fc3253f0e42
 
-PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)/lzma
-PKG_UNPACK:=bzcat $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(PKG_BUILD_DIR)/ $(TAR_OPTIONS)
+PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
