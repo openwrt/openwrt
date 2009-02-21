@@ -24,11 +24,9 @@ esac
 exit 0
 
 @DPATCH@
-Index: binutils-2.17/ld/emultempl/elf32.em
-===================================================================
---- binutils-2.17.orig/ld/emultempl/elf32.em	2007-06-28 09:19:34.796946512 +0200
-+++ binutils-2.17/ld/emultempl/elf32.em	2007-06-28 09:19:36.178736448 +0200
-@@ -970,6 +970,8 @@
+--- a/ld/emultempl/elf32.em
++++ b/ld/emultempl/elf32.em
+@@ -970,6 +970,8 @@ cat >>e${EMULATION_NAME}.c <<EOF
  	      && command_line.rpath == NULL)
  	    {
  	      lib_path = (const char *) getenv ("LD_RUN_PATH");
@@ -37,7 +35,7 @@ Index: binutils-2.17/ld/emultempl/elf32.em
  	      if (gld${EMULATION_NAME}_search_needed (lib_path, &n,
  						      force))
  		break;
-@@ -1154,6 +1156,8 @@
+@@ -1154,6 +1156,8 @@ gld${EMULATION_NAME}_before_allocation (
    rpath = command_line.rpath;
    if (rpath == NULL)
      rpath = (const char *) getenv ("LD_RUN_PATH");

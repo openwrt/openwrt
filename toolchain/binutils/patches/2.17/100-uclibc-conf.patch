@@ -1,8 +1,6 @@
-Index: binutils-2.17/bfd/configure
-===================================================================
---- binutils-2.17.orig/bfd/configure	2007-06-28 09:19:34.892931920 +0200
-+++ binutils-2.17/bfd/configure	2007-06-28 09:19:35.023912008 +0200
-@@ -3576,7 +3576,7 @@
+--- a/bfd/configure
++++ b/bfd/configure
+@@ -3576,7 +3576,7 @@ irix5* | irix6*)
    ;;
  
  # This must be Linux ELF.
@@ -11,11 +9,9 @@ Index: binutils-2.17/bfd/configure
    lt_cv_deplibs_check_method=pass_all
    ;;
  
-Index: binutils-2.17/binutils/configure
-===================================================================
---- binutils-2.17.orig/binutils/configure	2007-06-28 09:19:34.898931008 +0200
-+++ binutils-2.17/binutils/configure	2007-06-28 09:19:35.028911248 +0200
-@@ -3411,7 +3411,7 @@
+--- a/binutils/configure
++++ b/binutils/configure
+@@ -3411,7 +3411,7 @@ irix5* | irix6*)
    ;;
  
  # This must be Linux ELF.
@@ -24,11 +20,9 @@ Index: binutils-2.17/binutils/configure
    lt_cv_deplibs_check_method=pass_all
    ;;
  
-Index: binutils-2.17/configure
-===================================================================
---- binutils-2.17.orig/configure	2007-06-28 09:19:34.903930248 +0200
-+++ binutils-2.17/configure	2007-06-28 09:19:35.030910944 +0200
-@@ -1276,7 +1276,7 @@
+--- a/configure
++++ b/configure
+@@ -1276,7 +1276,7 @@ case "${target}" in
    am33_2.0-*-linux*)
      noconfigdirs="$noconfigdirs ${libgcj} target-newlib target-libgloss"
      ;;
@@ -37,7 +31,7 @@ Index: binutils-2.17/configure
      noconfigdirs="$noconfigdirs ${libgcj} target-newlib target-libgloss"
      ;;    
    sh*-*-pe|mips*-*-pe|*arm-wince-pe)
-@@ -1584,7 +1584,7 @@
+@@ -1584,7 +1584,7 @@ case "${target}" in
    romp-*-*)
      noconfigdirs="$noconfigdirs bfd binutils ld gas opcodes target-libgloss ${libgcj}"
      ;;
@@ -46,11 +40,9 @@ Index: binutils-2.17/configure
      case "${host}" in
        i[3456789]86-*-vsta) ;; # don't add gprof back in
        i[3456789]86-*-go32*) ;; # don't add gprof back in
-Index: binutils-2.17/configure.in
-===================================================================
---- binutils-2.17.orig/configure.in	2007-06-28 09:19:34.909929336 +0200
-+++ binutils-2.17/configure.in	2007-06-28 09:19:35.031910792 +0200
-@@ -468,7 +468,7 @@
+--- a/configure.in
++++ b/configure.in
+@@ -468,7 +468,7 @@ case "${target}" in
    am33_2.0-*-linux*)
      noconfigdirs="$noconfigdirs ${libgcj} target-newlib target-libgloss"
      ;;
@@ -59,7 +51,7 @@ Index: binutils-2.17/configure.in
      noconfigdirs="$noconfigdirs ${libgcj} target-newlib target-libgloss"
      ;;    
    sh*-*-pe|mips*-*-pe|*arm-wince-pe)
-@@ -776,7 +776,7 @@
+@@ -776,7 +776,7 @@ case "${target}" in
    romp-*-*)
      noconfigdirs="$noconfigdirs bfd binutils ld gas opcodes target-libgloss ${libgcj}"
      ;;
@@ -68,11 +60,9 @@ Index: binutils-2.17/configure.in
      case "${host}" in
        i[[3456789]]86-*-vsta) ;; # don't add gprof back in
        i[[3456789]]86-*-go32*) ;; # don't add gprof back in
-Index: binutils-2.17/gas/configure
-===================================================================
---- binutils-2.17.orig/gas/configure	2007-06-28 09:19:34.915928424 +0200
-+++ binutils-2.17/gas/configure	2007-06-28 09:19:35.035910184 +0200
-@@ -3411,7 +3411,7 @@
+--- a/gas/configure
++++ b/gas/configure
+@@ -3411,7 +3411,7 @@ irix5* | irix6*)
    ;;
  
  # This must be Linux ELF.
@@ -81,11 +71,9 @@ Index: binutils-2.17/gas/configure
    lt_cv_deplibs_check_method=pass_all
    ;;
  
-Index: binutils-2.17/gprof/configure
-===================================================================
---- binutils-2.17.orig/gprof/configure	2007-06-28 09:19:34.921927512 +0200
-+++ binutils-2.17/gprof/configure	2007-06-28 09:19:35.042909120 +0200
-@@ -3414,6 +3414,11 @@
+--- a/gprof/configure
++++ b/gprof/configure
+@@ -3414,6 +3414,11 @@ linux-gnu*)
    lt_cv_deplibs_check_method=pass_all
    ;;
  
@@ -97,11 +85,9 @@ Index: binutils-2.17/gprof/configure
  netbsd* | knetbsd*-gnu)
    if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
      lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
-Index: binutils-2.17/ld/configure
-===================================================================
---- binutils-2.17.orig/ld/configure	2007-06-28 09:19:34.927926600 +0200
-+++ binutils-2.17/ld/configure	2007-06-28 09:19:35.046908512 +0200
-@@ -3413,7 +3413,7 @@
+--- a/ld/configure
++++ b/ld/configure
+@@ -3413,7 +3413,7 @@ irix5* | irix6*)
    ;;
  
  # This must be Linux ELF.
@@ -110,11 +96,9 @@ Index: binutils-2.17/ld/configure
    lt_cv_deplibs_check_method=pass_all
    ;;
  
-Index: binutils-2.17/libtool.m4
-===================================================================
---- binutils-2.17.orig/libtool.m4	2007-06-28 09:19:34.933925688 +0200
-+++ binutils-2.17/libtool.m4	2007-06-28 09:19:35.047908360 +0200
-@@ -739,7 +739,7 @@
+--- a/libtool.m4
++++ b/libtool.m4
+@@ -739,7 +739,7 @@ irix5* | irix6*)
    ;;
  
  # This must be Linux ELF.
@@ -123,11 +107,9 @@ Index: binutils-2.17/libtool.m4
    lt_cv_deplibs_check_method=pass_all
    ;;
  
-Index: binutils-2.17/ltconfig
-===================================================================
---- binutils-2.17.orig/ltconfig	2007-06-28 09:19:34.939924776 +0200
-+++ binutils-2.17/ltconfig	2007-06-28 09:19:35.048908208 +0200
-@@ -602,6 +602,7 @@
+--- a/ltconfig
++++ b/ltconfig
+@@ -602,6 +602,7 @@ host_os=`echo $host | sed 's/^\([^-]*\)-
  
  # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
  case $host_os in
@@ -135,7 +117,7 @@ Index: binutils-2.17/ltconfig
  linux-gnu*) ;;
  linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
  esac
-@@ -1247,7 +1248,7 @@
+@@ -1247,7 +1248,7 @@ linux-gnuoldld* | linux-gnuaout* | linux
    ;;
  
  # This must be Linux ELF.
@@ -144,11 +126,9 @@ Index: binutils-2.17/ltconfig
    version_type=linux
    need_lib_prefix=no
    need_version=no
-Index: binutils-2.17/opcodes/configure
-===================================================================
---- binutils-2.17.orig/opcodes/configure	2007-06-28 09:19:34.946923712 +0200
-+++ binutils-2.17/opcodes/configure	2007-06-28 09:19:35.051907752 +0200
-@@ -3579,7 +3579,7 @@
+--- a/opcodes/configure
++++ b/opcodes/configure
+@@ -3579,7 +3579,7 @@ irix5* | irix6*)
    ;;
  
  # This must be Linux ELF.

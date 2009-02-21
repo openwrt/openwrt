@@ -57,11 +57,9 @@ Andreas.
 	* read.c (read_a_source_file): Ignore unknown text after line
 	comment character.  Fix misleading comment.
 
-Index: binutils-2.17/gas/read.c
-===================================================================
---- binutils-2.17.orig/gas/read.c	2007-06-28 09:19:34.031062944 +0200
-+++ binutils-2.17/gas/read.c	2007-06-28 09:19:39.244270416 +0200
-@@ -1008,10 +1008,14 @@
+--- a/gas/read.c
++++ b/gas/read.c
+@@ -1008,10 +1008,14 @@ read_a_source_file (char *name)
  	      unsigned int new_length;
  	      char *tmp_buf = 0;
  
@@ -78,7 +76,7 @@ Index: binutils-2.17/gas/read.c
  	      s += 4;
  
  	      sb_new (&sbuf);
-@@ -1110,7 +1114,7 @@
+@@ -1110,7 +1114,7 @@ read_a_source_file (char *name)
  	    continue;
  #endif
  	  input_line_pointer--;
