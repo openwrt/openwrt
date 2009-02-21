@@ -204,11 +204,10 @@
 +}
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -70,6 +70,22 @@ config IP_NF_MATCH_IPP2P
- 	help
- 	  Module for matching traffic of various Peer-to-Peer applications
+@@ -92,6 +92,21 @@ config IP_NF_MATCH_ECN
  
-+
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
 +config IP_NF_MATCH_TIME
 +	tristate  'TIME match support'
 +	depends on NETFILTER_ADVANCED
@@ -224,8 +223,8 @@
 +	  Documentation/modules.txt.  If unsure, say `N'.
 +
 +
- config IP_NF_MATCH_ADDRTYPE
- 	tristate '"addrtype" address type match support'
+ config IP_NF_MATCH_TTL
+ 	tristate '"ttl" match support'
  	depends on NETFILTER_ADVANCED
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
@@ -235,5 +234,5 @@
  obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
 +obj-$(CONFIG_IP_NF_MATCH_TIME) += ipt_time.o
  
- obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
- 
+ # targets
+ obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
