@@ -11,7 +11,7 @@ BOARD:=orion
 BOARDNAME:=Marvell Orion
 FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.28.6
+LINUX_VERSION:=2.6.28.7
 
 include $(INCLUDE_DIR)/target.mk
 
