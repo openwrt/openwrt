@@ -1,6 +1,6 @@
---- libtool-1.5.6/ltmain.in~libdir-la	2004-04-01 21:46:15.000000000 -0600
-+++ libtool-1.5.6/ltmain.in	2004-05-14 22:53:51.000000000 -0500
-@@ -2147,8 +2147,14 @@
+--- a/ltmain.in
++++ b/ltmain.in
+@@ -2444,8 +2444,14 @@ EOF
  	    absdir="$abs_ladir"
  	    libdir="$abs_ladir"
  	  else
@@ -15,5 +15,5 @@
 +	    #dir="$libdir"
 +	    #absdir="$libdir"
  	  fi
+ 	  test "X$hardcode_automatic" = Xyes && avoidtemprpath=yes
  	else
- 	  dir="$ladir/$objdir"
