@@ -56,16 +56,16 @@ include $(INCLUDE_DIR)/host-build.mk
 
 STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed
 
-PKG_BUILD_DIR0:=$(PKG_BUILD_DIR)-minimal
-PKG_BUILD_DIR1:=$(PKG_BUILD_DIR)-initial
-PKG_BUILD_DIR2:=$(PKG_BUILD_DIR)-final
+HOST_BUILD_DIR0:=$(HOST_BUILD_DIR)-minimal
+HOST_BUILD_DIR1:=$(HOST_BUILD_DIR)-initial
+HOST_BUILD_DIR2:=$(HOST_BUILD_DIR)-final
 
 SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
-	$(PKG_BUILD_DIR)/configure \
+	$(HOST_BUILD_DIR)/configure \
 		--prefix=$(TOOLCHAIN_DIR)/usr \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
@@ -138,45 +138,45 @@ GCC_MAKE:= \
 	$(MAKE) \
 
 
-define Build/SetToolchainInfo
+define Host/SetToolchainInfo
 	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
 
 
 define Stage0/Configure
-	mkdir -p $(PKG_BUILD_DIR0)
-	(cd $(PKG_BUILD_DIR0); rm -f config.cache; \
+	mkdir -p $(HOST_BUILD_DIR0)
+	(cd $(HOST_BUILD_DIR0); rm -f config.cache; \
 		$(GCC_CONFIGURE_STAGE0) \
 	);
 endef
 
 define Stage0/Compile
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR0) all-gcc
+	$(GCC_MAKE) -C $(HOST_BUILD_DIR0) all-gcc
 endef
 
 define Stage0/Install
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR0) install-gcc
+	$(GCC_MAKE) -C $(HOST_BUILD_DIR0) install-gcc
 endef
 
 
 define Stage1/Configure
-	mkdir -p $(PKG_BUILD_DIR1)
-	(cd $(PKG_BUILD_DIR1); rm -f config.cache; \
+	mkdir -p $(HOST_BUILD_DIR1)
+	(cd $(HOST_BUILD_DIR1); rm -f config.cache; \
 		$(GCC_CONFIGURE_STAGE1) \
 	);
 endef
 
 define Stage1/Compile
 	$(CP) $(BUILD_DIR_TOOLCHAIN)/linux-dev/* $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) \
+	$(GCC_MAKE) -C $(HOST_BUILD_DIR1) \
 		all-build-libiberty \
 		all-gcc \
 		$(if $(GCC_BUILD_TARGET_LIBGCC),all-target-libgcc)
 endef
 
 define Stage1/Install
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR1) \
+	$(GCC_MAKE) -C $(HOST_BUILD_DIR1) \
 		install-gcc \
 		$(if $(GCC_BUILD_TARGET_LIBGCC),install-target-libgcc)
 	
@@ -188,19 +188,19 @@ endef
 
 
 define Stage2/Configure
-	mkdir -p $(PKG_BUILD_DIR2) $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)
+	mkdir -p $(HOST_BUILD_DIR2) $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)
 	# Important!  Required for limits.h to be fixed.
 	rm -rf $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/sys-include
 	ln -sf ../include $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/sys-include
 	rm -rf $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
-	(cd $(PKG_BUILD_DIR2); rm -f config.cache; \
+	(cd $(HOST_BUILD_DIR2); rm -f config.cache; \
 		$(GCC_CONFIGURE_STAGE2) \
 	);
 endef
 
 define Stage2/Compile
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR2) all
+	$(GCC_MAKE) -C $(HOST_BUILD_DIR2) all
 endef
 
 define SetupExtraArch
@@ -217,7 +217,7 @@ define SetupExtraArch
 endef
 
 define Stage2/Install
-	$(GCC_MAKE) -C $(PKG_BUILD_DIR2) install
+	$(GCC_MAKE) -C $(HOST_BUILD_DIR2) install
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
 	(cd $(TOOLCHAIN_DIR)/usr; \
@@ -232,41 +232,41 @@ define Stage2/Install
 endef
 
 
-define Build/Prepare
-	$(call Build/SetToolchainInfo)
-	$(call Build/Prepare/Default)
+define Host/Prepare
+	$(call Host/SetToolchainInfo)
+	$(call Host/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/
-	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(PKG_BUILD_DIR)/gcc/version.c
-	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(PKG_BUILD_DIR)/gcc/version.c
-	(cd $(PKG_BUILD_DIR)/libstdc++-v3; autoconf;);
-	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(PKG_BUILD_DIR)/libstdc++-v3/configure
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/
+	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(HOST_BUILD_DIR)/gcc/version.c
+	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(HOST_BUILD_DIR)/gcc/version.c
+	(cd $(HOST_BUILD_DIR)/libstdc++-v3; autoconf;);
+	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(HOST_BUILD_DIR)/libstdc++-v3/configure
 	$(call Stage0/Configure)
 	$(call Stage0/Compile)
 	$(call Stage0/Install)
 endef
 
-define Build/Configure
+define Host/Configure
 endef
 
-define Build/Compile
+define Host/Compile
 	$(call Stage1/Configure)
 	$(call Stage1/Compile)
 	$(call Stage1/Install)
 endef
 
-define Build/Install
+define Host/Install
 	$(call Stage2/Configure)
 	$(call Stage2/Compile)
 	$(call Stage2/Install)
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -rf \
-		$(PKG_BUILD_DIR) \
-		$(PKG_BUILD_DIR0) \
-		$(PKG_BUILD_DIR1) \
-		$(PKG_BUILD_DIR2) \
+		$(HOST_BUILD_DIR) \
+		$(HOST_BUILD_DIR0) \
+		$(HOST_BUILD_DIR1) \
+		$(HOST_BUILD_DIR2) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME) \
 		$(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME) \
 		$(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-gc* \

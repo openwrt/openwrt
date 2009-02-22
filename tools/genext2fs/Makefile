@@ -17,8 +17,8 @@ PKG_MD5SUM:=b7b6361bcce2cedff1ae437fadafe53b
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Configure
-	( cd $(PKG_BUILD_DIR); \
+define Host/Configure
+	( cd $(HOST_BUILD_DIR); \
 		./configure \
 			--target=$(GNU_HOST_NAME) \
 			--host=$(GNU_HOST_NAME) \
@@ -38,17 +38,17 @@ define Build/Configure
 	)
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR) \
 		CFLAGS="$(HOST_CFLAGS) -include getline.h" \
 		all
 endef
 
-define Build/Install
-	install -m0755 $(PKG_BUILD_DIR)/genext2fs $(STAGING_DIR_HOST)/bin/
+define Host/Install
+	install -m0755 $(HOST_BUILD_DIR)/genext2fs $(STAGING_DIR_HOST)/bin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/genext2fs
 endef
 

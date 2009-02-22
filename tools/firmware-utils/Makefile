@@ -11,15 +11,15 @@ PKG_NAME := firmware-utils
 include $(INCLUDE_DIR)/host-build.mk
 
 define cc
-	$(CC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/bin/$(1) src/$(1).c $(2)
+	$(CC) $(HOST_CFLAGS) -include endian.h -o $(HOST_BUILD_DIR)/bin/$(1) src/$(1).c $(2)
 endef
 
 define cc2
-	$(CC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/bin/$(firstword $(1)) $(foreach src,$(1),src/$(src).c) $(2)
+	$(CC) $(HOST_CFLAGS) -include endian.h -o $(HOST_BUILD_DIR)/bin/$(firstword $(1)) $(foreach src,$(1),src/$(src).c) $(2)
 endef
 
-define Build/Compile
-	mkdir -p $(PKG_BUILD_DIR)/bin
+define Host/Compile
+	mkdir -p $(HOST_BUILD_DIR)/bin
 	$(call cc,addpattern)
 	$(call cc,trx)
 	$(call cc,motorola-bin)
@@ -41,8 +41,8 @@ define Build/Compile
 	$(call cc2,mkplanexfw sha1)
 endef
 
-define Build/Install
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/* $(STAGING_DIR_HOST)/bin/
+define Host/Install
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/bin/* $(STAGING_DIR_HOST)/bin/
 endef
 
 $(eval $(call HostBuild))

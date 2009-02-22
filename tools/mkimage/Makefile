@@ -10,17 +10,17 @@ PKG_NAME:=mkimage
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Compile
-	$(HOSTCC) $(HOST_CFLAGS) -O -c src/crc32.c -o $(PKG_BUILD_DIR)/crc32.o
-	$(HOSTCC) $(HOST_CFLAGS) -O -c src/mkimage.c -o $(PKG_BUILD_DIR)/mkimage.o
-	$(HOSTCC) $(HOST_CFLAGS) -O -o $(PKG_BUILD_DIR)/mkimage $(PKG_BUILD_DIR)/mkimage.o $(PKG_BUILD_DIR)/crc32.o
+define Host/Compile
+	$(HOSTCC) $(HOST_CFLAGS) -O -c src/crc32.c -o $(HOST_BUILD_DIR)/crc32.o
+	$(HOSTCC) $(HOST_CFLAGS) -O -c src/mkimage.c -o $(HOST_BUILD_DIR)/mkimage.o
+	$(HOSTCC) $(HOST_CFLAGS) -O -o $(HOST_BUILD_DIR)/mkimage $(HOST_BUILD_DIR)/mkimage.o $(HOST_BUILD_DIR)/crc32.o
 endef
 
-define Build/Install
-	$(CP) $(PKG_BUILD_DIR)/mkimage $(STAGING_DIR_HOST)/bin/
+define Host/Install
+	$(CP) $(HOST_BUILD_DIR)/mkimage $(STAGING_DIR_HOST)/bin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/mkimage
 endef
 

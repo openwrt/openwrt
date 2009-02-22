@@ -13,24 +13,24 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=5587d6ac230ad1903d504fc3253f0e42
 
-PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
-LIB_DIR=$(PKG_BUILD_DIR)/C/7zip/Compress/LZMA_Lib
-ALONE_DIR=$(PKG_BUILD_DIR)/C/7zip/Compress/LZMA_Alone
+LIB_DIR=$(HOST_BUILD_DIR)/C/7zip/Compress/LZMA_Lib
+ALONE_DIR=$(HOST_BUILD_DIR)/C/7zip/Compress/LZMA_Alone
 
-define Build/Compile
+define Host/Compile
 	$(MAKE) -C $(LIB_DIR)
 	$(MAKE) -f makefile.gcc -C $(ALONE_DIR)
 endef
 
-define Build/Install
+define Host/Install
 	$(INSTALL_DATA) $(LIB_DIR)/liblzma.a $(STAGING_DIR_HOST)/lib/
 	$(INSTALL_BIN) $(ALONE_DIR)/lzma $(STAGING_DIR_HOST)/bin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -f \
 		$(STAGING_DIR_HOST)/lib/liblzma.a \
 		$(STAGING_DIR_HOST)/bin/lzma

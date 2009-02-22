@@ -5,40 +5,40 @@
 # See /LICENSE for more information.
 #
 
-PKG_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
-PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/host-install
+HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
+PKG_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
 
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
 
-STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPEND),)))
-STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
-STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
-STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.$(PKG_NAME)_installed
+HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPEND),)))
+HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
+HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
+HOST_STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.$(PKG_NAME)_installed
 
 override MAKEFLAGS=
 
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
 
-Build/Patch:=$(Build/Patch/Default)
-ifneq ($(strip $(PKG_UNPACK)),)
-  define Build/Prepare/Default
-  	$(PKG_UNPACK)
-	$(Build/Patch)
-	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
+Host/Patch:=$(Host/Patch/Default)
+ifneq ($(strip $(HOST_UNPACK)),)
+  define Host/Prepare/Default
+  	$(HOST_UNPACK)
+	$(Host/Patch)
+	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
   endef
 endif
 
-define Build/Prepare
-  $(call Build/Prepare/Default)
+define Host/Prepare
+  $(call Host/Prepare/Default)
 endef
 
-define Build/Configure/Default
-	@(cd $(PKG_BUILD_DIR)/$(3); \
+define Host/Configure/Default
+	@(cd $(HOST_BUILD_DIR)/$(3); \
 	[ -x configure ] && \
-		$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/$(3)/ && \
+		$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
 		$(2) \
 		CPPFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
@@ -59,22 +59,22 @@ define Build/Configure/Default
 	)
 endef
 
-define Build/Configure
-  $(call Build/Configure/Default)
+define Host/Configure
+  $(call Host/Configure/Default)
 endef
 
-define Build/Compile/Default
-	$(MAKE) -C $(PKG_BUILD_DIR) $(1)
+define Host/Compile/Default
+	$(MAKE) -C $(HOST_BUILD_DIR) $(1)
 endef
 
-define Build/Compile
-  $(call Build/Compile/Default)
+define Host/Compile
+  $(call Host/Compile/Default)
 endef
 
 ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
-  define HostBuild/Autoclean
-    $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
-    $(if $(if $(Build/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT)))
+  define HostHost/Autoclean
+    $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(HOST_STAMP_PREPARED))
+    $(if $(if $(Host/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(HOST_BUILD_DIR),$(HOST_STAMP_BUILT)))
   endef
 endif
 
@@ -88,45 +88,45 @@ define Download/default
 endef
 
 define HostBuild
-  $(if $(QUILT),$(Build/Quilt))
+  $(if $(QUILT),$(Host/Quilt))
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
-  $(if $(DUMP),,$(call HostBuild/Autoclean))
+  $(if $(DUMP),,$(call HostHost/Autoclean))
   
-  $(STAMP_PREPARED):
-	@-rm -rf $(PKG_BUILD_DIR)
-	@mkdir -p $(PKG_BUILD_DIR)
-	$(call Build/Prepare)
+  $(HOST_STAMP_PREPARED):
+	@-rm -rf $(HOST_BUILD_DIR)
+	@mkdir -p $(HOST_BUILD_DIR)
+	$(call Host/Prepare)
 	touch $$@
 
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED)
-	$(call Build/Configure)
+  $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
+	$(call Host/Configure)
 	touch $$@
 
-  $(STAMP_BUILT): $(STAMP_CONFIGURED)
-	$(call Build/Compile)
+  $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+	$(call Host/Compile)
 	touch $$@
 
-  $(STAMP_INSTALLED): $(STAMP_BUILT)
-	$(call Build/Install)
+  $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT)
+	$(call Host/Install)
 	mkdir -p $$(shell dirname $$@)
 	touch $$@
 	
-  ifdef Build/Install
-    install: $(STAMP_INSTALLED)
+  ifdef Host/Install
+    install: $(HOST_STAMP_INSTALLED)
   endif
 
   package-clean: FORCE
-	$(call Build/Clean)
-	$(call Build/Uninstall)
-	rm -f $(STAMP_INSTALLED) $(STAMP_BUILT)
+	$(call Host/Clean)
+	$(call Host/Uninstall)
+	rm -f $(HOST_STAMP_INSTALLED) $(HOST_STAMP_BUILT)
 
   download:
-  prepare: $(STAMP_PREPARED)
-  configure: $(STAMP_CONFIGURED)
-  compile: $(STAMP_BUILT)
+  prepare: $(HOST_STAMP_PREPARED)
+  configure: $(HOST_STAMP_CONFIGURED)
+  compile: $(HOST_STAMP_BUILT)
   install:
   clean: FORCE
-	$(call Build/Clean)
-	rm -rf $(PKG_BUILD_DIR)
+	$(call Host/Clean)
+	rm -rf $(HOST_BUILD_DIR)
 
 endef

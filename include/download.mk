@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-DOWNLOAD_RDEP:=$(STAMP_PREPARED)
+DOWNLOAD_RDEP:=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
 define dl_method 
