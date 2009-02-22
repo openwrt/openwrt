@@ -919,14 +919,14 @@ static void register_buttons(struct button_t *b)
 	gpio_control(platform.button_mask, 0);
 	platform.button_polarity = gpio_in() & platform.button_mask;
 	gpio_intpolarity(platform.button_mask, platform.button_polarity);
-	gpio_intmask(platform.button_mask, platform.button_mask);
+	gpio_setintmask(platform.button_mask, platform.button_mask);
 
 	gpio_set_irqenable(1, button_handler);
 }
 
 static void unregister_buttons(struct button_t *b)
 {
-	gpio_intmask(platform.button_mask, 0);
+	gpio_setintmask(platform.button_mask, 0);
 
 	gpio_set_irqenable(0, button_handler);
 }
@@ -1101,7 +1101,7 @@ static void register_leds(struct led_t *l)
 	gpio_outen(mask, oe_mask);
 	gpio_control(mask, 0);
 	gpio_out(mask, val);
-	gpio_intmask(mask, 0);
+	gpio_setintmask(mask, 0);
 }
 
 static void unregister_leds(struct led_t *l)

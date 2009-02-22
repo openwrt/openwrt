@@ -32,12 +32,10 @@ static inline u32 gpio_control(u32 mask, u32 value)
 	return ssb_gpio_control(&ssb, mask, value);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
-static inline u32 gpio_intmask(u32 mask, u32 value)
+static inline u32 gpio_setintmask(u32 mask, u32 value)
 {
 	return ssb_gpio_intmask(&ssb, mask, value);
 }
-#endif
 
 static inline u32 gpio_intpolarity(u32 mask, u32 value)
 {
@@ -105,7 +103,7 @@ extern spinlock_t sbh_lock;
 #define gpio_out(mask, value) 	sb_gpioout(sbh, mask, ((value) & (mask)), GPIO_DRV_PRIORITY)
 #define gpio_outen(mask, value) 	sb_gpioouten(sbh, mask, value, GPIO_DRV_PRIORITY)
 #define gpio_control(mask, value) 	sb_gpiocontrol(sbh, mask, value, GPIO_DRV_PRIORITY)
-#define gpio_intmask(mask, value) 	sb_gpiointmask(sbh, mask, value, GPIO_DRV_PRIORITY)
+#define gpio_setintmask(mask, value) 	sb_gpiointmask(sbh, mask, value, GPIO_DRV_PRIORITY)
 #define gpio_intpolarity(mask, value) 	sb_gpiointpolarity(sbh, mask, value, GPIO_DRV_PRIORITY)
 
 static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *, struct pt_regs *))
