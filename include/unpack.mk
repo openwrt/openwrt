@@ -16,7 +16,8 @@ UNZIP_CMD=unzip -d $(1)/.. $(DL_DIR)/$(PKG_SOURCE)
 
 ifeq ($(PKG_SOURCE),)
   PKG_UNPACK ?= true
-endif
+else
+
 ifeq ($(strip $(UNPACK_CMD)),)
   ifeq ($(strip $(PKG_CAT)),)
     # try to autodetect file type
@@ -64,9 +65,13 @@ ifeq ($(strip $(UNPACK_CMD)),)
     CRLF_CMD :=
   endif
 endif
+
 ifdef PKG_BUILD_DIR
   PKG_UNPACK := $(call UNPACK_CMD,$(PKG_BUILD_DIR)) $(call CRLF_CMD,$(PKG_BUILD_DIR))
 endif
 ifdef HOST_BUILD_DIR
   HOST_UNPACK := $(call UNPACK_CMD,$(HOST_BUILD_DIR)) $(call CRLF_CMD,$(HOST_BUILD_DIR))
 endif
+
+endif # PKG_SOURCE
+
