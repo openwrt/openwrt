@@ -19,6 +19,7 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
 PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/lua/Default
@@ -81,8 +82,20 @@ $(call Package/lua/Default/description)
  This package contains LUA language examples.
 endef
 
-define Build/Configure
+# Host build
+define Host/Configure
+
 endef
+
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR)/src luac-host
+endef
+
+define Host/Install
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/src/luac-host $(STAGING_DIR_HOST)/bin/luac
+endef
+
+# Target build
 
 TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC)
 
@@ -91,6 +104,8 @@ ifneq ($(CONFIG_USE_EGLIBC),)
     TARGET_CFLAGS += -DNO_GETLOGIN
   endif
 endif
+
+Build/Configure=$(Host/Configure)
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -140,6 +155,7 @@ define Package/lua-examples/install
 		$(1)/usr/share/lua/examples/
 endef
 
+$(eval $(call HostBuild))
 $(eval $(call BuildPackage,liblua))
 $(eval $(call BuildPackage,lua))
 $(eval $(call BuildPackage,luac))
