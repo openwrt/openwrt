@@ -201,7 +201,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci @LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-ccitt @LINUX_2_6_27||@LINUX_2_6_28
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
@@ -209,7 +209,7 @@ endef
 
 define KernelPackage/rt2800-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-usb @LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-ccitt @LINUX_2_6_27||@LINUX_2_6_28
   TITLE+= (RT2870 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800usb)
