@@ -68,6 +68,7 @@ enum {
 	WLHDD,
 	WL300G,
 	WL320GE,
+	WL330GE,
 	WL500G,
 	WL500GD,
 	WL500GP,
@@ -305,6 +306,15 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wlan",	.gpio = 1 << 0, .polarity = REVERSE },
 			{ .name = "power",	.gpio = 1 << 2, .polarity = REVERSE },
 			{ .name = "link",	.gpio = 1 << 11, .polarity = REVERSE },
+		},
+	},
+	[WL330GE] = {
+		.name		= "ASUS WL-330gE",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 2 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
 		},
 	},
 	[WL500G] = {
@@ -764,6 +774,8 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WL520GC];
 		if (startswith(buf,"WL520GU-")) /* WL520GU-* */
 			return &platforms[WL520GU];
+		if (startswith(buf,"WL330GE-")) /* WL330GE-* */
+			return &platforms[WL330GE];
 	}
 
 	/* Based on "ModelId" */

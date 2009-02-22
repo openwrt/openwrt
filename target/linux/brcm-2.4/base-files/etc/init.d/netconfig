@@ -57,6 +57,12 @@ start() {
 			c["wan_ifname"] = ""
 			c["lan_ifname"] = "eth1"
 		}
+		if (model == "ASUS WL-330gE") {
+			c["wan_ifname"] = ""
+			c["lan_ifname"] = "eth0"
+			c["vlan0ports"] = ""
+			c["vlan1ports"] = ""
+		}
 		if (model == "ASUS WL-500g") {
 			c["wan_ifname"] = "eth1"
 			c["lan_ifname"] = "eth0"
@@ -149,12 +155,14 @@ start() {
 			c["vlan1ports"] = ""
 		}
 
-		print "#### VLAN configuration "
-		print "config switch eth0"
-		p("vlan0", "vlan0ports")
-		p("vlan1", "vlan1ports")
-		print ""
-		print ""
+		if (c["vlan0ports"] || c["vlan1ports"]) {
+			print "#### VLAN configuration "
+			print "config switch eth0"
+			p("vlan0", "vlan0ports")
+			p("vlan1", "vlan1ports")
+			print ""
+			print ""
+		}
 		print "#### Loopback configuration"
 		print "config interface loopback"
 		print "	option ifname	\"lo\""
@@ -173,10 +181,16 @@ start() {
 		print "	option netmask	255.255.255.0"
 		print ""
 		print ""
-		print "#### WAN configuration"
-		print "config interface	wan"
-		p("ifname", "wan_ifname")
-		p("macaddr", "wan_macaddr")
-		print "	option proto	dhcp"
+		if (c["wan_ifname"]) {
+			print "#### WAN configuration"
+			print "config interface	wan"
+			p("ifname", "wan_ifname")
+			p("macaddr", "wan_macaddr")
+			print "	option proto	dhcp"
+		} else {
+			print "#### WAN configuration (disabled)"
+			print "#config interface wan"
+			print "#	option proto	dhcp"
+		}
 	}' > /etc/config/network
 }
