@@ -19,6 +19,7 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
 PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
+HOST_PATCH_DIR=./patches-host
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
