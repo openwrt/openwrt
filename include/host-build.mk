@@ -27,7 +27,6 @@ ifneq ($(strip $(HOST_UNPACK)),)
   define Host/Prepare/Default
   	$(HOST_UNPACK)
 	$(Host/Patch)
-	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
   endef
 endif
 
