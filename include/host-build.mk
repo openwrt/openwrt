@@ -6,7 +6,7 @@
 #
 
 HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
-PKG_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
+HOST_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
 
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
@@ -86,9 +86,10 @@ define Download/default
   MD5SUM:=$(PKG_MD5SUM)
 endef
 
-define HostBuild
+ifndef DUMP
+  define HostBuild
   $(if $(QUILT),$(Host/Quilt))
-  $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+  $(if $(STAMP_PREPARED),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
   $(if $(DUMP),,$(call HostHost/Autoclean))
   
   $(HOST_STAMP_PREPARED):
@@ -111,21 +112,25 @@ define HostBuild
 	touch $$@
 	
   ifdef Host/Install
-    install: $(HOST_STAMP_INSTALLED)
+    host-install: $(HOST_STAMP_INSTALLED)
   endif
 
-  package-clean: FORCE
+  download:
+  host-prepare: $(HOST_STAMP_PREPARED)
+  host-configure: $(HOST_STAMP_CONFIGURED)
+  host-compile: $(HOST_STAMP_BUILT)
+  host-install:
+  host-clean: FORCE
 	$(call Host/Clean)
 	$(call Host/Uninstall)
-	rm -f $(HOST_STAMP_INSTALLED) $(HOST_STAMP_BUILT)
+	rm -rf $(HOST_BUILD_DIR) $(HOST_STAMP_INSTALLED) $(HOST_STAMP_BUILT)
 
-  download:
-  prepare: $(HOST_STAMP_PREPARED)
-  configure: $(HOST_STAMP_CONFIGURED)
-  compile: $(HOST_STAMP_BUILT)
-  install:
-  clean: FORCE
-	$(call Host/Clean)
-	rm -rf $(HOST_BUILD_DIR)
+  endef
 
-endef
+  prepare: host-prepare
+  compile: host-compile
+  install: host-install
+  clean: host-clean
+
+endif
+

@@ -69,7 +69,7 @@ define Build/DefaultTargets
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
   $(call Build/Autoclean)
 
-  $(STAMP_PREPARED):
+  $(STAMP_PREPARED): $(HOST_STAMP_INSTALLED)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
