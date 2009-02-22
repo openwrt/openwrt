@@ -1,7 +1,7 @@
 /*
  *  Driver for Micrel/Kendin PHYs
  *
- *  Copyright (c) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (c) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -61,11 +61,7 @@ static struct phy_driver ksz8041_phy_driver = {
 
 static int __init micrel_phy_init(void)
 {
-	int ret;
-
-	ret = phy_driver_register(&ksz8041_phy_driver);
-
-	return ret;
+	return phy_driver_register(&ksz8041_phy_driver);
 }
 
 static void __exit micrel_phy_exit(void)
@@ -73,8 +69,12 @@ static void __exit micrel_phy_exit(void)
 	phy_driver_unregister(&ksz8041_phy_driver);
 }
 
+#ifdef MODULE
 module_init(micrel_phy_init);
 module_exit(micrel_phy_exit);
+#else
+subsys_initcall(micrel_phy_init);
+#endif
 
 MODULE_DESCRIPTION("Micrel/Kendin PHY driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
