@@ -69,7 +69,7 @@ define Build/DefaultTargets
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
   $(call Build/Autoclean)
 
-  $(STAMP_PREPARED): $(HOST_STAMP_INSTALLED)
+  $(STAMP_PREPARED):
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
@@ -77,7 +77,7 @@ define Build/DefaultTargets
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
 	touch $$@
 
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED)
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(HOST_STAMP_INSTALLED)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
