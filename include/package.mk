@@ -125,7 +125,7 @@ define BuildPackage
   $(eval $(Package/$(1)))
 
 ifdef DESCRIPTION
-$$(error DESCRIPTION:= is obselete, use Package/PKG_NAME/description)
+$$(error DESCRIPTION:= is obsolete, use Package/PKG_NAME/description)
 endif
 
 ifndef Package/$(1)/description
