@@ -16,18 +16,18 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR)
 endef
 
-define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR) install
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) install
 endef
 
-define Build/Clean
-	$(MAKE) -C $(PKG_BUILD_DIR) uninstall
-	$(MAKE) -C $(PKG_BUILD_DIR) clean
-	$(call Build/Clean/Default)
+define Host/Clean
+	$(MAKE) -C $(HOST_BUILD_DIR) uninstall
+	$(MAKE) -C $(HOST_BUILD_DIR) clean
+	$(call Host/Clean/Default)
 endef
 
 $(eval $(call HostBuild))

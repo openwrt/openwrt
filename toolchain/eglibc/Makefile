@@ -35,7 +35,7 @@ PATCH_DIR:=./patches/$(PKG_VERSION)
 
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
-PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_SOURCE_SUBDIR)
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_SOURCE_SUBDIR)
 
 override CONFIG_AUTOREBUILD=
 
@@ -44,8 +44,8 @@ include $(INCLUDE_DIR)/host-build.mk
 STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.eglibc_built
 STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.eglibc_installed
 
-PKG_BUILD_DIR1:=$(PKG_BUILD_DIR)-initial
-PKG_BUILD_DIR2:=$(PKG_BUILD_DIR)-final
+HOST_BUILD_DIR1:=$(HOST_BUILD_DIR)-initial
+HOST_BUILD_DIR2:=$(HOST_BUILD_DIR)-final
 
 # XXX: {e,}glibc does not build w/ -Os
 # http://sourceware.org/bugzilla/show_bug.cgi?id=5203
@@ -55,7 +55,7 @@ EGLIBC_CONFIGURE:= \
 	BUILD_CC="$(HOSTCC)" \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(EGLIBC_CFLAGS)" \
-	$(PKG_BUILD_DIR)/libc/configure \
+	$(HOST_BUILD_DIR)/libc/configure \
 		--prefix=/usr \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(REAL_GNU_TARGET_NAME) \
@@ -77,7 +77,7 @@ EGLIBC_MAKE:= \
 	$(MAKE) \
 
 
-define Build/SetToolchainInfo
+define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.eglibc.org/,' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
@@ -85,9 +85,9 @@ define Build/SetToolchainInfo
 endef
 
 define Stage1/Configure
-	mkdir -p $(PKG_BUILD_DIR1)
-	$(CP) $(PKG_BUILD_DIR)/libc/option-groups.config $(PKG_BUILD_DIR1)/
-	( cd $(PKG_BUILD_DIR1); rm -f config.cache; \
+	mkdir -p $(HOST_BUILD_DIR1)
+	$(CP) $(HOST_BUILD_DIR)/libc/option-groups.config $(HOST_BUILD_DIR1)/
+	( cd $(HOST_BUILD_DIR1); rm -f config.cache; \
 		$(EGLIBC_CONFIGURE) \
 	);
 endef
@@ -97,13 +97,13 @@ endef
 
 define Stage1/Install
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/{include,lib}
-	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR1) \
+	$(EGLIBC_MAKE) -C $(HOST_BUILD_DIR1) \
 		install_root="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev" \
 		install-bootstrap-headers=yes \
 		install-headers 
-	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR1) \
+	$(EGLIBC_MAKE) -C $(HOST_BUILD_DIR1) \
 		csu/subdir_lib
-	( cd $(PKG_BUILD_DIR1); \
+	( cd $(HOST_BUILD_DIR1); \
 		$(CP) csu/crt1.o csu/crti.o csu/crtn.o $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/lib/ \
 	)
 	$(TARGET_CC) -nostdlib -nostartfiles -shared -x c /dev/null \
@@ -111,19 +111,19 @@ define Stage1/Install
 endef
 
 define Stage2/Configure
-	mkdir -p $(PKG_BUILD_DIR2)
-	$(CP) $(PKG_BUILD_DIR)/libc/option-groups.config $(PKG_BUILD_DIR2)/
-	( cd $(PKG_BUILD_DIR2); rm -f config.cache; \
+	mkdir -p $(HOST_BUILD_DIR2)
+	$(CP) $(HOST_BUILD_DIR)/libc/option-groups.config $(HOST_BUILD_DIR2)/
+	( cd $(HOST_BUILD_DIR2); rm -f config.cache; \
 		$(EGLIBC_CONFIGURE) \
 	);
 endef
 
 define Stage2/Compile
-	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR2) all
+	$(EGLIBC_MAKE) -C $(HOST_BUILD_DIR2) all
 endef
 
 define Stage2/Install
-	$(EGLIBC_MAKE) -C $(PKG_BUILD_DIR2) \
+	$(EGLIBC_MAKE) -C $(HOST_BUILD_DIR2) \
 		install_root="$(TOOLCHAIN_DIR)" \
 		install
 	( cd $(TOOLCHAIN_DIR) ; \
@@ -137,33 +137,33 @@ define Stage2/Install
 	)
 endef
 
-define Build/Prepare
-	$(call Build/SetToolchainInfo)
-	$(call Build/Prepare/Default)
+define Host/Prepare
+	$(call Host/SetToolchainInfo)
+	$(call Host/Prepare/Default)
 	ln -snf $(PKG_SOURCE_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-	$(SED) 's,y,n,' $(PKG_BUILD_DIR)/libc/option-groups.defaults
-	grep 'CONFIG_EGLIBC_OPTION_' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_EGLIBC_\\(.*\\),\\1\\2,g" > $(PKG_BUILD_DIR)/libc/option-groups.config
-	ln -sf ../ports $(PKG_BUILD_DIR)/libc/
-	( cd $(PKG_BUILD_DIR)/libc; autoconf --force )
+	$(SED) 's,y,n,' $(HOST_BUILD_DIR)/libc/option-groups.defaults
+	grep 'CONFIG_EGLIBC_OPTION_' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_EGLIBC_\\(.*\\),\\1\\2,g" > $(HOST_BUILD_DIR)/libc/option-groups.config
+	ln -sf ../ports $(HOST_BUILD_DIR)/libc/
+	( cd $(HOST_BUILD_DIR)/libc; autoconf --force )
 	$(call Stage1/Configure)
 	$(call Stage1/Compile)
 	$(call Stage1/Install)
 endef
 
-define Build/Configure
+define Host/Configure
 endef
 
-define Build/Compile
+define Host/Compile
 	$(call Stage2/Configure)
 	$(call Stage2/Compile)
 	$(call Stage2/Install)
 endef
 
-define Build/Install
+define Host/Install
 endef
 
-define Build/Clean
-	rm -rf $(PKG_BUILD_DIR) $(PKG_BUILD_DIR1) $(PKG_BUILD_DIR2) \
+define Host/Clean
+	rm -rf $(HOST_BUILD_DIR) $(HOST_BUILD_DIR1) $(HOST_BUILD_DIR2) \
 		$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef

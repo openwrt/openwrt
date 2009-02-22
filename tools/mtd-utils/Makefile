@@ -14,7 +14,7 @@ PKG_SOURCE_URL=http://ftp.debian.org/debian/pool/main/m/mtd
 PKG_MD5SUM:=1f42c2cae08eb9e7b52d0c188f8d6338
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION).orig
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION).orig
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -23,15 +23,15 @@ ifneq ($(HOST_OS),Linux)
 CFLAGS += -Dloff_t=off_t -D__BYTE_ORDER=BYTE_ORDER -include getline.h -include endian.h
 endif
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/util CFLAGS="$(CFLAGS)" TARGETS=mkfs.jffs2
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR)/util CFLAGS="$(CFLAGS)" TARGETS=mkfs.jffs2
 endef
 
-define Build/Install
-	$(CP) $(PKG_BUILD_DIR)/util/mkfs.jffs2 $(STAGING_DIR_HOST)/bin/
+define Host/Install
+	$(CP) $(HOST_BUILD_DIR)/util/mkfs.jffs2 $(STAGING_DIR_HOST)/bin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/mkfs.jffs2
 endef
 

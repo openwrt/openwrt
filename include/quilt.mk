@@ -25,47 +25,65 @@ sed -e s,\\\#.*,, $(1) | grep -E \[a-zA-Z0-9\]
 endef
 
 define PatchDir/Quilt
-	@if [ -s $(1)/series ]; then \
-		mkdir -p $(PKG_BUILD_DIR)/patches/$(2); \
-		cp $(1)/series $(PKG_BUILD_DIR)/patches/$(2); \
+	@if [ -s "$(2)/series" ]; then \
+		mkdir -p "$(1)/patches/$(3)"; \
+		cp "$(2)/series" "$(1)/patches/$(3)"; \
 	fi
-	@for patch in $$$$( (cd $(1) && if [ -f series ]; then $(call filter_series,series); else ls; fi; ) 2>/dev/null ); do ( \
-		cp "$(1)/$$$$patch" $(PKG_BUILD_DIR); \
-		cd $(PKG_BUILD_DIR); \
-		$(QUILT_CMD) import -P$(2)$$$$patch -p 1 "$$$$patch"; \
+	@for patch in $$$$( (cd "$(2)" && if [ -f series ]; then $(call filter_series,series); else ls; fi; ) 2>/dev/null ); do ( \
+		cp "$(2)/$$$$patch" "$(1)"; \
+		cd "$(1)"; \
+		$(QUILT_CMD) import -P$(3)$$$$patch -p 1 "$$$$patch"; \
 		$(QUILT_CMD) push -f >/dev/null 2>/dev/null; \
 		rm -f "$$$$patch"; \
 	); done
-	$(if $(2),@echo $(2) >> $(PKG_BUILD_DIR)/patches/.subdirs)
+	$(if $(3),@echo $(3) >> "$(1)/patches/.subdirs")
 endef
 
 define PatchDir/Default
-	@if [ -d "$(1)" -a "$$$$(ls $(1) | wc -l)" -gt 0 ]; then \
-		if [ -s "$(1)/series" ]; then \
-			$(call filter_series,$(1)/series) | xargs -n1 \
-				$(PATCH) $(PKG_BUILD_DIR) "$(1)"; \
+	@if [ -d "$(2)" -a "$$$$(ls $(2) | wc -l)" -gt 0 ]; then \
+		if [ -s "$(2)/series" ]; then \
+			$(call filter_series,$(2)/series) | xargs -n1 \
+				$(PATCH) "$(1)" "$(2)"; \
 		else \
-			$(PATCH) $(PKG_BUILD_DIR) "$(1)"; \
+			$(PATCH) "$(1)" "$(2)"; \
 		fi; \
 	fi
 endef
 
 define PatchDir
-$(call PatchDir/$(if $(strip $(QUILT)),Quilt,Default),$(strip $(1)),$(strip $(2)))
+$(call PatchDir/$(if $(strip $(QUILT)),Quilt,Default),$(strip $(1)),$(strip $(2)),$(strip $(3)))
 endef
 
-QUILT?=$(strip $(shell test -f $(PKG_BUILD_DIR)/.quilt_used && echo y))
-ifneq ($(QUILT),)
-  STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
-  STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
-  override CONFIG_AUTOREBUILD=
-  prepare: $(STAMP_PATCHED)
-  quilt-check: $(STAMP_CHECKED)
+ifneq ($(PKG_BUILD_DIR),)
+  QUILT?=$(strip $(shell test -f $(PKG_BUILD_DIR)/.quilt_used && echo y))
+  ifneq ($(QUILT),)
+    STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
+    STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
+    override CONFIG_AUTOREBUILD=
+    prepare: $(STAMP_PATCHED)
+    quilt-check: $(STAMP_CHECKED)
+  endif
 endif
+
+ifneq ($(HOST_BUILD_DIR),)
+  HOST_QUILT?=$(strip $(shell test -f $(if $(PKG_BUILD_DIR),$(PKG_BUILD_DIR),$(HOST_BUILD_DIR))/.quilt_used && echo y))
+  ifneq ($(HOST_QUILT),)
+    HOST_STAMP_PATCHED:=$(HOST_BUILD_DIR)/.quilt_patched
+    HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
+    override CONFIG_AUTOREBUILD=
+    host-prepare: $(HOST_STAMP_PATCHED)
+    host-quilt-check: $(HOST_STAMP_CHECKED)
+  endif
+endif
+
+define Host/Patch/Default
+	$(if $(QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
+	$(call PatchDir,$(HOST_BUILD_DIR),$(PATCH_DIR),)
+endef
 
 define Build/Patch/Default
 	$(if $(QUILT),rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
-	$(call PatchDir,$(PATCH_DIR),)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR),)
 endef
 
 kernel_files=$(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.)
@@ -73,22 +91,26 @@ define Kernel/Patch/Default
 	rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches
 	$(if $(kernel_files),$(CP) $(kernel_files) $(LINUX_DIR)/)
 	find $(LINUX_DIR)/ -name \*.rej -or -name \*.orig | $(XARGS) rm -f
-	$(call PatchDir,$(GENERIC_PATCH_DIR),generic/)
-	$(call PatchDir,$(PATCH_DIR),platform/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(GENERIC_PATCH_DIR),generic/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR),platform/)
 endef
 
 define Quilt/RefreshDir
-	mkdir -p $(1)
-	-rm -f $(1)/* 2>/dev/null >/dev/null
+	mkdir -p $(2)
+	-rm -f $(2)/* 2>/dev/null >/dev/null
 	@( \
-		for patch in $$$$($(if $(2),grep "^$(2)",cat) $(PKG_BUILD_DIR)/patches/series | awk '{print $$$$1}'); do \
-			$(CP) -v "$(PKG_BUILD_DIR)/patches/$$$$patch" $(1); \
+		for patch in $$$$($(if $(3),grep "^$(3)",cat) $(PKG_BUILD_DIR)/patches/series | awk '{print $$$$1}'); do \
+			$(CP) -v "$(PKG_BUILD_DIR)/patches/$$$$patch" $(2); \
 		done; \
 	)
 endef
 
+define Quilt/Refresh/Host
+	$(call Quilt/RefreshDir,$(HOST_BUILD_DIR),$(PATCH_DIR))
+endef
+
 define Quilt/Refresh/Package
-	$(call Quilt/RefreshDir,$(PATCH_DIR))
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR))
 endef
 
 define Quilt/Refresh/Kernel
@@ -96,18 +118,14 @@ define Quilt/Refresh/Kernel
 		echo "All kernel patches must start with either generic/ or platform/"; \
 		false; \
 	}
-	$(call Quilt/RefreshDir,$(GENERIC_PATCH_DIR),generic/)
-	$(call Quilt/RefreshDir,$(PATCH_DIR),platform/)
-endef
-
-define Quilt/Refresh
-$(if $(TARGET_BUILD),$(Quilt/Refresh/Kernel),$(Quilt/Refresh/Package))
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_PATCH_DIR),generic/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR),platform/)
 endef
 
 define Build/Quilt
-  $(STAMP_PATCHED): $(STAMP_PREPARED)
+  $($(2)STAMP_PATCHED): $($(2)STAMP_PREPARED)
 	@( \
-		cd $(PKG_BUILD_DIR)/patches; \
+		cd $(1)/patches; \
 		$(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null; \
 		if [ -s ".subdirs" ]; then \
 			rm -f series; \
@@ -124,36 +142,47 @@ define Build/Quilt
 			find * -type f \! -name series | sort > series; \
 		fi; \
 	)
-	touch $$@
+	touch "$$@"
 
-  $(STAMP_CONFIGURED): $(STAMP_CHECKED) FORCE
-  $(STAMP_CHECKED): $(STAMP_PATCHED)
-	if [ -s "$(PKG_BUILD_DIR)/patches/series" ]; then (cd $(PKG_BUILD_DIR); if $(QUILT_CMD) next >/dev/null 2>&1; then $(QUILT_CMD) push -a; else $(QUILT_CMD) top >/dev/null 2>&1; fi); fi
-	touch $$@
+  $($(2)STAMP_CONFIGURED): $($(2)STAMP_CHECKED) FORCE
+  $($(2)STAMP_CHECKED): $($(2)STAMP_PATCHED)
+	if [ -s "$(1)/patches/series" ]; then \
+		(cd "$(1)"; \
+			if $(QUILT_CMD) next >/dev/null 2>&1; then \
+				$(QUILT_CMD) push -a; \
+			else \
+				$(QUILT_CMD) top >/dev/null 2>&1; \
+			fi \
+		); \
+	fi
+	touch "$$@"
 
-  quilt-check: $(STAMP_PREPARED) FORCE
-	@[ -f "$(PKG_BUILD_DIR)/.quilt_used" ] || { \
+  $(3)quilt-check: $($(2)STAMP_PREPARED) FORCE
+	@[ -f "$(1)/.quilt_used" ] || { \
 		echo "The source directory was not unpacked using quilt. Please rebuild with QUILT=1"; \
 		false; \
 	}
-	@[ -f "$(PKG_BUILD_DIR)/patches/series" ] || { \
+	@[ -f "$(1)/patches/series" ] || { \
 		echo "The source directory contains no quilt patches."; \
 		false; \
 	}
-	@[ -n "$$$$(ls $(PKG_BUILD_DIR)/patches/series)" -o "$$$$(cat $(PKG_BUILD_DIR)/patches/series | md5sum)" = "$$(sort $(PKG_BUILD_DIR)/patches/series | md5sum)" ] || { \
+	@[ -n "$$$$(ls $(1)/patches/series)" -o "$$$$(cat $(1)/patches/series | md5sum)" = "$$(sort $(1)/patches/series | md5sum)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}
 
-  refresh: quilt-check
-	@cd $(PKG_BUILD_DIR); $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null
-	@cd $(PKG_BUILD_DIR); while $(QUILT_CMD) next 2>/dev/null >/dev/null && $(QUILT_CMD) push; do \
+  $(3)refresh: $(3)quilt-check
+	@cd "$(1)"; $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null
+	@cd "$(1)"; while $(QUILT_CMD) next 2>/dev/null >/dev/null && $(QUILT_CMD) push; do \
 		QUILT_DIFF_OPTS="-p" $(QUILT_CMD) refresh -p ab --no-index --no-timestamps; \
 	done; ! $(QUILT_CMD) next 2>/dev/null >/dev/null
-	$(Quilt/Refresh)
+	$(Quilt/Refresh/$(4))
 	
-  update: quilt-check
-	$(Quilt/Refresh)
+  $(3)update: $(3)quilt-check
+	$(Quilt/Refresh/$(4))
 endef
+
+Build/Quilt=$(call Quilt/Template,$(PKG_BUILD_DIR),,,$(if $(TARGET_BUILD),Kernel,Package))
+Host/Quilt=$(call Quilt/Template,$(HOST_BUILD_DIR),HOST_,host-,Host)
 
 endif

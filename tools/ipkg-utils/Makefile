@@ -16,16 +16,16 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Install
+define Host/Install
 	$(INSTALL_BIN) \
-		$(PKG_BUILD_DIR)/ipkg-build \
-		$(PKG_BUILD_DIR)/ipkg-buildpackage \
-		$(PKG_BUILD_DIR)/ipkg-make-index \
-		$(PKG_BUILD_DIR)/ipkg.py \
+		$(HOST_BUILD_DIR)/ipkg-build \
+		$(HOST_BUILD_DIR)/ipkg-buildpackage \
+		$(HOST_BUILD_DIR)/ipkg-make-index \
+		$(HOST_BUILD_DIR)/ipkg.py \
 		$(STAGING_DIR_HOST)/bin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -f $(STAGING_DIR)/etc/ipkg.conf
 	rm -f $(STAGING_DIR_HOST)/bin/ipkg*
 endef

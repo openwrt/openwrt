@@ -54,9 +54,9 @@ endif
 STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
-  PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_EXTRAVERSION)
+  HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_EXTRAVERSION)
 else
-  PKG_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
+  HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)
 endif
 
 override CONFIG_AUTOREBUILD=
@@ -82,44 +82,44 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 )
 
 
-define Build/SetToolchainInfo
+define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.uclibc.org/,' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_PATCHVER\)=.*,\1=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
 
-define Build/Prepare/Snapshot
+define Host/Prepare/Snapshot
 	$(PKG_UNPACK)
-	rm -Rf $(PKG_BUILD_DIR)
-	ln -snf $(BUILD_DIR_TOOLCHAIN)/uClibc $(PKG_BUILD_DIR)
-	$(Build/Patch)
-	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
+	rm -Rf $(HOST_BUILD_DIR)
+	ln -snf $(BUILD_DIR_TOOLCHAIN)/uClibc $(HOST_BUILD_DIR)
+	$(Host/Patch)
+	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
 endef
 
-define Build/Prepare/V_0_9_28
+define Host/Prepare/V_0_9_28
 	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(BUILD_DIR_TOOLCHAIN)/linux\",g' \
-		$(PKG_BUILD_DIR)/.config
+		$(HOST_BUILD_DIR)/.config
  ifeq ($(CONFIG_SOFT_FLOAT),y)
-	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(PKG_BUILD_DIR)/.config
+	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(HOST_BUILD_DIR)/.config
  endif
  ifeq ($(CONFIG_C99_MATH),y)
-	$(SED) 's,.*DO_C99_MATH.*,DO_C99_MATH=y,g' $(PKG_BUILD_DIR)/.config
+	$(SED) 's,.*DO_C99_MATH.*,DO_C99_MATH=y,g' $(HOST_BUILD_DIR)/.config
  endif
 endef
 
-define Build/Prepare
-	$(call Build/SetToolchainInfo)
+define Host/Prepare
+	$(call Host/SetToolchainInfo)
 	@echo prepare uClibc version $(PKG_VERSION)$(PKG_EXTRAVERSION)  
  ifeq ($(PKG_VERSION_SNAPSHOT),y)
-	$(call Build/Prepare/Snapshot)
+	$(call Host/Prepare/Snapshot)
  else
-	$(call Build/Prepare/Default)
+	$(call Host/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
  endif
-	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD)) $(PKG_BUILD_DIR)/.config
+	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD)) $(HOST_BUILD_DIR)/.config
  ifeq ($(PKG_VERSION),0.9.28)
-	$(call Build/Prepare/V_0_9_28)
+	$(call Host/Prepare/V_0_9_28)
  endif
 	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include\",g' \
 		-e 's,^.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n,y),g' \
@@ -128,9 +128,9 @@ define Build/Prepare
 		-e 's,^.*CONFIG_ARM_EABI.*,CONFIG_ARM_EABI=$(if $(CONFIG_EABI_SUPPORT),y,n),g' \
 		-e 's,^.*CONFIG_ARM_OABI.*,CONFIG_ARM_OABI=$(if $(CONFIG_EABI_SUPPORT),n,y),g' \
 		-e 's,^.*UCLIBC_HAS_SHADOW.*,UCLIBC_HAS_SHADOW=$(if $(CONFIG_SHADOW_PASSWORDS),y,n),g' \
-		$(PKG_BUILD_DIR)/.config
-	$(MAKE) -C $(PKG_BUILD_DIR)/extra/config conf KBUILD_HAVE_NLS= HOSTCFLAGS="-DKBUILD_NO_NLS"
-	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
+		$(HOST_BUILD_DIR)/.config
+	$(MAKE) -C $(HOST_BUILD_DIR)/extra/config conf KBUILD_HAVE_NLS= HOSTCFLAGS="-DKBUILD_NO_NLS"
+	PATH=$(TARGET_PATH) $(MAKE) -C $(HOST_BUILD_DIR) \
 		PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
 		DEVEL_PREFIX=/usr/ \
 		RUNTIME_PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
@@ -141,10 +141,10 @@ define Build/Prepare
 		$(if $(CONFIG_UCLIBC_VERSION_0_9_28),install_dev,install_headers)
 endef
 
-define Build/Configure
+define Host/Configure
 endef
 
-UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
+UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(HOST_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
 	DEVEL_PREFIX=/usr/ \
 	RUNTIME_PREFIX=/ \
@@ -152,8 +152,8 @@ UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 	CPU_CFLAGS="$(TARGET_CFLAGS)" \
 	DOSTRIP=""
 
-define Build/Compile
-	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
+define Host/Compile
+	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(HOST_BUILD_DIR)/Rules.mak
 	$(UCLIBC_MAKE) PREFIX= all
 	$(UCLIBC_MAKE) PREFIX="$(TOOLCHAIN_DIR)/" install_runtime install_dev
 	ln -sf ../../lib/libc.so.0 $(TOOLCHAIN_DIR)/usr/lib/libc.so
@@ -168,21 +168,21 @@ define Build/Compile
 #	)
 endef
 
-define Build/Install
+define Host/Install
 	$(UCLIBC_MAKE) PREFIX= utils
 	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/usr/bin
 	$(INSTALL_BIN) \
-		$(PKG_BUILD_DIR)/utils/ldd \
+		$(HOST_BUILD_DIR)/utils/ldd \
 		$(TOOLCHAIN_DIR)/usr/bin/
 	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/sbin
 	$(INSTALL_BIN) \
-		$(PKG_BUILD_DIR)/utils/ldconfig \
+		$(HOST_BUILD_DIR)/utils/ldconfig \
 		$(TOOLCHAIN_DIR)/sbin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -rf \
-		$(PKG_BUILD_DIR) \
+		$(HOST_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME) \
 		$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev
 endef

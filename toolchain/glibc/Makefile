@@ -34,15 +34,15 @@ include $(INCLUDE_DIR)/host-build.mk
 STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.glibc_built
 STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.glibc_installed
 
-PKG_BUILD_DIR1:=$(PKG_BUILD_DIR)-initial
-PKG_BUILD_DIR2:=$(PKG_BUILD_DIR)-final
+HOST_BUILD_DIR1:=$(HOST_BUILD_DIR)-initial
+HOST_BUILD_DIR2:=$(HOST_BUILD_DIR)-final
 
 GLIBC_ADD_ONS+=nptl,
 
 ifneq ($(CONFIG_GLIBC_PORTS),)
   GLIBC_ADD_ONS+=ports,
-  define Build/Prepare/ports
-	ln -snf ../glibc-ports $(PKG_BUILD_DIR)/ports
+  define Host/Prepare/ports
+	ln -snf ../glibc-ports $(HOST_BUILD_DIR)/ports
   endef
 endif
 
@@ -57,7 +57,7 @@ GLIBC_CONFIGURE:= \
 	libc_cv_forced_unwind=yes \
 	libc_cv_c_cleanup=yes \
 	libc_cv_386_tls=yes \
-	$(PKG_BUILD_DIR)/configure \
+	$(HOST_BUILD_DIR)/configure \
 		--prefix=/usr \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(REAL_GNU_TARGET_NAME) \
@@ -88,7 +88,7 @@ GLIBC_MAKE:= \
 	$(MAKE) \
 
 
-define Build/SetToolchainInfo
+define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.gnu.org/software/libc/,' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
@@ -96,8 +96,8 @@ define Build/SetToolchainInfo
 endef
 
 define Stage1/Configure
-	mkdir -p $(PKG_BUILD_DIR1)
-	( cd $(PKG_BUILD_DIR1); rm -f config.cache; \
+	mkdir -p $(HOST_BUILD_DIR1)
+	( cd $(HOST_BUILD_DIR1); rm -f config.cache; \
 		$(GLIBC_CONFIGURE_STAGE1) \
 	);
 endef
@@ -106,31 +106,31 @@ define Stage1/Compile
 endef
 
 define Stage1/Install
-	$(GLIBC_MAKE) -C $(PKG_BUILD_DIR1) \
+	$(GLIBC_MAKE) -C $(HOST_BUILD_DIR1) \
 		CFLAGS="-DBOOTSTRAP_GCC" \
 		cross-compiling=yes \
 		install_root="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev" \
 		install-headers
 	[ -f $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/bits/stdio_lim.h ] || \
-		$(CP) $(PKG_BUILD_DIR1)/bits/stdio_lim.h \
+		$(CP) $(HOST_BUILD_DIR1)/bits/stdio_lim.h \
 			$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/bits/stdio_lim.h
 	[ -f $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/gnu/stubs.h ] || \
 		touch $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/gnu/stubs.h
 endef
 
 define Stage2/Configure
-	mkdir -p $(PKG_BUILD_DIR2)
-	( cd $(PKG_BUILD_DIR2); rm -f config.cache; \
+	mkdir -p $(HOST_BUILD_DIR2)
+	( cd $(HOST_BUILD_DIR2); rm -f config.cache; \
 		$(GLIBC_CONFIGURE_STAGE2) \
 	);
 endef
 
 define Stage2/Compile
-	$(GLIBC_MAKE) -C $(PKG_BUILD_DIR2) all
+	$(GLIBC_MAKE) -C $(HOST_BUILD_DIR2) all
 endef
 
 define Stage2/Install
-	$(GLIBC_MAKE) -C $(PKG_BUILD_DIR2) \
+	$(GLIBC_MAKE) -C $(HOST_BUILD_DIR2) \
 		install_root="$(TOOLCHAIN_DIR)" \
 		install
 	( cd $(TOOLCHAIN_DIR) ; \
@@ -144,33 +144,33 @@ define Stage2/Install
 	)
 endef
 
-define Build/Prepare
-	$(call Build/SetToolchainInfo)
-	$(call Build/Prepare/Default)
+define Host/Prepare
+	$(call Host/SetToolchainInfo)
+	$(call Host/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-	$(call Build/Prepare/ports)
+	$(call Host/Prepare/ports)
 	$(call Stage1/Configure)
 	$(call Stage1/Compile)
 	$(call Stage1/Install)
 endef
 
-define Build/Configure
+define Host/Configure
 endef
 
-define Build/Compile
+define Host/Compile
 	$(call Stage2/Configure)
 	$(call Stage2/Compile)
 	$(call Stage2/Install)
 endef
 
-define Build/Install
+define Host/Install
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -rf \
-		$(PKG_BUILD_DIR) \
-		$(PKG_BUILD_DIR1) \
-		$(PKG_BUILD_DIR2) \
+		$(HOST_BUILD_DIR) \
+		$(HOST_BUILD_DIR1) \
+		$(HOST_BUILD_DIR2) \
 		$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef

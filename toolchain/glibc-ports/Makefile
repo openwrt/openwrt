@@ -34,23 +34,23 @@ include $(INCLUDE_DIR)/host-build.mk
 STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.glibc-ports_built
 STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.glibc-ports_installed
 
-define Build/Prepare
-$(call Build/Prepare/Default)
+define Host/Prepare
+$(call Host/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef
 
-define Build/Configure
+define Host/Configure
 endef
 
-define Build/Compile
+define Host/Compile
 endef
 
-define Build/Install
+define Host/Install
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -rf \
-		$(PKG_BUILD_DIR) \
+		$(HOST_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef
 

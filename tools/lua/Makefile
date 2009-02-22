@@ -20,23 +20,23 @@ PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Configure
+define Host/Configure
 endef
 
 TARGET_CFLAGS += -DLUA_USE_LINUX
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/src luac-host
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR)/src luac-host
 endef
 
-define Build/Install
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/luac-host $(STAGING_DIR_HOST)/bin/luac
+define Host/Install
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/src/luac-host $(STAGING_DIR_HOST)/bin/luac
 endef
 
-define Build/Clean
-	$(MAKE) -C $(PKG_BUILD_DIR)/src clean
-	rm -f $(PKG_BUILD_DIR)/src/luac-host
-	$(call Build/Clean/Default)
+define Host/Clean
+	$(MAKE) -C $(HOST_BUILD_DIR)/src clean
+	rm -f $(HOST_BUILD_DIR)/src/luac-host
+	$(call Host/Clean/Default)
 endef
 
 $(eval $(call HostBuild))

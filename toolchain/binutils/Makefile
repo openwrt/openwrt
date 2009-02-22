@@ -61,30 +61,30 @@ ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
 		--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX)
 endif
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
+define Host/Prepare
+	$(call Host/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/
 endef
 
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
+define Host/Configure
+	(cd $(HOST_BUILD_DIR); \
 		$(BINUTILS_CONFIGURE) \
 	);
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) all
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR) all
 endef
 
-define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR) install
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) install
 	$(CP) $(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -rf \
-		$(PKG_BUILD_DIR) \
+		$(HOST_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef
 

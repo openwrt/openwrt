@@ -17,15 +17,15 @@ export SED:=
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) SHELL="$(BASH)"
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)"
 endef
 
-define Build/Install
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sed/sed $(STAGING_DIR_HOST)/bin/
+define Host/Install
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/sed/sed $(STAGING_DIR_HOST)/bin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/sed
 endef
 

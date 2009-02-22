@@ -10,15 +10,15 @@ PKG_NAME:=patch-cmdline
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Compile
-	$(HOSTCC) $(HOST_CFLAGS) -include endian.h -o $(PKG_BUILD_DIR)/$(PKG_NAME) src/$(PKG_NAME).c
+define Host/Compile
+	$(HOSTCC) $(HOST_CFLAGS) -include endian.h -o $(HOST_BUILD_DIR)/$(PKG_NAME) src/$(PKG_NAME).c
 endef
 
-define Build/Install
-	$(CP) $(PKG_BUILD_DIR)/patch-cmdline $(STAGING_DIR_HOST)/bin/
+define Host/Install
+	$(CP) $(HOST_BUILD_DIR)/patch-cmdline $(STAGING_DIR_HOST)/bin/
 endef
 
-define Build/Clean
+define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/patch-cmdline
 endef
 

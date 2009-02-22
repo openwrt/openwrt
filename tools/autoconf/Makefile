@@ -15,23 +15,23 @@ PKG_MD5SUM:=e1fb8fe0b22e651240afdfa2be537a3c
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Build/Configure
-	$(call Build/Configure/Default,\
+define Host/Configure
+	$(call Host/Configure/Default,\
 		--datarootdir=$(STAGING_DIR_HOST)/share \
 	)
 endef
 
-define Build/Compile
-	export SHELL="$(BASH)"; $(MAKE) -C $(PKG_BUILD_DIR)
+define Host/Compile
+	export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR)
 endef
 
-define Build/Install
-	export SHELL="$(BASH)"; $(MAKE) -C $(PKG_BUILD_DIR) install
+define Host/Install
+	export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR) install
 endef
 
-define Build/Clean
-	export SHELL="$(BASH)"; $(MAKE) -C $(PKG_BUILD_DIR) uninstall
-	$(call Build/Clean/Default)
+define Host/Clean
+	export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR) uninstall
+	$(call Host/Clean/Default)
 endef
 
 $(eval $(call HostBuild))
