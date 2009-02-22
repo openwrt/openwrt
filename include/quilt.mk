@@ -13,6 +13,8 @@ ifeq ($(TARGET_BUILD),1)
 endif
 PATCH_DIR?=./patches
 FILES_DIR?=./files
+HOST_PATCH_DIR?=$(PATCH_DIR)
+HOST_FILES_DIR?=$(FILES_DIR)
 
 ifeq ($(MAKECMDGOALS),refresh)
   override QUILT=1
@@ -78,7 +80,7 @@ endif
 
 define Host/Patch/Default
 	$(if $(QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
-	$(call PatchDir,$(HOST_BUILD_DIR),$(PATCH_DIR),)
+	$(call PatchDir,$(HOST_BUILD_DIR),$(HOST_PATCH_DIR),)
 	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
 endef
 
