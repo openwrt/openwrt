@@ -410,7 +410,6 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(PKG_UNPACK)
 	$(Build/Patch)
-	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
 	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2860FW)

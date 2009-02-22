@@ -39,7 +39,6 @@ ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
   	$(PKG_UNPACK)
 	$(Build/Patch)
-	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
   endef
 endif
 

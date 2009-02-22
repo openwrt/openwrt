@@ -35,7 +35,6 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	$(Build/Patch)
-	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
 define Build/Compile

@@ -79,11 +79,13 @@ endif
 define Host/Patch/Default
 	$(if $(QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
 	$(call PatchDir,$(HOST_BUILD_DIR),$(PATCH_DIR),)
+	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
 endef
 
 define Build/Patch/Default
 	$(if $(QUILT),rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR),)
+	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
 kernel_files=$(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.)
