@@ -122,7 +122,7 @@ define Quilt/Refresh/Kernel
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR),platform/)
 endef
 
-define Build/Quilt
+define Quilt/Template
   $($(2)STAMP_PATCHED): $($(2)STAMP_PREPARED)
 	@( \
 		cd $(1)/patches; \
