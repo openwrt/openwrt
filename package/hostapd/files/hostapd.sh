@@ -76,6 +76,7 @@ hostapd_setup_vif() {
 	config_get device "$vif" device
 	config_get channel "$device" channel
 	config_get hwmode "$device" hwmode
+	config_get country "$device" country
 	case "$hwmode" in
 		11a) hwmode=a;;
 		11b) hwmode=b;;
@@ -96,6 +97,7 @@ ssid=$ssid
 debug=0
 wpa=$wpa
 ${crypto:+wpa_pairwise=$crypto}
+${country:+country_code=$country}
 $hostapd_cfg
 EOF
 	hostapd -P /var/run/wifi-$ifname.pid -B /var/run/hostapd-$ifname.conf
