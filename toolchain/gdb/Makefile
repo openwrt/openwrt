@@ -11,9 +11,7 @@ PKG_VERSION:=6.3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=05b928f41fa5b482e49ca2c24762a0ae
-PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/gdb
-PKG_CAT:=bzcat
-
+PKG_SOURCE_URL:=@GNU/gdb
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
