@@ -47,12 +47,7 @@ endif
 
 PATCH_DIR=./patches/$(PKG_VERSION)
 
-STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
-BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
-
-override CONFIG_AUTOREBUILD=
-
-include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/toolchain-build.mk
 
 STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed
 
