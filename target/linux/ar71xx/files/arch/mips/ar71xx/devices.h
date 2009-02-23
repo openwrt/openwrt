@@ -13,8 +13,11 @@
 #define __AR71XX_DEVICES_H
 
 #include <asm/mach-ar71xx/platform.h>
+
 #include <linux/leds.h>
 #include <linux/gpio_buttons.h>
+#include <linux/gpio_buttons.h>
+#include <net/dsa.h>
 
 void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 			   struct spi_board_info const *info,
@@ -47,5 +50,8 @@ void ar71xx_add_device_uart(void) __init;
 void ar71xx_add_device_wdt(void) __init;
 
 void ar91xx_add_device_wmac(void) __init;
+
+void ar71xx_add_device_dsa(unsigned int id,
+			   struct dsa_platform_data *d) __init;
 
 #endif /* __AR71XX_DEVICES_H */
