@@ -16,7 +16,6 @@
 
 #include <linux/leds.h>
 #include <linux/gpio_buttons.h>
-#include <linux/gpio_buttons.h>
 #include <net/dsa.h>
 
 void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
