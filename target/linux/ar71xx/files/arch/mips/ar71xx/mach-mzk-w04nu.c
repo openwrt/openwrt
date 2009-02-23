@@ -18,7 +18,8 @@
 #include <asm/mips_machine.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/platform.h>
+
+#include "devices.h"
 
 #define MZK_W04NU_GPIO_LED_USB		0
 #define MZK_W04NU_GPIO_LED_STATUS	1

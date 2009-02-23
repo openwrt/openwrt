@@ -20,7 +20,8 @@
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
-#include <asm/mach-ar71xx/platform.h>
+
+#include "devices.h"
 
 #define RB4XX_GPIO_USER_LED	4
 #define RB4XX_GPIO_RESET_SWITCH	7

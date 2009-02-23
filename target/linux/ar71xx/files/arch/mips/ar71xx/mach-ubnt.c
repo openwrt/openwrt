@@ -1,7 +1,7 @@
 /*
  *  Ubiquiti RouterStation support
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *  Copyright (C) 2008 Ubiquiti <support@ubnt.com>
  *
@@ -18,7 +18,8 @@
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
-#include <asm/mach-ar71xx/platform.h>
+
+#include "devices.h"
 
 #define UBNT_RS_GPIO_LED_RF	2
 #define UBNT_RS_GPIO_SW4	8
