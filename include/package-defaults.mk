@@ -32,6 +32,7 @@ define Package/Default
   TITLE:=
   KCONFIG:=
   BUILDONLY:=
+  URL:=
 endef
 
 Build/Patch:=$(Build/Patch/Default)
