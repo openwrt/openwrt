@@ -19,7 +19,8 @@
 #include <asm/mips_machine.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/platform.h>
+
+#include "devices.h"
 
 #define TEW_632BRP_GPIO_LED_STATUS	1
 #define TEW_632BRP_GPIO_LED_WPS		3

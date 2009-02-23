@@ -18,7 +18,8 @@
 #include <asm/mips_machine.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/platform.h>
+
+#include "devices.h"
 
 #define TL_WR941ND_GPIO_LED_SYSTEM	2
 #define TL_WR941ND_GPIO_LED_QSS		5

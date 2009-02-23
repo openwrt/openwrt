@@ -19,7 +19,8 @@
 #include <asm/fw/myloader/myloader.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/platform.h>
+
+#include "devices.h"
 
 struct board_rec {
 	char		*name;

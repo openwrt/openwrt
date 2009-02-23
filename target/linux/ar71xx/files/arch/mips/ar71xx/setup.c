@@ -27,7 +27,8 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
-#include <asm/mach-ar71xx/platform.h>
+
+#include "devices.h"
 
 #define AR71XX_SYS_TYPE_LEN	64
 #define AR71XX_BASE_FREQ	40000000
