@@ -8,7 +8,7 @@
 # under the terms of the GNU General Public License version 2 as published
 # by the Free Software Foundation.
 
-obj-y	:= prom.o irq.o setup.o platform.o gpio.o ar71xx.o
+obj-y	:= prom.o irq.o setup.o devices.o gpio.o ar71xx.o
 
 obj-$(CONFIG_AR71XX_MACH_AP83)		+= mach-ap83.o
 obj-$(CONFIG_AR71XX_MACH_AW_NR580)	+= mach-aw-nr580.o
