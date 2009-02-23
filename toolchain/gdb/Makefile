@@ -14,10 +14,8 @@ PKG_MD5SUM:=05b928f41fa5b482e49ca2c24762a0ae
 PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/gdb
 PKG_CAT:=bzcat
 
-STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
-BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 
-include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/toolchain-build.mk
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); \

@@ -28,12 +28,8 @@ endif
 PATCH_DIR:=./patches/$(PKG_VERSION)
 
 REAL_STAGING_DIR_HOST:=$(STAGING_DIR_HOST)
-STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
-BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 
-override CONFIG_AUTOREBUILD=
-
-include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/toolchain-build.mk
 
 BINUTILS_CONFIGURE:= \
 	./configure \

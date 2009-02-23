@@ -9,12 +9,8 @@ include $(TOPDIR)/rules.mk
 KERNEL_BUILD_DIR := $(BUILD_DIR_TOOLCHAIN)
 BUILD_DIR := $(KERNEL_BUILD_DIR)
 
-STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
-BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
-
 override QUILT:=
 override HOST_QUILT:=
-override CONFIG_AUTOREBUILD=
 
 include $(INCLUDE_DIR)/kernel.mk
 
@@ -26,7 +22,7 @@ HOST_BUILD_DIR:=$(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 PKG_MD5SUM:=$(LINUX_KERNEL_MD5SUM)
 LINUX_DIR := $(HOST_BUILD_DIR)
 
-include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/toolchain-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
 ifeq ($(strip $(BOARD)),uml)
