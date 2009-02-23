@@ -109,6 +109,19 @@ static struct gpio_button tl_wr941nd_gpio_buttons[] __initdata = {
 
 static void __init tl_wr941nd_setup(void)
 {
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
+
+	ar71xx_set_mac_base(mac);
+
+	ar71xx_add_device_mdio(0x0);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth0_data.phy_mask = 0x0;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(0);
+
 	ar71xx_add_device_spi(NULL, tl_wr941nd_spi_info,
 					ARRAY_SIZE(tl_wr941nd_spi_info));
 
@@ -121,4 +134,4 @@ static void __init tl_wr941nd_setup(void)
 	ar91xx_add_device_wmac();
 }
 
-MIPS_MACHINE(AR71XX_MACH_MZK_W04NU, "TP-LINK TL-WR941ND", tl_wr941nd_setup);
+MIPS_MACHINE(AR71XX_MACH_TL_WR941ND, "TP-LINK TL-WR941ND", tl_wr941nd_setup);
