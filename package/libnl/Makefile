@@ -13,7 +13,7 @@ PKG_VERSION:=1.1
 PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://people.suug.ch/~tgr/libnl/files/
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=ae970ccd9144e132b68664f98e7ceeb1
 
 include $(INCLUDE_DIR)/package.mk
