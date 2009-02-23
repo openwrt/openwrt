@@ -646,3 +646,30 @@ void __init ar91xx_add_device_wmac(void)
 
 	platform_device_register(&ar91xx_wmac_device);
 }
+
+static struct platform_device ar71xx_dsa_switch_device = {
+	.name		= "dsa",
+	.id		= 0,
+};
+
+void __init ar71xx_add_device_dsa(unsigned int id,
+				  struct dsa_platform_data *d)
+{
+	switch (id) {
+	case 0:
+		d->netdev = &ar71xx_eth0_device.dev;
+		break;
+	case 1:
+		d->netdev = &ar71xx_eth1_device.dev;
+		break;
+	default:
+		printk(KERN_ERR
+			"ar71xx: invalid ethernet id %d for DSA switch\n",
+			id);
+		return;
+	}
+	d->mii_bus = &ar71xx_mdio_device.dev;
+	ar71xx_dsa_switch_device.dev.platform_data = d;
+
+	platform_device_register(&ar71xx_dsa_switch_device);
+}

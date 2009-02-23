@@ -108,6 +108,15 @@ static struct gpio_button tl_wr941nd_gpio_buttons[] __initdata = {
 	}
 };
 
+static struct dsa_platform_data tl_wr941nd_dsa_data = {
+	.port_names[0]  = "wan",
+	.port_names[1]  = "lan1",
+	.port_names[2]  = "lan2",
+	.port_names[3]  = "lan3",
+	.port_names[4]  = "lan4",
+	.port_names[5]  = "cpu",
+};
+
 static void __init tl_wr941nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
@@ -122,6 +131,7 @@ static void __init tl_wr941nd_setup(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(0);
+	ar71xx_add_device_dsa(0, &tl_wr941nd_dsa_data);
 
 	ar71xx_add_device_spi(NULL, tl_wr941nd_spi_info,
 					ARRAY_SIZE(tl_wr941nd_spi_info));
