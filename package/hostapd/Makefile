@@ -94,11 +94,11 @@ define Build/ConfigureTarget
 endef
 
 define Build/CompileTarget
-	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/madwifi -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include/libnl -I$(STAGING_DIR)/usr/include" \
+	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/madwifi -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include/libnl $(TARGET_CPPFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(DRIVER_MAKEOPTS) \
-		LIBS="$(TARGET_LDFLAGS) -L$(STAGING_DIR)/usr/lib \
+		LIBS="$(TARGET_LDFLAGS) \
 			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm $(STAGING_DIR)/usr/lib/libnl.a) \
 			$(if $(findstring default,$(1)),-lssl -lcrypto)" \
 		hostapd hostapd_cli

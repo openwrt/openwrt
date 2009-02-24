@@ -161,7 +161,7 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I. -I$(PKG_BUILD_DIR)/include -Dlinux=1" \
 		all
-	$(TARGET_CC) -o $(PKG_BUILD_DIR)/nas $(PKG_BUILD_DIR)/nas_exe.o -L$(STAGING_DIR)/usr/lib -lnvram $(PKG_BUILD_DIR)/router/shared/libshared.a
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/nas $(PKG_BUILD_DIR)/nas_exe.o $(TARGET_LDFLAGS) -lnvram $(PKG_BUILD_DIR)/router/shared/libshared.a
 	$(TARGET_CC) -o $(PKG_BUILD_DIR)/wl $(PKG_BUILD_DIR)/wl_exe.o
 endef
 

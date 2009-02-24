@@ -32,8 +32,8 @@ define Build/Configure
 endef
 
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include/libnl -I$(STAGING_DIR)/usr/include" \
-	LDFLAGS="-L$(STAGING_DIR)/usr/lib -lnl"
+	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include/libnl $(TARGET_CPPFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS) -lnl"
 
 ifneq ($(CONFIG_LINUX_2_6),)
   define Package/iw/install
