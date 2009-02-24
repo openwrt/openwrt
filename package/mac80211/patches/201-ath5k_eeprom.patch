@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	struct ath5k_eeprom_info *ee = &ah->ah_capabilities.cap_eeprom;
  	int o = *offset;
 -	int i = 0;
-+	int i;
++	int i = 0 ;
  	u8 freq1, freq2;
  	int ret;
  	u16 val;
