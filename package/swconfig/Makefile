@@ -23,7 +23,6 @@ define Package/swconfig
 endef
 
 TARGET_CPPFLAGS += \
-	-I$(STAGING_DIR)/usr/include \
 	-I$(LINUX_DIR)/include \
 	-I$(PKG_BUILD_DIR)
 

@@ -53,7 +53,7 @@ UCI_MAKEOPTS = \
 		COPTS="$(TARGET_CFLAGS)" \
 		DEBUG="$(DEBUG)" \
 		VERSION="$(UCI_VERSION)" \
-		CPPFLAGS="-I$(PKG_BUILD_DIR) -I$(STAGING_DIR)/usr/include" \
+		CPPFLAGS="-I$(PKG_BUILD_DIR) $(TARGET_CPPFLAGS)" \
 		OS="Linux"
 
 # work around a nasty gcc bug

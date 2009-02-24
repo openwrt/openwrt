@@ -41,8 +41,8 @@ define Package/opkg/conffiles
 endef
 
 TARGET_CFLAGS += $(FPIC) $(if $(CONFIG_GCC_VERSION_4_3),-Wno-array-bounds)
-EXTRA_CFLAGS+=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/lib
-EXTRA_LDFLAGS+=-L$(STAGING_DIR)/usr/lib -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
+EXTRA_CFLAGS += $(TARGET_CPPFLAGS)
+EXTRA_LDFLAGS += $(TARGET_LDFLAGS) -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
 
 CONFIGURE_ARGS += \
 	--disable-curl \
