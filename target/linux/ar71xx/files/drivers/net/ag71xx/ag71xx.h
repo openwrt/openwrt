@@ -38,7 +38,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.20"
+#define AG71XX_DRV_VERSION	"0.5.21"
 
 #define AG71XX_NAPI_WEIGHT	64
 #define AG71XX_OOM_REFILL	(1 + HZ/10)
@@ -429,5 +429,21 @@ static void inline ag71xx_mii_ctrl_set_speed(struct ag71xx *ag,
 	t |= (speed & MII_CTRL_SPEED_MASK) << MII_CTRL_SPEED_SHIFT;
 	ag71xx_mii_ctrl_wr(ag, t);
 }
+
+#ifdef CONFIG_AG71XX_AR8216_SUPPORT
+void ag71xx_add_ar8216_header(struct ag71xx *ag, struct sk_buff *skb);
+int ag71xx_remove_ar8216_header(struct ag71xx *ag, struct sk_buff *skb);
+#else
+static inline void ag71xx_add_ar8216_header(struct ag71xx *ag,
+					   struct sk_buff *skb)
+{
+}
+
+static inline int ag71xx_remove_ar8216_header(struct ag71xx *ag,
+					      struct sk_buff *skb)
+{
+	return 0;
+}
+#endif
 
 #endif /* _AG71XX_H */

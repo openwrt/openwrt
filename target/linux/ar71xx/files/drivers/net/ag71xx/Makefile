@@ -2,6 +2,12 @@
 # Makefile for the Atheros AR71xx built-in ethernet macs
 #
 
+ag71xx-y	+= ag71xx_main.o 
+ag71xx-y	+= ag71xx_ethtool.o 
+ag71xx-y	+= ag71xx_phy.o 
+ag71xx-y	+= ag71xx_mdio.o
+
+ag71xx-$(CONFIG_AG71XX_AR8216_SUPPORT) += ag71xx_ar8216.o
+
 obj-$(CONFIG_AG71XX)	+= ag71xx.o
 
-ag71xx-objs	:= ag71xx_main.o ag71xx_ethtool.o ag71xx_phy.o ag71xx_mdio.o

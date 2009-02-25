@@ -473,6 +473,8 @@ static int ag71xx_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (!ag71xx_desc_empty(desc))
 		goto err_drop;
 
+	ag71xx_add_ar8216_header(ag, skb);
+
 	if (skb->len <= 0) {
 		DBG("%s: packet len is too small\n", ag->dev->name);
 		goto err_drop;
@@ -647,14 +649,19 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		skb_put(skb, pktlen);
 
 		skb->dev = dev;
-		skb->protocol = eth_type_trans(skb, dev);
 		skb->ip_summed = CHECKSUM_NONE;
-
-		netif_receive_skb(skb);
 
 		dev->last_rx = jiffies;
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
+
+		if (ag71xx_remove_ar8216_header(ag, skb) != 0) {
+			dev->stats.rx_dropped++;
+			kfree_skb(skb);
+		} else {
+			skb->protocol = eth_type_trans(skb, dev);
+			netif_receive_skb(skb);
+		}
 
 		ring->buf[i].skb = NULL;
 		done++;
