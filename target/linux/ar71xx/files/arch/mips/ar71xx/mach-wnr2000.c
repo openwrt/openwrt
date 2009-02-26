@@ -3,6 +3,7 @@
  *
  *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ *  Copyright (C) 2008-2009 Andy Boyett <agb@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -14,12 +15,22 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "devices.h"
+
+#define WNR2000_GPIO_LED_PWR_GREEN	14
+#define WNR2000_GPIO_LED_PWR_AMBER	7
+#define WNR2000_GPIO_LED_WPS		4
+#define WNR2000_GPIO_LED_WLAN		6
+#define WNR2000_GPIO_BTN_RESET		21
+#define WNR2000_GPIO_BTN_WPS		8
+
+#define WNR2000_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wnr2000_partitions[] = {
@@ -78,10 +89,54 @@ static struct spi_board_info wnr2000_spi_info[] = {
 	}
 };
 
+static struct gpio_led wnr2000_leds_gpio[] __initdata = {
+	{
+		.name		= "wnr2000:green:power",
+		.gpio		= WNR2000_GPIO_LED_PWR_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "wnr2000:amber:power",
+		.gpio		= WNR2000_GPIO_LED_PWR_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "wnr2000:green:wps",
+		.gpio		= WNR2000_GPIO_LED_WPS,
+		.active_low	= 1,
+	}, {
+		.name		= "wnr2000:blue:wlan",
+		.gpio		= WNR2000_GPIO_LED_WLAN,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_button wnr2000_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= WNR2000_GPIO_BTN_RESET,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= WNR2000_GPIO_BTN_WPS,
+	}
+};
+
 static void __init wnr2000_setup(void)
 {
 	ar71xx_add_device_spi(NULL, wnr2000_spi_info,
 					ARRAY_SIZE(wnr2000_spi_info));
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wnr2000_leds_gpio),
+					wnr2000_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, WNR2000_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(wnr2000_gpio_buttons),
+					wnr2000_gpio_buttons);
+
 
 	ar91xx_add_device_wmac();
 }
