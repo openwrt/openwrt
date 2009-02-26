@@ -8,11 +8,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.c |   23 ++++++++++++-----------
  1 files changed, 12 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
-index a95ef3c..b983744 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -358,7 +358,7 @@ static void rt2800usb_config_wcid_attr(struct rt2x00_dev *rt2x00dev,
+@@ -358,7 +358,7 @@ static void rt2800usb_config_wcid_attr(s
  	u32 offset;
  	u32 reg;
  
@@ -21,7 +19,7 @@ index a95ef3c..b983744 100644
  
  	rt2x00usb_register_read(rt2x00dev, offset, &reg);
  	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_KEYTAB,
-@@ -369,7 +369,7 @@ static void rt2800usb_config_wcid_attr(struct rt2x00_dev *rt2x00dev,
+@@ -369,7 +369,7 @@ static void rt2800usb_config_wcid_attr(s
  	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_RX_WIUDF, 0);
  	rt2x00usb_register_write(rt2x00dev, offset, reg);
  
@@ -30,7 +28,7 @@ index a95ef3c..b983744 100644
  
  	memset(&iveiv_entry, 0, sizeof(iveiv_entry));
  	if ((crypto->cipher == CIPHER_TKIP) ||
-@@ -380,7 +380,7 @@ static void rt2800usb_config_wcid_attr(struct rt2x00_dev *rt2x00dev,
+@@ -380,7 +380,7 @@ static void rt2800usb_config_wcid_attr(s
  	rt2x00usb_register_multiwrite(rt2x00dev, offset,
  				      &iveiv_entry, sizeof(iveiv_entry));
  
@@ -39,7 +37,7 @@ index a95ef3c..b983744 100644
  
  	memset(&wcid_entry, 0, sizeof(wcid_entry));
  	if (crypto->cmd == SET_KEY)
-@@ -425,10 +425,10 @@ static int rt2800usb_config_shared_key(struct rt2x00_dev *rt2x00dev,
+@@ -425,10 +425,10 @@ static int rt2800usb_config_shared_key(s
  	 * Using the correct defines correctly will cause overhead,
  	 * so just calculate the correct offset.
  	 */
@@ -52,7 +50,7 @@ index a95ef3c..b983744 100644
  
  	rt2x00usb_register_read(rt2x00dev, offset, &reg);
  	rt2x00_set_field32(&reg, field,
-@@ -2001,16 +2001,16 @@ static void rt2800usb_write_tx_desc(struct rt2x00_dev *rt2x00dev,
+@@ -2001,16 +2001,16 @@ static void rt2800usb_write_tx_desc(stru
  	rt2x00_set_field32(&word, TXWI_W1_NSEQ,
  			   test_bit(ENTRY_TXD_GENERATE_SEQ, &txdesc->flags));
  	rt2x00_set_field32(&word, TXWI_W1_BW_WIN_SIZE, txdesc->ba_size);
@@ -74,7 +72,7 @@ index a95ef3c..b983744 100644
  
  	/*
  	 * Initialize TX descriptor
-@@ -2018,7 +2018,8 @@ static void rt2800usb_write_tx_desc(struct rt2x00_dev *rt2x00dev,
+@@ -2018,7 +2018,8 @@ static void rt2800usb_write_tx_desc(stru
  	rt2x00_desc_read(txi, 0, &word);
  	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_TX_PKT_LEN,
  			   skb->len + TXWI_DESC_SIZE);
@@ -84,6 +82,3 @@ index a95ef3c..b983744 100644
  	rt2x00_set_field32(&word, TXINFO_W0_QSEL, 2);
  	rt2x00_set_field32(&word, TXINFO_W0_SW_USE_LAST_ROUND, 0);
  	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_NEXT_VALID, 0);
--- 
-1.6.0
-

@@ -8,11 +8,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.c |    3 ++-
  1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
-index 25f636f..a95ef3c 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -2338,7 +2338,8 @@ static int rt2800usb_init_eeprom(struct rt2x00_dev *rt2x00dev)
+@@ -2338,7 +2338,8 @@ static int rt2800usb_init_eeprom(struct 
  	 * identifies itself as rt2860 in the CSR register.
  	 */
  	if ((rt2x00_get_field32(reg, MAC_CSR0_ASIC_VER) != 0x2860) &&
@@ -22,6 +20,3 @@ index 25f636f..a95ef3c 100644
  		ERROR(rt2x00dev, "Invalid RT chipset detected.\n");
  		return -ENODEV;
  	}
--- 
-1.6.0
-

@@ -23,25 +23,25 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 -		freq1 = (val >> 8) & 0xff;
 -		freq2 = val & 0xff;
--
--		if (freq1) {
--			pc[i++].freq = ath5k_eeprom_bin2freq(ee,
--					freq1, mode);
--			ee->ee_n_piers[mode]++;
--		}
 +		freq1 = val & 0xff;
 +		if (!freq1)
 +			break;
  
--		if (freq2) {
+-		if (freq1) {
 -			pc[i++].freq = ath5k_eeprom_bin2freq(ee,
--					freq2, mode);
+-					freq1, mode);
 -			ee->ee_n_piers[mode]++;
 -		}
 +		pc[i++].freq = ath5k_eeprom_bin2freq(ee,
 +				freq1, mode);
 +		ee->ee_n_piers[mode]++;
  
+-		if (freq2) {
+-			pc[i++].freq = ath5k_eeprom_bin2freq(ee,
+-					freq2, mode);
+-			ee->ee_n_piers[mode]++;
+-		}
+-
 -		if (!freq1 || !freq2)
 +		freq2 = (val >> 8) & 0xff;
 +		if (!freq2)
@@ -79,8 +79,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -	if ((ee->ee_x_gain[mode] >> 2) & 0x1) pd_gains++;
 -	if ((ee->ee_x_gain[mode] >> 3) & 0x1) pd_gains++;
 -	ee->ee_pd_gains[mode] = pd_gains;
-+	u8 pd_gains;
- 
+-
 -	offset = ath5k_cal_data_offset_2413(ee, mode);
 -	ee->ee_n_piers[mode] = 0;
 -	switch (mode) {
@@ -95,7 +94,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -	case AR5K_EEPROM_MODE_11B:
 -		if (!AR5K_EEPROM_HDR_11B(ee->ee_header))
 -			return 0;
--
++	u8 pd_gains;
+ 
 -		ath5k_eeprom_init_11bg_2413(ah, mode, offset);
 -		offset += AR5K_EEPROM_N_2GHZ_CHAN_2413 / 2;
 -		gen_chan_info = ee->ee_pwr_cal_b;

@@ -9,11 +9,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800pci.h |    6 ------
  2 files changed, 22 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
-index 86ed55c..6e98c3d 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -1374,6 +1374,8 @@ static int rt2800pci_init_registers(struct rt2x00_dev *rt2x00dev)
+@@ -1374,6 +1374,8 @@ static int rt2800pci_init_registers(stru
  
  	rt2x00pci_register_read(rt2x00dev, TX_RTS_CFG, &reg);
  	rt2x00_set_field32(&reg, TX_RTS_CFG_AUTO_RTS_RETRY_LIMIT, 32);
@@ -22,7 +20,7 @@ index 86ed55c..6e98c3d 100644
  	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_FBK_EN, 0);
  	rt2x00pci_register_write(rt2x00dev, TX_RTS_CFG, reg);
  
-@@ -2470,7 +2472,10 @@ static int rt2800pci_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
+@@ -2470,7 +2472,10 @@ static int rt2800pci_probe_hw_mode(struc
  	spec->ht.ampdu_factor = 3;
  	spec->ht.ampdu_density = 4;
  	spec->ht.mcs.tx_params =
@@ -34,7 +32,7 @@ index 86ed55c..6e98c3d 100644
  
  	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH)) {
  	case 3:
-@@ -2552,6 +2557,21 @@ static int rt2800pci_probe_hw(struct rt2x00_dev *rt2x00dev)
+@@ -2552,6 +2557,21 @@ static int rt2800pci_probe_hw(struct rt2
  /*
   * IEEE80211 stack callback functions.
   */
@@ -56,7 +54,7 @@ index 86ed55c..6e98c3d 100644
  static int rt2800pci_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
  {
  	struct rt2x00_dev *rt2x00dev = hw->priv;
-@@ -2681,6 +2701,7 @@ static const struct ieee80211_ops rt2800pci_mac80211_ops = {
+@@ -2681,6 +2701,7 @@ static const struct ieee80211_ops rt2800
  	.configure_filter	= rt2x00mac_configure_filter,
  	.set_key		= rt2x00mac_set_key,
  	.get_stats		= rt2x00mac_get_stats,
@@ -64,8 +62,6 @@ index 86ed55c..6e98c3d 100644
  	.set_rts_threshold	= rt2800pci_set_rts_threshold,
  	.bss_info_changed	= rt2x00mac_bss_info_changed,
  	.conf_tx		= rt2800pci_conf_tx,
-diff --git a/drivers/net/wireless/rt2x00/rt2800pci.h b/drivers/net/wireless/rt2x00/rt2800pci.h
-index f8bc958..ea2a431 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.h
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
 @@ -1327,12 +1327,6 @@ struct mac_iveiv_entry {
@@ -81,6 +77,3 @@ index f8bc958..ea2a431 100644
   * MAC_WCID_ATTRIBUTE:
   */
  #define MAC_WCID_ATTRIBUTE_KEYTAB	FIELD32(0x00000001)
--- 
-1.6.0
-

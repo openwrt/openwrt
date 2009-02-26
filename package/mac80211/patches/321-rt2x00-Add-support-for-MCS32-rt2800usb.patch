@@ -8,11 +8,9 @@ Signed-off-by: Ivo van Doorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.c |   13 ++++++++-----
  1 files changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
-index 7ec1270..25f636f 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -1627,6 +1627,10 @@ static int rt2800usb_init_bbp(struct rt2x00_dev *rt2x00dev)
+@@ -1627,6 +1627,10 @@ static int rt2800usb_init_bbp(struct rt2
  		rt2800usb_bbp_write(rt2x00dev, 73, 0x12);
  	}
  
@@ -23,7 +21,7 @@ index 7ec1270..25f636f 100644
  	if (rt2x00_rev(&rt2x00dev->chip) == RT3070_VERSION) {
  		rt2800usb_bbp_write(rt2x00dev, 70, 0x0a);
  		rt2800usb_bbp_write(rt2x00dev, 84, 0x99);
-@@ -1658,11 +1662,9 @@ static u8 rt2800usb_init_rx_filter(struct rt2x00_dev *rt2x00dev,
+@@ -1658,11 +1662,9 @@ static u8 rt2800usb_init_rx_filter(struc
  
  	rt2800usb_rfcsr_write(rt2x00dev, 24, rfcsr24);
  
@@ -38,7 +36,7 @@ index 7ec1270..25f636f 100644
  
  	rt2800usb_rfcsr_read(rt2x00dev, 22, &rfcsr);
  	rt2x00_set_field8(&rfcsr, RFCSR22_BASEBAND_LOOPBACK, 1);
-@@ -2535,6 +2537,7 @@ static int rt2800usb_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
+@@ -2535,6 +2537,7 @@ static int rt2800usb_probe_hw_mode(struc
  		spec->ht.mcs.rx_mask[1] = 0xff;
  	case 1:
  		spec->ht.mcs.rx_mask[0] = 0xff;
@@ -46,6 +44,3 @@ index 7ec1270..25f636f 100644
  		break;
  	}
  
--- 
-1.6.0
-
