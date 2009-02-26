@@ -123,7 +123,9 @@ struct ocf_device {
 
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
+#include <linux/fdtable.h>
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 #define files_fdtable(files)	(files)
 #endif
 

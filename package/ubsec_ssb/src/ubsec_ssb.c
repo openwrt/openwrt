@@ -45,8 +45,6 @@
  */
 
 #include <linux/kernel.h>
-#include <linux/byteorder/swab.h>
-#include <linux/byteorder/generic.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/proc_fs.h>
@@ -88,8 +86,8 @@
 
 #define DRV_MODULE_NAME     "ubsec_ssb"
 #define PFX DRV_MODULE_NAME ": "
-#define DRV_MODULE_VERSION  "0.01"
-#define DRV_MODULE_RELDATE  "Jan 1, 2008"
+#define DRV_MODULE_VERSION  "0.02"
+#define DRV_MODULE_RELDATE  "Feb 21, 2009"
 
 #if 1
 #define DPRINTF(a...) \
