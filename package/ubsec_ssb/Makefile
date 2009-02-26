@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ubsec-ssb
+PKG_VERSION:=2009-02-21
 
 CRYPTO_MENU:=OCF Configuration
 
