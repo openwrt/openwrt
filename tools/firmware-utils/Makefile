@@ -39,6 +39,7 @@ define Host/Compile
 	$(call cc,add_header)
 	$(call cc,makeamitbin)
 	$(call cc2,mkplanexfw sha1)
+	$(call cc2,mktplinkfw md5)
 endef
 
 define Host/Install
