@@ -10,11 +10,11 @@ START=05
 start() {
 	local board=$(ar71xx_board_name)
 
-	[ ! -d /etc/config/defaults/$board ] && board="generic"
+	[ ! -d /etc/defconfig/$board ] && board="generic"
 
-	for f in $( ls /etc/config/defaults/$board ); do
+	for f in $( ls /etc/defconfig/$board ); do
 		if [ ! -e /etc/config/$f ]; then
-			cp /etc/config/defaults/$board/$f /etc/config/
+			cp /etc/defconfig/$board/$f /etc/config/
 		fi
 	done
 }
