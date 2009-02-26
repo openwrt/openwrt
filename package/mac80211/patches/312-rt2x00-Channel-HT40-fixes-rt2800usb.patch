@@ -9,11 +9,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.h |    5 +-
  2 files changed, 61 insertions(+), 51 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
-index 1709e87..29ecaa8 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -641,7 +641,7 @@ static void rt2800usb_config_ant(struct rt2x00_dev *rt2x00dev,
+@@ -641,7 +641,7 @@ static void rt2800usb_config_ant(struct 
  		rt2x00_set_field8(&r3, BBP3_RX_ANTENNA, 0);
  		break;
  	case 2:
@@ -22,7 +20,7 @@ index 1709e87..29ecaa8 100644
  		break;
  	case 3:
  		/* Do nothing */
-@@ -691,6 +691,7 @@ static void rt2800usb_config_lna_gain(struct rt2x00_dev *rt2x00dev,
+@@ -691,6 +691,7 @@ static void rt2800usb_config_lna_gain(st
  }
  
  static void rt2800usb_config_channel_rt2x(struct rt2x00_dev *rt2x00dev,
@@ -30,7 +28,7 @@ index 1709e87..29ecaa8 100644
  					  struct rf_channel *rf,
  					  struct channel_info *info)
  {
-@@ -702,6 +703,7 @@ static void rt2800usb_config_channel_rt2x(struct rt2x00_dev *rt2x00dev,
+@@ -702,6 +703,7 @@ static void rt2800usb_config_channel_rt2
  	 * Determine antenna settings from EEPROM
  	 */
  	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
@@ -38,7 +36,7 @@ index 1709e87..29ecaa8 100644
  	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1)
  		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_TX1, 1);
  
-@@ -742,8 +744,7 @@ static void rt2800usb_config_channel_rt2x(struct rt2x00_dev *rt2x00dev,
+@@ -742,8 +744,7 @@ static void rt2800usb_config_channel_rt2
  				   TXPOWER_G_TO_DEV(info->tx_power2));
  	}
  
@@ -48,7 +46,7 @@ index 1709e87..29ecaa8 100644
  
  	rt2800usb_rf_write(rt2x00dev, 1, rf->rf1);
  	rt2800usb_rf_write(rt2x00dev, 2, rf->rf2);
-@@ -766,6 +767,7 @@ static void rt2800usb_config_channel_rt2x(struct rt2x00_dev *rt2x00dev,
+@@ -766,6 +767,7 @@ static void rt2800usb_config_channel_rt2
  }
  
  static void rt2800usb_config_channel_rt3x(struct rt2x00_dev *rt2x00dev,
@@ -56,7 +54,7 @@ index 1709e87..29ecaa8 100644
  					  struct rf_channel *rf,
  					  struct channel_info *info)
  {
-@@ -787,10 +789,12 @@ static void rt2800usb_config_channel_rt3x(struct rt2x00_dev *rt2x00dev,
+@@ -787,10 +789,12 @@ static void rt2800usb_config_channel_rt3
  	rt2x00_set_field8(&rfcsr, RFCSR23_FREQ_OFFSET, rt2x00dev->freq_offset);
  	rt2800usb_rfcsr_write(rt2x00dev, 23, rfcsr);
  
@@ -72,7 +70,7 @@ index 1709e87..29ecaa8 100644
  
  	rt2800usb_rfcsr_read(rt2x00dev, 23, &rfcsr);
  	rt2x00_set_field8(&rfcsr, RFCSR7_RF_TUNING, 1);
-@@ -798,46 +802,24 @@ static void rt2800usb_config_channel_rt3x(struct rt2x00_dev *rt2x00dev,
+@@ -798,46 +802,24 @@ static void rt2800usb_config_channel_rt3
  }
  
  static void rt2800usb_config_channel(struct rt2x00_dev *rt2x00dev,
@@ -127,7 +125,7 @@ index 1709e87..29ecaa8 100644
  
  	/*
  	 * Change BBP settings
-@@ -855,11 +837,6 @@ static void rt2800usb_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -855,11 +837,6 @@ static void rt2800usb_config_channel(str
  			rt2800usb_bbp_write(rt2x00dev, 82, 0x84);
  			rt2800usb_bbp_write(rt2x00dev, 75, 0x50);
  		}
@@ -139,7 +137,7 @@ index 1709e87..29ecaa8 100644
  	} else {
  		rt2800usb_bbp_write(rt2x00dev, 82, 0xf2);
  
-@@ -867,15 +844,45 @@ static void rt2800usb_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -867,15 +844,45 @@ static void rt2800usb_config_channel(str
  			rt2800usb_bbp_write(rt2x00dev, 75, 0x46);
  		else
  			rt2800usb_bbp_write(rt2x00dev, 75, 0x50);
@@ -189,7 +187,7 @@ index 1709e87..29ecaa8 100644
  	msleep(1);
  }
  
-@@ -1008,8 +1015,8 @@ static void rt2800usb_config(struct rt2x00_dev *rt2x00dev,
+@@ -1008,8 +1015,8 @@ static void rt2800usb_config(struct rt2x
  	rt2800usb_config_lna_gain(rt2x00dev, libconf);
  
  	if (flags & IEEE80211_CONF_CHANGE_CHANNEL)
@@ -200,7 +198,7 @@ index 1709e87..29ecaa8 100644
  	if (flags & IEEE80211_CONF_CHANGE_POWER)
  		rt2800usb_config_txpower(rt2x00dev, libconf->conf->power_level);
  	if (flags & IEEE80211_CONF_CHANGE_RETRY_LIMITS)
-@@ -1643,7 +1650,7 @@ static u8 rt2800usb_init_rx_filter(struct rt2x00_dev *rt2x00dev,
+@@ -1643,7 +1650,7 @@ static u8 rt2800usb_init_rx_filter(struc
  
  	if (bw40) {
  		rt2800usb_bbp_read(rt2x00dev, 4, &bbp);
@@ -209,7 +207,7 @@ index 1709e87..29ecaa8 100644
  		rt2800usb_bbp_write(rt2x00dev, 4, bbp);
  	}
  
-@@ -2777,14 +2784,14 @@ static const struct rt2x00lib_ops rt2800usb_rt2x00_ops = {
+@@ -2777,14 +2784,14 @@ static const struct rt2x00lib_ops rt2800
  
  static const struct data_queue_desc rt2800usb_queue_rx = {
  	.entry_num		= RX_ENTRIES,
@@ -226,8 +224,6 @@ index 1709e87..29ecaa8 100644
  	.desc_size		= TXINFO_DESC_SIZE + TXWI_DESC_SIZE,
  	.priv_size		= sizeof(struct queue_entry_priv_usb),
  };
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.h b/drivers/net/wireless/rt2x00/rt2800usb.h
-index db2eedd..ffccc21 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.h
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.h
 @@ -803,6 +803,7 @@
@@ -260,6 +256,3 @@ index db2eedd..ffccc21 100644
  
  /*
   * EEPROM content.
--- 
-1.6.0
-

@@ -20,11 +20,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2x00debug.c |   33 ++++++++++++++++++++--------
  1 files changed, 23 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2x00debug.c b/drivers/net/wireless/rt2x00/rt2x00debug.c
-index 8d47389..07d378e 100644
 --- a/drivers/net/wireless/rt2x00/rt2x00debug.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00debug.c
-@@ -547,9 +547,9 @@ static struct dentry *rt2x00debug_create_file_driver(const char *name,
+@@ -547,9 +547,9 @@ static struct dentry *rt2x00debug_create
  		return NULL;
  
  	blob->data = data;
@@ -37,7 +35,7 @@ index 8d47389..07d378e 100644
  	blob->size = strlen(blob->data);
  
  	return debugfs_create_blob(name, S_IRUSR, intf->driver_folder, blob);
-@@ -570,14 +570,27 @@ static struct dentry *rt2x00debug_create_file_chipset(const char *name,
+@@ -570,14 +570,27 @@ static struct dentry *rt2x00debug_create
  		return NULL;
  
  	blob->data = data;
@@ -72,6 +70,3 @@ index 8d47389..07d378e 100644
  	blob->size = strlen(blob->data);
  
  	return debugfs_create_blob(name, S_IRUSR, intf->driver_folder, blob);
--- 
-1.6.0
-

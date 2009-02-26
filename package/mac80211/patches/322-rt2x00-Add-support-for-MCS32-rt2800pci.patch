@@ -8,11 +8,9 @@ Signed-off-by: Ivo van Doorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800pci.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
-index 6e98c3d..63d6499 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -2484,6 +2484,7 @@ static int rt2800pci_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
+@@ -2484,6 +2484,7 @@ static int rt2800pci_probe_hw_mode(struc
  		spec->ht.mcs.rx_mask[1] = 0xff;
  	case 1:
  		spec->ht.mcs.rx_mask[0] = 0xff;
@@ -20,6 +18,3 @@ index 6e98c3d..63d6499 100644
  		break;
  	}
  
--- 
-1.6.0
-

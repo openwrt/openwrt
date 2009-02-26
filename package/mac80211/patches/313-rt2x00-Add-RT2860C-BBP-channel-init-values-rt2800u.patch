@@ -8,11 +8,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.c |   12 ++++++++++++
  1 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
-index 29ecaa8..b9ef5ea 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -883,6 +883,18 @@ static void rt2800usb_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -883,6 +883,18 @@ static void rt2800usb_config_channel(str
  	rt2x00_set_field8(&bbp, BBP3_HT40_PLUS, conf_is_ht40_plus(conf));
  	rt2800usb_bbp_write(rt2x00dev, 3, bbp);
  
@@ -31,6 +29,3 @@ index 29ecaa8..b9ef5ea 100644
  	msleep(1);
  }
  
--- 
-1.6.0
-

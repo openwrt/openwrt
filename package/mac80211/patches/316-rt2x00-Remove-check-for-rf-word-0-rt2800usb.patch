@@ -9,11 +9,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2800usb.h |    4 ++--
  2 files changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.c b/drivers/net/wireless/rt2x00/rt2800usb.c
-index 012f4de..68ea600 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.c
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -182,9 +182,6 @@ static void rt2800usb_rf_write(struct rt2x00_dev *rt2x00dev,
+@@ -182,9 +182,6 @@ static void rt2800usb_rf_write(struct rt
  {
  	u32 reg;
  
@@ -23,8 +21,6 @@ index 012f4de..68ea600 100644
  	mutex_lock(&rt2x00dev->csr_mutex);
  
  	/*
-diff --git a/drivers/net/wireless/rt2x00/rt2800usb.h b/drivers/net/wireless/rt2x00/rt2800usb.h
-index ffccc21..f94c8f8 100644
 --- a/drivers/net/wireless/rt2x00/rt2800usb.h
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.h
 @@ -68,8 +68,8 @@
@@ -38,6 +34,3 @@ index ffccc21..f94c8f8 100644
  
  /*
   * Number of TX queues.
--- 
-1.6.0
-
