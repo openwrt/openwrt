@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mips
 BOARD:=ar71xx
-BOARDNAME:=Atheros AR71xx
+BOARDNAME:=Atheros AR71xx/AR913x
 FEATURES:=squashfs tgz
 
 LINUX_VERSION:=2.6.28.7
@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += hostapd-mini kmod-madwifi
 
 define Target/Description
-	Build firmware images for Atheros AR71xx based boards
+	Build firmware images for Atheros AR71xx/AR913x based boards
 endef
 
 $(eval $(call BuildTarget))
