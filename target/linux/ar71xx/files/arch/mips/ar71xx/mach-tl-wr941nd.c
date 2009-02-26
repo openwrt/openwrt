@@ -39,15 +39,11 @@ static struct mtd_partition tl_wr941nd_partitions[] = {
 	} , {
 		.name		= "kernel",
 		.offset		= 0x020000,
-		.size		= 0x100000,
+		.size		= 0x120000,
 	} , {
 		.name		= "rootfs",
-		.offset		= 0x120000,
-		.size		= 0x2c0000,
-	} , {
-		.name		= "config",
-		.offset		= 0x3e0000,
-		.size		= 0x010000,
+		.offset		= 0x140000,
+		.size		= 0x2b0000,
 	} , {
 		.name		= "art",
 		.offset		= 0x3f0000,
@@ -56,7 +52,7 @@ static struct mtd_partition tl_wr941nd_partitions[] = {
 	} , {
 		.name		= "firmware",
 		.offset		= 0x020000,
-		.size		= 0x3c0000,
+		.size		= 0x3d0000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
