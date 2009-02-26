@@ -13,14 +13,14 @@ scan_mac80211() {
 
 		config_get mode "$vif" mode
 		case "$mode" in
-			adhoc|sta|ap|monitor)
+			adhoc|sta|ap|monitor|mesh)
 				append $mode "$vif"
 			;;
 			*) echo "$device($vif): Invalid mode, ignored."; continue;;
 		esac
 	done
 
-	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }${monitor:+$monitor}"
+	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }${monitor:+$monitor }${mesh:+$mesh}"
 }
 
 
@@ -53,6 +53,7 @@ enable_mac80211() {
 	config_get txpower "$device" txpower
 
 	local first=1
+	local mesh_idx=0
 	for vif in $vifs; do
 		ifconfig "$ifname" down 2>/dev/null
 		config_get ifname "$vif" ifname
@@ -74,6 +75,13 @@ enable_mac80211() {
 				iwlist "$ifname" scan >/dev/null 2>/dev/null
 				sleep 1
 				iwconfig "$ifname" mode ad-hoc >/dev/null 2>/dev/null
+			fi
+			# mesh interface should be created only for the first interface
+			if [ "$mode" = mesh ]; then
+				config_get mesh_id "$vif" mesh_id
+				if [ -n "$mesh_id" ]; then
+					iw dev "$ifname" interface add msh$mesh_idx type mp mesh_id $mesh_id
+				fi
 			fi
 			sleep 1
 			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null
@@ -162,8 +170,14 @@ enable_mac80211() {
 					}
 				fi
 			;;
+			mesh)
+				# special case where physical interface should be down for mesh to work
+				ifconfig "$ifname" down
+				ifconfig "msh$mesh_idx" up
+			;;
 		esac
 		first=0
+		mesh_idx=$(expr $mesh_idx + 1)
 	done
 }
 
