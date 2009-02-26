@@ -40,6 +40,9 @@ ar71xx_board_name() {
 	*WP543)
 		name="wp543"
 		;;
+	*WNR2000)
+		name="wnr2000"
+		;;
 	*)
 		name="generic"
 		;;
