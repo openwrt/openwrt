@@ -106,6 +106,19 @@ static void __init ubnt_rs_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "Ubiquiti RouterStation", ubnt_rs_setup);
 
+static void __init ubnt_rspro_setup(void)
+{
+	ar71xx_add_device_spi(NULL, ubnt_spi_info,
+				    ARRAY_SIZE(ubnt_spi_info));
+
+	ar71xx_add_device_usb();
+
+	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
+}
+
+MIPS_MACHINE(AR71XX_MACH_UBNT_RSPRO, "Ubiquiti RouterStation Pro",
+	     ubnt_rspro_setup);
+
 static void __init ubnt_lsx_setup(void)
 {
 	ar71xx_add_device_spi(NULL, ubnt_spi_info,
