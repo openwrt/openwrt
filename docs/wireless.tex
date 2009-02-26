@@ -107,7 +107,7 @@ config wifi-device    wifi device name
 config wifi-iface
     option network  the interface you want wifi to bridge with
     option device   wifi0, wifi1, wifi2, wifiN
-    option mode     ap, sta, adhoc, monitor, or wds
+    option mode     ap, sta, adhoc, monitor, mesh, or wds
     option txpower  (deprecated) transmission power in dBm
     option ssid     ssid name
     option bssid    bssid address
@@ -184,6 +184,9 @@ config wifi-iface
             \item \texttt{monitor} \\
                 Monitor mode
 
+	    \item \texttt{mesh} \\
+		Mesh Point mode (802.11s)
+
             \item \texttt{wds} \\
                 WDS point-to-point link
 
@@ -228,6 +231,11 @@ config wifi-iface
         0 disables ap isolation (default); 1 enables ap isolation.
 
 \end{itemize}
+
+\paragraph{Mesh Point}
+
+Mesh Point (802.11s) is only supported by some mac80211 drivers. It requires the iw package
+to be installed to setup mesh links. OpenWrt creates mshN mesh point interfaces.
 
 \paragraph{Wireless Distribution System}
 
