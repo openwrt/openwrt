@@ -127,6 +127,19 @@ static struct gpio_button wnr2000_gpio_buttons[] __initdata = {
 
 static void __init wnr2000_setup(void)
 {
+	ar71xx_add_device_mdio(0x0);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth0_data.phy_mask = 0xf;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0x10;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
+
 	ar71xx_add_device_spi(NULL, wnr2000_spi_info,
 					ARRAY_SIZE(wnr2000_spi_info));
 
