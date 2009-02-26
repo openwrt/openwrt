@@ -60,6 +60,9 @@ static struct board_rec boards[] __initdata = {
 		.name		= "UBNT-RS",
 		.mach_type	= AR71XX_MACH_UBNT_RS,
 	}, {
+		.name		= "UBNT-RSPRO",
+		.mach_type	= AR71XX_MACH_UBNT_RSPRO,
+	}, {
 		.name		= "Ubiquiti AR71xx-based board",
 		.mach_type	= AR71XX_MACH_UBNT_RS,
 	}, {
