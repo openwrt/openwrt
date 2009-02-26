@@ -100,6 +100,17 @@ define Image/Build/Planex
 	fi; fi
 endef
 
+define Image/Build/TPLINK
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
+	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gzip
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-B $(4) -N OpenWrt -V $(REVISION)\
+		-k $(KDIR)/vmlinux-$(2).bin.gzip \
+		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-o $(BIN_DIR)/openwrt-$(BOARD)-$(2)-$(1).bin
+endef
+
 define Image/Build/Template/Compex
 	$(call Image/Build/MyLoader,$(1),$(2))
 endef
@@ -114,6 +125,14 @@ endef
 
 define Image/Build/Template/AP81/squashfs
 	$(call Image/Build/Template/AP81,squashfs,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/TPLINK
+	$(call Image/Build/TPLINK,$(1),$(2),$(3),$(4))
+endef
+
+define Image/Build/Template/TPLINK/squashfs
+	$(call Image/Build/Template/TPLINK,squashfs,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/UBNT
@@ -156,6 +175,10 @@ define Image/Build/Profile/MZKW04NU
 	$(call Image/Build/Template/Planex/$(1),mzk-w04nu,board=MZK-W04NU)
 endef
 
+define Image/Build/Profile/TLWR941NDV2
+	$(call Image/Build/Template/TPLINK/$(1),tl-wr941ndv2,board=TL-WR941ND,TL-WR941NDv2)
+endef
+
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
@@ -170,6 +193,7 @@ define Image/Build
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/UBNTRS,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
+	$(call Image/Build/Profile/TLWR941NDV2,$(1))
 endef
 
 $(eval $(call BuildImage))
