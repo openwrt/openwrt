@@ -13,6 +13,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
+#include <linux/ssb/ssb.h>
 #include <asm/addrspace.h>
 #include <bcm63xx_board.h>
 #include <bcm63xx_cpu.h>
@@ -448,6 +449,31 @@ static struct platform_device mtd_dev = {
 };
 
 /*
+ * Register a sane SPROMv2 to make the on-board
+ * bcm4318 WLAN work
+ */
+static struct ssb_sprom bcm63xx_sprom = {
+	.revision		= 0x02,
+	.board_rev		= 0x17,
+	.country_code		= 0x0,
+	.ant_available_bg 	= 0x3,
+	.pa0b0			= 0x15ae,
+	.pa0b1			= 0xfa85,
+	.pa0b2			= 0xfe8d,
+	.pa1b0			= 0xffff,
+	.pa1b1			= 0xffff,
+	.pa1b2			= 0xffff,
+	.gpio0			= 0xff,
+	.gpio1			= 0xff,
+	.gpio2			= 0xff,
+	.gpio3			= 0xff,
+	.maxpwr_bg		= 0x004c,
+	.itssi_bg		= 0x00,
+	.boardflags_lo		= 0x2848,
+	.boardflags_hi		= 0x0000,
+};
+
+/*
  * third stage init callback, register all board devices.
  */
 int __init board_register_devices(void)
@@ -474,6 +500,14 @@ int __init board_register_devices(void)
 	if (board.has_ehci0)
 		bcm63xx_ehci_register();
 
+	/* Generate MAC address for WLAN and
+	 * register our SPROM */
+	if (!board_get_mac_address(bcm63xx_sprom.il0mac)) {
+		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
+		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
+		if (ssb_arch_set_fallback_sprom(&bcm63xx_sprom) < 0)
+			printk(KERN_ERR "failed to register fallback SPROM\n");
+	}
 
 	/* read base address of boot chip select (0) */
 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
