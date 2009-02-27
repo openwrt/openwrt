@@ -54,6 +54,15 @@ static struct gpio_button aw_nr580_gpio_buttons[] __initdata = {
 	}
 };
 
+static struct ar71xx_pci_irq aw_nr580_pci_irqs[] __initdata = {
+	{
+		.slot	= 1,
+		.pin	= 1,
+		.irq	= AR71XX_PCI_IRQ_DEV1,
+	}
+};
+
+
 static void __init aw_nr580_setup(void)
 {
 	ar71xx_add_device_mdio(0x0);
@@ -64,6 +73,8 @@ static void __init aw_nr580_setup(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(0);
+
+	ar71xx_pci_init(ARRAY_SIZE(aw_nr580_pci_irqs), aw_nr580_pci_irqs);
 
 	ar71xx_add_device_spi(NULL, aw_nr580_spi_info,
 					ARRAY_SIZE(aw_nr580_spi_info));
