@@ -10,6 +10,9 @@ ar71xx_board_name() {
 	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$machine" in
+	*AW-NR580)
+		name="aw-nr580"
+		;;
 	*LS-SR71)
 		name="ls-sr71"
 		;;
