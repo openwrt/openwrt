@@ -40,6 +40,8 @@ void ar71xx_add_device_gpio_buttons(int id,
 				    unsigned nbuttons,
 				    struct gpio_button *buttons) __init;
 
+void ar71xx_add_device_usb(void) __init;
+
 #ifdef CONFIG_AR71XX_EARLY_SERIAL
 static inline void ar71xx_add_device_uart(void) {}
 #else

@@ -195,8 +195,6 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 	return __raw_readl(ar71xx_usb_ctrl_base + reg);
 }
 
-extern void ar71xx_add_device_usb(void) __init;
-
 /*
  * GPIO block
  */
