@@ -22,6 +22,12 @@
 
 #include "devices.h"
 
+#define AW_NR580_GPIO_LED_READY_RED	0
+#define AW_NR580_GPIO_LED_WLAN		1
+#define AW_NR580_GPIO_LED_READY_GREEN	2
+#define AW_NR580_GPIO_LED_WPS_GREEN	4
+#define AW_NR580_GPIO_LED_WPS_AMBER	5
+
 #define AW_NR580_GPIO_BTN_WPS		3
 #define AW_NR580_GPIO_BTN_RESET		11
 
@@ -33,6 +39,30 @@ static struct spi_board_info aw_nr580_spi_info[] = {
 		.chip_select	= 0,
 		.max_speed_hz	= 25000000,
 		.modalias	= "m25p80",
+	}
+};
+
+static struct gpio_led aw_nr580_leds_gpio[] __initdata = {
+	{
+		.name		= "aw-nr580:red:ready",
+		.gpio		= AW_NR580_GPIO_LED_READY_RED,
+		.active_low	= 0,
+	}, {
+		.name		= "aw-nr580:green:ready",
+		.gpio		= AW_NR580_GPIO_LED_READY_GREEN,
+		.active_low	= 0,
+	}, {
+		.name		= "aw-nr580:green:wps",
+		.gpio		= AW_NR580_GPIO_LED_WPS_GREEN,
+		.active_low	= 0,
+	}, {
+		.name		= "aw-nr580:amber:wps",
+		.gpio		= AW_NR580_GPIO_LED_WPS_AMBER,
+		.active_low	= 0,
+	}, {
+		.name		= "aw-nr580:green:wlan",
+		.gpio		= AW_NR580_GPIO_LED_WLAN,
+		.active_low	= 0,
 	}
 };
 
@@ -62,7 +92,6 @@ static struct ar71xx_pci_irq aw_nr580_pci_irqs[] __initdata = {
 	}
 };
 
-
 static void __init aw_nr580_setup(void)
 {
 	ar71xx_add_device_mdio(0x0);
@@ -78,6 +107,9 @@ static void __init aw_nr580_setup(void)
 
 	ar71xx_add_device_spi(NULL, aw_nr580_spi_info,
 					ARRAY_SIZE(aw_nr580_spi_info));
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(aw_nr580_leds_gpio),
+					aw_nr580_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, AW_NR580_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(aw_nr580_gpio_buttons),
