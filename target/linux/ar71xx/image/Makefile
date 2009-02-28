@@ -179,6 +179,16 @@ define Image/Build/Profile/TLWR941NDV2
 	$(call Image/Build/Template/TPLINK/$(1),tl-wr941ndv2,board=TL-WR941ND,TL-WR941NDv2)
 endef
 
+define Image/Build/Profile/Default
+	$(call Image/Build/Profile/DIR615C1,$(1))
+	$(call Image/Build/Profile/MZKW04NU,$(1))
+	$(call Image/Build/Profile/TEW632BRP,$(1))
+	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/TLWR941NDV2,$(1))
+	$(call Image/Build/Profile/UBNTRS,$(1))
+	$(call Image/Build/Profile/WP543,$(1))
+endef
+
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
@@ -187,13 +197,7 @@ define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(IMGNAME)-root.$(1) bs=128k conv=sync
 
-	$(call Image/Build/Profile/DIR615C1,$(1))
-	$(call Image/Build/Profile/MZKW04NU,$(1))
-	$(call Image/Build/Profile/TEW632BRP,$(1))
-	$(call Image/Build/Profile/TEW652BRP,$(1))
-	$(call Image/Build/Profile/UBNTRS,$(1))
-	$(call Image/Build/Profile/WP543,$(1))
-	$(call Image/Build/Profile/TLWR941NDV2,$(1))
+	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
 
 $(eval $(call BuildImage))
