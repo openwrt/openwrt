@@ -6,7 +6,7 @@
 #
 
 define Profile/Default
-	NAME:=Default
+	NAME:=Default Profile (no WiFi)
 	PACKAGES:=
 endef
 

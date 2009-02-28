@@ -11,7 +11,7 @@ define Profile/UBNTRS
 endef
 
 define Profile/UBNTRS/Description
-	Package set optimized for the Ubiquiti RouterStation
+	Package set optimized for the Ubiquiti RouterStation.
 endef
 
 $(eval $(call Profile,UBNTRS))

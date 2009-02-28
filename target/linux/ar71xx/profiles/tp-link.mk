@@ -7,7 +7,7 @@
 
 define Profile/TLWR941ND
 	NAME:=TP-LINK TL-WR941ND
-	PACKAGES:=kmod-ath9k
+	PACKAGES:=kmod-ath9k hostapd-mini
 endef
 
 define Profile/TLWR941ND/Description

@@ -7,7 +7,7 @@
 
 define Profile/DIR615C1
 	NAME:=D-Link DIR-615 rev. C1
-	PACKAGES:=kmod-ath9k
+	PACKAGES:=kmod-ath9k hostapd-mini
 endef
 
 define Profile/DIR615C1/Description

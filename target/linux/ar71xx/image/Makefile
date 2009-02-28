@@ -189,6 +189,11 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WP543,$(1))
 endef
 
+define Image/Build/Profile/Madwifi
+	$(call Image/Build/Profile/UBNTRS,$(1))
+	$(call Image/Build/Profile/WP543,$(1))
+endef
+
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef

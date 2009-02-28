@@ -11,7 +11,7 @@ define Profile/WP543
 endef
 
 define Profile/WP543/Description
-	Package set optimized for the Compex WP543
+	Package set optimized for the Compex WP543.
 endef
 
 $(eval $(call Profile,WP543))
