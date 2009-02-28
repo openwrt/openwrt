@@ -34,27 +34,33 @@ define Host/Prepare
   $(call Host/Prepare/Default)
 endef
 
+HOST_CONFIGURE_VARS = \
+	CPPFLAGS="$(HOST_CFLAGS)" \
+	LDFLAGS="$(HOST_LDFLAGS)" \
+	SHELL="$(BASH)"
+
+HOST_CONFIGURE_ARGS = \
+	--target=$(GNU_HOST_NAME) \
+	--host=$(GNU_HOST_NAME) \
+	--build=$(GNU_HOST_NAME) \
+	--program-prefix="" \
+	--program-suffix="" \
+	--prefix=$(STAGING_DIR_HOST) \
+	--exec-prefix=$(STAGING_DIR_HOST) \
+	--sysconfdir=$(STAGING_DIR_HOST)/etc \
+	--localstatedir=$(STAGING_DIR_HOST)/var
+
+HOST_CONFIGURE_CMD = ./configure
+
 define Host/Configure/Default
 	@(cd $(HOST_BUILD_DIR)/$(3); \
-	[ -x configure ] && \
-		$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
-		$(2) \
-		CPPFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)" \
-		SHELL="$(BASH)" \
-		./configure \
-		--target=$(GNU_HOST_NAME) \
-		--host=$(GNU_HOST_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--program-prefix="" \
-		--program-suffix="" \
-		--prefix=$(STAGING_DIR_HOST) \
-		--exec-prefix=$(STAGING_DIR_HOST) \
-		--sysconfdir=$(STAGING_DIR_HOST)/etc \
-		--localstatedir=$(STAGING_DIR_HOST)/var \
-		$(DISABLE_NLS) \
-		$(1); \
-		true; \
+		if [ -x configure ]; then \
+			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
+			$(2) \
+			$(HOST_CONFIGURE_CMD) \
+			$(HOST_CONFIGURE_ARGS) \
+			$(1); \
+		fi \
 	)
 endef
 
