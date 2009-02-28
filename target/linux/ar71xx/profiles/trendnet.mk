@@ -7,7 +7,7 @@
 
 define Profile/TEW632BRP
 	NAME:=TRENDNet TEW-632BRP
-	PACKAGES:=kmod-ath9k
+	PACKAGES:=kmod-ath9k hostapd-mini
 endef
 
 define Profile/TEW632BRP/Description
