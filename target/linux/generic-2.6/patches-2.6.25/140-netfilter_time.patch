@@ -204,25 +204,23 @@
 +}
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -63,6 +63,22 @@ config IP_NF_MATCH_IPP2P
- 	help
- 	  Module for matching traffic of various Peer-to-Peer applications
+@@ -57,6 +57,20 @@ config IP_NF_IPTABLES
+ 	  To compile it as a module, choose M here.  If unsure, say N.
  
-+
+ # The matches.
 +config IP_NF_MATCH_TIME
 +	tristate  'TIME match support'
-+	depends on IP_NF_IPTABLES
-+	help
-+	  This option adds a `time' match, which allows you
-+	  to match based on the packet arrival time/date
-+	  (arrival time/date at the machine which netfilter is running on) or
-+	  departure time/date (for locally generated packets).
++ 	depends on IP_NF_IPTABLES
++ 	help
++ 	  This option adds a `time' match, which allows you
++ 	  to match based on the packet arrival time/date
++ 	  (arrival time/date at the machine which netfilter is running on) or
++ 	  departure time/date (for locally generated packets).
 +
-+	  If you say Y here, try iptables -m time --help for more information.
-+	  If you want to compile it as a module, say M here and read
++ 	  If you say Y here, try iptables -m time --help for more information.
++ 	  If you want to compile it as a module, say M here and read
 +
-+	  Documentation/modules.txt.  If unsure, say `N'.
-+
++ 	  Documentation/modules.txt.  If unsure, say `N'.
 +
  config IP_NF_MATCH_RECENT
  	tristate '"recent" match support'
@@ -235,5 +233,5 @@
  obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
 +obj-$(CONFIG_IP_NF_MATCH_TIME) += ipt_time.o
  
- obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
- 
+ # targets
+ obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o

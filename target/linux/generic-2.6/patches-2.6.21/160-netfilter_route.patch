@@ -538,7 +538,7 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -807,5 +807,22 @@ config IP_NF_TARGET_SET
+@@ -801,5 +801,22 @@ config IP_NF_TARGET_SET
  	  To compile it as a module, choose M here.  If unsure, say N.
  
  
@@ -563,7 +563,7 @@
  
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -102,6 +102,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
+@@ -101,6 +101,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
  obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
