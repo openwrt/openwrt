@@ -107,7 +107,7 @@ define Image/Build/TPLINK
 		-B $(4) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.gzip \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(BOARD)-$(2)-$(1).bin
+		-o $(BIN_DIR)/openwrt-$(BOARD)-$(2)-$(1).uni
 endef
 
 define Image/Build/Template/Compex
