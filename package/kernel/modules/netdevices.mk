@@ -97,7 +97,8 @@ define KernelPackage/via-rhine
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Via Rhine ethernet support
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_VIA_RHINE
+  KCONFIG:=CONFIG_VIA_RHINE \
+    CONFIG_VIA_RHINE_MMIO=y
   FILES:=$(LINUX_DIR)/drivers/net/via-rhine.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,via-rhine)
 endef
@@ -129,7 +130,11 @@ define KernelPackage/8139too
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_8139TOO
+  KCONFIG:=CONFIG_8139TOO \
+    CONFIG_8139TOO_PIO=y \
+    CONFIG_8139TOO_TUNE_TWISTER=n \
+    CONFIG_8139TOO_8129=n \
+    CONFIG_8139_OLD_RX_RESET=n
   FILES:=$(LINUX_DIR)/drivers/net/8139too.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,8139too)
 endef
@@ -145,7 +150,9 @@ define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_R8169 CONFIG_R8169_NAPI=y CONFIG_R8169_VLAN=n
+  KCONFIG:=CONFIG_R8169 \
+    CONFIG_R8169_NAPI=y \
+    CONFIG_R8169_VLAN=n
   FILES:=$(LINUX_DIR)/drivers/net/r8169.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,r8169)
 endef
@@ -195,7 +202,8 @@ define KernelPackage/e1000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) PRO/1000 cards kernel support
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_E1000
+  KCONFIG:=CONFIG_E1000 \
+    CONFIG_E1000_DISABLE_PACKET_SPLIT=n
   FILES:=$(LINUX_DIR)/drivers/net/e1000/e1000.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,e1000)
 endef
