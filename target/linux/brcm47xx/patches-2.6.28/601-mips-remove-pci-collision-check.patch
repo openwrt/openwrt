@@ -1,7 +1,6 @@
-diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
 --- a/arch/mips/pci/pci.c
 +++ b/arch/mips/pci/pci.c
-@@ -207,12 +207,10 @@ static int pcibios_enable_resources(struct pci_dev *dev, int mask)
+@@ -207,12 +207,10 @@ static int pcibios_enable_resources(stru
  		if ((idx == PCI_ROM_RESOURCE) &&
  				(!(r->flags & IORESOURCE_ROM_ENABLE)))
  			continue;

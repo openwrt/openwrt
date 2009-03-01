@@ -6,10 +6,8 @@ Fix this by ignoring the bitmask and always returning 0. The SSB GPIO functions 
 
 
 
-Index: linux-2.6.28.5/arch/mips/include/asm/mach-bcm47xx/gpio.h
-===================================================================
---- linux-2.6.28.5.orig/arch/mips/include/asm/mach-bcm47xx/gpio.h	2009-02-14 20:52:31.000000000 +0100
-+++ linux-2.6.28.5/arch/mips/include/asm/mach-bcm47xx/gpio.h	2009-02-14 21:01:20.000000000 +0100
+--- a/arch/mips/include/asm/mach-bcm47xx/gpio.h
++++ b/arch/mips/include/asm/mach-bcm47xx/gpio.h
 @@ -31,24 +31,28 @@ static inline void gpio_set_value(unsign
  
  static inline int gpio_direction_input(unsigned gpio)

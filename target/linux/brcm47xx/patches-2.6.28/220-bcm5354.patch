@@ -1,7 +1,6 @@
-diff --git a/drivers/ssb/driver_chipcommon.c b/drivers/ssb/driver_chipcommon.c
 --- a/drivers/ssb/driver_chipcommon.c
 +++ b/drivers/ssb/driver_chipcommon.c
-@@ -270,6 +270,8 @@ void ssb_chipco_resume(struct ssb_chipcommon *cc)
+@@ -270,6 +270,8 @@ void ssb_chipco_resume(struct ssb_chipco
  void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
                               u32 *plltype, u32 *n, u32 *m)
  {
@@ -10,7 +9,7 @@ diff --git a/drivers/ssb/driver_chipcommon.c b/drivers/ssb/driver_chipcommon.c
  	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
  	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
  	switch (*plltype) {
-@@ -293,6 +295,8 @@ void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
+@@ -293,6 +295,8 @@ void ssb_chipco_get_clockcpu(struct ssb_
  void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
  				 u32 *plltype, u32 *n, u32 *m)
  {
@@ -19,10 +18,9 @@ diff --git a/drivers/ssb/driver_chipcommon.c b/drivers/ssb/driver_chipcommon.c
  	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
  	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
  	switch (*plltype) {
-diff --git a/drivers/ssb/driver_mipscore.c b/drivers/ssb/driver_mipscore.c
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
-@@ -161,6 +161,8 @@ u32 ssb_cpu_clock(struct ssb_mipscore *mcore)
+@@ -161,6 +161,8 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
  
  	if ((pll_type == SSB_PLLTYPE_5) || (bus->chip_id == 0x5365)) {
  		rate = 200000000;
@@ -31,7 +29,6 @@ diff --git a/drivers/ssb/driver_mipscore.c b/drivers/ssb/driver_mipscore.c
  	} else {
  		rate = ssb_calc_clock_rate(pll_type, n, m);
  	}
-diff --git a/drivers/ssb/main.c b/drivers/ssb/main.c
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
 @@ -1011,6 +1011,8 @@ u32 ssb_clockspeed(struct ssb_bus *bus)

@@ -1,4 +1,3 @@
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -96,6 +96,19 @@ config USB_EHCI_HCD_PPC_OF
@@ -21,7 +20,6 @@ diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
  config USB_ISP116X_HCD
  	tristate "ISP116X HCD support"
  	depends on USB
-diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
 @@ -1034,8 +1034,16 @@ MODULE_LICENSE ("GPL");
@@ -43,7 +41,6 @@ diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
  #error "missing bus glue for ehci-hcd"
  #endif
  
-diff --git a/drivers/usb/host/ehci-ssb.c b/drivers/usb/host/ehci-ssb.c
 --- /dev/null
 +++ b/drivers/usb/host/ehci-ssb.c
 @@ -0,0 +1,201 @@
@@ -248,7 +245,6 @@ diff --git a/drivers/usb/host/ehci-ssb.c b/drivers/usb/host/ehci-ssb.c
 +	SSB_DEVTABLE_END
 +};
 +MODULE_DEVICE_TABLE(ssb, ssb_ehci_table);
-diff --git a/drivers/usb/host/ohci-ssb.c b/drivers/usb/host/ohci-ssb.c
 --- a/drivers/usb/host/ohci-ssb.c
 +++ b/drivers/usb/host/ohci-ssb.c
 @@ -17,6 +17,8 @@
@@ -268,7 +264,7 @@ diff --git a/drivers/usb/host/ohci-ssb.c b/drivers/usb/host/ohci-ssb.c
  };
  
  static inline
-@@ -92,13 +95,25 @@ static const struct hc_driver ssb_ohci_hc_driver = {
+@@ -92,13 +95,25 @@ static const struct hc_driver ssb_ohci_h
  static void ssb_ohci_detach(struct ssb_device *dev)
  {
  	struct usb_hcd *hcd = ssb_get_drvdata(dev);
@@ -294,7 +290,7 @@ diff --git a/drivers/usb/host/ohci-ssb.c b/drivers/usb/host/ohci-ssb.c
  static int ssb_ohci_attach(struct ssb_device *dev)
  {
  	struct ssb_ohci_device *ohcidev;
-@@ -184,6 +199,14 @@ static int ssb_ohci_attach(struct ssb_device *dev)
+@@ -184,6 +199,14 @@ static int ssb_ohci_attach(struct ssb_de
  
  	ssb_set_drvdata(dev, hcd);
  

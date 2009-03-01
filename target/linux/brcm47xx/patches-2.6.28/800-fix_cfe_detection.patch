@@ -1,4 +1,3 @@
-diff --git a/arch/mips/bcm47xx/prom.c b/arch/mips/bcm47xx/prom.c
 --- a/arch/mips/bcm47xx/prom.c
 +++ b/arch/mips/bcm47xx/prom.c
 @@ -32,6 +32,7 @@
@@ -32,7 +31,7 @@ diff --git a/arch/mips/bcm47xx/prom.c b/arch/mips/bcm47xx/prom.c
 -	int argc = fw_arg0;
 -	char **envp = (char **) fw_arg2;
 -	int *prom_vec = (int *) fw_arg3;
- 
+-
 -	/*
 -	 * Check if a loader was used; if NOT, the 4 arguments are
 -	 * what CFE gives us (handle, 0, EPT and EPTSEAL)
@@ -62,15 +61,16 @@ diff --git a/arch/mips/bcm47xx/prom.c b/arch/mips/bcm47xx/prom.c
 -			cfe_eptseal = prom_vec[3];
 -		}
 -	}
-+	cfe_eptseal = (uint32_t) fw_arg3;
-+	cfe_handle = (uint32_t) fw_arg0;
-+	cfe_ept = (uint32_t) fw_arg2;
  
 -	if (cfe_eptseal != CFE_EPTSEAL) {
 -		/* too early for panic to do any good */
 -		printk(KERN_ERR "CFE's entrypoint seal doesn't match.");
 -		while (1) ;
 -	}
++	cfe_eptseal = (uint32_t) fw_arg3;
++	cfe_handle = (uint32_t) fw_arg0;
++	cfe_ept = (uint32_t) fw_arg2;
++
 +	if (cfe_eptseal != CFE_EPTSEAL)
 +		return -1;
  
