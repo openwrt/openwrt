@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -24,8 +24,7 @@ UBOOT_CONFIG=$(strip $(subst ",, $(CONFIG_AVR32_UBOOT_TARGET)))
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIG)_config
-	export CROSS_COMPILE=$(TARGET_CROSS);
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS)
 endef
 
 define Build/InstallDev
