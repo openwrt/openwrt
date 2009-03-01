@@ -45,6 +45,7 @@ endef
 
 define Host/Prepare/pre/powerpc
 	if [ -d $(HOST_BUILD_DIR)/include/asm-ppc ]; then \
+		mkdir -p $(PKG_BUILD_DIR)/include/asm-powerpc/; \
 		$(CP) $(HOST_BUILD_DIR)/include/asm-ppc/* $(HOST_BUILD_DIR)/include/asm-powerpc/; \
 		rm -rf $(HOST_BUILD_DIR)/include/asm-ppc; \
 		ln -s $(HOST_BUILD_DIR)/include/asm-powerpc $(HOST_BUILD_DIR)/include/asm-ppc; \
@@ -62,12 +63,10 @@ ifneq ($(LINUX_HAS_HEADERS_INSTALL),)
 else
   define Host/Prepare/all
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include
-	cp -pLR \
-		$(HOST_BUILD_DIR)/include/asm \
-		$(HOST_BUILD_DIR)/include/asm-generic \
-		$(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH) \
-		$(HOST_BUILD_DIR)/include/linux \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
+	cp -pLR $(HOST_BUILD_DIR)/include/asm $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
+	cp -pLR $(HOST_BUILD_DIR)/include/asm-generic $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
+	cp -pLR $(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH) $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
+	cp -pLR $(HOST_BUILD_DIR)/include/linux $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
   endef
 endif
 
