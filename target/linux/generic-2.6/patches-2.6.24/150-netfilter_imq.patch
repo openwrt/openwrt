@@ -709,7 +709,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -333,6 +333,17 @@ config IP_NF_MANGLE
+@@ -327,6 +327,17 @@ config IP_NF_MANGLE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -729,7 +729,7 @@
  	depends on IP_NF_MANGLE
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -58,6 +58,7 @@ obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_i
+@@ -56,6 +56,7 @@ obj-$(CONFIG_IP_NF_MATCH_TIME) += ipt_ti
  obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
