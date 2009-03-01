@@ -14,6 +14,7 @@ $(curdir)/builddirs := sed sstrip ipkg-utils genext2fs squashfs mtd-utils lzma m
 # builddir dependencies
 $(curdir)/squashfs/compile := $(curdir)/lzma/install
 $(curdir)/quilt/compile := $(curdir)/sed/install
+$(curdir)/dtc/compile := $(curdir)/bison/install
 
 # preparatory work
 $(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
