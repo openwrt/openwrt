@@ -48,16 +48,16 @@ static struct mtd_partition tew_632brp_partitions[] = {
 	} , {
 		.name		= "rootfs",
 		.offset		= 0x0f0000,
-		.size		= 0x2f0000,
+		.size		= 0x300000,
 	} , {
 		.name		= "art",
-		.offset		= 0x3e0000,
-		.size		= 0x020000,
+		.offset		= 0x3f0000,
+		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
 	} , {
 		.name		= "firmware",
 		.offset		= 0x030000,
-		.size		= 0x3b0000,
+		.size		= 0x3c0000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
