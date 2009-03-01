@@ -28,6 +28,7 @@ ifneq ($(DUMP),)
 		echo "Category: $(CATEGORY)"; \
 		echo "Title: $(TITLE)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
+		echo "Source: $(PKG_SOURCE)"; \
 		echo "Type: $(if $(Package/$(1)/targets),$(Package/$(1)/targets),$(if $(PKG_TARGETS),$(PKG_TARGETS),ipkg))"; \
 		$(if $(KCONFIG),echo "Kernel-Config: $(KCONFIG)";) \
 		$(if $(BUILDONLY),echo "Build-Only: $(BUILDONLY)";) \

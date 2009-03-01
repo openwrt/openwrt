@@ -201,12 +201,20 @@ sub print_target($) {
 	}
 
 	my $v = kver($target->{version});
+	if (@{$target->{subtargets}} == 0) {
 	$confstr = <<EOF;
 config TARGET_$target->{conf}
 	bool "$target->{name}"
 	select LINUX_$kernel
 	select LINUX_$v
 EOF
+	}
+	else {
+		$confstr = <<EOF;
+config TARGET_$target->{conf}
+	bool "$target->{name}"
+EOF
+	}
 	if ($target->{subtarget}) {
 		$confstr .= "\tdepends TARGET_$target->{boardconf}\n";
 	}
@@ -293,7 +301,14 @@ EOF
 				print "\tselect DEFAULT_$pkg\n";
 				$defaults{$pkg} = 1;
 			}
-			print "\n";
+			my $help = $profile->{desc};
+			if ($help =~ /\w+/) {
+				$help =~ s/^\s*/\t  /mg;
+				$help = "\thelp\n$help";
+			} else {
+				undef $help;
+			}
+			print "$help\n";
 		}
 	}
 
@@ -651,6 +666,16 @@ EOF
 	}
 }
 
+sub gen_package_source() {
+	parse_package_metadata($ARGV[0]) or exit 1;
+	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
+		my $pkg = $package{$name};
+		if ($pkg->{name} && $pkg->{source}) {
+			print "$pkg->{name}: ";
+			print "$pkg->{source}\n";
+		}
+	}
+}
 
 sub parse_command() {
 	my $cmd = shift @ARGV;
@@ -659,6 +684,7 @@ sub parse_command() {
 		/^package_mk$/ and return gen_package_mk();
 		/^package_config$/ and return gen_package_config();
 		/^kconfig/ and return gen_kconfig_overrides();
+		/^package_source$/ and return gen_package_source();
 	}
 	print <<EOF
 Available Commands:
@@ -666,6 +692,7 @@ Available Commands:
 	$0 package_mk [file]		Package metadata in makefile format
 	$0 package_config [file] 	Package metadata in Kconfig format
 	$0 kconfig [file] [config]	Kernel config overrides
+	$0 package_source [file] 	Package source file information
 
 EOF
 }
