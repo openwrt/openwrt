@@ -1,4 +1,3 @@
-diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
 --- a/drivers/net/tg3.c
 +++ b/drivers/net/tg3.c
 @@ -40,6 +40,7 @@
@@ -9,7 +8,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  
  #include <net/checksum.h>
  #include <net/ip.h>
-@@ -428,8 +429,9 @@ static void _tw32_flush(struct tg3 *tp, u32 off, u32 val, u32 usec_wait)
+@@ -428,8 +429,9 @@ static void _tw32_flush(struct tg3 *tp, 
  static inline void tw32_mailbox_flush(struct tg3 *tp, u32 off, u32 val)
  {
  	tp->write32_mbox(tp, off, val);
@@ -21,7 +20,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  		tp->read32_mbox(tp, off);
  }
  
-@@ -439,7 +441,7 @@ static void tg3_write32_tx_mbox(struct tg3 *tp, u32 off, u32 val)
+@@ -439,7 +441,7 @@ static void tg3_write32_tx_mbox(struct t
  	writel(val, mbox);
  	if (tp->tg3_flags & TG3_FLAG_TXD_MBOX_HWBUG)
  		writel(val, mbox);
@@ -30,7 +29,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  		readl(mbox);
  }
  
-@@ -711,7 +713,7 @@ static void tg3_switch_clocks(struct tg3 *tp)
+@@ -711,7 +713,7 @@ static void tg3_switch_clocks(struct tg3
  
  #define PHY_BUSY_LOOPS	5000
  
@@ -39,7 +38,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -725,7 +727,7 @@ static int tg3_readphy(struct tg3 *tp, int reg, u32 *val)
+@@ -725,7 +727,7 @@ static int tg3_readphy(struct tg3 *tp, i
  
  	*val = 0x0;
  
@@ -48,7 +47,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -760,7 +762,12 @@ static int tg3_readphy(struct tg3 *tp, int reg, u32 *val)
+@@ -760,7 +762,12 @@ static int tg3_readphy(struct tg3 *tp, i
  	return ret;
  }
  
@@ -62,7 +61,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -776,7 +783,7 @@ static int tg3_writephy(struct tg3 *tp, int reg, u32 val)
+@@ -776,7 +783,7 @@ static int tg3_writephy(struct tg3 *tp, 
  		udelay(80);
  	}
  
@@ -71,7 +70,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -809,6 +816,11 @@ static int tg3_writephy(struct tg3 *tp, int reg, u32 val)
+@@ -809,6 +816,11 @@ static int tg3_writephy(struct tg3 *tp, 
  	return ret;
  }
  
@@ -83,7 +82,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  static int tg3_bmcr_reset(struct tg3 *tp)
  {
  	u32 phy_control;
-@@ -2232,8 +2244,10 @@ static int tg3_set_power_state(struct tg3 *tp, pci_power_t state)
+@@ -2232,8 +2244,10 @@ static int tg3_set_power_state(struct tg
  	tg3_frob_aux_power(tp);
  
  	/* Workaround for unstable PLL clock */
@@ -123,7 +122,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5906) {
  		/* Wait up to 20ms for init done. */
  		for (i = 0; i < 200; i++) {
-@@ -5902,6 +5929,14 @@ static int tg3_chip_reset(struct tg3 *tp)
+@@ -5902,6 +5929,14 @@ static int tg3_chip_reset(struct tg3 *tp
  		tw32(0x5000, 0x400);
  	}
  
@@ -138,7 +137,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -6176,9 +6211,12 @@ static int tg3_halt_cpu(struct tg3 *tp, u32 offset)
+@@ -6176,9 +6211,12 @@ static int tg3_halt_cpu(struct tg3 *tp, 
  		return -ENODEV;
  	}
  
@@ -154,7 +153,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	return 0;
  }
  
-@@ -6259,6 +6297,11 @@ static int tg3_load_5701_a0_firmware_fix(struct tg3 *tp)
+@@ -6259,6 +6297,11 @@ static int tg3_load_5701_a0_firmware_fix
  	struct fw_info info;
  	int err, i;
  
@@ -166,7 +165,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	info.text_base = TG3_FW_TEXT_ADDR;
  	info.text_len = TG3_FW_TEXT_LEN;
  	info.text_data = &tg3FwText[0];
-@@ -6817,6 +6860,11 @@ static int tg3_load_tso_firmware(struct tg3 *tp)
+@@ -6817,6 +6860,11 @@ static int tg3_load_tso_firmware(struct 
  	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
  	int err, i;
  
@@ -178,7 +177,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	if (tp->tg3_flags2 & TG3_FLG2_HW_TSO)
  		return 0;
  
-@@ -7776,6 +7824,11 @@ static void tg3_timer(unsigned long __opaque)
+@@ -7776,6 +7824,11 @@ static void tg3_timer(unsigned long __op
  
  	spin_lock(&tp->lock);
  
@@ -190,7 +189,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	if (!(tp->tg3_flags & TG3_FLAG_TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -9469,6 +9522,11 @@ static int tg3_test_nvram(struct tg3 *tp)
+@@ -9469,6 +9522,11 @@ static int tg3_test_nvram(struct tg3 *tp
  	__le32 *buf;
  	int i, j, k, err = 0, size;
  
@@ -202,7 +201,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	if (tg3_nvram_read_swab(tp, 0, &magic) != 0)
  		return -EIO;
  
-@@ -10262,7 +10320,7 @@ static int tg3_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+@@ -10262,7 +10320,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -211,7 +210,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -10281,7 +10339,7 @@ static int tg3_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+@@ -10281,7 +10339,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -220,7 +219,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -10759,6 +10817,12 @@ static void __devinit tg3_get_5906_nvram_info(struct tg3 *tp)
+@@ -10759,6 +10817,12 @@ static void __devinit tg3_get_5906_nvram
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -233,7 +232,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -10900,6 +10964,9 @@ static int tg3_nvram_read(struct tg3 *tp, u32 offset, u32 *val)
+@@ -10900,6 +10964,9 @@ static int tg3_nvram_read(struct tg3 *tp
  {
  	int ret;
  
@@ -243,7 +242,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	if (!(tp->tg3_flags & TG3_FLAG_NVRAM))
  		return tg3_nvram_read_using_eeprom(tp, offset, val);
  
-@@ -11147,6 +11214,9 @@ static int tg3_nvram_write_block(struct tg3 *tp, u32 offset, u32 len, u8 *buf)
+@@ -11147,6 +11214,9 @@ static int tg3_nvram_write_block(struct 
  {
  	int ret;
  
@@ -253,7 +252,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -12205,7 +12275,6 @@ static int __devinit tg3_get_invariants(struct tg3 *tp)
+@@ -12205,7 +12275,6 @@ static int __devinit tg3_get_invariants(
  		tp->write32 = tg3_write_flush_reg32;
  	}
  
@@ -261,7 +260,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	if ((tp->tg3_flags & TG3_FLAG_TXD_MBOX_HWBUG) ||
  	    (tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER)) {
  		tp->write32_tx_mbox = tg3_write32_tx_mbox;
-@@ -12241,6 +12310,11 @@ static int __devinit tg3_get_invariants(struct tg3 *tp)
+@@ -12241,6 +12310,11 @@ static int __devinit tg3_get_invariants(
  	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
  		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;
  
@@ -273,7 +272,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLG2_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -12640,6 +12714,10 @@ static int __devinit tg3_get_device_address(struct tg3 *tp)
+@@ -12640,6 +12714,10 @@ static int __devinit tg3_get_device_addr
  	}
  
  	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
@@ -284,7 +283,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  #ifdef CONFIG_SPARC
  		if (!tg3_get_default_macaddr_sparc(tp))
  			return 0;
-@@ -13131,6 +13209,7 @@ static char * __devinit tg3_phy_string(struct tg3 *tp)
+@@ -13131,6 +13209,7 @@ static char * __devinit tg3_phy_string(s
  	case PHY_ID_BCM5704:	return "5704";
  	case PHY_ID_BCM5705:	return "5705";
  	case PHY_ID_BCM5750:	return "5750";
@@ -292,7 +291,7 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  	case PHY_ID_BCM5752:	return "5752";
  	case PHY_ID_BCM5714:	return "5714";
  	case PHY_ID_BCM5780:	return "5780";
-@@ -13317,6 +13396,13 @@ static int __devinit tg3_init_one(struct pci_dev *pdev,
+@@ -13317,6 +13396,13 @@ static int __devinit tg3_init_one(struct
  		tp->msg_enable = tg3_debug;
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;
@@ -306,7 +305,6 @@ diff --git a/drivers/net/tg3.c b/drivers/net/tg3.c
  
  	/* The word/byte swap controls here control register access byte
  	 * swapping.  DMA data byte swapping is controlled in the GRC_MODE
-diff --git a/drivers/net/tg3.h b/drivers/net/tg3.h
 --- a/drivers/net/tg3.h
 +++ b/drivers/net/tg3.h
 @@ -2516,6 +2516,9 @@ struct tg3 {

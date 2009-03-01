@@ -1,4 +1,3 @@
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -198,7 +198,6 @@ config MIPS_MALTA
@@ -23,10 +22,9 @@ diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
  config R5000_CPU_SCACHE
  	bool
  	select BOARD_SCACHE
-diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
 --- a/arch/mips/kernel/cpu-probe.c
 +++ b/arch/mips/kernel/cpu-probe.c
-@@ -755,6 +755,8 @@ static inline void cpu_probe_mips(struct cpuinfo_mips *c, unsigned int cpu)
+@@ -755,6 +755,8 @@ static inline void cpu_probe_mips(struct
  	case PRID_IMP_25KF:
  		c->cputype = CPU_25KF;
  		__cpu_name[cpu] = "MIPS 25Kc";
@@ -35,20 +33,18 @@ diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
  		break;
  	case PRID_IMP_34K:
  		c->cputype = CPU_34K;
-diff --git a/arch/mips/mm/Makefile b/arch/mips/mm/Makefile
 --- a/arch/mips/mm/Makefile
 +++ b/arch/mips/mm/Makefile
-@@ -31,6 +31,5 @@ obj-$(CONFIG_CPU_VR41XX)	+= c-r4k.o cex-gen.o tlb-r4k.o
+@@ -31,6 +31,5 @@ obj-$(CONFIG_CPU_VR41XX)	+= c-r4k.o cex-
  obj-$(CONFIG_IP22_CPU_SCACHE)	+= sc-ip22.o
  obj-$(CONFIG_R5000_CPU_SCACHE)  += sc-r5k.o
  obj-$(CONFIG_RM7000_CPU_SCACHE)	+= sc-rm7k.o
 -obj-$(CONFIG_MIPS_CPU_SCACHE)	+= sc-mips.o
  
  EXTRA_CFLAGS += -Werror
-diff --git a/arch/mips/mm/c-r4k.c b/arch/mips/mm/c-r4k.c
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -1121,7 +1121,6 @@ static void __init loongson2_sc_init(void)
+@@ -1121,7 +1121,6 @@ static void __init loongson2_sc_init(voi
  
  extern int r5k_sc_init(void);
  extern int rm7k_sc_init(void);

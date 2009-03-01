@@ -1,7 +1,6 @@
-diff --git a/drivers/net/b44.c b/drivers/net/b44.c
 --- a/drivers/net/b44.c
 +++ b/drivers/net/b44.c
-@@ -384,7 +384,7 @@ static void b44_set_flow_ctrl(struct b44 *bp, u32 local, u32 remote)
+@@ -384,7 +384,7 @@ static void b44_set_flow_ctrl(struct b44
  	__b44_set_flow_ctrl(bp, pause_enab);
  }
  
@@ -39,7 +38,7 @@ diff --git a/drivers/net/b44.c b/drivers/net/b44.c
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	struct ssb_device *sdev = bp->sdev;
-@@ -2089,6 +2111,8 @@ static int __devinit b44_get_invariants(struct b44 *bp)
+@@ -2089,6 +2111,8 @@ static int __devinit b44_get_invariants(
  	 * valid PHY address. */
  	bp->phy_addr &= 0x1F;
  

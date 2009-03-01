@@ -6,10 +6,8 @@ keeping track of what is upstream and what is not. Thanks.
 --mb
 
 
-Index: linux-2.6.28.2/drivers/ssb/Makefile
-===================================================================
---- linux-2.6.28.2.orig/drivers/ssb/Makefile	2009-02-01 13:09:04.000000000 +0100
-+++ linux-2.6.28.2/drivers/ssb/Makefile	2009-02-01 13:09:31.000000000 +0100
+--- a/drivers/ssb/Makefile
++++ b/drivers/ssb/Makefile
 @@ -9,6 +9,7 @@ ssb-$(CONFIG_SSB_PCMCIAHOST)		+= pcmcia.
  
  # built-in drivers
@@ -18,10 +16,8 @@ Index: linux-2.6.28.2/drivers/ssb/Makefile
  ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
  ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
  ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
-Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c	2009-02-03 19:07:23.000000000 +0100
+--- /dev/null
++++ b/drivers/ssb/driver_chipcommon_pmu.c
 @@ -0,0 +1,508 @@
 +/*
 + * Sonics Silicon Backplane
@@ -531,10 +527,8 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon_pmu.c
 +	ssb_pmu_pll_init(cc);
 +	ssb_pmu_resources_init(cc);
 +}
-Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon.c
-===================================================================
---- linux-2.6.28.2.orig/drivers/ssb/driver_chipcommon.c	2009-02-01 13:07:03.000000000 +0100
-+++ linux-2.6.28.2/drivers/ssb/driver_chipcommon.c	2009-02-01 13:47:17.000000000 +0100
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
 @@ -26,19 +26,6 @@ enum ssb_clksrc {
  };
  
@@ -563,10 +557,8 @@ Index: linux-2.6.28.2/drivers/ssb/driver_chipcommon.c
  	chipco_powercontrol_init(cc);
  	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
  	calc_fast_powerup_delay(cc);
-Index: linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h
-===================================================================
---- linux-2.6.28.2.orig/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-01 13:22:59.000000000 +0100
-+++ linux-2.6.28.2/include/linux/ssb/ssb_driver_chipcommon.h	2009-02-03 18:43:33.000000000 +0100
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -181,6 +181,16 @@
  #define SSB_CHIPCO_PROG_WAITCNT		0x0124
  #define SSB_CHIPCO_FLASH_CFG		0x0128
