@@ -52,9 +52,8 @@ define Image/Build/AP81
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=768k conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=3008k conv=sync; \
-		) > $(call imgname,$(1),$(2)).bin; \
-		cp $(call imgname,$(1),$(2)).bin $(call imgname,$(1),$(2)).webui; \
-		echo -n $(4) >> $(call imgname,$(1),$(2)).webui; \
+			echo -n $(4); \
+		) > $(call imgname,$(1),$(2)).uni; \
 	fi; fi
 endef
 
