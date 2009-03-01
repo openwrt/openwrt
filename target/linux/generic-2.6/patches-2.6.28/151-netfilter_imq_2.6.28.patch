@@ -56,7 +56,7 @@
  
  	if (skb2)
  		kfree_skb(ret ? entry->skb : skb2);
-@@ -248,11 +253,13 @@ static void qdisc_run_tasklet(unsigned l
+@@ -248,11 +251,13 @@ static void qdisc_run_tasklet(unsigned l
  {
  	struct net_device *dev = (struct net_device *)arg;
  	struct imq_private *priv = netdev_priv(dev);
