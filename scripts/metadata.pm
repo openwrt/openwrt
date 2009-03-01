@@ -73,6 +73,7 @@ sub parse_package_metadata($) {
 		/^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
 		/^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;
 		/^Submenu-Depends: \s*(.+)\s*$/ and $pkg->{submenudep} = $1;
+		/^Source: \s*(.+)\s*$/ and $pkg->{source} = $1;
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
