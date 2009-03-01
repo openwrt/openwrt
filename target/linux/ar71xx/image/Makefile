@@ -166,6 +166,10 @@ define Image/Build/Profile/TEW652BRP
 	$(call Image/Build/Template/AP81/$(1),tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
 endef
 
+define Image/Build/Profile/A02RBW300N
+	$(call Image/Build/Template/AP81/$(1),a02-rb-w300n,board=TEW-632BRP,"AP81-AR9130-RT-070614-03")
+endef
+
 define Image/Build/Profile/UBNTRS
 	$(call Image/Build/Template/UBNT/$(1),rs,board=UBNT-RS,RS,RSx)
 endef
@@ -179,6 +183,7 @@ define Image/Build/Profile/TLWR941NDV2
 endef
 
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/A02RBW300N,$(1))
 	$(call Image/Build/Profile/DIR615C1,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
