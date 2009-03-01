@@ -6,12 +6,12 @@
 #
 
 define Profile/TLWR941NDV2
-	NAME:=TP-LINK TL-WR941ND
+	NAME:=TP-LINK TL-WR941ND v2
 	PACKAGES:=kmod-ath9k hostapd-mini
 endef
 
 define Profile/TLWR941NDV2/Description
-	Package set optimized for the TP-LINK TL-WR941ND.
+	Package set optimized for the TP-LINK TL-WR941ND v2.
 endef
 
 $(eval $(call Profile,TLWR941NDV2))
