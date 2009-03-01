@@ -22,7 +22,7 @@ hostapd_setup_vif() {
 			wpa=3
 			crypto="CCMP TKIP"
 		;;
-		*) 
+		*)
 			wpa=1
 			crypto="TKIP"
 		;;
@@ -81,6 +81,11 @@ hostapd_setup_vif() {
 		11a) hwmode=a;;
 		11b) hwmode=b;;
 		11g) hwmode=g;;
+		11n)
+			hwmode=g
+			append hostapd_cfg "ieee80211n=1" "$N"
+			config_get ht_capab "$device" ht_capab
+		;;
 		*)
 			hwmode=
 			[ "$channel" -gt 14 ] && hwmode=a
@@ -98,6 +103,7 @@ debug=0
 wpa=$wpa
 ${crypto:+wpa_pairwise=$crypto}
 ${country:+country_code=$country}
+${ht_capab:+ht_capab=$ht_capab}
 $hostapd_cfg
 EOF
 	hostapd -P /var/run/wifi-$ifname.pid -B /var/run/hostapd-$ifname.conf
