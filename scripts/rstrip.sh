@@ -45,7 +45,7 @@ find $TARGETS -type f -a -exec file {} \; | \
   IFS=":"
   while read F S; do
     echo "$SELF: $F:$S"
-	[ "${F##*\.}" = "o" -o "${F##*\.}" = "ko" ] && {
+	[ "${S}" = "relocatable" ] && {
 		eval "$STRIP_KMOD -w -K '__param*' -K '__mod*' $(find_modparams "$F")$F"
 	} || {
 		eval "$STRIP $F"
