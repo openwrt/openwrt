@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2008 OpenWrt.org
+#
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/quilt.mk
 Host/Patch:=$(Host/Patch/Default)
 ifneq ($(strip $(HOST_UNPACK)),)
   define Host/Prepare/Default
-  	$(HOST_UNPACK)
+	$(HOST_UNPACK)
 	$(Host/Patch)
   endef
 endif
@@ -58,6 +58,7 @@ define Host/Configure/Default
 			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
 			$(2) \
 			$(HOST_CONFIGURE_CMD) \
+			$(HOST_CONFIGURE_VARS) \
 			$(HOST_CONFIGURE_ARGS) \
 			$(1); \
 		fi \
@@ -97,7 +98,7 @@ ifndef DUMP
   $(if $(QUILT),$(Host/Quilt))
   $(if $(STAMP_PREPARED),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
   $(if $(DUMP),,$(call HostHost/Autoclean))
-  
+
   $(HOST_STAMP_PREPARED):
 	@-rm -rf $(HOST_BUILD_DIR)
 	@mkdir -p $(HOST_BUILD_DIR)
@@ -116,7 +117,7 @@ ifndef DUMP
 	$(call Host/Install)
 	mkdir -p $$(shell dirname $$@)
 	touch $$@
-	
+
   ifdef Host/Install
     host-install: $(HOST_STAMP_INSTALLED)
   endif
