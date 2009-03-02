@@ -15,6 +15,14 @@ my $mk=`which gmake`;	# select the right 'make' program
 chomp($mk);		# trim trailing newline
 $mk or $mk = "make";	# default to 'make'
 
+# check version of make
+my @mkver = split /\s+/, `$mk -v`, 4;
+my $valid_mk = 1;
+$mkver[0] =~ /^GNU/ or $valid_mk = 0;
+$mkver[1] =~ /^Make/ or $valid_mk = 0;
+$mkver[2] >= "3.81" or $valid_mk = 0;
+$valid_mk or die "Unsupported version of make found: $mk\n";
+
 my @feeds;
 my %build_packages;
 my %installed;
@@ -72,7 +80,7 @@ sub update_location($$)
 		return $old_url ? 1 : 0;
 	}
 
-	return 0;	
+	return 0;
 }
 
 sub update_index($)
@@ -338,7 +346,7 @@ sub refresh_config {
 	system("rm -f tmp/.packageinfo");
 
 	# refresh the config
-	if ($default) { 
+	if ($default) {
 		system("$mk oldconfig CONFDEFAULT=\"$default\" Config.in >/dev/null 2>/dev/null");
 	} else {
 		system("$mk defconfig Config.in >/dev/null 2>/dev/null");
