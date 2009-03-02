@@ -131,13 +131,12 @@ define KernelPackage/crypto-aes
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=AES cipher CryptoAPI module
   DEPENDS:=+kmod-crypto-core
-  KCONFIG:=CONFIG_CRYPTO_AES
+  KCONFIG:=CONFIG_CRYPTO_AES CONFIG_CRYPTO_AES_586
   FILES:=$(LINUX_DIR)/crypto/aes$(AES_SUFFIX).$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX))
 endef
 
 define KernelPackage/crypto-aes/x86-2.6
-  KCONFIG+=CONFIG_CRYPTO_AES_586
   FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX) aes-i586)
 endef
