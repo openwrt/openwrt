@@ -13,14 +13,15 @@ sub get_ts($$) {
 	my $options = shift;
 	my $ts = 0;
 	my $fn = "";
+	$path .= "/" if( -d $path);
 	open FIND, "find $path -type f -and -not -path \\*.svn\\* -and -not -path \\*CVS\\* $options 2>/dev/null |";
 	while (<FIND>) {
 		chomp;
 		my $file = $_;
 		next if -l $file;
-		my @stat = stat $file;
-		if ($stat[9] > $ts) {
-			$ts = $stat[9];
+		my $mt = (stat $file)[9];
+		if ($mt > $ts) {
+			$ts = $mt;
 			$fn = $file;
 		}
 	}
