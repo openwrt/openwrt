@@ -6,7 +6,7 @@
 #
 
 TMP_DIR ?= $(TOPDIR)/tmp
-ifndef DUMP
+ifeq ($(if $(TARGET_BUILD),,$(DUMP)),)
   -include $(TMP_DIR)/.host.mk
 endif
 
