@@ -53,12 +53,7 @@ ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
 else
   ifeq (,$(LINUX_KARCH))
-    LINUX_KARCH=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/x86/' \
-	  -e 's/mipsel/mips/' \
-	  -e 's/mipseb/mips/' \
-	  -e 's/sh[234]/sh/' \
-	  -e 's/armeb/arm/' \
-    )
+    LINUX_KARCH=$(strip $(subst i386,x86,$(subst armeb,arm,$(subst mipsel,mips,$(subst sh2,sh,$(subst sh3,sh,$(subst sh4,sh,$(ARCH))))))))
   endif
 endif
 
