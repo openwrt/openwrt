@@ -72,7 +72,7 @@ prereq: $(target/stamp-prereq) tmp/.prereq_packages
 
 prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
 world: prepare $(target/stamp-compile) $(package/stamp-cleanup) $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare) $(target/stamp-install) FORCE
-	$(_SINGLE)$(SUBMAKE) package/index
+	$(_SINGLE)$(SUBMAKE) -r package/index
 
 # update all feeds, re-create index files, install symlinks
 package/symlinks:
