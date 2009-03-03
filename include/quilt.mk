@@ -56,7 +56,7 @@ $(call PatchDir/$(if $(strip $(QUILT)),Quilt,Default),$(strip $(1)),$(strip $(2)
 endef
 
 ifneq ($(PKG_BUILD_DIR),)
-  QUILT?=$(strip $(shell test -f $(PKG_BUILD_DIR)/.quilt_used && echo y))
+  QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
   ifneq ($(QUILT),)
     STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
     STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
@@ -67,7 +67,7 @@ ifneq ($(PKG_BUILD_DIR),)
 endif
 
 ifneq ($(HOST_BUILD_DIR),)
-  HOST_QUILT?=$(strip $(shell test -f $(if $(PKG_BUILD_DIR),$(PKG_BUILD_DIR),$(HOST_BUILD_DIR))/.quilt_used && echo y))
+  HOST_QUILT?=$(if $(wildcard $(if $(PKG_BUILD_DIR),$(PKG_BUILD_DIR),$(HOST_BUILD_DIR))/.quilt_used),y)
   ifneq ($(HOST_QUILT),)
     HOST_STAMP_PATCHED:=$(HOST_BUILD_DIR)/.quilt_patched
     HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked

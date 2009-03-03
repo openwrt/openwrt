@@ -19,9 +19,7 @@ TMP_DIR:=$(TOPDIR)/tmp
 
 export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"' --
 
-define qstrip
-$(strip $(subst ",,$(1)))
-endef
+qstrip=$(strip $(subst ",,$(1)))
 #"))
 
 empty:=
@@ -31,7 +29,7 @@ confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 
 _SINGLE=export MAKEFLAGS=$(space);
-ARCH:=$(call qstrip,$(shell echo $(CONFIG_ARCH) | sed -e 's/i[3-9]86/i386/'))
+ARCH:=$(subst i486,i386,$(subst i586,i386,$(subst i686,i386,$(call qstrip,$(CONFIG_ARCH)))))
 BOARD:=$(call qstrip,$(CONFIG_TARGET_BOARD))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
 TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))
@@ -41,7 +39,7 @@ LIBC:=$(call qstrip,$(CONFIG_LIBC))
 LIBCV:=$(call qstrip,$(CONFIG_LIBC_VERSION))
 SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 
-OPTIMIZE_FOR_CPU=$(shell echo $(ARCH) | sed -e 's/i386/i486/')
+OPTIMIZE_FOR_CPU=$(subst i386,i486,$(ARCH))
 
 ifeq ($(ARCH),powerpc)
   FPIC:=-fPIC
