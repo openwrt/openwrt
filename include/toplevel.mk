@@ -49,7 +49,7 @@ prepare-tmpinfo: FORCE
 	./scripts/metadata.pl package_mk tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
 	touch $(TOPDIR)/tmp/.build
 
-.config: ./scripts/config/conf prepare-tmpinfo $(if $(CONFIG_HAVE_DOT_CONFIG),,FORCE)
+.config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
 	@+if [ \! -e .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
 		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
 		$(_SINGLE)$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
@@ -106,7 +106,7 @@ download: .config FORCE
 clean dirclean: .config
 	@+$(SUBMAKE) -r $@ 
 
-prereq:: .config
+prereq:: prepare-tmpinfo .config
 	@+$(MAKE) -r -s tmp/.prereq-build $(PREP_MK)
 	@+$(NO_TRACE_MAKE) -r -s $@
 
