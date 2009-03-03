@@ -27,7 +27,7 @@ define PackageDir
 	{ \
 		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(2)) \
 		echo Source-Makefile: $(SCAN_DIR)/$(2)/Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) 2>/dev/null || echo "ERROR: please fix $(SCAN_DIR)/$(2)/Makefile" >&2; \
+		$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) 2>/dev/null || echo "ERROR: please fix $(SCAN_DIR)/$(2)/Makefile" >&2; \
 		echo; \
 	} > $$@ || true
 endef
