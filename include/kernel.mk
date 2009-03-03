@@ -30,7 +30,7 @@ else
     KERNEL_CROSS?=$(TARGET_CROSS)
   endif
 
-  PATCH_DIR ?= ./patches$(shell [ -d "./patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
+  PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
   FILES_DIR ?= $(foreach dir,$(wildcard ./files ./files-$(KERNEL_PATCHVER)),"$(dir)")
   KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
@@ -50,10 +50,10 @@ else
 endif
 
 ifneq (,$(findstring uml,$(BOARD)))
-  LINUX_KARCH:=um
+  LINUX_KARCH=um
 else
   ifeq (,$(LINUX_KARCH))
-    LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/x86/' \
+    LINUX_KARCH=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/x86/' \
 	  -e 's/mipsel/mips/' \
 	  -e 's/mipseb/mips/' \
 	  -e 's/sh[234]/sh/' \
@@ -159,7 +159,11 @@ define AutoLoad
   add_module $(1) "$(2)";
 endef
 
-define CompareKernelPatchVer
-  $(shell [ $$(echo $(1) | tr . 0) -$(2) $$(echo $(3) | tr . 0) ] && echo 1 || echo 0)
-endef
+ifdef DUMP
+  CompareKernelPatchVer=0
+else
+  define CompareKernelPatchVer
+    $(shell [ $$(echo $(1) | tr . 0) -$(2) $$(echo $(3) | tr . 0) ] && echo 1 || echo 0)
+  endef
+endif
 
