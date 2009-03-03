@@ -94,6 +94,12 @@ ifeq ($(DUMP)$(TARGET_BUILD),)
   -include $(LINUX_DIR)/.config
 endif
 
+define KernelPackage/depends
+  $(STAMP_BUILT): $(LINUX_DIR)/.config
+  define KernelPackage/depends
+  endef
+endef
+
 define KernelPackage
   NAME:=$(1)
   $(eval $(call Package/Default))
@@ -126,7 +132,7 @@ $(call KernelPackage/$(1)/config)
     endef
   endif
 
-  $(STAMP_BUILT): $(LINUX_DIR)/.config
+  $(call KernelPackage/depends)
 
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
