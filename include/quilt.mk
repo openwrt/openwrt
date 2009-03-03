@@ -3,9 +3,8 @@
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
-#
 
-ifneq ($(__quilt_inc),1)
+ifneq ($(if $(DUMP),1,$(__quilt_inc)),1)
 __quilt_inc:=1
 
 ifeq ($(TARGET_BUILD),1)

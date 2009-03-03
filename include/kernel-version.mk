@@ -38,6 +38,8 @@ endif
 # disable the md5sum check for unknown kernel versions
 LINUX_KERNEL_MD5SUM?=x
 
-KERNEL?=2.$(word 2,$(subst ., ,$(strip $(LINUX_VERSION))))
-KERNEL_PATCHVER=$(shell echo '$(LINUX_VERSION)' | cut -d. -f1,2,3 | cut -d- -f1)
+split_version=$(subst ., ,$(1))
+merge_version=$(subst $(space),.,$(1))
+KERNEL=$(call merge_version,$(wordlist 1,2,$(call split_version,$(LINUX_VERSION))))
+KERNEL_PATCHVER=$(call merge_version,$(wordlist 1,3,$(call split_version,$(LINUX_VERSION))))
 

@@ -40,9 +40,11 @@ TARGETID:=$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))
 PLATFORM_SUBDIR:=$(PLATFORM_DIR)$(if $(SUBTARGET),/$(SUBTARGET))
 
 ifneq ($(TARGET_BUILD),1)
-  include $(PLATFORM_DIR)/Makefile
-  ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
-    include $(PLATFORM_SUBDIR)/target.mk
+  ifndef DUMP
+    include $(PLATFORM_DIR)/Makefile
+    ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
+      include $(PLATFORM_SUBDIR)/target.mk
+    endif
   endif
 else
   ifneq ($(SUBTARGET),)
@@ -102,7 +104,9 @@ endif
 
 $(eval $(call shexport,Target/Description))
 
-include $(INCLUDE_DIR)/kernel-version.mk
+ifneq ($(TARGET_BUILD)$(if $(DUMP),,1),)
+  include $(INCLUDE_DIR)/kernel-version.mk
+endif
 
 GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic-$(KERNEL)
 GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(shell [ -d "$(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)" ] && printf -- "-$(KERNEL_PATCHVER)" || true )
