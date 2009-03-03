@@ -105,7 +105,7 @@ sub parse_package_metadata($) {
 				$type =~ /ipkg/ and $pkg->{tristate} = 1;
 			}
 		};
-		/^Config: \s*(.*)\s*$/ and $pkg->{config} = "$1\n".get_multiline(*FILE, "\t");
+		/^Config:\s*(.*)\s*$/ and $pkg->{config} = "$1\n".get_multiline(*FILE, "\t");
 		/^Prereq-Check:/ and $pkg->{prereq} = 1;
 		/^Preconfig:\s*(.+)\s*$/ and do {
 			my $pkgname = $pkg->{name};
