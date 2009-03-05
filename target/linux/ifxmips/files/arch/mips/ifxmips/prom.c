@@ -32,7 +32,7 @@ unsigned int prom_cp1_size;
 /* for Multithreading (APRP) on MIPS34K */
 unsigned long physical_memsize;
 
-#ifdef IFXMIPS_PROM_ASC0
+#ifdef CONFIG_IFXMIPS_PROM_ASC0
 #define IFXMIPS_ASC_DIFF	0
 #else
 #define IFXMIPS_ASC_DIFF	IFXMIPS_ASC_BASE_DIFF
