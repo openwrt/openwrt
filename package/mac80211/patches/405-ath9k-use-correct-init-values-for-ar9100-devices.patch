@@ -47,8 +47,6 @@ cause problems on them.
 Regards,
 Gabor
 
-diff --git a/drivers/net/wireless/ath9k/initvals.h b/drivers/net/wireless/ath9k/initvals.h
-index d492363..4eb8b59 100644
 --- a/drivers/net/wireless/ath9k/initvals.h
 +++ b/drivers/net/wireless/ath9k/initvals.h
 @@ -14,7 +14,7 @@
@@ -60,7 +58,7 @@ index d492363..4eb8b59 100644
      { 0x00001030, 0x00000230, 0x00000460, 0x000002c0, 0x00000160, 0x000001e0 },
      { 0x00001070, 0x00000168, 0x000002d0, 0x00000318, 0x0000018c, 0x000001e0 },
      { 0x000010b0, 0x00000e60, 0x00001cc0, 0x00007c70, 0x00003e38, 0x00001180 },
-@@ -78,7 +78,7 @@ static const u32 ar5416Modes_9100[][6] = {
+@@ -78,7 +78,7 @@ static const u32 ar5416Modes_9100[][6] =
      { 0x0000a334, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },
  };
  
@@ -69,7 +67,7 @@ index d492363..4eb8b59 100644
      { 0x0000000c, 0x00000000 },
      { 0x00000030, 0x00020015 },
      { 0x00000034, 0x00000005 },
-@@ -456,12 +456,12 @@ static const u32 ar5416Common_9100[][2] = {
+@@ -456,12 +456,12 @@ static const u32 ar5416Common_9100[][2] 
      { 0x0000a3e0, 0x000001ce },
  };
  
@@ -84,7 +82,7 @@ index d492363..4eb8b59 100644
      { 0x00009a00, 0x00000000, 0x00000000 },
      { 0x00009a04, 0x00000040, 0x00000040 },
      { 0x00009a08, 0x00000080, 0x00000080 },
-@@ -528,21 +528,21 @@ static const u32 ar5416BB_RfGain_9100[][3] = {
+@@ -528,21 +528,21 @@ static const u32 ar5416BB_RfGain_9100[][
      { 0x00009afc, 0x000000f9, 0x000000f9 },
  };
  
@@ -110,7 +108,7 @@ index d492363..4eb8b59 100644
  
      { 0x0000989c, 0x00000000, 0x00000000 },
      { 0x0000989c, 0x00000000, 0x00000000 },
-@@ -579,7 +579,7 @@ static const u32 ar5416Bank6_9100[][3] = {
+@@ -579,7 +579,7 @@ static const u32 ar5416Bank6_9100[][3] =
      { 0x000098d0, 0x0000000f, 0x0010000f },
  };
  
@@ -119,7 +117,7 @@ index d492363..4eb8b59 100644
      { 0x0000989c, 0x00000000, 0x00000000 },
      { 0x0000989c, 0x00000000, 0x00000000 },
      { 0x0000989c, 0x00000000, 0x00000000 },
-@@ -615,13 +615,13 @@ static const u32 ar5416Bank6TPC_9100[][3] = {
+@@ -615,13 +615,13 @@ static const u32 ar5416Bank6TPC_9100[][3
      { 0x000098d0, 0x0000000f, 0x0010000f },
  };
  
@@ -135,7 +133,7 @@ index d492363..4eb8b59 100644
      {0x0000989c,  0x00000000 },
      {0x0000989c,  0x00000003 },
      {0x0000989c,  0x00000000 },
-@@ -661,7 +661,7 @@ static const u32 ar5416Addac_9100[][2] = {
+@@ -661,7 +661,7 @@ static const u32 ar5416Addac_9100[][2] =
      {0x000098cc,  0x00000000 },
  };
  
@@ -168,7 +166,7 @@ index d492363..4eb8b59 100644
      { 0x00009a00, 0x00000000, 0x00000000 },
      { 0x00009a04, 0x00000040, 0x00000040 },
      { 0x00009a08, 0x00000080, 0x00000080 },
-@@ -1181,21 +1181,21 @@ static const u32 ar5416BB_RfGain[][3] = {
+@@ -1181,21 +1181,21 @@ static const u32 ar5416BB_RfGain[][3] = 
      { 0x00009afc, 0x000000f9, 0x000000f9 },
  };
  
@@ -219,8 +217,6 @@ index d492363..4eb8b59 100644
      {0x0000989c, 0x00000000 },
      {0x0000989c, 0x00000000 },
      {0x0000989c, 0x00000000 },
-diff --git a/drivers/net/wireless/ath9k/reg.h b/drivers/net/wireless/ath9k/reg.h
-index 8d85106..22a14a4 100644
 --- a/drivers/net/wireless/ath9k/reg.h
 +++ b/drivers/net/wireless/ath9k/reg.h
 @@ -158,14 +158,6 @@
@@ -277,6 +273,3 @@ index 8d85106..22a14a4 100644
  #define AR_SREV_9160(_ah) \
  	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_9160))
  #define AR_SREV_9160_10_OR_LATER(_ah) \
--- 
-1.5.3.2
-

@@ -1,25 +1,30 @@
-From 1d21decc7ccd8b7c2a280a4d15bda08883a03b2c Mon Sep 17 00:00:00 2001
+From b249bc450f982cd2491448c91faf797ed37b69b8 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Wed, 4 Feb 2009 20:45:56 +0100
+Date: Tue, 3 Mar 2009 19:25:49 +0100
 Subject: [PATCH] rt2x00: Implement support for rt2800usb
 
 Add support for the rt2800usb chipset.
 
-Includes various patches from Mattias and Felix.
+Includes various patches from Mattias, Felix, Xose and Axel.
 
 Signed-off-by: Mattias Nissler <mattias.nissler@gmx.de>
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Xose Vazquez Perez <xose.vazquez@gmail.com>
+Signed-off-by: Axel Kollhofer <rain_maker@root-forum.org>
 Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig     |   14 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800usb.c | 2928 +++++++++++++++++++++++++++++++
- drivers/net/wireless/rt2x00/rt2800usb.h | 1940 ++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800usb.c | 3032 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800usb.h | 1932 ++++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00.h    |    7 +
- 5 files changed, 4890 insertions(+), 0 deletions(-)
+ 5 files changed, 4986 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800usb.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800usb.h
 
+ config RT2X00_LIB_PCI
+ 	tristate
+ 	select RT2X00_LIB
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
 @@ -19,3 +19,4 @@ obj-$(CONFIG_RT61PCI)			+= rt61pci.o
@@ -29,7 +34,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +obj-$(CONFIG_RT2800USB)			+= rt2800usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -0,0 +1,2928 @@
+@@ -0,0 +1,3032 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -214,9 +219,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +{
 +	u32 reg;
 +
-+	if (!word)
-+		return;
-+
 +	mutex_lock(&rt2x00dev->csr_mutex);
 +
 +	/*
@@ -393,7 +395,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	u32 offset;
 +	u32 reg;
 +
-+	offset = MAC_WCID_ATTR_ENTRY(crypto->aid);
++	offset = MAC_WCID_ATTR_ENTRY(key->hw_key_idx);
 +
 +	rt2x00usb_register_read(rt2x00dev, offset, &reg);
 +	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_KEYTAB,
@@ -404,7 +406,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_RX_WIUDF, 0);
 +	rt2x00usb_register_write(rt2x00dev, offset, reg);
 +
-+	offset = MAC_IVEIV_ENTRY(crypto->aid);
++	offset = MAC_IVEIV_ENTRY(key->hw_key_idx);
 +
 +	memset(&iveiv_entry, 0, sizeof(iveiv_entry));
 +	if ((crypto->cipher == CIPHER_TKIP) ||
@@ -415,7 +417,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00usb_register_multiwrite(rt2x00dev, offset,
 +				      &iveiv_entry, sizeof(iveiv_entry));
 +
-+	offset = MAC_WCID_ENTRY(crypto->aid);
++	offset = MAC_WCID_ENTRY(key->hw_key_idx);
 +
 +	memset(&wcid_entry, 0, sizeof(wcid_entry));
 +	if (crypto->cmd == SET_KEY)
@@ -460,10 +462,10 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 * Using the correct defines correctly will cause overhead,
 +	 * so just calculate the correct offset.
 +	 */
-+	field.bit_offset = (4 * key->keyidx);
++	field.bit_offset = (4 * key->keyidx) + (16 * (crypto->bssidx & 1));
 +	field.bit_mask = 0x7 << field.bit_offset;
 +
-+	offset = SHARED_KEY_MODE_ENTRY(key->hw_key_idx / 8);
++	offset = SHARED_KEY_MODE_ENTRY(key->hw_key_idx / 2);
 +
 +	rt2x00usb_register_read(rt2x00dev, offset, &reg);
 +	rt2x00_set_field32(&reg, field,
@@ -670,10 +672,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH)) {
 +	case 1:
 +		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 0);
-+		rt2x00_set_field8(&r3, BBP3_RX_ANTENNA, 0);
 +		break;
 +	case 2:
-+		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 16);
++		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 2);
 +		break;
 +	case 3:
 +		/* Do nothing */
@@ -723,6 +724,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +}
 +
 +static void rt2800usb_config_channel_rt2x(struct rt2x00_dev *rt2x00dev,
++					  struct ieee80211_conf *conf,
 +					  struct rf_channel *rf,
 +					  struct channel_info *info)
 +{
@@ -734,6 +736,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 * Determine antenna settings from EEPROM
 +	 */
 +	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
++
 +	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1)
 +		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_TX1, 1);
 +
@@ -774,8 +777,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +				   TXPOWER_G_TO_DEV(info->tx_power2));
 +	}
 +
-+	rt2x00_set_field32(&rf->rf4, RF4_BW40,
-+			   test_bit(CONFIG_CHANNEL_HT40, &rt2x00dev->flags));
++	rt2x00_set_field32(&rf->rf4, RF4_HT40, conf_is_ht40(conf));
 +
 +	rt2800usb_rf_write(rt2x00dev, 1, rf->rf1);
 +	rt2800usb_rf_write(rt2x00dev, 2, rf->rf2);
@@ -798,6 +800,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +}
 +
 +static void rt2800usb_config_channel_rt3x(struct rt2x00_dev *rt2x00dev,
++					  struct ieee80211_conf *conf,
 +					  struct rf_channel *rf,
 +					  struct channel_info *info)
 +{
@@ -819,10 +822,12 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field8(&rfcsr, RFCSR23_FREQ_OFFSET, rt2x00dev->freq_offset);
 +	rt2800usb_rfcsr_write(rt2x00dev, 23, rfcsr);
 +
-+	if (test_bit(CONFIG_CHANNEL_HT40, &rt2x00dev->flags))
-+		rt2800usb_rfcsr_write(rt2x00dev, 24, rt2x00dev->calibration_bw40);
++	if (conf_is_ht40(conf))
++		rt2800usb_rfcsr_write(rt2x00dev, 24,
++				      rt2x00dev->calibration_bw40);
 +	else
-+		rt2800usb_rfcsr_write(rt2x00dev, 24, rt2x00dev->calibration_bw20);
++		rt2800usb_rfcsr_write(rt2x00dev, 24,
++				      rt2x00dev->calibration_bw20);
 +
 +	rt2800usb_rfcsr_read(rt2x00dev, 23, &rfcsr);
 +	rt2x00_set_field8(&rfcsr, RFCSR7_RF_TUNING, 1);
@@ -830,46 +835,24 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +}
 +
 +static void rt2800usb_config_channel(struct rt2x00_dev *rt2x00dev,
++				     struct ieee80211_conf *conf,
 +				     struct rf_channel *rf,
 +				     struct channel_info *info)
 +{
 +	u32 reg;
 +	unsigned int tx_pin;
 +	u16 eeprom;
++	u8 bbp;
 +
-+	if (rt2x00_rev(&rt2x00dev->chip) != RT3070_VERSION)
-+		rt2800usb_config_channel_rt2x(rt2x00dev, rf, info);
-+	else
-+		rt2800usb_config_channel_rt3x(rt2x00dev, rf, info);
-+
-+	tx_pin = 0;
-+	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 1);
-+	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A0_EN, 1);
-+	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G0_EN, 1);
-+	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 1);
-+	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 1);
-+	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_RFTR_EN, 1);
-+	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_TRSW_EN, 1);
-+
++	/*
++	 * Determine antenna settings from EEPROM
++	 */
 +	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
 +
-+	/* Turn off unused PA or LNA when only 1T or 1R */
-+	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1) {
-+		
-+		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A1_EN, 0);
-+		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 0);
-+	}
-+
-+	/* Turn off unused PA or LNA when only 1T or 1R */
-+	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 1) {
-+		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 0);
-+		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 0);
-+	}
-+
-+	if (rf->channel > 14)
-+		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A0_EN, 1);
++	if (rt2x00_rev(&rt2x00dev->chip) != RT3070_VERSION)
++		rt2800usb_config_channel_rt2x(rt2x00dev, conf, rf, info);
 +	else
-+		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G0_EN, 1);
++		rt2800usb_config_channel_rt3x(rt2x00dev, conf, rf, info);
 +
 +	/*
 +	 * Change BBP settings
@@ -887,11 +870,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +			rt2800usb_bbp_write(rt2x00dev, 82, 0x84);
 +			rt2800usb_bbp_write(rt2x00dev, 75, 0x50);
 +		}
-+
-+		rt2x00usb_register_read(rt2x00dev, TX_BAND_CFG, &reg);
-+		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_A, 0);
-+		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_BG, 1);
-+		rt2x00usb_register_write(rt2x00dev, TX_BAND_CFG, reg);
 +	} else {
 +		rt2800usb_bbp_write(rt2x00dev, 82, 0xf2);
 +
@@ -899,14 +877,56 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +			rt2800usb_bbp_write(rt2x00dev, 75, 0x46);
 +		else
 +			rt2800usb_bbp_write(rt2x00dev, 75, 0x50);
-+
-+		rt2x00usb_register_read(rt2x00dev, TX_BAND_CFG, &reg);
-+		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_A, 1);
-+		rt2x00_set_field32(&rf->rf3, TX_BAND_CFG_BG, 0);
-+		rt2x00usb_register_write(rt2x00dev, TX_BAND_CFG, reg);
 +	}
 +
++	rt2x00usb_register_read(rt2x00dev, TX_BAND_CFG, &reg);
++	rt2x00_set_field32(&reg, TX_BAND_CFG_HT40_PLUS, conf_is_ht40_plus(conf));
++	rt2x00_set_field32(&reg, TX_BAND_CFG_A, rf->channel > 14);
++	rt2x00_set_field32(&reg, TX_BAND_CFG_BG, rf->channel <= 14);
++	rt2x00usb_register_write(rt2x00dev, TX_BAND_CFG, reg);
++
++	tx_pin = 0;
++
++	/* Turn on unused PA or LNA when not using 1T or 1R */
++	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) != 1) {
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A1_EN, 1);
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 1);
++	}
++
++	/* Turn on unused PA or LNA when not using 1T or 1R */
++	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) != 1) {
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 1);
++		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 1);
++	}
++
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A0_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G0_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_RFTR_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_TRSW_EN, 1);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G0_EN, rf->channel <= 14);
++	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A0_EN, rf->channel > 14);
++
 +	rt2x00usb_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
++
++	rt2800usb_bbp_read(rt2x00dev, 4, &bbp);
++	rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 2 * conf_is_ht40(conf));
++	rt2800usb_bbp_write(rt2x00dev, 4, bbp);
++
++	rt2800usb_bbp_read(rt2x00dev, 3, &bbp);
++	rt2x00_set_field8(&bbp, BBP3_HT40_PLUS, conf_is_ht40_plus(conf));
++	rt2800usb_bbp_write(rt2x00dev, 3, bbp);
++
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION) {
++		if (conf_is_ht40(conf)) {
++			rt2800usb_bbp_write(rt2x00dev, 69, 0x1a);
++			rt2800usb_bbp_write(rt2x00dev, 70, 0x0a);
++			rt2800usb_bbp_write(rt2x00dev, 73, 0x16);
++		} else {
++			rt2800usb_bbp_write(rt2x00dev, 69, 0x16);
++			rt2800usb_bbp_write(rt2x00dev, 70, 0x08);
++			rt2800usb_bbp_write(rt2x00dev, 73, 0x11);
++		}
++	}
 +
 +	msleep(1);
 +}
@@ -1040,8 +1060,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2800usb_config_lna_gain(rt2x00dev, libconf);
 +
 +	if (flags & IEEE80211_CONF_CHANGE_CHANNEL)
-+		rt2800usb_config_channel(rt2x00dev, &libconf->rf,
-+					 &libconf->channel);
++		rt2800usb_config_channel(rt2x00dev, libconf->conf,
++					 &libconf->rf, &libconf->channel);
 +	if (flags & IEEE80211_CONF_CHANGE_POWER)
 +		rt2800usb_config_txpower(rt2x00dev, libconf->conf->power_level);
 +	if (flags & IEEE80211_CONF_CHANGE_RETRY_LIMITS)
@@ -1482,6 +1502,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	rt2x00usb_register_read(rt2x00dev, TX_RTS_CFG, &reg);
 +	rt2x00_set_field32(&reg, TX_RTS_CFG_AUTO_RTS_RETRY_LIMIT, 32);
++	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_THRES,
++			   IEEE80211_MAX_RTS_THRESHOLD);
 +	rt2x00_set_field32(&reg, TX_RTS_CFG_RTS_FBK_EN, 0);
 +	rt2x00usb_register_write(rt2x00dev, TX_RTS_CFG, reg);
 +
@@ -1491,18 +1513,18 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/*
 +	 * ASIC will keep garbage value after boot, clear encryption keys.
 +	 */
-+	for (i = 0; i < 254; i++) {
++	for (i = 0; i < 256; i++) {
 +		u32 wcid[2] = { 0xffffffff, 0x00ffffff };
 +		rt2x00usb_register_multiwrite(rt2x00dev, MAC_WCID_ENTRY(i),
 +					      wcid, sizeof(wcid));
++
++		rt2x00usb_register_write(rt2x00dev, MAC_WCID_ATTR_ENTRY(i), 1);
++		rt2x00usb_register_write(rt2x00dev, MAC_IVEIV_ENTRY(i), 0);
 +	}
 +
-+	for (i = 0; i < 4; i++)
++	for (i = 0; i < 16; i++)
 +		rt2x00usb_register_write(rt2x00dev,
 +					 SHARED_KEY_MODE_ENTRY(i), 0);
-+
-+	for (i = 0; i < 256; i++)
-+		rt2x00usb_register_write(rt2x00dev, MAC_WCID_ATTR_ENTRY(i), 1);
 +
 +	/*
 +	 * Clear all beacons
@@ -1642,6 +1664,10 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		rt2800usb_bbp_write(rt2x00dev, 73, 0x12);
 +	}
 +
++	if (rt2x00_rev(&rt2x00dev->chip) > RT2860D_VERSION) {
++		rt2800usb_bbp_write(rt2x00dev, 84, 0x19);
++	}
++
 +	if (rt2x00_rev(&rt2x00dev->chip) == RT3070_VERSION) {
 +		rt2800usb_bbp_write(rt2x00dev, 70, 0x0a);
 +		rt2800usb_bbp_write(rt2x00dev, 84, 0x99);
@@ -1673,11 +1699,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	rt2800usb_rfcsr_write(rt2x00dev, 24, rfcsr24);
 +
-+	if (bw40) {
-+		rt2800usb_bbp_read(rt2x00dev, 4, &bbp);
-+		rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 0x10);
-+		rt2800usb_bbp_write(rt2x00dev, 4, bbp);
-+	}
++	rt2800usb_bbp_read(rt2x00dev, 4, &bbp);
++	rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 2 * bw40);
++	rt2800usb_bbp_write(rt2x00dev, 4, bbp);
 +
 +	rt2800usb_rfcsr_read(rt2x00dev, 22, &rfcsr);
 +	rt2x00_set_field8(&rfcsr, RFCSR22_BASEBAND_LOOPBACK, 1);
@@ -2014,16 +2038,23 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&word, TXWI_W1_NSEQ,
 +			   test_bit(ENTRY_TXD_GENERATE_SEQ, &txdesc->flags));
 +	rt2x00_set_field32(&word, TXWI_W1_BW_WIN_SIZE, txdesc->ba_size);
-+	rt2x00_set_field32(&word, TXWI_W1_WIRELESS_CLI_ID, 0xff);
++	rt2x00_set_field32(&word, TXWI_W1_WIRELESS_CLI_ID,
++			   test_bit(ENTRY_TXD_ENCRYPT, &txdesc->flags) ?
++			       txdesc->key_idx : 0xff);
 +	rt2x00_set_field32(&word, TXWI_W1_MPDU_TOTAL_BYTE_COUNT, skb->len);
 +	rt2x00_set_field32(&word, TXWI_W1_PACKETID,
 +			   skbdesc->entry->entry_idx);
 +	rt2x00_desc_write(txwi, 1, word);
 +
-+	if (test_bit(ENTRY_TXD_ENCRYPT, &txdesc->flags)) {
-+		_rt2x00_desc_write(txwi, 2, skbdesc->iv[0]);
-+		_rt2x00_desc_write(txwi, 3, skbdesc->iv[1]);
-+	}
++	/*
++	 * Always write 0 to IV/EIV fields, hardware will insert the IV
++	 * from the IVEIV register when TXINFO_W0_WIV is set to 0.
++	 * When TXINFO_W0_WIV is set to 1 it will use the IV data
++	 * from the descriptor. The TXWI_W1_WIRELESS_CLI_ID indicates which
++	 * crypto entry in the registers should be used to encrypt the frame.
++	 */
++	_rt2x00_desc_write(txwi, 2, 0 /* skbdesc->iv[0] */);
++	_rt2x00_desc_write(txwi, 3, 0 /* skbdesc->iv[1] */);
 +
 +	/*
 +	 * Initialize TX descriptor
@@ -2031,7 +2062,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_desc_read(txi, 0, &word);
 +	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_TX_PKT_LEN,
 +			   skb->len + TXWI_DESC_SIZE);
-+	rt2x00_set_field32(&word, TXINFO_W0_WIV, 1);
++	rt2x00_set_field32(&word, TXINFO_W0_WIV,
++			   !test_bit(ENTRY_TXD_ENCRYPT_IV, &txdesc->flags));
 +	rt2x00_set_field32(&word, TXINFO_W0_QSEL, 2);
 +	rt2x00_set_field32(&word, TXINFO_W0_SW_USE_LAST_ROUND, 0);
 +	rt2x00_set_field32(&word, TXINFO_W0_USB_DMA_NEXT_VALID, 0);
@@ -2247,6 +2279,13 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		rt2x00_set_field16(&word, EEPROM_ANTENNA_RF_TYPE, RF2820);
 +		rt2x00_eeprom_write(rt2x00dev, EEPROM_ANTENNA, word);
 +		EEPROM(rt2x00dev, "Antenna: 0x%04x\n", word);
++	} else if (rt2x00_rev(&rt2x00dev->chip) < RT2883_VERSION) {
++		/*
++		 * There is a max of 2 RX streams for RT2860 series
++		 */
++		if (rt2x00_get_field16(word, EEPROM_ANTENNA_RXPATH) > 2)
++			rt2x00_set_field16(&word, EEPROM_ANTENNA_RXPATH, 2);
++		rt2x00_eeprom_write(rt2x00dev, EEPROM_ANTENNA, word);
 +	}
 +
 +	rt2x00_eeprom_read(rt2x00dev, EEPROM_NIC, &word);
@@ -2344,7 +2383,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 * identifies itself as rt2860 in the CSR register.
 +	 */
 +	if ((rt2x00_get_field32(reg, MAC_CSR0_ASIC_VER) != 0x2860) &&
-+	    (rt2x00_get_field32(reg, MAC_CSR0_ASIC_VER) != 0x2870)) {
++	    (rt2x00_get_field32(reg, MAC_CSR0_ASIC_VER) != 0x2870) &&
++	    (rt2x00_get_field32(reg, MAC_CSR0_ASIC_VER) != 0x3070)) {
 +		ERROR(rt2x00dev, "Invalid RT chipset detected.\n");
 +		return -ENODEV;
 +	}
@@ -2497,6 +2537,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	char *tx_power1;
 +	char *tx_power2;
 +	unsigned int i;
++	u16 eeprom;
 +
 +	/*
 +	 * Initialize all hw fields.
@@ -2513,6 +2554,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +				rt2x00_eeprom_addr(rt2x00dev,
 +						   EEPROM_MAC_ADDR_0));
 +
++	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
++
 +	/*
 +	 * Initialize HT information.
 +	 */
@@ -2527,10 +2570,22 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	    IEEE80211_HT_CAP_PSMP_SUPPORT;
 +	spec->ht.ampdu_factor = 3;
 +	spec->ht.ampdu_density = 4;
-+	spec->ht.mcs.rx_mask[0] = 0xff;
-+	spec->ht.mcs.rx_mask[1] = 0xff;
 +	spec->ht.mcs.tx_params =
-+	    IEEE80211_HT_MCS_TX_DEFINED;
++	    IEEE80211_HT_MCS_TX_DEFINED |
++	    IEEE80211_HT_MCS_TX_RX_DIFF |
++	    ((rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) - 1) <<
++		IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT);
++
++	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH)) {
++	case 3:
++		spec->ht.mcs.rx_mask[2] = 0xff;
++	case 2:
++		spec->ht.mcs.rx_mask[1] = 0xff;
++	case 1:
++		spec->ht.mcs.rx_mask[0] = 0xff;
++		spec->ht.mcs.rx_mask[4] = 0x1; /* MCS32 */
++		break;
++	}
 +
 +	/*
 +	 * Initialize hw_mode information.
@@ -2624,6 +2679,21 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +/*
 + * IEEE80211 stack callback functions.
 + */
++static void rt2800usb_get_tkip_seq(struct ieee80211_hw *hw, u8 hw_key_idx,
++				   u32 *iv32, u16 *iv16)
++{
++	struct rt2x00_dev *rt2x00dev = hw->priv;
++	struct mac_iveiv_entry iveiv_entry;
++	u32 offset;
++
++	offset = MAC_IVEIV_ENTRY(hw_key_idx);
++	rt2x00usb_register_multiread(rt2x00dev, offset,
++				      &iveiv_entry, sizeof(iveiv_entry));
++
++	memcpy(&iveiv_entry.iv[0], iv16, sizeof(iv16));
++	memcpy(&iveiv_entry.iv[4], iv32, sizeof(iv32));
++}
++
 +static int rt2800usb_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
 +{
 +	struct rt2x00_dev *rt2x00dev = hw->priv;
@@ -2728,13 +2798,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	return 0;
 +}
 +
-+#if 0
-+/*
-+ * Mac80211 demands get_tsf must be atomic.
-+ * This is not possible for rt2800usb since all register access
-+ * functions require sleeping. Untill mac80211 no longer needs
-+ * get_tsf to be atomic, this function should be disabled.
-+ */
 +static u64 rt2800usb_get_tsf(struct ieee80211_hw *hw)
 +{
 +	struct rt2x00_dev *rt2x00dev = hw->priv;
@@ -2748,9 +2811,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	return tsf;
 +}
-+#else
-+#define rt2800usb_get_tsf	NULL
-+#endif
 +
 +static const struct ieee80211_ops rt2800usb_mac80211_ops = {
 +	.tx			= rt2x00mac_tx,
@@ -2763,6 +2823,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	.configure_filter	= rt2x00mac_configure_filter,
 +	.set_key		= rt2x00mac_set_key,
 +	.get_stats		= rt2x00mac_get_stats,
++	.get_tkip_seq		= rt2800usb_get_tkip_seq,
 +	.set_rts_threshold	= rt2800usb_set_rts_threshold,
 +	.bss_info_changed	= rt2x00mac_bss_info_changed,
 +	.conf_tx		= rt2800usb_conf_tx,
@@ -2801,14 +2862,14 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +static const struct data_queue_desc rt2800usb_queue_rx = {
 +	.entry_num		= RX_ENTRIES,
-+	.data_size		= DATA_FRAME_SIZE,
++	.data_size		= AGGREGATION_SIZE,
 +	.desc_size		= RXD_DESC_SIZE + RXWI_DESC_SIZE,
 +	.priv_size		= sizeof(struct queue_entry_priv_usb),
 +};
 +
 +static const struct data_queue_desc rt2800usb_queue_tx = {
 +	.entry_num		= TX_ENTRIES,
-+	.data_size		= DATA_FRAME_SIZE,
++	.data_size		= AGGREGATION_SIZE,
 +	.desc_size		= TXINFO_DESC_SIZE + TXWI_DESC_SIZE,
 +	.priv_size		= sizeof(struct queue_entry_priv_usb),
 +};
@@ -2842,22 +2903,35 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + */
 +static struct usb_device_id rt2800usb_device_table[] = {
 +	/* Abocom */
-+	{ USB_DEVICE(0x07b8, 0x3070), USB_DEVICE_DATA(&rt2800usb_ops) },
-+	{ USB_DEVICE(0x07b8, 0x3071), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x07b8, 0x2870), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x07b8, 0x2770), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x07b8, 0x3070), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x07b8, 0x3071), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x07b8, 0x3072), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x1482, 0x3c09), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* AirTies */
++	{ USB_DEVICE(0x1eda, 0x2310), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Amigo */
++	{ USB_DEVICE(0x0e0b, 0x9031), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0e0b, 0x9041), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Amit */
 +	{ USB_DEVICE(0x15c5, 0x0008), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* ASUS */
 +	{ USB_DEVICE(0x0b05, 0x1731), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x0b05, 0x1732), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x0b05, 0x1742), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0b05, 0x1760), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0b05, 0x1761), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* AzureWave */
 +	{ USB_DEVICE(0x13d3, 0x3247), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x13d3, 0x3262), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x13d3, 0x3273), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Belkin */
 +	{ USB_DEVICE(0x050d, 0x8053), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x050d, 0x805c), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x050d, 0x815c), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Buffalo */
++	{ USB_DEVICE(0x0411, 0x012e), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Conceptronic */
 +	{ USB_DEVICE(0x14b2, 0x3c06), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x14b2, 0x3c07), USB_DEVICE_DATA(&rt2800usb_ops) },
@@ -2871,35 +2945,61 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	{ USB_DEVICE(0x07aa, 0x002f), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x07aa, 0x003c), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x07aa, 0x003f), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x18c5, 0x0008), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x18c5, 0x0012), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* D-Link */
 +	{ USB_DEVICE(0x07d1, 0x3c09), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x07d1, 0x3c11), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x07d1, 0x3c13), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x2001, 0x3c09), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x2001, 0x3c0a), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Edimax */
 +	{ USB_DEVICE(0x7392, 0x7711), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x7392, 0x7717), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x7392, 0x7718), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* EnGenius */
 +	{ USB_DEVICE(0X1740, 0x9701), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x1740, 0x9702), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x1740, 0x9703), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Gemtek */
++	{ USB_DEVICE(0x15a9, 0x0010), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Gigabyte */
 +	{ USB_DEVICE(0x1044, 0x800b), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x1044, 0x800c), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x1044, 0x800d), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Hawking */
 +	{ USB_DEVICE(0x0e66, 0x0001), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x0e66, 0x0003), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0e66, 0x0009), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0e66, 0x000b), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* LevelOne */
++	{ USB_DEVICE(0x1740, 0x0605), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x1740, 0x0615), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Linksys */
 +	{ USB_DEVICE(0x1737, 0x0071), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Logitec */
 +	{ USB_DEVICE(0x0789, 0x0162), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x0789, 0x0163), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x0789, 0x0164), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Pegatron */
++	{ USB_DEVICE(0x1d4d, 0x0002), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Philips */
 +	{ USB_DEVICE(0x0471, 0x200f), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Planex */
 +	{ USB_DEVICE(0x2019, 0xed06), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x2019, 0xab24), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x2019, 0xab25), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Qcom */
++	{ USB_DEVICE(0x18e8, 0x6259), USB_DEVICE_DATA(&rt2800usb_ops) },
++	/* Quanta */
++	{ USB_DEVICE(0x1a32, 0x0304), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Ralink */
++	{ USB_DEVICE(0x148f, 0x2070), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x148f, 0x2770), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x148f, 0x2870), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x148f, 0x3070), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x148f, 0x3071), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x148f, 0x3072), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Samsung */
 +	{ USB_DEVICE(0x04e8, 0x2018), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Siemens */
@@ -2909,9 +3009,18 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	{ USB_DEVICE(0x0df6, 0x002b), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x0df6, 0x002c), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x0df6, 0x002d), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0df6, 0x0039), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0df6, 0x003b), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0df6, 0x003c), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0df6, 0x003d), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0df6, 0x003e), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x0df6, 0x003f), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* SMC */
 +	{ USB_DEVICE(0x083a, 0x6618), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x083a, 0x7511), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x083a, 0x7512), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x083a, 0x7522), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x083a, 0x8522), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x083a, 0xb522), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	{ USB_DEVICE(0x083a, 0xa618), USB_DEVICE_DATA(&rt2800usb_ops) },
 +	/* Sparklan */
@@ -2960,7 +3069,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +module_exit(rt2800usb_exit);
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.h
-@@ -0,0 +1,1940 @@
+@@ -0,0 +1,1932 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -3031,8 +3140,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define EEPROM_SIZE			0x0110
 +#define BBP_BASE			0x0000
 +#define BBP_SIZE			0x0080
-+#define RF_BASE				0x0000
-+#define RF_SIZE				0x0014
++#define RF_BASE				0x0004
++#define RF_SIZE				0x0010
 +
 +/*
 + * Number of TX queues.
@@ -3190,11 +3299,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define WMM_TXOP1_CFG			0x0224
 +#define WMM_TXOP1_CFG_AC2TXOP		FIELD32(0x0000ffff)
 +#define WMM_TXOP1_CFG_AC3TXOP		FIELD32(0xffff0000)
-+
-+/*
-+ * RINGREG_DIFF
-+ */
-+#define RINGREG_DIFF			0x0010
 +
 +/*
 + * GPIO_CTRL_CFG:
@@ -3771,6 +3875,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * TX_BAND_CFG: 0x1 use upper 20MHz, 0x0 use lower 20MHz
 + */
 +#define TX_BAND_CFG			0x132c
++#define TX_BAND_CFG_HT40_PLUS		FIELD32(0x00000001)
 +#define TX_BAND_CFG_A			FIELD32(0x00000002)
 +#define TX_BAND_CFG_BG			FIELD32(0x00000004)
 +
@@ -4181,7 +4286,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * TX_STA_FIFO: TX Result for specific PID status fifo register
 + */
 +#define TX_STA_FIFO			0x1718
-+#define TX_STA_FIFO_B_VALID		FIELD32(0x00000001)
++#define TX_STA_FIFO_VALID		FIELD32(0x00000001)
 +#define TX_STA_FIFO_PID_TYPE		FIELD32(0x0000001e)
 +#define TX_STA_FIFO_TX_SUCCESS		FIELD32(0x00000020)
 +#define TX_STA_FIFO_TX_AGGRE		FIELD32(0x00000040)
@@ -4306,12 +4411,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +} __attribute__ ((packed));
 +
 +/*
-+ * MAC_IVEIV:
-+ */
-+#define MAC_IVEIV_EIV			FIELD32(0x20000000)
-+#define MAC_IVEIV_KEYIDX		FIELD32(0xc0000000)
-+
-+/*
 + * MAC_WCID_ATTRIBUTE:
 + */
 +#define MAC_WCID_ATTRIBUTE_KEYTAB	FIELD32(0x00000001)
@@ -4404,7 +4503,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +/*
 + * HW_BEACON_BASE
 + * In order to support maximum 8 MBSS and its maximum length
-+ *	is 512 bytes for each beacon
++ * is 512 bytes for each beacon
 + * Three section discontinue memory segments will be used.
 + * 1. The original region for BCN 0~3
 + * 2. Extract memory from FCE table for BCN 4~5
@@ -4450,10 +4549,12 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * BBP 3: RX Antenna
 + */
 +#define BBP3_RX_ANTENNA			FIELD8(0x18)
++#define BBP3_HT40_PLUS			FIELD8(0x20)
 +
 +/*
 + * BBP 4: Bandwidth
 + */
++#define BBP4_TX_BF			FIELD8(0x01)
 +#define BBP4_BANDWIDTH			FIELD8(0x18)
 +
 +/*
@@ -4516,7 +4617,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define RF4_TXPOWER_A_7DBM_BOOST	FIELD32(0x00000040)
 +#define RF4_TXPOWER_A			FIELD32(0x00000780)
 +#define RF4_FREQ_OFFSET			FIELD32(0x001f8000)
-+#define RF4_BW40			FIELD32(0x00200000)
++#define RF4_HT40			FIELD32(0x00200000)
 +
 +/*
 + * EEPROM content.
