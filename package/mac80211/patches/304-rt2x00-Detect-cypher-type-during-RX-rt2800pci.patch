@@ -1,0 +1,35 @@
+From f23c3d3175e55ebac81d6e29f1c1415491a78d60 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Tue, 3 Mar 2009 20:12:44 +0100
+Subject: [PATCH] rt2x00: Detect cypher type during RX (rt2800pci)
+
+Use UDF field in WCID entry to pass the cipher type
+to the RXWI fields. This will allow keeping track of
+the number of frames received with a particular cipher type
+which is exported through debugfs.
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800pci.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -339,7 +339,7 @@ static void rt2800pci_config_wcid_attr(s
+ 	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_CIPHER, crypto->cipher);
+ 	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_BSS_IDX,
+ 			   (crypto->cmd == SET_KEY) * crypto->bssidx);
+-	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_RX_WIUDF, 0);
++	rt2x00_set_field32(&reg, MAC_WCID_ATTRIBUTE_RX_WIUDF, crypto->cipher);
+ 	rt2x00pci_register_write(rt2x00dev, offset, reg);
+ 
+ 	offset = MAC_IVEIV_ENTRY(key->hw_key_idx);
+@@ -1980,7 +1980,7 @@ static void rt2800pci_fill_rxdone(struct
+ 		 * decryption. This prevents us from correct providing
+ 		 * correct statistics through debugfs.
+ 		 */
+-		rxdesc->cipher = CIPHER_NONE;
++		rxdesc->cipher = rt2x00_get_field32(rxwi0, RXWI_W0_UDF);
+ 		rxdesc->cipher_status =
+ 		    rt2x00_get_field32(rxd3, RXD_W3_CIPHER_ERROR);
+ 	}
