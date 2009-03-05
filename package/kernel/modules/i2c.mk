@@ -97,7 +97,9 @@ define KernelPackage/i2c-scx200
   SUBMENU:=$(I2C_MENU)
   TITLE:=Geode SCx200 I2C using GPIO pins
   DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-algo-bit
-  KCONFIG:=CONFIG_SCx200_I2C
+  KCONFIG:=CONFIG_SCx200_I2C \
+	CONFIG_SCx200_I2C_SCL=12 \
+	CONFIG_SCx200_I2C_SDA=13
   FILES:=$(LINUX_DIR)/drivers/i2c/busses/scx200_i2c.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,59,scx200_i2c)
 endef
