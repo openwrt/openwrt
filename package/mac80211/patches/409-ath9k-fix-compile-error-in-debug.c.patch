@@ -1,0 +1,27 @@
+From 15af1877e9fbb75c4a7506ab86e743c49a195e97 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 6 Mar 2009 09:46:27 +0100
+Subject: [PATCH 2/2] ath9k: fix compile error in debug.c
+
+drivers/net/wireless/ath9k/debug.c: In function 'read_file_wiphy':
+drivers/net/wireless/ath9k/debug.c:377: error: implicit declaration of
+function 'put_unaligned_le32'
+drivers/net/wireless/ath9k/debug.c:378: error: implicit declaration of
+function 'put_unaligned_le16'
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/ath9k/debug.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/wireless/ath9k/debug.c
++++ b/drivers/net/wireless/ath9k/debug.c
+@@ -14,6 +14,8 @@
+  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
++#include <asm/unaligned.h>
++
+ #include "ath9k.h"
+ 
+ static unsigned int ath9k_debug = DBG_DEFAULT;

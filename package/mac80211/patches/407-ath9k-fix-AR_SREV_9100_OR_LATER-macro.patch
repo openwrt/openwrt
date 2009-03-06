@@ -1,51 +1,22 @@
-From 91ada2959c75a3690bf009fd4314dd52454568df Mon Sep 17 00:00:00 2001
+From e379668f86409b5027f58a14614f6c876484404c Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
-Date: Tue, 3 Mar 2009 15:21:30 +0100
-Subject: [RFC] ath9k: use correct init values for ar9100 devices
+Date: Thu, 5 Mar 2009 08:32:55 +0100
+Subject: [PATCH v2 3/3] ath9k: fix AR_SREV_9100_OR_LATER macro
 
-Changes-licensed-under: ISC
+The current macro is wrong, because detects some AR5416 devices as an
+AR9100 device. The AR5416 devices would have performance issues after
+this change, because the contents of the ar5416 specific and of the
+ar9100 specificinitval arrays are swapped. Fortunately we can correct
+this with the rename of the arrays simply.
+
+Changes-licesed-under: ISC
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 ---
  drivers/net/wireless/ath9k/initvals.h |   44 ++++++++++++++++----------------
- drivers/net/wireless/ath9k/reg.h      |   32 ++++++++++++-----------
- 2 files changed, 39 insertions(+), 37 deletions(-)
- 
-Hi,
-
-Currently I'm trying to resolve the following mysterious issues caused by the
-ath9k driver on the ar913x based devices:
-
-1. In some cases the ethernet interface goes down for a short time
-after'ifconfig wlan0 up'.
-2. Sometimes the device simply reboots itself after 'ifconfig wlan0 up'.
-
-After I have added some printk statements into the code, I noticed that the 
-ar5416 and ar9100 devices use the same initval arrays currently. I assume 
-that they requires different initialization, because we have different 
-arrays for them.
-
-Although I have no detailed knowledge about the evolution of the ath9k devices,
-but the version checking macros for ther AR5416 cards seemed weird enough, so I
-have replaced them. Unfortunately, this leaded to very bad performance with the
-ar5416 cards I have, but the driver was working on the ar913x boards.
-
-After some digging, I have found an interesting ifdef statement in Sam's current
-HAL. In his ar5416Common initval array, this ifdef conditionally selects the
-right RTC register offsets for the ar5416/ar9100 devices. The strange thing,
-that in the ath9k driver the ar5416 specific RTC register offsets are used in
-the ar5416Common_ar9100 array, while the ar9100 specific offsets are used in the
-ar5416Common.
-
-After I have renamed the arrays and tested the ath9k driver with the new
-settings on the ar9100 devices, the strange problems I have mentioned above
-disappeared. Unfortunately I have no ar5418 devices so I can't test them, 
-but they are using the same array as before so this change should not 
-cause problems on them.
-
-Regards,
-Gabor
+ drivers/net/wireless/ath9k/reg.h      |    2 +-
+ 2 files changed, 23 insertions(+), 23 deletions(-)
 
 --- a/drivers/net/wireless/ath9k/initvals.h
 +++ b/drivers/net/wireless/ath9k/initvals.h
@@ -219,57 +190,12 @@ Gabor
      {0x0000989c, 0x00000000 },
 --- a/drivers/net/wireless/ath9k/reg.h
 +++ b/drivers/net/wireless/ath9k/reg.h
-@@ -158,14 +158,6 @@
- #define AR_CST_TIMEOUT_LIMIT      0xFFFF0000
- #define AR_CST_TIMEOUT_LIMIT_S    16
- 
--#define AR_SREV_VERSION_9100                  0x014
--
--#define AR_SREV_9100(ah) ((ah->hw_version.macVersion) == AR_SREV_VERSION_9100)
--#define AR_SREV_5416_V20_OR_LATER(_ah) \
--	(AR_SREV_9100((_ah)) || AR_SREV_5416_20_OR_LATER(_ah))
--#define AR_SREV_5416_V22_OR_LATER(_ah) \
--	(AR_SREV_9100((_ah)) || AR_SREV_5416_22_OR_LATER(_ah))
--
- #define AR_ISR               0x0080
- #define AR_ISR_RXOK          0x00000001
- #define AR_ISR_RXDESC        0x00000002
-@@ -734,6 +726,7 @@
- #define AR_SREV_REVISION_5416_10               0
- #define AR_SREV_REVISION_5416_20               1
- #define AR_SREV_REVISION_5416_22               2
-+#define AR_SREV_VERSION_9100                  0x14
- #define AR_SREV_VERSION_9160        	      0x40
- #define AR_SREV_REVISION_9160_10    	      0
- #define AR_SREV_REVISION_9160_11    	      1
-@@ -746,14 +739,23 @@
- #define AR_SREV_REVISION_9285_11              1
- #define AR_SREV_REVISION_9285_12              2
- 
-+#define AR_SREV_5416(_ah) \
-+	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_5416_PCIE) || \
-+	((_ah)->hw_version.macVersion == AR_SREV_VERSION_5416_PCI))
-+#define AR_SREV_5416_V20_OR_LATER(_ah) \
-+	(((_ah)->hw_version.macVersion > AR_SREV_VERSION_5416_PCIE) || \
-+	((AR_SREV_5416(_ah)) && \
-+	((_ah)->hw_version.macRev >= AR_SREV_REVISION_5416_20)))
-+#define AR_SREV_5416_V22_OR_LATER(_ah) \
-+	(((_ah)->hw_version.macVersion > AR_SREV_VERSION_5416_PCIE) || \
-+	((AR_SREV_5416(_ah)) && \
-+	((_ah)->hw_version.macRev >= AR_SREV_REVISION_5416_22)))
-+
-+#define AR_SREV_9100(ah) \
-+	((ah->hw_version.macVersion) == AR_SREV_VERSION_9100)
+@@ -754,7 +754,7 @@
+ #define AR_SREV_9100(ah) \
+ 	((ah->hw_version.macVersion) == AR_SREV_VERSION_9100)
  #define AR_SREV_9100_OR_LATER(_ah) \
 -	(((_ah)->hw_version.macVersion >= AR_SREV_VERSION_5416_PCIE))
--#define AR_SREV_5416_20_OR_LATER(_ah) \
--	(((_ah)->hw_version.macVersion >= AR_SREV_VERSION_9160) || \
--		((_ah)->hw_version.macRev >= AR_SREV_REVISION_5416_20))
--#define AR_SREV_5416_22_OR_LATER(_ah) \
--	(((_ah)->hw_version.macVersion >= AR_SREV_VERSION_9160) || \
--		((_ah)->hw_version.macRev >= AR_SREV_REVISION_5416_22))
-+	((_ah)->hw_version.macVersion >= AR_SREV_VERSION_9100)
-+
++	(((_ah)->hw_version.macVersion >= AR_SREV_VERSION_9100))
+ 
  #define AR_SREV_9160(_ah) \
  	(((_ah)->hw_version.macVersion == AR_SREV_VERSION_9160))
- #define AR_SREV_9160_10_OR_LATER(_ah) \
