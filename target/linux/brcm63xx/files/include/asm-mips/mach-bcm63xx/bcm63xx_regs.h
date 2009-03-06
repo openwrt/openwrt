@@ -757,7 +757,7 @@
  *************************************************************************/
 
 /* BCM 6338 SPI core */
-#define SPI_BCM_6338_SPI_CMD		0x00
+#define SPI_BCM_6338_SPI_CMD		0x00	/* 16-bits register */
 #define SPI_BCM_6338_SPI_INT_STATUS	0x02
 #define SPI_BCM_6338_SPI_MASK_INT_ST	0x03
 #define SPI_BCM_6338_SPI_INT_MASK	0x04
@@ -773,16 +773,23 @@
 #define SPI_BCM_6338_SPI_RX_DATA_SIZE	0x3f
 
 /* BCM 6348 SPI core */
-#define SPI_BCM_6348_SPI_CMD1		0x00
-#define SPI_BCM_6348_SPI_CMD2		0x04
-#define SPI_BCM_6348_SPI_TAIL		0x08
+#define SPI_BCM_6348_SPI_MASK_INT_ST	0x00
+#define SPI_BCM_6348_SPI_INT_STATUS	0x01
+#define SPI_BCM_6348_SPI_CMD		0x02	/* 16-bits register */
+#define SPI_BCM_6348_SPI_FILL_BYTE	0x04
+#define SPI_BCM_6348_SPI_CLK_CFG	0x05
+#define SPI_BCM_6348_SPI_ST		0x06
+#define SPI_BCM_6348_SPI_INT_MASK	0x07
+#define SPI_BCM_6348_SPI_RX_TAIL	0x08
+#define SPI_BCM_6348_SPI_MSG_TAIL	0x10
 #define SPI_BCM_6348_SPI_MSG_DATA	0x40
+#define SPI_BCM_6348_SPI_MSG_CTL	0x42
 #define SPI_BCM_6348_SPI_MSG_DATA_SIZE	0x3f
 #define SPI_BCM_6348_SPI_RX_DATA	0x80
 #define SPI_BCM_6348_SPI_RX_DATA_SIZE	0x3f
 
 /* BCM 6358 SPI core */
-#define SPI_BCM_6358_MSG_CTL		0x00
+#define SPI_BCM_6358_MSG_CTL		0x00	/* 16-bits register */
 
 #define SPI_BCM_6358_SPI_MSG_DATA	0x02
 #define SPI_BCM_6358_SPI_MSG_DATA_SIZE	0x21e
@@ -790,7 +797,7 @@
 #define SPI_BCM_6358_SPI_RX_FIFO	0x400
 #define SPI_BCM_6358_SPI_RX_FIFO_SIZE	0x220
 
-#define SPI_BCM_6358_SPI_CMD		0x700
+#define SPI_BCM_6358_SPI_CMD		0x700	/* 16-bits register */
 
 #define SPI_BCM_6358_SPI_INT_STATUS	0x702
 #define SPI_BCM_6358_SPI_MASK_INT_ST	0x703
@@ -811,6 +818,7 @@
 #define SPI_FD_RW			0
 #define SPI_HD_W			1
 #define SPI_HD_R			2
+#define SPI_BYTE_CNT_SHIFT		0
 #define SPI_MSG_TYPE_SHIFT		14
 
 /* Command */
