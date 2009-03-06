@@ -4,6 +4,7 @@
  * for more details.
  *
  * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
+ *		 2009 Florian Fainelli <florian@openwrt.org>
  */
 
 #include <linux/kernel.h>
@@ -19,6 +20,9 @@ EXPORT_SYMBOL(bcm63xx_regs_base);
 
 const int *bcm63xx_irqs;
 EXPORT_SYMBOL(bcm63xx_irqs);
+
+const unsigned long *bcm63xx_regs_spi;
+EXPORT_SYMBOL(bcm63xx_regs_spi);
 
 static u16 bcm63xx_cpu_id;
 static u16 bcm63xx_cpu_rev;
@@ -47,6 +51,21 @@ static const int bcm96338_irqs[] = {
 	[IRQ_ENET_PHY]		= BCM_6338_ENET_PHY_IRQ,
 	[IRQ_ENET0_RXDMA]	= BCM_6338_ENET0_RXDMA_IRQ,
 	[IRQ_ENET0_TXDMA]	= BCM_6338_ENET0_TXDMA_IRQ,
+};
+
+static const unsigned long bcm96338_regs_spi[] = {
+	[SPI_CMD]		= SPI_BCM_6338_SPI_CMD,
+	[SPI_INT_STATUS]	= SPI_BCM_6338_SPI_INT_STATUS,
+	[SPI_INT_MASK_ST]	= SPI_BCM_6338_SPI_MASK_INT_ST,
+	[SPI_INT_MASK]		= SPI_BCM_6338_SPI_INT_MASK,
+	[SPI_ST]		= SPI_BCM_6338_SPI_ST,
+	[SPI_CLK_CFG]		= SPI_BCM_6338_SPI_CLK_CFG,
+	[SPI_FILL_BYTE]		= SPI_BCM_6338_SPI_FILL_BYTE,
+	[SPI_MSG_TAIL]		= SPI_BCM_6338_SPI_MSG_TAIL,
+	[SPI_RX_TAIL]		= SPI_BCM_6338_SPI_RX_TAIL,
+	[SPI_MSG_CTL]		= SPI_BCM_6338_SPI_MSG_CTL,
+	[SPI_MSG_DATA]		= SPI_BCM_6338_SPI_MSG_DATA,
+	[SPI_RX_DATA]		= SPI_BCM_6338_SPI_RX_DATA,
 };
 
 /*
@@ -90,6 +109,21 @@ static const int bcm96348_irqs[] = {
 	[IRQ_PCI]		= BCM_6348_PCI_IRQ,
 };
 
+static const unsigned long bcm96348_regs_spi[] = {
+	[SPI_CMD]		= SPI_BCM_6348_SPI_CMD,
+	[SPI_INT_STATUS]	= SPI_BCM_6348_SPI_INT_STATUS,
+	[SPI_INT_MASK_ST]	= SPI_BCM_6348_SPI_MASK_INT_ST,
+	[SPI_INT_MASK]		= SPI_BCM_6348_SPI_INT_MASK,
+	[SPI_ST]		= SPI_BCM_6348_SPI_ST,
+	[SPI_CLK_CFG]		= SPI_BCM_6348_SPI_CLK_CFG,
+	[SPI_FILL_BYTE]		= SPI_BCM_6348_SPI_FILL_BYTE,
+	[SPI_MSG_TAIL]		= SPI_BCM_6348_SPI_MSG_TAIL,
+	[SPI_RX_TAIL]		= SPI_BCM_6348_SPI_RX_TAIL,
+	[SPI_MSG_CTL]		= SPI_BCM_6348_SPI_MSG_CTL,
+	[SPI_MSG_DATA]		= SPI_BCM_6348_SPI_MSG_DATA,
+	[SPI_RX_DATA]		= SPI_BCM_6348_SPI_RX_DATA,
+};
+
 /*
  * 6358 register sets and irqs
  */
@@ -131,6 +165,21 @@ static const int bcm96358_irqs[] = {
 	[IRQ_ENET1_RXDMA]	= BCM_6358_ENET1_RXDMA_IRQ,
 	[IRQ_ENET1_TXDMA]	= BCM_6358_ENET1_TXDMA_IRQ,
 	[IRQ_PCI]		= BCM_6358_PCI_IRQ,
+};
+
+static const unsigned long bcm96358_regs_spi[] = {
+	[SPI_CMD]		= SPI_BCM_6358_SPI_CMD,
+	[SPI_INT_STATUS]	= SPI_BCM_6358_SPI_INT_STATUS,
+	[SPI_INT_MASK_ST]	= SPI_BCM_6358_SPI_MASK_INT_ST,
+	[SPI_INT_MASK]		= SPI_BCM_6358_SPI_INT_MASK,
+	[SPI_ST]		= SPI_BCM_6358_SPI_STATUS,
+	[SPI_CLK_CFG]		= SPI_BCM_6358_SPI_CLK_CFG,
+	[SPI_FILL_BYTE]		= SPI_BCM_6358_SPI_FILL_BYTE,
+	[SPI_MSG_TAIL]		= SPI_BCM_6358_SPI_MSG_TAIL,
+	[SPI_RX_TAIL]		= SPI_BCM_6358_SPI_RX_TAIL,
+	[SPI_MSG_CTL]		= SPI_BCM_6358_MSG_CTL,
+	[SPI_MSG_DATA]		= SPI_BCM_6358_SPI_MSG_DATA,
+	[SPI_RX_DATA]		= SPI_BCM_6358_SPI_RX_FIFO,
 };
 
 u16 __bcm63xx_get_cpu_id(void)
@@ -236,16 +285,19 @@ void __init bcm63xx_cpu_init(void)
 		expected_cpu_id = BCM6338_CPU_ID;
 		bcm63xx_regs_base = bcm96338_regs_base;
 		bcm63xx_irqs = bcm96338_irqs;
+		bcm63xx_regs_spi = bcm96338_regs_spi;
 		break;
 	case CPU_BCM6348:
 		expected_cpu_id = BCM6348_CPU_ID;
 		bcm63xx_regs_base = bcm96348_regs_base;
 		bcm63xx_irqs = bcm96348_irqs;
+		bcm63xx_regs_spi = bcm96348_regs_spi;
 		break;
 	case CPU_BCM6358:
 		expected_cpu_id = BCM6358_CPU_ID;
 		bcm63xx_regs_base = bcm96358_regs_base;
 		bcm63xx_irqs = bcm96358_irqs;
+		bcm63xx_regs_spi = bcm96358_regs_spi;
 		break;
 	}
 
