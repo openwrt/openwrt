@@ -1,0 +1,41 @@
+From eb96b22223352ed6446532c2436f301e86970144 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 6 Mar 2009 10:50:37 +0100
+Subject: [PATCH] ath9k: always compile ath_radio_{en,dis}able
+
+ath_radio_{en,dis}able is only compiled if RFKILL is enabled, but it is
+required by the 'ath9k_wiphy_select' function.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/ath9k/main.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/ath9k/main.c
++++ b/drivers/net/wireless/ath9k/main.c
+@@ -1090,12 +1090,6 @@ fail:
+ 	ath_deinit_leds(sc);
+ }
+ 
+-#if defined(CONFIG_RFKILL) || defined(CONFIG_RFKILL_MODULE)
+-
+-/*******************/
+-/*	Rfkill	   */
+-/*******************/
+-
+ void ath_radio_enable(struct ath_softc *sc)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+@@ -1172,6 +1166,12 @@ void ath_radio_disable(struct ath_softc 
+ 	ath9k_ps_restore(sc);
+ }
+ 
++#if defined(CONFIG_RFKILL) || defined(CONFIG_RFKILL_MODULE)
++
++/*******************/
++/*	Rfkill	   */
++/*******************/
++
+ static bool ath_is_rfkill_set(struct ath_softc *sc)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;

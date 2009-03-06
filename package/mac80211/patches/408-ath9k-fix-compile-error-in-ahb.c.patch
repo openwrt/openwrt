@@ -1,0 +1,24 @@
+From c464fc7b864a15422d2d7e52f3ac3c09999a8514 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 6 Mar 2009 09:46:06 +0100
+Subject: [PATCH 1/2] ath9k: fix compile error in ahb.c
+
+drivers/net/wireless/ath9k/ahb.c: In function 'ath_ahb_probe':
+drivers/net/wireless/ath9k/ahb.c:136: error: 'aphy' undeclared (first
+use in this function)
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/wireless/ath9k/ahb.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/wireless/ath9k/ahb.c
++++ b/drivers/net/wireless/ath9k/ahb.c
+@@ -60,6 +60,7 @@ static struct ath_bus_ops ath_ahb_bus_op
+ static int ath_ahb_probe(struct platform_device *pdev)
+ {
+ 	void __iomem *mem;
++	struct ath_wiphy *aphy;
+ 	struct ath_softc *sc;
+ 	struct ieee80211_hw *hw;
+ 	struct resource *res;

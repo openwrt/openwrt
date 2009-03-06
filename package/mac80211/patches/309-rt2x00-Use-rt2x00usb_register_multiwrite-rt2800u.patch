@@ -1,0 +1,85 @@
+From d98dacd4b09b7ec428d5e9093a5e6f1f564b1d3c Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Wed, 4 Mar 2009 22:23:53 +0100
+Subject: [PATCH] rt2x00: Use rt2x00usb_register_multiwrite() (rt2800usb)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800usb.c |   31 ++++++++-----------------------
+ 1 files changed, 8 insertions(+), 23 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+@@ -396,7 +396,6 @@ static int rt2800usb_config_shared_key(s
+ {
+ 	struct hw_key_entry key_entry;
+ 	struct rt2x00_field32 field;
+-	int timeout;
+ 	u32 offset;
+ 	u32 reg;
+ 
+@@ -411,12 +410,8 @@ static int rt2800usb_config_shared_key(s
+ 		       sizeof(key_entry.rx_mic));
+ 
+ 		offset = SHARED_KEY_ENTRY(key->hw_key_idx);
+-		timeout = REGISTER_TIMEOUT32(sizeof(key_entry));
+-		rt2x00usb_vendor_request_large_buff(rt2x00dev, USB_MULTI_WRITE,
+-						    USB_VENDOR_REQUEST_OUT,
+-						    offset, &key_entry,
+-						    sizeof(key_entry),
+-						    timeout);
++		rt2x00usb_register_multiwrite(rt2x00dev, offset,
++					      &key_entry, sizeof(key_entry));
+ 	}
+ 
+ 	/*
+@@ -449,7 +444,6 @@ static int rt2800usb_config_pairwise_key
+ 					 struct ieee80211_key_conf *key)
+ {
+ 	struct hw_key_entry key_entry;
+-	int timeout;
+ 	u32 offset;
+ 
+ 	if (crypto->cmd == SET_KEY) {
+@@ -467,12 +461,8 @@ static int rt2800usb_config_pairwise_key
+ 		       sizeof(key_entry.rx_mic));
+ 
+ 		offset = PAIRWISE_KEY_ENTRY(key->hw_key_idx);
+-		timeout = REGISTER_TIMEOUT32(sizeof(key_entry));
+-		rt2x00usb_vendor_request_large_buff(rt2x00dev, USB_MULTI_WRITE,
+-						    USB_VENDOR_REQUEST_OUT,
+-						    offset, &key_entry,
+-						    sizeof(key_entry),
+-						    timeout);
++		rt2x00usb_register_multiwrite(rt2x00dev, offset,
++					      &key_entry, sizeof(key_entry));
+ 	}
+ 
+ 	/*
+@@ -1217,11 +1207,8 @@ static int rt2800usb_load_firmware(struc
+ 	/*
+ 	 * Write firmware to device.
+ 	 */
+-	rt2x00usb_vendor_request_large_buff(rt2x00dev, USB_MULTI_WRITE,
+-					    USB_VENDOR_REQUEST_OUT,
+-					    FIRMWARE_IMAGE_BASE,
+-					    data + offset, length,
+-					    REGISTER_TIMEOUT32(length));
++	rt2x00usb_register_multiwrite(rt2x00dev, FIRMWARE_IMAGE_BASE,
++				      (void *)(data + offset), length);
+ 
+ 	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
+ 	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_STATUS, ~0);
+@@ -2067,10 +2054,8 @@ static void rt2800usb_write_beacon(struc
+ 	 * Write entire beacon with descriptor to register.
+ 	 */
+ 	beacon_base = HW_BEACON_OFFSET(entry->entry_idx);
+-	rt2x00usb_vendor_request_large_buff(rt2x00dev, USB_MULTI_WRITE,
+-					    USB_VENDOR_REQUEST_OUT, beacon_base,
+-					    entry->skb->data, entry->skb->len,
+-					    REGISTER_TIMEOUT32(entry->skb->len));
++	rt2x00usb_register_multiwrite(rt2x00dev, beacon_base,
++				      entry->skb->data, entry->skb->len);
+ 
+ 	/*
+ 	 * Clean up the beacon skb.
