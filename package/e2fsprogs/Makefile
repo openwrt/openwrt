@@ -101,6 +101,12 @@ $(call Package/e2fsprogs)
   DEPENDS:=e2fsprogs
 endef
 
+define Package/blkid
+$(call Package/e2fsprogs)
+  TITLE:=Command-line utility to locate/print block device attributes
+  DEPENDS:=e2fsprogs
+endef
+
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
@@ -186,6 +192,11 @@ define Package/badblocks/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/badblocks $(1)/usr/sbin/
 endef
 
+define Package/blkid/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/blkid $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,uuidgen))
@@ -194,3 +205,4 @@ $(eval $(call BuildPackage,libext2fs))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))
+$(eval $(call BuildPackage,blkid))
