@@ -312,3 +312,33 @@ define KernelPackage/hfcmulti/description
 endef
 
 $(eval $(call KernelPackage,hfcmulti))
+
+
+define KernelPackage/gigaset
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Siemens Gigaset support (isdn)
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-isdn4linux +kmod-crc-ccitt +kmod-usb-core
+  URL:=http://gigaset307x.sourceforge.net/
+  KCONFIG:= \
+    CONFIG_ISDN_DRV_GIGASET \
+    CONFIG_GIGASET_BASE \
+    CONFIG_GIGASET_M101 \
+    CONFIG_GIGASET_M105 \
+    CONFIG_GIGASET_UNDOCREQ=y
+  FILES:= \
+    $(LINUX_DIR)/drivers/isdn/gigaset/gigaset.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/isdn/gigaset/bas_gigaset.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/isdn/gigaset/ser_gigaset.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/isdn/gigaset/usb_gigaset.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,gigaset bas_gigaset ser_gigaset usb_gigaset)
+endef
+
+define KernelPackage/gigaset/description
+ This driver supports the Siemens Gigaset SX205/255 family of
+ ISDN DECT bases, including the predecessors Gigaset 3070/3075
+ and 4170/4175 and their T-Com versions Sinus 45isdn and Sinus
+ 721X.
+endef
+
+$(eval $(call KernelPackage,gigaset))
+
