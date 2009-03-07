@@ -10,19 +10,19 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-ifneq ($(CONFIG_LINUX_2_6_27)$(CONFIG_LINUX_2_6_28),)
+ifneq ($(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_23)$(CONFIG_LINUX_2_6_24)$(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_26),)
+  PKG_VERSION:=2008-08-06
+  PKG_RELEASE:=2
+  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
+  PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
+  PATCH_DIR:=./patches-old
+else
   PKG_VERSION:=2009-03-05
   PKG_RELEASE:=1
   PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/03 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
   PKG_MD5SUM:=3e96bcca2be64536e206e425f0f26cfd
-else
-  PKG_VERSION:=2008-08-06
-  PKG_RELEASE:=2
-  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
-  PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
-  PATCH_DIR:=./patches-old
 endif
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
@@ -201,7 +201,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-ccitt @LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-ccitt @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24||!LINUX_2_6_25||!LINUX_2_6_26
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
@@ -209,7 +209,7 @@ endef
 
 define KernelPackage/rt2800-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-ccitt @LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-ccitt @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24||!LINUX_2_6_25||!LINUX_2_6_26
   TITLE+= (RT2870 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800usb)
@@ -250,7 +250,7 @@ define KernelPackage/ath9k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24||!LINUX_2_6_25||!LINUX_2_6_26
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath9k)
 endef
@@ -347,7 +347,7 @@ define KernelPackage/b43-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
-  DEPENDS+= +kmod-mac80211 @TARGET_brcm47xx||@TARGET_brcm63xx @LINUX_2_6_25||@LINUX_2_6_26||@LINUX_2_6_27||@LINUX_2_6_28
+  DEPENDS+= +kmod-mac80211 @TARGET_brcm47xx||@TARGET_brcm63xx @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24
 endef
 
 define KernelPackage/b43
