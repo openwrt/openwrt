@@ -328,14 +328,13 @@ endef
 $(eval $(call KernelPackage,ipt-ipset))
 
 
-# XXX: broken on 2.6.28 to xt_CHAOS module
 define KernelPackage/ipt-extra
   SUBMENU:=$(NF_MENU)
   TITLE:=Extra modules
   KCONFIG:=$(KCONFIG_IPT_EXTRA)
   FILES:=$(foreach mod,$(IPT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_EXTRA-m)))
-  DEPENDS:= kmod-ipt-core @LINUX_2_6_28:BROKEN
+  DEPENDS:= kmod-ipt-core
 endef
 
 define KernelPackage/ipt-extra/description
