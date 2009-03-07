@@ -135,7 +135,7 @@ $(eval $(call KernelPackage,ata-via-sata))
 define KernelPackage/ide-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=IDE (ATA/ATAPI) device support
-  DEPENDS:=@PCI_SUPPORT @LINUX_2_6_28:BROKEN
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:= \
 	CONFIG_IDE \
 	CONFIG_IDE_GENERIC \
@@ -183,7 +183,11 @@ define KernelPackage/ide-aec62xx
   TITLE:=Acard AEC62xx IDE driver
   DEPENDS:=@PCI_SUPPORT +kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
+  FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.$(LINUX_KMOD_SUFFIX)
+else
   FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
+endif
   AUTOLOAD:=$(call AutoLoad,30,aec62xx)
 endef
 
