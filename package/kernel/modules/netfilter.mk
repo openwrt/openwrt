@@ -79,7 +79,7 @@ define KernelPackage/ipt-filter
   KCONFIG:=$(KCONFIG_IPT_FILTER)
   FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_FILTER-m)))
-  DEPENDS:= kmod-ipt-core
+  DEPENDS:= kmod-ipt-core +kmod-textsearch
 endef
 
 define KernelPackage/ipt-filter/description
@@ -203,7 +203,7 @@ define KernelPackage/ipt-nathelper-extra
   KCONFIG:=$(KCONFIG_IPT_NATHELPER_EXTRA)
   FILES:=$(foreach mod,$(IPT_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_NATHELPER_EXTRA-m)))
-  DEPENDS:= kmod-ipt-core +kmod-ipt-nat
+  DEPENDS:= kmod-ipt-core +kmod-ipt-nat +kmod-textsearch
 endef
 
 define KernelPackage/ipt-nathelper-extra/description
