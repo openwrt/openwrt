@@ -766,3 +766,23 @@ define KernelPackage/cs5535-gpio/description
 endef
 
 $(eval $(call KernelPackage,cs5535-gpio))
+
+
+define KernelPackage/textsearch
+SUBMENU:=$(OTHER_MENU)
+  TITLE:=Textsearch support is selected if needed
+  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21
+  KCONFIG:= \
+    CONFIG_TEXTSEARCH=y \
+    CONFIG_TEXTSEARCH_KMP \
+    CONFIG_TEXTSEARCH_BM \
+    CONFIG_TEXTSEARCH_FSM
+  FILES:= \
+    $(LINUX_DIR)/lib/ts_kmp.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/lib/ts_bm.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/lib/ts_fsm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,ts_kmp ts_bm ts_fsm)
+endef
+
+$(eval $(call KernelPackage,textsearch))
+
