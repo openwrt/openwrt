@@ -219,7 +219,7 @@ define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   FILES:=$(LINUX_DIR)/drivers/net/b44.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_B44
-  DEPENDS:=@TARGET_x86 @BROKEN
+  DEPENDS:=@TARGET_x86 +kmod-ssb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   AUTOLOAD:=$(call AutoLoad,50,b44)
 endef
