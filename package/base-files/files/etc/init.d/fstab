@@ -62,5 +62,6 @@ stop() {
 	config_load fstab
 	config_foreach do_unmount mount
 	config_foreach do_swapoff swap
+	[ -x /sbin/swapoff ] && swapoff -a
 }
 
