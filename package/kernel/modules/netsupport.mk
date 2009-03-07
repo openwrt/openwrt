@@ -69,9 +69,9 @@ define KernelPackage/capi
 	CONFIG_ISDN_CAPIFS
   FILES:= \
 	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi capifs)
+	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX) \
+  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capifs capi)
 endef
 
 define KernelPackage/capi/description
