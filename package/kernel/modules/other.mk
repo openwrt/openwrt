@@ -786,3 +786,25 @@ endef
 
 $(eval $(call KernelPackage,textsearch))
 
+
+define KernelPackage/rfkill
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RF switch subsystem support
+  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21 @!TARGET_rb532 @!TARGET_avr32 @!TARGET_brcm47xx @!TARGET_s3c24xx @!TARGET_ifxmips @!TARGET_atheros @!TARGET_adm5120 @!TARGET_ar7 @!TARGET_ppc40x @!TARGET_ixp4xx @!TARGET_rdc
+  KCONFIG:= \
+    CONFIG_RFKILL \
+    CONFIG_RFKILL_INPUT \
+    CONFIG_RFKILL_LEDS=y
+  FILES:= \
+    $(LINUX_DIR)/net/rfkill/rfkill.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/net/rfkill/rfkill-input.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,rfkill rfkill-input)
+endef
+
+define KernelPackage/rfkill/description
+  Say Y here if you want to have control over RF switches
+  found on many WiFi and Bluetooth cards.
+endef
+
+$(eval $(call KernelPackage,rfkill))
+
