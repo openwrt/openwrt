@@ -179,7 +179,7 @@ static const unsigned long bcm96358_regs_spi[] = {
 	[SPI_RX_TAIL]		= SPI_BCM_6358_SPI_RX_TAIL,
 	[SPI_MSG_CTL]		= SPI_BCM_6358_MSG_CTL,
 	[SPI_MSG_DATA]		= SPI_BCM_6358_SPI_MSG_DATA,
-	[SPI_RX_DATA]		= SPI_BCM_6358_SPI_RX_FIFO,
+	[SPI_RX_DATA]		= SPI_BCM_6358_SPI_RX_DATA,
 };
 
 u16 __bcm63xx_get_cpu_id(void)
