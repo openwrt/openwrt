@@ -27,6 +27,7 @@
 #include <bcm63xx_dev_pcmcia.h>
 #include <bcm63xx_dev_usb_ohci.h>
 #include <bcm63xx_dev_usb_ehci.h>
+#include <bcm63xx_dev_spi.h>
 #include <board_bcm963xx.h>
 
 #define PFX	"board_bcm963xx: "
@@ -482,6 +483,7 @@ int __init board_register_devices(void)
 
 	bcm63xx_uart_register();
 	bcm63xx_wdt_register();
+	bcm63xx_spi_register();
 
 	if (board.has_pccard)
 		bcm63xx_pcmcia_register();
