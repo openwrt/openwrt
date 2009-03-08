@@ -3,7 +3,7 @@
 
 #include <linux/types.h>
 
-int bcm63xx_spi_register(void);
+int __init bcm63xx_spi_register(void);
 
 struct bcm63xx_spi_pdata {
 	unsigned int	msg_fifo_size;

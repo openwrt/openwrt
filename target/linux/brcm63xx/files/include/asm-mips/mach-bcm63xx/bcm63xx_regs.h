@@ -794,8 +794,8 @@
 #define SPI_BCM_6358_SPI_MSG_DATA	0x02
 #define SPI_BCM_6358_SPI_MSG_DATA_SIZE	0x21e
 
-#define SPI_BCM_6358_SPI_RX_FIFO	0x400
-#define SPI_BCM_6358_SPI_RX_FIFO_SIZE	0x220
+#define SPI_BCM_6358_SPI_RX_DATA	0x400
+#define SPI_BCM_6358_SPI_RX_DATA_SIZE	0x220
 
 #define SPI_BCM_6358_SPI_CMD		0x700	/* 16-bits register */
 
@@ -815,17 +815,17 @@
 /* Shared SPI definitions */
 
 /* Message configuration */
-#define SPI_FD_RW			0
-#define SPI_HD_W			1
-#define SPI_HD_R			2
+#define SPI_FD_RW			0x00
+#define SPI_HD_W			0x01
+#define SPI_HD_R			0x02
 #define SPI_BYTE_CNT_SHIFT		0
 #define SPI_MSG_TYPE_SHIFT		14
 
 /* Command */
-#define SPI_CMD_NOOP			0
-#define SPI_CMD_SOFT_RESET		1
-#define SPI_CMD_HARD_RESET		2
-#define SPI_CMD_START_IMMEDIATE		3
+#define SPI_CMD_NOOP			0x01
+#define SPI_CMD_SOFT_RESET		0x02
+#define SPI_CMD_HARD_RESET		0x04
+#define SPI_CMD_START_IMMEDIATE		0x08
 #define SPI_CMD_COMMAND_SHIFT		0
 #define SPI_CMD_COMMAND_MASK		0x000f
 #define SPI_CMD_DEVICE_ID_SHIFT		4
@@ -851,12 +851,14 @@
 #define SPI_SERIAL_BUSY			0x08
 
 /* Clock configuration */
-#define SPI_CLK_0_391MHZ		1
-#define SPI_CLK_0_781MHZ		2 /* default */
-#define SPI_CLK_1_563MHZ		3
-#define SPI_CLK_3_125MHZ		4
-#define SPI_CLK_6_250MHZ		5
-#define SPI_CLK_12_50MHZ		6
+#define SPI_CLK_20MHZ			0x00
+#define SPI_CLK_0_391MHZ		0x01
+#define SPI_CLK_0_781MHZ		0x02 /* default */
+#define SPI_CLK_1_563MHZ		0x03
+#define SPI_CLK_3_125MHZ		0x04
+#define SPI_CLK_6_250MHZ		0x05
+#define SPI_CLK_12_50MHZ		0x06
+#define SPI_CLK_25MHZ			0x07
 #define SPI_CLK_MASK			0x07
 #define SPI_SSOFFTIME_MASK		0x38
 #define SPI_SSOFFTIME_SHIFT		3

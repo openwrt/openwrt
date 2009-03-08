@@ -9,8 +9,10 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
+
 #include <bcm63xx_cpu.h>
 #include <bcm63xx_dev_spi.h>
+#include <bcm63xx_regs.h>
 
 static struct resource spi_resources[] = {
 	{
@@ -35,7 +37,9 @@ static struct platform_device bcm63xx_spi_device = {
 	.id		= 0,
 	.num_resources	= ARRAY_SIZE(spi_resources),
 	.resource	= spi_resources,
-	.dev.pdata	= &spi_pdata;
+	.dev		= {
+		.platform_data = &spi_pdata,
+	},
 };
 
 int __init bcm63xx_spi_register(void)
@@ -46,12 +50,12 @@ int __init bcm63xx_spi_register(void)
 	spi_resources[1].start = bcm63xx_get_irq_number(IRQ_SPI);
 
 	/* Fill in platform data */
-	if (CPU_IS_BCM6338() || CPU_IS_BCM6348()) {
+	if (BCMCPU_IS_6338() || BCMCPU_IS_6348()) {
 		spi_pdata.msg_fifo_size = SPI_BCM_6338_SPI_MSG_DATA_SIZE;
 		spi_pdata.rx_fifo_size = SPI_BCM_6338_SPI_RX_DATA_SIZE;
 	}
 
-	if (CPU_IS_BCM6358()) {
+	if (BCMCPU_IS_6358()) {
 		spi_pdata.msg_fifo_size = SPI_BCM_6358_SPI_MSG_DATA_SIZE;
 		spi_pdata.rx_fifo_size =  SPI_BCM_6358_SPI_RX_DATA_SIZE;
 	}
