@@ -33,7 +33,7 @@ static struct bcm63xx_spi_pdata spi_pdata = {
 };
 
 static struct platform_device bcm63xx_spi_device = {
-	.name		= "bcm63xx_spi",
+	.name		= "bcm63xx-spi",
 	.id		= 0,
 	.num_resources	= ARRAY_SIZE(spi_resources),
 	.resource	= spi_resources,
