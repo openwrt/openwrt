@@ -45,7 +45,7 @@ pivot() { # <new_root> <old_root>
 }
 
 run_ramfs() { # <command> [...]
-	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount /sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd /bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump
+	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount /sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd /bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump /bin/sleep
 	install_bin /sbin/mtd
 	for file in $RAMFS_COPY_BIN; do
 		install_bin $file
@@ -160,6 +160,7 @@ do_upgrade() {
 			jffs2_copy_config
 		fi
 	}
+	v "Upgrade completed"
 	[ -n "$DELAY" ] && sleep "$DELAY"
 	ask_bool 1 "Reboot" && reboot
 }
