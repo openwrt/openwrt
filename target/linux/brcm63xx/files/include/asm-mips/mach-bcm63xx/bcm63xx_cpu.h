@@ -396,7 +396,7 @@ switch (reg) {
 	case SPI_MSG_DATA:
 		return SPI_BCM_6358_SPI_MSG_DATA;
 	case SPI_RX_DATA:
-		return SPI_BCM_6358_SPI_RX_FIFO;
+		return SPI_BCM_6358_SPI_RX_DATA;
 }
 #endif
 #endif
