@@ -65,12 +65,6 @@
 					bcm63xx_regset_address(s) + (o))
 #define bcm_rset_writel(s,v,o)	bcm_writel((v), \
 					bcm63xx_regset_address(s) + (o))
-#define bcm_reg_spi_readb(s,o)	bcm_readb(bcm63xx_spireg(s) + (o))
-#define bcm_reg_spi_readw(s,o)	bcm_readw(bcm63xx_spireg(s) + (o))
-#define bcm_reg_spi_writeb(s,v,o)	bcm_writeb((v), \
-					bcm63xx_spireg(s) + (o))
-#define bcm_reg_spi_writew(s,v,o)	bcm_writew((v), \
-					bcm63xx_spireg(s) + (o))
 
 /*
  * helpers for frequently used register sets
@@ -95,9 +89,19 @@
 #define bcm_memc_writel(v,o)	bcm_rset_writel(RSET_MEMC, (v), (o))
 #define bcm_ddr_readl(o)	bcm_rset_readl(RSET_DDR, (o))
 #define bcm_ddr_writel(v,o)	bcm_rset_writel(RSET_DDR, (v), (o))
-#define bcm_spi_readb(o)	bcm_reg_spi_readb(RSET_SPI, (o))
-#define bcm_spi_readw(o)	bcm_reg_spi_readw(RSET_SPI, (o))
-#define bcm_spi_writeb(v,o)	bcm_reg_spi_writeb(RSET_SPI, (v), (o))
-#define bcm_spi_writew(v,o)	bcm_reg_spi_writew(RSET_SPI, (v), (o))
+
+/*
+ * helpers for the SPI register sets
+ */
+#define bcm_spi_readb(o)	bcm_readb(bcm63xx_regset_address(RSET_SPI) + \
+					bcm63xx_spireg(o))
+#define bcm_spi_readw(o)	bcm_readw(bcm63xx_regset_address(RSET_SPI) + \
+					bcm63xx_spireg(o))
+#define bcm_spi_writeb(v,o)	bcm_writeb((v), \
+					bcm63xx_regset_address(RSET_SPI) + \
+					bcm63xx_spireg(o))
+#define bcm_spi_writew(v,o)	bcm_writew((v), \
+					bcm63xx_regset_address(RSET_SPI) + \
+					bcm63xx_spireg(o))
 
 #endif /* ! BCM63XX_IO_H_ */
