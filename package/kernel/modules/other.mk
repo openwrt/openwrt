@@ -752,6 +752,21 @@ endef
 
 $(eval $(call KernelPackage,spi-dev))
 
+define KernelPackage/bcm63xx-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Broadcom BCM63xx SPI driver
+  DEPENDS:=@TARGET_brcm63xx +kmod-spi-bitbang
+  KCONFIG:=CONFIG_SPI_BCM63XX
+  FILES:=$(LINUX_DIR)/drivers/spi/bcm63xx_spi.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,92,bcm63xx_spi)
+endef
+
+define KernelPackage/bcm63xx-spi/description
+  This package contains the Broadcom BCM63xx SPI Master driver
+endef
+
+$(eval $(call KernelPackage,bcm63xx-spi))
+
 define KernelPackage/cs5535-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver
