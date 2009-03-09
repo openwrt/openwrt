@@ -595,8 +595,8 @@ ipkg_depends() {
 		all_deps="$all_deps $new_pkgs"
 		local new_deps=
 		for pkg in $new_pkgs; do
-			if echo $pkg | grep -q '[^a-z0-9.+-]'; then
-				echo "ipkg_depends: ERROR: Package name $pkg contains illegal characters (should be [a-z0-9.+-])" >&2
+			if echo $pkg | grep -q '[^A-Za-z0-9.+-]'; then
+				echo "ipkg_depends: ERROR: Package name $pkg contains illegal characters (should be [A-Za-z0-9.+-])" >&2
 				return 1
 			fi
 			# TODO: Fix this. For now I am ignoring versions and alternations in dependencies.
