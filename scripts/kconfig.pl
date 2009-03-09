@@ -27,7 +27,7 @@ sub load_config($) {
 			next;
 		};
 		/^#/ and next;
-		/^(.+)$/ and print "WARNING: can't parse line: $1\n";
+		/^(.+)$/ and warn "WARNING: can't parse line: $1\n";
 	}
 	return \%config;
 }
