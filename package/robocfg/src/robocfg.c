@@ -19,6 +19,7 @@
  * 02110-1301, USA.
  */
  
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -247,6 +248,85 @@ void usage()
 			mdix[0].name, mdix[1].name, mdix[2].name);
 }
 
+static robo_t robo;
+int bcm53xx_probe(const char *dev)
+{
+	struct ethtool_drvinfo info;
+	unsigned int phyid;
+	int ret;
+
+	fprintf(stderr, "probing %s\n", dev);
+
+	strcpy(robo.ifr.ifr_name, dev);
+	memset(&info, 0, sizeof(info));
+	info.cmd = ETHTOOL_GDRVINFO;
+	robo.ifr.ifr_data = (caddr_t)&info;
+	ret = ioctl(robo.fd, SIOCETHTOOL, (caddr_t)&robo.ifr);
+	if (ret < 0) {
+		perror("SIOCETHTOOL");
+		return ret;
+	}
+
+	if (	strcmp(info.driver, "et0") &&
+		strcmp(info.driver, "b44") &&
+		strcmp(info.driver, "bcm63xx_enet") ) {
+			fprintf(stderr, "driver not supported %s\n", info.driver);
+			return -ENOSYS;
+	}
+
+	/* try access using MII ioctls - get phy address */
+	robo.et = 0;
+	if (ioctl(robo.fd, SIOCGMIIPHY, &robo.ifr) < 0)
+		robo.et = 1;
+
+	if (robo.et) {
+		unsigned int args[2] = { 2 };
+		
+		robo.ifr.ifr_data = (caddr_t) args;
+		ret = ioctl(robo.fd, SIOCGETCPHYRD, (caddr_t)&robo.ifr);
+		if (ret < 0) {
+			perror("SIOCGETCPHYRD");
+			return ret;
+		}
+		phyid = args[1] & 0xffff;
+	
+		args[0] = 3;
+		robo.ifr.ifr_data = (caddr_t) args;
+		ret = ioctl(robo.fd, SIOCGETCPHYRD, (caddr_t)&robo.ifr);
+		if (ret < 0) {
+			perror("SIOCGETCPHYRD");
+			return ret;
+		}
+		phyid |= args[1] << 16;
+	} else {
+		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo.ifr.ifr_data;
+		mii->phy_id = ROBO_PHY_ADDR;
+		mii->reg_num = 2;
+		ret = ioctl(robo.fd, SIOCGMIIREG, &robo.ifr);
+		if (ret < 0) {
+			perror("SIOCGMIIREG");
+			return ret;
+		}
+		phyid = mii->val_out & 0xffff;
+
+		mii->phy_id = ROBO_PHY_ADDR;
+		mii->reg_num = 3;
+		ret = ioctl(robo.fd, SIOCGMIIREG, &robo.ifr);
+		if (ret < 0) {
+			perror("SIOCGMIIREG");
+			return ret;
+		}
+		phyid |= mii->val_out << 16;
+	}
+
+	if (phyid == 0xffffffff || phyid == 0x55210022) {
+		perror("phyid");
+		return -EIO;
+	}
+	
+	return 0;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -256,50 +336,18 @@ main(int argc, char *argv[])
 	int robo5350 = 0;
 	u32 phyid;
 	
-	static robo_t robo;
-	struct ethtool_drvinfo info;
-	
 	if ((robo.fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket");
 		exit(1);
 	}
 
-	/* the only interface for now */
-	strcpy(robo.ifr.ifr_name, "eth0");
-
-	memset(&info, 0, sizeof(info));
-	info.cmd = ETHTOOL_GDRVINFO;
-	robo.ifr.ifr_data = (caddr_t)&info;
-	if (ioctl(robo.fd, SIOCETHTOOL, (caddr_t)&robo.ifr) < 0) {
-		perror("SIOCETHTOOL: your ethernet module is either unsupported or outdated");
-//		exit(1);
-	} else
-	if (strcmp(info.driver, "et0") && strcmp(info.driver, "b44")) {
-		fprintf(stderr, "No suitable module found for %s (managed by %s)\n", 
-			robo.ifr.ifr_name, info.driver);
-		exit(1);
-	}
-	
-	/* try access using MII ioctls - get phy address */
-	if (ioctl(robo.fd, SIOCGMIIPHY, &robo.ifr) < 0) {
-		robo.et = 1;
-	} else {
-		/* got phy address check for robo address */
-		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo.ifr.ifr_data;
-		if (mii->phy_id != ROBO_PHY_ADDR) {
-			fprintf(stderr, "Invalid phy address (%d)\n", mii->phy_id);
+	if (bcm53xx_probe("eth1")) {
+		if (bcm53xx_probe("eth0")) {
+			perror("bcm53xx_probe");
 			exit(1);
 		}
 	}
 
-	phyid = mdio_read(&robo, ROBO_PHY_ADDR, 0x2) | 
-		(mdio_read(&robo, ROBO_PHY_ADDR, 0x3) << 16);
-	
-	if (phyid == 0xffffffff || phyid == 0x55210022) {
-		fprintf(stderr, "No Robo switch in managed mode found\n");
-		exit(1);
-	}
-	
 	robo5350 = robo_vlan5350(&robo);
 	
 	for (i = 1; i < argc;) {
