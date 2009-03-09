@@ -60,7 +60,7 @@ P54USBFW:=2.13.24.0.lm86.arm
 define Download/p54usb
   FILE:=$(P54USBFW)
   URL:=http://daemonizer.de/prism54/prism54-fw/fw-usb
-  MD5SUM:=2e847782bb36d5b0863db8b2f12c2228
+  MD5SUM:=2efd50eab43c0d0376765576a54b7a30
 endef
 $(eval $(call Download,p54usb))
 
