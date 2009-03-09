@@ -14,7 +14,7 @@ LINUX_VERSION:=2.6.27.19
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += hostapd-mini
+DEFAULT_PACKAGES += hostapd-mini kmod-switch
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
