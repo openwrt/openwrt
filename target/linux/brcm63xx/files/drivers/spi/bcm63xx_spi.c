@@ -36,7 +36,7 @@
 #include <bcm63xx_dev_spi.h>
 
 #define PFX 		KBUILD_MODNAME
-#define DRV_VER		"0.1.0"
+#define DRV_VER		"0.1.1"
 
 struct bcm63xx_spi {
 	/* bitbang has to be first */
@@ -207,7 +207,7 @@ static int bcm63xx_txrx_bufs(struct spi_device *spi, struct spi_transfer *t)
 	/* Fill in the Message control register */
 	msg_ctl = bcm_spi_readb(SPI_MSG_CTL);
 	msg_ctl |= (t->len << SPI_BYTE_CNT_SHIFT);
-	msg_ctl |= (SPI_HD_R << SPI_MSG_TYPE_SHIFT);
+	msg_ctl |= (SPI_FD_RW << SPI_MSG_TYPE_SHIFT);
 	bcm_spi_writeb(msg_ctl, SPI_MSG_CTL);
 	
 	/* Issue the transfer */
