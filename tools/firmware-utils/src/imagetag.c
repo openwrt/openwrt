@@ -20,8 +20,8 @@
 #define IMAGETAG_VER			"6"
 #define IMAGETAG_DEFAULT_LOADADDR	0x80010000
 #define IMAGETAG_CRC_START		0xFFFFFFFF
-#define FLASH_CFE_SIZE			0x10000			/* TODO: Make this a command line option */
-#define FLASH_START			0xBFC00000		/* TODO: Make this a command line option */
+#define DEFAULT_FW_OFFSET		0x10000
+#define DEFAULT_FLASH_START		0xBFC00000
 #define FLASH_BS			(64 * 1024)		/* TODO: Make this a command line option */
 
 /* Kernel header */
@@ -117,8 +117,8 @@ size_t getlen(FILE *fp)
 }
 
 int tagfile(const char *kernel, const char *rootfs, const char *bin,
-	    const char *boardid, const char *chipid, const uint32_t loadaddr,
-	    const uint32_t entry)
+	    const char *boardid, const char *chipid, const uint32_t fwaddr,
+	    const uint32_t loadaddr, const uint32_t entry)
 {
 	struct imagetag tag;
 	struct kernelhdr khdr;
@@ -155,7 +155,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	}
 
 	/* Build the kernel address and length (doesn't need to be aligned, read only) */
-	kerneloff = FLASH_START + FLASH_CFE_SIZE + sizeof(tag);
+	kerneloff = fwaddr + sizeof(tag);
 	kernellen = getlen(kernelfile);
 
 	/* Build the kernel header */
@@ -173,7 +173,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	rootfslen = (rootfslen % FLASH_BS) > 0 ? (((rootfslen / FLASH_BS) + 1) * FLASH_BS) : rootfslen;
 
 	/* Seek to the start of the kernel */
-	fseek(binfile, kerneloff - FLASH_START - FLASH_CFE_SIZE, SEEK_SET);
+	fseek(binfile, kerneloff - fwaddr, SEEK_SET);
 
 	/* Write the kernel header */
 	crc = crc32(IMAGETAG_CRC_START, (uint8_t*)&khdr, sizeof(khdr));
@@ -187,7 +187,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	}
 
 	/* Write the RootFS */
-	fseek(binfile, rootfsoff - FLASH_START - FLASH_CFE_SIZE, SEEK_SET);
+	fseek(binfile, rootfsoff - fwaddr, SEEK_SET);
 	while (rootfsfile && !feof(rootfsfile) && !ferror(rootfsfile)) {
 		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), rootfsfile);
 		/*
@@ -239,17 +239,20 @@ int main(int argc, char **argv)
 {
 	int c;
 	char *kernel, *rootfs, *bin, *boardid, *chipid;
-	uint32_t loadaddr, entry;
-
+	uint32_t flashstart, fwoffset, loadaddr, entry;
+	uint32_t fwaddr;
+	
 	kernel = rootfs = bin = boardid = chipid = NULL;
 	entry = 0;
 
+	flashstart = DEFAULT_FLASH_START;
+	fwoffset = DEFAULT_FW_OFFSET;
 	loadaddr = IMAGETAG_DEFAULT_LOADADDR;
 
 	printf("Broadcom image tagger - v0.1.0\n");
 	printf("Copyright (C) 2008 Axel Gembe\n");
 
-	while ((c = getopt(argc, argv, "i:f:o:b:c:l:e:h")) != -1) {
+	while ((c = getopt(argc, argv, "i:f:o:b:c:s:n:l:e:h")) != -1) {
 		switch (c) {
 			case 'i':
 				kernel = optarg;
@@ -266,6 +269,12 @@ int main(int argc, char **argv)
 			case 'c':
 				chipid = optarg;
 				break;
+			case 's':
+				flashstart = strtoul(optarg, NULL, 16);
+				break;
+			case 'n':
+				fwoffset = strtoul(optarg, NULL, 16);
+				break;
 			case 'l':
 				loadaddr = strtoul(optarg, NULL, 16);
 				break;
@@ -280,6 +289,8 @@ int main(int argc, char **argv)
 				fprintf(stderr, "-o <bin>      - The output file\n");
 				fprintf(stderr, "-b <boardid>  - The board id to set in the image (i.e. \"96345GW2\")\n");
 				fprintf(stderr, "-c <chipid>   - The chip id to set in the image (i.e. \"6345\")\n");
+				fprintf(stderr, "-s <flashstart>   - \n");
+				fprintf(stderr, "-n <fwoffset>   - \n");
 				fprintf(stderr, "-l <loadaddr> - Address where the kernel expects to be loaded (defaults to 0x80010000)\n");
 				fprintf(stderr, "-e <entry>    - Address where the kernel entry point will end up\n");
 				fprintf(stderr, "-h            - Displays this text\n");
@@ -297,5 +308,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	return tagfile(kernel, rootfs, bin, boardid, chipid, loadaddr, entry);
+	fwaddr = flashstart + fwoffset;
+
+	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry);
 }
