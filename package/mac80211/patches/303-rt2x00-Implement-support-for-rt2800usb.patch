@@ -22,9 +22,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  create mode 100644 drivers/net/wireless/rt2x00/rt2800usb.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800usb.h
 
- config RT2X00_LIB_PCI
- 	tristate
- 	select RT2X00_LIB
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
 @@ -19,3 +19,4 @@ obj-$(CONFIG_RT61PCI)			+= rt61pci.o

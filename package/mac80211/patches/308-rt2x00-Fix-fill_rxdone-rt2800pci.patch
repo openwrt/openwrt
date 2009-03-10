@@ -1,0 +1,21 @@
+From 89950075234deb1f98ff52b225487ffc5b8199b0 Mon Sep 17 00:00:00 2001
+From: Ivo van Doorn <IvDoorn@gmail.com>
+Date: Sun, 8 Mar 2009 16:47:28 +0100
+Subject: [PATCH] rt2x00: Fix fill_rxdone (rt2800pci)
+
+Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
+---
+ drivers/net/wireless/rt2x00/rt2800pci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -2037,7 +2037,7 @@ static void rt2800pci_fill_rxdone(struct
+ 	/*
+ 	 * Remove TXWI descriptor from start of buffer.
+ 	 */
+-	skb_pull(entry->skb, TXWI_DESC_SIZE);
++	skb_pull(entry->skb, RXWI_DESC_SIZE);
+ 	skb_trim(entry->skb, rxdesc->size);
+ }
+ 
