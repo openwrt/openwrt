@@ -48,8 +48,7 @@ struct bcm63xx_spi {
 
 	/* Platform data */
         u32			speed_hz;
-	unsigned		msg_fifo_size;
-	unsigned		rx_fifo_size;
+	unsigned		fifo_size;
 
 	/* Data buffers */
 	const unsigned char	*tx_ptr;
@@ -70,6 +69,7 @@ static void bcm63xx_spi_chipselect(struct spi_device *spi, int is_on)
 		val |= SPI_CMD_NOOP;
 	else if (is_on == BITBANG_CS_ACTIVE)
 		val |= (1 << spi->chip_select << SPI_CMD_DEVICE_ID_SHIFT);
+		
 	bcm_spi_writew(val, SPI_CMD);
 }
 
@@ -173,7 +173,7 @@ static void bcm63xx_spi_fill_tx_fifo(struct bcm63xx_spi *bs)
 
         /* Fill the Tx FIFO with as many bytes as possible */
 	tail = bcm_spi_readb(SPI_MSG_TAIL);
-        while ((tail < bs->msg_fifo_size) && (bs->remaining_bytes > 0)) {
+        while ((tail < bs->fifo_size) && (bs->remaining_bytes > 0)) {
                 if (bs->tx_ptr)
                         bcm_spi_writeb(*bs->tx_ptr++, SPI_MSG_DATA);
 		else
@@ -317,6 +317,12 @@ static int __init bcm63xx_spi_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, master);
         bs->pdev = pdev;
 
+	if (!request_mem_region(r->start,
+			r->end - r->start, PFX)) {
+		ret = -ENXIO;
+		goto out_free;
+	}
+
         bs->regs = ioremap_nocache(r->start, r->end - r->start);
 	if (!bs->regs) {
 		printk(KERN_ERR PFX " unable to ioremap regs\n");
@@ -325,8 +331,7 @@ static int __init bcm63xx_spi_probe(struct platform_device *pdev)
 	}
 	bs->irq = irq;
 	bs->clk = clk;
-	bs->msg_fifo_size = pdata->msg_fifo_size;
-	bs->rx_fifo_size = pdata->rx_fifo_size;
+	bs->fifo_size = pdata->fifo_size;
 
 	ret = request_irq(irq, bcm63xx_spi_interrupt, 0,
 				pdev->dev.bus_id, master);
@@ -344,8 +349,8 @@ static int __init bcm63xx_spi_probe(struct platform_device *pdev)
 	bcm_spi_writew(SPI_CMD_HARD_RESET, SPI_CMD);
 	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, SPI_INT_MASK);
 	
-	dev_info(&pdev->dev, PFX " at 0x%08x (irq %d) %s\n",
-				r->start, irq, DRV_VER);
+	dev_info(&pdev->dev, PFX " at 0x%08x (irq %d, FIFOs size %d) v%s\n",
+				r->start, irq, bs->fifo_size, DRV_VER);
 
 	ret = spi_bitbang_start(&bs->bitbang);
 	if (ret) {

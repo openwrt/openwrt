@@ -50,15 +50,11 @@ int __init bcm63xx_spi_register(void)
 	spi_resources[1].start = bcm63xx_get_irq_number(IRQ_SPI);
 
 	/* Fill in platform data */
-	if (BCMCPU_IS_6338() || BCMCPU_IS_6348()) {
-		spi_pdata.msg_fifo_size = SPI_BCM_6338_SPI_MSG_DATA_SIZE;
-		spi_pdata.rx_fifo_size = SPI_BCM_6338_SPI_RX_DATA_SIZE;
-	}
+	if (BCMCPU_IS_6338() || BCMCPU_IS_6348())
+		spi_pdata.fifo_size = SPI_BCM_6338_SPI_MSG_DATA_SIZE;
 
-	if (BCMCPU_IS_6358()) {
-		spi_pdata.msg_fifo_size = SPI_BCM_6358_SPI_MSG_DATA_SIZE;
-		spi_pdata.rx_fifo_size =  SPI_BCM_6358_SPI_RX_DATA_SIZE;
-	}
+	if (BCMCPU_IS_6358())
+		spi_pdata.fifo_size = SPI_BCM_6358_SPI_MSG_DATA_SIZE;
 	
 	return platform_device_register(&bcm63xx_spi_device);
 }
