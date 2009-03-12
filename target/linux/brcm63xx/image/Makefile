@@ -37,6 +37,15 @@ define Image/Build/CFE
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin)
 endef
 
+define Image/Build/CFEAGPF
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
+		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
+		-v 8 -m IMAGE -k 131072
+	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin)
+endef
+
 define Image/Build/RedBoot
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(1)-vmlinux.elf
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
@@ -104,6 +113,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),F@ST2404,6348)
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
+	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
+	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358)
 endef
 
 $(eval $(call BuildImage))
