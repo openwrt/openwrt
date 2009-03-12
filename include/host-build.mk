@@ -135,7 +135,7 @@ ifndef DUMP
   endef
 
   prepare: host-prepare
-  compile: host-compile
+  compile: host-compile $(if $(STAMP_BUILT),host-install)
   install: host-install
   clean: host-clean
 
