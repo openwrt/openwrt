@@ -4,17 +4,16 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id$
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ps3-utils
-PKG_VERSION:=2.2.0
+PKG_VERSION:=2.3
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.kernel.org/pub/linux/kernel/people/geoff/cell/ps3-utils/
-PKG_MD5SUM:=92b24e57af516d339fe05f6bf7f36848
+PKG_MD5SUM:=d0b24527a8582c9ff5be02c62bb2161d
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -24,6 +23,11 @@ define Package/ps3-utils
   TITLE:=PS3 Linux Utilities
   DEPENDS:=@TARGET_ps3
   URL:=http://kernel.org/pub/linux/kernel/people/geoff/cell/ps3-utils/
+endef
+
+define Package/ps3-utils/description
+     The ps3-utils package is a set of system administration utilites for the
+     PS3 game console.
 endef
 
 define Build/Configure
