@@ -122,7 +122,7 @@ ifndef DUMP
     host-install: $(HOST_STAMP_INSTALLED)
   endif
 
-  download:
+  $(if $(STAMP_BUILT),compile: host-install)
   host-prepare: $(HOST_STAMP_PREPARED)
   host-configure: $(HOST_STAMP_CONFIGURED)
   host-compile: $(HOST_STAMP_BUILT)
@@ -134,8 +134,9 @@ ifndef DUMP
 
   endef
 
+  download:
   prepare: host-prepare
-  compile: host-compile $(if $(STAMP_BUILT),host-install)
+  compile: host-compile
   install: host-install
   clean: host-clean
 
