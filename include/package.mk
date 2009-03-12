@@ -36,7 +36,6 @@ CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 ifneq ($(CONFIG_LINUX_2_4),)
   CONFIG_SITE:=$(subst linux-,linux2.4-,$(CONFIG_SITE))
 endif
-export CONFIG_SITE
 CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
 SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 
@@ -69,7 +68,7 @@ define Build/DefaultTargets
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
   $(call Build/Autoclean)
 
-  $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
+  $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG) CONFIG_SITE=$$(CONFIG_SITE)
   $(STAMP_PREPARED):
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
@@ -78,14 +77,14 @@ define Build/DefaultTargets
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
 	touch $$@
 
-  $(STAMP_CONFIGURED) : export PATH=$$(TARGET_PATH_PKG)
+  $(STAMP_CONFIGURED) : export PATH=$$(TARGET_PATH_PKG) CONFIG_SITE=$$(CONFIG_SITE)
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(HOST_STAMP_INSTALLED)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
 	touch $$@
 
-  $(STAMP_BUILT) : export PATH=$$(TARGET_PATH_PKG)
+  $(STAMP_BUILT) : export PATH=$$(TARGET_PATH_PKG) CONFIG_SITE=$$(CONFIG_SITE)
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
@@ -94,7 +93,7 @@ define Build/DefaultTargets
 	$(foreach hook,$(Hooks/Install/Post),$(call $(hook))$(sep))
 	touch $$@
 
-  $(STAMP_INSTALLED) : export PATH=$$(TARGET_PATH_PKG)
+  $(STAMP_INSTALLED) : export PATH=$$(TARGET_PATH_PKG) CONFIG_SITE=$$(CONFIG_SITE)
   $(STAMP_INSTALLED): $(STAMP_BUILT)
 	$(SUBMAKE) -j1 clean-staging
 	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
