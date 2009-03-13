@@ -49,7 +49,7 @@ PATCH_DIR=./patches/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed
+HOST_STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed
 
 HOST_BUILD_DIR0:=$(HOST_BUILD_DIR)-minimal
 HOST_BUILD_DIR1:=$(HOST_BUILD_DIR)-initial

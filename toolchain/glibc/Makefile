@@ -26,8 +26,8 @@ PATCH_DIR:=./patches/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.glibc_built
-STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.glibc_installed
+HOST_STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.glibc_built
+HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.glibc_installed
 
 HOST_BUILD_DIR1:=$(HOST_BUILD_DIR)-initial
 HOST_BUILD_DIR2:=$(HOST_BUILD_DIR)-final
