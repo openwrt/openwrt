@@ -37,8 +37,8 @@ HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_SOURCE_SUBDIR)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.eglibc_built
-STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.eglibc_installed
+HOST_STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.eglibc_built
+HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.eglibc_installed
 
 HOST_BUILD_DIR1:=$(HOST_BUILD_DIR)-initial
 HOST_BUILD_DIR2:=$(HOST_BUILD_DIR)-final

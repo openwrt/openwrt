@@ -26,8 +26,8 @@ PATCH_DIR:=./patches/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.glibc-ports_built
-STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.glibc-ports_installed
+HOST_STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.glibc-ports_built
+HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.glibc-ports_installed
 
 define Host/Prepare
 $(call Host/Prepare/Default)

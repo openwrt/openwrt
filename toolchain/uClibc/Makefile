@@ -59,8 +59,8 @@ endif
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.uclibc_installed
-STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.uclibc-utils_installed
+HOST_STAMP_BUILT:=$(TOOLCHAIN_DIR)/stamp/.uclibc_installed
+HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.uclibc-utils_installed
 
 UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 		-e 's/i.86/i386/' \
