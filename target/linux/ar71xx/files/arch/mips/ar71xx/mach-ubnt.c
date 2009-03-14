@@ -24,6 +24,14 @@
 #define UBNT_RS_GPIO_LED_RF	2
 #define UBNT_RS_GPIO_SW4	8
 
+#define UBNT_LS_SR71_GPIO_LED_D25	0
+#define UBNT_LS_SR71_GPIO_LED_D26	1
+#define UBNT_LS_SR71_GPIO_LED_D24	2
+#define UBNT_LS_SR71_GPIO_LED_D23	4
+#define UBNT_LS_SR71_GPIO_LED_D22	5
+#define UBNT_LS_SR71_GPIO_LED_D27	6
+#define UBNT_LS_SR71_GPIO_LED_D28	7
+
 #define UBNT_BUTTONS_POLL_INTERVAL	20
 
 static struct spi_board_info ubnt_spi_info[] = {
@@ -55,6 +63,38 @@ static struct gpio_led ubnt_rs_leds_gpio[] __initdata = {
 	{
 		.name		= "ubnt:green:rf",
 		.gpio		= UBNT_RS_GPIO_LED_RF,
+		.active_low	= 0,
+	}
+};
+
+static struct gpio_led ubnt_ls_sr71_leds_gpio[] __initdata = {
+	{
+		.name		= "ubnt:green:d22",
+		.gpio		= UBNT_LS_SR71_GPIO_LED_D22,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:green:d23",
+		.gpio		= UBNT_LS_SR71_GPIO_LED_D23,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:green:d24",
+		.gpio		= UBNT_LS_SR71_GPIO_LED_D24,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:red:d25",
+		.gpio		= UBNT_LS_SR71_GPIO_LED_D25,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:red:d26",
+		.gpio		= UBNT_LS_SR71_GPIO_LED_D26,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:green:d27",
+		.gpio		= UBNT_LS_SR71_GPIO_LED_D27,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:green:d28",
+		.gpio		= UBNT_LS_SR71_GPIO_LED_D28,
 		.active_low	= 0,
 	}
 };
@@ -107,7 +147,6 @@ static void __init ubnt_rs_setup(void)
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_rs_leds_gpio),
 					ubnt_rs_leds_gpio);
-
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "Ubiquiti RouterStation", ubnt_rs_setup);
@@ -141,6 +180,9 @@ static void __init ubnt_lssr71_setup(void)
 	ar71xx_eth0_data.phy_mask = UBNT_LSSR71_PHY_MASK;
 
 	ar71xx_add_device_eth(0);
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_ls_sr71_leds_gpio),
+					ubnt_ls_sr71_leds_gpio);
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
