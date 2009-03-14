@@ -10,6 +10,7 @@
  */
 
 #include <linux/init.h>
+#include <linux/bitops.h>
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
@@ -45,23 +46,27 @@ static struct ar71xx_pci_irq pb42_pci_irqs[] __initdata = {
 	}
 };
 
+#define PB42_WAN_PHYMASK	BIT(20)
+#define PB42_LAN_PHYMASK	(BIT(16) | BIT(17) | BIT(18) | BIT(19))
+#define PB42_MDIO_PHYMASK	(PB42_LAN_PHYMASK | PB42_WAN_PHYMASK)
+
 static void __init pb42_init(void)
 {
 	ar71xx_add_device_spi(NULL, pb42_spi_info,
 				ARRAY_SIZE(pb42_spi_info));
 
-	ar71xx_add_device_mdio(0xffe0ffff);
+	ar71xx_add_device_mdio(~PB42_MDIO_PHYMASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0x000f0000;
+	ar71xx_eth0_data.phy_mask = PB42_WAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0x00100000;
+	ar71xx_eth1_data.phy_mask = PB42_LAN_PHYMASK;
+	ar71xx_eth1_data.speed = SPEED_100;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
-
-	ar71xx_add_device_usb();
 
 	ar71xx_pci_init(ARRAY_SIZE(pb42_pci_irqs), pb42_pci_irqs);
 }
