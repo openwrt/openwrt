@@ -104,16 +104,7 @@ config SOFT_FLOAT
 config TARGET_OPTIMIZATION
 	string
 	prompt "Target Optimizations" if TOOLCHAINOPTS
-	default "-O2 -pipe -march=i686 -funit-at-a-time" if TARGET_x86_mediacenter
-	default "-O2 -pipe -march=i486 -funit-at-a-time" if TARGET_x86
-	default "-Os -pipe -march=i486 -funit-at-a-time" if TARGET_rdc
-	default "-Os -pipe -march=i486 -funit-at-a-time" if TARGET_uml && i386
-	default "-Os -pipe -march=athlon64 -funit-at-a-time" if TARGET_uml && x86_64
-	default "-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time" if TARGET_ar71xx
-	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if mipsel || mips
-	default "-Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time" if TARGET_ixp4xx || TARGET_iop32x || TARGET_pxa || TARGET_orion
-	default "-Os -pipe -march=armv4 -mtune=arm9tdmi -funit-at-a-time" if TARGET_storm
-	default "-Os -pipe -funit-at-a-time"
+	default DEFAULT_TARGET_OPTIMIZATION
 	help
 	  Optimizations to use when building for the target host.
 
