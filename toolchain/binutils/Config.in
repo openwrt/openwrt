@@ -4,7 +4,7 @@ choice
 	prompt "Binutils Version" if TOOLCHAINOPTS
 	default BINUTILS_VERSION_2_18 if TARGET_avr32
 	default BINUTILS_VERSION_2_18 if TARGET_ppc44x || TARGET_ppc40x
-	default BINUTILS_VERSION_2_17
+	default BINUTILS_VERSION_2_19_1
 	help
 	  Select the version of binutils you wish to use.
 
@@ -19,6 +19,7 @@ choice
 		bool "binutils 2.19"
 
 	config BINUTILS_VERSION_2_19_1
+		depends !TARGET_avr32
 		bool "binutils 2.19.1"
 endchoice
 
