@@ -19,10 +19,4 @@ KERNELNAME:="uImage"
 
 DEFAULT_PACKAGES += kmod-ath9k-new hostapd-mini
 
-define Kernel/Configure
-	$(call Kernel/Configure/Default)
-	$(SED) 's,.*CONFIG_AEABI.*,$(if $(CONFIG_EABI_SUPPORT),CONFIG_AEABI=y,# CONFIG_AEABI is not set),' $(LINUX_DIR)/.config
-	$(if $(CONFIG_EABI_SUPPORT),echo '# CONFIG_OABI_COMPAT is not set' >> $(LINUX_DIR)/.config)
-endef
-
 $(eval $(call BuildTarget))
