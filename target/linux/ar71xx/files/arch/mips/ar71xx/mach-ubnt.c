@@ -59,7 +59,7 @@ static struct gpio_led ubnt_rs_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button ubnt_rs_gpio_buttons[] __initdata = {
+static struct gpio_button ubnt_gpio_buttons[] __initdata = {
 	{
 		.desc		= "sw4",
 		.type		= EV_KEY,
@@ -70,13 +70,24 @@ static struct gpio_button ubnt_rs_gpio_buttons[] __initdata = {
 	}
 };
 
+static void __init ubnt_generic_setup(void)
+{
+	ar71xx_add_device_spi(NULL, ubnt_spi_info,
+				    ARRAY_SIZE(ubnt_spi_info));
+
+	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(ubnt_gpio_buttons),
+					ubnt_gpio_buttons);
+
+	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
+}
+
 #define UBNT_RS_WAN_PHYMASK	(1 << 20)
 #define UBNT_RS_LAN_PHYMASK	((1 << 16) | (1 << 17) | (1 << 18) | (1 << 19))
 
 static void __init ubnt_rs_setup(void)
 {
-	ar71xx_add_device_spi(NULL, ubnt_spi_info,
-				    ARRAY_SIZE(ubnt_spi_info));
+	ubnt_generic_setup();
 
 	ar71xx_add_device_mdio(~(UBNT_RS_WAN_PHYMASK | UBNT_RS_LAN_PHYMASK));
 
@@ -94,26 +105,18 @@ static void __init ubnt_rs_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
-
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_rs_leds_gpio),
 					ubnt_rs_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ubnt_rs_gpio_buttons),
-					ubnt_rs_gpio_buttons);
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "Ubiquiti RouterStation", ubnt_rs_setup);
 
 static void __init ubnt_rspro_setup(void)
 {
-	ar71xx_add_device_spi(NULL, ubnt_spi_info,
-				    ARRAY_SIZE(ubnt_spi_info));
+	ubnt_generic_setup();
 
 	ar71xx_add_device_usb();
-
-	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_RSPRO, "Ubiquiti RouterStation Pro",
@@ -121,9 +124,7 @@ MIPS_MACHINE(AR71XX_MACH_UBNT_RSPRO, "Ubiquiti RouterStation Pro",
 
 static void __init ubnt_lsx_setup(void)
 {
-	ar71xx_add_device_spi(NULL, ubnt_spi_info,
-				    ARRAY_SIZE(ubnt_spi_info));
-
+	ubnt_generic_setup();
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSX, "Ubiquiti LSX", ubnt_lsx_setup);
@@ -132,8 +133,7 @@ MIPS_MACHINE(AR71XX_MACH_UBNT_LSX, "Ubiquiti LSX", ubnt_lsx_setup);
 
 static void __init ubnt_lssr71_setup(void)
 {
-	ar71xx_add_device_spi(NULL, ubnt_spi_info,
-				    ARRAY_SIZE(ubnt_spi_info));
+	ubnt_generic_setup();
 
 	ar71xx_add_device_mdio(~UBNT_LSSR71_PHY_MASK);
 
@@ -141,8 +141,6 @@ static void __init ubnt_lssr71_setup(void)
 	ar71xx_eth0_data.phy_mask = UBNT_LSSR71_PHY_MASK;
 
 	ar71xx_add_device_eth(0);
-
-	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
