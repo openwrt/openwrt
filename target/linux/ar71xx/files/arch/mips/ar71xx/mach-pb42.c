@@ -11,6 +11,7 @@
 
 #include <linux/init.h>
 #include <linux/bitops.h>
+#include <linux/input.h>
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
@@ -20,6 +21,11 @@
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+
+#define PB42_BUTTONS_POLL_INTERVAL	20
+
+#define PB42_GPIO_BTN_SW4	8
+#define PB42_GPIO_BTN_SW5	3
 
 static struct spi_board_info pb42_spi_info[] = {
 	{
@@ -46,6 +52,24 @@ static struct ar71xx_pci_irq pb42_pci_irqs[] __initdata = {
 	}
 };
 
+static struct gpio_button pb42_gpio_buttons[] __initdata = {
+	{
+		.desc		= "sw4",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= PB42_GPIO_BTN_SW4,
+		.active_low	= 1,
+	} , {
+		.desc		= "sw5",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= PB42_GPIO_BTN_SW5,
+		.active_low	= 1,
+	}
+};
+
 #define PB42_WAN_PHYMASK	BIT(20)
 #define PB42_LAN_PHYMASK	(BIT(16) | BIT(17) | BIT(18) | BIT(19))
 #define PB42_MDIO_PHYMASK	(PB42_LAN_PHYMASK | PB42_WAN_PHYMASK)
@@ -67,6 +91,10 @@ static void __init pb42_init(void)
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
+
+	ar71xx_add_device_gpio_buttons(-1, PB42_BUTTONS_POLL_INTERVAL,
+				       ARRAY_SIZE(pb42_gpio_buttons),
+				       pb42_gpio_buttons);
 
 	ar71xx_pci_init(ARRAY_SIZE(pb42_pci_irqs), pb42_pci_irqs);
 }
