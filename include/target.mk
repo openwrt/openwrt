@@ -150,6 +150,13 @@ ifeq ($(DUMP),1)
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
   endif
+  DEFAULT_CFLAGS_i386=-O2 -pipe -march=i486 -funit-at-a-time
+  DEFAULT_CFLAGS_x86_64=-O2 -pipe -march=athlon64 -funit-at-a-time
+  DEFAULT_CFLAGS_mips=-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time
+  DEFAULT_CFLAGS_mipsel=$(DEFAULT_CFLAGS_mips)
+  DEFAULT_CFLAGS_arm=-Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+  DEFAULT_CFLAGS_armeb=$(DEFAULT_CFLAGS_arm)
+  DEFAULT_CFLAGS=$(if $(DEFAULT_CFLAGS_$(ARCH)),$(DEFAULT_CFLAGS_$(ARCH)),-Os -pipe -funit-at-a-time)
 endif
 
 define BuildTargets/DumpCurrent
@@ -163,6 +170,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Target-Arch: $(ARCH)'; \
 	 echo 'Target-Features: $(FEATURES)'; \
 	 echo 'Target-Depends: $(DEPENDS)'; \
+	 echo 'Target-Optimization: $(if $(CFLAGS),$(CFLAGS),$(DEFAULT_CFLAGS))'; \
 	 echo 'Linux-Version: $(LINUX_VERSION)'; \
 	 echo 'Linux-Release: $(LINUX_RELEASE)'; \
 	 echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'; \

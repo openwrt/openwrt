@@ -10,6 +10,7 @@ ARCH:=mips
 BOARD:=ar71xx
 BOARDNAME:=Atheros AR71xx/AR913x
 FEATURES:=squashfs tgz
+CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 
 LINUX_VERSION:=2.6.28.7
 

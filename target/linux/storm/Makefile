@@ -10,6 +10,7 @@ ARCH:=arm
 BOARD:=storm
 BOARDNAME:=Storm SL3512
 FEATURES:=squashfs pci broken
+CFLAGS:=-Os -pipe -march=armv4 -mtune=arm9tdmi -funit-at-a-time
 
 LINUX_VERSION:=2.6.23.17
 
