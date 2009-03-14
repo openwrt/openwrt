@@ -14,25 +14,16 @@ choice
 	config GCC_VERSION_3_4_6
 		bool "gcc 3.4.6"
 
+if !LINUX_2_4
 	config GCC_VERSION_4_1_2
-		depends !LINUX_2_4
 		bool "gcc 4.1.2"
 
 	config GCC_VERSION_4_2_4
-		depends !LINUX_2_4
 		bool "gcc 4.2.4"
 
-	config GCC_VERSION_4_3_1
-		depends !LINUX_2_4
-		bool "gcc 4.3.1"
-
-	config GCC_VERSION_4_3_2
-		depends !LINUX_2_4
-		bool "gcc 4.3.2"
-
 	config GCC_VERSION_4_3_3
-		depends !LINUX_2_4
 		bool "gcc 4.3.3"
+endif
 
 endchoice
 
