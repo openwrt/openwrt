@@ -19,6 +19,9 @@ ar71xx_board_name() {
 	*MZK-W04NU)
 		name="mzk-w04nu"
 		;;
+	*PB42)
+		name="pb42"
+		;;
 	*RB-411)
 		name="rb-411"
 		;;
