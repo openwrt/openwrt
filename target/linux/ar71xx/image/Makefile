@@ -73,7 +73,7 @@ define Image/Build/UBNT
 		-B $(4) -v $(5).ar7100.OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt-$(2)-$(1).bin
+		-o $(BIN_DIR)/openwrt-$(BOARD)-$(2)-$(1).bin
 endef
 
 define Image/Build/Planex
@@ -171,7 +171,11 @@ define Image/Build/Profile/A02RBW300N
 endef
 
 define Image/Build/Profile/UBNTRS
-	$(call Image/Build/Template/UBNT/$(1),rs,board=UBNT-RS,RS,RSx)
+	$(call Image/Build/Template/UBNT/$(1),ubnt-rs,board=UBNT-RS,RS,RSx)
+endef
+
+define Image/Build/Profile/UBNTLSSR71
+	$(call Image/Build/Template/UBNT/$(1),ubnt-ls-sr71,board=UBNT-LS-SR71,LS-SR71,LS-SR71)
 endef
 
 define Image/Build/Profile/MZKW04NU
@@ -190,6 +194,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/TLWR941NDV2,$(1))
 	$(call Image/Build/Profile/UBNTRS,$(1))
+	$(call Image/Build/Profile/UBNTLSSR71,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 endef
 
