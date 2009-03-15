@@ -1,0 +1,33 @@
+* rename the offset definition to avoid abiguity with the standard ATA
+  IO address
+* read and write four bytes at once like the original driver does
+* use writesl() and readsl() which implicitly iterate over the data
+
+This patch assumes buflen to be a multiple of four, which is true for
+ATA devices. ATAPI support is not known, though unlikely, as the
+original driver always transfers 512 Bytes at once.
+
+Signed-off-by: Phil Sutter <n0-1@freewrt.org>
+Acked-by: Sergei Shtyltov <sshtylyov@ru.mvista.com>
+---
+diff -urN linux-2.6.28.7/drivers/ata/pata_rb532_cf.c linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c
+--- linux-2.6.28.7/drivers/ata/pata_rb532_cf.c	2009-03-15 13:24:24.000000000 +0100
++++ linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c	2009-03-15 13:26:19.000000000 +0100
+@@ -82,13 +82,10 @@
+ 	void __iomem *ioaddr = ap->ioaddr.data_addr;
+ 	int retlen = buflen;
+ 
+-	if (write_data) {
+-		for (; buflen > 0; buflen--, buf++)
+-			writeb(*buf, ioaddr);
+-	} else {
+-		for (; buflen > 0; buflen--, buf++)
+-			*buf = readb(ioaddr);
+-	}
++	if (write_data)
++		writesl(ioaddr, buf, buflen / sizeof(u32));
++	else
++		readsl(ioaddr, buf, buflen / sizeof(u32));
+ 
+ 	rb532_pata_finish_io(adev->link->ap);
+ 	return retlen;
