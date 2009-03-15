@@ -77,7 +77,7 @@ setup_interface_ppp() {
 
 	config_get device "$config" device
 
-	config_get mtu "$cfg" mtu
+	config_get mtu "$config" mtu
 	mtu=${mtu:-1492}
 	start_pppd "$config" \
 		mtu $mtu mru $mtu \

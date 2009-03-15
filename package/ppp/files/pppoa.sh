@@ -20,7 +20,7 @@ setup_interface_pppoa() {
 		*) ENCAPS="llc-encaps" ;;
 	esac
 
-	config_get mtu "$cfg" mtu
+	config_get mtu "$config" mtu
 	mtu=${mtu:-1500}
 	start_pppd "$config" \
 		plugin pppoatm.so ${vpi:-8}.${vci:-35} ${ENCAPS} \
