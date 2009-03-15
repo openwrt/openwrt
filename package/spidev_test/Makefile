@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/spidev-test
   SECTION:=utils
-  CATEGORY:=Utilites
+  CATEGORY:=Utilities
   DEPENDS:=@LINUX_2_6
   TITLE:=SPI testing utility
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
