@@ -17,6 +17,6 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:="uImage"
 
-DEFAULT_PACKAGES += kmod-ath9k-new hostapd-mini
+DEFAULT_PACKAGES += kmod-ath9k hostapd-mini
 
 $(eval $(call BuildTarget))
