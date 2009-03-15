@@ -15,7 +15,7 @@ setup_interface_pppoe() {
 	config_get ifname "$config" ifname
 	set_interface_ifname "$config" "$ifname"
 
-	config_get mtu "$cfg" mtu
+	config_get mtu "$config" mtu
 	mtu=${mtu:-1492}
 	start_pppd "$config" \
 		plugin rp-pppoe.so \

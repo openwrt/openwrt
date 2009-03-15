@@ -13,7 +13,7 @@ setup_interface_pptp() {
 	
 	config_get device "$config" device
 	config_get ipproto "$config" ipproto
-	config_get server "$cfg" server
+	config_get server "$config" server
 
 	for module in slhc ppp_generic ppp_async ip_gre; do
 		/sbin/insmod $module 2>&- >&-
@@ -36,7 +36,7 @@ setup_interface_pptp() {
 	config_get ifname "$config" ifname
 	uci_set_state network "$config" ifname "$ifname"
 
-	config_get mtu "$cfg" mtu
+	config_get mtu "$configg" mtu
 	mtu=${mtu:-1452}
 	start_pppd "$config" \
 		pty "/usr/sbin/pptp $server --loglevel 0 --nolaunchpppd" \
