@@ -36,7 +36,7 @@ setup_interface_pptp() {
 	config_get ifname "$config" ifname
 	uci_set_state network "$config" ifname "$ifname"
 
-	config_get mtu "$configg" mtu
+	config_get mtu "$config" mtu
 	mtu=${mtu:-1452}
 	start_pppd "$config" \
 		pty "/usr/sbin/pptp $server --loglevel 0 --nolaunchpppd" \
