@@ -42,7 +42,7 @@ define Image/Build/CFEAGPF
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
 		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
 		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
-		-v 8 -m IMAGE -k 131072
+		-v 8 -m IMAGE -k 131072 -n $(4)
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin)
 endef
 
@@ -114,7 +114,7 @@ define Image/Build
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
-	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358)
+	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000)
 endef
 
 $(eval $(call BuildImage))
