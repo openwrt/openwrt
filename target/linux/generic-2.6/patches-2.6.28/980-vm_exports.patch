@@ -24,7 +24,7 @@
 -		fput(vma->vm_file);
 -	vma->vm_file = file;
 -	vma->vm_ops = &shmem_vm_ops;
-+	shmem_set_file(vma, vma->vm_file);
++	shmem_set_file(vma, file);
  	return 0;
  }
 --- a/fs/file.c
