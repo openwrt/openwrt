@@ -133,10 +133,6 @@ $(eval $(call RequireCommand,svn, \
 	Please install the subversion client. \
 ))
 
-$(eval $(call RequireCommand,autoconf, \
-	Please install GNU autoconf. \
-))
-
 define Require/gnu-find
 	$(FIND) $(TMP_DIR) -lname foo
 endef
