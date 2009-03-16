@@ -93,10 +93,6 @@ $(eval $(call RequireCommand,gawk, \
 	Please install GNU awk. \
 ))
 
-$(eval $(call RequireCommand,bison, \
-	Please install GNU bison. \
-))
-
 $(eval $(call RequireCommand,flex, \
 	Please install flex. \
 ))
