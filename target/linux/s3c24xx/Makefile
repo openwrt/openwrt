@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=s3c24xx
 BOARDNAME:=s3c24xx
 FEATURES:=jffs2
-CFLAGS:=-O2 -pipe -march=armv4 -mtune=arm9tdmi -funit-at-a-time
+CFLAGS:=-O2 -pipe -march=armv4t -mtune=arm920t -funit-at-a-time
 
 LINUX_VERSION:=2.6.28.7
 
