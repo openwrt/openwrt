@@ -3,7 +3,6 @@ config GCC_VERSION
 	default "3.4.6"     if GCC_VERSION_3_4_6
 	default "4.1.2"     if GCC_VERSION_4_1_2
 	default "4.2.4"     if GCC_VERSION_4_2_4
-	default "4.3.2"     if GCC_VERSION_4_3_2
 	default "4.3.3"     if GCC_VERSION_4_3_3
 	default "4.1.2"
 
@@ -31,7 +30,6 @@ config GCC_VERSION_4_2
 
 config GCC_VERSION_4_3
 	bool
-	default y	if GCC_VERSION_4_3_2
 	default y	if GCC_VERSION_4_3_3
 
 if !TOOLCHAINOPTS
@@ -43,6 +41,6 @@ if !TOOLCHAINOPTS
 		default y if TARGET_ppc40x
 		default y if TARGET_ppc44x
 
-	config GCC_VERSION_4_3_2
+	config GCC_VERSION_4_3_3
 		default y if TARGET_ps3
 endif
