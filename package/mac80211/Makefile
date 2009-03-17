@@ -483,6 +483,7 @@ ifneq ($(CONFIG_B43_OPENFIRMWARE),)
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_SUBDIR)/assembler/b43-asm $(STAGING_DIR_HOST)/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_SUBDIR)/assembler/b43-asm.bin $(STAGING_DIR_HOST)/bin/
 endif
+	$(INSTALL_BIN) ./files/host_bin/b43-fwsquash.py $(STAGING_DIR_HOST)/bin/
 endef
 
 define KernelPackage/b43/install
@@ -502,6 +503,9 @@ ifneq ($(CONFIG_B43_OPENFIRMWARE),)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0initvals5.fw $(1)/lib/firmware/b43-open/b0g0initvals5.fw
 else
 	b43-fwcutter --unsupported -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)
+endif
+ifneq ($(CONFIG_B43_FW_SQUASH),)
+	b43-fwsquash.py "$(CONFIG_B43_FW_SQUASH_PHYTYPES)" "$(CONFIG_B43_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43"
 endif
 endef
 
