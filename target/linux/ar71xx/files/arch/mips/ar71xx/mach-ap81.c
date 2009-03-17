@@ -9,6 +9,11 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/platform_device.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include <linux/spi/spi.h>
+#include <linux/spi/flash.h>
 #include <linux/input.h>
 
 #include <asm/mips_machine.h>
@@ -20,6 +25,51 @@
 #define AP81_GPIO_BTN_SW1	21
 
 #define AP81_BUTTONS_POLL_INTERVAL	20
+
+#ifdef CONFIG_MTD_PARTITIONS
+static struct mtd_partition ap81_partitions[] = {
+	{
+		.name		= "u-boot",
+		.offset		= 0,
+		.size		= 0x040000,
+		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "u-boot-env",
+		.offset		= 0x040000,
+		.size		= 0x010000,
+	} , {
+		.name		= "rootfs",
+		.offset		= 0x050000,
+		.size		= 0x500000,
+	} , {
+		.name		= "uImage",
+		.offset		= 0x550000,
+		.size		= 0x100000,
+	} , {
+		.name		= "ART",
+		.offset		= 0x650000,
+		.size		= 0x1b0000,
+		.mask_flags	= MTD_WRITEABLE,
+	}
+};
+#endif /* CONFIG_MTD_PARTITIONS */
+
+static struct flash_platform_data ap81_flash_data = {
+#ifdef CONFIG_MTD_PARTITIONS
+        .parts          = ap81_partitions,
+        .nr_parts       = ARRAY_SIZE(ap81_partitions),
+#endif
+};
+
+static struct spi_board_info ap81_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 25000000,
+		.modalias	= "m25p80",
+		.platform_data  = &ap81_flash_data,
+	}
+};
 
 static struct gpio_button ap81_gpio_buttons[] __initdata = {
 	{
@@ -56,6 +106,9 @@ static void __init ap81_setup(void)
 	ar71xx_add_device_eth(1);
 
 	ar71xx_add_device_usb();
+
+	ar71xx_add_device_spi(NULL, ap81_spi_info,
+			      ARRAY_SIZE(ap81_spi_info));
 
 	ar71xx_add_device_gpio_buttons(-1, AP81_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(ap81_gpio_buttons),
