@@ -4,6 +4,8 @@
 #include <linux/types.h>
 #include <linux/init.h>
 
+#include <bcm63xx_regs.h>
+
 /*
  * Macro to fetch bcm63xx cpu id and revision, should be optimized at
  * compile time if only one CPU support is enabled (idea stolen from
@@ -106,12 +108,18 @@ enum bcm63xx_regs_set {
  */
 
 #define BCM_6338_PERF_BASE		(0xfffe0000)
-#define BCM_6338_TIMER_BASE		(0xfffe0000)
-#define BCM_6338_WDT_BASE		(0xfffe001c)
+#define BCM_6338_BB_BASE		(0xfffe0100) /* bus bridge registers */
+#define BCM_6338_TIMER_BASE		(0xfffe0200)
+#define BCM_6338_WDT_BASE		(0xfffe021c)
 #define BCM_6338_UART0_BASE		(0xfffe0300)
 #define BCM_6338_GPIO_BASE		(0xfffe0400)
 #define BCM_6338_SPI_BASE		(0xfffe0c00)
+#define BCM_6338_DSL_BASE		(0xfffe1000)
 #define BCM_6338_SAR_BASE		(0xfffe2000)
+#define BCM_6338_ENETDMA_BASE		(0xfffe2400)
+#define BCM_6338_USBDMA_BASE		(0xfffe2400)
+#define BCM_6338_ENET0_BASE		(0xfffe2800)
+#define BCM_6338_UDC0_BASE		(0xfffe3000) /* USB_CTL_BASE */
 #define BCM_6338_MEMC_BASE		(0xfffe3100)
 
 /*
@@ -119,12 +127,14 @@ enum bcm63xx_regs_set {
  */
 #define BCM_6348_DSL_LMEM_BASE		(0xfff00000)
 #define BCM_6348_PERF_BASE		(0xfffe0000)
+#define BCM_6348_BB_BASE		(0xfffe0100) /* bus bridge registers */
 #define BCM_6348_TIMER_BASE		(0xfffe0200)
 #define BCM_6348_WDT_BASE		(0xfffe021c)
 #define BCM_6348_UART0_BASE		(0xfffe0300)
 #define BCM_6348_GPIO_BASE		(0xfffe0400)
 #define BCM_6348_SPI_BASE		(0xfffe0c00)
 #define BCM_6348_UDC0_BASE		(0xfffe1000)
+#define BCM_6348_USBDMA_BASE		(0xfffe1400)
 #define BCM_6348_OHCI0_BASE		(0xfffe1b00)
 #define BCM_6348_OHCI_PRIV_BASE		(0xfffe1c00)
 #define BCM_6348_USBH_PRIV_BASE		(0xdeadbeef)
@@ -132,6 +142,8 @@ enum bcm63xx_regs_set {
 #define BCM_6348_PCMCIA_BASE		(0xfffe2054)
 #define BCM_6348_SDRAM_REGS_BASE	(0xfffe2300)
 #define BCM_6348_DSL_BASE		(0xfffe3000)
+#define BCM_6348_SAR_BASE		(0xfffe4000)
+#define BCM_6348_UBUS_BASE		(0xfffe5000)
 #define BCM_6348_ENET0_BASE		(0xfffe6000)
 #define BCM_6348_ENET1_BASE		(0xfffe6800)
 #define BCM_6348_ENETDMA_BASE		(0xfffe7000)
@@ -351,6 +363,8 @@ switch (reg) {
 		return SPI_BCM_6348_SPI_CMD;
 	case SPI_INT_MASK_ST:
 		return SPI_BCM_6348_SPI_MASK_INT_ST;
+	case SPI_INT_MASK:
+		return SPI_BCM_6348_SPI_INT_MASK;
 	case SPI_INT_STATUS:
 		return SPI_BCM_6348_SPI_INT_STATUS;
 	case SPI_ST:
@@ -367,7 +381,7 @@ switch (reg) {
 		return SPI_BCM_6348_SPI_MSG_CTL;
 	case SPI_MSG_DATA:
 		return SPI_BCM_6348_SPI_MSG_DATA;
-	case SPI_BCM_6348_SPI_RX_DATA:
+	case SPI_RX_DATA:
 		return SPI_BCM_6348_SPI_RX_DATA;
 }
 #endif
@@ -411,6 +425,7 @@ enum bcm63xx_irq {
 	IRQ_UART0,
 	IRQ_SPI,
 	IRQ_DSL,
+	IRQ_UDC0,
 	IRQ_ENET0,
 	IRQ_ENET1,
 	IRQ_ENET_PHY,
@@ -434,7 +449,7 @@ enum bcm63xx_irq {
 #define BCM_6338_DG_IRQ			(IRQ_INTERNAL_BASE + 4)
 #define BCM_6338_DSL_IRQ		(IRQ_INTERNAL_BASE + 5)
 #define BCM_6338_ATM_IRQ		(IRQ_INTERNAL_BASE + 6)
-#define BCM_6338_USBS_IRQ		(IRQ_INTERNAL_BASE + 7)
+#define BCM_6338_UDC0_IRQ		(IRQ_INTERNAL_BASE + 7)
 #define BCM_6338_ENET0_IRQ		(IRQ_INTERNAL_BASE + 8)
 #define BCM_6338_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 9)
 #define BCM_6338_SDRAM_IRQ		(IRQ_INTERNAL_BASE + 10)
@@ -453,10 +468,17 @@ enum bcm63xx_irq {
 #define BCM_6348_SPI_IRQ		(IRQ_INTERNAL_BASE + 1)
 #define BCM_6348_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
 #define BCM_6348_DSL_IRQ		(IRQ_INTERNAL_BASE + 4)
+#define BCM_6348_UDC0_IRQ		(IRQ_INTERNAL_BASE + 6)
 #define BCM_6348_ENET1_IRQ		(IRQ_INTERNAL_BASE + 7)
 #define BCM_6348_ENET0_IRQ		(IRQ_INTERNAL_BASE + 8)
 #define BCM_6348_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 9)
 #define BCM_6348_OHCI0_IRQ		(IRQ_INTERNAL_BASE + 12)
+#define BCM_6348_USB_CNTL_RX_DMA	(IRQ_INTERNAL_BASE + 14)
+#define BCM_6348_USB_CNTL_TX_DMA	(IRQ_INTERNAL_BASE + 15)
+#define BCM_6348_USB_BULK_RX_DMA	(IRQ_INTERNAL_BASE + 16)
+#define BCM_6348_USB_BULK_TX_DMA	(IRQ_INTERNAL_BASE + 17)
+#define BCM_6348_USB_ISO_RX_DMA		(IRQ_INTERNAL_BASE + 18)
+#define BCM_6348_USB_ISO_TX_DMA		(IRQ_INTERNAL_BASE + 19)
 #define BCM_6348_ENET0_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 20)
 #define BCM_6348_ENET0_TXDMA_IRQ	(IRQ_INTERNAL_BASE + 21)
 #define BCM_6348_ENET1_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 22)

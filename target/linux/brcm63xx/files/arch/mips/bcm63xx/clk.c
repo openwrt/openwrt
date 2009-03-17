@@ -137,6 +137,26 @@ static struct clk clk_usbh = {
 };
 
 /*
+ * USB slave clock
+ */
+static void usbs_set(struct clk *clk, int enable)
+{
+	u32 mask;
+
+	switch(bcm63xx_get_cpu_id()) {
+	case BCM6338_CPU_ID: mask = CKCTL_6338_USBS_EN; break;
+	case BCM6348_CPU_ID: mask = CKCTL_6348_USBS_EN; break;
+	default:
+		return;
+	}
+	bcm_hwclock_set(mask, enable);
+}
+
+static struct clk clk_usbs = {
+	.set	= usbs_set,
+};
+
+/*
  * SPI clock
  */
 static void spi_set(struct clk *clk, int enable)
@@ -202,6 +222,8 @@ struct clk *clk_get(struct device *dev, const char *id)
 		return &clk_ephy;
 	if (!strcmp(id, "usbh"))
 		return &clk_usbh;
+	if (!strcmp(id, "usbs"))
+		return &clk_usbs;
 	if (!strcmp(id, "spi"))
 		return &clk_spi;
 	if (!strcmp(id, "periph"))

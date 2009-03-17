@@ -27,6 +27,7 @@
 #include <bcm63xx_dev_pcmcia.h>
 #include <bcm63xx_dev_usb_ohci.h>
 #include <bcm63xx_dev_usb_ehci.h>
+#include <bcm63xx_dev_usb_udc.h>
 #include <bcm63xx_dev_spi.h>
 #include <board_bcm963xx.h>
 
@@ -163,27 +164,23 @@ static struct board_info __initdata board_FAST2404 = {
 };
 
 static struct board_info __initdata board_DV201AMR = {
-        .name                           = "DV201AMR",
-        .expected_cpu_id                = 0x6348,
+	.name				= "DV201AMR",
+	.expected_cpu_id		= 0x6348,
 
-        .has_enet0                      = 1,
-        .has_enet1                      = 1,
-        .has_pci                        = 1,
+	.has_pci			= 1,
+	.has_ohci0			= 1,
+	.has_udc0			= 1,
 
+	.has_enet0			= 1,
+	.has_enet1			= 1,
 	.enet0 = {
 		.has_phy		= 1,
 		.use_internal_phy	= 1,
 	},
-
-        .enet1 = {
-                .force_speed_100        = 1,
-                .force_duplex_full      = 1,
-        },
-
-
-        .has_ohci0 = 1,
-        .has_pccard = 1,
-        .has_ehci0 = 1,
+	.enet1 = {
+		.force_speed_100	= 1,
+		.force_duplex_full	= 1,
+	},
 };
 
 static struct board_info __initdata board_96348gw_a = {
@@ -525,6 +522,8 @@ int __init board_register_devices(void)
 	if (board.has_ehci0)
 		bcm63xx_ehci_register();
 
+	if (board.has_udc0)
+		bcm63xx_udc_register();
 	/* Generate MAC address for WLAN and
 	 * register our SPROM */
 	if (!board_get_mac_address(bcm63xx_sprom.il0mac)) {
