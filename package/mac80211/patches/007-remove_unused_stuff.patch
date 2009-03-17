@@ -1,7 +1,7 @@
 Index: compat-wireless-2009-03-13/config.mk
 ===================================================================
---- compat-wireless-2009-03-13.orig/config.mk	2009-03-17 21:15:23.000000000 +0100
-+++ compat-wireless-2009-03-13/config.mk	2009-03-17 21:18:05.000000000 +0100
+--- compat-wireless-2009-03-13.orig/config.mk	2009-03-17 23:34:31.000000000 +0100
++++ compat-wireless-2009-03-13/config.mk	2009-03-17 23:40:08.000000000 +0100
 @@ -91,10 +91,10 @@ CONFIG_MAC80211_MESH=y
  CONFIG_CFG80211=m
  # CONFIG_CFG80211_REG_DEBUG is not set
@@ -68,7 +68,34 @@ Index: compat-wireless-2009-03-13/config.mk
  # CONFIG_IPW2200_DEBUG is not set
  # The above enables use a second interface prefixed 'rtap'.
  #           Example usage:
-@@ -283,15 +283,15 @@ CONFIG_SSB_SPROM=y
+@@ -176,13 +176,13 @@ CONFIG_IPW2200_QOS=y
+ # % echo 1 > /sys/bus/pci/drivers/ipw2200/*/rtap_iface
+ 
+ CONFIG_SSB_BLOCKIO=y
+-CONFIG_SSB_PCIHOST_POSSIBLE=y
+-CONFIG_SSB_PCIHOST=y
++# CONFIG_SSB_PCIHOST_POSSIBLE=y
++# CONFIG_SSB_PCIHOST=y
+ CONFIG_SSB_B43_PCI_BRIDGE=y
+-CONFIG_SSB_PCMCIAHOST_POSSIBLE=y
+-CONFIG_SSB_PCMCIAHOST=y
+-CONFIG_SSB_DRIVER_PCICORE_POSSIBLE=y
+-CONFIG_SSB_DRIVER_PCICORE=y
++# CONFIG_SSB_PCMCIAHOST_POSSIBLE=y
++# CONFIG_SSB_PCMCIAHOST=y
++# CONFIG_SSB_DRIVER_PCICORE_POSSIBLE=y
++# CONFIG_SSB_DRIVER_PCICORE=y
+ 
+ CONFIG_P54_PCI=m
+ 
+@@ -277,21 +277,21 @@ CONFIG_P54_COMMON=m
+ # Sonics Silicon Backplane
+ CONFIG_SSB_POSSIBLE=y
+ CONFIG_SSB=m
+-CONFIG_SSB_SPROM=y
++# CONFIG_SSB_SPROM=y
+ # CONFIG_SSB_DEBUG is not set
+ 
  ifneq ($(CONFIG_USB),)
  ifneq ($(CONFIG_LIBERTAS_THINFIRM_USB),m)
  CONFIG_LIBERTAS_USB=m
