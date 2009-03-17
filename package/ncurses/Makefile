@@ -16,6 +16,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/ncurses
 PKG_MD5SUM:=b6593abe1089d6aab1551c105c9300e3
 
+PKG_BUILD_DEPENDS:=ncurses/host
+
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libncurses
@@ -25,96 +28,37 @@ define Package/libncurses
   URL:=http://www.gnu.org/software/ncurses/
 endef
 
-define Build/Configure
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR) libs
+endef
+
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) install.progs
 endef
 
 TARGET_CFLAGS += $(FPIC)
 
+CONFIGURE_ARGS += \
+	--enable-echo \
+	--enable-const \
+	--enable-overwrite \
+	--disable-rpath \
+	--without-ada \
+	--without-cxx \
+	--without-cxx-binding \
+	--without-debug \
+	--without-profile \
+	--without-progs \
+	--with-normal \
+	--with-shared \
+	--with-terminfo-dirs=/usr/share/terminfo \
+	--with-default-terminfo-dir=/usr/share/terminfo
+
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
-	-$(MAKE) -C $(PKG_BUILD_DIR) distclean
-	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
-		CONFIG_SITE="" \
-		./configure \
-			--target=$(GNU_HOST_NAME) \
-			--host=$(GNU_HOST_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--program-prefix="" \
-			--program-suffix="" \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--datadir=/usr/share \
-			--includedir=/usr/include \
-			--infodir=/usr/share/info \
-			--libdir=/usr/lib \
-			--libexecdir=/usr/lib \
-			--localstatedir=/var \
-			--mandir=/usr/share/man \
-			--sbindir=/usr/sbin \
-			--sysconfdir=/etc \
-			$(DISABLE_NLS) \
-			$(DISABLE_LARGEFILE) \
-			--enable-echo \
-			--enable-const \
-			--enable-overwrite \
-			--disable-rpath \
-			--without-ada \
-			--without-cxx \
-			--without-cxx-binding \
-			--without-debug \
-			--without-profile \
-			--with-progs \
-			--with-normal \
-			--without-shared \
-			--with-terminfo-dirs=/usr/share/terminfo \
-			--with-default-terminfo-dir=/usr/share/terminfo \
-	);
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		libs install.progs
-	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="$(TARGET_CPPFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS)" \
-		./configure \
-			--target=$(GNU_TARGET_NAME) \
-			--host=$(GNU_TARGET_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--program-prefix="" \
-			--program-suffix="" \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--datadir=/usr/share \
-			--includedir=/usr/include \
-			--infodir=/usr/share/info \
-			--libdir=/usr/lib \
-			--libexecdir=/usr/lib \
-			--localstatedir=/var \
-			--mandir=/usr/share/man \
-			--sbindir=/usr/sbin \
-			--sysconfdir=/etc \
-			$(DISABLE_NLS) \
-			$(DISABLE_LARGEFILE) \
-			--enable-echo \
-			--enable-const \
-			--enable-overwrite \
-			--disable-rpath \
-			--without-ada \
-			--without-cxx \
-			--without-cxx-binding \
-			--without-debug \
-			--without-profile \
-			--without-progs \
-			--with-normal \
-			--with-shared \
-			--with-terminfo-dirs=/usr/share/terminfo \
-			--with-default-terminfo-dir=/usr/share/terminfo \
-	);
-	rm -f $(PKG_BUILD_DIR)/lib/lib*
+	cp \
+		$(HOST_BUILD_DIR)/ncurses/make_keys \
+		$(HOST_BUILD_DIR)/ncurses/make_hash \
+		$(PKG_BUILD_DIR)/ncurses/
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		BUILD_CC="$(TARGET_CC)" \
@@ -157,4 +101,5 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}.{a,so*} $(1)/usr/lib/
 endef
 
+$(eval $(call HostBuild))
 $(eval $(call BuildPackage,libncurses))
