@@ -12,6 +12,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
+	mkdir -p $(BIN_DIR)
 	cp $(KDIR)/image $(BIN_DIR)/otheros.bld
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
 	cp $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf $(TARGET_DIR)
