@@ -9,10 +9,35 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/input.h>
+
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "devices.h"
+
+#define AP81_GPIO_BTN_SW4	12
+#define AP81_GPIO_BTN_SW1	21
+
+#define AP81_BUTTONS_POLL_INTERVAL	20
+
+static struct gpio_button ap81_gpio_buttons[] __initdata = {
+	{
+		.desc		= "sw1",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= AP81_GPIO_BTN_SW1,
+		.active_low	= 1,
+	} , {
+		.desc		= "sw4",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= AP81_GPIO_BTN_SW4,
+		.active_low	= 1,
+	}
+};
 
 static void __init ap81_setup(void)
 {
@@ -31,6 +56,10 @@ static void __init ap81_setup(void)
 	ar71xx_add_device_eth(1);
 
 	ar71xx_add_device_usb();
+
+	ar71xx_add_device_gpio_buttons(-1, AP81_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(ap81_gpio_buttons),
+					ap81_gpio_buttons);
 
 	ar91xx_add_device_wmac();
 }
