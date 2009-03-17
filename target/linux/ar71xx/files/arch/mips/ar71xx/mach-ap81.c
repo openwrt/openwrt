@@ -30,6 +30,8 @@ static void __init ap81_setup(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
 
+	ar71xx_add_device_usb();
+
 	ar91xx_add_device_wmac();
 }
 
