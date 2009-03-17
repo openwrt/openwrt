@@ -97,7 +97,7 @@ endef
 ifndef DUMP
   define HostBuild
   $(if $(QUILT),$(Host/Quilt))
-  $(if $(STAMP_PREPARED),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
+  $(if $(if $(PKG_HOST_ONLY),,$(STAMP_PREPARED)),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
   $(if $(DUMP),,$(call HostHost/Autoclean))
 
   $(HOST_STAMP_PREPARED):
