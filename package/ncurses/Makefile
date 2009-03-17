@@ -16,9 +16,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/ncurses
 PKG_MD5SUM:=b6593abe1089d6aab1551c105c9300e3
 
-PKG_BUILD_DEPENDS:=ncurses/host
-
-include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libncurses
@@ -26,14 +23,6 @@ define Package/libncurses
   CATEGORY:=Libraries
   TITLE:=Terminal handling library
   URL:=http://www.gnu.org/software/ncurses/
-endef
-
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) libs
-endef
-
-define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) install.progs
 endef
 
 TARGET_CFLAGS += $(FPIC)
@@ -55,16 +44,9 @@ CONFIGURE_ARGS += \
 	--with-default-terminfo-dir=/usr/share/terminfo
 
 define Build/Compile
-	cp \
-		$(HOST_BUILD_DIR)/ncurses/make_keys \
-		$(HOST_BUILD_DIR)/ncurses/make_hash \
-		$(PKG_BUILD_DIR)/ncurses/
-	touch \
-		$(PKG_BUILD_DIR)/ncurses/make_keys \
-		$(PKG_BUILD_DIR)/ncurses/make_hash
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		BUILD_CC="$(TARGET_CC)" \
+		BUILD_CC="$(HOSTCC)" \
 		HOSTCC="$(HOSTCC)" \
 		HOSTCCFLAGS="" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
@@ -104,5 +86,4 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}.{a,so*} $(1)/usr/lib/
 endef
 
-$(eval $(call HostBuild))
 $(eval $(call BuildPackage,libncurses))
