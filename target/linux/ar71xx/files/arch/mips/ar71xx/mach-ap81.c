@@ -21,6 +21,11 @@
 
 #include "devices.h"
 
+#define AP81_GPIO_LED_STATUS	1
+#define AP81_GPIO_LED_AOSS	3
+#define AP81_GPIO_LED_WLAN	6
+#define AP81_GPIO_LED_POWER	14
+
 #define AP81_GPIO_BTN_SW4	12
 #define AP81_GPIO_BTN_SW1	21
 
@@ -71,6 +76,26 @@ static struct spi_board_info ap81_spi_info[] = {
 	}
 };
 
+static struct gpio_led ap81_leds_gpio[] __initdata = {
+	{
+		.name		= "ap81:green:status",
+		.gpio		= AP81_GPIO_LED_STATUS,
+		.active_low	= 1,
+	}, {
+		.name		= "ap81:amber:aoss",
+		.gpio		= AP81_GPIO_LED_AOSS,
+		.active_low	= 1,
+	}, {
+		.name		= "ap81:green:wlan",
+		.gpio		= AP81_GPIO_LED_WLAN,
+		.active_low	= 1,
+	}, {
+		.name		= "ap81:green:power",
+		.gpio		= AP81_GPIO_LED_POWER,
+		.active_low	= 1,
+	}
+};
+
 static struct gpio_button ap81_gpio_buttons[] __initdata = {
 	{
 		.desc		= "sw1",
@@ -109,6 +134,9 @@ static void __init ap81_setup(void)
 
 	ar71xx_add_device_spi(NULL, ap81_spi_info,
 			      ARRAY_SIZE(ap81_spi_info));
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap81_leds_gpio),
+					ap81_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, AP81_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(ap81_gpio_buttons),
