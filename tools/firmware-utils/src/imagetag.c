@@ -15,8 +15,8 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 
-#define IMAGETAG_MAGIC1			"OpenWRT BCM963xx"
-#define IMAGETAG_MAGIC2			"V1"
+#define IMAGETAG_MAGIC1			"Broadcom Corporatio"
+#define IMAGETAG_MAGIC2			"ver. 2.0"
 #define IMAGETAG_VER			"6"
 #define IMAGETAG_DEFAULT_LOADADDR	0x80010000
 #define IMAGETAG_CRC_START		0xFFFFFFFF
@@ -239,7 +239,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 int main(int argc, char **argv)
 {
 	int c;
-	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver;
+	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2 = NULL, *ver = NULL;
 	uint32_t flashstart, fwoffset, loadaddr, entry;
 	uint32_t fwaddr, flash_bs;
 	
