@@ -14,7 +14,6 @@
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
 
