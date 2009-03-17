@@ -156,7 +156,7 @@ endif
       ), $(BuildTarget/$(target)) \
     ) \
   )
-  $(if $(DUMP),,$(call Build/DefaultTargets,$(1)))
+  $(if $(PKG_HOST_ONLY)$(DUMP),,$(call Build/DefaultTargets,$(1)))
 endef
 
 define pkg_install_files
