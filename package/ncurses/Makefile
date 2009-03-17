@@ -59,6 +59,9 @@ define Build/Compile
 		$(HOST_BUILD_DIR)/ncurses/make_keys \
 		$(HOST_BUILD_DIR)/ncurses/make_hash \
 		$(PKG_BUILD_DIR)/ncurses/
+	touch \
+		$(PKG_BUILD_DIR)/ncurses/make_keys \
+		$(PKG_BUILD_DIR)/ncurses/make_hash
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		BUILD_CC="$(TARGET_CC)" \
