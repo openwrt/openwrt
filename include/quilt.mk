@@ -55,6 +55,10 @@ define PatchDir
 $(call PatchDir/$(if $(strip $(QUILT)),Quilt,Default),$(strip $(1)),$(strip $(2)),$(strip $(3)))
 endef
 
+define HostPatchDir
+$(call PatchDir/$(if $(strip $(HOST_QUILT)),Quilt,Default),$(strip $(1)),$(strip $(2)),$(strip $(3)))
+endef
+
 ifneq ($(PKG_BUILD_DIR),)
   QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
   ifneq ($(QUILT),)
@@ -78,9 +82,9 @@ ifneq ($(HOST_BUILD_DIR),)
 endif
 
 define Host/Patch/Default
-	$(if $(QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
-	$(call PatchDir,$(HOST_BUILD_DIR),$(HOST_PATCH_DIR),)
-	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
+	$(if $(HOST_QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
+	$(call HostPatchDir,$(HOST_BUILD_DIR),$(HOST_PATCH_DIR),)
+	$(if $(HOST_QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
 endef
 
 define Build/Patch/Default
