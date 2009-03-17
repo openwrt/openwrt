@@ -41,6 +41,7 @@ struct board_info {
 	unsigned int	has_pccard:1;
 	unsigned int	has_ohci0:1;
 	unsigned int	has_ehci0:1;
+	unsigned int	has_udc0:1;
 
 	/* ethernet config */
 	struct bcm63xx_enet_platform_data enet0;
