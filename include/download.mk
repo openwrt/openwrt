@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-DOWNLOAD_RDEP:=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
+DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
 define dl_method 
@@ -132,7 +132,9 @@ define Download
     endif
   )
 
-  $(if $(DOWNLOAD_RDEP),$(DOWNLOAD_RDEP): $(DL_DIR)/$(FILE))
+  $(foreach dep,$(DOWNLOAD_RDEP),
+    $(dep): $(DL_DIR)/$(FILE)
+  )
   download: $(DL_DIR)/$(FILE)
 
   $(DL_DIR)/$(FILE):
