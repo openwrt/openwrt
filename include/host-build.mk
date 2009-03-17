@@ -12,6 +12,7 @@ include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
 
+BUILD_TYPES += host
 HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPEND),)))
 HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
@@ -122,7 +123,12 @@ ifndef DUMP
     host-install: $(HOST_STAMP_INSTALLED)
   endif
 
-  $(if $(STAMP_BUILT),compile: host-install)
+  ifndef STAMP_BUILT
+    prepare: host-prepare
+    compile: host-compile
+    install: host-install
+    clean: host-clean
+  endif
   host-prepare: $(HOST_STAMP_PREPARED)
   host-configure: $(HOST_STAMP_CONFIGURED)
   host-compile: $(HOST_STAMP_BUILT)
@@ -135,10 +141,10 @@ ifndef DUMP
   endef
 
   download:
-  prepare: host-prepare
-  compile: host-compile
-  install: host-install
-  clean: host-clean
+  prepare:
+  compile:
+  install:
+  clean:
 
 endif
 

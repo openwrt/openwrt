@@ -327,10 +327,11 @@ sub install_package {
 
 	# install all dependencies
 	foreach my $vpkg (@{$srcpackage{$src}}, $pkg) {
-		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}) {
+		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}, @{$vpkg->{"builddepends/host"}}) {
 			next if $dep =~ /@/;
 			$dep =~ s/^\+//;
 			$dep =~ s/^.+://;
+			$dep =~ s/\/.+$//;
 			next unless $dep;
 			install_package($feed, $dep) == 0 or $ret = 1;
 		}

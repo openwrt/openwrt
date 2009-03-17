@@ -551,6 +551,20 @@ EOF
 	}
 }
 
+sub get_conditional_dep($$) {
+	my $condition = shift;
+	my $depstr = shift;
+	if ($condition) {
+		if ($condition =~ /^!(.+)/) {
+			return "\$(if \$(CONFIG_$1),,$depstr)";
+		} else {
+			return "\$(if \$(CONFIG_$condition),$depstr)";
+		}
+	} else {
+		return $depstr;
+	}
+}
+
 sub gen_package_mk() {
 	my %conf;
 	my %dep;
@@ -582,6 +596,10 @@ sub gen_package_mk() {
 		next if $done{$pkg->{src}};
 		$done{$pkg->{src}} = 1;
 
+		if (@{$pkg->{buildtypes}} > 0) {
+			print "buildtypes-$pkg->{subdir}$pkg->{src} = ".join(' ', @{$pkg->{buildtypes}})."\n";
+		}
+
 		foreach my $spkg (@{$srcpackage{$pkg->{src}}}) {
 			foreach my $dep (@{$spkg->{depends}}, @{$spkg->{builddepends}}) {
 				$dep =~ /@/ or do {
@@ -590,16 +608,59 @@ sub gen_package_mk() {
 				};
 			}
 		}
+		foreach my $type (@{$pkg->{buildtypes}}) {
+			my @extra_deps;
+			my %deplines;
+
+			next unless $pkg->{"builddepends/$type"};
+			foreach my $dep (@{$pkg->{"builddepends/$type"}}) {
+				my $suffix = "";
+				my $condition;
+
+				if ($dep =~ /^(.+):(.+)/) {
+					$condition = $1;
+					$dep = $2;
+				}
+				if ($dep =~ /^(.+)(\/.+)/) {
+					$dep = $1;
+					$suffix = $2;
+				}
+				my $pkg_dep = $package{$dep};
+				next unless $pkg_dep;
+
+				my $idx = "";
+				if (defined $pkg_dep->{src}) {
+					$idx = $pkg_dep->{subdir}.$pkg_dep->{src};
+				} elsif (defined($srcpackage{$dep})) {
+					$idx = $subdir{$dep}.$dep;
+				}
+				my $depstr = "\$(curdir)/$idx$suffix/compile";
+				my $depline = get_conditional_dep($condition, $depstr);
+				if ($depline) {
+					$deplines{$dep} = $depline;
+				}
+			}
+			my $depline = join(" ", values %deplines);
+			if ($depline) {
+				$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/$type/compile += $depline\n";
+			}
+		}
 
 		my $hasdeps = 0;
 		my %deplines;
 		foreach my $deps (@srcdeps) {
 			my $idx;
 			my $condition;
+			my $prefix = "";
+			my $suffix = "";
 
 			if ($deps =~ /^(.+):(.+)/) {
 				$condition = $1;
 				$deps = $2;
+			}
+			if ($deps =~ /^(.+)(\/.+)/) {
+				$deps = $1;
+				$suffix = $2;
 			}
 
 			my $pkg_dep = $package{$deps};
@@ -627,21 +688,13 @@ sub gen_package_mk() {
 					my $depstr;
 
 					if ($pkg_dep->{vdepends}) {
-						$depstr = "\$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
+						$depstr = "\$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx$suffix/compile)";
 						$dep{$pkg->{src}."->($dep)".$idx} = 1;
 					} else {
-						$depstr = "\$(curdir)/$idx/compile";
+						$depstr = "\$(curdir)/$idx$suffix/compile";
 						$dep{$pkg->{src}."->".$idx} = 1;
 					}
-					if ($condition) {
-						if ($condition =~ /^!(.+)/) {
-							$depline = "\$(if \$(CONFIG_$1),,$depstr)";
-						} else {
-							$depline = "\$(if \$(CONFIG_$condition),$depstr)";
-						}
-					} else {
-						$depline = $depstr;
-					}
+					$depline = get_conditional_dep($condition, $depstr);
 					if ($depline) {
 						$deplines{$idx.$dep} = $depline;
 					}

@@ -79,7 +79,7 @@ define Build/DefaultTargets
 
   $(STAMP_CONFIGURED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_CONFIGURED) : export CONFIG_SITE:=$$(CONFIG_SITE)
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(HOST_STAMP_INSTALLED)
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
