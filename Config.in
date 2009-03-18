@@ -15,7 +15,7 @@ source "target/Config.in"
 menu "Target Images"
 	config TARGET_ROOTFS_INITRAMFS
 		bool "ramdisk"
-		default n
+		default y if USES_INITRAMFS
 		depends LINUX_2_6
 		help
 		  Embed the rootfs into the kernel (initramfs)

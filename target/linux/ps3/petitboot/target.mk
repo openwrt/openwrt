@@ -1,7 +1,7 @@
 BOARDNAME:=Petitboot
-FEATURES:=fpu
+FEATURES:=fpu ramdisk
 
-DEFAULT_PACKAGES+= dnsmasq
+DEFAULT_PACKAGES+= dnsmasq petitboot
 
 define Target/Description
 	Build Petitboot bootloader
