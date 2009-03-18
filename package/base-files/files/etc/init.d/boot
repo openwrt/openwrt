@@ -20,8 +20,8 @@ system_config() {
 	config_get log_ip "$cfg" log_ip 
 	config_get log_size "$cfg" log_size
 	config_get log_port "$cfg" log_port
-	syslogd -C${log_size:-16} ${log_ip:+-L -R $log_ip${log_port:+:$log_port}}
-	klogd
+	[ -x /sbin/syslogd ] && syslogd -C${log_size:-16} ${log_ip:+-L -R $log_ip${log_port:+:$log_port}}
+	[ -x /sbin/klogd ] && klogd
 }
 
 apply_uci_config() {(
