@@ -17,12 +17,12 @@ ifneq ($(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_23)$(CONFIG_LINUX_2_6_24)$(CONFI
   PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
   PATCH_DIR:=./patches-old
 else
-  PKG_VERSION:=2009-03-13
+  PKG_VERSION:=2009-03-18
   PKG_RELEASE:=1
   PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/03 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-  PKG_MD5SUM:=bc924e8914a78d5a40ce4c17e5d28447
+  PKG_MD5SUM:=d46d230f62aed9bdec7a1f168feb221b
 endif
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
@@ -428,7 +428,6 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
-	rm $(PKG_BUILD_DIR)/include/net/ieee80211_radiotap.h
 	rm $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
 endef
 
