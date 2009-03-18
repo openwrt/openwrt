@@ -163,6 +163,7 @@ sub target_config_features(@) {
 		/tgz/ and $ret .= "\tselect USES_TGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
 		/fpu/ and $ret .= "\tselect HAS_FPU\n";
+		/ramdisk/ and $ret .= "\tselect USES_INITRAMFS\n";
 	}
 	return $ret;
 }
