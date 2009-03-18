@@ -239,11 +239,11 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 int main(int argc, char **argv)
 {
 	int c;
-	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2 = NULL, *ver = NULL;
+	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver;
 	uint32_t flashstart, fwoffset, loadaddr, entry;
 	uint32_t fwaddr, flash_bs;
 	
-	kernel = rootfs = bin = boardid = chipid = NULL;
+	kernel = rootfs = bin = boardid = chipid = magic2 = ver = NULL;
 	entry = 0;
 
 	flashstart = DEFAULT_FLASH_START;
