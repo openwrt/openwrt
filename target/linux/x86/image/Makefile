@@ -93,7 +93,7 @@ endef
 
 define Image/Build/iso 
 	$(CP) \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-pc/stage2_eltorito \
+		$(STAGING_DIR_HOST)/usr/lib/grub/i386-openwrt/stage2_eltorito \
 		$(KDIR)/root.grub/boot/grub/stage2_eltorito 
 	sed -i \
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
