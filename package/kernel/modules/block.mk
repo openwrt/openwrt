@@ -320,3 +320,18 @@ define KernelPackage/aoe/description
 endef
 
 $(eval $(call KernelPackage,aoe))
+
+define KernelPackage/ps3vram
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=PS3 Video RAM Storage Driver
+  DEPENDS:=@TARGET_ps3
+  KCONFIG:=CONFIG_PS3_VRAM
+  FILES:=$(LINUX_DIR)/drivers/block/ps3vram.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,01,ps3vram)
+endef
+
+define KernelPackage/ps3vram/description
+  Kernel support for PS3 Video RAM Storage
+endef
+
+$(eval $(call KernelPackage,ps3vram))
