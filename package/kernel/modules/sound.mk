@@ -23,7 +23,9 @@ define KernelPackage/sound-core
 	CONFIG_SND_VIRMIDI \
 	CONFIG_SND_SEQ_DUMMY \
 	CONFIG_SND_SEQUENCER_OSS=y \
-	CONFIG_HOSTAUDIO
+	CONFIG_HOSTAUDIO \
+	CONFIG_SND_PCM_OSS \
+	CONFIG_SND_MIXER_OSS
 endef
 
 define KernelPackage/sound-core/2.4
@@ -41,8 +43,8 @@ SOUNDCORE_LOAD ?= \
 	snd-rawmidi \
 	snd-timer \
 	snd-pcm \
-	$(if $(CONFIG_SND_MIXER_OSS),snd-mixer-oss) \
-	$(if $(CONFIG_SND_PCM_OSS),snd-pcm-oss)
+	snd-mixer-oss \
+	snd-pcm-oss
 
 SOUNDCORE_FILES ?= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
@@ -53,8 +55,8 @@ SOUNDCORE_FILES ?= \
 	$(LINUX_DIR)/sound/core/snd-rawmidi.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-timer.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/core/snd-pcm.$(LINUX_KMOD_SUFFIX) \
-	$(if $(CONFIG_SND_MIXER_OSS),$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.$(LINUX_KMOD_SUFFIX)) \
-	$(if $(CONFIG_SND_PCM_OSS),$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.$(LINUX_KMOD_SUFFIX))
+	$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.$(LINUX_KMOD_SUFFIX)
 
 define KernelPackage/sound-core/2.6
   FILES:=$(SOUNDCORE_FILES)
