@@ -72,6 +72,26 @@ static const unsigned long bcm96338_regs_spi[] = {
 };
 
 /*
+ * 6345 register sets and irqs
+ */
+
+static const unsigned long bcm96345_regs_base[] = {
+	[RSET_PERF]		= BCM_6345_PERF_BASE,
+	[RSET_TIMER]		= BCM_6345_TIMER_BASE,
+	[RSET_WDT]		= BCM_6345_WDT_BASE,
+	[RSET_UART0]		= BCM_6345_UART0_BASE,
+	[RSET_GPIO]		= BCM_6345_GPIO_BASE,
+};
+
+static const int bcm96345_irqs[] = {
+	[IRQ_TIMER]		= BCM_6345_TIMER_IRQ,
+	[IRQ_UART0]		= BCM_6345_UART0_IRQ,
+	[IRQ_DSL]		= BCM_6345_DSL_IRQ,
+	[IRQ_ENET0]		= BCM_6345_ENET0_IRQ,
+	[IRQ_ENET_PHY]		= BCM_6345_ENET_PHY_IRQ,
+};
+
+/*
  * 6348 register sets and irqs
  */
 static const unsigned long bcm96348_regs_base[] = {
@@ -217,9 +237,11 @@ static unsigned int detect_cpu_clock(void)
 {
 	unsigned int tmp, n1 = 0, n2 = 0, m1 = 0;
 
-	if (BCMCPU_IS_6338()) {
+	if (BCMCPU_IS_6338())
 		return 240000000;
-	}
+
+	if (BCMCPU_IS_6345())
+		return 140000000;
 
 	/*
 	 * frequency depends on PLL configuration:
@@ -293,6 +315,11 @@ void __init bcm63xx_cpu_init(void)
 		bcm63xx_regs_base = bcm96338_regs_base;
 		bcm63xx_irqs = bcm96338_irqs;
 		bcm63xx_regs_spi = bcm96338_regs_spi;
+		break;
+	case CPU_BCM6345:
+		expected_cpu_id = BCM6345_CPU_ID;
+		bcm63xx_regs_base = bcm96345_regs_base;
+		bcm63xx_irqs = bcm96345_irqs;
 		break;
 	case CPU_BCM6348:
 		expected_cpu_id = BCM6348_CPU_ID;

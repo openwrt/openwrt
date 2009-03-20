@@ -12,6 +12,7 @@
  * arm mach-types)
  */
 #define BCM6338_CPU_ID		0x6338
+#define BCM6345_CPU_ID		0x6345
 #define BCM6348_CPU_ID		0x6348
 #define BCM6358_CPU_ID		0x6358
 
@@ -31,6 +32,19 @@ unsigned int bcm63xx_get_cpu_freq(void);
 # define BCMCPU_IS_6338()	(bcm63xx_get_cpu_id() == BCM6338_CPU_ID)
 #else
 # define BCMCPU_IS_6338()	(0)
+#endif
+
+#ifdef CONFIG_BCM63XX_CPU_6345
+# ifdef bcm63xx_get_cpu_id
+#  undef bcm63xx_get_cpu_id
+#  define bcm63xx_get_cpu_id()	__bcm63xx_get_cpu_id()
+#  define BCMCPU_RUNTIME_DETECT
+# else
+#  define bcm63xx_get_cpu_id()	BCM6345_CPU_ID
+# endif
+# define BCMCPU_IS_6345()	(bcm63xx_get_cpu_id() == BCM6345_CPU_ID)
+#else
+# define BCMCPU_IS_6345()	(0)
 #endif
 
 #ifdef CONFIG_BCM63XX_CPU_6348
@@ -123,6 +137,15 @@ enum bcm63xx_regs_set {
 #define BCM_6338_MEMC_BASE		(0xfffe3100)
 
 /*
+ * 6345 register sets base address
+ */
+#define BCM_6345_PERF_BASE		(0xfffe0000)
+#define BCM_6345_TIMER_BASE		(0xfffe0200)
+#define BCM_6345_WDT_BASE		(0xfffe021c)
+#define BCM_6345_UART0_BASE		(0xfffe0300)
+#define BCM_6345_GPIO_BASE		(0xfffe0400)
+
+/*
  * 6348 register sets base address
  */
 #define BCM_6348_DSL_LMEM_BASE		(0xfff00000)
@@ -202,6 +225,20 @@ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
 		return BCM_6338_SPI_BASE;
 	case RSET_MEMC:
 		return BCM_6338_MEMC_BASE;
+	}
+#endif
+#ifdef CONFIG_BCM63XX_CPU_6345
+	switch (set) {
+	case RSET_PERF:
+		return BCM_6345_PERF_BASE;
+	case RSET_TIMER:
+		return BCM_6345_TIMER_BASE;
+	case RSET_WDT:
+		return BCM_6345_WDT_BASE;
+	case RSET_UART0:
+		return BCM_6345_UART0_BASE;
+	case RSET_GPIO:
+		return BCM_6345_GPIO_BASE;
 	}
 #endif
 #ifdef CONFIG_BCM63XX_CPU_6348
@@ -460,6 +497,17 @@ enum bcm63xx_irq {
 #define BCM_6338_ENET0_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 15)
 #define BCM_6338_ENET0_TXDMA_IRQ	(IRQ_INTERNAL_BASE + 16)
 #define BCM_6338_SDIO_IRQ		(IRQ_INTERNAL_BASE + 17)
+
+/*
+ * 6345 irqs
+ */
+#define BCM_6345_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
+#define BCM_6345_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
+#define BCM_6345_DSL_IRQ		(IRQ_INTERNAL_BASE + 3)
+#define BCM_6345_ATM_IRQ		(IRQ_INTERNAL_BASE + 4)
+#define BCM_6345_USB_IRQ		(IRQ_INTERNAL_BASE + 5)
+#define BCM_6345_ENET0_IRQ		(IRQ_INTERNAL_BASE + 8)
+#define BCM_6345_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 12)
 
 /*
  * 6348 irqs
