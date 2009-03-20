@@ -676,23 +676,24 @@ sub gen_package_mk() {
 			foreach my $dep (@deps) {
 				$pkg_dep = $package{$deps};
 				if (defined $pkg_dep->{src}) {
-					($pkg->{src} ne $pkg_dep->{src}) and $idx = $pkg_dep->{subdir}.$pkg_dep->{src};
+					($pkg->{src} ne $pkg_dep->{src}.$suffix) and $idx = $pkg_dep->{subdir}.$pkg_dep->{src};
 				} elsif (defined($srcpackage{$dep})) {
 					$idx = $subdir{$dep}.$dep;
 				}
+				$idx .= $suffix;
 				undef $idx if $idx =~ /^(kernel)|(base-files)$/;
 				if ($idx) {
 					my $depline;
-					next if $pkg->{src} eq $pkg_dep->{src};
+					next if $pkg->{src} eq $pkg_dep->{src}.$suffix;
 					next if $dep{$pkg->{src}."->".$idx};
 					next if $dep{$pkg->{src}."->($dep)".$idx} and $pkg_dep->{vdepends};
 					my $depstr;
 
 					if ($pkg_dep->{vdepends}) {
-						$depstr = "\$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx$suffix/compile)";
+						$depstr = "\$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
 						$dep{$pkg->{src}."->($dep)".$idx} = 1;
 					} else {
-						$depstr = "\$(curdir)/$idx$suffix/compile";
+						$depstr = "\$(curdir)/$idx/compile";
 						$dep{$pkg->{src}."->".$idx} = 1;
 					}
 					$depline = get_conditional_dep($condition, $depstr);
