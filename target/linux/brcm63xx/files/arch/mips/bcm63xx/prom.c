@@ -25,7 +25,11 @@ void __init prom_init(void)
 	bcm_wdt_writel(WDT_STOP_2, WDT_CTL_REG);
 
 	/* disable all hardware blocks clock for now */
-	if (BCMCPU_IS_6348())
+	if (BCMCPU_IS_6338())
+		mask = CKCTL_6338_ALL_SAFE_EN;
+	else if (BCMCPU_IS_6345())
+		mask = CKCTL_6345_UART_EN;
+	else if (BCMCPU_IS_6348())
 		mask = CKCTL_6348_ALL_SAFE_EN;
 	else
 		/* BCMCPU_IS_6358() */

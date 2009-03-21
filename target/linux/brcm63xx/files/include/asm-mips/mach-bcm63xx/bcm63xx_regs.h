@@ -24,6 +24,11 @@
 					CKCTL_6338_SAR_EN |		\
 					CKCTL_6338_SPI_EN)
 
+#define CKCTL_6345_CPU_EN		(1 << 0)
+#define CKCTL_6345_UART_EN		(1 << 3)
+#define CKCTL_6345_ENET_EN		(1 << 7)
+#define CKCTL_6345_USBH_EN		(1 << 8)
+
 #define CKCTL_6348_ADSLPHY_EN		(1 << 0)
 #define CKCTL_6348_MPI_EN		(1 << 1)
 #define CKCTL_6348_SDRAM_EN		(1 << 2)
