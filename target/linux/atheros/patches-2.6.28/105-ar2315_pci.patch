@@ -7,7 +7,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,231 @@
+@@ -0,0 +1,230 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -39,12 +39,11 @@
 +#include <ar231x_platform.h>
 +#include <ar231x.h>
 +#include <ar2315_regs.h>
++#include "devices.h"
 +
 +#define AR531X_MEM_BASE    0x80800000UL
 +#define AR531X_MEM_SIZE    0x00ffffffUL
 +#define AR531X_IO_SIZE     0x00007fffUL
-+
-+#define IS_2315() (current_cpu_data.cputype == CPU_4KEC)
 +
 +static unsigned long configspace;
 +
@@ -184,7 +183,7 @@
 +{
 +	u32 reg;
 +
-+	if (!IS_2315())
++	if (ar231x_devtype != DEV_TYPE_AR2315)
 +		return -ENODEV;
 +
 +	configspace = (unsigned long) ioremap_nocache(0x80000000, 1*1024*1024); /* Remap PCI config space */
