@@ -68,9 +68,7 @@ define Build/Compile
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
 		all
-endef
-
-define Package/busybox/install
+	rm -rf $(PKG_INSTALL_DIR)
 	$(FIND) $(PKG_BUILD_DIR) -lname "*busybox" -exec rm \{\} \;
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
@@ -78,9 +76,13 @@ define Package/busybox/install
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
 		IPKG_ARCH="$(ARCH)" \
-		CONFIG_PREFIX="$(1)" \
+		CONFIG_PREFIX="$(PKG_INSTALL_DIR)" \
 		install
+endef
+
+define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 	for tmp in $(init-y); do \
 		$(INSTALL_BIN) ./files/$$$$tmp $(1)/etc/init.d/$$$$tmp; \
 	done
