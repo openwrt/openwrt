@@ -257,8 +257,8 @@
 +	default y
 --- a/arch/mips/ar231x/ar2315.c
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -61,6 +61,27 @@ static inline void ar2315_gpio_irq(void)
- 	do_IRQ(AR531X_GPIO_IRQ_BASE + fls(pend) - 1);
+@@ -63,6 +63,27 @@ static inline void ar2315_gpio_irq(void)
+ 		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
  }
  
 +#ifdef CONFIG_ATHEROS_AR2315_PCI
@@ -285,7 +285,7 @@
  
  /*
   * Called when an interrupt is received, this function
-@@ -79,6 +100,10 @@ ar2315_irq_dispatch(void)
+@@ -81,6 +102,10 @@ ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);
