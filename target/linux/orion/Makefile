@@ -10,6 +10,7 @@ ARCH:=arm
 BOARD:=orion
 BOARDNAME:=Marvell Orion
 FEATURES:=squashfs
+SUBTARGETS=generic harddisk
 
 LINUX_VERSION:=2.6.28.8
 
