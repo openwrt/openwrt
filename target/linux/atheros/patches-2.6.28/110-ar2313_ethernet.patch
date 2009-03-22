@@ -25,7 +25,7 @@
  obj-$(CONFIG_DECLANCE) += declance.o
 --- /dev/null
 +++ b/drivers/net/ar231x.c
-@@ -0,0 +1,1267 @@
+@@ -0,0 +1,1268 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -301,22 +301,23 @@
 +	sp->mii_bus->write = ar231x_mdiobus_write;
 +	sp->mii_bus->reset = ar231x_mdiobus_reset;
 +	sp->mii_bus->name = "ar231x_eth_mii";
-+	snprintf(sp->mii_bus->id, MII_BUS_ID_SIZE, "0");
++	snprintf(sp->mii_bus->id, MII_BUS_ID_SIZE, "%d", pdev->id);
 +	sp->mii_bus->irq = kmalloc(sizeof(int), GFP_KERNEL);
 +	*sp->mii_bus->irq = PHY_POLL;
 +
 +	mdiobus_register(sp->mii_bus);
 +
 +	if (ar231x_mdiobus_probe(dev) != 0) {
-+		printk(KERN_ERR "ar231x: mdiobus_probe failed");
++		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
 +		rx_tasklet_cleanup(dev);
 +		ar231x_init_cleanup(dev);
 +		unregister_netdev(dev);
 +		kfree(dev);
-+	} else {
-+		/* start link poll timer */
-+		ar231x_setup_timer(dev);
++		return -ENODEV;
 +	}
++
++	/* start link poll timer */
++	ar231x_setup_timer(dev);
 +
 +	return 0;
 +}
