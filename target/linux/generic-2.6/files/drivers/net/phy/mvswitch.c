@@ -32,7 +32,7 @@
 
 /* Undefine this to use trailer mode instead.
  * I don't know if header mode works with all chips */
-#define HEADER_MODE	1
+//#define HEADER_MODE	1
 
 MODULE_DESCRIPTION("Marvell 88E6060 Switch driver");
 MODULE_AUTHOR("Felix Fietkau");
@@ -251,7 +251,7 @@ mvswitch_config_init(struct phy_device *pdev)
 
 	/* initialize default vlans */
 	for (i = 0; i < MV_PORTS; i++)
-		priv->vlans[(i == MV_WANPORT ? 1 : 0)] |= (1 << i);
+		priv->vlans[(i == MV_WANPORT ? 2 : 1)] |= (1 << i);
 
 	/* before entering reset, disable all ports */
 	for (i = 0; i < MV_PORTS; i++)
@@ -422,7 +422,9 @@ mvswitch_fixup(struct phy_device *dev)
 {
 	u16 reg;
 
-	/* look for the switch on the bus */
+	if (dev->addr != 0x10)
+		return 0;
+
 	reg = dev->bus->read(dev->bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
 	if (reg != MV_IDENT_VALUE)
 		return 0;
