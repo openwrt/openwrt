@@ -1,6 +1,6 @@
 --- a/drivers/net/ar231x.c
 +++ b/drivers/net/ar231x.c
-@@ -735,6 +735,7 @@ static void ar231x_load_rx_ring(struct n
+@@ -736,6 +736,7 @@ static void ar231x_load_rx_ring(struct n
  	for (i = 0; i < nr_bufs; i++) {
  		struct sk_buff *skb;
  		ar231x_descr_t *rd;
@@ -8,7 +8,7 @@
  
  		if (sp->rx_skb[idx])
  			break;
-@@ -753,7 +754,9 @@ static void ar231x_load_rx_ring(struct n
+@@ -754,7 +755,9 @@ static void ar231x_load_rx_ring(struct n
  		 * Make sure IP header starts on a fresh cache line.
  		 */
  		skb->dev = dev;
@@ -19,7 +19,7 @@
  		sp->rx_skb[idx] = skb;
  
  		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
-@@ -828,6 +831,7 @@ static int ar231x_rx_int(struct net_devi
+@@ -829,6 +832,7 @@ static int ar231x_rx_int(struct net_devi
  			/* alloc new buffer. */
  			skb_new = dev_alloc_skb(AR2313_BUFSIZE + RX_OFFSET + 128);
  			if (skb_new != NULL) {
@@ -27,7 +27,7 @@
  
  				skb = sp->rx_skb[idx];
  				/* set skb */
-@@ -835,13 +839,17 @@ static int ar231x_rx_int(struct net_devi
+@@ -836,13 +840,17 @@ static int ar231x_rx_int(struct net_devi
  						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
  
  				dev->stats.rx_bytes += skb->len;
@@ -48,7 +48,7 @@
  				/* reset descriptor's curr_addr */
  				rxdesc->addr = virt_to_phys(skb_new->data);
  
-@@ -1243,6 +1251,8 @@ static int ar231x_mdiobus_probe (struct 
+@@ -1244,6 +1252,8 @@ static int ar231x_mdiobus_probe (struct 
  		return PTR_ERR(phydev);
  	}
  
