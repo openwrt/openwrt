@@ -105,6 +105,24 @@ static int adm6996_config_aneg(struct phy_device *phydev)
 	return 0;
 }
 
+static int adm6996_fixup(struct phy_device *dev)
+{
+	struct mii_bus *bus = dev->bus;
+	u16 reg;
+
+	/* look for the switch on the bus */
+	reg = bus->read(bus, PHYADDR(ADM_SIG0)) & ADM_SIG0_MASK;
+	if (reg != ADM_SIG0_VAL)
+		return 0;
+
+	reg = bus->read(bus, PHYADDR(ADM_SIG1)) & ADM_SIG1_MASK;
+	if (reg != ADM_SIG1_VAL)
+		return 0;
+
+	dev->phy_id = (ADM_SIG0_VAL << 16) | ADM_SIG1_VAL;
+	return 0;
+}
+
 static int adm6996_probe(struct phy_device *pdev)
 {
 	struct adm6996_priv *priv;
@@ -124,30 +142,12 @@ static void adm6996_remove(struct phy_device *pdev)
 	kfree(pdev->priv);
 }
 
-static bool adm6996_detect(struct mii_bus *bus, int addr)
-{
-	u16 reg;
-
-	/* we only attach to phy id 0 */
-	if (addr != 0)
-		return false;
-
-	/* look for the switch on the bus */
-	reg = bus->read(bus, PHYADDR(ADM_SIG0)) & ADM_SIG0_MASK;
-	if (reg != ADM_SIG0_VAL)
-		return false;
-
-	reg = bus->read(bus, PHYADDR(ADM_SIG1)) & ADM_SIG1_MASK;
-	if (reg != ADM_SIG1_VAL)
-		return false;
-
-	return true;
-}
 
 static struct phy_driver adm6996_driver = {
 	.name		= "Infineon ADM6996",
+	.phy_id		= (ADM_SIG0_VAL << 16) | ADM_SIG1_VAL,
+	.phy_id_mask	= 0xffffffff,
 	.features	= PHY_BASIC_FEATURES,
-	.detect		= adm6996_detect,
 	.probe		= adm6996_probe,
 	.remove		= adm6996_remove,
 	.config_init	= &adm6996_config_init,
@@ -158,6 +158,7 @@ static struct phy_driver adm6996_driver = {
 
 static int __init adm6996_init(void)
 {
+	phy_register_fixup_for_id(PHY_ANY_ID, adm6996_fixup);
 	return phy_driver_register(&adm6996_driver);
 }
 
