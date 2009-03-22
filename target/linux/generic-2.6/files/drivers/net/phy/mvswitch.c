@@ -38,6 +38,8 @@ MODULE_DESCRIPTION("Marvell 88E6060 Switch driver");
 MODULE_AUTHOR("Felix Fietkau");
 MODULE_LICENSE("GPL");
 
+#define MVSWITCH_MAGIC 0x88E6060
+
 struct mvswitch_priv {
 	/* the driver's tx function */
 	int (*hardstart)(struct sk_buff *skb, struct net_device *dev);
@@ -401,37 +403,6 @@ mvswitch_remove(struct phy_device *pdev)
 	kfree(priv);
 }
 
-static bool
-mvswitch_detect(struct mii_bus *bus, int addr)
-{
-	u16 reg;
-	int i;
-
-	/* we attach to phy id 31 to make sure that the late probe works */
-	if (addr != 31)
-		return false;
-
-	/* look for the switch on the bus */
-	reg = bus->read(bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
-	if (reg != MV_IDENT_VALUE)
-		return false;
-
-	/* 
-	 * Now that we've established that the switch actually exists, let's 
-	 * get rid of the competition :)
-	 */
-	for (i = 0; i < 31; i++) {
-		if (!bus->phy_map[i])
-			continue;
-
-		device_unregister(&bus->phy_map[i]->dev);
-		kfree(bus->phy_map[i]);
-		bus->phy_map[i] = NULL;
-	}
-
-	return true;
-}
-
 static int
 mvswitch_probe(struct phy_device *pdev)
 {
@@ -446,11 +417,26 @@ mvswitch_probe(struct phy_device *pdev)
 	return 0;
 }
 
+static int
+mvswitch_fixup(struct phy_device *dev)
+{
+	u16 reg;
+
+	/* look for the switch on the bus */
+	reg = dev->bus->read(dev->bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
+	if (reg != MV_IDENT_VALUE)
+		return 0;
+
+	dev->phy_id = MVSWITCH_MAGIC;
+	return 0;
+}
+
 
 static struct phy_driver mvswitch_driver = {
 	.name		= "Marvell 88E6060",
+	.phy_id		= MVSWITCH_MAGIC,
+	.phy_id_mask	= 0xffffffff,
 	.features	= PHY_BASIC_FEATURES,
-	.detect		= &mvswitch_detect,
 	.probe		= &mvswitch_probe,
 	.remove		= &mvswitch_remove,
 	.config_init	= &mvswitch_config_init,
@@ -462,6 +448,7 @@ static struct phy_driver mvswitch_driver = {
 static int __init
 mvswitch_init(void)
 {
+	phy_register_fixup_for_id(PHY_ANY_ID, mvswitch_fixup);
 	return phy_driver_register(&mvswitch_driver);
 }
 
