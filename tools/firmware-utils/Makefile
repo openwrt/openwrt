@@ -38,6 +38,7 @@ define Host/Compile
 	$(call cc,imagetag)
 	$(call cc,add_header)
 	$(call cc,makeamitbin)
+	$(call cc,encode_crc)
 	$(call cc2,mkplanexfw sha1)
 	$(call cc2,mktplinkfw md5)
 endef
