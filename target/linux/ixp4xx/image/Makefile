@@ -7,17 +7,27 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Image/Build/slug
+define Image/Build/Linksys
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-L $(BIN_DIR)/apex-nslu2-armeb.bin \
-		-k $(BIN_DIR)/openwrt-nslu2-zImage \
+		-L $(BIN_DIR)/apex-$(2)-armeb.bin \
+		-k $(BIN_DIR)/openwrt-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-nslu2-$(1).bin
+		-p -o $(BIN_DIR)/openwrt-$(2)-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-F -L $(BIN_DIR)/apex-nslu2-16mb-armeb.bin \
-		-k $(BIN_DIR)/openwrt-nslu2-zImage \
+		-F -L $(BIN_DIR)/apex-$(2)-16mb-armeb.bin \
+		-k $(BIN_DIR)/openwrt-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-nslu2-$(1)-16mb.bin
+		-p -o $(BIN_DIR)/openwrt-$(2)-$(1)-16mb.bin
+endef
+
+define Image/Build/Freecom
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+	# TODO: Add special CMDLINE shim for webupgrade image here
+	$(CP) $(BIN_DIR)/openwrt-$(2)-zImage $(TARGET_DIR)/zImage
+	rm -rf $(TARGET_DIR)/{var,jffs,rom}
+	$(INSTALL_DIR) $(TARGET_DIR)/var
+	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --owner=root --group=root -C $(TARGET_DIR)/ .
+	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img
 endef
 
 define Build/Compile
@@ -51,13 +61,15 @@ endef
 
 define Image/Build/jffs2-128k
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
-	$(call Image/Build/slug,$(1))
+	$(call Image/Build/Linksys,$(1))
+	$(call Image/Build/Freecom,$(1),fsg3,$(1))
 endef
 
 define Image/Build/squashfs
-    $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
-	$(call Image/Build/slug,$(1))
+	$(call Image/Build/Linksys,$(1),nslu2,$(1))
+	$(call Image/Build/Freecom,$(1),fsg3,$(1))
 endef
 
 $(eval $(call BuildImage))
