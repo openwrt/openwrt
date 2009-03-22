@@ -26,6 +26,13 @@ define Image/BuildKernel
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d $(KDIR)/wnr854t-zImage $(KDIR)/wnr854t-uImage
 	cp $(KDIR)/wnr854t-uImage $(BIN_DIR)/openwrt-wnr854t-uImage
+# DT2: mach id 1514 (0x5EA)
+	echo -en "\x05\x1c\xa0\xe3\xea\x10\x81\xe3" > $(KDIR)/dt2-zImage
+	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/dt2-zImage
+	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
+	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
+	-d $(KDIR)/dt2-zImage $(KDIR)/dt2-uImage
+	cp $(KDIR)/dt2-uImage $(BIN_DIR)/openwrt-dt2-uImage
 endef
 
 define Image/Build/Netgear
@@ -44,10 +51,21 @@ define Image/Build/Linksys
 # placeholder for the WRT350N v2
 endef
 
+define Image/Build/Freecom
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+	# TODO: Add special CMDLINE shim for webupgrade image here
+	$(CP) $(KDIR)/dt2-uImage $(TARGET_DIR)/boot/uImage
+	rm -rf $(TARGET_DIR)/{var,jffs,rom}
+	$(INSTALL_DIR) $(TARGET_DIR)/var
+	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --owner=root --group=root -C $(TARGET_DIR)/ .
+	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img $(3)
+endef
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Netgear,$(1),wnr854t,NG_WNR854T,$(1))
 	$(call Image/Build/Linksys,$(1),wrt350nv2,WNR350Nv2,$(1))
+	$(call Image/Build/Freecom,$(1),dt2,DT,$(1))
 endef
 
 define Image/Build/squashfs
