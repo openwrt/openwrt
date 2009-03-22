@@ -1803,7 +1803,6 @@
 +	.name = "leds-gpio",
 +	.id = -1,
 +	.dev.platform_data = (void *) &ar5312_led_data,
-+	.num_resources  = 1,
 +};
 +#endif
 +
@@ -1993,7 +1992,7 @@
 +	if ((result = ar231x_read_reg(AR5312_SCRATCH)))
 +		return result;
 +
-+	devid = ar231x_board.devid;
++	devid = ar231x_read_reg(AR531X_REV);
 +	devid &= AR531X_REV_MAJ;
 +	devid >>= AR531X_REV_MAJ_S;
 +	if (devid == AR531X_REV_MAJ_AR2313) {
@@ -2064,9 +2063,6 @@
 +	if (!IS_5312())
 +		return;
 +
-+	devid = ar231x_read_reg(AR531X_REV);
-+	devid &= AR531X_REV_MAJ | AR531X_REV_MIN;
-+
 +	/* Detect memory size */
 +	memcfg = ar231x_read_reg(AR531X_MEM_CFG1);
 +	bank0AC = (memcfg & MEM_CFG1_AC0) >> MEM_CFG1_AC0_S;
@@ -2075,8 +2071,12 @@
 +	        + (bank1AC ? (1 << (bank1AC+1)) : 0);
 +	memsize <<= 20;
 +	add_memory_region(0, memsize, BOOT_MEM_RAM);
-+	ar231x_gpiodev = &ar5312_gpiodev;
++
++	devid = ar231x_read_reg(AR531X_REV);
++	devid >>= AR531X_REV_WMAC_MIN_S;
++	devid &= AR531X_REV_CHIP;
 +	ar231x_board.devid = (u16) devid;
++	ar231x_gpiodev = &ar5312_gpiodev;
 +}
 +
 +void __init
@@ -2096,7 +2096,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,673 @@
+@@ -0,0 +1,679 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2370,6 +2370,9 @@
 +ar2315_irq_init(void)
 +{
 +	int i;
++
++	if (!IS_2315())
++		return;
 +
 +	ar231x_irq_dispatch = ar2315_irq_dispatch;
 +	gpiointval = ar231x_read_reg(AR2315_GPIO_DI);
@@ -2719,6 +2722,9 @@
 +void __init
 +ar2315_time_init(void)
 +{
++	if (!IS_2315())
++		return;
++
 +	mips_hpt_frequency = ar2315_cpu_frequency() / 2;
 +}
 +
@@ -2885,13 +2891,13 @@
 +static inline u32
 +ar231x_read_reg(u32 reg)
 +{
-+	return __raw_readl((u32 *) reg);
++	return __raw_readl((u32 *) KSEG1ADDR(reg));
 +}
 +
 +static inline void
 +ar231x_write_reg(u32 reg, u32 val)
 +{
-+	__raw_writel(val, (u32 *)reg);
++	__raw_writel(val, (u32 *) KSEG1ADDR(reg));
 +}
 +
 +static inline u32
