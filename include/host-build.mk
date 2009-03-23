@@ -128,6 +128,7 @@ ifndef DUMP
     compile: host-compile
     install: host-install
     clean: host-clean
+    update: host-update
   else
     host-compile: $(HOST_STAMP_INSTALLED)
   endif
