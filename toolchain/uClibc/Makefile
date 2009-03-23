@@ -18,36 +18,18 @@ else
   PKG_SOURCE_URL:=http://www.uclibc.org/downloads
   PKG_SOURCE:=uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION).tar.bz2
 endif
-PATCH_DIR:=./patches/$(PKG_VERSION)$(PKG_EXTRAVERSION)
-CONFIG_DIR:=./config/$(PKG_VERSION)$(PKG_EXTRAVERSION)
+PATCH_DIR:=$(firstword $(wildcard ./patches-$(PKG_VERSION)$(PKG_EXTRAVERSION) ./patches-$(PKG_VERSION)))
+CONFIG_DIR:=$(firstword $(wildcard ./config-$(PKG_VERSION)$(PKG_EXTRAVERSION) ./config-$(PKG_VERSION)))
 
-ifeq ($(PKG_VERSION),0.9.28)
-  ifeq ($(PKG_EXTRAVERSION),.2)
-    PKG_MD5SUM:=959f25286e317f0d9e2103445c5a14c2
-  endif
-  ifeq ($(PKG_EXTRAVERSION),.3)
-    PKG_MD5SUM:=428405a36b4662980d9343b32089b5a6
-  endif
-endif
-
-ifeq ($(PKG_VERSION),0.9.29)
-  ifeq ($(PKG_EXTRAVERSION),)
-    # currently the default version, no special sub-directory needed
-    PATCH_DIR:=./patches
-    CONFIG_DIR:=./config
-    PKG_MD5SUM:=61dc55f43b17a38a074f347e74095b20
-  endif
-endif
-
-ifeq ($(PKG_VERSION),0.9.30)
-  ifeq ($(PKG_EXTRAVERSION),)
-    PKG_MD5SUM:=e5766e2566e0297adebebbcc0aba1f2d
-  endif
-endif
+PKG_MD5SUM_0.9.28.2 = 959f25286e317f0d9e2103445c5a14c2
+PKG_MD5SUM_0.9.28.3 = 428405a36b4662980d9343b32089b5a6
+PKG_MD5SUM_0.9.29 = 61dc55f43b17a38a074f347e74095b20
+PKG_MD5SUM_0.9.30 = e5766e2566e0297adebebbcc0aba1f2d
+PKG_MD5SUM=$(PKG_MD5SUM_$(PKG_VERSION)$(PKG_EXTRAVERSION))
 
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
   PATCH_DIR:=
-  CONFIG_DIR:=./config
+  CONFIG_DIR:=./config-0.9.30
   PKG_MD5SUM:=
 endif
 
