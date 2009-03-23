@@ -93,7 +93,7 @@ define Host/Prepare
 	$(call Host/Prepare/Snapshot)
  else
 	$(call Host/Prepare/Default)
-	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	ln -snf $(PKG_NAME)-$(PKG_VERSION)$(PKG_EXTRAVERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
  endif
 	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD)) $(HOST_BUILD_DIR)/.config
  ifeq ($(PKG_VERSION),0.9.28)
