@@ -41,7 +41,7 @@
 
 
 # Driver interface for Host AP driver
-# CONFIG_DRIVER_HOSTAP=y
+#CONFIG_DRIVER_HOSTAP=y
 
 # Driver interface for Agere driver
 #CONFIG_DRIVER_HERMES=y
@@ -51,8 +51,8 @@
 
 # Driver interface for madwifi driver
 CONFIG_DRIVER_MADWIFI=y
-# Change include directories to match with the local setup
-#CFLAGS += -I../madwifi/wpa
+# Set include directory to the madwifi source tree
+#CFLAGS += -I../../madwifi
 
 # Driver interface for Prism54 driver
 # (Note: Prism54 is not yet supported, i.e., this will not work as-is and is
@@ -65,7 +65,10 @@ CONFIG_DRIVER_MADWIFI=y
 # Driver interface for Atmel driver
 #CONFIG_DRIVER_ATMEL=y
 
-# Driver interface for Broadcom driver
+# Driver interface for old Broadcom driver
+# Please note that the newer Broadcom driver ("hybrid Linux driver") supports
+# Linux wireless extensions and does not need (or even work) with the old
+# driver wrapper. Use CONFIG_DRIVER_WEXT=y with that driver.
 #CONFIG_DRIVER_BROADCOM=y
 # Example path for wlioctl.h; change to match your configuration
 #CFLAGS += -I/opt/WRT54GS/release/src/include
@@ -78,6 +81,9 @@ CONFIG_DRIVER_MADWIFI=y
 
 # Driver interface for generic Linux wireless extensions
 CONFIG_DRIVER_WEXT=y
+
+# Driver interface for Linux drivers using the nl80211 kernel interface
+CONFIG_DRIVER_NL80211=y
 
 # Driver interface for FreeBSD net80211 layer (e.g., Atheros driver)
 #CONFIG_DRIVER_BSD=y
@@ -105,6 +111,9 @@ CONFIG_DRIVER_WEXT=y
 
 # Driver interface for wired Ethernet drivers
 CONFIG_DRIVER_WIRED=y
+
+# Driver interface for the Broadcom RoboSwitch family
+#CONFIG_DRIVER_ROBOSWITCH=y
 
 # Enable IEEE 802.1X Supplicant (automatically included if any EAP method is
 # included)
@@ -153,6 +162,13 @@ CONFIG_EAP_LEAP=y
 # EAP-AKA (enable CONFIG_PCSC, if EAP-AKA is used)
 #CONFIG_EAP_AKA=y
 
+# EAP-AKA' (enable CONFIG_PCSC, if EAP-AKA' is used).
+# This requires CONFIG_EAP_AKA to be enabled, too.
+#CONFIG_EAP_AKA_PRIME=y
+
+# Enable USIM simulator (Milenage) for EAP-AKA
+#CONFIG_USIM_SIMULATOR=y
+
 # EAP-SAKE
 #CONFIG_EAP_SAKE=y
 
@@ -163,6 +179,9 @@ CONFIG_EAP_LEAP=y
 
 # EAP-TNC and related Trusted Network Connect support (experimental)
 #CONFIG_EAP_TNC=y
+
+# Wi-Fi Protected Setup (WPS)
+#CONFIG_WPS=y
 
 # EAP-IKEv2
 #CONFIG_EAP_IKEV2=y
@@ -307,6 +326,10 @@ CONFIG_INTERNAL_LIBTOMMATH=y
 #LIBS += -L$(LTM_PATH)
 #LIBS_p += -L$(LTM_PATH)
 #endif
+# At the cost of about 4 kB of additional binary size, the internal LibTomMath
+# can be configured to include faster routines for exptmod, sqr, and div to
+# speed up DH and RSA calculation considerably
+#CONFIG_INTERNAL_LIBTOMMATH_FAST=y
 
 # Include NDIS event processing through WMI into wpa_supplicant/wpasvc.
 # This is only for Windows builds and requires WMI-related header files and
@@ -339,20 +362,13 @@ CONFIG_INTERNAL_LIBTOMMATH=y
 #CONFIG_DYNAMIC_EAP_METHODS=y
 
 # Include client MLME (management frame processing).
-# This can be used to move MLME processing of Devicescape IEEE 802.11 stack
-# into user space.
+# This can be used to move MLME processing of Linux mac80211 stack into user
+# space. Please note that this is currently only available with
+# driver_nl80211.c and only with a modified version of Linux kernel and
+# wpa_supplicant.
 #CONFIG_CLIENT_MLME=y
-# Currently, driver_devicescape.c build requires some additional parameters
-# to be able to include some of the kernel header files. Following lines can
-# be used to set these (WIRELESS_DEV must point to the root directory of the
-# wireless-dev.git tree).
-#WIRELESS_DEV=/usr/src/wireless-dev
-#CFLAGS += -I$(WIRELESS_DEV)/net/mac80211
 
-# IEEE 802.11r/D4.1 (Fast BSS Transition)
-# This enables an experimental implementation of a draft version of
-# IEEE 802.11r. This draft is still subject to change, so it should be noted
-# that this version may not comply with the final standard.
+# IEEE Std 802.11r-2008 (Fast BSS Transition)
 #CONFIG_IEEE80211R=y
 
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
@@ -360,3 +376,7 @@ CONFIG_DEBUG_FILE=y
 
 # Enable privilege separation (see README 'Privilege separation' for details)
 #CONFIG_PRIVSEP=y
+
+# Enable mitigation against certain attacks against TKIP by delaying Michael
+# MIC error reports by a random amount of time between 0 and 60 seconds
+#CONFIG_DELAYED_MIC_ERROR_REPORT=y
