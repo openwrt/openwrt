@@ -1924,7 +1924,7 @@
 +		if (!ar231x_board.radio)
 +			return 0;
 +
-+		if (*((u32 *) ar231x_board.radio) & AR531X_RADIO0_MASK)
++		if (*((u32 *) radio) & AR531X_RADIO0_MASK)
 +			ar231x_add_wmac(0, AR531X_WLAN0,
 +				AR5312_IRQ_WLAN0_INTRS);
 +
@@ -1948,7 +1948,7 @@
 +		break;
 +	}
 +
-+	if (*((u32 *) ar231x_board.radio) & AR531X_RADIO1_MASK)
++	if (*((u32 *) radio) & AR531X_RADIO1_MASK)
 +		ar231x_add_wmac(1, AR531X_WLAN1,
 +			AR5312_IRQ_WLAN1_INTRS);
 +
