@@ -26,16 +26,14 @@ sed -e s,\\\#.*,, $(1) | grep -E \[a-zA-Z0-9\]
 endef
 
 define PatchDir/Quilt
+	@mkdir -p "$(1)/patches$(if $(3),/$(patsubst %/,%,$(3)))"
 	@if [ -s "$(2)/series" ]; then \
 		mkdir -p "$(1)/patches/$(3)"; \
 		cp "$(2)/series" "$(1)/patches/$(3)"; \
 	fi
-	@for patch in $$$$( (cd "$(2)" && if [ -f series ]; then $(call filter_series,series); else ls; fi; ) 2>/dev/null ); do ( \
-		cp "$(2)/$$$$patch" "$(1)"; \
-		cd "$(1)"; \
-		$(QUILT_CMD) import -P$(3)$$$$patch -p 1 "$$$$patch"; \
-		$(QUILT_CMD) push -f >/dev/null 2>/dev/null; \
-		rm -f "$$$$patch"; \
+	@for patch in $$$$( (cd "$(2)" && if [ -f series ]; then $(call filter_series,series); else ls | sort; fi; ) 2>/dev/null ); do ( \
+		cp "$(2)/$$$$patch" "$(1)/patches/$(3)"; \
+		echo "$(3)$$$$patch" >> "$(1)/patches/series"; \
 	); done
 	$(if $(3),@echo $(3) >> "$(1)/patches/.subdirs")
 endef
@@ -62,10 +60,8 @@ endef
 ifneq ($(PKG_BUILD_DIR),)
   QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
   ifneq ($(QUILT),)
-    STAMP_PATCHED:=$(PKG_BUILD_DIR)/.quilt_patched
     STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
     override CONFIG_AUTOREBUILD=
-    prepare: $(STAMP_PATCHED)
     quilt-check: $(STAMP_CHECKED)
   endif
 endif
@@ -73,10 +69,8 @@ endif
 ifneq ($(HOST_BUILD_DIR),)
   HOST_QUILT?=$(if $(findstring command,$(origin $(QUILT))),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
   ifneq ($(HOST_QUILT),)
-    HOST_STAMP_PATCHED:=$(HOST_BUILD_DIR)/.quilt_patched
     HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
     override CONFIG_AUTOREBUILD=
-    host-prepare: $(HOST_STAMP_PATCHED)
     host-quilt-check: $(HOST_STAMP_CHECKED)
   endif
 endif
@@ -130,29 +124,8 @@ define Quilt/Refresh/Kernel
 endef
 
 define Quilt/Template
-  $($(2)STAMP_PATCHED): $($(2)STAMP_PREPARED)
-	@( \
-		cd $(1)/patches; \
-		$(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null; \
-		if [ -s ".subdirs" ]; then \
-			rm -f series; \
-			for file in $$$$(cat .subdirs); do \
-				if [ -f $$$$file/series ]; then \
-					echo "Converting $$file/series"; \
-					$$(call filter_series,$$$$file/series) | awk -v file="$$$$file/" '$$$$0 !~ /^#/ { print file $$$$0 }' | sed -e s,//,/,g >> series; \
-				else \
-					echo "Sorting patches in $$$$file"; \
-					find $$$$file/* -type f \! -name series | sed -e s,//,/,g | sort >> series; \
-				fi; \
-			done; \
-		else \
-			find * -type f \! -name series | sort > series; \
-		fi; \
-	)
-	touch "$$@"
-
   $($(2)STAMP_CONFIGURED): $($(2)STAMP_CHECKED) FORCE
-  $($(2)STAMP_CHECKED): $($(2)STAMP_PATCHED)
+  $($(2)STAMP_CHECKED): $($(2)STAMP_PREPARED)
 	if [ -s "$(1)/patches/series" ]; then \
 		(cd "$(1)"; \
 			if $(QUILT_CMD) next >/dev/null 2>&1; then \
