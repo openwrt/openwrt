@@ -100,8 +100,8 @@ define Quilt/RefreshDir
 	mkdir -p $(2)
 	-rm -f $(2)/* 2>/dev/null >/dev/null
 	@( \
-		for patch in $$$$($(if $(3),grep "^$(3)",cat) $(PKG_BUILD_DIR)/patches/series | awk '{print $$$$1}'); do \
-			$(CP) -v "$(PKG_BUILD_DIR)/patches/$$$$patch" $(2); \
+		for patch in $$$$($(if $(3),grep "^$(3)",cat) $(1)/patches/series | awk '{print $$$$1}'); do \
+			$(CP) -v "$(1)/patches/$$$$patch" $(2); \
 		done; \
 	)
 endef
