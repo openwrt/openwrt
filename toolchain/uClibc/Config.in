@@ -28,6 +28,7 @@ config UCLIBC_EXTRA_VERSION
 	depends on TOOLCHAINOPTS && USE_UCLIBC
 	default "snapshot"   if UCLIBC_VERSION_SNAPSHOT
 	default ".2"         if UCLIBC_VERSION_0_9_28
+	default ".1"         if UCLIBC_VERSION_0_9_30
 	default ""
 	help
 	    Default for version 0.9.28 is ".02", for daily snapshot it's just "snapshot"

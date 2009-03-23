@@ -30,6 +30,10 @@ else
   LIBGCC_VERSION:=<LIBGCC_VERSION>
 endif
 
+ifneq ($(LIBC_VERSION),0.9.28)
+  LIBC_VERSION:=$(LIBC_VERSION)$(LIBC_PATCHVER)
+endif
+
 CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
 
 define Package/base-files$(TARGET)
