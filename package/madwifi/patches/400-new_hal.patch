@@ -1,6 +1,48 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -606,6 +606,14 @@ ath_attach(u_int16_t devid, struct net_d
+ 	}
+ 	sc->sc_ah = ah;
+ 
++	/* WAR for AR7100 PCI bug */
++#ifdef CONFIG_ATHEROS_AR71XX
++	if ((ar_device(sc->devid) >= 5210) && (ar_device(sc->devid) < 5416)) {
++		ath_hal_setcapability(ah, HAL_CAP_DMABURST_RX, 0, HAL_DMABURST_4B, NULL);
++		ath_hal_setcapability(ah, HAL_CAP_DMABURST_TX, 0, HAL_DMABURST_4B, NULL);
++	}
++#endif
++
+ 	/*
+ 	 * Check if the MAC has multi-rate retry support.
+ 	 * We do this by trying to setup a fake extended
+@@ -7553,7 +7561,7 @@ ath_txq_setup(struct ath_softc *sc, int 
+ 	if (qtype == HAL_TX_QUEUE_UAPSD)
+ 		qi.tqi_qflags = HAL_TXQ_TXDESCINT_ENABLE;
+ 	else
+-		qi.tqi_qflags = HAL_TXQ_TXEOLINT_ENABLE | 
++		qi.tqi_qflags = HAL_TXQ_TXEOLINT_ENABLE | HAL_TXQ_TXOKINT_ENABLE |
+ 			HAL_TXQ_TXDESCINT_ENABLE;
+ 	qnum = ath_hal_setuptxqueue(ah, qtype, &qi);
+ 	if (qnum == -1) {
+--- a/ath_hal/ah_os.c
++++ b/ath_hal/ah_os.c
+@@ -126,6 +126,13 @@ ath_hal_printf(struct ath_hal *ah, const
+ }
+ EXPORT_SYMBOL(ath_hal_printf);
+ 
++void __ahdecl
++ath_hal_printstr(struct ath_hal *ah, const char *str)
++{
++	printk("%s", str);
++}
++EXPORT_SYMBOL(ath_hal_printstr);
++
+ /*
+  * Format an Ethernet MAC for printing.
+  */
 --- a/ath_hal/ah_os.h
 +++ b/ath_hal/ah_os.h
-@@ -156,80 +156,23 @@ extern u_int32_t __ahdecl ath_hal_getupt
+@@ -156,69 +156,23 @@ extern u_int32_t __ahdecl ath_hal_getupt
  #endif
  #endif				/* AH_BYTE_ORDER */
  
@@ -49,6 +91,10 @@
   */
 -#if (AH_BYTE_ORDER == AH_BIG_ENDIAN)
 -#define is_reg_le(__reg) ((0x4000 <= (__reg) && (__reg) < 0x5000))
+-#else
+-#define is_reg_le(__reg) 1
+-#endif
+-
 -#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,12)
 -#define _OS_REG_WRITE(_ah, _reg, _val) do {			\
 -	 is_reg_le(_reg) ?					\
@@ -60,76 +106,19 @@
 -	 ioread32((_ah)->ah_sh + (_reg)) :			\
 -	 ioread32be((_ah)->ah_sh + (_reg)))
 -#else
--#define _OS_REG_WRITE(_ah, _reg, _val) do {			\
+ #define _OS_REG_WRITE(_ah, _reg, _val) do {			\
 -	 writel(is_reg_le(_reg) ? 				\
 -	 	(_val) : cpu_to_le32(_val), 			\
 -		(_ah)->ah_sh + (_reg));				\
 -	} while (0)
--#define _OS_REG_READ(_ah, _reg)					\
++	 __raw_writel(SWAPREG(_ah, _reg, _val), (_ah)->ah_sh + (_reg));		\
++} while (0)
+ #define _OS_REG_READ(_ah, _reg)					\
 -	(is_reg_le(_reg) ?					\
 -	 readl((_ah)->ah_sh + (_reg)) :				\
 -	 cpu_to_le32(readl((_ah)->ah_sh + (_reg))))
 -#endif				/* KERNEL_VERSION(2,6,12) */
--#else				/* AH_BYTE_ORDER != AH_BIG_ENDIAN */
--#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,12)
--#define _OS_REG_WRITE(_ah, _reg, _val) do {			\
--	 iowrite32((_val), (_ah)->ah_sh + (_reg));		\
--	} while (0)
--#define _OS_REG_READ(_ah, _reg)					\
--	ioread32((_ah)->ah_sh + (_reg))
--#else
- #define _OS_REG_WRITE(_ah, _reg, _val) do {			\
--	 writel((_val), (_ah)->ah_sh + (_reg));			\
--	} while (0)
-+	 __raw_writel(SWAPREG(_ah, _reg, _val), (_ah)->ah_sh + (_reg));		\
-+} while (0)
- #define _OS_REG_READ(_ah, _reg)					\
--	readl((_ah)->ah_sh + (_reg))
--#endif				/* KERNEL_VERSION(2,6,12) */
--#endif				/* AH_BYTE_ORDER != AH_BIG_ENDIAN */
 +	 SWAPREG(_ah, _reg, __raw_readl((_ah)->ah_sh + (_reg)))
  
  /*
   * The functions in this section are not intended to be invoked by MadWifi
---- a/ath/if_ath.c
-+++ b/ath/if_ath.c
-@@ -606,6 +606,14 @@ ath_attach(u_int16_t devid, struct net_d
- 	}
- 	sc->sc_ah = ah;
- 
-+	/* WAR for AR7100 PCI bug */
-+#ifdef CONFIG_ATHEROS_AR71XX
-+	if ((ar_device(sc->devid) >= 5210) && (ar_device(sc->devid) < 5416)) {
-+		ath_hal_setcapability(ah, HAL_CAP_DMABURST_RX, 0, HAL_DMABURST_4B, NULL);
-+		ath_hal_setcapability(ah, HAL_CAP_DMABURST_TX, 0, HAL_DMABURST_4B, NULL);
-+	}
-+#endif
-+
- 	/*
- 	 * Check if the MAC has multi-rate retry support.
- 	 * We do this by trying to setup a fake extended
-@@ -7555,7 +7563,7 @@ ath_txq_setup(struct ath_softc *sc, int 
- 	if (qtype == HAL_TX_QUEUE_UAPSD)
- 		qi.tqi_qflags = HAL_TXQ_TXDESCINT_ENABLE;
- 	else
--		qi.tqi_qflags = HAL_TXQ_TXEOLINT_ENABLE | 
-+		qi.tqi_qflags = HAL_TXQ_TXEOLINT_ENABLE | HAL_TXQ_TXOKINT_ENABLE |
- 			HAL_TXQ_TXDESCINT_ENABLE;
- 	qnum = ath_hal_setuptxqueue(ah, qtype, &qi);
- 	if (qnum == -1) {
---- a/ath_hal/ah_os.c
-+++ b/ath_hal/ah_os.c
-@@ -126,6 +126,13 @@ ath_hal_printf(struct ath_hal *ah, const
- }
- EXPORT_SYMBOL(ath_hal_printf);
- 
-+void __ahdecl
-+ath_hal_printstr(struct ath_hal *ah, const char *str)
-+{
-+	printk("%s", str);
-+}
-+EXPORT_SYMBOL(ath_hal_printstr);
-+
- /*
-  * Format an Ethernet MAC for printing.
-  */
