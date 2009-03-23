@@ -1,7 +1,7 @@
 This patch decreases the timeouts for assoc/auth to more realistic values. Improves roaming speed
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -849,7 +849,7 @@ static void wpa_supplicant_event_assoc(s
+@@ -854,7 +854,7 @@ static void wpa_supplicant_event_assoc(s
  		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
  	} else if (!ft_completed) {
  		/* Timeout for receiving the first EAPOL packet */
