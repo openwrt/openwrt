@@ -67,7 +67,7 @@ ifneq ($(PKG_BUILD_DIR),)
 endif
 
 ifneq ($(HOST_BUILD_DIR),)
-  HOST_QUILT?=$(if $(findstring command,$(origin $(QUILT))),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
+  HOST_QUILT?=$(if $(findstring command,$(origin QUILT)),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
   ifneq ($(HOST_QUILT),)
     HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
     override CONFIG_AUTOREBUILD=
