@@ -38,7 +38,6 @@ CRYPTO_MODULES = \
 	HASH=crypto_hash \
 	CBC=cbc \
 	ECB=ecb \
-	HMAC=hmac \
 	DEFLATE=deflate
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
@@ -50,7 +49,7 @@ crypto_name=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(word 2,$(subs
 define KernelPackage/crypto-core
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=Core CryptoAPI modules
-  KCONFIG:=CONFIG_CRYPTO=y $(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
+  KCONFIG:=CONFIG_CRYPTO=y CONFIG_CRYPTO_HMAC $(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
   AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_name,$(mod))))
 endef
