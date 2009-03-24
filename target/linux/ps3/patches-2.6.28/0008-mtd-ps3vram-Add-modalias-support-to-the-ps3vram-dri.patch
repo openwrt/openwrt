@@ -10,6 +10,8 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
 Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
 ---
  arch/powerpc/include/asm/ps3.h |    1 +
+ drivers/mtd/devices/ps3vram.c  |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
 diff --git a/arch/powerpc/include/asm/ps3.h b/arch/powerpc/include/asm/ps3.h
 index 66b6505..eead5c6 100644
@@ -23,3 +25,15 @@ index 66b6505..eead5c6 100644
  #define PS3_MODULE_ALIAS_LPM		"ps3:11:0"
  
  enum ps3_system_bus_device_type {
+diff --git a/drivers/mtd/devices/ps3vram.c b/drivers/mtd/devices/ps3vram.c
+index 26a4b57..22f381f 100644
+--- a/drivers/mtd/devices/ps3vram.c
++++ b/drivers/mtd/devices/ps3vram.c
+@@ -774,3 +774,4 @@ module_exit(ps3vram_exit);
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Jim Paris <jim@jtan.com>");
+ MODULE_DESCRIPTION("MTD driver for PS3 video RAM");
++MODULE_ALIAS(PS3_MODULE_ALIAS_GPU_RAMDISK);
+-- 
+1.6.0.4
+
