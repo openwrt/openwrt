@@ -1,0 +1,22 @@
+--- a/parse.c
++++ b/parse.c
+@@ -1187,15 +1187,12 @@ try_command (const char *command)
+ Package *
+ get_compat_package (const char *name)
+ {
+-#ifdef G_OS_WIN32
+-  /* There has never been any of these legacy *-config scripts on
+-   * Windows as far as I know. No use trying to execute them, will
+-   * only confuse users to see the "blabla is not recognized as an
+-   * internal or external command, operable program or batch file"
+-   * messages.
++  /*
++   * We don't need this compatibility stuff on a system
++   * that is free of legacy stuff 
+    */
+   return NULL;
+-#else
++#if 0
+ 
+   Package *pkg;
+ 
