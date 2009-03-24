@@ -86,6 +86,8 @@ define Host/Prepare/V_0_9_28
  endif
 endef
 
+GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n $(if $(wildcard $(CONFIG_DIR)/common),'+' $(CONFIG_DIR)/common) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD))
+
 define Host/Prepare
 	$(call Host/SetToolchainInfo)
 	@echo prepare uClibc version $(PKG_VERSION)$(PKG_EXTRAVERSION)  
@@ -95,7 +97,7 @@ define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION)$(PKG_EXTRAVERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
  endif
-	$(CP) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD)) $(HOST_BUILD_DIR)/.config
+	$(GEN_CONFIG) > $(HOST_BUILD_DIR)/.config
  ifeq ($(PKG_VERSION),0.9.28)
 	$(call Host/Prepare/V_0_9_28)
  endif
