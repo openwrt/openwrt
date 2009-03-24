@@ -19,7 +19,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
 
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1039,6 +1039,11 @@ MODULE_LICENSE ("GPL");
+@@ -1041,6 +1041,11 @@ MODULE_LICENSE ("GPL");
  #define	PLATFORM_DRIVER		ixp4xx_ehci_driver
  #endif
  
@@ -33,7 +33,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  #error "missing bus glue for ehci-hcd"
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -755,6 +755,11 @@ ehci_port_speed(struct ehci_hcd *ehci, u
+@@ -761,6 +761,11 @@ ehci_port_speed(struct ehci_hcd *ehci, u
  #define writel_be(val, addr)	__raw_writel(val, (__force unsigned *)addr)
  #endif
  
