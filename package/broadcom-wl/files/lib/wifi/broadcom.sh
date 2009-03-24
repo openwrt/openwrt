@@ -251,8 +251,8 @@ enable_broadcom() {
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
 			bridge="$(bridge_interface "$net_cfg")"
-			append if_up "start_net '$ifname' '$net_cfg'" ";$N"
 			append if_up "set_wifi_up '$vif' '$ifname'" ";$N"
+			append if_up "start_net '$ifname' '$net_cfg' \$(wlc ifname '$ifname' bssid)" ";$N"
 		}
 		[ -z "$nasopts" ] || {
 			eval "${vif}_ssid=\"\$ssid\""

@@ -70,7 +70,7 @@ start_net() {(
 	[ -f "/var/run/$iface.pid" ] && kill "$(cat /var/run/${iface}.pid)" 2>/dev/null
 	include /lib/network
 	scan_interfaces
-	setup_interface "$1" "$2"
+	setup_interface "$1" "$2" "$3"
 )}
 
 set_wifi_up() {
