@@ -42,10 +42,11 @@ PKG_MD5SUM=$(PKG_MD5SUM_$(PKG_VERSION)$(PKG_EXTRAVERSION))
 
 
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/uClibc-$(PKG_EXTRAVERSION)
+  UCLIBC_SUBDIR:=uClibc-$(PKG_EXTRAVERSION)
 else
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)$(if $(CONFIG_UCLIBC_VERSION_NPTL),+nptl)
+  UCLIBC_SUBDIR:=uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION)$(if $(CONFIG_UCLIBC_VERSION_NPTL),+nptl)
 endif
+HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(UCLIBC_SUBDIR)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
@@ -78,7 +79,6 @@ endef
 define Host/Prepare/Snapshot
 	$(PKG_UNPACK)
 	rm -Rf $(HOST_BUILD_DIR)
-	ln -snf $(BUILD_DIR_TOOLCHAIN)/uClibc $(HOST_BUILD_DIR)
 	$(Host/Patch)
 	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
 endef
@@ -103,8 +103,8 @@ define Host/Prepare
 	$(call Host/Prepare/Snapshot)
  else
 	$(call Host/Prepare/Default)
-	ln -snf $(PKG_NAME)-$(PKG_VERSION)$(PKG_EXTRAVERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
  endif
+	ln -snf $(UCLIBC_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(GEN_CONFIG) > $(HOST_BUILD_DIR)/.config
  ifeq ($(PKG_VERSION),0.9.28)
 	$(call Host/Prepare/V_0_9_28)
