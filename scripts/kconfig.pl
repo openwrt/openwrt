@@ -94,7 +94,7 @@ sub config_sub($$) {
 sub print_cfgline($$) {
 	my $name = shift;
 	my $val = shift;
-	if ($val eq '#undef') {
+	if ($val eq '#undef' or $val eq 'n') {
 		print "# $PREFIX$name is not set\n";
 	} else {
 		print "$PREFIX$name=$val\n";
