@@ -9,7 +9,8 @@
 use warnings;
 use strict;
 
-my @arg = @ARGV;
+my @arg;
+my $PREFIX = "CONFIG_";
 
 sub load_config($) {
 	my $file = shift;
@@ -18,11 +19,11 @@ sub load_config($) {
 	open FILE, "$file" or die "can't open file";
 	while (<FILE>) {
 		chomp;
-		/^CONFIG_(.+?)=(.+)/ and do {
+		/^$PREFIX(.+?)=(.+)/ and do {
 			$config{$1} = $2;
 			next;
 		};
-		/^# CONFIG_(.+?) is not set/ and do {
+		/^# $PREFIX(.+?) is not set/ and do {
 			$config{$1} = "#undef";
 			next;
 		};
@@ -94,9 +95,9 @@ sub print_cfgline($$) {
 	my $name = shift;
 	my $val = shift;
 	if ($val eq '#undef') {
-		print "# CONFIG_$name is not set\n";
+		print "# $PREFIX$name is not set\n";
 	} else {
-		print "CONFIG_$name=$val\n";
+		print "$PREFIX$name=$val\n";
 	}
 }
 
@@ -142,6 +143,18 @@ sub parse_expr($) {
 		return load_config($arg);
 	}
 }
+
+while (@ARGV > 0 and $ARGV[0] =~ /^-\w+$/) {
+	my $cmd = shift @ARGV;
+	if ($cmd =~ /^-n$/) {
+		$PREFIX = "";
+	} elsif ($cmd =~ /^-p$/) {
+		$PREFIX = shift @ARGV;
+	} else {
+		die "Invalid option: $cmd\n";
+	}
+}
+@arg = @ARGV;
 
 my $pos = 0;
 dump_config(parse_expr(\$pos));
