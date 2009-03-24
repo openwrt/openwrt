@@ -1,6 +1,6 @@
---- a/drivers/spi/Kconfig	2009-03-06 02:24:35.000000000 +0100
-+++ b/drivers/spi/Kconfig	2009-03-06 02:25:01.000000000 +0100
-@@ -217,6 +217,13 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -217,6 +217,13 @@ config SPI_XILINX
  	  See the "OPB Serial Peripheral Interface (SPI) (v1.00e)"
  	  Product Specification document (DS464) for hardware details.
  
@@ -14,9 +14,9 @@
  #
  # Add new SPI master controllers in alphabetical order above this line
  #
---- a/drivers/spi/Makefile	2009-03-06 02:25:07.000000000 +0100
-+++ b/drivers/spi/Makefile	2009-03-06 02:24:13.000000000 +0100
-@@ -30,6 +30,7 @@
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -30,6 +30,7 @@ obj-$(CONFIG_SPI_S3C24XX)		+= spi_s3c24x
  obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
  obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
  obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.o
