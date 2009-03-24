@@ -62,8 +62,19 @@ def start_server(server):
 ####################
 
 def get_flash_size():
+    # make sure we don't have an A0 stepping
+    tn.write("cat /proc/cpuinfo\n")
+    buf = tn.read_until("Returned 0", 3)
+    if not buf:
+        print "Unable to obtain CPU information; make sure to not use A0 stepping!"
+    elif buf.find('rev 0') > 0:
+        print "Warning: IXP42x stepping A0 detected!"
+        if imagefile or url:
+            print "Error: No linux support for A0 stepping!"
+            sys.exit(2)
+
+    # now get flash size
     tn.write("cat /proc/mtd\n")
-    # wait for prompt
     buf = tn.read_until("Returned 0", 3)
     if buf:
         i = buf.find('mtd0:')
@@ -167,7 +178,7 @@ for o, a in opts:
 	usage()
 	sys.exit(1)
     elif o in ("-V", "--version"):
-	print "%s: 0.10" % sys.argv[0]
+	print "%s: 0.11" % sys.argv[0]
 	sys.exit(1)
     elif o in ("-d", "--no-dump"):
 	do_dump = 1
