@@ -1,7 +1,5 @@
-Index: compat-wireless-2009-03-18/config.mk
-===================================================================
---- compat-wireless-2009-03-18.orig/config.mk	2009-03-20 17:10:09.000000000 +0100
-+++ compat-wireless-2009-03-18/config.mk	2009-03-20 17:11:31.000000000 +0100
+--- a/config.mk
++++ b/config.mk
 @@ -104,10 +104,10 @@ CONFIG_MAC80211_MESH=y
  CONFIG_CFG80211=m
  # CONFIG_CFG80211_REG_DEBUG=y
@@ -165,7 +163,7 @@ Index: compat-wireless-2009-03-18/config.mk
  
  # USB Drivers
  ifneq ($(CONFIG_USB),)
-@@ -249,15 +249,15 @@ CONFIG_ZD1211RW=m
+@@ -249,22 +249,22 @@ CONFIG_ZD1211RW=m
  # is only wireless RNDIS chip known to date.
  # Note: this depends on CONFIG_USB_NET_RNDIS_HOST and CONFIG_USB_NET_CDCETHER
  # it also requires new RNDIS_HOST and CDC_ETHER modules which we add
@@ -184,9 +182,19 @@ Index: compat-wireless-2009-03-18/config.mk
 -CONFIG_AT76C50X_USB=m
 +# CONFIG_AT76C50X_USB=m
  
+ # Activate AR9170 support only on kernel >= 2.6.28.
+ # The needed USB poison feature was added in this kernel release.
+ ifeq ($(shell test $(KERNEL_SUBLEVEL) -ge 28 && echo yes),yes)
+-CONFIG_AR9170_COMMON=m
+-CONFIG_AR9170_USB=m
+-CONFIG_AR9170_LEDS=y
++# CONFIG_AR9170_COMMON=m
++# CONFIG_AR9170_USB=m
++# CONFIG_AR9170_LEDS=y
+ endif
+ 
  # RT2500USB does not require firmware
- CONFIG_RT2500USB=m
-@@ -294,20 +294,20 @@ CONFIG_P54_COMMON=m
+@@ -302,20 +302,20 @@ CONFIG_P54_COMMON=m
  
  
  # Sonics Silicon Backplane
