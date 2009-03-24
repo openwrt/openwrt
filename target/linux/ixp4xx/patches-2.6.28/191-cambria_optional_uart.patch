@@ -78,7 +78,7 @@
  
  static void __init cambria_gw2358_setup(void)
  {
-+	*IXP4XX_EXP_CS3 = 0xBFFF3C433;
++	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
 +	set_irq_type(IRQ_IXP4XX_GPIO3, IRQ_TYPE_EDGE_RISING);
 +	cambria_optional_uart_data[0].mapbase	= 0x53FC0000;
 +	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x53FC0000, 0x0fff);
