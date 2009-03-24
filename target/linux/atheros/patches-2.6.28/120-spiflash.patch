@@ -288,10 +288,10 @@
 +}
 +
 +static void
-+spiflash_wait_complete(struct spiflash_priv *priv)
++spiflash_wait_complete(struct spiflash_priv *priv, unsigned int timeout)
 +{
 +	busy_wait(priv, spiflash_sendcmd(priv, SPI_RD_STATUS, 0) &
-+		SPI_STATUS_WIP, 20);
++		SPI_STATUS_WIP, timeout);
 +	spiflash_done(priv);
 +}
 +
@@ -321,7 +321,7 @@
 +	reg |= op->tx_cnt | SPI_CTL_START;
 +	spiflash_write_reg(priv, SPI_FLASH_CTL, reg);
 +
-+	spiflash_wait_complete(priv);
++	spiflash_wait_complete(priv, 20);
 +
 +	instr->state = MTD_ERASE_DONE;
 +	if (instr->callback)
@@ -418,7 +418,7 @@
 +		reg |= (read_len + 4) | SPI_CTL_START;
 +		spiflash_write_reg(priv, SPI_FLASH_CTL, reg);
 +
-+		spiflash_wait_complete(priv);
++		spiflash_wait_complete(priv, 1);
 +
 +		bytes_left -= read_len;
 +		to += read_len;
