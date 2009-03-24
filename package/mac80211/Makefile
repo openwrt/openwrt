@@ -17,12 +17,12 @@ ifneq ($(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_23)$(CONFIG_LINUX_2_6_24)$(CONFI
   PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
   PATCH_DIR:=./patches-old
 else
-  PKG_VERSION:=2009-03-18
+  PKG_VERSION:=2009-03-24
   PKG_RELEASE:=1
   PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/03 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-  PKG_MD5SUM:=d46d230f62aed9bdec7a1f168feb221b
+  PKG_MD5SUM:=9e0574d123b6d6827c56a7c0042173fb
 endif
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
