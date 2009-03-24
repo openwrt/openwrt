@@ -1,7 +1,7 @@
 From 9b82f3e61758ed897200f0244b63a77c1791bcba Mon Sep 17 00:00:00 2001
 From: Geert Uytterhoeven <Geert.Uytterhoeven@sonycom.com>
 Date: Thu, 30 Oct 2008 08:12:58 +0000
-Subject: powerpc/ps3: Replace the flip_ctl logic in ps3av and ps3fb by a mutex
+Subject: [PATCH] powerpc/ps3: Replace the flip_ctl logic in ps3av and ps3fb by a mutex
 
 Introduce ps3_gpu_mutex to synchronizes GPU-related operations, like:
   - invoking the L1GPU_CONTEXT_ATTRIBUTE_FB_BLIT command using the
