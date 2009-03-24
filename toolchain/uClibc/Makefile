@@ -17,7 +17,7 @@ ifeq ($(CONFIG_UCLIBC_VERSION_NPTL),y)
   PKG_SOURCE_VERSION:=25804
   PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)+nptl
   PKG_SOURCE:=$(PKG_NAME)-nptl-r$(PKG_SOURCE_VERSION).tar.gz
-  PKG_EXTRAVERSION:=
+  PKG_EXTRAVERSION:=-svn
 else
 ifeq ($(PKG_VERSION_SNAPSHOT),y)
   PKG_SOURCE_URL:=http://www.uclibc.org/downloads/snapshots
