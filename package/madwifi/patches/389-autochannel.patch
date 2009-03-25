@@ -65,7 +65,7 @@
  	c = ic->ic_curchan;
  	sc->sc_curchan.channel = c->ic_freq;
  	sc->sc_curchan.channelFlags = ath_chan2flags(c);
-@@ -9020,6 +9057,7 @@ ath_chan_set(struct ath_softc *sc, struc
+@@ -9022,6 +9059,7 @@ ath_chan_set(struct ath_softc *sc, struc
  	u_int8_t channel_change_required = 0;
  	struct timeval tv;
  

@@ -34,7 +34,7 @@
  	    (sc->sc_nostabeacons) || sc->sc_scanning ||
  		(ic->ic_opmode == IEEE80211_M_HOSTAP))
  		rfilt |= HAL_RX_FILTER_BEACON;
-@@ -6433,6 +6451,33 @@ ath_capture(struct net_device *dev, cons
+@@ -6435,6 +6453,33 @@ ath_capture(struct net_device *dev, cons
  }
  
  /*
@@ -68,7 +68,7 @@
   * Intercept management frames to collect beacon RSSI data and to do
   * ibss merges. This function is called for all management frames,
   * including those belonging to other BSS.
-@@ -6485,10 +6530,19 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+@@ -6487,10 +6532,19 @@ ath_recv_mgmt(struct ieee80211vap * vap,
  			DPRINTF(sc, ATH_DEBUG_BEACON, 
  				"Updated beacon timers\n");
  		}
@@ -92,7 +92,7 @@
  		}
  		/* NB: Fall Through */
  	case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
-@@ -6561,6 +6615,10 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+@@ -6563,6 +6617,10 @@ ath_recv_mgmt(struct ieee80211vap * vap,
  #endif
  			if (do_merge)
  				ieee80211_ibss_merge(ni);

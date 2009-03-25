@@ -41,7 +41,7 @@
  			ATH_SCHEDULE_TQUEUE(&sc->sc_bstucktq, needmark);
  		return;
  	}
-@@ -5228,7 +5232,7 @@ ath_bstuck_tasklet(TQUEUE_ARG data)
+@@ -5230,7 +5234,7 @@ ath_bstuck_tasklet(TQUEUE_ARG data)
  	 *     check will be true, in which case return
  	 *     without resetting the driver.
  	 */

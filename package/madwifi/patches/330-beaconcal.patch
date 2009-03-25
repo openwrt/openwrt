@@ -68,16 +68,18 @@
  	 * Convert to a HAL channel description with the flags
  	 * constrained to reflect the current operating mode.
  	 */
-@@ -5154,6 +5178,8 @@ ath_beacon_send(struct ath_softc *sc, in
+@@ -5154,6 +5178,10 @@ ath_beacon_send(struct ath_softc *sc, in
  			"Invoking ath_hal_txstart with sc_bhalq: %d\n",
  			sc->sc_bhalq);
  		ath_hal_txstart(ah, sc->sc_bhalq);
-+		if (sc->sc_beacon_cal && (jiffies > sc->sc_lastcal + (ath_calinterval * HZ)))
-+			ath_calibrate((unsigned long) sc->sc_dev);
++		if (sc->sc_beacon_cal && (jiffies > sc->sc_lastcal + (ath_calinterval * HZ))) {
++			sc->sc_cal_ch.expires = jiffies + msecs_to_jiffies(10);
++			add_timer(&sc->sc_cal_ch);
++		}
  
  		sc->sc_stats.ast_be_xmit++;		/* XXX per-VAP? */
  	}
-@@ -5403,6 +5429,7 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5403,6 +5431,7 @@ ath_beacon_config(struct ath_softc *sc, 
  		ath_hal_beacontimers(ah, &bs);
  		sc->sc_imask |= HAL_INT_BMISS;
  		ath_hal_intrset(ah, sc->sc_imask);
@@ -85,7 +87,7 @@
  	} else {
  		ath_hal_intrset(ah, 0);
  		if (reset_tsf)
-@@ -5414,8 +5441,11 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5414,8 +5443,11 @@ ath_beacon_config(struct ath_softc *sc, 
  			 */
  			intval |= HAL_BEACON_ENA;
  			sc->sc_imask |= HAL_INT_SWBA;
@@ -98,7 +100,7 @@
  #ifdef ATH_SUPERG_DYNTURBO
  		ath_beacon_dturbo_config(vap, intval &
  				~(HAL_BEACON_RESET_TSF | HAL_BEACON_ENA));
-@@ -8879,6 +8909,9 @@ ath_chan_set(struct ath_softc *sc, struc
+@@ -8879,6 +8911,9 @@ ath_chan_set(struct ath_softc *sc, struc
  			/* Enter DFS wait period */
  			mod_timer(&sc->sc_dfs_cac_timer,
  				jiffies + (sc->sc_dfs_cac_period * HZ));
@@ -108,7 +110,7 @@
  		}
  		/*
  		 * re configure beacons when it is a turbo mode switch.
-@@ -8988,8 +9021,11 @@ ath_calibrate(unsigned long arg)
+@@ -8988,8 +9023,11 @@ ath_calibrate(unsigned long arg)
  		sc->sc_curchan.channel, sc->sc_curchan.channelFlags,
  		isIQdone ? "done" : "not done");
  
@@ -122,7 +124,7 @@
  }
  
  static void
-@@ -9096,7 +9132,8 @@ ath_newstate(struct ieee80211vap *vap, e
+@@ -9096,7 +9134,8 @@ ath_newstate(struct ieee80211vap *vap, e
  		ieee80211_state_name[vap->iv_state],
  		ieee80211_state_name[nstate]);
  
@@ -132,7 +134,7 @@
  
  	ath_hal_setledstate(ah, leds[nstate]);	/* set LED */
  	netif_stop_queue(dev);			/* before we do anything else */
-@@ -9321,7 +9358,8 @@ ath_newstate(struct ieee80211vap *vap, e
+@@ -9321,7 +9360,8 @@ ath_newstate(struct ieee80211vap *vap, e
  				"VAP -> DFSWAIT_PENDING \n");
  			/* start calibration timer with a really small value 
  			 * 1/10 sec */
@@ -142,7 +144,7 @@
  			/* wake the receiver */
  			netif_wake_queue(dev);
  			/* don't do the other usual stuff... */
-@@ -9364,7 +9402,7 @@ done:
+@@ -9364,7 +9404,7 @@ done:
  	error = avp->av_newstate(vap, nstate, arg);
  
  	/* Finally, start any timers. */
