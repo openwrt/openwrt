@@ -62,7 +62,7 @@
  static void
  ath_vap_delete(struct ieee80211vap *vap)
  {
-@@ -10819,6 +10853,12 @@ ath_ioctl(struct net_device *dev, struct
+@@ -10821,6 +10855,12 @@ ath_ioctl(struct net_device *dev, struct
   * is to add module parameters.
   */
  
@@ -75,7 +75,7 @@
  /*
   * Dynamic (i.e. per-device) sysctls.  These are automatically
   * mirrored in /proc/sys.
-@@ -10898,6 +10938,38 @@ ath_sysctl_get_intmit(struct ath_softc *
+@@ -10900,6 +10940,38 @@ ath_sysctl_get_intmit(struct ath_softc *
  }
  
  static int
@@ -114,7 +114,7 @@
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -11177,6 +11249,24 @@ static int maxint = 0x7fffffff;		/* 32-b
+@@ -11179,6 +11251,24 @@ static int maxint = 0x7fffffff;		/* 32-b
  
  static const ctl_table ath_sysctl_template[] = {
  	{ .ctl_name	= CTL_AUTO,

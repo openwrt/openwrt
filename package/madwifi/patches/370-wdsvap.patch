@@ -77,7 +77,7 @@
  		rfilt |= HAL_RX_FILTER_BEACON;
  	if (sc->sc_nmonvaps > 0)
  		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON |
-@@ -9030,8 +9031,6 @@ ath_calibrate(unsigned long arg)
+@@ -9032,8 +9033,6 @@ ath_calibrate(unsigned long arg)
  		 * set sc->beacons if we might need to restart
                   * them after ath_reset. */
  		if (!sc->sc_beacons &&

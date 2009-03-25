@@ -106,7 +106,7 @@
  	if (sc->sc_curchan.privFlags & CHANNEL_DFS)
  		rfilt |= (HAL_RX_FILTER_PHYERR | HAL_RX_FILTER_PHYRADAR);
  	return rfilt;
-@@ -6524,9 +6563,6 @@ process_rx_again:
+@@ -6526,9 +6565,6 @@ process_rx_again:
  			rs->rs_rssi = 0;
  
  		len = rs->rs_datalen;
@@ -116,7 +116,7 @@
  
  		if (rs->rs_more) {
  			/*
-@@ -8874,9 +8910,7 @@ ath_chan_set(struct ath_softc *sc, struc
+@@ -8876,9 +8912,7 @@ ath_chan_set(struct ath_softc *sc, struc
  		if (sc->sc_softled)
  			ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
  
@@ -127,7 +127,7 @@
  		sc->sc_curchan = hchan;
  		ath_update_txpow(sc);		/* update tx power state */
  		ath_radar_update(sc);
-@@ -10653,9 +10687,54 @@ enum {
+@@ -10655,9 +10689,54 @@ enum {
  	ATH_RP_IGNORED 		= 24,
  	ATH_RADAR_IGNORED       = 25,
  	ATH_MAXVAPS  		= 26,
@@ -182,7 +182,7 @@
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -10841,6 +10920,11 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -10843,6 +10922,11 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  			case ATH_RADAR_IGNORED:
  				sc->sc_radar_ignored = val;
  				break;
@@ -194,7 +194,7 @@
  			default:
  				ret = -EINVAL;
  				break;
-@@ -10907,6 +10991,11 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -10909,6 +10993,11 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  		case ATH_RADAR_IGNORED:
  			val = sc->sc_radar_ignored;
  			break;
@@ -206,7 +206,7 @@
  		default:
  			ret = -EINVAL;
  			break;
-@@ -11084,6 +11173,24 @@ static const ctl_table ath_sysctl_templa
+@@ -11086,6 +11175,24 @@ static const ctl_table ath_sysctl_templa
  	  .proc_handler = ath_sysctl_halparam,
  	  .extra2	= (void *)ATH_RADAR_IGNORED,
  	},

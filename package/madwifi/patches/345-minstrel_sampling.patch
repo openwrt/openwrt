@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8101,6 +8101,7 @@ ath_tx_start(struct net_device *dev, str
+@@ -8103,6 +8103,7 @@ ath_tx_start(struct net_device *dev, str
  		ath_hal_setupxtxdesc(sc->sc_ah, ds, mrr.rate1, mrr.retries1,
  				     mrr.rate2, mrr.retries2,
  				     mrr.rate3, mrr.retries3);

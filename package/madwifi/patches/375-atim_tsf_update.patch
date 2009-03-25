@@ -81,7 +81,7 @@
  /*
   * Reset the hardware w/o losing operational state.  This is
   * basically a more efficient way of doing ath_stop, ath_init,
-@@ -5292,6 +5359,7 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5294,6 +5361,7 @@ ath_beacon_config(struct ath_softc *sc, 
  	u_int64_t tsf, hw_tsf;
  	u_int32_t tsftu, hw_tsftu;
  	u_int32_t intval, nexttbtt = 0;
@@ -89,7 +89,7 @@
  	int reset_tsf = 0;
  
  	if (vap == NULL)
-@@ -5299,6 +5367,9 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5301,6 +5369,9 @@ ath_beacon_config(struct ath_softc *sc, 
  
  	ni = vap->iv_bss;
  
@@ -99,7 +99,7 @@
  	hw_tsf = ath_hal_gettsf64(ah);
  	tsf = le64_to_cpu(ni->ni_tstamp.tsf);
  	hw_tsftu = hw_tsf >> 10;
-@@ -5488,15 +5559,27 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5490,15 +5561,27 @@ ath_beacon_config(struct ath_softc *sc, 
  				<= ath_hal_sw_beacon_response_time)
  			nexttbtt += intval;
  		sc->sc_nexttbtt = nexttbtt;
@@ -127,7 +127,7 @@
  	/* We print all debug messages here, in order to preserve the
  	 * time critical aspect of this function */
  	DPRINTF(sc, ATH_DEBUG_BEACON,
-@@ -6399,6 +6482,11 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+@@ -6401,6 +6484,11 @@ ath_recv_mgmt(struct ieee80211vap * vap,
  			DPRINTF(sc, ATH_DEBUG_BEACON, 
  				"Updated beacon timers\n");
  		}

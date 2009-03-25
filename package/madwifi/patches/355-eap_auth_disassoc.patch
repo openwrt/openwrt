@@ -5,7 +5,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8332,6 +8332,14 @@ ath_tx_processq(struct ath_softc *sc, st
+@@ -8334,6 +8334,14 @@ ath_tx_processq(struct ath_softc *sc, st
  #endif
  				if (ts->ts_status & HAL_TXERR_XRETRY) {
  					sc->sc_stats.ast_tx_xretries++;
