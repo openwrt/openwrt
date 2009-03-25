@@ -174,6 +174,7 @@ enable_mac80211() {
 				# special case where physical interface should be down for mesh to work
 				ifconfig "$ifname" down
 				ifconfig "msh$mesh_idx" up
+				iwlist msh$mesh_idx scan 2>/dev/null >/dev/null
 			;;
 		esac
 		first=0
