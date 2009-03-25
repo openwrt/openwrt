@@ -63,7 +63,7 @@
  
 +	power = ic->ic_max_txpower;
 +	if (ic->ic_bsschan && (ic->ic_bsschan != IEEE80211_CHAN_ANYC))
-+		power = min(power, ic->ic_bsschan->ic_maxpower);
++		power = min(power, (u_int16_t) ic->ic_bsschan->ic_maxpower);
 +
  	/* txpower (128 values, but will print out only IW_MAX_TXPOWER) */
 -	range->num_txpower = (ic->ic_txpowlimit >= 8) ? IW_MAX_TXPOWER : ic->ic_txpowlimit;
@@ -136,8 +136,8 @@
 +	struct ieee80211_channel *c;
 +	u_int16_t txp = ic->ic_max_txpower;
 +
-+	if (ic->ic_bsschan && (ic->ic_bsschan != IEEE80211_CHAN_ANYC))
-+		txp = min(txp, ic->ic_bsschan->ic_maxpower);
++	if (ic->ic_bsschan && (ic->ic_bsschan != IEEE80211_CHAN_ANYC)) {
++		txp = min(txp, (u16) ic->ic_bsschan->ic_maxpower);
 +	} else if (ic->ic_cur_txpower > 0) {
 +		txp = min(txp, ic->ic_cur_txpower);
 +	}
