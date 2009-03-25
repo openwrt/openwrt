@@ -83,6 +83,7 @@ sort_list() {
 prepare_interface() {
 	local iface="$1"
 	local config="$2"
+	local vifmac="$3"
 
 	# if we're called for the bridge interface itself, don't bother trying
 	# to create any interfaces here. The scripts have already done that, otherwise
@@ -93,6 +94,12 @@ prepare_interface() {
 		# make sure the interface is removed from any existing bridge and deconfigured 
 		ifconfig "$iface" 0.0.0.0
 		unbridge "$iface"
+
+		# Change interface MAC address if requested
+		[ -n "$vifmac" ] && {
+			ifconfig "$iface" down
+			ifconfig "$iface" hw ether "$vifmac" up
+		}
 	}
 
 	# Setup VLAN interfaces
@@ -209,6 +216,7 @@ setup_interface_alias() {
 setup_interface() {
 	local iface="$1"
 	local config="$2"
+	local vifmac="$4"
 	local proto
 	local macaddr
 
@@ -218,7 +226,7 @@ setup_interface() {
 	}
 	proto="${3:-$(config_get "$config" proto)}"
 	
-	prepare_interface "$iface" "$config" || return 0
+	prepare_interface "$iface" "$config" "$vifmac" || return 0
 	
 	[ "$iface" = "br-$config" ] && {
 		# need to bring up the bridge and wait a second for 
@@ -231,7 +239,6 @@ setup_interface() {
 	# Interface settings
 	config_get mtu "$config" mtu
 	config_get macaddr "$config" macaddr
-	macaddr="${macaddr:-$3}"
 	grep "$iface:" /proc/net/dev > /dev/null && \
 		$DEBUG ifconfig "$iface" down && \
 		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
