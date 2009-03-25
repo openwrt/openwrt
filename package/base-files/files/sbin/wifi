@@ -66,11 +66,12 @@ wifi_detect() {
 start_net() {(
 	local iface="$1"
 	local config="$2"
+	local vifmac="$3"
 
 	[ -f "/var/run/$iface.pid" ] && kill "$(cat /var/run/${iface}.pid)" 2>/dev/null
 	include /lib/network
 	scan_interfaces
-	setup_interface "$1" "$2" "$3"
+	setup_interface "$iface" "$config" "" "$vifmac"
 )}
 
 set_wifi_up() {
