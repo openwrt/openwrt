@@ -39,6 +39,8 @@ else
   PATCH_DIR=./patches
 endif
 
+PKG_BUILD_DEPENDS:=wprobe
+
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(CONFIG_TARGET_atheros),)
@@ -168,6 +170,16 @@ define KernelPackage/madwifi/config
 	source "$(SOURCE)/Config.in"
 endef
 
+MADWIFI_INC = \
+	-I$(PKG_BUILD_DIR) \
+	-I$(PKG_BUILD_DIR)/include \
+	-I$(PKG_BUILD_DIR)/hal \
+	-I$(PKG_BUILD_DIR)/ath \
+	-I$(PKG_BUILD_DIR)/ath_hal \
+	-I$(PKG_BUILD_DIR)/net80211 \
+	-I$(STAGING_DIR)/usr/include \
+	-include $(PKG_BUILD_DIR)/include/compat.h
+
 MAKE_ARGS:= \
 	PATH="$(TARGET_PATH)" \
 	ARCH="$(LINUX_KARCH)" \
@@ -179,6 +191,7 @@ MAKE_ARGS:= \
 	LDOPTS="--no-warn-mismatch " \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 	DO_MULTI=1 \
+	INCS="$(MADWIFI_INC)" \
 	$(if $(CONFIG_MADWIFI_DEBUG),,DEBUG=) WARNINGS="-Wno-unused"
 
 MAKE_VARS:= \
