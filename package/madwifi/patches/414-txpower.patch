@@ -79,8 +79,12 @@
  			- (IW_MAX_TXPOWER - i - 1) * step;
  
  	range->txpower_capa = IW_TXPOW_DBM;
-@@ -1382,10 +1388,8 @@ ieee80211_ioctl_siwtxpow(struct net_devi
- 	disabled = (fixed && vap->iv_bss->ni_txpower == 0);
+@@ -1379,13 +1385,11 @@ ieee80211_ioctl_siwtxpow(struct net_devi
+ 	int fixed, disabled;
+ 
+ 	fixed = (ic->ic_flags & IEEE80211_F_TXPOW_FIXED);
+-	disabled = (fixed && vap->iv_bss->ni_txpower == 0);
++	disabled = (fixed && ic->ic_txpowlimit == 0);
  	if (rrq->disabled) {
  		if (!disabled) {
 -			if ((ic->ic_caps & IEEE80211_C_TXPMGT) == 0)
