@@ -34,6 +34,40 @@ bridge_interface() {(
 	[ "$iftype" = bridge ] && config_get "$cfg" ifname
 )}
 
+wifi_fixup_hwmode() {
+	local device="$1"
+	local default="$2"
+	local hwmode hwmode_11n
+
+	config_get channel "$device" channel
+	config_get hwmode "$device" hwmode
+	case "$hwmode" in
+		11a) hwmode=a;;
+		11b) hwmode=b;;
+		11g) hwmode=g;;
+		11n*)
+			hwmode_11n="${hwmode##11n}"
+			case "$hwmode" in
+				a|g) ;;
+				default) hwmode_11n="$default"
+			esac
+			config_set "$device" hwmode_11n "$hwmode_11n"
+		;;
+		*)
+			hwmode=
+			if [ "${channel:-0}" -gt 0 ]; then 
+				if [ "${channel:-0}" -gt 14 ]; then
+					hwmode=a
+				else
+					hwmode=g
+				fi
+			else
+				hwmode="$default"
+			fi
+		;;
+	esac
+	config_set "$device" hwmode "$hwmode"
+}
 
 wifi_updown() {
 	[ enable = "$1" ] && wifi_updown disable "$2"
