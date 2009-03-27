@@ -54,6 +54,7 @@ enable_mac80211() {
 
 	local first=1
 	local mesh_idx=0
+	wifi_fixup_hwmode "$device" "g"
 	for vif in $vifs; do
 		ifconfig "$ifname" down 2>/dev/null
 		config_get ifname "$vif" ifname
