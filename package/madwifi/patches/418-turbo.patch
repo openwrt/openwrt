@@ -1,0 +1,11 @@
+--- a/net80211/ieee80211_scan.c
++++ b/net80211/ieee80211_scan.c
+@@ -1129,7 +1129,7 @@ ieee80211_scan_add_channels(struct ieee8
+ 			continue;
+ 		if (c->ic_scanflags & IEEE80211_NOSCAN_SET)
+ 			continue;
+-		if (modeflags &&
++		if ((modeflags || (ss->ss_vap->iv_opmode == IEEE80211_M_HOSTAP)) &&
+ 			((c->ic_flags & IEEE80211_CHAN_ALLTURBO) !=
+ 			 (modeflags & IEEE80211_CHAN_ALLTURBO)))
+ 			continue;
