@@ -1,10 +1,9 @@
 --- a/lib/ipfix_FOKUS_IEs.txt
 +++ b/lib/ipfix_FOKUS_IEs.txt
-@@ -38,4 +38,39 @@
- 312, IPFIX_FT_OWDVARMEAN_NSEC,      4, IPFIX_CODING_INT, "owdvarmean_nsec", "FOKUS mean owd variace in ns"
+@@ -39,3 +39,41 @@
  313, IPFIX_FT_OWDVARMIN_NSEC,       4, IPFIX_CODING_INT, "owdvarmin_nsec", "FOKUS minimum owd variance in ns"
  314, IPFIX_FT_OWDVARMAX_NSEC,       4, IPFIX_CODING_INT, "owdvarmax_nsec", "FOKUS maximum ow variance in ns"
--
+ 
 +315, IPFIX_FT_WPROBE_NOISE_AVG, 4, IPFIX_CODING_FLOAT, "global_noise_avg", "wprobe global noice floor - Average"
 +316, IPFIX_FT_WPROBE_NOISE_STDEV, 4, IPFIX_CODING_FLOAT, "global_noise_stdev", "wprobe global noice floor - Standard deviation"
 +317, IPFIX_FT_WPROBE_NOISE_N, 4, IPFIX_CODING_UINT, "global_noise_n", "wprobe global noice floor - Number of samples"
@@ -41,3 +40,5 @@
 +348, IPFIX_FT_WPROBE_RETRANSMIT_1600_AVG, 4, IPFIX_CODING_FLOAT, "link_retransmit_1600_avg", "wprobe link total retransmissions per packet - >800 bytes - Average"
 +349, IPFIX_FT_WPROBE_RETRANSMIT_1600_STDEV, 4, IPFIX_CODING_FLOAT, "link_retransmit_1600_stdev", "wprobe link total retransmissions per packet - >800 bytes - Standard deviation"
 +350, IPFIX_FT_WPROBE_RETRANSMIT_1600_N, 4, IPFIX_CODING_UINT, "link_retransmit_1600_n", "wprobe link total retransmissions per packet - >800 bytes - Number of samples"
++351, IPFIX_FT_WPROBE_FRAMES, 4, IPFIX_CODING_UINT, "global_frames", "wprobe global number of 802.11 frames seen"
++352, IPFIX_FT_WPROBE_PROBEREQ, 4, IPFIX_CODING_UINT, "global_probereq", "wprobe global number of 802.11 probe requests seen"
