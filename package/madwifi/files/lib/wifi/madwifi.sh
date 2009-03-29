@@ -120,10 +120,10 @@ enable_atheros() {
 			*fh) hwmode=fh;;
 			*) hwmode=auto;;
 		esac
-		iwpriv "$ifname" mode "$hwmode"
 		iwpriv "$ifname" pureg "$pureg"
 
 		[ "$first" = 1 ] && {
+			iwpriv "$ifname" mode "$hwmode"
 			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
 		}
 	
