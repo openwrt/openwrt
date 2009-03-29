@@ -448,10 +448,10 @@ wprobe_scale_stats(const struct wprobe_item *item, struct wprobe_value *val, int
 		else if (wprobe_fam.attrbuf[WPROBE_ATTR_SCALE])
 			scale = nla_get_u32(wprobe_fam.attrbuf[WPROBE_ATTR_SCALE]);
 
-		if ((scale > 0) && (val[i].n >= scale)) {
+		if ((scale > 0) && (val[i].n > scale)) {
 			val[i].s = div_s64(val[i].s, scale);
 			val[i].ss = div_s64(val[i].ss, scale);
-			val[i].n /= scale;
+			val[i].n = val[i].n / scale + 1;
 		}
 	}
 }
