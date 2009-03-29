@@ -1,6 +1,6 @@
---- /dev/null	2009-03-26 21:01:06.000000000 +0100
-+++ ./ath/ath_wprobe.c	2009-03-26 20:58:07.000000000 +0100
-@@ -0,0 +1,364 @@
+--- /dev/null
++++ b/ath/ath_wprobe.c
+@@ -0,0 +1,392 @@
 +#include <net80211/ieee80211_node.h>
 +#include <linux/wprobe.h>
 +
@@ -22,6 +22,8 @@
 +	WP_GLOBAL_PHY_BUSY,
 +	WP_GLOBAL_PHY_RX,
 +	WP_GLOBAL_PHY_TX,
++	WP_GLOBAL_FRAMES,
++	WP_GLOBAL_PROBEREQ,
 +};
 +
 +static struct wprobe_item ath_wprobe_globals[] = {
@@ -44,6 +46,14 @@
 +		.name = "phy_tx",
 +		.type = WPROBE_VAL_U8,
 +		.flags = WPROBE_F_KEEPSTAT
++	},
++	[WP_GLOBAL_FRAMES] = {
++		.name = "frames",
++		.type = WPROBE_VAL_U32,
++	},
++	[WP_GLOBAL_PROBEREQ] = {
++		.name = "probereq",
++		.type = WPROBE_VAL_U32,
 +	},
 +};
 +
@@ -153,6 +163,9 @@
 +	WPROBE_SET(WP_GLOBAL_PHY_BUSY, U8, busy);
 +	WPROBE_SET(WP_GLOBAL_PHY_RX, U8, rx);
 +	WPROBE_SET(WP_GLOBAL_PHY_TX, U8, tx);
++	WPROBE_SET(WP_GLOBAL_FRAMES, U32, avp->av_rxframes);
++	WPROBE_SET(WP_GLOBAL_PROBEREQ, U32, avp->av_rxprobereq);
++
 +phy_skip:
 +	WPROBE_SET(WP_GLOBAL_NOISE, S16, noise);
 +	WPROBE_FILL_END();
@@ -262,6 +275,21 @@
 +}
 +
 +static void
++ath_wprobe_report_rx(struct ieee80211vap *vap, struct sk_buff *skb)
++{
++	struct ieee80211_frame *wh = (struct ieee80211_frame *)skb->data;
++	struct ath_vap *avp;
++
++	if (wprobe_disabled())
++		return;
++
++	avp = ATH_VAP(vap);
++	avp->av_rxframes++;
++	if (wh->i_fc[0] == (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_PROBE_REQ))
++		avp->av_rxprobereq++;
++}
++
++static void
 +ath_wprobe_node_join(struct ieee80211vap *vap, struct ieee80211_node *ni)
 +{
 +	struct wprobe_iface *dev;
@@ -365,8 +393,8 @@
 +
 +	wprobe_remove_iface(dev);
 +}
---- a/ath/if_ath.c	2009-03-26 19:54:36.000000000 +0100
-+++ /var/folders/DB/DBZUyxsHGRKP0B3nCU1mmU+++TI/-Tmp-/cocci-output-73937-18abc0-if_ath.c	2009-03-26 21:08:34.000000000 +0100
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -400,6 +400,7 @@ static int countrycode = -1;
  static int maxvaps = -1;
  static int outdoor = -1;
@@ -399,15 +427,33 @@
  
  	ATH_NODE_UAPSD_LOCK_IRQ(an);
  #ifdef IEEE80211_DEBUG_REFCNT
-@@ -7001,6 +7005,7 @@ drop_micfail:
+@@ -7001,6 +7005,8 @@ drop_micfail:
  				goto lookup_slowpath;
  			}
  			ATH_RSSI_LPF(ATH_NODE(ni)->an_avgrssi, rs->rs_rssi);
 +			ath_node_sample_rx(ni, rs);
++			ath_wprobe_report_rx(ni->ni_vap, skb);
  			type = ieee80211_input(ni->ni_vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  			ieee80211_unref_node(&ni);
  		} else {
-@@ -7020,6 +7025,7 @@ lookup_slowpath:
+@@ -7011,15 +7017,22 @@ drop_micfail:
+ 
+ lookup_slowpath:
+ 			vap = ieee80211_find_rxvap(ic, wh->i_addr1);
+-			if (vap)
++			if (vap) {
++				ath_wprobe_report_rx(vap, skb);
+ 				ni = ieee80211_find_rxnode(ic, vap, wh);
+-			else
++			} else {
++				TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
++					ath_wprobe_report_rx(vap, skb);
++				}
++				vap = NULL;
+ 				ni = NULL;
++			}
+ 
+ 			if (ni != NULL) {
  				ieee80211_keyix_t keyix;
  
  				ATH_RSSI_LPF(ATH_NODE(ni)->an_avgrssi, rs->rs_rssi);
@@ -415,7 +461,7 @@
  				type = ieee80211_input(vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  				/*
  				 * If the station has a key cache slot assigned
-@@ -8599,6 +8605,7 @@ ath_tx_processq(struct ath_softc *sc, st
+@@ -8599,6 +8612,7 @@ ath_tx_processq(struct ath_softc *sc, st
  				sc->sc_stats.ast_tx_rssi = ts->ts_rssi;
  				ATH_RSSI_LPF(an->an_halstats.ns_avgtxrssi,
  					ts->ts_rssi);
@@ -423,7 +469,7 @@
  				if (bf->bf_skb->priority == WME_AC_VO ||
  				    bf->bf_skb->priority == WME_AC_VI)
  					ni->ni_ic->ic_wme.wme_hipri_traffic++;
-@@ -10090,6 +10097,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10090,6 +10104,7 @@ ath_newassoc(struct ieee80211_node *ni, 
  	struct ath_softc *sc = ic->ic_dev->priv;
  
  	sc->sc_rc->ops->newassoc(sc, ATH_NODE(ni), isnew);
@@ -431,8 +477,8 @@
  
  	/* are we supporting compression? */
  	if (!(vap->iv_ath_cap & ni->ni_ath_flags & IEEE80211_NODE_COMP))
---- a/ath/if_athvar.h	2009-03-26 19:54:35.000000000 +0100
-+++ /var/folders/DB/DBZUyxsHGRKP0B3nCU1mmU+++TI/-Tmp-/cocci-output-73937-80429d-if_athvar.h	2009-03-26 21:08:42.000000000 +0100
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
 @@ -46,6 +46,7 @@
  #include "ah_desc.h"
  #include "ah_os.h"
@@ -451,11 +497,13 @@
  	u_int16_t an_decomp_index; 		/* decompression mask index */
  	u_int32_t an_avgrssi;			/* average rssi over all rx frames */
  	u_int8_t  an_prevdatarix;		/* rate ix of last data frame */
-@@ -521,6 +525,7 @@ struct ath_vap {
+@@ -521,6 +525,9 @@ struct ath_vap {
  #else
  	unsigned int av_beacon_alloc;
  #endif
 +	struct wprobe_iface av_wpif;
++	u32 av_rxframes;
++	u32 av_rxprobereq;
  };
  #define	ATH_VAP(_v)	((struct ath_vap *)(_v))
  
