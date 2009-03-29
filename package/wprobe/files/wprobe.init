@@ -1,0 +1,46 @@
+#!/bin/sh /etc/rc.common
+START=90
+
+wprobe_ssd() {
+	local cfg="$1"; shift
+	local cmd="$1"; shift
+	start-stop-daemon "$cmd" -p "/var/run/wprobe-$cfg.pid" -b -x /sbin/wprobe-export -m -- "$@"
+}
+
+stop_wprobe() {
+	local cfg="$1"
+	[ -f "/var/run/wprobe-$cfg.pid" ] && wprobe_ssd "$cfg" -K
+	rm -f "/var/run/wprobe-$cfg.pid"
+}
+
+start_wprobe() {
+	local cfg="$1"
+	config_get ifname "$cfg" interface
+	config_get host "$cfg" host
+	config_get port "$cfg" port
+	config_get proto "$cfg" proto
+	case "$proto" in
+		sctp) proto="-s";;
+		tcp) proto="-t";;
+		udp) proto="-u";;
+		*) proto="-t";;
+	esac
+	[ -z "$ifname" -o -z "$host" ] && {
+		echo "wprobe-export: missing host or interface name in config $cfg"
+		return
+	}
+	wprobe_ssd "$cfg" -S "$proto" -i "$ifname" -c "$host" -p "${port:-4739}"
+}
+
+stop() {
+	for f in /var/run/wprobe-*.pid; do
+		CFG="${f%%.pid}"
+		CFG="${CFG##/var/run/wprobe-}"
+		stop_wprobe "$CFG"
+	done
+}
+
+start() {
+	config_load wprobe
+	config_foreach start_wprobe wprobe
+}
