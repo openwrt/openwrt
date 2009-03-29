@@ -1,0 +1,11 @@
+--- a/modutils/lsmod.c
++++ b/modutils/lsmod.c
+@@ -107,7 +107,7 @@
+ 				continue;
+ 			} else if (errno != ENOSPC)
+ 				bb_perror_msg_and_die("module %s: QM_REFS", mn);
+-			deps = xrealloc(deps, count);
++			deps = xrealloc(deps, depsize = count);
+ 		}
+ 		printf("%-20s%8lu%4ld", mn, info.size, info.usecount);
+ 		if (info.flags & NEW_MOD_DELETED)
