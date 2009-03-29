@@ -17,12 +17,14 @@
 #include <ipfix.h>
 #include <mlog.h>
 #include <wprobe.h>
+#include <stdbool.h>
 
 static ipfix_datarecord_t g_data  = { NULL, NULL, 0 };
 static int do_close = 0;
 
 struct wprobe_mapping {
 	int id;
+	bool counter;
 	float scale;
 	const char *wprobe_id;
 	struct wprobe_value *val;
@@ -35,10 +37,21 @@ struct wprobe_mapping {
 #define WMAP(_id, _name, ...) \
 	{ \
 		.scale = 1.0f, \
+		.counter = false, \
 		.id = IPFIX_FT_WPROBE_##_id##_AVG, \
 		.wprobe_id = _name \
 		, ## __VA_ARGS__ \
 	}
+
+#define WMAP_COUNTER(_id, _name, ...) \
+	{ \
+		.scale = 1.0f, \
+		.counter = true, \
+		.id = IPFIX_FT_WPROBE_##_id, \
+		.wprobe_id = _name \
+		, ## __VA_ARGS__ \
+	}
+
 
 #define WPROBE_OFFSET	2
 
@@ -47,6 +60,8 @@ static struct wprobe_mapping map_globals[] = {
 	WMAP(PHY_BUSY, "phy_busy"),
 	WMAP(PHY_RX, "phy_rx"),
 	WMAP(PHY_TX, "phy_tx"),
+	WMAP_COUNTER(FRAMES, "frames"),
+	WMAP_COUNTER(PROBEREQ, "probereq"),
 };
 
 static struct wprobe_mapping map_perlink[] = {
@@ -129,12 +144,19 @@ add_template_fields(ipfix_t *handle, ipfix_template_t *t, struct wprobe_mapping 
 		if (!map[i].val)
 			continue;
 
-		g_data.addrs[f++] = &map[i].val->avg;
-		g_data.addrs[f++] = &map[i].val->stdev;
-		g_data.addrs[f++] = &map[i].val->n;
+		if (map[i].counter)
+			g_data.addrs[f++] = &map[i].val->U32;
+		else
+			g_data.addrs[f++] = &map[i].val->avg;
 
         if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 0, 4) < 0)
             exit(1);
+
+		if (map[i].counter)
+			continue;
+
+		g_data.addrs[f++] = &map[i].val->stdev;
+		g_data.addrs[f++] = &map[i].val->n;
         if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 1, 4) < 0)
             exit(1);
         if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 2, 4) < 0)
