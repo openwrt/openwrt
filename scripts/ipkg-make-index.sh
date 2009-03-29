@@ -15,7 +15,7 @@ for pkg in `find $pkg_dir -name '*.ipk' | sort`; do
 	file_size=$(ls -l $pkg | awk '{print $5}')
 	md5sum=$(md5sum $pkg | awk '{print $1}')
 	# Take pains to make variable value sed-safe
-	sed_safe_pkg=`echo $pkg | sed -e 's/\\//\\\\\\//g'`
+	sed_safe_pkg=`echo $pkg | sed -e 's/^\.\///g' -e 's/\\//\\\\\\//g'`
 	tar -xzOf $pkg ./control.tar.gz | tar xzOf - ./control | sed -e "s/^Description:/Filename: $sed_safe_pkg\\
 Size: $file_size\\
 MD5Sum: $md5sum\\
