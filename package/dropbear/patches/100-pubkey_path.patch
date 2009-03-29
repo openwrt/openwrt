@@ -1,8 +1,8 @@
-Index: dropbear-0.51/svr-authpubkey.c
+Index: dropbear-0.52/svr-authpubkey.c
 ===================================================================
---- dropbear-0.51.orig/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
-+++ dropbear-0.51/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
-@@ -176,6 +176,8 @@
+--- dropbear-0.52.orig/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
++++ dropbear-0.52/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
+@@ -209,6 +209,8 @@
  		goto out;
  	}
  
@@ -11,7 +11,7 @@ Index: dropbear-0.51/svr-authpubkey.c
  	/* we don't need to check pw and pw_dir for validity, since
  	 * its been done in checkpubkeyperms. */
  	len = strlen(ses.authstate.pw_dir);
-@@ -187,6 +189,9 @@
+@@ -220,6 +222,9 @@
  
  	/* open the file */
  	authfile = fopen(filename, "r");
@@ -21,7 +21,7 @@ Index: dropbear-0.51/svr-authpubkey.c
  	if (authfile == NULL) {
  		goto out;
  	}
-@@ -274,6 +279,8 @@
+@@ -372,6 +377,8 @@
  		goto out;
  	}
  
@@ -30,7 +30,7 @@ Index: dropbear-0.51/svr-authpubkey.c
  	/* allocate max required pathname storage,
  	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
  	filename = m_malloc(len + 22);
-@@ -295,6 +302,14 @@
+@@ -381,6 +388,14 @@
  	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
  		goto out;
  	}
@@ -43,5 +43,5 @@ Index: dropbear-0.51/svr-authpubkey.c
 +		}
 +	}
  
- 	/* file looks ok, return success */
- 	ret = DROPBEAR_SUCCESS;
+ 	/* check ~/.ssh */
+ 	strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
