@@ -4,10 +4,8 @@ This patch is submitted upstream and can be removed when it hits compat-wireless
 
 
 
-Index: compat-wireless-2009-03-24/drivers/net/wireless/b43/b43.h
-===================================================================
---- compat-wireless-2009-03-24.orig/drivers/net/wireless/b43/b43.h	2009-03-29 13:27:05.000000000 +0200
-+++ compat-wireless-2009-03-24/drivers/net/wireless/b43/b43.h	2009-03-29 13:27:21.000000000 +0200
+--- a/drivers/net/wireless/b43/b43.h
++++ b/drivers/net/wireless/b43/b43.h
 @@ -624,9 +624,11 @@ struct b43_wl {
  	/* Stats about the wireless interface */
  	struct ieee80211_low_level_stats ieee_stats;
@@ -21,10 +19,8 @@ Index: compat-wireless-2009-03-24/drivers/net/wireless/b43/b43.h
  
  	/* The RF-kill button */
  	struct b43_rfkill rfkill;
-Index: compat-wireless-2009-03-24/drivers/net/wireless/b43/main.c
-===================================================================
---- compat-wireless-2009-03-24.orig/drivers/net/wireless/b43/main.c	2009-03-29 13:27:05.000000000 +0200
-+++ compat-wireless-2009-03-24/drivers/net/wireless/b43/main.c	2009-03-29 13:27:21.000000000 +0200
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
 @@ -2982,6 +2982,7 @@ static void b43_security_init(struct b43
  	b43_clear_keys(dev);
  }
@@ -64,10 +60,8 @@ Index: compat-wireless-2009-03-24/drivers/net/wireless/b43/main.c
  
  	return err;
  }
-Index: compat-wireless-2009-03-24/config.mk
-===================================================================
---- compat-wireless-2009-03-24.orig/config.mk	2009-03-29 13:28:03.000000000 +0200
-+++ compat-wireless-2009-03-24/config.mk	2009-03-29 13:28:32.000000000 +0200
+--- a/config.mk
++++ b/config.mk
 @@ -148,6 +148,7 @@ CONFIG_ATH9K_DEBUG=y
  # CONFIG_B43_PIO=y
  # CONFIG_B43_LEDS=y

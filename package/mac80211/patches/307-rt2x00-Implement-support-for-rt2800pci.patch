@@ -1,7 +1,7 @@
-From a34c288f7214637f214ec17fb2b35dd5d20b0634 Mon Sep 17 00:00:00 2001
+From b7dcb460c4c441ce52b3c5ce30d65e1ecfbb30ad Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sat, 14 Mar 2009 20:41:58 +0100
-Subject: [PATCH] rt2x00: Implement support for rt2800pci
+Date: Sat, 28 Mar 2009 20:46:46 +0100
+Subject: [PATCH 8/9] rt2x00: Implement support for rt2800pci
 
 Add support for the rt2800pci chipset.
 
@@ -13,18 +13,18 @@ Signed-off-by: Mark Asselstine <asselsm@gmail.com>
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
- drivers/net/wireless/rt2x00/Kconfig     |   15 +
+ drivers/net/wireless/rt2x00/Kconfig     |   26 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800pci.c | 3035 +++++++++++++++++++++++++++++++
- drivers/net/wireless/rt2x00/rt2800pci.h | 1880 +++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.c | 3244 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.h | 1927 ++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00.h    |    6 +
- 5 files changed, 4937 insertions(+), 0 deletions(-)
+ 5 files changed, 5204 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.h
 
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
-@@ -16,5 +16,6 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00u
+@@ -17,5 +17,6 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00u
  obj-$(CONFIG_RT2400PCI)			+= rt2400pci.o
  obj-$(CONFIG_RT2500PCI)			+= rt2500pci.o
  obj-$(CONFIG_RT61PCI)			+= rt61pci.o
@@ -33,7 +33,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  obj-$(CONFIG_RT73USB)			+= rt73usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -0,0 +1,3035 @@
+@@ -0,0 +1,3244 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -72,13 +72,14 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +#include "rt2x00.h"
 +#include "rt2x00pci.h"
++#include "rt2x00soc.h"
 +#include "rt2800pci.h"
 +
-+/* FIXME: Make Kconfig dependent */
-+#ifdef CONFIG_PCI
++#ifdef CONFIG_RT2800PCI_PCI_MODULE
 +#define CONFIG_RT2800PCI_PCI
 +#endif
-+#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT305X)
++
++#ifdef CONFIG_RT2800PCI_WISOC_MODULE
 +#define CONFIG_RT2800PCI_WISOC
 +#endif
 +
@@ -102,6 +103,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + */
 +#define WAIT_FOR_BBP(__dev, __reg) \
 +	rt2x00pci_regbusy_read((__dev), BBP_CSR_CFG, BBP_CSR_CFG_BUSY, (__reg))
++#define WAIT_FOR_RFCSR(__dev, __reg) \
++	rt2x00pci_regbusy_read((__dev), RF_CSR_CFG, RF_CSR_CFG_BUSY, (__reg))
 +#define WAIT_FOR_RF(__dev, __reg) \
 +	rt2x00pci_regbusy_read((__dev), RF_CSR_CFG0, RF_CSR_CFG0_BUSY, (__reg))
 +#define WAIT_FOR_MCU(__dev, __reg) \
@@ -165,6 +168,61 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	mutex_unlock(&rt2x00dev->csr_mutex);
 +}
 +
++static void rt2800pci_rfcsr_write(struct rt2x00_dev *rt2x00dev,
++				  const unsigned int word, const u8 value)
++{
++	u32 reg;
++
++	mutex_lock(&rt2x00dev->csr_mutex);
++
++	/*
++	 * Wait until the RFCSR becomes available, afterwards we
++	 * can safely write the new data into the register.
++	 */
++	if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, RF_CSR_CFG_DATA, value);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE, 1);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY, 1);
++
++		rt2x00pci_register_write(rt2x00dev, RF_CSR_CFG, reg);
++	}
++
++	mutex_unlock(&rt2x00dev->csr_mutex);
++}
++
++static void rt2800pci_rfcsr_read(struct rt2x00_dev *rt2x00dev,
++				 const unsigned int word, u8 *value)
++{
++	u32 reg;
++
++	mutex_lock(&rt2x00dev->csr_mutex);
++
++	/*
++	 * Wait until the RFCSR becomes available, afterwards we
++	 * can safely write the read request into the register.
++	 * After the data has been written, we wait until hardware
++	 * returns the correct value, if at any time the register
++	 * doesn't become available in time, reg will be 0xffffffff
++	 * which means we return 0xff to the caller.
++	 */
++	if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
++		reg = 0;
++		rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM, word);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE, 0);
++		rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY, 1);
++
++		rt2x00pci_register_write(rt2x00dev, RF_CSR_CFG, reg);
++
++		WAIT_FOR_RFCSR(rt2x00dev, &reg);
++	}
++
++	*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
++
++	mutex_unlock(&rt2x00dev->csr_mutex);
++}
++
 +static void rt2800pci_rf_write(struct rt2x00_dev *rt2x00dev,
 +			       const unsigned int word, const u32 value)
 +{
@@ -195,6 +253,13 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +				  const u8 arg0, const u8 arg1)
 +{
 +	u32 reg;
++
++	/*
++	 * RT2880 and RT3052 don't support MCU requests.
++	 */
++	if (rt2x00_rt(&rt2x00dev->chip, RT2880) ||
++	    rt2x00_rt(&rt2x00dev->chip, RT3052))
++		return;
 +
 +	mutex_lock(&rt2x00dev->csr_mutex);
 +
@@ -765,13 +830,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00dev->lna_gain = lna_gain;
 +}
 +
-+static void rt2800pci_config_channel(struct rt2x00_dev *rt2x00dev,
-+				     struct ieee80211_conf *conf,
-+				     struct rf_channel *rf,
-+				     struct channel_info *info)
++static void rt2800pci_config_channel_rt2x(struct rt2x00_dev *rt2x00dev,
++					  struct ieee80211_conf *conf,
++					  struct rf_channel *rf,
++					  struct channel_info *info)
 +{
-+	u32 reg;
-+	unsigned int tx_pin;
 +	u16 eeprom;
 +
 +	rt2x00_set_field32(&rf->rf4, RF4_FREQ_OFFSET, rt2x00dev->freq_offset);
@@ -781,9 +844,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 */
 +	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
 +
-+	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1) {
++	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1)
 +		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_TX1, 1);
-+	}
 +
 +	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 1) {
 +		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX1, 1);
@@ -842,6 +904,62 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2800pci_rf_write(rt2x00dev, 2, rf->rf2);
 +	rt2800pci_rf_write(rt2x00dev, 3, rf->rf3 & ~0x00000004);
 +	rt2800pci_rf_write(rt2x00dev, 4, rf->rf4);
++}
++
++static void rt2800pci_config_channel_rt3x(struct rt2x00_dev *rt2x00dev,
++					  struct ieee80211_conf *conf,
++					  struct rf_channel *rf,
++					  struct channel_info *info)
++{
++	u8 rfcsr;
++
++	rt2800pci_rfcsr_write(rt2x00dev, 2, rf->rf1);
++	rt2800pci_rfcsr_write(rt2x00dev, 2, rf->rf3);
++
++	rt2800pci_rfcsr_read(rt2x00dev, 6, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR6_R, rf->rf2);
++	rt2800pci_rfcsr_write(rt2x00dev, 6, rfcsr);
++
++	rt2800pci_rfcsr_read(rt2x00dev, 12, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR12_TX_POWER,
++			  TXPOWER_G_TO_DEV(info->tx_power1));
++	rt2800pci_rfcsr_write(rt2x00dev, 12, rfcsr);
++
++	rt2800pci_rfcsr_read(rt2x00dev, 23, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR23_FREQ_OFFSET, rt2x00dev->freq_offset);
++	rt2800pci_rfcsr_write(rt2x00dev, 23, rfcsr);
++
++	if (conf_is_ht40(conf))
++		rt2800pci_rfcsr_write(rt2x00dev, 24,
++				      rt2x00dev->calibration_bw40);
++	else
++		rt2800pci_rfcsr_write(rt2x00dev, 24,
++				      rt2x00dev->calibration_bw20);
++
++	rt2800pci_rfcsr_read(rt2x00dev, 23, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR7_RF_TUNING, 1);
++	rt2800pci_rfcsr_write(rt2x00dev, 23, rfcsr);
++}
++
++static void rt2800pci_config_channel(struct rt2x00_dev *rt2x00dev,
++				     struct ieee80211_conf *conf,
++				     struct rf_channel *rf,
++				     struct channel_info *info)
++{
++	u32 reg;
++	unsigned int tx_pin;
++	u16 eeprom;
++	u8 bbp;
++
++	/*
++	 * Determine antenna settings from EEPROM
++	 */
++	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
++
++	if (rt2x00_rev(&rt2x00dev->chip) != RT3070_VERSION)
++		rt2800pci_config_channel_rt2x(rt2x00dev, conf, rf, info);
++	else
++		rt2800pci_config_channel_rt3x(rt2x00dev, conf, rf, info);
 +
 +	/*
 +	 * Change BBP settings
@@ -896,6 +1014,26 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A0_EN, rf->channel > 14);
 +
 +	rt2x00pci_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
++
++	rt2800pci_bbp_read(rt2x00dev, 4, &bbp);
++	rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 2 * conf_is_ht40(conf));
++	rt2800pci_bbp_write(rt2x00dev, 4, bbp);
++
++	rt2800pci_bbp_read(rt2x00dev, 3, &bbp);
++	rt2x00_set_field8(&bbp, BBP3_HT40_PLUS, conf_is_ht40_plus(conf));
++	rt2800pci_bbp_write(rt2x00dev, 3, bbp);
++
++	if (rt2x00_rev(&rt2x00dev->chip) == RT2860C_VERSION) {
++		if (conf_is_ht40(conf)) {
++			rt2800pci_bbp_write(rt2x00dev, 69, 0x1a);
++			rt2800pci_bbp_write(rt2x00dev, 70, 0x0a);
++			rt2800pci_bbp_write(rt2x00dev, 73, 0x16);
++		} else {
++			rt2800pci_bbp_write(rt2x00dev, 69, 0x16);
++			rt2800pci_bbp_write(rt2x00dev, 70, 0x08);
++			rt2800pci_bbp_write(rt2x00dev, 73, 0x11);
++		}
++	}
 +
 +	msleep(1);
 +}
@@ -1301,7 +1439,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	entry_priv = rt2x00dev->rx->entries[0].priv_data;
 +	rt2x00pci_register_write(rt2x00dev, RX_BASE_PTR, entry_priv->desc_dma);
 +	rt2x00pci_register_write(rt2x00dev, RX_MAX_CNT, rt2x00dev->rx[0].limit);
-+	rt2x00pci_register_write(rt2x00dev, RX_CRX_IDX, 0);
++	rt2x00pci_register_write(rt2x00dev, RX_CRX_IDX, rt2x00dev->rx[0].limit - 1);
 +	rt2x00pci_register_write(rt2x00dev, RX_DRX_IDX, 0);
 +
 +	/*
@@ -1659,6 +1797,12 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	if (rt2x00_rev(&rt2x00dev->chip) > RT2860D_VERSION)
 +		rt2800pci_bbp_write(rt2x00dev, 84, 0x19);
 +
++	if (rt2x00_rt(&rt2x00dev->chip, RT3052)) {
++		rt2800pci_bbp_write(rt2x00dev, 31, 0x08);
++		rt2800pci_bbp_write(rt2x00dev, 78, 0x0e);
++		rt2800pci_bbp_write(rt2x00dev, 80, 0x08);
++	}
++
 +	for (i = 0; i < EEPROM_BBP_SIZE; i++) {
 +		rt2x00_eeprom_read(rt2x00dev, EEPROM_BBP_START + i, &eeprom);
 +
@@ -1668,6 +1812,144 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +			rt2800pci_bbp_write(rt2x00dev, reg_id, value);
 +		}
 +	}
++
++	return 0;
++}
++
++static u8 rt2800pci_init_rx_filter(struct rt2x00_dev *rt2x00dev,
++				   bool bw40, u8 rfcsr24, u8 filter_target)
++{
++	unsigned int i;
++	u8 bbp;
++	u8 rfcsr;
++	u8 passband;
++	u8 stopband;
++	u8 overtuned = 0;
++
++	rt2800pci_rfcsr_write(rt2x00dev, 24, rfcsr24);
++
++	rt2800pci_bbp_read(rt2x00dev, 4, &bbp);
++	rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 2 * bw40);
++	rt2800pci_bbp_write(rt2x00dev, 4, bbp);
++
++	rt2800pci_rfcsr_read(rt2x00dev, 22, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR22_BASEBAND_LOOPBACK, 1);
++	rt2800pci_rfcsr_write(rt2x00dev, 22, rfcsr);
++
++	/*
++	 * Set power & frequency of passband test tone
++	 */
++	rt2800pci_bbp_write(rt2x00dev, 24, 0);
++
++	for (i = 0; i < 100; i++) {
++		rt2800pci_bbp_write(rt2x00dev, 25, 0x90);
++		msleep(1);
++
++		rt2800pci_bbp_read(rt2x00dev, 55, &passband);
++		if (passband)
++			break;
++	}
++
++	/*
++	 * Set power & frequency of stopband test tone
++	 */
++	rt2800pci_bbp_write(rt2x00dev, 24, 0x06);
++
++	for (i = 0; i < 100; i++) {
++		rt2800pci_bbp_write(rt2x00dev, 25, 0x90);
++		msleep(1);
++
++		rt2800pci_bbp_read(rt2x00dev, 55, &stopband);
++
++		if ((passband - stopband) <= filter_target) {
++			rfcsr24++;
++			overtuned += ((passband - stopband) == filter_target);
++		} else
++			break;
++
++		rt2800pci_rfcsr_write(rt2x00dev, 24, rfcsr24);
++	}
++
++	rfcsr24 -= !!overtuned;
++
++	rt2800pci_rfcsr_write(rt2x00dev, 24, rfcsr24);
++	return rfcsr24;
++}
++
++static int rt2800pci_init_rfcsr(struct rt2x00_dev *rt2x00dev)
++{
++	u8 rfcsr;
++	u8 bbp;
++	
++	if (!rt2x00_rf(&rt2x00dev->chip, RF3020) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF3021) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF3022))
++		return 0;
++
++	/*
++	 * Init RF calibration.
++	 */
++	rt2800pci_rfcsr_read(rt2x00dev, 30, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR30_RF_CALIBRATION, 1);
++	rt2800pci_rfcsr_write(rt2x00dev, 30, rfcsr);
++	msleep(1);
++	rt2x00_set_field8(&rfcsr, RFCSR30_RF_CALIBRATION, 0);
++	rt2800pci_rfcsr_write(rt2x00dev, 30, rfcsr);
++
++	rt2800pci_rfcsr_write(rt2x00dev, 0, 0x50);
++	rt2800pci_rfcsr_write(rt2x00dev, 1, 0x01);
++	rt2800pci_rfcsr_write(rt2x00dev, 2, 0xf7);
++	rt2800pci_rfcsr_write(rt2x00dev, 3, 0x75);
++	rt2800pci_rfcsr_write(rt2x00dev, 4, 0x40);
++	rt2800pci_rfcsr_write(rt2x00dev, 5, 0x03);
++	rt2800pci_rfcsr_write(rt2x00dev, 6, 0x02);
++	rt2800pci_rfcsr_write(rt2x00dev, 7, 0x50);
++	rt2800pci_rfcsr_write(rt2x00dev, 8, 0x39);
++	rt2800pci_rfcsr_write(rt2x00dev, 9, 0x0f);
++	rt2800pci_rfcsr_write(rt2x00dev, 10, 0x60);
++	rt2800pci_rfcsr_write(rt2x00dev, 11, 0x21);
++	rt2800pci_rfcsr_write(rt2x00dev, 12, 0x75);
++	rt2800pci_rfcsr_write(rt2x00dev, 13, 0x75);
++	rt2800pci_rfcsr_write(rt2x00dev, 14, 0x90);
++	rt2800pci_rfcsr_write(rt2x00dev, 15, 0x58);
++	rt2800pci_rfcsr_write(rt2x00dev, 16, 0xb3);
++	rt2800pci_rfcsr_write(rt2x00dev, 17, 0x92);
++	rt2800pci_rfcsr_write(rt2x00dev, 18, 0x2c);
++	rt2800pci_rfcsr_write(rt2x00dev, 19, 0x02);
++	rt2800pci_rfcsr_write(rt2x00dev, 20, 0xba);
++	rt2800pci_rfcsr_write(rt2x00dev, 21, 0xdb);
++	rt2800pci_rfcsr_write(rt2x00dev, 22, 0x00);
++	rt2800pci_rfcsr_write(rt2x00dev, 23, 0x31);
++	rt2800pci_rfcsr_write(rt2x00dev, 24, 0x08);
++	rt2800pci_rfcsr_write(rt2x00dev, 25, 0x01);
++	rt2800pci_rfcsr_write(rt2x00dev, 26, 0x25);
++	rt2800pci_rfcsr_write(rt2x00dev, 27, 0x23);
++	rt2800pci_rfcsr_write(rt2x00dev, 28, 0x13);
++	rt2800pci_rfcsr_write(rt2x00dev, 29, 0x83);
++
++	/*
++	 * Set RX Filter calibration for 20MHz and 40MHz
++	 */
++	rt2x00dev->calibration_bw20 =
++	    rt2800pci_init_rx_filter(rt2x00dev, false, 0x07, 0x16);
++	rt2x00dev->calibration_bw40 =
++	    rt2800pci_init_rx_filter(rt2x00dev, true, 0x27, 0x19);
++
++	/*
++	 * Set back to initial state
++	 */
++	rt2800pci_bbp_write(rt2x00dev, 24, 0);
++
++	rt2800pci_rfcsr_read(rt2x00dev, 22, &rfcsr);
++	rt2x00_set_field8(&rfcsr, RFCSR22_BASEBAND_LOOPBACK, 0);
++	rt2800pci_rfcsr_write(rt2x00dev, 22, rfcsr);
++
++	/*
++	 * set BBP back to BW20
++	 */
++	rt2800pci_bbp_read(rt2x00dev, 4, &bbp);
++	rt2x00_set_field8(&bbp, BBP4_BANDWIDTH, 0);
++	rt2800pci_bbp_write(rt2x00dev, 4, bbp);
 +
 +	return 0;
 +}
@@ -1754,7 +2036,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		     rt2800pci_init_queues(rt2x00dev) ||
 +		     rt2800pci_init_registers(rt2x00dev) ||
 +		     rt2800pci_wait_wpdma_ready(rt2x00dev) ||
-+		     rt2800pci_init_bbp(rt2x00dev)))
++		     rt2800pci_init_bbp(rt2x00dev) ||
++		     rt2800pci_init_rfcsr(rt2x00dev)))
 +		return -EIO;
 +
 +	/*
@@ -2150,6 +2433,12 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rxdesc->size = rt2x00_get_field32(rxwi0, RXWI_W0_MPDU_TOTAL_BYTE_COUNT);
 +
 +	/*
++	 * Set RX IDX in register to inform hardware that we have handled
++	 * this entry and it is available for reuse again.
++	 */
++	rt2x00pci_register_write(rt2x00dev, RX_CRX_IDX, entry->entry_idx);
++
++	/*
 +	 * Remove TXWI descriptor from start of buffer.
 +	 */
 +	skb_pull(entry->skb, RXWI_DESC_SIZE);
@@ -2416,7 +2705,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	    !rt2x00_rf(&rt2x00dev->chip, RF2750) &&
 +	    !rt2x00_rf(&rt2x00dev->chip, RF3020) &&
 +	    !rt2x00_rf(&rt2x00dev->chip, RF2020) &&
-+	    !rt2x00_rf(&rt2x00dev->chip, RF3052)) {
++	    !rt2x00_rf(&rt2x00dev->chip, RF3021) &&
++	    !rt2x00_rf(&rt2x00dev->chip, RF3022)) {
 +		ERROR(rt2x00dev, "Invalid RF chipset detected.\n");
 +		return -ENODEV;
 +	}
@@ -2496,8 +2786,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/* 802.11 HyperLan 2 */
 +	{ 100, 0x18402ec8, 0x184c06b2, 0x18178a55, 0x180ed783 },
 +	{ 102, 0x18402ec8, 0x184c06b2, 0x18578a55, 0x180ed793 },
-+	{ 104, 0x18402ec8, 0x184c06b2, 0x18578a55, 0x180ed1a3 },
-+	{ 108, 0x18402ecc, 0x184c0a32, 0x18578a55, 0x180ed193 },
++	{ 104, 0x18402ec8, 0x185c06b2, 0x18578a55, 0x180ed1a3 },
++	{ 108, 0x18402ecc, 0x185c0a32, 0x18578a55, 0x180ed193 },
 +	{ 110, 0x18402ecc, 0x184c0a36, 0x18178a55, 0x180ed183 },
 +	{ 112, 0x18402ecc, 0x184c0a36, 0x18178a55, 0x180ed19b },
 +	{ 116, 0x18402ecc, 0x184c0a3a, 0x18178a55, 0x180ed1a3 },
@@ -2564,7 +2854,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	if (rt2x00_rf(&rt2x00dev->chip, RF2820) ||
 +	    rt2x00_rf(&rt2x00dev->chip, RF2720) ||
-+	    rt2x00_rf(&rt2x00dev->chip, RF3052)) {
++	    rt2x00_rf(&rt2x00dev->chip, RF3021) ||
++	    rt2x00_rf(&rt2x00dev->chip, RF3022)) {
 +		spec->num_channels = 14;
 +		spec->channels = rf_vals;
 +	} else if (rt2x00_rf(&rt2x00dev->chip, RF2850) ||
@@ -2660,7 +2951,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/*
 +	 * This device requires firmware.
 +	 */
-+	__set_bit(DRIVER_REQUIRE_FIRMWARE, &rt2x00dev->flags);
++	if (!rt2x00_rt(&rt2x00dev->chip, RT2880) &&
++	    !rt2x00_rt(&rt2x00dev->chip, RT3052))
++		__set_bit(DRIVER_REQUIRE_FIRMWARE, &rt2x00dev->flags);
 +	if (!modparam_nohwcrypt)
 +		__set_bit(CONFIG_SUPPORT_HW_CRYPTO, &rt2x00dev->flags);
 +
@@ -2898,7 +3191,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +/*
 + * RT2800pci module information.
 + */
-+#ifdef CONFIG_RT2800PCI_PCI
 +static struct pci_device_id rt2800pci_device_table[] = {
 +	{ PCI_DEVICE(0x1814, 0x0601), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x0681), PCI_DEVICE_DATA(&rt2800pci_ops) },
@@ -2910,126 +3202,34 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	{ PCI_DEVICE(0x1a3b, 0x1059), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ 0, }
 +};
-+MODULE_DEVICE_TABLE(pci, rt2800pci_device_table);
-+#endif /* CONFIG_RT2800PCI_PCI */
 +
 +MODULE_AUTHOR(DRV_PROJECT);
 +MODULE_VERSION(DRV_VERSION);
 +MODULE_DESCRIPTION("Ralink RT2800 PCI & PCMCIA Wireless LAN driver.");
 +MODULE_SUPPORTED_DEVICE("Ralink RT2860 PCI & PCMCIA chipset based cards");
++#ifdef CONFIG_RT2800PCI_PCI
 +MODULE_FIRMWARE(FIRMWARE_RT2860);
++MODULE_DEVICE_TABLE(pci, rt2800pci_device_table);
++#endif /* CONFIG_RT2800PCI_PCI */
 +MODULE_LICENSE("GPL");
 +
 +#ifdef CONFIG_RT2800PCI_WISOC
-+
-+#ifdef CONFIG_RALINK_RT288X
-+#define WSOC_RT_CHIPSET		RT2880
-+#endif /* CONFIG_RALINK_RT288X */
-+
-+#ifdef CONFIG_RALINK_RT305X
-+#define WSOC_RT_CHIPSET		RT3052
-+#endif /* CONFIG_RALINK_RT305X */
-+
-+static void rt2800soc_free_reg(struct rt2x00_dev *rt2x00dev)
-+{
-+	kfree(rt2x00dev->rf);
-+	rt2x00dev->rf = NULL;
-+
-+	kfree(rt2x00dev->eeprom);
-+	rt2x00dev->eeprom = NULL;
-+}
-+
-+static int rt2800soc_alloc_reg(struct rt2x00_dev *rt2x00dev)
-+{
-+	struct platform_device *pdev = to_platform_device(rt2x00dev->dev);
-+	struct resource *res;
-+
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!res) {
-+		ERROR_PROBE("Failed to get MMIO resource\n");
-+		return -ENODEV;
-+	}
-+
-+	rt2x00dev->csr.base = (void __iomem *) KSEG1ADDR(res->start);
-+	rt2x00dev->eeprom = kzalloc(rt2x00dev->ops->eeprom_size, GFP_KERNEL);
-+	if (!rt2x00dev->eeprom)
-+		goto exit;
-+
-+	rt2x00dev->rf = kzalloc(rt2x00dev->ops->rf_size, GFP_KERNEL);
-+	if (!rt2x00dev->rf)
-+		goto exit;
-+
-+	return 0;
-+
-+exit:
-+	ERROR_PROBE("Failed to allocate registers.\n");
-+	rt2800soc_free_reg(rt2x00dev);
-+
-+	return -ENOMEM;
-+}
-+
-+static int rt2800soc_probe(struct platform_device *pdev)
-+{
-+	const struct rt2x00_ops *ops = &rt2800pci_ops;
-+	struct ieee80211_hw *hw;
-+	struct rt2x00_dev *rt2x00dev;
-+	int retval;
-+
-+	hw = ieee80211_alloc_hw(sizeof(struct rt2x00_dev), ops->hw);
-+	if (!hw) {
-+		ERROR_PROBE("Failed to allocate hardware.\n");
-+		return -ENOMEM;
-+	}
-+
-+	platform_set_drvdata(pdev, hw);
-+
-+	rt2x00dev = hw->priv;
-+	rt2x00dev->dev = &pdev->dev;
-+	rt2x00dev->ops = ops;
-+	rt2x00dev->hw = hw;
-+	rt2x00dev->irq = platform_get_irq(pdev, 0);
-+	rt2x00dev->name = pdev->dev.driver->name;
-+
-+	rt2x00_set_chip_rt(rt2x00dev, WSOC_RT_CHIPSET);
-+
-+	retval = rt2800soc_alloc_reg(rt2x00dev);
-+	if (retval)
-+		goto exit_free_device;
-+
-+	retval = rt2x00lib_probe_dev(rt2x00dev);
-+	if (retval)
-+		goto exit_free_reg;
-+
-+	return 0;
-+
-+exit_free_reg:
-+	rt2800soc_free_reg(rt2x00dev);
-+
-+exit_free_device:
-+	ieee80211_free_hw(hw);
-+
-+	return retval;
-+}
-+
-+static int rt2800soc_remove(struct platform_device *pdev)
-+{
-+	struct ieee80211_hw *hw = platform_get_drvdata(pdev);
-+	struct rt2x00_dev *rt2x00dev = hw->priv;
-+
-+	/*
-+	 * Free all allocated data.
-+	 */
-+	rt2x00lib_remove_dev(rt2x00dev);
-+	rt2800soc_free_reg(rt2x00dev);
-+	ieee80211_free_hw(hw);
-+
-+	return 0;
-+}
++#if defined(CONFIG_RALINK_RT288X)
++__rt2x00soc_probe(RT2880, &rt2800pci_ops);
++#elif defined(CONFIG_RALINK_RT305X)
++__rt2x00soc_probe(RT3052, &rt2800pci_ops);
++#endif
 +
 +static struct platform_driver rt2800soc_driver = {
-+	.driver.name	= "rt2800_wmac",
-+	.probe		= rt2800soc_probe,
-+	.remove		= rt2800soc_remove,
++	.driver		= {
++		.name		= "rt2800_wmac",
++		.owner		= THIS_MODULE,
++		.mod_name	= KBUILD_MODNAME,
++	},
++	.probe		= __rt2x00soc_probe,
++	.remove		= __devexit_p(rt2x00soc_remove),
++	.suspend	= rt2x00soc_suspend,
++	.resume		= rt2x00soc_resume,
 +};
 +#endif /* CONFIG_RT2800PCI_WISOC */
 +
@@ -3050,10 +3250,19 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +#ifdef CONFIG_RT2800PCI_WISOC
 +	ret = platform_driver_register(&rt2800soc_driver);
++	if (ret)
++		return ret;
 +#endif
 +#ifdef CONFIG_RT2800PCI_PCI
 +	ret = pci_register_driver(&rt2800pci_driver);
++	if (ret) {
++#ifdef CONFIG_RT2800PCI_WISOC
++		platform_driver_unregister(&rt2800soc_driver);
 +#endif
++		return ret;
++	}
++#endif
++
 +	return ret;
 +}
 +
@@ -3071,7 +3280,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +module_exit(rt2800pci_exit);
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
-@@ -0,0 +1,1880 @@
+@@ -0,0 +1,1927 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -3110,7 +3319,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * RF2750 2.4G/5G 1T2R
 + * RF3020 2.4G 1T1R
 + * RF2020 2.4G B/G
-+ * RF3052 2.4G 2T2R
++ * RF3021 2.4G 1T2R
++ * RF3022 2.4G 2T2R
 + */
 +#define RF2820				0x0001
 +#define RF2850				0x0002
@@ -3118,7 +3328,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define RF2750				0x0004
 +#define RF3020				0x0005
 +#define RF2020				0x0006
-+#define RF3052				0x0008
++#define RF3021				0x0007
++#define RF3022				0x0008
 +
 +/*
 + * RT2860 version
@@ -3155,12 +3366,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +/*
 + * PCI registers.
 + */
-+
-+/*
-+ * PCI Configuration Header
-+ */
-+#define PCI_CONFIG_HEADER_VENDOR	0x0000
-+#define PCI_CONFIG_HEADER_DEVICE	0x0002
 +
 +/*
 + * E2PROM_CSR: EEPROM control register.
@@ -3451,6 +3656,15 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + */
 +#define TXRXQ_PCNT			0x0438
 +#define PBF_DBG				0x043c
++
++/*
++ * RF registers
++ */
++#define	RF_CSR_CFG			0x0500
++#define RF_CSR_CFG_DATA			FIELD32(0x000000ff)
++#define RF_CSR_CFG_REGNUM		FIELD32(0x00001f00)
++#define RF_CSR_CFG_WRITE		FIELD32(0x00010000)
++#define RF_CSR_CFG_BUSY			FIELD32(0x00020000)
 +
 +/*
 + * MAC Control/Status Registers(CSR).
@@ -4545,6 +4759,48 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * BBP 3: RX Antenna
 + */
 +#define BBP3_RX_ANTENNA			FIELD8(0x18)
++#define BBP3_HT40_PLUS			FIELD8(0x20)
++
++/*
++ * BBP 4: Bandwidth
++ */
++#define BBP4_TX_BF			FIELD8(0x01)
++#define BBP4_BANDWIDTH			FIELD8(0x18)
++
++/*
++ * RFCSR registers
++ * The wordsize of the RFCSR is 8 bits.
++ */
++
++/*
++ * RFCSR 6:
++ */
++#define RFCSR6_R			FIELD8(0x03)
++
++/*
++ * RFCSR 7:
++ */
++#define RFCSR7_RF_TUNING		FIELD8(0x01)
++
++/*
++ * RFCSR 12:
++ */
++#define RFCSR12_TX_POWER		FIELD8(0x1f)
++
++/*
++ * RFCSR 22:
++ */
++#define RFCSR22_BASEBAND_LOOPBACK	FIELD8(0x01)
++
++/*
++ * RFCSR 23:
++ */
++#define RFCSR23_FREQ_OFFSET		FIELD8(0x7f)
++
++/*
++ * RFCSR 30:
++ */
++#define RFCSR30_RF_CALIBRATION		FIELD8(0x80)
 +
 +/*
 + * RF registers

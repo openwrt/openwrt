@@ -1,7 +1,7 @@
-From 101b65d221593c1bdeacf0c6085d885ea5447c4c Mon Sep 17 00:00:00 2001
+From 3924d0442771e17c26ab10ad53a1807e800ab3f1 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sat, 14 Mar 2009 20:46:40 +0100
-Subject: [PATCH] rt2x00: Implement support for rt2800usb
+Date: Sat, 28 Mar 2009 20:48:56 +0100
+Subject: [PATCH 9/9] rt2x00: Implement support for rt2800usb
 
 Add support for the rt2800usb chipset.
 
@@ -15,23 +15,23 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig     |   14 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800usb.c | 3032 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800usb.c | 3036 +++++++++++++++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2800usb.h | 1934 ++++++++++++++++++++
- drivers/net/wireless/rt2x00/rt2x00.h    |    7 +
- 5 files changed, 4988 insertions(+), 0 deletions(-)
+ drivers/net/wireless/rt2x00/rt2x00.h    |    1 +
+ 5 files changed, 4986 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800usb.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800usb.h
 
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
-@@ -19,3 +19,4 @@ obj-$(CONFIG_RT61PCI)			+= rt61pci.o
+@@ -20,3 +20,4 @@ obj-$(CONFIG_RT61PCI)			+= rt61pci.o
  obj-$(CONFIG_RT2800PCI)			+= rt2800pci.o
  obj-$(CONFIG_RT2500USB)			+= rt2500usb.o
  obj-$(CONFIG_RT73USB)			+= rt73usb.o
 +obj-$(CONFIG_RT2800USB)			+= rt2800usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800usb.c
-@@ -0,0 +1,3032 @@
+@@ -0,0 +1,3036 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -2472,8 +2472,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/* 802.11 HyperLan 2 */
 +	{ 100, 0x18402ec8, 0x184c06b2, 0x18178a55, 0x180ed783 },
 +	{ 102, 0x18402ec8, 0x184c06b2, 0x18578a55, 0x180ed793 },
-+	{ 104, 0x18402ec8, 0x184c06b2, 0x18578a55, 0x180ed1a3 },
-+	{ 108, 0x18402ecc, 0x184c0a32, 0x18578a55, 0x180ed193 },
++	{ 104, 0x18402ec8, 0x185c06b2, 0x18578a55, 0x180ed1a3 },
++	{ 108, 0x18402ecc, 0x185c0a32, 0x18578a55, 0x180ed193 },
 +	{ 110, 0x18402ecc, 0x184c0a36, 0x18178a55, 0x180ed183 },
 +	{ 112, 0x18402ecc, 0x184c0a36, 0x18178a55, 0x180ed19b },
 +	{ 116, 0x18402ecc, 0x184c0a3a, 0x18178a55, 0x180ed1a3 },
@@ -2495,6 +2495,10 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	{ 159, 0x18402ec4, 0x184c038e, 0x18178a55, 0x180ed1a7 },
 +	{ 161, 0x18402ec4, 0x184c0392, 0x18178a55, 0x180ed187 },
 +	{ 165, 0x18402ec4, 0x184c0392, 0x18178a55, 0x180ed197 },
++	{ 167, 0x18402ec4, 0x184c03d2, 0x18179855, 0x1815531f },
++	{ 169, 0x18402ec4, 0x184c03d2, 0x18179855, 0x18155327 },
++	{ 171, 0x18402ec4, 0x184c03d6, 0x18179855, 0x18155307 },
++	{ 173, 0x18402ec4, 0x184c03d6, 0x18179855, 0x1815530f },
 +
 +	/* 802.11 Japan */
 +	{ 184, 0x15002ccc, 0x1500491e, 0x1509be55, 0x150c0a0b },
@@ -5011,16 +5015,3 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  	u16 rf;
  	u32 rev;
-@@ -788,6 +789,12 @@ struct rt2x00_dev {
- 	u8 freq_offset;
- 
- 	/*
-+	 * Calibration information (for rt2800usb).
-+	 */
-+	u8 calibration_bw20;
-+	u8 calibration_bw40;
-+
-+	/*
- 	 * Low level statistics which will have
- 	 * to be kept up to date while device is running.
- 	 */
