@@ -1,7 +1,7 @@
-From 313314263fda19db8eed94a7d7259b595634212e Mon Sep 17 00:00:00 2001
+From 9ed8a41a30916a79529552872e8d1a6175d37398 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sat, 14 Mar 2009 20:02:51 +0100
-Subject: [PATCH] rt2x00: Move Move pci_dev specific access to rt2x00pci
+Date: Sat, 28 Mar 2009 20:30:14 +0100
+Subject: [PATCH 1/9] rt2x00: Move Move pci_dev specific access to rt2x00pci
 
 pci_dev->irq and pci_name(pci_dev) access should be limited
 to rt2x00pci only. This is more generic and allows a rt2x00 pci
@@ -16,7 +16,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  drivers/net/wireless/rt2x00/rt2x00.h    |   18 ++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00pci.c |   16 ++++++++++++----
  drivers/net/wireless/rt2x00/rt61pci.c   |    7 +------
- 5 files changed, 33 insertions(+), 12 deletions(-)
+ drivers/net/wireless/rt2x00/rt61pci.h   |    6 ------
+ 6 files changed, 33 insertions(+), 18 deletions(-)
 
 --- a/drivers/net/wireless/rt2x00/rt2400pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2400pci.c
@@ -148,3 +149,18 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  
  	if (!rt2x00_rf(&rt2x00dev->chip, RF5225) &&
  	    !rt2x00_rf(&rt2x00dev->chip, RF5325) &&
+--- a/drivers/net/wireless/rt2x00/rt61pci.h
++++ b/drivers/net/wireless/rt2x00/rt61pci.h
+@@ -63,12 +63,6 @@
+  */
+ 
+ /*
+- * PCI Configuration Header
+- */
+-#define PCI_CONFIG_HEADER_VENDOR	0x0000
+-#define PCI_CONFIG_HEADER_DEVICE	0x0002
+-
+-/*
+  * HOST_CMD_CSR: For HOST to interrupt embedded processor
+  */
+ #define HOST_CMD_CSR			0x0008
