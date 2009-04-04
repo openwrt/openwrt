@@ -1,7 +1,6 @@
-Index: openssl-0.9.8e/util/domd
-===================================================================
---- openssl-0.9.8e.orig/util/domd	2007-06-04 13:23:32.130849264 +0200
-+++ openssl-0.9.8e/util/domd	2007-06-04 13:23:32.408807008 +0200
+diff -burN openssl-0.9.8k/util/domd openssl-0.9.8k.patched/util/domd
+--- openssl-0.9.8k/util/domd	2009-01-21 22:44:52.000000000 +0100
++++ openssl-0.9.8k.patched/util/domd	2009-03-26 15:46:28.600347986 +0100
 @@ -14,7 +14,8 @@
  cp Makefile Makefile.save
  # fake the presence of Kerberos
@@ -16,7 +15,7 @@ Index: openssl-0.9.8e/util/domd
      done
      sed -e '/^# DO NOT DELETE.*/,$d' < Makefile > Makefile.tmp
      echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' >> Makefile.tmp
--    gcc -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp
+-    ${CC:-gcc} -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp
 +    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp
      ${PERL} $TOP/util/clean-depend.pl < Makefile.tmp > Makefile.new
      rm -f Makefile.tmp

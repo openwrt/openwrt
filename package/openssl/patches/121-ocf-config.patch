@@ -1,0 +1,24 @@
+diff -burN openssl-0.9.8k/config openssl-0.9.8k.patched/config
+--- openssl-0.9.8k/config	2009-02-16 09:43:41.000000000 +0100
++++ openssl-0.9.8k.patched/config	2009-03-27 19:38:37.262255825 +0100
+@@ -399,8 +399,11 @@
+ # this is where the translation occurs into SSLeay terms
+ # ---------------------------------------------------------------------------
+ 
++# figure out if gcc is available and if so we use it otherwise
++# we fallback to whatever cc does on the system
+ GCCVER=`(gcc -dumpversion) 2>/dev/null`
+ if [ "$GCCVER" != "" ]; then
++  CC=gcc
+   # then strip off whatever prefix egcs prepends the number with...
+   # Hopefully, this will work for any future prefixes as well.
+   GCCVER=`echo $GCCVER | LC_ALL=C sed 's/^[a-zA-Z]*\-//'`
+@@ -409,6 +412,8 @@
+   # major and minor version numbers.
+   # peak single digit before and after first dot, e.g. 2.95.1 gives 29
+   GCCVER=`echo $GCCVER | sed 's/\([0-9]\)\.\([0-9]\).*/\1\2/'`
++else
++  CC=cc
+ fi
+ 
+ # Only set CC if not supplied already
