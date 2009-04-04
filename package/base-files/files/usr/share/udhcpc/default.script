@@ -58,12 +58,6 @@ case "$1" in
 		[ -n "$dns" ] && \
 			echo -n > "${RESOLV_CONF}.tmp"
 		
-		if [ "$1" = "renew" ]; then
-			hotplug_event update
-		else
-			hotplug_event ifup
-		fi
-		
 		[ -n "$dns" ] && {
 			[ -s "${RESOLV_CONF}.tmp" ] || {
 				for i in $dns ; do
@@ -76,7 +70,13 @@ case "$1" in
 
 			mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
 		}
-		
+
+		if [ "$1" = "renew" ]; then
+			hotplug_event update
+		else
+			hotplug_event ifup
+		fi
+
 		# user rules
 		[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
 	;;
