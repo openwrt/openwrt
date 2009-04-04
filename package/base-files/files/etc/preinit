@@ -68,6 +68,7 @@ trap 'FAILSAFE=true' USR1
 [ -e /etc/preinit.arch ] && . /etc/preinit.arch
 set_state preinit
 echo "$HOTPLUG" > /proc/sys/kernel/hotplug
+export FAILSAFE
 eval ${FAILSAFE:+failsafe}
 lock -w /tmp/.failsafe
 
