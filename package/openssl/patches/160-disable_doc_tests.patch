@@ -1,12 +1,12 @@
-diff -burN openssl-0.9.8j/Makefile openssl-0.9.8j.patched/Makefile
---- openssl-0.9.8j/Makefile	2009-01-07 12:57:01.000000000 +0100
-+++ openssl-0.9.8j.patched/Makefile	2009-01-17 14:16:50.279667198 +0100
+diff -burN openssl-0.9.8k/Makefile openssl-0.9.8k.patched/Makefile
+--- openssl-0.9.8k/Makefile	2009-03-25 14:11:43.000000000 +0100
++++ openssl-0.9.8k.patched/Makefile	2009-03-26 15:28:35.483566078 +0100
 @@ -133,7 +133,7 @@
  
  BASEADDR=0xFB00000
  
--DIRS=   crypto fips ssl engines apps test tools
-+DIRS=   crypto fips ssl engines apps tools
+-DIRS=   crypto ssl engines apps test tools
++DIRS=   crypto ssl engines apps tools
  SHLIBDIRS= crypto ssl
  
  # dirs in crypto to build
@@ -15,7 +15,7 @@ diff -burN openssl-0.9.8j/Makefile openssl-0.9.8j.patched/Makefile
  # tests to perform.  "alltests" is a special word indicating that all tests
  # should be performed.
 -TESTS = alltests
-+TESTS = 
++TESTS =
  
  MAKEFILE= Makefile
  
@@ -37,7 +37,7 @@ diff -burN openssl-0.9.8j/Makefile openssl-0.9.8j.patched/Makefile
  
  build_libs: build_crypto build_fips build_ssl build_shared build_engines
  
-@@ -610,7 +610,7 @@
+@@ -613,7 +613,7 @@
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -46,10 +46,10 @@ diff -burN openssl-0.9.8j/Makefile openssl-0.9.8j.patched/Makefile
  
  install_sw:
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
-diff -burN openssl-0.9.8j/Makefile.org openssl-0.9.8j.patched/Makefile.org
---- openssl-0.9.8j/Makefile.org	2008-12-30 14:26:26.000000000 +0100
-+++ openssl-0.9.8j.patched/Makefile.org	2009-01-17 14:14:18.874409981 +0100
-@@ -608,7 +608,7 @@
+diff -burN openssl-0.9.8k/Makefile.org openssl-0.9.8k.patched/Makefile.org
+--- openssl-0.9.8k/Makefile.org	2009-03-03 23:40:29.000000000 +0100
++++ openssl-0.9.8k.patched/Makefile.org	2009-03-26 15:29:05.243750064 +0100
+@@ -611,7 +611,7 @@
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
