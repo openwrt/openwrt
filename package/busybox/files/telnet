@@ -7,7 +7,7 @@ start() {
 		awk -F: '/^root:/ && ($2 != "") && ($2 !~ /\!/) {exit 1}' /etc/passwd 2>/dev/null || \
 		( [ \! -x /usr/sbin/dropbear ] && [ \! -x /usr/sbin/sshd ] )
 	then \
-		telnetd -l /bin/login
+		telnetd -l /bin/login.sh
 	fi
 }
 

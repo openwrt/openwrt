@@ -15,7 +15,7 @@ failsafe() {
 	}
 
 	netmsg 192.168.1.255 "Entering Failsafe!"
-	telnetd -l /bin/login <> /dev/null 2>&1
+	telnetd -l /bin/login.sh <> /dev/null 2>&1
 
 	ash --login
 }
