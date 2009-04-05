@@ -20,7 +20,7 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
 HOST_PATCH_DIR=./patches-host
-PKG_BUILD_DEPENDS:=lua/host
+PKG_BUILD_DEPENDS:=lua/host zlib
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
