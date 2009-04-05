@@ -12,7 +12,7 @@ diff -ur lua-5.1.4.orig/src/Makefile lua-5.1.4/src/Makefile
  MYLDFLAGS=
 diff -ur lua-5.1.4.orig/src/lauxlib.c lua-5.1.4/src/lauxlib.c
 --- lua-5.1.4.orig/src/lauxlib.c	2009-04-04 23:06:04.000000000 +0200
-+++ lua-5.1.4/src/lauxlib.c	2009-04-05 00:03:33.000000000 +0200
++++ lua-5.1.4/src/lauxlib.c	2009-04-05 03:35:24.000000000 +0200
 @@ -11,6 +11,7 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -34,7 +34,7 @@ diff -ur lua-5.1.4.orig/src/lauxlib.c lua-5.1.4/src/lauxlib.c
  
  static const char *getF (lua_State *L, void *ud, size_t *size) {
    LoadF *lf = (LoadF *)ud;
-@@ -550,6 +557,26 @@
+@@ -550,6 +557,28 @@
  }
  
  
@@ -47,7 +47,9 @@ diff -ur lua-5.1.4.orig/src/lauxlib.c lua-5.1.4/src/lauxlib.c
 +  if (*size > 0) {
 +    if (lf->first_chunk) {
 +      lf->first_chunk = 0;
-+      if (strstr(lf->buffer, "#!") && (sp=strstr(lf->buffer, "\n")) != NULL) {
++      if ((lf->buffer[0] == '#') && (lf->buffer[1] == '!') &&
++          (sp=strstr(lf->buffer, "\n")) != NULL)
++      {
 +        *size -= ((uint)sp - (uint)lf->buffer);
 +        return sp;
 +      }
@@ -61,7 +63,7 @@ diff -ur lua-5.1.4.orig/src/lauxlib.c lua-5.1.4/src/lauxlib.c
  static int errfile (lua_State *L, const char *what, int fnameindex) {
    const char *serr = strerror(errno);
    const char *filename = lua_tostring(L, fnameindex) + 1;
-@@ -560,6 +587,31 @@
+@@ -560,6 +589,31 @@
  
  
  LUALIB_API int luaL_loadfile (lua_State *L, const char *filename) {
