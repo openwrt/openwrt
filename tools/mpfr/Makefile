@@ -15,27 +15,9 @@ PKG_MD5SUM:=527147c097874340cb9cee0579dacf3b
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Host/Configure
-	(cd $(HOST_BUILD_DIR); \
-	./configure \
-	  --prefix=$(STAGING_DIR_HOST) \
-	  --build=$(GNU_HOST_NAME) \
-	  --enable-static \
-	  --disable-shared \
-	  --with-gmp=$(STAGING_DIR_HOST) \
-	);
-endef
-
-define Host/Compile
-	make -C $(HOST_BUILD_DIR) all
-endef
-
-define Host/Install
-	make -C $(HOST_BUILD_DIR) install
-endef
-
-define Host/Clean
-	rm -rf $(HOST_BUILD_DIR)
-endef
+HOST_CONFIGURE_ARGS += \
+	--enable-static \
+	--disable-shared \
+	--with-gmp=$(STAGING_DIR_HOST)
 
 $(eval $(call HostBuild))

@@ -15,28 +15,10 @@ PKG_MD5SUM:=
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Host/Configure
-	(cd $(HOST_BUILD_DIR); \
-	./configure \
-	  --prefix=$(STAGING_DIR_HOST) \
-	  --build=$(GNU_HOST_NAME) \
-	  --enable-static \
-	  --disable-shared \
-	  --enable-cxx \
-	  --enable-mpbsd \
-	);
-endef
-
-define Host/Compile
-	make -C $(HOST_BUILD_DIR) all
-endef
-
-define Host/Install
-	make -C $(HOST_BUILD_DIR) install
-endef
-
-define Host/Clean
-	rm -rf $(HOST_BUILD_DIR)
-endef
+HOST_CONFIGURE_ARGS += \
+	--enable-static \
+	--disable-shared \
+	--enable-cxx \
+	--enable-mpbsd
 
 $(eval $(call HostBuild))
