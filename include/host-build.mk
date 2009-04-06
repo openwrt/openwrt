@@ -78,6 +78,15 @@ define Host/Compile
   $(call Host/Compile/Default)
 endef
 
+define Host/Install/Default
+	$(MAKE) -C $(HOST_BUILD_DIR) install
+endef
+
+define Host/Install
+  $(call Host/Install/Default)
+endef
+
+
 ifneq ($(if $(HOST_QUILT),,$(CONFIG_AUTOREBUILD)),)
   define HostHost/Autoclean
     $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(HOST_STAMP_PREPARED))
