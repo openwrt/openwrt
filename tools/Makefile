@@ -59,5 +59,5 @@ $(curdir)//compile = $(STAGING_DIR)/.prepared $($(curdir)/cmddeps)
 $(curdir)/ := .config prereq
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),tools,install))
+$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3))
 $(eval $(call subdir,$(curdir)))
