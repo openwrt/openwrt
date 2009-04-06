@@ -10,9 +10,15 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=wprobe
 PKG_VERSION:=1
 
-PKG_BUILD_DEPENDS:=libnl libipfix
+PKG_BUILD_DEPENDS:=libnl PACKAGE_wprobe-export:libipfix
 
 include $(INCLUDE_DIR)/package.mk
+
+PKG_CONFDEPS = \
+	CONFIG_PACKAGE_kmod-wprobe \
+	CONFIG_PACKAGE_wprobe-export
+
+STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,$(PKG_CONFDEPS))
 
 define KernelPackage/wprobe
   SUBMENU:=Network Support
@@ -57,7 +63,8 @@ endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
-define Build/Compile/kmod
+ifdef CONFIG_PACKAGE_kmod-wprobe
+  define Build/Compile/kmod
 	$(MAKE) -C $(LINUX_DIR) \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
@@ -66,7 +73,8 @@ define Build/Compile/kmod
 		CC="$(TARGET_CC)" \
 		EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/kernel" \
 		modules
-endef
+  endef
+endif
 
 define Build/Compile/lib
 	$(MAKE) -C $(PKG_BUILD_DIR)/user \
@@ -77,14 +85,16 @@ define Build/Compile/lib
 		LIBNL="$(STAGING_DIR)/usr/lib/libnl.a"
 endef
 
-define Build/Compile/exporter
+ifdef CONFIG_PACKAGE_wprobe-export
+  define Build/Compile/exporter
 	$(MAKE) -C $(PKG_BUILD_DIR)/exporter \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(PKG_BUILD_DIR)/kernel -I$(PKG_BUILD_DIR)/user" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
 		LIBS="$(PKG_BUILD_DIR)/user/libwprobe.a $(STAGING_DIR)/usr/lib/libipfix.a $(STAGING_DIR)/usr/lib/libmisc.a $(STAGING_DIR)/usr/lib/libnl.a -lm"
-endef
+  endef
+endif
 
 define Build/Compile
 	$(Build/Compile/kmod)
