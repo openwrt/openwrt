@@ -9,7 +9,11 @@
 curdir:=tools
 
 # subdirectories to descend into
-$(curdir)/builddirs := sed sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline pkg-config m4 autoconf automake $(if $(CONFIG_CCACHE),ccache) bison $(if $(CONFIG_powerpc),dtc) quilt $(if $(CONFIG_GCC_VERSION_4_3),gmp mpfr) yaffs2
+tools-y := sed sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline pkg-config m4 autoconf automake bison quilt yaffs2
+
+tools-$(CONFIG_CCACHE) += ccache
+tools-$(CONFIG_powerpc) += dtc
+tools-$(CONFIG_GCC_VERSION_4_3) += gmp mpfr
 
 # builddir dependencies
 $(curdir)/squashfs/compile := $(curdir)/lzma/install
@@ -17,6 +21,9 @@ $(curdir)/quilt/compile := $(curdir)/sed/install
 $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
 $(curdir)/automake/compile := $(curdir)/m4/install
+
+$(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
+$(curdir)/builddirs-default := $(tools-y)
 
 # preparatory work
 $(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
