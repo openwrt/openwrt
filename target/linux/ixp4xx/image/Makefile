@@ -7,18 +7,20 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Image/Build/Linksys
+ifdef CONFIG_PACKAGE_apex
+  define Image/Build/Linksys
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-L $(BIN_DIR)/apex-$(2)-armeb.bin \
+		-L $(BIN_DIR)/apex/apex-$(2)-armeb.bin \
 		-k $(BIN_DIR)/openwrt-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-$(2)-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-F -L $(BIN_DIR)/apex-$(2)-16mb-armeb.bin \
+		-F -L $(BIN_DIR)/apex/apex-$(2)-16mb-armeb.bin \
 		-k $(BIN_DIR)/openwrt-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-$(2)-$(1)-16mb.bin
-endef
+  endef
+endif
 
 define Image/Build/Freecom
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
@@ -28,18 +30,6 @@ define Image/Build/Freecom
 	$(INSTALL_DIR) $(TARGET_DIR)/var
 	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img
-endef
-
-define Build/Compile
-	mkdir -p $(BIN_DIR)
-	$(MAKE) -C apex \
-		BUILD_DIR="$(KDIR)" \
-		TARGET="$(BIN_DIR)" \
-		compile	
-endef
-
-define Build/Clean
-	$(MAKE) -C apex clean
 endef
 
 define Image/Prepare
