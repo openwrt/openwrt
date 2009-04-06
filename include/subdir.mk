@@ -46,9 +46,9 @@ define subdir
   $(foreach target,$(SUBTARGETS),$(call subtarget,$(1),$(target)))
 endef
 
-# Parameters: <subdir> <name> <target> <depends>
+# Parameters: <subdir> <name> <target> <depends> <config options>
 define stampfile
-  $(1)/stamp-$(3):=$(STAGING_DIR)/stamp/.$(2)_$(3)
+  $(1)/stamp-$(3):=$(STAGING_DIR)/stamp/.$(2)_$(3)$(if $(5),_$(call confvar,$(5)))
   $$($(1)/stamp-$(3)): $(TMP_DIR)/.build $(4)
 	@+$(SCRIPT_DIR)/timestamp.pl -n $$($(1)/stamp-$(3)) $(1) $(4) || \
 		$(MAKE) $$($(1)/flags-$(3)) $(1)/$(3)
