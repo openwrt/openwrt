@@ -1,47 +1,92 @@
-Index: dropbear-0.52/svr-authpubkey.c
-===================================================================
---- dropbear-0.52.orig/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
-+++ dropbear-0.52/svr-authpubkey.c	2008-04-22 17:29:49.000000000 -0700
-@@ -209,6 +209,8 @@
+diff -ur dropbear-0.52.orig/svr-authpubkey.c dropbear-0.52/svr-authpubkey.c
+--- dropbear-0.52.orig/svr-authpubkey.c	2009-04-08 00:32:16.000000000 +0200
++++ dropbear-0.52/svr-authpubkey.c	2009-04-08 00:44:11.000000000 +0200
+@@ -209,17 +209,21 @@
  		goto out;
  	}
  
+-	/* we don't need to check pw and pw_dir for validity, since
+-	 * its been done in checkpubkeyperms. */
+-	len = strlen(ses.authstate.pw_dir);
+-	/* allocate max required pathname storage,
+-	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
+-	filename = m_malloc(len + 22);
+-	snprintf(filename, len + 22, "%s/.ssh/authorized_keys", 
+-				ses.authstate.pw_dir);
+-
+-	/* open the file */
+-	authfile = fopen(filename, "r");
 +	if (ses.authstate.pw_uid != 0) {
++		/* we don't need to check pw and pw_dir for validity, since
++		 * its been done in checkpubkeyperms. */
++		len = strlen(ses.authstate.pw_dir);
++		/* allocate max required pathname storage,
++		 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
++		filename = m_malloc(len + 22);
++		snprintf(filename, len + 22, "%s/.ssh/authorized_keys", 
++		         ses.authstate.pw_dir);
 +
- 	/* we don't need to check pw and pw_dir for validity, since
- 	 * its been done in checkpubkeyperms. */
- 	len = strlen(ses.authstate.pw_dir);
-@@ -220,6 +222,9 @@
- 
- 	/* open the file */
- 	authfile = fopen(filename, "r");
++		/* open the file */
++		authfile = fopen(filename, "r");
 +	} else {
 +		authfile = fopen("/etc/dropbear/authorized_keys","r");
 +	}
  	if (authfile == NULL) {
  		goto out;
  	}
-@@ -372,6 +377,8 @@
+@@ -372,26 +376,35 @@
  		goto out;
  	}
  
-+	if (ses.authstate.pw_uid != 0) {
-+
- 	/* allocate max required pathname storage,
- 	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
- 	filename = m_malloc(len + 22);
-@@ -381,6 +388,14 @@
- 	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
- 		goto out;
- 	}
-+	} else {
+-	/* allocate max required pathname storage,
+-	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
+-	filename = m_malloc(len + 22);
+-	strncpy(filename, ses.authstate.pw_dir, len+1);
+-
+-	/* check ~ */
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
+-		goto out;
+-	}
+-
+-	/* check ~/.ssh */
+-	strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
+-		goto out;
+-	}
+-
+-	/* now check ~/.ssh/authorized_keys */
+-	strncat(filename, "/authorized_keys", 16);
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
+-		goto out;
++	if (ses.authstate.pw_uid == 0) {
 +		if (checkfileperm("/etc/dropbear") != DROPBEAR_SUCCESS) {
 +			goto out;
 +		}
 +		if (checkfileperm("/etc/dropbear/authorized_keys") != DROPBEAR_SUCCESS) {
 +			goto out;
 +		}
-+	}
++	} else {
++		/* allocate max required pathname storage,
++		 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
++		filename = m_malloc(len + 22);
++		strncpy(filename, ses.authstate.pw_dir, len+1);
++
++		/* check ~ */
++		if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
++			goto out;
++		}
++
++		/* check ~/.ssh */
++		strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
++		if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
++			goto out;
++		}
++
++		/* now check ~/.ssh/authorized_keys */
++		strncat(filename, "/authorized_keys", 16);
++		if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
++			goto out;
++		}
+ 	}
  
- 	/* check ~/.ssh */
- 	strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
+ 	/* file looks ok, return success */
