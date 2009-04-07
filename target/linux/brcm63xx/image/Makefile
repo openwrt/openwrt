@@ -42,7 +42,7 @@ define Image/Build/CFEAGPF
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
 		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
 		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
-		-v 8 -m IMAGE -k 131072 -n $(4)
+		-v 8 -m IMAGE -k 0x20000 -n $(4)
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin)
 endef
 
