@@ -1,0 +1,30 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -5344,27 +5344,6 @@ ath_beacon_send(struct ath_softc *sc, in
+ 	} else if ((sc->sc_updateslot == COMMIT) && (sc->sc_slotupdate == slot))
+ 		ath_setslottime(sc);		/* commit change to hardware */
+ 
+-	if ((!sc->sc_stagbeacons || slot == 0) && (!sc->sc_diversity)) {
+-		unsigned int otherant;
+-		/*
+-		 * Check recent per-antenna transmit statistics and flip
+-		 * the default rx antenna if noticeably more frames went out
+-		 * on the non-default antenna.  Only do this if rx diversity
+-		 * is off.
+-		 * XXX assumes 2 antennae
+-		 */
+-		otherant = sc->sc_defant & 1 ? 2 : 1;
+-		if (sc->sc_ant_tx[otherant] > sc->sc_ant_tx[sc->sc_defant] + 
+-				ATH_ANTENNA_DIFF) {
+-			DPRINTF(sc, ATH_DEBUG_BEACON,
+-				"Flip default antenna to %u, %u > %u\n",
+-				otherant, sc->sc_ant_tx[otherant],
+-				sc->sc_ant_tx[sc->sc_defant]);
+-			ath_setdefantenna(sc, otherant);
+-		}
+-		sc->sc_ant_tx[1] = sc->sc_ant_tx[2] = 0;
+-	}
+-
+ 	if (bfaddr != 0) {
+ 		/*
+ 		 * Stop any current DMA and put the new frame(s) on the queue.
