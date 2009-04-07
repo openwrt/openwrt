@@ -191,7 +191,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	fseek(binfile, rootfsoff - fwaddr, SEEK_SET);
 	while (rootfsfile && !feof(rootfsfile) && !ferror(rootfsfile)) {
 		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), rootfsfile);
-		crc = crc32(crc, readbuf, read);
+		//crc = crc32(crc, readbuf, read);
 		fwrite(readbuf, sizeof(uint8_t), read, binfile);
 	}
 
