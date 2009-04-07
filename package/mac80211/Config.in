@@ -9,12 +9,32 @@ choice
 
 config B43_STABLE
 	bool "4.150.10.5 (stable)"
+	help
+	  Stable firmware for BCM43xx devices.
+
+	  If unsure, select this.
 
 config B43_EXPERIMENTAL
 	bool "4.178.10.4 (experimental)"
+	help
+	  Experimental firmware for BCM43xx devices.
+
+	  This firmware is not tested as much as the "stable" firmware.
+
+	  If unsure, select the "stable" firmware.
 
 config B43_OPENFIRMWARE
 	bool "Open FirmWare for WiFi networks"
+	help
+	  Opensource firmware for BCM43xx devices.
+
+	  Do _not_ select this, unless you know what you are doing.
+	  The Opensource firmware is not suitable for embedded devices, yet.
+	  It does not support QoS, which is bad for AccessPoints.
+	  It does not support hardware crypto acceleration, which is a showstopper
+	  for embedded devices with low CPU resources.
+
+	  If unsure, select the "stable" firmware.
 
 endchoice
 
