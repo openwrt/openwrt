@@ -2096,7 +2096,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,679 @@
+@@ -0,0 +1,677 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2149,10 +2149,8 @@
 +
 +	if (pend) {
 +		bit = fls(pend) - 1;
-+		printk("GPIO IRQ: pend=0x%08x, val=%08x, bit=%d\n", pend, gpiointval, bit);
 +		pend &= ~(1 << bit);
 +		gpiointval ^= (1 << bit);
-+		printk("AFTER IRQ: pend=0x%08x, val=%08x, bit=%d\n", pend, gpiointval, bit);
 +	}
 +
 +	if (!pend)
