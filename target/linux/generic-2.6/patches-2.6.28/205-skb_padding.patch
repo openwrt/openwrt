@@ -1,0 +1,16 @@
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -1256,9 +1256,12 @@ static inline int skb_network_offset(con
+  *
+  * Various parts of the networking layer expect at least 16 bytes of
+  * headroom, you should not reduce this.
++ *
++ * This has been changed to 64 to acommodate for routing between ethernet
++ * and wireless
+  */
+ #ifndef NET_SKB_PAD
+-#define NET_SKB_PAD	16
++#define NET_SKB_PAD	64
+ #endif
+ 
+ extern int ___pskb_trim(struct sk_buff *skb, unsigned int len);
