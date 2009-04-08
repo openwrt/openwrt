@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.40.11
+PKG_VERSION:=1.41.3
 PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
-PKG_MD5SUM:=004cea70d724fdc7f1a952dffe4c9db8
+PKG_MD5SUM:=b21d26fc46c584021dc9c444933ee1c2
 
 include $(INCLUDE_DIR)/package.mk
 
