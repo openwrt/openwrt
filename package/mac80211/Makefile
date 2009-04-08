@@ -347,7 +347,7 @@ define KernelPackage/b43-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
-  DEPENDS+= +kmod-mac80211 @TARGET_brcm47xx||@TARGET_brcm63xx @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24
+  DEPENDS+= +kmod-mac80211 @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24
 endef
 
 define KernelPackage/b43
