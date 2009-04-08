@@ -36,7 +36,7 @@
 #include <bcm63xx_dev_spi.h>
 
 #define PFX 		KBUILD_MODNAME
-#define DRV_VER		"0.1.1"
+#define DRV_VER		"0.1.2"
 
 struct bcm63xx_spi {
 	/* bitbang has to be first */
@@ -62,15 +62,16 @@ struct bcm63xx_spi {
 
 static void bcm63xx_spi_chipselect(struct spi_device *spi, int is_on)
 {
+	struct bcm63xx_spi *bs = spi_master_get_devdata(spi->master);
 	u16 val;
 
-	val = bcm_spi_readw(SPI_CMD);
+	val = bcm_spi_readw(bs->regs, SPI_CMD);
 	if (is_on == BITBANG_CS_INACTIVE)
 		val |= SPI_CMD_NOOP;
 	else if (is_on == BITBANG_CS_ACTIVE)
 		val |= (1 << spi->chip_select << SPI_CMD_DEVICE_ID_SHIFT);
 		
-	bcm_spi_writew(val, SPI_CMD);
+	bcm_spi_writew(val, bs->regs, SPI_CMD);
 }
 
 static int bcm63xx_spi_setup_transfer(struct spi_device *spi,
@@ -125,7 +126,7 @@ static int bcm63xx_spi_setup_transfer(struct spi_device *spi,
 		break;
 	}
 
-	bcm_spi_writeb(clk_cfg, SPI_CLK_CFG);
+	bcm_spi_writeb(clk_cfg, bs->regs, SPI_CLK_CFG);
 	dev_dbg(&spi->dev, "Setting clock register to %d (hz %d, cmd %02x)\n",
 								div, hz, clk_cfg);
 	
@@ -172,14 +173,14 @@ static void bcm63xx_spi_fill_tx_fifo(struct bcm63xx_spi *bs)
         u8 tail;
 
         /* Fill the Tx FIFO with as many bytes as possible */
-	tail = bcm_spi_readb(SPI_MSG_TAIL);
+	tail = bcm_spi_readb(bs->regs, SPI_MSG_TAIL);
         while ((tail < bs->fifo_size) && (bs->remaining_bytes > 0)) {
                 if (bs->tx_ptr)
-                        bcm_spi_writeb(*bs->tx_ptr++, SPI_MSG_DATA);
+                        bcm_spi_writeb(*bs->tx_ptr++, bs->regs, SPI_MSG_DATA);
 		else
-			bcm_spi_writeb(0, SPI_MSG_DATA); 
+			bcm_spi_writeb(0, bs->regs, SPI_MSG_DATA); 
                 bs->remaining_bytes--;
-		tail = bcm_spi_readb(SPI_MSG_TAIL);
+		tail = bcm_spi_readb(bs->regs, SPI_MSG_TAIL);
         }
 }
 
@@ -202,24 +203,24 @@ static int bcm63xx_txrx_bufs(struct spi_device *spi, struct spi_transfer *t)
 
 	/* Enable the command done interrupt which
 	 * we use to determine completion of a command */
-	bcm_writeb(SPI_INTR_CMD_DONE, SPI_INT_MASK);
+	bcm_spi_writeb(SPI_INTR_CMD_DONE, bs->regs, SPI_INT_MASK);
 	
 	/* Fill in the Message control register */
-	msg_ctl = bcm_spi_readb(SPI_MSG_CTL);
+	msg_ctl = bcm_spi_readb(bs->regs, SPI_MSG_CTL);
 	msg_ctl |= (t->len << SPI_BYTE_CNT_SHIFT);
 	msg_ctl |= (SPI_FD_RW << SPI_MSG_TYPE_SHIFT);
-	bcm_spi_writeb(msg_ctl, SPI_MSG_CTL);
+	bcm_spi_writeb(msg_ctl, bs->regs, SPI_MSG_CTL);
 	
 	/* Issue the transfer */
-	cmd = bcm_spi_readb(SPI_CMD);
+	cmd = bcm_spi_readb(bs->regs, SPI_CMD);
 	cmd |= SPI_CMD_START_IMMEDIATE;
 	cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
-	bcm_spi_writeb(cmd, SPI_CMD);
+	bcm_spi_writeb(cmd, bs->regs, SPI_CMD);
 
 	wait_for_completion(&bs->done);	
 
 	/* Disable the CMD_DONE interrupt */
-	bcm_spi_writeb(~(SPI_INTR_CMD_DONE), SPI_INT_MASK);
+	bcm_spi_writeb(~(SPI_INTR_CMD_DONE), bs->regs, SPI_INT_MASK);
 
 	return t->len - bs->remaining_bytes;
 }
@@ -235,23 +236,23 @@ static irqreturn_t bcm63xx_spi_interrupt(int irq, void *dev_id)
 	u16 cmd;
 
 	/* Read interupts and clear them immediately */
-	intr = bcm_spi_readb(SPI_INT_STATUS);
-	bcm_writeb(SPI_INTR_CLEAR_ALL, SPI_INT_STATUS);
+	intr = bcm_spi_readb(bs->regs, SPI_INT_STATUS);
+	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, bs->regs, SPI_INT_STATUS);
 
 	/* A tansfer completed */
 	if (intr & SPI_INTR_CMD_DONE) {
 		u8 rx_empty;
 	
-		rx_empty = bcm_spi_readb(SPI_ST);
+		rx_empty = bcm_spi_readb(bs->regs, SPI_ST);
 		/* Read out all the data */
 		while ((rx_empty & SPI_RX_EMPTY) == 0) {
 			u8 data;
 		
-			data = bcm_spi_readb(SPI_RX_DATA);
+			data = bcm_spi_readb(bs->regs, SPI_RX_DATA);
 			if (bs->rx_ptr)
 				*bs->rx_ptr++ = data;
 
-			rx_empty = bcm_spi_readb(SPI_RX_EMPTY);
+			rx_empty = bcm_spi_readb(bs->regs, SPI_RX_EMPTY);
 		}
 
 		/* See if there is more data to send */
@@ -259,10 +260,10 @@ static irqreturn_t bcm63xx_spi_interrupt(int irq, void *dev_id)
 			bcm63xx_spi_fill_tx_fifo(bs);
 
 			/* Start the transfer */
-			cmd = bcm_spi_readb(SPI_CMD);
+			cmd = bcm_spi_readb(bs->regs, SPI_CMD);
 			cmd |= SPI_CMD_START_IMMEDIATE;
 			cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
-			bcm_spi_writeb(cmd, SPI_CMD);
+			bcm_spi_writeb(cmd, bs->regs, SPI_CMD);
 		} else
 			complete(&bs->done);
 	}
@@ -346,8 +347,8 @@ static int __init bcm63xx_spi_probe(struct platform_device *pdev)
 	
 	/* Initialize hardware */
 	clk_enable(bs->clk);
-	bcm_spi_writew(SPI_CMD_HARD_RESET, SPI_CMD);
-	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, SPI_INT_MASK);
+	bcm_spi_writew(SPI_CMD_HARD_RESET, bs->regs, SPI_CMD);
+	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, bs->regs, SPI_INT_MASK);
 	
 	dev_info(&pdev->dev, PFX " at 0x%08x (irq %d, FIFOs size %d) v%s\n",
 				r->start, irq, bs->fifo_size, DRV_VER);
@@ -442,3 +443,4 @@ MODULE_ALIAS("platform:bcm63xx_spi");
 MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
 MODULE_DESCRIPTION("Broadcom BCM63xx SPI Controller driver");
 MODULE_LICENSE("GPL");
+MODULE_VERSION(DRV_VER);
