@@ -93,15 +93,15 @@
 /*
  * helpers for the SPI register sets
  */
-#define bcm_spi_readb(o)	bcm_readb(bcm63xx_regset_address(RSET_SPI) + \
+#define bcm_spi_readb(b,o)	bcm_readb((b) + \
 					bcm63xx_spireg(o))
-#define bcm_spi_readw(o)	bcm_readw(bcm63xx_regset_address(RSET_SPI) + \
+#define bcm_spi_readw(b,o)	bcm_readw((b) + \
 					bcm63xx_spireg(o))
-#define bcm_spi_writeb(v,o)	bcm_writeb((v), \
-					bcm63xx_regset_address(RSET_SPI) + \
+#define bcm_spi_writeb(v,b,o)	bcm_writeb((v), \
+					(b) + \
 					bcm63xx_spireg(o))
-#define bcm_spi_writew(v,o)	bcm_writew((v), \
-					bcm63xx_regset_address(RSET_SPI) + \
+#define bcm_spi_writew(v,b,o)	bcm_writew((v), \
+					(b) + \
 					bcm63xx_spireg(o))
 
 #endif /* ! BCM63XX_IO_H_ */
