@@ -70,7 +70,7 @@
 -/* The golden ration: an arbitrary value */
 -#define JHASH_GOLDEN_RATIO	0x9e3779b9
 +/* An arbitrary initial parameter */
-+#define JHASH_INIT_PARAM	0xdeadbeef
++#define JHASH_GOLDEN_RATIO	0xdeadbeef
  
  /* The most generic version, hashes an arbitrary sequence
   * of bytes.  No alignment or length assumptions are made about
@@ -94,7 +94,7 @@
 -
 -		__jhash_mix(a,b,c);
 +	/* Set up the internal state */
-+	a = b = c = JHASH_INIT_PARAM + length + initval;
++	a = b = c = JHASH_GOLDEN_RATIO + length + initval;
  
 +	/* all but the last block: affect some 32 bits of (a,b,c) */
 +	while (length > 12) {
@@ -154,7 +154,7 @@
 -	c = initval;
 -	len = length;
 +	/* Set up the internal state */
-+	a = b = c = JHASH_INIT_PARAM + (length<<2) + initval;
++	a = b = c = JHASH_GOLDEN_RATIO + (length<<2) + initval;
  
 -	while (len >= 3) {
 +	/* handle most of the key */
@@ -202,9 +202,9 @@
 -	a += JHASH_GOLDEN_RATIO;
 -	b += JHASH_GOLDEN_RATIO;
 -	c += initval;
-+	a += JHASH_INIT_PARAM + initval;
-+	b += JHASH_INIT_PARAM + initval;
-+	c += JHASH_INIT_PARAM + initval;
++	a += JHASH_GOLDEN_RATIO + initval;
++	b += JHASH_GOLDEN_RATIO + initval;
++	c += JHASH_GOLDEN_RATIO + initval;
  
 -	__jhash_mix(a, b, c);
 +	__jhash_final(a, b, c);
