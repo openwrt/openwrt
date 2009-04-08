@@ -38,11 +38,6 @@ KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
 	KBUILD_HAVE_NLS=no \
 	CONFIG_SHELL=$(BASH)
 
-define Host/Prepare/pre/cris
-	ln -sf $(HOST_BUILD_DIR)/include/asm-cris/arch-v10 $(HOST_BUILD_DIR)/include/asm-cris/arch
-	ln -sf $(HOST_BUILD_DIR)/include/asm-cris/arch-v10 $(HOST_BUILD_DIR)/arch/cris/arch
-endef
-
 define Host/Prepare/pre/powerpc
 	if [ -d $(HOST_BUILD_DIR)/include/asm-ppc ]; then \
 		mkdir -p $(PKG_BUILD_DIR)/include/asm-powerpc/; \
@@ -79,7 +74,16 @@ define Host/Prepare/lzma
 endef
 
 # XXX: the following are needed to build a cris toolchain
-define Host/Prepare/post/cris
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.28)),1)
+  define Host/Prepare/pre/cris
+	ln -sf $(HOST_BUILD_DIR)/include/asm-cris/arch-v10 $(HOST_BUILD_DIR)/include/asm-cris/arch
+	ln -sf $(HOST_BUILD_DIR)/include/asm-cris/arch-v10 $(HOST_BUILD_DIR)/arch/cris/arch
+  endef
+
+  define Host/Prepare/post/cris
+	$(CP) \
+		$(HOST_BUILD_DIR)/include/linux/user.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/linux/user.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
@@ -88,6 +92,11 @@ define Host/Prepare/post/cris
 		$(HOST_BUILD_DIR)/include/asm-cris/page.h \
 		$(HOST_BUILD_DIR)/include/asm-cris/user.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
+	$(CP) \
+		$(HOST_BUILD_DIR)/include/asm-generic/memory_model.h \
+		$(HOST_BUILD_DIR)/include/asm-generic/page.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm-generic/
+
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/asm-cris/arch/elf.h \
@@ -95,11 +104,17 @@ define Host/Prepare/post/cris
 		$(HOST_BUILD_DIR)/include/asm-cris/arch/ptrace.h \
 		$(HOST_BUILD_DIR)/include/asm-cris/arch/user.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/arch/
+  endef
+else
+  define Host/Prepare/post/cris
 	$(CP) \
-		$(HOST_BUILD_DIR)/include/asm-generic/memory_model.h \
-		$(HOST_BUILD_DIR)/include/asm-generic/page.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm-generic/
-endef
+		$(HOST_BUILD_DIR)/include/linux/user.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
+	ln -snf $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch-v10/arch \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch
+	$(SED) '/#include <asm\/page\.h>/d' $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/user.h
+  endef
+endif
 
 define Host/Prepare/post/mips
 	$(call Host/Prepare/lzma)
