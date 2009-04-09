@@ -62,7 +62,7 @@ $(eval $(call Require,working-gcc, \
 
 define Require/working-g++
 	echo 'int main(int argc, char **argv) { return 0; }' | \
-		g++ -x c++ -o $(TMP_DIR)/a.out -lstdc++ - && \
+		g++ -x c++ -o $(TMP_DIR)/a.out - -lstdc++ && \
 		$(TMP_DIR)/a.out
 endef
 
@@ -72,7 +72,7 @@ $(eval $(call Require,working-g++, \
 
 define Require/ncurses
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
-		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out -lncurses -
+		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses
 endef
 
 $(eval $(call Require,ncurses, \
@@ -82,7 +82,7 @@ $(eval $(call Require,ncurses, \
 
 define Require/zlib
 	echo 'int main(int argc, char **argv) { gzdopen(0, "rb"); return 0; }' | \
-		gcc -include zlib.h -x c -o $(TMP_DIR)/a.out -lz -
+		gcc -include zlib.h -x c -o $(TMP_DIR)/a.out - -lz
 endef
 
 $(eval $(call Require,zlib, \
