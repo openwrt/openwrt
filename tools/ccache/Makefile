@@ -38,6 +38,8 @@ else
   endef
   define Host/Compile
   endef
+  define Host/Install
+  endef
   define Host/Clean
   endef
 endif
