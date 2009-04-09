@@ -57,6 +57,7 @@ dnsmasq() {
 	append_bool "$cfg" boguspriv "-b"
 	append_bool "$cfg" expandhosts "-E"
 	append_bool "$cfg" enable_tftp "--enable-tftp"
+	append_bool "$cfg" nonwildcard "-z"
 
 	append_parm "$cfg" dnsforwardmax "-0"
 	append_parm "$cfg" port "-p"
@@ -71,6 +72,7 @@ dnsmasq() {
 	append_parm "$cfg" "resolvfile" "-r"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
+	append_parm "$cfg" "interfaces" "-i"
 
 	config_get leasefile $cfg leasefile
 	[ -e "$leasefile" ] || touch "$leasefile"
