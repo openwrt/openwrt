@@ -1,0 +1,55 @@
+diff -urN linux-2.6.28.clean/arch/cris/Makefile linux-2.6.28.mod/arch/cris/Makefile
+--- linux-2.6.28.clean/arch/cris/Makefile	2008-12-25 00:26:37.000000000 +0100
++++ linux-2.6.28.mod/arch/cris/Makefile	2009-04-07 11:52:30.000000000 +0200
+@@ -40,7 +40,7 @@
+ 
+ LD = $(CROSS_COMPILE)ld -mcrislinux
+ 
+-OBJCOPYFLAGS := -O binary -R .note -R .comment -S
++OBJCOPYFLAGS := -O binary -R .bss -R .note -R .note.gnu.build-id -R .comment -S
+ 
+ CPPFLAGS_vmlinux.lds = -DDRAM_VIRTUAL_BASE=0x$(CONFIG_ETRAX_DRAM_VIRTUAL_BASE)
+ 
+diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/Makefile linux-2.6.28.mod/arch/cris/arch-v10/boot/Makefile
+--- linux-2.6.28.clean/arch/cris/arch-v10/boot/Makefile	2008-12-25 00:26:37.000000000 +0100
++++ linux-2.6.28.mod/arch/cris/arch-v10/boot/Makefile	2009-04-07 11:55:01.000000000 +0200
+@@ -2,8 +2,6 @@
+ # arch/cris/arch-v10/boot/Makefile
+ #
+ 
+-OBJCOPYFLAGS = -O binary --remove-section=.bss
+-
+ subdir- := compressed rescue
+ targets := Image
+ 
+@@ -13,7 +11,7 @@
+ 
+ $(obj)/compressed/vmlinux: $(obj)/Image FORCE
+ 	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
+-	$(Q)$(MAKE) $(build)=$(obj)/rescue $(obj)/rescue/rescue.bin
++#	$(Q)$(MAKE) $(build)=$(obj)/rescue $(obj)/rescue/rescue.bin
+ 
+ $(obj)/zImage:  $(obj)/compressed/vmlinux
+ 	@cp $< $@
+diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/compressed/Makefile linux-2.6.28.mod/arch/cris/arch-v10/boot/compressed/Makefile
+--- linux-2.6.28.clean/arch/cris/arch-v10/boot/compressed/Makefile	2008-12-25 00:26:37.000000000 +0100
++++ linux-2.6.28.mod/arch/cris/arch-v10/boot/compressed/Makefile	2009-04-07 11:53:02.000000000 +0200
+@@ -6,7 +6,6 @@
+ ccflags-y += -O2 $(LINUXINCLUDE)
+ ldflags-y += -T $(srctree)/$(src)/decompress.lds
+ OBJECTS = $(obj)/head.o $(obj)/misc.o
+-OBJCOPYFLAGS = -O binary --remove-section=.bss
+ 
+ quiet_cmd_image = BUILD   $@
+ cmd_image = cat $(obj)/decompress.bin $(obj)/piggy.gz > $@
+diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/rescue/Makefile linux-2.6.28.mod/arch/cris/arch-v10/boot/rescue/Makefile
+--- linux-2.6.28.clean/arch/cris/arch-v10/boot/rescue/Makefile	2008-12-25 00:26:37.000000000 +0100
++++ linux-2.6.28.mod/arch/cris/arch-v10/boot/rescue/Makefile	2009-04-07 11:53:09.000000000 +0200
+@@ -5,7 +5,6 @@
+ ccflags-y += -O2 $(LINUXINCLUDE)
+ asflags-y += $(LINUXINCLUDE)
+ ldflags-y += -T $(srctree)/$(src)/rescue.lds
+-OBJCOPYFLAGS = -O binary --remove-section=.bss
+ obj-$(CONFIG_ETRAX_AXISFLASHMAP) = head.o
+ OBJECT := $(obj)/head.o
+ 
