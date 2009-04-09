@@ -8,6 +8,7 @@ choice
 	  Select the version of uClibc you wish to use.
 
 	config UCLIBC_VERSION_SNAPSHOT
+		depends BROKEN
 		bool "uClibc snapshot"
 
 	config UCLIBC_VERSION_0_9_28
@@ -25,6 +26,7 @@ config UCLIBC_VERSION_NPTL
 	bool "Use NPTL branch"
 	depends on TOOLCHAINOPTS && USE_UCLIBC
 	depends on UCLIBC_VERSION_0_9_30
+	depends BROKEN
 
 
 config UCLIBC_EXTRA_VERSION
