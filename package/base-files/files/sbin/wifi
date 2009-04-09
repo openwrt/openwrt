@@ -42,6 +42,7 @@ wifi_fixup_hwmode() {
 	config_get channel "$device" channel
 	config_get hwmode "$device" hwmode
 	case "$hwmode" in
+		11bg) hwmode=bg;;
 		11a) hwmode=a;;
 		11b) hwmode=b;;
 		11g) hwmode=g;;
