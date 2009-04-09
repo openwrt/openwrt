@@ -25,7 +25,7 @@
  obj-$(CONFIG_DECLANCE) += declance.o
 --- /dev/null
 +++ b/drivers/net/ar231x.c
-@@ -0,0 +1,1268 @@
+@@ -0,0 +1,1265 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -768,15 +768,12 @@
 +		if (sp->rx_skb[idx])
 +			break;
 +
-+		// partha: create additional room for the second GRE fragment
-+		skb = alloc_skb(AR2313_BUFSIZE + 128, GFP_ATOMIC);
++		skb = netdev_alloc_skb(dev, AR2313_BUFSIZE);
 +		if (!skb) {
 +			printk("\n\n\n\n %s: No memory in system\n\n\n\n",
 +				   __FUNCTION__);
 +			break;
 +		}
-+		// partha: create additional room in the front for tx pkt capture
-+		skb_reserve(skb, 32);
 +
 +		/*
 +		 * Make sure IP header starts on a fresh cache line.
@@ -855,7 +852,7 @@
 +
 +		} else {
 +			/* alloc new buffer. */
-+			skb_new = dev_alloc_skb(AR2313_BUFSIZE + RX_OFFSET + 128);
++			skb_new = netdev_alloc_skb(dev, AR2313_BUFSIZE + RX_OFFSET);
 +			if (skb_new != NULL) {
 +
 +				skb = sp->rx_skb[idx];
@@ -870,7 +867,7 @@
 +
 +				skb_new->dev = dev;
 +				/* 16 bit align */
-+				skb_reserve(skb_new, RX_OFFSET + 32);
++				skb_reserve(skb_new, RX_OFFSET);
 +				/* reset descriptor's curr_addr */
 +				rxdesc->addr = virt_to_phys(skb_new->data);
 +
