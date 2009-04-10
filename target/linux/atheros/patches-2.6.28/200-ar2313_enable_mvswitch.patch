@@ -8,7 +8,7 @@
  
  		if (sp->rx_skb[idx])
  			break;
-@@ -754,7 +755,9 @@ static void ar231x_load_rx_ring(struct n
+@@ -751,7 +752,9 @@ static void ar231x_load_rx_ring(struct n
  		 * Make sure IP header starts on a fresh cache line.
  		 */
  		skb->dev = dev;
@@ -19,36 +19,36 @@
  		sp->rx_skb[idx] = skb;
  
  		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
-@@ -829,6 +832,7 @@ static int ar231x_rx_int(struct net_devi
+@@ -826,20 +829,23 @@ static int ar231x_rx_int(struct net_devi
  			/* alloc new buffer. */
- 			skb_new = dev_alloc_skb(AR2313_BUFSIZE + RX_OFFSET + 128);
+ 			skb_new = netdev_alloc_skb(dev, AR2313_BUFSIZE + RX_OFFSET);
  			if (skb_new != NULL) {
 +				int offset;
  
  				skb = sp->rx_skb[idx];
  				/* set skb */
-@@ -836,13 +840,17 @@ static int ar231x_rx_int(struct net_devi
+ 				skb_put(skb,
  						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
- 
+-
  				dev->stats.rx_bytes += skb->len;
 -				skb->protocol = eth_type_trans(skb, dev);
-+
- 				/* pass the packet to upper layers */
+-				/* pass the packet to upper layers */
 -				netif_rx(skb);
-+				sp->rx(skb);
  
++				/* pass the packet to upper layers */
++				sp->rx(skb);
  				skb_new->dev = dev;
 +
  				/* 16 bit align */
--				skb_reserve(skb_new, RX_OFFSET + 32);
-+				offset = RX_OFFSET + 32;
+-				skb_reserve(skb_new, RX_OFFSET);
++				offset = RX_OFFSET;
 +				if (sp->phy_dev)
 +					offset += sp->phy_dev->pkt_align;
 +				skb_reserve(skb_new, offset);
  				/* reset descriptor's curr_addr */
  				rxdesc->addr = virt_to_phys(skb_new->data);
  
-@@ -1244,6 +1252,8 @@ static int ar231x_mdiobus_probe (struct 
+@@ -1241,6 +1247,8 @@ static int ar231x_mdiobus_probe (struct 
  		return PTR_ERR(phydev);
  	}
  
