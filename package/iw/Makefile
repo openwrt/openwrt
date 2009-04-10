@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_VERSION:=0.9.11
+PKG_VERSION:=0.9.12
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/iw/
-PKG_MD5SUM:=a8198e7f6bf41ead9e9ade3ec5cae9b2
+PKG_MD5SUM:=2aa919ff927dd9def151a87badfa111a
 PKG_BUILD_DEPENDS:=mac80211 libnl
 
 include $(INCLUDE_DIR)/package.mk
