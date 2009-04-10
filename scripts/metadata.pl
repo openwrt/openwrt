@@ -415,12 +415,12 @@ sub mconf_depends {
 		$depend =~ s/^([@\+]+)//;
 		my $flags = $1;
 		my $vdep;
-		my $condition;
+		my $condition = $parent_condition;
 
 		if ($depend =~ /^(.+):(.+)$/) {
 			if ($1 ne "PACKAGE_$pkgname") {
-				if ($parent_condition) {
-					$condition = "$parent_condition && $1";
+				if ($condition) {
+					$condition = "$condition && $1";
 				} else {
 					$condition = $1;
 				}
