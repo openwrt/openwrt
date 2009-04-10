@@ -50,7 +50,7 @@ $(eval $(call KernelPackage,ieee80211))
 define KernelPackage/ieee80211-softmac
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=ieee80211 SoftMAC support
-  DEPENDS:=+kmod-ieee80211
+  DEPENDS:=+kmod-ieee80211 @LINUX_2_6_21||@LINUX_2_6_23||@LINUX_2_6_24||@LINUX_2_6_25
   KCONFIG:=CONFIG_IEEE80211_SOFTMAC
   FILES:=$(LINUX_DIR)/net/ieee80211/softmac/ieee80211softmac.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,ieee80211softmac)
