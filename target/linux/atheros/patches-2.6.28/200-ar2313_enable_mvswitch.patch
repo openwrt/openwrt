@@ -19,7 +19,7 @@
  		sp->rx_skb[idx] = skb;
  
  		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
-@@ -826,20 +829,23 @@ static int ar231x_rx_int(struct net_devi
+@@ -825,20 +828,23 @@ static int ar231x_rx_int(struct net_devi
  			/* alloc new buffer. */
  			skb_new = netdev_alloc_skb(dev, AR2313_BUFSIZE + RX_OFFSET);
  			if (skb_new != NULL) {
@@ -48,7 +48,7 @@
  				/* reset descriptor's curr_addr */
  				rxdesc->addr = virt_to_phys(skb_new->data);
  
-@@ -1241,6 +1247,8 @@ static int ar231x_mdiobus_probe (struct 
+@@ -1240,6 +1246,8 @@ static int ar231x_mdiobus_probe (struct 
  		return PTR_ERR(phydev);
  	}
  
