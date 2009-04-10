@@ -25,7 +25,7 @@
  obj-$(CONFIG_DECLANCE) += declance.o
 --- /dev/null
 +++ b/drivers/net/ar231x.c
-@@ -0,0 +1,1265 @@
+@@ -0,0 +1,1264 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -833,8 +833,7 @@
 +			break;
 +		}
 +
-+		if ((status & (DMA_RX_ERROR | DMA_RX_ERR_LENGTH)) &&
-+			(!(status & DMA_RX_LONG))) {
++		if (status & DMA_RX_ERROR) {
 +			dev->stats.rx_errors++;
 +			dev->stats.rx_dropped++;
 +
