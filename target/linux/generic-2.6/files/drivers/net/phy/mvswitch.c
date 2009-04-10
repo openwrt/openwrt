@@ -32,7 +32,7 @@
 
 /* Undefine this to use trailer mode instead.
  * I don't know if header mode works with all chips */
-//#define HEADER_MODE	1
+#define HEADER_MODE	1
 
 MODULE_DESCRIPTION("Marvell 88E6060 Switch driver");
 MODULE_AUTHOR("Felix Fietkau");
