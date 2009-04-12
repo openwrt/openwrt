@@ -113,6 +113,28 @@ endef
 
 $(eval $(call KernelPackage,fs-ext3))
 
+define KernelPackage/fs-ext4
+  SUBMENU:=$(FS_MENU)
+  TITLE:=EXT4 filesystem support
+  KCONFIG:= \
+	CONFIG_EXT4DEV_COMPAT=y \
+	CONFIG_EXT4_FS_XATTR=y \
+	CONFIG_EXT4_FS_POSIX_ACL=y \
+	CONFIG_EXT4_FS_SECURITY=y \
+	CONFIG_EXT4_FS
+  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
+  FILES:= \
+	$(LINUX_DIR)/fs/ext4/ext4.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ext4)
+endef
+
+define KernelPackage/fs-ext4/description
+ Kernel module for EXT4 filesystem support
+endef
+
+$(eval $(call KernelPackage,fs-ext4))
+
+
 
 define KernelPackage/fs-hfs
   SUBMENU:=$(FS_MENU)
