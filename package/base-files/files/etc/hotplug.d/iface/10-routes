@@ -23,7 +23,6 @@ add_route() {
 		config_get gateway "$interface" gateway
 	}
 
-	netmask="${netmask:-255.255.255.255}"
 	dest="${netmask:+-net "$target" netmask "$netmask"}"
 	dest="${dest:--host "$target"}"
 	
