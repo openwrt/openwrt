@@ -179,6 +179,9 @@ setup_interface_static() {
 		done
 	}
 
+	config_get type "$config" TYPE                                                                               
+	[ "$type" = "alias" ] && return 0
+
 	env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
 }
 
