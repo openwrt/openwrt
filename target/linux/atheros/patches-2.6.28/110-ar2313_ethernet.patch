@@ -833,7 +833,7 @@
 +			break;
 +		}
 +
-+		if (status & DMA_RX_ERROR) {
++		if ((status & DMA_RX_ERROR) && !(status & DMA_RX_LONG)) {
 +			dev->stats.rx_errors++;
 +			dev->stats.rx_dropped++;
 +
