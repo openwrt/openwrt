@@ -40,10 +40,16 @@
 static inline ssize_t
 getline(char **outbuf, size_t *outsize, FILE *fp)
 {
-	char *buf;
 	size_t len;
 
+#ifndef __CYGWIN__
+	char *buf;
 	buf = fgetln(fp, &len);
+#else
+	char buf[512];
+	fgets(buf, sizeof(buf), fp);	
+	len = strlen(buf);
+#endif
 	if (buf == NULL)
 		return (-1);
 
