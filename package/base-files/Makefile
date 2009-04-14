@@ -117,12 +117,16 @@ $(call Package/libc/Default)
 endef
 
 define Package/ldd
-$(call Package/uclibc/Default)
+$(call Package/libc/Default)
+  SECTION:=utils
+  CATEGORY:=Utilities
   TITLE:=LDD trace utility
 endef
 
 define Package/ldconfig
 $(call Package/libc/Default)
+  SECTION:=utils
+  CATEGORY:=Utilities
   TITLE:=Shared library path configuration
 endef
 
