@@ -12,8 +12,6 @@ BOARDNAME:=Sony PS3 Game Console
 MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
 SUBTARGETS=petitboot
 
-DEVICE_TYPE=bootloader
-
 LINUX_VERSION:=2.6.28.9
 
 KERNEL_CC:=
