@@ -4,7 +4,6 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id:$
 
 ifeq ($(NO_TRACE_MAKE),)
 NO_TRACE_MAKE := $(MAKE) V=99

@@ -8,7 +8,6 @@
 *! ( C ) Copyright 1999-2002 Axis Communications AB, LUND, SWEDEN
 *!
 *!***************************************************************************/
-/* $Id: i2c.c,v 1.16 2005/09/29 13:33:35 bjarne Exp $ */
 
 #define DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
 //#undef  DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC

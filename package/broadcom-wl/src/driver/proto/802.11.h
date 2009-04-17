@@ -9,7 +9,6 @@
  *
  * Fundamental types and constants relating to 802.11
  *
- * $Id$
  */
 
 #ifndef _802_11_H_

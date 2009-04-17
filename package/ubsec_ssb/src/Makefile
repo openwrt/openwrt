@@ -1,4 +1,3 @@
-# $Id$
 #
 # Makefile for b5365ips driver
 #

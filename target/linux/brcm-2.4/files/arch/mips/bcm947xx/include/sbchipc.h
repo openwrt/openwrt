@@ -5,7 +5,6 @@
  * jtag, 0/1/2 uarts, clock frequency control, a watchdog interrupt timer,
  * gpio interface, extbus, and support for serial and parallel flashes.
  *
- * $Id$
  * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 

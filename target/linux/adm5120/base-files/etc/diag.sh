@@ -2,7 +2,6 @@
 #
 # Copyright (C) 2007 OpenWrt.org
 #
-# $Id$
 #
 
 . /lib/adm5120.sh

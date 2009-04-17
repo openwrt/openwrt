@@ -4,7 +4,6 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id$
 
 define replace
 	if [ -f "$(PKG_BUILD_DIR)/$(3)$(1)" -a -e "$(2)/$(1)" ]; then \

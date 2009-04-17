@@ -9,7 +9,6 @@
  *
  * Fundamental types and constants relating to 802.11
  *
- * $Id: 802.11.h,v 1.1.1.17 2006/04/15 01:29:08 michael Exp $
  */
 
 #ifndef _802_11_H_

@@ -8,7 +8,6 @@
  *
  * Ethernet register definition.
  *
- * File   : $Id: eth.h,v 1.3 2002/06/06 18:34:04 astichte Exp $
  *
  * Author : Allen.Stichter@idt.com
  * Date   : 20020605

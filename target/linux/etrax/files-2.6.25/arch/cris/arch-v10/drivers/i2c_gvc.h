@@ -1,4 +1,3 @@
-/* $Id: i2c.h,v 1.3 2004/05/28 09:26:59 starvik Exp $ */
 #ifndef _I2C_H
 #define _I2C_H
 

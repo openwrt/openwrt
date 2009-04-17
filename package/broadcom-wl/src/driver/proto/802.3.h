@@ -9,7 +9,6 @@
  *
  * Fundamental constants relating to 802.3
  *
- * $Id$
  */
 
 #ifndef _802_3_h_

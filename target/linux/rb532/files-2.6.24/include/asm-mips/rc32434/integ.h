@@ -8,7 +8,6 @@
  *
  * System Integrity register definition.
  *
- * File   : $Id: integ.h,v 1.3 2002/06/06 18:34:04 astichte Exp $
  *
  * Author : ryan.holmQVist@idt.com
  * Date   : 20011005

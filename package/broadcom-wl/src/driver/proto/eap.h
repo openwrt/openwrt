@@ -6,7 +6,6 @@
  *
  * Copyright (C) 2002 Broadcom Corporation
  *
- * $Id$
  */
 
 #ifndef _eap_h_

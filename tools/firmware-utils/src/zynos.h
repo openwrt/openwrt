@@ -1,5 +1,4 @@
 /*
- *  $Id$
  *
  *  Copyright (C) 2007-2008 OpenWrt.org
  *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>

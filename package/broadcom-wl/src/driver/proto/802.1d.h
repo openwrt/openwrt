@@ -9,7 +9,6 @@
  *
  * Fundamental types and constants relating to 802.1D
  *
- * $Id$
  */
 
 #ifndef _802_1_D_

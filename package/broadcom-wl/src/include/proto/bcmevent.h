@@ -12,7 +12,6 @@
  *
  * Dependencies: proto/bcmeth.h
  *
- * $Id: bcmevent.h,v 1.1.1.3 2006/02/27 03:43:16 honor Exp $
  *
  */
 

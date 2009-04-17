@@ -1,5 +1,4 @@
 /*
- *  $Id: platform.c 8331 2007-08-03 15:59:23Z florian $
  *
  *  Generic RDC321x platform devices
  *
