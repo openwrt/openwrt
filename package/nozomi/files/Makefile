@@ -1,4 +1,3 @@
-# $Id$
 
 O_TARGET	:= noz.o
 

@@ -1,4 +1,3 @@
-/* $Id: $ */
 
 /*
  * Copyright (c) 2008 Daniel Mueller (daniel@danm.de)

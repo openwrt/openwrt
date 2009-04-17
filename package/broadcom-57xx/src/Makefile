@@ -1,7 +1,6 @@
 #
 # Broadcom BCM57XX Gigabit Ethernet driver make file.
 #
-# $Id: Makefile,v 1.1.1.4 2006/09/26 02:17:12 michael Exp $
 #
 
 O_TARGET = bcm57xx.o

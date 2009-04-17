@@ -2,7 +2,6 @@
 #
 # Copyright (C) 2007 OpenWrt.org
 #
-# $Id$
 #
 
 board_name=""

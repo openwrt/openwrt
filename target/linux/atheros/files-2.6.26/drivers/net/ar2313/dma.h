@@ -8,7 +8,6 @@
  *
  * DMA register definition.
  *
- * File   : $Id: dma.h,v 1.3 2002/06/06 18:34:03 astichte Exp $
  *
  * Author : ryan.holmQVist@idt.com
  * Date   : 20011005

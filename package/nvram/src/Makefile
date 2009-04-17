@@ -1,4 +1,3 @@
-# $Id$
 
 LIBNVRAM_OBJS := nvram.o
 

@@ -1,7 +1,6 @@
 /*
  * SPI Flash Memory support header file.
  *
- * $Id: //depot/sw/releases/linuxsrc/src/kernels/mips-linux-2.4.25/drivers/mtd/devices/spiflash.h#3 $
  *
  *
  * Copyright (c) 2005, Atheros Communications Inc.

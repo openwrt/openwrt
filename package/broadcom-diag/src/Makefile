@@ -1,4 +1,3 @@
-# $Id$
 #
 # Makefile for diag driver
 #

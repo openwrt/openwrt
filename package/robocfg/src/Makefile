@@ -1,4 +1,3 @@
-# $Id$
 
 all: robocfg
 

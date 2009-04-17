@@ -9,7 +9,6 @@
  *
  * Fundamental constants relating to IP Protocol
  *
- * $Id: bcmip.h,v 1.1.1.3 2006/02/27 03:43:16 honor Exp $
  */
 
 #ifndef _bcmip_h_

@@ -1,5 +1,4 @@
 /*
- * $Id: at91part.c 6948 2007-04-15 04:01:45Z hcg $
  * 
  * Copyright (C) 2007 OpenWrt.org
  * 

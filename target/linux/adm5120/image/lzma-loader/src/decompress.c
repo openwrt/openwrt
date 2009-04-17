@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * LZMA compressed kernel decompressor for ADM5120 boards
  *

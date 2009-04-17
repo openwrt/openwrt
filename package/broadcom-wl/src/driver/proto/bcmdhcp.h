@@ -9,7 +9,6 @@
  *
  * Fundamental constants relating to DHCP Protocol
  *
- * $Id$
  */
 
 #ifndef _bcmdhcp_h_
