@@ -41,6 +41,7 @@ define Build/InstallDev
 	mv $(2)/include/* $(1)/usr/include/
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/share/aclocal
 	$(CP) $(2)/share/aclocal/* $(STAGING_DIR_HOST)/share/aclocal/
+	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(2)/bin/libtool
 endef
 
 define Package/libltdl/install
