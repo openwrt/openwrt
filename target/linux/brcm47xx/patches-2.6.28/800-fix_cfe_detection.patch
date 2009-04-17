@@ -98,8 +98,8 @@
 -	prom_init_console();
 -	prom_init_cmdline();
 +	if (prom_init_cfe() == 0) {
-+		prom_init_console_cfe();
-+		prom_init_cmdline_cfe();
++		//prom_init_console_cfe();
++		//prom_init_cmdline_cfe();
 +		__prom_putchar = prom_putchar_cfe;
 +	}
 +
