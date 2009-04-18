@@ -9,7 +9,7 @@ config GLIBC_VERSION
 config GLIBC_PORTS
 	bool
 	depends on USE_GLIBC
-	default y  if GLIBC_VERSION_2_3_6 && (arm || armeb || mips || mipsel)
-	default y  if GLIBC_VERSION_2_6_1 && (arm || armeb || mips || mipsel || powerpc)
-	default y  if GLIBC_VERSION_2_7 && (arm || armeb || mips || mipsel || powerpc)
+	default y  if GLIBC_VERSION_2_3_6 && (arm || armeb || mips || mipsel || mips64 || mips64el)
+	default y  if GLIBC_VERSION_2_6_1 && (arm || armeb || mips || mipsel || mips64 || mips64el || powerpc)
+	default y  if GLIBC_VERSION_2_7 && (arm || armeb || mips || mipsel || mips64 || mips64el || powerpc)
 	default n
