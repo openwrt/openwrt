@@ -13,6 +13,7 @@ choice
 
 	config UCLIBC_VERSION_0_9_28
 		bool "uClibc 0.9.28"
+		depends !(mips64 || mips64el)
 
 	config UCLIBC_VERSION_0_9_29
 		bool "uClibc 0.9.29"

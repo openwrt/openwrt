@@ -73,6 +73,7 @@ GCC_CONFIGURE:= \
 		--disable-nls \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
+		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
 
 ifneq ($(CONFIG_GCC_VERSION_4_3),)
   GCC_BUILD_TARGET_LIBGCC:=y
@@ -189,6 +190,7 @@ define Stage2/Configure
 	ln -sf ../include $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/sys-include
 	rm -rf $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
+	$(if $(CONFIG_mips64)$(CONFIG_mips64el),ln -sf ../lib64 $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib64)
 	(cd $(HOST_BUILD_DIR2); rm -f config.cache; \
 		$(GCC_CONFIGURE_STAGE2) \
 	);

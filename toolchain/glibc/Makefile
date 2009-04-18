@@ -57,6 +57,7 @@ GLIBC_CONFIGURE:= \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(REAL_GNU_TARGET_NAME) \
 		--with-headers="$(TOOLCHAIN_DIR)/usr/include" \
+		$(if $(CONFIG_mips64)$(CONFIG_mips64el), --enable-kernel="2.6.0") \
 		--disable-debug \
 		--disable-profile \
 		--enable-add-ons="$(GLIBC_ADD_ONS)" \

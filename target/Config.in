@@ -65,6 +65,13 @@ config mips
 config mipsel
 	bool
 
+config mips64
+	select BIG_ENDIAN
+	bool
+
+config mips64el
+	bool
+
 config arm
 	bool
 
@@ -118,6 +125,8 @@ config ARCH
 	default "m68k"    if m68k
 	default "mips"    if mips
 	default "mipsel"  if mipsel
+	default "mips64"  if mips64
+	default "mips64el" if mips64el
 	default "powerpc" if powerpc
 	default "sh3"     if sh3
 	default "sh3eb"   if sh3eb
