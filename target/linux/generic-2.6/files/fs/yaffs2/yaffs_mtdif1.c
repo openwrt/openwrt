@@ -36,6 +36,7 @@
 /* Don't compile this module if we don't have MTD's mtd_oob_ops interface */
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
 
+const char *yaffs_mtdif1_c_version = "$Id: yaffs_mtdif1.c,v 1.3 2007/05/15 20:16:11 ian Exp $";
 
 #ifndef CONFIG_YAFFS_9BYTE_TAGS
 # define YTAG1_SIZE 8

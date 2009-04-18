@@ -29,6 +29,7 @@
  */
 
 const char *yaffs_ecc_c_version =
+    "$Id: yaffs_ecc.c,v 1.9 2007-02-14 01:09:06 wookey Exp $";
 
 #include "yportenv.h"
 
