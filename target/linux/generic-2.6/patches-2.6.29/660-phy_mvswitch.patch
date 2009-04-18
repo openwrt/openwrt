@@ -1,0 +1,22 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -93,6 +93,9 @@ config ADM6996_PHY
+ 	---help---
+ 	  Currently supports the ADM6996F switch
+ 
++config MVSWITCH_PHY
++	tristate "Driver for Marvell 88E6060 switches"
++
+ config FIXED_PHY
+ 	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
+ 	depends on PHYLIB=y
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
+ obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
+ obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
+ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
++obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
+ obj-$(CONFIG_LSI_ET1011C_PHY)	+= et1011c.o
+ obj-$(CONFIG_FIXED_PHY)		+= fixed.o
