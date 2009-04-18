@@ -12,6 +12,7 @@
  */
 
 const char *yaffs_guts_c_version =
+    "$Id: yaffs_guts.c,v 1.49 2007-05-15 20:07:40 charles Exp $";
 
 #include "yportenv.h"
 

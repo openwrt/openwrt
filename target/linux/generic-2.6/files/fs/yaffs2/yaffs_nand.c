@@ -12,6 +12,7 @@
  */
 
 const char *yaffs_nand_c_version =
+    "$Id: yaffs_nand.c,v 1.7 2007-02-14 01:09:06 wookey Exp $";
 
 #include "yaffs_nand.h"
 #include "yaffs_tagscompat.h"
