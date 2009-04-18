@@ -1,0 +1,41 @@
+--- a/arch/arm/mach-ixp4xx/avila-setup.c
++++ b/arch/arm/mach-ixp4xx/avila-setup.c
+@@ -237,10 +237,28 @@ static struct platform_device avila_latc
+ 	.dev.platform_data	= &avila_latch_leds_data,
+ };
+ 
++static struct resource avila_gpio_resources[] = {
++	{
++		.name	= "gpio",
++		/* FIXME: gpio mask should be model specific */
++		.start	= AVILA_GPIO_MASK,
++		.end	= AVILA_GPIO_MASK,
++		.flags	= 0,
++	},
++};
++
++static struct platform_device avila_gpio = {
++	.name			= "GPIODEV",
++	.id			= -1,
++	.num_resources		= ARRAY_SIZE(avila_gpio_resources),
++	.resource		= avila_gpio_resources,
++};
++
+ static struct platform_device *avila_devices[] __initdata = {
+ 	&avila_i2c_gpio,
+ 	&avila_flash,
+-	&avila_uart
++	&avila_uart,
++	&avila_gpio,
+ };
+ 
+ static void __init avila_gw23xx_setup(void)
+--- a/arch/arm/mach-ixp4xx/include/mach/avila.h
++++ b/arch/arm/mach-ixp4xx/include/mach/avila.h
+@@ -39,3 +39,6 @@
+ /* User LEDs */
+ #define AVILA_GW23XX_LED_USER_GPIO	3
+ #define AVILA_GW23X7_LED_USER_GPIO	4
++
++/* gpio mask used by platform device */
++#define AVILA_GPIO_MASK	(1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9)
