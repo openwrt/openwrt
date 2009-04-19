@@ -129,7 +129,7 @@ Index: linux-2.6.28.7/arch/mips/bcm47xx/setup.c
  {
  	int i = 0;
  
-@@ -73,52 +83,141 @@ static void str2eaddr(char *str, char *d
+@@ -73,52 +83,142 @@ static void str2eaddr(char *str, char *d
  	}
  }
  
@@ -272,6 +272,7 @@ Index: linux-2.6.28.7/arch/mips/bcm47xx/setup.c
 +
 +		memset(&s, 0, sizeof(s));
 +		s.line = i;
++		s.mapbase = (unsigned int) port->regs;
 +		s.membase = port->regs;
 +		s.irq = port->irq + 2;
 +		s.uartclk = port->baud_base;
