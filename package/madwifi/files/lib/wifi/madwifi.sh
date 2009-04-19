@@ -167,7 +167,7 @@ enable_atheros() {
 		esac
 
 		case "$mode" in
-			adhoc|ahdemo)
+			sta|adhoc|ahdemo)
 				config_get addr "$vif" bssid
 				[ -z "$addr" ] || { 
 					iwconfig "$ifname" ap "$addr"
