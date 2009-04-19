@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
 PKG_VERSION:=1.41.3
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
@@ -103,7 +103,7 @@ endef
 define Package/blkid
 $(call Package/e2fsprogs)
   TITLE:=Command-line utility to locate/print block device attributes
-  DEPENDS:=e2fsprogs
+  DEPENDS:=libuuid libblkid
 endef
 
 CONFIGURE_ARGS += \
