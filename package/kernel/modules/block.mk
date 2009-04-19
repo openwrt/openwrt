@@ -35,6 +35,22 @@ endef
 $(eval $(call KernelPackage,ata-ahci))
 
 
+define KernelPackage/ata-sil24
+  SUBMENU:=3D$(BLOCK_MENU)
+  TITLE:=3DSilicon Image 3124/3132 SATA support
+  DEPENDS:=3Dkmod-ata-core
+  KCONFIG:=3DCONFIG_SATA_SIL24
+  FILES:=3D$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=3D$(call AutoLoad,41,sata_sil24)
+endef
+
+define KernelPackage/ata-sil24/description
+ Support for Silicon Image 3124/3132 Serial ATA controllers.
+endef
+
+$(eval $(call KernelPackage,ata-sil24))
+
+
 define KernelPackage/ata-artop
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=ARTOP 6210/6260 PATA support
