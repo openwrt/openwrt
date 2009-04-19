@@ -23,6 +23,7 @@
 #define DEFAULT_FW_OFFSET		0x10000
 #define DEFAULT_FLASH_START		0xBFC00000
 #define DEFAULT_FLASH_BS		(64 * 1024)
+#define DEADCODE			0xDEADC0DE
 
 /* Kernel header */
 struct kernelhdr {
@@ -47,15 +48,19 @@ struct imagetag {
 	uint8_t			bigendian[2];	/*  60 -  61: "1" for big endian, "0" for little endian */
 	uint8_t			imagelen[10];	/*  62 -  71: The length of all data that follows */
 	struct imagecomp	cfe;		/*  72 -  93: The offset and length of CFE */
-	struct imagecomp	rootfs;		/*  94 - 115: The offset and length of the root file system */
+	struct imagecomp	rootfs;	/*  94 - 115: The offset and length of the root file system */
 	struct imagecomp	kernel;		/* 116 - 137: The offset and length of the kernel */
 	uint8_t			dualimage[2];	/* 138 - 139: use "0" here */
 	uint8_t			inactive[2];	/* 140 - 141: use "0" here */
 	uint8_t			reserved1[74];	/* 142 - 215: reserved */
 	uint32_t		imagecrc;	/* 216 - 219: crc of the images (net byte order) */
-	uint8_t			reserved2[16];	/* 220 - 235: reserved */
+// 	uint8_t			reserved2[16];	/* 220 - 235: reserved */
+	uint8_t			reserved2[4];	/* 220 - 223: reserved */
+	uint8_t			wrtrootfsaddr[12];	/* 224 - 235: wrt rootfs address */
 	uint32_t		headercrc;	/* 236 - 239: crc starting from sig1 until headercrc (net byte order) */
-	uint8_t			reserved3[16];	/* 240 - 255: reserved */
+//	uint8_t			reserved3[16];	/* 240 - 255: reserved */
+	uint8_t			reserved3[6];	/* 240 - 245: reserved */
+	uint8_t			wrtrootfslen[10];	/* 246 - 255: wrt rootfs lenght */
 };
 
 static uint32_t crc32tab[256] = {
@@ -101,6 +106,29 @@ uint32_t crc32(uint32_t crc, uint8_t *data, size_t len)
 	return crc;
 }
 
+uint32_t compute_crc32(uint32_t crc, FILE *binfile, size_t compute_start, size_t compute_len)
+{
+	uint8_t readbuf[1024];
+	size_t read;
+
+	fseek(binfile, compute_start, SEEK_SET);
+	
+	/* read block of 1024 bytes */
+	while (binfile && !feof(binfile) && !ferror(binfile) && (compute_len >= sizeof(readbuf))) {
+		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), binfile);
+		crc = crc32(crc, readbuf, read);
+		compute_len = compute_len - read;
+	}
+
+	/* Less than 1024 bytes remains, read compute_len bytes */
+	if (binfile && !feof(binfile) && !ferror(binfile) && (compute_len > 0)) {
+		read = fread(readbuf, sizeof(uint8_t), compute_len, binfile);
+		crc = crc32(crc, readbuf, read);
+	}
+
+	return crc;
+}
+
 size_t getlen(FILE *fp)
 {
 	size_t retval, curpos;
@@ -119,14 +147,16 @@ size_t getlen(FILE *fp)
 int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	    const char *boardid, const char *chipid, const uint32_t fwaddr,
 	    const uint32_t loadaddr, const uint32_t entry,
-	    const char *ver, const char *magic2, const uint32_t flash_bs)
+	    const char *ver, const char *magic2, const uint32_t flash_bs,
+	    const char *profile)
 {
 	struct imagetag tag;
 	struct kernelhdr khdr;
 	FILE *kernelfile = NULL, *rootfsfile = NULL, *binfile;
-	size_t kerneloff, kernellen, rootfsoff, rootfslen, read;
+	size_t kerneloff, kernellen, rootfsoff, rootfslen, read, imagelen;
 	uint8_t readbuf[1024];
-	uint32_t crc;
+	uint32_t crc = IMAGETAG_CRC_START;
+	const uint32_t deadcode = htonl(DEADCODE);
 
 	memset(&tag, 0, sizeof(struct imagetag));
 
@@ -150,7 +180,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 		return 1;
 	}
 
-	if (!bin || !(binfile = fopen(bin, "wb"))) {
+	if (!bin || !(binfile = fopen(bin, "wb+"))) {
 		fprintf(stderr, "Unable to open output file \"%s\"\n", bin);
 		return 1;
 	}
@@ -172,18 +202,17 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	rootfsoff = (rootfsoff % flash_bs) > 0 ? (((rootfsoff / flash_bs) + 1) * flash_bs) : rootfsoff;
 	rootfslen = getlen(rootfsfile);
 	rootfslen = (rootfslen % flash_bs) > 0 ? (((rootfslen / flash_bs) + 1) * flash_bs) : rootfslen;
+	imagelen = rootfsoff + rootfslen - kerneloff + sizeof(deadcode);
 
 	/* Seek to the start of the kernel */
 	fseek(binfile, kerneloff - fwaddr, SEEK_SET);
 
 	/* Write the kernel header */
-	crc = crc32(IMAGETAG_CRC_START, (uint8_t*)&khdr, sizeof(khdr));
 	fwrite(&khdr, sizeof(khdr), 1, binfile);
 
 	/* Write the kernel */
 	while (kernelfile && !feof(kernelfile) && !ferror(kernelfile)) {
 		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), kernelfile);
-		crc = crc32(crc, readbuf, read);
 		fwrite(readbuf, sizeof(uint8_t), read, binfile);
 	}
 
@@ -191,10 +220,27 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	fseek(binfile, rootfsoff - fwaddr, SEEK_SET);
 	while (rootfsfile && !feof(rootfsfile) && !ferror(rootfsfile)) {
 		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), rootfsfile);
-		//crc = crc32(crc, readbuf, read);
 		fwrite(readbuf, sizeof(uint8_t), read, binfile);
 	}
 
+	/* Align image to specified erase block size and append deadc0de */
+	printf("Data alignment to %dk with 'deadc0de' appended\n", flash_bs/1024);
+	fseek(binfile, rootfsoff + rootfslen - fwaddr, SEEK_SET);
+	fwrite(&deadcode, sizeof(uint32_t), 1, binfile);
+	
+
+	/* Choose and compute the CRC32 that should be inserted in the tag */
+	/* and fill reserved tag following profile specification	   */
+	if ( profile && (strcmp(profile, "alice") == 0)) {
+		crc = compute_crc32(crc, binfile, kerneloff - fwaddr, kernellen);
+		/* Should fill alice_data and put them on reserved1 */
+	}
+	else {
+		/* Compute the crc32 of the entire image (deadC0de included) */
+		crc = compute_crc32(crc, binfile, kerneloff - fwaddr, imagelen);
+	}
+
+	
 	/* Close the files */
 	fclose(kernelfile);
 	fclose(rootfsfile);
@@ -206,7 +252,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	strcpy(tag.chipid, chipid);
 	strcpy(tag.boardid, boardid);
 	strcpy(tag.bigendian, "1");
-	sprintf(tag.imagelen, "%lu", kernellen + rootfslen);
+	sprintf(tag.imagelen, "%lu", imagelen);
 
 	/* We don't include CFE */
 	strcpy(tag.cfe.address, "0");
@@ -218,8 +264,10 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	}
 
 	if (rootfsfile) {
-		sprintf(tag.rootfs.address, "%lu", rootfsoff);
-		sprintf(tag.rootfs.len, "%lu", rootfslen);
+		sprintf(tag.rootfs.address, "%lu", kerneloff);
+		sprintf(tag.rootfs.len, "%lu", rootfslen + sizeof(deadcode));
+		sprintf(tag.wrtrootfsaddr, "%lu", rootfsoff);
+		sprintf(tag.wrtrootfslen, "%lu", rootfslen);
 	}
 
 	tag.imagecrc = htonl(crc);
@@ -236,11 +284,11 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 int main(int argc, char **argv)
 {
 	int c;
-	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver;
+	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver, *profile;
 	uint32_t flashstart, fwoffset, loadaddr, entry;
 	uint32_t fwaddr, flash_bs;
 	
-	kernel = rootfs = bin = boardid = chipid = magic2 = ver = NULL;
+	kernel = rootfs = bin = boardid = chipid = magic2 = ver = profile = NULL;
 	entry = 0;
 
 	flashstart = DEFAULT_FLASH_START;
@@ -248,10 +296,10 @@ int main(int argc, char **argv)
 	loadaddr = IMAGETAG_DEFAULT_LOADADDR;
 	flash_bs = DEFAULT_FLASH_BS;
 
-	printf("Broadcom image tagger - v0.1.1\n");
+	printf("Broadcom image tagger - v0.1.2\n");
 	printf("Copyright (C) 2008 Axel Gembe\n");
 
-	while ((c = getopt(argc, argv, "i:f:o:b:c:s:n:v:m:k:l:e:h")) != -1) {
+	while ((c = getopt(argc, argv, "i:f:o:b:c:s:n:v:m:k:l:e:h:p:")) != -1) {
 		switch (c) {
 			case 'i':
 				kernel = optarg;
@@ -289,22 +337,26 @@ int main(int argc, char **argv)
 			case 'e':
 				entry = strtoul(optarg, NULL, 16);
 				break;
+			case 'p':
+				profile = optarg;
+				break;
 			case 'h':
 			default:
-				fprintf(stderr, "Usage: imagetag <parameters>\n");
-				fprintf(stderr, "-i <kernel>   - The LZMA compressed kernel file to include in the image\n");
-				fprintf(stderr, "-f <rootfs>   - The RootFS file to include in the image\n");
-				fprintf(stderr, "-o <bin>      - The output file\n");
-				fprintf(stderr, "-b <boardid>  - The board id to set in the image (i.e. \"96345GW2\")\n");
-				fprintf(stderr, "-c <chipid>   - The chip id to set in the image (i.e. \"6345\")\n");
-				fprintf(stderr, "-s <flashstart>   - Flash start address (i.e. \"0xBFC00000\"\n");
-				fprintf(stderr, "-n <fwoffset>   - \n");
-				fprintf(stderr, "-v <version>	- \n");
-				fprintf(stderr, "-m <magic2>	- \n");
-				fprintf(stderr, "-k <flash_bs>	- \n");
-				fprintf(stderr, "-l <loadaddr> - Address where the kernel expects to be loaded (defaults to 0x80010000)\n");
-				fprintf(stderr, "-e <entry>    - Address where the kernel entry point will end up\n");
-				fprintf(stderr, "-h            - Displays this text\n");
+				fprintf(stderr, "Usage: imagetag <parameters>\n\n");
+				fprintf(stderr, "	-i <kernel>		- The LZMA compressed kernel file to include in the image\n");
+				fprintf(stderr, "	-f <rootfs>		- The RootFS file to include in the image\n");
+				fprintf(stderr, "	-o <bin>		- The output file\n");
+				fprintf(stderr, "	-b <boardid>		- The board id to set in the image (i.e. \"96345GW2\")\n");
+				fprintf(stderr, "	-c <chipid>		- The chip id to set in the image (i.e. \"6345\")\n");
+				fprintf(stderr, "	-s <flashstart> 	- Flash start address (i.e. \"0xBFC00000\"\n");
+				fprintf(stderr, "	-n <fwoffset>   	- \n");
+				fprintf(stderr, "	-v <version>		- \n");
+				fprintf(stderr, "	-m <magic2>		- \n");
+				fprintf(stderr, "	-k <flash_bs>		- flash erase block size\n");
+				fprintf(stderr, "	-l <loadaddr>		- Address where the kernel expects to be loaded (defaults to 0x80010000)\n");
+				fprintf(stderr, "	-e <entry>		- Address where the kernel entry point will end up\n");
+				fprintf(stderr, "	-p <profile>		- Specify profile for particular devices, use 'list' to see available devices\n");
+				fprintf(stderr, "	-h			- Displays this text\n\n");
 				return 1;
 		}
 	}
@@ -316,6 +368,21 @@ int main(int argc, char **argv)
 
 	if (entry == 0) {
 		fprintf(stderr, "You need to specify the kernel entry (-e)\n");
+		return 1;
+	}
+	
+	if (profile && (strcmp(profile, "list") == 0)) {
+		fprintf(stderr, "\n----------------------------------------\n");
+		fprintf(stderr, "\tAvailable Profiles:");
+		fprintf(stderr, "\n\n");
+		fprintf(stderr, "\t'alice'\tALICE GATE VoIP 2 Plus Wi-Fi Business");
+		fprintf(stderr, "\n----------------------------------------\n");
+		return 0;
+	}
+
+	/* If the profile increase should found another way of testing the validity */
+	if (profile && !(strcmp(profile, "alice") == 0)) {
+		fprintf(stderr, "You specified an inexistent profile %s, see the list of availables options\n", profile);
 		return 1;
 	}
 
@@ -340,6 +407,7 @@ int main(int argc, char **argv)
 		}
 		strcpy(ver, IMAGETAG_VER);
 	}
+		
 
-	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry, ver, magic2, flash_bs);
+	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry, ver, magic2, flash_bs, profile);
 }
