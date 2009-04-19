@@ -14,17 +14,21 @@ struct bcm_tag {
 	unsigned char totalLength[IMAGE_LEN];           //Total length of image
 	unsigned char cfeAddress[ADDRESS_LEN];  // Address in memory of CFE
 	unsigned char cfeLength[IMAGE_LEN];             // Size of CFE
-	unsigned char rootAddress[ADDRESS_LEN];         // Address in memory of rootfs
-	unsigned char rootLength[IMAGE_LEN];            // Size of rootfs
+	unsigned char cfeRootAddress[ADDRESS_LEN];         // Address in memory of rootfs
+	unsigned char cfeRootLength[IMAGE_LEN];            // Size of rootfs
 	unsigned char kernelAddress[ADDRESS_LEN];       // Address in memory of kernel
 	unsigned char kernelLength[IMAGE_LEN];  // Size of kernel
 	unsigned char dualImage[2];                             // Unused at present
 	unsigned char inactiveFlag[2];                  // Unused at present
 	unsigned char reserved1[74];                            // Reserved area not in use
 	unsigned char imageCRC[4];                              // CRC32 of images
-	unsigned char reserved2[16];                            // Unused at present
-	unsigned char headerCRC[4];                             // CRC32 of header excluding tagVersion
-	unsigned char reserved3[16];                            // Unused at present
+//      unsigned char reserved2[16];                    // Unused at present
+        unsigned char reserved2[4];                     //Unused
+        unsigned char rootAddress[ADDRESS_LEN];         // Address in memory of rootfs
+        unsigned char headerCRC[4];                     // CRC32 of header excluding tagVersion
+//      unsigned char reserved3[16];                    // Unused at present
+        unsigned char reserved3[6];                     // Unused at present
+        unsigned char rootLength[IMAGE_LEN];            // Size of rootfs
 };
 
 #endif /* __BCM63XX_TAG_H */
