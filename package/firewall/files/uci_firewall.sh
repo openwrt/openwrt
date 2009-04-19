@@ -401,12 +401,12 @@ fw_init() {
 	config_foreach fw_defaults defaults
 	echo "Loading zones"
 	config_foreach fw_zone zone
-	echo "Loading rules"
-	config_foreach fw_rule rule
 	echo "Loading forwarding"
 	config_foreach fw_forwarding forwarding
 	echo "Loading redirects"
 	config_foreach fw_redirect redirect
+	echo "Loading rules"
+	config_foreach fw_rule rule
 	echo "Loading includes"
 	config_foreach fw_include include
 	uci_set_state firewall core loaded 1
