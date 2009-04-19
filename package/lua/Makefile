@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.1.4
-PKG_RELEASE:=4
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
@@ -18,10 +18,6 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
 PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
-HOST_PATCH_DIR=./patches-host
-PKG_BUILD_DEPENDS:=lua/host zlib
-
-include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/lua/Default
@@ -84,20 +80,8 @@ $(call Package/lua/Default/description)
  This package contains LUA language examples.
 endef
 
-# Host build
-define Host/Configure
-
+define Build/Configure
 endef
-
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)/src luac-host
-endef
-
-define Host/Install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/src/luac-host $(STAGING_DIR_HOST)/bin/luac
-endef
-
-# Target build
 
 TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC)
 
@@ -106,8 +90,6 @@ ifneq ($(CONFIG_USE_EGLIBC),)
     TARGET_CFLAGS += -DNO_GETLOGIN
   endif
 endif
-
-Build/Configure=$(Host/Configure)
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -157,7 +139,6 @@ define Package/lua-examples/install
 		$(1)/usr/share/lua/examples/
 endef
 
-$(eval $(call HostBuild))
 $(eval $(call BuildPackage,liblua))
 $(eval $(call BuildPackage,lua))
 $(eval $(call BuildPackage,luac))

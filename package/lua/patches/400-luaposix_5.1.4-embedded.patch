@@ -6,8 +6,8 @@ Index: lua-5.1.4/src/Makefile
  AR= ar rcu
  RANLIB= ranlib
  RM= rm -f
--LIBS= -lm -lz $(MYLIBS)
-+LIBS= -lm -lz -lcrypt $(MYLIBS)
+-LIBS= -lm $(MYLIBS)
++LIBS= -lm -lcrypt $(MYLIBS)
  
  MYCFLAGS=
  MYLDFLAGS=
