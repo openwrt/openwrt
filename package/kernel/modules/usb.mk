@@ -665,6 +665,22 @@ endef
 
 $(eval $(call KernelPackage,usb-yealink))
 
+
+define KernelPackage/usb-cm109
+  $(call usbdep,@LINUX_2_6 +kmod-input-core +kmod-input-evdev)
+  TITLE:=Support for CM109 device
+  KCONFIG:=CONFIG_USB_CM109 CONFIG_INPUT_CM109 CONFIG_INPUT=m CONFIG_INPUT_MISC=y
+  FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/cm109.ko
+  AUTOLOAD:=$(call AutoLoad,70,cm109)
+endef
+
+define KernelPackage/usb-cm109/description
+ Kernel support for CM109 VOIP phone
+endef
+
+$(eval $(call KernelPackage,usb-cm109))
+
+
 define KernelPackage/usb-test
   $(call usbdep,@LINUX_2_6 @DEVEL)
   TITLE:=USB Testing Driver
