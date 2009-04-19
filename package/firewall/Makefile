@@ -42,6 +42,8 @@ define Package/firewall/install
 	$(INSTALL_BIN) ./files/firewall.init $(1)/etc/init.d/firewall
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/20-firewall $(1)/etc/hotplug.d/iface
+	$(INSTALL_DIR) $(1)/etc
+	$(INSTALL_DATA) ./files/firewall.user $(1)/etc
 endef
 
 $(eval $(call BuildPackage,firewall))
