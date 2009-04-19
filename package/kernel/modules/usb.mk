@@ -635,6 +635,22 @@ endef
 $(eval $(call KernelPackage,usb-net-cdc-ether))
 
 
+define KernelPackage/usb-net-rndis
+  $(call usbdep,kmod-usb-net @LINUX_2_6)
+  TITLE:=Support for RNDIS connections
+  DEPENDS:=+kmod-usb-net-cdc-ether
+  KCONFIG:=CONFIG_USB_NET_RNDIS_HOST 
+  FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/rndis_host.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,62,rndis_host)
+endef
+
+define KernelPackage/usb-net-rndis/description
+ Kernel support for RNDIS connections
+endef
+
+$(eval $(call KernelPackage,usb-net-rndis))
+
+
 define KernelPackage/usb-hid
   $(call usbdep,@LINUX_2_6 +kmod-input-core +kmod-input-evdev +kmod-hid)
   TITLE:=Support for USB Human Input Devices
