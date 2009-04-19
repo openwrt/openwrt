@@ -350,7 +350,7 @@ static int __init bcm63xx_spi_probe(struct platform_device *pdev)
 	bcm_spi_writew(SPI_CMD_HARD_RESET, bs->regs, SPI_CMD);
 	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, bs->regs, SPI_INT_MASK);
 	
-	dev_info(&pdev->dev, PFX " at 0x%08x (irq %d, FIFOs size %d) v%s\n",
+	dev_info(&pdev->dev, " at 0x%08x (irq %d, FIFOs size %d) v%s\n",
 				r->start, irq, bs->fifo_size, DRV_VER);
 
 	ret = spi_bitbang_start(&bs->bitbang);
