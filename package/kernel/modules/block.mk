@@ -339,7 +339,7 @@ $(eval $(call KernelPackage,aoe))
 define KernelPackage/ps3vram
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=PS3 Video RAM Storage Driver
-  DEPENDS:=@TARGET_ps3
+  DEPENDS:=@TARGET_ps3||TARGET_ps3chk
   KCONFIG:=CONFIG_PS3_VRAM
   FILES:=$(LINUX_DIR)/drivers/block/ps3vram.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,01,ps3vram)
