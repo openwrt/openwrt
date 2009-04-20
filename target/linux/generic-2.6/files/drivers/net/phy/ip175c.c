@@ -237,9 +237,8 @@ struct ip175c_state {
 	int router_mode;		// ROUTER_EN
 	int vlan_enabled;		// TAG_VLAN_EN
 	struct port_state {
-		struct phy_device *phy;
+		u16 pvid;
 		unsigned int shareports;
-		u16 vlan_tag;
 	} ports[MAX_PORTS];
 	unsigned int add_tag;
 	unsigned int remove_tag;
@@ -247,29 +246,47 @@ struct ip175c_state {
 	unsigned int vlan_ports[MAX_VLANS];
 	const struct register_mappings *regs;
 	reg proc_mii; /*!< phy/reg for the low level register access via /proc */
-	int proc_errno; /*!< error code of the last read/write to "val" */
 
 	char buf[80];
 };
 
+static int ip_phy_read(struct mii_bus *bus, int port, int reg)
+{
+	int val;
+
+	mutex_lock(&bus->mdio_lock);
+	val = bus->read(bus, port, reg);
+	mutex_unlock(&bus->mdio_lock);
+
+	return val;
+}
+
+
+static int ip_phy_write(struct mii_bus *bus, int port, int reg, u16 val)
+{
+	int err;
+
+	mutex_lock(&bus->mdio_lock);
+	err = bus->write(bus, port, reg, val);
+	mutex_unlock(&bus->mdio_lock);
+
+	return err;
+}
+
+
 static int getPhy (struct ip175c_state *state, reg mii)
 {
 	struct mii_bus *bus = state->mii_bus;
-	int err;
+	int val;
 
 	if (!REG_SUPP(mii))
 		return -EFAULT;
-	mutex_lock(&bus->mdio_lock);
-	err = bus->read(bus, mii.p, mii.m);
-	mutex_unlock(&bus->mdio_lock);
-	if (err < 0) {
-		state->proc_errno = err;
-		pr_warning("IP175C: Unable to get MII register %d,%d: error %d\n", mii.p,mii.m,-err);
-		return err;
-	}
 
-	pr_debug("IP175C: Read MII register %d,%d -> %04x\n", mii.p, mii.m, err);
-	return err;
+	val = ip_phy_read(bus, mii.p, mii.m);
+	if (val < 0)
+		pr_warning("IP175C: Unable to get MII register %d,%d: error %d\n", mii.p,mii.m,-val);
+
+	return val;
 }
 
 static int setPhy (struct ip175c_state *state, reg mii, u16 value)
@@ -279,17 +296,14 @@ static int setPhy (struct ip175c_state *state, reg mii, u16 value)
 
 	if (!REG_SUPP(mii))
 		return -EFAULT;
-	mutex_lock(&bus->mdio_lock);
-	err = bus->write(bus, mii.p, mii.m, value);
-	mutex_unlock(&bus->mdio_lock);
+
+	err = ip_phy_write(bus, mii.p, mii.m, value);
 	if (err < 0) {
-		state->proc_errno = err;
 		pr_warning("IP175C: Unable to set MII register %d,%d to %d: error %d\n", mii.p,mii.m,value,-err);
 		return err;
 	}
 	mdelay(2);
 	getPhy(state, mii);
-	pr_debug("IP175C: Set MII register %d,%d to %04x\n", mii.p, mii.m, value);
 	return 0;
 }
 
@@ -470,9 +484,9 @@ static int get_state(struct ip175c_state *state)
 			if (val < 0) {
 				return val;
 			}
-			state->ports[i].vlan_tag = val;
+			state->ports[i].pvid = val;
 		} else {
-			state->ports[i].vlan_tag = 0;
+			state->ports[i].pvid = 0;
 		}
 	}
 
@@ -493,8 +507,8 @@ static int get_state(struct ip175c_state *state)
 		for (j=0; j<MAX_VLANS; j++) {
 			state->vlan_ports[j] = 0;
 			for (i=0; i<state->regs->NUM_PORTS; i++) {
-				if ((state->ports[i].vlan_tag == j) ||
-						(state->ports[i].vlan_tag == 0)) {
+				if ((state->ports[i].pvid == j) ||
+						(state->ports[i].pvid == 0)) {
 					state->vlan_ports[j] |= (1<<i);
 				}
 			}
@@ -610,7 +624,7 @@ static int update_state(struct ip175c_state *state)
 	for (i=0; i<MAX_PORTS; i++) {
 		if (REG_SUPP(state->regs->VLAN_DEFAULT_TAG_REG[i])) {
 			int err = setPhy(state, state->regs->VLAN_DEFAULT_TAG_REG[i],
-				 	state->ports[i].vlan_tag);
+					state->ports[i].pvid);
 			if (err < 0) {
 				return err;
 			}
@@ -638,30 +652,19 @@ static void correct_vlan_state(struct ip175c_state *state)
 		}
 	}
 
-	for (i=0; i<state->regs->NUM_PORTS; i++) {
-		int oldtag = state->ports[i].vlan_tag;
-		if (oldtag >= 0 && oldtag < MAX_VLANS) {
-			if (state->vlan_ports[oldtag] & (1<<i)) {
-				continue; // primary vlan is valid.
-			}
-		}
-		state->ports[i].vlan_tag = 0;
-	}
+
 
 	for (i=0; i<state->regs->NUM_PORTS; i++) {
 		unsigned int portmask = (1<<i);
-		state->ports[i].shareports = portmask;
-		for (j=0; j<MAX_VLANS; j++) {
-			if (state->vlan_ports[j] & portmask) {
-				state->ports[i].shareports |= state->vlan_ports[j];
-				if (state->ports[i].vlan_tag == 0) {
-					state->ports[i].vlan_tag = j;
-				}
-			}
-		}
 		if (!state->vlan_enabled) {
 			// share with everybody!
 			state->ports[i].shareports = (1<<state->regs->NUM_PORTS)-1;
+			continue;
+		}
+		state->ports[i].shareports = portmask;
+		for (j=0; j<MAX_VLANS; j++) {
+			if (state->vlan_ports[j] & portmask)
+				state->ports[i].shareports |= state->vlan_ports[j];
 		}
 	}
 	state->remove_tag = ((~state->add_tag) & ((1<<state->regs->NUM_PORTS)-1));
@@ -700,13 +703,11 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 	// Otherwise, if we are switching state, set fields to a known default.
 	state->remove_tag = 0x0000;
 	state->add_tag = 0x0000;
-	for (i = 0; i < MAX_PORTS; i++) {
-		state->ports[i].vlan_tag = 0;
+	for (i = 0; i < MAX_PORTS; i++)
 		state->ports[i].shareports = 0xffff;
-	}
-	for (i = 0; i < MAX_VLANS; i++) {
+
+	for (i = 0; i < MAX_VLANS; i++)
 		state->vlan_ports[i] = 0x0;
-	}
 
 	if (state->vlan_enabled) {
 		// updates other fields only based off vlan_ports and add_tag fields.
@@ -773,15 +774,6 @@ static int ip175c_set_ports(struct switch_dev *dev, struct switch_val *val)
 			state->add_tag &= (~bitmask);
 		}
 	}
-	/*
-	// no primary vlan id support in swconfig?
-	// primary vlan will be set to the first non-zero vlan a port is a member of.
-	for (i = 0; i< state->regs->NUM_PORTS; i++) {
-		if (vlan_config->pvid & (1<<i)) {
-			state->ports[i].vlan_tag = nr;
-		}
-	}
-	*/
 
 	correct_vlan_state(state);
 	err = update_state(state);
@@ -954,10 +946,8 @@ static int ip175c_get_val(struct switch_dev *dev, const struct switch_attr *attr
 		retval = getPhy(state, state->proc_mii);
 
 	if (retval < 0) {
-		state->proc_errno = retval;
 		return retval;
 	} else {
-		state->proc_errno = 0;
 		val->value.i = retval;
 		return 0;
 	}
@@ -967,23 +957,13 @@ static int ip175c_get_val(struct switch_dev *dev, const struct switch_attr *attr
 static int ip175c_set_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
-	int myval;
+	int myval, err = 0;
 
 	myval = val->value.i;
 	if (myval <= 0xffff && myval >= 0 && REG_SUPP(state->proc_mii)) {
-		state->proc_errno = setPhy(state, state->proc_mii, (u16)myval);
-	} else {
-		state->proc_errno = -EINVAL;
+		err = setPhy(state, state->proc_mii, (u16)myval);
 	}
-	return state->proc_errno;
-}
-
-/*! get the errno of the last read/write of "val" */
-static int ip175c_get_errno(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
-{
-	struct ip175c_state *state = dev->priv;
-	val->value.i = state->proc_errno;
-	return 0;
+	return err;
 }
 
 static int ip175c_read_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
@@ -996,9 +976,9 @@ static int ip175c_read_name(struct switch_dev *dev, const struct switch_attr *at
 
 static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	int nr = val->port_vlan;
 	struct ip175c_state *state = dev->priv;
-	struct phy_device *phy;
+	struct mii_bus *bus = state->mii_bus;
+	int nr = val->port_vlan;
 	int ctrl;
 	int autoneg;
 	int speed;
@@ -1013,17 +993,14 @@ static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_att
 		speed = 1;
 	}
 
-	if (nr == state->regs->CPU_PORT) {
-		return -EINVAL; // can't set speed for cpu port!
-	}
+	/* can't set speed for cpu port */
+	if (nr == state->regs->CPU_PORT)
+		return -EINVAL;
 
 	if (nr >= dev->ports || nr < 0)
 		return -EINVAL;
-	phy = state->ports[nr].phy;
-	if (!phy)
-		return -EINVAL;
 
-	ctrl = phy_read(phy, 0);
+	ctrl = ip_phy_read(bus, nr, 0);
 	if (ctrl < 0)
 		return -EIO;
 
@@ -1032,14 +1009,14 @@ static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_att
 	ctrl |= (autoneg<<12);
 	ctrl |= (speed<<13);
 
-	return phy_write(phy, 0, ctrl);
+	return ip_phy_write(bus, nr, 0, ctrl);
 }
 
 static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	int nr = val->port_vlan;
 	struct ip175c_state *state = dev->priv;
-	struct phy_device *phy;
+	struct mii_bus *bus = state->mii_bus;
+	int nr = val->port_vlan;
 	int speed, status;
 
 	if (nr == state->regs->CPU_PORT) {
@@ -1049,12 +1026,9 @@ static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_att
 
 	if (nr >= dev->ports || nr < 0)
 		return -EINVAL;
-	phy = state->ports[nr].phy;
-	if (!phy)
-		return -EINVAL;
 
-	status = phy_read(phy, 1);
-	speed = phy_read(phy, 18);
+	status = ip_phy_read(bus, nr, 1);
+	speed = ip_phy_read(bus, nr, 18);
 	if (status < 0 || speed < 0)
 		return -EIO;
 
@@ -1069,10 +1043,10 @@ static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_att
 
 static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	int nr = val->port_vlan;
 	struct ip175c_state *state = dev->priv;
-	struct phy_device *phy;
+	struct mii_bus *bus = state->mii_bus;
 	int ctrl, speed, status;
+	int nr = val->port_vlan;
 	int len;
 	char *buf = state->buf; // fixed-length at 80.
 
@@ -1084,13 +1058,10 @@ static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_at
 
 	if (nr >= dev->ports || nr < 0)
 		return -EINVAL;
-	phy = state->ports[nr].phy;
-	if (!phy)
-		return -EINVAL;
 
-	ctrl = phy_read(phy, 0);
-	status = phy_read(phy, 1);
-	speed = phy_read(phy, 18);
+	ctrl = ip_phy_read(bus, nr, 0);
+	status = ip_phy_read(bus, nr, 1);
+	speed = ip_phy_read(bus, nr, 18);
 	if (ctrl < 0 || status < 0 || speed < 0)
 		return -EIO;
 
@@ -1115,10 +1086,32 @@ static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_at
 	return 0;
 }
 
+static int ip175c_get_pvid(struct switch_dev *dev, int port, int *val)
+{
+	struct ip175c_state *state = dev->priv;
+
+	*val = state->ports[port].pvid;
+	return 0;
+}
+
+static int ip175c_set_pvid(struct switch_dev *dev, int port, int val)
+{
+	struct ip175c_state *state = dev->priv;
+
+	state->ports[port].pvid = val;
+
+	if (!REG_SUPP(state->regs->VLAN_DEFAULT_TAG_REG[port]))
+		return 0;
+
+	return setPhy(state, state->regs->VLAN_DEFAULT_TAG_REG[port], val);
+}
+
+
 enum Ports {
 	IP175C_PORT_STATUS,
 	IP175C_PORT_LINK,
 	IP175C_PORT_TAGGED,
+	IP175C_PORT_PVID,
 };
 
 enum Globals {
@@ -1181,15 +1174,6 @@ static const struct switch_attr ip175c_global[] = {
 		.get  = ip175c_get_val,
 		.set = ip175c_set_val,
 	},
-	[IP175C_REGISTER_ERRNO] = {
-		.id = IP175C_REGISTER_ERRNO,
-		.type = SWITCH_TYPE_INT,
-		.description = "Direct register access: returns last read or write error",
-		.name  = "errno",
-		.get  = ip175c_get_errno,
-		.set = NULL,
-	},
-
 };
 
 static const struct switch_attr ip175c_vlan[] = {
@@ -1244,6 +1228,8 @@ static int ip175c_probe(struct phy_device *pdev)
 	dev->attr_vlan.attr = ip175c_vlan;
 	dev->attr_vlan.n_attr = ARRAY_SIZE(ip175c_vlan);
 
+	dev->get_port_pvid = ip175c_get_pvid;
+	dev->set_port_pvid = ip175c_set_pvid;
 	dev->get_vlan_ports = ip175c_get_ports;
 	dev->set_vlan_ports = ip175c_set_ports;
 	dev->apply_config = ip175c_apply;
