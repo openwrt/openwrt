@@ -59,7 +59,7 @@ struct swconfig_callback
 /* defaults */
 
 static int
-swconfig_get_vlan_ports(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+swconfig_get_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	int ret;
 	if (val->port_vlan >= dev->vlans)
@@ -73,7 +73,7 @@ swconfig_get_vlan_ports(struct switch_dev *dev, struct switch_attr *attr, struct
 }
 
 static int
-swconfig_set_vlan_ports(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	int i;
 
@@ -96,7 +96,7 @@ swconfig_set_vlan_ports(struct switch_dev *dev, struct switch_attr *attr, struct
 }
 
 static int
-swconfig_apply_config(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	/* don't complain if not supported by the switch driver */
 	if (!dev->apply_config)
@@ -350,7 +350,7 @@ swconfig_list_attrs(struct sk_buff *skb, struct genl_info *info)
 		if (alist->attr[i].disabled)
 			continue;
 		cb.args[0] = i;
-		err = swconfig_send_multipart(&cb, &alist->attr[i]);
+		err = swconfig_send_multipart(&cb, (void *) &alist->attr[i]);
 		if (err < 0)
 			goto error;
 	}
@@ -360,7 +360,7 @@ swconfig_list_attrs(struct sk_buff *skb, struct genl_info *info)
 		if (!test_bit(i, def_active))
 			continue;
 		cb.args[0] = SWITCH_ATTR_DEFAULTS_OFFSET + i;
-		err = swconfig_send_multipart(&cb, &def_list[i]);
+		err = swconfig_send_multipart(&cb, (void *) &def_list[i]);
 		if (err < 0)
 			goto error;
 	}
@@ -379,13 +379,13 @@ out:
 	return err;
 }
 
-static struct switch_attr *
+static const struct switch_attr *
 swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		struct switch_val *val)
 {
 	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
 	const struct switch_attrlist *alist;
-	struct switch_attr *attr = NULL;
+	const struct switch_attr *attr = NULL;
 	int attr_id;
 
 	/* defaults */
@@ -490,7 +490,7 @@ swconfig_parse_ports(struct sk_buff *msg, struct nlattr *head,
 static int
 swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 {
-	struct switch_attr *attr;
+	const struct switch_attr *attr;
 	struct switch_dev *dev;
 	struct switch_val val;
 	int err = -EINVAL;
@@ -620,7 +620,7 @@ static int
 swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 {
 	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
-	struct switch_attr *attr;
+	const struct switch_attr *attr;
 	struct switch_dev *dev;
 	struct sk_buff *msg = NULL;
 	struct switch_val val;
