@@ -243,13 +243,15 @@ define KernelPackage/bluetooth
 	CONFIG_BLUEZ_BNEP \
 	CONFIG_BLUEZ_HCIUART \
 	CONFIG_BLUEZ_HCIUSB \
+	CONFIG_BLUEZ_HIDP \
 	CONFIG_BT \
 	CONFIG_BT_L2CAP \
 	CONFIG_BT_SCO \
 	CONFIG_BT_RFCOMM \
 	CONFIG_BT_BNEP \
 	CONFIG_BT_HCIUSB \
-	CONFIG_BT_HCIUART
+	CONFIG_BT_HCIUART \
+	CONFIG_BT_HIDP
 endef
 
 define KernelPackage/bluetooth/2.4
@@ -287,9 +289,10 @@ define KernelPackage/bluetooth/2.6
 	$(LINUX_DIR)/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/hidp/hidp.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hci_uart hci_usb)
+  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart hci_usb)
 endef
 
 define KernelPackage/bluetooth/description
