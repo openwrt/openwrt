@@ -129,6 +129,8 @@ struct switch_dev {
 
 	int (*get_vlan_ports)(struct switch_dev *dev, struct switch_val *val);
 	int (*set_vlan_ports)(struct switch_dev *dev, struct switch_val *val);
+	int (*get_port_pvid)(struct switch_dev *dev, int port, int *val);
+	int (*set_port_pvid)(struct switch_dev *dev, int port, int val);
 	int (*apply_config)(struct switch_dev *dev);
 };
 

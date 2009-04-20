@@ -75,6 +75,7 @@ swconfig_get_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 static int
 swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
+	struct switch_port *ports = val->value.ports;
 	int i;
 
 	if (val->port_vlan >= dev->vlans)
@@ -84,15 +85,42 @@ swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 	if (val->len > dev->ports)
 		return -EINVAL;
 
-	for (i = 0; i < val->len; i++) {
-		if (val->value.ports[i].id >= dev->ports)
-			return -EINVAL;
-	}
-
 	if (!dev->set_vlan_ports)
 		return -EOPNOTSUPP;
 
+	for (i = 0; i < val->len; i++) {
+		if (ports[i].id >= dev->ports)
+			return -EINVAL;
+
+		if (dev->set_port_pvid && !(ports[i].flags & SWITCH_PORT_FLAG_TAGGED))
+			dev->set_port_pvid(dev, ports[i].id, val->port_vlan);
+	}
+
 	return dev->set_vlan_ports(dev, val);
+}
+
+static int
+swconfig_set_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	if (val->port_vlan >= dev->ports)
+		return -EINVAL;
+
+	if (!dev->set_port_pvid)
+		return -EOPNOTSUPP;
+
+	return dev->set_port_pvid(dev, val->port_vlan, val->value.i);
+}
+
+static int
+swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	if (val->port_vlan >= dev->ports)
+		return -EINVAL;
+
+	if (!dev->get_port_pvid)
+		return -EOPNOTSUPP;
+
+	return dev->get_port_pvid(dev, val->port_vlan, &val->value.i);
 }
 
 static int
@@ -115,7 +143,7 @@ enum vlan_defaults {
 };
 
 enum port_defaults {
-	PORT_LINK,
+	PORT_PVID,
 };
 
 static struct switch_attr default_global[] = {
@@ -128,10 +156,12 @@ static struct switch_attr default_global[] = {
 };
 
 static struct switch_attr default_port[] = {
-	[PORT_LINK] = {
+	[PORT_PVID] = {
 		.type = SWITCH_TYPE_INT,
-		.name = "link",
-		.description = "Current link speed",
+		.name = "pvid",
+		.description = "Primary VLAN ID",
+		.set = swconfig_set_pvid,
+		.get = swconfig_get_pvid,
 	}
 };
 
@@ -154,6 +184,9 @@ static void swconfig_defaults_init(struct switch_dev *dev)
 
 	if (dev->get_vlan_ports || dev->set_vlan_ports)
 		set_bit(VLAN_PORTS, &dev->def_vlan);
+
+	if (dev->get_port_pvid || dev->set_port_pvid)
+		set_bit(PORT_PVID, &dev->def_port);
 
 	/* always present, can be no-op */
 	set_bit(GLOBAL_APPLY, &dev->def_global);
