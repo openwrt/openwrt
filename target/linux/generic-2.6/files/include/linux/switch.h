@@ -104,7 +104,7 @@ void unregister_switch(struct switch_dev *dev);
 struct switch_attrlist {
 	/* filled in by the driver */
 	int n_attr;
-	struct switch_attr *attr;
+	const struct switch_attr *attr;
 };
 
 
@@ -138,7 +138,7 @@ struct switch_port {
 };
 
 struct switch_val {
-	struct switch_attr *attr;
+	const struct switch_attr *attr;
 	int port_vlan;
 	int len;
 	union {
@@ -154,8 +154,8 @@ struct switch_attr {
 	const char *name;
 	const char *description;
 
-	int (*set)(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val);
-	int (*get)(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val);
+	int (*set)(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val);
+	int (*get)(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val);
 
 	/* for driver internal use */
 	int id;
