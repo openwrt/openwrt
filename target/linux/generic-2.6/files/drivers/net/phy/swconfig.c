@@ -69,7 +69,6 @@ swconfig_get_vlan_ports(struct switch_dev *dev, struct switch_attr *attr, struct
 		return -EOPNOTSUPP;
 
 	ret = dev->get_vlan_ports(dev, val);
-	printk("SET PORTS %d\n", val->len);
 	return ret;
 }
 
@@ -93,7 +92,6 @@ swconfig_set_vlan_ports(struct switch_dev *dev, struct switch_attr *attr, struct
 	if (!dev->set_vlan_ports)
 		return -EOPNOTSUPP;
 
-	printk("SET PORTS %d\n", val->len);
 	return dev->set_vlan_ports(dev, val);
 }
 
