@@ -115,6 +115,8 @@ ifndef DUMP
 	$(call Host/Prepare)
 	touch $$@
 
+  $(HOST_STAMP_CONFIGURED) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
+  $(HOST_STAMP_CONFIGURED) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
 	$(call Host/Configure)
 	touch $$@

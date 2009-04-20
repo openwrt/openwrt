@@ -43,9 +43,6 @@ ifneq ($(strip $(PKG_UNPACK)),)
   endef
 endif
 
-export PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR_HOST)/usr/lib/pkgconfig
-export PKG_CONFIG_LIBDIR=$(STAGING_DIR)/usr/lib/pkgconfig
-
 CONFIGURE_PREFIX:=/usr
 CONFIGURE_ARGS = \
 		--target=$(GNU_TARGET_NAME) \
