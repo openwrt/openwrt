@@ -594,7 +594,7 @@ $(eval $(call KernelPackage,input-core))
 
 define KernelPackage/input-evdev
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Input even device
+  TITLE:=Input event device
   DEPENDS:=+kmod-input-core
   KCONFIG:=CONFIG_INPUT_EVDEV
   FILES:=$(LINUX_DIR)/drivers/input/evdev.$(LINUX_KMOD_SUFFIX)
@@ -610,7 +610,7 @@ $(eval $(call KernelPackage,input-evdev))
 
 define KernelPackage/hid
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Input even device
+  TITLE:=HID Devices
   DEPENDS:=+kmod-input-core +kmod-input-evdev
   KCONFIG:=CONFIG_HID
   FILES:=$(LINUX_DIR)/drivers/hid/hid.$(LINUX_KMOD_SUFFIX)
