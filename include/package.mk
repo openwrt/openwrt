@@ -78,6 +78,8 @@ define Build/DefaultTargets
 
   $(STAMP_CONFIGURED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_CONFIGURED) : export CONFIG_SITE:=$$(CONFIG_SITE)
+  $(STAMP_CONFIGURED) : export PKG_CONFIG_PATH=$$(STAGING_DIR)/usr/lib/pkgconfig
+  $(STAMP_CONFIGURED) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR)/usr/lib/pkgconfig
   $(STAMP_CONFIGURED): $(STAMP_PREPARED)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
@@ -86,6 +88,8 @@ define Build/DefaultTargets
 
   $(STAMP_BUILT) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_BUILT) : export CONFIG_SITE:=$$(CONFIG_SITE)
+  $(STAMP_BUILT) : export PKG_CONFIG_PATH=$$(STAGING_DIR)/usr/lib/pkgconfig:$$(STAGING_DIR_HOST)/usr/lib/pkgconfig
+  $(STAMP_BUILT) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR)/usr/lib/pkgconfig
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
