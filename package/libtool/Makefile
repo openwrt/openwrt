@@ -17,6 +17,9 @@ PKG_MD5SUM:=d0071c890101fcf4f2be8934a37841b0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
+HOST_PATCH_DIR=/dev/null
+
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 CONFIGURE_PREFIX=$(STAGING_DIR)/host
@@ -39,8 +42,6 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include
 	mv $(2)/lib/* $(1)/usr/lib/
 	mv $(2)/include/* $(1)/usr/include/
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/share/aclocal
-	$(CP) $(2)/share/aclocal/* $(STAGING_DIR_HOST)/share/aclocal/
 	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(2)/bin/libtool
 endef
 
@@ -49,4 +50,5 @@ define Package/libltdl/install
 	$(CP) $(PKG_BUILD_DIR)/libltdl/.libs/libltdl.so.* $(1)/usr/lib/
 endef
 
+$(eval $(call HostBuild))
 $(eval $(call BuildPackage,libltdl))
