@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/swconfig
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@LINUX_2_6_26||LINUX_2_6_27
+  DEPENDS:=@LINUX_2_6_26||LINUX_2_6_27||LINUX_2_6_28||LINUX_2_6_29
   TITLE:=Switch configuration utility
 endef
 
