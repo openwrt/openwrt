@@ -21,7 +21,7 @@ define Package/ps3-utils
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=PS3 Linux Utilities
-  DEPENDS:=@TARGET_ps3
+  DEPENDS:=@TARGET_ps3||TARGET_ps3chk
   URL:=http://kernel.org/pub/linux/kernel/people/geoff/cell/ps3-utils/
 endef
 
