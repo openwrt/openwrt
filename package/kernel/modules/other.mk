@@ -657,6 +657,21 @@ endef
 
 $(eval $(call KernelPackage,input-gpio-buttons))
 
+define KernelPackage/input-joydev
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Joystick device support
+  DEPENDS:=+kmod-input-core
+  KCONFIG:=CONFIG_INPUT_JOYDEV
+  FILES:=$(LINUX_DIR)/drivers/input/joydev.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,62,joydev)
+endef
+
+define KernelPackage/input-joydev/description
+  Kernel module for joystick support
+endef
+
+$(eval $(call KernelPackage,input-joydev))
+
 
 define KernelPackage/mmc-spi
   SUBMENU:=$(OTHER_MENU)
