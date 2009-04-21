@@ -39,7 +39,7 @@ define Image/Build
 		-B XS2-8 -v XS2.ar2316.OpenWrt.$(REVISION) \
 		-k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt2-8-$(1).bin
+		-o $(BIN_DIR)/openwrt-$(BOARD)-ubnt2-pico2-$(1).bin
 
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B np25g \
 		-p0x020000:0x130000:ah:0x80041000:linux:$(KDIR)/vmlinux.bin.gz  \
