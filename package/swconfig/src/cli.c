@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <uci.h>
 
 #include <linux/types.h>
 #include <linux/netlink.h>
@@ -32,10 +33,14 @@
 #include <linux/switch.h>
 #include "swlib.h"
 
-#define GET		1
-#define SET		2
+enum {
+	GET,
+	SET,
+	LOAD
+};
 
-void print_attrs(struct switch_attr *attr)
+static void
+print_attrs(const struct switch_attr *attr)
 {
 	int i = 0;
 	while (attr) {
@@ -62,7 +67,8 @@ void print_attrs(struct switch_attr *attr)
 	}
 }
 
-void list_attributes(struct switch_dev *dev)
+static void
+list_attributes(struct switch_dev *dev)
 {
 	printf("Switch %d: %s(%s), ports: %d, vlans: %d\n", dev->id, dev->dev_name, dev->name, dev->ports, dev->vlans);
 	printf("     --switch\n");
@@ -73,10 +79,38 @@ void list_attributes(struct switch_dev *dev)
 	print_attrs(dev->port_ops);
 }
 
-void print_usage(void)
+static void
+print_usage(void)
 {
-	printf("swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>)\n");
-	exit(0);
+	printf("swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>)\n");
+	exit(1);
+}
+
+static void
+swconfig_load_uci(struct switch_dev *dev, const char *name)
+{
+	struct uci_context *ctx;
+	struct uci_package *p = NULL;
+	struct uci_element *e;
+	int ret = -1;
+
+	ctx = uci_alloc_context();
+	if (!ctx)
+		return;
+
+	uci_load(ctx, name, &p);
+	if (!p) {
+		uci_perror(ctx, "Failed to load config file: ");
+		goto out;
+	}
+
+	ret = swlib_apply_from_uci(dev, p);
+	if (ret < 0)
+		fprintf(stderr, "Failed to apply configuration for switch '%s'\n", dev->dev_name);
+
+out:
+	uci_free_context(ctx);
+	exit(ret);
 }
 
 int main(int argc, char **argv)
@@ -109,22 +143,18 @@ int main(int argc, char **argv)
 	for(i = 3; i < argc; i++)
 	{
 		int p;
-		if(!strcmp(argv[i], "help"))
-		{
+		if (!strcmp(argv[i], "help")) {
 			chelp = 1;
 			continue;
 		}
-		if(i + 1 >= argc)
+		if( i + 1 >= argc)
 			print_usage();
 		p = atoi(argv[i + 1]);
-		if(!strcmp(argv[i], "port"))
-		{
+		if (!strcmp(argv[i], "port")) {
 			cport = p;
-		} else if(!strcmp(argv[i], "vlan"))
-		{
+		} else if (!strcmp(argv[i], "vlan")) {
 			cvlan = p;
-		} else if(!strcmp(argv[i], "set"))
-		{
+		} else if (!strcmp(argv[i], "set")) {
 			if(argc <= i + 1)
 				print_usage();
 			cmd = SET;
@@ -134,11 +164,16 @@ int main(int argc, char **argv)
 			else
 				cvalue = NULL;
 			i++;
-		} else if(!strcmp(argv[i], "get"))
-		{
+		} else if (!strcmp(argv[i], "get")) {
 			cmd = GET;
 			ckey = argv[i + 1];
-		} else{
+		} else if (!strcmp(argv[i], "load")) {
+			if ((cport >= 0) || (cvlan >= 0))
+				print_usage();
+
+			ckey = argv[i + 1];
+			cmd = LOAD;
+		} else {
 			print_usage();
 		}
 		i++;
@@ -163,17 +198,19 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	if(cport > -1)
-		a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_PORT, ckey);
-	else if(cvlan > -1)
-		a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_VLAN, ckey);
-	else
-		a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_GLOBAL, ckey);
+	if (cmd != LOAD) {
+		if(cport > -1)
+			a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_PORT, ckey);
+		else if(cvlan > -1)
+			a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_VLAN, ckey);
+		else
+			a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_GLOBAL, ckey);
 
-	if(!a)
-	{
-		fprintf(stderr, "Unknown attribute \"%s\"\n", ckey);
-		goto out;
+		if(!a)
+		{
+			fprintf(stderr, "Unknown attribute \"%s\"\n", ckey);
+			goto out;
+		}
 	}
 
 	switch(cmd)
@@ -183,38 +220,10 @@ int main(int argc, char **argv)
 				(cvalue == NULL))
 			print_usage();
 
-		switch(a->type) {
-		case SWITCH_TYPE_INT:
-			val.value.i = atoi(cvalue);
-			break;
-		case SWITCH_TYPE_STRING:
-			val.value.s = cvalue;
-			break;
-		case SWITCH_TYPE_PORTS:
-			val.len = 0;
-			while(cvalue && *cvalue)
-			{
-				ports[val.len].flags = 0;
-				ports[val.len].id = strtol(cvalue, &cvalue, 10);
-				while(*cvalue && !isspace(*cvalue)) {
-					if (*cvalue == 't')
-						ports[val.len].flags |= SWLIB_PORT_FLAG_TAGGED;
-					cvalue++;
-				}
-				if (*cvalue)
-					cvalue++;
-				val.len++;
-			}
-			val.value.ports = ports;
-			break;
-		default:
-			break;
-		}
 		if(cvlan > -1)
-			val.port_vlan = cvlan;
-		if(cport > -1)
-			val.port_vlan = cport;
-		if(swlib_set_attr(dev, a, &val) < 0)
+			cport = cvlan;
+
+		if(swlib_set_attr_string(dev, a, cport, cvalue) < 0)
 		{
 			fprintf(stderr, "failed\n");
 			retval = -1;
@@ -245,6 +254,10 @@ int main(int argc, char **argv)
 			printf("\n");
 			break;
 		}
+		break;
+	case LOAD:
+		swconfig_load_uci(dev, ckey);
+		break;
 	}
 
 out:
