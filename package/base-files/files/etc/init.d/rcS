@@ -2,7 +2,7 @@
 # Copyright (C) 2006 OpenWrt.org
 
 LOGGER="cat"
-[ -x /usr/bin/logger ] && LOGGER="logger -s -p 6 -t ''"
+[ -x /usr/bin/logger ] && LOGGER="logger -s -p 6 -t sysinit"
 
 {
 	for i in /etc/rc.d/$1*; do
