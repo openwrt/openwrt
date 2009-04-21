@@ -48,7 +48,10 @@ find $TARGETS -type f -a -exec file {} \; | \
 	[ "${S}" = "relocatable" ] && {
 		eval "$STRIP_KMOD -w -K '__param*' -K '__mod*' $(find_modparams "$F")$F"
 	} || {
+		b=$(stat -c '%a' $F)
 		eval "$STRIP $F"
+		a=$(stat -c '%a' $F)
+		[ "$a" = "$b" ] || chmod $b $F
 	}
   done
   true
