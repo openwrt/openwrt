@@ -15,7 +15,7 @@ LINUX_VERSION:=2.6.28.9
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += hostapd-mini kmod-madwifi gpioctl
+DEFAULT_PACKAGES += hostapd-mini kmod-madwifi gpioctl swconfig
 
 define Target/Description
 	Build firmware images for Atheros SoC boards
