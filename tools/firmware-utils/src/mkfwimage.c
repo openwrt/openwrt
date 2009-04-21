@@ -63,6 +63,12 @@ fw_layout_t fw_layout_data[] = {
 		.kern_entry	=	0x80060000,
 		.firmware_max_length=	0x00640000,
 	},
+	{
+		.name		=	"XS2-8",
+		.kern_start	=	0xa8030000,
+		.kern_entry	=	0x80041000,
+		.firmware_max_length=	0x006C0000,
+	},
 	{	.name		=	"",
 	},
 };
