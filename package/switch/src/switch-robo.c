@@ -70,6 +70,7 @@
 
 
 extern char *nvram_get(const char *name);
+#define getvar(str) (nvram_get(str)?:"")
 
 /* Data structure for a Roboswitch device. */
 struct robo_switch {
@@ -275,7 +276,7 @@ static int robo_switch_enable(void)
 	}
 
 	/* WAN port LED, except for Netgear WGT634U */
-	if (strcmp(nvram_get("nvram_type"), "cfe"))
+	if (strcmp(getvar("nvram_type"), "cfe") != 0)
 		robo_write16(ROBO_CTRL_PAGE, 0x16, 0x1F);
 
 	return 0;
