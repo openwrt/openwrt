@@ -1,7 +1,7 @@
 /*
  * swlib.h: Switch configuration API (user space part)
  *
- * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2008-2009 Felix Fietkau <nbd@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -110,6 +110,7 @@ struct switch_dev;
 struct switch_attr;
 struct switch_port;
 struct switch_val;
+struct uci_package;
 
 struct switch_dev {
 	int id;
@@ -200,6 +201,17 @@ int swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr,
 		struct switch_val *val);
 
 /**
+ * swlib_set_attr_string: set the value for an attribute with type conversion
+ * @dev: switch device struct
+ * @attr: switch attribute struct
+ * @port_vlan: port or vlan (if applicable)
+ * @str: string value
+ * returns 0 on success
+ */
+int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *attr,
+		int port_vlan, const char *str);
+
+/**
  * swlib_get_attr: get the value for an attribute
  * @dev: switch device struct
  * @attr: switch attribute struct
@@ -209,5 +221,12 @@ int swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr,
  */
 int swlib_get_attr(struct switch_dev *dev, struct switch_attr *attr,
 		struct switch_val *val);
+
+/**
+ * swlib_apply_from_uci: set up the switch from a uci configuration
+ * @dev: switch device struct
+ * @p: uci package which contains the desired global config
+ */
+int swlib_apply_from_uci(struct switch_dev *dev, struct uci_package *p);
 
 #endif

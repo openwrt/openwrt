@@ -343,6 +343,49 @@ swlib_set_attr(struct switch_dev *dev, struct switch_attr *attr, struct switch_v
 	return swlib_call(cmd, NULL, send_attr_val, val);
 }
 
+int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int port_vlan, const char *str)
+{
+	struct switch_port *ports;
+	struct switch_val val;
+	char *ptr;
+
+	memset(&val, 0, sizeof(val));
+	val.port_vlan = port_vlan;
+	switch(a->type) {
+	case SWITCH_TYPE_INT:
+		val.value.i = atoi(str);
+		break;
+	case SWITCH_TYPE_STRING:
+		val.value.s = str;
+		break;
+	case SWITCH_TYPE_PORTS:
+		ports = alloca(sizeof(struct switch_port) * dev->ports);
+		memset(ports, 0, sizeof(struct switch_port) * dev->ports);
+		val.len = 0;
+		ptr = (char *)str;
+		while(ptr && *ptr)
+		{
+			ports[val.len].flags = 0;
+			ports[val.len].id = strtoul(ptr, &ptr, 10);
+			while(*ptr && !isspace(*ptr)) {
+				if (*ptr == 't')
+					ports[val.len].flags |= SWLIB_PORT_FLAG_TAGGED;
+				ptr++;
+			}
+			if (*ptr)
+				ptr++;
+			val.len++;
+		}
+		val.value.ports = ports;
+		break;
+	case SWITCH_TYPE_NOVAL:
+		break;
+	default:
+		return -1;
+	}
+	return swlib_set_attr(dev, a, &val);
+}
+
 
 struct attrlist_arg {
 	int id;

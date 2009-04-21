@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/swconfig
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@LINUX_2_6_26||LINUX_2_6_27||LINUX_2_6_28||LINUX_2_6_29
+  DEPENDS:=@LINUX_2_6_26||LINUX_2_6_27||LINUX_2_6_28||LINUX_2_6_29 +libuci
   TITLE:=Switch configuration utility
 endef
 
@@ -34,7 +34,7 @@ define Build/Compile
 	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		LIBS="$(STAGING_DIR)/usr/lib/libnl.a -lm"
+		LIBS="-L$(STAGING_DIR)/usr/lib $(STAGING_DIR)/usr/lib/libnl.a -lm -luci"
 endef
 
 define Package/swconfig/install
