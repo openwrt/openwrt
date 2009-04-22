@@ -235,6 +235,25 @@ define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
+  KCONFIG:= \
+	CONFIG_BLUEZ \
+	CONFIG_BLUEZ_L2CAP \
+	CONFIG_BLUEZ_SCO \
+	CONFIG_BLUEZ_RFCOMM \
+	CONFIG_BLUEZ_BNEP \
+	CONFIG_BLUEZ_HCIUART \
+	CONFIG_BLUEZ_HCIUSB \
+	CONFIG_BLUEZ_HIDP \
+	CONFIG_BT \
+	CONFIG_BT_L2CAP \
+	CONFIG_BT_SCO \
+	CONFIG_BT_RFCOMM \
+	CONFIG_BT_BNEP \
+	CONFIG_BT_HCIBTUSB \
+	CONFIG_BT_HCIUART \
+	CONFIG_BT_HIDP
+else
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -252,6 +271,7 @@ define KernelPackage/bluetooth
 	CONFIG_BT_HCIUSB \
 	CONFIG_BT_HCIUART \
 	CONFIG_BT_HIDP
+endif
 endef
 
 define KernelPackage/bluetooth/2.4
@@ -283,6 +303,18 @@ define KernelPackage/bluetooth/2.6
 #	CONFIG_BT_BNEP \
 #	CONFIG_BT_HCIUSB \
 #	CONFIG_BT_HCIUART
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
+  FILES:= \
+	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/hidp/hidp.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/bluetooth/btusb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart btusb)
+else
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -293,6 +325,7 @@ define KernelPackage/bluetooth/2.6
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart hci_usb)
+endif
 endef
 
 define KernelPackage/bluetooth/description
