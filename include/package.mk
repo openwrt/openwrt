@@ -62,6 +62,16 @@ define sep
 
 endef
 
+define Build/Exports/Default
+  $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR)/usr/share/aclocal $$(STAGING_DIR)/usr/share/aclocal-* $$(STAGING_DIR)/host/share/aclocal $$(STAGING_DIR)/host/share/aclocal-*),-I $$(p))
+  $(1) : export STAGING_PREFIX=$$(STAGING_DIR)/usr
+  $(1) : export PATH=$$(TARGET_PATH_PKG)
+  $(1) : export CONFIG_SITE:=$$(CONFIG_SITE)
+  $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR)/usr/lib/pkgconfig
+  $(1) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR)/usr/lib/pkgconfig
+endef
+Build/Exports=$(Build/Exports/Default)
+
 define Build/DefaultTargets
   $(if $(QUILT),$(Build/Quilt))
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
@@ -76,20 +86,14 @@ define Build/DefaultTargets
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
 	touch $$@
 
-  $(STAMP_CONFIGURED) : export PATH=$$(TARGET_PATH_PKG)
-  $(STAMP_CONFIGURED) : export CONFIG_SITE:=$$(CONFIG_SITE)
-  $(STAMP_CONFIGURED) : export PKG_CONFIG_PATH=$$(STAGING_DIR)/usr/lib/pkgconfig
-  $(STAMP_CONFIGURED) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR)/usr/lib/pkgconfig
+  $(call Build/Exports,$(STAMP_CONFIGURED))
   $(STAMP_CONFIGURED): $(STAMP_PREPARED)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
 	touch $$@
 
-  $(STAMP_BUILT) : export PATH=$$(TARGET_PATH_PKG)
-  $(STAMP_BUILT) : export CONFIG_SITE:=$$(CONFIG_SITE)
-  $(STAMP_BUILT) : export PKG_CONFIG_PATH=$$(STAGING_DIR)/usr/lib/pkgconfig:$$(STAGING_DIR_HOST)/usr/lib/pkgconfig
-  $(STAMP_BUILT) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR)/usr/lib/pkgconfig
+  $(call Build/Exports,$(STAMP_BUILT))
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
