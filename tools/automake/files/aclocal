@@ -1,10 +1,2 @@
 #!/usr/bin/env sh
-if [ -d ${STAGING_DIR}/host/share/aclocal ]; then
-    aclocal_include_dirs="-I ${STAGING_DIR}/host/share/aclocal"
-else
-    aclocal_include_dirs=
-fi
-if [ -d ${STAGING_DIR}/usr/share/aclocal ]; then
-    aclocal_include_dirs="$aclocal_include_dirs -I ${STAGING_DIR}/usr/share/aclocal"
-fi
-aclocal.real $aclocal_include_dirs $@
+aclocal.real $ACLOCAL_INCLUDE $@

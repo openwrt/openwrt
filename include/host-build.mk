@@ -103,6 +103,14 @@ define Download/default
   MD5SUM:=$(PKG_MD5SUM)
 endef
 
+define Host/Exports/Default
+  $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR_HOST)/share/aclocal $$(STAGING_DIR_HOST)/share/aclocal-*),-I $$(p))
+  $(1) : export STAGING_PREFIX=$$(STAGING_DIR_HOST)
+  $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
+  $(1) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
+endef
+Host/Exports=$(Host/Exports/Default)
+
 ifndef DUMP
   define HostBuild
   $(if $(HOST_QUILT),$(Host/Quilt))
@@ -115,12 +123,12 @@ ifndef DUMP
 	$(call Host/Prepare)
 	touch $$@
 
-  $(HOST_STAMP_CONFIGURED) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
-  $(HOST_STAMP_CONFIGURED) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
+  $(call Host/Exports,$(STAMP_CONFIGURED))
   $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
 	$(call Host/Configure)
 	touch $$@
 
+  $(call Host/Exports,$(STAMP_BUILT))
   $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
 	$(call Host/Compile)
 	touch $$@
