@@ -19,6 +19,8 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 HOST_PATCH_DIR=/dev/null
 
+PKG_BUILD_DEPENDS:=libtool/host
+
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
