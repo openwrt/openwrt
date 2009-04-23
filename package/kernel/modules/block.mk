@@ -36,12 +36,12 @@ $(eval $(call KernelPackage,ata-ahci))
 
 
 define KernelPackage/ata-sil24
-  SUBMENU:=3D$(BLOCK_MENU)
-  TITLE:=3DSilicon Image 3124/3132 SATA support
-  DEPENDS:=3Dkmod-ata-core
-  KCONFIG:=3DCONFIG_SATA_SIL24
-  FILES:=3D$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=3D$(call AutoLoad,41,sata_sil24)
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Silicon Image 3124/3132 SATA support
+  DEPENDS:=kmod-ata-core
+  KCONFIG:=CONFIG_SATA_SIL24
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,sata_sil24)
 endef
 
 define KernelPackage/ata-sil24/description
