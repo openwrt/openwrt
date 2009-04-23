@@ -1,8 +1,8 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -77,6 +77,11 @@ config ADM6996_PHY
- 	---help---
- 	  Currently supports the ADM6996F switch
+@@ -80,6 +80,11 @@ config ADM6996_PHY
+ config MVSWITCH_PHY
+ 	tristate "Driver for Marvell 88E6060 switches"
  
 +config MICREL_PHY
 +	tristate "Drivers for Micrel/Kendin PHYs"
@@ -14,9 +14,9 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -15,6 +15,7 @@ obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
- obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
+@@ -16,6 +16,7 @@ obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+ obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
 +obj-$(CONFIG_MICREL_PHY)	+= micrel.o
  obj-$(CONFIG_FIXED_PHY)		+= fixed.o
