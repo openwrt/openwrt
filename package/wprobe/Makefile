@@ -103,8 +103,8 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_BUILD_DIR)/kernel/linux $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include/wprobe
+	$(CP) $(PKG_BUILD_DIR)/kernel/linux $(1)/usr/include/wprobe
 endef
 
 define Package/wprobe-info/install
