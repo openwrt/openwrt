@@ -119,7 +119,13 @@ LINUX_SUBCONFIG?=$(firstword $(wildcard $(PLATFORM_SUBDIR)/config-$(KERNEL_PATCH
 ifeq ($(LINUX_CONFIG),$(LINUX_SUBCONFIG))
   LINUX_SUBCONFIG:=
 endif
-LINUX_CONFCMD=$(if $(LINUX_CONFIG),$(SCRIPT_DIR)/kconfig.pl + $(GENERIC_LINUX_CONFIG) $(if $(LINUX_SUBCONFIG),+ $(LINUX_CONFIG) $(LINUX_SUBCONFIG),$(LINUX_CONFIG)),true)
+LINUX_CONFCMD=$(if $(LINUX_CONFIG), \
+	$(if $(GENERIC_LINUX_CONFIG),,$(error The generic kernel config for your kernel version is mising)) \
+	$(if $(LINUX_CONFIG),,$(error The target kernel config for your kernel version is mising)) \
+	$(SCRIPT_DIR)/kconfig.pl \
+		+ $(GENERIC_LINUX_CONFIG) \
+		$(if $(LINUX_SUBCONFIG),+ $(LINUX_CONFIG) $(LINUX_SUBCONFIG),$(LINUX_CONFIG)), \
+	true)
 
 ifeq ($(DUMP),1)
   BuildTarget=$(BuildTargets/DumpCurrent)
