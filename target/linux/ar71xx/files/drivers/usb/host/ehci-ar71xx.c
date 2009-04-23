@@ -30,6 +30,7 @@ static int ehci_ar71xx_init(struct usb_hcd *hcd)
 	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
 
 	ehci->sbrn = 0x20;
+	ehci->has_synopsys_hc_bug = 1;
 
 	ehci_reset(ehci);
 
