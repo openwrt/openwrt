@@ -176,7 +176,7 @@ MADWIFI_INC = \
 	-I$(PKG_BUILD_DIR)/ath \
 	-I$(PKG_BUILD_DIR)/ath_hal \
 	-I$(PKG_BUILD_DIR)/net80211 \
-	-I$(STAGING_DIR)/usr/include \
+	-I$(STAGING_DIR)/usr/include/wprobe \
 	-include $(PKG_BUILD_DIR)/include/compat.h
 
 MAKE_ARGS:= \
