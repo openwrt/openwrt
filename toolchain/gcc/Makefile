@@ -44,6 +44,9 @@ endif
 ifeq ($(PKG_VERSION),4.3.3)
   PKG_MD5SUM:=cc3c5565fdb9ab87a05ddb106ba0bd1f
 endif
+ifeq ($(PKG_VERSION),4.4.0)
+  PKG_MD5SUM:=cf5d787bee57f38168b74d65a7c0e6fd
+endif
 
 PATCH_DIR=./patches/$(PKG_VERSION)
 
@@ -75,7 +78,7 @@ GCC_CONFIGURE:= \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
 
-ifneq ($(CONFIG_GCC_VERSION_4_3),)
+ifneq ($(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),)
   GCC_BUILD_TARGET_LIBGCC:=y
   GCC_CONFIGURE+= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
@@ -236,7 +239,7 @@ define Host/Prepare
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/
 	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(HOST_BUILD_DIR)/gcc/version.c
 	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(HOST_BUILD_DIR)/gcc/version.c
-	(cd $(HOST_BUILD_DIR)/libstdc++-v3; autoconf;);
+	#(cd $(HOST_BUILD_DIR)/libstdc++-v3; autoconf;);
 	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(HOST_BUILD_DIR)/libstdc++-v3/configure
 	$(call Stage0/Configure)
 	$(call Stage0/Compile)
