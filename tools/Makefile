@@ -13,7 +13,7 @@ tools-y := sed sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage firmw
 
 tools-$(CONFIG_CCACHE) += ccache
 tools-$(CONFIG_powerpc) += dtc
-tools-$(CONFIG_GCC_VERSION_4_3) += gmp mpfr
+tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
 
 # builddir dependencies
 $(curdir)/squashfs/compile := $(curdir)/lzma/install
