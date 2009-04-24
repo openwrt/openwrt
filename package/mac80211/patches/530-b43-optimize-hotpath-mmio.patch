@@ -1,7 +1,5 @@
-Index: compat-wireless-2009-03-31/drivers/net/wireless/b43/b43.h
-===================================================================
---- compat-wireless-2009-03-31.orig/drivers/net/wireless/b43/b43.h	2009-04-08 20:27:37.000000000 +0200
-+++ compat-wireless-2009-03-31/drivers/net/wireless/b43/b43.h	2009-04-08 20:28:14.000000000 +0200
+--- a/drivers/net/wireless/b43/b43.h
++++ b/drivers/net/wireless/b43/b43.h
 @@ -778,8 +778,8 @@ struct b43_wldev {
  	/* Reason code of the last interrupt. */
  	u32 irq_reason;
@@ -13,10 +11,8 @@ Index: compat-wireless-2009-03-31/drivers/net/wireless/b43/b43.h
  	/* Link Quality calculation context. */
  	struct b43_noise_calculation noisecalc;
  	/* if > 0 MAC is suspended. if == 0 MAC is enabled. */
-Index: compat-wireless-2009-03-31/drivers/net/wireless/b43/main.c
-===================================================================
---- compat-wireless-2009-03-31.orig/drivers/net/wireless/b43/main.c	2009-04-08 20:22:24.000000000 +0200
-+++ compat-wireless-2009-03-31/drivers/net/wireless/b43/main.c	2009-04-08 20:41:43.000000000 +0200
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
 @@ -673,32 +673,6 @@ static void b43_short_slot_timing_disabl
  	b43_set_slot_time(dev, 20);
  }
