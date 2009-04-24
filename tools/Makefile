@@ -9,11 +9,14 @@
 curdir:=tools
 
 # subdirectories to descend into
-tools-y := sed sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage firmware-utils patch-cmdline pkg-config m4 autoconf automake bison quilt yaffs2
+tools-y :=
+tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
+tools-y += m4 autoconf automake bison pkg-config sed
+tools-y += sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage
+tools-y += firmware-utils patch-cmdline quilt yaffs2
 
 tools-$(CONFIG_CCACHE) += ccache
 tools-$(CONFIG_powerpc) += dtc
-tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
 
 # builddir dependencies
 $(curdir)/squashfs/compile := $(curdir)/lzma/install
