@@ -1,6 +1,5 @@
-diff -urN gcc-4.4.0/gcc/config/arm/linux-elf.h gcc-4.4.0.new/gcc/config/arm/linux-elf.h
---- gcc-4.4.0/gcc/config/arm/linux-elf.h	2009-02-20 16:20:38.000000000 +0100
-+++ gcc-4.4.0.new/gcc/config/arm/linux-elf.h	2009-04-22 15:49:50.000000000 +0200
+--- a/gcc/config/arm/linux-elf.h
++++ b/gcc/config/arm/linux-elf.h
 @@ -60,7 +60,7 @@
     %{shared:-lc} \
     %{!shared:%{profile:-lc_p}%{!profile:-lc}}"
@@ -10,9 +9,8 @@ diff -urN gcc-4.4.0/gcc/config/arm/linux-elf.h gcc-4.4.0.new/gcc/config/arm/linu
  
  #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.2"
  
-diff -urN gcc-4.4.0/gcc/config/arm/t-linux gcc-4.4.0.new/gcc/config/arm/t-linux
---- gcc-4.4.0/gcc/config/arm/t-linux	2008-12-19 18:31:12.000000000 +0100
-+++ gcc-4.4.0.new/gcc/config/arm/t-linux	2009-04-22 15:49:15.000000000 +0200
+--- a/gcc/config/arm/t-linux
++++ b/gcc/config/arm/t-linux
 @@ -4,7 +4,10 @@
  
  LIB1ASMSRC = arm/lib1funcs.asm
