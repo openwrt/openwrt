@@ -4,7 +4,7 @@
  		print_memory_map("user");
  	}
  
-+	strcat(boot_command_line, " init=/etc/preinit");
++	strcat(boot_command_line, " init=/etc/preinit console=ttyS0,38400");
  	strlcpy(command_line, boot_command_line, COMMAND_LINE_SIZE);
  	*cmdline_p = command_line;
  
