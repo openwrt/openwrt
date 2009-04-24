@@ -9,44 +9,26 @@ include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=uClibc
 PKG_VERSION:=$(call qstrip,$(CONFIG_UCLIBC_VERSION))
-PKG_EXTRAVERSION:=$(call qstrip,$(CONFIG_UCLIBC_EXTRA_VERSION))
-PKG_VERSION_SNAPSHOT:=$(call qstrip,$(CONFIG_UCLIBC_VERSION_SNAPSHOT))
 ifeq ($(CONFIG_UCLIBC_VERSION_NPTL),y)
   PKG_SOURCE_URL:=http://www.uclibc.org/svn/branches/uClibc-nptl
   PKG_SOURCE_PROTO:=svn
   PKG_SOURCE_VERSION:=25804
-  PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)+nptl
-  PKG_SOURCE:=$(PKG_NAME)-nptl-r$(PKG_SOURCE_VERSION).tar.gz
-  PKG_EXTRAVERSION:=-svn
-else
-ifeq ($(PKG_VERSION_SNAPSHOT),y)
-  PKG_SOURCE_URL:=http://www.uclibc.org/downloads/snapshots
-  PKG_SOURCE:=uClibc-snapshot.tar.bz2
+  PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-r$(PKG_SOURCE_VERSION).tar.gz
+  LIBC_SO_VERSION:=0.9.30-svn
 else
   PKG_SOURCE_URL:=http://www.uclibc.org/downloads
-  PKG_SOURCE:=uClibc-$(PKG_VERSION)$(PKG_EXTRAVERSION).tar.bz2
+  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+  LIBC_SO_VERSION:=$(PKG_VERSION)
 endif
-endif
-PATCH_DIR:=$(firstword $(wildcard ./patches-$(PKG_VERSION)$(PKG_EXTRAVERSION) ./patches-$(PKG_VERSION)))
-CONFIG_DIR:=$(firstword $(wildcard ./config-$(PKG_VERSION)$(PKG_EXTRAVERSION) ./config-$(PKG_VERSION)))
-PATCH_DIR:=$(if $(CONFIG_UCLIBC_VERSION_NPTL),./patches-nptl,$(PATCH_DIR))
-CONFIG_DIR:=$(if $(CONFIG_UCLIBC_VERSION_NPTL),./config-nptl,$(CONFIG_DIR))
-PATCH_DIR:=$(if $(PKG_VERSION_SNAPSHOT),,$(PATCH_DIR))
-CONFIG_DIR:=$(if $(PKG_VERSION_SNAPSHOT),./config-0.9.30,$(CONFIG_DIR))
+PATCH_DIR:=./patches-$(PKG_VERSION)
+CONFIG_DIR:=./config-$(PKG_VERSION)
 
-PKG_MD5SUM_0.9.28.2 = 959f25286e317f0d9e2103445c5a14c2
-PKG_MD5SUM_0.9.28.3 = 428405a36b4662980d9343b32089b5a6
 PKG_MD5SUM_0.9.29 = 61dc55f43b17a38a074f347e74095b20
-PKG_MD5SUM_0.9.30 = e5766e2566e0297adebebbcc0aba1f2d
-PKG_MD5SUM=$(PKG_MD5SUM_$(PKG_VERSION)$(PKG_EXTRAVERSION))
+PKG_MD5SUM_0.9.30.1 = 1a4b84e5536ad8170563ffa88c34679c
+PKG_MD5SUM=$(PKG_MD5SUM_$(PKG_VERSION))
 
-
-ifeq ($(PKG_VERSION_SNAPSHOT),y)
-  UCLIBC_SUBDIR:=uClibc-$(PKG_EXTRAVERSION)
-else
-  UCLIBC_SUBDIR:=uClibc-$(PKG_VERSION)$(if $(CONFIG_UCLIBC_VERSION_NPTL),+nptl,$(PKG_EXTRAVERSION))
-endif
-HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(UCLIBC_SUBDIR)
+HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
@@ -73,42 +55,16 @@ define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.uclibc.org/,' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
-	$(SED) 's,^\(LIBC_PATCHVER\)=.*,\1=$(PKG_EXTRAVERSION),' $(TOOLCHAIN_DIR)/info.mk
-endef
-
-define Host/Prepare/Snapshot
-	$(PKG_UNPACK)
-	rm -Rf $(HOST_BUILD_DIR)
-	$(Host/Patch)
-	$(if $(QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
-endef
-
-define Host/Prepare/V_0_9_28
-	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(BUILD_DIR_TOOLCHAIN)/linux\",g' \
-		$(HOST_BUILD_DIR)/.config
- ifeq ($(CONFIG_SOFT_FLOAT),y)
-	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(HOST_BUILD_DIR)/.config
- endif
- ifeq ($(CONFIG_C99_MATH),y)
-	$(SED) 's,.*DO_C99_MATH.*,DO_C99_MATH=y,g' $(HOST_BUILD_DIR)/.config
- endif
+	$(SED) 's,^\(LIBC_SO_VERSION\)=.*,\1=$(LIBC_SO_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
 
 GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n $(if $(wildcard $(CONFIG_DIR)/common),'+' $(CONFIG_DIR)/common) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD))
 
 define Host/Prepare
 	$(call Host/SetToolchainInfo)
-	@echo prepare uClibc version $(PKG_VERSION)$(PKG_EXTRAVERSION)  
- ifeq ($(PKG_VERSION_SNAPSHOT),y)
-	$(call Host/Prepare/Snapshot)
- else
 	$(call Host/Prepare/Default)
- endif
-	ln -snf $(UCLIBC_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(GEN_CONFIG) > $(HOST_BUILD_DIR)/.config
- ifeq ($(PKG_VERSION),0.9.28)
-	$(call Host/Prepare/V_0_9_28)
- endif
 	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include\",g' \
 		-e 's,^.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n,y),g' \
 		-e 's,^.*UCLIBC_HAS_SOFT_FLOAT.*,UCLIBC_HAS_SOFT_FLOAT=$(if $(CONFIG_SOFT_FLOAT),y,n),g' \
@@ -126,7 +82,7 @@ define Host/Prepare
 		CC="$(TARGET_CC)" \
 		CPU_CFLAGS="$(TARGET_CFLAGS)" \
 		pregen \
-		$(if $(CONFIG_UCLIBC_VERSION_0_9_28),install_dev,install_headers)
+		install_headers
 endef
 
 define Host/Configure
