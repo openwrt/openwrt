@@ -42,7 +42,8 @@ define KernelPackage/r6040
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RDC Fast-Ethernet support
   DEPENDS:=@TARGET_rdc
-  KCONFIG:=CONFIG_R6040
+  KCONFIG:=CONFIG_R6040 \
+		CONFIG_R6040_NAPI=y
   FILES:=$(LINUX_DIR)/drivers/net/r6040.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,99,r6040)
 endef
