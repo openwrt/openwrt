@@ -1,8 +1,6 @@
-Index: gcc-4.2/libmudflap/mf-hooks2.c
-===================================================================
---- gcc-4.2/libmudflap/mf-hooks2.c	(revision 119834)
-+++ gcc-4.2/libmudflap/mf-hooks2.c	(working copy)
-@@ -427,7 +427,7 @@
+--- a/libmudflap/mf-hooks2.c
++++ b/libmudflap/mf-hooks2.c
+@@ -421,7 +421,7 @@
  {
    TRACE ("%s\n", __PRETTY_FUNCTION__);
    MF_VALIDATE_EXTENT(s, n, __MF_CHECK_WRITE, "bzero region");
@@ -11,7 +9,7 @@ Index: gcc-4.2/libmudflap/mf-hooks2.c
  }
  
  
-@@ -437,7 +437,7 @@
+@@ -431,7 +431,7 @@
    TRACE ("%s\n", __PRETTY_FUNCTION__);
    MF_VALIDATE_EXTENT(src, n, __MF_CHECK_READ, "bcopy src");
    MF_VALIDATE_EXTENT(dest, n, __MF_CHECK_WRITE, "bcopy dest");
@@ -20,7 +18,7 @@ Index: gcc-4.2/libmudflap/mf-hooks2.c
  }
  
  
-@@ -447,7 +447,7 @@
+@@ -441,7 +441,7 @@
    TRACE ("%s\n", __PRETTY_FUNCTION__);
    MF_VALIDATE_EXTENT(s1, n, __MF_CHECK_READ, "bcmp 1st arg");
    MF_VALIDATE_EXTENT(s2, n, __MF_CHECK_READ, "bcmp 2nd arg");
@@ -29,7 +27,7 @@ Index: gcc-4.2/libmudflap/mf-hooks2.c
  }
  
  
-@@ -456,7 +456,7 @@
+@@ -450,7 +450,7 @@
    size_t n = strlen (s);
    TRACE ("%s\n", __PRETTY_FUNCTION__);
    MF_VALIDATE_EXTENT(s, CLAMPADD(n, 1), __MF_CHECK_READ, "index region");
@@ -38,7 +36,7 @@ Index: gcc-4.2/libmudflap/mf-hooks2.c
  }
  
  
-@@ -465,7 +465,7 @@
+@@ -459,7 +459,7 @@
    size_t n = strlen (s);
    TRACE ("%s\n", __PRETTY_FUNCTION__);
    MF_VALIDATE_EXTENT(s, CLAMPADD(n, 1), __MF_CHECK_READ, "rindex region");
