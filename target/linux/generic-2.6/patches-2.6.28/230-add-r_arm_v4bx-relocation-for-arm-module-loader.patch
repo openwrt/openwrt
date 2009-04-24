@@ -1,8 +1,6 @@
-diff --git a/arch/arm/include/asm/elf.h b/arch/arm/include/asm/elf.h
-index a58378c..ce3b36e 100644
 --- a/arch/arm/include/asm/elf.h
 +++ b/arch/arm/include/asm/elf.h
-@@ -50,6 +50,7 @@  typedef struct user_fp elf_fpregset_t;
+@@ -50,6 +50,7 @@ typedef struct user_fp elf_fpregset_t;
  #define R_ARM_ABS32	2
  #define R_ARM_CALL	28
  #define R_ARM_JUMP24	29
@@ -10,11 +8,9 @@ index a58378c..ce3b36e 100644
  
  /*
   * These are used to set parameters in the core dumps.
-diff --git a/arch/arm/kernel/module.c b/arch/arm/kernel/module.c
-index dab48f2..9f509fd 100644
 --- a/arch/arm/kernel/module.c
 +++ b/arch/arm/kernel/module.c
-@@ -132,6 +132,15 @@  apply_relocate(Elf32_Shdr *sechdrs, const char *strtab, unsigned int symindex,
+@@ -132,6 +132,15 @@ apply_relocate(Elf32_Shdr *sechdrs, cons
  			*(u32 *)loc |= offset & 0x00ffffff;
  			break;
  
@@ -30,4 +26,3 @@ index dab48f2..9f509fd 100644
  		default:
  			printk(KERN_ERR "%s: unknown relocation: %u\n",
  			       module->name, ELF32_R_TYPE(rel->r_info));
-
