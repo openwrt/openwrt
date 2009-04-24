@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ BOARDNAME:=RDC 321x
 FEATURES:=squashfs jffs2 pci usb
 CFLAGS:=-Os -pipe -march=i486 -funit-at-a-time
 
-LINUX_VERSION:=2.6.24.7
+LINUX_VERSION:=2.6.28.9
 
 include $(INCLUDE_DIR)/target.mk
 

@@ -1,0 +1,42 @@
+diff -ru linux-2.6.24.7.orig/arch/x86/boot/boot.h linux-2.6.24.7/arch/x86/boot/boot.h
+--- linux-2.6.24.7.orig/arch/x86/boot/boot.h	2008-10-26 20:18:14.000000000 -0700
++++ linux-2.6.24.7/arch/x86/boot/boot.h	2008-10-26 20:18:36.000000000 -0700
+@@ -60,7 +60,7 @@
+ {
+ 	asm volatile("outl %0,%1" : : "a" (v), "dN" (port));
+ }
+-static inline u32 inl(u32 port)
++static inline u32 inl(u16 port)
+ {
+ 	u32 v;
+ 	asm volatile("inl %1,%0" : "=a" (v) : "dN" (port));
+diff -ru linux-2.6.24.7.orig/arch/x86/boot/pm.c linux-2.6.24.7/arch/x86/boot/pm.c
+--- linux-2.6.24.7.orig/arch/x86/boot/pm.c	2008-10-26 19:55:50.000000000 -0700
++++ linux-2.6.24.7/arch/x86/boot/pm.c	2008-10-26 21:38:12.000000000 -0700
+@@ -16,6 +16,9 @@
+ 
+ #include "boot.h"
+ #include <asm/segment.h>
++#ifdef CONFIG_X86_RDC
++#include <asm/mach-rdc/rdc321x_defs.h>
++#endif
+ 
+ /*
+  * Invoke the realmode switch hook if present; otherwise
+@@ -160,6 +163,16 @@
+ 		die();
+ 	}
+ 
++#ifdef CONFIG_X86_RDC
++	{
++		u32 bootctl;
++
++		outl(0x80003840, RDC3210_CFGREG_ADDR);
++		bootctl = inl(RDC3210_CFGREG_DATA) | 0x07ff0000;
++		outl(bootctl, RDC3210_CFGREG_DATA);
++	}
++#endif
++
+ 	/* Reset coprocessor (IGNNE#) */
+ 	reset_coprocessor();
+ 
