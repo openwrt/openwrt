@@ -3,4 +3,4 @@ GCC_VERSION=unknown
 LIBC_TYPE=unknown
 LIBC_URL=unknown
 LIBC_VERSION=unknown
-LIBC_PATCHVER=
+LIBC_SO_VERSION=unknown

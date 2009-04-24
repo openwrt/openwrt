@@ -7,37 +7,15 @@ choice
 	help
 	  Select the version of uClibc you wish to use.
 
-	config UCLIBC_VERSION_SNAPSHOT
-		depends BROKEN
-		bool "uClibc snapshot"
-
-	config UCLIBC_VERSION_0_9_28
-		bool "uClibc 0.9.28"
-		depends !(mips64 || mips64el)
-
 	config UCLIBC_VERSION_0_9_29
 		bool "uClibc 0.9.29"
 
-	config UCLIBC_VERSION_0_9_30
-		bool "uClibc 0.9.30"
+	config UCLIBC_VERSION_0_9_30_1
+		bool "uClibc 0.9.30.1"
+
+	config UCLIBC_VERSION_NPTL
+		bool "uClibc NPTL branch"
+		depends BROKEN
 
 endchoice
 
-config UCLIBC_VERSION_NPTL
-	bool "Use NPTL branch"
-	depends on TOOLCHAINOPTS && USE_UCLIBC
-	depends on UCLIBC_VERSION_0_9_30
-	depends BROKEN
-
-
-config UCLIBC_EXTRA_VERSION
-	string
-	prompt "Extra uClibc version"
-	depends on TOOLCHAINOPTS && USE_UCLIBC
-	default "snapshot"   if UCLIBC_VERSION_SNAPSHOT
-	default ".2"         if UCLIBC_VERSION_0_9_28
-	default ".1"         if UCLIBC_VERSION_0_9_30 && !UCLIBC_VERSION_NPTL
-	default ""
-	help
-	    Default for version 0.9.28 is ".02", for daily snapshot it's just "snapshot"
-	    For all other versions the default string is empty.

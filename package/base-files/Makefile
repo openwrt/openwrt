@@ -29,10 +29,6 @@ else
   LIBGCC_VERSION:=<LIBGCC_VERSION>
 endif
 
-ifneq ($(LIBC_VERSION),0.9.28)
-  LIBC_VERSION:=$(LIBC_VERSION)$(LIBC_PATCHVER)
-endif
-
 CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
 
 define Package/base-files$(TARGET)
@@ -216,10 +212,10 @@ use_nsswitch=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),lib
 define Package/glibc/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/ld*.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib/ld-$(LIBC_VERSION).so $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so $(1)/lib/
 	for file in libanl libc libcidn libcrypt libdl libm $(use_libnsl) $(use_nsswitch) libresolv $(use_libutil); do \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
-		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_VERSION).so $(1)/lib/; \
+		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
 	done
 endef
 
@@ -231,7 +227,7 @@ define Package/uClibc/install
 	$(INSTALL_DIR) $(1)/lib
 	for file in ld$(LIB_SUFFIX)-uClibc libc libcrypt libdl libm libnsl libresolv libuClibc libutil; do \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
-		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_VERSION).so $(1)/lib/; \
+		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
 	done
 endef
 
@@ -242,13 +238,13 @@ endef
 define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_VERSION).so $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so $(1)/lib/
 endef
 
 define Package/librt/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/librt.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib/librt-$(LIBC_VERSION).so $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so $(1)/lib/
 endef
 
 define Package/ldd/install
