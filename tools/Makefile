@@ -20,7 +20,8 @@ $(curdir)/squashfs/compile := $(curdir)/lzma/install
 $(curdir)/quilt/compile := $(curdir)/sed/install
 $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
-$(curdir)/automake/compile := $(curdir)/m4/install
+$(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install
+$(curdir)/mpfr/compile := $(curdir)/gmp/install
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
