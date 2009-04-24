@@ -7,10 +7,8 @@ Signed-off-by: Michael Buesch <mb@bu3sch.de>
 
 ---
 
-Index: compat-wireless-2009-03-31/drivers/net/wireless/b43/dma.c
-===================================================================
---- compat-wireless-2009-03-31.orig/drivers/net/wireless/b43/dma.c	2009-04-06 18:52:30.000000000 +0200
-+++ compat-wireless-2009-03-31/drivers/net/wireless/b43/dma.c	2009-04-06 18:53:04.000000000 +0200
+--- a/drivers/net/wireless/b43/dma.c
++++ b/drivers/net/wireless/b43/dma.c
 @@ -1503,20 +1503,16 @@ static void dma_rx(struct b43_dmaring *r
  			len = le16_to_cpu(rxhdr->frame_len);
  		} while (len == 0 && i++ < 5);
