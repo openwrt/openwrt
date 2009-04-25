@@ -112,6 +112,12 @@ endef
 
 $(eval $(call KernelPackage,fs-ext3))
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.28)),1)
+	EXT4_NAME:=ext4dev
+else
+	EXT4_NAME:=ext4
+endif
+
 define KernelPackage/fs-ext4
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT4 filesystem support
@@ -120,11 +126,13 @@ define KernelPackage/fs-ext4
 	CONFIG_EXT4_FS_XATTR=y \
 	CONFIG_EXT4_FS_POSIX_ACL=y \
 	CONFIG_EXT4_FS_SECURITY=y \
-	CONFIG_EXT4_FS
-  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
+	CONFIG_EXT4_FS \
+	CONFIG_JBD2
+  DEPENDS:= @LINUX_2_6 +kmod-crc16 $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:= \
-	$(LINUX_DIR)/fs/ext4/ext4.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ext4)
+	$(LINUX_DIR)/fs/ext4/$(EXT4_NAME).$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/jbd2/jbd2.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,jbd2 $(EXT4_NAME))
 endef
 
 define KernelPackage/fs-ext4/description
