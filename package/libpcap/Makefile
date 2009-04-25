@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
-PKG_VERSION:=0.9.8
+PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
-PKG_MD5SUM:=5208f24d0328ee7c20b52c43eaa9aa0e
+PKG_MD5SUM:=9ad1358c5dec48456405eac197a46d3d
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -29,6 +29,21 @@ define Package/libpcap/description
  packet capture.
 endef
 
+define Package/libpcap/config
+	config PCAP_HAS_USB
+		bool "Include USB support"
+		depends PACKAGE_libpcap
+		depends PACKAGE_kmod-usb-core
+		default n
+
+	config PCAP_HAS_BT
+		bool "Include bluetooth support"
+		depends PACKAGE_libpcap
+		depends PACKAGE_kmod-bluetooth
+		default n
+
+endef
+
 TARGET_CFLAGS += \
 	-ffunction-sections -fdata-sections
 
@@ -38,9 +53,15 @@ CONFIGURE_ARGS += \
 	--disable-yydebug \
 	--enable-ipv6 \
 	--with-build-cc="$(HOSTCC)" \
-	--with-pcap=linux
+	--with-pcap=linux \
+	--without-septel \
+	--without-dag
 
 define Build/Compile
+	rm -rf $(PKG_INSTALL_DIR)
+	$(if $(CONFIG_PCAP_HAS_USB),,$(SED) '/^#define PCAP_SUPPORT_USB/D' $(PKG_BUILD_DIR)/config.h)
+	$(if $(CONFIG_PCAP_HAS_USB),,$(SED) 's/pcap-usb-linux.c *//' $(PKG_BUILD_DIR)/Makefile)
+	$(if $(CONFIG_PCAP_HAS_BT),,$(SED) '/^#define PCAP_SUPPORT_BT/D' $(PKG_BUILD_DIR)/config.h)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
@@ -48,11 +69,12 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
-	$(CP)	$(PKG_INSTALL_DIR)/usr/include/pcap{,-bpf,-namedb}.h \
+	mkdir -p $(1)/usr/include $(1)/usr/lib
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/include/pcap* \
 		$(1)/usr/include/
-	mkdir -p $(1)/usr/lib
-	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libpcap.{a,so*} \
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/libpcap.{a,so*} \
 		$(1)/usr/lib/
 endef
 
