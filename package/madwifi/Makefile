@@ -50,11 +50,6 @@ else
   endif
 endif
 
-# XXX: remove this check later when we have PCI support properly detected on all targets
-ifneq ($(CONFIG_TARGET_ar7)$(CONFIG_TARGET_uml),)
-  BUS:=
-endif
-
 ifneq ($(CONFIG_CPU_MIPS32_R2),)
   ifeq ($(ARCH),mips)
     HAL_TARGET:=mips32r2-be-elf
@@ -156,7 +151,7 @@ define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros wireless chipsets
   URL:=http://madwifi.org/
-  DEPENDS:=+wireless-tools @PCI_SUPPORT||TARGET_atheros @!TARGET_ar7 @!TARGET_avr32 @!TARGET_etrax @!TARGET_uml @LINUX_2_6
+  DEPENDS:=+wireless-tools @PCI_SUPPORT||TARGET_atheros @!TARGET_avr32 @!TARGET_etrax @LINUX_2_6
   FILES:=$(MADWIFI_FILES)
   AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))
 endef
