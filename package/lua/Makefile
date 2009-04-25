@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -21,10 +21,10 @@ PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 include $(INCLUDE_DIR)/package.mk
 
 define Package/lua/Default
-  SUBMENU:=LUA
+  SUBMENU:=Lua
   SECTION:=lang
   CATEGORY:=Languages
-  TITLE:=LUA programming language
+  TITLE:=Lua programming language
   URL:=http://www.lua.org/
 endef
 
@@ -44,7 +44,7 @@ endef
 
 define Package/liblua/description
 $(call Package/lua/Default/description)
- This package contains the LUA shared libraries, needed by other programs.
+ This package contains the Lua shared libraries, needed by other programs.
 endef
 
 define Package/lua
@@ -55,7 +55,7 @@ endef
 
 define Package/lua/description
 $(call Package/lua/Default/description)
- This package contains the LUA language interpreter.
+ This package contains the Lua language interpreter.
 endef
 
 define Package/luac
@@ -66,7 +66,7 @@ endef
 
 define Package/luac/description
 $(call Package/lua/Default/description)
- This package contains the LUA language compiler.
+ This package contains the Lua language compiler.
 endef
 
 define Package/lua-examples
@@ -77,7 +77,7 @@ endef
 
 define Package/lua-examples/description
 $(call Package/lua/Default/description)
- This package contains LUA language examples.
+ This package contains Lua language examples.
 endef
 
 define Build/Configure
