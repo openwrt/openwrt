@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_VERSION:=0.9.12
+PKG_VERSION:=0.9.13
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/iw/
-PKG_MD5SUM:=2aa919ff927dd9def151a87badfa111a
+PKG_MD5SUM:=cf9121abb4ffe6dce1691e2ec97d5b2b
 PKG_BUILD_DEPENDS:=mac80211 libnl
 
 include $(INCLUDE_DIR)/package.mk
@@ -27,7 +27,7 @@ define Package/iw
 endef
 
 define Build/Configure
-	echo "#define IW_VERSION \"$(PKG_VERSION)\"" > $(PKG_BUILD_DIR)/version.h
+	echo "const char iw_version[] = \"$(PKG_VERSION)\";" > $(PKG_BUILD_DIR)/version.c
 endef
 
 MAKE_FLAGS += \
