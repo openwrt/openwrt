@@ -11,8 +11,10 @@ PKG_NAME:=ead
 PKG_RELEASE:=1
 
 PKG_BUILD_DEPENDS:=libpcap
+PKG_BUILD_DIR:=$(BUILD_DIR)/ead
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 define Package/ead
   SECTION:=net
@@ -29,6 +31,7 @@ endef
 CONFIGURE_PATH = tinysrp
 
 TARGET_CFLAGS += \
+	-I$(LINUX_DIR)/include \
 	-I$(PKG_BUILD_DIR) \
 	-I$(PKG_BUILD_DIR)/tinysrp \
 	$(TARGET_CPPFLAGS)

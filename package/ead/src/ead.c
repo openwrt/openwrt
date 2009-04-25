@@ -42,6 +42,10 @@
 #include "libbridge_init.c"
 #endif
 
+#ifdef linux
+#include <linux/if_packet.h>
+#endif
+
 #define PASSWD_FILE	"/etc/passwd"
 
 #ifndef DEFAULT_IFNAME
@@ -109,6 +113,51 @@ struct t_confent *tce = NULL;
 static struct t_server *ts = NULL;
 static struct t_num A, *B = NULL;
 unsigned char *skey;
+
+static void
+set_recv_type(pcap_t *p, bool rx)
+{
+#ifdef PACKET_RECV_TYPE
+	struct sockaddr_ll sll;
+	struct ifreq ifr;
+	int ifindex, mask;
+	int fd, ret;
+
+	fd = pcap_get_selectable_fd(p);
+	if (fd < 0)
+		return;
+
+	if (rx)
+		mask = 1 << PACKET_BROADCAST;
+	else
+		mask = 0;
+
+	ret = setsockopt(fd, SOL_PACKET, PACKET_RECV_TYPE, &mask, sizeof(mask));
+#endif
+}
+
+
+static pcap_t *
+ead_open_pcap(const char *ifname, char *errbuf, bool rx)
+{
+	pcap_t *p;
+
+	p = pcap_create(ifname, errbuf);
+	if (p == NULL)
+		goto out;
+
+	pcap_set_snaplen(p, PCAP_MRU);
+	pcap_set_promisc(p, rx);
+	pcap_set_timeout(p, PCAP_TIMEOUT);
+#ifdef HAS_PROTO_EXTENSION
+	pcap_set_protocol(p, (rx ? htons(ETH_P_IP) : 0));
+#endif
+	pcap_set_buffer_size(p, (rx ? 10 : 1) * PCAP_MRU);
+	pcap_activate(p);
+	set_recv_type(p, rx);
+out:
+	return p;
+}
 
 static void
 get_random_bytes(void *ptr, int len)
@@ -647,14 +696,18 @@ ead_pcap_reopen(bool first)
 
 	pcap_fp_rx = NULL;
 	do {
-		pcap_fp = pcap_open_live(instance->ifname, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
 #ifdef linux
-		if (instance->bridge[0])
-			pcap_fp_rx = pcap_open_live(instance->bridge, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
+		if (instance->bridge[0]) {
+			pcap_fp_rx = ead_open_pcap(instance->bridge, errbuf, 1);
+			pcap_fp = ead_open_pcap(instance->ifname, errbuf, 0);
+		} else
 #endif
+		{
+			pcap_fp = ead_open_pcap(instance->ifname, errbuf, 1);
+		}
+
 		if (!pcap_fp_rx)
 			pcap_fp_rx = pcap_fp;
-		pcap_setfilter(pcap_fp_rx, &pktfilter);
 		if (first && !pcap_fp) {
 			DEBUG(1, "WARNING: unable to open interface '%s'\n", instance->ifname);
 			first = false;
@@ -662,6 +715,7 @@ ead_pcap_reopen(bool first)
 		if (!pcap_fp)
 			sleep(1);
 	} while (!pcap_fp);
+	pcap_setfilter(pcap_fp_rx, &pktfilter);
 }
 
 
