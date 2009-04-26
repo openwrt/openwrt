@@ -24,8 +24,6 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <arpa/inet.h>
 #include <linux/limits.h>
 
 #include "sdinitvals.h"

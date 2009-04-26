@@ -409,6 +409,7 @@ const char * nvram_find_mtd(void)
 	int i, esz;
 	char dev[PATH_MAX];
 	char *path = NULL;
+	struct stat s;
 
 	// "/dev/mtdblock/" + ( 0 < x < 99 ) + \0 = 19
 	if( (path = (char *) malloc(19)) == NULL )
@@ -416,12 +417,30 @@ const char * nvram_find_mtd(void)
 
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		while (fgets(dev, sizeof(dev), fp)) {
-			if (strstr(dev, "nvram") && sscanf(dev, "mtd%d: %08x", &i, &esz)) {
-				if( (path = (char *) malloc(19)) != NULL )
+			if (strstr(dev, "nvram") && sscanf(dev, "mtd%d: %08x", &i, &esz))
+			{
+				nvram_erase_size = esz;
+
+				sprintf(dev, "/dev/mtdblock/%d", i);
+				if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
 				{
-					nvram_erase_size = esz;
-					snprintf(path, 19, "/dev/mtdblock/%d", i);
-					break;
+					if( (path = (char *) malloc(strlen(dev)+1)) != NULL )
+					{
+						strncpy(path, dev, strlen(dev)+1);
+						break;
+					}
+				}
+				else
+				{
+					sprintf(dev, "/dev/mtdblock%d", i);
+					if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
+					{
+						if( (path = (char *) malloc(strlen(dev)+1)) != NULL )
+						{
+							strncpy(path, dev, strlen(dev)+1);
+							break;
+						}
+					}
 				}
 			}
 		}
