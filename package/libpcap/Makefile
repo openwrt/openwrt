@@ -40,6 +40,7 @@ define Package/libpcap/config
 		bool "Include bluetooth support"
 		depends PACKAGE_libpcap
 		depends PACKAGE_kmod-bluetooth
+		depends BROKEN
 		default n
 
 endef
@@ -62,6 +63,7 @@ define Build/Compile
 	$(if $(CONFIG_PCAP_HAS_USB),,$(SED) '/^#define PCAP_SUPPORT_USB/D' $(PKG_BUILD_DIR)/config.h)
 	$(if $(CONFIG_PCAP_HAS_USB),,$(SED) 's/pcap-usb-linux.c *//' $(PKG_BUILD_DIR)/Makefile)
 	$(if $(CONFIG_PCAP_HAS_BT),,$(SED) '/^#define PCAP_SUPPORT_BT/D' $(PKG_BUILD_DIR)/config.h)
+	$(if $(CONFIG_PCAP_HAS_BT),,$(SED) 's/pcap-bt-linux.c *//' $(PKG_BUILD_DIR)/Makefile)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
