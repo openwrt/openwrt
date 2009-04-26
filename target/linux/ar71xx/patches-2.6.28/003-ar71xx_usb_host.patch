@@ -1,25 +1,27 @@
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -81,6 +81,12 @@ config USB_EHCI_BIG_ENDIAN_DESC
+@@ -81,6 +81,13 @@ config USB_EHCI_BIG_ENDIAN_DESC
  	depends on USB_EHCI_HCD && (440EPX || ARCH_IXP4XX)
  	default y
  
 +config USB_EHCI_AR71XX
 +	bool "USB EHCI support for AR71xx"
 +	depends on USB_EHCI_HCD && ATHEROS_AR71XX
++	default y
 +	help
 +	  Support for Atheros AR71xx built-in EHCI controller
 +
  config USB_EHCI_FSL
  	bool "Support for Freescale on-chip EHCI USB controller"
  	depends on USB_EHCI_HCD && FSL_SOC
-@@ -140,6 +146,12 @@ config USB_OHCI_HCD
+@@ -140,6 +147,13 @@ config USB_OHCI_HCD
  	  To compile this driver as a module, choose M here: the
  	  module will be called ohci-hcd.
  
 +config USB_OHCI_AR71XX
 +	bool "USB OHCI support for Atheros AR71xx"
 +	depends on USB_OHCI_HCD && ATHEROS_AR71XX
++	default y
 +	help
 +	  Support for Atheros AR71xx built-in OHCI controller
 +
