@@ -16,18 +16,20 @@ PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_MD5SUM:=83630d11fa66ade9091f1b304fccd74c
-PKG_BUILD_DEPENDS:=PACKAGE_kmod-madwifi:madwifi PACKAGE_kmod-mac80211:mac80211 PACKAGE_kmod-mac80211:libnl
 
-include $(INCLUDE_DIR)/package.mk
+PKG_BUILD_DEPENDS:= \
+	PACKAGE_kmod-madwifi:madwifi \
+	PACKAGE_kmod-mac80211:mac80211 \
+	PACKAGE_kmod-mac80211:libnl \
 
-PKG_CONFDEPS := \
+PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-ath9k \
 	CONFIG_PACKAGE_kmod-mac80211 \
 	CONFIG_PACKAGE_kmod-madwifi \
 	CONFIG_PACKAGE_hostapd \
-	CONFIG_PACKAGE_hostapd-mini
+	CONFIG_PACKAGE_hostapd-mini \
 
-STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,$(PKG_CONFDEPS))
+include $(INCLUDE_DIR)/package.mk
 
 DRIVER_MAKEOPTS= \
 	CONFIG_DRIVER_NL80211=$(CONFIG_PACKAGE_kmod-mac80211) \

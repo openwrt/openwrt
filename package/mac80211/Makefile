@@ -28,8 +28,10 @@ endif
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 
+PKG_CONFIG_DEPENDS:= \
+	CONFIG_PACKAGE_kmod-mac80211 \
+
 include $(INCLUDE_DIR)/package.mk
-STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-mac80211)
 
 WMENU:=Wireless Drivers
 

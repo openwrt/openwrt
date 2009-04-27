@@ -15,10 +15,14 @@ PKG_MD5SUM:=0efb8fcedf0a8acf6f423dfdb0658fdd
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
-PKG_BUILD_DEPENDS:=PACKAGE_kmod-madwifi:madwifi
+PKG_BUILD_DEPENDS:= \
+	PACKAGE_kmod-madwifi:madwifi \
+
+PKG_CONFIG_DEPENDS:= \
+	CONFIG_PACKAGE_kmod-madwifi \
+	CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK \
 
 include $(INCLUDE_DIR)/package.mk
-STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,CONFIG_PACKAGE_kmod-madwifi CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK)
 
 define Package/wpa-supplicant
   SECTION:=net
