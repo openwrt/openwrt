@@ -193,7 +193,7 @@ define Stage2/Configure
 	ln -sf ../include $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/sys-include
 	rm -rf $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib
-	$(if $(CONFIG_mips64)$(CONFIG_mips64el),ln -sf ../lib64 $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib64)
+	$(if $(CONFIG_mips64)$(CONFIG_mips64el)$(CONFIG_x86_64),ln -sf ../lib64 $(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME)/lib64)
 	(cd $(HOST_BUILD_DIR2); rm -f config.cache; \
 		$(GCC_CONFIGURE_STAGE2) \
 	);
