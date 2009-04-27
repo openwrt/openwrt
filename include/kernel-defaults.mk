@@ -105,7 +105,7 @@ define Kernel/CompileModules/Default
 	+$(MAKE) $(KERNEL_MAKEOPTS) modules
 endef
 
-OBJCOPY_STRIP = -R .reginfo -R .note -R .comment -R .mdebug -R .note.gnu.build-id
+OBJCOPY_STRIP = -R .reginfo -R .notes -R .note -R .comment -R .mdebug -R .note.gnu.build-id
 
 define Kernel/CompileImage/Default
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),,rm -f $(TARGET_DIR)/init)
