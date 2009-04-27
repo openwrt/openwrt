@@ -90,7 +90,7 @@ uint8_t hndcrc8 (uint8_t * pdata, uint32_t nbytes, uint8_t crc);
 uint8_t nvram_calc_crc(nvram_header_t * nvh);
 
 /* Determine NVRAM device node. */
-const char * nvram_find_mtd(void);
+char * nvram_find_mtd(void);
 
 /* Copy NVRAM contents to staging file. */
 int nvram_to_staging(void);
@@ -99,7 +99,7 @@ int nvram_to_staging(void);
 int staging_to_nvram(void);
 
 /* Check NVRAM staging file. */
-const char * nvram_find_staging(void);
+char * nvram_find_staging(void);
 
 
 /* Staging file for NVRAM */

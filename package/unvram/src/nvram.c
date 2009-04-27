@@ -338,6 +338,7 @@ int nvram_commit(nvram_handle_t *h)
 nvram_handle_t * nvram_open(const char *file, int rdonly)
 {
 	int fd;
+	char *mtd = NULL;
 	nvram_handle_t *h;
 	nvram_header_t *header;
 
@@ -345,16 +346,14 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 	if( (nvram_erase_size == 0) || (file == NULL) )
 	{
 		/* Finding the mtd will set the appropriate erase size */
-		if( file == NULL )
-			file = nvram_find_mtd();
-		else
-			(void) nvram_find_mtd();
-
-		if( nvram_erase_size == 0 )
+		if( (mtd = nvram_find_mtd()) == NULL || nvram_erase_size == 0 )
+		{
+			free(mtd);
 			return NULL;
+		}
 	}
 
-	if( (fd = open(file, O_RDWR)) > -1 )
+	if( (fd = open(file ? file : mtd, O_RDWR)) > -1 )
 	{
 		char *mmap_area = (char *) mmap(
 			NULL, nvram_erase_size, PROT_READ | PROT_WRITE,
@@ -377,6 +376,7 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 				if( header->magic == NVRAM_MAGIC )
 				{
 					_nvram_rehash(h);
+					free(mtd);
 					return h;
 				}
 				else
@@ -388,6 +388,7 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 		}
 	}
 
+	free(mtd);
 	return NULL;
 }
 
@@ -403,7 +404,7 @@ int nvram_close(nvram_handle_t *h)
 }
 
 /* Determine NVRAM device node. */
-const char * nvram_find_mtd(void)
+char * nvram_find_mtd(void)
 {
 	FILE *fp;
 	int i, esz;
@@ -411,13 +412,11 @@ const char * nvram_find_mtd(void)
 	char *path = NULL;
 	struct stat s;
 
-	// "/dev/mtdblock/" + ( 0 < x < 99 ) + \0 = 19
-	if( (path = (char *) malloc(19)) == NULL )
-		return NULL;
-
-	if ((fp = fopen("/proc/mtd", "r"))) {
-		while (fgets(dev, sizeof(dev), fp)) {
-			if (strstr(dev, "nvram") && sscanf(dev, "mtd%d: %08x", &i, &esz))
+	if( (fp = fopen("/proc/mtd", "r")) )
+	{
+		while( fgets(dev, sizeof(dev), fp) )
+		{
+			if( strstr(dev, "nvram") && sscanf(dev, "mtd%d: %08x", &i, &esz) )
 			{
 				nvram_erase_size = esz;
 
@@ -451,7 +450,7 @@ const char * nvram_find_mtd(void)
 }
 
 /* Check NVRAM staging file. */
-const char * nvram_find_staging(void)
+char * nvram_find_staging(void)
 {
 	struct stat s;
 
@@ -467,7 +466,7 @@ const char * nvram_find_staging(void)
 int nvram_to_staging(void)
 {
 	int fdmtd, fdstg, stat;
-	const char *mtd = nvram_find_mtd();
+	char *mtd = nvram_find_mtd();
 	char buf[nvram_erase_size];
 
 	stat = -1;
@@ -492,6 +491,7 @@ int nvram_to_staging(void)
 		}
 	}
 
+	free(mtd);
 	return stat;
 }
 
@@ -499,7 +499,7 @@ int nvram_to_staging(void)
 int staging_to_nvram(void)
 {
 	int fdmtd, fdstg, stat;
-	const char *mtd = nvram_find_mtd();
+	char *mtd = nvram_find_mtd();
 	char buf[nvram_erase_size];
 
 	stat = -1;
@@ -526,5 +526,6 @@ int staging_to_nvram(void)
 		}
 	}
 
+	free(mtd);
 	return stat;
 }
