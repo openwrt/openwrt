@@ -82,10 +82,19 @@ menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
 	fi
 	$< Config.in
 
-kernel_oldconfig: .config FORCE
+prepare_kernel_conf: .config FORCE
+
+ifeq ($(wildcard staging_dir/host/bin/sed),)
+  prepare_kernel_conf:
+	@+$(SUBMAKE) -r tools/sed/install
+else
+  prepare_kernel_conf: ;
+endif
+
+kernel_oldconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux oldconfig
 
-kernel_menuconfig: .config FORCE
+kernel_menuconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux menuconfig
 
 tmp/.prereq-build: include/prereq-build.mk
