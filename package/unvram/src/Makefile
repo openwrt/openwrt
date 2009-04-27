@@ -1,4 +1,4 @@
-CLI_FILENAME = unvram
+CLI_FILENAME = nvram
 
 LIB_VERMAJOR = 0
 LIB_VERMINOR = 1
@@ -30,4 +30,4 @@ libnvram:
 		-o $(LIB_FILENAME).$(LIB_VERMAJOR).$(LIB_VERMINOR) $(LIB_OBJ)
 
 clean:
-	rm -f nvram $(LIB_FILENAME)* *.o
+	rm -f $(CLI_FILENAME) $(LIB_FILENAME)* *.o

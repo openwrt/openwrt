@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=unvram
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -18,6 +18,7 @@ define Package/unvram
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=Userspace port of the Broadcom NVRAM manipulation tool
+  DEPENDS:=@TARGET_brcm_2_4||@TARGET_brcm47xx
 endef
 
 define Package/unvram/description
@@ -41,8 +42,10 @@ define Build/Compile
 endef
 
 define Package/unvram/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/unvram $(1)/sbin/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/nvram.init $(1)/etc/init.d/nvram
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nvram $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libnvram.so.0.1 $(1)/usr/lib/
 endef
