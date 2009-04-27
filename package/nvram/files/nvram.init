@@ -57,7 +57,6 @@ fixup_linksys() {
 				nvram_set sdram_ncdl 0x0
 			}
 	esac
-	[ "$COMMIT" = "1" ] && nvram commit
 }
 
 start() {
@@ -72,4 +71,5 @@ start() {
 		nvram set il0macaddr=$(nvram get et0macaddr|
 		awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
 	}
+	[ "$COMMIT" = "1" ] && nvram commit
 }
