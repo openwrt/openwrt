@@ -12,13 +12,11 @@ PKG_VERSION:=1
 
 PKG_BUILD_DEPENDS:=libnl PACKAGE_wprobe-export:libipfix
 
-include $(INCLUDE_DIR)/package.mk
-
-PKG_CONFDEPS = \
+PKG_CONFIG_DEPENDS = \
 	CONFIG_PACKAGE_kmod-wprobe \
-	CONFIG_PACKAGE_wprobe-export
+	CONFIG_PACKAGE_wprobe-export \
 
-STAMP_CONFIGURED:=$(STAMP_CONFIGURED)_$(call confvar,$(PKG_CONFDEPS))
+include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/wprobe
   SUBMENU:=Network Support
