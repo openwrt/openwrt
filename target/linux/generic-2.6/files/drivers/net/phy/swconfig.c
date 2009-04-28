@@ -133,9 +133,19 @@ swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr, st
 	return dev->apply_config(dev);
 }
 
+static int
+swconfig_reset_switch(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	/* don't complain if not supported by the switch driver */
+	if (!dev->reset_switch)
+		return 0;
+
+	return dev->reset_switch(dev);
+}
 
 enum global_defaults {
 	GLOBAL_APPLY,
+	GLOBAL_RESET,
 };
 
 enum vlan_defaults {
@@ -152,6 +162,12 @@ static struct switch_attr default_global[] = {
 		.name = "apply",
 		.description = "Activate changes in the hardware",
 		.set = swconfig_apply_config,
+	},
+	[GLOBAL_RESET] = {
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "reset",
+		.description = "Reset the switch",
+		.set = swconfig_reset_switch,
 	}
 };
 
@@ -190,6 +206,7 @@ static void swconfig_defaults_init(struct switch_dev *dev)
 
 	/* always present, can be no-op */
 	set_bit(GLOBAL_APPLY, &dev->def_global);
+	set_bit(GLOBAL_RESET, &dev->def_global);
 }
 
 
