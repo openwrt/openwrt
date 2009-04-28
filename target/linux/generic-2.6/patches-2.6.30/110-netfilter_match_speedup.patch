@@ -1,0 +1,74 @@
+--- a/include/linux/netfilter_ipv4/ip_tables.h
++++ b/include/linux/netfilter_ipv4/ip_tables.h
+@@ -62,6 +62,7 @@ struct ipt_ip {
+ #define IPT_F_FRAG		0x01	/* Set if rule is a fragment rule */
+ #define IPT_F_GOTO		0x02	/* Set if jump is a goto */
+ #define IPT_F_MASK		0x03	/* All possible flag bits mask. */
++#define IPT_F_NO_DEF_MATCH	0x80	/* Internal: no default match rules present */
+ 
+ /* Values for "inv" field in struct ipt_ip. */
+ #define IPT_INV_VIA_IN		0x01	/* Invert the sense of IN IFACE. */
+--- a/net/ipv4/netfilter/ip_tables.c
++++ b/net/ipv4/netfilter/ip_tables.c
+@@ -87,6 +87,9 @@ ip_packet_match(const struct iphdr *ip,
+ 
+ #define FWINV(bool, invflg) ((bool) ^ !!(ipinfo->invflags & (invflg)))
+ 
++	if (ipinfo->flags & IPT_F_NO_DEF_MATCH)
++		return true;
++
+ 	if (FWINV((ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
+ 		  IPT_INV_SRCIP)
+ 	    || FWINV((ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
+@@ -137,13 +140,32 @@ ip_packet_match(const struct iphdr *ip,
+ 		return false;
+ 	}
+ 
++#undef FWINV
+ 	return true;
+ }
+ 
+ static bool
+-ip_checkentry(const struct ipt_ip *ip)
++ip_checkentry(struct ipt_ip *ip)
+ {
+-	if (ip->flags & ~IPT_F_MASK) {
++#define FWINV(bool, invflg) ((bool) || (ip->invflags & (invflg)))
++
++	if (FWINV(ip->smsk.s_addr, IPT_INV_SRCIP) ||
++		FWINV(ip->dmsk.s_addr, IPT_INV_DSTIP))
++		goto has_match_rules;
++
++	if (FWINV(!!((const unsigned long *)ip->iniface_mask)[0],
++		IPT_INV_VIA_IN) ||
++	    FWINV(!!((const unsigned long *)ip->outiface_mask)[0],
++		IPT_INV_VIA_OUT))
++		goto has_match_rules;
++
++	if (FWINV(ip->flags&IPT_F_FRAG, IPT_INV_FRAG))
++		goto has_match_rules;
++
++	ip->flags |= IPT_F_NO_DEF_MATCH;
++
++has_match_rules:
++	if (ip->flags & ~(IPT_F_MASK|IPT_F_NO_DEF_MATCH)) {
+ 		duprintf("Unknown flag bits set: %08X\n",
+ 			 ip->flags & ~IPT_F_MASK);
+ 		return false;
+@@ -153,6 +175,8 @@ ip_checkentry(const struct ipt_ip *ip)
+ 			 ip->invflags & ~IPT_INV_MASK);
+ 		return false;
+ 	}
++
++#undef FWINV
+ 	return true;
+ }
+ 
+@@ -200,7 +224,6 @@ unconditional(const struct ipt_ip *ip)
+ 			return 0;
+ 
+ 	return 1;
+-#undef FWINV
+ }
+ 
+ #if defined(CONFIG_NETFILTER_XT_TARGET_TRACE) || \
