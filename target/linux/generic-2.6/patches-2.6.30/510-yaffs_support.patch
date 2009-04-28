@@ -1,0 +1,17 @@
+--- a/fs/Kconfig
++++ b/fs/Kconfig
+@@ -177,6 +177,7 @@ source "fs/romfs/Kconfig"
+ source "fs/sysv/Kconfig"
+ source "fs/ufs/Kconfig"
+ source "fs/exofs/Kconfig"
++source "fs/yaffs2/Kconfig"
+ 
+ config NILFS2_FS
+ 	tristate "NILFS2 file system support (EXPERIMENTAL)"
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -125,3 +125,4 @@ obj-$(CONFIG_OCFS2_FS)		+= ocfs2/
+ obj-$(CONFIG_BTRFS_FS)		+= btrfs/
+ obj-$(CONFIG_GFS2_FS)           += gfs2/
+ obj-$(CONFIG_EXOFS_FS)          += exofs/
++obj-$(CONFIG_YAFFS_FS)		+= yaffs2/

@@ -1,0 +1,25 @@
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -778,6 +778,8 @@ config CRYPTO_ANSI_CPRNG
+ 	  for cryptographic modules.  Uses the Algorithm specified in
+ 	  ANSI X9.31 A.2.4
+ 
++source "crypto/ocf/Kconfig"
++
+ source "drivers/crypto/Kconfig"
+ 
+ endif	# if CRYPTO
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -85,6 +85,11 @@ obj-$(CONFIG_CRYPTO_ANSI_CPRNG) += ansi_
+ obj-$(CONFIG_CRYPTO_TEST) += tcrypt.o
+ 
+ #
++# OCF
++#
++obj-$(CONFIG_OCF_OCF) += ocf/
++
++#
+ # generic algorithms and the async_tx api
+ #
+ obj-$(CONFIG_XOR_BLOCKS) += xor.o
