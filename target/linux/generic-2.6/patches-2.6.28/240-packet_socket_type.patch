@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	spin_lock_init(&po->bind_lock);
  	mutex_init(&po->pg_vec_lock);
  	po->prot_hook.func = packet_rcv;
-+	po->pkt_type = PACKET_MASK_ANY & ~PACKET_LOOPBACK;
++	po->pkt_type = PACKET_MASK_ANY & ~(1 << PACKET_LOOPBACK);
  
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
