@@ -8,6 +8,7 @@ set network.wan=interface
 set network.wan.ifname=eth0.2
 set network.wan.proto=dhcp
 EOF
+	HAS_SWITCH=1
 fi
 
 if [ -e "/sys/bus/mdio_bus/drivers/IC+ IP175C/0:00" ]; then
@@ -24,6 +25,15 @@ set network.eth0_2.device=eth0
 set network.eth0_2.vlan=2
 set network.eth0_2.ports="4 5t"
 EOF
+	HAS_SWITCH=1
 fi
+
+[ -z "$HAS_SWITCH" -a -d /sys/class/net/eth1 ] && {
+	uci batch <<EOF
+set network.wan=interface
+set network.wan.ifname=eth1
+set network.wan.proto=dhcp
+EOF
+}
 
 uci commit network
