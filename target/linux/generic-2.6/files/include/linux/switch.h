@@ -132,6 +132,7 @@ struct switch_dev {
 	int (*get_port_pvid)(struct switch_dev *dev, int port, int *val);
 	int (*set_port_pvid)(struct switch_dev *dev, int port, int val);
 	int (*apply_config)(struct switch_dev *dev);
+	int (*reset_switch)(struct switch_dev *dev);
 };
 
 struct switch_port {

@@ -801,7 +801,7 @@ static int ip175c_apply(struct switch_dev *dev)
 	return 0;
 }
 
-static int ip175c_reset(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip175c_reset(struct switch_dev *dev)
 {
 	struct ip175c_state *state = dev->priv;
 	int i, err;
@@ -1125,14 +1125,6 @@ enum Globals {
 };
 
 static const struct switch_attr ip175c_global[] = {
-	[IP175C_RESET] = {
-		.id = IP175C_RESET,
-		.type = SWITCH_TYPE_NOVAL,
-		.name  = "reset",
-		.get = NULL,
-		.description = "Resets the switch but does not clear vlan configuration",
-		.set = ip175c_reset,
-	},
 	[IP175C_ENABLE_VLAN] = {
 		.id = IP175C_ENABLE_VLAN,
 		.type = SWITCH_TYPE_INT,
@@ -1233,6 +1225,7 @@ static int ip175c_probe(struct phy_device *pdev)
 	dev->get_vlan_ports = ip175c_get_ports;
 	dev->set_vlan_ports = ip175c_set_ports;
 	dev->apply_config = ip175c_apply;
+	dev->reset_switch = ip175c_reset;
 
 	dev->priv = state;
 	pdev->priv = state;
@@ -1265,7 +1258,7 @@ static int ip175c_config_init(struct phy_device *pdev)
 	if (err < 0)
 		return err;
 
-	ip175c_reset(&state->dev, NULL, NULL);
+	ip175c_reset(&state->dev);
 
 	state->registered = true;
 	netif_carrier_on(pdev->attached_dev);
