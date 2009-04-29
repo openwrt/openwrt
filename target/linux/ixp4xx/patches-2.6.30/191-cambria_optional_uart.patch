@@ -106,7 +106,7 @@
  	unsigned int	type;		/* If UPF_FIXED_TYPE */
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
-@@ -270,6 +270,7 @@ struct uart_port {
+@@ -273,6 +273,7 @@ struct uart_port {
  #define UPIO_TSI		(5)			/* Tsi108/109 type IO */
  #define UPIO_DWAPB		(6)			/* DesignWare APB UART */
  #define UPIO_RM9000		(7)			/* RM9000 type IO */
@@ -114,7 +114,7 @@
  
  	unsigned int		read_status_mask;	/* driver specific */
  	unsigned int		ignore_status_mask;	/* driver specific */
-@@ -312,6 +313,7 @@ struct uart_port {
+@@ -315,6 +316,7 @@ struct uart_port {
  
  	unsigned int		mctrl;			/* current modem ctrl settings */
  	unsigned int		timeout;		/* character-based timeout */
@@ -199,7 +199,7 @@
  			uart->port.dev = port->dev;
 --- a/drivers/serial/serial_core.c
 +++ b/drivers/serial/serial_core.c
-@@ -2142,6 +2142,7 @@ uart_report_port(struct uart_driver *drv
+@@ -2138,6 +2138,7 @@ uart_report_port(struct uart_driver *drv
  		snprintf(address, sizeof(address),
  			 "I/O 0x%lx offset 0x%x", port->iobase, port->hub6);
  		break;
@@ -207,7 +207,7 @@
  	case UPIO_MEM:
  	case UPIO_MEM32:
  	case UPIO_AU:
-@@ -2556,6 +2557,7 @@ int uart_match_port(struct uart_port *po
+@@ -2552,6 +2553,7 @@ int uart_match_port(struct uart_port *po
  	case UPIO_HUB6:
  		return (port1->iobase == port2->iobase) &&
  		       (port1->hub6   == port2->hub6);
