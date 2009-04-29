@@ -1,8 +1,8 @@
 --- a/drivers/input/misc/Kconfig
 +++ b/drivers/input/misc/Kconfig
-@@ -227,4 +227,20 @@ config INPUT_PCF50633_PMU
- 	 Say Y to include support for delivering  PMU events via  input
- 	 layer on NXP PCF50633.
+@@ -250,4 +250,20 @@ config INPUT_RB532_BUTTON
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called rb532_button.
  
 +config INPUT_GPIO_BUTTONS
 +	tristate "Polled GPIO buttons interface"
@@ -23,8 +23,8 @@
  endif
 --- a/drivers/input/misc/Makefile
 +++ b/drivers/input/misc/Makefile
-@@ -22,3 +22,4 @@ obj-$(CONFIG_INPUT_UINPUT)		+= uinput.o
- obj-$(CONFIG_INPUT_APANEL)		+= apanel.o
- obj-$(CONFIG_INPUT_SGI_BTNS)		+= sgi_btns.o
- obj-$(CONFIG_INPUT_PCF50633_PMU)	+= pcf50633-input.o
+@@ -24,3 +24,4 @@ obj-$(CONFIG_INPUT_SPARCSPKR)		+= sparcs
+ obj-$(CONFIG_INPUT_UINPUT)		+= uinput.o
+ obj-$(CONFIG_INPUT_WISTRON_BTNS)	+= wistron_btns.o
+ obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 +obj-$(CONFIG_INPUT_GPIO_BUTTONS)	+= gpio_buttons.o
