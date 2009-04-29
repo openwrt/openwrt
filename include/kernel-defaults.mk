@@ -66,6 +66,8 @@ ifeq ($(KERNEL),2.6)
 		echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(TARGET_DIR) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(LINUX_DIR)/.config
+		echo 'CONFIG_INITRAMFS_COMPRESSION_NONE=y' >> $(LINUX_DIR)/.config
+		echo '# CONFIG_INITRAMFS_COMPRESSION_LZMA is not set' >> $(LINUX_DIR)/.config
     endef
   else
     define Kernel/SetInitramfs
