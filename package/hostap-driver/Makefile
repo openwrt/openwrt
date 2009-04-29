@@ -47,6 +47,7 @@ $(call KernelPackage/hostap/Default)
   TITLE:=Host AP support for Prism2/2.5/3
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-ieee80211 +wireless-tools
   KCONFIG:=CONFIG_HOSTAP
+  PROVIDES:=kmod-hostap
 endef
 
 define KernelPackage/hostap/2.4
