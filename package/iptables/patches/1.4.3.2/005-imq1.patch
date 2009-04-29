@@ -1,26 +1,25 @@
---- iptables-1.4.1-rc3.orig/extensions/.IMQ-test	1970-01-01 10:00:00.000000000 +1000
-+++ iptables-1.4.1-rc3/extensions/.IMQ-test	2008-06-08 22:41:49.000000000 +1000
+--- /dev/null
++++ b/extensions/.IMQ-test
 @@ -0,0 +1,3 @@
 +#!/bin/sh
 +# True if IMQ target patch is applied.
 +[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_IMQ.h ] && echo IMQ
-diff -pruN iptables-1.4.1-rc3.orig/extensions/.IMQ-test6 iptables-1.4.1-rc3/extensions/.IMQ-test6
---- iptables-1.4.1-rc3.orig/extensions/.IMQ-test6	1970-01-01 10:00:00.000000000 +1000
-+++ iptables-1.4.1-rc3/extensions/.IMQ-test6	2008-06-08 22:41:49.000000000 +1000
+--- /dev/null
++++ b/extensions/.IMQ-test6
 @@ -0,0 +1,3 @@
 +#!/bin/sh
 +# True if IMQ target patch is applied.
 +[ -f $KERNEL_DIR/include/linux/netfilter_ipv6/ip6t_IMQ.h ] && echo IMQ
-diff -pruN iptables-1.4.1-rc3.orig/extensions/libip6t_IMQ.c iptables-1.4.1-rc3/extensions/libip6t_IMQ.c
---- iptables-1.4.1-rc3.orig/extensions/libip6t_IMQ.c	1970-01-01 10:00:00.000000000 +1000
-+++ iptables-1.4.1-rc3/extensions/libip6t_IMQ.c	2008-06-08 22:46:57.000000000 +1000
-@@ -0,0 +1,89 @@
+--- /dev/null
++++ b/extensions/libip6t_IMQ.c
+@@ -0,0 +1,90 @@
 +/* Shared library add-on to iptables to add IMQ target support. */
 +#include <stdio.h>
 +#include <string.h>
 +#include <stdlib.h>
 +#include <getopt.h>
 +
++#include <xtables.h>
 +#include <ip6tables.h>
 +#include <linux/netfilter_ipv6/ip6_tables.h>
 +#include <linux/netfilter_ipv6/ip6t_IMQ.h>
@@ -57,8 +56,8 @@ diff -pruN iptables-1.4.1-rc3.orig/extensions/libip6t_IMQ.c iptables-1.4.1-rc3/e
 +	
 +	switch(c) {
 +	case '1':
-+		if (check_inverse(optarg, &invert, NULL, 0))
-+			exit_error(PARAMETER_PROBLEM,
++		if (xtables_check_inverse(optarg, &invert, NULL, 0))
++			xtables_error(PARAMETER_PROBLEM,
 +				   "Unexpected `!' after --todev");
 +		mr->todev=atoi(optarg);
 +		break;
@@ -104,16 +103,16 @@ diff -pruN iptables-1.4.1-rc3.orig/extensions/libip6t_IMQ.c iptables-1.4.1-rc3/e
 +{
 +	xtables_register_target(&imq);
 +}
-diff -pruN iptables-1.4.1-rc3.orig/extensions/libipt_IMQ.c iptables-1.4.1-rc3/extensions/libipt_IMQ.c
---- iptables-1.4.1-rc3.orig/extensions/libipt_IMQ.c	1970-01-01 10:00:00.000000000 +1000
-+++ iptables-1.4.1-rc3/extensions/libipt_IMQ.c	2008-06-08 22:46:25.000000000 +1000
-@@ -0,0 +1,88 @@
+--- /dev/null
++++ b/extensions/libipt_IMQ.c
+@@ -0,0 +1,89 @@
 +/* Shared library add-on to iptables to add IMQ target support. */
 +#include <stdio.h>
 +#include <string.h>
 +#include <stdlib.h>
 +#include <getopt.h>
 +
++#include <xtables.h>
 +#include <iptables.h>
 +#include <linux/netfilter_ipv4/ip_tables.h>
 +#include <linux/netfilter_ipv4/ipt_IMQ.h>
@@ -149,8 +148,8 @@ diff -pruN iptables-1.4.1-rc3.orig/extensions/libipt_IMQ.c iptables-1.4.1-rc3/ex
 +	
 +	switch(c) {
 +	case '1':
-+		if (check_inverse(optarg, &invert, NULL, 0))
-+			exit_error(PARAMETER_PROBLEM,
++		if (xtables_check_inverse(optarg, &invert, NULL, 0))
++			xtables_error(PARAMETER_PROBLEM,
 +				   "Unexpected `!' after --todev");
 +		mr->todev=atoi(optarg);
 +		break;

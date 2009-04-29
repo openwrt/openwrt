@@ -10,18 +10,9 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 
-ifeq ($(CONFIG_LINUX_2_4),y)
-  PKG_VERSION:=1.3.8
-  PKG_RELEASE:=4
-  PKG_MD5SUM:=0a9209f928002e5eee9cdff8fef4d4b3
-  MAKE_TARGETS:=experimental install-experimental install-devel
-endif
-
-ifeq ($(CONFIG_LINUX_2_6),y)
-  PKG_VERSION:=1.4.3.2
-  PKG_RELEASE:=1
-  PKG_MD5SUM:=545698693b636cfc844aafc6729fd48a
-endif
+PKG_VERSION:=1.4.3.2
+PKG_RELEASE:=1
+PKG_MD5SUM:=545698693b636cfc844aafc6729fd48a
 
 PKG_VERSION?=<IPTABLES_VERSION>
 
@@ -40,10 +31,27 @@ ifeq ($(DUMP),)
   STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep 'NETFILTER' $(LINUX_DIR)/.config | md5s)
 endif
 
+
+define Package/libiptc
+  SECTION:=libs
+  CATEGORY:=Libraries
+  URL:=http://netfilter.org/
+  TITLE:=IPv4/IPv6 firewall - shared libiptc library
+endef
+
+define Package/libxtables
+  SECTION:=libs
+  CATEGORY:=Libraries
+  URL:=http://netfilter.org/
+  TITLE:=IPv4/IPv6 firewall - shared xtables library
+endef
+
+
 define Package/iptables/Default
   SECTION:=net
   CATEGORY:=Base system
   URL:=http://netfilter.org/
+  DEPENDS:=+libiptc +libxtables
 endef
 
 define Package/iptables/Module
@@ -106,7 +114,7 @@ define Package/iptables-mod-filter/description
 endef
 
 define Package/iptables-mod-imq
-$(call Package/iptables/Module, +kmod-ipt-imq @!LINUX_2_6_27)
+$(call Package/iptables/Module, +kmod-ipt-imq)
   TITLE:=IMQ support
 endef
 
@@ -241,15 +249,6 @@ define Build/Prepare
 	$(call Build/Prepare/Default)
 endef
 
-ifeq ($(KERNEL),2.4)
-  define Build/Configure
-	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test*
-	rm -f $(PKG_BUILD_DIR)/.configured*
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		clean
-  endef
-endif
-
 TARGET_CPPFLAGS := -I$(PKG_BUILD_DIR)/include $(TARGET_CPPFLAGS)
 TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
@@ -287,6 +286,18 @@ define Package/iptables/install
 	)
 endef
 
+
+define Package/libiptc/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libiptc.so.0 $(1)/usr/lib/
+endef
+
+define Package/libxtables/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so.2 $(1)/usr/lib/
+endef
+
+
 define Package/iptables-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(1)/usr/sbin/
@@ -323,6 +334,10 @@ endef
 L7_INSTALL:=\
 	$(INSTALL_DIR) $$(1)/etc/l7-protocols; \
 	$(CP) files/l7/*.pat $$(1)/etc/l7-protocols/
+
+
+$(eval $(call BuildPackage,libiptc))
+$(eval $(call BuildPackage,libxtables))
 
 $(eval $(call BuildPackage,iptables))
 $(eval $(call BuildPackage,iptables-utils))
