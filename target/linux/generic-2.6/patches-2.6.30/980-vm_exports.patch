@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2587,6 +2587,16 @@ int shmem_unuse(swp_entry_t entry, struc
+@@ -2602,6 +2602,16 @@ int shmem_unuse(swp_entry_t entry, struc
  
  /* common code */
  
@@ -17,7 +17,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2665,11 +2675,7 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2680,11 +2690,7 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
@@ -70,7 +70,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -5600,6 +5600,7 @@ int can_nice(const struct task_struct *p
+@@ -5665,6 +5665,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
