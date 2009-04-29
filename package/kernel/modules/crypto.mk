@@ -32,9 +32,10 @@ endif
 CRYPTO_MODULES = \
 	ALGAPI=crypto_algapi \
 	AEAD=aead \
+	PCOMPRESS=pcompress \
 	BLKCIPHER=$(BLKCIPHER_PREFIX)blkcipher \
-	MANAGER=cryptomgr \
 	HASH=crypto_hash \
+	MANAGER=cryptomgr \
 	CBC=cbc \
 	ECB=ecb \
 	DEFLATE=deflate
