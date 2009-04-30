@@ -123,12 +123,12 @@ ifndef DUMP
 	$(call Host/Prepare)
 	touch $$@
 
-  $(call Host/Exports,$(STAMP_CONFIGURED))
+  $(call Host/Exports,$(HOST_STAMP_CONFIGURED))
   $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
 	$(call Host/Configure)
 	touch $$@
 
-  $(call Host/Exports,$(STAMP_BUILT))
+  $(call Host/Exports,$(HOST_STAMP_BUILT))
   $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
 	$(call Host/Compile)
 	touch $$@
