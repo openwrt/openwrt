@@ -32,7 +32,7 @@ endif
 CRYPTO_MODULES = \
 	ALGAPI=crypto_algapi \
 	AEAD=aead \
-	PCOMPRESS=pcompress \
+	$(if $(LINUX_2_6_30),PCOMPRESS=pcompress) \
 	BLKCIPHER=$(BLKCIPHER_PREFIX)blkcipher \
 	HASH=crypto_hash \
 	MANAGER=cryptomgr \
