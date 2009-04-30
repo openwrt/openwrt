@@ -52,6 +52,7 @@ GLIBC_CONFIGURE:= \
 	libc_cv_forced_unwind=yes \
 	libc_cv_c_cleanup=yes \
 	libc_cv_386_tls=yes \
+	libc_cv_slibdir="/lib" \
 	$(HOST_BUILD_DIR)/configure \
 		--prefix=/usr \
 		--build=$(GNU_HOST_NAME) \

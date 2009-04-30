@@ -51,6 +51,7 @@ EGLIBC_CONFIGURE:= \
 	BUILD_CC="$(HOSTCC)" \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(EGLIBC_CFLAGS)" \
+	libc_cv_slibdir="/lib" \
 	$(HOST_BUILD_DIR)/libc/configure \
 		--prefix=/usr \
 		--build=$(GNU_HOST_NAME) \
