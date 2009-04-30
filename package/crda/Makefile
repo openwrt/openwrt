@@ -14,7 +14,7 @@ PKG_VERSION:=1.0.2
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/crda
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=1f9854a77c7d92671b8bc8a502716a5b
-PKG_BUILD_DEPENDS:=mac80211 libnl
+PKG_BUILD_DEPENDS:=mac80211
 
 PKG_REGULATORY_NAME:=regulatory
 PKG_REGULATORY_VERSION:=2009.04.17
@@ -28,7 +28,7 @@ define Package/crda
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Central Regulatory Domain Agent (CRDA)
-  DEPENDS:=@LINUX_2_6 +hotplug2 +kmod-mac80211
+  DEPENDS:=@LINUX_2_6 +hotplug2 +kmod-mac80211 +libnl-tiny
   URL:=http://wireless.kernel.org/en/developers/Regulatory/CRDA
 endef
 
@@ -49,14 +49,16 @@ define Package/crda/description
  yet to be added).
 endef
 
-define Build/Compile
-	$(MAKE_VARS) \
-	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
-		$(MAKE_FLAGS) \
-		NLLIBS="$(STAGING_DIR)/usr/lib/libnl.a -lm" \
-		REG_BIN="$(DL_DIR)/$(PKG_REGULATORY_SOURCE)" \
-		crda
-endef
+TARGET_CPPFLAGS := \
+	-I$(STAGING_DIR)/usr/include/libnl-tiny \
+	$(TARGET_CPPFLAGS)
+
+MAKE_FLAGS += \
+	NL1FOUND="" NL2FOUND=Y \
+	NLLIBNAME="libnl-tiny" \
+	NLLIBS="-lnl-tiny -lm" \
+	REG_BIN="$(DL_DIR)/$(PKG_REGULATORY_SOURCE)" \
+	crda
 
 define Package/crda/install
 	$(INSTALL_DIR) $(1)/sbin
