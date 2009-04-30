@@ -75,7 +75,7 @@
  	/* if we've classified it or seen too many packets */
 -	if(total_acct_packets(master_conntrack) > num_packets ||
 -	   master_conntrack->layer7.app_proto) {
-+	if(!info->pkt && (TOTAL_PACKETS > num_packets ||
++	if(!info->pkt && (total_acct_packets(master_conntrack) > num_packets ||
 +	   master_conntrack->layer7.app_proto)) {
  
  		pattern_result = match_no_append(conntrack, master_conntrack, 
