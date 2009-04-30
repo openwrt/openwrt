@@ -40,7 +40,7 @@ define Package/opkg/conffiles
 /etc/opkg.conf
 endef
 
-TARGET_CFLAGS += $(FPIC) $(if $(CONFIG_GCC_VERSION_4_3),-Wno-array-bounds)
+TARGET_CFLAGS += $(FPIC) $(if $(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),-Wno-array-bounds)
 EXTRA_CFLAGS += $(TARGET_CPPFLAGS)
 EXTRA_LDFLAGS += $(TARGET_LDFLAGS) -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
 
