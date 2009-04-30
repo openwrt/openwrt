@@ -20,7 +20,6 @@ PKG_MD5SUM:=83630d11fa66ade9091f1b304fccd74c
 PKG_BUILD_DEPENDS:= \
 	PACKAGE_kmod-madwifi:madwifi \
 	PACKAGE_kmod-mac80211:mac80211 \
-	PACKAGE_kmod-mac80211:libnl \
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-ath9k \
@@ -41,7 +40,7 @@ define Package/hostapd/Default
   CATEGORY:=Network
   TITLE:=IEEE 802.1x Authenticator
   URL:=http://hostap.epitest.fi/
-  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax
+  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +PACKAGE_kmod-mac80211:libnl-tiny
 endef
 
 define Package/hostapd
@@ -94,13 +93,20 @@ define Build/ConfigureTarget
 	$(CP) ./files/$(1).config $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/.config
 endef
 
+TARGET_CPPFLAGS := \
+	-I$(STAGING_DIR)/usr/include/libnl-tiny \
+	$(TARGET_CPPFLAGS) \
+	-I$(STAGING_DIR)/usr/include/madwifi \
+	-I$(STAGING_DIR)/usr/include/mac80211 \
+	-DCONFIG_LIBNL20
+
 define Build/CompileTarget
-	CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/madwifi -I$(STAGING_DIR)/usr/include/mac80211 -I$(STAGING_DIR)/usr/include/libnl $(TARGET_CPPFLAGS)" \
+	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(DRIVER_MAKEOPTS) \
 		LIBS="$(TARGET_LDFLAGS) \
-			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm $(STAGING_DIR)/usr/lib/libnl.a) \
+			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm -lnl-tiny) \
 			$(if $(findstring default,$(1)),-lssl -lcrypto)" \
 		hostapd hostapd_cli
 	$(CP) $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/hostapd_cli $(PKG_BUILD_DIR)/
