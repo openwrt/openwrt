@@ -494,6 +494,10 @@ static struct ssb_sprom bcm63xx_sprom = {
 	.boardflags_hi		= 0x0000,
 };
 
+static struct resource gpiodev_resource = {
+	.start			= 0xFFFFFFFF,
+};
+
 /*
  * third stage init callback, register all board devices.
  */
@@ -540,6 +544,9 @@ int __init board_register_devices(void)
 	mtd_resources[0].end = 0x1FFFFFFF;
 
 	platform_device_register(&mtd_dev);
+
+	/* Register GPIODEV */
+	platform_device_register_simple("GPIODEV", 0, &gpiodev_resource, 1);
 
 	return 0;
 }
