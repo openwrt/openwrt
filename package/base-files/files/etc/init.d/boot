@@ -52,7 +52,7 @@ start() {
 
 	killall -q hotplug2
 	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
-			--max-children 1 --no-coldplug &
+			--max-children 1 --no-coldplug >/dev/null 2>&1 &
 
 	# the coldplugging of network interfaces needs to happen later, so we do it manually here
 	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do

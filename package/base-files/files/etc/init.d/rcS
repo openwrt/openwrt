@@ -1,11 +1,17 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
+run_scripts() {
+	for i in /etc/rc.d/$1*; do
+		[ -x $i ] && $i $2 2>&1
+	done | $LOGGER
+}
+
 LOGGER="cat"
 [ -x /usr/bin/logger ] && LOGGER="logger -s -p 6 -t sysinit"
 
-{
-	for i in /etc/rc.d/$1*; do
-		[ -x $i ] && $i $2 2>&1
-	done 
-} | $LOGGER &
+if [ "$1" = "S" ]; then
+	run_scripts "$1" "$2" &
+else
+	run_scripts "$1" "$2"
+fi
