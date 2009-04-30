@@ -1,6 +1,6 @@
 --- a/include/linux/netfilter/xt_layer7.h
 +++ b/include/linux/netfilter/xt_layer7.h
-@@ -8,6 +8,7 @@ struct xt_layer7_info {
+@@ -8,6 +8,7 @@
      char protocol[MAX_PROTOCOL_LEN];
      char pattern[MAX_PATTERN_LEN];
      u_int8_t invert;
@@ -10,7 +10,7 @@
  #endif /* _XT_LAYER7_H */
 --- a/net/netfilter/xt_layer7.c
 +++ b/net/netfilter/xt_layer7.c
-@@ -297,34 +297,36 @@ static int match_no_append(struct nf_con
+@@ -314,34 +314,36 @@
  }
  
  /* add the new app data to the conntrack.  Return number of bytes added. */
@@ -61,8 +61,8 @@
  	return length;
  }
  
-@@ -411,7 +413,7 @@ match(const struct sk_buff *skbin,
- 	const struct xt_layer7_info * info = matchinfo;
+@@ -438,7 +440,7 @@
+ 
  	enum ip_conntrack_info master_ctinfo, ctinfo;
  	struct nf_conn *master_conntrack, *conntrack;
 -	unsigned char * app_data;
@@ -70,18 +70,19 @@
  	unsigned int pattern_result, appdatalen;
  	regexp * comppattern;
  
-@@ -439,8 +441,8 @@ match(const struct sk_buff *skbin,
+@@ -466,9 +468,8 @@
  		master_conntrack = master_ct(master_conntrack);
  
  	/* if we've classified it or seen too many packets */
--	if(TOTAL_PACKETS > num_packets ||
+-	if(total_acct_packets(master_conntrack) > num_packets ||
 -	   master_conntrack->layer7.app_proto) {
-+	if(!info->pkt && (TOTAL_PACKETS > num_packets ||
+-
++	if(!info->pkt && (total_acct_packets(master_conntrack) > num_packets ||
 +	   master_conntrack->layer7.app_proto)) {
- 
  		pattern_result = match_no_append(conntrack, master_conntrack, 
  						 ctinfo, master_ctinfo, info);
-@@ -473,6 +475,25 @@ match(const struct sk_buff *skbin,
+ 
+@@ -500,6 +501,25 @@
  	/* the return value gets checked later, when we're ready to use it */
  	comppattern = compile_and_cache(info->pattern, info->protocol);
  
@@ -105,5 +106,5 @@
 +	}
 +
  	/* On the first packet of a connection, allocate space for app data */
- 	if(TOTAL_PACKETS == 1 && !skb->cb[0] && 
+ 	if(total_acct_packets(master_conntrack) == 1 && !skb->cb[0] && 
  	   !master_conntrack->layer7.app_data){
