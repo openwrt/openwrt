@@ -24,6 +24,9 @@
 #include <sys/socket.h>
 #include <linux/switch.h>
 #include "swlib.h"
+#include <netlink/netlink.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
 
 //#define DEBUG 1
 #ifdef DEBUG
@@ -32,7 +35,7 @@
 #define DPRINTF(fmt, ...) do {} while (0)
 #endif
 
-static struct nl_handle *handle;
+static struct nl_sock *handle;
 static struct nl_cache *cache;
 static struct genl_family *family;
 static struct nlattr *tb[SWITCH_ATTR_MAX];
@@ -507,7 +510,7 @@ swlib_priv_free(void)
 	if (cache)
 		nl_cache_free(cache);
 	if (handle)
-		nl_handle_destroy(handle);
+		nl_socket_free(handle);
 	handle = NULL;
 	cache = NULL;
 }
@@ -515,7 +518,9 @@ swlib_priv_free(void)
 static int
 swlib_priv_init(void)
 {
-	handle = nl_handle_alloc();
+	int ret;
+
+	handle = nl_socket_alloc();
 	if (!handle) {
 		DPRINTF("Failed to create handle\n");
 		goto err;
@@ -526,8 +531,8 @@ swlib_priv_init(void)
 		goto err;
 	}
 
-	cache = genl_ctrl_alloc_cache(handle);
-	if (!cache) {
+	ret = genl_ctrl_alloc_cache(handle, &cache);
+	if (ret < 0) {
 		DPRINTF("Failed to allocate netlink cache\n");
 		goto err;
 	}

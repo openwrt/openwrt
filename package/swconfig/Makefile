@@ -6,24 +6,25 @@
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=kmod-swconfig
+PKG_NAME:=swconfig
 PKG_RELEASE:=1
-PKG_BUILD_DEPENDS:=libnl
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 define Package/swconfig
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@LINUX_2_6_26||LINUX_2_6_27||LINUX_2_6_28||LINUX_2_6_29 +libuci
+  DEPENDS:=@LINUX_2_6_26||LINUX_2_6_27||LINUX_2_6_28||LINUX_2_6_29 +libuci +libnl-tiny
   TITLE:=Switch configuration utility
 endef
 
-TARGET_CPPFLAGS += \
+TARGET_CPPFLAGS := \
+	-I$(STAGING_DIR)/usr/include/libnl-tiny \
 	-I$(LINUX_DIR)/include \
-	-I$(PKG_BUILD_DIR)
+	-I$(PKG_BUILD_DIR) \
+	$(TARGET_CPPFLAGS)
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
@@ -31,10 +32,10 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
+	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		LIBS="-L$(STAGING_DIR)/usr/lib $(STAGING_DIR)/usr/lib/libnl.a -lm -luci"
+		LIBS="$(TARGET_LDFLAGS) -lnl-tiny -lm -luci"
 endef
 
 define Package/swconfig/install
