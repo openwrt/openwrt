@@ -36,9 +36,10 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include/libnl-tiny
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig $(1)/usr/include/libnl-tiny
 	$(CP) $(PKG_BUILD_DIR)/include/* $(1)/usr/include/libnl-tiny
 	$(CP) $(PKG_BUILD_DIR)/libnl-tiny.so $(1)/usr/lib/
+	$(CP) ./files/libnl-tiny.pc $(1)/usr/lib/pkgconfig
 endef
 
 define Package/libnl-tiny/install
