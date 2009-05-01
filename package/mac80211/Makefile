@@ -17,12 +17,12 @@ ifneq ($(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_23)$(CONFIG_LINUX_2_6_24)$(CONFI
   PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
   PATCH_DIR:=./patches-old
 else
-  PKG_VERSION:=2009-03-31
-  PKG_RELEASE:=2
+  PKG_VERSION:=2009-05-01
+  PKG_RELEASE:=1
   PKG_SOURCE_URL:= \
-	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/03 \
+	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/05 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-  PKG_MD5SUM:=b5b2159081c36dd6c318a28eddf7e646
+  PKG_MD5SUM:=abc949ec3f7cc57302cca814d9b9c6cd
 endif
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
@@ -234,12 +234,25 @@ define KernelPackage/zd1211rw
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
 endef
 
+
+define KernelPackage/ath
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Atheros common driver part
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,26,ath)
+endef
+
+define KernelPackage/ath/description
+ This module contains some common parts needed by Atheros Wireless drivers.
+endef
+
 define KernelPackage/ath5k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 5xxx wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath5k
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath5k/ath5k.$(LINUX_KMOD_SUFFIX)
+  DEPENDS+= +kmod-ath
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath5k/ath5k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath5k)
 endef
 
@@ -252,8 +265,8 @@ define KernelPackage/ath9k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24||!LINUX_2_6_25||!LINUX_2_6_26
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
+  DEPENDS+= +kmod-ath @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24||!LINUX_2_6_25||!LINUX_2_6_26
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath9k)
 endef
 
@@ -386,7 +399,7 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PCI),-DCONFIG_SSB_SPROM) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS) \
 	$(if $(CONFIG_RFKILL),-DCONFIG_B43_RFKILL -DCONFIG_B43LEGACY_RFKILL) \
-	$(if $(CONFIG_HW_RANDOM),-DCONFIG_B43_HWRNG) \
+	$(if $(CONFIG_HW_RANDOM),-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG) \
 	$(if $(CONFIG_PCMCIA),-DCONFIG_SSB_PCMCIAHOST_POSSIBLE -DCONFIG_SSB_PCMCIAHOST -DCONFIG_B43_PCMCIA -DCONFIG_B43_PIO) \
 	$(if $(CONFIG_DEBUG_FS), -DCONFIG_MAC80211_DEBUGFS) \
 	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
@@ -416,6 +429,7 @@ MAKE_OPTS:= \
 	CONFIG_B43LEGACY_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	CONFIG_B43_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	$(if $(CONFIG_HW_RANDOM),CONFIG_B43_HWRNG=y,CONFIG_B43_HWRNG=n) \
+	$(if $(CONFIG_HW_RANDOM),CONFIG_B43LEGACY_HWRNG=y,CONFIG_B43LEGACY_HWRNG=n) \
 	$(if $(CONFIG_PACKAGE_kmod-b43),CONFIG_B43=m) \
 	$(if $(CONFIG_PACKAGE_kmod-b43legacy),CONFIG_B43LEGACY=m) \
 	KLIB_BUILD="$(LINUX_DIR)" \
@@ -549,5 +563,6 @@ $(eval $(call KernelPackage,rt2800-usb))
 $(eval $(call KernelPackage,zd1211rw))
 $(eval $(call KernelPackage,mac80211-hwsim))
 $(eval $(call KernelPackage,ath9k))
+$(eval $(call KernelPackage,ath))
 $(eval $(call KernelPackage,b43))
 $(eval $(call KernelPackage,b43legacy))
