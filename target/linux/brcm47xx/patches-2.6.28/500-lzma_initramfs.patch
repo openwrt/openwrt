@@ -1,6 +1,14 @@
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -475,6 +475,69 @@ static void __init flush_window(void)
+--- a/init/initramfs.c	2009-03-23 22:55:52.000000000 +0100
++++ b/init/initramfs.c	2009-05-01 11:15:46.000000000 +0200
+@@ -7,6 +7,7 @@
+ #include <linux/string.h>
+ #include <linux/syscalls.h>
+ #include <linux/utime.h>
++#include <linux/vmalloc.h>
+ 
+ static __initdata char *message;
+ static void __init error(char *x)
+@@ -475,6 +476,69 @@
  	outcnt = 0;
  }
  
@@ -40,13 +48,13 @@
 +	workspace_size = ((LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp))) * sizeof(CProb)) + 100;
 +	printk( KERN_NOTICE "initramfs: LZMA lc=%d,lp=%d,pb=%d,origSize=%d\n",
 +	lc,lp,pb,osize);
-+	outputbuffer = kmalloc(osize, GFP_KERNEL);
++	outputbuffer = vmalloc(osize);
 +	if (outputbuffer == 0) {
 +		printk(KERN_ERR "initramfs: Couldn't allocate lzma output buffer\n");
 +		return -1;
 +	}
 +
-+	workspace = kmalloc(workspace_size, GFP_KERNEL);
++	workspace = vmalloc(workspace_size);
 +	if (workspace == NULL) {
 +		printk(KERN_ERR "initramfs: Couldn't allocate lzma workspace\n");
 +		return -1;
@@ -61,8 +69,8 @@
 +	flush_buffer(outputbuffer, outsizeProcessed);
 +	inptr = insize;
 +
-+	kfree(outputbuffer);
-+	kfree(workspace);
++	vfree(outputbuffer);
++	vfree(workspace);
 +	state = Reset;
 +	return 0;
 +}
@@ -70,7 +78,7 @@
  static char * __init unpack_to_rootfs(char *buf, unsigned len, int check_only)
  {
  	int written;
-@@ -509,12 +572,28 @@ static char * __init unpack_to_rootfs(ch
+@@ -509,12 +573,28 @@
  		inptr = 0;
  		outcnt = 0;		/* bytes in output buffer */
  		bytes_out = 0;
@@ -104,9 +112,9 @@
  		buf += inptr;
  		len -= inptr;
  	}
---- a/scripts/gen_initramfs_list.sh
-+++ b/scripts/gen_initramfs_list.sh
-@@ -287,7 +287,7 @@ if [ ! -z ${output_file} ]; then
+--- a/scripts/gen_initramfs_list.sh	2009-03-23 22:55:52.000000000 +0100
++++ b/scripts/gen_initramfs_list.sh	2009-05-01 11:12:45.000000000 +0200
+@@ -287,7 +287,7 @@
  	if [ "${is_cpio_compressed}" = "compressed" ]; then
  		cat ${cpio_tfile} > ${output_file}
  	else
