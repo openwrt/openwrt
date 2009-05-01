@@ -89,12 +89,12 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +			/* sanity check.  First non-comment non-blank 
 +			line must be the same as the file name. */
 +			if(strcmp(line, protoname))
-+				exit_error(OTHER_PROBLEM, 
++				xtables_error(OTHER_PROBLEM, 
 +					"Protocol name (%s) doesn't match file name (%s).  Bailing out\n",
 +					line, filename);
 +
 +			if(strlen(line) >= MAX_PROTOCOL_LEN)
-+				 exit_error(PARAMETER_PROBLEM, 
++				 xtables_error(PARAMETER_PROBLEM, 
 +					"Protocol name in %s too long!", filename);
 +			strncpy(info->protocol, line, MAX_PROTOCOL_LEN);
 +
@@ -103,18 +103,18 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +		else if(datatype == pattern)
 +		{
 +			if(strlen(line) >= MAX_PATTERN_LEN)
-+				 exit_error(PARAMETER_PROBLEM, "Pattern in %s too long!", filename);
++				 xtables_error(PARAMETER_PROBLEM, "Pattern in %s too long!", filename);
 +			strncpy(info->pattern, line, MAX_PATTERN_LEN);
 +			
 +			datatype = done;			
 +			break;
 +		}
 +		else
-+			exit_error(OTHER_PROBLEM, "Internal error");
++			xtables_error(OTHER_PROBLEM, "Internal error");
 +	}
 +
 +	if(datatype != done)
-+		exit_error(OTHER_PROBLEM, "Failed to get all needed data from %s", filename);
++		xtables_error(OTHER_PROBLEM, "Failed to get all needed data from %s", filename);
 +
 +	if(line) free(line);
 +	fclose(f);
@@ -133,7 +133,7 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +                case 'A' ... 'F':
 +                        return c - 'A' + 10;
 +                default:
-+                        exit_error(OTHER_PROBLEM, "hex2dec: bad value!\n");
++                        xtables_error(OTHER_PROBLEM, "hex2dec: bad value!\n");
 +                        return 0;
 +        }
 +}
@@ -210,7 +210,7 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +	if (n < 0)
 +	{
 +            perror("scandir");
-+	    exit_error(OTHER_PROBLEM, "Couldn't open %s\n", dirname);
++	    xtables_error(OTHER_PROBLEM, "Couldn't open %s\n", dirname);
 +	}
 +        else 
 +	{
@@ -267,7 +267,7 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +		int c = snprintf(filename, MAX_FN_LEN, "%s/%s/%s.pat", dir, subdirs[n], s);
 +
 +		if(c > MAX_FN_LEN)
-+			exit_error(OTHER_PROBLEM, 
++			xtables_error(OTHER_PROBLEM, 
 +				"Filename beginning with %s is too long!\n", filename);
 +
 +		/* read in the pattern from the file */
@@ -280,7 +280,7 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +	}
 +
 +	if(!done)
-+		exit_error(OTHER_PROBLEM, 
++		xtables_error(OTHER_PROBLEM, 
 +			"Couldn't find a pattern definition file for %s.\n", s);
 +
 +	/* process \xHH escapes and tolower everything. (our regex lib has no
@@ -305,7 +305,7 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +
 +	case 'd':
 +		if(strlen(argv[optind-1]) >= MAX_FN_LEN)
-+			exit_error(PARAMETER_PROBLEM, "directory name too long\n");
++			xtables_error(PARAMETER_PROBLEM, "directory name too long\n");
 +
 +		strncpy(l7dir, argv[optind-1], MAX_FN_LEN);
 +
@@ -323,7 +323,7 @@ diff -Nur a/libxt_layer7.c b/libxt_layer7.c
 +static void final_check(unsigned int flags)
 +{
 +	if (!flags)
-+		exit_error(PARAMETER_PROBLEM,
++		xtables_error(PARAMETER_PROBLEM,
 +			   "LAYER7 match: You must specify `--l7proto'");
 +}
 +
