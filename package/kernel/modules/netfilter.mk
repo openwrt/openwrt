@@ -78,7 +78,7 @@ define KernelPackage/ipt-filter
   KCONFIG:=$(KCONFIG_IPT_FILTER)
   FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_FILTER-m)))
-  DEPENDS:= kmod-ipt-core +kmod-textsearch
+  DEPENDS:= kmod-ipt-core @LINUX_2_4||+kmod-textsearch
 endef
 
 define KernelPackage/ipt-filter/description
