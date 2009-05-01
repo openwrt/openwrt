@@ -2,6 +2,7 @@
 # Pattern attributes: good fast fast overmatch 
 # Protocol groups: time_synchronization ietf_draft_standard
 # Wiki: http://www.protocolinfo.org/wiki/NTP
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # This pattern is tested and is believed to work.
 

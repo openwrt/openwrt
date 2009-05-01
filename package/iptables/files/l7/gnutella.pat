@@ -2,6 +2,7 @@
 # Pattern attributes: good notsofast notsofast
 # Protocol groups: p2p open_source
 # Wiki: http://www.protocolinfo.org/wiki/Gnutella
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # This should match both Gnutella and "Gnutella2" ("Mike's protocol")
 # 

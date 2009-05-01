@@ -2,6 +2,7 @@
 # Pattern attributes: good slow notsofast
 # Protocol groups: p2p
 # Wiki: http://www.protocolinfo.org/wiki/Fasttrack
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # Tested with Kazaa Lite Resurrection 0.0.7.6F
 #

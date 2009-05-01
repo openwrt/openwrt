@@ -2,6 +2,7 @@
 # Pattern attributes: great notsofast fast
 # Protocol groups: document_retrieval ietf_internet_standard
 # Wiki: http://protocolinfo.org/wiki/FTP
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # Usually runs on port 21.  Note that the data stream is on a dynamically
 # assigned port, which means that you will need the FTP connection 

@@ -2,6 +2,7 @@
 # Pattern attributes: great slow notsofast superset
 # Protocol groups: document_retrieval ietf_draft_standard
 # Wiki: http://protocolinfo.org/wiki/HTTP
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # Usually runs on port 80
 #
