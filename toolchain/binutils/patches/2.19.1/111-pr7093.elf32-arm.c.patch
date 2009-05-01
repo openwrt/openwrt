@@ -1,0 +1,13 @@
+--- a/bfd/elf32-arm.c
++++ b/bfd/elf32-arm.c
+@@ -4621,6 +4621,10 @@
+   Elf_Internal_Shdr *hdr;
+   unsigned int i, localsyms;
+ 
++  /* PR 7093: Make sure that we are dealing with an arm elf binary.  */
++  if (! is_arm_elf (abfd))
++    return;
++
+   if ((abfd->flags & DYNAMIC) != 0)
+     return;
+ 
