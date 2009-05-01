@@ -1,11 +1,11 @@
---- a/drivers/net/wireless/ath9k/hw.c
-+++ b/drivers/net/wireless/ath9k/hw.c
-@@ -513,11 +513,18 @@ static int ath9k_hw_init_macaddr(struct 
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -534,8 +534,18 @@ static int ath9k_hw_init_macaddr(struct 
  		ah->macaddr[2 * i] = eeval >> 8;
  		ah->macaddr[2 * i + 1] = eeval & 0xff;
  	}
--	if (sum == 0 || sum == 0xffff * 3) {
-+
+-	if (sum == 0 || sum == 0xffff * 3)
+-		return -EADDRNOTAVAIL;
 +	if (!is_valid_ether_addr(ah->macaddr)) {
 +		DECLARE_MAC_BUF(macbuf);
 +
@@ -14,12 +14,10 @@
 +			print_mac(macbuf, ah->macaddr));
 +
 +		random_ether_addr(ah->macaddr);
- 		DPRINTF(ah->ah_sc, ATH_DBG_EEPROM,
--			"mac address read failed: %pM\n",
--			ah->macaddr);
--		return -EADDRNOTAVAIL;
++		DPRINTF(ah->ah_sc, ATH_DBG_EEPROM,
 +			"random mac address will be used: %s\n",
 +			print_mac(macbuf, ah->macaddr));
- 	}
++	}
  
  	return 0;
+ }

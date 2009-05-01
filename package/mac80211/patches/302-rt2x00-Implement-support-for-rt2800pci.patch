@@ -1,7 +1,7 @@
-From b7dcb460c4c441ce52b3c5ce30d65e1ecfbb30ad Mon Sep 17 00:00:00 2001
+From 67432230daedc23f808b79173703e27675fd0659 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sat, 28 Mar 2009 20:46:46 +0100
-Subject: [PATCH 8/9] rt2x00: Implement support for rt2800pci
+Date: Sun, 26 Apr 2009 15:54:03 +0200
+Subject: [PATCH 2/4] rt2x00: Implement support for rt2800pci
 
 Add support for the rt2800pci chipset.
 
@@ -15,25 +15,26 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig     |   26 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800pci.c | 3244 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.c | 3245 +++++++++++++++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2800pci.h | 1927 ++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00.h    |    6 +
- 5 files changed, 5204 insertions(+), 0 deletions(-)
+ 5 files changed, 5205 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.h
 
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
-@@ -17,5 +17,6 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00u
+@@ -17,6 +17,7 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00u
  obj-$(CONFIG_RT2400PCI)			+= rt2400pci.o
  obj-$(CONFIG_RT2500PCI)			+= rt2500pci.o
  obj-$(CONFIG_RT61PCI)			+= rt61pci.o
 +obj-$(CONFIG_RT2800PCI)			+= rt2800pci.o
  obj-$(CONFIG_RT2500USB)			+= rt2500usb.o
  obj-$(CONFIG_RT73USB)			+= rt73usb.o
+ obj-$(CONFIG_RT2800USB)			+= rt2800usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -0,0 +1,3244 @@
+@@ -0,0 +1,3245 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -759,15 +760,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +static void rt2800pci_config_ant(struct rt2x00_dev *rt2x00dev,
 +				 struct antenna_setup *ant)
 +{
-+	u16 eeprom;
 +	u8 r1;
 +	u8 r3;
-+
-+	/*
-+	 * FIXME: Use requested antenna configuration.
-+	 */
-+
-+	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
 +
 +	rt2800pci_bbp_read(rt2x00dev, 1, &r1);
 +	rt2800pci_bbp_read(rt2x00dev, 3, &r3);
@@ -775,7 +769,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/*
 +	 * Configure the TX antenna.
 +	 */
-+	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH)) {
++	switch ((int)ant->tx) {
 +	case 1:
 +		rt2x00_set_field8(&r1, BBP1_TX_ANTENNA, 0);
 +		rt2x00_set_field8(&r3, BBP3_RX_ANTENNA, 0);
@@ -791,7 +785,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/*
 +	 * Configure the RX antenna.
 +	 */
-+	switch (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH)) {
++	switch ((int)ant->rx) {
 +	case 1:
 +		rt2x00_set_field8(&r3, BBP3_RX_ANTENNA, 0);
 +		break;
@@ -835,22 +829,15 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +					  struct rf_channel *rf,
 +					  struct channel_info *info)
 +{
-+	u16 eeprom;
-+
 +	rt2x00_set_field32(&rf->rf4, RF4_FREQ_OFFSET, rt2x00dev->freq_offset);
 +
-+	/*
-+	 * Determine antenna settings from EEPROM
-+	 */
-+	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
-+
-+	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) == 1)
++	if (rt2x00dev->default_ant.tx == 1)
 +		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_TX1, 1);
 +
-+	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 1) {
++	if (rt2x00dev->default_ant.rx == 1) {
 +		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX1, 1);
 +		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX2, 1);
-+	} else if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) == 2)
++	} else if (rt2x00dev->default_ant.rx == 2)
 +		rt2x00_set_field32(&rf->rf2, RF2_ANTENNA_RX2, 1);
 +
 +	if (rf->channel > 14) {
@@ -929,12 +916,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field8(&rfcsr, RFCSR23_FREQ_OFFSET, rt2x00dev->freq_offset);
 +	rt2800pci_rfcsr_write(rt2x00dev, 23, rfcsr);
 +
-+	if (conf_is_ht40(conf))
-+		rt2800pci_rfcsr_write(rt2x00dev, 24,
-+				      rt2x00dev->calibration_bw40);
-+	else
-+		rt2800pci_rfcsr_write(rt2x00dev, 24,
-+				      rt2x00dev->calibration_bw20);
++	rt2800pci_rfcsr_write(rt2x00dev, 24,
++			      rt2x00dev->calibration[conf_is_ht40(conf)]);
 +
 +	rt2800pci_rfcsr_read(rt2x00dev, 23, &rfcsr);
 +	rt2x00_set_field8(&rfcsr, RFCSR7_RF_TUNING, 1);
@@ -948,13 +931,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +{
 +	u32 reg;
 +	unsigned int tx_pin;
-+	u16 eeprom;
 +	u8 bbp;
-+
-+	/*
-+	 * Determine antenna settings from EEPROM
-+	 */
-+	rt2x00_eeprom_read(rt2x00dev, EEPROM_ANTENNA, &eeprom);
 +
 +	if (rt2x00_rev(&rt2x00dev->chip) != RT3070_VERSION)
 +		rt2800pci_config_channel_rt2x(rt2x00dev, conf, rf, info);
@@ -995,13 +972,13 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	tx_pin = 0;
 +
 +	/* Turn on unused PA or LNA when not using 1T or 1R */
-+	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH) != 1) {
++	if (rt2x00dev->default_ant.tx != 1) {
 +		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_A1_EN, 1);
 +		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_PA_PE_G1_EN, 1);
 +	}
 +
 +	/* Turn on unused PA or LNA when not using 1T or 1R */
-+	if (rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH) != 1) {
++	if (rt2x00dev->default_ant.rx != 1) {
 +		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_A1_EN, 1);
 +		rt2x00_set_field32(&tx_pin, TX_PIN_CFG_LNA_PE_G1_EN, 1);
 +	}
@@ -1930,9 +1907,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/*
 +	 * Set RX Filter calibration for 20MHz and 40MHz
 +	 */
-+	rt2x00dev->calibration_bw20 =
++	rt2x00dev->calibration[0] =
 +	    rt2800pci_init_rx_filter(rt2x00dev, false, 0x07, 0x16);
-+	rt2x00dev->calibration_bw40 =
++	rt2x00dev->calibration[1] =
 +	    rt2800pci_init_rx_filter(rt2x00dev, true, 0x27, 0x19);
 +
 +	/*
@@ -2215,7 +2192,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&word, TXWI_W1_WIRELESS_CLI_ID,
 +			   test_bit(ENTRY_TXD_ENCRYPT, &txdesc->flags) ?
 +			       txdesc->key_idx : 0xff);
-+	rt2x00_set_field32(&word, TXWI_W1_MPDU_TOTAL_BYTE_COUNT, skb->len);
++	rt2x00_set_field32(&word, TXWI_W1_MPDU_TOTAL_BYTE_COUNT,
++			   skb->len - txdesc->l2pad);
 +	rt2x00_set_field32(&word, TXWI_W1_PACKETID,
 +			   skbdesc->entry->queue->qid);
 +	rt2x00_desc_write(txwi, 1, word);
@@ -2402,6 +2380,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +	if (rt2x00_get_field32(rxd3, RXD_W3_MY_BSS))
 +		rxdesc->dev_flags |= RXDONE_MY_BSS;
++
++	if (rt2x00_get_field32(rxd3, RXD_W3_L2PAD))
++		rxdesc->dev_flags |= RXDONE_L2PAD;
 +
 +	if (rt2x00_get_field32(rxwi1, RXWI_W1_SHORT_GI))
 +		rxdesc->flags |= RX_FLAG_SHORT_GI;
@@ -2712,6 +2693,14 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	}
 +
 +	/*
++	 * Identify default antenna configuration.
++	 */
++	rt2x00dev->default_ant.tx =
++	    rt2x00_get_field16(eeprom, EEPROM_ANTENNA_TXPATH);
++	rt2x00dev->default_ant.rx =
++	    rt2x00_get_field16(eeprom, EEPROM_ANTENNA_RXPATH);
++
++	/*
 +	 * Read frequency offset and RF programming sequence.
 +	 */
 +	rt2x00_eeprom_read(rt2x00dev, EEPROM_FREQ, &eeprom);
@@ -2954,6 +2943,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	if (!rt2x00_rt(&rt2x00dev->chip, RT2880) &&
 +	    !rt2x00_rt(&rt2x00dev->chip, RT3052))
 +		__set_bit(DRIVER_REQUIRE_FIRMWARE, &rt2x00dev->flags);
++	__set_bit(DRIVER_REQUIRE_L2PAD, &rt2x00dev->flags);
 +	if (!modparam_nohwcrypt)
 +		__set_bit(CONFIG_SUPPORT_HW_CRYPTO, &rt2x00dev->flags);
 +
@@ -3192,13 +3182,25 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 + * RT2800pci module information.
 + */
 +static struct pci_device_id rt2800pci_device_table[] = {
++	/* Edimax */
++	{ PCI_DEVICE(0x1432, 0x7708), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1432, 0x7727), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1432, 0x7728), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1432, 0x7738), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1432, 0x7748), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1432, 0x7758), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1432, 0x7768), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x0601), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x0681), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x0701), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x0781), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1814, 0x3062), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x3090), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x3091), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ PCI_DEVICE(0x1814, 0x3092), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1814, 0x3562), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	{ PCI_DEVICE(0x1814, 0x3592), PCI_DEVICE_DATA(&rt2800pci_ops) },
++	/* Awt */
 +	{ PCI_DEVICE(0x1a3b, 0x1059), PCI_DEVICE_DATA(&rt2800pci_ops) },
 +	{ 0, }
 +};
@@ -5210,7 +5212,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#endif /* RT2800PCI_H */
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -138,6 +138,12 @@ struct rt2x00_chip {
+@@ -147,6 +147,12 @@ struct rt2x00_chip {
  #define RT2561		0x0302
  #define RT2661		0x0401
  #define RT2571		0x1300
@@ -5220,6 +5222,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define RT2890D		0x0781	/* 2.4GHz, 5GHz PCIe */
 +#define RT2880		0x2880	/* WSOC */
 +#define RT3052		0x3052	/* WSOC */
+ #define RT2870		0x1600
  
  	u16 rf;
- 	u32 rev;
