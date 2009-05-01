@@ -1,0 +1,64 @@
+--- a/arch/mips/sibyte/swarm/platform.c	2009-04-30 06:48:16.000000000 +0200
++++ b/arch/mips/sibyte/swarm/platform.c	2009-05-01 20:54:50.000000000 +0200
+@@ -83,3 +83,61 @@
+ device_initcall(swarm_pata_init);
+ 
+ #endif /* defined(CONFIG_SIBYTE_SWARM) || defined(CONFIG_SIBYTE_LITTLESUR) */
++
++#ifdef CONFIG_SIBYTE_RHONE
++
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/physmap.h>
++
++static struct mtd_partition flash_parts[] = {
++	{
++		.name           = "cfe",
++		.offset         = 0x00000000,
++		.size           = 0x00200000,
++		.mask_flags     = MTD_WRITEABLE,
++	},
++	{
++		.name           = "os",
++		.offset         = 0x00200000,
++		.size           = 0x00d00000,
++	},
++	{
++		.name           = "environment",
++		.offset         = 0x00f00000,
++		.size           = 0x00100000,
++		.mask_flags     = MTD_WRITEABLE,
++	},
++};
++
++static struct physmap_flash_data flash_data = {
++	.width		= 1,
++	.nr_parts	= ARRAY_SIZE(flash_parts),
++	.parts		= flash_parts,
++};
++
++static struct resource flash_resource = {
++	.start		= 0x1fc00000,
++	.end		= 0x20bfffff,
++	.flags		= IORESOURCE_MEM,
++};
++
++static struct platform_device flash_device = {
++	.name		= "physmap-flash",
++	.id		= 0,
++	.resource	= &flash_resource,
++	.num_resources	= 1,
++	.dev		= {
++		.platform_data = &flash_data,
++	},
++};
++
++static int __init flash_setup(void)
++{
++	platform_device_register(&flash_device);
++
++	return 0;
++};
++
++device_initcall(flash_setup);
++
++#endif /* CONFIG_SIBYTE_RHONE */
