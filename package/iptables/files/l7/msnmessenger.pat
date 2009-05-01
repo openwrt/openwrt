@@ -2,6 +2,7 @@
 # Pattern attributes: good slow notsofast
 # Protocol groups: chat proprietary
 # Wiki: http://www.protocolinfo.org/wiki/MSN_Messenger
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # Usually uses TCP port 1863
 # http://www.hypothetic.org/docs/msn/index.php

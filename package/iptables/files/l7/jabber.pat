@@ -2,6 +2,7 @@
 # Pattern attributes: good notsofast notsofast
 # Protocol groups: chat ietf_proposed_standard
 # Wiki: http://www.protocolinfo.org/wiki/Jabber
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # This pattern has been tested with Gaim and Gabber.  It is only tested 
 # with non-SSL mode Jabber with no proxies.

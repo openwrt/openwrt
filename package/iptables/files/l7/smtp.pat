@@ -2,6 +2,7 @@
 # Pattern attributes: great notsofast fast
 # Protocol groups: mail ietf_internet_standard
 # Wiki: http://www.protocolinfo.org/wiki/SMTP
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # usually runs on port 25
 # 

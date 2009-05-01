@@ -2,6 +2,7 @@
 # Pattern attributes: great veryfast fast
 # Protocol groups: remote_access
 # Wiki: http://www.protocolinfo.org/wiki/VNC
+# Copyright (C) 2008 Matthew Strait, Ethan Sommer; See ../LICENSE
 #
 # http://www.realvnc.com/documentation.html
 # 
