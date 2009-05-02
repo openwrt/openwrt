@@ -68,9 +68,13 @@
 #define bool int
 #endif
 
-
+/* Only available on brcm-2.4/brcm47xx */
+#ifdef BROADCOM
 extern char *nvram_get(const char *name);
 #define getvar(str) (nvram_get(str)?:"")
+#else
+#define getvar(str) NULL
+#endif
 
 /* Data structure for a Roboswitch device. */
 struct robo_switch {
