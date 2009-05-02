@@ -270,6 +270,8 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/.libs/libxtables.so* $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libiptc/.libs/libiptc.so* $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/include $(1)/usr
 endef
 
