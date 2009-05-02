@@ -13,6 +13,7 @@ endef
 
 define Image/BuildKernel
 # do mach-id fixup here, if needed
+	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
 endef
 
 define Image/Build
