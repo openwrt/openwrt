@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,10 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
-
 PKG_VERSION:=1.4.3.2
 PKG_RELEASE:=1
+
 PKG_MD5SUM:=545698693b636cfc844aafc6729fd48a
-
-PKG_VERSION?=<IPTABLES_VERSION>
-
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.be.netfilter.org/pub/netfilter/iptables/ \
@@ -23,6 +20,8 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 
 PATCH_DIR:=./patches/$(PKG_VERSION)
+
+PKG_FIXUP = libtool
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
@@ -32,26 +31,10 @@ ifeq ($(DUMP),)
 endif
 
 
-define Package/libiptc
-  SECTION:=libs
-  CATEGORY:=Libraries
-  URL:=http://netfilter.org/
-  TITLE:=IPv4/IPv6 firewall - shared libiptc library
-endef
-
-define Package/libxtables
-  SECTION:=libs
-  CATEGORY:=Libraries
-  URL:=http://netfilter.org/
-  TITLE:=IPv4/IPv6 firewall - shared xtables library
-endef
-
-
 define Package/iptables/Default
   SECTION:=net
   CATEGORY:=Base system
   URL:=http://netfilter.org/
-  DEPENDS:=+libiptc +libxtables
 endef
 
 define Package/iptables/Module
@@ -63,7 +46,7 @@ define Package/iptables
 $(call Package/iptables/Default)
   TITLE:=IPv4 firewall administration tool
   MENU:=1
-  DEPENDS+= +kmod-ipt-core
+  DEPENDS+= +kmod-ipt-core +libiptc +libxtables
 endef
 
 define Package/iptables/description
@@ -239,19 +222,32 @@ $(call Package/iptables/Default)
 endef
 
 define Package/ip6tables-utils
- $(call Package/iptables/Default)
- DEPENDS:=ip6tables
- CATEGORY:=IPv6
- TITLE:=ip6tables save and restore utilities
+$(call Package/iptables/Default)
+  DEPENDS:=ip6tables
+  CATEGORY:=IPv6
+  TITLE:=ip6tables save and restore utilities
 endef
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
+define Package/libiptc
+$(call Package/iptables/Default)
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=IPv4/IPv6 firewall - shared libiptc library
 endef
+
+define Package/libxtables
+ $(call Package/iptables/Default)
+ SECTION:=libs
+ CATEGORY:=Libraries
+ TITLE:=IPv4/IPv6 firewall - shared xtables library
+endef
+
 
 TARGET_CPPFLAGS := -I$(PKG_BUILD_DIR)/include $(TARGET_CPPFLAGS)
 TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
+	--enable-shared \
+	--enable-static \
 	--enable-devel \
 	--with-kernel="$(LINUX_DIR)" \
 	--with-xtlibdir=/usr/lib/iptables
@@ -269,10 +265,14 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/.libs/libxtables.so* $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libiptc/.libs/libiptc.so* $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/include $(1)/usr
+	mkdir -p $(1)/usr/include
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
+	mkdir -p $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.{a,so*} $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiptc.{a,so*} $(1)/usr/lib/
+	mkdir -p $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/xtables.pc $(1)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libiptc.pc $(1)/usr/lib/pkgconfig/
 endef
 
 define Package/iptables/install
@@ -287,18 +287,6 @@ define Package/iptables/install
 		done \
 	)
 endef
-
-
-define Package/libiptc/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libiptc.so.0 $(1)/usr/lib/
-endef
-
-define Package/libxtables/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so.2 $(1)/usr/lib/
-endef
-
 
 define Package/iptables-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
@@ -317,6 +305,16 @@ endef
 define Package/ip6tables-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables-{save,restore} $(1)/usr/sbin/
+endef
+
+define Package/libiptc/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libiptc.so.* $(1)/usr/lib/
+endef
+
+define Package/libxtables/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so.* $(1)/usr/lib/
 endef
 
 define BuildPlugin
@@ -338,9 +336,6 @@ L7_INSTALL:=\
 	$(CP) files/l7/*.pat $$(1)/etc/l7-protocols/
 
 
-$(eval $(call BuildPackage,libiptc))
-$(eval $(call BuildPackage,libxtables))
-
 $(eval $(call BuildPackage,iptables))
 $(eval $(call BuildPackage,iptables-utils))
 $(eval $(call BuildPlugin,iptables-mod-conntrack,$(IPT_CONNTRACK-m)))
@@ -357,3 +352,5 @@ $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPackage,ip6tables))
 $(eval $(call BuildPackage,ip6tables-utils))
+$(eval $(call BuildPackage,libiptc))
+$(eval $(call BuildPackage,libxtables))
