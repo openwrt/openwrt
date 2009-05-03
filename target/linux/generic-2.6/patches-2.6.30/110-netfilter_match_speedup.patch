@@ -20,7 +20,7 @@
  	if (FWINV((ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
  		  IPT_INV_SRCIP)
  	    || FWINV((ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
-@@ -137,13 +140,32 @@ ip_packet_match(const struct iphdr *ip,
+@@ -137,13 +140,35 @@ ip_packet_match(const struct iphdr *ip,
  		return false;
  	}
  
@@ -45,6 +45,9 @@
 +		IPT_INV_VIA_OUT))
 +		goto has_match_rules;
 +
++	if (FWINV(ip->proto, IPT_INV_PROTO))
++		goto has_match_rules;
++
 +	if (FWINV(ip->flags&IPT_F_FRAG, IPT_INV_FRAG))
 +		goto has_match_rules;
 +
@@ -55,7 +58,7 @@
  		duprintf("Unknown flag bits set: %08X\n",
  			 ip->flags & ~IPT_F_MASK);
  		return false;
-@@ -153,6 +175,8 @@ ip_checkentry(const struct ipt_ip *ip)
+@@ -153,6 +178,8 @@ ip_checkentry(const struct ipt_ip *ip)
  			 ip->invflags & ~IPT_INV_MASK);
  		return false;
  	}
@@ -64,7 +67,7 @@
  	return true;
  }
  
-@@ -200,7 +224,6 @@ unconditional(const struct ipt_ip *ip)
+@@ -200,7 +227,6 @@ unconditional(const struct ipt_ip *ip)
  			return 0;
  
  	return 1;
