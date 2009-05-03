@@ -11,7 +11,7 @@ BOARD:=ifxmips
 BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2
 
-LINUX_VERSION:=2.6.28.9
+LINUX_VERSION:=2.6.28.10
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=uboot-ifxmips hostapd-mini

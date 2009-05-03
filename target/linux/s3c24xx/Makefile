@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -12,7 +12,7 @@ BOARDNAME:=s3c24xx
 FEATURES:=jffs2
 CFLAGS:=-O2 -pipe -march=armv4t -mtune=arm920t -funit-at-a-time
 
-LINUX_VERSION:=2.6.28.9
+LINUX_VERSION:=2.6.28.10
 
 DEVICE_TYPE=phone
 
