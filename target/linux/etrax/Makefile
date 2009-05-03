@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -10,7 +10,7 @@ ARCH:=cris
 BOARD:=etrax
 BOARDNAME:=Foxboard (ETRAX 100LX)
 FEATURES:=squashfs jffs2
-LINUX_VERSION:=2.6.29.1
+LINUX_VERSION:=2.6.29.2
 
 include $(INCLUDE_DIR)/target.mk
 
