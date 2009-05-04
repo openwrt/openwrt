@@ -26,13 +26,13 @@ define Host/Compile
 endef
 
 define Host/Install
-	$(INSTALL_DATA) $(LIB_DIR)/liblzma.a $(STAGING_DIR_HOST)/lib/
+	$(INSTALL_DATA) $(LIB_DIR)/liblzma.a $(STAGING_DIR_HOST)/lib/liblzma-old.a
 	$(INSTALL_BIN) $(ALONE_DIR)/lzma $(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
 	rm -f \
-		$(STAGING_DIR_HOST)/lib/liblzma.a \
+		$(STAGING_DIR_HOST)/lib/liblzma-old.a \
 		$(STAGING_DIR_HOST)/bin/lzma
 endef
 
