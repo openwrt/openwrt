@@ -5,10 +5,9 @@ bytes, so alter the return value accordingly.
 
 Signed-off-by: Phil Sutter <n0-1@freewrt.org>
 ---
-diff -urN linux-2.6.28.7/drivers/ata/pata_rb532_cf.c linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c
---- linux-2.6.28.7/drivers/ata/pata_rb532_cf.c	2009-03-15 13:29:09.000000000 +0100
-+++ linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c	2009-03-15 13:29:46.000000000 +0100
-@@ -88,7 +88,7 @@
+--- a/drivers/ata/pata_rb532_cf.c
++++ b/drivers/ata/pata_rb532_cf.c
+@@ -88,7 +88,7 @@ static unsigned int rb532_pata_data_xfer
  		readsl(ioaddr, buf, buflen / sizeof(u32));
  
  	rb532_pata_finish_io(adev->link->ap);

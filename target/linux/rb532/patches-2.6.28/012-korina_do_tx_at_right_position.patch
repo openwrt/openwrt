@@ -7,9 +7,9 @@ upstream.
 
 Signed-off-by: Phil Sutter <n0-1@freewrt.org>
 ---
---- a/drivers/net/korina.c	2009-01-19 23:27:41.000000000 +0100
-+++ b/drivers/net/korina.c	2009-01-19 23:29:08.000000000 +0100
-@@ -330,12 +330,12 @@
+--- a/drivers/net/korina.c
++++ b/drivers/net/korina.c
+@@ -330,12 +330,12 @@ static irqreturn_t korina_rx_dma_interru
  
  	dmas = readl(&lp->rx_dma_regs->dmas);
  	if (dmas & (DMA_STAT_DONE | DMA_STAT_HALT | DMA_STAT_ERR)) {
@@ -24,7 +24,7 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  
  		if (dmas & DMA_STAT_ERR)
  			printk(KERN_ERR DRV_NAME "%s: DMA error\n", dev->name);
-@@ -621,11 +621,11 @@
+@@ -621,11 +621,11 @@ korina_tx_dma_interrupt(int irq, void *d
  	dmas = readl(&lp->tx_dma_regs->dmas);
  
  	if (dmas & (DMA_STAT_FINI | DMA_STAT_ERR)) {

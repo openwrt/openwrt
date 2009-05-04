@@ -8,11 +8,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  drivers/net/korina.c |    3 +++
  1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/net/korina.c b/drivers/net/korina.c
-index 67fbdf4..60ae7bf 100644
 --- a/drivers/net/korina.c
 +++ b/drivers/net/korina.c
-@@ -416,6 +416,9 @@ static int korina_rx(struct net_device *dev, int limit)
+@@ -415,6 +415,9 @@ static int korina_rx(struct net_device *
  			if (devcs & ETH_RX_MP)
  				dev->stats.multicast++;
  
@@ -21,8 +19,4 @@ index 67fbdf4..60ae7bf 100644
 +
  			lp->rx_skb[lp->rx_next_done] = skb_new;
  		}
- 
--- 
-1.5.6.4
-
-
+ 		rd->devcs = 0;

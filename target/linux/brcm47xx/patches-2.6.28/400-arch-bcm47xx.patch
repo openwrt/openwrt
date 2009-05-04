@@ -1,7 +1,5 @@
-Index: linux-2.6.28.7/arch/mips/Kconfig
-===================================================================
---- linux-2.6.28.7.orig/arch/mips/Kconfig	2009-03-17 17:26:23.000000000 +0100
-+++ linux-2.6.28.7/arch/mips/Kconfig	2009-03-17 17:27:33.000000000 +0100
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
 @@ -53,6 +53,7 @@ config BCM47XX
  	select SSB_DRIVER_MIPS
  	select SSB_DRIVER_EXTIF
@@ -10,20 +8,16 @@ Index: linux-2.6.28.7/arch/mips/Kconfig
  	select SSB_PCICORE_HOSTMODE if PCI
  	select GENERIC_GPIO
  	select SYS_HAS_EARLY_PRINTK
-Index: linux-2.6.28.7/arch/mips/bcm47xx/Makefile
-===================================================================
---- linux-2.6.28.7.orig/arch/mips/bcm47xx/Makefile	2009-03-17 17:26:19.000000000 +0100
-+++ linux-2.6.28.7/arch/mips/bcm47xx/Makefile	2009-03-17 17:26:56.000000000 +0100
+--- a/arch/mips/bcm47xx/Makefile
++++ b/arch/mips/bcm47xx/Makefile
 @@ -3,4 +3,4 @@
  # under Linux.
  #
  
 -obj-y := gpio.o irq.o prom.o serial.o setup.o time.o wgt634u.o
 +obj-y := cfe_env.o gpio.o irq.o nvram.o prom.o serial.o setup.o time.o wgt634u.o
-Index: linux-2.6.28.7/arch/mips/bcm47xx/irq.c
-===================================================================
---- linux-2.6.28.7.orig/arch/mips/bcm47xx/irq.c	2009-03-17 17:26:19.000000000 +0100
-+++ linux-2.6.28.7/arch/mips/bcm47xx/irq.c	2009-03-17 17:26:23.000000000 +0100
+--- a/arch/mips/bcm47xx/irq.c
++++ b/arch/mips/bcm47xx/irq.c
 @@ -1,5 +1,6 @@
  /*
   *  Copyright (C) 2004 Florian Schirmer <jolt@tuxbox.org>
@@ -51,10 +45,8 @@ Index: linux-2.6.28.7/arch/mips/bcm47xx/irq.c
  void plat_irq_dispatch(void)
  {
  	u32 cause;
-Index: linux-2.6.28.7/arch/mips/bcm47xx/nvram.c
-===================================================================
---- linux-2.6.28.7.orig/arch/mips/bcm47xx/nvram.c	2009-03-17 17:26:19.000000000 +0100
-+++ linux-2.6.28.7/arch/mips/bcm47xx/nvram.c	2009-03-17 17:26:23.000000000 +0100
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
 @@ -24,10 +24,10 @@
  #include <asm/io.h>
  #include <asm/uaccess.h>
@@ -77,10 +69,8 @@ Index: linux-2.6.28.7/arch/mips/bcm47xx/nvram.c
  	struct nvram_header *header;
  	int i;
  	u32 base, lim, off;
-Index: linux-2.6.28.7/arch/mips/bcm47xx/setup.c
-===================================================================
---- linux-2.6.28.7.orig/arch/mips/bcm47xx/setup.c	2009-03-17 17:26:19.000000000 +0100
-+++ linux-2.6.28.7/arch/mips/bcm47xx/setup.c	2009-03-17 17:26:23.000000000 +0100
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
 @@ -2,7 +2,7 @@
   *  Copyright (C) 2004 Florian Schirmer <jolt@tuxbox.org>
   *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -305,10 +295,8 @@ Index: linux-2.6.28.7/arch/mips/bcm47xx/setup.c
 +	return 0;
 +}
 +device_initcall(bcm47xx_register_gpiodev);
-Index: linux-2.6.28.7/arch/mips/bcm47xx/time.c
-===================================================================
---- linux-2.6.28.7.orig/arch/mips/bcm47xx/time.c	2009-03-17 17:26:19.000000000 +0100
-+++ linux-2.6.28.7/arch/mips/bcm47xx/time.c	2009-03-17 17:26:23.000000000 +0100
+--- a/arch/mips/bcm47xx/time.c
++++ b/arch/mips/bcm47xx/time.c
 @@ -22,11 +22,17 @@
   *  675 Mass Ave, Cambridge, MA 02139, USA.
   */

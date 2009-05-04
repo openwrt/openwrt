@@ -3,11 +3,9 @@ initialisation has to be the same as cf_slot0_res and nand_slot0_res.
 
 Signed-off-by: Phil Sutter <n0-1@freewrt.org>
 ---
-diff --git a/arch/mips/rb532/gpio.c b/arch/mips/rb532/gpio.c
-index d75eb19..40deb11 100644
 --- a/arch/mips/rb532/gpio.c
 +++ b/arch/mips/rb532/gpio.c
-@@ -55,8 +55,6 @@ static struct resource rb532_gpio_reg0_res[] = {
+@@ -55,8 +55,6 @@ static struct resource rb532_gpio_reg0_r
  static struct resource rb532_dev3_ctl_res[] = {
  	{
  		.name	= "dev3_ctl",
@@ -16,7 +14,7 @@ index d75eb19..40deb11 100644
  		.flags	= IORESOURCE_MEM,
  	}
  };
-@@ -243,6 +241,9 @@ int __init rb532_gpio_init(void)
+@@ -251,6 +249,9 @@ int __init rb532_gpio_init(void)
  	/* Register our GPIO chip */
  	gpiochip_add(&rb532_gpio_chip->chip);
  
@@ -26,7 +24,3 @@ index d75eb19..40deb11 100644
  	r = rb532_dev3_ctl_res;
  	dev3.base = ioremap_nocache(r->start, r->end - r->start);
  
--- 
-1.5.6.4
-
-

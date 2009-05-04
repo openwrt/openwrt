@@ -8,7 +8,7 @@
  
  #include <asm/io.h>
  #include <asm/irq.h>
-@@ -4384,6 +4385,7 @@ static const struct tty_operations rs_op
+@@ -4393,6 +4394,7 @@ static const struct tty_operations rs_op
  	.tiocmset = rs_tiocmset
  };
  
@@ -16,7 +16,7 @@
  static int __init
  rs_init(void)
  {
-@@ -4518,6 +4520,24 @@ rs_init(void)
+@@ -4527,6 +4529,24 @@ rs_init(void)
  #endif
  #endif /* CONFIG_SVINTO_SIM */
  

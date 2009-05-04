@@ -7,19 +7,17 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  drivers/net/korina.c |    2 ++
  1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/net/korina.c b/drivers/net/korina.c
-index 75010ca..56b4db2 100644
 --- a/drivers/net/korina.c
 +++ b/drivers/net/korina.c
-@@ -419,6 +419,7 @@ static int korina_rx(struct net_device *dev, int limit)
+@@ -418,6 +418,7 @@ static int korina_rx(struct net_device *
  			/* 16 bit align */
  			skb_reserve(skb_new, 2);
  
 +			skb_new->dev = dev;
  			lp->rx_skb[lp->rx_next_done] = skb_new;
  		}
- 
-@@ -763,6 +764,7 @@ static void korina_alloc_ring(struct net_device *dev)
+ 		rd->devcs = 0;
+@@ -761,6 +762,7 @@ static void korina_alloc_ring(struct net
  		if (!skb)
  			break;
  		skb_reserve(skb, 2);
@@ -27,7 +25,3 @@ index 75010ca..56b4db2 100644
  		lp->rx_skb[i] = skb;
  		lp->rd_ring[i].control = DMA_DESC_IOD |
  				DMA_COUNT(KORINA_RBSIZE);
--- 
-1.5.6.4
-
-

@@ -5,9 +5,9 @@ Before this change, the driver received absolutely nothing.
 
 Signed-off-by: Phil Sutter <n0-1@freewrt.org>
 ---
---- a/drivers/net/korina.c	2009-01-19 23:26:19.000000000 +0100
-+++ b/drivers/net/korina.c	2009-01-19 23:27:06.000000000 +0100
-@@ -330,7 +330,7 @@
+--- a/drivers/net/korina.c
++++ b/drivers/net/korina.c
+@@ -330,7 +330,7 @@ static irqreturn_t korina_rx_dma_interru
  
  	dmas = readl(&lp->rx_dma_regs->dmas);
  	if (dmas & (DMA_STAT_DONE | DMA_STAT_HALT | DMA_STAT_ERR)) {

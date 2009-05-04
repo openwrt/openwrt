@@ -9,11 +9,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  drivers/net/korina.c |    9 +++++----
  1 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/korina.c b/drivers/net/korina.c
-index 1d6e48e..67fbdf4 100644
 --- a/drivers/net/korina.c
 +++ b/drivers/net/korina.c
-@@ -769,11 +769,12 @@ static void korina_alloc_ring(struct net_device *dev)
+@@ -766,11 +766,12 @@ static void korina_alloc_ring(struct net
  		lp->rd_ring[i].link = CPHYSADDR(&lp->rd_ring[i+1]);
  	}
  
@@ -30,7 +28,3 @@ index 1d6e48e..67fbdf4 100644
  	lp->rx_chain_head = 0;
  	lp->rx_chain_tail = 0;
  	lp->rx_chain_status = desc_empty;
--- 
-1.5.6.4
-
-

@@ -1,5 +1,5 @@
---- a/init/initramfs.c	2009-03-23 22:55:52.000000000 +0100
-+++ b/init/initramfs.c	2009-05-01 11:15:46.000000000 +0200
+--- a/init/initramfs.c
++++ b/init/initramfs.c
 @@ -7,6 +7,7 @@
  #include <linux/string.h>
  #include <linux/syscalls.h>
@@ -8,7 +8,7 @@
  
  static __initdata char *message;
  static void __init error(char *x)
-@@ -475,6 +476,69 @@
+@@ -475,6 +476,69 @@ static void __init flush_window(void)
  	outcnt = 0;
  }
  
@@ -78,7 +78,7 @@
  static char * __init unpack_to_rootfs(char *buf, unsigned len, int check_only)
  {
  	int written;
-@@ -509,12 +573,28 @@
+@@ -509,12 +573,28 @@ static char * __init unpack_to_rootfs(ch
  		inptr = 0;
  		outcnt = 0;		/* bytes in output buffer */
  		bytes_out = 0;
@@ -112,9 +112,9 @@
  		buf += inptr;
  		len -= inptr;
  	}
---- a/scripts/gen_initramfs_list.sh	2009-03-23 22:55:52.000000000 +0100
-+++ b/scripts/gen_initramfs_list.sh	2009-05-01 11:12:45.000000000 +0200
-@@ -287,7 +287,7 @@
+--- a/scripts/gen_initramfs_list.sh
++++ b/scripts/gen_initramfs_list.sh
+@@ -287,7 +287,7 @@ if [ ! -z ${output_file} ]; then
  	if [ "${is_cpio_compressed}" = "compressed" ]; then
  		cat ${cpio_tfile} > ${output_file}
  	else

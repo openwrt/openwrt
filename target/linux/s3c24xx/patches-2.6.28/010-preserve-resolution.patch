@@ -1,8 +1,6 @@
-diff --git a/drivers/video/display/jbt6k74.c b/drivers/video/display/jbt6k74.c
-index a1d48dd..2ca1bd4 100644
 --- a/drivers/video/display/jbt6k74.c
 +++ b/drivers/video/display/jbt6k74.c
-@@ -443,8 +443,17 @@ int jbt6k74_enter_state(struct jbt_info *jbt, enum jbt_state new_state)
+@@ -443,8 +443,17 @@ int jbt6k74_enter_state(struct jbt_info 
  		break;
  	}
  	
@@ -21,7 +19,7 @@ index a1d48dd..2ca1bd4 100644
  
  	return rc;
  }
-@@ -595,7 +604,14 @@ static int fb_notifier_callback(struct notifier_block *self,
+@@ -595,7 +604,14 @@ static int fb_notifier_callback(struct n
  	switch (fb_blank) {
  	case FB_BLANK_UNBLANK:
  		dev_info(&jbt->spi_dev->dev, "**** jbt6k74 unblank\n");
@@ -37,7 +35,7 @@ index a1d48dd..2ca1bd4 100644
  		break;
  	case FB_BLANK_NORMAL:
  		dev_info(&jbt->spi_dev->dev, "**** jbt6k74 normal\n");
-@@ -720,8 +736,6 @@ static int jbt_suspend(struct spi_device *spi, pm_message_t state)
+@@ -720,8 +736,6 @@ static int jbt_suspend(struct spi_device
  {
  	struct jbt_info *jbt = dev_get_drvdata(&spi->dev);
  

@@ -1,5 +1,5 @@
---- linux-2.6.28.9/drivers/net/r6040.c	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/drivers/net/r6040.c	2009-04-24 14:24:51.000000000 +0200
+--- a/drivers/net/r6040.c
++++ b/drivers/net/r6040.c
 @@ -49,12 +49,12 @@
  #include <asm/processor.h>
  
@@ -16,7 +16,7 @@
  #define PHY_MODE	0x3100	/* PHY CHIP Register 0 */
  #define PHY_CAP		0x01E1	/* PHY CHIP Register 4 */
  
-@@ -160,6 +160,7 @@
+@@ -160,6 +160,7 @@ MODULE_AUTHOR("Sten Wang <sten.wang@rdc.
  	"Florian Fainelli <florian@openwrt.org>");
  MODULE_LICENSE("GPL");
  MODULE_DESCRIPTION("RDC R6040 NAPI PCI FastEthernet driver");
@@ -24,7 +24,7 @@
  
  /* RX and TX interrupts that we handle */
  #define RX_INTS			(RX_FIFO_FULL | RX_NO_DESC | RX_FINISH)
-@@ -200,7 +201,7 @@
+@@ -200,7 +201,7 @@ struct r6040_private {
  
  static char version[] __devinitdata = KERN_INFO DRV_NAME
  	": RDC R6040 NAPI net driver,"
@@ -33,7 +33,7 @@
  
  static int phy_table[] = { PHY1_ADDR, PHY2_ADDR };
  
-@@ -330,7 +331,7 @@
+@@ -330,7 +331,7 @@ static int r6040_alloc_rxbufs(struct net
  	do {
  		skb = netdev_alloc_skb(dev, MAX_BUF_SIZE);
  		if (!skb) {
@@ -42,7 +42,7 @@
  			rc = -ENOMEM;
  			goto err_exit;
  		}
-@@ -438,7 +439,6 @@
+@@ -438,7 +439,6 @@ static void r6040_down(struct net_device
  {
  	struct r6040_private *lp = netdev_priv(dev);
  	void __iomem *ioaddr = lp->base;
@@ -50,7 +50,7 @@
  	int limit = 2048;
  	u16 *adrp;
  	u16 cmd;
-@@ -457,22 +457,12 @@
+@@ -457,22 +457,12 @@ static void r6040_down(struct net_device
  	iowrite16(adrp[0], ioaddr + MID_0L);
  	iowrite16(adrp[1], ioaddr + MID_0M);
  	iowrite16(adrp[2], ioaddr + MID_0H);
@@ -74,7 +74,7 @@
  
  	/* deleted timer */
  	del_timer_sync(&lp->timer);
-@@ -481,8 +471,28 @@
+@@ -481,8 +471,28 @@ static int r6040_close(struct net_device
  	napi_disable(&lp->napi);
  	netif_stop_queue(dev);
  	r6040_down(dev);
@@ -103,7 +103,7 @@
  	return 0;
  }
  
-@@ -598,7 +608,6 @@
+@@ -598,7 +608,6 @@ static int r6040_rx(struct net_device *d
  		
  		/* Send to upper layer */
  		netif_receive_skb(skb_ptr);
@@ -111,7 +111,7 @@
  		dev->stats.rx_packets++;
  		dev->stats.rx_bytes += descptr->len - 4;
  
-@@ -668,7 +677,7 @@
+@@ -668,7 +677,7 @@ static int r6040_poll(struct napi_struct
  	work_done = r6040_rx(dev, budget);
  
  	if (work_done < budget) {
@@ -120,7 +120,7 @@
  		/* Enable RX interrupt */
  		iowrite16(ioread16(ioaddr + MIER) | RX_INTS, ioaddr + MIER);
  	}
-@@ -705,7 +714,7 @@
+@@ -705,7 +714,7 @@ static irqreturn_t r6040_interrupt(int i
  
  		/* Mask off RX interrupt */
  		misr &= ~RX_INTS;
@@ -129,7 +129,7 @@
  	}
  
  	/* TX interrupt request */
-@@ -1063,20 +1088,20 @@
+@@ -1063,20 +1072,20 @@ static int __devinit r6040_init_one(stru
  	/* this should always be supported */
  	err = pci_set_dma_mask(pdev, DMA_32BIT_MASK);
  	if (err) {
@@ -153,7 +153,7 @@
  		err = -EIO;
  		goto err_out;
  	}
-@@ -1086,7 +1111,7 @@
+@@ -1086,7 +1095,7 @@ static int __devinit r6040_init_one(stru
  
  	dev = alloc_etherdev(sizeof(struct r6040_private));
  	if (!dev) {
@@ -162,7 +162,7 @@
  		err = -ENOMEM;
  		goto err_out;
  	}
-@@ -1102,11 +1127,15 @@
+@@ -1102,11 +1111,15 @@ static int __devinit r6040_init_one(stru
  
  	ioaddr = pci_iomap(pdev, bar, io_size);
  	if (!ioaddr) {
@@ -179,7 +179,7 @@
  
  	/* Init system & device */
  	lp->base = ioaddr;
-@@ -1123,6 +1152,13 @@
+@@ -1123,6 +1136,13 @@ static int __devinit r6040_init_one(stru
  	adrp[1] = ioread16(ioaddr + MID_0M);
  	adrp[2] = ioread16(ioaddr + MID_0H);
  

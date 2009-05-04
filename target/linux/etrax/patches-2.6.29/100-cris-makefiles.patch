@@ -1,7 +1,6 @@
-diff -urN linux-2.6.28.clean/arch/cris/Makefile linux-2.6.28.mod/arch/cris/Makefile
---- linux-2.6.28.clean/arch/cris/Makefile	2008-12-25 00:26:37.000000000 +0100
-+++ linux-2.6.28.mod/arch/cris/Makefile	2009-04-07 11:52:30.000000000 +0200
-@@ -40,7 +40,7 @@
+--- a/arch/cris/Makefile
++++ b/arch/cris/Makefile
+@@ -40,7 +40,7 @@ endif
  
  LD = $(CROSS_COMPILE)ld -mcrislinux
  
@@ -10,9 +9,8 @@ diff -urN linux-2.6.28.clean/arch/cris/Makefile linux-2.6.28.mod/arch/cris/Makef
  
  CPPFLAGS_vmlinux.lds = -DDRAM_VIRTUAL_BASE=0x$(CONFIG_ETRAX_DRAM_VIRTUAL_BASE)
  
-diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/Makefile linux-2.6.28.mod/arch/cris/arch-v10/boot/Makefile
---- linux-2.6.28.clean/arch/cris/arch-v10/boot/Makefile	2008-12-25 00:26:37.000000000 +0100
-+++ linux-2.6.28.mod/arch/cris/arch-v10/boot/Makefile	2009-04-07 11:55:01.000000000 +0200
+--- a/arch/cris/arch-v10/boot/Makefile
++++ b/arch/cris/arch-v10/boot/Makefile
 @@ -2,8 +2,6 @@
  # arch/cris/arch-v10/boot/Makefile
  #
@@ -22,7 +20,7 @@ diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/Makefile linux-2.6.28.mod/a
  subdir- := compressed rescue
  targets := Image
  
-@@ -13,7 +11,7 @@
+@@ -13,7 +11,7 @@ $(obj)/Image: vmlinux FORCE
  
  $(obj)/compressed/vmlinux: $(obj)/Image FORCE
  	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
@@ -31,10 +29,9 @@ diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/Makefile linux-2.6.28.mod/a
  
  $(obj)/zImage:  $(obj)/compressed/vmlinux
  	@cp $< $@
-diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/compressed/Makefile linux-2.6.28.mod/arch/cris/arch-v10/boot/compressed/Makefile
---- linux-2.6.28.clean/arch/cris/arch-v10/boot/compressed/Makefile	2008-12-25 00:26:37.000000000 +0100
-+++ linux-2.6.28.mod/arch/cris/arch-v10/boot/compressed/Makefile	2009-04-07 11:53:02.000000000 +0200
-@@ -6,7 +6,6 @@
+--- a/arch/cris/arch-v10/boot/compressed/Makefile
++++ b/arch/cris/arch-v10/boot/compressed/Makefile
+@@ -6,7 +6,6 @@ asflags-y += $(LINUXINCLUDE)
  ccflags-y += -O2 $(LINUXINCLUDE)
  ldflags-y += -T $(srctree)/$(src)/decompress.lds
  OBJECTS = $(obj)/head.o $(obj)/misc.o
@@ -42,9 +39,8 @@ diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/compressed/Makefile linux-2
  
  quiet_cmd_image = BUILD   $@
  cmd_image = cat $(obj)/decompress.bin $(obj)/piggy.gz > $@
-diff -urN linux-2.6.28.clean/arch/cris/arch-v10/boot/rescue/Makefile linux-2.6.28.mod/arch/cris/arch-v10/boot/rescue/Makefile
---- linux-2.6.28.clean/arch/cris/arch-v10/boot/rescue/Makefile	2008-12-25 00:26:37.000000000 +0100
-+++ linux-2.6.28.mod/arch/cris/arch-v10/boot/rescue/Makefile	2009-04-07 11:53:09.000000000 +0200
+--- a/arch/cris/arch-v10/boot/rescue/Makefile
++++ b/arch/cris/arch-v10/boot/rescue/Makefile
 @@ -5,7 +5,6 @@
  ccflags-y += -O2 $(LINUXINCLUDE)
  asflags-y += $(LINUXINCLUDE)

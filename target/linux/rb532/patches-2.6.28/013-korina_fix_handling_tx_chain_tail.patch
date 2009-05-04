@@ -10,11 +10,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  drivers/net/korina.c |   22 +++++++++++-----------
  1 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/net/korina.c b/drivers/net/korina.c
-index dced5e7..f200175 100644
 --- a/drivers/net/korina.c
 +++ b/drivers/net/korina.c
-@@ -199,7 +199,7 @@ static int korina_send_packet(struct sk_buff *skb, struct net_device *dev)
+@@ -199,7 +199,7 @@ static int korina_send_packet(struct sk_
  	struct korina_private *lp = netdev_priv(dev);
  	unsigned long flags;
  	u32 length;
@@ -23,7 +21,7 @@ index dced5e7..f200175 100644
  	struct dma_desc *td;
  
  	spin_lock_irqsave(&lp->lock, flags);
-@@ -231,8 +231,8 @@ static int korina_send_packet(struct sk_buff *skb, struct net_device *dev)
+@@ -231,8 +231,8 @@ static int korina_send_packet(struct sk_
  	/* Setup the transmit descriptor. */
  	dma_cache_inv((u32) td, sizeof(*td));
  	td->ca = CPHYSADDR(skb->data);
@@ -34,7 +32,7 @@ index dced5e7..f200175 100644
  
  	if (readl(&(lp->tx_dma_regs->dmandptr)) == 0) {
  		if (lp->tx_chain_status == desc_empty) {
-@@ -240,7 +240,7 @@ static int korina_send_packet(struct sk_buff *skb, struct net_device *dev)
+@@ -240,7 +240,7 @@ static int korina_send_packet(struct sk_
  			td->control = DMA_COUNT(length) |
  					DMA_DESC_COF | DMA_DESC_IOF;
  			/* Move tail */
@@ -43,7 +41,7 @@ index dced5e7..f200175 100644
  			/* Write to NDPTR */
  			writel(CPHYSADDR(&lp->td_ring[lp->tx_chain_head]),
  					&lp->tx_dma_regs->dmandptr);
-@@ -251,12 +251,12 @@ static int korina_send_packet(struct sk_buff *skb, struct net_device *dev)
+@@ -251,12 +251,12 @@ static int korina_send_packet(struct sk_
  			td->control = DMA_COUNT(length) |
  					DMA_DESC_COF | DMA_DESC_IOF;
  			/* Link to prev */
@@ -59,7 +57,7 @@ index dced5e7..f200175 100644
  			/* Write to NDPTR */
  			writel(CPHYSADDR(&lp->td_ring[lp->tx_chain_head]),
  					&(lp->tx_dma_regs->dmandptr));
-@@ -270,17 +270,17 @@ static int korina_send_packet(struct sk_buff *skb, struct net_device *dev)
+@@ -270,17 +270,17 @@ static int korina_send_packet(struct sk_
  			td->control = DMA_COUNT(length) |
  					DMA_DESC_COF | DMA_DESC_IOF;
  			/* Move tail */
@@ -81,7 +79,3 @@ index dced5e7..f200175 100644
  		}
  	}
  	dma_cache_wback((u32) td, sizeof(*td));
--- 
-1.5.6.4
-
-

@@ -15,8 +15,6 @@ gets rid of the regulator related backtrace seen upon resume.
 Signed-off-by: Balaji Rao <balajirrao@openmoko.org>
 ---
 
-diff --git a/arch/arm/plat-s3c/pm.c b/arch/arm/plat-s3c/pm.c
-index 422dea2..889f191 100644
 --- a/arch/arm/plat-s3c/pm.c
 +++ b/arch/arm/plat-s3c/pm.c
 @@ -18,7 +18,6 @@
@@ -50,11 +48,9 @@ index 422dea2..889f191 100644
  };
  
  /* s3c_pm_init
-diff --git a/drivers/regulator/pcf50633-regulator.c b/drivers/regulator/pcf50633-regulator.c
-index 343f43e..d284200 100644
 --- a/drivers/regulator/pcf50633-regulator.c
 +++ b/drivers/regulator/pcf50633-regulator.c
-@@ -249,8 +249,6 @@ struct regulator_ops pcf50633_regulator_ops = {
+@@ -249,8 +249,6 @@ struct regulator_ops pcf50633_regulator_
  	.enable = pcf50633_regulator_enable,
  	.disable = pcf50633_regulator_disable,
  	.is_enabled = pcf50633_regulator_is_enabled,

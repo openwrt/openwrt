@@ -7,11 +7,9 @@ Tested-by: Florian Fainelli <florian@openwrt.org>
  arch/mips/pci/pci-rc32434.c |   11 +++++++++++
  1 files changed, 11 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/pci/pci-rc32434.c b/arch/mips/pci/pci-rc32434.c
-index 1c2821e..71f7d27 100644
 --- a/arch/mips/pci/pci-rc32434.c
 +++ b/arch/mips/pci/pci-rc32434.c
-@@ -205,6 +205,8 @@ static int __init rc32434_pcibridge_init(void)
+@@ -205,6 +205,8 @@ static int __init rc32434_pcibridge_init
  
  static int __init rc32434_pci_init(void)
  {
@@ -36,7 +34,3 @@ index 1c2821e..71f7d27 100644
  	register_pci_controller(&rc32434_controller);
  	rc32434_sync();
  
--- 
-1.5.6.4
-
-
