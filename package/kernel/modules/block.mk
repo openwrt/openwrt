@@ -146,55 +146,42 @@ endef
 $(eval $(call KernelPackage,ata-via-sata))
 
 
+define KernelPackage/ide-core
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=IDE (ATA/ATAPI) device support
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:= \
+	CONFIG_IDE \
+	CONFIG_IDE_GENERIC \
+	CONFIG_BLK_DEV_GENERIC \
+	CONFIG_BLK_DEV_IDE \
+	CONFIG_BLK_DEV_IDEDISK \
+	CONFIG_IDE_GD \
+	CONFIG_IDE_GD_ATA=y \
+	CONFIG_IDE_GD_ATAPI=n \
+	CONFIG_BLK_DEV_IDEDMA_PCI=y \
+	CONFIG_BLK_DEV_IDEPCI=y
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-  define KernelPackage/ide-core
-    SUBMENU:=$(BLOCK_MENU)
-    TITLE:=IDE (ATA/ATAPI) device support
-    DEPENDS:=@PCI_SUPPORT
-    KCONFIG:= \
-  	CONFIG_IDE \
-  	CONFIG_IDE_GENERIC \
-  	CONFIG_BLK_DEV_GENERIC \
-  	CONFIG_BLK_DEV_IDE \
-  	CONFIG_IDE_GD \
-  	CONFIG_IDE_GD_ATA=y \
-  	CONFIG_IDE_GD_ATAPI=n \
-  	CONFIG_BLK_DEV_IDEDMA_PCI=y \
-  	CONFIG_BLK_DEV_IDEPCI=y
     FILES:= \
   	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
   	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-gd_mod)
-  endef
+      AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-gd_mod)
 else
-  define KernelPackage/ide-core
-    SUBMENU:=$(BLOCK_MENU)
-    TITLE:=IDE (ATA/ATAPI) device support
-    DEPENDS:=@PCI_SUPPORT
-    KCONFIG:= \
-          CONFIG_IDE \
-          CONFIG_IDE_GENERIC \
-          CONFIG_BLK_DEV_GENERIC \
-          CONFIG_BLK_DEV_IDE \
-          CONFIG_BLK_DEV_IDEDISK \
-          CONFIG_BLK_DEV_IDEDMA_PCI=y \
-          CONFIG_BLK_DEV_IDEPCI=y
     FILES:= \
-          $(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
-          $(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-disk)
-  endef
+  	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
+      AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-disk)
 endif
+endef
 
 define KernelPackage/ide-core/2.4
   FILES+=$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD+=$(call AutoLoad,30,ide-detect)
 endef
 
-ifeq ($(and $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1), \
-	$(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.28)))
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),eq,2.6.26)),1)
   define KernelPackage/ide-core/2.6
-    FILES+=$(LINUX_DIR)/drivers/ide/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
+    FILES+=$(LINUX_DIR)/drivers/ide/pci/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
     AUTOLOAD+=$(call AutoLoad,30,ide-pci-generic)
   endef
 else
