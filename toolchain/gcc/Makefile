@@ -176,6 +176,7 @@ define Stage1/Install
 	# XXX: glibc insists on linking against libgcc_eh
 	( cd $(TOOLCHAIN_DIR)/usr/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
 		[ -e libgcc_eh.a ] || ln -sf libgcc.a libgcc_eh.a ; \
+		cp libgcc.a libgcc_initial.a; \
 	)
 endef
 
