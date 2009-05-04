@@ -43,6 +43,8 @@ define Package/ebtables-utils/description
 	$(call Package/ebtables/description)
 endef
 
+MAKE_VARS += EXT_LIBSI="$(LIBGCC_S)"
+
 MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LIBDIR="/usr/lib/ebtables"
