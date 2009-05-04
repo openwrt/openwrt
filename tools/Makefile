@@ -12,14 +12,14 @@ curdir:=tools
 tools-y :=
 tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
 tools-y += m4 autoconf automake bison pkg-config sed
-tools-y += sstrip ipkg-utils genext2fs squashfs mtd-utils lzma mkimage
+tools-y += sstrip ipkg-utils genext2fs squashfs mtd-utils lzma-old mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2
 
 tools-$(CONFIG_CCACHE) += ccache
 tools-$(CONFIG_powerpc) += dtc
 
 # builddir dependencies
-$(curdir)/squashfs/compile := $(curdir)/lzma/install
+$(curdir)/squashfs/compile := $(curdir)/lzma-old/install
 $(curdir)/quilt/compile := $(curdir)/sed/install
 $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install

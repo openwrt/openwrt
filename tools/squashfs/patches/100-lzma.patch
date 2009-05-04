@@ -1,17 +1,11 @@
 --- a/squashfs-tools/Makefile
 +++ b/squashfs-tools/Makefile
-@@ -1,4 +1,5 @@
- INCLUDEDIR = .
-+#LZMAPATH = ../lzma/SRC/7zip/Compress/LZMA_Lib
- 
- CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -O2
- 
 @@ -7,6 +8,9 @@ all: mksquashfs unsquashfs
  mksquashfs: mksquashfs.o read_fs.o sort.o
  	$(CC) mksquashfs.o read_fs.o sort.o -lz -o $@
  
 +mksquashfs-lzma: mksquashfs.o read_fs.o sort.o
-+	$(CXX) mksquashfs.o read_fs.o sort.o -L$(LZMAPATH) -llzma -o $@
++	$(CXX) mksquashfs.o read_fs.o sort.o -L$(LZMAPATH) -llzma-old -o $@
 +
  mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h
  
@@ -21,7 +15,7 @@
  	$(CC) unsquashfs.o -lz -o $@
  
 +unsquashfs-lzma: unsquashfs.o
-+	$(CXX) unsquashfs.o -L$(LZMAPATH) -llzma -o $@
++	$(CXX) unsquashfs.o -L$(LZMAPATH) -llzma-old -o $@
 +
  unsquashfs.o: unsquashfs.c squashfs_fs.h read_fs.h global.h
 +
