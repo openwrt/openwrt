@@ -51,6 +51,7 @@ endef
 
 TARGET_CPPFLAGS := \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
+	-D_GNU_SOURCE \
 	$(TARGET_CPPFLAGS)
 
 MAKE_FLAGS += \

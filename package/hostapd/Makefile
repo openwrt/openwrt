@@ -98,7 +98,8 @@ TARGET_CPPFLAGS := \
 	$(TARGET_CPPFLAGS) \
 	-I$(STAGING_DIR)/usr/include/madwifi \
 	-I$(STAGING_DIR)/usr/include/mac80211 \
-	-DCONFIG_LIBNL20
+	-DCONFIG_LIBNL20 \
+	-D_GNU_SOURCE
 
 define Build/CompileTarget
 	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
