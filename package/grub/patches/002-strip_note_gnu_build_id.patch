@@ -1,0 +1,22 @@
+--- a/stage1/Makefile.in
++++ b/stage1/Makefile.in
+@@ -427,7 +427,7 @@ uninstall-am: uninstall-info-am uninstal
+ 	uninstall-nodist_pkglibDATA
+ 
+ .exec:
+-	$(OBJCOPY) -O binary $< $@
++	$(OBJCOPY) -O binary -R .comment -R .note -R .note.gnu.build-id $< $@
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
+--- a/stage2/Makefile.in
++++ b/stage2/Makefile.in
+@@ -3244,7 +3244,7 @@ pxegrub: pxeloader diskless
+ 	-rm -f $@
+ 	cat $^ > $@
+ .exec:
+-	$(OBJCOPY) -O binary $< $@
++	$(OBJCOPY) -O binary -R .comment -R .note -R .note.gnu.build-id $< $@
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
