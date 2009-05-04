@@ -7,11 +7,11 @@
 
 define Profile/openmoko-gta02-full
   NAME:=Openmoko GTA-02 (full)
-  PACKAGES:=xglamo enlightenment gsm0710muxd python fso paroli
+  PACKAGES:=xserver-xorg xf86-video-glamo xf86-input-tslib enlightenment gsm0710muxd python fso paroli
 endef
 
 define Profile/openmoko-gta02-full/Description
-	Package set with accelerated x11-environment and phone-suite (paroli) compatible with the Openmoko GTA-02 hardware
+	Package set with accelerated x11-environment and phone-suite (paroli)
 endef
 $(eval $(call Profile,openmoko-gta02-full))
 
