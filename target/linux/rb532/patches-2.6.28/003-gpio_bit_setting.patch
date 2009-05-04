@@ -8,11 +8,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  arch/mips/rb532/gpio.c |    6 ++----
  1 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/mips/rb532/gpio.c b/arch/mips/rb532/gpio.c
-index 0e84c8a..e35cb75 100644
 --- a/arch/mips/rb532/gpio.c
 +++ b/arch/mips/rb532/gpio.c
-@@ -119,13 +119,11 @@ static inline void rb532_set_bit(unsigned bitval,
+@@ -119,13 +119,11 @@ static inline void rb532_set_bit(unsigne
  	unsigned long flags;
  	u32 val;
  
@@ -28,8 +26,3 @@ index 0e84c8a..e35cb75 100644
  	writel(val, ioaddr);
  
  	local_irq_restore(flags);
--- 
-1.5.6.4
-
-
-

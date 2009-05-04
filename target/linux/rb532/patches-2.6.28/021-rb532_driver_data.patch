@@ -7,11 +7,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  arch/mips/rb532/devices.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/rb532/devices.c b/arch/mips/rb532/devices.c
-index 9b6b744..3c74561 100644
 --- a/arch/mips/rb532/devices.c
 +++ b/arch/mips/rb532/devices.c
-@@ -89,7 +89,7 @@ static struct korina_device korina_dev0_data = {
+@@ -86,7 +86,7 @@ static struct korina_device korina_dev0_
  static struct platform_device korina_dev0 = {
  	.id = -1,
  	.name = "korina",
@@ -20,7 +18,3 @@ index 9b6b744..3c74561 100644
  	.resource = korina_dev0_res,
  	.num_resources = ARRAY_SIZE(korina_dev0_res),
  };
--- 
-1.5.6.4
-
-

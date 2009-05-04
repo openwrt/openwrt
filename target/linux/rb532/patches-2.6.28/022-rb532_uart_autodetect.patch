@@ -8,8 +8,6 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  arch/mips/rb532/serial.c  |    2 +-
  2 files changed, 27 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/rb532/devices.c b/arch/mips/rb532/devices.c
-index c1c2918..9b6b744 100644
 --- a/arch/mips/rb532/devices.c
 +++ b/arch/mips/rb532/devices.c
 @@ -24,6 +24,7 @@
@@ -29,7 +27,7 @@ index c1c2918..9b6b744 100644
  static struct resource korina_dev0_res[] = {
  	{
  		.name = "korina_regs",
-@@ -214,12 +217,32 @@ static struct platform_device rb532_wdt = {
+@@ -214,12 +217,32 @@ static struct platform_device rb532_wdt 
  	.num_resources	= ARRAY_SIZE(rb532_wdt_res),
  };
  
@@ -62,7 +60,7 @@ index c1c2918..9b6b744 100644
  	&rb532_wdt
  };
  
-@@ -294,6 +317,9 @@ static int __init plat_setup_devices(void)
+@@ -294,6 +317,9 @@ static int __init plat_setup_devices(voi
  	/* Initialise the NAND device */
  	rb532_nand_setup();
  
@@ -72,8 +70,6 @@ index c1c2918..9b6b744 100644
  	return platform_add_devices(rb532_devs, ARRAY_SIZE(rb532_devs));
  }
  
-diff --git a/arch/mips/rb532/serial.c b/arch/mips/rb532/serial.c
-index 3e0d7ec..00ed19f 100644
 --- a/arch/mips/rb532/serial.c
 +++ b/arch/mips/rb532/serial.c
 @@ -36,7 +36,7 @@
@@ -85,7 +81,3 @@ index 3e0d7ec..00ed19f 100644
  	.line = 0,
  	.irq = UART0_IRQ,
  	.iotype = UPIO_MEM,
--- 
-1.5.6.4
-
-

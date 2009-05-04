@@ -1,6 +1,6 @@
 --- a/include/linux/netfilter/xt_layer7.h
 +++ b/include/linux/netfilter/xt_layer7.h
-@@ -8,6 +8,7 @@
+@@ -8,6 +8,7 @@ struct xt_layer7_info {
      char protocol[MAX_PROTOCOL_LEN];
      char invert:1;
      char pattern[MAX_PATTERN_LEN];
@@ -10,7 +10,7 @@
  #endif /* _XT_LAYER7_H */
 --- a/net/netfilter/xt_layer7.c
 +++ b/net/netfilter/xt_layer7.c
-@@ -296,34 +296,36 @@
+@@ -296,34 +296,36 @@ static int match_no_append(struct nf_con
  }
  
  /* add the new app data to the conntrack.  Return number of bytes added. */
@@ -61,7 +61,7 @@
  	return length;
  }
  
-@@ -410,7 +412,7 @@
+@@ -410,7 +412,7 @@ match(const struct sk_buff *skbin,
  	struct xt_layer7_info * info = (struct xt_layer7_info *)matchinfo;
  	enum ip_conntrack_info master_ctinfo, ctinfo;
  	struct nf_conn *master_conntrack, *conntrack;
@@ -70,7 +70,7 @@
  	unsigned int pattern_result, appdatalen;
  	regexp * comppattern;
  
-@@ -438,8 +440,8 @@
+@@ -438,8 +440,8 @@ match(const struct sk_buff *skbin,
  		master_conntrack = master_ct(master_conntrack);
  
  	/* if we've classified it or seen too many packets */
@@ -81,7 +81,7 @@
  
  		pattern_result = match_no_append(conntrack, master_conntrack, 
  						 ctinfo, master_ctinfo, info);
-@@ -472,6 +474,25 @@
+@@ -472,6 +474,25 @@ match(const struct sk_buff *skbin,
  	/* the return value gets checked later, when we're ready to use it */
  	comppattern = compile_and_cache(info->pattern, info->protocol);
  

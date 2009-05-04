@@ -4,11 +4,9 @@ is wrong.
 
 Signed-off-by: Phil Sutter <n0-1@freewrt.org>
 ---
-diff --git a/arch/mips/rb532/gpio.c b/arch/mips/rb532/gpio.c
-index 40deb11..7e0cb4f 100644
 --- a/arch/mips/rb532/gpio.c
 +++ b/arch/mips/rb532/gpio.c
-@@ -93,7 +93,7 @@ void set_latch_u5(unsigned char or_mask, unsigned char nand_mask)
+@@ -93,7 +93,7 @@ void set_latch_u5(unsigned char or_mask,
  	spin_lock_irqsave(&dev3.lock, flags);
  
  	dev3.state = (dev3.state | or_mask) & ~nand_mask;
@@ -17,7 +15,3 @@ index 40deb11..7e0cb4f 100644
  
  	spin_unlock_irqrestore(&dev3.lock, flags);
  }
--- 
-1.5.6.4
-
-

@@ -10,10 +10,9 @@ original driver always transfers 512 Bytes at once.
 Signed-off-by: Phil Sutter <n0-1@freewrt.org>
 Acked-by: Sergei Shtyltov <sshtylyov@ru.mvista.com>
 ---
-diff -urN linux-2.6.28.7/drivers/ata/pata_rb532_cf.c linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c
---- linux-2.6.28.7/drivers/ata/pata_rb532_cf.c	2009-03-15 13:24:24.000000000 +0100
-+++ linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c	2009-03-15 13:26:19.000000000 +0100
-@@ -82,13 +82,10 @@
+--- a/drivers/ata/pata_rb532_cf.c
++++ b/drivers/ata/pata_rb532_cf.c
+@@ -82,13 +82,10 @@ static unsigned int rb532_pata_data_xfer
  	void __iomem *ioaddr = ap->ioaddr.data_addr;
  	int retlen = buflen;
  

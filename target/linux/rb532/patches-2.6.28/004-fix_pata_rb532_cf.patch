@@ -10,9 +10,8 @@ be cleared. This is being done at the end of rb532_pata_irq_handler.
 Signed-off-by: Phil Sutter <n0-1@freewrt.org>
 Acked-by: Florian Fainelli <florian@openwrt.org>
 ---
-diff -urN linux-2.6.28.7/drivers/ata/pata_rb532_cf.c linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c
---- linux-2.6.28.7/drivers/ata/pata_rb532_cf.c	2009-02-20 23:41:27.000000000 +0100
-+++ linux-2.6.28.7.new/drivers/ata/pata_rb532_cf.c	2009-03-15 13:21:06.000000000 +0100
+--- a/drivers/ata/pata_rb532_cf.c
++++ b/drivers/ata/pata_rb532_cf.c
 @@ -31,6 +31,7 @@
  #include <scsi/scsi_host.h>
  
@@ -21,7 +20,7 @@ diff -urN linux-2.6.28.7/drivers/ata/pata_rb532_cf.c linux-2.6.28.7.new/drivers/
  
  #define DRV_NAME	"pata-rb532-cf"
  #define DRV_VERSION	"0.1.0"
-@@ -63,8 +64,8 @@
+@@ -63,8 +64,8 @@ static inline void rb532_pata_finish_io(
  	   ata_sff_sync might be sufficient. */
  	ata_sff_dma_pause(ap);
  	ndelay(RB500_CF_IO_DELAY);
@@ -32,7 +31,7 @@ diff -urN linux-2.6.28.7/drivers/ata/pata_rb532_cf.c linux-2.6.28.7.new/drivers/
  }
  
  static void rb532_pata_exec_command(struct ata_port *ap,
-@@ -113,13 +114,15 @@
+@@ -113,13 +114,15 @@ static irqreturn_t rb532_pata_irq_handle
  	struct rb532_cf_info *info = ah->private_data;
  
  	if (gpio_get_value(info->gpio_line)) {

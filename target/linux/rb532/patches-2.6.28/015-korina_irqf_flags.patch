@@ -8,11 +8,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  drivers/net/korina.c |    8 ++++----
  1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/korina.c b/drivers/net/korina.c
-index bd33fa9..1d6e48e 100644
 --- a/drivers/net/korina.c
 +++ b/drivers/net/korina.c
-@@ -1000,14 +1000,14 @@ static int korina_open(struct net_device *dev)
+@@ -998,14 +998,14 @@ static int korina_open(struct net_device
  	 * that handles the Done Finished
  	 * Ovr and Und Events */
  	ret = request_irq(lp->rx_irq, &korina_rx_dma_interrupt,
@@ -29,7 +27,7 @@ index bd33fa9..1d6e48e 100644
  	if (ret < 0) {
  		printk(KERN_ERR DRV_NAME "%s: unable to get Tx DMA IRQ %d\n",
  		    dev->name, lp->tx_irq);
-@@ -1016,7 +1016,7 @@ static int korina_open(struct net_device *dev)
+@@ -1014,7 +1014,7 @@ static int korina_open(struct net_device
  
  	/* Install handler for overrun error. */
  	ret = request_irq(lp->ovr_irq, &korina_ovr_interrupt,
@@ -38,7 +36,7 @@ index bd33fa9..1d6e48e 100644
  	if (ret < 0) {
  		printk(KERN_ERR DRV_NAME"%s: unable to get OVR IRQ %d\n",
  		    dev->name, lp->ovr_irq);
-@@ -1025,7 +1025,7 @@ static int korina_open(struct net_device *dev)
+@@ -1023,7 +1023,7 @@ static int korina_open(struct net_device
  
  	/* Install handler for underflow error. */
  	ret = request_irq(lp->und_irq, &korina_und_interrupt,
@@ -47,7 +45,3 @@ index bd33fa9..1d6e48e 100644
  	if (ret < 0) {
  		printk(KERN_ERR DRV_NAME "%s: unable to get UND IRQ %d\n",
  		    dev->name, lp->und_irq);
--- 
-1.5.6.4
-
-

@@ -1,10 +1,8 @@
-Index: linux-2.6.28.2/drivers/mtd/chips/cfi_cmdset_0002.c
-===================================================================
---- linux-2.6.28.2.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2009-02-04 13:42:19.000000000 +0100
-+++ linux-2.6.28.2/drivers/mtd/chips/cfi_cmdset_0002.c	2009-02-04 13:44:11.000000000 +0100
-@@ -364,7 +364,7 @@
- 			return NULL;
- 		}
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -374,7 +374,7 @@ struct mtd_info *cfi_cmdset_0002(struct 
+ 
+ 		cfi_fixup_major_minor(cfi, extp);
  
 -		if (extp->MajorVersion != '1' ||
 +		if (extp->MajorVersion < '1' || extp->MajorVersion > '3' ||

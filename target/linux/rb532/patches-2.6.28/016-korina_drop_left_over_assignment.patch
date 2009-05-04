@@ -7,11 +7,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  drivers/net/korina.c |    3 +--
  1 files changed, 1 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/korina.c b/drivers/net/korina.c
-index 60ae7bf..75010ca 100644
 --- a/drivers/net/korina.c
 +++ b/drivers/net/korina.c
-@@ -743,6 +743,7 @@ static struct ethtool_ops netdev_ethtool_ops = {
+@@ -738,6 +738,7 @@ static struct ethtool_ops netdev_ethtool
  static void korina_alloc_ring(struct net_device *dev)
  {
  	struct korina_private *lp = netdev_priv(dev);
@@ -19,7 +17,7 @@ index 60ae7bf..75010ca 100644
  	int i;
  
  	/* Initialize the transmit descriptors */
-@@ -758,8 +759,6 @@ static void korina_alloc_ring(struct net_device *dev)
+@@ -753,8 +754,6 @@ static void korina_alloc_ring(struct net
  
  	/* Initialize the receive descriptors */
  	for (i = 0; i < KORINA_NUM_RDS; i++) {
@@ -28,7 +26,3 @@ index 60ae7bf..75010ca 100644
  		skb = dev_alloc_skb(KORINA_RBSIZE + 2);
  		if (!skb)
  			break;
--- 
-1.5.6.4
-
-

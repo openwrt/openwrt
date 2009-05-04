@@ -16,7 +16,7 @@
 +#endif /* _XT_LAYER7_H */
 --- a/include/net/netfilter/nf_conntrack.h
 +++ b/include/net/netfilter/nf_conntrack.h
-@@ -118,6 +118,22 @@
+@@ -118,6 +118,22 @@ struct nf_conn
  	u_int32_t secmark;
  #endif
  
@@ -41,7 +41,7 @@
  
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -794,6 +794,27 @@
+@@ -794,6 +794,27 @@ config NETFILTER_XT_MATCH_STATE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -71,7 +71,7 @@
  	depends on NETFILTER_ADVANCED
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -84,6 +84,7 @@
+@@ -84,6 +84,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_RECENT) 
  obj-$(CONFIG_NETFILTER_XT_MATCH_SCTP) += xt_sctp.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_SOCKET) += xt_socket.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STATE) += xt_state.o
@@ -81,7 +81,7 @@
  obj-$(CONFIG_NETFILTER_XT_MATCH_TCPMSS) += xt_tcpmss.o
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -202,6 +202,14 @@
+@@ -202,6 +202,14 @@ destroy_conntrack(struct nf_conntrack *n
  	 * too. */
  	nf_ct_remove_expectations(ct);
  
@@ -98,7 +98,7 @@
  		BUG_ON(hlist_unhashed(&ct->tuplehash[IP_CT_DIR_ORIGINAL].hnode));
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -165,6 +165,12 @@
+@@ -165,6 +165,12 @@ static int ct_seq_show(struct seq_file *
  		return -ENOSPC;
  #endif
  

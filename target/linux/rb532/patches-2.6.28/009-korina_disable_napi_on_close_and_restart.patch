@@ -5,11 +5,9 @@ Signed-off-by: Phil Sutter <n0-1@freewrt.org>
  drivers/net/korina.c |    4 ++++
  1 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/net/korina.c b/drivers/net/korina.c
-index e30c2f4..65b8487 100644
 --- a/drivers/net/korina.c
 +++ b/drivers/net/korina.c
-@@ -904,6 +904,8 @@ static int korina_restart(struct net_device *dev)
+@@ -905,6 +905,8 @@ static int korina_restart(struct net_dev
  
  	korina_free_ring(dev);
  
@@ -18,7 +16,7 @@ index e30c2f4..65b8487 100644
  	ret = korina_init(dev);
  	if (ret < 0) {
  		printk(KERN_ERR DRV_NAME "%s: cannot restart device\n",
-@@ -1070,6 +1072,8 @@ static int korina_close(struct net_device *dev)
+@@ -1071,6 +1073,8 @@ static int korina_close(struct net_devic
  
  	korina_free_ring(dev);
  
@@ -27,7 +25,3 @@ index e30c2f4..65b8487 100644
  	free_irq(lp->rx_irq, dev);
  	free_irq(lp->tx_irq, dev);
  	free_irq(lp->ovr_irq, dev);
--- 
-1.5.6.4
-
-

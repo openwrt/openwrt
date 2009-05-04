@@ -1,7 +1,6 @@
-diff -urN linux-2.6.28.9/arch/arm/boot/compressed/Makefile linux-2.6.28.9.new/arch/arm/boot/compressed/Makefile
---- linux-2.6.28.9/arch/arm/boot/compressed/Makefile	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/arch/arm/boot/compressed/Makefile	2009-04-24 14:08:08.000000000 +0200
-@@ -67,8 +67,15 @@
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -67,8 +67,15 @@ endif
  
  SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/BSS_START/$(ZBSSADDR)/
  
@@ -19,7 +18,7 @@ diff -urN linux-2.6.28.9/arch/arm/boot/compressed/Makefile linux-2.6.28.9.new/ar
  
  ifeq ($(CONFIG_FUNCTION_TRACER),y)
  ORIG_CFLAGS := $(KBUILD_CFLAGS)
-@@ -95,7 +102,7 @@
+@@ -95,7 +102,7 @@ LDFLAGS_vmlinux += -p --no-undefined -X 
  # would otherwise mess up our GOT table
  CFLAGS_misc.o := -Dstatic=
  
@@ -28,7 +27,7 @@ diff -urN linux-2.6.28.9/arch/arm/boot/compressed/Makefile linux-2.6.28.9.new/ar
  	 	$(addprefix $(obj)/, $(OBJS)) FORCE
  	$(call if_changed,ld)
  	@:
-@@ -103,7 +110,17 @@
+@@ -103,7 +110,17 @@ $(obj)/vmlinux: $(obj)/vmlinux.lds $(obj
  $(obj)/piggy.gz: $(obj)/../Image FORCE
  	$(call if_changed,gzip)
  
@@ -47,10 +46,9 @@ diff -urN linux-2.6.28.9/arch/arm/boot/compressed/Makefile linux-2.6.28.9.new/ar
  
  CFLAGS_font.o := -Dstatic=
  
-diff -urN linux-2.6.28.9/arch/arm/boot/compressed/misc.c linux-2.6.28.9.new/arch/arm/boot/compressed/misc.c
---- linux-2.6.28.9/arch/arm/boot/compressed/misc.c	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/arch/arm/boot/compressed/misc.c	2009-04-24 14:08:08.000000000 +0200
-@@ -169,116 +169,34 @@
+--- a/arch/arm/boot/compressed/misc.c
++++ b/arch/arm/boot/compressed/misc.c
+@@ -169,116 +169,34 @@ static inline __ptr_t memcpy(__ptr_t __d
  /*
   * gzip delarations
   */
@@ -176,7 +174,7 @@ diff -urN linux-2.6.28.9/arch/arm/boot/compressed/misc.c linux-2.6.28.9.new/arch
  
  #ifndef arch_error
  #define arch_error(x)
-@@ -301,16 +219,24 @@
+@@ -301,16 +219,24 @@ ulg
  decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
  		  int arch_id)
  {
@@ -207,7 +205,7 @@ diff -urN linux-2.6.28.9/arch/arm/boot/compressed/misc.c linux-2.6.28.9.new/arch
  	putstr(" done, booting the kernel.\n");
  	return output_ptr;
  }
-@@ -320,11 +246,8 @@
+@@ -320,11 +246,8 @@ char output_buffer[1500*1024];
  
  int main()
  {
@@ -220,9 +218,8 @@ diff -urN linux-2.6.28.9/arch/arm/boot/compressed/misc.c linux-2.6.28.9.new/arch
  	putstr("done.\n");
  	return 0;
  }
-diff -urN linux-2.6.28.9/arch/x86/boot/compressed/Makefile linux-2.6.28.9.new/arch/x86/boot/compressed/Makefile
---- linux-2.6.28.9/arch/x86/boot/compressed/Makefile	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/arch/x86/boot/compressed/Makefile	2009-04-24 14:10:01.000000000 +0200
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
 @@ -4,7 +4,7 @@
  # create a compressed vmlinux image from the original vmlinux
  #
@@ -232,7 +229,7 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/Makefile linux-2.6.28.9.new/ar
  
  KBUILD_CFLAGS := -m$(BITS) -D__KERNEL__ $(LINUX_INCLUDE) -O2
  KBUILD_CFLAGS += -fno-strict-aliasing -fPIC
-@@ -47,9 +47,17 @@
+@@ -47,9 +47,17 @@ ifeq ($(CONFIG_X86_32),y)
  ifdef CONFIG_RELOCATABLE
  $(obj)/vmlinux.bin.gz: $(obj)/vmlinux.bin.all FORCE
  	$(call if_changed,gzip)
@@ -250,7 +247,7 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/Makefile linux-2.6.28.9.new/ar
  endif
  LDFLAGS_piggy.o := -r --format binary --oformat elf32-i386 -T
  
-@@ -60,5 +68,9 @@
+@@ -60,5 +68,9 @@ $(obj)/vmlinux.bin.gz: $(obj)/vmlinux.bi
  LDFLAGS_piggy.o := -r --format binary --oformat elf64-x86-64 -T
  endif
  
@@ -261,9 +258,8 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/Makefile linux-2.6.28.9.new/ar
 +
 +$(obj)/piggy.o: $(obj)/vmlinux.scr $(obj)/vmlinux.bin.$(suffix_y) FORCE
  	$(call if_changed,ld)
-diff -urN linux-2.6.28.9/arch/x86/boot/compressed/misc.c linux-2.6.28.9.new/arch/x86/boot/compressed/misc.c
---- linux-2.6.28.9/arch/x86/boot/compressed/misc.c	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/arch/x86/boot/compressed/misc.c	2009-04-24 14:08:08.000000000 +0200
+--- a/arch/x86/boot/compressed/misc.c
++++ b/arch/x86/boot/compressed/misc.c
 @@ -116,71 +116,13 @@
  /*
   * gzip declarations
@@ -336,7 +332,7 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/misc.c linux-2.6.28.9.new/arch
  static void error(char *m);
  
  /*
-@@ -189,11 +131,6 @@
+@@ -189,11 +131,6 @@ static void error(char *m);
  static struct boot_params *real_mode;		/* Pointer to real-mode data */
  static int quiet;
  
@@ -348,7 +344,7 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/misc.c linux-2.6.28.9.new/arch
  static void *memset(void *s, int c, unsigned n);
  static void *memcpy(void *dest, const void *src, unsigned n);
  
-@@ -213,7 +150,19 @@
+@@ -213,7 +150,19 @@ static char *vidmem;
  static int vidport;
  static int lines, cols;
  
@@ -368,7 +364,7 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/misc.c linux-2.6.28.9.new/arch
  
  static void scroll(void)
  {
-@@ -293,38 +242,6 @@
+@@ -293,38 +242,6 @@ static void *memcpy(void *dest, const vo
  	return dest;
  }
  
@@ -407,7 +403,7 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/misc.c linux-2.6.28.9.new/arch
  
  static void error(char *x)
  {
-@@ -407,12 +324,8 @@
+@@ -407,12 +324,8 @@ asmlinkage void decompress_kernel(void *
  	lines = real_mode->screen_info.orig_video_lines;
  	cols = real_mode->screen_info.orig_video_cols;
  
@@ -420,7 +416,7 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/misc.c linux-2.6.28.9.new/arch
  
  #ifdef CONFIG_X86_64
  	if ((unsigned long)output & (__KERNEL_ALIGN - 1))
-@@ -430,10 +343,9 @@
+@@ -430,10 +343,9 @@ asmlinkage void decompress_kernel(void *
  #endif
  #endif
  
@@ -432,9 +428,8 @@ diff -urN linux-2.6.28.9/arch/x86/boot/compressed/misc.c linux-2.6.28.9.new/arch
  	parse_elf(output);
  	if (!quiet)
  		putstr("done.\nBooting the kernel.\n");
-diff -urN linux-2.6.28.9/arch/x86/include/asm/boot.h linux-2.6.28.9.new/arch/x86/include/asm/boot.h
---- linux-2.6.28.9/arch/x86/include/asm/boot.h	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/arch/x86/include/asm/boot.h	2009-04-24 14:08:08.000000000 +0200
+--- a/arch/x86/include/asm/boot.h
++++ b/arch/x86/include/asm/boot.h
 @@ -15,11 +15,21 @@
  				+ (CONFIG_PHYSICAL_ALIGN - 1)) \
  				& ~(CONFIG_PHYSICAL_ALIGN - 1))
@@ -458,10 +453,9 @@ diff -urN linux-2.6.28.9/arch/x86/include/asm/boot.h linux-2.6.28.9.new/arch/x86
  #define BOOT_STACK_SIZE	0x1000
  #endif
  
-diff -urN linux-2.6.28.9/drivers/block/Kconfig linux-2.6.28.9.new/drivers/block/Kconfig
---- linux-2.6.28.9/drivers/block/Kconfig	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/drivers/block/Kconfig	2009-04-24 14:08:08.000000000 +0200
-@@ -358,6 +358,30 @@
+--- a/drivers/block/Kconfig
++++ b/drivers/block/Kconfig
+@@ -358,6 +358,30 @@ config BLK_DEV_XIP
  	  will prevent RAM block device backing store memory from being
  	  allocated from highmem (only a problem for highmem systems).
  
@@ -492,9 +486,8 @@ diff -urN linux-2.6.28.9/drivers/block/Kconfig linux-2.6.28.9.new/drivers/block/
  config CDROM_PKTCDVD
  	tristate "Packet writing on CD/DVD media"
  	depends on !UML
-diff -urN linux-2.6.28.9/include/linux/decompress/bunzip2.h linux-2.6.28.9.new/include/linux/decompress/bunzip2.h
---- linux-2.6.28.9/include/linux/decompress/bunzip2.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/include/linux/decompress/bunzip2.h	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/include/linux/decompress/bunzip2.h
 @@ -0,0 +1,10 @@
 +#ifndef DECOMPRESS_BUNZIP2_H
 +#define DECOMPRESS_BUNZIP2_H
@@ -506,9 +499,8 @@ diff -urN linux-2.6.28.9/include/linux/decompress/bunzip2.h linux-2.6.28.9.new/i
 +	    int *pos,
 +	    void(*error)(char *x));
 +#endif
-diff -urN linux-2.6.28.9/include/linux/decompress/generic.h linux-2.6.28.9.new/include/linux/decompress/generic.h
---- linux-2.6.28.9/include/linux/decompress/generic.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/include/linux/decompress/generic.h	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/include/linux/decompress/generic.h
 @@ -0,0 +1,30 @@
 +#ifndef DECOMPRESS_GENERIC_H
 +#define DECOMPRESS_GENERIC_H
@@ -540,9 +532,8 @@ diff -urN linux-2.6.28.9/include/linux/decompress/generic.h linux-2.6.28.9.new/i
 +
 +
 +#endif
-diff -urN linux-2.6.28.9/include/linux/decompress/inflate.h linux-2.6.28.9.new/include/linux/decompress/inflate.h
---- linux-2.6.28.9/include/linux/decompress/inflate.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/include/linux/decompress/inflate.h	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/include/linux/decompress/inflate.h
 @@ -0,0 +1,13 @@
 +#ifndef INFLATE_H
 +#define INFLATE_H
@@ -557,9 +548,8 @@ diff -urN linux-2.6.28.9/include/linux/decompress/inflate.h linux-2.6.28.9.new/i
 +	   int *pos,
 +	   void(*error_fn)(char *x));
 +#endif
-diff -urN linux-2.6.28.9/include/linux/decompress/mm.h linux-2.6.28.9.new/include/linux/decompress/mm.h
---- linux-2.6.28.9/include/linux/decompress/mm.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/include/linux/decompress/mm.h	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/include/linux/decompress/mm.h
 @@ -0,0 +1,89 @@
 +/*
 + * linux/compr_mm.h
@@ -650,9 +640,8 @@ diff -urN linux-2.6.28.9/include/linux/decompress/mm.h linux-2.6.28.9.new/includ
 +#endif /* STATIC */
 +
 +#endif /* DECOMPR_MM_H */
-diff -urN linux-2.6.28.9/include/linux/decompress/unlzma.h linux-2.6.28.9.new/include/linux/decompress/unlzma.h
---- linux-2.6.28.9/include/linux/decompress/unlzma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/include/linux/decompress/unlzma.h	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/include/linux/decompress/unlzma.h
 @@ -0,0 +1,12 @@
 +#ifndef DECOMPRESS_UNLZMA_H
 +#define DECOMPRESS_UNLZMA_H
@@ -666,10 +655,9 @@ diff -urN linux-2.6.28.9/include/linux/decompress/unlzma.h linux-2.6.28.9.new/in
 +	);
 +
 +#endif
-diff -urN linux-2.6.28.9/init/Kconfig linux-2.6.28.9.new/init/Kconfig
---- linux-2.6.28.9/init/Kconfig	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/init/Kconfig	2009-04-24 14:08:08.000000000 +0200
-@@ -101,6 +101,56 @@
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -101,6 +101,56 @@ config LOCALVERSION_AUTO
  
  	  which is done within the script "scripts/setlocalversion".)
  
@@ -726,9 +714,8 @@ diff -urN linux-2.6.28.9/init/Kconfig linux-2.6.28.9.new/init/Kconfig
  config SWAP
  	bool "Support for paging of anonymous memory (swap)"
  	depends on MMU && BLOCK
-diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_rd.c
---- linux-2.6.28.9/init/do_mounts_rd.c	2009-04-24 13:59:44.000000000 +0200
-+++ linux-2.6.28.9.new/init/do_mounts_rd.c	2009-04-24 14:08:08.000000000 +0200
+--- a/init/do_mounts_rd.c
++++ b/init/do_mounts_rd.c
 @@ -11,6 +11,12 @@
  
  #include "do_mounts.h"
@@ -742,7 +729,7 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
  int __initdata rd_prompt = 1;/* 1 = prompt for RAM disk, 0 = don't prompt */
  
  static int __init prompt_ramdisk(char *str)
-@@ -29,7 +35,7 @@
+@@ -29,7 +35,7 @@ static int __init ramdisk_start_setup(ch
  }
  __setup("ramdisk_start=", ramdisk_start_setup);
  
@@ -751,7 +738,7 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
  
  /*
   * This routine tries to find a RAM disk image to load, and returns the
-@@ -46,7 +52,7 @@
+@@ -46,7 +52,7 @@ static int __init crd_load(int in_fd, in
   * 	gzip
   */
  static int __init 
@@ -760,7 +747,7 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
  {
  	const int size = 512;
  	struct minix_super_block *minixsb;
-@@ -74,6 +80,7 @@
+@@ -74,6 +80,7 @@ identify_ramdisk_image(int fd, int start
  	sys_lseek(fd, start_block * BLOCK_SIZE, 0);
  	sys_read(fd, buf, size);
  
@@ -768,7 +755,7 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
  	/*
  	 * If it matches the gzip magic numbers, return 0
  	 */
-@@ -81,9 +88,39 @@
+@@ -81,9 +88,39 @@ identify_ramdisk_image(int fd, int start
  		printk(KERN_NOTICE
  		       "RAMDISK: Compressed image found at block %d\n",
  		       start_block);
@@ -808,7 +795,7 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
  
  	/* romfs is at block zero too */
  	if (romfsb->word0 == ROMSB_WORD0 &&
-@@ -156,6 +193,7 @@
+@@ -156,6 +193,7 @@ int __init rd_load_image(char *from)
  	int nblocks, i, disk;
  	char *buf = NULL;
  	unsigned short rotate = 0;
@@ -816,7 +803,7 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
  #if !defined(CONFIG_S390) && !defined(CONFIG_PPC_ISERIES)
  	char rotator[4] = { '|' , '/' , '-' , '\\' };
  #endif
-@@ -168,12 +206,12 @@
+@@ -168,12 +206,12 @@ int __init rd_load_image(char *from)
  	if (in_fd < 0)
  		goto noclose_input;
  
@@ -831,7 +818,7 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
  			goto successful_load;
  		goto done;
  	}
-@@ -272,138 +310,48 @@
+@@ -272,138 +310,48 @@ int __init rd_load_disk(int n)
  	return rd_load_image("/dev/root");
  }
  
@@ -993,10 +980,9 @@ diff -urN linux-2.6.28.9/init/do_mounts_rd.c linux-2.6.28.9.new/init/do_mounts_r
 -	kfree(window);
  	return result;
  }
-diff -urN linux-2.6.28.9/init/initramfs.c linux-2.6.28.9.new/init/initramfs.c
---- linux-2.6.28.9/init/initramfs.c	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/init/initramfs.c	2009-04-24 14:13:53.000000000 +0200
-@@ -389,11 +389,14 @@
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -389,11 +389,14 @@ static int __init write_buffer(char *buf
  	return len - count;
  }
  
@@ -1013,7 +999,7 @@ diff -urN linux-2.6.28.9/init/initramfs.c linux-2.6.28.9.new/init/initramfs.c
  	while ((written = write_buffer(buf, len)) < len && !message) {
  		char c = buf[written];
  		if (c == '0') {
-@@ -407,73 +410,14 @@
+@@ -407,73 +410,14 @@ static void __init flush_buffer(char *bu
  		} else
  			error("junk in compressed archive");
  	}
@@ -1092,7 +1078,7 @@ diff -urN linux-2.6.28.9/init/initramfs.c linux-2.6.28.9.new/init/initramfs.c
  
  static char * __init unpack_to_rootfs(char *buf, unsigned len, int check_only)
  {
-@@ -482,9 +426,10 @@
+@@ -482,9 +426,10 @@ static char * __init unpack_to_rootfs(ch
  	header_buf = kmalloc(110, GFP_KERNEL);
  	symlink_buf = kmalloc(PATH_MAX + N_ALIGN(PATH_MAX) + 1, GFP_KERNEL);
  	name_buf = kmalloc(N_ALIGN(PATH_MAX), GFP_KERNEL);
@@ -1105,7 +1091,7 @@ diff -urN linux-2.6.28.9/init/initramfs.c linux-2.6.28.9.new/init/initramfs.c
  	state = Start;
  	this_header = 0;
  	message = NULL;
-@@ -504,22 +449,38 @@
+@@ -504,22 +449,38 @@ static char * __init unpack_to_rootfs(ch
  			continue;
  		}
  		this_header = 0;
@@ -1157,10 +1143,9 @@ diff -urN linux-2.6.28.9/init/initramfs.c linux-2.6.28.9.new/init/initramfs.c
  	kfree(name_buf);
  	kfree(symlink_buf);
  	kfree(header_buf);
-diff -urN linux-2.6.28.9/lib/Makefile linux-2.6.28.9.new/lib/Makefile
---- linux-2.6.28.9/lib/Makefile	2009-04-24 13:59:44.000000000 +0200
-+++ linux-2.6.28.9.new/lib/Makefile	2009-04-24 14:08:08.000000000 +0200
-@@ -11,7 +11,8 @@
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -11,7 +11,8 @@ lib-y := ctype.o string.o vsprintf.o cmd
  	 rbtree.o radix-tree.o dump_stack.o \
  	 idr.o int_sqrt.o extable.o prio_tree.o \
  	 sha1.o irq_regs.o reciprocal_div.o argv_split.o \
@@ -1170,9 +1155,8 @@ diff -urN linux-2.6.28.9/lib/Makefile linux-2.6.28.9.new/lib/Makefile
  
  lib-$(CONFIG_MMU) += ioremap.o
  lib-$(CONFIG_SMP) += cpumask.o
-diff -urN linux-2.6.28.9/lib/decompress_bunzip2.c linux-2.6.28.9.new/lib/decompress_bunzip2.c
---- linux-2.6.28.9/lib/decompress_bunzip2.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/lib/decompress_bunzip2.c	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/lib/decompress_bunzip2.c
 @@ -0,0 +1,735 @@
 +/* vi: set sw = 4 ts = 4: */
 +/*	Small bzip2 deflate implementation, by Rob Landley (rob@landley.net).
@@ -1909,9 +1893,8 @@ diff -urN linux-2.6.28.9/lib/decompress_bunzip2.c linux-2.6.28.9.new/lib/decompr
 +}
 +
 +#define decompress bunzip2
-diff -urN linux-2.6.28.9/lib/decompress_unlzma.c linux-2.6.28.9.new/lib/decompress_unlzma.c
---- linux-2.6.28.9/lib/decompress_unlzma.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/lib/decompress_unlzma.c	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/lib/decompress_unlzma.c
 @@ -0,0 +1,647 @@
 +/* Lzma decompressor for Linux kernel. Shamelessly snarfed
 + *from busybox 1.1.1
@@ -2560,10 +2543,9 @@ diff -urN linux-2.6.28.9/lib/decompress_unlzma.c linux-2.6.28.9.new/lib/decompre
 +}
 +
 +#define decompress unlzma
-diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
---- linux-2.6.28.9/lib/inflate.c	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/lib/inflate.c	2009-04-24 14:08:08.000000000 +0200
-@@ -109,20 +109,78 @@
+--- a/lib/inflate.c
++++ b/lib/inflate.c
+@@ -109,20 +109,78 @@ static char rcsid[] = "#Id: inflate.c,v 
  #endif
  
  #ifndef STATIC
@@ -2651,7 +2633,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  #define slide window
  
  /* Huffman code lookup table entry--this entry is four bytes for machines
-@@ -133,10 +191,10 @@
+@@ -133,10 +191,10 @@ static char rcsid[] = "#Id: inflate.c,v 
     an unused code.  If a code with e == 99 is looked up, this implies an
     error in the data. */
  struct huft {
@@ -2665,7 +2647,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
      struct huft *t;     /* pointer to next level of table */
    } v;
  };
-@@ -144,7 +202,7 @@
+@@ -144,7 +202,7 @@ struct huft {
  
  /* Function prototypes */
  STATIC int INIT huft_build OF((unsigned *, unsigned, unsigned, 
@@ -2674,7 +2656,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  STATIC int INIT huft_free OF((struct huft *));
  STATIC int INIT inflate_codes OF((struct huft *, struct huft *, int, int));
  STATIC int INIT inflate_stored OF((void));
-@@ -159,28 +217,28 @@
+@@ -159,28 +217,28 @@ STATIC int INIT inflate OF((void));
     circular buffer.  The index is updated simply by incrementing and then
     ANDing with 0x7fff (32K-1). */
  /* It is left to other modules to supply the 32 K area.  It is assumed
@@ -2710,7 +2692,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
          0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
          7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
          12, 12, 13, 13};
-@@ -217,59 +275,21 @@
+@@ -217,59 +275,21 @@ static const ush cpdext[] = {         /*
     the stream.
   */
  
@@ -2776,7 +2758,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  /*
     Huffman code decoding is performed using a multi-level table lookup.
     The fastest way to decode is to simply build a lookup table whose
-@@ -307,7 +327,7 @@
+@@ -307,7 +327,7 @@ STATIC const int lbits = 9;          /* 
  STATIC const int dbits = 6;          /* bits in base distance lookup table */
  
  
@@ -2785,7 +2767,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  #define BMAX 16         /* maximum bit length of any code (16 for explode) */
  #define N_MAX 288       /* maximum number of codes in any set */
  
-@@ -319,8 +339,8 @@
+@@ -319,8 +339,8 @@ STATIC int INIT huft_build(
  	unsigned *b,            /* code lengths in bits (all assumed <= BMAX) */
  	unsigned n,             /* number of codes (assumed <= N_MAX) */
  	unsigned s,             /* number of simple-valued codes (0..s-1) */
@@ -2796,7 +2778,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  	struct huft **t,        /* result: starting table */
  	int *m                  /* maximum lookup bits, returns actual */
  	)
-@@ -500,8 +520,8 @@
+@@ -500,8 +520,8 @@ DEBG1("5 ");
          if (h)
          {
            x[h] = i;             /* save pattern for backing up */
@@ -2807,7 +2789,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
            r.v.t = q;            /* pointer to this table */
            j = i >> (w - l);     /* (get around Turbo C bug) */
            u[h-1][j] = r;        /* connect to last table */
-@@ -511,18 +531,18 @@
+@@ -511,18 +531,18 @@ DEBG1("6 ");
  DEBG("h6c ");
  
        /* set up table entry in r */
@@ -2830,7 +2812,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
          r.v.n = d[*p++ - s];
        }
  DEBG("h6d ");
-@@ -592,11 +612,12 @@
+@@ -592,11 +612,12 @@ STATIC int INIT inflate_codes(
     Return an error code or zero if it all goes ok. */
  {
    register unsigned e;  /* table entry flag/number of extra bits */
@@ -2845,7 +2827,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
    register unsigned k;  /* number of bits in bit buffer */
  
  
-@@ -622,7 +643,7 @@
+@@ -622,7 +643,7 @@ STATIC int INIT inflate_codes(
      DUMPBITS(t->b)
      if (e == 16)                /* then it's a literal */
      {
@@ -2854,7 +2836,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
        Tracevv((stderr, "%c", slide[w-1]));
        if (w == WSIZE)
        {
-@@ -659,11 +680,25 @@
+@@ -659,11 +680,25 @@ STATIC int INIT inflate_codes(
  
        /* do the copy */
        do {
@@ -2882,7 +2864,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
            w += e;
            d += e;
          }
-@@ -673,9 +708,8 @@
+@@ -673,9 +708,8 @@ STATIC int INIT inflate_codes(
              slide[w++] = slide[d++];
  	    Tracevv((stderr, "%c", slide[w-1]));
            } while (--e);
@@ -2894,7 +2876,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
            w = 0;
          }
        } while (n);
-@@ -702,7 +736,7 @@
+@@ -702,7 +736,7 @@ STATIC int INIT inflate_stored(void)
  {
    unsigned n;           /* number of bytes in block */
    unsigned w;           /* current window position */
@@ -2903,7 +2885,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
    register unsigned k;  /* number of bits in bit buffer */
  
  DEBG("<stor");
-@@ -732,7 +766,7 @@
+@@ -732,7 +766,7 @@ DEBG("<stor");
    while (n--)
    {
      NEEDBITS(8)
@@ -2912,7 +2894,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
      if (w == WSIZE)
      {
        flush_output(w);
-@@ -838,7 +872,7 @@
+@@ -838,7 +872,7 @@ STATIC int noinline INIT inflate_dynamic
    unsigned nl;          /* number of literal/length codes */
    unsigned nd;          /* number of distance codes */
    unsigned *ll;         /* literal/length and distance code lengths */
@@ -2921,7 +2903,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
    register unsigned k;  /* number of bits in bit buffer */
    int ret;
  
-@@ -1033,7 +1067,7 @@
+@@ -1033,7 +1067,7 @@ STATIC int INIT inflate_block(
  /* decompress an inflated block */
  {
    unsigned t;           /* block type */
@@ -2930,7 +2912,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
    register unsigned k;  /* number of bits in bit buffer */
  
    DEBG("<blk");
-@@ -1130,8 +1164,8 @@
+@@ -1130,8 +1164,8 @@ STATIC int INIT inflate(void)
   *
   **********************************************************************/
  
@@ -2941,7 +2923,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  #define CRC_VALUE (crc ^ 0xffffffffUL)
  
  /*
-@@ -1172,7 +1206,7 @@
+@@ -1172,7 +1206,7 @@ makecrc(void)
    }
  
    /* this is initialized here so this code could reside in ROM */
@@ -2950,7 +2932,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  }
  
  /* gzip flag byte */
-@@ -1184,18 +1218,89 @@
+@@ -1184,18 +1218,89 @@ makecrc(void)
  #define ENCRYPTED    0x20 /* bit 5 set: file is encrypted */
  #define RESERVED     0xC0 /* bit 6,7:   reserved */
  
@@ -3044,7 +3026,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
      magic[0] = NEXTBYTE();
      magic[1] = NEXTBYTE();
      method   = NEXTBYTE();
-@@ -1212,7 +1317,7 @@
+@@ -1212,7 +1317,7 @@ static int INIT gunzip(void)
  	    return -1;
      }
  
@@ -3053,7 +3035,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
      if ((flags & ENCRYPTED) != 0) {
  	    error("Input is encrypted");
  	    return -1;
-@@ -1277,15 +1382,15 @@
+@@ -1277,15 +1382,15 @@ static int INIT gunzip(void)
      /* crc32  (see algorithm.doc)
       * uncompressed input size modulo 2^32
       */
@@ -3077,7 +3059,7 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
      
      /* Validate decompression */
      if (orig_crc != CRC_VALUE) {
-@@ -1296,11 +1401,22 @@
+@@ -1296,11 +1401,22 @@ static int INIT gunzip(void)
  	    error("length error");
  	    return -1;
      }
@@ -3101,10 +3083,9 @@ diff -urN linux-2.6.28.9/lib/inflate.c linux-2.6.28.9.new/lib/inflate.c
  
 -
 +#define decompress gunzip
-diff -urN linux-2.6.28.9/scripts/Makefile.lib linux-2.6.28.9.new/scripts/Makefile.lib
---- linux-2.6.28.9/scripts/Makefile.lib	2009-03-23 22:55:52.000000000 +0100
-+++ linux-2.6.28.9.new/scripts/Makefile.lib	2009-04-24 14:08:08.000000000 +0200
-@@ -183,3 +183,17 @@
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -183,3 +183,17 @@ quiet_cmd_gzip = GZIP    $@
  cmd_gzip = gzip -f -9 < $< > $@
  
  
@@ -3122,9 +3103,8 @@ diff -urN linux-2.6.28.9/scripts/Makefile.lib linux-2.6.28.9.new/scripts/Makefil
 +
 +quiet_cmd_lzma = LZMA    $@
 +cmd_lzma = (/usr/bin/lzma -9 -c $< ; $(size_append) $<) >$@ || (rm -f $@ ; false)
-diff -urN linux-2.6.28.9/scripts/bin_size linux-2.6.28.9.new/scripts/bin_size
---- linux-2.6.28.9/scripts/bin_size	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.28.9.new/scripts/bin_size	2009-04-24 14:08:08.000000000 +0200
+--- /dev/null
++++ b/scripts/bin_size
 @@ -0,0 +1,10 @@
 +#!/bin/sh
 +

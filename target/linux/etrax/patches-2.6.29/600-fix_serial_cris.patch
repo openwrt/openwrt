@@ -1,8 +1,6 @@
-Index: linux-2.6.28.9/drivers/serial/crisv10.c
-===================================================================
---- linux-2.6.28.9.orig/drivers/serial/crisv10.c	2009-04-10 12:58:18.000000000 +0200
-+++ linux-2.6.28.9/drivers/serial/crisv10.c	2009-04-10 12:58:22.000000000 +0200
-@@ -28,12 +28,15 @@
+--- a/drivers/serial/crisv10.c
++++ b/drivers/serial/crisv10.c
+@@ -28,12 +28,15 @@ static char *serial_version = "$Revision
  #include <linux/mutex.h>
  #include <linux/bitops.h>
  #include <linux/device.h>
@@ -20,7 +18,7 @@ Index: linux-2.6.28.9/drivers/serial/crisv10.c
  
  #include <arch/svinto.h>
  
-@@ -457,7 +460,6 @@
+@@ -457,7 +460,6 @@ static struct e100_serial rs_table[] = {
  
  #define NR_PORTS (sizeof(rs_table)/sizeof(struct e100_serial))
  
@@ -28,7 +26,7 @@ Index: linux-2.6.28.9/drivers/serial/crisv10.c
  #ifdef CONFIG_ETRAX_SERIAL_FAST_TIMER
  static struct fast_timer fast_timers[NR_PORTS];
  #endif
-@@ -4221,151 +4223,132 @@
+@@ -4221,151 +4223,132 @@ rs_open(struct tty_struct *tty, struct f
  	return 0;
  }
  
@@ -249,7 +247,7 @@ Index: linux-2.6.28.9/drivers/serial/crisv10.c
  	       &serial_version[11]); /* "$Revision: x.yy" */
  }
  
-@@ -4389,9 +4372,11 @@
+@@ -4389,9 +4372,11 @@ static const struct tty_operations rs_op
  	.break_ctl = rs_break,
  	.send_xchar = rs_send_xchar,
  	.wait_until_sent = rs_wait_until_sent,
