@@ -88,12 +88,13 @@ endef
 define Host/Configure
 endef
 
-UCLIBC_MAKE := PATH=$(TARGET_PATH) $(MAKE) -C $(HOST_BUILD_DIR) \
+UCLIBC_MAKE = PATH=$(TARGET_PATH) $(MAKE) -C $(HOST_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
 	DEVEL_PREFIX=/usr/ \
 	RUNTIME_PREFIX=/ \
 	HOSTCC="$(HOSTCC)" \
 	CPU_CFLAGS="$(TARGET_CFLAGS)" \
+	LIBGCC="$(subst libgcc.a,libgcc_initial.a,$(shell $(TARGET_CC) -print-libgcc-file-name))" \
 	DOSTRIP=""
 
 define Host/Compile
