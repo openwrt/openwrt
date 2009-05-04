@@ -148,12 +148,18 @@ define Package/base-files$(TARGET)/install
 	if [ -d $(PLATFORM_DIR)/base-files-$(PROFILE)/. ]; then \
 		$(CP) $(PLATFORM_DIR)/base-files-$(PROFILE)/* $(1)/; \
 	fi
+	if [ -d $(PLATFORM_DIR)/$(PROFILE)/base-files/. ]; then \
+		$(CP) $(PLATFORM_DIR)/$(PROFILE)/base-files/* $(1)/; \
+	fi
 	$(if $(filter-out $(PLATFORM_DIR),$(PLATFORM_SUBDIR)), \
 		if [ -d $(PLATFORM_SUBDIR)/base-files/. ]; then \
 			$(CP) $(PLATFORM_SUBDIR)/base-files/* $(1)/; \
 		fi; \
 		if [ -d $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/. ]; then \
 			$(CP) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/* $(1)/; \
+		fi; \
+		if [ -d $(PLATFORM_SUBDIR)/$(PROFILE)/base-files/. ]; then \
+			$(CP) $(PLATFORM_SUBDIR)/$(PROFILE)/base-files/* $(1)/; \
 		fi \
 	)
 # Form valid /etc/shadow entries, by copying the user:pw pairs
