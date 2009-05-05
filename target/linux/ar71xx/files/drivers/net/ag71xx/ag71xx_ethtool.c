@@ -44,7 +44,7 @@ static void ag71xx_ethtool_get_drvinfo(struct net_device *dev,
 
 	strcpy(info->driver, ag->pdev->dev.driver->name);
 	strcpy(info->version, AG71XX_DRV_VERSION);
-	strcpy(info->bus_info, ag->pdev->dev.bus_id);
+	strcpy(info->bus_info, dev_name(&ag->pdev->dev));
 }
 
 static u32 ag71xx_ethtool_get_msglevel(struct net_device *dev)

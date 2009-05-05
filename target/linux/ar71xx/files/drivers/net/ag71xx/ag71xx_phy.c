@@ -217,7 +217,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 
 		DBG("%s: PHY found at %s, uid=%08x\n",
 			dev->name,
-			ag->mii_bus->phy_map[phy_addr]->dev.bus_id,
+			dev_name(&ag->mii_bus->phy_map[phy_addr]->dev),
 			ag->mii_bus->phy_map[phy_addr]->phy_id);
 
 		if (phydev == NULL)
@@ -233,12 +233,12 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 		ret = -ENODEV;
 		break;
 	case 1:
-		ag->phy_dev = phy_connect(dev, phydev->dev.bus_id,
+		ag->phy_dev = phy_connect(dev, dev_name(&phydev->dev),
 			&ag71xx_phy_link_adjust, 0, pdata->phy_if_mode);
 
 		if (IS_ERR(ag->phy_dev)) {
 			printk(KERN_ERR "%s: could not connect to PHY at %s\n",
-				dev->name, phydev->dev.bus_id);
+				dev->name, dev_name(&phydev->dev));
 			return PTR_ERR(ag->phy_dev);
 		}
 
@@ -252,7 +252,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 
 		printk(KERN_DEBUG "%s: connected to PHY at %s "
 			"[uid=%08x, driver=%s]\n",
-			dev->name, phydev->dev.bus_id,
+			dev->name, dev_name(&phydev->dev),
 			phydev->phy_id, phydev->drv->name);
 
 		ag->link = 0;
