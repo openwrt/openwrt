@@ -266,6 +266,14 @@ endef
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
+	mkdir -p $(1)/usr/include/iptables
+	mkdir -p $(1)/usr/include/net/netfilter
+
+	# XXX: iptables header fixup, some headers are not installed by iptables anymore
+	$(CP) $(PKG_BUILD_DIR)/include/net/netfilter/*.h $(1)/usr/include/net/netfilter/
+	$(CP) $(PKG_BUILD_DIR)/include/iptables/*.h $(1)/usr/include/iptables/
+	$(CP) $(PKG_BUILD_DIR)/include/iptables.h $(1)/usr/include/
+
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
 	mkdir -p $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.{a,so*} $(1)/usr/lib/
