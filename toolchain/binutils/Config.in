@@ -8,15 +8,8 @@ choice
 	help
 	  Select the version of binutils you wish to use.
 
-	config BINUTILS_VERSION_2_17
-		bool "binutils 2.17"
-
 	config BINUTILS_VERSION_2_18
 		bool "binutils 2.18"
-
-	config BINUTILS_VERSION_2_19
-		depends !TARGET_avr32
-		bool "binutils 2.19"
 
 	config BINUTILS_VERSION_2_19_1
 		depends !TARGET_avr32
@@ -33,9 +26,7 @@ config EXTRA_BINUTILS_CONFIG_OPTIONS
 config BINUTILS_VERSION
 	string
 	prompt "Binutils Version" if (TOOLCHAINOPTS && NULL)
-	default "2.17"            if BINUTILS_VERSION_2_17
 	default "2.18"            if BINUTILS_VERSION_2_18
-	default "2.19"            if BINUTILS_VERSION_2_19
 	default "2.19.1"          if BINUTILS_VERSION_2_19_1
 	default "2.18"            if TARGET_avr32
 	default "2.18"            if TARGET_ppc44x || TARGET_ppc40x
