@@ -73,7 +73,7 @@
 extern char *nvram_get(const char *name);
 #define getvar(str) (nvram_get(str)?:"")
 #else
-#define getvar(str) NULL
+#define getvar(str) ""
 #endif
 
 /* Data structure for a Roboswitch device. */
