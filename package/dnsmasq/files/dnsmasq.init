@@ -40,6 +40,10 @@ append_server() {
 	append args "-S $1"
 }
 
+append_interface() {
+	append args "-i $1"
+}
+
 dnsmasq() {
 	local cfg="$1"
 	append_bool "$cfg" authoritative "-K"
@@ -68,11 +72,11 @@ dnsmasq() {
 	append_parm "$cfg" "domain" "-s"
 	append_parm "$cfg" "local" "-S"
 	config_list_foreach "$cfg" "server" append_server
+	config_list_foreach "$cfg" "interface" append_interface
 	append_parm "$cfg" "leasefile" "-l"
 	append_parm "$cfg" "resolvfile" "-r"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
-	append_parm "$cfg" "interfaces" "-i"
 
 	config_get leasefile $cfg leasefile
 	[ -e "$leasefile" ] || touch "$leasefile"
