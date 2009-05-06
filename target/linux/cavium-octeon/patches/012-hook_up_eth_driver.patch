@@ -1,0 +1,28 @@
+The previous patch adds the driver files for octeon-ethernet.  Here we
+hook them up into the main kernel build system.
+
+Signed-off-by: David Daney <ddaney@caviumnetworks.com>
+---
+ drivers/staging/Kconfig  |    2 ++
+ drivers/staging/Makefile |    1 +
+ 2 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/staging/Kconfig b/drivers/staging/Kconfig
+index 0dcf9ca..6c2ca23 100644
+--- a/drivers/staging/Kconfig
++++ b/drivers/staging/Kconfig
+@@ -115,5 +115,7 @@ source "drivers/staging/line6/Kconfig"
+ 
+ source "drivers/staging/serqt_usb/Kconfig"
+ 
++source "drivers/staging/octeon/Kconfig"
++
+ endif # !STAGING_EXCLUDE_BUILD
+ endif # STAGING
+--- a/drivers/staging/Makefile	2009-05-06 15:46:47.000000000 +0200
++++ b/drivers/staging/Makefile	2009-05-06 15:47:33.000000000 +0200
+@@ -29,3 +29,4 @@
+ obj-$(CONFIG_TRANZPORT)		+= frontier/
+ obj-$(CONFIG_EPL)		+= epl/
+ obj-$(CONFIG_ANDROID)		+= android/
++obj-$(CONFIG_OCTEON_ETHERNET)	+= octeon/

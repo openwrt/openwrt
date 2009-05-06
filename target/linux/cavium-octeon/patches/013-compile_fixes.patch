@@ -1,0 +1,85 @@
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c	2009-05-06 16:55:28.000000000 +0200
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c	2009-05-06 17:04:05.000000000 +0200
+@@ -272,6 +272,7 @@
+  *
+  * Returns Zero on success, negative on failure
+  */
++#if 0
+ int __cvmx_helper_errata_asx_pass1(int interface, int port, int cpu_clock_hz)
+ {
+ 	/* Set hi water mark as per errata GMX-4 */
+@@ -289,6 +290,7 @@
+ 			     cpu_clock_hz);
+ 	return 0;
+ }
++#endif
+ 
+ /**
+  * This function needs to be called on all Octeon chips with
+--- a/arch/mips/include/asm/octeon/cvmx-helper-errata.h	2009-05-06 17:12:16.000000000 +0200
++++ a/arch/mips/include/asm/octeon/cvmx-helper-errata.h	2009-05-06 17:12:10.000000000 +0200
+@@ -60,8 +60,8 @@
+  *
+  * Returns Zero on success, negative on failure
+  */
+-extern int __cvmx_helper_errata_asx_pass1(int interface, int port,
+-					  int cpu_clock_hz);
++//extern int __cvmx_helper_errata_asx_pass1(int interface, int port,
++//					  int cpu_clock_hz);
+ 
+ /**
+  * This function needs to be called on all Octeon chips with
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-util.c	2009-05-06 17:30:47.000000000 +0200
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-util.c	2009-05-06 17:31:01.000000000 +0200
+@@ -356,6 +356,7 @@
+  *
+  * Returns Interface number
+  */
++#if 0
+ int cvmx_helper_get_interface_num(int ipd_port)
+ {
+ 	if (ipd_port < 16)
+@@ -372,6 +373,7 @@
+ 
+ 	return -1;
+ }
++#endif
+ 
+ /**
+  * Returns the interface index number for an IPD/PKO port
+@@ -381,6 +383,7 @@
+  *
+  * Returns Interface index number
+  */
++#if 0
+ int cvmx_helper_get_interface_index_num(int ipd_port)
+ {
+ 	if (ipd_port < 32)
+@@ -395,6 +398,7 @@
+ 
+ 	return -1;
+ }
++#endif
+ 
+ /**
+  * Initialize the internal QLM JTAG logic to allow programming
+--- a/arch/mips/include/asm/octeon/cvmx-helper-util.h	2009-05-06 17:31:46.000000000 +0200
++++ b/arch/mips/include/asm/octeon/cvmx-helper-util.h	2009-05-06 17:27:36.000000000 +0200
+@@ -205,7 +205,7 @@
+  *
+  * Returns Interface number
+  */
+-extern int cvmx_helper_get_interface_num(int ipd_port);
++//extern int cvmx_helper_get_interface_num(int ipd_port);
+ 
+ /**
+  * Returns the interface index number for an IPD/PKO port
+@@ -215,7 +215,7 @@
+  *
+  * Returns Interface index number
+  */
+-extern int cvmx_helper_get_interface_index_num(int ipd_port);
++//extern int cvmx_helper_get_interface_index_num(int ipd_port);
+ 
+ /**
+  * Initialize the internal QLM JTAG logic to allow programming
