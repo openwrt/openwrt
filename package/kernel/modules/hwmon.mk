@@ -75,3 +75,21 @@ endef
 
 $(eval $(call KernelPackage,hwmon-pc87360))
 
+define KernelPackage/hwmon-w83627hf
+  SUBMENU:=$(HWMON_MENU)
+  TITLE:=Winbond W83627HF monitoring support
+  DEPENDS:=kmod-hwmon-core @TARGET_x86||TARGET_rdc
+  KCONFIG:= \
+	CONFIG_SENSORS_W83627HF \
+	CONFIG_HWMON_VID
+  FILES:= \
+	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/hwmon/w83627hf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,hwmon-vid w83627h)
+endef
+
+define KernelPacakge/hwmon-w83627hf/description
+  Kernel module for the Winbond W83627HF chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-w83627hf))
