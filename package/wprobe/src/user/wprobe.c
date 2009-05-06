@@ -35,7 +35,7 @@
 #define DPRINTF(fmt, ...) do {} while (0)
 #endif
 
-static struct nl_handle *handle = NULL;
+static struct nl_sock *handle = NULL;
 static struct nl_cache *cache = NULL;
 static struct genl_family *family = NULL;
 static struct nlattr *tb[WPROBE_ATTR_LAST+1];
@@ -89,7 +89,7 @@ wprobe_free(void)
 	if (cache)
 		nl_cache_free(cache);
 	if (handle)
-		nl_handle_destroy(handle);
+		nl_socket_free(handle);
 	handle = NULL;
 	cache = NULL;
 }
@@ -97,7 +97,9 @@ wprobe_free(void)
 int
 wprobe_init(void)
 {
-	handle = nl_handle_alloc();
+	int ret;
+
+	handle = nl_socket_alloc();
 	if (!handle) {
 		DPRINTF("Failed to create handle\n");
 		goto err;
@@ -108,8 +110,8 @@ wprobe_init(void)
 		goto err;
 	}
 
-	cache = genl_ctrl_alloc_cache(handle);
-	if (!cache) {
+	ret = genl_ctrl_alloc_cache(handle, &cache);
+	if (ret < 0) {
 		DPRINTF("Failed to allocate netlink cache\n");
 		goto err;
 	}

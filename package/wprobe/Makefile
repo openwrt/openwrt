@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=wprobe
 PKG_VERSION:=1
 
-PKG_BUILD_DEPENDS:=libnl PACKAGE_wprobe-export:libipfix
+PKG_BUILD_DEPENDS:=PACKAGE_wprobe-export:libipfix
 
 PKG_CONFIG_DEPENDS = \
 	CONFIG_PACKAGE_kmod-wprobe \
@@ -33,7 +33,7 @@ endef
 define Package/wprobe-info
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-wprobe
+  DEPENDS:=+kmod-wprobe +libnl-tiny
   TITLE:=Wireless measurement utility
 endef
 
@@ -45,7 +45,7 @@ endef
 define Package/wprobe-export
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-wprobe
+  DEPENDS:=+kmod-wprobe +libnl-tiny
   TITLE:=Wireless measurement data exporter
 endef
 
@@ -59,7 +59,9 @@ define Build/Prepare
 	$(CP) src/* $(PKG_BUILD_DIR)/
 endef
 
-TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+TARGET_CFLAGS += \
+	-I$(STAGING_DIR)/usr/include/libnl-tiny \
+	-I$(STAGING_DIR)/usr/include
 
 ifdef CONFIG_PACKAGE_kmod-wprobe
   define Build/Compile/kmod
@@ -80,7 +82,7 @@ define Build/Compile/lib
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(PKG_BUILD_DIR)/kernel" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
-		LIBNL="$(STAGING_DIR)/usr/lib/libnl.a"
+		LIBNL="-lnl-tiny"
 endef
 
 ifdef CONFIG_PACKAGE_wprobe-export
@@ -90,7 +92,7 @@ ifdef CONFIG_PACKAGE_wprobe-export
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(PKG_BUILD_DIR)/kernel -I$(PKG_BUILD_DIR)/user" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
-		LIBS="$(PKG_BUILD_DIR)/user/libwprobe.a $(STAGING_DIR)/usr/lib/libipfix.a $(STAGING_DIR)/usr/lib/libmisc.a $(STAGING_DIR)/usr/lib/libnl.a -lm"
+		LIBS="$(PKG_BUILD_DIR)/user/libwprobe.a $(STAGING_DIR)/usr/lib/libipfix.a $(STAGING_DIR)/usr/lib/libmisc.a -lnl-tiny -lm"
   endef
 endif
 
