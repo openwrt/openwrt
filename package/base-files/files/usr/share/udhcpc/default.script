@@ -1,85 +1,127 @@
 #!/bin/sh
 [ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
+
 . /etc/functions.sh
 include /lib/network
-
 RESOLV_CONF="/tmp/resolv.conf.auto"
 
-hotplug_event() {
-	scan_interfaces
-	for ifc in $interfaces; do
-		config_get ifname $ifc ifname
-		[ "$ifname" = "$interface" ] || continue
-
-		config_get proto $ifc proto
-		[ "$proto" = "dhcp" ] || continue
-		[ ifup = "$1" ] && {
-			config_get userdns "$ifc" dns
-			[ -n "$userdns" ] && {
-				for i in $userdns; do
-					echo "custom dns $i"
-					echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
-				done
-				dns="$userdns"
-			}
-			uci_set_state network "$ifc" ipaddr "$ip"
-			uci_set_state network "$ifc" netmask "${subnet:-255.255.255.0}"
-			uci_set_state network "$ifc" dnsdomain "$domain"
-			uci_set_state network "$ifc" dns "$dns"
-			uci_set_state network "$ifc" gateway "$router"
-		}
-		
-		env -i ACTION="$1" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug-call iface
-	done
+change_state () {
+	uci_revert_state "$1" "$2" "$3" "$4"
+	uci_set_state "$1" "$2" "$3" "$4"
 }
 
-case "$1" in
-	deconfig)
-		ifconfig $interface 0.0.0.0
-		hotplug_event ifdown
-	;;
-	renew|bound)
-		ifconfig $interface $ip \
-		netmask ${subnet:-255.255.255.0} \
-		broadcast ${broadcast:-+}
+uci_get() {
+	uci -P /dev/null get "$1" 2>/dev/null
+}
 
-		[ -n "$router" ] && {
-			for i in $router ; do
-				echo "adding router $i"
-				route add default gw $i dev $interface
-				valid="$valid|$i"
+setup_interface () {
+	local old_ip
+	local old_broadcast
+	local old_subnet
+	local old_router
+	local old_dns
+	local user_dns
+	local user_router
 
-			done
+	config_get old_ip        "$ifc" ipaddr
+	config_get old_broadcast "$ifc" broadcast
+	config_get old_subnet    "$ifc" netmask
 
-			echo "deleting old routes"
-			$(route -n | awk '/^0.0.0.0\W{9}('$valid')\W/ {next} /^0.0.0.0/ {print "route del -net "$1" gw "$2";"}')
-		}
+	[ "$ip" != "$old_ip" ] \
+	|| [ "${broadcast:-+}" != "$old_broadcast" ] \
+	|| [ "${subnet:-255.255.255.0}" != "$old_subnet" ] && {
+		echo "udhcpc: ifconfig $interface $ip netmask ${subnet:-255.255.255.0} broadcast ${broadcast:-+}"
+		ifconfig $interface $ip netmask ${subnet:-255.255.255.0} broadcast ${broadcast:-+}
 
-		[ -n "$dns" ] && \
-			echo -n > "${RESOLV_CONF}.tmp"
+		change_state network "$ifc" ipaddr "$ip"
+		change_state network "$ifc" broadcast "${broadcast:-+}"
+		change_state network "$ifc" netmask "${subnet:-255.255.255.0}"
+	}
+
+
+	# Default Route
+	change_state network "$ifc" lease_gateway "$router"
+	config_get old_router "$ifc" gateway
+	user_router=$(uci_get "network.$ifc.gateway")
+	[ -n "$user_router" ] && router="$user_router"
+
+	[ -n "$router" ] && [ "$router" != "0.0.0.0" ] && [ "$router" != "$old_router" ] && {
+		echo "udhcpc: setting default routers: $router"
+
+		local valid_gw=""
+		for i in $router ; do
+			route add default gw $i dev $interface
+			valid_gw="${valid_gw:+$valid_gw|}$i"
+		done
 		
-		[ -n "$dns" ] && {
-			[ -s "${RESOLV_CONF}.tmp" ] || {
-				for i in $dns ; do
-					echo "adding dns $i"
-					echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
-				done
-			}
+		eval $(route -n | awk '
+			/^0.0.0.0\W{9}('$valid_gw')\W/ {next}
+			/^0.0.0.0/ {print "route del -net "$1" gw "$2";"}
+		')
 
-			${domain:+echo search $domain} >> "${RESOLV_CONF}.tmp"
+		change_state network "$ifc" gateway "$router"
+	}
 
-			mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
-		}
 
-		if [ "$1" = "renew" ]; then
-			hotplug_event update
-		else
-			hotplug_event ifup
-		fi
+	# DNS
+	config_get old_dns "$ifc" dns
+	user_dns=$(uci_get "network.$ifc.dns")
+	[ -n "$user_dns" ] && dns="$user_dns"
 
-		# user rules
-		[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
-	;;
-esac
+	[ -n "$dns" ] && [ "$dns" != "$old_dns" ] && {
+		echo "udhcpc: setting dns servers: $dns"
+		echo -n > "${RESOLV_CONF}.tmp"
+		for i in $dns ; do
+			echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
+		done
+		${domain:+echo search $domain} >> "${RESOLV_CONF}.tmp"
+		mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
+
+		change_state network "$ifc" dnsdomain "$domain"
+		change_state network "$ifc" dns "$dns"
+	}
+
+
+	# UCI State
+	change_state network "$ifc" lease_server "$serverid"
+	change_state network "$ifc" lease_acquired "$(date '+%s')"
+	change_state network "$ifc" lease_lifetime "$lease"
+	[ -n "$ntpsrv" ] && 	change_state network "$ifc" lease_ntpsrv "$ntpsrv"
+	[ -n "$timesvr" ] && 	change_state network "$ifc" lease_timesrv "$timesvr"
+	[ -n "$hostname" ] &&	change_state network "$ifc" lease_hostname "$hostname"
+	[ -n "$timezone" ] && 	change_state network "$ifc" lease_timezone "$timezone"
+
+
+	# Hotplug
+	env -i ACTION="$1" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug-call iface
+}
+
+
+scan_interfaces
+
+for ifc in $interfaces; do
+	config_get ifname "$ifc" ifname
+	[ "$ifname" = "$interface" ] || continue
+
+	config_get proto "$ifc" proto
+	[ "$proto" = "dhcp" ] || continue
+
+	case "$1" in
+		deconfig)
+			ifconfig "$interface" 0.0.0.0
+			env -i ACTION="ifdown" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug-call iface
+			uci_revert_state network "$ifc"
+		;;
+		renew)
+			setup_interface update
+		;;
+		bound)
+			setup_interface ifup
+		;;
+	esac
+
+	# user rules
+	[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
+done
 
 exit 0
