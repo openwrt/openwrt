@@ -59,9 +59,9 @@ define Build/Prepare
 	$(CP) src/* $(PKG_BUILD_DIR)/
 endef
 
-TARGET_CFLAGS += \
+TARGET_CPPFLAGS := \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
-	-I$(STAGING_DIR)/usr/include
+	$(TARGET_CPPFLAGS)
 
 ifdef CONFIG_PACKAGE_kmod-wprobe
   define Build/Compile/kmod
