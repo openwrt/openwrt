@@ -67,15 +67,18 @@ disable_atheros() (
 
 enable_atheros() {
 	local device="$1"
-	# Can only set the country code to one setting for the entire system. The last country code is the one that will be applied.
+
+	config_get regdomain "$device" regdomain
+	[ -n "$regdomain" ] && echo "$regdomain" > /proc/sys/dev/$device/regdomain
+
 	config_get country "$device" country
 	[ -z "$country" ] && country="0"
-	local cc="0"
-	[ -e /proc/sys/dev/$device/countrycode ] && cc="$(cat /proc/sys/dev/$device/countrycode)"
-	if [ ! "$cc" = "$country" ] ; then
-		rmmod ath_pci
-		insmod ath_pci countrycode=$country
-	fi
+	echo "$country" > /proc/sys/dev/$device/countrycode
+
+	config_get outdoor "$device" outdoor
+	[ -z "$outdoor" ] && outdoor="0"
+	echo "$outdoor" > /proc/sys/dev/$device/outdoor
+
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
 	config_get txpower "$device" txpower
