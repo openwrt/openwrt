@@ -1,0 +1,11 @@
+--- linux-2.6.29.2/fs/binfmt_elf.c	2009-04-27 19:37:11.000000000 +0200
++++ linux-2.6.29.2.new/fs/binfmt_elf.c	2009-05-06 16:05:32.000000000 +0200
+@@ -1211,7 +1211,7 @@
+ 	if (FILTER(ELF_HEADERS) &&
+ 	    vma->vm_pgoff == 0 && (vma->vm_flags & VM_READ)) {
+ 		u32 __user *header = (u32 __user *) vma->vm_start;
+-		u32 word;
++		u32 word = 0;
+ 		mm_segment_t fs = get_fs();
+ 		/*
+ 		 * Doing it this way gets the constant folded by GCC.
