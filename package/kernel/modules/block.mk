@@ -255,6 +255,22 @@ endef
 $(eval $(call KernelPackage,ide-pdc202xx))
 
 
+define KernelPackage/ide-it821x
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=ITE IT821x IDE driver
+  DEPENDS:=+kmod-ide-core
+  KCONFIG:=CONFIG_BLK_DEV_IT821X
+  FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ite821x)
+endef
+
+define KernelPackage/ide-it821x/description
+  Kernel module for the ITE IDE821x IDE controllers.
+endef
+
+$(eval $(call KernelPackage,ide-it821x))
+
+
 define KernelPackage/scsi-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SCSI device support
