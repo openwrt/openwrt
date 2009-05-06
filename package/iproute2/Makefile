@@ -74,10 +74,6 @@ define Package/genl/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/genl/genl $(1)/usr/sbin/
 endef
 
-$(eval $(call RequireCommand,bison, \
-	$(PKG_NAME) requires GNU bison. \
-))
-
 $(eval $(call BuildPackage,ip))
 $(eval $(call BuildPackage,tc))
 $(eval $(call BuildPackage,genl))
