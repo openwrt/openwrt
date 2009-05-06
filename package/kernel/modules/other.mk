@@ -878,3 +878,37 @@ endef
 
 $(eval $(call KernelPackage,rfkill))
 
+
+define KernelPackage/rtc-core
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Kernel support for RTC devices
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:= \
+	CONFIG_RTC_CLASS \
+	CONFIG_RTC_HCTOSYS=y \
+	CONFIG_RTC_HCTOSYS_DEVICE=rtc0
+  FILES:= \
+	$(LINUX_DIR)/drivers/rtc/rtc-core.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,rtc-core)
+endef
+
+define KernelPackage/rtc-core/description
+ Kernel module for the RTC devices.
+endef
+
+$(eval $(call KernelPackage,rtc-core))
+
+define KernelPackage/rtc-m48t86
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RTC M48T86 / Dallas DS12887
+  DEPENDS:=+kmod-rtc-core
+  KCONFIG:=CONFIG_RTC_DRV_M48T86
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-m48t86.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,31,rtc-m48t86)
+endef
+
+define KernelPackage/rtc-m48t86/description
+  Kernel support for the RTC device M48T86 / Dallas DS12887
+endef
+
+$(eval $(call KernelPackage,rtc-m48t86))
