@@ -75,8 +75,7 @@ enable_atheros() {
 	[ -z "$country" ] && country="0"
 	echo "$country" > /proc/sys/dev/$device/countrycode
 
-	config_get outdoor "$device" outdoor
-	[ -z "$outdoor" ] && outdoor="0"
+	config_get_bool outdoor "$device" outdoor "0"
 	echo "$outdoor" > /proc/sys/dev/$device/outdoor
 
 	config_get channel "$device" channel
