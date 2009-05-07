@@ -1,6 +1,32 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -5344,27 +5344,6 @@ ath_beacon_send(struct ath_softc *sc, in
+@@ -797,7 +797,6 @@ ath_attach(u_int16_t devid, struct net_d
+ 		break;
+ 	}
+ 
+-	sc->sc_setdefantenna = ath_setdefantenna;
+ 	sc->sc_rc = ieee80211_rate_attach(sc, ratectl);
+ 	if (sc->sc_rc == NULL) {
+ 		error = EIO;
+@@ -2623,9 +2622,6 @@ ath_init(struct net_device *dev)
+ 	ath_radar_update(sc);
+ 	ath_rp_flush(sc);
+ 
+-	/* Set the default RX antenna; it may get lost on reset. */
+-	ath_setdefantenna(sc, sc->sc_defant);
+-
+ 	/*
+ 	 * Setup the hardware after reset: the key cache
+ 	 * is filled as needed and the receive engine is
+@@ -3010,7 +3006,6 @@ ath_reset(struct net_device *dev)
+ 	ath_setintmit(sc);
+ 	ath_update_txpow(sc);		/* update tx power state */
+ 	ath_radar_update(sc);
+-	ath_setdefantenna(sc, sc->sc_defant);
+ 	if (ath_startrecv(sc) != 0)	/* restart recv */
+ 		EPRINTF(sc, "Unable to start receive logic.\n");
+ 	if (sc->sc_softled)
+@@ -5344,27 +5339,6 @@ ath_beacon_send(struct ath_softc *sc, in
  	} else if ((sc->sc_updateslot == COMMIT) && (sc->sc_slotupdate == slot))
  		ath_setslottime(sc);		/* commit change to hardware */
  
@@ -28,3 +54,33 @@
  	if (bfaddr != 0) {
  		/*
  		 * Stop any current DMA and put the new frame(s) on the queue.
+@@ -6725,9 +6699,8 @@ ath_setdefantenna(struct ath_softc *sc, 
+ {
+ 	struct ath_hal *ah = sc->sc_ah;
+ 
+-	/* XXX block beacon interrupts */
+-	ath_hal_setdiversity(ah, (sc->sc_diversity != 0));
+ 	ath_hal_setdefantenna(ah, antenna);
++	ath_hal_setantennaswitch(ah, sc->sc_diversity ? 0 : sc->sc_defant);
+ 	if (sc->sc_defant != antenna)
+ 		sc->sc_stats.ast_ant_defswitch++;
+ 	sc->sc_defant = antenna;
+@@ -11138,7 +11111,7 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+ 					break;
+ 				}
+ 				sc->sc_diversity = val;
+-				ath_hal_setdiversity(ah, val);
++				ath_setdefantenna(sc, sc->sc_defant);
+ 				break;
+ 			case ATH_TXINTRPERIOD:
+ 				/* XXX: validate? */
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -640,7 +640,6 @@ struct ath_softc {
+ 	spinlock_t sc_hal_lock;                 /* hardware access lock */
+ 	struct ath_ratectrl *sc_rc;		/* tx rate control support */
+ 	struct ath_tx99 *sc_tx99; 		/* tx99 support */
+-	void (*sc_setdefantenna)(struct ath_softc *, u_int);
+ 	const struct ath_hw_detect *sc_hwinfo;
+ 
+ 	unsigned int 	sc_invalid:1;		/* being detached */
