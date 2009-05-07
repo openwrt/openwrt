@@ -9,7 +9,7 @@ export VERBOSE=1
 export SAVE_CONFIG=1
 export DELAY=
 export CONF_IMAGE=
-
+export GZIPED=
 # parse options
 while [ -n "$1" ]; do 
 	case "$1" in
@@ -19,6 +19,7 @@ while [ -n "$1" ]; do
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
 		-n) export SAVE_CONFIG=0;;
 		-f) export CONF_IMAGE="$2"; shift;;
+		-g) export GZIPED=1;;
 		-*)
 			echo "Invalid option: $1"
 			exit 1
@@ -41,6 +42,7 @@ Usage: $0 [options] <image file or URL>
 Options:
 	-d <delay>   add a delay before rebooting
 	-f <config>  restore configuration from .tar.gz (file or url)
+	-g           gziped image
 	-i           interactive mode
 	-n	     do not save configuration over reflash
 	-q           less verbose
