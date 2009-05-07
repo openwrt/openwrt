@@ -45,7 +45,7 @@ pivot() { # <new_root> <old_root>
 }
 
 run_ramfs() { # <command> [...]
-	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount /sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd /bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump /bin/sleep
+	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount /sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd /bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump /bin/sleep /bin/zcat
 	install_bin /sbin/mtd
 	for file in $RAMFS_COPY_BIN; do
 		install_bin $file
@@ -105,10 +105,13 @@ rootfs_type() {
 
 get_image() {
 	local from="$1"
+	local conc="cat"
+
+	[ $GZIPED -eq 1 ] && conc="zcat"
 
 	case "$from" in
-		http://*|ftp://*) wget -O- -q "$from";;
-		*) cat "$from"
+		http://*|ftp://*) wget -O- -q "$from" | "$conc";;
+		*) cat "$from" | "$conc";;
 	esac
 }
 
