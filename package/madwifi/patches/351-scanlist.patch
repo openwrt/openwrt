@@ -353,6 +353,17 @@
  		/* Identify mode capabilities. */
  		if (IEEE80211_IS_CHAN_A(c))
  			ic->ic_modecaps |= 1 << IEEE80211_MODE_11A;
+@@ -1447,10 +1452,6 @@ ieee80211_media_change(struct net_device
+ 		vap->iv_fixed_rate = newrate;		/* fixed TX rate */
+ 		error = -ENETRESET;
+ 	}
+-	if (vap->iv_des_mode != newmode) {
+-		vap->iv_des_mode = newmode;		/* desired PHY mode */
+-		error = -ENETRESET;
+-	}
+ 	return error;
+ }
+ EXPORT_SYMBOL(ieee80211_media_change);
 --- a/net80211/_ieee80211.h
 +++ b/net80211/_ieee80211.h
 @@ -132,6 +132,11 @@ enum ieee80211_scanmode {
@@ -387,7 +398,19 @@
  	IEEE80211_WMMPARAMS_CWMIN       = 1,
 --- a/net80211/ieee80211_scan_ap.c
 +++ b/net80211/ieee80211_scan_ap.c
-@@ -129,131 +129,7 @@ struct ap_state {
+@@ -105,11 +105,6 @@ struct scan_entry {
+ };
+ 
+ struct ap_state {
+-	unsigned int as_vap_desired_mode;       /* Used for channel selection, 
+-						 * vap->iv_des_mode */
+-	unsigned int as_required_mode;          /* Used for channel selection, 
+-						 * filtered version of 
+-						 * as_vap_desired_mode */
+ 	int as_maxrssi[IEEE80211_CHAN_MAX]; 	/* Used for channel selection */
+ 
+ 	/* These fields are just for scan caching for returning responses to
+@@ -129,131 +124,7 @@ struct ap_state {
  
  static int ap_flush(struct ieee80211_scan_state *);
  static void action_tasklet(IEEE80211_TQUEUE_ARG);
@@ -519,7 +542,7 @@
  
  /*
   * Attach prior to any scanning work.
-@@ -327,29 +203,6 @@ saveie(u_int8_t **iep, const u_int8_t *i
+@@ -327,29 +198,6 @@ saveie(u_int8_t **iep, const u_int8_t *i
  		ieee80211_saveie(iep, ie);
  }
  
@@ -549,7 +572,7 @@
  /*
   * Start an ap scan by populating the channel list.
   */
-@@ -358,8 +211,6 @@ ap_start(struct ieee80211_scan_state *ss
+@@ -358,90 +206,15 @@ ap_start(struct ieee80211_scan_state *ss
  {
  	struct ap_state *as 	    = ss->ss_priv;
  	struct ieee80211com *ic     = NULL;
@@ -558,10 +581,11 @@
  	int i;
  	unsigned int mode = 0;
  
-@@ -368,80 +219,8 @@ ap_start(struct ieee80211_scan_state *ss
+ 	SCAN_AP_LOCK_IRQ(as);
+ 	ic = vap->iv_ic;
  	/* Determine mode flags to match, or leave zero for auto mode */
- 	as->as_vap_desired_mode = vap->iv_des_mode;
- 	as->as_required_mode    = 0;
+-	as->as_vap_desired_mode = vap->iv_des_mode;
+-	as->as_required_mode    = 0;
 -	if (as->as_vap_desired_mode != IEEE80211_MODE_AUTO) {
 -		as->as_required_mode = chanflags[as->as_vap_desired_mode];
 -		if ((vap->iv_ath_cap & IEEE80211_ATHC_TURBOP) && 
@@ -574,7 +598,7 @@
 -		}
 -	}
 -
--	ss->ss_last = 0;
+ 	ss->ss_last = 0;
 -	/* Use the table of ordered channels to construct the list
 -	 * of channels for scanning.  Any channels in the ordered
 -	 * list not in the master list will be discarded. */
@@ -609,8 +633,7 @@
 -		/* XR is not supported on turbo channels */
 -		if (IEEE80211_IS_CHAN_TURBO(c) && vap->iv_flags & IEEE80211_F_XR)
 -			continue;
-+	ieee80211_scan_add_channels(ic, ss, vap->iv_des_mode);
- 
+-
 -		/* Dynamic channels are scanned in base mode */
 -		if (!as->as_required_mode && !IEEE80211_IS_CHAN_ST(c))
 -			continue;
@@ -630,7 +653,8 @@
 -		/* Make sure the channel is active */
 -		if ((c == NULL) || isclr(ic->ic_chan_active, c->ic_ieee))
 -			continue;
--
++	ieee80211_scan_add_channels(ic, ss, vap->iv_des_mode);
+ 
 -		/* Don't overrun */
 -		if (ss->ss_last >= IEEE80211_SCAN_MAX)
 -			break;
@@ -640,7 +664,7 @@
  	ss->ss_next = 0;
  	/* XXX tunables */
  	ss->ss_mindwell = msecs_to_jiffies(200);	/* 200ms */
-@@ -761,13 +540,6 @@ pick_channel(struct ieee80211_scan_state
+@@ -761,18 +534,6 @@ pick_channel(struct ieee80211_scan_state
  		if (IEEE80211_IS_CHAN_RADAR(c->chan))
  			continue;
  
@@ -651,9 +675,14 @@
 -		    (as->as_vap_desired_mode != IEEE80211_MODE_TURBO_STATIC_A))
 -			continue;
 -
- 		/* Verify mode matches any fixed mode specified */
- 		if((c->chan->ic_flags & as->as_required_mode) != 
- 				as->as_required_mode)
+-		/* Verify mode matches any fixed mode specified */
+-		if((c->chan->ic_flags & as->as_required_mode) != 
+-				as->as_required_mode)
+-			continue;
+-
+ 		if ((ic->ic_bsschan != NULL) &&
+ 			(ic->ic_bsschan != IEEE80211_CHAN_ANYC)) {
+ 
 --- a/net80211/ieee80211_scan.c
 +++ b/net80211/ieee80211_scan.c
 @@ -958,6 +958,80 @@ ieee80211_scan_flush(struct ieee80211com
