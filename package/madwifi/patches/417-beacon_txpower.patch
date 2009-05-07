@@ -9,7 +9,7 @@
  static int countrycode = -1;
  static int maxvaps = -1;
  static int outdoor = -1;
-@@ -4923,6 +4923,7 @@ ath_beacon_setup(struct ath_softc *sc, s
+@@ -4931,6 +4931,7 @@ ath_beacon_setup(struct ath_softc *sc, s
  	(((_ic)->ic_flags & (IEEE80211_F_SHPREAMBLE | IEEE80211_F_USEBARKER))\
  		== IEEE80211_F_SHPREAMBLE)
  	struct ieee80211com *ic = bf->bf_node->ni_ic;
@@ -17,7 +17,7 @@
  	struct sk_buff *skb = bf->bf_skb;
  	struct ath_hal *ah = sc->sc_ah;
  	struct ath_desc *ds;
-@@ -4990,7 +4991,7 @@ ath_beacon_setup(struct ath_softc *sc, s
+@@ -4998,7 +4999,7 @@ ath_beacon_setup(struct ath_softc *sc, s
  		skb->len + IEEE80211_CRC_LEN,	/* frame length */
  		sizeof(struct ieee80211_frame), /* header length */
  		HAL_PKT_TYPE_BEACON,		/* Atheros packet type */
