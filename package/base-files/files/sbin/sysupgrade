@@ -109,5 +109,9 @@ else
 fi
 run_hooks "" $sysupgrade_pre_upgrade
 
-v "Switching to ramdisk..."
-run_ramfs '. /etc/functions.sh; include /lib/upgrade; do_upgrade'
+if [ -n "$(rootfs_type)" ]; then
+	v "Switching to ramdisk..."
+	run_ramfs '. /etc/functions.sh; include /lib/upgrade; do_upgrade'
+else
+	do_upgrade
+fi
