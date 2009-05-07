@@ -87,7 +87,7 @@
 +		else
 +			bias += get_overlap(ch->freq, c->ic_freq, ch->bw, bw);
 +	}
-+	return min(bias, (u32) 100);
++	return bias;
 +}
 +EXPORT_SYMBOL(ieee80211_scan_get_bias);
 +
