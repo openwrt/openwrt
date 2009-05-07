@@ -261,7 +261,7 @@ define KernelPackage/ide-it821x
   DEPENDS:=+kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_IT821X
   FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ite821x)
+  AUTOLOAD:=$(call AutoLoad,30,it821x)
 endef
 
 define KernelPackage/ide-it821x/description
