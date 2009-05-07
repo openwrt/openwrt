@@ -319,7 +319,7 @@
  
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6580,9 +6580,8 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+@@ -6588,9 +6588,8 @@ ath_recv_mgmt(struct ieee80211vap * vap,
  
  	sc->sc_recv_mgmt(vap, ni_or_null, skb, subtype, rssi, rtsf);
  
@@ -330,7 +330,7 @@
  	         (const struct ieee80211_frame_min *)skb->data);
  	if (ni == NULL) {
  		DPRINTF(sc, ATH_DEBUG_BEACON, "Dropping; node unknown.\n");
-@@ -6737,7 +6736,9 @@ ath_rx_poll(struct net_device *dev, int 
+@@ -6745,7 +6744,9 @@ ath_rx_poll(struct net_device *dev, int 
  	struct ath_desc *ds;
  	struct ath_rx_status *rs;
  	struct sk_buff *skb = NULL;
@@ -340,7 +340,7 @@
  	unsigned int len;
  	int type;
  	u_int phyerr;
-@@ -6892,12 +6893,15 @@ rx_accept:
+@@ -6900,12 +6901,15 @@ rx_accept:
  		skb_trim(skb, skb->len - IEEE80211_CRC_LEN);
  
  		if (mic_fail) {
@@ -358,7 +358,7 @@
  
  			if (ni && ni->ni_table) {
  				ieee80211_check_mic(ni, skb);
-@@ -6959,11 +6963,24 @@ drop_micfail:
+@@ -6967,11 +6971,24 @@ drop_micfail:
  		 * for its use.  If the sender is unknown spam the
  		 * frame; it'll be dropped where it's not wanted.
  		 */
@@ -385,7 +385,7 @@
  			ATH_RSSI_LPF(ATH_NODE(ni)->an_avgrssi, rs->rs_rssi);
  			type = ieee80211_input(ni->ni_vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  			ieee80211_unref_node(&ni);
-@@ -6972,24 +6989,35 @@ drop_micfail:
+@@ -6980,24 +6997,35 @@ drop_micfail:
  			 * No key index or no entry, do a lookup and
  			 * add the node to the mapping table if possible.
  			 */
