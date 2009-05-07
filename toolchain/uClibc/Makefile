@@ -115,6 +115,7 @@ endef
 
 define Host/Install
 	$(UCLIBC_MAKE) PREFIX= utils
+	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/bin
 	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/usr/bin
 	$(INSTALL_BIN) \
 		$(HOST_BUILD_DIR)/utils/ldd \
