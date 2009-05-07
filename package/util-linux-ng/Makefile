@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -88,11 +88,21 @@ define Package/hwclock/description
  This package contains a utility for managing the hardware clock.
 endef
 
+define Package/flock
+$(call Package/util-linux/Default)
+  TITLE:=Manage file locks from shell scripts
+endef
+
+define Package/flock/description
+  This package contains a utility for managing file locks from shell scripts.
+endef
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/disk-utils mkswap
 	$(MAKE) -C $(PKG_BUILD_DIR)/mount swapon losetup umount mount
 	$(MAKE) -C $(PKG_BUILD_DIR)/fdisk fdisk cfdisk
 	$(MAKE) -C $(PKG_BUILD_DIR)/hwclock hwclock
+	$(MAKE) -C $(PKG_BUILD_DIR)/sys-utils flock
 endef
 
 define Package/fdisk/install
@@ -126,9 +136,15 @@ define Package/hwclock/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hwclock/hwclock $(1)/sbin/
 endef
 
+define Package/flock/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/flock $(1)/usr/bin/
+endef
+
 $(eval $(call BuildPackage,fdisk))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,losetup))
 $(eval $(call BuildPackage,mount-utils))
 $(eval $(call BuildPackage,swap-utils))
 $(eval $(call BuildPackage,hwclock))
+$(eval $(call BuildPackage,flock))
