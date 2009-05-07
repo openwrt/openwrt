@@ -7,14 +7,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-ifeq ($(CONFIG_LINUX_2_6_23),y)
-ARCH_PATH=i386
-else
-ARCH_PATH=x86
-endif
-
 define Image/Prepare
-	$(CP) $(LINUX_DIR)/arch/$(ARCH_PATH)/boot/bzImage $(KDIR)/bzImage
+	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
 endef
 
 define trxalign/jffs2-128k
@@ -74,9 +68,16 @@ define Image/Build/amit
 	$(STAGING_DIR_HOST)/bin/makeamitbin -o $(BIN_DIR)/openwrt-$(BOARD)-$(1)-ar360w3g.bin -1 ALK_ATG001 -2 Atropos linux3g $(KDIR)/bzImage ramdisk3g $(KDIR)/root.$(1)
 endef
 
+define Image/Build/Initramfs
+	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-ramfs.bzImage
+endef
+
 define Image/Build
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD).bzImage
 	$(call Image/Build/$(PROFILE),$(1),$(PROFILE),$(patsubst jffs2-%k,%,$(1)))
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	$(call Image/Build/Initramfs)
+endif
 endef
 
 $(eval $(call BuildImage))
