@@ -1,0 +1,31 @@
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
+@@ -70,7 +70,8 @@
+ 	(((_dev)->flags & (IFF_RUNNING|IFF_UP)) == (IFF_RUNNING|IFF_UP))
+ #define	IS_UP_AUTO(_vap) \
+ 	(IS_UP((_vap)->iv_dev) && \
+-	 (_vap)->iv_ic->ic_roaming == IEEE80211_ROAMING_AUTO)
++	 (((_vap)->iv_opmode == IEEE80211_M_HOSTAP) || \
++	 (_vap)->iv_ic->ic_roaming == IEEE80211_ROAMING_AUTO))
+ #define	RESCAN	1
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
+@@ -283,7 +284,7 @@ ieee80211_ioctl_siwencode(struct net_dev
+ 				vap->iv_flags &= ~IEEE80211_F_DROPUNENC;
+ 		}
+ 	}
+-	if ((error == 0) && IS_UP(vap->iv_dev)) {
++	if ((error == 0) && IS_UP_AUTO(vap) && wepchange) {
+ 		/*
+ 		 * Device is up and running; we must kick it to
+ 		 * effect the change.  If we're enabling/disabling
+@@ -291,8 +292,7 @@ ieee80211_ioctl_siwencode(struct net_dev
+ 		 * so the 802.11 state machine is reset.  Otherwise
+ 		 * the key state should have been updated above.
+ 		 */
+-		if (wepchange && IS_UP_AUTO(vap))
+-			ieee80211_new_state(vap, IEEE80211_S_SCAN, 0);
++		ieee80211_new_state(vap, IEEE80211_S_SCAN, 0);
+ 	}
+ #ifdef ATH_SUPERG_XR
+ 	/* set the same params on the xr vap device if exists */
