@@ -26,6 +26,12 @@ export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 export LD_LIBRARY_PATH:=$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib
 export DYLD_LIBRARY_PATH:=$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAGING_DIR_HOST)/lib
 
+# prevent perforce from messing with the patch utility
+export P4PORT=
+export P4USER=
+export P4CONFIG=
+export P4CLIENT=
+
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
