@@ -294,7 +294,7 @@
 +#endif /* _NETFILTER_MIME_H */
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -26,6 +26,7 @@ obj-$(CONFIG_NF_NAT_AMANDA) += nf_nat_am
+@@ -26,6 +26,7 @@
  obj-$(CONFIG_NF_NAT_FTP) += nf_nat_ftp.o
  obj-$(CONFIG_NF_NAT_H323) += nf_nat_h323.o
  obj-$(CONFIG_NF_NAT_IRC) += nf_nat_irc.o
@@ -304,7 +304,7 @@
  obj-$(CONFIG_NF_NAT_SNMP_BASIC) += nf_nat_snmp_basic.o
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -267,6 +267,16 @@ config NF_CONNTRACK_TFTP
+@@ -267,6 +267,16 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -323,7 +323,7 @@
  	select NETFILTER_NETLINK
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -33,6 +33,7 @@ obj-$(CONFIG_NF_CONNTRACK_PPTP) += nf_co
+@@ -33,6 +33,7 @@
  obj-$(CONFIG_NF_CONNTRACK_SANE) += nf_conntrack_sane.o
  obj-$(CONFIG_NF_CONNTRACK_SIP) += nf_conntrack_sip.o
  obj-$(CONFIG_NF_CONNTRACK_TFTP) += nf_conntrack_tftp.o
@@ -333,7 +333,7 @@
  obj-$(CONFIG_NETFILTER_TPROXY) += nf_tproxy_core.o
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -268,6 +268,11 @@ config NF_NAT_IRC
+@@ -257,6 +257,11 @@
  	depends on NF_CONNTRACK && NF_NAT
  	default NF_NAT && NF_CONNTRACK_IRC
  
