@@ -97,7 +97,8 @@ define KernelPackage/usb-ohci
   TITLE:=Support for OHCI controllers
   KCONFIG:= \
 	CONFIG_USB_OHCI \
-	CONFIG_USB_OHCI_HCD
+	CONFIG_USB_OHCI_HCD \
+	CONFIG_USB_OHCI_AR71XX=y
 endef
 
 define KernelPackage/usb-ohci/2.4
@@ -138,7 +139,8 @@ define KernelPackage/usb2
   $(call usbdep,)
   TITLE:=Support for USB2 controllers
   KCONFIG:=CONFIG_USB_EHCI_HCD \
-    CONFIG_USB_EHCI_HCD_SSB=y
+    CONFIG_USB_EHCI_HCD_SSB=y \
+    CONFIG_USB_EHCI_AR71XX=y
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,ehci-hcd)
 endef
