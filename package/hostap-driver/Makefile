@@ -174,12 +174,7 @@ else
   endef
 endif
 
-define KernelPackage/hostap-pci/install
-	$(INSTALL_DIR) $(1)/lib/wifi
-	$(INSTALL_DATA) ./files/lib/wifi/hostap.sh $(1)/lib/wifi
-endef
-
-define KernelPackage/hostap-plx/install
+define KernelPackage/hostap/install
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/hostap.sh $(1)/lib/wifi
 endef
