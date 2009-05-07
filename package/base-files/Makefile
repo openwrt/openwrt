@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=18
+PKG_RELEASE:=19
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 
@@ -22,6 +22,9 @@ ifneq ($(DUMP),1)
   endif
   LIBGCC_VERSION:=$(GCC_VERSION)
   ifeq ($(ARCH),x86_64)
+    LIB_SUFFIX:=64
+  endif
+  ifeq ($(ARCH),mips64)
     LIB_SUFFIX:=64
   endif
 else
@@ -174,10 +177,12 @@ define Package/base-files$(TARGET)/install
 	mkdir -p $(1)/etc/crontabs
 	mkdir -p $(1)/jffs
 	mkdir -p $(1)/lib/firmware
+	$(if $(LIB_SUFFIX),ln -s lib $(1)/lib$(LIB_SUFFIX))
 	mkdir -p $(1)/mnt
 	mkdir -p $(1)/proc
 	mkdir -p $(1)/tmp
 	mkdir -p $(1)/usr/lib
+	$(if $(LIB_SUFFIX),ln -s lib $(1)/usr/lib$(LIB_SUFFIX))
 	mkdir -p $(1)/usr/bin
 	mkdir -p $(1)/sys
 	mkdir -p $(1)/www
