@@ -92,14 +92,15 @@ define Image/Build/squashfs
 endef
 
 define Image/Build/iso 
+	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub
 	$(CP) \
 		$(STAGING_DIR_HOST)/usr/lib/grub/i386-openwrt/stage2_eltorito \
 		$(KDIR)/root.grub/boot/grub/stage2_eltorito 
-	sed -i \
+	sed \
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
 		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
 		-e 's#(hd0,0)#(cd)#g' \
-		 $(KDIR)/root.grub/boot/grub/menu.lst 
+		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz 
 	mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table \
 		-o $(KDIR)/root.iso $(KDIR)/root.grub 
@@ -111,9 +112,11 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
+ifneq ($(1),iso)
 	$(call Image/Build/grub,$(1))
 	$(call Image/Build/vdi,$(1))
 	$(call Image/Build/vmdk,$(1))
+endif
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).fs
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-vmlinuz
 endef
