@@ -885,11 +885,13 @@ define KernelPackage/rtc-core
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_RTC_CLASS \
+	CONFIG_RTC_LIB
 	CONFIG_RTC_HCTOSYS=y \
 	CONFIG_RTC_HCTOSYS_DEVICE=rtc0
   FILES:= \
-	$(LINUX_DIR)/drivers/rtc/rtc-core.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,rtc-core)
+	$(LINUX_DIR)/drivers/rtc/rtc-core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/rtc/rtc-lib.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,rtc-lib rtc-core)
 endef
 
 define KernelPackage/rtc-core/description
