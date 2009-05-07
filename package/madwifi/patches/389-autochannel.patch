@@ -95,7 +95,7 @@
  #define	IEEE80211_CHAN_MAX	255
 --- a/net80211/ieee80211_scan_ap.c
 +++ b/net80211/ieee80211_scan_ap.c
-@@ -423,6 +423,19 @@ pc_cmp_rssi(struct ap_state *as, struct 
+@@ -417,6 +417,19 @@ pc_cmp_rssi(struct ap_state *as, struct 
  
  /* This function must be invoked with locks acquired */
  static int
@@ -115,7 +115,7 @@
  pc_cmp_samechan(struct ieee80211com *ic, struct ieee80211_channel *a,
  		struct ieee80211_channel *b)
  {
-@@ -457,6 +470,7 @@ pc_cmp(const void *_a, const void *_b)
+@@ -451,6 +464,7 @@ pc_cmp(const void *_a, const void *_b)
  
  	EVALUATE_CRITERION(radar, a, b);
  	EVALUATE_CRITERION(keepmode, params, a, b);

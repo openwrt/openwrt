@@ -965,7 +965,7 @@
  	for (i = 0; i < nrates; i++)
  		if (IEEERATE(ic, mode, i) == rate)
  			return i;
-@@ -1881,11 +1915,6 @@ ieee80211_build_countryie(struct ieee802
+@@ -1877,11 +1911,6 @@ ieee80211_build_countryie(struct ieee802
  			if (ieee80211_chan2mode(c) != curmode_noturbo)
  				continue;
  
@@ -977,7 +977,7 @@
  			if (*cur_runlen == 0) {
  				(*cur_runlen)++;
  				*cur_pow = c->ic_maxregpower;
-@@ -1919,7 +1948,7 @@ void
+@@ -1915,7 +1944,7 @@ void
  ieee80211_build_sc_ie(struct ieee80211com *ic)
  {
  	struct ieee80211_ie_sc *ie = &ic->ic_sc_ie;
@@ -1268,7 +1268,7 @@
  
 --- a/net80211/ieee80211_scan_ap.c
 +++ b/net80211/ieee80211_scan_ap.c
-@@ -518,12 +518,13 @@ pick_channel(struct ieee80211_scan_state
+@@ -512,12 +512,13 @@ pick_channel(struct ieee80211_scan_state
  	int ss_last = ss->ss_last;
  	struct ieee80211_channel *best;
  	struct ap_state *as = ss->ss_priv;
@@ -1283,7 +1283,7 @@
  	for (i = 0; i < ss_last; i++) {
  		chans[i].chan = ss->ss_chans[i];
  		chans[i].orig = i;
-@@ -612,6 +613,7 @@ pick_channel(struct ieee80211_scan_state
+@@ -601,6 +602,7 @@ pick_channel(struct ieee80211_scan_state
  				"%s: best: channel %u rssi %d\n",
  				__func__, i, as->as_maxrssi[i]);
  	}
@@ -1291,7 +1291,7 @@
  	return best;
  }
  
-@@ -647,6 +649,7 @@ ap_end(struct ieee80211_scan_state *ss, 
+@@ -636,6 +638,7 @@ ap_end(struct ieee80211_scan_state *ss, 
  		res = 1; /* Do NOT restart scan */
  	} else {
  		struct ieee80211_scan_entry se;
@@ -1299,7 +1299,7 @@
  		/* XXX: notify all VAPs? */
  		/* if this is a dynamic turbo frequency , start with normal 
  		 * mode first */
-@@ -661,6 +664,11 @@ ap_end(struct ieee80211_scan_state *ss, 
+@@ -650,6 +653,11 @@ ap_end(struct ieee80211_scan_state *ss, 
  				return 0;
  			}
  		}
