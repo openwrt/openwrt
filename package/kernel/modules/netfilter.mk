@@ -229,7 +229,7 @@ define KernelPackage/ipt-imq
 	CONFIG_IMQ \
 	CONFIG_IMQ_BEHAVIOR_BA=y \
 	CONFIG_IMQ_NUM_DEVS=2 \
-	CONFIG_IP_NF_TARGET_IMQ
+	CONFIG_NETFILTER_XT_TARGET_IMQ
   FILES:= \
 	$(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX) \
 	$(foreach mod,$(IPT_IMQ-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
