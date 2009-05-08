@@ -124,7 +124,7 @@
  void
  ieee80211_scan_attach(struct ieee80211com *ic)
  {
-@@ -1168,7 +1285,7 @@ ieee80211_scan_dfs_action(struct ieee802
+@@ -1169,7 +1286,7 @@ ieee80211_scan_dfs_action(struct ieee802
  				IEEE80211_RADAR_CHANCHANGE_TBTT_COUNT;
  			ic->ic_flags |= IEEE80211_F_CHANSWITCH;
  		} else {
@@ -133,7 +133,7 @@
  			IEEE80211_DPRINTF(vap, IEEE80211_MSG_DOTH,
  					"%s: directly switching to channel "
  					"%3d (%4d MHz)\n", __func__,
-@@ -1179,6 +1296,9 @@ ieee80211_scan_dfs_action(struct ieee802
+@@ -1180,6 +1297,9 @@ ieee80211_scan_dfs_action(struct ieee802
  			 * change the channel here. */
  			change_channel(ic, new_channel);
  			ic->ic_bsschan = new_channel;

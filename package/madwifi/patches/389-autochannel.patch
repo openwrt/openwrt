@@ -208,7 +208,7 @@
  		if (ss->ss_last > 0) {
 --- a/net80211/ieee80211_scan.c
 +++ b/net80211/ieee80211_scan.c
-@@ -1002,20 +1002,33 @@ ieee80211_scan_add_channels(struct ieee8
+@@ -1002,20 +1002,34 @@ ieee80211_scan_add_channels(struct ieee8
  {
  	struct ieee80211_channel *c, *cg;
  	u_int modeflags;
@@ -218,6 +218,7 @@
  	KASSERT(mode < ARRAY_SIZE(chanflags), ("Unexpected mode %u", mode));
  	modeflags = chanflags[mode];
  	for (i = 0; i < ic->ic_nchans; i++) {
+ 		c = &ic->ic_channels[i];
 +		if (c->ic_flags & (IEEE80211_CHAN_TURBO | IEEE80211_CHAN_STURBO))
 +			continue;
 +
@@ -225,7 +226,7 @@
 +		break;
 +	}
 +	for (i = 0; i < ic->ic_nchans; i++) {
- 		c = &ic->ic_channels[i];
++		c = &ic->ic_channels[i];
  		if (c == NULL || isclr(ic->ic_chan_active, c->ic_ieee))
  			continue;
  		if (c->ic_scanflags & IEEE80211_NOSCAN_SET)
