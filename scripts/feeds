@@ -179,6 +179,7 @@ sub search_feed {
 		my $substr;
 		my $pkgmatch = 1;
 
+		next if $pkg->{vdepends};
 		foreach my $substr (@substr) {
 			my $match;
 			foreach my $key (qw(name title description src)) {
@@ -212,6 +213,7 @@ sub list_feed {
 	get_feed($feed);
 	foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
 		my $pkg = $package{$name};
+		next if $pkg->{vdepends};
 		if($pkg->{name}) {
 			printf "\%-32s\t\%s\n", $pkg->{name}, $pkg->{title};
 		}
@@ -384,6 +386,7 @@ sub install {
 				get_feed($f->[1]);
 				foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
 					my $p = $package{$name};
+					next if $p->{vdepends};
 					if( $p->{name} ) {
 						install_package($feed, $p->{name}) == 0 or $ret = 1;
 					}
