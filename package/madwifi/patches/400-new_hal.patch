@@ -122,3 +122,32 @@
  
  /*
   * The functions in this section are not intended to be invoked by MadWifi
+--- a/ath/if_ath_hal.h
++++ b/ath/if_ath_hal.h
+@@ -778,17 +778,6 @@ static inline HAL_STATUS ath_hal_getcapa
+ 	return ret;
+ }
+ 
+-static inline HAL_BOOL ath_hal_radar_wait(struct ath_hal *ah, HAL_CHANNEL *a1)
+-{
+-	HAL_BOOL ret;
+-	ATH_HAL_LOCK_IRQ(ah->ah_sc);
+-	ath_hal_set_function(__func__);
+-	ret = ah->ah_radarWait(ah, a1);
+-	ath_hal_set_function(NULL);
+-	ATH_HAL_UNLOCK_IRQ(ah->ah_sc);
+-	return ret;
+-}
+-
+ static inline HAL_BOOL ath_hal_setmcastfilterindex(struct ath_hal *ah,
+ 						   u_int32_t index)
+ {
+@@ -1268,8 +1257,6 @@ static inline void ath_hal_dump_map(stru
+ 	/* HAL_STATUS ah_getCapability(struct ath_hal *ah, HAL_CAPABILITY_TYPE a1, u_int32_t capability, u_int32_t *result) */
+ 	__print_symbol("%s=ah_getCapability\n",
+ 		       (unsigned long)ah->ah_getCapability);
+-	/* HAL_BOOL ah_radarWait(struct ath_hal *ah, HAL_CHANNEL *a1) */
+-	__print_symbol("%s=ah_radarWait\n", (unsigned long)ah->ah_radarWait);
+ 	/* HAL_BOOL ah_setMulticastFilterIndex(struct ath_hal *ah, u_int32_t index) */
+ 	__print_symbol("%s=ah_setMulticastFilterIndex\n",
+ 		       (unsigned long)ah->ah_setMulticastFilterIndex);
