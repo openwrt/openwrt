@@ -8,5 +8,7 @@ config interface loopback
 
 config interface lan
 	option ifname	eth2
-	option proto	dhcp
-
+	option type 	bridge
+	option proto	static
+	option ipaddr	192.168.1.1
+	option netmask	255.255.255.0
