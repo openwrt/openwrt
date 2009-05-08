@@ -28,7 +28,6 @@ ifneq ($(strip $(shell which ccache >/dev/null && echo found)),found)
 
   define Host/Clean
 	-$(MAKE) -C $(HOST_BUILD_DIR) uninstall
-	-$(MAKE) -C $(HOST_BUILD_DIR) clean
 	$(call Host/Clean/Default)
   endef
 else
