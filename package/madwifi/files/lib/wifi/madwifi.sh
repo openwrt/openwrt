@@ -219,9 +219,7 @@ enable_atheros() {
 		[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
 		[ -n "$anttx" ] && sysctl -w dev."$device".txantenna="$anttx" >&-
 		[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
-
-		config_get distance "$device" distance
-		[ -n "$distance" ] && athctrl -i "$device" -d "$distance" >&-
+		[ -n "$distance" ] && sysctl -w dev."$device".distance="$distance" >&-
 
 		config_get rate "$vif" rate
 		[ -n "$rate" ] && iwconfig "$ifname" rate "${rate%%.*}"
