@@ -30,7 +30,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR) uninstall
+	-export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR) uninstall
 	$(call Host/Clean/Default)
 endef
 
