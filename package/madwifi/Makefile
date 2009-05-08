@@ -38,9 +38,21 @@ else
   PATCH_DIR=./patches
 endif
 
+HAL_VERSION:=20090508
+HAL_FILE:=ath_hal-$(HAL_VERSION).tgz
+HAL_MD5SUM:=4ab7ae8bdb96c0be388c98bf8f92d5ca
+
 PKG_BUILD_DEPENDS:=wprobe
 
 include $(INCLUDE_DIR)/package.mk
+
+define Download/hal
+  FILE:=$(HAL_FILE)
+  URL:=http://mirror2.openwrt.org/sources
+  MD5SUM:=$(HAL_MD5SUM)
+endef
+$(eval $(call Download,hal))
+
 
 ifneq ($(CONFIG_TARGET_atheros),)
   BUS:=AHB
@@ -192,14 +204,10 @@ MAKE_VARS:= \
 	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"' -DATH_REVERSE_ENGINEERING=1" \
 
 ifeq ($(CONFIG_MADWIFI_UPSTREAM),)
-  HALFILE:=$(lastword $(sort $(wildcard ./ath_hal-*.tgz)))
-endif
-
-ifneq ($(HALFILE),)
   define Build/Prepare/HAL
 	rm -rf $(PKG_BUILD_DIR)/tmp
 	mkdir -p $(PKG_BUILD_DIR)/tmp
-	tar xvzf $(HALFILE) -C $(PKG_BUILD_DIR)/tmp
+	tar xvzf $(DL_DIR)/$(HAL_FILE) -C $(PKG_BUILD_DIR)/tmp
 	$(CP) $(PKG_BUILD_DIR)/tmp/ath_hal*/* $(PKG_BUILD_DIR)/hal/
 	rm -rf $(PKG_BUILD_DIR)/tmp
   endef
