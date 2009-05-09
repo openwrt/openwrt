@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -11,7 +11,7 @@ BOARD:=sibyte
 BOARDNAME:=Broadcom/SiByte SB-1
 FEATURES:=broken
 
-LINUX_VERSION:=2.6.30-rc4
+LINUX_VERSION:=2.6.30-rc5
 
 include $(INCLUDE_DIR)/target.mk
 
