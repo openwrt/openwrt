@@ -236,13 +236,13 @@
 -#endif
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -54,7 +54,7 @@ $(addprefix $(obj)/,$(zlib) cuboot-c2k.o
- 	$(addprefix $(obj)/,$(zliblinuxheader)) $(addprefix $(obj)/,$(zlibheader))
+@@ -59,7 +59,7 @@ libfdtheader := fdt.h libfdt.h libfdt_in
+ $(addprefix $(obj)/,$(libfdt) libfdt-wrapper.o simpleboot.o): \
+ 	$(addprefix $(obj)/,$(libfdtheader))
  
- src-libfdt := fdt.c fdt_ro.c fdt_wip.c fdt_sw.c fdt_rw.c fdt_strerror.c
 -src-wlib := string.S crt0.S crtsavres.S stdio.c main.c \
 +src-wlib := string.S crt0.S stdio.c main.c \
- 		$(addprefix libfdt/,$(src-libfdt)) libfdt-wrapper.c \
+ 		$(libfdt) libfdt-wrapper.c \
  		ns16550.c serial.c simple_alloc.c div64.S util.S \
  		gunzip_util.c elf_util.c $(zlib) devtree.c oflib.c ofconsole.c \
 --- a/arch/powerpc/kernel/prom_init_check.sh
