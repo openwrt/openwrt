@@ -28,11 +28,14 @@ endif
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
   SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 endif
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.30)),1)
+  CRYPTO_MODULE_PCOMPRESS:=PCOMPRESS=pcompress
+endif
 
 CRYPTO_MODULES = \
 	ALGAPI=crypto_algapi \
 	AEAD=aead \
-	$(if $(LINUX_2_6_30),PCOMPRESS=pcompress) \
+	$(CRYPTO_MODULE_PCOMPRESS) \
 	BLKCIPHER=$(BLKCIPHER_PREFIX)blkcipher \
 	HASH=crypto_hash \
 	MANAGER=cryptomgr \
