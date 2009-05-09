@@ -235,9 +235,9 @@ static inline u32 ar71xx_gpio_rr(unsigned reg)
 	return __raw_readl(ar71xx_gpio_base + reg);
 }
 
-extern void ar71xx_gpio_init(void) __init;
-extern void ar71xx_gpio_function_enable(u32 mask);
-extern void ar71xx_gpio_function_disable(u32 mask);
+void ar71xx_gpio_init(void) __init;
+void ar71xx_gpio_function_enable(u32 mask);
+void ar71xx_gpio_function_disable(u32 mask);
 
 /*
  * DDR_CTRL block
@@ -281,7 +281,7 @@ static inline u32 ar71xx_ddr_rr(unsigned reg)
 	return __raw_readl(ar71xx_ddr_base + reg);
 }
 
-extern void ar71xx_ddr_flush(u32 reg);
+void ar71xx_ddr_flush(u32 reg);
 
 /*
  * PCI block
@@ -396,8 +396,8 @@ static inline u32 ar71xx_reset_rr(unsigned reg)
 	return __raw_readl(ar71xx_reset_base + reg);
 }
 
-extern void ar71xx_device_stop(u32 mask);
-extern void ar71xx_device_start(u32 mask);
+void ar71xx_device_stop(u32 mask);
+void ar71xx_device_start(u32 mask);
 
 /*
  * SPI block
