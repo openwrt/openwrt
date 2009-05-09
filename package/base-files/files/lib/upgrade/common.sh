@@ -165,5 +165,8 @@ do_upgrade() {
 	}
 	v "Upgrade completed"
 	[ -n "$DELAY" ] && sleep "$DELAY"
-	ask_bool 1 "Reboot" && reboot
+	ask_bool 1 "Reboot" && {
+		v "Rebooting system..."
+		reboot
+	}
 }
