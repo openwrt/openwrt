@@ -26,7 +26,7 @@ $(call Package/e2fsprogs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3 filesystem utilities
-  DEPENDS:=+libblkid +libuuid +libext2fs
+  DEPENDS:=+libblkid +libuuid +libext2fs +libpthread
 endef
 
 define Package/e2fsprogs/description
