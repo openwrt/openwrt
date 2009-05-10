@@ -296,7 +296,7 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -69,7 +69,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
+@@ -70,7 +70,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
@@ -305,7 +305,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -214,6 +214,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
+@@ -215,6 +215,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_MAGICBOXV1)		+= cuImage.magicboxv1
@@ -315,7 +315,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -51,6 +51,16 @@ config MAGICBOXV1
+@@ -59,6 +59,16 @@ config MAGICBOXV1
  	help
  	  This option enables support for the Magicbox v1 board.
  
