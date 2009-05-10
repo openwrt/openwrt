@@ -1,0 +1,12 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -888,9 +888,6 @@ ath_attach(u_int16_t devid, struct net_d
+ 				IEEE80211_ADDR_LEN +
+ 				IEEE80211_WEP_IVLEN +
+ 				IEEE80211_WEP_KIDLEN;
+-#ifdef ATH_SUPERG_FF
+-	dev->hard_header_len += ATH_FF_MAX_HDR;
+-#endif
+ #endif
+ 	dev->type = ARPHRD_IEEE80211;
+ 
