@@ -728,3 +728,37 @@
  int athdebug_init(int argc, char *argv[]);
  int athkey_init(int argc, char *argv[]);
  int athstats_init(int argc, char *argv[]);
+--- a/ath_rate/minstrel/minstrel.h
++++ b/ath_rate/minstrel/minstrel.h
+@@ -172,14 +172,6 @@ struct minstrel_node {
+ 
+ #define	ATH_NODE_MINSTREL(an)	((struct minstrel_node *)&an[1])
+ 
+-
+-#ifndef MIN
+-#define MIN(a,b)        ((a) < (b) ? (a) : (b))
+-#endif
+-#ifndef MAX
+-#define MAX(a,b)        ((a) > (b) ? (a) : (b))
+-#endif
+-
+ /*
+  * Definitions for pulling the rate and trie counts from
+  * a 5212 h/w descriptor. These Don't belong here; the
+--- a/ath_rate/sample/sample.h
++++ b/ath_rate/sample/sample.h
+@@ -98,14 +98,6 @@ struct sample_node {
+ };
+ #define	ATH_NODE_SAMPLE(an)	((struct sample_node *)&an[1])
+ 
+-
+-#ifndef MIN
+-#define MIN(a,b)        ((a) < (b) ? (a) : (b))
+-#endif
+-#ifndef MAX
+-#define MAX(a,b)        ((a) > (b) ? (a) : (b))
+-#endif
+-
+ /*
+  * Definitions for pulling the rate and trie counts from
+  * a 5212 h/w descriptor. These Don't belong here; the

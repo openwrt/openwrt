@@ -241,7 +241,7 @@
  static void
 --- a/ath_rate/minstrel/minstrel.h
 +++ b/ath_rate/minstrel/minstrel.h
-@@ -171,36 +171,6 @@ struct minstrel_node {
+@@ -172,36 +172,6 @@ struct minstrel_node {
  
  #define	ATH_NODE_MINSTREL(an)	((struct minstrel_node *)&an[1])
  
@@ -468,11 +468,10 @@
  				0, 0,
 --- a/ath_rate/sample/sample.h
 +++ b/ath_rate/sample/sample.h
-@@ -98,36 +98,4 @@ struct sample_node {
+@@ -98,35 +98,4 @@ struct sample_node {
  };
  #define	ATH_NODE_SAMPLE(an)	((struct sample_node *)&an[1])
  
--
 -/*
 - * Definitions for pulling the rate and trie counts from
 - * a 5212 h/w descriptor. These Don't belong here; the
