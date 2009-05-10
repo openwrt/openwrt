@@ -68,7 +68,7 @@ setup_interface () {
 	user_dns=$(uci_get "network.$ifc.dns")
 	[ -n "$user_dns" ] && dns="$user_dns"
 
-	[ -n "$dns" ] && [ "$dns" != "$old_dns" ] && {
+	[ -n "$dns" ] && [ ! -s "${RESOLV_CONF}.tmp" -o "$dns" != "$old_dns" ] && {
 		echo "udhcpc: setting dns servers: $dns"
 		echo -n > "${RESOLV_CONF}.tmp"
 		for i in $dns ; do
@@ -110,7 +110,14 @@ for ifc in $interfaces; do
 		deconfig)
 			ifconfig "$interface" 0.0.0.0
 			env -i ACTION="ifdown" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug-call iface
+			
+			config_get device "$ifc" device
+			config_get ifname "$ifc" ifname
+			config_get aliases "$ifc" aliases
 			uci_revert_state network "$ifc"
+			[ -n "$device" ] && uci_set_state network "$ifc" device "$device"
+			[ -n "$ifname" ] && uci_set_state network "$ifc" ifname "$ifname"
+			[ -n "$aliases" ] && uci_set_state network "$ifc" aliases "$aliases"
 		;;
 		renew)
 			setup_interface update
