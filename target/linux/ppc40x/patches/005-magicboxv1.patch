@@ -263,7 +263,7 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -69,7 +69,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
+@@ -70,7 +70,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
@@ -272,7 +272,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -213,6 +213,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImag
+@@ -214,6 +214,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImag
  image-$(CONFIG_EP405)			+= dtbImage.ep405
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
@@ -282,7 +282,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -41,6 +41,16 @@ config KILAUEA
+@@ -49,6 +49,16 @@ config KILAUEA
  	help
  	  This option enables support for the AMCC PPC405EX evaluation board.
  
