@@ -1,0 +1,11 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -915,7 +915,7 @@ ath_attach(u_int16_t devid, struct net_d
+ 	ic->ic_ath_cap = 0;
+ 	sc->sc_fftxqmin = ATH_FF_TXQMIN;
+ #ifdef ATH_SUPERG_FF
+-	ic->ic_ath_cap |= (ath_hal_fastframesupported(ah) ? 
++	ic->ic_ath_cap |= (ah->ah_macType >= 5212 ?
+ 			IEEE80211_ATHC_FF : 0);
+ #endif
+ 	ic->ic_ath_cap |= (ath_hal_burstsupported(ah) ? 
