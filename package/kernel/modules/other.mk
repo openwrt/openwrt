@@ -121,6 +121,7 @@ endef
 
 $(eval $(call KernelPackage,pcspkr))
 
+# This activates PCMCIA support in ssb. This will be included in kmod-ssb.
 define KernelPackage/pcmcia-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PCMCIA/CardBus support
@@ -131,6 +132,9 @@ define KernelPackage/pcmcia-core
 	CONFIG_PCCARD \
 	CONFIG_YENTA \
 	CONFIG_PCCARD_NONSTATIC \
+	CONFIG_SSB_PCMCIAHOST=y \
+	CONFIG_SSB_PCMCIAHOST_POSSIBLE=y \
+	CONFIG_SSB_BLOCKIO=y \
 	PCMCIA_DEBUG=n
 endef
 
@@ -141,7 +145,7 @@ define KernelPackage/pcmcia-core/2.4
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core ds)
+  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core ds)
 endef
 
 define KernelPackage/pcmcia-core/2.6
@@ -155,7 +159,7 @@ define KernelPackage/pcmcia-core/2.6
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic)
+  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core pcmcia rsrc_nonstatic)
 endef
 
 define KernelPackage/pcmcia-core/description
