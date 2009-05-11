@@ -294,7 +294,7 @@
 +#endif /* _NETFILTER_MIME_H */
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -23,6 +23,7 @@
+@@ -23,6 +23,7 @@ obj-$(CONFIG_NF_NAT_AMANDA) += nf_nat_am
  obj-$(CONFIG_NF_NAT_FTP) += nf_nat_ftp.o
  obj-$(CONFIG_NF_NAT_H323) += nf_nat_h323.o
  obj-$(CONFIG_NF_NAT_IRC) += nf_nat_irc.o
@@ -304,7 +304,7 @@
  obj-$(CONFIG_NF_NAT_SNMP_BASIC) += nf_nat_snmp_basic.o
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -278,6 +278,16 @@
+@@ -278,6 +278,16 @@ config NF_CONNTRACK_TFTP
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -323,7 +323,7 @@
  	depends on NF_CONNTRACK
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -33,6 +33,7 @@
+@@ -33,6 +33,7 @@ obj-$(CONFIG_NF_CONNTRACK_PPTP) += nf_co
  obj-$(CONFIG_NF_CONNTRACK_SANE) += nf_conntrack_sane.o
  obj-$(CONFIG_NF_CONNTRACK_SIP) += nf_conntrack_sip.o
  obj-$(CONFIG_NF_CONNTRACK_TFTP) += nf_conntrack_tftp.o
@@ -333,7 +333,7 @@
  obj-$(CONFIG_NETFILTER_XTABLES) += x_tables.o xt_tcpudp.o
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -270,6 +270,11 @@
+@@ -270,6 +270,11 @@ config NF_NAT_IRC
  	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
  	default NF_NAT && NF_CONNTRACK_IRC
  

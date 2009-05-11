@@ -570,7 +570,7 @@
 +
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -109,6 +109,129 @@
+@@ -109,6 +109,129 @@ config EQUALIZER
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
  
@@ -702,7 +702,7 @@
  	select CRC32
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -148,6 +148,7 @@
+@@ -148,6 +148,7 @@ obj-$(CONFIG_SLHC) += slhc.o
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
@@ -764,7 +764,7 @@
  
  #define HAVE_ALLOC_SKB		/* For the drivers to know */
  #define HAVE_ALIGNABLE_SKB	/* Ditto 8)		   */
-@@ -278,6 +281,9 @@
+@@ -278,6 +281,9 @@ struct sk_buff {
  	 * first. This is owned by whoever has the skb queued ATM.
  	 */
  	char			cb[48];
@@ -774,7 +774,7 @@
  
  	unsigned int		len,
  				data_len;
-@@ -308,6 +314,9 @@
+@@ -308,6 +314,9 @@ struct sk_buff {
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -784,7 +784,7 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -327,6 +336,9 @@
+@@ -327,6 +336,9 @@ struct sk_buff {
  	__u8			do_not_encrypt:1;
  #endif
  	/* 0/13/14 bit hole */
@@ -794,7 +794,7 @@
  
  #ifdef CONFIG_NET_DMA
  	dma_cookie_t		dma_cookie;
-@@ -367,6 +379,12 @@
+@@ -367,6 +379,12 @@ extern void skb_dma_unmap(struct device 
  			  enum dma_data_direction dir);
  #endif
  
@@ -807,7 +807,7 @@
  extern void kfree_skb(struct sk_buff *skb);
  extern void	       __kfree_skb(struct sk_buff *skb);
  extern struct sk_buff *__alloc_skb(unsigned int size,
-@@ -1804,6 +1822,10 @@
+@@ -1804,6 +1822,10 @@ static inline void __nf_copy(struct sk_b
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -830,7 +830,7 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1655,7 +1658,11 @@
+@@ -1655,7 +1658,11 @@ int dev_hard_start_xmit(struct sk_buff *
  			struct netdev_queue *txq)
  {
  	if (likely(!skb->next)) {
@@ -843,7 +843,7 @@
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-@@ -1746,8 +1753,7 @@
+@@ -1746,8 +1753,7 @@ static u16 simple_tx_hash(struct net_dev
  	return (u16) (((u64) hash * dev->real_num_tx_queues) >> 32);
  }
  
@@ -853,7 +853,7 @@
  {
  	u16 queue_index = 0;
  
-@@ -1759,6 +1765,7 @@
+@@ -1759,6 +1765,7 @@ static struct netdev_queue *dev_pick_tx(
  	skb_set_queue_mapping(skb, queue_index);
  	return netdev_get_tx_queue(dev, queue_index);
  }
@@ -863,7 +863,7 @@
   *	dev_queue_xmit - transmit a buffer
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -950,6 +950,7 @@
+@@ -950,6 +950,7 @@ extern int		dev_alloc_name(struct net_de
  extern int		dev_open(struct net_device *dev);
  extern int		dev_close(struct net_device *dev);
  extern void		dev_disable_lro(struct net_device *dev);
@@ -885,7 +885,7 @@
 +
 --- a/include/net/netfilter/nf_queue.h
 +++ b/include/net/netfilter/nf_queue.h
-@@ -13,6 +13,12 @@
+@@ -13,6 +13,12 @@ struct nf_queue_entry {
  	struct net_device	*indev;
  	struct net_device	*outdev;
  	int			(*okfn)(struct sk_buff *);
@@ -898,7 +898,7 @@
  };
  
  #define nf_queue_entry_reroute(x) ((void *)x + sizeof(struct nf_queue_entry))
-@@ -30,5 +36,11 @@
+@@ -30,5 +36,11 @@ extern int nf_unregister_queue_handler(u
  				       const struct nf_queue_handler *qh);
  extern void nf_unregister_queue_handlers(const struct nf_queue_handler *qh);
  extern void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict);
@@ -922,7 +922,7 @@
  
  static void sock_pipe_buf_release(struct pipe_inode_info *pipe,
  				  struct pipe_buffer *buf)
-@@ -88,6 +91,80 @@
+@@ -88,6 +91,80 @@ static int sock_pipe_buf_steal(struct pi
  	return 1;
  }
  
@@ -1003,7 +1003,7 @@
  
  /* Pipe buffer operations for a socket. */
  static struct pipe_buf_operations sock_pipe_buf_ops = {
-@@ -381,6 +458,15 @@
+@@ -381,6 +458,15 @@ static void skb_release_head_state(struc
  		WARN_ON(in_irq());
  		skb->destructor(skb);
  	}
@@ -1019,7 +1019,7 @@
  #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
  	nf_conntrack_put(skb->nfct);
  	nf_conntrack_put_reasm(skb->nfct_reasm);
-@@ -493,6 +579,9 @@
+@@ -493,6 +579,9 @@ static void __copy_skb_header(struct sk_
  	new->sp			= secpath_get(old->sp);
  #endif
  	memcpy(new->cb, old->cb, sizeof(old->cb));
@@ -1029,7 +1029,7 @@
  	new->csum_start		= old->csum_start;
  	new->csum_offset	= old->csum_offset;
  	new->local_df		= old->local_df;
-@@ -2397,6 +2486,13 @@
+@@ -2397,6 +2486,13 @@ void __init skb_init(void)
  						0,
  						SLAB_HWCACHE_ALIGN|SLAB_PANIC,
  						NULL);
@@ -1045,7 +1045,7 @@
  /**
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -357,6 +357,18 @@
+@@ -357,6 +357,18 @@ config NETFILTER_XT_TARGET_DSCP
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -1066,7 +1066,7 @@
  	default m if NETFILTER_ADVANCED=n
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -45,6 +45,7 @@
+@@ -45,6 +45,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CLASSIF
  obj-$(CONFIG_NETFILTER_XT_TARGET_CONNMARK) += xt_CONNMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSECMARK) += xt_CONNSECMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_DSCP) += xt_DSCP.o
@@ -1076,7 +1076,7 @@
  obj-$(CONFIG_NETFILTER_XT_TARGET_NFQUEUE) += xt_NFQUEUE.o
 --- a/net/netfilter/nf_queue.c
 +++ b/net/netfilter/nf_queue.c
-@@ -20,6 +20,26 @@
+@@ -20,6 +20,26 @@ static const struct nf_queue_handler *qu
  
  static DEFINE_MUTEX(queue_handler_mutex);
  
@@ -1103,7 +1103,7 @@
  /* return EBUSY when somebody else is registered, return EEXIST if the
   * same handler is registered, return 0 in case of success. */
  int nf_register_queue_handler(u_int8_t pf, const struct nf_queue_handler *qh)
-@@ -80,7 +100,7 @@
+@@ -80,7 +100,7 @@ void nf_unregister_queue_handlers(const 
  }
  EXPORT_SYMBOL_GPL(nf_unregister_queue_handlers);
  
@@ -1112,7 +1112,7 @@
  {
  	/* Release those devices we held, or Alexey will kill me. */
  	if (entry->indev)
-@@ -100,6 +120,7 @@
+@@ -100,6 +120,7 @@ static void nf_queue_entry_release_refs(
  	/* Drop reference to owner of hook which queued us. */
  	module_put(entry->elem->owner);
  }
@@ -1120,7 +1120,7 @@
  
  /*
   * Any packet that leaves via this function must come back
-@@ -121,12 +142,26 @@
+@@ -121,12 +142,26 @@ static int __nf_queue(struct sk_buff *sk
  #endif
  	const struct nf_afinfo *afinfo;
  	const struct nf_queue_handler *qh;
@@ -1147,7 +1147,7 @@
  		goto err_unlock;
  
  	afinfo = nf_get_afinfo(pf);
-@@ -145,6 +180,10 @@
+@@ -145,6 +180,10 @@ static int __nf_queue(struct sk_buff *sk
  		.indev	= indev,
  		.outdev	= outdev,
  		.okfn	= okfn,
@@ -1158,7 +1158,7 @@
  	};
  
  	/* If it's going away, ignore hook. */
-@@ -170,8 +209,19 @@
+@@ -170,8 +209,19 @@ static int __nf_queue(struct sk_buff *sk
  	}
  #endif
  	afinfo->saveroute(skb, entry);
