@@ -12,7 +12,7 @@ WIRELESS_MENU:=Wireless Drivers
 define KernelPackage/ieee80211
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=802.11 Networking stack
-  DEPENDS:=+kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic
+  DEPENDS:=+kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic @LINUX_2_4||@LINUX_2_6_21||LINUX_2_6_23||LINUX_2_6_24||LINUX_2_6_25||LINUX_2_6_26||LINUX_2_6_27||LINUX_2_6_28
   KCONFIG:= \
 	CONFIG_IEEE80211 \
 	CONFIG_IEEE80211_CRYPT_WEP \
@@ -44,6 +44,40 @@ define KernelPackage/ieee80211/description
 endef
 
 $(eval $(call KernelPackage,ieee80211))
+
+
+define KernelPackage/lib80211
+  SUBMENU:=$(WIRELESS_MENU)
+  TITLE:=802.11 Networking stack
+  DEPENDS:=@LINUX_2_6_29||LINUX_2_6_30
+  KCONFIG:= \
+	CONFIG_LIB80211 \
+	CONFIG_LIB80211_CRYPT_WEP \
+	CONFIG_LIB80211_CRYPT_TKIP \
+	CONFIG_LIB80211_CRYPT_CCMP
+  FILES:= \
+  	$(LINUX_DIR)/net/wireless/lib80211.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/wireless/lib80211_crypt_wep.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/wireless/lib80211_crypt_ccmp.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/net/wireless/lib80211_crypt_tkip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,10, \
+	lib80211 \
+	lib80211_crypt_wep \
+	lib80211_crypt_ccmp \
+	lib80211_crypt_tkip \
+  )
+endef
+
+define KernelPackage/lib80211/description
+ Kernel modules for 802.11 Networking stack
+ Includes:
+ - lib80211
+ - lib80211_crypt_wep
+ - lib80211_crypt_tkip
+ - lib80211_crytp_ccmp
+endef
+
+$(eval $(call KernelPackage,lib80211))
 
 
 define KernelPackage/ieee80211-softmac
@@ -80,12 +114,32 @@ endef
 $(eval $(call KernelPackage,net-bcm43xx))
 
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
+  IPW_DIR:=ipw2x00/
+endif
+
+define KernelPackage/net-libipw
+  SUBMENU:=$(WIRELESS_MENU)
+  TITLE:=libipw for ipw2100 and ipw2200
+  DEPENDS:=@PCI_SUPPORT +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211 @LINUX_2_6_29||LINUX_2_6_30
+  KCONFIG:=CONFIG_LIBIPW
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(IPW_DIR)libipw.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,49,libipw)
+endef
+
+define KernelPackage/net-libipw/description
+ Hardware independent IEEE 802.11 networking stack for ipw2100 and ipw2200.
+endef
+
+$(eval $(call KernelPackage,net-libipw))
+
+
 define KernelPackage/net-ipw2100
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intel IPW2100 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-ieee80211
+  DEPENDS:=@PCI_SUPPORT +!LINUX_2_6_29&&!LINUX_2_6_30:kmod-ieee80211 +LINUX_2_6_29||LINUX_2_6_30:kmod-net-libipw
   KCONFIG:=CONFIG_IPW2100
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2100.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(IPW_DIR)ipw2100.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2100)
 endef
 
@@ -101,9 +155,9 @@ $(eval $(call KernelPackage,net-ipw2100))
 define KernelPackage/net-ipw2200
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intel IPW2200 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-ieee80211
+  DEPENDS:=@PCI_SUPPORT +!LINUX_2_6_29&&!LINUX_2_6_30:kmod-ieee80211 +LINUX_2_6_29||LINUX_2_6_30:kmod-net-libipw
   KCONFIG:=CONFIG_IPW2200
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2200.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(IPW_DIR)ipw2200.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2200)
 endef
 
@@ -132,16 +186,28 @@ endef
 $(eval $(call KernelPackage,net-airo))
 
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
+  ORINOCO_DIR:=orinoco/
+endif
+
 define KernelPackage/net-hermes
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Hermes 802.11b chipset support
   DEPENDS:=@LINUX_2_6 @PCI_SUPPORT||PCMCIA_SUPPORT
-  KCONFIG:=CONFIG_HERMES
+  KCONFIG:=CONFIG_HERMES \
+	CONFIG_HERMES_CACHE_FW_ON_INIT=n
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)hermes.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)hermes_dld.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,hermes hermes_dld orinoco)
+else
   FILES:= \
 	$(LINUX_DIR)/drivers/net/wireless/hermes.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/wireless/orinoco.$(LINUX_KMOD_SUFFIX) \
-    $(if $(CONFIG_LINUX_2_6_28),$(LINUX_DIR)/drivers/net/wireless/hermes_dld.$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(if $(CONFIG_LINUX_2_6_28),$(call AutoLoad,50,hermes hermes_dld orinoco),$(call AutoLoad,50,hermes orinoco))
+	$(LINUX_DIR)/drivers/net/wireless/orinoco.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,hermes orinoco)
+endif
 endef
 
 define KernelPackage/net-hermes/description
