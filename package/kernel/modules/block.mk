@@ -260,7 +260,11 @@ define KernelPackage/ide-it821x
   TITLE:=ITE IT821x IDE driver
   DEPENDS:=+kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_IT821X
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
   FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
+else
+  FILES=$(LINUX_DIR)/drivers/ide/pci/it821x.$(LINUX_KMOD_SUFFIX)
+endif
   AUTOLOAD:=$(call AutoLoad,30,it821x)
 endef
 
