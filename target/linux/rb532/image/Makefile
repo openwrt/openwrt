@@ -54,8 +54,9 @@ root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
 endef
 
 define Image/Build
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/$(1))) '
-	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin 4 $(KDIR)/vmlinux.elf $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+	$(CP) $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(1).kernel
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/openwrt-$(BOARD)-$(1).kernel '$(strip $(call Image/cmdline/$(1))) '
+	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin 4 $(BIN_DIR)/openwrt-$(BOARD)-$(1).kernel $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
