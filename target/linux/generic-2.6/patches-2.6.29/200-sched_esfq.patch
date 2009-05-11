@@ -90,7 +90,7 @@
  obj-$(CONFIG_NET_SCH_PRIO)	+= sch_prio.o
 --- /dev/null
 +++ b/net/sched/sch_esfq.c
-@@ -0,0 +1,702 @@
+@@ -0,0 +1,700 @@
 +/*
 + * net/sched/sch_esfq.c	Extended Stochastic Fairness Queueing discipline.
 + *
@@ -137,6 +137,7 @@
 +#include <linux/notifier.h>
 +#include <linux/init.h>
 +#include <net/ip.h>
++#include <net/netlink.h>
 +#include <linux/ipv6.h>
 +#include <net/route.h>
 +#include <linux/skbuff.h>
@@ -464,20 +465,17 @@
 +	return NET_XMIT_CN;
 +}
 +
-+
-+static int esfq_requeue(struct sk_buff *skb, struct Qdisc* sch)
++static struct sk_buff *esfq_peek(struct Qdisc* sch)
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
-+	esfq_q_enqueue(skb, q, ESFQ_HEAD);
-+	sch->qstats.backlog += skb->len;
-+	if (++sch->q.qlen < q->limit - 1) {
-+		sch->qstats.requeues++;
-+		return 0;
-+	}
++	esfq_index a;
 +
-+	sch->qstats.drops++;
-+	esfq_drop(sch);
-+	return NET_XMIT_CN;
++	/* No active slots */
++	if (q->tail == q->depth)
++		return NULL;
++
++	a = q->next[q->tail];
++	return skb_peek(&q->qs[a]);
 +}
 +
 +static struct sk_buff *esfq_q_dequeue(struct esfq_sched_data *q)
@@ -602,13 +600,13 @@
 +	}
 +}
 +
-+static int esfq_q_init(struct esfq_sched_data *q, struct rtattr *opt)
++static int esfq_q_init(struct esfq_sched_data *q, struct nlattr *opt)
 +{
-+	struct tc_esfq_qopt *ctl = RTA_DATA(opt);
++	struct tc_esfq_qopt *ctl = nla_data(opt);
 +	esfq_index p = ~0U/2;
 +	int i;
 +
-+	if (opt && opt->rta_len < RTA_LENGTH(sizeof(*ctl)))
++	if (opt && opt->nla_len < nla_attr_size(sizeof(*ctl)))
 +		return -EINVAL;
 +
 +	q->perturbation = 0;
@@ -620,7 +618,7 @@
 +		q->tail = q->limit = q->depth = 128;
 +
 +	} else {
-+		struct tc_esfq_qopt *ctl = RTA_DATA(opt);
++		struct tc_esfq_qopt *ctl = nla_data(opt);
 +		if (ctl->quantum)
 +			q->quantum = ctl->quantum;
 +		q->perturb_period = ctl->perturb_period*HZ;
@@ -673,7 +671,7 @@
 +	return -ENOBUFS;
 +}
 +
-+static int esfq_init(struct Qdisc *sch, struct rtattr *opt)
++static int esfq_init(struct Qdisc *sch, struct nlattr *opt)
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
 +	int err;
@@ -693,7 +691,7 @@
 +	return 0;
 +}
 +
-+static int esfq_change(struct Qdisc *sch, struct rtattr *opt)
++static int esfq_change(struct Qdisc *sch, struct nlattr *opt)
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
 +	struct esfq_sched_data new;
@@ -744,7 +742,7 @@
 +static int esfq_dump(struct Qdisc *sch, struct sk_buff *skb)
 +{
 +	struct esfq_sched_data *q = qdisc_priv(sch);
-+	unsigned char *b = skb->tail;
++	unsigned char *b = skb_tail_pointer(skb);
 +	struct tc_esfq_qopt opt;
 +
 +	opt.quantum = q->quantum;
@@ -755,12 +753,12 @@
 +	opt.flows = q->depth;
 +	opt.hash_kind = q->hash_kind;
 +
-+	RTA_PUT(skb, TCA_OPTIONS, sizeof(opt), &opt);
++	NLA_PUT(skb, TCA_OPTIONS, sizeof(opt), &opt);
 +
 +	return skb->len;
 +
-+rtattr_failure:
-+	skb_trim(skb, b - skb->data);
++nla_put_failure:
++	nlmsg_trim(skb, b);
 +	return -1;
 +}
 +
@@ -772,7 +770,7 @@
 +	.priv_size	=	sizeof(struct esfq_sched_data),
 +	.enqueue	=	esfq_enqueue,
 +	.dequeue	=	esfq_dequeue,
-+	.requeue	=	esfq_requeue,
++	.peek		=	esfq_peek,
 +	.drop		=	esfq_drop,
 +	.init		=	esfq_init,
 +	.reset		=	esfq_reset,
