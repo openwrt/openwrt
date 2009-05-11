@@ -21,7 +21,7 @@ define KernelPackage/libertas
   FILES:= \
 	$(PKG_BUILD_DIR)/libertas.$(LINUX_KMOD_SUFFIX)  \
 	$(PKG_BUILD_DIR)/usb8xxx.$(LINUX_KMOD_SUFFIX) 
-  AUTOLOAD:=$(call AutoLoad,20,libertas usb8xxx)
+  AUTOLOAD:=$(call AutoLoad,30,libertas usb8xxx)
 endef
 
 define Download/firmware
