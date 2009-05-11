@@ -315,6 +315,10 @@ endef
 
 $(eval $(call KernelPackage,fs-reiserfs))
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
+  VFAT_DIR:=fat
+endif
+VFAT_DIR?=vfat
 
 define KernelPackage/fs-vfat
   SUBMENU:=$(FS_MENU)
@@ -324,7 +328,7 @@ define KernelPackage/fs-vfat
 	CONFIG_VFAT_FS
   FILES:= \
 	$(LINUX_DIR)/fs/fat/fat.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/$(if $(CONFIG_LINUX_2_6_28),fat,vfat)/vfat.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/$(VFAT_DIR)/vfat.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
 $(call KernelPackage/nls/Depends)
 endef
