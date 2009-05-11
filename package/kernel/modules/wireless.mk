@@ -80,40 +80,6 @@ endef
 $(eval $(call KernelPackage,lib80211))
 
 
-define KernelPackage/ieee80211-softmac
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=ieee80211 SoftMAC support
-  DEPENDS:=+kmod-ieee80211 @LINUX_2_6_21||@LINUX_2_6_23||@LINUX_2_6_24||@LINUX_2_6_25
-  KCONFIG:=CONFIG_IEEE80211_SOFTMAC
-  FILES:=$(LINUX_DIR)/net/ieee80211/softmac/ieee80211softmac.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,ieee80211softmac)
-endef
-
-define KernelPackage/ieee80211-softmac/description
- Kernel modules for 802.11 SoftMAC support
-endef
-
-$(eval $(call KernelPackage,ieee80211-softmac))
-
-
-define KernelPackage/net-bcm43xx
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=Broadcom BCM43xx driver
-  DEPENDS:=@TARGET_brcm47xx||TARGET_brcm63xx +kmod-ieee80211-softmac
-  KCONFIG:=CONFIG_BCM43XX
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,bcm43xx)
-endef
-
-define KernelPackage/net-bcm43xx/description
- Kernel support for Broadcom BCM43xx
- Includes:
- - bcm43xx
-endef
-
-$(eval $(call KernelPackage,net-bcm43xx))
-
-
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
   IPW_DIR:=ipw2x00/
 endif
