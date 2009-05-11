@@ -139,7 +139,7 @@ static void usage(const char* progname)
 	     "\t-o <output file>\t - firmware output file, default: %s\n"
 	     "\t-p <name>:<offset>:<len>:<memaddr>:<entry>:<file>\n "
 	     "\t\t\t\t - create a partition from <file>\n"
-	     "\t-z\t\t\t - set partition offsets to zero\n",
+	     "\t-z\t\t\t - set partition offsets to zero\n"
 	     "\t-h\t\t\t - this help\n",
 	     VERSION, progname, DEFAULT_VERSION, MAGIC_HEADER,
 	     DEFAULT_FLASH_BASE, DEFAULT_OUTPUT_FILE);
