@@ -221,6 +221,12 @@ define KernelPackage/fs-nfs-common
   AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd)
 endef
 
+define KernelPackage/fs-nfs-common/2.6
+  KCONFIG+=CONFIG_SUNRPC_GSS
+  FILES+=$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD=$(call AutoLoad,30,sunrpc lockd auth_rpcgss)
+endef
+
 $(eval $(call KernelPackage,fs-nfs-common))
 
 
@@ -242,21 +248,28 @@ endef
 $(eval $(call KernelPackage,fs-nfs))
 
 
+define KernelPackage/fs-exportfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=exportfs kernel server support
+  KCONFIG:=CONFIG_EXPORTFS
+  FILES=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,exportfs)
+endef
+
+define KernelPackage/fs-exportfs/description
+ Kernel module for exportfs. Needed for some other modules.
+endef
+
+$(eval $(call KernelPackage,fs-exportfs))
+
+
 define KernelPackage/fs-nfsd
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS kernel server support
-  DEPENDS:=kmod-fs-nfs-common
+  DEPENDS:=kmod-fs-nfs-common +kmod-fs-exportfs
   KCONFIG:=CONFIG_NFSD
   FILES:=$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,nfsd)
-endef
-
-define KernelPackage/fs-nfsd/2.6
-  KCONFIG+=CONFIG_EXPORTFS \
-  	CONFIG_SUNRPC_GSS
-  FILES+=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,40,auth_rpcgss exportfs nfsd)
 endef
 
 define KernelPackage/fs-nfsd/description
@@ -328,6 +341,7 @@ define KernelPackage/fs-xfs
   SUBMENU:=$(FS_MENU)
   TITLE:=XFS filesystem support
   KCONFIG:=CONFIG_XFS_FS
+  DEPENDS:= +kmod-fs-exportfs
   FILES:=$(LINUX_DIR)/fs/xfs/xfs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,xfs)
 endef
