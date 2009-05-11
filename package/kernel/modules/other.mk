@@ -310,7 +310,7 @@ define KernelPackage/bluetooth/2.6
 #	CONFIG_BT_BNEP \
 #	CONFIG_BT_HCIUSB \
 #	CONFIG_BT_HCIUART
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.27)),1)
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -622,7 +622,7 @@ define KernelPackage/input-core
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_INPUT
   FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,input-core)
+  AUTOLOAD:=$(call AutoLoad,19,input-core)
 endef
 
 define KernelPackage/input-core/description
@@ -670,7 +670,7 @@ define KernelPackage/input-polldev
   DEPENDS:=+kmod-input-core @LINUX_2_6
   KCONFIG:=CONFIG_INPUT_POLLDEV
   FILES:=$(LINUX_DIR)/drivers/input/input-polldev.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,61,input-polldev)
+  AUTOLOAD:=$(call AutoLoad,20,input-polldev)
 endef
 
 define KernelPackage/input-polldev/description
