@@ -257,7 +257,6 @@ define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-input-core
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -273,27 +272,9 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
 	CONFIG_BT_RFCOMM \
 	CONFIG_BT_BNEP \
 	CONFIG_BT_HCIBTUSB \
-	CONFIG_BT_HCIUART \
-	CONFIG_BT_HIDP
-else
-  KCONFIG:= \
-	CONFIG_BLUEZ \
-	CONFIG_BLUEZ_L2CAP \
-	CONFIG_BLUEZ_SCO \
-	CONFIG_BLUEZ_RFCOMM \
-	CONFIG_BLUEZ_BNEP \
-	CONFIG_BLUEZ_HCIUART \
-	CONFIG_BLUEZ_HCIUSB \
-	CONFIG_BLUEZ_HIDP \
-	CONFIG_BT \
-	CONFIG_BT_L2CAP \
-	CONFIG_BT_SCO \
-	CONFIG_BT_RFCOMM \
-	CONFIG_BT_BNEP \
 	CONFIG_BT_HCIUSB \
 	CONFIG_BT_HCIUART \
 	CONFIG_BT_HIDP
-endif
 endef
 
 define KernelPackage/bluetooth/2.4
