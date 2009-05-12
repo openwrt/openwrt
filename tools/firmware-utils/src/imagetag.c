@@ -153,7 +153,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	struct imagetag tag;
 	struct kernelhdr khdr;
 	FILE *kernelfile = NULL, *rootfsfile = NULL, *binfile;
-	size_t kerneloff, kernellen, rootfsoff, rootfslen, read, imagelen;
+	size_t kerneloff, kernellen, rootfsoff, rootfslen, read, imagelen, rootfsoffpadlen;
 	uint8_t readbuf[1024];
 	uint32_t crc = IMAGETAG_CRC_START;
 	const uint32_t deadcode = htonl(DEADCODE);
@@ -203,6 +203,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	rootfslen = getlen(rootfsfile);
 	rootfslen = (rootfslen % flash_bs) > 0 ? (((rootfslen / flash_bs) + 1) * flash_bs) : rootfslen;
 	imagelen = rootfsoff + rootfslen - kerneloff + sizeof(deadcode);
+	rootfsoffpadlen = rootfsoff - (kerneloff + kernellen);
 
 	/* Seek to the start of the kernel */
 	fseek(binfile, kerneloff - fwaddr, SEEK_SET);
@@ -260,7 +261,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 
 	if (kernelfile) {
 		sprintf(tag.kernel.address, "%lu", kerneloff);
-		sprintf(tag.kernel.len, "%lu", kernellen);
+		sprintf(tag.kernel.len, "%lu", kernellen + rootfsoffpadlen);
 	}
 
 	if (rootfsfile) {
