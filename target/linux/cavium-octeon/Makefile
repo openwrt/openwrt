@@ -9,10 +9,10 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=cavium-octeon
 BOARDNAME:=Cavium Networks Octeon
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs jffs2 pci
 CFLAGS:=-Os -pipe -funit-at-a-time
 
-LINUX_VERSION:=2.6.29.2
+LINUX_VERSION:=2.6.30-rc5
 
 include $(INCLUDE_DIR)/target.mk
 

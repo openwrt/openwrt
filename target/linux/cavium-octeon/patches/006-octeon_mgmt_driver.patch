@@ -620,14 +620,14 @@ diff --git a/drivers/net/Makefile b/drivers/net/Makefile
 index 4a92305..4cbc22e 100644
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -228,6 +228,7 @@ obj-$(CONFIG_PASEMI_MAC) += pasemi_mac_driver.o
- pasemi_mac_driver-objs := pasemi_mac.o pasemi_mac_ethtool.o
+@@ -234,6 +234,7 @@
  obj-$(CONFIG_MLX4_CORE) += mlx4/
  obj-$(CONFIG_ENC28J60) += enc28j60.o
+ obj-$(CONFIG_ETHOC) += ethoc.o
 +obj-$(CONFIG_OCTEON_MGMT) += octeon/
- 
+
  obj-$(CONFIG_XTENSA_XT2000_SONIC) += xtsonic.o
- 
+
 diff --git a/drivers/net/octeon/Makefile b/drivers/net/octeon/Makefile
 new file mode 100644
 index 0000000..f32f394

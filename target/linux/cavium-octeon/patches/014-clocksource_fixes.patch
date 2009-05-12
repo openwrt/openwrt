@@ -1,0 +1,31 @@
+From: Coly Li <coly.li@suse.de>
+Date: Wed, 22 Apr 2009 19:06:06 +0000 (+0800)
+Subject: MIPS: Cavium: Add struct clocksource * argument to octeon_cvmcount_read()
+X-Git-Url: http://www.linux-mips.org/git?p=linux.git;a=commitdiff_plain;h=06a4801f5f580bb98dd813466668592943f7baea;hp=bb13f16bff55ce7ffb67d0d600bab72b9cab773b
+
+MIPS: Cavium: Add struct clocksource * argument to octeon_cvmcount_read()
+
+This patch modifies parameter of octeon_cvmcount_read() from 'void' to
+'struct clocksource *cs', which fixes compile warning for incompatible
+parameter type.
+
+Signed-off-by: Coly Li <coly.li@suse.de>
+Cc: David Daney <ddaney@caviumnetworks.com>
+Cc: Ingo Molnar <mingo@elte.hu>
+Reviewed-by: David Daney <ddaney@caviumnetworks.com>
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+
+diff --git a/arch/mips/cavium-octeon/csrc-octeon.c b/arch/mips/cavium-octeon/csrc-octeon.c
+index 70fd92c..96110f2 100644
+--- a/arch/mips/cavium-octeon/csrc-octeon.c
++++ b/arch/mips/cavium-octeon/csrc-octeon.c
+@@ -38,7 +38,7 @@ void octeon_init_cvmcount(void)
+ 	local_irq_restore(flags);
+ }
+ 
+-static cycle_t octeon_cvmcount_read(void)
++static cycle_t octeon_cvmcount_read(struct clocksource *cs)
+ {
+ 	return read_c0_cvmcount();
+ }

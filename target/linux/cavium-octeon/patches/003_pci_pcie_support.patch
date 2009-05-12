@@ -55,14 +55,16 @@ diff --git a/arch/mips/cavium-octeon/Makefile b/arch/mips/cavium-octeon/Makefile
 index 1c2a7fa..2b5f08f 100644
 --- a/arch/mips/cavium-octeon/Makefile
 +++ b/arch/mips/cavium-octeon/Makefile
-@@ -14,3 +14,7 @@ obj-y += dma-octeon.o flash_setup.o
+@@ -14,5 +14,9 @@
  obj-y += octeon-memcpy.o
- 
+
  obj-$(CONFIG_SMP)                     += smp.o
 +obj-$(CONFIG_PCI)                     += pci-common.o
 +obj-$(CONFIG_PCI)                     += pci.o
 +obj-$(CONFIG_PCI)                     += pcie.o
 +obj-$(CONFIG_PCI_MSI)                 += msi.o
+
+ EXTRA_CFLAGS += -Werror
 diff --git a/arch/mips/cavium-octeon/dma-octeon.c b/arch/mips/cavium-octeon/dma-octeon.c
 index 01b1ef9..af3c26f 100644
 --- a/arch/mips/cavium-octeon/dma-octeon.c
