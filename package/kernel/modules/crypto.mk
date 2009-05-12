@@ -29,7 +29,7 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
   SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 endif
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.30)),1)
-  CRYPTO_MODULE_PCOMPRESS:=PCOMPRESS=pcompress
+  CRYPTO_MODULE_PCOMPRESS:=PCOMP=pcompress
 endif
 
 CRYPTO_MODULES = \
