@@ -125,7 +125,7 @@
 +
 +int hostap_restore_power(struct net_device *dev)
 +{
-+        struct hostap_interface *iface = dev->priv;
++        struct hostap_interface *iface = netdev_priv(dev);
 +       local_info_t *local = iface->local;
 +
 +       u16 val;
