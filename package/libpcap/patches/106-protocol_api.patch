@@ -24,7 +24,7 @@
  	 * we also have PF_PACKET support.)
  	 */
 -	sock_fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-+	sock_fd = socket(PF_PACKET, SOCK_RAW, handle->opt.proto);
++	sock_fd = socket(PF_PACKET, SOCK_RAW, p->opt.proto);
  	if (sock_fd == -1) {
  		(void)snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
  		    "socket: %s", pcap_strerror(errno));
