@@ -36,6 +36,27 @@ define Image/BuildKernel
 		-d $(KDIR)/vmlinux.bin.lzma $(IMGNAME)-uImage-lzma.bin
 endef
 
+define Image/Build/Linksys8M
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1310720 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6488064 ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1280k conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=6336k conv=sync; \
+			echo -n $(4); \
+		) > $(call imgname,$(1),$(2)).bin; \
+	fi; fi
+endef
+
 define Image/Build/AP81
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
@@ -118,6 +139,14 @@ define Image/Build/Template/Compex/squashfs
 	$(call Image/Build/Template/Compex,squashfs,$(1))
 endef
 
+define Image/Build/Template/Linksys8M
+	$(call Image/Build/Linksys8M,$(1),$(2),$(3),$(4))
+endef
+
+define Image/Build/Template/Linksys8M/squashfs
+	$(call Image/Build/Template/Linksys8M,squashfs,$(1),$(2),$(3))
+endef
+
 define Image/Build/Template/AP81
 	$(call Image/Build/AP81,$(1),$(2),$(3),$(4))
 endef
@@ -190,6 +219,10 @@ define Image/Build/Profile/TLWR941NDV2
 	$(call Image/Build/Template/TPLINK/$(1),tl-wr941ndv2,board=TL-WR941ND,TL-WR941NDv2)
 endef
 
+define Image/Build/Profile/WRT400N
+	$(call Image/Build/Template/Linksys8M/$(1),wrt400n,board=WRT400N)
+endef
+
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/A02RBW300N,$(1))
 	$(call Image/Build/Profile/DIR615C1,$(1))
@@ -201,6 +234,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/UBNTRS,$(1))
 	$(call Image/Build/Profile/UBNTLSSR71,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
+	$(call Image/Build/Profile/WRT400N,$(1))
 endef
 
 define Image/Build/Profile/Madwifi
