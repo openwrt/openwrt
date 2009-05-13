@@ -46,6 +46,10 @@ static struct mtd_partition wrt400n_partitions[] = {
 	} , {
 		.name		= "linux",
 		.offset		= 0x040000,
+		.size		= 0x770000,
+	} , {
+		.name		= "kernel",
+		.offset		= 0x040000,
 		.size		= 0x140000,
 	} , {
 		.name		= "rootfs",
