@@ -14,7 +14,9 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/openwrt-$(BOARD)-wbd111-zImage $(BIN_DIR)/openwrt-$(BOARD)-wbd111-zImage
+# workaround the bootloader's bug with extra nops
+	echo -en "\x00\x00\xa0\xe1\x00\x00\xa0\xe1\x00\x00\xa0\xe1\x00\x00\xa0\xe1" > $(BIN_DIR)/openwrt-$(BOARD)-wbd111-zImage
+	cat $(KDIR)/openwrt-$(BOARD)-wbd111-zImage >> $(BIN_DIR)/openwrt-$(BOARD)-wbd111-zImage
 endef
 
 define Image/Build/jffs2-64k
