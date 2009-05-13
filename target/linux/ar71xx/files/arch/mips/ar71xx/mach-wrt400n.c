@@ -46,10 +46,6 @@ static struct mtd_partition wrt400n_partitions[] = {
 	} , {
 		.name		= "linux",
 		.offset		= 0x040000,
-		.size		= 0x770000,
-	} , {
-		.name		= "kernel",
-		.offset		= 0x040000,
 		.size		= 0x140000,
 	} , {
 		.name		= "rootfs",
@@ -75,6 +71,10 @@ static struct mtd_partition wrt400n_partitions[] = {
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "firmware",
+		.offset		= 0x040000,
+		.size		= 0x770000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
