@@ -75,3 +75,45 @@
  }
  
  #if defined(CONFIG_NETFILTER_XT_TARGET_TRACE) || \
+@@ -328,8 +354,27 @@ ipt_do_table(struct sk_buff *skb,
+ 	struct xt_match_param mtpar;
+ 	struct xt_target_param tgpar;
+ 
+-	/* Initialization */
+ 	ip = ip_hdr(skb);
++
++	read_lock_bh(&table->lock);
++	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
++	private = table->private;
++	table_base = (void *)private->entries[smp_processor_id()];
++	e = get_entry(table_base, private->hook_entry[hook]);
++	if (e->target_offset <= sizeof(struct ipt_entry) &&
++		(e->ip.flags & IPT_F_NO_DEF_MATCH)) {
++			struct ipt_entry_target *t = ipt_get_target(e);
++			if (!t->u.kernel.target->target) {
++				int v = ((struct ipt_standard_target *)t)->verdict;
++				if ((v < 0) && (v != IPT_RETURN)) {
++					ADD_COUNTER(e->counters, ntohs(ip->tot_len), 1);
++					read_unlock_bh(&table->lock);
++					return (unsigned)(-v) - 1;
++				}
++			}
++	}
++
++	/* Initialization */
+ 	datalen = skb->len - ip->ihl * 4;
+ 	indev = in ? in->name : nulldevname;
+ 	outdev = out ? out->name : nulldevname;
+@@ -347,12 +392,6 @@ ipt_do_table(struct sk_buff *skb,
+ 	mtpar.family  = tgpar.family = NFPROTO_IPV4;
+ 	tgpar.hooknum = hook;
+ 
+-	read_lock_bh(&table->lock);
+-	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
+-	private = table->private;
+-	table_base = (void *)private->entries[smp_processor_id()];
+-	e = get_entry(table_base, private->hook_entry[hook]);
+-
+ 	/* For return from builtin chain */
+ 	back = get_entry(table_base, private->underflow[hook]);
+ 
