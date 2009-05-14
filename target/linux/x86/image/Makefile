@@ -16,19 +16,19 @@ ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 ifneq ($(HOST_OS),Darwin)
   define Image/cmdline/squashfs
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs
   endef
 
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2
   endef
 
   define Image/cmdline/ext2
-    root=$(ROOTPART) rootfstype=ext2 init=/etc/preinit
+    root=$(ROOTPART) rootfstype=ext2
   endef
   
   define Image/Build/grub

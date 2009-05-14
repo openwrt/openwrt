@@ -15,19 +15,19 @@ ROOTDELAY=5
 
 ifeq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),y)
   define Image/cmdline/squashfs
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit rootdelay=$(ROOTDELAY)
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs rootdelay=$(ROOTDELAY)
   endef
 
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit rootdelay=$(ROOTDELAY)
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootdelay=$(ROOTDELAY)
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit rootdelay=$(ROOTDELAY)
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootdelay=$(ROOTDELAY)
   endef
 
   define Image/cmdline/ext2
-    root=$(ROOTPART) rootfstype=ext2 init=/etc/preinit
+    root=$(ROOTPART) rootfstype=ext2
   endef
 
   define Image/Build/bootscript

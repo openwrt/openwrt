@@ -34,23 +34,23 @@ define Image/BuildKernel
 endef
 
 define Image/cmdline/jffs2-64k
-block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
+block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock0 rootfstype=jffs2
 endef
 
 define Image/cmdline/jffs2-128k
-block2mtd.block2mtd=/dev/sda2,131072 root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
+block2mtd.block2mtd=/dev/sda2,131072 root=/dev/mtdblock0 rootfstype=jffs2
 endef
 
 define Image/cmdline/ext2
-root=/dev/sda2 rootfstype=ext2 init=/etc/preinit
+root=/dev/sda2 rootfstype=ext2
 endef
 
 define Image/cmdline/squashfs
-block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
+block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock0 rootfstype=squashfs
 endef
 
 define Image/cmdline/yaffs2
-root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit
+root=/dev/mtdblock1 rootfstype=yaffs2
 endef
 
 define Image/Build

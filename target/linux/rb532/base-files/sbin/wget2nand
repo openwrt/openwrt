@@ -57,7 +57,7 @@ ls /tmp/wget2nand-boot/
 ls /tmp/wget2nand/
 # use kexec if present
 [ -x /usr/bin/kexec ] && {
-	kexec -l /tmp/wget2nand-boot/kernel --command-line="$(cat /proc/cmdline) root=$main rootfstype=yaffs2 init=/etc/preinit"
+	kexec -l /tmp/wget2nand-boot/kernel --command-line="$(cat /proc/cmdline) root=$main rootfstype=yaffs2"
 	kexec -e
 }
 
