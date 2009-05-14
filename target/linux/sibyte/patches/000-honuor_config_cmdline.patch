@@ -1,0 +1,14 @@
+--- a/arch/mips/sibyte/cfe/setup.c
++++ b/arch/mips/sibyte/cfe/setup.c
+@@ -293,7 +293,11 @@ void __init prom_init(void)
+ 			 * It's OK for direct boot to not provide a
+ 			 *  command line
+ 			 */
++#ifdef CONFIG_CMDLINE
++			strlcpy(arcs_cmdline, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
++#else
+ 			strcpy(arcs_cmdline, "root=/dev/ram0 ");
++#endif
+ 		} else {
+ 			/* The loader should have set the command line */
+ 			/* too early for panic to do any good */
