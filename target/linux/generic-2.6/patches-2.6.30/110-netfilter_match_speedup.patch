@@ -95,7 +95,7 @@
 +				int v = ((struct ipt_standard_target *)t)->verdict;
 +				if ((v < 0) && (v != IPT_RETURN)) {
 +					ADD_COUNTER(e->counters, ntohs(ip->tot_len), 1);
-+					read_unlock_bh(&table->lock);
++					xt_info_rdunlock_bh();
 +					return (unsigned)(-v) - 1;
 +				}
 +			}
