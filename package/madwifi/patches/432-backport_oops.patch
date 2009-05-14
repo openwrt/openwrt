@@ -1,0 +1,127 @@
+Convert to net_device_ops for Linux 2.6.29+
+http://madwifi-project.org/changeset/4005
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -566,6 +566,20 @@ static inline int rate_factor(int mode)
+ 
+ /* Initialize ath_softc structure */
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29)
++static const struct net_device_ops ath_netdev_ops = {
++	.ndo_open		= ath_init,
++	.ndo_stop		= ath_stop,
++	.ndo_start_xmit		= ath_hardstart,
++	.ndo_tx_timeout 	= ath_tx_timeout,
++	.ndo_set_multicast_list = ath_mode_init,
++	.ndo_do_ioctl		= ath_ioctl,
++	.ndo_get_stats		= ath_getstats,
++	.ndo_set_mac_address	= ath_set_mac_address,
++	.ndo_change_mtu 	= ath_change_mtu,
++};
++#endif
++
+ int
+ ath_attach(u_int16_t devid, struct net_device *dev, HAL_BUS_TAG tag)
+ {
+@@ -865,16 +879,20 @@ ath_attach(u_int16_t devid, struct net_d
+ 	}
+ 
+ 	/* NB: ether_setup is done by bus-specific code */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ 	dev->open = ath_init;
+ 	dev->stop = ath_stop;
+ 	dev->hard_start_xmit = ath_hardstart;
+ 	dev->tx_timeout = ath_tx_timeout;
+-	dev->watchdog_timeo = 5 * HZ;
+ 	dev->set_multicast_list = ath_mode_init;
+ 	dev->do_ioctl = ath_ioctl;
+ 	dev->get_stats = ath_getstats;
+ 	dev->set_mac_address = ath_set_mac_address;
+ 	dev->change_mtu = ath_change_mtu;
++#else
++	dev->netdev_ops = &ath_netdev_ops;
++#endif
++	dev->watchdog_timeo = 5 * HZ;
+ 	dev->tx_queue_len = ATH_TXBUF - ATH_TXBUF_MGT_RESERVED;
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+ 	netif_napi_add(dev, &sc->sc_napi, ath_rx_poll, 64);
+@@ -12726,8 +12744,13 @@ ath_rcv_dev_event(struct notifier_block 
+ 	struct net_device *dev = (struct net_device *)ptr;
+ 	struct ath_softc *sc = (struct ath_softc *)netdev_priv(dev);
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ 	if (!dev || !sc || dev->open != &ath_init)
+ 		return 0;
++#else
++	if (!dev || !sc || dev->netdev_ops->ndo_open != &ath_init)
++		return 0;
++#endif
+ 
+ 	switch (event) {
+ 	case NETDEV_CHANGENAME:
+--- a/net80211/ieee80211.c
++++ b/net80211/ieee80211.c
+@@ -450,6 +450,17 @@ ieee80211_ifdetach(struct ieee80211com *
+ }
+ EXPORT_SYMBOL(ieee80211_ifdetach);
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29)
++static const struct net_device_ops ieee80211_netdev_ops = {
++	.ndo_get_stats		= ieee80211_getstats,
++	.ndo_open		= ieee80211_open,
++	.ndo_stop		= ieee80211_stop,
++	.ndo_start_xmit		= ieee80211_hardstart,
++	.ndo_set_multicast_list = ieee80211_set_multicast_list,
++	.ndo_change_mtu 	= ieee80211_change_mtu,
++};
++#endif
++
+ int
+ ieee80211_vap_setup(struct ieee80211com *ic, struct net_device *dev,
+ 	const char *name, int opmode, int flags, struct ieee80211vap *master)
+@@ -470,12 +481,16 @@ ieee80211_vap_setup(struct ieee80211com 
+ 		} else
+ 			strncpy(dev->name, name, sizeof(dev->name));
+ 	}
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ 
+ 	dev->get_stats = ieee80211_getstats;
+ 	dev->open = ieee80211_open;
+ 	dev->stop = ieee80211_stop;
+ 	dev->hard_start_xmit = ieee80211_hardstart;
+ 	dev->set_multicast_list = ieee80211_set_multicast_list;
++#else
++	dev->netdev_ops = &ieee80211_netdev_ops;
++#endif
+ #if 0
+ 	dev->set_mac_address = ieee80211_set_mac_address;
+ #endif
+@@ -1823,7 +1838,11 @@ ieee80211_set_multicast_list(struct net_
+ 	IEEE80211_UNLOCK_IRQ(ic);
+ 
+ 	/* XXX: Merge multicast list into parent device */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ 	parent->set_multicast_list(ic->ic_dev);
++#else
++	parent->netdev_ops->ndo_set_multicast_list(ic->ic_dev);
++#endif
+ }
+ 
+ void
+--- a/net80211/ieee80211_linux.c
++++ b/net80211/ieee80211_linux.c
+@@ -984,8 +984,14 @@ ieee80211_rcv_dev_event(struct notifier_
+ 	void *ptr)
+ {
+ 	struct net_device *dev = (struct net_device *) ptr;
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ 	if (!dev || dev->open != &ieee80211_open)
+ 		return 0;
++#else
++	if (!dev || dev->netdev_ops->ndo_open != &ieee80211_open)
++		return 0;
++#endif
+ 
+ 	switch (event) {
+ 	case NETDEV_CHANGENAME:
