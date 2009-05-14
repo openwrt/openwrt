@@ -12,7 +12,7 @@
 --- u-boot-1.1.4.old/tools/ubparams.c	2007-06-13 13:35:59.000000000 +0200
 +++ u-boot-1.1.4/tools/ubparams.c	2007-06-14 15:31:55.000000000 +0200
 @@ -44,8 +44,8 @@
- 	"bootargs=setenv bootargs root=/dev/mtdblock3 ro init=/etc/preinit console=/dev/ttyS0,115200,mem=32M\0"
+ 	"bootargs=setenv bootargs root=/dev/mtdblock3 ro console=/dev/ttyS0,115200,mem=32M\0"
  	"bootcmd=bootm 0xc0042000\0"
  	"ethaddr=00:30:49:00:00:01\0"
 -	"ipaddr=10.0.1.73\0"

@@ -354,7 +354,7 @@ endef
 
 ifeq ($(PROFILE),RouterBoard)
   define Image/cmdline/yaffs2
-	root=/dev/mtdblock3 rootfstype=yaffs2 init=/etc/preinit
+	root=/dev/mtdblock3 rootfstype=yaffs2
   endef
 
   define Image/BuildKernel/RouterBoard

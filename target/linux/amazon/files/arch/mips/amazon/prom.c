@@ -62,7 +62,7 @@ void __init prom_init(void)
 	mips_machgroup = MACH_GROUP_INFINEON;
 	mips_machtype = MACH_INFINEON_AMAZON;
 
-	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
+	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2");
 	
 	add_memory_region(0x00000000, 0x1000000, BOOT_MEM_RAM);
 }

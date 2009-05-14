@@ -127,7 +127,7 @@ void __init prom_init(void)
 		}
 		if (!*arcs_cmdline)
 			strcpy(&(arcs_cmdline[0]),
-				"console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
+				"console=ttyS0,115200 rootfstype=squashfs,jffs2");
 	}
 	envp = (char **)KSEG1ADDR((unsigned long)envp);
 	while (*envp) {
