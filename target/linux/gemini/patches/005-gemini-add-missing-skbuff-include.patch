@@ -1,0 +1,39 @@
+--- a/arch/arm/mach-gemini/devices.c
++++ b/arch/arm/mach-gemini/devices.c
+@@ -13,6 +13,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/serial_8250.h>
+ #include <linux/mtd/physmap.h>
++#include <linux/skbuff.h>
+ 
+ #include <mach/irqs.h>
+ #include <mach/hardware.h>
+@@ -147,7 +148,7 @@ int platform_register_ethernet(struct ge
+ 	if (pdata->bus_id[1])
+ 		reg |= GMAC_1_ENABLE;
+ 	else if (pdata->interface[0] == PHY_INTERFACE_MODE_GMII)
+-		reg |= GMAC_GMII;		
++		reg |= GMAC_GMII;
+ 
+ 	__raw_writel(reg, IO_ADDRESS(GEMINI_GLOBAL_BASE) + GLOBAL_MISC_CTRL);
+ 
+--- a/drivers/net/phy/mdio-bitbang.c
++++ b/drivers/net/phy/mdio-bitbang.c
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include <linux/module.h>
++#include <linux/skbuff.h>
+ #include <linux/mdio-bitbang.h>
+ #include <linux/slab.h>
+ #include <linux/types.h>
+--- a/drivers/net/phy/mdio-gpio.c
++++ b/drivers/net/phy/mdio-gpio.c
+@@ -25,6 +25,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
++#include <linux/skbuff.h>
+ #include <linux/gpio.h>
+ #include <linux/mdio-gpio.h>
+ 
