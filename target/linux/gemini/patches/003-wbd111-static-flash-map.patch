@@ -1,14 +1,15 @@
 --- a/arch/arm/mach-gemini/board-wbd111.c
 +++ b/arch/arm/mach-gemini/board-wbd111.c
-@@ -15,6 +15,7 @@
- #include <linux/input.h>
+@@ -16,6 +16,8 @@
+ #include <linux/skbuff.h>
  #include <linux/gpio_keys.h>
  #include <linux/mdio-gpio.h>
++#include <linux/mtd/mtd.h>
 +#include <linux/mtd/partitions.h>
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
  #include <asm/mach/time.h>
-@@ -101,11 +102,50 @@ static struct sys_timer wbd111_timer = {
+@@ -102,11 +104,50 @@ static struct sys_timer wbd111_timer = {
  	.init	= gemini_timer_init,
  };
  
