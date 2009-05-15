@@ -82,9 +82,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
 +  dep_tristate '  random match support' CONFIG_IP_NF_MATCH_RANDOM $CONFIG_IP_NF_IPTABLES
-   dep_tristate '  TIME match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_TIME $CONFIG_IP_NF_IPTABLES
    dep_tristate '  condition match support' CONFIG_IP_NF_MATCH_CONDITION $CONFIG_IP_NF_IPTABLES
    dep_tristate '  recent match support' CONFIG_IP_NF_MATCH_RECENT $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  ECN match support' CONFIG_IP_NF_MATCH_ECN $CONFIG_IP_NF_IPTABLES
 Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c
 ===================================================================
 --- /dev/null
