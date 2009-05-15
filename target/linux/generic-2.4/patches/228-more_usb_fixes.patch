@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/scsi/hosts.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/scsi/hosts.c
-+++ linux-2.4.35.4/drivers/scsi/hosts.c
+--- a/drivers/scsi/hosts.c
++++ b/drivers/scsi/hosts.c
 @@ -107,8 +107,21 @@ scsi_unregister(struct Scsi_Host * sh){
      if (shn) shn->host_registered = 0;
      /* else {} : This should not happen, we should panic here... */
@@ -25,10 +23,8 @@ Index: linux-2.4.35.4/drivers/scsi/hosts.c
      kfree((char *) sh);
  }
  
-Index: linux-2.4.35.4/drivers/usb/hcd.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/hcd.c
-+++ linux-2.4.35.4/drivers/usb/hcd.c
+--- a/drivers/usb/hcd.c
++++ b/drivers/usb/hcd.c
 @@ -1105,7 +1105,8 @@ static int hcd_submit_urb (struct urb *u
  		break;
  	case PIPE_BULK:
@@ -49,10 +45,8 @@ Index: linux-2.4.35.4/drivers/usb/hcd.c
  			urb->transfer_dma = pci_map_single (
  					hcd->pdev,
  					urb->transfer_buffer,
-Index: linux-2.4.35.4/drivers/usb/host/ehci-hcd.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/host/ehci-hcd.c
-+++ linux-2.4.35.4/drivers/usb/host/ehci-hcd.c
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
 @@ -399,6 +399,27 @@ static int ehci_start (struct usb_hcd *h
  		ehci_mem_cleanup (ehci);
  		return retval;
@@ -81,10 +75,8 @@ Index: linux-2.4.35.4/drivers/usb/host/ehci-hcd.c
  	writel (INTR_MASK, &ehci->regs->intr_enable);
  	writel (ehci->periodic_dma, &ehci->regs->frame_list);
  
-Index: linux-2.4.35.4/drivers/usb/host/ehci-q.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/host/ehci-q.c
-+++ linux-2.4.35.4/drivers/usb/host/ehci-q.c
+--- a/drivers/usb/host/ehci-q.c
++++ b/drivers/usb/host/ehci-q.c
 @@ -791,6 +791,8 @@ static void qh_link_async (struct ehci_h
  			writel (cmd, &ehci->regs->command);
  			ehci->hcd.state = USB_STATE_RUNNING;
@@ -94,10 +86,8 @@ Index: linux-2.4.35.4/drivers/usb/host/ehci-q.c
  		}
  	}
  
-Index: linux-2.4.35.4/drivers/usb/host/usb-uhci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/host/usb-uhci.c
-+++ linux-2.4.35.4/drivers/usb/host/usb-uhci.c
+--- a/drivers/usb/host/usb-uhci.c
++++ b/drivers/usb/host/usb-uhci.c
 @@ -3034,6 +3034,21 @@ uhci_pci_probe (struct pci_dev *dev, con
  	
  	pci_set_master(dev);
@@ -120,10 +110,8 @@ Index: linux-2.4.35.4/drivers/usb/host/usb-uhci.c
  	/* Search for the IO base address.. */
  	for (i = 0; i < 6; i++) {
  
-Index: linux-2.4.35.4/drivers/usb/storage/transport.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/storage/transport.c
-+++ linux-2.4.35.4/drivers/usb/storage/transport.c
+--- a/drivers/usb/storage/transport.c
++++ b/drivers/usb/storage/transport.c
 @@ -54,6 +54,22 @@
  #include <linux/sched.h>
  #include <linux/errno.h>
@@ -752,10 +740,8 @@ Index: linux-2.4.35.4/drivers/usb/storage/transport.c
  		}
  	}
  	else
-Index: linux-2.4.35.4/drivers/usb/storage/transport.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/storage/transport.h
-+++ linux-2.4.35.4/drivers/usb/storage/transport.h
+--- a/drivers/usb/storage/transport.h
++++ b/drivers/usb/storage/transport.h
 @@ -127,6 +127,16 @@ struct bulk_cs_wrap {
  #define US_BULK_TRANSFER_ABORTED	3  /* transfer canceled             */
  
@@ -773,10 +759,8 @@ Index: linux-2.4.35.4/drivers/usb/storage/transport.h
   * Transport return codes
   */
  
-Index: linux-2.4.35.4/drivers/usb/storage/usb.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/storage/usb.h
-+++ linux-2.4.35.4/drivers/usb/storage/usb.h
+--- a/drivers/usb/storage/usb.h
++++ b/drivers/usb/storage/usb.h
 @@ -111,6 +111,60 @@ typedef int (*trans_reset)(struct us_dat
  typedef void (*proto_cmnd)(Scsi_Cmnd*, struct us_data*);
  typedef void (*extra_data_destructor)(void *);	 /* extra data destructor   */
@@ -846,10 +830,8 @@ Index: linux-2.4.35.4/drivers/usb/storage/usb.h
  
  	/* the semaphore for sleeping the control thread */
  	struct semaphore	sema;		 /* to sleep thread on   */
-Index: linux-2.4.35.4/include/linux/usb.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/usb.h
-+++ linux-2.4.35.4/include/linux/usb.h
+--- a/include/linux/usb.h
++++ b/include/linux/usb.h
 @@ -483,6 +483,8 @@ struct usb_driver {
  #define URB_NO_INTERRUPT	0x0080	/* HINT: no non-error interrupt needed */
  					/* ... less overhead for QUEUE_BULK */

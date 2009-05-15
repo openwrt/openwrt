@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/arch/mips/kernel/time.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/time.c
-+++ linux-2.4.35.4/arch/mips/kernel/time.c
+--- a/arch/mips/kernel/time.c
++++ b/arch/mips/kernel/time.c
 @@ -151,6 +151,27 @@ void (*mips_timer_ack)(void);
  unsigned int (*mips_hpt_read)(void);
  void (*mips_hpt_init)(unsigned int);
@@ -36,10 +34,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/time.c
  EXPORT_SYMBOL(rtc_get_time);
 +EXPORT_SYMBOL(get_htscl);
 +EXPORT_SYMBOL(get_tscll);
-Index: linux-2.4.35.4/include/asm-mips/timex.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/timex.h
-+++ linux-2.4.35.4/include/asm-mips/timex.h
+--- a/include/asm-mips/timex.h
++++ b/include/asm-mips/timex.h
 @@ -31,6 +31,19 @@ static inline cycles_t get_cycles (void)
  	return read_c0_count();
  }
@@ -60,10 +56,8 @@ Index: linux-2.4.35.4/include/asm-mips/timex.h
  #define vxtime_lock()		do {} while (0)
  #define vxtime_unlock()		do {} while (0)
  
-Index: linux-2.4.35.4/include/net/pkt_sched.h
-===================================================================
---- linux-2.4.35.4.orig/include/net/pkt_sched.h
-+++ linux-2.4.35.4/include/net/pkt_sched.h
+--- a/include/net/pkt_sched.h
++++ b/include/net/pkt_sched.h
 @@ -5,7 +5,11 @@
  #define PSCHED_JIFFIES 		2
  #define PSCHED_CPU 		3

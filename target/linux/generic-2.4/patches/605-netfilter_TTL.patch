@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -3209,6 +3209,15 @@ CONFIG_IP_NF_TARGET_LOG
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -18,10 +16,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  ipchains (2.2-style) support
  CONFIG_IP_NF_COMPAT_IPCHAINS
    This option places ipchains (with masquerading and redirection
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_TTL.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_TTL.h
++++ b/include/linux/netfilter_ipv4/ipt_TTL.h
 @@ -0,0 +1,21 @@
 +/* TTL modification module for IP tables
 + * (C) 2000 by Harald Welte <laforge@gnumonks.org> */
@@ -44,10 +40,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_TTL.h
 +
 +
 +#endif
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -125,6 +125,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
    fi
@@ -56,10 +50,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TCPMSS target support' CONFIG_IP_NF_TARGET_TCPMSS $CONFIG_IP_NF_IPTABLES
  fi
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_TTL.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_TTL.c
++++ b/net/ipv4/netfilter/ipt_TTL.c
 @@ -0,0 +1,110 @@
 +/* TTL modification target for IP tables
 + * (C) 2000 by Harald Welte <laforge@gnumonks.org>
@@ -171,10 +163,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_TTL.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -109,6 +109,7 @@ obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) +=
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o

@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -17995,6 +17995,34 @@ CONFIG_UNIXWARE_DISKLABEL
  
    If you don't know what all this is about, say N.
@@ -37,10 +35,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  SMB file system support (to mount Windows shares etc.)
  CONFIG_SMB_FS
    SMB (Server Message Block) is the protocol Windows for Workgroups
-Index: linux-2.4.35.4/Documentation/filesystems/00-INDEX
-===================================================================
---- linux-2.4.35.4.orig/Documentation/filesystems/00-INDEX
-+++ linux-2.4.35.4/Documentation/filesystems/00-INDEX
+--- a/Documentation/filesystems/00-INDEX
++++ b/Documentation/filesystems/00-INDEX
 @@ -10,6 +10,8 @@ befs.txt
  	- info for the BeOS file system (BFS)
  bfs.txt
@@ -50,10 +46,8 @@ Index: linux-2.4.35.4/Documentation/filesystems/00-INDEX
  coda.txt
  	- description of the CODA filesystem.
  cramfs.txt
-Index: linux-2.4.35.4/Documentation/filesystems/cifs.txt
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/Documentation/filesystems/cifs.txt
++++ b/Documentation/filesystems/cifs.txt
 @@ -0,0 +1,51 @@
 +  This is the client VFS module for the Common Internet File System
 +  (CIFS) protocol which is the successor to the Server Message Block 
@@ -106,10 +100,8 @@ Index: linux-2.4.35.4/Documentation/filesystems/cifs.txt
 +  or the Samba site:
 +     
 +      http://www.samba.org
-Index: linux-2.4.35.4/fs/cifs/asn1.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/asn1.c
++++ b/fs/cifs/asn1.c
 @@ -0,0 +1,614 @@
 +/* 
 + * The ASB.1/BER parsing code is derived from ip_nat_snmp_basic.c which was in
@@ -725,10 +717,8 @@ Index: linux-2.4.35.4/fs/cifs/asn1.c
 +
 +	return 1;
 +}
-Index: linux-2.4.35.4/fs/cifs/AUTHORS
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/AUTHORS
++++ b/fs/cifs/AUTHORS
 @@ -0,0 +1,37 @@
 +Original Author
 +===============
@@ -767,10 +757,8 @@ Index: linux-2.4.35.4/fs/cifs/AUTHORS
 +
 +And thanks to the IBM LTC and Power test teams and SuSE testers for
 +finding multiple bugs during excellent stress test runs.
-Index: linux-2.4.35.4/fs/cifs/CHANGES
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/CHANGES
++++ b/fs/cifs/CHANGES
 @@ -0,0 +1,572 @@
 +Version 1.20
 +------------
@@ -1344,10 +1332,8 @@ Index: linux-2.4.35.4/fs/cifs/CHANGES
 +-----------
 +Initial drop
 +
-Index: linux-2.4.35.4/fs/cifs/cifs_debug.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifs_debug.c
++++ b/fs/cifs/cifs_debug.c
 @@ -0,0 +1,797 @@
 +/*
 + *   fs/cifs_debug.c
@@ -2146,10 +2132,8 @@ Index: linux-2.4.35.4/fs/cifs/cifs_debug.c
 +
 +
 +#endif
-Index: linux-2.4.35.4/fs/cifs/cifs_debug.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifs_debug.h
++++ b/fs/cifs/cifs_debug.h
 @@ -0,0 +1,66 @@
 +/*
 + *
@@ -2217,10 +2201,8 @@ Index: linux-2.4.35.4/fs/cifs/cifs_debug.h
 +#endif		/* _CIFS_DEBUG */
 +
 +#endif				/* _H_CIFS_DEBUG */
-Index: linux-2.4.35.4/fs/cifs/cifsencrypt.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifsencrypt.c
++++ b/fs/cifs/cifsencrypt.c
 @@ -0,0 +1,204 @@
 +/*
 + *   fs/cifs/cifsencrypt.c
@@ -2426,10 +2408,8 @@ Index: linux-2.4.35.4/fs/cifs/cifsencrypt.c
 +
 +	hmac_md5_final(v2_session_response,&context);
 +}
-Index: linux-2.4.35.4/fs/cifs/cifserr.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifserr.c
++++ b/fs/cifs/cifserr.c
 @@ -0,0 +1,70 @@
 +/*
 + *   fs/cifserr.c
@@ -2501,10 +2481,8 @@ Index: linux-2.4.35.4/fs/cifs/cifserr.c
 +{
 +	return map_cifs_error(error_class, error_code, FALSE);
 +}
-Index: linux-2.4.35.4/fs/cifs/cifsfs.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifsfs.c
++++ b/fs/cifs/cifsfs.c
 @@ -0,0 +1,769 @@
 +/*
 + *   fs/cifs/cifsfs.c
@@ -3275,10 +3253,8 @@ Index: linux-2.4.35.4/fs/cifs/cifsfs.c
 +    ("VFS to access servers complying with the SNIA CIFS Specification e.g. Samba and Windows");
 +module_init(init_cifs)
 +module_exit(exit_cifs)
-Index: linux-2.4.35.4/fs/cifs/cifsfs.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifsfs.h
++++ b/fs/cifs/cifsfs.h
 @@ -0,0 +1,97 @@
 +/*
 + *   fs/cifs/cifsfs.h
@@ -3377,10 +3353,8 @@ Index: linux-2.4.35.4/fs/cifs/cifsfs.h
 +extern ssize_t	cifs_listxattr(struct dentry *, char *, size_t);
 +#define CIFS_VERSION   "1.20"
 +#endif				/* _CIFSFS_H */
-Index: linux-2.4.35.4/fs/cifs/cifs_fs_sb.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifs_fs_sb.h
++++ b/fs/cifs/cifs_fs_sb.h
 @@ -0,0 +1,32 @@
 +/*
 + *   fs/cifs/cifs_fs_sb.h
@@ -3414,10 +3388,8 @@ Index: linux-2.4.35.4/fs/cifs/cifs_fs_sb.h
 +	mode_t	mnt_dir_mode;
 +};
 +#endif				/* _CIFS_FS_SB_H */
-Index: linux-2.4.35.4/fs/cifs/cifsglob.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifsglob.h
++++ b/fs/cifs/cifsglob.h
 @@ -0,0 +1,413 @@
 +/*
 + *   fs/cifs/cifsglob.h
@@ -3832,10 +3804,8 @@ Index: linux-2.4.35.4/fs/cifs/cifsglob.h
 +GLOBAL_EXTERN unsigned int sign_CIFS_PDUs;  /* enable smb packet signing */
 +GLOBAL_EXTERN unsigned int linuxExtEnabled;  /* enable Linux/Unix CIFS extensions */
 +
-Index: linux-2.4.35.4/fs/cifs/cifspdu.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifspdu.h
++++ b/fs/cifs/cifspdu.h
 @@ -0,0 +1,1793 @@
 +/*
 + *   fs/cifs/cifspdu.h
@@ -5630,10 +5600,8 @@ Index: linux-2.4.35.4/fs/cifs/cifspdu.h
 +#pragma pack()			/* resume default structure packing */
 +
 +#endif				/* _CIFSPDU_H */
-Index: linux-2.4.35.4/fs/cifs/cifsproto.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifsproto.h
++++ b/fs/cifs/cifsproto.h
 @@ -0,0 +1,254 @@
 +/*
 + *   fs/cifs/cifsproto.h
@@ -5889,10 +5857,8 @@ Index: linux-2.4.35.4/fs/cifs/cifsproto.h
 +		 char * EAData, size_t size,
 +		 const struct nls_table *nls_codepage);
 +#endif			/* _CIFSPROTO_H */
-Index: linux-2.4.35.4/fs/cifs/cifssmb.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifssmb.c
++++ b/fs/cifs/cifssmb.c
 @@ -0,0 +1,3016 @@
 +/*
 + *   fs/cifs/cifssmb.c
@@ -8910,10 +8876,8 @@ Index: linux-2.4.35.4/fs/cifs/cifssmb.c
 +	return rc;
 +}
 +#endif
-Index: linux-2.4.35.4/fs/cifs/cifs_unicode.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifs_unicode.c
++++ b/fs/cifs/cifs_unicode.c
 @@ -0,0 +1,87 @@
 +/*
 + *   fs/cifs/cifs_unicode.c
@@ -9002,10 +8966,8 @@ Index: linux-2.4.35.4/fs/cifs/cifs_unicode.c
 +	return i;
 +}
 +
-Index: linux-2.4.35.4/fs/cifs/cifs_unicode.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifs_unicode.h
++++ b/fs/cifs/cifs_unicode.h
 @@ -0,0 +1,353 @@
 +/*
 + * cifs_unicode:  Unicode kernel case support
@@ -9360,10 +9322,8 @@ Index: linux-2.4.35.4/fs/cifs/cifs_unicode.h
 +}
 +
 +#endif
-Index: linux-2.4.35.4/fs/cifs/cifs_uniupr.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/cifs_uniupr.h
++++ b/fs/cifs/cifs_uniupr.h
 @@ -0,0 +1,253 @@
 +/*
 + *   Copyright (c) International Business Machines  Corp., 2000,2002
@@ -9618,10 +9578,8 @@ Index: linux-2.4.35.4/fs/cifs/cifs_uniupr.h
 +	0, 0, 0
 +};
 +#endif
-Index: linux-2.4.35.4/fs/cifs/connect.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/connect.c
++++ b/fs/cifs/connect.c
 @@ -0,0 +1,2924 @@
 +/*
 + *   fs/cifs/connect.c
@@ -12547,10 +12505,8 @@ Index: linux-2.4.35.4/fs/cifs/connect.c
 +	return rc;
 +}
 +
-Index: linux-2.4.35.4/fs/cifs/dir.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/dir.c
++++ b/fs/cifs/dir.c
 @@ -0,0 +1,425 @@
 +/*
 + *   fs/cifs/dir.c
@@ -12977,10 +12933,8 @@ Index: linux-2.4.35.4/fs/cifs/dir.c
 +/* d_delete:       cifs_d_delete,       *//* not needed except for debugging */
 +	/* no need for d_hash, d_compare, d_release, d_iput ... yet. BB confirm this BB */
 +};
-Index: linux-2.4.35.4/fs/cifs/file.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/file.c
++++ b/fs/cifs/file.c
 @@ -0,0 +1,2185 @@
 +/*
 + *   fs/cifs/file.c
@@ -15167,10 +15121,8 @@ Index: linux-2.4.35.4/fs/cifs/file.c
 +	.sync_page = cifs_sync_page,
 +	/*.direct_IO = */
 +};
-Index: linux-2.4.35.4/fs/cifs/inode.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/inode.c
++++ b/fs/cifs/inode.c
 @@ -0,0 +1,1079 @@
 +/*
 + *   fs/cifs/inode.c
@@ -16251,10 +16203,8 @@ Index: linux-2.4.35.4/fs/cifs/inode.c
 +	/* may have to add back in if and when safe distributed caching of
 +		directories added e.g. via FindNotify */
 +}
-Index: linux-2.4.35.4/fs/cifs/link.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/link.c
++++ b/fs/cifs/link.c
 @@ -0,0 +1,328 @@
 +/*
 + *   fs/cifs/link.c
@@ -16584,10 +16534,8 @@ Index: linux-2.4.35.4/fs/cifs/link.c
 +	FreeXid(xid);
 +	return rc;
 +}
-Index: linux-2.4.35.4/fs/cifs/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/Makefile
++++ b/fs/cifs/Makefile
 @@ -0,0 +1,10 @@
 +#
 +# Makefile for Linux CIFS VFS client 
@@ -16599,10 +16547,8 @@ Index: linux-2.4.35.4/fs/cifs/Makefile
 +obj-m := $(O_TARGET)
 +
 +include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/fs/cifs/md4.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/md4.c
++++ b/fs/cifs/md4.c
 @@ -0,0 +1,203 @@
 +/* 
 +   Unix SMB/Netbios implementation.
@@ -16807,10 +16753,8 @@ Index: linux-2.4.35.4/fs/cifs/md4.c
 +
 +	A = B = C = D = 0;
 +}
-Index: linux-2.4.35.4/fs/cifs/md5.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/md5.c
++++ b/fs/cifs/md5.c
 @@ -0,0 +1,363 @@
 +/*
 + * This code implements the MD5 message-digest algorithm.
@@ -17175,10 +17119,8 @@ Index: linux-2.4.35.4/fs/cifs/md5.c
 +	}
 +	hmac_md5_final(digest, &ctx);
 +}
-Index: linux-2.4.35.4/fs/cifs/md5.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/md5.h
++++ b/fs/cifs/md5.h
 @@ -0,0 +1,38 @@
 +#ifndef MD5_H
 +#define MD5_H
@@ -17218,10 +17160,8 @@ Index: linux-2.4.35.4/fs/cifs/md5.h
 +void hmac_md5_final(unsigned char *digest, struct HMACMD5Context *ctx);
 +void hmac_md5(unsigned char key[16], unsigned char *data, int data_len,
 +			unsigned char *digest);
-Index: linux-2.4.35.4/fs/cifs/misc.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/misc.c
++++ b/fs/cifs/misc.c
 @@ -0,0 +1,463 @@
 +/*
 + *   fs/cifs/misc.c
@@ -17686,10 +17626,8 @@ Index: linux-2.4.35.4/fs/cifs/misc.c
 +	printk( " | %s\n", debug_line);
 +	return;
 +}
-Index: linux-2.4.35.4/fs/cifs/netmisc.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/netmisc.c
++++ b/fs/cifs/netmisc.c
 @@ -0,0 +1,905 @@
 +/*
 + *   fs/cifs/netmisc.c
@@ -18596,10 +18534,8 @@ Index: linux-2.4.35.4/fs/cifs/netmisc.c
 +	dce_time += NTFS_TIME_OFFSET;
 +	return dce_time;
 +}
-Index: linux-2.4.35.4/fs/cifs/nterr.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/nterr.c
++++ b/fs/cifs/nterr.c
 @@ -0,0 +1,687 @@
 +/* 
 + *  Unix SMB/Netbios implementation.
@@ -19288,10 +19224,8 @@ Index: linux-2.4.35.4/fs/cifs/nterr.c
 +	{"STATUS_SOME_UNMAPPED", STATUS_SOME_UNMAPPED},
 +	{NULL, 0}
 +};
-Index: linux-2.4.35.4/fs/cifs/nterr.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/nterr.h
++++ b/fs/cifs/nterr.h
 @@ -0,0 +1,556 @@
 +/* 
 +   Unix SMB/Netbios implementation.
@@ -19849,10 +19783,8 @@ Index: linux-2.4.35.4/fs/cifs/nterr.h
 +#define NT_STATUS_NO_SUCH_JOB 0xC0000000 | 0xEDE	/* scheduler */
 +
 +#endif				/* _NTERR_H */
-Index: linux-2.4.35.4/fs/cifs/ntlmssp.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/ntlmssp.h
++++ b/fs/cifs/ntlmssp.h
 @@ -0,0 +1,101 @@
 +/*
 + *   fs/cifs/ntlmssp.h
@@ -19955,10 +19887,8 @@ Index: linux-2.4.35.4/fs/cifs/ntlmssp.h
 +} AUTHENTICATE_MESSAGE, *PAUTHENTICATE_MESSAGE;
 +
 +#pragma pack()			/* resume default structure packing */
-Index: linux-2.4.35.4/fs/cifs/README
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/README
++++ b/fs/cifs/README
 @@ -0,0 +1,356 @@
 +The CIFS VFS support for Linux supports many advanced network filesystem 
 +features such as heirarchical dfs like namespace, hardlinks, locking and more.  
@@ -20316,10 +20246,8 @@ Index: linux-2.4.35.4/fs/cifs/README
 +Windows 2000 server or Samba since it does not usually send "raw NTLMSSP" 
 +(instead it sends NTLMSSP encapsulated in SPNEGO/GSSAPI, which support is not 
 +complete in the CIFS VFS yet).  
-Index: linux-2.4.35.4/fs/cifs/rfc1002pdu.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/rfc1002pdu.h
++++ b/fs/cifs/rfc1002pdu.h
 @@ -0,0 +1,79 @@
 +/*
 + *   fs/cifs/rfc1002pdu.h
@@ -20400,10 +20328,8 @@ Index: linux-2.4.35.4/fs/cifs/rfc1002pdu.h
 +
 +#pragma pack()		/* resume default structure packing */
 +                                                             
-Index: linux-2.4.35.4/fs/cifs/smbdes.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/smbdes.c
++++ b/fs/cifs/smbdes.c
 @@ -0,0 +1,408 @@
 +/* 
 +   Unix SMB/Netbios implementation.
@@ -20813,10 +20739,8 @@ Index: linux-2.4.35.4/fs/cifs/smbdes.c
 +	key2[0] = key[7];
 +	smbhash(out + 8, in + 8, key2, forw);
 +}
-Index: linux-2.4.35.4/fs/cifs/smbencrypt.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/smbencrypt.c
++++ b/fs/cifs/smbencrypt.c
 @@ -0,0 +1,295 @@
 +/* 
 +   Unix SMB/Netbios implementation.
@@ -21113,10 +21037,8 @@ Index: linux-2.4.35.4/fs/cifs/smbencrypt.c
 +{
 +	mdfour((unsigned char *) sess_key, (unsigned char *) kr, 16);
 +}
-Index: linux-2.4.35.4/fs/cifs/smberr.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/smberr.c
++++ b/fs/cifs/smberr.c
 @@ -0,0 +1,240 @@
 +/* 
 +   Unix SMB/Netbios implementation.
@@ -21358,10 +21280,8 @@ Index: linux-2.4.35.4/fs/cifs/smberr.c
 +	NTSTATUS status = map_nt_error_from_unix(error);
 +	return ntstatus_to_werror(status);
 +}
-Index: linux-2.4.35.4/fs/cifs/smberr.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/smberr.h
++++ b/fs/cifs/smberr.h
 @@ -0,0 +1,113 @@
 +/*
 + *   fs/cifs/smberr.h
@@ -21476,10 +21396,8 @@ Index: linux-2.4.35.4/fs/cifs/smberr.h
 +#define ERRpasswordExpired 2242
 +#define ERRnetlogonNotStarted 2455
 +#define ERRnosupport       0xFFFF
-Index: linux-2.4.35.4/fs/cifs/TODO
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/TODO
++++ b/fs/cifs/TODO
 @@ -0,0 +1,106 @@
 +version 1.16 May 27, 2004
 +
@@ -21587,10 +21505,8 @@ Index: linux-2.4.35.4/fs/cifs/TODO
 +4) More exhaustively test the recently added NT4 support against various
 +NT4 service pack levels.
 +
-Index: linux-2.4.35.4/fs/cifs/transport.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/cifs/transport.c
++++ b/fs/cifs/transport.c
 @@ -0,0 +1,434 @@
 +/*
 + *   fs/cifs/transport.c
@@ -22026,10 +21942,8 @@ Index: linux-2.4.35.4/fs/cifs/transport.c
 +
 +	return rc;
 +}
-Index: linux-2.4.35.4/fs/Config.in
-===================================================================
---- linux-2.4.35.4.orig/fs/Config.in
-+++ linux-2.4.35.4/fs/Config.in
+--- a/fs/Config.in
++++ b/fs/Config.in
 @@ -153,6 +153,10 @@ if [ "$CONFIG_NET" = "y" ]; then
       define_bool CONFIG_LOCKD_V4 y
     fi
@@ -22041,10 +21955,8 @@ Index: linux-2.4.35.4/fs/Config.in
     dep_tristate 'SMB file system support (to mount Windows shares etc.)' CONFIG_SMB_FS $CONFIG_INET
     if [ "$CONFIG_SMB_FS" != "n" ]; then
        bool '  Use a default NLS' CONFIG_SMB_NLS_DEFAULT
-Index: linux-2.4.35.4/fs/Makefile
-===================================================================
---- linux-2.4.35.4.orig/fs/Makefile
-+++ linux-2.4.35.4/fs/Makefile
+--- a/fs/Makefile
++++ b/fs/Makefile
 @@ -37,6 +37,7 @@ subdir-$(CONFIG_MSDOS_FS)	+= msdos
  subdir-$(CONFIG_VFAT_FS)	+= vfat
  subdir-$(CONFIG_BFS_FS)		+= bfs
@@ -22053,10 +21965,8 @@ Index: linux-2.4.35.4/fs/Makefile
  subdir-$(CONFIG_DEVFS_FS)	+= devfs
  subdir-$(CONFIG_HFSPLUS_FS)	+= hfsplus # Before hfs to find wrapped HFS+
  subdir-$(CONFIG_HFS_FS)		+= hfs
-Index: linux-2.4.35.4/fs/nls/Config.in
-===================================================================
---- linux-2.4.35.4.orig/fs/nls/Config.in
-+++ linux-2.4.35.4/fs/nls/Config.in
+--- a/fs/nls/Config.in
++++ b/fs/nls/Config.in
 @@ -11,6 +11,7 @@ fi
  
  # msdos and Joliet want NLS

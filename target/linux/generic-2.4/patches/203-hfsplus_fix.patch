@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/fs/hfsplus/super.c
-===================================================================
---- linux-2.4.35.4.orig/fs/hfsplus/super.c
-+++ linux-2.4.35.4/fs/hfsplus/super.c
+--- a/fs/hfsplus/super.c
++++ b/fs/hfsplus/super.c
 @@ -240,8 +240,7 @@ int hfsplus_remount(struct super_block *
  	if (!(*flags & MS_RDONLY)) {
  		struct hfsplus_vh *vhdr = HFSPLUS_SB(sb).s_vhdr;

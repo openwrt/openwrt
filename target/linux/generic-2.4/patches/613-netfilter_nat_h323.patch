@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -15,6 +15,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
    dep_tristate '  Connection byte counter support' CONFIG_IP_NF_MATCH_CONNBYTES $CONFIG_IP_NF_CT_ACCT $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
@@ -24,10 +22,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
        if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
          dep_tristate '    Basic SNMP-ALG support (EXPERIMENTAL)' CONFIG_IP_NF_NAT_SNMP_BASIC $CONFIG_IP_NF_NAT
        fi
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -53,6 +53,10 @@ obj-$(CONFIG_IP_NF_PPTP) += ip_conntrack
  ifdef CONFIG_IP_NF_NAT_PPTP
  	export-objs += ip_conntrack_pptp.o
@@ -47,10 +43,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  
  # generic IP tables 
  obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_h323.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_h323.c
++++ b/net/ipv4/netfilter/ip_conntrack_h323.c
 @@ -0,0 +1,302 @@
 +/* 
 + * H.323 'brute force' extension for H.323 connection tracking. 
@@ -354,10 +348,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_h323.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_h323.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_h323.c
++++ b/net/ipv4/netfilter/ip_nat_h323.c
 @@ -0,0 +1,403 @@
 +/* 
 + * H.323 'brute force' extension for NAT alteration. 
@@ -762,10 +754,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_h323.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+--- a/include/linux/netfilter_ipv4/ip_conntrack.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack.h
 @@ -71,6 +71,7 @@ union ip_conntrack_expect_proto {
  #include <linux/netfilter_ipv4/ip_conntrack_ftp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
@@ -790,10 +780,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  };
  
  #ifdef CONFIG_IP_NF_NAT_NEEDED
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_h323.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_h323.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack_h323.h
 @@ -0,0 +1,30 @@
 +#ifndef _IP_CONNTRACK_H323_H
 +#define _IP_CONNTRACK_H323_H

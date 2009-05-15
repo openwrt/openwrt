@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_multiport.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ipt_multiport.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_multiport.h
+--- a/include/linux/netfilter_ipv4/ipt_multiport.h
++++ b/include/linux/netfilter_ipv4/ipt_multiport.h
 @@ -11,11 +11,12 @@ enum ipt_multiport_flags
  
  #define IPT_MULTI_PORTS	15
@@ -17,10 +15,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_multiport.h
 +	u_int8_t invert;			/* Invert flag */
  };
  #endif /*_IPT_MULTIPORT_H*/
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_multiport.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ipt_multiport.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_multiport.c
+--- a/net/ipv4/netfilter/ipt_multiport.c
++++ b/net/ipv4/netfilter/ipt_multiport.c
 @@ -1,5 +1,14 @@
  /* Kernel module to match one of a list of TCP/UDP ports: ports are in
     the same place so we can treat them as equal. */

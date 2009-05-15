@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+--- a/include/linux/netfilter_ipv4/ip_conntrack.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack.h
 @@ -50,16 +50,19 @@ enum ip_conntrack_status {
  
  #include <linux/netfilter_ipv4/ip_conntrack_tcp.h>
@@ -56,10 +54,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  };
  #endif
  
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
 @@ -0,0 +1,313 @@
 +/* PPTP constants and structs */
 +#ifndef _CONNTRACK_PPTP_H
@@ -374,10 +370,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
 +
 +#endif /* __KERNEL__ */
 +#endif /* _CONNTRACK_PPTP_H */
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
 @@ -0,0 +1,123 @@
 +#ifndef _CONNTRACK_PROTO_GRE_H
 +#define _CONNTRACK_PROTO_GRE_H
@@ -502,10 +496,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
 +#endif /* __KERNEL__ */
 +
 +#endif /* _CONNTRACK_PROTO_GRE_H */
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
+--- a/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
 @@ -14,7 +14,7 @@
  union ip_conntrack_manip_proto
  {
@@ -564,10 +556,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
  
  #define CTINFO2DIR(ctinfo) ((ctinfo) >= IP_CT_IS_REPLY ? IP_CT_DIR_REPLY : IP_CT_DIR_ORIGINAL)
  
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat_pptp.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat_pptp.h
++++ b/include/linux/netfilter_ipv4/ip_nat_pptp.h
 @@ -0,0 +1,11 @@
 +/* PPTP constants and structs */
 +#ifndef _NAT_PPTP_H
@@ -580,10 +570,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat_pptp.h
 +};
 +
 +#endif /* _NAT_PPTP_H */
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -10,6 +10,8 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
@@ -614,10 +602,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
        if [ "$CONFIG_IP_NF_AMANDA" = "m" ]; then
          define_tristate CONFIG_IP_NF_NAT_AMANDA m
        else
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+--- a/net/ipv4/netfilter/ip_conntrack_core.c
++++ b/net/ipv4/netfilter/ip_conntrack_core.c
 @@ -143,6 +143,8 @@ ip_ct_get_tuple(const struct iphdr *iph,
  	tuple->dst.ip = iph->daddr;
  	tuple->dst.protonum = iph->protocol;
@@ -667,10 +653,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  		    && LIST_FIND(&ip_conntrack_expect_list, expect_clash,
  			         struct ip_conntrack_expect *, newtuple, &expect->mask)) {
  			/* Force NAT to find an unused tuple */
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
++++ b/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
 @@ -0,0 +1,24 @@
 +#ifndef _IP_CT_PPTP_PRIV_H
 +#define _IP_CT_PPTP_PRIV_H
@@ -696,10 +680,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
 +};
 +
 +#endif
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
++++ b/net/ipv4/netfilter/ip_conntrack_proto_gre.c
 @@ -0,0 +1,333 @@
 +/*
 + * ip_conntrack_proto_gre.c - Version 1.2 
@@ -1034,10 +1016,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_nat_core.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
+--- a/net/ipv4/netfilter/ip_nat_core.c
++++ b/net/ipv4/netfilter/ip_nat_core.c
 @@ -424,7 +424,7 @@ get_unique_tuple(struct ip_conntrack_tup
  	*tuple = *orig_tuple;
  	while ((rptr = find_best_ips_proto_fast(tuple, mr, conntrack, hooknum))
@@ -1059,10 +1039,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
  #endif
  
  		/* We now have two tuples (SRCIP/SRCPT/DSTIP/DSTPT):
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_pptp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_pptp.c
++++ b/net/ipv4/netfilter/ip_nat_pptp.c
 @@ -0,0 +1,482 @@
 +/*
 + * ip_nat_pptp.c	- Version 1.5
@@ -1546,10 +1524,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_pptp.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_proto_gre.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_proto_gre.c
++++ b/net/ipv4/netfilter/ip_nat_proto_gre.c
 @@ -0,0 +1,202 @@
 +/*
 + * ip_nat_proto_gre.c - Version 1.2
@@ -1753,10 +1729,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_proto_gre.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -36,23 +36,32 @@ obj-$(CONFIG_IP_NF_AMANDA) += ip_conntra
  ifdef CONFIG_IP_NF_AMANDA
  	export-objs += ip_conntrack_amanda.o
@@ -1792,10 +1766,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  
  # generic IP tables 
  obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_pptp.c
++++ b/net/ipv4/netfilter/ip_conntrack_pptp.c
 @@ -0,0 +1,635 @@
 +/*
 + * ip_conntrack_pptp.c	- Version 1.9

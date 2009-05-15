@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/usb/serial/pl2303.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/serial/pl2303.c
-+++ linux-2.4.35.4/drivers/usb/serial/pl2303.c
+--- a/drivers/usb/serial/pl2303.c
++++ b/drivers/usb/serial/pl2303.c
 @@ -78,6 +78,11 @@ static struct usb_device_id id_table [] 
  	{ USB_DEVICE(RADIOSHACK_VENDOR_ID, RADIOSHACK_PRODUCT_ID) },
  	{ USB_DEVICE(DCU10_VENDOR_ID, DCU10_PRODUCT_ID) },
@@ -14,10 +12,8 @@ Index: linux-2.4.35.4/drivers/usb/serial/pl2303.c
  	{ }					/* Terminating entry */
  };
  
-Index: linux-2.4.35.4/drivers/usb/serial/pl2303.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/serial/pl2303.h
-+++ linux-2.4.35.4/drivers/usb/serial/pl2303.h
+--- a/drivers/usb/serial/pl2303.h
++++ b/drivers/usb/serial/pl2303.h
 @@ -41,3 +41,21 @@
  
  #define SITECOM_VENDOR_ID	0x6189

@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/arch/mips/kernel/signal.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/signal.c
-+++ linux-2.4.35.4/arch/mips/kernel/signal.c
+--- a/arch/mips/kernel/signal.c
++++ b/arch/mips/kernel/signal.c
 @@ -6,8 +6,10 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 1999  Ralf Baechle
@@ -35,10 +33,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/signal.c
  {
  	sigset_t *unewset, saveset, newset;
          size_t sigsetsize;
-Index: linux-2.4.35.4/arch/mips/kernel/syscall.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/syscall.c
-+++ linux-2.4.35.4/arch/mips/kernel/syscall.c
+--- a/arch/mips/kernel/syscall.c
++++ b/arch/mips/kernel/syscall.c
 @@ -5,6 +5,7 @@
   *
   * Copyright (C) 1995 - 2000 by Ralf Baechle
@@ -69,10 +65,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/syscall.c
  {
  	unsigned long clone_flags;
  	unsigned long newsp;
-Index: linux-2.4.35.4/arch/mips/ld.script.in
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/ld.script.in
-+++ linux-2.4.35.4/arch/mips/ld.script.in
+--- a/arch/mips/ld.script.in
++++ b/arch/mips/ld.script.in
 @@ -9,6 +9,7 @@ SECTIONS
    {
      _ftext = . ;
@@ -81,10 +75,8 @@ Index: linux-2.4.35.4/arch/mips/ld.script.in
      *(.rodata)
      *(.rodata.*)
      *(.rodata1)
-Index: linux-2.4.35.4/arch/mips64/kernel/signal.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/signal.c
-+++ linux-2.4.35.4/arch/mips64/kernel/signal.c
+--- a/arch/mips64/kernel/signal.c
++++ b/arch/mips64/kernel/signal.c
 @@ -6,8 +6,10 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 2000  Ralf Baechle
@@ -107,10 +99,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal.c
  {
  	sigset_t *unewset, saveset, newset;
          size_t sigsetsize;
-Index: linux-2.4.35.4/arch/mips64/kernel/signal32.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/signal32.c
-+++ linux-2.4.35.4/arch/mips64/kernel/signal32.c
+--- a/arch/mips64/kernel/signal32.c
++++ b/arch/mips64/kernel/signal32.c
 @@ -6,7 +6,9 @@
   * Copyright (C) 1991, 1992  Linus Torvalds
   * Copyright (C) 1994 - 2000  Ralf Baechle
@@ -143,10 +133,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal32.c
  {
  	sigset32_t *uset;
  	sigset_t newset, saveset;
-Index: linux-2.4.35.4/arch/mips64/kernel/syscall.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/syscall.c
-+++ linux-2.4.35.4/arch/mips64/kernel/syscall.c
+--- a/arch/mips64/kernel/syscall.c
++++ b/arch/mips64/kernel/syscall.c
 @@ -6,7 +6,9 @@
   * Copyright (C) 1995 - 2000, 2001 by Ralf Baechle
   * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
@@ -179,10 +167,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/syscall.c
  {
  	unsigned long clone_flags;
  	unsigned long newsp;
-Index: linux-2.4.35.4/include/asm-mips/ptrace.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/ptrace.h
-+++ linux-2.4.35.4/include/asm-mips/ptrace.h
+--- a/include/asm-mips/ptrace.h
++++ b/include/asm-mips/ptrace.h
 @@ -4,6 +4,7 @@
   * for more details.
   *
@@ -205,10 +191,8 @@ Index: linux-2.4.35.4/include/asm-mips/ptrace.h
  #endif /* !__ASSEMBLY__ */
  
  /* Arbitrarily choose the same ptrace numbers as used by the Sparc code. */
-Index: linux-2.4.35.4/include/asm-mips64/ptrace.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/ptrace.h
-+++ linux-2.4.35.4/include/asm-mips64/ptrace.h
+--- a/include/asm-mips64/ptrace.h
++++ b/include/asm-mips64/ptrace.h
 @@ -5,6 +5,7 @@
   *
   * Copyright (C) 1994, 95, 96, 97, 98, 99, 2000 by Ralf Baechle

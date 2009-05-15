@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -17580,6 +17580,32 @@ CONFIG_JFFS2_FS_DEBUG
    If reporting bugs, please try to have available a full dump of the
    messages at debug level 1 while the misbehaviour was occurring.
@@ -35,10 +33,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  JFFS stats available in /proc filesystem
  CONFIG_JFFS_PROC_FS
    Enabling this option will cause statistics from mounted JFFS file systems
-Index: linux-2.4.35.4/fs/Config.in
-===================================================================
---- linux-2.4.35.4.orig/fs/Config.in
-+++ linux-2.4.35.4/fs/Config.in
+--- a/fs/Config.in
++++ b/fs/Config.in
 @@ -50,6 +50,12 @@ dep_tristate 'Journalling Flash File Sys
  if [ "$CONFIG_JFFS2_FS" = "y" -o "$CONFIG_JFFS2_FS" = "m" ] ; then
     int 'JFFS2 debugging verbosity (0 = quiet, 2 = noisy)' CONFIG_JFFS2_FS_DEBUG 0
@@ -52,20 +48,16 @@ Index: linux-2.4.35.4/fs/Config.in
  tristate 'Compressed ROM file system support' CONFIG_CRAMFS
  tristate 'Squashed file system support' CONFIG_SQUASHFS
  if [ "$CONFIG_SQUASHFS" = "y" -o "$CONFIG_SQUASHFS" = "m" ] ; then
-Index: linux-2.4.35.4/fs/jffs2/Config.in.bbc.inc
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/Config.in.bbc.inc
++++ b/fs/jffs2/Config.in.bbc.inc
 @@ -0,0 +1,5 @@
 +dep_mbool '  ARMLIB compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_ARMLIB $CONFIG_JFFS2_FS
 +dep_mbool '  LZO1X-* compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_LZO $CONFIG_JFFS2_FS
 +dep_mbool '  LZARI compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_LZARI $CONFIG_JFFS2_FS
 +dep_mbool '  LZHD compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_LZHD $CONFIG_JFFS2_FS
 +dep_mbool '  LZSS compression support for BBC (EXPERIMENTAL)' CONFIG_JFFS2_BBC_LZSS $CONFIG_JFFS2_FS
-Index: linux-2.4.35.4/fs/jffs2/Configure.help.bbc.inc
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/Configure.help.bbc.inc
++++ b/fs/jffs2/Configure.help.bbc.inc
 @@ -0,0 +1,25 @@
 +ARMLIB compression support for BBC (EXPERIMENTAL)
 +CONFIG_JFFS2_BBC_ARMLIB
@@ -92,10 +84,8 @@ Index: linux-2.4.35.4/fs/jffs2/Configure.help.bbc.inc
 +  This enables simple LempelZiv-Storer-Szymanski compression for BBC
 +  (faster than LZHD, and, and has a not-so-good compression ratio,
 +  was included just for testing)
-Index: linux-2.4.35.4/fs/jffs2/Kconfig.bbc.inc
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/Kconfig.bbc.inc
++++ b/fs/jffs2/Kconfig.bbc.inc
 @@ -0,0 +1,40 @@
 +config JFFS2_BBC_ARMLIB
 +	bool "ARMLIB compression support for BBC (EXPERIMENTAL)"
@@ -137,10 +127,8 @@ Index: linux-2.4.35.4/fs/jffs2/Kconfig.bbc.inc
 +	  This enables simple LempelZiv-Storer-Szymanski compression for BBC
 +	  (faster than LZHD, and, and has a not-so-good compression ratio,
 +	  was included just for testing)
-Index: linux-2.4.35.4/fs/jffs2/Makefile
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/Makefile
-+++ linux-2.4.35.4/fs/jffs2/Makefile
+--- a/fs/jffs2/Makefile
++++ b/fs/jffs2/Makefile
 @@ -10,9 +10,23 @@
  # Note 2! The CFLAGS definitions are now in the main makefile...
  
@@ -165,10 +153,8 @@ Index: linux-2.4.35.4/fs/jffs2/Makefile
  	read.o nodemgmt.o readinode.o super.o write.o scan.o gc.o \
  	symlink.o build.o erase.o background.o
  
-Index: linux-2.4.35.4/fs/jffs2/Makefile.bbc.inc
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/Makefile.bbc.inc
++++ b/fs/jffs2/Makefile.bbc.inc
 @@ -0,0 +1,12 @@
 +JFFS2_BBC_KERNEL_OBJS-y = jffs2_bbc_framework.o jffs2_bbc_fs.o
 +
@@ -182,10 +168,8 @@ Index: linux-2.4.35.4/fs/jffs2/Makefile.bbc.inc
 +
 +JFFS2_BBC_MKFS_OBJS   = jffs2_bbc_mkfs.o jffs2_bbc_framework.o jffs2_bbc_armlib_comp.o jffs2_bbc_lzo_comp.o\
 +                        jffs2_bbc_lzss_comp.o jffs2_bbc_lzari_comp.o jffs2_bbc_lzhd_comp.o
-Index: linux-2.4.35.4/fs/jffs2/compr_zlib.c
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/compr_zlib.c
-+++ linux-2.4.35.4/fs/jffs2/compr_zlib.c
+--- a/fs/jffs2/compr_zlib.c
++++ b/fs/jffs2/compr_zlib.c
 @@ -85,7 +85,7 @@ void jffs2_zlib_exit(void)
  	vfree(inflate_workspace);
  }
@@ -224,10 +208,8 @@ Index: linux-2.4.35.4/fs/jffs2/compr_zlib.c
 +		jffs2_zlib_decompress(data_in,cpage_out,srclen,destlen);
 +}
 +
-Index: linux-2.4.35.4/fs/jffs2/file.c
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/file.c
-+++ linux-2.4.35.4/fs/jffs2/file.c
+--- a/fs/jffs2/file.c
++++ b/fs/jffs2/file.c
 @@ -35,6 +35,7 @@
   *
   */
@@ -244,10 +226,8 @@ Index: linux-2.4.35.4/fs/jffs2/file.c
  			comprtype = jffs2_compress(page_address(pg)+ (file_ofs & (PAGE_CACHE_SIZE-1)), comprbuf, &datalen, &cdatalen);
  		}
  		if (comprtype == JFFS2_COMPR_NONE) {
-Index: linux-2.4.35.4/fs/jffs2/gc.c
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/gc.c
-+++ linux-2.4.35.4/fs/jffs2/gc.c
+--- a/fs/jffs2/gc.c
++++ b/fs/jffs2/gc.c
 @@ -35,6 +35,7 @@
   *
   */
@@ -264,10 +244,8 @@ Index: linux-2.4.35.4/fs/jffs2/gc.c
  			comprtype = jffs2_compress(writebuf, comprbuf, &datalen, &cdatalen);
  		}
  		if (comprtype) {
-Index: linux-2.4.35.4/fs/jffs2/hpatch
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/hpatch
++++ b/fs/jffs2/hpatch
 @@ -0,0 +1,191 @@
 +#!/usr/bin/perl
 +# A patch-like utility
@@ -460,10 +438,8 @@ Index: linux-2.4.35.4/fs/jffs2/hpatch
 +}
 +file_end();
 +close(CMD);
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_armlib_comp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_armlib_comp.c
++++ b/fs/jffs2/jffs2_bbc_armlib_comp.c
 @@ -0,0 +1,2224 @@
 +/*
 + * JFFS2-BBC: armlib compressor plugin
@@ -2689,10 +2665,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_armlib_comp.c
 +}
 +
 +/*END OF ARMLIB*/
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.c
++++ b/fs/jffs2/jffs2_bbc_framework.c
 @@ -0,0 +1,1324 @@
 +/* 
 + * JFFS2-BBC: Compression Framework
@@ -4018,10 +3992,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.c
 +}
 +
 +#endif
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.h
++++ b/fs/jffs2/jffs2_bbc_framework.h
 @@ -0,0 +1,202 @@
 +/*
 + * JFFS2-BBC: Compression Framework - headers
@@ -4225,10 +4197,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_framework.h
 +int jffs2_bbc_get_memory_counter(void);
 +
 +#endif
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.c
++++ b/fs/jffs2/jffs2_bbc_fs.c
 @@ -0,0 +1,331 @@
 +/*
 + * JFFS2-BBC: File System Extension for Linux Kernel
@@ -4561,10 +4531,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.c
 +	jffs2_bbc_compressor_deinit();
 +	remove_proc_entry("jffs2_bbc", NULL);
 +}
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.h
++++ b/fs/jffs2/jffs2_bbc_fs.h
 @@ -0,0 +1,30 @@
 +/*
 + * JFFS2 BBC: File System Extension for Linux Kernel - headers
@@ -4596,10 +4564,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_fs.h
 +
 +void jffs2_bbc_proc_init(void);
 +void jffs2_bbc_proc_deinit(void);
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzari_comp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzari_comp.c
++++ b/fs/jffs2/jffs2_bbc_lzari_comp.c
 @@ -0,0 +1,788 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -5389,10 +5355,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzari_comp.c
 +{
 +	jffs2_bbc_unregister_compressor (&jffs2_bbc_lzari);
 +}
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzhd_comp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzhd_comp.c
++++ b/fs/jffs2/jffs2_bbc_lzhd_comp.c
 @@ -0,0 +1,747 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -6141,10 +6105,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzhd_comp.c
 +{
 +	jffs2_bbc_unregister_compressor (&jffs2_bbc_lzhd);
 +}
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzo_comp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzo_comp.c
++++ b/fs/jffs2/jffs2_bbc_lzo_comp.c
 @@ -0,0 +1,2435 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -8581,10 +8543,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzo_comp.c
 +{
 +	jffs2_bbc_unregister_compressor (&jffs2_bbc_lzo);
 +}
-Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzss_comp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzss_comp.c
++++ b/fs/jffs2/jffs2_bbc_lzss_comp.c
 @@ -0,0 +1,385 @@
 +/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*- */
 +
@@ -8971,10 +8931,8 @@ Index: linux-2.4.35.4/fs/jffs2/jffs2_bbc_lzss_comp.c
 +{
 +	jffs2_bbc_unregister_compressor (&jffs2_bbc_lzss);
 +}
-Index: linux-2.4.35.4/fs/jffs2/linux-2.4.25.hpatch
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/jffs2/linux-2.4.25.hpatch
++++ b/fs/jffs2/linux-2.4.25.hpatch
 @@ -0,0 +1,97 @@
 +FMakefile
 +=BBC insertion
@@ -9073,10 +9031,8 @@ Index: linux-2.4.35.4/fs/jffs2/linux-2.4.25.hpatch
 +?{
 ++	jffs2_bbc_proc_deinit(); /**BBC**/
 ++
-Index: linux-2.4.35.4/fs/jffs2/read.c
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/read.c
-+++ linux-2.4.35.4/fs/jffs2/read.c
+--- a/fs/jffs2/read.c
++++ b/fs/jffs2/read.c
 @@ -35,6 +35,7 @@
   *
   */
@@ -9093,10 +9049,8 @@ Index: linux-2.4.35.4/fs/jffs2/read.c
  		ret = jffs2_decompress(ri->compr, readbuf, decomprbuf, ri->csize, ri->dsize);
  		if (ret) {
  			printk(KERN_WARNING "Error: jffs2_decompress returned %d\n", ret);
-Index: linux-2.4.35.4/fs/jffs2/super.c
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/super.c
-+++ linux-2.4.35.4/fs/jffs2/super.c
+--- a/fs/jffs2/super.c
++++ b/fs/jffs2/super.c
 @@ -35,6 +35,7 @@
   *
   */

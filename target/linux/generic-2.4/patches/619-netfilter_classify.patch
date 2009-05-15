@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_CLASSIFY.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_CLASSIFY.h
++++ b/include/linux/netfilter_ipv4/ipt_CLASSIFY.h
 @@ -0,0 +1,8 @@
 +#ifndef _IPT_CLASSIFY_H
 +#define _IPT_CLASSIFY_H
@@ -11,11 +9,9 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_CLASSIFY.h
 +};
 +
 +#endif /*_IPT_CLASSIFY_H */
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
-@@ -172,6 +172,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
+@@ -171,6 +171,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
      dep_tristate '    DSCP target support' CONFIG_IP_NF_TARGET_DSCP $CONFIG_IP_NF_MANGLE
   
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
@@ -23,10 +19,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
      dep_tristate '    IMQ target support' CONFIG_IP_NF_TARGET_IMQ $CONFIG_IP_NF_MANGLE
    fi
    if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_CLASSIFY.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_CLASSIFY.c
++++ b/net/ipv4/netfilter/ipt_CLASSIFY.c
 @@ -0,0 +1,82 @@
 +/*
 + * This is a module which is used for setting the skb->priority field
@@ -110,11 +104,9 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_CLASSIFY.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
-@@ -134,6 +134,7 @@ obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
+@@ -133,6 +133,7 @@ obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_
  
  # targets
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o

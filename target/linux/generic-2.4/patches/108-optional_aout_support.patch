@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -4690,6 +4690,12 @@ CONFIG_BINFMT_ELF
    ld.so (check the file <file:Documentation/Changes> for location and
    latest version).
@@ -31,10 +29,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  
  OSF/1 v4 readv/writev compatibility
  CONFIG_OSF4_COMPAT
-Index: linux-2.4.35.4/arch/alpha/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/alpha/config.in
-+++ linux-2.4.35.4/arch/alpha/config.in
+--- a/arch/alpha/config.in
++++ b/arch/alpha/config.in
 @@ -315,6 +315,9 @@ if [ "$CONFIG_BINFMT_AOUT" != "n" ]; the
  fi
  
@@ -45,10 +41,8 @@ Index: linux-2.4.35.4/arch/alpha/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  tristate 'Kernel support for Linux/Intel ELF binaries' CONFIG_BINFMT_EM86
  source drivers/parport/Config.in
-Index: linux-2.4.35.4/arch/alpha/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/alpha/defconfig
-+++ linux-2.4.35.4/arch/alpha/defconfig
+--- a/arch/alpha/defconfig
++++ b/arch/alpha/defconfig
 @@ -72,6 +72,7 @@ CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
  # CONFIG_BINFMT_AOUT is not set
@@ -57,10 +51,8 @@ Index: linux-2.4.35.4/arch/alpha/defconfig
  # CONFIG_BINFMT_MISC is not set
  # CONFIG_BINFMT_EM86 is not set
  
-Index: linux-2.4.35.4/arch/arm/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/arm/config.in
-+++ linux-2.4.35.4/arch/arm/config.in
+--- a/arch/arm/config.in
++++ b/arch/arm/config.in
 @@ -499,6 +499,9 @@ choice 'Kernel core (/proc/kcore) format
  	 A.OUT		CONFIG_KCORE_AOUT" ELF
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
@@ -71,10 +63,8 @@ Index: linux-2.4.35.4/arch/arm/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  dep_bool 'Power Management support (experimental)' CONFIG_PM $CONFIG_EXPERIMENTAL
  dep_tristate 'RISC OS personality' CONFIG_ARTHUR $CONFIG_CPU_32
-Index: linux-2.4.35.4/arch/arm/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/arm/defconfig
-+++ linux-2.4.35.4/arch/arm/defconfig
+--- a/arch/arm/defconfig
++++ b/arch/arm/defconfig
 @@ -83,8 +83,9 @@ CONFIG_SYSCTL=y
  CONFIG_NWFPE=y
  CONFIG_KCORE_ELF=y
@@ -86,10 +76,8 @@ Index: linux-2.4.35.4/arch/arm/defconfig
  # CONFIG_BINFMT_MISC is not set
  # CONFIG_PM is not set
  # CONFIG_ARTHUR is not set
-Index: linux-2.4.35.4/arch/cris/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/cris/config.in
-+++ linux-2.4.35.4/arch/cris/config.in
+--- a/arch/cris/config.in
++++ b/arch/cris/config.in
 @@ -31,6 +31,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  
@@ -100,10 +88,8 @@ Index: linux-2.4.35.4/arch/cris/config.in
  
  string 'Kernel command line' CONFIG_ETRAX_CMDLINE "root=/dev/mtdblock3"
  
-Index: linux-2.4.35.4/arch/cris/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/cris/defconfig
-+++ linux-2.4.35.4/arch/cris/defconfig
+--- a/arch/cris/defconfig
++++ b/arch/cris/defconfig
 @@ -18,6 +18,7 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  # CONFIG_SYSCTL is not set
@@ -112,10 +98,8 @@ Index: linux-2.4.35.4/arch/cris/defconfig
  # CONFIG_ETRAX_KGDB is not set
  # CONFIG_ETRAX_WATCHDOG is not set
  
-Index: linux-2.4.35.4/arch/i386/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/i386/config.in
-+++ linux-2.4.35.4/arch/i386/config.in
+--- a/arch/i386/config.in
++++ b/arch/i386/config.in
 @@ -329,6 +329,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
@@ -126,10 +110,8 @@ Index: linux-2.4.35.4/arch/i386/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  bool 'Select task to kill on out of memory condition' CONFIG_OOM_KILLER
  
-Index: linux-2.4.35.4/arch/i386/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/i386/defconfig
-+++ linux-2.4.35.4/arch/i386/defconfig
+--- a/arch/i386/defconfig
++++ b/arch/i386/defconfig
 @@ -115,9 +115,10 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
@@ -143,10 +125,8 @@ Index: linux-2.4.35.4/arch/i386/defconfig
  # CONFIG_OOM_KILLER is not set
  CONFIG_PM=y
  # CONFIG_APM is not set
-Index: linux-2.4.35.4/arch/ia64/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/ia64/config.in
-+++ linux-2.4.35.4/arch/ia64/config.in
+--- a/arch/ia64/config.in
++++ b/arch/ia64/config.in
 @@ -124,6 +124,9 @@ bool 'System V IPC' CONFIG_SYSVIPC
  bool 'BSD Process Accounting' CONFIG_BSD_PROCESS_ACCT
  bool 'Sysctl support' CONFIG_SYSCTL
@@ -157,10 +137,8 @@ Index: linux-2.4.35.4/arch/ia64/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  
  if [ "$CONFIG_IA64_HP_SIM" = "n" ]; then
-Index: linux-2.4.35.4/arch/ia64/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/ia64/defconfig
-+++ linux-2.4.35.4/arch/ia64/defconfig
+--- a/arch/ia64/defconfig
++++ b/arch/ia64/defconfig
 @@ -60,6 +60,7 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  CONFIG_SYSCTL=y
@@ -169,10 +147,8 @@ Index: linux-2.4.35.4/arch/ia64/defconfig
  # CONFIG_BINFMT_MISC is not set
  CONFIG_ACPI=y
  CONFIG_ACPI_EFI=y
-Index: linux-2.4.35.4/arch/m68k/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/m68k/config.in
-+++ linux-2.4.35.4/arch/m68k/config.in
+--- a/arch/m68k/config.in
++++ b/arch/m68k/config.in
 @@ -99,6 +99,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
@@ -183,10 +159,8 @@ Index: linux-2.4.35.4/arch/m68k/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  
  if [ "$CONFIG_AMIGA" = "y" ]; then
-Index: linux-2.4.35.4/arch/m68k/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/m68k/defconfig
-+++ linux-2.4.35.4/arch/m68k/defconfig
+--- a/arch/m68k/defconfig
++++ b/arch/m68k/defconfig
 @@ -44,8 +44,9 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
@@ -198,10 +172,8 @@ Index: linux-2.4.35.4/arch/m68k/defconfig
  # CONFIG_BINFMT_MISC is not set
  CONFIG_ZORRO=y
  # CONFIG_AMIGA_PCMCIA is not set
-Index: linux-2.4.35.4/arch/mips/config-shared.in
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/config-shared.in
-+++ linux-2.4.35.4/arch/mips/config-shared.in
+--- a/arch/mips/config-shared.in
++++ b/arch/mips/config-shared.in
 @@ -873,6 +873,9 @@ define_bool CONFIG_KCORE_ELF y
  define_bool CONFIG_KCORE_AOUT n
  define_bool CONFIG_BINFMT_AOUT n
@@ -212,10 +184,8 @@ Index: linux-2.4.35.4/arch/mips/config-shared.in
  dep_bool 'Kernel support for Linux/MIPS 32-bit binary compatibility' CONFIG_MIPS32_COMPAT $CONFIG_MIPS64
  dep_bool 'Kernel support for o32 binaries' CONFIG_MIPS32_O32 $CONFIG_MIPS32_COMPAT
  dep_bool 'Kernel support for n32 binaries' CONFIG_MIPS32_N32 $CONFIG_MIPS32_COMPAT
-Index: linux-2.4.35.4/arch/mips/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig
-+++ linux-2.4.35.4/arch/mips/defconfig
+--- a/arch/mips/defconfig
++++ b/arch/mips/defconfig
 @@ -143,6 +143,7 @@ CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
  # CONFIG_BINFMT_AOUT is not set
@@ -224,10 +194,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig
  # CONFIG_MIPS32_COMPAT is not set
  # CONFIG_MIPS32_O32 is not set
  # CONFIG_MIPS32_N32 is not set
-Index: linux-2.4.35.4/arch/mips/kernel/irixelf.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/irixelf.c
-+++ linux-2.4.35.4/arch/mips/kernel/irixelf.c
+--- a/arch/mips/kernel/irixelf.c
++++ b/arch/mips/kernel/irixelf.c
 @@ -8,6 +8,7 @@
   * Copyright 1993, 1994: Eric Youngdale (ericy@cais.com).
   */
@@ -266,10 +234,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/irixelf.c
  
  /* Called through irix_syssgi() to map an elf image given an FD,
   * a phdr ptr USER_PHDRP in userspace, and a count CNT telling how many
-Index: linux-2.4.35.4/arch/mips64/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig
-+++ linux-2.4.35.4/arch/mips64/defconfig
+--- a/arch/mips64/defconfig
++++ b/arch/mips64/defconfig
 @@ -147,6 +147,7 @@ CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
  # CONFIG_BINFMT_AOUT is not set
@@ -278,10 +244,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig
  CONFIG_MIPS32_COMPAT=y
  CONFIG_MIPS32_O32=y
  # CONFIG_MIPS32_N32 is not set
-Index: linux-2.4.35.4/arch/parisc/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/parisc/config.in
-+++ linux-2.4.35.4/arch/parisc/config.in
+--- a/arch/parisc/config.in
++++ b/arch/parisc/config.in
 @@ -89,6 +89,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  define_bool CONFIG_KCORE_ELF y
@@ -292,10 +256,8 @@ Index: linux-2.4.35.4/arch/parisc/config.in
  tristate 'Kernel support for SOM binaries' CONFIG_BINFMT_SOM
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  
-Index: linux-2.4.35.4/arch/parisc/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/parisc/defconfig
-+++ linux-2.4.35.4/arch/parisc/defconfig
+--- a/arch/parisc/defconfig
++++ b/arch/parisc/defconfig
 @@ -56,6 +56,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
@@ -304,10 +266,8 @@ Index: linux-2.4.35.4/arch/parisc/defconfig
  CONFIG_BINFMT_SOM=y
  # CONFIG_BINFMT_MISC is not set
  # CONFIG_PM is not set
-Index: linux-2.4.35.4/arch/ppc/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/ppc/config.in
-+++ linux-2.4.35.4/arch/ppc/config.in
+--- a/arch/ppc/config.in
++++ b/arch/ppc/config.in
 @@ -384,6 +384,7 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  define_bool CONFIG_BINFMT_ELF y
@@ -316,10 +276,8 @@ Index: linux-2.4.35.4/arch/ppc/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  bool 'Select task to kill on out of memory condition' CONFIG_OOM_KILLER
  
-Index: linux-2.4.35.4/arch/ppc/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/ppc/defconfig
-+++ linux-2.4.35.4/arch/ppc/defconfig
+--- a/arch/ppc/defconfig
++++ b/arch/ppc/defconfig
 @@ -59,7 +59,8 @@ CONFIG_SYSVIPC=y
  CONFIG_KCORE_ELF=y
  CONFIG_BINFMT_ELF=y
@@ -330,10 +288,8 @@ Index: linux-2.4.35.4/arch/ppc/defconfig
  # CONFIG_OOM_KILLER is not set
  CONFIG_PCI_NAMES=y
  CONFIG_HOTPLUG=y
-Index: linux-2.4.35.4/arch/ppc64/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/ppc64/config.in
-+++ linux-2.4.35.4/arch/ppc64/config.in
+--- a/arch/ppc64/config.in
++++ b/arch/ppc64/config.in
 @@ -82,6 +82,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  
@@ -344,10 +300,8 @@ Index: linux-2.4.35.4/arch/ppc64/config.in
  
  tristate 'Kernel support for 32 bit ELF binaries' CONFIG_BINFMT_ELF32
  
-Index: linux-2.4.35.4/arch/ppc64/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/ppc64/defconfig
-+++ linux-2.4.35.4/arch/ppc64/defconfig
+--- a/arch/ppc64/defconfig
++++ b/arch/ppc64/defconfig
 @@ -56,6 +56,7 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  CONFIG_KCORE_ELF=y
@@ -356,10 +310,8 @@ Index: linux-2.4.35.4/arch/ppc64/defconfig
  CONFIG_BINFMT_ELF32=y
  # CONFIG_BINFMT_MISC is not set
  CONFIG_PCI_NAMES=y
-Index: linux-2.4.35.4/arch/s390/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/s390/config.in
-+++ linux-2.4.35.4/arch/s390/config.in
+--- a/arch/s390/config.in
++++ b/arch/s390/config.in
 @@ -58,6 +58,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  define_bool CONFIG_KCORE_ELF y
@@ -370,10 +322,8 @@ Index: linux-2.4.35.4/arch/s390/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  bool 'Show crashed user process info' CONFIG_PROCESS_DEBUG
  bool 'Pseudo page fault support' CONFIG_PFAULT
-Index: linux-2.4.35.4/arch/s390/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/s390/defconfig
-+++ linux-2.4.35.4/arch/s390/defconfig
+--- a/arch/s390/defconfig
++++ b/arch/s390/defconfig
 @@ -46,6 +46,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
@@ -382,10 +332,8 @@ Index: linux-2.4.35.4/arch/s390/defconfig
  # CONFIG_BINFMT_MISC is not set
  # CONFIG_PROCESS_DEBUG is not set
  CONFIG_PFAULT=y
-Index: linux-2.4.35.4/arch/s390x/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/s390x/config.in
-+++ linux-2.4.35.4/arch/s390x/config.in
+--- a/arch/s390x/config.in
++++ b/arch/s390x/config.in
 @@ -61,6 +61,9 @@ bool 'BSD Process Accounting' CONFIG_BSD
  bool 'Sysctl support' CONFIG_SYSCTL
  define_bool CONFIG_KCORE_ELF y
@@ -396,10 +344,8 @@ Index: linux-2.4.35.4/arch/s390x/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  bool 'Show crashed user process info' CONFIG_PROCESS_DEBUG
  bool 'Pseudo page fault support' CONFIG_PFAULT
-Index: linux-2.4.35.4/arch/s390x/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/s390x/defconfig
-+++ linux-2.4.35.4/arch/s390x/defconfig
+--- a/arch/s390x/defconfig
++++ b/arch/s390x/defconfig
 @@ -47,6 +47,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
@@ -408,10 +354,8 @@ Index: linux-2.4.35.4/arch/s390x/defconfig
  # CONFIG_BINFMT_MISC is not set
  # CONFIG_PROCESS_DEBUG is not set
  CONFIG_PFAULT=y
-Index: linux-2.4.35.4/arch/sh/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/sh/config.in
-+++ linux-2.4.35.4/arch/sh/config.in
+--- a/arch/sh/config.in
++++ b/arch/sh/config.in
 @@ -283,6 +283,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  	 A.OUT		CONFIG_KCORE_AOUT" ELF
  fi
@@ -422,10 +366,8 @@ Index: linux-2.4.35.4/arch/sh/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  
  bool 'Select task to kill on out of memory condition' CONFIG_OOM_KILLER
-Index: linux-2.4.35.4/arch/sh/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/sh/defconfig
-+++ linux-2.4.35.4/arch/sh/defconfig
+--- a/arch/sh/defconfig
++++ b/arch/sh/defconfig
 @@ -48,6 +48,7 @@ CONFIG_CF_ENABLER=y
  CONFIG_KCORE_ELF=y
  # CONFIG_KCORE_AOUT is not set
@@ -434,10 +376,8 @@ Index: linux-2.4.35.4/arch/sh/defconfig
  # CONFIG_BINFMT_MISC is not set
  
  #
-Index: linux-2.4.35.4/arch/sparc/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/sparc/config.in
-+++ linux-2.4.35.4/arch/sparc/config.in
+--- a/arch/sparc/config.in
++++ b/arch/sparc/config.in
 @@ -74,6 +74,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
@@ -448,10 +388,8 @@ Index: linux-2.4.35.4/arch/sparc/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  bool 'SunOS binary emulation' CONFIG_SUNOS_EMUL
  bool 'Select task to kill on out of memory condition' CONFIG_OOM_KILLER
-Index: linux-2.4.35.4/arch/sparc/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/sparc/defconfig
-+++ linux-2.4.35.4/arch/sparc/defconfig
+--- a/arch/sparc/defconfig
++++ b/arch/sparc/defconfig
 @@ -49,9 +49,10 @@ CONFIG_SYSVIPC=y
  # CONFIG_BSD_PROCESS_ACCT is not set
  CONFIG_SYSCTL=y
@@ -465,10 +403,8 @@ Index: linux-2.4.35.4/arch/sparc/defconfig
  CONFIG_SUNOS_EMUL=y
  # CONFIG_OOM_KILLER is not set
  
-Index: linux-2.4.35.4/arch/sparc64/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/sparc64/config.in
-+++ linux-2.4.35.4/arch/sparc64/config.in
+--- a/arch/sparc64/config.in
++++ b/arch/sparc64/config.in
 @@ -79,6 +79,9 @@ if [ "$CONFIG_SPARC32_COMPAT" != "n" ]; 
     bool '  Kernel support for 32-bit (ie. SunOS) a.out binaries' CONFIG_BINFMT_AOUT32
  fi
@@ -479,10 +415,8 @@ Index: linux-2.4.35.4/arch/sparc64/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  bool 'SunOS binary emulation' CONFIG_SUNOS_EMUL
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-Index: linux-2.4.35.4/arch/sparc64/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/sparc64/defconfig
-+++ linux-2.4.35.4/arch/sparc64/defconfig
+--- a/arch/sparc64/defconfig
++++ b/arch/sparc64/defconfig
 @@ -70,7 +70,8 @@ CONFIG_SPARC32_COMPAT=y
  CONFIG_BINFMT_ELF32=y
  # CONFIG_BINFMT_AOUT32 is not set
@@ -493,10 +427,8 @@ Index: linux-2.4.35.4/arch/sparc64/defconfig
  # CONFIG_SUNOS_EMUL is not set
  CONFIG_SOLARIS_EMUL=m
  # CONFIG_OOM_KILLER is not set
-Index: linux-2.4.35.4/arch/x86_64/config.in
-===================================================================
---- linux-2.4.35.4.orig/arch/x86_64/config.in
-+++ linux-2.4.35.4/arch/x86_64/config.in
+--- a/arch/x86_64/config.in
++++ b/arch/x86_64/config.in
 @@ -118,6 +118,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  #tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
@@ -507,10 +439,8 @@ Index: linux-2.4.35.4/arch/x86_64/config.in
  tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
  
  bool 'Power Management support' CONFIG_PM
-Index: linux-2.4.35.4/arch/x86_64/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/x86_64/defconfig
-+++ linux-2.4.35.4/arch/x86_64/defconfig
+--- a/arch/x86_64/defconfig
++++ b/arch/x86_64/defconfig
 @@ -67,6 +67,7 @@ CONFIG_SYSVIPC=y
  CONFIG_SYSCTL=y
  CONFIG_KCORE_ELF=y
@@ -519,10 +449,8 @@ Index: linux-2.4.35.4/arch/x86_64/defconfig
  # CONFIG_BINFMT_MISC is not set
  CONFIG_PM=y
  CONFIG_IA32_EMULATION=y
-Index: linux-2.4.35.4/fs/binfmt_elf.c
-===================================================================
---- linux-2.4.35.4.orig/fs/binfmt_elf.c
-+++ linux-2.4.35.4/fs/binfmt_elf.c
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
 @@ -9,6 +9,7 @@
   * Copyright 1993, 1994: Eric Youngdale (ericy@cais.com).
   */
@@ -699,10 +627,8 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  
  /*
   * Note that some platforms still use traditional core dumps and not
-Index: linux-2.4.35.4/fs/exec.c
-===================================================================
---- linux-2.4.35.4.orig/fs/exec.c
-+++ linux-2.4.35.4/fs/exec.c
+--- a/fs/exec.c
++++ b/fs/exec.c
 @@ -109,6 +109,7 @@ static inline void put_binfmt(struct lin
   */
  asmlinkage long sys_uselib(const char * library)

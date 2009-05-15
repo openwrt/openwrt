@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/fs/jffs2/build.c
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/build.c
-+++ linux-2.4.35.4/fs/jffs2/build.c
+--- a/fs/jffs2/build.c
++++ b/fs/jffs2/build.c
 @@ -31,6 +31,10 @@
   * provisions above, a recipient may use your version of this file
   * under either the RHEPL or the GPL.
@@ -40,10 +38,8 @@ Index: linux-2.4.35.4/fs/jffs2/build.c
  	D1(printk(KERN_DEBUG "Scanned flash completely\n"));
  	/* Now build the data map for each inode, marking obsoleted nodes
  	   as such, and also increase nlink of any children. */
-Index: linux-2.4.35.4/fs/jffs2/scan.c
-===================================================================
---- linux-2.4.35.4.orig/fs/jffs2/scan.c
-+++ linux-2.4.35.4/fs/jffs2/scan.c
+--- a/fs/jffs2/scan.c
++++ b/fs/jffs2/scan.c
 @@ -31,6 +31,10 @@
   * provisions above, a recipient may use your version of this file
   * under either the RHEPL or the GPL.

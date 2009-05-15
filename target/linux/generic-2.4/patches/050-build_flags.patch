@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/arch/mips/Makefile
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/Makefile
-+++ linux-2.4.35.4/arch/mips/Makefile
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
 @@ -44,10 +44,10 @@ MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
  GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
  GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
@@ -49,10 +47,8 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  CFLAGS		+= $(GCCFLAGS)
  
  LD		+= -m $(ld-emul)
-Index: linux-2.4.35.4/Makefile
-===================================================================
---- linux-2.4.35.4.orig/Makefile
-+++ linux-2.4.35.4/Makefile
+--- a/Makefile
++++ b/Makefile
 @@ -17,7 +17,7 @@ HPATH   	= $(TOPDIR)/include
  FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math-emu
  

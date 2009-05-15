@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Makefile
-===================================================================
---- linux-2.4.35.4.orig/Makefile
-+++ linux-2.4.35.4/Makefile
+--- a/Makefile
++++ b/Makefile
 @@ -362,7 +362,7 @@ include/linux/compile.h: $(CONFIGURATION
  	@rm -f .ver1
  
@@ -20,10 +18,8 @@ Index: linux-2.4.35.4/Makefile
  	scripts/mkdep -- init/*.c > .depend
  
  ifdef CONFIG_MODVERSIONS
-Index: linux-2.4.35.4/Rules.make
-===================================================================
---- linux-2.4.35.4.orig/Rules.make
-+++ linux-2.4.35.4/Rules.make
+--- a/Rules.make
++++ b/Rules.make
 @@ -126,7 +126,7 @@ endif
  # This make dependencies quickly
  #

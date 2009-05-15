@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -11,6 +11,8 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
@@ -11,10 +9,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
    dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
  fi
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -106,6 +106,7 @@ obj-$(CONFIG_IP_NF_MATCH_LENGTH) += ipt_
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_state.o
@@ -23,10 +19,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_STRING) += ipt_string.o
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_amanda.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_amanda.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_amanda.c
+--- a/net/ipv4/netfilter/ip_conntrack_amanda.c
++++ b/net/ipv4/netfilter/ip_conntrack_amanda.c
 @@ -75,7 +75,7 @@ static int help(const struct iphdr *iph,
  
  	/* increase the UDP timeout of the master connection as replies from
@@ -36,10 +30,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_amanda.c
  	
  	/* Search for "CONNECT " string */
  	do {
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
+--- a/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
++++ b/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
 @@ -211,7 +211,7 @@ static int tcp_packet(struct ip_conntrac
  			set_bit(IPS_ASSURED_BIT, &conntrack->status);
  
@@ -49,10 +41,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
  	}
  
  	return NF_ACCEPT;
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_udp.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_udp.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_udp.c
+--- a/net/ipv4/netfilter/ip_conntrack_proto_udp.c
++++ b/net/ipv4/netfilter/ip_conntrack_proto_udp.c
 @@ -47,16 +47,16 @@ static unsigned int udp_print_conntrack(
  /* Returns verdict for packet, and may modify conntracktype */
  static int udp_packet(struct ip_conntrack *conntrack,
@@ -73,10 +63,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_udp.c
  
  	return NF_ACCEPT;
  }
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_standalone.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- a/net/ipv4/netfilter/ip_conntrack_standalone.c
++++ b/net/ipv4/netfilter/ip_conntrack_standalone.c
 @@ -79,6 +79,18 @@ print_expect(char *buffer, const struct 
  	return len;
  }
@@ -121,10 +109,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_standalone.c
  EXPORT_SYMBOL(ip_ct_find_proto);
  EXPORT_SYMBOL(__ip_ct_find_proto);
  EXPORT_SYMBOL(ip_ct_find_helper);
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_generic.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_generic.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_generic.c
+--- a/net/ipv4/netfilter/ip_conntrack_proto_generic.c
++++ b/net/ipv4/netfilter/ip_conntrack_proto_generic.c
 @@ -41,9 +41,9 @@ static unsigned int generic_print_conntr
  /* Returns verdict for packet, or -1 for invalid. */
  static int established(struct ip_conntrack *conntrack,
@@ -137,10 +123,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_generic.c
  	return NF_ACCEPT;
  }
  
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
+--- a/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
++++ b/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
 @@ -82,7 +82,7 @@ static int icmp_packet(struct ip_conntra
  			ct->timeout.function((unsigned long)ct);
  	} else {
@@ -150,10 +134,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
  	}
  
  	return NF_ACCEPT;
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+--- a/net/ipv4/netfilter/ip_conntrack_core.c
++++ b/net/ipv4/netfilter/ip_conntrack_core.c
 @@ -1196,22 +1196,40 @@ void ip_conntrack_helper_unregister(stru
  
  	MOD_DEC_USE_COUNT;
@@ -198,10 +180,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
  	}
  	WRITE_UNLOCK(&ip_conntrack_lock);
  }
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+--- a/include/linux/netfilter_ipv4/ip_conntrack.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack.h
 @@ -164,6 +164,12 @@ struct ip_conntrack_expect
  	union ip_conntrack_expect_help help;
  };
@@ -241,10 +221,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  
  /* These are for NAT.  Icky. */
  /* Call me when a conntrack is destroyed. */
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_connbytes.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_connbytes.c
++++ b/net/ipv4/netfilter/ipt_connbytes.c
 @@ -0,0 +1,163 @@
 +/* Kernel module to match connection tracking byte counter.
 + * GPL (C) 2002 Martin Devera (devik@cdi.cz).
@@ -409,10 +387,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_connbytes.c
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connbytes.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connbytes.h
++++ b/include/linux/netfilter_ipv4/ipt_connbytes.h
 @@ -0,0 +1,25 @@
 +#ifndef _IPT_CONNBYTES_H
 +#define _IPT_CONNBYTES_H
@@ -439,10 +415,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_connbytes.h
 +};
 +
 +#endif
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_proto_gre.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_proto_gre.c
+--- a/net/ipv4/netfilter/ip_conntrack_proto_gre.c
++++ b/net/ipv4/netfilter/ip_conntrack_proto_gre.c
 @@ -237,16 +237,16 @@ static unsigned int gre_print_conntrack(
  /* Returns verdict for packet, and may modify conntrack */
  static int gre_packet(struct ip_conntrack *ct,

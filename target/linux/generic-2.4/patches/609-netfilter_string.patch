@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_string.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_string.h
++++ b/include/linux/netfilter_ipv4/ipt_string.h
 @@ -0,0 +1,18 @@
 +#ifndef _IPT_STRING_H
 +#define _IPT_STRING_H
@@ -21,10 +19,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_string.h
 +};
 +
 +#endif /*_IPT_STRING_H*/
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -63,6 +63,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    fi
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
@@ -33,10 +29,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
      dep_tristate '  Owner match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_OWNER $CONFIG_IP_NF_IPTABLES
      dep_tristate '  Layer 7 match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_LAYER7 $CONFIG_IP_NF_CONNTRACK
      dep_mbool '  Layer 7 debugging output (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_LAYER7_DEBUG $CONFIG_IP_NF_MATCH_LAYER7
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_string.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_string.c
++++ b/net/ipv4/netfilter/ipt_string.c
 @@ -0,0 +1,99 @@
 +/* String matching match for iptables
 + * 
@@ -137,10 +131,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_string.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -108,6 +108,7 @@ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_s
  obj-$(CONFIG_IP_NF_MATCH_CONNMARK) += ipt_connmark.o
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
@@ -149,10 +141,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
  obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_layer7.o
  
-Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.c
++++ b/net/ipv4/netfilter/textsearch/textsearch.c
 @@ -0,0 +1,305 @@
 +/*
 + * lib/textsearch.c	Generic text search interface
@@ -459,10 +449,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.c
 +	kfree(conf);
 +}
 +
-Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.h
++++ b/net/ipv4/netfilter/textsearch/textsearch.h
 @@ -0,0 +1,182 @@
 +#ifndef __LINUX_TEXTSEARCH_H
 +#define __LINUX_TEXTSEARCH_H
@@ -646,10 +634,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/textsearch.h
 +#endif /* __KERNEL__ */
 +
 +#endif
-Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_bm.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_bm.c
++++ b/net/ipv4/netfilter/textsearch/ts_bm.c
 @@ -0,0 +1,190 @@
 +/*
 + * lib/ts_bm.c		Boyer-Moore text search implementation
@@ -841,10 +827,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_bm.c
 +{
 +	textsearch_unregister(&bm_ops);
 +}
-Index: linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_kmp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/textsearch/ts_kmp.c
++++ b/net/ipv4/netfilter/textsearch/ts_kmp.c
 @@ -0,0 +1,141 @@
 +/*
 + * lib/ts_kmp.c		Knuth-Morris-Pratt text search implementation

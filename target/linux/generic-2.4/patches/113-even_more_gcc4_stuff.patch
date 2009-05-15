@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/mips_ksyms.c
-+++ linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c
+--- a/arch/mips/kernel/mips_ksyms.c
++++ b/arch/mips/kernel/mips_ksyms.c
 @@ -30,6 +30,10 @@
  #include <asm/floppy.h>
  #endif
@@ -27,10 +25,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/mips_ksyms.c
  /* Networking helper routines. */
  EXPORT_SYMBOL(csum_partial_copy);
  
-Index: linux-2.4.35.4/arch/mips/lib/Makefile
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/lib/Makefile
-+++ linux-2.4.35.4/arch/mips/lib/Makefile
+--- a/arch/mips/lib/Makefile
++++ b/arch/mips/lib/Makefile
 @@ -9,7 +9,8 @@ L_TARGET = lib.a
  obj-y				+= csum_partial.o csum_partial_copy.o \
  				   promlib.o rtc-std.o rtc-no.o memcpy.o \
@@ -41,10 +37,8 @@ Index: linux-2.4.35.4/arch/mips/lib/Makefile
  
  export-objs			:= rtc-std.o rtc-no.o
  
-Index: linux-2.4.35.4/arch/mips/lib/ashldi3.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/lib/ashldi3.c
++++ b/arch/mips/lib/ashldi3.c
 @@ -0,0 +1,62 @@
 +/* ashrdi3.c extracted from gcc-2.95.2/libgcc2.c which is: */
 +/* Copyright (C) 1989, 92-98, 1999 Free Software Foundation, Inc.
@@ -108,10 +102,8 @@ Index: linux-2.4.35.4/arch/mips/lib/ashldi3.c
 +
 +  return w.ll;
 +}
-Index: linux-2.4.35.4/arch/mips/lib/ashrdi3.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/lib/ashrdi3.c
++++ b/arch/mips/lib/ashrdi3.c
 @@ -0,0 +1,63 @@
 +/* ashrdi3.c extracted from gcc-2.7.2/libgcc2.c which is: */
 +/* Copyright (C) 1989, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
@@ -176,10 +168,8 @@ Index: linux-2.4.35.4/arch/mips/lib/ashrdi3.c
 +
 +  return w.ll;
 +}
-Index: linux-2.4.35.4/arch/mips/lib/lshrdi3.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/lib/lshrdi3.c
++++ b/arch/mips/lib/lshrdi3.c
 @@ -0,0 +1,62 @@
 +/* lshrdi3.c extracted from gcc-2.7.2/libgcc2.c which is: */
 +/* Copyright (C) 1989, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
@@ -243,10 +233,8 @@ Index: linux-2.4.35.4/arch/mips/lib/lshrdi3.c
 +
 +  return w.ll;
 +}
-Index: linux-2.4.35.4/arch/mips/lib/muldi3.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/lib/muldi3.c
++++ b/arch/mips/lib/muldi3.c
 @@ -0,0 +1,63 @@
 +/* muldi3.c extracted from gcc-2.7.2.3/libgcc2.c and 
 +			   gcc-2.7.2.3/longlong.h which is: */
@@ -311,10 +299,8 @@ Index: linux-2.4.35.4/arch/mips/lib/muldi3.c
 +
 +  return w.ll;
 +}
-Index: linux-2.4.35.4/fs/cifs/cifsfs.c
-===================================================================
---- linux-2.4.35.4.orig/fs/cifs/cifsfs.c
-+++ linux-2.4.35.4/fs/cifs/cifsfs.c
+--- a/fs/cifs/cifsfs.c
++++ b/fs/cifs/cifsfs.c
 @@ -50,8 +50,6 @@
  static struct quotactl_ops cifs_quotactl_ops;
  #endif
@@ -324,10 +310,8 @@ Index: linux-2.4.35.4/fs/cifs/cifsfs.c
  int cifsFYI = 0;
  int cifsERROR = 1;
  int traceSMB = 0;
-Index: linux-2.4.35.4/include/asm-mips/uaccess.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/uaccess.h
-+++ linux-2.4.35.4/include/asm-mips/uaccess.h
+--- a/include/asm-mips/uaccess.h
++++ b/include/asm-mips/uaccess.h
 @@ -149,7 +149,7 @@ static inline int verify_area(int type, 
   * Returns zero on success, or -EFAULT on error.
   */

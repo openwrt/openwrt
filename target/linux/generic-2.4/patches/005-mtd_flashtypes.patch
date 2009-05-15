@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/mtd/chips/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/Config.in
-+++ linux-2.4.35.4/drivers/mtd/chips/Config.in
+--- a/drivers/mtd/chips/Config.in
++++ b/drivers/mtd/chips/Config.in
 @@ -45,6 +45,7 @@ fi
  dep_tristate '  Support for Intel/Sharp flash chips' CONFIG_MTD_CFI_INTELEXT $CONFIG_MTD_GEN_PROBE
  dep_tristate '  Support for AMD/Fujitsu flash chips' CONFIG_MTD_CFI_AMDSTD $CONFIG_MTD_GEN_PROBE
@@ -10,10 +8,8 @@ Index: linux-2.4.35.4/drivers/mtd/chips/Config.in
  
  dep_tristate '  Support for RAM chips in bus mapping' CONFIG_MTD_RAM $CONFIG_MTD
  dep_tristate '  Support for ROM chips in bus mapping' CONFIG_MTD_ROM $CONFIG_MTD
-Index: linux-2.4.35.4/drivers/mtd/chips/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/Makefile
-+++ linux-2.4.35.4/drivers/mtd/chips/Makefile
+--- a/drivers/mtd/chips/Makefile
++++ b/drivers/mtd/chips/Makefile
 @@ -18,6 +18,7 @@ obj-$(CONFIG_MTD)		+= chipreg.o
  obj-$(CONFIG_MTD_AMDSTD)	+= amd_flash.o 
  obj-$(CONFIG_MTD_CFI)		+= cfi_probe.o
@@ -22,10 +18,8 @@ Index: linux-2.4.35.4/drivers/mtd/chips/Makefile
  obj-$(CONFIG_MTD_CFI_AMDSTD)	+= cfi_cmdset_0002.o
  obj-$(CONFIG_MTD_CFI_INTELEXT)	+= cfi_cmdset_0001.o
  obj-$(CONFIG_MTD_GEN_PROBE)	+= gen_probe.o
-Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c
++++ b/drivers/mtd/chips/cfi_cmdset_0701.c
 @@ -0,0 +1,855 @@
 +/*
 + * Common Flash Interface support:
@@ -882,10 +876,8 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0701.c
 +module_init(cfi_sststd_init);
 +module_exit(cfi_sststd_exit);
 +
-Index: linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_probe.c
-+++ linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c
+--- a/drivers/mtd/chips/cfi_probe.c
++++ b/drivers/mtd/chips/cfi_probe.c
 @@ -67,8 +67,15 @@ static int cfi_probe_chip(struct map_inf
  	cfi_send_gen_cmd(0xF0, 0, base, map, cfi, cfi->device_type, NULL);
  	cfi_send_gen_cmd(0x98, 0x55, base, map, cfi, cfi->device_type, NULL);
@@ -904,10 +896,8 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_probe.c
  
  	if (!cfi->numchips) {
  		/* This is the first time we're called. Set up the CFI 
-Index: linux-2.4.35.4/drivers/mtd/chips/gen_probe.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/gen_probe.c
-+++ linux-2.4.35.4/drivers/mtd/chips/gen_probe.c
+--- a/drivers/mtd/chips/gen_probe.c
++++ b/drivers/mtd/chips/gen_probe.c
 @@ -328,13 +328,18 @@ static struct mtd_info *check_cmd_set(st
  		return cfi_cmdset_0001(map, primary);
  #endif

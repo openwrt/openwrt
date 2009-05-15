@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/netdevice.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netdevice.h
-+++ linux-2.4.35.4/include/linux/netdevice.h
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
 @@ -295,7 +295,9 @@ struct net_device
  
  	/* List of functions to handle Wireless Extensions (instead of ioctl).
@@ -13,10 +11,8 @@ Index: linux-2.4.35.4/include/linux/netdevice.h
  
  	struct ethtool_ops *ethtool_ops;
  
-Index: linux-2.4.35.4/include/linux/wireless.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/wireless.h
-+++ linux-2.4.35.4/include/linux/wireless.h
+--- a/include/linux/wireless.h
++++ b/include/linux/wireless.h
 @@ -1,10 +1,10 @@
  /*
   * This file define a set of standard wireless extensions
@@ -472,10 +468,8 @@ Index: linux-2.4.35.4/include/linux/wireless.h
  };
  
  /*
-Index: linux-2.4.35.4/include/net/iw_handler.h
-===================================================================
---- linux-2.4.35.4.orig/include/net/iw_handler.h
-+++ linux-2.4.35.4/include/net/iw_handler.h
+--- a/include/net/iw_handler.h
++++ b/include/net/iw_handler.h
 @@ -1,10 +1,10 @@
  /*
   * This file define the new driver API for Wireless Extensions
@@ -593,10 +587,8 @@ Index: linux-2.4.35.4/include/net/iw_handler.h
  };
  
  /**************************** PROTOTYPES ****************************/
-Index: linux-2.4.35.4/net/core/dev.c
-===================================================================
---- linux-2.4.35.4.orig/net/core/dev.c
-+++ linux-2.4.35.4/net/core/dev.c
+--- a/net/core/dev.c
++++ b/net/core/dev.c
 @@ -2426,7 +2426,7 @@ int dev_ioctl(unsigned int cmd, void *ar
  				/* Follow me in net/core/wireless.c */
  				ret = wireless_process_ioctl(&ifr, cmd);
@@ -606,10 +598,8 @@ Index: linux-2.4.35.4/net/core/dev.c
  				    copy_to_user(arg, &ifr, sizeof(struct ifreq)))
  					return -EFAULT;
  				return ret;
-Index: linux-2.4.35.4/net/core/wireless.c
-===================================================================
---- linux-2.4.35.4.orig/net/core/wireless.c
-+++ linux-2.4.35.4/net/core/wireless.c
+--- a/net/core/wireless.c
++++ b/net/core/wireless.c
 @@ -2,7 +2,7 @@
   * This file implement the Wireless Extensions APIs.
   *

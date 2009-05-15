@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -17,6 +17,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
    dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
    dep_tristate '  H.323 (netmeeting) support' CONFIG_IP_NF_H323 $CONFIG_IP_NF_CONNTRACK
@@ -24,10 +22,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
        if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
          dep_tristate '    Basic SNMP-ALG support (EXPERIMENTAL)' CONFIG_IP_NF_NAT_SNMP_BASIC $CONFIG_IP_NF_NAT
        fi
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -61,6 +61,10 @@ obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack
  ifdef CONFIG_IP_NF_NAT_RTSP
         export-objs += ip_conntrack_rtsp.o
@@ -47,10 +43,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  
  # generic IP tables 
  obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_mms.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_mms.c
++++ b/net/ipv4/netfilter/ip_conntrack_mms.c
 @@ -0,0 +1,292 @@
 +/* MMS extension for IP connection tracking
 + * (C) 2002 by Filip Sneppe <filip.sneppe@cronos.be>
@@ -344,10 +338,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_mms.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_mms.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_mms.c
++++ b/net/ipv4/netfilter/ip_nat_mms.c
 @@ -0,0 +1,330 @@
 +/* MMS extension for TCP NAT alteration.
 + * (C) 2002 by Filip Sneppe <filip.sneppe@cronos.be>
@@ -679,10 +671,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_mms.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_conntrack.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
+--- a/include/linux/netfilter_ipv4/ip_conntrack.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack.h
 @@ -73,6 +73,7 @@ union ip_conntrack_expect_proto {
  #include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_h323.h>
@@ -707,10 +697,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack.h
  };
  
  #ifdef CONFIG_IP_NF_NAT_NEEDED
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_mms.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_conntrack_mms.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack_mms.h
 @@ -0,0 +1,31 @@
 +#ifndef _IP_CONNTRACK_MMS_H
 +#define _IP_CONNTRACK_MMS_H

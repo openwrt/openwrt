@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv4/ip_nat.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat.h
+--- a/include/linux/netfilter_ipv4/ip_nat.h
++++ b/include/linux/netfilter_ipv4/ip_nat.h
 @@ -121,5 +121,13 @@ extern int ip_nat_used_tuple(const struc
  extern u_int16_t ip_nat_cheat_check(u_int32_t oldvalinv,
  				    u_int32_t newval,
@@ -16,10 +14,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ip_nat.h
 +
  #endif /*__KERNEL__*/
  #endif
-Index: linux-2.4.35.4/include/linux/rtnetlink.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/rtnetlink.h
-+++ linux-2.4.35.4/include/linux/rtnetlink.h
+--- a/include/linux/rtnetlink.h
++++ b/include/linux/rtnetlink.h
 @@ -234,6 +234,8 @@ struct rtnexthop
  #define RTNH_F_DEAD		1	/* Nexthop is dead (used by multipath)	*/
  #define RTNH_F_PERVASIVE	2	/* Do recursive gateway lookup	*/
@@ -29,10 +25,8 @@ Index: linux-2.4.35.4/include/linux/rtnetlink.h
  
  /* Macros to handle hexthops */
  
-Index: linux-2.4.35.4/include/net/ip_fib.h
-===================================================================
---- linux-2.4.35.4.orig/include/net/ip_fib.h
-+++ linux-2.4.35.4/include/net/ip_fib.h
+--- a/include/net/ip_fib.h
++++ b/include/net/ip_fib.h
 @@ -162,7 +162,8 @@ static inline int fib_lookup(const struc
  
  static inline void fib_select_default(const struct rt_key *key, struct fib_result *res)
@@ -58,10 +52,8 @@ Index: linux-2.4.35.4/include/net/ip_fib.h
 +extern rwlock_t fib_nhflags_lock;
  
  #endif  /* _NET_FIB_H */
-Index: linux-2.4.35.4/include/net/route.h
-===================================================================
---- linux-2.4.35.4.orig/include/net/route.h
-+++ linux-2.4.35.4/include/net/route.h
+--- a/include/net/route.h
++++ b/include/net/route.h
 @@ -49,6 +49,8 @@ struct rt_key
  {
  	__u32			dst;
@@ -95,10 +87,8 @@ Index: linux-2.4.35.4/include/net/route.h
  static inline void ip_rt_put(struct rtable * rt)
  {
  	if (rt)
-Index: linux-2.4.35.4/net/ipv4/fib_frontend.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/fib_frontend.c
-+++ linux-2.4.35.4/net/ipv4/fib_frontend.c
+--- a/net/ipv4/fib_frontend.c
++++ b/net/ipv4/fib_frontend.c
 @@ -54,6 +54,8 @@
  struct fib_table *local_table;
  struct fib_table *main_table;
@@ -197,10 +187,8 @@ Index: linux-2.4.35.4/net/ipv4/fib_frontend.c
  		rt_cache_flush(-1);
  		break;
  	case NETDEV_DOWN:
-Index: linux-2.4.35.4/net/ipv4/fib_hash.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/fib_hash.c
-+++ linux-2.4.35.4/net/ipv4/fib_hash.c
+--- a/net/ipv4/fib_hash.c
++++ b/net/ipv4/fib_hash.c
 @@ -71,6 +71,7 @@ struct fib_node
  	struct fib_info		*fn_info;
  #define FIB_INFO(f)	((f)->fn_info)
@@ -414,10 +402,8 @@ Index: linux-2.4.35.4/net/ipv4/fib_hash.c
  	new_f->fn_key = key;
  #ifdef CONFIG_IP_ROUTE_TOS
  	new_f->fn_tos = tos;
-Index: linux-2.4.35.4/net/ipv4/fib_rules.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/fib_rules.c
-+++ linux-2.4.35.4/net/ipv4/fib_rules.c
+--- a/net/ipv4/fib_rules.c
++++ b/net/ipv4/fib_rules.c
 @@ -307,6 +307,11 @@ static void fib_rules_attach(struct net_
  	}
  }
@@ -443,10 +429,8 @@ Index: linux-2.4.35.4/net/ipv4/fib_rules.c
  		struct fib_table *tb;
  		if ((tb = fib_get_table(res->r->r_table)) != NULL)
  			tb->tb_select_default(tb, key, res);
-Index: linux-2.4.35.4/net/ipv4/fib_semantics.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/fib_semantics.c
-+++ linux-2.4.35.4/net/ipv4/fib_semantics.c
+--- a/net/ipv4/fib_semantics.c
++++ b/net/ipv4/fib_semantics.c
 @@ -48,6 +48,7 @@
  static struct fib_info 	*fib_info_list;
  static rwlock_t fib_info_lock = RW_LOCK_UNLOCKED;
@@ -802,10 +786,8 @@ Index: linux-2.4.35.4/net/ipv4/fib_semantics.c
  	spin_unlock_bh(&fib_multipath_lock);
  }
  #endif
-Index: linux-2.4.35.4/net/ipv4/ip_nat_dumb.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/ip_nat_dumb.c
-+++ linux-2.4.35.4/net/ipv4/ip_nat_dumb.c
+--- a/net/ipv4/ip_nat_dumb.c
++++ b/net/ipv4/ip_nat_dumb.c
 @@ -124,6 +124,7 @@ ip_do_nat(struct sk_buff *skb)
  					key.dst = ciph->saddr;
  					key.iif = skb->dev->ifindex;
@@ -814,10 +796,8 @@ Index: linux-2.4.35.4/net/ipv4/ip_nat_dumb.c
  #ifdef CONFIG_IP_ROUTE_TOS
  					key.tos = RT_TOS(ciph->tos);
  #endif
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_fw_compat_masq.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_fw_compat_masq.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_fw_compat_masq.c
+--- a/net/ipv4/netfilter/ip_fw_compat_masq.c
++++ b/net/ipv4/netfilter/ip_fw_compat_masq.c
 @@ -41,6 +41,10 @@ do_masquerade(struct sk_buff **pskb, con
  	enum ip_conntrack_info ctinfo;
  	struct ip_conntrack *ct;
@@ -895,10 +875,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_fw_compat_masq.c
  }
  
  void
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_nat_core.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
+--- a/net/ipv4/netfilter/ip_nat_core.c
++++ b/net/ipv4/netfilter/ip_nat_core.c
 @@ -994,6 +994,60 @@ icmp_reply_translation(struct sk_buff *s
  	return NF_ACCEPT;
  }
@@ -960,10 +938,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_core.c
  int __init ip_nat_init(void)
  {
  	size_t i;
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_standalone.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_nat_standalone.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_nat_standalone.c
+--- a/net/ipv4/netfilter/ip_nat_standalone.c
++++ b/net/ipv4/netfilter/ip_nat_standalone.c
 @@ -245,6 +245,9 @@ ip_nat_local_fn(unsigned int hooknum,
  /* Before packet filtering, change destination */
  static struct nf_hook_ops ip_nat_in_ops
@@ -1000,10 +976,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ip_nat_standalone.c
   cleanup_inops:
  	nf_unregister_hook(&ip_nat_in_ops);
   cleanup_nat:
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_MASQUERADE.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ipt_MASQUERADE.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_MASQUERADE.c
+--- a/net/ipv4/netfilter/ipt_MASQUERADE.c
++++ b/net/ipv4/netfilter/ipt_MASQUERADE.c
 @@ -87,7 +87,8 @@ masquerade_target(struct sk_buff **pskb,
  	key.dst = (*pskb)->nh.iph->daddr;
  	key.src = 0; /* Unknown: that's what we're trying to establish */
@@ -1028,10 +1002,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_MASQUERADE.c
  
  	newsrc = rt->rt_src;
  	DEBUGP("newsrc = %u.%u.%u.%u\n", NIPQUAD(newsrc));
-Index: linux-2.4.35.4/net/ipv4/route.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/route.c
-+++ linux-2.4.35.4/net/ipv4/route.c
+--- a/net/ipv4/route.c
++++ b/net/ipv4/route.c
 @@ -919,6 +919,7 @@ void ip_rt_redirect(u32 old_gw, u32 dadd
  
  				/* Gateway is different ... */
@@ -1300,10 +1272,8 @@ Index: linux-2.4.35.4/net/ipv4/route.c
  #ifdef CONFIG_IP_ROUTE_FWMARK
  		    rth->key.fwmark == key->fwmark &&
  #endif
-Index: linux-2.4.35.4/net/netsyms.c
-===================================================================
---- linux-2.4.35.4.orig/net/netsyms.c
-+++ linux-2.4.35.4/net/netsyms.c
+--- a/net/netsyms.c
++++ b/net/netsyms.c
 @@ -260,6 +260,7 @@ EXPORT_SYMBOL(inet_register_protosw);
  EXPORT_SYMBOL(inet_unregister_protosw);
  EXPORT_SYMBOL(ip_route_output_key);

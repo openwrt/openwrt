@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -2914,6 +2914,15 @@ CONFIG_IP_NF_MATCH_MAC
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -41,10 +39,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  length match support
  CONFIG_IP6_NF_MATCH_LENGTH
    This option allows you to match the length of a packet against a
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_random.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_random.h
++++ b/include/linux/netfilter_ipv4/ipt_random.h
 @@ -0,0 +1,11 @@
 +#ifndef _IPT_RAND_H
 +#define _IPT_RAND_H
@@ -57,10 +53,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_random.h
 +};
 +
 +#endif /*_IPT_RAND_H*/
-Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_random.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_random.h
++++ b/include/linux/netfilter_ipv6/ip6t_random.h
 @@ -0,0 +1,11 @@
 +#ifndef _IP6T_RAND_H
 +#define _IP6T_RAND_H
@@ -73,10 +67,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_random.h
 +};
 +
 +#endif /*_IP6T_RAND_H*/
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -48,6 +48,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
@@ -85,10 +77,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    dep_tristate '  condition match support' CONFIG_IP_NF_MATCH_CONDITION $CONFIG_IP_NF_IPTABLES
    dep_tristate '  recent match support' CONFIG_IP_NF_MATCH_RECENT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  ECN match support' CONFIG_IP_NF_MATCH_ECN $CONFIG_IP_NF_IPTABLES
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c
++++ b/net/ipv4/netfilter/ipt_random.c
 @@ -0,0 +1,96 @@
 +/*
 +  This is a module which is used for a "random" match support.
@@ -186,12 +176,10 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_random.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
-@@ -115,6 +115,8 @@ obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos
- obj-$(CONFIG_IP_NF_MATCH_TIME) += ipt_time.o
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
+@@ -114,6 +114,8 @@ obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_o
+ obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
  obj-$(CONFIG_IP_NF_MATCH_CONDITION) += ipt_condition.o
  
 +obj-$(CONFIG_IP_NF_MATCH_RANDOM) += ipt_random.o
@@ -199,10 +187,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_MATCH_RECENT) += ipt_recent.o
  
  obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn.o
-Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv6/netfilter/Config.in
+--- a/net/ipv6/netfilter/Config.in
++++ b/net/ipv6/netfilter/Config.in
 @@ -19,6 +19,7 @@ if [ "$CONFIG_IP6_NF_IPTABLES" != "n" ];
    dep_tristate '  limit match support' CONFIG_IP6_NF_MATCH_LIMIT $CONFIG_IP6_NF_IPTABLES
    dep_tristate '  condition match support' CONFIG_IP6_NF_MATCH_CONDITION $CONFIG_IP6_NF_IPTABLES
@@ -211,10 +197,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Routing header match support (EXPERIMENTAL)' CONFIG_IP6_NF_MATCH_RT $CONFIG_IP6_NF_IPTABLES
    fi
-Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_random.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_random.c
++++ b/net/ipv6/netfilter/ip6t_random.c
 @@ -0,0 +1,97 @@
 +/*
 +  This is a module which is used for a "random" match support.
@@ -313,10 +297,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_random.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv6/netfilter/Makefile
+--- a/net/ipv6/netfilter/Makefile
++++ b/net/ipv6/netfilter/Makefile
 @@ -32,6 +32,7 @@ obj-$(CONFIG_IP6_NF_TARGET_MARK) += ip6t
  obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
  obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
