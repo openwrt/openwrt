@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/atmdev.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/atmdev.h
-+++ linux-2.4.35.4/include/linux/atmdev.h
+--- a/include/linux/atmdev.h
++++ b/include/linux/atmdev.h
 @@ -400,6 +400,7 @@ extern rwlock_t vcc_sklist_lock;
  struct atm_dev *atm_dev_register(const char *type,const struct atmdev_ops *ops,
      int number,atm_dev_flags_t *flags); /* number == -1: pick first available */
@@ -10,10 +8,8 @@ Index: linux-2.4.35.4/include/linux/atmdev.h
  void atm_dev_deregister(struct atm_dev *dev);
  void shutdown_atm_dev(struct atm_dev *dev);
  void vcc_insert_socket(struct sock *sk);
-Index: linux-2.4.35.4/net/atm/resources.c
-===================================================================
---- linux-2.4.35.4.orig/net/atm/resources.c
-+++ linux-2.4.35.4/net/atm/resources.c
+--- a/net/atm/resources.c
++++ b/net/atm/resources.c
 @@ -10,6 +10,7 @@
  #include <linux/sonet.h>
  #include <linux/kernel.h> /* for barrier */

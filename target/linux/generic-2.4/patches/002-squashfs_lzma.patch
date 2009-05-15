@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/fs/squashfs/inode.c
-===================================================================
---- linux-2.4.35.4.orig/fs/squashfs/inode.c
-+++ linux-2.4.35.4/fs/squashfs/inode.c
+--- a/fs/squashfs/inode.c
++++ b/fs/squashfs/inode.c
 @@ -4,6 +4,9 @@
   * Copyright (c) 2002, 2003, 2004, 2005, 2006
   * Phillip Lougher <phillip@lougher.org.uk>
@@ -99,10 +97,8 @@ Index: linux-2.4.35.4/fs/squashfs/inode.c
  	unregister_filesystem(&squashfs_fs_type);
  }
  
-Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/squashfs/LzmaDecode.c
++++ b/fs/squashfs/LzmaDecode.c
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -767,10 +763,8 @@ Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.c
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
-Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/squashfs/LzmaDecode.h
++++ b/fs/squashfs/LzmaDecode.h
 @@ -0,0 +1,100 @@
 +/* 
 +  LzmaDecode.h
@@ -872,10 +866,8 @@ Index: linux-2.4.35.4/fs/squashfs/LzmaDecode.h
 +    UInt32 *outSizeProcessed);
 +
 +#endif
-Index: linux-2.4.35.4/fs/squashfs/Makefile
-===================================================================
---- linux-2.4.35.4.orig/fs/squashfs/Makefile
-+++ linux-2.4.35.4/fs/squashfs/Makefile
+--- a/fs/squashfs/Makefile
++++ b/fs/squashfs/Makefile
 @@ -4,7 +4,7 @@
  
  O_TARGET := squashfs.o

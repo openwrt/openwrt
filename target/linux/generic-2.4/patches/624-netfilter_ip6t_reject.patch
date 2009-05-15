@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_REJECT.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_REJECT.c
++++ b/net/ipv6/netfilter/ip6t_REJECT.c
 @@ -0,0 +1,301 @@
 +/*
 + * This is a module which is used for rejecting packets.
@@ -304,10 +302,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_REJECT.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_REJECT.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/netfilter_ipv6/ip6t_REJECT.h
-+++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_REJECT.h
+--- a/include/linux/netfilter_ipv6/ip6t_REJECT.h
++++ b/include/linux/netfilter_ipv6/ip6t_REJECT.h
 @@ -2,15 +2,17 @@
  #define _IP6T_REJECT_H
  
@@ -332,10 +328,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_REJECT.h
  
 -#endif /*_IPT_REJECT_H*/
 +#endif /*_IP6T_REJECT_H*/
-Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv6/netfilter/Makefile
+--- a/net/ipv6/netfilter/Makefile
++++ b/net/ipv6/netfilter/Makefile
 @@ -34,5 +34,7 @@ obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.
  obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
  obj-$(CONFIG_IP6_NF_MATCH_RANDOM) += ip6t_random.o
@@ -344,10 +338,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
 +
  
  include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv6/netfilter/Config.in
+--- a/net/ipv6/netfilter/Config.in
++++ b/net/ipv6/netfilter/Config.in
 @@ -61,6 +61,9 @@ if [ "$CONFIG_IP6_NF_IPTABLES" != "n" ];
    if [ "$CONFIG_IP6_NF_FILTER" != "n" ]; then
      dep_tristate '    LOG target support' CONFIG_IP6_NF_TARGET_LOG $CONFIG_IP6_NF_FILTER

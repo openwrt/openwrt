@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/skbuff.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/skbuff.h
-+++ linux-2.4.35.4/include/linux/skbuff.h
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
 @@ -912,6 +912,49 @@ static inline void skb_reserve(struct sk
  	skb->tail+=len;
  }
@@ -52,10 +50,8 @@ Index: linux-2.4.35.4/include/linux/skbuff.h
  extern int ___pskb_trim(struct sk_buff *skb, unsigned int len, int realloc);
  
  static inline void __skb_trim(struct sk_buff *skb, unsigned int len)
-Index: linux-2.4.35.4/drivers/net/tun.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/tun.c
-+++ linux-2.4.35.4/drivers/net/tun.c
+--- a/drivers/net/tun.c
++++ b/drivers/net/tun.c
 @@ -185,22 +185,31 @@ static __inline__ ssize_t tun_get_user(s
  {
  	struct tun_pi pi = { 0, __constant_htons(ETH_P_IP) };

@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/core/dev.c
-===================================================================
---- linux-2.4.35.4.orig/net/core/dev.c
-+++ linux-2.4.35.4/net/core/dev.c
+--- a/net/core/dev.c
++++ b/net/core/dev.c
 @@ -1289,6 +1289,19 @@ int netif_rx(struct sk_buff *skb)
  	local_irq_save(flags);
  

@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/sched/sch_htb.c
-===================================================================
---- linux-2.4.35.4.orig/net/sched/sch_htb.c
-+++ linux-2.4.35.4/net/sched/sch_htb.c
+--- a/net/sched/sch_htb.c
++++ b/net/sched/sch_htb.c
 @@ -369,7 +369,7 @@ static void htb_debug_dump (struct htb_s
  		struct list_head *l;
  		list_for_each (l,q->hash+i) {

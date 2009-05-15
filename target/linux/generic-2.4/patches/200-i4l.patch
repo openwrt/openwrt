@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/isdn/CREDITS
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/CREDITS
-+++ linux-2.4.35.4/Documentation/isdn/CREDITS
+--- a/Documentation/isdn/CREDITS
++++ b/Documentation/isdn/CREDITS
 @@ -37,7 +37,7 @@ Michael Knigge (knick@cove.han.de)
  Andreas Kool (akool@Kool.f.EUnet.de)
    For contribution of the isdnlog/isdnrep-tool
@@ -11,10 +9,8 @@ Index: linux-2.4.35.4/Documentation/isdn/CREDITS
    For lot of new ideas and the pcbit driver.
  
  Eberhard Moenkeberg (emoenke@gwdg.de)
-Index: linux-2.4.35.4/Documentation/isdn/HiSax.cert
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/HiSax.cert
-+++ linux-2.4.35.4/Documentation/isdn/HiSax.cert
+--- a/Documentation/isdn/HiSax.cert
++++ b/Documentation/isdn/HiSax.cert
 @@ -68,6 +68,8 @@ drivers/isdn/hisax/cert.c
  drivers/isdn/hisax/elsa.c
  drivers/isdn/hisax/diva.c
@@ -24,10 +20,8 @@ Index: linux-2.4.35.4/Documentation/isdn/HiSax.cert
  
  Please send any changes, bugfixes and patches to me rather than implementing
  them directly into the HiSax sources.
-Index: linux-2.4.35.4/Documentation/isdn/INTERFACE
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/INTERFACE
-+++ linux-2.4.35.4/Documentation/isdn/INTERFACE
+--- a/Documentation/isdn/INTERFACE
++++ b/Documentation/isdn/INTERFACE
 @@ -1,4 +1,4 @@
 -$Id: INTERFACE,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +$Id: INTERFACE,v 1.17 2002/01/31 13:26:35 keil Exp $
@@ -66,20 +60,16 @@ Index: linux-2.4.35.4/Documentation/isdn/INTERFACE
 +      command     = ISDN_STAT_PROCEED
 +      arg         = channel-number, locally to the driver. (starting with 0)
 +
-Index: linux-2.4.35.4/Documentation/isdn/INTERFACE.fax
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/INTERFACE.fax
-+++ linux-2.4.35.4/Documentation/isdn/INTERFACE.fax
+--- a/Documentation/isdn/INTERFACE.fax
++++ b/Documentation/isdn/INTERFACE.fax
 @@ -1,4 +1,4 @@
 -$Id: INTERFACE.fax,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +$Id: INTERFACE.fax,v 1.2 2000/08/06 09:22:50 armin Exp $
  
  
  Description of the fax-subinterface between linklevel and hardwarelevel of 
-Index: linux-2.4.35.4/Documentation/isdn/README
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README
-+++ linux-2.4.35.4/Documentation/isdn/README
+--- a/Documentation/isdn/README
++++ b/Documentation/isdn/README
 @@ -278,6 +278,12 @@ README for the ISDN-subsystem
                                        1 = Add CPN to FCON message on
                              Bit 2:    0 = Add CDN to RING/FCON message off
@@ -93,10 +83,8 @@ Index: linux-2.4.35.4/Documentation/isdn/README
  
    Last but not least a (at the moment fairly primitive) device to request
    the line-status (/dev/isdninfo) is made available.
-Index: linux-2.4.35.4/Documentation/isdn/README.HiSax
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README.HiSax
-+++ linux-2.4.35.4/Documentation/isdn/README.HiSax
+--- a/Documentation/isdn/README.HiSax
++++ b/Documentation/isdn/README.HiSax
 @@ -41,10 +41,9 @@ ELSA Quickstep 3000 (same settings as QS
  ELSA Quickstep 3000PCI
  ELSA PCMCIA
@@ -188,70 +176,56 @@ Index: linux-2.4.35.4/Documentation/isdn/README.HiSax
  
  Running the driver
  ------------------
-Index: linux-2.4.35.4/Documentation/isdn/README.act2000
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README.act2000
-+++ linux-2.4.35.4/Documentation/isdn/README.act2000
+--- a/Documentation/isdn/README.act2000
++++ b/Documentation/isdn/README.act2000
 @@ -1,4 +1,4 @@
 -$Id: README.act2000,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +$Id: README.act2000,v 1.3 2000/08/06 09:22:51 armin Exp $
  
  This document describes the ACT2000 driver for the
  IBM Active 2000 ISDN card.
-Index: linux-2.4.35.4/Documentation/isdn/README.audio
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README.audio
-+++ linux-2.4.35.4/Documentation/isdn/README.audio
+--- a/Documentation/isdn/README.audio
++++ b/Documentation/isdn/README.audio
 @@ -1,4 +1,4 @@
 -$Id: README.audio,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +$Id: README.audio,v 1.8 1999/07/11 17:17:29 armin Exp $
  
  ISDN subsystem for Linux.
    Description of audio mode.
-Index: linux-2.4.35.4/Documentation/isdn/README.eicon
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README.eicon
-+++ linux-2.4.35.4/Documentation/isdn/README.eicon
+--- a/Documentation/isdn/README.eicon
++++ b/Documentation/isdn/README.eicon
 @@ -1,4 +1,4 @@
 -$Id: README.eicon,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +$Id: README.eicon,v 1.10 2000/08/13 12:19:15 armin Exp $
  
  (c) 1999,2000 Armin Schindler (mac@melware.de)
  (c) 1999,2000 Cytronics & Melware (info@melware.de)
-Index: linux-2.4.35.4/Documentation/isdn/README.hysdn
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README.hysdn
-+++ linux-2.4.35.4/Documentation/isdn/README.hysdn
+--- a/Documentation/isdn/README.hysdn
++++ b/Documentation/isdn/README.hysdn
 @@ -1,4 +1,4 @@
 -$Id: README.hysdn,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +$Id: README.hysdn,v 1.3.6.1 2001/02/10 14:41:19 kai Exp $
  The hysdn driver has been written by
  by Werner Cornelius (werner@isdn4linux.de or werner@titro.de) 
  for Hypercope GmbH Aachen Germany. Hypercope agreed to publish this driver
-Index: linux-2.4.35.4/Documentation/isdn/README.icn
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README.icn
-+++ linux-2.4.35.4/Documentation/isdn/README.icn
+--- a/Documentation/isdn/README.icn
++++ b/Documentation/isdn/README.icn
 @@ -1,4 +1,4 @@
 -$Id: README.icn,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +$Id: README.icn,v 1.7 2000/08/06 09:22:51 armin Exp $
  
  You can get the ICN-ISDN-card from:
  
-Index: linux-2.4.35.4/Documentation/isdn/README.pcbit
-===================================================================
---- linux-2.4.35.4.orig/Documentation/isdn/README.pcbit
-+++ linux-2.4.35.4/Documentation/isdn/README.pcbit
+--- a/Documentation/isdn/README.pcbit
++++ b/Documentation/isdn/README.pcbit
 @@ -37,4 +37,4 @@ mailing list (isdn4linux@listserv.isdn4l
  regards,
    Pedro.
  		
 -<pedro_m@yahoo.com>
 +<roque@di.fc.ul.pt>
-Index: linux-2.4.35.4/Documentation/isdn/abcext_kernel.help
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/Documentation/isdn/abcext_kernel.help
++++ b/Documentation/isdn/abcext_kernel.help
 @@ -0,0 +1,166 @@
 + 
 +ISDN-ABC-DW Extension
@@ -419,10 +393,8 @@ Index: linux-2.4.35.4/Documentation/isdn/abcext_kernel.help
 +   See "linux/Documentation/isdn/dw-abc-extension-howto.txt" 
 +   for more Information
 +
-Index: linux-2.4.35.4/drivers/isdn/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/Config.in
-+++ linux-2.4.35.4/drivers/isdn/Config.in
+--- a/drivers/isdn/Config.in
++++ b/drivers/isdn/Config.in
 @@ -4,11 +4,9 @@
  
  # only included if CONFIG_ISDN != n
@@ -552,10 +524,8 @@ Index: linux-2.4.35.4/drivers/isdn/Config.in
  fi
  endmenu
  
-Index: linux-2.4.35.4/drivers/isdn/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/Makefile
-+++ linux-2.4.35.4/drivers/isdn/Makefile
+--- a/drivers/isdn/Makefile
++++ b/drivers/isdn/Makefile
 @@ -2,7 +2,7 @@
  
  # The target object and module list name.
@@ -577,10 +547,8 @@ Index: linux-2.4.35.4/drivers/isdn/Makefile
  subdir-$(CONFIG_ISDN_DRV_ICN)		+= icn
  subdir-$(CONFIG_ISDN_DRV_PCBIT)		+= pcbit
  subdir-$(CONFIG_ISDN_DRV_SC)		+= sc
-Index: linux-2.4.35.4/drivers/isdn/act2000/act2000.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/act2000/act2000.h
-+++ linux-2.4.35.4/drivers/isdn/act2000/act2000.h
+--- a/drivers/isdn/act2000/act2000.h
++++ b/drivers/isdn/act2000/act2000.h
 @@ -1,4 +1,4 @@
 -/* $Id: act2000.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id$
@@ -610,10 +578,8 @@ Index: linux-2.4.35.4/drivers/isdn/act2000/act2000.h
  {
          queue_task(&card->poll_tq, &tq_immediate);
          mark_bh(IMMEDIATE_BH);
-Index: linux-2.4.35.4/drivers/isdn/act2000/act2000_isa.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/act2000/act2000_isa.c
-+++ linux-2.4.35.4/drivers/isdn/act2000/act2000_isa.c
+--- a/drivers/isdn/act2000/act2000_isa.c
++++ b/drivers/isdn/act2000/act2000_isa.c
 @@ -1,4 +1,4 @@
 -/* $Id: act2000_isa.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id$
@@ -650,20 +616,16 @@ Index: linux-2.4.35.4/drivers/isdn/act2000/act2000_isa.c
  	}
  }
  
-Index: linux-2.4.35.4/drivers/isdn/act2000/act2000_isa.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/act2000/act2000_isa.h
-+++ linux-2.4.35.4/drivers/isdn/act2000/act2000_isa.h
+--- a/drivers/isdn/act2000/act2000_isa.h
++++ b/drivers/isdn/act2000/act2000_isa.h
 @@ -1,4 +1,4 @@
 -/* $Id: act2000_isa.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id$
   *
   * ISDN lowlevel-module for the IBM ISDN-S0 Active 2000 (ISA-Version).
   *
-Index: linux-2.4.35.4/drivers/isdn/act2000/capi.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/act2000/capi.c
-+++ linux-2.4.35.4/drivers/isdn/act2000/capi.c
+--- a/drivers/isdn/act2000/capi.c
++++ b/drivers/isdn/act2000/capi.c
 @@ -1,4 +1,4 @@
 -/* $Id: capi.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id$
@@ -681,10 +643,8 @@ Index: linux-2.4.35.4/drivers/isdn/act2000/capi.c
  #endif
  	{{ 0x00, 0x00}, NULL},
  };
-Index: linux-2.4.35.4/drivers/isdn/act2000/capi.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/act2000/capi.h
-+++ linux-2.4.35.4/drivers/isdn/act2000/capi.h
+--- a/drivers/isdn/act2000/capi.h
++++ b/drivers/isdn/act2000/capi.h
 @@ -1,4 +1,4 @@
 -/* $Id: capi.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id$
@@ -728,10 +688,8 @@ Index: linux-2.4.35.4/drivers/isdn/act2000/capi.h
  actcapi_nextsmsg(act2000_card *card)
  {
  	unsigned long flags;
-Index: linux-2.4.35.4/drivers/isdn/act2000/module.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/act2000/module.c
-+++ linux-2.4.35.4/drivers/isdn/act2000/module.c
+--- a/drivers/isdn/act2000/module.c
++++ b/drivers/isdn/act2000/module.c
 @@ -1,4 +1,4 @@
 -/* $Id: module.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id$
@@ -789,30 +747,24 @@ Index: linux-2.4.35.4/drivers/isdn/act2000/module.c
  
  module_init(act2000_init);
  module_exit(act2000_exit);
-Index: linux-2.4.35.4/drivers/isdn/avmb1/avm_cs.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/avm_cs.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/avm_cs.c
+--- a/drivers/isdn/avmb1/avm_cs.c
++++ b/drivers/isdn/avmb1/avm_cs.c
 @@ -1,4 +1,4 @@
 -/* $Id: avm_cs.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: avm_cs.c,v 1.6 2001/09/24 13:22:44 kai Exp $
   *
   * A PCMCIA client driver for AVM B1/M1/M2
   *
-Index: linux-2.4.35.4/drivers/isdn/avmb1/avmcard.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/avmcard.h
-+++ linux-2.4.35.4/drivers/isdn/avmb1/avmcard.h
+--- a/drivers/isdn/avmb1/avmcard.h
++++ b/drivers/isdn/avmb1/avmcard.h
 @@ -1,4 +1,4 @@
 -/* $Id: avmcard.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: avmcard.h,v 1.12 2001/09/24 13:22:44 kai Exp $
   *
   * Copyright 1999 by Carsten Paeth <calle@calle.de>
   *
-Index: linux-2.4.35.4/drivers/isdn/avmb1/b1.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/b1.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/b1.c
+--- a/drivers/isdn/avmb1/b1.c
++++ b/drivers/isdn/avmb1/b1.c
 @@ -1,4 +1,4 @@
 -/* $Id: b1.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: b1.c,v 1.26 2001/09/24 13:22:44 kai Exp $
@@ -836,10 +788,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/b1.c
  
  /* ------------------------------------------------------------- */
  
-Index: linux-2.4.35.4/drivers/isdn/avmb1/b1dma.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/b1dma.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/b1dma.c
+--- a/drivers/isdn/avmb1/b1dma.c
++++ b/drivers/isdn/avmb1/b1dma.c
 @@ -1,4 +1,4 @@
 -/* $Id: b1dma.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: b1dma.c,v 1.18 2001/09/24 13:22:44 kai Exp $
@@ -893,10 +843,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/b1dma.c
  	rxlen  = b1dmainmeml(card->mbase+0x28);
  
  	csr  = b1dmainmeml(card->mbase+AMCC_INTCSR);
-Index: linux-2.4.35.4/drivers/isdn/avmb1/b1isa.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/b1isa.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/b1isa.c
+--- a/drivers/isdn/avmb1/b1isa.c
++++ b/drivers/isdn/avmb1/b1isa.c
 @@ -1,4 +1,4 @@
 -/* $Id: b1isa.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: b1isa.c,v 1.14 2001/09/24 13:22:44 kai Exp $
@@ -918,10 +866,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/b1isa.c
  
  /* ------------------------------------------------------------- */
  
-Index: linux-2.4.35.4/drivers/isdn/avmb1/b1pci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/b1pci.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/b1pci.c
+--- a/drivers/isdn/avmb1/b1pci.c
++++ b/drivers/isdn/avmb1/b1pci.c
 @@ -1,4 +1,4 @@
 -/* $Id: b1pci.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: b1pci.c,v 1.40 2001/09/24 13:22:44 kai Exp $
@@ -981,10 +927,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/b1pci.c
  
  		printk(KERN_INFO
  		"%s: PCI BIOS reports AVM-B1 at i/o %#x, irq %d\n",
-Index: linux-2.4.35.4/drivers/isdn/avmb1/b1pcmcia.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/b1pcmcia.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/b1pcmcia.c
+--- a/drivers/isdn/avmb1/b1pcmcia.c
++++ b/drivers/isdn/avmb1/b1pcmcia.c
 @@ -1,4 +1,4 @@
 -/* $Id: b1pcmcia.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: b1pcmcia.c,v 1.17 2001/09/24 13:22:44 kai Exp $
@@ -1000,10 +944,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/b1pcmcia.c
  
  /* ------------------------------------------------------------- */
  
-Index: linux-2.4.35.4/drivers/isdn/avmb1/c4.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/c4.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/c4.c
+--- a/drivers/isdn/avmb1/c4.c
++++ b/drivers/isdn/avmb1/c4.c
 @@ -1,4 +1,4 @@
 -/* $Id: c4.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: c4.c,v 1.38 2001/09/24 13:22:44 kai Exp $
@@ -1055,10 +997,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/c4.c
    
  		printk(KERN_INFO
  			"%s: PCI BIOS reports AVM-C%d at i/o %#x, irq %d, mem %#x\n",
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capi.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capi.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capi.c
+--- a/drivers/isdn/avmb1/capi.c
++++ b/drivers/isdn/avmb1/capi.c
 @@ -1,4 +1,4 @@
 -/* $Id: capi.c,v 1.1.4.2 2001/12/09 18:45:13 kai Exp $
 +/* $Id: capi.c,v 1.59 2001/11/07 22:35:48 kai Exp $
@@ -1893,30 +1833,24 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/capi.c
  	(void) detach_capi_interface(&cuser);
  	printk(KERN_NOTICE "capi: Rev %s: unloaded\n", rev);
  }
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capicmd.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capicmd.h
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capicmd.h
+--- a/drivers/isdn/avmb1/capicmd.h
++++ b/drivers/isdn/avmb1/capicmd.h
 @@ -1,4 +1,4 @@
 -/* $Id: capicmd.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capicmd.h,v 1.4 2001/09/24 13:22:44 kai Exp $
   * 
   * CAPI 2.0 Interface for Linux
   * 
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capidev.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capidev.h
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capidev.h
+--- a/drivers/isdn/avmb1/capidev.h
++++ b/drivers/isdn/avmb1/capidev.h
 @@ -1,4 +1,4 @@
 -/* $Id: capidev.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capidev.h,v 1.8 2001/09/24 13:22:44 kai Exp $
   *
   * CAPI 2.0 Interface for Linux
   *
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capidrv.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capidrv.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capidrv.c
+--- a/drivers/isdn/avmb1/capidrv.c
++++ b/drivers/isdn/avmb1/capidrv.c
 @@ -1,4 +1,4 @@
 -/* $Id: capidrv.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capidrv.c,v 1.45 2001/09/24 13:22:44 kai Exp $
@@ -2094,20 +2028,16 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/capidrv.c
  	kfree(card->bchans);
  	card->bchans = 0;
  
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capidrv.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capidrv.h
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capidrv.h
+--- a/drivers/isdn/avmb1/capidrv.h
++++ b/drivers/isdn/avmb1/capidrv.h
 @@ -1,4 +1,4 @@
 -/* $Id: capidrv.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capidrv.h,v 1.4 2001/09/24 13:22:44 kai Exp $
   *
   * ISDN4Linux Driver, using capi20 interface (kernelcapi)
   *
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capifs.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capifs.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capifs.c
+--- a/drivers/isdn/avmb1/capifs.c
++++ b/drivers/isdn/avmb1/capifs.c
 @@ -1,4 +1,4 @@
 -/* $Id: capifs.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capifs.c,v 1.22 2001/09/24 13:22:44 kai Exp $
@@ -2386,30 +2316,24 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/capifs.c
  		}
  	}
  }
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capifs.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capifs.h
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capifs.h
+--- a/drivers/isdn/avmb1/capifs.h
++++ b/drivers/isdn/avmb1/capifs.h
 @@ -1,4 +1,4 @@
 -/* $Id: capifs.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capifs.h,v 1.4 2001/09/24 13:22:44 kai Exp $
   * 
   * Copyright 2000 by Carsten Paeth <calle@calle.de>
   *
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capilli.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capilli.h
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capilli.h
+--- a/drivers/isdn/avmb1/capilli.h
++++ b/drivers/isdn/avmb1/capilli.h
 @@ -1,4 +1,4 @@
 -/* $Id: capilli.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capilli.h,v 1.5 2001/09/24 13:22:44 kai Exp $
   * 
   * Kernel CAPI 2.0 Driver Interface for Linux
   * 
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capiutil.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capiutil.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capiutil.c
+--- a/drivers/isdn/avmb1/capiutil.c
++++ b/drivers/isdn/avmb1/capiutil.c
 @@ -1,4 +1,4 @@
 -/* $Id: capiutil.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capiutil.c,v 1.16 2001/09/24 13:22:44 kai Exp $
@@ -2424,20 +2348,16 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/capiutil.c
  #include "capiutil.h"
  
  MODULE_DESCRIPTION("CAPI4Linux: CAPI message conversion support");
-Index: linux-2.4.35.4/drivers/isdn/avmb1/capiutil.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/capiutil.h
-+++ linux-2.4.35.4/drivers/isdn/avmb1/capiutil.h
+--- a/drivers/isdn/avmb1/capiutil.h
++++ b/drivers/isdn/avmb1/capiutil.h
 @@ -1,4 +1,4 @@
 -/* $Id: capiutil.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: capiutil.h,v 1.7 2001/09/24 13:22:44 kai Exp $
   *
   * CAPI 2.0 defines & types
   *
-Index: linux-2.4.35.4/drivers/isdn/avmb1/kcapi.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/kcapi.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/kcapi.c
+--- a/drivers/isdn/avmb1/kcapi.c
++++ b/drivers/isdn/avmb1/kcapi.c
 @@ -1,4 +1,4 @@
 -/* $Id: kcapi.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: kcapi.c,v 1.28 2001/09/24 13:22:44 kai Exp $
@@ -2613,10 +2533,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/kcapi.c
          printk(KERN_NOTICE "kcapi: card %d \"%s\" ready.\n",
  		CARDNR(card), card->name);
  
-Index: linux-2.4.35.4/drivers/isdn/avmb1/t1isa.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/t1isa.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/t1isa.c
+--- a/drivers/isdn/avmb1/t1isa.c
++++ b/drivers/isdn/avmb1/t1isa.c
 @@ -1,4 +1,4 @@
 -/* $Id: t1isa.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: t1isa.c,v 1.22 2001/09/24 13:22:44 kai Exp $
@@ -2639,10 +2557,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/t1isa.c
  
  /* ------------------------------------------------------------- */
  
-Index: linux-2.4.35.4/drivers/isdn/avmb1/t1pci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/avmb1/t1pci.c
-+++ linux-2.4.35.4/drivers/isdn/avmb1/t1pci.c
+--- a/drivers/isdn/avmb1/t1pci.c
++++ b/drivers/isdn/avmb1/t1pci.c
 @@ -1,4 +1,4 @@
 -/* $Id: t1pci.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: t1pci.c,v 1.25 2001/09/24 13:22:44 kai Exp $
@@ -2692,10 +2608,8 @@ Index: linux-2.4.35.4/drivers/isdn/avmb1/t1pci.c
  
  		printk(KERN_INFO
  			"%s: PCI BIOS reports AVM-T1-PCI at i/o %#x, irq %d, mem %#x\n",
-Index: linux-2.4.35.4/drivers/isdn/divert/divert_procfs.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/divert/divert_procfs.c
-+++ linux-2.4.35.4/drivers/isdn/divert/divert_procfs.c
+--- a/drivers/isdn/divert/divert_procfs.c
++++ b/drivers/isdn/divert/divert_procfs.c
 @@ -1,4 +1,4 @@
 -/* $Id: divert_procfs.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
@@ -2816,10 +2730,8 @@ Index: linux-2.4.35.4/drivers/isdn/divert/divert_procfs.c
  #endif	/* CONFIG_PROC_FS */
  
  	return (0);
-Index: linux-2.4.35.4/drivers/isdn/divert/isdn_divert.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/divert/isdn_divert.c
-+++ linux-2.4.35.4/drivers/isdn/divert/isdn_divert.c
+--- a/drivers/isdn/divert/isdn_divert.c
++++ b/drivers/isdn/divert/isdn_divert.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_divert.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
@@ -2875,10 +2787,8 @@ Index: linux-2.4.35.4/drivers/isdn/divert/isdn_divert.c
                     break;
   
  		   default:
-Index: linux-2.4.35.4/drivers/isdn/divert/isdn_divert.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/divert/isdn_divert.h
-+++ linux-2.4.35.4/drivers/isdn/divert/isdn_divert.h
+--- a/drivers/isdn/divert/isdn_divert.h
++++ b/drivers/isdn/divert/isdn_divert.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_divert.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
@@ -2907,10 +2817,8 @@ Index: linux-2.4.35.4/drivers/isdn/divert/isdn_divert.h
                         actions 1-2 only take place if interface is opened 
  		    */
     u_char waittime; /* maximum wait time for proceeding */ 
-Index: linux-2.4.35.4/drivers/isdn/eicon/Divas_mod.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/Divas_mod.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/Divas_mod.c
+--- a/drivers/isdn/eicon/Divas_mod.c
++++ b/drivers/isdn/eicon/Divas_mod.c
 @@ -20,6 +20,7 @@
  #include "adapter.h"
  #include "uxio.h"
@@ -2919,10 +2827,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/Divas_mod.c
  
  MODULE_DESCRIPTION("ISDN4Linux: Driver for Eicon Diva Server cards");
  MODULE_AUTHOR("Armin Schindler");
-Index: linux-2.4.35.4/drivers/isdn/eicon/common.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/common.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/common.c
+--- a/drivers/isdn/eicon/common.c
++++ b/drivers/isdn/eicon/common.c
 @@ -808,9 +808,7 @@ void	DivasDoDpc(void *pData)
  	
  	while(i--)
@@ -2934,10 +2840,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/common.c
  	}
  }
  
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon.h
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon.h
+--- a/drivers/isdn/eicon/eicon.h
++++ b/drivers/isdn/eicon/eicon.h
 @@ -1,4 +1,4 @@
 -/* $Id: eicon.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon.h,v 1.26 2001/09/24 13:22:47 kai Exp $
@@ -2967,20 +2871,16 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/eicon.h
  {
          queue_task(&card->ack_tq, &tq_immediate);
          mark_bh(IMMEDIATE_BH);
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_dsp.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_dsp.h
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_dsp.h
+--- a/drivers/isdn/eicon/eicon_dsp.h
++++ b/drivers/isdn/eicon/eicon_dsp.h
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_dsp.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_dsp.h,v 1.8 2001/09/24 13:22:47 kai Exp $
   *
   * ISDN lowlevel-module for Eicon active cards.
   * DSP definitions
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_idi.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_idi.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_idi.c
+--- a/drivers/isdn/eicon/eicon_idi.c
++++ b/drivers/isdn/eicon/eicon_idi.c
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_idi.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_idi.c,v 1.45 2001/11/07 22:35:48 kai Exp $
@@ -3057,30 +2957,24 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_idi.c
  					chan->statectrl &= ~WAITING_FOR_HANGUP;
  					chan->statectrl &= ~IN_HOLD;
  					if (chan->statectrl & HAVE_CONN_REQ) {
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_idi.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_idi.h
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_idi.h
+--- a/drivers/isdn/eicon/eicon_idi.h
++++ b/drivers/isdn/eicon/eicon_idi.h
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_idi.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_idi.h,v 1.12 2001/09/24 13:22:47 kai Exp $
   *
   * ISDN lowlevel-module for the Eicon active cards.
   * IDI-Interface
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_io.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_io.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_io.c
+--- a/drivers/isdn/eicon/eicon_io.c
++++ b/drivers/isdn/eicon/eicon_io.c
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_io.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_io.c,v 1.15 2001/09/24 13:22:47 kai Exp $
   *
   * ISDN low-level module for Eicon active ISDN-Cards.
   * Code for communicating with hardware.
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_isa.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_isa.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_isa.c
+--- a/drivers/isdn/eicon/eicon_isa.c
++++ b/drivers/isdn/eicon/eicon_isa.c
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_isa.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_isa.c,v 1.18 2001/11/07 22:35:48 kai Exp $
@@ -3172,20 +3066,16 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_isa.c
  #ifdef EICON_MCA_DEBUG
  	printk(KERN_INFO "eicon_isa_boot: card->ramsize = %d.\n", card->ramsize);
  #endif
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_isa.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_isa.h
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_isa.h
+--- a/drivers/isdn/eicon/eicon_isa.h
++++ b/drivers/isdn/eicon/eicon_isa.h
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_isa.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_isa.h,v 1.11 2001/09/24 13:22:47 kai Exp $
   *
   * ISDN low-level module for Eicon active ISDN-Cards.
   *
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_mod.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_mod.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_mod.c
+--- a/drivers/isdn/eicon/eicon_mod.c
++++ b/drivers/isdn/eicon/eicon_mod.c
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_mod.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_mod.c,v 1.44 2001/11/20 09:48:25 armin Exp $
@@ -3268,10 +3158,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_mod.c
  
  #endif /* MODULE */
  
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_pci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_pci.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_pci.c
+--- a/drivers/isdn/eicon/eicon_pci.c
++++ b/drivers/isdn/eicon/eicon_pci.c
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_pci.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_pci.c,v 1.18 2001/09/24 13:22:47 kai Exp $
@@ -3287,20 +3175,16 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_pci.c
  
  #if CONFIG_PCI	         /* intire stuff is only for PCI */
  #ifdef CONFIG_ISDN_DRV_EICON_PCI
-Index: linux-2.4.35.4/drivers/isdn/eicon/eicon_pci.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/eicon_pci.h
-+++ linux-2.4.35.4/drivers/isdn/eicon/eicon_pci.h
+--- a/drivers/isdn/eicon/eicon_pci.h
++++ b/drivers/isdn/eicon/eicon_pci.h
 @@ -1,4 +1,4 @@
 -/* $Id: eicon_pci.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: eicon_pci.h,v 1.7 2001/09/24 13:22:47 kai Exp $
   *
   * ISDN low-level module for Eicon active ISDN-Cards (PCI part).
   *
-Index: linux-2.4.35.4/drivers/isdn/eicon/fourbri.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/fourbri.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/fourbri.c
+--- a/drivers/isdn/eicon/fourbri.c
++++ b/drivers/isdn/eicon/fourbri.c
 @@ -337,8 +337,7 @@ static int diva_server_4bri_load(card_t 
  static int diva_server_4bri_start(card_t *card, byte *channels)
  {
@@ -3311,10 +3195,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/fourbri.c
  	int adapter_num;
  
  	DPRINTF(("divas: start Diva Server 4BRI"));
-Index: linux-2.4.35.4/drivers/isdn/eicon/kprintf.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/kprintf.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/kprintf.c
+--- a/drivers/isdn/eicon/kprintf.c
++++ b/drivers/isdn/eicon/kprintf.c
 @@ -18,6 +18,468 @@
  #include "divalog.h"
  #include "uxio.h"
@@ -3793,10 +3675,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/kprintf.c
  
      va_end(argptr);
  
-Index: linux-2.4.35.4/drivers/isdn/eicon/lincfg.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/lincfg.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/lincfg.c
+--- a/drivers/isdn/eicon/lincfg.c
++++ b/drivers/isdn/eicon/lincfg.c
 @@ -26,6 +26,9 @@
  #include "uxio.h"
  
@@ -3807,10 +3687,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/lincfg.c
  #include <linux/kernel.h>
  #include <linux/ioport.h>
  
-Index: linux-2.4.35.4/drivers/isdn/eicon/linchr.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/linchr.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/linchr.c
+--- a/drivers/isdn/eicon/linchr.c
++++ b/drivers/isdn/eicon/linchr.c
 @@ -154,17 +154,17 @@ ssize_t do_read(struct file *pFile, char
  	klog_t *pHeadItem;
  
@@ -3834,10 +3712,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/linchr.c
  		kfree(pHeadItem);
  		return sizeof(klog_t);
  	}
-Index: linux-2.4.35.4/drivers/isdn/eicon/linio.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/eicon/linio.c
-+++ linux-2.4.35.4/drivers/isdn/eicon/linio.c
+--- a/drivers/isdn/eicon/linio.c
++++ b/drivers/isdn/eicon/linio.c
 @@ -15,6 +15,7 @@
  #include <linux/slab.h>
  #include <linux/pci.h>
@@ -3846,10 +3722,8 @@ Index: linux-2.4.35.4/drivers/isdn/eicon/linio.c
  #undef N_DATA
  
  #include "uxio.h"
-Index: linux-2.4.35.4/drivers/isdn/hisax/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/Makefile
-+++ linux-2.4.35.4/drivers/isdn/hisax/Makefile
+--- a/drivers/isdn/hisax/Makefile
++++ b/drivers/isdn/hisax/Makefile
 @@ -4,20 +4,17 @@
  
  O_TARGET	  := vmlinux-obj.o
@@ -3913,10 +3787,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/Makefile
  
  CERT := $(shell md5sum -c md5sums.asc >> /dev/null;echo $$?)
  CFLAGS_cert.o := -DCERTIFICATION=$(CERT)
-Index: linux-2.4.35.4/drivers/isdn/hisax/amd7930.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/amd7930.c
++++ b/drivers/isdn/hisax/amd7930.c
 @@ -0,0 +1,755 @@
 +/* $Id: amd7930.c,v 1.8 2001/09/24 13:22:55 kai Exp $
 + *
@@ -4673,30 +4545,24 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/amd7930.c
 +
 +	return (1);
 +}
-Index: linux-2.4.35.4/drivers/isdn/hisax/arcofi.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/arcofi.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/arcofi.c
+--- a/drivers/isdn/hisax/arcofi.c
++++ b/drivers/isdn/hisax/arcofi.c
 @@ -1,4 +1,4 @@
 -/* $Id: arcofi.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: arcofi.c,v 1.14 2001/09/24 13:22:55 kai Exp $
   *
   * Ansteuerung ARCOFI 2165
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/arcofi.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/arcofi.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/arcofi.h
+--- a/drivers/isdn/hisax/arcofi.h
++++ b/drivers/isdn/hisax/arcofi.h
 @@ -1,4 +1,4 @@
 -/* $Id: arcofi.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
   *
   * Ansteuerung ARCOFI 2165
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/asuscom.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/asuscom.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/asuscom.c
+--- a/drivers/isdn/hisax/asuscom.c
++++ b/drivers/isdn/hisax/asuscom.c
 @@ -1,4 +1,4 @@
 -/* $Id: asuscom.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: asuscom.c,v 1.14 2001/09/24 13:22:55 kai Exp $
@@ -4795,10 +4661,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/asuscom.c
  	bytecnt = 8;
  	cs->hw.asus.cfg_reg = card->para[1];
  	cs->irq = card->para[0];
-Index: linux-2.4.35.4/drivers/isdn/hisax/avm_a1.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/avm_a1.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/avm_a1.c
+--- a/drivers/isdn/hisax/avm_a1.c
++++ b/drivers/isdn/hisax/avm_a1.c
 @@ -1,4 +1,4 @@
 -/* $Id: avm_a1.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: avm_a1.c,v 2.15 2001/09/24 13:22:55 kai Exp $
@@ -4814,10 +4678,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/avm_a1.c
  
  #define	 AVM_A1_STAT_ISAC	0x01
  #define	 AVM_A1_STAT_HSCX	0x02
-Index: linux-2.4.35.4/drivers/isdn/hisax/avm_a1p.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/avm_a1p.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/avm_a1p.c
+--- a/drivers/isdn/hisax/avm_a1p.c
++++ b/drivers/isdn/hisax/avm_a1p.c
 @@ -1,4 +1,4 @@
 -/* $Id: avm_a1p.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: avm_a1p.c,v 2.9 2001/09/24 13:22:55 kai Exp $
@@ -4833,10 +4695,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/avm_a1p.c
  
  static inline u_char
  ReadISAC(struct IsdnCardState *cs, u_char offset)
-Index: linux-2.4.35.4/drivers/isdn/hisax/avm_pci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/avm_pci.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/avm_pci.c
+--- a/drivers/isdn/hisax/avm_pci.c
++++ b/drivers/isdn/hisax/avm_pci.c
 @@ -1,4 +1,4 @@
 -/* $Id: avm_pci.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: avm_pci.c,v 1.29 2001/09/24 13:22:55 kai Exp $
@@ -4953,10 +4813,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/avm_pci.c
  	cs->hw.avm.isac = cs->hw.avm.cfg_reg + 0x10;
  	if (check_region((cs->hw.avm.cfg_reg), 32)) {
  		printk(KERN_WARNING
-Index: linux-2.4.35.4/drivers/isdn/hisax/bkm_a4t.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/bkm_a4t.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/bkm_a4t.c
+--- a/drivers/isdn/hisax/bkm_a4t.c
++++ b/drivers/isdn/hisax/bkm_a4t.c
 @@ -1,4 +1,4 @@
 -/* $Id: bkm_a4t.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: bkm_a4t.c,v 1.22 2001/09/24 13:22:55 kai Exp $
@@ -4994,10 +4852,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/bkm_a4t.c
  			cs->irq = dev_a4t->irq;
  			break;
  		}
-Index: linux-2.4.35.4/drivers/isdn/hisax/bkm_a8.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/bkm_a8.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/bkm_a8.c
+--- a/drivers/isdn/hisax/bkm_a8.c
++++ b/drivers/isdn/hisax/bkm_a8.c
 @@ -1,4 +1,4 @@
 -/* $Id: bkm_a8.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: bkm_a8.c,v 1.22 2001/09/24 13:22:55 kai Exp $
@@ -5047,20 +4903,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/bkm_a8.c
  		}
  #endif /* End HACK */
  	}
-Index: linux-2.4.35.4/drivers/isdn/hisax/bkm_ax.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/bkm_ax.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/bkm_ax.h
+--- a/drivers/isdn/hisax/bkm_ax.h
++++ b/drivers/isdn/hisax/bkm_ax.h
 @@ -1,4 +1,4 @@
 -/* $Id: bkm_ax.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
   *
   * low level decls for T-Berkom cards A4T and Scitel Quadro (4*S0, passive)
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/callc.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/callc.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/callc.c
+--- a/drivers/isdn/hisax/callc.c
++++ b/drivers/isdn/hisax/callc.c
 @@ -1,4 +1,4 @@
 -/* $Id: callc.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: callc.c,v 2.59 2002/02/09 21:19:11 keil Exp $
@@ -5153,20 +5005,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/callc.c
  		case (CC_PROGRESS | INDICATION):
  		case (CC_NOTIFY | INDICATION):
  			break;
-Index: linux-2.4.35.4/drivers/isdn/hisax/cert.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/cert.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/cert.c
+--- a/drivers/isdn/hisax/cert.c
++++ b/drivers/isdn/hisax/cert.c
 @@ -1,4 +1,4 @@
 -/* $Id: cert.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: cert.c,v 2.6 2001/09/24 13:22:56 kai Exp $
   *
   * Author       Karsten Keil
   * Copyright    by Karsten Keil      <keil@isdn4linux.de>
-Index: linux-2.4.35.4/drivers/isdn/hisax/config.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/config.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/config.c
+--- a/drivers/isdn/hisax/config.c
++++ b/drivers/isdn/hisax/config.c
 @@ -1,4 +1,4 @@
 -/* $Id: config.c,v 1.1.4.5 2001/12/09 19:19:26 kai Exp $
 +/* $Id: config.c,v 2.84 2002/08/13 09:55:29 keil Exp $
@@ -5656,10 +5504,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/config.c
 -EXPORT_SYMBOL(FsmInitTimer);
 -EXPORT_SYMBOL(FsmDelTimer);
 -EXPORT_SYMBOL(FsmRestartTimer);
-Index: linux-2.4.35.4/drivers/isdn/hisax/diva.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/diva.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/diva.c
+--- a/drivers/isdn/hisax/diva.c
++++ b/drivers/isdn/hisax/diva.c
 @@ -1,4 +1,4 @@
 -/* $Id: diva.c,v 1.1.4.2 2002/08/30 11:21:00 keil Exp $
 +/* $Id: diva.c,v 1.33 2001/09/24 13:22:56 kai Exp $
@@ -6080,10 +5926,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/diva.c
  	} else { /* DIVA 2.0 */
  		cs->hw.diva.tl.function = (void *) diva_led_handler;
  		cs->hw.diva.tl.data = (long) cs;
-Index: linux-2.4.35.4/drivers/isdn/hisax/elsa.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/elsa.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/elsa.c
+--- a/drivers/isdn/hisax/elsa.c
++++ b/drivers/isdn/hisax/elsa.c
 @@ -1,4 +1,4 @@
 -/* $Id: elsa.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: elsa.c,v 2.32 2001/09/24 13:22:56 kai Exp $
@@ -6229,10 +6073,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/elsa.c
  		case ELSA_QS3000PCI:
  			bytecnt = 16;
  			break;
-Index: linux-2.4.35.4/drivers/isdn/hisax/elsa_cs.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/elsa_cs.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/elsa_cs.c
+--- a/drivers/isdn/hisax/elsa_cs.c
++++ b/drivers/isdn/hisax/elsa_cs.c
 @@ -72,7 +72,7 @@ static int pc_debug = PCMCIA_DEBUG;
  MODULE_PARM(pc_debug, "i");
  #define DEBUG(n, args...) if (pc_debug>(n)) printk(KERN_DEBUG args);
@@ -6242,10 +6084,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/elsa_cs.c
  #else
  #define DEBUG(n, args...)
  #endif
-Index: linux-2.4.35.4/drivers/isdn/hisax/elsa_ser.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/elsa_ser.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/elsa_ser.c
+--- a/drivers/isdn/hisax/elsa_ser.c
++++ b/drivers/isdn/hisax/elsa_ser.c
 @@ -1,4 +1,4 @@
 -/* $Id: elsa_ser.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: elsa_ser.c,v 2.14 2001/09/24 13:22:56 kai Exp $
@@ -6327,10 +6167,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/elsa_ser.c
  
  static void rs_interrupt_elsa(int irq, struct IsdnCardState *cs)
  {
-Index: linux-2.4.35.4/drivers/isdn/hisax/fsm.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/fsm.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/fsm.c
+--- a/drivers/isdn/hisax/fsm.c
++++ b/drivers/isdn/hisax/fsm.c
 @@ -1,4 +1,4 @@
 -/* $Id: fsm.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
@@ -6352,20 +6190,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/fsm.c
  int __init
  FsmNew(struct Fsm *fsm, struct FsmNode *fnlist, int fncount)
  {
-Index: linux-2.4.35.4/drivers/isdn/hisax/fsm.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/fsm.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/fsm.h
+--- a/drivers/isdn/hisax/fsm.h
++++ b/drivers/isdn/hisax/fsm.h
 @@ -1,4 +1,4 @@
 -/* $Id: fsm.h,v 1.1.2.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
   *
   * Finite state machine
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/gazel.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/gazel.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/gazel.c
+--- a/drivers/isdn/hisax/gazel.c
++++ b/drivers/isdn/hisax/gazel.c
 @@ -1,4 +1,4 @@
 -/* $Id: gazel.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: gazel.c,v 2.19 2001/09/24 13:22:56 kai Exp $
@@ -6395,10 +6229,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/gazel.c
  			found = 1;
  		}
  		if (found)
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_2bds0.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_2bds0.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_2bds0.c
+--- a/drivers/isdn/hisax/hfc_2bds0.c
++++ b/drivers/isdn/hisax/hfc_2bds0.c
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_2bds0.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfc_2bds0.c,v 1.18 2001/09/24 13:22:56 kai Exp $
@@ -6477,40 +6309,32 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_2bds0.c
  }
  
  unsigned int __init
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_2bds0.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_2bds0.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_2bds0.h
+--- a/drivers/isdn/hisax/hfc_2bds0.h
++++ b/drivers/isdn/hisax/hfc_2bds0.h
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_2bds0.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfc_2bds0.h,v 1.6 2001/09/24 13:22:56 kai Exp $
   *
   * specific defines for CCD's HFC 2BDS0
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_2bs0.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_2bs0.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_2bs0.c
+--- a/drivers/isdn/hisax/hfc_2bs0.c
++++ b/drivers/isdn/hisax/hfc_2bs0.c
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_2bs0.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfc_2bs0.c,v 1.20 2001/09/24 13:22:56 kai Exp $
   *
   * specific routines for CCD's HFC 2BS0
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_2bs0.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_2bs0.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_2bs0.h
+--- a/drivers/isdn/hisax/hfc_2bs0.h
++++ b/drivers/isdn/hisax/hfc_2bs0.h
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_2bs0.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfc_2bs0.h,v 1.5 2001/09/24 13:22:56 kai Exp $
   *
   * specific defines for CCD's HFC 2BS0
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_pci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_pci.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_pci.c
+--- a/drivers/isdn/hisax/hfc_pci.c
++++ b/drivers/isdn/hisax/hfc_pci.c
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_pci.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfc_pci.c,v 1.48 2001/09/24 13:22:56 kai Exp $
@@ -6632,20 +6456,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_pci.c
  		    (((ulong) cs->hw.hfcpci.share_start) & ~0x7FFF) + 0x8000;
  		pcibios_write_config_dword(cs->hw.hfcpci.pci_bus,
  				       cs->hw.hfcpci.pci_device_fn, 0x80,
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_pci.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_pci.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_pci.h
+--- a/drivers/isdn/hisax/hfc_pci.h
++++ b/drivers/isdn/hisax/hfc_pci.h
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_pci.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfc_pci.h,v 1.10 2001/09/24 13:22:56 kai Exp $
   *
   * specific defines for CCD's HFC 2BDS0 PCI chips
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_sx.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_sx.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_sx.c
+--- a/drivers/isdn/hisax/hfc_sx.c
++++ b/drivers/isdn/hisax/hfc_sx.c
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_sx.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfc_sx.c,v 1.12 2001/09/24 13:22:56 kai Exp $
@@ -6776,20 +6596,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_sx.c
 +
 +
 +
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_sx.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfc_sx.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_sx.h
+--- a/drivers/isdn/hisax/hfc_sx.h
++++ b/drivers/isdn/hisax/hfc_sx.h
 @@ -1,4 +1,4 @@
 -/* $Id: hfc_sx.h,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id$
   *
   * specific defines for CCD's HFC 2BDS0 S+,SP chips
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_usb.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_usb.c
++++ b/drivers/isdn/hisax/hfc_usb.c
 @@ -0,0 +1,1189 @@
 +/* $Id: hfc_usb.c,v 2.3 2001/07/06 21:30:11 werner Exp $
 + *
@@ -7980,10 +7796,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_usb.c
 +
 +module_init(hfc_usb_init);
 +module_exit(hfc_usb_exit);
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_usbr.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfc_usbr.c
++++ b/drivers/isdn/hisax/hfc_usbr.c
 @@ -0,0 +1,471 @@
 +/* $Id: hfc_usbr.c,v 2.5 2001/07/06 21:30:11 werner Exp $
 +
@@ -8456,10 +8270,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hfc_usbr.c
 +	cs->cardmsg = &hfcusb_card_msg;
 +	return (1);		/* success */
 +}
-Index: linux-2.4.35.4/drivers/isdn/hisax/hfcscard.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hfcscard.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hfcscard.c
+--- a/drivers/isdn/hisax/hfcscard.c
++++ b/drivers/isdn/hisax/hfcscard.c
 @@ -1,4 +1,4 @@
 -/* $Id: hfcscard.c,v 1.1.4.1 2001/11/20 14:19:35 kai Exp $
 +/* $Id: hfcscard.c,v 1.10 2001/09/24 13:22:56 kai Exp $
@@ -8566,10 +8378,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hfcscard.c
  	cs->hw.hfcD.addr = card->para[1] & 0xfffe;
  	cs->irq = card->para[0];
  	cs->hw.hfcD.cip = 0;
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hisax.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax.h
+--- a/drivers/isdn/hisax/hisax.h
++++ b/drivers/isdn/hisax/hisax.h
 @@ -1,4 +1,4 @@
 -/* $Id: hisax.h,v 1.1.4.2 2001/12/09 19:15:28 kai Exp $
 +/* $Id: hisax.h,v 2.64 2001/09/24 13:22:56 kai Exp $
@@ -8686,10 +8496,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax.h
  #define TEI_PER_CARD 1
  
  /* L1 Debug */
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_debug.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hisax_debug.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_debug.h
+--- a/drivers/isdn/hisax/hisax_debug.h
++++ b/drivers/isdn/hisax/hisax_debug.h
 @@ -28,7 +28,7 @@
  
  #define DBG(level, format, arg...) do { \
@@ -8699,10 +8507,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_debug.h
  } while (0)
  
  #define DBG_PACKET(level,data,count) \
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_fcpcipnp.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hisax_fcpcipnp.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_fcpcipnp.c
+--- a/drivers/isdn/hisax/hisax_fcpcipnp.c
++++ b/drivers/isdn/hisax/hisax_fcpcipnp.c
 @@ -20,22 +20,19 @@
   *
   * o POWER PC
@@ -9138,10 +8944,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_fcpcipnp.c
 +#ifdef __ISAPNP__
 +#include "hisax_isapnp.c"
 +#endif
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_fcpcipnp.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hisax_fcpcipnp.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_fcpcipnp.h
+--- a/drivers/isdn/hisax/hisax_fcpcipnp.h
++++ b/drivers/isdn/hisax/hisax_fcpcipnp.h
 @@ -43,10 +43,12 @@ struct fritz_bcs {
  };
  
@@ -9156,10 +8960,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_fcpcipnp.h
  	struct isac isac;
  
  	struct fritz_bcs bcs[2];
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isac.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hisax_isac.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_isac.c
+--- a/drivers/isdn/hisax/hisax_isac.c
++++ b/drivers/isdn/hisax/hisax_isac.c
 @@ -34,7 +34,7 @@
  static int debug = 1;
  MODULE_PARM(debug, "i");
@@ -9265,10 +9067,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isac.c
  
  module_init(hisax_isac_init);
  module_exit(hisax_isac_exit);
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isac.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hisax_isac.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_isac.h
+--- a/drivers/isdn/hisax/hisax_isac.h
++++ b/drivers/isdn/hisax/hisax_isac.h
 @@ -8,7 +8,7 @@
  #define TIMER3_VALUE 7000
  #define MAX_DFRAME_LEN_L1 300
@@ -9290,10 +9090,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isac.h
 +void isacsx_interrupt(struct isac *isac);
  
  #endif
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isapnp.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_isapnp.c
++++ b/drivers/isdn/hisax/hisax_isapnp.c
 @@ -0,0 +1,105 @@
 +// FIXME copied
 +static const struct isapnp_device_id *
@@ -9400,10 +9198,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isapnp.c
 +	}
 +}
 +
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isapnp.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_isapnp.h
++++ b/drivers/isdn/hisax/hisax_isapnp.h
 @@ -0,0 +1,33 @@
 +#ifndef __HISAX_ISAPNP_H__
 +#define __HISAX_ISAPNP_H__
@@ -9438,10 +9234,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_isapnp.h
 +#endif
 +
 +#endif
-Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_loadable.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/hisax_loadable.h
++++ b/drivers/isdn/hisax/hisax_loadable.h
 @@ -0,0 +1,74 @@
 +/* $Id: hisax_loadable.h,v 2.1 2001/06/08 22:19:16 werner Exp $
 + *
@@ -9517,90 +9311,72 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/hisax_loadable.h
 +/* definition of the register function */
 +/***************************************/
 +extern int hisax_register_hfcusb(struct hisax_drvreg *l1drv);
-Index: linux-2.4.35.4/drivers/isdn/hisax/hscx.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hscx.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hscx.c
+--- a/drivers/isdn/hisax/hscx.c
++++ b/drivers/isdn/hisax/hscx.c
 @@ -1,4 +1,4 @@
 -/* $Id: hscx.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: hscx.c,v 1.24 2001/09/24 13:22:56 kai Exp $
   *
   * HSCX specific routines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/hscx.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hscx.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/hscx.h
+--- a/drivers/isdn/hisax/hscx.h
++++ b/drivers/isdn/hisax/hscx.h
 @@ -1,4 +1,4 @@
 -/* $Id: hscx.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: hscx.h,v 1.8 2001/09/24 13:22:56 kai Exp $
   *
   * HSCX specific defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/hscx_irq.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/hscx_irq.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/hscx_irq.c
+--- a/drivers/isdn/hisax/hscx_irq.c
++++ b/drivers/isdn/hisax/hscx_irq.c
 @@ -1,4 +1,4 @@
 -/* $Id: hscx_irq.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: hscx_irq.c,v 1.18 2001/09/24 13:22:56 kai Exp $
   *
   * low level b-channel stuff for Siemens HSCX
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/icc.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/icc.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/icc.c
+--- a/drivers/isdn/hisax/icc.c
++++ b/drivers/isdn/hisax/icc.c
 @@ -1,4 +1,4 @@
 -/* $Id: icc.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: icc.c,v 1.8 2001/09/24 13:22:56 kai Exp $
   *
   * ICC specific routines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/icc.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/icc.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/icc.h
+--- a/drivers/isdn/hisax/icc.h
++++ b/drivers/isdn/hisax/icc.h
 @@ -1,4 +1,4 @@
 -/* $Id: icc.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: icc.h,v 1.4 2001/09/24 13:22:56 kai Exp $
   *
   * ICC specific routines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/ipac.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/ipac.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/ipac.h
+--- a/drivers/isdn/hisax/ipac.h
++++ b/drivers/isdn/hisax/ipac.h
 @@ -1,4 +1,4 @@
 -/* $Id: ipac.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: ipac.h,v 1.7 2001/09/24 13:22:56 kai Exp $
   *
   * IPAC specific defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/isac.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isac.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/isac.c
+--- a/drivers/isdn/hisax/isac.c
++++ b/drivers/isdn/hisax/isac.c
 @@ -1,4 +1,4 @@
 -/* $Id: isac.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isac.c,v 1.31 2001/09/24 13:22:56 kai Exp $
   *
   * ISAC specific routines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/isac.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isac.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/isac.h
+--- a/drivers/isdn/hisax/isac.h
++++ b/drivers/isdn/hisax/isac.h
 @@ -1,4 +1,4 @@
 -/* $Id: isac.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isac.h,v 1.9 2001/09/24 13:22:56 kai Exp $
   *
   * ISAC specific defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/isar.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isar.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/isar.c
+--- a/drivers/isdn/hisax/isar.c
++++ b/drivers/isdn/hisax/isar.c
 @@ -1,4 +1,4 @@
 -/* $Id: isar.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isar.c,v 1.22 2001/09/23 12:00:05 keil Exp $
@@ -10004,10 +9780,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/isar.c
  				default:
  					printk(KERN_DEBUG "HiSax: invalid ioctl %d\n",
  					       (int) ic->arg);
-Index: linux-2.4.35.4/drivers/isdn/hisax/isar.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isar.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/isar.h
+--- a/drivers/isdn/hisax/isar.h
++++ b/drivers/isdn/hisax/isar.h
 @@ -1,4 +1,4 @@
 -/* $Id: isar.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isar.h,v 1.11 2001/09/24 13:22:56 kai Exp $
@@ -10043,10 +9817,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/isar.h
  extern int ISARVersion(struct IsdnCardState *cs, char *s);
  extern void isar_int_main(struct IsdnCardState *cs);
  extern void initisar(struct IsdnCardState *cs);
-Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl1.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isdnl1.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/isdnl1.c
+--- a/drivers/isdn/hisax/isdnl1.c
++++ b/drivers/isdn/hisax/isdnl1.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdnl1.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isdnl1.c,v 2.46 2001/09/24 13:22:56 kai Exp $
@@ -10062,20 +9834,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl1.c
  
  #define __NO_VERSION__
  #include <linux/init.h>
-Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl1.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isdnl1.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/isdnl1.h
+--- a/drivers/isdn/hisax/isdnl1.h
++++ b/drivers/isdn/hisax/isdnl1.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdnl1.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isdnl1.h,v 2.12 2001/09/24 13:22:56 kai Exp $
   *
   * Layer 1 defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl2.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isdnl2.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/isdnl2.c
+--- a/drivers/isdn/hisax/isdnl2.c
++++ b/drivers/isdn/hisax/isdnl2.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdnl2.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isdnl2.c,v 2.30 2001/09/24 13:22:56 kai Exp $
@@ -10101,20 +9869,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl2.c
  }
  
  static void
-Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl2.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isdnl2.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/isdnl2.h
+--- a/drivers/isdn/hisax/isdnl2.h
++++ b/drivers/isdn/hisax/isdnl2.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdnl2.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id$
   *
   * Layer 2 defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl3.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isdnl3.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/isdnl3.c
+--- a/drivers/isdn/hisax/isdnl3.c
++++ b/drivers/isdn/hisax/isdnl3.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdnl3.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isdnl3.c,v 2.22 2001/09/24 13:22:56 kai Exp $
@@ -10130,20 +9894,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl3.c
  
  static struct Fsm l3fsm;
  
-Index: linux-2.4.35.4/drivers/isdn/hisax/isdnl3.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isdnl3.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/isdnl3.h
+--- a/drivers/isdn/hisax/isdnl3.h
++++ b/drivers/isdn/hisax/isdnl3.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdnl3.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id$
   *
   * This software may be used and distributed according to the terms
   * of the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/hisax/isurf.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/isurf.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/isurf.c
+--- a/drivers/isdn/hisax/isurf.c
++++ b/drivers/isdn/hisax/isurf.c
 @@ -1,4 +1,4 @@
 -/* $Id: isurf.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: isurf.c,v 1.12 2001/09/24 13:22:56 kai Exp $
@@ -10263,10 +10023,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/isurf.c
  	printk(KERN_INFO
  	       "ISurf: defined at 0x%x 0x%lx IRQ %d\n",
  	       cs->hw.isurf.reset,
-Index: linux-2.4.35.4/drivers/isdn/hisax/ix1_micro.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/ix1_micro.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/ix1_micro.c
+--- a/drivers/isdn/hisax/ix1_micro.c
++++ b/drivers/isdn/hisax/ix1_micro.c
 @@ -1,4 +1,4 @@
 -/* $Id: ix1_micro.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: ix1_micro.c,v 2.12 2001/09/24 13:22:56 kai Exp $
@@ -10357,40 +10115,32 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/ix1_micro.c
  	/* IO-Ports */
  	cs->hw.ix1.isac_ale = card->para[1] + ISAC_COMMAND_OFFSET;
  	cs->hw.ix1.hscx_ale = card->para[1] + HSCX_COMMAND_OFFSET;
-Index: linux-2.4.35.4/drivers/isdn/hisax/jade.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/jade.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/jade.c
+--- a/drivers/isdn/hisax/jade.c
++++ b/drivers/isdn/hisax/jade.c
 @@ -1,4 +1,4 @@
 -/* $Id: jade.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: jade.c,v 1.9 2001/09/24 13:22:56 kai Exp $
   *
   * JADE stuff (derived from original hscx.c)
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/jade.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/jade.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/jade.h
+--- a/drivers/isdn/hisax/jade.h
++++ b/drivers/isdn/hisax/jade.h
 @@ -1,4 +1,4 @@
 -/* $Id: jade.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: jade.h,v 1.5 2001/09/24 13:22:56 kai Exp $
   *
   * JADE specific defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/jade_irq.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/jade_irq.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/jade_irq.c
+--- a/drivers/isdn/hisax/jade_irq.c
++++ b/drivers/isdn/hisax/jade_irq.c
 @@ -1,4 +1,4 @@
 -/* $Id: jade_irq.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: jade_irq.c,v 1.7 2001/09/24 13:22:56 kai Exp $
   *
   * Low level JADE IRQ stuff (derived from original hscx_irq.c)
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/l3_1tr6.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/l3_1tr6.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/l3_1tr6.c
+--- a/drivers/isdn/hisax/l3_1tr6.c
++++ b/drivers/isdn/hisax/l3_1tr6.c
 @@ -1,4 +1,4 @@
 -/* $Id: l3_1tr6.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: l3_1tr6.c,v 2.15 2001/09/24 13:22:56 kai Exp $
@@ -10406,20 +10156,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/l3_1tr6.c
  
  #define MsgHead(ptr, cref, mty, dis) \
  	*ptr++ = dis; \
-Index: linux-2.4.35.4/drivers/isdn/hisax/l3_1tr6.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/l3_1tr6.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/l3_1tr6.h
+--- a/drivers/isdn/hisax/l3_1tr6.h
++++ b/drivers/isdn/hisax/l3_1tr6.h
 @@ -1,4 +1,4 @@
 -/* $Id: l3_1tr6.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id$
   *
   * German 1TR6 D-channel protocol defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/l3dss1.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/l3dss1.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/l3dss1.c
+--- a/drivers/isdn/hisax/l3dss1.c
++++ b/drivers/isdn/hisax/l3dss1.c
 @@ -1,4 +1,4 @@
 -/* $Id: l3dss1.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: l3dss1.c,v 2.32 2001/09/24 13:22:56 kai Exp $
@@ -10435,20 +10181,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/l3dss1.c
  
  #define EXT_BEARER_CAPS 1
  
-Index: linux-2.4.35.4/drivers/isdn/hisax/l3dss1.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/l3dss1.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/l3dss1.h
+--- a/drivers/isdn/hisax/l3dss1.h
++++ b/drivers/isdn/hisax/l3dss1.h
 @@ -1,4 +1,4 @@
 -/* $Id: l3dss1.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id$
   *
   * DSS1 (Euro) D-channel protocol defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/l3ni1.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/l3ni1.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/l3ni1.c
+--- a/drivers/isdn/hisax/l3ni1.c
++++ b/drivers/isdn/hisax/l3ni1.c
 @@ -1,4 +1,4 @@
 -/* $Id: l3ni1.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: l3ni1.c,v 2.8 2001/09/24 13:22:56 kai Exp $
@@ -10464,30 +10206,24 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/l3ni1.c
  
  #define EXT_BEARER_CAPS 1
  
-Index: linux-2.4.35.4/drivers/isdn/hisax/l3ni1.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/l3ni1.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/l3ni1.h
+--- a/drivers/isdn/hisax/l3ni1.h
++++ b/drivers/isdn/hisax/l3ni1.h
 @@ -1,4 +1,4 @@
 -/* $Id: l3ni1.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id$
   *
   * NI1 D-channel protocol
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/lmgr.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/lmgr.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/lmgr.c
+--- a/drivers/isdn/hisax/lmgr.c
++++ b/drivers/isdn/hisax/lmgr.c
 @@ -1,4 +1,4 @@
 -/* $Id: lmgr.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id$
   *
   * Layermanagement module
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/md5sums.asc
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/md5sums.asc
-+++ linux-2.4.35.4/drivers/isdn/hisax/md5sums.asc
+--- a/drivers/isdn/hisax/md5sums.asc
++++ b/drivers/isdn/hisax/md5sums.asc
 @@ -1,33 +1,22 @@
 ------BEGIN PGP SIGNED MESSAGE-----
 -Hash: SHA1
@@ -10538,10 +10274,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/md5sums.asc
 -GIKgAEdRLzERmpt/bCCwAbY=
 -=FaHw
 ------END PGP SIGNATURE-----
-Index: linux-2.4.35.4/drivers/isdn/hisax/mic.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/mic.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/mic.c
+--- a/drivers/isdn/hisax/mic.c
++++ b/drivers/isdn/hisax/mic.c
 @@ -1,4 +1,4 @@
 -/* $Id: mic.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: mic.c,v 1.12 2001/09/24 13:22:56 kai Exp $
@@ -10557,10 +10291,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/mic.c
  
  #define byteout(addr,val) outb(val,addr)
  #define bytein(addr) inb(addr)
-Index: linux-2.4.35.4/drivers/isdn/hisax/netjet.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/netjet.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/netjet.c
+--- a/drivers/isdn/hisax/netjet.c
++++ b/drivers/isdn/hisax/netjet.c
 @@ -1,4 +1,4 @@
 -/* $Id: netjet.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: netjet.c,v 1.29 2001/09/24 13:22:56 kai Exp $
@@ -10640,20 +10372,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/netjet.c
  			l1_msg_b(st, pr, arg);
  			break;
  		case (PH_DEACTIVATE | CONFIRM):
-Index: linux-2.4.35.4/drivers/isdn/hisax/netjet.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/netjet.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/netjet.h
+--- a/drivers/isdn/hisax/netjet.h
++++ b/drivers/isdn/hisax/netjet.h
 @@ -1,4 +1,4 @@
 -/* $Id: netjet.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: netjet.h,v 2.8 2001/09/24 13:22:56 kai Exp $
   *
   * NETjet common header file
   *
-Index: linux-2.4.35.4/drivers/isdn/hisax/niccy.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/niccy.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/niccy.c
+--- a/drivers/isdn/hisax/niccy.c
++++ b/drivers/isdn/hisax/niccy.c
 @@ -1,4 +1,4 @@
 -/* $Id: niccy.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: niccy.c,v 1.21 2001/10/20 22:05:00 kai Exp $
@@ -10739,10 +10467,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/niccy.c
  			if (!pci_ioaddr) {
  				printk(KERN_WARNING "Niccy: No IO-Adr for PCI card found\n");
  				return(0);
-Index: linux-2.4.35.4/drivers/isdn/hisax/nj_s.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/nj_s.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/nj_s.c
+--- a/drivers/isdn/hisax/nj_s.c
++++ b/drivers/isdn/hisax/nj_s.c
 @@ -1,4 +1,4 @@
 -/* $Id: nj_s.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: nj_s.c,v 2.13 2001/09/24 13:22:56 kai Exp $
@@ -10800,10 +10526,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/nj_s.c
  	cs->readisac  = &NETjet_ReadIC;
  	cs->writeisac = &NETjet_WriteIC;
  	cs->readisacfifo  = &NETjet_ReadICfifo;
-Index: linux-2.4.35.4/drivers/isdn/hisax/nj_u.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/nj_u.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/nj_u.c
+--- a/drivers/isdn/hisax/nj_u.c
++++ b/drivers/isdn/hisax/nj_u.c
 @@ -1,4 +1,4 @@
 -/* $Id: nj_u.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $ 
 +/* $Id: nj_u.c,v 2.14 2001/09/24 13:22:56 kai Exp $ 
@@ -10833,10 +10557,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/nj_u.c
  			if (!cs->hw.njet.base) {
  				printk(KERN_WARNING "NETspider-U: No IO-Adr for PCI card found\n");
  				return(0);
-Index: linux-2.4.35.4/drivers/isdn/hisax/q931.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/q931.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/q931.c
+--- a/drivers/isdn/hisax/q931.c
++++ b/drivers/isdn/hisax/q931.c
 @@ -1,4 +1,4 @@
 -/* $Id: q931.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: q931.c,v 1.12 2001/09/24 13:22:56 kai Exp $
@@ -10875,10 +10597,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/q931.c
  
  static int
  prbits(char *dest, u_char b, int start, int len)
-Index: linux-2.4.35.4/drivers/isdn/hisax/rawhdlc.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/rawhdlc.c
++++ b/drivers/isdn/hisax/rawhdlc.c
 @@ -0,0 +1,543 @@
 +/* $Id: rawhdlc.c,v 1.7 2001/09/24 13:22:57 kai Exp $
 + *
@@ -11423,10 +11143,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/rawhdlc.c
 +}
 +
 +#endif
-Index: linux-2.4.35.4/drivers/isdn/hisax/rawhdlc.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/rawhdlc.h
++++ b/drivers/isdn/hisax/rawhdlc.h
 @@ -0,0 +1,28 @@
 +/* $Id: rawhdlc.h,v 1.5 2001/09/24 13:22:57 kai Exp $
 + *
@@ -11456,10 +11174,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/rawhdlc.h
 +                       u_char *src, u_int slen, u_char *dst, u_int dsize);
 +#define RAWHDLC_H
 +#endif
-Index: linux-2.4.35.4/drivers/isdn/hisax/s0box.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/s0box.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/s0box.c
+--- a/drivers/isdn/hisax/s0box.c
++++ b/drivers/isdn/hisax/s0box.c
 @@ -1,4 +1,4 @@
 -/* $Id: s0box.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: s0box.c,v 2.6 2001/09/24 13:22:57 kai Exp $
@@ -11475,10 +11191,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/s0box.c
  
  static inline void
  writereg(unsigned int padr, signed int addr, u_char off, u_char val) {
-Index: linux-2.4.35.4/drivers/isdn/hisax/saphir.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/saphir.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/saphir.c
+--- a/drivers/isdn/hisax/saphir.c
++++ b/drivers/isdn/hisax/saphir.c
 @@ -1,4 +1,4 @@
 -/* $Id: saphir.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: saphir.c,v 1.10 2001/09/24 13:22:57 kai Exp $
@@ -11494,10 +11208,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/saphir.c
  
  #define byteout(addr,val) outb(val,addr)
  #define bytein(addr) inb(addr)
-Index: linux-2.4.35.4/drivers/isdn/hisax/sedlbauer.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/sedlbauer.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/sedlbauer.c
+--- a/drivers/isdn/hisax/sedlbauer.c
++++ b/drivers/isdn/hisax/sedlbauer.c
 @@ -1,4 +1,4 @@
 -/* $Id: sedlbauer.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: sedlbauer.c,v 1.34 2002/02/09 21:00:57 keil Exp $
@@ -11664,10 +11376,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/sedlbauer.c
  	/* In case of the sedlbauer pcmcia card, this region is in use,
  	 * reserved for us by the card manager. So we do not check it
  	 * here, it would fail.
-Index: linux-2.4.35.4/drivers/isdn/hisax/sportster.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/sportster.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/sportster.c
+--- a/drivers/isdn/hisax/sportster.c
++++ b/drivers/isdn/hisax/sportster.c
 @@ -1,4 +1,4 @@
 -/* $Id: sportster.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: sportster.c,v 1.16 2001/09/24 13:22:57 kai Exp $
@@ -11683,10 +11393,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/sportster.c
  
  #define byteout(addr,val) outb(val,addr)
  #define bytein(addr) inb(addr)
-Index: linux-2.4.35.4/drivers/isdn/hisax/st5481-debug.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/hisax/st5481-debug.h
++++ b/drivers/isdn/hisax/st5481-debug.h
 @@ -0,0 +1,103 @@
 +#define ST5481_DEBUG 0x0
 +
@@ -11791,10 +11499,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/st5481-debug.h
 +
 +
 +
-Index: linux-2.4.35.4/drivers/isdn/hisax/st5481.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/st5481.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/st5481.h
+--- a/drivers/isdn/hisax/st5481.h
++++ b/drivers/isdn/hisax/st5481.h
 @@ -219,15 +219,15 @@ enum {
  #define L1_EVENT_COUNT (EV_TIMER3 + 1)
  
@@ -11894,10 +11600,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/st5481.h
  {
  	int i,j;
  	int len,ofs;
-Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_b.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/st5481_b.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/st5481_b.c
+--- a/drivers/isdn/hisax/st5481_b.c
++++ b/drivers/isdn/hisax/st5481_b.c
 @@ -67,28 +67,24 @@ static void usb_b_out(struct st5481_bcs 
  				bytes_sent = buf_size - len;
  				if (skb->len < bytes_sent)
@@ -11975,10 +11679,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_b.c
  {
  	DBG(4,"");
  
-Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_d.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/st5481_d.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/st5481_d.c
+--- a/drivers/isdn/hisax/st5481_d.c
++++ b/drivers/isdn/hisax/st5481_d.c
 @@ -162,8 +162,8 @@ static struct FsmNode L1FnList[] __initd
  	{ST_L1_F8, EV_TIMER3,            l1_timer3},
  	{ST_L1_F8, EV_IND_DP,            l1_go_f3},
@@ -12061,10 +11763,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_d.c
  {
  	DBG(2,"");
  
-Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_init.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/st5481_init.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/st5481_init.c
+--- a/drivers/isdn/hisax/st5481_init.c
++++ b/drivers/isdn/hisax/st5481_init.c
 @@ -14,6 +14,7 @@
   * TODO:
   *
@@ -12082,10 +11782,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_init.c
  	id_table: st5481_ids,
  };
  
-Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_usb.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/st5481_usb.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/st5481_usb.c
+--- a/drivers/isdn/hisax/st5481_usb.c
++++ b/drivers/isdn/hisax/st5481_usb.c
 @@ -41,9 +41,9 @@ static void usb_next_ctrl_msg(struct urb
  		(unsigned char *)&ctrl->msg_fifo.data[r_index];
  	
@@ -12228,10 +11926,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/st5481_usb.c
  		st5481_usb_device_ctrl_msg(in->adapter, in->counter,
  					   in->packet_size,
  					   NULL, NULL);
-Index: linux-2.4.35.4/drivers/isdn/hisax/tei.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/tei.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/tei.c
+--- a/drivers/isdn/hisax/tei.c
++++ b/drivers/isdn/hisax/tei.c
 @@ -1,4 +1,4 @@
 -/* $Id: tei.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: tei.c,v 2.20 2001/09/24 13:22:57 kai Exp $
@@ -12247,10 +11943,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/tei.c
  
  #define ID_REQUEST	1
  #define ID_ASSIGNED	2
-Index: linux-2.4.35.4/drivers/isdn/hisax/teleint.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/teleint.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/teleint.c
+--- a/drivers/isdn/hisax/teleint.c
++++ b/drivers/isdn/hisax/teleint.c
 @@ -1,4 +1,4 @@
 -/* $Id: teleint.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: teleint.c,v 1.16 2001/09/24 13:22:57 kai Exp $
@@ -12266,10 +11960,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/teleint.c
  
  #define byteout(addr,val) outb(val,addr)
  #define bytein(addr) inb(addr)
-Index: linux-2.4.35.4/drivers/isdn/hisax/teles0.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/teles0.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/teles0.c
+--- a/drivers/isdn/hisax/teles0.c
++++ b/drivers/isdn/hisax/teles0.c
 @@ -1,4 +1,4 @@
 -/* $Id: teles0.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: teles0.c,v 2.15 2001/09/24 13:22:57 kai Exp $
@@ -12314,10 +12006,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/teles0.c
  	printk(KERN_INFO
  	       "HiSax: %s config irq:%d mem:0x%lX cfg:0x%X\n",
  	       CardType[cs->typ], cs->irq,
-Index: linux-2.4.35.4/drivers/isdn/hisax/teles3.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/teles3.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/teles3.c
+--- a/drivers/isdn/hisax/teles3.c
++++ b/drivers/isdn/hisax/teles3.c
 @@ -1,4 +1,4 @@
 -/* $Id: teles3.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: teles3.c,v 2.19 2001/09/24 13:22:57 kai Exp $
@@ -12413,10 +12103,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/teles3.c
  	if (cs->typ == ISDN_CTYPE_16_3) {
  		cs->hw.teles3.cfg_reg = card->para[1];
  		switch (cs->hw.teles3.cfg_reg) {
-Index: linux-2.4.35.4/drivers/isdn/hisax/telespci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/telespci.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/telespci.c
+--- a/drivers/isdn/hisax/telespci.c
++++ b/drivers/isdn/hisax/telespci.c
 @@ -1,4 +1,4 @@
 -/* $Id: telespci.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: telespci.c,v 2.23 2001/09/24 13:22:57 kai Exp $
@@ -12448,10 +12136,8 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/telespci.c
  	} else {
  		printk(KERN_WARNING "TelesPCI: No PCI card found\n");
  		return(0);
-Index: linux-2.4.35.4/drivers/isdn/hisax/w6692.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/w6692.c
-+++ linux-2.4.35.4/drivers/isdn/hisax/w6692.c
+--- a/drivers/isdn/hisax/w6692.c
++++ b/drivers/isdn/hisax/w6692.c
 @@ -1,4 +1,4 @@
 -/* $Id: w6692.c,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: w6692.c,v 1.18 2001/09/24 13:22:57 kai Exp $
@@ -12633,20 +12319,16 @@ Index: linux-2.4.35.4/drivers/isdn/hisax/w6692.c
  	       cs->hw.w6692.iobase);
  
  	cs->readW6692 = &ReadW6692;
-Index: linux-2.4.35.4/drivers/isdn/hisax/w6692.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hisax/w6692.h
-+++ linux-2.4.35.4/drivers/isdn/hisax/w6692.h
+--- a/drivers/isdn/hisax/w6692.h
++++ b/drivers/isdn/hisax/w6692.h
 @@ -1,4 +1,4 @@
 -/* $Id: w6692.h,v 1.1.4.1 2001/11/20 14:19:36 kai Exp $
 +/* $Id: w6692.h,v 1.4 2001/09/24 13:22:57 kai Exp $
   *
   * Winbond W6692 specific defines
   *
-Index: linux-2.4.35.4/drivers/isdn/hysdn/boardergo.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/boardergo.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/boardergo.c
+--- a/drivers/isdn/hysdn/boardergo.c
++++ b/drivers/isdn/hysdn/boardergo.c
 @@ -1,27 +1,41 @@
 -/* $Id: boardergo.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 - *
@@ -12850,10 +12532,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/boardergo.c
  		set_current_state(TASK_INTERRUPTIBLE);
  		schedule_timeout((50 * HZ) / 1000);	/* Timeout 50ms */
  	}			/* wait until timeout */
-Index: linux-2.4.35.4/drivers/isdn/hysdn/boardergo.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/boardergo.h
-+++ linux-2.4.35.4/drivers/isdn/hysdn/boardergo.h
+--- a/drivers/isdn/hysdn/boardergo.h
++++ b/drivers/isdn/hysdn/boardergo.h
 @@ -1,4 +1,4 @@
 -/* $Id: boardergo.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -12868,10 +12548,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/boardergo.h
  
  /************************************************/
  /* defines for the dual port memory of the card */
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hycapi.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hycapi.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hycapi.c
+--- a/drivers/isdn/hysdn/hycapi.c
++++ b/drivers/isdn/hysdn/hycapi.c
 @@ -1,4 +1,4 @@
 -/* $Id: hycapi.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -12887,10 +12565,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hycapi.c
  
  unsigned int hycapi_enable = 0xffffffff; 
  MODULE_PARM(hycapi_enable, "i");
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_boot.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_boot.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_boot.c
+--- a/drivers/isdn/hysdn/hysdn_boot.c
++++ b/drivers/isdn/hysdn/hysdn_boot.c
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_boot.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -12906,10 +12582,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_boot.c
  				return (boot->last_error);	/* error writing data */
  
  			if (boot->pof_recoffset + datlen >= boot->pof_reclen)
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_defs.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_defs.h
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_defs.h
+--- a/drivers/isdn/hysdn/hysdn_defs.h
++++ b/drivers/isdn/hysdn/hysdn_defs.h
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_defs.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id: hysdn_defs.h,v 1.10 2001/09/24 13:23:03 kai Exp $
@@ -12936,10 +12610,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_defs.h
  
  	/* boot process */
  	void *boot;		/* pointer to boot private data */
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_init.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_init.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_init.c
+--- a/drivers/isdn/hysdn/hysdn_init.c
++++ b/drivers/isdn/hysdn/hysdn_init.c
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_init.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -12984,10 +12656,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_init.c
  		card->brdtype = BD_NONE;	/* unknown */
  		card->debug_flags = DEF_DEB_FLAGS;	/* set default debug */
  		card->faxchans = 0;	/* default no fax channels */
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_net.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_net.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_net.c
+--- a/drivers/isdn/hysdn/hysdn_net.c
++++ b/drivers/isdn/hysdn/hysdn_net.c
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_net.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -13207,20 +12877,16 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_net.c
  
  	unregister_netdev(dev);	/* release the device */
  	kfree(dev);		/* release the memory allocated */
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_pof.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_pof.h
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_pof.h
+--- a/drivers/isdn/hysdn/hysdn_pof.h
++++ b/drivers/isdn/hysdn/hysdn_pof.h
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_pof.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Linux driver for HYSDN cards, definitions used for handling pof-files.
   *
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_procconf.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_procconf.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_procconf.c
+--- a/drivers/isdn/hysdn/hysdn_procconf.c
++++ b/drivers/isdn/hysdn/hysdn_procconf.c
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_procconf.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -13417,10 +13083,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_procconf.c
  			hysdn_proclog_init(card);	/* init the log file entry */
  		}
  		card = card->next;	/* next entry */
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_proclog.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_proclog.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_proclog.c
+--- a/drivers/isdn/hysdn/hysdn_proclog.c
++++ b/drivers/isdn/hysdn/hysdn_proclog.c
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_proclog.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -13604,10 +13268,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_proclog.c
  		}
  
  		init_waitqueue_head(&(pd->rd_queue));
-Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_sched.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/hysdn/hysdn_sched.c
-+++ linux-2.4.35.4/drivers/isdn/hysdn/hysdn_sched.c
+--- a/drivers/isdn/hysdn/hysdn_sched.c
++++ b/drivers/isdn/hysdn/hysdn_sched.c
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_sched.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id: hysdn_sched.c,v 1.9 2001/09/24 13:23:03 kai Exp $
@@ -13691,10 +13353,8 @@ Index: linux-2.4.35.4/drivers/isdn/hysdn/hysdn_sched.c
  	if (card->debug_flags & LOG_SCHED_ASYN)
  		hysdn_addlog(card, "async tx-cfg data send");
  
-Index: linux-2.4.35.4/drivers/isdn/icn/icn.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/icn/icn.c
-+++ linux-2.4.35.4/drivers/isdn/icn/icn.c
+--- a/drivers/isdn/icn/icn.c
++++ b/drivers/isdn/icn/icn.c
 @@ -1,4 +1,4 @@
 -/* $Id: icn.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -13747,20 +13407,16 @@ Index: linux-2.4.35.4/drivers/isdn/icn/icn.c
  #endif /* MODULE */
  
  static int __init icn_init(void)
-Index: linux-2.4.35.4/drivers/isdn/icn/icn.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/icn/icn.h
-+++ linux-2.4.35.4/drivers/isdn/icn/icn.h
+--- a/drivers/isdn/icn/icn.h
++++ b/drivers/isdn/icn/icn.h
 @@ -1,4 +1,4 @@
 -/* $Id: icn.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * ISDN lowlevel-module for the ICN active ISDN-Card.
   *
-Index: linux-2.4.35.4/drivers/isdn/isdn_audio.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_audio.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_audio.c
+--- a/drivers/isdn/isdn_audio.c
++++ b/drivers/isdn/isdn_audio.c
 @@ -1,9 +1,9 @@
 -/* $Id: isdn_audio.c,v 1.1.4.1 2001/11/20 14:19:33 kai Exp $
 +/* $Id: isdn_audio.c,v 1.24 2002/08/13 09:57:26 keil Exp $
@@ -13925,10 +13581,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_audio.c
  				what = '.';
  		}
  		if ((what != s->last) && (what != ' ') && (what != '.')) {
-Index: linux-2.4.35.4/drivers/isdn/isdn_audio.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_audio.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_audio.h
+--- a/drivers/isdn/isdn_audio.h
++++ b/drivers/isdn/isdn_audio.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_audio.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_audio.h,v 1.10 2001/09/24 13:22:42 kai Exp $
@@ -13943,10 +13597,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_audio.h
  	int idx;
  	int buf[DTMF_NPOINTS];
  } dtmf_state;
-Index: linux-2.4.35.4/drivers/isdn/isdn_bsdcomp.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_bsdcomp.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_bsdcomp.c
+--- a/drivers/isdn/isdn_bsdcomp.c
++++ b/drivers/isdn/isdn_bsdcomp.c
 @@ -105,6 +105,14 @@ MODULE_LICENSE("Dual BSD/GPL");
  
  #define DEBUG 1
@@ -14187,10 +13839,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_bsdcomp.c
  	return skb_out->len;
  }
  
-Index: linux-2.4.35.4/drivers/isdn/isdn_common.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_common.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_common.c
+--- a/drivers/isdn/isdn_common.c
++++ b/drivers/isdn/isdn_common.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_common.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_common.c,v 1.137 2002/02/09 21:19:11 keil Exp $
@@ -15105,10 +14755,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_common.c
  }
  
  module_init(isdn_init);
-Index: linux-2.4.35.4/drivers/isdn/isdn_common.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_common.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_common.h
+--- a/drivers/isdn/isdn_common.h
++++ b/drivers/isdn/isdn_common.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_common.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_common.h,v 1.22 2001/09/24 13:22:42 kai Exp $
@@ -15125,30 +14773,24 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_common.h
  /* Prototypes */
  extern void isdn_MOD_INC_USE_COUNT(void);
  extern void isdn_MOD_DEC_USE_COUNT(void);
-Index: linux-2.4.35.4/drivers/isdn/isdn_concap.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_concap.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_concap.c
+--- a/drivers/isdn/isdn_concap.c
++++ b/drivers/isdn/isdn_concap.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_concap.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_concap.c,v 1.9 2001/09/24 13:22:42 kai Exp $
   * 
   * Linux ISDN subsystem, protocol encapsulation
   *
-Index: linux-2.4.35.4/drivers/isdn/isdn_concap.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_concap.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_concap.h
+--- a/drivers/isdn/isdn_concap.h
++++ b/drivers/isdn/isdn_concap.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_concap.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_concap.h,v 1.4 2001/09/24 13:22:42 kai Exp $
   *
   * Linux ISDN subsystem, protocol encapsulation
   *
-Index: linux-2.4.35.4/drivers/isdn/isdn_dwabc.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/isdn/isdn_dwabc.c
++++ b/drivers/isdn/isdn_dwabc.c
 @@ -0,0 +1,1053 @@
 +
 +/* $Id: isdn_dwabc.c,v 1.27 2001/12/01 23:18:21 detabc Exp $
@@ -16203,10 +15845,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_dwabc.c
 +{ return(skb); }
 +#endif
 +#endif
-Index: linux-2.4.35.4/drivers/isdn/isdn_net.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_net.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_net.c
+--- a/drivers/isdn/isdn_net.c
++++ b/drivers/isdn/isdn_net.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_net.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_net.c,v 1.153 2002/08/17 18:35:23 detabc Exp $
@@ -17799,10 +17439,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_net.c
  	restore_flags(flags);
  	kfree(p->local);
  	kfree(p);
-Index: linux-2.4.35.4/drivers/isdn/isdn_net.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_net.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_net.h
+--- a/drivers/isdn/isdn_net.h
++++ b/drivers/isdn/isdn_net.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_net.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_net.h,v 1.23 2001/11/07 22:35:48 kai Exp $
@@ -17848,10 +17486,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_net.h
  	spin_unlock_irqrestore(&master_lp->netdev->queue_lock, flags);
  }
  
-Index: linux-2.4.35.4/drivers/isdn/isdn_ppp.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_ppp.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_ppp.c
+--- a/drivers/isdn/isdn_ppp.c
++++ b/drivers/isdn/isdn_ppp.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_ppp.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_ppp.c,v 1.94 2001/11/07 22:35:48 kai Exp $
@@ -18532,10 +18168,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_ppp.c
  		printk(KERN_DEBUG "isdn_ppp: Ouch! Master CCP sends on slave slot!\n");
  	
          switch(data[2]) {
-Index: linux-2.4.35.4/drivers/isdn/isdn_ppp.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_ppp.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_ppp.h
+--- a/drivers/isdn/isdn_ppp.h
++++ b/drivers/isdn/isdn_ppp.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_ppp.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_ppp.h,v 1.18 2001/09/24 13:22:42 kai Exp $
@@ -18550,10 +18184,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_ppp.h
  extern int isdn_ppp_xmit(struct sk_buff *, struct net_device *);
  extern void isdn_ppp_receive(isdn_net_dev *, isdn_net_local *, struct sk_buff *);
  extern int isdn_ppp_dev_ioctl(struct net_device *, struct ifreq *, int);
-Index: linux-2.4.35.4/drivers/isdn/isdn_tty.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_tty.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_tty.c
+--- a/drivers/isdn/isdn_tty.c
++++ b/drivers/isdn/isdn_tty.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_tty.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_tty.c,v 1.104 2002/02/09 21:19:11 keil Exp $
@@ -18713,10 +18345,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_tty.c
  						if (dev->global_features &
  							ISDN_FEATURE_L3_FCLASS2)
  							strcat(rs, "2,");
-Index: linux-2.4.35.4/drivers/isdn/isdn_tty.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_tty.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_tty.h
+--- a/drivers/isdn/isdn_tty.h
++++ b/drivers/isdn/isdn_tty.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_tty.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_tty.h,v 1.25 2002/02/09 21:19:11 keil Exp $
@@ -18748,10 +18378,8 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_tty.h
  #define TTY_IS_FCLASS2(info) \
  	((info->emu.mdmreg[REG_L2PROT] == ISDN_PROTO_L2_FAX) && \
  	 (info->emu.mdmreg[REG_L3PROT] == ISDN_PROTO_L3_FCLASS2))
-Index: linux-2.4.35.4/drivers/isdn/isdn_ttyfax.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_ttyfax.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_ttyfax.c
+--- a/drivers/isdn/isdn_ttyfax.c
++++ b/drivers/isdn/isdn_ttyfax.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_ttyfax.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_ttyfax.c,v 1.9 2001/09/24 13:22:43 kai Exp $
@@ -18969,20 +18597,16 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_ttyfax.c
 +#endif
  	PARSE_ERROR1;
  }
-Index: linux-2.4.35.4/drivers/isdn/isdn_ttyfax.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_ttyfax.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_ttyfax.h
+--- a/drivers/isdn/isdn_ttyfax.h
++++ b/drivers/isdn/isdn_ttyfax.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_ttyfax.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_ttyfax.h,v 1.3 2001/09/24 13:22:43 kai Exp $
   *
   * header for Linux ISDN subsystem, tty_fax related functions (linklevel).
   *
-Index: linux-2.4.35.4/drivers/isdn/isdn_v110.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_v110.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_v110.c
+--- a/drivers/isdn/isdn_v110.c
++++ b/drivers/isdn/isdn_v110.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_v110.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_v110.c,v 1.8 2001/09/24 13:22:43 kai Exp $
@@ -19013,40 +18637,32 @@ Index: linux-2.4.35.4/drivers/isdn/isdn_v110.c
  #endif
  	kfree(v->encodebuf);
  	kfree(v);
-Index: linux-2.4.35.4/drivers/isdn/isdn_v110.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_v110.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_v110.h
+--- a/drivers/isdn/isdn_v110.h
++++ b/drivers/isdn/isdn_v110.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_v110.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_v110.h,v 1.5 2001/09/24 13:22:43 kai Exp $
   *
   * Linux ISDN subsystem, V.110 related functions (linklevel).
   *
-Index: linux-2.4.35.4/drivers/isdn/isdn_x25iface.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_x25iface.c
-+++ linux-2.4.35.4/drivers/isdn/isdn_x25iface.c
+--- a/drivers/isdn/isdn_x25iface.c
++++ b/drivers/isdn/isdn_x25iface.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_x25iface.c,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_x25iface.c,v 1.10 2001/09/24 13:22:43 kai Exp $
   *
   * Linux ISDN subsystem, X.25 related functions
   *
-Index: linux-2.4.35.4/drivers/isdn/isdn_x25iface.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdn_x25iface.h
-+++ linux-2.4.35.4/drivers/isdn/isdn_x25iface.h
+--- a/drivers/isdn/isdn_x25iface.h
++++ b/drivers/isdn/isdn_x25iface.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_x25iface.h,v 1.1.4.1 2001/11/20 14:19:34 kai Exp $
 +/* $Id: isdn_x25iface.h,v 1.4 2001/09/24 13:22:43 kai Exp $
   *
   * header for Linux ISDN subsystem, x.25 related functions
   *
-Index: linux-2.4.35.4/drivers/isdn/isdnloop/isdnloop.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdnloop/isdnloop.c
-+++ linux-2.4.35.4/drivers/isdn/isdnloop/isdnloop.c
+--- a/drivers/isdn/isdnloop/isdnloop.c
++++ b/drivers/isdn/isdnloop/isdnloop.c
 @@ -1,4 +1,4 @@
 -/* $Id: isdnloop.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id: isdnloop.c,v 1.17 2001/08/30 10:45:42 kai Exp $
@@ -19086,20 +18702,16 @@ Index: linux-2.4.35.4/drivers/isdn/isdnloop/isdnloop.c
  }
  
  static void __exit
-Index: linux-2.4.35.4/drivers/isdn/isdnloop/isdnloop.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/isdnloop/isdnloop.h
-+++ linux-2.4.35.4/drivers/isdn/isdnloop/isdnloop.h
+--- a/drivers/isdn/isdnloop/isdnloop.h
++++ b/drivers/isdn/isdnloop/isdnloop.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdnloop.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Loopback lowlevel module for testing of linklevel.
   *
-Index: linux-2.4.35.4/drivers/isdn/pcbit/callbacks.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/callbacks.c
-+++ linux-2.4.35.4/drivers/isdn/pcbit/callbacks.c
+--- a/drivers/isdn/pcbit/callbacks.c
++++ b/drivers/isdn/pcbit/callbacks.c
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19109,10 +18721,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/callbacks.c
   *
   * This software may be used and distributed according to the terms of 
   * the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/pcbit/callbacks.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/callbacks.h
-+++ linux-2.4.35.4/drivers/isdn/pcbit/callbacks.h
+--- a/drivers/isdn/pcbit/callbacks.h
++++ b/drivers/isdn/pcbit/callbacks.h
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19122,10 +18732,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/callbacks.h
   *
   * This software may be used and distributed according to the terms of 
   * the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/pcbit/capi.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/capi.c
-+++ linux-2.4.35.4/drivers/isdn/pcbit/capi.c
+--- a/drivers/isdn/pcbit/capi.c
++++ b/drivers/isdn/pcbit/capi.c
 @@ -4,7 +4,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19135,10 +18743,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/capi.c
   *
   * This software may be used and distributed according to the terms of 
   * the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/pcbit/capi.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/capi.h
-+++ linux-2.4.35.4/drivers/isdn/pcbit/capi.h
+--- a/drivers/isdn/pcbit/capi.h
++++ b/drivers/isdn/pcbit/capi.h
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19158,10 +18764,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/capi.h
  capi_channel(struct pcbit_dev *dev, struct sk_buff *skb)
  {
  	ushort callref;
-Index: linux-2.4.35.4/drivers/isdn/pcbit/drv.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/drv.c
-+++ linux-2.4.35.4/drivers/isdn/pcbit/drv.c
+--- a/drivers/isdn/pcbit/drv.c
++++ b/drivers/isdn/pcbit/drv.c
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19303,10 +18907,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/drv.c
  		if (capi_decode_conn_conf(chan, skb, &complete)) {
  			printk(KERN_DEBUG "conn_conf indicates error\n");
  			pcbit_fsm_event(dev, chan, EV_ERROR, NULL);
-Index: linux-2.4.35.4/drivers/isdn/pcbit/edss1.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/edss1.c
-+++ linux-2.4.35.4/drivers/isdn/pcbit/edss1.c
+--- a/drivers/isdn/pcbit/edss1.c
++++ b/drivers/isdn/pcbit/edss1.c
 @@ -4,7 +4,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19316,10 +18918,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/edss1.c
   *
   * This software may be used and distributed according to the terms of 
   * the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/pcbit/edss1.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/edss1.h
-+++ linux-2.4.35.4/drivers/isdn/pcbit/edss1.h
+--- a/drivers/isdn/pcbit/edss1.h
++++ b/drivers/isdn/pcbit/edss1.h
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19329,10 +18929,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/edss1.h
   *
   * This software may be used and distributed according to the terms of 
   * the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/pcbit/layer2.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/layer2.c
-+++ linux-2.4.35.4/drivers/isdn/pcbit/layer2.c
+--- a/drivers/isdn/pcbit/layer2.c
++++ b/drivers/isdn/pcbit/layer2.c
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19374,10 +18972,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/layer2.c
  			return;
  
  		}
-Index: linux-2.4.35.4/drivers/isdn/pcbit/layer2.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/layer2.h
-+++ linux-2.4.35.4/drivers/isdn/pcbit/layer2.h
+--- a/drivers/isdn/pcbit/layer2.h
++++ b/drivers/isdn/pcbit/layer2.h
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19387,10 +18983,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/layer2.h
   *
   * This software may be used and distributed according to the terms of 
   * the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/pcbit/module.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/module.c
-+++ linux-2.4.35.4/drivers/isdn/pcbit/module.c
+--- a/drivers/isdn/pcbit/module.c
++++ b/drivers/isdn/pcbit/module.c
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19434,10 +19028,8 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/module.c
  #endif
  
  module_init(pcbit_init);
-Index: linux-2.4.35.4/drivers/isdn/pcbit/pcbit.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/pcbit/pcbit.h
-+++ linux-2.4.35.4/drivers/isdn/pcbit/pcbit.h
+--- a/drivers/isdn/pcbit/pcbit.h
++++ b/drivers/isdn/pcbit/pcbit.h
 @@ -3,7 +3,7 @@
   *
   * Copyright (C) 1996 Universidade de Lisboa
@@ -19447,20 +19039,16 @@ Index: linux-2.4.35.4/drivers/isdn/pcbit/pcbit.h
   *
   * This software may be used and distributed according to the terms of 
   * the GNU General Public License, incorporated herein by reference.
-Index: linux-2.4.35.4/drivers/isdn/sc/card.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/card.h
-+++ linux-2.4.35.4/drivers/isdn/sc/card.h
+--- a/drivers/isdn/sc/card.h
++++ b/drivers/isdn/sc/card.h
 @@ -1,4 +1,4 @@
 -/* $Id: card.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Driver parameters for SpellCaster ISA ISDN adapters
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/command.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/command.c
-+++ linux-2.4.35.4/drivers/isdn/sc/command.c
+--- a/drivers/isdn/sc/command.c
++++ b/drivers/isdn/sc/command.c
 @@ -1,4 +1,4 @@
 -/* $Id: command.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -19476,40 +19064,32 @@ Index: linux-2.4.35.4/drivers/isdn/sc/command.c
  }
  
  /* 
-Index: linux-2.4.35.4/drivers/isdn/sc/debug.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/debug.c
-+++ linux-2.4.35.4/drivers/isdn/sc/debug.c
+--- a/drivers/isdn/sc/debug.c
++++ b/drivers/isdn/sc/debug.c
 @@ -1,4 +1,4 @@
 -/* $Id: debug.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/debug.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/debug.h
-+++ linux-2.4.35.4/drivers/isdn/sc/debug.h
+--- a/drivers/isdn/sc/debug.h
++++ b/drivers/isdn/sc/debug.h
 @@ -1,4 +1,4 @@
 -/* $Id: debug.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/event.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/event.c
-+++ linux-2.4.35.4/drivers/isdn/sc/event.c
+--- a/drivers/isdn/sc/event.c
++++ b/drivers/isdn/sc/event.c
 @@ -1,4 +1,4 @@
 -/* $Id: event.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/init.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/init.c
-+++ linux-2.4.35.4/drivers/isdn/sc/init.c
+--- a/drivers/isdn/sc/init.c
++++ b/drivers/isdn/sc/init.c
 @@ -514,6 +514,15 @@ int identify_board(unsigned long rambase
  	schedule_timeout(HZ);
  	sig = readl(rambase + SIG_OFFSET);
@@ -19536,20 +19116,16 @@ Index: linux-2.4.35.4/drivers/isdn/sc/init.c
  	if(sig == SIGNATURE)
  		return BRI_BOARD;
  
-Index: linux-2.4.35.4/drivers/isdn/sc/interrupt.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/interrupt.c
-+++ linux-2.4.35.4/drivers/isdn/sc/interrupt.c
+--- a/drivers/isdn/sc/interrupt.c
++++ b/drivers/isdn/sc/interrupt.c
 @@ -1,4 +1,4 @@
 -/* $Id: interrupt.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/ioctl.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/ioctl.c
-+++ linux-2.4.35.4/drivers/isdn/sc/ioctl.c
+--- a/drivers/isdn/sc/ioctl.c
++++ b/drivers/isdn/sc/ioctl.c
 @@ -23,6 +23,9 @@ extern int send_and_receive(int, unsigne
  
  extern board *adapter[];
@@ -19560,100 +19136,80 @@ Index: linux-2.4.35.4/drivers/isdn/sc/ioctl.c
  
  int GetStatus(int card, boardInfo *);
  
-Index: linux-2.4.35.4/drivers/isdn/sc/message.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/message.c
-+++ linux-2.4.35.4/drivers/isdn/sc/message.c
+--- a/drivers/isdn/sc/message.c
++++ b/drivers/isdn/sc/message.c
 @@ -1,4 +1,4 @@
 -/* $Id: message.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * functions for sending and receiving control messages
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/message.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/message.h
-+++ linux-2.4.35.4/drivers/isdn/sc/message.h
+--- a/drivers/isdn/sc/message.h
++++ b/drivers/isdn/sc/message.h
 @@ -1,4 +1,4 @@
 -/* $Id: message.h,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/packet.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/packet.c
-+++ linux-2.4.35.4/drivers/isdn/sc/packet.c
+--- a/drivers/isdn/sc/packet.c
++++ b/drivers/isdn/sc/packet.c
 @@ -1,4 +1,4 @@
 -/* $Id: packet.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/shmem.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/shmem.c
-+++ linux-2.4.35.4/drivers/isdn/sc/shmem.c
+--- a/drivers/isdn/sc/shmem.c
++++ b/drivers/isdn/sc/shmem.c
 @@ -1,4 +1,4 @@
 -/* $Id: shmem.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/sc/timer.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/sc/timer.c
-+++ linux-2.4.35.4/drivers/isdn/sc/timer.c
+--- a/drivers/isdn/sc/timer.c
++++ b/drivers/isdn/sc/timer.c
 @@ -1,4 +1,4 @@
 -/* $Id: timer.c,v 1.1.4.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Copyright (C) 1996  SpellCaster Telecommunications Inc.
   *
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam.h
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam.h
+--- a/drivers/isdn/tpam/tpam.h
++++ b/drivers/isdn/tpam/tpam.h
 @@ -1,4 +1,4 @@
 -/* $Id: tpam.h,v 1.1.2.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id: tpam.h,v 1.3 2001/09/24 13:23:12 kai Exp $
   *
   * Turbo PAM ISDN driver for Linux. (Kernel Driver)
   *
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_commands.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam_commands.c
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam_commands.c
+--- a/drivers/isdn/tpam/tpam_commands.c
++++ b/drivers/isdn/tpam/tpam_commands.c
 @@ -1,4 +1,4 @@
 -/* $Id: tpam_commands.c,v 1.1.2.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id: tpam_commands.c,v 1.3 2001/09/24 13:23:12 kai Exp $
   *
   * Turbo PAM ISDN driver for Linux. (Kernel Driver - ISDN commands)
   *
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_crcpc.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam_crcpc.c
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam_crcpc.c
+--- a/drivers/isdn/tpam/tpam_crcpc.c
++++ b/drivers/isdn/tpam/tpam_crcpc.c
 @@ -1,4 +1,4 @@
 -/* $Id: tpam_crcpc.c,v 1.1.2.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Turbo PAM ISDN driver for Linux. (Kernel Driver - CRC encoding)
   *
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_hdlc.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam_hdlc.c
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam_hdlc.c
+--- a/drivers/isdn/tpam/tpam_hdlc.c
++++ b/drivers/isdn/tpam/tpam_hdlc.c
 @@ -1,4 +1,4 @@
 -/* $Id: tpam_hdlc.c,v 1.1.2.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id: tpam_hdlc.c,v 1.3 2001/09/24 13:23:12 kai Exp $
   *
   * Turbo PAM ISDN driver for Linux. (Kernel Driver - HDLC encoding)
   *
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_main.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam_main.c
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam_main.c
+--- a/drivers/isdn/tpam/tpam_main.c
++++ b/drivers/isdn/tpam/tpam_main.c
 @@ -1,4 +1,4 @@
 -/* $Id: tpam_main.c,v 1.1.2.2 2001/12/09 18:45:14 kai Exp $
 +/* $Id$
@@ -19669,30 +19225,24 @@ Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_main.c
  };
  
  static int __init tpam_init(void) {
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_memory.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam_memory.c
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam_memory.c
+--- a/drivers/isdn/tpam/tpam_memory.c
++++ b/drivers/isdn/tpam/tpam_memory.c
 @@ -1,4 +1,4 @@
 -/* $Id: tpam_memory.c,v 1.1.2.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Turbo PAM ISDN driver for Linux. (Kernel Driver - Board Memory Access)
   *
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_nco.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam_nco.c
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam_nco.c
+--- a/drivers/isdn/tpam/tpam_nco.c
++++ b/drivers/isdn/tpam/tpam_nco.c
 @@ -1,4 +1,4 @@
 -/* $Id: tpam_nco.c,v 1.1.2.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
   *
   * Turbo PAM ISDN driver for Linux. 
   * (Kernel Driver - Low Level NCO Manipulation)
-Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_queues.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/isdn/tpam/tpam_queues.c
-+++ linux-2.4.35.4/drivers/isdn/tpam/tpam_queues.c
+--- a/drivers/isdn/tpam/tpam_queues.c
++++ b/drivers/isdn/tpam/tpam_queues.c
 @@ -1,4 +1,4 @@
 -/* $Id: tpam_queues.c,v 1.1.2.1 2001/11/20 14:19:37 kai Exp $
 +/* $Id$
@@ -19707,40 +19257,32 @@ Index: linux-2.4.35.4/drivers/isdn/tpam/tpam_queues.c
  				spin_unlock(&card->lock);
  				printk(KERN_ERR "TurboPAM(tpam_irq): "
  						"waiting too long...\n");
-Index: linux-2.4.35.4/include/linux/b1lli.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/b1lli.h
-+++ linux-2.4.35.4/include/linux/b1lli.h
+--- a/include/linux/b1lli.h
++++ b/include/linux/b1lli.h
 @@ -1,4 +1,4 @@
 -/* $Id: b1lli.h,v 1.8.8.3 2001/09/23 22:25:05 kai Exp $
 +/* $Id$
   *
   * ISDN lowlevel-module for AVM B1-card.
   *
-Index: linux-2.4.35.4/include/linux/b1pcmcia.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/b1pcmcia.h
-+++ linux-2.4.35.4/include/linux/b1pcmcia.h
+--- a/include/linux/b1pcmcia.h
++++ b/include/linux/b1pcmcia.h
 @@ -1,4 +1,4 @@
 -/* $Id: b1pcmcia.h,v 1.1.8.2 2001/09/23 22:25:05 kai Exp $
 +/* $Id$
   *
   * Exported functions of module b1pcmcia to be called by
   * avm_cs card services module.
-Index: linux-2.4.35.4/include/linux/capi.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/capi.h
-+++ linux-2.4.35.4/include/linux/capi.h
+--- a/include/linux/capi.h
++++ b/include/linux/capi.h
 @@ -1,4 +1,4 @@
 -/* $Id: capi.h,v 1.1.4.1 2001/11/20 14:19:38 kai Exp $
 +/* $Id$
   * 
   * CAPI 2.0 Interface for Linux
   * 
-Index: linux-2.4.35.4/include/linux/concap.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/concap.h
-+++ linux-2.4.35.4/include/linux/concap.h
+--- a/include/linux/concap.h
++++ b/include/linux/concap.h
 @@ -1,4 +1,4 @@
 -/* $Id: concap.h,v 1.2.8.1 2001/09/23 22:25:05 kai Exp $
 +/* $Id: concap.h,v 1.3 2001/09/24 13:23:13 kai Exp $
@@ -19755,30 +19297,24 @@ Index: linux-2.4.35.4/include/linux/concap.h
  
  /* Stuff to support encapsulation protocols genericly. The encapsulation
     protocol is processed at the uppermost layer of the network interface.
-Index: linux-2.4.35.4/include/linux/hysdn_if.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/hysdn_if.h
-+++ linux-2.4.35.4/include/linux/hysdn_if.h
+--- a/include/linux/hysdn_if.h
++++ b/include/linux/hysdn_if.h
 @@ -1,4 +1,4 @@
 -/* $Id: hysdn_if.h,v 1.1.8.3 2001/09/23 22:25:05 kai Exp $
 +/* $Id$
   *
   * Linux driver for HYSDN cards
   * ioctl definitions shared by hynetmgr and driver.
-Index: linux-2.4.35.4/include/linux/isdn/tpam.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/isdn/tpam.h
-+++ linux-2.4.35.4/include/linux/isdn/tpam.h
+--- a/include/linux/isdn/tpam.h
++++ b/include/linux/isdn/tpam.h
 @@ -1,4 +1,4 @@
 -/* $Id: tpam.h,v 1.1.2.1 2001/11/20 14:19:38 kai Exp $
 +/* $Id$
   *
   * Turbo PAM ISDN driver for Linux. (Kernel Driver)
   *
-Index: linux-2.4.35.4/include/linux/isdn.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/isdn.h
-+++ linux-2.4.35.4/include/linux/isdn.h
+--- a/include/linux/isdn.h
++++ b/include/linux/isdn.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn.h,v 1.1.4.1 2001/11/20 14:19:38 kai Exp $
 +/* $Id: isdn.h,v 1.125 2001/12/01 23:18:21 detabc Exp $
@@ -20001,10 +19537,8 @@ Index: linux-2.4.35.4/include/linux/isdn.h
  
  #endif /* __KERNEL__ */
  
-Index: linux-2.4.35.4/include/linux/isdn_compat.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/isdn_compat.h
++++ b/include/linux/isdn_compat.h
 @@ -0,0 +1,261 @@
 +/* $Id: isdn_compat.h,v 1.53 2001/09/24 13:23:13 kai Exp $
 + *
@@ -20267,10 +19801,8 @@ Index: linux-2.4.35.4/include/linux/isdn_compat.h
 +
 +#endif /* __KERNEL__ */
 +#endif /* _LINUX_ISDN_COMPAT_H */
-Index: linux-2.4.35.4/include/linux/isdn_divertif.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/isdn_divertif.h
-+++ linux-2.4.35.4/include/linux/isdn_divertif.h
+--- a/include/linux/isdn_divertif.h
++++ b/include/linux/isdn_divertif.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_divertif.h,v 1.1.4.1 2001/11/20 14:19:38 kai Exp $
 +/* $Id$
@@ -20294,10 +19826,8 @@ Index: linux-2.4.35.4/include/linux/isdn_divertif.h
    } isdn_divert_if;
  
  /*********************/
-Index: linux-2.4.35.4/include/linux/isdn_dwabc.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/isdn_dwabc.h
++++ b/include/linux/isdn_dwabc.h
 @@ -0,0 +1,84 @@
 +/* $Id: isdn_dwabc.h,v 1.9 2001/09/26 20:32:08 detabc Exp $
 + *
@@ -20383,20 +19913,16 @@ Index: linux-2.4.35.4/include/linux/isdn_dwabc.h
 +};
 +
 +#endif
-Index: linux-2.4.35.4/include/linux/isdn_lzscomp.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/isdn_lzscomp.h
-+++ linux-2.4.35.4/include/linux/isdn_lzscomp.h
+--- a/include/linux/isdn_lzscomp.h
++++ b/include/linux/isdn_lzscomp.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdn_lzscomp.h,v 1.1.4.1 2001/11/20 14:19:38 kai Exp $
 +/* $Id$
   *
   * Header for isdn_lzscomp.c
   * Concentrated here to not mess up half a dozen kernel headers with code
-Index: linux-2.4.35.4/include/linux/isdn_ppp.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/isdn_ppp.h
-+++ linux-2.4.35.4/include/linux/isdn_ppp.h
+--- a/include/linux/isdn_ppp.h
++++ b/include/linux/isdn_ppp.h
 @@ -8,6 +8,7 @@
  #ifndef _LINUX_ISDN_PPP_H
  #define _LINUX_ISDN_PPP_H
@@ -20438,10 +19964,8 @@ Index: linux-2.4.35.4/include/linux/isdn_ppp.h
    unsigned long debug;
    struct isdn_ppp_compressor *compressor,*decompressor;
    struct isdn_ppp_compressor *link_compressor,*link_decompressor;
-Index: linux-2.4.35.4/include/linux/isdnif.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/isdnif.h
-+++ linux-2.4.35.4/include/linux/isdnif.h
+--- a/include/linux/isdnif.h
++++ b/include/linux/isdnif.h
 @@ -1,4 +1,4 @@
 -/* $Id: isdnif.h,v 1.1.4.1 2001/11/20 14:19:38 kai Exp $
 +/* $Id: isdnif.h,v 1.43 2002/02/09 21:19:11 keil Exp $
@@ -20465,10 +19989,8 @@ Index: linux-2.4.35.4/include/linux/isdnif.h
  
  /*
   * Audio commands
-Index: linux-2.4.35.4/include/linux/kernelcapi.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/kernelcapi.h
-+++ linux-2.4.35.4/include/linux/kernelcapi.h
+--- a/include/linux/kernelcapi.h
++++ b/include/linux/kernelcapi.h
 @@ -1,12 +1,10 @@
 -/* $Id: kernelcapi.h,v 1.1.4.2 2002/01/28 18:25:10 kai Exp $
 +/*

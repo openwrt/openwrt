@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_ipp2p.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_ipp2p.h
++++ b/include/linux/netfilter_ipv4/ipt_ipp2p.h
 @@ -0,0 +1,31 @@
 +#ifndef __IPT_IPP2P_H
 +#define __IPT_IPP2P_H
@@ -34,10 +32,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_ipp2p.h
 +#define IPP2P_MUTE		(1 << 14)
 +#define IPP2P_WASTE		(1 << 15)
 +#define IPP2P_XDCC		(1 << 16)
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -26,6 +26,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
    dep_tristate '  recent match support' CONFIG_IP_NF_MATCH_RECENT $CONFIG_IP_NF_IPTABLES
@@ -46,10 +42,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
   
    dep_tristate '  DSCP match support' CONFIG_IP_NF_MATCH_DSCP $CONFIG_IP_NF_IPTABLES
   
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -67,6 +67,7 @@ obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_
  obj-$(CONFIG_IP_NF_MATCH_LIMIT) += ipt_limit.o
  obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
@@ -58,10 +52,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  
  obj-$(CONFIG_IP_NF_MATCH_PKTTYPE) += ipt_pkttype.o
  obj-$(CONFIG_IP_NF_MATCH_MULTIPORT) += ipt_multiport.o
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_ipp2p.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_ipp2p.c
++++ b/net/ipv4/netfilter/ipt_ipp2p.c
 @@ -0,0 +1,868 @@
 +#if defined(MODVERSIONS)
 +#include <linux/modversions.h>

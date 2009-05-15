@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -2888,6 +2888,13 @@ CONFIG_IP_NF_MATCH_LIMIT
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -16,10 +14,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  skb->pkt_type packet match support
  CONFIG_IP_NF_MATCH_PKTTYPE
    This patch allows you to match packet in accrodance
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h
++++ b/include/linux/netfilter_ipv4/ipt_quota.h
 @@ -0,0 +1,12 @@
 +#ifndef _IPT_QUOTA_H
 +#define _IPT_QUOTA_H
@@ -33,10 +29,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_quota.h
 +};
 +
 +#endif /*_IPT_QUOTA_H*/
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -24,6 +24,7 @@ tristate 'IP tables support (required fo
  if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
  # The simple matches.
@@ -45,10 +39,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
  
    dep_tristate '  IP set support' CONFIG_IP_NF_SET $CONFIG_IP_NF_IPTABLES
    if [ "$CONFIG_IP_NF_SET" != "n" ]; then
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -74,6 +74,7 @@ obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
  # matches
  obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
@@ -57,10 +49,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
  obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
  obj-$(CONFIG_IP_NF_TARGET_SET) += ipt_SET.o
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_quota.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_quota.c
++++ b/net/ipv4/netfilter/ipt_quota.c
 @@ -0,0 +1,88 @@
 +/* 
 + * netfilter module to enforce network quotas

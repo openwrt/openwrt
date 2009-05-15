@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/usb/host/ehci-q.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/usb/host/ehci-q.c
-+++ linux-2.4.35.4/drivers/usb/host/ehci-q.c
+--- a/drivers/usb/host/ehci-q.c
++++ b/drivers/usb/host/ehci-q.c
 @@ -782,6 +782,11 @@ static void qh_link_async (struct ehci_h
  		if (!(cmd & CMD_ASE)) {
  			/* in case a clear of CMD_ASE didn't take yet */

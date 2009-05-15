@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/atm/br2684.c
-===================================================================
---- linux-2.4.35.4.orig/net/atm/br2684.c
-+++ linux-2.4.35.4/net/atm/br2684.c
+--- a/net/atm/br2684.c
++++ b/net/atm/br2684.c
 @@ -55,36 +55,55 @@ static void skb_debug(const struct sk_bu
  #define skb_debug(skb)	do {} while (0)
  #endif
@@ -486,10 +484,8 @@ Index: linux-2.4.35.4/net/atm/br2684.c
  	while (!list_empty(&br2684_devs)) {
  		brdev = list_entry_brdev(br2684_devs.next);
  		unregister_netdev(&brdev->net_dev);
-Index: linux-2.4.35.4/net/atm/common.c
-===================================================================
---- linux-2.4.35.4.orig/net/atm/common.c
-+++ linux-2.4.35.4/net/atm/common.c
+--- a/net/atm/common.c
++++ b/net/atm/common.c
 @@ -158,6 +158,7 @@ void br2684_ioctl_set(int (*hook)(struct
  }
  #ifdef CONFIG_ATM_BR2684_MODULE
@@ -498,10 +494,8 @@ Index: linux-2.4.35.4/net/atm/common.c
  #endif
  #endif
  
-Index: linux-2.4.35.4/include/linux/atmbr2684.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/atmbr2684.h
-+++ linux-2.4.35.4/include/linux/atmbr2684.h
+--- a/include/linux/atmbr2684.h
++++ b/include/linux/atmbr2684.h
 @@ -3,6 +3,7 @@
  
  #include <linux/atm.h>

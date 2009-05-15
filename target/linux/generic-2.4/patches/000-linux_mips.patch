@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/arch/mips/au1000/common/au1xxx_irqmap.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/au1xxx_irqmap.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/au1xxx_irqmap.c
+--- a/arch/mips/au1000/common/au1xxx_irqmap.c
++++ b/arch/mips/au1000/common/au1xxx_irqmap.c
 @@ -172,14 +172,14 @@ au1xxx_irq_map_t au1xxx_ic0_map[] = {
  	{ AU1550_PSC1_INT, INTC_INT_HIGH_LEVEL, 0},
  	{ AU1550_PSC2_INT, INTC_INT_HIGH_LEVEL, 0},
@@ -48,10 +46,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/au1xxx_irqmap.c
  	{ AU1200_NAND_INT, INTC_INT_RISE_EDGE, 0},
  	{ AU1200_USB_INT, INTC_INT_HIGH_LEVEL, 0 },
  	{ AU1200_LCD_INT, INTC_INT_HIGH_LEVEL, 0},
-Index: linux-2.4.35.4/arch/mips/au1000/common/cputable.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/cputable.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/cputable.c
+--- a/arch/mips/au1000/common/cputable.c
++++ b/arch/mips/au1000/common/cputable.c
 @@ -39,7 +39,8 @@ struct cpu_spec	cpu_specs[] = {
      { 0xffffffff, 0x02030203, "Au1100 BD", 0, 1 },
      { 0xffffffff, 0x02030204, "Au1100 BE", 0, 1 },
@@ -62,10 +58,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/cputable.c
      { 0x00000000, 0x00000000, "Unknown Au1xxx", 1, 0 },
  };
  
-Index: linux-2.4.35.4/arch/mips/au1000/common/dbdma.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/dbdma.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/dbdma.c
+--- a/arch/mips/au1000/common/dbdma.c
++++ b/arch/mips/au1000/common/dbdma.c
 @@ -41,6 +41,8 @@
  #include <asm/au1xxx_dbdma.h>
  #include <asm/system.h>
@@ -644,10 +638,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/dbdma.c
 +
  #endif /* defined(CONFIG_SOC_AU1550) || defined(CONFIG_SOC_AU1200) */
  
-Index: linux-2.4.35.4/arch/mips/au1000/common/gpio.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/common/gpio.c
++++ b/arch/mips/au1000/common/gpio.c
 @@ -0,0 +1,118 @@
 +/*
 + *  This program is free software; you can redistribute	 it and/or modify it
@@ -767,10 +759,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/gpio.c
 +EXPORT_SYMBOL(au1xxx_gpio_tristate);
 +EXPORT_SYMBOL(au1xxx_gpio_write);
 +EXPORT_SYMBOL(au1xxx_gpio_read);
-Index: linux-2.4.35.4/arch/mips/au1000/common/irq.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/irq.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/irq.c
+--- a/arch/mips/au1000/common/irq.c
++++ b/arch/mips/au1000/common/irq.c
 @@ -303,8 +303,30 @@ static struct hw_interrupt_type level_ir
  };
  
@@ -838,10 +828,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/irq.c
  }
  
  
-Index: linux-2.4.35.4/arch/mips/au1000/common/Makefile
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/Makefile
-+++ linux-2.4.35.4/arch/mips/au1000/common/Makefile
+--- a/arch/mips/au1000/common/Makefile
++++ b/arch/mips/au1000/common/Makefile
 @@ -19,9 +19,9 @@ O_TARGET := au1000.o
  export-objs		= prom.o clocks.o power.o usbdev.o
  
@@ -854,10 +842,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/Makefile
  
  obj-$(CONFIG_AU1X00_USB_DEVICE) += usbdev.o
  obj-$(CONFIG_KGDB) += dbg_io.o
-Index: linux-2.4.35.4/arch/mips/au1000/common/pci_fixup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/pci_fixup.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/pci_fixup.c
+--- a/arch/mips/au1000/common/pci_fixup.c
++++ b/arch/mips/au1000/common/pci_fixup.c
 @@ -75,9 +75,13 @@ void __init pcibios_fixup(void)
  
  #ifdef CONFIG_NONCOHERENT_IO
@@ -874,10 +860,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/pci_fixup.c
  	printk("Non-coherent PCI accesses enabled\n");
  #endif
  
-Index: linux-2.4.35.4/arch/mips/au1000/common/pci_ops.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/pci_ops.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/pci_ops.c
+--- a/arch/mips/au1000/common/pci_ops.c
++++ b/arch/mips/au1000/common/pci_ops.c
 @@ -162,6 +162,7 @@ unsigned long last_entryLo0, last_entryL
  static int config_access(unsigned char access_type, struct pci_dev *dev, 
  			 unsigned char where, u32 * data)
@@ -919,10 +903,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/pci_ops.c
  }
  #endif
  
-Index: linux-2.4.35.4/arch/mips/au1000/common/power.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/power.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/power.c
+--- a/arch/mips/au1000/common/power.c
++++ b/arch/mips/au1000/common/power.c
 @@ -50,7 +50,6 @@
  
  static void calibrate_delay(void);
@@ -1149,10 +1131,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/power.c
  	{0}
  };
  
-Index: linux-2.4.35.4/arch/mips/au1000/common/reset.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/reset.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/reset.c
+--- a/arch/mips/au1000/common/reset.c
++++ b/arch/mips/au1000/common/reset.c
 @@ -37,8 +37,6 @@
  #include <asm/system.h>
  #include <asm/au1000.h>
@@ -1233,10 +1213,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/reset.c
 +	/* If board can't power-off, spin forever */
  	au1000_halt();
  }
-Index: linux-2.4.35.4/arch/mips/au1000/common/setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/setup.c
+--- a/arch/mips/au1000/common/setup.c
++++ b/arch/mips/au1000/common/setup.c
 @@ -174,6 +174,40 @@ void __init au1x00_setup(void)
  	initrd_end = (unsigned long)&__rd_end;
  #endif
@@ -1331,10 +1309,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/setup.c
  	if ((ide_ops == NULL) || (ide_ops == &no_ide_ops))
  		ide_ops = &std_ide_ops;
  #endif
-Index: linux-2.4.35.4/arch/mips/au1000/common/sleeper.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/sleeper.S
-+++ linux-2.4.35.4/arch/mips/au1000/common/sleeper.S
+--- a/arch/mips/au1000/common/sleeper.S
++++ b/arch/mips/au1000/common/sleeper.S
 @@ -15,17 +15,48 @@
  #include <asm/addrspace.h>
  #include <asm/regdef.h>
@@ -1603,10 +1579,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/sleeper.S
 +	.set reorder
  END(save_and_sleep)
 +
-Index: linux-2.4.35.4/arch/mips/au1000/common/time.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/common/time.c
-+++ linux-2.4.35.4/arch/mips/au1000/common/time.c
+--- a/arch/mips/au1000/common/time.c
++++ b/arch/mips/au1000/common/time.c
 @@ -50,7 +50,6 @@
  #include <linux/mc146818rtc.h>
  #include <linux/timex.h>
@@ -1666,10 +1640,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/common/time.c
  	}
  
  #else
-Index: linux-2.4.35.4/arch/mips/au1000/db1x00/board_setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/db1x00/board_setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/db1x00/board_setup.c
+--- a/arch/mips/au1000/db1x00/board_setup.c
++++ b/arch/mips/au1000/db1x00/board_setup.c
 @@ -46,10 +46,22 @@
  #include <asm/au1000.h>
  #include <asm/db1x00.h>
@@ -1753,10 +1725,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/db1x00/board_setup.c
  #ifdef CONFIG_MIPS_DB1000
      printk("AMD Alchemy Au1000/Db1000 Board\n");
  #endif
-Index: linux-2.4.35.4/arch/mips/au1000/db1x00/irqmap.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/db1x00/irqmap.c
-+++ linux-2.4.35.4/arch/mips/au1000/db1x00/irqmap.c
+--- a/arch/mips/au1000/db1x00/irqmap.c
++++ b/arch/mips/au1000/db1x00/irqmap.c
 @@ -53,6 +53,7 @@ au1xxx_irq_map_t au1xxx_irq_map[] = {
  #ifdef CONFIG_MIPS_DB1550
  	{ AU1000_GPIO_3, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card 0 IRQ#
@@ -1765,10 +1735,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/db1x00/irqmap.c
  #else
  	{ AU1000_GPIO_0, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card 0 Fully_Interted#
  	{ AU1000_GPIO_1, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card 0 STSCHG#
-Index: linux-2.4.35.4/arch/mips/au1000/db1x00/Makefile
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/db1x00/Makefile
-+++ linux-2.4.35.4/arch/mips/au1000/db1x00/Makefile
+--- a/arch/mips/au1000/db1x00/Makefile
++++ b/arch/mips/au1000/db1x00/Makefile
 @@ -17,4 +17,11 @@ O_TARGET := db1x00.o
  obj-y := init.o board_setup.o irqmap.o
  obj-$(CONFIG_WM97XX_COMODULE) += mirage_ts.o
@@ -1781,10 +1749,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/db1x00/Makefile
 +endif
 +
  include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/arch/mips/au1000/db1x00/mmc_support.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/db1x00/mmc_support.c
++++ b/arch/mips/au1000/db1x00/mmc_support.c
 @@ -0,0 +1,126 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -1912,10 +1878,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/db1x00/mmc_support.c
 +EXPORT_SYMBOL(mmc_power_on);
 +EXPORT_SYMBOL(mmc_power_off);
 +
-Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/au1200_ibutton.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/ficmmp/au1200_ibutton.c
++++ b/arch/mips/au1000/ficmmp/au1200_ibutton.c
 @@ -0,0 +1,270 @@
 +/* ---------------------------------------------------------------------- 
 + *  mtwilson_keys.c
@@ -2187,10 +2151,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/au1200_ibutton.c
 +MODULE_AUTHOR( DRIVER_AUTHOR );
 +MODULE_DESCRIPTION( DRIVER_DESC );
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/au1xxx_dock.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/ficmmp/au1xxx_dock.c
++++ b/arch/mips/au1000/ficmmp/au1xxx_dock.c
 @@ -0,0 +1,261 @@
 +/*
 + *  Copyright (C) 2003 Metrowerks, All Rights Reserved.
@@ -2453,10 +2415,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/au1xxx_dock.c
 +
 +module_init(au1xxx_dock_init);
 +module_exit(au1xxx_dock_exit);
-Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/board_setup.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/ficmmp/board_setup.c
++++ b/arch/mips/au1000/ficmmp/board_setup.c
 @@ -0,0 +1,226 @@
 +/*
 + *
@@ -2684,10 +2644,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/board_setup.c
 +	return 0;
 +}
 +
-Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/init.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/ficmmp/init.c
++++ b/arch/mips/au1000/ficmmp/init.c
 @@ -0,0 +1,76 @@
 +/*
 + *
@@ -2765,10 +2723,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/init.c
 +	return 0;
 +}
 +
-Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/irqmap.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/ficmmp/irqmap.c
++++ b/arch/mips/au1000/ficmmp/irqmap.c
 @@ -0,0 +1,61 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -2831,10 +2787,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/irqmap.c
 +
 +int au1xxx_nr_irqs = sizeof(au1xxx_irq_map)/sizeof(au1xxx_irq_map_t);
 +
-Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/ficmmp/Makefile
++++ b/arch/mips/au1000/ficmmp/Makefile
 @@ -0,0 +1,25 @@
 +#
 +#  Copyright 2000 MontaVista Software Inc.
@@ -2861,10 +2815,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/ficmmp/Makefile
 +
 +
 +include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/board_setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/hydrogen3/board_setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/hydrogen3/board_setup.c
+--- a/arch/mips/au1000/hydrogen3/board_setup.c
++++ b/arch/mips/au1000/hydrogen3/board_setup.c
 @@ -51,12 +51,19 @@ void board_reset (void)
  {
  }
@@ -2885,10 +2837,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/board_setup.c
  #ifdef CONFIG_AU1X00_USB_DEVICE
  	// 2nd USB port is USB device
  	pin_func = au_readl(SYS_PINFUNC) & (u32)(~0x8000);
-Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/buttons.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/hydrogen3/buttons.c
++++ b/arch/mips/au1000/hydrogen3/buttons.c
 @@ -0,0 +1,308 @@
 +/*
 + *  Copyright (C) 2003 Metrowerks, All Rights Reserved.
@@ -3198,10 +3148,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/buttons.c
 +
 +module_init(hydrogen3_buttons_init);
 +module_exit(hydrogen3_buttons_exit);
-Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/Makefile
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/hydrogen3/Makefile
-+++ linux-2.4.35.4/arch/mips/au1000/hydrogen3/Makefile
+--- a/arch/mips/au1000/hydrogen3/Makefile
++++ b/arch/mips/au1000/hydrogen3/Makefile
 @@ -14,6 +14,11 @@ USE_STANDARD_AS_RULE := true
  
  O_TARGET := hydrogen3.o
@@ -3215,10 +3163,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/Makefile
 +endif
  
  include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/mmc_support.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/hydrogen3/mmc_support.c
++++ b/arch/mips/au1000/hydrogen3/mmc_support.c
 @@ -0,0 +1,89 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -3309,10 +3255,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/hydrogen3/mmc_support.c
 +EXPORT_SYMBOL(mmc_power_on);
 +EXPORT_SYMBOL(mmc_power_off);
 +
-Index: linux-2.4.35.4/arch/mips/au1000/mtx-1/board_setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/mtx-1/board_setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/mtx-1/board_setup.c
+--- a/arch/mips/au1000/mtx-1/board_setup.c
++++ b/arch/mips/au1000/mtx-1/board_setup.c
 @@ -48,6 +48,12 @@
  
  extern struct rtc_ops no_rtc_ops;
@@ -3326,10 +3270,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/mtx-1/board_setup.c
  void __init board_setup(void)
  {
  	rtc_ops = &no_rtc_ops;
-Index: linux-2.4.35.4/arch/mips/au1000/mtx-1/irqmap.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/mtx-1/irqmap.c
-+++ linux-2.4.35.4/arch/mips/au1000/mtx-1/irqmap.c
+--- a/arch/mips/au1000/mtx-1/irqmap.c
++++ b/arch/mips/au1000/mtx-1/irqmap.c
 @@ -72,10 +72,10 @@ au1xxx_pci_irqmap(struct pci_dev *dev, u
  	 *	A       B       C       D
  	 */
@@ -3345,10 +3287,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/mtx-1/irqmap.c
  	};
  	const long min_idsel = 0, max_idsel = 3, irqs_per_slot = 4;
  	return PCI_IRQ_TABLE_LOOKUP;
-Index: linux-2.4.35.4/arch/mips/au1000/pb1000/board_setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/pb1000/board_setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/pb1000/board_setup.c
+--- a/arch/mips/au1000/pb1000/board_setup.c
++++ b/arch/mips/au1000/pb1000/board_setup.c
 @@ -58,6 +58,10 @@ void board_reset (void)
  {
  }
@@ -3360,10 +3300,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1000/board_setup.c
  void __init board_setup(void)
  {
  	u32 pin_func, static_cfg0;
-Index: linux-2.4.35.4/arch/mips/au1000/pb1100/board_setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/pb1100/board_setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/pb1100/board_setup.c
+--- a/arch/mips/au1000/pb1100/board_setup.c
++++ b/arch/mips/au1000/pb1100/board_setup.c
 @@ -62,6 +62,10 @@ void board_reset (void)
      au_writel(0x00000000, 0xAE00001C);
  }
@@ -3375,10 +3313,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1100/board_setup.c
  void __init board_setup(void)
  {
  	u32 pin_func;
-Index: linux-2.4.35.4/arch/mips/au1000/pb1100/Makefile
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/pb1100/Makefile
-+++ linux-2.4.35.4/arch/mips/au1000/pb1100/Makefile
+--- a/arch/mips/au1000/pb1100/Makefile
++++ b/arch/mips/au1000/pb1100/Makefile
 @@ -16,4 +16,10 @@ O_TARGET := pb1100.o
  
  obj-y := init.o board_setup.o irqmap.o
@@ -3390,10 +3326,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1100/Makefile
 +endif
 +
  include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/arch/mips/au1000/pb1100/mmc_support.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/pb1100/mmc_support.c
++++ b/arch/mips/au1000/pb1100/mmc_support.c
 @@ -0,0 +1,126 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -3521,10 +3455,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1100/mmc_support.c
 +EXPORT_SYMBOL(mmc_power_on);
 +EXPORT_SYMBOL(mmc_power_off);
 +
-Index: linux-2.4.35.4/arch/mips/au1000/pb1200/board_setup.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/pb1200/board_setup.c
++++ b/arch/mips/au1000/pb1200/board_setup.c
 @@ -0,0 +1,221 @@
 +/*
 + *
@@ -3747,10 +3679,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1200/board_setup.c
 +	return 0;
 +}
 +
-Index: linux-2.4.35.4/arch/mips/au1000/pb1200/init.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/pb1200/init.c
++++ b/arch/mips/au1000/pb1200/init.c
 @@ -0,0 +1,72 @@
 +/*
 + *
@@ -3824,10 +3754,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1200/init.c
 +	return 0;
 +}
 +
-Index: linux-2.4.35.4/arch/mips/au1000/pb1200/irqmap.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/pb1200/irqmap.c
++++ b/arch/mips/au1000/pb1200/irqmap.c
 @@ -0,0 +1,180 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -4009,10 +3937,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1200/irqmap.c
 +	request of any source attached to the cascade */
 +}
 +
-Index: linux-2.4.35.4/arch/mips/au1000/pb1200/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/pb1200/Makefile
++++ b/arch/mips/au1000/pb1200/Makefile
 @@ -0,0 +1,25 @@
 +#
 +#  Copyright 2000 MontaVista Software Inc.
@@ -4039,10 +3965,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1200/Makefile
 +
 +
 +include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/arch/mips/au1000/pb1200/mmc_support.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/au1000/pb1200/mmc_support.c
++++ b/arch/mips/au1000/pb1200/mmc_support.c
 @@ -0,0 +1,141 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -4185,10 +4109,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1200/mmc_support.c
 +EXPORT_SYMBOL(mmc_power_on);
 +EXPORT_SYMBOL(mmc_power_off);
 +
-Index: linux-2.4.35.4/arch/mips/au1000/pb1500/board_setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/pb1500/board_setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/pb1500/board_setup.c
+--- a/arch/mips/au1000/pb1500/board_setup.c
++++ b/arch/mips/au1000/pb1500/board_setup.c
 @@ -62,6 +62,10 @@ void board_reset (void)
      au_writel(0x00000000, 0xAE00001C);
  }
@@ -4200,10 +4122,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1500/board_setup.c
  void __init board_setup(void)
  {
  	u32 pin_func;
-Index: linux-2.4.35.4/arch/mips/au1000/pb1550/board_setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/pb1550/board_setup.c
-+++ linux-2.4.35.4/arch/mips/au1000/pb1550/board_setup.c
+--- a/arch/mips/au1000/pb1550/board_setup.c
++++ b/arch/mips/au1000/pb1550/board_setup.c
 @@ -48,12 +48,31 @@
  
  extern struct rtc_ops no_rtc_ops;
@@ -4273,10 +4193,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1550/board_setup.c
 +#endif
  	printk("AMD Alchemy Pb1550 Board\n");
  }
-Index: linux-2.4.35.4/arch/mips/au1000/pb1550/irqmap.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/au1000/pb1550/irqmap.c
-+++ linux-2.4.35.4/arch/mips/au1000/pb1550/irqmap.c
+--- a/arch/mips/au1000/pb1550/irqmap.c
++++ b/arch/mips/au1000/pb1550/irqmap.c
 @@ -50,6 +50,9 @@
  au1xxx_irq_map_t au1xxx_irq_map[] = {
  	{ AU1000_GPIO_0, INTC_INT_LOW_LEVEL, 0 },
@@ -4287,10 +4205,8 @@ Index: linux-2.4.35.4/arch/mips/au1000/pb1550/irqmap.c
  };
  
  int au1xxx_nr_irqs = sizeof(au1xxx_irq_map)/sizeof(au1xxx_irq_map_t);
-Index: linux-2.4.35.4/arch/mips/config-shared.in
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/config-shared.in
-+++ linux-2.4.35.4/arch/mips/config-shared.in
+--- a/arch/mips/config-shared.in
++++ b/arch/mips/config-shared.in
 @@ -21,16 +21,19 @@ mainmenu_option next_comment
  comment 'Machine selection'
  dep_bool 'Support for Acer PICA 1 chipset (EXPERIMENTAL)' CONFIG_ACER_PICA_61 $CONFIG_EXPERIMENTAL
@@ -4411,10 +4327,8 @@ Index: linux-2.4.35.4/arch/mips/config-shared.in
       "$CONFIG_NEC_OSPREY" = "y" -o \
       "$CONFIG_NEC_EAGLE" = "y" -o \
       "$CONFIG_NINO" = "y" -o \
-Index: linux-2.4.35.4/arch/mips/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig
-+++ linux-2.4.35.4/arch/mips/defconfig
+--- a/arch/mips/defconfig
++++ b/arch/mips/defconfig
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4457,10 +4371,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-atlas
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-atlas
-+++ linux-2.4.35.4/arch/mips/defconfig-atlas
+--- a/arch/mips/defconfig-atlas
++++ b/arch/mips/defconfig-atlas
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4503,10 +4415,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-atlas
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-bosporus
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-bosporus
-+++ linux-2.4.35.4/arch/mips/defconfig-bosporus
+--- a/arch/mips/defconfig-bosporus
++++ b/arch/mips/defconfig-bosporus
 @@ -30,8 +30,8 @@ CONFIG_MIPS_BOSPORUS=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4567,10 +4477,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-bosporus
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-capcella
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-capcella
-+++ linux-2.4.35.4/arch/mips/defconfig-capcella
+--- a/arch/mips/defconfig-capcella
++++ b/arch/mips/defconfig-capcella
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4601,10 +4509,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-capcella
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-cobalt
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-cobalt
-+++ linux-2.4.35.4/arch/mips/defconfig-cobalt
+--- a/arch/mips/defconfig-cobalt
++++ b/arch/mips/defconfig-cobalt
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4635,10 +4541,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-cobalt
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=16
  
-Index: linux-2.4.35.4/arch/mips/defconfig-csb250
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-csb250
-+++ linux-2.4.35.4/arch/mips/defconfig-csb250
+--- a/arch/mips/defconfig-csb250
++++ b/arch/mips/defconfig-csb250
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4669,10 +4573,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-csb250
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-db1000
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-db1000
-+++ linux-2.4.35.4/arch/mips/defconfig-db1000
+--- a/arch/mips/defconfig-db1000
++++ b/arch/mips/defconfig-db1000
 @@ -30,8 +30,8 @@ CONFIG_MIPS_DB1000=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4723,10 +4625,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-db1000
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-db1100
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-db1100
-+++ linux-2.4.35.4/arch/mips/defconfig-db1100
+--- a/arch/mips/defconfig-db1100
++++ b/arch/mips/defconfig-db1100
 @@ -30,8 +30,8 @@ CONFIG_MIPS_DB1100=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -4793,10 +4693,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-db1100
  # CONFIG_FB_IT8181 is not set
  # CONFIG_FB_VIRTUAL is not set
  CONFIG_FBCON_ADVANCED=y
-Index: linux-2.4.35.4/arch/mips/defconfig-db1200
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/defconfig-db1200
++++ b/arch/mips/defconfig-db1200
 @@ -0,0 +1,1032 @@
 +#
 +# Automatically generated make config: don't edit
@@ -5830,10 +5728,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-db1200
 +CONFIG_ZLIB_INFLATE=m
 +CONFIG_ZLIB_DEFLATE=m
 +# CONFIG_FW_LOADER is not set
-Index: linux-2.4.35.4/arch/mips/defconfig-db1500
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-db1500
-+++ linux-2.4.35.4/arch/mips/defconfig-db1500
+--- a/arch/mips/defconfig-db1500
++++ b/arch/mips/defconfig-db1500
 @@ -30,8 +30,8 @@ CONFIG_MIPS_DB1500=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -5864,10 +5760,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-db1500
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-db1550
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-db1550
-+++ linux-2.4.35.4/arch/mips/defconfig-db1550
+--- a/arch/mips/defconfig-db1550
++++ b/arch/mips/defconfig-db1550
 @@ -30,8 +30,8 @@ CONFIG_MIPS_DB1550=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -5918,10 +5812,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-db1550
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-ddb5476
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ddb5476
-+++ linux-2.4.35.4/arch/mips/defconfig-ddb5476
+--- a/arch/mips/defconfig-ddb5476
++++ b/arch/mips/defconfig-ddb5476
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -5952,10 +5844,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ddb5476
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-ddb5477
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ddb5477
-+++ linux-2.4.35.4/arch/mips/defconfig-ddb5477
+--- a/arch/mips/defconfig-ddb5477
++++ b/arch/mips/defconfig-ddb5477
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -5986,10 +5876,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ddb5477
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-decstation
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-decstation
-+++ linux-2.4.35.4/arch/mips/defconfig-decstation
+--- a/arch/mips/defconfig-decstation
++++ b/arch/mips/defconfig-decstation
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -6032,10 +5920,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-decstation
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-e55
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-e55
-+++ linux-2.4.35.4/arch/mips/defconfig-e55
+--- a/arch/mips/defconfig-e55
++++ b/arch/mips/defconfig-e55
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -6066,10 +5952,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-e55
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-eagle
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-eagle
-+++ linux-2.4.35.4/arch/mips/defconfig-eagle
+--- a/arch/mips/defconfig-eagle
++++ b/arch/mips/defconfig-eagle
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -6129,10 +6013,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-eagle
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-ev64120
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ev64120
-+++ linux-2.4.35.4/arch/mips/defconfig-ev64120
+--- a/arch/mips/defconfig-ev64120
++++ b/arch/mips/defconfig-ev64120
 @@ -30,8 +30,8 @@ CONFIG_MODULES=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -6163,10 +6045,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ev64120
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-ev96100
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ev96100
-+++ linux-2.4.35.4/arch/mips/defconfig-ev96100
+--- a/arch/mips/defconfig-ev96100
++++ b/arch/mips/defconfig-ev96100
 @@ -30,8 +30,8 @@ CONFIG_MODULES=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -6197,10 +6077,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ev96100
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-ficmmp
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/defconfig-ficmmp
++++ b/arch/mips/defconfig-ficmmp
 @@ -0,0 +1,862 @@
 +#
 +# Automatically generated make config: don't edit
@@ -7064,10 +6942,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ficmmp
 +# CONFIG_CRC32 is not set
 +CONFIG_ZLIB_INFLATE=m
 +CONFIG_ZLIB_DEFLATE=m
-Index: linux-2.4.35.4/arch/mips/defconfig-hp-lj
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-hp-lj
-+++ linux-2.4.35.4/arch/mips/defconfig-hp-lj
+--- a/arch/mips/defconfig-hp-lj
++++ b/arch/mips/defconfig-hp-lj
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7127,10 +7003,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-hp-lj
  # CONFIG_UNIX98_PTYS is not set
  
  #
-Index: linux-2.4.35.4/arch/mips/defconfig-hydrogen3
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-hydrogen3
-+++ linux-2.4.35.4/arch/mips/defconfig-hydrogen3
+--- a/arch/mips/defconfig-hydrogen3
++++ b/arch/mips/defconfig-hydrogen3
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7195,10 +7069,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-hydrogen3
  # CONFIG_FB_IT8181 is not set
  # CONFIG_FB_VIRTUAL is not set
  CONFIG_FBCON_ADVANCED=y
-Index: linux-2.4.35.4/arch/mips/defconfig-ip22
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ip22
-+++ linux-2.4.35.4/arch/mips/defconfig-ip22
+--- a/arch/mips/defconfig-ip22
++++ b/arch/mips/defconfig-ip22
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7241,10 +7113,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ip22
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-it8172
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-it8172
-+++ linux-2.4.35.4/arch/mips/defconfig-it8172
+--- a/arch/mips/defconfig-it8172
++++ b/arch/mips/defconfig-it8172
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7304,10 +7174,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-it8172
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-ivr
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ivr
-+++ linux-2.4.35.4/arch/mips/defconfig-ivr
+--- a/arch/mips/defconfig-ivr
++++ b/arch/mips/defconfig-ivr
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7338,10 +7206,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ivr
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-jmr3927
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-jmr3927
-+++ linux-2.4.35.4/arch/mips/defconfig-jmr3927
+--- a/arch/mips/defconfig-jmr3927
++++ b/arch/mips/defconfig-jmr3927
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7372,10 +7238,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-jmr3927
  # CONFIG_UNIX98_PTYS is not set
  
  #
-Index: linux-2.4.35.4/arch/mips/defconfig-lasat
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-lasat
-+++ linux-2.4.35.4/arch/mips/defconfig-lasat
+--- a/arch/mips/defconfig-lasat
++++ b/arch/mips/defconfig-lasat
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7424,10 +7288,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-lasat
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-malta
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-malta
-+++ linux-2.4.35.4/arch/mips/defconfig-malta
+--- a/arch/mips/defconfig-malta
++++ b/arch/mips/defconfig-malta
 @@ -22,16 +22,19 @@ CONFIG_KMOD=y
  #
  # CONFIG_ACER_PICA_61 is not set
@@ -7566,10 +7428,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-malta
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-mirage
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-mirage
-+++ linux-2.4.35.4/arch/mips/defconfig-mirage
+--- a/arch/mips/defconfig-mirage
++++ b/arch/mips/defconfig-mirage
 @@ -30,8 +30,8 @@ CONFIG_MIPS_MIRAGE=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7618,10 +7478,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-mirage
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-mpc30x
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-mpc30x
-+++ linux-2.4.35.4/arch/mips/defconfig-mpc30x
+--- a/arch/mips/defconfig-mpc30x
++++ b/arch/mips/defconfig-mpc30x
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7652,10 +7510,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-mpc30x
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-mtx-1
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-mtx-1
-+++ linux-2.4.35.4/arch/mips/defconfig-mtx-1
+--- a/arch/mips/defconfig-mtx-1
++++ b/arch/mips/defconfig-mtx-1
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7716,10 +7572,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-mtx-1
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-nino
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-nino
-+++ linux-2.4.35.4/arch/mips/defconfig-nino
+--- a/arch/mips/defconfig-nino
++++ b/arch/mips/defconfig-nino
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7750,10 +7604,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-nino
  # CONFIG_UNIX98_PTYS is not set
  
  #
-Index: linux-2.4.35.4/arch/mips/defconfig-ocelot
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ocelot
-+++ linux-2.4.35.4/arch/mips/defconfig-ocelot
+--- a/arch/mips/defconfig-ocelot
++++ b/arch/mips/defconfig-ocelot
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7802,10 +7654,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ocelot
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-osprey
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-osprey
-+++ linux-2.4.35.4/arch/mips/defconfig-osprey
+--- a/arch/mips/defconfig-osprey
++++ b/arch/mips/defconfig-osprey
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -7836,10 +7686,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-osprey
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-pb1000
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-pb1000
-+++ linux-2.4.35.4/arch/mips/defconfig-pb1000
+--- a/arch/mips/defconfig-pb1000
++++ b/arch/mips/defconfig-pb1000
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  CONFIG_MIPS_PB1000=y
  # CONFIG_MIPS_PB1100 is not set
@@ -7897,10 +7745,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-pb1000
  # CONFIG_TS_AU1X00_ADS7846 is not set
  
  #
-Index: linux-2.4.35.4/arch/mips/defconfig-pb1100
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-pb1100
-+++ linux-2.4.35.4/arch/mips/defconfig-pb1100
+--- a/arch/mips/defconfig-pb1100
++++ b/arch/mips/defconfig-pb1100
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  CONFIG_MIPS_PB1100=y
@@ -7965,10 +7811,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-pb1100
  # CONFIG_FB_IT8181 is not set
  # CONFIG_FB_VIRTUAL is not set
  CONFIG_FBCON_ADVANCED=y
-Index: linux-2.4.35.4/arch/mips/defconfig-pb1200
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/arch/mips/defconfig-pb1200
++++ b/arch/mips/defconfig-pb1200
 @@ -0,0 +1,1060 @@
 +#
 +# Automatically generated make config: don't edit
@@ -9030,10 +8874,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-pb1200
 +CONFIG_ZLIB_INFLATE=m
 +CONFIG_ZLIB_DEFLATE=m
 +# CONFIG_FW_LOADER is not set
-Index: linux-2.4.35.4/arch/mips/defconfig-pb1500
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-pb1500
-+++ linux-2.4.35.4/arch/mips/defconfig-pb1500
+--- a/arch/mips/defconfig-pb1500
++++ b/arch/mips/defconfig-pb1500
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9082,10 +8924,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-pb1500
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-pb1550
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-pb1550
-+++ linux-2.4.35.4/arch/mips/defconfig-pb1550
+--- a/arch/mips/defconfig-pb1550
++++ b/arch/mips/defconfig-pb1550
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9136,10 +8976,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-pb1550
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-rbtx4927
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-rbtx4927
-+++ linux-2.4.35.4/arch/mips/defconfig-rbtx4927
+--- a/arch/mips/defconfig-rbtx4927
++++ b/arch/mips/defconfig-rbtx4927
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9170,10 +9008,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-rbtx4927
  # CONFIG_UNIX98_PTYS is not set
  
  #
-Index: linux-2.4.35.4/arch/mips/defconfig-rm200
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-rm200
-+++ linux-2.4.35.4/arch/mips/defconfig-rm200
+--- a/arch/mips/defconfig-rm200
++++ b/arch/mips/defconfig-rm200
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9204,10 +9040,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-rm200
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-sb1250-swarm
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-sb1250-swarm
-+++ linux-2.4.35.4/arch/mips/defconfig-sb1250-swarm
+--- a/arch/mips/defconfig-sb1250-swarm
++++ b/arch/mips/defconfig-sb1250-swarm
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9246,10 +9080,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-sb1250-swarm
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-sead
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-sead
-+++ linux-2.4.35.4/arch/mips/defconfig-sead
+--- a/arch/mips/defconfig-sead
++++ b/arch/mips/defconfig-sead
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9268,10 +9100,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-sead
  # CONFIG_UNIX98_PTYS is not set
  
  #
-Index: linux-2.4.35.4/arch/mips/defconfig-stretch
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-stretch
-+++ linux-2.4.35.4/arch/mips/defconfig-stretch
+--- a/arch/mips/defconfig-stretch
++++ b/arch/mips/defconfig-stretch
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9314,10 +9144,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-stretch
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-tb0226
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-tb0226
-+++ linux-2.4.35.4/arch/mips/defconfig-tb0226
+--- a/arch/mips/defconfig-tb0226
++++ b/arch/mips/defconfig-tb0226
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9360,10 +9188,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-tb0226
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-tb0229
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-tb0229
-+++ linux-2.4.35.4/arch/mips/defconfig-tb0229
+--- a/arch/mips/defconfig-tb0229
++++ b/arch/mips/defconfig-tb0229
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9394,10 +9220,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-tb0229
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-ti1500
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-ti1500
-+++ linux-2.4.35.4/arch/mips/defconfig-ti1500
+--- a/arch/mips/defconfig-ti1500
++++ b/arch/mips/defconfig-ti1500
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9446,10 +9270,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-ti1500
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-workpad
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-workpad
-+++ linux-2.4.35.4/arch/mips/defconfig-workpad
+--- a/arch/mips/defconfig-workpad
++++ b/arch/mips/defconfig-workpad
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9480,10 +9302,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-workpad
  # CONFIG_VR41XX_KIU is not set
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
-Index: linux-2.4.35.4/arch/mips/defconfig-xxs1500
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-xxs1500
-+++ linux-2.4.35.4/arch/mips/defconfig-xxs1500
+--- a/arch/mips/defconfig-xxs1500
++++ b/arch/mips/defconfig-xxs1500
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9532,10 +9352,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-xxs1500
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/defconfig-yosemite
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/defconfig-yosemite
-+++ linux-2.4.35.4/arch/mips/defconfig-yosemite
+--- a/arch/mips/defconfig-yosemite
++++ b/arch/mips/defconfig-yosemite
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -9578,10 +9396,8 @@ Index: linux-2.4.35.4/arch/mips/defconfig-yosemite
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/cpu-probe.c
-+++ linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
 @@ -34,21 +34,16 @@ static void r4k_wait(void)
  		".set\tmips0");
  }
@@ -9650,10 +9466,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/cpu-probe.c
  	default:
  		printk(" unavailable.\n");
  		break;
-Index: linux-2.4.35.4/arch/mips/kernel/head.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/head.S
-+++ linux-2.4.35.4/arch/mips/kernel/head.S
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
 @@ -43,9 +43,9 @@
  
  		/* Cache Error */
@@ -9822,10 +9636,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/head.S
  		END(smp_bootstrap)
  #endif
  
-Index: linux-2.4.35.4/arch/mips/kernel/process.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/process.c
-+++ linux-2.4.35.4/arch/mips/kernel/process.c
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
 @@ -128,6 +128,26 @@ int dump_fpu(struct pt_regs *regs, elf_f
  	return 1;
  }
@@ -9853,10 +9665,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/process.c
  /*
   * Create a kernel thread
   */
-Index: linux-2.4.35.4/arch/mips/kernel/scall_o32.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/scall_o32.S
-+++ linux-2.4.35.4/arch/mips/kernel/scall_o32.S
+--- a/arch/mips/kernel/scall_o32.S
++++ b/arch/mips/kernel/scall_o32.S
 @@ -121,15 +121,14 @@ reschedule:
  
  trace_a_syscall:
@@ -9875,10 +9685,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/scall_o32.S
  
  	li	t0, -EMAXERRNO - 1	# error?
  	sltu	t0, t0, v0
-Index: linux-2.4.35.4/arch/mips/kernel/setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/setup.c
-+++ linux-2.4.35.4/arch/mips/kernel/setup.c
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
 @@ -5,7 +5,7 @@
   *
   * Copyright (C) 1995  Linus Torvalds
@@ -9908,10 +9716,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/setup.c
  	start_kernel();
  }
  
-Index: linux-2.4.35.4/arch/mips/kernel/traps.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/traps.c
-+++ linux-2.4.35.4/arch/mips/kernel/traps.c
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
 @@ -452,9 +452,10 @@ static inline void simulate_ll(struct pt
  	}
  	ll_task = current;
@@ -9998,10 +9804,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/traps.c
 -	TLBMISS_HANDLER_SETUP();
 +	per_cpu_trap_init();
  }
-Index: linux-2.4.35.4/arch/mips/lib/rtc-no.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/lib/rtc-no.c
-+++ linux-2.4.35.4/arch/mips/lib/rtc-no.c
+--- a/arch/mips/lib/rtc-no.c
++++ b/arch/mips/lib/rtc-no.c
 @@ -6,10 +6,9 @@
   * Stub RTC routines to keep Linux from crashing on machine which don't
   * have a RTC chip.
@@ -10020,10 +9824,8 @@ Index: linux-2.4.35.4/arch/mips/lib/rtc-no.c
  };
 -
 -EXPORT_SYMBOL(rtc_ops);
-Index: linux-2.4.35.4/arch/mips/lib/rtc-std.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/lib/rtc-std.c
-+++ linux-2.4.35.4/arch/mips/lib/rtc-std.c
+--- a/arch/mips/lib/rtc-std.c
++++ b/arch/mips/lib/rtc-std.c
 @@ -5,9 +5,8 @@
   *
   * RTC routines for PC style attached Dallas chip.
@@ -10041,10 +9843,8 @@ Index: linux-2.4.35.4/arch/mips/lib/rtc-std.c
  };
 -
 -EXPORT_SYMBOL(rtc_ops);
-Index: linux-2.4.35.4/arch/mips/Makefile
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/Makefile
-+++ linux-2.4.35.4/arch/mips/Makefile
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
 @@ -209,7 +209,7 @@ LOADADDR	:= 0x80080000
  endif
  
@@ -10112,10 +9912,8 @@ Index: linux-2.4.35.4/arch/mips/Makefile
  
  #
  # Cogent CSB250
-Index: linux-2.4.35.4/arch/mips/mm/cerr-sb1.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/cerr-sb1.c
-+++ linux-2.4.35.4/arch/mips/mm/cerr-sb1.c
+--- a/arch/mips/mm/cerr-sb1.c
++++ b/arch/mips/mm/cerr-sb1.c
 @@ -252,14 +252,14 @@ static const uint8_t parity[256] = {
  
  /* Masks to select bits for Hamming parity, mask_72_64[i] for bit[i] */
@@ -10160,10 +9958,8 @@ Index: linux-2.4.35.4/arch/mips/mm/cerr-sb1.c
  		if (way == 0) {
  			lru = (taghi >> 14) & 0xff;
  			prom_printf("[Bank %d Set 0x%02x]  LRU > %d %d %d %d > MRU\n",
-Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/c-r4k.c
-+++ linux-2.4.35.4/arch/mips/mm/c-r4k.c
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
 @@ -867,9 +867,16 @@ static void __init probe_pcache(void)
  	 * normally they'd suffer from aliases but magic in the hardware deals
  	 * with that for us so we don't need to take care ourselves.
@@ -10194,10 +9990,8 @@ Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
  	r4k_blast_dcache_page_setup();
  	r4k_blast_dcache_page_indexed_setup();
  	r4k_blast_dcache_setup();
-Index: linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/tlbex-mips32.S
-+++ linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S
+--- a/arch/mips/mm/tlbex-mips32.S
++++ b/arch/mips/mm/tlbex-mips32.S
 @@ -196,7 +196,7 @@
  	.set	noat; \
  	SAVE_ALL; \
@@ -10207,10 +10001,8 @@ Index: linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S
  	.set	at; \
  	move	a0, sp; \
  	jal	do_page_fault; \
-Index: linux-2.4.35.4/arch/mips/mm/tlbex-r4k.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/tlbex-r4k.S
-+++ linux-2.4.35.4/arch/mips/mm/tlbex-r4k.S
+--- a/arch/mips/mm/tlbex-r4k.S
++++ b/arch/mips/mm/tlbex-r4k.S
 @@ -184,13 +184,10 @@
  	P_MTC0	k0, CP0_ENTRYLO0		# load it
  	PTE_SRL	k1, k1, 6			# convert to entrylo1
@@ -10279,10 +10071,8 @@ Index: linux-2.4.35.4/arch/mips/mm/tlbex-r4k.S
  	.set	mips3
  	eret
  	.set	mips0
-Index: linux-2.4.35.4/arch/mips/mm/tlb-r4k.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/tlb-r4k.c
-+++ linux-2.4.35.4/arch/mips/mm/tlb-r4k.c
+--- a/arch/mips/mm/tlb-r4k.c
++++ b/arch/mips/mm/tlb-r4k.c
 @@ -3,17 +3,12 @@
   * License.  See the file "COPYING" in the main directory of this archive
   * for more details.
@@ -10609,10 +10399,8 @@ Index: linux-2.4.35.4/arch/mips/mm/tlb-r4k.c
  
  	/*
  	 * You should never change this register:
-Index: linux-2.4.35.4/arch/mips64/defconfig
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig
-+++ linux-2.4.35.4/arch/mips64/defconfig
+--- a/arch/mips64/defconfig
++++ b/arch/mips64/defconfig
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -10643,10 +10431,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-atlas
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-atlas
-+++ linux-2.4.35.4/arch/mips64/defconfig-atlas
+--- a/arch/mips64/defconfig-atlas
++++ b/arch/mips64/defconfig-atlas
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -10689,10 +10475,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-atlas
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-decstation
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-decstation
-+++ linux-2.4.35.4/arch/mips64/defconfig-decstation
+--- a/arch/mips64/defconfig-decstation
++++ b/arch/mips64/defconfig-decstation
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -10735,10 +10519,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-decstation
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-ip22
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-ip22
-+++ linux-2.4.35.4/arch/mips64/defconfig-ip22
+--- a/arch/mips64/defconfig-ip22
++++ b/arch/mips64/defconfig-ip22
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -10781,10 +10563,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-ip22
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-ip27
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-ip27
-+++ linux-2.4.35.4/arch/mips64/defconfig-ip27
+--- a/arch/mips64/defconfig-ip27
++++ b/arch/mips64/defconfig-ip27
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -10815,10 +10595,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-ip27
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-jaguar
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-jaguar
-+++ linux-2.4.35.4/arch/mips64/defconfig-jaguar
+--- a/arch/mips64/defconfig-jaguar
++++ b/arch/mips64/defconfig-jaguar
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -10849,10 +10627,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-jaguar
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-malta
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-malta
-+++ linux-2.4.35.4/arch/mips64/defconfig-malta
+--- a/arch/mips64/defconfig-malta
++++ b/arch/mips64/defconfig-malta
 @@ -22,16 +22,19 @@ CONFIG_KMOD=y
  #
  # CONFIG_ACER_PICA_61 is not set
@@ -11003,10 +10779,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-malta
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-ocelotc
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-ocelotc
-+++ linux-2.4.35.4/arch/mips64/defconfig-ocelotc
+--- a/arch/mips64/defconfig-ocelotc
++++ b/arch/mips64/defconfig-ocelotc
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -11037,10 +10811,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-ocelotc
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-sb1250-swarm
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-sb1250-swarm
-+++ linux-2.4.35.4/arch/mips64/defconfig-sb1250-swarm
+--- a/arch/mips64/defconfig-sb1250-swarm
++++ b/arch/mips64/defconfig-sb1250-swarm
 @@ -30,8 +30,8 @@ CONFIG_KMOD=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -11079,10 +10851,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-sb1250-swarm
  CONFIG_UNIX98_PTYS=y
  CONFIG_UNIX98_PTY_COUNT=256
  
-Index: linux-2.4.35.4/arch/mips64/defconfig-sead
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/defconfig-sead
-+++ linux-2.4.35.4/arch/mips64/defconfig-sead
+--- a/arch/mips64/defconfig-sead
++++ b/arch/mips64/defconfig-sead
 @@ -28,8 +28,8 @@ CONFIG_EXPERIMENTAL=y
  # CONFIG_MIPS_PB1000 is not set
  # CONFIG_MIPS_PB1100 is not set
@@ -11101,10 +10871,8 @@ Index: linux-2.4.35.4/arch/mips64/defconfig-sead
  # CONFIG_UNIX98_PTYS is not set
  
  #
-Index: linux-2.4.35.4/arch/mips64/kernel/binfmt_elfn32.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/binfmt_elfn32.c
-+++ linux-2.4.35.4/arch/mips64/kernel/binfmt_elfn32.c
+--- a/arch/mips64/kernel/binfmt_elfn32.c
++++ b/arch/mips64/kernel/binfmt_elfn32.c
 @@ -116,4 +116,7 @@ MODULE_AUTHOR("Ralf Baechle (ralf@linux-
  #undef MODULE_DESCRIPTION
  #undef MODULE_AUTHOR
@@ -11113,10 +10881,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/binfmt_elfn32.c
 +#define TASK_SIZE TASK_SIZE32
 +
  #include "../../../fs/binfmt_elf.c"
-Index: linux-2.4.35.4/arch/mips64/kernel/binfmt_elfo32.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/binfmt_elfo32.c
-+++ linux-2.4.35.4/arch/mips64/kernel/binfmt_elfo32.c
+--- a/arch/mips64/kernel/binfmt_elfo32.c
++++ b/arch/mips64/kernel/binfmt_elfo32.c
 @@ -137,4 +137,7 @@ MODULE_AUTHOR("Ralf Baechle (ralf@linux-
  #undef MODULE_DESCRIPTION
  #undef MODULE_AUTHOR
@@ -11125,10 +10891,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/binfmt_elfo32.c
 +#define TASK_SIZE TASK_SIZE32
 +
  #include "../../../fs/binfmt_elf.c"
-Index: linux-2.4.35.4/arch/mips64/kernel/head.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/head.S
-+++ linux-2.4.35.4/arch/mips64/kernel/head.S
+--- a/arch/mips64/kernel/head.S
++++ b/arch/mips64/kernel/head.S
 @@ -91,6 +91,21 @@ EXPORT(_stext)
  	__INIT
  
@@ -11213,10 +10977,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/head.S
  	END(smp_bootstrap)
  #endif /* CONFIG_SMP */
  
-Index: linux-2.4.35.4/arch/mips64/kernel/ioctl32.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/ioctl32.c
-+++ linux-2.4.35.4/arch/mips64/kernel/ioctl32.c
+--- a/arch/mips64/kernel/ioctl32.c
++++ b/arch/mips64/kernel/ioctl32.c
 @@ -2352,7 +2352,7 @@ static struct ioctl32_list ioctl32_handl
  	IOCTL32_HANDLER(AUTOFS_IOC_SETTIMEOUT32, ioc_settimeout),
  	IOCTL32_DEFAULT(AUTOFS_IOC_EXPIRE),
@@ -11226,10 +10988,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/ioctl32.c
  	IOCTL32_DEFAULT(AUTOFS_IOC_ASKREGHOST),
  	IOCTL32_DEFAULT(AUTOFS_IOC_TOGGLEREGHOST),
  	IOCTL32_DEFAULT(AUTOFS_IOC_ASKUMOUNT),
-Index: linux-2.4.35.4/arch/mips64/kernel/linux32.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/linux32.c
-+++ linux-2.4.35.4/arch/mips64/kernel/linux32.c
+--- a/arch/mips64/kernel/linux32.c
++++ b/arch/mips64/kernel/linux32.c
 @@ -1101,6 +1101,7 @@ do_readv_writev32(int type, struct file 
  	 * specially as they have atomicity guarantees and can handle
  	 * iovec's natively
@@ -11316,10 +11076,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/linux32.c
  /*
   * Ooo, nasty.  We need here to frob 32-bit unsigned longs to
   * 64-bit unsigned longs.
-Index: linux-2.4.35.4/arch/mips64/kernel/process.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/process.c
-+++ linux-2.4.35.4/arch/mips64/kernel/process.c
+--- a/arch/mips64/kernel/process.c
++++ b/arch/mips64/kernel/process.c
 @@ -125,6 +125,25 @@ int dump_fpu(struct pt_regs *regs, elf_f
  	return 1;
  }
@@ -11346,10 +11104,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/process.c
  /*
   * Create a kernel thread
   */
-Index: linux-2.4.35.4/arch/mips64/kernel/scall_64.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/scall_64.S
-+++ linux-2.4.35.4/arch/mips64/kernel/scall_64.S
+--- a/arch/mips64/kernel/scall_64.S
++++ b/arch/mips64/kernel/scall_64.S
 @@ -102,15 +102,14 @@ _64_reschedule:
  
  trace_a_syscall:
@@ -11368,10 +11124,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/scall_64.S
  
  	li	t0, -EMAXERRNO - 1	# error?
  	sltu	t0, t0, v0
-Index: linux-2.4.35.4/arch/mips64/kernel/scall_n32.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/scall_n32.S
-+++ linux-2.4.35.4/arch/mips64/kernel/scall_n32.S
+--- a/arch/mips64/kernel/scall_n32.S
++++ b/arch/mips64/kernel/scall_n32.S
 @@ -106,15 +106,14 @@ n32_reschedule:
  
  trace_a_syscall:
@@ -11390,10 +11144,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/scall_n32.S
  
  	li	t0, -EMAXERRNO - 1	# error?
  	sltu	t0, t0, v0
-Index: linux-2.4.35.4/arch/mips64/kernel/scall_o32.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/scall_o32.S
-+++ linux-2.4.35.4/arch/mips64/kernel/scall_o32.S
+--- a/arch/mips64/kernel/scall_o32.S
++++ b/arch/mips64/kernel/scall_o32.S
 @@ -118,9 +118,8 @@ trace_a_syscall:
  	sd	a6, PT_R10(sp)
  	sd	a7, PT_R11(sp)
@@ -11423,10 +11175,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/scall_o32.S
  	.macro	sys function, nargs
  	.byte	\nargs
  	.endm
-Index: linux-2.4.35.4/arch/mips64/kernel/setup.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/setup.c
-+++ linux-2.4.35.4/arch/mips64/kernel/setup.c
+--- a/arch/mips64/kernel/setup.c
++++ b/arch/mips64/kernel/setup.c
 @@ -129,14 +129,6 @@ asmlinkage void __init init_arch(int arg
  	 */
  	load_mmu();
@@ -11442,10 +11192,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/setup.c
  	start_kernel();
  }
  
-Index: linux-2.4.35.4/arch/mips64/kernel/signal_n32.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/signal_n32.c
-+++ linux-2.4.35.4/arch/mips64/kernel/signal_n32.c
+--- a/arch/mips64/kernel/signal_n32.c
++++ b/arch/mips64/kernel/signal_n32.c
 @@ -68,7 +68,7 @@ struct rt_sigframe_n32 {
  };
  
@@ -11455,10 +11203,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/signal_n32.c
  
  asmlinkage void sysn32_rt_sigreturn(abi64_no_regargs, struct pt_regs regs)
  {
-Index: linux-2.4.35.4/arch/mips64/kernel/traps.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/kernel/traps.c
-+++ linux-2.4.35.4/arch/mips64/kernel/traps.c
+--- a/arch/mips64/kernel/traps.c
++++ b/arch/mips64/kernel/traps.c
 @@ -462,9 +462,10 @@ static inline void simulate_ll(struct pt
  	}
  	ll_task = current;
@@ -11549,10 +11295,8 @@ Index: linux-2.4.35.4/arch/mips64/kernel/traps.c
 -	current->active_mm = &init_mm;
 +	per_cpu_trap_init();
  }
-Index: linux-2.4.35.4/arch/mips64/mm/cerr-sb1.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/mm/cerr-sb1.c
-+++ linux-2.4.35.4/arch/mips64/mm/cerr-sb1.c
+--- a/arch/mips64/mm/cerr-sb1.c
++++ b/arch/mips64/mm/cerr-sb1.c
 @@ -252,14 +252,14 @@ static const uint8_t parity[256] = {
  
  /* Masks to select bits for Hamming parity, mask_72_64[i] for bit[i] */
@@ -11597,10 +11341,8 @@ Index: linux-2.4.35.4/arch/mips64/mm/cerr-sb1.c
  		if (way == 0) {
  			lru = (taghi >> 14) & 0xff;
  			prom_printf("[Bank %d Set 0x%02x]  LRU > %d %d %d %d > MRU\n",
-Index: linux-2.4.35.4/arch/mips64/mm/c-r4k.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/mm/c-r4k.c
-+++ linux-2.4.35.4/arch/mips64/mm/c-r4k.c
+--- a/arch/mips64/mm/c-r4k.c
++++ b/arch/mips64/mm/c-r4k.c
 @@ -867,9 +867,16 @@ static void __init probe_pcache(void)
  	 * normally they'd suffer from aliases but magic in the hardware deals
  	 * with that for us so we don't need to take care ourselves.
@@ -11631,10 +11373,8 @@ Index: linux-2.4.35.4/arch/mips64/mm/c-r4k.c
  	r4k_blast_dcache_page_setup();
  	r4k_blast_dcache_page_indexed_setup();
  	r4k_blast_dcache_setup();
-Index: linux-2.4.35.4/arch/mips64/mm/tlbex-r4k.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/mm/tlbex-r4k.S
-+++ linux-2.4.35.4/arch/mips64/mm/tlbex-r4k.S
+--- a/arch/mips64/mm/tlbex-r4k.S
++++ b/arch/mips64/mm/tlbex-r4k.S
 @@ -125,6 +125,33 @@ LEAF(except_vec1_r4k)
  	 nop
  END(except_vec1_r4k)
@@ -11743,10 +11483,8 @@ Index: linux-2.4.35.4/arch/mips64/mm/tlbex-r4k.S
  	eret
  END(handle_vec1_r10k)
  
-Index: linux-2.4.35.4/arch/mips64/mm/tlb-r4k.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips64/mm/tlb-r4k.c
-+++ linux-2.4.35.4/arch/mips64/mm/tlb-r4k.c
+--- a/arch/mips64/mm/tlb-r4k.c
++++ b/arch/mips64/mm/tlb-r4k.c
 @@ -1,24 +1,12 @@
  /*
 - * Carsten Langgaard, carstenl@mips.com
@@ -12098,10 +11836,8 @@ Index: linux-2.4.35.4/arch/mips64/mm/tlb-r4k.c
  	probe_tlb(config);
  	write_c0_pagemask(PM_DEFAULT_MASK);
  	write_c0_wired(0);
-Index: linux-2.4.35.4/drivers/char/au1000_gpio.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/au1000_gpio.c
-+++ linux-2.4.35.4/drivers/char/au1000_gpio.c
+--- a/drivers/char/au1000_gpio.c
++++ b/drivers/char/au1000_gpio.c
 @@ -246,7 +246,7 @@ static struct file_operations au1000gpio
  
  static struct miscdevice au1000gpio_miscdev =
@@ -12111,10 +11847,8 @@ Index: linux-2.4.35.4/drivers/char/au1000_gpio.c
  	"au1000_gpio",
  	&au1000gpio_fops
  };
-Index: linux-2.4.35.4/drivers/char/au1550_psc_spi.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/char/au1550_psc_spi.c
++++ b/drivers/char/au1550_psc_spi.c
 @@ -0,0 +1,466 @@
 +/*
 + *  Driver for Alchemy Au1550 SPI on the PSC.
@@ -12582,10 +12316,8 @@ Index: linux-2.4.35.4/drivers/char/au1550_psc_spi.c
 +
 +module_init(au1550spi_init);
 +module_exit(au1550spi_exit);
-Index: linux-2.4.35.4/drivers/char/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/Config.in
-+++ linux-2.4.35.4/drivers/char/Config.in
+--- a/drivers/char/Config.in
++++ b/drivers/char/Config.in
 @@ -314,14 +314,11 @@ fi
  if [ "$CONFIG_OBSOLETE" = "y" -a "$CONFIG_ALPHA_BOOK1" = "y" ]; then
     bool 'Tadpole ANA H8 Support (OBSOLETE)'  CONFIG_H8
@@ -12623,10 +12355,8 @@ Index: linux-2.4.35.4/drivers/char/Config.in
  fi
  if [ "$CONFIG_MIPS_ITE8172" = "y" ]; then
    tristate ' ITE GPIO' CONFIG_ITE_GPIO
-Index: linux-2.4.35.4/drivers/char/decserial.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/decserial.c
-+++ linux-2.4.35.4/drivers/char/decserial.c
+--- a/drivers/char/decserial.c
++++ b/drivers/char/decserial.c
 @@ -3,95 +3,105 @@
   *      choose the right serial device at boot time
   *
@@ -12777,10 +12507,8 @@ Index: linux-2.4.35.4/drivers/char/decserial.c
  #endif
  }
  
-Index: linux-2.4.35.4/drivers/char/ds1286.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/ds1286.c
-+++ linux-2.4.35.4/drivers/char/ds1286.c
+--- a/drivers/char/ds1286.c
++++ b/drivers/char/ds1286.c
 @@ -1,6 +1,10 @@
  /*
   * DS1286 Real Time Clock interface for Linux
@@ -12916,10 +12644,8 @@ Index: linux-2.4.35.4/drivers/char/ds1286.c
 +
 +MODULE_AUTHOR("Ralf Baechle");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/char/ds1742.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/ds1742.c
-+++ linux-2.4.35.4/drivers/char/ds1742.c
+--- a/drivers/char/ds1742.c
++++ b/drivers/char/ds1742.c
 @@ -142,6 +142,7 @@ static int rtc_ds1742_set_time(unsigned 
  	CMOS_WRITE(RTC_WRITE, RTC_CONTROL);
  
@@ -12955,10 +12681,8 @@ Index: linux-2.4.35.4/drivers/char/ds1742.c
  		to_tm(curr_time, &rtc_tm);
  		rtc_tm.tm_year -= 1900;
  		return copy_to_user((void *) arg, &rtc_tm, sizeof(rtc_tm)) ? 
-Index: linux-2.4.35.4/drivers/char/dummy_keyb.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/dummy_keyb.c
-+++ linux-2.4.35.4/drivers/char/dummy_keyb.c
+--- a/drivers/char/dummy_keyb.c
++++ b/drivers/char/dummy_keyb.c
 @@ -141,3 +141,7 @@ void __init kbd_init_hw(void)
  {
  	printk("Dummy keyboard driver installed.\n");
@@ -12967,10 +12691,8 @@ Index: linux-2.4.35.4/drivers/char/dummy_keyb.c
 +unsigned char kbd_sysrq_key;
 +unsigned char kbd_sysrq_xlate[128];
 +#endif
-Index: linux-2.4.35.4/drivers/char/dz.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/dz.c
-+++ linux-2.4.35.4/drivers/char/dz.c
+--- a/drivers/char/dz.c
++++ b/drivers/char/dz.c
 @@ -1,11 +1,13 @@
  /*
 - * dz.c: Serial port driver for DECStations equiped 
@@ -13840,10 +13562,8 @@ Index: linux-2.4.35.4/drivers/char/dz.c
  };
  
  void __init dz_serial_console_init(void)
-Index: linux-2.4.35.4/drivers/char/dz.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/dz.h
-+++ linux-2.4.35.4/drivers/char/dz.h
+--- a/drivers/char/dz.h
++++ b/drivers/char/dz.h
 @@ -10,6 +10,8 @@
  #ifndef DZ_SERIAL_H
  #define DZ_SERIAL_H
@@ -13992,10 +13712,8 @@ Index: linux-2.4.35.4/drivers/char/dz.h
 -#endif
 -
  #endif /* DZ_SERIAL_H */
-Index: linux-2.4.35.4/drivers/char/ibm_workpad_keymap.map
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/char/ibm_workpad_keymap.map
++++ b/drivers/char/ibm_workpad_keymap.map
 @@ -0,0 +1,343 @@
 +# Keymap for IBM Workpad z50
 +# US Mapping
@@ -14340,10 +14058,8 @@ Index: linux-2.4.35.4/drivers/char/ibm_workpad_keymap.map
 +keycode 93 = AltGr
 +keycode 94 = ShiftR
 +	shift keycode 94 = Caps_Lock
-Index: linux-2.4.35.4/drivers/char/indydog.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/indydog.c
-+++ linux-2.4.35.4/drivers/char/indydog.c
+--- a/drivers/char/indydog.c
++++ b/drivers/char/indydog.c
 @@ -1,5 +1,5 @@
  /*
 - *	IndyDog	0.2	A Hardware Watchdog Device for SGI IP22
@@ -14587,10 +14303,8 @@ Index: linux-2.4.35.4/drivers/char/indydog.c
 +MODULE_AUTHOR("Guido Guenther <agx@sigxcpu.org>");
 +MODULE_DESCRIPTION("Hardware Watchdog Device for SGI IP22");
  MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/char/ip27-rtc.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/ip27-rtc.c
-+++ linux-2.4.35.4/drivers/char/ip27-rtc.c
+--- a/drivers/char/ip27-rtc.c
++++ b/drivers/char/ip27-rtc.c
 @@ -44,6 +44,7 @@
  #include <asm/sn/klconfig.h>
  #include <asm/sn/sn0/ip27.h>
@@ -14620,10 +14334,8 @@ Index: linux-2.4.35.4/drivers/char/ip27-rtc.c
 +MODULE_AUTHOR("Ralf Baechle <ralf@linux-mips.org>");
 +MODULE_DESCRIPTION("SGI IP27 M48T35 RTC driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/char/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/Makefile
-+++ linux-2.4.35.4/drivers/char/Makefile
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
 @@ -48,7 +48,12 @@ ifeq ($(ARCH),mips)
      KEYBD    =
    endif
@@ -14672,10 +14384,8 @@ Index: linux-2.4.35.4/drivers/char/Makefile
 +
 +victor_mpc30x_keymap.c: victor_mpc30x_keymap.map
 +	set -e ; loadkeys --mktable $< | sed -e 's/^static *//' > $@
-Index: linux-2.4.35.4/drivers/char/mips_rtc.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/mips_rtc.c
-+++ linux-2.4.35.4/drivers/char/mips_rtc.c
+--- a/drivers/char/mips_rtc.c
++++ b/drivers/char/mips_rtc.c
 @@ -53,14 +53,6 @@
  #include <asm/io.h>
  #include <asm/uaccess.h>
@@ -14691,10 +14401,8 @@ Index: linux-2.4.35.4/drivers/char/mips_rtc.c
  #include <asm/time.h>
  
  static unsigned long rtc_status = 0;	/* bitmapped status byte.       */
-Index: linux-2.4.35.4/drivers/char/sb1250_duart.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/sb1250_duart.c
-+++ linux-2.4.35.4/drivers/char/sb1250_duart.c
+--- a/drivers/char/sb1250_duart.c
++++ b/drivers/char/sb1250_duart.c
 @@ -328,10 +328,11 @@ static int duart_write(struct tty_struct
  		if (c <= 0) break;
  
@@ -14749,10 +14457,8 @@ Index: linux-2.4.35.4/drivers/char/sb1250_duart.c
  		break;
  	case TIOCSSERIAL:
  		printk("Ignoring TIOCSSERIAL\n");
-Index: linux-2.4.35.4/drivers/char/serial.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/serial.c
-+++ linux-2.4.35.4/drivers/char/serial.c
+--- a/drivers/char/serial.c
++++ b/drivers/char/serial.c
 @@ -62,6 +62,12 @@
   *        Robert Schwebel <robert@schwebel.de>,
   *        Juergen Beisert <jbeisert@eurodsn.de>,
@@ -14798,10 +14504,8 @@ Index: linux-2.4.35.4/drivers/char/serial.c
  
  /*
   * We used to support using pause I/O for certain machines.  We
-Index: linux-2.4.35.4/drivers/char/victor_mpc30x_keymap.map
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/char/victor_mpc30x_keymap.map
++++ b/drivers/char/victor_mpc30x_keymap.map
 @@ -0,0 +1,102 @@
 +# Victor Interlink MP-C303/304 keyboard keymap
 +#
@@ -14905,10 +14609,8 @@ Index: linux-2.4.35.4/drivers/char/victor_mpc30x_keymap.map
 +	alt keycode 31 = PageDown
 +keycode 47 = Right
 +	alt keycode 47 = End
-Index: linux-2.4.35.4/drivers/char/vr41xx_keyb.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/char/vr41xx_keyb.c
-+++ linux-2.4.35.4/drivers/char/vr41xx_keyb.c
+--- a/drivers/char/vr41xx_keyb.c
++++ b/drivers/char/vr41xx_keyb.c
 @@ -308,7 +308,7 @@ void __devinit kbd_init_hw(void)
  			if (found != 0) {
  				kiu_base = VRC4173_KIU_OFFSET;
@@ -14927,10 +14629,8 @@ Index: linux-2.4.35.4/drivers/char/vr41xx_keyb.c
  
  	kiu_writew(KIURST_KIURST, KIURST);
  
-Index: linux-2.4.35.4/drivers/i2c/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/i2c/Config.in
-+++ linux-2.4.35.4/drivers/i2c/Config.in
+--- a/drivers/i2c/Config.in
++++ b/drivers/i2c/Config.in
 @@ -57,6 +57,10 @@ if [ "$CONFIG_I2C" != "n" ]; then
     if [ "$CONFIG_SGI_IP22" = "y" ]; then
        dep_tristate 'I2C SGI interfaces' CONFIG_I2C_ALGO_SGI $CONFIG_I2C
@@ -14942,10 +14642,8 @@ Index: linux-2.4.35.4/drivers/i2c/Config.in
   
  # This is needed for automatic patch generation: sensors code starts here
  # This is needed for automatic patch generation: sensors code ends here
-Index: linux-2.4.35.4/drivers/i2c/i2c-algo-au1550.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/i2c/i2c-algo-au1550.c
++++ b/drivers/i2c/i2c-algo-au1550.c
 @@ -0,0 +1,340 @@
 +/*
 + * i2c-algo-au1550.c: SMBus (i2c) driver algorithms for Alchemy PSC interface
@@ -15287,10 +14985,8 @@ Index: linux-2.4.35.4/drivers/i2c/i2c-algo-au1550.c
 +MODULE_AUTHOR("Dan Malek <dan@embeddededge.com>");
 +MODULE_DESCRIPTION("SMBus Au1550 algorithm");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/i2c/i2c-au1550.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/i2c/i2c-au1550.c
++++ b/drivers/i2c/i2c-au1550.c
 @@ -0,0 +1,154 @@
 +/*
 + * i2c-au1550.c: SMBus (i2c) adapter for Alchemy PSC interface
@@ -15446,10 +15142,8 @@ Index: linux-2.4.35.4/drivers/i2c/i2c-au1550.c
 +{
 +	i2c_au1550_del_bus(&pb1550_board_adapter);
 +}
-Index: linux-2.4.35.4/drivers/i2c/i2c-core.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/i2c/i2c-core.c
-+++ linux-2.4.35.4/drivers/i2c/i2c-core.c
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
 @@ -1277,6 +1277,9 @@ static int __init i2c_init(void)
  #ifdef CONFIG_I2C_MAX1617
  	extern int i2c_max1617_init(void);
@@ -15471,10 +15165,8 @@ Index: linux-2.4.35.4/drivers/i2c/i2c-core.c
  	/* -------------- proc interface ---- */
  #ifdef CONFIG_I2C_PROC
  	sensors_init();
-Index: linux-2.4.35.4/drivers/i2c/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/i2c/Makefile
-+++ linux-2.4.35.4/drivers/i2c/Makefile
+--- a/drivers/i2c/Makefile
++++ b/drivers/i2c/Makefile
 @@ -6,7 +6,7 @@ O_TARGET := i2c.o
  
  export-objs	:= i2c-core.o i2c-algo-bit.o i2c-algo-pcf.o \
@@ -15492,10 +15184,8 @@ Index: linux-2.4.35.4/drivers/i2c/Makefile
  
  # This is needed for automatic patch generation: sensors code starts here
  # This is needed for automatic patch generation: sensors code ends here
-Index: linux-2.4.35.4/drivers/media/video/indycam.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/media/video/indycam.c
-+++ linux-2.4.35.4/drivers/media/video/indycam.c
+--- a/drivers/media/video/indycam.c
++++ b/drivers/media/video/indycam.c
 @@ -50,13 +50,14 @@ static int indycam_attach(struct i2c_ada
  		0x80,			/* INDYCAM_GAMMA */
  	};
@@ -15545,10 +15235,8 @@ Index: linux-2.4.35.4/drivers/media/video/indycam.c
  
  	MOD_INC_USE_COUNT;
  	return 0;
-Index: linux-2.4.35.4/drivers/media/video/vino.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/media/video/vino.c
-+++ linux-2.4.35.4/drivers/media/video/vino.c
+--- a/drivers/media/video/vino.c
++++ b/drivers/media/video/vino.c
 @@ -5,6 +5,8 @@
   * License version 2 as published by the Free Software Foundation.
   *
@@ -15669,10 +15357,8 @@ Index: linux-2.4.35.4/drivers/media/video/vino.c
  }
  
  static int vino_grab(struct vino_device *v, int frame)
-Index: linux-2.4.35.4/drivers/mtd/devices/docprobe.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/devices/docprobe.c
-+++ linux-2.4.35.4/drivers/mtd/devices/docprobe.c
+--- a/drivers/mtd/devices/docprobe.c
++++ b/drivers/mtd/devices/docprobe.c
 @@ -89,10 +89,10 @@ static unsigned long __initdata doc_loca
  	0xe4000000,
  #elif defined(CONFIG_MOMENCO_OCELOT)
@@ -15687,10 +15373,8 @@ Index: linux-2.4.35.4/drivers/mtd/devices/docprobe.c
  #warning Unknown architecture for DiskOnChip. No default probe locations defined
  #endif
  	0 };
-Index: linux-2.4.35.4/drivers/mtd/devices/ms02-nv.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/devices/ms02-nv.c
-+++ linux-2.4.35.4/drivers/mtd/devices/ms02-nv.c
+--- a/drivers/mtd/devices/ms02-nv.c
++++ b/drivers/mtd/devices/ms02-nv.c
 @@ -1,10 +1,10 @@
  /*
 - *      Copyright (c) 2001 Maciej W. Rozycki
@@ -15764,10 +15448,8 @@ Index: linux-2.4.35.4/drivers/mtd/devices/ms02-nv.c
  		csr = (volatile u32 *)KN03_MCR_BASE;
  		if (*csr & KN03_MCR_BNK32M)
  			stride = 2;
-Index: linux-2.4.35.4/drivers/mtd/devices/ms02-nv.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/devices/ms02-nv.h
-+++ linux-2.4.35.4/drivers/mtd/devices/ms02-nv.h
+--- a/drivers/mtd/devices/ms02-nv.h
++++ b/drivers/mtd/devices/ms02-nv.h
 @@ -1,32 +1,96 @@
  /*
 - *      Copyright (c) 2001 Maciej W. Rozycki
@@ -15874,10 +15556,8 @@ Index: linux-2.4.35.4/drivers/mtd/devices/ms02-nv.h
  typedef volatile u32 ms02nv_uint;
  
  struct ms02nv_private {
-Index: linux-2.4.35.4/drivers/mtd/maps/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/maps/Config.in
-+++ linux-2.4.35.4/drivers/mtd/maps/Config.in
+--- a/drivers/mtd/maps/Config.in
++++ b/drivers/mtd/maps/Config.in
 @@ -51,11 +51,26 @@ if [ "$CONFIG_MIPS" = "y" ]; then
     dep_tristate '  Pb1000 MTD support' CONFIG_MTD_PB1000 $CONFIG_MIPS_PB1000
     dep_tristate '  Pb1500 MTD support' CONFIG_MTD_PB1500 $CONFIG_MIPS_PB1500
@@ -15905,10 +15585,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/Config.in
     dep_tristate '  Flash chip mapping on ITE QED-4N-S01B, Globespan IVR or custom board' CONFIG_MTD_CSTM_MIPS_IXX $CONFIG_MTD_CFI $CONFIG_MTD_JEDEC $CONFIG_MTD_PARTITIONS 
     if [ "$CONFIG_MTD_CSTM_MIPS_IXX" = "y" -o "$CONFIG_MTD_CSTM_MIPS_IXX" = "m" ]; then
        hex '    Physical start address of flash mapping' CONFIG_MTD_CSTM_MIPS_IXX_START 0x8000000
-Index: linux-2.4.35.4/drivers/mtd/maps/db1x00-flash.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/mtd/maps/db1x00-flash.c
++++ b/drivers/mtd/maps/db1x00-flash.c
 @@ -0,0 +1,283 @@
 +/*
 + * Flash memory access on Alchemy Db1xxx boards
@@ -16193,10 +15871,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/db1x00-flash.c
 +MODULE_AUTHOR("Pete Popov");
 +MODULE_DESCRIPTION("Db1x00 mtd map driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/mtd/maps/hydrogen3-flash.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/mtd/maps/hydrogen3-flash.c
++++ b/drivers/mtd/maps/hydrogen3-flash.c
 @@ -0,0 +1,189 @@
 +/*
 + * Flash memory access on Alchemy HydrogenIII boards
@@ -16387,10 +16063,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/hydrogen3-flash.c
 +MODULE_AUTHOR("Pete Popov");
 +MODULE_DESCRIPTION("HydrogenIII mtd map driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/mtd/maps/lasat.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/maps/lasat.c
-+++ linux-2.4.35.4/drivers/mtd/maps/lasat.c
+--- a/drivers/mtd/maps/lasat.c
++++ b/drivers/mtd/maps/lasat.c
 @@ -1,15 +1,6 @@
  /*
   * Flash device on lasat 100 and 200 boards
@@ -16496,10 +16170,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/lasat.c
  	}
  }
  
-Index: linux-2.4.35.4/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/maps/Makefile
-+++ linux-2.4.35.4/drivers/mtd/maps/Makefile
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
 @@ -52,7 +52,13 @@ obj-$(CONFIG_MTD_PCI)		+= pci.o
  obj-$(CONFIG_MTD_PB1000)	+= pb1xxx-flash.o
  obj-$(CONFIG_MTD_PB1100)	+= pb1xxx-flash.o
@@ -16521,10 +16193,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/Makefile
 +obj-$(CONFIG_MTD_MIRAGE)        += mirage-flash.o
  
  include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/drivers/mtd/maps/mirage-flash.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/mtd/maps/mirage-flash.c
++++ b/drivers/mtd/maps/mirage-flash.c
 @@ -0,0 +1,194 @@
 +/*
 + * Flash memory access on AMD Mirage board.
@@ -16720,10 +16390,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/mirage-flash.c
 +MODULE_AUTHOR("Embedded Edge");
 +MODULE_DESCRIPTION("Mirage mtd map driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/mtd/maps/mtx-1.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/mtd/maps/mtx-1.c
++++ b/drivers/mtd/maps/mtx-1.c
 @@ -0,0 +1,181 @@
 +/*
 + * Flash memory access on 4G Systems MTX-1 board
@@ -16906,10 +16574,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/mtx-1.c
 +MODULE_AUTHOR("Pete Popov");
 +MODULE_DESCRIPTION("MTX-1 CFI map driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/mtd/maps/pb1550-flash.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/mtd/maps/pb1550-flash.c
++++ b/drivers/mtd/maps/pb1550-flash.c
 @@ -0,0 +1,270 @@
 +/*
 + * Flash memory access on Alchemy Pb1550 board
@@ -17181,10 +16847,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/pb1550-flash.c
 +MODULE_AUTHOR("Embedded Edge, LLC");
 +MODULE_DESCRIPTION("Pb1550 mtd map driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/mtd/maps/pb1xxx-flash.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/maps/pb1xxx-flash.c
-+++ linux-2.4.35.4/drivers/mtd/maps/pb1xxx-flash.c
+--- a/drivers/mtd/maps/pb1xxx-flash.c
++++ b/drivers/mtd/maps/pb1xxx-flash.c
 @@ -192,6 +192,34 @@ static struct mtd_partition pb1xxx_parti
  #else
  #error MTD_PB1500 define combo error /* should never happen */
@@ -17220,10 +16884,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/pb1xxx-flash.c
  #else
  #error Unsupported board
  #endif
-Index: linux-2.4.35.4/drivers/mtd/maps/xxs1500.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/mtd/maps/xxs1500.c
++++ b/drivers/mtd/maps/xxs1500.c
 @@ -0,0 +1,186 @@
 +/*
 + * Flash memory access on MyCable XXS1500 board
@@ -17411,10 +17073,8 @@ Index: linux-2.4.35.4/drivers/mtd/maps/xxs1500.c
 +MODULE_AUTHOR("Pete Popov");
 +MODULE_DESCRIPTION("XXS1500 CFI map driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/net/defxx.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/defxx.c
-+++ linux-2.4.35.4/drivers/net/defxx.c
+--- a/drivers/net/defxx.c
++++ b/drivers/net/defxx.c
 @@ -10,24 +10,18 @@
   *
   * Abstract:
@@ -18255,10 +17915,8 @@ Index: linux-2.4.35.4/drivers/net/defxx.c
  MODULE_LICENSE("GPL");
  
  
-Index: linux-2.4.35.4/drivers/net/defxx.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/defxx.h
-+++ linux-2.4.35.4/drivers/net/defxx.h
+--- a/drivers/net/defxx.h
++++ b/drivers/net/defxx.h
 @@ -12,17 +12,11 @@
   *   Contains all definitions specified by port specification and required
   *   by the defxx.c driver.
@@ -18347,10 +18005,8 @@ Index: linux-2.4.35.4/drivers/net/defxx.h
  	struct pci_dev *		pci_dev;
  	u32				full_duplex_enb;				/* FDDI Full Duplex enable (1 == on, 2 == off) */
  	u32				req_ttrt;					/* requested TTRT value (in 80ns units) */
-Index: linux-2.4.35.4/drivers/net/hamradio/hdlcdrv.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/hamradio/hdlcdrv.c
-+++ linux-2.4.35.4/drivers/net/hamradio/hdlcdrv.c
+--- a/drivers/net/hamradio/hdlcdrv.c
++++ b/drivers/net/hamradio/hdlcdrv.c
 @@ -587,6 +587,8 @@ static int hdlcdrv_close(struct net_devi
  		return -EINVAL;
  	s = (struct hdlcdrv_state *)dev->priv;
@@ -18360,10 +18016,8 @@ Index: linux-2.4.35.4/drivers/net/hamradio/hdlcdrv.c
  	if (s->ops && s->ops->close)
  		i = s->ops->close(dev);
  	if (s->skb)
-Index: linux-2.4.35.4/drivers/net/irda/au1k_ir.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/irda/au1k_ir.c
-+++ linux-2.4.35.4/drivers/net/irda/au1k_ir.c
+--- a/drivers/net/irda/au1k_ir.c
++++ b/drivers/net/irda/au1k_ir.c
 @@ -81,10 +81,6 @@ static char version[] __devinitdata =
  
  #define RUN_AT(x) (jiffies + (x))
@@ -18375,10 +18029,8 @@ Index: linux-2.4.35.4/drivers/net/irda/au1k_ir.c
  static spinlock_t ir_lock = SPIN_LOCK_UNLOCKED;
  
  /*
-Index: linux-2.4.35.4/drivers/net/sgiseeq.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/sgiseeq.c
-+++ linux-2.4.35.4/drivers/net/sgiseeq.c
+--- a/drivers/net/sgiseeq.c
++++ b/drivers/net/sgiseeq.c
 @@ -24,16 +24,16 @@
  #include <asm/io.h>
  #include <asm/system.h>
@@ -18529,10 +18181,8 @@ Index: linux-2.4.35.4/drivers/net/sgiseeq.c
 +MODULE_DESCRIPTION("SGI Seeq 8003 driver");
 +MODULE_AUTHOR("David S. Miller");
  MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/drivers/pci/pci.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/pci/pci.c
-+++ linux-2.4.35.4/drivers/pci/pci.c
+--- a/drivers/pci/pci.c
++++ b/drivers/pci/pci.c
 @@ -1281,11 +1281,17 @@ static int __devinit pci_scan_bridge(str
  {
  	unsigned int buses;
@@ -18559,10 +18209,8 @@ Index: linux-2.4.35.4/drivers/pci/pci.c
  	sprintf(child->name, (is_cardbus ? "PCI CardBus #%02x" : "PCI Bus #%02x"), child->number);
  	return max;
  }
-Index: linux-2.4.35.4/drivers/pcmcia/au1000_db1x00.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/pcmcia/au1000_db1x00.c
-+++ linux-2.4.35.4/drivers/pcmcia/au1000_db1x00.c
+--- a/drivers/pcmcia/au1000_db1x00.c
++++ b/drivers/pcmcia/au1000_db1x00.c
 @@ -1,6 +1,6 @@
  /*
   *
@@ -18635,10 +18283,8 @@ Index: linux-2.4.35.4/drivers/pcmcia/au1000_db1x00.c
  	return 0;
  }
  
-Index: linux-2.4.35.4/drivers/pcmcia/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/pcmcia/Config.in
-+++ linux-2.4.35.4/drivers/pcmcia/Config.in
+--- a/drivers/pcmcia/Config.in
++++ b/drivers/pcmcia/Config.in
 @@ -30,16 +30,14 @@ if [ "$CONFIG_PCMCIA" != "n" ]; then
        dep_tristate '  M8xx support' CONFIG_PCMCIA_M8XX $CONFIG_PCMCIA
     fi
@@ -18660,10 +18306,8 @@ Index: linux-2.4.35.4/drivers/pcmcia/Config.in
     if [ "$CONFIG_VRC4173" = "y" -o "$CONFIG_VRC4173" = "m" ]; then
        dep_tristate '  NEC VRC4173 CARDU support' CONFIG_PCMCIA_VRC4173 $CONFIG_PCMCIA
     fi
-Index: linux-2.4.35.4/drivers/pcmcia/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/pcmcia/Makefile
-+++ linux-2.4.35.4/drivers/pcmcia/Makefile
+--- a/drivers/pcmcia/Makefile
++++ b/drivers/pcmcia/Makefile
 @@ -61,9 +61,18 @@ endif
  
  obj-$(CONFIG_PCMCIA_AU1X00)			+= au1x00_ss.o
@@ -18694,10 +18338,8 @@ Index: linux-2.4.35.4/drivers/pcmcia/Makefile
  obj-$(CONFIG_PCMCIA_VRC4173)	+= vrc4173_cardu.o
  
  include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/drivers/pcmcia/vrc4171_card.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/pcmcia/vrc4171_card.c
++++ b/drivers/pcmcia/vrc4171_card.c
 @@ -0,0 +1,886 @@
 +/*
 + * vrc4171_card.c, NEC VRC4171 Card Controller driver for Socket Services.
@@ -19585,10 +19227,8 @@ Index: linux-2.4.35.4/drivers/pcmcia/vrc4171_card.c
 +
 +module_init(vrc4171_card_init);
 +module_exit(vrc4171_card_exit);
-Index: linux-2.4.35.4/drivers/scsi/NCR53C9x.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/scsi/NCR53C9x.h
-+++ linux-2.4.35.4/drivers/scsi/NCR53C9x.h
+--- a/drivers/scsi/NCR53C9x.h
++++ b/drivers/scsi/NCR53C9x.h
 @@ -144,12 +144,7 @@
  
  #ifndef MULTIPLE_PAD_SIZES
@@ -19603,10 +19243,8 @@ Index: linux-2.4.35.4/drivers/scsi/NCR53C9x.h
  #define esp_read(__reg) (__reg)
  
  struct ESP_regs {
-Index: linux-2.4.35.4/drivers/sound/au1550_i2s.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/sound/au1550_i2s.c
-+++ linux-2.4.35.4/drivers/sound/au1550_i2s.c
+--- a/drivers/sound/au1550_i2s.c
++++ b/drivers/sound/au1550_i2s.c
 @@ -41,6 +41,7 @@
   *  675 Mass Ave, Cambridge, MA 02139, USA.
   *
@@ -20478,10 +20116,8 @@ Index: linux-2.4.35.4/drivers/sound/au1550_i2s.c
   err_dev1:
  	au1xxx_dbdma_chan_free(s->dma_adc.dmanr);
   err_dma2:
-Index: linux-2.4.35.4/drivers/sound/au1550_psc.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/sound/au1550_psc.c
-+++ linux-2.4.35.4/drivers/sound/au1550_psc.c
+--- a/drivers/sound/au1550_psc.c
++++ b/drivers/sound/au1550_psc.c
 @@ -30,6 +30,7 @@
   *  675 Mass Ave, Cambridge, MA 02139, USA.
   *
@@ -20640,10 +20276,8 @@ Index: linux-2.4.35.4/drivers/sound/au1550_psc.c
  	return 0;
  
   err_dev3:
-Index: linux-2.4.35.4/drivers/sound/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/sound/Config.in
-+++ linux-2.4.35.4/drivers/sound/Config.in
+--- a/drivers/sound/Config.in
++++ b/drivers/sound/Config.in
 @@ -72,10 +72,15 @@ fi
  if [ "$CONFIG_DDB5477" = "y" ]; then
      dep_tristate '  NEC Vrc5477 AC97 sound' CONFIG_SOUND_VRC5477 $CONFIG_SOUND
@@ -20664,10 +20298,8 @@ Index: linux-2.4.35.4/drivers/sound/Config.in
  fi
  
  dep_tristate '  Trident 4DWave DX/NX, SiS 7018 or ALi 5451 PCI Audio Core' CONFIG_SOUND_TRIDENT $CONFIG_SOUND $CONFIG_PCI
-Index: linux-2.4.35.4/drivers/tc/lk201.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/tc/lk201.c
-+++ linux-2.4.35.4/drivers/tc/lk201.c
+--- a/drivers/tc/lk201.c
++++ b/drivers/tc/lk201.c
 @@ -5,7 +5,7 @@
   * for more details.
   *
@@ -20945,10 +20577,8 @@ Index: linux-2.4.35.4/drivers/tc/lk201.c
 +	if (!register_dec_serial_hook(keyb_line, &lk201_hook))
 +		unregister_dec_serial_hook(keyb_line);
  }
-Index: linux-2.4.35.4/drivers/tc/zs.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/tc/zs.c
-+++ linux-2.4.35.4/drivers/tc/zs.c
+--- a/drivers/tc/zs.c
++++ b/drivers/tc/zs.c
 @@ -68,6 +68,8 @@
  #include <asm/bitops.h>
  #include <asm/uaccess.h>
@@ -21337,10 +20967,8 @@ Index: linux-2.4.35.4/drivers/tc/zs.c
  }
  
  void __init zs_kgdb_hook(int tty_num)
-Index: linux-2.4.35.4/drivers/tc/zs.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/tc/zs.h
-+++ linux-2.4.35.4/drivers/tc/zs.h
+--- a/drivers/tc/zs.h
++++ b/drivers/tc/zs.h
 @@ -1,14 +1,18 @@
  /*
 - * macserial.h: Definitions for the Macintosh Z8530 serial driver.
@@ -21449,10 +21077,8 @@ Index: linux-2.4.35.4/drivers/tc/zs.h
  	unsigned char 		*xmit_buf;
  	int			xmit_head;
  	int			xmit_tail;
-Index: linux-2.4.35.4/drivers/video/au1200fb.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/video/au1200fb.c
++++ b/drivers/video/au1200fb.c
 @@ -0,0 +1,1564 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -23018,10 +22644,8 @@ Index: linux-2.4.35.4/drivers/video/au1200fb.c
 +#endif /* MODULE */
 +
 +
-Index: linux-2.4.35.4/drivers/video/au1200fb.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/video/au1200fb.h
++++ b/drivers/video/au1200fb.h
 @@ -0,0 +1,288 @@
 +/*
 + * BRIEF MODULE DESCRIPTION
@@ -23311,10 +22935,8 @@ Index: linux-2.4.35.4/drivers/video/au1200fb.h
 +
 +/********************************************************************/
 +#endif /* _AU1200LCD_H */
-Index: linux-2.4.35.4/drivers/video/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/video/Config.in
-+++ linux-2.4.35.4/drivers/video/Config.in
+--- a/drivers/video/Config.in
++++ b/drivers/video/Config.in
 @@ -87,8 +87,8 @@ if [ "$CONFIG_FB" = "y" ]; then
     if [ "$CONFIG_HP300" = "y" ]; then
        define_bool CONFIG_FB_HP300 y
@@ -23354,10 +22976,8 @@ Index: linux-2.4.35.4/drivers/video/Config.in
  	 fi
        fi
     fi
-Index: linux-2.4.35.4/drivers/video/fbmem.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/video/fbmem.c
-+++ linux-2.4.35.4/drivers/video/fbmem.c
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
 @@ -139,6 +139,8 @@ extern int e1356fb_init(void);
  extern int e1356fb_setup(char*);
  extern int au1100fb_init(void);
@@ -23377,10 +22997,8 @@ Index: linux-2.4.35.4/drivers/video/fbmem.c
  #ifdef CONFIG_FB_IT8181
  	{ "it8181fb", it8181fb_init, it8181fb_setup },
  #endif
-Index: linux-2.4.35.4/drivers/video/ims332.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/video/ims332.h
++++ b/drivers/video/ims332.h
 @@ -0,0 +1,275 @@
 +/*
 + *	linux/drivers/video/ims332.h
@@ -23657,10 +23275,8 @@ Index: linux-2.4.35.4/drivers/video/ims332.h
 +				IMS332_CTRL_A_BOOT_ENABLE_VTG);
 +	printk("\n");
 +}
-Index: linux-2.4.35.4/drivers/video/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/video/Makefile
-+++ linux-2.4.35.4/drivers/video/Makefile
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
 @@ -87,6 +87,7 @@ obj-$(CONFIG_FB_PMAGB_B)          += pma
  obj-$(CONFIG_FB_MAXINE)           += maxinefb.o
  obj-$(CONFIG_FB_TX3912)           += tx3912fb.o
@@ -23669,9 +23285,7 @@ Index: linux-2.4.35.4/drivers/video/Makefile
  obj-$(CONFIG_FB_IT8181)		  += it8181fb.o fbgen.o
  
  subdir-$(CONFIG_STI_CONSOLE)      += sti
-Index: linux-2.4.35.4/drivers/video/maxinefb.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/video/maxinefb.h
+--- a/drivers/video/maxinefb.h
 +++ /dev/null
 @@ -1,38 +0,0 @@
 -/*
@@ -23712,10 +23326,8 @@ Index: linux-2.4.35.4/drivers/video/maxinefb.h
 -#define IMS332_REG_COLOR_PALETTE        0x100	/* color palette, 256 entries */
 -#define IMS332_REG_CURSOR_COLOR_PALETTE	0x0a1	/* cursor color palette, */
 -						/* 3 entries             */
-Index: linux-2.4.35.4/drivers/video/newport_con.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/video/newport_con.c
-+++ linux-2.4.35.4/drivers/video/newport_con.c
+--- a/drivers/video/newport_con.c
++++ b/drivers/video/newport_con.c
 @@ -22,6 +22,7 @@
  #include <linux/module.h>
  #include <linux/slab.h>
@@ -23949,10 +23561,8 @@ Index: linux-2.4.35.4/drivers/video/newport_con.c
  }
  
  module_init(newport_console_init);
-Index: linux-2.4.35.4/drivers/video/tgafb.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/video/tgafb.c
-+++ linux-2.4.35.4/drivers/video/tgafb.c
+--- a/drivers/video/tgafb.c
++++ b/drivers/video/tgafb.c
 @@ -45,6 +45,15 @@
  #include <linux/console.h>
  #include <asm/io.h>
@@ -24129,10 +23739,8 @@ Index: linux-2.4.35.4/drivers/video/tgafb.c
      return 0;
  }
  
-Index: linux-2.4.35.4/drivers/video/tgafb.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/video/tgafb.h
-+++ linux-2.4.35.4/drivers/video/tgafb.h
+--- a/drivers/video/tgafb.h
++++ b/drivers/video/tgafb.h
 @@ -36,6 +36,7 @@
  #define	TGA_RASTEROP_REG		0x0034
  #define	TGA_PIXELSHIFT_REG		0x0038
@@ -24141,10 +23749,8 @@ Index: linux-2.4.35.4/drivers/video/tgafb.h
  #define	TGA_PIXELMASK_REG		0x005c
  #define	TGA_CURSOR_BASE_REG		0x0060
  #define	TGA_HORIZ_REG			0x0064
-Index: linux-2.4.35.4/fs/binfmt_elf.c
-===================================================================
---- linux-2.4.35.4.orig/fs/binfmt_elf.c
-+++ linux-2.4.35.4/fs/binfmt_elf.c
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
 @@ -665,6 +665,9 @@ static int load_elf_binary(struct linux_
  		    bprm->argc++;
  		  }
@@ -24167,10 +23773,8 @@ Index: linux-2.4.35.4/fs/binfmt_elf.c
  	elf.e_ehsize = sizeof(elf);
  	elf.e_phentsize = sizeof(struct elf_phdr);
  	elf.e_phnum = segs+1;		/* Include notes */
-Index: linux-2.4.35.4/fs/partitions/sgi.c
-===================================================================
---- linux-2.4.35.4.orig/fs/partitions/sgi.c
-+++ linux-2.4.35.4/fs/partitions/sgi.c
+--- a/fs/partitions/sgi.c
++++ b/fs/partitions/sgi.c
 @@ -17,6 +17,11 @@
  #include "check.h"
  #include "sgi.h"
@@ -24194,10 +23798,8 @@ Index: linux-2.4.35.4/fs/partitions/sgi.c
  		current_minor++;
  	}
  	printk("\n");
-Index: linux-2.4.35.4/fs/proc/array.c
-===================================================================
---- linux-2.4.35.4.orig/fs/proc/array.c
-+++ linux-2.4.35.4/fs/proc/array.c
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
 @@ -368,15 +368,15 @@ int proc_pid_stat(struct task_struct *ta
  		task->cmin_flt,
  		task->maj_flt,
@@ -24238,10 +23840,8 @@ Index: linux-2.4.35.4/fs/proc/array.c
  
  	return len;
  }
-Index: linux-2.4.35.4/fs/proc/proc_misc.c
-===================================================================
---- linux-2.4.35.4.orig/fs/proc/proc_misc.c
-+++ linux-2.4.35.4/fs/proc/proc_misc.c
+--- a/fs/proc/proc_misc.c
++++ b/fs/proc/proc_misc.c
 @@ -308,16 +308,16 @@ static int kstat_read_proc(char *page, c
  {
  	int i, len = 0;
@@ -24278,10 +23878,8 @@ Index: linux-2.4.35.4/fs/proc/proc_misc.c
  				   + kstat.per_cpu_nice[cpu_logical_map(i)] \
  				   + kstat.per_cpu_system[cpu_logical_map(i)]));
  	proc_sprintf(page, &off, &len,
-Index: linux-2.4.35.4/include/asm-alpha/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-alpha/param.h
-+++ linux-2.4.35.4/include/asm-alpha/param.h
+--- a/include/asm-alpha/param.h
++++ b/include/asm-alpha/param.h
 @@ -13,6 +13,9 @@
  # else
  #  define HZ	1200
@@ -24292,10 +23890,8 @@ Index: linux-2.4.35.4/include/asm-alpha/param.h
  #endif
  
  #define EXEC_PAGESIZE	8192
-Index: linux-2.4.35.4/include/asm-i386/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-i386/param.h
-+++ linux-2.4.35.4/include/asm-i386/param.h
+--- a/include/asm-i386/param.h
++++ b/include/asm-i386/param.h
 @@ -3,6 +3,9 @@
  
  #ifndef HZ
@@ -24306,10 +23902,8 @@ Index: linux-2.4.35.4/include/asm-i386/param.h
  #endif
  
  #define EXEC_PAGESIZE	4096
-Index: linux-2.4.35.4/include/asm-ia64/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-ia64/param.h
-+++ linux-2.4.35.4/include/asm-ia64/param.h
+--- a/include/asm-ia64/param.h
++++ b/include/asm-ia64/param.h
 @@ -7,9 +7,15 @@
   * Based on <asm-i386/param.h>.
   *
@@ -24327,10 +23921,8 @@ Index: linux-2.4.35.4/include/asm-ia64/param.h
  #define EXEC_PAGESIZE	65536
  
  #ifndef NGROUPS
-Index: linux-2.4.35.4/include/asm-m68k/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-m68k/param.h
-+++ linux-2.4.35.4/include/asm-m68k/param.h
+--- a/include/asm-m68k/param.h
++++ b/include/asm-m68k/param.h
 @@ -3,6 +3,9 @@
  
  #ifndef HZ
@@ -24341,10 +23933,8 @@ Index: linux-2.4.35.4/include/asm-m68k/param.h
  #endif
  
  #define EXEC_PAGESIZE	8192
-Index: linux-2.4.35.4/include/asm-mips/au1000_gpio.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/au1000_gpio.h
-+++ linux-2.4.35.4/include/asm-mips/au1000_gpio.h
+--- a/include/asm-mips/au1000_gpio.h
++++ b/include/asm-mips/au1000_gpio.h
 @@ -30,6 +30,13 @@
   *  675 Mass Ave, Cambridge, MA 02139, USA.
   */
@@ -24460,10 +24050,8 @@ Index: linux-2.4.35.4/include/asm-mips/au1000_gpio.h
  #endif
  
  #endif
-Index: linux-2.4.35.4/include/asm-mips/au1000.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/au1000.h
-+++ linux-2.4.35.4/include/asm-mips/au1000.h
+--- a/include/asm-mips/au1000.h
++++ b/include/asm-mips/au1000.h
 @@ -160,28 +160,356 @@ extern au1xxx_irq_map_t au1xxx_irq_map[]
  #define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5)
  #endif
@@ -25131,10 +24719,8 @@ Index: linux-2.4.35.4/include/asm-mips/au1000.h
 +
 +#endif
 +
-Index: linux-2.4.35.4/include/asm-mips/au1000_pcmcia.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/au1000_pcmcia.h
-+++ linux-2.4.35.4/include/asm-mips/au1000_pcmcia.h
+--- a/include/asm-mips/au1000_pcmcia.h
++++ b/include/asm-mips/au1000_pcmcia.h
 @@ -38,16 +38,41 @@
  #define AU1X_SOCK0_PHYS_MEM  0xF80000000
  
@@ -25186,10 +24772,8 @@ Index: linux-2.4.35.4/include/asm-mips/au1000_pcmcia.h
  #endif
  
  struct pcmcia_state {
-Index: linux-2.4.35.4/include/asm-mips/au1100_mmc.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/au1100_mmc.h
-+++ linux-2.4.35.4/include/asm-mips/au1100_mmc.h
+--- a/include/asm-mips/au1100_mmc.h
++++ b/include/asm-mips/au1100_mmc.h
 @@ -39,16 +39,22 @@
  #define __ASM_AU1100_MMC_H
  
@@ -25231,10 +24815,8 @@ Index: linux-2.4.35.4/include/asm-mips/au1100_mmc.h
 +
  #endif /* __ASM_AU1100_MMC_H */
  
-Index: linux-2.4.35.4/include/asm-mips/au1xxx_dbdma.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/au1xxx_dbdma.h
-+++ linux-2.4.35.4/include/asm-mips/au1xxx_dbdma.h
+--- a/include/asm-mips/au1xxx_dbdma.h
++++ b/include/asm-mips/au1xxx_dbdma.h
 @@ -43,7 +43,7 @@
  #define DDMA_GLOBAL_BASE	0xb4003000
  #define DDMA_CHANNEL_BASE	0xb4002000
@@ -25387,10 +24969,8 @@ Index: linux-2.4.35.4/include/asm-mips/au1xxx_dbdma.h
 +
  #endif /* _LANGUAGE_ASSEMBLY */
  #endif /* _AU1000_DBDMA_H_ */
-Index: linux-2.4.35.4/include/asm-mips/au1xxx_gpio.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/asm-mips/au1xxx_gpio.h
++++ b/include/asm-mips/au1xxx_gpio.h
 @@ -0,0 +1,22 @@
 +
 +
@@ -25414,10 +24994,8 @@ Index: linux-2.4.35.4/include/asm-mips/au1xxx_gpio.h
 +} AU1X00_GPIO2;
 +
 +#endif //__AU1XXX_GPIO_H
-Index: linux-2.4.35.4/include/asm-mips/au1xxx_psc.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/au1xxx_psc.h
-+++ linux-2.4.35.4/include/asm-mips/au1xxx_psc.h
+--- a/include/asm-mips/au1xxx_psc.h
++++ b/include/asm-mips/au1xxx_psc.h
 @@ -41,6 +41,11 @@
  #define PSC3_BASE_ADDR		0xb0d00000
  #endif
@@ -25439,10 +25017,8 @@ Index: linux-2.4.35.4/include/asm-mips/au1xxx_psc.h
  #define PSC_I2SCFG_WI		(1 << 15)
  
  #define PSC_I2SCFG_DIV_MASK	(3 << 13)
-Index: linux-2.4.35.4/include/asm-mips/bootinfo.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/bootinfo.h
-+++ linux-2.4.35.4/include/asm-mips/bootinfo.h
+--- a/include/asm-mips/bootinfo.h
++++ b/include/asm-mips/bootinfo.h
 @@ -180,6 +180,9 @@
  #define MACH_MTX1		7	/* 4G MTX-1 Au1500-based board */
  #define MACH_CSB250		8	/* Cogent Au1500 */
@@ -25453,10 +25029,8 @@ Index: linux-2.4.35.4/include/asm-mips/bootinfo.h
  
  /*
   * Valid machtype for group NEC_VR41XX
-Index: linux-2.4.35.4/include/asm-mips/db1200.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/asm-mips/db1200.h
++++ b/include/asm-mips/db1200.h
 @@ -0,0 +1,214 @@
 +/*
 + * AMD Alchemy DB1200 Referrence Board
@@ -25672,10 +25246,8 @@ Index: linux-2.4.35.4/include/asm-mips/db1200.h
 +
 +#endif /* __ASM_DB1200_H */
 +
-Index: linux-2.4.35.4/include/asm-mips/db1x00.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/db1x00.h
-+++ linux-2.4.35.4/include/asm-mips/db1x00.h
+--- a/include/asm-mips/db1x00.h
++++ b/include/asm-mips/db1x00.h
 @@ -1,5 +1,5 @@
  /*
 - * AMD Alchemy DB1x00 Reference Boards
@@ -25781,10 +25353,8 @@ Index: linux-2.4.35.4/include/asm-mips/db1x00.h
  
  #endif /* __ASM_DB1X00_H */
  
-Index: linux-2.4.35.4/include/asm-mips/elf.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/elf.h
-+++ linux-2.4.35.4/include/asm-mips/elf.h
+--- a/include/asm-mips/elf.h
++++ b/include/asm-mips/elf.h
 @@ -66,9 +66,10 @@ typedef elf_fpreg_t elf_fpregset_t[ELF_N
  #define USE_ELF_CORE_DUMP
  #define ELF_EXEC_PAGESIZE	PAGE_SIZE
@@ -25799,10 +25369,8 @@ Index: linux-2.4.35.4/include/asm-mips/elf.h
  
  /* This yields a mask that user programs can use to figure out what
     instruction set this cpu supports.  This could be done in userspace,
-Index: linux-2.4.35.4/include/asm-mips/ficmmp.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/asm-mips/ficmmp.h
++++ b/include/asm-mips/ficmmp.h
 @@ -0,0 +1,156 @@
 +/*
 + * FIC MMP
@@ -25960,10 +25528,8 @@ Index: linux-2.4.35.4/include/asm-mips/ficmmp.h
 +
 +#endif /* __ASM_FICMMP_H */
 +
-Index: linux-2.4.35.4/include/asm-mips/hazards.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/hazards.h
-+++ linux-2.4.35.4/include/asm-mips/hazards.h
+--- a/include/asm-mips/hazards.h
++++ b/include/asm-mips/hazards.h
 @@ -3,7 +3,7 @@
   * License.  See the file "COPYING" in the main directory of this archive
   * for more details.
@@ -26180,10 +25746,8 @@ Index: linux-2.4.35.4/include/asm-mips/hazards.h
 +#endif /* __ASSEMBLY__ */
 +
  #endif /* _ASM_HAZARDS_H */
-Index: linux-2.4.35.4/include/asm-mips/ide.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/ide.h
-+++ linux-2.4.35.4/include/asm-mips/ide.h
+--- a/include/asm-mips/ide.h
++++ b/include/asm-mips/ide.h
 @@ -32,12 +32,12 @@ struct ide_ops {
  
  extern struct ide_ops *ide_ops;
@@ -26299,10 +25863,8 @@ Index: linux-2.4.35.4/include/asm-mips/ide.h
  
  #endif /* __KERNEL__ */
  
-Index: linux-2.4.35.4/include/asm-mips/io.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/io.h
-+++ linux-2.4.35.4/include/asm-mips/io.h
+--- a/include/asm-mips/io.h
++++ b/include/asm-mips/io.h
 @@ -392,7 +392,8 @@ static inline unsigned int inl_p(unsigne
  	return __ioswab32(__val);
  }
@@ -26333,10 +25895,8 @@ Index: linux-2.4.35.4/include/asm-mips/io.h
  {
  	while (count--) {
  		outl(*(u32 *)addr, port);
-Index: linux-2.4.35.4/include/asm-mips/mipsregs.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/mipsregs.h
-+++ linux-2.4.35.4/include/asm-mips/mipsregs.h
+--- a/include/asm-mips/mipsregs.h
++++ b/include/asm-mips/mipsregs.h
 @@ -757,10 +757,18 @@ do {									\
  #define read_c0_config1()	__read_32bit_c0_register($16, 1)
  #define read_c0_config2()	__read_32bit_c0_register($16, 2)
@@ -26399,10 +25959,8 @@ Index: linux-2.4.35.4/include/asm-mips/mipsregs.h
  }
  
  /*
-Index: linux-2.4.35.4/include/asm-mips/mmu_context.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/mmu_context.h
-+++ linux-2.4.35.4/include/asm-mips/mmu_context.h
+--- a/include/asm-mips/mmu_context.h
++++ b/include/asm-mips/mmu_context.h
 @@ -27,7 +27,7 @@
  #define TLBMISS_HANDLER_SETUP_PGD(pgd) \
  	pgd_current[smp_processor_id()] = (unsigned long)(pgd)
@@ -26412,10 +25970,8 @@ Index: linux-2.4.35.4/include/asm-mips/mmu_context.h
  	TLBMISS_HANDLER_SETUP_PGD(swapper_pg_dir)
  extern unsigned long pgd_current[];
  
-Index: linux-2.4.35.4/include/asm-mips/pb1100.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/pb1100.h
-+++ linux-2.4.35.4/include/asm-mips/pb1100.h
+--- a/include/asm-mips/pb1100.h
++++ b/include/asm-mips/pb1100.h
 @@ -1,5 +1,5 @@
  /*
 - * Alchemy Semi PB1100 Referrence Board
@@ -26582,10 +26138,8 @@ Index: linux-2.4.35.4/include/asm-mips/pb1100.h
  
  #endif /* __ASM_PB1100_H */
 +
-Index: linux-2.4.35.4/include/asm-mips/pb1200.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/asm-mips/pb1200.h
++++ b/include/asm-mips/pb1200.h
 @@ -0,0 +1,244 @@
 +/*
 + * AMD Alchemy PB1200 Referrence Board
@@ -26831,10 +26385,8 @@ Index: linux-2.4.35.4/include/asm-mips/pb1200.h
 +
 +#endif /* __ASM_PB1200_H */
 +
-Index: linux-2.4.35.4/include/asm-mips/pb1550.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/pb1550.h
-+++ linux-2.4.35.4/include/asm-mips/pb1550.h
+--- a/include/asm-mips/pb1550.h
++++ b/include/asm-mips/pb1550.h
 @@ -30,13 +30,11 @@
  
  #define DBDMA_AC97_TX_CHAN DSCR_CMD0_PSC1_TX
@@ -26878,10 +26430,8 @@ Index: linux-2.4.35.4/include/asm-mips/pb1550.h
 +#define AU1XXX_SMC91111_IRQ		AU1000_GPIO_3
  
  #endif /* __ASM_PB1550_H */
-Index: linux-2.4.35.4/include/asm-mips/reg.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/reg.h
-+++ linux-2.4.35.4/include/asm-mips/reg.h
+--- a/include/asm-mips/reg.h
++++ b/include/asm-mips/reg.h
 @@ -45,6 +45,9 @@
  /*
   * k0/k1 unsaved
@@ -26900,10 +26450,8 @@ Index: linux-2.4.35.4/include/asm-mips/reg.h
  
  #define EF_SIZE			180	/* size in bytes */
  
-Index: linux-2.4.35.4/include/asm-mips/sgi/hpc3.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/sgi/hpc3.h
-+++ linux-2.4.35.4/include/asm-mips/sgi/hpc3.h
+--- a/include/asm-mips/sgi/hpc3.h
++++ b/include/asm-mips/sgi/hpc3.h
 @@ -128,26 +128,26 @@ struct hpc3_ethregs {
  	volatile u32 rx_gfptr;	/* current GIO fifo ptr */
  	volatile u32 rx_dfptr;	/* current device fifo ptr */
@@ -26969,10 +26517,8 @@ Index: linux-2.4.35.4/include/asm-mips/sgi/hpc3.h
   * It is possible to have two HPC3's within the address space on
   * one machine, though only having one is more likely on an Indy.
   */
-Index: linux-2.4.35.4/include/asm-mips/tx4927/tx4927.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/tx4927/tx4927.h
-+++ linux-2.4.35.4/include/asm-mips/tx4927/tx4927.h
+--- a/include/asm-mips/tx4927/tx4927.h
++++ b/include/asm-mips/tx4927/tx4927.h
 @@ -88,8 +88,8 @@
  
  
@@ -27041,10 +26587,8 @@ Index: linux-2.4.35.4/include/asm-mips/tx4927/tx4927.h
  #define TX4927_ACLC_ACSEMAPH            0xf720
  #define TX4927_ACLC_ACGPIDAT            0xf740
  #define TX4927_ACLC_ACGPODAT            0xf744
-Index: linux-2.4.35.4/include/asm-mips/unistd.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/unistd.h
-+++ linux-2.4.35.4/include/asm-mips/unistd.h
+--- a/include/asm-mips/unistd.h
++++ b/include/asm-mips/unistd.h
 @@ -760,7 +760,7 @@ type name(void) \
  	if (__a3 == 0) \
  		return (type) __v0; \
@@ -27126,10 +26670,8 @@ Index: linux-2.4.35.4/include/asm-mips/unistd.h
  }
  
  #endif /* (_MIPS_SIM == _MIPS_SIM_NABI32) || (_MIPS_SIM == _MIPS_SIM_ABI64) */
-Index: linux-2.4.35.4/include/asm-mips64/checksum.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/checksum.h
-+++ linux-2.4.35.4/include/asm-mips64/checksum.h
+--- a/include/asm-mips64/checksum.h
++++ b/include/asm-mips64/checksum.h
 @@ -144,7 +144,7 @@ static inline unsigned long csum_tcpudp_
  	"daddu\t%0, %4\n\t"
  	"dsll32\t$1, %0, 0\n\t"
@@ -27139,10 +26681,8 @@ Index: linux-2.4.35.4/include/asm-mips64/checksum.h
  	".set\tat"
  	: "=&r" (sum)
  	: "0" (daddr), "r"(saddr),
-Index: linux-2.4.35.4/include/asm-mips64/elf.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/elf.h
-+++ linux-2.4.35.4/include/asm-mips64/elf.h
+--- a/include/asm-mips64/elf.h
++++ b/include/asm-mips64/elf.h
 @@ -64,9 +64,10 @@ typedef elf_fpreg_t elf_fpregset_t[ELF_N
  #define USE_ELF_CORE_DUMP
  #define ELF_EXEC_PAGESIZE	PAGE_SIZE
@@ -27157,10 +26697,8 @@ Index: linux-2.4.35.4/include/asm-mips64/elf.h
  
  /* This yields a mask that user programs can use to figure out what
     instruction set this cpu supports.  This could be done in userspace,
-Index: linux-2.4.35.4/include/asm-mips64/hazards.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/hazards.h
-+++ linux-2.4.35.4/include/asm-mips64/hazards.h
+--- a/include/asm-mips64/hazards.h
++++ b/include/asm-mips64/hazards.h
 @@ -3,7 +3,7 @@
   * License.  See the file "COPYING" in the main directory of this archive
   * for more details.
@@ -27378,10 +26916,8 @@ Index: linux-2.4.35.4/include/asm-mips64/hazards.h
 +#endif /* __ASSEMBLY__ */
 +
  #endif /* _ASM_HAZARDS_H */
-Index: linux-2.4.35.4/include/asm-mips64/ide.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/ide.h
-+++ linux-2.4.35.4/include/asm-mips64/ide.h
+--- a/include/asm-mips64/ide.h
++++ b/include/asm-mips64/ide.h
 @@ -32,12 +32,12 @@ struct ide_ops {
  
  extern struct ide_ops *ide_ops;
@@ -27497,10 +27033,8 @@ Index: linux-2.4.35.4/include/asm-mips64/ide.h
  
  #endif /* __KERNEL__ */
  
-Index: linux-2.4.35.4/include/asm-mips64/io.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/io.h
-+++ linux-2.4.35.4/include/asm-mips64/io.h
+--- a/include/asm-mips64/io.h
++++ b/include/asm-mips64/io.h
 @@ -414,7 +414,8 @@ static inline unsigned int inl_p(unsigne
  	return __ioswab32(__val);
  }
@@ -27531,10 +27065,8 @@ Index: linux-2.4.35.4/include/asm-mips64/io.h
  {
  	while (count--) {
  		outl(*(u32 *)addr, port);
-Index: linux-2.4.35.4/include/asm-mips64/mipsregs.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/mipsregs.h
-+++ linux-2.4.35.4/include/asm-mips64/mipsregs.h
+--- a/include/asm-mips64/mipsregs.h
++++ b/include/asm-mips64/mipsregs.h
 @@ -757,10 +757,18 @@ do {									\
  #define read_c0_config1()	__read_32bit_c0_register($16, 1)
  #define read_c0_config2()	__read_32bit_c0_register($16, 2)
@@ -27597,10 +27129,8 @@ Index: linux-2.4.35.4/include/asm-mips64/mipsregs.h
  }
  
  /*
-Index: linux-2.4.35.4/include/asm-mips64/reg.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/reg.h
-+++ linux-2.4.35.4/include/asm-mips64/reg.h
+--- a/include/asm-mips64/reg.h
++++ b/include/asm-mips64/reg.h
 @@ -46,6 +46,9 @@
  /*
   * k0/k1 unsaved
@@ -27611,10 +27141,8 @@ Index: linux-2.4.35.4/include/asm-mips64/reg.h
  #define EF_REG28		28
  #define EF_REG29		29
  #define EF_REG30		30
-Index: linux-2.4.35.4/include/asm-mips64/sgi/hpc3.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/sgi/hpc3.h
-+++ linux-2.4.35.4/include/asm-mips64/sgi/hpc3.h
+--- a/include/asm-mips64/sgi/hpc3.h
++++ b/include/asm-mips64/sgi/hpc3.h
 @@ -128,26 +128,26 @@ struct hpc3_ethregs {
  	volatile u32 rx_gfptr;	/* current GIO fifo ptr */
  	volatile u32 rx_dfptr;	/* current device fifo ptr */
@@ -27680,10 +27208,8 @@ Index: linux-2.4.35.4/include/asm-mips64/sgi/hpc3.h
   * It is possible to have two HPC3's within the address space on
   * one machine, though only having one is more likely on an Indy.
   */
-Index: linux-2.4.35.4/include/asm-mips64/sn/nmi.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/sn/nmi.h
-+++ linux-2.4.35.4/include/asm-mips64/sn/nmi.h
+--- a/include/asm-mips64/sn/nmi.h
++++ b/include/asm-mips64/sn/nmi.h
 @@ -8,7 +8,7 @@
  #ifndef __ASM_SN_NMI_H
  #define __ASM_SN_NMI_H
@@ -27693,10 +27219,8 @@ Index: linux-2.4.35.4/include/asm-mips64/sn/nmi.h
  
  #include <asm/sn/addrs.h>
  
-Index: linux-2.4.35.4/include/asm-mips64/unistd.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/unistd.h
-+++ linux-2.4.35.4/include/asm-mips64/unistd.h
+--- a/include/asm-mips64/unistd.h
++++ b/include/asm-mips64/unistd.h
 @@ -760,7 +760,7 @@ type name(void) \
  	if (__a3 == 0) \
  		return (type) __v0; \
@@ -27778,10 +27302,8 @@ Index: linux-2.4.35.4/include/asm-mips64/unistd.h
  }
  
  #endif /* (_MIPS_SIM == _MIPS_SIM_NABI32) || (_MIPS_SIM == _MIPS_SIM_ABI64) */
-Index: linux-2.4.35.4/include/asm-ppc/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-ppc/param.h
-+++ linux-2.4.35.4/include/asm-ppc/param.h
+--- a/include/asm-ppc/param.h
++++ b/include/asm-ppc/param.h
 @@ -3,6 +3,9 @@
  
  #ifndef HZ
@@ -27792,10 +27314,8 @@ Index: linux-2.4.35.4/include/asm-ppc/param.h
  #endif
  
  #define EXEC_PAGESIZE	4096
-Index: linux-2.4.35.4/include/asm-s390/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-s390/param.h
-+++ linux-2.4.35.4/include/asm-s390/param.h
+--- a/include/asm-s390/param.h
++++ b/include/asm-s390/param.h
 @@ -11,6 +11,9 @@
  
  #ifndef HZ
@@ -27806,10 +27326,8 @@ Index: linux-2.4.35.4/include/asm-s390/param.h
  #endif
  
  #define EXEC_PAGESIZE	4096
-Index: linux-2.4.35.4/include/asm-sh/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-sh/param.h
-+++ linux-2.4.35.4/include/asm-sh/param.h
+--- a/include/asm-sh/param.h
++++ b/include/asm-sh/param.h
 @@ -3,6 +3,9 @@
  
  #ifndef HZ
@@ -27820,10 +27338,8 @@ Index: linux-2.4.35.4/include/asm-sh/param.h
  #endif
  
  #define EXEC_PAGESIZE	4096
-Index: linux-2.4.35.4/include/asm-sparc/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-sparc/param.h
-+++ linux-2.4.35.4/include/asm-sparc/param.h
+--- a/include/asm-sparc/param.h
++++ b/include/asm-sparc/param.h
 @@ -4,6 +4,9 @@
  
  #ifndef HZ
@@ -27834,10 +27350,8 @@ Index: linux-2.4.35.4/include/asm-sparc/param.h
  #endif
  
  #define EXEC_PAGESIZE	8192    /* Thanks for sun4's we carry baggage... */
-Index: linux-2.4.35.4/include/asm-sparc64/param.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-sparc64/param.h
-+++ linux-2.4.35.4/include/asm-sparc64/param.h
+--- a/include/asm-sparc64/param.h
++++ b/include/asm-sparc64/param.h
 @@ -4,6 +4,9 @@
  
  #ifndef HZ
@@ -27848,10 +27362,8 @@ Index: linux-2.4.35.4/include/asm-sparc64/param.h
  #endif
  
  #define EXEC_PAGESIZE	8192    /* Thanks for sun4's we carry baggage... */
-Index: linux-2.4.35.4/include/linux/i2c-algo-au1550.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/i2c-algo-au1550.h
++++ b/include/linux/i2c-algo-au1550.h
 @@ -0,0 +1,31 @@
 +/*
 + * Copyright (C) 2004 Embedded Edge, LLC <dan@embeddededge.com>
@@ -27884,10 +27396,8 @@ Index: linux-2.4.35.4/include/linux/i2c-algo-au1550.h
 +int i2c_au1550_del_bus(struct i2c_adapter *);
 +
 +#endif /* I2C_ALGO_AU1550_H */
-Index: linux-2.4.35.4/include/linux/i2c-id.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/i2c-id.h
-+++ linux-2.4.35.4/include/linux/i2c-id.h
+--- a/include/linux/i2c-id.h
++++ b/include/linux/i2c-id.h
 @@ -155,6 +155,8 @@
  #define I2C_ALGO_SIBYTE 0x150000	/* Broadcom SiByte SOCs		*/
  #define I2C_ALGO_SGI	0x160000	/* SGI algorithm		*/
@@ -27907,10 +27417,8 @@ Index: linux-2.4.35.4/include/linux/i2c-id.h
  /* --- SMBus only adapters						*/
  #define I2C_HW_SMBUS_PIIX4	0x00
  #define I2C_HW_SMBUS_ALI15X3	0x01
-Index: linux-2.4.35.4/include/linux/sched.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/sched.h
-+++ linux-2.4.35.4/include/linux/sched.h
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
 @@ -617,6 +617,10 @@ asmlinkage long sys_wait4(pid_t pid,unsi
  extern int in_group_p(gid_t);
  extern int in_egroup_p(gid_t);
@@ -27922,10 +27430,8 @@ Index: linux-2.4.35.4/include/linux/sched.h
  extern void proc_caches_init(void);
  extern void flush_signals(struct task_struct *);
  extern void flush_signal_handlers(struct task_struct *);
-Index: linux-2.4.35.4/include/linux/serial.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/serial.h
-+++ linux-2.4.35.4/include/linux/serial.h
+--- a/include/linux/serial.h
++++ b/include/linux/serial.h
 @@ -75,7 +75,8 @@ struct serial_struct {
  #define PORT_16654	11
  #define PORT_16850	12
@@ -27936,10 +27442,8 @@ Index: linux-2.4.35.4/include/linux/serial.h
  
  #define SERIAL_IO_PORT	0
  #define SERIAL_IO_HUB6	1
-Index: linux-2.4.35.4/include/linux/swap.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/swap.h
-+++ linux-2.4.35.4/include/linux/swap.h
+--- a/include/linux/swap.h
++++ b/include/linux/swap.h
 @@ -1,6 +1,12 @@
  #ifndef _LINUX_SWAP_H
  #define _LINUX_SWAP_H
@@ -27971,10 +27475,8 @@ Index: linux-2.4.35.4/include/linux/swap.h
  /*
   * Max bad pages in the new format..
   */
-Index: linux-2.4.35.4/include/video/newport.h
-===================================================================
---- linux-2.4.35.4.orig/include/video/newport.h
-+++ linux-2.4.35.4/include/video/newport.h
+--- a/include/video/newport.h
++++ b/include/video/newport.h
 @@ -291,8 +291,6 @@ struct newport_regs {
  	unsigned int _unused2[0x1ef];
  	struct newport_cregs cgo;
@@ -28042,10 +27544,8 @@ Index: linux-2.4.35.4/include/video/newport.h
  	
          while ((rex->set.dcbdata0.bybytes.b3 & 3) != XM9_FIFO_EMPTY)
  		;
-Index: linux-2.4.35.4/init/main.c
-===================================================================
---- linux-2.4.35.4.orig/init/main.c
-+++ linux-2.4.35.4/init/main.c
+--- a/init/main.c
++++ b/init/main.c
 @@ -296,7 +296,6 @@ static void __init parse_options(char *l
  
  
@@ -28054,10 +27554,8 @@ Index: linux-2.4.35.4/init/main.c
  
  unsigned long wait_init_idle;
  
-Index: linux-2.4.35.4/kernel/exit.c
-===================================================================
---- linux-2.4.35.4.orig/kernel/exit.c
-+++ linux-2.4.35.4/kernel/exit.c
+--- a/kernel/exit.c
++++ b/kernel/exit.c
 @@ -26,7 +26,7 @@ extern struct task_struct *child_reaper;
  
  int getrusage(struct task_struct *, int, struct rusage *);
@@ -28067,10 +27565,8 @@ Index: linux-2.4.35.4/kernel/exit.c
  {
  	if (p != current) {
  #ifdef CONFIG_SMP
-Index: linux-2.4.35.4/kernel/signal.c
-===================================================================
---- linux-2.4.35.4.orig/kernel/signal.c
-+++ linux-2.4.35.4/kernel/signal.c
+--- a/kernel/signal.c
++++ b/kernel/signal.c
 @@ -14,6 +14,7 @@
  #include <linux/init.h>
  #include <linux/sched.h>
@@ -28140,10 +27636,8 @@ Index: linux-2.4.35.4/kernel/signal.c
  
  	status = tsk->exit_code & 0x7f;
  	why = SI_KERNEL;	/* shouldn't happen */
-Index: linux-2.4.35.4/kernel/sys.c
-===================================================================
---- linux-2.4.35.4.orig/kernel/sys.c
-+++ linux-2.4.35.4/kernel/sys.c
+--- a/kernel/sys.c
++++ b/kernel/sys.c
 @@ -801,16 +801,23 @@ asmlinkage long sys_setfsgid(gid_t gid)
  
  asmlinkage long sys_times(struct tms * tbuf)
@@ -28171,10 +27665,8 @@ Index: linux-2.4.35.4/kernel/sys.c
  }
  
  /*
-Index: linux-2.4.35.4/lib/Makefile
-===================================================================
---- linux-2.4.35.4.orig/lib/Makefile
-+++ linux-2.4.35.4/lib/Makefile
+--- a/lib/Makefile
++++ b/lib/Makefile
 @@ -27,6 +27,7 @@ obj-$(CONFIG_CRC32)     += crc32.o
  subdir-$(CONFIG_ZLIB_INFLATE) += zlib_inflate
  subdir-$(CONFIG_ZLIB_DEFLATE) += zlib_deflate
@@ -28183,10 +27675,8 @@ Index: linux-2.4.35.4/lib/Makefile
  include $(TOPDIR)/drivers/net/Makefile.lib
  include $(TOPDIR)/drivers/usb/Makefile.lib
  include $(TOPDIR)/drivers/bluetooth/Makefile.lib
-Index: linux-2.4.35.4/Makefile
-===================================================================
---- linux-2.4.35.4.orig/Makefile
-+++ linux-2.4.35.4/Makefile
+--- a/Makefile
++++ b/Makefile
 @@ -469,10 +469,11 @@ mrproper: clean archmrproper
  	$(MAKE) -C Documentation/DocBook mrproper
  

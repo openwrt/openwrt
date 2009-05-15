@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/mtd/mtdchar.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/mtdchar.c
-+++ linux-2.4.35.4/drivers/mtd/mtdchar.c
+--- a/drivers/mtd/mtdchar.c
++++ b/drivers/mtd/mtdchar.c
 @@ -558,13 +558,13 @@ static void mtd_notify_add(struct mtd_in
  	sprintf(name, "%d", mtd->index);
  	devfs_rw_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
@@ -18,10 +16,8 @@ Index: linux-2.4.35.4/drivers/mtd/mtdchar.c
  			&mtd_fops, NULL);
  }
  
-Index: linux-2.4.35.4/drivers/mtd/mtdblock.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/mtdblock.c
-+++ linux-2.4.35.4/drivers/mtd/mtdblock.c
+--- a/drivers/mtd/mtdblock.c
++++ b/drivers/mtd/mtdblock.c
 @@ -601,7 +601,7 @@ static void mtd_notify_add(struct mtd_in
          sprintf(name, "%d", mtd->index);
          devfs_rw_handle[mtd->index] = devfs_register(devfs_dir_handle, name,

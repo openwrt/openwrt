@@ -4,10 +4,8 @@ Microsoft Point-to-Point Encryption / Compression support
 
   http://www.polbox.com/h/hs001/linux-2.4.29-mppe-mppc-1.3.patch.gz
 
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -9974,6 +9974,28 @@ CONFIG_PPP_BSDCOMP
    module; it is called bsd_comp.o and will show up in the directory
    modules once you have said "make modules". If unsure, say N.
@@ -37,10 +35,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  PPP over Ethernet
  CONFIG_PPPOE
    Support for PPP over Ethernet.
-Index: linux-2.4.35.4/crypto/Config.in
-===================================================================
---- linux-2.4.35.4.orig/crypto/Config.in
-+++ linux-2.4.35.4/crypto/Config.in
+--- a/crypto/Config.in
++++ b/crypto/Config.in
 @@ -11,7 +11,9 @@ if [ "$CONFIG_INET_AH" = "y" -o \
       "$CONFIG_INET6_AH" = "y" -o \
       "$CONFIG_INET6_AH" = "m" -o \
@@ -102,10 +98,8 @@ Index: linux-2.4.35.4/crypto/Config.in
    if [ "$CONFIG_INET_IPCOMP" = "y" -o \
         "$CONFIG_INET_IPCOMP" = "m" -o \
         "$CONFIG_INET6_IPCOMP" = "y" -o \
-Index: linux-2.4.35.4/drivers/net/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/Config.in
-+++ linux-2.4.35.4/drivers/net/Config.in
+--- a/drivers/net/Config.in
++++ b/drivers/net/Config.in
 @@ -336,6 +336,7 @@ if [ ! "$CONFIG_PPP" = "n" ]; then
     dep_tristate '  PPP support for sync tty ports' CONFIG_PPP_SYNC_TTY $CONFIG_PPP
     dep_tristate '  PPP Deflate compression' CONFIG_PPP_DEFLATE $CONFIG_PPP
@@ -114,10 +108,8 @@ Index: linux-2.4.35.4/drivers/net/Config.in
     if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
        dep_tristate '  PPP over Ethernet (EXPERIMENTAL)' CONFIG_PPPOE $CONFIG_PPP
     fi
-Index: linux-2.4.35.4/drivers/net/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/Makefile
-+++ linux-2.4.35.4/drivers/net/Makefile
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
 @@ -166,6 +166,7 @@ obj-$(CONFIG_PPP_ASYNC) += ppp_async.o
  obj-$(CONFIG_PPP_SYNC_TTY) += ppp_synctty.o
  obj-$(CONFIG_PPP_DEFLATE) += ppp_deflate.o
@@ -126,10 +118,8 @@ Index: linux-2.4.35.4/drivers/net/Makefile
  obj-$(CONFIG_PPPOE) += pppox.o pppoe.o
  
  obj-$(CONFIG_SLIP) += slip.o
-Index: linux-2.4.35.4/drivers/net/ppp_generic.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/ppp_generic.c
-+++ linux-2.4.35.4/drivers/net/ppp_generic.c
+--- a/drivers/net/ppp_generic.c
++++ b/drivers/net/ppp_generic.c
 @@ -19,7 +19,7 @@
   * PPP driver, written by Michael Callahan and Al Longyear, and
   * subsequently hacked by Paul Mackerras.
@@ -263,10 +253,8 @@ Index: linux-2.4.35.4/drivers/net/ppp_generic.c
  	init_ppp_file(&ppp->file, INTERFACE);
  	ppp->file.hdrlen = PPP_HDRLEN - 2;	/* don't count proto bytes */
  	for (i = 0; i < NUM_NP; ++i)
-Index: linux-2.4.35.4/drivers/net/ppp_mppe_mppc.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/net/ppp_mppe_mppc.c
++++ b/drivers/net/ppp_mppe_mppc.c
 @@ -0,0 +1,1312 @@
 +/*
 + * ppp_mppe_mppc.c - MPPC/MPPE "compressor/decompressor" module.
@@ -1580,10 +1568,8 @@ Index: linux-2.4.35.4/drivers/net/ppp_mppe_mppc.c
 +MODULE_AUTHOR("Jan Dubiec <jdx@slackware.pl>");
 +MODULE_DESCRIPTION("MPPE/MPPC encryption/compression module for Linux");
 +MODULE_LICENSE("Dual BSD/GPL");
-Index: linux-2.4.35.4/include/linux/ppp-comp.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/ppp-comp.h
-+++ linux-2.4.35.4/include/linux/ppp-comp.h
+--- a/include/linux/ppp-comp.h
++++ b/include/linux/ppp-comp.h
 @@ -28,7 +28,7 @@
   */
  

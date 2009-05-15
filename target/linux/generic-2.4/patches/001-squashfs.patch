@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/fs/Config.in
-===================================================================
---- linux-2.4.35.4.orig/fs/Config.in
-+++ linux-2.4.35.4/fs/Config.in
+--- a/fs/Config.in
++++ b/fs/Config.in
 @@ -51,6 +51,14 @@ if [ "$CONFIG_JFFS2_FS" = "y" -o "$CONFI
     int 'JFFS2 debugging verbosity (0 = quiet, 2 = noisy)' CONFIG_JFFS2_FS_DEBUG 0
  fi
@@ -17,10 +15,8 @@ Index: linux-2.4.35.4/fs/Config.in
  bool 'Virtual memory file system support (former shm fs)' CONFIG_TMPFS
  define_bool CONFIG_RAMFS y
  
-Index: linux-2.4.35.4/fs/Makefile
-===================================================================
---- linux-2.4.35.4.orig/fs/Makefile
-+++ linux-2.4.35.4/fs/Makefile
+--- a/fs/Makefile
++++ b/fs/Makefile
 @@ -65,6 +65,7 @@ subdir-$(CONFIG_REISERFS_FS)	+= reiserfs
  subdir-$(CONFIG_DEVPTS_FS)	+= devpts
  subdir-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs
@@ -29,10 +25,8 @@ Index: linux-2.4.35.4/fs/Makefile
  subdir-$(CONFIG_JFS_FS)		+= jfs
  subdir-$(CONFIG_XFS_FS)		+= xfs
  
-Index: linux-2.4.35.4/fs/squashfs/inode.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/squashfs/inode.c
++++ b/fs/squashfs/inode.c
 @@ -0,0 +1,2028 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2062,10 +2056,8 @@ Index: linux-2.4.35.4/fs/squashfs/inode.c
 +MODULE_DESCRIPTION("squashfs, a compressed read-only filesystem");
 +MODULE_AUTHOR("Phillip Lougher <phillip@lougher.org.uk>");
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/fs/squashfs/Makefile
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/squashfs/Makefile
++++ b/fs/squashfs/Makefile
 @@ -0,0 +1,11 @@
 +#
 +# Makefile for the linux squashfs routines.
@@ -2078,10 +2070,8 @@ Index: linux-2.4.35.4/fs/squashfs/Makefile
 +obj-m := $(O_TARGET)
 +
 +include $(TOPDIR)/Rules.make
-Index: linux-2.4.35.4/fs/squashfs/squashfs2_0.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/squashfs/squashfs2_0.c
++++ b/fs/squashfs/squashfs2_0.c
 @@ -0,0 +1,751 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2834,10 +2824,8 @@ Index: linux-2.4.35.4/fs/squashfs/squashfs2_0.c
 +
 +	return 1;
 +}
-Index: linux-2.4.35.4/fs/squashfs/squashfs.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/fs/squashfs/squashfs.h
++++ b/fs/squashfs/squashfs.h
 @@ -0,0 +1,85 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -2924,10 +2912,8 @@ Index: linux-2.4.35.4/fs/squashfs/squashfs.h
 +	return 0;
 +}
 +#endif
-Index: linux-2.4.35.4/include/linux/fs.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/fs.h
-+++ linux-2.4.35.4/include/linux/fs.h
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
 @@ -324,6 +324,7 @@ extern void set_bh_page(struct buffer_he
  #include <linux/usbdev_fs_i.h>
  #include <linux/jffs2_fs_i.h>
@@ -2960,10 +2946,8 @@ Index: linux-2.4.35.4/include/linux/fs.h
  		void			*generic_sbp;
  	} u;
  	/*
-Index: linux-2.4.35.4/include/linux/squashfs_fs.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/squashfs_fs.h
++++ b/include/linux/squashfs_fs.h
 @@ -0,0 +1,915 @@
 +#ifndef SQUASHFS_FS
 +#define SQUASHFS_FS
@@ -3880,10 +3864,8 @@ Index: linux-2.4.35.4/include/linux/squashfs_fs.h
 +
 +#endif
 +#endif
-Index: linux-2.4.35.4/include/linux/squashfs_fs_i.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/squashfs_fs_i.h
++++ b/include/linux/squashfs_fs_i.h
 @@ -0,0 +1,44 @@
 +#ifndef SQUASHFS_FS_I
 +#define SQUASHFS_FS_I
@@ -3929,10 +3911,8 @@ Index: linux-2.4.35.4/include/linux/squashfs_fs_i.h
 +	} u;
 +};
 +#endif
-Index: linux-2.4.35.4/include/linux/squashfs_fs_sb.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/squashfs_fs_sb.h
++++ b/include/linux/squashfs_fs_sb.h
 @@ -0,0 +1,74 @@
 +#ifndef SQUASHFS_FS_SB
 +#define SQUASHFS_FS_SB
@@ -4008,10 +3988,8 @@ Index: linux-2.4.35.4/include/linux/squashfs_fs_sb.h
 +	int			(*read_fragment_index_table)(struct super_block *s);
 +};
 +#endif
-Index: linux-2.4.35.4/init/do_mounts.c
-===================================================================
---- linux-2.4.35.4.orig/init/do_mounts.c
-+++ linux-2.4.35.4/init/do_mounts.c
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
 @@ -15,6 +15,7 @@
  #include <linux/minix_fs.h>
  #include <linux/ext2_fs.h>
@@ -4060,10 +4038,8 @@ Index: linux-2.4.35.4/init/do_mounts.c
  	/*
  	 * Read block 1 to test for minix and ext2 superblock
  	 */
-Index: linux-2.4.35.4/lib/Config.in
-===================================================================
---- linux-2.4.35.4.orig/lib/Config.in
-+++ linux-2.4.35.4/lib/Config.in
+--- a/lib/Config.in
++++ b/lib/Config.in
 @@ -10,6 +10,7 @@ tristate 'CRC32 functions' CONFIG_CRC32
  # Do we need the compression support?
  #

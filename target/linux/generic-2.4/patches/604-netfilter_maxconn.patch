@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/ip_conntrack_core.c
-+++ linux-2.4.35.4/net/ipv4/netfilter/ip_conntrack_core.c
+--- a/net/ipv4/netfilter/ip_conntrack_core.c
++++ b/net/ipv4/netfilter/ip_conntrack_core.c
 @@ -1410,7 +1410,7 @@ void ip_conntrack_cleanup(void)
  	nf_unregister_sockopt(&so_getorigdst);
  }

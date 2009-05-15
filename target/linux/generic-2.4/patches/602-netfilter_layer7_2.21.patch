@@ -1,6 +1,6 @@
 --- a/Documentation/Configure.help
 +++ b/Documentation/Configure.help
-@@ -29207,6 +29207,18 @@
+@@ -29207,6 +29207,18 @@ CONFIG_SOUND_WM97XX
    
    If unsure, say N.
  
@@ -21,7 +21,7 @@
  #   capitalize: AppleTalk, Ethernet, DOS, DMA, FAT, FTP, Internet,
 --- a/include/linux/netfilter_ipv4/ip_conntrack.h
 +++ b/include/linux/netfilter_ipv4/ip_conntrack.h
-@@ -207,6 +207,17 @@
+@@ -207,6 +207,17 @@ struct ip_conntrack
  	} nat;
  #endif /* CONFIG_IP_NF_NAT_NEEDED */
  
@@ -70,7 +70,7 @@
 +#endif /* _IPT_LAYER7_H */
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -44,6 +44,9 @@
+@@ -44,6 +44,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
      dep_tristate '  Owner match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_OWNER $CONFIG_IP_NF_IPTABLES
@@ -82,7 +82,7 @@
    dep_tristate '  Packet filtering' CONFIG_IP_NF_FILTER $CONFIG_IP_NF_IPTABLES 
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -87,6 +87,7 @@
+@@ -87,6 +87,7 @@ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_s
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
@@ -92,7 +92,7 @@
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
 --- a/net/ipv4/netfilter/ip_conntrack_core.c
 +++ b/net/ipv4/netfilter/ip_conntrack_core.c
-@@ -346,6 +346,14 @@
+@@ -346,6 +346,14 @@ destroy_conntrack(struct nf_conntrack *n
  		}
  		kfree(ct->master);
  	}
@@ -109,7 +109,7 @@
  	if (master)
 --- a/net/ipv4/netfilter/ip_conntrack_standalone.c
 +++ b/net/ipv4/netfilter/ip_conntrack_standalone.c
-@@ -107,6 +107,13 @@
+@@ -107,6 +107,13 @@ print_conntrack(char *buffer, struct ip_
  		len += sprintf(buffer + len, "[ASSURED] ");
  	len += sprintf(buffer + len, "use=%u ",
  		       atomic_read(&conntrack->ct_general.use));

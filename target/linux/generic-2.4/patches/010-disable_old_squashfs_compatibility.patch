@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/fs/squashfs/Makefile
-===================================================================
---- linux-2.4.35.4.orig/fs/squashfs/Makefile
-+++ linux-2.4.35.4/fs/squashfs/Makefile
+--- a/fs/squashfs/Makefile
++++ b/fs/squashfs/Makefile
 @@ -4,7 +4,7 @@
  
  O_TARGET := squashfs.o
@@ -11,10 +9,8 @@ Index: linux-2.4.35.4/fs/squashfs/Makefile
  
  obj-m := $(O_TARGET)
  
-Index: linux-2.4.35.4/fs/squashfs/squashfs.h
-===================================================================
---- linux-2.4.35.4.orig/fs/squashfs/squashfs.h
-+++ linux-2.4.35.4/fs/squashfs/squashfs.h
+--- a/fs/squashfs/squashfs.h
++++ b/fs/squashfs/squashfs.h
 @@ -24,6 +24,9 @@
  #ifdef CONFIG_SQUASHFS_1_0_COMPATIBILITY
  #undef CONFIG_SQUASHFS_1_0_COMPATIBILITY

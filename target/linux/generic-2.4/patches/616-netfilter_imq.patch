@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -3160,6 +3160,22 @@ CONFIG_IP_NF_TARGET_TOS
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
@@ -46,10 +44,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  SLIP (serial line) support
  CONFIG_SLIP
    Say Y if you intend to use SLIP or CSLIP (compressed SLIP) to
-Index: linux-2.4.35.4/drivers/net/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/Config.in
-+++ linux-2.4.35.4/drivers/net/Config.in
+--- a/drivers/net/Config.in
++++ b/drivers/net/Config.in
 @@ -7,6 +7,11 @@ source drivers/net/arcnet/Config.in
  tristate 'Dummy net driver support' CONFIG_DUMMY
  tristate 'Bonding driver support' CONFIG_BONDING
@@ -62,10 +58,8 @@ Index: linux-2.4.35.4/drivers/net/Config.in
  tristate 'Universal TUN/TAP device driver support' CONFIG_TUN
  bool 'Allow Net Devices to contribute to /dev/random' CONFIG_NET_RANDOM
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-Index: linux-2.4.35.4/drivers/net/Makefile
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/Makefile
-+++ linux-2.4.35.4/drivers/net/Makefile
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
 @@ -176,6 +176,7 @@ endif
  
  obj-$(CONFIG_STRIP) += strip.o
@@ -74,10 +68,8 @@ Index: linux-2.4.35.4/drivers/net/Makefile
  obj-$(CONFIG_DE600) += de600.o
  obj-$(CONFIG_DE620) += de620.o
  obj-$(CONFIG_AT1500) += lance.o
-Index: linux-2.4.35.4/drivers/net/imq.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/drivers/net/imq.c
++++ b/drivers/net/imq.c
 @@ -0,0 +1,321 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
@@ -400,10 +392,8 @@ Index: linux-2.4.35.4/drivers/net/imq.c
 +module_init(imq_init_module);
 +module_exit(imq_cleanup_module);
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/include/linux/imq.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/imq.h
++++ b/include/linux/imq.h
 @@ -0,0 +1,9 @@
 +#ifndef _IMQ_H
 +#define _IMQ_H
@@ -414,10 +404,8 @@ Index: linux-2.4.35.4/include/linux/imq.h
 +#define IMQ_F_ENQUEUE	0x80
 +
 +#endif /* _IMQ_H */
-Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_IMQ.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_IMQ.h
++++ b/include/linux/netfilter_ipv4/ipt_IMQ.h
 @@ -0,0 +1,8 @@
 +#ifndef _IPT_IMQ_H
 +#define _IPT_IMQ_H
@@ -427,10 +415,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv4/ipt_IMQ.h
 +};
 +
 +#endif /* _IPT_IMQ_H */
-Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_IMQ.h
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_IMQ.h
++++ b/include/linux/netfilter_ipv6/ip6t_IMQ.h
 @@ -0,0 +1,8 @@
 +#ifndef _IP6T_IMQ_H
 +#define _IP6T_IMQ_H
@@ -440,10 +426,8 @@ Index: linux-2.4.35.4/include/linux/netfilter_ipv6/ip6t_IMQ.h
 +};
 +
 +#endif /* _IP6T_IMQ_H */
-Index: linux-2.4.35.4/include/linux/skbuff.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/skbuff.h
-+++ linux-2.4.35.4/include/linux/skbuff.h
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
 @@ -93,6 +93,9 @@ struct nf_ct_info {
  	struct nf_conntrack *master;
  };
@@ -473,10 +457,8 @@ Index: linux-2.4.35.4/include/linux/skbuff.h
  };
  
  #ifdef __KERNEL__
-Index: linux-2.4.35.4/net/core/skbuff.c
-===================================================================
---- linux-2.4.35.4.orig/net/core/skbuff.c
-+++ linux-2.4.35.4/net/core/skbuff.c
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
 @@ -202,6 +202,10 @@ struct sk_buff *alloc_skb(unsigned int s
  	/* Set up other state */
  	skb->len = 0;
@@ -521,10 +503,8 @@ Index: linux-2.4.35.4/net/core/skbuff.c
  }
  
  /**
-Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv4/netfilter/Config.in
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
 @@ -171,6 +171,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
      dep_tristate '    DSCP target support' CONFIG_IP_NF_TARGET_DSCP $CONFIG_IP_NF_MANGLE
   
@@ -533,10 +513,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Config.in
    fi
    if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
      dep_tristate '  CONNMARK target support' CONFIG_IP_NF_TARGET_CONNMARK $CONFIG_IP_NF_IPTABLES
-Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv4/netfilter/Makefile
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
 @@ -138,6 +138,7 @@ obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TO
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_DSCP) += ipt_DSCP.o
@@ -545,10 +523,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/Makefile
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
-Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_IMQ.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv4/netfilter/ipt_IMQ.c
++++ b/net/ipv4/netfilter/ipt_IMQ.c
 @@ -0,0 +1,78 @@
 +/* This target marks packets to be enqueued to an imq device */
 +#include <linux/module.h>
@@ -628,10 +604,8 @@ Index: linux-2.4.35.4/net/ipv4/netfilter/ipt_IMQ.c
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Config.in
-+++ linux-2.4.35.4/net/ipv6/netfilter/Config.in
+--- a/net/ipv6/netfilter/Config.in
++++ b/net/ipv6/netfilter/Config.in
 @@ -72,6 +72,7 @@ if [ "$CONFIG_IP6_NF_IPTABLES" != "n" ];
    if [ "$CONFIG_IP6_NF_MANGLE" != "n" ]; then
  #    dep_tristate '    TOS target support' CONFIG_IP6_NF_TARGET_TOS $CONFIG_IP_NF_MANGLE
@@ -640,10 +614,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/Config.in
    fi
    #dep_tristate '  LOG target support' CONFIG_IP6_NF_TARGET_LOG $CONFIG_IP6_NF_IPTABLES
  fi
-Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
-===================================================================
---- linux-2.4.35.4.orig/net/ipv6/netfilter/Makefile
-+++ linux-2.4.35.4/net/ipv6/netfilter/Makefile
+--- a/net/ipv6/netfilter/Makefile
++++ b/net/ipv6/netfilter/Makefile
 @@ -29,6 +29,7 @@ obj-$(CONFIG_IP6_NF_MATCH_OWNER) += ip6t
  obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
  obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
@@ -652,10 +624,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/Makefile
  obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
  obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
  obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
-Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_IMQ.c
-===================================================================
 --- /dev/null
-+++ linux-2.4.35.4/net/ipv6/netfilter/ip6t_IMQ.c
++++ b/net/ipv6/netfilter/ip6t_IMQ.c
 @@ -0,0 +1,78 @@
 +/* This target marks packets to be enqueued to an imq device */
 +#include <linux/module.h>
@@ -735,10 +705,8 @@ Index: linux-2.4.35.4/net/ipv6/netfilter/ip6t_IMQ.c
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-Index: linux-2.4.35.4/net/sched/sch_generic.c
-===================================================================
---- linux-2.4.35.4.orig/net/sched/sch_generic.c
-+++ linux-2.4.35.4/net/sched/sch_generic.c
+--- a/net/sched/sch_generic.c
++++ b/net/sched/sch_generic.c
 @@ -29,6 +29,9 @@
  #include <linux/skbuff.h>
  #include <linux/rtnetlink.h>

@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/mtd/chips/cfi_cmdset_0001.c
-+++ linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
+--- a/drivers/mtd/chips/cfi_cmdset_0001.c
++++ b/drivers/mtd/chips/cfi_cmdset_0001.c
 @@ -28,10 +28,18 @@
  #include <linux/slab.h>
  #include <linux/delay.h>
@@ -80,10 +78,8 @@ Index: linux-2.4.35.4/drivers/mtd/chips/cfi_cmdset_0001.c
  	kfree(cfi->cmdset_priv);
  	kfree(cfi->cfiq);
  	kfree(cfi);
-Index: linux-2.4.35.4/include/linux/mtd/mtd.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/mtd/mtd.h
-+++ linux-2.4.35.4/include/linux/mtd/mtd.h
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
 @@ -10,6 +10,7 @@
  #include <linux/version.h>
  #include <linux/types.h>

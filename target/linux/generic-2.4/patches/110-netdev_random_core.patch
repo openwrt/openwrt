@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/Documentation/Configure.help
-===================================================================
---- linux-2.4.35.4.orig/Documentation/Configure.help
-+++ linux-2.4.35.4/Documentation/Configure.help
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
 @@ -10675,6 +10675,20 @@ CONFIG_TUN
  
    If you don't know what to use this for, you don't need it.
@@ -23,10 +21,8 @@ Index: linux-2.4.35.4/Documentation/Configure.help
  Ethertap network tap (OBSOLETE)
  CONFIG_ETHERTAP
    If you say Y here (and have said Y to "Kernel/User network link
-Index: linux-2.4.35.4/drivers/net/Config.in
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/Config.in
-+++ linux-2.4.35.4/drivers/net/Config.in
+--- a/drivers/net/Config.in
++++ b/drivers/net/Config.in
 @@ -8,6 +8,7 @@ tristate 'Dummy net driver support' CONF
  tristate 'Bonding driver support' CONFIG_BONDING
  tristate 'EQL (serial line load balancing) support' CONFIG_EQUALIZER
@@ -35,10 +31,8 @@ Index: linux-2.4.35.4/drivers/net/Config.in
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
     tristate 'Ethertap network tap (OBSOLETE)' CONFIG_ETHERTAP
  fi
-Index: linux-2.4.35.4/include/asm-alpha/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-alpha/signal.h
-+++ linux-2.4.35.4/include/asm-alpha/signal.h
+--- a/include/asm-alpha/signal.h
++++ b/include/asm-alpha/signal.h
 @@ -121,8 +121,15 @@ typedef unsigned long sigset_t;
  #define SA_PROBE		SA_ONESHOT
  #define SA_SAMPLE_RANDOM	SA_RESTART
@@ -55,10 +49,8 @@ Index: linux-2.4.35.4/include/asm-alpha/signal.h
  #define SIG_BLOCK          1	/* for blocking signals */
  #define SIG_UNBLOCK        2	/* for unblocking signals */
  #define SIG_SETMASK        3	/* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-arm/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-arm/signal.h
-+++ linux-2.4.35.4/include/asm-arm/signal.h
+--- a/include/asm-arm/signal.h
++++ b/include/asm-arm/signal.h
 @@ -125,8 +125,15 @@ typedef unsigned long sigset_t;
  #define SA_PROBE		0x80000000
  #define SA_SAMPLE_RANDOM	0x10000000
@@ -75,10 +67,8 @@ Index: linux-2.4.35.4/include/asm-arm/signal.h
  #define SIG_BLOCK          0	/* for blocking signals */
  #define SIG_UNBLOCK        1	/* for unblocking signals */
  #define SIG_SETMASK        2	/* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-cris/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-cris/signal.h
-+++ linux-2.4.35.4/include/asm-cris/signal.h
+--- a/include/asm-cris/signal.h
++++ b/include/asm-cris/signal.h
 @@ -120,8 +120,15 @@ typedef unsigned long sigset_t;
  #define SA_PROBE		SA_ONESHOT
  #define SA_SAMPLE_RANDOM	SA_RESTART
@@ -95,10 +85,8 @@ Index: linux-2.4.35.4/include/asm-cris/signal.h
  #define SIG_BLOCK          0	/* for blocking signals */
  #define SIG_UNBLOCK        1	/* for unblocking signals */
  #define SIG_SETMASK        2	/* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-i386/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-i386/signal.h
-+++ linux-2.4.35.4/include/asm-i386/signal.h
+--- a/include/asm-i386/signal.h
++++ b/include/asm-i386/signal.h
 @@ -119,8 +119,15 @@ typedef unsigned long sigset_t;
  #define SA_PROBE		SA_ONESHOT
  #define SA_SAMPLE_RANDOM	SA_RESTART
@@ -115,10 +103,8 @@ Index: linux-2.4.35.4/include/asm-i386/signal.h
  #define SIG_BLOCK          0	/* for blocking signals */
  #define SIG_UNBLOCK        1	/* for unblocking signals */
  #define SIG_SETMASK        2	/* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-ia64/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-ia64/signal.h
-+++ linux-2.4.35.4/include/asm-ia64/signal.h
+--- a/include/asm-ia64/signal.h
++++ b/include/asm-ia64/signal.h
 @@ -117,6 +117,12 @@
  #define SA_SHIRQ		0x04000000
  #define SA_PERCPU_IRQ		0x02000000
@@ -132,10 +118,8 @@ Index: linux-2.4.35.4/include/asm-ia64/signal.h
  #endif /* __KERNEL__ */
  
  #define SIG_BLOCK          0	/* for blocking signals */
-Index: linux-2.4.35.4/include/asm-m68k/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-m68k/signal.h
-+++ linux-2.4.35.4/include/asm-m68k/signal.h
+--- a/include/asm-m68k/signal.h
++++ b/include/asm-m68k/signal.h
 @@ -116,8 +116,15 @@ typedef unsigned long sigset_t;
  #define SA_PROBE		SA_ONESHOT
  #define SA_SAMPLE_RANDOM	SA_RESTART
@@ -152,10 +136,8 @@ Index: linux-2.4.35.4/include/asm-m68k/signal.h
  #define SIG_BLOCK          0	/* for blocking signals */
  #define SIG_UNBLOCK        1	/* for unblocking signals */
  #define SIG_SETMASK        2	/* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-mips/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/signal.h
-+++ linux-2.4.35.4/include/asm-mips/signal.h
+--- a/include/asm-mips/signal.h
++++ b/include/asm-mips/signal.h
 @@ -111,6 +111,12 @@ typedef unsigned long old_sigset_t;		/* 
  #define SA_SAMPLE_RANDOM	SA_RESTART
  #define SA_SHIRQ		0x02000000
@@ -169,10 +151,8 @@ Index: linux-2.4.35.4/include/asm-mips/signal.h
  #endif /* __KERNEL__ */
  
  #define SIG_BLOCK	1	/* for blocking signals */
-Index: linux-2.4.35.4/include/asm-mips64/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips64/signal.h
-+++ linux-2.4.35.4/include/asm-mips64/signal.h
+--- a/include/asm-mips64/signal.h
++++ b/include/asm-mips64/signal.h
 @@ -119,6 +119,12 @@ typedef unsigned int old_sigset_t32;
  #define SA_SAMPLE_RANDOM	SA_RESTART
  #define SA_SHIRQ		0x02000000
@@ -186,10 +166,8 @@ Index: linux-2.4.35.4/include/asm-mips64/signal.h
  #endif /* __KERNEL__ */
  
  #define SIG_BLOCK	1	/* for blocking signals */
-Index: linux-2.4.35.4/include/asm-parisc/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-parisc/signal.h
-+++ linux-2.4.35.4/include/asm-parisc/signal.h
+--- a/include/asm-parisc/signal.h
++++ b/include/asm-parisc/signal.h
 @@ -100,6 +100,12 @@
  #define SA_SAMPLE_RANDOM	SA_RESTART
  #define SA_SHIRQ		0x04000000
@@ -203,10 +181,8 @@ Index: linux-2.4.35.4/include/asm-parisc/signal.h
  #endif /* __KERNEL__ */
  
  #define SIG_BLOCK          0	/* for blocking signals */
-Index: linux-2.4.35.4/include/asm-ppc/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-ppc/signal.h
-+++ linux-2.4.35.4/include/asm-ppc/signal.h
+--- a/include/asm-ppc/signal.h
++++ b/include/asm-ppc/signal.h
 @@ -111,6 +111,13 @@ typedef struct {
  #define SA_PROBE		SA_ONESHOT
  #define SA_SAMPLE_RANDOM	SA_RESTART
@@ -221,10 +197,8 @@ Index: linux-2.4.35.4/include/asm-ppc/signal.h
  #endif /* __KERNEL__ */
  
  #define SIG_BLOCK          0	/* for blocking signals */
-Index: linux-2.4.35.4/include/asm-s390/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-s390/signal.h
-+++ linux-2.4.35.4/include/asm-s390/signal.h
+--- a/include/asm-s390/signal.h
++++ b/include/asm-s390/signal.h
 @@ -129,8 +129,15 @@ typedef unsigned long sigset_t;
  #define SA_SHIRQ                0x04000000
  #define SA_DOPATHGROUP          0x00100000
@@ -241,10 +215,8 @@ Index: linux-2.4.35.4/include/asm-s390/signal.h
  #define SIG_BLOCK          0    /* for blocking signals */
  #define SIG_UNBLOCK        1    /* for unblocking signals */
  #define SIG_SETMASK        2    /* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-s390x/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-s390x/signal.h
-+++ linux-2.4.35.4/include/asm-s390x/signal.h
+--- a/include/asm-s390x/signal.h
++++ b/include/asm-s390x/signal.h
 @@ -129,8 +129,15 @@ typedef unsigned long sigset_t;
  #define SA_SHIRQ                0x04000000
  #define SA_DOPATHGROUP          0x00100000
@@ -261,10 +233,8 @@ Index: linux-2.4.35.4/include/asm-s390x/signal.h
  #define SIG_BLOCK          0    /* for blocking signals */
  #define SIG_UNBLOCK        1    /* for unblocking signals */
  #define SIG_SETMASK        2    /* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-sh/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-sh/signal.h
-+++ linux-2.4.35.4/include/asm-sh/signal.h
+--- a/include/asm-sh/signal.h
++++ b/include/asm-sh/signal.h
 @@ -107,8 +107,15 @@ typedef struct {
  #define SA_PROBE		SA_ONESHOT
  #define SA_SAMPLE_RANDOM	SA_RESTART
@@ -281,10 +251,8 @@ Index: linux-2.4.35.4/include/asm-sh/signal.h
  #define SIG_BLOCK          0	/* for blocking signals */
  #define SIG_UNBLOCK        1	/* for unblocking signals */
  #define SIG_SETMASK        2	/* for setting the signal mask */
-Index: linux-2.4.35.4/include/asm-sparc/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-sparc/signal.h
-+++ linux-2.4.35.4/include/asm-sparc/signal.h
+--- a/include/asm-sparc/signal.h
++++ b/include/asm-sparc/signal.h
 @@ -176,8 +176,15 @@ struct sigstack {
  #define SA_PROBE SA_ONESHOT
  #define SA_SAMPLE_RANDOM SA_RESTART
@@ -301,10 +269,8 @@ Index: linux-2.4.35.4/include/asm-sparc/signal.h
  /* Type of a signal handler.  */
  #ifdef __KERNEL__
  typedef void (*__sighandler_t)(int, int, struct sigcontext *, char *);
-Index: linux-2.4.35.4/include/asm-sparc64/signal.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-sparc64/signal.h
-+++ linux-2.4.35.4/include/asm-sparc64/signal.h
+--- a/include/asm-sparc64/signal.h
++++ b/include/asm-sparc64/signal.h
 @@ -192,8 +192,15 @@ struct sigstack {
  #define SA_PROBE SA_ONESHOT
  #define SA_SAMPLE_RANDOM SA_RESTART

@@ -1,8 +1,6 @@
 packaging/utils/nattpatch 2.4
-Index: linux-2.4.35.4/include/net/sock.h
-===================================================================
---- linux-2.4.35.4.orig/include/net/sock.h
-+++ linux-2.4.35.4/include/net/sock.h
+--- a/include/net/sock.h
++++ b/include/net/sock.h
 @@ -488,7 +488,13 @@ struct tcp_opt {
  	} bictcp;
  };
@@ -28,10 +26,8 @@ Index: linux-2.4.35.4/include/net/sock.h
  
  	} tp_pinfo;
  
-Index: linux-2.4.35.4/net/Config.in
-===================================================================
---- linux-2.4.35.4.orig/net/Config.in
-+++ linux-2.4.35.4/net/Config.in
+--- a/net/Config.in
++++ b/net/Config.in
 @@ -104,4 +104,6 @@ comment 'Network testing'
  dep_tristate 'Packet Generator (USE WITH CAUTION)' CONFIG_NET_PKTGEN $CONFIG_PROC_FS
  endmenu
@@ -39,10 +35,8 @@ Index: linux-2.4.35.4/net/Config.in
 +bool 'IPSEC NAT-Traversal' CONFIG_IPSEC_NAT_TRAVERSAL
 +
  endmenu
-Index: linux-2.4.35.4/net/ipv4/udp.c
-===================================================================
---- linux-2.4.35.4.orig/net/ipv4/udp.c
-+++ linux-2.4.35.4/net/ipv4/udp.c
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
 @@ -860,6 +860,9 @@ static void udp_close(struct sock *sk, l
  
  static int udp_queue_rcv_skb(struct sock * sk, struct sk_buff *skb)
