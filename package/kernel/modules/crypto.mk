@@ -117,7 +117,9 @@ define KernelPackage/crypto-hw-ixp4xx
   TITLE:=Intel IXP4xx hardware crypto module
   DEPENDS:= \
 	@TARGET_ixp4xx +kmod-crypto-core +kmod-crypto-des +kmod-crypto-authenc
-  KCONFIG:= CONFIG_CRYPTO_DEV_IXP4XX
+  KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_DEV_IXP4XX
   FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,ixp4xx_crypto)
 endef
