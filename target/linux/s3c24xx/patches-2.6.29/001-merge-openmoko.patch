@@ -86936,54 +86936,6 @@ diff -ruN --exclude='*.orig' --exclude='*.rej' linux-2.6.29-rc3.owrt/drivers/vid
  config FB_S3C2410
  	tristate "S3C2410 LCD framebuffer support"
  	depends on FB && ARCH_S3C2410
-diff -ruN --exclude='*.orig' --exclude='*.rej' linux-2.6.29-rc3.owrt/drivers/video/logo/Kconfig linux-2.6.29-rc3.owrt.om/drivers/video/logo/Kconfig
---- linux-2.6.29-rc3.owrt/drivers/video/logo/Kconfig	2009-05-10 22:04:48.000000000 +0200
-+++ linux-2.6.29-rc3.owrt.om/drivers/video/logo/Kconfig	2009-05-10 22:28:00.000000000 +0200
-@@ -77,6 +77,11 @@
- 	depends on SUPERH
- 	default y
- 
-+config LOGO_OPENMOKO_CLUT224
-+	bool "224-color Openmoko Linux logo"
-+	depends on MACH_NEO1973_GTA01 || MACH_NEO1973_GTA02
-+	default y
-+
- config LOGO_M32R_CLUT224
- 	bool "224-color M32R Linux logo"
- 	depends on M32R
-diff -ruN --exclude='*.orig' --exclude='*.rej' linux-2.6.29-rc3.owrt/drivers/video/logo/logo.c linux-2.6.29-rc3.owrt.om/drivers/video/logo/logo.c
---- linux-2.6.29-rc3.owrt/drivers/video/logo/logo.c	2009-05-10 22:04:48.000000000 +0200
-+++ linux-2.6.29-rc3.owrt.om/drivers/video/logo/logo.c	2009-05-10 22:28:00.000000000 +0200
-@@ -35,6 +35,7 @@
- extern const struct linux_logo logo_superh_vga16;
- extern const struct linux_logo logo_superh_clut224;
- extern const struct linux_logo logo_m32r_clut224;
-+extern const struct linux_logo logo_openmoko_clut224;
- 
- static int nologo;
- module_param(nologo, bool, 0);
-@@ -115,6 +116,10 @@
- 		/* M32R Linux logo */
- 		logo = &logo_m32r_clut224;
- #endif
-+#ifdef CONFIG_LOGO_OPENMOKO_CLUT224
-+		/* Openmoko Linux logo */
-+		logo = &logo_openmoko_clut224;
-+#endif
- 	}
- 	return logo;
- }
-diff -ruN --exclude='*.orig' --exclude='*.rej' linux-2.6.29-rc3.owrt/drivers/video/logo/Makefile linux-2.6.29-rc3.owrt.om/drivers/video/logo/Makefile
---- linux-2.6.29-rc3.owrt/drivers/video/logo/Makefile	2009-05-10 22:04:48.000000000 +0200
-+++ linux-2.6.29-rc3.owrt.om/drivers/video/logo/Makefile	2009-05-10 22:28:00.000000000 +0200
-@@ -15,6 +15,7 @@
- obj-$(CONFIG_LOGO_SUPERH_VGA16)		+= logo_superh_vga16.o
- obj-$(CONFIG_LOGO_SUPERH_CLUT224)	+= logo_superh_clut224.o
- obj-$(CONFIG_LOGO_M32R_CLUT224)		+= logo_m32r_clut224.o
-+obj-$(CONFIG_LOGO_OPENMOKO_CLUT224)	+= logo_openmoko_clut224.o
- 
- obj-$(CONFIG_SPU_BASE)			+= logo_spe_clut224.o
- 
 diff -ruN --exclude='*.orig' --exclude='*.rej' linux-2.6.29-rc3.owrt/drivers/video/Makefile linux-2.6.29-rc3.owrt.om/drivers/video/Makefile
 --- linux-2.6.29-rc3.owrt/drivers/video/Makefile	2009-05-10 22:04:48.000000000 +0200
 +++ linux-2.6.29-rc3.owrt.om/drivers/video/Makefile	2009-05-10 22:28:00.000000000 +0200
