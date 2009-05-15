@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -12,7 +12,7 @@ curdir:=tools
 tools-y :=
 tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
 tools-y += m4 autoconf automake bison pkg-config sed
-tools-y += sstrip ipkg-utils genext2fs squashfs mtd-utils lzma-old mkimage
+tools-y += sstrip ipkg-utils genext2fs squashfs squashfs4 mtd-utils lzma-old mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2
 
 tools-$(CONFIG_CCACHE) += ccache
