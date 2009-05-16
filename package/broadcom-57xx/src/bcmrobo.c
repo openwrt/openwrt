@@ -788,13 +788,6 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 		sb_gpioouten(robo->sbh, reset, reset, GPIO_DRV_PRIORITY);
 		bcm_mdelay(50);
 
-		if (robo->devid == DEVID5395)
-			nvram_set("switch_type", "BCM5395");
-		else if(robo->devid == DEVID5397)
-			nvram_set("switch_type", "BCM5397");
-		else
-			nvram_set("switch_type", "unknown");
-
 		/* Keep RESET high for at least 20 ms */
 		sb_gpioout(robo->sbh, reset, reset, GPIO_DRV_PRIORITY);
 		bcm_mdelay(20);
