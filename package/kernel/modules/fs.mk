@@ -233,7 +233,7 @@ $(eval $(call KernelPackage,fs-nfs-common))
 define KernelPackage/fs-nfs
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS filesystem support
-  DEPENDS:=kmod-fs-nfs-common
+  DEPENDS:=+kmod-fs-nfs-common
   KCONFIG:= \
 	CONFIG_NFS_FS
   FILES:= \
@@ -266,7 +266,7 @@ $(eval $(call KernelPackage,fs-exportfs))
 define KernelPackage/fs-nfsd
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS kernel server support
-  DEPENDS:=kmod-fs-nfs-common +kmod-fs-exportfs
+  DEPENDS:=+kmod-fs-nfs-common +kmod-fs-exportfs
   KCONFIG:=CONFIG_NFSD
   FILES:=$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,nfsd)
