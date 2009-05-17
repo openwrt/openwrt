@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=opkg
 PKG_REV:=4564
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
