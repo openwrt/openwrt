@@ -17,6 +17,7 @@ tools-y += firmware-utils patch-cmdline quilt yaffs2
 
 tools-$(CONFIG_CCACHE) += ccache
 tools-$(CONFIG_powerpc) += dtc
+tools-dep += lzma
 
 # builddir dependencies
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
