@@ -68,7 +68,7 @@ setup_interface () {
 	user_dns=$(uci_get "network.$ifc.dns")
 	[ -n "$user_dns" ] && dns="$user_dns"
 
-	[ -n "$dns" ] && [ ! -s "${RESOLV_CONF}.tmp" -o "$dns" != "$old_dns" ] && {
+	[ -n "$dns" ] && [ ! -s "${RESOLV_CONF}" -o "$dns" != "$old_dns" ] && {
 		echo "udhcpc: setting dns servers: $dns"
 		echo -n > "${RESOLV_CONF}.tmp"
 		for i in $dns ; do
