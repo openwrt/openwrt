@@ -1,6 +1,7 @@
---- opkg-4564/configure.ac-orig	2008-08-04 19:39:20.000000000 -0500
-+++ opkg-4564/configure.ac	2008-08-04 19:37:17.000000000 -0500
-@@ -22,9 +22,16 @@
+diff -urN opkg-4993/configure.ac opkg-4993.new/configure.ac
+--- opkg-4993/configure.ac	2009-05-17 18:15:52.000000000 +0200
++++ opkg-4993.new/configure.ac	2009-05-17 18:17:09.000000000 +0200
+@@ -26,9 +26,16 @@
  
  # Checks for libraries
  
@@ -19,9 +20,10 @@
  
  
  dnl **********
---- opkg-4564/libopkg/opkg.c-orig	2008-08-04 19:39:38.000000000 -0500
-+++ opkg-4564/libopkg/opkg.c	2008-08-04 19:37:17.000000000 -0500
-@@ -1020,8 +1020,9 @@
+diff -urN opkg-4993/libopkg/opkg.c opkg-4993.new/libopkg/opkg.c
+--- opkg-4993/libopkg/opkg.c	2009-05-17 18:15:50.000000000 +0200
++++ opkg-4993.new/libopkg/opkg.c	2009-05-17 18:17:09.000000000 +0200
+@@ -1019,8 +1019,9 @@
  
    return package;
  }
@@ -32,7 +34,7 @@
  /**
   * @brief Check the accessibility of repositories. It will try to access the repository to check if the respository is accessible throught current network status. 
   * @param opkg The opkg_t
-@@ -1071,6 +1072,7 @@
+@@ -1070,6 +1071,7 @@
      repositories--;
  
      err = opkg_download(opkg->conf, iter1->data, "/dev/null", NULL, NULL);
@@ -40,7 +42,7 @@
      if (!(err == CURLE_OK || 
  		err == CURLE_HTTP_RETURNED_ERROR || 
  		err == CURLE_FILE_COULDNT_READ_FILE ||
-@@ -1079,6 +1081,7 @@
+@@ -1078,6 +1080,7 @@
  		)) {
  	    ret++;
      }
@@ -48,8 +50,9 @@
      str_list_elt_deinit(iter1);
      free(iter1);
    }
---- opkg-4564/libopkg/opkg_download.c-orig	2008-08-04 19:39:56.000000000 -0500
-+++ opkg-4564/libopkg/opkg_download.c	2008-08-04 19:37:17.000000000 -0500
+diff -urN opkg-4993/libopkg/opkg_download.c opkg-4993.new/libopkg/opkg_download.c
+--- opkg-4993/libopkg/opkg_download.c	2009-05-17 18:15:50.000000000 +0200
++++ opkg-4993.new/libopkg/opkg_download.c	2009-05-17 18:17:09.000000000 +0200
 @@ -17,7 +17,9 @@
     General Public License for more details.
  */
@@ -60,7 +63,7 @@
  #ifdef HAVE_GPGME
  #include <gpgme.h>
  #endif
-@@ -76,6 +78,7 @@
+@@ -77,6 +79,7 @@
  	setenv("no_proxy", conf->no_proxy, 1);
      }
  
@@ -68,7 +71,7 @@
      CURL *curl;
      CURLcode res;
      FILE * file = fopen (tmp_file_location, "w");
-@@ -121,6 +124,31 @@
+@@ -123,6 +126,31 @@
          free(src_basec);
  	return -1;
      }
