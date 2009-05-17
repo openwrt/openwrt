@@ -93,8 +93,9 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
+	# XXX: OpenSSL "make depend" will look for installed headers before its own,
+	# so remove installed stuff first
+	-$(SUBMAKE) -j1 clean-staging
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		MAKEDEPPROG="$(TARGET_CROSS)gcc" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
