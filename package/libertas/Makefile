@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 
 # XXX: current version needs 'get_unaligned_le16' helper introduced in 2.6.26
 define KernelPackage/libertas
-  SUBMENU:=Other modules
+  SUBMENU:=Wireless Drivers
   DEPENDS:=+kmod-ieee80211 @LINUX_2_6 @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24||!LINUX_2_6_25
   TITLE:=Marvell 88W8015 Wireless Driver
   FILES:= \
@@ -24,10 +24,12 @@ define KernelPackage/libertas
   AUTOLOAD:=$(call AutoLoad,30,libertas usb8xxx)
 endef
 
+FW_NAME:=usb8388-5.110.22.p23.bin
+
 define Download/firmware
-  URL:=http://dev.laptop.org/pub/firmware/libertas/
-  FILE:=usb8388-5.110.22.p20.bin
-  #MD5SUM=37cc814d5a475fcf8f8fbe89a9c5d546
+  URL:=http://dev.laptop.org/pub/firmware/libertas
+  FILE:=$(FW_NAME)
+  MD5SUM=5e38f55719df3d0c58dd3bd02575a09c
 endef
 
 define Build/Prepare
@@ -49,8 +51,8 @@ endef
 
 define KernelPackage/libertas/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_BIN) $(DL_DIR)/usb8388-5.110.22.p20.bin $(1)/lib/firmware/usb8388.bin
-	$(INSTALL_DATA) ./files/LICENSE $(1)/lib/firmware/
+	$(INSTALL_BIN) $(DL_DIR)/$(FW_NAME) $(1)/lib/firmware/usb8388.bin
+	$(INSTALL_DATA) ./files/LICENSE $(1)/lib/firmware/usb8388.LICENSE
 endef
 
 $(eval $(call KernelPackage,libertas))
