@@ -45,7 +45,7 @@ static struct map_info bcm963xx_map = {
 
 static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition **pparts)
 {
-	int nrparts = 2, curpart = 0; /* CFE and NVRAM are always present. */
+	int nrparts = 3, curpart = 0; /* CFE,NVRAM and global LINUX are always present. */
 	struct bcm_tag *buf;
 	struct mtd_partition *parts;
 	int ret;
@@ -118,9 +118,16 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 			parts[curpart].size += sparelen;
 		curpart++;
 	};
+	
 	parts[curpart].name = "nvram";
 	parts[curpart].offset = master->size - master->erasesize;
 	parts[curpart].size = master->erasesize;
+
+	/* Global partition "linux" to make easy firmware upgrade */
+	curpart++;
+	parts[curpart].name = "linux";
+	parts[curpart].offset = parts[0].size;
+	parts[curpart].size = master->size - parts[0].size - parts[3].size;
        
 	for (i = 0; i < nrparts; i++)
 		printk(KERN_INFO PFX "Partition %d is %s offset %x and length %x\n", i, parts[i].name, parts[i].offset, parts[i].size);
