@@ -1,0 +1,444 @@
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -64,6 +64,18 @@
+ #include "global.h"
+ #include "sort.h"
+ #include "pseudo.h"
++#include "uncompress.h"
++
++#ifdef USE_LZMA
++#include <LzmaEnc.h>
++#include <LzmaDec.h>
++#define LZMA_DEFAULT_LEVEL	5
++#define LZMA_DEFAULT_DICT	0
++#define LZMA_DEFAULT_LC	1
++#define LZMA_DEFAULT_LP	2
++#define LZMA_DEFAULT_PB 2
++#define LZMA_DEFAULT_FB 32
++#endif
+ 
+ #ifdef SQUASHFS_TRACE
+ #define TRACE(s, args...)	do { \
+@@ -830,6 +842,19 @@ void sigalrm_handler()
+ 	rotate = (rotate + 1) % 4;
+ }
+ 
++#ifdef USE_LZMA
++static void *lzma_malloc(void *p, size_t size)
++{
++	(void)p;
++	return malloc(size);
++}
++static void lzma_free(void *p, void *addr)
++{
++	(void)p;
++	free(addr);
++}
++static ISzAlloc lzma_alloc = { lzma_malloc, lzma_free };
++#endif
+ 
+ unsigned int mangle2(z_stream **strm, char *d, char *s, int size,
+ 	int block_size, int uncompressed, int data_block)
+@@ -841,6 +866,48 @@ unsigned int mangle2(z_stream **strm, ch
+ 	if(uncompressed)
+ 		goto notcompressed;
+ 
++#ifdef USE_LZMA
++	if (compression == LZMA_COMPRESSION) {
++		size_t outsize = block_size - LZMA_PROPS_SIZE;
++		size_t propsize = LZMA_PROPS_SIZE;
++		CLzmaEncProps props;
++
++		LzmaEncProps_Init(&props);
++		props.level = LZMA_DEFAULT_LEVEL;
++		props.dictSize = LZMA_DEFAULT_DICT;
++		props.lc = LZMA_DEFAULT_LC;
++		props.lp = LZMA_DEFAULT_LP;
++		props.pb = LZMA_DEFAULT_PB;
++		props.fb = LZMA_DEFAULT_FB;
++		props.numThreads = 1;
++
++		res = LzmaEncode((unsigned char *) d + LZMA_PROPS_SIZE, &outsize,
++			(unsigned char *) s, size,
++			&props, (unsigned char *) d, &propsize,
++			1, NULL, &lzma_alloc, &lzma_alloc);
++		switch(res) {
++		case SZ_OK:
++			outsize += LZMA_PROPS_SIZE;
++			break;
++		case SZ_ERROR_DATA:
++			BAD_ERROR("lzma::compress failed, data error\n");
++			break;
++		case SZ_ERROR_MEM:
++			BAD_ERROR("lzma::compress failed, memory allocation error\n");
++			break;
++		case SZ_ERROR_PARAM:
++			BAD_ERROR("lzma::compress failed, invalid parameters\n");
++			break;
++		/* should not happen */
++		default:
++			BAD_ERROR("lzma::compress failed, unknown error\n");
++			break;
++		}
++
++		return outsize;
++	}
++#endif
++
+ 	if(stream == NULL) {
+ 		if((stream = *strm = malloc(sizeof(z_stream))) == NULL)
+ 			BAD_ERROR("mangle::compress failed, not enough "
+@@ -1669,17 +1736,17 @@ struct file_buffer *get_fragment(struct 
+ 		else
+ 			data = read_from_disk(start_block, size);
+ 
+-		res = uncompress((unsigned char *) buffer->data, &bytes,
++		res = uncompress_wrapper((unsigned char *) buffer->data, &bytes,
+ 			(const unsigned char *) data, size);
+ 		if(res != Z_OK) {
+ 			if(res == Z_MEM_ERROR)
+-				BAD_ERROR("zlib::uncompress failed, not enough "
++				BAD_ERROR("uncompress failed, not enough "
+ 					"memory\n");
+ 			else if(res == Z_BUF_ERROR)
+-				BAD_ERROR("zlib::uncompress failed, not enough "
++				BAD_ERROR("uncompress failed, not enough "
+ 					"room in output buffer\n");
+ 			else
+-				BAD_ERROR("zlib::uncompress failed,"
++				BAD_ERROR("uncompress failed,"
+ 					"  unknown error %d\n", res);
+ 		}
+ 	} else if(compressed_buffer)
+@@ -4282,6 +4349,10 @@ int main(int argc, char *argv[])
+ 					argv[0]);
+ 				exit(1);
+ 			}
++#ifdef USE_LZMA
++		} else if(strcmp(argv[i], "-lzma") == 0) {
++			compression = LZMA_COMPRESSION;
++#endif
+ 		} else if(strcmp(argv[i], "-ef") == 0) {
+ 			if(++i == argc) {
+ 				ERROR("%s: -ef missing filename\n", argv[0]);
+@@ -4410,6 +4481,9 @@ printOptions:
+ 			ERROR("-b <block_size>\t\tset data block to "
+ 				"<block_size>.  Default %d bytes\n",
+ 				SQUASHFS_FILE_SIZE);
++#ifdef USE_LZMA
++			ERROR("-lzma Enable LZMA compression\n");
++#endif
+ 			ERROR("-processors <number>\tUse <number> processors."
+ 				"  By default will use number of\n");
+ 			ERROR("\t\t\tprocessors available\n");
+@@ -4804,7 +4878,7 @@ restore_filesystem:
+ 	sBlk.bytes_used = bytes;
+ 
+ 	/* Only compression supported */
+-	sBlk.compression = ZLIB_COMPRESSION;
++	sBlk.compression = compression;
+ 
+ 	/* Xattrs are not currently supported */
+ 	sBlk.xattr_table_start = SQUASHFS_INVALID_BLK;
+--- a/squashfs-tools/squashfs_fs.h
++++ b/squashfs-tools/squashfs_fs.h
+@@ -229,6 +229,7 @@ typedef long long		squashfs_block_t;
+ typedef long long		squashfs_inode_t;
+ 
+ #define ZLIB_COMPRESSION	1
++#define LZMA_COMPRESSION	2
+ 
+ struct squashfs_super_block {
+ 	unsigned int		s_magic;
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -4,14 +4,20 @@ INCLUDEDIR = .
+ 
+ CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_GNU_SOURCE -O2
+ 
++ifdef USE_LZMA
++  LZMA_CFLAGS = -DUSE_LZMA
++  LZMA_LIB = -llzma
++  CFLAGS += $(LZMA_CFLAGS)
++endif
++
+ all: mksquashfs unsquashfs
+ 
+-mksquashfs: mksquashfs.o read_fs.o sort.o swap.o pseudo.o
+-	$(CC) mksquashfs.o read_fs.o sort.o swap.o pseudo.o -lz -lpthread -lm -o $@
++mksquashfs: mksquashfs.o read_fs.o sort.o swap.o pseudo.o uncompress.o
++	$(CC) mksquashfs.o read_fs.o sort.o swap.o pseudo.o uncompress.o -lz -lpthread -lm $(LZMA_LIB) -o $@
+ 
+-mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h squashfs_swap.h Makefile
++mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h squashfs_swap.h uncompress.h Makefile
+ 
+-read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h squashfs_swap.h Makefile
++read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h squashfs_swap.h uncompress.h Makefile
+ 
+ sort.o: sort.c squashfs_fs.h global.h sort.h Makefile
+ 
+@@ -19,18 +25,20 @@ swap.o: swap.c Makefile
+ 
+ pseudo.o: pseudo.c pseudo.h Makefile
+ 
+-unsquashfs: unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o
+-	$(CC) unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o -lz -lpthread -lm -o $@
++uncompress.o: uncompress.c uncompress.h
++
++unsquashfs: unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o uncompress.o
++	$(CC) unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o uncompress.o -lz -lpthread -lm $(LZMA_LIB) -o $@
+ 
+-unsquashfs.o: unsquashfs.h unsquashfs.c squashfs_fs.h squashfs_swap.h squashfs_compat.h global.h Makefile
++unsquashfs.o: unsquashfs.h unsquashfs.c squashfs_fs.h squashfs_swap.h squashfs_compat.h global.h uncompress.h Makefile
+ 
+-unsquash-1.o: unsquashfs.h unsquash-1.c squashfs_fs.h squashfs_compat.h global.h Makefile
++unsquash-1.o: unsquashfs.h unsquash-1.c squashfs_fs.h squashfs_compat.h global.h uncompress.h Makefile
+ 
+-unsquash-2.o: unsquashfs.h unsquash-2.c unsquashfs.h squashfs_fs.h squashfs_compat.h global.h Makefile
++unsquash-2.o: unsquashfs.h unsquash-2.c unsquashfs.h squashfs_fs.h squashfs_compat.h global.h uncompress.h Makefile
+ 
+-unsquash-3.o: unsquashfs.h unsquash-3.c squashfs_fs.h squashfs_compat.h global.h Makefile
++unsquash-3.o: unsquashfs.h unsquash-3.c squashfs_fs.h squashfs_compat.h global.h uncompress.h Makefile
+ 
+-unsquash-4.o: unsquashfs.h unsquash-4.c squashfs_fs.h squashfs_swap.h global.h Makefile
++unsquash-4.o: unsquashfs.h unsquash-4.c squashfs_fs.h squashfs_swap.h global.h uncompress.h Makefile
+ 
+ clean:
+ 	-rm -f *.o mksquashfs unsquashfs
+--- a/squashfs-tools/read_fs.c
++++ b/squashfs-tools/read_fs.c
+@@ -51,6 +51,7 @@ extern unsigned int get_guid(unsigned in
+ #include "squashfs_swap.h"
+ #include "read_fs.h"
+ #include "global.h"
++#include "uncompress.h"
+ 
+ #include <stdlib.h>
+ 
+@@ -83,17 +84,17 @@ int read_block(int fd, long long start, 
+ 		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
+ 		read_destination(fd, start + offset, c_byte, buffer);
+ 
+-		res = uncompress(block, &bytes, (const unsigned char *) buffer,
+-			c_byte);
++		res = uncompress_wrapper(block, &bytes,
++			(const unsigned char *) buffer, c_byte);
+ 		if(res != Z_OK) {
+ 			if(res == Z_MEM_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
++				ERROR("uncompress failed, not enough "
+ 					"memory\n");
+ 			else if(res == Z_BUF_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
++				ERROR("uncompress failed, not enough "
+ 					"room in output buffer\n");
+ 			else
+-				ERROR("zlib::uncompress failed, unknown error "
++				ERROR("uncompress failed, unknown error "
+ 					"%d\n", res);
+ 			return 0;
+ 		}
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -24,6 +24,7 @@
+ #include "unsquashfs.h"
+ #include "squashfs_swap.h"
+ #include "squashfs_compat.h"
++#include "uncompress.h"
+ #include "read_fs.h"
+ 
+ struct cache *fragment_cache, *data_cache;
+@@ -597,18 +598,17 @@ int read_block(long long start, long lon
+ 		if(read_bytes(start + offset, c_byte, buffer) == FALSE)
+ 			goto failed;
+ 
+-		res = uncompress((unsigned char *) block, &bytes,
++		res = uncompress_wrapper((unsigned char *) block, &bytes,
+ 			(const unsigned char *) buffer, c_byte);
+-
+ 		if(res != Z_OK) {
+ 			if(res == Z_MEM_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
++				ERROR("uncompress failed, not enough "
+ 					"memory\n");
+ 			else if(res == Z_BUF_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
++				ERROR("uncompress failed, not enough "
+ 					"room in output buffer\n");
+ 			else
+-				ERROR("zlib::uncompress failed, unknown error "
++				ERROR("uncompress failed, unknown error "
+ 					"%d\n", res);
+ 			goto failed;
+ 		}
+@@ -645,18 +645,17 @@ int read_data_block(long long start, uns
+ 		if(read_bytes(start, c_byte, data) == FALSE)
+ 			goto failed;
+ 
+-		res = uncompress((unsigned char *) block, &bytes,
++		res = uncompress_wrapper((unsigned char *) block, &bytes,
+ 			(const unsigned char *) data, c_byte);
+-
+ 		if(res != Z_OK) {
+ 			if(res == Z_MEM_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
++				ERROR("uncompress failed, not enough "
+ 					"memory\n");
+ 			else if(res == Z_BUF_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
++				ERROR("uncompress failed, not enough "
+ 					"room in output buffer\n");
+ 			else
+-				ERROR("zlib::uncompress failed, unknown error "
++				ERROR("uncompress failed, unknown error "
+ 					"%d\n", res);
+ 			goto failed;
+ 		}
+@@ -1459,7 +1458,7 @@ int read_super(char *source)
+ 		s_ops.read_inode = read_inode_4;
+ 		s_ops.read_uids_guids = read_uids_guids_4;
+ 		memcpy(&sBlk, &sBlk_4, sizeof(sBlk_4));
+-		return TRUE;
++		goto done;
+ 	}
+ 
+ 	/*
+@@ -1548,6 +1547,9 @@ int read_super(char *source)
+ 		goto failed_mount;
+ 	}
+ 
++done:
++	compression = sBlk.compression;
++
+ 	return TRUE;
+ 
+ failed_mount:
+@@ -1710,19 +1712,19 @@ void *deflator(void *arg)
+ 		int res;
+ 		unsigned long bytes = block_size;
+ 
+-		res = uncompress((unsigned char *) tmp, &bytes,
++		res = uncompress_wrapper((unsigned char *) tmp, &bytes,
+ 			(const unsigned char *) entry->data,
+ 			SQUASHFS_COMPRESSED_SIZE_BLOCK(entry->size));
+ 
+ 		if(res != Z_OK) {
+ 			if(res == Z_MEM_ERROR)
+-				ERROR("zlib::uncompress failed, not enough"
++				ERROR("uncompress failed, not enough"
+ 					"memory\n");
+ 			else if(res == Z_BUF_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
++				ERROR("uncompress failed, not enough "
+ 					"room in output buffer\n");
+ 			else
+-				ERROR("zlib::uncompress failed, unknown error "
++				ERROR("uncompress failed, unknown error "
+ 					"%d\n", res);
+ 		} else
+ 			memcpy(entry->data, tmp, bytes);
+--- a/squashfs-tools/mksquashfs.h
++++ b/squashfs-tools/mksquashfs.h
+@@ -41,4 +41,9 @@
+ #define SQUASHFS_SWAP_LONG_LONGS(s, d, n) \
+ 					memcpy(d, s, n * sizeof(long long))
+ #endif
++
++extern int uncompress_wrapper(unsigned char *dest, unsigned long *dest_len,
++    const unsigned char *src, unsigned long src_len);
++
++
+ #endif
+--- /dev/null
++++ b/squashfs-tools/uncompress.c
+@@ -0,0 +1,58 @@
++/*
++ * Copyright (c) 2009  Felix Fietkau <nbd@openwrt.org>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ *
++ * uncompress.c
++ */
++
++
++
++#ifdef USE_LZMA
++#include <LzmaLib.h>
++#endif
++#include <zlib.h>
++#include "squashfs_fs.h"
++
++/* compression algorithm */
++int compression = ZLIB_COMPRESSION;
++
++
++int uncompress_wrapper(unsigned char *dest, unsigned long *dest_len,
++	const unsigned char *src, unsigned long src_len)
++{
++	int res;
++
++#ifdef USE_LZMA
++	if (compression == LZMA_COMPRESSION) {
++		size_t slen = src_len - LZMA_PROPS_SIZE;
++		res = LzmaUncompress((unsigned char *)dest, dest_len,
++			(const unsigned char *) src + LZMA_PROPS_SIZE, &slen,
++			(const unsigned char *) src, LZMA_PROPS_SIZE);
++		switch(res) {
++		case SZ_OK:
++			res = Z_OK;
++			break;
++		case SZ_ERROR_MEM:
++			res = Z_MEM_ERROR;
++			break;
++		}
++	} else
++#endif
++	res = uncompress(dest, dest_len, src, src_len);
++	return res;
++}
++
++
+--- /dev/null
++++ b/squashfs-tools/uncompress.h
+@@ -0,0 +1,29 @@
++/*
++ * Copyright (c) 2009  Felix Fietkau <nbd@openwrt.org>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ *
++ * uncompress.h
++ */
++
++#ifdef USE_LZMA
++#include <LzmaLib.h>
++#endif
++
++extern int compression;
++extern int uncompress_wrapper(unsigned char *dest, unsigned long *dest_len,
++    const unsigned char *src, unsigned long src_len);
++
++

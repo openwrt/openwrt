@@ -20,6 +20,9 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR)/squashfs-tools \
+		USE_LZMA=1 \
+		LZMA_CFLAGS="-I$(STAGING_DIR_HOST)/include -DUSE_LZMA" \
+		LZMA_LIB="$(STAGING_DIR_HOST)/lib/liblzma.a" \
 		mksquashfs unsquashfs
 endef
 

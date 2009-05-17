@@ -21,6 +21,7 @@ tools-dep += lzma
 
 # builddir dependencies
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
+$(curdir)/squashfs4/compile := $(curdir)/lzma/install
 $(curdir)/quilt/compile := $(curdir)/sed/install
 $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
