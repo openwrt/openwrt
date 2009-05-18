@@ -1,0 +1,37 @@
+Index: linux-2.6.30-rc6/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/leds/Kconfig	2009-05-18 19:07:07.000000000 +0200
++++ linux-2.6.30-rc6/drivers/leds/Kconfig	2009-05-18 19:08:33.000000000 +0200
+@@ -227,6 +227,19 @@
+ 	  This option enables support for BD2802GU RGB LED driver chips
+ 	  accessed via the I2C bus.
+ 
++config LEDS_GTA02_VIBRATOR
++	tristate "Vibrator Support for the Openmoko Freerunner GSM phone"
++	depends on LEDS_CLASS && MACH_NEO1973_GTA02
++ 	help
++	  This option enables support for the vibrator on the Openmoko Freerunner.
++
++config LEDS_GTA02
++	tristate "LED Support for the Openmoko Freerunner GSM phone"
++	depends on LEDS_CLASS && MACH_NEO1973_GTA02
++ 	help
++	  This option enables support for the LEDs on the Openmoko Freerunner.
++
++
+ comment "LED Triggers"
+ 
+ config LEDS_TRIGGERS
+Index: linux-2.6.30-rc6/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/leds/Makefile	2009-05-18 19:07:07.000000000 +0200
++++ linux-2.6.30-rc6/drivers/leds/Makefile	2009-05-18 19:08:33.000000000 +0200
+@@ -30,6 +30,8 @@
+ 
+ # LED SPI Drivers
+ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-dac124s085.o
++obj-$(CONFIG_LEDS_GTA02_VIBRATOR)	+= leds-gta02-vibrator.o
++obj-$(CONFIG_LEDS_GTA02)	+= leds-gta02.o
+ 
+ # LED Triggers
+ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o

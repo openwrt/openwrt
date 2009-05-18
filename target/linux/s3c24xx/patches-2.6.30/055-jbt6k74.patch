@@ -1,0 +1,30 @@
+Index: linux-2.6.30-rc6/drivers/video/display/Kconfig
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/video/display/Kconfig	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/video/display/Kconfig	2009-05-18 19:08:33.000000000 +0200
+@@ -21,4 +21,15 @@
+ comment "Display hardware drivers"
+ 	depends on DISPLAY_SUPPORT
+ 
++config DISPLAY_JBT6K74
++	tristate "TPO JBT6K74-AS TFT display ASIC control interface"
++	depends on SPI_MASTER && SYSFS
++	help
++	  SPI driver for the control interface of TFT panels containing
++	  the TPO JBT6K74-AS controller ASIC, such as the TPO TD028TTEC1
++	  TFT diplay module used in the Openmoko Freerunner GSM phone.
++
++	  The control interface is required for display operation, as it
++	  controls power management, display timing and gamma calibration.
++
+ endmenu
+Index: linux-2.6.30-rc6/drivers/video/display/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/video/display/Makefile	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/video/display/Makefile	2009-05-18 19:08:33.000000000 +0200
+@@ -3,4 +3,5 @@
+ display-objs				:= display-sysfs.o
+ 
+ obj-$(CONFIG_DISPLAY_SUPPORT)		+= display.o
++obj-$(CONFIG_DISPLAY_JBT6K74)		+= jbt6k74.o
+ 

@@ -1,0 +1,37 @@
+Index: linux-2.6.30-rc6/drivers/mfd/Kconfig
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/mfd/Kconfig	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/mfd/Kconfig	2009-05-18 19:08:32.000000000 +0200
+@@ -241,6 +241,8 @@
+ 	 Say yes here if you want to include support GPIO for pins on
+ 	 the PCF50633 chip.
+ 
++source "drivers/mfd/glamo/Kconfig"
++
+ endmenu
+ 
+ menu "Multimedia Capabilities Port drivers"
+Index: linux-2.6.30-rc6/drivers/mfd/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/mfd/Makefile	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/mfd/Makefile	2009-05-18 19:08:32.000000000 +0200
+@@ -4,6 +4,7 @@
+ 
+ obj-$(CONFIG_MFD_SM501)		+= sm501.o
+ obj-$(CONFIG_MFD_ASIC3)		+= asic3.o
++obj-$(CONFIG_MFD_GLAMO)		+= glamo/
+ 
+ obj-$(CONFIG_HTC_EGPIO)		+= htc-egpio.o
+ obj-$(CONFIG_HTC_PASIC3)	+= htc-pasic3.o
+Index: linux-2.6.30-rc6/include/linux/fb.h
+===================================================================
+--- linux-2.6.30-rc6.orig/include/linux/fb.h	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/include/linux/fb.h	2009-05-18 19:08:32.000000000 +0200
+@@ -124,6 +124,7 @@
+ #define FB_ACCEL_TRIDENT_BLADE3D 52	/* Trident Blade3D		*/
+ #define FB_ACCEL_TRIDENT_BLADEXP 53	/* Trident BladeXP		*/
+ #define FB_ACCEL_CIRRUS_ALPINE   53	/* Cirrus Logic 543x/544x/5480	*/
++#define FB_ACCEL_GLAMO		50	/* SMedia Glamo                 */
+ #define FB_ACCEL_NEOMAGIC_NM2070 90	/* NeoMagic NM2070              */
+ #define FB_ACCEL_NEOMAGIC_NM2090 91	/* NeoMagic NM2090              */
+ #define FB_ACCEL_NEOMAGIC_NM2093 92	/* NeoMagic NM2093              */

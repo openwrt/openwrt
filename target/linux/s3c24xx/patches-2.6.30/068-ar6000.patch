@@ -1,0 +1,25 @@
+Index: linux-2.6.30-rc6/arch/arm/Kconfig
+===================================================================
+--- linux-2.6.30-rc6.orig/arch/arm/Kconfig	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/arch/arm/Kconfig	2009-05-18 19:08:34.000000000 +0200
+@@ -1401,6 +1401,8 @@
+ 
+ source "drivers/uwb/Kconfig"
+ 
++source "drivers/ar6000/Kconfig"
++
+ source "drivers/mmc/Kconfig"
+ 
+ source "drivers/memstick/Kconfig"
+Index: linux-2.6.30-rc6/drivers/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/Makefile	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/Makefile	2009-05-18 19:08:34.000000000 +0200
+@@ -91,6 +91,7 @@
+ obj-y				+= idle/
+ obj-$(CONFIG_MMC)		+= mmc/
+ obj-$(CONFIG_MEMSTICK)		+= memstick/
++obj-$(CONFIG_AR6000_WLAN)	+= ar6000/
+ obj-$(CONFIG_NEW_LEDS)		+= leds/
+ obj-$(CONFIG_INFINIBAND)	+= infiniband/
+ obj-$(CONFIG_SGI_SN)		+= sn/
