@@ -1,0 +1,32 @@
+Index: linux-2.6.30-rc6/drivers/input/keyboard/Kconfig
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/input/keyboard/Kconfig	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/input/keyboard/Kconfig	2009-05-18 19:08:32.000000000 +0200
+@@ -332,4 +332,15 @@
+ 
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called sh_keysc.
++config KEYBOARD_GTA02
++	tristate "Openmoko Freerunner buttons"
++	depends on MACH_NEO1973
++	default y
++	help
++	  Say Y here to enable the buttons on the Openmoko Freerunner 
++	  GSM phone.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called gta02kbd.
++
+ endif
+Index: linux-2.6.30-rc6/drivers/input/keyboard/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/input/keyboard/Makefile	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/input/keyboard/Makefile	2009-05-18 19:08:32.000000000 +0200
+@@ -14,6 +14,7 @@
+ obj-$(CONFIG_KEYBOARD_NEWTON)		+= newtonkbd.o
+ obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stowaway.o
+ obj-$(CONFIG_KEYBOARD_CORGI)		+= corgikbd.o
++obj-$(CONFIG_KEYBOARD_GTA02)		+= gta02kbd.o
+ obj-$(CONFIG_KEYBOARD_SPITZ)		+= spitzkbd.o
+ obj-$(CONFIG_KEYBOARD_TOSA)		+= tosakbd.o
+ obj-$(CONFIG_KEYBOARD_HIL)		+= hil_kbd.o

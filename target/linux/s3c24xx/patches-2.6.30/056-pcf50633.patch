@@ -1,0 +1,375 @@
+Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/mfd/pcf50633-core.c	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c	2009-05-18 19:08:33.000000000 +0200
+@@ -15,6 +15,7 @@
+ #include <linux/kernel.h>
+ #include <linux/device.h>
+ #include <linux/sysfs.h>
++#include <linux/device.h>
+ #include <linux/module.h>
+ #include <linux/types.h>
+ #include <linux/interrupt.h>
+@@ -345,6 +346,8 @@
+ 		goto out;
+ 	}
+ 
++	pcf50633_reg_write(pcf, PCF50633_REG_OOCSHDWN,	0x04 );  /* defeat 8s death from lowsys on A5 */
++
+ 	/* We immediately read the usb and adapter status. We thus make sure
+ 	 * only of USBINS/USBREM IRQ handlers are called */
+ 	if (pcf_int[0] & (PCF50633_INT1_USBINS | PCF50633_INT1_USBREM)) {
+@@ -443,7 +446,8 @@
+ 	dev_dbg(pcf->dev, "pcf50633_irq\n");
+ 
+ 	get_device(pcf->dev);
+-	disable_irq(pcf->irq);
++	disable_irq_nosync(pcf->irq);
++
+ 	schedule_work(&pcf->irq_work);
+ 
+ 	return IRQ_HANDLED;
+@@ -482,13 +486,13 @@
+ }
+ 
+ #ifdef CONFIG_PM
+-static int pcf50633_suspend(struct device *dev, pm_message_t state)
++static int pcf50633_suspend(struct i2c_client *client, pm_message_t state)
+ {
+ 	struct pcf50633 *pcf;
+ 	int ret = 0, i;
+ 	u8 res[5];
+ 
+-	pcf = dev_get_drvdata(dev);
++	pcf = i2c_get_clientdata(client);
+ 
+ 	/* Make sure our interrupt handlers are not called
+ 	 * henceforth */
+@@ -523,12 +527,12 @@
+ 	return ret;
+ }
+ 
+-static int pcf50633_resume(struct device *dev)
++static int pcf50633_resume(struct i2c_client *client)
+ {
+ 	struct pcf50633 *pcf;
+ 	int ret;
+ 
+-	pcf = dev_get_drvdata(dev);
++	pcf = i2c_get_clientdata(client);
+ 
+ 	/* Write the saved mask registers */
+ 	ret = pcf50633_write_block(pcf, PCF50633_REG_INT1M,
+@@ -625,6 +629,7 @@
+ 	}
+ 
+ 	if (client->irq) {
++		set_irq_handler(client->irq, handle_level_irq);
+ 		ret = request_irq(client->irq, pcf50633_irq,
+ 				IRQF_TRIGGER_LOW, "pcf50633", pcf);
+ 
+@@ -683,12 +688,12 @@
+ static struct i2c_driver pcf50633_driver = {
+ 	.driver = {
+ 		.name	= "pcf50633",
+-		.suspend = pcf50633_suspend,
+-		.resume	= pcf50633_resume,
+ 	},
+ 	.id_table = pcf50633_id_table,
+ 	.probe = pcf50633_probe,
+ 	.remove = __devexit_p(pcf50633_remove),
++	.suspend = pcf50633_suspend,
++	.resume	= pcf50633_resume,
+ };
+ 
+ static int __init pcf50633_init(void)
+Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/power/pcf50633-charger.c	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/power/pcf50633-charger.c	2009-05-18 19:08:33.000000000 +0200
+@@ -36,6 +36,7 @@
+ 
+ 	struct power_supply usb;
+ 	struct power_supply adapter;
++	struct power_supply ac;
+ 
+ 	struct delayed_work charging_restart_work;
+ };
+@@ -47,16 +48,21 @@
+ 	u8 bits;
+ 	int charging_start = 1;
+ 	u8 mbcs2, chgmod;
++	unsigned int mbcc5;
+ 
+-	if (ma >= 1000)
++	if (ma >= 1000) {
+ 		bits = PCF50633_MBCC7_USB_1000mA;
+-	else if (ma >= 500)
++		ma = 1000;
++	} else if (ma >= 500) {
+ 		bits = PCF50633_MBCC7_USB_500mA;
+-	else if (ma >= 100)
++		ma = 500;
++	} else if (ma >= 100) {
+ 		bits = PCF50633_MBCC7_USB_100mA;
+-	else {
++		ma = 100;
++	} else {
+ 		bits = PCF50633_MBCC7_USB_SUSPEND;
+ 		charging_start = 0;
++		ma = 0;
+ 	}
+ 
+ 	ret = pcf50633_reg_set_bit_mask(pcf, PCF50633_REG_MBCC7,
+@@ -66,7 +72,22 @@
+ 	else
+ 		dev_info(pcf->dev, "usb curlim to %d mA\n", ma);
+ 
+-	/* Manual charging start */
++	/*
++	 * We limit the charging current to be the USB current limit.
++	 * The reason is that on pcf50633, when it enters PMU Standby mode,
++	 * which it does when the device goes "off", the USB current limit
++	 * reverts to the variant default.  In at least one common case, that
++	 * default is 500mA.  By setting the charging current to be the same
++	 * as the USB limit we set here before PMU standby, we enforce it only
++	 * using the correct amount of current even when the USB current limit
++	 * gets reset to the wrong thing
++	 */
++
++	mbcc5 = (ma << 8) / mbc->pcf->pdata->chg_ref_current_ma;
++	if (mbcc5 > 255)
++		mbcc5 = 255;
++	pcf50633_reg_write(mbc->pcf, PCF50633_REG_MBCC5, mbcc5);
++
+ 	mbcs2 = pcf50633_reg_read(pcf, PCF50633_REG_MBCS2);
+ 	chgmod = (mbcs2 & PCF50633_MBCS2_MBC_MASK);
+ 
+@@ -81,7 +102,7 @@
+ 				PCF50633_MBCC1_RESUME, PCF50633_MBCC1_RESUME);
+ 
+ 	mbc->usb_active = charging_start;
+-
++	
+ 	power_supply_changed(&mbc->usb);
+ 
+ 	return ret;
+@@ -156,9 +177,44 @@
+ 
+ static DEVICE_ATTR(usb_curlim, S_IRUGO | S_IWUSR, show_usblim, set_usblim);
+ 
++static ssize_t
++show_chglim(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct pcf50633_mbc *mbc = dev_get_drvdata(dev);
++	u8 mbcc5 = pcf50633_reg_read(mbc->pcf, PCF50633_REG_MBCC5);
++	unsigned int ma;
++
++	ma = (mbc->pcf->pdata->chg_ref_current_ma *  mbcc5) >> 8;
++
++	return sprintf(buf, "%u\n", ma);
++}
++
++static ssize_t set_chglim(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct pcf50633_mbc *mbc = dev_get_drvdata(dev);
++	unsigned long ma;
++	unsigned int mbcc5;
++	int ret;
++
++	ret = strict_strtoul(buf, 10, &ma);
++	if (ret)
++		return -EINVAL;
++
++	mbcc5 = (ma << 8) / mbc->pcf->pdata->chg_ref_current_ma;
++	if (mbcc5 > 255)
++		mbcc5 = 255;
++	pcf50633_reg_write(mbc->pcf, PCF50633_REG_MBCC5, mbcc5);
++
++	return count;
++}
++
++static DEVICE_ATTR(chg_curlim, S_IRUGO | S_IWUSR, show_chglim, set_chglim);
++
+ static struct attribute *pcf50633_mbc_sysfs_entries[] = {
+ 	&dev_attr_chgmode.attr,
+ 	&dev_attr_usb_curlim.attr,
++	&dev_attr_chg_curlim.attr,
+ 	NULL,
+ };
+ 
+@@ -239,6 +295,7 @@
+ 
+ 	power_supply_changed(&mbc->usb);
+ 	power_supply_changed(&mbc->adapter);
++	power_supply_changed(&mbc->ac);
+ 
+ 	if (mbc->pcf->pdata->mbc_event_callback)
+ 		mbc->pcf->pdata->mbc_event_callback(mbc->pcf, irq);
+@@ -248,8 +305,7 @@
+ 			enum power_supply_property psp,
+ 			union power_supply_propval *val)
+ {
+-	struct pcf50633_mbc *mbc = container_of(psy,
+-				struct pcf50633_mbc, adapter);
++	struct pcf50633_mbc *mbc = container_of(psy, struct pcf50633_mbc, adapter);
+ 	int ret = 0;
+ 
+ 	switch (psp) {
+@@ -269,10 +325,34 @@
+ {
+ 	struct pcf50633_mbc *mbc = container_of(psy, struct pcf50633_mbc, usb);
+ 	int ret = 0;
++	u8 usblim = pcf50633_reg_read(mbc->pcf, PCF50633_REG_MBCC7) &
++						PCF50633_MBCC7_USB_MASK;
+ 
+ 	switch (psp) {
+ 	case POWER_SUPPLY_PROP_ONLINE:
+-		val->intval = mbc->usb_online;
++		val->intval = mbc->usb_online &&
++			       	(usblim <= PCF50633_MBCC7_USB_500mA);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++	return ret;
++}
++
++static int ac_get_property(struct power_supply *psy,
++			enum power_supply_property psp,
++			union power_supply_propval *val)
++{
++	struct pcf50633_mbc *mbc = container_of(psy, struct pcf50633_mbc, ac);
++	int ret = 0;
++	u8 usblim = pcf50633_reg_read(mbc->pcf, PCF50633_REG_MBCC7) &
++						PCF50633_MBCC7_USB_MASK;
++
++	switch (psp) {
++	case POWER_SUPPLY_PROP_ONLINE:
++		val->intval = mbc->usb_online &&
++			       	(usblim == PCF50633_MBCC7_USB_1000mA);
+ 		break;
+ 	default:
+ 		ret = -EINVAL;
+@@ -337,6 +417,17 @@
+ 	mbc->usb.supplied_to		= mbc->pcf->pdata->batteries;
+ 	mbc->usb.num_supplicants	= mbc->pcf->pdata->num_batteries;
+ 
++	mbc->ac.name			= "ac";
++	mbc->ac.type			= POWER_SUPPLY_TYPE_MAINS;
++	mbc->ac.properties		= power_props;
++	mbc->ac.num_properties		= ARRAY_SIZE(power_props);
++	mbc->ac.get_property		= ac_get_property;
++	mbc->ac.supplied_to		= mbc->pcf->pdata->batteries;
++	mbc->ac.num_supplicants		= mbc->pcf->pdata->num_batteries;
++
++	INIT_DELAYED_WORK(&mbc->charging_restart_work,
++				pcf50633_mbc_charging_restart);
++
+ 	ret = power_supply_register(&pdev->dev, &mbc->adapter);
+ 	if (ret) {
+ 		dev_err(mbc->pcf->dev, "failed to register adapter\n");
+@@ -352,9 +443,15 @@
+ 		return ret;
+ 	}
+ 
+-	INIT_DELAYED_WORK(&mbc->charging_restart_work,
+-				pcf50633_mbc_charging_restart);
+-
++	ret = power_supply_register(&pdev->dev, &mbc->ac);
++	if (ret) {
++		dev_err(mbc->pcf->dev, "failed to register ac\n");
++		power_supply_unregister(&mbc->adapter);
++		power_supply_unregister(&mbc->usb);
++		kfree(mbc);
++		return ret;
++	}
++	
+ 	ret = sysfs_create_group(&pdev->dev.kobj, &mbc_attr_group);
+ 	if (ret)
+ 		dev_err(mbc->pcf->dev, "failed to create sysfs entries\n");
+Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/rtc/rtc-pcf50633.c	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c	2009-05-18 19:08:33.000000000 +0200
+@@ -58,6 +58,7 @@
+ struct pcf50633_rtc {
+ 	int alarm_enabled;
+ 	int second_enabled;
++	int alarm_pending;
+ 
+ 	struct pcf50633 *pcf;
+ 	struct rtc_device *rtc_dev;
+@@ -70,7 +71,7 @@
+ 	rtc->tm_hour = bcd2bin(pcf->time[PCF50633_TI_HOUR]);
+ 	rtc->tm_wday = bcd2bin(pcf->time[PCF50633_TI_WKDAY]);
+ 	rtc->tm_mday = bcd2bin(pcf->time[PCF50633_TI_DAY]);
+-	rtc->tm_mon = bcd2bin(pcf->time[PCF50633_TI_MONTH]);
++	rtc->tm_mon = bcd2bin(pcf->time[PCF50633_TI_MONTH]) - 1;
+ 	rtc->tm_year = bcd2bin(pcf->time[PCF50633_TI_YEAR]) + 100;
+ }
+ 
+@@ -81,7 +82,7 @@
+ 	pcf->time[PCF50633_TI_HOUR] = bin2bcd(rtc->tm_hour);
+ 	pcf->time[PCF50633_TI_WKDAY] = bin2bcd(rtc->tm_wday);
+ 	pcf->time[PCF50633_TI_DAY] = bin2bcd(rtc->tm_mday);
+-	pcf->time[PCF50633_TI_MONTH] = bin2bcd(rtc->tm_mon);
++	pcf->time[PCF50633_TI_MONTH] = bin2bcd(rtc->tm_mon + 1);
+ 	pcf->time[PCF50633_TI_YEAR] = bin2bcd(rtc->tm_year % 100);
+ }
+ 
+@@ -209,6 +210,7 @@
+ 	rtc = dev_get_drvdata(dev);
+ 
+ 	alrm->enabled = rtc->alarm_enabled;
++	alrm->pending = rtc->alarm_pending;
+ 
+ 	ret = pcf50633_read_block(rtc->pcf, PCF50633_REG_RTCSCA,
+ 				PCF50633_TI_EXTENT, &pcf_tm.time[0]);
+@@ -244,9 +246,12 @@
+ 	/* Returns 0 on success */
+ 	ret = pcf50633_write_block(rtc->pcf, PCF50633_REG_RTCSCA,
+ 				PCF50633_TI_EXTENT, &pcf_tm.time[0]);
++	if (!alrm->enabled)
++		rtc->alarm_pending = 0;
+ 
+-	if (!alarm_masked)
++	if (!alarm_masked || alrm->enabled)
+ 		pcf50633_irq_unmask(rtc->pcf, PCF50633_IRQ_ALARM);
++	rtc->alarm_enabled = alrm->enabled;
+ 
+ 	return ret;
+ }
+@@ -267,6 +272,7 @@
+ 	switch (irq) {
+ 	case PCF50633_IRQ_ALARM:
+ 		rtc_update_irq(rtc->rtc_dev, 1, RTC_AF | RTC_IRQF);
++		rtc->alarm_pending = 1;
+ 		break;
+ 	case PCF50633_IRQ_SECOND:
+ 		rtc_update_irq(rtc->rtc_dev, 1, RTC_UF | RTC_IRQF);
+Index: linux-2.6.30-rc6/include/linux/mfd/pcf50633/core.h
+===================================================================
+--- linux-2.6.30-rc6.orig/include/linux/mfd/pcf50633/core.h	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/include/linux/mfd/pcf50633/core.h	2009-05-18 19:08:33.000000000 +0200
+@@ -31,6 +31,8 @@
+ 
+ 	int charging_restart_interval;
+ 
++	int chg_ref_current_ma;
++
+ 	/* Callbacks */
+ 	void (*probe_done)(struct pcf50633 *);
+ 	void (*mbc_event_callback)(struct pcf50633 *, int);
+@@ -208,7 +210,8 @@
+ };
+ 
+ /* misc. registers */
+-#define PCF50633_REG_OOCSHDWN	0x0c
++#define PCF50633_REG_OOCSHDWN		0x0c
++#define PCF50633_OOCSHDWN_GOSTDBY 	0x01
+ 
+ /* LED registers */
+ #define PCF50633_REG_LEDOUT 0x28

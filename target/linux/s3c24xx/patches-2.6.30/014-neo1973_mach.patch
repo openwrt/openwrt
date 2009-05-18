@@ -1,0 +1,50 @@
+Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/Kconfig
+===================================================================
+--- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/Kconfig	2009-05-18 19:08:29.000000000 +0200
++++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/Kconfig	2009-05-18 19:08:31.000000000 +0200
+@@ -112,4 +112,20 @@
+ 	help
+ 	  Common machine code for SMDK2410 and SMDK2440
+ 
++config MACH_NEO1973
++	bool
++	select RFKILL
++	select SERIAL_SAMSUNG
++	select SERIAL_SAMSUNG_CONSOLE
++	help
++	  Common machine code for Neo1973 hardware
++
++config MACH_NEO1973
++	bool
++	select RFKILL
++	select SERIAL_SAMSUNG
++	select SERIAL_SAMSUNG_CONSOLE
++	help
++	  Common machine code for Neo1973 hardware
++
+ endif
+Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2442/Makefile	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/arch/arm/mach-s3c2442/Makefile	2009-05-18 19:08:31.000000000 +0200
+@@ -14,3 +14,9 @@
+ 
+ # Machine support
+ 
++obj-$(CONFIG_MACH_NEO1973)	+= \
++                                   gta02-pm-gsm.o \
++                                   gta02-pm-gps.o \
++                                   gta02-pm-bt.o  \
++                                   gta02-pm-wlan.o  \
++                                   gta02-shadow.o
+Index: linux-2.6.30-rc6/drivers/misc/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/misc/Makefile	2009-05-16 06:12:57.000000000 +0200
++++ linux-2.6.30-rc6/drivers/misc/Makefile	2009-05-18 19:08:31.000000000 +0200
+@@ -21,3 +21,6 @@
+ obj-$(CONFIG_ISL29003)		+= isl29003.o
+ obj-$(CONFIG_C2PORT)		+= c2port/
+ obj-y				+= eeprom/
++obj-$(CONFIG_MACH_NEO1973)      += gta02_pm_host.o \
++                                   gta02_pm_resume_reason.o
++

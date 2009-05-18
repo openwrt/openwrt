@@ -1,0 +1,29 @@
+Index: linux-2.6.30-rc6/drivers/input/misc/Kconfig
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/input/misc/Kconfig	2009-05-18 19:07:07.000000000 +0200
++++ linux-2.6.30-rc6/drivers/input/misc/Kconfig	2009-05-18 19:08:33.000000000 +0200
+@@ -220,6 +220,15 @@
+ 	  Say Y here if you want to support the built-in real time clock
+ 	  of the HP SDC controller.
+ 
++config INPUT_LIS302DL
++	tristate "STmicro LIS302DL 3-axis accelerometer"
++	depends on SPI_MASTER
++	help
++	  SPI driver for the STmicro LIS302DL 3-axis accelerometer.
++
++	  The userspece interface is a 3-axis (X/Y/Z) relative movement
++	  Linux input device, reporting REL_[XYZ] events.
++
+ config INPUT_PCF50633_PMU
+ 	tristate "PCF50633 PMU events"
+ 	depends on MFD_PCF50633
+Index: linux-2.6.30-rc6/drivers/input/misc/Makefile
+===================================================================
+--- linux-2.6.30-rc6.orig/drivers/input/misc/Makefile	2009-05-18 19:07:07.000000000 +0200
++++ linux-2.6.30-rc6/drivers/input/misc/Makefile	2009-05-18 19:08:33.000000000 +0200
+@@ -25,3 +25,4 @@
+ obj-$(CONFIG_INPUT_WISTRON_BTNS)	+= wistron_btns.o
+ obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
+ obj-$(CONFIG_INPUT_GPIO_BUTTONS)	+= gpio_buttons.o
++obj-$(CONFIG_INPUT_LIS302DL)		+= lis302dl.o
