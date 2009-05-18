@@ -6,8 +6,6 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  arch/mips/include/asm/octeon/cvmx-bootinfo.h |   13 +++++++++++++
  1 files changed, 13 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/include/asm/octeon/cvmx-bootinfo.h b/arch/mips/include/asm/octeon/cvmx-bootinfo.h
-index 692989a..f3c23a4 100644
 --- a/arch/mips/include/asm/octeon/cvmx-bootinfo.h
 +++ b/arch/mips/include/asm/octeon/cvmx-bootinfo.h
 @@ -157,6 +157,13 @@ enum cvmx_board_types_enum {
@@ -24,7 +22,7 @@ index 692989a..f3c23a4 100644
  	CVMX_BOARD_TYPE_MAX,
  
  	/*
-@@ -228,6 +235,12 @@ static inline const char *cvmx_board_type_to_string(enum
+@@ -228,6 +235,12 @@ static inline const char *cvmx_board_typ
  		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_NIC_XLE_4G)
  		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_EBT5600)
  		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_EBH5201)
@@ -37,6 +35,3 @@ index 692989a..f3c23a4 100644
  		ENUM_BRD_TYPE_CASE(CVMX_BOARD_TYPE_MAX)
  
  			/* Customer boards listed here */
--- 
-1.6.0.6
-

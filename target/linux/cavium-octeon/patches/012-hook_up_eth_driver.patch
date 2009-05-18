@@ -7,8 +7,6 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  drivers/staging/Makefile |    1 +
  2 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/staging/Kconfig b/drivers/staging/Kconfig
-index 0dcf9ca..6c2ca23 100644
 --- a/drivers/staging/Kconfig
 +++ b/drivers/staging/Kconfig
 @@ -115,5 +115,7 @@ source "drivers/staging/line6/Kconfig"
@@ -19,10 +17,9 @@ index 0dcf9ca..6c2ca23 100644
 +
  endif # !STAGING_EXCLUDE_BUILD
  endif # STAGING
-diff --git a/drivers/staging/Makefile b/drivers/staging/Makefile
---- a/drivers/staging/Makefile	2009-05-09 02:14:14.000000000 +0200
-+++ b/drivers/staging/Makefile	2009-05-12 12:38:22.000000000 +0200
-@@ -40,3 +40,4 @@
+--- a/drivers/staging/Makefile
++++ b/drivers/staging/Makefile
+@@ -40,3 +40,4 @@ obj-$(CONFIG_PLAN9AUTH)		+= p9auth/
  obj-$(CONFIG_HECI)		+= heci/
  obj-$(CONFIG_LINE6_USB)		+= line6/
  obj-$(CONFIG_USB_SERIAL_QUATECH_ESU100)	+= serqt_usb/

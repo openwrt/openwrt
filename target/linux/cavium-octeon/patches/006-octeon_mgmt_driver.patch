@@ -14,9 +14,6 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  create mode 100644 drivers/net/octeon/cvmx-mgmt-port.h
  create mode 100644 drivers/net/octeon/octeon-mgmt-port.c
 
-diff --git a/arch/mips/include/asm/octeon/cvmx-mdio.h b/arch/mips/include/asm/octeon/cvmx-mdio.h
-new file mode 100644
-index 0000000..89b0cc8
 --- /dev/null
 +++ b/arch/mips/include/asm/octeon/cvmx-mdio.h
 @@ -0,0 +1,577 @@
@@ -597,11 +594,9 @@ index 0000000..89b0cc8
 +}
 +
 +#endif
-diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
-index e9625a5..8c9d29e 100644
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -1864,6 +1864,14 @@ config ATL2
+@@ -2035,6 +2035,14 @@ config ATL2
  	  To compile this driver as a module, choose M here.  The module
  	  will be called atl2.
  
@@ -616,21 +611,16 @@ index e9625a5..8c9d29e 100644
  source "drivers/net/fs_enet/Kconfig"
  
  endif # NET_ETHERNET
-diff --git a/drivers/net/Makefile b/drivers/net/Makefile
-index 4a92305..4cbc22e 100644
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -234,6 +234,7 @@
+@@ -234,6 +234,7 @@ pasemi_mac_driver-objs := pasemi_mac.o p
  obj-$(CONFIG_MLX4_CORE) += mlx4/
  obj-$(CONFIG_ENC28J60) += enc28j60.o
  obj-$(CONFIG_ETHOC) += ethoc.o
 +obj-$(CONFIG_OCTEON_MGMT) += octeon/
-
+ 
  obj-$(CONFIG_XTENSA_XT2000_SONIC) += xtsonic.o
-
-diff --git a/drivers/net/octeon/Makefile b/drivers/net/octeon/Makefile
-new file mode 100644
-index 0000000..f32f394
+ 
 --- /dev/null
 +++ b/drivers/net/octeon/Makefile
 @@ -0,0 +1,11 @@
@@ -646,9 +636,6 @@ index 0000000..f32f394
 +
 +octeon_mgmt-objs := octeon-mgmt-port.o cvmx-mgmt-port.o
 \ No newline at end of file
-diff --git a/drivers/net/octeon/cvmx-mgmt-port.c b/drivers/net/octeon/cvmx-mgmt-port.c
-new file mode 100644
-index 0000000..f60255a
 --- /dev/null
 +++ b/drivers/net/octeon/cvmx-mgmt-port.c
 @@ -0,0 +1,818 @@
@@ -1470,9 +1457,6 @@ index 0000000..f60255a
 +		       (size_without_fcs + 7) & 0xfff8);
 +	cvmx_spinlock_unlock(&state->lock);
 +}
-diff --git a/drivers/net/octeon/cvmx-mgmt-port.h b/drivers/net/octeon/cvmx-mgmt-port.h
-new file mode 100644
-index 0000000..622168c
 --- /dev/null
 +++ b/drivers/net/octeon/cvmx-mgmt-port.h
 @@ -0,0 +1,168 @@
@@ -1644,9 +1628,6 @@ index 0000000..622168c
 +extern void cvmx_mgmt_port_set_max_packet_size(int port, int size_without_fcs);
 +
 +#endif /* __CVMX_MGMT_PORT_H__ */
-diff --git a/drivers/net/octeon/octeon-mgmt-port.c b/drivers/net/octeon/octeon-mgmt-port.c
-new file mode 100644
-index 0000000..9cffbb5
 --- /dev/null
 +++ b/drivers/net/octeon/octeon-mgmt-port.c
 @@ -0,0 +1,389 @@
@@ -2039,10 +2020,3 @@ index 0000000..9cffbb5
 +MODULE_DESCRIPTION("Cavium Networks Octeon management port ethernet driver.");
 +module_init(ethernet_mgmt_port_init);
 +module_exit(ethernet_mgmt_port_cleanup);
--- 
-1.5.6.5
-
---
-To unsubscribe from this list: send the line "unsubscribe netdev" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

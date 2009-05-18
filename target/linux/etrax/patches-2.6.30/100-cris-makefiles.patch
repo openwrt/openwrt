@@ -1,3 +1,45 @@
+--- a/arch/cris/boot/compressed/Makefile
++++ b/arch/cris/boot/compressed/Makefile
+@@ -18,7 +18,7 @@ ldflags-y += -T $(srctree)/$(src)/decomp
+ OBJECTS-$(CONFIG_ETRAX_ARCH_V32) = $(obj)/head_v32.o
+ OBJECTS-$(CONFIG_ETRAX_ARCH_V10) = $(obj)/head_v10.o
+ OBJECTS= $(OBJECTS-y) $(obj)/misc.o
+-OBJCOPYFLAGS = -O binary --remove-section=.bss
++#OBJCOPYFLAGS = -O binary --remove-section=.bss
+ 
+ quiet_cmd_image = BUILD   $@
+ cmd_image = cat $(obj)/decompress.bin $(obj)/piggy.gz > $@
+--- a/arch/cris/boot/Makefile
++++ b/arch/cris/boot/Makefile
+@@ -5,7 +5,7 @@
+ objcopyflags-$(CONFIG_ETRAX_ARCH_V10) += -R .note -R .comment
+ objcopyflags-$(CONFIG_ETRAX_ARCH_V32) += --remove-section=.bss
+ 
+-OBJCOPYFLAGS = -O binary $(objcopyflags-y)
++#OBJCOPYFLAGS = -O binary $(objcopyflags-y)
+ 
+ 
+ subdir- := compressed rescue
+@@ -17,7 +17,7 @@ $(obj)/Image: vmlinux FORCE
+ 
+ $(obj)/compressed/vmlinux: $(obj)/Image FORCE
+ 	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
+-	$(Q)$(MAKE) $(build)=$(obj)/rescue $(obj)/rescue/rescue.bin
++#	$(Q)$(MAKE) $(build)=$(obj)/rescue $(obj)/rescue/rescue.bin
+ 
+ $(obj)/zImage:  $(obj)/compressed/vmlinux
+ 	@cp $< $@
+--- a/arch/cris/boot/rescue/Makefile
++++ b/arch/cris/boot/rescue/Makefile
+@@ -14,7 +14,7 @@ arch-$(CONFIG_ETRAX_ARCH_V10) = v10
+ arch-$(CONFIG_ETRAX_ARCH_V32) = v32
+ 
+ ldflags-y += -T $(srctree)/$(src)/rescue_$(arch-y).lds
+-OBJCOPYFLAGS = -O binary --remove-section=.bss
++#OBJCOPYFLAGS = -O binary --remove-section=.bss
+ obj-$(CONFIG_ETRAX_ARCH_V32) = $(obj)/head_v32.o
+ obj-$(CONFIG_ETRAX_ARCH_V10) = $(obj)/head_v10.o
+ OBJECTS := $(obj-y)
 --- a/arch/cris/Makefile
 +++ b/arch/cris/Makefile
 @@ -40,7 +40,7 @@ endif
@@ -8,44 +50,4 @@
 +OBJCOPYFLAGS := -O binary -R .bss -R .note -R .note.gnu.build-id -R .comment -S
  
  CPPFLAGS_vmlinux.lds = -DDRAM_VIRTUAL_BASE=0x$(CONFIG_ETRAX_DRAM_VIRTUAL_BASE)
- 
---- a/arch/cris/arch-v10/boot/Makefile
-+++ b/arch/cris/arch-v10/boot/Makefile
-@@ -2,8 +2,6 @@
- # arch/cris/arch-v10/boot/Makefile
- #
- 
--OBJCOPYFLAGS = -O binary --remove-section=.bss
--
- subdir- := compressed rescue
- targets := Image
- 
-@@ -13,7 +11,7 @@ $(obj)/Image: vmlinux FORCE
- 
- $(obj)/compressed/vmlinux: $(obj)/Image FORCE
- 	$(Q)$(MAKE) $(build)=$(obj)/compressed $@
--	$(Q)$(MAKE) $(build)=$(obj)/rescue $(obj)/rescue/rescue.bin
-+#	$(Q)$(MAKE) $(build)=$(obj)/rescue $(obj)/rescue/rescue.bin
- 
- $(obj)/zImage:  $(obj)/compressed/vmlinux
- 	@cp $< $@
---- a/arch/cris/arch-v10/boot/compressed/Makefile
-+++ b/arch/cris/arch-v10/boot/compressed/Makefile
-@@ -6,7 +6,6 @@ asflags-y += $(LINUXINCLUDE)
- ccflags-y += -O2 $(LINUXINCLUDE)
- ldflags-y += -T $(srctree)/$(src)/decompress.lds
- OBJECTS = $(obj)/head.o $(obj)/misc.o
--OBJCOPYFLAGS = -O binary --remove-section=.bss
- 
- quiet_cmd_image = BUILD   $@
- cmd_image = cat $(obj)/decompress.bin $(obj)/piggy.gz > $@
---- a/arch/cris/arch-v10/boot/rescue/Makefile
-+++ b/arch/cris/arch-v10/boot/rescue/Makefile
-@@ -5,7 +5,6 @@
- ccflags-y += -O2 $(LINUXINCLUDE)
- asflags-y += $(LINUXINCLUDE)
- ldflags-y += -T $(srctree)/$(src)/rescue.lds
--OBJCOPYFLAGS = -O binary --remove-section=.bss
- obj-$(CONFIG_ETRAX_AXISFLASHMAP) = head.o
- OBJECT := $(obj)/head.o
  

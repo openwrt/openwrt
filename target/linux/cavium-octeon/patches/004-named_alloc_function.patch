@@ -6,11 +6,9 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  arch/mips/include/asm/octeon/cvmx-bootmem.h      |   85 ++++++++++++++++++
  2 files changed, 186 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/cavium-octeon/executive/cvmx-bootmem.c b/arch/mips/cavium-octeon/executive/cvmx-bootmem.c
-index 4f5a08b..8972448 100644
 --- a/arch/mips/cavium-octeon/executive/cvmx-bootmem.c
 +++ b/arch/mips/cavium-octeon/executive/cvmx-bootmem.c
-@@ -97,6 +97,32 @@ void *cvmx_bootmem_alloc(uint64_t size, uint64_t alignment)
+@@ -97,6 +97,32 @@ void *cvmx_bootmem_alloc(uint64_t size, 
  	return cvmx_bootmem_alloc_range(size, alignment, 0, 0);
  }
  
@@ -43,7 +41,7 @@ index 4f5a08b..8972448 100644
  int cvmx_bootmem_free_named(char *name)
  {
  	return cvmx_bootmem_phy_named_block_free(name, 0);
-@@ -584,3 +610,78 @@ int cvmx_bootmem_phy_named_block_free(char *name, uint32_t flags)
+@@ -584,3 +610,78 @@ int cvmx_bootmem_phy_named_block_free(ch
  	cvmx_bootmem_unlock();
  	return named_block_ptr != NULL;	/* 0 on failure, 1 on success */
  }
@@ -122,11 +120,9 @@ index 4f5a08b..8972448 100644
 +		cvmx_spinlock_unlock((cvmx_spinlock_t *)&(cvmx_bootmem_desc->lock));
 +	return addr_allocated;
 +}
-diff --git a/arch/mips/include/asm/octeon/cvmx-bootmem.h b/arch/mips/include/asm/octeon/cvmx-bootmem.h
-index 1cbe4b5..8e708bd 100644
 --- a/arch/mips/include/asm/octeon/cvmx-bootmem.h
 +++ b/arch/mips/include/asm/octeon/cvmx-bootmem.h
-@@ -183,6 +183,64 @@ extern void *cvmx_bootmem_alloc_range(uint64_t size, uint64_t alignment,
+@@ -183,6 +183,64 @@ extern void *cvmx_bootmem_alloc_range(ui
   * Returns 0 on failure,
   *         !0 on success
   */
@@ -191,7 +187,7 @@ index 1cbe4b5..8e708bd 100644
  extern int cvmx_bootmem_free_named(char *name);
  
  /**
-@@ -224,6 +282,33 @@ int64_t cvmx_bootmem_phy_alloc(uint64_t req_size, uint64_t address_min,
+@@ -224,6 +282,33 @@ int64_t cvmx_bootmem_phy_alloc(uint64_t 
  			       uint32_t flags);
  
  /**
@@ -225,10 +221,3 @@ index 1cbe4b5..8e708bd 100644
   * Finds a named memory block by name.
   * Also used for finding an unused entry in the named block table.
   *
--- 
-1.5.6.5
-
---
-To unsubscribe from this list: send the line "unsubscribe netdev" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

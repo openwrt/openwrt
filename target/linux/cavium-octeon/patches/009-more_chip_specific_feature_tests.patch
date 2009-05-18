@@ -6,8 +6,6 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  arch/mips/include/asm/octeon/octeon-feature.h |   27 +++++++++++++++++++++++++
  1 files changed, 27 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/include/asm/octeon/octeon-feature.h b/arch/mips/include/asm/octeon/octeon-feature.h
-index 04fac68..ef24a7b 100644
 --- a/arch/mips/include/asm/octeon/octeon-feature.h
 +++ b/arch/mips/include/asm/octeon/octeon-feature.h
 @@ -57,6 +57,13 @@ enum octeon_feature {
@@ -24,7 +22,7 @@ index 04fac68..ef24a7b 100644
  };
  
  static inline int cvmx_fuse_read(int fuse);
-@@ -112,6 +119,26 @@ static inline int octeon_has_feature(enum octeon_feature feature)
+@@ -112,6 +119,26 @@ static inline int octeon_has_feature(enu
  	case OCTEON_FEATURE_USB:
  		return !(OCTEON_IS_MODEL(OCTEON_CN38XX)
  			 || OCTEON_IS_MODEL(OCTEON_CN58XX));
@@ -51,6 +49,3 @@ index 04fac68..ef24a7b 100644
  	}
  	return 0;
  }
--- 
-1.6.0.6
-
