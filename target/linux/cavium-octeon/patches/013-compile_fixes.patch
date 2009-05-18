@@ -1,6 +1,6 @@
---- a/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c	2009-05-06 16:55:28.000000000 +0200
-+++ b/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c	2009-05-06 17:04:05.000000000 +0200
-@@ -272,6 +272,7 @@
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c
+@@ -272,6 +272,7 @@ fix_ipd_exit:
   *
   * Returns Zero on success, negative on failure
   */
@@ -8,7 +8,7 @@
  int __cvmx_helper_errata_asx_pass1(int interface, int port, int cpu_clock_hz)
  {
  	/* Set hi water mark as per errata GMX-4 */
-@@ -289,6 +290,7 @@
+@@ -289,6 +290,7 @@ int __cvmx_helper_errata_asx_pass1(int i
  			     cpu_clock_hz);
  	return 0;
  }
@@ -16,9 +16,9 @@
  
  /**
   * This function needs to be called on all Octeon chips with
---- a/arch/mips/include/asm/octeon/cvmx-helper-errata.h	2009-05-06 17:12:16.000000000 +0200
-+++ a/arch/mips/include/asm/octeon/cvmx-helper-errata.h	2009-05-06 17:12:10.000000000 +0200
-@@ -60,8 +60,8 @@
+--- a/arch/mips/include/asm/octeon/cvmx-helper-errata.h
++++ b/arch/mips/include/asm/octeon/cvmx-helper-errata.h
+@@ -60,8 +60,8 @@ extern int __cvmx_helper_errata_fix_ipd_
   *
   * Returns Zero on success, negative on failure
   */
@@ -29,9 +29,9 @@
  
  /**
   * This function needs to be called on all Octeon chips with
---- a/arch/mips/cavium-octeon/executive/cvmx-helper-util.c	2009-05-06 17:30:47.000000000 +0200
-+++ b/arch/mips/cavium-octeon/executive/cvmx-helper-util.c	2009-05-06 17:31:01.000000000 +0200
-@@ -356,6 +356,7 @@
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-util.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-util.c
+@@ -356,6 +356,7 @@ int cvmx_helper_get_ipd_port(int interfa
   *
   * Returns Interface number
   */
@@ -39,7 +39,7 @@
  int cvmx_helper_get_interface_num(int ipd_port)
  {
  	if (ipd_port < 16)
-@@ -372,6 +373,7 @@
+@@ -372,6 +373,7 @@ int cvmx_helper_get_interface_num(int ip
  
  	return -1;
  }
@@ -47,7 +47,7 @@
  
  /**
   * Returns the interface index number for an IPD/PKO port
-@@ -381,6 +383,7 @@
+@@ -381,6 +383,7 @@ int cvmx_helper_get_interface_num(int ip
   *
   * Returns Interface index number
   */
@@ -55,7 +55,7 @@
  int cvmx_helper_get_interface_index_num(int ipd_port)
  {
  	if (ipd_port < 32)
-@@ -395,6 +398,7 @@
+@@ -395,6 +398,7 @@ int cvmx_helper_get_interface_index_num(
  
  	return -1;
  }
@@ -63,9 +63,9 @@
  
  /**
   * Initialize the internal QLM JTAG logic to allow programming
---- a/arch/mips/include/asm/octeon/cvmx-helper-util.h	2009-05-06 17:31:46.000000000 +0200
-+++ b/arch/mips/include/asm/octeon/cvmx-helper-util.h	2009-05-06 17:27:36.000000000 +0200
-@@ -205,7 +205,7 @@
+--- a/arch/mips/include/asm/octeon/cvmx-helper-util.h
++++ b/arch/mips/include/asm/octeon/cvmx-helper-util.h
+@@ -205,7 +205,7 @@ static inline void cvmx_helper_free_pack
   *
   * Returns Interface number
   */
@@ -74,7 +74,7 @@
  
  /**
   * Returns the interface index number for an IPD/PKO port
-@@ -215,7 +215,7 @@
+@@ -215,7 +215,7 @@ extern int cvmx_helper_get_interface_num
   *
   * Returns Interface index number
   */

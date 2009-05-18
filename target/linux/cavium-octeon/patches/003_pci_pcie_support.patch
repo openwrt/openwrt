@@ -38,35 +38,29 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  create mode 100644 arch/mips/include/asm/octeon/cvmx-pcie.h
  create mode 100644 arch/mips/include/asm/octeon/cvmx-wqe.h
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index ea2b262..f009496 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -620,6 +620,8 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -617,6 +617,8 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  	select SYS_HAS_EARLY_PRINTK
- 	select CPU_CAVIUM_OCTEON
+ 	select SYS_HAS_CPU_CAVIUM_OCTEON
  	select SWAP_IO_SPACE
 +	select HW_HAS_PCI
 +	select ARCH_SUPPORTS_MSI
  	help
  	  This option supports all of the Octeon reference boards from Cavium
  	  Networks. It builds a kernel that dynamically determines the Octeon
-diff --git a/arch/mips/cavium-octeon/Makefile b/arch/mips/cavium-octeon/Makefile
-index 1c2a7fa..2b5f08f 100644
 --- a/arch/mips/cavium-octeon/Makefile
 +++ b/arch/mips/cavium-octeon/Makefile
-@@ -14,5 +14,9 @@
+@@ -14,5 +14,9 @@ obj-y += dma-octeon.o flash_setup.o
  obj-y += octeon-memcpy.o
-
+ 
  obj-$(CONFIG_SMP)                     += smp.o
 +obj-$(CONFIG_PCI)                     += pci-common.o
 +obj-$(CONFIG_PCI)                     += pci.o
 +obj-$(CONFIG_PCI)                     += pcie.o
 +obj-$(CONFIG_PCI_MSI)                 += msi.o
-
+ 
  EXTRA_CFLAGS += -Werror
-diff --git a/arch/mips/cavium-octeon/dma-octeon.c b/arch/mips/cavium-octeon/dma-octeon.c
-index 01b1ef9..af3c26f 100644
 --- a/arch/mips/cavium-octeon/dma-octeon.c
 +++ b/arch/mips/cavium-octeon/dma-octeon.c
 @@ -13,20 +13,326 @@
@@ -398,8 +392,6 @@ index 01b1ef9..af3c26f 100644
  	return;
 +#endif
  }
-diff --git a/arch/mips/cavium-octeon/executive/Makefile b/arch/mips/cavium-octeon/executive/Makefile
-index 80d6cb2..9b470dd 100644
 --- a/arch/mips/cavium-octeon/executive/Makefile
 +++ b/arch/mips/cavium-octeon/executive/Makefile
 @@ -11,3 +11,5 @@
@@ -408,9 +400,6 @@ index 80d6cb2..9b470dd 100644
  
 +obj-$(CONFIG_PCI) += cvmx-pcie.o
 +obj-$(CONFIG_PCI) += cvmx-helper-errata.o cvmx-helper-util.o
-diff --git a/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c b/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c
-new file mode 100644
-index 0000000..98822c1
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/executive/cvmx-helper-errata.c
 @@ -0,0 +1,379 @@
@@ -793,9 +782,6 @@ index 0000000..98822c1
 +	}
 +	cvmx_helper_qlm_jtag_update(qlm);
 +}
-diff --git a/arch/mips/cavium-octeon/executive/cvmx-helper-util.c b/arch/mips/cavium-octeon/executive/cvmx-helper-util.c
-new file mode 100644
-index 0000000..dc0087c
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/executive/cvmx-helper-util.c
 @@ -0,0 +1,502 @@
@@ -1301,9 +1287,6 @@ index 0000000..dc0087c
 +		jtgd.u64 = cvmx_read_csr(CVMX_CIU_QLM_JTGD);
 +	} while (jtgd.s.update);
 +}
-diff --git a/arch/mips/cavium-octeon/executive/cvmx-pcie.c b/arch/mips/cavium-octeon/executive/cvmx-pcie.c
-new file mode 100644
-index 0000000..710f21f
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/executive/cvmx-pcie.c
 @@ -0,0 +1,1053 @@
@@ -2360,9 +2343,6 @@ index 0000000..710f21f
 +		       mem_access_subid.u64);
 +	return 0;
 +}
-diff --git a/arch/mips/cavium-octeon/msi.c b/arch/mips/cavium-octeon/msi.c
-new file mode 100644
-index 0000000..964b03b
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/msi.c
 @@ -0,0 +1,288 @@
@@ -2654,8 +2634,6 @@ index 0000000..964b03b
 +}
 +
 +subsys_initcall(octeon_msi_initialize);
-diff --git a/arch/mips/cavium-octeon/octeon-irq.c b/arch/mips/cavium-octeon/octeon-irq.c
-index 788d588..3d7be84 100644
 --- a/arch/mips/cavium-octeon/octeon-irq.c
 +++ b/arch/mips/cavium-octeon/octeon-irq.c
 @@ -10,6 +10,8 @@
@@ -2667,9 +2645,6 @@ index 788d588..3d7be84 100644
  
  DEFINE_RWLOCK(octeon_irq_ciu0_rwlock);
  DEFINE_RWLOCK(octeon_irq_ciu1_rwlock);
-diff --git a/arch/mips/cavium-octeon/pci-common.c b/arch/mips/cavium-octeon/pci-common.c
-new file mode 100644
-index 0000000..cd029f8
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/pci-common.c
 @@ -0,0 +1,137 @@
@@ -2810,9 +2785,6 @@ index 0000000..cd029f8
 +
 +	return 0;
 +}
-diff --git a/arch/mips/cavium-octeon/pci-common.h b/arch/mips/cavium-octeon/pci-common.h
-new file mode 100644
-index 0000000..74ae799
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/pci-common.h
 @@ -0,0 +1,39 @@
@@ -2855,9 +2827,6 @@ index 0000000..74ae799
 +extern enum octeon_dma_bar_type octeon_dma_bar_type;
 +
 +#endif
-diff --git a/arch/mips/cavium-octeon/pci.c b/arch/mips/cavium-octeon/pci.c
-new file mode 100644
-index 0000000..67c0ff5
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/pci.c
 @@ -0,0 +1,568 @@
@@ -3429,9 +3398,6 @@ index 0000000..67c0ff5
 +}
 +
 +arch_initcall(octeon_pci_setup);
-diff --git a/arch/mips/cavium-octeon/pcie.c b/arch/mips/cavium-octeon/pcie.c
-new file mode 100644
-index 0000000..cb6662c
 --- /dev/null
 +++ b/arch/mips/cavium-octeon/pcie.c
 @@ -0,0 +1,441 @@
@@ -3876,8 +3842,6 @@ index 0000000..cb6662c
 +}
 +
 +arch_initcall(octeon_pcie_setup);
-diff --git a/arch/mips/include/asm/octeon/cvmx-asm.h b/arch/mips/include/asm/octeon/cvmx-asm.h
-index b21d3fc..093bcaf 100644
 --- a/arch/mips/include/asm/octeon/cvmx-asm.h
 +++ b/arch/mips/include/asm/octeon/cvmx-asm.h
 @@ -119,7 +119,8 @@
@@ -3890,9 +3854,6 @@ index b21d3fc..093bcaf 100644
  /* some new cop0-like stuff */
  #define CVMX_RDHWR(result, regstr) \
  	asm volatile ("rdhwr %[rt],$" CVMX_TMP_STR(regstr) : [rt] "=d" (result))
-diff --git a/arch/mips/include/asm/octeon/cvmx-helper-errata.h b/arch/mips/include/asm/octeon/cvmx-helper-errata.h
-new file mode 100644
-index 0000000..ce5deea
 --- /dev/null
 +++ b/arch/mips/include/asm/octeon/cvmx-helper-errata.h
 @@ -0,0 +1,92 @@
@@ -3988,9 +3949,6 @@ index 0000000..ce5deea
 +extern void __cvmx_helper_errata_qlm_disable_2nd_order_cdr(int qlm);
 +
 +#endif
-diff --git a/arch/mips/include/asm/octeon/cvmx-helper-util.h b/arch/mips/include/asm/octeon/cvmx-helper-util.h
-new file mode 100644
-index 0000000..d720217
 --- /dev/null
 +++ b/arch/mips/include/asm/octeon/cvmx-helper-util.h
 @@ -0,0 +1,266 @@
@@ -4260,8 +4218,6 @@ index 0000000..d720217
 +extern void cvmx_helper_qlm_jtag_update(int qlm);
 +
 +#endif /* __CVMX_HELPER_H__ */
-diff --git a/arch/mips/include/asm/octeon/cvmx-packet.h b/arch/mips/include/asm/octeon/cvmx-packet.h
-index 38aefa1..1cb3419 100644
 --- a/arch/mips/include/asm/octeon/cvmx-packet.h
 +++ b/arch/mips/include/asm/octeon/cvmx-packet.h
 @@ -25,7 +25,8 @@
@@ -4302,9 +4258,6 @@ index 38aefa1..1cb3419 100644
  		/* The size of the segment pointed to by addr (in bytes) */
  		uint64_t size:16;
  		/* Pointer to the first byte of the data, NOT buffer */
-diff --git a/arch/mips/include/asm/octeon/cvmx-pcie.h b/arch/mips/include/asm/octeon/cvmx-pcie.h
-new file mode 100644
-index 0000000..55a5ac1
 --- /dev/null
 +++ b/arch/mips/include/asm/octeon/cvmx-pcie.h
 @@ -0,0 +1,284 @@
@@ -4592,9 +4545,6 @@ index 0000000..55a5ac1
 +int cvmx_pcie_ep_initialize(void);
 +
 +#endif
-diff --git a/arch/mips/include/asm/octeon/cvmx-wqe.h b/arch/mips/include/asm/octeon/cvmx-wqe.h
-new file mode 100644
-index 0000000..fadc700
 --- /dev/null
 +++ b/arch/mips/include/asm/octeon/cvmx-wqe.h
 @@ -0,0 +1,422 @@
@@ -5020,11 +4970,9 @@ index 0000000..fadc700
 +} CVMX_CACHE_LINE_ALIGNED;
 +
 +#endif /* __CVMX_WQE_H__ */
-diff --git a/arch/mips/include/asm/octeon/cvmx.h b/arch/mips/include/asm/octeon/cvmx.h
-index 03fddfa..e31e3fe 100644
 --- a/arch/mips/include/asm/octeon/cvmx.h
 +++ b/arch/mips/include/asm/octeon/cvmx.h
-@@ -376,6 +376,18 @@ static inline uint64_t cvmx_get_cycle(void)
+@@ -376,6 +376,18 @@ static inline uint64_t cvmx_get_cycle(vo
  }
  
  /**
@@ -5043,17 +4991,12 @@ index 03fddfa..e31e3fe 100644
   * Reads a chip global cycle counter.  This counts CPU cycles since
   * chip reset.  The counter is 64 bit.
   * This register does not exist on CN38XX pass 1 silicion
-diff --git a/arch/mips/include/asm/octeon/octeon.h b/arch/mips/include/asm/octeon/octeon.h
-index edc6760..cac9b1a 100644
 --- a/arch/mips/include/asm/octeon/octeon.h
 +++ b/arch/mips/include/asm/octeon/octeon.h
-@@ -245,4 +245,6 @@ static inline uint32_t octeon_npi_read32(uint64_t address)
+@@ -245,4 +245,6 @@ static inline uint32_t octeon_npi_read32
  	return cvmx_read64_uint32(address ^ 4);
  }
  
 +extern struct cvmx_bootinfo *octeon_bootinfo;
 +
  #endif /* __ASM_OCTEON_OCTEON_H */
--- 
-1.5.6.5
-

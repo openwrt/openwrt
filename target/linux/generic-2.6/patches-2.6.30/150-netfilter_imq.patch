@@ -1023,7 +1023,7 @@
  #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
  	nf_conntrack_put(skb->nfct);
  	nf_conntrack_put_reasm(skb->nfct_reasm);
-@@ -524,6 +610,9 @@ static void __copy_skb_header(struct sk_
+@@ -526,6 +612,9 @@ static void __copy_skb_header(struct sk_
  	new->sp			= secpath_get(old->sp);
  #endif
  	memcpy(new->cb, old->cb, sizeof(old->cb));
@@ -1033,7 +1033,7 @@
  	new->csum_start		= old->csum_start;
  	new->csum_offset	= old->csum_offset;
  	new->local_df		= old->local_df;
-@@ -2767,6 +2856,13 @@ void __init skb_init(void)
+@@ -2769,6 +2858,13 @@ void __init skb_init(void)
  						0,
  						SLAB_HWCACHE_ALIGN|SLAB_PANIC,
  						NULL);

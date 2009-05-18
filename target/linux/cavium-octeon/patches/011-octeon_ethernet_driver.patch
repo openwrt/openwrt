@@ -163,9 +163,6 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  create mode 100644 drivers/staging/octeon/ethernet.c
  create mode 100644 drivers/staging/octeon/octeon-ethernet.h
 
-diff --git a/drivers/staging/octeon/Kconfig b/drivers/staging/octeon/Kconfig
-new file mode 100644
-index 0000000..536e238
 --- /dev/null
 +++ b/drivers/staging/octeon/Kconfig
 @@ -0,0 +1,12 @@
@@ -181,9 +178,6 @@ index 0000000..536e238
 +	  To compile this driver as a module, choose M here.  The module
 +	  will be called octeon-ethernet.
 +
-diff --git a/drivers/staging/octeon/Makefile b/drivers/staging/octeon/Makefile
-new file mode 100644
-index 0000000..3c839e3
 --- /dev/null
 +++ b/drivers/staging/octeon/Makefile
 @@ -0,0 +1,30 @@
@@ -217,9 +211,6 @@ index 0000000..3c839e3
 +	cvmx-helper-loop.o cvmx-helper-spi.o cvmx-helper-util.o \
 +	cvmx-interrupt-decodes.o cvmx-interrupt-rsl.o
 +
-diff --git a/drivers/staging/octeon/cvmx-address.h b/drivers/staging/octeon/cvmx-address.h
-new file mode 100644
-index 0000000..3c74d82
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-address.h
 @@ -0,0 +1,274 @@
@@ -497,9 +488,6 @@ index 0000000..3c74d82
 +#define CVMX_OCT_DID_ZIP_CSR        CVMX_FULL_DID(CVMX_OCT_DID_ZIP, 0ULL)
 +
 +#endif /* __CVMX_ADDRESS_H__ */
-diff --git a/drivers/staging/octeon/cvmx-asxx-defs.h b/drivers/staging/octeon/cvmx-asxx-defs.h
-new file mode 100644
-index 0000000..91415a8
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-asxx-defs.h
 @@ -0,0 +1,475 @@
@@ -978,9 +966,6 @@ index 0000000..91415a8
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-cmd-queue.c b/drivers/staging/octeon/cvmx-cmd-queue.c
-new file mode 100644
-index 0000000..976227b
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-cmd-queue.c
 @@ -0,0 +1,306 @@
@@ -1290,9 +1275,6 @@ index 0000000..976227b
 +	else
 +		return NULL;
 +}
-diff --git a/drivers/staging/octeon/cvmx-cmd-queue.h b/drivers/staging/octeon/cvmx-cmd-queue.h
-new file mode 100644
-index 0000000..f0cb20f
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-cmd-queue.h
 @@ -0,0 +1,617 @@
@@ -1913,9 +1895,6 @@ index 0000000..f0cb20f
 +}
 +
 +#endif /* __CVMX_CMD_QUEUE_H__ */
-diff --git a/drivers/staging/octeon/cvmx-config.h b/drivers/staging/octeon/cvmx-config.h
-new file mode 100644
-index 0000000..078a520
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-config.h
 @@ -0,0 +1,169 @@
@@ -2088,9 +2067,6 @@ index 0000000..078a520
 +
 +#endif /* __CVMX_CONFIG_H__ */
 +
-diff --git a/drivers/staging/octeon/cvmx-dbg-defs.h b/drivers/staging/octeon/cvmx-dbg-defs.h
-new file mode 100644
-index 0000000..abbf42d
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-dbg-defs.h
 @@ -0,0 +1,72 @@
@@ -2166,9 +2142,6 @@ index 0000000..abbf42d
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-fau.h b/drivers/staging/octeon/cvmx-fau.h
-new file mode 100644
-index 0000000..29bdce6
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-fau.h
 @@ -0,0 +1,597 @@
@@ -2769,9 +2742,6 @@ index 0000000..29bdce6
 +}
 +
 +#endif /* __CVMX_FAU_H__ */
-diff --git a/drivers/staging/octeon/cvmx-fpa-defs.h b/drivers/staging/octeon/cvmx-fpa-defs.h
-new file mode 100644
-index 0000000..bf5546b
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-fpa-defs.h
 @@ -0,0 +1,403 @@
@@ -3178,9 +3148,6 @@ index 0000000..bf5546b
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-fpa.c b/drivers/staging/octeon/cvmx-fpa.c
-new file mode 100644
-index 0000000..55d9147
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-fpa.c
 @@ -0,0 +1,183 @@
@@ -3367,9 +3334,6 @@ index 0000000..55d9147
 +		return 0;
 +	}
 +}
-diff --git a/drivers/staging/octeon/cvmx-fpa.h b/drivers/staging/octeon/cvmx-fpa.h
-new file mode 100644
-index 0000000..1d7788f
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-fpa.h
 @@ -0,0 +1,299 @@
@@ -3672,9 +3636,6 @@ index 0000000..1d7788f
 +uint64_t cvmx_fpa_get_block_size(uint64_t pool);
 +
 +#endif /*  __CVM_FPA_H__ */
-diff --git a/drivers/staging/octeon/cvmx-gmxx-defs.h b/drivers/staging/octeon/cvmx-gmxx-defs.h
-new file mode 100644
-index 0000000..946a43a
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-gmxx-defs.h
 @@ -0,0 +1,2529 @@
@@ -6207,9 +6168,6 @@ index 0000000..946a43a
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-helper-board.c b/drivers/staging/octeon/cvmx-helper-board.c
-new file mode 100644
-index 0000000..3085e38
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-board.c
 @@ -0,0 +1,706 @@
@@ -6919,9 +6877,6 @@ index 0000000..3085e38
 +
 +	return supported_ports;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-board.h b/drivers/staging/octeon/cvmx-helper-board.h
-new file mode 100644
-index 0000000..dc20b01
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-board.h
 @@ -0,0 +1,180 @@
@@ -7105,9 +7060,6 @@ index 0000000..dc20b01
 +int __cvmx_helper_board_usb_get_num_ports(int supported_ports);
 +
 +#endif /* __CVMX_HELPER_BOARD_H__ */
-diff --git a/drivers/staging/octeon/cvmx-helper-fpa.c b/drivers/staging/octeon/cvmx-helper-fpa.c
-new file mode 100644
-index 0000000..c239e5f
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-fpa.c
 @@ -0,0 +1,243 @@
@@ -7354,9 +7306,6 @@ index 0000000..c239e5f
 +					    CVMX_FPA_DFA_POOL_SIZE,
 +					    dfa_buffers);
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-fpa.h b/drivers/staging/octeon/cvmx-helper-fpa.h
-new file mode 100644
-index 0000000..5ff8c93
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-fpa.h
 @@ -0,0 +1,64 @@
@@ -7424,9 +7373,6 @@ index 0000000..5ff8c93
 +				      int tim_buffers, int dfa_buffers);
 +
 +#endif /* __CVMX_HELPER_H__ */
-diff --git a/drivers/staging/octeon/cvmx-helper-loop.c b/drivers/staging/octeon/cvmx-helper-loop.c
-new file mode 100644
-index 0000000..55a571a
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-loop.c
 @@ -0,0 +1,85 @@
@@ -7515,9 +7461,6 @@ index 0000000..55a571a
 +	/* Do nothing. */
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-loop.h b/drivers/staging/octeon/cvmx-helper-loop.h
-new file mode 100644
-index 0000000..e646a6c
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-loop.h
 @@ -0,0 +1,59 @@
@@ -7580,9 +7523,6 @@ index 0000000..e646a6c
 +extern int __cvmx_helper_loop_enable(int interface);
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-helper-npi.c b/drivers/staging/octeon/cvmx-helper-npi.c
-new file mode 100644
-index 0000000..7388a1e
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-npi.c
 @@ -0,0 +1,113 @@
@@ -7699,9 +7639,6 @@ index 0000000..7388a1e
 +	/* Enables are controlled by the remote host, so nothing to do here */
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-npi.h b/drivers/staging/octeon/cvmx-helper-npi.h
-new file mode 100644
-index 0000000..908e7b0
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-npi.h
 @@ -0,0 +1,60 @@
@@ -7765,9 +7702,6 @@ index 0000000..908e7b0
 +extern int __cvmx_helper_npi_enable(int interface);
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-helper-rgmii.c b/drivers/staging/octeon/cvmx-helper-rgmii.c
-new file mode 100644
-index 0000000..aa2d5d7
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-rgmii.c
 @@ -0,0 +1,525 @@
@@ -8296,9 +8230,6 @@ index 0000000..aa2d5d7
 +	cvmx_write_csr(CVMX_GMXX_PRTX_CFG(index, interface), gmx_cfg.u64);
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-rgmii.h b/drivers/staging/octeon/cvmx-helper-rgmii.h
-new file mode 100644
-index 0000000..ea26526
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-rgmii.h
 @@ -0,0 +1,110 @@
@@ -8412,9 +8343,6 @@ index 0000000..ea26526
 +						  int enable_external);
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-helper-sgmii.c b/drivers/staging/octeon/cvmx-helper-sgmii.c
-new file mode 100644
-index 0000000..6214e3b
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-sgmii.c
 @@ -0,0 +1,550 @@
@@ -8968,9 +8896,6 @@ index 0000000..6214e3b
 +	__cvmx_helper_sgmii_hardware_init_link(interface, index);
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-sgmii.h b/drivers/staging/octeon/cvmx-helper-sgmii.h
-new file mode 100644
-index 0000000..19b48d6
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-sgmii.h
 @@ -0,0 +1,104 @@
@@ -9078,9 +9003,6 @@ index 0000000..19b48d6
 +						  int enable_external);
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-helper-spi.c b/drivers/staging/octeon/cvmx-helper-spi.c
-new file mode 100644
-index 0000000..8ba6c83
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-spi.c
 @@ -0,0 +1,195 @@
@@ -9279,9 +9201,6 @@ index 0000000..8ba6c83
 +	   info */
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-spi.h b/drivers/staging/octeon/cvmx-helper-spi.h
-new file mode 100644
-index 0000000..69bac03
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-spi.h
 @@ -0,0 +1,84 @@
@@ -9369,9 +9288,6 @@ index 0000000..69bac03
 +				      cvmx_helper_link_info_t link_info);
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-helper-util.c b/drivers/staging/octeon/cvmx-helper-util.c
-new file mode 100644
-index 0000000..41ef8a4
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-util.c
 @@ -0,0 +1,433 @@
@@ -9808,9 +9724,6 @@ index 0000000..41ef8a4
 +
 +	return -1;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-util.h b/drivers/staging/octeon/cvmx-helper-util.h
-new file mode 100644
-index 0000000..6a6e52f
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-util.h
 @@ -0,0 +1,215 @@
@@ -10029,9 +9942,6 @@ index 0000000..6a6e52f
 +extern int cvmx_helper_get_interface_index_num(int ipd_port);
 +
 +#endif /* __CVMX_HELPER_H__ */
-diff --git a/drivers/staging/octeon/cvmx-helper-xaui.c b/drivers/staging/octeon/cvmx-helper-xaui.c
-new file mode 100644
-index 0000000..a11e676
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-xaui.c
 @@ -0,0 +1,348 @@
@@ -10383,9 +10293,6 @@ index 0000000..a11e676
 +	/* Take the link through a reset */
 +	return __cvmx_helper_xaui_enable(interface);
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper-xaui.h b/drivers/staging/octeon/cvmx-helper-xaui.h
-new file mode 100644
-index 0000000..4b4db2f
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper-xaui.h
 @@ -0,0 +1,103 @@
@@ -10492,9 +10399,6 @@ index 0000000..4b4db2f
 +						 int enable_internal,
 +						 int enable_external);
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-helper.c b/drivers/staging/octeon/cvmx-helper.c
-new file mode 100644
-index 0000000..5915066
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper.c
 @@ -0,0 +1,1058 @@
@@ -11556,9 +11460,6 @@ index 0000000..5915066
 +	}
 +	return result;
 +}
-diff --git a/drivers/staging/octeon/cvmx-helper.h b/drivers/staging/octeon/cvmx-helper.h
-new file mode 100644
-index 0000000..51916f3
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-helper.h
 @@ -0,0 +1,227 @@
@@ -11789,9 +11690,6 @@ index 0000000..51916f3
 +					  int enable_external);
 +
 +#endif /* __CVMX_HELPER_H__ */
-diff --git a/drivers/staging/octeon/cvmx-interrupt-decodes.c b/drivers/staging/octeon/cvmx-interrupt-decodes.c
-new file mode 100644
-index 0000000..a3337e3
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-interrupt-decodes.c
 @@ -0,0 +1,371 @@
@@ -12166,9 +12064,6 @@ index 0000000..a3337e3
 +	}
 +	cvmx_write_csr(CVMX_STXX_INT_MSK(index), stx_int_msk.u64);
 +}
-diff --git a/drivers/staging/octeon/cvmx-interrupt-rsl.c b/drivers/staging/octeon/cvmx-interrupt-rsl.c
-new file mode 100644
-index 0000000..df50048
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-interrupt-rsl.c
 @@ -0,0 +1,140 @@
@@ -12312,9 +12207,6 @@ index 0000000..df50048
 +	for (index = 0; index < num_ports; index++)
 +		__cvmx_interrupt_gmxx_rxx_int_en_enable(index, interface);
 +}
-diff --git a/drivers/staging/octeon/cvmx-ipd.h b/drivers/staging/octeon/cvmx-ipd.h
-new file mode 100644
-index 0000000..115a552
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-ipd.h
 @@ -0,0 +1,338 @@
@@ -12656,9 +12548,6 @@ index 0000000..115a552
 +}
 +
 +#endif /*  __CVMX_IPD_H__ */
-diff --git a/drivers/staging/octeon/cvmx-mdio.h b/drivers/staging/octeon/cvmx-mdio.h
-new file mode 100644
-index 0000000..c987a75
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-mdio.h
 @@ -0,0 +1,506 @@
@@ -13168,9 +13057,6 @@ index 0000000..c987a75
 +}
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-packet.h b/drivers/staging/octeon/cvmx-packet.h
-new file mode 100644
-index 0000000..62ffe78
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-packet.h
 @@ -0,0 +1,65 @@
@@ -13239,9 +13125,6 @@ index 0000000..62ffe78
 +};
 +
 +#endif /*  __CVMX_PACKET_H__ */
-diff --git a/drivers/staging/octeon/cvmx-pcsx-defs.h b/drivers/staging/octeon/cvmx-pcsx-defs.h
-new file mode 100644
-index 0000000..d45952d
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pcsx-defs.h
 @@ -0,0 +1,370 @@
@@ -13615,9 +13498,6 @@ index 0000000..d45952d
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-pcsxx-defs.h b/drivers/staging/octeon/cvmx-pcsxx-defs.h
-new file mode 100644
-index 0000000..55d120f
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pcsxx-defs.h
 @@ -0,0 +1,316 @@
@@ -13937,9 +13817,6 @@ index 0000000..55d120f
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-pip-defs.h b/drivers/staging/octeon/cvmx-pip-defs.h
-new file mode 100644
-index 0000000..5a36910
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pip-defs.h
 @@ -0,0 +1,1267 @@
@@ -15210,9 +15087,6 @@ index 0000000..5a36910
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-pip.h b/drivers/staging/octeon/cvmx-pip.h
-new file mode 100644
-index 0000000..78dbce8
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pip.h
 @@ -0,0 +1,524 @@
@@ -15740,9 +15614,6 @@ index 0000000..78dbce8
 +}
 +
 +#endif /*  __CVMX_PIP_H__ */
-diff --git a/drivers/staging/octeon/cvmx-pko-defs.h b/drivers/staging/octeon/cvmx-pko-defs.h
-new file mode 100644
-index 0000000..50e779c
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pko-defs.h
 @@ -0,0 +1,1133 @@
@@ -16879,9 +16750,6 @@ index 0000000..50e779c
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-pko.c b/drivers/staging/octeon/cvmx-pko.c
-new file mode 100644
-index 0000000..00db915
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pko.c
 @@ -0,0 +1,506 @@
@@ -17391,9 +17259,6 @@ index 0000000..00db915
 +	cvmx_write_csr(CVMX_PKO_MEM_PORT_RATE1, pko_mem_port_rate1.u64);
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/cvmx-pko.h b/drivers/staging/octeon/cvmx-pko.h
-new file mode 100644
-index 0000000..f068c19
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pko.h
 @@ -0,0 +1,610 @@
@@ -18007,9 +17872,6 @@ index 0000000..f068c19
 +extern int cvmx_pko_rate_limit_bits(int port, uint64_t bits_s, int burst);
 +
 +#endif /* __CVMX_PKO_H__ */
-diff --git a/drivers/staging/octeon/cvmx-pow.h b/drivers/staging/octeon/cvmx-pow.h
-new file mode 100644
-index 0000000..c5d66f2
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-pow.h
 @@ -0,0 +1,1982 @@
@@ -19995,9 +19857,6 @@ index 0000000..c5d66f2
 +extern int cvmx_pow_get_num_entries(void);
 +
 +#endif /* __CVMX_POW_H__ */
-diff --git a/drivers/staging/octeon/cvmx-scratch.h b/drivers/staging/octeon/cvmx-scratch.h
-new file mode 100644
-index 0000000..96b70cf
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-scratch.h
 @@ -0,0 +1,139 @@
@@ -20140,9 +19999,6 @@ index 0000000..96b70cf
 +}
 +
 +#endif /* __CVMX_SCRATCH_H__ */
-diff --git a/drivers/staging/octeon/cvmx-smix-defs.h b/drivers/staging/octeon/cvmx-smix-defs.h
-new file mode 100644
-index 0000000..9ae45fc
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-smix-defs.h
 @@ -0,0 +1,178 @@
@@ -20324,9 +20180,6 @@ index 0000000..9ae45fc
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-spi.c b/drivers/staging/octeon/cvmx-spi.c
-new file mode 100644
-index 0000000..82794d9
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-spi.c
 @@ -0,0 +1,667 @@
@@ -20997,9 +20850,6 @@ index 0000000..82794d9
 +
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/cvmx-spi.h b/drivers/staging/octeon/cvmx-spi.h
-new file mode 100644
-index 0000000..e814648
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-spi.h
 @@ -0,0 +1,269 @@
@@ -21272,9 +21122,6 @@ index 0000000..e814648
 +extern int cvmx_spi_interface_up_cb(int interface, cvmx_spi_mode_t mode);
 +
 +#endif /* __CVMX_SPI_H__ */
-diff --git a/drivers/staging/octeon/cvmx-spxx-defs.h b/drivers/staging/octeon/cvmx-spxx-defs.h
-new file mode 100644
-index 0000000..b16940e
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-spxx-defs.h
 @@ -0,0 +1,347 @@
@@ -21625,9 +21472,6 @@ index 0000000..b16940e
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-srxx-defs.h b/drivers/staging/octeon/cvmx-srxx-defs.h
-new file mode 100644
-index 0000000..d82b366
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-srxx-defs.h
 @@ -0,0 +1,126 @@
@@ -21757,9 +21601,6 @@ index 0000000..d82b366
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-stxx-defs.h b/drivers/staging/octeon/cvmx-stxx-defs.h
-new file mode 100644
-index 0000000..4f209b6
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-stxx-defs.h
 @@ -0,0 +1,292 @@
@@ -22055,9 +21896,6 @@ index 0000000..4f209b6
 +};
 +
 +#endif
-diff --git a/drivers/staging/octeon/cvmx-wqe.h b/drivers/staging/octeon/cvmx-wqe.h
-new file mode 100644
-index 0000000..6536109
 --- /dev/null
 +++ b/drivers/staging/octeon/cvmx-wqe.h
 @@ -0,0 +1,397 @@
@@ -22458,9 +22296,6 @@ index 0000000..6536109
 +} CVMX_CACHE_LINE_ALIGNED cvmx_wqe_t;
 +
 +#endif /* __CVMX_WQE_H__ */
-diff --git a/drivers/staging/octeon/ethernet-common.c b/drivers/staging/octeon/ethernet-common.c
-new file mode 100644
-index 0000000..3e6f5b8
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-common.c
 @@ -0,0 +1,328 @@
@@ -22792,9 +22627,6 @@ index 0000000..3e6f5b8
 +{
 +	/* Currently nothing to do */
 +}
-diff --git a/drivers/staging/octeon/ethernet-common.h b/drivers/staging/octeon/ethernet-common.h
-new file mode 100644
-index 0000000..2bd9cd7
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-common.h
 @@ -0,0 +1,29 @@
@@ -22827,9 +22659,6 @@ index 0000000..2bd9cd7
 +
 +int cvm_oct_common_init(struct net_device *dev);
 +void cvm_oct_common_uninit(struct net_device *dev);
-diff --git a/drivers/staging/octeon/ethernet-defines.h b/drivers/staging/octeon/ethernet-defines.h
-new file mode 100644
-index 0000000..8f7374e
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-defines.h
 @@ -0,0 +1,134 @@
@@ -22967,9 +22796,6 @@ index 0000000..8f7374e
 +
 +
 +#endif /* __ETHERNET_DEFINES_H__ */
-diff --git a/drivers/staging/octeon/ethernet-mdio.c b/drivers/staging/octeon/ethernet-mdio.c
-new file mode 100644
-index 0000000..93cab0a
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-mdio.c
 @@ -0,0 +1,231 @@
@@ -23204,9 +23030,6 @@ index 0000000..93cab0a
 +	}
 +	return 0;
 +}
-diff --git a/drivers/staging/octeon/ethernet-mdio.h b/drivers/staging/octeon/ethernet-mdio.h
-new file mode 100644
-index 0000000..6314141
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-mdio.h
 @@ -0,0 +1,46 @@
@@ -23256,9 +23079,6 @@ index 0000000..6314141
 +extern struct ethtool_ops cvm_oct_ethtool_ops;
 +int cvm_oct_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
 +int cvm_oct_mdio_setup_device(struct net_device *dev);
-diff --git a/drivers/staging/octeon/ethernet-mem.c b/drivers/staging/octeon/ethernet-mem.c
-new file mode 100644
-index 0000000..b595903
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-mem.c
 @@ -0,0 +1,198 @@
@@ -23460,9 +23280,6 @@ index 0000000..b595903
 +	else
 +		cvm_oct_free_hw_memory(pool, size, elements);
 +}
-diff --git a/drivers/staging/octeon/ethernet-mem.h b/drivers/staging/octeon/ethernet-mem.h
-new file mode 100644
-index 0000000..713f2ed
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-mem.h
 @@ -0,0 +1,29 @@
@@ -23495,9 +23312,6 @@ index 0000000..713f2ed
 +
 +int cvm_oct_mem_fill_fpa(int pool, int size, int elements);
 +void cvm_oct_mem_empty_fpa(int pool, int size, int elements);
-diff --git a/drivers/staging/octeon/ethernet-proc.c b/drivers/staging/octeon/ethernet-proc.c
-new file mode 100644
-index 0000000..8fa88fc
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-proc.c
 @@ -0,0 +1,256 @@
@@ -23757,9 +23571,6 @@ index 0000000..8fa88fc
 +{
 +	remove_proc_entry("octeon_ethernet_stats", NULL);
 +}
-diff --git a/drivers/staging/octeon/ethernet-proc.h b/drivers/staging/octeon/ethernet-proc.h
-new file mode 100644
-index 0000000..82c7d9f
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-proc.h
 @@ -0,0 +1,29 @@
@@ -23792,9 +23603,6 @@ index 0000000..82c7d9f
 +
 +void cvm_oct_proc_initialize(void);
 +void cvm_oct_proc_shutdown(void);
-diff --git a/drivers/staging/octeon/ethernet-rgmii.c b/drivers/staging/octeon/ethernet-rgmii.c
-new file mode 100644
-index 0000000..8579f16
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-rgmii.c
 @@ -0,0 +1,397 @@
@@ -24195,9 +24003,6 @@ index 0000000..8579f16
 +	if (number_rgmii_ports == 0)
 +		free_irq(OCTEON_IRQ_RML, &number_rgmii_ports);
 +}
-diff --git a/drivers/staging/octeon/ethernet-rx.c b/drivers/staging/octeon/ethernet-rx.c
-new file mode 100644
-index 0000000..1b237b7
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-rx.c
 @@ -0,0 +1,505 @@
@@ -24706,9 +24511,6 @@ index 0000000..1b237b7
 +	for (i = 0; i < NR_CPUS; i++)
 +		tasklet_kill(&cvm_oct_tasklet[i].t);
 +}
-diff --git a/drivers/staging/octeon/ethernet-rx.h b/drivers/staging/octeon/ethernet-rx.h
-new file mode 100644
-index 0000000..a9b72b8
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-rx.h
 @@ -0,0 +1,33 @@
@@ -24745,9 +24547,6 @@ index 0000000..a9b72b8
 +
 +void cvm_oct_rx_initialize(void);
 +void cvm_oct_rx_shutdown(void);
-diff --git a/drivers/staging/octeon/ethernet-sgmii.c b/drivers/staging/octeon/ethernet-sgmii.c
-new file mode 100644
-index 0000000..58fa39c
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-sgmii.c
 @@ -0,0 +1,129 @@
@@ -24880,9 +24679,6 @@ index 0000000..58fa39c
 +{
 +	cvm_oct_common_uninit(dev);
 +}
-diff --git a/drivers/staging/octeon/ethernet-spi.c b/drivers/staging/octeon/ethernet-spi.c
-new file mode 100644
-index 0000000..e0971bb
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-spi.c
 @@ -0,0 +1,323 @@
@@ -25209,9 +25005,6 @@ index 0000000..e0971bb
 +		free_irq(8 + 46, &number_spi_ports);
 +	}
 +}
-diff --git a/drivers/staging/octeon/ethernet-tx.c b/drivers/staging/octeon/ethernet-tx.c
-new file mode 100644
-index 0000000..77b7122
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-tx.c
 @@ -0,0 +1,634 @@
@@ -25849,9 +25642,6 @@ index 0000000..77b7122
 +		spin_unlock_irqrestore(&priv->tx_free_list[qos].lock, flags);
 +	}
 +}
-diff --git a/drivers/staging/octeon/ethernet-tx.h b/drivers/staging/octeon/ethernet-tx.h
-new file mode 100644
-index 0000000..5106236
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-tx.h
 @@ -0,0 +1,32 @@
@@ -25887,9 +25677,6 @@ index 0000000..5106236
 +int cvm_oct_transmit_qos(struct net_device *dev, void *work_queue_entry,
 +			 int do_free, int qos);
 +void cvm_oct_tx_shutdown(struct net_device *dev);
-diff --git a/drivers/staging/octeon/ethernet-util.h b/drivers/staging/octeon/ethernet-util.h
-new file mode 100644
-index 0000000..37b6659
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-util.h
 @@ -0,0 +1,81 @@
@@ -25974,9 +25761,6 @@ index 0000000..37b6659
 +	else
 +		return ipd_port & 3;
 +}
-diff --git a/drivers/staging/octeon/ethernet-xaui.c b/drivers/staging/octeon/ethernet-xaui.c
-new file mode 100644
-index 0000000..f08eb32
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet-xaui.c
 @@ -0,0 +1,127 @@
@@ -26107,9 +25891,6 @@ index 0000000..f08eb32
 +{
 +	cvm_oct_common_uninit(dev);
 +}
-diff --git a/drivers/staging/octeon/ethernet.c b/drivers/staging/octeon/ethernet.c
-new file mode 100644
-index 0000000..e8ef9e0
 --- /dev/null
 +++ b/drivers/staging/octeon/ethernet.c
 @@ -0,0 +1,507 @@
@@ -26620,9 +26401,6 @@ index 0000000..e8ef9e0
 +MODULE_DESCRIPTION("Cavium Networks Octeon ethernet driver.");
 +module_init(cvm_oct_init_module);
 +module_exit(cvm_oct_cleanup_module);
-diff --git a/drivers/staging/octeon/octeon-ethernet.h b/drivers/staging/octeon/octeon-ethernet.h
-new file mode 100644
-index 0000000..b319907
 --- /dev/null
 +++ b/drivers/staging/octeon/octeon-ethernet.h
 @@ -0,0 +1,127 @@
@@ -26753,6 +26531,3 @@ index 0000000..b319907
 +extern struct net_device *cvm_oct_device[];
 +
 +#endif
--- 
-1.6.0.6
-
