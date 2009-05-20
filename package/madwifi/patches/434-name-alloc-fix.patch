@@ -1,0 +1,30 @@
+diff -ur madwifi-trunk-r3314/ath/if_ath_ahb.c madwifi-trunk-r3314.patched/ath/if_ath_ahb.c
+--- madwifi-trunk-r3314/ath/if_ath_ahb.c	2009-05-17 22:16:05.000000000 +0300
++++ madwifi-trunk-r3314.patched/ath/if_ath_ahb.c	2009-05-17 22:15:47.000000000 +0300
+@@ -376,6 +376,11 @@
+ 	SET_MODULE_OWNER(dev);
+ 	sclist[wlanNum] = sc;
+ 
++	if (dev_alloc_name(dev, dev->name) < 0) {
++		printk(KERN_ERR "%s: cannot allocate name\n", dev_info);
++		goto bad3;
++	}
++
+ 	switch (wlanNum) {
+ 	case AR531X_WLAN0_NUM:
+ 		if (((devid & AR5315_REV_MAJ_M) == AR5315_REV_MAJ) ||
+diff -ur madwifi-trunk-r3314/ath/if_ath_pci.c madwifi-trunk-r3314.patched/ath/if_ath_pci.c
+--- madwifi-trunk-r3314/ath/if_ath_pci.c	2009-05-17 22:16:05.000000000 +0300
++++ madwifi-trunk-r3314.patched/ath/if_ath_pci.c	2009-05-17 22:15:47.000000000 +0300
+@@ -209,6 +209,11 @@
+ 	 */
+ 	sc->aps_sc.sc_invalid = 1;
+ 
++	if (dev_alloc_name(dev, dev->name) < 0) {
++		printk(KERN_ERR "%s: cannot allocate name\n", dev_info);
++		goto bad3;
++	}
++
+ 	dev->irq = pdev->irq;
+ 
+ 	SET_MODULE_OWNER(dev);
