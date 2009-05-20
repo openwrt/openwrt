@@ -8,12 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
+ifneq ($(CONFIG_UCLIBC_VERSION_0_9_29),y)
 PKG_VERSION:=1.41.5
+PKG_MD5SUM:=e218df6c84fc17c1126d31de9472a76c
+else
+PKG_VERSION:=1.40.11
+PKG_MD5SUM:=004cea70d724fdc7f1a952dffe4c9db8
+endif
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
-PKG_MD5SUM:=e218df6c84fc17c1126d31de9472a76c
 
 include $(INCLUDE_DIR)/package.mk
 
