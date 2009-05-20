@@ -361,7 +361,7 @@ detect_atheros() {
 "
 			;;
 		esac
-		[ "$type" = atheros ] && return
+		[ "$type" = atheros ] && continue
 		cat <<EOF
 config wifi-device  $dev
 	option type     atheros
