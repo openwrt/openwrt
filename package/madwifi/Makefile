@@ -46,6 +46,8 @@ PKG_BUILD_DEPENDS:=wprobe
 
 include $(INCLUDE_DIR)/package.mk
 
+COMPRESSION:=1
+
 define Download/hal
   FILE:=$(HAL_FILE)
   URL:=http://mirror2.openwrt.org/sources
@@ -197,6 +199,7 @@ MAKE_ARGS:= \
 	KERNELPATH="$(LINUX_DIR)" \
 	LDOPTS="--no-warn-mismatch " \
 	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
+	ATH_CAP_SUPERG_COMP="$(COMPRESSION)" \
 	DO_MULTI=1 \
 	INCS="$(MADWIFI_INC)" \
 	$(if $(CONFIG_MADWIFI_DEBUG),,DEBUG=) WARNINGS="-Wno-unused"
