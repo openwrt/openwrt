@@ -281,14 +281,14 @@ start_interface() {
 		return 1 
 	}
 	config_get upload "$iface" upload
-	config_get halfduplex "$iface" halfduplex
+	config_get_bool halfduplex "$iface" halfduplex
 	config_get download "$iface" download
 	config_get classgroup "$iface" classgroup
 	config_get_bool overhead "$iface" overhead 0
 	
 	download="${download:-${halfduplex:+$upload}}"
 	enum_classes "$classgroup"
-	for dir in up${halfduplex} ${download:+down}; do
+	for dir in ${halfduplex:-up} ${download:+down}; do
 		case "$dir" in
 			up)
 				[ "$overhead" = 1 ] && upload=$(($upload * 98 / 100 - (15 * 128 / $upload)))
@@ -298,7 +298,7 @@ start_interface() {
 				prefix="cls"
 			;;
 			down)
-				add_insmod imq numdevs="$num_imq"
+				[ "$(ls -d /proc/sys/net/ipv4/conf/imq* 2>&- | wc -l)" -ne "$num_imq" ] && add_insmod imq numdevs="$num_imq"
 				config_get imqdev "$iface" imqdev
 				[ "$overhead" = 1 ] && download=$(($download * 98 / 100 - (80 * 1024 / $download)))
 				dev="imq$imqdev"
