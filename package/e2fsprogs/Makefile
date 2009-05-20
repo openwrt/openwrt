@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-ifneq ($(CONFIG_UCLIBC_VERSION_0_9_29),y)
+ifneq ($(findstring "0.9.29",$(CONFIG_UCLIBC_VERSION)),"0.9.29")
 PKG_VERSION:=1.41.5
 PKG_MD5SUM:=e218df6c84fc17c1126d31de9472a76c
 else
