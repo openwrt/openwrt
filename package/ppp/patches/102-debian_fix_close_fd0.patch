@@ -1,0 +1,40 @@
+diff -Naur ppp-2.4.4.orig/pppd/main.c ppp-2.4.4/pppd/main.c
+--- ppp-2.4.4.orig/pppd/main.c	2009-05-07 15:49:34.000000000 -0400
++++ ppp-2.4.4/pppd/main.c	2009-05-07 15:53:42.000000000 -0400
+@@ -1570,6 +1570,8 @@
+ 	if (errfd == 0 || errfd == 1)
+ 		errfd = dup(errfd);
+ 
++	closelog();
++
+ 	/* dup the in, out, err fds to 0, 1, 2 */
+ 	if (infd != 0)
+ 		dup2(infd, 0);
+@@ -1578,7 +1580,6 @@
+ 	if (errfd != 2)
+ 		dup2(errfd, 2);
+ 
+-	closelog();
+ 	if (log_to_fd > 2)
+ 		close(log_to_fd);
+ 	if (the_channel->close)
+diff -Naur ppp-2.4.4.orig/pppd/main.c ppp-2.4.4/pppd/main.c
+--- ppp-2.4.4.orig/pppd/main.c	2009-05-07 15:49:34.000000000 -0400
++++ ppp-2.4.4/pppd/main.c	2009-05-07 15:53:42.000000000 -0400
+@@ -1570,6 +1570,8 @@
+ 	if (errfd == 0 || errfd == 1)
+ 		errfd = dup(errfd);
+ 
++	closelog();
++
+ 	/* dup the in, out, err fds to 0, 1, 2 */
+ 	if (infd != 0)
+ 		dup2(infd, 0);
+@@ -1578,7 +1580,6 @@
+ 	if (errfd != 2)
+ 		dup2(errfd, 2);
+ 
+-	closelog();
+ 	if (log_to_fd > 2)
+ 		close(log_to_fd);
+ 	if (the_channel->close)
