@@ -1,0 +1,24 @@
+diff -Naur ppp-2.4.4.orig/pppd/chap_ms.c ppp-2.4.4/pppd/chap_ms.c
+--- ppp-2.4.4.orig/pppd/chap_ms.c	2006-05-21 07:56:40.000000000 -0400
++++ ppp-2.4.4/pppd/chap_ms.c	2009-05-07 16:13:09.000000000 -0400
+@@ -852,7 +852,7 @@
+     u_char *p = &response[MS_CHAP2_PEER_CHALLENGE];
+     int i;
+ 
+-    BZERO(response, sizeof(*response));
++    BZERO(response, MS_CHAP2_RESPONSE_LEN);
+ 
+     /* Generate the Peer-Challenge if requested, or copy it if supplied. */
+     if (!PeerChallenge)
+diff -Naur ppp-2.4.4.orig/pppd/chap_ms.c ppp-2.4.4/pppd/chap_ms.c
+--- ppp-2.4.4.orig/pppd/chap_ms.c	2006-05-21 07:56:40.000000000 -0400
++++ ppp-2.4.4/pppd/chap_ms.c	2009-05-07 16:13:09.000000000 -0400
+@@ -852,7 +852,7 @@
+     u_char *p = &response[MS_CHAP2_PEER_CHALLENGE];
+     int i;
+ 
+-    BZERO(response, sizeof(*response));
++    BZERO(response, MS_CHAP2_RESPONSE_LEN);
+ 
+     /* Generate the Peer-Challenge if requested, or copy it if supplied. */
+     if (!PeerChallenge)

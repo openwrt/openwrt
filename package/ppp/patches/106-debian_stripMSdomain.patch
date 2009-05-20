@@ -1,0 +1,70 @@
+diff -Naur ppp-2.4.4.orig/pppd/chap-new.c ppp-2.4.4/pppd/chap-new.c
+--- ppp-2.4.4.orig/pppd/chap-new.c	2005-07-13 06:41:58.000000000 -0400
++++ ppp-2.4.4/pppd/chap-new.c	2009-05-07 16:18:37.000000000 -0400
+@@ -57,6 +57,7 @@
+ int chap_timeout_time = 3;
+ int chap_max_transmits = 10;
+ int chap_rechallenge_time = 0;
++int chapms_strip_domain = 0;
+ 
+ /*
+  * Command-line options.
+@@ -68,6 +69,8 @@
+ 	  "Set max #xmits for challenge", OPT_PRIO },
+ 	{ "chap-interval", o_int, &chap_rechallenge_time,
+ 	  "Set interval for rechallenge", OPT_PRIO },
++	{ "chapms-strip-domain", o_bool, &chapms_strip_domain,
++	  "Strip the domain prefix before the Username", 1 },
+ 	{ NULL }
+ };
+ 
+@@ -335,6 +338,14 @@
+ 			/* Null terminate and clean remote name. */
+ 			slprintf(rname, sizeof(rname), "%.*v", len, name);
+ 			name = rname;
++
++			/* strip the MS domain name */
++			if (chapms_strip_domain && strrchr(rname, '\\')) {
++				char tmp[MAXNAMELEN+1];
++
++				strcpy(tmp, strrchr(rname, '\\') + 1);
++				strcpy(rname, tmp);
++			}
+ 		}
+ 
+ 		if (chap_verify_hook)
+diff -Naur ppp-2.4.4.orig/pppd/chap-new.c ppp-2.4.4/pppd/chap-new.c
+--- ppp-2.4.4.orig/pppd/chap-new.c	2005-07-13 06:41:58.000000000 -0400
++++ ppp-2.4.4/pppd/chap-new.c	2009-05-07 16:18:37.000000000 -0400
+@@ -57,6 +57,7 @@
+ int chap_timeout_time = 3;
+ int chap_max_transmits = 10;
+ int chap_rechallenge_time = 0;
++int chapms_strip_domain = 0;
+ 
+ /*
+  * Command-line options.
+@@ -68,6 +69,8 @@
+ 	  "Set max #xmits for challenge", OPT_PRIO },
+ 	{ "chap-interval", o_int, &chap_rechallenge_time,
+ 	  "Set interval for rechallenge", OPT_PRIO },
++	{ "chapms-strip-domain", o_bool, &chapms_strip_domain,
++	  "Strip the domain prefix before the Username", 1 },
+ 	{ NULL }
+ };
+ 
+@@ -335,6 +338,14 @@
+ 			/* Null terminate and clean remote name. */
+ 			slprintf(rname, sizeof(rname), "%.*v", len, name);
+ 			name = rname;
++
++			/* strip the MS domain name */
++			if (chapms_strip_domain && strrchr(rname, '\\')) {
++				char tmp[MAXNAMELEN+1];
++
++				strcpy(tmp, strrchr(rname, '\\') + 1);
++				strcpy(rname, tmp);
++			}
+ 		}
+ 
+ 		if (chap_verify_hook)
