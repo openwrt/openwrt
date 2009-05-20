@@ -131,6 +131,7 @@ extern unsigned long ar71xx_mach_type;
 #define AR71XX_MACH_UBNT_RSPRO	17	/* Ubiquiti RouterStation Pro */
 #define AR71XX_MACH_AP81	18	/* Atheros AP81 */
 #define AR71XX_MACH_WRT400N	19	/* Linksys WRT400N */
+#define AR71XX_MACH_PB44	20	/* Atheros PB44 */
 
 /*
  * PLL block

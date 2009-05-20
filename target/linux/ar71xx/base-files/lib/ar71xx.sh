@@ -25,6 +25,9 @@ ar71xx_board_name() {
 	*PB42)
 		name="pb42"
 		;;
+	*PB44)
+		name="pb44"
+		;;
 	*RB-411)
 		name="rb-411"
 		;;
