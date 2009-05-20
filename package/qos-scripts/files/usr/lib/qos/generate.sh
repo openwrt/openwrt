@@ -1,12 +1,21 @@
 #!/bin/sh
 [ -e /etc/functions.sh ] && . /etc/functions.sh || . ./functions.sh
-[ -x /sbin/modprobe ] && insmod="modprobe" || insmod="insmod"
+[ -x /sbin/modprobe ] && {
+	insmod="modprobe"
+	rmmod="$insmod -r"
+} || {
+	insmod="insmod"
+	rmmod="rmmod"
+}
 
 add_insmod() {
 	eval "export isset=\${insmod_$1}"
 	case "$isset" in
 		1) ;;
-		*) append INSMOD "$insmod $* >&- 2>&-" "$N"; export insmod_$1=1;;
+		*) {
+			[ "$2" ] && append INSMOD "$rmmod $1 >&- 2>&-" "$N"
+			append INSMOD "$insmod $* >&- 2>&-" "$N"; export insmod_$1=1
+		};;
 	esac
 }
 
