@@ -56,7 +56,7 @@
  	struct ieee80211_spy iv_spy;         		/* IWSPY support */
  	struct ieee80211_app_ie app_ie[IEEE80211_APPIE_NUM_OF_FRAME]; /* app-specified IEs by frame type */
  	u_int32_t app_filter;				/* filters which management frames are forwarded to app */
-+	int iv_maxrateindex;
++	u_int iv_maxrateindex;
  };
  
  /* Debug functions need the defintion of struct ieee80211vap because iv_debug 
