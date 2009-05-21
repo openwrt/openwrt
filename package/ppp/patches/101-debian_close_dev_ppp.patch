@@ -15,20 +15,3 @@ diff -Naur ppp-2.4.4.orig/pppd/sys-linux.c ppp-2.4.4/pppd/sys-linux.c
  	/* Open an instance of /dev/ppp and connect the channel to it */
  	if (ioctl(fd, PPPIOCGCHAN, &chindex) == -1) {
  	    error("Couldn't get channel number: %m");
-diff -Naur ppp-2.4.4.orig/pppd/sys-linux.c ppp-2.4.4/pppd/sys-linux.c
---- ppp-2.4.4.orig/pppd/sys-linux.c	2005-08-26 18:44:35.000000000 -0400
-+++ ppp-2.4.4/pppd/sys-linux.c	2009-05-07 15:50:00.000000000 -0400
-@@ -453,6 +453,13 @@
-     if (new_style_driver) {
- 	int flags;
- 
-+        /* if a ppp_fd is already open, close it first */
-+        if(ppp_fd > 0) {
-+          close(ppp_fd);
-+          remove_fd(ppp_fd);
-+          ppp_fd = -1;
-+        }
-+
- 	/* Open an instance of /dev/ppp and connect the channel to it */
- 	if (ioctl(fd, PPPIOCGCHAN, &chindex) == -1) {
- 	    error("Couldn't get channel number: %m");
