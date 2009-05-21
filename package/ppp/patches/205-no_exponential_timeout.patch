@@ -26,31 +26,3 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
      } while (conn->discoveryState == STATE_SENT_PADR);
  
      /* We're done. */
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugins/rp-pppoe/discovery.c
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c	2009-05-07 19:47:30.000000000 -0400
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/discovery.c	2009-05-07 20:23:04.000000000 -0400
-@@ -593,12 +593,14 @@
- 	conn->discoveryState = STATE_SENT_PADI;
- 	waitForPADO(conn, timeout);
- 
-+#if 0
- 	/* If we're just probing for access concentrators, don't do
- 	   exponential backoff.  This reduces the time for an unsuccessful
- 	   probe to 15 seconds. */
- 	if (!conn->printACNames) {
- 	    timeout *= 2;
- 	}
-+#endif
- 	if (conn->printACNames && conn->numPADOs) {
- 	    break;
- 	}
-@@ -621,7 +623,9 @@
- 	sendPADR(conn);
- 	conn->discoveryState = STATE_SENT_PADR;
- 	waitForPADS(conn, timeout);
-+#if 0
- 	timeout *= 2;
-+#endif
-     } while (conn->discoveryState == STATE_SENT_PADR);
- 
-     /* We're done. */

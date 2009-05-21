@@ -24,29 +24,3 @@ diff -Naur ppp-2.4.4.orig/pppdump/Makefile.linux ppp-2.4.4/pppdump/Makefile.linu
  OBJS = pppdump.o bsd-comp.o deflate.o zlib.o
  
  INSTALL= install
-diff -Naur ppp-2.4.4.orig/pppd/plugins/radius/Makefile.linux ppp-2.4.4/pppd/plugins/radius/Makefile.linux
---- ppp-2.4.4.orig/pppd/plugins/radius/Makefile.linux	2009-05-07 18:05:57.000000000 -0400
-+++ ppp-2.4.4/pppd/plugins/radius/Makefile.linux	2009-05-07 18:06:23.000000000 -0400
-@@ -12,7 +12,8 @@
- INSTALL	= install
- 
- PLUGIN=radius.so radattr.so radrealms.so
--CFLAGS=-I. -I../.. -I../../../include -O2 -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
-+COPTS = -O2
-+CFLAGS=-I. -I../.. -I../../../include $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
- 
- # Uncomment the next line to include support for Microsoft's
- # MS-CHAP authentication protocol.
-diff -Naur ppp-2.4.4.orig/pppdump/Makefile.linux ppp-2.4.4/pppdump/Makefile.linux
---- ppp-2.4.4.orig/pppdump/Makefile.linux	2009-05-07 18:05:57.000000000 -0400
-+++ ppp-2.4.4/pppdump/Makefile.linux	2009-05-07 18:06:23.000000000 -0400
-@@ -2,7 +2,8 @@
- BINDIR = $(DESTDIR)/sbin
- MANDIR = $(DESTDIR)/share/man/man8
- 
--CFLAGS= -O -I../include/net
-+COPTS = -O
-+CFLAGS= $(COPTS) -I../include/net
- OBJS = pppdump.o bsd-comp.o deflate.o zlib.o
- 
- INSTALL= install
