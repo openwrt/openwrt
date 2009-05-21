@@ -46,7 +46,7 @@ static struct ar71xx_pci_irq pb44_pci_irqs[] __initdata = {
 	}
 };
 
-#define PB44_WAN_PHYMASK	BIT(1)
+#define PB44_WAN_PHYMASK	BIT(0)
 #define PB44_LAN_PHYMASK	0
 #define PB44_MDIO_PHYMASK	(PB44_LAN_PHYMASK | PB44_WAN_PHYMASK)
 
@@ -63,7 +63,7 @@ static void __init pb44_init(void)
 	ar71xx_add_device_eth(0);
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth1_data.phy_mask = PB44_WAN_PHYMASK;
+	ar71xx_eth1_data.phy_mask = PB44_LAN_PHYMASK;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
