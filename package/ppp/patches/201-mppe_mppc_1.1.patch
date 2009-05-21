@@ -1,6 +1,5 @@
-diff -Naur ppp-2.4.4.orig/include/linux/ppp-comp.h ppp-2.4.4/include/linux/ppp-comp.h
---- ppp-2.4.4.orig/include/linux/ppp-comp.h	2009-05-09 03:44:09.000000000 -0400
-+++ ppp-2.4.4/include/linux/ppp-comp.h	2009-05-09 03:45:52.000000000 -0400
+--- a/include/linux/ppp-comp.h
++++ b/include/linux/ppp-comp.h
 @@ -36,7 +36,7 @@
   */
  
@@ -10,7 +9,7 @@ diff -Naur ppp-2.4.4.orig/include/linux/ppp-comp.h ppp-2.4.4/include/linux/ppp-c
   *
   *  NOTE TO MAINTAINERS:
   *     If you modify this file at all, please set the above date.
-@@ -86,7 +86,7 @@
+@@ -86,7 +86,7 @@ struct compressor {
  
  	/* Compress a packet */
  	int     (*compress) (void *state, unsigned char *rptr,
@@ -19,7 +18,7 @@ diff -Naur ppp-2.4.4.orig/include/linux/ppp-comp.h ppp-2.4.4/include/linux/ppp-c
  
  	/* Return compression statistics */
  	void	(*comp_stat) (void *state, struct compstat *stats);
-@@ -107,7 +107,7 @@
+@@ -107,7 +107,7 @@ struct compressor {
  
  	/* Decompress a packet. */
  	int	(*decompress) (void *state, unsigned char *ibuf, int isize,
@@ -28,7 +27,7 @@ diff -Naur ppp-2.4.4.orig/include/linux/ppp-comp.h ppp-2.4.4/include/linux/ppp-c
  
  	/* Update state for an incompressible packet received */
  	void	(*incomp) (void *state, unsigned char *ibuf, int icnt);
-@@ -288,6 +288,33 @@
+@@ -288,6 +288,33 @@ struct compressor {
  	    opts |= MPPE_OPT_UNKNOWN;		\
      } while (/* CONSTCOND */ 0)
  
@@ -62,10 +61,9 @@ diff -Naur ppp-2.4.4.orig/include/linux/ppp-comp.h ppp-2.4.4/include/linux/ppp-c
  /*
   * Definitions for other, as yet unsupported, compression methods.
   */
-diff -Naur ppp-2.4.4.orig/include/net/ppp-comp.h ppp-2.4.4/include/net/ppp-comp.h
---- ppp-2.4.4.orig/include/net/ppp-comp.h	2009-05-09 03:44:09.000000000 -0400
-+++ ppp-2.4.4/include/net/ppp-comp.h	2009-05-09 03:45:52.000000000 -0400
-@@ -255,6 +255,33 @@
+--- a/include/net/ppp-comp.h
++++ b/include/net/ppp-comp.h
+@@ -255,6 +255,33 @@ struct compressor {
  	    opts |= MPPE_OPT_UNKNOWN;		\
      } while (/* CONSTCOND */ 0)
  
@@ -99,10 +97,9 @@ diff -Naur ppp-2.4.4.orig/include/net/ppp-comp.h ppp-2.4.4/include/net/ppp-comp.
  /*
   * Definitions for other, as yet unsupported, compression methods.
   */
-diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
---- ppp-2.4.4.orig/pppd/ccp.c	2009-05-09 03:44:09.000000000 -0400
-+++ ppp-2.4.4/pppd/ccp.c	2009-05-09 03:45:52.000000000 -0400
-@@ -62,12 +62,10 @@
+--- a/pppd/ccp.c
++++ b/pppd/ccp.c
+@@ -62,12 +62,10 @@ static int setdeflate __P((char **));
  static char bsd_value[8];
  static char deflate_value[8];
  
@@ -118,7 +115,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  
  static option_t ccp_option_list[] = {
      { "noccp", o_bool, &ccp_protent.enabled_flag,
-@@ -108,54 +106,36 @@
+@@ -108,54 +106,36 @@ static option_t ccp_option_list[] = {
        "don't allow Predictor-1", OPT_ALIAS | OPT_PRIOSUB | OPT_A2CLR,
        &ccp_allowoptions[0].predictor_1 },
  
@@ -202,7 +199,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  #endif /* MPPE */
  
      { NULL }
-@@ -241,7 +221,7 @@
+@@ -241,7 +221,7 @@ static fsm_callbacks ccp_callbacks = {
   */
  #define ANY_COMPRESS(opt)	((opt).deflate || (opt).bsd_compress \
  				 || (opt).predictor_1 || (opt).predictor_2 \
@@ -211,7 +208,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  
  /*
   * Local state (mainly for handling reset-reqs and reset-acks).
-@@ -344,6 +324,100 @@
+@@ -344,6 +324,100 @@ setdeflate(argv)
      return 1;
  }
  
@@ -312,7 +309,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  /*
   * ccp_init - initialize CCP.
   */
-@@ -378,6 +452,30 @@
+@@ -378,6 +452,30 @@ ccp_init(unit)
      ccp_allowoptions[0].bsd_bits = BSD_MAX_BITS;
  
      ccp_allowoptions[0].predictor_1 = 1;
@@ -343,7 +340,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  }
  
  /*
-@@ -455,11 +553,11 @@
+@@ -455,11 +553,11 @@ ccp_input(unit, p, len)
      if (oldstate == OPENED && p[0] == TERMREQ && f->state != OPENED) {
  	notice("Compression disabled by peer.");
  #ifdef MPPE
@@ -357,7 +354,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      }
  
      /*
-@@ -487,6 +585,15 @@
+@@ -487,6 +585,15 @@ ccp_extcode(f, code, id, p, len)
  	    break;
  	/* send a reset-ack, which the transmitter will see and
  	   reset its compression state. */
@@ -373,7 +370,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  	fsm_sdata(f, CCP_RESETACK, id, NULL, 0);
  	break;
  
-@@ -515,12 +622,11 @@
+@@ -515,12 +622,11 @@ ccp_protrej(unit)
      fsm_lowerdown(&ccp_fsm[unit]);
  
  #ifdef MPPE
@@ -388,7 +385,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  }
  
  /*
-@@ -537,7 +643,7 @@
+@@ -537,7 +643,7 @@ ccp_resetci(f)
      all_rejected[f->unit] = 0;
  
  #ifdef MPPE
@@ -397,7 +394,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  	ccp_options *ao = &ccp_allowoptions[f->unit];
  	int auth_mschap_bits = auth_done[f->unit];
  	int numbits;
-@@ -551,80 +657,109 @@
+@@ -551,80 +657,109 @@ ccp_resetci(f)
  	 * NB: If MPPE is required, all other compression opts are invalid.
  	 *     So, we return right away if we can't do it.
  	 */
@@ -573,7 +570,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      if (go->bsd_compress) {
  	opt_buf[0] = CI_BSD_COMPRESS;
  	opt_buf[1] = CILEN_BSD_COMPRESS;
-@@ -679,7 +814,8 @@
+@@ -679,7 +814,8 @@ ccp_cilen(f)
  	+ (go->deflate? CILEN_DEFLATE: 0)
  	+ (go->predictor_1? CILEN_PREDICTOR_1: 0)
  	+ (go->predictor_2? CILEN_PREDICTOR_2: 0)
@@ -583,7 +580,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  }
  
  /*
-@@ -693,6 +829,8 @@
+@@ -693,6 +829,8 @@ ccp_addci(f, p, lenp)
  {
      int res;
      ccp_options *go = &ccp_gotoptions[f->unit];
@@ -592,7 +589,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      u_char *p0 = p;
  
      /*
-@@ -701,22 +839,43 @@
+@@ -701,22 +839,43 @@ ccp_addci(f, p, lenp)
       * in case it gets Acked.
       */
  #ifdef MPPE
@@ -645,7 +642,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      if (go->deflate) {
  	p[0] = go->deflate_correct? CI_DEFLATE: CI_DEFLATE_DRAFT;
  	p[1] = CILEN_DEFLATE;
-@@ -802,7 +961,7 @@
+@@ -802,7 +961,7 @@ ccp_addci(f, p, lenp)
  
  /*
   * ccp_ackci - process a received configure-ack, and return
@@ -654,7 +651,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
   */
  static int
  ccp_ackci(f, p, len)
-@@ -811,24 +970,44 @@
+@@ -811,24 +970,44 @@ ccp_ackci(f, p, len)
      int len;
  {
      ccp_options *go = &ccp_gotoptions[f->unit];
@@ -708,7 +705,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      if (go->deflate) {
  	if (len < CILEN_DEFLATE
  	    || p[0] != (go->deflate_correct? CI_DEFLATE: CI_DEFLATE_DRAFT)
-@@ -891,7 +1070,7 @@
+@@ -891,7 +1070,7 @@ ccp_ackci(f, p, len)
  
  /*
   * ccp_nakci - process received configure-nak.
@@ -717,7 +714,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
   */
  static int
  ccp_nakci(f, p, len, treat_as_reject)
-@@ -901,6 +1080,8 @@
+@@ -901,6 +1080,8 @@ ccp_nakci(f, p, len, treat_as_reject)
      int treat_as_reject;
  {
      ccp_options *go = &ccp_gotoptions[f->unit];
@@ -726,7 +723,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      ccp_options no;		/* options we've seen already */
      ccp_options try;		/* options to ask for next time */
  
-@@ -908,28 +1089,100 @@
+@@ -908,28 +1089,100 @@ ccp_nakci(f, p, len, treat_as_reject)
      try = *go;
  
  #ifdef MPPE
@@ -845,7 +842,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      if (go->deflate && len >= CILEN_DEFLATE
  	&& p[0] == (go->deflate_correct? CI_DEFLATE: CI_DEFLATE_DRAFT)
  	&& p[1] == CILEN_DEFLATE) {
-@@ -1002,14 +1255,50 @@
+@@ -1002,14 +1255,50 @@ ccp_rejci(f, p, len)
  	return -1;
  
  #ifdef MPPE
@@ -900,7 +897,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      if (go->deflate_correct && len >= CILEN_DEFLATE
  	&& p[0] == CI_DEFLATE && p[1] == CILEN_DEFLATE) {
  	if (p[2] != DEFLATE_MAKE_OPT(go->deflate_size)
-@@ -1073,14 +1362,15 @@
+@@ -1073,14 +1362,15 @@ ccp_reqci(f, p, lenp, dont_nak)
      int dont_nak;
  {
      int ret, newret, res;
@@ -920,7 +917,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  
      ret = CONFACK;
      retp = p0 = p;
-@@ -1103,106 +1393,302 @@
+@@ -1103,106 +1393,302 @@ ccp_reqci(f, p, lenp, dont_nak)
  	    switch (type) {
  #ifdef MPPE
  	    case CI_MPPE:
@@ -1316,7 +1313,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  	    case CI_DEFLATE:
  	    case CI_DEFLATE_DRAFT:
  		if (!ao->deflate || clen != CILEN_DEFLATE
-@@ -1344,12 +1830,6 @@
+@@ -1344,12 +1830,6 @@ ccp_reqci(f, p, lenp, dont_nak)
  	else
  	    *lenp = retp - p0;
      }
@@ -1329,7 +1326,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      return ret;
  }
  
-@@ -1371,24 +1851,35 @@
+@@ -1371,24 +1851,35 @@ method_name(opt, opt2)
  	char *p = result;
  	char *q = result + sizeof(result); /* 1 past result */
  
@@ -1381,7 +1378,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
      case CI_DEFLATE:
      case CI_DEFLATE_DRAFT:
  	if (opt2 != NULL && opt2->deflate_size != opt->deflate_size)
-@@ -1444,12 +1935,12 @@
+@@ -1444,12 +1935,12 @@ ccp_up(f)
      } else if (ANY_COMPRESS(*ho))
  	notice("%s transmit compression enabled", method_name(ho, NULL));
  #ifdef MPPE
@@ -1396,7 +1393,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  }
  
  /*
-@@ -1472,7 +1963,7 @@
+@@ -1472,7 +1963,7 @@ ccp_down(f)
  	    lcp_close(f->unit, "MPPE disabled");
  	}
      }
@@ -1405,7 +1402,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  }
  
  /*
-@@ -1532,24 +2023,28 @@
+@@ -1532,24 +2023,28 @@ ccp_printpkt(p, plen, printer, arg)
  #ifdef MPPE
  	    case CI_MPPE:
  		if (optlen >= CILEN_MPPE) {
@@ -1446,7 +1443,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  	    case CI_DEFLATE:
  	    case CI_DEFLATE_DRAFT:
  		if (optlen >= CILEN_DEFLATE) {
-@@ -1635,6 +2130,7 @@
+@@ -1635,6 +2130,7 @@ ccp_datainput(unit, pkt, len)
  	    error("Lost compression sync: disabling compression");
  	    ccp_close(unit, "Lost compression sync");
  #ifdef MPPE
@@ -1454,7 +1451,7 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  	    /*
  	     * If we were doing MPPE, we must also take the link down.
  	     */
-@@ -1642,9 +2138,18 @@
+@@ -1642,9 +2138,18 @@ ccp_datainput(unit, pkt, len)
  		error("Too many MPPE errors, closing LCP");
  		lcp_close(unit, "Too many MPPE errors");
  	    }
@@ -1474,15 +1471,14 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.c ppp-2.4.4/pppd/ccp.c
  	     * Send a reset-request to reset the peer's compressor.
  	     * We don't do that if we are still waiting for an
  	     * acknowledgement to a previous reset-request.
-@@ -1675,4 +2180,3 @@
+@@ -1675,4 +2180,3 @@ ccp_rack_timeout(arg)
      } else
  	ccp_localstate[f->unit] &= ~RACK_PENDING;
  }
 -
-diff -Naur ppp-2.4.4.orig/pppd/ccp.h ppp-2.4.4/pppd/ccp.h
---- ppp-2.4.4.orig/pppd/ccp.h	2009-05-09 03:44:09.000000000 -0400
-+++ ppp-2.4.4/pppd/ccp.h	2009-05-09 03:45:52.000000000 -0400
-@@ -37,9 +37,17 @@
+--- a/pppd/ccp.h
++++ b/pppd/ccp.h
+@@ -37,9 +37,17 @@ typedef struct ccp_options {
      bool predictor_2;		/* do Predictor-2? */
      bool deflate_correct;	/* use correct code for deflate? */
      bool deflate_draft;		/* use draft RFC code for deflate? */
@@ -1500,10 +1496,9 @@ diff -Naur ppp-2.4.4.orig/pppd/ccp.h ppp-2.4.4/pppd/ccp.h
      short method;		/* code for chosen compression method */
  } ccp_options;
  
-diff -Naur ppp-2.4.4.orig/pppd/chap_ms.c ppp-2.4.4/pppd/chap_ms.c
---- ppp-2.4.4.orig/pppd/chap_ms.c	2009-05-09 03:45:07.000000000 -0400
-+++ ppp-2.4.4/pppd/chap_ms.c	2009-05-09 03:45:52.000000000 -0400
-@@ -897,13 +897,17 @@
+--- a/pppd/chap_ms.c
++++ b/pppd/chap_ms.c
+@@ -897,13 +897,17 @@ set_mppe_enc_types(int policy, int types
      /*
       * Disable undesirable encryption types.  Note that we don't ENABLE
       * any encryption types, to avoid overriding manual configuration.

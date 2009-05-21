@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/Makefile.linux ppp-2.4.4/pppd/Makefile.linux
---- ppp-2.4.4.orig/pppd/Makefile.linux	2009-05-08 23:17:17.000000000 -0400
-+++ ppp-2.4.4/pppd/Makefile.linux	2009-05-08 23:18:37.000000000 -0400
-@@ -48,21 +48,21 @@
+--- a/pppd/Makefile.linux
++++ b/pppd/Makefile.linux
+@@ -48,21 +48,21 @@ MPPE=y
  # Uncomment the next line to include support for PPP packet filtering.
  # This requires that the libpcap library and headers be installed
  # and that the kernel driver support PPP packet filtering.
@@ -28,7 +27,7 @@ diff -Naur ppp-2.4.4.orig/pppd/Makefile.linux ppp-2.4.4/pppd/Makefile.linux
  
  # Enable plugins
  PLUGIN=y
-@@ -77,7 +77,7 @@
+@@ -77,7 +77,7 @@ MAXOCTETS=y
  
  INCLUDE_DIRS= -I../include
  
@@ -37,7 +36,7 @@ diff -Naur ppp-2.4.4.orig/pppd/Makefile.linux ppp-2.4.4/pppd/Makefile.linux
  
  CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
  
-@@ -117,10 +117,10 @@
+@@ -117,10 +117,10 @@ CFLAGS   += -DHAS_SHADOW
  #LIBS     += -lshadow $(LIBS)
  endif
  

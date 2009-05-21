@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/plugins/radius/config.c ppp-2.4.4/pppd/plugins/radius/config.c
---- ppp-2.4.4.orig/pppd/plugins/radius/config.c	2004-11-14 02:26:26.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/radius/config.c	2009-05-07 19:31:14.000000000 -0400
-@@ -369,31 +369,37 @@
+--- a/pppd/plugins/radius/config.c
++++ b/pppd/plugins/radius/config.c
+@@ -369,31 +369,37 @@ static int test_config(char *filename)
  	}
  #endif
  
@@ -39,10 +38,9 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/radius/config.c ppp-2.4.4/pppd/plugins/ra
  
  	return 0;
  }
-diff -Naur ppp-2.4.4.orig/pppd/plugins/radius/options.h ppp-2.4.4/pppd/plugins/radius/options.h
---- ppp-2.4.4.orig/pppd/plugins/radius/options.h	2004-11-14 02:26:26.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/radius/options.h	2009-05-07 19:31:14.000000000 -0400
-@@ -31,24 +31,21 @@
+--- a/pppd/plugins/radius/options.h
++++ b/pppd/plugins/radius/options.h
+@@ -31,24 +31,21 @@ typedef struct _option {
  static SERVER acctserver = {0};
  static SERVER authserver = {0};
  

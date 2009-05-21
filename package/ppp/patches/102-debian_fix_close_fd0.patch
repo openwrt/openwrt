@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/main.c ppp-2.4.4/pppd/main.c
---- ppp-2.4.4.orig/pppd/main.c	2009-05-07 15:49:34.000000000 -0400
-+++ ppp-2.4.4/pppd/main.c	2009-05-07 15:53:42.000000000 -0400
-@@ -1570,6 +1570,8 @@
+--- a/pppd/main.c
++++ b/pppd/main.c
+@@ -1570,6 +1570,8 @@ safe_fork(int infd, int outfd, int errfd
  	if (errfd == 0 || errfd == 1)
  		errfd = dup(errfd);
  
@@ -10,7 +9,7 @@ diff -Naur ppp-2.4.4.orig/pppd/main.c ppp-2.4.4/pppd/main.c
  	/* dup the in, out, err fds to 0, 1, 2 */
  	if (infd != 0)
  		dup2(infd, 0);
-@@ -1578,7 +1580,6 @@
+@@ -1578,7 +1580,6 @@ safe_fork(int infd, int outfd, int errfd
  	if (errfd != 2)
  		dup2(errfd, 2);
  

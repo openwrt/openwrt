@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/sys-linux.c ppp-2.4.4/pppd/sys-linux.c
---- ppp-2.4.4.orig/pppd/sys-linux.c	2005-08-26 18:44:35.000000000 -0400
-+++ ppp-2.4.4/pppd/sys-linux.c	2009-05-07 15:50:00.000000000 -0400
-@@ -453,6 +453,13 @@
+--- a/pppd/sys-linux.c
++++ b/pppd/sys-linux.c
+@@ -453,6 +453,13 @@ int generic_establish_ppp (int fd)
      if (new_style_driver) {
  	int flags;
  
