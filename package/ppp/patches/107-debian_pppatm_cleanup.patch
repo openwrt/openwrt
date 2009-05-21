@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/pppoatm/pppoatm.c
---- ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c	2006-05-21 08:44:41.000000000 -0400
-+++ ppp-2.4.4/pppd/plugins/pppoatm/pppoatm.c	2009-05-07 16:22:22.000000000 -0400
-@@ -70,18 +70,20 @@
+--- a/pppd/plugins/pppoatm/pppoatm.c
++++ b/pppd/plugins/pppoatm/pppoatm.c
+@@ -70,18 +70,20 @@ static int setdevname_pppoatm(const char
  {
  	struct sockaddr_atmpvc addr;
  	extern struct stat devstat;
@@ -29,7 +28,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/
  	memcpy(&pvcaddr, &addr, sizeof pvcaddr);
  	strlcpy(devnam, cp, sizeof devnam);
  	devstat.st_mode = S_IFSOCK;
-@@ -93,7 +95,6 @@
+@@ -93,7 +95,6 @@ static int setdevname_pppoatm(const char
  		lcp_allowoptions[0].neg_asyncmap = 0;
  		lcp_wantoptions[0].neg_pcompression = 0;
  	}
@@ -37,7 +36,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/
  	device_got_set = 1;
  	return 1;
  }
-@@ -108,6 +109,7 @@
+@@ -108,6 +109,7 @@ static void no_device_given_pppoatm(void
  static void set_line_discipline_pppoatm(int fd)
  {
  	struct atm_backend_ppp be;
@@ -45,7 +44,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/
  	be.backend_num = ATM_BACKEND_PPP;
  	if (!llc_encaps)
  		be.encaps = PPPOATM_ENCAPS_VC;
-@@ -115,6 +117,7 @@
+@@ -115,6 +117,7 @@ static void set_line_discipline_pppoatm(
  		be.encaps = PPPOATM_ENCAPS_LLC;
  	else
  		be.encaps = PPPOATM_ENCAPS_AUTODETECT;
@@ -53,7 +52,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/
  	if (ioctl(fd, ATM_SETBACKEND, &be) < 0)
  		fatal("ioctl(ATM_SETBACKEND): %m");
  }
-@@ -175,16 +178,19 @@
+@@ -175,16 +178,19 @@ static void send_config_pppoa(int mtu,
  {
  	int sock;
  	struct ifreq ifr;
@@ -74,7 +73,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/
  }
  
  static void recv_config_pppoa(int mru,
-@@ -198,7 +204,7 @@
+@@ -198,7 +204,7 @@ static void recv_config_pppoa(int mru,
  
  void plugin_init(void)
  {
@@ -83,7 +82,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/
  	extern int new_style_driver;	/* From sys-linux.c */
  	if (!ppp_available() && !new_style_driver)
  		fatal("Kernel doesn't support ppp_generic - "
-@@ -206,9 +212,9 @@
+@@ -206,9 +212,9 @@ void plugin_init(void)
  #else
  	fatal("No PPPoATM support on this OS");
  #endif

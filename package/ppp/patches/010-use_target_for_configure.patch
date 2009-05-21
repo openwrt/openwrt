@@ -2,11 +2,9 @@
 	Use values exported from $(TOPDIR)/rules.mk for determining
 	the target system instead of the host configuration
 
-Index: ppp-2.4.3/configure
-===================================================================
---- ppp-2.4.3.orig/configure	2007-06-04 13:22:08.549555552 +0200
-+++ ppp-2.4.3/configure	2007-06-04 13:22:08.618545064 +0200
-@@ -8,9 +8,9 @@
+--- a/configure
++++ b/configure
+@@ -8,9 +8,9 @@ SYSCONF=/etc
  #  if [ -d /NextApps ]; then
  #    system="NeXTStep"
  #  else

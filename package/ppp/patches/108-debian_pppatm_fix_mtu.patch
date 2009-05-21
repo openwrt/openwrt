@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/pppoatm/pppoatm.c
---- ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c	2009-05-07 16:23:41.000000000 -0400
-+++ ppp-2.4.4/pppd/plugins/pppoatm/pppoatm.c	2009-05-07 16:23:57.000000000 -0400
-@@ -179,8 +179,11 @@
+--- a/pppd/plugins/pppoatm/pppoatm.c
++++ b/pppd/plugins/pppoatm/pppoatm.c
+@@ -179,8 +179,11 @@ static void send_config_pppoa(int mtu,
  	int sock;
  	struct ifreq ifr;
  
@@ -15,7 +14,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.4/pppd/plugins/
  
  	sock = socket(AF_INET, SOCK_DGRAM, 0);
  	if (sock < 0)
-@@ -198,8 +201,11 @@
+@@ -198,8 +201,11 @@ static void recv_config_pppoa(int mru,
  			      int pcomp,
  			      int accomp)
  {

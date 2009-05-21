@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/rp-pppoe/common.c
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c	2004-02-01 22:36:46.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/common.c	2009-05-07 17:01:46.000000000 -0400
-@@ -18,10 +18,6 @@
+--- a/pppd/plugins/rp-pppoe/common.c
++++ b/pppd/plugins/rp-pppoe/common.c
+@@ -18,10 +18,6 @@ static char const RCSID[] =
  
  #include "pppoe.h"
  
@@ -12,7 +11,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  #include <string.h>
  #include <errno.h>
  #include <stdlib.h>
-@@ -50,17 +46,17 @@
+@@ -50,17 +46,17 @@ parsePacket(PPPoEPacket *packet, ParseFu
      UINT16_t tagType, tagLen;
  
      if (packet->ver != 1) {
@@ -33,7 +32,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  	return -1;
      }
  
-@@ -76,7 +72,7 @@
+@@ -76,7 +72,7 @@ parsePacket(PPPoEPacket *packet, ParseFu
  	    return 0;
  	}
  	if ((curTag - packet->payload) + tagLen + TAG_HDR_SIZE > len) {
@@ -42,7 +41,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  	    return -1;
  	}
  	func(tagType, tagLen, curTag+TAG_HDR_SIZE, extra);
-@@ -105,17 +101,17 @@
+@@ -105,17 +101,17 @@ findTag(PPPoEPacket *packet, UINT16_t ty
      UINT16_t tagType, tagLen;
  
      if (packet->ver != 1) {
@@ -63,7 +62,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  	return NULL;
      }
  
-@@ -131,7 +127,7 @@
+@@ -131,7 +127,7 @@ findTag(PPPoEPacket *packet, UINT16_t ty
  	    return NULL;
  	}
  	if ((curTag - packet->payload) + tagLen + TAG_HDR_SIZE > len) {
@@ -72,7 +71,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  	    return NULL;
  	}
  	if (tagType == type) {
-@@ -143,6 +139,7 @@
+@@ -143,6 +139,7 @@ findTag(PPPoEPacket *packet, UINT16_t ty
      return NULL;
  }
  
@@ -80,7 +79,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  /**********************************************************************
  *%FUNCTION: printErr
  *%ARGUMENTS:
-@@ -158,6 +155,7 @@
+@@ -158,6 +155,7 @@ printErr(char const *str)
      fprintf(stderr, "pppoe: %s\n", str);
      syslog(LOG_ERR, "%s", str);
  }
@@ -88,7 +87,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  
  
  /**********************************************************************
-@@ -172,7 +170,7 @@
+@@ -172,7 +170,7 @@ strDup(char const *str)
  {
      char *copy = malloc(strlen(str)+1);
      if (!copy) {
@@ -97,7 +96,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
      }
      strcpy(copy, str);
      return copy;
-@@ -467,9 +465,10 @@
+@@ -467,9 +465,10 @@ sendPADT(PPPoEConnection *conn, char con
  	fprintf(conn->debugFile, "\n");
  	fflush(conn->debugFile);
      }
@@ -109,16 +108,15 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/common.c ppp-2.4.4/pppd/plugins/
  /**********************************************************************
  *%FUNCTION: parseLogErrs
  *%ARGUMENTS:
-@@ -501,4 +500,5 @@
+@@ -501,4 +500,5 @@ parseLogErrs(UINT16_t type, UINT16_t len
  	break;
      }
  }
 +#endif
  
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugins/rp-pppoe/discovery.c
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c	2005-03-22 05:22:32.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/discovery.c	2009-05-07 17:01:46.000000000 -0400
-@@ -13,10 +13,6 @@
+--- a/pppd/plugins/rp-pppoe/discovery.c
++++ b/pppd/plugins/rp-pppoe/discovery.c
+@@ -13,10 +13,6 @@ static char const RCSID[] =
  
  #include "pppoe.h"
  
@@ -129,7 +127,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
  #include <string.h>
  #include <stdlib.h>
  #include <errno.h>
-@@ -167,24 +163,21 @@
+@@ -167,24 +163,21 @@ parsePADOTags(UINT16_t type, UINT16_t le
  	if (conn->printACNames) {
  	    printf("Got a Service-Name-Error tag: %.*s\n", (int) len, data);
  	} else {
@@ -157,7 +155,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
  	}
  	break;
      }
-@@ -209,20 +202,14 @@
+@@ -209,20 +202,14 @@ parsePADSTags(UINT16_t type, UINT16_t le
      PPPoEConnection *conn = (PPPoEConnection *) extra;
      switch(type) {
      case TAG_SERVICE_NAME:
@@ -182,7 +180,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
      case TAG_RELAY_SESSION_ID:
  	conn->relayId.type = htons(type);
  	conn->relayId.length = htons(len);
-@@ -336,7 +323,7 @@
+@@ -336,7 +323,7 @@ waitForPADO(PPPoEConnection *conn, int t
  		if (r >= 0 || errno != EINTR) break;
  	    }
  	    if (r < 0) {
@@ -191,7 +189,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
  	    }
  	    if (r == 0) return;        /* Timed out */
  	}
-@@ -346,8 +333,7 @@
+@@ -346,8 +333,7 @@ waitForPADO(PPPoEConnection *conn, int t
  
  	/* Check length */
  	if (ntohs(packet.length) + HDR_SIZE > len) {
@@ -201,7 +199,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
  	    continue;
  	}
  
-@@ -366,16 +352,16 @@
+@@ -366,16 +352,16 @@ waitForPADO(PPPoEConnection *conn, int t
  
  	if (packet.code == CODE_PADO) {
  	    if (BROADCAST(packet.ethHdr.h_source)) {
@@ -221,7 +219,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
  		continue;
  	    }
  	    conn->numPADOs++;
-@@ -513,7 +499,7 @@
+@@ -513,7 +499,7 @@ waitForPADS(PPPoEConnection *conn, int t
  		if (r >= 0 || errno != EINTR) break;
  	    }
  	    if (r < 0) {
@@ -230,7 +228,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
  	    }
  	    if (r == 0) return;
  	}
-@@ -523,8 +509,7 @@
+@@ -523,8 +509,7 @@ waitForPADS(PPPoEConnection *conn, int t
  
  	/* Check length */
  	if (ntohs(packet.length) + HDR_SIZE > len) {
@@ -240,7 +238,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
  	    continue;
  	}
  
-@@ -556,11 +541,12 @@
+@@ -556,11 +541,12 @@ waitForPADS(PPPoEConnection *conn, int t
      /* Don't bother with ntohs; we'll just end up converting it back... */
      conn->session = packet.session;
  
@@ -255,7 +253,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
      }
  }
  
-@@ -620,7 +606,7 @@
+@@ -620,7 +606,7 @@ discovery(PPPoEConnection *conn)
  
      /* If we're only printing access concentrator names, we're done */
      if (conn->printACNames) {
@@ -264,10 +262,9 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/discovery.c ppp-2.4.4/pppd/plugi
      }
  
      timeout = PADI_TIMEOUT;
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-pppoe/if.c
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c	2001-12-13 21:55:20.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/if.c	2009-05-07 17:01:46.000000000 -0400
-@@ -40,10 +40,6 @@
+--- a/pppd/plugins/rp-pppoe/if.c
++++ b/pppd/plugins/rp-pppoe/if.c
+@@ -40,10 +40,6 @@ static char const RCSID[] =
  #include <sys/ioctl.h>
  #endif
  
@@ -278,7 +275,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  #include <errno.h>
  #include <stdlib.h>
  #include <string.h>
-@@ -127,7 +123,7 @@
+@@ -127,7 +123,7 @@ etherType(PPPoEPacket *packet)
  {
      UINT16_t type = (UINT16_t) ntohs(packet->ethHdr.h_proto);
      if (type != Eth_PPPOE_Discovery && type != Eth_PPPOE_Session) {
@@ -287,7 +284,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
      return type;
  }
-@@ -156,7 +152,7 @@
+@@ -156,7 +152,7 @@ getHWaddr(int sock, char const *ifname, 
      ifc.ifc_len = sizeof(inbuf);
      ifc.ifc_buf = inbuf;
      if (ioctl(sock, SIOCGIFCONF, &ifc) < 0) {
@@ -296,7 +293,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
      ifr = ifc.ifc_req;
      ifreq.ifr_name[0] = '\0';
-@@ -172,9 +168,7 @@
+@@ -172,9 +168,7 @@ getHWaddr(int sock, char const *ifname, 
  	        (sdl->sdl_alen == ETH_ALEN) &&
  		!strncmp(ifname, ifr->ifr_name, sizeof(ifr->ifr_name))) {
  		if (found) {
@@ -307,7 +304,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  		} else {
  		    found = 1;
  	            memcpy(hwaddr, LLADDR(sdl), ETH_ALEN);
-@@ -183,9 +177,7 @@
+@@ -183,9 +177,7 @@ getHWaddr(int sock, char const *ifname, 
  	}
      }
      if (!found) {
@@ -318,7 +315,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  }
  
-@@ -252,7 +244,7 @@
+@@ -252,7 +244,7 @@ initFilter(int fd, UINT16_t type, unsign
        
        /* Apply the filter */
        if (ioctl(fd, BIOCSETF, &bpfProgram) < 0) {
@@ -327,7 +324,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
        }
      }
  }
-@@ -298,42 +290,36 @@
+@@ -298,42 +290,36 @@ openInterface(char const *ifname, UINT16
      if (fd < 0) {
  	switch (errno) {
  	case EACCES:		/* permission denied */
@@ -378,7 +375,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
      getHWaddr(sock, ifname, hwaddr);
      initFilter(fd, type, hwaddr);
-@@ -342,58 +328,52 @@
+@@ -342,58 +328,52 @@ openInterface(char const *ifname, UINT16
  #if !defined(__OpenBSD__)
      strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
      if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
@@ -448,7 +445,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  	   ifname, 
  	   hwaddr[0], hwaddr[1], hwaddr[2],
  	   hwaddr[3], hwaddr[4], hwaddr[5],
-@@ -442,48 +422,41 @@
+@@ -442,48 +422,41 @@ openInterface(char const *ifname, UINT16
      if ((fd = socket(domain, stype, htons(type))) < 0) {
  	/* Give a more helpful message for the common error case */
  	if (errno == EPERM) {
@@ -507,7 +504,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  
  #ifdef HAVE_STRUCT_SOCKADDR_LL
-@@ -493,7 +466,7 @@
+@@ -493,7 +466,7 @@ openInterface(char const *ifname, UINT16
  
      strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
      if (ioctl(fd, SIOCGIFINDEX, &ifr) < 0) {
@@ -516,7 +513,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
      sa.sll_ifindex = ifr.ifr_ifindex;
  
-@@ -503,7 +476,7 @@
+@@ -503,7 +476,7 @@ openInterface(char const *ifname, UINT16
  
      /* We're only interested in packets on specified interface */
      if (bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
@@ -525,7 +522,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  
      return fd;
-@@ -527,13 +500,11 @@
+@@ -527,13 +500,11 @@ sendPacket(PPPoEConnection *conn, int so
  {
  #if defined(USE_BPF)
      if (write(sock, pkt, size) < 0) {
@@ -541,7 +538,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  #else
  #ifdef USE_DLPI
-@@ -577,12 +548,11 @@
+@@ -577,12 +548,11 @@ sendPacket(PPPoEConnection *conn, int so
      struct sockaddr sa;
  
      if (!conn) {
@@ -556,7 +553,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  #endif
  #endif
-@@ -632,26 +602,24 @@
+@@ -632,26 +602,24 @@ receivePacket(int sock, PPPoEPacket *pkt
      if (bpfSize <= 0) {
  	bpfOffset = 0;
  	if ((bpfSize = read(sock, bpfBuffer, bpfLength)) < 0) {
@@ -587,7 +584,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  	clearPacketHeader(pkt);		/* resets bpfSize and bpfOffset */
  	return 0;
      }
-@@ -676,16 +644,14 @@
+@@ -676,16 +644,14 @@ receivePacket(int sock, PPPoEPacket *pkt
  	data.len = 0; 
  	
  	if ((retval = getmsg(sock, NULL, &data, &flags)) < 0) {
@@ -606,7 +603,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  #endif
  #endif
-@@ -716,7 +682,7 @@
+@@ -716,7 +682,7 @@ openInterface(char const *ifname, UINT16
      int ppa; 
  
      if(strlen(ifname) > PATH_MAX) {
@@ -615,7 +612,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  
      ppa = atoi(&ifname[strlen(ifname)-1]);
-@@ -729,9 +695,9 @@
+@@ -729,9 +695,9 @@ openInterface(char const *ifname, UINT16
      if (( fd = open(base_dev, O_RDWR)) < 0) {
  	/* Give a more helpful message for the common error case */
  	if (errno == EPERM) {
@@ -627,7 +624,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
      }
  
  /* rearranged order of DLPI code - delphys 20010803 */
-@@ -747,17 +713,18 @@
+@@ -747,17 +713,18 @@ openInterface(char const *ifname, UINT16
      dl_abssaplen = ABS(dlp->info_ack.dl_sap_length);
      dl_saplen = dlp->info_ack.dl_sap_length;
      if (ETHERADDRL != (dlp->info_ack.dl_addr_length - dl_abssaplen))
@@ -649,7 +646,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  
      return fd;
  }
-@@ -780,7 +747,7 @@
+@@ -780,7 +747,7 @@ void dlpromisconreq(int fd, u_long level
          flags = 0;
  
          if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
@@ -658,7 +655,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  
  }
  
-@@ -799,7 +766,7 @@
+@@ -799,7 +766,7 @@ void dlinforeq(int fd)
          flags = RS_HIPRI;
  
          if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
@@ -667,7 +664,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  }
  
  void dlunitdatareq(int fd, u_char *addrp, int addrlen, u_long minpri, u_long maxpri, u_char *datap, int datalen)
-@@ -827,7 +794,7 @@
+@@ -827,7 +794,7 @@ void dlunitdatareq(int fd, u_char *addrp
          data.buf = (char *) datap;
  
          if (putmsg(fd, &ctl, &data, 0) < 0)
@@ -676,7 +673,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  }
  
  void dlinfoack(int fd, char *bufp)
-@@ -847,18 +814,14 @@
+@@ -847,18 +814,14 @@ void dlinfoack(int fd, char *bufp)
          expecting(DL_INFO_ACK, dlp);
  
          if (ctl.len < sizeof (dl_info_ack_t)) {
@@ -698,7 +695,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  	}
  }
  
-@@ -882,7 +845,7 @@
+@@ -882,7 +845,7 @@ void dlbindreq(int fd, u_long sap, u_lon
          flags = 0;
  
          if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
@@ -707,7 +704,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  }
  
  void dlattachreq(int fd, u_long ppa)
-@@ -901,7 +864,7 @@
+@@ -901,7 +864,7 @@ void dlattachreq(int fd, u_long ppa)
          flags = 0;
  
          if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
@@ -716,7 +713,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  }
  
  void dlokack(int fd, char *bufp)
-@@ -921,18 +884,14 @@
+@@ -921,18 +884,14 @@ void dlokack(int fd, char *bufp)
          expecting(DL_OK_ACK, dlp);
  
          if (ctl.len < sizeof (dl_ok_ack_t)) { 
@@ -738,7 +735,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  	}
  }
  
-@@ -953,12 +912,10 @@
+@@ -953,12 +912,10 @@ void dlbindack(int fd, char *bufp)
          expecting(DL_BIND_ACK, dlp);
  
          if (flags != RS_HIPRI)
@@ -753,7 +750,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  	}
  }
  
-@@ -989,8 +946,7 @@
+@@ -989,8 +946,7 @@ void strgetmsg(int fd, struct strbuf *ct
           */
          (void) signal(SIGALRM, sigalrm);
          if (alarm(MAXWAIT) < 0) {
@@ -763,7 +760,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
          }
  
          /*
-@@ -998,61 +954,48 @@
+@@ -998,61 +954,48 @@ void strgetmsg(int fd, struct strbuf *ct
           */
          *flagsp = 0;
          if ((rc = getmsg(fd, ctlp, datap, flagsp)) < 0) {
@@ -833,10 +830,9 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/if.c ppp-2.4.4/pppd/plugins/rp-p
  	}
  }
  
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/Makefile.linux ppp-2.4.4/pppd/plugins/rp-pppoe/Makefile.linux
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/Makefile.linux	2006-06-04 01:07:46.000000000 -0400
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/Makefile.linux	2009-05-07 17:01:46.000000000 -0400
-@@ -28,8 +28,8 @@
+--- a/pppd/plugins/rp-pppoe/Makefile.linux
++++ b/pppd/plugins/rp-pppoe/Makefile.linux
+@@ -28,8 +28,8 @@ COPTS=-O2 -g
  CFLAGS=$(COPTS) -I../../../include/linux
  all: rp-pppoe.so pppoe-discovery
  
@@ -847,10 +843,9 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/Makefile.linux ppp-2.4.4/pppd/pl
  
  pppoe-discovery.o: pppoe-discovery.c
  	$(CC) $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o pppoe-discovery.o pppoe-discovery.c
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.4/pppd/plugins/rp-pppoe/plugin.c
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/plugin.c	2006-05-29 19:29:16.000000000 -0400
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/plugin.c	2009-05-07 17:01:46.000000000 -0400
-@@ -35,7 +35,6 @@
+--- a/pppd/plugins/rp-pppoe/plugin.c
++++ b/pppd/plugins/rp-pppoe/plugin.c
+@@ -35,7 +35,6 @@ static char const RCSID[] =
  #include "pppd/pathnames.h"
  
  #include <linux/types.h>
@@ -858,7 +853,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.4/pppd/plugins/
  #include <sys/ioctl.h>
  #include <sys/types.h>
  #include <sys/socket.h>
-@@ -173,10 +172,8 @@
+@@ -173,10 +172,8 @@ PPPOEConnectDevice(void)
  	    (unsigned) conn->peerEth[5]);
  
      if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
@@ -870,7 +865,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.4/pppd/plugins/
  
      return conn->sessionSocket;
  }
-@@ -320,11 +317,9 @@
+@@ -320,11 +317,9 @@ plugin_init(void)
      }
  
      add_options(Options);
@@ -883,7 +878,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.4/pppd/plugins/
  /**********************************************************************
  *%FUNCTION: fatalSys
  *%ARGUMENTS:
-@@ -378,6 +373,7 @@
+@@ -378,6 +373,7 @@ sysErr(char const *str)
  {
      rp_fatal(str);
  }
@@ -891,9 +886,8 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.4/pppd/plugins/
  
  void pppoe_check_options(void)
  {
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe-discovery.c ppp-2.4.4/pppd/plugins/rp-pppoe/pppoe-discovery.c
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe-discovery.c	2004-11-13 07:12:05.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/pppoe-discovery.c	2009-05-07 17:01:46.000000000 -0400
+--- a/pppd/plugins/rp-pppoe/pppoe-discovery.c
++++ b/pppd/plugins/rp-pppoe/pppoe-discovery.c
 @@ -17,14 +17,8 @@
  
  #include "pppoe.h"
@@ -909,7 +903,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe-discovery.c ppp-2.4.4/pppd
  int main(int argc, char *argv[])
  {
      int opt;
-@@ -32,17 +26,17 @@
+@@ -32,17 +26,17 @@ int main(int argc, char *argv[])
  
      conn = malloc(sizeof(PPPoEConnection));
      if (!conn)
@@ -930,7 +924,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe-discovery.c ppp-2.4.4/pppd
  	    break;
  	case 'U':
  	    conn->useHostUniq = 1;
-@@ -57,7 +51,7 @@
+@@ -57,7 +51,7 @@ int main(int argc, char *argv[])
  	    fprintf(conn->debugFile, "pppoe-discovery %s\n", VERSION);
  	    break;
  	case 'I':
@@ -939,7 +933,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe-discovery.c ppp-2.4.4/pppd
  	    break;
  	case 'A':
  	    /* this is the default */
-@@ -74,7 +68,7 @@
+@@ -74,7 +68,7 @@ int main(int argc, char *argv[])
  
      /* default interface name */
      if (!conn->ifName)
@@ -948,7 +942,7 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe-discovery.c ppp-2.4.4/pppd
  
      conn->discoverySocket = -1;
      conn->sessionSocket = -1;
-@@ -84,39 +78,6 @@
+@@ -84,39 +78,6 @@ int main(int argc, char *argv[])
      exit(0);
  }
  
@@ -988,10 +982,9 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe-discovery.c ppp-2.4.4/pppd
  void usage(void)
  {
      fprintf(stderr, "Usage: pppoe-discovery [options]\n");
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe.h ppp-2.4.4/pppd/plugins/rp-pppoe/pppoe.h
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe.h	2004-11-04 05:07:37.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/pppoe.h	2009-05-07 17:01:46.000000000 -0400
-@@ -307,12 +307,18 @@
+--- a/pppd/plugins/rp-pppoe/pppoe.h
++++ b/pppd/plugins/rp-pppoe/pppoe.h
+@@ -307,12 +307,18 @@ void discovery(PPPoEConnection *conn);
  unsigned char *findTag(PPPoEPacket *packet, UINT16_t tagType,
  		       PPPoETag *tag);
  
@@ -1011,9 +1004,8 @@ diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/pppoe.h ppp-2.4.4/pppd/plugins/r
          return; \
      } \
  } while(0)
-diff -Naur ppp-2.4.4.orig/pppd/plugins/rp-pppoe/utils.c ppp-2.4.4/pppd/plugins/rp-pppoe/utils.c
---- ppp-2.4.4.orig/pppd/plugins/rp-pppoe/utils.c	1969-12-31 19:00:00.000000000 -0500
-+++ ppp-2.4.4/pppd/plugins/rp-pppoe/utils.c	2009-05-07 17:01:46.000000000 -0400
+--- /dev/null
++++ b/pppd/plugins/rp-pppoe/utils.c
 @@ -0,0 +1,62 @@
 +#include <stdio.h>
 +#include <stdlib.h>

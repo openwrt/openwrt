@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/chap-new.c ppp-2.4.4/pppd/chap-new.c
---- ppp-2.4.4.orig/pppd/chap-new.c	2005-07-13 06:41:58.000000000 -0400
-+++ ppp-2.4.4/pppd/chap-new.c	2009-05-07 16:18:37.000000000 -0400
-@@ -57,6 +57,7 @@
+--- a/pppd/chap-new.c
++++ b/pppd/chap-new.c
+@@ -57,6 +57,7 @@ int (*chap_verify_hook)(char *name, char
  int chap_timeout_time = 3;
  int chap_max_transmits = 10;
  int chap_rechallenge_time = 0;
@@ -9,7 +8,7 @@ diff -Naur ppp-2.4.4.orig/pppd/chap-new.c ppp-2.4.4/pppd/chap-new.c
  
  /*
   * Command-line options.
-@@ -68,6 +69,8 @@
+@@ -68,6 +69,8 @@ static option_t chap_option_list[] = {
  	  "Set max #xmits for challenge", OPT_PRIO },
  	{ "chap-interval", o_int, &chap_rechallenge_time,
  	  "Set interval for rechallenge", OPT_PRIO },
@@ -18,7 +17,7 @@ diff -Naur ppp-2.4.4.orig/pppd/chap-new.c ppp-2.4.4/pppd/chap-new.c
  	{ NULL }
  };
  
-@@ -335,6 +338,14 @@
+@@ -335,6 +338,14 @@ chap_handle_response(struct chap_server_
  			/* Null terminate and clean remote name. */
  			slprintf(rname, sizeof(rname), "%.*v", len, name);
  			name = rname;

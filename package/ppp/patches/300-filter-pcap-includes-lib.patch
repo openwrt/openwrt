@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/Makefile.linux ppp-2.4.4/pppd/Makefile.linux
---- ppp-2.4.4.orig/pppd/Makefile.linux	2009-05-07 22:25:24.000000000 -0400
-+++ ppp-2.4.4/pppd/Makefile.linux	2009-05-07 22:28:44.000000000 -0400
-@@ -170,8 +170,8 @@
+--- a/pppd/Makefile.linux
++++ b/pppd/Makefile.linux
+@@ -170,8 +170,8 @@ endif
  
  ifdef FILTER
  ifneq ($(wildcard /usr/include/pcap-bpf.h),)

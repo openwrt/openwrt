@@ -1,7 +1,6 @@
-diff -Naur ppp-2.4.4.orig/pppd/main.c ppp-2.4.4/pppd/main.c
---- ppp-2.4.4.orig/pppd/main.c	2009-05-07 15:58:00.000000000 -0400
-+++ ppp-2.4.4/pppd/main.c	2009-05-07 15:58:19.000000000 -0400
-@@ -772,8 +772,7 @@
+--- a/pppd/main.c
++++ b/pppd/main.c
+@@ -772,8 +772,7 @@ detach()
  	/* update pid files if they have been written already */
  	if (pidfilename[0])
  	    create_pidfile(pid);
