@@ -370,7 +370,7 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 #else /* ifdef DEBUG */
 
 static inline void urb_print(struct admhcd *ahcd, struct urb * urb, char * str,
-	int small) {}
+	int small, int status) {}
 static inline void admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 	const struct ed *ed, int verbose) {}
 static inline void admhc_dump_td(const struct admhcd *ahcd, const char *label,
