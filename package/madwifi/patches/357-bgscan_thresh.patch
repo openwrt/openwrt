@@ -7,7 +7,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 --- a/net80211/ieee80211_ioctl.h
 +++ b/net80211/ieee80211_ioctl.h
 @@ -646,6 +646,7 @@ enum {
- 	IEEE80211_PARAM_MINRATE			= 76,	/* Maximum rate (by table index) */
+ 	IEEE80211_PARAM_MINRATE			= 76,	/* Minimum rate (by table index) */
  	IEEE80211_PARAM_PROTMODE_RSSI		= 77,	/* RSSI Threshold for enabling protection mode */
  	IEEE80211_PARAM_PROTMODE_TIMEOUT	= 78,	/* Timeout for expiring protection mode */
 +	IEEE80211_PARAM_BGSCAN_THRESH		= 79,	/* bg scan rssi threshold */

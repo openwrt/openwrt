@@ -62,7 +62,7 @@
  	IEEE80211_PARAM_BEACON_MISS_THRESH	= 73,	/* Beacon miss threshold (in beacons) */
  	IEEE80211_PARAM_BEACON_MISS_THRESH_MS	= 74,	/* Beacon miss threshold (in ms) */
  	IEEE80211_PARAM_MAXRATE			= 75,	/* Maximum rate (by table index) */
-+	IEEE80211_PARAM_MINRATE			= 76,	/* Maximum rate (by table index) */
++	IEEE80211_PARAM_MINRATE			= 76,	/* Minimum rate (by table index) */
  };
  
  #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)
@@ -71,8 +71,8 @@
 @@ -282,6 +282,7 @@ struct ieee80211vap {
  	struct ieee80211_app_ie app_ie[IEEE80211_APPIE_NUM_OF_FRAME]; /* app-specified IEs by frame type */
  	u_int32_t app_filter;				/* filters which management frames are forwarded to app */
- 	int iv_maxrateindex;
-+	int iv_minrateindex;
+ 	u_int iv_maxrateindex;
++	u_int iv_minrateindex;
  };
  
  /* Debug functions need the defintion of struct ieee80211vap because iv_debug 
