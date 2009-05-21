@@ -1,0 +1,11 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -313,7 +313,7 @@ ieee80211_input(struct ieee80211vap * va
+ 			if (type == IEEE80211_FC0_TYPE_DATA && ni == vap->iv_bss &&
+ 					!IEEE80211_ADDR_EQ(vap->iv_bss->ni_macaddr, wh->i_addr2)) {
+ 				/* Try to find sender in local node table. */
+-				ni = ieee80211_find_node(vap->iv_bss->ni_table, wh->i_addr2);
++				ni = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
+ 				if (ni == NULL) {
+ 					/*
+ 					 * Fake up a node for this newly discovered
