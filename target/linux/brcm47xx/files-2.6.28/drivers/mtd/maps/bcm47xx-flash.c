@@ -378,6 +378,7 @@ int __init init_bcm47xx_map(void)
 	printk("flash init: 0x%08x 0x%08x\n", window, window_size);
 	bcm47xx_map.phys = window;
 	bcm47xx_map.size = window_size;
+	bcm47xx_map.bankwidth = mcore->flash_buswidth;
 	bcm47xx_map.virt = ioremap_nocache(window, window_size);
 #else
 	printk("flash init: 0x%08x 0x%08x\n", WINDOW_ADDR, WINDOW_SIZE);
