@@ -713,7 +713,7 @@
 +MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -728,6 +728,12 @@ config CRYPTO_ZLIB
+@@ -758,6 +758,12 @@ config CRYPTO_ZLIB
  	help
  	  This is the zlib algorithm.
  
@@ -728,7 +728,7 @@
  	select CRYPTO_ALGAPI
 --- a/crypto/Makefile
 +++ b/crypto/Makefile
-@@ -73,6 +73,7 @@ obj-$(CONFIG_CRYPTO_SEED) += seed.o
+@@ -75,6 +75,7 @@ obj-$(CONFIG_CRYPTO_SEED) += seed.o
  obj-$(CONFIG_CRYPTO_SALSA20) += salsa20_generic.o
  obj-$(CONFIG_CRYPTO_DEFLATE) += deflate.o
  obj-$(CONFIG_CRYPTO_ZLIB) += zlib.o
