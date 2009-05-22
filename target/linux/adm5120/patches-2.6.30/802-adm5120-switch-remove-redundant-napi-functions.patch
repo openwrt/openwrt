@@ -1,0 +1,20 @@
+--- a/drivers/net/adm5120sw.c
++++ b/drivers/net/adm5120sw.c
+@@ -517,7 +517,7 @@ static int adm5120_if_poll(struct napi_s
+ 	status = sw_int_status() & SWITCH_INTS_POLL;
+ 	if ((done < limit) && (!status)) {
+ 		SW_DBG("disable polling mode for %s\n", dev->name);
+-		netif_rx_complete(dev, napi);
++		napi_complete(napi);
+ 		sw_int_unmask(SWITCH_INTS_POLL);
+ 		return 0;
+ 	}
+@@ -548,7 +548,7 @@ static irqreturn_t adm5120_switch_irq(in
+ 		sw_dump_intr_mask("poll ints", status);
+ 		SW_DBG("enable polling mode for %s\n", dev->name);
+ 		sw_int_mask(SWITCH_INTS_POLL);
+-		netif_rx_schedule(dev, &priv->napi);
++		napi_schedule(&priv->napi);
+ 	}
+ #else
+ 	sw_int_ack(status);
