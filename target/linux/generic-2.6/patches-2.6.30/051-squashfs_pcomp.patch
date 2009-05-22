@@ -201,7 +201,7 @@
  		goto failure;
  	}
  
-@@ -284,17 +311,18 @@ failed_mount:
+@@ -294,17 +321,18 @@ failed_mount:
  	kfree(msblk->inode_lookup_table);
  	kfree(msblk->fragment_index);
  	kfree(msblk->id_table);
@@ -223,7 +223,7 @@
  }
  
  
-@@ -333,7 +361,7 @@ static void squashfs_put_super(struct su
+@@ -346,7 +374,7 @@ static void squashfs_put_super(struct su
  		kfree(sbi->id_table);
  		kfree(sbi->fragment_index);
  		kfree(sbi->meta_index);
