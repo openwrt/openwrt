@@ -174,7 +174,6 @@ static const struct hc_driver adm5120_hc_driver = {
 	 */
 	.hub_status_data =	admhc_hub_status_data,
 	.hub_control =		admhc_hub_control,
-	.hub_irq_enable =	admhc_hub_irq_enable,
 #ifdef CONFIG_PM
 	.bus_suspend =		admhc_bus_suspend,
 	.bus_resume =		admhc_bus_resume,
