@@ -199,6 +199,7 @@ enable_broadcom() {
 				case "$enc" in
 					wpa*+wpa2*|WPA*+WPA2*|*psk+*psk2|*PSK+*PSK2) auth=132; wsec=6;;
 					wpa2*|WPA2*|*PSK2|*psk2) auth=128; wsec=4;;
+					*aes|*AES) auth=4; wsec=4;;
 					*) auth=4; wsec=2;;
 				esac
 				eval "${vif}_key=\"\$key\""
