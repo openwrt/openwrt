@@ -122,7 +122,7 @@ and automagic QoS-disabling.
  	} else {
  		b43info(dev->wl, "Loading firmware version %u.%u "
  			"(20%.2i-%.2i-%.2i %.2i:%.2i:%.2i)\n",
-@@ -3629,7 +3658,7 @@ static int b43_op_set_key(struct ieee802
+@@ -3627,7 +3656,7 @@ static int b43_op_set_key(struct ieee802
  	if (!dev || b43_status(dev) < B43_STAT_INITIALIZED)
  		goto out_unlock;
  
@@ -131,7 +131,7 @@ and automagic QoS-disabling.
  		/* We don't have firmware for the crypto engine.
  		 * Must use software-crypto. */
  		err = -EOPNOTSUPP;
-@@ -4737,6 +4766,7 @@ static int b43_wireless_init(struct ssb_
+@@ -4735,6 +4764,7 @@ static int b43_wireless_init(struct ssb_
  		b43err(NULL, "Could not allocate ieee80211 device\n");
  		goto out;
  	}
@@ -139,7 +139,7 @@ and automagic QoS-disabling.
  
  	/* fill hw info */
  	hw->flags = IEEE80211_HW_RX_INCLUDES_FCS |
-@@ -4750,7 +4780,8 @@ static int b43_wireless_init(struct ssb_
+@@ -4748,7 +4778,8 @@ static int b43_wireless_init(struct ssb_
  		BIT(NL80211_IFTYPE_WDS) |
  		BIT(NL80211_IFTYPE_ADHOC);
  
@@ -149,7 +149,7 @@ and automagic QoS-disabling.
  	hw->max_rates = 2;
  	SET_IEEE80211_DEV(hw, dev->dev);
  	if (is_valid_ether_addr(sprom->et1mac))
-@@ -4758,9 +4789,7 @@ static int b43_wireless_init(struct ssb_
+@@ -4756,9 +4787,7 @@ static int b43_wireless_init(struct ssb_
  	else
  		SET_IEEE80211_PERM_ADDR(hw, sprom->il0mac);
  
@@ -160,7 +160,7 @@ and automagic QoS-disabling.
  	wl->hw = hw;
  	spin_lock_init(&wl->irq_lock);
  	rwlock_init(&wl->tx_lock);
-@@ -4826,8 +4855,13 @@ static void b43_remove(struct ssb_device
+@@ -4824,8 +4853,13 @@ static void b43_remove(struct ssb_device
  	cancel_work_sync(&wldev->restart_work);
  
  	B43_WARN_ON(!wl);

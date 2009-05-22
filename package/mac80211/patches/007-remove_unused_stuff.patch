@@ -146,7 +146,7 @@
  
  CONFIG_RT2X00_LIB_PCI=m
  CONFIG_RT2400PCI=m
-@@ -227,16 +227,16 @@ CONFIG_RT61PCI=m
+@@ -227,24 +227,24 @@ CONFIG_RT61PCI=m
  NEED_RT2X00_FIRMWARE=y
  endif
  
@@ -161,13 +161,23 @@
  endif
  ## end of PCI
  
+ ifneq ($(CONFIG_PCMCIA),)
+ 
+-CONFIG_LIBERTAS_CS=m
+-NEED_LIBERTAS=y
++# CONFIG_LIBERTAS_CS=m
++# NEED_LIBERTAS=y
+ 
+ endif
+ ## end of PCMCIA
+ 
  # This is required for some cards
 -CONFIG_EEPROM_93CX6=m
 +# CONFIG_EEPROM_93CX6=m
  
  # USB Drivers
  ifneq ($(CONFIG_USB),)
-@@ -250,21 +250,21 @@ CONFIG_ZD1211RW=m
+@@ -258,21 +258,21 @@ CONFIG_ZD1211RW=m
  # is only wireless RNDIS chip known to date.
  # Note: this depends on CONFIG_USB_NET_RNDIS_HOST and CONFIG_USB_NET_CDCETHER
  # it also requires new RNDIS_HOST and CDC_ETHER modules which we add
@@ -196,7 +206,40 @@
  endif
  
  # RT2500USB does not require firmware
-@@ -306,20 +306,20 @@ CONFIG_ATH_COMMON=m
+@@ -286,24 +286,24 @@ CONFIG_RT73USB=m
+ NEED_RT2X00_FIRMWARE=y
+ endif
+ 
+-CONFIG_LIBERTAS_THINFIRM_USB=m
+-CONFIG_LIBERTAS_USB=m
+-NEED_LIBERTAS=y
++# CONFIG_LIBERTAS_THINFIRM_USB=m
++# CONFIG_LIBERTAS_USB=m
++# NEED_LIBERTAS=y
+ 
+ endif # end of USB driver list
+ 
+ ifneq ($(CONFIG_SPI_MASTER),)
+ 
+-CONFIG_WL12XX=m
+-CONFIG_LIBERTAS_SPI=m
+-NEED_LIBERTAS=y
++# CONFIG_WL12XX=m
++# CONFIG_LIBERTAS_SPI=m
++# NEED_LIBERTAS=y
+ 
+ endif # end of SPI driver list
+ 
+ ifneq ($(CONFIG_MMC),)
+ 
+-CONFIG_LIBERTAS_SDIO=m
+-NEED_LIBERTAS=y
++# CONFIG_LIBERTAS_SDIO=m
++# NEED_LIBERTAS=y
+ 
+ endif # end of SDIO driver list
+ 
+@@ -333,13 +333,13 @@ CONFIG_ATH_COMMON=m
  
  
  # Sonics Silicon Backplane
@@ -208,19 +251,9 @@
 +# CONFIG_SSB_SPROM=y
  # CONFIG_SSB_DEBUG=y
  
- ifneq ($(CONFIG_USB),)
- ifneq ($(CONFIG_LIBERTAS_THINFIRM_USB),m)
--CONFIG_LIBERTAS_USB=m
--NEED_LIBERTAS=y
-+# CONFIG_LIBERTAS_USB=m
-+# NEED_LIBERTAS=y
- endif
- endif
- ifneq ($(CONFIG_PCMCIA),)
--CONFIG_LIBERTAS_CS=m
--NEED_LIBERTAS=y
-+# CONFIG_LIBERTAS_CS=m
-+# NEED_LIBERTAS=y
- endif
  ifeq ($(NEED_LIBERTAS),y)
+-CONFIG_LIBERTAS_THINFIRM=m
++# CONFIG_LIBERTAS_THINFIRM=m
  CONFIG_LIBERTAS=m
+ # CONFIG_LIBERTAS_DEBUG=y
+ endif
