@@ -233,7 +233,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	/* Choose and compute the CRC32 that should be inserted in the tag */
 	/* and fill reserved tag following profile specification	   */
 	if ( profile && (strcmp(profile, "alice") == 0)) {
-		crc = compute_crc32(crc, binfile, kerneloff - fwaddr, kernellen);
+		crc = compute_crc32(crc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen);
 		/* Should fill alice_data and put them on reserved1 */
 	}
 	else {
