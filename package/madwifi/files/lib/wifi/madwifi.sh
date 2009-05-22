@@ -297,9 +297,6 @@ enable_atheros() {
 		config_get_bool ar "$vif" ar
 		[ -n "$ar" ] && iwpriv "$ifname" ar "$ar"
 
-		config_get_bool turbo "$vif" turbo
-		[ -n "$turbo" ] && iwpriv "$ifname" turbo "$turbo"
-
 		config_get_bool beacon_power "$vif" beacon_power
 		[ -n "$beacon_power" ] && iwpriv "$ifname" beacon_pwr "$beacon_power"
 
