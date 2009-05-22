@@ -46,7 +46,7 @@
 #include "../core/hcd.h"
 #include "../core/hub.h"
 
-#define DRIVER_VERSION	"0.25.0"
+#define DRIVER_VERSION	"0.27.0"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg@openwrt.org>"
 #define DRIVER_DESC	"ADMtek USB 1.1 Host Controller Driver"
 

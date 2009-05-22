@@ -63,20 +63,6 @@
 
 /*-------------------------------------------------------------------------*/
 
-/* hcd->hub_irq_enable() */
-static void admhc_hub_irq_enable(struct usb_hcd *hcd)
-{
-	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
-
-	spin_lock_irq(&ahcd->lock);
-	if (!ahcd->autostop)
-		del_timer(&hcd->rh_timer);	/* Prevent next poll */
-	admhc_intr_enable(ahcd, ADMHC_INTR_INSM);
-	spin_unlock_irq(&ahcd->lock);
-}
-
-/*-------------------------------------------------------------------------*/
-
 /* build "status change" packet (one or two bytes) from HC registers */
 
 static int
