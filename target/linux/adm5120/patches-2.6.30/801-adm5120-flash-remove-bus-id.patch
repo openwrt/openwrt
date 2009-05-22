@@ -1,0 +1,11 @@
+--- a/drivers/mtd/maps/adm5120-flash.c
++++ b/drivers/mtd/maps/adm5120-flash.c
+@@ -233,7 +233,7 @@ static int adm5120_flash_initinfo(struct
+ 	struct flash_desc *fdesc;
+ 	u32 t = 0;
+ 
+-	map->name = dev->dev.bus_id;
++	map->name = dev_name(&dev->dev);
+ 
+ 	if (dev->id > 1) {
+ 		MAP_ERR(map, "invalid flash id\n");

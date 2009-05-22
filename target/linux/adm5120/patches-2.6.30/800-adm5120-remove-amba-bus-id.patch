@@ -1,0 +1,18 @@
+--- a/arch/mips/adm5120/common/platform.c
++++ b/arch/mips/adm5120/common/platform.c
+@@ -190,7 +190,6 @@ struct amba_pl010_data adm5120_uart0_dat
+ 
+ struct amba_device adm5120_uart0_device = {
+ 	.dev		= {
+-		.bus_id	= "APB:UART0",
+ 		.platform_data = &adm5120_uart0_data,
+ 	},
+ 	.res		= {
+@@ -208,7 +207,6 @@ struct amba_pl010_data adm5120_uart1_dat
+ 
+ struct amba_device adm5120_uart1_device = {
+ 	.dev		= {
+-		.bus_id	= "APB:UART1",
+ 		.platform_data = &adm5120_uart1_data,
+ 	},
+ 	.res		= {
