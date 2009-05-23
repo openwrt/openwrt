@@ -24,7 +24,7 @@ ifneq ($(DUMP),1)
   ifeq ($(ARCH),x86_64)
     LIB_SUFFIX:=64
   endif
-  ifeq ($(ARCH),mips64)
+  ifneq ($(findstring mips64,$(ARCH)),)
     LIB_SUFFIX:=64
   endif
 else
