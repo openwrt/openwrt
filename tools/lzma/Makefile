@@ -24,9 +24,10 @@ define Host/Compile
 endef
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib $(STAGING_DIR_HOST)/include
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib $(STAGING_DIR_HOST)/include $(STAGING_DIR_HOST)/bin
 	$(CP) $(HOST_BUILD_DIR)/C/*.h $(STAGING_DIR_HOST)/include/
 	$(CP) $(UTIL_DIR)/liblzma.a $(STAGING_DIR_HOST)/lib/
+	$(CP) $(HOST_BUILD_DIR)/C/LzmaUtil/lzma $(STAGING_DIR_HOST)/bin/lzma-new
 endef
 
 define Host/Clean
