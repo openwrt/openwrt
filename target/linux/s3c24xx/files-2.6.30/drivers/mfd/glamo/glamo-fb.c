@@ -61,8 +61,7 @@ do { \
 } while (0);
 #endif
 
-
-#define RESSIZE(ressource) (((ressource)->end - (ressource)->start)+1)
+static void glamofb_program_mode(struct glamofb_handle* glamo);
 
 struct glamofb_handle {
 	struct fb_info *fb;
@@ -75,14 +74,47 @@ struct glamofb_handle {
 	int cursor_on;
 	u_int32_t pseudo_pal[16];
 	spinlock_t lock_cmd;
-	int angle;	/* Current rotation angle */
 	int blank_mode;
+	int mode_set; /* 0 if the current display mode hasn't been set on the glamo */
+	int output_enabled; /* 0 if the video output is disabled */
 };
 
 /* 'sibling' spi device for lcm init */
 static struct platform_device glamo_spi_dev = {
 	.name		= "glamo-lcm-spi",
 };
+
+static void glamo_output_enable(struct glamofb_handle *gfb) {
+        	struct glamo_core *gcore = gfb->mach_info->glamo;
+
+	if (gfb->output_enabled)
+		return;
+
+	/* enable the pixel clock if off */
+	glamo_engine_clkreg_set(gcore,
+		GLAMO_ENGINE_LCD,
+		GLAMO_CLOCK_LCD_EN_DCLK,
+		GLAMO_CLOCK_LCD_EN_DCLK);
+
+	gfb->output_enabled = 1;
+	if (!gfb->mode_set)
+		glamofb_program_mode(gfb);
+}
+
+static void glamo_output_disable(struct glamofb_handle *gfb) {
+	struct glamo_core *gcore = gfb->mach_info->glamo;
+
+	if (!gfb->output_enabled)
+		return;
+
+	/* enable the pixel clock if off */
+	glamo_engine_clkreg_set(gcore,
+		GLAMO_ENGINE_LCD,
+		GLAMO_CLOCK_LCD_EN_DCLK,
+		0);
+
+	gfb->output_enabled = 0;
+}
 
 
 static int reg_read(struct glamofb_handle *glamo,
@@ -129,8 +161,6 @@ static struct glamo_script glamo_regs[] = {
 	/* The following values assume 640*480@16bpp */
 	{ GLAMO_REG_LCD_A_BASE1, 0x0000 }, /* display A base address 15:0 */
 	{ GLAMO_REG_LCD_A_BASE2, 0x0000 }, /* display A base address 22:16 */
-	{ GLAMO_REG_LCD_B_BASE1, 0x6000 }, /* display B base address 15:0 */
-	{ GLAMO_REG_LCD_B_BASE2, 0x0009 }, /* display B base address 22:16 */
 	{ GLAMO_REG_LCD_CURSOR_BASE1, 0xC000 }, /* cursor base address 15:0 */
 	{ GLAMO_REG_LCD_CURSOR_BASE2, 0x0012 }, /* cursor base address 22:16 */
 	{ GLAMO_REG_LCD_COMMAND2, 0x0000 }, /* display page A */
@@ -174,20 +204,11 @@ static int glamofb_check_var(struct fb_var_screeninfo *var,
 		return -EBUSY;
 	}
 
-	if (var->yres > glamo->mach_info->yres.max)
-		var->yres = glamo->mach_info->yres.max;
-	else if (var->yres < glamo->mach_info->yres.min)
-		var->yres = glamo->mach_info->yres.min;
+	if (var->bits_per_pixel != 16)
+		var->bits_per_pixel = 16;
 
-	if (var->xres > glamo->mach_info->xres.max)
-		var->xres = glamo->mach_info->xres.max;
-	else if (var->xres < glamo->mach_info->xres.min)
-		var->xres = glamo->mach_info->xres.min;
-
-	if (var->bits_per_pixel > glamo->mach_info->bpp.max)
-		var->bits_per_pixel = glamo->mach_info->bpp.max;
-	else if (var->bits_per_pixel < glamo->mach_info->bpp.min)
-		var->bits_per_pixel = glamo->mach_info->bpp.min;
+	var->height = glamo->mach_info->height;
+	var->width = glamo->mach_info->width;
 
 	/* FIXME: set rgb positions */
 	switch (var->bits_per_pixel) {
@@ -259,8 +280,6 @@ static void reg_set_bit_mask(struct glamofb_handle *glamo,
 #define GLAMO_LCD_HV_RETR_DISP_START_MASK 0x03FF
 #define GLAMO_LCD_HV_RETR_DISP_END_MASK 0x03FF
 
-enum orientation {ORIENTATION_PORTRAIT, ORIENTATION_LANDSCAPE};
-
 /* the caller has to enxure lock_cmd is held and we are in cmd mode */
 static void __rotate_lcd(struct glamofb_handle *glamo, __u32 rotation)
 {
@@ -274,24 +293,16 @@ static void __rotate_lcd(struct glamofb_handle *glamo, __u32 rotation)
 	}
 
 	switch (rotation) {
-	case FB_ROTATE_UR:
-		glamo_rot = GLAMO_LCD_ROT_MODE_0;
-		glamo->angle = 0;
-		break;
 	case FB_ROTATE_CW:
 		glamo_rot = GLAMO_LCD_ROT_MODE_90;
-		glamo->angle = 90;
 		break;
 	case FB_ROTATE_UD:
 		glamo_rot = GLAMO_LCD_ROT_MODE_180;
-		glamo->angle = 180;
 		break;
 	case FB_ROTATE_CCW:
 		glamo_rot = GLAMO_LCD_ROT_MODE_270;
-		glamo->angle = 270;
 		break;
 	default:
-		glamo->angle = 0;
 		glamo_rot = GLAMO_LCD_ROT_MODE_0;
 		break;
 	}
@@ -307,155 +318,113 @@ static void __rotate_lcd(struct glamofb_handle *glamo, __u32 rotation)
 				 GLAMO_LCD_MODE1_ROTATE_EN : 0);
 }
 
-static enum orientation get_orientation(struct fb_var_screeninfo *var)
-{
-	if (var->xres <= var->yres)
-		return ORIENTATION_PORTRAIT;
-
-	return ORIENTATION_LANDSCAPE;
-}
-
-static int will_orientation_change(struct fb_var_screeninfo *var)
-{
-	enum orientation orient = get_orientation(var);
-
-	switch (orient) {
-	case ORIENTATION_LANDSCAPE:
-		if (var->rotate == FB_ROTATE_UR || var->rotate == FB_ROTATE_UD)
-			return 1;
-		break;
-	case ORIENTATION_PORTRAIT:
-		if (var->rotate == FB_ROTATE_CW || var->rotate == FB_ROTATE_CCW)
-			return 1;
-		break;
-	}
-	return 0;
-}
-
-static void glamofb_update_lcd_controller(struct glamofb_handle *glamo,
-					  struct fb_var_screeninfo *var)
-{
-	int sync, bp, disp, fp, total, xres, yres, pitch;
-	int uninitialized_var(orientation_changing);
+static void glamofb_program_mode(struct glamofb_handle* gfb) {
+	int sync, bp, disp, fp, total;
 	unsigned long flags;
+	struct glamo_core *gcore = gfb->mach_info->glamo;
+	struct fb_var_screeninfo *var = &gfb->fb->var;
 
-	if (!glamo || !var)
-		return;
+	dev_dbg(&gcore->pdev->dev,
+			  "glamofb_program_mode spin_lock_irqsave\n");
+	spin_lock_irqsave(&gfb->lock_cmd, flags);
 
-	if (glamo->mach_info->glamo->suspending) {
-		dev_err(&glamo->mach_info->glamo->pdev->dev,
-				"IGNORING glamofb_update_lcd_controller while "
-								 "suspended\n");
-		return;
-	}
-
-	dev_dbg(&glamo->mach_info->glamo->pdev->dev,
-			  "glamofb_update_lcd_controller spin_lock_irqsave\n");
-	spin_lock_irqsave(&glamo->lock_cmd, flags);
-
-	if (glamofb_cmd_mode(glamo, 1))
+	if (glamofb_cmd_mode(gfb, 1))
 		goto out_unlock;
 
-/*	if (var->pixclock)
-		glamo_engine_reclock(glamo->mach_info->glamo,
+	if (var->pixclock)
+		glamo_engine_reclock(gcore,
 				     GLAMO_ENGINE_LCD,
-				     var->pixclock);*/
+				     gfb->fb->var.pixclock);
 
-	xres = var->xres;
-	yres = var->yres;
-
-    orientation_changing = will_orientation_change(var);
-	/* Adjust the pitch according to new orientation to come. */
-	if (orientation_changing)
-		pitch = var->yres * var->bits_per_pixel / 8;
-	else
-		pitch = var->xres * var->bits_per_pixel / 8;
-
-	reg_set_bit_mask(glamo,
+	reg_set_bit_mask(gfb,
 			 GLAMO_REG_LCD_WIDTH,
 			 GLAMO_LCD_WIDTH_MASK,
-			 xres);
-	reg_set_bit_mask(glamo,
+			 var->xres);
+	reg_set_bit_mask(gfb,
 			 GLAMO_REG_LCD_HEIGHT,
 			 GLAMO_LCD_HEIGHT_MASK,
-			 yres);
-	reg_set_bit_mask(glamo,
+			 var->yres);
+	reg_set_bit_mask(gfb,
 			 GLAMO_REG_LCD_PITCH,
 			 GLAMO_LCD_PITCH_MASK,
-			 pitch);
+			 gfb->fb->fix.line_length);
 
 	/* honour the rotation request */
-	__rotate_lcd(glamo, var->rotate);
-
-	if (orientation_changing) {
-		var->xres_virtual = yres;
-		var->xres = yres;
-		var->xres_virtual *= 2;
-		var->yres_virtual = xres;
-		var->yres = xres;
-	} else {
-		var->xres_virtual = xres;
-		var->yres_virtual = yres;
-		var->yres_virtual *= 2;
-	}
+	__rotate_lcd(gfb, var->rotate);
 
 	/* update scannout timings */
 	sync = 0;
 	bp = sync + var->hsync_len;
 	disp = bp + var->left_margin;
-	fp = disp + xres;
+	fp = disp + var->xres;
 	total = fp + var->right_margin;
 
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_HORIZ_TOTAL,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_HORIZ_TOTAL,
 			 GLAMO_LCD_HV_TOTAL_MASK, total);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_HORIZ_RETR_START,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_HORIZ_RETR_START,
 			 GLAMO_LCD_HV_RETR_START_MASK, sync);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_HORIZ_RETR_END,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_HORIZ_RETR_END,
 			 GLAMO_LCD_HV_RETR_END_MASK, bp);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_HORIZ_DISP_START,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_HORIZ_DISP_START,
 			  GLAMO_LCD_HV_RETR_DISP_START_MASK, disp);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_HORIZ_DISP_END,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_HORIZ_DISP_END,
 			 GLAMO_LCD_HV_RETR_DISP_END_MASK, fp);
 
 	sync = 0;
 	bp = sync + var->vsync_len;
 	disp = bp + var->upper_margin;
-	fp = disp + yres;
+	fp = disp + var->yres;
 	total = fp + var->lower_margin;
 
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_VERT_TOTAL,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_VERT_TOTAL,
 			 GLAMO_LCD_HV_TOTAL_MASK, total);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_VERT_RETR_START,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_VERT_RETR_START,
 			  GLAMO_LCD_HV_RETR_START_MASK, sync);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_VERT_RETR_END,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_VERT_RETR_END,
 			 GLAMO_LCD_HV_RETR_END_MASK, bp);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_VERT_DISP_START,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_VERT_DISP_START,
 			 GLAMO_LCD_HV_RETR_DISP_START_MASK, disp);
-	reg_set_bit_mask(glamo, GLAMO_REG_LCD_VERT_DISP_END,
+	reg_set_bit_mask(gfb, GLAMO_REG_LCD_VERT_DISP_END,
 			 GLAMO_LCD_HV_RETR_DISP_END_MASK, fp);
 
-	glamofb_cmd_mode(glamo, 0);
+	glamofb_cmd_mode(gfb, 0);
+
+	gfb->mode_set = 1;
 
 out_unlock:
-	dev_dbg(&glamo->mach_info->glamo->pdev->dev,
-		      "glamofb_update_lcd_controller spin_unlock_irqrestore\n");
-	spin_unlock_irqrestore(&glamo->lock_cmd, flags);
+	dev_dbg(&gcore->pdev->dev,
+		      "glamofb_program_mode spin_unlock_irqrestore\n");
+	spin_unlock_irqrestore(&gfb->lock_cmd, flags);
 }
+
 
 static int glamofb_pan_display(struct fb_var_screeninfo *var,
 		struct fb_info *info)
 {
-	struct glamofb_handle *glamo = info->par;
-	u_int16_t page = var->yoffset / glamo->mach_info->yres.defval;
-	reg_write(glamo, GLAMO_REG_LCD_COMMAND2, page);
-
 	return 0;
+}
+
+static struct fb_videomode *glamofb_find_mode(struct fb_info *info,
+        struct fb_var_screeninfo *var) {
+	struct glamofb_handle *glamo = info->par;
+	struct glamofb_platform_data *mach_info = glamo->mach_info;
+	struct fb_videomode *mode;
+	int i;
+
+	for(i = mach_info->num_modes, mode = mach_info->modes; i > 0; --i, ++mode) {
+		if (mode->xres == var->xres &&
+		    mode->yres == var->yres)
+			return mode;
+	}
+
+	return NULL;
 }
 
 static int glamofb_set_par(struct fb_info *info)
 {
 	struct glamofb_handle *glamo = info->par;
 	struct fb_var_screeninfo *var = &info->var;
+	struct fb_videomode *mode;
 
 	if (glamo->mach_info->glamo->suspending) {
 		dev_err(&glamo->mach_info->glamo->pdev->dev,
@@ -464,37 +433,37 @@ static int glamofb_set_par(struct fb_info *info)
 		return -EBUSY;
 	}
 
-	switch (var->bits_per_pixel) {
-	case 16:
-		info->fix.visual = FB_VISUAL_TRUECOLOR;
+	mode = glamofb_find_mode(info, var);
+	if (!mode)
+		return -EINVAL;
+
+	fb_videomode_to_var(var, mode);
+
+	info->mode = mode;
+
+	glamo->mode_set = 0;
+
+	switch(var->rotate) {
+	case FB_ROTATE_CW:
+	case FB_ROTATE_CCW:
+		info->fix.line_length = (var->yres * var->bits_per_pixel) / 8;
+		/* FIXME: Limit pixelclock */
+		var->pixclock *= 2;
 		break;
 	default:
-		printk("Smedia driver doesn't support != 16bpp\n");
-		return -EINVAL;
+		info->fix.line_length = (var->xres * var->bits_per_pixel) / 8;
+		break;
 	}
 
-	info->fix.line_length = (var->xres * var->bits_per_pixel) / 8;
-
-	glamofb_update_lcd_controller(glamo, var);
+	if(glamo->output_enabled)
+		glamofb_program_mode(glamo);
 
 	return 0;
 }
 
-
-static void notify_blank(struct fb_info *info, int blank_mode)
-{
-	struct fb_event event;
-
-	event.info = info;
-	event.data = &blank_mode;
-	fb_notifier_call_chain(FB_EVENT_CONBLANK, &event);
-}
-
-
 static int glamofb_blank(int blank_mode, struct fb_info *info)
 {
 	struct glamofb_handle *gfb = info->par;
-	struct glamo_core *gcore = gfb->mach_info->glamo;
 
 	dev_dbg(gfb->dev, "glamofb_blank(%u)\n", blank_mode);
 
@@ -505,28 +474,13 @@ static int glamofb_blank(int blank_mode, struct fb_info *info)
 		 * we should already switch off pixel clock here */
 		break;
 	case FB_BLANK_POWERDOWN:
-		/* Simulating FB_BLANK_NORMAL allow turning off backlight */
-		if (gfb->blank_mode != FB_BLANK_NORMAL)
-			notify_blank(info, FB_BLANK_NORMAL);
-
-		/* LCM need notification before pixel clock is stopped */
-		notify_blank(info, blank_mode);
-
 		/* disable the pixel clock */
-		glamo_engine_clkreg_set(gcore, GLAMO_ENGINE_LCD,
-					GLAMO_CLOCK_LCD_EN_DCLK, 0);
+		glamo_output_disable(gfb);
 		gfb->blank_mode = blank_mode;
 		break;
 	case FB_BLANK_UNBLANK:
 	case FB_BLANK_NORMAL:
-		/* enable the pixel clock if off */
-		if (gfb->blank_mode == FB_BLANK_POWERDOWN)
-			glamo_engine_clkreg_set(gcore,
-					GLAMO_ENGINE_LCD,
-					GLAMO_CLOCK_LCD_EN_DCLK,
-					GLAMO_CLOCK_LCD_EN_DCLK);
-
-		notify_blank(info, blank_mode);
+		glamo_output_enable(gfb);
 		gfb->blank_mode = blank_mode;
 		break;
 	}
@@ -733,7 +687,7 @@ int glamofb_cmd_mode(struct glamofb_handle *gfb, int on)
 		dev_dbg(gfb->dev, "%s: waiting for cmdq empty: ",
 			__func__);
 		while ((!glamofb_cmdq_empty(gfb)) && (timeout--))
-			/* yield() */;
+			yield();
 		if (timeout < 0) {
 			printk(KERN_ERR"*************"
 				       "glamofb cmd_queue never got empty"
@@ -853,7 +807,6 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	glamofb->fb = fbinfo;
 	glamofb->dev = &pdev->dev;
 
-	glamofb->angle = 0;
 	glamofb->blank_mode = FB_BLANK_POWERDOWN;
 
 	strcpy(fbinfo->fix.id, "SMedia Glamo");
@@ -875,7 +828,7 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	}
 
 	glamofb->reg = request_mem_region(glamofb->reg->start,
-					  RESSIZE(glamofb->reg), pdev->name);
+					  resource_size(glamofb->reg), pdev->name);
 	if (!glamofb->reg) {
 		dev_err(&pdev->dev, "failed to request mmio region\n");
 		goto out_free;
@@ -891,16 +844,16 @@ static int __init glamofb_probe(struct platform_device *pdev)
 
 	/* we want to remap only the registers required for this core
 	 * driver. */
-	glamofb->base = ioremap(glamofb->reg->start, RESSIZE(glamofb->reg));
+	glamofb->base = ioremap_nocache(glamofb->reg->start, resource_size(glamofb->reg));
 	if (!glamofb->base) {
 		dev_err(&pdev->dev, "failed to ioremap() mmio memory\n");
 		goto out_release_fb;
 	}
 	fbinfo->fix.smem_start = (unsigned long) glamofb->fb_res->start;
-	fbinfo->fix.smem_len = mach_info->fb_mem_size;
+	fbinfo->fix.smem_len = (__u32) resource_size(glamofb->fb_res);
 
 	fbinfo->screen_base = ioremap(glamofb->fb_res->start,
-				       RESSIZE(glamofb->fb_res));
+				       resource_size(glamofb->fb_res));
 	if (!fbinfo->screen_base) {
 		dev_err(&pdev->dev, "failed to ioremap() vram memory\n");
 		goto out_release_fb;
@@ -915,42 +868,29 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	fbinfo->fix.type = FB_TYPE_PACKED_PIXELS;
 	fbinfo->fix.type_aux = 0;
 	fbinfo->fix.xpanstep = 0;
-	fbinfo->fix.ypanstep = mach_info->yres.defval;
+	fbinfo->fix.ypanstep = 0;
 	fbinfo->fix.ywrapstep = 0;
 	fbinfo->fix.accel = FB_ACCEL_GLAMO;
 
-	fbinfo->var.nonstd = 0;
-	fbinfo->var.activate = FB_ACTIVATE_NOW;
-	fbinfo->var.height = mach_info->height;
-	fbinfo->var.width = mach_info->width;
-	fbinfo->var.accel_flags = 0;	/* FIXME */
-	fbinfo->var.vmode = FB_VMODE_NONINTERLACED;
 
 	fbinfo->fbops = &glamofb_ops;
 	fbinfo->flags = FBINFO_FLAG_DEFAULT;
 	fbinfo->pseudo_palette = &glamofb->pseudo_pal;
 
-	fbinfo->var.xres = mach_info->xres.defval;
-	fbinfo->var.xres_virtual = mach_info->xres.defval;
-	fbinfo->var.yres = mach_info->yres.defval;
-	fbinfo->var.yres_virtual = mach_info->yres.defval * 2;
-	fbinfo->var.bits_per_pixel = mach_info->bpp.defval;
-
-	fbinfo->var.pixclock = mach_info->pixclock;
-	fbinfo->var.left_margin = mach_info->left_margin;
-	fbinfo->var.right_margin = mach_info->right_margin;
-	fbinfo->var.upper_margin = mach_info->upper_margin;
-	fbinfo->var.lower_margin = mach_info->lower_margin;
-	fbinfo->var.hsync_len = mach_info->hsync_len;
-	fbinfo->var.vsync_len = mach_info->vsync_len;
-
-	memset(fbinfo->screen_base, 0,
-			mach_info->xres.max *
-			mach_info->yres.max *
-			mach_info->bpp.max / 8);
+	fbinfo->mode = mach_info->modes;
+	fb_videomode_to_var(&fbinfo->var, fbinfo->mode);
+	fbinfo->var.bits_per_pixel = 16;
+	fbinfo->var.nonstd = 0;
+	fbinfo->var.activate = FB_ACTIVATE_NOW;
+	fbinfo->var.height = mach_info->height;
+	fbinfo->var.width = mach_info->width;
+	fbinfo->var.accel_flags = 0;
+	fbinfo->var.vmode = FB_VMODE_NONINTERLACED;
 
 	glamo_engine_enable(mach_info->glamo, GLAMO_ENGINE_LCD);
 	glamo_engine_reset(mach_info->glamo, GLAMO_ENGINE_LCD);
+	glamofb->output_enabled = 1;
+	glamofb->mode_set = 1;
 
 	dev_info(&pdev->dev, "spin_lock_init\n");
 	spin_lock_init(&glamofb->lock_cmd);
@@ -959,14 +899,8 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	glamofb_cursor_onoff(glamofb, 1);
 #endif
 
-#ifdef CONFIG_MFD_GLAMO_FB_XGLAMO_WORKAROUND
-	/* sysfs */
-	rc = sysfs_create_group(&pdev->dev.kobj, &glamo_fb_attr_group);
-	if (rc < 0) {
-		dev_err(&pdev->dev, "cannot create sysfs group\n");
-		goto out_unmap_fb;
-	}
-#endif
+	fb_videomode_to_modelist(mach_info->modes, mach_info->num_modes,
+	                         &fbinfo->modelist);
 
 	rc = register_framebuffer(fbinfo);
 	if (rc < 0) {
@@ -991,9 +925,9 @@ out_unmap_fb:
 	iounmap(fbinfo->screen_base);
 	iounmap(glamofb->base);
 out_release_fb:
-	release_mem_region(glamofb->fb_res->start, RESSIZE(glamofb->fb_res));
+	release_mem_region(glamofb->fb_res->start, resource_size(glamofb->fb_res));
 out_release_reg:
-	release_mem_region(glamofb->reg->start, RESSIZE(glamofb->reg));
+	release_mem_region(glamofb->reg->start, resource_size(glamofb->reg));
 out_free:
 	framebuffer_release(fbinfo);
 	return rc;
@@ -1005,7 +939,7 @@ static int glamofb_remove(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 	iounmap(glamofb->base);
-	release_mem_region(glamofb->reg->start, RESSIZE(glamofb->reg));
+	release_mem_region(glamofb->reg->start, resource_size(glamofb->reg));
 	kfree(glamofb);
 
 	return 0;
@@ -1035,7 +969,7 @@ static int glamofb_resume(struct platform_device *pdev)
 
 	/* OK let's allow framebuffer ops again */
 	/* gfb->fb->screen_base = ioremap(gfb->fb_res->start,
-				       RESSIZE(gfb->fb_res)); */
+				       resource_size(gfb->fb_res)); */
 	glamo_engine_enable(mach_info->glamo, GLAMO_ENGINE_LCD);
 	glamo_engine_reset(mach_info->glamo, GLAMO_ENGINE_LCD);
 

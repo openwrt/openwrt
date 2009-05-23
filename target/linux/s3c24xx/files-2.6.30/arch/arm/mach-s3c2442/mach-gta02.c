@@ -1399,33 +1399,43 @@ static void gta02_glamo_external_reset(int level)
 	s3c2410_gpio_cfgpin(GTA02_GPIO_3D_RESET, S3C2410_GPIO_OUTPUT);
 }
 
+static struct fb_videomode gta02_glamo_modes[] = {
+	{
+		.name = "480x640",
+		.xres = 480,
+		.yres = 640,
+		.pixclock	= 40816,
+		.left_margin	= 8,
+		.right_margin	= 16,
+		.upper_margin	= 2,
+		.lower_margin	= 16,
+		.hsync_len	= 8,
+		.vsync_len	= 2,
+		.vmode = FB_VMODE_NONINTERLACED,
+	}, {
+		.name = "240x320",
+		.xres = 240,
+		.yres = 320,
+		.pixclock	= 40816,
+		.left_margin	= 8,
+		.right_margin	= 16,
+		.upper_margin	= 2,
+		.lower_margin	= 16,
+		.hsync_len	= 8,
+		.vsync_len	= 2,
+		.vmode = FB_VMODE_NONINTERLACED,
+	}
+};
+
+
 static struct glamofb_platform_data gta02_glamo_pdata = {
 	.width		= 43,
 	.height		= 58,
-	 /* 24.5MHz --> 40.816ns */
-	.pixclock	= 40816,
-	.left_margin	= 8,
-	.right_margin	= 16,
-	.upper_margin	= 2,
-	.lower_margin	= 16,
-	.hsync_len	= 8,
-	.vsync_len	= 2,
 	.fb_mem_size	= 0x400000, /* glamo has 8 megs of SRAM. we use 4 */
-	.xres		= {
-		.min	= 240,
-		.max	= 640,
-		.defval	= 480,
-	},
-	.yres		= {
-		.min	= 320,
-		.max	= 640,
-		.defval	= 640,
-	},
-	.bpp		= {
-		.min	= 16,
-		.max	= 16,
-		.defval	= 16,
-	},
+
+	.num_modes = ARRAY_SIZE(gta02_glamo_modes),
+	.modes = gta02_glamo_modes,
+
 	//.spi_info	= &glamo_spi_cfg,
 	.spigpio_info	= &glamo_spigpio_cfg,
 
