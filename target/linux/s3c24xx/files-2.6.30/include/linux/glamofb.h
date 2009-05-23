@@ -2,26 +2,16 @@
 #define _LINUX_GLAMOFB_H
 
 #include <linux/spi/glamo.h>
-
-struct glamofb_val {
-	unsigned int defval;
-	unsigned int min;
-	unsigned int max;
-};
+#include <linux/fb.h>
 
 struct glamo_core;
 
 struct glamofb_platform_data {
 	int width, height;
-	int pixclock;
-	int left_margin, right_margin;
-	int upper_margin, lower_margin;
-	int hsync_len, vsync_len;
 	int fb_mem_size;
 
-	struct glamofb_val xres;
-	struct glamofb_val yres;
-	struct glamofb_val bpp;
+	int num_modes;
+	struct fb_videomode *modes;
 
 	struct glamo_spi_info *spi_info;
 	struct glamo_spigpio_info *spigpio_info;
