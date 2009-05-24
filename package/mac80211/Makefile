@@ -217,6 +217,29 @@ $(call KernelPackage/rt2x00/Default)
   AUTOLOAD:=$(call AutoLoad,27,rt2800usb)
 endef
 
+define KernelPackage/rtl818x/Default
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek Drivers for RTL818x devices
+  URL:=http://wireless.kernel.org/en/users/Drivers/rtl8187
+  DEPENDS+= +kmod-eeprom-93cx6 +kmod-mac80211 @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_25
+endef
+
+define KernelPackage/rtl8180
+  $(call KernelPackage/rtl818x/Default)
+  DEPENDS+= @PCI_SUPPORT
+  TITLE+= (RTL8180 PCI)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,rtl8180)
+endef
+
+define KernelPackage/rtl8187
+$(call KernelPackage/rtl818x/Default)
+  DEPENDS+= @USB_SUPPORT
+  TITLE+= (RTL8187 USB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8187.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,rtl8187)
+endef
+
 ZD1211FW_NAME:=zd1211-firmware
 ZD1211FW_VERSION:=1.4
 define Download/zd1211rw
@@ -556,6 +579,8 @@ $(eval $(call KernelPackage,rt61-pci))
 $(eval $(call KernelPackage,rt73-usb))
 $(eval $(call KernelPackage,rt2800-pci))
 $(eval $(call KernelPackage,rt2800-usb))
+$(eval $(call KernelPackage,rtl8180))
+$(eval $(call KernelPackage,rtl8187))
 $(eval $(call KernelPackage,zd1211rw))
 $(eval $(call KernelPackage,mac80211-hwsim))
 $(eval $(call KernelPackage,ath9k))
