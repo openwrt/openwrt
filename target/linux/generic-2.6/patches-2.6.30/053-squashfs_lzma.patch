@@ -26,7 +26,7 @@
 +config SQUASHFS_SUPPORT_LZMA
 +	bool "Support LZMA compression"
 +	depends on SQUASHFS
-+	select CRYPTO_LZMA
++	select CRYPTO_UNLZMA
 +	help
 +	  By default SquashFS uses ZLIB compression, however (if your tools
 +	  support it, you can use LZMA instead, which saves space.
