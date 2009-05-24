@@ -129,7 +129,6 @@ define KernelPackage/pcmcia-core
 	CONFIG_PCMCIA \
 	CONFIG_CARDBUS \
 	CONFIG_PCCARD \
-	CONFIG_YENTA \
 	CONFIG_PCCARD_NONSTATIC \
 	PCMCIA_DEBUG=n
 endef
@@ -148,7 +147,6 @@ define KernelPackage/pcmcia-core/2.6
 #  KCONFIG:= \
 #	CONFIG_PCCARD \
 #	CONFIG_PCMCIA \
-#	CONFIG_YENTA \
 #	CONFIG_PCCARD_NONSTATIC \
 #	PCMCIA_DEBUG=n
   FILES:= \
