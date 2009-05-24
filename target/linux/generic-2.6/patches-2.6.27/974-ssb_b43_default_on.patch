@@ -1,14 +1,5 @@
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -26,7 +26,7 @@ config SSB_SPROM
- 
- # Support for Block-I/O. SELECT this from the driver that needs it.
- config SSB_BLOCKIO
--	bool
-+	bool "add SSB_BLOCKIO support"
- 	depends on SSB
- 
- config SSB_PCIHOST_POSSIBLE
 @@ -48,7 +48,7 @@ config SSB_PCIHOST
  config SSB_B43_PCI_BRIDGE
  	bool
