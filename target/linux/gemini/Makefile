@@ -12,7 +12,7 @@ BOARDNAME:=Cortina Systems CS351x
 FEATURES:=jffs2 broken
 CFLAGS:=-Os -pipe -march=armv4 -mtune=arm9tdmi -funit-at-a-time
 
-LINUX_VERSION:=2.6.30-rc6
+LINUX_VERSION:=2.6.30-rc7
 
 include $(INCLUDE_DIR)/target.mk
 

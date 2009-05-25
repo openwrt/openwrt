@@ -1,7 +1,5 @@
-Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mfd/pcf50633-core.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c	2009-05-18 19:08:33.000000000 +0200
+--- a/drivers/mfd/pcf50633-core.c
++++ b/drivers/mfd/pcf50633-core.c
 @@ -15,6 +15,7 @@
  #include <linux/kernel.h>
  #include <linux/device.h>
@@ -10,7 +8,7 @@ Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
  #include <linux/module.h>
  #include <linux/types.h>
  #include <linux/interrupt.h>
-@@ -345,6 +346,8 @@
+@@ -345,6 +346,8 @@ static void pcf50633_irq_worker(struct w
  		goto out;
  	}
  
@@ -19,17 +17,7 @@ Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
  	/* We immediately read the usb and adapter status. We thus make sure
  	 * only of USBINS/USBREM IRQ handlers are called */
  	if (pcf_int[0] & (PCF50633_INT1_USBINS | PCF50633_INT1_USBREM)) {
-@@ -443,7 +446,8 @@
- 	dev_dbg(pcf->dev, "pcf50633_irq\n");
- 
- 	get_device(pcf->dev);
--	disable_irq(pcf->irq);
-+	disable_irq_nosync(pcf->irq);
-+
- 	schedule_work(&pcf->irq_work);
- 
- 	return IRQ_HANDLED;
-@@ -482,13 +486,13 @@
+@@ -482,13 +485,13 @@ pcf50633_client_dev_register(struct pcf5
  }
  
  #ifdef CONFIG_PM
@@ -45,7 +33,7 @@ Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
  
  	/* Make sure our interrupt handlers are not called
  	 * henceforth */
-@@ -523,12 +527,12 @@
+@@ -523,12 +526,12 @@ out:
  	return ret;
  }
  
@@ -60,7 +48,7 @@ Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
  
  	/* Write the saved mask registers */
  	ret = pcf50633_write_block(pcf, PCF50633_REG_INT1M,
-@@ -625,6 +629,7 @@
+@@ -625,6 +628,7 @@ static int __devinit pcf50633_probe(stru
  	}
  
  	if (client->irq) {
@@ -68,7 +56,7 @@ Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
  		ret = request_irq(client->irq, pcf50633_irq,
  				IRQF_TRIGGER_LOW, "pcf50633", pcf);
  
-@@ -683,12 +688,12 @@
+@@ -683,12 +687,12 @@ static struct i2c_device_id pcf50633_id_
  static struct i2c_driver pcf50633_driver = {
  	.driver = {
  		.name	= "pcf50633",
@@ -83,11 +71,9 @@ Index: linux-2.6.30-rc6/drivers/mfd/pcf50633-core.c
  };
  
  static int __init pcf50633_init(void)
-Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/power/pcf50633-charger.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/power/pcf50633-charger.c	2009-05-18 19:08:33.000000000 +0200
-@@ -36,6 +36,7 @@
+--- a/drivers/power/pcf50633-charger.c
++++ b/drivers/power/pcf50633-charger.c
+@@ -36,6 +36,7 @@ struct pcf50633_mbc {
  
  	struct power_supply usb;
  	struct power_supply adapter;
@@ -95,7 +81,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  
  	struct delayed_work charging_restart_work;
  };
-@@ -47,16 +48,21 @@
+@@ -47,16 +48,21 @@ int pcf50633_mbc_usb_curlim_set(struct p
  	u8 bits;
  	int charging_start = 1;
  	u8 mbcs2, chgmod;
@@ -121,7 +107,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  	}
  
  	ret = pcf50633_reg_set_bit_mask(pcf, PCF50633_REG_MBCC7,
-@@ -66,7 +72,22 @@
+@@ -66,7 +72,22 @@ int pcf50633_mbc_usb_curlim_set(struct p
  	else
  		dev_info(pcf->dev, "usb curlim to %d mA\n", ma);
  
@@ -145,7 +131,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  	mbcs2 = pcf50633_reg_read(pcf, PCF50633_REG_MBCS2);
  	chgmod = (mbcs2 & PCF50633_MBCS2_MBC_MASK);
  
-@@ -81,7 +102,7 @@
+@@ -81,7 +102,7 @@ int pcf50633_mbc_usb_curlim_set(struct p
  				PCF50633_MBCC1_RESUME, PCF50633_MBCC1_RESUME);
  
  	mbc->usb_active = charging_start;
@@ -154,7 +140,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  	power_supply_changed(&mbc->usb);
  
  	return ret;
-@@ -156,9 +177,44 @@
+@@ -156,9 +177,44 @@ static ssize_t set_usblim(struct device 
  
  static DEVICE_ATTR(usb_curlim, S_IRUGO | S_IWUSR, show_usblim, set_usblim);
  
@@ -199,7 +185,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  	NULL,
  };
  
-@@ -239,6 +295,7 @@
+@@ -239,6 +295,7 @@ pcf50633_mbc_irq_handler(int irq, void *
  
  	power_supply_changed(&mbc->usb);
  	power_supply_changed(&mbc->adapter);
@@ -207,7 +193,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  
  	if (mbc->pcf->pdata->mbc_event_callback)
  		mbc->pcf->pdata->mbc_event_callback(mbc->pcf, irq);
-@@ -248,8 +305,7 @@
+@@ -248,8 +305,7 @@ static int adapter_get_property(struct p
  			enum power_supply_property psp,
  			union power_supply_propval *val)
  {
@@ -217,7 +203,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  	int ret = 0;
  
  	switch (psp) {
-@@ -269,10 +325,34 @@
+@@ -269,10 +325,34 @@ static int usb_get_property(struct power
  {
  	struct pcf50633_mbc *mbc = container_of(psy, struct pcf50633_mbc, usb);
  	int ret = 0;
@@ -253,7 +239,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  		break;
  	default:
  		ret = -EINVAL;
-@@ -337,6 +417,17 @@
+@@ -337,6 +417,17 @@ static int __devinit pcf50633_mbc_probe(
  	mbc->usb.supplied_to		= mbc->pcf->pdata->batteries;
  	mbc->usb.num_supplicants	= mbc->pcf->pdata->num_batteries;
  
@@ -271,7 +257,7 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  	ret = power_supply_register(&pdev->dev, &mbc->adapter);
  	if (ret) {
  		dev_err(mbc->pcf->dev, "failed to register adapter\n");
-@@ -352,9 +443,15 @@
+@@ -352,9 +443,15 @@ static int __devinit pcf50633_mbc_probe(
  		return ret;
  	}
  
@@ -290,11 +276,9 @@ Index: linux-2.6.30-rc6/drivers/power/pcf50633-charger.c
  	ret = sysfs_create_group(&pdev->dev.kobj, &mbc_attr_group);
  	if (ret)
  		dev_err(mbc->pcf->dev, "failed to create sysfs entries\n");
-Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/rtc/rtc-pcf50633.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c	2009-05-18 19:08:33.000000000 +0200
-@@ -58,6 +58,7 @@
+--- a/drivers/rtc/rtc-pcf50633.c
++++ b/drivers/rtc/rtc-pcf50633.c
+@@ -58,6 +58,7 @@ struct pcf50633_time {
  struct pcf50633_rtc {
  	int alarm_enabled;
  	int second_enabled;
@@ -302,7 +286,7 @@ Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
  
  	struct pcf50633 *pcf;
  	struct rtc_device *rtc_dev;
-@@ -70,7 +71,7 @@
+@@ -70,7 +71,7 @@ static void pcf2rtc_time(struct rtc_time
  	rtc->tm_hour = bcd2bin(pcf->time[PCF50633_TI_HOUR]);
  	rtc->tm_wday = bcd2bin(pcf->time[PCF50633_TI_WKDAY]);
  	rtc->tm_mday = bcd2bin(pcf->time[PCF50633_TI_DAY]);
@@ -311,7 +295,7 @@ Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
  	rtc->tm_year = bcd2bin(pcf->time[PCF50633_TI_YEAR]) + 100;
  }
  
-@@ -81,7 +82,7 @@
+@@ -81,7 +82,7 @@ static void rtc2pcf_time(struct pcf50633
  	pcf->time[PCF50633_TI_HOUR] = bin2bcd(rtc->tm_hour);
  	pcf->time[PCF50633_TI_WKDAY] = bin2bcd(rtc->tm_wday);
  	pcf->time[PCF50633_TI_DAY] = bin2bcd(rtc->tm_mday);
@@ -320,7 +304,7 @@ Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
  	pcf->time[PCF50633_TI_YEAR] = bin2bcd(rtc->tm_year % 100);
  }
  
-@@ -209,6 +210,7 @@
+@@ -209,6 +210,7 @@ static int pcf50633_rtc_read_alarm(struc
  	rtc = dev_get_drvdata(dev);
  
  	alrm->enabled = rtc->alarm_enabled;
@@ -328,7 +312,7 @@ Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
  
  	ret = pcf50633_read_block(rtc->pcf, PCF50633_REG_RTCSCA,
  				PCF50633_TI_EXTENT, &pcf_tm.time[0]);
-@@ -244,9 +246,12 @@
+@@ -244,9 +246,12 @@ static int pcf50633_rtc_set_alarm(struct
  	/* Returns 0 on success */
  	ret = pcf50633_write_block(rtc->pcf, PCF50633_REG_RTCSCA,
  				PCF50633_TI_EXTENT, &pcf_tm.time[0]);
@@ -342,7 +326,7 @@ Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
  
  	return ret;
  }
-@@ -267,6 +272,7 @@
+@@ -267,6 +272,7 @@ static void pcf50633_rtc_irq(int irq, vo
  	switch (irq) {
  	case PCF50633_IRQ_ALARM:
  		rtc_update_irq(rtc->rtc_dev, 1, RTC_AF | RTC_IRQF);
@@ -350,11 +334,9 @@ Index: linux-2.6.30-rc6/drivers/rtc/rtc-pcf50633.c
  		break;
  	case PCF50633_IRQ_SECOND:
  		rtc_update_irq(rtc->rtc_dev, 1, RTC_UF | RTC_IRQF);
-Index: linux-2.6.30-rc6/include/linux/mfd/pcf50633/core.h
-===================================================================
---- linux-2.6.30-rc6.orig/include/linux/mfd/pcf50633/core.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/include/linux/mfd/pcf50633/core.h	2009-05-18 19:08:33.000000000 +0200
-@@ -31,6 +31,8 @@
+--- a/include/linux/mfd/pcf50633/core.h
++++ b/include/linux/mfd/pcf50633/core.h
+@@ -31,6 +31,8 @@ struct pcf50633_platform_data {
  
  	int charging_restart_interval;
  
@@ -363,7 +345,7 @@ Index: linux-2.6.30-rc6/include/linux/mfd/pcf50633/core.h
  	/* Callbacks */
  	void (*probe_done)(struct pcf50633 *);
  	void (*mbc_event_callback)(struct pcf50633 *, int);
-@@ -208,7 +210,8 @@
+@@ -208,7 +210,8 @@ enum pcf50633_reg_int5 {
  };
  
  /* misc. registers */

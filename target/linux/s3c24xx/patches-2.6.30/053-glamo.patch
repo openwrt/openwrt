@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/drivers/mfd/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mfd/Kconfig	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mfd/Kconfig	2009-05-18 19:08:32.000000000 +0200
-@@ -241,6 +241,8 @@
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -241,6 +241,8 @@ config PCF50633_GPIO
  	 Say yes here if you want to include support GPIO for pins on
  	 the PCF50633 chip.
  
@@ -11,10 +9,8 @@ Index: linux-2.6.30-rc6/drivers/mfd/Kconfig
  endmenu
  
  menu "Multimedia Capabilities Port drivers"
-Index: linux-2.6.30-rc6/drivers/mfd/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mfd/Makefile	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mfd/Makefile	2009-05-18 19:08:32.000000000 +0200
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
 @@ -4,6 +4,7 @@
  
  obj-$(CONFIG_MFD_SM501)		+= sm501.o
@@ -23,11 +19,9 @@ Index: linux-2.6.30-rc6/drivers/mfd/Makefile
  
  obj-$(CONFIG_HTC_EGPIO)		+= htc-egpio.o
  obj-$(CONFIG_HTC_PASIC3)	+= htc-pasic3.o
-Index: linux-2.6.30-rc6/include/linux/fb.h
-===================================================================
---- linux-2.6.30-rc6.orig/include/linux/fb.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/include/linux/fb.h	2009-05-18 19:08:32.000000000 +0200
-@@ -124,6 +124,7 @@
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -124,6 +124,7 @@ struct dentry;
  #define FB_ACCEL_TRIDENT_BLADE3D 52	/* Trident Blade3D		*/
  #define FB_ACCEL_TRIDENT_BLADEXP 53	/* Trident BladeXP		*/
  #define FB_ACCEL_CIRRUS_ALPINE   53	/* Cirrus Logic 543x/544x/5480	*/

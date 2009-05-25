@@ -1,7 +1,5 @@
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2410/include/mach/dma.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h	2009-05-18 19:08:29.000000000 +0200
+--- a/arch/arm/mach-s3c2410/include/mach/dma.h
++++ b/arch/arm/mach-s3c2410/include/mach/dma.h
 @@ -3,7 +3,7 @@
   * Copyright (C) 2003,2004,2006 Simtec Electronics
   *	Ben Dooks <ben@simtec.co.uk>
@@ -21,7 +19,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
  
  #define MAX_DMA_TRANSFER_SIZE   0x100000 /* Data Unit is half word  */
  
-@@ -55,9 +55,9 @@
+@@ -55,9 +55,9 @@ enum dma_ch {
  
  /* we have 4 dma channels */
  #ifndef CONFIG_CPU_S3C2443
@@ -33,7 +31,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
  #endif
  
  /* types */
-@@ -68,7 +68,6 @@
+@@ -68,7 +68,6 @@ enum s3c2410_dma_state {
  	S3C2410_DMA_PAUSED
  };
  
@@ -41,7 +39,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
  /* enum s3c2410_dma_loadst
   *
   * This represents the state of the DMA engine, wrt to the loaded / running
-@@ -104,32 +103,6 @@
+@@ -104,32 +103,6 @@ enum s3c2410_dma_loadst {
  	S3C2410_DMALOAD_1LOADED_1RUNNING,
  };
  
@@ -74,7 +72,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
  
  /* flags */
  
-@@ -137,19 +110,18 @@
+@@ -137,19 +110,18 @@ enum s3c2410_chan_op {
  					    * waiting for reloads */
  #define S3C2410_DMAF_AUTOSTART    (1<<1)   /* auto-start if buffer queued */
  
@@ -98,7 +96,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
  struct s3c2410_dma_buf {
  	struct s3c2410_dma_buf	*next;
  	int			 magic;		/* magic */
-@@ -161,20 +133,6 @@
+@@ -161,20 +133,6 @@ struct s3c2410_dma_buf {
  
  /* [1] is this updated for both recv/send modes? */
  
@@ -119,7 +117,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
  struct s3c2410_dma_stats {
  	unsigned long		loads;
  	unsigned long		timeout_longest;
-@@ -206,10 +164,10 @@
+@@ -206,10 +164,10 @@ struct s3c2410_dma_chan {
  
  	/* channel configuration */
  	enum s3c2410_dmasrc	 source;
@@ -131,7 +129,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
  
  	struct s3c24xx_dma_map	*map;		/* channel hw maps */
  
-@@ -236,213 +194,12 @@
+@@ -236,213 +194,12 @@ struct s3c2410_dma_chan {
  	struct sys_device	dev;
  };
  
@@ -349,11 +347,9 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/dma.h
 +}
  
  #endif /* __ASM_ARCH_DMA_H */
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2442/Kconfig	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2442/Kconfig	2009-05-18 19:08:29.000000000 +0200
-@@ -11,6 +11,7 @@
+--- a/arch/arm/mach-s3c2442/Kconfig
++++ b/arch/arm/mach-s3c2442/Kconfig
+@@ -11,6 +11,7 @@ config CPU_S3C2442
  	select S3C2410_CLOCK
  	select S3C2410_GPIO
  	select S3C2410_PM if PM
@@ -361,10 +357,8 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/Kconfig
  	select CPU_S3C244X
  	select CPU_LLSERIAL_S3C2440
  	help
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/dma.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/dma.c	2009-05-18 19:08:29.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/dma.c
 @@ -0,0 +1,86 @@
 +/* linux/arch/arm/plat-s3c/dma.c
 + *
@@ -452,10 +446,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/dma.c
 +	return 0;
 +}
 +EXPORT_SYMBOL(s3c2410_dma_setflags);
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/dma-core.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/dma-core.h	2009-05-18 19:08:29.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/include/plat/dma-core.h
 @@ -0,0 +1,22 @@
 +/* arch/arm/plat-s3c/include/plat/dma.h
 + *
@@ -479,10 +471,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/dma-core.h
 +extern struct s3c2410_dma_chan s3c2410_chans[];
 +
 +
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/dma.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/dma.h	2009-05-18 19:08:29.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/include/plat/dma.h
 @@ -0,0 +1,128 @@
 +/* arch/arm/plat-s3c/include/plat/dma.h
 + *
@@ -612,11 +602,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/dma.h
 +extern int s3c2410_dma_set_buffdone_fn(unsigned int, s3c2410_dma_cbfn_t rtn);
 +
 +
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/Kconfig	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig	2009-05-18 19:08:29.000000000 +0200
-@@ -150,6 +150,13 @@
+--- a/arch/arm/plat-s3c/Kconfig
++++ b/arch/arm/plat-s3c/Kconfig
+@@ -150,6 +150,13 @@ config S3C_GPIO_CFG_S3C64XX
  	  Internal configuration to enable S3C64XX style GPIO configuration
  	  functions.
  
@@ -630,11 +618,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig
  # device definitions to compile in
  
  config S3C_DEV_HSMMC
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/Makefile	2009-05-18 19:07:48.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile	2009-05-18 19:08:29.000000000 +0200
-@@ -18,6 +18,10 @@
+--- a/arch/arm/plat-s3c/Makefile
++++ b/arch/arm/plat-s3c/Makefile
+@@ -18,6 +18,10 @@ obj-y				+= pwm-clock.o
  obj-y				+= gpio.o
  obj-y				+= gpio-config.o
  
@@ -645,16 +631,14 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile
  # PM support
  
  obj-$(CONFIG_PM)		+= pm.o
-@@ -31,3 +35,5 @@
+@@ -31,3 +35,5 @@ obj-$(CONFIG_S3C_DEV_HSMMC1)	+= dev-hsmm
  obj-y				+= dev-i2c0.o
  obj-$(CONFIG_S3C_DEV_I2C1)	+= dev-i2c1.o
  obj-$(CONFIG_S3C_DEV_FB)	+= dev-fb.o
 +obj-$(CONFIG_S3C_DMA)		+= dma.o
 +
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/dma.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c	2009-05-18 19:08:29.000000000 +0200
+--- a/arch/arm/plat-s3c24xx/dma.c
++++ b/arch/arm/plat-s3c24xx/dma.c
 @@ -31,10 +31,11 @@
  #include <asm/irq.h>
  #include <mach/hardware.h>
@@ -669,7 +653,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  /* io map for dma */
  static void __iomem *dma_base;
-@@ -44,8 +45,6 @@
+@@ -44,8 +45,6 @@ static int dma_channels;
  
  static struct s3c24xx_dma_selection dma_sel;
  
@@ -678,7 +662,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  /* debugging functions */
  
-@@ -135,21 +134,6 @@
+@@ -135,21 +134,6 @@ dmadbg_showregs(const char *fname, int l
  #define dbg_showchan(chan) do { } while(0)
  #endif /* CONFIG_S3C2410_DMA_DEBUG */
  
@@ -700,7 +684,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  /* s3c2410_dma_stats_timeout
   *
   * Update DMA stats from timeout info
-@@ -214,8 +198,6 @@
+@@ -214,8 +198,6 @@ s3c2410_dma_waitforload(struct s3c2410_d
  	return 0;
  }
  
@@ -709,7 +693,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  /* s3c2410_dma_loadbuffer
   *
   * load a buffer, and update the channel state
-@@ -453,7 +435,7 @@
+@@ -453,7 +435,7 @@ s3c2410_dma_canload(struct s3c2410_dma_c
  int s3c2410_dma_enqueue(unsigned int channel, void *id,
  			dma_addr_t data, int size)
  {
@@ -718,7 +702,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  	struct s3c2410_dma_buf *buf;
  	unsigned long flags;
  
-@@ -804,7 +786,7 @@
+@@ -804,7 +786,7 @@ EXPORT_SYMBOL(s3c2410_dma_request);
  
  int s3c2410_dma_free(unsigned int channel, struct s3c2410_dma_client *client)
  {
@@ -727,7 +711,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  	unsigned long flags;
  
  	if (chan == NULL)
-@@ -836,7 +818,7 @@
+@@ -836,7 +818,7 @@ int s3c2410_dma_free(unsigned int channe
  	chan->irq_claimed = 0;
  
  	if (!(channel & DMACH_LOW_LEVEL))
@@ -736,7 +720,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	local_irq_restore(flags);
  
-@@ -995,7 +977,7 @@
+@@ -995,7 +977,7 @@ static int s3c2410_dma_started(struct s3
  int
  s3c2410_dma_ctrl(unsigned int channel, enum s3c2410_chan_op op)
  {
@@ -745,7 +729,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	if (chan == NULL)
  		return -EINVAL;
-@@ -1038,14 +1020,13 @@
+@@ -1038,14 +1020,13 @@ EXPORT_SYMBOL(s3c2410_dma_ctrl);
  /* s3c2410_dma_config
   *
   * xfersize:     size of unit in bytes (1,2,4)
@@ -763,7 +747,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	pr_debug("%s: chan=%d, xfer_unit=%d, dcon=%08x\n",
  		 __func__, channel, xferunit, dcon);
-@@ -1055,10 +1036,33 @@
+@@ -1055,10 +1036,33 @@ int s3c2410_dma_config(unsigned int chan
  
  	pr_debug("%s: Initial dcon is %08x\n", __func__, dcon);
  
@@ -798,7 +782,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  	switch (xferunit) {
  	case 1:
  		dcon |= S3C2410_DCON_BYTE;
-@@ -1089,10 +1093,10 @@
+@@ -1089,10 +1093,10 @@ int s3c2410_dma_config(unsigned int chan
  }
  
  EXPORT_SYMBOL(s3c2410_dma_config);
@@ -811,7 +795,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	if (chan == NULL)
  		return -EINVAL;
-@@ -1105,43 +1109,7 @@
+@@ -1105,43 +1109,7 @@ int s3c2410_dma_setflags(unsigned int ch
  }
  
  EXPORT_SYMBOL(s3c2410_dma_setflags);
@@ -856,7 +840,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  /* s3c2410_dma_devconfig
   *
-@@ -1150,29 +1118,38 @@
+@@ -1150,29 +1118,38 @@ EXPORT_SYMBOL(s3c2410_dma_set_buffdone_f
   * source:    S3C2410_DMASRC_HW: source is hardware
   *            S3C2410_DMASRC_MEM: source is memory
   *
@@ -904,7 +888,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	switch (source) {
  	case S3C2410_DMASRC_HW:
-@@ -1219,7 +1196,7 @@
+@@ -1219,7 +1196,7 @@ EXPORT_SYMBOL(s3c2410_dma_devconfig);
  
  int s3c2410_dma_getposition(unsigned int channel, dma_addr_t *src, dma_addr_t *dst)
  {
@@ -913,7 +897,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	if (chan == NULL)
  		return -EINVAL;
-@@ -1278,8 +1255,8 @@
+@@ -1278,8 +1255,8 @@ static int s3c2410_dma_resume(struct sys
  
  	printk(KERN_INFO "dma%d: restoring configuration\n", cp->number);
  
@@ -924,7 +908,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	/* re-select the dma source for this channel */
  
-@@ -1476,7 +1453,8 @@
+@@ -1476,7 +1453,8 @@ static struct s3c2410_dma_chan *s3c2410_
   found:
  	dmach = &s3c2410_chans[ch];
  	dmach->map = ch_map;
@@ -934,10 +918,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/dma.c
  
  	/* select the channel */
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/dma.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/include/plat/dma.h	2009-05-16 06:12:57.000000000 +0200
-+++ /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- a/arch/arm/plat-s3c24xx/include/plat/dma.h
++++ /dev/null
 @@ -1,82 +0,0 @@
 -/* linux/include/asm-arm/plat-s3c24xx/dma.h
 - *
@@ -1021,10 +1003,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/dma.h
 -
 -extern int s3c24xx_dma_init(unsigned int channels, unsigned int irq,
 -			    unsigned int stride);
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/dma-plat.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/dma-plat.h	2009-05-18 19:08:29.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c24xx/include/plat/dma-plat.h
 @@ -0,0 +1,84 @@
 +/* linux/arch/arm/plat-s3c24xx/include/plat/dma-plat.h
 + *
@@ -1110,10 +1090,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/dma-plat.h
 +
 +extern int s3c24xx_dma_init(unsigned int channels, unsigned int irq,
 +			    unsigned int stride);
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/regs-dma.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/regs-dma.h	2009-05-18 19:08:29.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c24xx/include/plat/regs-dma.h
 @@ -0,0 +1,145 @@
 +/* arch/arm/mach-s3c2410/include/mach/dma.h
 + *
@@ -1260,11 +1238,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/regs-dma.h
 +#define S3C2443_DMAREQSEL_PCMOUT	S3C2443_DMAREQSEL_SRC(27)
 +#define S3C2443_DMAREQSEL_PCMIN 	S3C2443_DMAREQSEL_SRC(28)
 +#define S3C2443_DMAREQSEL_MICIN		S3C2443_DMAREQSEL_SRC(29)
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/Kconfig	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/Kconfig	2009-05-18 19:08:29.000000000 +0200
-@@ -71,6 +71,7 @@
+--- a/arch/arm/plat-s3c24xx/Kconfig
++++ b/arch/arm/plat-s3c24xx/Kconfig
+@@ -71,6 +71,7 @@ config PM_SIMTEC
  config S3C2410_DMA
  	bool "S3C2410 DMA support"
  	depends on ARCH_S3C2410
@@ -1272,10 +1248,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/Kconfig
  	help
  	  S3C2410 DMA support. This is needed for drivers like sound which
  	  use the S3C2410's DMA system to move data to and from the
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/dma.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2410/dma.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2410/dma.c	2009-05-18 19:08:29.000000000 +0200
+--- a/arch/arm/mach-s3c2410/dma.c
++++ b/arch/arm/mach-s3c2410/dma.c
 @@ -17,14 +17,16 @@
  #include <linux/sysdev.h>
  #include <linux/serial_core.h>
@@ -1294,10 +1268,8 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/dma.c
  #include <mach/regs-mem.h>
  #include <mach/regs-lcd.h>
  #include <mach/regs-sdi.h>
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2440/dma.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2440/dma.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2440/dma.c	2009-05-18 19:08:29.000000000 +0200
+--- a/arch/arm/mach-s3c2440/dma.c
++++ b/arch/arm/mach-s3c2440/dma.c
 @@ -17,14 +17,16 @@
  #include <linux/sysdev.h>
  #include <linux/serial_core.h>

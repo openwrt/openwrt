@@ -9,9 +9,10 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=sibyte
 BOARDNAME:=Broadcom/SiByte SB-1
-FEATURES:=broken
+FEATURES:=fpu
+CFLAGS:=-Os -pipe -march=sb1 -funit-at-a-time
 
-LINUX_VERSION:=2.6.30-rc6
+LINUX_VERSION:=2.6.30-rc7
 
 include $(INCLUDE_DIR)/target.mk
 

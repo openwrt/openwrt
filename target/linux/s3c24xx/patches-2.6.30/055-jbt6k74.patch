@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/drivers/video/display/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/video/display/Kconfig	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/video/display/Kconfig	2009-05-18 19:08:33.000000000 +0200
-@@ -21,4 +21,15 @@
+--- a/drivers/video/display/Kconfig
++++ b/drivers/video/display/Kconfig
+@@ -21,4 +21,15 @@ config DISPLAY_SUPPORT
  comment "Display hardware drivers"
  	depends on DISPLAY_SUPPORT
  
@@ -18,10 +16,8 @@ Index: linux-2.6.30-rc6/drivers/video/display/Kconfig
 +	  controls power management, display timing and gamma calibration.
 +
  endmenu
-Index: linux-2.6.30-rc6/drivers/video/display/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/video/display/Makefile	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/video/display/Makefile	2009-05-18 19:08:33.000000000 +0200
+--- a/drivers/video/display/Makefile
++++ b/drivers/video/display/Makefile
 @@ -3,4 +3,5 @@
  display-objs				:= display-sysfs.o
  

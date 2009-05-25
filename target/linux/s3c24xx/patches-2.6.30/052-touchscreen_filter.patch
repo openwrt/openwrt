@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/drivers/input/touchscreen/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/input/touchscreen/Kconfig	2009-05-18 19:08:31.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/input/touchscreen/Kconfig	2009-05-18 19:08:32.000000000 +0200
-@@ -11,6 +11,54 @@
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -11,6 +11,54 @@ menuconfig INPUT_TOUCHSCREEN
  
  if INPUT_TOUCHSCREEN
  
@@ -57,11 +55,9 @@ Index: linux-2.6.30-rc6/drivers/input/touchscreen/Kconfig
  config TOUCHSCREEN_ADS7846
  	tristate "ADS7846/TSC2046 and ADS7843 based touchscreens"
  	depends on SPI_MASTER
-Index: linux-2.6.30-rc6/drivers/input/touchscreen/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/input/touchscreen/Makefile	2009-05-18 19:08:31.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/input/touchscreen/Makefile	2009-05-18 19:08:32.000000000 +0200
-@@ -38,3 +38,8 @@
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -38,3 +38,8 @@ wm97xx-ts-$(CONFIG_TOUCHSCREEN_WM9713)	+
  obj-$(CONFIG_TOUCHSCREEN_WM97XX_MAINSTONE)	+= mainstone-wm97xx.o
  obj-$(CONFIG_TOUCHSCREEN_WM97XX_ZYLONITE)	+= zylonite-wm97xx.o
  obj-$(CONFIG_TOUCHSCREEN_S3C2410)	+= s3c2410_ts.o
