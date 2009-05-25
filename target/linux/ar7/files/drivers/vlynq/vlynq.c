@@ -40,6 +40,8 @@
 #define VLYNQ_CTRL_INT2CFG		0x00000080
 #define VLYNQ_CTRL_RESET		0x00000001
 
+#define VLYNQ_CTRL_CLOCK_MASK          (0x7 << 16)
+
 #define VLYNQ_INT_OFFSET		0x00000014
 #define VLYNQ_REMOTE_OFFSET		0x00000080
 
@@ -112,6 +114,24 @@ int vlynq_linked(struct vlynq_device *dev)
 			cpu_relax();
 
 	return 0;
+}
+
+static void vlynq_reset(struct vlynq_device *dev)
+{
+	vlynq_reg_write(dev->local->control,
+			vlynq_reg_read(dev->local->control) |
+			VLYNQ_CTRL_RESET);
+
+	/* Wait for the devices to finish resetting */
+	msleep(5);
+
+	/* Remove reset bit */
+	vlynq_reg_write(dev->local->control,
+			vlynq_reg_read(dev->local->control) &
+			~VLYNQ_CTRL_RESET);
+
+	/* Give some time for the devices to settle */
+	msleep(5);
 }
 
 static void vlynq_irq_unmask(unsigned int irq)
@@ -357,9 +377,100 @@ void vlynq_unregister_driver(struct vlynq_driver *driver)
 }
 EXPORT_SYMBOL(vlynq_unregister_driver);
 
+static int __vlynq_try_remote(struct vlynq_device *dev)
+{
+	int i;
+
+	vlynq_reset(dev);
+	for (i = dev->dev_id ? vlynq_rdiv2 : vlynq_rdiv8; dev->dev_id ?
+			i <= vlynq_rdiv8 : i >= vlynq_rdiv2;
+		dev->dev_id ? i++ : i--) {
+
+		if (!vlynq_linked(dev))
+			break;
+
+		vlynq_reg_write(dev->remote->control,
+				(vlynq_reg_read(dev->remote->control) &
+				~VLYNQ_CTRL_CLOCK_MASK) |
+				VLYNQ_CTRL_CLOCK_INT |
+				VLYNQ_CTRL_CLOCK_DIV(i - vlynq_rdiv1));
+		vlynq_reg_write(dev->local->control,
+				((vlynq_reg_read(dev->local->control)
+				& ~(VLYNQ_CTRL_CLOCK_INT |
+				VLYNQ_CTRL_CLOCK_MASK)) |
+				VLYNQ_CTRL_CLOCK_DIV(i - vlynq_rdiv1)));
+
+		if (vlynq_linked(dev)) {
+			printk(KERN_DEBUG
+				"%s: using remote clock divisor %d\n",
+				dev->dev.bus_id, i - vlynq_rdiv1 + 1);
+			dev->divisor = i;
+			return 0;
+		} else {
+			vlynq_reset(dev);
+		}
+	}
+
+	return -ENODEV;
+}
+
+static int __vlynq_try_local(struct vlynq_device *dev)
+{
+	int i;
+	
+	vlynq_reset(dev);
+
+	for (i = dev->dev_id ? vlynq_ldiv2 : vlynq_ldiv8; dev->dev_id ?
+			i <= vlynq_ldiv8 : i >= vlynq_ldiv2;
+		dev->dev_id ? i++ : i--) {
+
+		vlynq_reg_write(dev->local->control,
+				(vlynq_reg_read(dev->local->control) &
+				~VLYNQ_CTRL_CLOCK_MASK) |
+				VLYNQ_CTRL_CLOCK_INT |
+				VLYNQ_CTRL_CLOCK_DIV(i - vlynq_ldiv1));
+
+		if (vlynq_linked(dev)) {
+			printk(KERN_DEBUG
+				"%s: using local clock divisor %d\n",
+				dev->dev.bus_id, i - vlynq_ldiv1 + 1);
+			dev->divisor = i;
+			return 0;
+		} else {
+			vlynq_reset(dev);
+		}
+	}
+
+	return -ENODEV;
+}
+
+static int __vlynq_try_external(struct vlynq_device *dev)
+{
+	vlynq_reset(dev);
+	if (!vlynq_linked(dev))
+		return -ENODEV;
+
+	vlynq_reg_write(dev->remote->control,
+			(vlynq_reg_read(dev->remote->control) &
+			~VLYNQ_CTRL_CLOCK_INT));
+
+	vlynq_reg_write(dev->local->control,
+			(vlynq_reg_read(dev->local->control) &
+			~VLYNQ_CTRL_CLOCK_INT));
+
+	if (vlynq_linked(dev)) {
+		printk(KERN_DEBUG "%s: using external clock\n",
+			dev->dev.bus_id);
+			dev->divisor = vlynq_div_external;
+		return 0;
+	}
+	
+	return -ENODEV;
+}
+
 static int __vlynq_enable_device(struct vlynq_device *dev)
 {
-	int i, result;
+	int result;
 	struct plat_vlynq_ops *ops = dev->dev.platform_data;
 
 	result = ops->on(dev);
@@ -369,30 +480,23 @@ static int __vlynq_enable_device(struct vlynq_device *dev)
 	switch (dev->divisor) {
 	case vlynq_div_external:
 	case vlynq_div_auto:
-		vlynq_reg_write(dev->local->control, 0);
-		vlynq_reg_write(dev->remote->control, 0);
-		if (vlynq_linked(dev)) {
-			dev->divisor = vlynq_div_external;
-			printk(KERN_DEBUG "%s: using external clock\n",
-				dev->dev.bus_id);
-			return 0;
-		}
-
-		/* Only try locally supplied clock, others cause problems */
-		for (i = dev->dev_id ? vlynq_ldiv2 : vlynq_ldiv8; dev->dev_id ?
-				i <= vlynq_ldiv8 : i >= vlynq_ldiv2;
-				dev->dev_id ? i++ : i--) {
-			vlynq_reg_write(dev->local->control,
-					VLYNQ_CTRL_CLOCK_INT |
-					VLYNQ_CTRL_CLOCK_DIV(i - vlynq_ldiv1));
-			if (vlynq_linked(dev)) {
-				printk(KERN_DEBUG
-				       "%s: using local clock divisor %d\n",
-				       dev->dev.bus_id, i - vlynq_ldiv1 + 1);
-				dev->divisor = i;
+		/* When the device is brought from reset it should have clock
+		generation negotiated by hardware.
+		Check which device is generating clocks and perform setup
+		accordingly */
+		if (vlynq_linked(dev) && vlynq_reg_read(dev->remote->control) &
+		   VLYNQ_CTRL_CLOCK_INT) {
+			if (!__vlynq_try_remote(dev) ||
+				!__vlynq_try_local(dev)  ||
+				!__vlynq_try_external(dev))
 				return 0;
-			}
+		} else {
+			if (!__vlynq_try_external(dev) ||
+				!__vlynq_try_local(dev)    ||
+				!__vlynq_try_remote(dev))
+				return 0;
 		}
+		break;
 	case vlynq_ldiv1: case vlynq_ldiv2: case vlynq_ldiv3: case vlynq_ldiv4:
 	case vlynq_ldiv5: case vlynq_ldiv6: case vlynq_ldiv7: case vlynq_ldiv8:
 		vlynq_reg_write(dev->local->control,
