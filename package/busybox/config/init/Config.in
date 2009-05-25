@@ -12,14 +12,6 @@ config BUSYBOX_CONFIG_INIT
 	help
 	  init is the first program run when the system boots.
 
-config BUSYBOX_CONFIG_DEBUG_INIT
-	bool "Debugging aid"
-	default n
-	depends on BUSYBOX_CONFIG_INIT
-	help
-	  Turn this on to disable all the dangerous
-	  rebooting stuff when debugging.
-
 config BUSYBOX_CONFIG_FEATURE_USE_INITTAB
 	bool "Support reading an inittab file"
 	default y
@@ -82,8 +74,6 @@ config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
 	  exists, then init will call setrlimit() to allow unlimited
 	  core file sizes. If this option is disabled, processes
 	  will not generate any core files.
-
-
 
 config BUSYBOX_CONFIG_FEATURE_INITRD
 	bool "Support running init from within an initrd (not initramfs)"

@@ -136,12 +136,12 @@ config BUSYBOX_CONFIG_DF
 	  df reports the amount of disk space used and available
 	  on filesystems.
 
-config BUSYBOX_CONFIG_FEATURE_DF_INODE
-	bool "Enable -i (inode information)"
+config BUSYBOX_CONFIG_FEATURE_DF_FANCY
+	bool "Enable -a, -i, -B"
 	default n
 	depends on BUSYBOX_CONFIG_DF
 	help
-	  This option enables support for df -i.
+	  This option enables -a, -i and -B.
 
 config BUSYBOX_CONFIG_DIRNAME
 	bool "dirname"
@@ -189,7 +189,7 @@ config BUSYBOX_CONFIG_ECHO
 config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
 	bool "Enable echo options (-n and -e)"
 	default y
-	depends on BUSYBOX_CONFIG_ECHO
+	depends on BUSYBOX_CONFIG_ECHO || BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
 	help
 	  This adds options (-n and -e) to echo.
 
@@ -649,7 +649,7 @@ config BUSYBOX_CONFIG_TEST
 config BUSYBOX_CONFIG_FEATURE_TEST_64
 	bool "Extend test to 64 bit"
 	default n
-	depends on BUSYBOX_CONFIG_TEST
+	depends on BUSYBOX_CONFIG_TEST || BUSYBOX_CONFIG_ASH_BUILTIN_TEST
 	help
 	  Enable 64-bit support in test.
 

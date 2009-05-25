@@ -12,7 +12,7 @@ config BUSYBOX_CONFIG_AWK
 	  Awk is used as a pattern scanning and processing language. This is
 	  the BusyBox implementation of that programming language.
 
-config BUSYBOX_CONFIG_FEATURE_AWK_MATH
+config BUSYBOX_CONFIG_FEATURE_AWK_LIBM
 	bool "Enable math functions (requires libm)"
 	default y
 	depends on BUSYBOX_CONFIG_AWK

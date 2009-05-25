@@ -1,6 +1,6 @@
 --- a/networking/udhcp/packet.c
 +++ b/networking/udhcp/packet.c
-@@ -114,6 +114,10 @@ uint16_t udhcp_checksum(void *addr, int 
+@@ -114,6 +114,10 @@ uint16_t FAST_FUNC udhcp_checksum(void *
  	return ~sum;
  }
  
@@ -10,8 +10,8 @@
 +}
  
  /* Construct a ip/udp header for a packet, send packet */
- int udhcp_send_raw_packet(struct dhcpMessage *payload,
-@@ -125,11 +129,7 @@ int udhcp_send_raw_packet(struct dhcpMes
+ int FAST_FUNC udhcp_send_raw_packet(struct dhcpMessage *payload,
+@@ -126,11 +130,7 @@ int FAST_FUNC udhcp_send_raw_packet(stru
  	int fd;
  	int result = -1;
  	const char *msg;
@@ -24,7 +24,7 @@
  
  	fd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
  	if (fd < 0) {
-@@ -139,7 +139,7 @@ int udhcp_send_raw_packet(struct dhcpMes
+@@ -140,7 +140,7 @@ int FAST_FUNC udhcp_send_raw_packet(stru
  
  	memset(&dest, 0, sizeof(dest));
  	memset(&packet, 0, sizeof(packet));
@@ -33,7 +33,7 @@
  
  	dest.sll_family = AF_PACKET;
  	dest.sll_protocol = htons(ETH_P_IP);
-@@ -156,23 +156,18 @@ int udhcp_send_raw_packet(struct dhcpMes
+@@ -157,23 +157,18 @@ int FAST_FUNC udhcp_send_raw_packet(stru
  	packet.ip.daddr = dest_ip;
  	packet.udp.source = htons(source_port);
  	packet.udp.dest = htons(dest_port);
@@ -63,7 +63,7 @@
  				(struct sockaddr *) &dest, sizeof(dest));
  	msg = "sendto";
   ret_close:
-@@ -224,8 +219,7 @@ int udhcp_send_kernel_packet(struct dhcp
+@@ -225,8 +220,7 @@ int FAST_FUNC udhcp_send_kernel_packet(s
  		goto ret_close;
  	}
  

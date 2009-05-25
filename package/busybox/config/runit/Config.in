@@ -20,12 +20,29 @@ config BUSYBOX_CONFIG_RUNSVDIR
 	  a directory, in the services directory dir, up to a limit of 1000
 	  subdirectories, and restarts a runsv process if it terminates.
 
+config BUSYBOX_CONFIG_FEATURE_RUNSVDIR_LOG
+	bool "Enable scrolling argument log"
+	depends on BUSYBOX_CONFIG_RUNSVDIR
+	default n
+	help
+	  Enable feature where second parameter of runsvdir holds last error
+	  message (viewable via top/ps). Otherwise (feature is off
+	  or no parameter), error messages go to stderr only.
+
 config BUSYBOX_CONFIG_SV
 	bool "sv"
 	default n
 	help
 	  sv reports the current status and controls the state of services
 	  monitored by the runsv supervisor.
+
+config BUSYBOX_CONFIG_SV_DEFAULT_SERVICE_DIR
+	string "Default directory for services"
+	default "/var/service"
+	depends on BUSYBOX_CONFIG_SV
+	help
+	  Default directory for services.
+	  Defaults to "/var/service"
 
 config BUSYBOX_CONFIG_SVLOGD
 	bool "svlogd"

@@ -5,6 +5,15 @@
 
 menu "Linux System Utilities"
 
+config BUSYBOX_CONFIG_BLKID
+	bool "blkid"
+	default n
+	select BUSYBOX_CONFIG_VOLUMEID
+	help
+	  Lists labels and UUIDs of all filesystems.
+	  WARNING:
+	  With all submodules selected, it will add ~8k to busybox.
+
 config BUSYBOX_CONFIG_DMESG
 	bool "dmesg"
 	default y
@@ -156,9 +165,7 @@ config BUSYBOX_CONFIG_FINDFS
 	default n
 	select BUSYBOX_CONFIG_VOLUMEID
 	help
-	  This is similar to the findfs program that is part of the e2fsprogs
-	  package. However, the e2fsprogs version only support ext2/3. This
-	  version supports those in addition to FAT, swap, and ReiserFS.
+	  Prints the name of a filesystem with given label or UUID.
 	  WARNING:
 	  With all submodules selected, it will add ~8k to busybox.
 
@@ -396,10 +403,8 @@ config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
 	  unable to move the cursor.
 
 config BUSYBOX_CONFIG_VOLUMEID
-	bool "Routines for detecting label and uuid on common filesystems"
+	bool #No description makes it a hidden option
 	default n
-	help
-	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
 	bool "Ext filesystem"
@@ -651,7 +656,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
 	select BUSYBOX_CONFIG_VOLUMEID
 	help
 	  This allows for specifying a device by label or uuid, rather than by
-	  name. This feature utilizes the same functionality as findfs.
+	  name. This feature utilizes the same functionality as blkid/findfs.
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
 	bool "Support mounting NFS file systems"

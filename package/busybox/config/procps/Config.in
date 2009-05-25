@@ -135,32 +135,51 @@ config BUSYBOX_CONFIG_TOP
 	  system.
 
 config BUSYBOX_CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE
-	bool "Show CPU per-process usage percentage (adds 2k bytes)"
+	bool "Show CPU per-process usage percentage"
 	default y
 	depends on BUSYBOX_CONFIG_TOP
 	help
 	  Make top display CPU usage for each process.
+	  This adds about 2k.
 
 config BUSYBOX_CONFIG_FEATURE_TOP_CPU_GLOBAL_PERCENTS
-	bool "Show CPU global usage percentage (adds 0.5k bytes)"
+	bool "Show CPU global usage percentage"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE
 	help
 	  Makes top display "CPU: NN% usr NN% sys..." line.
+	  This adds about 0.5k.
+
+config BUSYBOX_CONFIG_FEATURE_TOP_SMP_CPU
+	bool "SMP CPU usage display ('c' key)"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_TOP_CPU_GLOBAL_PERCENTS
+	help
+	  Allow 'c' key to switch between individual/cumulative CPU stats
+	  This adds about 0.5k.
 
 config BUSYBOX_CONFIG_FEATURE_TOP_DECIMALS
-	bool "Show 1/10th of a percent in CPU/mem statistics (adds 0.3k bytes)"
+	bool "Show 1/10th of a percent in CPU/mem statistics"
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE
 	help
 	  Show 1/10th of a percent in CPU/mem statistics.
+	  This adds about 0.3k.
 
-config BUSYBOX_CONFIG_FEATURE_TOPMEM
-	bool "topmem"
+config BUSYBOX_CONFIG_FEATURE_TOP_SMP_PROCESS
+	bool "Show CPU process runs on ('j' field)"
 	default n
 	depends on BUSYBOX_CONFIG_TOP
 	help
-	  Enable 's' in top (gives lots of memory info)
+	  Show CPU where process was last found running on.
+	  This is the 'j' field.
+
+config BUSYBOX_CONFIG_FEATURE_TOPMEM
+	bool "Topmem command ('s' key)"
+	default n
+	depends on BUSYBOX_CONFIG_TOP
+	help
+	  Enable 's' in top (gives lots of memory info).
 
 config BUSYBOX_CONFIG_UPTIME
 	bool "uptime"
@@ -173,11 +192,9 @@ config BUSYBOX_CONFIG_UPTIME
 config BUSYBOX_CONFIG_WATCH
 	bool "watch"
 	default n
-	#huh?? select DATE
 	help
 	  watch is used to execute a program periodically, showing
 	  output to the screen.
 
 
 endmenu
-

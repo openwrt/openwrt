@@ -8,8 +8,8 @@
 +		 * member interfaces were added/removed or if the status of the
 +		 * bridge changed).
 +		 * Workaround: refresh it here before processing the next packet */
-+		read_interface(client_config.interface, &client_config.ifindex, NULL, client_config.arp);
++		udhcp_read_interface(client_config.interface, &client_config.ifindex, NULL, client_config.arp);
 +
  		if (listen_mode != LISTEN_NONE && sockfd < 0) {
  			if (listen_mode == LISTEN_KERNEL)
- 				sockfd = listen_socket(/*INADDR_ANY,*/ CLIENT_PORT, client_config.interface);
+ 				sockfd = udhcp_listen_socket(/*INADDR_ANY,*/ CLIENT_PORT, client_config.interface);

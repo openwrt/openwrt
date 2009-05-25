@@ -1,6 +1,6 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -261,6 +261,7 @@ USE_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_
+@@ -263,6 +263,7 @@ USE_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_
  USE_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_NEVER))
  USE_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
@@ -10,7 +10,7 @@
  USE_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
 --- a/include/usage.h
 +++ b/include/usage.h
-@@ -2816,6 +2816,9 @@
+@@ -2849,6 +2849,9 @@
  
  #endif
  
@@ -37,7 +37,7 @@
  	default n
 --- a/networking/Kbuild
 +++ b/networking/Kbuild
-@@ -24,6 +24,7 @@ lib-$(CONFIG_IP)           += ip.o
+@@ -23,6 +23,7 @@ lib-$(CONFIG_IP)           += ip.o
  lib-$(CONFIG_IPCALC)       += ipcalc.o
  lib-$(CONFIG_NAMEIF)       += nameif.o
  lib-$(CONFIG_NC)           += nc.o

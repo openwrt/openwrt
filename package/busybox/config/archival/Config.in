@@ -13,7 +13,7 @@ config BUSYBOX_CONFIG_FEATURE_SEAMLESS_LZMA
 
 config BUSYBOX_CONFIG_FEATURE_SEAMLESS_BZ2
 	bool "Make tar, rpm, modprobe etc understand .bz2 data"
-	default y
+	default n
 	help
 	  Make tar, rpm, modprobe etc understand .bz2 data.
 
@@ -77,7 +77,7 @@ config BUSYBOX_CONFIG_BUNZIP2
 
 config BUSYBOX_CONFIG_BZIP2
 	bool "bzip2"
-	default y
+	default n
 	help
 	  bzip2 is a compression utility using the Burrows-Wheeler block
 	  sorting text compression algorithm, and Huffman coding. Compression
@@ -113,6 +113,7 @@ config BUSYBOX_CONFIG_FEATURE_CPIO_O
 config BUSYBOX_CONFIG_DPKG
 	bool "dpkg"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ
 	help
 	  dpkg is a medium-level tool to install, build, remove and manage
 	  Debian packages.
@@ -123,9 +124,9 @@ config BUSYBOX_CONFIG_DPKG
 config BUSYBOX_CONFIG_DPKG_DEB
 	bool "dpkg_deb"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ
 	help
-	  dpkg-deb packs, unpacks and provides information about Debian
-	  archives.
+	  dpkg-deb unpacks and provides information about Debian archives.
 
 	  This implementation of dpkg-deb cannot pack archives.
 
@@ -177,7 +178,7 @@ config BUSYBOX_CONFIG_TAR
 	  create compressed archives. It's probably the most widely used
 	  UNIX archive program.
 
-if TAR
+if BUSYBOX_CONFIG_TAR
 
 config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
 	bool "Enable archive creation"
