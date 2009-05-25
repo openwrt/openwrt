@@ -55,6 +55,9 @@ ar71xx_board_name() {
 	*WNR2000)
 		name="wnr2000"
 		;;
+	*WRT160NL)
+		name="wrt160nl"
+		;;
 	*WRT400N)
 		name="wrt400n"
 		;;

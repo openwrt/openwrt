@@ -5,6 +5,15 @@
 # See /LICENSE for more information.
 #
 
+define Profile/WRT160NL
+	NAME:=Linksys WRT160NL
+	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb2
+endef
+
+define Profile/WRT160NL/Description
+	Package set optimized for the Linksys WRT160NL.
+endef
+
 define Profile/WRT400N
 	NAME:=Linksys WRT400N
 	PACKAGES:=kmod-ath9k hostapd-mini
@@ -14,4 +23,5 @@ define Profile/WRT400N/Description
 	Package set optimized for the Linksys WRT400N.
 endef
 
+$(eval $(call Profile,WRT160NL))
 $(eval $(call Profile,WRT400N))
