@@ -20,6 +20,15 @@ config BUSYBOX_CONFIG_DESKTOP
 	  Select this only if you plan to use busybox on full-blown
 	  desktop machine with common Linux distro, not on an embedded box.
 
+config BUSYBOX_CONFIG_EXTRA_COMPAT
+	bool "Provide compatible behavior for rare corner cases (bigger code)"
+	default n
+	help
+	  This option makes grep, sed etc handle rare corner cases
+	  (embedded NUL bytes and such). This makes code bigger and uses
+	  some GNU extensions in libc. You probably only need this option
+	  if you plan to run busybox on desktop.
+
 config BUSYBOX_CONFIG_FEATURE_ASSUME_UNICODE
 	bool "Assume that 1:1 char/glyph correspondence is not true"
 	default n
@@ -39,7 +48,7 @@ choice
 	  There are 3 ways BusyBox can handle buffer allocations:
 	  - Use malloc. This costs code size for the call to xmalloc.
 	  - Put them on stack. For some very small machines with limited stack
-	    space, this can be deadly.  For most folks, this works just fine.
+	    space, this can be deadly. For most folks, this works just fine.
 	  - Put them in BSS. This works beautifully for computers with a real
 	    MMU (and OS support), but wastes runtime RAM for uCLinux. This
 	    behavior was the only one available for BusyBox versions 0.48 and
@@ -71,8 +80,8 @@ config BUSYBOX_CONFIG_FEATURE_VERBOSE_USAGE
 	select BUSYBOX_CONFIG_SHOW_USAGE
 	help
 	  All BusyBox applets will show more verbose help messages when
-	  busybox is invoked with --help.  This will add a lot of text to the
-	  busybox binary.  In the default configuration, this will add about
+	  busybox is invoked with --help. This will add a lot of text to the
+	  busybox binary. In the default configuration, this will add about
 	  13k, but it can add much more depending on your configuration.
 
 config BUSYBOX_CONFIG_FEATURE_COMPRESS_USAGE
@@ -85,15 +94,15 @@ config BUSYBOX_CONFIG_FEATURE_COMPRESS_USAGE
 
 	  If you have a really tiny busybox with few applets enabled (and
 	  bunzip2 isn't one of them), the overhead of the decompressor might
-	  be noticeable.  Also, if you run executables directly from ROM
-	  and have very little memory, this might not be a win.  Otherwise,
+	  be noticeable. Also, if you run executables directly from ROM
+	  and have very little memory, this might not be a win. Otherwise,
 	  you probably want this.
 
 config BUSYBOX_CONFIG_FEATURE_INSTALLER
 	bool "Support --install [-s] to install applet links at runtime"
 	default n
 	help
-	  Enable 'busybox --install [-s]' support.  This will allow you to use
+	  Enable 'busybox --install [-s]' support. This will allow you to use
 	  busybox at runtime to create hard links or symlinks for all the
 	  applets that are compiled into busybox.
 
@@ -117,7 +126,7 @@ config BUSYBOX_CONFIG_FEATURE_DEVPTS
 	help
 	  Enable if you want BusyBox to use Unix98 PTY support. If enabled,
 	  busybox will use /dev/ptmx for the master side of the pseudoterminal
-	  and /dev/pts/<number> for the slave side.  Otherwise, BSD style
+	  and /dev/pts/<number> for the slave side. Otherwise, BSD style
 	  /dev/ttyp<number> will be used. To use this option, you should have
 	  devpts mounted.
 
@@ -126,7 +135,7 @@ config BUSYBOX_CONFIG_FEATURE_CLEAN_UP
 	default n
 	help
 	  As a size optimization, busybox normally exits without explicitly
-	  freeing dynamically allocated memory or closing files.  This saves
+	  freeing dynamically allocated memory or closing files. This saves
 	  space since the OS will clean up for us, but it can confuse debuggers
 	  like valgrind, which report tons of memory and resource leaks.
 
@@ -151,7 +160,7 @@ config BUSYBOX_CONFIG_FEATURE_SUID
 	  If you're really paranoid and don't want to do this, build two
 	  busybox binaries with different applets in them (and the appropriate
 	  symlinks pointing to each binary), and only set the suid bit on the
-	  one that needs it.  The applets currently marked to need the suid bit
+	  one that needs it. The applets currently marked to need the suid bit
 	  are login, passwd, su, ping, traceroute, crontab, dnsd, ipcrm, ipcs,
 	  and vlock.
 
@@ -161,7 +170,7 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	depends on BUSYBOX_CONFIG_FEATURE_SUID
 	help
 	  Allow the SUID / SGID state of an applet to be determined at runtime
-	  by checking /etc/busybox.conf.  (This is sort of a poor man's sudo.)
+	  by checking /etc/busybox.conf. (This is sort of a poor man's sudo.)
 	  The format of this file is as follows:
 
 	  <applet> = [Ssx-][Ssx-][x-] (<username>|<uid>).(<groupname>|<gid>)
@@ -169,11 +178,12 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	  An example might help:
 
 	  [SUID]
-	  su = ssx root.0 # applet su can be run by anyone and runs with euid=0/egid=0
+	  su = ssx root.0 # applet su can be run by anyone and runs with
+	                  # euid=0/egid=0
 	  su = ssx        # exactly the same
 
-	  mount = sx- root.disk # applet mount can be run by root and members of group disk
-	                        # and runs with euid=0
+	  mount = sx- root.disk # applet mount can be run by root and members
+	                        # of group disk and runs with euid=0
 
 	  cp = --- # disable applet cp for everyone
 
@@ -192,14 +202,15 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG_QUIET
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	help
-	  /etc/busybox.conf should be readable by the user needing the SUID, check
-	  this option to avoid users to be notified about missing permissions.
+	  /etc/busybox.conf should be readable by the user needing the SUID,
+	  check this option to avoid users to be notified about missing
+	  permissions.
 
 config BUSYBOX_CONFIG_SELINUX
 	bool "Support NSA Security Enhanced Linux"
 	default n
 	help
-	  Enable support for SELinux in applets ls, ps, and id.  Also provide
+	  Enable support for SELinux in applets ls, ps, and id. Also provide
 	  the option of compiling in SELinux applets.
 
 	  If you do not have a complete SELinux userland installed, this stuff
@@ -234,9 +245,9 @@ config BUSYBOX_CONFIG_BUSYBOX_EXEC_PATH
 	default "/proc/self/exe"
 	help
 	  When Busybox applets need to run other busybox applets, BusyBox
-	  sometimes needs to exec() itself.  When the /proc filesystem is
+	  sometimes needs to exec() itself. When the /proc filesystem is
 	  mounted, /proc/self/exe always points to the currently running
-	  executable.  If you haven't got /proc, set this to wherever you
+	  executable. If you haven't got /proc, set this to wherever you
 	  want to run BusyBox from.
 
 # These are auto-selected by other options
@@ -303,7 +314,7 @@ config BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 	  busybox code.
 
 	  This feature allows every applet to be built as a tiny
-	  separate executable.  Enabling it for "one big busybox binary"
+	  separate executable. Enabling it for "one big busybox binary"
 	  approach serves no purpose and increases code size.
 	  You should almost certainly say "no" to this.
 
@@ -320,7 +331,7 @@ config BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 ###	  standalone application which uses libbusybox say 'Y'.
 ###
 ###	  Note: libbusybox is GPL, not LGPL, and exports no stable API that
-###	  might act as a copyright barrier.  We can and will modify the
+###	  might act as a copyright barrier. We can and will modify the
 ###	  exported function set between releases (even minor version number
 ###	  changes), and happily break out-of-tree features.
 ###
@@ -329,7 +340,7 @@ config BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 config BUSYBOX_CONFIG_FEATURE_INDIVIDUAL
 	bool "Produce a binary for each applet, linked against libbusybox"
 	default n
-	depends on !BUSYBOX_CONFIG_STATIC && BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
+	depends on BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 	help
 	  If your CPU architecture doesn't allow for sharing text/rodata
 	  sections of running binaries, but allows for runtime dynamic
@@ -347,7 +358,7 @@ config BUSYBOX_CONFIG_FEATURE_INDIVIDUAL
 config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
 	bool "Produce additional busybox binary linked against libbusybox"
 	default n
-	depends on !BUSYBOX_CONFIG_STATIC && BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
+	depends on BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 	help
 	  Build busybox, dynamically linked against libbusybox.so.N.N.N.
 
@@ -378,11 +389,11 @@ config BUSYBOX_CONFIG_LFS
 	select BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
 	help
 	  If you want to build BusyBox with large file support, then enable
-	  this option.  This will have no effect if your kernel or your C
-	  library lacks large file support for large files.  Some of the
+	  this option. This will have no effect if your kernel or your C
+	  library lacks large file support for large files. Some of the
 	  programs that can benefit from large file support include dd, gzip,
-	  cp, mount, tar, and many others.  If you want to access files larger
-	  than 2 Gigabytes, enable this option.  Otherwise, leave it set to 'N'.
+	  cp, mount, tar, and many others. If you want to access files larger
+	  than 2 Gigabytes, enable this option. Otherwise, leave it set to 'N'.
 
 config BUSYBOX_CONFIG_CROSS_COMPILER_PREFIX
 	string "Cross Compiler prefix"
@@ -403,20 +414,20 @@ config BUSYBOX_CONFIG_DEBUG
 	default n
 	help
 	  Say Y here if you wish to examine BusyBox internals while applets are
-	  running.  This increases the size of the binary considerably, and
-	  should only be used when doing development.  If you are doing
+	  running. This increases the size of the binary considerably, and
+	  should only be used when doing development. If you are doing
 	  development and want to debug BusyBox, answer Y.
 
 	  Most people should answer N.
 
 config BUSYBOX_CONFIG_DEBUG_PESSIMIZE
-	bool "Disable compiler optimizations."
+	bool "Disable compiler optimizations"
 	default n
 	depends on BUSYBOX_CONFIG_DEBUG
 	help
 	  The compiler's optimization of source code can eliminate and reorder
 	  code, resulting in an executable that's hard to understand when
-	  stepping through it with a debugger.  This switches it off, resulting
+	  stepping through it with a debugger. This switches it off, resulting
 	  in a much bigger executable that more closely matches the source
 	  code.
 
@@ -433,27 +444,28 @@ choice
 	default BUSYBOX_CONFIG_NO_DEBUG_LIB
 	help
 	  Using an additional debugging library will make BusyBox become
-	  considerable larger and will cause it to run more slowly.  You
+	  considerable larger and will cause it to run more slowly. You
 	  should always leave this option disabled for production use.
 
 	  dmalloc support:
 	  ----------------
 	  This enables compiling with dmalloc ( http://dmalloc.com/ )
 	  which is an excellent public domain mem leak and malloc problem
-	  detector.  To enable dmalloc, before running busybox you will
+	  detector. To enable dmalloc, before running busybox you will
 	  want to properly set your environment, for example:
 	    export DMALLOC_OPTIONS=debug=0x34f47d83,inter=100,log=logfile
 	  The 'debug=' value is generated using the following command
-	    dmalloc -p log-stats -p log-non-free -p log-bad-space -p log-elapsed-time \
-	       -p check-fence -p check-heap -p check-lists -p check-blank \
-	       -p check-funcs -p realloc-copy -p allow-free-null
+	    dmalloc -p log-stats -p log-non-free -p log-bad-space \
+	       -p log-elapsed-time -p check-fence -p check-heap \
+	       -p check-lists -p check-blank -p check-funcs -p realloc-copy \
+	       -p allow-free-null
 
 	  Electric-fence support:
 	  -----------------------
-	  This enables compiling with Electric-fence support.  Electric
+	  This enables compiling with Electric-fence support. Electric
 	  fence is another very useful malloc debugging library which uses
 	  your computer's virtual memory hardware to detect illegal memory
-	  accesses.  This support will make BusyBox be considerable larger
+	  accesses. This support will make BusyBox be considerable larger
 	  and run slower, so you should leave this option disabled unless
 	  you are hunting a hard to find memory problem.
 
@@ -475,8 +487,11 @@ config BUSYBOX_CONFIG_INCLUDE_SUSv2
 	help
 	  This option will enable backwards compatibility with SuSv2,
 	  specifically, old-style numeric options ('command -1 <file>')
-	  will be supported in head, tail, and fold.  (Note: should
+	  will be supported in head, tail, and fold. (Note: should
 	  affect renice too.)
+
+config BUSYBOX_CONFIG_PARSE
+	bool "Uniform config file parser debugging applet: parse"
 
 endmenu
 
@@ -505,8 +520,8 @@ config BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
 config BUSYBOX_CONFIG_INSTALL_APPLET_HARDLINKS
 	bool "as hard-links"
 	help
-	  Install applets as hard-links to the busybox binary. This might count
-	  on a filesystem with few inodes.
+	  Install applets as hard-links to the busybox binary. This might
+	  count on a filesystem with few inodes.
 
 config BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
 	bool "as script wrappers"
@@ -542,7 +557,8 @@ config BUSYBOX_CONFIG_INSTALL_SH_APPLET_HARDLINK
 config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SCRIPT_WRAPPER
 	bool "as script wrapper"
 	help
-	  Install /bin/sh applet as script wrapper that call the busybox binary.
+	  Install /bin/sh applet as script wrapper that call the busybox
+	  binary.
 
 endchoice
 

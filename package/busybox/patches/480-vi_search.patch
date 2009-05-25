@@ -1,15 +1,15 @@
 --- a/editors/vi.c
 +++ b/editors/vi.c
-@@ -3313,7 +3313,7 @@ static void do_cmd(char c)
+@@ -3317,7 +3317,7 @@ static void do_cmd(char c)
  		buf[1] = '\0';
  		q = get_input_line(buf);	// get input line- use "status line"
  		if (q[0] && !q[1]) {
 -			if (last_search_pattern[0])
 +			if (last_search_pattern)
- 			    last_search_pattern[0] = c;
+ 				last_search_pattern[0] = c;
  			goto dc3; // if no pat re-use old pat
  		}
-@@ -3329,6 +3329,10 @@ static void do_cmd(char c)
+@@ -3333,6 +3333,10 @@ static void do_cmd(char c)
  		if (cmdcnt-- > 1) {
  			do_cmd(c);
  		}				// repeat cnt
@@ -20,16 +20,3 @@
  		dir = BACK;		// assume BACKWARD search
  		p = dot - 1;
  		if (last_search_pattern[0] == '?') {
-@@ -3348,10 +3352,8 @@ static void do_cmd(char c)
- 			msg = "No previous regular expression";
- 			goto dc2;
- 		}
--		if (last_search_pattern[0] == '/') {
--			dir = FORWARD;	// assume FORWARD search
--			p = dot + 1;
--		}
-+		dir = FORWARD;	// assume FORWARD search
-+		p = dot + 1;
- 		if (last_search_pattern[0] == '?') {
- 			dir = BACK;
- 			p = dot - 1;

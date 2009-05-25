@@ -17,7 +17,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_PRINT0
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Causes output names to be separated by a null character
-	  rather than a newline.  This allows names that contain
+	  rather than a newline. This allows names that contain
 	  newlines and other whitespace to be more easily
 	  interpreted by other programs.
 
@@ -182,7 +182,7 @@ config BUSYBOX_CONFIG_FEATURE_GREP_EGREP_ALIAS
 	default y
 	depends on BUSYBOX_CONFIG_GREP
 	help
-	  Enabled support for extended regular expressions.  Extended
+	  Enabled support for extended regular expressions. Extended
 	  regular expressions allow for alternation (foo|bar), grouping,
 	  and various repetition operators.
 

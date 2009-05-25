@@ -95,6 +95,12 @@ config BUSYBOX_CONFIG_FEATURE_SETCONSOLE_LONG_OPTIONS
 	help
 	  Support long options for the setconsole applet.
 
+config BUSYBOX_CONFIG_SETFONT
+	bool "setfont"
+	default n
+	help
+	  Allows to load console screen map. Useful for i18n.
+
 config BUSYBOX_CONFIG_SETKEYCODES
 	bool "setkeycodes"
 	default n
@@ -107,5 +113,11 @@ config BUSYBOX_CONFIG_SETLOGCONS
 	default n
 	help
 	  This program redirects the output console of kernel messages.
+
+config BUSYBOX_CONFIG_SHOWKEY
+	bool "showkey"
+	default n
+	help
+	  Shows keys pressed.
 
 endmenu

@@ -5,14 +5,64 @@
 
 menu "Linux Module Utilities"
 
+config BUSYBOX_CONFIG_MODPROBE_SMALL
+	bool "Simplified modutils"
+	default n
+	help
+	  Simplified modutils.
+
+	  With this option modprobe does not require modules.dep file
+	  and does not use /etc/modules.conf file.
+	  It scans module files in /lib/modules/`uname -r` and
+	  determines dependencies and module alias names on the fly.
+	  This may make module loading slower, most notably
+	  when one needs to load module by alias (this requires
+	  scanning through module _bodies_).
+
+	  At the first attempt to load a module by alias modprobe
+	  will try to generate modules.dep.bb file in order to speed up
+	  future loads by alias. Failure to do so (read-only /lib/modules,
+	  etc) is not reported, and future modprobes will be slow too.
+
+	  NB: modules.dep.bb file format is not compatible
+	  with modules.dep file as created/used by standard module tools.
+
+	  Additional module parameters can be stored in
+	  /etc/modules/$module_name files.
+
+	  Apart from modprobe, other utilities are also provided:
+	  - insmod is an alias to modprobe
+	  - rmmod is an alias to modprobe -r
+	  - depmod generates modules.dep.bb
+
+	  As of 2008-07, this code is experimental. It is 14kb smaller
+	  than "non-small" modutils.
+
+config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE
+	bool "Accept module options on modprobe command line"
+	default n
+	depends on BUSYBOX_CONFIG_MODPROBE_SMALL
+	help
+	  Allow insmod and modprobe take module options from command line.
+	  N.B. Very bloaty.
+
+config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_CHECK_ALREADY_LOADED
+	bool "Skip loading of already loaded modules"
+	default n
+	depends on BUSYBOX_CONFIG_MODPROBE_SMALL
+	help
+	  Check if the module is already loaded.
+	  N.B. It's racy.
+
 config BUSYBOX_CONFIG_DEPMOD
 	bool "depmod"
 	default n
+	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  depmod generates modules.dep (FIXME: elaborate)
 
 config BUSYBOX_CONFIG_FEATURE_DEPMOD_PRUNE_FANCY
-	bool "fancy dependency pruning"
+	bool "Fancy dependency pruning"
 	default n
 	depends on BUSYBOX_CONFIG_DEPMOD
 	help
@@ -26,7 +76,7 @@ config BUSYBOX_CONFIG_FEATURE_DEPMOD_PRUNE_FANCY
 	  If unsure, say N.
 
 config BUSYBOX_CONFIG_FEATURE_DEPMOD_ALIAS
-	bool "alias support"
+	bool "Alias support"
 	default n
 	depends on BUSYBOX_CONFIG_DEPMOD
 	help
@@ -38,6 +88,7 @@ config BUSYBOX_CONFIG_FEATURE_DEPMOD_ALIAS
 config BUSYBOX_CONFIG_INSMOD
 	bool "insmod"
 	default y
+	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  insmod is used to load specified modules in the running kernel.
 
@@ -46,7 +97,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_VERSION_CHECKING
 	default n
 	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	help
-	  Support checking of versions for modules.  This is used to
+	  Support checking of versions for modules. This is used to
 	  ensure that the kernel and module are made for each other.
 
 config BUSYBOX_CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -55,9 +106,9 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
 	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	help
 	  By adding module symbols to the kernel symbol table, Oops messages
-	  occuring within kernel modules can be properly debugged.  By enabling
+	  occuring within kernel modules can be properly debugged. By enabling
 	  this feature, module symbols will always be added to the kernel symbol
-	  table for properly debugging support.  If you are not interested in
+	  table for properly debugging support. If you are not interested in
 	  Oops messages from kernel modules, say N.
 
 config BUSYBOX_CONFIG_FEATURE_INSMOD_LOADINKMEM
@@ -87,18 +138,20 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP_FULL
 	depends on BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
 	help
 	  Without this option, -m will only output section
-	  load map.  With this option, -m will also output
+	  load map. With this option, -m will also output
 	  symbols load map.
 
 config BUSYBOX_CONFIG_RMMOD
 	bool "rmmod"
 	default y
+	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  rmmod is used to unload specified modules from the kernel.
 
 config BUSYBOX_CONFIG_LSMOD
 	bool "lsmod"
 	default y
+	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  lsmod is used to display a list of loaded modules.
 
@@ -113,6 +166,7 @@ config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
 config BUSYBOX_CONFIG_MODPROBE
 	bool "modprobe"
 	default n
+	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  Handle the loading of modules, and their dependencies on a high
 	  level.
@@ -168,7 +222,7 @@ config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	default y
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_LSMOD
 	help
-	  Support checking for tainted modules.  These are usually binary
+	  Support checking for tainted modules. These are usually binary
 	  only modules that will make the linux-kernel list ignore your
 	  support request.
 	  This option is required to support GPLONLY modules.
@@ -196,7 +250,7 @@ config BUSYBOX_CONFIG_DEFAULT_MODULES_DIR
 	# Simulate indentation
 	string "Default directory containing modules"
 	default "/lib/modules"
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_DEPMOD
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_MODPROBE_SMALL || BUSYBOX_CONFIG_DEPMOD
 	help
 	  Directory that contains kernel modules.
 	  Defaults to "/lib/modules"
@@ -205,7 +259,7 @@ config BUSYBOX_CONFIG_DEFAULT_DEPMOD_FILE
 	# Simulate indentation
 	string "Default name of modules.dep"
 	default "modules.dep"
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_DEPMOD
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_MODPROBE_SMALL || BUSYBOX_CONFIG_DEPMOD
 	help
 	  Filename that contains kernel modules dependencies.
 	  Defaults to "modules.dep"

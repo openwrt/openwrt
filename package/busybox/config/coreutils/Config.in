@@ -10,7 +10,7 @@ config BUSYBOX_CONFIG_BASENAME
 	default y
 	help
 	  basename is used to strip the directory and suffix from filenames,
-	  leaving just the filename itself.  Enable this option if you wish
+	  leaving just the filename itself. Enable this option if you wish
 	  to enable the 'basename' utility.
 
 config BUSYBOX_CONFIG_CAL
@@ -24,7 +24,7 @@ config BUSYBOX_CONFIG_CAT
 	default y
 	help
 	  cat is used to concatenate files and print them to the standard
-	  output.  Enable this option if you wish to enable the 'cat' utility.
+	  output. Enable this option if you wish to enable the 'cat' utility.
 
 config BUSYBOX_CONFIG_CATV
 	bool "catv"
@@ -117,7 +117,8 @@ config BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
 	  print to standard error the number of records read and written
 	  so far, then to resume copying.
 
-	  $ dd if=/dev/zero of=/dev/null& pid=$! $ kill -USR1 $pid; sleep 1; kill $pid
+	  $ dd if=/dev/zero of=/dev/null&
+	  $ pid=$! kill -USR1 $pid; sleep 1; kill $pid
 	  10899206+0 records in 10899206+0 records out
 
 config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
@@ -232,7 +233,7 @@ config BUSYBOX_CONFIG_EXPR_MATH_SUPPORT_64
 	default n
 	depends on BUSYBOX_CONFIG_EXPR
 	help
-	  Enable 64-bit math support in the expr applet.  This will make
+	  Enable 64-bit math support in the expr applet. This will make
 	  the applet slightly larger, but will allow computation with very
 	  large numbers.
 
@@ -509,17 +510,32 @@ config BUSYBOX_CONFIG_SHA1SUM
 	  Compute and check SHA1 message digest
 
 config BUSYBOX_CONFIG_SLEEP
-	bool "sleep (single integer arg with no suffix)"
+	bool "sleep"
 	default y
 	help
-	  sleep is used to pause for a specified number of seconds,
+	  sleep is used to pause for a specified number of seconds.
+	  It comes in 3 versions:
+	  - small: takes one integer parameter
+	  - fancy: takes multiple integer arguments with suffixes:
+	    sleep 1d 2h 3m 15s
+	  - fancy with fractional numbers:
+	    sleep 2.3s 4.5h sleeps for 16202.3 seconds
+	  Last one is "the most compatible" with coreutils sleep,
+	  but it adds around 1k of code.
 
 config BUSYBOX_CONFIG_FEATURE_FANCY_SLEEP
-	bool "Enable multiple integer args and optional time suffixes"
+	bool "Enable multiple arguments and s/m/h/d suffixes"
 	default y
 	depends on BUSYBOX_CONFIG_SLEEP
 	help
 	  Allow sleep to pause for specified minutes, hours, and days.
+
+config BUSYBOX_CONFIG_FEATURE_FLOAT_SLEEP
+	bool "Enable fractional arguments"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_FANCY_SLEEP
+	help
+	  Allow for fractional numeric parameters.
 
 config BUSYBOX_CONFIG_SORT
 	bool "sort"
@@ -532,9 +548,9 @@ config BUSYBOX_CONFIG_FEATURE_SORT_BIG
 	default n
 	depends on BUSYBOX_CONFIG_SORT
 	help
-	  Without this, sort only supports  -r, -u, and an integer version
-	  of -n.  Selecting this adds sort keys, floating point support, and
-	  more.  This adds a little over 3k to a nonstatic build on x86.
+	  Without this, sort only supports -r, -u, and an integer version
+	  of -n. Selecting this adds sort keys, floating point support, and
+	  more. This adds a little over 3k to a nonstatic build on x86.
 
 	  The SuSv3 sort standard is available at:
 	  http://www.opengroup.org/onlinepubs/007904975/utilities/sort.html
@@ -566,7 +582,7 @@ config BUSYBOX_CONFIG_FEATURE_STAT_FORMAT
 	depends on BUSYBOX_CONFIG_STAT
 	help
 	  Without this, stat will not support the '-c format' option where
-	  users can pass a custom format string for output.  This adds about
+	  users can pass a custom format string for output. This adds about
 	  7k to a nonstatic build on amd64.
 
 config BUSYBOX_CONFIG_STTY
@@ -627,7 +643,7 @@ config BUSYBOX_CONFIG_TEST
 	default y
 	help
 	  test is used to check file types and compare values,
-	  returning an appropriate exit code.  The bash shell
+	  returning an appropriate exit code. The bash shell
 	  has test built in, ash can build it in optionally.
 
 config BUSYBOX_CONFIG_FEATURE_TEST_64
@@ -738,7 +754,7 @@ config BUSYBOX_CONFIG_FEATURE_WC_LARGE
 	default n
 	depends on BUSYBOX_CONFIG_WC
 	help
-	  Use "unsigned long long" in wc for count variables
+	  Use "unsigned long long" in wc for count variables.
 
 config BUSYBOX_CONFIG_WHO
 	bool "who"

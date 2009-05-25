@@ -9,7 +9,7 @@ config BUSYBOX_CONFIG_AWK
 	bool "awk"
 	default y
 	help
-	  Awk is used as a pattern scanning and processing language.  This is
+	  Awk is used as a pattern scanning and processing language. This is
 	  the BusyBox implementation of that programming language.
 
 config BUSYBOX_CONFIG_FEATURE_AWK_MATH
@@ -64,7 +64,7 @@ config BUSYBOX_CONFIG_ED
 	default n
 	help
 	  The original 1970's Unix text editor, from the days of teletypes.
-	  Small, simple, evil.  Part of SUSv3.  If you're not already using
+	  Small, simple, evil. Part of SUSv3. If you're not already using
 	  this, you don't need it.
 
 config BUSYBOX_CONFIG_PATCH
@@ -84,9 +84,9 @@ config BUSYBOX_CONFIG_VI
 	bool "vi"
 	default y
 	help
-	  'vi' is a text editor.  More specifically, it is the One True
-	  text editor <grin>.  It does, however, have a rather steep
-	  learning curve.  If you are not already comfortable with 'vi'
+	  'vi' is a text editor. More specifically, it is the One True
+	  text editor <grin>. It does, however, have a rather steep
+	  learning curve. If you are not already comfortable with 'vi'
 	  you may wish to use something else.
 
 config BUSYBOX_CONFIG_FEATURE_VI_MAX_LEN
@@ -113,7 +113,7 @@ config BUSYBOX_CONFIG_FEATURE_VI_COLON
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
-	  Enable a limited set of colon commands for vi.  This does not
+	  Enable a limited set of colon commands for vi. This does not
 	  provide an "ex" mode.
 
 config BUSYBOX_CONFIG_FEATURE_VI_YANKMARK
@@ -137,7 +137,7 @@ config BUSYBOX_CONFIG_FEATURE_VI_USE_SIGNALS
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
-	  Selecting this option will make busybox vi signal aware.  This will
+	  Selecting this option will make busybox vi signal aware. This will
 	  make busybox vi support SIGWINCH to deal with Window Changes, catch
 	  Ctrl-Z and Ctrl-C and alarms.
 

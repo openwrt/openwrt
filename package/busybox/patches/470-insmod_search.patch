@@ -27,11 +27,11 @@
 +int insmod_main_26(int argc, char **argv);
  #endif
 +int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
- 
++
 +static char *g_filename = NULL;
 +#define _PATH_MODULES	"/lib/modules"
 +
-+static int check_module_name_match(const char *filename, struct stat *statbuf,
++static int FAST_FUNC check_module_name_match(const char *filename, struct stat *statbuf,
 +				   void *userdata, int depth)
 +{
 +	char *fullname = (char *) userdata;
@@ -112,7 +112,7 @@
 +
 +done:
 +	free(filename);
-+
+ 
 +	return ret;
 +}
 +
@@ -164,9 +164,9 @@
 -/*======================================================================*/
 -
 -
--static int check_module_name_match(const char *filename,
--		struct stat *statbuf ATTRIBUTE_UNUSED,
--		void *userdata, int depth ATTRIBUTE_UNUSED)
+-static int FAST_FUNC check_module_name_match(const char *filename,
+-		struct stat *statbuf UNUSED_PARAM,
+-		void *userdata, int depth UNUSED_PARAM)
 -{
 -	char *fullname = (char *) userdata;
 -	char *tmp;
@@ -238,7 +238,7 @@
  			break;
  
  #elif defined(__microblaze__)
-@@ -1759,7 +1823,7 @@ static int arch_list_add(ElfW(RelM) *rel
+@@ -1764,7 +1828,7 @@ static int arch_list_add(ElfW(RelM) *rel
  
  #if defined(USE_SINGLE)
  
@@ -247,7 +247,7 @@
  			     int offset, int size)
  {
  	if (single->allocated == 0) {
-@@ -1907,7 +1971,7 @@ static void arch_create_got(struct obj_f
+@@ -1912,7 +1976,7 @@ static void arch_create_got(struct obj_f
  #if defined(USE_GOT_ENTRIES)
  			if (got_allocate) {
  				got_offset += arch_single_init(
@@ -256,7 +256,7 @@
  						got_offset, GOT_ENTRY_SIZE);
  
  				got_needed = 1;
-@@ -1921,7 +1985,7 @@ static void arch_create_got(struct obj_f
+@@ -1926,7 +1990,7 @@ static void arch_create_got(struct obj_f
  						plt_offset, PLT_ENTRY_SIZE);
  #else
  				plt_offset += arch_single_init(
@@ -265,7 +265,7 @@
  						plt_offset, PLT_ENTRY_SIZE);
  #endif
  				plt_needed = 1;
-@@ -1959,8 +2023,7 @@ static unsigned long obj_elf_hash_n(cons
+@@ -1964,8 +2028,7 @@ static unsigned long obj_elf_hash_n(cons
  	while (n > 0) {
  		ch = *name++;
  		h = (h << 4) + ch;
@@ -275,7 +275,7 @@
  			h ^= g >> 24;
  			h &= ~g;
  		}
-@@ -2039,7 +2102,7 @@ obj_add_symbol(struct obj_file *f, const
+@@ -2044,7 +2107,7 @@ obj_add_symbol(struct obj_file *f, const
  	int n_type = ELF_ST_TYPE(info);
  	int n_binding = ELF_ST_BIND(info);
  
@@ -284,7 +284,7 @@
  		if (f->symbol_cmp(sym->name, name) == 0) {
  			int o_secidx = sym->secidx;
  			int o_info = sym->info;
-@@ -2098,14 +2161,14 @@ obj_add_symbol(struct obj_file *f, const
+@@ -2103,14 +2166,14 @@ obj_add_symbol(struct obj_file *f, const
  				return sym;
  			}
  		}
@@ -301,7 +301,7 @@
  		if (symidx >= f->local_symtab_size)
  			bb_error_msg("local symbol %s with index %ld exceeds local_symtab_size %ld",
  					name, (long) symidx, (long) f->local_symtab_size);
-@@ -3228,7 +3291,7 @@ static int obj_relocate(struct obj_file 
+@@ -3234,7 +3297,7 @@ static int obj_relocate(struct obj_file 
  
  			/* Do it! */
  			switch (arch_apply_relocation
@@ -310,12 +310,12 @@
  			) {
  			case obj_reloc_ok:
  				break;
-@@ -3307,11 +3370,11 @@ static int obj_create_image(struct obj_f
+@@ -3313,11 +3376,11 @@ static int obj_create_image(struct obj_f
  
  /*======================================================================*/
  
--static struct obj_file *obj_load(FILE * fp, int loadprogbits ATTRIBUTE_UNUSED)
-+static struct obj_file *obj_load(FILE * fp, int loadprogbits)
+-static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
++static struct obj_file *obj_load(FILE *fp, int loadprogbits)
  {
  	struct obj_file *f;
  	ElfW(Shdr) * section_headers;
@@ -324,7 +324,7 @@
  	char *shstrtab;
  
  	/* Read the file header.  */
-@@ -3583,7 +3646,7 @@ static int obj_gpl_license(struct obj_fi
+@@ -3591,7 +3654,7 @@ static int obj_gpl_license(struct obj_fi
  		while (ptr < endptr) {
  			value = strchr(ptr, '=');
  			if (value && strncmp(ptr, "license", value-ptr) == 0) {
@@ -333,7 +333,7 @@
  				if (license)
  					*license = value+1;
  				for (i = 0; i < ARRAY_SIZE(gpl_licenses); ++i) {
-@@ -3687,9 +3750,6 @@ static void check_tainted_module(struct 
+@@ -3695,9 +3758,6 @@ static void check_tainted_module(struct 
   * start of some sections.  this info is used by ksymoops to do better
   * debugging.
   */
@@ -343,7 +343,7 @@
  static int
  get_module_version(struct obj_file *f, char str[STRVERSIONLEN])
  {
-@@ -3722,8 +3782,7 @@ add_ksymoops_symbols(struct obj_file *f,
+@@ -3730,8 +3790,7 @@ add_ksymoops_symbols(struct obj_file *f,
  	struct obj_symbol *sym;
  	char *name, *absolute_filename;
  	char str[STRVERSIONLEN];
@@ -353,7 +353,7 @@
  	struct stat statbuf;
  
  	/* WARNING: was using realpath, but replaced by readlink to stop using
-@@ -3910,145 +3969,57 @@ static void print_load_map(struct obj_fi
+@@ -3922,145 +3981,57 @@ static void print_load_map(struct obj_fi
  void print_load_map(struct obj_file *f);
  #endif
  
@@ -408,7 +408,7 @@
 +	if (arg1 == NULL)
  		bb_show_usage();
 -	}
- 
+-
 -	/* Grab the module name */
 -	tmp1 = xstrdup(arg1);
 -	tmp = basename(tmp1);
@@ -419,7 +419,7 @@
 -			k_version = myuname.release[2] - '0';
 -		}
 -	}
--
+ 
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4 && len > 3 && tmp[len - 3] == '.'
 -	 && tmp[len - 2] == 'k' && tmp[len - 1] == 'o'
@@ -453,7 +453,7 @@
 -
 -	/* Get a filedesc for the module.  Check that we have a complete path */
 -	if (stat(arg1, &st) < 0 || !S_ISREG(st.st_mode)
--	 || (fp = fopen(arg1, "r")) == NULL
+-	 || (fp = fopen_for_read(arg1)) == NULL
 -	) {
 -		/* Hmm.  Could not open it.  First search under /lib/modules/`uname -r`,
 -		 * but do not error out yet if we fail to find it... */
@@ -477,7 +477,7 @@
 -		}
 -
 -		/* Check if we have found anything yet */
--		if (!m_filename || ((fp = fopen(m_filename, "r")) == NULL)) {
+-		if (!m_filename || ((fp = fopen_for_read(m_filename)) == NULL)) {
 -			int r;
 -			char *module_dir;
 -
@@ -494,7 +494,7 @@
 -				bb_error_msg_and_die("%s: module not found", m_fullName);
 -			free(module_dir);
 -			if (m_filename == NULL
--			 || ((fp = fopen(m_filename, "r")) == NULL)
+-			 || ((fp = fopen_for_read(m_filename)) == NULL)
 -			) {
 -				bb_error_msg_and_die("%s: module not found", m_fullName);
 -			}
@@ -503,16 +503,16 @@
  		}
 -	} else
 -		m_filename = xstrdup(arg1);
- 
+-
 -	if (flag_verbose)
 -		printf("Using %s\n", m_filename);
--
+ 
 -#if ENABLE_FEATURE_2_6_MODULES
 -	if (k_version > 4) {
 -		argv[optind] = m_filename;
 -		optind--;
 -		return insmod_ng_main(argc - optind, argv + optind);
-+	fp = fopen(g_filename, "r");
++	fp = fopen_for_read(g_filename);
 +	if (!fp) {
 +		ret = errno;
 +		goto out;
@@ -521,7 +521,7 @@
  
  	f = obj_load(fp, LOADBITS);
  
-@@ -4075,7 +4046,7 @@ int insmod_main(int argc, char **argv)
+@@ -4087,7 +4058,7 @@ int insmod_main(int argc, char **argv)
  				"\t%s was compiled for kernel version %s\n"
  				"\twhile this kernel is version %s",
  				flag_force_load ? "warning: " : "",
@@ -530,7 +530,7 @@
  			if (!flag_force_load)
  				goto out;
  		}
-@@ -4117,7 +4088,7 @@ int insmod_main(int argc, char **argv)
+@@ -4129,7 +4100,7 @@ int insmod_main(int argc, char **argv)
  	hide_special_symbols(f);
  
  #if ENABLE_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
@@ -539,7 +539,7 @@
  #endif /* FEATURE_INSMOD_KSYMOOPS_SYMBOLS */
  
  	new_create_module_ksymtab(f);
-@@ -4126,7 +4097,7 @@ int insmod_main(int argc, char **argv)
+@@ -4138,7 +4109,7 @@ int insmod_main(int argc, char **argv)
  	m_size = obj_load_size(f);
  
  	m_addr = create_module(m_name, m_size);
@@ -548,7 +548,7 @@
  		case EEXIST:
  			bb_error_msg_and_die("a module named %s already exists", m_name);
  		case ENOMEM:
-@@ -4142,36 +4113,37 @@ int insmod_main(int argc, char **argv)
+@@ -4154,36 +4125,37 @@ int insmod_main(int argc, char **argv)
  	 * now we can load them directly into the kernel memory
  	 */
  	if (!obj_load_progbits(fp, f, (char*)m_addr)) {
@@ -594,7 +594,7 @@
  }
  
  #endif /* ENABLE_FEATURE_2_4_MODULES */
-@@ -4183,15 +4155,8 @@ int insmod_main(int argc, char **argv)
+@@ -4195,15 +4167,8 @@ int insmod_main(int argc, char **argv)
  #if ENABLE_FEATURE_2_6_MODULES
  
  #include <sys/mman.h>
@@ -610,15 +610,15 @@
  
  /* We use error numbers in a loose translation... */
  static const char *moderror(int err)
-@@ -4210,22 +4175,32 @@ static const char *moderror(int err)
+@@ -4222,22 +4187,32 @@ static const char *moderror(int err)
  	}
  }
  
 -#if !ENABLE_FEATURE_2_4_MODULES
 -int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
--int insmod_main(int argc ATTRIBUTE_UNUSED, char **argv)
+-int insmod_main(int argc UNUSED_PARAM, char **argv)
 -#else
--static int insmod_ng_main(int argc ATTRIBUTE_UNUSED, char **argv)
+-static int insmod_ng_main(int argc UNUSED_PARAM, char **argv)
 -#endif
 +int insmod_main_26(int argc, char **argv)
  {
@@ -651,7 +651,7 @@
  	/* Rest is options */
  	options = xzalloc(1);
  	optlen = 0;
-@@ -4235,41 +4210,47 @@ static int insmod_ng_main(int argc ATTRI
+@@ -4247,41 +4222,47 @@ static int insmod_ng_main(int argc UNUSE
  		optlen += sprintf(options + optlen, (strchr(*argv,' ') ? "\"%s\" " : "%s "), *argv);
  	}
  
@@ -683,7 +683,7 @@
 -	}
 -#else
  	len = MAXINT(ssize_t);
--	map = xmalloc_open_read_close(filename, &len);
+-	map = xmalloc_xopen_read_close(filename, &len);
 -#endif
 +	map = xmalloc_open_read_close(g_filename, &len);
 +	ret = syscall(__NR_init_module, map, len, options);

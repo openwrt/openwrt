@@ -66,12 +66,12 @@ config BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
 	  This adds about 600 bytes.
 
 config BUSYBOX_CONFIG_FEATURE_BRCTL_SHOW
-	bool "Support show"
+	bool "Support show, showmac and showstp"
 	default y
 	depends on BUSYBOX_CONFIG_BRCTL && BUSYBOX_CONFIG_FEATURE_BRCTL_FANCY
 	help
 	  Add support for option which prints the current config:
-	    show
+	    showmacs, showstp, show
 
 config BUSYBOX_CONFIG_DNSD
 	bool "dnsd"
@@ -216,7 +216,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ENCODE_URL_STR
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows html encoding of arbitrary strings for display
-	  by the browser.  Output goes to stdout.
+	  by the browser. Output goes to stdout.
 	  For example, httpd -e "<Hello World>" produces
 	  "&#60Hello&#32World&#62".
 
@@ -264,7 +264,7 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_SLIP
 	default n
 	depends on BUSYBOX_CONFIG_IFCONFIG
 	help
-	  Allow "keepalive" and "outfill" support for SLIP.  If you're not
+	  Allow "keepalive" and "outfill" support for SLIP. If you're not
 	  planning on using serial lines, leave this unchecked.
 
 config BUSYBOX_CONFIG_FEATURE_IFCONFIG_MEMSTART_IOADDR_IRQ
@@ -281,7 +281,7 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_HW
 	depends on BUSYBOX_CONFIG_IFCONFIG
 	help
 	  Set the hardware address of this interface, if the device driver
-	  supports  this  operation.  Currently, we only support the 'ether'
+	  supports  this  operation. Currently, we only support the 'ether'
 	  class.
 
 config BUSYBOX_CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS
@@ -303,15 +303,15 @@ config BUSYBOX_CONFIG_IFUPDOWN
 	bool "ifupdown"
 	default n
 	help
-	  Activate or deactivate the specified interfaces.  This applet makes
+	  Activate or deactivate the specified interfaces. This applet makes
 	  use of either "ifconfig" and "route" or the "ip" command to actually
-	  configure network interfaces.  Therefore, you will probably also want
+	  configure network interfaces. Therefore, you will probably also want
 	  to enable either IFCONFIG and ROUTE, or enable
-	  FEATURE_IFUPDOWN_IP and the various IP options.  Of
+	  FEATURE_IFUPDOWN_IP and the various IP options. Of
 	  course you could use non-busybox versions of these programs, so
 	  against my better judgement (since this will surely result in plenty
 	  of support questions on the mailing list), I do not force you to
-	  enable these additional options.  It is up to you to supply either
+	  enable these additional options. It is up to you to supply either
 	  "ifconfig", "route" and "run-parts" or the "ip" command, either
 	  via busybox or via standalone utilities.
 
@@ -458,7 +458,7 @@ config BUSYBOX_CONFIG_IP
 	default n
 	help
 	  The "ip" applet is a TCP/IP interface configuration and routing
-	  utility.  You generally don't need "ip" to use busybox with
+	  utility. You generally don't need "ip" to use busybox with
 	  TCP/IP.
 
 config BUSYBOX_CONFIG_FEATURE_IP_ADDRESS
@@ -558,7 +558,8 @@ config BUSYBOX_CONFIG_FEATURE_IPCALC_FANCY
 	default n
 	depends on BUSYBOX_CONFIG_IPCALC
 	help
-	  Adds the options hostname, prefix and silent to the output of "ipcalc".
+	  Adds the options hostname, prefix and silent to the output of
+	  "ipcalc".
 
 config BUSYBOX_CONFIG_FEATURE_IPCALC_LONG_OPTIONS
 	bool "Enable long options"
@@ -638,6 +639,14 @@ config BUSYBOX_CONFIG_FEATURE_NETSTAT_WIDE
 	  Add support for wide columns. Useful when displaying IPv6 addresses
 	  (-W option).
 
+config BUSYBOX_CONFIG_FEATURE_NETSTAT_PRG
+	bool "Enable PID/Program name output"
+	default n
+	depends on BUSYBOX_CONFIG_NETSTAT
+	help
+	  Add support for -p flag to print out PID and program name.
+	  +700 bytes of code.
+
 config BUSYBOX_CONFIG_NSLOOKUP
 	bool "nslookup"
 	default y
@@ -694,7 +703,8 @@ config BUSYBOX_CONFIG_SLATTACH
 	bool "slattach"
 	default n
 	help
-	  slattach is a small utility to attach network interfaces to serial lines.
+	  slattach is a small utility to attach network interfaces to serial
+	  lines.
 
 config BUSYBOX_CONFIG_TELNET
 	bool "telnet"
@@ -709,7 +719,7 @@ config BUSYBOX_CONFIG_FEATURE_TELNET_TTYPE
 	depends on BUSYBOX_CONFIG_TELNET
 	help
 	  Setting this option will forward the TERM environment variable to the
-	  remote host you are connecting to.  This is useful to make sure that
+	  remote host you are connecting to. This is useful to make sure that
 	  things like ANSI colors and other control sequences behave.
 
 config BUSYBOX_CONFIG_FEATURE_TELNET_AUTOLOGIN
@@ -728,9 +738,9 @@ config BUSYBOX_CONFIG_TELNETD
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  A daemon for the TELNET protocol, allowing you to log onto the host
-	  running the daemon.  Please keep in mind that the TELNET protocol
-	  sends passwords in plain text.  If you can't afford the space for an
-	  SSH daemon and you trust your network, you may say 'y' here.  As a
+	  running the daemon. Please keep in mind that the TELNET protocol
+	  sends passwords in plain text. If you can't afford the space for an
+	  SSH daemon and you trust your network, you may say 'y' here. As a
 	  more secure alternative, you should seriously consider installing the
 	  very small Dropbear SSH daemon instead:
 		http://matt.ucc.asn.au/dropbear/dropbear.html
@@ -756,7 +766,7 @@ config BUSYBOX_CONFIG_TELNETD
 		  mount -t devpts devpts /dev/pts
 
 	  You need to be sure that Busybox has LOGIN and
-	  FEATURE_SUID enabled.  And finally, you should make
+	  FEATURE_SUID enabled. And finally, you should make
 	  certain that Busybox has been installed setuid root:
 
 		chown root.root /bin/busybox
@@ -776,7 +786,7 @@ config BUSYBOX_CONFIG_TFTP
 	bool "tftp"
 	default n
 	help
-	  This enables the Trivial File Transfer Protocol client program.  TFTP
+	  This enables the Trivial File Transfer Protocol client program. TFTP
 	  is usually used for simple, small transfers such as a root image
 	  for a network-enabled bootloader.
 
@@ -795,7 +805,7 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_GET
 	default n
 	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
-	  Add support for the GET command within the TFTP client.  This allows
+	  Add support for the GET command within the TFTP client. This allows
 	  a client to retrieve a file from a TFTP server.
 	  Also enable upload support in tftpd, if tftpd is selected.
 
@@ -804,7 +814,7 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_PUT
 	default n
 	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
-	  Add support for the PUT command within the TFTP client.  This allows
+	  Add support for the PUT command within the TFTP client. This allows
 	  a client to transfer a file to a TFTP server.
 	  Also enable download support in tftpd, if tftpd is selected.
 
@@ -821,7 +831,7 @@ config BUSYBOX_CONFIG_DEBUG_TFTP
 	default n
 	depends on BUSYBOX_CONFIG_TFTP
 	help
-	  Enable debug settings for tftp.  This is useful if you're running
+	  Enable debug settings for tftp. This is useful if you're running
 	  into problems with tftp as the protocol doesn't help you much when
 	  you run into problems.
 
@@ -836,7 +846,7 @@ config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_VERBOSE
 	default y
 	depends on BUSYBOX_CONFIG_TRACEROUTE
 	help
-	  Add some verbosity to traceroute.  This includes amongst other things
+	  Add some verbosity to traceroute. This includes amongst other things
 	  hostnames and ICMP response types.
 
 config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_SOURCE_ROUTE
@@ -906,12 +916,14 @@ config BUSYBOX_CONFIG_TCPSVD
 	bool "tcpsvd"
 	default n
 	help
-	  tcpsvd listens on a TCP port and runs a program for each new connection
+	  tcpsvd listens on a TCP port and runs a program for each new
+	  connection.
 
 config BUSYBOX_CONFIG_UDPSVD
 	bool "udpsvd"
 	default n
 	help
-	  udpsvd listens on an UDP port and runs a program for each new connection
+	  udpsvd listens on an UDP port and runs a program for each new
+	  connection.
 
 endmenu
