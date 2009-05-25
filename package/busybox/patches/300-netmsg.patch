@@ -1,6 +1,6 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -257,6 +257,7 @@ USE_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_
+@@ -261,6 +261,7 @@ USE_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_
  USE_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_NEVER))
  USE_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
@@ -10,7 +10,7 @@
  USE_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
 --- a/include/usage.h
 +++ b/include/usage.h
-@@ -2815,6 +2815,9 @@
+@@ -2816,6 +2816,9 @@
  
  #endif
  
@@ -18,11 +18,11 @@
 +#define netmsg_full_usage ""
 +
  #define netstat_trivial_usage \
-        "[-laentuwxr"USE_FEATURE_NETSTAT_WIDE("W")"]"
+        "[-laentuwxr"USE_FEATURE_NETSTAT_WIDE("W")USE_FEATURE_NETSTAT_PRG("p")"]"
  #define netstat_full_usage "\n\n" \
 --- a/networking/Config.in
 +++ b/networking/Config.in
-@@ -602,6 +602,12 @@ config NC
+@@ -603,6 +603,12 @@ config NC
  	  A simple Unix utility which reads and writes data across network
  	  connections.
  

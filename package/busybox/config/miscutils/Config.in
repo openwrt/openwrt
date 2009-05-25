@@ -101,7 +101,7 @@ config BUSYBOX_CONFIG_CROND
 	help
 	  Crond is a background daemon that parses individual crontab
 	  files and executes commands on behalf of the users in question.
-	  This is a port of dcron from slackware.  It uses files of the
+	  This is a port of dcron from slackware. It uses files of the
 	  format /var/spool/cron/crontabs/<username> files, for example:
 	      $ cat /var/spool/cron/crontabs/root
 	      # Run daily cron jobs at 4:40 every day:
@@ -126,7 +126,7 @@ config BUSYBOX_CONFIG_CRONTAB
 	default y
 	select BUSYBOX_CONFIG_FEATURE_SUID
 	help
-	  Crontab manipulates the crontab for a particular user.  Only
+	  Crontab manipulates the crontab for a particular user. Only
 	  the superuser may specify a different user and/or crontab directory.
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
@@ -167,8 +167,9 @@ config BUSYBOX_CONFIG_DEVFSD_FG_NP
 	default n
 	depends on BUSYBOX_CONFIG_DEVFSD
 	help
-		-fg	Run the daemon in the foreground.
-		-np	Exit  after  parsing  the configuration file. Do not poll for events.
+	  -fg  Run the daemon in the foreground.
+	  -np  Exit after parsing the configuration file.
+	       Do not poll for events.
 
 config BUSYBOX_CONFIG_DEVFSD_VERBOSE
 	bool "Increases logging (and size)"
@@ -184,14 +185,14 @@ config BUSYBOX_CONFIG_FEATURE_DEVFS
 	  This is obsolete and will be going away at the end of 2008..
 
 	  This tells busybox to look for names like /dev/loop/0 instead of
-	  /dev/loop0.  If your /dev directory has normal names instead of
+	  /dev/loop0. If your /dev directory has normal names instead of
 	  devfs names, you don't want this.
 
 config BUSYBOX_CONFIG_EJECT
 	bool "eject"
 	default n
 	help
-	  Used to eject cdroms.  (defaults to /dev/cdrom)
+	  Used to eject cdroms. (defaults to /dev/cdrom)
 
 config BUSYBOX_CONFIG_FEATURE_EJECT_SCSI
 	bool "SCSI support"
@@ -226,7 +227,8 @@ config BUSYBOX_CONFIG_INOTIFYD
 	bool "inotifyd"
 	default n
 	help
-	  Simple inotify daemon. Reports filesystem changes. Requires kernel >= 2.6.13
+	  Simple inotify daemon. Reports filesystem changes. Requires
+	  kernel >= 2.6.13
 
 config BUSYBOX_CONFIG_LAST
 	bool "last"
@@ -309,8 +311,8 @@ config BUSYBOX_CONFIG_HDPARM
 	bool "hdparm"
 	default n
 	help
-	  Get/Set hard drive parameters.  Primarily intended for ATA
-	  drives.  Adds about 13k (or around 30k if you enable the
+	  Get/Set hard drive parameters. Primarily intended for ATA
+	  drives. Adds about 13k (or around 30k if you enable the
 	  FEATURE_HDPARM_GET_IDENTITY option)....
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY
@@ -340,7 +342,7 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_UNREGISTER_HWIF
 	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_DRIVE_RESET
-	bool "perform device reset (DANGEROUS)"
+	bool "Perform device reset (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -348,16 +350,16 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_DRIVE_RESET
 	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_TRISTATE_HWIF
-	bool "tristate device for hotswap (DANGEROUS)"
+	bool "Tristate device for hotswap (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
 	  Enables the 'hdparm -x' option to tristate device for hotswap,
-	  and the '-b' option to get/set bus state.  This is dangerous
+	  and the '-b' option to get/set bus state. This is dangerous
 	  stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_GETSET_DMA
-	bool "get/set using_dma flag (DANGEROUS)"
+	bool "Get/set using_dma flag (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -424,7 +426,7 @@ config BUSYBOX_CONFIG_MT
 	bool "mt"
 	default n
 	help
-	  mt is used to control tape devices.  You can use the mt utility
+	  mt is used to control tape devices. You can use the mt utility
 	  to advance or rewind a tape past a specified number of archive
 	  files on the tape.
 
@@ -445,7 +447,7 @@ config BUSYBOX_CONFIG_READAHEAD
 
 	  This applet just calls the readahead(2) system call on each file.
 	  It is mainly useful in system startup scripts to preload files
-	  or executables before they are used.  When used at the right time
+	  or executables before they are used. When used at the right time
 	  (in particular when a CPU bound process is running) it can
 	  significantly speed up system startup.
 
@@ -509,16 +511,17 @@ config BUSYBOX_CONFIG_TTYSIZE
 	default n
 	help
 	  A replacement for "stty size". Unlike stty, can report only width,
-	  only height, or both, in any order. It also does not complain on error,
-	  but returns default 80x24. Usage in shell scripts: width=`ttysize w`.
+	  only height, or both, in any order. It also does not complain on
+	  error, but returns default 80x24.
+	  Usage in shell scripts: width=`ttysize w`.
 
 config BUSYBOX_CONFIG_WATCHDOG
 	bool "watchdog"
 	default y
 	help
 	  The watchdog utility is used with hardware or software watchdog
-	  device drivers.  It opens the specified watchdog device special file
-	  and periodically writes a magic character to the device.  If the
+	  device drivers. It opens the specified watchdog device special file
+	  and periodically writes a magic character to the device. If the
 	  watchdog applet ever fails to write the magic character within a
 	  certain amount of time, the watchdog device assumes the system has
 	  hung, and will cause the hardware to reboot.

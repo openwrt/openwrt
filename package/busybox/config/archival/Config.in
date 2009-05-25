@@ -5,12 +5,36 @@
 
 menu "Archival Utilities"
 
+config BUSYBOX_CONFIG_FEATURE_SEAMLESS_LZMA
+	bool "Make tar, rpm, modprobe etc understand .lzma data"
+	default n
+	help
+	  Make tar, rpm, modprobe etc understand .lzma data.
+
+config BUSYBOX_CONFIG_FEATURE_SEAMLESS_BZ2
+	bool "Make tar, rpm, modprobe etc understand .bz2 data"
+	default y
+	help
+	  Make tar, rpm, modprobe etc understand .bz2 data.
+
+config BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ
+	bool "Make tar, rpm, modprobe etc understand .gz data"
+	default y
+	help
+	  Make tar, rpm, modprobe etc understand .gz data.
+
+config BUSYBOX_CONFIG_FEATURE_SEAMLESS_Z
+	bool "Make tar and gunzip understand .Z data"
+	default n
+	help
+	  Make tar and gunzip understand .Z data.
+
 config BUSYBOX_CONFIG_AR
 	bool "ar"
 	default n
 	help
 	  ar is an archival utility program used to create, modify, and
-	  extract contents from archives.  An archive is a single file holding
+	  extract contents from archives. An archive is a single file holding
 	  a collection of other files in a structure that makes it possible to
 	  retrieve the original individual files (called archive members).
 	  The original files' contents, mode (permissions), timestamp, owner,
@@ -33,8 +57,8 @@ config BUSYBOX_CONFIG_FEATURE_AR_LONG_FILENAMES
 	default n
 	depends on BUSYBOX_CONFIG_AR
 	help
-	  By default the ar format can only store the first 15 characters of the
-	  filename, this option removes that limitation.
+	  By default the ar format can only store the first 15 characters of
+	  the filename, this option removes that limitation.
 	  It supports the GNU ar long filename method which moves multiple long
 	  filenames into a the data section of a new ar entry.
 
@@ -43,7 +67,7 @@ config BUSYBOX_CONFIG_BUNZIP2
 	default y
 	help
 	  bunzip2 is a compression utility using the Burrows-Wheeler block
-	  sorting text compression algorithm, and Huffman coding.  Compression
+	  sorting text compression algorithm, and Huffman coding. Compression
 	  is generally considerably better than that achieved by more
 	  conventional LZ77/LZ78-based compressors, and approaches the
 	  performance of the PPM family of statistical compressors.
@@ -53,10 +77,10 @@ config BUSYBOX_CONFIG_BUNZIP2
 
 config BUSYBOX_CONFIG_BZIP2
 	bool "bzip2"
-	default n
+	default y
 	help
 	  bzip2 is a compression utility using the Burrows-Wheeler block
-	  sorting text compression algorithm, and Huffman coding.  Compression
+	  sorting text compression algorithm, and Huffman coding. Compression
 	  is generally considerably better than that achieved by more
 	  conventional LZ77/LZ78-based compressors, and approaches the
 	  performance of the PPM family of statistical compressors.
@@ -68,15 +92,15 @@ config BUSYBOX_CONFIG_CPIO
 	bool "cpio"
 	default n
 	help
-	  cpio is an archival utility program used to create, modify, and extract
-	  contents from archives.
+	  cpio is an archival utility program used to create, modify, and
+	  extract contents from archives.
 	  cpio has 110 bytes of overheads for every stored file.
 
 	  This implementation of cpio can extract cpio archives created in the
 	  "newc" or "crc" format, it cannot create or modify them.
 
-	  Unless you have a specific application which requires cpio, you should
-	  probably say N here.
+	  Unless you have a specific application which requires cpio, you
+	  should probably say N here.
 
 config BUSYBOX_CONFIG_FEATURE_CPIO_O
 	bool "Support for archive creation"
@@ -90,30 +114,33 @@ config BUSYBOX_CONFIG_DPKG
 	bool "dpkg"
 	default n
 	help
-	  dpkg is a medium-level tool to install, build, remove and manage Debian packages.
+	  dpkg is a medium-level tool to install, build, remove and manage
+	  Debian packages.
 
-	  This implementation of dpkg has a number of limitations, you should use the
-	  official dpkg if possible.
+	  This implementation of dpkg has a number of limitations,
+	  you should use the official dpkg if possible.
 
 config BUSYBOX_CONFIG_DPKG_DEB
 	bool "dpkg_deb"
 	default n
 	help
-	  dpkg-deb packs, unpacks and provides information about Debian archives.
+	  dpkg-deb packs, unpacks and provides information about Debian
+	  archives.
 
 	  This implementation of dpkg-deb cannot pack archives.
 
-	  Unless you have a specific application which requires dpkg-deb, you should
-	  probably say N here.
+	  Unless you have a specific application which requires dpkg-deb,
+	  say N here.
 
 config BUSYBOX_CONFIG_FEATURE_DPKG_DEB_EXTRACT_ONLY
 	bool "Extract only (-x)"
 	default n
 	depends on BUSYBOX_CONFIG_DPKG_DEB
 	help
-	  This reduces dpkg-deb to the equivalent of "ar -p <deb> data.tar.gz | tar -zx".
-	  However it saves space as none of the extra dpkg-deb, ar or tar options are
-	  needed, they are linked to internally.
+	  This reduces dpkg-deb to the equivalent of
+	  "ar -p <deb> data.tar.gz | tar -zx". However it saves space as none
+	  of the extra dpkg-deb, ar or tar options are needed, they are linked
+	  to internally.
 
 config BUSYBOX_CONFIG_GUNZIP
 	bool "gunzip"
@@ -122,15 +149,6 @@ config BUSYBOX_CONFIG_GUNZIP
 	  gunzip is used to decompress archives created by gzip.
 	  You can use the `-t' option to test the integrity of
 	  an archive, without decompressing it.
-
-config BUSYBOX_CONFIG_FEATURE_GUNZIP_UNCOMPRESS
-	bool "Uncompress support"
-	default y
-	depends on BUSYBOX_CONFIG_GUNZIP
-	help
-	  Enable if you want gunzip to have the ability to decompress
-	  archives created by the program compress (not much
-	  used anymore).
 
 config BUSYBOX_CONFIG_GZIP
 	bool "gzip"
@@ -151,13 +169,6 @@ config BUSYBOX_CONFIG_RPM
 	help
 	  Mini RPM applet - queries and extracts RPM packages.
 
-config BUSYBOX_CONFIG_FEATURE_RPM_BZ2
-	bool "Enable handling of rpms with bzip2-compressed data inside"
-	default n
-	depends on BUSYBOX_CONFIG_RPM
-	help
-	  Enable handling of rpms with bzip2-compressed data inside.
-
 config BUSYBOX_CONFIG_TAR
 	bool "tar"
 	default y
@@ -165,6 +176,8 @@ config BUSYBOX_CONFIG_TAR
 	  tar is an archiving program. It's commonly used with gzip to
 	  create compressed archives. It's probably the most widely used
 	  UNIX archive program.
+
+if TAR
 
 config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
 	bool "Enable archive creation"
@@ -174,45 +187,13 @@ config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
 	  If you enable this option you'll be able to create
 	  tar archives using the `-c' option.
 
-config BUSYBOX_CONFIG_FEATURE_TAR_GZIP
-	bool "Enable -z option"
-	default y
-	depends on BUSYBOX_CONFIG_TAR
-	help
-	  If you enable this option tar will be able to call gzip,
-	  when creating or extracting tar gziped archives.
-
-config BUSYBOX_CONFIG_FEATURE_TAR_BZIP2
-	bool "Enable -j option to handle .tar.bz2 files"
-	default y
-	depends on BUSYBOX_CONFIG_TAR
-	help
-	  If you enable this option you'll be able to extract
-	  archives compressed with bzip2.
-
-config BUSYBOX_CONFIG_FEATURE_TAR_LZMA
-	bool "Enable -a option to handle .tar.lzma files"
-	default n
-	depends on BUSYBOX_CONFIG_TAR
-	help
-	  If you enable this option you'll be able to extract
-	  archives compressed with lzma.
-
-config BUSYBOX_CONFIG_FEATURE_TAR_COMPRESS
-	bool "Enable -Z option"
-	default n
-	depends on BUSYBOX_CONFIG_TAR
-	help
-	  If you enable this option tar will be able to call uncompress,
-	  when extracting .tar.Z archives.
-
 config BUSYBOX_CONFIG_FEATURE_TAR_AUTODETECT
-	bool "Let tar autodetect gz/bz2 compresses tarballs"
+	bool "Autodetect gz/bz2 compressed tarballs"
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_TAR_GZIP || BUSYBOX_CONFIG_FEATURE_TAR_BZIP2
+	depends on BUSYBOX_CONFIG_FEATURE_SEAMLESS_Z || BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ || BUSYBOX_CONFIG_FEATURE_SEAMLESS_BZ2 || BUSYBOX_CONFIG_FEATURE_SEAMLESS_LZMA
 	help
 	  With this option tar can automatically detect gzip/bzip2 compressed
-	  tarballs. Currently it works only on seekable streams.
+	  tarballs. Currently it works only on files (not pipes etc).
 
 config BUSYBOX_CONFIG_FEATURE_TAR_FROM
 	bool "Enable -X (exclude from) and -T (include from) options)"
@@ -237,8 +218,9 @@ config BUSYBOX_CONFIG_FEATURE_TAR_OLDSUN_COMPATIBILITY
 	depends on BUSYBOX_CONFIG_TAR
 	help
 	  This option is required to unpack archives created by some old
-	  version of Sun's tar (it was calculating checksum using signed arithmetic).
-	  It is said to be fixed in newer Sun tar, but "old" tarballs still exist.
+	  version of Sun's tar (it was calculating checksum using signed
+	  arithmetic). It is said to be fixed in newer Sun tar, but "old"
+	  tarballs still exist.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_GNU_EXTENSIONS
 	bool "Support for GNU tar extensions (long filenames)"
@@ -264,6 +246,8 @@ config BUSYBOX_CONFIG_FEATURE_TAR_UNAME_GNAME
 	  listings (-t) and preserving permissions when unpacking (-p).
 	  +200 bytes.
 
+endif #tar
+
 config BUSYBOX_CONFIG_UNCOMPRESS
 	bool "uncompress"
 	default n
@@ -276,7 +260,7 @@ config BUSYBOX_CONFIG_UNLZMA
 	default n
 	help
 	  unlzma is a compression utility using the Lempel-Ziv-Markov chain
-	  compression algorithm, and range coding.  Compression
+	  compression algorithm, and range coding. Compression
 	  is generally considerably better than that achieved by the bzip2
 	  compressors.
 
@@ -303,42 +287,5 @@ config BUSYBOX_CONFIG_UNZIP
 	  (with no options) is to extract the archive into the
 	  current directory. Use the `-d' option to extract to a
 	  directory of your choice.
-
-comment "Common options for cpio and tar"
-	depends on BUSYBOX_CONFIG_CPIO || BUSYBOX_CONFIG_TAR
-
-comment "Common options for dpkg and dpkg_deb"
-	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
-
-config BUSYBOX_CONFIG_FEATURE_DEB_TAR_GZ
-	bool "gzip debian packages (normal)"
-	default n if BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
-	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
-	help
-	  This is the default compression method inside the debian ar file.
-
-	  If you want compatibility with standard .deb's you should say yes here.
-
-config BUSYBOX_CONFIG_FEATURE_DEB_TAR_BZ2
-	bool "bzip2 debian packages"
-	default n
-	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
-	help
-	  This allows dpkg and dpkg-deb to extract deb's that are compressed internally
-	  with bzip2 instead of gzip.
-
-	  You only want this if you are creating your own custom debian packages that
-	  use an internal control.tar.bz2 or data.tar.bz2.
-
-config BUSYBOX_CONFIG_FEATURE_DEB_TAR_LZMA
-	bool "lzma debian packages"
-	default n
-	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
-	help
-	  This allows dpkg and dpkg-deb to extract deb's that are compressed
-	  internally with lzma instead of gzip.
-
-	  You only want this if you are creating your own custom debian
-	  packages that use an internal control.tar.lzma or data.tar.lzma.
 
 endmenu

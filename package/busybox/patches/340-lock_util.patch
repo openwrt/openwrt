@@ -1,8 +1,8 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -220,6 +220,7 @@ USE_LN(APPLET_NOEXEC(ln, ln, _BB_DIR_BIN
+@@ -222,6 +222,7 @@ USE_LN(APPLET_NOEXEC(ln, ln, _BB_DIR_BIN
  USE_LOAD_POLICY(APPLET(load_policy, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
- USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
  USE_LOADKMAP(APPLET(loadkmap, _BB_DIR_SBIN, _BB_SUID_NEVER))
 +USE_LOCK(APPLET(lock, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_LOGGER(APPLET(logger, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
@@ -10,7 +10,7 @@
  USE_LOGNAME(APPLET_NOFORK(logname, logname, _BB_DIR_USR_BIN, _BB_SUID_NEVER, logname))
 --- a/include/usage.h
 +++ b/include/usage.h
-@@ -2138,6 +2138,9 @@
+@@ -2132,6 +2132,9 @@
  #define loadkmap_example_usage \
         "$ loadkmap < /etc/i18n/lang-keymap\n"
  
@@ -22,7 +22,7 @@
  #define logger_full_usage "\n\n" \
 --- a/miscutils/Config.in
 +++ b/miscutils/Config.in
-@@ -364,6 +364,12 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
+@@ -366,6 +366,12 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  	  This is dangerous stuff, so you should probably say N.
  

@@ -39,7 +39,7 @@ config BUSYBOX_CONFIG_ASH
 	help
 	  Tha 'ash' shell adds about 60k in the default configuration and is
 	  the most complete and most pedantically correct shell included with
-	  busybox.  This shell is actually a derivative of the Debian 'dash'
+	  busybox. This shell is actually a derivative of the Debian 'dash'
 	  shell (by Herbert Xu), which was created by porting the 'ash' shell
 	  (written by Kenneth Almquist) from NetBSD.
 
@@ -51,7 +51,7 @@ config BUSYBOX_CONFIG_ASH_BASH_COMPAT
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
-	  Enable bash-conpatible extensions.
+	  Enable bash-compatible extensions.
 
 config BUSYBOX_CONFIG_ASH_JOB_CONTROL
 	bool "Job control"
@@ -69,7 +69,7 @@ config BUSYBOX_CONFIG_ASH_READ_NCHARS
 	  'read -s' will read without echoing the user's input.
 
 config BUSYBOX_CONFIG_ASH_READ_TIMEOUT
-	bool "'read -t S' support."
+	bool "'read -t S' support"
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
@@ -96,7 +96,7 @@ config BUSYBOX_CONFIG_ASH_MATH_SUPPORT_64
 	default y
 	depends on BUSYBOX_CONFIG_ASH_MATH_SUPPORT
 	help
-	  Enable 64-bit math support in the ash shell.  This will make
+	  Enable 64-bit math support in the ash shell. This will make
 	  the shell slightly larger, but will allow computation with very
 	  large numbers.
 
@@ -176,11 +176,13 @@ config BUSYBOX_CONFIG_HUSH
 	default n
 	help
 	  hush is a very small shell (just 18k) and it has fairly complete
-	  Bourne shell grammar.  It even handles all the normal flow control
+	  Bourne shell grammar. It even handles all the normal flow control
 	  options such as if/then/elif/else/fi, for/in/do/done, while loops,
-	  etc.
+	  case/esac.
 
-	  It does not handle case/esac, select, function, here documents ( <<
+	  It uses only vfork, so it can be used on uClinux systems.
+
+	  It does not handle select, functions, here documents ( <<
 	  word ), arithmetic expansion, aliases, brace expansion, tilde
 	  expansion, &> and >& redirection of stdout+stderr, etc.
 
@@ -232,6 +234,14 @@ config BUSYBOX_CONFIG_HUSH_LOOPS
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable for, while and until loops in hush.
+	  As of 2008-07, break and continue statements are not supported.
+
+config BUSYBOX_CONFIG_HUSH_CASE
+	bool "Support case ... esac statement"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable case ... esac statement in hush. +400 bytes.
 
 config BUSYBOX_CONFIG_LASH
 	bool "lash"
@@ -246,10 +256,10 @@ config BUSYBOX_CONFIG_MSH
 	help
 	  The minix shell (adds just 30k) is quite complete and handles things
 	  like for/do/done, case/esac and all the things you expect a Bourne
-	  shell to do.  It is not always pedantically correct about Bourne
+	  shell to do. It is not always pedantically correct about Bourne
 	  shell grammar (try running the shell testscript "tests/sh.testcases"
 	  on it and compare vs bash) but for most things it works quite well.
-	  It also uses only vfork, so it can be used on uClinux systems.
+	  It uses only vfork, so it can be used on uClinux systems.
 
 comment "Bourne Shell Options"
 	depends on BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
@@ -267,11 +277,11 @@ config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE
 	depends on (BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH) && BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
 	  This option causes busybox shells to use busybox applets
-	  in preference to executables in the PATH whenever possible.  For
+	  in preference to executables in the PATH whenever possible. For
 	  example, entering the command 'ifconfig' into the shell would cause
-	  busybox to use the ifconfig busybox applet.  Specifying the fully
+	  busybox to use the ifconfig busybox applet. Specifying the fully
 	  qualified executable name, such as '/sbin/ifconfig' will still
-	  execute the /sbin/ifconfig executable on the filesystem.  This option
+	  execute the /sbin/ifconfig executable on the filesystem. This option
 	  is generally used when creating a statically linked version of busybox
 	  for use as a rescue shell, in the event that you screw up your system.
 
@@ -285,12 +295,12 @@ config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE
 	  started this way).
 # untrue?
 #	  Note that this will *also* cause applets to take precedence
-#	  over shell builtins of the same name.  So turning this on will
+#	  over shell builtins of the same name. So turning this on will
 #	  eliminate any performance gained by turning on the builtin "echo"
 #	  and "test" commands in ash.
 # untrue?
 #	  Note that when using this option, the shell will attempt to directly
-#	  run '/bin/busybox'.  If you do not have the busybox binary sitting in
+#	  run '/bin/busybox'. If you do not have the busybox binary sitting in
 #	  that exact location with that exact name, this option will not work at
 #	  all.
 

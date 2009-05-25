@@ -80,7 +80,7 @@ config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
 	help
 	  If this option is enabled and the file /.init_enable_core
 	  exists, then init will call setrlimit() to allow unlimited
-	  core file sizes.  If this option is disabled, processes
+	  core file sizes. If this option is disabled, processes
 	  will not generate any core files.
 
 
@@ -90,7 +90,7 @@ config BUSYBOX_CONFIG_FEATURE_INITRD
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
-	  Legacy support for running init under the old-style initrd.  Allows
+	  Legacy support for running init under the old-style initrd. Allows
 	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
 
 	  This does not apply to initramfs, which runs /init as PID 1 and
@@ -106,7 +106,7 @@ config BUSYBOX_CONFIG_MESG
 	bool "mesg"
 	default y
 	help
-	  Mesg controls access to your terminal by others.  It is typically
+	  Mesg controls access to your terminal by others. It is typically
 	  used to allow or disallow other users to write to your terminal
 
 endmenu
