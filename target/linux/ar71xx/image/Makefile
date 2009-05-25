@@ -91,7 +91,7 @@ define Image/Build/UBNT
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).lzma
 	dd if=$(KDIR)/vmlinux-$(2).lzma of=$(KDIR)/vmlinux-$(2).bin.lzma bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(4) -v $(5).ar7100.OpenWrt.$(REVISION) \
+		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
 		-o $(BIN_DIR)/openwrt-$(BOARD)-$(2)-$(1).bin
@@ -164,11 +164,11 @@ define Image/Build/Template/TPLINK/squashfs
 endef
 
 define Image/Build/Template/UBNT
-	$(call Image/Build/UBNT,$(1),$(2),$(3),$(4),$(5))
+	$(call Image/Build/UBNT,$(1),$(2),$(3),$(4),$(5),$(6))
 endef
 
 define Image/Build/Template/UBNT/squashfs
-	$(call Image/Build/Template/UBNT,squashfs,$(1),$(2),$(3),$(4))
+	$(call Image/Build/Template/UBNT,squashfs,$(1),$(2),$(3),$(4),$(5))
 endef
 
 define Image/Build/Template/Planex
@@ -200,11 +200,21 @@ define Image/Build/Profile/A02RBW300N
 endef
 
 define Image/Build/Profile/UBNTRS
-	$(call Image/Build/Template/UBNT/$(1),ubnt-rs,board=UBNT-RS,RS,RSx)
+	$(call Image/Build/Template/UBNT/$(1),ubnt-rs,board=UBNT-RS,RS,RSx,ar7100)
+endef
+
+define Image/Build/Profile/UBNTRSPRO
+	$(call Image/Build/Template/UBNT/$(1),ubnt-rspro,board=UBNT-RSPRO,RSPRO,RSPRO,ar7100pro)
 endef
 
 define Image/Build/Profile/UBNTLSSR71
-	$(call Image/Build/Template/UBNT/$(1),ubnt-ls-sr71,board=UBNT-LS-SR71,LS-SR71,LS-SR71)
+	$(call Image/Build/Template/UBNT/$(1),ubnt-ls-sr71,board=UBNT-LS-SR71,LS-SR71,LS-SR71,ar7100)
+endef
+
+define Image/Build/Profile/UBNT
+	$(call Image/Build/Profile/UBNTRS,$(1))
+	$(call Image/Build/Profile/UBNTRSPRO,$(1))
+	$(call Image/Build/Profile/UBNTLSSR71,$(1))
 endef
 
 define Image/Build/Profile/MZKW04NU
@@ -231,14 +241,13 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/TLWR841NDV3,$(1))
 	$(call Image/Build/Profile/TLWR941NDV2,$(1))
-	$(call Image/Build/Profile/UBNTRS,$(1))
-	$(call Image/Build/Profile/UBNTLSSR71,$(1))
+	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
 endef
 
 define Image/Build/Profile/Madwifi
-	$(call Image/Build/Profile/UBNTRS,$(1))
+	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 endef
 
