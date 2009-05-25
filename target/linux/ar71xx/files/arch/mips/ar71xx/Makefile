@@ -24,4 +24,5 @@ obj-$(CONFIG_AR71XX_MACH_TL_WR941ND)	+= mach-tl-wr941nd.o
 obj-$(CONFIG_AR71XX_MACH_UBNT)		+= mach-ubnt.o
 obj-$(CONFIG_AR71XX_MACH_WNR2000)	+= mach-wnr2000.o
 obj-$(CONFIG_AR71XX_MACH_WP543)		+= mach-wp543.o
+obj-$(CONFIG_AR71XX_MACH_WRT160NL)	+= mach-wrt160nl.o
 obj-$(CONFIG_AR71XX_MACH_WRT400N)	+= mach-wrt400n.o
