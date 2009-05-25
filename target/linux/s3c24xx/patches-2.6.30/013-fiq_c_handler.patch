@@ -1,7 +1,5 @@
-Index: linux-2.6.30-rc6/arch/arm/kernel/fiq.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/kernel/fiq.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/kernel/fiq.c	2009-05-18 19:08:30.000000000 +0200
+--- a/arch/arm/kernel/fiq.c
++++ b/arch/arm/kernel/fiq.c
 @@ -8,6 +8,8 @@
   *
   *  FIQ support re-written by Russell King to be more generic
@@ -11,7 +9,7 @@ Index: linux-2.6.30-rc6/arch/arm/kernel/fiq.c
   * We now properly support a method by which the FIQ handlers can
   * be stacked onto the vector.  We still do not support sharing
   * the FIQ vector itself.
-@@ -124,6 +126,83 @@
+@@ -124,6 +126,83 @@ void __naked get_fiq_regs(struct pt_regs
  	: "r" (&regs->ARM_r8), "I" (PSR_I_BIT | PSR_F_BIT | FIQ_MODE));
  }
  
@@ -95,11 +93,9 @@ Index: linux-2.6.30-rc6/arch/arm/kernel/fiq.c
  int claim_fiq(struct fiq_handler *f)
  {
  	int ret = 0;
-Index: linux-2.6.30-rc6/arch/arm/include/asm/fiq.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/include/asm/fiq.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/include/asm/fiq.h	2009-05-18 19:08:30.000000000 +0200
-@@ -29,8 +29,9 @@
+--- a/arch/arm/include/asm/fiq.h
++++ b/arch/arm/include/asm/fiq.h
+@@ -29,8 +29,9 @@ struct fiq_handler {
  extern int claim_fiq(struct fiq_handler *f);
  extern void release_fiq(struct fiq_handler *f);
  extern void set_fiq_handler(void *start, unsigned int length);
@@ -111,10 +107,8 @@ Index: linux-2.6.30-rc6/arch/arm/include/asm/fiq.h
  extern void enable_fiq(int fiq);
  extern void disable_fiq(int fiq);
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/irq.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/include/plat/irq.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/irq.h	2009-05-18 19:08:30.000000000 +0200
+--- a/arch/arm/plat-s3c24xx/include/plat/irq.h
++++ b/arch/arm/plat-s3c24xx/include/plat/irq.h
 @@ -12,6 +12,7 @@
  
  #include <linux/io.h>
@@ -123,7 +117,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/irq.h
  #include <mach/hardware.h>
  #include <mach/regs-irq.h>
  #include <mach/regs-gpio.h>
-@@ -31,8 +32,15 @@
+@@ -31,8 +32,15 @@ s3c_irqsub_mask(unsigned int irqno, unsi
  {
  	unsigned long mask;
  	unsigned long submask;
@@ -139,7 +133,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/irq.h
  	mask = __raw_readl(S3C2410_INTMSK);
  
  	submask |= (1UL << (irqno - IRQ_S3CUART_RX0));
-@@ -45,6 +53,9 @@
+@@ -45,6 +53,9 @@ s3c_irqsub_mask(unsigned int irqno, unsi
  
  	/* write back masks */
  	__raw_writel(submask, S3C2410_INTSUBMSK);
@@ -149,7 +143,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/irq.h
  
  }
  
-@@ -53,8 +64,15 @@
+@@ -53,8 +64,15 @@ s3c_irqsub_unmask(unsigned int irqno, un
  {
  	unsigned long mask;
  	unsigned long submask;
@@ -165,7 +159,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/irq.h
  	mask = __raw_readl(S3C2410_INTMSK);
  
  	submask &= ~(1UL << (irqno - IRQ_S3CUART_RX0));
-@@ -63,6 +81,9 @@
+@@ -63,6 +81,9 @@ s3c_irqsub_unmask(unsigned int irqno, un
  	/* write back masks */
  	__raw_writel(submask, S3C2410_INTSUBMSK);
  	__raw_writel(mask, S3C2410_INTMSK);
@@ -175,10 +169,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/irq.h
  }
  
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/irq.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq.c	2009-05-18 19:08:30.000000000 +0200
+--- a/arch/arm/plat-s3c24xx/irq.c
++++ b/arch/arm/plat-s3c24xx/irq.c
 @@ -28,6 +28,8 @@
  #include <asm/mach/irq.h>
  
@@ -188,7 +180,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq.c
  
  #include <plat/cpu.h>
  #include <plat/pm.h>
-@@ -37,12 +39,20 @@
+@@ -37,12 +39,20 @@ static void
  s3c_irq_mask(unsigned int irqno)
  {
  	unsigned long mask;
@@ -211,7 +203,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq.c
  }
  
  static inline void
-@@ -59,9 +69,19 @@
+@@ -59,9 +69,19 @@ s3c_irq_maskack(unsigned int irqno)
  {
  	unsigned long bitval = 1UL << (irqno - IRQ_EINT0);
  	unsigned long mask;
@@ -232,7 +224,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq.c
  
  	__raw_writel(bitval, S3C2410_SRCPND);
  	__raw_writel(bitval, S3C2410_INTPND);
-@@ -72,15 +92,25 @@
+@@ -72,15 +92,25 @@ static void
  s3c_irq_unmask(unsigned int irqno)
  {
  	unsigned long mask;
@@ -258,7 +250,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq.c
  }
  
  struct irq_chip s3c_irq_level_chip = {
-@@ -523,26 +553,26 @@
+@@ -523,26 +553,26 @@ void __init s3c24xx_init_irq(void)
  
  	last = 0;
  	for (i = 0; i < 4; i++) {

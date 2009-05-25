@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/drivers/input/keyboard/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/input/keyboard/Kconfig	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/input/keyboard/Kconfig	2009-05-18 19:08:32.000000000 +0200
-@@ -332,4 +332,15 @@
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
+@@ -332,4 +332,15 @@ config KEYBOARD_SH_KEYSC
  
  	  To compile this driver as a module, choose M here: the
  	  module will be called sh_keysc.
@@ -18,11 +16,9 @@ Index: linux-2.6.30-rc6/drivers/input/keyboard/Kconfig
 +	  module will be called gta02kbd.
 +
  endif
-Index: linux-2.6.30-rc6/drivers/input/keyboard/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/input/keyboard/Makefile	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/input/keyboard/Makefile	2009-05-18 19:08:32.000000000 +0200
-@@ -14,6 +14,7 @@
+--- a/drivers/input/keyboard/Makefile
++++ b/drivers/input/keyboard/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_KEYBOARD_LOCOMO)		+= locomo
  obj-$(CONFIG_KEYBOARD_NEWTON)		+= newtonkbd.o
  obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stowaway.o
  obj-$(CONFIG_KEYBOARD_CORGI)		+= corgikbd.o

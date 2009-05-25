@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/spi-gpio.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2410/include/mach/spi-gpio.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/spi-gpio.h	2009-05-18 19:08:34.000000000 +0200
-@@ -21,7 +21,8 @@
+--- a/arch/arm/mach-s3c2410/include/mach/spi-gpio.h
++++ b/arch/arm/mach-s3c2410/include/mach/spi-gpio.h
+@@ -21,7 +21,8 @@ struct s3c2410_spigpio_info {
  	int			 num_chipselect;
  	int			 bus_num;
  
@@ -12,11 +10,9 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/spi-gpio.h
  };
  
  
-Index: linux-2.6.30-rc6/drivers/spi/spi_bitbang.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/spi/spi_bitbang.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/spi/spi_bitbang.c	2009-05-18 19:08:34.000000000 +0200
-@@ -264,6 +264,123 @@
+--- a/drivers/spi/spi_bitbang.c
++++ b/drivers/spi/spi_bitbang.c
+@@ -264,6 +264,123 @@ static int spi_bitbang_bufs(struct spi_d
   * Drivers can provide word-at-a-time i/o primitives, or provide
   * transfer-at-a-time ones to leverage dma or fifo hardware.
   */
@@ -140,7 +136,7 @@ Index: linux-2.6.30-rc6/drivers/spi/spi_bitbang.c
  static void bitbang_work(struct work_struct *work)
  {
  	struct spi_bitbang	*bitbang =
-@@ -274,120 +391,13 @@
+@@ -274,120 +391,13 @@ static void bitbang_work(struct work_str
  	bitbang->busy = 1;
  	while (!list_empty(&bitbang->queue)) {
  		struct spi_message	*m;
@@ -263,7 +259,7 @@ Index: linux-2.6.30-rc6/drivers/spi/spi_bitbang.c
  		spin_lock_irqsave(&bitbang->lock, flags);
  	}
  	bitbang->busy = 0;
-@@ -459,6 +469,9 @@
+@@ -459,6 +469,9 @@ int spi_bitbang_start(struct spi_bitbang
  
  	if (!bitbang->master->transfer)
  		bitbang->master->transfer = spi_bitbang_transfer;
@@ -273,11 +269,9 @@ Index: linux-2.6.30-rc6/drivers/spi/spi_bitbang.c
  	if (!bitbang->txrx_bufs) {
  		bitbang->use_dma = 0;
  		bitbang->txrx_bufs = spi_bitbang_bufs;
-Index: linux-2.6.30-rc6/drivers/spi/spi_s3c24xx_gpio.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/spi/spi_s3c24xx_gpio.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/spi/spi_s3c24xx_gpio.c	2009-05-18 19:08:34.000000000 +0200
-@@ -91,7 +91,7 @@
+--- a/drivers/spi/spi_s3c24xx_gpio.c
++++ b/drivers/spi/spi_s3c24xx_gpio.c
+@@ -91,7 +91,7 @@ static void s3c2410_spigpio_chipselect(s
  	struct s3c2410_spigpio *sg = spidev_to_sg(dev);
  
  	if (sg->info && sg->info->chip_select)
@@ -286,7 +280,7 @@ Index: linux-2.6.30-rc6/drivers/spi/spi_s3c24xx_gpio.c
  }
  
  static int s3c2410_spigpio_probe(struct platform_device *dev)
-@@ -112,14 +112,17 @@
+@@ -112,14 +112,17 @@ static int s3c2410_spigpio_probe(struct 
  
  	platform_set_drvdata(dev, sp);
  
@@ -305,11 +299,9 @@ Index: linux-2.6.30-rc6/drivers/spi/spi_s3c24xx_gpio.c
  
  	sp->bitbang.txrx_word[SPI_MODE_0] = s3c2410_spigpio_txrx_mode0;
  	sp->bitbang.txrx_word[SPI_MODE_1] = s3c2410_spigpio_txrx_mode1;
-Index: linux-2.6.30-rc6/include/linux/mmc/core.h
-===================================================================
---- linux-2.6.30-rc6.orig/include/linux/mmc/core.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/include/linux/mmc/core.h	2009-05-18 19:08:34.000000000 +0200
-@@ -129,6 +129,8 @@
+--- a/include/linux/mmc/core.h
++++ b/include/linux/mmc/core.h
+@@ -129,6 +129,8 @@ struct mmc_request {
  struct mmc_host;
  struct mmc_card;
  
@@ -318,10 +310,8 @@ Index: linux-2.6.30-rc6/include/linux/mmc/core.h
  extern void mmc_wait_for_req(struct mmc_host *, struct mmc_request *);
  extern int mmc_wait_for_cmd(struct mmc_host *, struct mmc_command *, int);
  extern int mmc_wait_for_app_cmd(struct mmc_host *, struct mmc_card *,
-Index: linux-2.6.30-rc6/include/linux/mmc/sdio_ids.h
-===================================================================
---- linux-2.6.30-rc6.orig/include/linux/mmc/sdio_ids.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/include/linux/mmc/sdio_ids.h	2009-05-18 19:08:34.000000000 +0200
+--- a/include/linux/mmc/sdio_ids.h
++++ b/include/linux/mmc/sdio_ids.h
 @@ -25,5 +25,9 @@
  
  #define SDIO_VENDOR_ID_MARVELL			0x02df
@@ -332,11 +322,9 @@ Index: linux-2.6.30-rc6/include/linux/mmc/sdio_ids.h
 +#define SDIO_DEVICE_ID_ATHEROS_AR6002		0x0200
  
  #endif
-Index: linux-2.6.30-rc6/include/linux/spi/spi_bitbang.h
-===================================================================
---- linux-2.6.30-rc6.orig/include/linux/spi/spi_bitbang.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/include/linux/spi/spi_bitbang.h	2009-05-18 19:08:34.000000000 +0200
-@@ -31,6 +31,9 @@
+--- a/include/linux/spi/spi_bitbang.h
++++ b/include/linux/spi/spi_bitbang.h
+@@ -31,6 +31,9 @@ struct spi_bitbang {
  	u8			use_dma;
  	u8			flags;		/* extra spi->mode support */
  
@@ -346,7 +334,7 @@ Index: linux-2.6.30-rc6/include/linux/spi/spi_bitbang.h
  	struct spi_master	*master;
  
  	/* setup_transfer() changes clock and/or wordsize to match settings
-@@ -62,6 +65,8 @@
+@@ -62,6 +65,8 @@ extern void spi_bitbang_cleanup(struct s
  extern int spi_bitbang_transfer(struct spi_device *spi, struct spi_message *m);
  extern int spi_bitbang_setup_transfer(struct spi_device *spi,
  				      struct spi_transfer *t);
@@ -355,11 +343,9 @@ Index: linux-2.6.30-rc6/include/linux/spi/spi_bitbang.h
  
  /* start or stop queue processing */
  extern int spi_bitbang_start(struct spi_bitbang *spi);
-Index: linux-2.6.30-rc6/include/linux/spi/spi.h
-===================================================================
---- linux-2.6.30-rc6.orig/include/linux/spi/spi.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/include/linux/spi/spi.h	2009-05-18 19:08:34.000000000 +0200
-@@ -204,7 +204,6 @@
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -204,7 +204,6 @@ static inline void spi_unregister_driver
   *	SPI slaves, and are numbered from zero to num_chipselects.
   *	each slave has a chipselect signal, but it's common that not
   *	every chipselect is connected to a slave.
@@ -367,7 +353,7 @@ Index: linux-2.6.30-rc6/include/linux/spi/spi.h
   * @setup: updates the device mode and clocking records used by a
   *	device's SPI controller; protocol code may call this.  This
   *	must fail if an unrecognized or unsupported mode is requested.
-@@ -240,17 +239,7 @@
+@@ -240,17 +239,7 @@ struct spi_master {
  	 */
  	u16			num_chipselect;
  
@@ -386,7 +372,7 @@ Index: linux-2.6.30-rc6/include/linux/spi/spi.h
  	int			(*setup)(struct spi_device *spi);
  
  	/* bidirectional bulk transfers
-@@ -275,6 +264,13 @@
+@@ -275,6 +264,13 @@ struct spi_master {
  	int			(*transfer)(struct spi_device *spi,
  						struct spi_message *mesg);
  
@@ -400,7 +386,7 @@ Index: linux-2.6.30-rc6/include/linux/spi/spi.h
  	/* called on release() to free memory provided by spi_master */
  	void			(*cleanup)(struct spi_device *spi);
  };
-@@ -584,6 +580,29 @@
+@@ -584,6 +580,29 @@ spi_async(struct spi_device *spi, struct
  	return spi->master->transfer(spi, message);
  }
  

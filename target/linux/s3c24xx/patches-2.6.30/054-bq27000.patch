@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/drivers/power/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/power/Kconfig	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/power/Kconfig	2009-05-18 19:08:32.000000000 +0200
-@@ -88,4 +88,16 @@
+--- a/drivers/power/Kconfig
++++ b/drivers/power/Kconfig
+@@ -88,4 +88,16 @@ config CHARGER_PCF50633
  	help
  	 Say Y to include support for NXP PCF50633 Main Battery Charger.
  
@@ -19,11 +17,9 @@ Index: linux-2.6.30-rc6/drivers/power/Kconfig
 +
  endif # POWER_SUPPLY
 +
-Index: linux-2.6.30-rc6/drivers/power/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/power/Makefile	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/power/Makefile	2009-05-18 19:08:32.000000000 +0200
-@@ -25,4 +25,7 @@
+--- a/drivers/power/Makefile
++++ b/drivers/power/Makefile
+@@ -25,4 +25,7 @@ obj-$(CONFIG_BATTERY_TOSA)	+= tosa_batte
  obj-$(CONFIG_BATTERY_WM97XX)	+= wm97xx_battery.o
  obj-$(CONFIG_BATTERY_BQ27x00)	+= bq27x00_battery.o
  obj-$(CONFIG_BATTERY_DA9030)	+= da9030_battery.o

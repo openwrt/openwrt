@@ -11,7 +11,7 @@ BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
 FEATURES:=jffs2 usb broken
 
-LINUX_VERSION:=2.6.30-rc6
+LINUX_VERSION:=2.6.30-rc7
 
 include $(INCLUDE_DIR)/target.mk
 

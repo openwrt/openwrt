@@ -1,7 +1,5 @@
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/dev-usb.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/dev-usb.c	2009-05-18 19:08:30.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/dev-usb.c
 @@ -0,0 +1,50 @@
 +/* linux/arch/arm/plat-s3c/dev-usb.c
 + *
@@ -53,10 +51,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/dev-usb.c
 +};
 +
 +EXPORT_SYMBOL(s3c_device_usb);
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/regs-usb-hs-otg.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/regs-usb-hs-otg.h	2009-05-18 19:08:30.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/include/plat/regs-usb-hs-otg.h
 @@ -0,0 +1,360 @@
 +/* linux/include/asm-arm/arch-s3c2410/regs-udc.h
 + *
@@ -418,11 +414,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/regs-usb-hs-otg.h
 +#define XFERSIZE(x)			(x<<0)
 +
 +#endif
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/Kconfig	2009-05-18 19:08:30.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig	2009-05-18 19:08:30.000000000 +0200
-@@ -184,4 +184,9 @@
+--- a/arch/arm/plat-s3c/Kconfig
++++ b/arch/arm/plat-s3c/Kconfig
+@@ -184,4 +184,9 @@ config S3C_DEV_FB
  	help
  	  Compile in platform device definition for framebuffer
  
@@ -432,11 +426,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig
 +	  Compile in platform device definition for USB host.
 +
  endif
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/Makefile	2009-05-18 19:08:30.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile	2009-05-18 19:08:30.000000000 +0200
-@@ -35,6 +35,8 @@
+--- a/arch/arm/plat-s3c/Makefile
++++ b/arch/arm/plat-s3c/Makefile
+@@ -35,6 +35,8 @@ obj-$(CONFIG_S3C_DEV_HSMMC1)	+= dev-hsmm
  obj-y				+= dev-i2c0.o
  obj-$(CONFIG_S3C_DEV_I2C1)	+= dev-i2c1.o
  obj-$(CONFIG_S3C_DEV_FB)	+= dev-fb.o
@@ -445,11 +437,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile
  obj-$(CONFIG_S3C_PWM)		+= pwm.o
  obj-$(CONFIG_S3C_DMA)		+= dma.o
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/devs.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/devs.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/devs.c	2009-05-18 19:08:30.000000000 +0200
-@@ -136,36 +136,6 @@
+--- a/arch/arm/plat-s3c24xx/devs.c
++++ b/arch/arm/plat-s3c24xx/devs.c
+@@ -136,36 +136,6 @@ struct platform_device *s3c24xx_uart_src
  struct platform_device *s3c24xx_uart_devs[4] = {
  };
  

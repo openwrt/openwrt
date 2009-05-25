@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/usb/gadget/s3c2410_udc.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c	2009-05-18 19:08:35.000000000 +0200
-@@ -74,6 +74,7 @@
+--- a/drivers/usb/gadget/s3c2410_udc.c
++++ b/drivers/usb/gadget/s3c2410_udc.c
+@@ -74,6 +74,7 @@ static void __iomem		*base_addr;
  static u64			rsrc_start;
  static u64			rsrc_len;
  static struct dentry		*s3c2410_udc_debugfs_root;
@@ -10,7 +8,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  
  static inline u32 udc_read(u32 reg)
  {
-@@ -134,6 +135,8 @@
+@@ -134,6 +135,8 @@ static int dprintk(int level, const char
  	return 0;
  }
  #endif
@@ -19,7 +17,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  static int s3c2410_udc_debugfs_seq_show(struct seq_file *m, void *p)
  {
  	u32 addr_reg,pwr_reg,ep_int_reg,usb_int_reg;
-@@ -197,6 +200,7 @@
+@@ -197,6 +200,7 @@ static const struct file_operations s3c2
  	.release	= single_release,
  	.owner		= THIS_MODULE,
  };
@@ -27,7 +25,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  
  /* io macros */
  
-@@ -843,6 +847,7 @@
+@@ -843,6 +847,7 @@ static void s3c2410_udc_handle_ep(struct
  	u32			ep_csr1;
  	u32			idx;
  
@@ -35,7 +33,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  	if (likely (!list_empty(&ep->queue)))
  		req = list_entry(ep->queue.next,
  				struct s3c2410_request, queue);
-@@ -882,6 +887,8 @@
+@@ -882,6 +887,8 @@ static void s3c2410_udc_handle_ep(struct
  
  		if ((ep_csr1 & S3C2410_UDC_OCSR1_PKTRDY) && req) {
  			s3c2410_udc_read_fifo(ep,req);
@@ -44,7 +42,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  		}
  	}
  }
-@@ -1520,6 +1527,20 @@
+@@ -1520,6 +1527,20 @@ static irqreturn_t s3c2410_udc_vbus_irq(
  	return IRQ_HANDLED;
  }
  
@@ -65,7 +63,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  static int s3c2410_vbus_draw(struct usb_gadget *_gadget, unsigned ma)
  {
  	dprintk(DEBUG_NORMAL, "%s()\n", __func__);
-@@ -1677,6 +1698,11 @@
+@@ -1677,6 +1698,11 @@ int usb_gadget_register_driver(struct us
  		goto register_error;
  	}
  
@@ -77,7 +75,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  	/* Enable udc */
  	s3c2410_udc_enable(udc);
  
-@@ -1707,6 +1733,7 @@
+@@ -1707,6 +1733,7 @@ int usb_gadget_unregister_driver(struct 
  	if (driver->disconnect)
  		driver->disconnect(&udc->gadget);
  
@@ -85,7 +83,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  	device_del(&udc->gadget.dev);
  	udc->driver = NULL;
  
-@@ -1893,10 +1920,16 @@
+@@ -1893,10 +1920,16 @@ static int s3c2410_udc_probe(struct plat
  		}
  
  		dev_dbg(dev, "got irq %i\n", irq);
@@ -102,7 +100,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  	if (s3c2410_udc_debugfs_root) {
  		udc->regs_info = debugfs_create_file("registers", S_IRUGO,
  				s3c2410_udc_debugfs_root,
-@@ -1904,6 +1937,7 @@
+@@ -1904,6 +1937,7 @@ static int s3c2410_udc_probe(struct plat
  		if (!udc->regs_info)
  			dev_warn(dev, "debugfs file creation failed\n");
  	}
@@ -110,7 +108,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  
  	dev_dbg(dev, "probe ok\n");
  
-@@ -1939,6 +1973,8 @@
+@@ -1939,6 +1973,8 @@ static int s3c2410_udc_remove(struct pla
  	if (udc_info && udc_info->vbus_pin > 0) {
  		irq = gpio_to_irq(udc_info->vbus_pin);
  		free_irq(irq, udc);
@@ -119,7 +117,7 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  	}
  
  	free_irq(IRQ_USBD, udc);
-@@ -2013,12 +2049,14 @@
+@@ -2013,12 +2049,14 @@ static int __init udc_init(void)
  
  	dprintk(DEBUG_NORMAL, "%s: version %s\n", gadget_name, DRIVER_VERSION);
  
@@ -134,10 +132,8 @@ Index: linux-2.6.30-rc6/drivers/usb/gadget/s3c2410_udc.c
  
  	retval = platform_driver_register(&udc_driver_2410);
  	if (retval)
-Index: linux-2.6.30-rc6/drivers/usb/host/ohci-s3c2410.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/usb/host/ohci-s3c2410.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/usb/host/ohci-s3c2410.c	2009-05-18 19:08:35.000000000 +0200
+--- a/drivers/usb/host/ohci-s3c2410.c
++++ b/drivers/usb/host/ohci-s3c2410.c
 @@ -21,6 +21,8 @@
  
  #include <linux/platform_device.h>
@@ -147,7 +143,7 @@ Index: linux-2.6.30-rc6/drivers/usb/host/ohci-s3c2410.c
  #include <plat/usb-control.h>
  
  #define valid_port(idx) ((idx) == 1 || (idx) == 2)
-@@ -306,6 +308,42 @@
+@@ -306,6 +308,42 @@ static void s3c2410_hcd_oc(struct s3c241
  	local_irq_restore(flags);
  }
  
@@ -190,7 +186,7 @@ Index: linux-2.6.30-rc6/drivers/usb/host/ohci-s3c2410.c
  /* may be called without controller electrically present */
  /* may be called with controller, bus, and devices active */
  
-@@ -486,15 +524,23 @@
+@@ -486,15 +524,23 @@ static int ohci_hcd_s3c2410_drv_remove(s
  	return 0;
  }
  
@@ -216,11 +212,9 @@ Index: linux-2.6.30-rc6/drivers/usb/host/ohci-s3c2410.c
  	},
  };
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/udc.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/include/plat/udc.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/udc.h	2009-05-18 19:08:35.000000000 +0200
-@@ -27,6 +27,7 @@
+--- a/arch/arm/plat-s3c24xx/include/plat/udc.h
++++ b/arch/arm/plat-s3c24xx/include/plat/udc.h
+@@ -27,6 +27,7 @@ enum s3c2410_udc_cmd_e {
  struct s3c2410_udc_mach_info {
  	void	(*udc_command)(enum s3c2410_udc_cmd_e);
   	void	(*vbus_draw)(unsigned int ma);

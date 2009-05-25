@@ -1,7 +1,5 @@
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pwm.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pwm.h	2009-05-18 19:08:30.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/include/plat/pwm.h
 @@ -0,0 +1,45 @@
 +#ifndef __S3C2410_PWM_H
 +#define __S3C2410_PWM_H
@@ -48,11 +46,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pwm.h
 +int s3c2410_pwm_dumpregs(void);
 +
 +#endif /* __S3C2410_PWM_H */
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/Kconfig	2009-05-18 19:08:29.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig	2009-05-18 19:08:30.000000000 +0200
-@@ -157,6 +157,11 @@
+--- a/arch/arm/plat-s3c/Kconfig
++++ b/arch/arm/plat-s3c/Kconfig
+@@ -157,6 +157,11 @@ config S3C_DMA
  	help
  	  Internal configuration for S3C DMA core
  
@@ -64,21 +60,17 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Kconfig
  # device definitions to compile in
  
  config S3C_DEV_HSMMC
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/Makefile	2009-05-18 19:08:29.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile	2009-05-18 19:08:30.000000000 +0200
-@@ -35,5 +35,6 @@
+--- a/arch/arm/plat-s3c/Makefile
++++ b/arch/arm/plat-s3c/Makefile
+@@ -35,5 +35,6 @@ obj-$(CONFIG_S3C_DEV_HSMMC1)	+= dev-hsmm
  obj-y				+= dev-i2c0.o
  obj-$(CONFIG_S3C_DEV_I2C1)	+= dev-i2c1.o
  obj-$(CONFIG_S3C_DEV_FB)	+= dev-fb.o
 +obj-$(CONFIG_S3C_PWM)		+= pwm.o
  obj-$(CONFIG_S3C_DMA)		+= dma.o
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pwm.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/pwm.c	2009-05-18 19:08:30.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/pwm.c
 @@ -0,0 +1,288 @@
 +/*
 + * arch/arm/plat-s3c/pwm.c
@@ -368,10 +360,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pwm.c
 +
 +module_init(s3c24xx_pwm_init);
 +module_exit(s3c24xx_pwm_exit);
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/pwm-clock.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/pwm-clock.c	2009-05-18 19:08:30.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c24xx/pwm-clock.c
 @@ -0,0 +1,437 @@
 +/* linux/arch/arm/plat-s3c24xx/pwm-clock.c
 + *

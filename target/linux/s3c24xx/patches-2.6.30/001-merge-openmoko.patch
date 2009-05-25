@@ -5,10 +5,8 @@ lars@lars-laptop   Thu May 14 18:33:23 UTC 2009
 
 ---
 
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/mci.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/mci.h	2009-05-18 19:07:48.000000000 +0200
+--- /dev/null
++++ b/arch/arm/mach-s3c2410/include/mach/mci.h
 @@ -0,0 +1,13 @@
 +#ifndef _ARCH_MCI_H
 +#define _ARCH_MCI_H
@@ -23,10 +21,8 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/mci.h
 +};
 +
 +#endif /* _ARCH_NCI_H */
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/regs-sdi.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2410/include/mach/regs-sdi.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/regs-sdi.h	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/mach-s3c2410/include/mach/regs-sdi.h
++++ b/arch/arm/mach-s3c2410/include/mach/regs-sdi.h
 @@ -30,6 +30,7 @@
  #define S3C2410_SDIFSTA               (0x38)
  
@@ -44,11 +40,9 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/regs-sdi.h
  #define S3C2410_SDICON_BYTEORDER      (1<<4)
  #define S3C2410_SDICON_SDIOIRQ        (1<<3)
  #define S3C2410_SDICON_RWAITEN        (1<<2)
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2440/s3c2440.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2440/s3c2440.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2440/s3c2440.c	2009-05-18 19:07:48.000000000 +0200
-@@ -46,6 +46,9 @@
+--- a/arch/arm/mach-s3c2440/s3c2440.c
++++ b/arch/arm/mach-s3c2440/s3c2440.c
+@@ -46,6 +46,9 @@ int __init s3c2440_init(void)
  	s3c_device_wdt.resource[1].start = IRQ_S3C2440_WDT;
  	s3c_device_wdt.resource[1].end   = IRQ_S3C2440_WDT;
  
@@ -58,10 +52,8 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2440/s3c2440.c
  	/* register our system device for everything else */
  
  	return sysdev_register(&s3c2440_sysdev);
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/s3c2442.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2442/s3c2442.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2442/s3c2442.c	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/mach-s3c2442/s3c2442.c
++++ b/arch/arm/mach-s3c2442/s3c2442.c
 @@ -21,6 +21,7 @@
  
  #include <plat/s3c2442.h>
@@ -70,7 +62,7 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/s3c2442.c
  
  static struct sys_device s3c2442_sysdev = {
  	.cls		= &s3c2442_sysclass,
-@@ -30,5 +31,8 @@
+@@ -30,5 +31,8 @@ int __init s3c2442_init(void)
  {
  	printk("S3C2442: Initialising architecture\n");
  
@@ -79,11 +71,9 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/s3c2442.c
 +
  	return sysdev_register(&s3c2442_sysdev);
  }
-Index: linux-2.6.30-rc6/arch/arm/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/Makefile	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/Makefile	2009-05-18 19:07:48.000000000 +0200
-@@ -55,7 +55,8 @@
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -55,7 +55,8 @@ ifeq ($(CONFIG_CPU_32v6),y)
  arch-$(CONFIG_CPU_32v6K)	:=-D__LINUX_ARM_ARCH__=6 $(call cc-option,-march=armv6k,-march=armv5t -Wa$(comma)-march=armv6k)
  endif
  arch-$(CONFIG_CPU_32v5)		:=-D__LINUX_ARM_ARCH__=5 $(call cc-option,-march=armv5te,-march=armv4t)
@@ -93,10 +83,8 @@ Index: linux-2.6.30-rc6/arch/arm/Makefile
  arch-$(CONFIG_CPU_32v4)		:=-D__LINUX_ARM_ARCH__=4 -march=armv4
  arch-$(CONFIG_CPU_32v3)		:=-D__LINUX_ARM_ARCH__=3 -march=armv3
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/mach/cpu.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/mach/cpu.h	2009-05-18 19:07:48.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/include/mach/cpu.h
 @@ -0,0 +1,165 @@
 +/*
 + * arch/arm/plat-s3c/include/mach/cpu.h
@@ -263,11 +251,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/mach/cpu.h
 +#endif
 +
 +#endif
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/devs.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/include/plat/devs.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/devs.h	2009-05-18 19:07:48.000000000 +0200
-@@ -16,6 +16,10 @@
+--- a/arch/arm/plat-s3c/include/plat/devs.h
++++ b/arch/arm/plat-s3c/include/plat/devs.h
+@@ -16,6 +16,10 @@ struct s3c24xx_uart_resources {
  	unsigned long		 nr_resources;
  };
  
@@ -278,10 +264,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/devs.h
  extern struct s3c24xx_uart_resources s3c2410_uart_resources[];
  extern struct s3c24xx_uart_resources s3c64xx_uart_resources[];
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/gpio-core.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/include/plat/gpio-core.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/gpio-core.h	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c/include/plat/gpio-core.h
++++ b/arch/arm/plat-s3c/include/plat/gpio-core.h
 @@ -20,6 +20,19 @@
   * specific code.
  */
@@ -302,7 +286,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/gpio-core.h
  struct s3c_gpio_cfg;
  
  /**
-@@ -27,6 +40,7 @@
+@@ -27,6 +40,7 @@ struct s3c_gpio_cfg;
   * @chip: The chip structure to be exported via gpiolib.
   * @base: The base pointer to the gpio configuration registers.
   * @config: special function and pull-resistor control information.
@@ -310,7 +294,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/gpio-core.h
   *
   * This wrapper provides the necessary information for the Samsung
   * specific gpios being registered with gpiolib.
-@@ -34,7 +48,11 @@
+@@ -34,7 +48,11 @@ struct s3c_gpio_cfg;
  struct s3c_gpio_chip {
  	struct gpio_chip	chip;
  	struct s3c_gpio_cfg	*config;
@@ -322,7 +306,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/gpio-core.h
  };
  
  static inline struct s3c_gpio_chip *to_s3c_gpio(struct gpio_chip *gpc)
-@@ -75,3 +93,16 @@
+@@ -75,3 +93,16 @@ static inline struct s3c_gpio_chip *s3c_
  
  static inline void s3c_gpiolib_track(struct s3c_gpio_chip *chip) { }
  #endif
@@ -339,10 +323,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/gpio-core.h
 +#define __gpio_pm(x) NULL
 +
 +#endif /* CONFIG_PM */
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/map-base.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/include/plat/map-base.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/map-base.h	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c/include/plat/map-base.h
++++ b/arch/arm/plat-s3c/include/plat/map-base.h
 @@ -36,5 +36,7 @@
  #define S3C_VA_TIMER	S3C_ADDR(0x00300000)	/* timer block */
  #define S3C_VA_WATCHDOG	S3C_ADDR(0x00400000)	/* watchdog */
@@ -351,10 +333,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/map-base.h
 +#define S3C_VA_OTGSFR	S3C_ADDR(0x03a00000)	/* OTGSFR */
  
  #endif /* __ASM_PLAT_MAP_H */
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/nand.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/include/plat/nand.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/nand.h	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c/include/plat/nand.h
++++ b/arch/arm/plat-s3c/include/plat/nand.h
 @@ -21,11 +21,14 @@
   * partitions	 = mtd partition list
  */
@@ -370,7 +350,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/nand.h
  	char			*name;
  	int			*nr_map;
  	struct mtd_partition	*partitions;
-@@ -44,6 +47,9 @@
+@@ -44,6 +47,9 @@ struct s3c2410_platform_nand {
  	int			nr_sets;
  	struct s3c2410_nand_set *sets;
  
@@ -380,10 +360,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/nand.h
  	void			(*select_chip)(struct s3c2410_nand_set *,
  					       int chip);
  };
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pm.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/include/plat/pm.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pm.h	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c/include/plat/pm.h
++++ b/arch/arm/plat-s3c/include/plat/pm.h
 @@ -9,6 +9,8 @@
   * published by the Free Software Foundation.
  */
@@ -393,7 +371,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pm.h
  /* s3c_pm_init
   *
   * called from board at initialisation time to setup the power
-@@ -44,6 +46,8 @@
+@@ -44,6 +46,8 @@ extern void (*pm_cpu_sleep)(void);
  
  extern unsigned long s3c_pm_flags;
  
@@ -402,7 +380,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pm.h
  /* from sleep.S */
  
  extern int  s3c_cpu_save(unsigned long *saveblk);
-@@ -88,6 +92,7 @@
+@@ -88,6 +92,7 @@ struct pm_uart_save {
  	u32	ufcon;
  	u32	umcon;
  	u32	ubrdiv;
@@ -410,11 +388,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/pm.h
  };
  
  /* helper functions to save/restore lists of registers. */
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/sdhci.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/include/plat/sdhci.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/sdhci.h	2009-05-18 19:07:48.000000000 +0200
-@@ -29,6 +29,7 @@
+--- a/arch/arm/plat-s3c/include/plat/sdhci.h
++++ b/arch/arm/plat-s3c/include/plat/sdhci.h
+@@ -29,6 +29,7 @@ struct mmc_ios;
   *            is necessary the controllers and/or GPIO blocks require the
   *	      changing of driver-strength and other controls dependant on
   *	      the card and speed of operation.
@@ -422,7 +398,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/sdhci.h
   *
   * Initialisation data specific to either the machine or the platform
   * for the device driver to use or call-back when configuring gpio or
-@@ -45,8 +46,11 @@
+@@ -45,8 +46,11 @@ struct s3c_sdhci_platdata {
  			    void __iomem *regbase,
  			    struct mmc_ios *ios,
  			    struct mmc_card *card);
@@ -434,10 +410,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/include/plat/sdhci.h
  /**
   * s3c_sdhci0_set_platdata - Set platform data for S3C SDHCI device.
   * @pd: Platform data to register to device.
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/init.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/init.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/init.c	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c/init.c
++++ b/arch/arm/plat-s3c/init.c
 @@ -31,6 +31,34 @@
  
  static struct cpu_table *cpu;
@@ -473,7 +447,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/init.c
  static struct cpu_table * __init s3c_lookup_cpu(unsigned long idcode,
  						struct cpu_table *tab,
  						unsigned int count)
-@@ -53,6 +81,8 @@
+@@ -53,6 +81,8 @@ void __init s3c_init_cpu(unsigned long i
  		panic("Unknown S3C24XX CPU");
  	}
  
@@ -482,11 +456,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/init.c
  	printk("CPU %s (id 0x%08lx)\n", cpu->name, idcode);
  
  	if (cpu->map_io == NULL || cpu->init == NULL) {
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/Makefile	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile	2009-05-18 19:07:48.000000000 +0200
-@@ -21,6 +21,7 @@
+--- a/arch/arm/plat-s3c/Makefile
++++ b/arch/arm/plat-s3c/Makefile
+@@ -21,6 +21,7 @@ obj-y				+= gpio-config.o
  # PM support
  
  obj-$(CONFIG_PM)		+= pm.o
@@ -494,10 +466,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/Makefile
  obj-$(CONFIG_S3C2410_PM_CHECK)	+= pm-check.o
  
  # devices
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c/pm.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/pm.c	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c/pm.c
++++ b/arch/arm/plat-s3c/pm.c
 @@ -21,11 +21,10 @@
  
  #include <asm/cacheflush.h>
@@ -511,7 +481,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm.c
  #include <mach/regs-irq.h>
  #include <asm/irq.h>
  
-@@ -70,6 +69,8 @@
+@@ -70,6 +69,8 @@ static inline void s3c_pm_debug_init(voi
  
  /* Save the UART configurations if we are configured for debug. */
  
@@ -520,7 +490,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm.c
  #ifdef CONFIG_S3C2410_PM_DEBUG
  
  struct pm_uart_save uart_save[CONFIG_SERIAL_SAMSUNG_UARTS];
-@@ -83,6 +84,12 @@
+@@ -83,6 +84,12 @@ static void s3c_pm_save_uart(unsigned in
  	save->ufcon = __raw_readl(regs + S3C2410_UFCON);
  	save->umcon = __raw_readl(regs + S3C2410_UMCON);
  	save->ubrdiv = __raw_readl(regs + S3C2410_UBRDIV);
@@ -533,7 +503,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm.c
  }
  
  static void s3c_pm_save_uarts(void)
-@@ -98,11 +105,16 @@
+@@ -98,11 +105,16 @@ static void s3c_pm_restore_uart(unsigned
  {
  	void __iomem *regs = S3C_VA_UARTx(uart);
  
@@ -550,7 +520,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm.c
  }
  
  static void s3c_pm_restore_uarts(void)
-@@ -289,11 +301,14 @@
+@@ -289,11 +301,14 @@ static int s3c_pm_enter(suspend_state_t 
  
  	s3c_pm_arch_stop_clocks();
  
@@ -570,10 +540,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm.c
  
  	/* restore the cpu state using the kernel's cpu init code. */
  
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm-gpio.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c/pm-gpio.c	2009-05-18 19:07:48.000000000 +0200
+--- /dev/null
++++ b/arch/arm/plat-s3c/pm-gpio.c
 @@ -0,0 +1,378 @@
 +/* linux/arch/arm/plat-s3c/pm-gpio.c
 + *
@@ -953,10 +921,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c/pm-gpio.c
 +		gpio_nr += CONFIG_S3C_GPIO_SPACE;
 +	}
 +}
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/clock-dclk.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/clock-dclk.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/clock-dclk.c	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c24xx/clock-dclk.c
++++ b/arch/arm/plat-s3c24xx/clock-dclk.c
 @@ -18,6 +18,7 @@
  
  #include <mach/regs-clock.h>
@@ -965,11 +931,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/clock-dclk.c
  
  #include <plat/clock.h>
  #include <plat/cpu.h>
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/cpu.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/cpu.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/cpu.c	2009-05-18 19:07:48.000000000 +0200
-@@ -61,6 +61,7 @@
+--- a/arch/arm/plat-s3c24xx/cpu.c
++++ b/arch/arm/plat-s3c24xx/cpu.c
+@@ -61,6 +61,7 @@ static const char name_s3c2410[]  = "S3C
  static const char name_s3c2412[]  = "S3C2412";
  static const char name_s3c2440[]  = "S3C2440";
  static const char name_s3c2442[]  = "S3C2442";
@@ -977,7 +941,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/cpu.c
  static const char name_s3c2443[]  = "S3C2443";
  static const char name_s3c2410a[] = "S3C2410A";
  static const char name_s3c2440a[] = "S3C2440A";
-@@ -112,6 +113,15 @@
+@@ -112,6 +113,15 @@ static struct cpu_table cpu_ids[] __init
  		.name		= name_s3c2442
  	},
  	{
@@ -993,10 +957,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/cpu.c
  		.idcode		= 0x32412001,
  		.idmask		= 0xffffffff,
  		.map_io		= s3c2412_map_io,
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/gpiolib.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c24xx/gpiolib.c
++++ b/arch/arm/plat-s3c24xx/gpiolib.c
 @@ -19,9 +19,10 @@
  #include <linux/io.h>
  #include <linux/gpio.h>
@@ -1009,7 +971,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  
  #include <mach/regs-gpio.h>
  
-@@ -78,6 +79,7 @@
+@@ -78,6 +79,7 @@ static int s3c24xx_gpiolib_bankg_toirq(s
  struct s3c_gpio_chip s3c24xx_gpios[] = {
  	[0] = {
  		.base	= S3C24XX_GPIO_BASE(S3C2410_GPA0),
@@ -1017,7 +979,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  		.chip	= {
  			.base			= S3C2410_GPA0,
  			.owner			= THIS_MODULE,
-@@ -89,6 +91,7 @@
+@@ -89,6 +91,7 @@ struct s3c_gpio_chip s3c24xx_gpios[] = {
  	},
  	[1] = {
  		.base	= S3C24XX_GPIO_BASE(S3C2410_GPB0),
@@ -1025,7 +987,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  		.chip	= {
  			.base			= S3C2410_GPB0,
  			.owner			= THIS_MODULE,
-@@ -98,6 +101,7 @@
+@@ -98,6 +101,7 @@ struct s3c_gpio_chip s3c24xx_gpios[] = {
  	},
  	[2] = {
  		.base	= S3C24XX_GPIO_BASE(S3C2410_GPC0),
@@ -1033,7 +995,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  		.chip	= {
  			.base			= S3C2410_GPC0,
  			.owner			= THIS_MODULE,
-@@ -107,6 +111,7 @@
+@@ -107,6 +111,7 @@ struct s3c_gpio_chip s3c24xx_gpios[] = {
  	},
  	[3] = {
  		.base	= S3C24XX_GPIO_BASE(S3C2410_GPD0),
@@ -1041,7 +1003,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  		.chip	= {
  			.base			= S3C2410_GPD0,
  			.owner			= THIS_MODULE,
-@@ -116,6 +121,7 @@
+@@ -116,6 +121,7 @@ struct s3c_gpio_chip s3c24xx_gpios[] = {
  	},
  	[4] = {
  		.base	= S3C24XX_GPIO_BASE(S3C2410_GPE0),
@@ -1049,7 +1011,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  		.chip	= {
  			.base			= S3C2410_GPE0,
  			.label			= "GPIOE",
-@@ -125,6 +131,7 @@
+@@ -125,6 +131,7 @@ struct s3c_gpio_chip s3c24xx_gpios[] = {
  	},
  	[5] = {
  		.base	= S3C24XX_GPIO_BASE(S3C2410_GPF0),
@@ -1057,7 +1019,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  		.chip	= {
  			.base			= S3C2410_GPF0,
  			.owner			= THIS_MODULE,
-@@ -135,12 +142,23 @@
+@@ -135,12 +142,23 @@ struct s3c_gpio_chip s3c24xx_gpios[] = {
  	},
  	[6] = {
  		.base	= S3C24XX_GPIO_BASE(S3C2410_GPG0),
@@ -1082,11 +1044,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/gpiolib.c
  		},
  	},
  };
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/pm-core.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/include/plat/pm-core.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/pm-core.h	2009-05-18 19:07:48.000000000 +0200
-@@ -57,3 +57,8 @@
+--- a/arch/arm/plat-s3c24xx/include/plat/pm-core.h
++++ b/arch/arm/plat-s3c24xx/include/plat/pm-core.h
+@@ -57,3 +57,8 @@ static inline void s3c_pm_arch_show_resu
  	s3c_pm_show_resume_irqs(IRQ_EINT4-4, __raw_readl(S3C2410_EINTPEND),
  				s3c_irqwake_eintmask);
  }
@@ -1095,10 +1055,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/include/plat/pm-core.h
 +					   struct pm_uart_save *save)
 +{
 +}
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq-pm.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/irq-pm.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq-pm.c	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c24xx/irq-pm.c
++++ b/arch/arm/plat-s3c24xx/irq-pm.c
 @@ -15,6 +15,7 @@
  #include <linux/module.h>
  #include <linux/interrupt.h>
@@ -1107,7 +1065,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq-pm.c
  
  #include <plat/cpu.h>
  #include <plat/pm.h>
-@@ -80,7 +81,9 @@
+@@ -80,7 +81,9 @@ int s3c24xx_irq_suspend(struct sys_devic
  
  int s3c24xx_irq_resume(struct sys_device *dev)
  {
@@ -1118,7 +1076,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq-pm.c
  
  	for (i = 0; i < ARRAY_SIZE(save_extint); i++)
  		__raw_writel(save_extint[i], S3C24XX_EXTINT0 + (i*4));
-@@ -91,5 +94,25 @@
+@@ -91,5 +94,25 @@ int s3c24xx_irq_resume(struct sys_device
  	s3c_pm_do_restore(irq_save, ARRAY_SIZE(irq_save));
  	__raw_writel(save_eintmask, S3C24XX_EINTMASK);
  
@@ -1144,10 +1102,8 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/irq-pm.c
 +
  	return 0;
  }
-Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/pm.c
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/plat-s3c24xx/pm.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/plat-s3c24xx/pm.c	2009-05-18 19:07:48.000000000 +0200
+--- a/arch/arm/plat-s3c24xx/pm.c
++++ b/arch/arm/plat-s3c24xx/pm.c
 @@ -39,6 +39,7 @@
  #include <mach/regs-gpio.h>
  #include <mach/regs-mem.h>
@@ -1156,7 +1112,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/pm.c
  
  #include <asm/mach/time.h>
  
-@@ -75,43 +76,10 @@
+@@ -75,43 +76,10 @@ static struct sleep_save core_save[] = {
  	SAVE_ITEM(S3C2410_CLKSLOW),
  };
  
@@ -1200,7 +1156,7 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/pm.c
  /* s3c_pm_check_resume_pin
   *
   * check to see if the pin is configured correctly for sleep mode, and
-@@ -165,186 +133,6 @@
+@@ -165,186 +133,6 @@ void s3c_pm_configure_extint(void)
  	}
  }
  
@@ -1387,11 +1343,9 @@ Index: linux-2.6.30-rc6/arch/arm/plat-s3c24xx/pm.c
  
  void s3c_pm_restore_core(void)
  {
-Index: linux-2.6.30-rc6/drivers/mmc/host/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mmc/host/Kconfig	2009-05-18 19:07:38.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mmc/host/Kconfig	2009-05-18 19:07:48.000000000 +0200
-@@ -37,13 +37,6 @@
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -37,13 +37,6 @@ config MMC_SDHCI
  
  	  If unsure, say N.
  
@@ -1405,7 +1359,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/Kconfig
  config MMC_SDHCI_PCI
  	tristate "SDHCI support on PCI bus"
  	depends on MMC_SDHCI && PCI
-@@ -55,6 +48,18 @@
+@@ -55,6 +48,18 @@ config MMC_SDHCI_PCI
  
  	  If unsure, say N.
  
@@ -1424,7 +1378,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/Kconfig
  config MMC_RICOH_MMC
  	tristate "Ricoh MMC Controller Disabler  (EXPERIMENTAL)"
  	depends on MMC_SDHCI_PCI
-@@ -72,17 +77,6 @@
+@@ -72,17 +77,6 @@ config MMC_RICOH_MMC
  
  	  If unsure, say Y.
  
@@ -1442,7 +1396,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/Kconfig
  config MMC_OMAP
  	tristate "TI OMAP Multimedia Card Interface support"
  	depends on ARCH_OMAP
-@@ -163,16 +157,6 @@
+@@ -163,16 +157,6 @@ config MMC_IMX
  
  	  If unsure, say N.
  
@@ -1459,11 +1413,9 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/Kconfig
  config MMC_TIFM_SD
  	tristate "TI Flash Media MMC/SD Interface support  (EXPERIMENTAL)"
  	depends on EXPERIMENTAL && PCI
-Index: linux-2.6.30-rc6/drivers/mmc/host/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mmc/host/Makefile	2009-05-18 19:07:38.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mmc/host/Makefile	2009-05-18 19:07:48.000000000 +0200
-@@ -9,11 +9,10 @@
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -9,11 +9,10 @@ endif
  obj-$(CONFIG_MMC_ARMMMCI)	+= mmci.o
  obj-$(CONFIG_MMC_PXA)		+= pxamci.o
  obj-$(CONFIG_MMC_IMX)		+= imxmmc.o
@@ -1476,7 +1428,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/Makefile
  obj-$(CONFIG_MMC_WBSD)		+= wbsd.o
  obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
-@@ -21,7 +20,6 @@
+@@ -21,7 +20,6 @@ obj-$(CONFIG_MMC_OMAP_HS)	+= omap_hsmmc.
  obj-$(CONFIG_MMC_AT91)		+= at91_mci.o
  obj-$(CONFIG_MMC_ATMELMCI)	+= atmel-mci.o
  obj-$(CONFIG_MMC_TIFM_SD)	+= tifm_sd.o
@@ -1484,10 +1436,8 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/Makefile
  obj-$(CONFIG_MMC_SPI)		+= mmc_spi.o
  ifeq ($(CONFIG_OF),y)
  obj-$(CONFIG_MMC_SPI)		+= of_mmc_spi.o
-Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mmc/host/s3cmci.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c	2009-05-18 19:07:48.000000000 +0200
+--- a/drivers/mmc/host/s3cmci.c
++++ b/drivers/mmc/host/s3cmci.c
 @@ -2,6 +2,7 @@
   *  linux/drivers/mmc/s3cmci.h - Samsung S3C MCI driver
   *
@@ -1515,7 +1465,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  #include "s3cmci.h"
  
  #define DRIVER_NAME "s3c-mci"
-@@ -47,6 +57,9 @@
+@@ -47,6 +57,9 @@ static const int dbgmap_err   = dbg_fail
  static const int dbgmap_info  = dbg_info | dbg_conf;
  static const int dbgmap_debug = dbg_err | dbg_debug;
  
@@ -1525,7 +1475,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  #define dbg(host, channels, args...)		  \
  	do {					  \
  	if (dbgmap_err & channels) 		  \
-@@ -280,8 +293,11 @@
+@@ -280,8 +293,11 @@ static void do_pio_read(struct s3cmci_ho
  		 * an even multiple of 4. */
  		if (fifo >= host->pio_bytes)
  			fifo = host->pio_bytes;
@@ -1538,7 +1488,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  
  		host->pio_bytes -= fifo;
  		host->pio_count += fifo;
-@@ -329,7 +345,7 @@
+@@ -329,7 +345,7 @@ static void do_pio_write(struct s3cmci_h
  
  	to_ptr = host->base + host->sdidata;
  
@@ -1547,7 +1497,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  		if (!host->pio_bytes) {
  			res = get_data_buffer(host, &host->pio_bytes,
  							&host->pio_ptr);
-@@ -353,8 +369,11 @@
+@@ -353,8 +369,11 @@ static void do_pio_write(struct s3cmci_h
  		 * words, so round down to an even multiple of 4. */
  		if (fifo >= host->pio_bytes)
  			fifo = host->pio_bytes;
@@ -1560,7 +1510,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  
  		host->pio_bytes -= fifo;
  		host->pio_count += fifo;
-@@ -373,7 +392,6 @@
+@@ -373,7 +392,6 @@ static void pio_tasklet(unsigned long da
  {
  	struct s3cmci_host *host = (struct s3cmci_host *) data;
  
@@ -1568,7 +1518,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  	disable_irq(host->irq);
  
  	if (host->pio_active == XFER_WRITE)
-@@ -614,7 +632,6 @@
+@@ -614,7 +632,6 @@ irq_out:
  
  	spin_unlock_irqrestore(&host->complete_lock, iflags);
  	return IRQ_HANDLED;
@@ -1576,7 +1526,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  }
  
  /*
-@@ -789,11 +806,11 @@
+@@ -789,11 +806,11 @@ static void s3cmci_dma_setup(struct s3cm
  
  	last_source = source;
  
@@ -1590,7 +1540,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  		s3c2410_dma_set_buffdone_fn(host->dma,
  					    s3cmci_dma_done_callback);
  		s3c2410_dma_setflags(host->dma, S3C2410_DMAF_AUTOSTART);
-@@ -1026,6 +1043,7 @@
+@@ -1026,6 +1043,7 @@ static void s3cmci_send_request(struct m
  			dbg(host, dbg_err, "data prepare error %d\n", res);
  			cmd->error = res;
  			cmd->data->error = res;
@@ -1598,7 +1548,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  
  			mmc_request_done(mmc, mrq);
  			return;
-@@ -1263,10 +1281,8 @@
+@@ -1263,10 +1281,8 @@ static int __devinit s3cmci_probe(struct
  	host->is2440	= is2440;
  
  	host->pdata = pdev->dev.platform_data;
@@ -1610,7 +1560,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  
  	spin_lock_init(&host->complete_lock);
  	tasklet_init(&host->pio_tasklet, pio_tasklet, (unsigned long) host);
-@@ -1379,6 +1395,18 @@
+@@ -1379,6 +1395,18 @@ static int __devinit s3cmci_probe(struct
  	mmc->f_min 	= host->clk_rate / (host->clk_div * 256);
  	mmc->f_max 	= host->clk_rate / host->clk_div;
  
@@ -1629,7 +1579,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  	if (host->pdata->ocr_avail)
  		mmc->ocr_avail = host->pdata->ocr_avail;
  
-@@ -1491,18 +1519,60 @@
+@@ -1491,18 +1519,60 @@ static int __devinit s3cmci_2440_probe(s
  
  #ifdef CONFIG_PM
  
@@ -1692,7 +1642,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  }
  
  #else /* CONFIG_PM */
-@@ -1560,9 +1630,13 @@
+@@ -1560,9 +1630,13 @@ static void __exit s3cmci_exit(void)
  module_init(s3cmci_init);
  module_exit(s3cmci_exit);
  
@@ -1706,10 +1656,8 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.c
  MODULE_ALIAS("platform:s3c2412-sdi");
  MODULE_ALIAS("platform:s3c2440-sdi");
 +
-Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.h
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mmc/host/s3cmci.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mmc/host/s3cmci.h	2009-05-18 19:07:48.000000000 +0200
+--- a/drivers/mmc/host/s3cmci.h
++++ b/drivers/mmc/host/s3cmci.h
 @@ -8,6 +8,10 @@
   * published by the Free Software Foundation.
   */
@@ -1721,7 +1669,7 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.h
  /* FIXME: DMA Resource management ?! */
  #define S3CMCI_DMA 0
  
-@@ -68,7 +72,16 @@
+@@ -68,7 +72,16 @@ struct s3cmci_host {
  	unsigned int		ccnt, dcnt;
  	struct tasklet_struct	pio_tasklet;
  
@@ -1738,10 +1686,8 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/s3cmci.h
 +
 +	struct regulator *regulator;
  };
-Index: linux-2.6.30-rc6/drivers/mmc/host/sdhci-s3c.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30-rc6/drivers/mmc/host/sdhci-s3c.c	2009-05-18 19:07:48.000000000 +0200
+--- /dev/null
++++ b/drivers/mmc/host/sdhci-s3c.c
 @@ -0,0 +1,419 @@
 +/* linux/drivers/mmc/host/sdhci-s3c.c
 + *
@@ -2162,11 +2108,9 @@ Index: linux-2.6.30-rc6/drivers/mmc/host/sdhci-s3c.c
 +MODULE_AUTHOR("Ben Dooks, <ben@simtec.co.uk>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:s3c-sdhci");
-Index: linux-2.6.30-rc6/drivers/mtd/nand/s3c2410.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mtd/nand/s3c2410.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mtd/nand/s3c2410.c	2009-05-18 19:07:48.000000000 +0200
-@@ -438,7 +438,7 @@
+--- a/drivers/mtd/nand/s3c2410.c
++++ b/drivers/mtd/nand/s3c2410.c
+@@ -438,7 +438,7 @@ static int s3c2410_nand_correct_data(str
  	if ((diff0 & ~(1<<fls(diff0))) == 0)
  		return 1;
  
@@ -2175,7 +2119,7 @@ Index: linux-2.6.30-rc6/drivers/mtd/nand/s3c2410.c
  }
  
  /* ECC functions
-@@ -530,7 +530,12 @@
+@@ -530,7 +530,12 @@ static void s3c2410_nand_read_buf(struct
  static void s3c2440_nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
  {
  	struct s3c2410_nand_info *info = s3c2410_nand_mtd_toinfo(mtd);
@@ -2188,7 +2132,7 @@ Index: linux-2.6.30-rc6/drivers/mtd/nand/s3c2410.c
  }
  
  static void s3c2410_nand_write_buf(struct mtd_info *mtd, const u_char *buf, int len)
-@@ -645,17 +650,31 @@
+@@ -645,17 +650,31 @@ static int s3c2410_nand_remove(struct pl
  }
  
  #ifdef CONFIG_MTD_PARTITIONS
@@ -2222,7 +2166,7 @@ Index: linux-2.6.30-rc6/drivers/mtd/nand/s3c2410.c
  	return add_mtd_device(&mtd->mtd);
  }
  #else
-@@ -684,9 +703,13 @@
+@@ -684,9 +703,13 @@ static void s3c2410_nand_init_chip(struc
  	chip->select_chip  = s3c2410_nand_select_chip;
  	chip->chip_delay   = 50;
  	chip->priv	   = nmtd;
@@ -2237,7 +2181,7 @@ Index: linux-2.6.30-rc6/drivers/mtd/nand/s3c2410.c
  	switch (info->cpu_type) {
  	case TYPE_S3C2410:
  		chip->IO_ADDR_W = regs + S3C2410_NFDATA;
-@@ -726,7 +749,7 @@
+@@ -726,7 +749,7 @@ static void s3c2410_nand_init_chip(struc
  	nmtd->mtd.owner    = THIS_MODULE;
  	nmtd->set	   = set;
  
@@ -2246,11 +2190,9 @@ Index: linux-2.6.30-rc6/drivers/mtd/nand/s3c2410.c
  		chip->ecc.calculate = s3c2410_nand_calculate_ecc;
  		chip->ecc.correct   = s3c2410_nand_correct_data;
  		chip->ecc.mode	    = NAND_ECC_HW;
-Index: linux-2.6.30-rc6/drivers/mmc/core/core.c
-===================================================================
---- linux-2.6.30-rc6.orig/drivers/mmc/core/core.c	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/drivers/mmc/core/core.c	2009-05-18 19:07:48.000000000 +0200
-@@ -59,10 +59,11 @@
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -59,10 +59,11 @@ static int mmc_schedule_delayed_work(str
  /*
   * Internal function. Flush all scheduled work from the MMC work queue.
   */

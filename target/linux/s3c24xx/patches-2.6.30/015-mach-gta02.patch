@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/Kconfig
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2442/Kconfig	2009-05-18 19:08:29.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2442/Kconfig	2009-05-18 19:08:31.000000000 +0200
-@@ -25,6 +25,20 @@
+--- a/arch/arm/mach-s3c2442/Kconfig
++++ b/arch/arm/mach-s3c2442/Kconfig
+@@ -25,6 +25,20 @@ config SMDK2440_CPU2442
  	depends on ARCH_S3C2440
  	select CPU_S3C2442
  
@@ -23,11 +21,9 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/Kconfig
  
  endmenu
  
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/Makefile
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2442/Makefile	2009-05-18 19:08:31.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2442/Makefile	2009-05-18 19:08:31.000000000 +0200
-@@ -9,8 +9,11 @@
+--- a/arch/arm/mach-s3c2442/Makefile
++++ b/arch/arm/mach-s3c2442/Makefile
+@@ -9,8 +9,11 @@ obj-m				:=
  obj-n				:=
  obj-				:=
  
@@ -39,10 +35,8 @@ Index: linux-2.6.30-rc6/arch/arm/mach-s3c2442/Makefile
  
  # Machine support
  
-Index: linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/irqs.h
-===================================================================
---- linux-2.6.30-rc6.orig/arch/arm/mach-s3c2410/include/mach/irqs.h	2009-05-16 06:12:57.000000000 +0200
-+++ linux-2.6.30-rc6/arch/arm/mach-s3c2410/include/mach/irqs.h	2009-05-18 19:08:31.000000000 +0200
+--- a/arch/arm/mach-s3c2410/include/mach/irqs.h
++++ b/arch/arm/mach-s3c2410/include/mach/irqs.h
 @@ -153,9 +153,9 @@
  #define IRQ_S3C2443_AC97	S3C2410_IRQSUB(28)
  
