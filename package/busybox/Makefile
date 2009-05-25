@@ -1,4 +1,4 @@
-#
+# 
 # Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.12.4
+PKG_VERSION:=1.13.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
-PKG_MD5SUM:=5b8c427bf596732d6b6156672e6e093f
+PKG_MD5SUM:=8a5eb7f15d4077d18fa97bda7a4e5412
 
 include $(INCLUDE_DIR)/package.mk
 

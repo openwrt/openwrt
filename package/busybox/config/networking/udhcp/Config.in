@@ -74,14 +74,14 @@ config BUSYBOX_CONFIG_FEATURE_UDHCP_PORT
 	  At the cost of ~300 bytes, enables -P port option.
 	  This feature is typically not needed.
 
-config BUSYBOX_CONFIG_FEATURE_UDHCP_DEBUG
+config BUSYBOX_CONFIG_UDHCP_DEBUG
 	bool "Compile udhcp with noisy debugging messages"
 	default n
 	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
 	help
 	  If selected, udhcpd will output extra debugging output.
 
-config BUSYBOX_CONFIG_FEATURE_RFC3397
+config BUSYBOX_CONFIG_FEATURE_UDHCP_RFC3397
 	bool "Support for RFC3397 domain search (experimental)"
 	default y
 	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
@@ -89,7 +89,7 @@ config BUSYBOX_CONFIG_FEATURE_RFC3397
 	  If selected, both client and server will support passing of domain
 	  search lists via option 119, specified in RFC3397.
 
-config BUSYBOX_CONFIG_DHCPC_DEFAULT_SCRIPT
+config BUSYBOX_CONFIG_UDHCPC_DEFAULT_SCRIPT
 	string "Absolute path to config script"
 	default "/usr/share/udhcpc/default.script"
 	depends on BUSYBOX_CONFIG_APP_UDHCPC

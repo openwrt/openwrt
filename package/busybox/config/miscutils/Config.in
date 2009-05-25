@@ -107,7 +107,7 @@ config BUSYBOX_CONFIG_CROND
 	      # Run daily cron jobs at 4:40 every day:
 	      40 4 * * * /etc/cron/daily > /dev/null 2>&1
 
-config BUSYBOX_CONFIG_DEBUG_CROND_OPTION
+config BUSYBOX_CONFIG_FEATURE_CROND_D
 	bool "Support option -d to redirect output to stderr"
 	depends on BUSYBOX_CONFIG_CROND
 	default n
@@ -137,6 +137,14 @@ config BUSYBOX_CONFIG_DC
 	help
 	  Dc is a reverse-polish desk calculator which supports unlimited
 	  precision arithmetic.
+
+config BUSYBOX_CONFIG_FEATURE_DC_LIBM
+	bool "Enable power and exp functions (requires libm)"
+	default n
+	depends on BUSYBOX_CONFIG_DC
+	help
+	  Enable power and exp functions.
+	  NOTE: This will require libm to be present for linking.
 
 config BUSYBOX_CONFIG_DEVFSD
 	bool "devfsd (obsolete)"
@@ -187,6 +195,13 @@ config BUSYBOX_CONFIG_FEATURE_DEVFS
 	  This tells busybox to look for names like /dev/loop/0 instead of
 	  /dev/loop0. If your /dev directory has normal names instead of
 	  devfs names, you don't want this.
+
+config BUSYBOX_CONFIG_DEVMEM
+	bool "devmem"
+	default n
+	help
+	  devmem is a small program that reads and writes from physical
+	  memory using /dev/mem.
 
 config BUSYBOX_CONFIG_EJECT
 	bool "eject"
@@ -285,13 +300,13 @@ config BUSYBOX_CONFIG_FEATURE_LESS_FLAGS
 	  The -M flag enables a more sophisticated status line.
 	  The -m flag enables a simpler status line with a percentage.
 
-config BUSYBOX_CONFIG_FEATURE_LESS_FLAGCS
-	bool "Enable flag changes"
+config BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
+	bool "Enable flag changes ('-' command)"
 	default n
 	depends on BUSYBOX_CONFIG_LESS
 	help
 	  This enables the ability to change command-line flags within
-	  less itself.
+	  less itself ('-' keyboard command).
 
 config BUSYBOX_CONFIG_FEATURE_LESS_MARKS
 	bool "Enable marks"
@@ -306,6 +321,20 @@ config BUSYBOX_CONFIG_FEATURE_LESS_REGEXP
 	depends on BUSYBOX_CONFIG_LESS
 	help
 	  Enable regular expressions, allowing complex file searches.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_LINENUMS
+	bool "Enable dynamic switching of line numbers"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
+	help
+	  Enable "-N" command.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_WINCH
+	bool "Enable automatic resizing on window size changes"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  Makes less track window size changes.
 
 config BUSYBOX_CONFIG_HDPARM
 	bool "hdparm"

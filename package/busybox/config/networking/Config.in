@@ -641,7 +641,7 @@ config BUSYBOX_CONFIG_FEATURE_NETSTAT_WIDE
 
 config BUSYBOX_CONFIG_FEATURE_NETSTAT_PRG
 	bool "Enable PID/Program name output"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_NETSTAT
 	help
 	  Add support for -p flag to print out PID and program name.
@@ -687,24 +687,22 @@ config BUSYBOX_CONFIG_ROUTE
 	help
 	  Route displays or manipulates the kernel's IP routing tables.
 
-config BUSYBOX_CONFIG_SENDMAIL
-	bool "sendmail"
-	default n
-	help
-	  Barebones sendmail.
-
-config BUSYBOX_CONFIG_FETCHMAIL
-	bool "fetchmail"
-	default n
-	help
-	  Barebones fetchmail.
-
 config BUSYBOX_CONFIG_SLATTACH
 	bool "slattach"
 	default n
 	help
 	  slattach is a small utility to attach network interfaces to serial
 	  lines.
+
+#config TC
+#	bool "tc"
+#	default n
+#	help
+#	  show / manipulate traffic control settings
+#
+#config FEATURE_TC_INGRESS
+#	def_bool n
+#	depends on TC
 
 config BUSYBOX_CONFIG_TELNET
 	bool "telnet"
@@ -826,7 +824,7 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_BLOCKSIZE
 	  Allow tftp to specify block size, and tftpd to understand
 	  "blksize" option.
 
-config BUSYBOX_CONFIG_DEBUG_TFTP
+config BUSYBOX_CONFIG_TFTP_DEBUG
 	bool "Enable debug"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP

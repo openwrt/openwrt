@@ -5,6 +5,20 @@
 
 menu "Linux Module Utilities"
 
+config BUSYBOX_CONFIG_DEFAULT_MODULES_DIR
+	string "Default directory containing modules"
+	default "/lib/modules"
+	help
+	  Directory that contains kernel modules.
+	  Defaults to "/lib/modules"
+
+config BUSYBOX_CONFIG_DEFAULT_DEPMOD_FILE
+	string "Default name of modules.dep"
+	default "modules.dep"
+	help
+	  Filename that contains kernel modules dependencies.
+	  Defaults to "modules.dep"
+
 config BUSYBOX_CONFIG_MODPROBE_SMALL
 	bool "Simplified modutils"
 	default n
@@ -54,92 +68,12 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_CHECK_ALREADY_LOADED
 	  Check if the module is already loaded.
 	  N.B. It's racy.
 
-config BUSYBOX_CONFIG_DEPMOD
-	bool "depmod"
-	default n
-	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
-	help
-	  depmod generates modules.dep (FIXME: elaborate)
-
-config BUSYBOX_CONFIG_FEATURE_DEPMOD_PRUNE_FANCY
-	bool "Fancy dependency pruning"
-	default n
-	depends on BUSYBOX_CONFIG_DEPMOD
-	help
-	  By default modules.dep contains all dependencies as listed by
-	  the modules.
-	  If you enable this option then we remove implied modules from
-	  the dependencies.
-	  This makes depmod somewhat bigger but generates a smaller
-	  modules.dep file.
-
-	  If unsure, say N.
-
-config BUSYBOX_CONFIG_FEATURE_DEPMOD_ALIAS
-	bool "Alias support"
-	default n
-	depends on BUSYBOX_CONFIG_DEPMOD
-	help
-	  By default modules.dep does not contain alias information.
-	  Enable this to emit aliases of the form:
-
-	    alias pcmcia:m*c*f03fn*pfn*pa*pb*pc*pd* parport_cs
-
 config BUSYBOX_CONFIG_INSMOD
 	bool "insmod"
 	default y
 	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  insmod is used to load specified modules in the running kernel.
-
-config BUSYBOX_CONFIG_FEATURE_INSMOD_VERSION_CHECKING
-	bool "Module version checking"
-	default n
-	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
-	help
-	  Support checking of versions for modules. This is used to
-	  ensure that the kernel and module are made for each other.
-
-config BUSYBOX_CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
-	bool "Add module symbols to kernel symbol table"
-	default n
-	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
-	help
-	  By adding module symbols to the kernel symbol table, Oops messages
-	  occuring within kernel modules can be properly debugged. By enabling
-	  this feature, module symbols will always be added to the kernel symbol
-	  table for properly debugging support. If you are not interested in
-	  Oops messages from kernel modules, say N.
-
-config BUSYBOX_CONFIG_FEATURE_INSMOD_LOADINKMEM
-	bool "In kernel memory optimization (uClinux only)"
-	default n
-	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
-	help
-	  This is a special uClinux only memory optimization that lets insmod
-	  load the specified kernel module directly into kernel space, reducing
-	  memory usage by preventing the need for two copies of the module
-	  being loaded into memory.
-
-config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
-	bool "Enable load map (-m) option"
-	default n
-	depends on BUSYBOX_CONFIG_INSMOD && ( BUSYBOX_CONFIG_FEATURE_2_4_MODULES || BUSYBOX_CONFIG_FEATURE_2_6_MODULES )
-	help
-	  Enabling this, one would be able to get a load map
-	  output on stdout. This makes kernel module debugging
-	  easier.
-	  If you don't plan to debug kernel modules, you
-	  don't need this option.
-
-config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP_FULL
-	bool "Symbols in load map"
-	default n
-	depends on BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
-	help
-	  Without this option, -m will only output section
-	  load map. With this option, -m will also output
-	  symbols load map.
 
 config BUSYBOX_CONFIG_RMMOD
 	bool "rmmod"
@@ -156,12 +90,13 @@ config BUSYBOX_CONFIG_LSMOD
 	  lsmod is used to display a list of loaded modules.
 
 config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
-	bool "Pretty output for 2.6.x Linux kernels"
+	bool "Pretty output"
 	default y
 	depends on BUSYBOX_CONFIG_LSMOD
 	help
 	  This option makes output format of lsmod adjusted to
 	  the format of module-init-tools for Linux kernel 2.6.
+	  Increases size somewhat.
 
 config BUSYBOX_CONFIG_MODPROBE
 	bool "modprobe"
@@ -174,38 +109,11 @@ config BUSYBOX_CONFIG_MODPROBE
 	  Note that in the state, modprobe does not understand multiple
 	  module options from the configuration file. See option below.
 
-config BUSYBOX_CONFIG_FEATURE_MODPROBE_MULTIPLE_OPTIONS
-	bool
-	prompt "Multiple options parsing"
-	default n
-	depends on BUSYBOX_CONFIG_MODPROBE
-	help
-	  Allow modprobe to understand more than one option to pass to
-	  modules.
-
-	  This is a WIP, while waiting for a common argument parsing
-	  common amongst all BB applets (shell, modprobe, etc...) and
-	  adds around 600 bytes on x86, 700 bytes on ARM. The code is
-	  biggish and uggly, but just works.
-
-	  Saying Y here is not a bad idea if you're not that short
-	  on storage capacity.
-
-config BUSYBOX_CONFIG_FEATURE_MODPROBE_FANCY_ALIAS
-	bool
-	prompt "Fancy alias parsing"
-	default n
-	depends on BUSYBOX_CONFIG_MODPROBE && BUSYBOX_CONFIG_FEATURE_2_6_MODULES
-	help
-	  Say 'y' here to enable parsing of aliases with underscore/dash
-	  mismatch between module name and file name, along with bus-specific
-	  aliases (such as pci:... or usb:... aliases).
-
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_BLACKLIST
 	bool
 	prompt "Blacklist support"
 	default n
-	depends on BUSYBOX_CONFIG_MODPROBE && BUSYBOX_CONFIG_FEATURE_2_6_MODULES
+	depends on BUSYBOX_CONFIG_MODPROBE
 	help
 	  Say 'y' here to enable support for the 'blacklist' command in
 	  modprobe.conf. This prevents the alias resolver to resolve
@@ -213,60 +121,110 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_BLACKLIST
 	  hardware autodetection scripts to load modules like evdev, frame
 	  buffer drivers etc.
 
+config BUSYBOX_CONFIG_DEPMOD
+	bool "depmod"
+	default n
+	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
+	help
+	  depmod generates modules.dep (and potentially modules.alias
+	  and modules.symbols) that contain dependency information
+	  for modprobe.
+
 comment "Options common to multiple modutils"
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_LSMOD || BUSYBOX_CONFIG_DEPMOD
+
+config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
+	bool "Support version 2.2/2.4 Linux kernels"
+	default n
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_LSMOD
+	help
+	  Support module loading for 2.2.x and 2.4.x Linux kernels.
+	  This increases size considerably. Say N unless you plan
+	  to run ancient kernels.
+
+config BUSYBOX_CONFIG_FEATURE_INSMOD_VERSION_CHECKING
+	bool "Enable module version checking"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && (BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_MODPROBE)
+	help
+	  Support checking of versions for modules. This is used to
+	  ensure that the kernel and module are made for each other.
+
+config BUSYBOX_CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
+	bool "Add module symbols to kernel symbol table"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && (BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_MODPROBE)
+	help
+	  By adding module symbols to the kernel symbol table, Oops messages
+	  occuring within kernel modules can be properly debugged. By enabling
+	  this feature, module symbols will always be added to the kernel symbol
+	  table for properly debugging support. If you are not interested in
+	  Oops messages from kernel modules, say N.
+
+config BUSYBOX_CONFIG_FEATURE_INSMOD_LOADINKMEM
+	bool "In kernel memory optimization (uClinux only)"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && (BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_MODPROBE)
+	help
+	  This is a special uClinux only memory optimization that lets insmod
+	  load the specified kernel module directly into kernel space, reducing
+	  memory usage by preventing the need for two copies of the module
+	  being loaded into memory.
+
+config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
+	bool "Enable insmod load map (-m) option"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && BUSYBOX_CONFIG_INSMOD
+	help
+	  Enabling this, one would be able to get a load map
+	  output on stdout. This makes kernel module debugging
+	  easier.
+	  If you don't plan to debug kernel modules, you
+	  don't need this option.
+
+config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP_FULL
+	bool "Symbols in load map"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP && !BUSYBOX_CONFIG_MODPROBE_SMALL
+	help
+	  Without this option, -m will only output section
+	  load map. With this option, -m will also output
+	  symbols load map.
 
 config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
-	# Simulate indentation
 	bool "Support tainted module checking with new kernels"
 	default y
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_LSMOD
+	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  Support checking for tainted modules. These are usually binary
 	  only modules that will make the linux-kernel list ignore your
 	  support request.
 	  This option is required to support GPLONLY modules.
 
-config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
-	# Simulate indentation
-	bool "Support version 2.2.x to 2.4.x Linux kernels"
+config BUSYBOX_CONFIG_FEATURE_MODUTILS_ALIAS
+	bool "Support for module.aliases file"
 	default n
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE
+	depends on BUSYBOX_CONFIG_DEPMOD || BUSYBOX_CONFIG_MODPROBE
 	help
-	  Support module loading for 2.2.x and 2.4.x Linux kernels.
+	  Generate and parse modules.alias containing aliases for bus
+	  identifiers:
+	    alias pcmcia:m*c*f03fn*pfn*pa*pb*pc*pd* parport_cs
 
-	  Note:
-	  This is automatically enabled if 2.6 modules are not enabled.
+	  and aliases for logical modules names e.g.:
+	    alias padlock_aes aes
+	    alias aes_i586 aes
+	    alias aes_generic aes
 
-config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
-	# Simulate indentation
-	bool "Support version 2.6.x Linux kernels"
-	default y
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE
-	help
-	  Support module loading for newer 2.6.x Linux kernels.
+	  Say Y if unsure.
 
-config BUSYBOX_CONFIG_DEFAULT_MODULES_DIR
-	# Simulate indentation
-	string "Default directory containing modules"
-	default "/lib/modules"
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_MODPROBE_SMALL || BUSYBOX_CONFIG_DEPMOD
-	help
-	  Directory that contains kernel modules.
-	  Defaults to "/lib/modules"
-
-config BUSYBOX_CONFIG_DEFAULT_DEPMOD_FILE
-	# Simulate indentation
-	string "Default name of modules.dep"
-	default "modules.dep"
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_MODPROBE_SMALL || BUSYBOX_CONFIG_DEPMOD
-	help
-	  Filename that contains kernel modules dependencies.
-	  Defaults to "modules.dep"
-
-config BUSYBOX_CONFIG_FEATURE_QUERY_MODULE_INTERFACE
-	bool
+config BUSYBOX_CONFIG_FEATURE_MODUTILS_SYMBOLS
+	bool "Support for module.symbols file"
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && !BUSYBOX_CONFIG_FEATURE_2_6_MODULES
+	depends on BUSYBOX_CONFIG_DEPMOD || BUSYBOX_CONFIG_MODPROBE
+	help
+	  Generate and parse modules.symbols containing aliases for
+	  symbol_request() kernel calls, such as:
+	    alias symbol:usb_sg_init usbcore
+
+	  Say Y if unsure.
 
 endmenu

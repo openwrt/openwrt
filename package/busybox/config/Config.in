@@ -154,15 +154,17 @@ config BUSYBOX_CONFIG_FEATURE_SUID
 	default y
 	help
 	  With this option you can install the busybox binary belonging
-	  to root with the suid bit set, and it'll and it'll automatically drop
+	  to root with the suid bit set, and it will automatically drop
 	  priviledges for applets that don't need root access.
 
-	  If you're really paranoid and don't want to do this, build two
+	  If you are really paranoid and don't want to do this, build two
 	  busybox binaries with different applets in them (and the appropriate
 	  symlinks pointing to each binary), and only set the suid bit on the
 	  one that needs it. The applets currently marked to need the suid bit
-	  are login, passwd, su, ping, traceroute, crontab, dnsd, ipcrm, ipcs,
-	  and vlock.
+	  are:
+
+	  crontab, dnsd, findfs, ipcrm, ipcs, login, passwd, ping, su,
+	  traceroute, vlock.
 
 config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	bool "Runtime SUID/SGID configuration via /etc/busybox.conf"
@@ -253,18 +255,18 @@ config BUSYBOX_CONFIG_BUSYBOX_EXEC_PATH
 # These are auto-selected by other options
 
 config BUSYBOX_CONFIG_FEATURE_SYSLOG
-	bool "Support for logging to syslog"
+	bool #No description makes it a hidden option
 	default y
-	help
-	  This option is auto-selected when you select any applet which may
-	  send its output to syslog. You do not need to select it manually.
+	#help
+	#  This option is auto-selected when you select any applet which may
+	#  send its output to syslog. You do not need to select it manually.
 
 config BUSYBOX_CONFIG_FEATURE_HAVE_RPC
-	bool "RPC support"
+	bool #No description makes it a hidden option
 	default y
-	help
-	  This is automatically selected if any of enabled applets need it.
-	  You do not need to select it manually.
+	#help
+	#  This is automatically selected if any of enabled applets need it.
+	#  You do not need to select it manually.
 
 endmenu
 
@@ -401,9 +403,12 @@ config BUSYBOX_CONFIG_CROSS_COMPILER_PREFIX
 	help
 	  If you want to build BusyBox with a cross compiler, then you
 	  will need to set this to the cross-compiler prefix, for example,
-	  "i386-uclibc-". Note that CROSS_COMPILE environment variable
-	  or "make CROSS_COMPILE=xxx ..." will override this selection.
-	  For native build leave it empty.
+	  "i386-uclibc-".
+
+	  Note that CROSS_COMPILE environment variable or
+	  "make CROSS_COMPILE=xxx ..." will override this selection.
+
+	  Native builds leave this empty.
 
 endmenu
 
@@ -490,8 +495,8 @@ config BUSYBOX_CONFIG_INCLUDE_SUSv2
 	  will be supported in head, tail, and fold. (Note: should
 	  affect renice too.)
 
-config BUSYBOX_CONFIG_PARSE
-	bool "Uniform config file parser debugging applet: parse"
+### config PARSE
+### 	bool "Uniform config file parser debugging applet: parse"
 
 endmenu
 
@@ -589,9 +594,10 @@ source package/busybox/config/modutils/Config.in
 source package/busybox/config/util-linux/Config.in
 source package/busybox/config/miscutils/Config.in
 source package/busybox/config/networking/Config.in
+source package/busybox/config/printutils/Config.in
+source package/busybox/config/mailutils/Config.in
 source package/busybox/config/procps/Config.in
-source package/busybox/config/shell/Config.in
-source package/busybox/config/sysklogd/Config.in
 source package/busybox/config/runit/Config.in
 source package/busybox/config/selinux/Config.in
-source package/busybox/config/printutils/Config.in
+source package/busybox/config/shell/Config.in
+source package/busybox/config/sysklogd/Config.in

@@ -1,6 +1,6 @@
 --- a/init/init.c
 +++ b/init/init.c
-@@ -498,12 +498,11 @@ static void run_actions(int action_type)
+@@ -497,12 +497,11 @@ static void run_actions(int action_type)
  	for (a = init_action_list; a; a = tmp) {
  		tmp = a->next;
  		if (a->action_type & action_type) {
