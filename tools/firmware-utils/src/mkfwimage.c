@@ -58,6 +58,12 @@ fw_layout_t fw_layout_data[] = {
 		.firmware_max_length=	0x00640000,
 	},
 	{
+		.name		=	"RSPRO",
+		.kern_start	=	0xbf030000,
+		.kern_entry	=	0x80060000,
+		.firmware_max_length=	0x00640000,
+	},
+	{
 		.name		=	"LS-SR71",
 		.kern_start	=	0xbf030000,
 		.kern_entry	=	0x80060000,
