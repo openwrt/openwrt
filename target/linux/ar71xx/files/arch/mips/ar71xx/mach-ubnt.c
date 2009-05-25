@@ -125,6 +125,9 @@ static void __init ubnt_generic_setup(void)
 #define UBNT_RS_WAN_PHYMASK	(1 << 20)
 #define UBNT_RS_LAN_PHYMASK	((1 << 16) | (1 << 17) | (1 << 18) | (1 << 19))
 
+#define UBNT_RSPRO_WAN_PHYMASK	(1 << 4)
+#define UBNT_RSPRO_LAN_PHYMASK	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3))
+
 static void __init ubnt_rs_setup(void)
 {
 	ubnt_generic_setup();
@@ -155,7 +158,24 @@ static void __init ubnt_rspro_setup(void)
 {
 	ubnt_generic_setup();
 
+	ar71xx_add_device_mdio(~(UBNT_RSPRO_WAN_PHYMASK | UBNT_RSPRO_LAN_PHYMASK));
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = UBNT_RSPRO_WAN_PHYMASK;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth1_data.phy_mask = UBNT_RSPRO_LAN_PHYMASK;
+
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
+
 	ar71xx_add_device_usb();
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_rs_leds_gpio),
+					ubnt_rs_leds_gpio);
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_RSPRO, "Ubiquiti RouterStation Pro",
