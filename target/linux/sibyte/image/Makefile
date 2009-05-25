@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+#
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,12 +7,14 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-#define Image/Prepare
-#	cp $(LINUX_DIR)/arch/arm/boot/zImage $(KDIR)/zImage
-#endef
-
 define Image/BuildKernel
 	cp $(LINUX_DIR)/vmlinux $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
+# uImage
+	dd if=$(KDIR)/vmlinux of=$(KDIR)/openwrt-$(BOARD)-vmlinux bs=64k conv=sync
+	mkimage -A mips -O linux -T kernel -a 0x80100000 -C none -e \
+		0x80100000 \
+		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/openwrt-$(BOARD)-vmlinux $(BIN_DIR)/openwrt-$(BOARD)-uImage
 endef
 
 define Image/Build
@@ -29,9 +31,8 @@ define Image/Build/jffs2-128k
 endef
 
 define Image/Build/squashfs
-    $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
-	$(call Image/Build/slug,$(1))
 endef
 
 $(eval $(call BuildImage))
