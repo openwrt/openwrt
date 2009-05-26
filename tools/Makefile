@@ -20,6 +20,7 @@ tools-$(CONFIG_powerpc) += dtc
 tools-dep += lzma
 
 # builddir dependencies
+$(curdir)/pkg-config/compile := $(curdir)/sed/install
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
 $(curdir)/squashfs4/compile := $(curdir)/lzma/install
 $(curdir)/quilt/compile := $(curdir)/sed/install
