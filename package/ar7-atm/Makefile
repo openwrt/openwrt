@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -54,12 +54,14 @@ endef
 
 define KernelPackage/sangam-atm-annex-a/install
 	mkdir -p $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700mp.bin $(1)/lib/firmware/ar0700xx.bin
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700mp.bin $(1)/lib/firmware/
+	ln -sf ar0700mp.bin $(1)/lib/firmware/ar0700xx.bin
 endef
 
 define KernelPackage/sangam-atm-annex-b/install
 	mkdir -p $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700db.bin $(1)/lib/firmware/ar0700xx.bin
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700db.bin $(1)/lib/firmware/
+	ln -sf ar0700db.bin $(1)/lib/firmware/ar0700xx.bin
 endef
 
 $(eval $(call KernelPackage,sangam-atm-annex-a))
