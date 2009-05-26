@@ -1,6 +1,14 @@
 --- a/arch/mips/sibyte/swarm/platform.c
 +++ b/arch/mips/sibyte/swarm/platform.c
-@@ -83,3 +83,61 @@ static int __init swarm_pata_init(void)
+@@ -5,6 +5,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/ata_platform.h>
+ 
++#include <asm/addrspace.h>
+ #include <asm/sibyte/board.h>
+ #include <asm/sibyte/sb1250_genbus.h>
+ #include <asm/sibyte/sb1250_regs.h>
+@@ -83,3 +84,71 @@ static int __init swarm_pata_init(void)
  device_initcall(swarm_pata_init);
  
  #endif /* defined(CONFIG_SIBYTE_SWARM) || defined(CONFIG_SIBYTE_LITTLESUR) */
@@ -9,6 +17,15 @@
 +
 +#include <linux/mtd/partitions.h>
 +#include <linux/mtd/physmap.h>
++
++/* The board has 16MB flash but CFE sets up only 2MB */
++#define PHYS_TO_K1(a) CKSEG1ADDR(a)
++#define BOOTROM_SIZE 0x100
++
++static void fixup_cs0_size(void)
++{
++	SBWRITECSR(((A_IO_EXT_CS_BASE(0)) + R_IO_EXT_MULT_SIZE), BOOTROM_SIZE);
++}
 +
 +static struct mtd_partition flash_parts[] = {
 +	{
@@ -54,6 +71,7 @@
 +
 +static int __init flash_setup(void)
 +{
++	fixup_cs0_size();
 +	platform_device_register(&flash_device);
 +
 +	return 0;
