@@ -19,7 +19,7 @@ mkdir -p "$STAMP_DIR" "$BUILD_DIR" "$LOG_DIR"
 
 for pkg in `cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -e 's,.*[/=]\s*,,' | sort -u`; do
 		SELECTED=
-		for conf in `grep CONFIG_PACKAGE tmp/.packagedeps | grep " $pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'`; do
+		for conf in `grep CONFIG_PACKAGE tmp/.packagedeps | grep -E "[ /]$pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'`; do
 				grep "$conf=" .config > /dev/null && SELECTED=1
 		done
         [ -f "$STAMP_DIR/$pkg-done" ] && continue
