@@ -12,6 +12,9 @@ PKG_VERSION:=$(call qstrip,$(CONFIG_GLIBC_VERSION))
 ifeq ($(PKG_VERSION),2.3.6)
   PKG_MD5SUM:=bfdce99f82d6dbcb64b7f11c05d6bc96
 endif
+ifeq ($(PKG_VERSION),2.4)
+  PKG_MD5SUM:=7e9a88dcd41fbc53801dbe5bdacaf245
+endif
 ifeq ($(PKG_VERSION),2.6.1)
   PKG_MD5SUM:=11cf6d3fc86dbe0890b8d00372eb6286
 endif
