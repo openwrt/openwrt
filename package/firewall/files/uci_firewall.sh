@@ -93,7 +93,7 @@ addif() {
 	$IPTABLES -I zone_${zone}_nat 1 -t nat -o "$ifname" -j MASQUERADE 
 	$IPTABLES -I PREROUTING 1 -t nat -i "$ifname" -j zone_${zone}_prerouting 
 	$IPTABLES -A forward -i "$ifname" -j zone_${zone}_forward
-	$IPTABLES -t raw -I PREROUTING 1 -i "$ifname" -j zone_${name}_notrack
+	$IPTABLES -t raw -I PREROUTING 1 -i "$ifname" -j zone_${zone}_notrack
 	uci_set_state firewall core "${network}_ifname" "$ifname"
 	uci_set_state firewall core "${network}_zone" "$zone"
 }
