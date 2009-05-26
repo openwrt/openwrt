@@ -37,6 +37,7 @@ endef
 define Package/libopenssl
 $(call Package/openssl/Default)
   SECTION:=libs
+  SUBMENU:=SSL
   CATEGORY:=Libraries
   DEPENDS:=+zlib
   TITLE+= (libraries)
