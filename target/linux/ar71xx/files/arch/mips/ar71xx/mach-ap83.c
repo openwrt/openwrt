@@ -11,6 +11,8 @@
 
 #include <linux/platform_device.h>
 #include <linux/input.h>
+#include <linux/spi/spi.h>
+#include <linux/spi/spi_gpio.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -22,6 +24,11 @@
 #define AP83_GPIO_LED_JUMPSTART	15
 #define AP83_GPIO_BTN_JUMPSTART	12
 #define AP83_GPIO_BTN_RESET	21
+
+#define AP83_GPIO_VSC7385_CS	1
+#define AP83_GPIO_VSC7385_MISO	3
+#define AP83_GPIO_VSC7385_MOSI	16
+#define AP83_GPIO_VSC7385_SCK	17
 
 static struct gpio_led ap83_leds_gpio[] __initdata = {
 	{
@@ -57,6 +64,21 @@ static struct gpio_button ap83_gpio_buttons[] __initdata = {
 	}
 };
 
+static struct spi_gpio_platform_data ap83_spi_data = {
+	.miso	= AP83_GPIO_VSC7385_MISO,
+	.mosi	= AP83_GPIO_VSC7385_MOSI,
+	.sck	= AP83_GPIO_VSC7385_SCK,
+	.num_chipselect = 1,
+};
+
+static struct platform_device ap83_spi_device = {
+	.name		= "spi_gpio",
+	.id		= 0,
+	.dev		= {
+		.platform_data = &ap83_spi_data,
+	}
+};
+
 static void __init ap83_setup(void)
 {
 	ar71xx_add_device_mdio(0xfffffffe);
@@ -82,6 +104,8 @@ static void __init ap83_setup(void)
 	ar71xx_add_device_usb();
 
 	ar91xx_add_device_wmac();
+
+	platform_device_register(&ap83_spi_device);
 }
 
 MIPS_MACHINE(AR71XX_MACH_AP83, "Atheros AP83", ap83_setup);
