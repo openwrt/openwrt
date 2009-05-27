@@ -4,11 +4,11 @@
  
  #include "libbb.h"
  #include "modutils.h"
++#include <sys/utsname.h>
 +#ifndef CONFIG_FEATURE_2_4_MODULES
 +#include <sys/mman.h>
 +#include <asm/unistd.h>
 +#include <sys/syscall.h>
-+#include <sys/utsname.h>
 +#endif
 +
 +static char *g_filename = NULL;
