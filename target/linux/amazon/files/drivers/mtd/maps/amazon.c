@@ -41,7 +41,7 @@
 static struct map_info amazon_map = {
 	.name = "AMAZON_FLASH",
 	.bankwidth = 2,
-	.size = 0x400000,
+	.size = 0x1000000,
 };
 
 static map_word amazon_read16(struct map_info * map, unsigned long ofs)
@@ -107,18 +107,24 @@ unsigned long flash_start = 0x13000000;
 unsigned long flash_size = 0x800000;
 unsigned long uImage_size = 0x10000d;
 
-int find_uImage_size(unsigned long start_offset){
+int find_uImage_size(unsigned long start_offset)
+{
+	unsigned long magic;
 	unsigned long temp;
-
-	printk("trying to find uImage and its size\n");
+	amazon_copy_from(&amazon_map, &magic, start_offset, 4);
+	if (!(ntohl(magic) == 0x27051956)) {
+		printk(KERN_INFO "amazon_mtd: invalid magic (0x%08X) of kernel at 0x%08lx \n", ntohl(magic), start_offset);
+		return 0;
+	}
 	amazon_copy_from(&amazon_map, &temp, start_offset + 12, 4);
-	printk("kernel size is %d \n", temp + 0x40);
+	printk(KERN_INFO "amazon_mtd: kernel size is %ld \n", temp + 0x40);
 	return temp + 0x40;
 }
 
 int __init init_amazon_mtd(void)
 {
 	int ret = 0;
+	unsigned long uimage_size;
 	struct mtd_info *mymtd = NULL;
 	struct mtd_partition *parts = NULL;
 
@@ -146,10 +152,28 @@ int __init init_amazon_mtd(void)
 
 	mymtd->owner = THIS_MODULE;
 	parts = &amazon_partitions[0];
-	amazon_partitions[2].offset = UBOOT_SIZE + find_uImage_size(amazon_partitions[1].offset);
-	amazon_partitions[1].size = mymtd->size - amazon_partitions[1].offset - (2 * mymtd->erasesize);
-	amazon_partitions[2].size = mymtd->size - amazon_partitions[2].offset - (2 * mymtd->erasesize);
+
+	/* Some Samsung devices are containing a 16 MB flash chip with a bigger U-Boot partition. */
+	if(mymtd->size == 0x01000000 && mymtd->erasesize == 0x00020000) {
+		printk(KERN_INFO "amazon_mtd: Found big flash chip!\n");
+		amazon_partitions[0].size = 0x60000;
+		amazon_partitions[1].offset = 0x60000;
+		uimage_size = find_uImage_size(amazon_partitions[1].offset);
+		amazon_partitions[1].size = uimage_size;
+		amazon_partitions[2].offset = 0x60000 + uimage_size;
+		amazon_partitions[2].size = mymtd->size - amazon_partitions[2].offset - mymtd->erasesize;
+	} else {
+		printk(KERN_INFO "amazon_mtd: Found small flash chip!\n");
+		uimage_size = find_uImage_size(amazon_partitions[1].offset);
+		amazon_partitions[1].size = uimage_size;
+		amazon_partitions[2].offset = UBOOT_SIZE + uimage_size;
+		amazon_partitions[2].size = mymtd->size - amazon_partitions[2].offset - (2 * mymtd->erasesize);
+	}
+
 	add_mtd_partitions(mymtd, parts, 3);
+
+	printk(KERN_INFO "amazon_mtd: added %s flash with %dMB\n",
+		amazon_map.name, mymtd->size >> 20);
 	return 0;
 }
 
