@@ -74,10 +74,8 @@ static void wdt_enable(void)
 
 static void wdt_disable(void)
 {
-	/* NB: we can't turn off the watchdog anymore, so we
-	 * have to keep running the strobe timer without decrementing
-	 * the counter */
-	clear_bit(WDT_RUNNING, &wdt_status);
+	/* Re-enable clock generator output on GPIO 14/15 */
+	*IXP4XX_GPIO_GPCLKR |= (1 << 8);
 }
 
 static int avila_wdt_open(struct inode *inode, struct file *file)
@@ -209,6 +207,8 @@ static int __init avila_wdt_init(void)
 static void __exit avila_wdt_exit(void)
 {
 	misc_deregister(&avila_wdt_miscdev);
+	del_timer(&wdt_timer);
+	wdt_disable();
 }
 
 
