@@ -999,10 +999,10 @@ If set and clear bit are written concurrently with 1, the associated bit is not 
 #define AMAZON_DMA_H_MASK						0x00000fff
                                                                                        
 /***External Interrupt Control Register***/
-#define AMAZON_ICU_EXTINTCR						(AMAZON_ICU + 0x0000)
-#define AMAZON_ICU_IRNICR						(AMAZON_ICU + 0x0004)   
-#define AMAZON_ICU_IRNCR						(AMAZON_ICU + 0x0008)   
-#define AMAZON_ICU_IRNEN						(AMAZON_ICU + 0x000c)
+#define AMAZON_ICU_EXTINTCR						((volatile u32*)(AMAZON_ICU + 0x0000))
+#define AMAZON_ICU_IRNICR						((volatile u32*)(AMAZON_ICU + 0x0004))  
+#define AMAZON_ICU_IRNCR						((volatile u32*)(AMAZON_ICU + 0x0008))  
+#define AMAZON_ICU_IRNEN						((volatile u32*)(AMAZON_ICU + 0x000c))
 
 /***********************************************************************/
 /*  Module      :   PCI/Card-BUS/PC-Card register address and bits     */

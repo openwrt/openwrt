@@ -18,6 +18,4 @@ define Target/Description
 	Build firmware images for Infineon Amazon boards
 endef
 
-KERNELNAME:="uImage"
-
 $(eval $(call BuildTarget))
