@@ -97,39 +97,41 @@ enum jbt_register {
 
 };
 
-enum jbt_state {
-	JBT_STATE_DEEP_STANDBY,
-	JBT_STATE_SLEEP,
-	JBT_STATE_NORMAL,
-	JBT_STATE_QVGA_NORMAL,
+enum jbt_resolution {
+	JBT_RESOLUTION_VGA,
+	JBT_RESOLUTION_QVGA,
 };
 
-static const char *jbt_state_names[] = {
-	[JBT_STATE_DEEP_STANDBY]	= "deep-standby",
-	[JBT_STATE_SLEEP]		= "sleep",
-	[JBT_STATE_NORMAL]		= "normal",
-	[JBT_STATE_QVGA_NORMAL]		= "qvga-normal",
+enum jbt_power_mode {
+	JBT_POWER_MODE_DEEP_STANDBY,
+	JBT_POWER_MODE_SLEEP,
+	JBT_POWER_MODE_NORMAL,
+};
+
+static const char *jbt_power_mode_names[] = {
+	[JBT_POWER_MODE_DEEP_STANDBY]	= "deep-standby",
+	[JBT_POWER_MODE_SLEEP]		= "sleep",
+	[JBT_POWER_MODE_NORMAL]		= "normal",
+};
+
+static const char *jbt_resolution_names[] = {
+	[JBT_RESOLUTION_VGA] = "vga",
+	[JBT_RESOLUTION_QVGA] = "qvga",
 };
 
 struct jbt_info {
-	enum jbt_state state, normal_state;
+	enum jbt_resolution resolution;
+	enum jbt_power_mode power_mode;
 	struct spi_device *spi_dev;
 	struct mutex lock;		/* protects tx_buf and reg_cache */
 	struct notifier_block fb_notif;
 	u16 tx_buf[8];
 	u16 reg_cache[0xEE];
-	struct timespec last_sleep;
+	unsigned long last_sleep;
 };
 
 #define JBT_COMMAND	0x000
 #define JBT_DATA	0x100
-
-static inline unsigned int timespec_sub_ms(struct timespec lhs,
-					struct timespec rhs)
-{
-	struct timespec ts = timespec_sub(lhs, rhs);
-	return (ts.tv_sec * MSEC_PER_SEC) + (ts.tv_nsec / NSEC_PER_MSEC);
-}
 
 static int jbt_reg_write_nodata(struct jbt_info *jbt, u8 reg)
 {
@@ -141,7 +143,7 @@ static int jbt_reg_write_nodata(struct jbt_info *jbt, u8 reg)
 	if (rc == 0)
 		jbt->reg_cache[reg] = 0;
 	else
-		printk(KERN_ERR"jbt_reg_write_nodata spi_write ret %d\n",
+		dev_err(&jbt->spi_dev->dev, "jbt_reg_write_nodata spi_write ret %d\n",
 		       rc);
 
 	return rc;
@@ -159,7 +161,7 @@ static int jbt_reg_write(struct jbt_info *jbt, u8 reg, u8 data)
 	if (rc == 0)
 		jbt->reg_cache[reg] = data;
 	else
-		printk(KERN_ERR"jbt_reg_write spi_write ret %d\n", rc);
+		dev_err(&jbt->spi_dev->dev, "jbt_reg_write spi_write ret %d\n", rc);
 
 	return rc;
 }
@@ -177,7 +179,7 @@ static int jbt_reg_write16(struct jbt_info *jbt, u8 reg, u16 data)
 	if (rc == 0)
 		jbt->reg_cache[reg] = data;
 	else
-		printk(KERN_ERR"jbt_reg_write16 spi_write ret %d\n", rc);
+		dev_err(&jbt->spi_dev->dev, "jbt_reg_write16 spi_write ret %d\n", rc);
 
 	return rc;
 }
@@ -187,7 +189,7 @@ static int jbt_init_regs(struct jbt_info *jbt)
 	int rc;
 
 	dev_dbg(&jbt->spi_dev->dev, "entering %cVGA mode\n",
-			jbt->normal_state == JBT_STATE_QVGA_NORMAL ? 'Q' : ' ');
+			jbt->resolution == JBT_RESOLUTION_QVGA ? 'Q' : ' ');
 
 	rc = jbt_reg_write(jbt, JBT_REG_DISPLAY_MODE1, 0x01);
 	rc |= jbt_reg_write(jbt, JBT_REG_DISPLAY_MODE2, 0x00);
@@ -221,7 +223,7 @@ static int jbt_init_regs(struct jbt_info *jbt)
 	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_INCLINATION, 0x00);
 	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_BLUE_OFFSET, 0x00);
 
-	if (jbt->normal_state != JBT_STATE_QVGA_NORMAL) {
+	if (jbt->resolution != JBT_RESOLUTION_QVGA) {
 		rc |= jbt_reg_write16(jbt, JBT_REG_HCLOCK_VGA, 0x1f0);
 		rc |= jbt_reg_write(jbt, JBT_REG_BLANK_CONTROL, 0x02);
 		rc |= jbt_reg_write16(jbt, JBT_REG_BLANK_TH_TV, 0x0804);
@@ -276,12 +278,10 @@ static int sleep_to_normal(struct jbt_info *jbt)
 	int rc;
 
 	/* Make sure we are 120 ms after SLEEP_OUT */
-	unsigned int sleep_time = timespec_sub_ms(current_kernel_time(),
-							jbt->last_sleep);
-	if (sleep_time < 120)
-		mdelay(120 - sleep_time);
+	if (time_before(jiffies, jbt->last_sleep))
+		mdelay(jiffies_to_msecs(jbt->last_sleep - jiffies));
 
-	if (jbt->normal_state == JBT_STATE_NORMAL) {
+	if (jbt->resolution == JBT_RESOLUTION_VGA) {
 		/* RGB I/F on, RAM wirte off, QVGA through, SIGCON enable */
 		rc = jbt_reg_write(jbt, JBT_REG_DISPLAY_MODE, 0x80);
 
@@ -306,7 +306,7 @@ static int sleep_to_normal(struct jbt_info *jbt)
 
 	/* Sleep mode off */
 	rc |= jbt_reg_write_nodata(jbt, JBT_REG_SLEEP_OUT);
-	jbt->last_sleep = current_kernel_time();
+	jbt->last_sleep = jiffies + msecs_to_jiffies(120);
 
 	/* Allow the booster and display controller to restart stably */
 	mdelay(5);
@@ -319,15 +319,13 @@ static int normal_to_sleep(struct jbt_info *jbt)
 	int rc;
 
 	/* Make sure we are 120 ms after SLEEP_OUT */
-	unsigned int sleep_time = timespec_sub_ms(current_kernel_time(),
-							jbt->last_sleep);
-	if (sleep_time < 120)
-		mdelay(120 - sleep_time);
+	if (time_before(jiffies, jbt->last_sleep))
+		mdelay(jiffies_to_msecs(jbt->last_sleep - jiffies));
 
 	rc = jbt_reg_write_nodata(jbt, JBT_REG_DISPLAY_OFF);
 	rc |= jbt_reg_write16(jbt, JBT_REG_OUTPUT_CONTROL, 0x8002);
 	rc |= jbt_reg_write_nodata(jbt, JBT_REG_SLEEP_IN);
-	jbt->last_sleep = current_kernel_time();
+	jbt->last_sleep = jiffies + msecs_to_jiffies(120);
 
 	/* Allow the internal circuits to stop automatically */
 	mdelay(5);
@@ -341,40 +339,26 @@ static int sleep_to_standby(struct jbt_info *jbt)
 }
 
 /* frontend function */
-int jbt6k74_enter_state(struct jbt_info *jbt, enum jbt_state new_state)
+int jbt6k74_enter_power_mode(struct jbt_info *jbt, enum jbt_power_mode new_mode)
 {
 	int rc = -EINVAL;
 
-/*	dev_dbg(&jbt->spi_dev->dev, "entering (old_state=%s, new_state=%s)\n",
-			jbt_state_names[jbt->state],
-			jbt_state_names[new_state]);*/
-
-/*    printk("entering (old_state=%s, new_state=%s)\n",
-			jbt_state_names[jbt->state],
-			jbt_state_names[new_state]);*/
+	dev_dbg(&jbt->spi_dev->dev, "entering (old_state=%s, new_state=%s)\n",
+			jbt_power_mode_names[jbt->power_mode],
+			jbt_power_mode_names[new_mode]);
 
 	mutex_lock(&jbt->lock);
 
-	if (new_state == JBT_STATE_NORMAL ||
-			new_state == JBT_STATE_QVGA_NORMAL)
-		jbt->normal_state = new_state;
-
-	switch (jbt->state) {
-	case JBT_STATE_DEEP_STANDBY:
-		switch (new_state) {
-		case JBT_STATE_DEEP_STANDBY:
+	switch (jbt->power_mode) {
+	case JBT_POWER_MODE_DEEP_STANDBY:
+		switch (new_mode) {
+		case JBT_POWER_MODE_DEEP_STANDBY:
 			rc = 0;
 			break;
-		case JBT_STATE_SLEEP:
+		case JBT_POWER_MODE_SLEEP:
 			rc = standby_to_sleep(jbt);
 			break;
-		case JBT_STATE_NORMAL:
-			/* first transition into sleep */
-			rc = standby_to_sleep(jbt);
-			/* then transition into normal */
-			rc |= sleep_to_normal(jbt);
-			break;
-		case JBT_STATE_QVGA_NORMAL:
+		case JBT_POWER_MODE_NORMAL:
 			/* first transition into sleep */
 			rc = standby_to_sleep(jbt);
 			/* then transition into normal */
@@ -382,107 +366,109 @@ int jbt6k74_enter_state(struct jbt_info *jbt, enum jbt_state new_state)
 			break;
 		}
 		break;
-	case JBT_STATE_SLEEP:
-		switch (new_state) {
-		case JBT_STATE_SLEEP:
+	case JBT_POWER_MODE_SLEEP:
+		switch (new_mode) {
+		case JBT_POWER_MODE_SLEEP:
 			rc = 0;
 			break;
-		case JBT_STATE_DEEP_STANDBY:
+		case JBT_POWER_MODE_DEEP_STANDBY:
 			rc = sleep_to_standby(jbt);
 			break;
-		case JBT_STATE_NORMAL:
-		case JBT_STATE_QVGA_NORMAL:
+		case JBT_POWER_MODE_NORMAL:
 			rc = sleep_to_normal(jbt);
 			break;
 		}
 		break;
-	case JBT_STATE_NORMAL:
-		switch (new_state) {
-		case JBT_STATE_NORMAL:
+	case JBT_POWER_MODE_NORMAL:
+		switch (new_mode) {
+		case JBT_POWER_MODE_NORMAL:
 			rc = 0;
 			break;
-		case JBT_STATE_DEEP_STANDBY:
+		case JBT_POWER_MODE_DEEP_STANDBY:
 			/* first transition into sleep */
 			rc = normal_to_sleep(jbt);
 			/* then transition into deep standby */
 			rc |= sleep_to_standby(jbt);
 			break;
-		case JBT_STATE_SLEEP:
+		case JBT_POWER_MODE_SLEEP:
 			rc = normal_to_sleep(jbt);
-			break;
-		case JBT_STATE_QVGA_NORMAL:
-			/* first transition into sleep */
-			rc = normal_to_sleep(jbt);
-			/* second transition into deep standby */
-			rc |= sleep_to_standby(jbt);
-			/* third transition into sleep */
-			rc |= standby_to_sleep(jbt);
-			/* fourth transition into normal */
-			rc |= sleep_to_normal(jbt);
 			break;
 		}
-		break;
-	case JBT_STATE_QVGA_NORMAL:
-		switch (new_state) {
-		case JBT_STATE_QVGA_NORMAL:
-			rc = 0;
-			break;
-		case JBT_STATE_DEEP_STANDBY:
-			/* first transition into sleep */
-			rc = normal_to_sleep(jbt);
-			/* then transition into deep standby */
-			rc |= sleep_to_standby(jbt);
-			break;
-		case JBT_STATE_SLEEP:
-			rc = normal_to_sleep(jbt);
-			break;
-		case JBT_STATE_NORMAL:
-			/* first transition into sleep */
-			rc = normal_to_sleep(jbt);
-			/* second transition into deep standby */
-			rc |= sleep_to_standby(jbt);
-			/* third transition into sleep */
-			rc |= standby_to_sleep(jbt);
-			/* fourth transition into normal */
-			rc |= sleep_to_normal(jbt);
-			break;
-		}
-		break;
 	}
 
 	if (rc == 0)
-		jbt->state = new_state;
+		jbt->power_mode = new_mode;
 	else
 		dev_err(&jbt->spi_dev->dev, "Failed enter state '%s')\n",
-				jbt_state_names[new_state]);
+				jbt_power_mode_names[new_mode]);
 
 	mutex_unlock(&jbt->lock);
 
 	return rc;
 }
-EXPORT_SYMBOL_GPL(jbt6k74_enter_state);
+EXPORT_SYMBOL_GPL(jbt6k74_enter_power_mode);
 
-static ssize_t state_read(struct device *dev, struct device_attribute *attr,
+int jbt6k74_set_resolution(struct jbt_info *jbt, enum jbt_resolution new_resolution) {
+	int rc = 0;
+	enum jbt_resolution old_resolution;
+
+	mutex_lock(&jbt->lock);
+
+	if (jbt->resolution == new_resolution)
+		return 0;
+
+	if (new_resolution != JBT_RESOLUTION_VGA &&
+	    new_resolution != JBT_RESOLUTION_QVGA)
+		return -EINVAL;
+
+	old_resolution = jbt->resolution;
+	jbt->resolution = new_resolution;
+
+	if (jbt->power_mode == JBT_POWER_MODE_NORMAL) {
+
+		/* first transition into sleep */
+		rc = normal_to_sleep(jbt);
+		/* second transition into deep standby */
+/*		rc |= sleep_to_standby(jbt);*/
+		/* third transition into sleep */
+/*		rc |= standby_to_sleep(jbt);*/
+		/* fourth transition into normal */
+		rc |= sleep_to_normal(jbt);
+
+		if (rc) {
+			jbt->resolution = old_resolution;
+			dev_err(&jbt->spi_dev->dev, "Failed to set resolution '%s')\n",
+			        jbt_resolution_names[new_resolution]);
+		}
+	}
+
+	mutex_unlock(&jbt->lock);
+
+	return rc;
+}
+EXPORT_SYMBOL_GPL(jbt6k74_set_resolution);
+
+static ssize_t power_mode_read(struct device *dev, struct device_attribute *attr,
 			  char *buf)
 {
 	struct jbt_info *jbt = dev_get_drvdata(dev);
 
-	if (jbt->state >= ARRAY_SIZE(jbt_state_names))
+	if (jbt->power_mode >= ARRAY_SIZE(jbt_power_mode_names))
 		return -EIO;
 
-	return sprintf(buf, "%s\n", jbt_state_names[jbt->state]);
+	return sprintf(buf, "%s\n", jbt_power_mode_names[jbt->power_mode]);
 }
 
-static ssize_t state_write(struct device *dev, struct device_attribute *attr,
+static ssize_t power_mode_write(struct device *dev, struct device_attribute *attr,
 			   const char *buf, size_t count)
 {
 	struct jbt_info *jbt = dev_get_drvdata(dev);
 	int i, rc;
 
-	for (i = 0; i < ARRAY_SIZE(jbt_state_names); i++) {
-		if (!strncmp(buf, jbt_state_names[i],
-			     strlen(jbt_state_names[i]))) {
-			rc = jbt6k74_enter_state(jbt, i);
+	for (i = 0; i < ARRAY_SIZE(jbt_power_mode_names); i++) {
+		if (!strncmp(buf, jbt_power_mode_names[i],
+			     strlen(jbt_power_mode_names[i]))) {
+			rc = jbt6k74_enter_power_mode(jbt, i);
 			if (rc)
 				return rc;
 			return count;
@@ -492,7 +478,39 @@ static ssize_t state_write(struct device *dev, struct device_attribute *attr,
 	return -EINVAL;
 }
 
-static DEVICE_ATTR(state, 0644, state_read, state_write);
+static DEVICE_ATTR(power_mode, 0644, power_mode_read, power_mode_write);
+
+static ssize_t resolution_read(struct device *dev, struct device_attribute *attr,
+			  char *buf)
+{
+	struct jbt_info *jbt = dev_get_drvdata(dev);
+
+	if (jbt->resolution >= ARRAY_SIZE(jbt_resolution_names))
+		return -EIO;
+
+	return sprintf(buf, "%s\n", jbt_resolution_names[jbt->resolution]);
+}
+
+static ssize_t resolution_write(struct device *dev, struct device_attribute *attr,
+			   const char *buf, size_t count)
+{
+	struct jbt_info *jbt = dev_get_drvdata(dev);
+	int i, rc;
+
+	for (i = 0; i < ARRAY_SIZE(jbt_resolution_names); i++) {
+		if (!strncmp(buf, jbt_resolution_names[i],
+		       strlen(jbt_resolution_names[i]))) {
+			rc = jbt6k74_set_resolution(jbt, i);
+			if (rc)
+				return rc;
+			return count;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static DEVICE_ATTR(resolution, 0644, resolution_read, resolution_write);
 
 static int reg_by_string(const char *name)
 {
@@ -547,8 +565,6 @@ static ssize_t reset_write(struct device *dev, struct device_attribute *attr,
 
 	mutex_lock(&jbt->lock);
 
-	jbt->state = JBT_STATE_DEEP_STANDBY;
-
 	/* hard reset the jbt6k74 */
 	(pdata->reset)(0, 0);
 	mdelay(1);
@@ -562,7 +578,7 @@ static ssize_t reset_write(struct device *dev, struct device_attribute *attr,
 
 	mutex_unlock(&jbt->lock);
 
-	jbt6k74_enter_state(jbt, jbt->normal_state);
+	jbt6k74_enter_power_mode(jbt, jbt->power_mode);
 
 	return count;
 }
@@ -574,7 +590,8 @@ static DEVICE_ATTR(gamma_blue_offset, 0644, gamma_read, gamma_write);
 static DEVICE_ATTR(reset, 0600, NULL, reset_write);
 
 static struct attribute *jbt_sysfs_entries[] = {
-	&dev_attr_state.attr,
+	&dev_attr_power_mode.attr,
+	&dev_attr_resolution.attr,
 	&dev_attr_gamma_fine1.attr,
 	&dev_attr_gamma_fine2.attr,
 	&dev_attr_gamma_inclination.attr,
@@ -593,34 +610,51 @@ static int fb_notifier_callback(struct notifier_block *self,
 {
 	struct jbt_info *jbt;
 	struct fb_event *evdata = data;
+	struct fb_info *info;
 	int fb_blank;
 
 	jbt = container_of(self, struct jbt_info, fb_notif);
 
 	dev_dbg(&jbt->spi_dev->dev, "event=%lu\n", event);
 
-	if (event != FB_EVENT_BLANK && event != FB_EVENT_CONBLANK)
-		return 0;
-
-	fb_blank = *(int *)evdata->data;
-	switch (fb_blank) {
-	case FB_BLANK_UNBLANK:
-		dev_dbg(&jbt->spi_dev->dev, "unblank\n");
-		jbt6k74_enter_state(jbt, jbt->normal_state);
+	switch (event) {
+	case FB_EVENT_MODE_CHANGE:
+	case FB_EVENT_MODE_CHANGE_ALL:
+		info = evdata->info;
+		if (info->var.xres == 240 &&
+		    info->var.yres == 320) {
+			jbt6k74_set_resolution(jbt, JBT_RESOLUTION_QVGA);
+		} else if (info->var.xres == 480 &&
+		           info->var.yres == 640) {
+			jbt6k74_set_resolution(jbt, JBT_RESOLUTION_VGA);
+		} else {
+			dev_err(&jbt->spi_dev->dev, "Unknown resolution. Entering sleep mode.\n");
+			jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_SLEEP);
+		}
 		break;
-	case FB_BLANK_NORMAL:
-		dev_dbg(&jbt->spi_dev->dev, "blank\n");
-		break;
-	case FB_BLANK_VSYNC_SUSPEND:
-		dev_dbg(&jbt->spi_dev->dev, "vsync suspend\n");
-		break;
-	case FB_BLANK_HSYNC_SUSPEND:
-		dev_dbg(&jbt->spi_dev->dev, "hsync suspend\n");
-		break;
-	case FB_BLANK_POWERDOWN:
-		dev_dbg(&jbt->spi_dev->dev, "powerdown\n");
-		jbt6k74_enter_state(jbt, JBT_STATE_SLEEP);
-		break;
+	case FB_EVENT_BLANK:
+	case FB_EVENT_CONBLANK:
+		fb_blank = *(int *)evdata->data;
+		switch (fb_blank) {
+		case FB_BLANK_UNBLANK:
+			dev_dbg(&jbt->spi_dev->dev, "unblank\n");
+			jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_NORMAL);
+			break;
+		case FB_BLANK_NORMAL:
+			jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_SLEEP);
+			dev_dbg(&jbt->spi_dev->dev, "blank\n");
+			break;
+		case FB_BLANK_VSYNC_SUSPEND:
+			dev_dbg(&jbt->spi_dev->dev, "vsync suspend\n");
+			break;
+		case FB_BLANK_HSYNC_SUSPEND:
+			dev_dbg(&jbt->spi_dev->dev, "hsync suspend\n");
+			break;
+		case FB_BLANK_POWERDOWN:
+			dev_dbg(&jbt->spi_dev->dev, "powerdown\n");
+			jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_DEEP_STANDBY);
+			break;
+		}
 	}
 
 	return 0;
@@ -651,14 +685,14 @@ static int __devinit jbt_probe(struct spi_device *spi)
 		return -ENOMEM;
 
 	jbt->spi_dev = spi;
-	jbt->normal_state = JBT_STATE_NORMAL;
-	jbt->state = JBT_STATE_DEEP_STANDBY;
-	jbt->last_sleep = current_kernel_time();
+	jbt->resolution = JBT_RESOLUTION_VGA;
+	jbt->power_mode = JBT_POWER_MODE_DEEP_STANDBY;
+	jbt->last_sleep = jiffies + msecs_to_jiffies(120);
 	mutex_init(&jbt->lock);
 
 	dev_set_drvdata(&spi->dev, jbt);
 
-	rc = jbt6k74_enter_state(jbt, JBT_STATE_NORMAL);
+	rc = jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_NORMAL);
 	if (rc < 0) {
 		dev_err(&spi->dev, "cannot enter NORMAL state\n");
 		goto err_free_drvdata;
@@ -685,7 +719,7 @@ static int __devinit jbt_probe(struct spi_device *spi)
 err_sysfs:
 	sysfs_remove_group(&spi->dev.kobj, &jbt_attr_group);
 err_standby:
-	jbt6k74_enter_state(jbt, JBT_STATE_DEEP_STANDBY);
+	jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_DEEP_STANDBY);
 err_free_drvdata:
 	dev_set_drvdata(&spi->dev, NULL);
 	kfree(jbt);
@@ -699,7 +733,7 @@ static int __devexit jbt_remove(struct spi_device *spi)
 
 	/* We don't want to switch off the display in case the user
 	 * accidentially onloads the module (whose use count normally is 0) */
-	jbt6k74_enter_state(jbt, jbt->normal_state);
+	jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_NORMAL);
 
 	fb_unregister_client(&jbt->fb_notif);
 	sysfs_remove_group(&spi->dev.kobj, &jbt_attr_group);
@@ -714,7 +748,7 @@ static int jbt_suspend(struct spi_device *spi, pm_message_t state)
 {
 	struct jbt_info *jbt = dev_get_drvdata(&spi->dev);
 
-	jbt6k74_enter_state(jbt, JBT_STATE_DEEP_STANDBY);
+	jbt6k74_enter_power_mode(jbt, JBT_POWER_MODE_DEEP_STANDBY);
 
 	dev_info(&spi->dev, "suspended\n");
 
@@ -726,7 +760,7 @@ int jbt6k74_resume(struct spi_device *spi)
 	struct jbt_info *jbt = dev_get_drvdata(&spi->dev);
 	struct jbt6k74_platform_data *pdata = spi->dev.platform_data;
 
-	jbt6k74_enter_state(jbt, jbt->normal_state);
+	jbt6k74_enter_power_mode(jbt, jbt->power_mode);
 
 	if (pdata->resuming)
 		(pdata->resuming)(0);
