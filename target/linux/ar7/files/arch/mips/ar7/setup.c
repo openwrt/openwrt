@@ -19,6 +19,9 @@
 #include <linux/init.h>
 #include <linux/ioport.h>
 #include <linux/pm.h>
+#include <linux/console.h>
+#include <linux/serial.h>
+#include <linux/serial_8250.h>
 
 #include <asm/reboot.h>
 #include <asm/time.h>
@@ -69,7 +72,40 @@ const char *get_system_type(void)
 
 static int __init ar7_init_console(void)
 {
-	return 0;
+	int res;
+
+	static struct uart_port uart_port[2];
+
+	memset(uart_port, 0, sizeof(struct uart_port) * 2);
+
+	uart_port[0].type = PORT_AR7;
+	uart_port[0].line = 0;
+	uart_port[0].irq = AR7_IRQ_UART0;
+	uart_port[0].uartclk = ar7_bus_freq() / 2;
+	uart_port[0].iotype = UPIO_MEM;
+	uart_port[0].mapbase = AR7_REGS_UART0;
+	uart_port[0].membase = ioremap(uart_port[0].mapbase, 256);
+	uart_port[0].regshift = 2;
+	res = early_serial_setup(&uart_port[0]);
+	if (res)
+		return res;
+
+	/* Only TNETD73xx have a second serial port */
+	if (ar7_has_second_uart()) {
+		uart_port[1].type = PORT_AR7;
+		uart_port[1].line = 1;
+		uart_port[1].irq = AR7_IRQ_UART1;
+		uart_port[1].uartclk = ar7_bus_freq() / 2;
+		uart_port[1].iotype = UPIO_MEM;
+		uart_port[1].mapbase = UR8_REGS_UART1;
+		uart_port[1].membase = ioremap(uart_port[1].mapbase, 256);
+		uart_port[1].regshift = 2;
+		res = early_serial_setup(&uart_port[1]);
+		if (res)
+			return res;
+	}
+
+	return add_preferred_console("ttyS", 0, NULL);
 }
 
 /*
