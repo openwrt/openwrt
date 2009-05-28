@@ -19,7 +19,7 @@ because other drivers do it in the same way.
 
 --- a/drivers/net/cpmac.c
 +++ b/drivers/net/cpmac.c
-@@ -621,13 +621,13 @@
+@@ -621,13 +621,13 @@ static void cpmac_end_xmit(struct net_de
  
  		dev_kfree_skb_irq(desc->skb);
  		desc->skb = NULL;
@@ -35,7 +35,7 @@ because other drivers do it in the same way.
  			netif_wake_subqueue(dev, queue);
  	}
  }
-@@ -737,7 +737,6 @@
+@@ -737,7 +737,6 @@ static void cpmac_clear_tx(struct net_de
  
  static void cpmac_hw_error(struct work_struct *work)
  {
@@ -43,7 +43,7 @@ because other drivers do it in the same way.
  	struct cpmac_priv *priv =
  		container_of(work, struct cpmac_priv, reset_work);
  
-@@ -824,7 +823,6 @@
+@@ -824,7 +823,6 @@ static irqreturn_t cpmac_irq(int irq, vo
  
  static void cpmac_tx_timeout(struct net_device *dev)
  {
@@ -51,7 +51,7 @@ because other drivers do it in the same way.
  	struct cpmac_priv *priv = netdev_priv(dev);
  
  	spin_lock(&priv->lock);
-@@ -1103,7 +1101,7 @@
+@@ -1103,7 +1101,7 @@ static int external_switch;
  
  static int __devinit cpmac_probe(struct platform_device *pdev)
  {
@@ -60,7 +60,7 @@ because other drivers do it in the same way.
  	char *mdio_bus_id = "0";
  	struct resource *mem;
  	struct cpmac_priv *priv;
-@@ -1132,6 +1130,7 @@
+@@ -1132,6 +1130,7 @@ static int __devinit cpmac_probe(struct 
  	}
  
  	dev = alloc_etherdev_mq(sizeof(*priv), CPMAC_QUEUES);

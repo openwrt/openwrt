@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -190,6 +190,12 @@ config MTD_MYLOADER_PARTS
+@@ -188,6 +188,12 @@ config MTD_MYLOADER_PARTS
  	  You will still need the parsing functions to be called by the driver
  	  for your particular device. It won't happen automatically.
  
@@ -15,7 +15,7 @@
  config MTD_CHAR
 --- a/drivers/mtd/maps/physmap.c
 +++ b/drivers/mtd/maps/physmap.c
-@@ -87,7 +87,7 @@ static int physmap_flash_remove(struct p
+@@ -85,7 +85,7 @@ static int physmap_flash_remove(struct p
  
  static const char *rom_probe_types[] = { "cfi_probe", "jedec_probe", "map_rom", NULL };
  #ifdef CONFIG_MTD_PARTITIONS

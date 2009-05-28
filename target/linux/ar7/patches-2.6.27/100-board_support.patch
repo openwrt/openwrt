@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -18,6 +18,24 @@ choice
+@@ -19,6 +19,24 @@ choice
  	prompt "System type"
  	default SGI_IP22
  
@@ -27,7 +27,7 @@
  
 --- a/arch/mips/kernel/traps.c
 +++ b/arch/mips/kernel/traps.c
-@@ -1188,9 +1188,22 @@ void *set_except_vector(int n, void *add
+@@ -1203,9 +1203,22 @@ void *set_except_vector(int n, void *add
  
  	exception_handlers[n] = handler;
  	if (n == 0 && cpu_has_divec) {
