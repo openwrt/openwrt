@@ -100,7 +100,7 @@
  	if (test_bit(IPS_ASSURED_BIT, &conntrack->status))
  		len += sprintf(buffer + len, "[ASSURED] ");
  	len += sprintf(buffer + len, "use=%u ",
-@@ -478,7 +494,7 @@ EXPORT_SYMBOL(ip_conntrack_get);
+@@ -481,7 +497,7 @@ EXPORT_SYMBOL(ip_conntrack_get);
  EXPORT_SYMBOL(ip_conntrack_helper_register);
  EXPORT_SYMBOL(ip_conntrack_helper_unregister);
  EXPORT_SYMBOL(ip_ct_iterate_cleanup);

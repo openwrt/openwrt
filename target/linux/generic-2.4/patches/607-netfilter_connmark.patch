@@ -81,9 +81,9 @@
    fi
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
-@@ -125,6 +129,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
-  
+@@ -126,6 +130,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
+     dep_tristate '    CLASSIFY target support (EXPERIMENTAL)' CONFIG_IP_NF_TARGET_CLASSIFY $CONFIG_IP_NF_MANGLE
    fi
 +  if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
 +    dep_tristate '  CONNMARK target support' CONFIG_IP_NF_TARGET_CONNMARK $CONFIG_IP_NF_IPTABLES
@@ -101,7 +101,7 @@
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
-@@ -110,6 +111,7 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
+@@ -111,6 +112,7 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o

@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/pcmcia/yenta.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/pcmcia/yenta.c
-+++ linux-2.4.35.4/drivers/pcmcia/yenta.c
+--- a/drivers/pcmcia/yenta.c
++++ b/drivers/pcmcia/yenta.c
 @@ -543,6 +543,9 @@ static unsigned int yenta_probe_irq(pci_
  	 * Probe for usable interrupts using the force
  	 * register to generate bogus card status events.
