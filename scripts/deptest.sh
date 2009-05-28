@@ -1,6 +1,7 @@
 DIR="$PWD/tmp/deptest"
 STAMP_DIR="$DIR/stamp"
 BUILD_DIR="$DIR/build"
+BUILD_DIR_HOST="$DIR/build_host"
 STAGING_DIR="$DIR/staging"
 STAGING_DIR_HOST="$DIR/staging_host"
 STAGING_DIR_HOST_TMPL="$DIR/staging_host_tmpl"
@@ -34,6 +35,7 @@ for pkg in `cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -
 		cp -al "$STAGING_DIR_HOST_TMPL" "$STAGING_DIR_HOST"
         make package/$pkg/compile \
                 BUILD_DIR="$BUILD_DIR" \
+                BUILD_DIR_HOST="$BUILD_DIR_HOST" \
                 STAGING_DIR="$STAGING_DIR" \
 				STAGING_DIR_HOST="$STAGING_DIR_HOST" \
                 V=99 >"$LOG_DIR/$(basename $pkg).log" 2>&1 \
