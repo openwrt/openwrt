@@ -8,7 +8,7 @@
  	struct mii_if_info mii_if;
  	struct net_device *dev;
  	int phy_addr;
-@@ -663,6 +664,15 @@ static void korina_check_media(struct ne
+@@ -664,6 +665,15 @@ static void korina_check_media(struct ne
  						&lp->eth_regs->ethmac2);
  }
  
@@ -41,7 +41,7 @@
  	/* Disable interrupts */
  	disable_irq(lp->rx_irq);
  	disable_irq(lp->tx_irq);
-@@ -1177,6 +1190,7 @@ static int korina_probe(struct platform_
+@@ -1176,6 +1189,7 @@ static int korina_probe(struct platform_
  			": cannot register net device %d\n", rc);
  		goto probe_err_register;
  	}
