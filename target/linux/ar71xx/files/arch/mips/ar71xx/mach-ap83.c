@@ -93,6 +93,8 @@ static void __init ap83_setup(void)
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
+	ar71xx_eth1_pll_data.pll_1000 = 0x1f000000;
+
 	ar71xx_add_device_eth(1);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap83_leds_gpio),

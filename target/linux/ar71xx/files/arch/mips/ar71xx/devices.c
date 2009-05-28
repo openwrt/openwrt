@@ -237,26 +237,70 @@ static void ar71xx_set_pll(u32 cfg_reg, u32 pll_reg, u32 pll_val, u32 shift)
 	iounmap(base);
 }
 
-static void ar71xx_set_pll_ge0(u32 val)
+struct ar71xx_eth_pll_data ar71xx_eth0_pll_data;
+struct ar71xx_eth_pll_data ar71xx_eth1_pll_data;
+
+static u32 ar71xx_get_eth_pll(unsigned int mac, int speed)
 {
+	struct ar71xx_eth_pll_data *pll_data;
+	u32 pll_val;
+
+	switch (mac) {
+	case 0:
+		pll_data = &ar71xx_eth0_pll_data;
+		break;
+	case 1:
+		pll_data = &ar71xx_eth1_pll_data;
+		break;
+	default:
+		BUG();
+	}
+
+	switch (speed) {
+	case SPEED_10:
+		pll_val = pll_data->pll_10;
+		break;
+	case SPEED_100:
+		pll_val = pll_data->pll_100;
+		break;
+	case SPEED_1000:
+		pll_val = pll_data->pll_1000;
+		break;
+	default:
+		BUG();
+	}
+
+	return pll_val;
+}
+
+static void ar71xx_set_pll_ge0(int speed)
+{
+	u32 val = ar71xx_get_eth_pll(0, speed);
+
 	ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG, AR71XX_PLL_REG_ETH0_INT_CLOCK,
 			val, AR71XX_ETH0_PLL_SHIFT);
 }
 
-static void ar71xx_set_pll_ge1(u32 val)
+static void ar71xx_set_pll_ge1(int speed)
 {
+	u32 val = ar71xx_get_eth_pll(1, speed);
+
 	ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG, AR71XX_PLL_REG_ETH1_INT_CLOCK,
 			 val, AR71XX_ETH1_PLL_SHIFT);
 }
 
-static void ar91xx_set_pll_ge0(u32 val)
+static void ar91xx_set_pll_ge0(int speed)
 {
+	u32 val = ar71xx_get_eth_pll(0, speed);
+
 	ar71xx_set_pll(AR91XX_PLL_REG_ETH_CONFIG, AR91XX_PLL_REG_ETH0_INT_CLOCK,
 			 val, AR91XX_ETH0_PLL_SHIFT);
 }
 
-static void ar91xx_set_pll_ge1(u32 val)
+static void ar91xx_set_pll_ge1(int speed)
 {
+	u32 val = ar71xx_get_eth_pll(1, speed);
+
 	ar71xx_set_pll(AR91XX_PLL_REG_ETH_CONFIG, AR91XX_PLL_REG_ETH1_INT_CLOCK,
 			 val, AR91XX_ETH1_PLL_SHIFT);
 }
@@ -357,11 +401,65 @@ static struct platform_device ar71xx_eth1_device = {
 	},
 };
 
+#define AR71XX_PLL_VAL_1000	0x00110000
+#define AR71XX_PLL_VAL_100	0x00001099
+#define AR71XX_PLL_VAL_10	0x00991099
+
+#define AR91XX_PLL_VAL_1000	0x1a000000
+#define AR91XX_PLL_VAL_100	0x13000a44
+#define AR91XX_PLL_VAL_10	0x00441099
+
+static void __init ar71xx_init_eth_pll_data(unsigned int id)
+{
+	struct ar71xx_eth_pll_data *pll_data;
+	u32 pll_10, pll_100, pll_1000;
+
+	switch (id) {
+	case 0:
+		pll_data = &ar71xx_eth0_pll_data;
+		break;
+	case 1:
+		pll_data = &ar71xx_eth1_pll_data;
+		break;
+	default:
+		BUG();
+	}
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		pll_10 = AR71XX_PLL_VAL_10;
+		pll_100 = AR71XX_PLL_VAL_100;
+		pll_1000 = AR71XX_PLL_VAL_1000;
+		break;
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		pll_10 = AR91XX_PLL_VAL_10;
+		pll_100 = AR91XX_PLL_VAL_100;
+		pll_1000 = AR91XX_PLL_VAL_1000;
+		break;
+	default:
+		BUG();
+	}
+
+	if (!pll_data->pll_10)
+		pll_data->pll_10 = pll_10;
+
+	if (!pll_data->pll_100)
+		pll_data->pll_100 = pll_100;
+
+	if (!pll_data->pll_1000)
+		pll_data->pll_1000 = pll_1000;
+}
+
 static int ar71xx_eth_instance __initdata;
 void __init ar71xx_add_device_eth(unsigned int id)
 {
 	struct platform_device *pdev;
 	struct ag71xx_platform_data *pdata;
+
+	ar71xx_init_eth_pll_data(id);
 
 	switch (id) {
 	case 0:
