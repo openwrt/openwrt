@@ -1,7 +1,6 @@
-diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
---- sangam_atm-07.02.01.00/tn7atm.c	2007-09-19 04:12:20.000000000 +0200
-+++ sangam_atm-07.02.01.00.mod/tn7atm.c	2007-09-20 14:45:19.280250000 +0200
-@@ -84,6 +84,146 @@
+--- a/tn7atm.c
++++ b/tn7atm.c
+@@ -87,6 +87,146 @@
  MODULE_LICENSE("GPL");
  MODULE_DESCRIPTION ("Tnetd73xx ATM Device Driver");
  MODULE_AUTHOR ("Zhicheng Tang");
@@ -148,7 +147,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
  #endif
  
  #ifndef TRUE
-@@ -657,9 +797,9 @@
+@@ -655,9 +795,9 @@ static int __init tn7atm_irq_request (st
     * interrupt pacing
     */
    ptr = prom_getenv ("sar_ipacemax");
@@ -160,7 +159,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
    }
  /*  avalanche_request_pacing (priv->sar_irq, ATM_SAR_INT_PACING_BLOCK_NUM,
                              def_sar_inter_pace);*/
-@@ -799,7 +939,7 @@
+@@ -797,7 +937,7 @@ static int __init tn7atm_get_ESI (struct
    char esi_addr[ESI_LEN] = { 0x00, 0x00, 0x11, 0x22, 0x33, 0x44 };
    char *esiaddr_str = NULL;
  
@@ -169,7 +168,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
  
    if (!esiaddr_str)
    {
-@@ -1932,15 +2072,15 @@
+@@ -1930,15 +2070,15 @@ static int tn7atm_autoDetectDspBoost (vo
  //UR8_MERGE_END   CQ10450*
  
    cp = prom_getenv ("dsp_noboost");
@@ -189,7 +188,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
      if (dspfreq == 250)
      {
        boostDsp = 1;
-@@ -2189,8 +2329,9 @@
+@@ -2187,8 +2327,9 @@ static int __init tn7atm_init (struct at
    // Inter-Op DSL phy Control
    // Note the setting of _dsl_Feature_0 and _dsl_Feature_1 must before
    // dslhal_api_dslStartup (in tn7dsl_init()).
@@ -200,7 +199,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2198,8 +2339,9 @@
+@@ -2196,8 +2337,9 @@ static int __init tn7atm_init (struct at
      _dsl_Feature_0_defined = 1;
    }
  
@@ -211,7 +210,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2211,8 +2353,9 @@
+@@ -2209,8 +2351,9 @@ static int __init tn7atm_init (struct at
    // DSL phy Feature Control
    // Note the setting of _dsl_PhyControl_0 and _dsl_PhyControl_1 must before
    // dslhal_api_dslStartup (in tn7dsl_init()).
@@ -222,7 +221,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2220,8 +2363,9 @@
+@@ -2218,8 +2361,9 @@ static int __init tn7atm_init (struct at
      _dsl_PhyControl_0_defined = 1;
    }
  
@@ -233,7 +232,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
      if ((ptr[0] == '0') && (ptr[1] == 'x'))     // skip 0x before pass to
        // os_atoh
        ptr += 2;
-@@ -2249,9 +2393,9 @@
+@@ -2247,9 +2391,9 @@ static int __init tn7atm_init (struct at
    priv->bTurboDsl = 1;
    // read config for turbo dsl
    ptr = prom_getenv ("TurboDSL");
@@ -245,7 +244,7 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
    }
  
    // @Added to make Rx buffer number & Service max configurable through
-@@ -2259,30 +2403,30 @@
+@@ -2257,30 +2401,30 @@ static int __init tn7atm_init (struct at
    priv->sarRxBuf = RX_BUFFER_NUM;
    ptr = NULL;
    ptr = prom_getenv ("SarRxBuf");
@@ -284,10 +283,9 @@ diff -urN sangam_atm-07.02.01.00/tn7atm.c sangam_atm-07.02.01.00.mod/tn7atm.c
    }
  
    return 0;
-diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.mod/tn7dsl.c
---- sangam_atm-07.02.01.00/tn7dsl.c	2007-09-19 04:12:20.000000000 +0200
-+++ sangam_atm-07.02.01.00.mod/tn7dsl.c	2007-09-20 14:55:46.608375000 +0200
-@@ -134,6 +134,27 @@
+--- a/tn7dsl.c
++++ b/tn7dsl.c
+@@ -136,6 +136,27 @@
  #define NEW_TRAINING_VAL_T1413  128
  #define NEW_TRAINING_VAL_MMODE  255
  
@@ -315,7 +313,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.mod/tn7dsl.c
  int testflag1 = 0;
  extern int  __guDbgLevel;
  extern sar_stat_t sarStat;
-@@ -2816,84 +2837,80 @@
+@@ -2818,84 +2839,80 @@ static int tn7dsl_set_dsl(void)
  
    // modulation
    ptr = prom_getenv("modulation");
@@ -429,7 +427,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.mod/tn7dsl.c
  
      tn7dsl_generic_read(2, offset);
      dslReg &= dslhal_support_byteSwap32(0xFFFFFF00);
-@@ -2911,46 +2928,47 @@
+@@ -2913,46 +2930,47 @@ static int tn7dsl_set_dsl(void)
    // maximum bits per carrier
    ptr = NULL;
    ptr = prom_getenv("maximum_bits_per_carrier");
@@ -488,7 +486,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.mod/tn7dsl.c
      for(i=0;i<8;i++)
      {
        tmp[0]=ptr[i*2];
-@@ -2975,26 +2993,26 @@
+@@ -2977,26 +2995,26 @@ static int tn7dsl_set_dsl(void)
    }
    ptr = NULL;
    ptr = prom_getenv("eoc_vendor_revision");
@@ -521,7 +519,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.mod/tn7dsl.c
    }
  
    return 0;
-@@ -3038,7 +3056,7 @@
+@@ -3041,7 +3059,7 @@ int tn7dsl_init(void *priv)
     * backward compatibility.
     */
    cp = prom_getenv("DSL_BIT_TMODE");
@@ -530,7 +528,7 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.mod/tn7dsl.c
    {
      printk("%s : env var DSL_BIT_TMODE is set\n", __FUNCTION__);
      /*
-@@ -3067,9 +3085,9 @@
+@@ -3070,9 +3088,9 @@ int tn7dsl_init(void *priv)
  
  //  UR8_MERGE_START CQ11054   Jack Zhang
    cp = prom_getenv("high_precision");
@@ -542,10 +540,9 @@ diff -urN sangam_atm-07.02.01.00/tn7dsl.c sangam_atm-07.02.01.00.mod/tn7dsl.c
    }
    if ( high_precision_selected)
    {
-diff -urN sangam_atm-07.02.01.00/tn7sar.c sangam_atm-07.02.01.00.mod/tn7sar.c
---- sangam_atm-07.02.01.00/tn7sar.c	2007-09-19 04:12:20.000000000 +0200
-+++ sangam_atm-07.02.01.00.mod/tn7sar.c	2007-09-20 14:23:50.436500000 +0200
-@@ -73,6 +73,8 @@
+--- a/tn7sar.c
++++ b/tn7sar.c
+@@ -74,6 +74,8 @@ typedef void OS_SETUP;
  /* PDSP Firmware files */
  #include "tnetd7300_sar_firm.h"
  
@@ -554,7 +551,7 @@ diff -urN sangam_atm-07.02.01.00/tn7sar.c sangam_atm-07.02.01.00.mod/tn7sar.c
  
  enum
  {
-@@ -816,9 +818,9 @@
+@@ -817,9 +819,9 @@ int tn7sar_setup_oam_channel(Tn7AtmPriva
    pHalDev  = (HAL_DEVICE *)priv->pSarHalDev;
  
    pauto_pvc = prom_getenv("autopvc_enable");
@@ -566,7 +563,7 @@ diff -urN sangam_atm-07.02.01.00/tn7sar.c sangam_atm-07.02.01.00.mod/tn7sar.c
    }
  
    memset(&chInfo, 0xff, sizeof(chInfo));
-@@ -984,9 +986,9 @@
+@@ -985,9 +987,9 @@ int tn7sar_init(struct atm_dev *dev, Tn7
  
    /* read in oam lb timeout value */
    pLbTimeout = prom_getenv("oam_lb_timeout");
