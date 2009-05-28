@@ -30,7 +30,7 @@ setup_broadcom_wds() {
 			config_get ssid "$cfg" ssid
 		
 			[ "$encryption" != "none" ] && {
-				sleep 1
+				sleep 5
 				case "$encryption" in
 					psk|PSK)
 						nas4not "$network" "$iface" up auto tkip psk "$key" "$ssid"
