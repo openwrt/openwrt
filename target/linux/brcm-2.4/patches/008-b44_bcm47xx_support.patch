@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/net/b44.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/b44.c
-+++ linux-2.4.35.4/drivers/net/b44.c
+--- a/drivers/net/b44.c
++++ b/drivers/net/b44.c
 @@ -1,7 +1,9 @@
  /* b44.c: Broadcom 4400 device driver.
   *
@@ -550,10 +548,8 @@ Index: linux-2.4.35.4/drivers/net/b44.c
  	return 0;
  
  err_out_iounmap:
-Index: linux-2.4.35.4/drivers/net/b44.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/b44.h
-+++ linux-2.4.35.4/drivers/net/b44.h
+--- a/drivers/net/b44.h
++++ b/drivers/net/b44.h
 @@ -229,8 +229,6 @@
  #define  SBIPSFLAG_IMASK4	0x3f000000 /* Which sbflags --> mips interrupt 4 */
  #define  SBIPSFLAG_ISHIFT4	24
@@ -572,11 +568,9 @@ Index: linux-2.4.35.4/drivers/net/b44.h
  
  /* SW copy of device statistics, kept up to date by periodic timer
   * which probes HW values.  Must have same relative layout as HW
-Index: linux-2.4.35.4/include/linux/pci_ids.h
-===================================================================
---- linux-2.4.35.4.orig/include/linux/pci_ids.h
-+++ linux-2.4.35.4/include/linux/pci_ids.h
-@@ -1756,6 +1756,7 @@
+--- a/include/linux/pci_ids.h
++++ b/include/linux/pci_ids.h
+@@ -1765,6 +1765,7 @@
  #define PCI_DEVICE_ID_TIGON3_5901_2	0x170e
  #define PCI_DEVICE_ID_BCM4401		0x4401
  #define PCI_DEVICE_ID_BCM4401B0		0x4402

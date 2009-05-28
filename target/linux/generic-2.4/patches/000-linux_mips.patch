@@ -12318,7 +12318,7 @@
 +module_exit(au1550spi_exit);
 --- a/drivers/char/Config.in
 +++ b/drivers/char/Config.in
-@@ -314,14 +314,11 @@ fi
+@@ -320,14 +320,11 @@ fi
  if [ "$CONFIG_OBSOLETE" = "y" -a "$CONFIG_ALPHA_BOOK1" = "y" ]; then
     bool 'Tadpole ANA H8 Support (OBSOLETE)'  CONFIG_H8
  fi
@@ -12335,7 +12335,7 @@
  fi
  if [ "$CONFIG_TOSHIBA_RBTX4927" = "y" -o "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
     tristate 'Dallas DS1742 RTC support' CONFIG_DS1742
-@@ -384,6 +381,11 @@ if [ "$CONFIG_DRM" = "y" ]; then
+@@ -390,6 +387,11 @@ if [ "$CONFIG_DRM" = "y" ]; then
        source drivers/char/drm/Config.in
     fi
  fi
@@ -12347,7 +12347,7 @@
  endmenu
  
  if [ "$CONFIG_HOTPLUG" = "y" -a "$CONFIG_PCMCIA" != "n" ]; then
-@@ -392,6 +394,7 @@ fi
+@@ -398,6 +400,7 @@ fi
  if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
     tristate ' Alchemy Au1x00 GPIO device support' CONFIG_AU1X00_GPIO
     tristate ' Au1000/ADS7846 touchscreen support' CONFIG_TS_AU1X00_ADS7846
@@ -14366,7 +14366,7 @@
  obj-$(CONFIG_DS1620) += ds1620.o
  obj-$(CONFIG_DS1742) += ds1742.o
  obj-$(CONFIG_INTEL_RNG) += i810_rng.o
-@@ -269,6 +274,7 @@ obj-$(CONFIG_BRIQ_PANEL) += briq_panel.o
+@@ -270,6 +275,7 @@ obj-$(CONFIG_BRIQ_PANEL) += briq_panel.o
  
  obj-$(CONFIG_ITE_GPIO) += ite_gpio.o
  obj-$(CONFIG_AU1X00_GPIO) += au1000_gpio.o
@@ -14374,7 +14374,7 @@
  obj-$(CONFIG_AU1X00_USB_TTY) += au1000_usbtty.o
  obj-$(CONFIG_AU1X00_USB_RAW) += au1000_usbraw.o
  obj-$(CONFIG_COBALT_LCD) += lcd.o
-@@ -355,3 +361,9 @@ defkeymap.c: defkeymap.map
+@@ -357,3 +363,9 @@ defkeymap.c: defkeymap.map
  
  qtronixmap.c: qtronixmap.map
  	set -e ; loadkeys --mktable $< | sed -e 's/^static *//' > $@
@@ -27419,7 +27419,7 @@
  #define I2C_HW_SMBUS_ALI15X3	0x01
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -617,6 +617,10 @@ asmlinkage long sys_wait4(pid_t pid,unsi
+@@ -619,6 +619,10 @@ asmlinkage long sys_wait4(pid_t pid,unsi
  extern int in_group_p(gid_t);
  extern int in_egroup_p(gid_t);
  
@@ -27613,7 +27613,7 @@
  	return sig;
  }
  
-@@ -540,6 +558,11 @@ send_sig_info(int sig, struct siginfo *i
+@@ -551,6 +569,11 @@ send_sig_info(int sig, struct siginfo *i
  printk("SIG queue (%s:%d): %d ", t->comm, t->pid, sig);
  #endif
  
@@ -27625,7 +27625,7 @@
  	ret = -EINVAL;
  	if (sig < 0 || sig > _NSIG)
  		goto out_nolock;
-@@ -778,8 +801,8 @@ void do_notify_parent(struct task_struct
+@@ -789,8 +812,8 @@ void do_notify_parent(struct task_struct
  	info.si_uid = tsk->uid;
  
  	/* FIXME: find out whether or not this is supposed to be c*time. */

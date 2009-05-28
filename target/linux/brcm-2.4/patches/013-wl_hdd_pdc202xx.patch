@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/ide/pci/pdc202xx_old.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/ide/pci/pdc202xx_old.c
-+++ linux-2.4.35.4/drivers/ide/pci/pdc202xx_old.c
+--- a/drivers/ide/pci/pdc202xx_old.c
++++ b/drivers/ide/pci/pdc202xx_old.c
 @@ -253,23 +253,23 @@ static int pdc202xx_tune_chipset (ide_dr
  	pci_read_config_byte(dev, (drive_pci)|0x03, &DP);
  

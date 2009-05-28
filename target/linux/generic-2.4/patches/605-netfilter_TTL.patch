@@ -1,8 +1,8 @@
 --- a/Documentation/Configure.help
 +++ b/Documentation/Configure.help
-@@ -3209,6 +3209,15 @@ CONFIG_IP_NF_TARGET_LOG
+@@ -3220,6 +3220,15 @@ CONFIG_IP_NF_TARGET_CLASSIFY
    If you want to compile it as a module, say M here and read
-   <file:Documentation/modules.txt>.  If unsure, say `N'.
+   Documentation/modules.txt.  If unsure, say `N'.
  
 +TTL target support
 +CONFIG_IP_NF_TARGET_TTL
@@ -42,8 +42,8 @@
 +#endif
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -125,6 +125,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
-     dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
+@@ -126,6 +126,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+     dep_tristate '    CLASSIFY target support (EXPERIMENTAL)' CONFIG_IP_NF_TARGET_CLASSIFY $CONFIG_IP_NF_MANGLE
    fi
    dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
 +  dep_tristate '  TTL target support' CONFIG_IP_NF_TARGET_TTL $CONFIG_IP_NF_IPTABLES
@@ -165,7 +165,7 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -109,6 +109,7 @@ obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) +=
+@@ -110,6 +110,7 @@ obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) +=
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o

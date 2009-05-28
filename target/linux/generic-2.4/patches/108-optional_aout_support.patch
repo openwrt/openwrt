@@ -1,6 +1,6 @@
 --- a/Documentation/Configure.help
 +++ b/Documentation/Configure.help
-@@ -4690,6 +4690,12 @@ CONFIG_BINFMT_ELF
+@@ -4701,6 +4701,12 @@ CONFIG_BINFMT_ELF
    ld.so (check the file <file:Documentation/Changes> for location and
    latest version).
  
@@ -13,7 +13,7 @@
  Kernel support for a.out binaries
  CONFIG_BINFMT_AOUT
    A.out (Assembler.OUTput) is a set of formats for libraries and
-@@ -4703,13 +4709,11 @@ CONFIG_BINFMT_AOUT
+@@ -4714,13 +4720,11 @@ CONFIG_BINFMT_AOUT
    warrant removing support. However its removal is a good idea if you
    wish to ensure that absolutely none of your programs will use this
    older executable format. If you don't know what to answer at this
@@ -100,7 +100,7 @@
  
 --- a/arch/i386/config.in
 +++ b/arch/i386/config.in
-@@ -329,6 +329,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
+@@ -345,6 +345,9 @@ if [ "$CONFIG_PROC_FS" = "y" ]; then
  fi
  tristate 'Kernel support for a.out binaries' CONFIG_BINFMT_AOUT
  bool 'Kernel support for ELF binaries' CONFIG_BINFMT_ELF

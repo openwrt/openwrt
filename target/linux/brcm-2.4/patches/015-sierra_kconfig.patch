@@ -1,7 +1,6 @@
-diff -Naur linux-2.4.35.4.orig/drivers/usb/serial/Config.in linux-2.4.35.4/drivers/usb/serial/Config.in
---- linux-2.4.35.4.orig/drivers/usb/serial/Config.in	2008-01-25 10:09:11.541747549 -0700
-+++ linux-2.4.35.4/drivers/usb/serial/Config.in	2008-01-25 10:17:01.890745265 -0700
-@@ -39,6 +39,7 @@
+--- a/drivers/usb/serial/Config.in
++++ b/drivers/usb/serial/Config.in
+@@ -39,6 +39,7 @@ if [ "$CONFIG_USB_SERIAL" != "n" ]; then
     dep_tristate '  USB KOBIL chipcard reader (EXPERIMENTAL)' CONFIG_USB_SERIAL_KOBIL_SCT $CONFIG_USB_SERIAL $CONFIG_EXPERIMENTAL
     dep_tristate '  USB Prolific 2303 Single Port Serial Driver' CONFIG_USB_SERIAL_PL2303 $CONFIG_USB_SERIAL
     dep_tristate '  USB REINER SCT cyberJack pinpad/e-com chipcard reader (EXPERIMENTAL)' CONFIG_USB_SERIAL_CYBERJACK $CONFIG_USB_SERIAL $CONFIG_EXPERIMENTAL
@@ -9,10 +8,9 @@ diff -Naur linux-2.4.35.4.orig/drivers/usb/serial/Config.in linux-2.4.35.4/drive
     dep_tristate '  USB Xircom / Entregra Single Port Serial Driver (EXPERIMENTAL)' CONFIG_USB_SERIAL_XIRCOM $CONFIG_USB_SERIAL $CONFIG_EXPERIMENTAL
     dep_tristate '  USB ZyXEL omni.net LCD Plus Driver (EXPERIMENTAL)' CONFIG_USB_SERIAL_OMNINET $CONFIG_USB_SERIAL $CONFIG_EXPERIMENTAL
  fi
-diff -Naur linux-2.4.35.4.orig/drivers/usb/serial/Makefile linux-2.4.35.4/drivers/usb/serial/Makefile
---- linux-2.4.35.4.orig/drivers/usb/serial/Makefile	2008-01-25 10:09:11.542749582 -0700
-+++ linux-2.4.35.4/drivers/usb/serial/Makefile	2008-01-25 10:17:37.412855271 -0700
-@@ -26,6 +26,7 @@
+--- a/drivers/usb/serial/Makefile
++++ b/drivers/usb/serial/Makefile
+@@ -26,6 +26,7 @@ obj-$(CONFIG_USB_SERIAL_CYBERJACK)		+= c
  obj-$(CONFIG_USB_SERIAL_IR)			+= ir-usb.o
  obj-$(CONFIG_USB_SERIAL_KLSI)			+= kl5kusb105.o
  obj-$(CONFIG_USB_SERIAL_KOBIL_SCT)		+= kobil_sct.o

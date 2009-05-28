@@ -14460,7 +14460,7 @@
  #ifdef CONFIG_NETDEVICES
  			case IIOCNETAIF:
  				/* Add a network-interface */
-@@ -1654,22 +1808,12 @@ isdn_open(struct inode *ino, struct file
+@@ -1657,22 +1811,12 @@ isdn_open(struct inode *ino, struct file
  	int chidx;
  	int retval = -ENODEV;
  
@@ -14487,7 +14487,7 @@
  	}
  	if (!dev->channels)
  		goto out;
-@@ -1692,6 +1836,9 @@ isdn_open(struct inode *ino, struct file
+@@ -1695,6 +1839,9 @@ isdn_open(struct inode *ino, struct file
  		if (drvidx < 0)
  			goto out;
  		isdn_lock_drivers();
@@ -14497,7 +14497,7 @@
  		retval = 0;
  		goto out;
  	}
-@@ -1704,6 +1851,10 @@ isdn_open(struct inode *ino, struct file
+@@ -1707,6 +1854,10 @@ isdn_open(struct inode *ino, struct file
  	}
  #endif
   out:
@@ -14508,7 +14508,7 @@
  	return retval;
  }
  
-@@ -1712,25 +1863,11 @@ isdn_close(struct inode *ino, struct fil
+@@ -1715,25 +1866,11 @@ isdn_close(struct inode *ino, struct fil
  {
  	uint minor = MINOR(ino->i_rdev);
  
@@ -14537,7 +14537,7 @@
  	}
  	isdn_unlock_drivers();
  	if (minor <= ISDN_MINOR_BMAX)
-@@ -1738,6 +1875,12 @@ isdn_close(struct inode *ino, struct fil
+@@ -1741,6 +1878,12 @@ isdn_close(struct inode *ino, struct fil
  	if (minor <= ISDN_MINOR_CTRLMAX) {
  		if (dev->profd == current)
  			dev->profd = NULL;
@@ -14550,7 +14550,7 @@
  		goto out;
  	}
  #ifdef CONFIG_ISDN_PPP
-@@ -1746,13 +1889,19 @@ isdn_close(struct inode *ino, struct fil
+@@ -1749,13 +1892,19 @@ isdn_close(struct inode *ino, struct fil
  #endif
  
   out:
@@ -14570,7 +14570,7 @@
  	llseek:		no_llseek,
  	read:		isdn_read,
  	write:		isdn_write,
-@@ -1805,6 +1954,15 @@ isdn_get_free_channel(int usage, int l2_
+@@ -1808,6 +1957,15 @@ isdn_get_free_channel(int usage, int l2_
  		if (USG_NONE(dev->usage[i]) &&
  		    (dev->drvmap[i] != -1)) {
  			int d = dev->drvmap[i];
@@ -14586,7 +14586,7 @@
  			if ((dev->usage[i] & ISDN_USAGE_EXCLUSIVE) &&
  			((pre_dev != d) || (pre_chan != dev->chanmap[i])))
  				continue;
-@@ -1823,7 +1981,11 @@ isdn_get_free_channel(int usage, int l2_
+@@ -1826,7 +1984,11 @@ isdn_get_free_channel(int usage, int l2_
  						restore_flags(flags);
  						return i;
  					} else {
@@ -14598,7 +14598,7 @@
  							dev->usage[i] &= ISDN_USAGE_EXCLUSIVE;
  							dev->usage[i] |= usage;
  							isdn_info_update();
-@@ -2010,7 +2172,7 @@ isdn_add_channels(driver *d, int drvidx,
+@@ -2013,7 +2175,7 @@ isdn_add_channels(driver *d, int drvidx,
  
  	if ((adding) && (d->rcverr))
  		kfree(d->rcverr);
@@ -14607,7 +14607,7 @@
  		printk(KERN_WARNING "register_isdn: Could not alloc rcverr\n");
  		return -1;
  	}
-@@ -2018,7 +2180,7 @@ isdn_add_channels(driver *d, int drvidx,
+@@ -2021,7 +2183,7 @@ isdn_add_channels(driver *d, int drvidx,
  
  	if ((adding) && (d->rcvcount))
  		kfree(d->rcvcount);
@@ -14616,7 +14616,7 @@
  		printk(KERN_WARNING "register_isdn: Could not alloc rcvcount\n");
  		if (!adding) kfree(d->rcverr);
  		return -1;
-@@ -2030,7 +2192,8 @@ isdn_add_channels(driver *d, int drvidx,
+@@ -2033,7 +2195,8 @@ isdn_add_channels(driver *d, int drvidx,
  			skb_queue_purge(&d->rpqueue[j]);
  		kfree(d->rpqueue);
  	}
@@ -14626,7 +14626,7 @@
  		printk(KERN_WARNING "register_isdn: Could not alloc rpqueue\n");
  		if (!adding) {
  			kfree(d->rcvcount);
-@@ -2044,7 +2207,8 @@ isdn_add_channels(driver *d, int drvidx,
+@@ -2047,7 +2210,8 @@ isdn_add_channels(driver *d, int drvidx,
  
  	if ((adding) && (d->rcv_waitq))
  		kfree(d->rcv_waitq);
@@ -14636,7 +14636,7 @@
  	if (!d->rcv_waitq) {
  		printk(KERN_WARNING "register_isdn: Could not alloc rcv_waitq\n");
  		if (!adding) {
-@@ -2068,7 +2232,9 @@ isdn_add_channels(driver *d, int drvidx,
+@@ -2071,7 +2235,9 @@ isdn_add_channels(driver *d, int drvidx,
  			if (dev->chanmap[k] < 0) {
  				dev->chanmap[k] = j;
  				dev->drvmap[k] = drvidx;
@@ -14646,7 +14646,7 @@
  				break;
  			}
  	restore_flags(flags);
-@@ -2132,6 +2298,7 @@ int DIVERT_REG_NAME(isdn_divert_if *i_di
+@@ -2135,6 +2301,7 @@ int DIVERT_REG_NAME(isdn_divert_if *i_di
          i_div->ll_cmd = isdn_command; /* set command function */
          i_div->drv_to_name = map_drvname; 
          i_div->name_to_drv = map_namedrv; 
@@ -14654,7 +14654,7 @@
          MOD_INC_USE_COUNT;
          divert_if = i_div; /* remember interface */
          return(DIVERT_NO_ERR);
-@@ -2169,7 +2336,7 @@ register_isdn(isdn_if * i)
+@@ -2172,7 +2339,7 @@ register_isdn(isdn_if * i)
  		printk(KERN_WARNING "register_isdn: No write routine given.\n");
  		return 0;
  	}
@@ -14663,7 +14663,7 @@
  		printk(KERN_WARNING "register_isdn: Could not alloc driver-struct\n");
  		return 0;
  	}
-@@ -2229,6 +2396,7 @@ isdn_getrev(const char *revision)
+@@ -2232,6 +2399,7 @@ isdn_getrev(const char *revision)
  	return rev;
  }
  
@@ -14671,7 +14671,7 @@
  #ifdef CONFIG_DEVFS_FS
  
  static devfs_handle_t devfs_handle;
-@@ -2318,6 +2486,7 @@ static void isdn_cleanup_devfs(void)
+@@ -2321,6 +2489,7 @@ static void isdn_cleanup_devfs(void)
  }
  
  #endif  /* CONFIG_DEVFS_FS */
@@ -14679,7 +14679,7 @@
  
  /*
   * Allocate and initialize all data, register modem-devices
-@@ -2335,7 +2504,6 @@ static int __init isdn_init(void)
+@@ -2338,7 +2507,6 @@ static int __init isdn_init(void)
  	init_timer(&dev->timer);
  	dev->timer.function = isdn_timer_funct;
  	init_MUTEX(&dev->sem);
@@ -14687,7 +14687,7 @@
  	for (i = 0; i < ISDN_MAX_CHANNELS; i++) {
  		dev->drvmap[i] = -1;
  		dev->chanmap[i] = -1;
-@@ -2349,7 +2517,9 @@ static int __init isdn_init(void)
+@@ -2352,7 +2520,9 @@ static int __init isdn_init(void)
  		vfree(dev);
  		return -EIO;
  	}
@@ -14697,7 +14697,7 @@
  	if ((i = isdn_tty_modem_init()) < 0) {
  		printk(KERN_WARNING "isdn: Could not register tty devices\n");
  		if (i == -3)
-@@ -2357,7 +2527,9 @@ static int __init isdn_init(void)
+@@ -2360,7 +2530,9 @@ static int __init isdn_init(void)
  		if (i <= -2)
  			tty_unregister_driver(&dev->mdm.tty_modem);
  		vfree(dev);
@@ -14707,7 +14707,7 @@
  		devfs_unregister_chrdev(ISDN_MAJOR, "isdn");
  		return -EIO;
  	}
-@@ -2368,7 +2540,9 @@ static int __init isdn_init(void)
+@@ -2371,7 +2543,9 @@ static int __init isdn_init(void)
  		tty_unregister_driver(&dev->mdm.cua_modem);
  		for (i = 0; i < ISDN_MAX_CHANNELS; i++)
  			kfree(dev->mdm.info[i].xmit_buf - 4);
@@ -14717,7 +14717,7 @@
  		devfs_unregister_chrdev(ISDN_MAJOR, "isdn");
  		vfree(dev);
  		return -EIO;
-@@ -2394,6 +2568,9 @@ static int __init isdn_init(void)
+@@ -2397,6 +2571,9 @@ static int __init isdn_init(void)
  	printk("\n");
  #endif
  	isdn_info_update();
@@ -14727,7 +14727,7 @@
  	return 0;
  }
  
-@@ -2402,7 +2579,7 @@ static int __init isdn_init(void)
+@@ -2405,7 +2582,7 @@ static int __init isdn_init(void)
   */
  static void __exit isdn_exit(void)
  {
@@ -14736,7 +14736,7 @@
  	int i;
  
  #ifdef CONFIG_ISDN_PPP
-@@ -2436,13 +2613,18 @@ static void __exit isdn_exit(void)
+@@ -2439,13 +2616,18 @@ static void __exit isdn_exit(void)
  		printk(KERN_WARNING "isdn: controldevice busy, remove cancelled\n");
  		restore_flags(flags);
  	} else {
@@ -17070,20 +17070,19 @@
  	netif_rx(skb);
  	return;
  }
-@@ -2160,8 +2915,10 @@ isdn_net_find_icall(int di, int ch, int 
+@@ -2160,7 +2915,10 @@ isdn_net_find_icall(int di, int ch, int 
  	isdn_net_phone *n;
  	ulong flags;
- 	char nr[32];
+ 	char nr[ISDN_MSNLEN];
 -	char *my_eaz;
--
 +#ifdef CONFIG_ISDN_WITH_ABC
 +	if(dev->net_verbose > 2)
 +		printk(KERN_DEBUG "n_fi: di=%d ch=%d idx=%d usg=0x%04X\n", di, ch, idx,dev->usage[idx]);
 +#endif
+ 
  	/* Search name in netdev-chain */
  	save_flags(flags);
- 	cli();
-@@ -2180,17 +2937,15 @@ isdn_net_find_icall(int di, int ch, int 
+@@ -2182,17 +2940,15 @@ isdn_net_find_icall(int di, int ch, int 
  		eaz = setup->eazmsn;
  	if (dev->net_verbose > 1)
  		printk(KERN_INFO "isdn_net: call from %s,%d,%d -> %s\n", nr, si1, si2, eaz);
@@ -17110,7 +17109,7 @@
  	ematch = wret = swapped = 0;
  #ifdef ISDN_DEBUG_NET_ICALL
  	printk(KERN_DEBUG "n_fi: di=%d ch=%d idx=%d usg=%d\n", di, ch, idx,
-@@ -2210,25 +2965,8 @@ p = dev->netdev;
+@@ -2212,25 +2968,8 @@ p = dev->netdev;
  				break;
  		}
  		swapped = 0;
@@ -17138,7 +17137,7 @@
  		/* Remember if more numbers eventually can match */
  		if (matchret > wret)
  			wret = matchret;
-@@ -2236,17 +2974,122 @@ p = dev->netdev;
+@@ -2238,17 +2977,122 @@ p = dev->netdev;
  		printk(KERN_DEBUG "n_fi: if='%s', l.msn=%s, l.flags=%d, l.dstate=%d\n",
  		       lp->name, lp->msn, lp->flags, lp->dialstate);
  #endif
@@ -17261,7 +17260,7 @@
  			if (dev->usage[idx] & ISDN_USAGE_EXCLUSIVE) {
  				if ((lp->pre_channel != ch) ||
  				    (lp->pre_device != di)) {
-@@ -2375,6 +3218,12 @@ p = dev->netdev;
+@@ -2377,6 +3221,12 @@ p = dev->netdev;
  						continue;
  					}
  				} 
@@ -17274,7 +17273,7 @@
  				if (lp->flags & ISDN_NET_CALLBACK) {
  					int chi;
  					/*
-@@ -2427,6 +3276,47 @@ p = dev->netdev;
+@@ -2429,6 +3279,47 @@ p = dev->netdev;
  					restore_flags(flags);
  					return 0;
  				} else {
@@ -17322,7 +17321,7 @@
  					printk(KERN_DEBUG "%s: call from %s -> %s accepted\n", lp->name, nr,
  					       eaz);
  					/* if this interface is dialing, it does it probably on a different
-@@ -2516,7 +3406,11 @@ isdn_net_force_dial_lp(isdn_net_local * 
+@@ -2518,7 +3409,11 @@ isdn_net_force_dial_lp(isdn_net_local * 
  							lp->l3_proto,
  							lp->pre_device,
  						 	lp->pre_channel,
@@ -17334,7 +17333,7 @@
  							) < 0) {
  				printk(KERN_WARNING "isdn_net_force_dial: No channel for %s\n", lp->name);
  				restore_flags(flags);
-@@ -2599,7 +3493,11 @@ isdn_net_new(char *name, struct net_devi
+@@ -2601,7 +3496,11 @@ isdn_net_new(char *name, struct net_devi
  		strcpy(netdev->local->name, "         ");
  	else
  		strcpy(netdev->local->name, name);
@@ -17346,7 +17345,7 @@
  	netdev->dev.priv = netdev->local;
  	netdev->dev.init = isdn_net_init;
  	netdev->local->p_encap = ISDN_NET_ENCAP_RAWIP;
-@@ -2617,11 +3515,13 @@ isdn_net_new(char *name, struct net_devi
+@@ -2619,11 +3518,13 @@ isdn_net_new(char *name, struct net_devi
  		((isdn_net_local *) q->priv)->slave = &(netdev->dev);
  	} else {
  		/* Device shall be a master */
@@ -17360,7 +17359,7 @@
  		if (register_netdev(&netdev->dev) != 0) {
  			printk(KERN_WARNING "isdn_net: Could not register net-device\n");
  			kfree(netdev->local);
-@@ -2658,6 +3558,9 @@ isdn_net_new(char *name, struct net_devi
+@@ -2660,6 +3561,9 @@ isdn_net_new(char *name, struct net_devi
  	netdev->local->hupflags = ISDN_INHUP;	/* Do hangup even on incoming calls */
  	netdev->local->onhtime = 10;	/* Default hangup-time for saving costs
  	   of those who forget configuring this */
@@ -17370,7 +17369,7 @@
  	netdev->local->dialmax = 1;
  	netdev->local->flags = ISDN_NET_CBHUP | ISDN_NET_DM_MANUAL;	/* Hangup before Callback, manual dial */
  	netdev->local->cbdelay = 25;	/* Wait 5 secs before Callback */
-@@ -2831,7 +3734,6 @@ isdn_net_setcfg(isdn_net_ioctl_cfg * cfg
+@@ -2833,7 +3737,6 @@ isdn_net_setcfg(isdn_net_ioctl_cfg * cfg
  
  			/* If binding is exclusive, try to grab the channel */
  			save_flags(flags);
@@ -17378,7 +17377,7 @@
  			if ((i = isdn_get_free_channel(ISDN_USAGE_NET,
  				lp->l2_proto, lp->l3_proto, drvidx,
  				chidx, lp->msn)) < 0) {
-@@ -2859,6 +3761,9 @@ isdn_net_setcfg(isdn_net_ioctl_cfg * cfg
+@@ -2862,6 +3765,9 @@ isdn_net_setcfg(isdn_net_ioctl_cfg * cfg
  		lp->pre_device = drvidx;
  		lp->pre_channel = chidx;
  		lp->onhtime = cfg->onhtime;
@@ -17388,7 +17387,7 @@
  		lp->charge = cfg->charge;
  		lp->l2_proto = cfg->l2_proto;
  		lp->l3_proto = cfg->l3_proto;
-@@ -2932,6 +3837,9 @@ isdn_net_setcfg(isdn_net_ioctl_cfg * cfg
+@@ -2935,6 +3841,9 @@ isdn_net_setcfg(isdn_net_ioctl_cfg * cfg
  			}
  		}
  		lp->p_encap = cfg->p_encap;
@@ -17398,8 +17397,8 @@
  		return 0;
  	}
  	return -ENODEV;
-@@ -3007,6 +3915,9 @@ isdn_net_addphone(isdn_net_ioctl_phone *
- 		strcpy(n->num, phone->phone);
+@@ -3011,6 +3920,9 @@ isdn_net_addphone(isdn_net_ioctl_phone *
+ 		n->num[sizeof(n->num) - 1] = 0;
  		n->next = p->local->phone[phone->outgoing & 1];
  		p->local->phone[phone->outgoing & 1] = n;
 +#ifdef CONFIG_ISDN_WITH_ABC
@@ -17408,7 +17407,7 @@
  		return 0;
  	}
  	return -ENODEV;
-@@ -3100,6 +4011,9 @@ isdn_net_delphone(isdn_net_ioctl_phone *
+@@ -3104,6 +4016,9 @@ isdn_net_delphone(isdn_net_ioctl_phone *
  				else
  					p->local->phone[inout] = n->next;
  				kfree(n);
@@ -17418,7 +17417,7 @@
  				restore_flags(flags);
  				return 0;
  			}
-@@ -3135,6 +4049,9 @@ isdn_net_rmallphone(isdn_net_dev * p)
+@@ -3139,6 +4054,9 @@ isdn_net_rmallphone(isdn_net_dev * p)
  		p->local->phone[i] = NULL;
  	}
  	p->local->dial = NULL;
@@ -17428,7 +17427,7 @@
  	restore_flags(flags);
  	return 0;
  }
-@@ -3218,6 +4135,10 @@ isdn_net_realrm(isdn_net_dev * p, isdn_n
+@@ -3222,6 +4140,10 @@ isdn_net_realrm(isdn_net_dev * p, isdn_n
  	/* If no more net-devices remain, disable auto-hangup timer */
  	if (dev->netdev == NULL)
  		isdn_timer_ctrl(ISDN_TIMER_NETHANGUP, 0);

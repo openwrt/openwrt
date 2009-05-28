@@ -2930,7 +2930,7 @@
  		void				*generic_ip;
  	} u;
  };
-@@ -734,6 +736,7 @@ struct nameidata {
+@@ -736,6 +738,7 @@ struct nameidata {
  #include <linux/usbdev_fs_sb.h>
  #include <linux/cramfs_fs_sb.h>
  #include <linux/jffs2_fs_sb.h>
@@ -2938,7 +2938,7 @@
  
  extern struct list_head super_blocks;
  extern spinlock_t sb_lock;
-@@ -793,6 +796,7 @@ struct super_block {
+@@ -795,6 +798,7 @@ struct super_block {
  		struct usbdev_sb_info   usbdevfs_sb;
  		struct jffs2_sb_info	jffs2_sb;
  		struct cramfs_sb_info	cramfs_sb;
@@ -3990,7 +3990,7 @@
 +#endif
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
-@@ -15,6 +15,7 @@
+@@ -16,6 +16,7 @@
  #include <linux/minix_fs.h>
  #include <linux/ext2_fs.h>
  #include <linux/romfs_fs.h>
@@ -3998,7 +3998,7 @@
  #include <linux/cramfs_fs.h>
  
  #define BUILD_CRAMDISK
-@@ -476,6 +477,7 @@ static int __init crd_load(int in_fd, in
+@@ -485,6 +486,7 @@ static int __init crd_load(int in_fd, in
   * 	minix
   * 	ext2
   *	romfs
@@ -4006,7 +4006,7 @@
   *	cramfs
   * 	gzip
   */
-@@ -486,6 +488,7 @@ identify_ramdisk_image(int fd, int start
+@@ -495,6 +497,7 @@ identify_ramdisk_image(int fd, int start
  	struct minix_super_block *minixsb;
  	struct ext2_super_block *ext2sb;
  	struct romfs_super_block *romfsb;
@@ -4014,7 +4014,7 @@
  	struct cramfs_super *cramfsb;
  	int nblocks = -1;
  	unsigned char *buf;
-@@ -497,6 +500,7 @@ identify_ramdisk_image(int fd, int start
+@@ -506,6 +509,7 @@ identify_ramdisk_image(int fd, int start
  	minixsb = (struct minix_super_block *) buf;
  	ext2sb = (struct ext2_super_block *) buf;
  	romfsb = (struct romfs_super_block *) buf;
@@ -4022,7 +4022,7 @@
  	cramfsb = (struct cramfs_super *) buf;
  	memset(buf, 0xe5, size);
  
-@@ -535,6 +539,15 @@ identify_ramdisk_image(int fd, int start
+@@ -544,6 +548,15 @@ identify_ramdisk_image(int fd, int start
  		goto done;
  	}
  

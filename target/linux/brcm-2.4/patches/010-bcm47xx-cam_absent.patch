@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/drivers/net/b44.h
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/b44.h
-+++ linux-2.4.35.4/drivers/net/b44.h
+--- a/drivers/net/b44.h
++++ b/drivers/net/b44.h
 @@ -122,6 +122,7 @@
  #define  RXCONFIG_FLOW		0x00000020 /* Flow Control Enable */
  #define  RXCONFIG_FLOW_ACCEPT	0x00000040 /* Accept Unicast Flow Control Frame */
@@ -10,10 +8,8 @@ Index: linux-2.4.35.4/drivers/net/b44.h
  #define B44_RXMAXLEN	0x0404UL /* EMAC RX Max Packet Length */
  #define B44_TXMAXLEN	0x0408UL /* EMAC TX Max Packet Length */
  #define B44_MDIO_CTRL	0x0410UL /* EMAC MDIO Control */
-Index: linux-2.4.35.4/drivers/net/b44.c
-===================================================================
---- linux-2.4.35.4.orig/drivers/net/b44.c
-+++ linux-2.4.35.4/drivers/net/b44.c
+--- a/drivers/net/b44.c
++++ b/drivers/net/b44.c
 @@ -1299,6 +1299,7 @@ static int b44_set_mac_addr(struct net_d
  {
  	struct b44 *bp = dev->priv;

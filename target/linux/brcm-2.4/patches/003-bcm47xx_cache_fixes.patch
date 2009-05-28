@@ -1,7 +1,5 @@
-Index: linux-2.4.35.4/arch/mips/kernel/entry.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/kernel/entry.S
-+++ linux-2.4.35.4/arch/mips/kernel/entry.S
+--- a/arch/mips/kernel/entry.S
++++ b/arch/mips/kernel/entry.S
 @@ -100,6 +100,10 @@ END(except_vec1_generic)
  		 * and R4400 SC and MC versions.
  		 */
@@ -13,10 +11,8 @@ Index: linux-2.4.35.4/arch/mips/kernel/entry.S
  #if R5432_CP0_INTERRUPT_WAR
  		mfc0	k0, CP0_INDEX
  #endif
-Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/c-r4k.c
-+++ linux-2.4.35.4/arch/mips/mm/c-r4k.c
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
 @@ -14,6 +14,12 @@
  #include <linux/mm.h>
  #include <linux/bitops.h>
@@ -244,10 +240,8 @@ Index: linux-2.4.35.4/arch/mips/mm/c-r4k.c
  	probe_pcache();
  	setup_scache();
  
-Index: linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S
-===================================================================
---- linux-2.4.35.4.orig/arch/mips/mm/tlbex-mips32.S
-+++ linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S
+--- a/arch/mips/mm/tlbex-mips32.S
++++ b/arch/mips/mm/tlbex-mips32.S
 @@ -90,6 +90,9 @@
  	.set	noat
  	LEAF(except_vec0_r4000)
@@ -258,10 +252,8 @@ Index: linux-2.4.35.4/arch/mips/mm/tlbex-mips32.S
  #ifdef CONFIG_SMP
  	mfc0	k1, CP0_CONTEXT
  	la	k0, pgd_current
-Index: linux-2.4.35.4/include/asm-mips/r4kcache.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/r4kcache.h
-+++ linux-2.4.35.4/include/asm-mips/r4kcache.h
+--- a/include/asm-mips/r4kcache.h
++++ b/include/asm-mips/r4kcache.h
 @@ -15,6 +15,18 @@
  #include <asm/asm.h>
  #include <asm/cacheops.h>
@@ -464,10 +456,8 @@ Index: linux-2.4.35.4/include/asm-mips/r4kcache.h
  	do {
  		cache64_unroll32(start,Hit_Invalidate_I);
  		start += 0x800;
-Index: linux-2.4.35.4/include/asm-mips/stackframe.h
-===================================================================
---- linux-2.4.35.4.orig/include/asm-mips/stackframe.h
-+++ linux-2.4.35.4/include/asm-mips/stackframe.h
+--- a/include/asm-mips/stackframe.h
++++ b/include/asm-mips/stackframe.h
 @@ -209,6 +209,20 @@
  
  #endif
@@ -489,10 +479,8 @@ Index: linux-2.4.35.4/include/asm-mips/stackframe.h
  #define RESTORE_SP                                       \
  		lw	sp,  PT_R29(sp);                 \
  
-Index: linux-2.4.35.4/mm/memory.c
-===================================================================
---- linux-2.4.35.4.orig/mm/memory.c
-+++ linux-2.4.35.4/mm/memory.c
+--- a/mm/memory.c
++++ b/mm/memory.c
 @@ -927,6 +927,7 @@ static inline void break_cow(struct vm_a
  	flush_page_to_ram(new_page);
  	flush_cache_page(vma, address);
