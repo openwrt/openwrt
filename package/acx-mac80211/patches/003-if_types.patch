@@ -1,7 +1,6 @@
-diff -urN acx-mac80211-20080805/acx_mac80211.h acx-mac80211-20080805.new/acx_mac80211.h
---- acx-mac80211-20080805/acx_mac80211.h	2009-05-07 14:32:44.000000000 +0200
-+++ acx-mac80211-20080805.new/acx_mac80211.h	2009-05-07 15:59:45.000000000 +0200
-@@ -36,7 +36,7 @@
+--- a/acx_mac80211.h
++++ b/acx_mac80211.h
+@@ -36,7 +36,7 @@ struct acx_interface {                
          /* Current BSSID (if any). */       
          u8 *bssid;
  
@@ -10,10 +9,9 @@ diff -urN acx-mac80211-20080805/acx_mac80211.h acx-mac80211-20080805.new/acx_mac
          int type; 
          /* Counter of active monitor interfaces. */
          int monitor;
-diff -urN acx-mac80211-20080805/common.c acx-mac80211-20080805.new/common.c
---- acx-mac80211-20080805/common.c	2009-05-07 14:32:44.000000000 +0200
-+++ acx-mac80211-20080805.new/common.c	2009-05-07 16:11:26.000000000 +0200
-@@ -4105,28 +4105,28 @@
+--- a/common.c
++++ b/common.c
+@@ -4111,28 +4111,28 @@ static void acx_s_select_opmode(acx_devi
  
  	if (adev->interface.operating) {
  		switch (adev->interface.type) {
@@ -46,7 +44,7 @@ diff -urN acx-mac80211-20080805/common.c acx-mac80211-20080805.new/common.c
  			default:
  				if (adev->mode != ACX_MODE_OFF)
  				{
-@@ -4136,7 +4136,7 @@
+@@ -4142,7 +4142,7 @@ static void acx_s_select_opmode(acx_devi
  			break;
  		}
  	} else {
@@ -55,7 +53,7 @@ diff -urN acx-mac80211-20080805/common.c acx-mac80211-20080805.new/common.c
  		{
  			if (adev->mode != ACX_MODE_MONITOR)
  			{
-@@ -4180,7 +4180,7 @@
+@@ -4186,7 +4186,7 @@ int acx_add_interface(struct ieee80211_h
  	FN_ENTER;
  	acx_lock(adev, flags);
  
@@ -64,7 +62,7 @@ diff -urN acx-mac80211-20080805/common.c acx-mac80211-20080805.new/common.c
  		adev->interface.monitor++;
  	} else {
  		if (adev->interface.operating)
-@@ -4226,7 +4226,7 @@
+@@ -4232,7 +4232,7 @@ void acx_remove_interface(struct ieee802
  	FN_ENTER;
  
  	acx_sem_lock(adev);
@@ -73,7 +71,7 @@ diff -urN acx-mac80211-20080805/common.c acx-mac80211-20080805.new/common.c
  		adev->interface.monitor--;
  //                assert(bcm->interface.monitor >= 0);
  	} else {
-@@ -4380,7 +4380,7 @@
+@@ -4386,7 +4386,7 @@ extern int acx_config_interface(struct i
  
  	acx_lock(adev, flags);
  
@@ -82,7 +80,7 @@ diff -urN acx-mac80211-20080805/common.c acx-mac80211-20080805.new/common.c
  	    && (adev->vif == vif)) {
  		if (conf->bssid)
  		{
-@@ -4388,7 +4388,7 @@
+@@ -4394,7 +4394,7 @@ extern int acx_config_interface(struct i
   	             	MAC_COPY(adev->bssid,conf->bssid);
  		}
  	}
