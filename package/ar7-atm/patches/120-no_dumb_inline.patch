@@ -1,7 +1,6 @@
-diff -urN sangam_atm-D7.03.01.00.orig/tn7api.h sangam_atm-D7.03.01.00/tn7api.h
---- sangam_atm-D7.03.01.00.orig/tn7api.h	2006-12-11 15:36:54.000000000 +0100
-+++ sangam_atm-D7.03.01.00/tn7api.h	2008-01-05 03:12:15.000000000 +0100
-@@ -107,7 +107,7 @@
+--- a/tn7api.h
++++ b/tn7api.h
+@@ -107,7 +107,7 @@ int tn7dsl_proc_dbg_rmsgs4(char* buf, ch
  
  int tn7dsl_proc_write_stats(struct file *fp, const char * buf, unsigned long count, void * data);
  int tn7dsl_proc_modem(char* buf, char **start, off_t offset, int count,int *eof, void *data);
