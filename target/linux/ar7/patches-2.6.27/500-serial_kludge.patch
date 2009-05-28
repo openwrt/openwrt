@@ -1,6 +1,6 @@
 --- a/drivers/serial/8250.c
 +++ b/drivers/serial/8250.c
-@@ -266,6 +266,13 @@ static const struct serial8250_config ua
+@@ -264,6 +264,13 @@ static const struct serial8250_config ua
  		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
  		.flags		= UART_CAP_FIFO,
  	},
@@ -14,7 +14,7 @@
  };
  
  #if defined (CONFIG_SERIAL_8250_AU1X00)
-@@ -2524,7 +2531,11 @@ static void serial8250_console_putchar(s
+@@ -2552,7 +2559,11 @@ static void serial8250_console_putchar(s
  {
  	struct uart_8250_port *up = (struct uart_8250_port *)port;
  
