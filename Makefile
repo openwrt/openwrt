@@ -49,8 +49,8 @@ $(BUILD_DIR)/.prepared: Makefile
 	@touch $@
 
 clean: FORCE
-	rm -rf $(BUILD_DIR) $(BIN_DIR)
 	$(_SINGLE)$(SUBMAKE) target/linux/clean
+	rm -rf $(BUILD_DIR) $(BIN_DIR) $(BUILD_LOG_DIR)
 
 dirclean: clean
 	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST) $(BUILD_DIR_TOOLCHAIN)
