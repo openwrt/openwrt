@@ -32,8 +32,8 @@ if grep devfs /proc/filesystems > /dev/null; then
 elif [ -x /sbin/hotplug2 ]; then
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
-	/sbin/hotplug2 --coldplug --set-rules-file /etc/hotplug2-init.rules
-	/sbin/hotplug2 --no-coldplug --persistent --set-rules-file /etc/hotplug2-init.rules &
+	/sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --no-persistent --set-coldplug-cmd /sbin/udevtrigger
+	/sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --persistent &
 	M0=/dev/ptmx
 	M1=/dev/ptmx
 	HOTPLUG=
