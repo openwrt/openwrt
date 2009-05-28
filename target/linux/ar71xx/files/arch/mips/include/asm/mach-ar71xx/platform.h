@@ -31,7 +31,7 @@ struct ag71xx_platform_data {
 	u8		has_ar8216:1;
 
 	void		(* ddr_flush)(void);
-	void		(* set_pll)(u32 pll);
+	void		(* set_pll)(int speed);
 };
 
 struct ag71xx_mdio_platform_data {

@@ -25,6 +25,15 @@ void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 void ar71xx_set_mac_base(unsigned char *mac) __init;
 void ar71xx_parse_mac_addr(char *mac_str) __init;
 
+struct ar71xx_eth_pll_data {
+	u32	pll_10;
+	u32	pll_100;
+	u32	pll_1000;
+};
+
+extern struct ar71xx_eth_pll_data ar71xx_eth0_pll_data;
+extern struct ar71xx_eth_pll_data ar71xx_eth1_pll_data;
+
 extern struct ag71xx_platform_data ar71xx_eth0_data;
 extern struct ag71xx_platform_data ar71xx_eth1_data;
 void ar71xx_add_device_eth(unsigned int id) __init;
