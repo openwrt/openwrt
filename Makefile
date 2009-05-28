@@ -48,6 +48,8 @@ $(BUILD_DIR)/.prepared: Makefile
 	@mkdir -p $$(dirname $@)
 	@touch $@
 
+prepare: $(target/stamp-compile)
+
 clean: FORCE
 	$(_SINGLE)$(SUBMAKE) target/linux/clean
 	rm -rf $(BUILD_DIR) $(BIN_DIR) $(BUILD_LOG_DIR)
