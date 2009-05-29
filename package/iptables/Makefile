@@ -252,9 +252,7 @@ CONFIGURE_ARGS += \
 	--with-kernel="$(LINUX_DIR)" \
 	--with-xtlibdir=/usr/lib/iptables
 
-define Build/Compile
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+IPTABLES_MAKEOPTS = \
 		$(TARGET_CONFIGURE_OPTS) \
 		COPT_FLAGS="$(TARGET_CFLAGS)" \
 		LDFLAGS="-rdynamic -static-libgcc" \
@@ -262,6 +260,11 @@ define Build/Compile
 		KBUILD_OUTPUT="$(LINUX_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install $(MAKE_TARGETS)
+
+define Build/Compile
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) $(IPTABLES_MAKEOPTS)
+	$(MAKE) -C $(PKG_BUILD_DIR)/libipq $(IPTABLES_MAKEOPTS)
 endef
 
 define Build/InstallDev
@@ -273,11 +276,13 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/include/net/netfilter/*.h $(1)/usr/include/net/netfilter/
 	$(CP) $(PKG_BUILD_DIR)/include/iptables/*.h $(1)/usr/include/iptables/
 	$(CP) $(PKG_BUILD_DIR)/include/iptables.h $(1)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/include/libipq/libipq.h $(1)/usr/include/
 
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
 	mkdir -p $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.{a,so*} $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiptc.{a,so*} $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(1)/usr/lib/
 	mkdir -p $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/xtables.pc $(1)/usr/lib/pkgconfig/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libiptc.pc $(1)/usr/lib/pkgconfig/
