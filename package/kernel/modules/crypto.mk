@@ -28,17 +28,23 @@ endif
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
   SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 endif
+AEAD_CONF:=AEAD
+MANAGER_CONF:=MANAGER
+BLKCIPHER_CONF:=BLKCIPHER
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.30)),1)
   CRYPTO_MODULE_PCOMPRESS:=PCOMP=pcompress
+  AEAD_CONF:=AEAD2
+  MANAGER_CONF:=MANAGER2
+  BLKCIPHER_CONF:=BLKCIPHER2
 endif
 
 CRYPTO_MODULES = \
 	ALGAPI=crypto_algapi \
-	AEAD=aead \
+	$(AEAD_CONF)=aead \
 	$(CRYPTO_MODULE_PCOMPRESS) \
-	BLKCIPHER=$(BLKCIPHER_PREFIX)blkcipher \
+	$(BLKCIPHER_CONF)=$(BLKCIPHER_PREFIX)blkcipher \
 	HASH=crypto_hash \
-	MANAGER=cryptomgr \
+	$(MANAGER_CONF)=cryptomgr \
 	CBC=cbc \
 	ECB=ecb \
 	DEFLATE=deflate
