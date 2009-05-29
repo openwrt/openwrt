@@ -97,7 +97,7 @@ define KernelPackage/sound-ps3
   TITLE:=PS3 Audio
   DEPENDS:=kmod-sound-core
   KCONFIG:=CONFIG_SND_PS3 \
-		CONFIG_SND_PPC
+		CONFIG_SND_PPC=y
   FILES:=$(LINUX_DIR)/sound/ppc/snd_ps3.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,35, snd_ps3)
 endef
