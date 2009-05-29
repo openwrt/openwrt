@@ -36,7 +36,7 @@ define Package/hotplug2/description
  This is an implementation of Hotplug2-1.0-beta
 endef
 
-MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS) -DHAVE_RULES -I."
+MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS) $(FPIC) -DHAVE_RULES -I."
 
 define Package/hotplug2/install
 	$(INSTALL_DIR) $(1)/etc
