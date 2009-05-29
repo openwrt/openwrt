@@ -15,6 +15,8 @@ PKG_SOURCE:=hotplug2-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://isteve.bofh.cz/~isteve/hotplug2
 PKG_MD5SUM:=ea2c01d027b4002e4e6b0ff266f51a51
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/hotplug2-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/hotplug2-old
