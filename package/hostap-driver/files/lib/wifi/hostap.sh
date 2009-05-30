@@ -75,7 +75,13 @@ enable_prism2() {
 		[ "$mode" = "wds" ] || iwconfig "$device" essid "$ssid"
 
 		case "$mode" in
-			sta) iwconfig "$device" mode managed;;
+			sta)
+				iwconfig "$device" mode managed
+				config_get addr "$device" bssid
+				[ -z "$addr" ] || { 
+					iwconfig "$device" ap "$addr"
+				}
+			;;
 			ap) iwconfig "$device" mode master;;
 			wds) iwpriv "$device" wds_add "$ssid";;
 			*) iwconfig "$device" mode "$mode";;
@@ -86,8 +92,15 @@ enable_prism2() {
 			[ -n "$rate" ] && iwconfig "$device" rate "${rate%%.*}"
 
 			config_get_bool hidden "$vif" hidden 0
-			iwpriv "$ifname" enh_sec "$hidden"
+			iwpriv "$device" enh_sec "$hidden"
 
+			config_get frag "$vif" frag
+			[ -n "$frag" ] && iwconfig "$device" frag "${frag%%.*}"
+
+			config_get rts "$vif" rts
+			[ -n "$rts" ] && iwconfig "$device" rts "${rts%%.*}"
+
+			config_get maclist "$vif" maclist
 			[ -n "$maclist" ] && {
 				# flush MAC list
 				iwpriv "$device" maccmd 3
@@ -95,6 +108,7 @@ enable_prism2() {
 					iwpriv "$device" addmac "$mac"
 				done
 			}
+			config_get macpolicy "$vif" macpolicy
 			case "$macpolicy" in
 				allow)
 					iwpriv $device maccmd 2
