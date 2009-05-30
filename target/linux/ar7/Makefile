@@ -11,7 +11,7 @@ BOARD:=ar7
 BOARDNAME:=TI AR7
 FEATURES:=squashfs jffs2 atm
 
-LINUX_VERSION:=2.6.27.22
+LINUX_VERSION:=2.6.27.24
 
 include $(INCLUDE_DIR)/target.mk
 
