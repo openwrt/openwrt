@@ -8,7 +8,7 @@
 -		return NULL;
 +		/* pick the first available rate control module */
 +		printk(KERN_INFO "Rate control module \"%s\" not available\n", buf);
-+		for (id = 0; id < IEEE80211_RATE_MAX; id++) {
++		for (id = 0; id < IEEE80211_RATE_MAX - 1; id++) {
 +			if (ratectls[id].attach)
 +				break;
 +		}
