@@ -1,6 +1,8 @@
---- a/acx_func.h
-+++ b/acx_func.h
-@@ -623,7 +623,7 @@ void acx_config_interface(struct ieee802
+Index: acx-mac80211-20080805/acx_func.h
+===================================================================
+--- acx-mac80211-20080805.orig/acx_func.h	2009-05-26 20:58:10.000000000 +0200
++++ acx-mac80211-20080805/acx_func.h	2009-05-26 20:58:11.000000000 +0200
+@@ -623,7 +623,7 @@
  				struct ieee80211_vif *vif,
  				struct ieee80211_bss_conf *info,
  				u32 changes);
@@ -9,9 +11,11 @@
  int acx_net_get_tx_stats(struct ieee80211_hw* ieee, struct ieee80211_tx_queue_stats *stats);
  int acx_net_conf_tx(struct ieee80211_hw* ieee, u16 queue,
  		const struct ieee80211_tx_queue_params *params);
---- a/common.c
-+++ b/common.c
-@@ -4300,9 +4300,10 @@ int acx_selectchannel(acx_device_t * ade
+Index: acx-mac80211-20080805/common.c
+===================================================================
+--- acx-mac80211-20080805.orig/common.c	2009-05-26 20:58:10.000000000 +0200
++++ acx-mac80211-20080805/common.c	2009-05-26 20:58:11.000000000 +0200
+@@ -4300,9 +4300,10 @@
  ** Derived from mac80211 code, p54, bcm43xx_mac80211
  **
  */
@@ -23,9 +27,11 @@
  	unsigned long flags;
  
  	FN_ENTER;
---- a/pci.c
-+++ b/pci.c
-@@ -3105,7 +3105,7 @@ acxpci_l_tx_data(acx_device_t *adev, tx_
+Index: acx-mac80211-20080805/pci.c
+===================================================================
+--- acx-mac80211-20080805.orig/pci.c	2009-05-26 20:58:10.000000000 +0200
++++ acx-mac80211-20080805/pci.c	2009-05-30 20:44:29.000000000 +0200
+@@ -3105,7 +3105,7 @@
  
  	/* let chip do RTS/CTS handshaking before sending
  	 * in case packet size exceeds threshold */
@@ -34,7 +40,7 @@
  		SET_BIT(Ctl2_8, DESC_CTL2_RTS);
  	else
  		CLEAR_BIT(Ctl2_8, DESC_CTL2_RTS);
-@@ -3120,7 +3120,7 @@ acxpci_l_tx_data(acx_device_t *adev, tx_
+@@ -3120,7 +3120,7 @@
  /*	put_txcr(adev, txdesc, clt, rate_cur);  deprecated by mac80211 */
  
  	txdesc->total_length = cpu_to_le16(len);
@@ -43,7 +49,7 @@
  	hostdesc2->length = cpu_to_le16(len - wlhdr_len);
  /*
  	if (!ieeectl->do_not_encrypt && ieeectl->key_idx>= 0)
-@@ -3444,8 +3444,8 @@ unsigned int acxpci_l_clean_txdesc(acx_d
+@@ -3444,8 +3444,8 @@
  		/* And finally report upstream */
  		if (hostdesc)
  		{
@@ -54,3 +60,11 @@
  			ieee80211_tx_status(adev->ieee, hostdesc->skb);
  		}
  		/* update pointer for descr to be cleaned next */
+@@ -4303,6 +4303,7 @@
+ 	}
+ 
+ 	acx_init_task_scheduler(adev);
++	adev->ieee->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
+ 	result = ieee80211_register_hw(adev->ieee);
+ 	if (OK != result) {
+ 		printk("acx: ieee80211_register_hw() FAILED: %d\n", result);
