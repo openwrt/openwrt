@@ -72,7 +72,7 @@ enable_prism2() {
 		config_get ssid "$vif" ssid
 		config_get mode "$vif" mode
 
-		[ "$mode" = "wds" ] || iwconfig "$device" essid "$ssid"
+		[ "$mode" = "wds" ] || iwconfig "$device" essid -- "$ssid"
 
 		case "$mode" in
 			sta)
