@@ -48,6 +48,17 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   endif
 endif
 
+ifeq ($(CONFIG_$(PKG_NAME)_USE_CUSTOM_SOURCE_DIR),y)
+# disable load stage
+PKG_SOURCE_URL:=
+# add hook to install a link to customer source path of dedicated package
+Hooks/Prepare/Pre += prepare_custom_source_directory
+# define empty default action
+define Build/Prepare/Default
+	@: 
+endef
+endif
+
 define Download/default
   FILE:=$(PKG_SOURCE)
   URL:=$(PKG_SOURCE_URL)
