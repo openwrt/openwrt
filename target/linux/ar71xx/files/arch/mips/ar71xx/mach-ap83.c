@@ -11,6 +11,9 @@
 
 #include <linux/platform_device.h>
 #include <linux/input.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include <linux/mtd/physmap.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
 
@@ -29,6 +32,65 @@
 #define AP83_GPIO_VSC7385_MISO	3
 #define AP83_GPIO_VSC7385_MOSI	16
 #define AP83_GPIO_VSC7385_SCK	17
+
+#ifdef CONFIG_MTD_PARTITIONS
+static struct mtd_partition ap83_flash_partitions[] = {
+	{
+		.name		= "u-boot",
+		.offset		= 0,
+		.size		= 0x040000,
+		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "u-boot-env",
+		.offset		= 0x040000,
+		.size		= 0x020000,
+		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "rootfs",
+		.offset		= 0x060000,
+		.size		= 0x400000,
+	} , {
+		.name		= "kernel",
+		.offset		= 0x460000,
+		.size		= 0x100000,
+	} , {
+		.name		= "art",
+		.offset		= 0x560000,
+		.size		= 0x2a0000,
+		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "firmware",
+		.offset		= 0x060000,
+		.size		= 0x500000,
+	}
+};
+#endif /* CONFIG_MTD_PARTITIONS */
+
+static struct physmap_flash_data ap83_flash_data = {
+	.width		= 2,
+#ifdef CONFIG_MTD_PARTITIONS
+        .parts          = ap83_flash_partitions,
+        .nr_parts       = ARRAY_SIZE(ap83_flash_partitions),
+#endif
+};
+
+static struct resource ap83_flash_resources[] = {
+	[0] = {
+		.start	= AR71XX_SPI_BASE,
+		.end	= AR71XX_SPI_BASE + AR71XX_SPI_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device ap83_flash_device = {
+	.name		= "physmap-flash",
+	.id		= -1,
+	.resource	= ap83_flash_resources,
+	.num_resources	= ARRAY_SIZE(ap83_flash_resources),
+	.dev		= {
+		.platform_data = &ap83_flash_data,
+	}
+};
 
 static struct gpio_led ap83_leds_gpio[] __initdata = {
 	{
@@ -108,6 +170,7 @@ static void __init ap83_setup(void)
 	ar91xx_add_device_wmac();
 
 	platform_device_register(&ap83_spi_device);
+	platform_device_register(&ap83_flash_device);
 }
 
 MIPS_MACHINE(AR71XX_MACH_AP83, "Atheros AP83", ap83_setup);
