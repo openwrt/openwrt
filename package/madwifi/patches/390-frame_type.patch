@@ -5,7 +5,7 @@
  			skb->pkt_type = PACKET_OTHERHOST;
  
 -	return eth->h_proto;
-+	if (ntohs(eth->h_proto) >= 1536)
++	if ((ntohs(eth->h_proto) >= 1536) || (ntohs(eth->h_proto) < 38))
 +		return eth->h_proto;
 +	return htons(ETH_P_802_2);
  }
