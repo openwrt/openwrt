@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6733,10 +6733,10 @@ ath_rx_poll(struct net_device *dev, int 
+@@ -6734,10 +6734,10 @@ ath_rx_poll(struct net_device *dev, int 
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
  	struct ath_softc *sc = container_of(napi, struct ath_softc, sc_napi);
  	struct net_device *dev = sc->sc_dev;
@@ -13,7 +13,7 @@
  #endif
  	struct ath_buf *bf;
  	struct ieee80211com *ic = &sc->sc_ic;
-@@ -6779,13 +6779,15 @@ process_rx_again:
+@@ -6780,13 +6780,15 @@ process_rx_again:
  			break;
  		}
  
@@ -33,7 +33,7 @@
  
  		skb = bf->bf_skb;
  		if (skb == NULL) {
-@@ -7069,8 +7071,8 @@ rx_next:
+@@ -7070,8 +7072,8 @@ rx_next:
  		if (sc->sc_isr & HAL_INT_RX) {
  			u_int64_t hw_tsf = ath_hal_gettsf64(ah);
  			sc->sc_isr &= ~HAL_INT_RX;

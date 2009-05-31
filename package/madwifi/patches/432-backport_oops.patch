@@ -45,7 +45,7 @@ http://madwifi-project.org/changeset/4005
  	dev->tx_queue_len = ATH_TXBUF - ATH_TXBUF_MGT_RESERVED;
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
  	netif_napi_add(dev, &sc->sc_napi, ath_rx_poll, 64);
-@@ -12726,8 +12744,13 @@ ath_rcv_dev_event(struct notifier_block 
+@@ -12729,8 +12747,13 @@ ath_rcv_dev_event(struct notifier_block 
  	struct net_device *dev = (struct net_device *)ptr;
  	struct ath_softc *sc = (struct ath_softc *)netdev_priv(dev);
  

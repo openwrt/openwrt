@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6529,7 +6529,7 @@ ath_capture(struct net_device *dev, cons
+@@ -6530,7 +6530,7 @@ ath_capture(struct net_device *dev, cons
  
  	/* Never copy the SKB, as it is ours on the RX side, and this is the 
  	 * last process on the TX side and we only modify our own headers. */
@@ -9,7 +9,7 @@
  	if (tskb == NULL) {
  		DPRINTF(sc, ATH_DEBUG_ANY,
  			"Dropping; ath_skb_removepad failed!\n");
-@@ -6537,6 +6537,8 @@ ath_capture(struct net_device *dev, cons
+@@ -6538,6 +6538,8 @@ ath_capture(struct net_device *dev, cons
  	}
  	
  	ieee80211_input_monitor(ic, tskb, bf, tx, tsf, sc);

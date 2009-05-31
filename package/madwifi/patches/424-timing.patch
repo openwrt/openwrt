@@ -16,7 +16,7 @@
  
  	return 0;
  bad3:
-@@ -2672,6 +2674,7 @@ ath_init(struct net_device *dev)
+@@ -2673,6 +2675,7 @@ ath_init(struct net_device *dev)
  	 */
  	ath_chan_change(sc, ic->ic_curchan);
  	ath_set_ack_bitrate(sc, sc->sc_ackrate);
@@ -24,7 +24,7 @@
  	dev->flags |= IFF_RUNNING;		/* we are ready to go */
  	ieee80211_start_running(ic);		/* start all VAPs */
  #ifdef ATH_TX99_DIAG
-@@ -4483,17 +4486,52 @@ ath_mode_init(struct net_device *dev)
+@@ -4484,17 +4487,52 @@ ath_mode_init(struct net_device *dev)
   * Set the slot time based on the current setting.
   */
  static void
@@ -82,7 +82,7 @@
  	sc->sc_updateslot = OK;
  }
  
-@@ -4515,7 +4553,7 @@ ath_updateslot(struct net_device *dev)
+@@ -4516,7 +4554,7 @@ ath_updateslot(struct net_device *dev)
  	if (ic->ic_opmode == IEEE80211_M_HOSTAP)
  		sc->sc_updateslot = UPDATE;
  	else if (dev->flags & IFF_RUNNING)
@@ -91,7 +91,7 @@
  }
  
  #ifdef ATH_SUPERG_DYNTURBO
-@@ -5359,7 +5397,7 @@ ath_beacon_send(struct ath_softc *sc, in
+@@ -5360,7 +5398,7 @@ ath_beacon_send(struct ath_softc *sc, in
  		sc->sc_updateslot = COMMIT;	/* commit next beacon */
  		sc->sc_slotupdate = slot;
  	} else if ((sc->sc_updateslot == COMMIT) && (sc->sc_slotupdate == slot))
@@ -100,7 +100,7 @@
  
  	if (bfaddr != 0) {
  		/*
-@@ -9429,7 +9467,8 @@ ath_set_coverageclass(struct ieee80211co
+@@ -9430,7 +9468,8 @@ ath_set_coverageclass(struct ieee80211co
  {
  	struct ath_softc *sc = ic->ic_dev->priv;
  
@@ -110,7 +110,7 @@
  
  	return;
  }
-@@ -10950,6 +10989,7 @@ enum {
+@@ -10953,6 +10992,7 @@ enum {
  	ATH_OFDM_WEAK_DET	= 29,
  	ATH_CHANBW		= 30,
  	ATH_OUTDOOR		= 31,
@@ -118,7 +118,7 @@
  };
  
  /*
-@@ -11162,21 +11202,31 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11165,21 +11205,31 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  					sc->sc_slottimeconf = val;
  				else
  					sc->sc_slottimeconf = 0;
@@ -153,7 +153,7 @@
  				break;
  			case ATH_SOFTLED:
  				if (val != sc->sc_softled) {
-@@ -11332,6 +11382,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11335,6 +11385,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  		case ATH_CHANBW:
  			val = sc->sc_chanbw ?: 20;
  			break;
@@ -163,7 +163,7 @@
  		case ATH_SLOTTIME:
  			val = ath_hal_getslottime(ah);
  			break;
-@@ -11453,6 +11506,12 @@ static const ctl_table ath_sysctl_templa
+@@ -11456,6 +11509,12 @@ static const ctl_table ath_sysctl_templa
  	  .extra2	= (void *)ATH_CTSTIMEOUT,
  	},
  	{ .ctl_name	= CTL_AUTO,
@@ -232,7 +232,7 @@
  struct ath_softc {
  	struct ieee80211com sc_ic;		/* NB: must be first */
  	struct net_device *sc_dev;
-@@ -838,6 +847,8 @@ struct ath_softc {
+@@ -839,6 +848,8 @@ struct ath_softc {
  						 * detected radars */
  	u_int32_t sc_nexttbtt;
  	u_int64_t sc_last_tsf;
@@ -241,7 +241,7 @@
  };
  
  typedef void (*ath_callback) (struct ath_softc *);
-@@ -945,49 +956,76 @@ int ar_device(int devid);
+@@ -946,49 +957,76 @@ int ar_device(int devid);
  	  DEV_NAME(_v->iv_ic->ic_dev))
  
  void ath_radar_detected(struct ath_softc *sc, const char* message);

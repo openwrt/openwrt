@@ -81,10 +81,10 @@
 -}
 -
  static const char ubnt[] = "Ubiquiti Networks";
+ /* { vendorname, cardname, vendorid, cardid, subsys vendorid, subsys id, poweroffset } */
  static const struct ath_hw_detect cards[] = {
- 	{
-@@ -266,6 +238,114 @@ static const struct ath_hw_detect cards[
- 	},
+@@ -201,6 +173,114 @@ static const struct ath_hw_detect cards[
+ 	{ ubnt, "Bullet5",             PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xc205 },
  };
  
 +static void
@@ -198,7 +198,7 @@
  static int
  init_ath_wmac(u_int16_t devid, u_int16_t wlanNum, struct ar531x_config *config)
  {
-@@ -318,7 +398,7 @@ init_ath_wmac(u_int16_t devid, u_int16_t
+@@ -253,7 +333,7 @@ init_ath_wmac(u_int16_t devid, u_int16_t
  	sc->aps_sc.sc_iobase = (void __iomem *) dev->mem_start;
  	sc->aps_sc.sc_bdev = NULL;
  
@@ -207,7 +207,7 @@
  		printk(KERN_WARNING "%s: %s: request_irq failed\n", dev_info, dev->name);
  		goto bad3;
  	}
-@@ -328,21 +408,12 @@ init_ath_wmac(u_int16_t devid, u_int16_t
+@@ -263,21 +343,12 @@ init_ath_wmac(u_int16_t devid, u_int16_t
  	athname = ath_hal_probe(ATHEROS_VENDOR_ID, devid);
  	printk(KERN_INFO "%s: %s: %s: mem=0x%lx, irq=%d\n",
  		dev_info, dev->name, athname ? athname : "Atheros ???", dev->mem_start, dev->irq);
@@ -230,7 +230,7 @@
  
  	return 0;
  
-@@ -357,6 +428,29 @@ init_ath_wmac(u_int16_t devid, u_int16_t
+@@ -292,6 +363,29 @@ init_ath_wmac(u_int16_t devid, u_int16_t
  	return -ENODEV;
  }
  
@@ -260,7 +260,7 @@
  static int ahb_wmac_probe(struct platform_device *pdev)
  {
  	u_int16_t devid;
-@@ -377,11 +471,18 @@ static int ahb_wmac_remove(struct platfo
+@@ -312,11 +406,18 @@ static int ahb_wmac_remove(struct platfo
  	return 0;
  }
  

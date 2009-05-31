@@ -411,7 +411,7 @@
  	return vap;
  }
  
-@@ -1605,6 +1607,7 @@ ath_vap_delete(struct ieee80211vap *vap)
+@@ -1606,6 +1608,7 @@ ath_vap_delete(struct ieee80211vap *vap)
  		decrease = 0;
  
  	ieee80211_vap_detach(vap);
@@ -419,7 +419,7 @@
  	/* NB: memory is reclaimed through dev->destructor callback */
  	if (decrease)
  		sc->sc_nvaps--;
-@@ -5939,6 +5942,7 @@ ath_node_cleanup(struct ieee80211_node *
+@@ -5940,6 +5943,7 @@ ath_node_cleanup(struct ieee80211_node *
  	/* Clean up node-specific rate things - this currently appears to 
  	 * always be a no-op */
  	sc->sc_rc->ops->node_cleanup(sc, ATH_NODE(ni));
@@ -427,7 +427,7 @@
  
  	ATH_NODE_UAPSD_LOCK_IRQ(an);
  #ifdef IEEE80211_DEBUG_REFCNT
-@@ -7009,6 +7013,8 @@ drop_micfail:
+@@ -7010,6 +7014,8 @@ drop_micfail:
  				goto lookup_slowpath;
  			}
  			ATH_RSSI_LPF(ATH_NODE(ni)->an_avgrssi, rs->rs_rssi);
@@ -436,7 +436,7 @@
  			type = ieee80211_input(ni->ni_vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  			ieee80211_unref_node(&ni);
  		} else {
-@@ -7019,15 +7025,22 @@ drop_micfail:
+@@ -7020,15 +7026,22 @@ drop_micfail:
  
  lookup_slowpath:
  			vap = ieee80211_find_rxvap(ic, wh->i_addr1);
@@ -461,7 +461,7 @@
  				type = ieee80211_input(vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  				/*
  				 * If the station has a key cache slot assigned
-@@ -8607,6 +8620,7 @@ ath_tx_processq(struct ath_softc *sc, st
+@@ -8608,6 +8621,7 @@ ath_tx_processq(struct ath_softc *sc, st
  				sc->sc_stats.ast_tx_rssi = ts->ts_rssi;
  				ATH_RSSI_LPF(an->an_halstats.ns_avgtxrssi,
  					ts->ts_rssi);
@@ -469,7 +469,7 @@
  				if (bf->bf_skb->priority == WME_AC_VO ||
  				    bf->bf_skb->priority == WME_AC_VI)
  					ni->ni_ic->ic_wme.wme_hipri_traffic++;
-@@ -10106,6 +10120,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10107,6 +10121,7 @@ ath_newassoc(struct ieee80211_node *ni, 
  	struct ath_softc *sc = ic->ic_dev->priv;
  
  	sc->sc_rc->ops->newassoc(sc, ATH_NODE(ni), isnew);

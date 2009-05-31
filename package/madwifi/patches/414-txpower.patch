@@ -165,7 +165,7 @@
  
  static void ath_poll_disable(struct net_device *dev);
  static void ath_poll_enable(struct net_device *dev);
-@@ -3167,7 +3166,7 @@ ath_tx_startraw(struct net_device *dev, 
+@@ -3168,7 +3167,7 @@ ath_tx_startraw(struct net_device *dev, 
  	try0 = ph->try0;
  	rt = sc->sc_currates;
  	txrate = dot11_to_ratecode(sc, rt, ph->rate0);
@@ -174,7 +174,7 @@
  	hdrlen = ieee80211_anyhdrsize(wh);
  	pktlen = skb->len + IEEE80211_CRC_LEN;
  
-@@ -8389,7 +8388,7 @@ ath_tx_start(struct net_device *dev, str
+@@ -8390,7 +8389,7 @@ ath_tx_start(struct net_device *dev, str
  			    pktlen,			/* packet length */
  			    hdrlen,			/* header length */
  			    atype,			/* Atheros packet type */
@@ -183,7 +183,7 @@
  			    txrate, try0,		/* series 0 rate/tries */
  			    keyix,			/* key cache index */
  			    antenna,			/* antenna mode */
-@@ -10380,59 +10379,16 @@ ath_get_clamped_maxtxpower(struct ath_so
+@@ -10383,59 +10382,16 @@ ath_get_clamped_maxtxpower(struct ath_so
  
  /* XXX: this function needs some locking to avoid being called 
   * twice/interrupted */

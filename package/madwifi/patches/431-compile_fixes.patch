@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -2387,7 +2387,9 @@ ath_intr(int irq, void *dev_id, struct p
+@@ -2388,7 +2388,9 @@ ath_intr(int irq, void *dev_id, struct p
  		if (status & (HAL_INT_RX | HAL_INT_RXPHY)) {
  			ath_uapsd_processtriggers(sc, hw_tsf);
  			sc->sc_isr &= ~HAL_INT_RX;
@@ -11,7 +11,7 @@
  			if (netif_rx_schedule_prep(dev, &sc->sc_napi))
  #else
  			if (netif_rx_schedule_prep(dev))
-@@ -2395,7 +2397,9 @@ ath_intr(int irq, void *dev_id, struct p
+@@ -2396,7 +2398,9 @@ ath_intr(int irq, void *dev_id, struct p
  			{
  				sc->sc_imask &= ~HAL_INT_RX;
  				ath_hal_intrset(ah, sc->sc_imask);
@@ -22,7 +22,7 @@
  				__netif_rx_schedule(dev, &sc->sc_napi);
  #else
  				__netif_rx_schedule(dev);
-@@ -7131,7 +7135,9 @@ rx_next:
+@@ -7132,7 +7136,9 @@ rx_next:
  		local_irq_restore(flags);
  	}
  
