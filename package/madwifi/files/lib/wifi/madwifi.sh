@@ -217,52 +217,9 @@ enable_atheros() {
 				}
 			;;
 		esac
-		config_get ssid "$vif" ssid
 
 		config_get_bool bgscan "$vif" bgscan
 		[ -n "$bgscan" ] && iwpriv "$ifname" bgscan "$bgscan"
-
-		config_get_bool antdiv "$device" diversity
-		config_get antrx "$device" rxantenna
-		config_get anttx "$device" txantenna
-		config_get_bool softled "$device" softled 1
-
-		devname="$(cat /proc/sys/dev/$device/dev_name)"
-		antgpio=
-		case "$devname" in
-			NanoStation2) antgpio=7;;
-			NanoStation5) antgpio=1;;
-		esac
-		if [ -n "$antgpio" ]; then
-			softled=0
-			config_get antenna "$device" antenna
-			case "$antenna" in
-				external) antdiv=0; antrx=1; anttx=1 ;;
-				horizontal) antdiv=0; antrx=1; anttx=1 ;;
-				vertical) antdiv=0; antrx=2; anttx=2 ;;
-				auto) antdiv=1; antrx=0; anttx=0 ;;
-			esac
-			
-			[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
-			case "$antenna" in
-				horizontal|vertical|auto)
-					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-					gpioctl "set" "$antgpio" >/dev/null 2>&1
-				;;
-				external)
-					gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-					gpioctl "clear" "$antgpio" >/dev/null 2>&1
-				;;
-			esac
-		fi
-
-		[ -n "$antdiv" ] && sysctl -w dev."$device".diversity="$antdiv" >&-
-		[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
-		[ -n "$anttx" ] && sysctl -w dev."$device".txantenna="$anttx" >&-
-		[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
-
-		config_get distance "$device" distance
-		[ -n "$distance" ] && sysctl -w dev."$device".distance="$distance" >&-
 
 		config_get rate "$vif" rate
 		[ -n "$rate" ] && iwconfig "$ifname" rate "${rate%%.*}"
@@ -338,10 +295,13 @@ enable_atheros() {
 			config_set "$vif" bridge "$bridge"
 			start_net "$ifname" "$net_cfg"
 		}
+
+		config_get ssid "$vif" ssid
 		[ -n "$ssid" ] && {
 			iwconfig "$ifname" essid on
 			iwconfig "$ifname" essid "$ssid"
 		}
+
 		set_wifi_up "$vif" "$ifname"
 
 		# TXPower settings only work if device is up already
