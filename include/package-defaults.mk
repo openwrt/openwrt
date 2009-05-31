@@ -70,7 +70,7 @@ CONFIGURE_VARS = \
 		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
 
 CONFIGURE_PATH = .
-CONFIGURE_CMD = ./configure
+CONFIGURE_CMD = $(CONFIGURE_PATH)/configure
 
 replace_script=$(FIND) $(1) -name $(2) | $(XARGS) chmod u+w; $(FIND) $(1) -name $(2) | $(XARGS) -n1 cp $(SCRIPT_DIR)/$(2);
 
@@ -116,4 +116,12 @@ define Build/Install/Default
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_INSTALL_FLAGS) \
 		$(1) install;
+endef
+
+define Build/Dist/Default
+	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" CC="$(TARGET_CC)" dist)
+endef
+
+define Build/DistCheck/Default
+	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" CC="$(TARGET_CC)" distcheck)
 endef
