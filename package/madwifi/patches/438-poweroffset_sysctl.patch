@@ -1,0 +1,43 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -11029,6 +11029,7 @@ enum {
+ 	ATH_DEBUG,
+ 	ATH_TXANTENNA,
+ 	ATH_RXANTENNA,
++	ATH_POWEROFFSET,
+ 	ATH_DIVERSITY,
+ 	ATH_TXINTRPERIOD,
+ 	ATH_FFTXQMIN,
+@@ -11309,6 +11310,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+ 				ath_debug_global = (val &  ATH_DEBUG_GLOBAL);
+ #endif
+ 				break;
++			case ATH_POWEROFFSET:
++				sc->sc_poweroffset = val;
++				break;
+ 			case ATH_TXANTENNA:
+ 				/*
+ 				 * antenna can be:
+@@ -11476,6 +11480,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+ 		case ATH_DEBUG:
+ 			val = sc->sc_debug | ath_debug_global;
+ 			break;
++		case ATH_POWEROFFSET:
++			val = sc->sc_poweroffset;
++			break;
+ 		case ATH_TXANTENNA:
+ 			val = sc->sc_txantenna;
+ 			break;
+@@ -11617,6 +11624,12 @@ static const ctl_table ath_sysctl_templa
+ 	},
+ #endif
+ 	{ .ctl_name	= CTL_AUTO,
++	  .procname	= "poweroffset",
++	  .mode		= 0644,
++	  .proc_handler	= ath_sysctl_halparam,
++	  .extra2	= (void *)ATH_POWEROFFSET,
++	},
++	{ .ctl_name	= CTL_AUTO,
+ 	  .procname	= "txantenna",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,

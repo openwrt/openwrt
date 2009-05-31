@@ -33,7 +33,7 @@
  	/* Allocate space for dynamically determined maximum VAP count */
  	sc->sc_bslot = 
  		kmalloc(ath_maxvaps * sizeof(struct ieee80211vap*), GFP_KERNEL);
-@@ -1508,6 +1520,28 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1508,6 +1520,29 @@ ath_vap_create(struct ieee80211com *ic, 
  	return vap;
  }
  
@@ -55,6 +55,7 @@
 +			continue;
 +
 +		sc->sc_hwinfo = c;
++		sc->sc_poweroffset = c->poweroffset;
 +		break;
 +	}
 +}
@@ -62,7 +63,23 @@
  static void
  ath_vap_delete(struct ieee80211vap *vap)
  {
-@@ -10821,6 +10855,12 @@ ath_ioctl(struct net_device *dev, struct
+@@ -10225,6 +10260,7 @@ static u_int32_t
+ ath_set_clamped_maxtxpower(struct ath_softc *sc, 
+ 		u_int32_t new_clamped_maxtxpower)
+ {
++	new_clamped_maxtxpower -= sc->sc_poweroffset;
+ 	(void)ath_hal_settxpowlimit(sc->sc_ah, new_clamped_maxtxpower);
+ 	return ath_get_clamped_maxtxpower(sc);
+ }
+@@ -10238,6 +10274,7 @@ ath_get_clamped_maxtxpower(struct ath_so
+ {
+ 	u_int32_t clamped_maxtxpower;
+ 	(void)ath_hal_getmaxtxpow(sc->sc_ah, &clamped_maxtxpower);
++	clamped_maxtxpower += sc->sc_poweroffset;
+ 	return clamped_maxtxpower;
+ }
+ 
+@@ -10821,6 +10858,12 @@ ath_ioctl(struct net_device *dev, struct
   * is to add module parameters.
   */
  
@@ -75,7 +92,7 @@
  /*
   * Dynamic (i.e. per-device) sysctls.  These are automatically
   * mirrored in /proc/sys.
-@@ -10900,6 +10940,38 @@ ath_sysctl_get_intmit(struct ath_softc *
+@@ -10900,6 +10943,38 @@ ath_sysctl_get_intmit(struct ath_softc *
  }
  
  static int
@@ -114,7 +131,7 @@
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
-@@ -11179,6 +11251,24 @@ static int maxint = 0x7fffffff;		/* 32-b
+@@ -11179,6 +11254,24 @@ static int maxint = 0x7fffffff;		/* 32-b
  
  static const ctl_table ath_sysctl_template[] = {
  	{ .ctl_name	= CTL_AUTO,
@@ -174,7 +191,15 @@
  
  	unsigned int 	sc_invalid:1;		/* being detached */
  	unsigned int	sc_mrretry:1;		/* multi-rate retry support */
-@@ -929,4 +935,15 @@ int ar_device(int devid);
+@@ -683,6 +689,7 @@ struct ath_softc {
+ 	const HAL_RATE_TABLE *sc_quarter_rates;	/* quarter rate table */
+ 	HAL_OPMODE sc_opmode;			/* current hal operating mode */
+ 	enum ieee80211_phymode sc_curmode;	/* current phy mode */
++	u_int sc_poweroffset;			/* hardware power offset */
+ 	u_int16_t sc_curtxpow;			/* current tx power limit */
+ 	u_int16_t sc_curaid;			/* current association id */
+ 	HAL_CHANNEL sc_curchan;			/* current h/w channel */
+@@ -929,4 +936,16 @@ int ar_device(int devid);
  
  void ath_radar_detected(struct ath_softc *sc, const char* message);
  
@@ -185,6 +210,7 @@
 +	u32 id;
 +	u32 subvendor;
 +	u32 subid;
++	u32 poweroffset;
 +};
 +
 +extern void ath_hw_detect(struct ath_softc *sc, const struct ath_hw_detect *cards, int n_cards, u32 vendor, u32 id, u32 subvendor, u32 subid);
@@ -200,92 +226,27 @@
  
  #include <asm/io.h>
  #include <asm/uaccess.h>
-@@ -181,12 +182,97 @@ exit_ath_wmac(u_int16_t wlanNum, struct 
+@@ -181,12 +182,32 @@ exit_ath_wmac(u_int16_t wlanNum, struct 
  	return 0;
  }
  
 +static const char ubnt[] = "Ubiquiti Networks";
++/* { vendorname, cardname, vendorid, cardid, subsys vendorid, subsys id, poweroffset } */
 +static const struct ath_hw_detect cards[] = {
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "PowerStation2 (18V)",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xb102,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "PowerStation2 (16D)",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xb202,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "PowerStation2 (EXT)",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xb302,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "PowerStation5 (22V)",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xb105,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "PowerStation5 (EXT)",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xb305,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "WispStation5",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xa105,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "LiteStation2",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xa002,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "LiteStation5",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xa005,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "NanoStation2",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xc002,
-+	},
-+	{
-+		.vendor_name = ubnt,
-+		.card_name = "NanoStation5",
-+		.vendor = PCI_ANY_ID,
-+		.id = PCI_ANY_ID,
-+		.subvendor = PCI_ANY_ID,
-+		.subid = 0xc005,
-+	},
++	{ ubnt, "PowerStation2 (18V)", PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xb102 },
++	{ ubnt, "PowerStation2 (16D)", PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xb202 },
++	{ ubnt, "PowerStation2 (EXT)", PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xb302 },
++	{ ubnt, "PowerStation5 (22V)", PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xb105 },
++	{ ubnt, "PowerStation5 (EXT)", PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xb305 },
++	{ ubnt, "WispStation5",        PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xa105 },
++	{ ubnt, "LiteStation2",        PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xa002 },
++	{ ubnt, "LiteStation5",        PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xa005 },
++	{ ubnt, "NanoStation2",        PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xc002 },
++	{ ubnt, "NanoStation5",        PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xc005 },
++	{ ubnt, "NanoStation Loco2",   PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xc102 },
++	{ ubnt, "NanoStation Loco5",   PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xc105 },
++	{ ubnt, "Bullet2",             PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xc202 },
++	{ ubnt, "Bullet5",             PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, 0xc205 },
 +};
 +
  static int
@@ -298,7 +259,7 @@
  
  	if (((wlanNum != 0) && (wlanNum != 1)) ||
  		(sclist[wlanNum] != NULL))
-@@ -248,6 +334,16 @@ init_ath_wmac(u_int16_t devid, u_int16_t
+@@ -248,6 +269,16 @@ init_ath_wmac(u_int16_t devid, u_int16_t
  	sc->aps_sc.sc_softled = 1; /* SoftLED over GPIO */
  	sc->aps_sc.sc_ledpin = config->board->sysLedGpio;
  	sc->aps_sc.sc_invalid = 0;
@@ -315,3 +276,50 @@
  	return 0;
  
   bad4:
+--- a/ath/if_ath_pci.c
++++ b/ath/if_ath_pci.c
+@@ -123,6 +123,33 @@ static u16 ath_devidmap[][2] = {
+ 	{ 0xff1a, 0x001a }
+ };
+ 
++static const char ubnt[] = "Ubiquiti Networks";
++/* { vendorname, cardname, vendorid, cardid, subsys vendorid, subsys id, poweroffset } */
++static const struct ath_hw_detect cards[] = {
++	{ ubnt, "XR2",     0x168c, 0x001b, 0x0777, 0x3002, 10 },
++	{ ubnt, "XR2",     0x168c, 0x001b, 0x7777, 0x3002, 10 },
++	{ ubnt, "XR2.3",   0x168c, 0x001b, 0x0777, 0x3b02, 10 },
++	{ ubnt, "XR2.6",   0x168c, 0x001b, 0x0777, 0x3c02, 10 },
++	{ ubnt, "XR3-2.8", 0x168c, 0x001b, 0x0777, 0x3b03, 10 },
++	{ ubnt, "XR3-3.6", 0x168c, 0x001b, 0x0777, 0x3c03, 10 },
++	{ ubnt, "XR3",     0x168c, 0x001b, 0x0777, 0x3003, 10 },
++	{ ubnt, "XR4",     0x168c, 0x001b, 0x0777, 0x3004, 10 },
++	{ ubnt, "XR5",     0x168c, 0x001b, 0x0777, 0x3005, 10 },
++	{ ubnt, "XR5",     0x168c, 0x001b, 0x7777, 0x3005, 10 },
++	{ ubnt, "XR7",     0x168c, 0x001b, 0x0777, 0x3007, 10 },
++	{ ubnt, "XR9",     0x168c, 0x001b, 0x0777, 0x3009, 10 },
++	{ ubnt, "SRC",     0x168c, 0x0013, 0x168c, 0x1042, 1 },
++	{ ubnt, "SR2",     0x168c, 0x0013, 0x0777, 0x2041, 10 },
++	{ ubnt, "SR4",     0x168c, 0x0013, 0x0777, 0x2004, 6 },
++	{ ubnt, "SR4",     0x168c, 0x0013, 0x7777, 0x2004, 6 },
++	{ ubnt, "SR4C",    0x168c, 0x0013, 0x0777, 0x1004, 6 },
++	{ ubnt, "SR4C",    0x168c, 0x0013, 0x7777, 0x1004, 6 },
++	{ ubnt, "SR5",     0x168c, 0x0013, 0x168c, 0x2042, 7 },
++	{ ubnt, "SR9",     0x168c, 0x0013, 0x7777, 0x2009, 12 },
++	{ ubnt, "SR71A",   0x168c, 0x0027, 0x168c, 0x2082, 10 },
++	{ ubnt, "SR71",    0x168c, 0x0027, 0x0777, 0x4082, 10 },
++};
++
+ static int
+ ath_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+ {
+@@ -257,6 +284,10 @@ ath_pci_probe(struct pci_dev *pdev, cons
+ 	printk(KERN_INFO "%s: %s: %s: mem=0x%lx, irq=%d\n",
+ 		dev_info, dev->name, athname ? athname : "Atheros ???", phymem, dev->irq);
+ 
++	ath_hw_detect(&sc->aps_sc, cards, ARRAY_SIZE(cards),
++		pdev->vendor, pdev->device,
++		pdev->subsystem_vendor, pdev->subsystem_device);
++
+ 	/* ready to process interrupts */
+ 	sc->aps_sc.sc_invalid = 0;
+ 

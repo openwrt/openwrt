@@ -8,7 +8,7 @@
  	sc->sc_rc = ieee80211_rate_attach(sc, ratectl);
  	if (sc->sc_rc == NULL) {
  		error = EIO;
-@@ -2623,9 +2622,6 @@ ath_init(struct net_device *dev)
+@@ -2624,9 +2623,6 @@ ath_init(struct net_device *dev)
  	ath_radar_update(sc);
  	ath_rp_flush(sc);
  
@@ -18,7 +18,7 @@
  	/*
  	 * Setup the hardware after reset: the key cache
  	 * is filled as needed and the receive engine is
-@@ -3018,7 +3014,6 @@ ath_reset(struct net_device *dev)
+@@ -3019,7 +3015,6 @@ ath_reset(struct net_device *dev)
  	ath_setintmit(sc);
  	ath_update_txpow(sc);		/* update tx power state */
  	ath_radar_update(sc);
@@ -26,7 +26,7 @@
  	if (ath_startrecv(sc) != 0)	/* restart recv */
  		EPRINTF(sc, "Unable to start receive logic.\n");
  	if (sc->sc_softled)
-@@ -5352,27 +5347,6 @@ ath_beacon_send(struct ath_softc *sc, in
+@@ -5353,27 +5348,6 @@ ath_beacon_send(struct ath_softc *sc, in
  	} else if ((sc->sc_updateslot == COMMIT) && (sc->sc_slotupdate == slot))
  		ath_setslottime(sc);		/* commit change to hardware */
  
@@ -54,7 +54,7 @@
  	if (bfaddr != 0) {
  		/*
  		 * Stop any current DMA and put the new frame(s) on the queue.
-@@ -6733,9 +6707,8 @@ ath_setdefantenna(struct ath_softc *sc, 
+@@ -6734,9 +6708,8 @@ ath_setdefantenna(struct ath_softc *sc, 
  {
  	struct ath_hal *ah = sc->sc_ah;
  
@@ -65,7 +65,7 @@
  	if (sc->sc_defant != antenna)
  		sc->sc_stats.ast_ant_defswitch++;
  	sc->sc_defant = antenna;
-@@ -11154,7 +11127,7 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11157,7 +11130,7 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  					break;
  				}
  				sc->sc_diversity = val;

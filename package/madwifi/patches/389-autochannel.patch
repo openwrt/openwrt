@@ -8,7 +8,7 @@
  
  /* calibrate every 30 secs in steady state but check every second at first. */
  static int ath_calinterval = ATH_SHORT_CALINTERVAL;
-@@ -2580,6 +2581,7 @@ ath_init(struct net_device *dev)
+@@ -2581,6 +2582,7 @@ ath_init(struct net_device *dev)
  	 * be followed by initialization of the appropriate bits
  	 * and then setup of the interrupt mask.
  	 */
@@ -16,7 +16,7 @@
  	sc->sc_curchan.channel = ic->ic_curchan->ic_freq;
  	sc->sc_curchan.channelFlags = ath_chan2flags(ic->ic_curchan);
  	if (!ath_hal_reset(ah, sc->sc_opmode, &sc->sc_curchan, AH_FALSE, &status)) {
-@@ -2913,6 +2915,48 @@ ath_hw_check_atim(struct ath_softc *sc, 
+@@ -2914,6 +2916,48 @@ ath_hw_check_atim(struct ath_softc *sc, 
  	return 0;
  }
  
@@ -65,7 +65,7 @@
  
  /*
   * Reset the hardware w/o losing operational state.  This is
-@@ -2940,6 +2984,7 @@ ath_reset(struct net_device *dev)
+@@ -2941,6 +2985,7 @@ ath_reset(struct net_device *dev)
  	 * Convert to a HAL channel description with the flags
  	 * constrained to reflect the current operating mode.
  	 */
@@ -73,7 +73,7 @@
  	c = ic->ic_curchan;
  	sc->sc_curchan.channel = c->ic_freq;
  	sc->sc_curchan.channelFlags = ath_chan2flags(c);
-@@ -9022,6 +9067,7 @@ ath_chan_set(struct ath_softc *sc, struc
+@@ -9023,6 +9068,7 @@ ath_chan_set(struct ath_softc *sc, struc
  	u_int8_t channel_change_required = 0;
  	struct timeval tv;
  
@@ -81,7 +81,7 @@
  	/*
  	 * Convert to a HAL channel description with
  	 * the flags constrained to reflect the current
-@@ -9030,6 +9076,14 @@ ath_chan_set(struct ath_softc *sc, struc
+@@ -9031,6 +9077,14 @@ ath_chan_set(struct ath_softc *sc, struc
  	memset(&hchan, 0, sizeof(HAL_CHANNEL));
  	hchan.channel = chan->ic_freq;
  	hchan.channelFlags = ath_chan2flags(chan);
@@ -98,7 +98,7 @@
  	do_gettimeofday(&tv);
 --- a/ath/if_athvar.h
 +++ b/ath/if_athvar.h
-@@ -773,6 +773,7 @@ struct ath_softc {
+@@ -774,6 +774,7 @@ struct ath_softc {
  	struct ieee80211vap **sc_bslot;		/* beacon xmit slots */
  	int sc_bnext;				/* next slot for beacon xmit */
  

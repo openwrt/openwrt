@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -2307,6 +2307,17 @@ ath_intr(int irq, void *dev_id, struct p
+@@ -2308,6 +2308,17 @@ ath_intr(int irq, void *dev_id, struct p
  
  	sc->sc_isr = status;
  	status &= sc->sc_imask;			/* discard unasked for bits */
@@ -18,7 +18,7 @@
  	/* As soon as we know we have a real interrupt we intend to service, 
  	 * we will check to see if we need an initial hardware TSF reading. 
  	 * Normally we would just populate this all the time to keep things
-@@ -2319,10 +2330,6 @@ ath_intr(int irq, void *dev_id, struct p
+@@ -2320,10 +2331,6 @@ ath_intr(int irq, void *dev_id, struct p
  		sc->sc_stats.ast_hardware++;
  		ath_hal_intrset(ah, 0);		/* disable intr's until reset */
  		ATH_SCHEDULE_TQUEUE(&sc->sc_fataltq, &needmark);
