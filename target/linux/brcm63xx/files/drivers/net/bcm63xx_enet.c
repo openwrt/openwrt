@@ -450,7 +450,7 @@ static int bcm_enet_poll(struct napi_struct *napi, int budget)
 
 	/* no more packet in rx/tx queue, remove device from poll
 	 * queue */
-	__netif_rx_complete(dev, napi);
+	netif_rx_complete(dev, napi);
 
 	/* restore rx/tx interrupt */
 	enet_dma_writel(priv, ENETDMA_IR_PKTDONE_MASK,
