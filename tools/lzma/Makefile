@@ -18,9 +18,11 @@ HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/host-build.mk
 
 UTIL_DIR=$(HOST_BUILD_DIR)/C/LzmaUtil
+ALONE_DIR=$(HOST_BUILD_DIR)/CPP/7zip/Compress/LZMA_Alone
 
 define Host/Compile
 	$(MAKE) -C $(UTIL_DIR) -f makefile.gcc
+	$(MAKE) -C $(ALONE_DIR) -f makefile.gcc
 endef
 
 define Host/Install
