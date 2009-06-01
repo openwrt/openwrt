@@ -1,0 +1,112 @@
+From: Nicolas Pitre <nico@cam.org>
+Date: Fri, 22 May 2009 20:53:40 +0000 (-0400)
+Subject: [ARM] add coherent DMA mask for mv643xx_eth
+X-Git-Url: http://git.marvell.com/?p=orion.git;a=commitdiff_plain;h=a49a018a6ea6d73742a81d673fe5ec4a7d2137b3
+
+[ARM] add coherent DMA mask for mv643xx_eth
+
+Since commit eb0519b5a1cf, mv643xx_eth is non functional on ARM because
+the platform device declaration does not include any coherent DMA mask
+and coherent memory allocations fail.
+
+Signed-off-by: Nicolas Pitre <nico@marvell.com>
+---
+
+--- a/arch/arm/mach-kirkwood/common.c
++++ b/arch/arm/mach-kirkwood/common.c
+@@ -144,6 +144,9 @@ static struct platform_device kirkwood_g
+ 	.id		= 0,
+ 	.num_resources	= 1,
+ 	.resource	= kirkwood_ge00_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init kirkwood_ge00_init(struct mv643xx_eth_platform_data *eth_data)
+@@ -202,6 +205,9 @@ static struct platform_device kirkwood_g
+ 	.id		= 1,
+ 	.num_resources	= 1,
+ 	.resource	= kirkwood_ge01_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init kirkwood_ge01_init(struct mv643xx_eth_platform_data *eth_data)
+--- a/arch/arm/mach-loki/common.c
++++ b/arch/arm/mach-loki/common.c
+@@ -82,6 +82,9 @@ static struct platform_device loki_ge0 =
+ 	.id		= 0,
+ 	.num_resources	= 1,
+ 	.resource	= loki_ge0_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init loki_ge0_init(struct mv643xx_eth_platform_data *eth_data)
+@@ -136,6 +139,9 @@ static struct platform_device loki_ge1 =
+ 	.id		= 1,
+ 	.num_resources	= 1,
+ 	.resource	= loki_ge1_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init loki_ge1_init(struct mv643xx_eth_platform_data *eth_data)
+--- a/arch/arm/mach-mv78xx0/common.c
++++ b/arch/arm/mach-mv78xx0/common.c
+@@ -321,6 +321,9 @@ static struct platform_device mv78xx0_ge
+ 	.id		= 0,
+ 	.num_resources	= 1,
+ 	.resource	= mv78xx0_ge00_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init mv78xx0_ge00_init(struct mv643xx_eth_platform_data *eth_data)
+@@ -375,6 +378,9 @@ static struct platform_device mv78xx0_ge
+ 	.id		= 1,
+ 	.num_resources	= 1,
+ 	.resource	= mv78xx0_ge01_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init mv78xx0_ge01_init(struct mv643xx_eth_platform_data *eth_data)
+@@ -429,6 +435,9 @@ static struct platform_device mv78xx0_ge
+ 	.id		= 2,
+ 	.num_resources	= 1,
+ 	.resource	= mv78xx0_ge10_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init mv78xx0_ge10_init(struct mv643xx_eth_platform_data *eth_data)
+@@ -496,6 +505,9 @@ static struct platform_device mv78xx0_ge
+ 	.id		= 3,
+ 	.num_resources	= 1,
+ 	.resource	= mv78xx0_ge11_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init mv78xx0_ge11_init(struct mv643xx_eth_platform_data *eth_data)
+--- a/arch/arm/mach-orion5x/common.c
++++ b/arch/arm/mach-orion5x/common.c
+@@ -188,6 +188,9 @@ static struct platform_device orion5x_et
+ 	.id		= 0,
+ 	.num_resources	= 1,
+ 	.resource	= orion5x_eth_resources,
++	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
++	},
+ };
+ 
+ void __init orion5x_eth_init(struct mv643xx_eth_platform_data *eth_data)
