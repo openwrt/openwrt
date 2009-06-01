@@ -25,9 +25,6 @@
 #include <asm/ar7/ar7.h>
 #include <asm/ar7/prom.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24) /* TODO remove when 2.6.24 is stable */
-extern void ar7_time_init(void);
-#endif
 static void ar7_machine_restart(char *command);
 static void ar7_machine_halt(void);
 static void ar7_machine_power_off(void);
@@ -86,9 +83,6 @@ void __init plat_mem_setup(void)
 	_machine_restart = ar7_machine_restart;
 	_machine_halt = ar7_machine_halt;
 	pm_power_off = ar7_machine_power_off;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24) /* TODO remove when 2.6.24 is stable */
-	board_time_init = ar7_time_init;
-#endif
 	panic_timeout = 3;
 
 	io_base = (unsigned long)ioremap(AR7_REGS_BASE, 0x10000);
