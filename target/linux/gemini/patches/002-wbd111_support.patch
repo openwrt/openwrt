@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/mach-gemini/board-wbd111.c
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,125 @@
 +/*
 + *  Support for Wiliboard WBD-111
 + *
@@ -109,6 +109,7 @@
 +{
 +	gemini_gpio_init();
 +	platform_register_uart();
++	platform_register_watchdog();
 +	platform_register_pflash(SZ_8M, NULL, 0);
 +	platform_device_register(&wbd111_leds_device);
 +	platform_device_register(&wbd111_keys_device);
