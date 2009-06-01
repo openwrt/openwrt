@@ -97,9 +97,6 @@ endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif
-ifeq ($(BOARD),storm)
-  HAL_TARGET:=armv4-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
-endif
 ifeq ($(BOARD),gemini)
   HAL_TARGET:=armv4-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
 endif
