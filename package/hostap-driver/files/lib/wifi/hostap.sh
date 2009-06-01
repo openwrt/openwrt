@@ -54,9 +54,13 @@ enable_prism2() {
 	local device="$1"
 
 	config_get rxantenna "$device" rxantenna
-	[ -n "$rxantenna" ] && iwpriv $device antsel_rx "$rxantenna"
-
 	config_get txantenna "$device" txantenna
+	config_get_bool diversity "$device" diversity
+	[ -n "$diversity" ] && {
+		rxantenna="1"
+		txantenna="1"
+	}
+	[ -n "$rxantenna" ] && iwpriv $device antsel_rx "$rxantenna"
 	[ -n "$txantenna" ] && iwpriv $device antsel_tx "$txantenna"
 
 	config_get channel "$device" channel
