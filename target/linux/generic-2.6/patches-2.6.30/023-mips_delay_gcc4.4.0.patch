@@ -21,11 +21,9 @@ Signed-off-by: Wu Zhangjin <wuzhangjin@gmail.com>
  arch/mips/include/asm/delay.h    |   58 +++++++++++++++++++++++++------------
  3 files changed, 57 insertions(+), 20 deletions(-)
 
-diff --git a/arch/mips/Makefile b/arch/mips/Makefile
-index a25c2e5..1ee5504 100644
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -120,7 +120,14 @@ cflags-$(CONFIG_CPU_R4300)	+= -march=r4300 -Wa,--trap
+@@ -120,7 +120,14 @@ cflags-$(CONFIG_CPU_R4300)	+= -march=r43
  cflags-$(CONFIG_CPU_VR41XX)	+= -march=r4100 -Wa,--trap
  cflags-$(CONFIG_CPU_R4X00)	+= -march=r4600 -Wa,--trap
  cflags-$(CONFIG_CPU_TX49XX)	+= -march=r4600 -Wa,--trap
@@ -41,8 +39,6 @@ index a25c2e5..1ee5504 100644
  cflags-$(CONFIG_CPU_MIPS32_R1)	+= $(call cc-option,-march=mips32,-mips32 -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32) \
  			-Wa,-mips32 -Wa,--trap
  cflags-$(CONFIG_CPU_MIPS32_R2)	+= $(call cc-option,-march=mips32r2,-mips32r2 -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32) \
-diff --git a/arch/mips/include/asm/compiler.h b/arch/mips/include/asm/compiler.h
-index 71f5c5c..95256a8 100644
 --- a/arch/mips/include/asm/compiler.h
 +++ b/arch/mips/include/asm/compiler.h
 @@ -1,5 +1,6 @@
@@ -66,8 +62,6 @@ index 71f5c5c..95256a8 100644
 +#endif
 +
  #endif /* _ASM_COMPILER_H */
-diff --git a/arch/mips/include/asm/delay.h b/arch/mips/include/asm/delay.h
-index b0bccd2..00d7969 100644
 --- a/arch/mips/include/asm/delay.h
 +++ b/arch/mips/include/asm/delay.h
 @@ -7,6 +7,7 @@
@@ -78,7 +72,7 @@ index b0bccd2..00d7969 100644
   */
  #ifndef _ASM_DELAY_H
  #define _ASM_DELAY_H
-@@ -48,6 +49,43 @@ static inline void __delay(unsigned long loops)
+@@ -48,6 +49,43 @@ static inline void __delay(unsigned long
  		: "0" (loops), "r" (1));
  }
  
@@ -122,7 +116,7 @@ index b0bccd2..00d7969 100644
  
  /*
   * Division by multiplication: you don't have to worry about
-@@ -62,8 +100,6 @@ static inline void __delay(unsigned long loops)
+@@ -62,8 +100,6 @@ static inline void __delay(unsigned long
  
  static inline void __udelay(unsigned long usecs, unsigned long lpj)
  {
@@ -131,7 +125,7 @@ index b0bccd2..00d7969 100644
  	/*
  	 * The rates of 128 is rounded wrongly by the catchall case
  	 * for 64-bit.  Excessive precission?  Probably ...
-@@ -77,23 +113,7 @@ static inline void __udelay(unsigned long usecs, unsigned long lpj)
+@@ -77,23 +113,7 @@ static inline void __udelay(unsigned lon
  	                           0x80000000ULL) >> 32);
  #endif
  
@@ -156,8 +150,3 @@ index b0bccd2..00d7969 100644
  }
  
  #define __udelay_val cpu_data[raw_smp_processor_id()].udelay_val
--- 
-1.6.0.4
-
-
-
