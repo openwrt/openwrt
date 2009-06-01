@@ -276,9 +276,9 @@ enable_broadcom() {
 	wlc stdin <<EOF
 $ifdown
 
+apsta $apsta
 ap $ap
 ${mssid:+mssid $mssid}
-apsta $apsta
 infra $infra
 ${wet:+wet 1}
 802.11d 0
