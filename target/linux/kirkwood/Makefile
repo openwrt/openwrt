@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
-FEATURES:=jffs2 usb broken
+FEATURES:=tgz usb
 
 LINUX_VERSION:=2.6.30-rc7
 
