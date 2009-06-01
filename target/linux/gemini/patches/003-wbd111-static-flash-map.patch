@@ -9,7 +9,7 @@
  #include <asm/mach-types.h>
  #include <asm/mach/arch.h>
  #include <asm/mach/time.h>
-@@ -102,11 +104,50 @@ static struct sys_timer wbd111_timer = {
+@@ -102,12 +104,51 @@ static struct sys_timer wbd111_timer = {
  	.init	= gemini_timer_init,
  };
  
@@ -55,6 +55,7 @@
  {
  	gemini_gpio_init();
  	platform_register_uart();
+ 	platform_register_watchdog();
 -	platform_register_pflash(SZ_8M, NULL, 0);
 +	platform_register_pflash(SZ_8M, wbd111_partitions,
 +				 wbd111_num_partitions);
