@@ -28,10 +28,10 @@
 +
 +		t = kthread_create(random_proc, NULL, "ocf-random");
 +		if (IS_ERR(t)) {
++			ret = PTR_ERR(t);
  			printk("crypto: crypto_rregister cannot start random thread; "
  					"error %d", ret);
 -		} else
-+			ret = PTR_ERR(t);
 +		} else {
 +			random_task = t;
 +			wake_up_process(t);
