@@ -1,0 +1,229 @@
+--- a/arch/avr32/boards/atngw100/setup.c
++++ b/arch/avr32/boards/atngw100/setup.c
+@@ -118,7 +118,7 @@ static void __init set_hw_addr(struct pl
+ 
+ void __init setup_board(void)
+ {
+-	at32_map_usart(1, 0, 0);	/* USART 1: /dev/ttyS0, DB9 */
++	at32_map_usart(1, 0);	/* USART 1: /dev/ttyS0, DB9 */
+ 	at32_setup_serial_console(0);
+ }
+ 
+--- a/arch/avr32/boards/atstk1000/atstk1002.c
++++ b/arch/avr32/boards/atstk1000/atstk1002.c
+@@ -252,12 +252,12 @@ static void __init atstk1002_setup_extda
+ void __init setup_board(void)
+ {
+ #ifdef	CONFIG_BOARD_ATSTK100X_SW2_CUSTOM
+-	at32_map_usart(0, 1, 0);	/* USART 0/B: /dev/ttyS1, IRDA */
++	at32_map_usart(0, 1);	/* USART 0/B: /dev/ttyS1, IRDA */
+ #else
+-	at32_map_usart(1, 0, 0);	/* USART 1/A: /dev/ttyS0, DB9 */
++	at32_map_usart(1, 0);	/* USART 1/A: /dev/ttyS0, DB9 */
+ #endif
+ 	/* USART 2/unused: expansion connector */
+-	at32_map_usart(3, 2, 0);	/* USART 3/C: /dev/ttyS2, DB9 */
++	at32_map_usart(3, 2);	/* USART 3/C: /dev/ttyS2, DB9 */
+ 
+ 	at32_setup_serial_console(0);
+ }
+--- a/arch/avr32/boards/atstk1000/atstk1003.c
++++ b/arch/avr32/boards/atstk1000/atstk1003.c
+@@ -115,12 +115,12 @@ static void __init atstk1003_setup_extda
+ void __init setup_board(void)
+ {
+ #ifdef	CONFIG_BOARD_ATSTK100X_SW2_CUSTOM
+-	at32_map_usart(0, 1, 0);	/* USART 0/B: /dev/ttyS1, IRDA */
++	at32_map_usart(0, 1);	/* USART 0/B: /dev/ttyS1, IRDA */
+ #else
+-	at32_map_usart(1, 0, 0);	/* USART 1/A: /dev/ttyS0, DB9 */
++	at32_map_usart(1, 0);	/* USART 1/A: /dev/ttyS0, DB9 */
+ #endif
+ 	/* USART 2/unused: expansion connector */
+-	at32_map_usart(3, 2, 0);	/* USART 3/C: /dev/ttyS2, DB9 */
++	at32_map_usart(3, 2);	/* USART 3/C: /dev/ttyS2, DB9 */
+ 
+ 	at32_setup_serial_console(0);
+ }
+--- a/arch/avr32/boards/atstk1000/atstk1004.c
++++ b/arch/avr32/boards/atstk1000/atstk1004.c
+@@ -120,12 +120,12 @@ static void __init atstk1004_setup_extda
+ void __init setup_board(void)
+ {
+ #ifdef	CONFIG_BOARD_ATSTK100X_SW2_CUSTOM
+-	at32_map_usart(0, 1, 0);	/* USART 0/B: /dev/ttyS1, IRDA */
++	at32_map_usart(0, 1);	/* USART 0/B: /dev/ttyS1, IRDA */
+ #else
+-	at32_map_usart(1, 0, 0);	/* USART 1/A: /dev/ttyS0, DB9 */
++	at32_map_usart(1, 0);	/* USART 1/A: /dev/ttyS0, DB9 */
+ #endif
+ 	/* USART 2/unused: expansion connector */
+-	at32_map_usart(3, 2, 0);	/* USART 3/C: /dev/ttyS2, DB9 */
++	at32_map_usart(3, 2);	/* USART 3/C: /dev/ttyS2, DB9 */
+ 
+ 	at32_setup_serial_console(0);
+ }
+--- a/arch/avr32/boards/favr-32/setup.c
++++ b/arch/avr32/boards/favr-32/setup.c
+@@ -250,7 +250,7 @@ static void __init favr32_setup_atmel_pw
+ 
+ void __init setup_board(void)
+ {
+-	at32_map_usart(3, 0, 0);	/* USART 3 => /dev/ttyS0 */
++	at32_map_usart(3, 0);	/* USART 3 => /dev/ttyS0 */
+ 	at32_setup_serial_console(0);
+ }
+ 
+--- a/arch/avr32/boards/hammerhead/setup.c
++++ b/arch/avr32/boards/hammerhead/setup.c
+@@ -165,7 +165,7 @@ static void __init set_hw_addr(struct pl
+ 
+ void __init setup_board(void)
+ {
+-	at32_map_usart(1, 0, 0);	/* USART 1: /dev/ttyS0, DB9 */
++	at32_map_usart(1, 0);	/* USART 1: /dev/ttyS0, DB9 */
+ 	at32_setup_serial_console(0);
+ }
+ 
+--- a/arch/avr32/boards/merisc/setup.c
++++ b/arch/avr32/boards/merisc/setup.c
+@@ -231,9 +231,9 @@ static void detect_merisc_board_id(void)
+ 
+ void __init setup_board(void)
+ {
+-	at32_map_usart(0, 0, 0);
+-	at32_map_usart(1, 1, 0);
+-	at32_map_usart(3, 3, 0);
++	at32_map_usart(0, 0);
++	at32_map_usart(1, 1);
++	at32_map_usart(3, 3);
+ 	at32_setup_serial_console(1);
+ }
+ 
+@@ -248,7 +248,7 @@ static int __init merisc_init(void)
+ 	at32_reserve_pin(GPIO_PIOE_BASE, ATMEL_EBI_PE_DATA_ALL | (1 << 26));
+ 
+ 	if (merisc_board_id >= 1)
+-		at32_map_usart(2, 2, 0);
++		at32_map_usart(2, 2);
+ 
+ 	at32_add_device_usart(0);
+ 	at32_add_device_usart(1);
+--- a/arch/avr32/boards/mimc200/setup.c
++++ b/arch/avr32/boards/mimc200/setup.c
+@@ -175,10 +175,10 @@ static void __init set_hw_addr(struct pl
+ 
+ void __init setup_board(void)
+ {
+-	at32_map_usart(0, 0, 0);	/* USART 0: /dev/ttyS0 (TTL --> Altera) */
+-	at32_map_usart(1, 1, 0);	/* USART 1: /dev/ttyS1 (RS232) */
+-	at32_map_usart(2, 2, 0);	/* USART 2: /dev/ttyS2 (RS485) */
+-	at32_map_usart(3, 3, 0);	/* USART 3: /dev/ttyS3 (RS422 Multidrop) */
++	at32_map_usart(0, 0);	/* USART 0: /dev/ttyS0 (TTL --> Altera) */
++	at32_map_usart(1, 1);	/* USART 1: /dev/ttyS1 (RS232) */
++	at32_map_usart(2, 2);	/* USART 2: /dev/ttyS2 (RS485) */
++	at32_map_usart(3, 3);	/* USART 3: /dev/ttyS3 (RS422 Multidrop) */
+ }
+ 
+ static struct i2c_gpio_platform_data i2c_gpio_data = {
+--- a/arch/avr32/mach-at32ap/at32ap700x.c
++++ b/arch/avr32/mach-at32ap/at32ap700x.c
+@@ -966,68 +966,56 @@ static struct resource atmel_usart3_reso
+ DEFINE_DEV_DATA(atmel_usart, 3);
+ DEV_CLK(usart, atmel_usart3, pba, 6);
+ 
+-static inline void configure_usart0_pins(int flags)
++static inline void configure_usart0_pins(void)
+ {
+ 	u32 pin_mask = (1 << 8) | (1 << 9); /* RXD & TXD */
+-	if (flags & ATMEL_USART_RTS)	pin_mask |= (1 << 6);
+-	if (flags & ATMEL_USART_CTS)	pin_mask |= (1 << 7);
+-	if (flags & ATMEL_USART_CLK)	pin_mask |= (1 << 10);
+ 
+ 	select_peripheral(PIOA, pin_mask, PERIPH_B, AT32_GPIOF_PULLUP);
+ }
+ 
+-static inline void configure_usart1_pins(int flags)
++static inline void configure_usart1_pins(void)
+ {
+ 	u32 pin_mask = (1 << 17) | (1 << 18); /* RXD & TXD */
+-	if (flags & ATMEL_USART_RTS)	pin_mask |= (1 << 19);
+-	if (flags & ATMEL_USART_CTS)	pin_mask |= (1 << 20);
+-	if (flags & ATMEL_USART_CLK)	pin_mask |= (1 << 16);
+ 
+ 	select_peripheral(PIOA, pin_mask, PERIPH_A, AT32_GPIOF_PULLUP);
+ }
+ 
+-static inline void configure_usart2_pins(int flags)
++static inline void configure_usart2_pins(void)
+ {
+ 	u32 pin_mask = (1 << 26) | (1 << 27); /* RXD & TXD */
+-	if (flags & ATMEL_USART_RTS)	pin_mask |= (1 << 30);
+-	if (flags & ATMEL_USART_CTS)	pin_mask |= (1 << 29);
+-	if (flags & ATMEL_USART_CLK)	pin_mask |= (1 << 28);
+ 
+ 	select_peripheral(PIOB, pin_mask, PERIPH_B, AT32_GPIOF_PULLUP);
+ }
+ 
+-static inline void configure_usart3_pins(int flags)
++static inline void configure_usart3_pins(void)
+ {
+ 	u32 pin_mask = (1 << 18) | (1 << 17); /* RXD & TXD */
+-	if (flags & ATMEL_USART_RTS)	pin_mask |= (1 << 16);
+-	if (flags & ATMEL_USART_CTS)	pin_mask |= (1 << 15);
+-	if (flags & ATMEL_USART_CLK)	pin_mask |= (1 << 19);
+ 
+ 	select_peripheral(PIOB, pin_mask, PERIPH_B, AT32_GPIOF_PULLUP);
+ }
+ 
+ static struct platform_device *__initdata at32_usarts[4];
+ 
+-void __init at32_map_usart(unsigned int hw_id, unsigned int line, int flags)
++void __init at32_map_usart(unsigned int hw_id, unsigned int line)
+ {
+ 	struct platform_device *pdev;
+ 
+ 	switch (hw_id) {
+ 	case 0:
+ 		pdev = &atmel_usart0_device;
+-		configure_usart0_pins(flags);
++		configure_usart0_pins();
+ 		break;
+ 	case 1:
+ 		pdev = &atmel_usart1_device;
+-		configure_usart1_pins(flags);
++		configure_usart1_pins();
+ 		break;
+ 	case 2:
+ 		pdev = &atmel_usart2_device;
+-		configure_usart2_pins(flags);
++		configure_usart2_pins();
+ 		break;
+ 	case 3:
+ 		pdev = &atmel_usart3_device;
+-		configure_usart3_pins(flags);
++		configure_usart3_pins();
+ 		break;
+ 	default:
+ 		return;
+--- a/arch/avr32/mach-at32ap/include/mach/board.h
++++ b/arch/avr32/mach-at32ap/include/mach/board.h
+@@ -26,17 +26,12 @@ static inline void __deprecated at32_add
+ #define ATMEL_MAX_UART	4
+ extern struct platform_device *atmel_default_console_device;
+ 
+-/* Flags for selecting USART extra pins */
+-#define	ATMEL_USART_RTS		0x01
+-#define	ATMEL_USART_CTS		0x02
+-#define	ATMEL_USART_CLK		0x03
+-
+ struct atmel_uart_data {
+ 	short		use_dma_tx;	/* use transmit DMA? */
+ 	short		use_dma_rx;	/* use receive DMA? */
+ 	void __iomem	*regs;		/* virtual base address, if any */
+ };
+-void at32_map_usart(unsigned int hw_id, unsigned int line, int flags);
++void at32_map_usart(unsigned int hw_id, unsigned int line);
+ struct platform_device *at32_add_device_usart(unsigned int id);
+ 
+ struct eth_platform_data {
