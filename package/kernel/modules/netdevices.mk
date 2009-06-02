@@ -200,7 +200,7 @@ $(eval $(call KernelPackage,e100))
 
 define KernelPackage/e1000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Intel(R) PRO/1000 cards kernel support
+  TITLE:=Intel(R) PRO/1000 PCI cards kernel support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_E1000 \
     CONFIG_E1000_DISABLE_PACKET_SPLIT=n
@@ -209,10 +209,26 @@ define KernelPackage/e1000
 endef
 
 define KernelPackage/e1000/description
- Kernel modules for Intel(R) PRO/1000 Ethernet adapters.
+ Kernel modules for Intel(R) PRO/1000 PCI Ethernet adapters.
 endef
 
 $(eval $(call KernelPackage,e1000))
+
+
+define KernelPackage/e1000e
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel(R) PRO/1000 PCIe cards kernel support
+  DEPENDS:=@PCIE_SUPPORT
+  KCONFIG:=CONFIG_E1000E
+  FILES:=$(LINUX_DIR)/drivers/net/e1000e/e1000e.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,e1000e)
+endef
+
+define KernelPackage/e1000e/description
+ Kernel modules for Intel(R) PRO/1000 PCIe Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,e1000e))
 
 
 define KernelPackage/b44
