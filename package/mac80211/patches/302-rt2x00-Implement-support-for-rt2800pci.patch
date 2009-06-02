@@ -1,7 +1,7 @@
-From 67432230daedc23f808b79173703e27675fd0659 Mon Sep 17 00:00:00 2001
+From c5d3ab153ef4b68c9c6fab32f6f292c4394b72d3 Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Sun, 26 Apr 2009 15:54:03 +0200
-Subject: [PATCH 2/4] rt2x00: Implement support for rt2800pci
+Date: Thu, 21 May 2009 19:21:31 +0200
+Subject: [PATCH 2/2] rt2x00: Implement support for rt2800pci
 
 Add support for the rt2800pci chipset.
 
@@ -15,10 +15,10 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig     |   26 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800pci.c | 3245 +++++++++++++++++++++++++++++++
- drivers/net/wireless/rt2x00/rt2800pci.h | 1927 ++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.c | 3241 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.h | 1929 ++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00.h    |    6 +
- 5 files changed, 5205 insertions(+), 0 deletions(-)
+ 5 files changed, 5203 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.h
 
@@ -34,7 +34,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  obj-$(CONFIG_RT2800USB)			+= rt2800usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -0,0 +1,3245 @@
+@@ -0,0 +1,3241 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -755,6 +755,11 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&reg, XIFS_TIME_CFG_EIFS, erp->eifs);
 +	rt2x00_set_field32(&reg, XIFS_TIME_CFG_BB_RXEND_ENABLE, 1);
 +	rt2x00pci_register_write(rt2x00dev, XIFS_TIME_CFG, reg);
++
++	rt2x00pci_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
++	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_INTERVAL,
++			   erp->beacon_int * 16);
++	rt2x00pci_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +}
 +
 +static void rt2800pci_config_ant(struct rt2x00_dev *rt2x00dev,
@@ -1095,17 +1100,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_write(rt2x00dev, TX_RTY_CFG, reg);
 +}
 +
-+static void rt2800pci_config_duration(struct rt2x00_dev *rt2x00dev,
-+				      struct rt2x00lib_conf *libconf)
-+{
-+	u32 reg;
-+
-+	rt2x00pci_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
-+	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_INTERVAL,
-+			   libconf->conf->beacon_int * 16);
-+	rt2x00pci_register_write(rt2x00dev, BCN_TIME_CFG, reg);
-+}
-+
 +static void rt2800pci_config_ps(struct rt2x00_dev *rt2x00dev,
 +				struct rt2x00lib_conf *libconf)
 +{
@@ -1150,8 +1144,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		rt2800pci_config_txpower(rt2x00dev, libconf->conf->power_level);
 +	if (flags & IEEE80211_CONF_CHANGE_RETRY_LIMITS)
 +		rt2800pci_config_retry_limit(rt2x00dev, libconf);
-+	if (flags & IEEE80211_CONF_CHANGE_BEACON_INTERVAL)
-+		rt2800pci_config_duration(rt2x00dev, libconf);
 +	if (flags & IEEE80211_CONF_CHANGE_PS)
 +		rt2800pci_config_ps(rt2x00dev, libconf);
 +}
@@ -2085,13 +2077,17 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +static int rt2800pci_set_state(struct rt2x00_dev *rt2x00dev,
 +			       enum dev_state state)
 +{
-+	rt2x00pci_register_write(rt2x00dev, AUTOWAKEUP_CFG, 0);
++	/*
++	 * Always put the device to sleep (even when we intend to wakup!)
++	 * if the device is booting and wasn't asleep it will return
++	 * failure when attempting to wakup.
++	 */
++	rt2800pci_mcu_request(rt2x00dev, MCU_SLEEP, 0xff, 0, 2);
 +
 +	if (state == STATE_AWAKE) {
 +		rt2800pci_mcu_request(rt2x00dev, MCU_WAKEUP, TOKEN_WAKUP, 0, 0);
 +		rt2800pci_mcu_status(rt2x00dev, TOKEN_WAKUP);
-+	} else
-+		rt2800pci_mcu_request(rt2x00dev, MCU_SLEEP, 0xff, 0, 2);
++	}
 +
 +	return 0;
 +}
@@ -2943,6 +2939,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	if (!rt2x00_rt(&rt2x00dev->chip, RT2880) &&
 +	    !rt2x00_rt(&rt2x00dev->chip, RT3052))
 +		__set_bit(DRIVER_REQUIRE_FIRMWARE, &rt2x00dev->flags);
++	__set_bit(DRIVER_REQUIRE_DMA, &rt2x00dev->flags);
 +	__set_bit(DRIVER_REQUIRE_L2PAD, &rt2x00dev->flags);
 +	if (!modparam_nohwcrypt)
 +		__set_bit(CONFIG_SUPPORT_HW_CRYPTO, &rt2x00dev->flags);
@@ -3098,7 +3095,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	.add_interface		= rt2x00mac_add_interface,
 +	.remove_interface	= rt2x00mac_remove_interface,
 +	.config			= rt2x00mac_config,
-+	.config_interface	= rt2x00mac_config_interface,
 +	.configure_filter	= rt2x00mac_configure_filter,
 +	.set_key		= rt2x00mac_set_key,
 +	.get_stats		= rt2x00mac_get_stats,
@@ -3282,7 +3278,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +module_exit(rt2800pci_exit);
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.h
-@@ -0,0 +1,1927 @@
+@@ -0,0 +1,1929 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -4999,6 +4995,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define MCU_SLEEP			0x30
 +#define MCU_WAKEUP			0x31
 +#define MCU_RADIO_OFF			0x35
++#define MCU_CURRENT			0x36
 +#define MCU_LED				0x50
 +#define MCU_LED_STRENGTH		0x51
 +#define MCU_LED_1			0x52
@@ -5007,6 +5004,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define MCU_RADAR			0x60
 +#define MCU_BOOT_SIGNAL			0x72
 +#define MCU_BBP_SIGNAL			0x80
++#define MCU_POWER_SAVE			0x83
 +
 +/*
 + * MCU mailbox tokens
