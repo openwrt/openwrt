@@ -232,9 +232,9 @@ static int ifxmips_mtd_probe(struct platform_device *dev)
 
 	if (err <= 0) {
 		if (ifxmips_has_brn_block()) {
-			parts[4].size -= ifxmips_mtd->erasesize;
-			parts[5].offset = ifxmips_mtd->size - ifxmips_mtd->erasesize;
-			parts[5].size = ifxmips_mtd->erasesize;
+			parts[3].size -= ifxmips_mtd->erasesize;
+			parts[4].offset = ifxmips_mtd->size - ifxmips_mtd->erasesize;
+			parts[4].size = ifxmips_mtd->erasesize;
 		} else {
 			num_parts--;
 		}
