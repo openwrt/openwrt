@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=mips
-BOARD:=cavium-octeon
+BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs jffs2 pci
 CFLAGS:=-Os -pipe -funit-at-a-time
