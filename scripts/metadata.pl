@@ -155,6 +155,7 @@ sub target_config_features(@) {
 		/display/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
 		/gpio/ and $ret .= "\tselect GPIO_SUPPORT\n";
 		/pci/ and $ret .= "\tselect PCI_SUPPORT\n";
+		/pcie/ and $ret .= "\tselect PCIE_SUPPORT\n";
 		/usb/ and $ret .= "\tselect USB_SUPPORT\n";
 		/pcmcia/ and $ret .= "\tselect PCMCIA_SUPPORT\n";
 		/squashfs/ and $ret .= "\tselect USES_SQUASHFS\n";
