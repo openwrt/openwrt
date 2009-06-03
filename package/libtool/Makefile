@@ -25,7 +25,6 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 CONFIGURE_PREFIX=$(STAGING_DIR)/host
-CONFIGURE_VARS+= CXX=no
 export GLOBAL_LIBDIR=$(STAGING_DIR)/usr/lib
 
 define Package/libltdl
