@@ -23,9 +23,12 @@
  * not overflow the fifo  */
 #define BCMENET_TX_FIFO_TRESH	32
 
-/* maximum rx/tx packet size */
-#define	BCMENET_MAX_RX_SIZE	(ETH_FRAME_LEN + 4)
-#define	BCMENET_MAX_TX_SIZE	(ETH_FRAME_LEN + 4)
+/*
+ * hardware maximum rx/tx packet size including FCS, max mtu is
+ * actually 2047, but if we set max rx size register to 2047 we won't
+ * get overflow information if packet size is 2048 or above
+ */
+#define BCMENET_MAX_MTU		2046
 
 /*
  * rx/tx dma descriptor
@@ -202,6 +205,9 @@ struct bcm_enet_priv {
 	/* next dirty rx descriptor to refill */
 	int rx_dirty_desc;
 
+	/* size of allocated rx skbs */
+	unsigned int rx_skb_size;
+
 	/* list of skb given to hw for rx */
 	struct sk_buff **rx_skb;
 
@@ -289,6 +295,9 @@ struct bcm_enet_priv {
 
 	/* platform device reference */
 	struct platform_device *pdev;
+
+	/* maximum hardware transmit/receive size */
+	unsigned int hw_mtu;
 };
 
 #endif /* ! BCM63XX_ENET_H_ */
