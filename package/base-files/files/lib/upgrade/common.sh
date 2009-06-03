@@ -107,7 +107,7 @@ get_image() {
 	local from="$1"
 	local conc="cat"
 
-	[ $GZIPED -eq 1 ] && conc="zcat"
+	[ "$GZIPED" -eq 1 ] && conc="zcat"
 
 	case "$from" in
 		http://*|ftp://*) wget -O- -q "$from" | "$conc";;
