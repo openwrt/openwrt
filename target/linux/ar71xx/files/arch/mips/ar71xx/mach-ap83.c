@@ -9,6 +9,7 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/input.h>
 #include <linux/mtd/mtd.h>
@@ -16,6 +17,7 @@
 #include <linux/mtd/physmap.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
+#include <linux/spi/vsc7385.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -28,10 +30,10 @@
 #define AP83_GPIO_BTN_JUMPSTART	12
 #define AP83_GPIO_BTN_RESET	21
 
-#define AP83_GPIO_VSC7385_CS	1
-#define AP83_GPIO_VSC7385_MISO	3
-#define AP83_GPIO_VSC7385_MOSI	16
-#define AP83_GPIO_VSC7385_SCK	17
+#define AP83_050_GPIO_VSC7385_CS	1
+#define AP83_050_GPIO_VSC7385_MISO	3
+#define AP83_050_GPIO_VSC7385_MOSI	16
+#define AP83_050_GPIO_VSC7385_SCK	17
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition ap83_flash_partitions[] = {
@@ -126,23 +128,65 @@ static struct gpio_button ap83_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct spi_gpio_platform_data ap83_spi_data = {
-	.miso	= AP83_GPIO_VSC7385_MISO,
-	.mosi	= AP83_GPIO_VSC7385_MOSI,
-	.sck	= AP83_GPIO_VSC7385_SCK,
+static struct resource ap83_040_spi_resources[] = {
+	[0] = {
+		.start	= AR71XX_SPI_BASE,
+		.end	= AR71XX_SPI_BASE + AR71XX_SPI_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device ap83_040_spi_device = {
+	.name		= "ap83-spi",
+	.id		= 0,
+	.resource	= ap83_040_spi_resources,
+	.num_resources	= ARRAY_SIZE(ap83_040_spi_resources),
+};
+
+static struct spi_gpio_platform_data ap83_050_spi_data = {
+	.miso	= AP83_050_GPIO_VSC7385_MISO,
+	.mosi	= AP83_050_GPIO_VSC7385_MOSI,
+	.sck	= AP83_050_GPIO_VSC7385_SCK,
 	.num_chipselect = 1,
 };
 
-static struct platform_device ap83_spi_device = {
+static struct platform_device ap83_050_spi_device = {
 	.name		= "spi_gpio",
 	.id		= 0,
 	.dev		= {
-		.platform_data = &ap83_spi_data,
+		.platform_data = &ap83_050_spi_data,
 	}
 };
 
-static void __init ap83_setup(void)
+static void ap83_vsc7385_reset(void)
 {
+	ar71xx_device_stop(RESET_MODULE_GE1_PHY);
+	udelay(10);
+	ar71xx_device_start(RESET_MODULE_GE1_PHY);
+	mdelay(50);
+}
+
+static struct vsc7385_platform_data ap83_vsc7385_data = {
+	.reset		= ap83_vsc7385_reset,
+};
+
+static struct spi_board_info ap83_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 25000000,
+		.modalias	= "spi-vsc7385",
+		.platform_data	= &ap83_vsc7385_data,
+		.controller_data = (void *) AP83_050_GPIO_VSC7385_CS,
+	}
+};
+
+static void __init ap83_generic_setup(void)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1fff1000);
+
+	ar71xx_set_mac_base(mac);
+
 	ar71xx_add_device_mdio(0xfffffffe);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
@@ -169,8 +213,43 @@ static void __init ap83_setup(void)
 
 	ar91xx_add_device_wmac();
 
-	platform_device_register(&ap83_spi_device);
 	platform_device_register(&ap83_flash_device);
+
+	spi_register_board_info(ap83_spi_info, ARRAY_SIZE(ap83_spi_info));
+}
+
+static void __init ap83_040_setup(void)
+{
+	ar71xx_flash_lock_enable();
+	ap83_generic_setup();
+	platform_device_register(&ap83_040_spi_device);
+}
+
+static void __init ap83_050_setup(void)
+{
+	ap83_generic_setup();
+	platform_device_register(&ap83_050_spi_device);
+}
+
+static void __init ap83_setup(void)
+{
+	u8 *board_id = (u8 *) KSEG1ADDR(0x1fff1244);
+	unsigned int board_version;
+
+	board_version = (unsigned int)(board_id[0] - '0');
+	board_version += ((unsigned int)(board_id[1] - '0')) * 10;
+
+	switch (board_version) {
+	case 40:
+		ap83_040_setup();
+		break;
+	case 50:
+		ap83_050_setup();
+		break;
+	default:
+		printk(KERN_WARNING "AP83-%03u board is not yet supported\n",
+		       board_version);
+	}
 }
 
 MIPS_MACHINE(AR71XX_MACH_AP83, "Atheros AP83", ap83_setup);
