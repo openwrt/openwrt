@@ -38,7 +38,7 @@ TARGET_CFLAGS += \
 
 MAKE_FLAGS += \
 	CONFIGURE_ARGS="$(CONFIGURE_ARGS)" \
-	LIBS="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a" \
+	LIBS_EADCLIENT="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a" \
 	LIBS_EAD="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a $(STAGING_DIR)/usr/lib/libpcap.a" \
 	CFLAGS="$(TARGET_CFLAGS)"
 
