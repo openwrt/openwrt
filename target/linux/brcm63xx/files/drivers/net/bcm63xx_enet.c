@@ -27,6 +27,7 @@
 #include <linux/err.h>
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
+#include <linux/if_vlan.h>
 
 #include <bcm63xx_dev_enet.h>
 #include "bcm63xx_enet.h"
@@ -189,18 +190,18 @@ static int bcm_enet_refill_rx(struct net_device *dev)
 		desc = &priv->rx_desc_cpu[desc_idx];
 
 		if (!priv->rx_skb[desc_idx]) {
-			skb = netdev_alloc_skb(dev, BCMENET_MAX_RX_SIZE);
+			skb = netdev_alloc_skb(dev, priv->rx_skb_size);
 			if (!skb)
 				break;
 			priv->rx_skb[desc_idx] = skb;
 
 			p = dma_map_single(&priv->pdev->dev, skb->data,
-					   BCMENET_MAX_RX_SIZE,
+					   priv->rx_skb_size,
 					   DMA_FROM_DEVICE);
 			desc->address = p;
 		}
 
-		len_stat = BCMENET_MAX_RX_SIZE << DMADESC_LENGTH_SHIFT;
+		len_stat = priv->rx_skb_size << DMADESC_LENGTH_SHIFT;
 		len_stat |= DMADESC_OWNER_MASK;
 		if (priv->rx_dirty_desc == priv->rx_ring_size - 1) {
 			len_stat |= DMADESC_WRAP_MASK;
@@ -337,7 +338,7 @@ static int bcm_enet_receive_queue(struct net_device *dev, int budget)
 			skb = nskb;
 		} else {
 			dma_unmap_single(&priv->pdev->dev, desc->address,
-					 BCMENET_MAX_RX_SIZE, DMA_FROM_DEVICE);
+					 priv->rx_skb_size, DMA_FROM_DEVICE);
 			priv->rx_skb[desc_idx] = NULL;
 		}
 
@@ -949,8 +950,8 @@ static int bcm_enet_open(struct net_device *dev)
 	enet_dma_writel(priv, 0, ENETDMA_SRAM4_REG(priv->tx_chan));
 
 	/* set max rx/tx length */
-	enet_writel(priv, BCMENET_MAX_RX_SIZE, ENET_RXMAXLEN_REG);
-	enet_writel(priv, BCMENET_MAX_TX_SIZE, ENET_TXMAXLEN_REG);
+	enet_writel(priv, priv->hw_mtu, ENET_RXMAXLEN_REG);
+	enet_writel(priv, priv->hw_mtu, ENET_TXMAXLEN_REG);
 
 	/* set dma maximum burst len */
 	enet_dma_writel(priv, BCMENET_DMA_MAXBURST,
@@ -1016,7 +1017,7 @@ out:
 			continue;
 
 		desc = &priv->rx_desc_cpu[i];
-		dma_unmap_single(kdev, desc->address, BCMENET_MAX_RX_SIZE,
+		dma_unmap_single(kdev, desc->address, priv->rx_skb_size,
 				 DMA_FROM_DEVICE);
 		kfree_skb(priv->rx_skb[i]);
 	}
@@ -1116,7 +1117,7 @@ static int bcm_enet_stop(struct net_device *dev)
 			continue;
 
 		desc = &priv->rx_desc_cpu[i];
-		dma_unmap_single(kdev, desc->address, BCMENET_MAX_RX_SIZE,
+		dma_unmap_single(kdev, desc->address, priv->rx_skb_size,
 				 DMA_FROM_DEVICE);
 		kfree_skb(priv->rx_skb[i]);
 	}
@@ -1506,6 +1507,55 @@ static int bcm_enet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 }
 
 /*
+ * calculate actual hardware mtu
+ */
+static int compute_hw_mtu(struct bcm_enet_priv *priv, int mtu)
+{
+	int actual_mtu;
+
+	actual_mtu = mtu;
+
+	/* add ethernet header + vlan tag size */
+	actual_mtu += VLAN_ETH_HLEN;
+
+	if (actual_mtu < 64 || actual_mtu > BCMENET_MAX_MTU)
+		return -EINVAL;
+
+	/*
+	 * setup maximum size before we get overflow mark in
+	 * descriptor, note that this will not prevent reception of
+	 * big frames, they will be split into multiple buffers
+	 * anyway
+	 */
+	priv->hw_mtu = actual_mtu;
+
+	/*
+	 * align rx buffer size to dma burst len, account FCS since
+	 * it's appended
+	 */
+	priv->rx_skb_size = ALIGN(actual_mtu + ETH_FCS_LEN,
+				  BCMENET_DMA_MAXBURST * 4);
+	return 0;
+}
+
+/*
+ * adjust mtu, can't be called while device is running
+ */
+static int bcm_enet_change_mtu(struct net_device *dev, int new_mtu)
+{
+	int ret;
+
+	if (netif_running(dev))
+		return -EBUSY;
+
+	ret = compute_hw_mtu(netdev_priv(dev), new_mtu);
+	if (ret)
+		return ret;
+	dev->mtu = new_mtu;
+	return 0;
+}
+
+/*
  * preinit hardware to allow mii operation while device is down
  */
 static void bcm_enet_hw_preinit(struct bcm_enet_priv *priv)
@@ -1581,6 +1631,10 @@ static int __devinit bcm_enet_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	priv = netdev_priv(dev);
 	memset(priv, 0, sizeof(*priv));
+
+	ret = compute_hw_mtu(priv, dev->mtu);
+	if (ret)
+		goto out;
 
 	iomem_size = res_mem->end - res_mem->start + 1;
 	if (!request_mem_region(res_mem->start, iomem_size, "bcm63xx_enet")) {
@@ -1721,6 +1775,7 @@ static int __devinit bcm_enet_probe(struct platform_device *pdev)
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	dev->poll_controller = bcm_enet_netpoll;
 #endif
+	dev->change_mtu	= bcm_enet_change_mtu;
 
 	SET_ETHTOOL_OPS(dev, &bcm_enet_ethtool_ops);
 
@@ -1754,6 +1809,7 @@ err:
 		enet_writel(priv, 0, ENET_MIISC_REG);
 		iounmap(priv->base);
 	}
+out:
 	free_netdev(dev);
 	return ret;
 }
