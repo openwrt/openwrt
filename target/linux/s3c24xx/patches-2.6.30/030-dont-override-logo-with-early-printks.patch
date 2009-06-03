@@ -1,7 +1,6 @@
-diff -ruN linux-2.6.29.orig/drivers/video/console/fbcon.c linux-2.6.29/drivers/video/console/fbcon.c
---- linux-2.6.29.orig/drivers/video/console/fbcon.c	2009-05-14 22:21:12.000000000 +0200
-+++ linux-2.6.29/drivers/video/console/fbcon.c	2009-05-15 01:45:36.000000000 +0200
-@@ -562,7 +562,7 @@
+--- a/drivers/video/console/fbcon.c
++++ b/drivers/video/console/fbcon.c
+@@ -562,7 +562,7 @@ static void fbcon_prepare_logo(struct vc
  	/* Need to make room for the logo */
  	struct fbcon_ops *ops = info->fbcon_par;
  	int cnt, erase = vc->vc_video_erase_char, step;
@@ -10,7 +9,7 @@ diff -ruN linux-2.6.29.orig/drivers/video/console/fbcon.c linux-2.6.29/drivers/v
  	int logo_height;
  
  	if (info->flags & FBINFO_MODULE) {
-@@ -581,37 +581,18 @@
+@@ -581,37 +581,18 @@ static void fbcon_prepare_logo(struct vc
  	q = (unsigned short *) (vc->vc_origin +
  				vc->vc_size_row * rows);
  	step = logo_lines * cols;
@@ -60,7 +59,7 @@ diff -ruN linux-2.6.29.orig/drivers/video/console/fbcon.c linux-2.6.29/drivers/v
  	scr_memsetw((unsigned short *) vc->vc_origin,
  		    erase,
  		    vc->vc_size_row * logo_lines);
-@@ -621,16 +602,6 @@
+@@ -621,16 +602,6 @@ static void fbcon_prepare_logo(struct vc
  		update_screen(vc);
  	}
  

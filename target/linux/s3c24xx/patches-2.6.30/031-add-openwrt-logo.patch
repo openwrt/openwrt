@@ -1,7 +1,6 @@
-diff -ruN linux-2.6.29.orig/drivers/video/logo/Kconfig linux-2.6.29/drivers/video/logo/Kconfig
---- linux-2.6.29.orig/drivers/video/logo/Kconfig	2009-05-14 22:21:12.000000000 +0200
-+++ linux-2.6.29/drivers/video/logo/Kconfig	2009-05-14 22:28:50.000000000 +0200
-@@ -82,4 +82,8 @@
+--- a/drivers/video/logo/Kconfig
++++ b/drivers/video/logo/Kconfig
+@@ -82,4 +82,8 @@ config LOGO_M32R_CLUT224
  	depends on M32R
  	default y
  
@@ -10,10 +9,9 @@ diff -ruN linux-2.6.29.orig/drivers/video/logo/Kconfig linux-2.6.29/drivers/vide
 +	default y
 +
  endif # LOGO
-diff -ruN linux-2.6.29.orig/drivers/video/logo/logo.c linux-2.6.29/drivers/video/logo/logo.c
---- linux-2.6.29.orig/drivers/video/logo/logo.c	2009-05-14 22:21:12.000000000 +0200
-+++ linux-2.6.29/drivers/video/logo/logo.c	2009-05-14 22:37:05.000000000 +0200
-@@ -35,6 +35,7 @@
+--- a/drivers/video/logo/logo.c
++++ b/drivers/video/logo/logo.c
+@@ -35,6 +35,7 @@ extern const struct linux_logo logo_supe
  extern const struct linux_logo logo_superh_vga16;
  extern const struct linux_logo logo_superh_clut224;
  extern const struct linux_logo logo_m32r_clut224;
@@ -21,7 +19,7 @@ diff -ruN linux-2.6.29.orig/drivers/video/logo/logo.c linux-2.6.29/drivers/video
  
  static int nologo;
  module_param(nologo, bool, 0);
-@@ -115,6 +116,10 @@
+@@ -115,6 +116,10 @@ const struct linux_logo * __init_refok f
  		/* M32R Linux logo */
  		logo = &logo_m32r_clut224;
  #endif
@@ -32,9 +30,8 @@ diff -ruN linux-2.6.29.orig/drivers/video/logo/logo.c linux-2.6.29/drivers/video
  	}
  	return logo;
  }
-diff -ruN linux-2.6.29.orig/drivers/video/logo/logo_openwrt_clut224.ppm linux-2.6.29/drivers/video/logo/logo_openwrt_clut224.ppm
---- linux-2.6.29.orig/drivers/video/logo/logo_openwrt_clut224.ppm	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.29/drivers/video/logo/logo_openwrt_clut224.ppm	2009-05-15 09:54:13.000000000 +0200
+--- /dev/null
++++ b/drivers/video/logo/logo_openwrt_clut224.ppm
 @@ -0,0 +1,38403 @@
 +P3
 +480 480
@@ -38439,10 +38436,9 @@ diff -ruN linux-2.6.29.orig/drivers/video/logo/logo_openwrt_clut224.ppm linux-2.
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
-diff -ruN linux-2.6.29.orig/drivers/video/logo/Makefile linux-2.6.29/drivers/video/logo/Makefile
---- linux-2.6.29.orig/drivers/video/logo/Makefile	2009-05-14 22:21:12.000000000 +0200
-+++ linux-2.6.29/drivers/video/logo/Makefile	2009-05-14 22:35:42.000000000 +0200
-@@ -15,6 +15,7 @@
+--- a/drivers/video/logo/Makefile
++++ b/drivers/video/logo/Makefile
+@@ -15,6 +15,7 @@ obj-$(CONFIG_LOGO_SUPERH_MONO)		+= logo_
  obj-$(CONFIG_LOGO_SUPERH_VGA16)		+= logo_superh_vga16.o
  obj-$(CONFIG_LOGO_SUPERH_CLUT224)	+= logo_superh_clut224.o
  obj-$(CONFIG_LOGO_M32R_CLUT224)		+= logo_m32r_clut224.o

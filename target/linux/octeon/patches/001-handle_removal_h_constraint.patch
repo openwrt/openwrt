@@ -12,8 +12,8 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
 
 --- a/arch/mips/include/asm/compiler.h
 +++ b/arch/mips/include/asm/compiler.h
-@@ -16,4 +16,11 @@
- #define GCC_REG_ACCUM "accum"
+@@ -26,4 +26,11 @@ typedef u64 uintx_t;
+ #endif
  #endif
  
 +#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
@@ -26,7 +26,7 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
  #endif /* _ASM_COMPILER_H */
 --- a/arch/mips/include/asm/delay.h
 +++ b/arch/mips/include/asm/delay.h
-@@ -83,10 +83,14 @@ static inline void __udelay(unsigned lon
+@@ -67,10 +67,14 @@ static inline unsigned long __usecs_to_l
  		: "r" (usecs), "r" (lpj)
  		: GCC_REG_ACCUM);
  	else if (sizeof(long) == 8 && !R4000_WAR)
