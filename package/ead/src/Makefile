@@ -2,8 +2,8 @@ CC       = gcc
 CPPFLAGS = -I. -Itinysrp
 CFLAGS   = -Os -Wall
 LDFLAGS	 =
-LIBS	 = tinysrp/libtinysrp.a
-LIBS_EAD = $(LIBS) -lpcap
+LIBS_EADCLIENT = tinysrp/libtinysrp.a
+LIBS_EAD = tinysrp/libtinysrp.a -lpcap
 CONFIGURE_ARGS =
 
 all: ead ead-client
@@ -26,7 +26,7 @@ ead: ead.o $(obj) tinysrp/libtinysrp.a
 	$(CC) -o $@ $< $(obj) $(LDFLAGS) $(LIBS_EAD)
 
 ead-client: ead-client.o $(obj)
-	$(CC) -o $@ $< $(obj) $(LDFLAGS) $(LIBS)
+	$(CC) -o $@ $< $(obj) $(LDFLAGS) $(LIBS_EADCLIENT)
 
 clean:
 	rm -f *.o ead ead-client
