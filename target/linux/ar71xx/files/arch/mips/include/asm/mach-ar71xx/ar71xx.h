@@ -422,6 +422,10 @@ void ar71xx_device_start(u32 mask);
 #define SPI_IOC_CS2		SPI_IOC_CS(2)
 #define SPI_IOC_CS_ALL		(SPI_IOC_CS0 | SPI_IOC_CS1 | SPI_IOC_CS2)
 
+void ar71xx_flash_lock_enable(void) __init;
+void ar71xx_flash_acquire(void);
+void ar71xx_flash_release(void);
+
 /*
  * MII_CTRL block
  */
