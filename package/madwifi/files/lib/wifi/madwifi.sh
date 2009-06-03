@@ -128,8 +128,7 @@ enable_atheros() {
 
 	local first=1
 	for vif in $vifs; do
-		local start_hostapd vif_txpower
-		nosbeacon=
+		local start_hostapd= vif_txpower= nosbeacon=
 		config_get ifname "$vif" ifname
 		config_get enc "$vif" encryption
 		config_get eap_type "$vif" eap_type
