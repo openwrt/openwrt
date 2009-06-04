@@ -10,5 +10,5 @@
 
 struct vsc7385_platform_data {
 	void		(* reset)(void);
-	unsigned char	*ucode_name;
+	char		*ucode_name;
 };
