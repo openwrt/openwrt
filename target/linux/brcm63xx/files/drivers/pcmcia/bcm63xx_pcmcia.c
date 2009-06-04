@@ -409,9 +409,18 @@ static int bcm63xx_drv_pcmcia_probe(struct platform_device *pdev)
 	val |= 3 << PCMCIA_C2_HOLD_SHIFT;
 	pcmcia_writel(skt, val, PCMCIA_C2_REG);
 
+	/* request and setup ready gpio */
+	ret = gpio_request(skt->pd->ready_gpio, "bcm63xx_pcmcia");
+	if (ret < 0)
+		goto err;
+
+	ret = gpio_direction_input(skt->pd->ready_gpio);
+	if (ret < 0)
+		goto err_gpio;
+
 	ret = pcmcia_register_socket(sock);
 	if (ret)
-		goto err;
+		goto err_gpio;
 
 	/* start polling socket */
 	mod_timer(&skt->timer,
@@ -419,6 +428,9 @@ static int bcm63xx_drv_pcmcia_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, skt);
 	return 0;
+
+err_gpio:
+	gpio_free(skt->pd->ready_gpio);
 
 err:
 	if (skt->io_base)
@@ -442,6 +454,7 @@ static int bcm63xx_drv_pcmcia_remove(struct platform_device *pdev)
 	iounmap(skt->io_base);
 	res = skt->reg_res;
 	release_mem_region(res->start, res->end - res->start + 1);
+	gpio_free(skt->pd->ready_gpio);
 	kfree(skt);
 	return 0;
 }
