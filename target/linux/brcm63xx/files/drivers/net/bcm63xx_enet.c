@@ -1778,6 +1778,7 @@ static int __devinit bcm_enet_probe(struct platform_device *pdev)
 	dev->change_mtu	= bcm_enet_change_mtu;
 
 	SET_ETHTOOL_OPS(dev, &bcm_enet_ethtool_ops);
+	SET_NETDEV_DEV(dev, &pdev->dev);
 
 	ret = register_netdev(dev);
 	if (ret)
@@ -1786,7 +1787,6 @@ static int __devinit bcm_enet_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, dev);
 	priv->pdev = pdev;
 	priv->net_dev = dev;
-	SET_NETDEV_DEV(dev, &pdev->dev);
 
 	return 0;
 
@@ -1857,6 +1857,7 @@ static int __devexit bcm_enet_remove(struct platform_device *pdev)
 	clk_disable(priv->mac_clk);
 	clk_put(priv->mac_clk);
 
+	platform_set_drvdata(pdev, NULL);
 	free_netdev(dev);
 	return 0;
 }
