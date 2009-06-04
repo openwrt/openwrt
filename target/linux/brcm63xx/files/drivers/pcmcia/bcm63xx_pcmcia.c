@@ -455,6 +455,7 @@ static int bcm63xx_drv_pcmcia_remove(struct platform_device *pdev)
 	res = skt->reg_res;
 	release_mem_region(res->start, res->end - res->start + 1);
 	gpio_free(skt->pd->ready_gpio);
+	platform_set_drvdata(pdev, NULL);
 	kfree(skt);
 	return 0;
 }
