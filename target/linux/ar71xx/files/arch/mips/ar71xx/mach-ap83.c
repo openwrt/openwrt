@@ -168,6 +168,7 @@ static void ap83_vsc7385_reset(void)
 
 static struct vsc7385_platform_data ap83_vsc7385_data = {
 	.reset		= ap83_vsc7385_reset,
+	.ucode_name	= "vsc7385_ucode_ap83.bin",
 };
 
 static struct spi_board_info ap83_spi_info[] = {
