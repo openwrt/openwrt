@@ -114,7 +114,9 @@ define Image/Build/Planex
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1408k conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=6208k conv=sync; \
 		) > $(call imgname,$(1),$(2)).bin; \
-		$(STAGING_DIR_HOST)/bin/mkplanexfw -v 2.00.00 \
+		$(STAGING_DIR_HOST)/bin/mkplanexfw \
+			-B $(2) \
+			-v 2.00.00 \
 			-i $(call imgname,$(1),$(2)).bin \
 			-o $(call imgname,$(1),$(2)).webui; \
 	fi; fi
@@ -221,6 +223,10 @@ define Image/Build/Profile/MZKW04NU
 	$(call Image/Build/Template/Planex/$(1),mzk-w04nu,board=MZK-W04NU)
 endef
 
+define Image/Build/Profile/MZKW300NH
+	$(call Image/Build/Template/Planex/$(1),mzk-w300nh,board=MZK-W300NH)
+endef
+
 define Image/Build/Profile/TLWR841NDV3
 	$(call Image/Build/Template/TPLINK/$(1),tl-wr841ndv3,board=TL-WR941ND,TL-WR841NDv3)
 endef
@@ -237,6 +243,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/A02RBW300N,$(1))
 	$(call Image/Build/Profile/DIR615C1,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
+	$(call Image/Build/Profile/MZKW300NH,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/TLWR841NDV3,$(1))
