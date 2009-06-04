@@ -1,20 +1,23 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 define replace
-	if [ -f "$(PKG_BUILD_DIR)/$(3)$(1)" -a -e "$(2)/$(1)" ]; then \
+	if [ -f "$(PKG_BUILD_DIR)/$(3)$(1)" -a -e "$(2)/$(if $(4),$(4),$(1))" ]; then \
 		rm -f $(PKG_BUILD_DIR)/$(3)$(1); \
-		ln -s $(2)/$(1) $(PKG_BUILD_DIR)/$(3); \
+		ln -s $(2)/$(if $(4),$(4),$(1)) $(PKG_BUILD_DIR)/$(3)$(1); \
 	fi
 	
 endef
 
 # replace copies of ltmain.sh with the build system's version
-update_libtool=$(call replace,libtool,$(STAGING_DIR)/host/bin,$(CONFIGURE_PATH)/)$(call replace,ltmain.sh,$(STAGING_DIR)/host/share/libtool,$(CONFIGURE_PATH)/)$(call replace,libtool.m4,$(STAGING_DIR)/host/share/aclocal,$(CONFIGURE_PATH)/)
+update_libtool_common=$(call replace,ltmain.sh,$(STAGING_DIR)/host/share/libtool,$(CONFIGURE_PATH)/)$(call replace,libtool.m4,$(STAGING_DIR)/host/share/aclocal,$(CONFIGURE_PATH)/)
+update_libtool=$(call replace,libtool,$(STAGING_DIR)/host/bin,$(CONFIGURE_PATH)/)$(call update_libtool_common)
+update_libtool_ucxx=$(call replace,libtool,$(STAGING_DIR)/host/bin,$(CONFIGURE_PATH)/,libtool-ucxx)$(call update_libtool_common)
+
 
 # prevent libtool from linking against host development libraries
 define libtool_fixup_libdir
@@ -38,3 +41,11 @@ ifneq ($(filter libtool,$(PKG_FIXUP)),)
   Hooks/Configure/Post += update_libtool
   Hooks/InstallDev/Post += libtool_fixup_libdir
 endif
+
+ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
+  PKG_BUILD_DEPENDS += libtool
+  Hooks/Configure/Pre += update_libtool_ucxx remove_version_check
+  Hooks/Configure/Post += update_libtool_ucxx
+  Hooks/InstallDev/Post += libtool_fixup_libdir
+endif
+

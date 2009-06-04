@@ -45,6 +45,8 @@ define Build/InstallDev
 	mv $(2)/lib/* $(1)/usr/lib/
 	mv $(2)/include/* $(1)/usr/include/
 	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(2)/bin/libtool
+	$(CP) $(2)/bin/libtool $(2)/bin/libtool-ucxx
+	$(SED) 's,-lstdc++,-luClibc++,g' $(2)/bin/libtool-ucxx
 endef
 
 define Package/libltdl/install
