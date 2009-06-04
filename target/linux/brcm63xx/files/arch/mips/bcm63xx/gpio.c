@@ -18,10 +18,11 @@
 #include <bcm63xx_io.h>
 #include <bcm63xx_regs.h>
 
+static DEFINE_SPINLOCK(bcm63xx_gpio_lock);
 static u32 gpio_out_low, gpio_out_high;
 
 static void bcm63xx_gpio_set(struct gpio_chip *chip,
-				unsigned gpio, int val)
+			     unsigned gpio, int val)
 {
 	u32 reg;
 	u32 mask;
@@ -41,13 +42,13 @@ static void bcm63xx_gpio_set(struct gpio_chip *chip,
 		v = &gpio_out_high;
 	}
 
-	local_irq_save(flags);
+	spin_lock_irqsave(&bcm63xx_gpio_lock, flags);
 	if (val)
 		*v |= mask;
 	else
 		*v &= ~mask;
 	bcm_gpio_writel(*v, reg);
-	local_irq_restore(flags);
+	spin_unlock_irqrestore(&bcm63xx_gpio_lock, flags);
 }
 
 static int bcm63xx_gpio_get(struct gpio_chip *chip, unsigned gpio)
@@ -70,7 +71,7 @@ static int bcm63xx_gpio_get(struct gpio_chip *chip, unsigned gpio)
 }
 
 static int bcm63xx_gpio_set_direction(struct gpio_chip *chip,
-					unsigned gpio, int dir)
+				      unsigned gpio, int dir)
 {
 	u32 reg;
 	u32 mask;
@@ -88,14 +89,14 @@ static int bcm63xx_gpio_set_direction(struct gpio_chip *chip,
 		mask = 1 << (gpio - 32);
 	}
 
-	local_irq_save(flags);
+	spin_lock_irqsave(&bcm63xx_gpio_lock, flags);
 	tmp = bcm_gpio_readl(reg);
 	if (dir == GPIO_DIR_IN)
 		tmp &= ~mask;
 	else
 		tmp |= mask;
 	bcm_gpio_writel(tmp, reg);
-	local_irq_restore(flags);
+	spin_unlock_irqrestore(&bcm63xx_gpio_lock, flags);
 
 	return 0;
 }
@@ -106,7 +107,7 @@ static int bcm63xx_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
 }
 
 static int bcm63xx_gpio_direction_output(struct gpio_chip *chip,
-					unsigned gpio, int value)
+					 unsigned gpio, int value)
 {
 	bcm63xx_gpio_set(chip, gpio, value);
 	return bcm63xx_gpio_set_direction(chip, gpio, GPIO_DIR_OUT);
