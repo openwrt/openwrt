@@ -117,11 +117,11 @@ static struct gpio_chip bcm63xx_gpio_chip = {
 	.get			= bcm63xx_gpio_get,
 	.set			= bcm63xx_gpio_set,
 	.base			= 0,
-	.ngpio			= BCM63XX_GPIO_COUNT,
 };
 
 int __init bcm63xx_gpio_init(void)
 {
-	printk(KERN_INFO "registering %d GPIOs\n", BCM63XX_GPIO_COUNT);
+	bcm63xx_gpio_chip.ngpio = bcm63xx_gpio_count();
+	printk(KERN_INFO "registering %d GPIOs\n", bcm63xx_gpio_chip.ngpio);
 	return gpiochip_add(&bcm63xx_gpio_chip);
 }

@@ -3,8 +3,6 @@
 
 #include <bcm63xx_gpio.h>
 
-#define NR_BUILTIN_GPIO		BCM63XX_GPIO_COUNT
-
 #define gpio_to_irq(gpio)	NULL
 
 #define gpio_get_value __gpio_get_value
