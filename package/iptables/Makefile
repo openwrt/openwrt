@@ -19,7 +19,11 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 
+ifeq ($(CONFIG_EXTERNAL_KERNEL_TREE),)
 PATCH_DIR:=./patches/$(PKG_VERSION)
+else
+PATCH_DIR:=
+endif
 
 PKG_FIXUP = libtool
 
