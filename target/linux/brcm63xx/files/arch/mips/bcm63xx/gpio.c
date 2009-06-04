@@ -18,12 +18,14 @@
 #include <bcm63xx_io.h>
 #include <bcm63xx_regs.h>
 
+static u32 gpio_out_low, gpio_out_high;
+
 static void bcm63xx_gpio_set(struct gpio_chip *chip,
 				unsigned gpio, int val)
 {
 	u32 reg;
 	u32 mask;
-	u32 tmp;
+	u32 *v;
 	unsigned long flags;
 
 	if (gpio >= chip->ngpio)
@@ -32,18 +34,19 @@ static void bcm63xx_gpio_set(struct gpio_chip *chip,
 	if (gpio < 32) {
 		reg = GPIO_DATA_LO_REG;
 		mask = 1 << gpio;
+		v = &gpio_out_low;
 	} else {
 		reg = GPIO_DATA_HI_REG;
 		mask = 1 << (gpio - 32);
+		v = &gpio_out_high;
 	}
 
 	local_irq_save(flags);
-	tmp = bcm_gpio_readl(reg);
 	if (val)
-		tmp |= mask;
+		*v |= mask;
 	else
-		tmp &= ~mask;
-	bcm_gpio_writel(tmp, reg);
+		*v &= ~mask;
+	bcm_gpio_writel(*v, reg);
 	local_irq_restore(flags);
 }
 
