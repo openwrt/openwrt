@@ -120,9 +120,8 @@ static struct gpio_chip bcm63xx_gpio_chip = {
 	.ngpio			= BCM63XX_GPIO_COUNT,
 };
 
-static int __init bcm63xx_gpio_init(void)
+int __init bcm63xx_gpio_init(void)
 {
 	printk(KERN_INFO "registering %d GPIOs\n", BCM63XX_GPIO_COUNT);
 	return gpiochip_add(&bcm63xx_gpio_chip);
 }
-arch_initcall(bcm63xx_gpio_init);

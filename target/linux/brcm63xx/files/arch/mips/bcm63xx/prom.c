@@ -13,6 +13,7 @@
 #include <bcm63xx_cpu.h>
 #include <bcm63xx_io.h>
 #include <bcm63xx_regs.h>
+#include <bcm63xx_gpio.h>
 
 void __init prom_init(void)
 {
@@ -41,6 +42,9 @@ void __init prom_init(void)
 
 	/* assign command line from kernel config */
 	strcpy(arcs_cmdline, CONFIG_CMDLINE);
+
+	/* register gpiochip */
+	bcm63xx_gpio_init();
 
 	/* do low level board init */
 	board_prom_init();
