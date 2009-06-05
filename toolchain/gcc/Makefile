@@ -124,6 +124,7 @@ GCC_CONFIGURE_STAGE2:= \
 		--enable-languages=$(TARGET_LANGUAGES) \
 		--enable-shared \
 		--enable-threads \
+		--disable-tls \
 		--with-slibdir=$(TOOLCHAIN_DIR)/lib \
 
 GCC_MAKE:= \
