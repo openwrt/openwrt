@@ -63,7 +63,7 @@ static struct mtd_partition mzk_w300nh_partitions[] = {
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
 	} , {
-		.name		= "firmare",
+		.name		= "firmware",
 		.offset		= 0x050000,
 		.size		= 0x770000,
 	}
