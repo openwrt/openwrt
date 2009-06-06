@@ -68,7 +68,7 @@ static struct mtd_partition ap83_flash_partitions[] = {
 };
 #endif /* CONFIG_MTD_PARTITIONS */
 
-static struct physmap_flash_data ap83_flash_data = {
+static struct ar91xx_flash_platform_data ap83_flash_data = {
 	.width		= 2,
 #ifdef CONFIG_MTD_PARTITIONS
         .parts          = ap83_flash_partitions,
@@ -85,7 +85,7 @@ static struct resource ap83_flash_resources[] = {
 };
 
 static struct platform_device ap83_flash_device = {
-	.name		= "physmap-flash",
+	.name		= "ar91xx-flash",
 	.id		= -1,
 	.resource	= ap83_flash_resources,
 	.num_resources	= ARRAY_SIZE(ap83_flash_resources),
