@@ -60,6 +60,9 @@ fixup_linksys() {
 }
 
 start() {
+	# Don't do any fixups on the WGT634U
+	[ "$(cat /proc/diag/model)" = "Netgear WGT634U" ] && return
+
 	fixup_linksys
 
 	# OFDM Power Offset is set incorrectly on many boards.
