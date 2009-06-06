@@ -13,6 +13,9 @@ ar71xx_board_name() {
 	*AP81)
 		name="ap81"
 		;;
+	*AP83)
+		name="ap83"
+		;;
 	*AW-NR580)
 		name="aw-nr580"
 		;;
