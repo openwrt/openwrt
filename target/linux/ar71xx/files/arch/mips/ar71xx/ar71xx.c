@@ -17,7 +17,6 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 
 static DEFINE_MUTEX(ar71xx_flash_mutex);
-static int ar71xx_flash_lock_enabled;
 
 void __iomem *ar71xx_ddr_base;
 EXPORT_SYMBOL_GPL(ar71xx_ddr_base);
@@ -102,21 +101,14 @@ void ar71xx_ddr_flush(u32 reg)
 }
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
 
-void  __init ar71xx_flash_lock_enable(void)
-{
-	ar71xx_flash_lock_enabled = 1;
-}
-
 void ar71xx_flash_acquire(void)
 {
-	if (ar71xx_flash_lock_enabled)
-		mutex_lock(&ar71xx_flash_mutex);
+	mutex_lock(&ar71xx_flash_mutex);
 }
 EXPORT_SYMBOL_GPL(ar71xx_flash_acquire);
 
 void ar71xx_flash_release(void)
 {
-	if (ar71xx_flash_lock_enabled)
-		mutex_unlock(&ar71xx_flash_mutex);
+	mutex_unlock(&ar71xx_flash_mutex);
 }
 EXPORT_SYMBOL_GPL(ar71xx_flash_release);

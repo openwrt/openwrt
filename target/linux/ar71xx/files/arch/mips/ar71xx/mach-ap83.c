@@ -221,7 +221,7 @@ static void __init ap83_generic_setup(void)
 
 static void __init ap83_040_setup(void)
 {
-	ar71xx_flash_lock_enable();
+	ap83_flash_data.is_shared=1;
 	ap83_generic_setup();
 	platform_device_register(&ap83_040_spi_device);
 }
