@@ -48,22 +48,22 @@ static struct mtd_partition ap83_flash_partitions[] = {
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
 	} , {
-		.name		= "rootfs",
-		.offset		= 0x060000,
-		.size		= 0x400000,
-	} , {
 		.name		= "kernel",
-		.offset		= 0x460000,
-		.size		= 0x100000,
+		.offset		= 0x060000,
+		.size		= 0x140000,
+	} , {
+		.name		= "rootfs",
+		.offset		= 0x1a0000,
+		.size		= 0x650000,
 	} , {
 		.name		= "art",
-		.offset		= 0x560000,
-		.size		= 0x2a0000,
+		.offset		= 0x7f0000,
+		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
 	} , {
 		.name		= "firmware",
 		.offset		= 0x060000,
-		.size		= 0x500000,
+		.size		= 0x790000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
