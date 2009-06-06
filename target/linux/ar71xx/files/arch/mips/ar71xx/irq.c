@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx SoC specific interrupt handling
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  Parts of this file are based on Atheros' 2.6.15 BSP
@@ -27,7 +27,7 @@ static void ar71xx_pci_irq_dispatch(void)
 	u32 pending;
 
 	pending = ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_STATUS) &
-	    ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
+		  ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
 
 	if (pending & PCI_INT_DEV0)
 		do_IRQ(AR71XX_PCI_IRQ_DEV0);
@@ -37,6 +37,9 @@ static void ar71xx_pci_irq_dispatch(void)
 
 	else if (pending & PCI_INT_DEV2)
 		do_IRQ(AR71XX_PCI_IRQ_DEV2);
+
+	else if (pending & PCI_INT_CORE)
+		do_IRQ(AR71XX_PCI_IRQ_CORE);
 
 	else
 		spurious_interrupt();
