@@ -116,6 +116,9 @@ static struct gpio_button ap81_gpio_buttons[] __initdata = {
 
 static void __init ap81_setup(void)
 {
+	u8 *mac = (u8 *) KSEG1ADDR(0x1fff1000);
+
+	ar71xx_set_mac_base(mac);
 	ar71xx_add_device_mdio(0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
