@@ -60,6 +60,41 @@ static void ar91xx_flash_write(struct map_info *map, map_word d,
 	mb();
 }
 
+static map_word ar91xx_flash_read_lock(struct map_info *map, unsigned long ofs)
+{
+	map_word ret;
+
+	ar71xx_flash_acquire();
+	ret = ar91xx_flash_read(map, ofs);
+	ar71xx_flash_release();
+
+	return ret;
+}
+
+static void ar91xx_flash_write_lock(struct map_info *map, map_word d,
+			       unsigned long ofs)
+{
+	ar71xx_flash_acquire();
+	ar91xx_flash_write(map, d, ofs);
+	ar71xx_flash_release();
+}
+
+static void ar91xx_flash_copy_from_lock(struct map_info *map, void *to,
+					unsigned long from, ssize_t len)
+{
+	ar71xx_flash_acquire();
+	inline_map_copy_from(map, to, from, len);
+	ar71xx_flash_release();
+}
+
+static void ar91xx_flash_copy_to_lock(struct map_info *map, unsigned long to,
+				      const void *from, ssize_t len)
+{
+	ar71xx_flash_acquire();
+	inline_map_copy_to(map, to, from, len);
+	ar71xx_flash_release();
+}
+
 static int ar91xx_flash_remove(struct platform_device *pdev)
 {
 	struct ar91xx_flash_platform_data *pdata;
@@ -152,8 +187,15 @@ static int ar91xx_flash_probe(struct platform_device *pdev)
 	}
 
 	simple_map_init(&info->map);
-	info->map.read = ar91xx_flash_read;
-	info->map.write = ar91xx_flash_write;
+	if (pdata->is_shared) {
+		info->map.read = ar91xx_flash_read_lock;
+		info->map.write = ar91xx_flash_write_lock;
+		info->map.copy_from = ar91xx_flash_copy_from_lock;
+		info->map.copy_to = ar91xx_flash_copy_to_lock;
+	} else {
+		info->map.read = ar91xx_flash_read;
+		info->map.write = ar91xx_flash_write;
+	}
 
 	probe_type = rom_probe_types;
 	for (; info->mtd == NULL && *probe_type != NULL; probe_type++)

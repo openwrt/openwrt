@@ -55,6 +55,7 @@ struct ar71xx_spi_platform_data {
 
 struct ar91xx_flash_platform_data {
 	unsigned int		width;
+	u8			is_shared:1;
 #ifdef CONFIG_MTD_PARTITIONS
 	unsigned int		nr_parts;
 	struct mtd_partition	*parts;
