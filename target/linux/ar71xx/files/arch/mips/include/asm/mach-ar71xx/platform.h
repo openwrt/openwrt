@@ -16,6 +16,8 @@
 #include <linux/skbuff.h>
 #include <linux/phy.h>
 #include <linux/spi/spi.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
 
 struct ag71xx_platform_data {
 	phy_interface_t	phy_if_mode;
@@ -50,5 +52,13 @@ struct ar71xx_spi_platform_data {
 
 #define AR71XX_SPI_CS_INACTIVE	0
 #define AR71XX_SPI_CS_ACTIVE	1
+
+struct ar91xx_flash_platform_data {
+	unsigned int		width;
+#ifdef CONFIG_MTD_PARTITIONS
+	unsigned int		nr_parts;
+	struct mtd_partition	*parts;
+#endif
+};
 
 #endif /* __ASM_MACH_AR71XX_PLATFORM_H */
