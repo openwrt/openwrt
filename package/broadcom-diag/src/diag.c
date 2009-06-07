@@ -781,6 +781,8 @@ static struct platform_t __init *platform_detect(void)
 	if ((buf = nvram_get("ModelId"))) {
 		if (!strcmp(buf, "WR850GP"))
 			return &platforms[WR850GP];
+		if (!strcmp(buf, "WR850G"))
+			return &platforms[WR850GV2V3];
 		if (!strcmp(buf, "WX-5565") && !strcmp(getvar("boardtype"),"bcm94710ap"))
 			return &platforms[TM2300]; /* Dell TrueMobile 2300 */
 		if (startswith(buf,"WE800G")) /* WE800G* */
