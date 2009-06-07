@@ -119,7 +119,7 @@ define Image/Build/UBNT
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(BOARD)-$(2)-$(1).bin
+		-o $(call imgname,$(1),$(2)).bin
 endef
 
 define Image/Build/Planex
@@ -174,6 +174,10 @@ define Image/Build/Template/Linksys8M/squashfs
 	$(call Image/Build/Template/Linksys8M,squashfs,$(1),$(2),$(3))
 endef
 
+define Image/Build/Template/Linksys8M/jffs2-64k
+	$(call Image/Build/Template/Linksys8M,jffs2-64k,$(1),$(2),$(3))
+endef
+
 define Image/Build/Template/AP81
 	$(call Image/Build/AP81,$(1),$(2),$(3),$(4))
 endef
@@ -188,6 +192,10 @@ endef
 
 define Image/Build/Template/AP83/squashfs
 	$(call Image/Build/Template/AP83,squashfs,$(1),$(2))
+endef
+
+define Image/Build/Template/AP83/jffs2-64k
+	$(call Image/Build/Template/AP83,jffs2-64k,$(1),$(2))
 endef
 
 define Image/Build/Template/TPLINK
@@ -206,12 +214,20 @@ define Image/Build/Template/UBNT/squashfs
 	$(call Image/Build/Template/UBNT,squashfs,$(1),$(2),$(3),$(4),$(5))
 endef
 
+define Image/Build/Template/UBNT/jffs2-64k
+	$(call Image/Build/Template/UBNT,jffs2-64k,$(1),$(2),$(3),$(4),$(5))
+endef
+
 define Image/Build/Template/Planex
 	$(call Image/Build/Planex,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/Planex/squashfs
 	$(call Image/Build/Template/Planex,squashfs,$(1),$(2))
+endef
+
+define Image/Build/Template/Planex/jffs2-64k
+	$(call Image/Build/Template/Planex,jffs2-64k,$(1),$(2))
 endef
 
 define Image/Build/Profile/AP83
