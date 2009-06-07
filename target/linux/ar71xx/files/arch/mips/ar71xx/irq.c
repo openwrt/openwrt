@@ -50,6 +50,9 @@ static void ar71xx_pci_irq_unmask(unsigned int irq)
 	irq -= AR71XX_PCI_IRQ_BASE;
 	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE,
 		ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE) | (1 << irq));
+
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
 }
 
 static void ar71xx_pci_irq_mask(unsigned int irq)
@@ -57,6 +60,9 @@ static void ar71xx_pci_irq_mask(unsigned int irq)
 	irq -= AR71XX_PCI_IRQ_BASE;
 	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE,
 		ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE) & ~(1 << irq));
+
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
 }
 
 static struct irq_chip ar71xx_pci_irq_chip = {
