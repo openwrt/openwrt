@@ -411,8 +411,18 @@ char * nvram_find_mtd(void)
 	char dev[PATH_MAX];
 	char *path = NULL;
 	struct stat s;
+	int supported = 1;
 
-	if( (fp = fopen("/proc/mtd", "r")) )
+	/* Refuse any operation on the WGT634U */
+	if( (fp = fopen("/proc/diag/model", "r")) )
+	{
+		if( fgets(dev, sizeof(dev), fp) && !strncmp(dev, "Netgear WGT634U", 15) )
+			supported = 0;
+
+		fclose(fp);
+	}
+
+	if( supported && (fp = fopen("/proc/mtd", "r")) )
 	{
 		while( fgets(dev, sizeof(dev), fp) )
 		{
