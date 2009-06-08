@@ -33,8 +33,9 @@ After running \texttt{scan\_interfaces}, the following functions are available:
 
 \subsubsection{Writing protocol handlers}
 
-You can add custom protocol handlers by adding shell scripts to
-\texttt{/lib/network}. They provide the following two shell functions:
+You can add custom protocol handlers (e.g: PPPoE, PPPoA, ATM, PPTP ...)
+by adding shell scripts to \texttt{/lib/network}. They provide the following
+two shell functions:
 
 \begin{Verbatim}
 scan_<protocolname>() {
