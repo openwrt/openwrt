@@ -773,7 +773,7 @@ ipkg_install_file_dest() {
 	mkdir -p $IPKG_TMP/$pkg/data
 	mkdir -p $info_dir
 
-	if ! $pkg_extract_stdout $filename ./control.tar.gz | (cd $IPKG_TMP/$pkg/control; tar -xzf - ) ; then
+	if ! $pkg_extract_stdout $filename ./control.tar.gz | (cd $IPKG_TMP/$pkg/control; zcat | tar -xf - ) ; then
 		echo "ipkg_install_file: ERROR unpacking control.tar.gz from $filename"
 		return 1
 	fi
@@ -803,7 +803,7 @@ Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 	set -o noglob
 	rm -r $IPKG_TMP/$pkg/control
 
-	if ! $pkg_extract_stdout $filename ./data.tar.gz | (cd $IPKG_TMP/$pkg/data; tar -xzf - ) ; then
+	if ! $pkg_extract_stdout $filename ./data.tar.gz | (cd $IPKG_TMP/$pkg/data; zcat | tar -xf - ) ; then
 		echo "ipkg_install_file: ERROR unpacking data.tar.gz from $filename"
 		return 1
 	fi
@@ -875,7 +875,7 @@ diff -u $dest/$conffile $IPKG_TMP/$pkg/data/$conffile"
 	rm -rf $IPKG_TMP/$pkg/data
 	rmdir $IPKG_TMP/$pkg
 	rm -f $info_dir/$pkg.list
-	$pkg_extract_stdout $filename ./data.tar.gz | tar tzf - | sed -e 's/^\.//' > $info_dir/$pkg.list
+	$pkg_extract_stdout $filename ./data.tar.gz | zcat | tar tf - | sed -e 's/^\.//' > $info_dir/$pkg.list
 
 	if [ -x "$info_dir/$pkg.postinst" ]; then
 		$info_dir/$pkg.postinst configure
