@@ -22,7 +22,12 @@ of interfaces and add:
 \end{Verbatim}
 
 It is possible to use VLAN tagging on an interface simply by adding the VLAN IDs
-to it, e.g. \texttt{eth0.1}. These can be nested as well.
+to it, e.g. \texttt{eth0.1}. These can be nested as well. See the switch section for
+this.
+
+\begin{Verbatim}
+config inter
+\end{Verbatim}
 
 This sets up a simple static configuration for \texttt{eth0}. \texttt{proto} specifies the
 protocol used for the interface. The default image usually provides \texttt{'none'}
@@ -31,10 +36,26 @@ packages.
 
 When using the \texttt{'static'} method like in the example, the  options \texttt{ipaddr} and
 \texttt{netmask} are mandatory, while \texttt{gateway} and \texttt{dns} are optional.
-You can specify more than one DNS server, separated with spaces.
+You can specify more than one DNS server, separated with spaces:
+
+\begin{Verbatim}
+config interface     "lan"
+    option ifname    "eth0"
+    option proto     "static"
+    ...
+    option dns       "192.168.1.254 192.168.1.253" (optional)
+\end{Verbatim}
 
 DHCP currently only accepts \texttt{ipaddr} (IP address to request from the server)
 and \texttt{hostname} (client hostname identify as) - both are optional.
+
+\begin{Verbatim}
+config interface     "lan"
+    option ifname    "eth0"
+    option proto     "dhcp"
+    option ipaddr    "192.168.1.1" (optional)
+    option hostname  "openwrt"	(optional)
+\end{Verbatim}
 
 PPP based protocols (\texttt{pppoe}, \texttt{pptp}, ...) accept these options:
 \begin{itemize}
@@ -55,6 +76,16 @@ PPP based protocols (\texttt{pppoe}, \texttt{pptp}, ...) accept these options:
 \end{itemize}
 
 For all protocol types, you can also specify the MTU by using the \texttt{mtu} option.
+A sample PPPoE config would look like this:
+
+\begin{Verbatim}
+config interface     "lan"
+    option ifname    "eth0"
+    option proto     "pppoe"
+    option username  "username"
+    option password  "openwrt"
+    option mtu	     1492 (optional)
+\end{Verbatim}
 
 \subsubsection{Setting up static routes}
 
