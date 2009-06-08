@@ -467,8 +467,6 @@ struct platform_driver bcm63xx_pcmcia_driver = {
 		.name	= "bcm63xx_pcmcia",
 		.owner  = THIS_MODULE,
 	},
-
-	{ },
 };
 
 #ifdef CONFIG_CARDBUS
