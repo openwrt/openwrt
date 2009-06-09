@@ -74,7 +74,7 @@ static void bcm63xx_timer_tick(unsigned long unused)
 		bcm63xx_wdt_hw_start();
 		mod_timer(&bcm63xx_wdt_device.timer, jiffies + HZ);
 	} else
-		printk(KERN_CRIT PFX "watchdog will restart system\n");
+		printk(KERN_CRIT PFX ": watchdog will restart system\n");
 }
 
 static void bcm63xx_wdt_pet(void)
@@ -108,7 +108,7 @@ static int bcm63xx_wdt_open(struct inode *inode, struct file *file)
 {
 	if (test_and_set_bit(0, &bcm63xx_wdt_device.inuse))
 		return -EBUSY;
-	
+
 	bcm63xx_wdt_start();
 	return nonseekable_open(inode, file);
 }
@@ -188,11 +188,11 @@ static long bcm63xx_wdt_ioctl(struct file *file, unsigned int cmd,
 		}
 
 		return retval;
-	
+
 	case WDIOC_KEEPALIVE:
-                bcm63xx_wdt_pet();
+		bcm63xx_wdt_pet();
 		return 0;
-		
+
 	case WDIOC_SETTIMEOUT:
 		if (get_user(new_value, p))
 			return -EFAULT;
@@ -212,14 +212,14 @@ static long bcm63xx_wdt_ioctl(struct file *file, unsigned int cmd,
 }
 
 static int bcm63xx_wdt_notify_sys(struct notifier_block *this,
-           unsigned long code, void *unused)
+				unsigned long code, void *unused)
 {
 	if (code == SYS_DOWN || code == SYS_HALT)
 		bcm63xx_wdt_pause();
 	return NOTIFY_DONE;
 }
 
-static struct file_operations bcm63xx_wdt_fops = {
+static const struct file_operations bcm63xx_wdt_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,
 	.write		= bcm63xx_wdt_write,
@@ -243,12 +243,12 @@ static int bcm63xx_wdt_probe(struct platform_device *pdev)
 {
 	int ret;
 	struct resource *r;
-	
+
 	setup_timer(&bcm63xx_wdt_device.timer, bcm63xx_timer_tick, 0L);
 
 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!r) {
-		printk(KERN_ERR PFX 
+		printk(KERN_ERR PFX
 			"failed to retrieve resources\n");
 		return -ENODEV;
 	}
@@ -271,7 +271,7 @@ static int bcm63xx_wdt_probe(struct platform_device *pdev)
 	if (ret) {
 		printk(KERN_ERR PFX
 			"failed to register reboot_notifier\n");
-                return ret;
+		return ret;
 	}
 
 	ret = misc_register(&bcm63xx_wdt_miscdev);
