@@ -17,6 +17,8 @@ LOADER_MAKEOPTS= \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
 		RAMSIZE=$(RAMSIZE)
 
+SVN_REVISION=r$(shell svn info|grep Revision|cut -f1 -d\ )
+
 define trxalign/jffs2-128k
 -a 0x20000
 endef
@@ -30,8 +32,9 @@ endef
 define Image/Build/CFE
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
-		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR)
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-$(6)-cfe.bin \
+		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
+	        -t $(4) -d "$(5)"
 #		-b $(2) -c $(3) -e $(KERNEL_ENTRY) -l $(LOADADDR)
 
 endef
@@ -39,9 +42,9 @@ endef
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-$(7)-cfe.bin \
 		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
-		-v 8 -m IMAGE -k 0x20000 -n $(4) -p alice
+		-v 8 -m IMAGE -k 0x20000 -n $(4) -t $(5)
 endef
 
 define Image/Build/RedBoot
@@ -95,24 +98,42 @@ endef
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
-	$(call Image/Build/CFE,$(1),96345GW2,6345)
-	$(call Image/Build/CFE,$(1),96348GW,6348)
+	# Various routers
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bc300,,bc300)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bc310,OpenWRT-$(SVN_REVISION),bc310)
+	$(call Image/Build/CFE,$(1),96348GW,6348,bccfe,,bcfe)
+	# BT Voyager V2500V
+	$(call Image/Build/CFE,$(1),V2500V_BB,6348,bc308,,btvgr)
+	# Tecom GW6000
+	$(call Image/Build/CFE,$(1),96348GW,6348,bc300,,bc300)
+	# Tecom GW6200
+	$(call Image/Build/CFE,$(1),96348GW,6348,bc310,$(shell printf '\x99'),gw6200)
 	# Neufbox4
-	$(call Image/Build/CFE,$(1),96358VW,6358)
-	# Comtrend 536
-	$(call Image/Build/CFE,$(1),96348GW-11,6348)
+	$(call Image/Build/CFE,$(1),96358VW,6358,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),96358VW,6358,bc310,OpenWRT-$(SVN_REVISION),nb4)
+	# Comtrend 536, 5621
+	$(call Image/Build/CFE,$(1),96348GW-11,6348,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),96348GW-11,6348,bc300,,bc300)
 	# Davolink DV201AMR
 	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
 	# USR 9108
-	$(call Image/Build/CFE,$(1),96348GW-A,6348)
-	# DG834GT
-	$(call Image/Build/CFE,$(1),96348GW-10,6348)
+	$(call Image/Build/CFE,$(1),96348GW-A,6348,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),96348GW-A,6348,bc300,,bc300)
+	$(call Image/Build/CFE,$(1),96348GW-A,6348,bc310,OpenWRT-$(SVN_REVISION),bc310)
+	# NetGear DG834GT
+	$(call Image/Build/CFE,$(1),96348GW-10,6348,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),96348GW-10,6348,bc300,,bc300)
+
 	# Sagem F@ST2404
-	$(call Image/Build/CFE,$(1),F@ST2404,6348)
+	$(call Image/Build/CFE,$(1),F@ST2404,6348,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),F@ST2404,6348,bc300,,bc300)
+	$(call Image/Build/CFE,$(1),F@ST2404,6348,bc310,OpenWRT-$(SVN_REVISION),bc310)
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
-	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000)
+	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,bccfe,,bccfe)
+	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,ag306,,agv2+w)
 endef
 
 $(eval $(call BuildImage))
