@@ -1,10 +1,11 @@
 #!/bin/sh /etc/rc.common
 START=90
+EXPORTER=/usr/sbin/wprobe-ipfix
 
 wprobe_ssd() {
 	local cfg="$1"; shift
 	local cmd="$1"; shift
-	start-stop-daemon "$cmd" -p "/var/run/wprobe-$cfg.pid" -b -x /sbin/wprobe-export -m -- "$@"
+	start-stop-daemon "$cmd" -p "/var/run/wprobe-$cfg.pid" -b -x "$EXPORTER" -m -- "$@"
 }
 
 stop_wprobe() {
@@ -13,7 +14,14 @@ stop_wprobe() {
 	rm -f "/var/run/wprobe-$cfg.pid"
 }
 
-start_wprobe() {
+config_wprobe() {
+	config_get ifname "$cfg" ifname
+	config_get interval "$cfg" interval
+	[ -n "$interval" ] || interval=100
+	wprobe-info "$ifname" -c -i "$interval"
+}
+
+start_ipfix() {
 	local cfg="$1"
 	config_get ifname "$cfg" interface
 	config_get host "$cfg" host
@@ -29,7 +37,15 @@ start_wprobe() {
 		echo "wprobe-export: missing host or interface name in config $cfg"
 		return
 	}
+	config_wprobe "$cfg"
 	wprobe_ssd "$cfg" -S "$proto" -i "$ifname" -c "$host" -p "${port:-4739}"
+}
+
+start_export() {
+	config_get export_type "$cfg" type
+	case "$export_type" in 
+		ipfix) start_ipfix "$cfg";;
+	esac
 }
 
 stop() {
@@ -42,5 +58,6 @@ stop() {
 
 start() {
 	config_load wprobe
-	config_foreach start_wprobe wprobe
+	config_foreach config_wprobe interface
+	[ -x "$EXPORTER" ] && config_foreach start_export export
 }

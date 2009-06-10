@@ -34,6 +34,8 @@
 #define list_for_each_rcu __list_for_each_rcu
 #endif
 
+#define WPROBE_MIN_INTERVAL		100 /* minimum measurement interval in msecs */
+
 static struct list_head wprobe_if;
 static spinlock_t wprobe_lock;
 
@@ -43,10 +45,11 @@ static struct genl_family wprobe_fam = {
 	.hdrsize = 0,
 	.version = 1,
 	/* only the first set of attributes is used for queries */
-	.maxattr = WPROBE_ATTR_ID,
+	.maxattr = WPROBE_ATTR_LAST,
 };
 
 static void wprobe_update_stats(struct wprobe_iface *dev, struct wprobe_link *l);
+static int wprobe_sync_data(struct wprobe_iface *dev, struct wprobe_link *l, bool query);
 
 int
 wprobe_add_link(struct wprobe_iface *s, struct wprobe_link *l, const char *addr)
@@ -81,6 +84,19 @@ wprobe_remove_link(struct wprobe_iface *s, struct wprobe_link *l)
 }
 EXPORT_SYMBOL(wprobe_remove_link);
 
+static void
+wprobe_measure_timer(unsigned long data)
+{
+	struct wprobe_iface *dev = (struct wprobe_iface *) data;
+
+	/* set next measurement interval */
+	mod_timer(&dev->measure_timer, jiffies +
+		msecs_to_jiffies(dev->measure_interval));
+
+	/* perform measurement */
+	wprobe_sync_data(dev, NULL, false);
+}
+
 int
 wprobe_add_iface(struct wprobe_iface *s)
 {
@@ -93,6 +109,7 @@ wprobe_add_iface(struct wprobe_iface *s)
 	BUG_ON(!s->name);
 	INIT_LIST_HEAD(&s->list);
 	INIT_LIST_HEAD(&s->links);
+	setup_timer(&s->measure_timer, wprobe_measure_timer, (unsigned long) s);
 
 	vsize = max(s->n_link_items, s->n_global_items);
 	s->val = kzalloc(sizeof(struct wprobe_value) * vsize, GFP_ATOMIC);
@@ -102,6 +119,15 @@ wprobe_add_iface(struct wprobe_iface *s)
 	s->query_val = kzalloc(sizeof(struct wprobe_value) * vsize, GFP_ATOMIC);
 	if (!s->query_val)
 		goto error;
+
+	/* initialize defaults to be able to handle overflow,
+	 * user space will need to handle this if it keeps an
+	 * internal histogram */
+	s->scale_min = 20;
+	s->scale_max = (1 << 31);
+
+	s->scale_m = 1;
+	s->scale_d = 10;
 
 	spin_lock_irqsave(&wprobe_lock, flags);
 	list_add_rcu(&s->list, &wprobe_if);
@@ -123,6 +149,7 @@ wprobe_remove_iface(struct wprobe_iface *s)
 
 	BUG_ON(!list_empty(&s->links));
 
+	del_timer_sync(&s->measure_timer);
 	spin_lock_irqsave(&wprobe_lock, flags);
 	list_del_rcu(&s->list);
 	spin_unlock_irqrestore(&wprobe_lock, flags);
@@ -160,7 +187,7 @@ wprobe_get_dev(struct nlattr *attr)
 	return dev;
 }
 
-int
+static int
 wprobe_sync_data(struct wprobe_iface *dev, struct wprobe_link *l, bool query)
 {
 	struct wprobe_value *val;
@@ -190,11 +217,40 @@ done:
 }
 EXPORT_SYMBOL(wprobe_sync_data);
 
+static void
+wprobe_scale_stats(struct wprobe_iface *dev, const struct wprobe_item *item,
+                   struct wprobe_value *val, int n)
+{
+	u64 scale_ts = jiffies_64;
+	int i;
+
+	for (i = 0; i < n; i++) {
+		if (!(item[i].flags & WPROBE_F_KEEPSTAT))
+			continue;
+
+		if (val[i].n <= dev->scale_min)
+			continue;
+
+		/* FIXME: div_s64 seems to be very imprecise here, even when
+		 * the values are scaled up */
+		val[i].s *= dev->scale_m;
+		val[i].s = div_s64(val[i].s, dev->scale_d);
+
+		val[i].ss *= dev->scale_m;
+		val[i].ss = div_s64(val[i].ss, dev->scale_d);
+
+		val[i].n = (val[i].n * dev->scale_m) / dev->scale_d;
+		val[i].scale_timestamp = scale_ts;
+	}
+}
+
+
 void
 wprobe_update_stats(struct wprobe_iface *dev, struct wprobe_link *l)
 {
 	const struct wprobe_item *item;
 	struct wprobe_value *val;
+	bool scale_stats = false;
 	int i, n;
 
 	if (l) {
@@ -215,6 +271,10 @@ wprobe_update_stats(struct wprobe_iface *dev, struct wprobe_link *l)
 			continue;
 
 		val[i].n++;
+		if ((item[i].flags & WPROBE_F_KEEPSTAT) &&
+			(dev->scale_max > 0) && (val[i].n > dev->scale_max)) {
+			scale_stats = true;
+		}
 
 		switch(item[i].type) {
 		case WPROBE_VAL_S8:
@@ -249,15 +309,22 @@ wprobe_update_stats(struct wprobe_iface *dev, struct wprobe_link *l)
 		val[i].ss += v * v;
 		val[i].pending = false;
 	}
+	if (scale_stats)
+		wprobe_scale_stats(dev, item, val, n);
 }
 EXPORT_SYMBOL(wprobe_update_stats);
 
-static const struct nla_policy wprobe_policy[WPROBE_ATTR_ID+1] = {
+static const struct nla_policy wprobe_policy[WPROBE_ATTR_LAST+1] = {
 	[WPROBE_ATTR_INTERFACE] = { .type = NLA_NUL_STRING },
 	[WPROBE_ATTR_MAC] = { .type = NLA_STRING },
-	[WPROBE_ATTR_DURATION] = { .type = NLA_MSECS },
 	[WPROBE_ATTR_FLAGS] = { .type = NLA_U32 },
-	[WPROBE_ATTR_SCALE] = { .type = NLA_U32 },
+
+	/* config */
+	[WPROBE_ATTR_INTERVAL] = { .type = NLA_MSECS },
+	[WPROBE_ATTR_SAMPLES_MIN] = { .type = NLA_U32 },
+	[WPROBE_ATTR_SAMPLES_MAX] = { .type = NLA_U32 },
+	[WPROBE_ATTR_SAMPLES_SCALE_M] = { .type = NLA_U32 },
+	[WPROBE_ATTR_SAMPLES_SCALE_D] = { .type = NLA_U32 },
 };
 
 static bool
@@ -322,6 +389,7 @@ wprobe_send_item_value(struct sk_buff *msg, struct netlink_callback *cb,
 		NLA_PUT_U64(msg, WPROBE_VAL_SUM, val[i].s);
 		NLA_PUT_U64(msg, WPROBE_VAL_SUM_SQ, val[i].ss);
 		NLA_PUT_U32(msg, WPROBE_VAL_SAMPLES, (u32) val[i].n);
+		NLA_PUT_MSECS(msg, WPROBE_VAL_SCALE_TIME, val[i].scale_timestamp);
 	}
 done:
 	genlmsg_end(msg, hdr);
@@ -432,29 +500,6 @@ wprobe_dump_links(struct sk_buff *skb, struct netlink_callback *cb)
 done:
 	return err;
 }
-static void
-wprobe_scale_stats(const struct wprobe_item *item, struct wprobe_value *val, int n, u32 flags)
-{
-	u32 scale = 0;
-	int i;
-
-	for (i = 0; i < n; i++) {
-		if (!(item[i].flags & WPROBE_F_KEEPSTAT))
-			continue;
-
-		/* reset statistics, if requested */
-		if (flags & WPROBE_F_RESET)
-			scale = val[i].n;
-		else if (wprobe_fam.attrbuf[WPROBE_ATTR_SCALE])
-			scale = nla_get_u32(wprobe_fam.attrbuf[WPROBE_ATTR_SCALE]);
-
-		if ((scale > 0) && (val[i].n > scale)) {
-			val[i].s = div_s64(val[i].s, scale);
-			val[i].ss = div_s64(val[i].ss, scale);
-			val[i].n = val[i].n / scale + 1;
-		}
-	}
-}
 
 #define WPROBE_F_LINK (1 << 31) /* for internal use */
 static int
@@ -515,7 +560,6 @@ wprobe_dump_info(struct sk_buff *skb, struct netlink_callback *cb)
 			err = wprobe_sync_data(dev, l, true);
 			if (!err)
 				memcpy(dev->query_val, val, n * sizeof(struct wprobe_value));
-			wprobe_scale_stats(item, val, n, flags);
 			spin_unlock_irqrestore(&dev->lock, flags);
 
 			if (err)
@@ -583,6 +627,25 @@ done:
 #undef WPROBE_F_LINK
 
 static int
+wprobe_update_auto_measurement(struct wprobe_iface *dev, u32 interval)
+{
+	if (interval && (interval < WPROBE_MIN_INTERVAL))
+		return -EINVAL;
+
+	if (!interval && dev->measure_interval)
+		del_timer_sync(&dev->measure_timer);
+
+	dev->measure_interval = interval;
+	if (!interval)
+		return 0;
+
+	/* kick of a new measurement immediately */
+	mod_timer(&dev->measure_timer, jiffies + 1);
+
+	return 0;
+}
+
+static int
 wprobe_measure(struct sk_buff *skb, struct genl_info *info)
 {
 	struct wprobe_iface *dev;
@@ -607,6 +670,75 @@ done:
 	return err;
 }
 
+static int
+wprobe_set_config(struct sk_buff *skb, struct genl_info *info)
+{
+	struct wprobe_iface *dev;
+	unsigned long flags;
+	int err = -ENOENT;
+	u32 scale_min, scale_max;
+	u32 scale_m, scale_d;
+
+	rcu_read_lock();
+	dev = wprobe_get_dev(info->attrs[WPROBE_ATTR_INTERFACE]);
+	if (!dev)
+		goto done_unlocked;
+
+	err = -EINVAL;
+	spin_lock_irqsave(&dev->lock, flags);
+	if (info->attrs[WPROBE_ATTR_MAC]) {
+		/* not supported yet */
+		goto done;
+	}
+
+	if (info->attrs[WPROBE_ATTR_SAMPLES_MIN] ||
+		info->attrs[WPROBE_ATTR_SAMPLES_MAX]) {
+		if (info->attrs[WPROBE_ATTR_SAMPLES_MIN])
+			scale_min = nla_get_u32(info->attrs[WPROBE_ATTR_SAMPLES_MIN]);
+		else
+			scale_min = dev->scale_min;
+
+		if (info->attrs[WPROBE_ATTR_SAMPLES_MAX])
+			scale_max = nla_get_u32(info->attrs[WPROBE_ATTR_SAMPLES_MAX]);
+		else
+			scale_max = dev->scale_max;
+
+		if ((!scale_min && !scale_max) ||
+		    (scale_min && scale_max && (scale_min < scale_max))) {
+			dev->scale_min = scale_min;
+			dev->scale_max = scale_max;
+		} else {
+			goto done;
+		}
+	}
+
+	if (info->attrs[WPROBE_ATTR_SAMPLES_SCALE_M] &&
+		info->attrs[WPROBE_ATTR_SAMPLES_SCALE_D]) {
+
+		scale_m = nla_get_u32(info->attrs[WPROBE_ATTR_SAMPLES_SCALE_M]);
+		scale_d = nla_get_u32(info->attrs[WPROBE_ATTR_SAMPLES_SCALE_D]);
+
+		if (!scale_d || (scale_m > scale_d))
+			goto done;
+
+		dev->scale_m = scale_m;
+		dev->scale_d = scale_d;
+	}
+
+	err = 0;
+	if (info->attrs[WPROBE_ATTR_INTERVAL]) {
+		/* change of measurement interval requested */
+		err = wprobe_update_auto_measurement(dev,
+			(u32) nla_get_u64(info->attrs[WPROBE_ATTR_INTERVAL]));
+	}
+
+done:
+	spin_unlock_irqrestore(&dev->lock, flags);
+done_unlocked:
+	rcu_read_unlock();
+	return err;
+}
+
 static struct genl_ops wprobe_ops[] = {
 	{
 		.cmd = WPROBE_CMD_GET_INFO,
@@ -627,7 +759,11 @@ static struct genl_ops wprobe_ops[] = {
 		.cmd = WPROBE_CMD_GET_LINKS,
 		.dumpit = wprobe_dump_links,
 		.policy = wprobe_policy,
-	}
+	},
+	{
+		.cmd = WPROBE_CMD_CONFIG,
+		.doit = wprobe_set_config,
+	},
 };
 
 static void __exit
