@@ -103,16 +103,23 @@ rootfs_type() {
 	mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }'
 }
 
-get_image() {
+get_image() { # <source> [ <command> ]
 	local from="$1"
-	local conc="cat"
+	local cmd="$2"
+	local conc
 
-	[ "$GZIPED" -eq 1 ] && conc="zcat"
+	if [ -z "$cmd" ]; then
+		case "$from" in
+			http://*|ftp://*) cmd="wget -O- -q";;
+			*) cmd="cat";;
+		esac
+		local magic="$(eval $cmd $from | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
+		case "$magic" in
+			1f8b) conc="| zcat";;
+		esac
+	fi
 
-	case "$from" in
-		http://*|ftp://*) wget -O- -q "$from" | "$conc";;
-		*) cat "$from" | "$conc";;
-	esac
+	eval "$cmd $from $conc"
 }
 
 get_magic_word() {
