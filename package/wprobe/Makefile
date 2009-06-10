@@ -45,7 +45,7 @@ endef
 define Package/wprobe-export
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-wprobe +libnl-tiny
+  DEPENDS:=+wprobe-info
   TITLE:=Wireless measurement data exporter
 endef
 
@@ -113,8 +113,9 @@ define Package/wprobe-info/install
 endef
 
 define Package/wprobe-export/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/sbin $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_BIN) ./files/wprobe.init $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/wprobe.config $(1)/etc/config/wprobe
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exporter/wprobe-export $(1)/sbin/
 endef
 

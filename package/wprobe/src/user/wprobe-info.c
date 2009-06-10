@@ -64,15 +64,15 @@ wprobe_dump_value(struct wprobe_attribute *attr)
 
 
 static void
-wprobe_dump_data(const char *ifname, struct list_head *gl, struct list_head *ll, struct list_head *ls)
+wprobe_dump_data(struct wprobe_iface *dev)
 {
 	struct wprobe_attribute *attr;
 	struct wprobe_link *link;
 	bool first = true;
 
 	fprintf(stderr, "\n");
-	wprobe_request_data(ifname, gl, NULL, 2);
-	list_for_each_entry(attr, gl, list) {
+	wprobe_request_data(dev, NULL);
+	list_for_each_entry(attr, &dev->global_attr, list) {
 		fprintf(stderr, (first ?
 			"Global:            %s=%s\n" :
 			"                   %s=%s\n"),
@@ -82,10 +82,10 @@ wprobe_dump_data(const char *ifname, struct list_head *gl, struct list_head *ll,
 		first = false;
 	}
 
-	list_for_each_entry(link, ls, list) {
+	list_for_each_entry(link, &dev->links, list) {
 		first = true;
-		wprobe_request_data(ifname, ll, link->addr, 2);
-		list_for_each_entry(attr, ll, list) {
+		wprobe_request_data(dev, link->addr);
+		list_for_each_entry(attr, &dev->link_attr, list) {
 			if (first) {
 				fprintf(stderr,
 					"%02x:%02x:%02x:%02x:%02x:%02x: %s=%s\n",
@@ -119,57 +119,92 @@ static const char *attr_typestr[] = {
 
 static int usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s <interface>\n", prog);
-	return 1;
+	fprintf(stderr,
+		"Usage: %s <interface> [options]\n"
+		"\n"
+		"Options:\n"
+		"  -c:            Only apply configuration\n"
+		"  -h:            This help text\n"
+		"  -i <interval>: Set measurement interval\n"
+		"  -m:            Run measurement loop\n"
+		"\n"
+		, prog);
+	exit(1);
+}
+
+static void show_attributes(struct wprobe_iface *dev)
+{
+	struct wprobe_attribute *attr;
+	list_for_each_entry(attr, &dev->global_attr, list) {
+		fprintf(stderr, "Global attribute: '%s' (%s)\n",
+			attr->name, attr_typestr[attr->type]);
+	}
+	list_for_each_entry(attr, &dev->link_attr, list) {
+		fprintf(stderr, "Link attribute: '%s' (%s)\n",
+			attr->name, attr_typestr[attr->type]);
+	}
+}
+
+static void loop_measurement(struct wprobe_iface *dev)
+{
+	while (1) {
+		sleep(1);
+		wprobe_update_links(dev);
+		wprobe_dump_data(dev);
+	}
 }
 
 int main(int argc, char **argv)
 {
-	struct wprobe_attribute *attr;
+	struct wprobe_iface *dev;
 	const char *ifname;
-	LIST_HEAD(global_attr);
-	LIST_HEAD(link_attr);
-	LIST_HEAD(links);
-	int i = 0;
+	const char *prog = argv[0];
+	enum {
+		CMD_NONE,
+		CMD_CONFIG,
+		CMD_MEASURE,
+	} cmd = CMD_NONE;
+	int ch;
 
-	if (argc < 2)
-		return usage(argv[0]);
+	if ((argc < 2) || (argv[1][0] == '-'))
+		return usage(prog);
 
 	ifname = argv[1];
+	dev = wprobe_get_dev(ifname);
+	argv++;
+	argc--;
 
-	if (wprobe_init() != 0)
-		return -1;
-
-	wprobe_dump_attributes(ifname, false, &global_attr, NULL);
-	wprobe_dump_attributes(ifname, true, &link_attr, NULL);
-
-	if (list_empty(&global_attr) &&
-		list_empty(&link_attr)) {
+	if (!dev || (list_empty(&dev->global_attr) &&
+		list_empty(&dev->link_attr))) {
 		fprintf(stderr, "Interface '%s' not found\n", ifname);
 		return -1;
 	}
 
-	list_for_each_entry(attr, &global_attr, list) {
-		fprintf(stderr, "Global attribute: '%s' (%s)\n",
-			attr->name, attr_typestr[attr->type]);
-	}
-	list_for_each_entry(attr, &link_attr, list) {
-		fprintf(stderr, "Link attribute: '%s' (%s)\n",
-			attr->name, attr_typestr[attr->type]);
+	while ((ch = getopt(argc, argv, "chi:m")) != -1) {
+		switch(ch) {
+		case 'c':
+			cmd = CMD_CONFIG;
+			break;
+		case 'm':
+			cmd = CMD_MEASURE;
+			break;
+		case 'i':
+			dev->interval = strtoul(optarg, NULL, 10);
+			break;
+		case 'h':
+		default:
+			usage(prog);
+			break;
+		}
 	}
 
-	while (1) {
-		usleep(100 * 1000);
-		wprobe_measure(ifname);
+	wprobe_apply_config(dev);
+	if (cmd != CMD_CONFIG)
+		show_attributes(dev);
+	if (cmd == CMD_MEASURE)
+		loop_measurement(dev);
 
-		if (i-- > 0)
-			continue;
-
-		i = 10;
-		wprobe_update_links(ifname, &links);
-		wprobe_dump_data(ifname, &global_attr, &link_attr, &links);
-	}
-	wprobe_free();
+	wprobe_free_dev(dev);
 
 	return 0;
 }

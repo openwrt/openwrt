@@ -32,13 +32,12 @@
  *
  * @WPROBE_ATTR_INTERFACE: interface name to process query on (NLA_STRING)
  * @WPROBE_ATTR_MAC: mac address (used for wireless links) (NLA_STRING)
- * @WPROBE_ATTR_FLAGS: interface/link/attribute flags (see enum wprobe_flags) (NLA_U32)
- * @WPROBE_ATTR_DURATION: sampling duration (in milliseconds) (NLA_MSECS)
+ * @WPROBE_ATTR_FLAGS: interface/link/attribute flags (see enum wprobe_flags) (NLA_U32)a
+ * @WPROBE_ATTR_DURATION: sampling duration (in milliseconds) (NLA_MSECS) 
  *
  * @WPROBE_ATTR_ID: attribute id (NLA_U32)
  * @WPROBE_ATTR_NAME: attribute name (NLA_STRING)
  * @WPROBE_ATTR_TYPE: attribute type (NLA_U8)
- * @WPROBE_ATTR_SCALE: attribute scale factor (NLA_U32)
  *
  * attribute values:
  *
@@ -56,22 +55,29 @@
  * @WPROBE_VAL_SUM: sum of all samples
  * @WPROBE_VAL_SUM_SQ: sum of all samples^2
  * @WPROBE_VAL_SAMPLES: number of samples
+ * @WPROBE_VAL_SCALE_TIME: last time the samples were scaled down
+ *
+ * configuration:
+ * @WPROBE_ATTR_INTERVAL: (measurement interval in milliseconds) (NLA_MSECS)
+ * @WPROBE_ATTR_SAMPLES_MIN: minimum samples to keep during inactivity (NLA_U32)
+ * @WPROBE_ATTR_SAMPLES_MAX: maximum samples to keep before scaling down (NLA_U32)
+ * @WPROBE_ATTR_SAMPLES_SCALE_M: multiplier for scaling down samples (NLA_U32)
+ * @WPROBE_ATTR_SAMPLES_SCALE_D: divisor for scaling down samples (NLA_U32)
  *
  * @WPROBE_ATTR_LAST: unused
  */
 enum wprobe_attr {
+	/* query attributes */
 	WPROBE_ATTR_UNSPEC,
 	WPROBE_ATTR_INTERFACE,
 	WPROBE_ATTR_MAC,
 	WPROBE_ATTR_FLAGS,
-	WPROBE_ATTR_DURATION,
-	WPROBE_ATTR_SCALE,
-	/* end of query attributes */
 
 	/* response data */
 	WPROBE_ATTR_ID,
 	WPROBE_ATTR_NAME,
 	WPROBE_ATTR_TYPE,
+	WPROBE_ATTR_DURATION,
 
 	/* value type attributes */
 	WPROBE_VAL_STRING,
@@ -88,6 +94,14 @@ enum wprobe_attr {
 	WPROBE_VAL_SUM,
 	WPROBE_VAL_SUM_SQ,
 	WPROBE_VAL_SAMPLES,
+	WPROBE_VAL_SCALE_TIME,
+
+	/* config attributes */
+	WPROBE_ATTR_INTERVAL,
+	WPROBE_ATTR_SAMPLES_MIN,
+	WPROBE_ATTR_SAMPLES_MAX,
+	WPROBE_ATTR_SAMPLES_SCALE_M,
+	WPROBE_ATTR_SAMPLES_SCALE_D,
 
 	WPROBE_ATTR_LAST
 };
@@ -117,6 +131,7 @@ enum wprobe_cmd {
 	WPROBE_CMD_SET_FLAGS,
 	WPROBE_CMD_MEASURE,
 	WPROBE_CMD_GET_LINKS,
+	WPROBE_CMD_CONFIG,
 	WPROBE_CMD_LAST
 };
 
@@ -192,6 +207,7 @@ struct wprobe_value {
 
 	/* timestamps */
 	u64 first, last;
+	u64 scale_timestamp;
 };
 
 /**
@@ -225,7 +241,8 @@ struct wprobe_iface {
 	const struct wprobe_item *global_items;
 	int n_global_items;
 
-	int (*sync_data)(struct wprobe_iface *dev, struct wprobe_link *l, struct wprobe_value *val, bool measure);
+	int (*sync_data)(struct wprobe_iface *dev, struct wprobe_link *l,
+	                 struct wprobe_value *val, bool measure);
 	void *priv;
 
 	/* handled by the wprobe core */
@@ -234,6 +251,14 @@ struct wprobe_iface {
 	spinlock_t lock;
 	void *val;
 	void *query_val;
+
+	u32 measure_interval;
+	struct timer_list measure_timer;
+
+	u32 scale_min;
+	u32 scale_max;
+	u32 scale_m;
+	u32 scale_d;
 };
 
 #define WPROBE_FILL_BEGIN(_ptr, _list) do {			\

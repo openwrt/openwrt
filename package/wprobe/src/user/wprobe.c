@@ -35,6 +35,7 @@
 #define DPRINTF(fmt, ...) do {} while (0)
 #endif
 
+static int n_devs = 0;
 static struct nl_sock *handle = NULL;
 static struct nl_cache *cache = NULL;
 static struct genl_family *family = NULL;
@@ -83,9 +84,16 @@ ack_handler(struct nl_msg *msg, void *arg)
 }
 
 
-void
+static void
 wprobe_free(void)
 {
+	/* should not happen */
+	if (n_devs == 0)
+		return;
+
+	if (--n_devs != 0)
+		return;
+
 	if (cache)
 		nl_cache_free(cache);
 	if (handle)
@@ -94,10 +102,13 @@ wprobe_free(void)
 	cache = NULL;
 }
 
-int
+static int
 wprobe_init(void)
 {
 	int ret;
+
+	if (n_devs++ > 0)
+		return 0;
 
 	handle = nl_socket_alloc();
 	if (!handle) {
@@ -233,8 +244,8 @@ save_attribute_handler(struct nl_msg *msg, void *arg)
 }
 
 
-int
-wprobe_dump_attributes(const char *ifname, bool link, struct list_head *list, char *addr)
+static int
+dump_attributes(const char *ifname, bool link, struct list_head *list, char *addr)
 {
 	struct nl_msg *msg;
 	struct wprobe_attr_cb cb;
@@ -253,6 +264,64 @@ wprobe_dump_attributes(const char *ifname, bool link, struct list_head *list, ch
 nla_put_failure:
 	nlmsg_free(msg);
 	return -EINVAL;
+}
+
+struct wprobe_iface *
+wprobe_get_dev(const char *ifname)
+{
+	struct wprobe_iface *dev;
+
+	if (wprobe_init() != 0)
+		return NULL;
+
+	dev = malloc(sizeof(struct wprobe_iface));
+	if (!dev)
+		return NULL;
+
+	memset(dev, 0, sizeof(struct wprobe_iface));
+	dev->ifname = strdup(ifname);
+	if (!dev->ifname)
+		goto error;
+
+	dev->interval = -1;
+	dev->scale_min = -1;
+	dev->scale_max = -1;
+	dev->scale_m = -1;
+	dev->scale_d = -1;
+
+	INIT_LIST_HEAD(&dev->global_attr);
+	INIT_LIST_HEAD(&dev->link_attr);
+	INIT_LIST_HEAD(&dev->links);
+
+	dump_attributes(ifname, false, &dev->global_attr, NULL);
+	dump_attributes(ifname, true, &dev->link_attr, NULL);
+
+	return dev;
+
+error:
+	free(dev);
+	return NULL;
+}
+
+static void
+free_attr_list(struct list_head *list)
+{
+	struct wprobe_attribute *attr, *tmp;
+
+	list_for_each_entry_safe(attr, tmp, list, list) {
+		list_del(&attr->list);
+		free(attr);
+	}
+}
+
+void
+wprobe_free_dev(struct wprobe_iface *dev)
+{
+	wprobe_free();
+	free_attr_list(&dev->global_attr);
+	free_attr_list(&dev->link_attr);
+	free((void *)dev->ifname);
+	free(dev);
 }
 
 static struct wprobe_link *
@@ -313,7 +382,7 @@ save_link_handler(struct nl_msg *msg, void *arg)
 
 
 int
-wprobe_update_links(const char *ifname, struct list_head *list)
+wprobe_update_links(struct wprobe_iface *dev)
 {
 	struct wprobe_link *l, *tmp;
 	struct nl_msg *msg;
@@ -321,10 +390,10 @@ wprobe_update_links(const char *ifname, struct list_head *list)
 	int err;
 
 	INIT_LIST_HEAD(&cb.old_list);
-	list_splice_init(list, &cb.old_list);
-	cb.list = list;
+	list_splice_init(&dev->links, &cb.old_list);
+	cb.list = &dev->links;
 
-	msg = wprobe_new_msg(ifname, WPROBE_CMD_GET_LINKS, true);
+	msg = wprobe_new_msg(dev->ifname, WPROBE_CMD_GET_LINKS, true);
 	if (!msg)
 		return -ENOMEM;
 
@@ -340,16 +409,37 @@ wprobe_update_links(const char *ifname, struct list_head *list)
 	return 0;
 }
 
-void
-wprobe_measure(const char *ifname)
+int
+wprobe_apply_config(struct wprobe_iface *dev)
 {
 	struct nl_msg *msg;
 
-	msg = wprobe_new_msg(ifname, WPROBE_CMD_MEASURE, false);
+	msg = wprobe_new_msg(dev->ifname, WPROBE_CMD_CONFIG, false);
 	if (!msg)
-		return;
+		return -ENOMEM;
+
+	if (dev->interval >= 0)
+		NLA_PUT_MSECS(msg, WPROBE_ATTR_INTERVAL, dev->interval);
 
 	wprobe_send_msg(msg, NULL, NULL);
+	return 0;
+
+nla_put_failure:
+	nlmsg_free(msg);
+	return -ENOMEM;
+}
+
+int
+wprobe_measure(struct wprobe_iface *dev)
+{
+	struct nl_msg *msg;
+
+	msg = wprobe_new_msg(dev->ifname, WPROBE_CMD_MEASURE, false);
+	if (!msg)
+		return -ENOMEM;
+
+	wprobe_send_msg(msg, NULL, NULL);
+	return 0;
 }
 
 struct wprobe_request_cb {
@@ -431,6 +521,10 @@ found:
 		if (attr->val.n > 0) {
 			float avg = ((float) attr->val.s) / attr->val.n;
 			float stdev = sqrt((((float) attr->val.ss) / attr->val.n) - (avg * avg));
+			if (isnan(stdev))
+				stdev = 0.0f;
+			if (isnan(avg))
+				avg = 0.0f;
 			attr->val.avg = avg;
 			attr->val.stdev = stdev;
 		}
@@ -443,25 +537,24 @@ out:
 
 
 int
-wprobe_request_data(const char *ifname, struct list_head *attrs, const unsigned char *addr, int scale)
+wprobe_request_data(struct wprobe_iface *dev, const unsigned char *addr)
 {
 	struct wprobe_request_cb cb;
+	struct list_head *attrs;
 	struct nl_msg *msg;
 	int err;
 
-	msg = wprobe_new_msg(ifname, WPROBE_CMD_GET_INFO, true);
+	msg = wprobe_new_msg(dev->ifname, WPROBE_CMD_GET_INFO, true);
 	if (!msg)
 		return -ENOMEM;
 
-	if (scale < 0)
-		NLA_PUT_U32(msg, WPROBE_ATTR_FLAGS, WPROBE_F_RESET);
-	else if (scale > 0)
-		NLA_PUT_U32(msg, WPROBE_ATTR_SCALE, scale);
-
-	if (addr)
+	if (addr) {
+		attrs = &dev->link_attr;
 		NLA_PUT(msg, WPROBE_ATTR_MAC, 6, addr);
+	} else {
+		attrs = &dev->global_attr;
+	}
 
-nla_put_failure:
 	INIT_LIST_HEAD(&cb.old_list);
 	list_splice_init(attrs, &cb.old_list);
 	cb.list = attrs;
@@ -469,6 +562,10 @@ nla_put_failure:
 	err = wprobe_send_msg(msg, save_attrdata_handler, &cb);
 	list_splice(&cb.old_list, attrs->prev);
 	return err;
+
+nla_put_failure:
+	nlmsg_free(msg);
+	return -ENOMEM;
 }
 
 
