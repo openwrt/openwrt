@@ -15,7 +15,8 @@
 #include <linux/mtd/partitions.h>
 #include <linux/autoconf.h>
 #include <linux/sched.h>
-#include <linux/squashfs_fs.h>
+
+#define SQUASHFS_MAGIC               0x73717368
 
 static struct mtd_info		*rdc3210_mtd;
 
