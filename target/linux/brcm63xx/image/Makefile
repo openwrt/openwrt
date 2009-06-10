@@ -34,7 +34,7 @@ define Image/Build/CFE
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
 		-o $(BIN_DIR)/openwrt-$(2)-$(1)-$(6)-cfe.bin \
 		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
-	        -t $(4) -d "$(5)"
+	        -t $(4) -d "$(5)" $(7)
 #		-b $(2) -c $(3) -e $(KERNEL_ENTRY) -l $(LOADADDR)
 
 endef
@@ -99,14 +99,28 @@ define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
 	# Various routers
-	$(call Image/Build/CFE,$(1),96345GW2,6345,bccfe,,bccfe)
-	$(call Image/Build/CFE,$(1),96345GW2,6345,bc300,,bc300)
-	$(call Image/Build/CFE,$(1),96345GW2,6345,bc310,OpenWRT-$(SVN_REVISION),bc310)
-	$(call Image/Build/CFE,$(1),96348GW,6348,bccfe,,bcfe)
-	# BT Voyager V2500V
-	$(call Image/Build/CFE,$(1),V2500V_BB,6348,bc308,,btvgr)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bccfe,,bccfe,)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bc221,,bc221,-y 5)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bc300,,bc300,)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bc310,OpenWRT-$(SVN_REVISION),bc310,)
+	$(call Image/Build/CFE,$(1),96348GW,6348,bccfe,,bcfe,)
+	$(call Image/Build/CFE,$(1),96348GW,6348,bc221,,bc221,-y 5)
+	# BT Voyager V210_BTR
+	$(call Image/Build/CFE,$(1),V210_BB,6348,bc221,,btvgr,-y 5)
+	# BT Voyager V210_ROI, V210_WB
+	$(call Image/Build/CFE,$(1),V210,6348,bc221,,btvgr,-y 5)
+	# BT Voyager V2091_BTR
+	$(call Image/Build/CFE,$(1),V2091_BB,6348,bc221,,btvgr,-y 5)
+	# BT Voyager V2091_ROI, V2091_WB
+	$(call Image/Build/CFE,$(1),V2091,6348,bc221,,btvgr,-y 5)
+	# BT Voyager V220V, V220V_MGCP_BTR
+	$(call Image/Build/CFE,$(1),RTA1052V,6348,bc221,,btvgr,-y 5)
+	# BT Voyager V2110, V2110_AA, V2110_ROI
+	$(call Image/Build/CFE,$(1),V2110,6348,bc221,,btvgr,-y 5)
+	# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
+	$(call Image/Build/CFE,$(1),V2500V_BB,6348,bc221,,btvgr,-y 5)
 	# Tecom GW6000
-	$(call Image/Build/CFE,$(1),96348GW,6348,bc300,,bc300)
+	$(call Image/Build/CFE,$(1),96348GW,6348,bc300,,bc300,)
 	# Tecom GW6200
 	$(call Image/Build/CFE,$(1),96348GW,6348,bc310,$(shell printf '\x99'),gw6200)
 	# Neufbox4
@@ -115,15 +129,23 @@ define Image/Build
 	# Comtrend 536, 5621
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,bccfe,,bccfe)
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,bc300,,bc300)
+	# TP-Link 8900GB
+	$(call Image/Build/CFE,$(1),96348GW-11,6348,bc310,$(shell printf 'PRID\x89\x10\x00\x02'),td8900GB)
 	# Davolink DV201AMR
 	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
 	# USR 9108
 	$(call Image/Build/CFE,$(1),96348GW-A,6348,bccfe,,bccfe)
 	$(call Image/Build/CFE,$(1),96348GW-A,6348,bc300,,bc300)
-	$(call Image/Build/CFE,$(1),96348GW-A,6348,bc310,OpenWRT-$(SVN_REVISION),bc310)
-	# NetGear DG834GT
+	# NetGear DG834GT, DG834PN
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,bccfe,,bccfe)
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,bc300,,bc300)
+	# Belkin f5d7633
+	$(call Image/Build/CFE,$(1),96348GW-10,6348,bc310,,bc310)
+	# D-Link DSL-2640B
+	$(call Image/Build/CFE,$(1),D-4P-W,6348,bc310,,bc310)
+
+	# TP-Link TD-8810A, TD-8810B, TD-8811A, TD-8811B
+	$(call Image/Build/CFE,$(1),8L-2M-8M,6338,bc300,,bc300)
 
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,bccfe,,bccfe)
@@ -131,6 +153,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,bc310,OpenWRT-$(SVN_REVISION),bc310)
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
+	# D-Link DSL-2740B
+	$(call Image/Build/CFE,$(1),96358GW,6358,bc310,,dsl2740b)
 	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
 	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,bccfe,,bccfe)
 	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,ag306,,agv2+w)

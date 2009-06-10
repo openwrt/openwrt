@@ -6,6 +6,7 @@
 #define TAGID_LEN  6                   /* Length of tag ID */
 #define TAGINFO_LEN 20                 /* Length of vendor information field in tag */
 #define TAGVER_LEN 4                   /* Length of Tag Version */
+#define TAGLAYOUT_LEN 4                /* Length of FlashLayoutVer */
 
 #define NUM_TAGID 5
 #define IMAGETAG_CRC_START		0xFFFFFFFF
@@ -15,18 +16,18 @@ struct tagiddesc_t {
   char tagiddesc[80];
 };
 
- // what is called bc308 may actually be BT Voyager-specific
- // bc310 should be right 
+ // bc221 is used by BT Voyager and should be right
+ // bc310 should be right, and may apply to 3.08 code as well
 #define TAGID_DEFINITIONS { \
   { "bccfe", "Broadcom CFE flash image" }, \
   { "bc300", "Broadcom code version 3.00-3.06 and all ftp/tftp flash" }, \
   { "ag306", "Alice Gate (Pirelli, based on Broadcom 3.06)" }, \
-  { "bc308", "Broadcom code version 3.08" }, \
+  { "bc221", "Broadcom code version 2.21" }, \
   { "bc310", "Broadcom code version 3.10-3.12" }, \
 }
 
 struct bcm_tag_bccfe {
-	unsigned char tagVersion[TAGVER_LEN];                    // 0-3: Version of the image tag
+	unsigned char tagVersion[TAGVER_LEN];           // 0-3: Version of the image tag
 	unsigned char sig_1[20];                        // 4-23: Company Line 1
 	unsigned char sig_2[14];                        // 24-37: Company Line 2
 	unsigned char chipid[6];                        // 38-43: Chip this image is for
@@ -52,7 +53,7 @@ struct bcm_tag_bccfe {
 };
 
 struct bcm_tag_bc300 {
-	unsigned char tagVersion[4];                    // 0-3: Version of the image tag
+	unsigned char tagVersion[TAGVER_LEN];           // 0-3: Version of the image tag
 	unsigned char sig_1[20];                        // 4-23: Company Line 1
 	unsigned char sig_2[14];                        // 24-37: Company Line 2
 	unsigned char chipid[6];                        // 38-43: Chip this image is for
@@ -80,7 +81,7 @@ struct bcm_tag_bc300 {
 };
 
 struct bcm_tag_ag306 {
-	unsigned char tagVersion[4];                    // 0-3: Version of the image tag
+	unsigned char tagVersion[TAGVER_LEN];           // 0-3: Version of the image tag
 	unsigned char sig_1[20];                        // 4-23: Company Line 1
 	unsigned char sig_2[14];                        // 24-37: Company Line 2
 	unsigned char chipid[6];                        // 38-43: Chip this image is for
@@ -105,8 +106,8 @@ struct bcm_tag_ag306 {
         unsigned char tagId[TAGID_LEN];                 // 250-255: Identifies which type of tag this is, currently two-letter company code, and then three digits for version of broadcom code in which this tag was first introduced
 };
 
-struct bcm_tag_bc308 {
-	unsigned char tagVersion[4];                    // 0-3: Version of the image tag
+struct bcm_tag_bc221 {
+	unsigned char tagVersion[TAGVER_LEN];           // 0-3: Version of the image tag
 	unsigned char sig_1[20];                        // 4-23: Company Line 1
 	unsigned char sig_2[14];                        // 24-37: Company Line 2
 	unsigned char chipid[6];                        // 38-43: Chip this image is for
@@ -121,12 +122,12 @@ struct bcm_tag_bc308 {
 	unsigned char kernelLength[IMAGE_LEN];          // 128-137: Size of kernel
 	unsigned char dualImage[2];                     // 138-139: Unused at present
 	unsigned char inactiveFlag[2];                  // 140-141: Unused at present
-        unsigned char information1[TAGINFO_LEN+2];      // 142-163: Unused at present
+        unsigned char rsa_signature[TAGINFO_LEN];       // 142-161: RSA Signature (unused at present; some vendors may use this)
+        unsigned char reserved5[2];                     // 162-163: Unused at present
         unsigned char tagId[TAGID_LEN];                 // 164-169: Identifies which type of tag this is, currently two-letter company code, and then three digits for version of broadcom code in which this tag was first introduced
         unsigned char rootAddress[ADDRESS_LEN];         // 170-181: Address in memory of rootfs partition
         unsigned char rootLength[IMAGE_LEN];            // 182-191: Size of rootfs partition
-        unsigned char flashLayoutVer[2];                // 192-193: Version flash layout
-	unsigned char curflashLayoutVer[2];             // 194-195: Unused at present
+        unsigned char flashLayoutVer[4];                // 192-195: Version flash layout
         unsigned char kernelCRC[4];                     // 196-199: Guessed to be kernel CRC
         unsigned char reserved4[16];                    // 200-215: Reserved area; unused at present
 	unsigned char imageCRC[4];                      // 216-219: CRC32 of images
@@ -170,7 +171,7 @@ union bcm_tag {
   struct bcm_tag_bccfe bccfe;
   struct bcm_tag_bc300 bc300;
   struct bcm_tag_ag306 ag306;
-  struct bcm_tag_bc308 bc308;
+  struct bcm_tag_bc221 bc221;
   struct bcm_tag_bc310 bc310;
 };
 

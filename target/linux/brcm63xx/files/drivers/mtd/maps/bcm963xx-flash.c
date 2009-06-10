@@ -163,16 +163,16 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	    boardid = &(buf->ag306.boardid[0]);
 	    break;
 	  case 3:
-	    matchtagid = "bc308";
-	    tagid = &(buf->bc308.tagId[0]);
-	    sscanf(buf->bc308.rootAddress,"%u", &rootfsaddr);
-	    sscanf(buf->bc308.rootLength, "%u", &rootfslen);
-	    sscanf(buf->bc308.kernelAddress, "%u", &kerneladdr);
-	    sscanf(buf->bc308.kernelLength, "%u", &kernellen);
-	    sscanf(buf->bc308.totalLength, "%u", &totallen);
-	    tagidcrc = buf->bc308.tagIdCRC;
-	    tagversion = &(buf->bc308.tagVersion[0]);
-	    boardid = &(buf->bc308.boardid[0]);
+	    matchtagid = "bc221";
+	    tagid = &(buf->bc221.tagId[0]);
+	    sscanf(buf->bc221.rootAddress,"%u", &rootfsaddr);
+	    sscanf(buf->bc221.rootLength, "%u", &rootfslen);
+	    sscanf(buf->bc221.kernelAddress, "%u", &kerneladdr);
+	    sscanf(buf->bc221.kernelLength, "%u", &kernellen);
+	    sscanf(buf->bc221.totalLength, "%u", &totallen);
+	    tagidcrc = buf->bc221.tagIdCRC;
+	    tagversion = &(buf->bc221.tagVersion[0]);
+	    boardid = &(buf->bc221.boardid[0]);
 	    break;
 	  case 4:
 	    matchtagid = "bc310";
