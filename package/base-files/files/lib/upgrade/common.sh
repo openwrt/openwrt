@@ -116,7 +116,7 @@ get_image() {
 }
 
 get_magic_word() {
-	get_image "$1" | dd bs=2 count=1 2>/dev/null | hexdump -C | awk '$2 { print $2 $3 }'
+	get_image "$1" | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"'
 }
 
 refresh_mtd_partitions() {
