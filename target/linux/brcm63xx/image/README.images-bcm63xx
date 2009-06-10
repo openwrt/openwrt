@@ -44,25 +44,43 @@ Some boards share the same tag format, but require vendor-specific fields in
 the board.  In that case the tagid is shared, but the filename of the generated
 image reflects the router for which the image was created.
 
-router     |method| codever |tagid |filename
-+----------+------+---------+------+-------------------------------------------
-|any       |cfe   |   any   |bccfe |openwrt-<board>-<filesystem>-bccfe-cfe.bin
-|any       |t/ftp |   any   |bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|          |web   |3.00-3.06|bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|          |web   |3.08     |bc308 |openwrt-<board>-<filesystem>-bc308-cfe.bin
-|          |web   |3.10-3.12|bc310 |openwrt-<board>-<filesystem>-bc310-cfe.bin
-|CT536     |web   |3.02     |bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|CT5621    |web   |3.02     |bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|GW6000    |web   |3.00     |bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|USR9108?  |web   |?        |bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|USR9108?  |web   |?        |bc310 |openwrt-<board>-<filesystem>-bc310-cfe.bin
-|DG834GT   |web   |3.02     |bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|V2500V    |web   |3.08     |bc308 |openwrt-<board>-<filesystem>-btvgr-cfe.bin
-|GW6200    |web   |3.10     |bc310 |openwrt-<board>-<filesystem>-gw6200-cfe.bin
-|Neufbox4  |web   |3.12     |bc310 |openwrt-<board>-<filesystem>-nb4-cfe.bin
-|F@ST2404  |web   |?        |bc300 |openwrt-<board>-<filesystem>-bc300-cfe.bin
-|F@ST2404  |web   |?        |bc310 |openwrt-<board>-<filesystem>-bc310-cfe.bin
-|AGVoIP2+Wi|web   |alice3.06|ag306 |openwrt-<board>-<filesystem>-agv2+w-cfe.bin
+router        |method| codever |tagid |filename
++-------------+------+---------+------+----------------------------------------
+|any          |cfe   |   any   |bccfe |openwrt-<board>-<fs>-bccfe-cfe.bin
+|any          |t/ftp |   any   |bc300 |openwrt-<board>-<fs>-bc300-cfe.bin
+|             |web   |3.00-3.06|bc300 |openwrt-<board>-<fs>-bc300-cfe.bin
+|             |web   |3.10-3.12|bc310 |openwrt-<board>-<fs>-bc310-cfe.bin
+|AGVoIP2+WiFi |web   |alice3.06|ag306 |openwrt-AGPF-S0-<fs>-agv2+w-cfe.bin
+|CT536        |web   |3.02     |bc300 |openwrt-96348GW-11-<fs>-bc300-cfe.bin
+|CT5621       |web   |3.02     |bc300 |openwrt-96348GW-11-<fs>-bc300-cfe.bin
+|DG834GT      |web   |3.02     |bc300 |openwrt-96348GW-10-<fs>-bc300-cfe.bin
+|DG834PN      |web   |3.02     |bc300 |openwrt-96348GW-10-<fs>-bc300-cfe.bin
+|DSL-2640B    |web   |3.10     |bc310 |openwrt-D-4P-W-<fs>-bc310-cfe.bin
+|DSL-2740B    |web   |3.10     |bc310 |openwrt-96358GW-<fs>-dsl2740b-cfe.bin
+|F5D7633      |web   |3.10     |bc310 |openwrt-96348GW-10-<fs>-bc310-cfe.bin
+|F@ST2404     |web   |?        |bc300 |openwrt-F@ST2404-<fs>-bc300-cfe.bin
+|F@ST2404     |web   |?        |bc310 |openwrt-F@ST2404-<fs>-bc310-cfe.bin
+|GW6000       |web   |3.00     |bc300 |openwrt-96348GW-<fs>-bc300-cfe.bin
+|GW6200       |web   |3.10     |bc310 |openwrt-96348GW-<fs>-gw6200-cfe.bin
+|Neufbox4     |web   |3.12     |bc310 |openwrt-96358VW-<fs>-nb4-cfe.bin
+|TD8810A      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
+|TD8810B      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
+|TD8811A      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
+|TD8811B      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
+|TD8900GB     |web   |3.06     |bc300 |openwrt-96348GW-11-<fs>-td8900gb-cfe.bin
+|USR9108      |web   |?        |bc300 |openwrt-96348GW-A-<fs>-bc300-cfe.bin
+|V2091_BTR    |web   |2.21     |bc221 |openwrt-V2091_BB-<fs>-btvgr-cfe.bin
+|V2091_ROI    |web   |2.21     |bc221 |openwrt-V2091-<fs>-btvgr-cfe.bin
+|V2091_WB     |web   |2.21     |bc221 |openwrt-V2091-<fs>-btvgr-cfe.bin
+|V210_BTR     |web   |2.21     |bc221 |openwrt-V210_BB-<fs>-btvgr-cfe.bin
+|V210_ROI     |web   |2.21     |bc221 |openwrt-V210-<fs>-btvgr-cfe.bin
+|V210_WB      |web   |2.21     |bc221 |openwrt-V210-<fs>-btvgr-cfe.bin
+|V2110        |web   |2.21     |bc221 |openwrt-V2110-<fs>-btvgr-cfe.bin
+|V2110_AA     |web   |2.21     |bc221 |openwrt-V2110-<fs>-btvgr-cfe.bin
+|V2110_ROI    |web   |2.21     |bc221 |openwrt-V2110-<fs>-btvgr-cfe.bin
+|V2500V       |web   |2.21     |bc221 |openwrt-V2500V_BB-<fs>-btvgr-cfe.bin
+|V2500V_AA    |web   |2.21     |bc221 |openwrt-V2500V_BB-<fs>-btvgr-cfe.bin
+|V2500V_SIP_CLUB |web|2.21     |bc221 |openwrt-V2500V_BB-<fs>-btvgr-cfe.bin
 
 Old imagetag routers
 --------------------
@@ -77,15 +95,34 @@ Known router->code versions
 
 Vendor                     |Model                                     |Code Ver
 ---------------------------+------------------------------------------+--------
+Belkin                     |F5D7633                                   |3.10
+British Telecom (BT)       |Voyager V2091_BTR                         |2.21
+British Telecom (BT)       |Voyager V2091_ROI                         |2.21
+British Telecom (BT)       |Voyager V2091_WB                          |2.21
+British Telecom (BT)       |Voyager V210_BTR                          |2.21
+British Telecom (BT)       |Voyager V210_ROI                          |2.21
+British Telecom (BT)       |Voyager V210_WB                           |2.21
+British Telecom (BT)       |Voyager V2110                             |2.21
+British Telecom (BT)       |Voyager V2110_AA                          |2.21
+British Telecom (BT)       |Voyager V2110_ROI                         |2.21
+British Telecom (BT)       |Voyager V220V                             |2.21
+British Telecom (BT)       |Voyager V2500V                            |2.21
+British Telecom (BT)       |Voyager V2500V_AA                         |2.21
+British Telecom (BT)       |Voyager V2500V_SIP_CLUB                   |2.21
 Comtrend                   |CT-5261                                   |3.02
 Comtrend                   |CT-536                                    |3.02
+D-Link                     |DSL-2640B                                 |3.10
+D-Link                     |DSL-2670B                                 |3.10
+NetGear			   |DG834GT				      |3.02
+NetGear			   |DG834PN				      |3.02
+Neuf Cegetel               |Neufbox 4                                 |3.12
+Pirelli                    |Alice Gate Wi-Fi (+VoIP models?)          |ag 3.06
+Sagem			   |F@ST2404				      |?
+TP-Link                    |TD-8810A                                  |3.06
+TP-Link			   |TD-8810B				      |3.06
+TP-Link			   |TD-8811A				      |3.06
+TP-Link			   |TD-8811B				      |3.06
+TP-Link			   |TD-W8900GB				      |3.06
 Tecom                      |GW6000                                    |3.00
 Tecom                      |GW6200                                    |3.10
-Pirelli                    |Alice Gate Wi-Fi (+VoIP models?)          |ag 3.06
-?                          |TD-88xx                                   |3.06
-BT                         |Voyager V2500V                            |3.08 (?)
-Belkin                     |F5D7633                                   |3.10
-Neuf ?                     |Neufbox 4                                 |3.12
-NetGear			   |DG834GT				      |3.02
-Sagem			   |F@ST2404				      |?
 USR			   |9108				      |?
