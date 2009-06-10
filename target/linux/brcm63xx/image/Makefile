@@ -17,8 +17,6 @@ LOADER_MAKEOPTS= \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
 		RAMSIZE=$(RAMSIZE)
 
-SVN_REVISION=r$(shell svn info|grep Revision|cut -f1 -d\ )
-
 define trxalign/jffs2-128k
 -a 0x20000
 endef
@@ -102,7 +100,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96345GW2,6345,bccfe,,bccfe,)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,bc221,,bc221,-y 5)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,bc300,,bc300,)
-	$(call Image/Build/CFE,$(1),96345GW2,6345,bc310,OpenWRT-$(SVN_REVISION),bc310,)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,bc310,OpenWRT-$(REVISION),bc310,)
 	$(call Image/Build/CFE,$(1),96348GW,6348,bccfe,,bcfe,)
 	$(call Image/Build/CFE,$(1),96348GW,6348,bc221,,bc221,-y 5)
 	# BT Voyager V210_BTR
@@ -125,7 +123,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96348GW,6348,bc310,$(shell printf '\x99'),gw6200)
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358,bccfe,,bccfe)
-	$(call Image/Build/CFE,$(1),96358VW,6358,bc310,OpenWRT-$(SVN_REVISION),nb4)
+	$(call Image/Build/CFE,$(1),96358VW,6358,bc310,OpenWRT-$(REVISION),nb4)
 	# Comtrend 536, 5621
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,bccfe,,bccfe)
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,bc300,,bc300)
@@ -150,7 +148,7 @@ define Image/Build
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,bccfe,,bccfe)
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,bc300,,bc300)
-	$(call Image/Build/CFE,$(1),F@ST2404,6348,bc310,OpenWRT-$(SVN_REVISION),bc310)
+	$(call Image/Build/CFE,$(1),F@ST2404,6348,bc310,OpenWRT-$(REVISION),bc310)
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 	# D-Link DSL-2740B
