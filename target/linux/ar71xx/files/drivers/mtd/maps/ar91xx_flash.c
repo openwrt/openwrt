@@ -22,7 +22,7 @@
 #include <linux/io.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/platform.h>
+#include <asm/mach-ar71xx/ar91xx_flash.h>
 
 #define DRV_NAME	"ar91xx-flash"
 
