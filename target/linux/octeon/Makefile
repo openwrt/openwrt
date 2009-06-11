@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs jffs2 pci
 CFLAGS:=-Os -pipe -funit-at-a-time
 
-LINUX_VERSION:=2.6.30-rc8
+LINUX_VERSION:=2.6.30
 
 include $(INCLUDE_DIR)/target.mk
 
