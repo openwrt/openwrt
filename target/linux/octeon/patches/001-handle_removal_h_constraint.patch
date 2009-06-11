@@ -7,7 +7,6 @@ Comments welcome.
 Signed-off-by: David Daney <ddaney@caviumnetworks.com>
 ---
  arch/mips/include/asm/compiler.h |    7 +++++++
- arch/mips/include/asm/delay.h    |    4 ++++
  2 files changed, 11 insertions(+), 0 deletions(-)
 
 --- a/arch/mips/include/asm/compiler.h
@@ -24,20 +23,3 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
 +#endif
 +
  #endif /* _ASM_COMPILER_H */
---- a/arch/mips/include/asm/delay.h
-+++ b/arch/mips/include/asm/delay.h
-@@ -67,10 +67,14 @@ static inline unsigned long __usecs_to_l
- 		: "r" (usecs), "r" (lpj)
- 		: GCC_REG_ACCUM);
- 	else if (sizeof(long) == 8 && !R4000_WAR)
-+#ifdef GCC_NO_H_CONSTRAINT
-+		usecs = ((uint128_t)usecs * lpj) >> 64;
-+#else
- 		__asm__("dmultu\t%2, %3"
- 		: "=h" (usecs), "=l" (lo)
- 		: "r" (usecs), "r" (lpj)
- 		: GCC_REG_ACCUM);
-+#endif
- 	else if (sizeof(long) == 8 && R4000_WAR)
- 		__asm__("dmultu\t%3, %4\n\tmfhi\t%0"
- 		: "=r" (usecs), "=h" (hi), "=l" (lo)
