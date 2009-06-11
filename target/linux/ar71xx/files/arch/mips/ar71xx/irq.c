@@ -113,6 +113,9 @@ static void ar71xx_gpio_irq_unmask(unsigned int irq)
 	irq -= AR71XX_GPIO_IRQ_BASE;
 	ar71xx_gpio_wr(GPIO_REG_INT_ENABLE,
 			ar71xx_gpio_rr(GPIO_REG_INT_ENABLE) | (1 << irq));
+
+	/* flush write */
+	ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
 }
 
 static void ar71xx_gpio_irq_mask(unsigned int irq)
@@ -120,6 +123,9 @@ static void ar71xx_gpio_irq_mask(unsigned int irq)
 	irq -= AR71XX_GPIO_IRQ_BASE;
 	ar71xx_gpio_wr(GPIO_REG_INT_ENABLE,
 			ar71xx_gpio_rr(GPIO_REG_INT_ENABLE) & ~(1 << irq));
+
+	/* flush write */
+	ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
 }
 
 #if 0
@@ -211,6 +217,9 @@ static void ar71xx_misc_irq_unmask(unsigned int irq)
 	irq -= AR71XX_MISC_IRQ_BASE;
 	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE,
 		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE) | (1 << irq));
+
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
 static void ar71xx_misc_irq_mask(unsigned int irq)
@@ -218,6 +227,9 @@ static void ar71xx_misc_irq_mask(unsigned int irq)
 	irq -= AR71XX_MISC_IRQ_BASE;
 	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE,
 		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE) & ~(1 << irq));
+
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
 struct irq_chip ar71xx_misc_irq_chip = {
