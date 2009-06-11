@@ -1,0 +1,12 @@
+diff -ruN fuse-2.4.1-old/util/Makefile.in fuse-2.4.1-new/util/Makefile.in
+--- fuse-2.4.1-old/util/Makefile.in	2005-10-17 12:29:20.000000000 +0200
++++ fuse-2.4.1-new/util/Makefile.in	2005-10-19 17:11:13.000000000 +0200
+@@ -445,7 +445,7 @@
+ install-exec-hook:
+ 	-chown root $(DESTDIR)$(bindir)/fusermount
+ 	-chmod u+s $(DESTDIR)$(bindir)/fusermount
+-	@if test ! -e $(DESTDIR)/dev/fuse; then \
++	-@if test ! -e $(DESTDIR)/dev/fuse; then \
+ 		$(mkdir_p) $(DESTDIR)/dev; \
+ 		echo "mknod $(DESTDIR)/dev/fuse -m 0666 c 10 229"; \
+ 		mknod $(DESTDIR)/dev/fuse -m 0666 c 10 229; \
