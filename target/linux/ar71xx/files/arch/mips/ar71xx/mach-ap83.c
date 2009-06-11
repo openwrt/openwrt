@@ -14,13 +14,13 @@
 #include <linux/input.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
 #include <linux/spi/vsc7385.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
+#include <asm/mach-ar71xx/ar91xx_flash.h>
 
 #include "devices.h"
 
