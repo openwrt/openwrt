@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,18 +9,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=fuse
-PKG_VERSION:=2.7.3
+PKG_VERSION:=2.7.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=98563fc7b265b7479a3178181cbcf59a
+PKG_MD5SUM:=4879f06570d2225667534c37fea04213
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/fuse/Default
   TITLE:=FUSE
-  DEPENDS:=@LINUX_2_6
   URL:=http://fuse.sourceforge.net/
 endef
 
@@ -32,14 +31,14 @@ define Package/fuse-utils
 $(call Package/fuse/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libfuse +kmod-fuse @LINUX_2_6
+  DEPENDS:=+libfuse
   TITLE+= (utilities)
-  SUBMENU:=disc
+  SUBMENU:=filesystem
 endef
 
 define Package/fuse-utils/description
 $(call Package/fuse/Default/description)
- This package contains the FUSE utilities.
+ This package contains the FUSE utility 'fusermount'.
 endef
 
 define KernelPackage/fuse
@@ -50,6 +49,7 @@ $(call Package/fuse/Default)
   KCONFIG:= CONFIG_FUSE_FS
   FILES:=$(LINUX_DIR)/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,80,fuse)
+  VERSION:=$(LINUX_VERSION)
 endef
 
 define KernelPackage/fuse/description
@@ -61,9 +61,9 @@ define Package/libfuse
 $(call Package/fuse/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=@LINUX_2_6
   TITLE+= (library)
-  SUBMENU:=disc
+  DEPENDS:=+LINUX_2_4:kmod-fuse24 +LINUX_2_6:kmod-fuse
+  SUBMENU:=filesystem
 endef
 
 define Package/libfuse/description
@@ -83,18 +83,25 @@ CONFIGURE_ARGS += \
 	--disable-example \
 	--disable-auto-modprobe \
 	--with-kernel="$(LINUX_DIR)" \
-	--disable-mtab
+	--disable-mtab 
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.25)),1)
-  define KernelPackage/fuse/2.6
-    KCONFIG:=
-    FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
-  endef
-
- CONFIGURE_ARGS += --enable-kernel-module
-else
- CONFIGURE_ARGS += --disable-kernel-module
-endif
+# This section is disabled; since kernel 2.6.14 the fuse module is officially 
+# part of the kernel. The following enables this fuse packages kernel module 
+# instead of the kernel's, if the kernel is younger than 2.6.25. 
+# Generally it is better to use the kernel's module. Because it is DCACHE BUG 
+# patched and from fuse 2.8.0 on it will be removed from the fuse package 
+# anyway.
+#
+#ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.25)),1)
+#  define KernelPackage/fuse/2.6
+#    KCONFIG:=
+#    FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
+#  endef
+#
+# CONFIGURE_ARGS += --enable-kernel-module
+#else
+# CONFIGURE_ARGS += --disable-kernel-module
+#endif
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
