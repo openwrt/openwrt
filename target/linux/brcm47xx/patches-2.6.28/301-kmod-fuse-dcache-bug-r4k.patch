@@ -1,0 +1,31 @@
+--- linux-2.6.28.10.orig/arch/mips/mm/c-r4k.c	2009-05-02 20:54:43.000000000 +0200
++++ linux-2.6.28.10/arch/mips/mm/c-r4k.c	2009-06-07 20:36:01.667918000 +0200
+@@ -348,7 +348,7 @@
+ 	}
+ }
+ 
+-static void r4k___flush_cache_all(void)
++void r4k___flush_cache_all(void)
+ {
+ 	r4k_on_each_cpu(local_r4k___flush_cache_all, NULL, 1);
+ }
+@@ -512,7 +512,7 @@
+ 	}
+ }
+ 
+-static void r4k_flush_cache_page(struct vm_area_struct *vma,
++void r4k_flush_cache_page(struct vm_area_struct *vma,
+ 	unsigned long addr, unsigned long pfn)
+ {
+ 	struct flush_cache_page_args args;
+@@ -1401,3 +1401,10 @@
+ #endif
+ 	coherency_setup();
+ }
++
++// fuse package DCACHE BUG patch exports
++void (*fuse_flush_cache_all)(void) = r4k___flush_cache_all;
++void (*fuse_flush_cache_page)(struct vm_area_struct *vma, unsigned long page,
++        unsigned long pfn) = r4k_flush_cache_page;
++EXPORT_SYMBOL(fuse_flush_cache_page);
++EXPORT_SYMBOL(fuse_flush_cache_all);
