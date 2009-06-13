@@ -1,0 +1,77 @@
+--- a/arch/mips/include/asm/cpu-features.h
++++ b/arch/mips/include/asm/cpu-features.h
+@@ -104,6 +104,9 @@
+ #ifndef cpu_has_pindexed_dcache
+ #define cpu_has_pindexed_dcache	(cpu_data[0].dcache.flags & MIPS_CACHE_PINDEX)
+ #endif
++#ifndef cpu_use_kmap_coherent
++#define cpu_use_kmap_coherent 1
++#endif
+ 
+ /*
+  * I-Cache snoops remote store.  This only matters on SMP.  Some multiprocessors
+--- /dev/null
++++ b/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
+@@ -0,0 +1,13 @@
++/*
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Copyright (C) 2005 Ralf Baechle (ralf@linux-mips.org)
++ */
++#ifndef __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
++#define __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
++
++#define cpu_use_kmap_coherent	0
++
++#endif /* __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H */
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -494,7 +494,7 @@ static inline void local_r4k_flush_cache
+ 		 */
+ 		map_coherent = (cpu_has_dc_aliases &&
+ 				page_mapped(page) && !Page_dcache_dirty(page));
+-		if (map_coherent)
++		if (map_coherent && cpu_use_kmap_coherent)
+ 			vaddr = kmap_coherent(page, addr);
+ 		else
+ 			vaddr = kmap_atomic(page, KM_USER0);
+@@ -517,7 +517,7 @@ static inline void local_r4k_flush_cache
+ 	}
+ 
+ 	if (vaddr) {
+-		if (map_coherent)
++		if (map_coherent && cpu_use_kmap_coherent)
+ 			kunmap_coherent();
+ 		else
+ 			kunmap_atomic(vaddr, KM_USER0);
+--- a/arch/mips/mm/init.c
++++ b/arch/mips/mm/init.c
+@@ -204,7 +204,7 @@ void copy_user_highpage(struct page *to,
+ 	void *vfrom, *vto;
+ 
+ 	vto = kmap_atomic(to, KM_USER1);
+-	if (cpu_has_dc_aliases &&
++	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+ 	    page_mapped(from) && !Page_dcache_dirty(from)) {
+ 		vfrom = kmap_coherent(from, vaddr);
+ 		copy_page(vto, vfrom);
+@@ -226,7 +226,7 @@ void copy_to_user_page(struct vm_area_st
+ 	struct page *page, unsigned long vaddr, void *dst, const void *src,
+ 	unsigned long len)
+ {
+-	if (cpu_has_dc_aliases &&
++	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+ 	    page_mapped(page) && !Page_dcache_dirty(page)) {
+ 		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
+ 		memcpy(vto, src, len);
+@@ -244,7 +244,7 @@ void copy_from_user_page(struct vm_area_
+ 	struct page *page, unsigned long vaddr, void *dst, const void *src,
+ 	unsigned long len)
+ {
+-	if (cpu_has_dc_aliases &&
++	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+ 	    page_mapped(page) && !Page_dcache_dirty(page)) {
+ 		void *vfrom = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
+ 		memcpy(dst, vfrom, len);
