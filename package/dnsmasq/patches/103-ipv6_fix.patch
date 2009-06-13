@@ -1,6 +1,6 @@
 --- a/src/netlink.c
 +++ b/src/netlink.c
-@@ -116,6 +116,7 @@
+@@ -129,6 +129,7 @@ int iface_enumerate(void *parm, int (*ip
    ssize_t len;
    static unsigned int seq = 0;
    int family = AF_INET;
@@ -8,7 +8,7 @@
  
    struct {
      struct nlmsghdr nlh;
-@@ -187,9 +188,12 @@
+@@ -207,9 +208,12 @@ int iface_enumerate(void *parm, int (*ip
  		    rta = RTA_NEXT(rta, len1);
  		  }
  		
@@ -22,7 +22,7 @@
  	      }
  #ifdef HAVE_IPV6
  	    else if (ifa->ifa_family == AF_INET6)
-@@ -205,7 +209,7 @@
+@@ -225,7 +229,7 @@ int iface_enumerate(void *parm, int (*ip
  		
  		if (addrp && ipv6_callback)
  		  if (!((*ipv6_callback)(addrp, ifa->ifa_index, ifa->ifa_index, parm)))
@@ -33,7 +33,7 @@
  	  }
 --- a/src/network.c
 +++ b/src/network.c
-@@ -278,7 +278,7 @@
+@@ -296,7 +296,7 @@ static int create_ipv6_listener(struct l
        bind(tcpfd, (struct sockaddr *)&addr, sa_len(&addr)) == -1 ||
        listen(tcpfd, 5) == -1 ||
        bind(fd, (struct sockaddr *)&addr, sa_len(&addr)) == -1) 
