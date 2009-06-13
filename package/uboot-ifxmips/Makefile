@@ -16,7 +16,6 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
 PKG_MD5SUM:=579707c8ecbf1ab4127285d2aac2a9ee
-PKG_CAT:=bzcat
 PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk

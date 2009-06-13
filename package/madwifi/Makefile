@@ -15,7 +15,7 @@ ifneq ($(CONFIG_MADWIFI_UPSTREAM),)
   PKG_RELEASE:=2
 
   PKG_SOURCE:=madwifi-$(PKG_VERSION).tar.gz
-  PKG_SOURCE_URL:=http://downloads.sourceforge.net/madwifi/
+  PKG_SOURCE_URL:=@SF/madwifi
   PKG_MD5SUM:=399d20de8d855a59f20058857c2178ad
 
   PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/madwifi-$(PKG_VERSION)
@@ -30,7 +30,7 @@ else
   PKG_SOURCE_PROTO:=svn
   PKG_SOURCE_VERSION:=$(PKG_REV)
   PKG_SOURCE_SUBDIR:=$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
-  PKG_SOURCE_URL:=http://svn.madwifi.org/madwifi/$(if $(PKG_BRANCH),branches/$(PKG_BRANCH),trunk)
+  PKG_SOURCE_URL:=http://madwifi-project.org/svn/madwifi/$(if $(PKG_BRANCH),branches/$(PKG_BRANCH),trunk)
   PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 
   PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(PKG_BRANCH),$(PKG_BRANCH),madwifi-trunk)-$(PKG_VERSION)
@@ -164,7 +164,7 @@ endif
 define KernelPackage/madwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros wireless chipsets
-  URL:=http://madwifi.org/
+  URL:=http://madwifi-project.org/
   DEPENDS:=+wireless-tools @PCI_SUPPORT||TARGET_atheros @!TARGET_avr32 @!TARGET_etrax @LINUX_2_6
   FILES:=$(MADWIFI_FILES)
   AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))

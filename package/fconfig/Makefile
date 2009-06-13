@@ -16,7 +16,6 @@ PKG_SOURCE_URL:=http://andrzejekiert.ovh.org/software/fconfig/
 PKG_MD5SUM:=dac355e9f2a0f48c414c52e2034b6346
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
 

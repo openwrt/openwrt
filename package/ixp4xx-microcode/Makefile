@@ -15,8 +15,6 @@ PKG_SOURCE:=IPL_ixp400NpeLibraryWithCrypto-2_4.zip
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 PKG_MD5SUM:=dd5f6482e625ecb334469958bcd54b37
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ixp4xx-microcode

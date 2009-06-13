@@ -11,7 +11,6 @@ PKG_NAME:=apex
 PKG_VERSION:=1.5.14
 PKG_RELEASE:=3
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.buici.com/pub/apex/ \
 	ftp://metalab.unc.edu/pub/Linux/system/boot/apex/
