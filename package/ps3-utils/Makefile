@@ -12,7 +12,7 @@ PKG_VERSION:=2.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.kernel.org/pub/linux/kernel/people/geoff/cell/ps3-utils/
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/geoff/cell/ps3-utils
 PKG_MD5SUM:=d0b24527a8582c9ff5be02c62bb2161d
 
 include $(INCLUDE_DIR)/package.mk

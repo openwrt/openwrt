@@ -12,7 +12,7 @@ PKG_VERSION:=2.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/horms/kexec-tools
 PKG_MD5SUM:=d9f2ecd3c3307905f24130a25816e6cc
 
 include $(INCLUDE_DIR)/package.mk
