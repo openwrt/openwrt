@@ -1,7 +1,6 @@
-diff -ruN fuse-2.5.3-old/kernel/Makefile.in fuse-2.5.3-new/kernel/Makefile.in
---- fuse-2.5.3-old/kernel/Makefile.in	2006-06-17 00:04:06.000000000 +0200
-+++ fuse-2.5.3-new/kernel/Makefile.in	2006-06-17 00:08:44.000000000 +0200
-@@ -31,11 +31,9 @@
+--- a/kernel/Makefile.in
++++ b/kernel/Makefile.in
+@@ -31,11 +31,9 @@ all-y: all-spec
  install-y: all
  	$(mkdir_p) $(DESTDIR)$(fusemoduledir)
  	$(INSTALL) -m 644 $(fusemodule) $(DESTDIR)$(fusemoduledir)/$(fusemodule)

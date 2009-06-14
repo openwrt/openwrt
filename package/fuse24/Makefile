@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=fuse
 
 PKG_VERSION:=2.5.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=9c7e8b6606b9f158ae20b8521ba2867c
 
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
@@ -48,7 +48,7 @@ endef
 
 define KernelPackage/fuse24/install
 	$(call $(Package/kmod-fuse24/install))
-	echo mknod /dev/fuse -m 0666 c 10 229 >> $(1)/CONTROL/postinst
+	echo '[ ! -d /dev/misc ]&& umask 022 && mkdir /dev/misc ; mknod /dev/misc/fuse -m 0666 c 10 229' >> $(1)/CONTROL/postinst
 endef
 
 define Build/Configure
@@ -107,8 +107,6 @@ endef
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
 	$(CP)	$(PKG_INSTALL_DIR)/usr/include/fuse{,.h} $(1)/usr/include/
-#	mkdir -p $(1)/usr/lib
-#	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libfuse.{a,so*} $(1)/usr/lib/
 	mkdir -p $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(1)/usr/lib/pkgconfig/
 	$(SED) 's,-I$$$${includedir}/fuse,,g' $(1)/usr/lib/pkgconfig/fuse.pc

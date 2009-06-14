@@ -1,7 +1,6 @@
-diff -Nur fuse-2.5.2/kernel/Makefile.in fuse-2.5.2.patched/kernel/Makefile.in
---- fuse-2.5.2/kernel/Makefile.in	2006-02-02 18:04:52.000000000 +0100
-+++ fuse-2.5.2.patched/kernel/Makefile.in	2006-03-28 20:17:13.000000000 +0200
-@@ -54,23 +54,8 @@
+--- a/kernel/Makefile.in
++++ b/kernel/Makefile.in
+@@ -54,23 +54,8 @@ distdir: $(DISTFILES) $(COMPATDISTFILES)
  
  ifeq ($(majver), 2.4)
  
@@ -25,7 +24,7 @@ diff -Nur fuse-2.5.2/kernel/Makefile.in fuse-2.5.2.patched/kernel/Makefile.in
  fuse_headers = fuse_i.h fuse_kernel.h
  
  dev.o: $(fuse_headers)
-@@ -78,6 +63,18 @@
+@@ -78,6 +63,18 @@ dir.o: $(fuse_headers)
  file.o: $(fuse_headers)
  inode.o: $(fuse_headers)
  
