@@ -1,0 +1,30 @@
+--- a/android-configure.sh
++++ b/android-configure.sh
+@@ -656,6 +656,9 @@ case "$CPU" in
+     *) HOST_CPU=$CPU
+     ;;
+ esac
++case "$OS" in
++    darwin*) echo "#define _BSD	1" >> $config_h;;
++esac
+ echo "#define HOST_$HOST_CPU    1" >> $config_h
+ log "Generate   : $config_h"
+ 
+--- a/android/utils/display-quartz.m
++++ b/android/utils/display-quartz.m
+@@ -34,6 +34,7 @@ get_monitor_resolution( int  *px_dpi, in
+ int
+ get_nearest_monitor_rect( int  *x, int  *y, int  *width, int  *height )
+ {
++#if 0
+     SDL_SysWMinfo  info;
+     NSWindow*      window;
+ 
+@@ -108,4 +109,7 @@ get_nearest_monitor_rect( int  *x, int  
+         }
+         return 0;
+     }
++#else
++	return -1;
++#endif
+ };

@@ -1,0 +1,20 @@
+From 700cfcab7eee4a822be3fe0c8cfd77caac10bfed Mon Sep 17 00:00:00 2001
+From: Dima Zavin <dima@android.com>
+Date: Wed, 25 Mar 2009 21:29:45 -0700
+Subject: [PATCH 108/134] mmc: sd: Remove debugging printk
+
+Signed-off-by: Dima Zavin <dima@android.com>
+---
+ drivers/mmc/core/sd.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -574,7 +574,6 @@ static void mmc_sd_detect(struct mmc_hos
+ #ifdef CONFIG_MMC_PARANOID_SD_INIT
+ 	while(retries) {
+ 		err = mmc_send_status(host->card, NULL);
+-		printk("%s(%s): err = %d\n", __func__, mmc_hostname(host), err);
+ 		if (err) {
+ 			retries--;
+ 			udelay(5);

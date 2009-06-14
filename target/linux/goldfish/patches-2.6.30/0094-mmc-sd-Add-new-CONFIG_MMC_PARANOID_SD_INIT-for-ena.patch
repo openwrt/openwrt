@@ -1,0 +1,69 @@
+From 66983857a54479d76ce6dbd8399e1276698bd3c5 Mon Sep 17 00:00:00 2001
+From: San Mehat <san@google.com>
+Date: Tue, 11 Nov 2008 09:35:36 -0800
+Subject: [PATCH 094/134] mmc: sd: Add new CONFIG_MMC_PARANOID_SD_INIT for enabling retries during SD detection
+
+Signed-off-by: San Mehat <san@google.com>
+---
+ drivers/mmc/core/Kconfig |    8 ++++++++
+ drivers/mmc/core/sd.c    |   24 ++++++++++++++++++++++--
+ 2 files changed, 30 insertions(+), 2 deletions(-)
+
+--- a/drivers/mmc/core/Kconfig
++++ b/drivers/mmc/core/Kconfig
+@@ -14,3 +14,11 @@ config MMC_UNSAFE_RESUME
+ 	  This option is usually just for embedded systems which use
+ 	  a MMC/SD card for rootfs. Most people should say N here.
+ 
++config MMC_PARANOID_SD_INIT
++	bool "Enable paranoid SD card initialization (EXPERIMENTAL)"
++	help
++	  If you say Y here, the MMC layer will be extra paranoid
++	  about re-trying SD init requests. This can be a useful
++	  work-around for buggy controllers and hardware. Enable
++	  if you are experiencing issues with SD detection.
++
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -336,7 +336,9 @@ static int mmc_sd_init_card(struct mmc_h
+ 	int err;
+ 	u32 cid[4];
+ 	unsigned int max_dtr;
+-
++#ifdef CONFIG_MMC_PARANOID_SD_INIT
++	int retries;
++#endif
+ 	BUG_ON(!host);
+ 	WARN_ON(!host->claimed);
+ 
+@@ -439,11 +441,29 @@ static int mmc_sd_init_card(struct mmc_h
+ 		err = mmc_decode_scr(card);
+ 		if (err < 0)
+ 			goto free_card;
+-
+ 		/*
+ 		 * Fetch switch information from card.
+ 		 */
++#ifdef CONFIG_MMC_PARANOID_SD_INIT
++		for (retries = 1; retries <= 3; retries++) {
++			err = mmc_read_switch(card);
++			if (!err) {
++				if (retries > 1) {
++					printk(KERN_WARNING
++					       "%s: recovered\n", 
++					       mmc_hostname(host));
++				}
++				break;
++			} else {
++				printk(KERN_WARNING
++				       "%s: read switch failed (attempt %d)\n",
++				       mmc_hostname(host), retries);
++			}
++		}
++#else
+ 		err = mmc_read_switch(card);
++#endif
++
+ 		if (err)
+ 			goto free_card;
+ 	}

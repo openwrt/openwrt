@@ -1,0 +1,186 @@
+From fce981438497199217ed19f14c4d0f1a1aa309f3 Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@google.com>
+Date: Fri, 29 Jun 2007 21:46:31 -0700
+Subject: [PATCH 127/134] [ARM] goldfish: RTC: Add RTC driver for goldfish.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Gets the current time from the host.
+Alarms are not supported yet.
+
+Signed-off-by: Mike A. Chan <mikechan@google.com>
+Signed-off-by: Arve Hjønnevåg <arve@android.com>
+---
+ drivers/rtc/Kconfig        |    6 ++
+ drivers/rtc/Makefile       |    1 +
+ drivers/rtc/rtc-goldfish.c |  138 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 145 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/rtc/rtc-goldfish.c
+
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -691,6 +691,12 @@ config RTC_DRV_BFIN
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called rtc-bfin.
+ 
++config RTC_DRV_GOLDFISH
++	tristate "GOLDFISH"
++	depends on ARCH_GOLDFISH
++	help
++	  RTC driver for Goldfish Virtual Platform
++
+ config RTC_DRV_RS5C313
+ 	tristate "Ricoh RS5C313"
+ 	depends on SH_LANDISK
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_RTC_DRV_DS3234)	+= rtc-ds32
+ obj-$(CONFIG_RTC_DRV_EFI)	+= rtc-efi.o
+ obj-$(CONFIG_RTC_DRV_EP93XX)	+= rtc-ep93xx.o
+ obj-$(CONFIG_RTC_DRV_FM3130)	+= rtc-fm3130.o
++obj-$(CONFIG_RTC_DRV_GOLDFISH)	+= rtc-goldfish.o
+ obj-$(CONFIG_RTC_DRV_ISL1208)	+= rtc-isl1208.o
+ obj-$(CONFIG_RTC_DRV_M41T80)	+= rtc-m41t80.o
+ obj-$(CONFIG_RTC_DRV_M41T94)	+= rtc-m41t94.o
+--- /dev/null
++++ b/drivers/rtc/rtc-goldfish.c
+@@ -0,0 +1,138 @@
++/* drivers/rtc/rtc-goldfish.c
++**
++** Copyright (C) 2007 Google, Inc.
++**
++** This software is licensed under the terms of the GNU General Public
++** License version 2, as published by the Free Software Foundation, and
++** may be copied, distributed, and modified under those terms.
++**
++** This program is distributed in the hope that it will be useful,
++** but WITHOUT ANY WARRANTY; without even the implied warranty of
++** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++** GNU General Public License for more details.
++**
++*/
++
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/platform_device.h>
++#include <linux/rtc.h>
++
++#include <mach/timer.h>
++#include <mach/hardware.h>
++#include <asm/io.h>
++
++struct goldfish_rtc {
++	uint32_t base;
++	uint32_t irq;
++	struct rtc_device *rtc;
++};
++
++static irqreturn_t
++goldfish_rtc_interrupt(int irq, void *dev_id)
++{
++	struct goldfish_rtc	*qrtc = dev_id;
++	unsigned long		events = 0;
++
++	writel(1, qrtc->base + TIMER_CLEAR_INTERRUPT);
++	events = RTC_IRQF | RTC_AF;
++
++	rtc_update_irq(qrtc->rtc, 1, events);
++
++	return IRQ_HANDLED;
++}
++
++static int goldfish_rtc_read_time(struct device *dev, struct rtc_time *tm)
++{
++	int64_t time;
++	struct goldfish_rtc	*qrtc = platform_get_drvdata(to_platform_device(dev));
++
++	time = readl(qrtc->base + TIMER_TIME_LOW);
++	time |= (int64_t)readl(qrtc->base + TIMER_TIME_HIGH) << 32;
++	do_div(time, NSEC_PER_SEC);
++
++	rtc_time_to_tm(time, tm);
++	return 0;
++}
++
++static struct rtc_class_ops goldfish_rtc_ops = {
++//	.ioctl		= goldfish_rtc_ioctl,
++	.read_time	= goldfish_rtc_read_time,
++//	.set_time	= goldfish_rtc_set_time,
++//	.read_alarm	= goldfish_rtc_read_alarm,
++//	.set_alarm	= goldfish_rtc_set_alarm,
++};
++
++
++static int goldfish_rtc_probe(struct platform_device *pdev)
++{
++	int ret;
++	struct resource *r;
++	struct goldfish_rtc *qrtc;
++
++	qrtc = kzalloc(sizeof(*qrtc), GFP_KERNEL);
++	if(qrtc == NULL) {
++		ret = -ENOMEM;
++		goto err_qrtc_alloc_failed;
++	}
++	platform_set_drvdata(pdev, qrtc);
++
++	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if(r == NULL) {
++		ret = -ENODEV;
++		goto err_no_io_base;
++	}
++	qrtc->base = IO_ADDRESS(r->start - IO_START);
++	qrtc->irq = platform_get_irq(pdev, 0);
++	if(qrtc->irq < 0) {
++		ret = -ENODEV;
++		goto err_no_irq;
++	}
++	qrtc->rtc = rtc_device_register(pdev->name, &pdev->dev,
++	                                &goldfish_rtc_ops, THIS_MODULE);
++	if (IS_ERR(qrtc->rtc)) {
++		ret = PTR_ERR(qrtc->rtc);
++		goto err_rtc_device_register_failed;
++	}
++
++	ret = request_irq(qrtc->irq, goldfish_rtc_interrupt, 0, pdev->name, qrtc);
++	if(ret)
++		goto request_irq;
++
++	return 0;
++
++	free_irq(qrtc->irq, qrtc);
++request_irq:
++	rtc_device_unregister(qrtc->rtc);
++err_rtc_device_register_failed:
++err_no_irq:
++err_no_io_base:
++	kfree(qrtc);
++err_qrtc_alloc_failed:
++	return ret;
++}
++
++static int goldfish_rtc_remove(struct platform_device *pdev)
++{
++	struct goldfish_rtc	*qrtc = platform_get_drvdata(pdev);
++	free_irq(qrtc->irq, qrtc);
++	rtc_device_unregister(qrtc->rtc);
++	kfree(qrtc);
++	return 0;
++}
++
++static struct platform_driver goldfish_timer = {
++	.probe = goldfish_rtc_probe,
++	.remove = goldfish_rtc_remove,
++	.driver = {
++		.name = "goldfish_rtc"
++	}
++};
++
++static int __init goldfish_rtc_init(void)
++{
++	return platform_driver_register(&goldfish_timer);
++}
++
++module_init(goldfish_rtc_init);
++

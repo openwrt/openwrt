@@ -1,0 +1,50 @@
+From 784b170a69906c48a688a9ffa7512fc858f8836c Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Sun, 30 Mar 2008 21:36:29 -0700
+Subject: [PATCH 061/134] [ARM] Save thread registers in coredumps
+
+Signed-off-by: Brian Swetland <swetland@google.com>
+---
+ arch/arm/include/asm/elf.h |    6 ++++++
+ arch/arm/kernel/process.c  |   10 ++++++++++
+ 2 files changed, 16 insertions(+), 0 deletions(-)
+
+--- a/arch/arm/include/asm/elf.h
++++ b/arch/arm/include/asm/elf.h
+@@ -86,6 +86,10 @@ extern char elf_platform[];
+ 
+ struct elf32_hdr;
+ 
++struct task_struct;
++
++extern int dump_task_regs (struct task_struct *, elf_gregset_t *);
++
+ /*
+  * This is used to ensure we don't load something for the wrong architecture.
+  */
+@@ -113,4 +117,6 @@ extern int arm_elf_read_implies_exec(con
+ extern void elf_set_personality(const struct elf32_hdr *);
+ #define SET_PERSONALITY(ex)	elf_set_personality(&(ex))
+ 
++#define ELF_CORE_COPY_TASK_REGS(tsk, elf_regs) dump_task_regs(tsk, elf_regs)
++
+ #endif
+--- a/arch/arm/kernel/process.c
++++ b/arch/arm/kernel/process.c
+@@ -337,6 +337,16 @@ int dump_fpu (struct pt_regs *regs, stru
+ EXPORT_SYMBOL(dump_fpu);
+ 
+ /*
++ * Capture the user space registers if the task is not running (in user space)
++ */
++int dump_task_regs(struct task_struct *tsk, elf_gregset_t *regs)
++{
++	struct pt_regs ptregs = *task_pt_regs(tsk);
++	elf_core_copy_regs(regs, &ptregs);
++	return 1;
++}
++
++/*
+  * Shuffle the argument into the correct register before calling the
+  * thread function.  r1 is the thread argument, r2 is the pointer to
+  * the thread function, and r3 points to the exit function.

@@ -1,0 +1,94 @@
+--- a/drivers/mtd/devices/goldfish_nand.c
++++ b/drivers/mtd/devices/goldfish_nand.c
+@@ -65,7 +65,7 @@ static int goldfish_nand_erase(struct mt
+ 	if(rem)
+ 		goto invalid_arg;
+ 	ofs *= (mtd->writesize + mtd->oobsize);
+-	
++
+ 	if(len % mtd->writesize)
+ 		goto invalid_arg;
+ 	len = len / mtd->writesize * (mtd->writesize + mtd->oobsize);
+@@ -94,15 +94,12 @@ static int goldfish_nand_read_oob(struct
+ 
+ 	if(ofs + ops->len > mtd->size)
+ 		goto invalid_arg;
+-	if(ops->datbuf && ops->len && ops->len != mtd->writesize)
+-		goto invalid_arg;
+ 	if(ops->ooblen + ops->ooboffs > mtd->oobsize)
+ 		goto invalid_arg;
+ 
+ 	rem = do_div(ofs, mtd->writesize);
+-	if(rem)
+-		goto invalid_arg;
+ 	ofs *= (mtd->writesize + mtd->oobsize);
++	ofs += rem;
+ 
+ 	if(ops->datbuf)
+ 		ops->retlen = goldfish_nand_cmd(mtd, NAND_CMD_READ, ofs,
+@@ -131,7 +128,7 @@ static int goldfish_nand_write_oob(struc
+ 		goto invalid_arg;
+ 	if(ops->ooblen + ops->ooboffs > mtd->oobsize)
+ 		goto invalid_arg;
+-	
++
+ 	rem = do_div(ofs, mtd->writesize);
+ 	if(rem)
+ 		goto invalid_arg;
+@@ -160,15 +157,24 @@ static int goldfish_nand_read(struct mtd
+ 
+ 	if(from + len > mtd->size)
+ 		goto invalid_arg;
+-	if(len != mtd->writesize)
+-		goto invalid_arg;
++
++	*retlen = 0;
+ 
+ 	rem = do_div(from, mtd->writesize);
+-	if(rem)
+-		goto invalid_arg;
+ 	from *= (mtd->writesize + mtd->oobsize);
++	from += rem;
+ 
+-	*retlen = goldfish_nand_cmd(mtd, NAND_CMD_READ, from, len, buf);
++	do {
++		*retlen += goldfish_nand_cmd(mtd, NAND_CMD_READ, from, min(len, mtd->writesize - rem), buf);
++		if (len > mtd->writesize - rem) {
++			len -= mtd->writesize - rem;
++			buf += mtd->writesize - rem;
++			from += mtd->writesize + mtd->oobsize - rem;
++			rem = 0;
++		} else {
++			len = 0;
++		}
++	} while (len);
+ 	return 0;
+ 
+ invalid_arg:
+@@ -184,15 +190,23 @@ static int goldfish_nand_write(struct mt
+ 
+ 	if(to + len > mtd->size)
+ 		goto invalid_arg;
+-	if(len != mtd->writesize)
+-		goto invalid_arg;
+ 
+ 	rem = do_div(to, mtd->writesize);
+ 	if(rem)
+ 		goto invalid_arg;
+ 	to *= (mtd->writesize + mtd->oobsize);
+ 
+-	*retlen = goldfish_nand_cmd(mtd, NAND_CMD_WRITE, to, len, (void *)buf);
++	*retlen = 0;
++	do {
++		*retlen += goldfish_nand_cmd(mtd, NAND_CMD_WRITE, to, min(len, mtd->writesize), (void *)buf);
++		if (len > mtd->writesize) {
++			len -= mtd->writesize;
++			buf += mtd->writesize;
++			to += mtd->writesize + mtd->oobsize;
++		} else {
++			len = 0;
++		}
++	} while (len);
+ 	return 0;
+ 
+ invalid_arg:

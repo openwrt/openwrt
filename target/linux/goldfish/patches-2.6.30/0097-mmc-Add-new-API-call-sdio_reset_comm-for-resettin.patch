@@ -1,0 +1,74 @@
+From 0b9879757f15d4ac99e032647cb3ee26393031b0 Mon Sep 17 00:00:00 2001
+From: San Mehat <san@android.com>
+Date: Thu, 15 May 2008 09:15:37 -0700
+Subject: [PATCH 097/134] mmc: Add new API call 'sdio_reset_comm' for resetting communication with an SDIO device
+
+Signed-off-by: San Mehat <san@android.com>
+---
+ drivers/mmc/core/sdio.c |   58 +++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 58 insertions(+), 0 deletions(-)
+
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -482,3 +482,61 @@ err:
+ 	return err;
+ }
+ 
++int sdio_reset_comm(struct mmc_card *card)
++{
++	struct mmc_host *host = card->host;
++	u32 ocr;
++	int err;
++
++	printk("%s():\n", __func__);
++	mmc_go_idle(host);
++
++	mmc_set_clock(host, host->f_min);
++
++	err = mmc_send_io_op_cond(host, 0, &ocr);
++	if (err)
++		goto err;
++
++	host->ocr = mmc_select_voltage(host, ocr);
++	if (!host->ocr) {
++		err = -EINVAL;
++		goto err;
++	}
++
++	err = mmc_send_io_op_cond(host, host->ocr, &ocr);
++	if (err)
++		goto err;
++
++	if (mmc_host_is_spi(host)) {
++		err = mmc_spi_set_crc(host, use_spi_crc);
++		if (err)
++		goto err;
++	}
++
++	if (!mmc_host_is_spi(host)) {
++		err = mmc_send_relative_addr(host, &card->rca);
++		if (err)
++			goto err;
++		mmc_set_bus_mode(host, MMC_BUSMODE_PUSHPULL);
++	}
++	if (!mmc_host_is_spi(host)) {
++		err = mmc_select_card(card);
++		if (err)
++			goto err;
++	}
++
++	mmc_set_clock(host, card->cis.max_dtr);
++	err = sdio_enable_wide(card);
++	if (err)
++		goto err;
++
++	return 0;
++ err:
++	printk("%s: Error resetting SDIO communications (%d)\n",
++	       mmc_hostname(host), err);
++	mmc_release_host(host);
++	return err;
++}
++EXPORT_SYMBOL(sdio_reset_comm);
++
++
