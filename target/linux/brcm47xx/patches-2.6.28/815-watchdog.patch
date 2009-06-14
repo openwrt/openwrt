@@ -10,11 +10,9 @@ be build as a module.
 
 Signed-off-by: Aleksandar Radovanovic <biblbroks@sezampro.rs>
 Signed-off-by: Matthieu CASTET <castet.matthieu@free.fr>
-Index: linux-2.6/drivers/watchdog/Kconfig
-===================================================================
---- linux-2.6.orig/drivers/watchdog/Kconfig	2009-05-25 22:22:02.000000000 +0200
-+++ linux-2.6/drivers/watchdog/Kconfig	2009-06-05 22:05:19.000000000 +0200
-@@ -764,6 +764,12 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -747,6 +747,12 @@ config TXX9_WDT
  	help
  	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
  
@@ -27,11 +25,9 @@ Index: linux-2.6/drivers/watchdog/Kconfig
  # PARISC Architecture
  
  # POWERPC Architecture
-Index: linux-2.6/drivers/watchdog/Makefile
-===================================================================
---- linux-2.6.orig/drivers/watchdog/Makefile	2009-05-25 22:22:02.000000000 +0200
-+++ linux-2.6/drivers/watchdog/Makefile	2009-05-25 23:02:27.000000000 +0200
-@@ -105,6 +105,7 @@
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -106,6 +106,7 @@ obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
@@ -39,10 +35,8 @@ Index: linux-2.6/drivers/watchdog/Makefile
  
  # PARISC Architecture
  
-Index: linux-2.6/drivers/watchdog/bcm47xx_wdt.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6/drivers/watchdog/bcm47xx_wdt.c	2009-06-05 22:25:37.000000000 +0200
+--- /dev/null
++++ b/drivers/watchdog/bcm47xx_wdt.c
 @@ -0,0 +1,286 @@
 +/*
 + *  Watchdog driver for Broadcom BCM47XX

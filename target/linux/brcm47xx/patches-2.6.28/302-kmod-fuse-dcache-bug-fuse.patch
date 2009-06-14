@@ -1,7 +1,6 @@
-diff -ru linux-2.6.28.10.orig/fs/fuse/dev.c linux-2.6.28.10/fs/fuse/dev.c
---- linux-2.6.28.10.orig/fs/fuse/dev.c	2009-05-02 20:54:43.000000000 +0200
-+++ linux-2.6.28.10/fs/fuse/dev.c	2009-06-07 20:29:50.229816000 +0200
-@@ -525,6 +525,11 @@
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -525,6 +525,11 @@ static void fuse_copy_finish(struct fuse
  	}
  }
  
@@ -13,7 +12,7 @@ diff -ru linux-2.6.28.10.orig/fs/fuse/dev.c linux-2.6.28.10/fs/fuse/dev.c
  /*
   * Get another pagefull of userspace buffer, and map it to kernel
   * address space, and lock request
-@@ -533,6 +538,9 @@
+@@ -533,6 +538,9 @@ static int fuse_copy_fill(struct fuse_co
  {
  	unsigned long offset;
  	int err;
@@ -23,7 +22,7 @@ diff -ru linux-2.6.28.10.orig/fs/fuse/dev.c linux-2.6.28.10/fs/fuse/dev.c
  
  	unlock_request(cs->fc, cs->req);
  	fuse_copy_finish(cs);
-@@ -544,14 +552,22 @@
+@@ -544,14 +552,22 @@ static int fuse_copy_fill(struct fuse_co
  		cs->nr_segs --;
  	}
  	down_read(&current->mm->mmap_sem);
@@ -46,7 +45,7 @@ diff -ru linux-2.6.28.10.orig/fs/fuse/dev.c linux-2.6.28.10/fs/fuse/dev.c
  	cs->buf = cs->mapaddr + offset;
  	cs->len = min(PAGE_SIZE - offset, cs->seglen);
  	cs->seglen -= cs->len;
-@@ -565,6 +581,11 @@
+@@ -565,6 +581,11 @@ static int fuse_copy_do(struct fuse_copy
  {
  	unsigned ncpy = min(*size, cs->len);
  	if (val) {
@@ -58,9 +57,8 @@ diff -ru linux-2.6.28.10.orig/fs/fuse/dev.c linux-2.6.28.10/fs/fuse/dev.c
  		if (cs->write)
  			memcpy(cs->buf, *val, ncpy);
  		else
-diff -ru linux-2.6.28.10.orig/fs/fuse/fuse_i.h linux-2.6.28.10/fs/fuse/fuse_i.h
---- linux-2.6.28.10.orig/fs/fuse/fuse_i.h	2009-05-02 20:54:43.000000000 +0200
-+++ linux-2.6.28.10/fs/fuse/fuse_i.h	2009-06-06 16:34:54.814468000 +0200
+--- a/fs/fuse/fuse_i.h
++++ b/fs/fuse/fuse_i.h
 @@ -8,6 +8,7 @@
  
  #ifndef _FS_FUSE_I_H
@@ -69,10 +67,9 @@ diff -ru linux-2.6.28.10.orig/fs/fuse/fuse_i.h linux-2.6.28.10/fs/fuse/fuse_i.h
  
  #include <linux/fuse.h>
  #include <linux/fs.h>
-diff -ru linux-2.6.28.10.orig/fs/fuse/inode.c linux-2.6.28.10/fs/fuse/inode.c
---- linux-2.6.28.10.orig/fs/fuse/inode.c	2009-05-02 20:54:43.000000000 +0200
-+++ linux-2.6.28.10/fs/fuse/inode.c	2009-06-07 20:33:34.156611000 +0200
-@@ -1038,6 +1038,10 @@
+--- a/fs/fuse/inode.c
++++ b/fs/fuse/inode.c
+@@ -1038,6 +1038,10 @@ static int __init fuse_init(void)
  	printk("fuse init (API version %i.%i)\n",
  	       FUSE_KERNEL_VERSION, FUSE_KERNEL_MINOR_VERSION);
  
