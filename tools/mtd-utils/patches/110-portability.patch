@@ -1,0 +1,72 @@
+--- a/compr_lzo.c
++++ b/compr_lzo.c
+@@ -24,7 +24,6 @@
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+-#include <asm/types.h>
+ #include <linux/jffs2.h>
+ #include <lzo/lzo1x.h>
+ #include "compr.h"
+--- a/compr_zlib.c
++++ b/compr_zlib.c
+@@ -35,7 +35,6 @@
+ #include <stdint.h>
+ #include <zlib.h>
+ #include <stdio.h>
+-#include <asm/types.h>
+ #include <linux/jffs2.h>
+ #include "compr.h"
+ 
+--- a/mkfs.jffs2.c
++++ b/mkfs.jffs2.c
+@@ -1100,6 +1100,7 @@ static struct {
+ 	{ 0, NULL, 0 }
+ };
+ 
++#ifndef NO_ACL_SUPPORT
+ static void formalize_posix_acl(void *xvalue, int *value_len)
+ {
+ 	struct posix_acl_xattr_header *pacl_header;
+@@ -1151,6 +1152,7 @@ static void formalize_posix_acl(void *xv
+ 	memcpy(xvalue, buffer, offset);
+ 	*value_len = offset;
+ }
++#endif
+ 
+ static xattr_entry_t *create_xattr_entry(int xprefix, char *xname, char *xvalue, int value_len)
+ {
+@@ -1205,9 +1207,11 @@ static xattr_entry_t *find_xattr_entry(i
+ 	if (!xentry_hash)
+ 		xentry_hash = xcalloc(1, sizeof(xe) * XATTRENTRY_HASHSIZE);
+ 
++#ifndef NO_ACL_SUPPORT
+ 	if (xprefix == JFFS2_XPREFIX_ACL_ACCESS
+ 			|| xprefix == JFFS2_XPREFIX_ACL_DEFAULT)
+ 		formalize_posix_acl(xvalue, &value_len);
++#endif
+ 
+ 	name_len = strlen(xname);
+ 	index = (crc32(0, xname, name_len) ^ crc32(0, xvalue, value_len)) % XATTRENTRY_HASHSIZE;
+--- a/rbtree.h
++++ b/rbtree.h
+@@ -94,8 +94,7 @@ static inline struct page * rb_insert_pa
+ #ifndef	_LINUX_RBTREE_H
+ #define	_LINUX_RBTREE_H
+ 
+-#include <linux/kernel.h>
+-#include <linux/stddef.h>
++#include <stddef.h>
+ 
+ struct rb_node
+ {
+@@ -131,7 +130,9 @@ static inline void rb_set_color(struct r
+ 
+ #define RB_ROOT	(struct rb_root) { NULL, }
+ 
++#ifndef offsetof
+ #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
++#endif
+ 
+ #define container_of(ptr, type, member) ({                      \
+         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
