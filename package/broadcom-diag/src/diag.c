@@ -123,6 +123,7 @@ enum {
 
 	/* D-Link */
 	DIR130,
+	DIR320,
 	DIR330,
 	DWL3150,
 
@@ -718,6 +719,20 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "blue",	.gpio = 1 << 6},
 		},
 	},
+	[DIR320] = {
+		.name	  = "D-Link DIR-320",
+		.buttons	= {
+			{ .name = "reserved",	.gpio = 1 << 6},
+			{ .name = "reset",	.gpio = 1 << 7},
+		},
+		.leds	   = {
+			{ .name = "wlan",	.gpio = 1 << 0, .polarity = NORMAL },
+			{ .name = "diag",	.gpio = 1 << 1, .polarity = NORMAL }, /* "status led */
+			{ .name = "red",	.gpio = 1 << 3, .polarity = REVERSE },
+			{ .name = "blue",	.gpio = 1 << 4, .polarity = REVERSE },
+			{ .name = "usb",	.gpio = 1 << 5, .polarity = NORMAL },
+		},
+	},
 	[DIR330] = {
 		.name	  = "D-Link DIR-330",
 		.buttons	= {
@@ -874,6 +889,10 @@ static struct platform_t __init *platform_detect(void)
 
 		if (!strcmp(getvar("boardtype"), "0x0101") && !strcmp(getvar("boardrev"), "0x10")) /* SE505V2 With Modified CFE */
 			return &platforms[SE505V2];
+
+		if (!strcmp(boardtype, "0x048e") && !strcmp(getvar("boardrev"),"0x35") &&
+				!strcmp(getvar("boardflags"), "0x750")) /* D-Link DIR-320 */
+			return &platforms[DIR320];
 
 	} else { /* PMON based - old stuff */
 		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
