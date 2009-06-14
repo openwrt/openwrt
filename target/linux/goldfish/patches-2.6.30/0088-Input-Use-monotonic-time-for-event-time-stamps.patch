@@ -1,0 +1,31 @@
+From 474db0e1425f8da03a7d49ebba1602efa503c73f Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Fri, 17 Oct 2008 15:28:08 -0700
+Subject: [PATCH 088/134] Input: Use monotonic time for event time stamps.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Since wall time can jump backwards, it cannot be used to determine if one
+event occured before another or for how long a key was pressed.
+
+Signed-off-by: Arve Hjønnevåg <arve@android.com>
+---
+ drivers/input/evdev.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+--- a/drivers/input/evdev.c
++++ b/drivers/input/evdev.c
+@@ -74,8 +74,11 @@ static void evdev_event(struct input_han
+ 	struct evdev *evdev = handle->private;
+ 	struct evdev_client *client;
+ 	struct input_event event;
++	struct timespec ts;
+ 
+-	do_gettimeofday(&event.time);
++	ktime_get_ts(&ts);
++	event.time.tv_sec = ts.tv_sec;
++	event.time.tv_usec = ts.tv_nsec / NSEC_PER_USEC;
+ 	event.type = type;
+ 	event.code = code;
+ 	event.value = value;

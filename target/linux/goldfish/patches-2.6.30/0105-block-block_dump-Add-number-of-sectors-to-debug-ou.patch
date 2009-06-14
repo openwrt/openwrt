@@ -1,0 +1,27 @@
+From 4d3a01ba872f67bae704e37bf888c38fa83be759 Mon Sep 17 00:00:00 2001
+From: San Mehat <san@android.com>
+Date: Sat, 21 Mar 2009 18:48:05 -0700
+Subject: [PATCH 105/134] block: block_dump: Add number of sectors to debug output
+
+Signed-off-by: San Mehat <san@android.com>
+---
+ block/blk-core.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -1558,11 +1558,12 @@ void submit_bio(int rw, struct bio *bio)
+ 
+ 		if (unlikely(block_dump)) {
+ 			char b[BDEVNAME_SIZE];
+-			printk(KERN_DEBUG "%s(%d): %s block %Lu on %s\n",
++			printk(KERN_DEBUG "%s(%d): %s block %Lu on %s (%u sectors)\n",
+ 			current->comm, task_pid_nr(current),
+ 				(rw & WRITE) ? "WRITE" : "READ",
+ 				(unsigned long long)bio->bi_sector,
+-				bdevname(bio->bi_bdev, b));
++				bdevname(bio->bi_bdev, b),
++				count);
+ 		}
+ 	}
+ 

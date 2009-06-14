@@ -1,0 +1,52 @@
+From 7b236e69bb4403f20fbdef81907d46b4d32d4af8 Mon Sep 17 00:00:00 2001
+From: =?utf-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Thu, 9 Oct 2008 19:17:11 -0700
+Subject: [PATCH 068/134] PM: Enable early suspend through /sys/power/state
+
+If EARLYSUSPEND is enabled then writes to /sys/power/state no longer
+blocks, and the kernel will try to enter the requested state every
+time no wakelocks are held. Write "on" to resume normal operation.
+---
+ kernel/power/main.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+--- a/kernel/power/main.c
++++ b/kernel/power/main.c
+@@ -408,6 +408,9 @@ static void suspend_finish(void)
+ 
+ 
+ static const char * const pm_states[PM_SUSPEND_MAX] = {
++#ifdef CONFIG_EARLYSUSPEND
++	[PM_SUSPEND_ON]		= "on",
++#endif
+ 	[PM_SUSPEND_STANDBY]	= "standby",
+ 	[PM_SUSPEND_MEM]	= "mem",
+ };
+@@ -525,7 +528,11 @@ static ssize_t state_store(struct kobjec
+ 			   const char *buf, size_t n)
+ {
+ #ifdef CONFIG_SUSPEND
++#ifdef CONFIG_EARLYSUSPEND
++	suspend_state_t state = PM_SUSPEND_ON;
++#else
+ 	suspend_state_t state = PM_SUSPEND_STANDBY;
++#endif
+ 	const char * const *s;
+ #endif
+ 	char *p;
+@@ -547,8 +554,15 @@ static ssize_t state_store(struct kobjec
+ 			break;
+ 	}
+ 	if (state < PM_SUSPEND_MAX && *s)
++#ifdef CONFIG_EARLYSUSPEND
++		if (state == PM_SUSPEND_ON || valid_state(state)) {
++			error = 0;
++			request_suspend_state(state);
++		}
++#else
+ 		error = enter_state(state);
+ #endif
++#endif
+ 
+  Exit:
+ 	return error ? error : n;
