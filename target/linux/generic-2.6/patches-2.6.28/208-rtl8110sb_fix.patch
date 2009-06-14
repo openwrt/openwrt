@@ -27,7 +27,7 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_MSI
-@@ -3554,10 +3554,12 @@ static irqreturn_t rtl8169_interrupt(int
+@@ -3555,10 +3555,12 @@ static irqreturn_t rtl8169_interrupt(int
  		goto out;
  	}
  

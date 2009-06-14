@@ -6,8 +6,6 @@ Signed-off-by: Atsushi Nemoto <anemo@mba.ocn.ne.jp>
  arch/mips/lib/delay.c |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/lib/delay.c b/arch/mips/lib/delay.c
-index f69c6b5..6b3b1de 100644
 --- a/arch/mips/lib/delay.c
 +++ b/arch/mips/lib/delay.c
 @@ -43,7 +43,7 @@ void __udelay(unsigned long us)
@@ -27,6 +25,3 @@ index f69c6b5..6b3b1de 100644
 +	__delay((ns * 0x00000005ull * HZ * lpj) >> 32);
  }
  EXPORT_SYMBOL(__ndelay);
-
-
-
