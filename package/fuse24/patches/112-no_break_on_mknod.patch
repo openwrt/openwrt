@@ -1,7 +1,6 @@
-diff -ruN fuse-2.4.1-old/util/Makefile.in fuse-2.4.1-new/util/Makefile.in
---- fuse-2.4.1-old/util/Makefile.in	2005-10-17 12:29:20.000000000 +0200
-+++ fuse-2.4.1-new/util/Makefile.in	2005-10-19 17:11:13.000000000 +0200
-@@ -445,7 +445,7 @@
+--- a/util/Makefile.in
++++ b/util/Makefile.in
+@@ -453,7 +453,7 @@ uninstall-am: uninstall-binPROGRAMS unin
  install-exec-hook:
  	-chown root $(DESTDIR)$(bindir)/fusermount
  	-chmod u+s $(DESTDIR)$(bindir)/fusermount

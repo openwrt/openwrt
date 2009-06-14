@@ -1,7 +1,6 @@
-diff -ruN fuse-2.5.3.orig/kernel/dev.c fuse-2.5.3/kernel/dev.c
---- fuse-2.5.3.orig/kernel/dev.c	2006-02-02 19:04:52.000000000 +0200
-+++ fuse-2.5.3/kernel/dev.c	2008-10-23 10:27:53.000000000 +0300
-@@ -512,6 +512,9 @@
+--- a/kernel/dev.c
++++ b/kernel/dev.c
+@@ -512,6 +512,9 @@ static int fuse_copy_fill(struct fuse_co
  {
  	unsigned long offset;
  	int err;
@@ -11,7 +10,7 @@ diff -ruN fuse-2.5.3.orig/kernel/dev.c fuse-2.5.3/kernel/dev.c
  
  	unlock_request(cs->req);
  	fuse_copy_finish(cs);
-@@ -523,14 +526,22 @@
+@@ -523,14 +526,22 @@ static int fuse_copy_fill(struct fuse_co
  		cs->nr_segs --;
  	}
  	down_read(&current->mm->mmap_sem);
@@ -34,7 +33,7 @@ diff -ruN fuse-2.5.3.orig/kernel/dev.c fuse-2.5.3/kernel/dev.c
  	cs->buf = cs->mapaddr + offset;
  	cs->len = min(PAGE_SIZE - offset, cs->seglen);
  	cs->seglen -= cs->len;
-@@ -545,6 +556,11 @@
+@@ -545,6 +556,11 @@ static inline int fuse_copy_do(struct fu
  {
  	unsigned ncpy = min(*size, cs->len);
  	if (val) {
@@ -46,9 +45,8 @@ diff -ruN fuse-2.5.3.orig/kernel/dev.c fuse-2.5.3/kernel/dev.c
  		if (cs->write)
  			memcpy(cs->buf, *val, ncpy);
  		else
-diff -ruN fuse-2.5.3.orig/kernel/fuse_i.h fuse-2.5.3/kernel/fuse_i.h
---- fuse-2.5.3.orig/kernel/fuse_i.h	2006-02-02 19:04:52.000000000 +0200
-+++ fuse-2.5.3/kernel/fuse_i.h	2008-10-22 18:03:50.000000000 +0300
+--- a/kernel/fuse_i.h
++++ b/kernel/fuse_i.h
 @@ -45,6 +45,10 @@
  #  endif
  #endif
@@ -60,4 +58,16 @@ diff -ruN fuse-2.5.3.orig/kernel/fuse_i.h fuse-2.5.3/kernel/fuse_i.h
  #include "config.h"
  #ifndef KERNEL_2_6
  #  include <linux/config.h>
-
+--- a/kernel/inode.c
++++ b/kernel/inode.c
+@@ -739,6 +739,10 @@ static int __init fuse_init(void)
+ 	printk("fuse distribution version: %s\n", FUSE_VERSION);
+ #endif
+ 
++#ifdef DCACHE_BUG
++printk("fuse init: DCACHE_BUG enabled\n");
++#endif
++
+ 	spin_lock_init(&fuse_lock);
+ 	res = fuse_fs_init();
+ 	if (res)
