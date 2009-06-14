@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -610,6 +610,13 @@ else
+@@ -603,6 +603,13 @@ else
  load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
  endif
  
@@ -40,7 +40,7 @@
  config BASLER_EXCITE
  	bool "Basler eXcite smart camera"
  	select CEVT_R4K
-@@ -633,6 +650,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -634,6 +651,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  endchoice
  
  source "arch/mips/alchemy/Kconfig"
