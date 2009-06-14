@@ -114,3 +114,13 @@
  
  struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
  				void *caller)
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -728,6 +728,7 @@ static inline int shmem_lock(struct file
+ #endif
+ struct file *shmem_file_setup(char *name, loff_t size, unsigned long flags);
+ 
++void shmem_set_file(struct vm_area_struct *vma, struct file *file);
+ int shmem_zero_setup(struct vm_area_struct *);
+ 
+ #ifndef CONFIG_MMU
