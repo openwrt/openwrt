@@ -63,6 +63,7 @@ endef
 define Package/goldfish-qemu/install
 	$(INSTALL_DIR) $(1)
 	$(CP) $(PKG_BUILD_DIR)/objs/emulator $(1)/
+	$(CP) ./skins $(1)/
 endef
 
 $(eval $(call BuildPackage,goldfish-qemu))
