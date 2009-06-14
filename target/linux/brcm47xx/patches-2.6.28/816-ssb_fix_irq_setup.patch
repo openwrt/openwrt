@@ -21,11 +21,9 @@ I also added some code to print the irq configuration before and after irq setup
 [1] http://www.danm.de/files/src/bcm5365p/REPORTED_DEVICES
 
 Signed-off-by: Matthieu CASTET <castet.matthieu@free.fr> 
-Index: linux-2.6/drivers/ssb/driver_mipscore.c
-===================================================================
---- linux-2.6.orig/drivers/ssb/driver_mipscore.c	2009-05-25 19:47:26.000000000 +0200
-+++ linux-2.6/drivers/ssb/driver_mipscore.c	2009-05-25 19:47:42.000000000 +0200
-@@ -49,29 +49,54 @@
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -49,29 +49,54 @@ static const u32 ipsflag_irq_shift[] = {
  
  static inline u32 ssb_irqflag(struct ssb_device *dev)
  {
@@ -83,7 +81,7 @@ Index: linux-2.6/drivers/ssb/driver_mipscore.c
  
  	return irq;
  }
-@@ -97,25 +122,56 @@
+@@ -97,25 +122,56 @@ static void set_irq(struct ssb_device *d
  	struct ssb_device *mdev = bus->mipscore.dev;
  	u32 irqflag = ssb_irqflag(dev);
  
@@ -145,7 +143,7 @@ Index: linux-2.6/drivers/ssb/driver_mipscore.c
  }
  
  static void ssb_mips_serial_init(struct ssb_mipscore *mcore)
-@@ -195,18 +251,26 @@
+@@ -197,18 +253,26 @@ void ssb_mipscore_init(struct ssb_mipsco
  	else if (bus->chipco.dev)
  		ssb_chipco_timing_init(&bus->chipco, ns);
  
@@ -174,7 +172,7 @@ Index: linux-2.6/drivers/ssb/driver_mipscore.c
  			/* fallthrough */
  		case SSB_DEV_PCI:
  		case SSB_DEV_ETHERNET:
-@@ -220,6 +284,8 @@
+@@ -222,6 +286,8 @@ void ssb_mipscore_init(struct ssb_mipsco
  			}
  		}
  	}

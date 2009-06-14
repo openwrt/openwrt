@@ -1,6 +1,6 @@
---- linux-2.6.28.10.orig/arch/mips/mm/c-r4k.c	2009-05-02 20:54:43.000000000 +0200
-+++ linux-2.6.28.10/arch/mips/mm/c-r4k.c	2009-06-07 20:36:01.667918000 +0200
-@@ -348,7 +348,7 @@
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -360,7 +360,7 @@ static inline void local_r4k___flush_cac
  	}
  }
  
@@ -9,7 +9,7 @@
  {
  	r4k_on_each_cpu(local_r4k___flush_cache_all, NULL, 1);
  }
-@@ -512,7 +512,7 @@
+@@ -524,7 +524,7 @@ static inline void local_r4k_flush_cache
  	}
  }
  
@@ -18,9 +18,9 @@
  	unsigned long addr, unsigned long pfn)
  {
  	struct flush_cache_page_args args;
-@@ -1401,3 +1401,10 @@
- #endif
+@@ -1430,3 +1430,10 @@ void __cpuinit r4k_cache_init(void)
  	coherency_setup();
+ #endif
  }
 +
 +// fuse package DCACHE BUG patch exports

@@ -4,11 +4,9 @@ watchdog driver.
 
 Signed-off-by: Matthieu CASTET <castet.matthieu@free.fr>
 Acked-by : Michael Buesch <mb@bu3sch.de>
-Index: linux-2.6/drivers/ssb/embedded.c
-===================================================================
---- linux-2.6.orig/drivers/ssb/embedded.c	2009-05-22 21:45:50.000000000 +0200
-+++ linux-2.6/drivers/ssb/embedded.c	2009-05-22 21:46:07.000000000 +0200
-@@ -29,6 +29,7 @@
+--- a/drivers/ssb/embedded.c
++++ b/drivers/ssb/embedded.c
+@@ -29,6 +29,7 @@ int ssb_watchdog_timer_set(struct ssb_bu
  	}
  	return -ENODEV;
  }
