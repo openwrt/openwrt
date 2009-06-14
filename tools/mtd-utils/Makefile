@@ -36,10 +36,16 @@ define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
 		$(MTD_MAKEOPTS) \
 		TARGETS=mkfs.jffs2
+	$(MAKE) -C $(HOST_BUILD_DIR)/ubi-utils \
+		$(MTD_MAKEOPTS) \
+		TARGETS=ubinize
 endef
 
 define Host/Install
-	$(CP) $(HOST_BUILD_DIR)/mkfs.jffs2 $(STAGING_DIR_HOST)/bin/
+	$(CP) \
+		$(HOST_BUILD_DIR)/mkfs.jffs2 \
+		$(HOST_BUILD_DIR)/ubinize \
+		$(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
