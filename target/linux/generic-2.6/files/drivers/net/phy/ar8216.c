@@ -27,16 +27,19 @@
 #include <linux/switch.h>
 #include <linux/delay.h>
 #include <linux/phy.h>
+#include <linux/netdevice.h>
+#include <linux/etherdevice.h>
 #include "ar8216.h"
 
-#define AR8216_REG_PORT_RATE(_i)	(AR8216_PORT_OFFSET(_i) + 0x000c)
-#define AR8216_REG_PORT_PRIO(_i)	(AR8216_PORT_OFFSET(_i) + 0x0010)
 
 struct ar8216_priv {
+	int (*hardstart)(struct sk_buff *skb, struct net_device *dev);
+
 	struct switch_dev dev;
 	struct phy_device *phy;
 	u32 (*read)(struct ar8216_priv *priv, int reg);
 	void (*write)(struct ar8216_priv *priv, int reg, u32 val);
+
 	/* all fields below are cleared on reset */
 	bool vlan;
 	u8 vlan_id[AR8216_NUM_VLANS];
@@ -70,6 +73,7 @@ ar8216_mii_read(struct ar8216_priv *priv, int reg)
 
 	split_addr((u32) reg, &r1, &r2, &page);
 	phy->bus->write(phy->bus, 0x18, 0, page);
+	msleep(1); /* wait for the page switch to propagate */
 	lo = phy->bus->read(phy->bus, 0x10 | r2, r1);
 	hi = phy->bus->read(phy->bus, 0x10 | r2, r1 + 1);
 
@@ -85,6 +89,7 @@ ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 
 	split_addr((u32) reg, &r1, &r2, &r3);
 	phy->bus->write(phy->bus, 0x18, 0, r3);
+	msleep(1); /* wait for the page switch to propagate */
 
 	lo = val & 0xffff;
 	hi = (u16) (val >> 16);
@@ -156,6 +161,103 @@ ar8216_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 	struct ar8216_priv *priv = to_ar8216(dev);
 	val->value.i = priv->vlan_id[val->port_vlan];
 	return 0;
+}
+
+
+static int
+ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
+{
+	struct ar8216_priv *priv = dev->phy_ptr;
+	unsigned char *buf;
+
+    if (unlikely(!priv))
+        goto error;
+
+	if (!priv->vlan)
+		goto send;
+
+	if (unlikely(skb_headroom(skb) < 2)) {
+		if (pskb_expand_head(skb, 2, 0, GFP_ATOMIC) < 0)
+			goto error;
+	}
+
+	buf = skb_push(skb, 2);
+	buf[0] = 0x10;
+	buf[1] = 0x80;
+
+send:
+	return priv->hardstart(skb, dev);
+
+error:
+	dev_kfree_skb_any(skb);
+	return 0;
+}
+
+static int
+ar8216_mangle_rx(struct sk_buff *skb, int napi)
+{
+	struct ar8216_priv *priv;
+	struct net_device *dev;
+	unsigned char *buf;
+	int port, vlan;
+
+	dev = skb->dev;
+	if (!dev)
+		goto error;
+
+	priv = dev->phy_ptr;
+	if (!priv)
+		goto error;
+
+	/* don't strip the header if vlan mode is disabled */
+	if (!priv->vlan)
+		goto recv;
+
+	/* strip header, get vlan id */
+	buf = skb->data;
+	skb_pull(skb, 2);
+
+	/* check for vlan header presence */
+	if ((buf[12 + 2] != 0x81) || (buf[13 + 2] != 0x00))
+		goto recv;
+
+	port = buf[0] & 0xf;
+
+	/* no need to fix up packets coming from a tagged source */
+	if (priv->vlan_tagged & (1 << port))
+		goto recv;
+
+	/* lookup port vid from local table, the switch passes an invalid vlan id */
+	vlan = priv->pvid[port];
+
+	buf[14 + 2] &= 0xf0;
+	buf[14 + 2] |= vlan >> 8;
+	buf[15 + 2] = vlan & 0xff;
+
+recv:
+	skb->protocol = eth_type_trans(skb, skb->dev);
+
+	if (napi)
+		return netif_receive_skb(skb);
+	else
+		return netif_rx(skb);
+
+error:
+	/* no vlan? eat the packet! */
+	dev_kfree_skb_any(skb);
+	return 0;
+}
+
+static int
+ar8216_netif_rx(struct sk_buff *skb)
+{
+	return ar8216_mangle_rx(skb, 0);
+}
+
+static int
+ar8216_netif_receive_skb(struct sk_buff *skb)
+{
+	return ar8216_mangle_rx(skb, 1);
 }
 
 
@@ -327,19 +429,18 @@ ar8216_hw_apply(struct switch_dev *dev)
 
 		if (priv->vlan && (priv->vlan_tagged & (1 << i))) {
 			egress = AR8216_OUT_ADD_VLAN;
-			ingress = AR8216_IN_PORT_FALLBACK;
 		} else {
 			egress = AR8216_OUT_STRIP_VLAN;
-			ingress = AR8216_IN_SECURE;
 		}
+		ingress = AR8216_IN_SECURE;
 
 		ar8216_rmw(priv, AR8216_REG_PORT_CTRL(i),
 			AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
 			AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
 			AR8216_PORT_CTRL_HEADER | AR8216_PORT_CTRL_LEARN_LOCK,
 			AR8216_PORT_CTRL_LEARN |
+			  (i == AR8216_PORT_CPU ? AR8216_PORT_CTRL_HEADER : 0) |
 			  (egress << AR8216_PORT_CTRL_VLAN_MODE_S) |
-			  (priv->vlan ? AR8216_PORT_CTRL_SINGLE_VLAN : 0) |
 			  (AR8216_PORT_STATE_FORWARD << AR8216_PORT_CTRL_STATE_S));
 
 		ar8216_rmw(priv, AR8216_REG_PORT_VLAN(i),
@@ -394,6 +495,7 @@ static int
 ar8216_config_init(struct phy_device *pdev)
 {
 	struct ar8216_priv *priv;
+	struct net_device *dev = pdev->attached_dev;
 	int ret;
 
 	printk("%s: AR8216 PHY driver attached.\n", pdev->attached_dev->name);
@@ -415,6 +517,16 @@ ar8216_config_init(struct phy_device *pdev)
 	}
 
 	ret = ar8216_reset_switch(&priv->dev);
+	if (ret)
+		goto done;
+
+	dev->phy_ptr = priv;
+	pdev->pkt_align = 2;
+	priv->hardstart = dev->hard_start_xmit;
+	pdev->netif_receive_skb = ar8216_netif_receive_skb;
+	pdev->netif_rx = ar8216_netif_rx;
+	dev->hard_start_xmit = ar8216_mangle_tx;
+
 done:
 	return ret;
 }
@@ -465,10 +577,13 @@ static void
 ar8216_remove(struct phy_device *pdev)
 {
 	struct ar8216_priv *priv = pdev->priv;
+	struct net_device *dev = pdev->attached_dev;
 
 	if (!priv)
 		return;
 
+	if (priv->hardstart && dev)
+		dev->hard_start_xmit = priv->hardstart;
 	unregister_switch(&priv->dev);
 	kfree(priv);
 }

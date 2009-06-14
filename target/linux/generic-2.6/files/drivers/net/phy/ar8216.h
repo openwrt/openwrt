@@ -120,6 +120,9 @@
 #define   AR8216_PORT_VLAN_MODE		BITS(30, 2)
 #define   AR8216_PORT_VLAN_MODE_S	30
 
+#define AR8216_REG_PORT_RATE(_i)	(AR8216_PORT_OFFSET(_i) + 0x000c)
+#define AR8216_REG_PORT_PRIO(_i)	(AR8216_PORT_OFFSET(_i) + 0x0010)
+
 /* ingress 802.1q mode */
 enum {
 	AR8216_IN_PORT_ONLY = 0,
