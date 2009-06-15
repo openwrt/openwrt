@@ -60,3 +60,18 @@
  		} else {
  			cvmx_dprintf("ERROR: Unsupported Octeon model in %s\n",
  				     __func__);
+--- a/arch/mips/cavium-octeon/pci.c
++++ b/arch/mips/cavium-octeon/pci.c
+@@ -95,9 +95,11 @@ const char *octeon_get_pci_interrupts(vo
+ 	case CVMX_BOARD_TYPE_EBH3000:
+ 		return "";
+ 	case CVMX_BOARD_TYPE_EBH3100:
+-	case CVMX_BOARD_TYPE_CN3010_EVB_HS5:
++	//case CVMX_BOARD_TYPE_CN3010_EVB_HS5:
+ 	case CVMX_BOARD_TYPE_CN3005_EVB_HS5:
+ 		return "AAABAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
++	case CVMX_BOARD_TYPE_CN3010_EVB_HS5:
++		return "AAAAAAAAAAAAAABAAAAAAAAAAAAAAABA";
+ 	case CVMX_BOARD_TYPE_BBGW_REF:
+ 		return "AABCD";
+ 	default:
