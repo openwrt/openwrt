@@ -761,7 +761,7 @@ $(eval $(call KernelPackage,textsearch))
 define KernelPackage/rfkill
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RF switch subsystem support
-  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21 @!TARGET_rb532 @!TARGET_avr32 @!TARGET_brcm47xx @!TARGET_s3c24xx @!TARGET_ifxmips @!TARGET_atheros @!TARGET_adm5120 @!TARGET_ar7 @!TARGET_ppc40x @!TARGET_ixp4xx @!TARGET_rdc @!TARGET_uml
+  DEPENDS:=@TARGET_x86||TARGET_olpc||TARGET_s3c24xx||TARGET_brcm47xx
   KCONFIG:= \
     CONFIG_RFKILL \
     CONFIG_RFKILL_INPUT \
