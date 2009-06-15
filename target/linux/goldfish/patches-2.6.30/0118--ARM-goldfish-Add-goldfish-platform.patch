@@ -2018,7 +2018,7 @@ Signed-off-by: Arve Hjønnevåg <arve@android.com>
 +	return IRQ_HANDLED;
 +}
 +
-+static cycle_t goldfish_timer_read(void)
++static cycle_t goldfish_timer_read(struct clocksource *cs)
 +{
 +	uint32_t timer_base = IO_ADDRESS(GOLDFISH_TIMER_BASE);
 +	unsigned long irqflags;
