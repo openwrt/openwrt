@@ -526,6 +526,6 @@
 -	if (m41t81_probe())
 -		swarm_rtc_type = RTC_M4LT81;
 -
- 	printk("This kernel optimized for "
- #ifdef CONFIG_SIMULATION
- 	       "simulation"
+ #ifdef CONFIG_VT
+ 	screen_info = (struct screen_info) {
+ 		0, 0,           /* orig-x, orig-y */
