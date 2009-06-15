@@ -11,8 +11,8 @@ Signed-off-by: David Daney <ddaney@caviumnetworks.com>
 
 --- a/arch/mips/include/asm/compiler.h
 +++ b/arch/mips/include/asm/compiler.h
-@@ -26,4 +26,11 @@ typedef u64 uintx_t;
- #endif
+@@ -16,4 +16,11 @@
+ #define GCC_REG_ACCUM "accum"
  #endif
  
 +#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
