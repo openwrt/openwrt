@@ -1,6 +1,6 @@
---- a/drivers/mtd/maps/Kconfig	2009-05-07 00:51:33.000000000 +0200
-+++ b/drivers/mtd/maps/Kconfig	2009-05-07 01:08:25.000000000 +0200
-@@ -156,6 +156,12 @@
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -156,6 +156,12 @@ config MTD_RDC3210_BUSWIDTH
  	  Number of bytes addressed on the RDC-3210 flash device before
  	  addressing the same chip again
  
@@ -13,9 +13,9 @@
  config MTD_SC520CDP
  	tristate "CFI Flash device mapped on AMD SC520 CDP"
  	depends on X86 && MTD_CFI && MTD_CONCAT
---- a/drivers/mtd/maps/Makefile	2009-05-07 00:51:33.000000000 +0200
-+++ b/drivers/mtd/maps/Makefile	2009-05-07 01:07:28.000000000 +0200
-@@ -28,6 +28,7 @@
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -28,6 +28,7 @@ obj-$(CONFIG_MTD_PMC_MSP_EVM)   += pmcms
  obj-$(CONFIG_MTD_PMC_MSP_RAMROOT)+= pmcmsp-ramroot.o
  obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
  obj-$(CONFIG_MTD_RDC3210)	+= rdc3210.o
