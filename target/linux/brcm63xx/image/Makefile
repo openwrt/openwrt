@@ -143,7 +143,14 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),D-4P-W,6348,bc310,,bc310)
 
 	# TP-Link TD-8810A, TD-8810B, TD-8811A, TD-8811B
+	$(call Image/Build/CFE,$(1),8L-2M-8M,6338,bccfe,,bccfe)
 	$(call Image/Build/CFE,$(1),8L-2M-8M,6338,bc300,,bc300)
+
+	# Generic 6338 images
+	$(call Image/Build/CFE,$(1),6338GW,6338,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),6338GW,6338,bc221,,bc221)
+	$(call Image/Build/CFE,$(1),6338GW,6338,bc300,,bc300)
+	$(call Image/Build/CFE,$(1),6338GW,6338,bc310,,bc310)
 
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,bccfe,,bccfe)
