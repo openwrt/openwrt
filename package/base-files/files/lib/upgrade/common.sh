@@ -142,12 +142,12 @@ jffs2_copy_config() {
 }
 
 default_do_upgrade() {
+	sync
 	if [ "$SAVE_CONFIG" -eq 1 -a -z "$USE_REFRESH" ]; then
 		get_image "$1" | mtd -j "$CONF_TAR" write - "${PART_NAME:-image}"
 	else
 		get_image "$1" | mtd write - "${PART_NAME:-image}"
 	fi
-	sync
 }
 
 do_upgrade() {
@@ -157,7 +157,7 @@ do_upgrade() {
 	else
 		default_do_upgrade "$ARGV"
 	fi
-	
+
 	[ "$SAVE_CONFIG" -eq 1 -a -n "$USE_REFRESH" ] && {
 		v "Refreshing partitions"
 		if type 'platform_refresh_partitions' >/dev/null 2>/dev/null; then
@@ -175,7 +175,8 @@ do_upgrade() {
 	[ -n "$DELAY" ] && sleep "$DELAY"
 	ask_bool 1 "Reboot" && {
 		v "Rebooting system..."
-		echo b 2>/dev/null >/proc/sysrq-trigger
 		reboot
+		sleep 5
+		echo b 2>/dev/null >/proc/sysrq-trigger
 	}
 }
