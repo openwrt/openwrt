@@ -135,11 +135,12 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	union bcm_tag tag;
 	struct kernelhdr khdr;
 	FILE *kernelfile = NULL, *rootfsfile = NULL, *binfile;
-	size_t kerneloff, kernellen, rootfsoff, rootfslen, read, imagelen, rootfsoffpadlen;
+	size_t kerneloff, kernellen, rootfsoff, rootfslen, read, imagelen, rootfsoffpadlen, kernelfslen;
 	uint8_t readbuf[1024];
 	uint32_t imagecrc = IMAGETAG_CRC_START;
 	uint32_t kernelcrc = IMAGETAG_CRC_START;
 	uint32_t rootfscrc = IMAGETAG_CRC_START;
+	uint32_t kernelfscrc = IMAGETAG_CRC_START;
 	const uint32_t deadcode = htonl(DEADCODE);
         union int2char intchar;
 
@@ -230,7 +231,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 		/* Compute the crc32 of the entire image (deadC0de included) */
 		imagecrc = compute_crc32(imagecrc, binfile, kerneloff - fwaddr, imagelen);
 	        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
-		kernelcrc = compute_crc32(kernelcrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen);
+		kernelfscrc = compute_crc32(kernelfscrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen + rootfslen + sizeof(deadcode));
 	} else if ( tagid && (strncmp(tagid, "bc310", TAGID_LEN) == 0) ) {
 		/* Compute the crc32 of the entire image (deadC0de included) */
 		imagecrc = compute_crc32(imagecrc, binfile, kerneloff - fwaddr, imagelen);
@@ -376,7 +377,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 
 	  int2tag(tag.bc221.tagIdCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&(tag.bc221.tagId[0]), TAGID_LEN));
 	  int2tag(tag.bc221.imageCRC, imagecrc);
-	  int2tag(tag.bc221.kernelCRC, kernelcrc);
+	  int2tag(tag.bc221.fskernelCRC, kernelfscrc);
 	  int2tag(tag.bc221.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
 	} else if ( tagid && (strcmp(tagid, "bc310") == 0)) {
 	  /* Build the tag */

@@ -128,7 +128,7 @@ struct bcm_tag_bc221 {
         unsigned char rootAddress[ADDRESS_LEN];         // 170-181: Address in memory of rootfs partition
         unsigned char rootLength[IMAGE_LEN];            // 182-191: Size of rootfs partition
         unsigned char flashLayoutVer[4];                // 192-195: Version flash layout
-        unsigned char kernelCRC[4];                     // 196-199: Guessed to be kernel CRC
+        unsigned char fskernelCRC[4];                   // 196-199: Guessed to be kernel CRC
         unsigned char reserved4[16];                    // 200-215: Reserved area; unused at present
 	unsigned char imageCRC[4];                      // 216-219: CRC32 of images
         unsigned char reserved2[12];                    // 220-231: Unused at present
