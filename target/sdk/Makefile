@@ -14,7 +14,7 @@ override MAKEFLAGS=
 PKG_OS:=$(shell uname -s)
 PKG_CPU:=$(shell uname -m)
 
-SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)
+SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 EXCLUDE_DIRS:=*/ccache */stamp */man */share */stampfiles */info
 
