@@ -25,7 +25,7 @@ all: compile
 $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
-	$(TAR) -cf - -C $(TOPDIR) $(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") --exclude="staging_dir/$(ARCH)" staging_dir | \
+	$(TAR) -cf - -C $(TOPDIR) $(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") --exclude="staging_dir/$(ARCH)" staging_dir/host staging_dir/target-$(ARCH)_$(LIBC)-$(LIBCV) staging_dir/toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 	mkdir -p $(SDK_BUILD_DIR)/target/linux
 	$(CP) $(GENERIC_PLATFORM_DIR) $(PLATFORM_DIR) $(SDK_BUILD_DIR)/target/linux/
