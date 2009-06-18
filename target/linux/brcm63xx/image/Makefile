@@ -101,7 +101,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96345GW2,6345,bc221,,bc221,-y 5)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,bc300,,bc300,)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,bc310,OpenWRT-$(REVISION),bc310,)
-	$(call Image/Build/CFE,$(1),96348GW,6348,bccfe,,bcfe,)
+	$(call Image/Build/CFE,$(1),96348GW,6348,bccfe,,bccfe,)
 	$(call Image/Build/CFE,$(1),96348GW,6348,bc221,,bc221,-y 5)
 	# BT Voyager V210_BTR
 	$(call Image/Build/CFE,$(1),V210_BB,6348,bc221,,btvgr,-y 5)
