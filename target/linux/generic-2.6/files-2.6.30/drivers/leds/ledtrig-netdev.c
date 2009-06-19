@@ -317,8 +317,11 @@ static void netdev_trig_timer(unsigned long arg)
 		led_set_brightness(trigger_data->led_cdev, ((trigger_data->mode & MODE_LINK) != 0 && trigger_data->link_up) ? LED_FULL : LED_OFF);
 		goto no_restart;
 	}
-
+#ifdef CONFIG_COMPAT_NET_DEV_OPS
 	dev_stats = trigger_data->net_dev->get_stats(trigger_data->net_dev);
+#else
+	dev_stats = trigger_data->net_dev->netdev_ops->ndo_get_stats(trigger_data->net_dev);
+#endif
 	new_activity =
 		((trigger_data->mode & MODE_TX) ? dev_stats->tx_packets : 0) +
 		((trigger_data->mode & MODE_RX) ? dev_stats->rx_packets : 0);
