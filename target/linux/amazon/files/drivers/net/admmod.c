@@ -928,7 +928,6 @@ static int ifx_sw_init(void)
 
 int adm_open(struct inode *node, struct file *filp)
 {
-    MOD_INC_USE_COUNT;
     return 0;
 }
 
@@ -945,7 +944,6 @@ ssize_t adm_write(struct file *filep, const char *buf, size_t count, loff_t *ppo
 /* close */
 int adm_release(struct inode *inode, struct file *filp)
 {
-    MOD_DEC_USE_COUNT;
     return 0;
 }
 
