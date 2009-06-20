@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -13,7 +13,7 @@ define Image/BuildKernel
 endef
 
 define Image/Prepare
-	cp $(LINUX_DIR)/arch/cris/arch-v10/boot/zImage $(KDIR)/vmlinuz
+	cp $(LINUX_DIR)/arch/cris/boot/zImage $(KDIR)/vmlinuz
 	$(MAKE) -C e100boot compile
 	$(MAKE) -C mkfimage compile
 	$(INSTALL_BIN) ./boot_linux $(BIN_DIR)
