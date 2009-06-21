@@ -8,6 +8,7 @@ choice
 	default GCC_VERSION_4_2_4 if TARGET_ppc44x
 	default GCC_VERSION_4_3_3 if TARGET_ps3_petitboot
 	default GCC_VERSION_4_3_3 if TARGET_etrax
+	default GCC_VERSION_4_3_3 if TARGET_coldfire
 	default GCC_VERSION_4_1_2
 	help
 	  Select the version of gcc you wish to use.

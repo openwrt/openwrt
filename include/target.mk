@@ -162,6 +162,7 @@ ifeq ($(DUMP),1)
   endif
   DEFAULT_CFLAGS_i386=-O2 -pipe -march=i486 -funit-at-a-time
   DEFAULT_CFLAGS_x86_64=-O2 -pipe -march=athlon64 -funit-at-a-time
+  DEFAULT_CFLAGS_m68k=-Os -pipe -mcfv4e -funit-at-a-time
   DEFAULT_CFLAGS_mips=-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time
   DEFAULT_CFLAGS_mipsel=$(DEFAULT_CFLAGS_mips)
   DEFAULT_CFLAGS_mips64=-Os -pipe -mips64 -mtune=mips64 -mabi=64 -funit-at-a-time

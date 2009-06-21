@@ -61,6 +61,10 @@ config i386
 config i686
 	bool 
 
+config m68k
+	select BIG_ENDIAN
+	bool
+
 config mips
 	select BIG_ENDIAN
 	bool
