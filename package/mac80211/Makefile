@@ -18,7 +18,7 @@ ifneq ($(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_23)$(CONFIG_LINUX_2_6_24)$(CONFI
   PATCH_DIR:=./patches-old
 else
   PKG_VERSION:=2009-06-02
-  PKG_RELEASE:=1
+  PKG_RELEASE:=2
   PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/06 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
