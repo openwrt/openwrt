@@ -74,7 +74,7 @@ endef
 define Package/libgcc
 $(call Package/gcc/Default)
   TITLE:=GCC support library
-  DEPENDS+=@!TARGET_avr32
+  DEPENDS+=@!(TARGET_avr32||TARGET_coldfire)
 endef
 
 define Package/libssp
