@@ -1,0 +1,32 @@
+--- a/drivers/net/wireless/ath/ath5k/reset.c
++++ b/drivers/net/wireless/ath/ath5k/reset.c
+@@ -1297,8 +1297,14 @@ int ath5k_hw_reset(struct ath5k_hw *ah, 
+ 	if (ah->ah_version != AR5K_AR5210) {
+ 		AR5K_REG_WRITE_BITS(ah, AR5K_TXCFG,
+ 			AR5K_TXCFG_SDMAMR, AR5K_DMASIZE_128B);
++#ifndef CONFIG_ATHEROS_AR71XX
+ 		AR5K_REG_WRITE_BITS(ah, AR5K_RXCFG,
+ 			AR5K_RXCFG_SDMAMW, AR5K_DMASIZE_128B);
++#else
++		/* WAR for AR71xx PCI bug */
++		AR5K_REG_WRITE_BITS(ah, AR5K_RXCFG,
++			AR5K_RXCFG_SDMAMW, AR5K_DMASIZE_4B);
++#endif
+ 	}
+ 
+ 	/* Pre-enable interrupts on 5211/5212*/
+--- a/drivers/net/wireless/ath/ath5k/initvals.c
++++ b/drivers/net/wireless/ath/ath5k/initvals.c
+@@ -59,7 +59,12 @@ static const struct ath5k_ini ar5210_ini
+ 	{ AR5K_IER,		AR5K_IER_DISABLE },
+ 	{ AR5K_BSR,		0, AR5K_INI_READ },
+ 	{ AR5K_TXCFG,		AR5K_DMASIZE_128B },
++#ifndef CONFIG_ATHEROS_AR71XX
+ 	{ AR5K_RXCFG,		AR5K_DMASIZE_128B },
++#else
++	/* WAR for AR71xx PCI bug */
++	{ AR5K_RXCFG,		AR5K_DMASIZE_4B },
++#endif
+ 	{ AR5K_CFG,		AR5K_INIT_CFG },
+ 	{ AR5K_TOPS,		8 },
+ 	{ AR5K_RXNOFRM,		8 },
