@@ -9,18 +9,6 @@
  {
  	pgd_val(*pgdp) = virt_to_phys(pmdp);
  }
---- a/include/asm-m68k/irq.h
-+++ b/include/asm-m68k/irq.h
-@@ -61,7 +61,8 @@
- 
- #define IRQ_USER	8
- 
--extern unsigned int irq_canonicalize(unsigned int irq);
-+//extern unsigned int irq_canonicalize(unsigned int irq);
-+#define irq_canonicalize(irq)  (irq)
- 
- struct pt_regs;
- 
 --- a/arch/m68k/mm/cf-mmu.c
 +++ b/arch/m68k/mm/cf-mmu.c
 @@ -21,6 +21,7 @@
