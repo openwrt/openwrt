@@ -13,6 +13,11 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
+	$(TARGET_CROSS)objcopy -O binary -R .bss -R .note -R .comment \
+		-R .note.gnu.build-id -S $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux.bin
+	mkimage -A m68k -O linux -T kernel -a 0x00020000 -e 0x00020000 \
+		-C none -n 'M68K OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/vmlinux.bin $(BIN_DIR)/openwrt-$(BOARD)-uImage
 endef
 
 define Image/Build
