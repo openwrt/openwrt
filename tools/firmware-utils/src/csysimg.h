@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007,2009 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program was based on the code found in various Linux
  *  source tarballs released by Edimax for it's devices.
@@ -60,6 +60,7 @@
 #define SIG_PS3205U	"5010"
 #define SIG_PS3205UWg	"5011"
 #define SIG_RALINK	"RNRA"
+#define SIG_5GXI	"5GXI"	/* fake signature */
 
 #define SIG_H2BR4	SIG_BR6524K
 #define SIG_H2WR54G	SIG_BR6524WG
@@ -75,6 +76,3 @@ struct csys_header {
 	uint32_t addr;
 	uint32_t size;
 };
-
-
-

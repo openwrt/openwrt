@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2009 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program was based on the code found in various Linux
  *  source tarballs released by Edimax for it's devices.
@@ -180,6 +180,9 @@ static struct board_info boards[] = {
 
 	/* Conceptronic products */
 	BOARD_ADM("C54BSR4", "Conceptronic C54BSR4", 2, SIG_C54BSR4),
+
+	/* OSBRiDGE products */
+	BOARD_ADM("5GXi", "OSBDRiDGE 5GXi", 2, SIG_5GXI),
 
 	{.model = NULL}
 };
