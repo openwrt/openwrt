@@ -50,6 +50,7 @@ define Host/Compile
 	$(call cc2,mkplanexfw sha1)
 	$(call cc2,mktplinkfw md5)
 	$(call cc,pc1crypt)
+	$(call cc,osbridge-crc)
 endef
 
 define Host/Install
