@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007,2008 OpenWrt.org
+# Copyright (C) 2007-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -40,6 +40,24 @@ define Image/Build/Edimax
 		-x $(call imgname,$(1),$(2)).trx:0x10000 \
 		-x $(JFFS2MARK):0x10000 \
 		$(call imgname,$(1),$(2))-xmodem.bin
+	rm -f $(call imgname,$(1),$(2)).trx
+endef
+
+define Image/Build/Osbridge
+	$(call Image/Build/Loader,$(2),gz,0x80500000,0x6D8,y,$(2))
+	$(call Image/Build/TRXEdimax,$(call imgname,$(1),$(2)).trx,$(1))
+	$(STAGING_DIR_HOST)/bin/mkcsysimg -B $(2) -d \
+		-r $(KDIR)/loader-$(2).gz::0x1000 \
+		-x $(call imgname,$(1),$(2)).trx:0x10000 \
+		-x $(JFFS2MARK):0x10000 \
+		$(call imgname,$(1),$(2))-firmware.bin
+	$(STAGING_DIR_HOST)/bin/osbridge-crc \
+		-i $(call imgname,$(1),$(2))-firmware.bin \
+		-o $(call imgname,$(1),$(2))-temp.bin
+	$(STAGING_DIR_HOST)/bin/pc1crypt \
+		-i $(call imgname,$(1),$(2))-temp.bin \
+		-o $(call imgname,$(1),$(2))-webui.bin
+	rm -f $(call imgname,$(1),$(2))-temp.bin
 	rm -f $(call imgname,$(1),$(2)).trx
 endef
 
@@ -199,6 +217,21 @@ define Image/Build/Template/Mikrotik/Initramfs
 endef
 
 #
+# OSBRiDGE 5GXi/5XLi
+#
+define Image/Build/Template/Osbridge
+	$(call Image/Build/Osbridge,$(1),$(2))
+endef
+
+define Image/Build/Template/Osbridge/squashfs
+	$(call Image/Build/Template/Osbridge,squashfs,$(1))
+endef
+
+define Image/Build/Template/Osbridge/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,$(1),gz)
+endef
+
+#
 # Profiles
 #
 define Image/Build/Profile/CAS630
@@ -307,6 +340,10 @@ define Image/Build/Profile/PMUGW
 	$(call Image/Build/Template/Infineon/$(1),powerline-mugw)
 endef
 
+define Image/Build/Profile/5GXI
+	$(call Image/Build/Template/Osbridge/$(1),5gxi)
+endef
+
 define Image/Build/Profile/RouterBoard
 	$(call Image/Build/Template/Mikrotik/$(1))
 endef
@@ -326,6 +363,8 @@ ifeq ($(CONFIG_BROKEN),y)
 	$(call Image/Build/Profile/CAS861W,$(1))
 	# Motorola
 	$(call Image/Build/Profile/PMUGW,$(1))
+	# OSBRiDGE
+	$(call Image/Build/Profile/5GXI,$(1))
   endef
 endif
 
