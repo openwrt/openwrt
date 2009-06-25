@@ -1,7 +1,7 @@
 /*
  *  ADM5120 specific setup
  *
- *  Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2007-2009 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This code was based on the ADM5120 specific port of the Linux 2.6.10 kernel
  *  done by Jeroen Vreeken
@@ -30,6 +30,9 @@
 #include <asm/mach-adm5120/adm5120_switch.h>
 #include <asm/mach-adm5120/adm5120_platform.h>
 
+#define ADM5120_SYS_TYPE_LEN	64
+
+unsigned char adm5120_sys_type[ADM5120_SYS_TYPE_LEN];
 void (*adm5120_board_reset)(void);
 
 static char *prom_names[ADM5120_PROM_LAST+1] __initdata = {
@@ -43,11 +46,7 @@ static char *prom_names[ADM5120_PROM_LAST+1] __initdata = {
 
 static void __init adm5120_report(void)
 {
-	printk(KERN_INFO "SoC      : ADM%04X%s revision %d, running "
-		"at %ldMHz\n",
-		adm5120_product_code,
-		adm5120_package_bga() ? "" : "P",
-		adm5120_revision, (adm5120_speed / 1000000));
+	printk(KERN_INFO "SoC      : %s\n", adm5120_sys_type);
 	printk(KERN_INFO "Bootdev  : %s flash\n",
 		adm5120_nand_boot ? "NAND":"NOR");
 	printk(KERN_INFO "Prom     : %s\n", prom_names[adm5120_prom_type]);
@@ -55,7 +54,7 @@ static void __init adm5120_report(void)
 
 const char *get_system_type(void)
 {
-	return mips_machine_name;
+	return adm5120_sys_type;
 }
 
 static void adm5120_restart(char *command)
@@ -87,6 +86,13 @@ void __init plat_mem_setup(void)
 {
 	adm5120_soc_init();
 	adm5120_mem_init();
+
+	sprintf(adm5120_sys_type, "ADM%04X%s rev %u, running at %lu.%03lu MHz",
+		adm5120_product_code,
+		adm5120_package_bga() ? "" : "P",
+		adm5120_revision,
+		(adm5120_speed / 1000000), (adm5120_speed / 1000) % 1000);
+
 	adm5120_report();
 
 	_machine_restart = adm5120_restart;
