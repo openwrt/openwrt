@@ -130,6 +130,12 @@ config ADM5120_MACH_PMUGW
 	select ADM5120_OEM_MOTOROLA
 	default y
 
+config ADM5120_MACH_5GXI
+	bool "OSBRiDGE 5GXi/5XLi support"
+	select ADM5120_SOC_BGA
+	select ADM5120_OEM_OSBRIDGE
+	default y
+
 config ADM5120_MACH_P_334WT
 	bool "ZyXEL Prestige 334WT"
 	depends on CPU_BIG_ENDIAN
@@ -166,6 +172,9 @@ config ADM5120_OEM_MIKROTIK
 	def_bool n
 
 config ADM5120_OEM_MOTOROLA
+	def_bool n
+
+config ADM5120_OEM_OSBRIDGE
 	def_bool n
 
 config ADM5120_OEM_ZYXEL

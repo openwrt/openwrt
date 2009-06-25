@@ -68,6 +68,8 @@ static struct board_desc common_boards[] __initdata = {
 	DEFBOARD("153",		MACH_ADM5120_RB_153),
 	DEFBOARD("192",		MACH_ADM5120_RB_192),
 	DEFBOARD("miniROUTER",	MACH_ADM5120_RB_150),
+	/* OSBRiDGE boards */
+	DEFBOARD("OSBRiDGE 5GXi",	MACH_ADM5120_5GXI),
 	/* Motorola boards */
 	DEFBOARD("Powerline MU Gateway",MACH_ADM5120_PMUGW),
 };
