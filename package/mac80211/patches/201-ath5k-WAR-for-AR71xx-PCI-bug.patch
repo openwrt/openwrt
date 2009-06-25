@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath5k/reset.c
 +++ b/drivers/net/wireless/ath/ath5k/reset.c
-@@ -1297,8 +1297,14 @@ int ath5k_hw_reset(struct ath5k_hw *ah, 
+@@ -1296,8 +1296,14 @@ int ath5k_hw_reset(struct ath5k_hw *ah, 
  	if (ah->ah_version != AR5K_AR5210) {
  		AR5K_REG_WRITE_BITS(ah, AR5K_TXCFG,
  			AR5K_TXCFG_SDMAMR, AR5K_DMASIZE_128B);
