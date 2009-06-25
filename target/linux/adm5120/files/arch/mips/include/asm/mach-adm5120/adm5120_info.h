@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2007-2009 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -84,6 +84,7 @@ extern unsigned long adm5120_mach_type;
 #define MACH_ADM5120_BR6104KP	42	/* Edimax BR-6104KP */
 #define MACH_ADM5120_BR61X4WG	43	/* Edimax BR-6104Wg/BR-6114WG */
 #define MACH_ADM5120_PMUGW	44	/* Motorola Powerline MU Gateway */
+#define MACH_ADM5120_5GXI	45	/* OSBRiDGE 5GXi/5XLi */
 
 /*
  * TODO:remove adm5120_eth* variables when the switch driver will be
