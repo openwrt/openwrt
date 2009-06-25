@@ -577,7 +577,7 @@ block_writeout_hdr(FILE *outfile, struct csys_block *block)
 	/* setup header fields */
 	memcpy(hdr.sig, block->sig, 4);
 	hdr.addr = HOST_TO_LE32(block->addr);
-	hdr.size = HOST_TO_LE32(block->align-block->size_hdr);
+	hdr.size = HOST_TO_LE32(block->size - block->size_hdr - block->size_csum);
 
 	DBG(1,"writing header for block");
 	res = write_out_data(outfile, (uint8_t *)&hdr, sizeof(hdr),NULL);
