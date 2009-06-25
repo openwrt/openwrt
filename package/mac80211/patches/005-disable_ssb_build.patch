@@ -1,7 +1,7 @@
 --- a/Makefile
 +++ b/Makefile
 @@ -20,8 +20,7 @@ NOSTDINC_FLAGS := -I$(M)/include/ -inclu
- obj-y := net/wireless/ net/mac80211/
+ obj-y := net/wireless/ net/mac80211/ net/rfkill/
  ifeq ($(ONLY_CORE),)
  obj-$(CONFIG_B44) += drivers/net/b44.o
 -obj-y += drivers/ssb/ \
