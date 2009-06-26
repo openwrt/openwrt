@@ -134,7 +134,9 @@ enum bcm63xx_regs_set {
 #define BCM_6338_USBDMA_BASE		(0xfffe2400)
 #define BCM_6338_ENET0_BASE		(0xfffe2800)
 #define BCM_6338_UDC0_BASE		(0xfffe3000) /* USB_CTL_BASE */
-#define BCM_6338_MEMC_BASE		(0xfffe3100)
+#define BCM_6338_SDRAM_REGS_BASE	(0xfffe3100)
+#define BCM_6338_SDRAM_BASE		(0xfffe3100)
+#define BCM_6338_MEMC_BASE		(0xdeadbeef)
 
 /*
  * 6345 register sets base address
@@ -225,6 +227,8 @@ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
 		return BCM_6338_SPI_BASE;
 	case RSET_MEMC:
 		return BCM_6338_MEMC_BASE;
+	case RSET_SDRAM:
+		return BCM_6338_SDRAM_BASE;
 	}
 #endif
 #ifdef CONFIG_BCM63XX_CPU_6345
