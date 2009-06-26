@@ -151,6 +151,10 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),6338GW,6338,bc221,,bc221)
 	$(call Image/Build/CFE,$(1),6338GW,6338,bc300,,bc300)
 	$(call Image/Build/CFE,$(1),6338GW,6338,bc310,,bc310)
+	$(call Image/Build/CFE,$(1),6338W,6338,bccfe,,bccfe)
+	$(call Image/Build/CFE,$(1),6338W,6338,bc221,,bc221)
+	$(call Image/Build/CFE,$(1),6338W,6338,bc300,,bc300)
+	$(call Image/Build/CFE,$(1),6338W,6338,bc310,,bc310)
 
 	# Sagem F@ST2404
 	$(call Image/Build/CFE,$(1),F@ST2404,6348,bccfe,,bccfe)
