@@ -54,6 +54,13 @@ static struct board_info __initdata board_96338gw = {
 
 	.has_ohci0			= 1,
 };
+
+static struct board_info __initdata board_96338w = {
+	.name				= "9338W",
+	.expected_cpu_id		= 0x6338,
+
+	.has_enet0			= 1,
+};
 #endif
 
 /*
@@ -287,6 +294,7 @@ static struct board_info __initdata board_AGPFS0 = {
 static const struct board_info __initdata *bcm963xx_boards[] = {
 #ifdef CONFIG_BCM63XX_CPU_6338
 	&board_96338gw,
+	&board_96338w,
 #endif
 #ifdef CONFIG_BCM63XX_CPU_6348
 	&board_96348r,
