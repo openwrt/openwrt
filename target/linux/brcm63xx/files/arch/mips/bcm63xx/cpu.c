@@ -40,6 +40,7 @@ static const unsigned long bcm96338_regs_base[] = {
 	[RSET_UDC0]		= BCM_6338_UDC0_BASE,
 	[RSET_UART0]		= BCM_6338_UART0_BASE,
 	[RSET_GPIO]		= BCM_6338_GPIO_BASE,
+	[RSET_SDRAM]		= BCM_6338_SDRAM_BASE,
 	[RSET_SPI]		= BCM_6338_SPI_BASE,
 	[RSET_MEMC]		= BCM_6338_MEMC_BASE,
 };
@@ -310,7 +311,7 @@ void __init bcm63xx_cpu_init(void)
 	expected_cpu_id = 0;
 
 	switch (c->cputype) {
-	case CPU_BCM6338:
+	case CPU_BCM3302:
 		expected_cpu_id = BCM6338_CPU_ID;
 		bcm63xx_regs_base = bcm96338_regs_base;
 		bcm63xx_irqs = bcm96338_irqs;
