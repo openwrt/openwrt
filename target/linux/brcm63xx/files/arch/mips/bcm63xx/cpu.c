@@ -34,6 +34,7 @@ static unsigned int bcm63xx_memory_size;
  */
 
 static const unsigned long bcm96338_regs_base[] = {
+	[RSET_DSL_LMEM]		= BCM_6338_DSL_LMEM_BASE,
 	[RSET_PERF]		= BCM_6338_PERF_BASE,
 	[RSET_TIMER]		= BCM_6338_TIMER_BASE,
 	[RSET_WDT]		= BCM_6338_WDT_BASE,

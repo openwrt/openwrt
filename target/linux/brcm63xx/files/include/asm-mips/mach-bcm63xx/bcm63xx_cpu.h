@@ -121,6 +121,7 @@ enum bcm63xx_regs_set {
  * 6338 register sets base address
  */
 
+#define BCM_6338_DSL_LMEM_BASE		(0xfff00000)
 #define BCM_6338_PERF_BASE		(0xfffe0000)
 #define BCM_6338_BB_BASE		(0xfffe0100) /* bus bridge registers */
 #define BCM_6338_TIMER_BASE		(0xfffe0200)
@@ -213,6 +214,8 @@ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
 #else
 #ifdef CONFIG_BCM63XX_CPU_6338
 	switch (set) {
+	case RSET_DSL_LMEM:
+		return BCM_6338_DSL_LMEM_BASE;
 	case RSET_PERF:
 		return BCM_6338_PERF_BASE;
 	case RSET_TIMER:
