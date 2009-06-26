@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ksymoops
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6 @TARGET_mips||TARGET_mips||TARGET_m68k||TARGET_x86 +libbfd
+  DEPENDS:=@LINUX_2_6 @mips||mipsel||m68k||i386 +libbfd
   TITLE:=Interpret oops of the kernel
   URL:=http://www.kernel.org/pub/linux/utils/kernel/ksymoops/v2.4/
   MENU:=1
