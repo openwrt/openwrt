@@ -153,8 +153,8 @@ static inline void rb433_add_device_spi(void) {}
 
 static void __init rb4xx_generic_setup(void)
 {
-	ar71xx_gpio_function_enable(GPIO_FUNC_SPI_CS1_EN |
-				    GPIO_FUNC_SPI_CS2_EN);
+	ar71xx_gpio_function_enable(AR71XX_GPIO_FUNC_SPI_CS1_EN |
+				    AR71XX_GPIO_FUNC_SPI_CS2_EN);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
