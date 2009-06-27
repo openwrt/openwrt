@@ -34,7 +34,7 @@
 #define AR71XX_BASE_FREQ	40000000
 #define AR91XX_BASE_FREQ	5000000
 
-unsigned long ar71xx_mach_type;
+enum ar71xx_mach_type ar71xx_mach;
 
 u32 ar71xx_cpu_freq;
 EXPORT_SYMBOL_GPL(ar71xx_cpu_freq);
@@ -284,7 +284,7 @@ static int __init ar71xx_machine_setup(void)
 	ar71xx_add_device_uart();
 	ar71xx_add_device_wdt();
 
-	mips_machine_setup(ar71xx_mach_type);
+	mips_machine_setup(ar71xx_mach);
 	return 0;
 }
 

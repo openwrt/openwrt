@@ -109,30 +109,32 @@ enum ar71xx_soc_type {
 
 extern enum ar71xx_soc_type ar71xx_soc;
 
-extern unsigned long ar71xx_mach_type;
+enum ar71xx_mach_type {
+	AR71XX_MACH_GENERIC = 0,
+	AR71XX_MACH_AP81,	/* Atheros AP81 */
+	AR71XX_MACH_AP83,	/* Atheros AP83 */
+	AR71XX_MACH_AW_NR580,	/* AzureWave AW-NR580 */
+	AR71XX_MACH_RB_411,	/* MikroTik RouterBOARD 411/411A/411AH */
+	AR71XX_MACH_RB_433,	/* MikroTik RouterBOARD 433/433AH */
+	AR71XX_MACH_RB_450,	/* MikroTik RouterBOARD 450 */
+	AR71XX_MACH_RB_493,	/* Mikrotik RouterBOARD 493/493AH */
+	AR71XX_MACH_PB42,	/* Atheros PB42 */
+	AR71XX_MACH_PB44,	/* Atheros PB44 */
+	AR71XX_MACH_MZK_W04NU,	/* Planex MZK-W04NU */
+	AR71XX_MACH_MZK_W300NH,	/* Planex MZK-W300NH */
+	AR71XX_MACH_TEW_632BRP,	/* TRENDnet TEW-632BRP */
+	AR71XX_MACH_TL_WR941ND,	/* TP-LINK TL-WR941ND */
+	AR71XX_MACH_UBNT_LSSR71, /* Ubiquiti LS-SR71 */
+	AR71XX_MACH_UBNT_LSX,	/* Ubiquiti LSX */
+	AR71XX_MACH_UBNT_RS,	/* Ubiquiti RouterStation */
+	AR71XX_MACH_UBNT_RSPRO,	/* Ubiquiti RouterStation Pro */
+	AR71XX_MACH_WNR2000,	/* NETGEAR WNR2000 */
+	AR71XX_MACH_WP543,	/* Compex WP543 */
+	AR71XX_MACH_WRT160NL,	/* Linksys WRT160NL */
+	AR71XX_MACH_WRT400N,	/* Linksys WRT400N */
+};
 
-#define AR71XX_MACH_GENERIC	0
-#define AR71XX_MACH_WP543	1	/* Compex WP543 */
-#define AR71XX_MACH_RB_411	2	/* MikroTik RouterBOARD 411/411A/411AH */
-#define AR71XX_MACH_RB_433	3	/* MikroTik RouterBOARD 433/433AH */
-#define AR71XX_MACH_RB_450	4	/* MikroTik RouterBOARD 450 */
-#define AR71XX_MACH_RB_493	5	/* Mikrotik RouterBOARD 493/493AH */
-#define AR71XX_MACH_AW_NR580	6	/* AzureWave AW-NR580 */
-#define AR71XX_MACH_AP83	7	/* Atheros AP83 */
-#define AR71XX_MACH_TEW_632BRP	8	/* TRENDnet TEW-632BRP */
-#define AR71XX_MACH_UBNT_RS	9	/* Ubiquiti RouterStation */
-#define AR71XX_MACH_UBNT_LSX	10	/* Ubiquiti LSX */
-#define AR71XX_MACH_WNR2000	11	/* NETGEAR WNR2000 */
-#define AR71XX_MACH_PB42	12	/* Atheros PB42 */
-#define AR71XX_MACH_MZK_W300NH	13	/* Planex MZK-W300NH */
-#define AR71XX_MACH_MZK_W04NU	14	/* Planex MZK-W04NU */
-#define AR71XX_MACH_UBNT_LSSR71	15	/* Ubiquiti LS-SR71 */
-#define AR71XX_MACH_TL_WR941ND	16	/* TP-LINK TL-WR941ND */
-#define AR71XX_MACH_UBNT_RSPRO	17	/* Ubiquiti RouterStation Pro */
-#define AR71XX_MACH_AP81	18	/* Atheros AP81 */
-#define AR71XX_MACH_WRT400N	19	/* Linksys WRT400N */
-#define AR71XX_MACH_PB44	20	/* Atheros PB44 */
-#define AR71XX_MACH_WRT160NL	21	/* Linksys WRT160NL */
+extern enum ar71xx_mach_type ar71xx_mach;
 
 /*
  * PLL block

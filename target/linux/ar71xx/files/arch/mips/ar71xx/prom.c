@@ -23,8 +23,8 @@
 #include "devices.h"
 
 struct board_rec {
-	char		*name;
-	unsigned long	mach_type;
+	char			*name;
+	enum ar71xx_mach_type	mach_type;
 };
 
 static int ar71xx_prom_argc __initdata;
@@ -174,7 +174,7 @@ static int ar71xx_prom_init_myloader(void)
 
 	switch (mylo->did) {
 	case DEVID_COMPEX_WP543:
-		ar71xx_mach_type = AR71XX_MACH_WP543;
+		ar71xx_mach = AR71XX_MACH_WP543;
 		break;
 	default:
 		printk(KERN_WARNING "prom: unknown device id: %x\n",
@@ -197,7 +197,7 @@ static void ar71xx_prom_init_generic(void)
 	if (!p)
 		p = ar71xx_prom_getenv("board");
 	if (p)
-		ar71xx_mach_type = find_board_byname(p);
+		ar71xx_mach = find_board_byname(p);
 
 	p = ar71xx_prom_getenv("ethaddr");
 	if (!p)
@@ -213,7 +213,7 @@ void __init prom_init(void)
 			(unsigned int)fw_arg0, (unsigned int)fw_arg1,
 			(unsigned int)fw_arg2, (unsigned int)fw_arg3);
 
-	ar71xx_mach_type = AR71XX_MACH_GENERIC;
+	ar71xx_mach = AR71XX_MACH_GENERIC;
 
 	if (ar71xx_prom_init_myloader())
 		return;
