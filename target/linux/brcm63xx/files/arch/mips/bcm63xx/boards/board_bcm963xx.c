@@ -323,9 +323,15 @@ void __init board_prom_init(void)
 	char cfe_version[32];
 	u32 val;
 
-	/* read base address of boot chip select (0) */
-	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
-	val &= MPI_CSBASE_BASE_MASK;
+	/* read base address of boot chip select (0) 
+	 * 6338 does not have MPI but boots from standard
+	 * MIPS Flash address */
+	if (BCMCPU_IS_6338() || BCMCPU_IS_6345())
+		val = 0x1fc00000;
+	else {
+		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
+		val &= MPI_CSBASE_BASE_MASK;
+	}
 	boot_addr = (u8 *)KSEG1ADDR(val);
 
 	/* dump cfe version */
