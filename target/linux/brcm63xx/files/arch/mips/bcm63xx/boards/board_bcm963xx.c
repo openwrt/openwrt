@@ -45,11 +45,11 @@ static struct board_info board;
 static struct board_info __initdata board_96338gw = {
 	.name				= "96338GW",
 	.expected_cpu_id		= 0x6338,
-
+	
 	.has_enet0			= 1,
 	.enet0 = {
-		.has_phy		= 1,
-		.use_internal_phy	= 1,
+		.force_speed_100	= 1,
+		.force_duplex_full	= 1,
 	},
 
 	.has_ohci0			= 1,
@@ -58,8 +58,12 @@ static struct board_info __initdata board_96338gw = {
 static struct board_info __initdata board_96338w = {
 	.name				= "96338W",
 	.expected_cpu_id		= 0x6338,
-
+	
 	.has_enet0			= 1,
+	.enet0 = {
+		.force_speed_100	= 1,
+		.force_duplex_full	= 1,
+	}
 };
 #endif
 
@@ -326,7 +330,7 @@ void __init board_prom_init(void)
 	/* read base address of boot chip select (0) 
 	 * 6338/6345 does not have MPI but boots from standard
 	 * MIPS Flash address */
-	if (BCMCPU_IS_6338() || BCMCPU_IS_6345())
+	if (BCMCPU_IS_6345())
 		val = 0x1fc00000;
 	else {
 		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
@@ -554,7 +558,7 @@ int __init board_register_devices(void)
 #endif
 
 	/* read base address of boot chip select (0) */
-	if (BCMCPU_IS_6338() || BCMCPU_IS_6345())
+	if (BCMCPU_IS_6345())
 		val = 0x1fc0000;
 	else {
 		val = bcm_mpi_readl(MPI_CSBASE_REG(0));

@@ -15,12 +15,17 @@
 /* Clock Control register */
 #define PERF_CKCTL_REG			0x4
 
+#define CKCTL_6338_ADSLPHY_EN		(1 << 0)
+#define CKCTL_6338_MPI_EN		(1 << 1)
+#define CKCTL_6338_DRAM_EN		(1 << 2)
 #define CKCTL_6338_ENET_EN		(1 << 4)
 #define CKCTL_6338_USBS_EN		(1 << 4)
 #define CKCTL_6338_SAR_EN		(1 << 5)
 #define CKCTL_6338_SPI_EN		(1 << 9)
 
-#define CKCTL_6338_ALL_SAFE_EN		(CKCTL_6338_ENET_EN |		\
+#define CKCTL_6338_ALL_SAFE_EN		(CKCTL_6338_ADSLPHY_EN |	\
+					CKCTL_6338_MPI_EN |		\
+					CKCTL_6338_ENET_EN |		\
 					CKCTL_6338_SAR_EN |		\
 					CKCTL_6338_SPI_EN)
 
