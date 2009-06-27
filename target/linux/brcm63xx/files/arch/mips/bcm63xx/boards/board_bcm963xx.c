@@ -56,7 +56,7 @@ static struct board_info __initdata board_96338gw = {
 };
 
 static struct board_info __initdata board_96338w = {
-	.name				= "9338W",
+	.name				= "96338W",
 	.expected_cpu_id		= 0x6338,
 
 	.has_enet0			= 1,
