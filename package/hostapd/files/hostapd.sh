@@ -97,7 +97,6 @@ ${hwmode:+hw_mode=$hwmode}
 ${channel:+channel=$channel}
 ${bridge:+bridge=$bridge}
 ssid=$ssid
-debug=0
 wpa=$wpa
 ${crypto:+wpa_pairwise=$crypto}
 ${country:+country_code=$country}
