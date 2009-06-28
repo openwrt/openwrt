@@ -371,7 +371,9 @@ define KernelPackage/arptables
   SUBMENU:=$(NF_MENU)
   TITLE:=ARP firewalling modules
   FILES:=$(LINUX_DIR)/net/ipv4/netfilter/arp*.$(LINUX_KMOD_SUFFIX)
-  KCONFIG:=CONFIG_IP_NF_ARPTABLES
+  KCONFIG:=CONFIG_IP_NF_ARPTABLES \
+    CONFIG_IP_NF_ARPFILTER \
+    CONFIG_IP_NF_ARP_MANGLE
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/arp*.$(LINUX_KMOD_SUFFIX)))))
 endef
 
