@@ -95,7 +95,7 @@ config SOFT_FLOAT
 	bool
 	prompt "Use software floating point by default" if TOOLCHAINOPTS
 	default y
-	depends on (arm || armeb || powerpc) && !HAS_FPU
+	depends on (arm || armeb || powerpc || mipsel || mips) && !HAS_FPU
 	help
 	  If your target CPU does not have a Floating Point Unit (FPU) or a
 	  kernel FPU emulator, but you still wish to support floating point
