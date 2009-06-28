@@ -19,7 +19,6 @@
 #include <linux/errno.h>
 #include <linux/interrupt.h>
 #include <linux/delay.h>
-#include <linux/gta02-shadow.h>
 
 #include <mach/gpio.h>
 #include <asm/mach-types.h>
@@ -31,15 +30,35 @@
 #include <linux/mfd/pcf50633/gpio.h>
 #include <mach/regs-gpio.h>
 #include <mach/regs-gpioj.h>
+#include <linux/gta02-shadow.h>
 
 int gta_gsm_interrupts;
 EXPORT_SYMBOL(gta_gsm_interrupts);
 
+extern void s3c24xx_serial_console_set_silence(int);
+
 struct gta02pm_priv {
 	int gpio_ndl_gsm;
+	struct console *con;
 };
 
 static struct gta02pm_priv gta02_gsm;
+
+static struct console *find_s3c24xx_console(void)
+{
+	struct console *con;
+
+	acquire_console_sem();
+
+	for (con = console_drivers; con; con = con->next) {
+		if (!strcmp(con->name, "ttySAC"))
+			break;
+	}
+
+	release_console_sem();
+
+	return con;
+}
 
 static ssize_t gsm_read(struct device *dev, struct device_attribute *attr,
 			char *buf)
@@ -63,17 +82,28 @@ out_1:
 static void gsm_on_off(struct device *dev, int on)
 {
 	if (!on) {
-		/*
-		 * Do not drive into powered-down GSM side
-		 * GTA02 only, because on GTA01 maybe serial
-		 * is used otherwise.
-		 */
 		s3c2410_gpio_cfgpin(S3C2410_GPH1, S3C2410_GPIO_INPUT);
 		s3c2410_gpio_cfgpin(S3C2410_GPH2, S3C2410_GPIO_INPUT);
 
 		pcf50633_gpio_set(gta02_pcf, PCF50633_GPIO2, 0);
 
+		if (gta02_gsm.con) {
+			s3c24xx_serial_console_set_silence(0);
+			console_start(gta02_gsm.con);
+
+			dev_dbg(dev, "powered down gta02 GSM, enabling "
+					"serial console\n");
+		}
+
 		return;
+	}
+
+	if (gta02_gsm.con) {
+		dev_dbg(dev, "powering up GSM, thus "
+				"disconnecting serial console\n");
+
+		console_stop(gta02_gsm.con);
+		s3c24xx_serial_console_set_silence(1);
 	}
 
 	/* allow UART to talk to GSM side now we will power it */
@@ -83,6 +113,10 @@ static void gsm_on_off(struct device *dev, int on)
 	pcf50633_gpio_set(gta02_pcf, PCF50633_GPIO2, 7);
 
 	msleep(100);
+
+	gta02_gpb_setpin(GTA02_GPIO_MODEM_ON, 1);
+	msleep(500);
+	gta02_gpb_setpin(GTA02_GPIO_MODEM_ON, 0);
 
 	/*
 	 * workaround for calypso firmware moko10 and earlier,
@@ -188,6 +222,11 @@ static int gta02_gsm_resume(struct platform_device *pdev)
 	/* GPIO state is saved/restored by S3C2410 core GPIO driver, so we
 	 * don't need to do much here. */
 
+	/* Make sure that the kernel console on the serial port is still
+	 * disabled. FIXME: resume ordering race with serial driver! */
+	if (gta02_gsm.con && s3c2410_gpio_getpin(GTA02_GPIO_MODEM_ON))
+		console_stop(gta02_gsm.con);
+
 	s3c2410_gpio_setpin(GTA02_GPIO_nDL_GSM, gta02_gsm.gpio_ndl_gsm);
 
 	return 0;
@@ -222,12 +261,16 @@ static int __init gta02_gsm_probe(struct platform_device *pdev)
 	case GTA02v6_SYSTEM_REV:
 		break;
 	default:
-		/* TODO: fail */
-		dev_warn(&pdev->dev, "Unknown Neo1973 Revision 0x%x, "
+		dev_warn(&pdev->dev, "Unknown Freerunner Revision 0x%x, "
 			 "some PM features not available!!!\n",
 			 system_rev);
 		break;
 	}
+
+	gta02_gsm.con = find_s3c24xx_console();
+	if (!gta02_gsm.con)
+		dev_warn(&pdev->dev,
+			 "cannot find S3C24xx console driver\n");
 
 	/* note that download initially disabled, and enforce that */
 	gta02_gsm.gpio_ndl_gsm = 1;
