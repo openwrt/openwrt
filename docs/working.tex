@@ -1,0 +1,112 @@
+The following section gives some tips and tricks on how to use efficiently
+OpenWrt on a regular basis and for daily work.
+
+\subsection{Compiling/recompiling components}
+
+The buildroot allows you to recompile the full environment or only parts of it
+like the toolchain, the kernel modules, the kernel or some packages.
+
+For instance if you want to recompile the toolchain after you made any change to it
+issue the following command:
+
+\begin{Verbatim}
+make toolchain/{clean,compile,install}
+\end{Verbatim}
+
+Which will clean, compile and install the toolchain. The command actually expands to the
+following:
+
+\begin{Verbatim}
+make[1] toolchain/clean
+make[2] -C toolchain/kernel-headers clean
+make[2] -C toolchain/binutils clean
+make[2] -C toolchain/gcc clean
+make[2] -C toolchain/uClibc clean	(glibc or eglibc when chosen)
+\end{Verbatim}
+
+Of course, you could only choose to recompile one or several of the toolchain components
+(binutils, kernel-headers gcc, C library) individually.
+
+The exact same idea works for packages:
+
+\begin{Verbatim}
+make package/busybox/{clean,compile,install}
+\end{Verbatim}
+
+will clean, compile and install buysbox (if selected to be installed on the final rootfs).
+
+Supposing that you made changes to the Linux kernel, but do not want to recompile everything,
+you can recompile only the kernel modules by issuing:
+
+\begin{Verbatim}
+make target/linux/compile
+\end{Verbatim}
+
+To recompile the static part of the kernel use the following command:
+
+\begin{Verbatim}
+make target/linux/install
+\end{Verbatim}
+
+\subsection{Using quilt inside OpenWrt}
+
+OpenWrt integrates quilt in order to ease the package, kernel and toolchain
+patches maintenance when migrating over new versions of the software.
+
+Quilt intends to replace an old workflow, where you would download the new
+source file, create an original copy of it, an a working copy, then try to
+apply by hand old patches and resolve conflicts manually. Additionnaly, using
+quilt allows you to update and fold patches into other patches easily.
+
+Quilt is used by default to apply Linux kernel patches, but not for the other
+components (toolchain and packages).
+
+\subsubsection{Using quilt with kernel patches}
+
+Assuming that you have everything setup for your new kernel version:
+\begin{itemize}
+\item \texttt{LINUX\_VERSION} set in the target Makefile
+\item config-2.6.x.y existing
+\item patches-2.6.x.y containing the previous patches
+\end{itemize}
+
+Some patches are likely to fail since the vanilla kernel we are patching
+received modifications so some hunks of the patches are no longer applying.
+We will use quilt to get them applying cleanly again. Follow this procedure
+whenever you want to upgrade the kernel using previous patches:
+
+\begin{enumerate}
+\item make target/linux/clean (removes the old version)
+\item make target/linux/compile (uncompress the kernel and try to apply patches)
+\item if patches failed to apply:
+\item cd build\_dir/linux-target/linux-2.6.x.y
+\item quilt push -a (to apply patches where quilt stopped)
+\item quilt push -f (to force applying patches)
+\item edit .rej files, apply the necessary changes to the files
+\item remove .rej files
+\item quilt refresh
+\item repeat operation 3 and following until all patches have been applied
+\item when all patches did apply cleanly: make target/linux/refresh
+\end{enumerate}
+
+Note that generic (target/linux/generic-2.6/linux-2.6.x/) patches can be found in 
+\texttt{build\_dir/linux-target/linux-2.6.x.y/patches/generic} and platform specific
+patches in \texttt{build\_dir/linux-target/linux-2.6.x.y/patches/platform}.
+
+\subsubsection{Using quilt with packages}
+
+As we mentionned earlier, quilt is enabled by default for kernel patches, but not for
+packages. If you want to use quilt in the same way, you should set the QUILT environment
+variable to 1, e.g:
+
+\begin{Verbatim}
+make package/buysbox/{clean,compile} QUILT=1
+\end{Verbatim}
+
+Will generate the patch series file and allow you to update patches just like we described
+before in the kernel case. Note that once all patches apply cleanly you should refresh them
+as well using the following command:
+
+\begin{Verbatim}
+make package/buysbox/refresh QUILT=1
+\end{Verbatim}
