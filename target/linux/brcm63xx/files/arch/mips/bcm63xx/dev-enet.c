@@ -109,7 +109,10 @@ int __init bcm63xx_enet_register(int unit,
 	if (!shared_device_registered) {
 		shared_res[0].start = bcm63xx_regset_address(RSET_ENETDMA);
 		shared_res[0].end = shared_res[0].start;
-		shared_res[0].end += RSET_ENETDMA_SIZE - 1;
+		if (BCMCPU_IS_6338())
+			shared_res[0].end += (RSET_ENETDMA_SIZE / 2)  - 1;
+		else
+			shared_res[0].end += (RSET_ENETDMA_SIZE)  - 1;
 
 		ret = platform_device_register(&bcm63xx_enet_shared_device);
 		if (ret)
