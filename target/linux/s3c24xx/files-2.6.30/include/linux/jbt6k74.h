@@ -5,8 +5,8 @@
 
 struct jbt6k74_platform_data {
 	void (*reset)(int devindex, int level);
-	void (*resuming)(int devindex); /* called when LCM is resumed */
 	void (*probe_completed)(struct device *dev);
+	void (*enable_pixel_clock)(struct device *dev, int enable);
 };
 
 #endif
