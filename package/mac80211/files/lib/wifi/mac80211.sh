@@ -3,7 +3,7 @@ append DRIVERS "mac80211"
 
 scan_mac80211() {
 	local device="$1"
-	local adhoc sta ap
+	local adhoc sta ap monitor mesh
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
@@ -20,7 +20,7 @@ scan_mac80211() {
 		esac
 	done
 
-	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }${monitor:+$monitor }${mesh:+$mesh}"
+	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${sta:+$sta }${monitor:+$monitor }${mesh:+$mesh}"
 }
 
 
