@@ -105,26 +105,26 @@ rootfs_type() {
 
 get_image() { # <source> [ <command> ]
 	local from="$1"
-	local cmd="$2"
-	local conc
+	local conc="$2"
+	local cmd
 
-	if [ -z "$cmd" ]; then
-		case "$from" in
-			http://*|ftp://*) cmd="wget -O- -q";;
-			*) cmd="cat";;
-		esac
+	case "$from" in
+		http://*|ftp://*) cmd="wget -O- -q";;
+		*) cmd="cat";;
+	esac
+	if [ -z "$conc" ]; then
 		local magic="$(eval $cmd $from | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
 		case "$magic" in
-			1f8b) conc="| zcat";;
-			425a) conc="| bzcat";;
+			1f8b) conc="zcat";;
+			425a) conc="bzcat";;
 		esac
 	fi
 
-	eval "$cmd $from $conc"
+	eval "$cmd $from ${conc:+| $conc}"
 }
 
 get_magic_word() {
-	get_image "$1" | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"'
+	get_image "$@" | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"'
 }
 
 refresh_mtd_partitions() {

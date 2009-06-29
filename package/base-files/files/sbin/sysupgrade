@@ -88,7 +88,7 @@ for check in $sysupgrade_image_check; do
 done
 
 if [ -n "$CONF_IMAGE" ]; then
-	case "$(get_magic_word "$CONF_IMAGE")" in
+	case "$(get_magic_word $CONF_IMAGE cat)" in
 		# .gz files
 		1f8b) ;;
 		*)
