@@ -488,6 +488,10 @@ ar8216_reset_switch(struct switch_dev *dev)
 	}
 	/* XXX: undocumented magic from atheros, required! */
 	priv->write(priv, 0x38, 0xc000050e);
+
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		AR8216_GCTRL_MTU, 1518 + 8 + 2);
+
 	return ar8216_hw_apply(dev);
 }
 
