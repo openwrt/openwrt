@@ -26,7 +26,7 @@ BEGIN {
 	
 	if (ARGC > 3) {
 		print "START="int2ip(start)
-		print "END="int2ip(end-1)
+		print "END="int2ip(end)
 	}
 }
 EOF
