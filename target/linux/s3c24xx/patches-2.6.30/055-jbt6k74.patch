@@ -6,7 +6,7 @@
  
 +config DISPLAY_JBT6K74
 +	tristate "TPO JBT6K74-AS TFT display ASIC control interface"
-+	depends on SPI_MASTER && SYSFS
++	depends on SPI_MASTER && SYSFS && LCD_CLASS_DEVICE
 +	help
 +	  SPI driver for the control interface of TFT panels containing
 +	  the TPO JBT6K74-AS controller ASIC, such as the TPO TD028TTEC1
