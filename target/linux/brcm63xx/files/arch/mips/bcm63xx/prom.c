@@ -28,8 +28,6 @@ void __init prom_init(void)
 	/* disable all hardware blocks clock for now */
 	if (BCMCPU_IS_6338())
 		mask = CKCTL_6338_ALL_SAFE_EN;
-	else if (BCMCPU_IS_6345())
-		mask = CKCTL_6345_UART_EN;
 	else if (BCMCPU_IS_6348())
 		mask = CKCTL_6348_ALL_SAFE_EN;
 	else

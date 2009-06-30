@@ -68,6 +68,16 @@ static struct board_info __initdata board_96338w = {
 #endif
 
 /*
+ * known 6345 boards
+ */
+#ifdef CONFIG_BCM63XX_CPU_6345
+static struct board_info __initdata board_96345gw2 = {
+	.name				= "96345GW2",
+	.expected_cpu_id		= 0x6345,
+};
+#endif
+
+/*
  * known 6348 boards
  */
 #ifdef CONFIG_BCM63XX_CPU_6348
@@ -299,6 +309,9 @@ static const struct board_info __initdata *bcm963xx_boards[] = {
 #ifdef CONFIG_BCM63XX_CPU_6338
 	&board_96338gw,
 	&board_96338w,
+#endif
+#ifdef CONFIG_BCM63XX_CPU_6345
+	&board_96345gw2,
 #endif
 #ifdef CONFIG_BCM63XX_CPU_6348
 	&board_96348r,
