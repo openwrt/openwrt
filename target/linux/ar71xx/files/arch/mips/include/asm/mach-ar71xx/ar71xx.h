@@ -362,6 +362,8 @@ void ar71xx_ddr_flush(u32 reg);
 #define AR91XX_RESET_REG_PERFC0			0x24
 #define AR91XX_RESET_REG_PERFC1			0x28
 
+#define AR724X_RESET_REG_RESET_MODULE		0x1c
+
 #define WDOG_CTRL_LAST_RESET		BIT(31)
 #define WDOG_CTRL_ACTION_MASK		3
 #define WDOG_CTRL_ACTION_NONE		0	/* no action */
