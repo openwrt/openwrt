@@ -172,6 +172,7 @@ int main(int argc, char **argv)
 					fprintf(stderr, "realloc failed");
 					return EXIT_FAILURE;
 				}
+				p = (struct trx_header *) buf;
 				break;
 			case 'a':
 				errno = 0;
