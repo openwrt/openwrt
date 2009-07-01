@@ -306,6 +306,7 @@ void __init arch_init_irq(void)
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
+	case AR71XX_SOC_AR7240:
 #ifdef CONFIG_PCI
 		ar71xx_pci_irq_init();
 		ar71xx_ip2_irq_handler = ar71xx_pci_irq_dispatch;
