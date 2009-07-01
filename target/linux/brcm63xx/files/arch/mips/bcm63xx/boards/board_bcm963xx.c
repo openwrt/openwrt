@@ -24,6 +24,7 @@
 #include <bcm63xx_dev_uart.h>
 #include <bcm63xx_dev_wdt.h>
 #include <bcm63xx_dev_enet.h>
+#include <bcm63xx_dev_dsp.h>
 #include <bcm63xx_dev_pcmcia.h>
 #include <bcm63xx_dev_usb_ohci.h>
 #include <bcm63xx_dev_usb_ehci.h>
@@ -114,6 +115,14 @@ static struct board_info __initdata board_96348gw_10 = {
 	.has_ohci0			= 1,
 	.has_pccard			= 1,
 	.has_ehci0			= 1,
+
+	.has_dsp			= 1,
+	.dsp = {
+		.gpio_rst		= 6,
+		.gpio_int		= 34,
+		.cs			= 2,
+		.ext_irq		= 2,
+	},
 }; 
 
 static struct board_info __initdata board_96348gw_11 = {
@@ -157,7 +166,15 @@ static struct board_info __initdata board_96348gw = {
 		.force_duplex_full	= 1,
 	},
 
-	.has_ohci0 = 1,
+	.has_ohci0			= 1,
+	.has_dsp			= 1,
+	
+	.dsp = {
+		.gpio_rst		= 6,
+		.gpio_int		= 34,
+		.ext_irq		= 2,
+		.cs			= 2,
+	},
 };
 
 static struct board_info __initdata board_FAST2404 = {
@@ -559,6 +576,10 @@ int __init board_register_devices(void)
 
 	if (board.has_udc0)
 		bcm63xx_udc_register();
+
+	if (board.has_dsp)
+		bcm63xx_dsp_register(&board.dsp);
+	
 	/* Generate MAC address for WLAN and
 	 * register our SPROM */
 #ifdef CONFIG_PCI

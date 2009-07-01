@@ -7,6 +7,7 @@ obj-y		+= dev-usb-udc.o
 obj-y		+= dev-enet.o
 obj-y		+= dev-wdt.o
 obj-y		+= dev-spi.o
+obj-y		+= dev-dsp.o
 obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
 
 obj-y		+= boards/
