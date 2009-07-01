@@ -103,45 +103,66 @@ static void __init ar71xx_detect_mem_size(void)
 
 static void __init ar71xx_detect_sys_type(void)
 {
-	char *chip;
+	char *chip = "????";
 	u32 id;
-	u32 rev;
+	u32 major;
+	u32 minor;
+	u32 rev = 0;
 
-	id = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) & REV_ID_MASK;
-	rev = (id >> REV_ID_REVISION_SHIFT) & REV_ID_REVISION_MASK;
+	id = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID);
+	major = id & REV_ID_MAJOR_MASK;
 
-	switch (id & REV_ID_CHIP_MASK) {
-	case REV_ID_CHIP_AR7130:
-		ar71xx_soc = AR71XX_SOC_AR7130;
-		chip = "7130";
+	switch (major) {
+	case REV_ID_MAJOR_AR71XX:
+		minor = id & AR71XX_REV_ID_MINOR_MASK;
+		rev = id >> AR71XX_REV_ID_REVISION_SHIFT;
+		rev &= AR71XX_REV_ID_REVISION_MASK;
+		switch (minor) {
+		case AR71XX_REV_ID_MINOR_AR7130:
+			ar71xx_soc = AR71XX_SOC_AR7130;
+			chip = "7130";
+			break;
+
+		case AR71XX_REV_ID_MINOR_AR7141:
+			ar71xx_soc = AR71XX_SOC_AR7141;
+			chip = "7141";
+			break;
+
+		case AR71XX_REV_ID_MINOR_AR7161:
+			ar71xx_soc = AR71XX_SOC_AR7161;
+			chip = "7161";
+			break;
+		}
 		break;
 
-	case REV_ID_CHIP_AR7141:
-		ar71xx_soc = AR71XX_SOC_AR7141;
-		chip = "7141";
+	case REV_ID_MAJOR_AR724X:
+		ar71xx_soc = AR71XX_SOC_AR7240;
+		chip = "7240";
+		rev = (id & AR724X_REV_ID_REVISION_MASK);
 		break;
 
-	case REV_ID_CHIP_AR7161:
-		ar71xx_soc = AR71XX_SOC_AR7161;
-		chip = "7161";
-		break;
+	case REV_ID_MAJOR_AR913X:
+		minor = id & AR91XX_REV_ID_MINOR_MASK;
+		rev = id >> AR91XX_REV_ID_REVISION_SHIFT;
+		rev &= AR91XX_REV_ID_REVISION_MASK;
+		switch (minor) {
+		case AR91XX_REV_ID_MINOR_AR9130:
+			ar71xx_soc = AR71XX_SOC_AR9130;
+			chip = "9130";
+			break;
 
-	case REV_ID_CHIP_AR9130:
-		ar71xx_soc = AR71XX_SOC_AR9130;
-		chip = "9130";
-		break;
-
-	case REV_ID_CHIP_AR9132:
-		ar71xx_soc = AR71XX_SOC_AR9132;
-		chip = "9132";
+		case AR91XX_REV_ID_MINOR_AR9132:
+			ar71xx_soc = AR71XX_SOC_AR9132;
+			chip = "9132";
+			break;
+		}
 		break;
 
 	default:
-		panic("ar71xx: unknown chip id:0x%02x\n", id);
+		panic("ar71xx: unknown chip id:0x%08x\n", id);
 	}
 
-	sprintf(ar71xx_sys_type, "Atheros AR%s rev %u (id:0x%02x)",
-		chip, rev, id);
+	sprintf(ar71xx_sys_type, "Atheros AR%s rev %u", chip, rev);
 }
 
 static void __init ar91xx_detect_sys_frequency(void)
