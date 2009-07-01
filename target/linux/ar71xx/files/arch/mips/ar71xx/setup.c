@@ -33,6 +33,7 @@
 #define AR71XX_SYS_TYPE_LEN	64
 #define AR71XX_BASE_FREQ	40000000
 #define AR91XX_BASE_FREQ	5000000
+#define AR724X_BASE_FREQ	5000000
 
 enum ar71xx_mach_type ar71xx_mach;
 
@@ -206,6 +207,29 @@ static void __init ar71xx_detect_sys_frequency(void)
 	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
 }
 
+static void __init ar724x_detect_sys_frequency(void)
+{
+	u32 pll;
+	u32 freq;
+	u32 div;
+
+	pll = ar71xx_pll_rr(AR724X_PLL_REG_CPU_CONFIG);
+
+	div = ((pll >> AR724X_PLL_DIV_SHIFT) & AR724X_PLL_DIV_MASK);
+	freq = div * AR724X_BASE_FREQ;
+
+	div = ((pll >> AR724X_PLL_REF_DIV_SHIFT) & AR724X_PLL_REF_DIV_MASK);
+	freq *= div;
+
+	ar71xx_cpu_freq = freq;
+
+	div = ((pll >> AR724X_DDR_DIV_SHIFT) & AR724X_DDR_DIV_MASK) + 1;
+	ar71xx_ddr_freq = freq / div;
+
+	div = (((pll >> AR724X_AHB_DIV_SHIFT) & AR724X_AHB_DIV_MASK) + 1) * 2;
+	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
+}
+
 static void __init detect_sys_frequency(void)
 {
 	switch (ar71xx_soc) {
@@ -213,6 +237,10 @@ static void __init detect_sys_frequency(void)
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
 		ar71xx_detect_sys_frequency();
+		break;
+
+	case AR71XX_SOC_AR7240:
+		ar724x_detect_sys_frequency();
 		break;
 
 	case AR71XX_SOC_AR9130:
