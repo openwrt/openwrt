@@ -46,7 +46,11 @@ PKG_BUILD_DEPENDS:=wprobe
 
 include $(INCLUDE_DIR)/package.mk
 
-COMPRESSION:=1
+ifdef CONFIG_MADWIFI_COMPRESSION
+  COMPRESSION:=1
+else
+  COMPRESSION:=0
+endif
 
 define Download/hal
   FILE:=$(HAL_FILE)
