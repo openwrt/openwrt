@@ -3,6 +3,7 @@
 
 #include <linux/types.h>
 #include <bcm63xx_dev_enet.h>
+#include <bcm63xx_dev_dsp.h>
 
 /*
  * flash mapping
@@ -42,10 +43,14 @@ struct board_info {
 	unsigned int	has_ohci0:1;
 	unsigned int	has_ehci0:1;
 	unsigned int	has_udc0:1;
+	unsigned int	has_dsp:1;
 
 	/* ethernet config */
 	struct bcm63xx_enet_platform_data enet0;
 	struct bcm63xx_enet_platform_data enet1;
+
+	/* DSP config */
+	struct bcm63xx_dsp_platform_data dsp;
 };
 
 #endif /* ! BOARD_BCM963XX_H_ */
