@@ -49,7 +49,9 @@ static void enet_misc_set(struct clk *clk, int enable)
 {
 	u32 mask;
 
-	if (BCMCPU_IS_6348())
+	if (BCMCPU_IS_6338())
+		mask = CKCTL_6338_ENET_EN;
+	else if (BCMCPU_IS_6348())
 		mask = CKCTL_6348_ENET_EN;
 	else
 		/* BCMCPU_IS_6358 */
@@ -163,7 +165,9 @@ static void spi_set(struct clk *clk, int enable)
 {
 	u32 mask;
 
-	if (BCMCPU_IS_6348())
+	if (BCMCPU_IS_6338())
+		mask = CKCTL_6338_SPI_EN;
+	else if (BCMCPU_IS_6348())
 		mask = CKCTL_6348_SPI_EN;
 	else
 		/* BCMCPU_IS_6358 */
