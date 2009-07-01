@@ -48,6 +48,13 @@ void ar71xx_device_stop(u32 mask)
 		local_irq_restore(flags);
 		break;
 
+	case AR71XX_SOC_AR7240:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t | mask);
+		local_irq_restore(flags);
+		break;
+
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
 		local_irq_save(flags);
@@ -74,6 +81,13 @@ void ar71xx_device_start(u32 mask)
 		local_irq_save(flags);
 		t = ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE);
 		ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE, t & ~mask);
+		local_irq_restore(flags);
+		break;
+
+	case AR71XX_SOC_AR7240:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t & ~mask);
 		local_irq_restore(flags);
 		break;
 
