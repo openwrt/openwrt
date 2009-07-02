@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=23
+PKG_RELEASE:=24
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 
@@ -175,6 +175,7 @@ define Package/base-files$(TARGET)/install
 	mkdir -p $(1)/CONTROL
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
+	mkdir -p $(1)/etc/rc.d
 	mkdir -p $(1)/jffs
 	mkdir -p $(1)/lib/firmware
 	$(if $(LIB_SUFFIX),ln -s lib $(1)/lib$(LIB_SUFFIX))
