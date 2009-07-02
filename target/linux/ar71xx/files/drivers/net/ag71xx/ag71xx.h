@@ -82,7 +82,7 @@ struct ag71xx_desc {
 	u32	ctrl;
 #define DESC_EMPTY	BIT(31)
 #define DESC_MORE	BIT(24)
-#define DESC_PKTLEN_M	0x1fff
+#define DESC_PKTLEN_M	0xfff
 	u32	next;
 	u32	pad;
 };
