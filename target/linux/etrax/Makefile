@@ -21,4 +21,12 @@ define Target/Description
 	Build firmware images for the FOXBOARD made by acmesystems.it
 endef
 
+define Kernel/Prepare
+	$(call Kernel/Prepare/Default)
+	mkdir -p $(LINUX_DIR)/include/asm-cris
+	$(CP) $(LINUX_DIR)/arch/cris/include/asm/*.h $(LINUX_DIR)/include/asm-cris
+	mkdir -p $(LINUX_DIR)/include/asm-cris/arch
+	$(CP) $(LINUX_DIR)/arch/cris/include/arch-v10/arch/*.h $(LINUX_DIR)/include/asm-cris/arch
+endef
+
 $(eval $(call BuildTarget))
