@@ -6,11 +6,13 @@ include /lib/network
 RESOLV_CONF="/tmp/resolv.conf.auto"
 
 change_state () {
+	[ -n "$ifc" ] || return
 	uci_revert_state "$1" "$2" "$3" "$4"
 	uci_set_state "$1" "$2" "$3" "$4"
 }
 
 uci_get() {
+	[ -n "$ifc" ] || return
 	uci -P /dev/null get "$1" 2>/dev/null
 }
 
@@ -23,9 +25,11 @@ setup_interface () {
 	local user_dns
 	local user_router
 
-	config_get old_ip        "$ifc" ipaddr
-	config_get old_broadcast "$ifc" broadcast
-	config_get old_subnet    "$ifc" netmask
+	[ -n "$ifc" ] && {
+		config_get old_ip        "$ifc" ipaddr
+		config_get old_broadcast "$ifc" broadcast
+		config_get old_subnet    "$ifc" netmask
+	}
 
 	[ "$ip" != "$old_ip" ] \
 	|| [ "${broadcast:-+}" != "$old_broadcast" ] \
@@ -40,12 +44,14 @@ setup_interface () {
 
 
 	# Default Route
-	change_state network "$ifc" lease_gateway "$router"
-	config_get old_router "$ifc" gateway
-	user_router=$(uci_get "network.$ifc.gateway")
-	[ -n "$user_router" ] && router="$user_router"
+	[ -n "$ifc" ] && {
+		change_state network "$ifc" lease_gateway "$router"
+		config_get old_router "$ifc" gateway
+		user_router=$(uci_get "network.$ifc.gateway")
+		[ -n "$user_router" ] && router="$user_router"
+	}
 
-	[ -n "$router" ] && [ "$router" != "0.0.0.0" ] && [ "$router" != "$old_router" ] && {
+	[ -n "$router" ] && [ "$router" != "0.0.0.0" ] && [ "$router" != "255.255.255.255" ] && [ "$router" != "$old_router" ] && {
 		echo "udhcpc: setting default routers: $router"
 
 		local valid_gw=""
@@ -155,6 +161,7 @@ setup_interface () {
 		change_state network "$ifc" dns "$dns"
 	}
 
+	[ -n "$ifc" ] || return
 
 	# UCI State
 	change_state network "$ifc" lease_server "$serverid"
@@ -172,26 +179,34 @@ setup_interface () {
 
 
 scan_interfaces
+applied=
+for ifc in $interfaces __default; do
+	if [ "$ifc" = __default ]; then
+		ifc=""
+		[ -n "$applied" ] && continue
+	else
+		config_get ifname "$ifc" ifname
+		[ "$ifname" = "$interface" ] || continue
 
-for ifc in $interfaces; do
-	config_get ifname "$ifc" ifname
-	[ "$ifname" = "$interface" ] || continue
-
-	config_get proto "$ifc" proto
-	[ "$proto" = "dhcp" ] || continue
+		config_get proto "$ifc" proto
+		[ "$proto" = "dhcp" ] || continue
+		applied=true
+	fi
 
 	case "$1" in
 		deconfig)
 			ifconfig "$interface" 0.0.0.0
-			env -i ACTION="ifdown" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug-call iface
+			[ -n "$ifc" ] && {
+				env -i ACTION="ifdown" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug-call iface
 			
-			config_get device "$ifc" device
-			config_get ifname "$ifc" ifname
-			config_get aliases "$ifc" aliases
-			uci_revert_state network "$ifc"
-			[ -n "$device" ] && uci_set_state network "$ifc" device "$device"
-			[ -n "$ifname" ] && uci_set_state network "$ifc" ifname "$ifname"
-			[ -n "$aliases" ] && uci_set_state network "$ifc" aliases "$aliases"
+				config_get device "$ifc" device
+				config_get ifname "$ifc" ifname
+				config_get aliases "$ifc" aliases
+				uci_revert_state network "$ifc"
+				[ -n "$device" ] && uci_set_state network "$ifc" device "$device"
+				[ -n "$ifname" ] && uci_set_state network "$ifc" ifname "$ifname"
+				[ -n "$aliases" ] && uci_set_state network "$ifc" aliases "$aliases"
+			}
 		;;
 		renew)
 			setup_interface update
