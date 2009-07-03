@@ -1,6 +1,6 @@
 --- a/drivers/net/r8169.c
 +++ b/drivers/net/r8169.c
-@@ -1527,7 +1527,7 @@ static const struct rtl_cfg_info {
+@@ -1526,7 +1526,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8169,
  		.region		= 1,
  		.align		= 0,
@@ -9,7 +9,7 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_GMII
-@@ -1536,7 +1536,7 @@ static const struct rtl_cfg_info {
+@@ -1535,7 +1535,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8168,
  		.region		= 2,
  		.align		= 8,
@@ -18,7 +18,7 @@
  				  TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_GMII | RTL_FEATURE_MSI
-@@ -1545,7 +1545,7 @@ static const struct rtl_cfg_info {
+@@ -1544,7 +1544,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8101,
  		.region		= 2,
  		.align		= 8,
@@ -27,7 +27,7 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_MSI
-@@ -2879,10 +2879,12 @@ static irqreturn_t rtl8169_interrupt(int
+@@ -2878,10 +2878,12 @@ static irqreturn_t rtl8169_interrupt(int
  		goto out;
  	}
  
