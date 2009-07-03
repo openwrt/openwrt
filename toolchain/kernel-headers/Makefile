@@ -83,9 +83,7 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.28)),1)
   define Host/Prepare/post/cris
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/linux/user.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/linux/user.h \
+		$(HOST_BUILD_DIR)/include/linux/autoconf.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/asm-cris/elf.h \
@@ -109,6 +107,7 @@ else
   define Host/Prepare/post/cris
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/linux/user.h \
+		$(HOST_BUILD_DIR)/include/linux/autoconf.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/linux/
 	ln -snf $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch-v10/arch \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/arch
