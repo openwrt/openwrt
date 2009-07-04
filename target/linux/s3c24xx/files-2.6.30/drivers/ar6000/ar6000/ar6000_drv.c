@@ -213,6 +213,7 @@ static void ar6000_cleanup_module(void);
 int ar6000_init(struct net_device *dev);
 static int ar6000_open(struct net_device *dev);
 static int ar6000_close(struct net_device *dev);
+static int ar6000_cleanup(struct net_device *dev);
 static void ar6000_init_control_info(AR_SOFTC_T *ar);
 static int ar6000_data_tx(struct sk_buff *skb, struct net_device *dev);
 
@@ -984,6 +985,7 @@ ar6000_destroy(struct net_device *dev, unsigned int unregister)
 	unregister_netdev(dev);
     } else {
 	ar6000_close(dev);
+    ar6000_cleanup(dev);
     }
 
     free_raw_buffers(ar);
@@ -1089,6 +1091,14 @@ ar6000_open(struct net_device *dev)
 
 static int
 ar6000_close(struct net_device *dev)
+{
+    /* Stop the transmit queues */ 
+    netif_stop_queue(dev); 
+    return 0; 
+}
+
+static int 
+ar6000_cleanup(struct net_device *dev)
 {
     AR_SOFTC_T *ar = netdev_priv(dev);
 
