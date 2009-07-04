@@ -179,12 +179,7 @@ define KernelPackage/ide-core/2.4
   AUTOLOAD+=$(call AutoLoad,30,ide-detect)
 endef
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),eq,2.6.26)),1)
-  define KernelPackage/ide-core/2.6
-    FILES+=$(LINUX_DIR)/drivers/ide/pci/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD+=$(call AutoLoad,30,ide-pci-generic)
-  endef
-else
+ifneq ($(CONFIG_arm),y)
   define KernelPackage/ide-core/2.6
     FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
     AUTOLOAD+=$(call AutoLoad,30,ide-generic)
