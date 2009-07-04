@@ -56,6 +56,13 @@
 #define AR71XX_DMA_SIZE		0x10000
 #define AR71XX_STEREO_BASE	(AR71XX_APB_BASE + 0x000B0000)
 #define AR71XX_STEREO_SIZE	0x10000
+
+#define AR724X_PCI_CRP_BASE	(AR71XX_APB_BASE + 0x000C0000)
+#define AR724X_PCI_CRP_SIZE	0x100
+
+#define AR724X_PCI_CTRL_BASE	(AR71XX_APB_BASE + 0x000F0000)
+#define AR724X_PCI_CTRL_SIZE	0x100
+
 #define AR91XX_WMAC_BASE	(AR71XX_APB_BASE + 0x000C0000)
 #define AR91XX_WMAC_SIZE	0x30000
 
@@ -337,6 +344,34 @@ void ar71xx_ddr_flush(u32 reg);
 #define PCI_CFG_CMD_WRITE	0x0000000b
 
 #define PCI_IDSEL_ADL_START	17
+
+#define AR7240_PCI_CFG_BASE	(AR71XX_PCI_MEM_BASE + PCI_WIN4_OFFS)
+#define AR7240_PCI_CFG_SIZE	0x100
+
+#define AR724X_PCI_REG_INT_STATUS	0x4c
+#define AR724X_PCI_REG_INT_MASK		0x50
+
+#define AR724X_PCI_INT_DEV0		BIT(14)
+
+static inline void ar724x_pci_wr(unsigned reg, u32 val)
+{
+	void __iomem *base;
+
+	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
+	__raw_writel(val, base + reg);
+	iounmap(base);
+}
+
+static inline u32 ar724x_pci_rr(unsigned reg)
+{
+	void __iomem *base;
+	u32 ret;
+
+	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
+	ret = __raw_readl(base + reg);
+	iounmap(base);
+	return ret;
+}
 
 /*
  * RESET block
