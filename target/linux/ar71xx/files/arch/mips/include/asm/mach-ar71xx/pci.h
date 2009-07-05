@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx SoC specific PCI definitions
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -12,17 +12,24 @@
 #ifndef __ASM_MACH_AR71XX_PCI_H
 #define __ASM_MACH_AR71XX_PCI_H
 
+struct pci_dev;
+
 struct ar71xx_pci_irq {
 	int	irq;
 	u8	slot;
 	u8	pin;
 };
 
-extern int (*ar71xx_pci_be_handler)(int is_fixup);
-extern int (*ar71xx_pci_bios_init)(unsigned nr_irqs,
-				    struct ar71xx_pci_irq *map) __initdata;
+extern int (*ar71xx_pci_plat_dev_init)(struct pci_dev *dev);
+extern unsigned ar71xx_pci_nr_irqs __initdata;
+extern struct ar71xx_pci_irq *ar71xx_pci_irq_map __initdata;
 
-extern int ar71xx_pci_init(unsigned nr_irqs,
-			   struct ar71xx_pci_irq *map) __init;
+int ar71xx_pcibios_map_irq(const struct pci_dev *dev,
+			   uint8_t slot, uint8_t pin) __init;
+int ar71xx_pcibios_init(void) __init;
+
+int ar71xx_pci_be_handler(int is_fixup);
+
+int ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map) __init;
 
 #endif /* __ASM_MACH_AR71XX_PCI_H */
