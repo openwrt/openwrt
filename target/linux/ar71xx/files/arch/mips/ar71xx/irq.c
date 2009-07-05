@@ -385,6 +385,7 @@ void __init arch_init_irq(void)
 		ar71xx_pci_irq_init();
 		ar71xx_ip2_irq_handler = ar71xx_pci_irq_dispatch;
 #endif
+		break;
 	case AR71XX_SOC_AR7240:
 #ifdef CONFIG_PCI
 		ar724x_pci_irq_init();
