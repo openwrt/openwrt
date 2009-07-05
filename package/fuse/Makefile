@@ -33,7 +33,7 @@ $(call Package/fuse/Default)
   CATEGORY:=Utilities
   DEPENDS:=+libfuse
   TITLE+= (utilities)
-  SUBMENU:=filesystem
+  SUBMENU:=Filesystem
 endef
 
 define Package/fuse-utils/description
@@ -63,7 +63,7 @@ $(call Package/fuse/Default)
   CATEGORY:=Libraries
   TITLE+= (library)
   DEPENDS:=+LINUX_2_4:kmod-fuse24 +LINUX_2_6:kmod-fuse
-  SUBMENU:=filesystem
+  SUBMENU:=Filesystem
 endef
 
 define Package/libfuse/description
