@@ -1,6 +1,6 @@
 --- a/drivers/net/r8169.c
 +++ b/drivers/net/r8169.c
-@@ -1890,7 +1890,7 @@ static const struct rtl_cfg_info {
+@@ -1889,7 +1889,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8169,
  		.region		= 1,
  		.align		= 0,
@@ -9,7 +9,7 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_GMII
-@@ -1899,7 +1899,7 @@ static const struct rtl_cfg_info {
+@@ -1898,7 +1898,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8168,
  		.region		= 2,
  		.align		= 8,
@@ -18,7 +18,7 @@
  				  TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_GMII | RTL_FEATURE_MSI
-@@ -1908,7 +1908,7 @@ static const struct rtl_cfg_info {
+@@ -1907,7 +1907,7 @@ static const struct rtl_cfg_info {
  		.hw_start	= rtl_hw_start_8101,
  		.region		= 2,
  		.align		= 8,
@@ -27,16 +27,16 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_MSI
-@@ -3582,10 +3582,12 @@ static irqreturn_t rtl8169_interrupt(int
- 		goto out;
- 	}
+@@ -3576,10 +3576,12 @@ static irqreturn_t rtl8169_interrupt(int
+ 			break;
+ 		}
  
 +#if 0
- 	if (unlikely(status & SYSErr)) {
- 		rtl8169_pcierr_interrupt(dev);
- 		goto out;
- 	}
+ 		if (unlikely(status & SYSErr)) {
+ 			rtl8169_pcierr_interrupt(dev);
+ 			break;
+ 		}
 +#endif
  
- 	if (status & LinkChg)
- 		rtl8169_check_link_status(dev, tp, ioaddr);
+ 		if (status & LinkChg)
+ 			rtl8169_check_link_status(dev, tp, ioaddr);
