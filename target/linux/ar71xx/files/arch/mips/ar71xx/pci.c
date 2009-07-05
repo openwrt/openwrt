@@ -38,15 +38,48 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 
 int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 {
-	return ar71xx_pcibios_map_irq(dev, slot, pin);
+	int ret = 0;
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		ret = ar71xx_pcibios_map_irq(dev, slot, pin);
+		break;
+
+	case AR71XX_SOC_AR7240:
+		ret = ar724x_pcibios_map_irq(dev, slot, pin);
+		break;
+
+	default:
+		break;
+	}
+
+	return ret;
 }
 
 int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
 {
+	int ret = 0;
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		board_be_handler = ar71xx_be_handler;
+		ret = ar71xx_pcibios_init();
+		break;
+
+	case AR71XX_SOC_AR7240:
+		ret = ar724x_pcibios_init();
+		break;
+
+	default:
+		return 0;
+	}
+
 	ar71xx_pci_nr_irqs = nr_irqs;
 	ar71xx_pci_irq_map = map;
 
-	board_be_handler = ar71xx_be_handler;
-
-	return ar71xx_pcibios_init();
+	return ret;
 }
