@@ -12,15 +12,11 @@
  */
 
 #include <linux/kernel.h>
-#include <linux/module.h>
 #include <linux/init.h>
-#include <linux/types.h>
-#include <linux/pci.h>
 #include <linux/serial_8250.h>
 #include <linux/bootmem.h>
 
 #include <asm/bootinfo.h>
-#include <asm/traps.h>
 #include <asm/time.h>		/* for mips_hpt_frequency */
 #include <asm/reboot.h>		/* for _machine_{restart,halt} */
 #include <asm/mips_machine.h>
@@ -49,11 +45,6 @@ EXPORT_SYMBOL_GPL(ar71xx_ddr_freq);
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
 
-int (*ar71xx_pci_bios_init)(unsigned nr_irqs,
-			     struct ar71xx_pci_irq *map) __initdata;
-
-int (*ar71xx_pci_be_handler)(int is_fixup);
-
 static char ar71xx_sys_type[AR71XX_SYS_TYPE_LEN];
 
 static void ar71xx_restart(char *command)
@@ -68,24 +59,6 @@ static void ar71xx_halt(void)
 {
 	while (1)
 		cpu_wait();
-}
-
-static int ar71xx_be_handler(struct pt_regs *regs, int is_fixup)
-{
-	int err = 0;
-
-	if (ar71xx_pci_be_handler)
-		err = ar71xx_pci_be_handler(is_fixup);
-
-	return (is_fixup && !err) ? MIPS_BE_FIXUP : MIPS_BE_FATAL;
-}
-
-int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
-{
-	if (!ar71xx_pci_bios_init)
-		return 0;
-
-	return ar71xx_pci_bios_init(nr_irqs, map);
 }
 
 static void __init ar71xx_detect_mem_size(void)
@@ -315,8 +288,6 @@ void __init plat_mem_setup(void)
 	_machine_restart = ar71xx_restart;
 	_machine_halt = ar71xx_halt;
 	pm_power_off = ar71xx_halt;
-
-	board_be_handler = ar71xx_be_handler;
 
 	ar71xx_early_serial_setup();
 }
