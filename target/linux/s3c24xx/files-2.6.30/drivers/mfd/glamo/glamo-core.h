@@ -2,6 +2,7 @@
 #define __GLAMO_CORE_H
 
 #include <asm/system.h>
+#include <linux/glamo-engine.h>
 
 /* for the time being, we put the on-screen framebuffer into the lowest
  * VRAM space.  This should make the code easily compatible with the various
@@ -39,29 +40,6 @@ struct glamo_script {
 
 int glamo_run_script(struct glamo_core *glamo,
 		     struct glamo_script *script, int len, int may_sleep);
-
-enum glamo_engine {
-	GLAMO_ENGINE_CAPTURE,
-	GLAMO_ENGINE_ISP,
-	GLAMO_ENGINE_JPEG,
-	GLAMO_ENGINE_MPEG_ENC,
-	GLAMO_ENGINE_MPEG_DEC,
-	GLAMO_ENGINE_LCD,
-	GLAMO_ENGINE_CMDQ,
-	GLAMO_ENGINE_2D,
-	GLAMO_ENGINE_3D,
-	GLAMO_ENGINE_MMC,
-	GLAMO_ENGINE_MICROP0,
-	GLAMO_ENGINE_RISC,
-	GLAMO_ENGINE_MICROP1_MPEG_ENC,
-	GLAMO_ENGINE_MICROP1_MPEG_DEC,
-#if 0
-	GLAMO_ENGINE_H264_DEC,
-	GLAMO_ENGINE_RISC1,
-	GLAMO_ENGINE_SPI,
-#endif
-	__NUM_GLAMO_ENGINES
-};
 
 struct glamo_mci_pdata {
 	struct glamo_core * pglamo;
