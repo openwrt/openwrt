@@ -1,8 +1,12 @@
 #ifndef _LINUX_GLAMOFB_H
 #define _LINUX_GLAMOFB_H
 
-#include <linux/spi/glamo.h>
 #include <linux/fb.h>
+#include <linux/glamo-engine.h>
+
+#ifdef __KERNEL__
+
+#include <linux/spi/glamo.h>
 
 struct glamo_core;
 
@@ -36,5 +40,11 @@ void glamo_lcm_reset(int level);
 #else
 #define glamo_lcm_reset(...) do {} while (0)
 #endif
+
+#endif
+
+#define GLAMOFB_ENGINE_ENABLE _IOW('F', 0x1, __u32)
+#define GLAMOFB_ENGINE_DISABLE _IOW('F', 0x2, __u32)
+#define GLAMOFB_ENGINE_RESET _IOW('F', 0x3, __u32)
 
 #endif

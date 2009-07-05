@@ -535,6 +535,31 @@ static int glamofb_setcolreg(unsigned regno,
 	return 0;
 }
 
+static int glamofb_ioctl(struct fb_info *info, unsigned int cmd,
+                         unsigned long arg) {
+	struct glamofb_handle *gfb = (struct glamofb_handle*)info->par;
+	struct glamo_core *gcore = gfb->mach_info->glamo;
+	int retval = -ENOTTY;
+
+	switch (cmd) {
+	case GLAMOFB_ENGINE_ENABLE:
+		retval = glamo_engine_enable(gcore, arg);
+		break;
+	case GLAMOFB_ENGINE_DISABLE:
+		retval = glamo_engine_disable(gcore, arg);
+		break;
+	case GLAMOFB_ENGINE_RESET:
+		glamo_engine_reset(gcore, arg);
+		retval = 0;
+		break;
+	default:
+		break;
+	}
+
+	return retval;
+}
+
+
 #ifdef CONFIG_MFD_GLAMO_HWACCEL
 static inline void glamofb_vsync_wait(struct glamofb_handle *glamo,
 		int line, int size, int range)
@@ -770,6 +795,7 @@ static struct fb_ops glamofb_ops = {
 	.fb_set_par	= glamofb_set_par,
 	.fb_blank	= glamofb_blank,
 	.fb_setcolreg	= glamofb_setcolreg,
+	.fb_ioctl = glamofb_ioctl,
 #ifdef CONFIG_MFD_GLAMO_HWACCEL
 	.fb_cursor	= glamofb_cursor,
 #endif

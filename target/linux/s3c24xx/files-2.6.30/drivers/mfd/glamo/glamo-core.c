@@ -536,6 +536,9 @@ int __glamo_engine_enable(struct glamo_core *glamo, enum glamo_engine engine)
 		__reg_set_bit_mask(glamo, GLAMO_REG_HOSTBUS(2),
 				   GLAMO_HOSTBUS2_MMIO_EN_2D,
 				   GLAMO_HOSTBUS2_MMIO_EN_2D);
+		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
+		                   GLAMO_CLOCK_GEN51_EN_DIV_GCLK,
+						   0xffff);
 		break;
 	case GLAMO_ENGINE_CMDQ:
 		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_2D,
@@ -543,10 +546,13 @@ int __glamo_engine_enable(struct glamo_core *glamo, enum glamo_engine engine)
 		__reg_set_bit_mask(glamo, GLAMO_REG_HOSTBUS(2),
 				   GLAMO_HOSTBUS2_MMIO_EN_CQ,
 				   GLAMO_HOSTBUS2_MMIO_EN_CQ);
+		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
+		                   GLAMO_CLOCK_GEN51_EN_DIV_MCLK,
+						   0xffff);
 		break;
 	/* FIXME: Implementation */
 	default:
-		break;
+		return -EINVAL;
 	}
 
 	glamo->engine_enabled_bitfield |= 1 << engine;
@@ -589,17 +595,42 @@ int __glamo_engine_disable(struct glamo_core *glamo, enum glamo_engine engine)
 		break;
 
 	case GLAMO_ENGINE_MMC:
-//		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_MMC,
-//						   GLAMO_CLOCK_MMC_EN_M9CLK |
-//						   GLAMO_CLOCK_MMC_EN_TCLK |
-//						   GLAMO_CLOCK_MMC_DG_M9CLK |
-//						   GLAMO_CLOCK_MMC_DG_TCLK, 0);
+		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_MMC,
+						   GLAMO_CLOCK_MMC_EN_M9CLK |
+						   GLAMO_CLOCK_MMC_EN_TCLK |
+						   GLAMO_CLOCK_MMC_DG_M9CLK |
+						   GLAMO_CLOCK_MMC_DG_TCLK, 0);
 		/* disable the TCLK divider clk input */
-//		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
-//					GLAMO_CLOCK_GEN51_EN_DIV_TCLK, 0);
-
-	default:
+		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
+					GLAMO_CLOCK_GEN51_EN_DIV_TCLK, 0);
+        break;
+	case GLAMO_ENGINE_CMDQ:
+			__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_2D,
+			                   GLAMO_CLOCK_2D_EN_M6CLK,
+							   0);
+			__reg_set_bit_mask(glamo, GLAMO_REG_HOSTBUS(2),
+			                   GLAMO_HOSTBUS2_MMIO_EN_CQ,
+			                   GLAMO_HOSTBUS2_MMIO_EN_CQ);
+/*			__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
+			                   GLAMO_CLOCK_GEN51_EN_DIV_MCLK,
+							   0);*/
 		break;
+	case GLAMO_ENGINE_2D:
+			__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_2D,
+			                   GLAMO_CLOCK_2D_EN_M7CLK |
+							   GLAMO_CLOCK_2D_EN_GCLK |
+							   GLAMO_CLOCK_2D_DG_M7CLK |
+							   GLAMO_CLOCK_2D_DG_GCLK,
+							   0);
+			__reg_set_bit_mask(glamo, GLAMO_REG_HOSTBUS(2),
+			                   GLAMO_HOSTBUS2_MMIO_EN_2D,
+			                   GLAMO_HOSTBUS2_MMIO_EN_2D);
+			__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
+			                   GLAMO_CLOCK_GEN51_EN_DIV_GCLK,
+							   0);
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	glamo->engine_enabled_bitfield &= ~(1 << engine);
@@ -667,6 +698,9 @@ struct glamo_script reset_regs[] = {
 	[GLAMO_ENGINE_MMC] = {
 		GLAMO_REG_CLOCK_MMC, GLAMO_CLOCK_MMC_RESET
 	},
+    [GLAMO_ENGINE_CMDQ] = {
+        GLAMO_REG_CLOCK_2D, GLAMO_CLOCK_2D_CQ_RESET
+    },
 	[GLAMO_ENGINE_2D] = {
 		GLAMO_REG_CLOCK_2D, GLAMO_CLOCK_2D_RESET
 	},
