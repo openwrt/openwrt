@@ -11,6 +11,10 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/kernel.h>
+
+#include <asm/traps.h>
+
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
