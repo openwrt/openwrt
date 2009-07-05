@@ -355,7 +355,7 @@ define KernelPackage/ip6tables
   SUBMENU:=$(NF_MENU)
   TITLE:=IPv6 modules
   DEPENDS:=+kmod-ipv6
-  KCONFIG:=CONFIG_IP6_NF_IPTABLES
+  KCONFIG:=$(KCONFIG_IPT_IPV6)
   FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(IPT_IPV6-m)))
 endef
