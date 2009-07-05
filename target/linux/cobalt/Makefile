@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=cobalt
 BOARDNAME:=Cobalt Microservers
-FEATURES:=tgz pci
+FEATURES:=tgz pci ext2
 
-LINUX_VERSION:=2.6.30
+LINUX_VERSION:=2.6.30.1
 
 include $(INCLUDE_DIR)/target.mk
 

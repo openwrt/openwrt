@@ -16,20 +16,6 @@
  	err = mmc_sd_switch(card, 1, 0, 1, status);
  	if (err)
  		goto out;
---- a/drivers/mmc/host/mvsdio.c
-+++ b/drivers/mmc/host/mvsdio.c
-@@ -620,9 +620,11 @@ static void mvsd_set_ios(struct mmc_host
- 	if (ios->bus_width == MMC_BUS_WIDTH_4)
- 		ctrl_reg |= MVSD_HOST_CTRL_DATA_WIDTH_4_BITS;
- 
-+#if 0
- 	if (ios->timing == MMC_TIMING_MMC_HS ||
- 	    ios->timing == MMC_TIMING_SD_HS)
- 		ctrl_reg |= MVSD_HOST_CTRL_HI_SPEED_EN;
-+#endif
- 
- 	host->ctrl = ctrl_reg;
- 	mvsd_write(MVSD_HOST_CTRL, ctrl_reg);
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
 @@ -286,9 +286,9 @@ void mmc_set_data_timeout(struct mmc_dat
