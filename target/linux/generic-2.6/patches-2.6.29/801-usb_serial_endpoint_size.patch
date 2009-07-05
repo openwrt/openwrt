@@ -17,7 +17,7 @@
  		port->bulk_in_size = buffer_size;
  		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
  		port->bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
-@@ -1306,3 +1307,5 @@ MODULE_LICENSE("GPL");
+@@ -1307,3 +1308,5 @@ MODULE_LICENSE("GPL");
  
  module_param(debug, bool, S_IRUGO | S_IWUSR);
  MODULE_PARM_DESC(debug, "Debug enabled or not");
