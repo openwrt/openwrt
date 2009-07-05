@@ -169,7 +169,6 @@ config 6tunnel
         option remoteip4        '1.0.0.1'
         option localip4         '1.0.0.2'
         option localip6         '2001::DEAD::BEEF::1'
-        option prefix           '/64'
 \end{Verbatim}
 
 \begin{itemize}
@@ -184,8 +183,6 @@ config 6tunnel
     \item{\texttt{'localip6'}:}
 	IPv6 address to setup on your tunnel side
 	This address is given by the tunnel broker
-    \item{\texttt{'prefix'}:}
-	IPv6 prefix to setup on the LAN.
 \end{itemize}
 
 Using the same package you can also setup an IPv6 bridged connection :
