@@ -13,8 +13,9 @@ PKG_VERSION:=0.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=e100boot.tar.bz2
-PKG_SOURCE_URL:=http://www.acmesystems.it/download/owrt
-PKG_MD5SUM:=
+PKG_SOURCE_URL:=http://www.acmesystems.it/download/owrt \
+http://download.tuxfamily.org/crisos/repository/source/
+PKG_MD5SUM:=11fd53e7824dc550e4cffbc4cd114c3e
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
