@@ -24,6 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/e2fsprogs/Default
   URL:=http://e2fsprogs.sourceforge.net/
+  SUBMENU:=Filesystem
 endef
 
 define Package/e2fsprogs
