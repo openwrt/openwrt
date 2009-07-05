@@ -1,7 +1,6 @@
-diff -urNX /opt/Projects/openmoko-linux-2.6/orig/dontdiff /opt/Projects/openmoko-linux-2.6/orig/linux-2.6.29-rc3/drivers/serial/samsung.c /opt/Projects/openmoko-linux-2.6/drivers/serial/samsung.c
---- a/drivers/serial/samsung.c	2009-01-28 19:49:30.000000000 +0100
-+++ b/drivers/serial/samsung.c	2009-05-16 13:25:47.000000000 +0200
-@@ -1208,6 +1355,13 @@
+--- a/drivers/serial/samsung.c
++++ b/drivers/serial/samsung.c
+@@ -1263,6 +1263,13 @@ module_exit(s3c24xx_serial_modexit);
  #ifdef CONFIG_SERIAL_SAMSUNG_CONSOLE
  
  static struct uart_port *cons_uart;
@@ -15,7 +14,7 @@ diff -urNX /opt/Projects/openmoko-linux-2.6/orig/dontdiff /opt/Projects/openmoko
  
  static int
  s3c24xx_serial_console_txrdy(struct uart_port *port, unsigned int ufcon)
-@@ -1232,9 +1386,21 @@
+@@ -1287,9 +1294,21 @@ static void
  s3c24xx_serial_console_putchar(struct uart_port *port, int ch)
  {
  	unsigned int ufcon = rd_regl(cons_uart, S3C2410_UFCON);
@@ -37,4 +36,3 @@ diff -urNX /opt/Projects/openmoko-linux-2.6/orig/dontdiff /opt/Projects/openmoko
  }
  
  static void
-
