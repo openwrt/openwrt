@@ -103,7 +103,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -lib-$(CONFIG_SIBYTE_CFE_CONSOLE)	+= console.o
 --- a/arch/mips/sibyte/cfe/setup.c
 +++ /dev/null
-@@ -1,350 +0,0 @@
+@@ -1,344 +0,0 @@
 -/*
 - * Copyright (C) 2000, 2001, 2002, 2003 Broadcom Corporation
 - *
@@ -394,13 +394,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 -	 */
 -	cfe_cons_handle = cfe_getstdhandle(CFE_STDHANDLE_CONSOLE);
 -	if (cfe_getenv("LINUX_CMDLINE", arcs_cmdline, CL_SIZE) < 0) {
--		if (argc < 0) {
--			/*
--			 * It's OK for direct boot to not provide a
--			 *  command line
--			 */
--			strcpy(arcs_cmdline, "root=/dev/ram0 ");
--		} else {
+-		if (argc >= 0) {
 -			/* The loader should have set the command line */
 -			/* too early for panic to do any good */
 -			printk("LINUX_CMDLINE not defined in cfe.");
