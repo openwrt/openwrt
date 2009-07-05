@@ -48,5 +48,5 @@ int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
 
 	board_be_handler = ar71xx_be_handler;
 
-	return ar71xx_pci_bios_init();
+	return ar71xx_pcibios_init();
 }
