@@ -253,6 +253,17 @@ function add(ts)
 	end
 end
 
+function save_trigger(name)
+	if triggers.active[name] then
+		local slist = get_names(triggers.active[name])
+		if #slist > 0 then
+			tctx:set("uci_trigger", name, "sections", slist)
+		end
+	else
+		tctx:delete("uci_trigger", name)
+	end
+end
+
 function set(data, cursor)
 	assert(data ~= nil)
 	if cursor == nil then
@@ -296,10 +307,7 @@ function set(data, cursor)
 		if section[".name"] then
 			active[section[".name"]] = true
 		end
-		local slist = get_names(triggers.active[t.id])
-		if #slist > 0 then
-			tctx:set("uci_trigger", t.id, "sections", slist)
-		end
+		save_trigger(t.id)
 	end
 	tctx:save("uci_trigger")
 end
@@ -333,6 +341,46 @@ function get_active()
 		end
 	end
 	return slist
+end
+
+function set_active(trigger, sections)
+	if triggers == nil then
+		load_state()
+	end
+	if not triggers.list[trigger] then
+		return
+	end
+	if triggers.active[trigger] == nil then
+		tctx:set("uci_trigger", trigger, "trigger")
+		triggers.active[trigger] = {}
+	end
+	local active = triggers.active[trigger]
+	if triggers.list[trigger].section_only or sections ~= nil then
+		for i, t in ipairs(sections) do
+			triggers.active[trigger][t] = true
+		end
+	end
+	save_trigger(trigger)
+	tctx:save("uci_trigger")
+end
+
+function clear_active(trigger, sections)
+	if triggers == nil then
+		load_state()
+	end
+	if triggers.list[trigger] == nil or triggers.active[trigger] == nil then
+		return
+	end
+	local active = triggers.active[trigger]
+	if not triggers.list[trigger].section_only or sections == nil then
+		triggers.active[trigger] = nil
+	else
+		for i, t in ipairs(sections) do
+			triggers.active[trigger][t] = false
+		end
+	end
+	save_trigger(trigger)
+	tctx:save("uci_trigger")
 end
 
 function run(ts)

@@ -9,6 +9,8 @@ function usage()
 	print("    -t: show matching UCI triggers")
 	print("    -s: show information about tasks to be executed")
 	print("    -r: reset all triggers")
+	print("    -C <trigger> [<section>]: force clear a trigger")
+	print("    -S <trigger> [<section>]: force set a trigger")
 	print("")
 end
 
@@ -39,6 +41,14 @@ elseif arg[1] == "-a" then
 	uci.trigger.run()
 elseif arg[1] == "-r" then
 	uci.trigger.reset_state()
+elseif arg[1] == "-S" then
+	local trigger = arg[2]
+	local section = arg[3]
+	uci.trigger.set_active(trigger, section)
+elseif arg[1] == "-C" then
+	local trigger = arg[2]
+	local section = arg[3]
+	uci.trigger.clear_active(trigger, section)
 else
 	usage()
 end
