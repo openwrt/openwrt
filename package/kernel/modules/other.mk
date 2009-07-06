@@ -674,6 +674,23 @@ endef
 $(eval $(call KernelPackage,input-polldev))
 
 
+define KernelPackage/input-gpio-keys
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPIO key support
+  DEPENDS:= @GPIO_SUPPORT +kmod-input-core
+  KCONFIG:=CONFIG_KEYBOARD_GPIO
+  FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,gpio_keys)
+endef
+
+define KernelPackage/input-gpio-keys/description
+ This driver implements support for buttons connected
+ to GPIO pins of various CPUs (and some other chips).
+endef
+
+$(eval $(call KernelPackage,input-gpio-keys))
+
+
 define KernelPackage/input-gpio-buttons
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Polled GPIO buttons input device
