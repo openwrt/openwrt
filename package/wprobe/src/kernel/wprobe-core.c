@@ -35,6 +35,8 @@
 #endif
 
 #define WPROBE_MIN_INTERVAL		100 /* minimum measurement interval in msecs */
+#define WPROBE_MAX_FILTER_SIZE	1024
+#define WPROBE_MAX_FRAME_SIZE	1900
 
 static struct list_head wprobe_if;
 static spinlock_t wprobe_lock;
@@ -48,8 +50,17 @@ static struct genl_family wprobe_fam = {
 	.maxattr = WPROBE_ATTR_LAST,
 };
 
+/* fake radiotap header */
+struct wprobe_rtap_hdr {
+	__u8 version;
+	__u8 padding;
+	__le16 len;
+	__le32 present;
+};
+
 static void wprobe_update_stats(struct wprobe_iface *dev, struct wprobe_link *l);
 static int wprobe_sync_data(struct wprobe_iface *dev, struct wprobe_link *l, bool query);
+static void wprobe_free_filter(struct wprobe_filter *f);
 
 int
 wprobe_add_link(struct wprobe_iface *s, struct wprobe_link *l, const char *addr)
@@ -111,11 +122,11 @@ wprobe_add_iface(struct wprobe_iface *s)
 	INIT_LIST_HEAD(&s->links);
 	setup_timer(&s->measure_timer, wprobe_measure_timer, (unsigned long) s);
 
-	vsize = max(s->n_link_items, s->n_global_items);
-	s->val = kzalloc(sizeof(struct wprobe_value) * vsize, GFP_ATOMIC);
+	s->val = kzalloc(sizeof(struct wprobe_value) * s->n_global_items, GFP_ATOMIC);
 	if (!s->val)
 		goto error;
 
+	vsize = max(s->n_link_items, s->n_global_items);
 	s->query_val = kzalloc(sizeof(struct wprobe_value) * vsize, GFP_ATOMIC);
 	if (!s->query_val)
 		goto error;
@@ -160,6 +171,8 @@ wprobe_remove_iface(struct wprobe_iface *s)
 
 	kfree(s->val);
 	kfree(s->query_val);
+	if (s->active_filter)
+		wprobe_free_filter(s->active_filter);
 }
 EXPORT_SYMBOL(wprobe_remove_iface);
 
@@ -186,6 +199,69 @@ wprobe_get_dev(struct nlattr *attr)
 
 	return dev;
 }
+
+int
+wprobe_add_frame(struct wprobe_iface *dev, const struct wprobe_wlan_hdr *hdr, void *data, int len)
+{
+	struct wprobe_filter *f;
+	struct sk_buff *skb;
+	unsigned long flags;
+	int i, j;
+
+	rcu_read_lock();
+	f = rcu_dereference(dev->active_filter);
+	if (!f)
+		goto out;
+
+	spin_lock_irqsave(&f->lock, flags);
+
+	skb = f->skb;
+	skb->len = sizeof(struct wprobe_rtap_hdr);
+	skb->tail = skb->data + skb->len;
+	if (len + skb->len > WPROBE_MAX_FRAME_SIZE)
+		len = WPROBE_MAX_FRAME_SIZE - skb->len;
+
+	memcpy(skb_put(skb, f->hdrlen), hdr, sizeof(struct wprobe_wlan_hdr));
+	memcpy(skb_put(skb, len), data, len);
+
+	for(i = 0; i < f->n_groups; i++) {
+		struct wprobe_filter_group *fg = &f->groups[i];
+		bool found = false;
+		int def = -1;
+
+		for (j = 0; j < fg->n_items; j++) {
+			struct wprobe_filter_item *fi = fg->items[j];
+
+			if (!fi->hdr.n_items) {
+				def = j;
+				continue;
+			}
+			if (sk_run_filter(skb, fi->filter, fi->hdr.n_items) == 0)
+				continue;
+
+			found = true;
+			break;
+		}
+		if (!found && def >= 0) {
+			j = def;
+			found = true;
+		}
+		if (found) {
+			struct wprobe_filter_counter *c = &fg->counters[j];
+
+			if (hdr->type >= WPROBE_PKT_TX)
+				c->tx++;
+			else
+				c->rx++;
+		}
+	}
+
+	spin_unlock_irqrestore(&f->lock, flags);
+out:
+	rcu_read_unlock();
+	return 0;
+}
+EXPORT_SYMBOL(wprobe_add_frame);
 
 static int
 wprobe_sync_data(struct wprobe_iface *dev, struct wprobe_link *l, bool query)
@@ -325,6 +401,7 @@ static const struct nla_policy wprobe_policy[WPROBE_ATTR_LAST+1] = {
 	[WPROBE_ATTR_SAMPLES_MAX] = { .type = NLA_U32 },
 	[WPROBE_ATTR_SAMPLES_SCALE_M] = { .type = NLA_U32 },
 	[WPROBE_ATTR_SAMPLES_SCALE_D] = { .type = NLA_U32 },
+	[WPROBE_ATTR_FILTER] = { .type = NLA_BINARY, .len = 32768 },
 };
 
 static bool
@@ -435,6 +512,86 @@ wprobe_find_link(struct wprobe_iface *dev, const char *mac)
 			return l;
 	}
 	return NULL;
+}
+
+static bool
+wprobe_dump_filter_group(struct sk_buff *msg, struct wprobe_filter_group *fg, struct netlink_callback *cb)
+{
+	struct genlmsghdr *hdr;
+	struct nlattr *group, *item;
+	int i;
+
+	hdr = genlmsg_put(msg, NETLINK_CB(cb->skb).pid, cb->nlh->nlmsg_seq,
+			&wprobe_fam, NLM_F_MULTI, WPROBE_CMD_GET_FILTER);
+	if (!hdr)
+		return false;
+
+	NLA_PUT_STRING(msg, WPROBE_ATTR_NAME, fg->name);
+	group = nla_nest_start(msg, WPROBE_ATTR_FILTER_GROUP);
+	for (i = 0; i < fg->n_items; i++) {
+		struct wprobe_filter_item *fi = fg->items[i];
+		struct wprobe_filter_counter *fc = &fg->counters[i];
+
+		item = nla_nest_start(msg, WPROBE_ATTR_FILTER_GROUP);
+		NLA_PUT_STRING(msg, WPROBE_ATTR_NAME, fi->hdr.name);
+		NLA_PUT_U64(msg, WPROBE_ATTR_RXCOUNT, fc->rx);
+		NLA_PUT_U64(msg, WPROBE_ATTR_TXCOUNT, fc->tx);
+		nla_nest_end(msg, item);
+	}
+
+	nla_nest_end(msg, group);
+	genlmsg_end(msg, hdr);
+	return true;
+
+nla_put_failure:
+	genlmsg_cancel(msg, hdr);
+	return false;
+}
+
+static int
+wprobe_dump_filters(struct sk_buff *skb, struct netlink_callback *cb)
+{
+	struct wprobe_iface *dev = (struct wprobe_iface *)cb->args[0];
+	struct wprobe_filter *f;
+	int err = 0;
+	int i = 0;
+
+	if (!dev) {
+		err = nlmsg_parse(cb->nlh, GENL_HDRLEN + wprobe_fam.hdrsize,
+				wprobe_fam.attrbuf, wprobe_fam.maxattr, wprobe_policy);
+		if (err)
+			goto done;
+
+		dev = wprobe_get_dev(wprobe_fam.attrbuf[WPROBE_ATTR_INTERFACE]);
+		if (!dev) {
+			err = -ENODEV;
+			goto done;
+		}
+
+		cb->args[0] = (long) dev;
+		cb->args[1] = 0;
+	} else {
+		if (!wprobe_check_ptr(&wprobe_if, &dev->list)) {
+			err = -ENODEV;
+			goto done;
+		}
+	}
+
+	rcu_read_lock();
+	f = rcu_dereference(dev->active_filter);
+	if (!f)
+		goto abort;
+
+	for (i = cb->args[1]; i < f->n_groups; i++) {
+		if (unlikely(!wprobe_dump_filter_group(skb, &f->groups[i], cb)))
+			break;
+	}
+	cb->args[1] = i;
+abort:
+	rcu_read_unlock();
+	err = skb->len;
+done:
+	return err;
 }
 
 static bool
@@ -671,6 +828,158 @@ done:
 }
 
 static int
+wprobe_check_filter(void *data, int datalen, int gs)
+{
+	struct wprobe_filter_item_hdr *hdr;
+	void *orig_data = data;
+	void *end = data + datalen;
+	int i, j, k, is, cur_is;
+
+	for (i = j = is = 0; i < gs; i++) {
+		hdr = data;
+		data += sizeof(*hdr);
+
+		if (data > end)
+			goto overrun;
+
+		hdr->name[31] = 0;
+		cur_is = be32_to_cpu(hdr->n_items);
+		is += cur_is;
+		for (j = 0; j < cur_is; j++) {
+			struct sock_filter *sf;
+			int n_items;
+
+			hdr = data;
+			data += sizeof(*hdr);
+			if (data > end)
+				goto overrun;
+
+			if (hdr->n_items > 1024)
+				goto overrun;
+
+			hdr->name[31] = 0;
+			hdr->n_items = n_items = be32_to_cpu(hdr->n_items);
+			sf = data;
+			if (n_items > 0) {
+				for (k = 0; k < n_items; k++) {
+					sf->code = be16_to_cpu(sf->code);
+					sf->k = be32_to_cpu(sf->k);
+					sf++;
+				}
+				if (sk_chk_filter(data, n_items) != 0) {
+					printk("%s: filter check failed at group %d, item %d\n", __func__, i, j);
+					return 0;
+				}
+			}
+			data += n_items * sizeof(struct sock_filter);
+		}
+	}
+	return is;
+
+overrun:
+	printk(KERN_ERR "%s: overrun during filter check at group %d, item %d, offset=%d, len=%d\n", __func__, i, j, (data - orig_data), datalen);
+	return 0;
+}
+
+static void
+wprobe_free_filter(struct wprobe_filter *f)
+{
+	if (f->skb)
+		kfree_skb(f->skb);
+	if (f->data)
+		kfree(f->data);
+	if (f->items)
+		kfree(f->items);
+	if (f->counters)
+		kfree(f->counters);
+	kfree(f);
+}
+
+
+static int
+wprobe_set_filter(struct wprobe_iface *dev, void *data, int len)
+{
+	struct wprobe_filter_hdr *fhdr;
+	struct wprobe_rtap_hdr *rtap;
+	struct wprobe_filter *f;
+	int i, j, cur_is, is, gs;
+
+	if (len < sizeof(*fhdr))
+		return -EINVAL;
+
+	fhdr = data;
+	data += sizeof(*fhdr);
+	len -= sizeof(*fhdr);
+
+	if (memcmp(fhdr->magic, "WPFF", 4) != 0) {
+		printk(KERN_ERR "%s: filter rejected (invalid magic)\n", __func__);
+		return -EINVAL;
+	}
+
+	gs = be16_to_cpu(fhdr->n_groups);
+	is = wprobe_check_filter(data, len, gs);
+	if (is == 0)
+		return -EINVAL;
+
+	f = kzalloc(sizeof(struct wprobe_filter) +
+		gs * sizeof(struct wprobe_filter_group), GFP_ATOMIC);
+	if (!f)
+		return -ENOMEM;
+
+	f->skb = alloc_skb(WPROBE_MAX_FRAME_SIZE, GFP_ATOMIC);
+	if (!f->skb)
+		goto error;
+
+	f->data = kmalloc(len, GFP_ATOMIC);
+	if (!f->data)
+		goto error;
+
+	f->items = kzalloc(sizeof(struct wprobe_filter_item *) * is, GFP_ATOMIC);
+	if (!f->items)
+		goto error;
+
+	f->counters = kzalloc(sizeof(struct wprobe_filter_counter) * is, GFP_ATOMIC);
+	if (!f->counters)
+		goto error;
+
+	spin_lock_init(&f->lock);
+	memcpy(f->data, data, len);
+	f->n_groups = gs;
+
+	if (f->hdrlen < sizeof(struct wprobe_wlan_hdr))
+		f->hdrlen = sizeof(struct wprobe_wlan_hdr);
+
+	rtap = (struct wprobe_rtap_hdr *)skb_put(f->skb, sizeof(*rtap));
+	memset(rtap, 0, sizeof(*rtap));
+	rtap->len = cpu_to_le16(sizeof(struct wprobe_rtap_hdr) + f->hdrlen);
+	data = f->data;
+
+	cur_is = 0;
+	for (i = 0; i < gs; i++) {
+		struct wprobe_filter_item_hdr *hdr = data;
+		struct wprobe_filter_group *g = &f->groups[i];
+
+		data += sizeof(*hdr);
+		g->name = hdr->name;
+		g->items = &f->items[cur_is];
+		g->counters = &f->counters[cur_is];
+		g->n_items = hdr->n_items;
+
+		for (j = 0; j < g->n_items; j++) {
+			hdr = data;
+			f->items[cur_is++] = data;
+			data += sizeof(*hdr) + be32_to_cpu(hdr->n_items) * sizeof(struct sock_filter);
+		}
+	}
+	rcu_assign_pointer(dev->active_filter, f);
+	return 0;
+
+error:
+	wprobe_free_filter(f);
+	return -ENOMEM;
+}
+
+static int
 wprobe_set_config(struct sk_buff *skb, struct genl_info *info)
 {
 	struct wprobe_iface *dev;
@@ -678,6 +987,8 @@ wprobe_set_config(struct sk_buff *skb, struct genl_info *info)
 	int err = -ENOENT;
 	u32 scale_min, scale_max;
 	u32 scale_m, scale_d;
+	struct nlattr *attr;
+	struct wprobe_filter *filter_free = NULL;
 
 	rcu_read_lock();
 	dev = wprobe_get_dev(info->attrs[WPROBE_ATTR_INTERFACE]);
@@ -691,15 +1002,28 @@ wprobe_set_config(struct sk_buff *skb, struct genl_info *info)
 		goto done;
 	}
 
+	if (info->attrs[WPROBE_ATTR_FLAGS]) {
+		u32 flags = nla_get_u32(info->attrs[WPROBE_ATTR_FLAGS]);
+
+		if (flags & BIT(WPROBE_F_RESET)) {
+			struct wprobe_link *l;
+
+			memset(dev->val, 0, sizeof(struct wprobe_value) * dev->n_global_items);
+			list_for_each_entry_rcu(l, &dev->links, list) {
+				memset(l->val, 0, sizeof(struct wprobe_value) * dev->n_link_items);
+			}
+		}
+	}
+
 	if (info->attrs[WPROBE_ATTR_SAMPLES_MIN] ||
 		info->attrs[WPROBE_ATTR_SAMPLES_MAX]) {
-		if (info->attrs[WPROBE_ATTR_SAMPLES_MIN])
-			scale_min = nla_get_u32(info->attrs[WPROBE_ATTR_SAMPLES_MIN]);
+		if ((attr = info->attrs[WPROBE_ATTR_SAMPLES_MIN]))
+			scale_min = nla_get_u32(attr);
 		else
 			scale_min = dev->scale_min;
 
-		if (info->attrs[WPROBE_ATTR_SAMPLES_MAX])
-			scale_max = nla_get_u32(info->attrs[WPROBE_ATTR_SAMPLES_MAX]);
+		if ((attr = info->attrs[WPROBE_ATTR_SAMPLES_MAX]))
+			scale_max = nla_get_u32(attr);
 		else
 			scale_max = dev->scale_max;
 
@@ -725,6 +1049,13 @@ wprobe_set_config(struct sk_buff *skb, struct genl_info *info)
 		dev->scale_d = scale_d;
 	}
 
+	if ((attr = info->attrs[WPROBE_ATTR_FILTER])) {
+		filter_free = rcu_dereference(dev->active_filter);
+		rcu_assign_pointer(dev->active_filter, NULL);
+		if (nla_len(attr) > 0)
+			wprobe_set_filter(dev, nla_data(attr), nla_len(attr));
+	}
+
 	err = 0;
 	if (info->attrs[WPROBE_ATTR_INTERVAL]) {
 		/* change of measurement interval requested */
@@ -736,6 +1067,10 @@ done:
 	spin_unlock_irqrestore(&dev->lock, flags);
 done_unlocked:
 	rcu_read_unlock();
+	if (filter_free) {
+		synchronize_rcu();
+		wprobe_free_filter(filter_free);
+	}
 	return err;
 }
 
@@ -763,6 +1098,12 @@ static struct genl_ops wprobe_ops[] = {
 	{
 		.cmd = WPROBE_CMD_CONFIG,
 		.doit = wprobe_set_config,
+		.policy = wprobe_policy,
+	},
+	{
+		.cmd = WPROBE_CMD_GET_FILTER,
+		.dumpit = wprobe_dump_filters,
+		.policy = wprobe_policy,
 	},
 };
 

@@ -87,8 +87,19 @@ struct wprobe_link {
 	unsigned char addr[6];
 };
 
+struct wprobe_filter_item {
+	char name[32];
+	uint64_t rx;
+	uint64_t tx;
+};
+
+struct wprobe_iface_ops;
 struct wprobe_iface {
+	const struct wprobe_iface_ops *ops;
+
+	int sockfd;
 	const char *ifname;
+	unsigned int genl_family;
 	char addr[6];
 
 	struct list_head global_attr;
@@ -101,11 +112,23 @@ struct wprobe_iface {
 	int scale_max;
 	int scale_m;
 	int scale_d;
+
+	/* filter */
+	void *filter;
+
+	/* filter_len:
+	 *   set to -1 to drop the current filter
+	 *   automatically reset to 0 after config apply
+	 */
+	int filter_len;
 };
+
+typedef void (*wprobe_filter_cb)(void *arg, const char *group, struct wprobe_filter_item *items, int n_items);
+extern int wprobe_port;
 
 /**
  * wprobe_update_links: get a list of all link partners
- * @ifname: name of the wprobe interface
+ * @dev: wprobe device structure
  * @list: linked list for storing link descriptions
  *
  * when wprobe_update_links is called multiple times, the linked list 
@@ -114,8 +137,16 @@ struct wprobe_iface {
 extern int wprobe_update_links(struct wprobe_iface *dev);
 
 /**
+ * wprobe_dump_filters: dump all layer 2 filter counters
+ * @dev: wprobe device structure
+ * @cb: callback (called once per filter group)
+ * @arg: user argument for the callback
+ */
+extern int wprobe_dump_filters(struct wprobe_iface *dev, wprobe_filter_cb cb, void *arg);
+
+/**
  * wprobe_measure: start a measurement request for all global attributes
- * @ifname: name of the wprobe interface
+ * @dev: wprobe device structure
  *
  * not all attributes are automatically filled with data, since for some
  * it may be desirable to control the sampling interval from user space
@@ -124,13 +155,19 @@ extern int wprobe_update_links(struct wprobe_iface *dev);
 extern int wprobe_measure(struct wprobe_iface *dev);
 
 /**
- * wprobe_get_dev: get device information
+ * wprobe_get_dev: get a handle to a local wprobe device
  * @ifname: name of the wprobe interface
  *
  * queries the wprobe interface for all attributes
  * must be freed with wprobe_free_dev
  */
 extern struct wprobe_iface *wprobe_get_dev(const char *ifname);
+
+/**
+ * wprobe_get_auto: get a handle to a local or remote wprobe device
+ * @arg: pointer to the wprobe device, either <dev> (local) or <host>:<dev> (remote)
+ */
+extern struct wprobe_iface *wprobe_get_auto(const char *arg, char **err);
 
 /**
  * wprobe_get_dev: free all device information
@@ -155,5 +192,22 @@ extern int wprobe_apply_config(struct wprobe_iface *dev);
  * if addr is set, per-link values for the given address are stored in the link attributes list
  */
 extern int wprobe_request_data(struct wprobe_iface *dev, const unsigned char *addr);
+
+/**
+ * wprobe_server_init: send a wprobe server init message to a server's client socket
+ * @socket: socket of the connection to the client
+ */
+extern int wprobe_server_init(int socket);
+
+/**
+ * wprobe_server_handle: read a request from the client socket, process it, send the response
+ * @socket: socket of the connection to the client
+ */
+extern int wprobe_server_handle(int socket);
+
+/**
+ * wprobe_server_done: release memory allocated for the server connection
+ */
+extern void wprobe_server_done(void);
 
 #endif
