@@ -23,6 +23,7 @@
 #include <linux/module.h>
 #include <linux/list.h>
 #include <linux/timer.h>
+#include <linux/filter.h>
 #include <net/genetlink.h>
 #endif
 
@@ -103,6 +104,11 @@ enum wprobe_attr {
 	WPROBE_ATTR_SAMPLES_MAX,
 	WPROBE_ATTR_SAMPLES_SCALE_M,
 	WPROBE_ATTR_SAMPLES_SCALE_D,
+	WPROBE_ATTR_FILTER,
+
+	WPROBE_ATTR_FILTER_GROUP,
+	WPROBE_ATTR_RXCOUNT,
+	WPROBE_ATTR_TXCOUNT,
 
 	WPROBE_ATTR_LAST
 };
@@ -118,6 +124,8 @@ enum wprobe_attr {
  * @WPROBE_CMD_SET_FLAGS: set global/link flags
  * @WPROBE_CMD_MEASURE: take a snapshot of the current data
  * @WPROBE_CMD_GET_LINKS: get a list of links
+ * @WPROBE_CMD_CONFIG: set config options
+ * @WPROBE_CMD_GET_FILTER: get counters for active filters
  *
  * @WPROBE_CMD_LAST: unused
  * 
@@ -133,13 +141,14 @@ enum wprobe_cmd {
 	WPROBE_CMD_MEASURE,
 	WPROBE_CMD_GET_LINKS,
 	WPROBE_CMD_CONFIG,
+	WPROBE_CMD_GET_FILTER,
 	WPROBE_CMD_LAST
 };
 
 /**
  * enum wprobe_flags: flags for wprobe links and items
  * @WPROBE_F_KEEPSTAT: keep statistics for this link/device
- * @WPROBE_F_RESET: reset statistics now (used only in WPROBE_CMD_SET_LINK)
+ * @WPROBE_F_RESET: reset statistics now
  * @WPROBE_F_NEWDATA: used to indicate that a value has been updated
  */
 enum wprobe_flags {
@@ -153,6 +162,7 @@ enum wprobe_flags {
 struct wprobe_link;
 struct wprobe_item;
 struct wprobe_source;
+struct wprobe_value;
 
 /**
  * struct wprobe_link - data structure describing a wireless link
@@ -170,7 +180,7 @@ struct wprobe_link {
 	char addr[ETH_ALEN];
 	u32 flags;
 	void *priv;
-	void *val;
+	struct wprobe_value *val;
 };
 
 /** 
@@ -211,6 +221,58 @@ struct wprobe_value {
 	u64 scale_timestamp;
 };
 
+struct wprobe_filter_item_hdr {
+	char name[32];
+	__be32 n_items;
+} __attribute__((packed));
+
+struct wprobe_filter_item {
+	struct wprobe_filter_item_hdr hdr;
+	struct sock_filter filter[];
+} __attribute__((packed));
+
+struct wprobe_filter_counter {
+	u64 tx;
+	u64 rx;
+};
+
+struct wprobe_filter_group {
+	const char *name;
+	int n_items;
+	struct wprobe_filter_item **items;
+	struct wprobe_filter_counter *counters;
+};
+
+struct wprobe_filter_hdr {
+	__u8 magic[4];
+	__u8 version;
+	__u8 hdrlen;
+	__u16 n_groups;
+} __attribute__((packed));
+
+struct wprobe_filter {
+	spinlock_t lock;
+	struct sk_buff *skb;
+	void *data;
+	int n_groups;
+	int hdrlen;
+	struct wprobe_filter_item **items;
+	struct wprobe_filter_counter *counters;
+	struct wprobe_filter_group groups[];
+};
+
+enum {
+	WPROBE_PKT_RX = 0x00,
+	WPROBE_PKT_TX = 0x10,
+};
+
+struct wprobe_wlan_hdr {
+	u16 len;
+	u8 snr;
+	u8 type;
+} __attribute__((packed));
+
+
 /**
  * struct wprobe_source - data structure describing a wireless interface
  *
@@ -250,8 +312,9 @@ struct wprobe_iface {
 	struct list_head list;
 	struct list_head links;
 	spinlock_t lock;
-	void *val;
-	void *query_val;
+	struct wprobe_value *val;
+	struct wprobe_value *query_val;
+	struct wprobe_filter *active_filter;
 
 	u32 measure_interval;
 	struct timer_list measure_timer;
@@ -261,6 +324,7 @@ struct wprobe_iface {
 	u32 scale_m;
 	u32 scale_d;
 };
+
 
 #define WPROBE_FILL_BEGIN(_ptr, _list) do {			\
 	struct wprobe_value *__val = (_ptr);			\
@@ -318,6 +382,15 @@ extern void __weak wprobe_remove_link(struct wprobe_iface *dev, struct wprobe_li
  * if l == NULL, then the stats for globals are updated
  */
 extern void __weak wprobe_update_stats(struct wprobe_iface *dev, struct wprobe_link *l);
+
+/**
+ * wprobe_add_frame: add frame for layer 2 analysis
+ * @dev: wprobe_iface structure describing the interface
+ * @hdr: metadata for the frame
+ * @data: 802.11 header pointer
+ * @len: length of the 802.11 header
+ */
+extern int __weak wprobe_add_frame(struct wprobe_iface *dev, const struct wprobe_wlan_hdr *hdr, void *data, int len);
 
 #endif /* __KERNEL__ */
 

@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/ath/ath_wprobe.c
-@@ -0,0 +1,392 @@
+@@ -0,0 +1,433 @@
 +#include <net80211/ieee80211_node.h>
 +#include <linux/wprobe.h>
 +
@@ -206,8 +206,36 @@
 +	if ((rate < 0) || (rate >= rt->rateCount))
 +		return -1;
 +
-+	return rt->info[rate].rateKbps / 10;
++	return rt->info[rate].rateKbps;
 +}
++
++static void
++ath_wprobe_report_rx(struct ieee80211vap *vap, struct ath_rx_status *rs, struct sk_buff *skb)
++{
++	const struct ieee80211_frame *wh = (struct ieee80211_frame *)skb->data;
++	struct wprobe_wlan_hdr hdr;
++	struct ath_vap *avp;
++	int hdrsize;
++
++	if (wprobe_disabled())
++		return;
++
++	avp = ATH_VAP(vap);
++	avp->av_rxframes++;
++	if (wh->i_fc[0] == (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_PROBE_REQ))
++		avp->av_rxprobereq++;
++
++	memset(&hdr, 0, sizeof(hdr));
++	hdr.len = skb->len;
++	hdr.snr = rs->rs_rssi;
++	hdr.type = WPROBE_PKT_RX;
++	if ((wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
++		hdrsize = sizeof(struct ieee80211_ctlframe_addr2);
++	else
++		hdrsize = ieee80211_hdrsize(skb->data);
++	wprobe_add_frame(&avp->av_wpif, &hdr, skb->data, hdrsize + 0x42);
++}
++
 +
 +static void
 +ath_node_sample_rx(struct ieee80211_node *ni, struct ath_rx_status *rs)
@@ -237,7 +265,33 @@
 +}
 +
 +static void
-+ath_node_sample_tx(struct ieee80211_node *ni, struct ath_tx_status *ts, int len)
++ath_wprobe_report_tx(struct ieee80211vap *vap, struct ath_tx_status *ts, struct sk_buff *skb)
++{
++	const struct ieee80211_frame *wh = (struct ieee80211_frame *)skb->data;
++	struct wprobe_wlan_hdr hdr;
++	struct ath_vap *avp;
++	int hdrsize;
++
++	if (wprobe_disabled())
++		return;
++
++	avp = ATH_VAP(vap);
++
++	memset(&hdr, 0, sizeof(hdr));
++	hdr.len = skb->len;
++	hdr.snr = ts->ts_rssi;
++	hdr.type = WPROBE_PKT_TX;
++	if ((wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_CTL)
++		hdrsize = sizeof(struct ieee80211_ctlframe_addr2);
++	else
++		hdrsize = ieee80211_hdrsize(skb->data);
++	wprobe_add_frame(&avp->av_wpif, &hdr, skb->data, hdrsize + 0x42);
++}
++
++
++
++static void
++ath_node_sample_tx(struct ieee80211_node *ni, struct ath_tx_status *ts, struct sk_buff *skb)
 +{
 +	struct ath_node *an = ATH_NODE(ni);
 +	struct ieee80211vap *vap = ni->ni_vap;
@@ -246,10 +300,12 @@
 +	struct wprobe_value *v = l->val;
 +	unsigned long flags;
 +	int rate, rexmit_counter;
++	int len = skb->len;
 +
 +	if (wprobe_disabled() || !an->an_wplink_active || !l->val)
 +		return;
 +
++	ath_wprobe_report_tx(vap, ts, skb);
 +	rate = ath_lookup_rateval(ni, ts->ts_rate);
 +
 +	spin_lock_irqsave(&l->iface->lock, flags);
@@ -272,21 +328,6 @@
 +	WPROBE_FILL_END();
 +	wprobe_update_stats(l->iface, l);
 +	spin_unlock_irqrestore(&l->iface->lock, flags);
-+}
-+
-+static void
-+ath_wprobe_report_rx(struct ieee80211vap *vap, struct sk_buff *skb)
-+{
-+	struct ieee80211_frame *wh = (struct ieee80211_frame *)skb->data;
-+	struct ath_vap *avp;
-+
-+	if (wprobe_disabled())
-+		return;
-+
-+	avp = ATH_VAP(vap);
-+	avp->av_rxframes++;
-+	if (wh->i_fc[0] == (IEEE80211_FC0_TYPE_MGT | IEEE80211_FC0_SUBTYPE_PROBE_REQ))
-+		avp->av_rxprobereq++;
 +}
 +
 +static void
@@ -432,7 +473,7 @@
  			}
  			ATH_RSSI_LPF(ATH_NODE(ni)->an_avgrssi, rs->rs_rssi);
 +			ath_node_sample_rx(ni, rs);
-+			ath_wprobe_report_rx(ni->ni_vap, skb);
++			ath_wprobe_report_rx(ni->ni_vap, rs, skb);
  			type = ieee80211_input(ni->ni_vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  			ieee80211_unref_node(&ni);
  		} else {
@@ -442,12 +483,12 @@
  			vap = ieee80211_find_rxvap(ic, wh->i_addr1);
 -			if (vap)
 +			if (vap) {
-+				ath_wprobe_report_rx(vap, skb);
++				ath_wprobe_report_rx(vap, rs, skb);
  				ni = ieee80211_find_rxnode(ic, vap, wh);
 -			else
 +			} else {
 +				TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
-+					ath_wprobe_report_rx(vap, skb);
++					ath_wprobe_report_rx(vap, rs, skb);
 +				}
 +				vap = NULL;
  				ni = NULL;
@@ -465,7 +506,7 @@
  				sc->sc_stats.ast_tx_rssi = ts->ts_rssi;
  				ATH_RSSI_LPF(an->an_halstats.ns_avgtxrssi,
  					ts->ts_rssi);
-+					ath_node_sample_tx(&an->an_node, ts, bf->bf_skb->len);
++					ath_node_sample_tx(&an->an_node, ts, bf->bf_skb);
  				if (bf->bf_skb->priority == WME_AC_VO ||
  				    bf->bf_skb->priority == WME_AC_VI)
  					ni->ni_ic->ic_wme.wme_hipri_traffic++;

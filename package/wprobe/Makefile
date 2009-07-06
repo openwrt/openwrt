@@ -30,22 +30,22 @@ define KernelPackage/wprobe/description
   A module that exports measurement data from wireless driver to user space
 endef
 
-define Package/wprobe-info
+define Package/wprobe-util
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=+kmod-wprobe +libnl-tiny
   TITLE:=Wireless measurement utility
 endef
 
-define Package/wprobe-info/description
-  wprobe-info uses the wprobe kernel module to query
+define Package/wprobe-util/description
+  wprobe-util uses the wprobe kernel module to query
   wireless driver measurement data from an interface
 endef
 
 define Package/wprobe-export
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+wprobe-info
+  DEPENDS:=+wprobe-util
   TITLE:=Wireless measurement data exporter
 endef
 
@@ -82,6 +82,7 @@ define Build/Compile/lib
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(PKG_BUILD_DIR)/kernel" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
+		HOST_OS=Linux \
 		LIBNL="-lnl-tiny"
 endef
 
@@ -107,9 +108,9 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/kernel/linux $(1)/usr/include/wprobe
 endef
 
-define Package/wprobe-info/install
+define Package/wprobe-util/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/user/wprobe-info $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/user/wprobe-util $(1)/sbin/
 endef
 
 define Package/wprobe-export/install
@@ -120,5 +121,5 @@ define Package/wprobe-export/install
 endef
 
 $(eval $(call KernelPackage,wprobe))
-$(eval $(call BuildPackage,wprobe-info))
+$(eval $(call BuildPackage,wprobe-util))
 $(eval $(call BuildPackage,wprobe-export))

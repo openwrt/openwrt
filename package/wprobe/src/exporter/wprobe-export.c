@@ -252,7 +252,7 @@ int main ( int argc, char **argv )
 		return -1;
 	}
 
-	dev = wprobe_get_dev(ifname);
+	dev = wprobe_get_auto(ifname);
 	if (!dev || (list_empty(&dev->global_attr) && list_empty(&dev->link_attr))) {
 		fprintf(stderr, "Cannot connect to wprobe on interface '%s'\n", ifname);
 		return -1;
