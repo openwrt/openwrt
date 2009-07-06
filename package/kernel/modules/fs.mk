@@ -539,3 +539,37 @@ define KernelPackage/nls-utf8/description
 endef
 
 $(eval $(call KernelPackage,nls-utf8))
+
+
+define KernelPackage/nls-iso8859-13
+  SUBMENU:=$(FS_MENU)
+  TITLE:=ISO 8859-13 (Latin 7; Baltic)
+  KCONFIG:=CONFIG_NLS_ISO8859_13
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-13.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-13)
+$(call KernelPackage/nls/Depends)
+endef
+
+
+define KernelPackage/nls-iso8859-13/description
+ Kernel module for NLS ISO 8859-13 (Latin 7; Baltic)
+endef
+
+$(eval $(call KernelPackage,nls-iso8859-13))
+
+define KernelPackage/nls-cp775
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Codepage 775 (Baltic Rim)
+  KCONFIG:=CONFIG_NLS_CODEPAGE_775
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp775.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp775)
+$(call KernelPackage/nls/Depends)
+endef
+
+
+define KernelPackage/nls-cp775/description
+ Kernel module for NLS Codepage 775 (Baltic Rim)
+endef
+
+$(eval $(call KernelPackage,nls-cp775))
+
