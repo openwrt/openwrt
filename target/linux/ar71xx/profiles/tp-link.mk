@@ -5,6 +5,16 @@
 # See /LICENSE for more information.
 #
 
+define Profile/TLWR741NDV1
+	NAME:=TP-LINK TL-WR741ND v1
+endef
+
+define Profile/TLWR741NDV1/Description
+	Package set optimized for the TP-LINK TL-WR741ND v1.
+endef
+
+$(eval $(call Profile,TLWR741NDV1))
+
 define Profile/TLWR941NDV2
 	NAME:=TP-LINK TL-WR941ND v2
 	PACKAGES:=kmod-ath9k hostapd-mini

@@ -280,6 +280,10 @@ define Image/Build/Profile/MZKW300NH
 	$(call Image/Build/Template/Planex/$(1),mzk-w300nh,board=MZK-W300NH)
 endef
 
+define Image/Build/Profile/TLWR741NDV1
+	$(call Image/Build/Template/TPLINK/$(1),tl-wr741ndv1,board=TL-WR741ND,TL-WR741NDv1)
+endef
+
 define Image/Build/Profile/TLWR841NDV3
 	$(call Image/Build/Template/TPLINK/$(1),tl-wr841ndv3,board=TL-WR941ND,TL-WR841NDv3)
 endef
@@ -300,6 +304,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MZKW300NH,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/TLWR741NDV1,$(1))
 	$(call Image/Build/Profile/TLWR841NDV3,$(1))
 	$(call Image/Build/Profile/TLWR941NDV2,$(1))
 	$(call Image/Build/Profile/UBNT,$(1))
