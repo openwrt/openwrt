@@ -795,7 +795,8 @@ wprobe_get_auto(const char *arg, char **err)
 		free(devstr);
 		return wprobe_get_dev(arg);
 #else
-		*err = "Invalid argument";
+		if (err)
+			*err = "Invalid argument";
 		goto out;
 #endif
 	}
