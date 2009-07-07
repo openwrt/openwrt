@@ -115,7 +115,7 @@ endef
 
 define Package/wprobe-export/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/etc/init.d $(1)/etc/config
-	$(INSTALL_BIN) ./files/wprobe.init $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/wprobe.init $(1)/etc/init.d/wprobe
 	$(INSTALL_BIN) ./files/wprobe.config $(1)/etc/config/wprobe
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/exporter/wprobe-export $(1)/sbin/
 endef
