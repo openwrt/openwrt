@@ -54,12 +54,10 @@ choice
 	config USE_EGLIBC
 		bool "Use eglibc"
 		depends !avr32
-		select NO_STRIP
 	
 	config USE_GLIBC
 		bool "Use glibc"
 		depends !avr32
-		select NO_STRIP
 	
 	config USE_UCLIBC
 		bool "Use uClibc"
