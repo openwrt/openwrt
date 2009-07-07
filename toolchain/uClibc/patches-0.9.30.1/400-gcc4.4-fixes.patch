@@ -818,30 +818,6 @@ index d912a06..0be57bf 100644
  	while (*new_path == '/' && new_path > got_path)
  		new_path--;
 -- 
-The test here is a constant expression and will compile out.
-For platforms that don't need the shift the code gets slightly smaller
-and simpler, for those that do the result is unchanged.
-
-Signed-off-by: Ron Lee <ron@debian.org>
----
- libc/sysdeps/linux/arm/posix_fadvise.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
-
-Index: uClibc-0.9.30.1/libc/sysdeps/linux/arm/posix_fadvise.c
-===================================================================
---- uClibc-0.9.30.1.orig/libc/sysdeps/linux/arm/posix_fadvise.c	2007-05-31 10:21:38.000000000 +0200
-+++ uClibc-0.9.30.1/libc/sysdeps/linux/arm/posix_fadvise.c	2009-07-06 21:19:18.000000000 +0200
-@@ -18,8 +18,8 @@
- {
-   INTERNAL_SYSCALL_DECL (err);
-   int ret = INTERNAL_SYSCALL (arm_fadvise64_64, err, 6, fd, advise,
--                              __LONG_LONG_PAIR ((long)(offset >> 32), (long)offset),
--                              __LONG_LONG_PAIR ((long)(len >> 32), (long)len));
-+                              __LONG_LONG_PAIR (HIGH_BITS(offset), (long)offset),
-+                              __LONG_LONG_PAIR (HIGH_BITS(len), (long)len));
- 
-     if (INTERNAL_SYSCALL_ERROR_P (ret, err))
-       return INTERNAL_SYSCALL_ERRNO (ret, err);
 Signed-off-by: Ron Lee <ron@debian.org>
 ---
  ldso/ldso/dl-elf.c      |    4 +++-
@@ -900,3 +876,41 @@ Index: uClibc-0.9.30.1/libc/inet/getaddrinfo.c
  		}
  	}
  
+From 8ee834680d39677a60e26a0de4ece2f0c1ebbde2 Mon Sep 17 00:00:00 2001
+From: Ron <ron@debian.org>
+Date: Sat, 27 Jun 2009 04:44:27 +0930
+Subject: [PATCH] Avoid warnings about shifting more bits than we have
+
+The test here is a constant expression and will compile out.
+For platforms that don't need the shift the code gets slightly smaller
+and simpler, for those that do the result is unchanged.
+
+Signed-off-by: Ron Lee <ron@debian.org>
+Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+---
+ libc/sysdeps/linux/arm/posix_fadvise.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+--- a/libc/sysdeps/linux/arm/posix_fadvise.c
++++ b/libc/sysdeps/linux/arm/posix_fadvise.c
+@@ -10,6 +10,9 @@
+ #include <sys/syscall.h>
+ #include <fcntl.h>
+ #if defined __NR_arm_fadvise64_64
++
++#define HIGH_BITS(x) (sizeof(x) > 4 ? (x) >> 32 : 0)
++
+ /* This is for the ARM version of fadvise64_64 which swaps the params
+  *  * about to avoid having ABI compat issues
+  *   */
+@@ -18,8 +21,8 @@
+ {
+   INTERNAL_SYSCALL_DECL (err);
+   int ret = INTERNAL_SYSCALL (arm_fadvise64_64, err, 6, fd, advise,
+-                              __LONG_LONG_PAIR ((long)(offset >> 32), (long)offset),
+-                              __LONG_LONG_PAIR ((long)(len >> 32), (long)len));
++                              __LONG_LONG_PAIR (HIGH_BITS(offset), (long)offset),
++                              __LONG_LONG_PAIR (HIGH_BITS(len), (long)len));
+ 
+     if (INTERNAL_SYSCALL_ERROR_P (ret, err))
+       return INTERNAL_SYSCALL_ERRNO (ret, err);
