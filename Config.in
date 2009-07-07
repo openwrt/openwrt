@@ -88,7 +88,7 @@ config ALL
 	bool "Select all packages by default"
 	default n
 
-comment "Features"
+comment "General build options"
 
 config CLEAN_IPKG
 	bool
@@ -96,6 +96,35 @@ config CLEAN_IPKG
 	default n
 	help
 		This removes all ipkg data from the target directory before building the root fs
+
+choice
+	prompt "Binary stripping method"
+	default USE_STRIP   if USE_GLIBC || USE_EGLIBC
+	default USE_SSTRIP
+	help
+	  Select the binary stripping method you wish to use.
+
+	config NO_STRIP
+		bool "none"
+		help
+		  This will install unstripped binaries (useful for native compiling/debugging)
+
+	config USE_STRIP
+		bool "strip"
+		depends !DEBUG
+		help
+		  This will install binaries stripped using strip from binutils
+
+
+	config USE_SSTRIP
+		bool "sstrip"
+		depends !DEBUG
+		depends !USE_GLIBC
+		depends !USE_EGLIBC
+		help
+		  This will install binaries stripped using sstrip
+
+endchoice
 
 comment "Package build options"
 
@@ -112,10 +141,6 @@ config DEBUG_DIR
 	help
 		This will install all compiled package binaries into build_dir/target-*/debug-*/,
 		useful for cross-debugging via gdb/gdbserver
-
-config NO_STRIP
-	bool "Install unstripped binary on the target (useful for native compiling/debugging)"
-	default n
 
 comment "Kernel build options"
 

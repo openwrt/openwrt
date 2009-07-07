@@ -104,7 +104,6 @@ HOST_LDFLAGS:=-L$(STAGING_DIR_HOST)/lib
 
 TARGET_CC:=$(TARGET_CROSS)gcc
 TARGET_CXX:=$(if $(CONFIG_INSTALL_LIBSTDCPP),$(TARGET_CROSS)g++,no)
-STRIP:=$(STAGING_DIR_HOST)/bin/sstrip
 PATCH:=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 CP:=cp -fpR
@@ -137,7 +136,15 @@ TARGET_CONFIGURE_OPTS:= \
 # strip an entire directory
 ifneq ($(CONFIG_NO_STRIP),)
   RSTRIP:=:
+  STRIP:=:
 else
+  ifneq ($(CONFIG_USE_STRIP),)
+    STRIP:=$(TARGET_CROSS)strip
+  else
+    ifneq ($(CONFIG_USE_SSTRIP),)
+      STRIP:=$(STAGING_DIR_HOST)/bin/sstrip
+    endif
+  endif
   RSTRIP:= \
     NM="$(TARGET_CROSS)nm" \
     STRIP="$(STRIP)" \
