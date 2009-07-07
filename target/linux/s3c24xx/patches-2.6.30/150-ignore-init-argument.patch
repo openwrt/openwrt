@@ -1,0 +1,19 @@
+--- linux-2.6.30.1/init/main.c.orig	2009-07-07 19:35:25.000000000 +0200
++++ linux-2.6.30.1/init/main.c	2009-07-07 19:35:39.000000000 +0200
+@@ -830,11 +830,11 @@
+ 	 * The Bourne shell can be used instead of init if we are
+ 	 * trying to recover a really broken machine.
+ 	 */
+-	if (execute_command) {
+-		run_init_process(execute_command);
+-		printk(KERN_WARNING "Failed to execute %s.  Attempting "
+-					"defaults...\n", execute_command);
+-	}
++	//if (execute_command) {
++	//	run_init_process(execute_command);
++	//	printk(KERN_WARNING "Failed to execute %s.  Attempting "
++	//				"defaults...\n", execute_command);
++	//}
+ 	run_init_process("/etc/preinit");
+ 
+ 	panic("No init found.  Try passing init= option to kernel.");
