@@ -194,6 +194,7 @@ int main ( int argc, char **argv )
     int port = IPFIX_PORTNO;
     int verbose_level = 0;
     int opt, i = 10;
+	char *err = NULL;
 
 	while ((opt = getopt(argc, argv, "hi:c:p:vstu")) != EOF) {
 		switch (opt) {
@@ -252,9 +253,9 @@ int main ( int argc, char **argv )
 		return -1;
 	}
 
-	dev = wprobe_get_auto(ifname);
+	dev = wprobe_get_auto(ifname, &err);
 	if (!dev || (list_empty(&dev->global_attr) && list_empty(&dev->link_attr))) {
-		fprintf(stderr, "Cannot connect to wprobe on interface '%s'\n", ifname);
+		fprintf(stderr, "Cannot connect to wprobe on interface '%s': %s\n", ifname, (err ? err : "Unknown error"));
 		return -1;
 	}
 
