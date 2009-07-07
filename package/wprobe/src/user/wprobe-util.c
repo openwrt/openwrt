@@ -296,7 +296,7 @@ static int run_proxy(int port)
 		return 1;
 	}
 	while(1) {
-		unsigned int addrlen;
+		unsigned int addrlen = sizeof(struct sockaddr_in);
 		int ret, c;
 
 		c = accept(s, (struct sockaddr *)&sa, &addrlen);
