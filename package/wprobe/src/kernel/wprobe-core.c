@@ -844,6 +844,7 @@ wprobe_check_filter(void *data, int datalen, int gs)
 
 		hdr->name[31] = 0;
 		cur_is = be32_to_cpu(hdr->n_items);
+		hdr->n_items = cur_is;
 		is += cur_is;
 		for (j = 0; j < cur_is; j++) {
 			struct sock_filter *sf;
@@ -854,11 +855,13 @@ wprobe_check_filter(void *data, int datalen, int gs)
 			if (data > end)
 				goto overrun;
 
-			if (hdr->n_items > 1024)
+			hdr->name[31] = 0;
+			n_items = be32_to_cpu(hdr->n_items);
+			hdr->n_items = n_items;
+
+			if (n_items > 1024)
 				goto overrun;
 
-			hdr->name[31] = 0;
-			hdr->n_items = n_items = be32_to_cpu(hdr->n_items);
 			sf = data;
 			if (n_items > 0) {
 				for (k = 0; k < n_items; k++) {
@@ -968,7 +971,7 @@ wprobe_set_filter(struct wprobe_iface *dev, void *data, int len)
 		for (j = 0; j < g->n_items; j++) {
 			hdr = data;
 			f->items[cur_is++] = data;
-			data += sizeof(*hdr) + be32_to_cpu(hdr->n_items) * sizeof(struct sock_filter);
+			data += sizeof(*hdr) + hdr->n_items * sizeof(struct sock_filter);
 		}
 	}
 	rcu_assign_pointer(dev->active_filter, f);
