@@ -292,6 +292,9 @@ void ar71xx_gpio_function_disable(u32 mask);
 #define AR71XX_DDR_REG_FLUSH_USB	0xa4
 #define AR71XX_DDR_REG_FLUSH_PCI	0xa8
 
+#define AR724X_DDR_REG_FLUSH_GE0	0x7c
+#define AR724X_DDR_REG_FLUSH_GE1	0x80
+
 #define AR91XX_DDR_REG_FLUSH_GE0	0x7c
 #define AR91XX_DDR_REG_FLUSH_GE1	0x80
 #define AR91XX_DDR_REG_FLUSH_USB	0x84

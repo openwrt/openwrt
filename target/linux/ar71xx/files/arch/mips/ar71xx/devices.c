@@ -289,6 +289,16 @@ static void ar71xx_set_pll_ge1(int speed)
 			 val, AR71XX_ETH1_PLL_SHIFT);
 }
 
+static void ar724x_set_pll_ge0(int speed)
+{
+	/* TODO */
+}
+
+static void ar724x_set_pll_ge1(int speed)
+{
+	/* TODO */
+}
+
 static void ar91xx_set_pll_ge0(int speed)
 {
 	u32 val = ar71xx_get_eth_pll(0, speed);
@@ -313,6 +323,16 @@ static void ar71xx_ddr_flush_ge0(void)
 static void ar71xx_ddr_flush_ge1(void)
 {
 	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_GE1);
+}
+
+static void ar724x_ddr_flush_ge0(void)
+{
+	ar71xx_ddr_flush(AR724X_DDR_REG_FLUSH_GE0);
+}
+
+static void ar724x_ddr_flush_ge1(void)
+{
+	ar71xx_ddr_flush(AR724X_DDR_REG_FLUSH_GE1);
 }
 
 static void ar91xx_ddr_flush_ge0(void)
@@ -405,6 +425,10 @@ static struct platform_device ar71xx_eth1_device = {
 #define AR71XX_PLL_VAL_100	0x00001099
 #define AR71XX_PLL_VAL_10	0x00991099
 
+#define AR724X_PLL_VAL_1000	0x00110000
+#define AR724X_PLL_VAL_100	0x00001099
+#define AR724X_PLL_VAL_10	0x00991099
+
 #define AR91XX_PLL_VAL_1000	0x1a000000
 #define AR91XX_PLL_VAL_100	0x13000a44
 #define AR91XX_PLL_VAL_10	0x00441099
@@ -433,6 +457,13 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 		pll_100 = AR71XX_PLL_VAL_100;
 		pll_1000 = AR71XX_PLL_VAL_1000;
 		break;
+
+	case AR71XX_SOC_AR7240:
+		pll_10 = AR724X_PLL_VAL_10;
+		pll_100 = AR724X_PLL_VAL_100;
+		pll_1000 = AR724X_PLL_VAL_1000;
+		break;
+
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
 		pll_10 = AR91XX_PLL_VAL_10;
@@ -520,6 +551,14 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		pdata->set_pll =  id ? ar71xx_set_pll_ge1
 				     : ar71xx_set_pll_ge0;
 		pdata->has_gbit = 1;
+		break;
+
+	case AR71XX_SOC_AR7240:
+		pdata->ddr_flush = id ? ar724x_ddr_flush_ge1
+				      : ar724x_ddr_flush_ge0;
+		pdata->set_pll =  id ? ar724x_set_pll_ge1
+				     : ar724x_set_pll_ge0;
+		pdata->is_ar724x = 1;
 		break;
 
 	case AR71XX_SOC_AR9130:

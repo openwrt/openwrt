@@ -399,12 +399,22 @@ static inline void ag71xx_int_disable(struct ag71xx *ag, u32 ints)
 
 static inline void ag71xx_mii_ctrl_wr(struct ag71xx *ag, u32 value)
 {
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+
+	if (pdata->is_ar724x)
+		return;
+
 	__raw_writel(value, ag->mii_ctrl);
 	__raw_readl(ag->mii_ctrl);
 }
 
 static inline u32 ag71xx_mii_ctrl_rr(struct ag71xx *ag)
 {
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+
+	if (pdata->is_ar724x)
+		return 0xffffffff;
+
 	return __raw_readl(ag->mii_ctrl);
 }
 
