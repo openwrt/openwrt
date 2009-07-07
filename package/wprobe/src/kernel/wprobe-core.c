@@ -203,6 +203,7 @@ wprobe_get_dev(struct nlattr *attr)
 int
 wprobe_add_frame(struct wprobe_iface *dev, const struct wprobe_wlan_hdr *hdr, void *data, int len)
 {
+	struct wprobe_wlan_hdr *new_hdr;
 	struct wprobe_filter *f;
 	struct sk_buff *skb;
 	unsigned long flags;
@@ -221,7 +222,10 @@ wprobe_add_frame(struct wprobe_iface *dev, const struct wprobe_wlan_hdr *hdr, vo
 	if (len + skb->len > WPROBE_MAX_FRAME_SIZE)
 		len = WPROBE_MAX_FRAME_SIZE - skb->len;
 
-	memcpy(skb_put(skb, f->hdrlen), hdr, sizeof(struct wprobe_wlan_hdr));
+	new_hdr = (struct wprobe_wlan_hdr *) skb_put(skb, f->hdrlen);
+	memcpy(new_hdr, hdr, sizeof(struct wprobe_wlan_hdr));
+	new_hdr->len = cpu_to_be16(new_hdr->len);
+
 	memcpy(skb_put(skb, len), data, len);
 
 	for(i = 0; i < f->n_groups; i++) {
