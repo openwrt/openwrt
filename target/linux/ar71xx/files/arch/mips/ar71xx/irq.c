@@ -213,7 +213,7 @@ static int ar71xx_gpio_irq_set_type(unsigned int irq, unsigned int flow_type)
 #define ar71xx_gpio_irq_set_type	NULL
 #endif
 
-struct irq_chip ar71xx_gpio_irq_chip = {
+static struct irq_chip ar71xx_gpio_irq_chip = {
 	.name		= "AR71XX GPIO",
 	.unmask		= ar71xx_gpio_irq_unmask,
 	.mask		= ar71xx_gpio_irq_mask,
@@ -323,7 +323,7 @@ static void ar71xx_misc_irq_mask(unsigned int irq)
 	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
-struct irq_chip ar71xx_misc_irq_chip = {
+static struct irq_chip ar71xx_misc_irq_chip = {
 	.name		= "AR71XX MISC",
 	.unmask		= ar71xx_misc_irq_unmask,
 	.mask		= ar71xx_misc_irq_mask,
