@@ -14,12 +14,20 @@
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
+#include <linux/i2c/pcf857x.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+
+#define PB44_GPIO_I2C_SCL	0
+#define PB44_GPIO_I2C_SDA	1
+
+#define PB44_GPIO_EXP_BASE	16
 
 static struct spi_board_info pb44_spi_info[] = {
 	{
@@ -44,6 +52,30 @@ static struct ar71xx_pci_irq pb44_pci_irqs[] __initdata = {
 		.pin	= 1,
 		.irq	= AR71XX_PCI_IRQ_DEV2,
 	}
+};
+
+static struct i2c_gpio_platform_data pb44_i2c_gpio_data = {
+	.sda_pin        = PB44_GPIO_I2C_SDA,
+	.scl_pin        = PB44_GPIO_I2C_SCL,
+};
+
+static struct platform_device pb44_i2c_gpio_device = {
+	.name		= "i2c-gpio",
+	.id		= 0,
+	.dev = {
+		.platform_data	= &pb44_i2c_gpio_data,
+	}
+};
+
+static struct pcf857x_platform_data pb44_pcf857x_data = {
+	.gpio_base	= PB44_GPIO_EXP_BASE,
+};
+
+static struct i2c_board_info pb44_i2c_board_info[] __initdata = {
+	{
+		I2C_BOARD_INFO("pcf8575", 0x20),
+		.platform_data  = &pb44_pcf857x_data,
+	},
 };
 
 #define PB44_WAN_PHYMASK	BIT(0)
@@ -72,6 +104,11 @@ static void __init pb44_init(void)
 	ar71xx_add_device_usb();
 
 	ar71xx_pci_init(ARRAY_SIZE(pb44_pci_irqs), pb44_pci_irqs);
+
+	i2c_register_board_info(0, pb44_i2c_board_info,
+ 				ARRAY_SIZE(pb44_i2c_board_info));
+
+	platform_device_register(&pb44_i2c_gpio_device);
 
 	/* TODO: GPIO LEDs & buttons */
 }
