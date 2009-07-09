@@ -124,7 +124,9 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_AW_NR580,	/* AzureWave AW-NR580 */
 	AR71XX_MACH_RB_411,	/* MikroTik RouterBOARD 411/411A/411AH */
 	AR71XX_MACH_RB_433,	/* MikroTik RouterBOARD 433/433AH */
+	AR71XX_MACH_RB_433U,	/* MikroTik RouterBOARD 433UAH */
 	AR71XX_MACH_RB_450,	/* MikroTik RouterBOARD 450 */
+	AR71XX_MACH_RB_450G,	/* MikroTik RouterBOARD 450G */
 	AR71XX_MACH_RB_493,	/* Mikrotik RouterBOARD 493/493AH */
 	AR71XX_MACH_PB42,	/* Atheros PB42 */
 	AR71XX_MACH_PB44,	/* Atheros PB44 */

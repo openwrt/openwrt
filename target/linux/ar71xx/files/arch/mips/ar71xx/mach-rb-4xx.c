@@ -206,7 +206,15 @@ static void __init rb433_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_RB_433, "MikroTik RouterBOARD 433/AH", rb433_setup);
 
-static void __init rb450_setup(void)
+static void __init rb433u_setup(void)
+{
+	rb433_setup();
+	ar71xx_add_device_usb();
+}
+
+MIPS_MACHINE(AR71XX_MACH_RB_433U, "MikroTik RouterBOARD 433UAH", rb433u_setup);
+
+static void __init rb450_generic_setup(int gige)
 {
 	rb4xx_generic_setup();
 	rb4xx_add_device_spi();
@@ -215,7 +223,7 @@ static void __init rb450_setup(void)
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = 0x0000000f;
-	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.speed = (gige) ? SPEED_1000 : SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
@@ -225,7 +233,19 @@ static void __init rb450_setup(void)
 	ar71xx_add_device_eth(0);
 }
 
+static void __init rb450_setup(void)
+{
+	rb450_generic_setup(0);
+}
+
 MIPS_MACHINE(AR71XX_MACH_RB_450, "MikroTik RouterBOARD 450", rb450_setup);
+
+static void __init rb450g_setup(void)
+{
+	rb450_generic_setup(1);
+}
+
+MIPS_MACHINE(AR71XX_MACH_RB_450G, "MikroTik RouterBOARD 450G", rb450g_setup);
 
 static void __init rb493_setup(void)
 {
