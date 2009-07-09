@@ -24,10 +24,30 @@
 
 #include "devices.h"
 
+#define PB44_PCF8757_VSC7385_CS	0
+#define PB44_PCF8757_STEREO_CS	1
+#define PB44_PCF8757_SLIC_CS0	2
+#define PB44_PCF8757_SLIC_TEST	3
+#define PB44_PCF8757_SLIC_INT0	4
+#define PB44_PCF8757_SLIC_INT1	5
+#define PB44_PCF8757_SW_RESET	6
+#define PB44_PCF8757_SW_JUMP	8
+#define PB44_PCF8757_LED_JUMP1	9
+#define PB44_PCF8757_LED_JUMP2	10
+#define PB44_PCF8757_TP24	11
+#define PB44_PCF8757_TP25	12
+#define PB44_PCF8757_TP26	13
+#define PB44_PCF8757_TP27	14
+#define PB44_PCF8757_TP28	15
+
 #define PB44_GPIO_I2C_SCL	0
 #define PB44_GPIO_I2C_SDA	1
 
 #define PB44_GPIO_EXP_BASE	16
+#define PB44_GPIO_SW_RESET	(PB44_GPIO_EXP_BASE + PB44_PCF8757_SW_RESET)
+#define PB44_GPIO_SW_JUMP	(PB44_GPIO_EXP_BASE + PB44_PCF8757_SW_JUMP)
+#define PB44_GPIO_LED_JUMP1	(PB44_GPIO_EXP_BASE + PB44_PCF8757_LED_JUMP1)
+#define PB44_GPIO_LED_JUMP2	(PB44_GPIO_EXP_BASE + PB44_PCF8757_LED_JUMP2)
 
 static struct spi_board_info pb44_spi_info[] = {
 	{
@@ -78,6 +98,36 @@ static struct i2c_board_info pb44_i2c_board_info[] __initdata = {
 	},
 };
 
+static struct gpio_led pb44_leds_gpio[] __initdata = {
+	{
+		.name		= "pb44:amber:jump1",
+		.gpio		= PB44_GPIO_LED_JUMP1,
+		.active_low	= 1,
+	}, {
+		.name		= "pb44:green:jump2",
+		.gpio		= PB44_GPIO_LED_JUMP2,
+		.active_low	= 1,
+	},
+};
+
+static struct gpio_button pb44_gpio_buttons[] __initdata = {
+	{
+		.desc		= "soft_reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= PB44_GPIO_SW_RESET,
+		.active_low	= 1,
+	} , {
+		.desc		= "jumpstart",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= PB44_GPIO_SW_JUMP,
+		.active_low	= 1,
+	}
+};
+
 #define PB44_WAN_PHYMASK	BIT(0)
 #define PB44_LAN_PHYMASK	0
 #define PB44_MDIO_PHYMASK	(PB44_LAN_PHYMASK | PB44_WAN_PHYMASK)
@@ -110,7 +160,11 @@ static void __init pb44_init(void)
 
 	platform_device_register(&pb44_i2c_gpio_device);
 
-	/* TODO: GPIO LEDs & buttons */
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(pb44_leds_gpio),
+				    pb44_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, 20, ARRAY_SIZE(pb44_gpio_buttons),
+				       pb44_gpio_buttons);
 }
 
 MIPS_MACHINE(AR71XX_MACH_PB44, "Atheros PB44", pb44_init);
