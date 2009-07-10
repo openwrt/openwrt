@@ -29,12 +29,6 @@ define Target/Description
 	Enable the Petitboot package to build a PS3 bootloader.
 endef
 
-ifeq ($(CONFIG_TARGET_ps3_petitboot),y)
-define Kernel/Patch
-# no patches required
-endef
-endif
-
 KERNELNAME:="zImage"
 
 $(eval $(call BuildTarget))
