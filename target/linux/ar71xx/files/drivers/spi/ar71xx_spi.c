@@ -25,7 +25,7 @@
 #include <asm/mach-ar71xx/platform.h>
 
 #define DRV_DESC	"Atheros AR71xx SPI Controller driver"
-#define DRV_VERSION	"0.2.2"
+#define DRV_VERSION	"0.2.3"
 #define DRV_NAME	"ar71xx-spi"
 
 #undef PER_BIT_READ
@@ -184,7 +184,7 @@ static int ar71xx_spi_probe(struct platform_device *pdev)
 		goto err1;
 	}
 
-	sp->reg_ctrl = ar71xx_spi_rr(sp, SPI_REG_IOC);
+	sp->reg_ctrl = ar71xx_spi_rr(sp, SPI_REG_CTRL);
 
 	ret = spi_bitbang_start(&sp->bitbang);
 	if (!ret)
