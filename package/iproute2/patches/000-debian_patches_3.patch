@@ -1,8 +1,6 @@
-Index: iproute2-2.6.25/doc/ip-cref.tex
-===================================================================
---- iproute2-2.6.25.orig/doc/ip-cref.tex	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/doc/ip-cref.tex	2008-05-01 00:26:48.000000000 +0100
-@@ -1315,6 +1315,19 @@ peers are allowed to send to us.
+--- a/doc/ip-cref.tex
++++ b/doc/ip-cref.tex
+@@ -1324,6 +1324,19 @@ peers are allowed to send to us.
      If it is not given, Linux uses the value selected with \verb|sysctl|
      variable \verb|net/ipv4/tcp_reordering|.
  
@@ -22,7 +20,7 @@ Index: iproute2-2.6.25/doc/ip-cref.tex
  
  
  \item \verb|nexthop NEXTHOP|
-@@ -2644,6 +2657,9 @@ http://www.cisco.com/univercd/cc/td/doc/
+@@ -2653,6 +2666,9 @@ http://www.cisco.com/univercd/cc/td/doc/
  \bibitem{RFC-DHCP} R.~Droms.
  ``Dynamic Host Configuration Protocol.'', RFC-2131
  
@@ -32,10 +30,8 @@ Index: iproute2-2.6.25/doc/ip-cref.tex
  \end{thebibliography}
  
  
-Index: iproute2-2.6.25/doc/Makefile
-===================================================================
---- iproute2-2.6.25.orig/doc/Makefile	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/doc/Makefile	2008-05-01 00:26:48.000000000 +0100
+--- a/doc/Makefile
++++ b/doc/Makefile
 @@ -14,6 +14,7 @@ PAGESIZE=a4
  PAGESPERPAGE=2
  
@@ -67,10 +63,8 @@ Index: iproute2-2.6.25/doc/Makefile
  clean:
 -	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html
 +	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html $(TXTFILES)
-Index: iproute2-2.6.25/include/linux/pkt_sched.h
-===================================================================
---- iproute2-2.6.25.orig/include/linux/pkt_sched.h	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/include/linux/pkt_sched.h	2008-05-01 00:37:45.000000000 +0100
+--- a/include/linux/pkt_sched.h
++++ b/include/linux/pkt_sched.h
 @@ -1,3 +1,409 @@
 +#if 0
 +#ifndef __LINUX_PKT_SCHED_H
@@ -481,9 +475,9 @@ Index: iproute2-2.6.25/include/linux/pkt_sched.h
  #ifndef __LINUX_PKT_SCHED_H
  #define __LINUX_PKT_SCHED_H
  
-@@ -482,4 +888,116 @@ struct tc_netem_corrupt
- 
- #define NETEM_DIST_SCALE	8192
+@@ -518,4 +924,116 @@ struct tc_drr_stats
+ 	__u32	deficit;
+ };
  
 +/* WRR section */
 +
@@ -598,10 +592,8 @@ Index: iproute2-2.6.25/include/linux/pkt_sched.h
 +};
 +
  #endif
-Index: iproute2-2.6.25/ip/iproute.c
-===================================================================
---- iproute2-2.6.25.orig/ip/iproute.c	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/ip/iproute.c	2008-05-01 00:28:02.000000000 +0100
+--- a/ip/iproute.c
++++ b/ip/iproute.c
 @@ -73,7 +73,7 @@ static void usage(void)
  	fprintf(stderr, "           [ rtt TIME ] [ rttvar TIME ]\n");
  	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ initcwnd NUMBER ]\n");
@@ -611,7 +603,7 @@ Index: iproute2-2.6.25/ip/iproute.c
  	fprintf(stderr, "TYPE := [ unicast | local | broadcast | multicast | throw |\n");
  	fprintf(stderr, "          unreachable | prohibit | blackhole | nat ]\n");
  	fprintf(stderr, "TABLE_ID := [ local | main | default | all | NUMBER ]\n");
-@@ -780,6 +780,30 @@ int iproute_modify(int cmd, unsigned fla
+@@ -792,6 +792,30 @@ int iproute_modify(int cmd, unsigned fla
  				invarg("\"reordering\" value is invalid\n", *argv);
  			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_REORDERING, reord);
  #endif
@@ -642,10 +634,8 @@ Index: iproute2-2.6.25/ip/iproute.c
  		} else if (strcmp(*argv, "rtt") == 0) {
  			unsigned rtt;
  			NEXT_ARG();
-Index: iproute2-2.6.25/ip/iptunnel.c
-===================================================================
---- iproute2-2.6.25.orig/ip/iptunnel.c	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/ip/iptunnel.c	2008-05-01 00:26:48.000000000 +0100
+--- a/ip/iptunnel.c
++++ b/ip/iptunnel.c
 @@ -134,7 +134,7 @@ static int parse_args(int argc, char **a
  			NEXT_ARG();
  			p->o_flags |= GRE_KEY;
@@ -655,11 +645,9 @@ Index: iproute2-2.6.25/ip/iptunnel.c
  			else {
  				if (get_unsigned(&uval, *argv, 0)<0) {
  					fprintf(stderr, "invalid value of \"okey\"\n");
-Index: iproute2-2.6.25/Makefile
-===================================================================
---- iproute2-2.6.25.orig/Makefile	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/Makefile	2008-05-01 00:26:48.000000000 +0100
-@@ -48,7 +48,7 @@ install: all
+--- a/Makefile
++++ b/Makefile
+@@ -49,7 +49,7 @@ install: all
  		$(DESTDIR)$(DOCDIR)/examples
  	install -m 0644 $(shell find examples/diffserv -maxdepth 1 -type f) \
  		$(DESTDIR)$(DOCDIR)/examples/diffserv
@@ -668,7 +656,7 @@ Index: iproute2-2.6.25/Makefile
  	install -m 0644 $(shell find etc/iproute2 -maxdepth 1 -type f) $(DESTDIR)$(CONFDIR)
  	install -m 0755 -d $(DESTDIR)$(MANDIR)/man8
  	install -m 0644 $(shell find man/man8 -maxdepth 1 -type f) $(DESTDIR)$(MANDIR)/man8
-@@ -65,7 +65,7 @@ snapshot:
+@@ -67,7 +67,7 @@ snapshot:
  
  clean:
  	rm -f cscope.*
@@ -677,10 +665,8 @@ Index: iproute2-2.6.25/Makefile
  	do $(MAKE) $(MFLAGS) -C $$i clean; done
  
  clobber: clean
-Index: iproute2-2.6.25/misc/Makefile
-===================================================================
---- iproute2-2.6.25.orig/misc/Makefile	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/misc/Makefile	2008-05-01 00:26:48.000000000 +0100
+--- a/misc/Makefile
++++ b/misc/Makefile
 @@ -1,7 +1,8 @@
  SSOBJ=ss.o ssfilter.o
  LNSTATOBJ=lnstat.o lnstat_util.o
@@ -691,22 +677,18 @@ Index: iproute2-2.6.25/misc/Makefile
  
  include ../Config
  
-Index: iproute2-2.6.25/tc/Makefile
-===================================================================
---- iproute2-2.6.25.orig/tc/Makefile	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/tc/Makefile	2008-05-01 00:30:13.000000000 +0100
-@@ -13,6 +13,7 @@ TCMODULES += q_tbf.o
- TCMODULES += q_cbq.o
+--- a/tc/Makefile
++++ b/tc/Makefile
+@@ -14,6 +14,7 @@ TCMODULES += q_cbq.o
  TCMODULES += q_rr.o
+ TCMODULES += q_multiq.o
  TCMODULES += q_netem.o
 +TCMODULES += q_wrr.o
  TCMODULES += f_rsvp.o
  TCMODULES += f_u32.o
  TCMODULES += f_route.o
-Index: iproute2-2.6.25/tc/q_htb.c
-===================================================================
---- iproute2-2.6.25.orig/tc/q_htb.c	2008-05-01 00:17:55.000000000 +0100
-+++ iproute2-2.6.25/tc/q_htb.c	2008-05-01 00:37:50.000000000 +0100
+--- a/tc/q_htb.c
++++ b/tc/q_htb.c
 @@ -1,3 +1,311 @@
 +#if 0
 +/*
@@ -1019,10 +1001,8 @@ Index: iproute2-2.6.25/tc/q_htb.c
  /*
   * q_htb.c		HTB.
   *
-Index: iproute2-2.6.25/tc/q_wrr.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iproute2-2.6.25/tc/q_wrr.c	2008-05-01 00:37:17.000000000 +0100
+--- /dev/null
++++ b/tc/q_wrr.c
 @@ -0,0 +1,322 @@
 +#include <stdio.h>
 +#include <stdlib.h>

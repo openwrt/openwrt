@@ -1,8 +1,6 @@
-Index: iproute2-2.6.25/ip/ipxfrm.c
-===================================================================
---- iproute2-2.6.25.orig/ip/ipxfrm.c	2008-04-17 18:12:54.000000000 +0100
-+++ iproute2-2.6.25/ip/ipxfrm.c	2008-05-01 00:38:40.000000000 +0100
-@@ -490,7 +490,6 @@ void xfrm_selector_print(struct xfrm_sel
+--- a/ip/ipxfrm.c
++++ b/ip/ipxfrm.c
+@@ -491,7 +491,6 @@ void xfrm_selector_print(struct xfrm_sel
  	switch (sel->proto) {
  	case IPPROTO_TCP:
  	case IPPROTO_UDP:
@@ -10,7 +8,7 @@ Index: iproute2-2.6.25/ip/ipxfrm.c
  	case IPPROTO_DCCP:
  	default: /* XXX */
  		if (sel->sport_mask)
-@@ -1121,7 +1120,6 @@ static int xfrm_selector_upspec_parse(st
+@@ -1154,7 +1153,6 @@ static int xfrm_selector_upspec_parse(st
  		switch (sel->proto) {
  		case IPPROTO_TCP:
  		case IPPROTO_UDP:

@@ -1,7 +1,5 @@
-Index: iproute2-2.6.25/include/linux/pkt_sched.h
-===================================================================
---- iproute2-2.6.25.orig/include/linux/pkt_sched.h	2008-05-01 00:37:45.000000000 +0100
-+++ iproute2-2.6.25/include/linux/pkt_sched.h	2008-05-01 20:30:49.000000000 +0100
+--- a/include/linux/pkt_sched.h
++++ b/include/linux/pkt_sched.h
 @@ -174,8 +174,38 @@ struct tc_sfq_qopt
   *
   *	The only reason for this is efficiency, it is possible
@@ -41,7 +39,7 @@ Index: iproute2-2.6.25/include/linux/pkt_sched.h
  /* RED section */
  
  enum
-@@ -568,8 +598,37 @@ struct tc_sfq_xstats
+@@ -588,8 +618,37 @@ struct tc_sfq_xstats
   *
   *	The only reason for this is efficiency, it is possible
   *	to change these parameters in compile time.
@@ -79,10 +77,8 @@ Index: iproute2-2.6.25/include/linux/pkt_sched.h
  /* RED section */
  
  enum
-Index: iproute2-2.6.25/tc/Makefile
-===================================================================
---- iproute2-2.6.25.orig/tc/Makefile	2008-05-01 00:30:13.000000000 +0100
-+++ iproute2-2.6.25/tc/Makefile	2008-05-01 20:30:49.000000000 +0100
+--- a/tc/Makefile
++++ b/tc/Makefile
 @@ -7,6 +7,7 @@ include ../Config
  TCMODULES :=
  TCMODULES += q_fifo.o
@@ -91,10 +87,8 @@ Index: iproute2-2.6.25/tc/Makefile
  TCMODULES += q_red.o
  TCMODULES += q_prio.o
  TCMODULES += q_tbf.o
-Index: iproute2-2.6.25/tc/q_esfq.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ iproute2-2.6.25/tc/q_esfq.c	2008-05-01 20:31:09.000000000 +0100
+--- /dev/null
++++ b/tc/q_esfq.c
 @@ -0,0 +1,200 @@
 +/*
 + * q_esfq.c		ESFQ.

@@ -1,10 +1,9 @@
-diff -urN iproute-2.6.20-070313/include/linux/netfilter_ipv4/ip_tables.h iproute-2.6.20-070313.new/include/linux/netfilter_ipv4/ip_tables.h
---- iproute-2.6.20-070313/include/linux/netfilter_ipv4/ip_tables.h	2007-03-13 22:50:56.000000000 +0100
-+++ iproute-2.6.20-070313.new/include/linux/netfilter_ipv4/ip_tables.h	2007-06-13 19:50:04.000000000 +0200
-@@ -112,7 +112,10 @@
+--- a/include/linux/netfilter_ipv4/ip_tables.h
++++ b/include/linux/netfilter_ipv4/ip_tables.h
+@@ -114,7 +114,10 @@ struct ipt_entry
  #define IPT_CONTINUE XT_CONTINUE
  #define IPT_RETURN XT_RETURN
-
+ 
 +#include <linux/version.h> 
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
  #include <linux/netfilter/xt_tcpudp.h>
