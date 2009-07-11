@@ -45,8 +45,6 @@
 #include <asm/uaccess.h>
 #include <asm/div64.h>
 
-//#include <mach/regs-irq.h>
-
 #ifdef CONFIG_PM
 #include <linux/pm.h>
 #endif
@@ -54,10 +52,7 @@
 #include "glamo-regs.h"
 #include "glamo-core.h"
 
-#define RESSIZE(ressource) (((ressource)->end - (ressource)->start)+1)
-
 #define GLAMO_MEM_REFRESH_COUNT 0x100
-
 
 /*
  * Glamo internal settings
@@ -149,27 +144,6 @@ static inline void __reg_clear_bit(struct glamo_core *glamo,
 				   u_int16_t reg, u_int16_t bit)
 {
 	__reg_set_bit_mask(glamo, reg, bit, 0);
-}
-
-static inline void glamo_vmem_write(struct glamo_core *glamo, u_int32_t addr,
-				    u_int16_t *src, int len)
-{
-	if (addr & 0x0001 || (unsigned long)src & 0x0001 || len & 0x0001) {
-		dev_err(&glamo->pdev->dev, "unaligned write(0x%08x, 0x%p, "
-			"0x%x)!!\n", addr, src, len);
-	}
-
-}
-
-static inline void glamo_vmem_read(struct glamo_core *glamo, u_int16_t *buf,
-				   u_int32_t addr, int len)
-{
-	if (addr & 0x0001 || (unsigned long) buf & 0x0001 || len & 0x0001) {
-		dev_err(&glamo->pdev->dev, "unaligned read(0x%p, 0x08%x, "
-			"0x%x)!!\n", buf, addr, len);
-	}
-
-
 }
 
 /***********************************************************************
@@ -307,10 +281,10 @@ static struct resource glamo_mmc_resources[] = {
 	},
 };
 
-struct glamo_mci_pdata glamo_mci_def_pdata = {
+static struct glamo_mci_pdata glamo_mci_def_pdata = {
 	.gpio_detect		= 0,
 	.glamo_can_set_mci_power	= NULL, /* filled in from MFD platform data */
-	.ocr_avail	= MMC_VDD_20_21 |
+/*	.ocr_avail	= MMC_VDD_20_21 |
 			  MMC_VDD_21_22 |
 			  MMC_VDD_22_23 |
 			  MMC_VDD_23_24 |
@@ -321,14 +295,11 @@ struct glamo_mci_pdata glamo_mci_def_pdata = {
 			  MMC_VDD_28_29 |
 			  MMC_VDD_29_30 |
 			  MMC_VDD_30_31 |
-			  MMC_VDD_32_33,
+			  MMC_VDD_32_33,*/
 	.glamo_irq_is_wired	= NULL, /* filled in from MFD platform data */
 	.mci_suspending = NULL, /* filled in from MFD platform data */
 	.mci_all_dependencies_resumed = NULL, /* filled in from MFD platform data */
 };
-EXPORT_SYMBOL_GPL(glamo_mci_def_pdata);
-
-
 
 static void mangle_mem_resources(struct resource *res, int num_res,
 				 struct resource *parent)
@@ -1377,7 +1348,8 @@ static int __init glamo_probe(struct platform_device *pdev)
 	glamo_mmc_dev->name = "glamo-mci";
 	glamo_mmc_dev->dev.parent = &pdev->dev;
 	glamo_mmc_dev->resource = glamo_mmc_resources;
-	glamo_mmc_dev->num_resources = ARRAY_SIZE(glamo_mmc_resources); 
+	glamo_mmc_dev->num_resources = ARRAY_SIZE(glamo_mmc_resources);
+    glamo_mmc_dev->dev.platform_data = &glamo_mci_def_pdata;
 
 	/* we need it later to give to the engine enable and disable */
 	glamo_mci_def_pdata.pglamo = glamo;
