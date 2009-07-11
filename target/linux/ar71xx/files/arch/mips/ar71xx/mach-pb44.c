@@ -11,9 +11,11 @@
 #include <linux/init.h>
 #include <linux/bitops.h>
 #include <linux/input.h>
+#include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/spi/vsc7385.h>
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
 #include <linux/i2c/pcf857x.h>
@@ -24,7 +26,7 @@
 
 #include "devices.h"
 
-#define PB44_PCF8757_VSC7385_CS	0
+#define PB44_PCF8757_VSC7395_CS	0
 #define PB44_PCF8757_STEREO_CS	1
 #define PB44_PCF8757_SLIC_CS0	2
 #define PB44_PCF8757_SLIC_TEST	3
@@ -44,19 +46,11 @@
 #define PB44_GPIO_I2C_SDA	1
 
 #define PB44_GPIO_EXP_BASE	16
+#define PB44_GPIO_VSC7395_CS	(PB44_GPIO_EXP_BASE + PB44_PCF8757_VSC7395_CS)
 #define PB44_GPIO_SW_RESET	(PB44_GPIO_EXP_BASE + PB44_PCF8757_SW_RESET)
 #define PB44_GPIO_SW_JUMP	(PB44_GPIO_EXP_BASE + PB44_PCF8757_SW_JUMP)
 #define PB44_GPIO_LED_JUMP1	(PB44_GPIO_EXP_BASE + PB44_PCF8757_LED_JUMP1)
 #define PB44_GPIO_LED_JUMP2	(PB44_GPIO_EXP_BASE + PB44_PCF8757_LED_JUMP2)
-
-static struct spi_board_info pb44_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz	= 25000000,
-		.modalias	= "m25p80",
-	}
-};
 
 static struct ar71xx_pci_irq pb44_pci_irqs[] __initdata = {
 	{
@@ -128,15 +122,69 @@ static struct gpio_button pb44_gpio_buttons[] __initdata = {
 	}
 };
 
+static void pb44_vsc7395_reset(void)
+{
+	ar71xx_device_stop(RESET_MODULE_GE1_PHY);
+	udelay(10);
+	ar71xx_device_start(RESET_MODULE_GE1_PHY);
+	mdelay(50);
+}
+
+static struct vsc7385_platform_data pb44_vsc7395_data = {
+	.reset		= pb44_vsc7395_reset,
+	.ucode_name	= "vsc7395_ucode_pb44.bin",
+	.mac_cfg = {
+		.tx_ipg		= 6,
+		.bit2		= 1,
+		.clk_sel	= 0,
+	},
+};
+
+static struct spi_board_info pb44_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 25000000,
+		.modalias	= "m25p80",
+	}, {
+		.bus_num	= 0,
+		.chip_select	= 1,
+		.max_speed_hz	= 25000000,
+		.modalias	= "spi-vsc7385",
+		.platform_data	= &pb44_vsc7395_data,
+		.controller_data = (void *) PB44_GPIO_VSC7395_CS,
+	},
+};
+
+static struct resource pb44_spi_resources[] = {
+	[0] = {
+		.start	= AR71XX_SPI_BASE,
+		.end	= AR71XX_SPI_BASE + AR71XX_SPI_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct ar71xx_spi_platform_data pb44_spi_data = {
+	.bus_num		= 0,
+	.num_chipselect		= 2,
+};
+
+static struct platform_device pb44_spi_device = {
+	.name		= "pb44-spi",
+	.id		= -1,
+	.resource	= pb44_spi_resources,
+	.num_resources	= ARRAY_SIZE(pb44_spi_resources),
+	.dev = {
+		.platform_data = &pb44_spi_data,
+	},
+};
+
 #define PB44_WAN_PHYMASK	BIT(0)
 #define PB44_LAN_PHYMASK	0
 #define PB44_MDIO_PHYMASK	(PB44_LAN_PHYMASK | PB44_WAN_PHYMASK)
 
 static void __init pb44_init(void)
 {
-	ar71xx_add_device_spi(NULL, pb44_spi_info,
-				ARRAY_SIZE(pb44_spi_info));
-
 	ar71xx_add_device_mdio(~PB44_MDIO_PHYMASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
@@ -148,6 +196,7 @@ static void __init pb44_init(void)
 	ar71xx_eth1_data.phy_mask = PB44_LAN_PHYMASK;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_eth1_pll_data.pll_1000 = 0x110000;
 
 	ar71xx_add_device_eth(1);
 
@@ -159,6 +208,9 @@ static void __init pb44_init(void)
  				ARRAY_SIZE(pb44_i2c_board_info));
 
 	platform_device_register(&pb44_i2c_gpio_device);
+
+	spi_register_board_info(pb44_spi_info, ARRAY_SIZE(pb44_spi_info));
+	platform_device_register(&pb44_spi_device);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(pb44_leds_gpio),
 				    pb44_leds_gpio);
