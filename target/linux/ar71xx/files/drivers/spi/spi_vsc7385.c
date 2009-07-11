@@ -63,10 +63,11 @@
 #define VSC73XX_MAC_CFG_VLAN_DBLAWR	(1 << 15)
 #define VSC73XX_MAC_CFG_VLAN_AWR	(1 << 14)
 #define VSC73XX_MAC_CFG_100_BASE_T	(1 << 13)
-#define VSC73XX_MAC_CFG_TX_IPG(x)	((x & 0x1f) << 6)
+#define VSC73XX_MAC_CFG_TX_IPG(x)	(((x) & 0x1f) << 6)
 #define VSC73XX_MAC_CFG_MAC_RX_RST	(1 << 5)
 #define VSC73XX_MAC_CFG_MAC_TX_RST	(1 << 4)
-#define VSC73XX_MAC_CFG_CLK_SEL(x)	((x & 0x3) << 0)
+#define VSC73XX_MAC_CFG_BIT2		(1 << 2)
+#define VSC73XX_MAC_CFG_CLK_SEL(x)	((x) & 0x3)
 
 /* ADVPORTM register bits */
 #define VSC73XX_ADVPORTM_IFG_PPM	(1 << 7)
@@ -145,12 +146,10 @@
 				 VSC73XX_MAC_CFG_MAC_RX_RST | \
 				 VSC73XX_MAC_CFG_MAC_TX_RST)
 
-#define VSC7385_MAC_CFG_INIT	(VSC73XX_MAC_CFG_TX_EN | \
+#define VSC73XX_MAC_CFG_INIT	(VSC73XX_MAC_CFG_TX_EN | \
 				 VSC73XX_MAC_CFG_FDX | \
 				 VSC73XX_MAC_CFG_GIGE | \
-				 VSC73XX_MAC_CFG_RX_EN | \
-				 VSC73XX_MAC_CFG_TX_IPG(6) | \
-				 4)
+				 VSC73XX_MAC_CFG_RX_EN)
 
 #define VSC73XX_RESET_DELAY	100
 
@@ -438,6 +437,8 @@ static int vsc7385_upload_ucode(struct vsc7385 *vsc)
 
 static int vsc7385_setup(struct vsc7385 *vsc)
 {
+	struct vsc7385_platform_data *pdata = vsc->pdata;
+	u32 t;
 	int err;
 
 	err = vsc7385_write_verify(vsc, VSC73XX_BLOCK_SYSTEM, 0,
@@ -461,8 +462,14 @@ static int vsc7385_setup(struct vsc7385 *vsc)
 	if (err)
 		goto err;
 
+	t = VSC73XX_MAC_CFG_INIT;
+	t |= VSC73XX_MAC_CFG_TX_IPG(pdata->mac_cfg.tx_ipg);
+	t |= VSC73XX_MAC_CFG_CLK_SEL(pdata->mac_cfg.clk_sel);
+	if (pdata->mac_cfg.bit2)
+		t |= VSC73XX_MAC_CFG_BIT2;
+
 	err = vsc7385_write(vsc, VSC73XX_BLOCK_MAC, VSC73XX_SUBBLOCK_PORT_MAC,
-			    VSC73XX_MAC_CFG, VSC7385_MAC_CFG_INIT);
+			    VSC73XX_MAC_CFG, t);
 	if (err)
 		goto err;
 
