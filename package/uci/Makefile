@@ -39,7 +39,7 @@ endef
 define Package/ucitrigger
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+libuci-lua
+  DEPENDS:=+libuci-lua +lua
   TITLE:=Automatic triggers for applying system config changes
 endef
 
