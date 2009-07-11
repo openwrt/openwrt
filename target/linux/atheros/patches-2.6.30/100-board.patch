@@ -20,7 +20,7 @@
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-@@ -632,6 +645,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -633,6 +646,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  
  endchoice
  
@@ -30,7 +30,7 @@
  source "arch/mips/jazz/Kconfig"
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -290,6 +290,13 @@ libs-$(CONFIG_MIPS_XXS1500)	+= arch/mips
+@@ -283,6 +283,13 @@ libs-$(CONFIG_MIPS_XXS1500)	+= arch/mips
  load-$(CONFIG_MIPS_XXS1500)	+= 0xffffffff80100000
  
  #
