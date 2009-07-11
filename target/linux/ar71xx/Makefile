@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mips
 BOARD:=ar71xx
-BOARDNAME:=Atheros AR71xx/AR913x
+BOARDNAME:=Atheros AR71xx/AR7240/AR913x
 FEATURES:=squashfs jffs2 tgz
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 
