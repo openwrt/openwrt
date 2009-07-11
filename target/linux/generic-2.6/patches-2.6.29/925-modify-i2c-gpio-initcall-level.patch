@@ -1,0 +1,11 @@
+--- a/drivers/i2c/busses/i2c-gpio.c
++++ b/drivers/i2c/busses/i2c-gpio.c
+@@ -210,7 +210,7 @@ static int __init i2c_gpio_init(void)
+ 
+ 	return ret;
+ }
+-module_init(i2c_gpio_init);
++subsys_initcall(i2c_gpio_init);
+ 
+ static void __exit i2c_gpio_exit(void)
+ {
