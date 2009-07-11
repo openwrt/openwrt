@@ -44,11 +44,11 @@ static struct mtd_partition tew_632brp_partitions[] = {
 	} , {
 		.name		= "kernel",
 		.offset		= 0x030000,
-		.size		= 0x0c0000,
+		.size		= 0x0d0000,
 	} , {
 		.name		= "rootfs",
-		.offset		= 0x0f0000,
-		.size		= 0x300000,
+		.offset		= 0x100000,
+		.size		= 0x2f0000,
 	} , {
 		.name		= "art",
 		.offset		= 0x3f0000,
