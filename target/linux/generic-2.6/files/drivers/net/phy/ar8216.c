@@ -264,7 +264,7 @@ ar8216_netif_receive_skb(struct sk_buff *skb)
 static struct switch_attr ar8216_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
-		.name = "vlan",
+		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
 		.set = ar8216_set_vlan,
 		.get = ar8216_get_vlan,
