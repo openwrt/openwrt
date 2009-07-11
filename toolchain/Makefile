@@ -66,6 +66,6 @@ $(curdir)//install = $(1)/compile
 
 $(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed:
 
-$(eval $(call stampfile,$(curdir),toolchain,install,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed))
+$(eval $(call stampfile,$(curdir),toolchain,install,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed,,$(TOOLCHAIN_DIR)))
 $(eval $(call subdir,$(curdir)))
 
