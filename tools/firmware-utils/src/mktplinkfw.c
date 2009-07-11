@@ -110,7 +110,7 @@ static struct board_info boards[] = {
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x120000,
+		.rootfs_ofs	= 0x140000,
 	}, {
 		.id		= "TL-WR841NDv3",
 		.hw_id		= HWID_TL_WR841ND_V3,
@@ -118,7 +118,7 @@ static struct board_info boards[] = {
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x120000,
+		.rootfs_ofs	= 0x140000,
 	}, {
 		.id		= "TL-WR941NDv2",
 		.hw_id		= HWID_TL_WR941ND_V2,
@@ -126,7 +126,7 @@ static struct board_info boards[] = {
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x120000,
+		.rootfs_ofs	= 0x140000,
 	}, {
 		/* terminating entry */
 	}

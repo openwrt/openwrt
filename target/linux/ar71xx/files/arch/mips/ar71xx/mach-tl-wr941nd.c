@@ -39,11 +39,11 @@ static struct mtd_partition tl_wr941nd_partitions[] = {
 	} , {
 		.name		= "kernel",
 		.offset		= 0x020000,
-		.size		= 0x120000,
+		.size		= 0x140000,
 	} , {
 		.name		= "rootfs",
-		.offset		= 0x140000,
-		.size		= 0x2b0000,
+		.offset		= 0x160000,
+		.size		= 0x290000,
 	} , {
 		.name		= "art",
 		.offset		= 0x3f0000,
