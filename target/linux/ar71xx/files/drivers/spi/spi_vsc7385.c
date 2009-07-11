@@ -102,6 +102,13 @@
 #define VSC73XX_ICPU_CTRL_CLK_EN	(1 << 1)
 #define VSC73XX_ICPU_CTRL_SRST		(1 << 0)
 
+#define VSC73XX_ICPU_CHIPID_ID_SHIFT	12
+#define VSC73XX_ICPU_CHIPID_ID_MASK	0xffff
+#define VSC73XX_ICPU_CHIPID_REV_SHIFT	28
+#define VSC73XX_ICPU_CHIPID_REV_MASK	0xf
+#define VSC73XX_ICPU_CHIPID_ID_7385	0x7385
+#define VSC73XX_ICPU_CHIPID_ID_7395	0x7395
+
 #define VSC73XX_CMD_MODE_READ		0
 #define VSC73XX_CMD_MODE_WRITE		1
 #define VSC73XX_CMD_MODE_SHIFT		4
@@ -494,16 +501,18 @@ static int vsc7385_detect(struct vsc7385 *vsc)
 		return err;
 	}
 
-	id = (t >> 12) & 0xffff;
+	id = (t >> VSC73XX_ICPU_CHIPID_ID_SHIFT) & VSC73XX_ICPU_CHIPID_ID_MASK;
 	switch (id) {
-	case 0x7385:
+	case VSC73XX_ICPU_CHIPID_ID_7385:
+	case VSC73XX_ICPU_CHIPID_ID_7395:
 		break;
 	default:
 		dev_err(&spi->dev, "unsupported chip, id=%04x\n", id);
 		return -ENODEV;
 	}
 
-	rev = (t >> 28) & 0xf;
+	rev = (t >> VSC73XX_ICPU_CHIPID_REV_SHIFT) &
+	      VSC73XX_ICPU_CHIPID_REV_MASK;
 	dev_info(&spi->dev, "VSC%04X (rev. %d) switch found \n", id, rev);
 
 	return 0;
