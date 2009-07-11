@@ -1,7 +1,5 @@
-Index: iproute2-2.6.25/tc/q_htb.c
-===================================================================
---- iproute2-2.6.25.orig/tc/q_htb.c	2008-05-01 00:37:50.000000000 +0100
-+++ iproute2-2.6.25/tc/q_htb.c	2008-05-01 20:30:28.000000000 +0100
+--- a/tc/q_htb.c
++++ b/tc/q_htb.c
 @@ -35,10 +35,14 @@ static void explain(void)
  		" default  minor id of class to which unclassified packets are sent {0}\n"
  		" r2q      DRR quantums are computed as rate in Bps/r2q {10}\n"

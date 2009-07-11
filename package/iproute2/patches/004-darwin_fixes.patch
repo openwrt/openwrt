@@ -1,7 +1,5 @@
-Index: iproute-2.6.20-070313/netem/maketable.c
-===================================================================
---- iproute-2.6.20-070313.orig/netem/maketable.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/netem/maketable.c	2007-06-09 13:54:01.000000000 +0100
+--- a/netem/maketable.c
++++ b/netem/maketable.c
 @@ -10,7 +10,9 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -12,10 +10,8 @@ Index: iproute-2.6.20-070313/netem/maketable.c
  #include <string.h>
  #include <sys/types.h>
  #include <sys/stat.h>
-Index: iproute-2.6.20-070313/netem/normal.c
-===================================================================
---- iproute-2.6.20-070313.orig/netem/normal.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/netem/normal.c	2007-06-09 13:54:01.000000000 +0100
+--- a/netem/normal.c
++++ b/netem/normal.c
 @@ -8,8 +8,12 @@
  #include <string.h>
  #include <limits.h>
@@ -29,10 +25,8 @@ Index: iproute-2.6.20-070313/netem/normal.c
  
  #define TABLESIZE 16384
  #define TABLEFACTOR NETEM_DIST_SCALE
-Index: iproute-2.6.20-070313/netem/pareto.c
-===================================================================
---- iproute-2.6.20-070313.orig/netem/pareto.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/netem/pareto.c	2007-06-09 13:54:01.000000000 +0100
+--- a/netem/pareto.c
++++ b/netem/pareto.c
 @@ -7,8 +7,12 @@
  #include <math.h>
  #include <limits.h>
@@ -46,10 +40,8 @@ Index: iproute-2.6.20-070313/netem/pareto.c
  
  static const double a=3.0;
  #define TABLESIZE	16384
-Index: iproute-2.6.20-070313/netem/paretonormal.c
-===================================================================
---- iproute-2.6.20-070313.orig/netem/paretonormal.c	2007-06-09 13:53:56.000000000 +0100
-+++ iproute-2.6.20-070313/netem/paretonormal.c	2007-06-09 13:54:01.000000000 +0100
+--- a/netem/paretonormal.c
++++ b/netem/paretonormal.c
 @@ -15,10 +15,13 @@
  #include <string.h>
  #include <math.h>
