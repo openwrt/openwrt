@@ -11,4 +11,9 @@
 struct vsc7385_platform_data {
 	void		(* reset)(void);
 	char		*ucode_name;
+	struct {
+		u32	tx_ipg:5;
+		u32	bit2:1;
+		u32	clk_sel:3;
+	} mac_cfg;
 };
