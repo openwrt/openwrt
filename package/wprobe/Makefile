@@ -20,6 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/wprobe
   SUBMENU:=Network Support
+  DEPENDS:=@LINUX_2_6
   TITLE:=Wireless driver probe infrastructure
   FILES:= \
   	$(PKG_BUILD_DIR)/kernel/wprobe.$(LINUX_KMOD_SUFFIX)
