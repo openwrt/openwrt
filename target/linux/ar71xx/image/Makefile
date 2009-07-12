@@ -36,7 +36,7 @@ define Image/BuildKernel
 		-d $(KDIR)/vmlinux.bin.lzma $(IMGNAME)-uImage-lzma.bin
 endef
 
-define Image/Build/Linksys8M
+define Image/Build/WRT400N
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
@@ -54,6 +54,7 @@ define Image/Build/Linksys8M
 			dd if=$(KDIR)/root.$(1) bs=6336k conv=sync; \
 			echo -n $(4); \
 		) > $(call imgname,$(1),$(2)).bin; \
+		wrt400n $(KDIR)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call imgname,$(1),$(2)).webui; \
 	fi; fi
 endef
 
@@ -166,16 +167,16 @@ define Image/Build/Template/Compex/squashfs
 	$(call Image/Build/Template/Compex,squashfs,$(1))
 endef
 
-define Image/Build/Template/Linksys8M
-	$(call Image/Build/Linksys8M,$(1),$(2),$(3),$(4))
+define Image/Build/Template/WRT400N
+	$(call Image/Build/WRT400N,$(1),$(2),$(3),$(4))
 endef
 
-define Image/Build/Template/Linksys8M/squashfs
-	$(call Image/Build/Template/Linksys8M,squashfs,$(1),$(2),$(3))
+define Image/Build/Template/WRT400N/squashfs
+	$(call Image/Build/Template/WRT400N,squashfs,$(1),$(2),$(3))
 endef
 
-define Image/Build/Template/Linksys8M/jffs2-64k
-	$(call Image/Build/Template/Linksys8M,jffs2-64k,$(1),$(2),$(3))
+define Image/Build/Template/WRT400N/jffs2-64k
+	$(call Image/Build/Template/WRT400N,jffs2-64k,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/AP81
@@ -293,7 +294,7 @@ define Image/Build/Profile/TLWR941NDV2
 endef
 
 define Image/Build/Profile/WRT400N
-	$(call Image/Build/Template/Linksys8M/$(1),wrt400n,board=WRT400N)
+	$(call Image/Build/Template/WRT400N/$(1),wrt400n,board=WRT400N)
 endef
 
 define Image/Build/Profile/Default
