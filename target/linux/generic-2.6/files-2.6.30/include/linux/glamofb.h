@@ -12,16 +12,12 @@ struct glamo_core;
 
 struct glamofb_platform_data {
 	int width, height;
-	int fb_mem_size;
 
 	int num_modes;
 	struct fb_videomode *modes;
 
-	struct glamo_spi_info *spi_info;
 	struct glamo_spigpio_info *spigpio_info;
 	struct glamo_core *glamo;
-
-	struct platform_device *mmc_dev;
 
 	/* glamo mmc platform specific info */
 	int		(*glamo_can_set_mci_power)(void);

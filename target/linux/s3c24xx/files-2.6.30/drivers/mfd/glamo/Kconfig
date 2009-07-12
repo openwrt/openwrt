@@ -1,5 +1,6 @@
 config MFD_GLAMO
 	bool "Smedia Glamo 336x/337x support"
+	select MFD_CORE
 	help
 	  This enables the core driver for the Smedia Glamo 336x/337x
 	  multi-function device.  It includes irq_chip demultiplex as
