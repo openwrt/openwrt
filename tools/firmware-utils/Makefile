@@ -51,6 +51,7 @@ define Host/Compile
 	$(call cc2,mktplinkfw md5)
 	$(call cc,pc1crypt)
 	$(call cc,osbridge-crc)
+	$(call cc2,wrt400n cyg_crc32)
 endef
 
 define Host/Install
