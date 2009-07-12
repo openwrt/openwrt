@@ -85,7 +85,7 @@ struct ag71xx_desc {
 #define DESC_PKTLEN_M	0xfff
 	u32	next;
 	u32	pad;
-};
+} __attribute__((aligned(4)));
 
 struct ag71xx_buf {
 	struct sk_buff	*skb;
