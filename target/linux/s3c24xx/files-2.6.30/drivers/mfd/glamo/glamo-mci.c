@@ -738,7 +738,7 @@ static int glamo_mci_probe(struct platform_device *pdev)
 	spin_lock_init(&host->lock);
 	INIT_WORK(&host->irq_work, glamo_mci_irq_worker);
 
-	host->regulator = regulator_get(&pdev->dev, "SD_3V3");
+	host->regulator = regulator_get(pdev->dev.parent, "SD_3V3");
 	if (!host->regulator) {
 		dev_err(&pdev->dev, "Cannot proceed without regulator.\n");
 		ret = -ENODEV;

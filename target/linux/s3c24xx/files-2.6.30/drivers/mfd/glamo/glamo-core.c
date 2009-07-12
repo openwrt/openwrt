@@ -40,6 +40,7 @@
 #include <linux/glamofb.h>
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/host.h>
+#include <linux/mfd/core.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -150,100 +151,7 @@ static inline void __reg_clear_bit(struct glamo_core *glamo,
  * resources of sibling devices
  ***********************************************************************/
 
-#if 0
-static struct resource glamo_core_resources[] = {
-	{
-		.start	= GLAMO_REGOFS_GENERIC,
-		.end	= GLAMO_REGOFS_GENERIC + 0x400,
-		.flags	= IORESOURCE_MEM,
-	}, {
-		.start	= 0,
-		.end	= 0,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device glamo_core_dev = {
-	.name		= "glamo-core",
-	.resource	= &glamo_core_resources,
-	.num_resources	= ARRAY_SIZE(glamo_core_resources),
-};
-#endif
-
-static struct resource glamo_jpeg_resources[] = {
-	{
-		.start	= GLAMO_REGOFS_JPEG,
-		.end	= GLAMO_REGOFS_MPEG - 1,
-		.flags	= IORESOURCE_MEM,
-	}, {
-		.start	= IRQ_GLAMO_JPEG,
-		.end	= IRQ_GLAMO_JPEG,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device glamo_jpeg_dev = {
-	.name		= "glamo-jpeg",
-	.resource	= glamo_jpeg_resources,
-	.num_resources	= ARRAY_SIZE(glamo_jpeg_resources),
-};
-
-static struct resource glamo_mpeg_resources[] = {
-	{
-		.start	= GLAMO_REGOFS_MPEG,
-		.end	= GLAMO_REGOFS_LCD - 1,
-		.flags	= IORESOURCE_MEM,
-	}, {
-		.start	= IRQ_GLAMO_MPEG,
-		.end	= IRQ_GLAMO_MPEG,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device glamo_mpeg_dev = {
-	.name		= "glamo-mpeg",
-	.resource	= glamo_mpeg_resources,
-	.num_resources	= ARRAY_SIZE(glamo_mpeg_resources),
-};
-
-static struct resource glamo_2d_resources[] = {
-	{
-		.start	= GLAMO_REGOFS_2D,
-		.end	= GLAMO_REGOFS_3D - 1,
-		.flags	= IORESOURCE_MEM,
-	}, {
-		.start	= IRQ_GLAMO_2D,
-		.end	= IRQ_GLAMO_2D,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device glamo_2d_dev = {
-	.name		= "glamo-2d",
-	.resource	= glamo_2d_resources,
-	.num_resources	= ARRAY_SIZE(glamo_2d_resources),
-};
-
-static struct resource glamo_3d_resources[] = {
-	{
-		.start	= GLAMO_REGOFS_3D,
-		.end	= GLAMO_REGOFS_END - 1,
-		.flags	= IORESOURCE_MEM,
-	},
-};
-
-static struct platform_device glamo_3d_dev = {
-	.name		= "glamo-3d",
-	.resource	= glamo_3d_resources,
-	.num_resources	= ARRAY_SIZE(glamo_3d_resources),
-};
-
-static struct platform_device glamo_spigpio_dev = {
-	.name		= "glamo-spi-gpio",
-};
-
 static struct resource glamo_fb_resources[] = {
-	/* FIXME: those need to be incremented by parent base */
 	{
 		.name	= "glamo-fb-regs",
 		.start	= GLAMO_REGOFS_LCD,
@@ -257,15 +165,8 @@ static struct resource glamo_fb_resources[] = {
 	},
 };
 
-static struct platform_device glamo_fb_dev = {
-	.name		= "glamo-fb",
-	.resource	= glamo_fb_resources,
-	.num_resources	= ARRAY_SIZE(glamo_fb_resources),
-};
-
 static struct resource glamo_mmc_resources[] = {
 	{
-		/* FIXME: those need to be incremented by parent base */
 		.start	= GLAMO_REGOFS_MMC,
 		.end	= GLAMO_REGOFS_MPROC0 - 1,
 		.flags	= IORESOURCE_MEM
@@ -284,36 +185,33 @@ static struct resource glamo_mmc_resources[] = {
 static struct glamo_mci_pdata glamo_mci_def_pdata = {
 	.gpio_detect		= 0,
 	.glamo_can_set_mci_power	= NULL, /* filled in from MFD platform data */
-/*	.ocr_avail	= MMC_VDD_20_21 |
-			  MMC_VDD_21_22 |
-			  MMC_VDD_22_23 |
-			  MMC_VDD_23_24 |
-			  MMC_VDD_24_25 |
-			  MMC_VDD_25_26 |
-			  MMC_VDD_26_27 |
-			  MMC_VDD_27_28 |
-			  MMC_VDD_28_29 |
-			  MMC_VDD_29_30 |
-			  MMC_VDD_30_31 |
-			  MMC_VDD_32_33,*/
 	.glamo_irq_is_wired	= NULL, /* filled in from MFD platform data */
 	.mci_suspending = NULL, /* filled in from MFD platform data */
 	.mci_all_dependencies_resumed = NULL, /* filled in from MFD platform data */
 };
 
-static void mangle_mem_resources(struct resource *res, int num_res,
-				 struct resource *parent)
-{
-	int i;
+enum glamo_cells {
+	GLAMO_CELL_FB,
+	GLAMO_CELL_MMC,
+	GLAMO_CELL_SPI_GPIO
+};
 
-	for (i = 0; i < num_res; i++) {
-		if (res[i].flags != IORESOURCE_MEM)
-			continue;
-		res[i].start += parent->start;
-		res[i].end += parent->start;
-		res[i].parent = parent;
-	}
-}
+static struct mfd_cell glamo_cells[] = {
+	[GLAMO_CELL_FB] = {
+		.name = "glamo-fb",
+		.num_resources = ARRAY_SIZE(glamo_fb_resources),
+		.resources = glamo_fb_resources,
+	},
+	[GLAMO_CELL_MMC] = {
+		.name = "glamo-mci",
+		.num_resources = ARRAY_SIZE(glamo_mmc_resources),
+		.resources = glamo_mmc_resources,
+	},
+	[GLAMO_CELL_SPI_GPIO] = {
+		.name = "glamo-spi-gpio",
+	},
+};
+
 
 /***********************************************************************
  * IRQ demultiplexer
@@ -363,7 +261,7 @@ static void glamo_irq_demux_handler(unsigned int irq, struct irq_desc *desc)
 		desc->chip->ack(irq);
 		return;
 	}
-    kstat_incr_irqs_this_cpu(irq, desc);
+	kstat_incr_irqs_this_cpu(irq, desc);
 
 	desc->chip->ack(irq);
 	desc->status |= IRQ_INPROGRESS;
@@ -574,7 +472,7 @@ int __glamo_engine_disable(struct glamo_core *glamo, enum glamo_engine engine)
 		/* disable the TCLK divider clk input */
 		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
 					GLAMO_CLOCK_GEN51_EN_DIV_TCLK, 0);
-        break;
+		break;
 	case GLAMO_ENGINE_CMDQ:
 			__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_2D,
 			                   GLAMO_CLOCK_2D_EN_M6CLK,
@@ -669,9 +567,9 @@ struct glamo_script reset_regs[] = {
 	[GLAMO_ENGINE_MMC] = {
 		GLAMO_REG_CLOCK_MMC, GLAMO_CLOCK_MMC_RESET
 	},
-    [GLAMO_ENGINE_CMDQ] = {
-        GLAMO_REG_CLOCK_2D, GLAMO_CLOCK_2D_CQ_RESET
-    },
+	[GLAMO_ENGINE_CMDQ] = {
+		GLAMO_REG_CLOCK_2D, GLAMO_CLOCK_2D_CQ_RESET
+	},
 	[GLAMO_ENGINE_2D] = {
 		GLAMO_REG_CLOCK_2D, GLAMO_CLOCK_2D_RESET
 	},
@@ -1208,7 +1106,6 @@ static int __init glamo_probe(struct platform_device *pdev)
 {
 	int rc = 0, irq;
 	struct glamo_core *glamo;
-	struct platform_device *glamo_mmc_dev;
 
 	if (glamo_handle) {
 		dev_err(&pdev->dev,
@@ -1234,14 +1131,7 @@ static int __init glamo_probe(struct platform_device *pdev)
 
 	/* register a number of sibling devices whoise IOMEM resources
 	 * are siblings of pdev's IOMEM resource */
-#if 0
-	glamo_core_dev.dev.parent = &pdev.dev;
-	mangle_mem_resources(glamo_core_dev.resources,
-			     glamo_core_dev.num_resources, glamo->mem);
-	glamo_core_dev.resources[1].start = glamo->irq;
-	glamo_core_dev.resources[1].end = glamo->irq;
-	platform_device_register(&glamo_core_dev);
-#endif
+
 	/* only remap the generic, hostbus and memory controller registers */
 	glamo->base = ioremap(glamo->mem->start, 0x4000 /*GLAMO_REGOFS_VIDCAP*/);
 	if (!glamo->base) {
@@ -1278,7 +1168,6 @@ static int __init glamo_probe(struct platform_device *pdev)
 		glamo->irq_works = 0;
 	}
 
-
 	/* confirm it isn't insane version */
 	if (!glamo_supported(glamo)) {
 		dev_err(&pdev->dev, "This Glamo is not supported\n");
@@ -1302,6 +1191,8 @@ static int __init glamo_probe(struct platform_device *pdev)
 		 glamo_pll_rate(glamo, GLAMO_PLL1),
 		 glamo_pll_rate(glamo, GLAMO_PLL2));
 
+	glamo->pdata->glamo = glamo;
+
 	/* bring MCI specific stuff over from our MFD platform data */
 	glamo_mci_def_pdata.glamo_can_set_mci_power =
 					glamo->pdata->glamo_can_set_mci_power;
@@ -1309,53 +1200,23 @@ static int __init glamo_probe(struct platform_device *pdev)
 					glamo->pdata->glamo_mci_use_slow;
 	glamo_mci_def_pdata.glamo_irq_is_wired =
 					glamo->pdata->glamo_irq_is_wired;
+	glamo_mci_def_pdata.pglamo = glamo;
 
-	/* start creating the siblings */
+	/* register siblings */
+	glamo_cells[GLAMO_CELL_MMC].platform_data = &glamo_mci_def_pdata;
+	glamo_cells[GLAMO_CELL_MMC].data_size = sizeof(glamo_mci_def_pdata);
 
-	glamo_2d_dev.dev.parent = &pdev->dev;
-	mangle_mem_resources(glamo_2d_dev.resource,
-			     glamo_2d_dev.num_resources, glamo->mem);
-	platform_device_register(&glamo_2d_dev);
-
-	glamo_3d_dev.dev.parent = &pdev->dev;
-	mangle_mem_resources(glamo_3d_dev.resource,
-			     glamo_3d_dev.num_resources, glamo->mem);
-	platform_device_register(&glamo_3d_dev);
-
-	glamo_jpeg_dev.dev.parent = &pdev->dev;
-	mangle_mem_resources(glamo_jpeg_dev.resource,
-			     glamo_jpeg_dev.num_resources, glamo->mem);
-	platform_device_register(&glamo_jpeg_dev);
-
-	glamo_mpeg_dev.dev.parent = &pdev->dev;
-	mangle_mem_resources(glamo_mpeg_dev.resource,
-			     glamo_mpeg_dev.num_resources, glamo->mem);
-	platform_device_register(&glamo_mpeg_dev);
-
-	glamo->pdata->glamo = glamo;
-	glamo_fb_dev.dev.parent = &pdev->dev;
-	glamo_fb_dev.dev.platform_data = glamo->pdata;
-	mangle_mem_resources(glamo_fb_dev.resource,
-			     glamo_fb_dev.num_resources, glamo->mem);
-	platform_device_register(&glamo_fb_dev);
+	glamo_cells[GLAMO_CELL_FB].platform_data = glamo->pdata;
+	glamo_cells[GLAMO_CELL_FB].data_size = sizeof(struct glamofb_platform_data);
 
 	glamo->pdata->spigpio_info->glamo = glamo;
-	glamo_spigpio_dev.dev.parent = &pdev->dev;
-	glamo_spigpio_dev.dev.platform_data = glamo->pdata->spigpio_info;
-	platform_device_register(&glamo_spigpio_dev);
+	glamo_cells[GLAMO_CELL_SPI_GPIO].platform_data = glamo->pdata->spigpio_info;
+	glamo_cells[GLAMO_CELL_SPI_GPIO].data_size =
+	sizeof(struct glamo_spigpio_info);
 
-	glamo_mmc_dev = glamo->pdata->mmc_dev;
-	glamo_mmc_dev->name = "glamo-mci";
-	glamo_mmc_dev->dev.parent = &pdev->dev;
-	glamo_mmc_dev->resource = glamo_mmc_resources;
-	glamo_mmc_dev->num_resources = ARRAY_SIZE(glamo_mmc_resources);
-    glamo_mmc_dev->dev.platform_data = &glamo_mci_def_pdata;
-
-	/* we need it later to give to the engine enable and disable */
-	glamo_mci_def_pdata.pglamo = glamo;
-	mangle_mem_resources(glamo_mmc_dev->resource,
-			     glamo_mmc_dev->num_resources, glamo->mem);
-	platform_device_register(glamo_mmc_dev);
+	mfd_add_devices(&pdev->dev, pdev->id, glamo_cells,
+	                      ARRAY_SIZE(glamo_cells),
+						  glamo->mem, 0);
 
 	/* only request the generic, hostbus and memory controller MMIO */
 	glamo->mem = request_mem_region(glamo->mem->start,
@@ -1399,8 +1260,7 @@ static int glamo_remove(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, NULL);
-	platform_device_unregister(&glamo_fb_dev);
-	platform_device_unregister(glamo->pdata->mmc_dev);
+	mfd_remove_devices(&pdev->dev);
 	iounmap(glamo->base);
 	release_mem_region(glamo->mem->start, GLAMO_REGOFS_VIDCAP);
 	glamo_handle = NULL;

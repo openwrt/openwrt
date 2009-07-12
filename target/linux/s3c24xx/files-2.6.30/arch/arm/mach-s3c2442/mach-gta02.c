@@ -535,16 +535,9 @@ static struct regulator_consumer_supply ldo5_consumers[] = {
 	},
 };
 
-/*
- * We need this dummy thing to fill the regulator consumers
- */
-static struct platform_device gta02_mmc_dev = {
-	/* details filled in by glamo core */
-};
-
 static struct regulator_consumer_supply hcldo_consumers[] = {
 	{
-		.dev = &gta02_mmc_dev.dev,
+		.dev = &gta02_glamo_dev.dev,
 		.supply = "SD_3V3",
 	},
 };
@@ -1111,13 +1104,6 @@ const struct jbt6k74_platform_data jbt6k74_pdata = {
 	.probe_completed = gta02_jbt6k74_probe_completed,
 };
 
-#if 0 /* currently this is not used and we use gpio spi */
-static struct glamo_spi_info glamo_spi_cfg = {
-	.board_size	= ARRAY_SIZE(gta02_spi_board_info),
-	.board_info	= gta02_spi_board_info,
-};
-#endif /* 0 */
-
 static struct glamo_spigpio_info glamo_spigpio_cfg = {
 	.pin_clk	= GLAMO_GPIO10_OUTPUT,
 	.pin_mosi	= GLAMO_GPIO11_OUTPUT,
@@ -1431,16 +1417,13 @@ static struct fb_videomode gta02_glamo_modes[] = {
 static struct glamofb_platform_data gta02_glamo_pdata = {
 	.width		= 43,
 	.height		= 58,
-	.fb_mem_size	= 0x400000, /* glamo has 8 megs of SRAM. we use 4 */
 
 	.num_modes = ARRAY_SIZE(gta02_glamo_modes),
 	.modes = gta02_glamo_modes,
 
-	//.spi_info	= &glamo_spi_cfg,
 	.spigpio_info	= &glamo_spigpio_cfg,
 
 	/* glamo MMC function platform data */
-	.mmc_dev = &gta02_mmc_dev,
 	.glamo_can_set_mci_power = gta02_glamo_can_set_mmc_power,
 	.glamo_mci_use_slow = gta02_glamo_mci_use_slow,
 	.glamo_irq_is_wired = glamo_irq_is_wired,

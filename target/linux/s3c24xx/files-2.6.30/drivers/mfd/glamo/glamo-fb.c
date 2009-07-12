@@ -79,11 +79,6 @@ struct glamofb_handle {
 	int output_enabled; /* 0 if the video output is disabled */
 };
 
-/* 'sibling' spi device for lcm init */
-static struct platform_device glamo_spi_dev = {
-	.name		= "glamo-lcm-spi",
-};
-
 static void glamo_output_enable(struct glamofb_handle *gfb) {
         	struct glamo_core *gcore = gfb->mach_info->glamo;
 
@@ -861,7 +856,7 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	}
 
 	glamofb->fb_res = request_mem_region(glamofb->fb_res->start,
-					     mach_info->fb_mem_size,
+					     resource_size(glamofb->fb_res),
 					     pdev->name);
 	if (!glamofb->fb_res) {
 		dev_err(&pdev->dev, "failed to request vram region\n");
@@ -875,6 +870,7 @@ static int __init glamofb_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to ioremap() mmio memory\n");
 		goto out_release_fb;
 	}
+
 	fbinfo->fix.smem_start = (unsigned long) glamofb->fb_res->start;
 	fbinfo->fix.smem_len = (__u32) resource_size(glamofb->fb_res);
 
@@ -932,14 +928,6 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	if (rc < 0) {
 		dev_err(&pdev->dev, "failed to register framebuffer\n");
 		goto out_unmap_fb;
-	}
-
-	if (mach_info->spi_info) {
-		/* register the sibling spi device */
-		mach_info->spi_info->glamofb_handle = glamofb;
-		glamo_spi_dev.dev.parent = &pdev->dev;
-		glamo_spi_dev.dev.platform_data = mach_info->spi_info;
-		platform_device_register(&glamo_spi_dev);
 	}
 
 	printk(KERN_INFO "fb%d: %s frame buffer device\n",
