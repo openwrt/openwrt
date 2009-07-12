@@ -126,7 +126,6 @@ enable_atheros() {
 	config_get distance "$device" distance
 	[ -n "$distance" ] && sysctl -w dev."$device".distance="$distance" >&-
 
-	local first=1
 	for vif in $vifs; do
 		local start_hostapd= vif_txpower= nosbeacon=
 		config_get ifname "$vif" ifname
@@ -146,29 +145,26 @@ enable_atheros() {
 		}
 		config_set "$vif" ifname "$ifname"
 
-		# only need to change freq band and channel on the first vif
-		[ "$first" = 1 ] && {
 		config_get hwmode "$device" hwmode
 		[ -z "$hwmode" ] && config_get hwmode "$device" mode
 
-			pureg=0
-			case "$hwmode" in
-				*b) hwmode=11b;;
-				*bg) hwmode=11g;;
-				*g) hwmode=11g; pureg=1;;
-				*gdt) hwmode=11gdt;;
-				*a) hwmode=11a;;
-				*adt) hwmode=11adt;;
-				*ast) hwmode=11ast;;
-				*fh) hwmode=fh;;
-				*) hwmode=auto;;
-			esac
-			iwpriv "$ifname" mode "$hwmode"
-			iwpriv "$ifname" pureg "$pureg"
+		pureg=0
+		case "$hwmode" in
+			*b) hwmode=11b;;
+			*bg) hwmode=11g;;
+			*g) hwmode=11g; pureg=1;;
+			*gdt) hwmode=11gdt;;
+			*a) hwmode=11a;;
+			*adt) hwmode=11adt;;
+			*ast) hwmode=11ast;;
+			*fh) hwmode=fh;;
+			*) hwmode=auto;;
+		esac
+		iwpriv "$ifname" mode "$hwmode"
+		iwpriv "$ifname" pureg "$pureg"
 
-			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
-		}
-	
+		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
+
 		config_get_bool hidden "$vif" hidden 0
 		iwpriv "$ifname" hide_ssid "$hidden"
 
@@ -339,7 +335,6 @@ enable_atheros() {
 				fi
 			;;
 		esac
-		first=0
 	done
 }
 
