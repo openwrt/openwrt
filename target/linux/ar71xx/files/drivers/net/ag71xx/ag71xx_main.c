@@ -457,18 +457,12 @@ static int ag71xx_stop(struct net_device *dev)
 static int ag71xx_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	struct ag71xx_desc *desc;
-	unsigned long flags;
 	int i;
 
 	i = ring->curr % AG71XX_TX_RING_SIZE;
 	desc = &ring->descs[i];
-
-	spin_lock_irqsave(&ag->lock, flags);
-	pdata->ddr_flush();
-	spin_unlock_irqrestore(&ag->lock, flags);
 
 	if (!ag71xx_desc_empty(desc))
 		goto err_drop;
