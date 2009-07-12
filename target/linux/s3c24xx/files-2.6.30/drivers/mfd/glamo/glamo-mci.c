@@ -219,9 +219,9 @@ static void glamo_mci_fix_card_div(struct glamo_mci_host *host, int div)
 		writew(readw(host->pdata->pglamo->base +
 		             GLAMO_REG_CLOCK_GEN5_1) | GLAMO_CLOCK_GEN51_EN_DIV_TCLK,
 		       host->pdata->pglamo->base + GLAMO_REG_CLOCK_GEN5_1);
-		mdelay(5);
 	}
 	spin_unlock_irqrestore(&host->pdata->pglamo->lock, flags);
+	mdelay(5);
 }
 
 static int glamo_mci_set_card_clock(struct glamo_mci_host *host, int freq)

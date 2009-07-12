@@ -1082,7 +1082,7 @@ static struct platform_device gta02_bl_dev = {
 
 static void gta02_jbt6k74_reset(int devidx, int level)
 {
-	glamo_lcm_reset(level);
+	glamo_lcm_reset(&gta02_glamo_dev, level);
 }	
 
 static void gta02_jbt6k74_probe_completed(struct device *dev)
