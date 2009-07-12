@@ -98,8 +98,6 @@ struct reg_range reg_range[] = {
 	{ 0x1b00, 0x900,	"3D Unit",	0 }, */
 };
 
-static struct glamo_core *glamo_handle;
-
 static inline void __reg_write(struct glamo_core *glamo,
 				u_int16_t reg, u_int16_t val)
 {
@@ -220,32 +218,36 @@ static struct mfd_cell glamo_cells[] = {
 
 static void glamo_ack_irq(unsigned int irq)
 {
+	struct glamo_core *glamo = (struct glamo_core*)get_irq_chip_data(irq);
 	/* clear interrupt source */
-	__reg_write(glamo_handle, GLAMO_REG_IRQ_CLEAR,
+	__reg_write(glamo, GLAMO_REG_IRQ_CLEAR,
 		    1 << irq2glamo(irq));
 }
 
 static void glamo_mask_irq(unsigned int irq)
 {
+	struct glamo_core *glamo = (struct glamo_core*)get_irq_chip_data(irq);
 	u_int16_t tmp;
 
 	/* clear bit in enable register */
-	tmp = __reg_read(glamo_handle, GLAMO_REG_IRQ_ENABLE);
+	tmp = __reg_read(glamo, GLAMO_REG_IRQ_ENABLE);
 	tmp &= ~(1 << irq2glamo(irq));
-	__reg_write(glamo_handle, GLAMO_REG_IRQ_ENABLE, tmp);
+	__reg_write(glamo, GLAMO_REG_IRQ_ENABLE, tmp);
 }
 
 static void glamo_unmask_irq(unsigned int irq)
 {
+	struct glamo_core *glamo = (struct glamo_core*)get_irq_chip_data(irq);
 	u_int16_t tmp;
 
 	/* set bit in enable register */
-	tmp = __reg_read(glamo_handle, GLAMO_REG_IRQ_ENABLE);
+	tmp = __reg_read(glamo, GLAMO_REG_IRQ_ENABLE);
 	tmp |= (1 << irq2glamo(irq));
-	__reg_write(glamo_handle, GLAMO_REG_IRQ_ENABLE, tmp);
+	__reg_write(glamo, GLAMO_REG_IRQ_ENABLE, tmp);
 }
 
 static struct irq_chip glamo_irq_chip = {
+	.name   = "glamo",
 	.ack	= glamo_ack_irq,
 	.mask	= glamo_mask_irq,
 	.unmask	= glamo_unmask_irq,
@@ -253,6 +255,7 @@ static struct irq_chip glamo_irq_chip = {
 
 static void glamo_irq_demux_handler(unsigned int irq, struct irq_desc *desc)
 {
+	struct glamo_core *glamo = get_irq_desc_chip_data(desc);
 	desc->status &= ~(IRQ_REPLAY | IRQ_WAITING);
 
 	if (unlikely(desc->status & IRQ_INPROGRESS)) {
@@ -281,7 +284,7 @@ static void glamo_irq_demux_handler(unsigned int irq, struct irq_desc *desc)
 		desc->status &= ~IRQ_PENDING;
 
 		/* read IRQ status register */
-		irqstatus = __reg_read(glamo_handle, GLAMO_REG_IRQ_STATUS);
+		irqstatus = __reg_read(glamo, GLAMO_REG_IRQ_STATUS);
 		for (i = 0; i < 9; i++)
 			if (irqstatus & (1 << i))
 				desc_handle_irq(IRQ_GLAMO(i),
@@ -596,14 +599,14 @@ void glamo_engine_reset(struct glamo_core *glamo, enum glamo_engine engine)
 }
 EXPORT_SYMBOL_GPL(glamo_engine_reset);
 
-void glamo_lcm_reset(int level)
+void glamo_lcm_reset(struct platform_device *pdev, int level)
 {
-	if (!glamo_handle)
+	struct glamo_core *glamo = dev_get_drvdata(&pdev->dev);
+	if (!glamo)
 		return;
 
-	glamo_gpio_setpin(glamo_handle, GLAMO_GPIO4, level);
-	glamo_gpio_cfgpin(glamo_handle, GLAMO_GPIO4_OUTPUT);
-
+	glamo_gpio_setpin(glamo, GLAMO_GPIO4, level);
+	glamo_gpio_cfgpin(glamo, GLAMO_GPIO4_OUTPUT);
 }
 EXPORT_SYMBOL_GPL(glamo_lcm_reset);
 
@@ -1107,18 +1110,11 @@ static int __init glamo_probe(struct platform_device *pdev)
 	int rc = 0, irq;
 	struct glamo_core *glamo;
 
-	if (glamo_handle) {
-		dev_err(&pdev->dev,
-			"This driver supports only one instance\n");
-		return -EBUSY;
-	}
-
 	glamo = kmalloc(GFP_KERNEL, sizeof(*glamo));
 	if (!glamo)
 		return -ENOMEM;
 
 	spin_lock_init(&glamo->lock);
-	glamo_handle = glamo;
 	glamo->pdev = pdev;
 	glamo->mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	glamo->irq = platform_get_irq(pdev, 0);
@@ -1152,15 +1148,16 @@ static int __init glamo_probe(struct platform_device *pdev)
 	 */
 
 	for (irq = IRQ_GLAMO(0); irq <= IRQ_GLAMO(8); irq++) {
-		set_irq_chip(irq, &glamo_irq_chip);
-		set_irq_handler(irq, handle_level_irq);
+		set_irq_chip_and_handler(irq, &glamo_irq_chip, handle_level_irq);
 		set_irq_flags(irq, IRQF_VALID);
+		set_irq_chip_data(irq, glamo);
 	}
 
 	if (glamo->pdata->glamo_irq_is_wired &&
 	    !glamo->pdata->glamo_irq_is_wired()) {
 		set_irq_chained_handler(glamo->irq, glamo_irq_demux_handler);
 		set_irq_type(glamo->irq, IRQ_TYPE_EDGE_FALLING);
+		set_irq_chip_data(glamo->irq, glamo);
 		dev_info(&pdev->dev, "Glamo interrupt registered\n");
 		glamo->irq_works = 1;
 	} else {
@@ -1231,16 +1228,17 @@ static int __init glamo_probe(struct platform_device *pdev)
 bail_irq:
 	disable_irq(glamo->irq);
 	set_irq_chained_handler(glamo->irq, NULL);
+	set_irq_chip_data(glamo->irq, NULL);
 
 	for (irq = IRQ_GLAMO(0); irq <= IRQ_GLAMO(8); irq++) {
 		set_irq_flags(irq, 0);
 		set_irq_chip(irq, NULL);
+		set_irq_chip_data(irq, NULL);
 	}
 
 	iounmap(glamo->base);
 bail_free:
 	platform_set_drvdata(pdev, NULL);
-	glamo_handle = NULL;
 	kfree(glamo);
 
 	return rc;
@@ -1253,17 +1251,18 @@ static int glamo_remove(struct platform_device *pdev)
 
 	disable_irq(glamo->irq);
 	set_irq_chained_handler(glamo->irq, NULL);
+	set_irq_chip_data(glamo->irq, NULL);
 
 	for (irq = IRQ_GLAMO(0); irq <= IRQ_GLAMO(8); irq++) {
 		set_irq_flags(irq, 0);
 		set_irq_chip(irq, NULL);
+		set_irq_chip_data(irq, NULL);
 	}
 
 	platform_set_drvdata(pdev, NULL);
 	mfd_remove_devices(&pdev->dev);
 	iounmap(glamo->base);
 	release_mem_region(glamo->mem->start, GLAMO_REGOFS_VIDCAP);
-	glamo_handle = NULL;
 	kfree(glamo);
 
 	return 0;
@@ -1273,16 +1272,18 @@ static int glamo_remove(struct platform_device *pdev)
 
 static int glamo_suspend(struct platform_device *pdev, pm_message_t state)
 {
-	glamo_handle->suspending = 1;
-	glamo_power(glamo_handle, GLAMO_POWER_SUSPEND);
+	struct glamo_core *glamo = dev_get_drvdata(&pdev->dev);
+	glamo->suspending = 1;
+	glamo_power(glamo, GLAMO_POWER_SUSPEND);
 
 	return 0;
 }
 
 static int glamo_resume(struct platform_device *pdev)
 {
-	glamo_power(glamo_handle, GLAMO_POWER_ON);
-	glamo_handle->suspending = 0;
+	struct glamo_core *glamo = dev_get_drvdata(&pdev->dev);
+	glamo_power(glamo, GLAMO_POWER_ON);
+	glamo->suspending = 0;
 
 	return 0;
 }
