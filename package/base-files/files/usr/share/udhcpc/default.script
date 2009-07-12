@@ -215,9 +215,9 @@ for ifc in $interfaces __default; do
 			setup_interface ifup
 		;;
 	esac
-
-	# user rules
-	[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
 done
+
+# user rules
+[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
 
 exit 0
