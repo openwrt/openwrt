@@ -24,10 +24,10 @@
 	| NETIF_MSG_RX_ERR		\
 	| NETIF_MSG_TX_ERR )
 
-static int ag71xx_debug = -1;
+static int ag71xx_msg_level = -1;
 
-module_param(ag71xx_debug, int, 0);
-MODULE_PARM_DESC(ag71xx_debug, "Debug level (-1=defaults,0=none,...,16=all)");
+module_param_named(msg_level, ag71xx_msg_level, int, 0);
+MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
 
 static void ag71xx_dump_dma_regs(struct ag71xx *ag)
 {
@@ -819,7 +819,7 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	ag->pdev = pdev;
 	ag->dev = dev;
 	ag->mii_bus = ag71xx_mdio_bus->mii_bus;
-	ag->msg_enable = netif_msg_init(ag71xx_debug,
+	ag->msg_enable = netif_msg_init(ag71xx_msg_level,
 					AG71XX_DEFAULT_MSG_ENABLE);
 	spin_lock_init(&ag->lock);
 
