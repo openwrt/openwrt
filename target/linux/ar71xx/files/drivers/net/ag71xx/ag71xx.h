@@ -38,7 +38,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.22"
+#define AG71XX_DRV_VERSION	"0.5.23"
 
 #define AG71XX_NAPI_WEIGHT	64
 #define AG71XX_OOM_REFILL	(1 + HZ/10)
@@ -96,6 +96,7 @@ struct ag71xx_ring {
 	struct ag71xx_buf	*buf;
 	struct ag71xx_desc	*descs_cpu;
 	dma_addr_t		descs_dma;
+	unsigned int		desc_size;
 	unsigned int		curr;
 	unsigned int		dirty;
 	unsigned int		size;
