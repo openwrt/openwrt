@@ -11,6 +11,7 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/cache.h>
 #include "ag71xx.h"
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
@@ -86,7 +87,7 @@ static void ag71xx_ring_free(struct ag71xx_ring *ring)
 	kfree(ring->buf);
 
 	if (ring->descs_cpu)
-		dma_free_coherent(NULL, ring->size * sizeof(struct ag71xx_desc),
+		dma_free_coherent(NULL, ring->size * ring->desc_size,
 				  ring->descs_cpu, ring->descs_dma);
 }
 
@@ -95,10 +96,16 @@ static int ag71xx_ring_alloc(struct ag71xx_ring *ring, unsigned int size)
 	int err;
 	int i;
 
-	ring->descs_cpu = dma_alloc_coherent(NULL,
-					     size * sizeof(struct ag71xx_desc),
-					     &ring->descs_dma,
-					     GFP_ATOMIC);
+	ring->desc_size = sizeof(struct ag71xx_desc);
+	if (ring->desc_size % cache_line_size()) {
+		DBG("ag71xx: ring %p, desc size %u rounded to %u\n",
+			ring, ring->desc_size,
+			roundup(ring->desc_size, cache_line_size()));
+		ring->desc_size = roundup(ring->desc_size, cache_line_size());
+	}
+
+	ring->descs_cpu = dma_alloc_coherent(NULL, size * ring->desc_size,
+					     &ring->descs_dma, GFP_ATOMIC);
 	if (!ring->descs_cpu) {
 		err = -ENOMEM;
 		goto err;
@@ -113,8 +120,9 @@ static int ag71xx_ring_alloc(struct ag71xx_ring *ring, unsigned int size)
 	}
 
 	for (i = 0; i < size; i++) {
-		struct ag71xx_desc *descs = (struct ag71xx_desc *) ring->descs_cpu;
-		ring->buf[i].desc = &descs[i];
+		ring->buf[i].desc = (struct ag71xx_desc *)&ring->descs_cpu[i * ring->desc_size];
+		DBG("ag71xx: ring %p, desc %d at %p\n",
+			ring, i, ring->buf[i].desc);
 	}
 
 	return 0;
@@ -156,7 +164,7 @@ static void ag71xx_ring_tx_init(struct ag71xx *ag)
 
 	for (i = 0; i < AG71XX_TX_RING_SIZE; i++) {
 		ring->buf[i].desc->next = (u32) (ring->descs_dma +
-			sizeof(struct ag71xx_desc) * ((i + 1) % AG71XX_TX_RING_SIZE));
+			ring->desc_size * ((i + 1) % AG71XX_TX_RING_SIZE));
 
 		ring->buf[i].desc->ctrl = DESC_EMPTY;
 		ring->buf[i].skb = NULL;
@@ -190,9 +198,14 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 	int ret;
 
 	ret = 0;
-	for (i = 0; i < AG71XX_RX_RING_SIZE; i++)
+	for (i = 0; i < AG71XX_RX_RING_SIZE; i++) {
 		ring->buf[i].desc->next = (u32) (ring->descs_dma +
-			sizeof(struct ag71xx_desc) * ((i + 1) % AG71XX_RX_RING_SIZE));
+			ring->desc_size * ((i + 1) % AG71XX_RX_RING_SIZE));
+
+		DBG("ag71xx: RX desc at %p, next is %08x\n",
+			ring->buf[i].desc,
+			ring->buf[i].desc->next);
+	}
 
 	for (i = 0; i < AG71XX_RX_RING_SIZE; i++) {
 		struct sk_buff *skb;
