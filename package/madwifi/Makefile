@@ -228,6 +228,7 @@ define Build/Prepare
 	$(SED) 's, -E[LB],,' \
 		-e 's, -mips2,,' \
 		-e 's, -mapcs-32,,' \
+		-e 's, -mlong-calls,,' \
 		$(PKG_BUILD_DIR)/hal/public/*.inc
 	$(SED) 's,march=armv4,march=armv5te,' \
 		$(PKG_BUILD_DIR)/hal/public/xscale*.inc
