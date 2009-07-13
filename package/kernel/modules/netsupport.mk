@@ -136,21 +136,23 @@ define KernelPackage/isdn4linux
     CONFIG_ISDN_DRV_LOOP=n \
     CONFIG_ISDN_DRV_PCBIT=n \
     CONFIG_ISDN_DRV_SC=n \
-    CONFIG_HYSDN=n \
+    CONFIG_HYSDN=n
   FILES:= \
-    $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,isdn isdn_bsdcomp dss1_divert)
 endef
 
 define KernelPackage/isdn4linux/2.4
-  KCONFIG+=CONFIG_ISDN
+  KCONFIG+= \
+	CONFIG_ISDN
   FILES+= \
 	$(LINUX_DIR)/drivers/isdn/isdn.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/isdn4linux/2.6
-  KCONFIG+=CONFIG_ISDN=y
+  KCONFIG+= \
+	CONFIG_ISDN=y
   FILES+= \
 	$(LINUX_DIR)/drivers/isdn/i4l/isdn.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/i4l/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
