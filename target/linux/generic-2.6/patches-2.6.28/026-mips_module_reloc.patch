@@ -209,7 +209,7 @@
  	return 0;
  }
  
-@@ -97,45 +248,73 @@ static int apply_r_mips_32_rela(struct m
+@@ -97,27 +248,44 @@ static int apply_r_mips_32_rela(struct m
  	return 0;
  }
  
@@ -231,15 +231,15 @@
 -	}
 +	if (*plt_offset == size)
 +		return 0;
-+
+ 
+-	*location = (*location & ~0x03ffffff) |
+-	            ((*location + (v >> 2)) & 0x03ffffff);
 +	*plt_offset += 4 * sizeof(int);
 +
 +	/* adjust carry for addiu */
 +	if (v & 0x00008000)
 +		v += 0x10000;
- 
--	*location = (*location & ~0x03ffffff) |
--	            ((*location + (v >> 2)) & 0x03ffffff);
++
 +	tramp[0] = 0x3c190000 | (v >> 16);      /* lui t9, hi16 */
 +	tramp[1] = 0x27390000 | (v & 0xffff);   /* addiu t9, t9, lo16 */
 +	tramp[2] = 0x03200008;                  /* jr t9 */
@@ -268,16 +268,20 @@
  {
  	if (v % 4) {
  		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
- 		return -ENOEXEC;
+@@ -125,17 +293,31 @@ static int apply_r_mips_26_rela(struct m
  	}
  
--	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
-+	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000) &&
-+	    ((v = add_plt_entry(me, location, v + (ofs << 2))) == 0)) {
- 		printk(KERN_ERR
+ 	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
+-		printk(KERN_ERR
++	    v = add_plt_entry(me, location, v + (ofs << 2));
++		if (!v) {
++			printk(KERN_ERR
  		       "module %s: relocation overflow\n",
  		       me->name);
- 		return -ENOEXEC;
+-		return -ENOEXEC;
++			return -ENOEXEC;
++		}
++		ofs = 0;
  	}
  
 -	*location = (*location & ~0x03ffffff) | ((v >> 2) & 0x03ffffff);
@@ -299,7 +303,7 @@
  static int apply_r_mips_hi16_rel(struct module *me, u32 *location, Elf_Addr v)
  {
  	struct mips_hi16 *n;
-@@ -400,11 +579,23 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -400,11 +582,23 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
