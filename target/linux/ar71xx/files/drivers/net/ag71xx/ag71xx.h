@@ -94,7 +94,7 @@ struct ag71xx_buf {
 
 struct ag71xx_ring {
 	struct ag71xx_buf	*buf;
-	struct ag71xx_desc	*descs_cpu;
+	u8			*descs_cpu;
 	dma_addr_t		descs_dma;
 	unsigned int		desc_size;
 	unsigned int		curr;
