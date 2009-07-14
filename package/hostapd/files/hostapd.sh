@@ -46,8 +46,8 @@ hostapd_setup_vif() {
 			fi
 		;;
 		*wpa*|*WPA*)
-		        # required fields? formats?
-		        # hostapd is particular, maybe a default configuration for failures
+			# required fields? formats?
+			# hostapd is particular, maybe a default configuration for failures
 			config_get server "$vif" server
 			append hostapd_cfg "auth_server_addr=$server" "$N"
 			config_get port "$vif" port
@@ -76,6 +76,8 @@ hostapd_setup_vif() {
 	config_get device "$vif" device
 	config_get channel "$device" channel
 	config_get hwmode "$device" hwmode
+	config_get wpa_group_rekey "$vif" wpa_group_rekey
+	config_get ieee80211d "$vif" ieee80211d 
 	case "$hwmode" in
 		bg) hwmode=g;;
 	esac
@@ -102,6 +104,8 @@ ${crypto:+wpa_pairwise=$crypto}
 ${country:+country_code=$country}
 ${hwmode_11n:+ieee80211n=1}
 ${ht_capab:+ht_capab=$ht_capab}
+${wpa_group_rekey:+wpa_group_rekey=$wpa_group_rekey}
+${ieee80211d:+ieee80211d=$ieee80211d}
 $hostapd_cfg
 EOF
 	hostapd -P /var/run/wifi-$ifname.pid -B /var/run/hostapd-$ifname.conf
