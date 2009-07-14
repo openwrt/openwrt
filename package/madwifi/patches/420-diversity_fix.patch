@@ -61,7 +61,7 @@
 -	/* XXX block beacon interrupts */
 -	ath_hal_setdiversity(ah, (sc->sc_diversity != 0));
  	ath_hal_setdefantenna(ah, antenna);
-+	ath_hal_setantennaswitch(ah, sc->sc_diversity ? 0 : sc->sc_defant);
++	ath_hal_setantennaswitch(ah, sc->sc_diversity ? 0 : antenna);
  	if (sc->sc_defant != antenna)
  		sc->sc_stats.ast_ant_defswitch++;
  	sc->sc_defant = antenna;
