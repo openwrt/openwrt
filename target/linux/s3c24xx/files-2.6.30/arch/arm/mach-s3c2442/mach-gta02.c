@@ -464,7 +464,7 @@ static void gta02_pmu_force_shutdown(struct pcf50633 *pcf)
 
 static void gta02_udc_vbus_draw(unsigned int ma)
 {
-        if (!gta02_pcf)
+	if (!gta02_pcf)
 		return;
 
 	gta02_usb_vbus_draw = ma;
@@ -624,8 +624,8 @@ struct pcf50633_platform_data gta02_pcf_pdata = {
 		[PCF50633_REGULATOR_LDO1] = {
 			.constraints = {
 				.name = "GSENSOR_3V3",
-				.min_uV = 1300000,
-				.max_uV = 1300000,
+				.min_uV = 3300000,
+				.max_uV = 3300000,
 				.valid_modes_mask = REGULATOR_MODE_NORMAL,
 				.apply_uV = 1,
 			},
@@ -664,8 +664,8 @@ struct pcf50633_platform_data gta02_pcf_pdata = {
 		[PCF50633_REGULATOR_LDO5] = {
 			.constraints = {
 				.name = "RF_3V",
-				.min_uV = 1500000,
-				.max_uV = 1500000,
+				.min_uV = 3000000,
+				.max_uV = 3000000,
 				.valid_modes_mask = REGULATOR_MODE_NORMAL,
 				.apply_uV = 1,
 				.state_mem = {
@@ -678,10 +678,11 @@ struct pcf50633_platform_data gta02_pcf_pdata = {
 		[PCF50633_REGULATOR_LDO6] = {
 			.constraints = {
 				.name = "LCM_3V",
-				.min_uV = 0,
-				.max_uV = 3300000,
+				.min_uV = 3000000,
+				.max_uV = 3000000,
 				.always_on = 1,
 				.valid_modes_mask = REGULATOR_MODE_NORMAL,
+				.apply_uV = 1,
 			},
 			.num_consumer_supplies = 0,
 		},
@@ -715,28 +716,21 @@ static void mangle_pmu_pdata_by_system_rev(void)
 		/* FIXME: this is only in v1 due to wrong PMU variant */
 		reg_init_data[PCF50633_REGULATOR_DOWN2]
 					.constraints.state_mem.enabled = 1;
-		break;
-	case GTA02v2_SYSTEM_REV:
-	case GTA02v3_SYSTEM_REV:
-	case GTA02v4_SYSTEM_REV:
-	case GTA02v5_SYSTEM_REV:
-	case GTA02v6_SYSTEM_REV:
+
 		reg_init_data[PCF50633_REGULATOR_LDO1]
-					.constraints.min_uV = 3300000;
+					.constraints.min_uV = 1300000;
 		reg_init_data[PCF50633_REGULATOR_LDO1]
-					.constraints.min_uV = 3300000;
-		reg_init_data[PCF50633_REGULATOR_LDO1]
-					.constraints.state_mem.enabled = 0;
+					.constraints.max_uV = 1300000;
 
 		reg_init_data[PCF50633_REGULATOR_LDO5]
-					.constraints.min_uV = 3000000;
+					.constraints.min_uV = 1500000;
 		reg_init_data[PCF50633_REGULATOR_LDO5]
-					.constraints.max_uV = 3000000;
+					.constraints.max_uV = 1500000;
 
 		reg_init_data[PCF50633_REGULATOR_LDO6]
-					.constraints.min_uV = 3000000;
+					.constraints.min_uV = 0;
 		reg_init_data[PCF50633_REGULATOR_LDO6]
-					.constraints.max_uV = 3000000;
+					.constraints.max_uV = 3300000;
 		reg_init_data[PCF50633_REGULATOR_LDO6]
 					.constraints.apply_uV = 1;
 		break;
@@ -1560,7 +1554,7 @@ static void gta02_pmu_regulator_registered(struct pcf50633 *pcf, int id)
 			pdev = &gta02_glamo_dev;
 			break;
 		default:
-            return;
+			return;
 	}
 
 	pdev->dev.parent = &regulator->dev;
