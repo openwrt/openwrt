@@ -1,0 +1,80 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -6642,10 +6642,8 @@ static void
+ ath_recv_mgmt(struct ieee80211vap * vap, struct ieee80211_node *ni_or_null,
+ 	struct sk_buff *skb, int subtype, int rssi, u_int64_t rtsf)
+ {
++	const struct ieee80211_frame *wh = (struct ieee80211_frame *)skb->data;
+ 	struct ath_softc *sc = netdev_priv(vap->iv_ic->ic_dev);
+-#ifdef AR_DEBUG
+-        struct ieee80211_frame *wh = (struct ieee80211_frame *)skb->data;
+-#endif
+ 	struct ieee80211_node * ni = ni_or_null;
+ 	u_int64_t hw_tsf, beacon_tsf;
+ 	u_int32_t hw_tu, beacon_tu, intval;
+@@ -6687,7 +6685,7 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+ 		}
+ 		if ((vap->iv_opmode == IEEE80211_M_IBSS) &&
+ 				(sc->sc_opmode == HAL_M_HOSTAP) &&
+-				IEEE80211_ADDR_EQ(ni->ni_bssid, vap->iv_bss->ni_bssid)) {
++				IEEE80211_ADDR_EQ(wh->i_addr3, vap->iv_bssid)) {
+ 			/* In this mode, we drive the HAL in HOSTAP mode. Hence
+ 			 * we do the IBSS merging in software. Also do not merge
+ 			 * if the difference it too small. Otherwise we are playing
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -311,7 +311,8 @@ ieee80211_input(struct ieee80211vap * va
+ 			}
+ 			/* Do not try to find a node reference if the packet really did come from the BSS */
+ 			if (type == IEEE80211_FC0_TYPE_DATA && ni == vap->iv_bss &&
+-					!IEEE80211_ADDR_EQ(vap->iv_bss->ni_macaddr, wh->i_addr2)) {
++					!IEEE80211_ADDR_EQ(vap->iv_bss->ni_macaddr, wh->i_addr2) &&
++					IEEE80211_ADDR_EQ(vap->iv_bssid, wh->i_addr3)) {
+ 				/* Try to find sender in local node table. */
+ 				ni = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
+ 				if (ni == NULL) {
+@@ -513,6 +514,10 @@ ieee80211_input(struct ieee80211vap * va
+ 			break;
+ 		case IEEE80211_M_IBSS:
+ 		case IEEE80211_M_AHDEMO:
++			/* ignore foreign data frames */
++			if (ni == vap->iv_bss)
++				goto out;
++
+ 			if (dir != IEEE80211_FC1_DIR_NODS) {
+ 				IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
+ 					wh, "data", "invalid dir 0x%x", dir);
+@@ -3548,6 +3553,11 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 			} else if (vap->iv_opmode == IEEE80211_M_WDS) {
+ 				found = 1;
+ 				ni = ni_or_null = vap->iv_wdsnode;
++			} else if (vap->iv_opmode == IEEE80211_M_IBSS) {
++				ni_or_null = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
++				if (ni_or_null)
++					ni = ni_or_null;
++				found = 1;
+ 			}
+ 			IEEE80211_UNLOCK_IRQ(vap->iv_ic);
+ 
+@@ -3672,19 +3682,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 			vap->iv_stats.is_rx_ssidmismatch++; /*XXX*/
+ 			return;
+ 		}
+-		if (ni == vap->iv_bss) {
+-			if (vap->iv_opmode == IEEE80211_M_IBSS) {
+-				/*
+-				 * XXX Cannot tell if the sender is operating
+-				 * in ibss mode.  But we need a new node to
+-				 * send the response so blindly add them to the
+-				 * neighbor table.
+-				 */
+-				ni = ieee80211_fakeup_adhoc_node(vap,
+-					wh->i_addr2);
+-			} else {
+-				ni = ieee80211_dup_bss(vap, wh->i_addr2, 1);
+-			}
++		if (ni == vap->iv_bss && vap->iv_opmode != IEEE80211_M_IBSS) {
++			ni = ieee80211_dup_bss(vap, wh->i_addr2, 1);
+ 			if (ni == NULL)
+ 				return;
+ 			allocbs = 1;
