@@ -573,6 +573,7 @@ struct pcf50633_platform_data gta02_pcf_pdata = {
 				.max_uV = 3300000,
 				.valid_modes_mask = REGULATOR_MODE_NORMAL,
 				.boot_on = 1,
+				.always_on = 1,
 				.apply_uV = 1,
 				.state_mem = {
 					.enabled = 1,
@@ -587,6 +588,7 @@ struct pcf50633_platform_data gta02_pcf_pdata = {
 				.max_uV = 1600000,
 				.valid_modes_mask = REGULATOR_MODE_NORMAL,
 				.boot_on = 1,
+				.always_on = 1,
 				.apply_uV = 1,
 			},
 			.num_consumer_supplies = 0,
@@ -599,6 +601,7 @@ struct pcf50633_platform_data gta02_pcf_pdata = {
 				.valid_modes_mask = REGULATOR_MODE_NORMAL,
 				.apply_uV = 1,
 				.boot_on = 1,
+				.always_on = 1,
 				.state_mem = {
 					.enabled = 1,
 				},
@@ -676,6 +679,7 @@ struct pcf50633_platform_data gta02_pcf_pdata = {
 				.name = "LCM_3V",
 				.min_uV = 0,
 				.max_uV = 3300000,
+				.always_on = 1,
 				.valid_modes_mask = REGULATOR_MODE_NORMAL,
 			},
 			.num_consumer_supplies = 0,
@@ -1083,7 +1087,7 @@ static struct platform_device gta02_bl_dev = {
 static void gta02_jbt6k74_reset(int devidx, int level)
 {
 	glamo_lcm_reset(&gta02_glamo_dev, level);
-}	
+}
 
 static void gta02_jbt6k74_probe_completed(struct device *dev)
 {
@@ -1587,7 +1591,7 @@ static void gta02_pmu_attach_child_devices(struct pcf50633 *pcf)
 	platform_add_devices(gta02_devices_pmu_children,
 					ARRAY_SIZE(gta02_devices_pmu_children));
 
-/*    regulator_has_full_constraints();*/
+    regulator_has_full_constraints();
 }
 
 static void gta02_poweroff(void)
@@ -1639,7 +1643,7 @@ static void __init gta02_machine_init(void)
 	s3c24xx_udc_set_platdata(&gta02_udc_cfg);
 	s3c_i2c0_set_platdata(NULL);
 	set_s3c2410ts_info(&gta02_ts_cfg);
-	
+
 	mangle_glamo_res_by_system_rev();
 
 	i2c_register_board_info(0, gta02_i2c_devs, ARRAY_SIZE(gta02_i2c_devs));
@@ -1679,7 +1683,7 @@ static void __init gta02_machine_init(void)
 	platform_device_register(&gta02_hdq_device);
 #endif
 #ifdef CONFIG_LEDS_GTA02_VIBRATOR
-	gta02_vibrator_dev.dev.parent = &s3c24xx_pwm_device.dev; 
+	gta02_vibrator_dev.dev.parent = &s3c24xx_pwm_device.dev;
 	platform_device_register(&gta02_vibrator_dev);
 #endif
 }
