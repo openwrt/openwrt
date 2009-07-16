@@ -78,3 +78,13 @@
  			if (ni == NULL)
  				return;
  			allocbs = 1;
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
+@@ -601,6 +601,7 @@ ieee80211_ibss_merge(struct ieee80211_no
+ 		ic->ic_flags & IEEE80211_F_SHPREAMBLE ? "short" : "long",
+ 		ic->ic_flags & IEEE80211_F_SHSLOT ? "short" : "long",
+ 		ic->ic_flags & IEEE80211_F_USEPROT ? ", protection" : "");
++	ieee80211_node_table_reset(&vap->iv_ic->ic_sta, vap);
+ 	return ieee80211_sta_join1(ieee80211_ref_node(ni));
+ }
+ EXPORT_SYMBOL(ieee80211_ibss_merge);
