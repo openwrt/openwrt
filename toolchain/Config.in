@@ -13,7 +13,7 @@ menuconfig TOOLCHAINOPTS
 menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
-	default y	if TARGET_ps3
+	default y	if TARGET_ps3 || TARGET_pxcab
 	default n
 	help
 	  Some builds may require a 'biarch' toolchain. This option
@@ -23,7 +23,7 @@ menuconfig EXTRA_TARGET_ARCH
 
 	config EXTRA_TARGET_ARCH_NAME
 		string
-		default "powerpc64"	if TARGET_ps3
+		default "powerpc64"	if TARGET_ps3 || TARGET_pxcab
 		prompt "Extra architecture name" if EXTRA_TARGET_ARCH
 		help
 		  Specify the cpu name (eg powerpc64 or x86_64) of the
@@ -31,7 +31,7 @@ menuconfig EXTRA_TARGET_ARCH
 
 	config EXTRA_TARGET_ARCH_OPTS
 		string
-		default "-m64"		if TARGET_ps3
+		default "-m64"		if TARGET_ps3 || TARGET_pxcab
 		prompt "Extra architecture compiler options" if EXTRA_TARGET_ARCH
 		help
 		  If you're specifying an addition target architecture,
