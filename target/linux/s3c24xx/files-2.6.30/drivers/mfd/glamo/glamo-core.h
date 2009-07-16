@@ -2,7 +2,7 @@
 #define __GLAMO_CORE_H
 
 #include <asm/system.h>
-#include <linux/glamo-engine.h>
+#include <linux/mfd/glamo.h>
 
 /* for the time being, we put the on-screen framebuffer into the lowest
  * VRAM space.  This should make the code easily compatible with the various
@@ -24,7 +24,7 @@ struct glamo_core {
 	struct resource *mem_core;
 	void __iomem *base;
 	struct platform_device *pdev;
-	struct glamofb_platform_data *pdata;
+	struct glamo_platform_data *pdata;
 	u_int16_t type;
 	u_int16_t revision;
 	spinlock_t lock;
@@ -40,19 +40,6 @@ struct glamo_script {
 
 int glamo_run_script(struct glamo_core *glamo,
 		     struct glamo_script *script, int len, int may_sleep);
-
-struct glamo_mci_pdata {
-	struct glamo_core * pglamo;
-	unsigned int	gpio_detect;
-	unsigned int	gpio_wprotect;
-	int		(*glamo_can_set_mci_power)(void);
-	/* glamo-mci asking if it should use the slow clock to card */
-	int		(*glamo_mci_use_slow)(void);
-	int		(*glamo_irq_is_wired)(void);
-	void		(*mci_suspending)(struct platform_device *dev);
-	int		(*mci_all_dependencies_resumed)(struct platform_device *dev);
-
-};
 
 int glamo_engine_enable(struct glamo_core *glamo, enum glamo_engine engine);
 int glamo_engine_disable(struct glamo_core *glamo, enum glamo_engine engine);

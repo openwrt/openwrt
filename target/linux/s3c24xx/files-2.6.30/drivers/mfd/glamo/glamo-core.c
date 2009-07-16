@@ -25,25 +25,22 @@
 #include <linux/errno.h>
 #include <linux/string.h>
 #include <linux/mm.h>
-#include <linux/tty.h>
-#include <linux/slab.h>
 #include <linux/delay.h>
 #include <linux/fb.h>
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
-#include <linux/wait.h>
 #include <linux/platform_device.h>
 #include <linux/kernel_stat.h>
 #include <linux/spinlock.h>
-#include <linux/glamofb.h>
-#include <linux/mmc/mmc.h>
-#include <linux/mmc/host.h>
 #include <linux/mfd/core.h>
+#include <linux/mfd/glamo.h>
+#include <linux/spi/glamo.h>
+#include <linux/glamo-gpio.h>
+#include <linux/glamofb.h>
+#include <linux/io.h>
 
-#include <asm/io.h>
-#include <asm/uaccess.h>
 #include <asm/div64.h>
 
 #ifdef CONFIG_PM
@@ -81,7 +78,7 @@ struct reg_range {
 };
 struct reg_range reg_range[] = {
 	{ 0x0000, 0x76,		"General",	1 },
-	{ 0x0200, 0x16,		"Host Bus",	1 },
+	{ 0x0200, 0x18,		"Host Bus",	1 },
 	{ 0x0300, 0x38,		"Memory",	1 },
 /*	{ 0x0400, 0x100,	"Sensor",	0 }, */
 /*		{ 0x0500, 0x300,	"ISP",		0 }, */
@@ -178,14 +175,6 @@ static struct resource glamo_mmc_resources[] = {
 				  GLAMO_MMC_BUFFER_SIZE - 1,
 		.flags	= IORESOURCE_MEM
 	},
-};
-
-static struct glamo_mci_pdata glamo_mci_def_pdata = {
-	.gpio_detect		= 0,
-	.glamo_can_set_mci_power	= NULL, /* filled in from MFD platform data */
-	.glamo_irq_is_wired	= NULL, /* filled in from MFD platform data */
-	.mci_suspending = NULL, /* filled in from MFD platform data */
-	.mci_all_dependencies_resumed = NULL, /* filled in from MFD platform data */
 };
 
 enum glamo_cells {
@@ -620,8 +609,7 @@ static int glamo_pll_rate(struct glamo_core *glamo,
 {
 	u_int16_t reg;
 	unsigned int div = 512;
-	/* FIXME: move osci into platform_data */
-	unsigned int osci = 32768;
+	unsigned int osci = glamo->pdata->osci_clock_rate;
 
 	if (osci == 32768)
 		div = 1;
@@ -887,7 +875,7 @@ static void glamo_power(struct glamo_core *glamo,
 {
 	int n;
 	unsigned long flags;
-	
+
 	spin_lock_irqsave(&glamo->lock, flags);
 
 	dev_info(&glamo->pdev->dev, "***** glamo_power -> %d\n", new_state);
@@ -1188,28 +1176,21 @@ static int __init glamo_probe(struct platform_device *pdev)
 		 glamo_pll_rate(glamo, GLAMO_PLL1),
 		 glamo_pll_rate(glamo, GLAMO_PLL2));
 
-	glamo->pdata->glamo = glamo;
-
-	/* bring MCI specific stuff over from our MFD platform data */
-	glamo_mci_def_pdata.glamo_can_set_mci_power =
-					glamo->pdata->glamo_can_set_mci_power;
-	glamo_mci_def_pdata.glamo_mci_use_slow =
-					glamo->pdata->glamo_mci_use_slow;
-	glamo_mci_def_pdata.glamo_irq_is_wired =
-					glamo->pdata->glamo_irq_is_wired;
-	glamo_mci_def_pdata.pglamo = glamo;
-
 	/* register siblings */
-	glamo_cells[GLAMO_CELL_MMC].platform_data = &glamo_mci_def_pdata;
-	glamo_cells[GLAMO_CELL_MMC].data_size = sizeof(glamo_mci_def_pdata);
+	glamo->pdata->mmc_data->core = glamo;
+	glamo_cells[GLAMO_CELL_MMC].platform_data = glamo->pdata->mmc_data;
+	glamo_cells[GLAMO_CELL_MMC].data_size =
+		sizeof(struct glamo_mmc_platform_data);
 
-	glamo_cells[GLAMO_CELL_FB].platform_data = glamo->pdata;
-	glamo_cells[GLAMO_CELL_FB].data_size = sizeof(struct glamofb_platform_data);
+	glamo->pdata->fb_data->core = glamo;
+	glamo_cells[GLAMO_CELL_FB].platform_data = glamo->pdata->fb_data;
+	glamo_cells[GLAMO_CELL_FB].data_size = sizeof(struct glamo_fb_platform_data);
 
-	glamo->pdata->spigpio_info->glamo = glamo;
-	glamo_cells[GLAMO_CELL_SPI_GPIO].platform_data = glamo->pdata->spigpio_info;
+	glamo->pdata->spigpio_data->core = glamo;
+	glamo_cells[GLAMO_CELL_SPI_GPIO].platform_data =
+		glamo->pdata->spigpio_data;
 	glamo_cells[GLAMO_CELL_SPI_GPIO].data_size =
-	sizeof(struct glamo_spigpio_info);
+		sizeof(struct glamo_spigpio_platform_data);
 
 	mfd_add_devices(&pdev->dev, pdev->id, glamo_cells,
 	                      ARRAY_SIZE(glamo_cells),
