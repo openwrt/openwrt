@@ -374,3 +374,18 @@ define KernelPackage/ps3vram/description
 endef
 
 $(eval $(call KernelPackage,ps3vram))
+
+define KernelPackage/axonram
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Axon DDR2 memory device driver
+  DEPENDS:=@TARGET_pxcab
+  KCONFIG:=CONFIG_AXON_RAM
+  FILES:=$(LINUX_DIR)/arch/powerpc/sysdev/axonram.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,01,axonram)
+endef
+
+define KernelPackage/axonram/description
+  Kernel support for Axon DDR2 memory device
+endef
+
+$(eval $(call KernelPackage,axonram))
