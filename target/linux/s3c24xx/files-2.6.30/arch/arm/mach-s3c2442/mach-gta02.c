@@ -35,7 +35,6 @@
 #include <linux/platform_device.h>
 #include <linux/serial_core.h>
 #include <linux/spi/spi.h>
-#include <linux/spi/glamo.h>
 #include <linux/spi/spi_bitbang.h>
 #include <linux/mmc/host.h>
 
@@ -97,6 +96,8 @@
 
 #include <linux/jbt6k74.h>
 #include <linux/glamofb.h>
+#include <linux/mfd/glamo.h>
+#include <linux/spi/glamo.h>
 
 #include <linux/hdq.h>
 #include <linux/bq27000_battery.h>
@@ -1108,14 +1109,6 @@ const struct jbt6k74_platform_data jbt6k74_pdata = {
 	.probe_completed = gta02_jbt6k74_probe_completed,
 };
 
-static struct glamo_spigpio_info glamo_spigpio_cfg = {
-	.pin_clk	= GLAMO_GPIO10_OUTPUT,
-	.pin_mosi	= GLAMO_GPIO11_OUTPUT,
-	.pin_cs		= GLAMO_GPIO12_OUTPUT,
-	.pin_miso	= 0,
-	.bus_num	= 2,
-};
-
 /*----------- SPI: Accelerometers attached to SPI of s3c244x ----------------- */
 
 void gta02_lis302dl_suspend_io(struct lis302dl_info *lis, int resume)
@@ -1359,19 +1352,6 @@ static int glamo_irq_is_wired(void)
 	return -ENODEV;
 }
 
-static int gta02_glamo_can_set_mmc_power(void)
-{
-	switch (S3C_SYSTEM_REV_ATAG) {
-		case GTA02v3_SYSTEM_REV:
-		case GTA02v4_SYSTEM_REV:
-		case GTA02v5_SYSTEM_REV:
-		case GTA02v6_SYSTEM_REV:
-			return 1;
-	}
-
-	return 0;
-}
-
 /* Smedia Glamo 3362 */
 
 /*
@@ -1417,21 +1397,35 @@ static struct fb_videomode gta02_glamo_modes[] = {
 	}
 };
 
-
-static struct glamofb_platform_data gta02_glamo_pdata = {
-	.width		= 43,
-	.height		= 58,
+static struct glamo_fb_platform_data gta02_glamo_fb_pdata = {
+	.width  = 43,
+	.height = 58,
 
 	.num_modes = ARRAY_SIZE(gta02_glamo_modes),
 	.modes = gta02_glamo_modes,
+};
 
-	.spigpio_info	= &glamo_spigpio_cfg,
+static struct glamo_spigpio_platform_data gta02_glamo_spigpio_pdata = {
+	.pin_clk  = GLAMO_GPIO10_OUTPUT,
+	.pin_mosi = GLAMO_GPIO11_OUTPUT,
+	.pin_cs	  = GLAMO_GPIO12_OUTPUT,
+	.pin_miso = 0,
+	.bus_num  = 2,
+};
 
-	/* glamo MMC function platform data */
-	.glamo_can_set_mci_power = gta02_glamo_can_set_mmc_power,
-	.glamo_mci_use_slow = gta02_glamo_mci_use_slow,
+static struct glamo_mmc_platform_data gta02_glamo_mmc_pdata = {
+	.glamo_mmc_use_slow = gta02_glamo_mci_use_slow,
+};
+
+static struct glamo_platform_data gta02_glamo_pdata = {
+	.fb_data      = &gta02_glamo_fb_pdata,
+	.spigpio_data = &gta02_glamo_spigpio_pdata,
+	.mmc_data     = &gta02_glamo_mmc_pdata,
+
+    .osci_clock_rate = 32768,
+
 	.glamo_irq_is_wired = glamo_irq_is_wired,
-	.glamo_external_reset = gta02_glamo_external_reset
+	.glamo_external_reset = gta02_glamo_external_reset,
 };
 
 static struct resource gta02_glamo_resources[] = {
@@ -1643,7 +1637,7 @@ static void __init gta02_machine_init(void)
 	s3c24xx_udc_set_platdata(&gta02_udc_cfg);
 	s3c_i2c0_set_platdata(NULL);
 	set_s3c2410ts_info(&gta02_ts_cfg);
-
+	
 	mangle_glamo_res_by_system_rev();
 
 	i2c_register_board_info(0, gta02_i2c_devs, ARRAY_SIZE(gta02_i2c_devs));
@@ -1683,7 +1677,7 @@ static void __init gta02_machine_init(void)
 	platform_device_register(&gta02_hdq_device);
 #endif
 #ifdef CONFIG_LEDS_GTA02_VIBRATOR
-	gta02_vibrator_dev.dev.parent = &s3c24xx_pwm_device.dev;
+	gta02_vibrator_dev.dev.parent = &s3c24xx_pwm_device.dev; 
 	platform_device_register(&gta02_vibrator_dev);
 #endif
 }

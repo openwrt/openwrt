@@ -21,7 +21,6 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/spinlock.h>
-#include <linux/workqueue.h>
 #include <linux/platform_device.h>
 
 #include <linux/spi/spi.h>
@@ -38,8 +37,7 @@
 struct glamo_spigpio {
 	struct spi_bitbang		bitbang;
 	struct spi_master		*master;
-	struct glamo_spigpio_info	*info;
-	struct glamo_core		*glamo;
+	struct glamo_spigpio_platform_data	*info;
 };
 
 static inline struct glamo_spigpio *to_sg(struct spi_device *spi)
@@ -50,20 +48,20 @@ static inline struct glamo_spigpio *to_sg(struct spi_device *spi)
 static inline void setsck(struct spi_device *dev, int on)
 {
 	struct glamo_spigpio *sg = to_sg(dev);
-	glamo_gpio_setpin(sg->glamo, sg->info->pin_clk, on ? 1 : 0);
+	glamo_gpio_setpin(sg->info->core, sg->info->pin_clk, on ? 1 : 0);
 }
 
 static inline void setmosi(struct spi_device *dev, int on)
 {
 	struct glamo_spigpio *sg = to_sg(dev);
-	glamo_gpio_setpin(sg->glamo, sg->info->pin_mosi, on ? 1 : 0);
+	glamo_gpio_setpin(sg->info->core, sg->info->pin_mosi, on ? 1 : 0);
 }
 
 static inline u32 getmiso(struct spi_device *dev)
 {
 	struct glamo_spigpio *sg = to_sg(dev);
 	if (sg->info->pin_miso)
-		return glamo_gpio_getpin(sg->glamo, sg->info->pin_miso) ? 1 : 0;
+		return glamo_gpio_getpin(sg->info->core, sg->info->pin_miso) ? 1 : 0;
 	else
 		return 0;
 }
@@ -123,7 +121,7 @@ static void glamo_spigpio_chipsel(struct spi_device *spi, int value)
 	dev_dbg(&spi->dev, "chipsel %d: spi=%p, gs=%p, info=%p, handle=%p\n",
 		value, spi, gs, gs->info, gs->info->glamo);
 #endif
-	glamo_gpio_setpin(gs->glamo, gs->info->pin_cs, value ? 0 : 1);
+	glamo_gpio_setpin(gs->info->core, gs->info->pin_cs, value ? 0 : 1);
 }
 
 
@@ -153,7 +151,6 @@ static int glamo_spigpio_probe(struct platform_device *pdev)
 	master->bus_num = 2; /* FIXME: use dynamic number */
 
 	sp->master = spi_master_get(master);
-	sp->glamo = sp->info->glamo;
 
 	sp->bitbang.master = sp->master;
 	sp->bitbang.chipselect = glamo_spigpio_chipsel;
@@ -163,20 +160,20 @@ static int glamo_spigpio_probe(struct platform_device *pdev)
 	sp->bitbang.txrx_word[SPI_MODE_3] = glamo_spigpio_txrx_mode3;
 
 	/* set state of spi pins */
-	glamo_gpio_setpin(sp->glamo, sp->info->pin_clk, 0);
-	glamo_gpio_setpin(sp->glamo, sp->info->pin_mosi, 0);
-	glamo_gpio_setpin(sp->glamo, sp->info->pin_cs, 1);
+	glamo_gpio_setpin(sp->info->core, sp->info->pin_clk, 0);
+	glamo_gpio_setpin(sp->info->core, sp->info->pin_mosi, 0);
+	glamo_gpio_setpin(sp->info->core, sp->info->pin_cs, 1);
 
-	glamo_gpio_cfgpin(sp->glamo, sp->info->pin_clk);
-	glamo_gpio_cfgpin(sp->glamo, sp->info->pin_mosi);
-	glamo_gpio_cfgpin(sp->glamo, sp->info->pin_cs);
+	glamo_gpio_cfgpin(sp->info->core, sp->info->pin_clk);
+	glamo_gpio_cfgpin(sp->info->core, sp->info->pin_mosi);
+	glamo_gpio_cfgpin(sp->info->core, sp->info->pin_cs);
 	if (sp->info->pin_miso)
-		glamo_gpio_cfgpin(sp->glamo, sp->info->pin_miso);
+		glamo_gpio_cfgpin(sp->info->core, sp->info->pin_miso);
 
 	/* bring the LCM panel out of reset if it isn't already */
 
-	glamo_gpio_setpin(sp->glamo, GLAMO_GPIO4, 1);
-	glamo_gpio_cfgpin(sp->glamo, GLAMO_GPIO4_OUTPUT);
+	glamo_gpio_setpin(sp->info->core, GLAMO_GPIO4, 1);
+	glamo_gpio_cfgpin(sp->info->core, GLAMO_GPIO4_OUTPUT);
 	msleep(90);
 
 #if 0
@@ -233,15 +230,15 @@ static int glamo_spigpio_resume(struct platform_device *pdev)
 		return 0;
 
 	/* set state of spi pins */
-	glamo_gpio_setpin(sp->glamo, sp->info->pin_clk, 0);
-	glamo_gpio_setpin(sp->glamo, sp->info->pin_mosi, 0);
-	glamo_gpio_setpin(sp->glamo, sp->info->pin_cs, 1);
+	glamo_gpio_setpin(sp->info->core, sp->info->pin_clk, 0);
+	glamo_gpio_setpin(sp->info->core, sp->info->pin_mosi, 0);
+	glamo_gpio_setpin(sp->info->core, sp->info->pin_cs, 1);
 
-	glamo_gpio_cfgpin(sp->glamo, sp->info->pin_clk);
-	glamo_gpio_cfgpin(sp->glamo, sp->info->pin_mosi);
-	glamo_gpio_cfgpin(sp->glamo, sp->info->pin_cs);
+	glamo_gpio_cfgpin(sp->info->core, sp->info->pin_clk);
+	glamo_gpio_cfgpin(sp->info->core, sp->info->pin_mosi);
+	glamo_gpio_cfgpin(sp->info->core, sp->info->pin_cs);
 	if (sp->info->pin_miso)
-		glamo_gpio_cfgpin(sp->glamo, sp->info->pin_miso);
+		glamo_gpio_cfgpin(sp->info->core, sp->info->pin_miso);
 
 	return 0;
 }

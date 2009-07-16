@@ -14,7 +14,7 @@
 
 struct glamo_mci_host {
 	struct platform_device *pdev;
-	struct glamo_mci_pdata *pdata;
+	struct glamo_mmc_platform_data *pdata;
 	struct mmc_host        *mmc;
 	struct resource        *mmio_mem;
 	struct resource        *data_mem;

@@ -15,7 +15,7 @@
 */
 
 #define DEBUG
-
+#if 0
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/delay.h>
@@ -238,3 +238,4 @@ module_exit(glamo_spi_exit);
 MODULE_DESCRIPTION("Smedia Glamo 336x/337x LCM serial command SPI Driver");
 MODULE_AUTHOR("Harald Welte <laforge@openmoko.org>")
 MODULE_LICENSE("GPL");
+#endif
