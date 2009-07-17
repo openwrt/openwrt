@@ -23,7 +23,7 @@ JFFS2OPTS     :=  --pad --big-endian --squash
 SQUASHFS_OPTS :=  -be
 endif
 
-ifneq ($(CONFIG_LINUX_2_6_29)$(CONFIG_LINUX_2_6_30),)
+ifneq ($(CONFIG_LINUX_2_6_30),)
 USE_SQUASHFS4 := y
 endif
 
