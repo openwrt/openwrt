@@ -358,7 +358,7 @@ void __init board_prom_init(void)
 	u32 val;
 
 	/* read base address of boot chip select (0) 
-	 * 6338/6345 does not have MPI but boots from standard
+	 * 6345 does not have MPI but boots from standard
 	 * MIPS Flash address */
 	if (BCMCPU_IS_6345())
 		val = 0x1fc00000;
