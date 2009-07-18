@@ -123,11 +123,12 @@
  	.enqueue	=	pfifo_fast_enqueue,
  	.dequeue	=	pfifo_fast_dequeue,
  	.requeue	=	pfifo_fast_requeue,
-@@ -739,3 +803,16 @@ void dev_shutdown(struct net_device *dev
+@@ -739,3 +803,18 @@ void dev_shutdown(struct net_device *dev
  	shutdown_scheduler_queue(dev, &dev->rx_queue, &noop_qdisc);
  	WARN_ON(timer_pending(&dev->watchdog_timer));
  }
 +
++#ifdef CONFIG_NET_SCHED
 +static int __init sch_generic_init(void)
 +{
 +	return register_qdisc(&pfifo_fast_ops);
@@ -140,3 +141,4 @@
 +
 +module_init(sch_generic_init)
 +module_exit(sch_generic_exit)
++#endif
