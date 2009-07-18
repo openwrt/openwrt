@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/crypto/unlzma.c
-@@ -0,0 +1,710 @@
+@@ -0,0 +1,721 @@
 +/*
 + * LZMA uncompresion module for pcomp
 + * Copyright (C) 2009  Felix Fietkau <nbd@openwrt.org>
@@ -69,6 +69,7 @@
 +	u8 previous_byte;
 +	ssize_t pos;
 +	struct unlzma_buffer *head;
++	int buf_full;
 +
 +	/* cstate */
 +	int state;
@@ -87,11 +88,32 @@
 +}
 +
 +static void
++get_buffer(struct unlzma_ctx *ctx)
++{
++	struct unlzma_buffer *bh;
++
++	bh = kzalloc(sizeof(struct unlzma_buffer), GFP_KERNEL);
++	bh->ptr = ctx->next_out;
++	bh->offset = ctx->pos;
++	bh->last = ctx->head;
++	bh->size = ctx->avail_out;
++	ctx->head = bh;
++	ctx->buf_full = 0;
++}
++
++static void
 +unlzma_request_buffer(struct unlzma_ctx *ctx, int *avail)
 +{
-+	mutex_unlock(&ctx->mutex);
-+	wait_event(ctx->next_req, unlzma_should_stop(ctx) || (*avail > 0));
-+	mutex_lock(&ctx->mutex);
++	do {
++		mutex_unlock(&ctx->mutex);
++		if (wait_event_interruptible(ctx->next_req,
++			unlzma_should_stop(ctx) || (*avail > 0)))
++			schedule();
++		mutex_lock(&ctx->mutex);
++	} while (*avail <= 0 && !unlzma_should_stop(ctx));
++
++	if (!unlzma_should_stop(ctx) && ctx->buf_full)
++		get_buffer(ctx);
 +}
 +
 +static u8
@@ -196,28 +218,13 @@
 +
 +	while (bh->offset > pos) {
 +		bh = bh->last;
-+		if (!bh)
-+			return 0;
++		BUG_ON(!bh);
 +	}
 +
 +	pos -= bh->offset;
-+	if (pos > bh->size)
-+		return 0;
++	BUG_ON(pos >= bh->size);
 +
 +	return bh->ptr[pos];
-+}
-+
-+static void
-+get_buffer(struct unlzma_ctx *ctx)
-+{
-+	struct unlzma_buffer *bh;
-+
-+	bh = kzalloc(sizeof(struct unlzma_buffer), GFP_KERNEL);
-+	bh->ptr = ctx->next_out;
-+	bh->offset = ctx->pos;
-+	bh->last = ctx->head;
-+	bh->size = ctx->avail_out;
-+	ctx->head = bh;
 +}
 +
 +static void
@@ -225,7 +232,6 @@
 +{
 +	if (unlikely(ctx->avail_out <= 0)) {
 +		unlzma_request_buffer(ctx, &ctx->avail_out);
-+		get_buffer(ctx);
 +	}
 +
 +	if (!ctx->avail_out)
@@ -234,6 +240,8 @@
 +	ctx->previous_byte = byte;
 +	*(ctx->next_out++) = byte;
 +	ctx->avail_out--;
++	if (ctx->avail_out == 0)
++		ctx->buf_full = 1;
 +	ctx->pos++;
 +}
 +
@@ -489,7 +497,8 @@
 +	if (ctx->workspace_size < num_probs * sizeof(*p)) {
 +		if (ctx->workspace)
 +			vfree(ctx->workspace);
-+		ctx->workspace = vmalloc(num_probs * sizeof(*p));
++		ctx->workspace_size = num_probs * sizeof(*p);
++		ctx->workspace = vmalloc(ctx->workspace_size);
 +	}
 +	p = (u16 *) ctx->workspace;
 +	if (!p)
@@ -652,6 +661,8 @@
 +	req->avail_in = ctx->avail_in;
 +	req->next_out = ctx->next_out;
 +	req->avail_out = ctx->avail_out;
++	ctx->next_in = 0;
++	ctx->avail_in = 0;
 +	pos = ctx->pos - pos;
 +
 +out:
