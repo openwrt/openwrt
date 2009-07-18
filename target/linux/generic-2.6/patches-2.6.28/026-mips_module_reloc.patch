@@ -209,13 +209,13 @@
  	return 0;
  }
  
-@@ -97,27 +248,44 @@ static int apply_r_mips_32_rela(struct m
+@@ -97,27 +248,41 @@ static int apply_r_mips_32_rela(struct m
  	return 0;
  }
  
 -static int apply_r_mips_26_rel(struct module *me, u32 *location, Elf_Addr v)
 +static Elf_Addr add_plt_entry_to(unsigned *plt_offset,
-+				 void *start, unsigned size, Elf_Addr v)
++				 void *start, Elf_Addr v)
  {
 -	if (v % 4) {
 -		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
@@ -229,17 +229,14 @@
 -		       me->name);
 -		return -ENOEXEC;
 -	}
-+	if (*plt_offset == size)
-+		return 0;
- 
--	*location = (*location & ~0x03ffffff) |
--	            ((*location + (v >> 2)) & 0x03ffffff);
 +	*plt_offset += 4 * sizeof(int);
 +
 +	/* adjust carry for addiu */
 +	if (v & 0x00008000)
 +		v += 0x10000;
-+
+ 
+-	*location = (*location & ~0x03ffffff) |
+-	            ((*location + (v >> 2)) & 0x03ffffff);
 +	tramp[0] = 0x3c190000 | (v >> 16);      /* lui t9, hi16 */
 +	tramp[1] = 0x27390000 | (v & 0xffff);   /* addiu t9, t9, lo16 */
 +	tramp[2] = 0x03200008;                  /* jr t9 */
@@ -253,12 +250,12 @@
 +	if (location >= me->module_core &&
 +	    location < me->module_core + me->core_size)
 +		return add_plt_entry_to(&me->arch.core_plt_offset,
-+				me->module_core, me->core_size, v);
++				me->arch.plt_tbl, v);
 +
 +	if (location >= me->module_init &&
 +	    location < me->module_init + me->init_size)
 +		return add_plt_entry_to(&me->arch.init_plt_offset,
-+				me->module_init, me->init_size, v);
++				me->arch.plt_tbl, v);
  
  	return 0;
  }
@@ -268,7 +265,7 @@
  {
  	if (v % 4) {
  		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
-@@ -125,17 +293,31 @@ static int apply_r_mips_26_rela(struct m
+@@ -125,17 +290,31 @@ static int apply_r_mips_26_rela(struct m
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -303,7 +300,7 @@
  static int apply_r_mips_hi16_rel(struct module *me, u32 *location, Elf_Addr v)
  {
  	struct mips_hi16 *n;
-@@ -400,11 +582,23 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -400,11 +579,23 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
