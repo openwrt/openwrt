@@ -110,6 +110,7 @@ endef
 RT61FW:=RT61_Firmware_V1.2.zip
 RT71FW:=RT71W_Firmware_V1.8.zip
 RT2860FW:=RT2860_Firmware_V11.zip
+RT2870FW:=RT2870_Firmware_V8.zip
 
 define Download/rt61
   FILE:=$(RT61FW)
@@ -131,6 +132,13 @@ define Download/rt2860
   MD5SUM:=440a81756a52c53528f16faa41c40124
 endef
 $(eval $(call Download,rt2860))
+
+define Download/rt2870
+  FILE:=$(RT2870FW)
+  URL:=http://www.ralinktech.com.tw/data/drivers
+  MD5SUM:=a7aae1d8cfd68e4d86a73000df0b6584
+endef
+$(eval $(call Download,rt2870))
 
 define KernelPackage/rt2x00/Default
   $(call KernelPackage/mac80211/Default)
@@ -462,6 +470,7 @@ define Build/Prepare
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
 	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
 	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2860FW)
+	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2870FW)
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
@@ -513,6 +522,11 @@ endef
 define KernelPackage/rt2800-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2860.bin $(1)/lib/firmware/
+endef
+
+define KernelPackage/rt2800-usb/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2870.bin $(1)/lib/firmware/
 endef
 
 define KernelPackage/zd1211rw/install
