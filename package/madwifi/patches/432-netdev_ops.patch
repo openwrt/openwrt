@@ -156,3 +156,17 @@ http://madwifi-project.org/changeset/4005
  #if IW_HANDLER_VERSION < 7
  	dev->get_wireless_stats = ieee80211_iw_getstats;
  #endif
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -1185,7 +1185,11 @@ ieee80211_deliver_data(struct ieee80211_
+ 			skb1->protocol = __constant_htons(ETH_P_802_2);
+ 			/* XXX insert vlan tag before queue it? */
+ 			ni_tmp = SKB_CB(skb1)->ni; /* remember node so we can free it */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+ 			ret = dev->hard_start_xmit(skb1, dev);
++#else
++			ret = dev->netdev_ops->ndo_start_xmit(skb1, dev);
++#endif
+ 
+ 			if (ret == NETDEV_TX_BUSY)
+ 				ieee80211_dev_kfree_skb(&skb1);
