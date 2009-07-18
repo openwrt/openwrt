@@ -1,0 +1,19 @@
+Index: linux-2.6.30.1/drivers/net/au1000_eth.c
+===================================================================
+--- linux-2.6.30.1.orig/drivers/net/au1000_eth.c	2009-07-03 01:52:38.000000000 +0200
++++ linux-2.6.30.1/drivers/net/au1000_eth.c	2009-07-18 12:26:58.000000000 +0200
+@@ -1036,10 +1036,14 @@
+ 	}
+ }
+ 
++#define AU1000_KNOWN_PHY_IOCTLS	(SIOCGMIIPHY & 0xfff0)
+ static int au1000_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ {
+ 	struct au1000_private *aup = netdev_priv(dev);
+ 
++	if((cmd & AU1000_KNOWN_PHY_IOCTLS) != AU1000_KNOWN_PHY_IOCTLS)
++		return -EINVAL;
++
+ 	if (!netif_running(dev)) return -EINVAL;
+ 
+ 	if (!aup->phy_dev) return -EINVAL; // PHY not controllable
