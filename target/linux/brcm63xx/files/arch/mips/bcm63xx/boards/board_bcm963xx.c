@@ -4,6 +4,7 @@
  * for more details.
  *
  * Copyright (C) 2008 Maxime Bizon <mbizon@freebox.fr>
+ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
  */
 
 #include <linux/init.h>
@@ -54,6 +55,35 @@ static struct board_info __initdata board_96338gw = {
 	},
 
 	.has_ohci0			= 1,
+
+	.leds = {
+		{
+			.name		= "adsl",
+			.gpio		= 3,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ses",
+			.gpio		= 5,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+		{
+			.name		= "power",
+			.gpio		= 0,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "stop",
+			.gpio		= 1,
+			.active_low	= 1,
+		}
+	},
 };
 
 static struct board_info __initdata board_96338w = {
@@ -64,7 +94,36 @@ static struct board_info __initdata board_96338w = {
 	.enet0 = {
 		.force_speed_100	= 1,
 		.force_duplex_full	= 1,
-	}
+	},
+
+	.leds = {
+		{
+			.name		= "adsl",
+			.gpio		= 3,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ses",
+			.gpio		= 5,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+		{
+			.name		= "power",
+			.gpio		= 0,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "stop",
+			.gpio		= 1,
+			.active_low	= 1,
+		},
+	},
 };
 #endif
 
@@ -92,6 +151,36 @@ static struct board_info __initdata board_96348r = {
 	.enet0 = {
 		.has_phy		= 1,
 		.use_internal_phy	= 1,
+	},
+
+	.leds = {
+		{
+			.name		= "adsl-fail",
+			.gpio		= 2,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp",
+			.gpio		= 3,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+		{
+			.name		= "power",
+			.gpio		= 0,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+			
+		},
+		{
+			.name		= "stop",
+			.gpio		= 1,
+			.active_low	= 1,
+		},
 	},
 };
 
@@ -123,6 +212,35 @@ static struct board_info __initdata board_96348gw_10 = {
 		.cs			= 2,
 		.ext_irq		= 2,
 	},
+	
+	.leds = {
+		{
+			.name		= "adsl-fail",
+			.gpio		= 2,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp",
+			.gpio		= 3,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+		{
+			.name		= "power",
+			.gpio		= 0,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "stop",
+			.gpio		= 1,
+			.active_low	= 1,
+		},
+	},
 }; 
 
 static struct board_info __initdata board_96348gw_11 = {
@@ -147,6 +265,35 @@ static struct board_info __initdata board_96348gw_11 = {
 	.has_ohci0 = 1,
 	.has_pccard = 1,
 	.has_ehci0 = 1,
+	
+	.leds = {
+		{
+			.name		= "adsl-fail",
+			.gpio		= 2,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp",
+			.gpio		= 3,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+		{
+			.name		= "power",
+			.gpio		= 0,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "stop",
+			.gpio		= 1,
+			.active_low	= 1,
+		},
+	},
 };
 
 static struct board_info __initdata board_96348gw = {
@@ -174,6 +321,35 @@ static struct board_info __initdata board_96348gw = {
 		.gpio_int		= 34,
 		.ext_irq		= 2,
 		.cs			= 2,
+	},
+	
+	.leds = {
+		{
+			.name		= "adsl-fail",
+			.gpio		= 2,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp",
+			.gpio		= 3,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+		{
+			.name		= "power",
+			.gpio		= 0,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "stop",
+			.gpio		= 1,
+			.active_low	= 1,
+		},
 	},
 };
 
@@ -270,6 +446,33 @@ static struct board_info __initdata board_96358vw = {
 	.has_ohci0 = 1,
 	.has_pccard = 1,
 	.has_ehci0 = 1,
+	
+	.leds = {
+		{
+			.name		= "adsl-fail",
+			.gpio		= 15,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp",
+			.gpio		= 22,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 23,
+			.active_low	= 1,
+		},
+		{
+			.name		= "power",
+			.gpio		= 4,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "stop",
+			.gpio		= 5,
+		},
+	},
 };
 
 static struct board_info __initdata board_96358vw2 = {
@@ -294,6 +497,29 @@ static struct board_info __initdata board_96358vw2 = {
 	.has_ohci0 = 1,
 	.has_pccard = 1,
 	.has_ehci0 = 1,
+
+	.leds = {
+		{
+			.name		= "adsl",
+			.gpio		= 22,
+			.active_low	= 1,
+		},
+		{
+			.name		= "ppp-fail",
+			.gpio		= 23,
+		},
+		{
+			.name		= "power",
+			.gpio		= 5,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "stop",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+	},
 };
 
 static struct board_info __initdata board_AGPFS0 = {
@@ -546,6 +772,14 @@ static struct resource gpiodev_resource = {
 	.start			= 0xFFFFFFFF,
 };
 
+static struct gpio_led_platform_data bcm63xx_led_data;
+
+static struct platform_device bcm63xx_gpio_leds = {
+	.name			= "leds-gpio",
+	.id			= 0,
+	.dev.platform_data	= &bcm63xx_led_data,
+};
+
 /*
  * third stage init callback, register all board devices.
  */
@@ -605,6 +839,11 @@ int __init board_register_devices(void)
 
 	/* Register GPIODEV */
 	platform_device_register_simple("GPIODEV", 0, &gpiodev_resource, 1);
+
+	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);
+	bcm63xx_led_data.leds = board.leds;
+
+	platform_device_register(&bcm63xx_gpio_leds);
 
 	return 0;
 }
