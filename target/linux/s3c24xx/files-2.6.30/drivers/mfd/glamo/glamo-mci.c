@@ -618,6 +618,7 @@ static void glamo_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 	struct glamo_mci_host *host = mmc_priv(mmc);
 	int bus_width = 0;
 	int powering = 0;
+	int ret;
 
 	if (host->suspending) {
 		dev_err(&host->pdev->dev, "IGNORING glamo_mci_set_ios while "
@@ -628,8 +629,9 @@ static void glamo_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 	/* Set power */
 	switch(ios->power_mode) {
 	case MMC_POWER_UP:
-		mmc_regulator_set_ocr(host->regulator, ios->vdd);
-		host->vdd_current = ios->vdd;
+		ret = regulator_enable(host->regulator);
+		if (ret)
+			dev_err(&host->pdev->dev, "Failed to enable regulator: %d\n", ret);
 		break;
 	case MMC_POWER_ON:
 		/*
@@ -638,10 +640,6 @@ static void glamo_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 		 */
 		host->force_slow_during_powerup = 1;
 
-		if (host->vdd_current != ios->vdd) {
-			mmc_regulator_set_ocr(host->regulator, ios->vdd);
-			host->vdd_current = ios->vdd;
-		}
 		if (host->power_mode_current == MMC_POWER_OFF) {
 			glamo_engine_enable(host->pdata->core,
 							      GLAMO_ENGINE_MMC);
@@ -659,12 +657,20 @@ static void glamo_mci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 		glamo_engine_disable(host->pdata->core,
 				     GLAMO_ENGINE_MMC);
 
-		mmc_regulator_set_ocr(host->regulator, 0);
-		host->vdd_current = -1;
+		ret = regulator_disable(host->regulator);
+		if (ret)
+			dev_warn(&host->pdev->dev, "Failed to disable regulator: %d\n", ret);
 		break;
 	}
 	host->power_mode_current = ios->power_mode;
 
+	if (host->vdd_current != ios->vdd) {
+		ret = mmc_regulator_set_ocr(host->regulator, ios->vdd);
+		if (ret)
+			dev_err(&host->pdev->dev, "Failed to set regulator voltage: %d\n", ret);
+		else
+			host->vdd_current = ios->vdd;
+	}
 	glamo_mci_set_card_clock(host, ios->clock);
 
 	/* after power-up, we are meant to give it >= 74 clocks so it can
@@ -804,7 +810,7 @@ static int glamo_mci_probe(struct platform_device *pdev)
 	}
 
 
-	host->vdd_current = -1;
+	host->vdd_current = 0;
 	host->clk_rate = 50000000; /* really it's 49152000 */
 	host->clk_div = 16;
 
@@ -823,6 +829,12 @@ static int glamo_mci_probe(struct platform_device *pdev)
 	mmc->max_seg_size  = mmc->max_req_size;
 	mmc->max_phys_segs = 128;
 	mmc->max_hw_segs   = 128;
+
+	if (mmc->ocr_avail < 0) {
+		dev_warn(&pdev->dev, "Failed to get ocr list for regulator: %d.\n",
+				mmc->ocr_avail);
+		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
+	}
 
 	platform_set_drvdata(pdev, mmc);
 
