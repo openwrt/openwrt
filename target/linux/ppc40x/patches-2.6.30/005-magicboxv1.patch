@@ -204,11 +204,11 @@
 +				#size-cells = <1>;
 +				partition@0 {
 +					label = "linux";
-+					reg = <0x0 0x3c0000>;
++					reg = <0x0 0x120000>;
 +				};
-+				partition@100000 {
++				partition@120000 {
 +					label = "rootfs";
-+					reg = <0x100000 0x2c0000>;
++					reg = <0x120000 0x2a0000>;
 +				};
 +				partition@3c0000 {
 +					label = "u-boot";
