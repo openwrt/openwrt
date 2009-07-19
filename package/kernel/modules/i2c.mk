@@ -126,10 +126,26 @@ endef
 
 $(eval $(call KernelPackage,i2c-scx200-acb))
 
+define KernelPackage/of-i2c
+  SUBMENU:=$(I2C_MENU)
+  TITLE:=OpenFirmware I2C accessors
+  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx kmod-i2c-core
+  KCONFIG:=CONFIG_OF_I2C
+  FILES:=$(LINUX_DIR)/drivers/of/of_i2c.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,58,of_i2c)
+endef
+
+define KernelPackage/of-i2c/description
+ Kernel module for OpenFirmware I2C accessors.
+endef
+
+$(eval $(call KernelPackage,of-i2c))
+
+
 define KernelPackage/i2c-ibm-iic
   SUBMENU:=$(I2C_MENU)
   TITLE:=IBM PPC 4xx on-chip I2C interface support
-  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx +kmod-i2c-core
+  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx +kmod-i2c-core +kmod-of-i2c
   KCONFIG:=CONFIG_I2C_IBM_IIC
   FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-ibm_iic.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,59,i2c-ibm_iic)
@@ -140,5 +156,3 @@ define KernelPackage/i2c-ibm-iic/description
 endef
 
 $(eval $(call KernelPackage,i2c-ibm-iic))
-
-
