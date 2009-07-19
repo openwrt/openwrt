@@ -17,7 +17,7 @@ LINUX_KARCH:=powerpc
 include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
-	Build firmware images for the AMCC Taishan evaluation board
+	Build firmware images for AMCC/IBM PPC44x based boards.
 endef
 
 $(eval $(call BuildTarget))
