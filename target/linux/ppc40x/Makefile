@@ -17,7 +17,7 @@ LINUX_KARCH:=powerpc
 include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
-	Build firmware images for the AMCC Kilauea evaluation board
+	Build firmware images for AMCC/IBM PPC40x based boards.
 endef
 
 $(eval $(call BuildTarget))
