@@ -1,6 +1,6 @@
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -76,7 +76,7 @@
+@@ -76,7 +76,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
  		cuboot-acadia.c cuboot-amigaone.c cuboot-magicboxv1.c \
@@ -9,7 +9,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -195,6 +195,7 @@
+@@ -195,6 +195,7 @@ image-$(CONFIG_WALNUT)			+= treeImage.wa
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_MAGICBOXV1)		+= cuImage.magicboxv1
  image-$(CONFIG_MAGICBOXV2)		+= cuImage.magicboxv2
@@ -19,7 +19,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -79,6 +79,16 @@
+@@ -79,6 +79,16 @@ config MAKALU
  	help
  	  This option enables support for the AMCC PPC405EX board.
  
@@ -38,7 +38,7 @@
  #	depends on 40x
 --- a/arch/powerpc/platforms/40x/ppc40x_simple.c
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -54,6 +54,7 @@
+@@ -54,6 +54,7 @@ static char *board[] __initdata = {
  	"amcc,acadia",
  	"magicboxv1",
  	"magicboxv2",
