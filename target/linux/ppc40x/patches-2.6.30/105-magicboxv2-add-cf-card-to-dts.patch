@@ -1,0 +1,25 @@
+--- a/arch/powerpc/boot/dts/magicboxv2.dts
++++ b/arch/powerpc/boot/dts/magicboxv2.dts
+@@ -2,6 +2,7 @@
+  * Device Tree Source for Magicbox v2
+  *
+  * Copyright 2008 Imre Kaloz <kaloz@openwrt.org>
++ * Copyright 2009 Gabor Juhos <juhosg@openwrt.org>
+  *
+  * Based on walnut.dts
+  *
+@@ -183,6 +184,14 @@
+ 			 */
+ 			clock-frequency = <0>; /* Filled in by zImage */
+ 
++			cf_card@ff100000 {
++				compatible = "magicbox-cf";
++				reg = <0x00000000 0xff100000 0x00001000
++				       0x00000000 0xff200000 0x00001000>;
++				interrupt-parent = <&UIC0>;
++				interrupts = <0x19 0x1 /* IRQ_TYPE_EDGE_RISING */ >;
++			};
++
+ 			nor_flash@ffc00000 {
+ 				compatible = "cfi-flash";
+ 				bank-width = <2>;
