@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/powerpc/boot/cuboot-magicboxv2.c
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,41 @@
 +/*
 + * Old U-boot compatibility for Magicbox v2
 + *
@@ -31,7 +31,7 @@
 +	ibm4xx_sdram_fixup_memsize();
 +	dt_fixup_mac_addresses(&bd.bi_enetaddr, &bd.bi_enet1addr);
 +}
-+	
++
 +void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
 +		unsigned long r6, unsigned long r7)
 +{
@@ -41,6 +41,7 @@
 +	fdt_init(_dtb_start);
 +	serial_console_init();
 +}
++
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/magicboxv2.dts
 @@ -0,0 +1,250 @@
@@ -296,7 +297,7 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -75,7 +75,8 @@ src-plat := of.c cuboot-52xx.c cuboot-82
+@@ -75,7 +75,8 @@
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
@@ -306,7 +307,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -193,6 +194,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
+@@ -193,6 +194,7 @@
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_MAGICBOXV1)		+= cuImage.magicboxv1
@@ -316,7 +317,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -59,6 +59,16 @@ config MAGICBOXV1
+@@ -59,6 +59,16 @@
  	help
  	  This option enables support for the Magicbox v1 board.
  
@@ -335,12 +336,10 @@
  	depends on 40x
 --- a/arch/powerpc/platforms/40x/ppc40x_simple.c
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -52,7 +52,8 @@ machine_device_initcall(ppc40x_simple, p
-  */
+@@ -53,6 +53,7 @@
  static char *board[] __initdata = {
  	"amcc,acadia",
--	"magicboxv1"
-+	"magicboxv1",
+ 	"magicboxv1",
 +	"magicboxv2",
  };
  
