@@ -126,3 +126,19 @@ endef
 
 $(eval $(call KernelPackage,i2c-scx200-acb))
 
+define KernelPackage/i2c-ibm-iic
+  SUBMENU:=$(I2C_MENU)
+  TITLE:=IBM PPC 4xx on-chip I2C interface support
+  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx +kmod-i2c-core
+  KCONFIG:=CONFIG_I2C_IBM_IIC
+  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-ibm_iic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,59,i2c-ibm_iic)
+endef
+
+define KernelPackage/i2c-ibm-iic/description
+ Kernel module for IIC peripheral found on embedded IBM PPC4xx based systems.
+endef
+
+$(eval $(call KernelPackage,i2c-ibm-iic))
+
+
