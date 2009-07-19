@@ -220,7 +220,7 @@ $(eval $(call KernelPackage,ide-aec62xx))
 define KernelPackage/ide-magicbox
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Magicbox 2.0 IDE CF driver
-  DEPENDS:=@TARGET_ppc40x @LINUX_2_6_30 +kmod-ide-core
+  DEPENDS:=@TARGET_ppc40x +kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_IDE_MAGICBOX
   FILES:=$(LINUX_DIR)/drivers/ide/magicbox_ide.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,magicbox_ide)
