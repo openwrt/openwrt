@@ -179,7 +179,7 @@ define KernelPackage/ide-core/2.4
   AUTOLOAD+=$(call AutoLoad,30,ide-detect)
 endef
 
-ifneq ($(CONFIG_arm),y)
+ifneq ($(CONFIG_arm)$(CONFIG_powerpc),y)
   define KernelPackage/ide-core/2.6
     FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
     AUTOLOAD+=$(call AutoLoad,30,ide-generic)
@@ -220,9 +220,9 @@ $(eval $(call KernelPackage,ide-aec62xx))
 define KernelPackage/ide-magicbox
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Magicbox 2.0 IDE CF driver
-  DEPENDS:=@TARGET_magicbox +kmod-ide-core
-  KCONFIG:=CONFIG_BLK_DEV_MAGICBOX_IDE
-  FILES:=$(LINUX_DIR)/drivers/ide/ppc/magicbox_ide.$(LINUX_KMOD_SUFFIX)
+  DEPENDS:=@TARGET_ppc40x @LINUX_2_6_30 +kmod-ide-core
+  KCONFIG:=CONFIG_BLK_DEV_IDE_MAGICBOX
+  FILES:=$(LINUX_DIR)/drivers/ide/magicbox_ide.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,magicbox_ide)
 endef
 
