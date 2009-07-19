@@ -43,7 +43,7 @@ config MFD_GLAMO_SPI_GPIO
 
 config MFD_GLAMO_MCI
 	tristate "Glamo S3C SD/MMC Card Interface support"
-	depends on MFD_GLAMO && MMC
+	depends on MFD_GLAMO && MMC && REGULATOR
 	help
 	  This selects a driver for the MCI interface found in
 	  the S-Media GLAMO chip, as used in Openmoko
