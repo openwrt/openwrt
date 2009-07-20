@@ -335,7 +335,7 @@ static int __init bcm63xx_spi_probe(struct platform_device *pdev)
 	bs->fifo_size = pdata->fifo_size;
 
 	ret = request_irq(irq, bcm63xx_spi_interrupt, 0,
-				pdev->dev.bus_id, master);
+				pdev->name, master);
 	if (ret) {
 		printk(KERN_ERR PFX " unable to request irq\n");
 		goto out_unmap;
