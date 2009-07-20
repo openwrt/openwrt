@@ -1,10 +1,11 @@
 --- /dev/null
 +++ b/arch/powerpc/boot/cuboot-magicboxv2.c
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,70 @@
 +/*
 + * Old U-boot compatibility for Magicbox v2
 + *
 + * Author: Imre Kaloz <kaloz@openwrt.org>
++ *         Gabor Juhos <juhosg@openwrt.org>
 + *
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -25,8 +26,36 @@
 +
 +static bd_t bd;
 +
++static void fixup_cf_card(void)
++{
++#define DCRN_CPC0_PCI_BASE	0xf9
++#define CF_CS0_BASE	0xff100000
++#define CF_CS1_BASE	0xff200000
++
++	/* Turn on PerWE instead of PCIsomething */
++	mtdcr(DCRN_CPC0_PCI_BASE,
++	      mfdcr(DCRN_CPC0_PCI_BASE) | (0x80000000L >> 27));
++
++	/* PerCS1 (CF's CS0): base 0xff100000, 16-bit, rw */
++	mtdcr(DCRN_EBC0_CFGADDR, EBC_B1CR);
++	mtdcr(DCRN_EBC0_CFGDATA, CF_CS0_BASE | EBC_BXCR_BU_RW | EBC_BXCR_BW_16);
++	mtdcr(DCRN_EBC0_CFGADDR, EBC_B1AP);
++	mtdcr(DCRN_EBC0_CFGDATA, 0x080bd800);
++
++	/* PerCS2 (CF's CS1): base 0xff200000, 16-bit, rw */
++	mtdcr(DCRN_EBC0_CFGADDR, EBC_B2CR);
++	mtdcr(DCRN_EBC0_CFGDATA, CF_CS1_BASE | EBC_BXCR_BU_RW | EBC_BXCR_BW_16);
++	mtdcr(DCRN_EBC0_CFGADDR, EBC_B2AP);
++	mtdcr(DCRN_EBC0_CFGDATA, 0x080bd800);
++
++#undef DCRN_CPC0_PCI_BASE
++#undef CF_CS0_BASE
++#undef CF_CS1_BASE
++}
++
 +static void magicboxv2_fixups(void)
 +{
++	fixup_cf_card();
 +	ibm405ep_fixup_clocks(25000000);
 +	ibm4xx_sdram_fixup_memsize();
 +	dt_fixup_mac_addresses(&bd.bi_enetaddr, &bd.bi_enet1addr);
@@ -44,11 +73,12 @@
 +
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/magicboxv2.dts
-@@ -0,0 +1,250 @@
+@@ -0,0 +1,259 @@
 +/*
 + * Device Tree Source for Magicbox v2
 + *
 + * Copyright 2008 Imre Kaloz <kaloz@openwrt.org>
++ * Copyright 2009 Gabor Juhos <juhosg@openwrt.org>
 + *
 + * Based on walnut.dts
 + *
@@ -229,6 +259,14 @@
 +			 * EBC bridge
 +			 */
 +			clock-frequency = <0>; /* Filled in by zImage */
++
++			cf_card@ff100000 {
++				compatible = "magicbox-cf";
++				reg = <0x00000000 0xff100000 0x00001000
++				       0x00000000 0xff200000 0x00001000>;
++				interrupt-parent = <&UIC0>;
++				interrupts = <0x19 0x1 /* IRQ_TYPE_EDGE_RISING */ >;
++			};
 +
 +			nor_flash@ffc00000 {
 +				compatible = "cfi-flash";
