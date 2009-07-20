@@ -151,9 +151,8 @@ define KernelPackage/pcmcia-core/2.6
 #	PCMCIA_DEBUG=n
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core pcmcia rsrc_nonstatic)
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core pcmcia)
 endef
 
 define KernelPackage/pcmcia-core/description
@@ -168,8 +167,10 @@ define KernelPackage/pcmcia-yenta
   TITLE:=yenta socket driver
   DEPENDS:=kmod-pcmcia-core
   KCONFIG:=CONFIG_YENTA
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,yenta_socket)
+  FILES:= \
+	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,rsrc_nonstatic yenta_socket)
 endef
 
 $(eval $(call KernelPackage,pcmcia-yenta))
