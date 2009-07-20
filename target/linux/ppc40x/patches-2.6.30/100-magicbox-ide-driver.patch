@@ -24,7 +24,7 @@
  obj-$(CONFIG_BLK_DEV_IDE_TX4939)	+= tx4939ide.o
 --- /dev/null
 +++ b/drivers/ide/magicbox_ide.c
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,293 @@
 +/*
 + *  IDE driver for the MagicBox 2.0 onboard CompactFlash slot.
 + *
@@ -43,8 +43,6 @@
 +#include <linux/of_device.h>
 +#include <linux/of_platform.h>
 +#include <linux/ide.h>
-+
-+#include <asm/dcr-native.h>
 +
 +#define DRV_DESC	"IDE driver for Magicbox 2.0 onboard CF slot"
 +#define DRV_NAME	"magicbox_cf"
@@ -239,6 +237,9 @@
 +	 * with CS1 active instead of CS0
 +	 */
 +	hw->io_ports.ctl_addr = (unsigned long)ctrl + (6 * 2);
++	hw->irq = irq;
++	hw->chipset = ide_generic;
++	hw->ack_intr = NULL;
 +}
 +
 +static int __devinit magicbox_ide_of_probe(struct of_device *op,
@@ -271,12 +272,8 @@
 +		goto err_unmap_base;
 +	}
 +
-+	magicbox_ide_setup_hw(&hw, base, ctrl, irq);
-+
 +	hw.dev = &op->dev;
-+	hw.irq = irq;
-+	hw.chipset = ide_generic;
-+	hw.ack_intr = NULL;
++	magicbox_ide_setup_hw(&hw, base, ctrl, irq);
 +
 +	ret = ide_host_add(&magicbox_ide_port_info, hws, &host);
 +	if (ret)
