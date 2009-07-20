@@ -76,6 +76,7 @@ struct reg_range {
 	char *name;
 	char dump;
 };
+
 struct reg_range reg_range[] = {
 	{ 0x0000, 0x76,		"General",	1 },
 	{ 0x0200, 0x18,		"Host Bus",	1 },
@@ -86,7 +87,7 @@ struct reg_range reg_range[] = {
 /*		{ 0x0c00, 0xcc,		"MPEG",		0 }, */
 	{ 0x1100, 0xb2,		"LCD 1",	1 },
 	{ 0x1200, 0x64,		"LCD 2",	1 },
-	{ 0x1400, 0x40,		"MMC",		1 },
+	{ 0x1400, 0x42,		"MMC",		1 },
 /*		{ 0x1500, 0x080,	"MPU 0",	0 },
 	{ 0x1580, 0x080,	"MPU 1",	0 },
 	{ 0x1600, 0x080,	"Cmd Queue",	0 },
@@ -478,7 +479,7 @@ int __glamo_engine_disable(struct glamo_core *glamo, enum glamo_engine engine)
 		break;
 	case GLAMO_ENGINE_2D:
 			__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_2D,
-			                   GLAMO_CLOCK_2D_EN_M7CLK |
+							   GLAMO_CLOCK_2D_EN_M7CLK |
 							   GLAMO_CLOCK_2D_EN_GCLK |
 							   GLAMO_CLOCK_2D_DG_M7CLK |
 							   GLAMO_CLOCK_2D_DG_GCLK,
@@ -544,7 +545,40 @@ u_int16_t glamo_engine_clkreg_get(struct glamo_core *glamo,
 }
 EXPORT_SYMBOL_GPL(glamo_engine_clkreg_get);
 
-struct glamo_script reset_regs[] = {
+static const struct glamo_script engine_div_regs[__NUM_GLAMO_ENGINES] = {
+	[GLAMO_ENGINE_LCD] = {GLAMO_REG_CLOCK_GEN5_1, GLAMO_CLOCK_GEN51_EN_DIV_DCLK},
+	[GLAMO_ENGINE_MMC] = {GLAMO_REG_CLOCK_GEN5_1, GLAMO_CLOCK_GEN51_EN_DIV_TCLK},
+	[GLAMO_ENGINE_2D]  = {GLAMO_REG_CLOCK_GEN5_1, GLAMO_CLOCK_GEN51_EN_DIV_GCLK},
+};
+
+void glamo_engine_div_enable(struct glamo_core *glamo, enum glamo_engine engine)
+{
+	uint16_t reg = engine_div_regs[engine].reg;
+	uint16_t bit = engine_div_regs[engine].val;
+	uint16_t val;
+
+	spin_lock(&glamo->lock);
+	val = __reg_read(glamo, reg);
+	__reg_write(glamo, reg, val | bit);
+	spin_unlock(&glamo->lock);
+	mdelay(5);
+}
+EXPORT_SYMBOL_GPL(glamo_engine_div_enable);
+
+void glamo_engine_div_disable(struct glamo_core *glamo, enum glamo_engine engine)
+{
+	uint16_t reg = engine_div_regs[engine].reg;
+	uint16_t bit = engine_div_regs[engine].val;
+	uint16_t val;
+
+	spin_lock(&glamo->lock);
+	val = __reg_read(glamo, reg);
+	__reg_write(glamo, reg, val & ~bit);
+	spin_unlock(&glamo->lock);
+}
+EXPORT_SYMBOL_GPL(glamo_engine_div_disable);
+
+static const struct glamo_script reset_regs[] = {
 	[GLAMO_ENGINE_LCD] = {
 		GLAMO_REG_CLOCK_LCD, GLAMO_CLOCK_LCD_RESET
 	},
@@ -572,18 +606,18 @@ struct glamo_script reset_regs[] = {
 
 void glamo_engine_reset(struct glamo_core *glamo, enum glamo_engine engine)
 {
-	struct glamo_script *rst;
+    uint16_t reg = reset_regs[engine].reg;
+    uint16_t val = reset_regs[engine].val;
 
 	if (engine >= ARRAY_SIZE(reset_regs)) {
 		dev_warn(&glamo->pdev->dev, "unknown engine %u ", engine);
 		return;
 	}
 
-	rst = &reset_regs[engine];
 
 	spin_lock(&glamo->lock);
-	__reg_set_bit(glamo, rst->reg, rst->val);
-	__reg_clear_bit(glamo, rst->reg, rst->val);
+	__reg_set_bit(glamo, reg, val);
+	__reg_clear_bit(glamo, reg, val);
 	spin_unlock(&glamo->lock);
 }
 EXPORT_SYMBOL_GPL(glamo_engine_reset);
@@ -599,20 +633,11 @@ void glamo_lcm_reset(struct platform_device *pdev, int level)
 }
 EXPORT_SYMBOL_GPL(glamo_lcm_reset);
 
-enum glamo_pll {
-	GLAMO_PLL1,
-	GLAMO_PLL2,
-};
-
-static int glamo_pll_rate(struct glamo_core *glamo,
+int glamo_pll_rate(struct glamo_core *glamo,
 			  enum glamo_pll pll)
 {
 	u_int16_t reg;
-	unsigned int div = 512;
 	unsigned int osci = glamo->pdata->osci_clock_rate;
-
-	if (osci == 32768)
-		div = 1;
 
 	switch (pll) {
 	case GLAMO_PLL1:
@@ -624,23 +649,29 @@ static int glamo_pll_rate(struct glamo_core *glamo,
 	default:
 		return -EINVAL;
 	}
-	return (osci/div)*reg;
+	return osci*reg;
 }
+EXPORT_SYMBOL_GPL(glamo_pll_rate);
 
 int glamo_engine_reclock(struct glamo_core *glamo,
 			 enum glamo_engine engine,
-			 int ps)
+			 int hz)
 {
-	int pll, khz;
-	u_int16_t reg, mask, val = 0;
+	int pll;
+	u_int16_t reg, mask, div;
 
-	if (!ps)
-		return 0;
+	if (!hz)
+		return -EINVAL;
 
 	switch (engine) {
 	case GLAMO_ENGINE_LCD:
 		pll = GLAMO_PLL1;
 		reg = GLAMO_REG_CLOCK_GEN7;
+		mask = 0xff;
+		break;
+	case GLAMO_ENGINE_MMC:
+		pll = GLAMO_PLL1;
+		reg = GLAMO_REG_CLOCK_GEN8;
 		mask = 0xff;
 		break;
 	default:
@@ -651,23 +682,22 @@ int glamo_engine_reclock(struct glamo_core *glamo,
 	}
 
 	pll = glamo_pll_rate(glamo, pll);
-	khz = 1000000000UL / ps;
 
-	if (khz)
-		val = (pll / khz) / 1000;
+	div = pll / hz;
+
+	if (div != 0 && pll / div <= hz)
+		--div;
+
+	if (div > mask)
+		div = mask;
 
 	dev_dbg(&glamo->pdev->dev,
-			"PLL %d, kHZ %d, div %d\n", pll, khz, val);
+			"PLL %d, kHZ %d, div %d\n", pll, hz / 1000, div);
 
-	if (val) {
-		val--;
-		reg_set_bit_mask(glamo, reg, mask, val);
-		mdelay(5); /* wait some time to stabilize */
+	reg_set_bit_mask(glamo, reg, mask, div);
+	mdelay(5); /* wait some time to stabilize */
 
-		return 0;
-	} else {
-		return -EINVAL;
-	}
+	return pll / (div + 1);
 }
 EXPORT_SYMBOL_GPL(glamo_engine_reclock);
 
@@ -675,7 +705,7 @@ EXPORT_SYMBOL_GPL(glamo_engine_reclock);
  * script support
  ***********************************************************************/
 
-int glamo_run_script(struct glamo_core *glamo, struct glamo_script *script,
+int glamo_run_script(struct glamo_core *glamo, const struct glamo_script *script,
 		     int len, int may_sleep)
 {
 	int i;
@@ -746,7 +776,7 @@ int glamo_run_script(struct glamo_core *glamo, struct glamo_script *script,
 }
 EXPORT_SYMBOL(glamo_run_script);
 
-static struct glamo_script glamo_init_script[] = {
+static const struct glamo_script glamo_init_script[] = {
 	{ GLAMO_REG_CLOCK_HOST,		0x1000 },
 		{ 0xfffe, 2 },
 	{ GLAMO_REG_CLOCK_MEMORY, 	0x1000 },

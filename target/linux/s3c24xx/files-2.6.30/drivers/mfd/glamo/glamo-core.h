@@ -17,6 +17,11 @@
 #define GLAMO_MMC_BUFFER_SIZE (64 * 1024)
 #define GLAMO_FB_SIZE	(GLAMO_INTERNAL_RAM_SIZE - GLAMO_MMC_BUFFER_SIZE)
 
+enum glamo_pll {
+    GLAMO_PLL1,
+    GLAMO_PLL2,
+};
+
 struct glamo_core {
 	int irq;
 	int irq_works; /* 0 means PCB does not support Glamo IRQ */
@@ -38,8 +43,14 @@ struct glamo_script {
 	u_int16_t val;
 };
 
+void glamo_engine_div_enable(struct glamo_core *glamo, enum glamo_engine engine);
+void glamo_engine_div_disable(struct glamo_core *glamo, enum glamo_engine engine);
+
+
+int glamo_pll_rate(struct glamo_core *glamo, enum glamo_pll pll);
+
 int glamo_run_script(struct glamo_core *glamo,
-		     struct glamo_script *script, int len, int may_sleep);
+		     const struct glamo_script *script, int len, int may_sleep);
 
 int glamo_engine_enable(struct glamo_core *glamo, enum glamo_engine engine);
 int glamo_engine_disable(struct glamo_core *glamo, enum glamo_engine engine);

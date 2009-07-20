@@ -321,7 +321,7 @@ static void glamofb_program_mode(struct glamofb_handle* gfb) {
 	if (var->pixclock)
 		glamo_engine_reclock(gcore,
 				     GLAMO_ENGINE_LCD,
-				     gfb->fb->var.pixclock);
+				     (1000000000UL / gfb->fb->var.pixclock) * 1000);
 
 	reg_set_bit_mask(gfb,
 			 GLAMO_REG_LCD_WIDTH,
