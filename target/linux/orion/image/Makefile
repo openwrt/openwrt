@@ -57,7 +57,7 @@ define Image/Build/Freecom
 	$(CP) $(KDIR)/dt2-uImage $(TARGET_DIR)/boot/uImage
 	rm -rf $(TARGET_DIR)/{var,jffs,rom}
 	$(INSTALL_DIR) $(TARGET_DIR)/var
-	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --owner=root --group=root -C $(TARGET_DIR)/ .
+	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img $(3)
 endef
 
