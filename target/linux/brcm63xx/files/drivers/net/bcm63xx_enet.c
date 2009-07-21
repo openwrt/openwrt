@@ -453,7 +453,7 @@ static int bcm_enet_poll(struct napi_struct *napi, int budget)
 	/* no more packet in rx/tx queue, remove device from poll
 	 * queue */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
-	netif_rx_schedule(dev, napi);
+	netif_rx_complete(dev, napi);
 #else
 	napi_complete(napi);
 #endif
@@ -509,7 +509,7 @@ static irqreturn_t bcm_enet_isr_dma(int irq, void *dev_id)
 	enet_dma_writel(priv, 0, ENETDMA_IRMASK_REG(priv->tx_chan));
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
-	netif_rx_schedul(dev, &priv->napi);
+	netif_rx_schedule(dev, &priv->napi);
 #else
 	napi_schedule(&priv->napi);
 #endif
