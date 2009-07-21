@@ -43,9 +43,7 @@
 
 #include <asm/div64.h>
 
-#ifdef CONFIG_PM
 #include <linux/pm.h>
-#endif
 
 #include "glamo-regs.h"
 #include "glamo-core.h"
@@ -1281,37 +1279,42 @@ static int glamo_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_PM
 
-static int glamo_suspend(struct platform_device *pdev, pm_message_t state)
+static int glamo_suspend(struct device *dev)
 {
-	struct glamo_core *glamo = dev_get_drvdata(&pdev->dev);
+	struct glamo_core *glamo = dev_get_drvdata(dev);
 	glamo->suspending = 1;
 	glamo_power(glamo, GLAMO_POWER_SUSPEND);
 
 	return 0;
 }
 
-static int glamo_resume(struct platform_device *pdev)
+static int glamo_resume(struct device *dev)
 {
-	struct glamo_core *glamo = dev_get_drvdata(&pdev->dev);
+	struct glamo_core *glamo = dev_get_drvdata(dev);
 	glamo_power(glamo, GLAMO_POWER_ON);
 	glamo->suspending = 0;
 
 	return 0;
 }
 
+static struct dev_pm_ops glamo_pm_ops = {
+	.suspend = glamo_suspend,
+	.resume  = glamo_resume,
+};
+
+#define GLAMO_PM_OPS (&glamo_pm_ops)
+
 #else
-#define glamo_suspend NULL
-#define glamo_resume  NULL
+#define GLAMO_PM_OPS NULL
 #endif
 
 static struct platform_driver glamo_driver = {
 	.probe		= glamo_probe,
 	.remove		= glamo_remove,
-	.suspend	= glamo_suspend,
-	.resume	= glamo_resume,
 	.driver		= {
 		.name	= "glamo3362",
 		.owner	= THIS_MODULE,
+		.pm     = GLAMO_PM_OPS,
 	},
 };
 

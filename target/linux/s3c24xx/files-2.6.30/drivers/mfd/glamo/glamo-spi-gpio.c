@@ -211,20 +211,16 @@ static int glamo_spigpio_remove(struct platform_device *pdev)
 	return 0;
 }
 
-/*#define glamo_spigpio_suspend NULL
-#define glamo_spigpio_resume NULL
-*/
-
 
 #ifdef CONFIG_PM
-static int glamo_spigpio_suspend(struct platform_device *pdev, pm_message_t state)
+/*static int glamo_spigpio_suspend(struct device *dev)
 {
 	return 0;
-}
+}*/
 
-static int glamo_spigpio_resume(struct platform_device *pdev)
+static int glamo_spigpio_resume(struct device *dev)
 {
-	struct glamo_spigpio *sp = platform_get_drvdata(pdev);
+	struct glamo_spigpio *sp = dev_get_drvdata(dev);
 
 	if (!sp)
 		return 0;
@@ -242,18 +238,25 @@ static int glamo_spigpio_resume(struct platform_device *pdev)
 
 	return 0;
 }
+
+static struct dev_pm_ops glamo_spigpio_pm_ops = {
+/*	.suspend = glamo_spiogpio_suspend,*/
+	.resume_noirq = glamo_spigpio_resume,
+};
+
+#define GLAMO_SPIGPIO_PM_OPS (&glamo_spigpio_pm_ops)
+
+#else
+#define GLAMO_SPIGPIO_PM_OPS NULL
 #endif
 
 static struct platform_driver glamo_spi_drv = {
 	.probe		= glamo_spigpio_probe,
 	.remove		= glamo_spigpio_remove,
-#ifdef CONFIG_PM
-	.suspend_late	= glamo_spigpio_suspend,
-	.resume_early	= glamo_spigpio_resume,
-#endif
 	.driver		= {
 		.name	= "glamo-spi-gpio",
 		.owner	= THIS_MODULE,
+		.pm     = GLAMO_SPIGPIO_PM_OPS,
 	},
 };
 
