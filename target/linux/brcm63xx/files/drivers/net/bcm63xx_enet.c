@@ -28,6 +28,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
 #include <linux/if_vlan.h>
+#include <linux/version.h>
 
 #include <bcm63xx_dev_enet.h>
 #include "bcm63xx_enet.h"
@@ -451,7 +452,11 @@ static int bcm_enet_poll(struct napi_struct *napi, int budget)
 
 	/* no more packet in rx/tx queue, remove device from poll
 	 * queue */
-	netif_rx_complete(dev, napi);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
+	netif_rx_schedule(dev, napi);
+#else
+	napi_complete(napi);
+#endif
 
 	/* restore rx/tx interrupt */
 	enet_dma_writel(priv, ENETDMA_IR_PKTDONE_MASK,
@@ -503,7 +508,11 @@ static irqreturn_t bcm_enet_isr_dma(int irq, void *dev_id)
 	enet_dma_writel(priv, 0, ENETDMA_IRMASK_REG(priv->rx_chan));
 	enet_dma_writel(priv, 0, ENETDMA_IRMASK_REG(priv->tx_chan));
 
-	netif_rx_schedule(dev, &priv->napi);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
+	netif_rx_schedul(dev, &priv->napi);
+#else
+	napi_schedule(&priv->napi);
+#endif
 
 	return IRQ_HANDLED;
 }
@@ -1709,7 +1718,11 @@ static int __devinit bcm_enet_probe(struct platform_device *pdev)
 	if (priv->has_phy) {
 		bus = &priv->mii_bus;
 		bus->name = "bcm63xx_enet MII bus";
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
 		bus->dev = &pdev->dev;
+#else
+		bus->parent = &pdev->dev;
+#endif
 		bus->priv = priv;
 		bus->read = bcm_enet_mdio_read_phylib;
 		bus->write = bcm_enet_mdio_write_phylib;
