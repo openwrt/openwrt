@@ -139,9 +139,8 @@ static void glamo_reg_set_bit_mask(struct glamo_mci_host *glamo,
 
 static void glamo_mci_clock_disable(struct glamo_mci_host *host) {
 	if (host->clk_enabled) {
-/*		glamo_engine_div_disable(host->pdata->core, GLAMO_ENGINE_MMC);*/
+		glamo_engine_div_disable(host->pdata->core, GLAMO_ENGINE_MMC);
 		host->clk_enabled = 0;
-        printk("clk disabled\n");
 	}
 }
 
@@ -151,7 +150,6 @@ static void glamo_mci_clock_enable(struct glamo_mci_host *host) {
 	if (!host->clk_enabled) {
 		glamo_engine_div_enable(host->pdata->core, GLAMO_ENGINE_MMC);
 		host->clk_enabled = 1;
-        printk("clk enabled\n");
 	}
 }
 
@@ -829,28 +827,28 @@ static int glamo_mci_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_PM
 
-static int glamo_mci_suspend(struct platform_device *dev, pm_message_t state)
+static int glamo_mci_suspend(struct device *dev)
 {
-	struct mmc_host *mmc = platform_get_drvdata(dev);
+	struct mmc_host *mmc = dev_get_drvdata(dev);
 	struct glamo_mci_host *host = mmc_priv(mmc);
 	int ret;
 
 	cancel_work_sync(&host->irq_work);
 
-	ret = mmc_suspend_host(mmc, state);
+	ret = mmc_suspend_host(mmc, PMSG_SUSPEND);
 	glamo_mci_clock_enable(host);
 
 	return ret;
 }
 
-static int glamo_mci_resume(struct platform_device *dev)
+static int glamo_mci_resume(struct device *dev)
 {
-	struct mmc_host *mmc = platform_get_drvdata(dev);
+	struct mmc_host *mmc = dev_get_drvdata(dev);
 	struct glamo_mci_host *host = mmc_priv(mmc);
 	int ret;
 
-    glamo_engine_enable(host->pdata->core, GLAMO_ENGINE_MMC);
-    glamo_engine_reset(host->pdata->core, GLAMO_ENGINE_MMC);
+	glamo_engine_enable(host->pdata->core, GLAMO_ENGINE_MMC);
+	glamo_engine_reset(host->pdata->core, GLAMO_ENGINE_MMC);
 
 	glamo_reg_write(host, GLAMO_REG_MMC_WDATADS1,
 			(u16)(host->data_mem->start));
@@ -861,28 +859,34 @@ static int glamo_mci_resume(struct platform_device *dev)
 			(u16)(host->data_mem->start));
 	glamo_reg_write(host, GLAMO_REG_MMC_RDATADS2,
 			(u16)(host->data_mem->start >> 16));
-    mdelay(5);
+	mdelay(5);
 
 	ret = mmc_resume_host(host->mmc);
 /*	glamo_mci_clock_disable(host);*/
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(glamo_mci_resume);
+
+static struct dev_pm_ops glamo_mci_pm_ops = {
+	.suspend = glamo_mci_suspend,
+	.resume  = glamo_mci_resume,
+};
+#define GLAMO_MCI_PM_OPS (&glamo_mci_pm_ops)
 
 #else /* CONFIG_PM */
-#define glamo_mci_suspend NULL
-#define glamo_mci_resume NULL
+#define GLAMO_MCI_PM_OPS NULL
 #endif /* CONFIG_PM */
 
 
 static struct platform_driver glamo_mci_driver =
 {
-	.driver.name	= "glamo-mci",
-	.probe		= glamo_mci_probe,
-	.remove		= glamo_mci_remove,
-	.suspend	= glamo_mci_suspend,
-	.resume		= glamo_mci_resume,
+	.probe  = glamo_mci_probe,
+	.remove = glamo_mci_remove,
+	.driver = {
+		.name  = "glamo-mci",
+		.owner = THIS_MODULE,
+		.pm    = GLAMO_MCI_PM_OPS,
+	},
 };
 
 static int __init glamo_mci_init(void)

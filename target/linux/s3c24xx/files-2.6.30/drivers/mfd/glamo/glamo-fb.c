@@ -953,9 +953,9 @@ static int glamofb_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_PM
 
-static int glamofb_suspend(struct platform_device *pdev, pm_message_t state)
+static int glamofb_suspend(struct device *dev)
 {
-	struct glamofb_handle *gfb = platform_get_drvdata(pdev);
+	struct glamofb_handle *gfb = dev_get_drvdata(dev);
 
 	/* we need to stop anything touching our framebuffer */
 	fb_set_suspend(gfb->fb, 1);
@@ -968,10 +968,10 @@ static int glamofb_suspend(struct platform_device *pdev, pm_message_t state)
 	return 0;
 }
 
-static int glamofb_resume(struct platform_device *pdev)
+static int glamofb_resume(struct device *dev)
 {
-	struct glamofb_handle *gfb = platform_get_drvdata(pdev);
-	struct glamo_fb_platform_data *mach_info = pdev->dev.platform_data;
+	struct glamofb_handle *gfb = dev_get_drvdata(dev);
+	struct glamo_fb_platform_data *mach_info = dev->platform_data;
 
 	/* OK let's allow framebuffer ops again */
 	/* gfb->fb->screen_base = ioremap(gfb->fb_res->start,
@@ -979,8 +979,6 @@ static int glamofb_resume(struct platform_device *pdev)
 	glamo_engine_enable(mach_info->core, GLAMO_ENGINE_LCD);
 	glamo_engine_reset(mach_info->core, GLAMO_ENGINE_LCD);
 
-	printk(KERN_ERR"spin_lock_init\n");
-	spin_lock_init(&gfb->lock_cmd);
 	glamofb_init_regs(gfb);
 #ifdef CONFIG_MFD_GLAMO_HWACCEL
 	glamofb_cursor_onoff(gfb, 1);
@@ -990,19 +988,25 @@ static int glamofb_resume(struct platform_device *pdev)
 
 	return 0;
 }
+
+static struct dev_pm_ops glamofb_pm_ops = {
+	.suspend = glamofb_suspend,
+	.resume = glamofb_resume,
+};
+
+#define GLAMOFB_PM_OPS (&glamofb_pm_ops)
+
 #else
-#define glamofb_suspend NULL
-#define glamofb_resume  NULL
+#define GLAMOFB_PM_OPS NULL
 #endif
 
 static struct platform_driver glamofb_driver = {
 	.probe		= glamofb_probe,
 	.remove		= glamofb_remove,
-	.suspend	= glamofb_suspend,
-	.resume	= glamofb_resume,
 	.driver		= {
 		.name	= "glamo-fb",
 		.owner	= THIS_MODULE,
+		.pm     = GLAMOFB_PM_OPS
 	},
 };
 
