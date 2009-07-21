@@ -209,13 +209,18 @@ static struct mv643xx_eth_platform_data dt2_eth_data = {
 	.duplex		= DUPLEX_FULL,
 };
 
-static struct dsa_platform_data dt2_switch_data = {
+static struct dsa_chip_data dt2_switch_chip_data = {
 	.port_names[0] = "wan",
 	.port_names[1] = "lan1",
 	.port_names[2] = "lan2",
 	.port_names[3] = "cpu",
 	.port_names[4] = "lan3",
 	.port_names[5] = "lan4",
+};
+
+static struct dsa_platform_data dt2_switch_plat_data = {
+	.nr_chips	= 1,
+	.chip		= &dt2_switch_chip_data,
 };
 
 /*****************************************************************************
@@ -300,7 +305,6 @@ static void __init dt2_init(void)
 	/*
 	 * Configure peripherals.
 	 */
-	gpio_display();
 
 	orion5x_uart0_init();
 	orion5x_ehci0_init();
@@ -321,7 +325,7 @@ static void __init dt2_init(void)
 
 	orion5x_eth_init(&dt2_eth_data);
 	memcpy(dt2_eth_data.mac_addr, dt2_eeprom.gw.mac_addr[0], 6);
-	orion5x_eth_switch_init(&dt2_switch_data, NO_IRQ);
+	orion5x_eth_switch_init(&dt2_switch_plat_data, NO_IRQ);
 
 	i2c_register_board_info(0, &dt2_i2c_rtc, 1);
 
