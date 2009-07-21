@@ -389,3 +389,35 @@ define KernelPackage/axonram/description
 endef
 
 $(eval $(call KernelPackage,axonram))
+
+define KernelPackage/libsas
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=SAS Domain Transport Attributes
+  DEPENDS:=+kmod-scsi-core
+  KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
+	CONFIG_SCSI_SAS_HOST_SMP=y \
+	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
+  FILES:=$(LINUX_DIR)/drivers/scsi/libsas/libsas.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,29,libsas)
+endef
+
+define KernelPackage/libsas/description
+  SAS Domain Transport Attributes support.
+endef
+
+$(eval $(call KernelPackage,libsas))
+
+define KernelPackage/mvsas
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Marvell 88SE6440 SAS/SATA driver
+  DEPENDS:=@TARGET_x86 +kmod-libsas
+  KCONFIG:=CONFIG_SCSI_MVSAS
+  FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,mvsas)
+endef
+
+define KernelPackage/mvsas/description
+  Kernel support for the Marvell SAS SCSI adapters
+endef
+
+$(eval $(call KernelPackage,mvsas))
