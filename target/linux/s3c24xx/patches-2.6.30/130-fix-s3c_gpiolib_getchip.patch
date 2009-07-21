@@ -1,0 +1,13 @@
+diff --git a/arch/arm/mach-s3c2410/include/mach/gpio-core.h b/arch/arm/mach-s3c2410/include/mach/gpio-core.h
+index 8fe1920..f8b879a 100644
+--- a/arch/arm/mach-s3c2410/include/mach/gpio-core.h
++++ b/arch/arm/mach-s3c2410/include/mach/gpio-core.h
+@@ -28,7 +28,7 @@ static inline struct s3c_gpio_chip *s3c_gpiolib_getchip(unsigned int pin)
+ 		return NULL;
+ 
+ 	chip = &s3c24xx_gpios[pin/32];
+-	return (S3C2410_GPIO_OFFSET(pin) > chip->chip.ngpio) ? chip : NULL;
++	return (S3C2410_GPIO_OFFSET(pin) < chip->chip.ngpio) ? chip : NULL;
+ }
+ 
+ #endif /* __ASM_ARCH_GPIO_CORE_H */
