@@ -5,4 +5,4 @@
  
  quiet_cmd_lzma = LZMA    $@
 -cmd_lzma = (lzma -9 -c $< && $(size_append) $<) >$@ || (rm -f $@ ; false)
-+cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2
++cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 -eos
