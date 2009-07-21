@@ -37,7 +37,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -489,6 +491,148 @@ out_register:
+@@ -489,6 +491,147 @@ out_register:
  	return slave;
  }
  
@@ -46,32 +46,31 @@
 +#define ROOTFS_REMOVED_NAME "<removed>"
 +static int split_squashfs(struct mtd_info *master, int offset, int *split_offset)
 +{
-+	char buf[512];
-+	struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
++	struct squashfs_super_block sb;
 +	int len, ret;
 +
-+	ret = master->read(master, offset, sizeof(*sb), &len, buf);
-+	if (ret || (len != sizeof(*sb))) {
++	ret = master->read(master, offset, sizeof(sb), &len, (void *) &sb);
++	if (ret || (len != sizeof(sb))) {
 +		printk(KERN_ALERT "split_squashfs: error occured while reading "
 +			"from \"%s\"\n", master->name);
 +		return -EINVAL;
 +	}
 +
-+	if (*((u32 *) buf) != SQUASHFS_MAGIC) {
++	if (sb.s_magic != SQUASHFS_MAGIC) {
 +		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
 +			master->name);
 +		*split_offset = 0;
 +		return 0;
 +	}
 +
-+	if (sb->bytes_used <= 0) {
++	if (sb.bytes_used <= 0) {
 +		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
 +			master->name);
 +		*split_offset = 0;
 +		return 0;
 +	}
 +
-+	len = (u32) sb->bytes_used;
++	len = (u32) sb.bytes_used;
 +	len += (offset & 0x000fffff);
 +	len +=  (master->erasesize - 1);
 +	len &= ~(master->erasesize - 1);
@@ -186,7 +185,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -502,14 +646,29 @@ int add_mtd_partitions(struct mtd_info *
+@@ -502,14 +645,29 @@ int add_mtd_partitions(struct mtd_info *
  {
  	struct mtd_part *slave;
  	u_int32_t cur_offset = 0;
@@ -219,7 +218,7 @@
  		cur_offset = slave->offset + slave->mtd.size;
  	}
  
-@@ -517,6 +676,32 @@ int add_mtd_partitions(struct mtd_info *
+@@ -517,6 +675,32 @@ int add_mtd_partitions(struct mtd_info *
  }
  EXPORT_SYMBOL(add_mtd_partitions);
  
