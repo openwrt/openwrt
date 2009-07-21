@@ -1,6 +1,6 @@
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -63,7 +63,7 @@ endif
+@@ -67,7 +67,7 @@ endif
  
  SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/BSS_START/$(ZBSSADDR)/
  
@@ -9,7 +9,7 @@
  		 head.o misc.o $(OBJS)
  
  ifeq ($(CONFIG_FUNCTION_TRACER),y)
-@@ -96,10 +96,10 @@ $(obj)/vmlinux: $(obj)/vmlinux.lds $(obj
+@@ -100,10 +100,10 @@ $(obj)/vmlinux: $(obj)/vmlinux.lds $(obj
  	$(call if_changed,ld)
  	@:
  
@@ -25,7 +25,7 @@
  
 --- a/arch/arm/boot/compressed/misc.c
 +++ b/arch/arm/boot/compressed/misc.c
-@@ -186,36 +186,10 @@ static inline __ptr_t memcpy(__ptr_t __d
+@@ -166,36 +166,10 @@ static inline __ptr_t memcpy(__ptr_t __d
  	return __dest;
  }
  
@@ -64,7 +64,7 @@
  
  /* Diagnostic functions */
  #ifdef DEBUG
-@@ -234,24 +208,21 @@ static unsigned outcnt;		/* bytes in out
+@@ -214,24 +188,21 @@ static unsigned outcnt;		/* bytes in out
  #  define Tracecv(c,x)
  #endif
  
@@ -93,7 +93,7 @@
  
  #ifdef STANDALONE_DEBUG
  #define NO_INFLATE_MALLOC
-@@ -259,50 +230,10 @@ static ulg free_mem_end_ptr;
+@@ -239,50 +210,10 @@ static ulg free_mem_end_ptr;
  
  #define ARCH_HAS_DECOMP_WDOG
  
@@ -145,7 +145,7 @@
  
  static void error(char *x)
  {
-@@ -317,20 +248,16 @@ static void error(char *x)
+@@ -297,20 +228,16 @@ static void error(char *x)
  
  #ifndef STANDALONE_DEBUG
  
@@ -169,7 +169,7 @@
  	putstr(" done, booting the kernel.\n");
  	return output_ptr;
  }
-@@ -340,11 +267,8 @@ char output_buffer[1500*1024];
+@@ -320,11 +247,8 @@ char output_buffer[1500*1024];
  
  int main()
  {
@@ -708,3 +708,12 @@
 +#define LZMA_LITERAL (LZMA_REP_LEN_CODER + LZMA_NUM_LEN_PROBS)
 +
 +#endif
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -182,4 +182,6 @@ cmd_objcopy = $(OBJCOPY) $(OBJCOPYFLAGS)
+ quiet_cmd_gzip = GZIP    $@
+ cmd_gzip = gzip -f -9 < $< > $@
+ 
++quiet_cmd_lzma = LZMA    $@
++cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 -eos
+ 
