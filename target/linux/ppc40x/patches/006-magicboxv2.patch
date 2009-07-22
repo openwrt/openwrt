@@ -280,7 +280,7 @@
 +			clock-frequency = <0>; /* Filled in by zImage */
 +
 +			cf_card@ff100000 {
-+				compatible = "magicbox-cf";
++				compatible = "magicbox-cf", "pata-magicbox-cf";
 +				reg = <0x00000000 0xff100000 0x00001000
 +				       0x00000000 0xff200000 0x00001000>;
 +				interrupt-parent = <&UIC0>;
