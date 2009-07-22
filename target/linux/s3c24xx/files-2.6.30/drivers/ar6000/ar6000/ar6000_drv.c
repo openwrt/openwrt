@@ -48,7 +48,6 @@ A_TIMER aptcTimer;
 APTC_TRAFFIC_RECORD aptcTR;
 #endif /* ADAPTIVE_POWER_THROUGHPUT_CONTROL */
 
-int bmienable = 0;
 unsigned int bypasswmi = 0;
 unsigned int debuglevel = 0;
 int tspecCompliance = 1;
@@ -68,7 +67,6 @@ unsigned int testmode =0;
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-module_param(bmienable, int, 0644);
 module_param(bypasswmi, int, 0644);
 module_param(debuglevel, int, 0644);
 module_param(tspecCompliance, int, 0644);
@@ -90,7 +88,6 @@ module_param(testmode, int, 0644);
 
 #define __user
 /* for linux 2.4 and lower */
-MODULE_PARM(bmienable,"i");
 MODULE_PARM(bypasswmi,"i");
 MODULE_PARM(debuglevel, "i");
 MODULE_PARM(onebitmode,"i");
@@ -701,6 +698,14 @@ static int alloc_raw_buffers(AR_SOFTC_T *ar)
     return 0;
 }
 
+static const struct net_device_ops ar6000_netdev_ops = {
+    .ndo_init = &ar6000_init,
+    .ndo_open = &ar6000_open,
+    .ndo_stop = &ar6000_close,
+    .ndo_start_xmit = &ar6000_data_tx,
+    .ndo_get_stats = &ar6000_get_stats,
+    .ndo_do_ioctl = &ar6000_ioctl,
+};
 /*
  * HTC Event handlers
  */
@@ -858,21 +863,7 @@ ar6000_avail_ev(HTC_HANDLE HTCHandle)
 
     spin_lock_init(&ar->arLock);
 
-    /* Don't install the init function if BMI is requested */
-    if(!bmienable)
-    {
-        dev->init = ar6000_init;
-    } else {
-        AR_DEBUG_PRINTF(" BMI enabled \n");
-    }
-
-    dev->open = &ar6000_open;
-    dev->stop = &ar6000_close;
-    dev->hard_start_xmit = &ar6000_data_tx;
-    dev->get_stats = &ar6000_get_stats;
-
-    /* dev->tx_timeout = ar6000_tx_timeout; */
-    dev->do_ioctl = &ar6000_ioctl;
+    dev->netdev_ops = &ar6000_netdev_ops;
     dev->watchdog_timeo = AR6000_TX_TIMEOUT;
     ar6000_ioctl_iwsetup(&ath_iw_handler_def);
     dev->wireless_handlers = &ath_iw_handler_def;
