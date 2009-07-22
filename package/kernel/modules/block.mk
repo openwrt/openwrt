@@ -393,7 +393,7 @@ $(eval $(call KernelPackage,axonram))
 define KernelPackage/libsas
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SAS Domain Transport Attributes
-  DEPENDS:=+kmod-scsi-core
+  DEPENDS:=+kmod-scsi-core @TARGET_x86
   KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
 	CONFIG_SCSI_SAS_HOST_SMP=y \
 	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
