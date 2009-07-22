@@ -113,6 +113,24 @@ endef
 $(eval $(call KernelPackage,ata-nvidia-sata))
 
 
+define KernelPackage/ata-magicbox-cf
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Magicbox v2/OpenRB Compact flash support (ATA)
+  DEPENDS:=@TARGET_ppc40x +kmod-ata-core
+  KCONFIG:=\
+	CONFIG_PATA_MAGICBOX_CF \
+	CONFIG_ATA_SFF=y
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_magicbox_cf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,pata_magicbox_cf)
+endef
+
+define KernelPackage/ata-magicbox-cf/description
+  Support for Magicbox v2/OpenRB on-board CF slot. (ATA version).
+endef
+
+$(eval $(call KernelPackage,ata-magicbox-cf))
+
+
 define KernelPackage/ata-piix
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Intel PIIX PATA/SATA support
@@ -219,7 +237,7 @@ $(eval $(call KernelPackage,ide-aec62xx))
 
 define KernelPackage/ide-magicbox
   SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Magicbox 2.0 IDE CF driver
+  TITLE:=Magicbox v2/OpenRB Compact flash support (IDE)
   DEPENDS:=@TARGET_ppc40x +kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_IDE_MAGICBOX
   FILES:=$(LINUX_DIR)/drivers/ide/magicbox_ide.$(LINUX_KMOD_SUFFIX)
@@ -227,7 +245,7 @@ define KernelPackage/ide-magicbox
 endef
 
 define KernelPackage/ide-magicbox/description
- Support for Magicbox 2.0 onboard CF slot.
+ Support for Magicbox v2/OpenRB on-board CF slot. (IDE version).
 endef
 
 $(eval $(call KernelPackage,ide-magicbox))
