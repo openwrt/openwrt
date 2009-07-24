@@ -73,7 +73,7 @@
 +
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/magicboxv2.dts
-@@ -0,0 +1,279 @@
+@@ -0,0 +1,281 @@
 +/*
 + * Device Tree Source for Magicbox v2
 + *
@@ -195,6 +195,8 @@
 +
 +			IIC: i2c@ef600500 {
 +				compatible = "ibm,iic-405ep", "ibm,iic";
++				#address-cells = <1>;
++				#size-cells = <0>;
 +				reg = <0xef600500 0x00000011>;
 +				interrupt-parent = <&UIC0>;
 +				interrupts = <0x2 0x4>;
