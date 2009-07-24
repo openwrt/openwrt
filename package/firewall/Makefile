@@ -19,6 +19,7 @@ define Package/firewall
   URL:=http://openwrt.org/
   TITLE:=OpenWrt firewall
   DEPENDS:=+iptables-mod-conntrack +iptables-mod-nat
+  PKGARCH:=all
 endef
 
 define Package/firewall/description

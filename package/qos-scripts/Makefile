@@ -20,6 +20,7 @@ define Package/qos-scripts
   CATEGORY:=Base system
   DEPENDS:=+tc +kmod-sched +iptables-mod-filter +iptables-mod-ipopt +iptables-mod-conntrack-extra +iptables-mod-imq
   TITLE:=QoS scripts
+  PKGARCH:=all
 endef
 
 define Package/qos-scripts/description
