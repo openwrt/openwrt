@@ -43,6 +43,10 @@ define Image/Build/jffs2-64k
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-light bs=1152k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-light-jffs2.img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-medium bs=1152k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-medium-jffs2.img
 endef
 
 define Image/Build/squashfs
@@ -64,6 +68,10 @@ define Image/Build/squashfs
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-light bs=1152k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-light-$(1).img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-medium bs=1152k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-medium-$(1).img
 endef
 
 $(eval $(call BuildImage))
