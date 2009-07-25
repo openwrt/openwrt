@@ -387,18 +387,67 @@ define KernelPackage/ebtables
   SUBMENU:=$(NF_MENU)
   TITLE:=Bridge firewalling modules
   DEPENDS:=@LINUX_2_6
-  FILES:=$(LINUX_DIR)/net/bridge/netfilter/*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
-  	CONFIG_BRIDGE_NF_EBTABLES
-  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(patsubst %.$(LINUX_KMOD_SUFFIX),%,ebtables.$(LINUX_KMOD_SUFFIX) $(wildcard $(LINUX_DIR)/net/bridge/netfilter/ebtable_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(LINUX_DIR)/net/bridge/netfilter/ebt_*.$(LINUX_KMOD_SUFFIX)))))
+	$(KCONFIG_EBTABLES)
+  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES-m)))
 endef
 
 define KernelPackage/ebtables/description
- Kernel modules for Ethernet Bridge firewalling
+  ebtables is a general, extensible frame/packet identification
+  framework. It provides you to do Ethernet
+  filtering/NAT/brouting on the Ethernet bridge.
 endef
 
 $(eval $(call KernelPackage,ebtables))
 
+define KernelPackage/ebtables-ipv4
+  SUBMENU:=$(NF_MENU)
+  TITLE:=ebtables: IPv4 support
+  DEPENDS:= kmod-ebtables
+  FILES:=$(foreach mod,$(EBTABLES_IP4-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  KCONFIG:=$(KCONFIG_EBTABLES_IP4)
+  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES_IP4-m)))
+endef
+
+define KernelPackage/ebtables-ipv4/description
+ This option adds the IPv4 support to ebtables, which allows basic
+ IPv4 header field filtering, ARP filtering as well as SNAT, DNAT targets.
+endef
+
+$(eval $(call KernelPackage,ebtables-ipv4))
+
+define KernelPackage/ebtables-ipv6
+  SUBMENU:=$(NF_MENU)
+  TITLE:=ebtables: IPv6 support
+  DEPENDS:= kmod-ebtables
+  FILES:=$(foreach mod,$(EBTABLES_IP6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  KCONFIG:=$(KCONFIG_EBTABLES_IP6)
+  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES_IP6-m)))
+endef
+
+define KernelPackage/ebtables-ipv6/description
+ This option adds the IPv6 support to ebtables, which allows basic
+ IPv6 header field filtering and target support.
+endef
+
+$(eval $(call KernelPackage,ebtables-ipv6))
+
+define KernelPackage/ebtables-watchers
+  SUBMENU:=$(NF_MENU)
+  TITLE:=ebtables: watchers support
+  DEPENDS:= kmod-ebtables
+  FILES:=$(foreach mod,$(EBTABLES_WATCHERS-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  KCONFIG:=$(KCONFIG_EBTABLES_WATCHERS)
+  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES_WATCHERS-m)))
+endef
+
+define KernelPackage/ebtables-watchers/description
+ This option adds the log watchers, that you can use in any rule
+ in any ebtables table.
+endef
+
+$(eval $(call KernelPackage,ebtables-watchers))
 
 define KernelPackage/nfnetlink
   SUBMENU:=$(NF_MENU)
