@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/image.mk
 IMGNAME:=$(BIN_DIR)/openwrt-$(BOARD)
 
 define imgname
-$(IMGNAME)-$(2)-$(patsubst jffs2-%,jffs2,$(1))
+$(IMGNAME)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 endef
 
 VMLINUX:=$(IMGNAME)-vmlinux
@@ -156,7 +156,7 @@ define Image/Build/TPLINK
 		-B $(4) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.gzip \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(BOARD)-$(2)-$(1).uni
+		-o $(call imgname,$(1),$(2)).uni
 endef
 
 define Image/Build/Template/Compex
@@ -205,6 +205,14 @@ endef
 
 define Image/Build/Template/TPLINK/squashfs
 	$(call Image/Build/Template/TPLINK,squashfs,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/TPLINK4K
+	$(call Image/Build/TPLINK,$(1),$(2),$(3),$(4))
+endef
+
+define Image/Build/Template/TPLINK4K/squashfs
+	$(call Image/Build/Template/TPLINK,squashfs-4k,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/UBNT
@@ -282,7 +290,7 @@ define Image/Build/Profile/MZKW300NH
 endef
 
 define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/TPLINK/$(1),tl-wr741ndv1,board=TL-WR741ND,TL-WR741NDv1)
+	$(call Image/Build/Template/TPLINK4K/$(1),tl-wr741ndv1,board=TL-WR741ND,TL-WR741NDv1)
 endef
 
 define Image/Build/Profile/TLWR841NDV3
@@ -319,6 +327,8 @@ define Image/Build/Profile/Madwifi
 endef
 
 define Image/Build/squashfs
+	dd if=$(KDIR)/root.squashfs of=$(IMGNAME)-root.squashfs-4k bs=4k conv=sync
+	$(call add_jffs2_mark,$(IMGNAME)-root.squashfs-4k)
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
