@@ -60,7 +60,9 @@ CONFIGURE_ARGS = \
 		--localstatedir=/var \
 		--mandir=$(CONFIGURE_PREFIX)/man \
 		--infodir=$(CONFIGURE_PREFIX)/info \
-		$(DISABLE_NLS)
+		$(DISABLE_NLS) \
+		$(DISABLE_LARGEFILE) \
+		$(DISABLE_IPV6)
 
 CONFIGURE_VARS = \
 		$(TARGET_CONFIGURE_OPTS) \

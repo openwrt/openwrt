@@ -153,13 +153,21 @@ else
 endif
 
 ifeq ($(CONFIG_ENABLE_LOCALE),true)
-  DISABLE_NLS:=
+  DISABLE_NLS:=--enable-nls
 else
   DISABLE_NLS:=--disable-nls
 endif
 
-ifneq ($(CONFIG_LARGEFILE),y)
-  DISABLE_LARGEFILE= --disable-largefile
+ifeq ($(CONFIG_IPV6),y)
+  DISABLE_IPV6:=--enable-ipv6
+else
+  DISABLE_IPV6:=--disable-ipv6
+endif
+
+ifeq ($(CONFIG_LARGEFILE),y)
+  DISABLE_LARGEFILE:=
+else
+  DISABLE_LARGEFILE:=--disable-largefile
 endif
 
 ifeq ($(CONFIG_TAR_VERBOSITY),y)
