@@ -1,0 +1,185 @@
+diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c
+--- compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2008-08-13 06:33:34.000000000 +0200
++++ compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2009-01-21 08:00:35.000000000 +0100
+@@ -62,8 +62,12 @@
+ 		goto literal;
+ 
+ try_match:
++#ifdef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
+ 		if (get_unaligned((const unsigned short *)m_pos)
+ 				== get_unaligned((const unsigned short *)ip)) {
++#else
++		if (m_pos[0] == ip[0] && m_pos[1] == ip[1]) {
++#endif
+ 			if (likely(m_pos[2] == ip[2]))
+ 					goto match;
+ 		}
+@@ -94,9 +98,14 @@
+ 				}
+ 				*op++ = tt;
+ 			}
+-			do {
+-				*op++ = *ii++;
+-			} while (--t > 0);
++			if (t >= 2 * 4) {
++				memcpy(op, ii, t);
++				op += t;
++				ii += t;
++			} else
++				do {
++					*op++ = *ii++;
++				} while (--t > 0);
+ 		}
+ 
+ 		ip += 3;
+@@ -208,9 +217,14 @@
+ 
+ 			*op++ = tt;
+ 		}
+-		do {
+-			*op++ = *ii++;
+-		} while (--t > 0);
++		if (t >= 2 * 4) {
++			memcpy(op, ii, t);
++			op += t;
++			ii += t;
++		} else
++			do {
++				*op++ = *ii++;
++			} while (--t > 0);
+ 	}
+ 
+ 	*op++ = M4_MARKER | 1;
+@@ -224,4 +238,3 @@
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION("LZO1X-1 Compressor");
+-
+diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
+--- compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2008-08-13 06:33:42.000000000 +0200
++++ compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2009-01-21 07:49:41.000000000 +0100
+@@ -45,10 +45,7 @@
+ 			goto output_overrun;
+ 		if (HAVE_IP(t + 1, ip_end, ip))
+ 			goto input_overrun;
+-		do {
+-			*op++ = *ip++;
+-		} while (--t > 0);
+-		goto first_literal_run;
++		goto prep_first_literal_run;
+ 	}
+ 
+ 	while ((ip < ip_end)) {
+@@ -71,23 +68,20 @@
+ 		if (HAVE_IP(t + 4, ip_end, ip))
+ 			goto input_overrun;
+ 
+-		COPY4(op, ip);
+-		op += 4;
+-		ip += 4;
+-		if (--t > 0) {
+-			if (t >= 4) {
+-				do {
+-					COPY4(op, ip);
+-					op += 4;
+-					ip += 4;
+-					t -= 4;
+-				} while (t >= 4);
+-				if (t > 0) {
+-					do {
+-						*op++ = *ip++;
+-					} while (--t > 0);
+-				}
+-			} else {
++		t += (4 - 1);
++		if (t >= 2 * 4) {
++			memcpy(op, ip, t);
++			op += t;
++			ip += t;
++		} else {
++			do {
++				COPY4(op, ip);
++				op += 4;
++				ip += 4;
++				t -= 4;
++			} while (t >= 4);
++			if (t > 0) {
++prep_first_literal_run:
+ 				do {
+ 					*op++ = *ip++;
+ 				} while (--t > 0);
+@@ -139,8 +133,7 @@
+ 					t += 31 + *ip++;
+ 				}
+ 				m_pos = op - 1;
+-				m_pos -= le16_to_cpu(get_unaligned(
+-					(const unsigned short *)ip)) >> 2;
++				m_pos -= get_unaligned_le16(ip) >> 2;
+ 				ip += 2;
+ 			} else if (t >= 16) {
+ 				m_pos = op;
+@@ -158,8 +151,7 @@
+ 					}
+ 					t += 7 + *ip++;
+ 				}
+-				m_pos -= le16_to_cpu(get_unaligned(
+-					(const unsigned short *)ip)) >> 2;
++				m_pos -= get_unaligned_le16(ip) >> 2;
+ 				ip += 2;
+ 				if (m_pos == op)
+ 					goto eof_found;
+@@ -184,21 +176,33 @@
+ 			if (HAVE_OP(t + 3 - 1, op_end, op))
+ 				goto output_overrun;
+ 
+-			if (t >= 2 * 4 - (3 - 1) && (op - m_pos) >= 4) {
+-				COPY4(op, m_pos);
+-				op += 4;
+-				m_pos += 4;
+-				t -= 4 - (3 - 1);
+-				do {
++			if (t >= 2 * 4 - (3 - 1)) {
++				/*
++				 *  Assume memcpy don't copy
++				 *  more than 32 bytes at once
++				 */
++				if ((op - m_pos) >= 32) {
++					t += (3 - 1);
++					memcpy(op, m_pos, t);
++					op += t;
++					m_pos += t;
++				} else if ((op - m_pos) >= 4) {
+ 					COPY4(op, m_pos);
+ 					op += 4;
+ 					m_pos += 4;
+-					t -= 4;
+-				} while (t >= 4);
+-				if (t > 0)
++					t -= 4 - (3 - 1);
+ 					do {
+-						*op++ = *m_pos++;
+-					} while (--t > 0);
++						COPY4(op, m_pos);
++						op += 4;
++						m_pos += 4;
++						t -= 4;
++					} while (t >= 4);
++					if (t > 0)
++						do {
++							*op++ = *m_pos++;
++						} while (--t > 0);
++				} else
++					goto copy_match;
+ 			} else {
+ copy_match:
+ 				*op++ = *m_pos++;
+@@ -247,9 +251,7 @@
+ 	*out_len = op - out;
+ 	return LZO_E_LOOKBEHIND_OVERRUN;
+ }
+-
+ EXPORT_SYMBOL_GPL(lzo1x_decompress_safe);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_DESCRIPTION("LZO1X Decompressor");
+-
