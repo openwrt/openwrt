@@ -621,6 +621,21 @@ endef
 $(eval $(call KernelPackage,usb-net-pegasus))
 
 
+define KernelPackage/usb-net-mcs7830
+  $(call usbdep,kmod-usb-net @LINUX_2_6)
+  TITLE:=Kernel module for USB-to-Ethernet MCS7830 convertors
+  KCONFIG:=CONFIG_USB_NET_MCS7830
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/mcs7830.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,mcs7830)
+endef
+
+define KernelPackage/usb-net-mcs7830/description
+ Kernel module for USB-to-Ethernet MCS7830 convertors
+endef
+
+$(eval $(call KernelPackage,usb-net-mcs7830))
+
+
 define KernelPackage/usb-net-cdc-ether
   $(call usbdep,kmod-usb-net @LINUX_2_6)
   TITLE:=Support for cdc ethernet connections
