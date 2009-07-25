@@ -1,0 +1,39 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+START=19
+
+load_modules() {
+	local section="$1"
+	config_get "size_kbytes" "$section" "size_kbytes"
+	config_get_bool "enabled" "$section" "enabled" '1'
+	if [ "$enabled" -gt 0 ]; then
+		if [ "`lsmod | grep 'compcache'`" != "" ]; then
+			echo "compcache allready loaded"
+		else
+			insmod xvmalloc
+			insmod lzo1x
+			insmod compcache compcache_size_kbytes=$size_kbytes
+		fi
+	fi
+}
+
+remove_modules() {
+	local section="$1"
+	config_get_bool "enabled" "$section" "enabled" '1'
+	if [ "$enabled" -gt 0 ]; then
+		[ "`cat /proc/swaps | grep 'ramzswap0'`" != "" ] && swapoff /dev/ramzswap0
+		[ "`lsmod | grep 'compcache'`" != "" ] && rmmod compcache > /dev/null
+		[ "`lsmod | grep 'lzo1x'`" != "" ] && rmmod lzo1x > /dev/null
+		[ "`lsmod | grep 'xvmalloc'`" != "" ] && rmmod xvmalloc > /dev/null
+	fi
+}
+
+start() {
+	config_load "compcache"
+	config_foreach load_modules "compcache"
+}
+
+stop() {
+	config_load "compcache"
+	config_foreach remove_modules "compcache"
+}
