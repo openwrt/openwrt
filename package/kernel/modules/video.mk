@@ -126,6 +126,24 @@ endef
 $(eval $(call KernelPackage,video-ovcamchip))
 
 
+define KernelPackage/video-sn9c102
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=SN9C102 Camera Chip support
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-usb-core +kmod-video-core
+  KCONFIG:=CONFIG_USB_SN9C102
+  FILES:=$(LINUX_DIR)/drivers/media/video/sn9c102/sn9c102.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,70,sn9c102)
+endef
+
+
+define KernelPackage/video-sn9c102/description
+ Kernel modules for supporting SN9C102
+ camera chips.
+endef
+
+$(eval $(call KernelPackage,video-sn9c102))
+
+
 define KernelPackage/video-pwc
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Philips USB webcam support
