@@ -142,6 +142,13 @@ config DEBUG_DIR
 		This will install all compiled package binaries into build_dir/target-*/debug-*/,
 		useful for cross-debugging via gdb/gdbserver
 
+config IPV6 
+        bool 
+        prompt "Enable IPv6 support in packages"
+        default n 
+        help 
+                Enable IPV6 support in packages (passes --enable-ipv6 to configure scripts).
+
 comment "Kernel build options"
 
 config KERNEL_KALLSYMS
