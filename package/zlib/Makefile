@@ -28,7 +28,7 @@ define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
-		CFLAGS="$(TARGET_CFLAGS) $(FPIC) $(CFLAGS_LARGEFILE)" \
+		CFLAGS="$(TARGET_CFLAGS) $(FPIC)" \
 		UNAME_S="Linux" \
 		./configure \
 			--prefix=/usr \
@@ -39,7 +39,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -fPIC $(CFLAGS_LARGEFILE)" \
+		CFLAGS="$(TARGET_CFLAGS) -fPIC" \
 		libz.a libz.so
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
