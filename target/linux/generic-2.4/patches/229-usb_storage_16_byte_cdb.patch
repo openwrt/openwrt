@@ -1,0 +1,14 @@
+--- a/drivers/usb/storage/scsiglue.c.old	2009-03-30 09:08:02.000000000 +0200
++++ b/drivers/usb/storage/scsiglue.c	2009-03-30 09:02:53.000000000 +0200
+@@ -95,6 +95,11 @@
+ 	if (us->host) {
+ 		us->host->hostdata[0] = (unsigned long)us;
+ 		us->host_no = us->host->host_no;
++
++		/* allow 16-byte CDBs as we need it for devices > 2TB
++		   and ATA command pass-through */
++		us->host->max_cmd_len = 16;
++
+ 		return 1;
+ 	}
+ 
