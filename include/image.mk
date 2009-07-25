@@ -92,7 +92,7 @@ endif
 define Image/Checksum
 	( cd ${BIN_DIR} ; \
 		$(FIND) -maxdepth 1 -type f \! -name 'md5sums'  -printf "%P\n" | xargs \
-		md5sum > md5sums \
+		md5sum --binary > md5sums \
 	)
 endef
 
