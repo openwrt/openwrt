@@ -1,7 +1,11 @@
 #!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 
 . $IPKG_INSTROOT/etc/functions.sh
+
+initscript=$1
+action=${2:-help}
+shift 2
 
 start() {
 	return 0
@@ -66,27 +70,9 @@ $EXTRA_HELP
 EOF
 }
 
-initscript="$1"
-[ "$#" -ge 1 ] && shift
-action="$1"
-[ "$#" -ge 1 ] && shift
-
 . "$initscript"
 
-cmds=
-for cmd in $EXTRA_COMMANDS; do
-	cmds="${cmds:+$cmds$N}$cmd) $cmd \"\$@\";;"
-done
-eval "case \"\$action\" in
-	start) start \"\$@\";;
-	stop) stop \"\$@\";;
-	reload) reload \"\$@\" || restart \"\$@\";;
-	restart) restart \"\$@\";;
-	boot) boot \"\$@\";;
-	shutdown) shutdown \"\$@\";;
-	enable) enable \"\$@\";;
-	enabled) enabled \"\$@\";;
-	disable) disable \"\$@\";;
-	$cmds
-	*) help;;
-esac"
+ALL_COMMANDS="start stop reload restart boot shutdown enable disable enabled depends ${EXTRA_COMMANDS}"
+list_contains ALL_COMMANDS "$action" || action=help
+[ "$action" == reload ] && action='eval reload "$@" || restart "$@" && :'
+$action "$@"
