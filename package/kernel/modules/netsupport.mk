@@ -146,7 +146,6 @@ define KernelPackage/isdn4linux/2.4
   KCONFIG+= \
 	CONFIG_ISDN
   FILES+= \
-	$(LINUX_DIR)/drivers/isdn/isdn.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
 endef
 
@@ -461,6 +460,21 @@ define KernelPackage/pppoa/description
 endef
 
 $(eval $(call KernelPackage,pppoa))
+
+define KernelPackage/pppol2tp
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=PPPoL2TP support
+  DEPENDS:=kmod-ppp +kmod-pppoe @!LINUX_2_6_21||!LINUX_2_6_25||!LINUX_2_6_27
+  KCONFIG:=CONFIG_PPPOL2TP
+  FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pppol2tp)
+endef
+
+define KernelPackage/pppol2tp/description
+  Kernel modules for PPPoL2TP (PPP over L2TP) support
+endef
+
+$(eval $(call KernelPackage,pppol2tp))
 
 
 define KernelPackage/ipoa
