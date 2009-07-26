@@ -6,7 +6,7 @@
  
 +config BLK_DEV_IDE_MAGICBOX
 +	tristate "Magicbox CF card support"
-+	depends on MAGICBOXV2 || OPENRB_LIGHT
++	depends on MAGICBOX || OPENRB_LIGHT
 +	select IDE_XFER_MODE
 +
  config BLK_DEV_IDE_TX4938

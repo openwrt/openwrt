@@ -1,58 +1,11 @@
---- a/arch/powerpc/boot/Makefile
-+++ b/arch/powerpc/boot/Makefile
-@@ -76,7 +76,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
- 		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
- 		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
- 		cuboot-acadia.c cuboot-amigaone.c cuboot-magicboxv1.c \
--		cuboot-magicboxv2.c
-+		cuboot-magicboxv2.c cuboot-openrb-light.c
- src-boot := $(src-wlib) $(src-plat) empty.c
- 
- src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -195,6 +195,7 @@ image-$(CONFIG_WALNUT)			+= treeImage.wa
- image-$(CONFIG_ACADIA)			+= cuImage.acadia
- image-$(CONFIG_MAGICBOXV1)		+= cuImage.magicboxv1
- image-$(CONFIG_MAGICBOXV2)		+= cuImage.magicboxv2
-+image-$(CONFIG_OPENRB_LIGHT)		+= cuImage.openrb-light
- 
- # Board ports in arch/powerpc/platform/44x/Kconfig
- image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
---- a/arch/powerpc/platforms/40x/Kconfig
-+++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -79,6 +79,16 @@ config MAKALU
- 	help
- 	  This option enables support for the AMCC PPC405EX board.
- 
-+config OPENRB_LIGHT
-+	bool "OpenRB Light"
-+	depends on 40x
-+	default n
-+	select PPC40x_SIMPLE
-+	select 405EP
-+	select PCI
-+	help
-+	  This option enables support for the OpenRB Light board.
-+
- #config REDWOOD_5
- #	bool "Redwood-5"
- #	depends on 40x
---- a/arch/powerpc/platforms/40x/ppc40x_simple.c
-+++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -54,6 +54,7 @@ static char *board[] __initdata = {
- 	"amcc,acadia",
- 	"magicboxv1",
- 	"magicboxv2",
-+	"openrb,light",
- };
- 
- static int __init ppc40x_probe(void)
 --- /dev/null
-+++ b/arch/powerpc/boot/cuboot-openrb-light.c
-@@ -0,0 +1,69 @@
++++ b/arch/powerpc/boot/cuboot-magicbox.c
+@@ -0,0 +1,90 @@
 +/*
-+ * Old U-boot compatibility for OpenRB Light board
++ * Old U-boot compatibility for Magicbox boards
 + *
-+ * Author: Gabor Juhos <juhosg@openwrt.org>
++ * Author: Imre Kaloz <kaloz@openwrt.org>
++ *         Gabor Juhos <juhosg@openwrt.org>
 + *
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -76,8 +29,8 @@
 +static void fixup_cf_card(void)
 +{
 +#define DCRN_CPC0_PCI_BASE	0xf9
-+#define CF_CS0_BASE		0xff100000
-+#define CF_CS1_BASE		0xff200000
++#define CF_CS0_BASE	0xff100000
++#define CF_CS1_BASE	0xff200000
 +
 +	/* Turn on PerWE instead of PCIsomething */
 +	mtdcr(DCRN_CPC0_PCI_BASE,
@@ -100,11 +53,32 @@
 +#undef CF_CS1_BASE
 +}
 +
-+static void openrb_light_fixups(void)
++static void magicbox_fixups(void)
 +{
-+	fixup_cf_card();
-+	ibm405ep_fixup_clocks(33333000);
++	ibm405ep_fixup_clocks(bd.bi_procfreq / 8);
 +	ibm4xx_sdram_fixup_memsize();
++
++	/* Magicbox v1 has only one ethernet, one serial and no
++	 * CF slot -- detect it using it's fake enet1addr
++	 */
++	if ((bd.bi_enet1addr[0] == 0x00) &&
++	    (bd.bi_enet1addr[1] == 0x00) &&
++	    (bd.bi_enet1addr[2] == 0x02) &&
++	    (bd.bi_enet1addr[3] == 0xfa) &&
++	    (bd.bi_enet1addr[4] == 0xf0) &&
++	    (bd.bi_enet1addr[5] == 0x80)) {
++		void *devp;
++
++		devp = finddevice("/plb/opb/ethernet@ef600900");
++		del_node(devp);
++		devp = finddevice("/plb/opb/serial@ef600400");
++		del_node(devp);
++		devp = finddevice("/plb/ebc/cf_card@ff100000");
++		del_node(devp);
++	} else {
++		fixup_cf_card();
++	}
++
 +	dt_fixup_mac_addresses(&bd.bi_enetaddr, &bd.bi_enet1addr);
 +}
 +
@@ -112,21 +86,21 @@
 +		unsigned long r6, unsigned long r7)
 +{
 +	CUBOOT_INIT();
-+	platform_ops.fixups = openrb_light_fixups;
++	platform_ops.fixups = magicbox_fixups;
 +	platform_ops.exit = ibm40x_dbcr_reset;
 +	fdt_init(_dtb_start);
 +	serial_console_init();
 +}
-+
 --- /dev/null
-+++ b/arch/powerpc/boot/dts/openrb-light.dts
-@@ -0,0 +1,252 @@
++++ b/arch/powerpc/boot/dts/magicbox.dts
+@@ -0,0 +1,281 @@
 +/*
-+ * Device Tree Source for OpenRB Light board
++ * Device Tree Source for Magicbox boards
 + *
++ * Copyright 2008-2009 Imre Kaloz <kaloz@openwrt.org>
 + * Copyright 2009 Gabor Juhos <juhosg@openwrt.org>
 + *
-+ * Based on magicboxv2.dts
++ * Based on walnut.dts
 + *
 + * This file is licensed under the terms of the GNU General Public
 + * License version 2.  This program is licensed "as is" without
@@ -138,12 +112,13 @@
 +/ {
 +	#address-cells = <1>;
 +	#size-cells = <1>;
-+	model = "openrb,light";
-+	compatible = "openrb,light";
++	model = "magicbox";
++	compatible = "magicbox";
 +	dcr-parent = <&{/cpus/cpu@0}>;
 +
 +	aliases {
 +		ethernet0 = &EMAC0;
++		ethernet1 = &EMAC1;
 +		serial0 = &UART0;
 +		serial1 = &UART1;
 +	};
@@ -156,12 +131,12 @@
 +			device_type = "cpu";
 +			model = "PowerPC,405EP";
 +			reg = <0x00000000>;
-+			clock-frequency = <0xbebc200>; /* Filled in by zImage */
++			clock-frequency = <0>; /* Filled in by zImage */
 +			timebase-frequency = <0>; /* Filled in by zImage */
-+			i-cache-line-size = <20>;
-+			d-cache-line-size = <20>;
-+			i-cache-size = <4000>;
-+			d-cache-size = <4000>;
++			i-cache-line-size = <0x20>;
++			d-cache-line-size = <0x20>;
++			i-cache-size = <0x4000>;
++			d-cache-size = <0x4000>;
 +			dcr-controller;
 +			dcr-access-method = "native";
 +		};
@@ -208,7 +183,7 @@
 +				0xe 0x4 /* RXDE */>;
 +		};
 +
-+		OPB0: opb {
++		POB0: opb {
 +			compatible = "ibm,opb-405ep", "ibm,opb";
 +			#address-cells = <1>;
 +			#size-cells = <1>;
@@ -239,12 +214,17 @@
 +			};
 +
 +			IIC: i2c@ef600500 {
++				compatible = "ibm,iic-405ep", "ibm,iic";
 +				#address-cells = <1>;
 +				#size-cells = <0>;
-+				compatible = "ibm,iic-405ep", "ibm,iic";
 +				reg = <0xef600500 0x00000011>;
 +				interrupt-parent = <&UIC0>;
 +				interrupts = <0x2 0x4>;
++
++				dtt@48 {
++					compatible = "national,lm75";
++					reg = <0x48>;
++				};
 +
 +				eeprom@50 {
 +					compatible = "at24,24c16";
@@ -280,10 +260,32 @@
 +				phy-map = <0x00000000>;
 +			};
 +
++			EMAC1: ethernet@ef600900 {
++				linux,network-index = <0x1>;
++				device_type = "network";
++				compatible = "ibm,emac-405ep", "ibm,emac";
++				interrupt-parent = <&UIC0>;
++				interrupts = <
++					0x11 0x4 /* Ethernet */
++					0x09 0x4 /* Ethernet Wake Up */>;
++				local-mac-address = [000000000000]; /* Filled in by zImage */
++				reg = <0xef600900 0x00000070>;
++				mal-device = <&MAL>;
++				mal-tx-channel = <2>;
++				mal-rx-channel = <1>;
++				cell-index = <1>;
++				max-frame-size = <0x5dc>;
++				rx-fifo-size = <0x1000>;
++				tx-fifo-size = <0x800>;
++				mdio-device = <&EMAC0>;
++				phy-mode = "mii";
++				phy-map = <0x00000001>;
++			};
++
 +			leds {
 +				compatible = "gpio-leds";
 +				user {
-+					label = "openrb:green:user";
++					label = "magicbox:red:user";
 +					gpios = <&GPIO0 2 1>;
 +				};
 +			};
@@ -308,10 +310,10 @@
 +				interrupts = <0x19 0x1 /* IRQ_TYPE_EDGE_RISING */ >;
 +			};
 +
-+			nor_flash@ff800000 {
++			nor_flash@ffc00000 {
 +				compatible = "cfi-flash";
 +				bank-width = <2>;
-+				reg = <0x00000000 0xff800000 0x00800000>;
++				reg = <0x00000000 0xffc00000 0x00400000>;
 +				#address-cells = <1>;
 +				#size-cells = <1>;
 +				partition@0 {
@@ -320,11 +322,11 @@
 +				};
 +				partition@120000 {
 +					label = "rootfs";
-+					reg = <0x120000 0x6a0000>;
++					reg = <0x120000 0x2a0000>;
 +				};
-+				partition@7c0000 {
++				partition@3c0000 {
 +					label = "u-boot";
-+					reg = <0x7c0000 0x30000>;
++					reg = <0x3c0000 0x30000>;
 +					read-only;
 +				};
 +			};
@@ -337,10 +339,10 @@
 +			#address-cells = <3>;
 +			compatible = "ibm,plb405ep-pci", "ibm,plb-pci";
 +			primary;
-+			reg = <0xeec00000 0x00000008    /* Config space access */
-+			       0xeed80000 0x00000004    /* IACK */
-+			       0xeed80000 0x00000004    /* Special cycle */
-+			       0xef480000 0x00000040>;  /* Internal registers */
++			reg = <0xeec00000 0x00000008	/* Config space access */
++			       0xeed80000 0x00000004	/* IACK */
++			       0xeed80000 0x00000004	/* Special cycle */
++			       0xef480000 0x00000040>;	/* Internal registers */
 +
 +			/* Outbound ranges, one memory and one IO,
 +			 * later cannot be changed. Chip supports a second
@@ -373,3 +375,53 @@
 +		linux,stdout-path = "/plb/opb/serial@ef600300";
 +	};
 +};
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -75,7 +75,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
+ 		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
+ 		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
+ 		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
+-		cuboot-acadia.c cuboot-amigaone.c
++		cuboot-acadia.c cuboot-amigaone.c cuboot-magicbox.c
+ src-boot := $(src-wlib) $(src-plat) empty.c
+ 
+ src-boot := $(addprefix $(obj)/, $(src-boot))
+@@ -192,6 +192,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImag
+ image-$(CONFIG_EP405)			+= dtbImage.ep405
+ image-$(CONFIG_WALNUT)			+= treeImage.walnut
+ image-$(CONFIG_ACADIA)			+= cuImage.acadia
++image-$(CONFIG_MAGICBOX)		+= cuImage.magicbox
+ 
+ # Board ports in arch/powerpc/platform/44x/Kconfig
+ image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
+--- a/arch/powerpc/platforms/40x/Kconfig
++++ b/arch/powerpc/platforms/40x/Kconfig
+@@ -49,6 +49,16 @@ config KILAUEA
+ 	help
+ 	  This option enables support for the AMCC PPC405EX evaluation board.
+ 
++config MAGICBOX
++	bool "Magicbox"
++	depends on 40x
++	default n
++	select PPC40x_SIMPLE
++	select 405EP
++	select PCI
++	help
++	  This option enables support for the Magicbox boards.
++
+ config MAKALU
+ 	bool "Makalu"
+ 	depends on 40x
+--- a/arch/powerpc/platforms/40x/ppc40x_simple.c
++++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
+@@ -51,7 +51,8 @@ machine_device_initcall(ppc40x_simple, p
+  * board.c file for it rather than adding it to this list.
+  */
+ static char *board[] __initdata = {
+-	"amcc,acadia"
++	"amcc,acadia",
++	"magicbox"
+ };
+ 
+ static int __init ppc40x_probe(void)
