@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 # XXX: current version needs 'get_unaligned_le16' helper introduced in 2.6.26
 define KernelPackage/libertas
   SUBMENU:=Wireless Drivers
-  DEPENDS:=+kmod-ieee80211 @LINUX_2_6 @!LINUX_2_6_21||!LINUX_2_6_23||!LINUX_2_6_24||!LINUX_2_6_25
+  DEPENDS:=+kmod-ieee80211 @LINUX_2_6 @!LINUX_2_6_21||!LINUX_2_6_25
   TITLE:=Marvell 88W8015 Wireless Driver
   FILES:= \
 	$(PKG_BUILD_DIR)/libertas.$(LINUX_KMOD_SUFFIX)  \
