@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -36,21 +36,13 @@ endef
 
 define Image/Build/jffs2-64k
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv1 bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1152k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv1-jffs2.img
+	) > $(BIN_DIR)/openwrt-$(BOARD)-magicbox-jffs2.img
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv2 bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1152k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv2-jffs2.img
-	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-light bs=1152k conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-light-jffs2.img
-	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-medium bs=1152k conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-medium-jffs2.img
+	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-jffs2.img
 endef
 
 define Image/Build/squashfs
@@ -61,21 +53,13 @@ define Image/Build/squashfs
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-kilauea-$(1).img
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv1 bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1152k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv1-$(1).img
+	) > $(BIN_DIR)/openwrt-$(BOARD)-magicbox-$(1).img
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicboxv2 bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1152k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-magicboxv2-$(1).img
-	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-light bs=1152k conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-light-$(1).img
-	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb-medium bs=1152k conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-medium-$(1).img
+	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-$(1).img
 endef
 
 $(eval $(call BuildImage))

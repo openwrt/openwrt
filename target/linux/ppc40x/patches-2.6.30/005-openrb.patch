@@ -1,11 +1,11 @@
 --- /dev/null
-+++ b/arch/powerpc/boot/cuboot-magicboxv2.c
-@@ -0,0 +1,70 @@
++++ b/arch/powerpc/boot/cuboot-openrb.c
+@@ -0,0 +1,71 @@
 +/*
-+ * Old U-boot compatibility for Magicbox v2
++ * Old U-boot compatibility for OpenRB boards
 + *
-+ * Author: Imre Kaloz <kaloz@openwrt.org>
-+ *         Gabor Juhos <juhosg@openwrt.org>
++ * Author: Gabor Juhos <juhosg@openwrt.org>
++ *         Imre Kaloz <kaloz@openwrt.org>
 + *
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -29,8 +29,8 @@
 +static void fixup_cf_card(void)
 +{
 +#define DCRN_CPC0_PCI_BASE	0xf9
-+#define CF_CS0_BASE	0xff100000
-+#define CF_CS1_BASE	0xff200000
++#define CF_CS0_BASE		0xff100000
++#define CF_CS1_BASE		0xff200000
 +
 +	/* Turn on PerWE instead of PCIsomething */
 +	mtdcr(DCRN_CPC0_PCI_BASE,
@@ -53,11 +53,13 @@
 +#undef CF_CS1_BASE
 +}
 +
-+static void magicboxv2_fixups(void)
++static void openrb_fixups(void)
 +{
-+	fixup_cf_card();
-+	ibm405ep_fixup_clocks(25000000);
++	ibm405ep_fixup_clocks(bd.bi_procfreq / 8);
 +	ibm4xx_sdram_fixup_memsize();
++
++	fixup_cf_card();
++
 +	dt_fixup_mac_addresses(&bd.bi_enetaddr, &bd.bi_enet1addr);
 +}
 +
@@ -65,20 +67,19 @@
 +		unsigned long r6, unsigned long r7)
 +{
 +	CUBOOT_INIT();
-+	platform_ops.fixups = magicboxv2_fixups;
++	platform_ops.fixups = openrb_fixups;
 +	platform_ops.exit = ibm40x_dbcr_reset;
 +	fdt_init(_dtb_start);
 +	serial_console_init();
 +}
-+
 --- /dev/null
-+++ b/arch/powerpc/boot/dts/magicboxv2.dts
-@@ -0,0 +1,281 @@
++++ b/arch/powerpc/boot/dts/openrb.dts
+@@ -0,0 +1,276 @@
 +/*
-+ * Device Tree Source for Magicbox v2
++ * Device Tree Source for OpenRB boards
 + *
-+ * Copyright 2008 Imre Kaloz <kaloz@openwrt.org>
 + * Copyright 2009 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright 2009 Imre Kaloz <kaloz@openwrt.org>
 + *
 + * Based on walnut.dts
 + *
@@ -92,8 +93,8 @@
 +/ {
 +	#address-cells = <1>;
 +	#size-cells = <1>;
-+	model = "magicboxv2";
-+	compatible = "magicboxv2";
++	model = "openrb";
++	compatible = "openrb";
 +	dcr-parent = <&{/cpus/cpu@0}>;
 +
 +	aliases {
@@ -111,12 +112,12 @@
 +			device_type = "cpu";
 +			model = "PowerPC,405EP";
 +			reg = <0x00000000>;
-+			clock-frequency = <0xbebc200>; /* Filled in by zImage */
++			clock-frequency = <0>; /* Filled in by zImage */
 +			timebase-frequency = <0>; /* Filled in by zImage */
-+			i-cache-line-size = <20>;
-+			d-cache-line-size = <20>;
-+			i-cache-size = <4000>;
-+			d-cache-size = <4000>;
++			i-cache-line-size = <0x20>;
++			d-cache-line-size = <0x20>;
++			i-cache-size = <0x4000>;
++			d-cache-size = <0x4000>;
 +			dcr-controller;
 +			dcr-access-method = "native";
 +		};
@@ -201,11 +202,6 @@
 +				interrupt-parent = <&UIC0>;
 +				interrupts = <0x2 0x4>;
 +
-+				dtt@48 {
-+					compatible = "national,lm75";
-+					reg = <0x48>;
-+				};
-+
 +				eeprom@50 {
 +					compatible = "at24,24c16";
 +					reg = <0x50>;
@@ -265,7 +261,7 @@
 +			leds {
 +				compatible = "gpio-leds";
 +				user {
-+					label = "magicbox:red:user";
++					label = "openrb:green:user";
 +					gpios = <&GPIO0 2 1>;
 +				};
 +			};
@@ -290,10 +286,10 @@
 +				interrupts = <0x19 0x1 /* IRQ_TYPE_EDGE_RISING */ >;
 +			};
 +
-+			nor_flash@ffc00000 {
++			nor_flash@ff800000 {
 +				compatible = "cfi-flash";
 +				bank-width = <2>;
-+				reg = <0x00000000 0xffc00000 0x00400000>;
++				reg = <0x00000000 0xff800000 0x00800000>;
 +				#address-cells = <1>;
 +				#size-cells = <1>;
 +				partition@0 {
@@ -302,11 +298,11 @@
 +				};
 +				partition@120000 {
 +					label = "rootfs";
-+					reg = <0x120000 0x2a0000>;
++					reg = <0x120000 0x6a0000>;
 +				};
-+				partition@3c0000 {
++				partition@7c0000 {
 +					label = "u-boot";
-+					reg = <0x3c0000 0x30000>;
++					reg = <0x7c0000 0x30000>;
 +					read-only;
 +				};
 +			};
@@ -361,46 +357,48 @@
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
--		cuboot-acadia.c cuboot-amigaone.c cuboot-magicboxv1.c
-+		cuboot-acadia.c cuboot-amigaone.c cuboot-magicboxv1.c \
-+		cuboot-magicboxv2.c
+-		cuboot-acadia.c cuboot-amigaone.c cuboot-magicbox.c
++		cuboot-acadia.c cuboot-amigaone.c cuboot-magicbox.c \
++		cuboot-openrb.c
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
 @@ -193,6 +194,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
- image-$(CONFIG_MAGICBOXV1)		+= cuImage.magicboxv1
-+image-$(CONFIG_MAGICBOXV2)		+= cuImage.magicboxv2
+ image-$(CONFIG_MAGICBOX)		+= cuImage.magicbox
++image-$(CONFIG_OPENRB)			+= cuImage.openrb
  
  # Board ports in arch/powerpc/platform/44x/Kconfig
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -59,6 +59,16 @@ config MAGICBOXV1
+@@ -59,6 +59,16 @@ config MAGICBOX
  	help
- 	  This option enables support for the Magicbox v1 board.
+ 	  This option enables support for the Magicbox boards.
  
-+config MAGICBOXV2
-+	bool "Magicbox v2"
++config OPENRB
++	bool "OpenRB"
 +	depends on 40x
 +	default n
 +	select PPC40x_SIMPLE
 +	select 405EP
 +	select PCI
 +	help
-+	  This option enables support for the Magicbox v2 board.
++	  This option enables support for the OpenRB Light board.
 +
  config MAKALU
  	bool "Makalu"
  	depends on 40x
 --- a/arch/powerpc/platforms/40x/ppc40x_simple.c
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -53,6 +53,7 @@ machine_device_initcall(ppc40x_simple, p
+@@ -52,7 +52,8 @@ machine_device_initcall(ppc40x_simple, p
+  */
  static char *board[] __initdata = {
  	"amcc,acadia",
- 	"magicboxv1",
-+	"magicboxv2",
+-	"magicbox"
++	"magicbox",
++	"openrb"
  };
  
  static int __init ppc40x_probe(void)

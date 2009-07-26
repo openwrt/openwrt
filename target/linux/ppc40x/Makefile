@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=ppc40x
 BOARDNAME:=AMCC/IBM PPC40x
-FEATURES:=squashfs jffs2 usb
+FEATURES:=squashfs usb
 
-LINUX_VERSION:=2.6.28.10
+LINUX_VERSION:=2.6.30.2
 LINUX_KARCH:=powerpc
 
 include $(INCLUDE_DIR)/target.mk

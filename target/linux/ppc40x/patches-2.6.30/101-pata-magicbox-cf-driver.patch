@@ -6,7 +6,7 @@
  
 +config PATA_MAGICBOX_CF
 +	tristate "Magicbox/OpenRB Compact Flash support"
-+	depends on MAGICBOXV2 || OPENRB_LIGHT
++	depends on MAGICBOX || OPENRB
 +	help
 +	  This option enables support for a Compact Flash conected on
 +	  the ppc405ep expansion bus. This driver had been written for
