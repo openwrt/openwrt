@@ -28,7 +28,7 @@
 curdir:=toolchain
 
 # subdirectories to descend into
-$(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc $(LIBC) $(if $(CONFIG_GLIBC_PORTS),glibc-ports))
+$(curdir)/builddirs := kernel-headers $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_NATIVE_TOOLCHAIN),,binutils gcc $(LIBC) $(if $(CONFIG_GLIBC_PORTS),glibc-ports))
 $(curdir)/builddirs-compile:=$($(curdir)/builddirs-prepare)
 $(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
