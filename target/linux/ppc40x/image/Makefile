@@ -22,6 +22,10 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
 
+define Image/Build/ext2
+	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-ext2.img
+endef
+
 define Image/Build/jffs2-128k
 	( \
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
