@@ -356,6 +356,29 @@ endef
 
 $(eval $(call KernelPackage,fs-xfs))
 
+define KernelPackage/fs-btrfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=BTRFS filesystem support
+  KCONFIG:=\
+	CONFIG_CRYPTO_CRC32C \
+	CONFIG_LIBCRC32C \
+	CONFIG_BTRFS_FS \
+	CONFIG_BTRFS_FS_POSIX_ACL=n
+  # for crc32c
+  DEPENDS:=+kmod-crypto-core @!LINUX_2_6_21||!LINUX_2_6_25||!LINUX_2_6_28
+  FILES:=\
+	$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/lib/libcrc32c.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/btrfs/btrfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,crc32c libcrc32c btrfs)
+endef
+
+define KernelPackage/fs-btrfs/description
+  Kernel module for BTRFS support
+endef
+
+$(eval $(call KernelPackage,fs-btrfs))
+
 
 define KernelPackage/nls-base
   SUBMENU:=$(FS_MENU)
