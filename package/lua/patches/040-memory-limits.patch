@@ -147,7 +147,7 @@
      last -= n-1;
 --- a/src/lua.c
 +++ b/src/lua.c
-@@ -19,6 +19,82 @@
+@@ -19,6 +19,94 @@
  #include "llimits.h"
  
  
@@ -156,6 +156,7 @@
 +	lua_State	*L;
 +	size_t		memused;
 +	size_t		peak_memused;
++	size_t		gc_memused;
 +	size_t		max_memused;
 +	int		collecting;
 +} script_info_t;
@@ -172,7 +173,8 @@
 +		return NULL;
 +	}
 +	info->memused += nsize;
-+	if(info->max_memused > 0 && nsize > osize && info->memused >= info->max_memused) {
++	if(info->max_memused > 0 && nsize > osize &&
++	  (info->memused >= info->max_memused || info->memused >= info->gc_memused)) {
 +#ifdef LOW_MEM_DEBUG
 +		printf("LOW MEM: 1 osize=%zd, nsize=%zd, used=%zu, peak=%zu, need=%zd\n", osize, nsize,
 +			info->memused, info->peak_memused, (info->memused - info->max_memused));
@@ -207,15 +209,24 @@
 +
 +static int set_memory_limit(lua_State *L)
 +{
-+	int limit = luaL_checknumber(L, 1);
++	int hardlimit = luaL_checknumber(L, 1);
++	int softlimit = luaL_optnumber(L, 2, 0);
++
 +	script_info_t *info;
 +	lua_getallocf(L, (void *)(&info));
 +
-+	if( limit >= 0 )
-+		info->max_memused = limit;
++	if( hardlimit >= 0 )
++	{
++		if( softlimit <= 0 )
++			softlimit = (int)((float)hardlimit * 0.75);
 +
-+	lua_pushnumber(L, limit);
-+	return 1;
++		info->max_memused = hardlimit;
++		info->gc_memused  = softlimit;
++	}
++
++	lua_pushnumber(L, hardlimit);
++	lua_pushnumber(L, softlimit);
++	return 2;
 +}
 +
 +static int get_memory_limit(lua_State *L)
@@ -223,14 +234,15 @@
 +	script_info_t *info;
 +	lua_getallocf(L, (void *)(&info));
 +	lua_pushnumber(L, info->max_memused);
-+	return 1;
++	lua_pushnumber(L, info->gc_memused);
++	return 2;
 +}
 +
 +
  static lua_State *globalL = NULL;
  
  static const char *progname = LUA_PROGNAME;
-@@ -377,11 +453,28 @@
+@@ -377,11 +465,28 @@
  int main (int argc, char **argv) {
    int status;
    struct Smain s;
@@ -260,7 +272,7 @@
    /* Checking 'sizeof(lua_Integer)' cannot be made in preprocessor on all compilers.
    */
  #ifdef LNUM_INT16
-@@ -396,6 +489,14 @@
+@@ -396,6 +501,14 @@
    status = lua_cpcall(L, &pmain, &s);
    report(L, status);
    lua_close(L);
