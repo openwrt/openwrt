@@ -17,6 +17,14 @@ export SED:=
 
 include $(INCLUDE_DIR)/host-build.mk
 
+define Build/Configure
+	( cd $(PKG_BUILD_DIR); \
+		./configure \
+		--prefix=$(STAGING_DIR_HOST) \
+		--infodir=/usr/info \
+	)
+endef
+
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)"
 endef
