@@ -377,7 +377,15 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -75,7 +75,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
+@@ -42,6 +42,7 @@ $(obj)/ebony.o: BOOTCFLAGS += -mcpu=405
+ $(obj)/cuboot-taishan.o: BOOTCFLAGS += -mcpu=405
+ $(obj)/cuboot-katmai.o: BOOTCFLAGS += -mcpu=405
+ $(obj)/cuboot-acadia.o: BOOTCFLAGS += -mcpu=405
++$(obj)/cuboot-magicbox.o: BOOTCFLAGS += -mcpu=405
+ $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
+ $(obj)/virtex405-head.o: BOOTAFLAGS += -mcpu=405
+ 
+@@ -75,7 +76,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
@@ -386,7 +394,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -192,6 +192,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImag
+@@ -192,6 +193,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImag
  image-$(CONFIG_EP405)			+= dtbImage.ep405
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
