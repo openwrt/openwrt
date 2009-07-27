@@ -373,7 +373,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -59,6 +59,16 @@ config MAGICBOX
+@@ -60,6 +60,16 @@ config MAGICBOX
  	help
  	  This option enables support for the Magicbox boards.
  
@@ -392,10 +392,10 @@
  	depends on 40x
 --- a/arch/powerpc/platforms/40x/ppc40x_simple.c
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -52,7 +52,8 @@ machine_device_initcall(ppc40x_simple, p
-  */
- static char *board[] __initdata = {
- 	"amcc,acadia",
+@@ -55,7 +55,8 @@ static char *board[] __initdata = {
+ 	"amcc,haleakala",
+ 	"amcc,kilauea",
+ 	"amcc,makalu",
 -	"magicbox"
 +	"magicbox",
 +	"openrb"
