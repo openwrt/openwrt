@@ -827,7 +827,7 @@ int __init board_register_devices(void)
 
 	/* read base address of boot chip select (0) */
 	if (BCMCPU_IS_6345())
-		val = 0x1fc0000;
+		val = 0x1fc00000;
 	else {
 		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
 		val &= MPI_CSBASE_BASE_MASK;
