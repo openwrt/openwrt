@@ -60,6 +60,7 @@ enum {
 	WRT54G,
 	WRTSL54GS,
 	WRT54G3G,
+	WRT160N,
 	WRT350N,
 	WRT600N,
 	WRT600NV11,
@@ -239,6 +240,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "3g_green",	.gpio = 1 << 2, .polarity = NORMAL },
 			{ .name = "3g_blue",	.gpio = 1 << 3, .polarity = NORMAL },
 			{ .name = "3g_blink",	.gpio = 1 << 5, .polarity = NORMAL },
+		},
+	},
+	[WRT160N] = {
+		.name		= "Linksys WRT160N",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_blue",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "ses_orange", .gpio = 1 << 3, .polarity = REVERSE },
 		},
 	},
 	[WRT350N] = {
@@ -861,6 +874,9 @@ static struct platform_t __init *platform_detect(void)
 
 			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
 				return &platforms[WRTSL54GS];
+
+			if (!strcmp(boardtype, "0x0472"))
+				return &platforms[WRT160N];
 
 			/* default to WRT54G */
 			return &platforms[WRT54G];
