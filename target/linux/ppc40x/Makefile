@@ -11,7 +11,7 @@ BOARD:=ppc40x
 BOARDNAME:=AMCC/IBM PPC40x
 FEATURES:=squashfs usb
 
-LINUX_VERSION:=2.6.30.2
+LINUX_VERSION:=2.6.30.3
 LINUX_KARCH:=powerpc
 
 include $(INCLUDE_DIR)/target.mk

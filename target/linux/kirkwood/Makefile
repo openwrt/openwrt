@@ -11,7 +11,7 @@ BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
 FEATURES:=tgz usb
 
-LINUX_VERSION:=2.6.30.2
+LINUX_VERSION:=2.6.30.3
 
 include $(INCLUDE_DIR)/target.mk
 
