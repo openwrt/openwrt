@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/crypto/unlzma.c
-@@ -0,0 +1,721 @@
+@@ -0,0 +1,723 @@
 +/*
 + * LZMA uncompresion module for pcomp
 + * Copyright (C) 2009  Felix Fietkau <nbd@openwrt.org>
@@ -526,6 +526,8 @@
 +		if (unlzma_should_stop(ctx))
 +			break;
 +	}
++	if (likely(!unlzma_should_stop(ctx)))
++		rc_normalize(ctx);
 +
 +	return ctx->pos;
 +}
