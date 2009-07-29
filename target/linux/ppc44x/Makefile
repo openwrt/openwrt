@@ -10,6 +10,7 @@ ARCH:=powerpc
 BOARD:=ppc44x
 BOARDNAME:=AMCC/IBM PPC44x
 FEATURES:=squashfs
+CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=440
 
 LINUX_VERSION:=2.6.30.3
 LINUX_KARCH:=powerpc
