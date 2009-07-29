@@ -83,11 +83,9 @@ define KernelPackage/misdn
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=mISDN (ISDN) Support
   KCONFIG:= \
-  	CONFIG_ISDN=y \
   	CONFIG_MISDN \
 	CONFIG_MISDN_DSP \
 	CONFIG_MISDN_L1OIP \
-	CONFIG_ISDN_PPP=n \
 	CONFIG_ISDN_AUDIO=n \
 	CONFIG_ISDN_WITH_ABC=n \
 	CONFIG_ISDN_DRV_LOOP=n \
@@ -105,6 +103,16 @@ define KernelPackage/misdn
 	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_dsp.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/mISDN/l1oip.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,mISDN_core mISDN_dsp l1oip)
+endef
+
+define KernelPackage/misdn/2.4
+  KCONFIG+= \
+	CONFIG_ISDN
+endef
+
+define KernelPackage/misdn/2.6
+   KCONFIG+= \
+	CONFIG_ISDN=y
 endef
 
 define KernelPackage/misdn/description
