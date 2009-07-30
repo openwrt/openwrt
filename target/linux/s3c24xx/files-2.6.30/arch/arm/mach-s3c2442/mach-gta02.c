@@ -112,7 +112,6 @@
 #include <asm/fiq.h>
 
 #include <linux/gta02-vibrator.h>
-#include <linux/gta02-shadow.h>
 
 /* arbitrates which sensor IRQ owns the shared SPI bus */
 static spinlock_t motion_irq_lock;
@@ -275,7 +274,7 @@ static long gta02_panic_blink(long count)
 
 	led ^= 1;
 	s3c2410_gpio_cfgpin(GTA02_GPIO_AUX_LED, S3C2410_GPIO_OUTPUT);
-	gta02_gpb_setpin(GTA02_GPIO_AUX_LED, led);
+	s3c2410_gpio_setpin(GTA02_GPIO_AUX_LED, led);
 
 	last_blink = count;
 	return delay;
@@ -938,11 +937,11 @@ static void gta02_udc_command(enum s3c2410_udc_cmd_e cmd)
 	switch (cmd) {
 	case S3C2410_UDC_P_ENABLE:
 		printk(KERN_DEBUG "%s S3C2410_UDC_P_ENABLE\n", __func__);
-	    gta02_gpb_setpin(GTA02_GPIO_USB_PULLUP, 1);
+	    s3c2410_gpio_setpin(GTA02_GPIO_USB_PULLUP, 1);
 		break;
 	case S3C2410_UDC_P_DISABLE:
 		printk(KERN_DEBUG "%s S3C2410_UDC_P_DISABLE\n", __func__);
-		gta02_gpb_setpin(GTA02_GPIO_USB_PULLUP, 0);
+		s3c2410_gpio_setpin(GTA02_GPIO_USB_PULLUP, 0);
 		break;
 	case S3C2410_UDC_P_RESET:
 		printk(KERN_DEBUG "%s S3C2410_UDC_P_RESET\n", __func__);
@@ -1570,11 +1569,12 @@ static struct platform_device *gta02_devices_pmu_children[] = {
 	&gta02_resume_reason_device,
 };
 
-static void gta02_register_glamo() {
+static void gta02_register_glamo(void)
+{
 	platform_device_register(&gta02_glamo_dev);
-    if (!gpio_request(GTA02_GPIO_GLAMO(4), "jbt6k74 reset"))
+    if (gpio_request(GTA02_GPIO_GLAMO(4), "jbt6k74 reset"))
         printk("gta02: Failed to request jbt6k74 reset pin\n");
-    if (!gpio_direction_output(GTA02_GPIO_GLAMO(4), 1))
+    if (gpio_direction_output(GTA02_GPIO_GLAMO(4), 1))
         printk("gta02: Failed to configure jbt6k74 reset pin\n");
 	platform_device_register(&spigpio_device);
 }
@@ -1725,13 +1725,13 @@ void DEBUG_LED(int n)
 {
 	switch (n) {
 	case 0:
-		gta02_gpb_setpin(GTA02_GPIO_PWR_LED1, 1);
+		s3c2410_gpio_setpin(GTA02_GPIO_PWR_LED1, 1);
 		break;
 	case 1:
-		gta02_gpb_setpin(GTA02_GPIO_PWR_LED2, 1);
+		s3c2410_gpio_setpin(GTA02_GPIO_PWR_LED2, 1);
 		break;
 	default:
-		gta02_gpb_setpin(GTA02_GPIO_AUX_LED, 1);
+		s3c2410_gpio_setpin(GTA02_GPIO_AUX_LED, 1);
 		break;
 	}
 }

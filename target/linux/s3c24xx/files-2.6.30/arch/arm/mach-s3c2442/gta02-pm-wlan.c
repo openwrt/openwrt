@@ -19,7 +19,6 @@
 
 #include <mach/hardware.h>
 #include <asm/mach-types.h>
-#include <linux/gta02-shadow.h>
 
 #include <mach/gta02.h>
 #include <mach/gta02-pm-wlan.h>

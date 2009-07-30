@@ -22,8 +22,6 @@
 
 #include <asm/mach-types.h>
 
-#include <linux/gta02-shadow.h>
-
 #include <mach/gta02.h>
 #include <linux/mfd/pcf50633/core.h>
 #include <linux/mfd/pcf50633/pmic.h>

@@ -23,7 +23,7 @@
  endif
 --- a/arch/arm/mach-s3c2442/Makefile
 +++ b/arch/arm/mach-s3c2442/Makefile
-@@ -14,3 +14,9 @@ obj-$(CONFIG_CPU_S3C2442)	+= clock.o
+@@ -14,3 +14,8 @@ obj-$(CONFIG_CPU_S3C2442)	+= clock.o
  
  # Machine support
  
@@ -31,8 +31,7 @@
 +                                   gta02-pm-gsm.o \
 +                                   gta02-pm-gps.o \
 +                                   gta02-pm-bt.o  \
-+                                   gta02-pm-wlan.o  \
-+                                   gta02-shadow.o
++                                   gta02-pm-wlan.o
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -21,3 +21,6 @@ obj-$(CONFIG_HP_ILO)		+= hpilo.o

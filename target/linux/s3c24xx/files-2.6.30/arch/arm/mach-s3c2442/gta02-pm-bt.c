@@ -20,7 +20,6 @@
 
 #include <mach/hardware.h>
 #include <asm/mach-types.h>
-#include <linux/gta02-shadow.h>
 
 #include <mach/gta02.h>
 #include <linux/mfd/pcf50633/gpio.h>
@@ -62,7 +61,7 @@ static void __gta02_pm_bt_toggle_radio(struct device *dev, unsigned int on)
 
 	bt_data = dev_get_drvdata(dev);
 
-	gta02_gpb_setpin(GTA02_GPIO_BT_EN, !on);
+    s3c2410_gpio_setpin(GTA02_GPIO_BT_EN, !on);
 
 	if (on) {
 		if (!regulator_is_enabled(bt_data->regulator))
@@ -72,7 +71,7 @@ static void __gta02_pm_bt_toggle_radio(struct device *dev, unsigned int on)
 			regulator_disable(bt_data->regulator);
 	}
 
-	gta02_gpb_setpin(GTA02_GPIO_BT_EN, on);
+	s3c2410_gpio_setpin(GTA02_GPIO_BT_EN, on);
 }
 
 
@@ -100,7 +99,7 @@ static ssize_t bt_write(struct device *dev, struct device_attribute *attr,
 		__gta02_pm_bt_toggle_radio(dev, on);
 	} else if (!strcmp(attr->attr.name, "reset")) {
 		/* reset is low-active, so we need to invert */
-		gta02_gpb_setpin(GTA02_GPIO_BT_EN, on ? 0 : 1);
+		s3c2410_gpio_setpin(GTA02_GPIO_BT_EN, on ? 0 : 1);
 	}
 
 	return count;
@@ -177,7 +176,7 @@ static int __init gta02_bt_probe(struct platform_device *pdev)
 
 	/* we pull reset to low to make sure that the chip doesn't
 	 * drain power through the reset line */
-	gta02_gpb_setpin(GTA02_GPIO_BT_EN, 0);
+	s3c2410_gpio_setpin(GTA02_GPIO_BT_EN, 0);
 
 	rfkill = rfkill_allocate(&pdev->dev, RFKILL_TYPE_BLUETOOTH);
 
