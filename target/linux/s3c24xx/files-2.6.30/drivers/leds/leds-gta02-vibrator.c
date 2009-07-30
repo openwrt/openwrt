@@ -52,14 +52,14 @@ int gta02_vibrator_fiq_handler(void)
 		return 0;
 
 	if ((u8)gta02_vib_priv.fiq_count == gta02_vib_priv.vib_pwm_latched)
-		gta02_gpb_setpin(gta02_vib_priv.vib_gpio_pin, 0);
+		s3c2410_gpio_setpin(gta02_vib_priv.vib_gpio_pin, 0);
 
 	if ((u8)gta02_vib_priv.fiq_count)
 		return 1;
 
 	gta02_vib_priv.vib_pwm_latched = gta02_vib_priv.vib_pwm;
 	if (gta02_vib_priv.vib_pwm_latched)
-		gta02_gpb_setpin(gta02_vib_priv.vib_gpio_pin, 1);
+		s3c2410_gpio_setpin(gta02_vib_priv.vib_gpio_pin, 1);
 
 	return 1;
 }
@@ -139,7 +139,7 @@ static int __init gta02_vib_probe(struct platform_device *pdev)
 	gta02_vib_priv.pdata = pdev->dev.platform_data;
 	platform_set_drvdata(pdev, &gta02_vib_led);
 
-    gta02_gpb_setpin(gta02_vib_led.gpio, 0); /* off */
+    s3c2410_gpio_setpin(gta02_vib_led.gpio, 0); /* off */
     s3c2410_gpio_cfgpin(gta02_vib_led.gpio, S3C2410_GPIO_OUTPUT);
     /* safe, kmalloc'd copy needed for FIQ ISR */
     gta02_vib_priv.vib_gpio_pin = gta02_vib_led.gpio;

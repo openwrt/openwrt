@@ -30,7 +30,6 @@
 #include <linux/mfd/pcf50633/gpio.h>
 #include <mach/regs-gpio.h>
 #include <mach/regs-gpioj.h>
-#include <linux/gta02-shadow.h>
 
 int gta_gsm_interrupts;
 EXPORT_SYMBOL(gta_gsm_interrupts);
@@ -114,9 +113,9 @@ static void gsm_on_off(struct device *dev, int on)
 
 	msleep(100);
 
-	gta02_gpb_setpin(GTA02_GPIO_MODEM_ON, 1);
+	s3c2410_gpio_setpin(GTA02_GPIO_MODEM_ON, 1);
 	msleep(500);
-	gta02_gpb_setpin(GTA02_GPIO_MODEM_ON, 0);
+	s3c2410_gpio_setpin(GTA02_GPIO_MODEM_ON, 0);
 
 	/*
 	 * workaround for calypso firmware moko10 and earlier,

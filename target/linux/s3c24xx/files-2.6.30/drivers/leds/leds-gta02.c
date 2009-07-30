@@ -19,7 +19,6 @@
 #include <asm/mach-types.h>
 #include <mach/gta02.h>
 #include <plat/regs-timer.h>
-#include <linux/gta02-shadow.h>
 
 #define MAX_LEDS 3
 #define COUNTER 256
@@ -54,7 +53,7 @@ static void gta02led_set(struct led_classdev *led_cdev,
 	struct gta02_led_priv *lp = to_priv(led_cdev);
 
 	spin_lock_irqsave(&lp->lock, flags);
-	gta02_gpb_setpin(lp->gpio, value ? 1 : 0);
+	s3c2410_gpio_setpin(lp->gpio, value ? 1 : 0);
 	spin_unlock_irqrestore(&lp->lock, flags);
 }
 
@@ -117,7 +116,6 @@ static int __init gta02led_probe(struct platform_device *pdev)
 		case S3C2410_GPB1:
 		case S3C2410_GPB2:
 			s3c2410_gpio_cfgpin(lp->gpio, S3C2410_GPIO_OUTPUT);
-			gta02_gpb_add_shadow_gpio(lp->gpio);
 			break;
 		default:
 			break;
