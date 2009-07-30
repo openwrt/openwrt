@@ -127,15 +127,6 @@ static void reg_set_bit_mask(struct glamo_core *glamo,
 	spin_unlock(&glamo->lock);
 }
 
-static int __reg_write_batch(struct glamo_core *glamo,
-			uint16_t start, size_t num, uint16_t *regs)
-{
-	int end = start + num * 2
-	for(end = start + num * 2; start < end; start += 2, ++regs) {
-		*regs = __reg_read(glamo, start);
-	}
-}
-
 static inline void __reg_set_bit(struct glamo_core *glamo,
 				 u_int16_t reg, u_int16_t bit)
 {
