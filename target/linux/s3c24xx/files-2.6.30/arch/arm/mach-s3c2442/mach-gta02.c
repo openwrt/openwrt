@@ -38,6 +38,7 @@
 #include <linux/spi/spi_gpio.h>
 #include <linux/spi/spi_bitbang.h>
 #include <linux/mmc/host.h>
+#include <linux/leds.h>
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
@@ -1079,7 +1080,7 @@ static struct platform_device gta02_bl_dev = {
 
 static void gta02_jbt6k74_reset(int devidx, int level)
 {
-    gpio_set_value(GTA02_GPIO_GLAMO(4), level);
+	gpio_set_value(GTA02_GPIO_GLAMO(4), level);
 }
 
 static void gta02_jbt6k74_probe_completed(struct device *dev)
@@ -1246,26 +1247,30 @@ static struct platform_device gta02_spi_gpio_dev = {
 
 /*----------- / SPI: Accelerometers attached to SPI of s3c244x ----------------- */
 
-static struct resource gta02_led_resources[] = {
+static struct gpio_led gta02_gpio_leds[] = {
 	{
 		.name	= "gta02-power:orange",
-		.start	= GTA02_GPIO_PWR_LED1,
-		.end	= GTA02_GPIO_PWR_LED1,
+		.gpio	= GTA02_GPIO_PWR_LED1,
 	}, {
 		.name	= "gta02-power:blue",
-		.start	= GTA02_GPIO_PWR_LED2,
-		.end	= GTA02_GPIO_PWR_LED2,
+		.gpio	= GTA02_GPIO_PWR_LED2,
 	}, {
 		.name	= "gta02-aux:red",
-		.start	= GTA02_GPIO_AUX_LED,
-		.end	= GTA02_GPIO_AUX_LED,
+		.gpio	= GTA02_GPIO_AUX_LED,
 	},
 };
 
+static struct gpio_led_platform_data gta02_gpio_leds_pdata = {
+	.leds = gta02_gpio_leds,
+	.num_leds = ARRAY_SIZE(gta02_gpio_leds),
+};
+
 struct platform_device gta02_led_dev = {
-	.name		= "gta02-led",
-	.num_resources	= ARRAY_SIZE(gta02_led_resources),
-	.resource	= gta02_led_resources,
+	.name = "leds-gpio",
+	.id   = -1,
+	.dev = {
+		.platform_data = &gta02_gpio_leds_pdata,
+	},
 };
 
 static struct resource gta02_button_resources[] = {
@@ -1433,9 +1438,9 @@ static struct glamo_mmc_platform_data gta02_glamo_mmc_pdata = {
 static struct glamo_platform_data gta02_glamo_pdata = {
 	.fb_data   = &gta02_glamo_fb_pdata,
 	.mmc_data  = &gta02_glamo_mmc_pdata,
-    .gpio_base = GTA02_GPIO_GLAMO_BASE,
+	.gpio_base = GTA02_GPIO_GLAMO_BASE,
 
-    .osci_clock_rate = 32768,
+	.osci_clock_rate = 32768,
 
 	.glamo_irq_is_wired = glamo_irq_is_wired,
 	.glamo_external_reset = gta02_glamo_external_reset,
@@ -1500,10 +1505,10 @@ struct spi_gpio_platform_data spigpio_platform_data = {
 
 static struct platform_device spigpio_device = {
 	.name = "spi_gpio",
-    .id   = 2,
+	.id   = 2,
 	.dev = {
 		.platform_data = &spigpio_platform_data,
-        .parent        = &gta02_glamo_dev.dev,
+		.parent        = &gta02_glamo_dev.dev,
 	},
 };
 
@@ -1572,10 +1577,10 @@ static struct platform_device *gta02_devices_pmu_children[] = {
 static void gta02_register_glamo(void)
 {
 	platform_device_register(&gta02_glamo_dev);
-    if (gpio_request(GTA02_GPIO_GLAMO(4), "jbt6k74 reset"))
-        printk("gta02: Failed to request jbt6k74 reset pin\n");
-    if (gpio_direction_output(GTA02_GPIO_GLAMO(4), 1))
-        printk("gta02: Failed to configure jbt6k74 reset pin\n");
+	if (gpio_request(GTA02_GPIO_GLAMO(4), "jbt6k74 reset"))
+		printk("gta02: Failed to request jbt6k74 reset pin\n");
+	if (gpio_direction_output(GTA02_GPIO_GLAMO(4), 1))
+		printk("gta02: Failed to configure jbt6k74 reset pin\n");
 	platform_device_register(&spigpio_device);
 }
 
@@ -1595,8 +1600,8 @@ static void gta02_pmu_regulator_registered(struct pcf50633 *pcf, int id)
 			pdev = &gta02_pm_gps_dev;
 			break;
 		case PCF50633_REGULATOR_HCLDO:
-            gta02_register_glamo();
-            return;
+			gta02_register_glamo();
+			return;
 		default:
 			return;
 	}
@@ -1623,7 +1628,7 @@ static void gta02_pmu_attach_child_devices(struct pcf50633 *pcf)
 	platform_add_devices(gta02_devices_pmu_children,
 					ARRAY_SIZE(gta02_devices_pmu_children));
 
-    regulator_has_full_constraints();
+	regulator_has_full_constraints();
 }
 
 static void gta02_poweroff(void)
