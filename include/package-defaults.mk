@@ -61,8 +61,7 @@ CONFIGURE_ARGS = \
 		--mandir=$(CONFIGURE_PREFIX)/man \
 		--infodir=$(CONFIGURE_PREFIX)/info \
 		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
-		$(DISABLE_IPV6)
+		$(DISABLE_LARGEFILE)
 
 CONFIGURE_VARS = \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -85,7 +84,8 @@ define Build/Configure/Default
 		$(2) \
 		$(CONFIGURE_CMD) \
 		$(CONFIGURE_ARGS) \
-		$(1); \
+		$(1) \
+		$(DISABLE_IPV6); \
 	fi; \
 	)
 endef
