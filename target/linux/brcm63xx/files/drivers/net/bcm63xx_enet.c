@@ -1718,7 +1718,7 @@ static int __devinit bcm_enet_probe(struct platform_device *pdev)
 	if (priv->has_phy) {
 		bus = &priv->mii_bus;
 		bus->name = "bcm63xx_enet MII bus";
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
 		bus->dev = &pdev->dev;
 #else
 		bus->parent = &pdev->dev;
