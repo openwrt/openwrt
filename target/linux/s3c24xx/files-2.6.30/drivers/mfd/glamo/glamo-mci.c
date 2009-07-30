@@ -18,7 +18,6 @@
 #include <linux/irq.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/spinlock.h>
 #include <linux/workqueue.h>
 #include <linux/crc7.h>
 #include <linux/scatterlist.h>
@@ -53,6 +52,7 @@ struct glamo_mci_host {
 	struct timer_list disable_timer;
 
 	struct work_struct irq_work;
+	struct work_struct read_work;
 
 	unsigned clk_enabled : 1;
 };
@@ -74,7 +74,7 @@ static void glamo_mci_send_command(struct glamo_mci_host *host,
  * for example
  */
 
-static int sd_max_clk = 50000000;
+static int sd_max_clk = 21000000;
 module_param(sd_max_clk, int, 0644);
 
 /*
@@ -216,7 +216,6 @@ static int glamo_mci_set_card_clock(struct glamo_mci_host *host, int freq)
 static void glamo_mci_request_done(struct glamo_mci_host *host, struct
 mmc_request *mrq) {
 	mod_timer(&host->disable_timer, jiffies + HZ / 16);
-
 	mmc_request_done(host->mmc, mrq);
 }
 
@@ -227,11 +226,16 @@ static void glamo_mci_irq_worker(struct work_struct *work)
 												irq_work);
 	struct mmc_command *cmd;
 	uint16_t status;
-
 	if (!host->mrq || !host->mrq->cmd)
 		return;
 
 	cmd = host->mrq->cmd;
+
+#if 0
+	if (cmd->data->flags & MMC_DATA_READ) {
+		return;
+	}
+#endif
 
 	status = glamo_reg_read(host, GLAMO_REG_MMC_RB_STAT1);
 	dev_dbg(&host->pdev->dev, "status = 0x%04x\n", status);
@@ -240,20 +244,20 @@ static void glamo_mci_irq_worker(struct work_struct *work)
 	if (status & GLAMO_STAT1_MMC_RB_DRDY)
 		status &= ~GLAMO_STAT1_MMC_DTOUT;
 
-	if (status & (GLAMO_STAT1_MMC_RTOUT |
-			  GLAMO_STAT1_MMC_DTOUT))
+	if (status & (GLAMO_STAT1_MMC_RTOUT | GLAMO_STAT1_MMC_DTOUT))
 		cmd->error = -ETIMEDOUT;
-	if (status & (GLAMO_STAT1_MMC_BWERR |
-			  GLAMO_STAT1_MMC_BRERR))
+	if (status & (GLAMO_STAT1_MMC_BWERR | GLAMO_STAT1_MMC_BRERR)) {
 		cmd->error = -EILSEQ;
+	}
 	if (cmd->error) {
 		dev_info(&host->pdev->dev, "Error after cmd: 0x%x\n", status);
 		goto done;
 	}
 
 	/* issue STOP if we have been given one to use */
-	if (host->mrq->stop)
+	if (host->mrq->stop) {
 		glamo_mci_send_command(host, host->mrq->stop);
+	}
 
 	if (cmd->data->flags & MMC_DATA_READ)
 		do_pio_read(host, cmd->data);
@@ -263,10 +267,70 @@ done:
 	glamo_mci_request_done(host, cmd->mrq);
 }
 
+static void glamo_mci_read_worker(struct work_struct *work)
+{
+	struct glamo_mci_host *host = container_of(work, struct glamo_mci_host,
+												read_work);
+	struct mmc_command *cmd;
+	uint16_t status;
+	uint16_t blocks_ready;
+	size_t data_read = 0;
+	size_t data_ready;
+	struct scatterlist *sg;
+	u16 __iomem *from_ptr = host->data_base;
+	void *sg_pointer;
+
+
+	cmd = host->mrq->cmd;
+	sg = cmd->data->sg;
+	do {
+		status = glamo_reg_read(host, GLAMO_REG_MMC_RB_STAT1);
+
+		if (status & (GLAMO_STAT1_MMC_RTOUT | GLAMO_STAT1_MMC_DTOUT))
+			cmd->error = -ETIMEDOUT;
+		if (status & (GLAMO_STAT1_MMC_BWERR | GLAMO_STAT1_MMC_BRERR))
+			cmd->error = -EILSEQ;
+		if (cmd->error) {
+			dev_info(&host->pdev->dev, "Error after cmd: 0x%x\n", status);
+			goto done;
+		}
+
+		blocks_ready = glamo_reg_read(host, GLAMO_REG_MMC_RB_BLKCNT);
+		data_ready = blocks_ready * cmd->data->blksz;
+
+		if (data_ready == data_read)
+			yield();
+
+		while(sg && data_read + sg->length <= data_ready) {
+			sg_pointer = page_address(sg_page(sg)) + sg->offset;
+			memcpy(sg_pointer, from_ptr, sg->length);
+			from_ptr += sg->length >> 1;
+
+			data_read += sg->length;
+			sg = sg_next(sg);
+		}
+
+	} while(sg);
+	cmd->data->bytes_xfered = data_read;
+
+	do {
+		status = glamo_reg_read(host, GLAMO_REG_MMC_RB_STAT1);
+	} while (!(status & GLAMO_STAT1_MMC_IDLE));
+
+	if (host->mrq->stop)
+		glamo_mci_send_command(host, host->mrq->stop);
+
+	do {
+		status = glamo_reg_read(host, GLAMO_REG_MMC_RB_STAT1);
+	} while (!(status & GLAMO_STAT1_MMC_IDLE));
+done:
+	host->mrq = NULL;
+	glamo_mci_request_done(host, cmd->mrq);
+}
+
 static irqreturn_t glamo_mci_irq(int irq, void *devid)
 {
 	struct glamo_mci_host *host = (struct glamo_mci_host*)devid;
-
 	schedule_work(&host->irq_work);
 
 	return IRQ_HANDLED;
@@ -391,7 +455,7 @@ static void glamo_mci_send_command(struct glamo_mci_host *host,
 		break;
 	}
 
-	if (triggers_int)
+	if (cmd->data)
 		host->mrq = cmd->mrq;
 
 	/* always largest timeout */
@@ -430,8 +494,7 @@ static void glamo_mci_send_command(struct glamo_mci_host *host,
 				   GLAMO_STAT1_MMC_DTOUT)) ||
 		(timeout == 0)) {
 		cmd->error = -ETIMEDOUT;
-	} else if (status & (GLAMO_STAT1_MMC_BWERR |
-			  GLAMO_STAT1_MMC_BRERR)) {
+	} else if (status & (GLAMO_STAT1_MMC_BWERR | GLAMO_STAT1_MMC_BRERR)) {
 		cmd->error = -EILSEQ;
 	}
 
@@ -451,6 +514,15 @@ static void glamo_mci_send_command(struct glamo_mci_host *host,
 						   ((readw(&reg_resp[2])) << 24);
 		}
 	}
+
+#if 0
+	/* We'll only get an interrupt when all data has been transfered.
+	   By starting to copy data when it's avaiable we can increase throughput by
+	   up to 30%. */
+	if (cmd->data && (cmd->data->flags & MMC_DATA_READ))
+		schedule_work(&host->read_work);
+#endif
+
 }
 
 static int glamo_mci_prepare_pio(struct glamo_mci_host *host,
@@ -513,9 +585,11 @@ static void glamo_mci_send_request(struct mmc_host *mmc, struct mmc_request *mrq
 	struct glamo_mci_host *host = mmc_priv(mmc);
 	struct mmc_command *cmd = mrq->cmd;
 
+	glamo_mci_clock_enable(host);
 	host->request_counter++;
 	if (cmd->data) {
 		if(glamo_mci_prepare_pio(host, cmd->data)) {
+			cmd->error = -EIO;
 			cmd->data->error = -EIO;
 			goto done;
 		}
@@ -526,7 +600,6 @@ static void glamo_mci_send_request(struct mmc_host *mmc, struct mmc_request *mrq
 		 cmd->opcode, cmd->arg, cmd->data, cmd->mrq->stop,
 		 cmd->flags);
 
-	glamo_mci_clock_enable(host);
 	glamo_mci_send_command(host, cmd);
 
 	/*
@@ -664,6 +737,7 @@ static int glamo_mci_probe(struct platform_device *pdev)
 	host->clk_enabled = 0;
 
 	INIT_WORK(&host->irq_work, glamo_mci_irq_worker);
+	INIT_WORK(&host->read_work, glamo_mci_read_worker);
 
 	host->regulator = regulator_get(pdev->dev.parent, "SD_3V3");
 	if (!host->regulator) {
@@ -744,7 +818,7 @@ static int glamo_mci_probe(struct platform_device *pdev)
 	                 MMC_CAP_MMC_HIGHSPEED |
 	                 MMC_CAP_SD_HIGHSPEED;
 	mmc->f_min     = host->clk_rate / 256;
-	mmc->f_max     = host->clk_rate;
+	mmc->f_max     = sd_max_clk;
 
 	mmc->max_blk_count = (1 << 16) - 1; /* GLAMO_REG_MMC_RB_BLKCNT */
 	mmc->max_blk_size  = (1 << 12) - 1; /* GLAMO_REG_MMC_RB_BLKLEN */
