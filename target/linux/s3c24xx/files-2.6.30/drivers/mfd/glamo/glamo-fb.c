@@ -43,19 +43,10 @@
 #include "glamo-regs.h"
 #include "glamo-core.h"
 
-#ifndef DEBUG
-#define GLAMO_LOG(...)
-#else
-#define GLAMO_LOG(...) \
-do { \
-	printk(KERN_DEBUG "in %s:%s:%d", __FILE__, __func__, __LINE__); \
-	printk(KERN_DEBUG __VA_ARGS__); \
-} while (0);
-#endif
-
 static void glamofb_program_mode(struct glamofb_handle* glamo);
 
 struct glamofb_handle {
+	struct glamo_core *core;
 	struct fb_info *fb;
 	struct device *dev;
 	struct resource *reg;
@@ -72,7 +63,7 @@ struct glamofb_handle {
 };
 
 static void glamo_output_enable(struct glamofb_handle *gfb) {
-        	struct glamo_core *gcore = gfb->mach_info->core;
+	struct glamo_core *gcore = gfb->core;
 
 	if (gfb->output_enabled)
 		return;
@@ -89,7 +80,7 @@ static void glamo_output_enable(struct glamofb_handle *gfb) {
 }
 
 static void glamo_output_disable(struct glamofb_handle *gfb) {
-	struct glamo_core *gcore = gfb->mach_info->core;
+	struct glamo_core *gcore = gfb->core;
 
 	if (!gfb->output_enabled)
 		return;
@@ -158,8 +149,8 @@ static int glamofb_run_script(struct glamofb_handle *glamo,
 {
 	int i;
 
-	if (glamo->mach_info->core->suspending) {
-		dev_err(&glamo->mach_info->core->pdev->dev,
+	if (glamo->core->suspending) {
+		dev_err(&glamo->core->pdev->dev,
 				"IGNORING glamofb_run_script while "
 								 "suspended\n");
 		return -EBUSY;
@@ -184,8 +175,8 @@ static int glamofb_check_var(struct fb_var_screeninfo *var,
 {
 	struct glamofb_handle *glamo = info->par;
 
-	if (glamo->mach_info->core->suspending) {
-		dev_err(&glamo->mach_info->core->pdev->dev,
+	if (glamo->core->suspending) {
+		dev_err(&glamo->core->pdev->dev,
 				"IGNORING glamofb_check_var while "
 								 "suspended\n");
 		return -EBUSY;
@@ -272,8 +263,8 @@ static void __rotate_lcd(struct glamofb_handle *glamo, __u32 rotation)
 {
 	int glamo_rot;
 
-	if (glamo->mach_info->core->suspending) {
-		dev_err(&glamo->mach_info->core->pdev->dev,
+	if (glamo->core->suspending) {
+		dev_err(&glamo->core->pdev->dev,
 				"IGNORING rotate_lcd while "
 								 "suspended\n");
 		return;
@@ -308,7 +299,7 @@ static void __rotate_lcd(struct glamofb_handle *glamo, __u32 rotation)
 static void glamofb_program_mode(struct glamofb_handle* gfb) {
 	int sync, bp, disp, fp, total;
 	unsigned long flags;
-	struct glamo_core *gcore = gfb->mach_info->core;
+	struct glamo_core *gcore = gfb->core;
 	struct fb_var_screeninfo *var = &gfb->fb->var;
 
 	dev_dbg(&gcore->pdev->dev,
@@ -413,8 +404,8 @@ static int glamofb_set_par(struct fb_info *info)
 	struct fb_var_screeninfo *var = &info->var;
 	struct fb_videomode *mode;
 
-	if (glamo->mach_info->core->suspending) {
-		dev_err(&glamo->mach_info->core->pdev->dev,
+	if (glamo->core->suspending) {
+		dev_err(&glamo->core->pdev->dev,
 				"IGNORING glamofb_set_par while "
 								 "suspended\n");
 		return -EBUSY;
@@ -493,8 +484,8 @@ static int glamofb_setcolreg(unsigned regno,
 	struct glamofb_handle *glamo = info->par;
 	unsigned int val;
 
-	if (glamo->mach_info->core->suspending) {
-		dev_err(&glamo->mach_info->core->pdev->dev,
+	if (glamo->core->suspending) {
+		dev_err(&glamo->core->pdev->dev,
 				"IGNORING glamofb_set_par while "
 								 "suspended\n");
 		return -EBUSY;
@@ -525,7 +516,7 @@ static int glamofb_setcolreg(unsigned regno,
 static int glamofb_ioctl(struct fb_info *info, unsigned int cmd,
                          unsigned long arg) {
 	struct glamofb_handle *gfb = (struct glamofb_handle*)info->par;
-	struct glamo_core *gcore = gfb->mach_info->core;
+	struct glamo_core *gcore = gfb->core;
 	int retval = -ENOTTY;
 
 	switch (cmd) {
@@ -687,8 +678,8 @@ int glamofb_cmd_mode(struct glamofb_handle *gfb, int on)
 {
 	int timeout = 2000000;
 
-	if (gfb->mach_info->core->suspending) {
-		dev_err(&gfb->mach_info->core->pdev->dev,
+	if (gfb->core->suspending) {
+		dev_err(&gfb->core->pdev->dev,
 				"IGNORING glamofb_cmd_mode while "
 								 "suspended\n");
 		return -EBUSY;
@@ -699,7 +690,7 @@ int glamofb_cmd_mode(struct glamofb_handle *gfb, int on)
 		dev_dbg(gfb->dev, "%s: waiting for cmdq empty: ",
 			__func__);
 		while ((!glamofb_cmdq_empty(gfb)) && (timeout--))
-			yield();
+			cpu_relax();
 		if (timeout < 0) {
 			printk(KERN_ERR"*************"
 				       "glamofb cmd_queue never got empty"
@@ -718,7 +709,7 @@ int glamofb_cmd_mode(struct glamofb_handle *gfb, int on)
 		timeout = 2000000;
 		while ((!reg_read(gfb, GLAMO_REG_LCD_STATUS2) & (1 << 12)) &&
 		      (timeout--))
-			/* yield() */;
+			cpu_relax();
 		if (timeout < 0) {
 			printk(KERN_ERR"*************"
 				       "glamofb lcd never idle"
@@ -751,8 +742,8 @@ int glamofb_cmd_write(struct glamofb_handle *gfb, u_int16_t val)
 {
 	int timeout = 200000;
 
-	if (gfb->mach_info->core->suspending) {
-		dev_err(&gfb->mach_info->core->pdev->dev,
+	if (gfb->core->suspending) {
+		dev_err(&gfb->core->pdev->dev,
 				"IGNORING glamofb_cmd_write while "
 								 "suspended\n");
 		return -EBUSY;
@@ -807,14 +798,20 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	int rc = -EIO;
 	struct fb_info *fbinfo;
 	struct glamofb_handle *glamofb;
-	struct glamo_fb_platform_data *mach_info = pdev->dev.platform_data;
+	struct glamo_core *core = dev_get_drvdata(pdev->dev.parent);
+	struct glamo_fb_platform_data *mach_info;
 
 	printk(KERN_INFO "SMEDIA Glamo frame buffer driver (C) 2007 "
 		"Openmoko, Inc.\n");
 
+	if (!core->pdata || !core->pdata->fb_data)
+		return -ENOENT;
+
+
 	fbinfo = framebuffer_alloc(sizeof(struct glamofb_handle), &pdev->dev);
 	if (!fbinfo)
 		return -ENOMEM;
+
 
 	glamofb = fbinfo->par;
 	glamofb->fb = fbinfo;
@@ -876,7 +873,9 @@ static int __init glamofb_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, glamofb);
 
-	glamofb->mach_info = pdev->dev.platform_data;
+	mach_info = core->pdata->fb_data;
+	glamofb->core = core;
+	glamofb->mach_info = mach_info;
 
 	fbinfo->fix.visual = FB_VISUAL_TRUECOLOR;
 	fbinfo->fix.type = FB_TYPE_PACKED_PIXELS;
@@ -901,8 +900,8 @@ static int __init glamofb_probe(struct platform_device *pdev)
 	fbinfo->var.accel_flags = 0;
 	fbinfo->var.vmode = FB_VMODE_NONINTERLACED;
 
-	glamo_engine_enable(mach_info->core, GLAMO_ENGINE_LCD);
-	glamo_engine_reset(mach_info->core, GLAMO_ENGINE_LCD);
+	glamo_engine_enable(core, GLAMO_ENGINE_LCD);
+	glamo_engine_reset(core, GLAMO_ENGINE_LCD);
 	glamofb->output_enabled = 1;
 	glamofb->mode_set = 1;
 
@@ -971,13 +970,12 @@ static int glamofb_suspend(struct device *dev)
 static int glamofb_resume(struct device *dev)
 {
 	struct glamofb_handle *gfb = dev_get_drvdata(dev);
-	struct glamo_fb_platform_data *mach_info = dev->platform_data;
 
 	/* OK let's allow framebuffer ops again */
 	/* gfb->fb->screen_base = ioremap(gfb->fb_res->start,
 				       resource_size(gfb->fb_res)); */
-	glamo_engine_enable(mach_info->core, GLAMO_ENGINE_LCD);
-	glamo_engine_reset(mach_info->core, GLAMO_ENGINE_LCD);
+	glamo_engine_enable(gfb->core, GLAMO_ENGINE_LCD);
+	glamo_engine_reset(gfb->core, GLAMO_ENGINE_LCD);
 
 	glamofb_init_regs(gfb);
 #ifdef CONFIG_MFD_GLAMO_HWACCEL

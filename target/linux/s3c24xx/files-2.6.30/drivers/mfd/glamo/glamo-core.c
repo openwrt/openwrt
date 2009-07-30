@@ -1188,16 +1188,6 @@ static int __init glamo_probe(struct platform_device *pdev)
 		 glamo_pll_rate(glamo, GLAMO_PLL1),
 		 glamo_pll_rate(glamo, GLAMO_PLL2));
 
-	/* register siblings */
-	glamo->pdata->mmc_data->core = glamo;
-	glamo_cells[GLAMO_CELL_MMC].platform_data = glamo->pdata->mmc_data;
-	glamo_cells[GLAMO_CELL_MMC].data_size =
-		sizeof(struct glamo_mmc_platform_data);
-
-	glamo->pdata->fb_data->core = glamo;
-	glamo_cells[GLAMO_CELL_FB].platform_data = glamo->pdata->fb_data;
-	glamo_cells[GLAMO_CELL_FB].data_size = sizeof(struct glamo_fb_platform_data);
-
 	mfd_add_devices(&pdev->dev, pdev->id, glamo_cells,
 	                      ARRAY_SIZE(glamo_cells),
 						  glamo->mem, 0);
