@@ -35,6 +35,7 @@
 #include <linux/platform_device.h>
 #include <linux/serial_core.h>
 #include <linux/spi/spi.h>
+#include <linux/spi/spi_gpio.h>
 #include <linux/spi/spi_bitbang.h>
 #include <linux/mmc/host.h>
 
@@ -74,7 +75,6 @@
 #include <mach/spi.h>
 #include <mach/spi-gpio.h>
 #include <mach/regs-mem.h>
-#include <mach/spi-gpio.h>
 #include <plat/pwm.h>
 #include <mach/cpu.h>
 
@@ -97,7 +97,6 @@
 #include <linux/jbt6k74.h>
 #include <linux/glamofb.h>
 #include <linux/mfd/glamo.h>
-#include <linux/spi/glamo.h>
 
 #include <linux/hdq.h>
 #include <linux/bq27000_battery.h>
@@ -1081,7 +1080,7 @@ static struct platform_device gta02_bl_dev = {
 
 static void gta02_jbt6k74_reset(int devidx, int level)
 {
-	glamo_lcm_reset(&gta02_glamo_dev, level);
+    gpio_set_value(GTA02_GPIO_GLAMO(4), level);
 }
 
 static void gta02_jbt6k74_probe_completed(struct device *dev)
@@ -1160,13 +1159,12 @@ struct lis302dl_platform_data lis302_pdata_bottom = {
 static struct spi_board_info gta02_spi_board_info[] = {
 	{
 		.modalias	= "jbt6k74",
-		/* platform_data */
 		.platform_data	= &jbt6k74_pdata,
-		/* controller_data */
+		.controller_data = (void*)GTA02_GPIO_GLAMO(12),
 		/* irq */
 		.max_speed_hz	= 100 * 1000,
 		.bus_num	= 2,
-		/* chip_select */
+		.chip_select = 0
 	},
 	{
 		.modalias	= "lis302dl",
@@ -1363,6 +1361,35 @@ static void gta02_glamo_external_reset(int level)
 	s3c2410_gpio_cfgpin(GTA02_GPIO_3D_RESET, S3C2410_GPIO_OUTPUT);
 }
 
+/*
+static struct fb_videomode gta02_glamo_modes[] = {
+	{
+		.name = "480x640",
+		.xres = 480,
+		.yres = 640,
+		.pixclock	= 40816,
+		.left_margin	= 8,
+		.right_margin	= 63,
+		.upper_margin	= 2,
+		.lower_margin	= 4,
+		.hsync_len	= 8,
+		.vsync_len	= 2,
+		.vmode = FB_VMODE_NONINTERLACED,
+	}, {
+		.name = "240x320",
+		.xres = 240,
+		.yres = 320,
+		.pixclock	= 40816,
+		.left_margin	= 8,
+		.right_margin	= 88,
+		.upper_margin	= 2,
+		.lower_margin	= 2,
+		.hsync_len	= 8,
+		.vsync_len	= 2,
+		.vmode = FB_VMODE_NONINTERLACED,
+	}
+};*/
+
 static struct fb_videomode gta02_glamo_modes[] = {
 	{
 		.name = "480x640",
@@ -1391,6 +1418,7 @@ static struct fb_videomode gta02_glamo_modes[] = {
 	}
 };
 
+
 static struct glamo_fb_platform_data gta02_glamo_fb_pdata = {
 	.width  = 43,
 	.height = 58,
@@ -1399,22 +1427,14 @@ static struct glamo_fb_platform_data gta02_glamo_fb_pdata = {
 	.modes = gta02_glamo_modes,
 };
 
-static struct glamo_spigpio_platform_data gta02_glamo_spigpio_pdata = {
-	.pin_clk  = GLAMO_GPIO10_OUTPUT,
-	.pin_mosi = GLAMO_GPIO11_OUTPUT,
-	.pin_cs	  = GLAMO_GPIO12_OUTPUT,
-	.pin_miso = 0,
-	.bus_num  = 2,
-};
-
 static struct glamo_mmc_platform_data gta02_glamo_mmc_pdata = {
 	.glamo_mmc_use_slow = gta02_glamo_mci_use_slow,
 };
 
 static struct glamo_platform_data gta02_glamo_pdata = {
-	.fb_data      = &gta02_glamo_fb_pdata,
-	.spigpio_data = &gta02_glamo_spigpio_pdata,
-	.mmc_data     = &gta02_glamo_mmc_pdata,
+	.fb_data   = &gta02_glamo_fb_pdata,
+	.mmc_data  = &gta02_glamo_mmc_pdata,
+    .gpio_base = GTA02_GPIO_GLAMO_BASE,
 
     .osci_clock_rate = 32768,
 
@@ -1472,6 +1492,22 @@ static void mangle_glamo_res_by_system_rev(void)
 	}
 }
 
+struct spi_gpio_platform_data spigpio_platform_data = {
+	.sck = GTA02_GPIO_GLAMO(10),
+	.mosi = GTA02_GPIO_GLAMO(11),
+	.miso = GTA02_GPIO_GLAMO(5),
+	.num_chipselect = 1,
+};
+
+static struct platform_device spigpio_device = {
+	.name = "spi_gpio",
+    .id   = 2,
+	.dev = {
+		.platform_data = &spigpio_platform_data,
+        .parent        = &gta02_glamo_dev.dev,
+	},
+};
+
 static void __init gta02_map_io(void)
 {
 	s3c24xx_init_io(gta02_iodesc, ARRAY_SIZE(gta02_iodesc));
@@ -1519,7 +1555,6 @@ static struct platform_device *gta02_devices[] __initdata = {
 	&s3c24xx_pwm_device,
 	&gta02_led_dev,
 	&gta02_pm_wlan_dev, /* not dependent on PMU */
-
 	&s3c_device_iis,
 	&s3c_device_i2c0,
 };
@@ -1534,6 +1569,15 @@ static struct platform_device *gta02_devices_pmu_children[] = {
 	&gta02_button_dev, /* input 4 */
 	&gta02_resume_reason_device,
 };
+
+static void gta02_register_glamo() {
+	platform_device_register(&gta02_glamo_dev);
+    if (!gpio_request(GTA02_GPIO_GLAMO(4), "jbt6k74 reset"))
+        printk("gta02: Failed to request jbt6k74 reset pin\n");
+    if (!gpio_direction_output(GTA02_GPIO_GLAMO(4), 1))
+        printk("gta02: Failed to configure jbt6k74 reset pin\n");
+	platform_device_register(&spigpio_device);
+}
 
 static void gta02_pmu_regulator_registered(struct pcf50633 *pcf, int id)
 {
@@ -1551,8 +1595,8 @@ static void gta02_pmu_regulator_registered(struct pcf50633 *pcf, int id)
 			pdev = &gta02_pm_gps_dev;
 			break;
 		case PCF50633_REGULATOR_HCLDO:
-			pdev = &gta02_glamo_dev;
-			break;
+            gta02_register_glamo();
+            return;
 		default:
 			return;
 	}
@@ -1628,10 +1672,11 @@ static void __init gta02_machine_init(void)
 	s3c2410_gpio_setpin(S3C2410_GPD13, 1);
 	s3c2410_gpio_cfgpin(S3C2410_GPD13, S3C2410_GPIO_OUTPUT);
 
+
 	s3c24xx_udc_set_platdata(&gta02_udc_cfg);
 	s3c_i2c0_set_platdata(NULL);
 	set_s3c2410ts_info(&gta02_ts_cfg);
-	
+
 	mangle_glamo_res_by_system_rev();
 
 	i2c_register_board_info(0, gta02_i2c_devs, ARRAY_SIZE(gta02_i2c_devs));

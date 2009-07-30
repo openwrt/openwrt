@@ -2,6 +2,7 @@
 #define _GTA02_H
 
 #include <mach/regs-gpio.h>
+#include <mach/gpio.h>
 #include <mach/irqs.h>
 
 /* Different hardware revisions, passed in ATAG_REVISION by u-boot */
@@ -77,6 +78,9 @@
 #define GTA02_PCB_ID1_2		S3C2410_GPD0
 #define GTA02_PCB_ID2_0		S3C2410_GPD3
 #define GTA02_PCB_ID2_1		S3C2410_GPD4
+
+#define GTA02_GPIO_GLAMO_BASE S3C_GPIO_END
+#define GTA02_GPIO_GLAMO(x) (GTA02_GPIO_GLAMO_BASE + x)
 
 int gta02_get_pcb_revision(void);
 

@@ -89,9 +89,9 @@ struct reg_range reg_range[] = {
 /*		{ 0x1500, 0x080,	"MPU 0",	0 },
 	{ 0x1580, 0x080,	"MPU 1",	0 },
 	{ 0x1600, 0x080,	"Cmd Queue",	0 },
-	{ 0x1680, 0x080,	"RISC CPU",	0 },
+	{ 0x1680, 0x080,	"RISC CPU",	0 },*/
 	{ 0x1700, 0x400,	"2D Unit",	0 },
-	{ 0x1b00, 0x900,	"3D Unit",	0 }, */
+/*	{ 0x1b00, 0x900,	"3D Unit",	0 }, */
 };
 
 static inline void __reg_write(struct glamo_core *glamo,
@@ -179,7 +179,7 @@ static struct resource glamo_mmc_resources[] = {
 enum glamo_cells {
 	GLAMO_CELL_FB,
 	GLAMO_CELL_MMC,
-	GLAMO_CELL_SPI_GPIO
+	GLAMO_CELL_GPIO,
 };
 
 static struct mfd_cell glamo_cells[] = {
@@ -193,8 +193,8 @@ static struct mfd_cell glamo_cells[] = {
 		.num_resources = ARRAY_SIZE(glamo_mmc_resources),
 		.resources = glamo_mmc_resources,
 	},
-	[GLAMO_CELL_SPI_GPIO] = {
-		.name = "glamo-spi-gpio",
+	[GLAMO_CELL_GPIO] = {
+		.name = "glamo-gpio",
 	},
 };
 
@@ -381,7 +381,8 @@ int __glamo_engine_enable(struct glamo_core *glamo, enum glamo_engine engine)
 				   GLAMO_CLOCK_MMC_EN_M9CLK |
 				   GLAMO_CLOCK_MMC_EN_TCLK |
 				   GLAMO_CLOCK_MMC_DG_M9CLK |
-				   GLAMO_CLOCK_MMC_DG_TCLK, 0xffff);
+				   GLAMO_CLOCK_MMC_DG_TCLK,
+				   0xffff);
 		/* enable the TCLK divider clk input */
 		__reg_set_bit_mask(glamo, GLAMO_REG_CLOCK_GEN5_1,
 						 GLAMO_CLOCK_GEN51_EN_DIV_TCLK,
@@ -604,8 +605,8 @@ static const struct glamo_script reset_regs[] = {
 
 void glamo_engine_reset(struct glamo_core *glamo, enum glamo_engine engine)
 {
-    uint16_t reg = reset_regs[engine].reg;
-    uint16_t val = reset_regs[engine].val;
+	uint16_t reg = reset_regs[engine].reg;
+	uint16_t val = reset_regs[engine].val;
 
 	if (engine >= ARRAY_SIZE(reset_regs)) {
 		dev_warn(&glamo->pdev->dev, "unknown engine %u ", engine);
@@ -619,17 +620,6 @@ void glamo_engine_reset(struct glamo_core *glamo, enum glamo_engine engine)
 	spin_unlock(&glamo->lock);
 }
 EXPORT_SYMBOL_GPL(glamo_engine_reset);
-
-void glamo_lcm_reset(struct platform_device *pdev, int level)
-{
-	struct glamo_core *glamo = dev_get_drvdata(&pdev->dev);
-	if (!glamo)
-		return;
-
-	glamo_gpio_setpin(glamo, GLAMO_GPIO4, level);
-	glamo_gpio_cfgpin(glamo, GLAMO_GPIO4_OUTPUT);
-}
-EXPORT_SYMBOL_GPL(glamo_lcm_reset);
 
 int glamo_pll_rate(struct glamo_core *glamo,
 			  enum glamo_pll pll)
@@ -707,10 +697,9 @@ int glamo_run_script(struct glamo_core *glamo, const struct glamo_script *script
 		     int len, int may_sleep)
 {
 	int i;
+    const struct glamo_script *line = script;
 
-	for (i = 0; i < len; i++) {
-		struct glamo_script *line = &script[i];
-
+	for (i = 0; i < len; ++i, ++line) {
 		switch (line->reg) {
 		case 0xffff:
 			return 0;
@@ -859,11 +848,6 @@ static const struct glamo_script glamo_init_script[] = {
 	{ GLAMO_REG_MEM_DRAM1,		0xe100 },
 	{ GLAMO_REG_MEM_DRAM2,		0x01d6 },
 	{ GLAMO_REG_CLOCK_MEMORY,	0x000b },
-	{ GLAMO_REG_GPIO_GEN1,		0x000f },
-	{ GLAMO_REG_GPIO_GEN2,		0x111e },
-	{ GLAMO_REG_GPIO_GEN3,		0xccc3 },
-	{ GLAMO_REG_GPIO_GEN4,		0x111e },
-	{ GLAMO_REG_GPIO_GEN5,		0x000f },
 };
 #if 0
 static struct glamo_script glamo_resume_script[] = {
@@ -1214,12 +1198,6 @@ static int __init glamo_probe(struct platform_device *pdev)
 	glamo_cells[GLAMO_CELL_FB].platform_data = glamo->pdata->fb_data;
 	glamo_cells[GLAMO_CELL_FB].data_size = sizeof(struct glamo_fb_platform_data);
 
-	glamo->pdata->spigpio_data->core = glamo;
-	glamo_cells[GLAMO_CELL_SPI_GPIO].platform_data =
-		glamo->pdata->spigpio_data;
-	glamo_cells[GLAMO_CELL_SPI_GPIO].data_size =
-		sizeof(struct glamo_spigpio_platform_data);
-
 	mfd_add_devices(&pdev->dev, pdev->id, glamo_cells,
 	                      ARRAY_SIZE(glamo_cells),
 						  glamo->mem, 0);
@@ -1293,7 +1271,6 @@ static int glamo_resume(struct device *dev)
 	struct glamo_core *glamo = dev_get_drvdata(dev);
 	glamo_power(glamo, GLAMO_POWER_ON);
 	glamo->suspending = 0;
-
 	return 0;
 }
 
