@@ -24,8 +24,6 @@
 #include <plat/regs-timer.h>
 #include <linux/gta02-vibrator.h>
 
-#include <linux/gta02-shadow.h>
-
 #define COUNTER 64
 
 static struct gta02_vib_priv {

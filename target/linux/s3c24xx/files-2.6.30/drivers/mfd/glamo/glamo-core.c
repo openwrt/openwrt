@@ -36,8 +36,6 @@
 #include <linux/spinlock.h>
 #include <linux/mfd/core.h>
 #include <linux/mfd/glamo.h>
-#include <linux/spi/glamo.h>
-#include <linux/glamo-gpio.h>
 #include <linux/glamofb.h>
 #include <linux/io.h>
 
@@ -127,6 +125,15 @@ static void reg_set_bit_mask(struct glamo_core *glamo,
 	spin_lock(&glamo->lock);
 	__reg_set_bit_mask(glamo, reg, mask, val);
 	spin_unlock(&glamo->lock);
+}
+
+static int __reg_write_batch(struct glamo_core *glamo,
+			uint16_t start, size_t num, uint16_t *regs)
+{
+	int end = start + num * 2
+	for(end = start + num * 2; start < end; start += 2, ++regs) {
+		*regs = __reg_read(glamo, start);
+	}
 }
 
 static inline void __reg_set_bit(struct glamo_core *glamo,
