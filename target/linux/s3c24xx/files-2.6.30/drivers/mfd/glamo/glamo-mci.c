@@ -31,8 +31,9 @@
 #define DRIVER_NAME "glamo-mci"
 
 struct glamo_mci_host {
-	struct platform_device *pdev;
 	struct glamo_mmc_platform_data *pdata;
+	struct platform_device *pdev;
+	struct glamo_core      *core;
 	struct mmc_host        *mmc;
 	struct resource        *mmio_mem;
 	struct resource        *data_mem;
@@ -55,6 +56,7 @@ struct glamo_mci_host {
 	struct work_struct read_work;
 
 	unsigned clk_enabled : 1;
+
 };
 
 static void glamo_mci_send_request(struct mmc_host *mmc, struct mmc_request* mrq);
@@ -139,7 +141,7 @@ static void glamo_reg_set_bit_mask(struct glamo_mci_host *glamo,
 
 static void glamo_mci_clock_disable(struct glamo_mci_host *host) {
 	if (host->clk_enabled) {
-		glamo_engine_div_disable(host->pdata->core, GLAMO_ENGINE_MMC);
+		glamo_engine_div_disable(host->core, GLAMO_ENGINE_MMC);
 		host->clk_enabled = 0;
 	}
 }
@@ -148,7 +150,7 @@ static void glamo_mci_clock_enable(struct glamo_mci_host *host) {
 	del_timer_sync(&host->disable_timer);
 
 	if (!host->clk_enabled) {
-		glamo_engine_div_enable(host->pdata->core, GLAMO_ENGINE_MMC);
+		glamo_engine_div_enable(host->core, GLAMO_ENGINE_MMC);
 		host->clk_enabled = 1;
 	}
 }
@@ -205,7 +207,7 @@ static int glamo_mci_set_card_clock(struct glamo_mci_host *host, int freq)
 
 	if (freq) {
 		glamo_mci_clock_enable(host);
-		real_rate = glamo_engine_reclock(host->pdata->core, GLAMO_ENGINE_MMC, freq);
+		real_rate = glamo_engine_reclock(host->core, GLAMO_ENGINE_MMC, freq);
 	} else {
 		glamo_mci_clock_disable(host);
 	}
@@ -558,7 +560,7 @@ static int glamo_mci_irq_poll(struct glamo_mci_host *host,
 	 * but something insane like suspend problems can mean
 	 * we spin here forever, so we timeout after a LONG time
 	 */
-	while ((!(readw(host->pdata->core->base +
+	while ((!(readw(host->core->base +
 		 GLAMO_REG_IRQ_STATUS) & GLAMO_IRQ_MMC)) &&
 		   (timeout--));
 
@@ -569,7 +571,7 @@ static int glamo_mci_irq_poll(struct glamo_mci_host *host,
 		return -ETIMEDOUT;
 	}
 	/* ack this interrupt source */
-	writew(GLAMO_IRQ_MMC, host->pdata->core->base +
+	writew(GLAMO_IRQ_MMC, host->core->base +
 		   GLAMO_REG_IRQ_CLEAR);
 
 	/* yay we are an interrupt controller! -- call the ISR
@@ -609,7 +611,7 @@ static void glamo_mci_send_request(struct mmc_host *mmc, struct mmc_request *mrq
 		goto done;
 
 
-	if (!host->pdata->core->irq_works) {
+	if (!host->core->irq_works) {
 		if (glamo_mci_irq_poll(host, mrq->cmd))
 			goto done;
 	}
@@ -645,7 +647,7 @@ static void glamo_mci_set_power_mode(struct glamo_mci_host *host,
 		break;
 	case MMC_POWER_OFF:
 	default:
-		glamo_engine_disable(host->pdata->core,
+		glamo_engine_disable(host->core,
 				     GLAMO_ENGINE_MMC);
 
 		ret = regulator_disable(host->regulator);
@@ -717,8 +719,9 @@ static struct mmc_host_ops glamo_mci_ops = {
 
 static int glamo_mci_probe(struct platform_device *pdev)
 {
-	struct mmc_host 	*mmc;
-	struct glamo_mci_host 	*host;
+	struct mmc_host *mmc;
+	struct glamo_mci_host *host;
+	struct glamo_core *core = dev_get_drvdata(pdev->dev.parent);
 	int ret;
 
 	dev_info(&pdev->dev, "glamo_mci driver (C)2007 Openmoko, Inc\n");
@@ -732,9 +735,11 @@ static int glamo_mci_probe(struct platform_device *pdev)
 	host = mmc_priv(mmc);
 	host->mmc = mmc;
 	host->pdev = pdev;
-	host->pdata = pdev->dev.platform_data;
+	if (core->pdata)
+		host->pdata = core->pdata->mmc_data;
 	host->power_mode = MMC_POWER_OFF;
 	host->clk_enabled = 0;
+	host->core = core;
 
 	INIT_WORK(&host->irq_work, glamo_mci_irq_worker);
 	INIT_WORK(&host->read_work, glamo_mci_read_worker);
@@ -809,7 +814,7 @@ static int glamo_mci_probe(struct platform_device *pdev)
 
 
 	host->vdd = 0;
-	host->clk_rate = glamo_pll_rate(host->pdata->core, GLAMO_PLL1);
+	host->clk_rate = glamo_pll_rate(host->core, GLAMO_PLL1);
 
 	/* explain our host controller capabilities */
 	mmc->ops       = &glamo_mci_ops;
@@ -835,8 +840,8 @@ static int glamo_mci_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, mmc);
 
-	glamo_engine_enable(host->pdata->core, GLAMO_ENGINE_MMC);
-	glamo_engine_reset(host->pdata->core, GLAMO_ENGINE_MMC);
+	glamo_engine_enable(host->core, GLAMO_ENGINE_MMC);
+	glamo_engine_reset(host->core, GLAMO_ENGINE_MMC);
 
 	glamo_reg_write(host, GLAMO_REG_MMC_WDATADS1,
 			(u16)(host->data_mem->start));
@@ -894,7 +899,7 @@ static int glamo_mci_remove(struct platform_device *pdev)
 
 	mmc_free_host(mmc);
 
-	glamo_engine_disable(host->pdata->core, GLAMO_ENGINE_MMC);
+	glamo_engine_disable(host->core, GLAMO_ENGINE_MMC);
 	return 0;
 }
 
@@ -921,8 +926,8 @@ static int glamo_mci_resume(struct device *dev)
 	struct glamo_mci_host *host = mmc_priv(mmc);
 	int ret;
 
-	glamo_engine_enable(host->pdata->core, GLAMO_ENGINE_MMC);
-	glamo_engine_reset(host->pdata->core, GLAMO_ENGINE_MMC);
+	glamo_engine_enable(host->core, GLAMO_ENGINE_MMC);
+	glamo_engine_reset(host->core, GLAMO_ENGINE_MMC);
 
 	glamo_reg_write(host, GLAMO_REG_MMC_WDATADS1,
 			(u16)(host->data_mem->start));
