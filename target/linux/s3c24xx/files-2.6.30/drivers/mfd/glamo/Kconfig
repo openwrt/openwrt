@@ -23,23 +23,12 @@ config MFD_GLAMO_FB
 
 	  If unsure, say N.
 
-config MFD_GLAMO_FB_XGLAMO_WORKAROUND
-	bool "Smedia Glamo 336x/337x Xglamo rotation workaround"
-	depends on MFD_GLAMO_FB
-	help
-	  This is a workaround for a Xglamo bug. This should be fixed
-	  in Xglamo and not in kernel space.
-
-	  If unsure, say N.
-
-
-config MFD_GLAMO_SPI_GPIO
-	tristate "Glamo GPIO SPI bitbang support"
+config MFD_GLAMO_GPIO
+	tristate "Glamo GPIO support"
 	depends on MFD_GLAMO
-	select SPI_BITBANG
 
 	help
-          Enable a bitbanging SPI adapter driver for the Smedia Glamo.
+		Enable a bitbanging SPI adapter driver for the Smedia Glamo.
 
 config MFD_GLAMO_MCI
 	tristate "Glamo S3C SD/MMC Card Interface support"

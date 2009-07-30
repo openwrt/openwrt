@@ -15,6 +15,7 @@ struct glamo_platform_data {
     struct glamo_fb_platform_data      *fb_data;
     struct glamo_spigpio_platform_data *spigpio_data;
     struct glamo_mmc_platform_data     *mmc_data;
+    int gpio_base;
 
     unsigned int osci_clock_rate;
 
