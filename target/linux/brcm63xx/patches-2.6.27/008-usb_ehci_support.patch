@@ -45,9 +45,9 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  static inline unsigned int ehci_readl(const struct ehci_hcd *ehci,
  		__u32 __iomem * regs)
  {
---- a/drivers/usb/host/Kconfig	2009-07-03 01:33:19.000000000 +0200
-+++ b/drivers/usb/host/Kconfig	2009-07-17 17:53:11.000000000 +0200
-@@ -44,7 +44,7 @@
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -44,7 +44,7 @@ config USB_EHCI_HCD
  
  config USB_EHCI_ROOT_HUB_TT
  	bool "Root Hub Transaction Translators"

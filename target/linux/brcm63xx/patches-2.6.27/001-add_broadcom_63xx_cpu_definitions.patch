@@ -22,7 +22,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  		cpu_wait = r4k_wait;
  		break;
  
-@@ -802,11 +806,28 @@ static inline void cpu_probe_broadcom(st
+@@ -802,11 +805,28 @@ static inline void cpu_probe_broadcom(st
  	decode_configs(c);
  	switch (c->processor_id & 0xff00) {
  	case PRID_IMP_BCM3302:
@@ -51,7 +51,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  	default:
  		c->cputype = CPU_UNKNOWN;
  		break;
-@@ -892,6 +913,10 @@ static __cpuinit const char *cpu_to_name
+@@ -892,6 +912,10 @@ static __cpuinit const char *cpu_to_name
  	case CPU_SR71000:	name = "Sandcraft SR71000"; break;
  	case CPU_BCM3302:	name = "Broadcom BCM3302"; break;
  	case CPU_BCM4710:	name = "Broadcom BCM4710"; break;
