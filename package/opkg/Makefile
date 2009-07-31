@@ -59,7 +59,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		HOST_CPU="$(ARCH)" \
+		HOST_CPU="$(BOARD)" \
 		all install
 endef
 
