@@ -27,16 +27,18 @@
  				  RxFIFOOver | TxErr | TxOK | RxOK | RxErr,
  		.napi_event	= RxFIFOOver | TxErr | TxOK | RxOK | RxOverflow,
  		.features	= RTL_FEATURE_MSI
-@@ -2878,10 +2878,12 @@ static irqreturn_t rtl8169_interrupt(int
- 		goto out;
- 	}
- 
+@@ -2872,12 +2872,12 @@ static irqreturn_t rtl8169_interrupt(int
+ 			rtl8169_tx_timeout(dev);
+ 			break;
+ 		}
+-
 +#if 0
- 	if (unlikely(status & SYSErr)) {
- 		rtl8169_pcierr_interrupt(dev);
- 		goto out;
- 	}
+ 		if (unlikely(status & SYSErr)) {
+ 			rtl8169_pcierr_interrupt(dev);
+ 			break;
+ 		}
+-
 +#endif
+ 		if (status & LinkChg)
+ 			rtl8169_check_link_status(dev, tp, ioaddr);
  
- 	if (status & LinkChg)
- 		rtl8169_check_link_status(dev, tp, ioaddr);
