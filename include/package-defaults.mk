@@ -23,7 +23,7 @@ define Package/Default
   else
     VERSION:=$(PKG_RELEASE)
   endif
-  PKGARCH:=$(ARCH)
+  PKGARCH:=$(BOARD)
   PRIORITY:=optional
   DEFAULT:=
   MENU:=
