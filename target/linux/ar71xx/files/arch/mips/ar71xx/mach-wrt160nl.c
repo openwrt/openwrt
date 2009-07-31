@@ -71,13 +71,26 @@ static struct spi_board_info wrt160nl_spi_info[] = {
 
 static void __init wrt160nl_setup(void)
 {
-	/* TODO: ethernet, LEDs, buttons */
+	ar71xx_add_device_mdio(0x0);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth0_data.phy_mask = 0xf;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0x10;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
 
 	ar71xx_add_device_spi(NULL, wrt160nl_spi_info,
 			      ARRAY_SIZE(wrt160nl_spi_info));
 
 	ar71xx_add_device_usb();
 	ar91xx_add_device_wmac();
+
+	/* TODO: LEDs, buttons */
 }
 
 MIPS_MACHINE(AR71XX_MACH_WRT160NL, "Linksys WRT160NL", wrt160nl_setup);
