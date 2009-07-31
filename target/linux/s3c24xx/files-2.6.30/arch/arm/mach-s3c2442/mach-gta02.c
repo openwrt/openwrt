@@ -39,6 +39,7 @@
 #include <linux/spi/spi_bitbang.h>
 #include <linux/mmc/host.h>
 #include <linux/leds.h>
+#include <linux/gpio_keys.h>
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
@@ -1273,39 +1274,37 @@ struct platform_device gta02_led_dev = {
 	},
 };
 
-static struct resource gta02_button_resources[] = {
-	[0] = {
-		.start = GTA02_GPIO_AUX_KEY,
-		.end   = GTA02_GPIO_AUX_KEY,
+static struct gpio_keys_button gta02_buttons[] = {
+	{
+		.gpio = GTA02_GPIO_AUX_KEY,
+		.code = KEY_PHONE,
+		.desc = "Aux",
+		.type = EV_KEY,
 	},
-	[1] = {
-		.start = GTA02_GPIO_HOLD_KEY,
-		.end   = GTA02_GPIO_HOLD_KEY,
-	},
-	[2] = {
-		.start = GTA02_GPIO_JACK_INSERT,
-		.end   = GTA02_GPIO_JACK_INSERT,
-	},
-	[3] = {
-		.start = 0,
-		.end   = 0,
-	},
-	[4] = {
-		.start = 0,
-		.end   = 0,
+	{
+		.gpio = GTA02_GPIO_HOLD_KEY,
+		.code = KEY_PAUSE,
+		.desc = "Hold",
+		.type = EV_KEY,
 	},
 };
 
+static struct gpio_keys_platform_data gta02_buttons_pdata = {
+	.buttons = gta02_buttons,
+	.nbuttons = ARRAY_SIZE(gta02_buttons),
+};
+
 static struct platform_device gta02_button_dev = {
-	.name		= "gta02-button",
-	.num_resources	= ARRAY_SIZE(gta02_button_resources),
-	.resource	= gta02_button_resources,
+	.name = "gpio-keys",
+	.id = -1,
+	.dev = {
+		.platform_data = &gta02_buttons_pdata,
+	},
 };
 
 static struct platform_device gta02_pm_usbhost_dev = {
 	.name		= "gta02-pm-host",
 };
-
 
 /* USB */
 static struct s3c2410_hcd_info gta02_usb_info = {
