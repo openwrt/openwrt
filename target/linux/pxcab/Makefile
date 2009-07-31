@@ -11,7 +11,7 @@ BOARD:=pxcab
 BOARDNAME:=PowerXCell Accelerator Board
 FEATURES:=fpu ramdisk
 
-LINUX_VERSION:=2.6.30.3
+LINUX_VERSION:=2.6.30.4
 
 KERNEL_CC:=
 
