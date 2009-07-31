@@ -151,18 +151,39 @@ enum bcm63xx_regs_set {
 /*
  * 6345 register sets base address
  */
+#define BCM_6345_DSL_LMEM_BASE		(0xfff00000)
 #define BCM_6345_PERF_BASE		(0xfffe0000)
+#define BCM_6345_BB_BASE		(0xfffe0100)
 #define BCM_6345_TIMER_BASE		(0xfffe0200)
 #define BCM_6345_WDT_BASE		(0xfffe021c)
 #define BCM_6345_UART0_BASE		(0xfffe0300)
 #define BCM_6345_GPIO_BASE		(0xfffe0400)
+#define BCM_6345_SPI_BASE		(0xdeadbeef)
+#define BCM_6345_UDC0_BASE		(0xdeadbeef)
+#define BCM_6345_USBDMA_BASE		(0xfffe2800)
+#define BCM_6345_ENET0_BASE		(0xfffe1800)
+#define BCM_6345_ENETDMA_BASE		(0xfffe2800)
+#define BCM_6345_PCMCIA_BASE		(0xfffe2028)
+#define BCM_6345_MPI_BASE		(0xdeadbeef)
+#define BCM_6345_OHCI0_BASE		(0xfffe2100)
+#define BCM_6345_OHCI_PRIV_BASE		(0xfffe2200)
+#define BCM_6345_USBH_PRIV_BASE		(0xdeadbeef)
+#define BCM_6345_SDRAM_REGS_BASE	(0xfffe2300)
+#define BCM_6345_DSL_BASE		(0xdeadbeef)
+#define BCM_6345_SAR_BASE		(0xdeadbeef)
+#define BCM_6345_UBUS_BASE		(0xdeadbeef)
+#define BCM_6345_ENET1_BASE		(0xdeadbeef)
+#define BCM_6345_EHCI0_BASE		(0xdeadbeef)
+#define BCM_6345_SDRAM_BASE		(0xfffe2300)
+#define BCM_6345_MEMC_BASE		(0xdeadbeef)
+#define BCM_6345_DDR_BASE		(0xdeadbeef)
 
 /*
  * 6348 register sets base address
  */
 #define BCM_6348_DSL_LMEM_BASE		(0xfff00000)
 #define BCM_6348_PERF_BASE		(0xfffe0000)
-#define BCM_6348_BB_BASE		(0xfffe0100) /* bus bridge registers */
+#define BCM_6348_BB_BASE		(0xfffe0100)
 #define BCM_6348_TIMER_BASE		(0xfffe0200)
 #define BCM_6348_WDT_BASE		(0xfffe021c)
 #define BCM_6348_UART0_BASE		(0xfffe0300)
@@ -269,6 +290,8 @@ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
 #endif
 #ifdef CONFIG_BCM63XX_CPU_6345
 	switch (set) {
+	case RSET_DSL_LMEM:
+		return BCM_6345_DSL_LMEM_BASE;
 	case RSET_PERF:
 		return BCM_6345_PERF_BASE;
 	case RSET_TIMER:
@@ -279,6 +302,34 @@ static inline unsigned long bcm63xx_regset_address(enum bcm63xx_regs_set set)
 		return BCM_6345_UART0_BASE;
 	case RSET_GPIO:
 		return BCM_6345_GPIO_BASE;
+	case RSET_SPI_BASE:
+		return BCM_6345_SPI_BASE;
+	case RSET_UDC0:
+		return BCM_6345_UDC0_BASE;
+	case RSET_OHCI0:
+		return BCM_6345_OHCI0_BASE;
+	case RSET_OHCI_PRIV:
+		return BCM_6345_OHCI_PRIV_BASE;
+	case RSET_USBH_PRIV:
+		return BCM_6345_USBH_PRIV_BASE;
+	case RSET_MPI:
+		return BCM_6345_MPI_BASE;
+	case RSET_PCMCIA:
+		return BCM_6345_PCMCIA_BASE;
+	case RSET_DSL:
+		return BCM_6345_DSL_BASE;
+	case RSET_ENET0:
+		return BCM_6345_ENET0_BASE;
+	case RSET_ENETDMA:
+		return BCM_6345_ENETDMA_BASE;
+	case RSET_EHCI0:
+		return BCM_6345_EHCI0_BASE;
+	case RSET_SDRAM:
+		return BCM_6345_SDRAM_BASE;
+	case RSET_MEMC:
+		return BCM_6345_MEMC_BASE;
+	case RSET_DDR:
+		return BCM_6345_DDR_BASE;
 	}
 #endif
 #ifdef CONFIG_BCM63XX_CPU_6348
@@ -548,6 +599,8 @@ enum bcm63xx_irq {
 #define BCM_6345_USB_IRQ		(IRQ_INTERNAL_BASE + 5)
 #define BCM_6345_ENET0_IRQ		(IRQ_INTERNAL_BASE + 8)
 #define BCM_6345_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 12)
+#define BCM_6345_ENET0_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 13 + 1)
+#define BCM_6345_ENET0_TXDMA_IRQ	(IRQ_INTERNAL_BASE + 13 + 2)
 
 /*
  * 6348 irqs

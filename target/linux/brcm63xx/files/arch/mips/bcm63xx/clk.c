@@ -51,6 +51,8 @@ static void enet_misc_set(struct clk *clk, int enable)
 
 	if (BCMCPU_IS_6338())
 		mask = CKCTL_6338_ENET_EN;
+	else if (BCMCPU_IS_6345())
+		mask = CKCTL_6345_ENET_EN;
 	else if (BCMCPU_IS_6348())
 		mask = CKCTL_6348_ENET_EN;
 	else
