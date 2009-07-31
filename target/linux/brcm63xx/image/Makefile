@@ -117,6 +117,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),V2110,6348,bc221,,btvgr,-y 5)
 	# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
 	$(call Image/Build/CFE,$(1),V2500V_BB,6348,bc221,,btvgr,-y 5)
+	# RTA1025W_16 (numerous routers)
+	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,bc221,,btrta,-y 5)
 	# Tecom GW6000
 	$(call Image/Build/CFE,$(1),96348GW,6348,bc300,,bc300,)
 	# Tecom GW6200
