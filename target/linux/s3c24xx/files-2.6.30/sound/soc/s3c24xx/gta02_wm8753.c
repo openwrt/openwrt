@@ -22,6 +22,7 @@
 #include <sound/pcm.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
+#include <sound/jack.h>
 
 #include <asm/mach-types.h>
 
@@ -38,6 +39,7 @@
 #include "s3c24xx-i2s.h"
 
 static struct snd_soc_card neo1973_gta02;
+static struct snd_soc_jack gta02_hs_jack;
 
 static int neo1973_gta02_hifi_hw_params(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
@@ -332,6 +334,27 @@ static const struct snd_kcontrol_new wm8753_neo1973_gta02_controls[] = {
 		lm4853_set_spk),
 };
 
+static struct snd_soc_jack_pin gta02_hs_jack_pins[] = {
+	{
+		.pin = "Headset Mic",
+		.mask = SND_JACK_MICROPHONE
+	},
+	{
+		.pin = "Stereo Out",
+		.mask = SND_JACK_HEADPHONE,
+        .invert = 1,
+	},
+};
+
+static struct snd_soc_jack_gpio gta02_hs_jack_gpios[] = {
+	{
+		.gpio = GTA02_GPIO_JACK_INSERT,
+		.name = "headset-gpio",
+		.report = SND_JACK_HEADSET,
+		.debounce_time = 100,
+	},
+};
+
 /*
  * This is an example machine initialisation for a wm8753 connected to a
  * neo1973 GTA02.
@@ -369,6 +392,28 @@ static int neo1973_gta02_wm8753_init(struct snd_soc_codec *codec)
 	snd_soc_dapm_disable_pin(codec, "Handset Spk");
 
 	snd_soc_dapm_sync(codec);
+
+    err = snd_soc_jack_new(&neo1973_gta02, "Headset Jack",
+					SND_JACK_HEADSET, &gta02_hs_jack);
+	if (err) {
+		dev_err(codec->card->dev, "failed to alloc headset jack\n");
+        return err;
+	}
+
+	err = snd_soc_jack_add_pins(&gta02_hs_jack, ARRAY_SIZE(gta02_hs_jack_pins),
+					gta02_hs_jack_pins);
+	if (err) {
+		dev_err(codec->card->dev, "failed to add headset jack pins\n");
+        return err;
+	}
+
+	err = snd_soc_jack_add_gpios(&gta02_hs_jack, ARRAY_SIZE(gta02_hs_jack_gpios),
+					gta02_hs_jack_gpios);
+	if (err) {
+		dev_err(codec->card->dev, "failed to add headset jack gpios\n");
+        return err;
+	}
+
 
 	return 0;
 }
@@ -423,6 +468,7 @@ static struct snd_soc_device neo1973_gta02_snd_devdata = {
 
 static struct platform_device *neo1973_gta02_snd_device;
 
+
 static int __init neo1973_gta02_init(void)
 {
 	int ret;
@@ -439,8 +485,10 @@ static int __init neo1973_gta02_init(void)
 		return ret;
 
 	neo1973_gta02_snd_device = platform_device_alloc("soc-audio", -1);
-	if (!neo1973_gta02_snd_device)
-		return -ENOMEM;
+	if (!neo1973_gta02_snd_device) {
+		ret = -ENOMEM;
+        goto err_unregister_dai;
+    }
 
 	platform_set_drvdata(neo1973_gta02_snd_device,
 			&neo1973_gta02_snd_devdata);
@@ -449,7 +497,7 @@ static int __init neo1973_gta02_init(void)
 
 	if (ret) {
 		platform_device_put(neo1973_gta02_snd_device);
-		return ret;
+        goto err_unregister_dai;
 	}
 
 	/* Initialise GPIOs used by amp */
@@ -462,13 +510,21 @@ static int __init neo1973_gta02_init(void)
 	/* Speaker off by default */
 	s3c2410_gpio_setpin(GTA02_GPIO_HP_IN, 1);
 
-	return ret;
+
+	return 0;
+
+err_unregister_dai:
+	snd_soc_unregister_dai(&bt_dai);
+    return ret;
 }
 module_init(neo1973_gta02_init);
 
 static void __exit neo1973_gta02_exit(void)
 {
 	snd_soc_unregister_dai(&bt_dai);
+    snd_soc_jack_free_gpios(&gta02_hs_jack, ARRAY_SIZE(gta02_hs_jack_gpios),
+            gta02_hs_jack_gpios);
+
 	platform_device_unregister(neo1973_gta02_snd_device);
 }
 module_exit(neo1973_gta02_exit);
