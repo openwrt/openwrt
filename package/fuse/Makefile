@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=fuse
 PKG_VERSION:=2.7.4
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
@@ -85,23 +85,12 @@ CONFIGURE_ARGS += \
 	--with-kernel="$(LINUX_DIR)" \
 	--disable-mtab 
 
-# This section is disabled; since kernel 2.6.14 the fuse module is officially 
-# part of the kernel. The following enables this fuse packages kernel module 
-# instead of the kernel's, if the kernel is younger than 2.6.25. 
-# Generally it is better to use the kernel's module. Because it is DCACHE BUG 
-# patched and from fuse 2.8.0 on it will be removed from the fuse package 
-# anyway.
+# Since kernel 2.6.14 the fuse module is officially part of the kernel. 
+# Generally it is better to use the kernel's module. Because it is patched
+# against the DCACHE BUG on arm architectures (currently brcm-2.4, brcm-47xx) 
+# and from fuse 2.8.0 on it will be removed from the fuse package anyway.
 #
-#ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.25)),1)
-#  define KernelPackage/fuse/2.6
-#    KCONFIG:=
-#    FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
-#  endef
-#
-# CONFIGURE_ARGS += --enable-kernel-module
-#else
-# CONFIGURE_ARGS += --disable-kernel-module
-#endif
+CONFIGURE_ARGS += --disable-kernel-module
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
