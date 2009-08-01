@@ -1,24 +1,19 @@
-From d8d0421cddc6ecdec166612d914b8edbcdb96ed0 Mon Sep 17 00:00:00 2001
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Fri, 31 Jul 2009 20:33:31 +0200
-Subject: [PATCH] ASoC: jack: Fix race in snd_soc_jack_add_gpios
+commit 5ced436d549d911ce610ea47d85f71fae5bbfce4
+Author: Lars-Peter Clausen <lars@metafoo.de>
+Date:   Fri Jul 31 18:26:48 2009 +0200
 
-The irq can fire as soon as it has been requested, thus all fields accessed
-from within the irq handler must be initialized prior to requesting the irq.
-
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
----
-The patch is against alsa-kernel/master but I guess something similar should also
-go into 2.6.31.
-
- sound/soc/soc-jack.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+    ASoC: jack: Fix race in snd_soc_jack_add_gpios
+    
+    The irq can fire as soon as it has been requested, thus all fields accessed
+    from within the irq handler must be initialized prior to requesting the irq.
+    
+    Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 
 diff --git a/sound/soc/soc-jack.c b/sound/soc/soc-jack.c
-index 4aa7d8f..1d455ab 100644
+index 28346fb..639333a 100644
 --- a/sound/soc/soc-jack.c
 +++ b/sound/soc/soc-jack.c
-@@ -221,6 +221,9 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+@@ -220,6 +220,9 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
  		if (ret)
  			goto err;
  
@@ -28,16 +23,13 @@ index 4aa7d8f..1d455ab 100644
  		ret = request_irq(gpio_to_irq(gpios[i].gpio),
  				gpio_handler,
  				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
-@@ -234,9 +237,6 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
- 		gpio_export(gpios[i].gpio, false);
- #endif
- 
+@@ -227,9 +230,6 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+ 				&gpios[i]);
+ 		if (ret)
+ 			goto err;
+-
 -		INIT_WORK(&gpios[i].work, gpio_work);
 -		gpios[i].jack = jack;
--
- 		/* Update initial jack status */
- 		snd_soc_jack_gpio_detect(&gpios[i]);
  	}
--- 
-1.5.6.5
-
+ 
+ 	return 0;
