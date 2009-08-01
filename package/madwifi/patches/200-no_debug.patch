@@ -204,12 +204,14 @@
  #include <linux/wireless.h>
 --- a/Makefile.inc
 +++ b/Makefile.inc
-@@ -148,7 +148,8 @@ ATH_RATE=	$(TOP)/ath_rate
+@@ -147,8 +147,9 @@ ATH_RATE=	$(TOP)/ath_rate
+ # 
  TOOLS=  $(TOP)/tools 
  
- WARNINGS = -Werror
+-WARNINGS = -Werror
 -COPTS+= $(WARNINGS)
-+DEBUG = -DAR_DEBUG -DIEEE80211_DEBUG
++WARNINGS = -Wno-unused
++# DEBUG = -DAR_DEBUG -DIEEE80211_DEBUG
 +COPTS+= $(WARNINGS) $(DEBUG)
  INCS=	-include $(TOP)/include/compat.h -I$(TOP)/include
  
