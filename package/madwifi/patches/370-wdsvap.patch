@@ -883,6 +883,15 @@
  	ieee80211_node_table_reset(&ic->ic_sta, vap);
  	if (vap->iv_bss != NULL) {
  		ieee80211_unref_node(&vap->iv_bss);
+@@ -309,7 +314,7 @@ ieee80211_create_ibss(struct ieee80211va
+ 	/* Check to see if we already have a node for this mac
+ 	 * NB: we gain a node reference here
+ 	 */
+-	ni = ieee80211_find_node(&ic->ic_sta, vap->iv_myaddr);
++	ni = ieee80211_find_txnode(vap, vap->iv_myaddr);
+ 	if (ni == NULL) {
+ 		ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
+ 		IEEE80211_DPRINTF(vap, IEEE80211_MSG_ASSOC,
 @@ -831,12 +836,18 @@ node_table_leave_locked(struct ieee80211
  		LIST_REMOVE(ni, ni_hash);
  	}
@@ -1356,7 +1365,20 @@
  		};
 --- a/net80211/ieee80211_proto.c
 +++ b/net80211/ieee80211_proto.c
-@@ -1081,6 +1081,8 @@ ieee80211_init(struct net_device *dev, i
+@@ -979,6 +979,12 @@ ieee80211_init(struct net_device *dev, i
+ 		"start running (state=%d)\n", vap->iv_state);
+ 
+ 
++	if (vap->iv_master && vap->iv_master->iv_state == IEEE80211_S_INIT) {
++		int ret = ieee80211_init(vap->iv_master->iv_dev, forcescan);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	if ((dev->flags & IFF_RUNNING) == 0) {
+ 		if (ic->ic_nopened++ == 0 &&
+ 		    (parent->flags & IFF_RUNNING) == 0)
+@@ -1081,6 +1087,8 @@ ieee80211_init(struct net_device *dev, i
  int
  ieee80211_open(struct net_device *dev)
  {
@@ -1365,7 +1387,7 @@
  	return ieee80211_init(dev, 0);
  }
  
-@@ -1090,7 +1092,7 @@ ieee80211_open(struct net_device *dev)
+@@ -1090,7 +1098,7 @@ ieee80211_open(struct net_device *dev)
  void
  ieee80211_start_running(struct ieee80211com *ic)
  {
@@ -1374,7 +1396,7 @@
  	struct net_device *dev;
  
  	/* XXX locking */
-@@ -1099,6 +1101,16 @@ ieee80211_start_running(struct ieee80211
+@@ -1099,6 +1107,16 @@ ieee80211_start_running(struct ieee80211
  		/* NB: avoid recursion */
  		if ((dev->flags & IFF_UP) && !(dev->flags & IFF_RUNNING))
  			ieee80211_open(dev);
@@ -1391,7 +1413,7 @@
  	}
  }
  EXPORT_SYMBOL(ieee80211_start_running);
-@@ -1116,11 +1128,43 @@ ieee80211_stop(struct net_device *dev)
+@@ -1116,11 +1134,43 @@ ieee80211_stop(struct net_device *dev)
  	struct ieee80211vap *vap = dev->priv;
  	struct ieee80211com *ic = vap->iv_ic;
  	struct net_device *parent = ic->ic_dev;
@@ -1435,7 +1457,7 @@
  	ieee80211_new_state(vap, IEEE80211_S_INIT, -1);
  	if (dev->flags & IFF_RUNNING) {
  		dev->flags &= ~IFF_RUNNING;		/* mark us stopped */
-@@ -1148,7 +1192,7 @@ EXPORT_SYMBOL(ieee80211_stop);
+@@ -1148,7 +1198,7 @@ EXPORT_SYMBOL(ieee80211_stop);
  void
  ieee80211_stop_running(struct ieee80211com *ic)
  {
@@ -1444,7 +1466,7 @@
  	struct net_device *dev;
  
  	/* XXX locking */
-@@ -1156,6 +1200,12 @@ ieee80211_stop_running(struct ieee80211c
+@@ -1156,6 +1206,12 @@ ieee80211_stop_running(struct ieee80211c
  		dev = vap->iv_dev;
  		if (dev->flags & IFF_RUNNING)	/* NB: avoid recursion */
  			ieee80211_stop(dev);
@@ -1457,7 +1479,7 @@
  	}
  }
  EXPORT_SYMBOL(ieee80211_stop_running);
-@@ -1342,9 +1392,9 @@ ieee80211_new_state(struct ieee80211vap 
+@@ -1342,9 +1398,9 @@ ieee80211_new_state(struct ieee80211vap 
  	struct ieee80211com *ic = vap->iv_ic;
  	int rc;
  
@@ -1469,7 +1491,7 @@
  	return rc;
  }
  
-@@ -1557,57 +1607,12 @@ __ieee80211_newstate(struct ieee80211vap
+@@ -1557,57 +1613,12 @@ __ieee80211_newstate(struct ieee80211vap
  		switch (ostate) {
  		case IEEE80211_S_INIT:
  			if (vap->iv_opmode == IEEE80211_M_MONITOR ||
@@ -1527,7 +1549,7 @@
  				break;
  			}
  			/* fall thru... */
-@@ -1675,6 +1680,7 @@ __ieee80211_newstate(struct ieee80211vap
+@@ -1675,6 +1686,7 @@ __ieee80211_newstate(struct ieee80211vap
  		 */
  		if (ni->ni_authmode != IEEE80211_AUTH_8021X)
  			ieee80211_node_authorize(ni);
@@ -1535,7 +1557,7 @@
  #ifdef ATH_SUPERG_XR
  		/*
  		 * fire a timer to bring up XR vap if configured.
-@@ -1808,6 +1814,11 @@ ieee80211_newstate(struct ieee80211vap *
+@@ -1808,6 +1820,11 @@ ieee80211_newstate(struct ieee80211vap *
  			  ieee80211_state_name[dstate]);
  
  	ieee80211_update_link_status(vap, nstate, ostate);
@@ -1547,7 +1569,7 @@
  	switch (nstate) {
  	case IEEE80211_S_AUTH:
  	case IEEE80211_S_ASSOC:
-@@ -1930,8 +1941,15 @@ ieee80211_newstate(struct ieee80211vap *
+@@ -1930,8 +1947,15 @@ ieee80211_newstate(struct ieee80211vap *
  		if (ostate == IEEE80211_S_SCAN || 
  		    ostate == IEEE80211_S_AUTH ||
  		    ostate == IEEE80211_S_ASSOC) {
