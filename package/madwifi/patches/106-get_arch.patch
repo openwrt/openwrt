@@ -1,6 +1,6 @@
 --- a/scripts/get_arch.mk
 +++ b/scripts/get_arch.mk
-@@ -36,6 +36,13 @@ ifeq (,$(ARCH-y))
+@@ -36,11 +36,14 @@ ifeq (,$(ARCH-y))
  $(Cannot determine ARCH)
  endif
  
@@ -14,3 +14,8 @@
  # Don't allow ARCH to be overridden by a different value.
  ifeq (,$(ARCH))
  ARCH = $(ARCH-y)
+-else
+-ifneq ($(ARCH),$(ARCH-y))
+-$(error ARCH mismatch: supplied "$(ARCH)", determined "$(ARCH-y)")
+-endif
+ endif
