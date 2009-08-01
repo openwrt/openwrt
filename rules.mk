@@ -159,7 +159,7 @@ else
 endif
 
 ifeq ($(CONFIG_IPV6),y)
-  DISABLE_IPV6:=--enable-ipv6
+  DISABLE_IPV6:=
 else
   DISABLE_IPV6:=--disable-ipv6
 endif
