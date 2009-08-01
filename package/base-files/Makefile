@@ -178,12 +178,12 @@ define Package/base-files$(TARGET)/install
 	mkdir -p $(1)/etc/rc.d
 	mkdir -p $(1)/jffs
 	mkdir -p $(1)/lib/firmware
-	$(if $(LIB_SUFFIX),ln -s lib $(1)/lib$(LIB_SUFFIX))
+	$(if $(LIB_SUFFIX),-ln -s lib $(1)/lib$(LIB_SUFFIX))
 	mkdir -p $(1)/mnt
 	mkdir -p $(1)/proc
 	mkdir -p $(1)/tmp
 	mkdir -p $(1)/usr/lib
-	$(if $(LIB_SUFFIX),ln -s lib $(1)/usr/lib$(LIB_SUFFIX))
+	$(if $(LIB_SUFFIX),-ln -s lib $(1)/usr/lib$(LIB_SUFFIX))
 	mkdir -p $(1)/usr/bin
 	mkdir -p $(1)/sys
 	mkdir -p $(1)/www
