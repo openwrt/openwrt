@@ -261,7 +261,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	parts[curpart].size = master->size - parts[0].size - parts[3].size;
        
 	for (i = 0; i < nrparts; i++)
-		printk(KERN_INFO PFX "Partition %d is %s offset %x and length %x\n", i, parts[i].name, parts[i].offset, parts[i].size);
+		printk(KERN_INFO PFX "Partition %d is %s offset %llx and length %llx\n", i, parts[i].name, parts[i].offset, parts[i].size);
 
 	*pparts = parts;
 	vfree(buf);
@@ -326,7 +326,7 @@ static int bcm963xx_probe(struct platform_device *pdev)
 	} else {
 		printk(KERN_INFO PFX "assuming RedBoot bootloader\n");
 		if (bcm963xx_mtd_info->size > 0x00400000) {
-			printk(KERN_INFO PFX "Support for extended flash memory size : 0x%08X ; ONLY 64MBIT SUPPORT\n", bcm963xx_mtd_info->size);
+			printk(KERN_INFO PFX "Support for extended flash memory size : 0x%llx ; ONLY 64MBIT SUPPORT\n", bcm963xx_mtd_info->size);
 			bcm963xx_map.virt = (u32)(EXTENDED_SIZE);
 		}
 
