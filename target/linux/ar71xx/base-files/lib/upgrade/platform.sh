@@ -5,6 +5,7 @@
 . /lib/ar71xx.sh
 
 PART_NAME=firmware
+RAMFS_COPY_DATA=/lib/ar71xx.sh
 
 platform_check_image() {
 	local board=$(ar71xx_board_name)
@@ -42,4 +43,5 @@ disable_watchdog() {
 		return 1
 	}
 }
+
 append sysupgrade_pre_upgrade disable_watchdog
