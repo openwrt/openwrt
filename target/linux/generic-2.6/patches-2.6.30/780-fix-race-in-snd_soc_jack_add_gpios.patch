@@ -9,11 +9,9 @@ Date:   Fri Jul 31 18:26:48 2009 +0200
     
     Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 
-diff --git a/sound/soc/soc-jack.c b/sound/soc/soc-jack.c
-index 28346fb..639333a 100644
 --- a/sound/soc/soc-jack.c
 +++ b/sound/soc/soc-jack.c
-@@ -220,6 +220,9 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+@@ -220,6 +220,9 @@ int snd_soc_jack_add_gpios(struct snd_so
  		if (ret)
  			goto err;
  
@@ -23,7 +21,7 @@ index 28346fb..639333a 100644
  		ret = request_irq(gpio_to_irq(gpios[i].gpio),
  				gpio_handler,
  				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
-@@ -227,9 +230,6 @@ int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
+@@ -227,9 +230,6 @@ int snd_soc_jack_add_gpios(struct snd_so
  				&gpios[i]);
  		if (ret)
  			goto err;

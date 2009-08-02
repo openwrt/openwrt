@@ -6,9 +6,9 @@
  quiet_cmd_lzma = LZMA    $@
 -cmd_lzma = (lzma -9 -c $< && $(size_append) $<) >$@ || (rm -f $@ ; false)
 +cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 -eos
---- a/scripts/gen_initramfs_list.sh	2009-06-10 05:05:27.000000000 +0200
-+++ b/scripts/gen_initramfs_list.sh	2009-08-01 18:36:14.000000000 +0200
-@@ -225,7 +225,7 @@
+--- a/scripts/gen_initramfs_list.sh
++++ b/scripts/gen_initramfs_list.sh
+@@ -225,7 +225,7 @@ cpio_list=
  output="/dev/stdout"
  output_file=""
  is_cpio_compressed=
@@ -17,7 +17,7 @@
  
  arg="$1"
  case "$arg" in
-@@ -239,9 +239,9 @@
+@@ -239,9 +239,9 @@ case "$arg" in
  		output_file="$1"
  		cpio_list="$(mktemp ${TMPDIR:-/tmp}/cpiolist.XXXXXX)"
  		output=${cpio_list}
@@ -30,7 +30,7 @@
  		echo "$output_file" | grep -q "\.cpio$" && compr="cat"
  		shift
  		;;
-@@ -292,7 +292,7 @@
+@@ -292,7 +292,7 @@ if [ ! -z ${output_file} ]; then
  	if [ "${is_cpio_compressed}" = "compressed" ]; then
  		cat ${cpio_tfile} > ${output_file}
  	else
