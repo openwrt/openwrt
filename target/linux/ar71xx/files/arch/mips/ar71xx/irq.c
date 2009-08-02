@@ -297,22 +297,6 @@ static void ar71xx_misc_irq_unmask(unsigned int irq)
 	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
-static void ar724x_misc_irq_unmask(unsigned int irq)
-{
-	irq -= AR71XX_MISC_IRQ_BASE;
-	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE,
-		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE) | (1 << irq));
-
-	/* flush write */
-	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
-
-	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_STATUS,
-		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS) & ~(1 << irq));
-
-	/* flush write */
-	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS);
-}
-
 static void ar71xx_misc_irq_mask(unsigned int irq)
 {
 	irq -= AR71XX_MISC_IRQ_BASE;
@@ -323,11 +307,20 @@ static void ar71xx_misc_irq_mask(unsigned int irq)
 	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
+static void ar724x_misc_irq_ack(unsigned int irq)
+{
+	irq -= AR71XX_MISC_IRQ_BASE;
+	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_STATUS,
+		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS) & ~(1 << irq));
+
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS);
+}
+
 static struct irq_chip ar71xx_misc_irq_chip = {
 	.name		= "AR71XX MISC",
 	.unmask		= ar71xx_misc_irq_unmask,
 	.mask		= ar71xx_misc_irq_mask,
-	.mask_ack	= ar71xx_misc_irq_mask,
 };
 
 static struct irqaction ar71xx_misc_irqaction = {
@@ -343,7 +336,9 @@ static void __init ar71xx_misc_irq_init(void)
 	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_STATUS, 0);
 
 	if (ar71xx_soc == AR71XX_SOC_AR7240)
-		ar71xx_misc_irq_chip.unmask = ar724x_misc_irq_unmask;
+		ar71xx_misc_irq_chip.ack = ar724x_misc_irq_ack;
+	else
+		ar71xx_misc_irq_chip.mask_ack = ar71xx_misc_irq_mask;
 
 	for (i = AR71XX_MISC_IRQ_BASE;
 	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++) {
