@@ -178,7 +178,7 @@ define BuildTargets/DumpCurrent
 	@echo 'Target: $(TARGETID)'; \
 	 echo 'Target-Board: $(BOARD)'; \
 	 echo 'Target-Kernel: $(KERNEL)'; \
-	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),, [$(KERNEL)])$(if $(SUBTARGETS),$(if $(SUBTARGET), [$(KERNEL)]))'; \
+	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),$(if $(SUBTARGET),))'; \
 	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
 	 echo 'Target-Features: $(FEATURES)'; \
