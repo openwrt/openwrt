@@ -23,7 +23,11 @@ define Package/Default
   else
     VERSION:=$(PKG_RELEASE)
   endif
-  PKGARCH:=$(BOARD)
+  ifneq ($(CONFIG_TARGET_adm5120),y)
+    PKGARCH:=$(BOARD)
+  else
+    PKGARCH:=$(BOARD)_$(ARCH)
+  endif
   PRIORITY:=optional
   DEFAULT:=
   MENU:=
