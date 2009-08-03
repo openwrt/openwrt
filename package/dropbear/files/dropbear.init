@@ -1,28 +1,52 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006 OpenWrt.org
-START=50
+# Copyright (C) 2006-2009 OpenWrt.org
 # Copyright (C) 2006 Carlos Sobrinho
 
-config_cb() {
-	local cfg="$CONFIG_SECTION"
+NAME=dropbear
+PROG=/usr/sbin/dropbear
+START=50
+PIDCOUNT=0
+EXTRA_COMMANDS="killclients"
+EXTRA_HELP="	killclients Kill ${NAME} processes except servers and yourself"
+
+dropbear_start()
+{
+	local section="$1"
+
+	# check if section is enabled (default)
+	local enabled
+	config_get_bool enabled "${section}" enable 1
+	[ "${enabled}" -eq 0 ] && return 1
+
+	# verbose parameter
+	local verbosed
+	config_get_bool verbosed "${section}" verbose 0
+
+	# increase pid file count to handle multiple instances correctly
+	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
+
+	# prepare parameters
+	# A) password authentication
 	local nopasswd
-	local cfgt
-	config_get cfgt "$cfg" TYPE
+	local passauth
+	config_get_bool passauth "${section}" PasswordAuth 1
+	[ "${passauth}" -eq 0 ] && nopasswd=1
+	# B) listen port
+	local port
+	config_get port "${section}" Port
 
-	case "$cfgt" in
-		dropbear)
-			config_get passauth $cfg PasswordAuth
-			config_get port $cfg Port
+	# concatenate parameters
+	local args
+	args="${nopasswd:+-s }${port:+-p ${port}} -P /var/run/${NAME}.${PIDCOUNT}.pid"
 
-			case "$passauth" in
-				no|off|disabled|0) nopasswd=1;;
-			esac
-			DROPBEAR_ARGS="${nopasswd:+-s }${port:+-p $port}"
-		;;
-	esac
+	# execute program and return its exit code
+	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
+	${PROG} ${args}
+	return $?
 }
 
-keygen() {
+keygen()
+{
 	for keytype in rsa dss; do
 		# check for keys
 		key=dropbear/dropbear_${keytype}_host_key
@@ -44,14 +68,78 @@ keygen() {
 	chmod 0700 /etc/dropbear
 }
 
-start() {
+start()
+{
 	[ -s /etc/dropbear/dropbear_rsa_host_key -a \
 	  -s /etc/dropbear/dropbear_dss_host_key ] || keygen
-	
-	config_load dropbear
-	/usr/sbin/dropbear $DROPBEAR_ARGS
+
+	config_load "${NAME}"
+	config_foreach dropbear_start dropbear
 }
 
-stop() {
-	killall dropbear
+stop()
+{
+	# killing all server processes
+	local pidfile
+	for pidfile in `ls /var/run/${NAME}.*.pid`
+	 do
+		start-stop-daemon -K -s KILL -p "${pidfile}" -n "${NAME}" >/dev/null
+		rm -f "${pidfile}"
+	done
+	[ -z "${pidfile}" ] && echo "${initscript}: no pid files, if you get problems with start then try killclients"
+}
+
+killclients()
+{
+	local ignore=''
+	local server
+	local pid
+
+	# if this script is run from inside a client session, then ignore that session
+	pid="$$"
+	while [ "${pid}" -ne 0 ]
+	 do
+		# get parent process id
+		pid=`cut -d ' ' -f 4 "/proc/${pid}/stat"`
+		[ "${pid}" -eq 0 ] && break
+
+		# check if client connection
+		ps | grep -e "^[ ]*${pid} " | grep "${PROG}" >/dev/null
+		if [ $? -eq 0 ]
+		 then
+			append ignore "${pid}"
+			break
+		fi
+	done
+
+	# get all server pids that should be ignored
+	for server in `cat /var/run/${NAME}.*.pid`
+	 do
+		append ignore "${server}"
+	done
+
+	# get all running pids and kill client connections
+	local skip
+	for pid in `pidof "${NAME}"`
+	 do
+		# check if correct program
+		ps | grep -e "^[ ]*${pid} " | grep "${PROG}" >/dev/null
+		[ $? -ne 0 ] && continue
+
+		# check if pid should be ignored (servers, ourself)
+		skip=0
+		for server in ${ignore}
+		 do
+			if [ "${pid}" == "${server}" ]
+			 then
+				skip=1
+				break
+			fi
+		done
+		[ "${skip}" -ne 0 ] && continue
+
+		# kill process
+		echo "${initscript}: Killing ${pid}..."
+		kill -KILL ${pid}
+	done
 }
