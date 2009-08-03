@@ -243,6 +243,7 @@ fw_rule() {
 	local dest_ip
 	local dest_port
 	local proto
+	local icmp_type
 	local target
 	local ruleset
 
@@ -254,6 +255,7 @@ fw_rule() {
 	config_get dest_ip $1 dest_ip
 	config_get dest_port $1 dest_port
 	config_get proto $1 proto
+	config_get icmp_type $1 icmp_type
 	config_get target $1 target
 	config_get ruleset $1 ruleset
 
@@ -276,6 +278,7 @@ fw_rule() {
 	add_rule() {
 		$IPTABLES -I $ZONE 1 \
 			${proto:+-p $proto} \
+			${icmp_type:+--icmp-type $icmp_type} \
 			${src_ip:+-s $src_ip} \
 			${src_port:+--sport $src_port} \
 			${src_mac:+-m mac --mac-source $src_mac} \
