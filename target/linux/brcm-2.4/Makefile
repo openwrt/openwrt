@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mipsel
 BOARD:=brcm-2.4
-BOARDNAME:=Broadcom BCM947xx/953xx
+BOARDNAME:=Broadcom BCM947xx/953xx [2.4]
 FEATURES:=squashfs
 
 KERNEL:=2.4
