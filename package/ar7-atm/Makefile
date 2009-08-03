@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=sangam_atm
-PKG_VERSION:=D7.03.01.00
-PKG_RELEASE:=R2
+PKG_VERSION:=D7.04.03.00
+PKG_RELEASE:=R1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=bc6e9c6adb1be25820c7ee661de8ca7d
+PKG_MD5SUM:=3d76004e46f09e88931f91670cb420ad
 
 include $(INCLUDE_DIR)/package.mk
 
