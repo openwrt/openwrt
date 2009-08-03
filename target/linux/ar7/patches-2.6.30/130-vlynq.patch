@@ -1,20 +1,21 @@
 --- a/drivers/Kconfig
 +++ b/drivers/Kconfig
-@@ -100,5 +100,7 @@ source "drivers/auxdisplay/Kconfig"
+@@ -104,6 +104,8 @@ source "drivers/auxdisplay/Kconfig"
  
  source "drivers/uio/Kconfig"
  
 +source "drivers/vlynq/Kconfig"
 +
  source "drivers/xen/Kconfig"
- endmenu
+ 
+ source "drivers/staging/Kconfig"
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
-@@ -96,6 +96,7 @@ obj-$(CONFIG_DCA)		+= dca/
+@@ -103,6 +103,7 @@ obj-$(CONFIG_DCA)		+= dca/
  obj-$(CONFIG_HID)		+= hid/
  obj-$(CONFIG_PPC_PS3)		+= ps3/
  obj-$(CONFIG_OF)		+= of/
 +obj-$(CONFIG_VLYNQ)		+= vlynq/
  obj-$(CONFIG_SSB)		+= ssb/
  obj-$(CONFIG_VIRTIO)		+= virtio/
- obj-$(CONFIG_REGULATOR)		+= regulator/
+ obj-$(CONFIG_STAGING)		+= staging/
