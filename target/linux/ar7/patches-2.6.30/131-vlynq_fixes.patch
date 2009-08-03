@@ -1,5 +1,5 @@
---- a/drivers/vlynq/vlynq.c	2009-05-31 20:41:57.000000000 +0200
-+++ b/drivers/vlynq/vlynq.c	2009-07-28 21:27:52.000000000 +0200
+--- a/drivers/vlynq/vlynq.c
++++ b/drivers/vlynq/vlynq.c
 @@ -14,6 +14,9 @@
   * You should have received a copy of the GNU General Public License
   * along with this program; if not, write to the Free Software
@@ -18,7 +18,7 @@
  #include <linux/delay.h>
  #include <linux/io.h>
  
-@@ -73,15 +75,11 @@
+@@ -73,15 +75,11 @@ struct vlynq_regs {
  	u32 int_device[8];
  };
  
@@ -36,7 +36,7 @@
  	printk(KERN_DEBUG "VLYNQ local=%p remote=%p\n",
  			dev->local, dev->remote);
  	for (i = 0; i < 32; i++) {
-@@ -95,20 +93,23 @@
+@@ -95,20 +93,23 @@ static void vlynq_dump_regs(struct vlynq
  static void vlynq_dump_mem(u32 *base, int count)
  {
  	int i;
@@ -63,7 +63,7 @@
  			return 1;
  		else
  			cpu_relax();
-@@ -118,17 +119,15 @@
+@@ -118,17 +119,15 @@ int vlynq_linked(struct vlynq_device *de
  
  static void vlynq_reset(struct vlynq_device *dev)
  {
@@ -85,7 +85,7 @@
  
  	/* Give some time for the devices to settle */
  	msleep(5);
-@@ -142,9 +141,9 @@
+@@ -142,9 +141,9 @@ static void vlynq_irq_unmask(unsigned in
  
  	BUG_ON(!dev);
  	virq = irq - dev->irq_start;
@@ -97,7 +97,7 @@
  }
  
  static void vlynq_irq_mask(unsigned int irq)
-@@ -155,9 +154,9 @@
+@@ -155,9 +154,9 @@ static void vlynq_irq_mask(unsigned int 
  
  	BUG_ON(!dev);
  	virq = irq - dev->irq_start;
@@ -109,7 +109,7 @@
  }
  
  static int vlynq_irq_type(unsigned int irq, unsigned int flow_type)
-@@ -168,7 +167,7 @@
+@@ -168,7 +167,7 @@ static int vlynq_irq_type(unsigned int i
  
  	BUG_ON(!dev);
  	virq = irq - dev->irq_start;
@@ -118,7 +118,7 @@
  	switch (flow_type & IRQ_TYPE_SENSE_MASK) {
  	case IRQ_TYPE_EDGE_RISING:
  	case IRQ_TYPE_EDGE_FALLING:
-@@ -187,28 +186,30 @@
+@@ -187,28 +186,30 @@ static int vlynq_irq_type(unsigned int i
  	default:
  		return -EINVAL;
  	}
@@ -160,7 +160,7 @@
  }
  
  static irqreturn_t vlynq_irq(int irq, void *dev_id)
-@@ -217,8 +218,8 @@
+@@ -217,8 +218,8 @@ static irqreturn_t vlynq_irq(int irq, vo
  	u32 status;
  	int virq = 0;
  
@@ -171,7 +171,7 @@
  
  	if (unlikely(!status))
  		spurious_interrupt();
-@@ -262,28 +263,28 @@
+@@ -262,28 +263,28 @@ static int vlynq_setup_irq(struct vlynq_
  	if (dev->local_irq == dev->remote_irq) {
  		printk(KERN_ERR
  		       "%s: local vlynq irq should be different from remote\n",
@@ -210,7 +210,7 @@
  
  	for (i = dev->irq_start; i <= dev->irq_end; i++) {
  		virq = i - dev->irq_start;
-@@ -299,12 +300,13 @@
+@@ -299,12 +300,13 @@ static int vlynq_setup_irq(struct vlynq_
  			set_irq_chip_and_handler(i, &vlynq_irq_chip,
  						 handle_simple_irq);
  			set_irq_chip_data(i, dev);
@@ -226,7 +226,7 @@
  		return -EAGAIN;
  	}
  
-@@ -328,11 +330,11 @@
+@@ -328,11 +330,11 @@ static int vlynq_device_match(struct dev
  		if (ids->id == vdev->dev_id) {
  			vdev->divisor = ids->divisor;
  			vlynq_set_drvdata(vdev, ids);
@@ -240,7 +240,7 @@
  			" for VLYNQ device: %08x\n", ids->id, vdev->dev_id);
  		ids++;
  	}
-@@ -346,8 +348,7 @@
+@@ -346,8 +348,7 @@ static int vlynq_device_probe(struct dev
  	struct vlynq_device_id *id = vlynq_get_drvdata(vdev);
  	int result = -ENODEV;
  
@@ -250,7 +250,7 @@
  		result = drv->probe(vdev, id);
  	if (result)
  		put_device(dev);
-@@ -357,9 +358,10 @@
+@@ -357,9 +358,10 @@ static int vlynq_device_probe(struct dev
  static int vlynq_device_remove(struct device *dev)
  {
  	struct vlynq_driver *drv = to_vlynq_driver(dev->driver);
@@ -263,7 +263,7 @@
  	return 0;
  }
  
-@@ -377,6 +379,14 @@
+@@ -377,6 +379,14 @@ void vlynq_unregister_driver(struct vlyn
  }
  EXPORT_SYMBOL(vlynq_unregister_driver);
  
@@ -278,7 +278,7 @@
  static int __vlynq_try_remote(struct vlynq_device *dev)
  {
  	int i;
-@@ -389,21 +399,21 @@
+@@ -389,21 +399,21 @@ static int __vlynq_try_remote(struct vly
  		if (!vlynq_linked(dev))
  			break;
  
@@ -307,7 +307,7 @@
  			dev->divisor = i;
  			return 0;
  		} else {
-@@ -414,26 +424,33 @@
+@@ -414,26 +424,33 @@ static int __vlynq_try_remote(struct vly
  	return -ENODEV;
  }
  
@@ -346,7 +346,7 @@
  			dev->divisor = i;
  			return 0;
  		} else {
-@@ -444,27 +461,33 @@
+@@ -444,27 +461,33 @@ static int __vlynq_try_local(struct vlyn
  	return -ENODEV;
  }
  
@@ -389,7 +389,7 @@
  	return -ENODEV;
  }
  
-@@ -481,10 +504,10 @@
+@@ -481,10 +504,10 @@ static int __vlynq_enable_device(struct 
  	case vlynq_div_external:
  	case vlynq_div_auto:
  		/* When the device is brought from reset it should have clock
@@ -404,7 +404,7 @@
  		   VLYNQ_CTRL_CLOCK_INT) {
  			if (!__vlynq_try_remote(dev) ||
  				!__vlynq_try_local(dev)  ||
-@@ -497,31 +520,43 @@
+@@ -497,31 +520,43 @@ static int __vlynq_enable_device(struct 
  				return 0;
  		}
  		break;
@@ -466,7 +466,7 @@
  			return 0;
  		}
  		break;
-@@ -568,12 +603,10 @@
+@@ -568,12 +603,10 @@ int vlynq_set_local_mapping(struct vlynq
  	if (!dev->enabled)
  		return -ENXIO;
  
@@ -482,7 +482,7 @@
  	}
  	return 0;
  }
-@@ -587,12 +620,10 @@
+@@ -587,12 +620,10 @@ int vlynq_set_remote_mapping(struct vlyn
  	if (!dev->enabled)
  		return -ENXIO;
  
@@ -498,7 +498,7 @@
  	}
  	return 0;
  }
-@@ -662,8 +693,7 @@
+@@ -662,8 +693,7 @@ static int vlynq_probe(struct platform_d
  	dev->id = pdev->id;
  	dev->dev.bus = &vlynq_bus_type;
  	dev->dev.parent = &pdev->dev;
@@ -508,7 +508,7 @@
  	dev->dev.platform_data = pdev->dev.platform_data;
  	dev->dev.release = vlynq_device_release;
  
-@@ -673,9 +703,9 @@
+@@ -673,9 +703,9 @@ static int vlynq_probe(struct platform_d
  	dev->mem_end = mem_res->end;
  
  	len = regs_res->end - regs_res->start;
@@ -520,7 +520,7 @@
  		result = -ENXIO;
  		goto fail_request;
  	}
-@@ -683,7 +713,7 @@
+@@ -683,7 +713,7 @@ static int vlynq_probe(struct platform_d
  	dev->local = ioremap(regs_res->start, len);
  	if (!dev->local) {
  		printk(KERN_ERR "%s: Can't remap vlynq registers\n",
@@ -529,7 +529,7 @@
  		result = -ENXIO;
  		goto fail_remap;
  	}
-@@ -702,14 +732,14 @@
+@@ -702,14 +732,14 @@ static int vlynq_probe(struct platform_d
  	platform_set_drvdata(pdev, dev);
  
  	printk(KERN_INFO "%s: regs 0x%p, irq %d, mem 0x%p\n",
