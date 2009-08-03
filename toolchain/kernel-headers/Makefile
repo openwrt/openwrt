@@ -72,7 +72,8 @@ endef
 
 define Host/Prepare
 	$(call Kernel/Prepare/Default)
-	ln -sf linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
+	rm -f $(BUILD_DIR_TOOLCHAIN)/linux
+	ln -s linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(HOST_BUILD_DIR)/Makefile
 endef
 
