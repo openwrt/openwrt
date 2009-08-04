@@ -5,7 +5,7 @@
  	  accessed via the I2C bus.
  
 +config LEDS_GTA02_VIBRATOR
-+	tristate "Vibrator Support for the Openmoko Freerunner GSM phone"
++	boolean "Vibrator Support for the Openmoko Freerunner GSM phone"
 +	depends on LEDS_CLASS && MACH_NEO1973_GTA02
 + 	help
 +	  This option enables support for the vibrator on the Openmoko Freerunner.
