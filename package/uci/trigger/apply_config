@@ -32,7 +32,7 @@ elseif arg[1] == "-t" then
 		local trigger = a[1]
 		local sections = a[2]
 		if trigger.section_only then
-			print(trigger.id .. " " .. table.concat(" ", sections))
+			print(trigger.id .. " " .. table.concat(sections, " "))
 		else
 			print(trigger.id)
 		end
