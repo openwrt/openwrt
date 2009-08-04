@@ -249,7 +249,7 @@ static const struct dev_pm_ops glamo_pm_ops = {
 #define GLAMO_GPIO_PM_OPS (&glamo_pm_ops)
 
 #else
-#define GLAMO_GPIO_OPS NULL
+#define GLAMO_GPIO_PM_OPS NULL
 #endif
 
 static struct platform_driver glamo_gpio_driver = {
