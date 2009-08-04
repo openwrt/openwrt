@@ -57,7 +57,7 @@ scan_interfaces() {
 
 add_vlan() {
 	local vif="${1%\.*}"
-	
+
 	[ "$1" = "$vif" ] || ifconfig "$1" >/dev/null 2>/dev/null || {
 		ifconfig "$vif" up 2>/dev/null >/dev/null || add_vlan "$vif"
 		$DEBUG vconfig add "$vif" "${1##*\.}"
@@ -90,7 +90,7 @@ prepare_interface() {
 	# to create any interfaces here. The scripts have already done that, otherwise
 	# the bridge interface wouldn't exist.
 	[ "br-$config" = "$iface" -o -e "$iface" ] && return 0;
-	
+
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
 		config_get proto "$config" proto
 
@@ -165,12 +165,12 @@ setup_interface_static() {
 	config_get netmask "$config" netmask
 	config_get ip6addr "$config" ip6addr
 	[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
-	
+
 	config_get gateway "$config" gateway
 	config_get ip6gw "$config" ip6gw
 	config_get dns "$config" dns
 	config_get bcast "$config" broadcast
-	
+
 	[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
 	[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
 	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" dev "$iface"
@@ -183,7 +183,7 @@ setup_interface_static() {
 		done
 	}
 
-	config_get type "$config" TYPE                                                                               
+	config_get type "$config" TYPE
 	[ "$type" = "alias" ] && return 0
 
 	env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
@@ -213,7 +213,7 @@ setup_interface_alias() {
 		static)
 			setup_interface_static "$iface:$ctr" "$config"
 		;;
-		*) 
+		*)
 			echo "Unsupported type '$proto' for alias config '$config'"
 			return 1
 		;;
@@ -226,23 +226,32 @@ setup_interface() {
 	local vifmac="$4"
 	local proto
 	local macaddr
+	local hasipv6
 
 	[ -n "$config" ] || {
 		config=$(find_config "$iface")
 		[ "$?" = 0 ] || return 1
 	}
 	proto="${3:-$(config_get "$config" proto)}"
-	
+
 	prepare_interface "$iface" "$config" "$vifmac" || return 0
-	
+
 	[ "$iface" = "br-$config" ] && {
-		# need to bring up the bridge and wait a second for 
+		# need to bring up the bridge and wait a second for
 		# it to switch to the 'forwarding' state, otherwise
 		# it will lose its routes...
 		ifconfig "$iface" up
 		sleep 1
 	}
-	
+
+	# Check whether this interface has an IPv6 address
+	# defined and ensure that the kmod is loaded since
+	# ifup could be triggered before modules are loaded.
+	config_get hasipv6 "$config" ip6addr
+	[ -n "$hasipv6" ] && [ ! -d /proc/sys/net/ipv6 ] && {
+		grep -q '^ipv6' /etc/modules.d/* && insmod ipv6
+	}
+
 	# Interface settings
 	config_get mtu "$config" mtu
 	config_get macaddr "$config" macaddr
@@ -285,7 +294,7 @@ setup_interface() {
 		;;
 		*)
 			if ( eval "type setup_interface_$proto" ) >/dev/null 2>/dev/null; then
-				eval "setup_interface_$proto '$iface' '$config' '$proto'" 
+				eval "setup_interface_$proto '$iface' '$config' '$proto'"
 			else
 				echo "Interface type $proto not supported."
 				return 1
@@ -307,7 +316,7 @@ setup_interface() {
 unbridge() {
 	local dev="$1"
 	local brdev
-	
+
 	[ -x /usr/sbin/brctl ] || return 0
 	brctl show | grep "$dev" >/dev/null && {
 		# interface is still part of a bridge, correct that
