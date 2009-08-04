@@ -4,21 +4,27 @@
 
 . /lib/ar71xx.sh
 
-tew632brp_init_mac_address() {
+fetch_mac_from_mtd() {
+	local mtd_part=$1
+	local lan_env=$2
+	local wan_env=$3
 	local mtd mac
 
-	mtd=$(grep config /proc/mtd | cut -d: -f1)
+	mtd=$(grep $mtd_part /proc/mtd | cut -d: -f1)
 	[ -z $mtd ] && return
 
-	mac=$(grep lan_mac /dev/$mtd | cut -d= -f2)
+	mac=$(grep $lan_env /dev/$mtd | cut -d= -f2)
 	[ ! -z $mac ] && ifconfig eth0 hw ether $mac 2>/dev/null
 
-	mac=$(grep wan_mac /dev/$mtd | cut -d= -f2)
+	mac=$(grep $wan_env /dev/$mtd | cut -d= -f2)
 	[ ! -z $mac ] && ifconfig eth1 hw ether $mac 2>/dev/null
 }
 
 case $(ar71xx_board_name) in
 	tew-632brp)
-		tew632brp_init_mac_address
+		fetch_mac_from_mtd config lan_mac wan_mac
+		;;
+	wrt160nl)
+		fetch_mac_from_mtd nvram lan_hwaddr wan_hwaddr
 		;;
 esac
