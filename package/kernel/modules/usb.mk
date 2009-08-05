@@ -391,6 +391,22 @@ endef
 $(eval $(call KernelPackage,usb-serial-sierrawireless))
 
 
+define KernelPackage/usb-serial-motorola-phone
+  $(call usbdep,kmod-usb-serial)
+  TITLE:=Support for Motorola usb phone
+  KCONFIG:=CONFIG_USB_SERIAL_MOTOROLA
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/moto_modem.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,moto_modem)
+endef
+
+define KernelPackage/usb-serial-motorola-phone/description
+ Kernel support for Motorola usb phone
+endef
+
+$(eval $(call KernelPackage,usb-serial-motorola-phone))
+
+
+
 define KernelPackage/usb-serial-visor
   $(call usbdep,kmod-usb-serial)
   TITLE:=Support for Handspring Visor devices
