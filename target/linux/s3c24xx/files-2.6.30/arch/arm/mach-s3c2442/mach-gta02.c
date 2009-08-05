@@ -91,6 +91,7 @@
 #include <plat/iic.h>
 #include <plat/usb-control.h>
 #include <plat/regs-timer.h>
+#include <plat/gpio-core.h>
 
 #include <mach/gta02-pm-gsm.h>
 #include <mach/gta02-pm-gps.h>
@@ -1636,6 +1637,57 @@ static void gta02_poweroff(void)
 		  PCF50633_OOCSHDWN_GOSTDBY, PCF50633_OOCSHDWN_GOSTDBY);
 }
 
+
+/* On hardware rev 5 and earlier the leds are missing a resistor and reading
+ * from their gpio pins will always return 0, so we have to shadow the
+ * led states software */
+static unsigned long gpb_shadow;
+extern struct s3c_gpio_chip s3c24xx_gpios[];
+
+static void gta02_gpb_set(struct gpio_chip *chip,
+			    unsigned offset, int value)
+{
+	void __iomem *base = S3C24XX_GPIO_BASE(S3C2410_GPB0);
+	unsigned long flags;
+	unsigned long dat;
+
+	local_irq_save(flags);
+
+	dat = __raw_readl(base + 0x04) | gpb_shadow;
+	dat &= ~(1 << offset);
+	gpb_shadow &= ~(1 << offset);
+	if (value) {
+		dat |= 1 << offset;
+		switch (offset) {
+		case 0 ... 2:
+			gpb_shadow |= 1 << offset;
+			break;
+		default:
+			break;
+		}
+	}
+	__raw_writel(dat, base + 0x04);
+
+	local_irq_restore(flags);
+}
+
+static int gta02_gpb_get(struct gpio_chip *chip, unsigned offset)
+{
+	void __iomem *base = S3C24XX_GPIO_BASE(S3C2410_GPB0);
+	unsigned long val;
+
+	val = __raw_readl(base + 0x04) | gpb_shadow;
+	val >>= offset;
+	val &= 1;
+
+	return val;
+}
+
+static void gta02_hijack_gpb(void) {
+    s3c24xx_gpios[1].chip.set = gta02_gpb_set;
+    s3c24xx_gpios[1].chip.get = gta02_gpb_get;
+}
+
 static void __init gta02_machine_init(void)
 {
 	int rc;
@@ -1652,6 +1704,8 @@ static void __init gta02_machine_init(void)
 	default:
 		break;
 	}
+	if (S3C_SYSTEM_REV_ATAG <= GTA02v5_SYSTEM_REV)
+		gta02_hijack_gpb();
 
 	spin_lock_init(&motion_irq_lock);
 
