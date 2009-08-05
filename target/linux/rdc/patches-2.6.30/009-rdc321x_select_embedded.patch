@@ -1,0 +1,10 @@
+--- a/arch/x86/Kconfig	2009-06-19 15:06:16.000000000 +0200
++++ b/arch/x86/Kconfig	2009-06-19 15:06:01.000000000 +0200
+@@ -380,6 +380,7 @@
+ 	depends on X86_EXTENDED_PLATFORM
+ 	select M486
+ 	select X86_REBOOTFIXUPS
++	select EMBEDDED
+ 	---help---
+ 	  This option is needed for RDC R-321x system-on-chip, also known
+ 	  as R-8610-(G).
