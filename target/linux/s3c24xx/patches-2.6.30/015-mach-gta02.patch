@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-s3c2442/Kconfig
 +++ b/arch/arm/mach-s3c2442/Kconfig
-@@ -25,6 +25,20 @@ config SMDK2440_CPU2442
+@@ -25,6 +25,21 @@ config SMDK2440_CPU2442
  	depends on ARCH_S3C2440
  	select CPU_S3C2442
  
@@ -15,6 +15,7 @@
 +	select S3C_PWM
 +	select FIQ
 +	select S3C_DEV_USB_HOST
++	select S3C24XX_GPIO_EXTRA64
 +	help
 +	   Say Y here if you are using the Openmoko Freerunner GSM Phone
 +
