@@ -7,14 +7,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=opkg
-PKG_REV:=4993
+PKG_REV:=215
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=4
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=opkg-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://svn.openmoko.org/trunk/src/target/opkg/
+PKG_SOURCE_URL:=http://opkg.googlecode.com/svn/trunk/
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 PKG_FIXUP = libtool
 include $(INCLUDE_DIR)/package.mk
@@ -37,7 +37,7 @@ define Package/opkg/description
 endef
 
 define Package/opkg/conffiles
-/etc/opkg.conf
+/etc/opkg/opkg.conf
 endef
 
 TARGET_CFLAGS += $(FPIC) $(if $(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),-Wno-array-bounds)
@@ -67,8 +67,9 @@ define Package/opkg/install
 	$(INSTALL_DIR) $(1)/usr/lib/opkg
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc
-	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/
-	$(SED) 's,$$$$S,$(PKGARCH),g' $(1)/etc/opkg.conf
+	$(INSTALL_DIR) $(1)/etc/opkg
+	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/opkg/
+	$(SED) 's,$$$$S,$(PKGARCH),g' $(1)/etc/opkg/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopkg.so.* $(1)/usr/lib/
