@@ -1,7 +1,7 @@
 /*
  * Atheros AR71xx SPI Controller driver
  *
- * Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 #include <asm/mach-ar71xx/platform.h>
 
 #define DRV_DESC	"Atheros AR71xx SPI Controller driver"
-#define DRV_VERSION	"0.2.3"
+#define DRV_VERSION	"0.2.4"
 #define DRV_NAME	"ar71xx-spi"
 
 #undef PER_BIT_READ
@@ -80,10 +80,7 @@ static void ar71xx_spi_chipselect(struct spi_device *spi, int value)
 		ioc_base = sp->get_ioc_base(spi->chip_select,
 					(spi->mode & SPI_CS_HIGH) != 0,
 					AR71XX_SPI_CS_INACTIVE);
-
 		__raw_writel(ioc_base, base + SPI_REG_IOC);
-		__raw_writel(sp->reg_ctrl, base + SPI_REG_CTRL);
-		__raw_writel(0, base + SPI_REG_FS);
 		break;
 
 	case BITBANG_CS_ACTIVE:
@@ -91,13 +88,57 @@ static void ar71xx_spi_chipselect(struct spi_device *spi, int value)
 					(spi->mode & SPI_CS_HIGH) != 0,
 					AR71XX_SPI_CS_ACTIVE);
 
-		__raw_writel(SPI_FS_GPIO, base + SPI_REG_FS);
-		/* TODO: setup speed */
-		__raw_writel(0x43, base + SPI_REG_CTRL);
 		__raw_writel(ioc_base, base + SPI_REG_IOC);
 		sp->ioc_base = ioc_base;
 		break;
 	}
+}
+
+static void ar71xx_spi_setup_regs(struct spi_device *spi)
+{
+	struct ar71xx_spi *sp = spidev_to_sp(spi);
+
+	/* enable GPIO mode */
+	ar71xx_spi_wr(sp, SPI_REG_FS, SPI_FS_GPIO);
+
+	/* save CTRL register */
+	sp->reg_ctrl = ar71xx_spi_rr(sp, SPI_REG_CTRL);
+
+	/* TODO: setup speed? */
+	ar71xx_spi_wr(sp, SPI_REG_CTRL, 0x43);
+}
+
+static void ar71xx_spi_restore_regs(struct spi_device *spi)
+{
+	struct ar71xx_spi *sp = spidev_to_sp(spi);
+
+	/* restore CTRL register */
+	ar71xx_spi_wr(sp, SPI_REG_CTRL, sp->reg_ctrl);
+	/* disable GPIO mode */
+	ar71xx_spi_wr(sp, SPI_REG_FS, 0);
+}
+
+static int ar71xx_spi_setup(struct spi_device *spi)
+{
+	int status;
+
+	if (spi->bits_per_word > 32)
+		return -EINVAL;
+
+	if (!spi->controller_state)
+		ar71xx_spi_setup_regs(spi);
+
+	status = spi_bitbang_setup(spi);
+	if (status && !spi->controller_state)
+		ar71xx_spi_restore_regs(spi);
+
+	return status;
+}
+
+static void ar71xx_spi_cleanup(struct spi_device *spi)
+{
+	ar71xx_spi_restore_regs(spi);
+	spi_bitbang_cleanup(spi);
 }
 
 static u32 ar71xx_spi_txrx_mode0(struct spi_device *spi, unsigned nsecs,
@@ -157,9 +198,13 @@ static int ar71xx_spi_probe(struct platform_device *pdev)
 
 	pdata = pdev->dev.platform_data;
 
+	master->setup = ar71xx_spi_setup;
+	master->cleanup = ar71xx_spi_cleanup;
+
 	sp->bitbang.master = spi_master_get(master);
 	sp->bitbang.chipselect = ar71xx_spi_chipselect;
 	sp->bitbang.txrx_word[SPI_MODE_0] = ar71xx_spi_txrx_mode0;
+	sp->bitbang.setup_transfer = spi_bitbang_setup_transfer;
 
 	sp->get_ioc_base = ar71xx_spi_get_ioc_base;
 	if (pdata) {
@@ -184,14 +229,12 @@ static int ar71xx_spi_probe(struct platform_device *pdev)
 		goto err1;
 	}
 
-	sp->reg_ctrl = ar71xx_spi_rr(sp, SPI_REG_CTRL);
-
 	ret = spi_bitbang_start(&sp->bitbang);
 	if (!ret)
 		return 0;
 
 	iounmap(sp->base);
-err1:
+ err1:
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(sp->bitbang.master);
 
