@@ -159,6 +159,26 @@ define Image/Build/TPLINK
 		-o $(call imgname,$(1),$(2)).uni
 endef
 
+define Image/Build/CyberTAN
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
+	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gzip
+	mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
+		0x80060000 \
+		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/vmlinux-$(2).bin.gzip $(KDIR)/vmlinux-$(2).uImage
+	( \
+		dd if=$(KDIR)/vmlinux-$(2).uImage bs=64k conv=sync; \
+		dd if=/dev/zero bs=1 count=65476; \
+		dd if=$(KDIR)/root.$(1) bs=64k; \
+	) > $(KDIR)/vmlinux-$(2).image
+	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/vmlinux-$(2).trx \
+		-f $(KDIR)/vmlinux-$(2).image
+	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) -g \
+		-i $(KDIR)/vmlinux-$(2).trx \
+		-o $(call imgname,$(1),$(2)).bin
+endef
+
 define Image/Build/Template/Compex
 	$(call Image/Build/MyLoader,$(1),$(2))
 endef
@@ -177,6 +197,18 @@ endef
 
 define Image/Build/Template/WRT400N/jffs2-64k
 	$(call Image/Build/Template/WRT400N,jffs2-64k,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/CyberTAN
+	$(call Image/Build/CyberTAN,$(1),$(2),$(3),$(4))
+endef
+
+define Image/Build/Template/CyberTAN/squashfs
+	$(call Image/Build/Template/CyberTAN,squashfs,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/CyberTAN/jffs2-64k
+	$(call Image/Build/Template/CyberTAN,jffs2-64k,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/AP81
@@ -305,6 +337,10 @@ define Image/Build/Profile/WRT400N
 	$(call Image/Build/Template/WRT400N/$(1),wrt400n,board=WRT400N)
 endef
 
+define Image/Build/Profile/WRT160NL
+	$(call Image/Build/Template/CyberTAN/$(1),wrt160nl,board=WRT160NL,1.00.01)
+endef
+
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP83,$(1))
 	$(call Image/Build/Profile/A02RBW300N,$(1))
@@ -319,6 +355,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
+	$(call Image/Build/Profile/WRT160NL,$(1))
 endef
 
 define Image/Build/Profile/Madwifi
