@@ -10,8 +10,8 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=broadcom-wl
 PKG_VERSION:=4.150.10.5.3
-PKG_RELEASE:=5
-WLC_VERSION:=0.1
+PKG_RELEASE:=6
+WLC_VERSION:=0.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
