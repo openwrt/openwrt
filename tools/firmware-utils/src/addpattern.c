@@ -29,11 +29,11 @@
  */
 
 /* January 12, 2005
- * 
+ *
  * Modified by rodent at rodent dot za dot net
  * Support added for the new WRT54G v2.2 and WRT54GS v1.1 "flags"
  * Without the flags set to 0x7, the above units will refuse to flash.
- * 
+ *
  * Extensions:
  *  -{0|1|2} sets {0|1} sets hw_ver flag to 0/1. {2} sets hw_ver to 1
  *     and adds the new hardware "flags" for the v2.2/v1.1 units
@@ -87,14 +87,46 @@ struct code_header {			/* from cyutils.h */
 	unsigned char res2[10];
 } ;
 
+struct board_info {
+	char	*id;
+	char	*pattern;
+	char	hw_ver;
+	char	unused;
+	char	flags[2];
+};
+
+struct board_info boards[] = {
+	{
+		.id		= "WRT160NL",
+		.pattern	= "NL16",
+		.hw_ver		= 0x00,
+		.unused		= 0x0f,
+		.flags		= {0x3f, 0x00},
+	}, {
+		/* Terminating entry */
+		.id	= NULL,
+	}
+};
+
 /**********************************************************************/
 
 void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-p pattern] [-g] [-b] [-v v#.#.#] [-r #.#] [-{0|1|2|4}] -h\n");
+	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-B board_id] [-p pattern] [-g] [-b] [-v v#.#.#] [-r #.#] [-{0|1|2|4}] -h\n");
 	exit(EXIT_FAILURE);
+}
+
+struct board_info *find_board(char *id)
+{
+	struct board_info *board;
+
+	for (board = boards; board->id != NULL; board++)
+		if (strcasecmp(id, board->id) == 0)
+			return board;
+
+	return NULL;
 }
 
 int main(int argc, char **argv)
@@ -108,6 +140,8 @@ int main(int argc, char **argv)
 	char *pattern = CODE_PATTERN;
 	char *pbotpat = PBOT_PATTERN;
 	char *version = CYBERTAN_VERSION;
+	char *board_id = NULL;
+	struct board_info *board = NULL;
 	int gflag = 0;
 	int pbotflag = 0;
 	int c;
@@ -121,7 +155,7 @@ int main(int argc, char **argv)
 	hdr = (struct code_header *) buf;
 	memset(hdr, 0, sizeof(struct code_header));
 
-	while ((c = getopt(argc, argv, "i:o:p:gbv:0124hr:")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:gbv:0124hr:B:")) != -1) {
 		switch (c) {
 			case 'i':
 				ifn = optarg;
@@ -161,6 +195,9 @@ int main(int argc, char **argv)
                         case 'r':
                                 hdr->hw_ver = (char)(atof(optarg)*10)+0x30;
                                 break;
+                        case 'B':
+                                board_id = optarg;
+                                break;
 
                         case 'h':
 			default:
@@ -171,6 +208,19 @@ int main(int argc, char **argv)
     	if (optind != argc || optind == 1) {
 		fprintf(stderr, "illegal arg \"%s\"\n", argv[optind]);
 		usage();
+	}
+
+	if (board_id) {
+		board = find_board(board_id);
+		if (board == NULL) {
+			fprintf(stderr, "unknown board \"%s\"\n", board_id);
+			usage();
+		}
+		pattern = board->pattern;
+		hdr->hw_ver = board->hw_ver;
+		hdr->unused = board->unused;
+		hdr->flags[0] = board->flags[0];
+		hdr->flags[1] = board->flags[1];
 	}
 
 	if (strlen(pattern) != 4) {
@@ -239,7 +289,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 	}
-	
+
 	if (ferror(in)) {
 		goto FREAD_ERROR;
 	}
