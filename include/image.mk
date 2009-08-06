@@ -29,7 +29,7 @@ endif
 
 ifneq ($(USE_SQUASHFS4),)
 MKSQUASHFS_CMD := $(STAGING_DIR_HOST)/bin/mksquashfs4
-SQUASHFS_OPTS  := -lzma
+SQUASHFS_OPTS  := -lzma -processors 1
 else
 MKSQUASHFS_CMD := $(STAGING_DIR_HOST)/bin/mksquashfs-lzma
 endif
