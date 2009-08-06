@@ -1,6 +1,8 @@
---- a/arch/mips/Makefile
-+++ b/arch/mips/Makefile
-@@ -83,7 +83,7 @@ all-$(CONFIG_BOOT_ELF64)	:= $(vmlinux-64
+Index: linux-2.6.30.4/arch/mips/Makefile
+===================================================================
+--- linux-2.6.30.4.orig/arch/mips/Makefile	2009-08-06 16:02:25.000000000 +0200
++++ linux-2.6.30.4/arch/mips/Makefile	2009-08-06 16:02:37.000000000 +0200
+@@ -83,7 +83,7 @@
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
@@ -9,9 +11,11 @@
  
  cflags-y += -ffreestanding
  
---- a/arch/mips/include/asm/module.h
-+++ b/arch/mips/include/asm/module.h
-@@ -9,6 +9,11 @@ struct mod_arch_specific {
+Index: linux-2.6.30.4/arch/mips/include/asm/module.h
+===================================================================
+--- linux-2.6.30.4.orig/arch/mips/include/asm/module.h	2009-08-06 16:02:25.000000000 +0200
++++ linux-2.6.30.4/arch/mips/include/asm/module.h	2009-08-06 16:02:37.000000000 +0200
+@@ -9,6 +9,11 @@
  	struct list_head dbe_list;
  	const struct exception_table_entry *dbe_start;
  	const struct exception_table_entry *dbe_end;
@@ -23,9 +27,11 @@
  };
  
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
---- a/arch/mips/kernel/module.c
-+++ b/arch/mips/kernel/module.c
-@@ -43,6 +43,114 @@ static struct mips_hi16 *mips_hi16_list;
+Index: linux-2.6.30.4/arch/mips/kernel/module.c
+===================================================================
+--- linux-2.6.30.4.orig/arch/mips/kernel/module.c	2009-08-06 16:02:36.000000000 +0200
++++ linux-2.6.30.4/arch/mips/kernel/module.c	2009-08-06 16:03:15.000000000 +0200
+@@ -43,6 +43,116 @@
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -35,7 +41,7 @@
 + * physically mapped memory to put the module into.
 + */
 +static unsigned int
-+get_plt_size(const Elf32_Ehdr *hdr, const Elf32_Shdr *sechdrs,
++get_plt_size(const Elf_Ehdr *hdr, const Elf_Shdr *sechdrs,
 +             const char *secstrings, unsigned int symindex, bool is_init)
 +{
 +	unsigned long ret = 0;
@@ -103,6 +109,7 @@
 +	return ret;
 +}
 +
++#ifndef MODULE_START
 +static void *alloc_phys(unsigned long size)
 +{
 +	unsigned order;
@@ -124,6 +131,7 @@
 +
 +	return page_address(page);
 +}
++#endif
 +
 +static void free_phys(void *ptr, unsigned long size)
 +{
@@ -140,7 +148,7 @@
  void *module_alloc(unsigned long size)
  {
  #ifdef MODULE_START
-@@ -58,16 +166,41 @@ void *module_alloc(unsigned long size)
+@@ -58,16 +168,45 @@
  
  	return __vmalloc_area(area, GFP_KERNEL, PAGE_KERNEL);
  #else
@@ -159,14 +167,18 @@
 +		return vmalloc(size);
 +
 +	return ptr;
++#endif
++}
++
++static inline bool is_phys_addr(void *ptr)
++{
++#ifdef CONFIG_64BIT
++	return (KSEGX((unsigned long)ptr) == CKSEG0);
++#else
++	return (KSEGX(ptr) == KSEG0);
  #endif
  }
  
-+static inline bool is_phys_addr(void *ptr)
-+{
-+	return (KSEGX(ptr) == KSEG0);
-+}
-+
  /* Free memory returned from module_alloc */
  void module_free(struct module *mod, void *module_region)
  {
@@ -184,7 +196,7 @@
  	/* FIXME: If module_region == mod->init_region, trim exception
             table entries. */
  }
-@@ -75,6 +208,24 @@ void module_free(struct module *mod, voi
+@@ -75,6 +214,24 @@
  int module_frob_arch_sections(Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
  			      char *secstrings, struct module *mod)
  {
@@ -209,7 +221,7 @@
  	return 0;
  }
  
-@@ -97,27 +248,41 @@ static int apply_r_mips_32_rela(struct m
+@@ -97,27 +254,41 @@
  	return 0;
  }
  
@@ -234,14 +246,14 @@
 +	/* adjust carry for addiu */
 +	if (v & 0x00008000)
 +		v += 0x10000;
- 
--	*location = (*location & ~0x03ffffff) |
--	            ((*location + (v >> 2)) & 0x03ffffff);
++
 +	tramp[0] = 0x3c190000 | (v >> 16);      /* lui t9, hi16 */
 +	tramp[1] = 0x27390000 | (v & 0xffff);   /* addiu t9, t9, lo16 */
 +	tramp[2] = 0x03200008;                  /* jr t9 */
 +	tramp[3] = 0x00000000;                  /* nop */
-+
+ 
+-	*location = (*location & ~0x03ffffff) |
+-	            ((*location + (v >> 2)) & 0x03ffffff);
 +	return (Elf_Addr) tramp;
 +}
 +
@@ -265,7 +277,7 @@
  {
  	if (v % 4) {
  		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
-@@ -125,17 +290,31 @@ static int apply_r_mips_26_rela(struct m
+@@ -125,17 +296,31 @@
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -300,7 +312,7 @@
  static int apply_r_mips_hi16_rel(struct module *me, u32 *location, Elf_Addr v)
  {
  	struct mips_hi16 *n;
-@@ -400,11 +579,23 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -400,11 +585,23 @@
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
