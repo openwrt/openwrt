@@ -4,7 +4,7 @@
  	help
  	 Support for BCM47XX based boards
  
-+config ATHEROS
++config ATHEROS_AR231X
 +	bool "Atheros 231x/531x SoC support"
 +	select CEVT_R4K
 +	select CSRC_R4K
@@ -36,9 +36,9 @@
  #
 +# Atheros AR5312/AR2312 WiSoC
 +#
-+core-$(CONFIG_ATHEROS)		+= arch/mips/ar231x/
-+cflags-$(CONFIG_ATHEROS)	+= -I$(srctree)/arch/mips/include/asm/mach-ar231x
-+load-$(CONFIG_ATHEROS)		+= 0xffffffff80041000
++core-$(CONFIG_ATHEROS_AR231X)		+= arch/mips/ar231x/
++cflags-$(CONFIG_ATHEROS_AR231X)	+= -I$(srctree)/arch/mips/include/asm/mach-ar231x
++load-$(CONFIG_ATHEROS_AR231X)		+= 0xffffffff80041000
 +
 +#
  # Cobalt Server
@@ -49,12 +49,12 @@
 @@ -0,0 +1,17 @@
 +config ATHEROS_AR5312
 +	bool "Atheros 5312/2312+ support"
-+	depends on ATHEROS
++	depends on ATHEROS_AR231X
 +	default y
 +
 +config ATHEROS_AR2315
 +	bool "Atheros 2315+ support"
-+	depends on ATHEROS
++	depends on ATHEROS_AR231X
 +	select DMA_NONCOHERENT
 +	select CEVT_R4K
 +	select CSRC_R4K
