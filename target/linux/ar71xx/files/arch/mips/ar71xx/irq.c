@@ -175,8 +175,8 @@ static void __init ar724x_pci_irq_init(void)
 	setup_irq(AR71XX_CPU_IRQ_PCI, &ar724x_pci_irqaction);
 }
 #else
-static inline void ar71xx_pci_irq_init(void) {}
-static inline void ar724x_pci_irq_init(void) {}
+static inline void ar71xx_pci_irq_init(void) {};
+static inline void ar724x_pci_irq_init(void) {};
 #endif /* CONFIG_PCI */
 
 static void ar71xx_gpio_irq_dispatch(void)
