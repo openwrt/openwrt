@@ -57,7 +57,7 @@ MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started (default="
 /* HW functions */
 static void bcm63xx_wdt_hw_start(void)
 {
-	bcm_writel(0xffffffff, bcm63xx_wdt_device.regs + WDT_DEFVAL_REG);
+	bcm_writel(0xfffffffe, bcm63xx_wdt_device.regs + WDT_DEFVAL_REG);
 	bcm_writel(WDT_START_1, bcm63xx_wdt_device.regs + WDT_CTL_REG);
 	bcm_writel(WDT_START_2, bcm63xx_wdt_device.regs + WDT_CTL_REG);
 }

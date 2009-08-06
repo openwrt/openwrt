@@ -32,7 +32,5 @@ int __init bcm63xx_wdt_register(void)
 	wdt_resources[0].end = wdt_resources[0].start;
 	wdt_resources[0].end += RSET_WDT_SIZE - 1;
 
-	/* Disable watchdog for 6345 until we fix it */
-	if (!BCMCPU_IS_6345())
-		return platform_device_register(&bcm63xx_wdt_device);
+	return platform_device_register(&bcm63xx_wdt_device);
 }
