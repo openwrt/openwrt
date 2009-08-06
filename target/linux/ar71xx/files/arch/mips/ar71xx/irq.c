@@ -21,6 +21,8 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
+static void (* ar71xx_ip2_irq_handler)(void) = spurious_interrupt;
+
 #ifdef CONFIG_PCI
 static void ar71xx_pci_irq_dispatch(void)
 {
@@ -80,6 +82,8 @@ static struct irqaction ar71xx_pci_irqaction = {
 static void __init ar71xx_pci_irq_init(void)
 {
 	int i;
+
+	ar71xx_ip2_irq_handler = ar71xx_pci_irq_dispatch;
 
 	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE, 0);
 	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_STATUS, 0);
@@ -156,6 +160,8 @@ static void __init ar724x_pci_irq_init(void)
 {
 	int i;
 
+	ar71xx_ip2_irq_handler = ar724x_pci_irq_dispatch;
+
 	ar724x_pci_wr(AR724X_PCI_REG_INT_MASK, 0);
 	ar724x_pci_wr(AR724X_PCI_REG_INT_STATUS, 0);
 
@@ -168,6 +174,9 @@ static void __init ar724x_pci_irq_init(void)
 
 	setup_irq(AR71XX_CPU_IRQ_PCI, &ar724x_pci_irqaction);
 }
+#else
+static inline void ar71xx_pci_irq_init(void) {}
+static inline void ar724x_pci_irq_init(void) {}
 #endif /* CONFIG_PCI */
 
 static void ar71xx_gpio_irq_dispatch(void)
@@ -355,8 +364,6 @@ static void ar913x_wmac_irq_dispatch(void)
 	do_IRQ(AR71XX_CPU_IRQ_WMAC);
 }
 
-static void (* ar71xx_ip2_irq_handler)(void) = spurious_interrupt;
-
 asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned long pending;
@@ -395,16 +402,10 @@ void __init arch_init_irq(void)
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
-#ifdef CONFIG_PCI
 		ar71xx_pci_irq_init();
-		ar71xx_ip2_irq_handler = ar71xx_pci_irq_dispatch;
-#endif
 		break;
 	case AR71XX_SOC_AR7240:
-#ifdef CONFIG_PCI
 		ar724x_pci_irq_init();
-		ar71xx_ip2_irq_handler = ar724x_pci_irq_dispatch;
-#endif
 		break;
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
