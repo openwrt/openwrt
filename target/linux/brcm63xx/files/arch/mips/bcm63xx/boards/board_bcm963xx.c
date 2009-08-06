@@ -789,7 +789,9 @@ int __init board_register_devices(void)
 
 	bcm63xx_uart_register();
 	bcm63xx_wdt_register();
-	bcm63xx_spi_register();
+
+	if (!BCMCPU_IS_6345())
+		bcm63xx_spi_register();
 
 	if (board.has_pccard)
 		bcm63xx_pcmcia_register();
