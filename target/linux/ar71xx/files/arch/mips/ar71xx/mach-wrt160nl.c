@@ -13,11 +13,22 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "devices.h"
+
+#define WRT160NL_GPIO_LED_POWER		14
+#define WRT160NL_GPIO_LED_WPS_AMBER	9
+#define WRT160NL_GPIO_LED_WPS_BLUE	8
+#define WRT160NL_GPIO_LED_WLAN		6
+
+#define WRT160NL_GPIO_BTN_WPS		7
+#define WRT160NL_GPIO_BTN_RESET		21
+
+#define WRT160NL_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wrt160nl_partitions[] = {
@@ -69,6 +80,44 @@ static struct spi_board_info wrt160nl_spi_info[] = {
 	}
 };
 
+static struct gpio_led wrt160nl_leds_gpio[] __initdata = {
+	{
+		.name		= "wrt160nl:blue:power",
+		.gpio		= WRT160NL_GPIO_LED_POWER,
+		.active_low	= 1,
+	}, {
+		.name		= "wrt160nl:amber:wps",
+		.gpio		= WRT160NL_GPIO_LED_WPS_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "wrt160nl:blue:wps",
+		.gpio		= WRT160NL_GPIO_LED_WPS_BLUE,
+		.active_low	= 1,
+	}, {
+		.name		= "wrt160nl:blue:wlan",
+		.gpio		= WRT160NL_GPIO_LED_WLAN,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_button wrt160nl_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= WRT160NL_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= WRT160NL_GPIO_BTN_WPS,
+		.active_low	= 1,
+	}
+};
+
 static void __init wrt160nl_setup(void)
 {
 	ar71xx_add_device_mdio(0x0);
@@ -90,7 +139,12 @@ static void __init wrt160nl_setup(void)
 	ar71xx_add_device_usb();
 	ar91xx_add_device_wmac();
 
-	/* TODO: LEDs, buttons */
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wrt160nl_leds_gpio),
+					wrt160nl_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, WRT160NL_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(wrt160nl_gpio_buttons),
+					wrt160nl_gpio_buttons);
 }
 
 MIPS_MACHINE(AR71XX_MACH_WRT160NL, "Linksys WRT160NL", wrt160nl_setup);
