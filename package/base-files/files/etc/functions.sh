@@ -134,22 +134,25 @@ config_clear() {
 	done
 }
 
+# config_get <variable> <section> <option> [<default>]
+# config_get <section> <option>
 config_get() {
 	case "$3" in
-		"") eval "echo \"\${CONFIG_${1}_${2}}\"";;
-		*)  eval "export ${NO_EXPORT:+-n} -- \"$1=\${CONFIG_${2}_${3}}\"";;
+		"") eval echo "\${CONFIG_${1}_${2}:-\${4}}";;
+		*)  eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}";;
 	esac
 }
 
 # config_get_bool <variable> <section> <option> [<default>]
 config_get_bool() {
 	local _tmp
-	config_get "_tmp" "$2" "$3"
+	config_get _tmp "$2" "$3" "$4"
 	case "$_tmp" in
-		1|on|true|enabled) export ${NO_EXPORT:+-n} "$1=1";;
-		0|off|false|disabled) export ${NO_EXPORT:+-n} "$1=0";;
-		*) eval "$1=$4";;
+		1|on|true|enabled) _tmp=1;;
+		0|off|false|disabled) _tmp=0;;
+		*) _tmp="$4";;
 	esac
+	export ${NO_EXPORT:+-n} "$1=$_tmp"
 }
 
 config_set() {
