@@ -4,7 +4,8 @@ config GCC_VERSION
 	default "4.1.2"     if GCC_VERSION_4_1_2
 	default "4.2.4"     if GCC_VERSION_4_2_4
 	default "4.3.3"     if GCC_VERSION_4_3_3
-	default "4.4.0"	    if GCC_VERSION_4_4_0
+	default "4.4.0"     if GCC_VERSION_4_4_0
+	default "4.4.1"	    if GCC_VERSION_4_4_1
 	default "4.1.2"
 
 config GCC_VERSION_3
@@ -37,6 +38,7 @@ config GCC_VERSION_4_3
 config GCC_VERSION_4_4
 	bool
 	default y	if GCC_VERSION_4_4_0
+	default y	if GCC_VERSION_4_4_1
 
 if !TOOLCHAINOPTS
 	config GCC_VERSION_3_4_6
