@@ -24,8 +24,7 @@ find_config() {
 }
 
 scan_interfaces() {
-	local cfgfile="$1"
-	local mode iftype iface ifname device
+	local cfgfile="${1:-network}"
 	interfaces=
 	config_cb() {
 		case "$1" in
@@ -33,18 +32,19 @@ scan_interfaces() {
 				config_set "$2" auto 1
 			;;
 		esac
+		local iftype ifname device proto
 		config_get iftype "$CONFIG_SECTION" TYPE
 		case "$iftype" in
 			interface)
-				config_get proto "$CONFIG_SECTION" proto
 				append interfaces "$CONFIG_SECTION"
+				config_get proto "$CONFIG_SECTION" proto
 				config_get iftype "$CONFIG_SECTION" type
 				config_get ifname "$CONFIG_SECTION" ifname
-				config_get device "$CONFIG_SECTION" device
-				config_set "$CONFIG_SECTION" device "${device:-$ifname}"
+				config_get device "$CONFIG_SECTION" device "$ifname"
+				config_set "$CONFIG_SECTION" device "$device"
 				case "$iftype" in
 					bridge)
-						config_set "$CONFIG_SECTION" ifnames "${device:-$ifname}"
+						config_set "$CONFIG_SECTION" ifnames "$device"
 						config_set "$CONFIG_SECTION" ifname br-"$CONFIG_SECTION"
 					;;
 				esac
@@ -52,7 +52,7 @@ scan_interfaces() {
 			;;
 		esac
 	}
-	config_load "${cfgfile:-network}"
+	config_load "${cfgfile}"
 }
 
 add_vlan() {
@@ -84,7 +84,6 @@ prepare_interface() {
 	local iface="$1"
 	local config="$2"
 	local vifmac="$3"
-	local proto
 
 	# if we're called for the bridge interface itself, don't bother trying
 	# to create any interfaces here. The scripts have already done that, otherwise
@@ -92,6 +91,7 @@ prepare_interface() {
 	[ "br-$config" = "$iface" -o -e "$iface" ] && return 0;
 
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
+		local proto
 		config_get proto "$config" proto
 
 		# make sure the interface is removed from any existing bridge and deconfigured,
@@ -111,14 +111,13 @@ prepare_interface() {
 	ifconfig "$iface" 2>/dev/null >/dev/null || return 0
 
 	# Setup bridging
+	local iftype
 	config_get iftype "$config" type
-	config_get stp "$config" stp
 	case "$iftype" in
 		bridge)
 			[ -x /usr/sbin/brctl ] && {
 				ifconfig "br-$config" 2>/dev/null >/dev/null && {
-					local newdevs=
-
+					local newdevs devices
 					config_get devices "$config" device
 					for dev in $(sort_list "$devices" "$iface"); do
 						append newdevs "$dev"
@@ -127,11 +126,13 @@ prepare_interface() {
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Bridge existed already. No further processing necesary
 				} || {
+					local stp
+					config_get_bool stp "$config" stp 0
 					$DEBUG brctl addbr "br-$config"
 					$DEBUG brctl setfd "br-$config" 0
 					$DEBUG ifconfig "br-$config" up
 					$DEBUG brctl addif "br-$config" "$iface"
-					$DEBUG brctl stp "br-$config" ${stp:-0}
+					$DEBUG brctl stp "br-$config" $stp
 					# Creating the bridge here will have triggered a hotplug event, which will
 					# result in another setup_interface() call, so we simply stop processing
 					# the current event at this point.
@@ -148,6 +149,7 @@ set_interface_ifname() {
 	local config="$1"
 	local ifname="$2"
 
+	local device
 	config_get device "$1" device
 	uci_set_state network "$config" ifname "$ifname"
 	uci_set_state network "$config" device "$device"
@@ -161,11 +163,13 @@ setup_interface_static() {
 	local iface="$1"
 	local config="$2"
 
+	local ipaddr netmask ip6addr
 	config_get ipaddr "$config" ipaddr
 	config_get netmask "$config" netmask
 	config_get ip6addr "$config" ip6addr
 	[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
 
+	local gateway ip6gw dns bcast
 	config_get gateway "$config" gateway
 	config_get ip6gw "$config" ip6gw
 	config_get dns "$config" dns
@@ -194,24 +198,30 @@ setup_interface_alias() {
 	local parent="$2"
 	local iface="$3"
 
+	local cfg
 	config_get cfg "$config" interface
 	[ "$parent" == "$cfg" ] || return 0
 
 	# alias counter
-	config_get ctr "$parent" alias_count
+	local ctr
+	config_get ctr "$parent" alias_count 0
 	ctr="$(($ctr + 1))"
 	config_set "$parent" alias_count "$ctr"
 
 	# alias list
+	local list
 	config_get list "$parent" aliases
 	append list "$config"
 	config_set "$parent" aliases "$list"
 
-	set_interface_ifname "$config" "$iface:$ctr"
-	config_get proto "$config" proto
-	case "${proto:-static}" in
+	iface="$iface:$ctr"
+	set_interface_ifname "$config" "$iface"
+
+	local proto
+	config_get proto "$config" proto "static"
+	case "${proto}" in
 		static)
-			setup_interface_static "$iface:$ctr" "$config"
+			setup_interface_static "$iface" "$config"
 		;;
 		*)
 			echo "Unsupported type '$proto' for alias config '$config'"
@@ -223,16 +233,13 @@ setup_interface_alias() {
 setup_interface() {
 	local iface="$1"
 	local config="$2"
+	local proto="$3"
 	local vifmac="$4"
-	local proto
-	local macaddr
-	local hasipv6
 
 	[ -n "$config" ] || {
 		config=$(find_config "$iface")
 		[ "$?" = 0 ] || return 1
 	}
-	proto="${3:-$(config_get "$config" proto)}"
 
 	prepare_interface "$iface" "$config" "$vifmac" || return 0
 
@@ -247,21 +254,24 @@ setup_interface() {
 	# Check whether this interface has an IPv6 address
 	# defined and ensure that the kmod is loaded since
 	# ifup could be triggered before modules are loaded.
+	local hasipv6
 	config_get hasipv6 "$config" ip6addr
 	[ -n "$hasipv6" ] && [ ! -d /proc/sys/net/ipv6 ] && {
 		grep -q '^ipv6' /etc/modules.d/* && insmod ipv6
 	}
 
 	# Interface settings
-	config_get mtu "$config" mtu
-	config_get macaddr "$config" macaddr
 	grep "$iface:" /proc/net/dev > /dev/null && {
+		local mtu macaddr
+		config_get mtu "$config" mtu
+		config_get macaddr "$config" macaddr
 		[ -n "$macaddr" ] && $DEBUG ifconfig "$iface" down
 		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
 	}
 	set_interface_ifname "$config" "$iface"
 
 	pidfile="/var/run/$iface.pid"
+	[ -n "$proto" ] || config_get proto "$config" proto
 	case "$proto" in
 		static)
 			setup_interface_static "$iface" "$config"
@@ -269,11 +279,11 @@ setup_interface() {
 		dhcp)
 			# prevent udhcpc from starting more than once
 			lock "/var/lock/dhcp-$iface"
-			pid="$(cat "$pidfile" 2>/dev/null)"
+			local pid="$(cat "$pidfile" 2>/dev/null)"
 			if [ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null; then
 				lock -u "/var/lock/dhcp-$iface"
 			else
-
+				local ipaddr netmask hostname proto1 clientid
 				config_get ipaddr "$config" ipaddr
 				config_get netmask "$config" netmask
 				config_get hostname "$config" hostname
@@ -284,6 +294,7 @@ setup_interface() {
 					$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
 				# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
+				local dhcpopts
 				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
 				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -R &}
 				lock -u "/var/lock/dhcp-$iface"
@@ -306,6 +317,8 @@ setup_interface() {
 			ifconfig "$ifn" down
 		done
 	}
+
+	local aliases
 	config_set "$config" aliases ""
 	config_set "$config" alias_count 0
 	config_foreach setup_interface_alias alias "$config" "$iface"
