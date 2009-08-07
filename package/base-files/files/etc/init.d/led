@@ -13,27 +13,25 @@ load_led() {
 	local delayon
 	local delayoff
 
-	config_get name $1 name
 	config_get sysfs $1 sysfs
-	config_get trigger $1 trigger
+	config_get name $1 name "$sysfs"
+	config_get trigger $1 trigger "none"
 	config_get dev $1 dev
-	config_get mode $1 mode
-	config_get default $1 default
+	config_get mode $1 mode "link"
+	config_get_bool default $1 default "nil"
 	config_get delayon $1 delayon
 	config_get delayoff $1 delayoff
 
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
-		logger "setting up led : ${name:-$sysfs}"
-		[ -n "$default" ] && { 
+		echo "setting up led ${name}"
+		[ "$default" != nil ] && { 
 			[ $default -eq 1 ] && 
 				echo 1 >/sys/class/leds/${sysfs}/brightness 
 			[ $default -eq 1 ] ||
 				echo 0 >/sys/class/leds/${sysfs}/brightness
 		}
-		[ -z "$trigger" ] && trigger=none
 		echo $trigger > /sys/class/leds/${sysfs}/trigger
 		[ "$trigger" == "netdev" -a -n "$dev" ] && {
-			[ -z "$mode" ] && mode=link
 			echo $dev > /sys/class/leds/${sysfs}/device_name
 			echo $mode > /sys/class/leds/${sysfs}/mode
 		} 
