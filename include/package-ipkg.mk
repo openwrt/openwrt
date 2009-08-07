@@ -38,7 +38,7 @@ ifeq ($(DUMP),)
 
     ifdef Package/$(1)/install
       ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
-        compile: $$(IPKG_$(1))
+        compile: $$(IPKG_$(1)) $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
 
         ifeq ($(CONFIG_PACKAGE_$(1)),y)
           install: $$(INFO_$(1))
@@ -81,6 +81,11 @@ ifeq ($(DUMP),)
 	(cd $$(IDIR_$(1))/CONTROL; \
 		$($(1)_COMMANDS) \
 	)
+
+    $(STAGING_DIR_ROOT)/stamp/.$(1)_installed:
+	mkdir -p $(STAGING_DIR_ROOT)/stamp
+	$(call Package/$(1)/install,$(STAGING_DIR_ROOT))
+	touch $$@
 
     $$(IPKG_$(1)): $(STAGING_DIR)/etc/ipkg.conf $(PKG_BUILD_DIR)/.built $$(IDIR_$(1))/CONTROL/control
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
