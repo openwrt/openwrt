@@ -91,8 +91,8 @@ list() {
 	local value="$*"
 	local len
 
-	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 
-	len="$((${len:-0} + 1))"
+	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 0
+	len=$(($len + 1))
 	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
 	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
 	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
