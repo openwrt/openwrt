@@ -23,7 +23,7 @@ endif
 $(curdir)/install:=$(curdir)/install-cleanup
 
 $(curdir)/cleanup: $(TMP_DIR)/.build
-	rm -rf $(TARGET_DIR)
+	rm -rf $(TARGET_DIR) $(STAGING_DIR_ROOT)
 
 $(curdir)/rootfs-prepare: $(TMP_DIR)/.build
 	@-$(MAKE) package/preconfig
