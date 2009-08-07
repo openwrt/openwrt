@@ -5,22 +5,23 @@ START=10
 
 system_config() {
 	local cfg="$1"
-	local hostname
-	
-	config_get hostname "$cfg" hostname
-	echo "${hostname:-OpenWrt}" > /proc/sys/kernel/hostname
+
+	local hostname conloglevel timezone
+
+	config_get hostname "$cfg" hostname 'OpenWrt'
+	echo "$hostname" > /proc/sys/kernel/hostname
 
 	config_get conloglevel "$cfg" conloglevel
 	[ -n "$conloglevel" ] && dmesg -n "$conloglevel"
 	
-	config_get timezone "$cfg" timezone 
-	[ -z "$timezone" ] && timezone=UTC
+	config_get timezone "$cfg" timezone 'UTC'
 	echo "$timezone" > /tmp/TZ
 
+	local log_ip log_size log_port
 	config_get log_ip "$cfg" log_ip 
-	config_get log_size "$cfg" log_size
-	config_get log_port "$cfg" log_port
-	[ -x /sbin/syslogd ] && syslogd -C${log_size:-16} ${log_ip:+-L -R $log_ip${log_port:+:$log_port}}
+	config_get log_size "$cfg" log_size 16
+	config_get log_port "$cfg" log_port 514
+	[ -x /sbin/syslogd ] && syslogd -C${log_size} ${log_ip:+-L -R ${log_ip}:${log_port}}
 	[ -x /sbin/klogd ] && klogd
 }
 
