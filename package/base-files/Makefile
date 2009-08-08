@@ -247,6 +247,10 @@ define Package/libc/install
 $(call Package/$(LIBC)/install,$1)
 endef
 
+define Package/libc/install_lib
+	$(CP) $(filter-out %/libdl_pic.a,$(wildcard $(TOOLCHAIN_DIR)/usr/lib/lib*.a)) $(1)/lib/
+endef
+
 define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread.so.* $(1)/lib/
