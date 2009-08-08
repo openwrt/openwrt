@@ -54,6 +54,28 @@ define BuildKernel
 	$(Kernel/Prepare)
 	touch $$@
 
+  $(KERNEL_BUILD_DIR)/symtab.txt: FORCE
+	find $(LINUX_DIR) $(STAGING_DIR_ROOT)/lib/modules -name \*.ko | \
+		xargs $(TARGET_CROSS)nm | \
+		awk '$$$$1 == "U" { print $$$$2 } ' | \
+		sort -u > $$@
+
+  $(KERNEL_BUILD_DIR)/symtab.h: $(KERNEL_BUILD_DIR)/symtab.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+			awk '{print "*(__ksymtab." $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+			awk '{print "*(__ksymtab_gpl." $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_STR \'; \
+		cat $(KERNEL_BUILD_DIR)/symtab.txt | \
+			awk '{print "*(__ksymtab_strings." $$$$1 ") \\" }'; \
+		echo; \
+	) > $$@
+
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_CONFIG) $(GENERIC_LINUX_CONFIG) $(TOPDIR)/.config
 	$(Kernel/Configure)
 	touch $$@
@@ -62,7 +84,7 @@ define BuildKernel
 	$(Kernel/CompileModules)
 	touch $$@
 
-  $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) FORCE
+  $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) $(if $(CONFIG_STRIP_KERNEL_EXPORTS),$(KERNEL_BUILD_DIR)/symtab.h) FORCE
 	$(Kernel/CompileImage)
 	touch $$@
 	

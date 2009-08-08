@@ -22,6 +22,11 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	KBUILD_HAVE_NLS=no \
 	CONFIG_SHELL="$(BASH)"
 
+ifdef CONFIG_STRIP_KERNEL_EXPORTS
+  KERNEL_MAKEOPTS += \
+	EXTRA_LDSFLAGS="-I$(KERNEL_BUILD_DIR) -include symtab.h"
+endif
+
 INITRAMFS_EXTRA_FILES ?= $(GENERIC_PLATFORM_DIR)/image/initramfs-base-files.txt
 
 ifneq (,$(KERNEL_CC))

@@ -134,6 +134,14 @@ config USE_MKLIBS
 	  Note that this will make the system libraries incompatible with most of the packages
 	  that are not selected during the build process
 
+config STRIP_KERNEL_EXPORTS
+	depends LINUX_2_6
+	bool "Strip unnecessary exports from the kernel image"
+	help
+	  Reduces kernel size by stripping unused kernel exports from the kernel image
+	  Note that this might make the kernel incompatible with any kernel modules that
+	  were not selected at the time the kernel image was created
+
 comment "Package build options"
 
 config DEBUG
