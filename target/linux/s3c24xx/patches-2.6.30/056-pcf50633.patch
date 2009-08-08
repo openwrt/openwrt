@@ -355,8 +355,6 @@
  
  /* LED registers */
  #define PCF50633_REG_LEDOUT 0x28
-diff --git a/drivers/regulator/pcf50633-regulator.c b/drivers/regulator/pcf50633-regulator.c
-index 8e14900..4809789 100644
 --- a/drivers/regulator/pcf50633-regulator.c
 +++ b/drivers/regulator/pcf50633-regulator.c
 @@ -24,11 +24,12 @@
@@ -373,7 +371,7 @@ index 8e14900..4809789 100644
  		.type = REGULATOR_VOLTAGE, 	\
  		.owner = THIS_MODULE, 		\
  	}
-@@ -193,6 +194,40 @@ static int pcf50633_regulator_get_voltage(struct regulator_dev *rdev)
+@@ -193,6 +194,40 @@ static int pcf50633_regulator_get_voltag
  	return millivolts * 1000;
  }
  
@@ -414,7 +412,7 @@ index 8e14900..4809789 100644
  static int pcf50633_regulator_enable(struct regulator_dev *rdev)
  {
  	struct pcf50633 *pcf = rdev_get_drvdata(rdev);
-@@ -246,6 +281,7 @@ static int pcf50633_regulator_is_enabled(struct regulator_dev *rdev)
+@@ -246,6 +281,7 @@ static int pcf50633_regulator_is_enabled
  static struct regulator_ops pcf50633_regulator_ops = {
  	.set_voltage = pcf50633_regulator_set_voltage,
  	.get_voltage = pcf50633_regulator_get_voltage,
@@ -422,7 +420,7 @@ index 8e14900..4809789 100644
  	.enable = pcf50633_regulator_enable,
  	.disable = pcf50633_regulator_disable,
  	.is_enabled = pcf50633_regulator_is_enabled,
-@@ -253,27 +289,27 @@ static struct regulator_ops pcf50633_regulator_ops = {
+@@ -253,27 +289,27 @@ static struct regulator_ops pcf50633_reg
  
  static struct regulator_desc regulators[] = {
  	[PCF50633_REGULATOR_AUTO] =
