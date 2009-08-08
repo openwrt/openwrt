@@ -18,3 +18,16 @@
  	.release   = avsar_release,
  };
  
+diff -urN sangam_atm-D7.04.03.00/tn7dsl.c sangam_atm-D7.04.03.00.new/tn7dsl.c
+--- sangam_atm-D7.04.03.00/tn7dsl.c	2009-08-08 21:41:11.000000000 +0200
++++ sangam_atm-D7.04.03.00.new/tn7dsl.c	2009-08-08 21:41:40.000000000 +0200
+@@ -458,6 +458,9 @@
+ 	const struct firmware *fw_entry;
+ 	size_t size;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
++	dev_set_name(&avsar, "avsar");
++#endif
+ 	printk("requesting firmware image \"ar0700xx.bin\"\n");
+ 	if(device_register(&avsar) < 0) {
+ 		printk(KERN_ERR
