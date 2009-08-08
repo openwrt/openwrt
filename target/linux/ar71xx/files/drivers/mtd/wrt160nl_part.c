@@ -41,7 +41,7 @@ struct trx_header {
 };
 
 #define IH_MAGIC	0x27051956	/* Image Magic Number */
-#define IH_NMLEN		32	/* Image Name Length */
+#define IH_NMLEN	32		/* Image Name Length */
 
 struct uimage_header {
 	uint32_t	ih_magic;	/* Image Header Magic Number */
@@ -66,32 +66,31 @@ static int create_mtd_partitions(struct mtd_info *master,
 {
 	uint8_t buf[512];
 	int len;
-	struct trx_header* header;
-	struct uimage_header* uheader;
+	struct trx_header *header;
+	struct uimage_header *uheader;
 	unsigned int kernel_len;
 
 	master->read(master, 4 * master->erasesize, sizeof(buf), &len, buf);
-	if(strncmp(buf, "NL16", 4) == 0) {
+	if (strncmp(buf, "NL16", 4) == 0) {
 		printk(KERN_INFO "TRX on WRT160NL detected\n");
 
-		header = (struct trx_header*)(buf + 32);
-
-		if(le32_to_cpu(header->magic) != TRX_MAGIC) {
+		header = (struct trx_header *)(buf + 32);
+		if (le32_to_cpu(header->magic) != TRX_MAGIC) {
 			printk(KERN_WARNING "TRX messed up\n");
 			return 0;
 		}
 
-		uheader = (struct uimage_header*)(buf + 60);
-
-		if(uheader->ih_magic != IH_MAGIC) {
+		uheader = (struct uimage_header *)(buf + 60);
+		if (uheader->ih_magic != IH_MAGIC) {
 			printk(KERN_WARNING "uImage messed up\n");
 			return 0;
 		}
 
 		kernel_len = uheader->ih_size / master->erasesize;
-		if(uheader->ih_size % master->erasesize)
+		if (uheader->ih_size % master->erasesize)
 			kernel_len++;
-			kernel_len++;
+
+		kernel_len++;
 		kernel_len *= master->erasesize;
 
 		trx_parts[0].name = "u-boot";
@@ -112,9 +111,9 @@ static int create_mtd_partitions(struct mtd_info *master,
 		trx_parts[3].name = "nvram";
 		trx_parts[3].offset = master->size - 2 * master->erasesize;
 		trx_parts[3].size = master->erasesize;
-		trx_parts[3].mask_flags = 0;
+		trx_parts[3].mask_flags = MTD_WRITEABLE;
 
-		trx_parts[4].name = "ART";
+		trx_parts[4].name = "art";
 		trx_parts[4].offset = master->size - master->erasesize;
 		trx_parts[4].size = master->erasesize;
 		trx_parts[4].mask_flags = MTD_WRITEABLE;
@@ -133,9 +132,9 @@ static int create_mtd_partitions(struct mtd_info *master,
 }
 
 static struct mtd_part_parser trx_parser = {
-	.owner = THIS_MODULE,
-	.parse_fn = create_mtd_partitions,
-	.name = "wrt160nl",
+	.owner		= THIS_MODULE,
+	.parse_fn	= create_mtd_partitions,
+	.name		= "wrt160nl",
 };
 
 static int __init trx_parser_init(void)
