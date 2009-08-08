@@ -7,11 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mklibs
-PKG_VERSION:=0.1.26
+PKG_VERSION:=0.1.29
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://ftp.de.debian.org/debian/pool/main/m/mklibs/
-PKG_MD5SUM:=708f284975f1b567b817d27f7677a95f
+PKG_MD5SUM:=7f35dfdbde249a090199829c1a1222d8
+
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/mklibs
 
 include $(INCLUDE_DIR)/host-build.mk
 
