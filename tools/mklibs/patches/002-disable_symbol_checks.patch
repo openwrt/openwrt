@@ -1,6 +1,6 @@
 --- a/src/mklibs.py
 +++ b/src/mklibs.py
-@@ -429,7 +429,7 @@ while 1:
+@@ -500,7 +500,7 @@ while 1:
          # No progress in last pass. Verify all remaining symbols are weak.
          for name in unresolved:
              if not needed_symbols[name].weak:
@@ -9,13 +9,13 @@
          break
  
      previous_pass_unresolved = unresolved
-@@ -467,10 +467,7 @@ while 1:
+@@ -533,10 +533,7 @@ while 1:
  
      # which symbols are actually used from each lib
      for name in needed_symbols:
 -        if not name in symbol_provider:
 -            if not needed_symbols[name].weak:
--                raise "No library provides non-weak %s" % symbol
+-                raise "No library provides non-weak %s" % name
 -        else:
 +        if name in symbol_provider:
              lib = symbol_provider[name]
