@@ -126,6 +126,14 @@ choice
 
 endchoice
 
+config USE_MKLIBS
+	bool "Strip unnecessary functions from libraries"
+	help
+	  Reduces libraries to only those functions that are necessary for using all
+	  selected packages (including those selected as <M>)
+	  Note that this will make the system libraries incompatible with most of the packages
+	  that are not selected during the build process
+
 comment "Package build options"
 
 config DEBUG
