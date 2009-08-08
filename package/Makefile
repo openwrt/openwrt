@@ -37,7 +37,7 @@ ifdef CONFIG_USE_MKLIBS
 		file -r -N -F '' {} + | \
 		awk ' /shared object/ { print $$1 }' >> $(TMP_DIR)/mklibs-progs
 	mkdir -p $(TMP_DIR)/mklibs-out
-	$(STAGING_DIR_HOST)/bin/mklibs.py -D -v \
+	$(STAGING_DIR_HOST)/bin/mklibs.py -D \
 		-d $(TMP_DIR)/mklibs-out \
 		--sysroot $(STAGING_DIR_ROOT) \
 		-L /lib \
