@@ -16,7 +16,11 @@ PKG_CPU:=$(shell uname -m)
 
 SDK_NAME:=OpenWrt-SDK-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
-EXCLUDE_DIRS:=*/ccache */stamp */man */share */stampfiles */info
+EXCLUDE_DIRS:=*/ccache \
+	*/stamp \
+	*/stampfiles \
+	*/man \
+	*/info
 
 SVN_PACKAGE_URL=$(shell svn info ../../package | awk '/^URL:/ { print $$2; }')
 
