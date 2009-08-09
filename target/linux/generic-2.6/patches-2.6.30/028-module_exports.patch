@@ -1,25 +1,34 @@
 --- a/include/asm-generic/vmlinux.lds.h
 +++ b/include/asm-generic/vmlinux.lds.h
-@@ -4,6 +4,18 @@
+@@ -4,6 +4,27 @@
  #define LOAD_OFFSET 0
  #endif
  
 +#ifndef SYMTAB_KEEP_STR
-+#define SYMTAB_KEEP_STR *(__ksymtab_strings.*)
++#define SYMTAB_KEEP_STR *(__ksymtab_strings*)
++#define SYMTAB_DISCARD_STR
++#else
++#define SYMTAB_DISCARD_STR *(__ksymtab_strings*)
 +#endif
 +
 +#ifndef SYMTAB_KEEP
-+#define SYMTAB_KEEP *(__ksymtab.*)
++#define SYMTAB_KEEP *(__ksymtab*)
++#define SYMTAB_DISCARD
++#else
++#define SYMTAB_DISCARD *(__ksymtab*)
 +#endif
 +
 +#ifndef SYMTAB_KEEP_GPL
-+#define SYMTAB_KEEP_GPL *(__ksymtab_gpl.*)
++#define SYMTAB_KEEP_GPL *(__ksymtab_gpl*)
++#define SYMTAB_DISCARD_GPL
++#else
++#define SYMTAB_DISCARD_GPL *(__ksymtab_gpl*)
 +#endif
 +
  #ifndef VMLINUX_SYMBOL
  #define VMLINUX_SYMBOL(_sym_) _sym_
  #endif
-@@ -176,35 +188,35 @@
+@@ -176,35 +197,35 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
@@ -40,7 +49,7 @@
  	__ksymtab_unused  : AT(ADDR(__ksymtab_unused) - LOAD_OFFSET) {	\
  		VMLINUX_SYMBOL(__start___ksymtab_unused) = .;		\
 -		*(__ksymtab_unused)					\
-+		*(__ksymtab_unused.*)					\
++		*(__ksymtab_unused*)					\
  		VMLINUX_SYMBOL(__stop___ksymtab_unused) = .;		\
  	}								\
  									\
@@ -48,7 +57,7 @@
  	__ksymtab_unused_gpl : AT(ADDR(__ksymtab_unused_gpl) - LOAD_OFFSET) { \
  		VMLINUX_SYMBOL(__start___ksymtab_unused_gpl) = .;	\
 -		*(__ksymtab_unused_gpl)					\
-+		*(__ksymtab_unused_gpl.*)				\
++		*(__ksymtab_unused_gpl*)				\
  		VMLINUX_SYMBOL(__stop___ksymtab_unused_gpl) = .;	\
  	}								\
  									\
@@ -56,11 +65,11 @@
  	__ksymtab_gpl_future : AT(ADDR(__ksymtab_gpl_future) - LOAD_OFFSET) { \
  		VMLINUX_SYMBOL(__start___ksymtab_gpl_future) = .;	\
 -		*(__ksymtab_gpl_future)					\
-+		*(__ksymtab_gpl_future.*)				\
++		*(__ksymtab_gpl_future*)				\
  		VMLINUX_SYMBOL(__stop___ksymtab_gpl_future) = .;	\
  	}								\
  									\
-@@ -245,7 +257,13 @@
+@@ -245,7 +266,13 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
@@ -115,3 +124,73 @@
  
  # The asm symlink changes when $(ARCH) changes.
  # Detect this and ask user to run make mrproper
+--- a/arch/arm/kernel/vmlinux.lds.S
++++ b/arch/arm/kernel/vmlinux.lds.S
+@@ -78,18 +78,6 @@ SECTIONS
+ #endif
+ 	}
+ 
+-	/DISCARD/ : {			/* Exit code and data		*/
+-		EXIT_TEXT
+-		EXIT_DATA
+-		*(.exitcall.exit)
+-		*(.ARM.exidx.exit.text)
+-		*(.ARM.extab.exit.text)
+-#ifndef CONFIG_MMU
+-		*(.fixup)
+-		*(__ex_table)
+-#endif
+-	}
+-
+ 	.text : {			/* Real text segment		*/
+ 		_text = .;		/* Text and read-only data	*/
+ 			__exception_text_start = .;
+@@ -194,6 +182,20 @@ SECTIONS
+ 		*(COMMON)
+ 		_end = .;
+ 	}
++
++	/DISCARD/ : {			/* Exit code and data		*/
++		EXIT_TEXT
++		EXIT_DATA
++		*(.discard)
++		*(.exitcall.exit)
++		*(.ARM.exidx.exit.text)
++		*(.ARM.extab.exit.text)
++#ifndef CONFIG_MMU
++		*(.fixup)
++		*(__ex_table)
++#endif
++	}
++
+ 					/* Stabs debugging sections.	*/
+ 	.stab 0 : { *(.stab) }
+ 	.stabstr 0 : { *(.stabstr) }
+--- a/arch/powerpc/kernel/vmlinux.lds.S
++++ b/arch/powerpc/kernel/vmlinux.lds.S
+@@ -37,12 +37,6 @@ jiffies = jiffies_64 + 4;
+ #endif
+ SECTIONS
+ {
+-	/* Sections to be discarded. */
+-	/DISCARD/ : {
+-	*(.exitcall.exit)
+-	EXIT_DATA
+-	}
+-
+ 	. = KERNELBASE;
+ 
+ /*
+@@ -295,6 +289,12 @@ SECTIONS
+ 		__bss_stop = .;
+ 	}
+ 
++	/* Sections to be discarded. */
++	/DISCARD/ : {
++	*(.exitcall.exit)
++	EXIT_DATA
++	}
++
+ 	. = ALIGN(PAGE_SIZE);
+ 	_end = . ;
+ 	PROVIDE32 (end = .);
