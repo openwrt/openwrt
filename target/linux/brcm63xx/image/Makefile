@@ -169,6 +169,9 @@ define Image/Build
 	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
 	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,bccfe,,bccfe)
 	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,ag306,,agv2+w)
+	# Pirelli A226G
+	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,bccfe,,bccfe)
+	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,ag306,DWV_96358,a226g)
 endef
 
 $(eval $(call BuildImage))
