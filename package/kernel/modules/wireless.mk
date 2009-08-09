@@ -192,7 +192,7 @@ $(eval $(call KernelPackage,net-hermes))
 define KernelPackage/net-hermes-pci
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intersil Prism 2.5 PCI support
-  DEPENDS:=@PCI_SUPPORT kmod-net-hermes
+  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PCI_HERMES
   FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
@@ -208,7 +208,7 @@ $(eval $(call KernelPackage,net-hermes-pci))
 define KernelPackage/net-hermes-plx
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=PLX9052 based PCI adaptor
-  DEPENDS:=@PCI_SUPPORT kmod-net-hermes
+  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PLX_HERMES
   FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_plx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_plx)
