@@ -134,7 +134,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	    sscanf(buf->bccfe.kernelAddress, "%u", &kerneladdr);
 	    sscanf(buf->bccfe.kernelLength, "%u", &kernellen);
 	    sscanf(buf->bccfe.totalLength, "%u", &totallen);
-	    tagidcrc = buf->bccfe.tagIdCRC;
+	    tagidcrc = *(uint32_t *)&(buf->bccfe.tagIdCRC[0]);
 	    tagversion = &(buf->bccfe.tagVersion[0]);
 	    boardid = &(buf->bccfe.boardid[0]);
 	    break;
@@ -146,7 +146,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	    sscanf(buf->bc300.kernelAddress, "%u", &kerneladdr);
 	    sscanf(buf->bc300.kernelLength, "%u", &kernellen);
 	    sscanf(buf->bc300.totalLength, "%u", &totallen);
-	    tagidcrc = buf->bc300.tagIdCRC;
+	    tagidcrc = *(uint32_t *)&(buf->bc300.tagIdCRC[0]);
 	    tagversion = &(buf->bc300.tagVersion[0]);
 	    boardid = &(buf->bc300.boardid[0]);
 	    break;
@@ -158,7 +158,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	    sscanf(buf->ag306.kernelAddress, "%u", &kerneladdr);
 	    sscanf(buf->ag306.kernelLength, "%u", &kernellen);
 	    sscanf(buf->ag306.totalLength, "%u", &totallen);
-	    tagidcrc = buf->ag306.tagIdCRC;
+	    tagidcrc = *(uint32_t *)&(buf->ag306.tagIdCRC[0]);
 	    tagversion = &(buf->ag306.tagVersion[0]);
 	    boardid = &(buf->ag306.boardid[0]);
 	    break;
@@ -170,7 +170,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	    sscanf(buf->bc221.kernelAddress, "%u", &kerneladdr);
 	    sscanf(buf->bc221.kernelLength, "%u", &kernellen);
 	    sscanf(buf->bc221.totalLength, "%u", &totallen);
-	    tagidcrc = buf->bc221.tagIdCRC;
+	    tagidcrc = *(uint32_t *)&(buf->bc221.tagIdCRC[0]);
 	    tagversion = &(buf->bc221.tagVersion[0]);
 	    boardid = &(buf->bc221.boardid[0]);
 	    break;
@@ -182,7 +182,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	    sscanf(buf->bc310.kernelAddress, "%u", &kerneladdr);
 	    sscanf(buf->bc310.kernelLength, "%u", &kernellen);
 	    sscanf(buf->bc310.totalLength, "%u", &totallen);
-	    tagidcrc = buf->bc310.tagIdCRC;
+	    tagidcrc = *(uint32_t *)&(buf->bc310.tagIdCRC[0]);
 	    tagversion = &(buf->bc310.tagVersion[0]);
 	    boardid = &(buf->bc310.boardid[0]);
 	    break;
@@ -191,8 +191,8 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	    continue;
 	  }
 
-	  calctagidcrc = tagcrc32(IMAGETAG_CRC_START, tagid, TAGID_LEN);
-	  if (tagidcrc = calctagidcrc) {
+	  calctagidcrc = htonl(tagcrc32(IMAGETAG_CRC_START, tagid, TAGID_LEN));
+	  if (tagidcrc == calctagidcrc) {
 	    tagid_match = true;
 	    break;
 	  }
@@ -263,6 +263,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	for (i = 0; i < nrparts; i++)
 		printk(KERN_INFO PFX "Partition %d is %s offset %llx and length %llx\n", i, parts[i].name, parts[i].offset, parts[i].size);
 
+ 	printk(KERN_INFO PFX "Spare partition is %x offset and length %x\n", spareaddr, sparelen);
 	*pparts = parts;
 	vfree(buf);
 
