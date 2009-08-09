@@ -85,6 +85,7 @@ static struct gpio_led wrt160nl_leds_gpio[] __initdata = {
 		.name		= "wrt160nl:blue:power",
 		.gpio		= WRT160NL_GPIO_LED_POWER,
 		.active_low	= 1,
+		.default_trigger = "default-on",
 	}, {
 		.name		= "wrt160nl:amber:wps",
 		.gpio		= WRT160NL_GPIO_LED_WPS_AMBER,
