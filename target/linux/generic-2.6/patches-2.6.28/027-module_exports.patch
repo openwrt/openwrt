@@ -152,3 +152,40 @@
  	. = ALIGN(PAGE_SIZE);
  	_end = . ;
  	PROVIDE32 (end = .);
+--- a/arch/arm/kernel/vmlinux.lds.S
++++ b/arch/arm/kernel/vmlinux.lds.S
+@@ -76,16 +76,6 @@ SECTIONS
+ #endif
+ 	}
+ 
+-	/DISCARD/ : {			/* Exit code and data		*/
+-		EXIT_TEXT
+-		EXIT_DATA
+-		*(.exitcall.exit)
+-#ifndef CONFIG_MMU
+-		*(.fixup)
+-		*(__ex_table)
+-#endif
+-	}
+-
+ 	.text : {			/* Real text segment		*/
+ 		_text = .;		/* Text and read-only data	*/
+ 			__exception_text_start = .;
+@@ -173,6 +163,17 @@ SECTIONS
+ 		*(COMMON)
+ 		_end = .;
+ 	}
++
++	/DISCARD/ : {			/* Exit code and data		*/
++		EXIT_TEXT
++		EXIT_DATA
++		*(.exitcall.exit)
++#ifndef CONFIG_MMU
++		*(.fixup)
++		*(__ex_table)
++#endif
++	}
++
+ 					/* Stabs debugging sections.	*/
+ 	.stab 0 : { *(.stab) }
+ 	.stabstr 0 : { *(.stabstr) }
