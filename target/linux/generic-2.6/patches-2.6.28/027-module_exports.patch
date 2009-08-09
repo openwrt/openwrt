@@ -5,24 +5,24 @@
  #endif
  
 +#ifndef SYMTAB_KEEP_STR
-+#define SYMTAB_KEEP_STR *(__ksymtab_strings*)
++#define SYMTAB_KEEP_STR *(__ksymtab_strings.*)
 +#define SYMTAB_DISCARD_STR
 +#else
-+#define SYMTAB_DISCARD_STR *(__ksymtab_strings*)
++#define SYMTAB_DISCARD_STR *(__ksymtab_strings.*)
 +#endif
 +
 +#ifndef SYMTAB_KEEP
-+#define SYMTAB_KEEP *(__ksymtab*)
++#define SYMTAB_KEEP *(__ksymtab.*)
 +#define SYMTAB_DISCARD
 +#else
-+#define SYMTAB_DISCARD *(__ksymtab*)
++#define SYMTAB_DISCARD *(__ksymtab.*)
 +#endif
 +
 +#ifndef SYMTAB_KEEP_GPL
-+#define SYMTAB_KEEP_GPL *(__ksymtab_gpl*)
++#define SYMTAB_KEEP_GPL *(__ksymtab_gpl.*)
 +#define SYMTAB_DISCARD_GPL
 +#else
-+#define SYMTAB_DISCARD_GPL *(__ksymtab_gpl*)
++#define SYMTAB_DISCARD_GPL *(__ksymtab_gpl.*)
 +#endif
 +
  #ifndef VMLINUX_SYMBOL
@@ -49,7 +49,7 @@
  	__ksymtab_unused  : AT(ADDR(__ksymtab_unused) - LOAD_OFFSET) {	\
  		VMLINUX_SYMBOL(__start___ksymtab_unused) = .;		\
 -		*(__ksymtab_unused)					\
-+		*(__ksymtab_unused*)					\
++		*(__ksymtab_unused.*)					\
  		VMLINUX_SYMBOL(__stop___ksymtab_unused) = .;		\
  	}								\
  									\
@@ -57,7 +57,7 @@
  	__ksymtab_unused_gpl : AT(ADDR(__ksymtab_unused_gpl) - LOAD_OFFSET) { \
  		VMLINUX_SYMBOL(__start___ksymtab_unused_gpl) = .;	\
 -		*(__ksymtab_unused_gpl)					\
-+		*(__ksymtab_unused_gpl*)				\
++		*(__ksymtab_unused_gpl.*)				\
  		VMLINUX_SYMBOL(__stop___ksymtab_unused_gpl) = .;	\
  	}								\
  									\
@@ -65,7 +65,7 @@
  	__ksymtab_gpl_future : AT(ADDR(__ksymtab_gpl_future) - LOAD_OFFSET) { \
  		VMLINUX_SYMBOL(__start___ksymtab_gpl_future) = .;	\
 -		*(__ksymtab_gpl_future)					\
-+		*(__ksymtab_gpl_future*)				\
++		*(__ksymtab_gpl_future.*)				\
  		VMLINUX_SYMBOL(__stop___ksymtab_gpl_future) = .;	\
  	}								\
  									\
@@ -78,9 +78,9 @@
 +	}								\
 +									\
 +	/DISCARD/ : {							\
-+		*(__ksymtab.*)						\
-+		*(__ksymtab_gpl.*)					\
-+		*(__ksymtab_strings.*)					\
++		SYMTAB_DISCARD						\
++		SYMTAB_DISCARD_GPL					\
++		SYMTAB_DISCARD_STR					\
  	}								\
  									\
  	/* __*init sections */						\
