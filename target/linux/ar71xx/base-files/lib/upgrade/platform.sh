@@ -21,8 +21,15 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	 tl-wr741nd | tl-wr941nd)
+	tl-wr741nd | tl-wr941nd)
 		[ "$magic" != "0100" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
+	wrt160nl)
+		[ "$magic" != "4e4c" ] && {
 			echo "Invalid image type."
 			return 1
 		}
