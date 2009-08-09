@@ -219,6 +219,10 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	fseek(binfile, rootfsoff + rootfslen - fwaddr, SEEK_SET);
 	fwrite(&deadcode, sizeof(uint32_t), 1, binfile);
 	
+	/* Flush the binfile buffer so that when we read from file, it contains
+         * everything in the buffer
+	 */
+	fflush(binfile);
 
 	/* Choose and compute the CRC32 that should be inserted in the tag */
         if ( tagid && ( (strncmp(tagid, "bccfe", TAGID_LEN) == 0)) || ( strncmp(tagid, "bc300", TAGID_LEN) == 0)) {
