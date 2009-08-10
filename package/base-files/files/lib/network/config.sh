@@ -251,15 +251,6 @@ setup_interface() {
 		sleep 1
 	}
 
-	# Check whether this interface has an IPv6 address
-	# defined and ensure that the kmod is loaded since
-	# ifup could be triggered before modules are loaded.
-	local hasipv6
-	config_get hasipv6 "$config" ip6addr
-	[ -n "$hasipv6" ] && [ ! -d /proc/sys/net/ipv6 ] && {
-		grep -q '^ipv6' /etc/modules.d/* && insmod ipv6
-	}
-
 	# Interface settings
 	grep "$iface:" /proc/net/dev > /dev/null && {
 		local mtu macaddr
