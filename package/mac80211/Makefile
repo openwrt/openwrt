@@ -211,7 +211,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-ccitt @!LINUX_2_6_21||!LINUX_2_6_25
+  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-ccitt @!LINUX_2_6_21&&!LINUX_2_6_25
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
@@ -219,7 +219,7 @@ endef
 
 define KernelPackage/rt2800-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-ccitt @!LINUX_2_6_21||!LINUX_2_6_25
+  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-ccitt @!LINUX_2_6_21&&!LINUX_2_6_25
   TITLE+= (RT2870 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800usb)
@@ -229,7 +229,7 @@ define KernelPackage/rtl818x/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek Drivers for RTL818x devices
   URL:=http://wireless.kernel.org/en/users/Drivers/rtl8187
-  DEPENDS+= +kmod-eeprom-93cx6 +kmod-mac80211 @!LINUX_2_6_21||!LINUX_2_6_25
+  DEPENDS+= +kmod-eeprom-93cx6 +kmod-mac80211 @!LINUX_2_6_21&&!LINUX_2_6_25
 endef
 
 define KernelPackage/rtl8180
@@ -296,7 +296,7 @@ define KernelPackage/ath9k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= +kmod-ath @!LINUX_2_6_21||!LINUX_2_6_25
+  DEPENDS+= +kmod-ath @!LINUX_2_6_21&&!LINUX_2_6_25
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath9k)
 endef
