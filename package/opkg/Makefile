@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=opkg
 PKG_REV:=215
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
@@ -37,7 +37,7 @@ define Package/opkg/description
 endef
 
 define Package/opkg/conffiles
-/etc/opkg/opkg.conf
+/etc/opkg.conf
 endef
 
 TARGET_CFLAGS += $(FPIC) $(if $(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),-Wno-array-bounds)
@@ -47,6 +47,7 @@ EXTRA_LDFLAGS += $(TARGET_LDFLAGS) -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
 CONFIGURE_ARGS += \
 	--disable-curl \
 	--disable-gpg \
+	--with-ipkgetcdir=/etc
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
@@ -67,9 +68,8 @@ define Package/opkg/install
 	$(INSTALL_DIR) $(1)/usr/lib/opkg
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc
-	$(INSTALL_DIR) $(1)/etc/opkg
-	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/opkg/
-	$(SED) 's,$$$$S,$(PKGARCH),g' $(1)/etc/opkg/opkg.conf
+	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/
+	$(SED) 's,$$$$S,$(PKGARCH),g' $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopkg.so.* $(1)/usr/lib/
