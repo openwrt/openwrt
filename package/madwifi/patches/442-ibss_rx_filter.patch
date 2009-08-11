@@ -1,0 +1,20 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -294,6 +294,17 @@ ieee80211_input(struct ieee80211vap * va
+ 			break;
+ 		case IEEE80211_M_IBSS:
+ 		case IEEE80211_M_AHDEMO:
++			if (!IEEE80211_ADDR_EQ(wh->i_addr3, vap->iv_bssid) ||
++			    (!IEEE80211_ADDR_EQ(wh->i_addr1, vap->iv_myaddr) &&
++			     !IEEE80211_IS_MULTICAST(wh->i_addr1) &&
++			     (subtype != IEEE80211_FC0_SUBTYPE_BEACON))) {
++				if (!(vap->iv_dev->flags & IFF_PROMISC)) {
++					IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
++						bssid, NULL, "%s", "not to bss");
++					vap->iv_stats.is_rx_wrongbss++;
++					goto out;
++				}
++			}
+ 			if (dir != IEEE80211_FC1_DIR_NODS)
+ 				bssid = wh->i_addr1;
+ 			else if (type == IEEE80211_FC0_TYPE_CTL)
