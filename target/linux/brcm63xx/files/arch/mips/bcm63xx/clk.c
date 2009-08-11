@@ -149,6 +149,7 @@ static void usbs_set(struct clk *clk, int enable)
 
 	switch(bcm63xx_get_cpu_id()) {
 	case BCM6338_CPU_ID: mask = CKCTL_6338_USBS_EN; break;
+	case BCM6345_CPU_ID: mask = CKCTL_6345_USBS_EN; break;
 	case BCM6348_CPU_ID: mask = CKCTL_6348_USBS_EN; break;
 	default:
 		return;

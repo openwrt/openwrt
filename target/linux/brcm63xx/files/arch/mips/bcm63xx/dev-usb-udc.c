@@ -47,7 +47,7 @@ static struct platform_device bcm63xx_udc_device = {
 
 int __init bcm63xx_udc_register(void)
 {
-	if (!BCMCPU_IS_6338() && !BCMCPU_IS_6348())
+	if (!BCMCPU_IS_6338() && !BCMCPU_IS_6345() && !BCMCPU_IS_6348())
 		return 0;
 
 	udc_resources[0].start = bcm63xx_regset_address(RSET_UDC0);

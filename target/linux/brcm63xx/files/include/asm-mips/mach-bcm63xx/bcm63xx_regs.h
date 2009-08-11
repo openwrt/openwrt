@@ -35,10 +35,10 @@
 #define CKCTL_6345_UART_EN		(1 << 3)
 #define CKCTL_6345_ADSLPHY_EN		(1 << 4)
 #define CKCTL_6345_ENET_EN		(1 << 7)
-#define CKCTL_6345_USBH_EN		(1 << 8)
+#define CKCTL_6345_USBS_EN		(1 << 8)
 
 #define CKCTL_6345_ALL_SAFE_EN		(CKCTL_6345_ENET_EN |	\
-					CKCTL_6345_USBH_EN |	\
+					CKCTL_6345_USBS_EN |	\
 					CKCTL_6345_ADSLPHY_EN)
 
 #define CKCTL_6348_ADSLPHY_EN		(1 << 0)
