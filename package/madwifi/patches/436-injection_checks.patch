@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -3200,7 +3200,13 @@ ath_tx_startraw(struct net_device *dev, 
+@@ -3199,7 +3199,13 @@ ath_tx_startraw(struct net_device *dev, 
  	struct ieee80211_frame *wh;
  
  	wh = (struct ieee80211_frame *)skb->data;
@@ -14,7 +14,7 @@
  	rt = sc->sc_currates;
  	txrate = dot11_to_ratecode(sc, rt, ph->rate0);
  	power = ph->power > 63 ? 63 : ph->power;
-@@ -3225,7 +3231,8 @@ ath_tx_startraw(struct net_device *dev, 
+@@ -3224,7 +3230,8 @@ ath_tx_startraw(struct net_device *dev, 
  	rt = sc->sc_currates;
  	KASSERT(rt != NULL, ("no rate table, mode %u", sc->sc_curmode));
  
