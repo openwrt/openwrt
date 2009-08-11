@@ -1,0 +1,57 @@
+diff -urN sangam_atm-D7.04.03.00/tn7atm.c sangam_atm-D7.04.03.00.new/tn7atm.c
+--- sangam_atm-D7.04.03.00/tn7atm.c	2009-08-11 19:15:07.000000000 +0200
++++ sangam_atm-D7.04.03.00.new/tn7atm.c	2009-08-11 19:16:41.000000000 +0200
+@@ -71,10 +71,16 @@
+ #include <linux/proc_fs.h>
+ #include <linux/string.h>
+ #include <linux/ctype.h>
++#include <linux/version.h>
+ 
+ #include <asm/io.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
+ #include <asm/ar7/ar7.h>
+ #include <asm/ar7/prom.h>
++#else
++#include <asm/mach-ar7/ar7.h>
++#include <asm/mach-ar7/prom.h>
++#endif
+ 
+ #include "dsl_hal_api.h"
+ #include "tn7atm.h"
+diff -urN sangam_atm-D7.04.03.00/tn7dsl.c sangam_atm-D7.04.03.00.new/tn7dsl.c
+--- sangam_atm-D7.04.03.00/tn7dsl.c	2009-08-11 19:15:07.000000000 +0200
++++ sangam_atm-D7.04.03.00.new/tn7dsl.c	2009-08-11 19:17:20.000000000 +0200
+@@ -112,8 +112,13 @@
+ #include <linux/version.h>
+ 
+ #include <asm/io.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
+ #include <asm/ar7/ar7.h>
+ #include <asm/ar7/prom.h>
++#else
++#include <asm/mach-ar7/ar7.h>
++#include <asm/mach-ar7/prom.h>
++#endif
+ 
+ /* Modules specific header files */
+ #include "tn7atm.h"
+diff -urN sangam_atm-D7.04.03.00/tn7sar.c sangam_atm-D7.04.03.00.new/tn7sar.c
+--- sangam_atm-D7.04.03.00/tn7sar.c	2009-08-11 19:15:07.000000000 +0200
++++ sangam_atm-D7.04.03.00.new/tn7sar.c	2009-08-11 19:18:04.000000000 +0200
+@@ -52,10 +52,16 @@
+ #include <linux/proc_fs.h>
+ #include <linux/string.h>
+ #include <linux/ctype.h>
++#include <linux/version.h>
+ 
+ #include <asm/io.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)
+ #include <asm/ar7/ar7.h>
+ #include <asm/ar7/prom.h>
++#else
++#include <asm/mach-ar7/ar7.h>
++#include <asm/mach-ar7/prom.h>
++#endif
+ 
+ #define _CPHAL_AAL5
+ #define _CPHAL_SAR
