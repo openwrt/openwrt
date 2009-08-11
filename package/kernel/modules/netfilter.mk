@@ -203,7 +203,7 @@ define KernelPackage/ipt-nathelper-extra
   KCONFIG:=$(KCONFIG_IPT_NATHELPER_EXTRA)
   FILES:=$(foreach mod,$(IPT_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_NATHELPER_EXTRA-m)))
-  DEPENDS:= kmod-ipt-core +kmod-ipt-nat +kmod-textsearch
+  DEPENDS:= kmod-ipt-core +kmod-ipt-nat +LINUX_2_6:kmod-textsearch
 endef
 
 define KernelPackage/ipt-nathelper-extra/description
