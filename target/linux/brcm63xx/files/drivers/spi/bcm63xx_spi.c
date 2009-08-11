@@ -237,7 +237,7 @@ static irqreturn_t bcm63xx_spi_interrupt(int irq, void *dev_id)
 
 	/* Read interupts and clear them immediately */
 	intr = bcm_spi_readb(bs->regs, SPI_INT_STATUS);
-	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, bs->regs, SPI_INT_STATUS);
+	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, bs->regs, SPI_INT_MASK);
 
 	/* A tansfer completed */
 	if (intr & SPI_INTR_CMD_DONE) {
