@@ -12,7 +12,7 @@
  		KASSERT(c->ic_ieee < IEEE80211_CHAN_MAX,
  			("channel with bogus ieee number %u", c->ic_ieee));
  		setbit(ic->ic_chan_avail, c->ic_ieee);
-+		ic->ic_max_txpower = max(ic->ic_max_txpower, (u16) c->ic_maxpower * 2);
++		ic->ic_max_txpower = max(ic->ic_max_txpower, (u16) (c->ic_maxpower * 2));
  
  		if (c->ic_scanflags & IEEE80211_NOSCAN_DEFAULT)
  			c->ic_scanflags |= IEEE80211_NOSCAN_SET;
