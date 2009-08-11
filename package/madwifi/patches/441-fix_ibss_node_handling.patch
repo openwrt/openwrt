@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6642,10 +6642,8 @@ static void
+@@ -6641,10 +6641,8 @@ static void
  ath_recv_mgmt(struct ieee80211vap * vap, struct ieee80211_node *ni_or_null,
  	struct sk_buff *skb, int subtype, int rssi, u_int64_t rtsf)
  {
@@ -12,7 +12,7 @@
  	struct ieee80211_node * ni = ni_or_null;
  	u_int64_t hw_tsf, beacon_tsf;
  	u_int32_t hw_tu, beacon_tu, intval;
-@@ -6687,7 +6685,7 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+@@ -6686,7 +6684,7 @@ ath_recv_mgmt(struct ieee80211vap * vap,
  		}
  		if ((vap->iv_opmode == IEEE80211_M_IBSS) &&
  				(sc->sc_opmode == HAL_M_HOSTAP) &&
