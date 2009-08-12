@@ -28,7 +28,11 @@ static struct resource bcm_pci_mem_resource = {
 static struct resource bcm_pci_io_resource = {
 	.name   = "bcm63xx PCI IO space",
 	.start  = BCM_PCI_IO_BASE_PA,
+#ifdef CONFIG_CARDBUS
+	.end    = BCM_PCI_IO_HALF_PA,
+#else
 	.end    = BCM_PCI_IO_END_PA,
+#endif
 	.flags  = IORESOURCE_IO
 };
 
@@ -37,6 +41,33 @@ struct pci_controller bcm63xx_controller = {
 	.io_resource	= &bcm_pci_io_resource,
 	.mem_resource	= &bcm_pci_mem_resource,
 };
+
+/*
+ * We handle cardbus  via a fake Cardbus bridge,  memory and io spaces
+ * have to be  clearly separated from PCI one  since we have different
+ * memory decoder.
+ */
+#ifdef CONFIG_CARDBUS
+static struct resource bcm_cb_mem_resource = {
+	.name   = "bcm63xx Cardbus memory space",
+	.start  = BCM_CB_MEM_BASE_PA,
+	.end    = BCM_CB_MEM_END_PA,
+	.flags  = IORESOURCE_MEM
+};
+
+static struct resource bcm_cb_io_resource = {
+	.name   = "bcm63xx Cardbus IO space",
+	.start  = BCM_PCI_IO_HALF_PA + 1,
+	.end    = BCM_PCI_IO_END_PA,
+	.flags  = IORESOURCE_IO
+};
+
+struct pci_controller bcm63xx_cb_controller = {
+	.pci_ops	= &bcm63xx_cb_ops,
+	.io_resource	= &bcm_cb_io_resource,
+	.mem_resource	= &bcm_cb_mem_resource,
+};
+#endif
 
 static u32 bcm63xx_int_cfg_readl(u32 reg)
 {
@@ -98,8 +129,17 @@ static int __init bcm63xx_pci_init(void)
 	val |= (CARDBUS_PCI_IDSEL << PCMCIA_C1_CBIDSEL_SHIFT);
 	bcm_pcmcia_writel(val, PCMCIA_C1_REG);
 
+#ifdef CONFIG_CARDBUS
+	/* setup local bus to PCI access (Cardbus memory) */
+	val = BCM_CB_MEM_BASE_PA & MPI_L2P_BASE_MASK;
+	bcm_mpi_writel(val, MPI_L2PMEMBASE2_REG);
+	bcm_mpi_writel(~(BCM_CB_MEM_SIZE - 1), MPI_L2PMEMRANGE2_REG);
+	val |= MPI_L2PREMAP_ENABLED_MASK | MPI_L2PREMAP_IS_CARDBUS_MASK;
+	bcm_mpi_writel(val, MPI_L2PMEMREMAP2_REG);
+#else
 	/* disable second access windows */
 	bcm_mpi_writel(0, MPI_L2PMEMREMAP2_REG);
+#endif
 
 	/* setup local bus  to PCI access (IO memory),  we have only 1
 	 * IO window  for both PCI  and cardbus, but it  cannot handle
@@ -168,6 +208,10 @@ static int __init bcm63xx_pci_init(void)
 	bcm_mpi_writel(val, MPI_LOCINT_REG);
 
 	register_pci_controller(&bcm63xx_controller);
+
+#ifdef CONFIG_CARDBUS
+	register_pci_controller(&bcm63xx_cb_controller);
+#endif
 
 	/* mark memory space used for IO mapping as reserved */
 	request_mem_region(BCM_PCI_IO_BASE_PA, BCM_PCI_IO_SIZE,
