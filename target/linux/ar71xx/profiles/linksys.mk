@@ -7,7 +7,7 @@
 
 define Profile/WRT160NL
 	NAME:=Linksys WRT160NL
-	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb2
+	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb2 swconfig
 endef
 
 define Profile/WRT160NL/Description
