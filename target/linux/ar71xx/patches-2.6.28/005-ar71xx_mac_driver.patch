@@ -11,11 +11,11 @@
  	depends on PCI
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -2,6 +2,7 @@
- # Makefile for the Linux network (ethercard) device drivers.
- #
+@@ -93,6 +93,7 @@ obj-$(CONFIG_SH_ETH) += sh_eth.o
+ obj-$(CONFIG_MII) += mii.o
+ obj-$(CONFIG_PHYLIB) += phy/
  
 +obj-$(CONFIG_AG71XX) += ag71xx/
- obj-$(CONFIG_E1000) += e1000/
- obj-$(CONFIG_E1000E) += e1000e/
- obj-$(CONFIG_IBM_NEW_EMAC) += ibm_newemac/
+ obj-$(CONFIG_SUNDANCE) += sundance.o
+ obj-$(CONFIG_HAMACHI) += hamachi.o
+ obj-$(CONFIG_NET) += Space.o loopback.o
