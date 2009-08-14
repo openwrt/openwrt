@@ -194,7 +194,7 @@ define KernelPackage/net-hermes-pci
   TITLE:=Intersil Prism 2.5 PCI support
   DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PCI_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_pci.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco_pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
 endef
 
@@ -210,7 +210,7 @@ define KernelPackage/net-hermes-plx
   TITLE:=PLX9052 based PCI adaptor
   DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PLX_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco_plx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco_plx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_plx)
 endef
 
