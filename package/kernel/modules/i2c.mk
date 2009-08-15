@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,17 +7,27 @@
 
 I2C_MENU:=I2C support
 
-define KernelPackage/i2c-core
+ModuleConfVar=$(word 1,$(subst :,$(space),$(1)))
+ModuleFullPath=$(if $(findstring y,$($(call ModuleConfVar,$(1)))),,$(LINUX_DIR)/$(word 2,$(subst :,$(space),$(1))).$(LINUX_KMOD_SUFFIX))
+ModuleKconfig=$(foreach mod,$(1),$(call ModuleConfVar,$(mod)))
+ModuleFiles=$(foreach mod,$(1),$(call ModuleFullPath,$(mod)))
+ModuleAuto=$(call AutoLoad,$(1),$(foreach mod,$(2),$(notdir $(call ModuleFullPath,$(mod)))),$(3))
+
+define i2c_defaults
   SUBMENU:=$(I2C_MENU)
+  KCONFIG:=$(call ModuleKconfig,$(1))
+  FILES:=$(call ModuleFiles,$(1))
+  AUTOLOAD:=$(call ModuleAuto,$(2),$(1),$(3))
+endef
+
+I2C_CORE_MODULES:= \
+  CONFIG_I2C:drivers/i2c/i2c-core \
+  CONFIG_I2C_CHARDEV:drivers/i2c/i2c-dev
+
+define KernelPackage/i2c-core
+  $(call i2c_defaults,$(I2C_CORE_MODULES),51)
   TITLE:=I2C support
   DEPENDS:=@LINUX_2_6
-  KCONFIG:= \
-	CONFIG_I2C \
-	CONFIG_I2C_CHARDEV
-  FILES:= \
-	$(LINUX_DIR)/drivers/i2c/i2c-core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/i2c/i2c-dev.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,51,i2c-core i2c-dev)
 endef
 
 define KernelPackage/i2c-core/description
@@ -27,13 +37,13 @@ endef
 $(eval $(call KernelPackage,i2c-core))
 
 
+I2C_ALGOBIT_MODULES:= \
+  CONFIG_I2C_ALGOBIT:drivers/i2c/algos/i2c-algo-bit
+
 define KernelPackage/i2c-algo-bit
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(I2C_ALGOBIT_MODULES),55)
   TITLE:=I2C bit-banging interfaces
   DEPENDS:=kmod-i2c-core
-  KCONFIG:=CONFIG_I2C_ALGOBIT
-  FILES:=$(LINUX_DIR)/drivers/i2c/algos/i2c-algo-bit.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,55,i2c-algo-bit)
 endef
 
 define KernelPackage/i2c-algo-bit/description
@@ -43,13 +53,13 @@ endef
 $(eval $(call KernelPackage,i2c-algo-bit))
 
 
+I2C_ALGOPCA_MODULES:= \
+  CONFIG_I2C_ALGOPCA:drivers/i2c/algos/i2c-algo-pca
+
 define KernelPackage/i2c-algo-pca
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(I2C_ALGOPCA_MODULES),55)
   TITLE:=I2C PCA 9564 interfaces
   DEPENDS:=kmod-i2c-core
-  KCONFIG:=CONFIG_I2C_ALGOPCA
-  FILES:=$(LINUX_DIR)/drivers/i2c/algos/i2c-algo-pca.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,55,i2c-algo-pca)
 endef
 
 define KernelPackage/i2c-algo-pca/description
@@ -59,13 +69,13 @@ endef
 $(eval $(call KernelPackage,i2c-algo-pca))
 
 
+I2C_ALGOPCF_MODULES:= \
+  CONFIG_I2C_ALGOPCF:drivers/i2c/algos/i2c-algo-pcf
+
 define KernelPackage/i2c-algo-pcf
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(I2C_ALGOPCF_MODULES),55)
   TITLE:=I2C PCF 8584 interfaces
   DEPENDS:=kmod-i2c-core
-  KCONFIG:=CONFIG_I2C_ALGOPCF
-  FILES:=$(LINUX_DIR)/drivers/i2c/algos/i2c-algo-pcf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,55,i2c-algo-pcf)
 endef
 
 define KernelPackage/i2c-algo-pcf/description
@@ -75,13 +85,13 @@ endef
 $(eval $(call KernelPackage,i2c-algo-pcf))
 
 
+I2C_GPIO_MODULES:= \
+  CONFIG_I2C_GPIO:drivers/i2c/busses/i2c-gpio
+
 define KernelPackage/i2c-gpio
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(I2C_GPIO_MODULES),59)
   TITLE:=GPIO-based bitbanging I2C
   DEPENDS:=@GPIO_SUPPORT +kmod-i2c-algo-bit
-  KCONFIG:=CONFIG_I2C_GPIO
-  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-gpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,59,i2c-gpio)
 endef
 
 define KernelPackage/i2c-gpio/description
@@ -91,16 +101,16 @@ endef
 
 $(eval $(call KernelPackage,i2c-gpio))
 
+I2C_SCX200_MODULES:=\
+  CONFIG_SCx200_I2C:drivers/i2c/busses/scx200_i2c
 
 define KernelPackage/i2c-scx200
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(I2C_SCX200_MODULES),59)
   TITLE:=Geode SCx200 I2C using GPIO pins
   DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-algo-bit
-  KCONFIG:=CONFIG_SCx200_I2C \
+  KCONFIG+= \
 	CONFIG_SCx200_I2C_SCL=12 \
 	CONFIG_SCx200_I2C_SDA=13
-  FILES:=$(LINUX_DIR)/drivers/i2c/busses/scx200_i2c.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,59,scx200_i2c)
 endef
 
 define KernelPackage/i2c-scx200/description
@@ -110,13 +120,13 @@ endef
 $(eval $(call KernelPackage,i2c-scx200))
 
 
+I2C_SCX200_ACB_MODULES:=\
+  CONFIG_SCx200_ACB:drivers/i2c/busses/scx200_i2c
+
 define KernelPackage/i2c-scx200-acb
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(I2C_SCX200_ACB_MODULES),59)
   TITLE:=Geode SCx200 ACCESS.bus support
   DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-algo-bit
-  KCONFIG:=CONFIG_SCx200_ACB
-  FILES:=$(LINUX_DIR)/drivers/i2c/busses/scx200_acb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,59,scx200_acb)
 endef
 
 define KernelPackage/i2c-scx200-acb/description
@@ -126,13 +136,14 @@ endef
 
 $(eval $(call KernelPackage,i2c-scx200-acb))
 
+
+OF_I2C_MODULES:=\
+  CONFIG_OF_I2C:drivers/of/of_i2c
+
 define KernelPackage/of-i2c
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(OF_I2C_MODULES),58)
   TITLE:=OpenFirmware I2C accessors
   DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx kmod-i2c-core
-  KCONFIG:=CONFIG_OF_I2C
-  FILES:=$(LINUX_DIR)/drivers/of/of_i2c.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,58,of_i2c)
 endef
 
 define KernelPackage/of-i2c/description
@@ -142,13 +153,13 @@ endef
 $(eval $(call KernelPackage,of-i2c))
 
 
+I2C_IBM_IIC_MODULES:=\
+  CONFIG_I2C_IBM_IIC:drivers/i2c/busses/i2c-ibm_iic
+
 define KernelPackage/i2c-ibm-iic
-  SUBMENU:=$(I2C_MENU)
+  $(call i2c_defaults,$(OF_I2C_MODULES),59)
   TITLE:=IBM PPC 4xx on-chip I2C interface support
   DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx +kmod-i2c-core +kmod-of-i2c
-  KCONFIG:=CONFIG_I2C_IBM_IIC
-  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-ibm_iic.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,59,i2c-ibm_iic)
 endef
 
 define KernelPackage/i2c-ibm-iic/description
