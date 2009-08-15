@@ -1,30 +1,31 @@
-From c5d3ab153ef4b68c9c6fab32f6f292c4394b72d3 Mon Sep 17 00:00:00 2001
+From 8dff6729a634d7cf223679d9a29a3df77927540c Mon Sep 17 00:00:00 2001
 From: Ivo van Doorn <IvDoorn@gmail.com>
-Date: Thu, 21 May 2009 19:21:31 +0200
-Subject: [PATCH 2/2] rt2x00: Implement support for rt2800pci
+Date: Sat, 8 Aug 2009 23:47:53 +0200
+Subject: [PATCH 2/3] rt2x00: Implement support for rt2800pci
 
 Add support for the rt2800pci chipset.
 
-Includes various patches from Mattias, Mark, Felix and Xose.
+Includes various patches from Luis, Mattias, Mark, Felix and Xose.
 
 Signed-off-by: Xose Vazquez Perez <xose.vazquez@gmail.com>
 Signed-off-by: Mattias Nissler <mattias.nissler@gmx.de>
 Signed-off-by: Mark Asselstine <asselsm@gmail.com>
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Luis Correia <luis.f.correia@gmail.com>
 Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 ---
  drivers/net/wireless/rt2x00/Kconfig     |   26 +
  drivers/net/wireless/rt2x00/Makefile    |    1 +
- drivers/net/wireless/rt2x00/rt2800pci.c | 3241 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/rt2x00/rt2800pci.c | 3243 +++++++++++++++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2800pci.h | 1929 ++++++++++++++++++
  drivers/net/wireless/rt2x00/rt2x00.h    |    6 +
- 5 files changed, 5203 insertions(+), 0 deletions(-)
+ 5 files changed, 5205 insertions(+), 0 deletions(-)
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.c
  create mode 100644 drivers/net/wireless/rt2x00/rt2800pci.h
 
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00u
+@@ -16,6 +16,7 @@ obj-$(CONFIG_RT2X00_LIB_USB)		+= rt2x00u
  obj-$(CONFIG_RT2400PCI)			+= rt2400pci.o
  obj-$(CONFIG_RT2500PCI)			+= rt2500pci.o
  obj-$(CONFIG_RT61PCI)			+= rt61pci.o
@@ -412,7 +413,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +};
 +#endif /* CONFIG_RT2X00_LIB_DEBUGFS */
 +
-+#ifdef CONFIG_RT2X00_LIB_RFKILL
 +static int rt2800pci_rfkill_poll(struct rt2x00_dev *rt2x00dev)
 +{
 +	u32 reg;
@@ -420,9 +420,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00pci_register_read(rt2x00dev, GPIO_CTRL_CFG, &reg);
 +	return rt2x00_get_field32(reg, GPIO_CTRL_CFG_BIT2);
 +}
-+#else
-+#define rt2800pci_rfkill_poll	NULL
-+#endif /* CONFIG_RT2X00_LIB_RFKILL */
 +
 +#ifdef CONFIG_RT2X00_LIB_LEDS
 +static void rt2800pci_brightness_set(struct led_classdev *led_cdev,
@@ -661,7 +658,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_RTS,
 +			   !(filter_flags & FIF_CONTROL));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_PSPOLL,
-+			   !(filter_flags & FIF_CONTROL));
++			   !(filter_flags & FIF_PSPOLL));
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_BA, 1);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_BAR, 0);
 +	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_CNTL,
@@ -2078,9 +2075,9 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +			       enum dev_state state)
 +{
 +	/*
-+	 * Always put the device to sleep (even when we intend to wakup!)
++	 * Always put the device to sleep (even when we intend to wakeup!)
 +	 * if the device is booting and wasn't asleep it will return
-+	 * failure when attempting to wakup.
++	 * failure when attempting to wakeup.
 +	 */
 +	rt2800pci_mcu_request(rt2x00dev, MCU_SLEEP, 0xff, 0, 2);
 +
@@ -2102,7 +2099,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		/*
 +		 * Before the radio can be enabled, the device first has
 +		 * to be woken up. After that it needs a bit of time
-+		 * to be fully awake and the radio can be enabled.
++		 * to be fully awake and then the radio can be enabled.
 +		 */
 +		rt2800pci_set_state(rt2x00dev, STATE_AWAKE);
 +		msleep(1);
@@ -2110,7 +2107,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		break;
 +	case STATE_RADIO_OFF:
 +		/*
-+		 * After the radio has been disablee, the device should
++		 * After the radio has been disabled, the device should
 +		 * be put to sleep for powersaving.
 +		 */
 +		rt2800pci_disable_radio(rt2x00dev);
@@ -2250,8 +2247,6 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	 * otherwise we might be sending out invalid data.
 +	 */
 +	rt2x00pci_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
-+	rt2x00_set_field32(&reg, BCN_TIME_CFG_TSF_TICKING, 0);
-+	rt2x00_set_field32(&reg, BCN_TIME_CFG_TBTT_ENABLE, 0);
 +	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_GEN, 0);
 +	rt2x00pci_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 +
@@ -2715,10 +2710,8 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	/*
 +	 * Detect if this device has an hardware controlled radio.
 +	 */
-+#ifdef CONFIG_RT2X00_LIB_RFKILL
 +	if (rt2x00_get_field16(eeprom, EEPROM_NIC_HW_RADIO))
 +		__set_bit(CONFIG_SUPPORT_HW_BUTTON, &rt2x00dev->flags);
-+#endif /* CONFIG_RT2X00_LIB_RFKILL */
 +
 +	/*
 +	 * Store led settings, for correct led behaviour.
@@ -2934,6 +2927,13 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +		return retval;
 +
 +	/*
++	 * This device has multiple filters for control frames
++	 * and has a separate filter for PS Poll frames.
++	 */
++	__set_bit(DRIVER_SUPPORT_CONTROL_FILTERS, &rt2x00dev->flags);
++	__set_bit(DRIVER_SUPPORT_CONTROL_FILTER_PSPOLL, &rt2x00dev->flags);
++
++	/*
 +	 * This device requires firmware.
 +	 */
 +	if (!rt2x00_rt(&rt2x00dev->chip, RT2880) &&
@@ -3104,6 +3104,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	.conf_tx		= rt2800pci_conf_tx,
 +	.get_tx_stats		= rt2x00mac_get_tx_stats,
 +	.get_tsf		= rt2800pci_get_tsf,
++	.rfkill_poll		= rt2x00mac_rfkill_poll,
 +};
 +
 +static const struct rt2x00lib_ops rt2800pci_rt2x00_ops = {
@@ -3340,7 +3341,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +/*
 + * Signal information.
-+ * Defaul offset is required for RSSI <-> dBm conversion.
++ * Default offset is required for RSSI <-> dBm conversion.
 + */
 +#define DEFAULT_RSSI_OFFSET		120 /* FIXME */
 +
@@ -5045,7 +5046,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +
 +/*
 + * Word3
-+ * WIV: Wireless Info Valid. 1: Driver filled WI,  0: DMA needs to copy WI
++ * WIV: Wireless Info Valid. 1: Driver filled WI, 0: DMA needs to copy WI
 + * QSEL: Select on-chip FIFO ID for 2nd-stage output scheduler.
 + *       0:MGMT, 1:HCCA 2:EDCA
 + */
@@ -5186,7 +5187,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#define RXWI_W3_SNR1			FIELD32(0x0000ff00)
 +
 +/*
-+ * Macro's for converting txpower from EEPROM to mac80211 value
++ * Macros for converting txpower from EEPROM to mac80211 value
 + * and from mac80211 value to register value.
 + */
 +#define MIN_G_TXPOWER	0
@@ -5210,7 +5211,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +#endif /* RT2800PCI_H */
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -147,6 +147,12 @@ struct rt2x00_chip {
+@@ -158,6 +158,12 @@ struct rt2x00_chip {
  #define RT2561		0x0302
  #define RT2661		0x0401
  #define RT2571		0x1300
