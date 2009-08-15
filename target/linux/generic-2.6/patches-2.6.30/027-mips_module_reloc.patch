@@ -1,8 +1,6 @@
-Index: linux-2.6.30.4/arch/mips/Makefile
-===================================================================
---- linux-2.6.30.4.orig/arch/mips/Makefile	2009-08-06 16:02:25.000000000 +0200
-+++ linux-2.6.30.4/arch/mips/Makefile	2009-08-06 16:02:37.000000000 +0200
-@@ -83,7 +83,7 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -83,7 +83,7 @@ all-$(CONFIG_BOOT_ELF64)	:= $(vmlinux-64
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
@@ -11,11 +9,9 @@ Index: linux-2.6.30.4/arch/mips/Makefile
  
  cflags-y += -ffreestanding
  
-Index: linux-2.6.30.4/arch/mips/include/asm/module.h
-===================================================================
---- linux-2.6.30.4.orig/arch/mips/include/asm/module.h	2009-08-06 16:02:25.000000000 +0200
-+++ linux-2.6.30.4/arch/mips/include/asm/module.h	2009-08-06 16:02:37.000000000 +0200
-@@ -9,6 +9,11 @@
+--- a/arch/mips/include/asm/module.h
++++ b/arch/mips/include/asm/module.h
+@@ -9,6 +9,11 @@ struct mod_arch_specific {
  	struct list_head dbe_list;
  	const struct exception_table_entry *dbe_start;
  	const struct exception_table_entry *dbe_end;
@@ -27,11 +23,9 @@ Index: linux-2.6.30.4/arch/mips/include/asm/module.h
  };
  
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
-Index: linux-2.6.30.4/arch/mips/kernel/module.c
-===================================================================
---- linux-2.6.30.4.orig/arch/mips/kernel/module.c	2009-08-06 16:02:36.000000000 +0200
-+++ linux-2.6.30.4/arch/mips/kernel/module.c	2009-08-06 16:03:15.000000000 +0200
-@@ -43,6 +43,116 @@
+--- a/arch/mips/kernel/module.c
++++ b/arch/mips/kernel/module.c
+@@ -43,6 +43,116 @@ static struct mips_hi16 *mips_hi16_list;
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -148,7 +142,7 @@ Index: linux-2.6.30.4/arch/mips/kernel/module.c
  void *module_alloc(unsigned long size)
  {
  #ifdef MODULE_START
-@@ -58,16 +168,45 @@
+@@ -58,16 +168,45 @@ void *module_alloc(unsigned long size)
  
  	return __vmalloc_area(area, GFP_KERNEL, PAGE_KERNEL);
  #else
@@ -196,7 +190,7 @@ Index: linux-2.6.30.4/arch/mips/kernel/module.c
  	/* FIXME: If module_region == mod->init_region, trim exception
             table entries. */
  }
-@@ -75,6 +214,24 @@
+@@ -75,6 +214,24 @@ void module_free(struct module *mod, voi
  int module_frob_arch_sections(Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
  			      char *secstrings, struct module *mod)
  {
@@ -221,7 +215,7 @@ Index: linux-2.6.30.4/arch/mips/kernel/module.c
  	return 0;
  }
  
-@@ -97,27 +254,41 @@
+@@ -97,27 +254,41 @@ static int apply_r_mips_32_rela(struct m
  	return 0;
  }
  
@@ -277,7 +271,7 @@ Index: linux-2.6.30.4/arch/mips/kernel/module.c
  {
  	if (v % 4) {
  		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
-@@ -125,17 +296,31 @@
+@@ -125,17 +296,31 @@ static int apply_r_mips_26_rela(struct m
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -312,7 +306,7 @@ Index: linux-2.6.30.4/arch/mips/kernel/module.c
  static int apply_r_mips_hi16_rel(struct module *me, u32 *location, Elf_Addr v)
  {
  	struct mips_hi16 *n;
-@@ -400,11 +585,23 @@
+@@ -400,11 +585,23 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
