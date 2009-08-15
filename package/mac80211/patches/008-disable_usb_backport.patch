@@ -18,7 +18,7 @@
  }
  
  EXPORT_SYMBOL_GPL(usb_anchor_empty);
-+#endif
++#endif /* CONFIG_AR9170_USB */
  
  
  void __iomem *pci_ioremap_bar(struct pci_dev *pdev, int bar)
@@ -32,20 +32,20 @@
  
  #ifndef ETH_P_PAE
  #define ETH_P_PAE 0x888E      /* Port Access Entity (IEEE 802.1X) */
-@@ -42,6 +41,8 @@ extern void usb_poison_urb(struct urb *u
+@@ -37,6 +36,8 @@
+ #define pcmcia_parse_tuple(tuple, parse) pccard_parse_tuple(tuple, parse)
  #endif
- extern void usb_unpoison_urb(struct urb *urb);
  
 +#ifdef CONFIG_AR9170_USB
 +#include <linux/usb.h>
  #if 0
- extern void usb_poison_anchored_urbs(struct usb_anchor *anchor);
+ extern void usb_poison_urb(struct urb *urb);
  #endif
 @@ -49,6 +50,7 @@ extern void usb_poison_anchored_urbs(str
  extern struct urb *usb_get_from_anchor(struct usb_anchor *anchor);
  extern void usb_scuttle_anchored_urbs(struct usb_anchor *anchor);
  extern int usb_anchor_empty(struct usb_anchor *anchor);
-+#endif
++#endif /* CONFIG_AR9170_USB */
  
  
  void __iomem *pci_ioremap_bar(struct pci_dev *pdev, int bar);
@@ -63,7 +63,7 @@
  	spin_unlock_irqrestore(&anchor->lock, flags);
  }
  EXPORT_SYMBOL_GPL(usb_unpoison_anchored_urbs);
-+#endif
++#endif /* CONFIG_AR9170_USB */
  
  
  #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29) */
@@ -75,7 +75,7 @@
  
 +#ifdef CONFIG_AR9170_USB
  extern void usb_unpoison_anchored_urbs(struct usb_anchor *anchor);
-+#endif
++#endif /* CONFIG_AR9170_USB */
  
  #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)) */
  
