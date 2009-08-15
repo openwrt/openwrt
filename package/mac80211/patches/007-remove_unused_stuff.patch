@@ -1,7 +1,7 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -107,10 +107,10 @@ CONFIG_MAC80211_MESH=y
- CONFIG_CFG80211=m
+@@ -153,10 +153,10 @@ CONFIG_CFG80211_DEFAULT_PS=y
+ CONFIG_CFG80211_DEFAULT_PS_VALUE=1
  # CONFIG_CFG80211_REG_DEBUG=y
  
 -CONFIG_LIB80211=m
@@ -15,7 +15,7 @@
  # CONFIG_LIB80211_DEBUG=y
  
  CONFIG_WIRELESS_OLD_REGULATORY=n
-@@ -123,61 +123,61 @@ ifneq ($(CONFIG_PCI),)
+@@ -169,61 +169,61 @@ ifneq ($(CONFIG_PCI),)
  
  CONFIG_ATH5K=m
  # CONFIG_ATH5K_DEBUG=y
@@ -36,12 +36,12 @@
  # CONFIG_IWLWIFI_DEBUG=y
  # CONFIG_IWLWIFI_DEBUGFS=y
 -CONFIG_IWLAGN=m
--CONFIG_IWL4965=y
+-CONFIG_COMPAT_IWL4965=y
 -CONFIG_IWL5000=y
 -CONFIG_IWL3945=m
 -CONFIG_IWL3945_SPECTRUM_MEASUREMENT=y
 +# CONFIG_IWLAGN=m
-+# CONFIG_IWL4965=y
++# CONFIG_COMPAT_IWL4965=y
 +# CONFIG_IWL5000=y
 +# CONFIG_IWL3945=m
 +# CONFIG_IWL3945_SPECTRUM_MEASUREMENT=y
@@ -112,7 +112,7 @@
  # CONFIG_IPW2200_DEBUG=y
  # The above enables use a second interface prefixed 'rtap'.
  #           Example usage:
-@@ -192,27 +192,27 @@ CONFIG_IPW2200_QOS=y
+@@ -238,27 +238,27 @@ CONFIG_IPW2200_QOS=y
  #
  # % echo 1 > /sys/bus/pci/drivers/ipw2200/*/rtap_iface
  
@@ -154,7 +154,7 @@
  
  CONFIG_RT2X00_LIB_PCI=m
  CONFIG_RT2400PCI=m
-@@ -228,24 +228,24 @@ CONFIG_RT61PCI=m
+@@ -274,10 +274,10 @@ CONFIG_RT61PCI=m
  NEED_RT2X00_FIRMWARE=y
  endif
  
@@ -168,13 +168,20 @@
  
  endif
  ## end of PCI
- 
+@@ -285,18 +285,18 @@ endif
  ifneq ($(CONFIG_PCMCIA),)
  
+ ifeq ($(shell test $(KERNEL_SUBLEVEL) -le 26 && echo yes),yes)
+-CONFIG_LIBERTAS=n
+-CONFIG_LIBERTAS_CS=n
++# CONFIG_LIBERTAS=n
++# CONFIG_LIBERTAS_CS=n
+ else
 -CONFIG_LIBERTAS_CS=m
 -NEED_LIBERTAS=y
 +# CONFIG_LIBERTAS_CS=m
 +# NEED_LIBERTAS=y
+ endif
  
  endif
  ## end of PCMCIA
@@ -185,7 +192,7 @@
  
  # USB Drivers
  ifneq ($(CONFIG_USB),)
-@@ -259,21 +259,21 @@ CONFIG_ZD1211RW=m
+@@ -310,19 +310,19 @@ CONFIG_ZD1211RW=m
  # is only wireless RNDIS chip known to date.
  # Note: this depends on CONFIG_USB_NET_RNDIS_HOST and CONFIG_USB_NET_CDCETHER
  # it also requires new RNDIS_HOST and CDC_ETHER modules which we add
@@ -203,9 +210,7 @@
 -CONFIG_AT76C50X_USB=m
 +# CONFIG_AT76C50X_USB=m
  
- # Activate AR9170 support only on kernel >= 2.6.29.
- # The needed USB poison feature was added in this kernel release.
- ifeq ($(shell test $(KERNEL_SUBLEVEL) -ge 29 && echo yes),yes)
+ ifeq ($(shell test $(KERNEL_SUBLEVEL) -ge 28 && echo yes),yes)
 -CONFIG_AR9170_USB=m
 -CONFIG_AR9170_LEDS=y
 +# CONFIG_AR9170_USB=m
@@ -213,16 +218,24 @@
  endif
  
  # RT2500USB does not require firmware
-@@ -287,30 +287,30 @@ CONFIG_RT73USB=m
- NEED_RT2X00_FIRMWARE=y
+@@ -337,28 +337,28 @@ NEED_RT2X00_FIRMWARE=y
  endif
  
+ ifeq ($(shell test $(KERNEL_SUBLEVEL) -le 26 && echo yes),yes)
+-CONFIG_LIBERTAS_THINFIRM_USB=n
+-CONFIG_LIBERTAS_USB=n
+-NEED_LIBERTAS=n
++# CONFIG_LIBERTAS_THINFIRM_USB=n
++# CONFIG_LIBERTAS_USB=n
++# NEED_LIBERTAS=n
+ else
 -CONFIG_LIBERTAS_THINFIRM_USB=m
 -CONFIG_LIBERTAS_USB=m
 -NEED_LIBERTAS=y
 +# CONFIG_LIBERTAS_THINFIRM_USB=m
 +# CONFIG_LIBERTAS_USB=m
 +# NEED_LIBERTAS=y
+ endif
  
  endif # end of USB driver list
  
@@ -230,21 +243,36 @@
  
 -CONFIG_WL1251=m
 -CONFIG_P54_SPI=m
--CONFIG_LIBERTAS_SPI=m
--NEED_LIBERTAS=y
 +# CONFIG_WL1251=m
 +# CONFIG_P54_SPI=m
+ 
+ ifeq ($(shell test $(KERNEL_SUBLEVEL) -le 26 && echo yes),yes)
+-CONFIG_LIBERTAS_SPI=n
+-NEED_LIBERTAS=n
++# CONFIG_LIBERTAS_SPI=n
++# NEED_LIBERTAS=n
+ else
+-CONFIG_LIBERTAS_SPI=m
+-NEED_LIBERTAS=y
 +# CONFIG_LIBERTAS_SPI=m
 +# NEED_LIBERTAS=y
+ endif
  
  endif # end of SPI driver list
- 
+@@ -366,17 +366,17 @@ endif # end of SPI driver list
  ifneq ($(CONFIG_MMC),)
  
+ ifeq ($(shell test $(KERNEL_SUBLEVEL) -le 26 && echo yes),yes)
+-CONFIG_LIBERTAS_SDIO=n
+-NEED_LIBERTAS=n
++# CONFIG_LIBERTAS_SDIO=n
++# NEED_LIBERTAS=n
+ else
 -CONFIG_LIBERTAS_SDIO=m
 -NEED_LIBERTAS=y
 +# CONFIG_LIBERTAS_SDIO=m
 +# NEED_LIBERTAS=y
+ endif
  
  # Activate iwmc3200wifi support only on kernel >= 2.6.29.
  # iwmc3200wifi uses new netdev_ops api no supported by old kernel.
@@ -254,7 +282,7 @@
  # CONFIG_IWM_DEBUG=y
  endif
  
-@@ -323,7 +323,7 @@ CONFIG_RT2X00_LIB=m
+@@ -389,7 +389,7 @@ CONFIG_RT2X00_LIB=m
  CONFIG_RT2X00_LIB_HT=y
  CONFIG_RT2X00_LIB_FIRMWARE=y
  CONFIG_RT2X00_LIB_CRYPTO=y
@@ -263,12 +291,20 @@
  CONFIG_RT2X00_LIB_LEDS=y
  # CONFIG_RT2X00_LIB_DEBUGFS=y
  # CONFIG_RT2X00_DEBUG=y
-@@ -340,25 +340,25 @@ CONFIG_P54_LEDS=y
+@@ -406,24 +406,24 @@ CONFIG_P54_LEDS=y
  # Atheros
  CONFIG_ATH_COMMON=m
  
 -CONFIG_WL12XX=y
+-CONFIG_WL1251=m
+-CONFIG_WL1251_SPI=m
+-CONFIG_WL1251_SDIO=m
+-CONFIG_WL1271=m
 +# CONFIG_WL12XX=y
++# CONFIG_WL1251=m
++# CONFIG_WL1251_SPI=m
++# CONFIG_WL1251_SDIO=m
++# CONFIG_WL1271=m
  
  # Sonics Silicon Backplane
 -CONFIG_SSB_POSSIBLE=y
@@ -279,6 +315,10 @@
 +# CONFIG_SSB_SPROM=y
  # CONFIG_SSB_DEBUG=y
  
+ ifeq ($(shell test $(KERNEL_SUBLEVEL) -le 26 && echo yes),yes)
+-CONFIG_LIBERTAS=n
++# CONFIG_LIBERTAS=n
+ else
  ifeq ($(NEED_LIBERTAS),y)
 -CONFIG_LIBERTAS_THINFIRM=m
 -CONFIG_LIBERTAS=m
@@ -286,7 +326,8 @@
 +# CONFIG_LIBERTAS=m
  # CONFIG_LIBERTAS_DEBUG=y
  endif
- 
+ endif
+@@ -431,8 +431,8 @@ endif
  # We need the backported rfkill module on kernel < 2.6.31.
  # In more recent kernel versions use the in kernel rfkill module.
  ifeq ($(shell test $(KERNEL_SUBLEVEL) -le 30 && echo yes),yes)

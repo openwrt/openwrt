@@ -7,10 +7,10 @@
 +	if (AR_SREV_9100(sc->sc_ah))
 +		return;
 +
- 	cancel_delayed_work_sync(&sc->ath_led_blink_work);
  	ath_unregister_led(&sc->assoc_led);
  	sc->sc_flags &= ~SC_OP_LED_ASSOCIATED;
-@@ -1071,6 +1074,9 @@ static void ath_init_leds(struct ath_sof
+ 	ath_unregister_led(&sc->tx_led);
+@@ -1070,6 +1073,9 @@ static void ath_init_leds(struct ath_sof
  	char *trigger;
  	int ret;
  
