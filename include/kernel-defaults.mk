@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -49,7 +49,7 @@ define Kernel/Prepare/Default
     endef
   else
     define Kernel/Prepare/Default
-	git clone --reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY) $(CONFIG_KERNEL_GIT_CLONE_URI) $(LINUX_DIR) 
+	git clone --reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY) $(CONFIG_KERNEL_GIT_CLONE_URI) $(LINUX_DIR)
     endef
   endif
 endif
@@ -67,12 +67,14 @@ ifeq ($(KERNEL),2.6)
   ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     define Kernel/SetInitramfs
 		mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
-		grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
+		grep -v -e INITRAMFS -e CONFIG_RD_ $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(TARGET_DIR) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(LINUX_DIR)/.config
-		echo 'CONFIG_INITRAMFS_COMPRESSION_NONE=y' >> $(LINUX_DIR)/.config
-		echo '# CONFIG_INITRAMFS_COMPRESSION_LZMA is not set' >> $(LINUX_DIR)/.config
+		echo "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_NONE),CONFIG_INITRAMFS_COMPRESSION_NONE=y,# CONFIG_INITRAMFS_COMPRESSION_NONE is not set)" >> $(LINUX_DIR)/.config
+		echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP),CONFIG_INITRAMFS_COMPRESSION_GZIP=y\nCONFIG_RD_GZIP=y,# CONFIG_INITRAMFS_COMPRESSION_GZIP is not set\n# CONFIG_RD_GZIP is not set)" >> $(LINUX_DIR)/.config
+		echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),CONFIG_INITRAMFS_COMPRESSION_BZIP2=y\nCONFIG_RD_BZIP2=y,# CONFIG_INITRAMFS_COMPRESSION_BZIP2 is not set\n# CONFIG_RD_BZIP2 is not set)" >> $(LINUX_DIR)/.config
+		echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA),CONFIG_INITRAMFS_COMPRESSION_LZMA=y\nCONFIG_RD_LZMA=y,# CONFIG_INITRAMFS_COMPRESSION_LZMA is not set\n# CONFIG_RD_LZMA is not set)" >> $(LINUX_DIR)/.config
     endef
   else
     define Kernel/SetInitramfs

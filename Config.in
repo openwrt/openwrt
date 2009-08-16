@@ -20,6 +20,31 @@ menu "Target Images"
 		help
 		  Embed the rootfs into the kernel (initramfs)
 
+	choice
+		prompt "ramdisk compression"
+		depends TARGET_ROOTFS_INITRAMFS
+		depends !LINUX_2_6_21
+		depends !LINUX_2_6_25
+		depends !LINUX_2_6_27
+		depends !LINUX_2_6_28
+		default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ar71xx
+		default TARGET_INITRAMFS_COMPRESSION_NONE
+		help
+		  Select ramdisk compression.
+
+		config TARGET_INITRAMFS_COMPRESSION_NONE
+			bool "NONE"
+
+		config TARGET_INITRAMFS_COMPRESSION_GZIP
+			bool "GZIP"
+
+		config TARGET_INITRAMFS_COMPRESSION_BZIP2
+			bool "BZIP2"
+
+		config TARGET_INITRAMFS_COMPRESSION_LZMA
+			bool "LZMA"
+	endchoice
+
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		default y if USES_JFFS2
@@ -40,14 +65,14 @@ menu "Target Images"
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a compressed tar archive of the the root filesystem
-		  
+
 	config TARGET_ROOTFS_CPIOGZ
 		bool "cpiogz"
 		default y if USES_CPIOGZ
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a compressed cpio archive of the the root filesystem
-		  
+
 	config TARGET_ROOTFS_EXT2FS
 		bool "ext2"
 		default y if USES_EXT2
@@ -55,12 +80,12 @@ menu "Target Images"
 		help
 		  Ext2 file system with some free space for uml images
 
-	config TARGET_ROOTFS_ISO 
-		bool "iso" 
-		default n 
-		depends TARGET_ROOTFS_INITRAMFS && TARGET_x86 
-		help 
-		  Create some bootable ISO image 
+	config TARGET_ROOTFS_ISO
+		bool "iso"
+		default n
+		depends TARGET_ROOTFS_INITRAMFS && TARGET_x86
+		help
+		  Create some bootable ISO image
 
 comment "Image Options"
 
@@ -158,11 +183,11 @@ config DEBUG_DIR
 		This will install all compiled package binaries into build_dir/target-*/debug-*/,
 		useful for cross-debugging via gdb/gdbserver
 
-config IPV6 
-        bool 
+config IPV6
+        bool
         prompt "Enable IPv6 support in packages"
-        default n 
-        help 
+        default n
+        help
                 Enable IPV6 support in packages (passes --enable-ipv6 to configure scripts).
 
 comment "Kernel build options"
