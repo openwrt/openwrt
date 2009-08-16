@@ -67,7 +67,7 @@ TARGET_CPPFLAGS := \
 ifdef CONFIG_PACKAGE_kmod-wprobe
   define Build/Compile/kmod
 	$(MAKE) -C $(LINUX_DIR) \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
+		CROSS_COMPILE="$(KERNEL_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)/kernel" \
 		KERNELDIR=$(LINUX_DIR) \
