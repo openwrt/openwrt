@@ -1463,13 +1463,13 @@
 +}
 --- /dev/null
 +++ b/net/netfilter/xt_layer7.c
-@@ -0,0 +1,651 @@
+@@ -0,0 +1,666 @@
 +/*
 +  Kernel module to match application layer (OSI layer 7) data in connections.
 +
 +  http://l7-filter.sf.net
 +
-+  (C) 2003, 2004, 2005, 2006, 2007 Matthew Strait and Ethan Sommer.
++  (C) 2003-2009 Matthew Strait and Ethan Sommer.
 +
 +  This program is free software; you can redistribute it and/or
 +  modify it under the terms of the GNU General Public License
@@ -1506,7 +1506,7 @@
 +MODULE_AUTHOR("Matthew Strait <quadong@users.sf.net>, Ethan Sommer <sommere@users.sf.net>");
 +MODULE_DESCRIPTION("iptables application layer match module");
 +MODULE_ALIAS("ipt_layer7");
-+MODULE_VERSION("2.19");
++MODULE_VERSION("2.21");
 +
 +static int maxdatalen = 2048; // this is the default
 +module_param(maxdatalen, int, 0444);
@@ -1879,6 +1879,9 @@
 +}
 +
 +static bool
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
++match(const struct sk_buff *skbin, const struct xt_match_param *par)
++#else
 +match(const struct sk_buff *skbin,
 +      const struct net_device *in,
 +      const struct net_device *out,
@@ -1887,11 +1890,18 @@
 +      int offset,
 +      unsigned int protoff,
 +      bool *hotdrop)
++#endif
 +{
 +	/* sidestep const without getting a compiler warning... */
 +	struct sk_buff * skb = (struct sk_buff *)skbin; 
 +
-+	const struct xt_layer7_info * info = matchinfo;
++	const struct xt_layer7_info * info = 
++	#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
++		par->matchinfo;
++	#else
++		matchinfo;
++	#endif
++
 +	enum ip_conntrack_info master_ctinfo, ctinfo;
 +	struct nf_conn *master_conntrack, *conntrack;
 +	unsigned char * app_data;
@@ -1976,7 +1986,7 @@
 +	the beginning of a connection */
 +	if(master_conntrack->layer7.app_data == NULL){
 +		spin_unlock_bh(&l7_lock);
-+		return (info->invert); /* unmatched */
++		return info->invert; /* unmatched */
 +	}
 +
 +	if(!skb->cb[0]){
@@ -2000,7 +2010,8 @@
 +	} else if(!strcmp(info->protocol, "unset")) {
 +		pattern_result = 2;
 +		DPRINTK("layer7: matched unset: not yet classified "
-+			"(%d/%d packets)\n", total_acct_packets(master_conntrack), num_packets);
++			"(%d/%d packets)\n",
++                        total_acct_packets(master_conntrack), num_packets);
 +	/* If the regexp failed to compile, don't bother running it */
 +	} else if(comppattern && 
 +		  regexec(comppattern, master_conntrack->layer7.app_data)){
@@ -2030,27 +2041,39 @@
 +	return (pattern_result ^ info->invert);
 +}
 +
-+static bool check(const char *tablename,
-+		 const void *inf,
-+		 const struct xt_match *match,
-+		 void *matchinfo,
-+		 unsigned int hook_mask)
-+
++// load nf_conntrack_ipv4
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
++static bool check(const struct xt_mtchk_param *par)
 +{
-+	// load nf_conntrack_ipv4
++        if (nf_ct_l3proto_try_module_get(par->match->family) < 0) {
++                printk(KERN_WARNING "can't load conntrack support for "
++                                    "proto=%d\n", par->match->family);
++#else
++static bool check(const char *tablename, const void *inf,
++		 const struct xt_match *match, void *matchinfo,
++		 unsigned int hook_mask)
++{
 +        if (nf_ct_l3proto_try_module_get(match->family) < 0) {
 +                printk(KERN_WARNING "can't load conntrack support for "
 +                                    "proto=%d\n", match->family);
++#endif
 +                return 0;
 +        }
 +	return 1;
 +}
 +
-+static void
-+destroy(const struct xt_match *match, void *matchinfo)
-+{
-+	nf_ct_l3proto_module_put(match->family);
-+}
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
++	static void destroy(const struct xt_mtdtor_param *par)
++	{
++		nf_ct_l3proto_module_put(par->match->family);
++	}
++#else
++	static void destroy(const struct xt_match *match, void *matchinfo)
++	{
++		nf_ct_l3proto_module_put(match->family);
++	}
++#endif
 +
 +static struct xt_match xt_layer7_match[] __read_mostly = {
 +{
@@ -2066,22 +2089,14 @@
 +
 +static void layer7_cleanup_proc(void)
 +{
-+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,23)
-+	remove_proc_entry("layer7_numpackets", proc_net);
-+#else
 +	remove_proc_entry("layer7_numpackets", init_net.proc_net);
-+#endif
 +}
 +
 +/* register the proc file */
 +static void layer7_init_proc(void)
 +{
 +	struct proc_dir_entry* entry;
-+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,23)
-+	entry = create_proc_entry("layer7_numpackets", 0644, proc_net);
-+#else
 +	entry = create_proc_entry("layer7_numpackets", 0644, init_net.proc_net);
-+#endif
 +	entry->read_proc = layer7_read_proc;
 +	entry->write_proc = layer7_write_proc;
 +}
