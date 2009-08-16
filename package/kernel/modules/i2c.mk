@@ -11,7 +11,7 @@ ModuleConfVar=$(word 1,$(subst :,$(space),$(1)))
 ModuleFullPath=$(if $(findstring y,$($(call ModuleConfVar,$(1)))),,$(LINUX_DIR)/$(word 2,$(subst :,$(space),$(1))).$(LINUX_KMOD_SUFFIX))
 ModuleKconfig=$(foreach mod,$(1),$(call ModuleConfVar,$(mod)))
 ModuleFiles=$(foreach mod,$(1),$(call ModuleFullPath,$(mod)))
-ModuleAuto=$(call AutoLoad,$(1),$(foreach mod,$(2),$(notdir $(call ModuleFullPath,$(mod)))),$(3))
+ModuleAuto=$(call AutoLoad,$(1),$(foreach mod,$(2),$(basename $(notdir $(call ModuleFullPath,$(mod))))),$(3))
 
 define i2c_defaults
   SUBMENU:=$(I2C_MENU)
@@ -121,7 +121,7 @@ $(eval $(call KernelPackage,i2c-scx200))
 
 
 I2C_SCX200_ACB_MODULES:=\
-  CONFIG_SCx200_ACB:drivers/i2c/busses/scx200_i2c
+  CONFIG_SCx200_ACB:drivers/i2c/busses/scx200_acb
 
 define KernelPackage/i2c-scx200-acb
   $(call i2c_defaults,$(I2C_SCX200_ACB_MODULES),59)
