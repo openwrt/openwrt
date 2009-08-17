@@ -1,0 +1,23 @@
+diff -urN mpfr-2.3.2/Makefile.am mpfr-2.3.2.new/Makefile.am
+--- mpfr-2.3.2/Makefile.am	2008-09-12 15:47:25.000000000 +0200
++++ mpfr-2.3.2.new/Makefile.am	2009-08-17 15:19:18.000000000 +0200
+@@ -1,6 +1,6 @@
+ AUTOMAKE_OPTIONS = gnu ansi2knr
+ 
+-SUBDIRS = tests
++SUBDIRS = 
+ EXTRA_DIST = BUGS FAQ.html PATCHES VERSION get_patches.sh generic.c round_raw_generic.c gen_inverse.h jyn_asympt.c
+ 
+ include_HEADERS = mpfr.h mpf2mpfr.h
+diff -urN mpfr-2.3.2/Makefile.in mpfr-2.3.2.new/Makefile.in
+--- mpfr-2.3.2/Makefile.in	2008-09-12 15:48:04.000000000 +0200
++++ mpfr-2.3.2.new/Makefile.in	2009-08-17 15:19:12.000000000 +0200
+@@ -283,7 +283,7 @@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ AUTOMAKE_OPTIONS = gnu ansi2knr
+-SUBDIRS = tests
++SUBDIRS = 
+ EXTRA_DIST = BUGS FAQ.html PATCHES VERSION get_patches.sh generic.c round_raw_generic.c gen_inverse.h jyn_asympt.c
+ include_HEADERS = mpfr.h mpf2mpfr.h
+ lib_LTLIBRARIES = libmpfr.la
