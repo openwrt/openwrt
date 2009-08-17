@@ -77,6 +77,7 @@ define ModuleAutoLoad
 	$(3) \
 	if [ -n "$$$$$$$$modules" ]; then \
 		mkdir -p $(2)/etc/modules.d; \
+		mkdir -p $(2)/CONTROL; \
 		echo "#!/bin/sh" > $(2)/CONTROL/postinst; \
 		echo "[ -z \"\$$$$$$$$IPKG_INSTROOT\" ] || exit 0" >> $(2)/CONTROL/postinst; \
 		echo ". /etc/functions.sh" >> $(2)/CONTROL/postinst; \
