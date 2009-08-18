@@ -7,9 +7,9 @@
 
 define Profile/Default
   NAME:=Default PS3 Petitboot profile
-  PACKAGES:=-dnsmasq -iptables -ppp -ppp-mod-pppoe -kmod-ipt-nathelper \
-	    -firewall \
-	    kexec-tools petitboot
+  PACKAGES:=-dnsmasq -iptables -opkg -ppp -ppp-mod-pppoe -kmod-ipt-nathelper \
+	    -firewall -mtd -hotplug2 -swconfig \
+	    kexec-tools ps3-utils petitboot
 endef
 
 define Profile/Default/Description
