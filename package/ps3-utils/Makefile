@@ -41,6 +41,18 @@ define Build/Configure
 	$(call Build/Configure/Default)
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(INSTALL_DATA) \
+		$(PKG_INSTALL_DIR)/usr/include/ps3*.h \
+		$(1)/usr/include
+
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) \
+		$(PKG_INSTALL_DIR)/usr/lib/libps3-utils.{la,a,so*} \
+		$(1)/usr/lib/
+endef
+
 define Package/ps3-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/usr/bin
