@@ -2,7 +2,7 @@
 config KEXEC_TOOLS_TARGET_NAME
 	string
 	prompt "Target name for kexec kernel" if PACKAGE_kexec-tools
-	default EXTRA_TARGET_ARCH_NAME	if TARGET_ps3
+	default EXTRA_TARGET_ARCH_NAME	if powerpc64
 	default ARCH
 	help
 	  Defines the target type of the kernels that kexec deals

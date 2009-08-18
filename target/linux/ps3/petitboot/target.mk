@@ -1,5 +1,5 @@
 BOARDNAME:=Petitboot
-FEATURES:=fpu ramdisk
+FEATURES+=fpu ramdisk
 
 define Target/Description
 	Build Petitboot bootloader
