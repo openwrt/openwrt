@@ -18,44 +18,43 @@
 #
 
 usage() {
-	echo "" >&2
-	echo "SYNOPSIS" >&2
-	echo "     bl-option [OPTION]" >&2
-	echo "" >&2
-	echo "DESCRIPTION" >&2
-	echo "     Get and set PS3 bootloader options in flash." >&2
-	echo "" >&2
-	echo "OPTIONS" >&2
-	echo "     -m, --get-video-mode" >&2
-	echo "             Get the bootloader video mode." >&2
-	echo "" >&2
-	echo "     -M, --set-video-mode value" >&2
-	echo "             Set the bootloader video mode." >&2
-	echo "" >&2
-	echo "     -p, --get-petitboot-default" >&2
-	echo "             Get the default Petitboot menu item." >&2
-	echo "" >&2
-	echo "     -P, --set-petitboot-default value" >&2
-	echo "             Set the default Petitboot menu item." >&2
-	echo "" >&2
-	echo "     -t, --get-telnet-enabled" >&2
-	echo "             Get the telnet enabled flag." >&2
-	echo "" >&2
-	echo "     -T, --set-telnet-enabled value" >&2
-	echo "             Set the telnet enabled flag." >&2
-	echo "" >&2
-	echo "     -h, --help" >&2
-	echo "             Print a help message." >&2
-	echo "" >&2
-	echo "SEE ALSO" >&2
-	echo "     ps3-flash-util(8)" >&2
-	echo "" >&2
+	echo -n "
+SYNOPSIS
+     ps3-bl-option [OPTION]
+DESCRIPTION
+     Get and set PS3 bootloader options in flash.
+OPTIONS
+     -m, --get-video-mode
+             Get the bootloader video mode.
+     -M, --set-video-mode value
+             Set the bootloader video mode.
+     -o, --get-bootloader-timeout
+             Get the bootloader timeout in seconds.
+     -O, --set-bootloader-timeout value
+             Set the bootloader timeout in seconds.
+     -p, --get-bootloader-default
+             Get the default bootloader menu item.
+     -P, --set-bootloader-default value
+             Set the default bootloader menu item.
+     -t, --get-telnet-enabled
+             Get the telnet enabled flag.
+     -T, --set-telnet-enabled value
+             Set the telnet enabled flag.
+     -h, --help
+             Print a help message.
+SEE ALSO
+     ps3-flash-util(8)
+"
+}
+
+bad_arg() {
+	echo "ERROR: bad arg" >&2;
+	usage
 	exit 1
 }
 
 if [ "$#" -eq 0 ] ; then
-	echo "ERROR: bad arg" >&2;
-	usage
+	bad_arg
 fi
 
 get_flag() {
@@ -74,40 +73,47 @@ set_flag() {
 }
 
 # owners
-petitboot="3"
+bootloader="3"
 
 # keys
-menu="1"
+item="1"
 video="2"
 flags="3"
+timeout="4"
 
 # flags
 telnet="1"
 
 case "$1" in
 	-m | --get-video-mode)
-		ps3-flash-util --db-print ${petitboot} ${video}
+		ps3-flash-util --db-print ${bootloader} ${video}
 		;;
 	-M | --set-video-mode)
-		ps3-flash-util --db-write-half ${petitboot} ${video} $2
+		ps3-flash-util --db-write-half ${bootloader} ${video} $2
 		;;
-	-p | --get-petitboot-default)
-		ps3-flash-util --db-print ${petitboot} ${menu}
+	-o | --get-bootloader-timeout)
+		ps3-flash-util --db-print ${bootloader} ${timeout}
 		;;
-	-P | --set-petitboot-default)
-		ps3-flash-util --db-write-word ${petitboot} ${menu} $2
+	-O | --set-bootloader-timeout)
+		ps3-flash-util --db-write-half ${bootloader} ${timeout} $2
+		;;
+	-p | --get-bootloader-default)
+		ps3-flash-util --db-print ${bootloader} ${item}
+		;;
+	-P | --set-bootloader-default)
+		ps3-flash-util --db-write-word ${bootloader} ${item} $2
 		;;
 	-t | --get-telnet-enabled)
-		get_flag ${petitboot} ${flags} ${telnet}
+		get_flag ${bootloader} ${flags} ${telnet}
 		;;
 	-T | --set-telnet-enabled)
-		set_flag ${petitboot} ${flags} ${telnet} $2
+		set_flag ${bootloader} ${flags} ${telnet} $2
 		;;
 	-h | --help)
 		usage
+		exit 0
 		;;
 	*)
-		echo "ERROR: bad arg $1" >&2;
-		usage
+		bad_arg
 		;;
 esac
