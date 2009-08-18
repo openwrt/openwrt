@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@armeb||@i386||@TARGET_ps3||@mipsel||@mips +zlib
+  DEPENDS:=@armeb||@i386||@powerpc64||@mipsel||@mips +zlib
   TITLE:=Kernel boots kernel
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
   MENU:=1
