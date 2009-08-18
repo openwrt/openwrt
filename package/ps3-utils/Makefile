@@ -8,21 +8,27 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ps3-utils
-PKG_VERSION:=2.3
+PKG_VERSION:=6488134e48cf2d6f2d6471ced8346ac8cb1b855a
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/geoff/cell/ps3-utils
-PKG_MD5SUM:=d0b24527a8582c9ff5be02c62bb2161d
+PKG_SOURCE_URL:=http://www.kernel.org/pub/scm/linux/kernel/git/geoff/ps3-utils.git
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=$(PKG_VERSION)
+
+PKG_FIXUP:=libtool
+PKG_INSTALL=1
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ps3-utils
-  SECTION:=utils
-  CATEGORY:=Utilities
-  TITLE:=PS3 Linux Utilities
-  DEPENDS:=@TARGET_ps3||TARGET_ps3chk
-  URL:=http://kernel.org/pub/linux/kernel/people/geoff/cell/ps3-utils/
+	SECTION:=utils
+	CATEGORY:=Utilities
+	TITLE:=PS3 Linux Utilities
+	URL:=http://kernel.org/pub/linux/kernel/people/geoff/cell/ps3-utils/
+	MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
+	DEPENDS:=@TARGET_ps3||TARGET_ps3chk||TARGET_powerpc
 endef
 
 define Package/ps3-utils/description
@@ -31,11 +37,8 @@ define Package/ps3-utils/description
 endef
 
 define Build/Configure
+	(cd $(PKG_BUILD_DIR) && $(BASH) -x ./bootstrap)
 	$(call Build/Configure/Default)
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" all install
 endef
 
 define Package/ps3-utils/install
