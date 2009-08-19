@@ -1,0 +1,18 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -1957,6 +1957,7 @@ ath_uapsd_processtriggers(struct ath_sof
+ 				if (qwh->i_fc[1] & IEEE80211_FC1_PWR_MGT) {
+ 					ni->ni_flags |=
+ 						IEEE80211_NODE_UAPSD_TRIG;
++					ni->ni_vap->iv_ps_sta++;
+ 					ic->ic_uapsdmaxtriggers++;
+ 					WME_UAPSD_NODE_TRIGSEQINIT(ni);
+ 					DPRINTF(sc, ATH_DEBUG_UAPSD,
+@@ -1967,6 +1968,7 @@ ath_uapsd_processtriggers(struct ath_sof
+ 				} else {
+ 					ni->ni_flags &=
+ 						~IEEE80211_NODE_UAPSD_TRIG;
++					ni->ni_vap->iv_ps_sta--;
+ 					ic->ic_uapsdmaxtriggers--;
+ 					DPRINTF(sc, ATH_DEBUG_UAPSD,
+ 						"Node (" MAC_FMT ") no longer U-APSD"
