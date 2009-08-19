@@ -23,11 +23,6 @@ choice
 config MADWIFI_STABLE
 	bool "Use the OpenWrt stable version of madwifi"
 
-config MADWIFI_UPSTREAM
-	depends BROKEN
-	depends !TARGET_atheros
-	bool "Use the upstream release version 0.9.4"
-
 endchoice
 
 config MADWIFI_SINGLE_MODULE
