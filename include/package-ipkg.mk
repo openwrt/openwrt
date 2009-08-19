@@ -57,8 +57,9 @@ ifeq ($(DUMP),)
     $(eval $(call BuildIPKGVariable,$(1),postinst))
     $(eval $(call BuildIPKGVariable,$(1),prerm))
     $(eval $(call BuildIPKGVariable,$(1),postrm))
-    $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH)
+    $$(IDIR_$(1))/CONTROL/control: $(STAMP_BUILT)
 	@rm -f $(PACKAGE_DIR)/$(1)_*
+	rm -rf $$(IDIR_$(1))
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
@@ -107,9 +108,6 @@ ifeq ($(DUMP),)
 
     clean: $(1)-clean
 
-    $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH): $(STAMP_PREPARED)
-	-@rm -f $(PKG_BUILD_DIR)/.version-$(1)_* 2>/dev/null
-	@touch $$@
   endef
 
   $(STAGING_DIR)/etc/ipkg.conf:
