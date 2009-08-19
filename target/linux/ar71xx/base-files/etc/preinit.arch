@@ -20,11 +20,33 @@ fetch_mac_from_mtd() {
 	[ ! -z $mac ] && ifconfig eth1 hw ether $mac 2>/dev/null
 }
 
-case $(ar71xx_board_name) in
-	tew-632brp)
-		fetch_mac_from_mtd config lan_mac wan_mac
-		;;
-	wrt160nl)
-		fetch_mac_from_mtd nvram lan_hwaddr wan_hwaddr
-		;;
-esac
+preinit_load_modules() {
+	insmod input-core
+	insmod input-polldev
+	insmod gpio_buttons
+	insmod button-hotplug
+}
+
+preinit_set_mac_address() {
+	case $(ar71xx_board_name) in
+		tew-632brp)
+			fetch_mac_from_mtd config lan_mac wan_mac
+			;;
+		wrt160nl)
+			fetch_mac_from_mtd nvram lan_hwaddr wan_hwaddr
+			;;
+	esac
+}
+
+preinit_set_mac_address
+preinit_load_modules
+
+ifname=eth0
+
+failsafe_ip
+
+netmsg 192.168.1.255 "Press reset now, to enter Failsafe!"
+
+ifconfig "$ifname" 0.0.0.0 down
+
+sleep 2
