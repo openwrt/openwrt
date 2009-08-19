@@ -13,18 +13,6 @@ config MADWIFI_COMPRESSION
 	help
 	  Enables Atheros Super A/G Hardware Compression Engine.
 
-choice
-	prompt "Madwifi version"
-	depends on PACKAGE_kmod-madwifi
-	default MADWIFI_STABLE
-	help
-	  This option allows you to select the version of MadWifi to be built.
-
-config MADWIFI_STABLE
-	bool "Use the OpenWrt stable version of madwifi"
-
-endchoice
-
 config MADWIFI_SINGLE_MODULE
 	bool "Combine driver and net80211 into a single module"
 	depends on PACKAGE_kmod-madwifi
