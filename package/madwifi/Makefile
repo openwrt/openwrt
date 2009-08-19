@@ -124,6 +124,9 @@ ifdef CONFIG_MADWIFI_RCA_SAMPLERATE
   RATE_CONTROL:=sample
 endif
 
+ifneq ($(CONFIG_MADWIFI_SINGLE_MODULE),)
+MADWIFI_FILES:= $(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX)
+else
 MADWIFI_FILES:= \
 	$(PKG_BUILD_DIR)/net80211/wlan.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net80211/wlan_scan_ap.$(LINUX_KMOD_SUFFIX) \
@@ -134,9 +137,13 @@ MADWIFI_FILES:= \
 	$(PKG_BUILD_DIR)/net80211/wlan_ccmp.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net80211/wlan_tkip.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net80211/wlan_wep.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_xauth.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net80211/wlan_xauth.$(LINUX_KMOD_SUFFIX)
+endif
 
-MADWIFI_AUTOLOAD:= \
+ifneq ($(CONFIG_MADWIFI_SINGLE_MODULE),)
+  MADWIFI_AUTOLOAD:= ath_hal
+else
+  MADWIFI_AUTOLOAD:= \
 	wlan \
 	wlan_scan_ap \
 	wlan_scan_sta \
@@ -146,7 +153,8 @@ MADWIFI_AUTOLOAD:= \
 	wlan_ccmp \
 	wlan_tkip \
 	wlan_wep \
-	wlan_xauth \
+	wlan_xauth
+endif
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.$(LINUX_KMOD_SUFFIX)
@@ -202,14 +210,15 @@ MAKE_ARGS:= \
 	TOOLPATH="$(KERNEL_CROSS)" \
 	KERNELPATH="$(LINUX_DIR)" \
 	LDOPTS="--no-warn-mismatch " \
-	ATH_RATE="ath_rate/$(RATE_CONTROL)" \
+	ATH_RATE="$(RATE_CONTROL)" \
 	ATH_CAP_SUPERG_COMP="$(COMPRESSION)" \
 	DO_MULTI=1 \
+	SINGLE_MODULE=$(if $(CONFIG_MADWIFI_SINGLE_MODULE),1) \
 	INCS="$(MADWIFI_INC)" \
 	$(if $(CONFIG_MADWIFI_DEBUG),,DEBUG=) WARNINGS="-Wno-unused"
 
 MAKE_VARS:= \
-	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"' -DATH_REVERSE_ENGINEERING=1" \
+	COPTS="-DATH_REVERSE_ENGINEERING=1" \
 
 ifeq ($(CONFIG_MADWIFI_UPSTREAM),)
   define Build/Prepare/HAL

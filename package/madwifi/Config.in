@@ -30,6 +30,15 @@ config MADWIFI_UPSTREAM
 
 endchoice
 
+config MADWIFI_SINGLE_MODULE
+	bool "Combine driver and net80211 into a single module"
+	depends on PACKAGE_kmod-madwifi
+	default y
+	help
+	  This option combines all driver and stack related code (except for HAL)
+	  into a single module, thus saving space and removing unnecessary kernel
+	  exports
+
 choice
 	prompt "Rate control algorithm selection"
 	depends on PACKAGE_kmod-madwifi
@@ -45,38 +54,6 @@ config MADWIFI_RCA_MINSTREL
 	  performance, and make a choice. Note that the wandering minstrel will
 	  always wander in directions where he/she feels he/she will get paid
 	  the best for his/her work.
-
-config MADWIFI_RCA_ONOE
-	bool "Use the Onoe rate control algorithm"
-	help
-	  Onoe is a credit based RCA where the value of the credit is determined
-	  by the frequency of successful, erroneous and retransmissions
-	  accumulated during a fixed invocation period of 1000 ms. If less than
-	  10% of the packets need to be retransmitted at a particular rate, Onoe
-	  keeps increasing its credit point till the threshold value of 10 is
-	  reached. At this point, the current transmission rate is increased to
-	  the next available higher rate and the process repeated with credit
-	  score of zero. Similar logic holds for deducting the credit score and
-	  moving to a lower bit-rate for failed packet
-	  transmission/retransmission attempts. However, once a bit-rate has
-	  been marked as failure in the previous attempt, Onoe will not attempt
-	  to select that bit-rate until 10 seconds have elapsed since the last
-	  attempt. Due to the manner in which it operates, Onoe is conservative
-	  in rate selection and is less sensitive to individual packet failure.
-
-config MADWIFI_RCA_AMRR
-	bool "Use the AMRR rate control algorithm"
-	help
-	  AMRR uses Binary Exponential Backoff (BEB) technique to adapt the
-	  length (threshold) of the sampling period used to change the values of
-	  bit-rate and transmission count parameters. It uses probe packets and
-	  depending on their transmission status adaptively changes the threshold
-	  value. The adaptation mechanism ensures fewer failed
-	  transmission/retransmission and higher throughput by not switching to a
-	  higher rate as specified by the backoff mechanism. In addition to this,
-	  the AMRR employs heuristics to capture the short-term variations of the
-	  channel by judiciously setting the rate and transmission count
-	  parameters.
 
 config MADWIFI_RCA_SAMPLERATE
 	bool "Use the SampleRate rate control algorithm"
