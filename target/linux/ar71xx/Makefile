@@ -17,7 +17,7 @@ LINUX_VERSION:=2.6.30.5
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	kmod-gpio-leds kmod-input-core kmod-input-polldev \
+	kmod-leds-gpio kmod-input-core kmod-input-polldev \
 	kmod-input-gpio-buttons kmod-button-hotplug
 
 define Target/Description
