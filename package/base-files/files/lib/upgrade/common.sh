@@ -124,7 +124,7 @@ get_image() { # <source> [ <command> ]
 }
 
 get_magic_word() {
-	get_image "$@" | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"'
+	get_image "$@" | dd bs=2 count=1 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
 }
 
 refresh_mtd_partitions() {
