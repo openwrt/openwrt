@@ -241,7 +241,7 @@
  	 * the auto-select case; this should be redundant if the
 --- a/net80211/ieee80211_proto.c
 +++ b/net80211/ieee80211_proto.c
-@@ -1225,6 +1225,7 @@ ieee80211_dturbo_switch(struct ieee80211
+@@ -1231,6 +1231,7 @@ ieee80211_dturbo_switch(struct ieee80211
  	struct ieee80211vap *vap = TAILQ_FIRST(&ic->ic_vaps);
  #endif
  	struct ieee80211_channel *chan;
@@ -249,7 +249,7 @@
  
  	chan = ieee80211_find_channel(ic, ic->ic_bsschan->ic_freq, newflags);
  	if (chan == NULL) {		/* XXX should not happen */
-@@ -1243,6 +1244,9 @@ ieee80211_dturbo_switch(struct ieee80211
+@@ -1249,6 +1250,9 @@ ieee80211_dturbo_switch(struct ieee80211
  	ic->ic_bsschan = chan;
  	ic->ic_curchan = chan;
  	ic->ic_set_channel(ic);
