@@ -1,0 +1,17 @@
+--- a/net80211/ieee80211_beacon.c
++++ b/net80211/ieee80211_beacon.c
+@@ -476,6 +476,14 @@ ieee80211_beacon_update(struct ieee80211
+ 			tie->tim_bitctl |= BITCTL_BUFD_MCAST;
+ 		else
+ 			tie->tim_bitctl &= ~BITCTL_BUFD_MCAST;
++
++		/* WAR: on some platforms, a race condition between beacon
++		 * contents update and beacon transmission leads to beacon
++		 * data not being updated in time. For most fields this is
++		 * not critical, but for powersave it is. Work around this
++		 * by always remapping the beacon when the TIM IE changes.
++		 */
++		len_changed = 1;
+ 	}
+ 
+ 	/* Whenever we want to switch to a new channel, we need to follow the
