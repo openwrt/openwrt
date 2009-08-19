@@ -1136,7 +1136,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct net_device *parent = ic->ic_dev;
  
-@@ -1081,7 +1081,7 @@ ieee80211_init(struct net_device *dev, i
+@@ -1087,7 +1087,7 @@ ieee80211_init(struct net_device *dev, i
  int
  ieee80211_open(struct net_device *dev)
  {
@@ -1145,7 +1145,7 @@
  
  	return ieee80211_init(dev, 0);
  }
-@@ -1125,7 +1125,7 @@ EXPORT_SYMBOL(ieee80211_start_running);
+@@ -1131,7 +1131,7 @@ EXPORT_SYMBOL(ieee80211_start_running);
  int
  ieee80211_stop(struct net_device *dev)
  {
