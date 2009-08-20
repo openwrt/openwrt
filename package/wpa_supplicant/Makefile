@@ -56,6 +56,8 @@ TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/madwifi $(if $(CONFIG_WPA_SUPPLICA
 
 define Build/Configure
 	cp $(CONFIG) $(PKG_BUILD_DIR)/wpa_supplicant/.config
+	[ -f $(STAMP_CONFIGURED) ] || $(MAKE) -C $(PKG_BUILD_DIR)/wpa_supplicant clean
+	rm -f $(PKG_BUILD_DIR)/.configured*
 	$(if $(CONFIG_PACKAGE_kmod-madwifi),,$(SED) 's,^CONFIG_DRIVER_MADWIFI,#CONFIG_DRIVER_MADWIFI,g' $(PKG_BUILD_DIR)/wpa_supplicant/.config)
 	$(if $(CONFIG_PACKAGE_kmod-hostap),,$(SED) 's,^CONFIG_DRIVER_HOSTAP,#CONFIG_DRIVER_HOSTAP,g' $(PKG_BUILD_DIR)/wpa_supplicant/.config)
 	$(if $(CONFIG_WPA_SUPPLICANT_OPENSSL),$(SED) 's|^CONFIG_TLS.*|CONFIG_TLS=openssl|g' $(PKG_BUILD_DIR)/wpa_supplicant/.config)
