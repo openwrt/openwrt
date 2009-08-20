@@ -57,7 +57,14 @@ ifeq ($(DUMP),)
     $(eval $(call BuildIPKGVariable,$(1),postinst))
     $(eval $(call BuildIPKGVariable,$(1),prerm))
     $(eval $(call BuildIPKGVariable,$(1),postrm))
-    $$(IDIR_$(1))/CONTROL/control: $(STAMP_BUILT)
+
+    $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(STAMP_BUILT)
+	mkdir -p $(STAGING_DIR_ROOT)/stamp
+	$(call Package/$(1)/install,$(STAGING_DIR_ROOT))
+	$(call Package/$(1)/install_lib,$(STAGING_DIR_ROOT))
+	touch $$@
+
+    $$(IPKG_$(1)): $(STAGING_DIR)/etc/ipkg.conf $(STAMP_BUILT)
 	@rm -f $(PACKAGE_DIR)/$(1)_*
 	rm -rf $$(IDIR_$(1))
 	mkdir -p $$(IDIR_$(1))/CONTROL
@@ -82,16 +89,7 @@ ifeq ($(DUMP),)
 	(cd $$(IDIR_$(1))/CONTROL; \
 		$($(1)_COMMANDS) \
 	)
-
-    $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(STAMP_BUILT)
-	mkdir -p $(STAGING_DIR_ROOT)/stamp
-	$(call Package/$(1)/install,$(STAGING_DIR_ROOT))
-	$(call Package/$(1)/install_lib,$(STAGING_DIR_ROOT))
-	touch $$@
-
-    $$(IPKG_$(1)): $(STAGING_DIR)/etc/ipkg.conf $(STAMP_BUILT) $$(IDIR_$(1))/CONTROL/control
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
-	mkdir -p $$(IDIR_$(1))/CONTROL
 	mkdir -p $(PACKAGE_DIR)
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
 	$(RSTRIP) $$(IDIR_$(1))
