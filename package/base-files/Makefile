@@ -32,9 +32,7 @@ else
   LIBGCC_VERSION:=<LIBGCC_VERSION>
 endif
 
-CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
-
-define Package/base-files$(TARGET)
+define Package/base-files
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=Base filesystem for OpenWrt
@@ -47,7 +45,7 @@ define Package/base-files$(TARGET)
   $(call Config,network.lan.dns,ip,,LAN DNS server)
 endef
 
-define Package/base-files$(TARGET)/conffiles
+define Package/base-files/conffiles
 /etc/banner
 /etc/hosts
 /etc/inittab
@@ -59,7 +57,7 @@ define Package/base-files$(TARGET)/conffiles
 $(call $(TARGET)/conffiles)
 endef
 
-define Package/base-files$(TARGET)/description
+define Package/base-files/description
  This package contains a base filesystem and system scripts for OpenWrt.
 endef
 
@@ -140,7 +138,7 @@ define Build/Compile
 	$(call Build/Compile/Default)
 endef
 
-define Package/base-files$(TARGET)/install
+define Package/base-files/install
 	$(CP) ./files/* $(1)/
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(GENERIC_PLATFORM_DIR)/base-files/* $(1)/; \
@@ -277,7 +275,7 @@ ifneq ($(DUMP),1)
   -include $(PLATFORM_DIR)/base-files.mk
 endif
 
-$(eval $(call BuildPackage,base-files$(TARGET)))
+$(eval $(call BuildPackage,base-files))
 $(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libssp))
