@@ -33,7 +33,7 @@ filter_deps=$(foreach dep,$(call strip_deps,$(1)),$(if $(findstring :,$(dep)),$(
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
     IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
-    IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
+    IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
     ifdef Package/$(1)/install
