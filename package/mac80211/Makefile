@@ -10,20 +10,12 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-ifneq ($(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_25),)
-  PKG_VERSION:=2008-08-06
-  PKG_RELEASE:=2
-  PKG_SOURCE_URL:=http://www.orbit-lab.org/kernel/compat-wireless-2.6/2008/08
-  PKG_MD5SUM:=9563ceeed86bca0859ad5f010623277c
-  PATCH_DIR:=./patches-old
-else
-  PKG_VERSION:=2009-08-20
-  PKG_RELEASE:=1
-  PKG_SOURCE_URL:= \
+PKG_VERSION:=2009-08-20
+PKG_RELEASE:=1
+PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/08 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-  PKG_MD5SUM:=0b3919adf847a59478cc4fb58e1cb6ec
-endif
+PKG_MD5SUM:=0b3919adf847a59478cc4fb58e1cb6ec
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -44,7 +36,7 @@ endef
 define KernelPackage/mac80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=Linux 802.11 Wireless Networking Stack
-  DEPENDS+= +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools
+  DEPENDS+= +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools @!LINUX_2_6_21 @!LINUX_2_6_25
   FILES:= \
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
@@ -211,7 +203,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-ccitt @!LINUX_2_6_21&&!LINUX_2_6_25
+  DEPENDS+= +kmod-rt2x00-pci +kmod-crc-ccitt
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800pci)
@@ -219,7 +211,7 @@ endef
 
 define KernelPackage/rt2800-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-ccitt @!LINUX_2_6_21&&!LINUX_2_6_25
+  DEPENDS+= +kmod-rt2x00-usb +kmod-crc-ccitt
   TITLE+= (RT2870 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800usb)
@@ -229,7 +221,7 @@ define KernelPackage/rtl818x/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek Drivers for RTL818x devices
   URL:=http://wireless.kernel.org/en/users/Drivers/rtl8187
-  DEPENDS+= +kmod-eeprom-93cx6 +kmod-mac80211 @!LINUX_2_6_21&&!LINUX_2_6_25
+  DEPENDS+= +kmod-eeprom-93cx6 +kmod-mac80211
 endef
 
 define KernelPackage/rtl8180
@@ -296,7 +288,7 @@ define KernelPackage/ath9k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= +kmod-ath @!LINUX_2_6_21&&!LINUX_2_6_25
+  DEPENDS+= +kmod-ath
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath9k)
 endef
@@ -393,7 +385,7 @@ define KernelPackage/b43-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
-  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb @!LINUX_2_6_21
+  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb
 endef
 
 define KernelPackage/b43
