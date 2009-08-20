@@ -14,8 +14,8 @@
 -KERNEL_SUBLEVEL = $(shell $(MAKE) -C $(KLIB_BUILD) kernelversion | sed -n 's/^2\.6\.\([0-9]\+\).*/\1/p')
 +ifneq ($(wildcard $(KLIB_BUILD)/Makefile),)
 +COMPAT_LATEST_VERSION = 32
-+KERNEL_SUBLEVEL ?= $(shell $(MAKE) -C $(KLIB_BUILD) kernelversion | sed -n 's/^2\.6\.\([0-9]\+\).*/\1/p')
-+COMPAT_VERSIONS ?= $(shell I=$(COMPAT_LATEST_VERSION); while [ "$$I" -gt $(KERNEL_SUBLEVEL) ]; do echo $$I; I=$$(($$I - 1)); done)
++KERNEL_SUBLEVEL := $(shell $(MAKE) -C $(KLIB_BUILD) kernelversion | sed -n 's/^2\.6\.\([0-9]\+\).*/\1/p')
++COMPAT_VERSIONS := $(shell I=$(COMPAT_LATEST_VERSION); while [ "$$I" -gt $(KERNEL_SUBLEVEL) ]; do echo $$I; I=$$(($$I - 1)); done)
 +$(foreach ver,$(COMPAT_VERSIONS),$(eval CONFIG_COMPAT_WIRELESS_$(ver)=y))
  
 -ifeq ($(shell test $(KERNEL_SUBLEVEL) -lt 25 && echo yes),yes)
@@ -86,7 +86,7 @@
  ifneq ($(CONFIG_PCMCIA),)
  
 -ifeq ($(shell test $(KERNEL_SUBLEVEL) -le 26 && echo yes),yes)
-+ifdef CONFIG_COMPAT_WIRELESS_25
++ifdef CONFIG_COMPAT_WIRELESS_27
  CONFIG_LIBERTAS=n
  CONFIG_LIBERTAS_CS=n
  else
