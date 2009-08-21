@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_MD5SUM:=9ad1358c5dec48456405eac197a46d3d
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 define Package/libpcap
   SECTION:=libs
@@ -47,6 +48,9 @@ endef
 
 TARGET_CFLAGS += \
 	-ffunction-sections -fdata-sections
+
+CONFIGURE_VARS += \
+	ac_cv_linux_vers=$(LINUX_VERSION)
 
 CONFIGURE_ARGS += \
 	--enable-shared \
