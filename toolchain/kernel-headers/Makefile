@@ -115,6 +115,15 @@ else
   endef
 endif
 
+define Host/Prepare/post/ubicom32
+	$(CP) \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/elf.h \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/user.h \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page.h \
+		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/page_offset.h \
+		$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/asm/
+endef
+
 define Host/Prepare/post/mips
 	$(call Host/Prepare/lzma)
 endef
