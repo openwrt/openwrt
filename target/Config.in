@@ -124,6 +124,10 @@ config sparc
 config x86_64
 	bool
 
+config ubicom32
+	select BIG_ENDIAN
+	bool
+
 config ARCH
 	string
 	default "arm"     if arm
@@ -144,4 +148,5 @@ config ARCH
 	default "sh4eb"   if sh4eb
 	default "sparc"   if sparc
 	default "x86_64"  if x86_64
+	default "ubicom32"  if ubicom32
 
