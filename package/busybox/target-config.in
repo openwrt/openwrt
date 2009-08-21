@@ -12,3 +12,22 @@ config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 	bool
 	default n if LINUX_2_4
 	default y if LINUX_2_6
+
+config BUSYBOX_CONFIG_NOMMU
+	bool
+	depends NOMMU
+	default y if NOMMU
+	deselect BUSYBOX_CONFIG_ASH
+	deselect BUSYBOX_CONFIG_FEATURE_SH_IS_ASH
+	deselect BUSYBOX_CONFIG_LOCK
+
+config CONFIG_BUSYBOX_CONFIG_FEATURE_SH_IS_HUSH
+	bool
+	default y if NOMMU
+	default n if !NOMMU
+
+config BUSYBOX_CONFIG_HUSH
+	bool
+	default y if NOMMU
+	default n if !NOMMU
+
