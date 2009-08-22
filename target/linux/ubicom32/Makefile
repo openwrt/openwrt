@@ -12,7 +12,7 @@ TARGET_CFLAGS+= -DNO_FORK
 ARCH:=ubicom32
 BOARD:=ubicom32
 BOARDNAME:=Ubicom IPxx
-FEATURES:=nommu
+FEATURES:=nommu ramdisk
 
 LINUX_VERSION:=2.6.28.10
 
