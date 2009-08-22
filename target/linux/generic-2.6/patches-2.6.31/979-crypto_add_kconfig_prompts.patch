@@ -1,0 +1,47 @@
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -30,7 +30,7 @@ config CRYPTO_FIPS
+ 	  this is.
+ 
+ config CRYPTO_ALGAPI
+-	tristate
++	tristate "ALGAPI"
+ 	select CRYPTO_ALGAPI2
+ 	help
+ 	  This option provides the API for cryptographic algorithms.
+@@ -39,7 +39,7 @@ config CRYPTO_ALGAPI2
+ 	tristate
+ 
+ config CRYPTO_AEAD
+-	tristate
++	tristate "AEAD"
+ 	select CRYPTO_AEAD2
+ 	select CRYPTO_ALGAPI
+ 
+@@ -48,7 +48,7 @@ config CRYPTO_AEAD2
+ 	select CRYPTO_ALGAPI2
+ 
+ config CRYPTO_BLKCIPHER
+-	tristate
++	tristate "BLKCIPHER"
+ 	select CRYPTO_BLKCIPHER2
+ 	select CRYPTO_ALGAPI
+ 
+@@ -59,7 +59,7 @@ config CRYPTO_BLKCIPHER2
+ 	select CRYPTO_WORKQUEUE
+ 
+ config CRYPTO_HASH
+-	tristate
++	tristate "HASH"
+ 	select CRYPTO_HASH2
+ 	select CRYPTO_ALGAPI
+ 
+@@ -68,7 +68,7 @@ config CRYPTO_HASH2
+ 	select CRYPTO_ALGAPI2
+ 
+ config CRYPTO_RNG
+-	tristate
++	tristate "RNG"
+ 	select CRYPTO_RNG2
+ 	select CRYPTO_ALGAPI
+ 
