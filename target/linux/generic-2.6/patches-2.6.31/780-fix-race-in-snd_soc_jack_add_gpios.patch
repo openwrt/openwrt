@@ -1,0 +1,33 @@
+commit 5ced436d549d911ce610ea47d85f71fae5bbfce4
+Author: Lars-Peter Clausen <lars@metafoo.de>
+Date:   Fri Jul 31 18:26:48 2009 +0200
+
+    ASoC: jack: Fix race in snd_soc_jack_add_gpios
+    
+    The irq can fire as soon as it has been requested, thus all fields accessed
+    from within the irq handler must be initialized prior to requesting the irq.
+    
+    Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+
+--- a/sound/soc/soc-jack.c
++++ b/sound/soc/soc-jack.c
+@@ -220,6 +220,9 @@ int snd_soc_jack_add_gpios(struct snd_so
+ 		if (ret)
+ 			goto err;
+ 
++		INIT_WORK(&gpios[i].work, gpio_work);
++		gpios[i].jack = jack;
++
+ 		ret = request_irq(gpio_to_irq(gpios[i].gpio),
+ 				gpio_handler,
+ 				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+@@ -227,9 +230,6 @@ int snd_soc_jack_add_gpios(struct snd_so
+ 				&gpios[i]);
+ 		if (ret)
+ 			goto err;
+-
+-		INIT_WORK(&gpios[i].work, gpio_work);
+-		gpios[i].jack = jack;
+ 	}
+ 
+ 	return 0;
