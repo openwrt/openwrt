@@ -194,7 +194,7 @@ endef
 
 define KernelPackage/ide-core/2.4
   FILES+=$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,30,ide-detect)
+  AUTOLOAD+=$(call AutoLoad,35,ide-detect)
 endef
 
 ifneq ($(CONFIG_arm)$(CONFIG_powerpc),y)
