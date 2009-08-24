@@ -50,11 +50,11 @@ CONFIGURE_ARGS = \
 		--bindir=/usr/bin \
 		--sbindir=/usr/sbin \
 		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
+		--sysconfdir=/etc
 
 CONFIGURE_VARS += \
 	BUILD_CC="$(HOSTCC)" \
-	TARGET_CC="$(TARGET_CC)" \
+	TARGET_CC="$(TARGET_CC)"
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) all
