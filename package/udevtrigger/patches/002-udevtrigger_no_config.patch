@@ -1,0 +1,12 @@
+Index: udev-106/udevtrigger.c
+===================================================================
+--- udev-106.orig/udevtrigger.c	2007-06-04 13:22:17.745157608 +0200
++++ udev-106/udevtrigger.c	2007-06-04 13:22:18.022115504 +0200
+@@ -446,7 +446,6 @@
+ 	};
+ 
+ 	logging_init("udevtrigger");
+-	udev_config_init();
+ 	dbg("version %s", UDEV_VERSION);
+ 	sysfs_init();
+ 

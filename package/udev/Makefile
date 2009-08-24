@@ -31,13 +31,6 @@ define Package/udev/description
  the /dev directory, or it renames network interfaces.
 endef
 
-define Package/udevtrigger
-$(call Package/udev)
-  SECTION:=base
-  CATEGORY:=Base system
-  TITLE:=Small utility to request kernel devices events for coldplug
-endef
-
 define Package/udevextras
 $(call Package/udev)
   TITLE:=Utilities for udev scripts, for general device discovery
@@ -81,11 +74,6 @@ define Package/udev/install
 	$(CP) files/20-input-grouping.rules $(1)/etc/udev/rules.d/
 endef
 
-define Package/udevtrigger/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/udevtrigger $(1)/sbin/
-endef
-
 define Package/udevextras/install
 	$(INSTALL_DIR) $(1)/etc/udev
 	$(CP) $(PKG_BUILD_DIR)/etc/udev/rules.d $(1)/etc/udev/
@@ -96,5 +84,4 @@ define Package/udevextras/install
 endef
 
 $(eval $(call BuildPackage,udev))
-$(eval $(call BuildPackage,udevtrigger))
 $(eval $(call BuildPackage,udevextras))
