@@ -1,17 +1,5 @@
 #!/bin/sh
-if [ -e "/sys/bus/mdio_bus/drivers/Infineon ADM6996/0:00" -o \
-     -e "/sys/bus/mdio_bus/drivers/IC+ IP175C/0:00" -o \
-     -e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" ]; then
-	uci batch <<EOF
-set network.lan.ifname=eth0.1
-set network.wan=interface
-set network.wan.ifname=eth0.2
-set network.wan.proto=dhcp
-EOF
-	HAS_SWITCH=1
-fi
-
-if [ -e "/sys/bus/mdio_bus/drivers/IC+ IP175C/0:00" ]; then
+if [ -e "/sys/bus/mdio_bus/drivers/IC+ IP175C/0:00" -a -x /sbin/swconfig ]; then
 	uci batch <<EOF
 set network.eth0=switch
 set network.eth0.reset=1
@@ -24,6 +12,18 @@ set network.eth0_2=switch_vlan
 set network.eth0_2.device=eth0
 set network.eth0_2.vlan=2
 set network.eth0_2.ports="4 5t"
+EOF
+	HAS_SWITCH=1
+fi
+
+if [ -n "$HAS_SWITCH" -o \
+	-e "/sys/bus/mdio_bus/drivers/Infineon ADM6996/0:00" -o \
+	-e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" ]; then
+	uci batch <<EOF
+set network.lan.ifname=eth0.1
+set network.wan=interface
+set network.wan.ifname=eth0.2
+set network.wan.proto=dhcp
 EOF
 	HAS_SWITCH=1
 fi
