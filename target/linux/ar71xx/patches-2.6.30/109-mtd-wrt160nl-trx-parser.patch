@@ -31,7 +31,7 @@
 +
  config MTD_MYLOADER_PARTS
  	tristate "MyLoader partition parsing"
- 	depends on MTD_PARTITIONS && (ADM5120 || ATHEROS || ATHEROS_AR71XX)
+ 	depends on MTD_PARTITIONS && (ADM5120 || ATHEROS_AR231X || ATHEROS_AR71XX)
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
 @@ -12,6 +12,7 @@ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redbo
