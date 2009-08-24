@@ -40,15 +40,19 @@ elif [ -x /sbin/hotplug2 ]; then
 
 elif [ -x /sbin/udevd ]; then
 	mount -n -t tmpfs -o mode=0755 udev /dev
-	/sbin/udevd --daemon
-	/sbin/udevtrigger
-	/sbin/udevsettle
+	[ -d /lib/udev/devices ] && cp -af /lib/udev/devices/* /dev/
+	[ -c /dev/console ] || mknod -m 0600 /dev/console c 5 1
+	[ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
+	/sbin/udevd --daemon --resolve-names=never
+	/sbin/udevadm trigger
+	/sbin/udevadm settle
 	M0=/dev/pty/ptmx
 	M1=/dev/pty/ptmx
 	HOTPLUG=
 fi
 
-mkdir -p /dev/pts /dev/shm
+[ -d /dev/pts ] || mkdir -p /dev/pts
+[ -d /dev/shm ] || mkdir -p /dev/shm
 mount devpts /dev/pts -t devpts
 
 # the shell really doesn't like having stdin/out closed
