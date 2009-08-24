@@ -1,6 +1,6 @@
 --- a/drivers/net/ag71xx/ag71xx_main.c
 +++ b/drivers/net/ag71xx/ag71xx_main.c
-@@ -791,6 +791,17 @@ static void ag71xx_set_multicast_list(st
+@@ -791,6 +791,18 @@ static void ag71xx_set_multicast_list(st
  	/* TODO */
  }
  
@@ -10,6 +10,7 @@
 +	.ndo_start_xmit		= ag71xx_hard_start_xmit,
 +	.ndo_set_multicast_list	= ag71xx_set_multicast_list,
 +	.ndo_do_ioctl		= ag71xx_do_ioctl,
++	.ndo_tx_timeout		= ag71xx_tx_timeout,
 +	.ndo_change_mtu		= eth_change_mtu,
 +	.ndo_set_mac_address	= eth_mac_addr,
 +	.ndo_validate_addr	= eth_validate_addr,
@@ -18,7 +19,7 @@
  static int __init ag71xx_probe(struct platform_device *pdev)
  {
  	struct net_device *dev;
-@@ -875,11 +886,7 @@ static int __init ag71xx_probe(struct pl
+@@ -875,14 +887,9 @@ static int __init ag71xx_probe(struct pl
  	}
  
  	dev->base_addr = (unsigned long)ag->mac_base;
@@ -30,4 +31,7 @@
 +	dev->netdev_ops = &ag71xx_netdev_ops;
  	dev->ethtool_ops = &ag71xx_ethtool_ops;
  
- 	dev->tx_timeout = ag71xx_tx_timeout;
+-	dev->tx_timeout = ag71xx_tx_timeout;
+ 	INIT_WORK(&ag->restart_work, ag71xx_restart_work_func);
+ 
+ 	init_timer(&ag->oom_timer);
