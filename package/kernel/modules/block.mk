@@ -254,10 +254,14 @@ $(eval $(call KernelPackage,ide-magicbox))
 define KernelPackage/ide-pdc202xx
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Promise PDC202xx IDE driver
-  DEPENDS:=@LINUX_2_4 +kmod-ide-core
+  DEPENDS:=+kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
-  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
+endef
+
+define KernelPackage/ide-pdc202xx/2.4
+  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/ide-pdc202xx/description
