@@ -24,6 +24,7 @@ set network.lan.ifname=eth0.1
 set network.wan=interface
 set network.wan.ifname=eth0.2
 set network.wan.proto=dhcp
+commit network
 EOF
 	HAS_SWITCH=1
 fi
@@ -33,6 +34,7 @@ fi
 set network.wan=interface
 set network.wan.ifname=eth1
 set network.wan.proto=dhcp
+commit network
 EOF
 }
 
