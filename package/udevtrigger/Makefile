@@ -15,7 +15,7 @@ PKG_SOURCE:=udev-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/hotplug/
 PKG_MD5SUM:=320ccd2d0f4540d10e021bafa14f8985
 
-TAR_OPTIONS+=--transform='s,udev-$(PKG_VERSION),$(PKG_NAME)-$(PKG_VERSION),'
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/udev-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
