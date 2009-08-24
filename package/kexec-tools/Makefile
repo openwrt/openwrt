@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=2.0.0
+PKG_VERSION:=2.0.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/horms/kexec-tools
-PKG_MD5SUM:=d9f2ecd3c3307905f24130a25816e6cc
+PKG_MD5SUM:=67c1a396fdf67b984dad939a59a01571
 
 include $(INCLUDE_DIR)/package.mk
 
