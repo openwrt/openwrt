@@ -39,8 +39,8 @@ define Build/Compile
 endef
 
 define Package/swconfig/install
-	$(INSTALL_DIR) $(1)/bin $(1)/lib/network
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/swconfig $(1)/bin/swconfig
+	$(INSTALL_DIR) $(1)/sbin $(1)/lib/network
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/swconfig $(1)/sbin/swconfig
 	$(INSTALL_DATA) ./files/switch.sh $(1)/lib/network/
 endef
 
