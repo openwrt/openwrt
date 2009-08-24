@@ -8,3 +8,12 @@ config KEXEC_TOOLS_TARGET_NAME
 	  Defines the target type of the kernels that kexec deals
 	  with. This should be the target specification of
 	  the kernel you're booting.
+
+config KEXEC_TOOLS_kdump
+	bool
+	prompt "kdump support"
+	depends on PACKAGE_kexec-tools
+	default n
+	help
+	  Include the kdump utility.
+

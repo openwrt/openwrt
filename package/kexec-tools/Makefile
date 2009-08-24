@@ -56,15 +56,21 @@ CONFIGURE_VARS += \
 	BUILD_CC="$(HOSTCC)" \
 	TARGET_CC="$(TARGET_CC)"
 
+kexec-extra-sbin-$(CONFIG_KEXEC_TOOLS_kdump) += kdump
+
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) all
+	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_INSTALL_DIR)" all install
 endef
 
 define Package/kexec-tools/install
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(1)" \
-		install
-	rm -rf $(1)/usr/man
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) \
+		$(addprefix $(PKG_INSTALL_DIR)/usr/sbin/, \
+			$(kexec-extra-sbin-y)) \
+		$(kexec-extra-bin-y) \
+		$(PKG_INSTALL_DIR)/usr/sbin/kexec \
+		$(1)/usr/sbin
+
 endef
 
 $(eval $(call BuildPackage,kexec-tools))
