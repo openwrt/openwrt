@@ -12,8 +12,7 @@ LIBS := $(shell sh check-lxdialog.sh -ldflags gcc)
 OS := $(shell uname -s)
 ifeq ($(strip $(OS)),OpenBSD)
 LIBS := -lncurses
-endif
-ifeq ($(strip $(OS)),CYGWIN_NT-5.1)
+ifeq ($(shell uname -o),Cygwin)
 LIBS := -lncurses
 endif
 always		:= $(hostprogs-y) dochecklxdialog
