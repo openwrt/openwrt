@@ -1,6 +1,6 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -53,7 +53,7 @@
+@@ -54,7 +54,7 @@
  
  #define POOL_ALLOC_SIZE		(sizeof(struct desc) * (RX_DESCS + TX_DESCS))
  #define REGS_SIZE		0x1000
@@ -9,7 +9,7 @@
  #define RX_BUFF_SIZE		ALIGN((NET_IP_ALIGN) + MAX_MRU, 4)
  
  #define NAPI_WEIGHT		16
-@@ -927,6 +927,32 @@
+@@ -1011,6 +1011,32 @@ static void destroy_queues(struct port *
  	}
  }
  
@@ -42,7 +42,7 @@
  static int eth_open(struct net_device *dev)
  {
  	struct port *port = netdev_priv(dev);
-@@ -976,6 +1002,8 @@
+@@ -1061,6 +1087,8 @@ static int eth_open(struct net_device *d
  	if (npe_send_recv_message(port->npe, &msg, "ETH_SET_FIREWALL_MODE"))
  		return -EIO;
  
@@ -51,8 +51,8 @@
  	if ((err = request_queues(port)) != 0)
  		return err;
  
-@@ -1119,6 +1147,24 @@
- 	return 0;
+@@ -1238,6 +1266,24 @@ static void eth_init_mii(struct net_devi
+ 
  }
  
 +static int eth_change_mtu(struct net_device *dev, int mtu)
@@ -76,7 +76,7 @@
  static int __devinit eth_init_one(struct platform_device *pdev)
  {
  	struct port *port;
-@@ -1153,6 +1199,7 @@
+@@ -1272,6 +1318,7 @@ static int __devinit eth_init_one(struct
  		goto err_free;
  	}
  

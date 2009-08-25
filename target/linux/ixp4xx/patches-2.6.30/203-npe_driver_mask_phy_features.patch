@@ -1,8 +1,8 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -1220,6 +1220,10 @@ static int __devinit eth_init_one(struct
- 		return PTR_ERR(port->phydev);
- 	}
+@@ -1215,6 +1215,10 @@ static int __devinit eth_init_one(struct
+ 	if ((err = IS_ERR(port->phydev)))
+ 		goto err_free_mem;
  
 +	/* mask with MAC supported features */
 +	port->phydev->supported &= PHY_BASIC_FEATURES;
@@ -10,4 +10,4 @@
 +
  	port->phydev->irq = PHY_POLL;
  
- 	printk(KERN_INFO "%s: MII PHY %i on %s\n", dev->name, plat->phy,
+ 	if ((err = register_netdev(dev)))

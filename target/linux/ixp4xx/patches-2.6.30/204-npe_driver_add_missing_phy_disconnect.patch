@@ -1,10 +1,10 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -1245,6 +1245,7 @@ static int __devexit eth_remove_one(stru
+@@ -1247,6 +1247,7 @@ static int __devexit eth_remove_one(stru
  	struct net_device *dev = platform_get_drvdata(pdev);
  	struct port *port = netdev_priv(dev);
  
 +	phy_disconnect(port->phydev);
  	unregister_netdev(dev);
+ 	phy_disconnect(port->phydev);
  	npe_port_tab[NPE_ID(port->id)] = NULL;
- 	platform_set_drvdata(pdev, NULL);
