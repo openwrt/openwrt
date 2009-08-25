@@ -12,6 +12,7 @@ LIBS := $(shell sh check-lxdialog.sh -ldflags gcc)
 OS := $(shell uname -s)
 ifeq ($(strip $(OS)),OpenBSD)
 LIBS := -lncurses
+endif
 ifeq ($(shell uname -o),Cygwin)
 LIBS := -lncurses
 endif
