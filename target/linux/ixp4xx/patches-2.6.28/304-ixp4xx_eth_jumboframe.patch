@@ -1,15 +1,15 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -54,7 +54,7 @@
+@@ -53,7 +53,7 @@
  
  #define POOL_ALLOC_SIZE		(sizeof(struct desc) * (RX_DESCS + TX_DESCS))
  #define REGS_SIZE		0x1000
 -#define MAX_MRU			1536 /* 0x600 */
-+#define MAX_MRU			16384
++#define MAX_MRU			(16320 - ETH_HLEN - ETH_FCS_LEN)
  #define RX_BUFF_SIZE		ALIGN((NET_IP_ALIGN) + MAX_MRU, 4)
  
  #define NAPI_WEIGHT		16
-@@ -1011,6 +1011,30 @@ static void destroy_queues(struct port *
+@@ -927,6 +927,32 @@
  	}
  }
  
@@ -17,6 +17,8 @@
 +{
 +	struct port *port;
 +	struct msg msg;
++	/* adjust for ethernet headers */
++	int framesize = mtu + ETH_HLEN + ETH_FCS_LEN;
 +
 +	port = netdev_priv(dev);
 +
@@ -25,11 +27,11 @@
 +	msg.eth_id = port->id;
 +
 +	/* max rx/tx 64 byte blocks */
-+	msg.byte2 = ((mtu + 63) / 64) << 8;
-+	msg.byte3 = ((mtu + 63) / 64) << 8;
++	msg.byte2 = ((framesize + 63) / 64) << 8;
++	msg.byte3 = ((framesize + 63) / 64) << 8;
 +
-+	msg.byte4 = msg.byte6 = mtu >> 8;
-+	msg.byte5 = msg.byte7 = mtu & 0xff;
++	msg.byte4 = msg.byte6 = framesize >> 8;
++	msg.byte5 = msg.byte7 = framesize & 0xff;
 +
 +	if (npe_send_recv_message(port->npe, &msg, "ETH_SET_MAX_FRAME_LENGTH"))
 +		return -EIO;
@@ -40,7 +42,7 @@
  static int eth_open(struct net_device *dev)
  {
  	struct port *port = netdev_priv(dev);
-@@ -1061,6 +1085,8 @@ static int eth_open(struct net_device *d
+@@ -976,6 +1002,8 @@
  	if (npe_send_recv_message(port->npe, &msg, "ETH_SET_FIREWALL_MODE"))
  		return -EIO;
  
@@ -49,8 +51,8 @@
  	if ((err = request_queues(port)) != 0)
  		return err;
  
-@@ -1238,6 +1264,24 @@ static void eth_init_mii(struct net_devi
- 
+@@ -1119,6 +1147,24 @@
+ 	return 0;
  }
  
 +static int eth_change_mtu(struct net_device *dev, int mtu)
@@ -74,7 +76,7 @@
  static int __devinit eth_init_one(struct platform_device *pdev)
  {
  	struct port *port;
-@@ -1272,6 +1316,7 @@ static int __devinit eth_init_one(struct
+@@ -1153,6 +1199,7 @@
  		goto err_free;
  	}
  
