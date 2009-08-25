@@ -124,7 +124,7 @@
  	unsigned int		custom_divisor;
 --- a/drivers/serial/8250.c
 +++ b/drivers/serial/8250.c
-@@ -396,6 +396,20 @@ static void mem_serial_out(struct uart_p
+@@ -397,6 +397,20 @@ static void mem_serial_out(struct uart_p
  	writeb(value, p->membase + offset);
  }
  
@@ -145,7 +145,7 @@
  static void mem32_serial_out(struct uart_port *p, int offset, int value)
  {
  	offset = map_8250_out_reg(p, offset) << p->regshift;
-@@ -488,6 +502,11 @@ static void set_io_from_upio(struct uart
+@@ -490,6 +504,11 @@ static void set_io_from_upio(struct uart
  		p->serial_out = mem32_serial_out;
  		break;
  
@@ -157,7 +157,7 @@
  #ifdef CONFIG_SERIAL_8250_AU1X00
  	case UPIO_AU:
  		p->serial_in = au_serial_in;
-@@ -518,6 +537,7 @@ serial_out_sync(struct uart_8250_port *u
+@@ -522,6 +541,7 @@ serial_out_sync(struct uart_8250_port *u
  	switch (p->iotype) {
  	case UPIO_MEM:
  	case UPIO_MEM32:
@@ -165,7 +165,7 @@
  #ifdef CONFIG_SERIAL_8250_AU1X00
  	case UPIO_AU:
  #endif
-@@ -2433,6 +2453,7 @@ static int serial8250_request_std_resour
+@@ -2440,6 +2460,7 @@ static int serial8250_request_std_resour
  	case UPIO_MEM32:
  	case UPIO_MEM:
  	case UPIO_DWAPB:
@@ -173,7 +173,7 @@
  		if (!up->port.mapbase)
  			break;
  
-@@ -2470,6 +2491,7 @@ static void serial8250_release_std_resou
+@@ -2477,6 +2498,7 @@ static void serial8250_release_std_resou
  	case UPIO_MEM32:
  	case UPIO_MEM:
  	case UPIO_DWAPB:
@@ -181,7 +181,7 @@
  		if (!up->port.mapbase)
  			break;
  
-@@ -2931,6 +2953,7 @@ static int __devinit serial8250_probe(st
+@@ -2946,6 +2968,7 @@ static int __devinit serial8250_probe(st
  		port.serial_in		= p->serial_in;
  		port.serial_out		= p->serial_out;
  		port.dev		= &dev->dev;
@@ -189,7 +189,7 @@
  		if (share_irqs)
  			port.flags |= UPF_SHARE_IRQ;
  		ret = serial8250_register_port(&port);
-@@ -3080,6 +3103,7 @@ int serial8250_register_port(struct uart
+@@ -3095,6 +3118,7 @@ int serial8250_register_port(struct uart
  		uart->port.iotype       = port->iotype;
  		uart->port.flags        = port->flags | UPF_BOOT_AUTOCONF;
  		uart->port.mapbase      = port->mapbase;

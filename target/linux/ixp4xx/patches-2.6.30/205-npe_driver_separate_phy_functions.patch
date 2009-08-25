@@ -73,7 +73,7 @@
  
  	if (!ports_open)
  		qmgr_disable_irq(TXDONE_QUEUE);
-@@ -1149,7 +1195,6 @@ static int __devinit eth_init_one(struct
+@@ -1151,7 +1197,6 @@ static int __devinit eth_init_one(struct
  	struct net_device *dev;
  	struct eth_plat_info *plat = pdev->dev.platform_data;
  	u32 regs_phys;
@@ -81,7 +81,7 @@
  	int err;
  
  	if (!(dev = alloc_etherdev(sizeof(struct port))))
-@@ -1207,18 +1252,10 @@ static int __devinit eth_init_one(struct
+@@ -1209,18 +1254,10 @@ static int __devinit eth_init_one(struct
  	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
  	udelay(50);
  
@@ -102,7 +102,7 @@
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
  
-@@ -1245,7 +1282,7 @@ static int __devexit eth_remove_one(stru
+@@ -1247,7 +1284,7 @@ static int __devexit eth_remove_one(stru
  	struct net_device *dev = platform_get_drvdata(pdev);
  	struct port *port = netdev_priv(dev);
  
