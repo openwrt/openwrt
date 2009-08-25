@@ -140,7 +140,6 @@ void __init ar71xx_add_device_usb(void)
 	}
 }
 
-#ifndef CONFIG_AR71XX_EARLY_SERIAL
 static struct resource ar71xx_uart_resources[] = {
 	{
 		.start	= AR71XX_UART_BASE,
@@ -177,7 +176,6 @@ void __init ar71xx_add_device_uart(void)
 	ar71xx_uart_data[0].uartclk = ar71xx_ahb_freq;
 	platform_device_register(&ar71xx_uart_device);
 }
-#endif /* CONFIG_AR71XX_EARLY_SERIAL */
 
 static struct resource ar71xx_mdio_resources[] = {
 	{
