@@ -226,26 +226,6 @@ static void __init detect_sys_frequency(void)
 	}
 }
 
-#ifdef CONFIG_AR71XX_EARLY_SERIAL
-static void __init ar71xx_early_serial_setup(void)
-{
-	struct uart_port p;
-
-	memset(&p, 0, sizeof(p));
-
-	p.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_IOREMAP;
-	p.iotype	= UPIO_MEM32;
-	p.uartclk	= ar71xx_ahb_freq;
-	p.irq		= AR71XX_MISC_IRQ_UART;
-	p.regshift	= 2;
-	p.mapbase	= AR71XX_UART_BASE;
-
-	early_serial_setup(&p);
-}
-#else
-static inline void ar71xx_early_serial_setup(void) {};
-#endif /* CONFIG_AR71XX_EARLY_SERIAL */
-
 const char *get_system_type(void)
 {
 	return ar71xx_sys_type;
@@ -288,8 +268,6 @@ void __init plat_mem_setup(void)
 	_machine_restart = ar71xx_restart;
 	_machine_halt = ar71xx_halt;
 	pm_power_off = ar71xx_halt;
-
-	ar71xx_early_serial_setup();
 }
 
 void __init plat_time_init(void)
