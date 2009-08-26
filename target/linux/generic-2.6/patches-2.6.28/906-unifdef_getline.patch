@@ -1,29 +1,41 @@
 --- a/scripts/unifdef.c
 +++ b/scripts/unifdef.c
-@@ -206,7 +206,7 @@ static void             done(void);
+@@ -206,7 +206,11 @@ static void             done(void);
  static void             error(const char *);
  static int              findsym(const char *);
  static void             flushline(bool);
 -static Linetype         getline(void);
++#ifndef __CYGWIN__
 +static Linetype         __getline(void);
++#else
++static Linetype		get_line(void);
++#endif
  static Linetype         ifeval(const char **);
  static void             ignoreoff(void);
  static void             ignoreon(void);
-@@ -512,7 +512,7 @@ process(void)
+@@ -512,7 +516,11 @@ process(void)
  
  	for (;;) {
  		linenum++;
 -		lineval = getline();
++#ifndef __CYGWIN__
 +		lineval = __getline();
++#else
++		lineval = get_line();
++#endif
  		trans_table[ifstate[depth]][lineval]();
  		debug("process %s -> %s depth %d",
  		    linetype_name[lineval],
-@@ -526,7 +526,7 @@ process(void)
+@@ -526,7 +534,11 @@ process(void)
   * help from skipcomment().
   */
  static Linetype
 -getline(void)
++#ifndef __CYGWIN__
 +__getline(void)
++#else
++get_line(void)
++#endif
  {
  	const char *cp;
  	int cursym;
