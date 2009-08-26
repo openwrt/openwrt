@@ -1,0 +1,89 @@
+Subject: net/ps3_gelic: Fix RX DMA restart
+
+Fix the condition where PS3 network RX hangs when no network
+TX is occuring by calling gelic_card_enable_rxdmac() during
+RX_DMA_CHAIN_END event processing.
+
+The gelic hardware automatically clears its RX_DMA_EN flag when
+it detects an RX_DMA_CHAIN_END event.  In its processing of
+RX_DMA_CHAIN_END the gelic driver is required to set RX_DMA_EN
+(with a call to gelic_card_enable_rxdmac()) to restart RX DMA
+transfers.  The existing gelic driver code does not set
+RX_DMA_EN directly in its processing of the RX_DMA_CHAIN_END
+event, but uses a flag variable card->rx_dma_restart_required
+to schedule the setting of RX_DMA_EN until next inside the
+interrupt handler.
+
+It seems this delayed setting of RX_DMA_EN causes the hang since
+the next RX interrupt after the RX_DMA_CHAIN_END event where
+RX_DMA_EN is scheduled to be set will not occur since RX_DMA_EN
+was not set.  In the case were network TX is occuring, RX_DMA_EN
+is set in the next TX interrupt and RX processing continues.
+
+Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
+---
+ drivers/net/ps3_gelic_net.c |   21 ++++++++-------------
+ drivers/net/ps3_gelic_net.h |    1 -
+ 2 files changed, 8 insertions(+), 14 deletions(-)
+
+--- a/drivers/net/ps3_gelic_net.c
++++ b/drivers/net/ps3_gelic_net.c
+@@ -970,10 +970,6 @@ static int gelic_card_decode_one_descr(s
+ 	int dmac_chain_ended;
+ 
+ 	status = gelic_descr_get_status(descr);
+-	/* is this descriptor terminated with next_descr == NULL? */
+-	dmac_chain_ended =
+-		be32_to_cpu(descr->dmac_cmd_status) &
+-		GELIC_DESCR_RX_DMA_CHAIN_END;
+ 
+ 	if (status == GELIC_DESCR_DMA_CARDOWNED)
+ 		return 0;
+@@ -1036,6 +1032,11 @@ static int gelic_card_decode_one_descr(s
+ 	/* ok, we've got a packet in descr */
+ 	gelic_net_pass_skb_up(descr, card, netdev);
+ refill:
++
++	/* is the current descriptor terminated with next_descr == NULL? */
++	dmac_chain_ended =
++		be32_to_cpu(descr->dmac_cmd_status) &
++		GELIC_DESCR_RX_DMA_CHAIN_END;
+ 	/*
+ 	 * So that always DMAC can see the end
+ 	 * of the descriptor chain to avoid
+@@ -1064,10 +1065,9 @@ refill:
+ 	 * If dmac chain was met, DMAC stopped.
+ 	 * thus re-enable it
+ 	 */
+-	if (dmac_chain_ended) {
+-		card->rx_dma_restart_required = 1;
+-		dev_dbg(ctodev(card), "reenable rx dma scheduled\n");
+-	}
++
++	if (dmac_chain_ended)
++		gelic_card_enable_rxdmac(card);
+ 
+ 	return 1;
+ }
+@@ -1133,11 +1133,6 @@ static irqreturn_t gelic_card_interrupt(
+ 
+ 	status &= card->irq_mask;
+ 
+-	if (card->rx_dma_restart_required) {
+-		card->rx_dma_restart_required = 0;
+-		gelic_card_enable_rxdmac(card);
+-	}
+-
+ 	if (status & GELIC_CARD_RXINT) {
+ 		gelic_card_rx_irq_off(card);
+ 		napi_schedule(&card->napi);
+--- a/drivers/net/ps3_gelic_net.h
++++ b/drivers/net/ps3_gelic_net.h
+@@ -284,7 +284,6 @@ struct gelic_card {
+ 
+ 	struct gelic_descr_chain tx_chain;
+ 	struct gelic_descr_chain rx_chain;
+-	int rx_dma_restart_required;
+ 	int rx_csum;
+ 	/*
+ 	 * tx_lock guards tx descriptor list and
