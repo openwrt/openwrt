@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,6 +13,7 @@ ARCH:=ubicom32
 BOARD:=ubicom32
 BOARDNAME:=Ubicom IPxx
 FEATURES:=nommu ramdisk
+CFLAGS:=-Os -pipe -march=ubicom32v4 -funit-at-a-time
 
 LINUX_VERSION:=2.6.28.10
 
