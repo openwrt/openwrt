@@ -12,7 +12,6 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/io.h>
-#include <linux/serial_reg.h>
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
@@ -233,17 +232,4 @@ void __init prom_init(void)
 void __init prom_free_prom_memory(void)
 {
 	/* We do not have to prom memory to free */
-}
-
-#define UART_READ(r) \
-	__raw_readl((void __iomem *)(KSEG1ADDR(AR71XX_UART_BASE) + 4 * (r)))
-
-#define UART_WRITE(r, v) \
-	__raw_writel((v), (void __iomem *)(KSEG1ADDR(AR71XX_UART_BASE) + 4*(r)))
-
-void prom_putchar(unsigned char ch)
-{
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
-	UART_WRITE(UART_TX, ch);
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
 }
