@@ -9,8 +9,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
 ifneq ($(findstring "0.9.29",$(CONFIG_UCLIBC_VERSION)),"0.9.29")
-PKG_VERSION:=1.41.5
-PKG_MD5SUM:=e218df6c84fc17c1126d31de9472a76c
+PKG_VERSION:=1.41.9
+PKG_MD5SUM:=52f60a9e19a02f142f5546f1b5681927
 else
 PKG_VERSION:=1.40.11
 PKG_MD5SUM:=004cea70d724fdc7f1a952dffe4c9db8
@@ -31,7 +31,7 @@ define Package/e2fsprogs
 $(call Package/e2fsprogs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  TITLE:=Ext2/3 filesystem utilities
+  TITLE:=Ext2/3/4 filesystem utilities
   DEPENDS:=+libblkid +libuuid +libext2fs +libpthread
 endef
 
@@ -81,11 +81,11 @@ define Package/libext2fs
 $(call Package/e2fsprogs/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  TITLE:=ext2/ext3 filesystem library
+  TITLE:=ext2/3/4 filesystem library
 endef
 
 define Package/libext2fs/description
-libext2fs is a library which can access ext2 and ext3 filesystems.
+libext2fs is a library which can access ext2, ext3 and ext4 filesystems.
 endef
 
 define Package/tune2fs
@@ -155,6 +155,7 @@ define Package/e2fsprogs/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/mke2fs $(1)/usr/sbin/
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext2
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext3
+	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext4
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(foreach lib,com_err e2p,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc/init.d

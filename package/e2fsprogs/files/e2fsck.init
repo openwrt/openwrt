@@ -13,7 +13,7 @@ e2fsck() {
 
 	config_get fstype "$cfg" fstype
 	case "$fstype" in
-		ext2|ext3)
+		ext2|ext3|ext4)
 			/usr/sbin/e2fsck -p "$device"
 			local status="$?"
 			case "$status" in
