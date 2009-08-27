@@ -1,0 +1,154 @@
+diff -urN squashfs4.0/squashfs-tools/global.h squashfs4.0.new/squashfs-tools/global.h
+--- squashfs4.0/squashfs-tools/global.h	2009-08-27 21:33:03.000000000 +0200
++++ squashfs4.0.new/squashfs-tools/global.h	2009-08-27 21:36:38.000000000 +0200
+@@ -44,6 +44,11 @@
+ typedef squashfs_inode_t squashfs_inode;
+ typedef squashfs_block_t squashfs_block;
+ 
++#ifdef __CYGWIN__
++#include <sys/termios.h>
++#define FNM_EXTMATCH  (1 << 5)
++#endif
++
+ #ifndef FNM_EXTMATCH
+ #define FNM_EXTMATCH 0
+ #endif
+diff -urN squashfs4.0/squashfs-tools/mksquashfs.c squashfs4.0.new/squashfs-tools/mksquashfs.c
+--- squashfs4.0/squashfs-tools/mksquashfs.c	2009-08-27 21:33:06.000000000 +0200
++++ squashfs4.0.new/squashfs-tools/mksquashfs.c	2009-08-27 21:37:22.000000000 +0200
+@@ -49,10 +49,12 @@
+ #include <fnmatch.h>
+ 
+ #ifndef linux
++#ifndef __CYGWIN__
+ #define __BYTE_ORDER BYTE_ORDER
+ #define __BIG_ENDIAN BIG_ENDIAN
+ #define __LITTLE_ENDIAN LITTLE_ENDIAN
+ #include <sys/sysctl.h>
++#endif /* __CYGWIN__ */
+ #else
+ #include <endian.h>
+ #include <sys/sysinfo.h>
+@@ -825,6 +827,7 @@
+ 
+ void sigwinch_handler()
+ {
++#ifndef __CYGWIN__
+ 	struct winsize winsize;
+ 
+ 	if(ioctl(1, TIOCGWINSZ, &winsize) == -1) {
+@@ -834,6 +837,9 @@
+ 		columns = 80;
+ 	} else
+ 		columns = winsize.ws_col;
++#else
++	columns = 80;
++#endif
+ }
+ 
+ 
+@@ -3753,7 +3759,9 @@
+ 		BAD_ERROR("Failed to set signal mask in intialise_threads\n");
+ 
+ 	signal(SIGUSR1, sigusr1_handler);
+-
++#ifdef __CYGWIN__
++	processors = atoi(getenv("NUMBER_OF_PROCESSORS"));
++#else
+ 	if(processors == -1) {
+ #ifndef linux
+ 		int mib[2];
+@@ -3775,6 +3783,7 @@
+ 		processors = get_nprocs();
+ #endif
+ 	}
++#endif /* __CYGWIN__ */
+ 
+ 	if((thread = malloc((2 + processors * 2) * sizeof(pthread_t))) == NULL)
+ 		BAD_ERROR("Out of memory allocating thread descriptors\n");
+diff -urN squashfs4.0/squashfs-tools/read_fs.c squashfs4.0.new/squashfs-tools/read_fs.c
+--- squashfs4.0/squashfs-tools/read_fs.c	2009-08-27 21:33:06.000000000 +0200
++++ squashfs4.0.new/squashfs-tools/read_fs.c	2009-08-27 21:41:54.000000000 +0200
+@@ -40,9 +40,11 @@
+ #include <sys/mman.h>
+ 
+ #ifndef linux
++#ifndef __CYGWIN__
+ #define __BYTE_ORDER BYTE_ORDER
+ #define __BIG_ENDIAN BIG_ENDIAN
+ #define __LITTLE_ENDIAN LITTLE_ENDIAN
++#endif
+ #else
+ #include <endian.h>
+ #endif
+diff -urN squashfs4.0/squashfs-tools/swap.c squashfs4.0.new/squashfs-tools/swap.c
+--- squashfs4.0/squashfs-tools/swap.c	2009-03-26 05:40:16.000000000 +0100
++++ squashfs4.0.new/squashfs-tools/swap.c	2009-08-27 21:44:52.000000000 +0200
+@@ -20,9 +20,11 @@
+  */
+ 
+ #ifndef linux
++#ifndef __CYGWIN__
+ #define __BYTE_ORDER BYTE_ORDER
+ #define __BIG_ENDIAN BIG_ENDIAN
+ #define __LITTLE_ENDIAN LITTLE_ENDIAN
++#endif
+ #else
+ #include <endian.h>
+ #endif
+diff -urN squashfs4.0/squashfs-tools/unsquashfs.c squashfs4.0.new/squashfs-tools/unsquashfs.c
+--- squashfs4.0/squashfs-tools/unsquashfs.c	2009-08-27 21:33:06.000000000 +0200
++++ squashfs4.0.new/squashfs-tools/unsquashfs.c	2009-08-27 21:41:38.000000000 +0200
+@@ -111,6 +111,7 @@
+ 
+ void sigwinch_handler()
+ {
++#ifndef __CYGWIN__
+ 	struct winsize winsize;
+ 
+ 	if(ioctl(1, TIOCGWINSZ, &winsize) == -1) {
+@@ -120,6 +121,9 @@
+ 		columns = 80;
+ 	} else
+ 		columns = winsize.ws_col;
++#else
++	columns = 80;
++#endif
+ }
+ 
+ 
+@@ -1794,7 +1798,9 @@
+ 	if(sigprocmask(SIG_BLOCK, &sigmask, &old_mask) == -1)
+ 		EXIT_UNSQUASH("Failed to set signal mask in intialise_threads"
+ 			"\n");
+-
++#ifdef __CYGWIN__
++	processors = atoi(getenv("NUMBER_OF_PROCESSORS"));
++#else
+ 	if(processors == -1) {
+ #ifndef linux
+ 		int mib[2];
+@@ -1816,6 +1822,7 @@
+ 		processors = get_nprocs();
+ #endif
+ 	}
++#endif /* __CYGWIN__ */
+ 
+ 	if((thread = malloc((3 + processors) * sizeof(pthread_t))) == NULL)
+ 		EXIT_UNSQUASH("Out of memory allocating thread descriptors\n");
+diff -urN squashfs4.0/squashfs-tools/unsquashfs.h squashfs4.0.new/squashfs-tools/unsquashfs.h
+--- squashfs4.0/squashfs-tools/unsquashfs.h	2009-08-27 21:33:03.000000000 +0200
++++ squashfs4.0.new/squashfs-tools/unsquashfs.h	2009-08-27 21:44:17.000000000 +0200
+@@ -46,10 +46,12 @@
+ #include <sys/time.h>
+ 
+ #ifndef linux
++#ifndef __CYGWIN__
+ #define __BYTE_ORDER BYTE_ORDER
+ #define __BIG_ENDIAN BIG_ENDIAN
+ #define __LITTLE_ENDIAN LITTLE_ENDIAN
+ #include <sys/sysctl.h>
++#endif /* __CYGWIN__ */
+ #else
+ #include <endian.h>
+ #include <sys/sysinfo.h>
