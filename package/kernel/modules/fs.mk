@@ -51,6 +51,7 @@ define KernelPackage/fs-ntfs
   KCONFIG:=CONFIG_NTFS_FS
   FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ntfs)
+$(call KernelPackage/nls/Depends)
 endef
 
 define KernelPackage/fs-ntfs/description
