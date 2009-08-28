@@ -88,7 +88,7 @@ http://madwifi-project.org/changeset/4005
  int
  ieee80211_vap_setup(struct ieee80211com *ic, struct net_device *dev,
  	const char *name, int opmode, int flags, struct ieee80211vap *master)
-@@ -470,12 +482,17 @@ ieee80211_vap_setup(struct ieee80211com 
+@@ -470,16 +482,21 @@ ieee80211_vap_setup(struct ieee80211com 
  		} else
  			strncpy(dev->name, name, sizeof(dev->name));
  	}
@@ -100,12 +100,16 @@ http://madwifi-project.org/changeset/4005
  	dev->hard_start_xmit = ieee80211_hardstart;
  	dev->set_multicast_list = ieee80211_set_multicast_list;
 +	dev->do_ioctl = ieee80211_ioctl;
-+#else
-+	dev->netdev_ops = &ieee80211_netdev_ops;
-+#endif
  #if 0
  	dev->set_mac_address = ieee80211_set_mac_address;
  #endif
+  	dev->change_mtu = ieee80211_change_mtu;
++#else
++	dev->netdev_ops = &ieee80211_netdev_ops;
++#endif
+ 	dev->tx_queue_len = 0;			/* NB: bypass queuing */
+ 	dev->hard_header_len = parent->hard_header_len;
+ 	/*
 @@ -1823,7 +1840,11 @@ ieee80211_set_multicast_list(struct net_
  	IEEE80211_UNLOCK_IRQ(ic);
  
