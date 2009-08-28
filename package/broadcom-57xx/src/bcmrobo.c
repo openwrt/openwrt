@@ -96,6 +96,7 @@
 #define	DEVID5395	0x95	/*  5395 */
 #define	DEVID5397	0x97	/*  5397 */
 #define	DEVID5398	0x98	/*  5398 */
+#define	DEVID53115	0x3115	/* 53115 */
 
 /* VLAN page registers */
 #define REG_VLAN_CTRL0	0x00	/* VLAN Control 0 register */
@@ -891,7 +892,8 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 	ASSERT((robo->devid == DEVID5325) ||
 	       (robo->devid == DEVID5395) ||
 	       (robo->devid == DEVID5397) ||
-	       (robo->devid == DEVID5398));
+	       (robo->devid == DEVID5398) ||
+	       (robo->devid == DEVID53115));
 
 	bcm_robo_reset(robo);
 	config_attach(robo);
@@ -1253,7 +1255,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 		val32 = ((c->untag << 9) |		/* untag enable */
 			 c->port);			/* vlan members */
 
-		if (robo->devid == DEVID5395) {
+		if ((robo->devid == DEVID5395) || (robo->devid == DEVID53115)) {
 			vtble = REG_VTBL_ENTRY_5395;
 			vtbli = REG_VTBL_INDX_5395;
 			vtbla = REG_VTBL_ACCESS_5395;
