@@ -8,9 +8,7 @@
 FS_MENU:=Filesystems
 
 define KernelPackage/nls/Depends
-  ifneq ($(KERNEL),2.4)
-    DEPENDS:= +kmod-nls-base
-  endif
+  DEPENDS:= +!LINUX_2_4:kmod-nls-base
 endef
 
 define KernelPackage/fs-cifs
