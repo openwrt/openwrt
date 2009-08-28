@@ -23,5 +23,12 @@ try_git() {
 	[ -n "$REV" ]
 }
 
-try_version || try_svn || try_git || REV="unknown"
+try_hg() {
+	[ -d .hg ] || return 1
+	REV="$(hg log -r-1 --template '{desc}' | awk '{print $2}' | sed 's/\].*//')"
+	REV="${REV:+$REV}"
+	[ -n "$REV" ]
+}
+
+try_version || try_svn || try_git || try_hg || REV="unknown"
 echo "$REV"
