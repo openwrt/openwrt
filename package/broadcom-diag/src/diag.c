@@ -64,6 +64,7 @@ enum {
 	WRT350N,
 	WRT600N,
 	WRT600NV11,
+	WRT610N,
 
 	/* ASUS */
 	WLHDD,
@@ -300,6 +301,19 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "wl1_ses_green",      .gpio = 1 << 11, .polarity = REVERSE }, // 5.6Ghz LED Green
 		},
 		.platform_init = bcm57xx_init,
+	},
+	[WRT610N] = {
+		.name           = "Linksys WRT610N",
+		.buttons        = {
+			{ .name = "reset",      .gpio = 1 << 6 },
+			{ .name = "ses",        .gpio = 1 << 8 },
+		},
+		.leds           = {
+			{ .name = "power",      .gpio = 1 << 1,  .polarity = NORMAL }, // Power LED
+			{ .name = "usb",        .gpio = 1 << 0,  .polarity = REVERSE }, // USB LED
+			{ .name = "ses_amber",  .gpio = 1 << 3,  .polarity = REVERSE }, // WiFi protected setup LED amber
+			{ .name = "ses_blue",   .gpio = 1 << 9,  .polarity = REVERSE }, // WiFi protected setup LED blue
+		},
 	},
 	/* Asus */
 	[WLHDD] = {
@@ -796,6 +810,12 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[DIR130];
 		if (!strcmp(buf, "DIR-330"))
 			return &platforms[DIR330];
+	}
+
+	/* Based on "wsc_modelname */
+	if ((buf = nvram_get("wsc_modelname"))) {
+		if (!strcmp(buf, "WRT610N"))
+			return &platforms[WRT610N];
 	}
 
 	/* Based on "model_no" */
