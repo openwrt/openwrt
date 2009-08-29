@@ -247,6 +247,7 @@ endef
 
 define Package/libc/install_lib
 	$(CP) $(filter-out %/libdl_pic.a,$(wildcard $(TOOLCHAIN_DIR)/usr/lib/lib*.a)) $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc.a $(1)/lib/libgcc_s_pic.a
 endef
 
 define Package/libpthread/install
