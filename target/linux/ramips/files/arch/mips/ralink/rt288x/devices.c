@@ -18,7 +18,8 @@
 
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
-#include <asm/mach-ralink/platform.h>
+
+#include "devices.h"
 
 static struct resource rt288x_flash0_resources[] = {
 	{
