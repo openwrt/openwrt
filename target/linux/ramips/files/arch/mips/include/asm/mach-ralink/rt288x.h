@@ -53,7 +53,6 @@ extern unsigned long rt288x_mach_type;
 #define RT288X_GPIO_COUNT	32
 
 extern void __iomem *rt288x_sysc_base;
-extern void __iomem *rt288x_intc_base;
 extern void __iomem *rt288x_memc_base;
 
 static inline void rt288x_sysc_wr(u32 val, unsigned reg)
@@ -64,16 +63,6 @@ static inline void rt288x_sysc_wr(u32 val, unsigned reg)
 static inline u32 rt288x_sysc_rr(unsigned reg)
 {
 	return __raw_readl(rt288x_sysc_base + reg);
-}
-
-static inline void rt288x_intc_wr(u32 val, unsigned reg)
-{
-	__raw_writel(val, rt288x_intc_base + reg);
-}
-
-static inline u32 rt288x_intc_rr(unsigned reg)
-{
-	return __raw_readl(rt288x_intc_base + reg);
 }
 
 static inline void rt288x_memc_wr(u32 val, unsigned reg)

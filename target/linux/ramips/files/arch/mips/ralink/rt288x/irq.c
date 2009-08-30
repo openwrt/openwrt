@@ -17,6 +17,7 @@
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 
+#include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
 
@@ -24,7 +25,7 @@ static void rt288x_intc_irq_dispatch(void)
 {
 	u32 pending;
 
-	pending = rt288x_intc_rr(INTC_REG_STATUS0);
+	pending = ramips_intc_get_status();
 
 	if (pending & RT2880_INTC_INT_TIMER0)
 		do_IRQ(RT2880_INTC_IRQ_TIMER0);
@@ -45,52 +46,6 @@ static void rt288x_intc_irq_dispatch(void)
 
 	else
 		spurious_interrupt();
-}
-
-static void rt288x_intc_irq_unmask(unsigned int irq)
-{
-	irq -= RT288X_INTC_IRQ_BASE;
-	rt288x_intc_wr((1 << irq), INTC_REG_ENABLE);
-}
-
-static void rt288x_intc_irq_mask(unsigned int irq)
-{
-	irq -= RT288X_INTC_IRQ_BASE;
-	rt288x_intc_wr((1 << irq), INTC_REG_DISABLE);
-}
-
-struct irq_chip rt288x_intc_irq_chip = {
-	.name		= "RT288X INTC",
-	.unmask		= rt288x_intc_irq_unmask,
-	.mask		= rt288x_intc_irq_mask,
-	.mask_ack	= rt288x_intc_irq_mask,
-};
-
-static struct irqaction rt288x_intc_irqaction = {
-	.handler	= no_action,
-	.name		= "cascade [RT288X INTC]",
-};
-
-static void __init rt288x_intc_irq_init(void)
-{
-	int i;
-
-	/* disable all interrupts */
-	rt288x_intc_wr(~0, INTC_REG_DISABLE);
-
-	/* route all INTC interrupts to MIPS HW0 interrupt */
-	rt288x_intc_wr(0, INTC_REG_TYPE);
-
-	for (i = RT288X_INTC_IRQ_BASE;
-	     i < RT288X_INTC_IRQ_BASE + RT288X_INTC_IRQ_COUNT; i++) {
-		irq_desc[i].status = IRQ_DISABLED;
-		set_irq_chip_and_handler(i, &rt288x_intc_irq_chip,
-					 handle_level_irq);
-	}
-
-	setup_irq(RT288X_CPU_IRQ_INTC, &rt288x_intc_irqaction);
-
-	rt288x_intc_wr(RT2880_INTC_INT_GLOBAL, INTC_REG_ENABLE);
 }
 
 asmlinkage void plat_irq_dispatch(void)
@@ -121,5 +76,6 @@ asmlinkage void plat_irq_dispatch(void)
 void __init arch_init_irq(void)
 {
 	mips_cpu_irq_init();
-	rt288x_intc_irq_init();
+	ramips_intc_irq_init(RT2880_INTC_BASE, RT288X_CPU_IRQ_INTC,
+			     RT288X_INTC_IRQ_BASE);
 }
