@@ -1,0 +1,15 @@
+if RALINK_RT305X
+
+menu "Ralink RT350x machine selection"
+
+config RT305X_MACH_GENERIC
+	bool "Generic RT350x based machine support"
+	default y
+
+config RT305X_MACH_WHR_G300N
+	bool "Buffalo WHR-G300N support"
+	default y
+
+endmenu
+
+endif
