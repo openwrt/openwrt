@@ -1,0 +1,51 @@
+if MIPS_RALINK
+
+choice
+	prompt "Ralink SoC selection"
+	default SOC_RT288X
+	help
+	  Select Ralink MIPS SoC type.
+
+	config RALINK_RT288X
+		bool "RT288x"
+		select SOC_RT288X
+
+	config RALINK_RT305X
+		bool "RT305x"
+		select SOC_RT305X
+
+endchoice
+
+source "arch/mips/ralink/rt288x/Kconfig"
+source "arch/mips/ralink/rt305x/Kconfig"
+
+config SOC_RT288X
+	bool
+	select CEVT_R4K
+	select CSRC_R4K
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select ARCH_REQUIRE_GPIOLIB
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select HW_HAS_PCI
+	select MIPS_MACHINE
+
+config SOC_RT305X
+	bool
+	select CEVT_R4K
+	select CSRC_R4K
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select ARCH_REQUIRE_GPIOLIB
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+	select MIPS_MACHINE
+
+endif
