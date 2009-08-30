@@ -108,7 +108,6 @@ void __init plat_mem_setup(void)
 {
 	set_io_port_base(KSEG1);
 
-	rt288x_intc_base = ioremap_nocache(RT2880_INTC_BASE, RT2880_INTC_SIZE);
 	rt288x_sysc_base = ioremap_nocache(RT2880_SYSC_BASE, RT2880_SYSC_SIZE);
 	rt288x_memc_base = ioremap_nocache(RT2880_MEMC_BASE, RT2880_MEMC_SIZE);
 

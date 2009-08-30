@@ -103,7 +103,6 @@ void __init plat_mem_setup(void)
 {
 	set_io_port_base(KSEG1);
 
-	rt305x_intc_base = ioremap_nocache(RT305X_INTC_BASE, PAGE_SIZE);
 	rt305x_sysc_base = ioremap_nocache(RT305X_SYSC_BASE, PAGE_SIZE);
 	rt305x_memc_base = ioremap_nocache(RT305X_MEMC_BASE, PAGE_SIZE);
 

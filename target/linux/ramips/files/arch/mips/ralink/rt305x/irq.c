@@ -16,6 +16,7 @@
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 
+#include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
 
@@ -23,7 +24,7 @@ static void rt305x_intc_irq_dispatch(void)
 {
 	u32 pending;
 
-	pending = rt305x_intc_rr(INTC_REG_STATUS0);
+	pending = ramips_intc_get_status();
 
 	if (pending & RT305X_INTC_INT_TIMER0)
 		do_IRQ(RT305X_INTC_IRQ_TIMER0);
@@ -41,52 +42,6 @@ static void rt305x_intc_irq_dispatch(void)
 
 	else
 		spurious_interrupt();
-}
-
-static void rt305x_intc_irq_unmask(unsigned int irq)
-{
-	irq -= RT305X_INTC_IRQ_BASE;
-	rt305x_intc_wr((1 << irq), INTC_REG_ENABLE);
-}
-
-static void rt305x_intc_irq_mask(unsigned int irq)
-{
-	irq -= RT305X_INTC_IRQ_BASE;
-	rt305x_intc_wr((1 << irq), INTC_REG_DISABLE);
-}
-
-struct irq_chip rt305x_intc_irq_chip = {
-	.name		= "RT305X INTC",
-	.unmask		= rt305x_intc_irq_unmask,
-	.mask		= rt305x_intc_irq_mask,
-	.mask_ack	= rt305x_intc_irq_mask,
-};
-
-static struct irqaction rt305x_intc_irqaction = {
-	.handler	= no_action,
-	.name		= "cascade [RT305X INTC]",
-};
-
-static void __init rt305x_intc_irq_init(void)
-{
-	int i;
-
-	/* disable all interrupts */
-	rt305x_intc_wr(~0, INTC_REG_DISABLE);
-
-	/* route all INTC interrupts to MIPS HW0 interrupt */
-	rt305x_intc_wr(0, INTC_REG_TYPE);
-
-	for (i = RT305X_INTC_IRQ_BASE;
-	     i < RT305X_INTC_IRQ_BASE + RT305X_INTC_IRQ_COUNT; i++) {
-		set_irq_chip_and_handler(i, &rt305x_intc_irq_chip,
-					 handle_level_irq);
-	}
-
-	setup_irq(RT305X_CPU_IRQ_INTC, &rt305x_intc_irqaction);
-
-	/* enable interrupt masking */
-	rt305x_intc_wr(RT305X_INTC_INT_GLOBAL, INTC_REG_ENABLE);
 }
 
 asmlinkage void plat_irq_dispatch(void)
@@ -114,5 +69,6 @@ asmlinkage void plat_irq_dispatch(void)
 void __init arch_init_irq(void)
 {
 	mips_cpu_irq_init();
-	rt305x_intc_irq_init();
+	ramips_intc_irq_init(RT305X_INTC_BASE, RT305X_CPU_IRQ_INTC,
+			     RT305X_INTC_IRQ_BASE);
 }

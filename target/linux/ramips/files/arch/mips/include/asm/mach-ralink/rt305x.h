@@ -55,7 +55,6 @@ extern unsigned long rt305x_sys_freq;
 #define RT305X_INTC_IRQ_OTG	(RT305X_INTC_IRQ_BASE + 18)
 
 extern void __iomem *rt305x_sysc_base;
-extern void __iomem *rt305x_intc_base;
 extern void __iomem *rt305x_memc_base;
 
 static inline void rt305x_sysc_wr(u32 val, unsigned reg)
@@ -66,16 +65,6 @@ static inline void rt305x_sysc_wr(u32 val, unsigned reg)
 static inline u32 rt305x_sysc_rr(unsigned reg)
 {
 	return __raw_readl(rt305x_sysc_base + reg);
-}
-
-static inline void rt305x_intc_wr(u32 val, unsigned reg)
-{
-	__raw_writel(val, rt305x_intc_base + reg);
-}
-
-static inline u32 rt305x_intc_rr(unsigned reg)
-{
-	return __raw_readl(rt305x_intc_base + reg);
 }
 
 static inline void rt305x_memc_wr(u32 val, unsigned reg)

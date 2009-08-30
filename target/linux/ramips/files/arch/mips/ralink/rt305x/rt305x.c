@@ -26,7 +26,6 @@ EXPORT_SYMBOL_GPL(rt305x_cpu_freq);
 unsigned long rt305x_sys_freq;
 EXPORT_SYMBOL_GPL(rt305x_sys_freq);
 
-void __iomem * rt305x_intc_base;
 void __iomem * rt305x_sysc_base;
 void __iomem * rt305x_memc_base;
 
