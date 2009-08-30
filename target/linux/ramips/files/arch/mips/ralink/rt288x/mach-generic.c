@@ -11,6 +11,7 @@
 
 #include <linux/init.h>
 
+#include <asm/mach-ralink/rt288x.h>
 #include <asm/mips_machine.h>
 
 static void __init rt288x_generic_init(void)
