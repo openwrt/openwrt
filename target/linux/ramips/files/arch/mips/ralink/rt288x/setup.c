@@ -57,7 +57,6 @@ static void __init rt288x_detect_mem_size(void)
 	add_memory_region(RT2880_SDRAM_BASE, size, BOOT_MEM_RAM);
 }
 
-#ifdef CONFIG_RT288X_EARLY_SERIAL
 static void __init rt288x_early_serial_setup(void)
 {
 	struct uart_port p;
@@ -90,9 +89,6 @@ static void __init rt288x_early_serial_setup(void)
 		printk(KERN_ERR "RT288x: early UART1 registration failed %d\n",
 			err);
 }
-#else
-static inline void rt288x_early_serial_setup(void) {};
-#endif /* CONFIG_RT288X_EARLY_SERIAL */
 
 const char *get_system_type(void)
 {
