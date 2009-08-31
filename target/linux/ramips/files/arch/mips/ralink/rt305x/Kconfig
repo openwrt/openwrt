@@ -9,6 +9,7 @@ config RT305X_MACH_GENERIC
 config RT305X_MACH_WHR_G300N
 	bool "Buffalo WHR-G300N support"
 	default y
+	select RALINK_DEV_GPIO_LEDS
 
 endmenu
 
