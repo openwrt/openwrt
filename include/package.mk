@@ -145,7 +145,14 @@ define Build/DefaultTargets
   distcheck: $(STAMP_CONFIGURED)
 endef
 
+define Build/IncludeOverlay
+  $(eval -include $(wildcard $(TOPDIR)/overlay/*/$(PKG_NAME).mk))
+  define Build/IncludeOverlay
+  endef
+endef
+
 define BuildPackage
+  $(Build/IncludeOverlay)
   $(eval $(Package/Default))
   $(eval $(Package/$(1)))
 
