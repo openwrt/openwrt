@@ -16,9 +16,9 @@
 #include <linux/leds.h>
 
 #include <asm/mips_machine.h>
+#include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
 
-#include "machine.h"
 #include "devices.h"
 
 #define WHR_G300N_GPIO_LED_DIAG		7
@@ -93,4 +93,4 @@ static void __init whr_g300n_init(void)
 				  whr_g300n_leds_gpio);
 }
 
-MIPS_MACHINE(RT305X_MACH_WHR_G300N, "Buffalo WHR-G300N", whr_g300n_init);
+MIPS_MACHINE(RAMIPS_MACH_WHR_G300N, "Buffalo WHR-G300N", whr_g300n_init);

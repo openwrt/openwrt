@@ -14,14 +14,13 @@
 #include <asm/bootinfo.h>
 
 #include <asm/mach-ralink/common.h>
+#include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
 
-#include "machine.h"
-
 struct board_rec {
 	char			*name;
-	enum rt305x_mach_type	mach_type;
+	enum ramips_mach_type	mach_type;
 };
 
 static int rt305x_prom_argc __initdata;
@@ -31,7 +30,7 @@ static char **rt305x_prom_envp __initdata;
 static struct board_rec boards[] __initdata = {
 	{
 		.name		= "WHR-G300N",
-		.mach_type	= RT305X_MACH_WHR_G300N,
+		.mach_type	= RAMIPS_MACH_WHR_G300N,
 	}
 };
 
@@ -113,11 +112,9 @@ static __init void find_board_byname(char *name)
 {
 	int i;
 
-	rt305x_mach = RT305X_MACH_GENERIC;
-
 	for (i = 0; i < ARRAY_SIZE(boards); i++)
 		if (strcmp(name, boards[i].name) == 0) {
-			rt305x_mach = boards[i].mach_type;
+			ramips_mach = boards[i].mach_type;
 			break;
 		}
 }

@@ -11,5 +11,3 @@
 obj-y	:= prom.o irq.o setup.o rt288x.o devices.o
 
 obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
-
-obj-$(CONFIG_RT288X_MACH_GENERIC)	+= mach-generic.o

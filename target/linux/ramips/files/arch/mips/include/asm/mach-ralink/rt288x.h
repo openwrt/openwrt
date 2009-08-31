@@ -23,9 +23,6 @@ void rt288x_detect_sys_freq(void) __init;
 extern unsigned long rt288x_cpu_freq;
 extern unsigned long rt288x_sys_freq;
 
-extern unsigned long rt288x_mach_type;
-#define RT288X_MACH_GENERIC	0
-
 #define RT288X_CPU_IRQ_BASE	0
 #define RT288X_INTC_IRQ_BASE	8
 #define RT288X_INTC_IRQ_COUNT	32
