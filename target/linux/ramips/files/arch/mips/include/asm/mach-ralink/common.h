@@ -9,6 +9,9 @@
 #ifndef __ASM_MACH_RALINK_COMMON_H
 #define __ASM_MACH_RALINK_COMMON_H
 
+#define RAMIPS_SYS_TYPE_LEN	64
+extern unsigned char ramips_sys_type[RAMIPS_SYS_TYPE_LEN];
+
 void __init ramips_intc_irq_init(unsigned intc_base, unsigned irq,
 				 unsigned irq_base);
 u32 ramips_intc_get_status(void);

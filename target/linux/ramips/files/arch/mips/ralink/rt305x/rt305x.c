@@ -15,10 +15,9 @@
 #include <linux/init.h>
 #include <linux/module.h>
 
+#include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
-
-unsigned char rt305x_sys_type[RT305X_SYS_TYPE_LEN];
 
 unsigned long rt305x_cpu_freq;
 EXPORT_SYMBOL_GPL(rt305x_cpu_freq);
@@ -39,7 +38,7 @@ void __init rt305x_detect_sys_type(void)
 	n1 = rt305x_sysc_rr(SYSC_REG_CHIP_NAME1);
 	id = rt305x_sysc_rr(SYSC_REG_CHIP_ID);
 
-	snprintf(rt305x_sys_type, RT305X_SYS_TYPE_LEN,
+	snprintf(ramips_sys_type, RAMIPS_SYS_TYPE_LEN,
 		"Ralink %c%c%c%c%c%c%c%c id:%u rev:%u",
 		(char) (n0 & 0xff), (char) ((n0 >> 8) & 0xff),
 		(char) ((n0 >> 16) & 0xff), (char) ((n0 >> 24) & 0xff),

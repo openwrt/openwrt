@@ -19,6 +19,13 @@
 #include <asm/mach-ralink/common.h>
 #include <ralink_soc.h>
 
+unsigned char ramips_sys_type[RAMIPS_SYS_TYPE_LEN];
+
+const char *get_system_type(void)
+{
+	return ramips_sys_type;
+}
+
 static void __init detect_mem_size(void)
 {
 	unsigned long size;

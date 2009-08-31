@@ -75,11 +75,6 @@ static void __init rt305x_early_serial_setup(void)
 			err);
 }
 
-const char *get_system_type(void)
-{
-	return rt305x_sys_type;
-}
-
 unsigned int __cpuinit get_c0_compare_irq(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;
@@ -93,7 +88,7 @@ void __init ramips_soc_setup(void)
 	rt305x_detect_sys_type();
 	rt305x_detect_sys_freq();
 
-	printk(KERN_INFO "%s running at %lu.%02lu MHz\n", get_system_type(),
+	printk(KERN_INFO "%s running at %lu.%02lu MHz\n", ramips_sys_type,
 		rt305x_cpu_freq / 1000000,
 		(rt305x_cpu_freq % 1000000) * 100 / 1000000);
 

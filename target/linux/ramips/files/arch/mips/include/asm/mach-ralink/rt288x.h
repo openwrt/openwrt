@@ -18,10 +18,6 @@
 #include <linux/io.h>
 
 void rt288x_detect_sys_type(void) __init;
-
-#define RT288X_SYS_TYPE_LEN	64
-extern unsigned char rt288x_sys_type[RT288X_SYS_TYPE_LEN];
-
 void rt288x_detect_sys_freq(void) __init;
 
 extern unsigned long rt288x_cpu_freq;

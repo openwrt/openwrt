@@ -17,10 +17,6 @@
 #include <linux/io.h>
 
 void rt305x_detect_sys_type(void) __init;
-
-#define RT305X_SYS_TYPE_LEN	64
-extern unsigned char rt305x_sys_type[RT305X_SYS_TYPE_LEN];
-
 void rt305x_detect_sys_freq(void) __init;
 
 extern unsigned long rt305x_cpu_freq;
