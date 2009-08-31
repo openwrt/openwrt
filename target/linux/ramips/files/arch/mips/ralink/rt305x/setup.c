@@ -20,6 +20,7 @@
 #include <asm/reboot.h>
 #include <asm/time.h>
 
+#include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
 
@@ -99,10 +100,8 @@ unsigned int __cpuinit get_c0_compare_irq(void)
 	return CP0_LEGACY_COMPARE_IRQ;
 }
 
-void __init plat_mem_setup(void)
+void __init ramips_soc_setup(void)
 {
-	set_io_port_base(KSEG1);
-
 	rt305x_sysc_base = ioremap_nocache(RT305X_SYSC_BASE, PAGE_SIZE);
 	rt305x_memc_base = ioremap_nocache(RT305X_MEMC_BASE, PAGE_SIZE);
 

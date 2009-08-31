@@ -13,4 +13,6 @@ void __init ramips_intc_irq_init(unsigned intc_base, unsigned irq,
 				 unsigned irq_base);
 u32 ramips_intc_get_status(void);
 
+void __init ramips_soc_setup(void);
+
 #endif /* __ASM_MACH_RALINK_COMMON_H */
