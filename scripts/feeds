@@ -46,7 +46,7 @@ sub parse_config() {
 		$line[0] =~ /^src-\w+$/ or $valid = 0;
 		$line[1] =~ /^\w+$/ or $valid = 0;
 		@src = split /\s+/, $line[2];
-		$valid or die "Syntax error in feeds.list, line: $line\n";
+		$valid or die "Syntax error in feeds.conf, line: $line\n";
 
 		$name{$line[1]} and die "Duplicate feed name '$line[1]', line: $line\n";
 		$name{$line[1]} = 1;
