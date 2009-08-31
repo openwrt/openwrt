@@ -24,8 +24,6 @@
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
 
-unsigned long rt288x_mach_type;
-
 static void rt288x_restart(char *command)
 {
 	rt288x_sysc_wr(RT2880_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
@@ -101,12 +99,3 @@ void __init plat_time_init(void)
 {
 	mips_hpt_frequency = rt288x_cpu_freq / 2;
 }
-
-static int __init rt288x_machine_setup(void)
-{
-	mips_machine_setup(rt288x_mach_type);
-
-	return 0;
-}
-
-arch_initcall(rt288x_machine_setup);

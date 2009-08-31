@@ -23,10 +23,6 @@
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
 
-#include "machine.h"
-
-enum rt305x_mach_type rt305x_mach;
-
 static void rt305x_restart(char *command)
 {
 	rt305x_sysc_wr(RT305X_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
@@ -103,12 +99,3 @@ void __init plat_time_init(void)
 {
 	mips_hpt_frequency = rt305x_cpu_freq / 2;
 }
-
-static int __init rt305x_machine_setup(void)
-{
-	mips_machine_setup(rt305x_mach);
-
-	return 0;
-}
-
-arch_initcall(rt305x_machine_setup);

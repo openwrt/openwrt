@@ -1,5 +1,5 @@
 /*
- * Ralink RT305x SoC specific setup
+ * Ralink machine types
  *
  * Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -8,9 +8,9 @@
  * by the Free Software Foundation.
  */
 
-enum rt305x_mach_type {
-	RT305X_MACH_GENERIC,
-	RT305X_MACH_WHR_G300N,		/* Buffalo WHR-G300N */
+enum ramips_mach_type {
+	RAMIPS_MACH_GENERIC,
+	RAMIPS_MACH_WHR_G300N,		/* Buffalo WHR-G300N */
 };
 
-extern enum rt305x_mach_type rt305x_mach;
+extern enum ramips_mach_type ramips_mach;

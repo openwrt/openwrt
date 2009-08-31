@@ -15,11 +15,14 @@
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
+#include <asm/mips_machine.h>
 
 #include <asm/mach-ralink/common.h>
+#include <asm/mach-ralink/machine.h>
 #include <ralink_soc.h>
 
 unsigned char ramips_sys_type[RAMIPS_SYS_TYPE_LEN];
+enum ramips_mach_type ramips_mach = RAMIPS_MACH_GENERIC;
 
 const char *get_system_type(void)
 {
@@ -47,3 +50,17 @@ void __init plat_mem_setup(void)
 	detect_mem_size();
 	ramips_soc_setup();
 }
+
+static int __init ramips_machine_setup(void)
+{
+	mips_machine_setup(ramips_mach);
+	return 0;
+}
+
+arch_initcall(ramips_machine_setup);
+
+static void __init ramips_generic_init(void)
+{
+}
+
+MIPS_MACHINE(RAMIPS_MACH_GENERIC, "Generic Ralink board", ramips_generic_init);

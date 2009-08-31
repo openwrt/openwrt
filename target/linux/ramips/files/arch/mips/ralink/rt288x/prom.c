@@ -26,8 +26,6 @@ void __init prom_init(void)
 			"fw_arg2=%08x, fw_arg3=%08x\n",
 			(unsigned int)fw_arg0, (unsigned int)fw_arg1,
 			(unsigned int)fw_arg2, (unsigned int)fw_arg3);
-
-	rt288x_mach_type = RT288X_MACH_GENERIC;
 }
 
 void __init prom_free_prom_memory(void)
