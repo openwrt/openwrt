@@ -7,6 +7,6 @@
 # under the terms of the GNU General Public License version 2 as published
 # by the Free Software Foundation.
 
-obj-y	:= intc.o gpio.o
+obj-y	:= setup.o intc.o gpio.o
 
 obj-$(CONFIG_RALINK_DEV_GPIO_LEDS)	+= dev-gpio-leds.o
