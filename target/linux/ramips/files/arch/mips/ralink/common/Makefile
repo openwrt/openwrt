@@ -7,4 +7,4 @@
 # under the terms of the GNU General Public License version 2 as published
 # by the Free Software Foundation.
 
-obj-y	:= intc.o
+obj-y	:= intc.o gpio.o

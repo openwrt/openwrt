@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -603,6 +603,24 @@ else
+@@ -603,6 +603,26 @@
  load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
  endif
  
@@ -14,12 +14,14 @@
 +# Ralink RT288x
 +#
 +core-$(CONFIG_RALINK_RT288X)	+= arch/mips/ralink/rt288x/
++cflags-$(CONFIG_RALINK_RT288X)	+= -I$(srctree)//arch/mips/include/asm/mach-ralink/rt305x
 +load-$(CONFIG_RALINK_RT288X)	+= 0xffffffff88000000
 +
 +#
 +# Ralink RT305x
 +#
 +core-$(CONFIG_RALINK_RT305X)	+= arch/mips/ralink/rt305x/
++cflags-$(CONFIG_RALINK_RT305X)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt305x
 +load-$(CONFIG_RALINK_RT305X)	+= 0xffffffff80000000
 +
  # temporary until string.h is fixed
@@ -27,7 +29,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -22,6 +22,9 @@ choice
+@@ -22,6 +22,9 @@
  config MACH_ALCHEMY
  	bool "Alchemy processor based machines"
  
@@ -37,7 +39,7 @@
  config BASLER_EXCITE
  	bool "Basler eXcite smart camera"
  	select CEVT_R4K
-@@ -638,6 +641,7 @@ source "arch/mips/basler/excite/Kconfig"
+@@ -638,6 +641,7 @@
  source "arch/mips/jazz/Kconfig"
  source "arch/mips/lasat/Kconfig"
  source "arch/mips/pmc-sierra/Kconfig"

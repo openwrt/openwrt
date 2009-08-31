@@ -1,5 +1,5 @@
 /*
- *  Ralink RT288x GPIO API definitions
+ *  Ralink SoC GPIO API support
  *
  *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
@@ -10,43 +10,15 @@
  *
  */
 
-#ifndef __ASM_MACH_RT288X_GPIO_H
-#define __ASM_MACH_RT288X_GPIO_H
+#ifndef __ASM_MACH_RALINK_GPIO_H
+#define __ASM_MACH_RALINK_GPIO_H
 
-#define ARCH_NR_GPIOS	64
+#define ARCH_NR_GPIOS	128
 #include <asm-generic/gpio.h>
 
-#include <asm/mach-ralink/rt288x.h>
-
-extern void __rt288x_gpio_set_value(unsigned gpio, int value);
-extern int __rt288x_gpio_get_value(unsigned gpio);
-
-static inline int gpio_to_irq(unsigned gpio)
-{
-	return RT288X_GPIO_IRQ(gpio);
-}
-
-static inline int irq_to_gpio(unsigned irq)
-{
-	return irq - RT288X_GPIO_IRQ_BASE;
-}
-
-static inline int gpio_get_value(unsigned gpio)
-{
-	if (gpio < RT288X_GPIO_COUNT)
-		return __rt288x_gpio_get_value(gpio);
-
-	return __gpio_get_value(gpio);
-}
-
-static inline void gpio_set_value(unsigned gpio, int value)
-{
-	if (gpio < RT288X_GPIO_COUNT)
-		__rt288x_gpio_set_value(gpio, value);
-	else
-		__gpio_set_value(gpio, value);
-}
-
+#define gpio_get_value	__gpio_get_value
+#define gpio_set_value	__gpio_set_value
 #define gpio_cansleep	__gpio_cansleep
+#define gpio_to_irq	__gpio_to_irq
 
-#endif /* __ASM_MACH_RT288X_GPIO_H */
+#endif /* __ASM_MACH_RALINK_GPIO_H */
