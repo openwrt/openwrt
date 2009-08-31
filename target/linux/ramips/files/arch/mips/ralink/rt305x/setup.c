@@ -15,7 +15,6 @@
 #include <linux/io.h>
 #include <linux/serial_8250.h>
 
-#include <asm/bootinfo.h>
 #include <asm/mips_machine.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
@@ -41,20 +40,6 @@ static void rt305x_halt(void)
 	while (1)
 		if (cpu_wait)
 			cpu_wait();
-}
-
-static void __init rt305x_detect_mem_size(void)
-{
-	unsigned long size;
-
-	for (size = RT305X_MEM_SIZE_MIN; size < RT305X_MEM_SIZE_MAX;
-	     size <<= 1 ) {
-		if (!memcmp(rt305x_detect_mem_size,
-			    rt305x_detect_mem_size + size, 1024))
-			break;
-	}
-
-	add_memory_region(RT305X_SDRAM_BASE, size, BOOT_MEM_RAM);
 }
 
 static void __init rt305x_early_serial_setup(void)
@@ -105,7 +90,6 @@ void __init ramips_soc_setup(void)
 	rt305x_sysc_base = ioremap_nocache(RT305X_SYSC_BASE, PAGE_SIZE);
 	rt305x_memc_base = ioremap_nocache(RT305X_MEMC_BASE, PAGE_SIZE);
 
-	rt305x_detect_mem_size();
 	rt305x_detect_sys_type();
 	rt305x_detect_sys_freq();
 

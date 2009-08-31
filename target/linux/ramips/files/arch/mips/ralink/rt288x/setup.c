@@ -16,7 +16,6 @@
 #include <linux/io.h>
 #include <linux/serial_8250.h>
 
-#include <asm/bootinfo.h>
 #include <asm/mips_machine.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
@@ -24,9 +23,6 @@
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
-
-#define RT288X_MEM_SIZE_MIN (2 * 1024 * 1024)
-#define RT288X_MEM_SIZE_MAX (128 * 1024 * 1024)
 
 unsigned long rt288x_mach_type;
 
@@ -42,20 +38,6 @@ static void rt288x_halt(void)
 {
 	while (1)
 		cpu_wait();
-}
-
-static void __init rt288x_detect_mem_size(void)
-{
-	unsigned long size;
-
-	for (size = RT288X_MEM_SIZE_MIN; size < RT288X_MEM_SIZE_MAX;
-	     size <<= 1 ) {
-		if (!memcmp(rt288x_detect_mem_size,
-			    rt288x_detect_mem_size + size, 1024))
-			break;
-	}
-
-	add_memory_region(RT2880_SDRAM_BASE, size, BOOT_MEM_RAM);
 }
 
 static void __init rt288x_early_serial_setup(void)
@@ -106,7 +88,6 @@ void __init ramips_soc_setup(void)
 	rt288x_sysc_base = ioremap_nocache(RT2880_SYSC_BASE, RT2880_SYSC_SIZE);
 	rt288x_memc_base = ioremap_nocache(RT2880_MEMC_BASE, RT2880_MEMC_SIZE);
 
-	rt288x_detect_mem_size();
 	rt288x_detect_sys_type();
 	rt288x_detect_sys_freq();
 
