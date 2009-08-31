@@ -13,6 +13,7 @@
 
 #include <asm/bootinfo.h>
 
+#include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
 
