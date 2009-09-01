@@ -10,6 +10,7 @@
 
 enum ramips_mach_type {
 	RAMIPS_MACH_GENERIC,
+	RAMIPS_MACH_RT_N15,		/* Asus RT-N15 */
 	RAMIPS_MACH_WHR_G300N,		/* Buffalo WHR-G300N */
 };
 
