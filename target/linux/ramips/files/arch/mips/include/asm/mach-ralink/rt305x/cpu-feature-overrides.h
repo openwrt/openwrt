@@ -1,5 +1,5 @@
 /*
- * Ralink RT288x/RT305x specific CPU feature overrides
+ * Ralink RT305x specific CPU feature overrides
  *
  * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>

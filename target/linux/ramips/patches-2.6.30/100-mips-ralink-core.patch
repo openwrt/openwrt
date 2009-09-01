@@ -47,3 +47,12 @@
  source "arch/mips/sgi-ip27/Kconfig"
  source "arch/mips/sibyte/Kconfig"
  source "arch/mips/txx9/Kconfig"
+@@ -988,7 +992,7 @@
+ 
+ config MIPS_L1_CACHE_SHIFT
+ 	int
+-	default "4" if MACH_DECSTATION || MIKROTIK_RB532
++	default "4" if MACH_DECSTATION || MIKROTIK_RB532 || RALINK_RT288X
+ 	default "7" if SGI_IP22 || SGI_IP27 || SGI_IP28 || SNI_RM || CPU_CAVIUM_OCTEON
+ 	default "4" if PMC_MSP4200_EVAL
+ 	default "5"
