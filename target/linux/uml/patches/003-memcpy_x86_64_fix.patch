@@ -1,0 +1,26 @@
+--- a/arch/um/os-Linux/user_syms.c	2009-08-16 23:19:38.000000000 +0200
++++ b/arch/um/os-Linux/user_syms.c	2009-09-01 17:05:40.000000000 +0200
+@@ -23,10 +23,8 @@
+ EXPORT_SYMBOL(strstr);
+ #endif
+ 
+-#ifndef __x86_64__
+ extern void *memcpy(void *, const void *, size_t);
+ EXPORT_SYMBOL(memcpy);
+-#endif
+ 
+ EXPORT_SYMBOL(memmove);
+ EXPORT_SYMBOL(memset);
+--- a/arch/um/sys-x86_64/ksyms.c	2009-08-16 23:19:38.000000000 +0200
++++ b/arch/um/sys-x86_64/ksyms.c	2009-09-01 17:13:47.000000000 +0200
+@@ -2,10 +2,5 @@
+ #include <asm/string.h>
+ #include <asm/checksum.h>
+ 
+-/*XXX: we need them because they would be exported by x86_64 */
+-#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 3) || __GNUC__ > 4
+-EXPORT_SYMBOL(memcpy);
+-#else
+ EXPORT_SYMBOL(__memcpy);
+-#endif
+ EXPORT_SYMBOL(csum_partial);
