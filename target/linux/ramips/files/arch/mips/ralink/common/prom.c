@@ -1,5 +1,5 @@
 /*
- *  Ralink RT305x SoC specific prom routines
+ *  Ralink SoC specific prom routines
  *
  *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -10,25 +10,29 @@
 
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/string.h>
 
 #include <asm/bootinfo.h>
+#include <asm/addrspace.h>
 
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/machine.h>
-#include <asm/mach-ralink/rt305x.h>
-#include <asm/mach-ralink/rt305x_regs.h>
+#include <ralink_soc.h>
 
 struct board_rec {
 	char			*name;
 	enum ramips_mach_type	mach_type;
 };
 
-static int rt305x_prom_argc __initdata;
-static char **rt305x_prom_argv __initdata;
-static char **rt305x_prom_envp __initdata;
+static int ramips_prom_argc __initdata;
+static char **ramips_prom_argv __initdata;
+static char **ramips_prom_envp __initdata;
 
 static struct board_rec boards[] __initdata = {
 	{
+		.name		= "RT-N15",
+		.mach_type	= RAMIPS_MACH_RT_N15,
+	}, {
 		.name		= "WHR-G300N",
 		.mach_type	= RAMIPS_MACH_WHR_G300N,
 	}
@@ -38,47 +42,47 @@ static inline void *to_ram_addr(void *addr)
 {
 	u32 base;
 
-	base = KSEG0ADDR(RT305X_SDRAM_BASE);
+	base = KSEG0ADDR(RALINK_SOC_SDRAM_BASE);
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RT305X_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
 		return addr;
 
-	base = KSEG1ADDR(RT305X_SDRAM_BASE);
+	base = KSEG1ADDR(RALINK_SOC_SDRAM_BASE);
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RT305X_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
 		return addr;
 
 	/* some U-Boot variants uses physical addresses */
-	base = RT305X_SDRAM_BASE;
+	base = RALINK_SOC_SDRAM_BASE;
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RT305X_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
 		return (void *)KSEG0ADDR(addr);
 
 	return NULL;
 }
 
-static __init char *rt305x_prom_getargv(const char *name)
+static __init char *ramips_prom_getargv(const char *name)
 {
 	int len = strlen(name);
 	int i;
 
-	if (!rt305x_prom_argv) {
+	if (!ramips_prom_argv) {
 		printk(KERN_DEBUG "argv=%p is invalid, skipping\n",
-		       rt305x_prom_argv);
+		       ramips_prom_argv);
 		return NULL;
 	}
 
-	for (i = 0; i < rt305x_prom_argc; i++) {
-		char *argv = to_ram_addr(rt305x_prom_argv[i]);
+	for (i = 0; i < ramips_prom_argc; i++) {
+		char *argv = to_ram_addr(ramips_prom_argv[i]);
 
 		if (!argv) {
 			printk(KERN_DEBUG
 			       "argv[%d]=%p is invalid, skipping\n",
-			       i, rt305x_prom_argv[i]);
+			       i, ramips_prom_argv[i]);
 			continue;
 		}
 
-		printk(KERN_DEBUG "argv[i]: %s\n", argv);
+		printk(KERN_DEBUG "argv[%d]: %s\n", i, argv);
 		if (strncmp(name, argv, len) == 0 && (argv)[len] == '=')
 			return argv + len + 1;
 	}
@@ -86,26 +90,33 @@ static __init char *rt305x_prom_getargv(const char *name)
 	return NULL;
 }
 
-static __init char *rt305x_prom_getenv(const char *envname)
+static __init char *ramips_prom_getenv(const char *envname)
 {
+#define PROM_MAX_ENVS	256
 	int len = strlen(envname);
 	char **env;
-	char *p;
+	int i;
 
-	env = rt305x_prom_envp;
+	env = ramips_prom_envp;
 	if (!env) {
 		printk(KERN_DEBUG "envp=%p is not in RAM, skipping\n",
-		       rt305x_prom_envp);
+		       ramips_prom_envp);
 		return NULL;
 	}
 
-	for (p = to_ram_addr(*env); p; env++) {
-		printk(KERN_DEBUG "env: %s\n", *env);
-		if (strncmp(envname, p, len) == 0 && (p)[len] == '=')
+	for (i = 0; i < PROM_MAX_ENVS; i++) {
+		char *p = to_ram_addr(env[i]);
+
+		if (!p)
+			break;
+
+		printk(KERN_DEBUG "env[%d]: %s\n", i, p);
+		if (strncmp(envname, p, len) == 0 && p[len] == '=')
 			return p + len + 1;
 	}
 
 	return NULL;
+#undef PROM_MAX_ENVS
 }
 
 static __init void find_board_byname(char *name)
@@ -128,13 +139,13 @@ void __init prom_init(void)
 	       (unsigned int)fw_arg0, (unsigned int)fw_arg1,
 	       (unsigned int)fw_arg2, (unsigned int)fw_arg3);
 
-	rt305x_prom_argc = fw_arg0;
-	rt305x_prom_argv = to_ram_addr((void *)fw_arg1);
-	rt305x_prom_envp = to_ram_addr((void *)fw_arg2);
+	ramips_prom_argc = fw_arg0;
+	ramips_prom_argv = to_ram_addr((void *)fw_arg1);
+	ramips_prom_envp = to_ram_addr((void *)fw_arg2);
 
-	p = rt305x_prom_getargv("board");
+	p = ramips_prom_getargv("board");
 	if (!p)
-		p = rt305x_prom_getenv("board");
+		p = ramips_prom_getenv("board");
 	if (p)
 		find_board_byname(p);
 }
