@@ -204,7 +204,7 @@ static struct ramips_gpio_chip ramips_gpio_chip2 = {
 
 static __init void ramips_gpio_chip_add(struct ramips_gpio_chip *rg)
 {
-	/* set priority to low for all lines */
+	/* set polarity to low for all lines */
 	ramips_gpio_wr(rg, RAMIPS_GPIO_REG_POL, 0);
 
 	gpiochip_add(&rg->chip);
