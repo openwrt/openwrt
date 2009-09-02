@@ -69,7 +69,11 @@ echo "- preinit -"
 echo "Press CTRL-C for failsafe"
 trap 'FAILSAFE=true' INT
 trap 'FAILSAFE=true' USR1
-[ -e /etc/preinit.arch ] && . /etc/preinit.arch
+if [ -e /etc/preinit.arch ]; then
+	. /etc/preinit.arch
+else
+	sleep 2
+fi
 set_state preinit
 echo "$HOTPLUG" > /proc/sys/kernel/hotplug
 export FAILSAFE
