@@ -12,6 +12,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/io.h>
+#include <linux/serial_8250.h>
 
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
@@ -41,6 +42,30 @@ static void __init detect_mem_size(void)
 	}
 
 	add_memory_region(RALINK_SOC_SDRAM_BASE, size, BOOT_MEM_RAM);
+}
+
+void __init ramips_early_serial_setup(int line, unsigned base, unsigned freq,
+				      unsigned irq)
+{
+	struct uart_port p;
+	int err;
+
+	memset(&p, 0, sizeof(p));
+	p.flags		= UPF_SKIP_TEST;
+	p.iotype	= UPIO_AU;
+	p.uartclk	= freq;
+	p.regshift	= 2;
+	p.type		= PORT_16550A;
+
+	p.mapbase	= base;
+	p.membase	= ioremap_nocache(p.mapbase, PAGE_SIZE);
+	p.line		= line;
+	p.irq		= irq;
+
+	err = early_serial_setup(&p);
+	if (err)
+		printk(KERN_ERR "early serial%d registration failed %d\n",
+		       line, err);
 }
 
 void __init plat_mem_setup(void)

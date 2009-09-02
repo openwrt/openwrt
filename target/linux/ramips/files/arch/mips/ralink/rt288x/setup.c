@@ -14,7 +14,6 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/io.h>
-#include <linux/serial_8250.h>
 
 #include <asm/mips_machine.h>
 #include <asm/reboot.h>
@@ -38,39 +37,6 @@ static void rt288x_halt(void)
 		cpu_wait();
 }
 
-static void __init rt288x_early_serial_setup(void)
-{
-	struct uart_port p;
-	int err;
-
-	memset(&p, 0, sizeof(p));
-	p.flags		= UPF_SKIP_TEST;
-	p.iotype	= UPIO_AU;
-	p.uartclk	= rt288x_sys_freq;
-	p.regshift	= 2;
-	p.type		= PORT_16550A;
-
-	p.mapbase	= RT2880_UART0_BASE;
-	p.membase	= ioremap_nocache(p.mapbase, RT2880_UART0_SIZE);
-	p.line		= 0;
-	p.irq		= RT2880_INTC_IRQ_UART0;
-
-	err = early_serial_setup(&p);
-	if (err)
-		printk(KERN_ERR "RT288x: early UART0 registration failed %d\n",
-			err);
-
-	p.mapbase	= RT2880_UART1_BASE;
-	p.membase	= ioremap_nocache(p.mapbase, RT2880_UART1_SIZE);
-	p.line		= 1;
-	p.irq		= RT2880_INTC_IRQ_UART1;
-
-	err = early_serial_setup(&p);
-	if (err)
-		printk(KERN_ERR "RT288x: early UART1 registration failed %d\n",
-			err);
-}
-
 unsigned int __cpuinit get_c0_compare_irq(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;
@@ -92,7 +58,10 @@ void __init ramips_soc_setup(void)
 	_machine_halt = rt288x_halt;
 	pm_power_off = rt288x_halt;
 
-	rt288x_early_serial_setup();
+	ramips_early_serial_setup(0, RT2880_UART0_BASE, rt288x_sys_freq,
+				  RT2880_INTC_IRQ_UART0);
+	ramips_early_serial_setup(1, RT2880_UART1_BASE, rt288x_sys_freq,
+				  RT2880_INTC_IRQ_UART1);
 }
 
 void __init plat_time_init(void)
