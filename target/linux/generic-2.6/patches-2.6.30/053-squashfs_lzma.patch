@@ -47,7 +47,7 @@
  	__le32			s_magic;
 --- a/fs/squashfs/super.c
 +++ b/fs/squashfs/super.c
-@@ -47,13 +47,65 @@
+@@ -47,13 +47,76 @@
  #include "squashfs.h"
  
  
@@ -81,7 +81,7 @@
 +		crypto_free_pcomp(msblk->tfm);
 +	}
 +#endif
- 
++
 +	return err;
 +}
 +
@@ -90,6 +90,17 @@
 +	int err = -EOPNOTSUPP;
 +
 +#ifdef CONFIG_SQUASHFS_SUPPORT_LZMA
++	struct {
++		struct nlattr nla;
++		int val;
++	} params = {
++		.nla = {
++			.nla_len	= nla_attr_size(sizeof(int)),
++			.nla_type	= UNLZMA_DECOMP_OUT_BUFFERS,
++		},
++		.val = (msblk->block_size / PAGE_CACHE_SIZE) + 1
++	};
+ 
 +	msblk->tfm = crypto_alloc_pcomp("lzma", 0,
 +					CRYPTO_ALG_ASYNC);
 +	if (IS_ERR(msblk->tfm)) {
@@ -97,7 +108,7 @@
 +		return PTR_ERR(msblk->tfm);
 +	}
 +
-+	err = crypto_decompress_setup(msblk->tfm, NULL, 0);
++	err = crypto_decompress_setup(msblk->tfm, &params, sizeof(params));
 +	if (err) {
 +		ERROR("Failed to set up decompression parameters\n");
 +		crypto_free_pcomp(msblk->tfm);
@@ -115,7 +126,7 @@
  {
  	if (major < SQUASHFS_MAJOR) {
  		ERROR("Major/Minor mismatch, older Squashfs %d.%d "
-@@ -66,9 +118,6 @@ static int supported_squashfs_filesystem
+@@ -66,9 +129,6 @@ static int supported_squashfs_filesystem
  		return -EINVAL;
  	}
  
@@ -125,7 +136,7 @@
  	return 0;
  }
  
-@@ -83,16 +132,6 @@ static int squashfs_fill_super(struct su
+@@ -83,16 +143,6 @@ static int squashfs_fill_super(struct su
  	unsigned short flags;
  	unsigned int fragments;
  	u64 lookup_table_start;
@@ -142,7 +153,7 @@
  	int err;
  
  	TRACE("Entered squashfs_fill_superblock\n");
-@@ -104,21 +143,6 @@ static int squashfs_fill_super(struct su
+@@ -104,21 +154,6 @@ static int squashfs_fill_super(struct su
  	}
  	msblk = sb->s_fs_info;
  
@@ -164,8 +175,15 @@
  	sblk = kzalloc(sizeof(*sblk), GFP_KERNEL);
  	if (sblk == NULL) {
  		ERROR("Failed to allocate squashfs_super_block\n");
-@@ -158,8 +182,21 @@ static int squashfs_fill_super(struct su
+@@ -156,10 +191,28 @@ static int squashfs_fill_super(struct su
+ 		goto failed_mount;
+ 	}
  
++	/* Check block size for sanity */
++	msblk->block_size = le32_to_cpu(sblk->block_size);
++	if (msblk->block_size > SQUASHFS_FILE_MAX_SIZE)
++		goto failed_mount;
++
  	/* Check the MAJOR & MINOR versions and compression type */
  	err = supported_squashfs_filesystem(le16_to_cpu(sblk->s_major),
 -			le16_to_cpu(sblk->s_minor),
@@ -188,7 +206,19 @@
  	if (err < 0)
  		goto failed_mount;
  
-@@ -315,21 +352,16 @@ allocate_root:
+@@ -179,11 +232,6 @@ static int squashfs_fill_super(struct su
+ 			i_size_read(sb->s_bdev->bd_inode))
+ 		goto failed_mount;
+ 
+-	/* Check block size for sanity */
+-	msblk->block_size = le32_to_cpu(sblk->block_size);
+-	if (msblk->block_size > SQUASHFS_FILE_MAX_SIZE)
+-		goto failed_mount;
+-
+ 	/*
+ 	 * Check the system page size is not larger than the filesystem
+ 	 * block size (by default 128K).  This is currently not supported.
+@@ -315,21 +363,16 @@ allocate_root:
  	return 0;
  
  failed_mount:
