@@ -13,6 +13,8 @@
  * GNU General Public License for more details.
  */
 
+#define _ISOC99_SOURCE
+#define _BSD_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
