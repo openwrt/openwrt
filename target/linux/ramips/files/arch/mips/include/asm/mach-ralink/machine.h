@@ -10,7 +10,11 @@
 
 enum ramips_mach_type {
 	RAMIPS_MACH_GENERIC,
+	/* RT2880 based machines */
 	RAMIPS_MACH_RT_N15,		/* Asus RT-N15 */
+
+	/* RT3052 based machines */
+	RAMIPS_MACH_V22RW_2X2,		/* Ralink AP-RT3052-V22RW-2X2 */
 	RAMIPS_MACH_WHR_G300N,		/* Buffalo WHR-G300N */
 };
 
