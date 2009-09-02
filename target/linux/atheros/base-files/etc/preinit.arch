@@ -11,10 +11,10 @@ grep 'Atheros AR231[567]' /proc/cpuinfo > /dev/null && {
 	fi
 	failsafe_ip
 	netmsg 192.168.1.255 "Press reset now, to enter Failsafe!"
-	ifconfig "$ifname" 0.0.0.0 down
 	sleep 2
-	if [ -e "/sys/bus/mdio_bus/drivers/Infineon ADM6996/0:00" -o \
-	     -e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" ]; then
+	if [ -z "$FAILSAFE" -a \
+		 \( -e "/sys/bus/mdio_bus/drivers/Infineon ADM6996/0:00" -o \
+	        -e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" \) ]; then
 		vconfig rem eth0.1
 		ifconfig eth0 down
 	fi
