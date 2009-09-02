@@ -17,5 +17,7 @@ void __init ramips_intc_irq_init(unsigned intc_base, unsigned irq,
 u32 ramips_intc_get_status(void);
 
 void __init ramips_soc_setup(void);
+void __init ramips_early_serial_setup(int line, unsigned base, unsigned freq,
+				      unsigned irq);
 
 #endif /* __ASM_MACH_RALINK_COMMON_H */
