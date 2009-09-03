@@ -20,11 +20,12 @@ include $(INCLUDE_DIR)/package.mk
 PKG_INSTALL=1
 
 define Package/udev
-	SECTION:=base
-	CATEGORY:=Base system
-	TITLE:=Dynamic device management subsystem
-	URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
-	MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
+  SECTION:=base
+  CATEGORY:=Base system
+  DEPENDS:=@LINUX_2_6
+  TITLE:=Dynamic device management subsystem
+  URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
+  MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
 endef
 
 define Package/udev/description
