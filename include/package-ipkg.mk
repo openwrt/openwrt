@@ -59,6 +59,7 @@ ifeq ($(DUMP),)
     $(eval $(call BuildIPKGVariable,$(1),postrm))
 
     $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(STAMP_BUILT)
+	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
 	mkdir -p $(STAGING_DIR_ROOT)/stamp $(STAGING_DIR_ROOT)/tmp-$(1)
 	$(call Package/$(1)/install,$(STAGING_DIR_ROOT)/tmp-$(1))
 	$(call Package/$(1)/install_lib,$(STAGING_DIR_ROOT)/tmp-$(1))
