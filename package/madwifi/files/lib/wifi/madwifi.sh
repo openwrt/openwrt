@@ -214,6 +214,9 @@ enable_atheros() {
 			;;
 		esac
 
+		config_get_bool uapsd "$vif" uapsd 0
+		iwpriv "$ifname" uapsd "$uapsd"
+
 		config_get_bool bgscan "$vif" bgscan
 		[ -n "$bgscan" ] && iwpriv "$ifname" bgscan "$bgscan"
 
