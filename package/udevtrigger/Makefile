@@ -20,11 +20,12 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/udev-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/udevtrigger
-	SECTION:=base
-	CATEGORY:=Base system
-	TITLE:=Small utility to request kernel devices events for coldplug
-	URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
-	MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
+  SECTION:=base
+  CATEGORY:=Base system
+  DEPENDS:=@LINUX_2_6
+  TITLE:=Small utility to request kernel devices events for coldplug
+  URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
+  MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
 endef
 
 define Build/Compile
