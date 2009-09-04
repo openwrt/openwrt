@@ -220,5 +220,3 @@ __init int ramips_gpio_init(void)
 
 	return 0;
 }
-
-arch_initcall(ramips_gpio_init);

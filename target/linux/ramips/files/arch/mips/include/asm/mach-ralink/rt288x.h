@@ -1,7 +1,7 @@
 /*
  * Ralink RT288x SoC specific definitions
  *
- * Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  * Parts of this file are based on Ralink's 2.6.21 BSP
@@ -67,5 +67,7 @@ static inline u32 rt288x_memc_rr(unsigned reg)
 {
 	return __raw_readl(rt288x_memc_base + reg);
 }
+
+void rt288x_gpio_init(u32 mode) __init;
 
 #endif /* _RT228X_H_ */
