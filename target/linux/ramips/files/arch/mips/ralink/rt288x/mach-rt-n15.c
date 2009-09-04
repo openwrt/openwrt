@@ -18,10 +18,14 @@
 #include <asm/mips_machine.h>
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
+#include <asm/mach-ralink/rt288x.h>
+#include <asm/mach-ralink/rt288x_regs.h>
 
 #include "devices.h"
 
 #define RT_N15_GPIO_LED_POWER		11
+#define RT_N15_GPIO_BUTTON_WPS		0
+#define RT_N15_GPIO_BUTTON_RESET	12
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rt_n15_partitions[] = {
@@ -73,6 +77,8 @@ static struct gpio_led rt_n15_leds_gpio[] __initdata = {
 
 static void __init rt_n15_init(void)
 {
+	rt288x_gpio_init(RT2880_GPIO_MODE_UART0);
+
 	rt288x_register_flash(0, &rt_n15_flash_data);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(rt_n15_leds_gpio),

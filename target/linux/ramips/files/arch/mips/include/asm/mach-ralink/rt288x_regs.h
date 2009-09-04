@@ -46,6 +46,7 @@
 #define SYSC_REG_SYSTEM_CONFIG	0x010	/* System Configuration */
 #define SYSC_REG_RESET_CTRL	0x034	/* Reset Control*/
 #define SYSC_REG_RESET_STATUS	0x038	/* Reset Status*/
+#define SYSC_REG_GPIO_MODE	0x060	/* GPIO Purpose Select */
 #define SYSC_REG_IA_ADDRESS	0x310	/* Illegal Access Address */
 #define SYSC_REG_IA_TYPE	0x314	/* Illegal Access Type */
 
@@ -74,6 +75,15 @@
 #define RT2880_RESET_WMAC	BIT(17)
 #define RT2880_RESET_FE		BIT(18)
 #define RT2880_RESET_PCM	BIT(19)
+
+#define RT2880_GPIO_MODE_I2C	BIT(0)
+#define RT2880_GPIO_MODE_UART0	BIT(1)
+#define RT2880_GPIO_MODE_SPI	BIT(2)
+#define RT2880_GPIO_MODE_UART1	BIT(3)
+#define RT2880_GPIO_MODE_JTAG	BIT(4)
+#define RT2880_GPIO_MODE_MDIO	BIT(5)
+#define RT2880_GPIO_MODE_SDRAM	BIT(6)
+#define RT2880_GPIO_MODE_PCI	BIT(7)
 
 #define RT2880_INTC_INT_TIMER0	BIT(0)
 #define RT2880_INTC_INT_TIMER1	BIT(1)

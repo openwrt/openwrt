@@ -1,7 +1,7 @@
 /*
  * Ralink RT288x SoC specific setup
  *
- * Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  * Parts of this file are based on Ralink's 2.6.21 BSP
@@ -14,6 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/gpio.h>
 
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt288x.h>
@@ -73,3 +74,35 @@ void __init rt288x_detect_sys_freq(void)
 	rt288x_sys_freq = rt288x_cpu_freq / 2;
 }
 
+static void rt288x_gpio_reserve(int first, int last)
+{
+	for (; first <= last; first++)
+		gpio_request(first, "reserved");
+}
+
+void __init rt288x_gpio_init(u32 mode)
+{
+	rt288x_sysc_wr(mode, SYSC_REG_GPIO_MODE);
+
+	ramips_gpio_init();
+	if ((mode & RT2880_GPIO_MODE_I2C) == 0)
+		rt288x_gpio_reserve(1, 2);
+
+	if ((mode & RT2880_GPIO_MODE_SPI) == 0)
+		rt288x_gpio_reserve(3, 6);
+
+	if ((mode & RT2880_GPIO_MODE_UART0) == 0)
+		rt288x_gpio_reserve(7, 14);
+
+	if ((mode & RT2880_GPIO_MODE_JTAG) == 0)
+		rt288x_gpio_reserve(17, 21);
+
+	if ((mode & RT2880_GPIO_MODE_MDIO) == 0)
+		rt288x_gpio_reserve(22, 23);
+
+	if ((mode & RT2880_GPIO_MODE_SDRAM) == 0)
+		rt288x_gpio_reserve(24, 39);
+
+	if ((mode & RT2880_GPIO_MODE_PCI) == 0)
+		rt288x_gpio_reserve(40, 71);
+}
