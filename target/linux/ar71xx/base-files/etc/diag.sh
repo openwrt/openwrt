@@ -73,7 +73,7 @@ get_status_led() {
 		status_led="wrt400n:blue:status"
 		;;
 	wrt160nl)
-		status_led="wrt160nl:blue:status"
+		status_led="wrt160nl:blue:wps"
 		;;
 	esac;
 }
