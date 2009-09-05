@@ -285,7 +285,7 @@ mtd_write(int imagefd, const char *mtd)
 			break;
 
 		if (jffs2file) {
-			if (memcmp(buf, JFFS2_EOF, sizeof(JFFS2_EOF)) == 0) {
+			if (memcmp(buf, JFFS2_EOF, sizeof(JFFS2_EOF) - 1) == 0) {
 				if (!quiet)
 					fprintf(stderr, "\b\b\b   ");
 				if (quiet < 2)
