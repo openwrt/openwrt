@@ -8,6 +8,7 @@ failsafe_ip() {
 }
 
 failsafe() {
+	set_state failsafe
 	[ -n "$ifname" ] && grep "$ifname" /proc/net/dev >/dev/null && {
 		failsafe_ip
 		netmsg 192.168.1.255 "Entering Failsafe!"
@@ -66,6 +67,7 @@ dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null && {
 exec <$M0 >$M1 2>&0
 
 echo "- preinit -"
+set_state preinit
 echo "Press CTRL-C for failsafe"
 trap 'FAILSAFE=true' INT
 trap 'FAILSAFE=true' USR1
@@ -74,7 +76,6 @@ if [ -e /etc/preinit.arch ]; then
 else
 	sleep 2
 fi
-set_state preinit
 echo "$HOTPLUG" > /proc/sys/kernel/hotplug
 export FAILSAFE
 eval ${FAILSAFE:+failsafe}
@@ -92,6 +93,6 @@ if [ -z "$INITRAMFS" ]; then
 	}
 
 	echo "- init -"
-	
+
 	exec /sbin/init
 fi
