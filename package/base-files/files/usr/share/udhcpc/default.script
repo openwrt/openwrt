@@ -203,6 +203,7 @@ for ifc in $interfaces __default; do
 				config_get ifname "$ifc" ifname
 				config_get aliases "$ifc" aliases
 				uci_revert_state network "$ifc"
+				uci_set_state network "$ifc" started 1
 				[ -n "$device" ] && uci_set_state network "$ifc" device "$device"
 				[ -n "$ifname" ] && uci_set_state network "$ifc" ifname "$ifname"
 				[ -n "$aliases" ] && uci_set_state network "$ifc" aliases "$aliases"
