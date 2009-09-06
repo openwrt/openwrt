@@ -214,7 +214,7 @@
 +	u32 tmp, flags = 0;
 +
 +	hcd = usb_create_hcd(&ssb_ehci_hc_driver, dev->dev,
-+		dev->dev->bus_id);
++			     dev_name(dev->dev));
 +	if (!hcd)
 +		goto err_dev_disable;
 +
