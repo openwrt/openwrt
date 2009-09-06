@@ -136,14 +136,12 @@ choice
 
 	config USE_STRIP
 		bool "strip"
-		depends !DEBUG
 		help
 		  This will install binaries stripped using strip from binutils
 
 
 	config USE_SSTRIP
 		bool "sstrip"
-		depends !DEBUG
 		depends !USE_GLIBC
 		depends !USE_EGLIBC
 		help
