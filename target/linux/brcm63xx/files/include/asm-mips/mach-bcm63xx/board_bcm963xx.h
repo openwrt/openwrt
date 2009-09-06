@@ -56,6 +56,9 @@ struct board_info {
 
 	/* GPIO LEDs */
 	struct gpio_led leds[5];
+
+	/* Reset button */
+	unsigned int	reset_btn;
 };
 
 #endif /* ! BOARD_BCM963XX_H_ */

@@ -802,6 +802,17 @@ static struct platform_device bcm63xx_gpio_leds = {
 	.dev.platform_data	= &bcm63xx_led_data,
 };
 
+struct gpio_buttons_platform_data bcm63xx_gpio_buttons_data = {
+	.poll_interval  = 20,
+};
+
+struct platform_device bcm63xx_gpio_buttons_device = {
+        .name           = "gpio-buttons",
+        .id             = 0,
+        .dev.platform_data = &bcm63xx_gpio_buttons_data,
+};
+
+
 /*
  * third stage init callback, register all board devices.
  */
@@ -868,6 +879,11 @@ int __init board_register_devices(void)
 	bcm63xx_led_data.leds = board.leds;
 
 	platform_device_register(&bcm63xx_gpio_leds);
+
+	bcm63xx_gpio_buttons_data.nbuttons = 1,
+	bcm63xx_gpio_buttons_data.buttons = board.reset_btm;
+
+	platform_device_register(&bcm63xx_gpio_buttons);
 
 	return 0;
 }
