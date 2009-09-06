@@ -17,6 +17,12 @@ scan_ppp() {
 
 start_pppd() {
 	local cfg="$1"; shift
+	local ifname
+
+	# make sure the network state references the correct ifname
+	scan_ppp "$cfg"
+	config_get ifname "$cfg" ifname
+	set_interface_ifname "$cfg" "$ifname"
 
 	# make sure only one pppd process is started
 	lock "/var/lock/ppp-${cfg}"
