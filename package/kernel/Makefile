@@ -34,7 +34,7 @@ define Package/kernel
   CATEGORY:=Kernel
   DEFAULT:=y
   TITLE:=Virtual kernel package
-  VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
+  VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)
 endef
 
 define Package/kernel/install
