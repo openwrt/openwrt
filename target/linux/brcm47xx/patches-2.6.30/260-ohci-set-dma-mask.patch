@@ -1,14 +1,16 @@
---- a/drivers/usb/host/ohci-ssb.c
-+++ b/drivers/usb/host/ohci-ssb.c
-@@ -159,6 +159,11 @@ static int ssb_ohci_attach(struct ssb_de
- 	else
- 		ssb_device_enable(dev, 0);
+---
+ drivers/usb/host/ohci-ssb.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- linux-2.6.28.10.orig/drivers/usb/host/ohci-ssb.c
++++ linux-2.6.28.10/drivers/usb/host/ohci-ssb.c
+@@ -106,6 +106,9 @@ static int ssb_ohci_attach(struct ssb_de
+ 	int err = -ENOMEM;
+ 	u32 tmp, flags = 0;
  
-+ /*
-+  * Set dma mask - 32 bit mask is just an assumption
-+  */
-+ if (ssb_dma_set_mask(dev, DMA_32BIT_MASK))
-+   return -EOPNOTSUPP;
- 
- 	hcd = usb_create_hcd(&ssb_ohci_hc_driver, dev->dev,
- 			dev_name(dev->dev));
++	if (ssb_dma_set_mask(dev, DMA_32BIT_MASK))
++		return -EOPNOTSUPP;
++
+ 	if (dev->id.coreid == SSB_DEV_USB11_HOSTDEV) {
+ 		/* Put the device into host-mode. */
+ 		flags |= SSB_OHCI_TMSLOW_HOSTMODE;
