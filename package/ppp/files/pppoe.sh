@@ -10,11 +10,6 @@ setup_interface_pppoe() {
 		/sbin/insmod $module 2>&- >&-
 	done
 
-	# make sure the network state references the correct ifname
-	scan_ppp "$config"
-	config_get ifname "$config" ifname
-	set_interface_ifname "$config" "$ifname"
-
 	config_get mtu "$config" mtu
 	mtu=${mtu:-1492}
 	start_pppd "$config" \
