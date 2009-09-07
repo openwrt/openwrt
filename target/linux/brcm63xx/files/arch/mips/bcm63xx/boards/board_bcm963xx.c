@@ -15,6 +15,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 #include <linux/ssb/ssb.h>
+#include <linux/gpio_buttons.h>
 #include <asm/addrspace.h>
 #include <bcm63xx_board.h>
 #include <bcm63xx_cpu.h>
@@ -881,9 +882,9 @@ int __init board_register_devices(void)
 	platform_device_register(&bcm63xx_gpio_leds);
 
 	bcm63xx_gpio_buttons_data.nbuttons = 1,
-	bcm63xx_gpio_buttons_data.buttons = board.reset_btm;
+	bcm63xx_gpio_buttons_data.buttons = board.reset_btn;
 
-	platform_device_register(&bcm63xx_gpio_buttons);
+	platform_device_register(&bcm63xx_gpio_buttons_device);
 
 	return 0;
 }
