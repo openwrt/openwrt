@@ -881,10 +881,12 @@ int __init board_register_devices(void)
 
 	platform_device_register(&bcm63xx_gpio_leds);
 
-	bcm63xx_gpio_buttons_data.nbuttons = 1,
-	bcm63xx_gpio_buttons_data.buttons = board.reset_btn;
+	if (board.reset_btn) {
+		bcm63xx_gpio_buttons_data.nbuttons = 1,
+		bcm63xx_gpio_buttons_data.buttons = board.reset_btn;
 
-	platform_device_register(&bcm63xx_gpio_buttons_device);
+		platform_device_register(&bcm63xx_gpio_buttons_device);
+	}
 
 	return 0;
 }
