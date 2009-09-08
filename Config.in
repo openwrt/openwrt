@@ -195,12 +195,22 @@ config KERNEL_KALLSYMS
 	default n
 	help
 		This will give you more information in stack traces from kernel oopses
+
 config KERNEL_PROFILING
 	bool "Compile the kernel with profiling enabled"
 	default n
 	help
 		Enable the extended profiling support mechanisms used by profilers such
 		as OProfile.
+
+config KERNEL_DEBUG_FS
+	bool "Compile the kernel with Debug Filesystem enabled"
+	depends LINUX_2_6
+	default y
+	help
+		debugfs is a virtual file system that kernel developers use to put
+		debugging files into. Enable this option to be able to read and
+		write to these files.
 
 endmenu
 
