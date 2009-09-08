@@ -1,0 +1,81 @@
+# B43 configuration
+
+choice
+	prompt "b43 firmware version"
+	depends on PACKAGE_kmod-b43
+	default B43_STABLE
+	help
+	  This option allows you to select the version of the b43 firmware.
+
+config B43_STABLE
+	bool "4.150.10.5 (stable)"
+	help
+	  Stable firmware for BCM43xx devices.
+
+	  If unsure, select this.
+
+config B43_EXPERIMENTAL
+	bool "4.178.10.4 (experimental)"
+	help
+	  Experimental firmware for BCM43xx devices.
+
+	  This firmware is not tested as much as the "stable" firmware.
+
+	  If unsure, select the "stable" firmware.
+
+config B43_OPENFIRMWARE
+	bool "Open FirmWare for WiFi networks"
+	help
+	  Opensource firmware for BCM43xx devices.
+
+	  Do _not_ select this, unless you know what you are doing.
+	  The Opensource firmware is not suitable for embedded devices, yet.
+	  It does not support QoS, which is bad for AccessPoints.
+	  It does not support hardware crypto acceleration, which is a showstopper
+	  for embedded devices with low CPU resources.
+
+	  If unsure, select the "stable" firmware.
+
+endchoice
+
+config B43_FW_SQUASH
+	bool "Remove unnecessary firmware files"
+	depends on PACKAGE_kmod-b43 && !B43_OPENFIRMWARE
+	help
+	  This options allows you to remove unnecessary b43 firmware files
+	  from the final rootfs image. This can reduce the rootfs size by
+	  up to 200k.
+
+	  Do _NOT_ use this option, if you don't know the core revision
+	  and/or PHY type of your wireless chip.
+
+	  If unsure, say N.
+
+config B43_FW_SQUASH_COREREVS
+	string "Core revisions to include"
+	depends on PACKAGE_kmod-b43 && B43_FW_SQUASH
+	default "5,6,7,8,9,10"
+	help
+	  This is a comma seperated list of core revision numbers.
+	  Example (keep files for rev5 only):
+	         5
+	  Example (keep files for rev5 and rev11):
+	         5,11
+
+config B43_FW_SQUASH_PHYTYPES
+	string "PHY types to include"
+	depends on PACKAGE_kmod-b43 && B43_FW_SQUASH
+	default "G,LP,N"
+	help
+	  This is a comma seperated list of PHY types:
+	  A         => A-PHY
+	  AG        => Dual A-PHY G-PHY
+	  G         => G-PHY
+	  LP        => LP-PHY
+	  N         => N-PHY
+
+	  Example (keep files for G-PHY only):
+	         G
+	  Example (keep files for G-PHY and N-PHY):
+	         G,N
+

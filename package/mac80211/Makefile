@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2009-08-20
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/08 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
@@ -41,6 +41,10 @@ define KernelPackage/mac80211
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,cfg80211 mac80211)
+endef
+
+define KernelPackage/mac80211/config
+	source "$(SOURCE)/Config.in"
 endef
 
 define KernelPackage/mac80211/description
@@ -298,6 +302,10 @@ This module adds support for wireless adapters based on
 Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
 
+define KernelPackage/ath9k/config
+	source "$(SOURCE)/Config.in.ath9k"
+endef
+
 define KernelPackage/mac80211-hwsim
   $(call KernelPackage/mac80211/Default)
   TITLE:=mac80211 HW simulation device
@@ -396,7 +404,7 @@ $(call KernelPackage/b43-common)
 endef
 
 define KernelPackage/b43/config
-	source "$(SOURCE)/Config.in"
+	source "$(SOURCE)/Config.in.b43"
 endef
 
 define KernelPackage/b43/description
@@ -422,7 +430,8 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PCI),-DCONFIG_SSB_SPROM) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS) \
 	$(if $(CONFIG_HW_RANDOM),-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG) \
-	$(if $(CONFIG_DEBUG_FS), -DCONFIG_MAC80211_DEBUGFS) \
+	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),-DCONFIG_MAC80211_DEBUGFS) \
+	$(if $(CONFIG_PACKAGE_ATH9K_DEBUG),-DCONFIG_ATH9K_DEBUG) \
 	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
 
 MAKE_OPTS:= \
@@ -433,7 +442,7 @@ MAKE_OPTS:= \
 	CONFIG_MAC80211_RC_PID=y \
 	CONFIG_MAC80211_RC_MINSTREL=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
-	CONFIG_MAC80211_DEBUGFS=$(CONFIG_DEBUG_FS) \
+	CONFIG_MAC80211_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
 	CONFIG_B43_PCMCIA=n CONFIG_B43_PIO=n \
 	CONFIG_B43_PCI_AUTOSELECT=$(if $(CONFIG_PCI),y) \
 	CONFIG_B43_PCICORE_AUTOSELECT=$(if $(CONFIG_PCI),y) \
@@ -450,6 +459,7 @@ MAKE_OPTS:= \
 	CONFIG_ATH_COMMON=$(if $(CONFIG_PACKAGE_kmod-ath),m) \
 	CONFIG_ATH5K=$(if $(CONFIG_PACKAGE_kmod-ath5k),m) \
 	CONFIG_ATH9K=$(if $(CONFIG_PACKAGE_kmod-ath9k),m) \
+	CONFIG_ATH9K_DEBUG=$(if $(CONFIG_PACKAGE_ATH9K_DEBUG),y) \
 	CONFIG_ZD1211RW=$(if $(CONFIG_PACKAGE_kmod-zd1211rw),m) \
 	CONFIG_P54_COMMON=$(if $(CONFIG_PACKAGE_kmod-p54-common),m) \
 	CONFIG_P54_PCI=$(if $(CONFIG_PACKAGE_kmod-p54-pci),m) \
