@@ -183,6 +183,23 @@ static void __init rb411_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_RB_411, "MikroTik RouterBOARD 411/A/AH", rb411_setup);
 
+static void __init rb411u_setup(void)
+{
+	rb4xx_generic_setup();
+	rb4xx_add_device_spi();
+
+	ar71xx_add_device_mdio(0xfffffffd);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0x00000002;
+	ar71xx_add_device_eth(0);
+
+	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
+	ar71xx_add_device_usb();
+}
+
+MIPS_MACHINE(AR71XX_MACH_RB_411U, "MikroTik RouterBOARD 411U", rb411u_setup);
+
 static void __init rb433_setup(void)
 {
 	rb4xx_generic_setup();
