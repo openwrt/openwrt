@@ -96,7 +96,7 @@
 -		/* NB: must be after ni_chan is setup */
 -		ieee80211_setup_rates(ni, sp->rates, sp->xrates, IEEE80211_F_DOSORT);
 -
-+		ni->ni_rates = vap->iv_bss->ni_rates;
++		memcpy(&ni->ni_rates, &vap->iv_bss->ni_rates, sizeof(ni->ni_rates));
  		if (ic->ic_newassoc != NULL)
  			ic->ic_newassoc(ni, 1);
  		/* XXX not right for 802.1x/WPA */
