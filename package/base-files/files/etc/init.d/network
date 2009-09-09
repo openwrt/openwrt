@@ -4,18 +4,7 @@
 START=40
 STOP=40
 
-config_cb() {
-	local cfg_type="$1"
-
-	case "$cfg_type" in
-		interface)
-			append networks "$2" "$N"
-		;;
-	esac
-}
-
 boot() {
-	uci_load network
 	setup_switch() { return 0; }
 
 	include /lib/network
@@ -23,10 +12,6 @@ boot() {
 	[ -s /etc/config/wireless ] || \
 		/sbin/wifi detect > /etc/config/wireless
 	/sbin/wifi up
-	for network in $networks; do
-		config_get startupcheck $network started
-		[ "$startupcheck" = "" ] && ifup $network
-	done
 }
 
 start() {
