@@ -153,7 +153,6 @@ set_interface_ifname() {
 	config_get device "$1" device
 	uci_set_state network "$config" ifname "$ifname"
 	uci_set_state network "$config" device "$device"
-	uci_set_state network "$config" started 1
 }
 
 setup_interface_none() {
