@@ -100,7 +100,7 @@
  
  	if (bfaddr != 0) {
  		/*
-@@ -9430,7 +9468,8 @@ ath_set_coverageclass(struct ieee80211co
+@@ -9433,7 +9471,8 @@ ath_set_coverageclass(struct ieee80211co
  {
  	struct ath_softc *sc = ic->ic_dev->priv;
  
@@ -110,7 +110,7 @@
  
  	return;
  }
-@@ -10953,6 +10992,7 @@ enum {
+@@ -10956,6 +10995,7 @@ enum {
  	ATH_OFDM_WEAK_DET	= 29,
  	ATH_CHANBW		= 30,
  	ATH_OUTDOOR		= 31,
@@ -118,7 +118,7 @@
  };
  
  /*
-@@ -11165,21 +11205,31 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11168,21 +11208,31 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  					sc->sc_slottimeconf = val;
  				else
  					sc->sc_slottimeconf = 0;
@@ -153,7 +153,7 @@
  				break;
  			case ATH_SOFTLED:
  				if (val != sc->sc_softled) {
-@@ -11335,6 +11385,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11338,6 +11388,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  		case ATH_CHANBW:
  			val = sc->sc_chanbw ?: 20;
  			break;
@@ -163,7 +163,7 @@
  		case ATH_SLOTTIME:
  			val = ath_hal_getslottime(ah);
  			break;
-@@ -11456,6 +11509,12 @@ static const ctl_table ath_sysctl_templa
+@@ -11459,6 +11512,12 @@ static const ctl_table ath_sysctl_templa
  	  .extra2	= (void *)ATH_CTSTIMEOUT,
  	},
  	{ .ctl_name	= CTL_AUTO,

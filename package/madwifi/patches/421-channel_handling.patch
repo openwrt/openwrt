@@ -228,7 +228,7 @@
  
  	if (bfaddr != 0) {
  		/*
-@@ -7799,12 +7815,14 @@ ath_get_ivlen(struct ieee80211_key *k)
+@@ -7802,12 +7818,14 @@ ath_get_ivlen(struct ieee80211_key *k)
   * Get transmit rate index using rate in Kbps
   */
  static __inline int
@@ -245,7 +245,7 @@
  			ndx = i;
  			break;
  		}
-@@ -8097,7 +8115,7 @@ ath_tx_start(struct net_device *dev, str
+@@ -8100,7 +8118,7 @@ ath_tx_start(struct net_device *dev, str
  		atype = HAL_PKT_TYPE_NORMAL;		/* default */
  
  		if (ismcast) {
@@ -254,7 +254,7 @@
  			txrate = rt->info[rix].rateCode;
  			if (shortPreamble)
  				txrate |= rt->info[rix].shortPreamble;
-@@ -9064,7 +9082,7 @@ ath_chan_change(struct ath_softc *sc, st
+@@ -9067,7 +9085,7 @@ ath_chan_change(struct ath_softc *sc, st
  	struct net_device *dev = sc->sc_dev;
  	enum ieee80211_phymode mode;
  
@@ -263,7 +263,7 @@
  
  	ath_rate_setup(dev, mode);
  	ath_setcurmode(sc, mode);
-@@ -10121,8 +10139,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10124,8 +10142,7 @@ ath_newassoc(struct ieee80211_node *ni, 
  }
  
  static int
@@ -273,7 +273,7 @@
  {
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211com *ic = &sc->sc_ic;
-@@ -10136,17 +10153,31 @@ ath_getchannels(struct net_device *dev, 
+@@ -10139,17 +10156,31 @@ ath_getchannels(struct net_device *dev, 
  		EPRINTF(sc, "Insufficient memory for channel table!\n");
  		return -ENOMEM;
  	}
@@ -307,7 +307,7 @@
  	/*
  	 * Convert HAL channels to ieee80211 ones.
  	 */
-@@ -10392,7 +10423,7 @@ ath_xr_rate_setup(struct net_device *dev
+@@ -10395,7 +10426,7 @@ ath_xr_rate_setup(struct net_device *dev
  	struct ieee80211com *ic = &sc->sc_ic;
  	const HAL_RATE_TABLE *rt;
  	struct ieee80211_rateset *rs;
@@ -316,7 +316,7 @@
  	sc->sc_xr_rates = ath_hal_getratetable(ah, HAL_MODE_XR);
  	rt = sc->sc_xr_rates;
  	if (rt == NULL)
-@@ -10405,57 +10436,16 @@ ath_xr_rate_setup(struct net_device *dev
+@@ -10408,57 +10439,16 @@ ath_xr_rate_setup(struct net_device *dev
  	} else
  		maxrates = rt->rateCount;
  	rs = &ic->ic_sup_xr_rates;
@@ -380,7 +380,7 @@
  static int
  ath_rate_setup(struct net_device *dev, u_int mode)
  {
-@@ -10464,7 +10454,7 @@ ath_rate_setup(struct net_device *dev, u
+@@ -10467,7 +10457,7 @@ ath_rate_setup(struct net_device *dev, u
  	struct ieee80211com *ic = &sc->sc_ic;
  	const HAL_RATE_TABLE *rt;
  	struct ieee80211_rateset *rs;
@@ -389,7 +389,7 @@
  
  	switch (mode) {
  	case IEEE80211_MODE_11A:
-@@ -10482,6 +10472,12 @@ ath_rate_setup(struct net_device *dev, u
+@@ -10485,6 +10475,12 @@ ath_rate_setup(struct net_device *dev, u
  	case IEEE80211_MODE_TURBO_G:
  		sc->sc_rates[mode] = ath_hal_getratetable(ah, HAL_MODE_108G);
  		break;
@@ -402,7 +402,7 @@
  	default:
  		DPRINTF(sc, ATH_DEBUG_ANY, "Invalid mode %u\n", mode);
  		return 0;
-@@ -10496,10 +10492,16 @@ ath_rate_setup(struct net_device *dev, u
+@@ -10499,10 +10495,16 @@ ath_rate_setup(struct net_device *dev, u
  		maxrates = IEEE80211_RATE_MAXSIZE;
  	} else
  		maxrates = rt->rateCount;
@@ -419,7 +419,7 @@
  	return 1;
  }
  
-@@ -10528,13 +10530,18 @@ ath_setcurmode(struct ath_softc *sc, enu
+@@ -10531,13 +10533,18 @@ ath_setcurmode(struct ath_softc *sc, enu
  		{   0, 500, 130 },
  	};
  	const HAL_RATE_TABLE *rt;
@@ -440,7 +440,7 @@
  	memset(sc->sc_hwmap, 0, sizeof(sc->sc_hwmap));
  	for (i = 0; i < 32; i++) {
  		u_int8_t ix = rt->rateCodeToIndex[i];
-@@ -10544,7 +10551,7 @@ ath_setcurmode(struct ath_softc *sc, enu
+@@ -10547,7 +10554,7 @@ ath_setcurmode(struct ath_softc *sc, enu
  			continue;
  		}
  		sc->sc_hwmap[i].ieeerate =
@@ -449,7 +449,7 @@
  		if (rt->info[ix].shortPreamble ||
  		    rt->info[ix].phy == IEEE80211_T_OFDM)
  			sc->sc_hwmap[i].flags |= IEEE80211_RADIOTAP_F_SHORTPRE;
-@@ -10945,9 +10952,106 @@ enum {
+@@ -10948,9 +10955,106 @@ enum {
  	ATH_MAXVAPS  		= 26,
  	ATH_INTMIT			= 27,
  	ATH_NOISE_IMMUNITY	= 28,
@@ -557,7 +557,7 @@
  static int
  ath_sysctl_set_intmit(struct ath_softc *sc, long ctl, u_int val)
  {
-@@ -11026,6 +11130,7 @@ static int
+@@ -11029,6 +11133,7 @@ static int
  ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl, write, filp, buffer, lenp, ppos)
  {
  	struct ath_softc *sc = ctl->extra1;
@@ -565,7 +565,7 @@
  	struct ath_hal *ah = sc->sc_ah;
  	u_int val;
  	u_int tab_3_val[3];
-@@ -11049,25 +11154,34 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11052,25 +11157,34 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  				lenp, ppos);
  		if (ret == 0) {
  			switch ((long)ctl->extra2) {
@@ -613,7 +613,7 @@
  				break;
  			case ATH_SOFTLED:
  				if (val != sc->sc_softled) {
-@@ -11220,6 +11334,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11223,6 +11337,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  		}
  	} else {
  		switch ((long)ctl->extra2) {
@@ -623,7 +623,7 @@
  		case ATH_SLOTTIME:
  			val = ath_hal_getslottime(ah);
  			break;
-@@ -11238,6 +11355,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11241,6 +11358,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  		case ATH_COUNTRYCODE:
  			ath_hal_getcountrycode(ah, &val);
  			break;
@@ -633,7 +633,7 @@
  		case ATH_MAXVAPS:
  			val = ath_maxvaps;
  			break;
-@@ -11351,11 +11471,17 @@ static const ctl_table ath_sysctl_templa
+@@ -11354,11 +11474,17 @@ static const ctl_table ath_sysctl_templa
  	},
  	{ .ctl_name	= CTL_AUTO,
  	  .procname	= "countrycode",
@@ -652,7 +652,7 @@
  	  .procname	= "maxvaps",
  	  .mode		= 0444,
  	  .proc_handler	= ath_sysctl_halparam,
-@@ -11363,7 +11489,7 @@ static const ctl_table ath_sysctl_templa
+@@ -11366,7 +11492,7 @@ static const ctl_table ath_sysctl_templa
  	},
  	{ .ctl_name	= CTL_AUTO,
  	  .procname	= "regdomain",
@@ -661,7 +661,7 @@
  	  .proc_handler	= ath_sysctl_halparam,
  	  .extra2	= (void *)ATH_REGDOMAIN,
  	},
-@@ -11426,6 +11552,12 @@ static const ctl_table ath_sysctl_templa
+@@ -11429,6 +11555,12 @@ static const ctl_table ath_sysctl_templa
  	  .extra2	= (void *)ATH_ACKRATE,
  	},
  	{ .ctl_name	= CTL_AUTO,
@@ -674,7 +674,7 @@
  	  .procname     = "rp",
  	  .mode         = 0200,
  	  .proc_handler = ath_sysctl_halparam,
-@@ -11666,13 +11798,6 @@ static ctl_table ath_static_sysctls[] = 
+@@ -11669,13 +11801,6 @@ static ctl_table ath_static_sysctls[] = 
  	},
  #endif
  	{ .ctl_name	= CTL_AUTO,
@@ -688,7 +688,7 @@
  	  .procname	= "maxvaps",
  	  .mode		= 0444,
  	  .data		= &ath_maxvaps,
-@@ -11680,13 +11805,6 @@ static ctl_table ath_static_sysctls[] = 
+@@ -11683,13 +11808,6 @@ static ctl_table ath_static_sysctls[] = 
  	  .proc_handler	= proc_dointvec
  	},
  	{ .ctl_name	= CTL_AUTO,

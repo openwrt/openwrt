@@ -44,7 +44,7 @@
  			if (dir != IEEE80211_FC1_DIR_NODS) {
  				IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
  					wh, "data", "invalid dir 0x%x", dir);
-@@ -3552,6 +3557,11 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3555,6 +3560,11 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			} else if (vap->iv_opmode == IEEE80211_M_WDS) {
  				found = 1;
  				ni = ni_or_null = vap->iv_wdsnode;
@@ -56,7 +56,7 @@
  			}
  			IEEE80211_UNLOCK_IRQ(vap->iv_ic);
  
-@@ -3676,19 +3686,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3683,19 +3693,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			vap->iv_stats.is_rx_ssidmismatch++; /*XXX*/
  			return;
  		}
@@ -80,11 +80,23 @@
  			allocbs = 1;
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -601,6 +601,7 @@ ieee80211_ibss_merge(struct ieee80211_no
+@@ -601,6 +601,8 @@ ieee80211_ibss_merge(struct ieee80211_no
  		ic->ic_flags & IEEE80211_F_SHPREAMBLE ? "short" : "long",
  		ic->ic_flags & IEEE80211_F_SHSLOT ? "short" : "long",
  		ic->ic_flags & IEEE80211_F_USEPROT ? ", protection" : "");
-+	ieee80211_node_table_reset(&vap->iv_ic->ic_sta, vap);
++	if (!IEEE80211_ADDR_EQ(ni->ni_bssid, vap->iv_bssid))
++		ieee80211_node_table_reset(&vap->iv_ic->ic_sta, vap);
  	return ieee80211_sta_join1(ieee80211_ref_node(ni));
  }
  EXPORT_SYMBOL(ieee80211_ibss_merge);
+@@ -1378,9 +1380,7 @@ ieee80211_add_neighbor(struct ieee80211v
+ 		if (sp->ath != NULL)
+ 			ieee80211_saveath(ni, sp->ath);
+ 
+-		/* NB: must be after ni_chan is setup */
+-		ieee80211_setup_rates(ni, sp->rates, sp->xrates, IEEE80211_F_DOSORT);
+-
++		ni->ni_rates = vap->iv_bss->ni_rates;
+ 		if (ic->ic_newassoc != NULL)
+ 			ic->ic_newassoc(ni, 1);
+ 		/* XXX not right for 802.1x/WPA */

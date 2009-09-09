@@ -22,7 +22,7 @@
  				__netif_rx_schedule(dev, &sc->sc_napi);
  #else
  				__netif_rx_schedule(dev);
-@@ -7132,7 +7136,9 @@ rx_next:
+@@ -7135,7 +7139,9 @@ rx_next:
  		local_irq_restore(flags);
  	}
  

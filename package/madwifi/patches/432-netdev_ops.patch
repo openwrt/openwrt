@@ -53,7 +53,7 @@ http://madwifi-project.org/changeset/4005
  	unregister_netdev(dev);
  	return 0;
  }
-@@ -12729,8 +12746,13 @@ ath_rcv_dev_event(struct notifier_block 
+@@ -12732,8 +12749,13 @@ ath_rcv_dev_event(struct notifier_block 
  	struct net_device *dev = (struct net_device *)ptr;
  	struct ath_softc *sc = (struct ath_softc *)netdev_priv(dev);
  
@@ -170,7 +170,7 @@ http://madwifi-project.org/changeset/4005
  #endif
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1185,7 +1185,11 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1187,7 +1187,11 @@ ieee80211_deliver_data(struct ieee80211_
  			skb1->protocol = __constant_htons(ETH_P_802_2);
  			/* XXX insert vlan tag before queue it? */
  			ni_tmp = SKB_CB(skb1)->ni; /* remember node so we can free it */

@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -13496,7 +13496,7 @@ cleanup_ath_buf(struct ath_softc *sc, st
+@@ -13499,7 +13499,7 @@ cleanup_ath_buf(struct ath_softc *sc, st
  	if (bf == NULL) 
  		return bf;
  
@@ -9,7 +9,7 @@
  		bus_unmap_single(
  			sc->sc_bdev,
  			bf->bf_skbaddr, 
-@@ -13504,8 +13504,6 @@ cleanup_ath_buf(struct ath_softc *sc, st
+@@ -13507,8 +13507,6 @@ cleanup_ath_buf(struct ath_softc *sc, st
  				sc->sc_rxbufsize : bf->bf_skb->len),
  			direction);
  		bf->bf_skbaddr = 0;

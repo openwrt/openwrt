@@ -20,7 +20,7 @@
  struct ath_ratectrl {
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -8635,6 +8635,8 @@ ath_tx_processq(struct ath_softc *sc, st
+@@ -8638,6 +8638,8 @@ ath_tx_processq(struct ath_softc *sc, st
  
  		ni = bf->bf_node;
  		if (ni != NULL) {
@@ -29,7 +29,7 @@
  			an = ATH_NODE(ni);
  			if (ts->ts_status == 0) {
  				u_int8_t txant = ts->ts_antenna;
-@@ -8687,15 +8689,43 @@ ath_tx_processq(struct ath_softc *sc, st
+@@ -8690,15 +8692,43 @@ ath_tx_processq(struct ath_softc *sc, st
  			lr = ts->ts_longretry;
  			sc->sc_stats.ast_tx_shortretry += sr;
  			sc->sc_stats.ast_tx_longretry += lr;
