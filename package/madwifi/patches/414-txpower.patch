@@ -174,7 +174,7 @@
  	hdrlen = ieee80211_anyhdrsize(wh);
  	pktlen = skb->len + IEEE80211_CRC_LEN;
  
-@@ -8390,7 +8389,7 @@ ath_tx_start(struct net_device *dev, str
+@@ -8394,7 +8393,7 @@ ath_tx_start(struct net_device *dev, str
  			    pktlen,			/* packet length */
  			    hdrlen,			/* header length */
  			    atype,			/* Atheros packet type */
@@ -183,7 +183,7 @@
  			    txrate, try0,		/* series 0 rate/tries */
  			    keyix,			/* key cache index */
  			    antenna,			/* antenna mode */
-@@ -10383,59 +10382,16 @@ ath_get_clamped_maxtxpower(struct ath_so
+@@ -10387,59 +10386,16 @@ ath_get_clamped_maxtxpower(struct ath_so
  
  /* XXX: this function needs some locking to avoid being called 
   * twice/interrupted */

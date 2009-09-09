@@ -33,7 +33,7 @@
  
  		skb = bf->bf_skb;
  		if (skb == NULL) {
-@@ -7070,8 +7072,8 @@ rx_next:
+@@ -7074,8 +7076,8 @@ rx_next:
  		if (sc->sc_isr & HAL_INT_RX) {
  			u_int64_t hw_tsf = ath_hal_gettsf64(ah);
  			sc->sc_isr &= ~HAL_INT_RX;
@@ -45,7 +45,7 @@
  		local_irq_restore(flags);
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1203,6 +1203,7 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1205,6 +1205,7 @@ ieee80211_deliver_data(struct ieee80211_
  		}
  	}
  

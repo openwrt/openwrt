@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -10473,11 +10473,11 @@ set_node_txpower(void *arg, struct ieee8
+@@ -10476,11 +10476,11 @@ set_node_txpower(void *arg, struct ieee8
   * XXX: this function needs some locking to avoid being called 
   * twice/interrupted. Returns the value actually stored. */
  static u_int32_t
@@ -16,7 +16,7 @@
  	return ath_get_clamped_maxtxpower(sc);
  }
  
-@@ -11028,6 +11028,7 @@ enum {
+@@ -11031,6 +11031,7 @@ enum {
  	ATH_DEBUG,
  	ATH_TXANTENNA,
  	ATH_RXANTENNA,
@@ -24,7 +24,7 @@
  	ATH_DIVERSITY,
  	ATH_TXINTRPERIOD,
  	ATH_FFTXQMIN,
-@@ -11308,6 +11309,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11311,6 +11312,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  				ath_debug_global = (val &  ATH_DEBUG_GLOBAL);
  #endif
  				break;
@@ -34,7 +34,7 @@
  			case ATH_TXANTENNA:
  				/*
  				 * antenna can be:
-@@ -11475,6 +11479,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+@@ -11478,6 +11482,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
  		case ATH_DEBUG:
  			val = sc->sc_debug | ath_debug_global;
  			break;
@@ -44,7 +44,7 @@
  		case ATH_TXANTENNA:
  			val = sc->sc_txantenna;
  			break;
-@@ -11616,6 +11623,12 @@ static const ctl_table ath_sysctl_templa
+@@ -11619,6 +11626,12 @@ static const ctl_table ath_sysctl_templa
  	},
  #endif
  	{ .ctl_name	= CTL_AUTO,

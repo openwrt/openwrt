@@ -291,19 +291,21 @@
  		if (TAILQ_NEXT(vap, iv_next) != NULL) {
  			skb1 = skb_copy(skb, GFP_ATOMIC);
  			if (skb1 == NULL) {
-@@ -950,8 +957,10 @@ ieee80211_input_all(struct ieee80211com 
+@@ -950,8 +957,12 @@ ieee80211_input_all(struct ieee80211com 
  			skb1 = skb;
  			skb = NULL;
  		}
 -		type = ieee80211_input(vap, NULL, skb1, rssi, rtsf);
 +		type = ieee80211_input(vap, ni, skb1, rssi, rtsf);
++		if (ni)
++			ieee80211_unref_node(&ni);
  	}
 +
 +out:
  	if (skb != NULL)		/* no vaps, reclaim skb */
  		ieee80211_dev_kfree_skb(&skb);
  	return type;
-@@ -1146,11 +1155,9 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1146,11 +1157,9 @@ ieee80211_deliver_data(struct ieee80211_
  			 * sending it will not work; just let it be
  			 * delivered normally.
  			 */
@@ -317,6 +319,37 @@
  					!ni1->ni_subif &&
  				    ni1 != vap->iv_bss) {
  
+@@ -3519,6 +3528,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 				 (vap->iv_opmode == IEEE80211_M_WDS)) &&
+ 				(scan.capinfo & IEEE80211_CAPINFO_ESS))) {
+ 			struct ieee80211vap *avp = NULL;
++			int do_unref = 0;
+ 			int found = 0;
+ 
+ 			IEEE80211_LOCK_IRQ(vap->iv_ic);
+@@ -3550,10 +3560,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 					ni->ni_associd |= 0xc000;
+ 					avp->iv_wdsnode = ieee80211_ref_node(ni);
+ 					IEEE80211_UNLOCK_IRQ(ic);
+-				} else if (vap->iv_opmode == IEEE80211_M_IBSS) {
++				} else if ((vap->iv_opmode == IEEE80211_M_IBSS) &&
++				           IEEE80211_ADDR_EQ(wh->i_addr3, vap->iv_bssid)) {
+ 					/* Create a new entry in the neighbor table. */
+ 					ni = ieee80211_add_neighbor(vap, wh, &scan);
+ 				}
++				do_unref = 1;
+ 			} else {
+ 				/*
+ 				 * Copy data from beacon to neighbor table.
+@@ -3592,6 +3604,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 				ni->ni_rssi = rssi;
+ 				ni->ni_rtsf = rtsf;
+ 				ni->ni_last_rx = jiffies;
++				if (do_unref)
++					ieee80211_unref_node(&ni);
+ 			}
+ 		}
+ 		break;
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
 @@ -6589,9 +6589,8 @@ ath_recv_mgmt(struct ieee80211vap * vap,
@@ -385,7 +418,7 @@
  			ATH_RSSI_LPF(ATH_NODE(ni)->an_avgrssi, rs->rs_rssi);
  			type = ieee80211_input(ni->ni_vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  			ieee80211_unref_node(&ni);
-@@ -6981,24 +6998,35 @@ drop_micfail:
+@@ -6981,24 +6998,39 @@ drop_micfail:
  			 * No key index or no entry, do a lookup and
  			 * add the node to the mapping table if possible.
  			 */
@@ -393,7 +426,11 @@
 -				(const struct ieee80211_frame_min *)skb->data);
 +
 +lookup_slowpath:
-+			vap = ieee80211_find_rxvap(ic, wh->i_addr1);
++			if (IEEE80211_IS_MULTICAST(wh->i_addr1))
++				vap = NULL;
++			else
++				vap = ieee80211_find_rxvap(ic, wh->i_addr1);
++
 +			if (vap)
 +				ni = ieee80211_find_rxnode(ic, vap, wh);
 +			else

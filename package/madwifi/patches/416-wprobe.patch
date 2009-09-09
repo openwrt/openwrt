@@ -477,10 +477,10 @@
  			type = ieee80211_input(ni->ni_vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  			ieee80211_unref_node(&ni);
  		} else {
-@@ -7020,15 +7026,22 @@ drop_micfail:
+@@ -7024,15 +7030,21 @@ lookup_slowpath:
+ 			else
+ 				vap = ieee80211_find_rxvap(ic, wh->i_addr1);
  
- lookup_slowpath:
- 			vap = ieee80211_find_rxvap(ic, wh->i_addr1);
 -			if (vap)
 +			if (vap) {
 +				ath_wprobe_report_rx(vap, rs, skb);
@@ -490,7 +490,6 @@
 +				TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
 +					ath_wprobe_report_rx(vap, rs, skb);
 +				}
-+				vap = NULL;
  				ni = NULL;
 +			}
  
@@ -502,7 +501,7 @@
  				type = ieee80211_input(vap, ni, skb, rs->rs_rssi, bf->bf_tsf);
  				/*
  				 * If the station has a key cache slot assigned
-@@ -8608,6 +8621,7 @@ ath_tx_processq(struct ath_softc *sc, st
+@@ -8612,6 +8624,7 @@ ath_tx_processq(struct ath_softc *sc, st
  				sc->sc_stats.ast_tx_rssi = ts->ts_rssi;
  				ATH_RSSI_LPF(an->an_halstats.ns_avgtxrssi,
  					ts->ts_rssi);
@@ -510,7 +509,7 @@
  				if (bf->bf_skb->priority == WME_AC_VO ||
  				    bf->bf_skb->priority == WME_AC_VI)
  					ni->ni_ic->ic_wme.wme_hipri_traffic++;
-@@ -10107,6 +10121,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10111,6 +10124,7 @@ ath_newassoc(struct ieee80211_node *ni, 
  	struct ath_softc *sc = ic->ic_dev->priv;
  
  	sc->sc_rc->ops->newassoc(sc, ATH_NODE(ni), isnew);

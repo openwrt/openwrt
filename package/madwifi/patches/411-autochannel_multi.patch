@@ -183,7 +183,7 @@
  		ieee80211_stop(vap->iv_dev);
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -2772,6 +2772,7 @@ static void
+@@ -2774,6 +2774,7 @@ static void
  ieee80211_doth_switch_channel(struct ieee80211vap *vap)
  {
  	struct ieee80211com *ic = vap->iv_ic;
@@ -191,7 +191,7 @@
  
  	IEEE80211_DPRINTF(vap, IEEE80211_MSG_DOTH,
  			  "%s: Channel switch to %3d (%4d MHz) NOW!\n",
-@@ -2794,6 +2795,9 @@ ieee80211_doth_switch_channel(struct iee
+@@ -2796,6 +2797,9 @@ ieee80211_doth_switch_channel(struct iee
  
  	ic->ic_curchan = ic->ic_bsschan = vap->iv_csa_chan;
  	ic->ic_set_channel(ic);
