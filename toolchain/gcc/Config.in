@@ -58,10 +58,10 @@ config EXTRA_GCC_CONFIG_OPTIONS
 config SSP_SUPPORT
 	bool
 	depends !GCC_VERSION_3_4_6
-	prompt "Enable Smash Stacking Protection support" if TOOLCHAINOPTS
+	prompt "Enable Stack-Smashing Protection support" if TOOLCHAINOPTS
 	default n
 	help
-	    Enable Smash Stacking Protection support
+	    Enable Stack-Smashing Protection support
 
 config INSTALL_LIBSTDCPP
 	bool
