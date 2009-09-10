@@ -1,7 +1,7 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -88,6 +88,11 @@ config AR8216_PHY
- 	tristate "Driver for Atheros AR8216 switches"
+@@ -92,6 +92,11 @@ config RTL8306_PHY
+ 	tristate "Driver for Realtek RTL8306S switches"
  	select SWCONFIG
  
 +config MICREL_PHY
@@ -14,9 +14,9 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -18,6 +18,7 @@ obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
- obj-$(CONFIG_IP175C_PHY)	+= ip175c.o
+@@ -19,6 +19,7 @@ obj-$(CONFIG_IP175C_PHY)	+= ip175c.o
  obj-$(CONFIG_AR8216_PHY)	+= ar8216.o
+ obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
 +obj-$(CONFIG_MICREL_PHY)	+= micrel.o
  obj-$(CONFIG_FIXED_PHY)		+= fixed.o
