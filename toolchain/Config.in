@@ -83,40 +83,6 @@ config INSIGHT
 	help
 		Enable if you want to build insight-gdb
 
-config LARGEFILE
-	bool
-	prompt "Enable large file (files > 2 GB) support?" if TOOLCHAINOPTS
-	default y
-	help
-		Enable large file (files > 2 GB) support
-
-config SHADOW_PASSWORDS
-	bool
-	prompt "Enable shadow password support?" if TOOLCHAINOPTS
-	default y
-	help
-		Enable shadow password support.
-
-config SOFT_FLOAT
-	bool
-	prompt "Use software floating point by default" if TOOLCHAINOPTS
-	default y
-	depends on (arm || armeb || powerpc || mipsel || mips) && !HAS_FPU
-	help
-	  If your target CPU does not have a Floating Point Unit (FPU) or a
-	  kernel FPU emulator, but you still wish to support floating point
-	  functions, then everything will need to be compiled with soft floating
-	  point support (-msoft-float).
-
-	  Most people will answer N.
-
-config TARGET_OPTIMIZATION
-	string
-	prompt "Target Optimizations" if TOOLCHAINOPTS
-	default DEFAULT_TARGET_OPTIMIZATION
-	help
-	  Optimizations to use when building for the target host.
-
 config USE_UCLIBC
 	bool
 	default y if !TOOLCHAINOPTS
