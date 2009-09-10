@@ -1,17 +1,21 @@
---- a/net/ipv4/netfilter/Config.in
-+++ b/net/ipv4/netfilter/Config.in
-@@ -11,6 +11,8 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
+Index: linux-2.4.37.5/net/ipv4/netfilter/Config.in
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/Config.in	2009-09-03 00:17:38.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/Config.in	2009-09-03 00:25:34.000000000 -0700
+@@ -11,6 +11,8 @@
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
 +  dep_tristate '  Connection tracking flow accounting' CONFIG_IP_NF_CT_ACCT $CONFIG_IP_NF_CONNTRACK
 +  dep_tristate '  Connection byte counter support' CONFIG_IP_NF_MATCH_CONNBYTES $CONFIG_IP_NF_CT_ACCT $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES
-   dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
-   dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
  fi
---- a/net/ipv4/netfilter/Makefile
-+++ b/net/ipv4/netfilter/Makefile
-@@ -106,6 +106,7 @@ obj-$(CONFIG_IP_NF_MATCH_LENGTH) += ipt_
+ 
+ if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+Index: linux-2.4.37.5/net/ipv4/netfilter/Makefile
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/Makefile	2009-09-03 00:17:38.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/Makefile	2009-09-03 00:17:57.000000000 -0700
+@@ -97,6 +97,7 @@
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_state.o
  obj-$(CONFIG_IP_NF_MATCH_CONNMARK) += ipt_connmark.o
@@ -19,9 +23,11 @@
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_STRING) += ipt_string.o
---- a/net/ipv4/netfilter/ip_conntrack_amanda.c
-+++ b/net/ipv4/netfilter/ip_conntrack_amanda.c
-@@ -75,7 +75,7 @@ static int help(const struct iphdr *iph,
+Index: linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_amanda.c
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/ip_conntrack_amanda.c	2009-08-13 15:04:00.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_amanda.c	2009-09-03 00:17:57.000000000 -0700
+@@ -75,7 +75,7 @@
  
  	/* increase the UDP timeout of the master connection as replies from
  	 * Amanda clients to the server can be quite delayed */
@@ -30,9 +36,11 @@
  	
  	/* Search for "CONNECT " string */
  	do {
---- a/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
-+++ b/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
-@@ -211,7 +211,7 @@ static int tcp_packet(struct ip_conntrac
+Index: linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2009-08-13 15:04:00.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2009-09-03 00:17:57.000000000 -0700
+@@ -211,7 +211,7 @@
  			set_bit(IPS_ASSURED_BIT, &conntrack->status);
  
  		WRITE_UNLOCK(&tcp_lock);
@@ -41,9 +49,11 @@
  	}
  
  	return NF_ACCEPT;
---- a/net/ipv4/netfilter/ip_conntrack_proto_udp.c
-+++ b/net/ipv4/netfilter/ip_conntrack_proto_udp.c
-@@ -47,16 +47,16 @@ static unsigned int udp_print_conntrack(
+Index: linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_udp.c
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2009-08-13 15:04:00.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2009-09-03 00:17:57.000000000 -0700
+@@ -47,16 +47,16 @@
  /* Returns verdict for packet, and may modify conntracktype */
  static int udp_packet(struct ip_conntrack *conntrack,
  		      struct iphdr *iph, size_t len,
@@ -63,9 +73,11 @@
  
  	return NF_ACCEPT;
  }
---- a/net/ipv4/netfilter/ip_conntrack_standalone.c
-+++ b/net/ipv4/netfilter/ip_conntrack_standalone.c
-@@ -79,6 +79,18 @@ print_expect(char *buffer, const struct 
+Index: linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_standalone.c
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/ip_conntrack_standalone.c	2009-09-03 00:17:18.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_standalone.c	2009-09-03 00:17:57.000000000 -0700
+@@ -79,6 +79,18 @@
  	return len;
  }
  
@@ -84,7 +96,7 @@
  static unsigned int
  print_conntrack(char *buffer, struct ip_conntrack *conntrack)
  {
-@@ -98,11 +110,15 @@ print_conntrack(char *buffer, struct ip_
+@@ -98,11 +110,15 @@
  	len += print_tuple(buffer + len,
  			   &conntrack->tuplehash[IP_CT_DIR_ORIGINAL].tuple,
  			   proto);
@@ -100,7 +112,7 @@
  	if (test_bit(IPS_ASSURED_BIT, &conntrack->status))
  		len += sprintf(buffer + len, "[ASSURED] ");
  	len += sprintf(buffer + len, "use=%u ",
-@@ -481,7 +497,7 @@ EXPORT_SYMBOL(ip_conntrack_get);
+@@ -481,7 +497,7 @@
  EXPORT_SYMBOL(ip_conntrack_helper_register);
  EXPORT_SYMBOL(ip_conntrack_helper_unregister);
  EXPORT_SYMBOL(ip_ct_iterate_cleanup);
@@ -109,9 +121,11 @@
  EXPORT_SYMBOL(ip_ct_find_proto);
  EXPORT_SYMBOL(__ip_ct_find_proto);
  EXPORT_SYMBOL(ip_ct_find_helper);
---- a/net/ipv4/netfilter/ip_conntrack_proto_generic.c
-+++ b/net/ipv4/netfilter/ip_conntrack_proto_generic.c
-@@ -41,9 +41,9 @@ static unsigned int generic_print_conntr
+Index: linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_generic.c
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/ip_conntrack_proto_generic.c	2009-08-13 15:04:00.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_generic.c	2009-09-03 00:17:57.000000000 -0700
+@@ -41,9 +41,9 @@
  /* Returns verdict for packet, or -1 for invalid. */
  static int established(struct ip_conntrack *conntrack,
  		       struct iphdr *iph, size_t len,
@@ -123,9 +137,11 @@
  	return NF_ACCEPT;
  }
  
---- a/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
-+++ b/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
-@@ -82,7 +82,7 @@ static int icmp_packet(struct ip_conntra
+Index: linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/ip_conntrack_proto_icmp.c	2009-08-13 15:04:00.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_proto_icmp.c	2009-09-03 00:17:57.000000000 -0700
+@@ -82,7 +82,7 @@
  			ct->timeout.function((unsigned long)ct);
  	} else {
  		atomic_inc(&ct->proto.icmp.count);
@@ -134,9 +150,11 @@
  	}
  
  	return NF_ACCEPT;
---- a/net/ipv4/netfilter/ip_conntrack_core.c
-+++ b/net/ipv4/netfilter/ip_conntrack_core.c
-@@ -1196,22 +1196,40 @@ void ip_conntrack_helper_unregister(stru
+Index: linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_core.c
+===================================================================
+--- linux-2.4.37.5.orig/net/ipv4/netfilter/ip_conntrack_core.c	2009-09-03 00:17:18.000000000 -0700
++++ linux-2.4.37.5/net/ipv4/netfilter/ip_conntrack_core.c	2009-09-03 00:17:57.000000000 -0700
+@@ -1193,22 +1193,40 @@
  
  	MOD_DEC_USE_COUNT;
  }
@@ -180,9 +198,11 @@
  	}
  	WRITE_UNLOCK(&ip_conntrack_lock);
  }
---- a/include/linux/netfilter_ipv4/ip_conntrack.h
-+++ b/include/linux/netfilter_ipv4/ip_conntrack.h
-@@ -164,6 +164,12 @@ struct ip_conntrack_expect
+Index: linux-2.4.37.5/include/linux/netfilter_ipv4/ip_conntrack.h
+===================================================================
+--- linux-2.4.37.5.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2009-09-03 00:17:18.000000000 -0700
++++ linux-2.4.37.5/include/linux/netfilter_ipv4/ip_conntrack.h	2009-09-03 00:17:57.000000000 -0700
+@@ -156,6 +156,12 @@
  	union ip_conntrack_expect_help help;
  };
  
@@ -195,7 +215,7 @@
  struct ip_conntrack_helper;
  
  struct ip_conntrack
-@@ -181,6 +187,12 @@ struct ip_conntrack
+@@ -173,6 +179,12 @@
  	/* Timer function; drops refcnt when it goes off. */
  	struct timer_list timeout;
  
@@ -208,7 +228,7 @@
  	/* If we're expecting another related connection, this will be
             in expected linked list */
  	struct list_head sibling_list;
-@@ -264,8 +276,10 @@ extern int invert_tuplepr(struct ip_conn
+@@ -256,8 +268,10 @@
  			  const struct ip_conntrack_tuple *orig);
  
  /* Refresh conntrack for this many jiffies */
@@ -221,8 +241,10 @@
  
  /* These are for NAT.  Icky. */
  /* Call me when a conntrack is destroyed. */
---- /dev/null
-+++ b/net/ipv4/netfilter/ipt_connbytes.c
+Index: linux-2.4.37.5/net/ipv4/netfilter/ipt_connbytes.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.37.5/net/ipv4/netfilter/ipt_connbytes.c	2009-09-03 00:17:57.000000000 -0700
 @@ -0,0 +1,163 @@
 +/* Kernel module to match connection tracking byte counter.
 + * GPL (C) 2002 Martin Devera (devik@cdi.cz).
@@ -387,8 +409,10 @@
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
---- /dev/null
-+++ b/include/linux/netfilter_ipv4/ipt_connbytes.h
+Index: linux-2.4.37.5/include/linux/netfilter_ipv4/ipt_connbytes.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.37.5/include/linux/netfilter_ipv4/ipt_connbytes.h	2009-09-03 00:17:57.000000000 -0700
 @@ -0,0 +1,25 @@
 +#ifndef _IPT_CONNBYTES_H
 +#define _IPT_CONNBYTES_H
@@ -415,25 +439,3 @@
 +};
 +
 +#endif
---- a/net/ipv4/netfilter/ip_conntrack_proto_gre.c
-+++ b/net/ipv4/netfilter/ip_conntrack_proto_gre.c
-@@ -237,16 +237,16 @@ static unsigned int gre_print_conntrack(
- /* Returns verdict for packet, and may modify conntrack */
- static int gre_packet(struct ip_conntrack *ct,
- 		      struct iphdr *iph, size_t len,
--		      enum ip_conntrack_info conntrackinfo)
-+		      enum ip_conntrack_info ctinfo)
- {
- 	/* If we've seen traffic both ways, this is a GRE connection.
- 	 * Extend timeout. */
- 	if (ct->status & IPS_SEEN_REPLY) {
--		ip_ct_refresh_acct(ct, ct->proto.gre.stream_timeout);
-+		ip_ct_refresh_acct(ct, ctinfo, iph, ct->proto.gre.stream_timeout);
- 		/* Also, more likely to be important, and not a probe. */
- 		set_bit(IPS_ASSURED_BIT, &ct->status);
- 	} else
--		ip_ct_refresh_acct(ct, ct->proto.gre.timeout);
-+		ip_ct_refresh_acct(ct, ctinfo, iph, ct->proto.gre.timeout);
- 	
- 	return NF_ACCEPT;
- }
