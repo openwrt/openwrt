@@ -505,7 +505,7 @@
  /**
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -171,6 +171,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -155,6 +155,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
      dep_tristate '    DSCP target support' CONFIG_IP_NF_TARGET_DSCP $CONFIG_IP_NF_MANGLE
   
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
@@ -515,7 +515,7 @@
    if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -139,6 +139,7 @@ obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TO
+@@ -130,6 +130,7 @@ obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TO
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_DSCP) += ipt_DSCP.o
  obj-$(CONFIG_IP_NF_TARGET_MARK) += ipt_MARK.o

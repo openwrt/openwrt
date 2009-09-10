@@ -1,6 +1,6 @@
 --- a/net/ipv4/netfilter/ip_conntrack_core.c
 +++ b/net/ipv4/netfilter/ip_conntrack_core.c
-@@ -1410,7 +1410,7 @@ void ip_conntrack_cleanup(void)
+@@ -1407,7 +1407,7 @@ void ip_conntrack_cleanup(void)
  	nf_unregister_sockopt(&so_getorigdst);
  }
  
@@ -9,7 +9,7 @@
  MODULE_PARM(hashsize, "i");
  
  int __init ip_conntrack_init(void)
-@@ -1431,7 +1431,7 @@ int __init ip_conntrack_init(void)
+@@ -1428,7 +1428,7 @@ int __init ip_conntrack_init(void)
  		if (ip_conntrack_htable_size < 16)
  			ip_conntrack_htable_size = 16;
  	}

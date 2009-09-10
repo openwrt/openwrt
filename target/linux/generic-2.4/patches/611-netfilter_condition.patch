@@ -60,7 +60,7 @@
 +#endif
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -43,6 +43,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -41,6 +41,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
@@ -70,7 +70,7 @@
    dep_tristate '  peer to peer traffic match support' CONFIG_IP_NF_MATCH_IPP2P $CONFIG_IP_NF_IPTABLES
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -94,6 +94,7 @@ obj-$(CONFIG_IP_NF_MATCH_PKTTYPE) += ipt
+@@ -85,6 +85,7 @@ obj-$(CONFIG_IP_NF_MATCH_PKTTYPE) += ipt
  obj-$(CONFIG_IP_NF_MATCH_MULTIPORT) += ipt_multiport.o
  obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o

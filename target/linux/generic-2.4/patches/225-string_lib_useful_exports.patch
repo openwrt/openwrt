@@ -136,7 +136,7 @@
  #endif
  
  #ifndef __HAVE_ARCH_MEMCMP
-@@ -458,6 +475,7 @@ int memcmp(const void * cs,const void * 
+@@ -459,6 +476,7 @@ int memcmp(const void * cs,const void * 
  			break;
  	return res;
  }
@@ -144,7 +144,7 @@
  #endif
  
  #ifndef __HAVE_ARCH_MEMSCAN
-@@ -482,6 +500,7 @@ void * memscan(void * addr, int c, size_
+@@ -483,6 +501,7 @@ void * memscan(void * addr, int c, size_
  	}
    	return (void *) p;
  }
@@ -152,7 +152,7 @@
  #endif
  
  #ifndef __HAVE_ARCH_STRSTR
-@@ -506,6 +525,7 @@ char * strstr(const char * s1,const char
+@@ -507,6 +526,7 @@ char * strstr(const char * s1,const char
  	}
  	return NULL;
  }
@@ -160,7 +160,7 @@
  #endif
  
  #ifndef __HAVE_ARCH_MEMCHR
-@@ -528,5 +548,5 @@ void *memchr(const void *s, int c, size_
+@@ -529,5 +549,5 @@ void *memchr(const void *s, int c, size_
  	}
  	return NULL;
  }

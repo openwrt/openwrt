@@ -1073,7 +1073,7 @@
 +#endif /*_IPT_SET_H*/
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -22,6 +22,20 @@ tristate 'IP tables support (required fo
+@@ -20,6 +20,20 @@ tristate 'IP tables support (required fo
  if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
  # The simple matches.
    dep_tristate '  limit match support' CONFIG_IP_NF_MATCH_LIMIT $CONFIG_IP_NF_IPTABLES
@@ -5681,7 +5681,7 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -75,6 +75,18 @@ obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
+@@ -66,6 +66,18 @@ obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
  obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
  obj-$(CONFIG_IP_NF_MATCH_LIMIT) += ipt_limit.o
  obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
