@@ -42,14 +42,24 @@ menuconfig EXTRA_TARGET_ARCH
 		  both powerpc and powerpc64 binaries, you'll need to
 		  specify -m64 here.
 
+comment "Binary tools"
+	depends TOOLCHAINOPTS
+
 source "toolchain/binutils/Config.in"
+
+comment "Compiler"
+	depends TOOLCHAINOPTS
+
 source "toolchain/gcc/Config.in"
 
+comment "C Library"
+	depends TOOLCHAINOPTS
+
 choice
-	prompt "LIBC implementation" if TOOLCHAINOPTS
+	prompt "C Library implementation" if TOOLCHAINOPTS
 	default USE_UCLIBC
 	help
-	  Select the LIBC implementation.
+	  Select the C library implementation.
 
 	config USE_EGLIBC
 		bool "Use eglibc"
@@ -67,6 +77,9 @@ endchoice
 source "toolchain/eglibc/Config.in"
 source "toolchain/glibc/Config.in"
 source "toolchain/uClibc/Config.in"
+
+comment "Debuggers"
+	depends TOOLCHAINOPTS
 
 config GDB
 	bool
