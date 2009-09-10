@@ -1,24 +1,10 @@
---- a/arch/mips/kernel/head.S
-+++ b/arch/mips/kernel/head.S
-@@ -123,6 +123,11 @@
- 
- 	j kernel_entry
- 	nop
-+
-+
-+EXPORT(_image_cmdline)
-+	.ascii "CMDLINE:"
-+
- #ifndef CONFIG_NO_EXCEPT_FILL
- 	/*
- 	 * Reserved space for exception handlers.
 --- a/arch/mips/rb532/prom.c
 +++ b/arch/mips/rb532/prom.c
 @@ -67,6 +67,7 @@ static inline unsigned long tag2ul(char 
  	return simple_strtoul(num, 0, 10);
  }
  
-+extern char _image_cmdline;
++extern char __image_cmdline[];
  void __init prom_setup_cmdline(void)
  {
  	char cmd_line[CL_SIZE];
@@ -26,8 +12,8 @@
  	}
  	*(cp++) = ' ';
  
-+	strcpy(cp,(&_image_cmdline + 8));
-+	cp += strlen(&_image_cmdline);
++	strcpy(cp,(__image_cmdline));
++	cp += strlen(__image_cmdline);
 +
  	i = strlen(arcs_cmdline);
  	if (i > 0) {
