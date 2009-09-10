@@ -1,6 +1,6 @@
 --- a/include/linux/netfilter_ipv4/ip_conntrack.h
 +++ b/include/linux/netfilter_ipv4/ip_conntrack.h
-@@ -226,6 +226,9 @@ struct ip_conntrack
+@@ -218,6 +218,9 @@ struct ip_conntrack
  		unsigned int app_data_len;
  	} layer7;
  #endif
@@ -61,7 +61,7 @@
 +#endif /*_IPT_CONNMARK_H*/
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -6,7 +6,8 @@ comment '  IP: Netfilter Configuration'
+@@ -6,6 +6,7 @@ comment '  IP: Netfilter Configuration'
  
  tristate 'Connection tracking (required for masq/NAT)' CONFIG_IP_NF_CONNTRACK
  if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
@@ -69,8 +69,7 @@
    dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
-   dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
-@@ -42,6 +43,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -40,6 +41,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
      dep_tristate '  Connection state match support' CONFIG_IP_NF_MATCH_STATE $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
      dep_tristate '  Connection tracking match support' CONFIG_IP_NF_MATCH_CONNTRACK $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
@@ -80,7 +79,7 @@
    fi
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
-@@ -126,6 +130,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -110,6 +114,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
      dep_tristate '    CLASSIFY target support (EXPERIMENTAL)' CONFIG_IP_NF_TARGET_CLASSIFY $CONFIG_IP_NF_MANGLE
    fi
@@ -92,7 +91,7 @@
    dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -93,6 +93,7 @@ obj-$(CONFIG_IP_NF_MATCH_LENGTH) += ipt_
+@@ -84,6 +84,7 @@ obj-$(CONFIG_IP_NF_MATCH_LENGTH) += ipt_
  
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_state.o
@@ -100,7 +99,7 @@
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
-@@ -111,6 +112,7 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
+@@ -102,6 +103,7 @@ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += i
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
  obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
  obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
@@ -110,7 +109,7 @@
  obj-$(CONFIG_IP_NF_TARGET_TCPMSS) += ipt_TCPMSS.o
 --- a/net/ipv4/netfilter/ip_conntrack_core.c
 +++ b/net/ipv4/netfilter/ip_conntrack_core.c
-@@ -754,6 +754,9 @@ init_conntrack(const struct ip_conntrack
+@@ -750,6 +750,9 @@ init_conntrack(const struct ip_conntrack
  		__set_bit(IPS_EXPECTED_BIT, &conntrack->status);
  		conntrack->master = expected;
  		expected->sibling = conntrack;

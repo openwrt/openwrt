@@ -1,14 +1,14 @@
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -17,6 +17,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
-   dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
+@@ -15,6 +15,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
+   dep_tristate '  Connection byte counter support' CONFIG_IP_NF_MATCH_CONNBYTES $CONFIG_IP_NF_CT_ACCT $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  H.323 (netmeeting) support' CONFIG_IP_NF_H323 $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  RTSP protocol support' CONFIG_IP_NF_RTSP $CONFIG_IP_NF_CONNTRACK
 +  dep_tristate '  MMS protocol support' CONFIG_IP_NF_MMS $CONFIG_IP_NF_CONNTRACK
  fi
  
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-@@ -126,6 +127,13 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -110,6 +111,13 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
           define_tristate CONFIG_IP_NF_NAT_RTSP $CONFIG_IP_NF_NAT
         fi
        fi
@@ -24,7 +24,7 @@
        fi
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -61,6 +61,10 @@ obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack
+@@ -55,6 +55,10 @@ obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack
  ifdef CONFIG_IP_NF_NAT_RTSP
         export-objs += ip_conntrack_rtsp.o
  endif
@@ -34,9 +34,9 @@
 +endif
  
  
- 
-@@ -73,6 +77,7 @@ obj-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_
- obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o
+ # NAT helpers 
+@@ -64,6 +68,7 @@ obj-$(CONFIG_IP_NF_NAT_FTP) += ip_nat_ft
+ obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_irc.o
  obj-$(CONFIG_IP_NF_NAT_H323) += ip_nat_h323.o
  obj-$(CONFIG_IP_NF_NAT_RTSP) += ip_nat_rtsp.o
 +obj-$(CONFIG_IP_NF_NAT_MMS) += ip_nat_mms.o
@@ -673,24 +673,24 @@
 +module_exit(fini);
 --- a/include/linux/netfilter_ipv4/ip_conntrack.h
 +++ b/include/linux/netfilter_ipv4/ip_conntrack.h
-@@ -73,6 +73,7 @@ union ip_conntrack_expect_proto {
- #include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
+@@ -69,6 +69,7 @@ union ip_conntrack_expect_proto {
+ #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
  #include <linux/netfilter_ipv4/ip_conntrack_h323.h>
  #include <linux/netfilter_ipv4/ip_conntrack_rtsp.h>
 +#include <linux/netfilter_ipv4/ip_conntrack_mms.h>
  
  /* per expectation: application helper private data */
  union ip_conntrack_expect_help {
-@@ -83,6 +84,7 @@ union ip_conntrack_expect_help {
- 	struct ip_ct_pptp_expect exp_pptp_info;
+@@ -78,6 +79,7 @@ union ip_conntrack_expect_help {
+ 	struct ip_ct_irc_expect exp_irc_info;
  	struct ip_ct_h225_expect exp_h225_info;
  	struct ip_ct_rtsp_expect exp_rtsp_info;
 +	struct ip_ct_mms_expect exp_mms_info;
  
  #ifdef CONFIG_IP_NF_NAT_NEEDED
  	union {
-@@ -99,6 +101,7 @@ union ip_conntrack_help {
- 	struct ip_ct_pptp_master ct_pptp_info;
+@@ -93,6 +95,7 @@ union ip_conntrack_help {
+ 	struct ip_ct_irc_master ct_irc_info;
  	struct ip_ct_h225_master ct_h225_info;
  	struct ip_ct_rtsp_master ct_rtsp_info;
 +	struct ip_ct_mms_master ct_mms_info;

@@ -27677,7 +27677,7 @@
  include $(TOPDIR)/drivers/bluetooth/Makefile.lib
 --- a/Makefile
 +++ b/Makefile
-@@ -469,10 +469,11 @@ mrproper: clean archmrproper
+@@ -472,10 +472,11 @@ mrproper: clean archmrproper
  	$(MAKE) -C Documentation/DocBook mrproper
  
  distclean: mrproper
@@ -27693,7 +27693,7 @@
  
  backup: mrproper
  	cd .. && tar cf - linux/ | gzip -9 > backup.gz
-@@ -499,7 +500,7 @@ mandocs:
+@@ -502,7 +503,7 @@ mandocs:
  	$(MAKE) -C Documentation/DocBook man
  
  sums:

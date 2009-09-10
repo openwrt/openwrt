@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -362,7 +362,7 @@ include/linux/compile.h: $(CONFIGURATION
+@@ -365,7 +365,7 @@ include/linux/compile.h: $(CONFIGURATION
  	@rm -f .ver1
  
  include/linux/version.h: ./Makefile
@@ -9,7 +9,7 @@
  	  (echo KERNELRELEASE \"$(KERNELRELEASE)\" exceeds $(uts_len) characters >&2; false)
  	@echo \#define UTS_RELEASE \"$(KERNELRELEASE)\" > .ver
  	@echo \#define LINUX_VERSION_CODE `expr $(VERSION) \\* 65536 + $(PATCHLEVEL) \\* 256 + $(SUBLEVEL)` >> .ver
-@@ -500,7 +500,7 @@ dep-files: scripts/mkdep archdep include
+@@ -503,7 +503,7 @@ dep-files: scripts/mkdep archdep include
  ifdef CONFIG_MODVERSIONS
  	$(MAKE) update-modverfile
  endif

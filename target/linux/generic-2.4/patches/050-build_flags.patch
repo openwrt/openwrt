@@ -70,9 +70,9 @@
  	  -fno-strict-aliasing -fno-common
  CFLAGS += -fno-builtin-strpbrk -fno-builtin-sprintf
  ifndef CONFIG_FRAME_POINTER
-@@ -105,6 +104,8 @@ if_gcc4 = $(shell if echo __GNUC__ | $(C
- # disable pointer signedness warnings in gcc 4.0
- CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
+@@ -108,6 +107,8 @@ CFLAGS += $(call check_gcc,-Wno-pointer-
+ # disable stupid and dangerous "optimization" in gcc 3.2+
+ CFLAGS += $(call check_gcc,-fno-delete-null-pointer-checks,)
  
 +CFLAGS += $(call check_gcc, -funit-at-a-time,)
 +

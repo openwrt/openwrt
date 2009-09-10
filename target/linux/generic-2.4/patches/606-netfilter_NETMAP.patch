@@ -1,8 +1,6 @@
-Index: linux-2.4.37.5/Documentation/Configure.help
-===================================================================
---- linux-2.4.37.5.orig/Documentation/Configure.help	2009-09-03 00:09:38.000000000 -0700
-+++ linux-2.4.37.5/Documentation/Configure.help	2009-09-03 00:12:30.000000000 -0700
-@@ -3086,6 +3086,17 @@
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
+@@ -3086,6 +3086,17 @@ CONFIG_IP_NF_TARGET_REDIRECT
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -20,11 +18,9 @@ Index: linux-2.4.37.5/Documentation/Configure.help
  Packet mangling
  CONFIG_IP_NF_MANGLE
    This option adds a `mangle' table to iptables: see the man page for
-Index: linux-2.4.37.5/net/ipv4/netfilter/Config.in
-===================================================================
---- linux-2.4.37.5.orig/net/ipv4/netfilter/Config.in	2009-09-03 00:09:38.000000000 -0700
-+++ linux-2.4.37.5/net/ipv4/netfilter/Config.in	2009-09-03 00:14:38.000000000 -0700
-@@ -63,6 +63,7 @@
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
+@@ -63,6 +63,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
        define_bool CONFIG_IP_NF_NAT_NEEDED y
        dep_tristate '    MASQUERADE target support' CONFIG_IP_NF_TARGET_MASQUERADE $CONFIG_IP_NF_NAT
        dep_tristate '    REDIRECT target support' CONFIG_IP_NF_TARGET_REDIRECT $CONFIG_IP_NF_NAT
@@ -32,10 +28,8 @@ Index: linux-2.4.37.5/net/ipv4/netfilter/Config.in
        if [ "$CONFIG_IP_NF_AMANDA" = "m" ]; then
          define_tristate CONFIG_IP_NF_NAT_AMANDA m
        else
-Index: linux-2.4.37.5/net/ipv4/netfilter/ipt_NETMAP.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.4.37.5/net/ipv4/netfilter/ipt_NETMAP.c	2009-09-03 00:12:30.000000000 -0700
+--- /dev/null
++++ b/net/ipv4/netfilter/ipt_NETMAP.c
 @@ -0,0 +1,112 @@
 +/* NETMAP - static NAT mapping of IP network addresses (1:1).
 +   The mapping can be applied to source (POSTROUTING),
@@ -149,11 +143,9 @@ Index: linux-2.4.37.5/net/ipv4/netfilter/ipt_NETMAP.c
 +
 +module_init(init);
 +module_exit(fini);
-Index: linux-2.4.37.5/net/ipv4/netfilter/Makefile
-===================================================================
---- linux-2.4.37.5.orig/net/ipv4/netfilter/Makefile	2009-09-03 00:09:38.000000000 -0700
-+++ linux-2.4.37.5/net/ipv4/netfilter/Makefile	2009-09-03 00:12:30.000000000 -0700
-@@ -99,6 +99,7 @@
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
+@@ -99,6 +99,7 @@ obj-$(CONFIG_IP_NF_TARGET_DSCP) += ipt_D
  obj-$(CONFIG_IP_NF_TARGET_MARK) += ipt_MARK.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o

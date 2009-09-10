@@ -69,7 +69,7 @@
 +#endif /*_IP6T_RAND_H*/
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -48,6 +48,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -46,6 +46,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
@@ -178,7 +178,7 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -114,6 +114,8 @@ obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_o
+@@ -105,6 +105,8 @@ obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_o
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
  obj-$(CONFIG_IP_NF_MATCH_CONDITION) += ipt_condition.o
  

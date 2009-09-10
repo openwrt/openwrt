@@ -1,14 +1,14 @@
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -16,6 +16,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
-   dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
-   dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
+@@ -14,6 +14,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ];
+   dep_tristate '  Connection tracking flow accounting' CONFIG_IP_NF_CT_ACCT $CONFIG_IP_NF_CONNTRACK
+   dep_tristate '  Connection byte counter support' CONFIG_IP_NF_MATCH_CONNBYTES $CONFIG_IP_NF_CT_ACCT $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  H.323 (netmeeting) support' CONFIG_IP_NF_H323 $CONFIG_IP_NF_CONNTRACK
 +  dep_tristate '  RTSP protocol support' CONFIG_IP_NF_RTSP $CONFIG_IP_NF_CONNTRACK
  fi
  
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-@@ -118,6 +119,13 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -102,6 +103,13 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
           define_tristate CONFIG_IP_NF_NAT_H323 $CONFIG_IP_NF_NAT
         fi
        fi
@@ -24,7 +24,7 @@
        fi
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -57,6 +57,11 @@ obj-$(CONFIG_IP_NF_H323) += ip_conntrack
+@@ -51,6 +51,11 @@ obj-$(CONFIG_IP_NF_H323) += ip_conntrack
  ifdef CONFIG_IP_NF_NAT_H323
         export-objs += ip_conntrack_h323.o
  endif
@@ -34,11 +34,11 @@
 +endif
 +
  
- 
  # NAT helpers 
-@@ -67,6 +72,7 @@ obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_ir
- obj-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_nat_proto_gre.o
- obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o
+ obj-$(CONFIG_IP_NF_NAT_AMANDA) += ip_nat_amanda.o
+@@ -58,6 +63,7 @@ obj-$(CONFIG_IP_NF_NAT_TFTP) += ip_nat_t
+ obj-$(CONFIG_IP_NF_NAT_FTP) += ip_nat_ftp.o
+ obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_irc.o
  obj-$(CONFIG_IP_NF_NAT_H323) += ip_nat_h323.o
 +obj-$(CONFIG_IP_NF_NAT_RTSP) += ip_nat_rtsp.o
  
@@ -1490,25 +1490,25 @@
 +#endif /* _NETFILTER_MIME_H */
 --- a/include/linux/netfilter_ipv4/ip_conntrack.h
 +++ b/include/linux/netfilter_ipv4/ip_conntrack.h
-@@ -72,6 +72,7 @@ union ip_conntrack_expect_proto {
+@@ -68,6 +68,7 @@ union ip_conntrack_expect_proto {
+ #include <linux/netfilter_ipv4/ip_conntrack_ftp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
- #include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_h323.h>
 +#include <linux/netfilter_ipv4/ip_conntrack_rtsp.h>
  
  /* per expectation: application helper private data */
  union ip_conntrack_expect_help {
-@@ -81,6 +82,7 @@ union ip_conntrack_expect_help {
+@@ -76,6 +77,7 @@ union ip_conntrack_expect_help {
+ 	struct ip_ct_ftp_expect exp_ftp_info;
  	struct ip_ct_irc_expect exp_irc_info;
- 	struct ip_ct_pptp_expect exp_pptp_info;
  	struct ip_ct_h225_expect exp_h225_info;
 +	struct ip_ct_rtsp_expect exp_rtsp_info;
  
  #ifdef CONFIG_IP_NF_NAT_NEEDED
  	union {
-@@ -96,6 +98,7 @@ union ip_conntrack_help {
+@@ -90,6 +92,7 @@ union ip_conntrack_help {
+ 	struct ip_ct_ftp_master ct_ftp_info;
  	struct ip_ct_irc_master ct_irc_info;
- 	struct ip_ct_pptp_master ct_pptp_info;
  	struct ip_ct_h225_master ct_h225_info;
 +	struct ip_ct_rtsp_master ct_rtsp_info;
  };

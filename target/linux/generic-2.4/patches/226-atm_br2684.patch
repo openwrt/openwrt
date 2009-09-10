@@ -257,7 +257,7 @@
  	netif_rx(skb);
  }
  
-@@ -525,10 +625,10 @@ Note: we do not have explicit unassign, 
+@@ -529,10 +629,10 @@ Note: we do not have explicit unassign, 
  		err = -EEXIST;
  		goto error;
  	}
@@ -272,7 +272,7 @@
  		err = -EINVAL;
  		goto error;
  	}
-@@ -554,18 +654,21 @@ Note: we do not have explicit unassign, 
+@@ -553,18 +653,21 @@ Note: we do not have explicit unassign, 
  	brvcc->atmvcc = atmvcc;
  	atmvcc->user_back = brvcc;
  	brvcc->encaps = (enum br2684_encaps) be.encaps;
@@ -293,8 +293,8 @@
 -    error:
 +      error:
  	write_unlock_irq(&devs_lock);
+ 	kfree(brvcc);
  	MOD_DEC_USE_COUNT;
- 	return err;
 @@ -608,12 +711,25 @@ static int br2684_create(unsigned long a
  
  	if (ni.ifname[0] != '\0') {
