@@ -1,6 +1,6 @@
 --- a/init/main.c
 +++ b/init/main.c
-@@ -843,7 +843,7 @@ static noinline int init_post(void)
+@@ -844,7 +844,7 @@ static noinline int init_post(void)
  	numa_default_policy();
  
  	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
