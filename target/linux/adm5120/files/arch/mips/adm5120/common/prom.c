@@ -237,18 +237,22 @@ static void __init prom_detect_machtype(void)
 	adm5120_mach_type = MACH_ADM5120_GENERIC;
 }
 
-/* TODO: this is an ugly hack for RouterBOARDS */
-extern char _image_cmdline;
+#ifdef CONFIG_IMAGE_CMDLINE_HACK
+extern char __image_cmdline[];
+
 static void __init prom_init_cmdline(void)
 {
 	char *cmd;
 
 	/* init command line, register a default kernel command line */
-	cmd = &_image_cmdline + 8;
+	cmd = __image_cmdline;
 	if (strlen(cmd) > 0)
 		strlcpy(arcs_cmdline, cmd, sizeof(arcs_cmdline));
 
 }
+#else
+static void inline prom_init_cmdline(void) {}
+#endif /* CONFIG_IMAGE_CMDLINE_HACK */
 
 #define UART_READ(r) \
 	__raw_readl((void __iomem *)(KSEG1ADDR(ADM5120_UART0_BASE)+(r)))
