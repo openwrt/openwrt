@@ -65,9 +65,8 @@
  
  tristate 'Connection tracking (required for masq/NAT)' CONFIG_IP_NF_CONNTRACK
  if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
--  dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
 +  bool '  Connection mark tracking support' CONFIG_IP_NF_CONNTRACK_MARK
-+  dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACKa
+   dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
    dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
