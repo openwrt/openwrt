@@ -122,6 +122,20 @@ config CLEAN_IPKG
 	help
 		This removes all ipkg data from the target directory before building the root fs
 
+config LARGEFILE
+	bool
+	prompt "Enable large file (files > 2 GB) support"
+	default y
+	help
+	  Enable large file (files > 2 GB) support.
+
+config SHADOW_PASSWORDS
+	bool
+	prompt "Enable shadow password support"
+	default y
+	help
+	  Enable shadow password support.
+
 choice
 	prompt "Binary stripping method"
 	default USE_STRIP   if USE_GLIBC || USE_EGLIBC
@@ -285,6 +299,31 @@ config KERNEL_GIT_LOCAL_REPOSITORY
 		Enter a full pathname to a local reference git repository.
 		In this instance, the --refererence option of git clone will
 		be used thus creating a quick local clone of your repo.
+
+
+menuconfig TARGET_OPTIONS
+	bool "Target Options"  if DEVEL
+
+config TARGET_OPTIMIZATION
+	string
+	prompt "Target Optimizations" if TARGET_OPTIONS
+	default DEFAULT_TARGET_OPTIMIZATION
+	help
+	  Optimizations to use when building for the target host.
+
+config SOFT_FLOAT
+	bool
+	prompt "Use software floating point by default" if TARGET_OPTIONS
+	default y
+	depends on (arm || armeb || powerpc || mipsel || mips) && !HAS_FPU
+	help
+	  If your target CPU does not have a Floating Point Unit (FPU) or a
+	  kernel FPU emulator, but you still wish to support floating point
+	  functions, then everything will need to be compiled with soft floating
+	  point support (-msoft-float).
+
+	  Most people will answer N.
+
 
 source "toolchain/Config.in"
 
