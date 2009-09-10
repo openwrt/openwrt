@@ -8,13 +8,13 @@
 +config PROM_EMU
 +	def_bool n
  
- config NO_IOPORT
- 	def_bool n
+ config IMAGE_CMDLINE_HACK
+ 	bool "OpenWrt specific image command line hack"
 --- a/arch/mips/kernel/head.S
 +++ b/arch/mips/kernel/head.S
-@@ -143,6 +143,15 @@ FEXPORT(__kernel_entry)
- 	j	kernel_entry
- #endif
+@@ -149,6 +149,15 @@ EXPORT(__image_cmdline)
+ 	.fill	0x400
+ #endif /* CONFIG_IMAGE_CMDLINE_HACK */
  
 +#ifdef CONFIG_PROM_EMU
 +EXPORT(prom_emu_argv)
@@ -28,7 +28,7 @@
  	__REF
  
  NESTED(kernel_entry, 16, sp)			# kernel entry point
-@@ -183,6 +192,19 @@ NESTED(kernel_entry, 16, sp)			# kernel 
+@@ -189,6 +198,19 @@ NESTED(kernel_entry, 16, sp)			# kernel 
  	LONG_S		zero, (t0)
  	bne		t0, t1, 1b
  

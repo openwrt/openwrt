@@ -1,0 +1,59 @@
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
+@@ -545,8 +545,28 @@ static void __init resource_init(void)
+ 	}
+ }
+ 
++#ifdef CONFIG_IMAGE_CMDLINE_HACK
++static void __init process__image_cmdline(void)
++{
++	extern char __image_cmdline[];
++
++	if (__image_cmdline[0] == '\0')
++		return;
++
++	if (__image_cmdline[0] == '-') {
++		strlcpy(arcs_cmdline, __image_cmdline, sizeof(arcs_cmdline));
++	} else {
++		strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
++		strlcat(arcs_cmdline, __image_cmdline, sizeof(arcs_cmdline));
++	}
++}
++#else
++static void inline process__image_cmdline(void) {}
++#endif
++
+ void __init setup_arch(char **cmdline_p)
+ {
++	process__image_cmdline();
+ 	cpu_probe();
+ 	prom_init();
+ 
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -766,6 +766,10 @@ config SYNC_R4K
+ config MIPS_MACHINE
+ 	def_bool n
+ 
++config IMAGE_CMDLINE_HACK
++	bool "OpenWrt specific image command line hack"
++	default n
++
+ config NO_IOPORT
+ 	def_bool n
+ 
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -143,6 +143,12 @@ FEXPORT(__kernel_entry)
+ 	j	kernel_entry
+ #endif
+ 
++#ifdef CONFIG_IMAGE_CMDLINE_HACK
++	.ascii	"CMDLINE:"
++EXPORT(__image_cmdline)
++	.fill	0x400
++#endif /* CONFIG_IMAGE_CMDLINE_HACK */
++
+ 	__REF
+ 
+ NESTED(kernel_entry, 16, sp)			# kernel entry point
