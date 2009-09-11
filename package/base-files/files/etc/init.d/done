@@ -9,6 +9,11 @@ boot() {
 		lock -u /tmp/.switch2jffs
 	}
 
+	# process user commands
+	[ -f /etc/rc.local ] && {
+		sh /etc/rc.local
+	}
+
 	# set leds to normal state
 	. /etc/diag.sh
 	set_state done
