@@ -51,7 +51,7 @@ EOF
 
 add_uci_conffiles() {
 	local file="$1"
-	find /etc/config /etc/passwd /etc/group /etc/dropbear /etc/firewall.user > "$file"
+	find /etc/config /etc/passwd /etc/group /etc/dropbear /etc/firewall.user /etc/rc.local > "$file"
 	return 0
 }
 
