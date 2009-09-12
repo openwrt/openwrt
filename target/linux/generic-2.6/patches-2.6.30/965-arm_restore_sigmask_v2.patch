@@ -1,0 +1,354 @@
+From: Mikael Pettersson <mikpe@it.uu.se>
+Date: Sat, 15 Aug 2009 11:58:11 +0000 (+0100)
+Subject: ARM: 5677/1: ARM support for TIF_RESTORE_SIGMASK/pselect6/ppoll/epoll_pwait
+X-Git-Tag: next-20090817~86^2~1^6
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Fnext%2Flinux-next.git;a=commitdiff_plain;h=369842658a36bcea28ecb643ba4bdb53919330dd
+
+ARM: 5677/1: ARM support for TIF_RESTORE_SIGMASK/pselect6/ppoll/epoll_pwait
+
+This patch adds support for TIF_RESTORE_SIGMASK to ARM's
+signal handling, which allows to hook up the pselect6, ppoll,
+and epoll_pwait syscalls on ARM.
+
+Tested here with eabi userspace and a test program with a
+deliberate race between a child's exit and the parent's
+sigprocmask/select sequence. Using sys_pselect6() instead
+of sigprocmask/select reliably prevents the race.
+
+The other arch's support for TIF_RESTORE_SIGMASK has evolved
+over time:
+
+In 2.6.16:
+- add TIF_RESTORE_SIGMASK which parallels TIF_SIGPENDING
+- test both when checking for pending signal [changed later]
+- reimplement sys_sigsuspend() to use current->saved_sigmask,
+  TIF_RESTORE_SIGMASK [changed later], and -ERESTARTNOHAND;
+  ditto for sys_rt_sigsuspend(), but drop private code and
+  use common code via __ARCH_WANT_SYS_RT_SIGSUSPEND;
+- there are now no "extra" calls to do_signal() so its oldset
+  parameter is always &current->blocked so need not be passed,
+  also its return value is changed to void
+- change handle_signal() to return 0/-errno
+- change do_signal() to honor TIF_RESTORE_SIGMASK:
+  + get oldset from current->saved_sigmask if TIF_RESTORE_SIGMASK
+    is set
+  + if handle_signal() was successful then clear TIF_RESTORE_SIGMASK
+  + if no signal was delivered and TIF_RESTORE_SIGMASK is set then
+    clear it and restore the sigmask
+- hook up sys_pselect6() and sys_ppoll()
+
+In 2.6.19:
+- hook up sys_epoll_pwait()
+
+In 2.6.26:
+- allow archs to override how TIF_RESTORE_SIGMASK is implemented;
+  default set_restore_sigmask() sets both TIF_RESTORE_SIGMASK and
+  TIF_SIGPENDING; archs need now just test TIF_SIGPENDING again
+  when checking for pending signal work; some archs now implement
+  TIF_RESTORE_SIGMASK as a secondary/non-atomic thread flag bit
+- call set_restore_sigmask() in sys_sigsuspend() instead of setting
+  TIF_RESTORE_SIGMASK
+
+In 2.6.29-rc:
+- kill sys_pselect7() which no arch wanted
+
+So for 2.6.31-rc6/ARM this patch does the following:
+- Add TIF_RESTORE_SIGMASK. Use the generic set_restore_sigmask()
+  which sets both TIF_SIGPENDING and TIF_RESTORE_SIGMASK, so
+  TIF_RESTORE_SIGMASK need not claim one of the scarce low thread
+  flags, and existing TIF_SIGPENDING and _TIF_WORK_MASK tests need
+  not be extended for TIF_RESTORE_SIGMASK.
+- sys_sigsuspend() is reimplemented to use current->saved_sigmask
+  and set_restore_sigmask(), making it identical to most other archs
+- The private code for sys_rt_sigsuspend() is removed, instead
+  generic code supplies it via __ARCH_WANT_SYS_RT_SIGSUSPEND.
+- sys_sigsuspend() and sys_rt_sigsuspend() no longer need a pt_regs
+  parameter, so their assembly code wrappers are removed.
+- handle_signal() is changed to return 0 on success or -errno.
+- The oldset parameter to do_signal() is now redundant and removed,
+  and the return value is now also redundant and changed to void.
+- do_signal() is changed to honor TIF_RESTORE_SIGMASK:
+  + get oldset from current->saved_sigmask if TIF_RESTORE_SIGMASK
+    is set
+  + if handle_signal() was successful then clear TIF_RESTORE_SIGMASK
+  + if no signal was delivered and TIF_RESTORE_SIGMASK is set then
+    clear it and restore the sigmask
+- Hook up sys_pselect6, sys_ppoll, and sys_epoll_pwait.
+
+Signed-off-by: Mikael Pettersson <mikpe@it.uu.se>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+
+--- a/arch/arm/include/asm/thread_info.h	2009-04-18 18:55:23.000000000 +0200
++++ b/arch/arm/include/asm/thread_info.h	2009-04-18 19:10:22.000000000 +0200
+@@ -140,6 +140,7 @@ extern void vfp_sync_state(struct thread
+ #define TIF_USING_IWMMXT	17
+ #define TIF_MEMDIE		18
+ #define TIF_FREEZE		19
++#define TIF_RESTORE_SIGMASK	20
+ 
+ #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
+ #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
+@@ -147,6 +148,7 @@ extern void vfp_sync_state(struct thread
+ #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
+ #define _TIF_USING_IWMMXT	(1 << TIF_USING_IWMMXT)
+ #define _TIF_FREEZE		(1 << TIF_FREEZE)
++#define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
+ 
+ /*
+  * Change these and you break ASM code in entry-common.S
+--- a/arch/arm/include/asm/unistd.h	2008-10-11 10:43:49.000000000 +0200
++++ b/arch/arm/include/asm/unistd.h	2009-04-18 19:10:22.000000000 +0200
+@@ -360,8 +360,8 @@
+ #define __NR_readlinkat			(__NR_SYSCALL_BASE+332)
+ #define __NR_fchmodat			(__NR_SYSCALL_BASE+333)
+ #define __NR_faccessat			(__NR_SYSCALL_BASE+334)
+-					/* 335 for pselect6 */
+-					/* 336 for ppoll */
++#define __NR_pselect6			(__NR_SYSCALL_BASE+335)
++#define __NR_ppoll			(__NR_SYSCALL_BASE+336)
+ #define __NR_unshare			(__NR_SYSCALL_BASE+337)
+ #define __NR_set_robust_list		(__NR_SYSCALL_BASE+338)
+ #define __NR_get_robust_list		(__NR_SYSCALL_BASE+339)
+@@ -372,7 +372,7 @@
+ #define __NR_vmsplice			(__NR_SYSCALL_BASE+343)
+ #define __NR_move_pages			(__NR_SYSCALL_BASE+344)
+ #define __NR_getcpu			(__NR_SYSCALL_BASE+345)
+-					/* 346 for epoll_pwait */
++#define __NR_epoll_pwait		(__NR_SYSCALL_BASE+346)
+ #define __NR_kexec_load			(__NR_SYSCALL_BASE+347)
+ #define __NR_utimensat			(__NR_SYSCALL_BASE+348)
+ #define __NR_signalfd			(__NR_SYSCALL_BASE+349)
+@@ -428,6 +428,7 @@
+ #define __ARCH_WANT_SYS_SIGPENDING
+ #define __ARCH_WANT_SYS_SIGPROCMASK
+ #define __ARCH_WANT_SYS_RT_SIGACTION
++#define __ARCH_WANT_SYS_RT_SIGSUSPEND
+ 
+ #if !defined(CONFIG_AEABI) || defined(CONFIG_OABI_COMPAT)
+ #define __ARCH_WANT_SYS_TIME
+--- a/arch/arm/kernel/calls.S	2009-03-24 18:00:31.000000000 +0100
++++ b/arch/arm/kernel/calls.S	2009-04-18 19:10:22.000000000 +0200
+@@ -81,7 +81,7 @@
+ 		CALL(sys_ni_syscall)		/* was sys_ssetmask */
+ /* 70 */	CALL(sys_setreuid16)
+ 		CALL(sys_setregid16)
+-		CALL(sys_sigsuspend_wrapper)
++		CALL(sys_sigsuspend)
+ 		CALL(sys_sigpending)
+ 		CALL(sys_sethostname)
+ /* 75 */	CALL(sys_setrlimit)
+@@ -188,7 +188,7 @@
+ 		CALL(sys_rt_sigpending)
+ 		CALL(sys_rt_sigtimedwait)
+ 		CALL(sys_rt_sigqueueinfo)
+-		CALL(sys_rt_sigsuspend_wrapper)
++		CALL(sys_rt_sigsuspend)
+ /* 180 */	CALL(ABI(sys_pread64, sys_oabi_pread64))
+ 		CALL(ABI(sys_pwrite64, sys_oabi_pwrite64))
+ 		CALL(sys_chown16)
+@@ -344,8 +344,8 @@
+ 		CALL(sys_readlinkat)
+ 		CALL(sys_fchmodat)
+ 		CALL(sys_faccessat)
+-/* 335 */	CALL(sys_ni_syscall)		/* eventually pselect6 */
+-		CALL(sys_ni_syscall)		/* eventually ppoll */
++/* 335 */	CALL(sys_pselect6)
++		CALL(sys_ppoll)
+ 		CALL(sys_unshare)
+ 		CALL(sys_set_robust_list)
+ 		CALL(sys_get_robust_list)
+@@ -355,7 +355,7 @@
+ 		CALL(sys_vmsplice)
+ 		CALL(sys_move_pages)
+ /* 345 */	CALL(sys_getcpu)
+-		CALL(sys_ni_syscall)		/* eventually epoll_pwait */
++		CALL(sys_epoll_pwait)
+ 		CALL(sys_kexec_load)
+ 		CALL(sys_utimensat)
+ 		CALL(sys_signalfd)
+--- a/arch/arm/kernel/entry-common.S	2009-04-18 18:55:23.000000000 +0200
++++ b/arch/arm/kernel/entry-common.S	2009-04-18 19:10:22.000000000 +0200
+@@ -370,16 +370,6 @@ sys_clone_wrapper:
+ 		b	sys_clone
+ ENDPROC(sys_clone_wrapper)
+ 
+-sys_sigsuspend_wrapper:
+-		add	r3, sp, #S_OFF
+-		b	sys_sigsuspend
+-ENDPROC(sys_sigsuspend_wrapper)
+-
+-sys_rt_sigsuspend_wrapper:
+-		add	r2, sp, #S_OFF
+-		b	sys_rt_sigsuspend
+-ENDPROC(sys_rt_sigsuspend_wrapper)
+-
+ sys_sigreturn_wrapper:
+ 		add	r0, sp, #S_OFF
+ 		b	sys_sigreturn
+--- a/arch/arm/kernel/signal.c	2008-12-25 15:54:13.000000000 +0100
++++ b/arch/arm/kernel/signal.c	2009-04-18 19:10:22.000000000 +0200
+@@ -47,57 +47,22 @@ const unsigned long sigreturn_codes[7] =
+ 	MOV_R7_NR_RT_SIGRETURN, SWI_SYS_RT_SIGRETURN, SWI_THUMB_RT_SIGRETURN,
+ };
+ 
+-static int do_signal(sigset_t *oldset, struct pt_regs * regs, int syscall);
+-
+ /*
+  * atomically swap in the new signal mask, and wait for a signal.
+  */
+-asmlinkage int sys_sigsuspend(int restart, unsigned long oldmask, old_sigset_t mask, struct pt_regs *regs)
++asmlinkage int sys_sigsuspend(int restart, unsigned long oldmask, old_sigset_t mask)
+ {
+-	sigset_t saveset;
+-
+ 	mask &= _BLOCKABLE;
+ 	spin_lock_irq(&current->sighand->siglock);
+-	saveset = current->blocked;
++	current->saved_sigmask = current->blocked;
+ 	siginitset(&current->blocked, mask);
+ 	recalc_sigpending();
+ 	spin_unlock_irq(&current->sighand->siglock);
+-	regs->ARM_r0 = -EINTR;
+-
+-	while (1) {
+-		current->state = TASK_INTERRUPTIBLE;
+-		schedule();
+-		if (do_signal(&saveset, regs, 0))
+-			return regs->ARM_r0;
+-	}
+-}
+-
+-asmlinkage int
+-sys_rt_sigsuspend(sigset_t __user *unewset, size_t sigsetsize, struct pt_regs *regs)
+-{
+-	sigset_t saveset, newset;
+-
+-	/* XXX: Don't preclude handling different sized sigset_t's. */
+-	if (sigsetsize != sizeof(sigset_t))
+-		return -EINVAL;
+-
+-	if (copy_from_user(&newset, unewset, sizeof(newset)))
+-		return -EFAULT;
+-	sigdelsetmask(&newset, ~_BLOCKABLE);
+-
+-	spin_lock_irq(&current->sighand->siglock);
+-	saveset = current->blocked;
+-	current->blocked = newset;
+-	recalc_sigpending();
+-	spin_unlock_irq(&current->sighand->siglock);
+-	regs->ARM_r0 = -EINTR;
+ 
+-	while (1) {
+-		current->state = TASK_INTERRUPTIBLE;
+-		schedule();
+-		if (do_signal(&saveset, regs, 0))
+-			return regs->ARM_r0;
+-	}
++	current->state = TASK_INTERRUPTIBLE;
++	schedule();
++	set_restore_sigmask();
++	return -ERESTARTNOHAND;
+ }
+ 
+ asmlinkage int 
+@@ -541,7 +506,7 @@ static inline void restart_syscall(struc
+ /*
+  * OK, we're invoking a handler
+  */	
+-static void
++static int
+ handle_signal(unsigned long sig, struct k_sigaction *ka,
+ 	      siginfo_t *info, sigset_t *oldset,
+ 	      struct pt_regs * regs, int syscall)
+@@ -592,7 +557,7 @@ handle_signal(unsigned long sig, struct 
+ 
+ 	if (ret != 0) {
+ 		force_sigsegv(sig, tsk);
+-		return;
++		return ret;
+ 	}
+ 
+ 	/*
+@@ -606,6 +571,7 @@ handle_signal(unsigned long sig, struct 
+ 	recalc_sigpending();
+ 	spin_unlock_irq(&tsk->sighand->siglock);
+ 
++	return 0;
+ }
+ 
+ /*
+@@ -617,11 +583,12 @@ handle_signal(unsigned long sig, struct 
+  * the kernel can handle, and then we build all the user-level signal handling
+  * stack-frames in one go after that.
+  */
+-static int do_signal(sigset_t *oldset, struct pt_regs *regs, int syscall)
++static void do_signal(struct pt_regs *regs, int syscall)
+ {
+ 	struct k_sigaction ka;
+ 	siginfo_t info;
+ 	int signr;
++	sigset_t *oldset;
+ 
+ 	/*
+ 	 * We want the common case to go fast, which
+@@ -630,18 +597,32 @@ static int do_signal(sigset_t *oldset, s
+ 	 * if so.
+ 	 */
+ 	if (!user_mode(regs))
+-		return 0;
++		return;
+ 
+ 	if (try_to_freeze())
+ 		goto no_signal;
+ 
+ 	single_step_clear(current);
+ 
++	if (test_thread_flag(TIF_RESTORE_SIGMASK))
++		oldset = &current->saved_sigmask;
++	else
++		oldset = &current->blocked;
++
+ 	signr = get_signal_to_deliver(&info, &ka, regs, NULL);
+ 	if (signr > 0) {
+-		handle_signal(signr, &ka, &info, oldset, regs, syscall);
++		if (handle_signal(signr, &ka, &info, oldset, regs, syscall) == 0) {
++			/*
++			 * A signal was successfully delivered; the saved
++			 * sigmask will have been stored in the signal frame,
++			 * and will be restored by sigreturn, so we can simply
++			 * clear the TIF_RESTORE_SIGMASK flag.
++			 */
++			if (test_thread_flag(TIF_RESTORE_SIGMASK))
++				clear_thread_flag(TIF_RESTORE_SIGMASK);
++		}
+ 		single_step_set(current);
+-		return 1;
++		return;
+ 	}
+ 
+  no_signal:
+@@ -693,14 +674,21 @@ static int do_signal(sigset_t *oldset, s
+ 		    regs->ARM_r0 == -ERESTARTNOINTR) {
+ 			restart_syscall(regs);
+ 		}
++
++		/* If there's no signal to deliver, we just put the saved sigmask
++		 * back.
++		 */
++		if (test_thread_flag(TIF_RESTORE_SIGMASK)) {
++			clear_thread_flag(TIF_RESTORE_SIGMASK);
++			sigprocmask(SIG_SETMASK, &current->saved_sigmask, NULL);
++		}
+ 	}
+ 	single_step_set(current);
+-	return 0;
+ }
+ 
+ asmlinkage void
+ do_notify_resume(struct pt_regs *regs, unsigned int thread_flags, int syscall)
+ {
+ 	if (thread_flags & _TIF_SIGPENDING)
+-		do_signal(&current->blocked, regs, syscall);
++		do_signal(regs, syscall);
+ }
