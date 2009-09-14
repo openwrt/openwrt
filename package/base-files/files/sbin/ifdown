@@ -22,8 +22,8 @@ config_get proto "$cfg" proto
 [ -z "$proto" ] && { echo "interface not found."; exit; }
 
 config_get iface "$cfg" device
-[ "static" = "$proto" ] && {
-	env -i ACTION="ifdown" INTERFACE="$cfg" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
+[ "static" = "$proto" -o "none" = "$proto" ] && {
+	env -i ACTION="ifdown" INTERFACE="$cfg" DEVICE="$iface" PROTO="$proto" /sbin/hotplug-call "iface"
 }
 
 # call interface stop handler
