@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -4440,7 +4440,9 @@ ath_eth_type_trans(struct sk_buff *skb, 
+@@ -4441,7 +4441,9 @@ ath_eth_type_trans(struct sk_buff *skb, 
  		if (memcmp(eth->h_dest, dev->dev_addr, ETH_ALEN))
  			skb->pkt_type = PACKET_OTHERHOST;
  

@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1197,6 +1197,7 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1198,6 +1198,7 @@ ieee80211_deliver_data(struct ieee80211_
  		}
  		if (skb1 != NULL) {
  			struct ieee80211_node *ni_tmp;
@@ -8,7 +8,7 @@
  			skb1->dev = dev;
  			skb_reset_mac_header(skb1);
  			skb_set_network_header(skb1, sizeof(struct ether_header));
-@@ -1204,7 +1205,12 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1205,7 +1206,12 @@ ieee80211_deliver_data(struct ieee80211_
  			skb1->protocol = __constant_htons(ETH_P_802_2);
  			/* XXX insert vlan tag before queue it? */
  			ni_tmp = SKB_CB(skb1)->ni; /* remember node so we can free it */

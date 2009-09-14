@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3528,6 +3528,11 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3529,6 +3529,11 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  		if (ic->ic_flags & IEEE80211_F_SCAN) {
  			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, rtsf);
  		}

@@ -44,7 +44,7 @@
  			if (dir != IEEE80211_FC1_DIR_NODS) {
  				IEEE80211_DISCARD(vap, IEEE80211_MSG_ANY,
  					wh, "data", "invalid dir 0x%x", dir);
-@@ -3555,6 +3560,11 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3556,6 +3561,11 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			} else if (vap->iv_opmode == IEEE80211_M_WDS) {
  				found = 1;
  				ni = ni_or_null = vap->iv_wdsnode;
@@ -56,7 +56,7 @@
  			}
  			IEEE80211_UNLOCK_IRQ(vap->iv_ic);
  
-@@ -3683,19 +3693,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3684,19 +3694,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			vap->iv_stats.is_rx_ssidmismatch++; /*XXX*/
  			return;
  		}
