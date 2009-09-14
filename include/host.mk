@@ -30,6 +30,7 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		echo "HOST_ARCH:=$$HOST_ARCH" >> $@; \
 		echo "GNU_HOST_NAME:=$$GNU_HOST_NAME" >> $@; \
 		TAR=`which gtar 2>/dev/null`; \
+		[ -n "$$TAR" -a -x "$$TAR" ] || TAR=`which gnutar 2>/dev/null`; \
 		[ -n "$$TAR" -a -x "$$TAR" ] || TAR=`which tar 2>/dev/null`; \
 		echo "TAR:=$$TAR" >> $@; \
 		FIND=`which gfind 2>/dev/null`; \
