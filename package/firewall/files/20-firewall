@@ -27,9 +27,10 @@ config_foreach load_zones zone
 }
 
 [ ifdown = "$ACTION" ] && {
+	local up
+	config_get up "$INTERFACE" up
+
 	for z in $ZONE; do 
-		local up
-		config_get up "$INTERFACE" up
 		[ "$up" == "1" ] && delif "$INTERFACE" "$ifname" "$z"
 	done
 }
