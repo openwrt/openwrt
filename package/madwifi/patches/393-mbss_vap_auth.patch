@@ -305,7 +305,7 @@
  	if (skb != NULL)		/* no vaps, reclaim skb */
  		ieee80211_dev_kfree_skb(&skb);
  	return type;
-@@ -1146,11 +1157,9 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1147,11 +1158,9 @@ ieee80211_deliver_data(struct ieee80211_
  			 * sending it will not work; just let it be
  			 * delivered normally.
  			 */
@@ -319,7 +319,7 @@
  					!ni1->ni_subif &&
  				    ni1 != vap->iv_bss) {
  
-@@ -3519,6 +3528,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3520,6 +3529,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  				 (vap->iv_opmode == IEEE80211_M_WDS)) &&
  				(scan.capinfo & IEEE80211_CAPINFO_ESS))) {
  			struct ieee80211vap *avp = NULL;
@@ -327,7 +327,7 @@
  			int found = 0;
  
  			IEEE80211_LOCK_IRQ(vap->iv_ic);
-@@ -3550,10 +3560,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3551,10 +3561,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  					ni->ni_associd |= 0xc000;
  					avp->iv_wdsnode = ieee80211_ref_node(ni);
  					IEEE80211_UNLOCK_IRQ(ic);
@@ -341,7 +341,7 @@
  			} else {
  				/*
  				 * Copy data from beacon to neighbor table.
-@@ -3592,6 +3604,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3593,6 +3605,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  				ni->ni_rssi = rssi;
  				ni->ni_rtsf = rtsf;
  				ni->ni_last_rx = jiffies;

@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1374,7 +1374,7 @@ ieee80211_auth_open(struct ieee80211_nod
+@@ -1375,7 +1375,7 @@ ieee80211_auth_open(struct ieee80211_nod
  		vap->iv_stats.is_rx_bad_auth++;	/* XXX maybe a unique error? */
  		if (vap->iv_opmode == IEEE80211_M_HOSTAP) {
  			if (ni == vap->iv_bss) {
@@ -9,7 +9,7 @@
  				if (ni == NULL)
  					return;
  				tmpnode = 1;
-@@ -1762,6 +1762,8 @@ ieee80211_ssid_mismatch(struct ieee80211
+@@ -1763,6 +1763,8 @@ ieee80211_ssid_mismatch(struct ieee80211
  }
  
  #define	IEEE80211_VERIFY_SSID(_ni, _ssid) do {				\
@@ -18,7 +18,7 @@
  	if ((_ssid)[1] != 0 &&						\
  	    ((_ssid)[1] != (_ni)->ni_esslen ||				\
  	    memcmp((_ssid) + 2, (_ni)->ni_essid, (_ssid)[1]) != 0)) {	\
-@@ -1776,6 +1778,8 @@ ieee80211_ssid_mismatch(struct ieee80211
+@@ -1777,6 +1779,8 @@ ieee80211_ssid_mismatch(struct ieee80211
  } while (0)
  #else /* !IEEE80211_DEBUG */
  #define	IEEE80211_VERIFY_SSID(_ni, _ssid) do {				\

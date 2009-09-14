@@ -748,7 +748,7 @@
  		IEEE80211_NODE_STAT(ni, rx_data);
  		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
  		ic->ic_lastdata = jiffies;
-@@ -1114,6 +1142,17 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1114,6 +1142,18 @@ ieee80211_deliver_data(struct ieee80211_
  		dev = vap->iv_xrvap->iv_dev;
  #endif
  
@@ -757,6 +757,7 @@
 +	if (ni->ni_subif && ((eh)->ether_type != __constant_htons(ETHERTYPE_PAE))) {
 +		if (ni->ni_vap == ni->ni_subif) {
 +			ieee80211_dev_kfree_skb(&skb);
++			return;
 +		} else {
 +			vap = ni->ni_subif;
 +			dev = vap->iv_dev;
@@ -766,7 +767,7 @@
  	/* perform as a bridge within the vap */
  	/* XXX intra-vap bridging only */
  	if (vap->iv_opmode == IEEE80211_M_HOSTAP &&
-@@ -1139,7 +1178,16 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1139,7 +1179,16 @@ ieee80211_deliver_data(struct ieee80211_
  			if (ni1 != NULL) {
  				if (ni1->ni_vap == vap &&
  				    ieee80211_node_is_authorized(ni1) &&
@@ -783,7 +784,7 @@
  					skb1 = skb;
  					skb = NULL;
  				}
-@@ -3084,8 +3132,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3084,8 +3133,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  		    (vap->iv_opmode == IEEE80211_M_STA && ni->ni_associd) ||
  		    (vap->iv_opmode == IEEE80211_M_IBSS) ||
  			((subtype == IEEE80211_FC0_SUBTYPE_BEACON) &&
@@ -793,7 +794,7 @@
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -3471,13 +3518,54 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3471,13 +3519,54 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  		 */
  		if (ic->ic_flags & IEEE80211_F_SCAN) {
  			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, rtsf);
@@ -853,7 +854,7 @@
  			} else {
  				/*
  				 * Copy data from beacon to neighbor table.
-@@ -3490,6 +3578,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3490,6 +3579,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  				IEEE80211_ADDR_COPY(ni->ni_bssid, wh->i_addr3);
  				memcpy(ni->ni_tstamp.data, scan.tstamp,
  					sizeof(ni->ni_tstamp));

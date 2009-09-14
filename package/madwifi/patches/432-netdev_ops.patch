@@ -170,7 +170,7 @@ http://madwifi-project.org/changeset/4005
  #endif
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -1187,7 +1187,11 @@ ieee80211_deliver_data(struct ieee80211_
+@@ -1188,7 +1188,11 @@ ieee80211_deliver_data(struct ieee80211_
  			skb1->protocol = __constant_htons(ETH_P_802_2);
  			/* XXX insert vlan tag before queue it? */
  			ni_tmp = SKB_CB(skb1)->ni; /* remember node so we can free it */
