@@ -32,6 +32,11 @@
 #define UBNT_LS_SR71_GPIO_LED_D27	6
 #define UBNT_LS_SR71_GPIO_LED_D28	7
 
+#define UBNT_BULLET_M_GPIO_LED_L1	0
+#define UBNT_BULLET_M_GPIO_LED_L2	1
+#define UBNT_BULLET_M_GPIO_LED_L3	11
+#define UBNT_BULLET_M_GPIO_LED_L4	7
+
 #define UBNT_BUTTONS_POLL_INTERVAL	20
 
 static struct spi_board_info ubnt_spi_info[] = {
@@ -95,6 +100,26 @@ static struct gpio_led ubnt_ls_sr71_leds_gpio[] __initdata = {
 	}, {
 		.name		= "ubnt:green:d28",
 		.gpio		= UBNT_LS_SR71_GPIO_LED_D28,
+		.active_low	= 0,
+	}
+};
+
+static struct gpio_led ubnt_bullet_m_leds_gpio[] __initdata = {
+	{
+		.name		= "ubnt:red:link1",
+		.gpio		= UBNT_BULLET_M_GPIO_LED_L1,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:orange:link2",
+		.gpio		= UBNT_BULLET_M_GPIO_LED_L2,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:green:link3",
+		.gpio		= UBNT_BULLET_M_GPIO_LED_L3,
+		.active_low	= 0,
+	}, {
+		.name		= "ubnt:green:link4",
+		.gpio		= UBNT_BULLET_M_GPIO_LED_L4,
 		.active_low	= 0,
 	}
 };
@@ -206,3 +231,24 @@ static void __init ubnt_lssr71_setup(void)
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
+
+static void __init ubnt_bullet_m_setup(void)
+{
+	ar71xx_add_device_spi(NULL, ubnt_spi_info,
+				    ARRAY_SIZE(ubnt_spi_info));
+
+	ar71xx_add_device_mdio(~0);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0;
+
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(0);
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_bullet_m_leds_gpio),
+					ubnt_bullet_m_leds_gpio);
+}
+
+MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "Ubiquiti Bullet M", ubnt_bullet_m_setup);
