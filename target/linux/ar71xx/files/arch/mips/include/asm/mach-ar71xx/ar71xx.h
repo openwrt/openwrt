@@ -140,6 +140,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_UBNT_LSX,	/* Ubiquiti LSX */
 	AR71XX_MACH_UBNT_RS,	/* Ubiquiti RouterStation */
 	AR71XX_MACH_UBNT_RSPRO,	/* Ubiquiti RouterStation Pro */
+	AR71XX_MACH_UBNT_BULLET_M, /* Ubiquiti Bullet M */
 	AR71XX_MACH_WNR2000,	/* NETGEAR WNR2000 */
 	AR71XX_MACH_WP543,	/* Compex WP543 */
 	AR71XX_MACH_WRT160NL,	/* Linksys WRT160NL */
