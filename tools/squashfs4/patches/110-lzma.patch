@@ -1,5 +1,7 @@
---- a/squashfs-tools/mksquashfs.c
-+++ b/squashfs-tools/mksquashfs.c
+Index: squashfs4.0/squashfs-tools/mksquashfs.c
+===================================================================
+--- squashfs4.0.orig/squashfs-tools/mksquashfs.c	2009-04-05 23:22:48.000000000 +0200
++++ squashfs4.0/squashfs-tools/mksquashfs.c	2009-09-14 17:21:46.210480446 +0200
 @@ -64,6 +64,18 @@
  #include "global.h"
  #include "sort.h"
@@ -19,7 +21,7 @@
  
  #ifdef SQUASHFS_TRACE
  #define TRACE(s, args...)	do { \
-@@ -830,6 +842,19 @@ void sigalrm_handler()
+@@ -830,6 +842,19 @@
  	rotate = (rotate + 1) % 4;
  }
  
@@ -39,7 +41,7 @@
  
  unsigned int mangle2(z_stream **strm, char *d, char *s, int size,
  	int block_size, int uncompressed, int data_block)
-@@ -841,6 +866,48 @@ unsigned int mangle2(z_stream **strm, ch
+@@ -841,6 +866,50 @@
  	if(uncompressed)
  		goto notcompressed;
  
@@ -75,9 +77,11 @@
 +		case SZ_ERROR_PARAM:
 +			BAD_ERROR("lzma::compress failed, invalid parameters\n");
 +			break;
++		case SZ_ERROR_OUTPUT_EOF:
++			goto notcompressed;
 +		/* should not happen */
 +		default:
-+			BAD_ERROR("lzma::compress failed, unknown error\n");
++			BAD_ERROR("lzma::compress failed, unknown error (%d)\n", res);
 +			break;
 +		}
 +
@@ -88,7 +92,7 @@
  	if(stream == NULL) {
  		if((stream = *strm = malloc(sizeof(z_stream))) == NULL)
  			BAD_ERROR("mangle::compress failed, not enough "
-@@ -1669,17 +1736,17 @@ struct file_buffer *get_fragment(struct 
+@@ -1669,17 +1738,17 @@
  		else
  			data = read_from_disk(start_block, size);
  
@@ -110,7 +114,7 @@
  					"  unknown error %d\n", res);
  		}
  	} else if(compressed_buffer)
-@@ -4282,6 +4349,10 @@ int main(int argc, char *argv[])
+@@ -4282,6 +4351,10 @@
  					argv[0]);
  				exit(1);
  			}
@@ -121,7 +125,7 @@
  		} else if(strcmp(argv[i], "-ef") == 0) {
  			if(++i == argc) {
  				ERROR("%s: -ef missing filename\n", argv[0]);
-@@ -4410,6 +4481,9 @@ printOptions:
+@@ -4410,6 +4483,9 @@
  			ERROR("-b <block_size>\t\tset data block to "
  				"<block_size>.  Default %d bytes\n",
  				SQUASHFS_FILE_SIZE);
@@ -131,7 +135,7 @@
  			ERROR("-processors <number>\tUse <number> processors."
  				"  By default will use number of\n");
  			ERROR("\t\t\tprocessors available\n");
-@@ -4804,7 +4878,7 @@ restore_filesystem:
+@@ -4804,7 +4880,7 @@
  	sBlk.bytes_used = bytes;
  
  	/* Only compression supported */
@@ -140,9 +144,11 @@
  
  	/* Xattrs are not currently supported */
  	sBlk.xattr_table_start = SQUASHFS_INVALID_BLK;
---- a/squashfs-tools/squashfs_fs.h
-+++ b/squashfs-tools/squashfs_fs.h
-@@ -229,6 +229,7 @@ typedef long long		squashfs_block_t;
+Index: squashfs4.0/squashfs-tools/squashfs_fs.h
+===================================================================
+--- squashfs4.0.orig/squashfs-tools/squashfs_fs.h	2009-03-18 03:50:20.000000000 +0100
++++ squashfs4.0/squashfs-tools/squashfs_fs.h	2009-09-14 17:20:36.310480350 +0200
+@@ -229,6 +229,7 @@
  typedef long long		squashfs_inode_t;
  
  #define ZLIB_COMPRESSION	1
@@ -150,9 +156,11 @@
  
  struct squashfs_super_block {
  	unsigned int		s_magic;
---- a/squashfs-tools/Makefile
-+++ b/squashfs-tools/Makefile
-@@ -4,14 +4,20 @@ INCLUDEDIR = .
+Index: squashfs4.0/squashfs-tools/Makefile
+===================================================================
+--- squashfs4.0.orig/squashfs-tools/Makefile	2009-04-05 04:03:36.000000000 +0200
++++ squashfs4.0/squashfs-tools/Makefile	2009-09-14 17:20:36.310480350 +0200
+@@ -4,14 +4,20 @@
  
  CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_GNU_SOURCE -O2
  
@@ -177,7 +185,7 @@
  
  sort.o: sort.c squashfs_fs.h global.h sort.h Makefile
  
-@@ -19,18 +25,20 @@ swap.o: swap.c Makefile
+@@ -19,18 +25,20 @@
  
  pseudo.o: pseudo.c pseudo.h Makefile
  
@@ -205,9 +213,11 @@
  
  clean:
  	-rm -f *.o mksquashfs unsquashfs
---- a/squashfs-tools/read_fs.c
-+++ b/squashfs-tools/read_fs.c
-@@ -51,6 +51,7 @@ extern unsigned int get_guid(unsigned in
+Index: squashfs4.0/squashfs-tools/read_fs.c
+===================================================================
+--- squashfs4.0.orig/squashfs-tools/read_fs.c	2009-03-31 06:23:14.000000000 +0200
++++ squashfs4.0/squashfs-tools/read_fs.c	2009-09-14 17:20:36.310480350 +0200
+@@ -51,6 +51,7 @@
  #include "squashfs_swap.h"
  #include "read_fs.h"
  #include "global.h"
@@ -215,7 +225,7 @@
  
  #include <stdlib.h>
  
-@@ -83,17 +84,17 @@ int read_block(int fd, long long start, 
+@@ -83,17 +84,17 @@
  		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
  		read_destination(fd, start + offset, c_byte, buffer);
  
@@ -238,8 +248,10 @@
  					"%d\n", res);
  			return 0;
  		}
---- a/squashfs-tools/unsquashfs.c
-+++ b/squashfs-tools/unsquashfs.c
+Index: squashfs4.0/squashfs-tools/unsquashfs.c
+===================================================================
+--- squashfs4.0.orig/squashfs-tools/unsquashfs.c	2009-04-05 23:23:06.000000000 +0200
++++ squashfs4.0/squashfs-tools/unsquashfs.c	2009-09-14 17:20:36.310480350 +0200
 @@ -24,6 +24,7 @@
  #include "unsquashfs.h"
  #include "squashfs_swap.h"
@@ -248,7 +260,7 @@
  #include "read_fs.h"
  
  struct cache *fragment_cache, *data_cache;
-@@ -597,18 +598,17 @@ int read_block(long long start, long lon
+@@ -597,18 +598,17 @@
  		if(read_bytes(start + offset, c_byte, buffer) == FALSE)
  			goto failed;
  
@@ -271,7 +283,7 @@
  					"%d\n", res);
  			goto failed;
  		}
-@@ -645,18 +645,17 @@ int read_data_block(long long start, uns
+@@ -645,18 +645,17 @@
  		if(read_bytes(start, c_byte, data) == FALSE)
  			goto failed;
  
@@ -294,7 +306,7 @@
  					"%d\n", res);
  			goto failed;
  		}
-@@ -1459,7 +1458,7 @@ int read_super(char *source)
+@@ -1459,7 +1458,7 @@
  		s_ops.read_inode = read_inode_4;
  		s_ops.read_uids_guids = read_uids_guids_4;
  		memcpy(&sBlk, &sBlk_4, sizeof(sBlk_4));
@@ -303,7 +315,7 @@
  	}
  
  	/*
-@@ -1548,6 +1547,9 @@ int read_super(char *source)
+@@ -1548,6 +1547,9 @@
  		goto failed_mount;
  	}
  
@@ -313,7 +325,7 @@
  	return TRUE;
  
  failed_mount:
-@@ -1710,19 +1712,19 @@ void *deflator(void *arg)
+@@ -1710,19 +1712,19 @@
  		int res;
  		unsigned long bytes = block_size;
  
@@ -337,8 +349,10 @@
  					"%d\n", res);
  		} else
  			memcpy(entry->data, tmp, bytes);
---- a/squashfs-tools/mksquashfs.h
-+++ b/squashfs-tools/mksquashfs.h
+Index: squashfs4.0/squashfs-tools/mksquashfs.h
+===================================================================
+--- squashfs4.0.orig/squashfs-tools/mksquashfs.h	2009-02-19 19:31:08.000000000 +0100
++++ squashfs4.0/squashfs-tools/mksquashfs.h	2009-09-14 17:20:36.310480350 +0200
 @@ -41,4 +41,9 @@
  #define SQUASHFS_SWAP_LONG_LONGS(s, d, n) \
  					memcpy(d, s, n * sizeof(long long))
@@ -349,8 +363,10 @@
 +
 +
  #endif
---- /dev/null
-+++ b/squashfs-tools/uncompress.c
+Index: squashfs4.0/squashfs-tools/uncompress.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ squashfs4.0/squashfs-tools/uncompress.c	2009-09-14 17:20:36.310480350 +0200
 @@ -0,0 +1,58 @@
 +/*
 + * Copyright (c) 2009  Felix Fietkau <nbd@openwrt.org>
@@ -410,8 +426,10 @@
 +}
 +
 +
---- /dev/null
-+++ b/squashfs-tools/uncompress.h
+Index: squashfs4.0/squashfs-tools/uncompress.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ squashfs4.0/squashfs-tools/uncompress.h	2009-09-14 17:20:36.310480350 +0200
 @@ -0,0 +1,29 @@
 +/*
 + * Copyright (c) 2009  Felix Fietkau <nbd@openwrt.org>
