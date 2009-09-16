@@ -33,12 +33,12 @@
 
 
 struct ar8216_priv {
-	int (*hardstart)(struct sk_buff *skb, struct net_device *dev);
-
 	struct switch_dev dev;
 	struct phy_device *phy;
 	u32 (*read)(struct ar8216_priv *priv, int reg);
 	void (*write)(struct ar8216_priv *priv, int reg, u32 val);
+	const struct net_device_ops *ndo_old;
+	struct net_device_ops ndo;
 
 	/* all fields below are cleared on reset */
 	bool vlan;
@@ -186,7 +186,7 @@ ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	buf[1] = 0x80;
 
 send:
-	return priv->hardstart(skb, dev);
+	return priv->ndo_old->ndo_start_xmit(skb, dev);
 
 error:
 	dev_kfree_skb_any(skb);
@@ -439,7 +439,8 @@ ar8216_hw_apply(struct switch_dev *dev)
 			AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
 			AR8216_PORT_CTRL_HEADER | AR8216_PORT_CTRL_LEARN_LOCK,
 			AR8216_PORT_CTRL_LEARN |
-			  (i == AR8216_PORT_CPU ? AR8216_PORT_CTRL_HEADER : 0) |
+			  (priv->vlan && i == AR8216_PORT_CPU ?
+			   AR8216_PORT_CTRL_HEADER : 0) |
 			  (egress << AR8216_PORT_CTRL_VLAN_MODE_S) |
 			  (AR8216_PORT_STATE_FORWARD << AR8216_PORT_CTRL_STATE_S));
 
@@ -526,10 +527,13 @@ ar8216_config_init(struct phy_device *pdev)
 
 	dev->phy_ptr = priv;
 	pdev->pkt_align = 2;
-	priv->hardstart = dev->hard_start_xmit;
 	pdev->netif_receive_skb = ar8216_netif_receive_skb;
 	pdev->netif_rx = ar8216_netif_rx;
-	dev->hard_start_xmit = ar8216_mangle_tx;
+
+	priv->ndo_old = dev->netdev_ops;
+	memcpy(&priv->ndo, priv->ndo_old, sizeof(struct net_device_ops));
+	priv->ndo.ndo_start_xmit = ar8216_mangle_tx;
+	dev->netdev_ops = &priv->ndo;
 
 done:
 	return ret;
@@ -586,8 +590,8 @@ ar8216_remove(struct phy_device *pdev)
 	if (!priv)
 		return;
 
-	if (priv->hardstart && dev)
-		dev->hard_start_xmit = priv->hardstart;
+	if (priv->ndo_old && dev)
+		dev->netdev_ops = priv->ndo_old;
 	unregister_switch(&priv->dev);
 	kfree(priv);
 }

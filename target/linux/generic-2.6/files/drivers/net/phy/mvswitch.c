@@ -41,8 +41,8 @@ MODULE_LICENSE("GPL");
 #define MVSWITCH_MAGIC 0x88E6060
 
 struct mvswitch_priv {
-	/* the driver's tx function */
-	int (*hardstart)(struct sk_buff *skb, struct net_device *dev);
+	const struct net_device_ops *ndo_old;
+	struct net_device_ops ndo;
 	struct vlan_group *grp;
 	u8 vlans[16];
 };
@@ -133,7 +133,7 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	));
 #endif
 
-	return priv->hardstart(skb, dev);
+	return priv->ndo_old->ndo_start_xmit(skb, dev);
 
 error_expand:
 	if (net_ratelimit())
@@ -248,6 +248,9 @@ mvswitch_config_init(struct phy_device *pdev)
 	pdev->advertising = ADVERTISED_100baseT_Full;
 	dev->phy_ptr = priv;
 	dev->irq = PHY_POLL;
+#ifdef HEADER_MODE
+	dev->flags |= IFF_PROMISC;
+#endif
 
 	/* initialize default vlans */
 	for (i = 0; i < MV_PORTS; i++)
@@ -340,12 +343,15 @@ mvswitch_config_init(struct phy_device *pdev)
 	);
 
 	/* hook into the tx function */
+	priv->ndo_old = dev->netdev_ops;
+	memcpy(&priv->ndo, priv->ndo_old, sizeof(struct net_device_ops));
+	priv->ndo.ndo_start_xmit = mvswitch_mangle_tx;
+	priv->ndo.ndo_vlan_rx_register = mvswitch_vlan_rx_register;
+	dev->netdev_ops = &priv->ndo;
+
 	pdev->pkt_align = 2;
-	priv->hardstart = dev->hard_start_xmit;
 	pdev->netif_receive_skb = mvswitch_netif_receive_skb;
 	pdev->netif_rx = mvswitch_netif_rx;
-	dev->hard_start_xmit = mvswitch_mangle_tx;
-	dev->vlan_rx_register = mvswitch_vlan_rx_register;
 #ifdef HEADER_MODE
 	dev->features |= NETIF_F_HW_VLAN_RX | NETIF_F_HW_VLAN_TX;
 #else
@@ -393,11 +399,9 @@ mvswitch_remove(struct phy_device *pdev)
 	struct mvswitch_priv *priv = to_mvsw(pdev);
 	struct net_device *dev = pdev->attached_dev;
 
-	/* restore old xmit handler */
-	if (priv->hardstart && dev)
-		dev->hard_start_xmit = priv->hardstart;
-	dev->vlan_rx_register = NULL;
-	dev->vlan_rx_kill_vid = NULL;
+	/* restore old netdev ops */
+	if (priv->ndo_old && dev)
+		dev->netdev_ops = priv->ndo_old;
 	dev->phy_ptr = NULL;
 	dev->features &= ~NETIF_F_HW_VLAN_RX;
 	kfree(priv);
