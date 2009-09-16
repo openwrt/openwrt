@@ -123,6 +123,7 @@ prepare_interface() {
 						append newdevs "$dev"
 					done
 					uci_set_state network "$config" device "$newdevs"
+					$DEBUG ifconfig "$iface" 0.0.0.0
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Bridge existed already. No further processing necesary
 				} || {
@@ -131,6 +132,7 @@ prepare_interface() {
 					$DEBUG brctl addbr "br-$config"
 					$DEBUG brctl setfd "br-$config" 0
 					$DEBUG ifconfig "br-$config" up
+					$DEBUG ifconfig "$iface" 0.0.0.0
 					$DEBUG brctl addif "br-$config" "$iface"
 					$DEBUG brctl stp "br-$config" $stp
 					# Creating the bridge here will have triggered a hotplug event, which will
