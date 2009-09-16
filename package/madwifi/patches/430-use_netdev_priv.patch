@@ -1570,7 +1570,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	unsigned int power = ic->ic_txpowlimit;
  	struct ieee80211_channel *c;
-@@ -1572,7 +1572,7 @@ static int
+@@ -1573,7 +1573,7 @@ static int
  ieee80211_dump_registers(struct net_device *dev, struct iw_request_info *info, void *w, char *extra)
  {
  	unsigned int *params = (unsigned int*) extra;
@@ -1579,7 +1579,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	switch (params[1]) {
  	case 2:
-@@ -1595,7 +1595,7 @@ static int
+@@ -1596,7 +1596,7 @@ static int
  ieee80211_ioctl_writereg(struct net_device *dev, struct iw_request_info *info, void *w, char *extra)
  {
  	unsigned int *params = (unsigned int*) extra;
@@ -1588,7 +1588,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	return ic->ic_write_register(ic, params[0], params[1]);
  }
-@@ -1606,7 +1606,7 @@ static int
+@@ -1607,7 +1607,7 @@ static int
  ieee80211_ioctl_readreg(struct net_device *dev, struct iw_request_info *info, void *w, char *extra)
  {
  	unsigned int *params = (unsigned int*) extra;
@@ -1597,7 +1597,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	return ic->ic_read_register(ic, params[0], &params[0]);
  }
-@@ -1642,7 +1642,7 @@ static int
+@@ -1643,7 +1643,7 @@ static int
  ieee80211_ioctl_iwaplist(struct net_device *dev, struct iw_request_info *info,
  	struct iw_point *data, char *extra)
  {
@@ -1606,7 +1606,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct waplistreq req;		/* XXX off stack */
  
-@@ -1664,7 +1664,7 @@ static int
+@@ -1665,7 +1665,7 @@ static int
  ieee80211_ioctl_siwscan(struct net_device *dev,	struct iw_request_info *info,
  	struct iw_point *data, char *extra)
  {
@@ -1615,7 +1615,7 @@
  
  	/*
  	 * XXX don't permit a scan to be started unless we
-@@ -1988,7 +1988,7 @@ static int
+@@ -1989,7 +1989,7 @@ static int
  ieee80211_ioctl_giwscan(struct net_device *dev,	struct iw_request_info *info,
  	struct iw_point *data, char *extra)
  {
@@ -1624,7 +1624,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct iwscanreq req;
  	int res = 0;
-@@ -2089,7 +2089,7 @@ static int
+@@ -2090,7 +2090,7 @@ static int
  ieee80211_ioctl_setmode(struct net_device *dev, struct iw_request_info *info,
  	struct iw_point *wri, char *extra)
  {
@@ -1633,7 +1633,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ifreq ifr;
  	char s[6];		/* big enough for ``11adt'' */
-@@ -2213,10 +2213,10 @@ ieee80211_setathcap(struct ieee80211vap 
+@@ -2214,10 +2214,10 @@ ieee80211_setathcap(struct ieee80211vap 
  static int
  ieee80211_set_turbo(struct net_device *dev, int flag)
  {
@@ -1646,7 +1646,7 @@
  	int nvap = 0;
  
  	TAILQ_FOREACH(tmpvap, &ic->ic_vaps, iv_next)
-@@ -2237,7 +2237,7 @@ static int
+@@ -2238,7 +2238,7 @@ static int
  ieee80211_ioctl_setparam(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1655,7 +1655,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_rsnparms *rsn = &vap->iv_bss->ni_rsn;
  	unsigned int *i = (unsigned int *) extra;
-@@ -2917,7 +2917,7 @@ static int
+@@ -2918,7 +2918,7 @@ static int
  ieee80211_ioctl_getmode(struct net_device *dev, struct iw_request_info *info,
  	struct iw_point *wri, char *extra)
  {
@@ -1664,7 +1664,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ifmediareq imr;
  
-@@ -2955,7 +2955,7 @@ static int
+@@ -2956,7 +2956,7 @@ static int
  ieee80211_ioctl_getparam(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1673,7 +1673,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_rsnparms *rsn = &vap->iv_bss->ni_rsn;
  	unsigned int *param = (unsigned int *) extra;
-@@ -3300,7 +3300,7 @@ static int
+@@ -3301,7 +3301,7 @@ static int
  ieee80211_ioctl_setoptie(struct net_device *dev, struct iw_request_info *info,
  	struct iw_point *wri, char *extra)
  {
@@ -1682,7 +1682,7 @@
  	void *ie;
  
  	/*
-@@ -3334,7 +3334,7 @@ static int
+@@ -3335,7 +3335,7 @@ static int
  ieee80211_ioctl_getoptie(struct net_device *dev, struct iw_request_info *info,
  	struct iw_point *wri, char *extra)
  {
@@ -1691,7 +1691,7 @@
  
  	if (vap->iv_opt_ie == NULL) {
  		wri->length = 0;
-@@ -3398,7 +3398,7 @@ ieee80211_ioctl_setappiebuf(struct net_d
+@@ -3399,7 +3399,7 @@ ieee80211_ioctl_setappiebuf(struct net_d
  	struct iw_request_info *info,
  	struct iw_point *data, char *extra)
  {
@@ -1700,7 +1700,7 @@
  	struct ieee80211req_getset_appiebuf *iebuf =
  		(struct ieee80211req_getset_appiebuf *)extra;
  	enum ieee80211_opmode chk_opmode;
-@@ -3440,7 +3440,7 @@ static int
+@@ -3441,7 +3441,7 @@ static int
  ieee80211_ioctl_getappiebuf(struct net_device *dev, struct iw_request_info *info,
  	struct iw_point *data, char *extra)
  {
@@ -1709,7 +1709,7 @@
  	struct ieee80211req_getset_appiebuf *iebuf =
  		(struct ieee80211req_getset_appiebuf *)extra;
  	int max_iebuf_len;
-@@ -3481,7 +3481,7 @@ static int
+@@ -3482,7 +3482,7 @@ static int
  ieee80211_ioctl_setfilter(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1718,7 +1718,7 @@
  	struct ieee80211req_set_filter *app_filter = (struct ieee80211req_set_filter *)extra;
  
  	if ((extra == NULL) || (app_filter->app_filterype & ~IEEE80211_FILTER_TYPE_ALL))
-@@ -3496,7 +3496,7 @@ static int
+@@ -3497,7 +3497,7 @@ static int
  ieee80211_ioctl_setkey(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1727,7 +1727,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211req_key *ik = (struct ieee80211req_key *)extra;
  	struct ieee80211_node *ni;
-@@ -3579,7 +3579,7 @@ ieee80211_ioctl_setkey(struct net_device
+@@ -3580,7 +3580,7 @@ ieee80211_ioctl_setkey(struct net_device
  static int
  ieee80211_ioctl_getkey(struct net_device *dev, struct iwreq *iwr)
  {
@@ -1736,7 +1736,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_node *ni;
  	struct ieee80211req_key ik;
-@@ -3640,7 +3640,7 @@ static int
+@@ -3641,7 +3641,7 @@ static int
  ieee80211_ioctl_delkey(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1745,7 +1745,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211req_del_key *dk = (struct ieee80211req_del_key *)extra;
  	ieee80211_keyix_t kix;
-@@ -3714,7 +3714,7 @@ static int
+@@ -3715,7 +3715,7 @@ static int
  ieee80211_ioctl_setmlme(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1754,7 +1754,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211req_mlme *mlme = (struct ieee80211req_mlme *)extra;
  	struct ieee80211_node *ni;
-@@ -3817,7 +3817,7 @@ static int
+@@ -3818,7 +3818,7 @@ static int
  ieee80211_ioctl_wdsaddmac(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1763,7 +1763,7 @@
  	struct sockaddr *sa = (struct sockaddr *)extra;
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211vap *avp;
-@@ -3846,7 +3846,7 @@ static int
+@@ -3847,7 +3847,7 @@ static int
  ieee80211_ioctl_wdssetmac(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1772,7 +1772,7 @@
  	struct sockaddr *sa = (struct sockaddr *)extra;
  
  	if (vap->iv_opmode != IEEE80211_M_WDS)
-@@ -3913,7 +3913,7 @@ ieee80211_ioctl_setscanlist(struct net_d
+@@ -3914,7 +3914,7 @@ ieee80211_ioctl_setscanlist(struct net_d
  	struct iw_request_info *info,
  	struct iw_point *data, char *extra)
  {
@@ -1781,7 +1781,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	char *s, *next;
  	int val = 1;
-@@ -3988,7 +3988,7 @@ static int
+@@ -3989,7 +3989,7 @@ static int
  ieee80211_ioctl_addmac(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1790,7 +1790,7 @@
  	struct sockaddr *sa = (struct sockaddr *)extra;
  	const struct ieee80211_aclator *acl = vap->iv_acl;
  
-@@ -4006,7 +4006,7 @@ static int
+@@ -4007,7 +4007,7 @@ static int
  ieee80211_ioctl_delmac(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1799,7 +1799,7 @@
  	struct sockaddr *sa = (struct sockaddr *)extra;
  	const struct ieee80211_aclator *acl = vap->iv_acl;
  
-@@ -4024,7 +4024,7 @@ static int
+@@ -4025,7 +4025,7 @@ static int
  ieee80211_ioctl_setchanlist(struct net_device *dev,
  	struct iw_request_info *info, void *w, char *extra)
  {
@@ -1808,7 +1808,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211req_chanlist *list =
  		(struct ieee80211req_chanlist *)extra;
-@@ -4075,7 +4075,7 @@ static int
+@@ -4076,7 +4076,7 @@ static int
  ieee80211_ioctl_getchanlist(struct net_device *dev,
  	struct iw_request_info *info, void *w, char *extra)
  {
@@ -1817,7 +1817,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  
  	memcpy(extra, ic->ic_chan_active, sizeof(ic->ic_chan_active));
-@@ -4096,7 +4096,7 @@ static int
+@@ -4097,7 +4097,7 @@ static int
  ieee80211_ioctl_getchaninfo(struct net_device *dev,
  			    struct iw_request_info *info, void *w, char *extra)
  {
@@ -1826,7 +1826,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211req_chaninfo *chans =
  	    (struct ieee80211req_chaninfo *)extra;
-@@ -4143,7 +4143,7 @@ static int
+@@ -4144,7 +4144,7 @@ static int
  ieee80211_ioctl_setwmmparams(struct net_device *dev,
  	struct iw_request_info *info, void *w, char *extra)
  {
@@ -1835,7 +1835,7 @@
  	unsigned int *param = (unsigned int *) extra;
  	unsigned int ac = (param[1] < WME_NUM_AC) ? param[1] : WME_AC_BE;
  	unsigned int bss = param[2];
-@@ -4231,7 +4231,7 @@ static int
+@@ -4232,7 +4232,7 @@ static int
  ieee80211_ioctl_getwmmparams(struct net_device *dev,
  	struct iw_request_info *info, void *w, char *extra)
  {
@@ -1844,7 +1844,7 @@
  	unsigned int *param = (unsigned int *) extra;
  	unsigned int ac = (param[1] < WME_NUM_AC) ? param[1] : WME_AC_BE;
  	struct ieee80211_wme_state *wme = &vap->iv_ic->ic_wme;
-@@ -4266,7 +4266,7 @@ ieee80211_ioctl_getwmmparams(struct net_
+@@ -4267,7 +4267,7 @@ ieee80211_ioctl_getwmmparams(struct net_
  static int
  ieee80211_ioctl_getwpaie(struct net_device *dev, struct iwreq *iwr)
  {
@@ -1853,7 +1853,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_node *ni;
  	struct ieee80211req_wpaie wpaie;
-@@ -4300,7 +4300,7 @@ ieee80211_ioctl_getwpaie(struct net_devi
+@@ -4301,7 +4301,7 @@ ieee80211_ioctl_getwpaie(struct net_devi
  static int
  ieee80211_ioctl_getstastats(struct net_device *dev, struct iwreq *iwr)
  {
@@ -1862,7 +1862,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_node *ni;
  	u_int8_t macaddr[IEEE80211_ADDR_LEN];
-@@ -4419,7 +4419,7 @@ get_scan_result(void *arg, const struct 
+@@ -4420,7 +4420,7 @@ get_scan_result(void *arg, const struct 
  static int
  ieee80211_ioctl_getscanresults(struct net_device *dev, struct iwreq *iwr)
  {
@@ -1871,7 +1871,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct scanreq req;
  	int error;
-@@ -4582,7 +4582,7 @@ get_sta_info(void *arg, struct ieee80211
+@@ -4583,7 +4583,7 @@ get_sta_info(void *arg, struct ieee80211
  static int
  ieee80211_ioctl_getstainfo(struct net_device *dev, struct iwreq *iwr)
  {
@@ -1880,7 +1880,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct stainforeq req;
  	int error;
-@@ -4616,7 +4616,7 @@ ieee80211_ioctl_getstainfo(struct net_de
+@@ -4617,7 +4617,7 @@ ieee80211_ioctl_getstainfo(struct net_de
  
  static void
  pre_announced_chanswitch(struct net_device *dev, u_int32_t channel, u_int32_t tbtt) {
@@ -1889,7 +1889,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211vap *avp;
  
-@@ -4634,7 +4634,7 @@ static int
+@@ -4635,7 +4635,7 @@ static int
  ieee80211_ioctl_chanswitch(struct net_device *dev, struct iw_request_info *info,
  	void *w, char *extra)
  {
@@ -1898,7 +1898,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	unsigned int *param = (unsigned int *) extra;
  
-@@ -4679,7 +4679,7 @@ static int
+@@ -4680,7 +4680,7 @@ static int
  ieee80211_ioctl_giwgenie(struct net_device *dev,
  	struct iw_request_info *info, struct iw_point *out, char *buf)
  {
@@ -1907,7 +1907,7 @@
  
  	if (out->length < vap->iv_opt_ie_len)
  		return -E2BIG;
-@@ -5212,7 +5212,7 @@ static int
+@@ -5213,7 +5213,7 @@ static int
  ieee80211_ioctl_giwencodeext(struct net_device *dev,
  	struct iw_request_info *info, struct iw_point *erq, char *extra)
  {
@@ -1916,7 +1916,7 @@
  	struct iw_encode_ext *ext;
  	struct ieee80211_key *wk;
  	ieee80211_keyix_t kix;
-@@ -5272,7 +5272,7 @@ static int
+@@ -5273,7 +5273,7 @@ static int
  ieee80211_ioctl_siwencodeext(struct net_device *dev,
  	struct iw_request_info *info, struct iw_point *erq, char *extra)
  {
@@ -1925,7 +1925,7 @@
  	struct iw_encode_ext *ext = (struct iw_encode_ext *)extra;
  	struct ieee80211req_key kr;
  	ieee80211_keyix_t kix;
-@@ -5948,7 +5948,7 @@ static struct iw_handler_def ieee80211_i
+@@ -5949,7 +5949,7 @@ static struct iw_handler_def ieee80211_i
  static int
  ieee80211_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
