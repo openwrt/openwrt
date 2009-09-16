@@ -2,6 +2,7 @@
 # Copyright (C) 2009 OpenWrt.org
 
 setup_switch_dev() {
+	ifconfig "$1" 0.0.0.0
 	swconfig dev "$1" load network
 }
 
