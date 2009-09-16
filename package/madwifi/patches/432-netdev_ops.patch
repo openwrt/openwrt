@@ -151,7 +151,7 @@ http://madwifi-project.org/changeset/4005
   * Iterate through ic_channels to enumerate all distinct ic_ieee channel numbers.
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -5945,7 +5945,7 @@ static struct iw_handler_def ieee80211_i
+@@ -5946,7 +5946,7 @@ static struct iw_handler_def ieee80211_i
  /*
   * Handle private ioctl requests.
   */
@@ -160,7 +160,7 @@ http://madwifi-project.org/changeset/4005
  ieee80211_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
  	struct ieee80211vap *vap = netdev_priv(dev);
-@@ -6035,7 +6035,6 @@ ieee80211_ioctl_vattach(struct ieee80211
+@@ -6036,7 +6036,6 @@ ieee80211_ioctl_vattach(struct ieee80211
  {
  	struct net_device *dev = vap->iv_dev;
  

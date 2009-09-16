@@ -541,7 +541,7 @@
  ath_rate_node_init(struct ath_softc *sc, struct ath_node *an)
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -2736,6 +2736,7 @@ ieee80211_ioctl_setparam(struct net_devi
+@@ -2737,6 +2737,7 @@ ieee80211_ioctl_setparam(struct net_devi
  	case IEEE80211_PARAM_COVERAGE_CLASS:
  		if (value <= IEEE80211_COVERAGE_CLASS_MAX) {
  			ic->ic_coverageclass = value;

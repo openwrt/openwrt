@@ -48,7 +48,7 @@
  	struct ieee80211_node *iv_bss;			/* information for this node */
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -2862,6 +2862,9 @@ ieee80211_ioctl_setparam(struct net_devi
+@@ -2863,6 +2863,9 @@ ieee80211_ioctl_setparam(struct net_devi
  	case IEEE80211_PARAM_PROBEREQ:
  		vap->iv_no_probereq = !value;
  		break;
@@ -58,7 +58,7 @@
  #ifdef ATH_REVERSE_ENGINEERING
  	case IEEE80211_PARAM_DUMPREGS:
  		ieee80211_dump_registers(dev, info, w, extra);
-@@ -3227,6 +3230,9 @@ ieee80211_ioctl_getparam(struct net_devi
+@@ -3228,6 +3231,9 @@ ieee80211_ioctl_getparam(struct net_devi
  	case IEEE80211_PARAM_PROBEREQ:
  		param[0] = !vap->iv_no_probereq;
  		break;
@@ -68,7 +68,7 @@
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -5801,6 +5807,10 @@ static const struct iw_priv_args ieee802
+@@ -5802,6 +5808,10 @@ static const struct iw_priv_args ieee802
  	 IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "probereq"},
  	{ IEEE80211_PARAM_PROBEREQ,
  	 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_probereq"},

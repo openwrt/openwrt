@@ -1183,7 +1183,7 @@
  	if ((ic->ic_flags & IEEE80211_F_USEPROT) &&
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -2133,7 +2133,7 @@ ieee80211_ioctl_setmode(struct net_devic
+@@ -2134,7 +2134,7 @@ ieee80211_ioctl_setmode(struct net_devic
  
  		vap->iv_des_mode = mode;
  		if (IS_UP_AUTO(vap))
@@ -1192,7 +1192,7 @@
  
  		retv = 0;
  	}
-@@ -4081,46 +4081,60 @@ ieee80211_ioctl_getchanlist(struct net_d
+@@ -4082,46 +4082,60 @@ ieee80211_ioctl_getchanlist(struct net_d
  	return 0;
  }
  
