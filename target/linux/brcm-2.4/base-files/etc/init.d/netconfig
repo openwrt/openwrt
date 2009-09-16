@@ -113,6 +113,13 @@ start() {
 				}
 			}
 		}
+		# Buffalo WBR-B11 and Buffalo WBR-G54
+		if (nvram["boardtype"] == "bcm94710ap") {
+			c["vlan0ports"] = "0 1 2 3 4 5u"
+			c["vlan1ports"] = ""
+			c["lan_ifname"] = "eth0"
+			c["wan_ifname"] = "eth1"
+		}
 		if (nvram["boardtype"] == "0x478") {
 			# generic broadcom 4785 processor with 5397 switch?
 			c["vlan0ports"] = "1 2 3 4 8*"
