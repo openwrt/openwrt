@@ -12,7 +12,7 @@ BOARDNAME:=Goldfish (Android Emulator)
 FEATURES:=
 CFLAGS:=-O2 -pipe -march=armv5te -mtune=xscale -funit-at-a-time
 
-LINUX_VERSION:=2.6.30.6
+LINUX_VERSION:=2.6.30.7
 
 DEVICE_TYPE=phone
 

@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM63xx
 FEATURES:=squashfs jffs2 usb atm pci pcmcia
-LINUX_VERSION:=2.6.27.33
+LINUX_VERSION:=2.6.27.34
 
 include $(INCLUDE_DIR)/target.mk
 
