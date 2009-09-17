@@ -5,7 +5,7 @@
  quiet_cmd_lzma = LZMA    $@
  cmd_lzma = (cat $(filter-out FORCE,$^) | \
 -	lzma -9 && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
-+	lzma -lc1 -lp2 -pb2 -eos -si -so && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
++	lzma e -lc1 -lp2 -pb2 -eos -si -so && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
  	(rm -f $@ ; false)
 --- a/scripts/gen_initramfs_list.sh
 +++ b/scripts/gen_initramfs_list.sh
