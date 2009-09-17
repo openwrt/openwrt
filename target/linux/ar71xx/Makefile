@@ -12,7 +12,7 @@ BOARDNAME:=Atheros AR71xx/AR7240/AR913x
 FEATURES:=squashfs jffs2 tgz
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 
-LINUX_VERSION:=2.6.30.6
+LINUX_VERSION:=2.6.30.7
 
 include $(INCLUDE_DIR)/target.mk
 
