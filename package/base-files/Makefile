@@ -194,7 +194,7 @@ define Package/base-files/install
 	$(call Package/base-files/install-target,$(1))
 	for conffile in $(1)/etc/config/*; do \
 		if [ -f "$$$$conffile" ]; then \
-			grep "$$$$conffile" $(1)/CONTROL/conffiles || \
+			grep "$$$${conffile##$(1)}" $(1)/CONTROL/conffiles || \
 				echo "$$$${conffile##$(1)}" >> $(1)/CONTROL/conffiles; \
 		fi \
 	done
