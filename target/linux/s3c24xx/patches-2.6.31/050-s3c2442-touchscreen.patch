@@ -1,0 +1,173 @@
+From 0bd4d22c621eef0178be7d518a92a7fe42a37b3c Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 21 Jul 2009 12:43:48 +0200
+Subject: [PATCH] 050-s3c2442-touchscreen.patch
+
+---
+ arch/arm/mach-s3c2410/include/mach/ts.h |   35 +++++++++++++++++++++++++++++++
+ arch/arm/plat-s3c/include/plat/devs.h   |    3 +-
+ arch/arm/plat-s3c24xx/devs.c            |   20 +++++++++++++++++
+ arch/arm/plat-s3c24xx/s3c244x.c         |    3 ++
+ drivers/input/touchscreen/Kconfig       |   18 ++++++++++++++++
+ drivers/input/touchscreen/Makefile      |    1 +
+ 6 files changed, 79 insertions(+), 1 deletions(-)
+ create mode 100644 arch/arm/mach-s3c2410/include/mach/ts.h
+
+diff --git a/arch/arm/mach-s3c2410/include/mach/ts.h b/arch/arm/mach-s3c2410/include/mach/ts.h
+new file mode 100644
+index 0000000..f84324d
+--- /dev/null
++++ b/arch/arm/mach-s3c2410/include/mach/ts.h
+@@ -0,0 +1,35 @@
++/* arch/arm/mach-s3c2410/include/mach/ts.h
++ *
++ * Copyright (c) 2005 Arnaud Patard <arnaud.patard@rtp-net.org>
++ *
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ *
++ *  Changelog:
++ *     24-Mar-2005     RTP     Created file
++ *     03-Aug-2005     RTP     Renamed to ts.h
++ */
++
++#ifndef __ASM_ARM_TS_H
++#define __ASM_ARM_TS_H
++
++#include <linux/touchscreen/ts_filter.h>
++
++struct s3c2410_ts_mach_info {
++	/* Touchscreen delay. */
++	int delay;
++	/* Prescaler value. */
++	int presc;
++	/*
++	 * Null-terminated array of pointers to filter APIs and configurations
++	 * we want to use. In the same order they will be applied.
++	 */
++	const struct ts_filter_chain_configuration *filter_config;
++};
++
++void set_s3c2410ts_info(const struct s3c2410_ts_mach_info *hard_s3c2410ts_info);
++
++#endif /* __ASM_ARM_TS_H */
+diff --git a/arch/arm/plat-s3c/include/plat/devs.h b/arch/arm/plat-s3c/include/plat/devs.h
+index 49504b3..105ad09 100644
+--- a/arch/arm/plat-s3c/include/plat/devs.h
++++ b/arch/arm/plat-s3c/include/plat/devs.h
+@@ -55,10 +55,11 @@ extern struct platform_device s3c_device_nand;
+ extern struct platform_device s3c_device_usbgadget;
+ extern struct platform_device s3c_device_usb_hsotg;
+ 
++extern struct platform_device s3c_device_ts;
++
+ /* s3c2440 specific devices */
+ 
+ #ifdef CONFIG_CPU_S3C2440
+ 
+ extern struct platform_device s3c_device_camif;
+-
+ #endif
+diff --git a/arch/arm/plat-s3c24xx/devs.c b/arch/arm/plat-s3c24xx/devs.c
+index 4eb378c..0fdaa54 100644
+--- a/arch/arm/plat-s3c24xx/devs.c
++++ b/arch/arm/plat-s3c24xx/devs.c
+@@ -26,6 +26,8 @@
+ #include <asm/mach/irq.h>
+ #include <mach/fb.h>
+ #include <mach/hardware.h>
++#include <mach/ts.h>
++#include <asm/io.h>
+ #include <asm/irq.h>
+ 
+ #include <plat/regs-serial.h>
+@@ -199,6 +201,24 @@ struct platform_device s3c_device_nand = {
+ 
+ EXPORT_SYMBOL(s3c_device_nand);
+ 
++/* Touchscreen */
++struct platform_device s3c_device_ts = {
++	.name		  = "s3c2410-ts",
++	.id		  = -1,
++};
++
++EXPORT_SYMBOL(s3c_device_ts);
++
++static struct s3c2410_ts_mach_info s3c2410ts_info;
++
++void set_s3c2410ts_info(const struct s3c2410_ts_mach_info *hard_s3c2410ts_info)
++{
++	memcpy(&s3c2410ts_info, hard_s3c2410ts_info,
++	       sizeof(struct s3c2410_ts_mach_info));
++	s3c_device_ts.dev.platform_data = &s3c2410ts_info;
++}
++EXPORT_SYMBOL(set_s3c2410ts_info);
++
+ /* USB Device (Gadget)*/
+ 
+ static struct resource s3c_usbgadget_resource[] = {
+diff --git a/arch/arm/plat-s3c24xx/s3c244x.c b/arch/arm/plat-s3c24xx/s3c244x.c
+index 1364317..0731b23 100644
+--- a/arch/arm/plat-s3c24xx/s3c244x.c
++++ b/arch/arm/plat-s3c24xx/s3c244x.c
+@@ -59,6 +59,8 @@ void __init s3c244x_init_uarts(struct s3c2410_uartcfg *cfg, int no)
+ 	s3c24xx_init_uartdevs("s3c2440-uart", s3c2410_uart_resources, cfg, no);
+ }
+ 
++extern struct platform_device s3c_device_ts;
++
+ void __init s3c244x_map_io(void)
+ {
+ 	/* register our io-tables */
+@@ -70,6 +72,7 @@ void __init s3c244x_map_io(void)
+ 	s3c_device_sdi.name  = "s3c2440-sdi";
+ 	s3c_device_i2c0.name  = "s3c2440-i2c";
+ 	s3c_device_nand.name = "s3c2440-nand";
++	s3c_device_ts.name = "s3c2440-ts";
+ 	s3c_device_usbgadget.name = "s3c2440-usbgadget";
+ }
+ 
+diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
+index 72e2712..2bb711f 100644
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -133,6 +133,24 @@ config TOUCHSCREEN_FUJITSU
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called fujitsu-ts.
+ 
++config TOUCHSCREEN_S3C2410
++	tristate "Samsung S3C2410 touchscreen input driver"
++	depends on ARCH_S3C2410 && INPUT && INPUT_TOUCHSCREEN
++	select SERIO
++	help
++	  Say Y here if you have the s3c2410 touchscreen.
++
++	  If unsure, say N.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called s3c2410_ts.
++
++config TOUCHSCREEN_S3C2410_DEBUG
++	boolean "Samsung S3C2410 touchscreen debug messages"
++	depends on TOUCHSCREEN_S3C2410
++	help
++	  Select this if you want debug messages
++
+ config TOUCHSCREEN_GUNZE
+ 	tristate "Gunze AHL-51S touchscreen"
+ 	select SERIO
+diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
+index 3e1c5e0..269814c 100644
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -40,3 +40,4 @@ obj-$(CONFIG_TOUCHSCREEN_WM97XX_ATMEL)	+= atmel-wm97xx.o
+ obj-$(CONFIG_TOUCHSCREEN_WM97XX_MAINSTONE)	+= mainstone-wm97xx.o
+ obj-$(CONFIG_TOUCHSCREEN_WM97XX_ZYLONITE)	+= zylonite-wm97xx.o
+ obj-$(CONFIG_TOUCHSCREEN_W90X900)	+= w90p910_ts.o
++obj-$(CONFIG_TOUCHSCREEN_S3C2410)	+= s3c2410_ts.o
+-- 
+1.5.6.5
+

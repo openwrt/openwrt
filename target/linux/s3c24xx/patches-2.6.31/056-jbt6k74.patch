@@ -1,0 +1,43 @@
+From ad6c7d39f8898477da5e810dfc2cc7560618661f Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 21 Jul 2009 19:11:41 +0200
+Subject: [PATCH] 055-jbt6k74.patch
+
+---
+ drivers/video/display/Kconfig  |   11 +++++++++++
+ drivers/video/display/Makefile |    1 +
+ 2 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/video/display/Kconfig b/drivers/video/display/Kconfig
+index f99af93..1c9e760 100644
+--- a/drivers/video/display/Kconfig
++++ b/drivers/video/display/Kconfig
+@@ -21,4 +21,15 @@ config DISPLAY_SUPPORT
+ comment "Display hardware drivers"
+ 	depends on DISPLAY_SUPPORT
+ 
++config DISPLAY_JBT6K74
++	tristate "TPO JBT6K74-AS TFT display ASIC control interface"
++	depends on SPI_MASTER && SYSFS && LCD_CLASS_DEVICE
++	help
++	  SPI driver for the control interface of TFT panels containing
++	  the TPO JBT6K74-AS controller ASIC, such as the TPO TD028TTEC1
++	  TFT diplay module used in the Openmoko Freerunner GSM phone.
++
++	  The control interface is required for display operation, as it
++	  controls power management, display timing and gamma calibration.
++
+ endmenu
+diff --git a/drivers/video/display/Makefile b/drivers/video/display/Makefile
+index c0ea832..011b69d 100644
+--- a/drivers/video/display/Makefile
++++ b/drivers/video/display/Makefile
+@@ -3,4 +3,5 @@
+ display-objs				:= display-sysfs.o
+ 
+ obj-$(CONFIG_DISPLAY_SUPPORT)		+= display.o
++obj-$(CONFIG_DISPLAY_JBT6K74)		+= jbt6k74.o
+ 
+-- 
+1.5.6.5
+

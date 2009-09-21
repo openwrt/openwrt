@@ -1,0 +1,309 @@
+From f3f6575e69903475fc2015d6943f575c77d22550 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 21 Jul 2009 12:08:11 +0200
+Subject: [PATCH] 013-fiq_c_handler.patch
+
+---
+ arch/arm/include/asm/fiq.h               |    5 +-
+ arch/arm/kernel/fiq.c                    |   79 ++++++++++++++++++++++++++++++
+ arch/arm/plat-s3c24xx/include/plat/irq.h |   21 ++++++++
+ arch/arm/plat-s3c24xx/irq.c              |   50 +++++++++++++++----
+ 4 files changed, 143 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/include/asm/fiq.h b/arch/arm/include/asm/fiq.h
+index 2242ce2..7ade2b8 100644
+--- a/arch/arm/include/asm/fiq.h
++++ b/arch/arm/include/asm/fiq.h
+@@ -29,8 +29,9 @@ struct fiq_handler {
+ extern int claim_fiq(struct fiq_handler *f);
+ extern void release_fiq(struct fiq_handler *f);
+ extern void set_fiq_handler(void *start, unsigned int length);
+-extern void set_fiq_regs(struct pt_regs *regs);
+-extern void get_fiq_regs(struct pt_regs *regs);
++extern void set_fiq_c_handler(void (*handler)(void));
++extern void __attribute__((naked)) set_fiq_regs(struct pt_regs *regs);
++extern void __attribute__((naked)) get_fiq_regs(struct pt_regs *regs);
+ extern void enable_fiq(int fiq);
+ extern void disable_fiq(int fiq);
+ 
+diff --git a/arch/arm/kernel/fiq.c b/arch/arm/kernel/fiq.c
+index 6ff7919..c07691e 100644
+--- a/arch/arm/kernel/fiq.c
++++ b/arch/arm/kernel/fiq.c
+@@ -8,6 +8,8 @@
+  *
+  *  FIQ support re-written by Russell King to be more generic
+  *
++ *  FIQ handler in C supoprt written by Andy Green <andy@openmoko.com>
++ *
+  * We now properly support a method by which the FIQ handlers can
+  * be stacked onto the vector.  We still do not support sharing
+  * the FIQ vector itself.
+@@ -124,6 +126,83 @@ void __naked get_fiq_regs(struct pt_regs *regs)
+ 	: "r" (&regs->ARM_r8), "I" (PSR_I_BIT | PSR_F_BIT | FIQ_MODE));
+ }
+ 
++/* -------- FIQ handler in C ---------
++ *
++ * Major Caveats for using this
++ *  ---------------------------
++ *  *
++ *  * 1) it CANNOT touch any vmalloc()'d memory, only memory
++ *    that was kmalloc()'d.  Static allocations in the monolithic kernel
++ *    are kmalloc()'d so they are okay.  You can touch memory-mapped IO, but
++ *    the pointer for it has to have been stored in kmalloc'd memory.  The
++ *    reason for this is simple: every now and then Linux turns off interrupts
++ *    and reorders the paging tables.  If a FIQ happens during this time, the
++ *    virtual memory space can be partly or entirely disordered or missing.
++ *
++ * 2) Because vmalloc() is used when a module is inserted, THIS FIQ
++ *    ISR HAS TO BE IN THE MONOLITHIC KERNEL, not a module.  But the way
++ *    it is set up, you can all to enable and disable it from your module
++ *    and intercommunicate with it through struct fiq_ipc
++ *    fiq_ipc which you can define in
++ *    asm/archfiq_ipc_type.h.  The reason is the same as above, a
++ *    FIQ could happen while even the ISR is not present in virtual memory
++ *    space due to pagetables being changed at the time.
++ *
++ * 3) You can't call any Linux API code except simple macros
++ *    - understand that FIQ can come in at any time, no matter what
++ *      state of undress the kernel may privately be in, thinking it
++ *      locked the door by turning off interrupts... FIQ is an
++ *      unstoppable monster force (which is its value)
++ *    - they are not vmalloc()'d memory safe
++ *    - they might do crazy stuff like sleep: FIQ pisses fire and
++ *      is not interested in 'sleep' that the weak seem to need
++ *    - calling APIs from FIQ can re-enter un-renterable things
++ *    - summary: you cannot interoperate with linux APIs directly in the FIQ ISR
++ *
++ * If you follow these rules, it is fantastic, an extremely powerful, solid,
++ * genuine hard realtime feature.
++ */
++
++static void (*current_fiq_c_isr)(void);
++#define FIQ_C_ISR_STACK_SIZE 	256
++
++static void __attribute__((naked)) __jump_to_isr(void)
++{
++	asm __volatile__ ("mov pc, r8");
++}
++
++
++static void __attribute__((naked)) __actual_isr(void)
++{
++	asm __volatile__ (
++		"stmdb	sp!, {r0-r12, lr};"
++		"mov     fp, sp;"
++	);
++
++	current_fiq_c_isr();
++
++	asm __volatile__ (
++		"ldmia	sp!, {r0-r12, lr};"
++		"subs	pc, lr, #4;"
++	);
++}
++
++void set_fiq_c_handler(void (*isr)(void))
++{
++	struct pt_regs regs;
++
++	memset(&regs, 0, sizeof(regs));
++	regs.ARM_r8 = (unsigned long) __actual_isr;
++	regs.ARM_sp = 0xffff001c + FIQ_C_ISR_STACK_SIZE;
++
++	set_fiq_handler(__jump_to_isr, 4);
++
++	current_fiq_c_isr = isr;
++
++	set_fiq_regs(&regs);
++}
++/* -------- FIQ handler in C ---------*/
++
+ int claim_fiq(struct fiq_handler *f)
+ {
+ 	int ret = 0;
+diff --git a/arch/arm/plat-s3c24xx/include/plat/irq.h b/arch/arm/plat-s3c24xx/include/plat/irq.h
+index 69e1be8..11a8664 100644
+--- a/arch/arm/plat-s3c24xx/include/plat/irq.h
++++ b/arch/arm/plat-s3c24xx/include/plat/irq.h
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/io.h>
+ 
++#include <mach/irqs.h>
+ #include <mach/hardware.h>
+ #include <mach/regs-irq.h>
+ #include <mach/regs-gpio.h>
+@@ -31,8 +32,15 @@ s3c_irqsub_mask(unsigned int irqno, unsigned int parentbit,
+ {
+ 	unsigned long mask;
+ 	unsigned long submask;
++#ifdef CONFIG_S3C2440_C_FIQ
++	unsigned long flags;
++#endif
+ 
+ 	submask = __raw_readl(S3C2410_INTSUBMSK);
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_save_flags(flags);
++	local_fiq_disable();
++#endif
+ 	mask = __raw_readl(S3C2410_INTMSK);
+ 
+ 	submask |= (1UL << (irqno - IRQ_S3CUART_RX0));
+@@ -45,6 +53,9 @@ s3c_irqsub_mask(unsigned int irqno, unsigned int parentbit,
+ 
+ 	/* write back masks */
+ 	__raw_writel(submask, S3C2410_INTSUBMSK);
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_irq_restore(flags);
++#endif
+ 
+ }
+ 
+@@ -53,8 +64,15 @@ s3c_irqsub_unmask(unsigned int irqno, unsigned int parentbit)
+ {
+ 	unsigned long mask;
+ 	unsigned long submask;
++#ifdef CONFIG_S3C2440_C_FIQ
++	unsigned long flags;
++#endif
+ 
+ 	submask = __raw_readl(S3C2410_INTSUBMSK);
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_save_flags(flags);
++	local_fiq_disable();
++#endif
+ 	mask = __raw_readl(S3C2410_INTMSK);
+ 
+ 	submask &= ~(1UL << (irqno - IRQ_S3CUART_RX0));
+@@ -63,6 +81,9 @@ s3c_irqsub_unmask(unsigned int irqno, unsigned int parentbit)
+ 	/* write back masks */
+ 	__raw_writel(submask, S3C2410_INTSUBMSK);
+ 	__raw_writel(mask, S3C2410_INTMSK);
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_irq_restore(flags);
++#endif
+ }
+ 
+ 
+diff --git a/arch/arm/plat-s3c24xx/irq.c b/arch/arm/plat-s3c24xx/irq.c
+index 9587377..4b21ac9 100644
+--- a/arch/arm/plat-s3c24xx/irq.c
++++ b/arch/arm/plat-s3c24xx/irq.c
+@@ -28,6 +28,8 @@
+ #include <asm/mach/irq.h>
+ 
+ #include <plat/regs-irqtype.h>
++#include <mach/regs-irq.h>
++#include <mach/regs-gpio.h>
+ 
+ #include <plat/cpu.h>
+ #include <plat/pm.h>
+@@ -37,12 +39,20 @@ static void
+ s3c_irq_mask(unsigned int irqno)
+ {
+ 	unsigned long mask;
+-
++#ifdef CONFIG_S3C2440_C_FIQ
++	unsigned long flags;
++#endif
+ 	irqno -= IRQ_EINT0;
+-
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_save_flags(flags);
++	local_fiq_disable();
++#endif
+ 	mask = __raw_readl(S3C2410_INTMSK);
+ 	mask |= 1UL << irqno;
+ 	__raw_writel(mask, S3C2410_INTMSK);
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_irq_restore(flags);
++#endif
+ }
+ 
+ static inline void
+@@ -59,9 +69,19 @@ s3c_irq_maskack(unsigned int irqno)
+ {
+ 	unsigned long bitval = 1UL << (irqno - IRQ_EINT0);
+ 	unsigned long mask;
+-
++#ifdef CONFIG_S3C2440_C_FIQ
++	unsigned long flags;
++#endif
++
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_save_flags(flags);
++	local_fiq_disable();
++#endif
+ 	mask = __raw_readl(S3C2410_INTMSK);
+ 	__raw_writel(mask|bitval, S3C2410_INTMSK);
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_irq_restore(flags);
++#endif
+ 
+ 	__raw_writel(bitval, S3C2410_SRCPND);
+ 	__raw_writel(bitval, S3C2410_INTPND);
+@@ -72,15 +92,25 @@ static void
+ s3c_irq_unmask(unsigned int irqno)
+ {
+ 	unsigned long mask;
++#ifdef CONFIG_S3C2440_C_FIQ
++	unsigned long flags;
++#endif
+ 
+ 	if (irqno != IRQ_TIMER4 && irqno != IRQ_EINT8t23)
+ 		irqdbf2("s3c_irq_unmask %d\n", irqno);
+ 
+ 	irqno -= IRQ_EINT0;
+ 
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_save_flags(flags);
++	local_fiq_disable();
++#endif
+ 	mask = __raw_readl(S3C2410_INTMSK);
+ 	mask &= ~(1UL << irqno);
+ 	__raw_writel(mask, S3C2410_INTMSK);
++#ifdef CONFIG_S3C2440_C_FIQ
++	local_irq_restore(flags);
++#endif
+ }
+ 
+ struct irq_chip s3c_irq_level_chip = {
+@@ -523,26 +553,26 @@ void __init s3c24xx_init_irq(void)
+ 
+ 	last = 0;
+ 	for (i = 0; i < 4; i++) {
+-		pend = __raw_readl(S3C2410_INTPND);
++		pend = __raw_readl(S3C2410_SUBSRCPND);
+ 
+ 		if (pend == 0 || pend == last)
+ 			break;
+ 
+-		__raw_writel(pend, S3C2410_SRCPND);
+-		__raw_writel(pend, S3C2410_INTPND);
+-		printk("irq: clearing pending status %08x\n", (int)pend);
++		printk("irq: clearing subpending status %08x\n", (int)pend);
++		__raw_writel(pend, S3C2410_SUBSRCPND);
+ 		last = pend;
+ 	}
+ 
+ 	last = 0;
+ 	for (i = 0; i < 4; i++) {
+-		pend = __raw_readl(S3C2410_SUBSRCPND);
++		pend = __raw_readl(S3C2410_INTPND);
+ 
+ 		if (pend == 0 || pend == last)
+ 			break;
+ 
+-		printk("irq: clearing subpending status %08x\n", (int)pend);
+-		__raw_writel(pend, S3C2410_SUBSRCPND);
++		__raw_writel(pend, S3C2410_SRCPND);
++		__raw_writel(pend, S3C2410_INTPND);
++		printk("irq: clearing pending status %08x\n", (int)pend);
+ 		last = pend;
+ 	}
+ 
+-- 
+1.5.6.5
+

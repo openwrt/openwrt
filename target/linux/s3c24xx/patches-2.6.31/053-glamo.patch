@@ -1,0 +1,38 @@
+From 638b05549def8b8c257a802da780c06055ef9a9e Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 21 Jul 2009 12:45:12 +0200
+Subject: [PATCH] 053-glamo.patch
+
+---
+ drivers/mfd/Kconfig  |    2 ++
+ drivers/mfd/Makefile |    1 +
+ 2 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
+index 491ac0f..cc1f6ed 100644
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -263,6 +263,8 @@ config EZX_PCAP
+ 	  This enables the PCAP ASIC present on EZX Phones. This is
+ 	  needed for MMC, TouchScreen, Sound, USB, etc..
+ 
++source "drivers/mfd/glamo/Kconfig"
++
+ endmenu
+ 
+ menu "Multimedia Capabilities Port drivers"
+diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
+index 6f8a9a1..b724861 100644
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -4,6 +4,7 @@
+ 
+ obj-$(CONFIG_MFD_SM501)		+= sm501.o
+ obj-$(CONFIG_MFD_ASIC3)		+= asic3.o
++obj-$(CONFIG_MFD_GLAMO)		+= glamo/
+ 
+ obj-$(CONFIG_HTC_EGPIO)		+= htc-egpio.o
+ obj-$(CONFIG_HTC_PASIC3)	+= htc-pasic3.o
+-- 
+1.5.6.5
+

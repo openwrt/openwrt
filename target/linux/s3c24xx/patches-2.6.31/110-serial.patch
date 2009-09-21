@@ -1,0 +1,52 @@
+From 15f219822a30534756518cd8c4dfade95c4959c2 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 21 Jul 2009 12:51:57 +0200
+Subject: [PATCH] 110-serial.patch
+
+---
+ drivers/serial/samsung.c |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/serial/samsung.c b/drivers/serial/samsung.c
+index bf0af79..64c35d1 100644
+--- a/drivers/serial/samsung.c
++++ b/drivers/serial/samsung.c
+@@ -1263,6 +1263,13 @@ module_exit(s3c24xx_serial_modexit);
+ #ifdef CONFIG_SERIAL_SAMSUNG_CONSOLE
+ 
+ static struct uart_port *cons_uart;
++static int cons_silenced;
++
++void s3c24xx_serial_console_set_silence(int silenced)
++{
++	cons_silenced = silenced;
++}
++EXPORT_SYMBOL(s3c24xx_serial_console_set_silence);
+ 
+ static int
+ s3c24xx_serial_console_txrdy(struct uart_port *port, unsigned int ufcon)
+@@ -1287,9 +1294,21 @@ static void
+ s3c24xx_serial_console_putchar(struct uart_port *port, int ch)
+ {
+ 	unsigned int ufcon = rd_regl(cons_uart, S3C2410_UFCON);
++	unsigned int umcon = rd_regl(cons_uart, S3C2410_UMCON);
++
++	if (cons_silenced)
++		return;
++
++	/* If auto HW flow control enabled, temporarily turn it off */
++	if (umcon & S3C2410_UMCOM_AFC)
++		wr_regl(port, S3C2410_UMCON, (umcon & !S3C2410_UMCOM_AFC));
++
+ 	while (!s3c24xx_serial_console_txrdy(port, ufcon))
+ 		barrier();
+ 	wr_regb(cons_uart, S3C2410_UTXH, ch);
++
++	if (umcon & S3C2410_UMCOM_AFC)
++		wr_regl(port, S3C2410_UMCON, umcon);
+ }
+ 
+ static void
+-- 
+1.5.6.5
+
