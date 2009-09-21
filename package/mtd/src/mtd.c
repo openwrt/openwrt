@@ -98,13 +98,13 @@ int mtd_check_open(const char *mtd)
 	fd = mtd_open(mtd, false);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
-		return 0;
+		return -1;
 	}
 
 	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
 		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
 		close(fd);
-		return 0;
+		return -1;
 	}
 	mtdsize = mtdInfo.size;
 	erasesize = mtdInfo.erasesize;
@@ -162,7 +162,7 @@ static int mtd_check(const char *mtd)
 		}
 
 		fd = mtd_check_open(mtd);
-		if (!fd)
+		if (fd < 0)
 			return 0;
 
 		if (!buf)
@@ -199,7 +199,7 @@ mtd_unlock(const char *mtd)
 		}
 
 		fd = mtd_check_open(mtd);
-		if(fd <= 0) {
+		if(fd < 0) {
 			fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 			exit(1);
 		}
@@ -230,7 +230,7 @@ mtd_erase(const char *mtd)
 		fprintf(stderr, "Erasing %s ...\n", mtd);
 
 	fd = mtd_check_open(mtd);
-	if(fd <= 0) {
+	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}
@@ -260,7 +260,7 @@ mtd_refresh(const char *mtd)
 		fprintf(stderr, "Refreshing mtd partition %s ... ", mtd);
 
 	fd = mtd_check_open(mtd);
-	if(fd <= 0) {
+	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
 	}

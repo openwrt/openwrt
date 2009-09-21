@@ -42,7 +42,7 @@ static int last_ino = 0;
 static int last_version = 0;
 static char *buf = NULL;
 static int ofs = 0;
-static int outfd = 0;
+static int outfd = -1;
 static int mtdofs = 0;
 static int target_ino = 0;
 
@@ -186,7 +186,7 @@ static void add_file(const char *name, int parent)
 	ri.usercompr = 0;
 
 	fd = open(name, 0);
-	if (fd <= 0) {
+	if (fd < 0) {
 		fprintf(stderr, "File %s does not exist\n", name);
 		return;
 	}
@@ -282,7 +282,7 @@ int mtd_write_jffs2(const char *mtd, const char *filename, const char *dir)
 	int err = -1, fdeof = 0;
 
 	outfd = mtd_check_open(mtd);
-	if (!outfd)
+	if (outfd < 0)
 		return -1;
 
 	if (quiet < 2)
