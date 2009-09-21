@@ -20,7 +20,7 @@
 +obj-$(CONFIG_MTD_AR2315)	+= ar2315.o
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,518 @@
+@@ -0,0 +1,517 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -323,8 +323,7 @@
 +	spiflash_wait_complete(priv, 20);
 +
 +	instr->state = MTD_ERASE_DONE;
-+	if (instr->callback)
-+		instr->callback(instr);
++	mtd_erase_callback(instr);
 +
 +	return 0;
 +}
