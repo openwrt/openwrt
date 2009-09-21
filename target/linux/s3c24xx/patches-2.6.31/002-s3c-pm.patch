@@ -1,0 +1,72 @@
+diff --git a/arch/arm/plat-s3c/pm.c b/arch/arm/plat-s3c/pm.c
+index 8d97db2..a7667d5 100644
+--- a/arch/arm/plat-s3c/pm.c
++++ b/arch/arm/plat-s3c/pm.c
+@@ -301,11 +301,14 @@ static int s3c_pm_enter(suspend_state_t state)
+ 
+ 	s3c_pm_arch_stop_clocks();
+ 
+-	/* s3c_cpu_save will also act as our return point from when
+-	 * we resume as it saves its own register state and restores it
+-	 * during the resume.  */
++	/* s3c2410_cpu_save will also act as our return point from when
++	 * we resume as it saves its own register state, so use the return
++	 * code to differentiate return from save and return from sleep */
+ 
+-	s3c_cpu_save(regs_save);
++	if (s3c_cpu_save(regs_save) == 0) {
++		flush_cache_all();
++		pm_cpu_sleep();
++	}
+ 
+ 	/* restore the cpu state using the kernel's cpu init code. */
+ 
+diff --git a/arch/arm/plat-s3c24xx/irq-pm.c b/arch/arm/plat-s3c24xx/irq-pm.c
+index b7acf1a..925514e 100644
+--- a/arch/arm/plat-s3c24xx/irq-pm.c
++++ b/arch/arm/plat-s3c24xx/irq-pm.c
+@@ -15,6 +15,7 @@
+ #include <linux/module.h>
+ #include <linux/interrupt.h>
+ #include <linux/sysdev.h>
++#include <linux/irq.h>
+ 
+ #include <plat/cpu.h>
+ #include <plat/pm.h>
+@@ -80,7 +81,9 @@ int s3c24xx_irq_suspend(struct sys_device *dev, pm_message_t state)
+ 
+ int s3c24xx_irq_resume(struct sys_device *dev)
+ {
+-	unsigned int i;
++	unsigned int i, irq;
++	unsigned long eintpnd;
++	struct irq_desc *desc;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(save_extint); i++)
+ 		__raw_writel(save_extint[i], S3C24XX_EXTINT0 + (i*4));
+@@ -91,5 +94,25 @@ int s3c24xx_irq_resume(struct sys_device *dev)
+ 	s3c_pm_do_restore(irq_save, ARRAY_SIZE(irq_save));
+ 	__raw_writel(save_eintmask, S3C24XX_EINTMASK);
+ 
++	/*
++	 * ACK those interrupts which are now masked and pending.
++	 * Level interrupts if not ACKed here, create an interrupt storm
++	 * because they are not handled at all.
++	 */
++
++	eintpnd = __raw_readl(S3C24XX_EINTPEND);
++
++	eintpnd &= save_eintmask;
++	eintpnd &= ~0xff;	/* ignore lower irqs */
++
++	while (eintpnd) {
++		irq = __ffs(eintpnd);
++		eintpnd &= ~(1 << irq);
++
++		irq += (IRQ_EINT4 - 4);
++		desc = irq_to_desc(irq);
++		desc->chip->ack(irq);
++	}
++
+ 	return 0;
+ }

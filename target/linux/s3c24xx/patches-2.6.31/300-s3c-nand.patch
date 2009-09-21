@@ -1,0 +1,61 @@
+diff --git a/arch/arm/plat-s3c/include/plat/nand.h b/arch/arm/plat-s3c/include/plat/nand.h
+index 18f9588..fff94e6 100644
+--- a/arch/arm/plat-s3c/include/plat/nand.h
++++ b/arch/arm/plat-s3c/include/plat/nand.h
+@@ -33,6 +33,8 @@ struct s3c2410_nand_set {
+ 
+ 	int			nr_chips;
+ 	int			nr_partitions;
++	unsigned int		flags;
++#define S3C2410_NAND_BBT	0x0001
+ 	char			*name;
+ 	int			*nr_map;
+ 	struct mtd_partition	*partitions;
+@@ -51,6 +53,9 @@ struct s3c2410_platform_nand {
+ 	int			nr_sets;
+ 	struct s3c2410_nand_set *sets;
+ 
++	/* force software_ecc at runtime */
++	int	software_ecc;
++
+ 	void			(*select_chip)(struct s3c2410_nand_set *,
+ 					       int chip);
+ };
+diff --git a/drivers/mtd/nand/s3c2410.c b/drivers/mtd/nand/s3c2410.c
+index 11dc7e6..59637ac 100644
+--- a/drivers/mtd/nand/s3c2410.c
++++ b/drivers/mtd/nand/s3c2410.c
+@@ -491,7 +491,7 @@ static int s3c2410_nand_correct_data(struct mtd_info *mtd, u_char *dat,
+ 	if ((diff0 & ~(1<<fls(diff0))) == 0)
+ 		return 1;
+ 
+-	return -1;
++	return -EBADMSG;
+ }
+ 
+ /* ECC functions
+@@ -774,9 +783,13 @@ static void s3c2410_nand_init_chip(struct s3c2410_nand_info *info,
+ 	chip->select_chip  = s3c2410_nand_select_chip;
+ 	chip->chip_delay   = 50;
+ 	chip->priv	   = nmtd;
+-	chip->options	   = 0;
+ 	chip->controller   = &info->controller;
+ 
++	if (set->flags & S3C2410_NAND_BBT)
++		chip->options	   = NAND_USE_FLASH_BBT;
++	else
++		chip->options	   = 0;
++
+ 	switch (info->cpu_type) {
+ 	case TYPE_S3C2410:
+ 		chip->IO_ADDR_W = regs + S3C2410_NFDATA;
+@@ -816,7 +829,7 @@ static void s3c2410_nand_init_chip(struct s3c2410_nand_info *info,
+ 	nmtd->mtd.owner    = THIS_MODULE;
+ 	nmtd->set	   = set;
+ 
+-	if (hardware_ecc) {
++	if (!info->platform->software_ecc && hardware_ecc) {
+ 		chip->ecc.calculate = s3c2410_nand_calculate_ecc;
+ 		chip->ecc.correct   = s3c2410_nand_correct_data;
+ 		chip->ecc.mode	    = NAND_ECC_HW;
+

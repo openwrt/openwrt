@@ -1,0 +1,25 @@
+From 299fc0aa9b81265b4038dd306de69dec4b24491a Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Tue, 21 Jul 2009 12:43:16 +0200
+Subject: [PATCH] 040-rename-serialdevs.patch
+
+---
+ drivers/serial/samsung.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/serial/samsung.c b/drivers/serial/samsung.c
+index c8851a0..bf0af79 100644
+--- a/drivers/serial/samsung.c
++++ b/drivers/serial/samsung.c
+@@ -878,7 +878,7 @@ static struct uart_ops s3c24xx_serial_ops = {
+ 
+ static struct uart_driver s3c24xx_uart_drv = {
+ 	.owner		= THIS_MODULE,
+-	.dev_name	= "s3c2410_serial",
++	.dev_name	= "ttySAC",
+ 	.nr		= CONFIG_SERIAL_SAMSUNG_UARTS,
+ 	.cons		= S3C24XX_SERIAL_CONSOLE,
+ 	.driver_name	= S3C24XX_SERIAL_NAME,
+-- 
+1.5.6.5
+
