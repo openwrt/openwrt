@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/crypto/unlzma.c
-@@ -0,0 +1,748 @@
+@@ -0,0 +1,772 @@
 +/*
 + * LZMA uncompresion module for pcomp
 + * Copyright (C) 2009  Felix Fietkau <nbd@openwrt.org>
@@ -50,7 +50,9 @@
 +struct unlzma_ctx {
 +	struct task_struct *thread;
 +	wait_queue_head_t next_req;
++	wait_queue_head_t req_done;
 +	struct mutex mutex;
++	bool waiting;
 +	bool active;
 +	bool cancel;
 +
@@ -106,7 +108,9 @@
 +unlzma_request_buffer(struct unlzma_ctx *ctx, int *avail)
 +{
 +	do {
++		ctx->waiting = true;
 +		mutex_unlock(&ctx->mutex);
++		wake_up(&ctx->req_done);
 +		if (wait_event_interruptible(ctx->next_req,
 +			unlzma_should_stop(ctx) || (*avail > 0)))
 +			schedule();
@@ -213,22 +217,35 @@
 +	int i = ctx->n_buffers;
 +	u32 pos;
 +
-+	BUG_ON(!ctx->n_buffers);
-+	pos = ctx->pos - offs;
-+	if (pos >= ctx->dict_size) {
-+		pos = (~pos % ctx->dict_size);
++	if (!ctx->n_buffers) {
++		printk(KERN_ERR "unlzma/%s: no buffer\n", __func__);
++		goto error;
 +	}
++
++	pos = ctx->pos - offs;
++	if (unlikely(pos >= ctx->dict_size))
++		pos = ~pos & (ctx->dict_size - 1);
 +
 +	while (bh->offset > pos) {
 +		bh--;
 +		i--;
-+		BUG_ON(!i);
++		if (!i) {
++			printk(KERN_ERR "unlzma/%s: position %d out of range\n", __func__, pos);
++			goto error;
++		}
 +	}
 +
 +	pos -= bh->offset;
-+	BUG_ON(pos >= bh->size);
++	if (pos >= bh->size) {
++		printk(KERN_ERR "unlzma/%s: position %d out of range\n", __func__, pos);
++		goto error;
++	}
 +
 +	return bh->ptr[pos];
++
++error:
++	ctx->cancel = true;
++	return 0;
 +}
 +
 +static void
@@ -635,8 +652,10 @@
 +	if (!ctx->buffers)
 +		return -ENOMEM;
 +
++	ctx->waiting = false;
 +	mutex_init(&ctx->mutex);
 +	init_waitqueue_head(&ctx->next_req);
++	init_waitqueue_head(&ctx->req_done);
 +	ctx->thread = kthread_run(unlzma_thread, ctx, "unlzma/%d", instance++);
 +	if (IS_ERR(ctx->thread)) {
 +		ret = PTR_ERR(ctx->thread);
@@ -649,21 +668,22 @@
 +static int
 +unlzma_decompress_init(struct crypto_pcomp *tfm)
 +{
-+	struct unlzma_ctx *ctx = crypto_tfm_ctx(crypto_pcomp_tfm(tfm));
-+
-+	ctx->pos = 0;
 +	return 0;
 +}
 +
 +static void
 +unlzma_wait_complete(struct unlzma_ctx *ctx, bool finish)
 +{
++	DEFINE_WAIT(__wait);
++
 +	do {
-+		mutex_unlock(&ctx->mutex);
 +		wake_up(&ctx->next_req);
++		prepare_to_wait(&ctx->req_done, &__wait, TASK_INTERRUPTIBLE);
++		mutex_unlock(&ctx->mutex);
 +		schedule();
 +		mutex_lock(&ctx->mutex);
-+	} while (ctx->active &&	(ctx->avail_in > 0) && (ctx->avail_out > 0));
++	} while (!ctx->waiting && ctx->active);
++	finish_wait(&ctx->req_done, &__wait);
 +}
 +
 +static int
@@ -677,6 +697,7 @@
 +		goto out;
 +
 +	pos = ctx->pos;
++	ctx->waiting = false;
 +	ctx->next_in = req->next_in;
 +	ctx->avail_in = req->avail_in;
 +	ctx->next_out = req->next_out;
@@ -694,6 +715,9 @@
 +
 +out:
 +	mutex_unlock(&ctx->mutex);
++	if (ctx->cancel)
++		return -EINVAL;
++
 +	return pos;
 +}
 +
