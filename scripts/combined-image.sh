@@ -8,8 +8,8 @@ BLKSZ=65536
 }
 
 # Make sure provided images are 64k aligned.
-kern=$(tempfile)
-root=$(tempfile)
+kern=$(mktemp)
+root=$(mktemp)
 dd if="$1" of="$kern" bs=$BLKSZ conv=sync 2>/dev/null
 dd if="$2" of="$root" bs=$BLKSZ conv=sync 2>/dev/null
 
