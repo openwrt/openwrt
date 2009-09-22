@@ -125,6 +125,8 @@ enable_broadcom() {
 	config_get macaddr "$device" macaddr
 	config_get txpower "$device" txpower
 	local vif_pre_up vif_post_up vif_do_up vif_txpower
+	local doth=0
+	local wmm=0
 
 	_c=0
 	nas="$(which nas)"
@@ -139,7 +141,7 @@ enable_broadcom() {
 	} || {
 		slottime="${slottime:--1}"
 	}
-	
+
 	case "$macfilter" in
 		allow|2)
 			macfilter=2;
@@ -159,7 +161,10 @@ enable_broadcom() {
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
 		append vif_do_up "vif $_c" "$N"
-		
+
+		config_get_bool wmm "$vif" wmm "$wmm"
+		config_get_bool doth "$vif" doth "$doth"
+
 		[ "$mode" = "sta" ] || {
 			config_get_bool hidden "$vif" hidden 0
 			append vif_pre_up "closed $hidden" "$N"
@@ -282,7 +287,8 @@ ${mssid:+mssid $mssid}
 infra $infra
 ${wet:+wet 1}
 802.11d 0
-802.11h 0
+802.11h ${doth:-0}
+wme ${wmm:-0}
 rxant ${rxantenna:-3}
 txant ${txantenna:-3}
 monitor ${monitor:-0}

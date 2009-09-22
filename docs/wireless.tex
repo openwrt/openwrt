@@ -121,6 +121,8 @@ config wifi-iface
     option port     port
     option hidden   0,1
     option isolate  0,1	(broadcom)
+    option doth     0,1	(atheros, broadcom)
+    option wmm      0,1	(atheros, broadcom)
 \end{Verbatim}
 
 \paragraph{Options for the \texttt{wifi-device}:}
@@ -229,6 +231,14 @@ config wifi-iface
     \item \texttt{isolate} \\
         Optional: Isolation is a mode usually set on hotspots that limits the clients to communicate only with the AP and not with other wireless clients.
         0 disables ap isolation (default); 1 enables ap isolation.
+
+    \item \texttt{doth} \\
+        Optional: Toggle 802.11h mode.
+        0 disables 802.11h (default); 1 enables it.
+
+    \item \texttt{wmm} \\
+        Optional: Toggle 802.11e mode.
+        0 disables 802.11e (default); 1 enables it.
 
 \end{itemize}
 
