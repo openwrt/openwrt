@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/crypto/unlzma.c
-@@ -0,0 +1,723 @@
+@@ -0,0 +1,772 @@
 +/*
 + * LZMA uncompresion module for pcomp
 + * Copyright (C) 2009  Felix Fietkau <nbd@openwrt.org>
@@ -36,12 +36,12 @@
 +#include <linux/kthread.h>
 +
 +#include <crypto/internal/compress.h>
++#include <net/netlink.h>
 +#include "unlzma.h"
 +
 +static int instance = 0;
 +
 +struct unlzma_buffer {
-+	struct unlzma_buffer *last;
 +	int offset;
 +	int size;
 +	u8 *ptr;
@@ -50,7 +50,9 @@
 +struct unlzma_ctx {
 +	struct task_struct *thread;
 +	wait_queue_head_t next_req;
++	wait_queue_head_t req_done;
 +	struct mutex mutex;
++	bool waiting;
 +	bool active;
 +	bool cancel;
 +
@@ -68,8 +70,10 @@
 +	/* writer state */
 +	u8 previous_byte;
 +	ssize_t pos;
-+	struct unlzma_buffer *head;
 +	int buf_full;
++	int n_buffers;
++	int buffers_max;
++	struct unlzma_buffer *buffers;
 +
 +	/* cstate */
 +	int state;
@@ -92,12 +96,11 @@
 +{
 +	struct unlzma_buffer *bh;
 +
-+	bh = kzalloc(sizeof(struct unlzma_buffer), GFP_KERNEL);
++	BUG_ON(ctx->n_buffers >= ctx->buffers_max);
++	bh = &ctx->buffers[ctx->n_buffers++];
 +	bh->ptr = ctx->next_out;
 +	bh->offset = ctx->pos;
-+	bh->last = ctx->head;
 +	bh->size = ctx->avail_out;
-+	ctx->head = bh;
 +	ctx->buf_full = 0;
 +}
 +
@@ -105,7 +108,9 @@
 +unlzma_request_buffer(struct unlzma_ctx *ctx, int *avail)
 +{
 +	do {
++		ctx->waiting = true;
 +		mutex_unlock(&ctx->mutex);
++		wake_up(&ctx->req_done);
 +		if (wait_event_interruptible(ctx->next_req,
 +			unlzma_should_stop(ctx) || (*avail > 0)))
 +			schedule();
@@ -208,23 +213,39 @@
 +static u8
 +peek_old_byte(struct unlzma_ctx *ctx, u32 offs)
 +{
-+	struct unlzma_buffer *bh = ctx->head;
++	struct unlzma_buffer *bh = &ctx->buffers[ctx->n_buffers - 1];
++	int i = ctx->n_buffers;
 +	u32 pos;
 +
-+	pos = ctx->pos - offs;
-+	if (pos >= ctx->dict_size) {
-+		pos = (~pos % ctx->dict_size);
++	if (!ctx->n_buffers) {
++		printk(KERN_ERR "unlzma/%s: no buffer\n", __func__);
++		goto error;
 +	}
 +
++	pos = ctx->pos - offs;
++	if (unlikely(pos >= ctx->dict_size))
++		pos = ~pos & (ctx->dict_size - 1);
++
 +	while (bh->offset > pos) {
-+		bh = bh->last;
-+		BUG_ON(!bh);
++		bh--;
++		i--;
++		if (!i) {
++			printk(KERN_ERR "unlzma/%s: position %d out of range\n", __func__, pos);
++			goto error;
++		}
 +	}
 +
 +	pos -= bh->offset;
-+	BUG_ON(pos >= bh->size);
++	if (pos >= bh->size) {
++		printk(KERN_ERR "unlzma/%s: position %d out of range\n", __func__, pos);
++		goto error;
++	}
 +
 +	return bh->ptr[pos];
++
++error:
++	ctx->cancel = true;
++	return 0;
 +}
 +
 +static void
@@ -460,6 +481,7 @@
 +		hdr_buf[i] = rc_read(ctx);
 +	}
 +
++	ctx->n_buffers = 0;
 +	ctx->pos = 0;
 +	get_buffer(ctx);
 +	ctx->active = true;
@@ -554,11 +576,6 @@
 +		unlzma_reset_buf(ctx);
 +		ctx->cancel = false;
 +		ctx->active = false;
-+		while (ctx->head) {
-+			struct unlzma_buffer *bh = ctx->head;
-+			ctx->head = bh->last;
-+			kfree(bh);
-+		}
 +	} while (!kthread_should_stop());
 +	mutex_unlock(&ctx->mutex);
 +	return 0;
@@ -598,6 +615,10 @@
 +		unlzma_cancel(ctx);
 +		kthread_stop(ctx->thread);
 +		ctx->thread = NULL;
++		if (ctx->buffers)
++			kfree(ctx->buffers);
++		ctx->buffers_max = 0;
++		ctx->buffers = NULL;
 +	}
 +}
 +
@@ -605,13 +626,36 @@
 +unlzma_decompress_setup(struct crypto_pcomp *tfm, void *p, unsigned int len)
 +{
 +	struct unlzma_ctx *ctx = crypto_tfm_ctx(crypto_pcomp_tfm(tfm));
++	struct nlattr *tb[UNLZMA_DECOMP_MAX + 1];
 +	int ret = 0;
 +
 +	if (ctx->thread)
-+		return 0;
++		return -EINVAL;
 +
++	if (!p)
++		return -EINVAL;
++
++	ret = nla_parse(tb, UNLZMA_DECOMP_MAX, p, len, NULL);
++	if (!tb[UNLZMA_DECOMP_OUT_BUFFERS])
++		return -EINVAL;
++
++	if (ctx->buffers_max && (ctx->buffers_max <
++	    nla_get_u32(tb[UNLZMA_DECOMP_OUT_BUFFERS]))) {
++		kfree(ctx->buffers);
++		ctx->buffers_max = 0;
++		ctx->buffers = NULL;
++	}
++	if (!ctx->buffers) {
++		ctx->buffers_max = nla_get_u32(tb[UNLZMA_DECOMP_OUT_BUFFERS]);
++		ctx->buffers = kzalloc(sizeof(struct unlzma_buffer) * ctx->buffers_max, GFP_KERNEL);
++	}
++	if (!ctx->buffers)
++		return -ENOMEM;
++
++	ctx->waiting = false;
 +	mutex_init(&ctx->mutex);
 +	init_waitqueue_head(&ctx->next_req);
++	init_waitqueue_head(&ctx->req_done);
 +	ctx->thread = kthread_run(unlzma_thread, ctx, "unlzma/%d", instance++);
 +	if (IS_ERR(ctx->thread)) {
 +		ret = PTR_ERR(ctx->thread);
@@ -624,21 +668,22 @@
 +static int
 +unlzma_decompress_init(struct crypto_pcomp *tfm)
 +{
-+	struct unlzma_ctx *ctx = crypto_tfm_ctx(crypto_pcomp_tfm(tfm));
-+
-+	ctx->pos = 0;
 +	return 0;
 +}
 +
 +static void
 +unlzma_wait_complete(struct unlzma_ctx *ctx, bool finish)
 +{
++	DEFINE_WAIT(__wait);
++
 +	do {
-+		mutex_unlock(&ctx->mutex);
 +		wake_up(&ctx->next_req);
++		prepare_to_wait(&ctx->req_done, &__wait, TASK_INTERRUPTIBLE);
++		mutex_unlock(&ctx->mutex);
 +		schedule();
 +		mutex_lock(&ctx->mutex);
-+	} while (ctx->active &&	(ctx->avail_in > 0) && (ctx->avail_out > 0));
++	} while (!ctx->waiting && ctx->active);
++	finish_wait(&ctx->req_done, &__wait);
 +}
 +
 +static int
@@ -652,6 +697,7 @@
 +		goto out;
 +
 +	pos = ctx->pos;
++	ctx->waiting = false;
 +	ctx->next_in = req->next_in;
 +	ctx->avail_in = req->avail_in;
 +	ctx->next_out = req->next_out;
@@ -669,6 +715,9 @@
 +
 +out:
 +	mutex_unlock(&ctx->mutex);
++	if (ctx->cancel)
++		return -EINVAL;
++
 +	return pos;
 +}
 +
@@ -832,3 +881,18 @@
 +#define LZMA_LITERAL (LZMA_REP_LEN_CODER + LZMA_NUM_LEN_PROBS)
 +
 +#endif
+--- a/include/crypto/compress.h
++++ b/include/crypto/compress.h
+@@ -49,6 +49,12 @@ enum zlib_decomp_params {
+ 
+ #define ZLIB_DECOMP_MAX	(__ZLIB_DECOMP_MAX - 1)
+ 
++enum unlzma_decomp_params {
++	UNLZMA_DECOMP_OUT_BUFFERS = 1, /* naximum number of output buffers */
++	__UNLZMA_DECOMP_MAX,
++};
++#define UNLZMA_DECOMP_MAX	(__UNLZMA_DECOMP_MAX - 1)
++
+ 
+ struct crypto_pcomp {
+ 	struct crypto_tfm base;
