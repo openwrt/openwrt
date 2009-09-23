@@ -38,7 +38,7 @@
  			IEEE80211_KEYIX_NONE);
 --- a/net80211/ieee80211_var.h
 +++ b/net80211/ieee80211_var.h
-@@ -343,8 +343,9 @@ struct ieee80211com {
+@@ -343,8 +343,8 @@ struct ieee80211com {
  	u_int16_t ic_holdover;			/* PM hold over duration */
  	u_int16_t ic_bmissthreshold;		/* beacon miss threshold (# beacons) */
  	unsigned long ic_bmiss_guard;		/* when to cease ignoring bmiss (jiffies) */
@@ -46,13 +46,34 @@
 -	u_int16_t ic_newtxpowlimit; 		/* tx power limit to change to (in 0.5 dBm) */
 +	u_int16_t ic_txpowlimit; 		/* configured global tx power limit (in 0.5 dBm) */
 +	u_int16_t ic_max_txpower;			/* global hardware tx power limit */
-+	u_int16_t ic_cur_txpower;			/* current tx power */
  	u_int16_t ic_uapsdmaxtriggers; 		/* max triggers that could arrive */
  	u_int8_t ic_coverageclass; 		/* coverage class */
  	u_int8_t ic_protmode_rssi;			/* rssi threshold for protection mode */
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -920,17 +920,23 @@ ieee80211_ioctl_giwrange(struct net_devi
+@@ -908,6 +908,21 @@ ieee80211_ioctl_giwessid(struct net_devi
+ 	return 0;
+ }
+ 
++static u16
++ieee80211_get_maxtxpow(struct ieee80211com *ic)
++{
++	u_int16_t txp = IEEE80211_TXPOWER_MAX;
++
++	if (ic->ic_bsschan && (ic->ic_bsschan != IEEE80211_CHAN_ANYC))
++		txp = min(txp, (u16) ic->ic_bsschan->ic_maxpower);
++
++	if (ic->ic_max_txpower > 0)
++		txp = min(txp, ic->ic_max_txpower);
++
++	return txp;
++}
++
++
+ static int
+ ieee80211_ioctl_giwrange(struct net_device *dev, struct iw_request_info *info,
+ 	struct iw_point *data, char *extra)
+@@ -920,17 +935,21 @@ ieee80211_ioctl_giwrange(struct net_devi
  	u_int8_t reported[IEEE80211_CHAN_BYTES];	/* XXX stack usage? */
  	int i, r;
  	int step = 0;
@@ -61,9 +82,7 @@
  	data->length = sizeof(struct iw_range);
  	memset(range, 0, sizeof(struct iw_range));
  
-+	power = ic->ic_max_txpower;
-+	if (ic->ic_bsschan && (ic->ic_bsschan != IEEE80211_CHAN_ANYC))
-+		power = min(power, (u_int16_t) ic->ic_bsschan->ic_maxpower);
++	power = ieee80211_get_maxtxpow(ic);
 +
  	/* txpower (128 values, but will print out only IW_MAX_TXPOWER) */
 -	range->num_txpower = (ic->ic_txpowlimit >= 8) ? IW_MAX_TXPOWER : ic->ic_txpowlimit;
@@ -79,7 +98,7 @@
  			- (IW_MAX_TXPOWER - i - 1) * step;
  
  	range->txpower_capa = IW_TXPOW_DBM;
-@@ -1379,13 +1385,11 @@ ieee80211_ioctl_siwtxpow(struct net_devi
+@@ -1379,13 +1398,11 @@ ieee80211_ioctl_siwtxpow(struct net_devi
  	int fixed, disabled;
  
  	fixed = (ic->ic_flags & IEEE80211_F_TXPOW_FIXED);
@@ -95,7 +114,7 @@
  			goto done;
  		}
  		return 0;
-@@ -1396,30 +1400,12 @@ ieee80211_ioctl_siwtxpow(struct net_devi
+@@ -1396,30 +1413,12 @@ ieee80211_ioctl_siwtxpow(struct net_devi
  			return -EOPNOTSUPP;
  		if (rrq->flags != IW_TXPOW_DBM)
  			return -EINVAL;
@@ -129,7 +148,7 @@
  		ic->ic_flags &= ~IEEE80211_F_TXPOW_FIXED;
  	}
  done:
-@@ -1588,9 +1574,23 @@ ieee80211_ioctl_giwtxpow(struct net_devi
+@@ -1588,9 +1587,18 @@ ieee80211_ioctl_giwtxpow(struct net_devi
  {
  	struct ieee80211vap *vap = dev->priv;
  	struct ieee80211com *ic = vap->iv_ic;
@@ -138,14 +157,9 @@
 -	rrq->fixed = (ic->ic_flags & IEEE80211_F_TXPOW_FIXED) != 0;
 +	unsigned int power = ic->ic_txpowlimit;
 +	struct ieee80211_channel *c;
-+	u_int16_t txp = ic->ic_max_txpower;
++	u_int16_t txp;
 +
-+	if (ic->ic_bsschan && (ic->ic_bsschan != IEEE80211_CHAN_ANYC)) {
-+		txp = min(txp, (u16) ic->ic_bsschan->ic_maxpower);
-+	}
-+	if (ic->ic_cur_txpower > 0) {
-+		txp = min(txp, ic->ic_cur_txpower);
-+	}
++	txp = ieee80211_get_maxtxpow(ic);
 +	if (ic->ic_flags & IEEE80211_F_TXPOW_FIXED) {
 +		txp = min(txp, ic->ic_txpowlimit);
 +		rrq->fixed = 1;
@@ -242,7 +256,7 @@
 -	if (new_clamped_maxtxpower != prev_clamped_maxtxpower)
 -		ath_hal_settxpowlimit(ah, new_clamped_maxtxpower);
 +	ath_set_clamped_maxtxpower(sc, ic->ic_txpowlimit);
-+	ic->ic_cur_txpower = ath_get_clamped_maxtxpower(sc);
++	ic->ic_max_txpower = ath_get_clamped_maxtxpower(sc);
  }
  
  #ifdef ATH_SUPERG_XR

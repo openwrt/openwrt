@@ -141,7 +141,7 @@ http://madwifi-project.org/changeset/4005
  	case NETDEV_CHANGENAME:
 --- a/net80211/ieee80211_var.h
 +++ b/net80211/ieee80211_var.h
-@@ -740,6 +740,7 @@ void ieee80211_build_sc_ie(struct ieee80
+@@ -739,6 +739,7 @@ void ieee80211_build_sc_ie(struct ieee80
  void ieee80211_dfs_action(struct ieee80211com *);
  void ieee80211_expire_channel_excl_restrictions(struct ieee80211com *);
  void ieee80211_setpuregbasicrates(struct ieee80211_rateset *rs);
@@ -151,7 +151,7 @@ http://madwifi-project.org/changeset/4005
   * Iterate through ic_channels to enumerate all distinct ic_ieee channel numbers.
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -5946,7 +5946,7 @@ static struct iw_handler_def ieee80211_i
+@@ -5954,7 +5954,7 @@ static struct iw_handler_def ieee80211_i
  /*
   * Handle private ioctl requests.
   */
@@ -160,7 +160,7 @@ http://madwifi-project.org/changeset/4005
  ieee80211_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
  	struct ieee80211vap *vap = netdev_priv(dev);
-@@ -6036,7 +6036,6 @@ ieee80211_ioctl_vattach(struct ieee80211
+@@ -6044,7 +6044,6 @@ ieee80211_ioctl_vattach(struct ieee80211
  {
  	struct net_device *dev = vap->iv_dev;
  

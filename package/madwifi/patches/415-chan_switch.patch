@@ -171,7 +171,7 @@
  
  		/* Don't allow to change to channel with radar found */
  		if (c->ic_flags & IEEE80211_CHAN_RADAR)
-@@ -4626,7 +4598,13 @@ static void
+@@ -4634,7 +4606,13 @@ static void
  pre_announced_chanswitch(struct net_device *dev, u_int32_t channel, u_int32_t tbtt) {
  	struct ieee80211vap *vap = dev->priv;
  	struct ieee80211com *ic = vap->iv_ic;
