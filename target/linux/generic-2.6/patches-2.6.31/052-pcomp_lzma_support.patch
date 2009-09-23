@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/crypto/unlzma.c
-@@ -0,0 +1,772 @@
+@@ -0,0 +1,775 @@
 +/*
 + * LZMA uncompresion module for pcomp
 + * Copyright (C) 2009  Felix Fietkau <nbd@openwrt.org>
@@ -636,6 +636,9 @@
 +		return -EINVAL;
 +
 +	ret = nla_parse(tb, UNLZMA_DECOMP_MAX, p, len, NULL);
++	if (ret)
++		return ret;
++
 +	if (!tb[UNLZMA_DECOMP_OUT_BUFFERS])
 +		return -EINVAL;
 +
