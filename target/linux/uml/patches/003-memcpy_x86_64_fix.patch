@@ -1,6 +1,6 @@
---- a/arch/um/os-Linux/user_syms.c	2009-08-16 23:19:38.000000000 +0200
-+++ b/arch/um/os-Linux/user_syms.c	2009-09-01 17:05:40.000000000 +0200
-@@ -23,10 +23,8 @@
+--- a/arch/um/os-Linux/user_syms.c
++++ b/arch/um/os-Linux/user_syms.c
+@@ -23,10 +23,8 @@ extern int printf(const char *, ...);
  EXPORT_SYMBOL(strstr);
  #endif
  
@@ -11,8 +11,8 @@
  
  EXPORT_SYMBOL(memmove);
  EXPORT_SYMBOL(memset);
---- a/arch/um/sys-x86_64/ksyms.c	2009-08-16 23:19:38.000000000 +0200
-+++ b/arch/um/sys-x86_64/ksyms.c	2009-09-01 17:13:47.000000000 +0200
+--- a/arch/um/sys-x86_64/ksyms.c
++++ b/arch/um/sys-x86_64/ksyms.c
 @@ -2,10 +2,5 @@
  #include <asm/string.h>
  #include <asm/checksum.h>
