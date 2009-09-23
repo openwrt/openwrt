@@ -79,8 +79,8 @@ Signed-off-by: Mikael Pettersson <mikpe@it.uu.se>
 Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
 
---- a/arch/arm/include/asm/thread_info.h	2009-04-18 18:55:23.000000000 +0200
-+++ b/arch/arm/include/asm/thread_info.h	2009-04-18 19:10:22.000000000 +0200
+--- a/arch/arm/include/asm/thread_info.h
++++ b/arch/arm/include/asm/thread_info.h
 @@ -140,6 +140,7 @@ extern void vfp_sync_state(struct thread
  #define TIF_USING_IWMMXT	17
  #define TIF_MEMDIE		18
@@ -97,8 +97,8 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  /*
   * Change these and you break ASM code in entry-common.S
---- a/arch/arm/include/asm/unistd.h	2008-10-11 10:43:49.000000000 +0200
-+++ b/arch/arm/include/asm/unistd.h	2009-04-18 19:10:22.000000000 +0200
+--- a/arch/arm/include/asm/unistd.h
++++ b/arch/arm/include/asm/unistd.h
 @@ -360,8 +360,8 @@
  #define __NR_readlinkat			(__NR_SYSCALL_BASE+332)
  #define __NR_fchmodat			(__NR_SYSCALL_BASE+333)
@@ -119,7 +119,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  #define __NR_kexec_load			(__NR_SYSCALL_BASE+347)
  #define __NR_utimensat			(__NR_SYSCALL_BASE+348)
  #define __NR_signalfd			(__NR_SYSCALL_BASE+349)
-@@ -428,6 +428,7 @@
+@@ -430,6 +430,7 @@
  #define __ARCH_WANT_SYS_SIGPENDING
  #define __ARCH_WANT_SYS_SIGPROCMASK
  #define __ARCH_WANT_SYS_RT_SIGACTION
@@ -127,8 +127,8 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  #if !defined(CONFIG_AEABI) || defined(CONFIG_OABI_COMPAT)
  #define __ARCH_WANT_SYS_TIME
---- a/arch/arm/kernel/calls.S	2009-03-24 18:00:31.000000000 +0100
-+++ b/arch/arm/kernel/calls.S	2009-04-18 19:10:22.000000000 +0200
+--- a/arch/arm/kernel/calls.S
++++ b/arch/arm/kernel/calls.S
 @@ -81,7 +81,7 @@
  		CALL(sys_ni_syscall)		/* was sys_ssetmask */
  /* 70 */	CALL(sys_setreuid16)
@@ -167,8 +167,8 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		CALL(sys_kexec_load)
  		CALL(sys_utimensat)
  		CALL(sys_signalfd)
---- a/arch/arm/kernel/entry-common.S	2009-04-18 18:55:23.000000000 +0200
-+++ b/arch/arm/kernel/entry-common.S	2009-04-18 19:10:22.000000000 +0200
+--- a/arch/arm/kernel/entry-common.S
++++ b/arch/arm/kernel/entry-common.S
 @@ -370,16 +370,6 @@ sys_clone_wrapper:
  		b	sys_clone
  ENDPROC(sys_clone_wrapper)
@@ -186,8 +186,8 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  sys_sigreturn_wrapper:
  		add	r0, sp, #S_OFF
  		b	sys_sigreturn
---- a/arch/arm/kernel/signal.c	2008-12-25 15:54:13.000000000 +0100
-+++ b/arch/arm/kernel/signal.c	2009-04-18 19:10:22.000000000 +0200
+--- a/arch/arm/kernel/signal.c
++++ b/arch/arm/kernel/signal.c
 @@ -47,57 +47,22 @@ const unsigned long sigreturn_codes[7] =
  	MOV_R7_NR_RT_SIGRETURN, SWI_SYS_RT_SIGRETURN, SWI_THUMB_RT_SIGRETURN,
  };
