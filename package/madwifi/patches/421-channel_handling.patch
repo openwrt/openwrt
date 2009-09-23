@@ -999,7 +999,7 @@
  	u_int16_t ic_modecaps;			/* set of mode capabilities */
  	u_int16_t ic_curmode;			/* current mode */
  	u_int16_t ic_lintval;			/* beacon interval */
-@@ -715,6 +713,7 @@ MALLOC_DECLARE(M_80211_VAP);
+@@ -714,6 +712,7 @@ MALLOC_DECLARE(M_80211_VAP);
  
  int ieee80211_ifattach(struct ieee80211com *);
  void ieee80211_ifdetach(struct ieee80211com *);
@@ -1007,7 +1007,7 @@
  int ieee80211_vap_setup(struct ieee80211com *, struct net_device *,
  	const char *, int, int, struct ieee80211vap *);
  int ieee80211_vap_attach(struct ieee80211vap *, ifm_change_cb_t, ifm_stat_cb_t);
-@@ -794,6 +793,23 @@ ieee80211_anyhdrspace(struct ieee80211co
+@@ -793,6 +792,23 @@ ieee80211_anyhdrspace(struct ieee80211co
  	return size;
  }
  
@@ -1183,7 +1183,7 @@
  	if ((ic->ic_flags & IEEE80211_F_USEPROT) &&
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -2134,7 +2134,7 @@ ieee80211_ioctl_setmode(struct net_devic
+@@ -2142,7 +2142,7 @@ ieee80211_ioctl_setmode(struct net_devic
  
  		vap->iv_des_mode = mode;
  		if (IS_UP_AUTO(vap))
@@ -1192,7 +1192,7 @@
  
  		retv = 0;
  	}
-@@ -4082,46 +4082,60 @@ ieee80211_ioctl_getchanlist(struct net_d
+@@ -4090,46 +4090,60 @@ ieee80211_ioctl_getchanlist(struct net_d
  	return 0;
  }
  
