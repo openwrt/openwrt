@@ -21,7 +21,13 @@ struct ag71xx_mdio *ag71xx_mdio_bus;
 static inline void ag71xx_mdio_wr(struct ag71xx_mdio *am, unsigned reg,
 				  u32 value)
 {
-	__raw_writel(value, am->mdio_base + reg);
+	void __iomem *r;
+
+	r = am->mdio_base + reg;
+	__raw_writel(value, r);
+
+	/* flush write */
+	(void) __raw_readl(r);
 }
 
 static inline u32 ag71xx_mdio_rr(struct ag71xx_mdio *am, unsigned reg)
