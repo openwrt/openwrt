@@ -1,0 +1,177 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -396,7 +396,6 @@ static int tpc = 1;
+ static int maxvaps = -1;
+ static int xchanmode = -1;
+ #include "ath_wprobe.c"
+-static int beacon_cal = 1;
+ 
+ static const struct ath_hw_detect generic_hw_info = {
+ 	.vendor_name = "Unknown",
+@@ -431,7 +430,6 @@ static struct notifier_block ath_event_b
+ };
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,52))
+-MODULE_PARM(beacon_cal, "i");
+ MODULE_PARM(maxvaps, "i");
+ MODULE_PARM(xchanmode, "i");
+ MODULE_PARM(rfkill, "i");
+@@ -443,7 +441,6 @@ MODULE_PARM(autocreate, "s");
+ MODULE_PARM(ratectl, "s");
+ #else
+ #include <linux/moduleparam.h>
+-module_param(beacon_cal, int, 0600);
+ module_param(maxvaps, int, 0600);
+ module_param(xchanmode, int, 0600);
+ module_param(rfkill, int, 0600);
+@@ -837,6 +834,7 @@ ath_attach(u_int16_t devid, struct net_d
+ 		error = EIO;
+ 		goto bad2;
+ 	}
++	sc->sc_cal_interval = ath_calinterval;
+ 	init_timer(&sc->sc_cal_ch);
+ 	sc->sc_cal_ch.function = ath_calibrate;
+ 	sc->sc_cal_ch.data = (unsigned long) dev;
+@@ -2765,8 +2763,7 @@ ath_stop_locked(struct net_device *dev)
+ 		}
+ 		if (!sc->sc_invalid) {
+ 			del_timer_sync(&sc->sc_dfs_cac_timer);
+-			if (!sc->sc_beacon_cal)
+-				del_timer_sync(&sc->sc_cal_ch);
++			del_timer_sync(&sc->sc_cal_ch);
+ 		}
+ 		ath_draintxq(sc);
+ 		if (!sc->sc_invalid) {
+@@ -2791,10 +2788,9 @@ static void ath_set_beacon_cal(struct at
+ 	if (val) {
+ 		del_timer_sync(&sc->sc_cal_ch);
+ 	} else {
+-		sc->sc_cal_ch.expires = jiffies + (ath_calinterval * HZ);
+-		add_timer(&sc->sc_cal_ch);
++		mod_timer(&sc->sc_cal_ch, jiffies + (sc->sc_cal_interval * HZ));
+ 	}
+-	sc->sc_beacon_cal = !!val && beacon_cal;
++	sc->sc_beacon_cal = !!val;
+ }
+ 
+ /*
+@@ -3036,7 +3032,7 @@ ath_reset(struct net_device *dev)
+ 	 * XXX: starting the calibration too early seems to lead to
+ 	 * problems with the beacons.
+ 	 */
+-	sc->sc_lastcal = jiffies;
++	sc->sc_nextcal = jiffies + msecs_to_jiffies(sc->sc_cal_interval * 1000);
+ 
+ 	/*
+ 	 * Convert to a HAL channel description with the flags
+@@ -5477,10 +5473,9 @@ next:
+ 			"Invoking ath_hal_txstart with sc_bhalq: %d\n",
+ 			sc->sc_bhalq);
+ 		ath_hal_txstart(ah, sc->sc_bhalq);
+-		if (sc->sc_beacon_cal && (jiffies > sc->sc_lastcal + (ath_calinterval * HZ))) {
+-			sc->sc_cal_ch.expires = jiffies + msecs_to_jiffies(10);
+-			add_timer(&sc->sc_cal_ch);
+-		}
++		if (sc->sc_beacon_cal && ((sc->sc_bmisscount == 3) ||
++		    (jiffies > sc->sc_nextcal)))
++			mod_timer(&sc->sc_cal_ch, jiffies + 1);
+ 
+ 		sc->sc_stats.ast_be_xmit++;		/* XXX per-VAP? */
+ 	}
+@@ -9161,6 +9156,7 @@ ath_startrecv(struct ath_softc *sc)
+ 		dev->mtu, sc->sc_cachelsz, sc->sc_rxbufsize);
+ 
+ 	sc->sc_rxlink = NULL;
++	ath_set_beacon_cal(sc, IEEE80211_IS_MODE_BEACON(sc->sc_ic.ic_opmode));
+ 	STAILQ_FOREACH(bf, &sc->sc_rxbuf, bf_list) {
+ 		int error = ath_rxbuf_init(sc, bf);
+ 		ATH_RXBUF_RESET(bf);
+@@ -9377,7 +9373,7 @@ ath_chan_set(struct ath_softc *sc, struc
+ 				jiffies + (sc->sc_dfs_cac_period * HZ));
+ 
+ 			/* This is a good time to start a calibration */
+-			ath_set_beacon_cal(sc, 1);
++			mod_timer(&sc->sc_cal_ch, jiffies + 1);
+ 		}
+ 		/*
+ 		 * re configure beacons when it is a turbo mode switch.
+@@ -9471,25 +9467,23 @@ ath_calibrate(unsigned long arg)
+ 	if (isIQdone == AH_TRUE) {
+ 		/* Unless user has overridden calibration interval,
+ 		 * upgrade to less frequent calibration */
+-		if (ath_calinterval == ATH_SHORT_CALINTERVAL)
+-			ath_calinterval = ATH_LONG_CALINTERVAL;
++		if (sc->sc_cal_interval == ATH_SHORT_CALINTERVAL)
++			sc->sc_cal_interval = ATH_LONG_CALINTERVAL;
+ 	}
+ 	else {
+ 		/* Unless user has overridden calibration interval,
+ 		 * downgrade to more frequent calibration */
+-		if (ath_calinterval == ATH_LONG_CALINTERVAL)
+-			ath_calinterval = ATH_SHORT_CALINTERVAL;
++		if (sc->sc_cal_interval == ATH_LONG_CALINTERVAL)
++			sc->sc_cal_interval = ATH_SHORT_CALINTERVAL;
+ 	}
+ 
+ 	DPRINTF(sc, ATH_DEBUG_CALIBRATE, "Channel %u/%x -- IQ %s.\n",
+ 		sc->sc_curchan.channel, sc->sc_curchan.channelFlags,
+ 		isIQdone ? "done" : "not done");
+ 
+-	sc->sc_lastcal = jiffies;
+-	if (!sc->sc_beacon_cal) {
+-		sc->sc_cal_ch.expires = jiffies + (ath_calinterval * HZ);
+-		add_timer(&sc->sc_cal_ch);
+-	}
++	sc->sc_nextcal = jiffies + msecs_to_jiffies(sc->sc_cal_interval * 1000);
++	if (!sc->sc_beacon_cal)
++		mod_timer(&sc->sc_cal_ch, sc->sc_nextcal);
+ }
+ 
+ static void
+@@ -9597,9 +9591,6 @@ ath_newstate(struct ieee80211vap *vap, e
+ 		ieee80211_state_name[vap->iv_state],
+ 		ieee80211_state_name[nstate]);
+ 
+-	if (!sc->sc_beacon_cal)
+-		del_timer(&sc->sc_cal_ch);		/* periodic calibration timer */
+-
+ 	ath_hal_setledstate(ah, leds[nstate]);	/* set LED */
+ 	netif_stop_queue(dev);			/* before we do anything else */
+ 
+@@ -9821,10 +9812,7 @@ ath_newstate(struct ieee80211vap *vap, e
+ 				IEEE80211_IS_MODE_DFS_MASTER(vap->iv_opmode)) {
+ 			DPRINTF(sc, ATH_DEBUG_STATE | ATH_DEBUG_DOTH, 
+ 				"VAP -> DFSWAIT_PENDING \n");
+-			/* start calibration timer with a really small value 
+-			 * 1/10 sec */
+-			if (!sc->sc_beacon_cal)
+-				mod_timer(&sc->sc_cal_ch, jiffies + (HZ/10));
++			mod_timer(&sc->sc_cal_ch, jiffies + 1);
+ 			/* wake the receiver */
+ 			netif_wake_queue(dev);
+ 			/* don't do the other usual stuff... */
+@@ -9866,12 +9854,6 @@ done:
+ 	/* Invoke the parent method to complete the work. */
+ 	error = avp->av_newstate(vap, nstate, arg);
+ 
+-	/* Finally, start any timers. */
+-	if (nstate == IEEE80211_S_RUN && !sc->sc_beacon_cal) {
+-		/* start periodic recalibration timer */
+-		mod_timer(&sc->sc_cal_ch, jiffies + (ath_calinterval * HZ));
+-	}
+-
+ #ifdef ATH_SUPERG_XR
+ 	if (vap->iv_flags & IEEE80211_F_XR &&
+ 		nstate == IEEE80211_S_RUN)
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -834,7 +834,8 @@ struct ath_softc {
+ 
+ 	struct ieee80211_channel *sc_last_chan;
+ 	int sc_beacon_cal;			/* use beacon timer for calibration */
+-	u_int64_t sc_lastcal;			/* last time the calibration was performed */
++	u_int64_t sc_nextcal;			/* last time the calibration was performed */
++	int sc_cal_interval;			/* current calibration interval */
+ 	struct timer_list sc_cal_ch;		/* calibration timer */
+ 	HAL_NODE_STATS sc_halstats;		/* station-mode rssi stats */
+ 
