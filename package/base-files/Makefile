@@ -61,13 +61,14 @@ define Package/base-files/description
  This package contains a base filesystem and system scripts for OpenWrt.
 endef
 
+
 define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  DEPENDS:=@!NATIVE_TOOLCHAIN
   URL:=http://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
 endef
+
 
 define Package/libgcc
 $(call Package/gcc/Default)
@@ -75,11 +76,53 @@ $(call Package/gcc/Default)
   DEPENDS+=@!(TARGET_avr32||TARGET_coldfire)
 endef
 
+define Package/libgcc/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libgcc
+
+	config LIBGCC_ROOT_DIR
+		string
+		prompt "libgcc shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libgcc
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBGCC_FILE_SPEC
+		string
+		prompt "libgcc shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libgcc
+		default "./lib/libgcc_s.so.*"
+
+	endmenu
+endef
+
+
 define Package/libssp
 $(call Package/gcc/Default)
   DEPENDS+=@SSP_SUPPORT
   TITLE:=GCC support library
 endef
+
+define Package/libssp/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
+
+	config LIBSPP_ROOT_DIR
+		string
+		prompt "libssp shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBSSP_FILE_SPEC
+		string
+		prompt "libssp shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libssp
+		default "./lib/libssp.so.*"
+
+	endmenu
+endef
+
 
 define Package/libstdcpp
 $(call Package/gcc/Default)
@@ -88,18 +131,60 @@ $(call Package/gcc/Default)
   DEPENDS+=@INSTALL_LIBSTDCPP
 endef
 
+define Package/libstdcpp/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_libstdcpp
+
+	config LIBSTDCPP_ROOT_DIR
+		string
+		prompt "libstdcpp shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libstdcpp
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBSTDCPP_FILE_SPEC
+		string
+		prompt "libstdc++ shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libstdcpp
+		default "./lib/libstdc++.so.*"
+
+	endmenu
+endef
+
+
 define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  DEPENDS:=@!NATIVE_TOOLCHAIN
   VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
   URL:=$(LIBC_URL)
 endef
+
 
 define Package/libc
 $(call Package/libc/Default)
   TITLE:=C library
 endef
+
+define Package/libc/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_libc
+
+	config LIBC_ROOT_DIR
+		string
+		prompt "libc shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libc
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBC_FILE_SPEC
+		string
+		prompt "libc shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libc
+		default "./lib/ld{-*.so,-linux*.so.*} ./lib/lib{anl,c,cidn,crypt,dl,m,nsl,nss_dns,nss_files,resolv,util}{-*.so,.so.*}"
+
+	endmenu
+endef
+
 
 define Package/libpthread
 $(call Package/libc/Default)
@@ -107,10 +192,52 @@ $(call Package/libc/Default)
   DEPENDS:= +librt
 endef
 
+define Package/libpthread/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
+
+	config LIBPTHREAD_ROOT_DIR
+		string
+		prompt "libpthread shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBPTHREAD_FILE_SPEC
+		string
+		prompt "libpthread shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_libpthread
+		default "./lib/libpthread{-*.so,.so.*}"
+
+	endmenu
+endef
+
+
 define Package/librt
 $(call Package/libc/Default)
   TITLE:=POSIX.1b RealTime extension library
 endef
+
+define Package/librt/config
+	menu "Configuration"
+	depends EXTERNAL_TOOLCHAIN && PACKAGE_librt
+
+	config LIBRT_ROOT_DIR
+		string
+		prompt "librt shared library base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_librt
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBRT_FILE_SPEC
+		string
+		prompt "librt shared library files (use wildcards)"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_librt
+		default "./lib/librt{-*.so,.so.*}"
+
+	endmenu
+endef
+
 
 define Package/ldd
 $(call Package/libc/Default)
@@ -119,11 +246,52 @@ $(call Package/libc/Default)
   TITLE:=LDD trace utility
 endef
 
+define Package/ldd/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldd
+
+	config LDD_ROOT_DIR
+		string
+		prompt "ldd trace utility base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldd
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LDD_FILE_SPEC
+		string
+		prompt "ldd trace utility file"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldd
+		default "./usr/bin/ldd"
+
+	endmenu
+endef
+
+
 define Package/ldconfig
 $(call Package/libc/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Shared library path configuration
+endef
+
+define Package/ldconfig/config
+	menu "Configuration"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldconfig
+
+	config LDCONFIG_ROOT_DIR
+		string
+		prompt "ldconfig base directory"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldconfig
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LDCONFIG_FILE_SPEC
+		string
+		prompt "ldconfig file"
+		depends EXTERNAL_TOOLCHAIN && PACKAGE_ldconfig
+		default "./sbin/ldconfig"
+
+	endmenu
 endef
 
 
@@ -200,26 +368,28 @@ define Package/base-files/install
 	done
 endef
 
-define Package/libgcc/install
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+
+  define Package/libgcc/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_SUFFIX)/libgcc_s.so.* $(1)/lib/
-endef
+  endef
 
-define Package/libssp/install
+  define Package/libssp/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib$(LIB_SUFFIX)/libssp.so.* $(1)/lib/
-endef
+  endef
 
-define Package/libstdcpp/install
+  define Package/libstdcpp/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(TOOLCHAIN_DIR)/usr/lib$(LIB_SUFFIX)/libstdc++.so.* $(1)/usr/lib/
-endef
+  endef
 
-use_libutil=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),libutil)
-use_libnsl=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),libnsl)
-use_nsswitch=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),libnss_dns libnss_files)
+  use_libutil=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),libutil)
+  use_libnsl=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),libnsl)
+  use_nsswitch=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),libnss_dns libnss_files)
 
-define Package/glibc/install
+  define Package/glibc/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/ld*.so.* $(1)/lib/
 	$(CP) $(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so $(1)/lib/
@@ -227,51 +397,119 @@ define Package/glibc/install
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
 	done
-endef
+  endef
 
-define Package/eglibc/install
-$(call Package/glibc/install,$1)
-endef
+  define Package/eglibc/install
+    $(call Package/glibc/install,$1)
+  endef
 
-define Package/uClibc/install
+  define Package/uClibc/install
 	$(INSTALL_DIR) $(1)/lib
 	for file in ld$(LIB_SUFFIX)-uClibc libc libcrypt libdl libm libnsl libresolv libuClibc libutil; do \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
 		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
 	done
-endef
+  endef
 
-define Package/libc/install
-$(call Package/$(LIBC)/install,$1)
-endef
+  define Package/libc/install
+    $(call Package/$(LIBC)/install,$1)
+  endef
 
-define Package/libc/install_lib
+  define Package/libc/install_lib
 	$(CP) $(filter-out %/libdl_pic.a,$(wildcard $(TOOLCHAIN_DIR)/usr/lib/lib*.a)) $(1)/lib/
 	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/libc_so.a),$(CP) $(TOOLCHAIN_DIR)/usr/lib/libc_so.a $(1)/lib/libc_pic.a)
 	$(CP) $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc.a $(1)/lib/libgcc_s_pic.a
-endef
+  endef
 
-define Package/libpthread/install
+  define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread.so.* $(1)/lib/
 	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so $(1)/lib/
-endef
+  endef
 
-define Package/librt/install
+  define Package/librt/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/librt.so.* $(1)/lib/
 	$(CP) $(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so $(1)/lib/
-endef
+  endef
 
-define Package/ldd/install
+  define Package/ldd/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(CP) $(TOOLCHAIN_DIR)/usr/bin/ldd $(1)/usr/bin/
-endef
+  endef
 
-define Package/ldconfig/install
+  define Package/ldconfig/install
 	$(INSTALL_DIR) $(1)/sbin/
 	$(CP) $(TOOLCHAIN_DIR)/sbin/ldconfig $(1)/sbin/
-endef
+  endef
+
+else
+
+  define Package/libgcc/install
+	for file in $(call qstrip,$(CONFIG_LIBGCC_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBGCC_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libssp/install
+	for file in $(call qstrip,$(CONFIG_LIBSSP_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBSSP_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libstdcpp/install
+	for file in $(call qstrip,$(CONFIG_LIBSTDCPP_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBSTDCPP_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libc/install
+	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBC_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/libpthread/install
+	for file in $(call qstrip,$(CONFIG_LIBPTHREAD_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBPTHREAD_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/librt/install
+	for file in $(call qstrip,$(CONFIG_LIBRT_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBRT_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/ldd/install
+	for file in $(call qstrip,$(CONFIG_LDD_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LDD_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+  define Package/ldconfig/install
+	for file in $(call qstrip,$(CONFIG_LDCONFIG_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LDCONFIG_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done
+  endef
+
+endif
 
 ifneq ($(DUMP),1)
   -include $(PLATFORM_DIR)/base-files.mk

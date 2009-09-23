@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2007 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -138,6 +138,7 @@ config SHADOW_PASSWORDS
 
 choice
 	prompt "Binary stripping method"
+	default USE_STRIP   if EXTERNAL_TOOLCHAIN
 	default USE_STRIP   if USE_GLIBC || USE_EGLIBC
 	default USE_SSTRIP
 	help
@@ -231,7 +232,6 @@ endmenu
 menuconfig DEVEL
 	bool "Advanced configuration options (for developers)"
 	default n
-	select TOOLCHAINOPTS if !NATIVE_TOOLCHAIN
 
 config BROKEN
 	bool

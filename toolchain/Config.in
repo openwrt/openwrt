@@ -1,14 +1,90 @@
 #
-config NATIVE_TOOLCHAIN
+
+menuconfig EXTERNAL_TOOLCHAIN
 	bool
-	prompt "Use host's toolchain" if DEVEL && BROKEN
-	default n
+	prompt "Use external toolchain"  if DEVEL
 	help
-		If enabled, OpenWrt will compile using your existing toolchain instead of compiling one
+	  If enabled, OpenWrt will compile using an existing toolchain instead of compiling one
+
+	config NATIVE_TOOLCHAIN
+		bool
+		prompt "Use host's toolchain"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN
+		select NO_STRIP
+		help
+		  If enabled, OpenWrt will compile using the native toolchain for your host instead of compiling one
+
+	config TARGET_NAME
+		string
+		prompt "Target name"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "arm-unknown-linux-gnu"      if arm
+		default "armeb-unknown-linux-gnu"    if armeb
+		default "i486-unknown-linux-gnu"     if i386
+		default "mips-unknown-linux-gnu"     if mips
+		default "mipsel-unknown-linux-gnu"   if mipsel
+		default "powerpc-unknown-linux-gnu"  if powerpc
+		default "x86_64-unknown-linux-gnu"   if x86_64
+
+	config TOOLCHAIN_PREFIX
+		string
+		prompt "Toolchain prefix"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "arm-unknown-linux-gnu-"      if arm
+		default "armeb-unknown-linux-gnu-"    if armeb
+		default "i486-unknown-linux-gnu-"     if i386
+		default "mips-unknown-linux-gnu-"     if mips
+		default "mipsel-unknown-linux-gnu-"   if mipsel
+		default "powerpc-unknown-linux-gnu-"  if powerpc
+		default "x86_64-unknown-linux-gnu-"   if x86_64
+
+	config TOOLCHAIN_ROOT
+		string
+		prompt "Toolchain root"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "/opt/cross/arm-unknown-linux-gnu"      if arm
+		default "/opt/cross/armeb-unknown-linux-gnu"    if armeb
+		default "/opt/cross/i486-unknown-linux-gnu"     if i386
+		default "/opt/cross/mips-unknown-linux-gnu"     if mips
+		default "/opt/cross/mipsel-unknown-linux-gnu"   if mipsel
+		default "/opt/cross/powerpc-unknown-linux-gnu"  if powerpc
+		default "/opt/cross/x86_64-unknown-linux-gnu"   if x86_64
+
+	config TOOLCHAIN_BIN_PATH
+		string
+		prompt "Toolchain program path"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/bin ./bin"
+		help
+		  Specify additional directories searched for toolchain binaries (override PATH)
+		  Use ./DIR for directories relative to the root above
+
+	config TOOLCHAIN_INC_PATH
+		string
+		prompt "Toolchain include path"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/include ./include"
+		help
+		  Specify additional directories searched for header files (override CPPFLAGS)
+		  Use ./DIR for directories relative to the root above
+
+	config TOOLCHAIN_LIB_PATH
+		string
+		prompt "Toolchain library path"  if DEVEL
+		depends EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/lib ./lib"
+		help
+		  Specify additional directories searched for libraries (override LDFLAGS)
+		  Use ./DIR for directories relative to the root above
+
+config NEED_TOOLCHAIN
+	bool
+	depends DEVEL
+	default y if !EXTERNAL_TOOLCHAIN
 
 menuconfig TOOLCHAINOPTS
-	bool "Toolchain Options" if DEVEL
-	depends !NATIVE_TOOLCHAIN
+	bool "Toolchain Options"  if DEVEL
+	depends NEED_TOOLCHAIN
 
 menuconfig EXTRA_TARGET_ARCH
 	bool
