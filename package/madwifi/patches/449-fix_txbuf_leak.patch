@@ -1,0 +1,10 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -3725,6 +3725,7 @@ ff_bypass:
+ 	 */
+ 	skb = ieee80211_encap(ni, skb, &framecnt);
+ 	if (skb == NULL) {
++		STAILQ_INSERT_TAIL(&bf_head, bf, bf_list);
+ 		DPRINTF(sc, ATH_DEBUG_XMIT,
+ 			"Dropping; encapsulation failure\n");
+ 		sc->sc_stats.ast_tx_encap++;
