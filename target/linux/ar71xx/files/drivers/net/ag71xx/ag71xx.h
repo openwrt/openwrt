@@ -136,13 +136,13 @@ struct ag71xx {
 extern struct ethtool_ops ag71xx_ethtool_ops;
 
 extern struct ag71xx_mdio *ag71xx_mdio_bus;
-extern int ag71xx_mdio_driver_init(void) __init;
-extern void ag71xx_mdio_driver_exit(void);
+int ag71xx_mdio_driver_init(void) __init;
+void ag71xx_mdio_driver_exit(void);
 
-extern int ag71xx_phy_connect(struct ag71xx *ag);
-extern void ag71xx_phy_disconnect(struct ag71xx *ag);
-extern void ag71xx_phy_start(struct ag71xx *ag);
-extern void ag71xx_phy_stop(struct ag71xx *ag);
+int ag71xx_phy_connect(struct ag71xx *ag);
+void ag71xx_phy_disconnect(struct ag71xx *ag);
+void ag71xx_phy_start(struct ag71xx *ag);
+void ag71xx_phy_stop(struct ag71xx *ag);
 
 static inline struct ag71xx_platform_data *ag71xx_get_pdata(struct ag71xx *ag)
 {
