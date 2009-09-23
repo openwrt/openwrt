@@ -11,11 +11,9 @@ Date:   Sun Sep 6 14:36:01 2009 +0200
     
     Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
 
-diff --git a/arch/um/Makefile b/arch/um/Makefile
-index 0728def..dc1ea7d 100644
 --- a/arch/um/Makefile
 +++ b/arch/um/Makefile
-@@ -99,9 +99,6 @@ CFLAGS_NO_HARDENING := $(call cc-option, -fno-PIC,) $(call cc-option, -fno-pic,)
+@@ -99,9 +99,6 @@ CFLAGS_NO_HARDENING := $(call cc-option,
  CONFIG_KERNEL_STACK_ORDER ?= 2
  STACK_SIZE := $(shell echo $$[ 4096 * (1 << $(CONFIG_KERNEL_STACK_ORDER)) ] )
  
@@ -32,8 +30,6 @@ index 0728def..dc1ea7d 100644
 -export SUBARCH USER_CFLAGS CFLAGS_NO_HARDENING OS HEADER_ARCH DEV_NULL_PATH
 +export SUBARCH USER_CFLAGS CFLAGS_NO_HARDENING OS HEADER_ARCH DEV_NULL_PATH \
 +       ELF_ARCH ELF_FORMAT STACK_SIZE START
-diff --git a/arch/um/kernel/Makefile b/arch/um/kernel/Makefile
-index 388ec0a..2907436 100644
 --- a/arch/um/kernel/Makefile
 +++ b/arch/um/kernel/Makefile
 @@ -3,6 +3,10 @@

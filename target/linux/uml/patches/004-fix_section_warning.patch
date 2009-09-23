@@ -14,8 +14,6 @@ Cc: Jeff Dike <jdike@addtoit.com>
 Cc: Sam Ravnborg <sam@ravnborg.org>
 
 ---
-diff --git a/arch/um/sys-x86_64/stub.S b/arch/um/sys-x86_64/stub.S
-index 6d9edf9..20e4a96 100644
 --- a/arch/um/sys-x86_64/stub.S
 +++ b/arch/um/sys-x86_64/stub.S
 @@ -1,7 +1,7 @@
@@ -27,8 +25,6 @@ index 6d9edf9..20e4a96 100644
  syscall_stub:
  	syscall
  	/* We don't have 64-bit constants, so this constructs the address
-diff --git a/arch/um/sys-i386/stub.S b/arch/um/sys-i386/stub.S
-index c41b04b..54a36ec 100644
 --- a/arch/um/sys-i386/stub.S
 +++ b/arch/um/sys-i386/stub.S
 @@ -1,7 +1,7 @@
@@ -40,8 +36,3 @@ index c41b04b..54a36ec 100644
  
  	.globl batch_syscall_stub
  batch_syscall_stub:
---
-To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
-Please read the FAQ at  http://www.tux.org/lkml/
