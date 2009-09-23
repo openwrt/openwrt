@@ -1,0 +1,151 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -512,7 +512,7 @@ MODULE_PARM_DESC(ieee80211_debug, "Load-
+  * and use the higher bits as the index of the VAP.
+  */
+ #define ATH_SET_VAP_BSSID_MASK(bssid_mask)				\
+-	((bssid_mask)[0] &= ~(((ath_maxvaps-1) << 2) | 0x02))
++	((bssid_mask)[0] &= ~(((ATH_MAXVAPS_MAX-1) << 2) | 0x02))
+ #define ATH_GET_VAP_ID(bssid)                   ((bssid)[0] >> 2)
+ #define ATH_SET_VAP_BSSID(bssid, id)					\
+ 		do {							\
+@@ -604,8 +604,8 @@ ath_attach(u_int16_t devid, struct net_d
+ 
+ 	/* Allocate space for dynamically determined maximum VAP count */
+ 	sc->sc_bslot = 
+-		kmalloc(ath_maxvaps * sizeof(struct ieee80211vap*), GFP_KERNEL);
+-	memset(sc->sc_bslot, 0, ath_maxvaps * sizeof(struct ieee80211vap*));
++		kmalloc(ATH_MAXVAPS_MAX * sizeof(struct ieee80211vap*), GFP_KERNEL);
++	memset(sc->sc_bslot, 0, ATH_MAXVAPS_MAX * sizeof(struct ieee80211vap*));
+ 
+ 	/*
+ 	 * Cache line size is used to size and align various
+@@ -1349,11 +1349,8 @@ ath_vap_create(struct ieee80211com *ic, 
+ 		return NULL;
+ 	}
+ 
+-	if (sc->sc_nvaps >= ath_maxvaps) {
+-		EPRINTF(sc, "Too many virtual APs (%d already exist).\n", 
+-				sc->sc_nvaps);
+-		return NULL;
+-	}
++	if ((sc->sc_nvaps >= ath_maxvaps) && (ath_maxvaps < ATH_MAXVAPS_MAX))
++		ath_maxvaps++;
+ 
+ 	dev = alloc_etherdev(sizeof(struct ath_vap) + sc->sc_rc->arc_vap_space);
+ 	if (dev == NULL) {
+@@ -1451,11 +1448,11 @@ ath_vap_create(struct ieee80211com *ic, 
+ 		/* Assign the VAP to a beacon xmit slot.  As
+ 		 * above, this cannot fail to find one. */
+ 		avp->av_bslot = 0;
+-		for (slot = 0; slot < ath_maxvaps; slot++)
++		for (slot = 0; slot < ATH_MAXVAPS_MAX; slot++)
+ 			if (sc->sc_bslot[slot] == NULL) {
+ 				/* XXX: Hack, space out slots to better
+ 				 * deal with misses. */
+-				if (slot + 1 < ath_maxvaps &&
++				if (slot + 1 < ATH_MAXVAPS_DEFAULT &&
+ 				    sc->sc_bslot[slot+1] == NULL) {
+ 					avp->av_bslot = slot + 1;
+ 					break;
+@@ -1463,11 +1460,16 @@ ath_vap_create(struct ieee80211com *ic, 
+ 				avp->av_bslot = slot;
+ 				/* NB: keep looking for a double slot */
+ 			}
+-		KASSERT(sc->sc_bslot[avp->av_bslot] == NULL,
+-			("beacon slot %u not empty?", avp->av_bslot));
++
++		/* No beacon slot found? */
++		if (sc->sc_bslot[avp->av_bslot]) {
++			free_netdev(dev);
++			return NULL;
++		}
+ 		sc->sc_bslot[avp->av_bslot] = vap;
+ 		sc->sc_nbcnvaps++;
+ 
++#if 0
+ 		if ((opmode == IEEE80211_M_HOSTAP) && (sc->sc_hastsfadd)) {
+ 			/*
+ 			 * Multiple VAPs are to transmit beacons and we
+@@ -1485,6 +1487,9 @@ ath_vap_create(struct ieee80211com *ic, 
+ 				sc->sc_stagbeacons = 1;
+ 			}
+ 		}
++#else
++		sc->sc_stagbeacons = sc->sc_hastsfadd;
++#endif
+ 		DPRINTF(sc, ATH_DEBUG_BEACON, "sc->sc_stagbeacons %sabled\n", 
+ 				(sc->sc_stagbeacons ? "en" : "dis"));
+ 	}
+@@ -4968,7 +4973,7 @@ ath_beacon_alloc_internal(struct ath_sof
+ 		 * has a timestamp in one beacon interval while the
+ 		 * others get a timestamp aligned to the next interval.
+ 		 */
+-		tuadjust = (ni->ni_intval * (ath_maxvaps - avp->av_bslot)) / ath_maxvaps;
++		tuadjust = (ni->ni_intval * (ATH_MAXVAPS_DEFAULT - avp->av_bslot)) / ATH_MAXVAPS_DEFAULT;
+ 		tsfadjust = cpu_to_le64(tuadjust << 10);	/* TU->TSF */
+ 
+ 		DPRINTF(sc, ATH_DEBUG_BEACON,
+@@ -5358,21 +5363,40 @@ ath_beacon_send(struct ath_softc *sc, in
+ 	 */
+ 	if (sc->sc_stagbeacons) {		/* staggered beacons */
+ 		struct ieee80211com *ic = &sc->sc_ic;
++		u_int32_t *bflink = NULL;
+ 		u_int32_t tsftu;
+ 
+ 		tsftu = hw_tsf >> 10; /* NB: 64 -> 32: See note far above. */
+-		slot = ((tsftu % ic->ic_lintval) * ath_maxvaps) / ic->ic_lintval;
+-		vap = sc->sc_bslot[(slot + 1) % ath_maxvaps];
++		slot = ((tsftu % ic->ic_lintval) * ATH_MAXVAPS_DEFAULT) / ic->ic_lintval;
+ 		DPRINTF(sc, ATH_DEBUG_BEACON_PROC,
+ 			"Slot %d [tsf %llu tsftu %llu intval %u] vap %p\n",
+ 			slot, (unsigned long long)hw_tsf, 
+ 			(unsigned long long)tsftu, ic->ic_lintval, vap);
+ 		bfaddr = 0;
+-		if (vap != NULL) {
++		while (slot < ATH_MAXVAPS_MAX) {
++			vap = sc->sc_bslot[slot];
++			if (vap == NULL)
++				goto next;
++
+ 			bf = ath_beacon_generate(sc, vap, needmark);
+-			if (bf != NULL)
++			if (bf == NULL)
++				break;
++
++			if (bflink != NULL)
++#ifdef AH_NEED_DESC_SWAP
++				*bflink = cpu_to_le32(bf->bf_daddr);
++#else
++				*bflink = bf->bf_daddr;
++#endif
++			else
+ 				bfaddr = bf->bf_daddr;
++
++			bflink = &bf->bf_desc->ds_link;
++next:
++			slot += ATH_MAXVAPS_DEFAULT;
+ 		}
++		if (bflink != NULL)
++			*bflink = 0;		/* link of last frame */
+ 	} else {				/* burst'd beacons */
+ 		u_int32_t *bflink = NULL;
+ 
+@@ -5567,7 +5591,7 @@ ath_beacon_config(struct ath_softc *sc, 
+ 		/* NB: the beacon interval is kept internally in TUs */
+ 		intval = ic->ic_lintval & HAL_BEACON_PERIOD;
+ 		if (sc->sc_stagbeacons)
+-			intval /= ath_maxvaps;	/* for staggered beacons */
++			intval /= ATH_MAXVAPS_DEFAULT;	/* for staggered beacons */
+ 		if ((sc->sc_nostabeacons) &&
+ 		    (vap->iv_opmode == IEEE80211_M_HOSTAP))
+ 			reset_tsf = 1;
+@@ -5889,7 +5913,7 @@ ath_desc_alloc(struct ath_softc *sc)
+ 
+ 	/* XXX allocate beacon state together with VAP */
+ 	error = ath_descdma_setup(sc, &sc->sc_bdma, &sc->sc_bbuf,
+-			"beacon", ath_maxvaps, 1);
++			"beacon", ATH_MAXVAPS_MAX, 1);
+ 	if (error != 0) {
+ 		ath_descdma_cleanup(sc, &sc->sc_txdma, &sc->sc_txbuf,
+ 			BUS_DMA_TODEVICE);
