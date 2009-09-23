@@ -1,0 +1,33 @@
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
+@@ -647,8 +647,11 @@ ieee80211_sta_join1(struct ieee80211_nod
+ 		(vap->iv_state == IEEE80211_S_RUN) && bssid_equal(obss, selbs)); */
+ 	vap->iv_bss = selbs;
+ 	IEEE80211_ADDR_COPY(vap->iv_bssid, selbs->ni_bssid);
+-	if (obss != NULL)
++	if (obss != NULL) {
++		if (obss->ni_table)
++			ieee80211_node_leave(obss);
+ 		ieee80211_unref_node(&obss);
++	}
+ 	ic->ic_bsschan = selbs->ni_chan;
+ 	ic->ic_curchan = ic->ic_bsschan;
+ 	ic->ic_curmode = ieee80211_chan2mode(ic->ic_curchan);
+--- a/net80211/ieee80211_proto.c
++++ b/net80211/ieee80211_proto.c
+@@ -1512,14 +1512,13 @@ __ieee80211_newstate(struct ieee80211vap
+ 			if (arg != 0)
+ 				ieee80211_scan_assoc_fail(ic,
+ 					vap->iv_bss->ni_macaddr, arg);
++			ieee80211_node_leave(vap->iv_bss);
+ 			if (ic->ic_roaming == IEEE80211_ROAMING_AUTO)
+ 				ieee80211_check_scan(vap,
+ 					IEEE80211_SCAN_ACTIVE,
+ 					IEEE80211_SCAN_FOREVER,
+ 					vap->iv_des_nssid, vap->iv_des_ssid,
+ 					NULL);
+-			else
+-				ieee80211_node_leave(vap->iv_bss);
+ 			break;
+ 		case IEEE80211_S_RUN:		/* beacon miss */
+ 			if (vap->iv_opmode == IEEE80211_M_STA) {
