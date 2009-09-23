@@ -837,32 +837,18 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 		goto err_free_dev;
 	}
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac_base2");
-	if (!res) {
-		dev_err(&pdev->dev, "no mac_base2 resource found\n");
-		err = -ENXIO;
-		goto err_unmap_base1;
-	}
-
-	ag->mac_base2 = ioremap_nocache(res->start, res->end - res->start + 1);
-	if (!ag->mac_base) {
-		dev_err(&pdev->dev, "unable to ioremap mac_base2\n");
-		err = -ENOMEM;
-		goto err_unmap_base1;
-	}
-
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mii_ctrl");
 	if (!res) {
 		dev_err(&pdev->dev, "no mii_ctrl resource found\n");
 		err = -ENXIO;
-		goto err_unmap_base2;
+		goto err_unmap_base;
 	}
 
 	ag->mii_ctrl = ioremap_nocache(res->start, res->end - res->start + 1);
 	if (!ag->mii_ctrl) {
 		dev_err(&pdev->dev, "unable to ioremap mii_ctrl\n");
 		err = -ENOMEM;
-		goto err_unmap_base2;
+		goto err_unmap_base;
 	}
 
 	dev->irq = platform_get_irq(pdev, 0);
@@ -929,9 +915,7 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	free_irq(dev->irq, dev);
  err_unmap_mii_ctrl:
 	iounmap(ag->mii_ctrl);
- err_unmap_base2:
-	iounmap(ag->mac_base2);
- err_unmap_base1:
+ err_unmap_base:
 	iounmap(ag->mac_base);
  err_free_dev:
 	kfree(dev);
@@ -951,7 +935,6 @@ static int __exit ag71xx_remove(struct platform_device *pdev)
 		unregister_netdev(dev);
 		free_irq(dev->irq, dev);
 		iounmap(ag->mii_ctrl);
-		iounmap(ag->mac_base2);
 		iounmap(ag->mac_base);
 		kfree(dev);
 		platform_set_drvdata(pdev, NULL);

@@ -181,8 +181,8 @@ static struct resource ar71xx_mdio_resources[] = {
 	{
 		.name	= "mdio_base",
 		.flags	= IORESOURCE_MEM,
-		.start	= AR71XX_GE0_BASE + 0x20,
-		.end	= AR71XX_GE0_BASE + 0x38 - 1,
+		.start	= AR71XX_GE0_BASE,
+		.end	= AR71XX_GE0_BASE + 0x200 - 1,
 	}
 };
 
@@ -348,11 +348,6 @@ static struct resource ar71xx_eth0_resources[] = {
 		.name	= "mac_base",
 		.flags	= IORESOURCE_MEM,
 		.start	= AR71XX_GE0_BASE,
-		.end	= AR71XX_GE0_BASE + 0x20 - 1,
-	}, {
-		.name	= "mac_base2",
-		.flags	= IORESOURCE_MEM,
-		.start	= AR71XX_GE0_BASE + 0x38,
 		.end	= AR71XX_GE0_BASE + 0x200 - 1,
 	}, {
 		.name	= "mii_ctrl",
@@ -386,11 +381,6 @@ static struct resource ar71xx_eth1_resources[] = {
 		.name	= "mac_base",
 		.flags	= IORESOURCE_MEM,
 		.start	= AR71XX_GE1_BASE,
-		.end	= AR71XX_GE1_BASE + 0x20 - 1,
-	}, {
-		.name	= "mac_base2",
-		.flags	= IORESOURCE_MEM,
-		.start	= AR71XX_GE1_BASE + 0x38,
 		.end	= AR71XX_GE1_BASE + 0x200 - 1,
 	}, {
 		.name	= "mii_ctrl",
