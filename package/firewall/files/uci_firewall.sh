@@ -56,9 +56,9 @@ create_zone() {
 	$IPTABLES -N zone_$1_DROP
 	$IPTABLES -N zone_$1_REJECT
 	$IPTABLES -N zone_$1_forward
-	$IPTABLES -A zone_$1_forward -j zone_$1_$5
-	$IPTABLES -A zone_$1 -j zone_$1_$3
-	$IPTABLES -A output -j zone_$1_$4
+	[ "$5" ] && $IPTABLES -A zone_$1_forward -j zone_$1_$5
+	[ "$3" ] && $IPTABLES -A zone_$1 -j zone_$1_$3
+	[ "$4" ] && $IPTABLES -A output -j zone_$1_$4
 	$IPTABLES -N zone_$1_nat -t nat
 	$IPTABLES -N zone_$1_prerouting -t nat
 	$IPTABLES -t raw -N zone_$1_notrack
