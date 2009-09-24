@@ -156,6 +156,7 @@ define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
   VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
+  DEPENDS:=+libgcc
   URL:=$(LIBC_URL)
 endef
 
