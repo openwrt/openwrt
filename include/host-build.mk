@@ -54,7 +54,7 @@ HOST_CONFIGURE_ARGS = \
 HOST_CONFIGURE_CMD = ./configure
 
 define Host/Configure/Default
-	@(cd $(HOST_BUILD_DIR)/$(3); \
+	(cd $(HOST_BUILD_DIR)/$(3); \
 		if [ -x configure ]; then \
 			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
 			$(2) \
