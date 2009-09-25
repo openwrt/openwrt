@@ -4,7 +4,6 @@
 
 SUBTARGET:=rt305x
 BOARDNAME:=RT305x based boards
-FEATURES:=squashfs broken
 
 define Target/Description
 	Build firmware images for Ralink RT305x based boards.
