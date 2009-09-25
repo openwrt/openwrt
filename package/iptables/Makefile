@@ -247,7 +247,11 @@ define Package/libxtables
 endef
 
 
-TARGET_CPPFLAGS := -I$(PKG_BUILD_DIR)/include $(TARGET_CPPFLAGS)
+TARGET_CPPFLAGS := \
+	-I$(PKG_BUILD_DIR)/include \
+	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include \
+	$(TARGET_CPPFLAGS)
+
 TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
 	--enable-shared \
