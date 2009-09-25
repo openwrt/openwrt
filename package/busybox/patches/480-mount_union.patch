@@ -1,0 +1,29 @@
+--- a/util-linux/mount.c
++++ b/util-linux/mount.c
+@@ -42,6 +42,10 @@
+ #define MS_DIRSYNC      128     /* Directory modifications are synchronous */
+ #endif
+ 
++#ifndef MS_UNION
++#define MS_UNION	0x100   /* 256: Mount on top of a union */
++#endif
++
+ 
+ #if defined(__dietlibc__)
+ /* 16.12.2006, Sampo Kellomaki (sampo@iki.fi)
+@@ -152,6 +156,7 @@
+ 		/* "rslave"      */ MS_SLAVE|MS_RECURSIVE,
+ 		/* "rprivate"    */ MS_SLAVE|MS_RECURSIVE,
+ 		/* "runbindable" */ MS_UNBINDABLE|MS_RECURSIVE,
++		/* "union"       */ MS_UNION,
+ 	)
+ 
+ 	// Always understood.
+@@ -206,6 +211,7 @@
+ 		"rslave" "\0"
+ 		"rprivate" "\0"
+ 		"runbindable" "\0"
++		"union" "\0"
+ 	)
+ 
+ 	// Always understood.
