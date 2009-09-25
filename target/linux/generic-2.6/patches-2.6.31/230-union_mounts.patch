@@ -1,0 +1,5203 @@
+--- /dev/null
++++ b/Documentation/filesystems/union-mounts.txt
+@@ -0,0 +1,187 @@
++VFS based Union Mounts
++----------------------
++
++ 1. What are "Union Mounts"
++ 2. The Union Stack
++ 3. Whiteouts, Opaque Directories, and Fallthrus
++ 4. Copy-up
++ 5. Directory Reading
++ 6. Known Problems
++ 7. References
++
++-------------------------------------------------------------------------------
++
++1. What are "Union Mounts"
++==========================
++
++Please note: this is NOT about UnionFS and it is NOT derived work!
++
++Traditionally the mount operation is opaque, which means that the content of
++the mount point, the directory where the file system is mounted on, is hidden
++by the content of the mounted file system's root directory until the file
++system is unmounted again. Unlike the traditional UNIX mount mechanism, that
++hides the contents of the mount point, a union mount presents a view as if
++both filesystems are merged together. Although only the topmost layer of the
++mount stack can be altered, it appears as if transparent file system mounts
++allow any file to be created, modified or deleted.
++
++Most people know the concepts and features of union mounts from other
++operating systems like Sun's Translucent Filesystem, Plan9 or BSD. For an
++in-depth review of union mounts and other unioning file systems, see:
++
++http://lwn.net/Articles/324291/
++http://lwn.net/Articles/325369/
++http://lwn.net/Articles/327738/
++
++Here are the key features of this implementation:
++- completely VFS based
++- does not change the namespace stacking
++- directory listings have duplicate entries removed in the kernel
++- writable unions: only the topmost file system layer may be writable
++- writable unions: new whiteout filetype handled inside the kernel
++
++-------------------------------------------------------------------------------
++
++2. The Union Stack
++==================
++
++The mounted file systems are organized in the "file system hierarchy" (tree of
++vfsmount structures), which keeps track about the stacking of file systems
++upon each other. The per-directory view on the file system hierarchy is called
++"mount stack" and reflects the order of file systems, which are mounted on a
++specific directory.
++
++Union mounts present a single unified view of the contents of two or more file
++systems as if they are merged together. Since the information which file
++system objects are part of a unified view is not directly available from the
++file system hierarchy there is a need for a new structure. The file system
++objects, which are part of a unified view are ordered in a so-called "union
++stack". Only directories can be part of a unified view.
++
++The link between two layers of the union stack is maintained using the
++union_mount structure (#include <linux/union.h>):
++
++struct union_mount {
++       atomic_t u_count;               /* reference count */
++       struct mutex u_mutex;
++       struct list_head u_unions;      /* list head for d_unions */
++       struct hlist_node u_hash;       /* list head for searching */
++       struct hlist_node u_rhash;      /* list head for reverse searching */
++
++       struct path u_this;             /* this is me */
++       struct path u_next;             /* this is what I overlay */
++};
++
++The union_mount structure holds a reference (dget,mntget) to the next lower
++layer of the union stack. Since a dentry can be part of multiple unions
++(e.g. with bind mounts) they are tied together via the d_unions field of the
++dentry structure.
++
++All union_mount structures are cached in two hash tables, one for lookups of
++the next lower layer of the union stack and one for reverse lookups of the
++next upper layer of the union stack. The reverse lookup is necessary to
++resolve CWD relative path lookups. For calculation of the hash value, the
++(dentry,vfsmount) pair is used. The u_this field is used for the hash table
++which is used in forward lookups and the u_next field for the reverse lookups.
++
++During every new mount (or mount propagation), a new union_mount structure is
++allocated. A reference to the mountpoint's vfsmount and dentry is taken and
++stored in the u_next field.  In almost the same manner an union_mount
++structure is created during the first time lookup of a directory within a
++union mount point. In this case the lookup proceeds to all lower layers of the
++union. Therefore the complete union stack is constructed during lookups.
++
++The union_mount structures of a dentry are destroyed when the dentry itself is
++destroyed. Therefore the dentry cache is indirectly driving the union_mount
++cache like this is done for inodes too. Please note that lower layer
++union_mount structures are kept in memory until the topmost dentry is
++destroyed.
++
++-------------------------------------------------------------------------------
++
++3. Whiteouts, Opaque Directories, and Fallthrus
++===========================================================
++
++The whiteout filetype isn't new. It has been there for quite some time now
++but Linux's VFS hasn't used it yet. With the availability of union mount code
++inside the VFS the whiteout filetype is getting important to support writable
++union mounts. For read-only union mounts, support for whiteouts or
++copy-on-open is not necessary.
++
++The whiteout filetype has the same function as negative dentries: they
++describe a filename which isn't there. The creation of whiteouts needs
++lowlevel filesystem support. At the time of writing this, there is whiteout
++support for tmpfs, ext2 and ext3 available. The VFS is extended to make the
++whiteout handling transparent to all its users. The whiteouts are not
++visible to user-space.
++
++What happens when we create a directory that was previously whited-out? We
++don't want the directory entries from underlying filesystems to suddenly appear
++in the newly created directory.  So we mark the directory opaque (the file
++system must support storage of the opaque flag).
++
++Fallthrus are directory entries that override the opaque flag on a directory
++for that specific directory entry name (the lookup "falls through" to the next
++layer of the union mount).  Fallthrus are mainly useful for implementing
++readdir().
++
++-------------------------------------------------------------------------------
++
++4. Copy-up
++===========
++
++Any write to an object on any layer other than the topmost triggers a copy-up
++of the object to the topmost file system. For regular files, the copy-up
++happens when it is opened in writable mode.
++
++Directories are copied up on open, regardless of intent to write, to simplify
++copy-up of any object located below it in the namespace. Otherwise we have to
++walk the entire pathname to create intermediate directories whenever we do a
++copy-up. This is the same approach as BSD union mounts and uses a negigible
++amount of disk space.  Note that the actual directory entries themselves are
++not copied-up from the lower levels until (a) the directory is written to, or
++(b) the first readdir() of the directory (more on that later).
++
++Rename across different levels of the union is implemented as a copy-up
++operation for regular files. Rename of directories simply returns EXDEV, the
++same as if we tried to rename across different mounts. Most applications have
++to handle this case anyway. Some applications do not expect EXDEV on
++rename operations within the same directory, but these applications will also
++be broken with bind mounts.
++
++-------------------------------------------------------------------------------
++
++5. Directory Reading
++====================
++
++readdir() is somewhat difficult to implement in a unioning file system. We must
++eliminate duplicates, apply whiteouts, and start up readdir() where we left
++off, given a single f_pos value. Our solution is to copy up all the directory
++entries to the topmost directory the first time readdir() is called on a
++directory. During this copy-up, we skip duplicates and entries covered by
++whiteouts, and then create fallthru entries for each remaining visible dentry.
++Then we mark the whole directory opaque. From then on, we just use the topmost
++file system's normal readdir() operation.
++
++-------------------------------------------------------------------------------
++
++6. Known Problems
++=================
++
++- copyup() for other filetypes that reg and dir (e.g. for chown() on devices)
++- symlinks are untested
++
++-------------------------------------------------------------------------------
++
++7. References
++=============
++
++[1] http://marc.info/?l=linux-fsdevel&m=96035682927821&w=2
++[2] http://marc.info/?l=linux-fsdevel&m=117681527820133&w=2
++[3] http://marc.info/?l=linux-fsdevel&m=117913503200362&w=2
++[4] http://marc.info/?l=linux-fsdevel&m=118231827024394&w=2
++
++Authors:
++Jan Blunck <jblunck@suse.de>
++Bharata B Rao <bharata@linux.vnet.ibm.com>
++Valerie Aurora <vaurora@redhat.com>
+--- a/fs/autofs4/autofs_i.h
++++ b/fs/autofs4/autofs_i.h
+@@ -130,6 +130,7 @@
+ 	int reghost_enabled;
+ 	int needs_reghost;
+ 	struct super_block *sb;
++	struct vfsmount *mnt;
+ 	struct mutex wq_mutex;
+ 	spinlock_t fs_lock;
+ 	struct autofs_wait_queue *queues; /* Wait queue pointer */
+--- a/fs/autofs4/init.c
++++ b/fs/autofs4/init.c
+@@ -17,7 +17,16 @@
+ static int autofs_get_sb(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+ {
+-	return get_sb_nodev(fs_type, flags, data, autofs4_fill_super, mnt);
++	struct autofs_sb_info *sbi;
++	int ret;
++
++	ret = get_sb_nodev(fs_type, flags, data, autofs4_fill_super, mnt);
++	if (ret)
++		return ret;
++
++	sbi = autofs4_sbi(mnt->mnt_sb);
++	sbi->mnt = mnt;
++	return 0;
+ }
+ 
+ static struct file_system_type autofs_fs_type = {
+--- a/fs/autofs4/root.c
++++ b/fs/autofs4/root.c
+@@ -179,6 +179,12 @@
+ 	DPRINTK("dentry=%p %.*s oz_mode=%d nd->flags=%d",
+ 		dentry, dentry->d_name.len, dentry->d_name.name, oz_mode,
+ 		nd->flags);
++
++	dput(nd->path.dentry);
++	mntput(nd->path.mnt);
++	nd->path.mnt = mntget(sbi->mnt);
++	nd->path.dentry = dget(dentry);
++
+ 	/*
+ 	 * For an expire of a covered direct or offset mount we need
+ 	 * to break out of follow_down() at the autofs mount trigger
+--- a/fs/compat.c
++++ b/fs/compat.c
+@@ -847,6 +847,9 @@
+ 	struct compat_old_linux_dirent __user *dirent;
+ 	compat_ulong_t d_ino;
+ 
++	if (d_type == DT_WHT)
++		return 0;
++
+ 	if (buf->result)
+ 		return -EINVAL;
+ 	d_ino = ino;
+@@ -918,6 +921,9 @@
+ 	compat_ulong_t d_ino;
+ 	int reclen = ALIGN(NAME_OFFSET(dirent) + namlen + 2, sizeof(compat_long_t));
+ 
++	if (d_type == DT_WHT)
++		return 0;
++
+ 	buf->error = -EINVAL;	/* only used if we fail.. */
+ 	if (reclen > buf->count)
+ 		return -EINVAL;
+@@ -1007,6 +1013,9 @@
+ 	int reclen = ALIGN(jj + namlen + 1, sizeof(u64));
+ 	u64 off;
+ 
++	if (d_type == DT_WHT)
++		return 0;
++
+ 	buf->error = -EINVAL;	/* only used if we fail.. */
+ 	if (reclen > buf->count)
+ 		return -EINVAL;
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -18,6 +18,7 @@
+ #include <linux/string.h>
+ #include <linux/mm.h>
+ #include <linux/fs.h>
++#include <linux/union.h>
+ #include <linux/fsnotify.h>
+ #include <linux/slab.h>
+ #include <linux/init.h>
+@@ -157,14 +158,19 @@
+ }
+ 
+ /**
+- * d_kill - kill dentry and return parent
++ * __d_kill - kill dentry and return parent
+  * @dentry: dentry to kill
++ * @list: kill list
++ * @greedy: return parent instead of putting it on the kill list
+  *
+  * The dentry must already be unhashed and removed from the LRU.
+  *
+- * If this is the root of the dentry tree, return NULL.
++ * If this is the root of the dentry tree, return NULL. If greedy is zero, we
++ * put the parent of this dentry on the kill list instead. The callers must
++ * make sure that __d_kill_final() is called on all dentries on the kill list.
+  */
+-static struct dentry *d_kill(struct dentry *dentry)
++static struct dentry *__d_kill(struct dentry *dentry, struct list_head *list,
++			       int greedy)
+ 	__releases(dentry->d_lock)
+ 	__releases(dcache_lock)
+ {
+@@ -172,13 +178,78 @@
+ 
+ 	list_del(&dentry->d_u.d_child);
+ 	dentry_stat.nr_dentry--;	/* For d_free, below */
+-	/*drops the locks, at that point nobody can reach this dentry */
++
++	/*
++	 * If we are not greedy we just put this on a list for later processing
++	 * (follow up to parent, releasing of inode and freeing dentry memory).
++	 */
++	if (!greedy) {
++		list_del_init(&dentry->d_alias);
++		/* at this point nobody can reach this dentry */
++		list_add(&dentry->d_lru, list);
++		spin_unlock(&dentry->d_lock);
++		spin_unlock(&dcache_lock);
++		__shrink_d_unions(dentry, list);
++		return NULL;
++	}
++
++	/* drops the locks, at that point nobody can reach this dentry */
+ 	dentry_iput(dentry);
++	/* If the dentry was in an union delete them */
++	__shrink_d_unions(dentry, list);
++	if (IS_ROOT(dentry))
++		parent = NULL;
++	else
++		parent = dentry->d_parent;
++	d_free(dentry);
++	return parent;
++}
++
++void __dput(struct dentry *, struct list_head *, int);
++
++static void __d_kill_final(struct dentry *dentry, struct list_head *list)
++{
++	struct dentry *parent;
++	struct inode *inode = dentry->d_inode;
++
++	if (inode) {
++		dentry->d_inode = NULL;
++		if (!inode->i_nlink)
++			fsnotify_inoderemove(inode);
++		if (dentry->d_op && dentry->d_op->d_iput)
++			dentry->d_op->d_iput(dentry, inode);
++		else
++			iput(inode);
++	}
++
+ 	if (IS_ROOT(dentry))
+ 		parent = NULL;
+ 	else
+ 		parent = dentry->d_parent;
+ 	d_free(dentry);
++	__dput(parent, list, 1);
++}
++
++/**
++ * d_kill - kill dentry and return parent
++ * @dentry: dentry to kill
++ *
++ * The dentry must already be unhashed and removed from the LRU.
++ *
++ * If this is the root of the dentry tree, return NULL.
++ */
++static struct dentry *d_kill(struct dentry *dentry)
++{
++	LIST_HEAD(mortuary);
++	struct dentry *parent;
++
++	parent = __d_kill(dentry, &mortuary, 1);
++	while (!list_empty(&mortuary)) {
++		dentry = list_entry(mortuary.next, struct dentry, d_lru);
++		list_del(&dentry->d_lru);
++		__d_kill_final(dentry, &mortuary);
++	}
++
+ 	return parent;
+ }
+ 
+@@ -199,19 +270,24 @@
+  * Real recursion would eat up our stack space.
+  */
+ 
+-/*
+- * dput - release a dentry
+- * @dentry: dentry to release 
++/**
++ * __dput - release a dentry
++ * @dentry: dentry to release
++ * @list: kill list argument for __d_kill()
++ * @greedy: greedy argument for __d_kill()
+  *
+  * Release a dentry. This will drop the usage count and if appropriate
+  * call the dentry unlink method as well as removing it from the queues and
+  * releasing its resources. If the parent dentries were scheduled for release
+- * they too may now get deleted.
++ * they too may now get deleted if @greedy is not zero. Otherwise parent is
++ * added to the kill list. The callers must make sure that __d_kill_final() is
++ * called on all dentries on the kill list.
++ *
++ * You probably want to use dput() instead.
+  *
+  * no dcache lock, please.
+  */
+-
+-void dput(struct dentry *dentry)
++void __dput(struct dentry *dentry, struct list_head *list, int greedy)
+ {
+ 	if (!dentry)
+ 		return;
+@@ -252,12 +328,35 @@
+ kill_it:
+ 	/* if dentry was on the d_lru list delete it from there */
+ 	dentry_lru_del(dentry);
+-	dentry = d_kill(dentry);
++	dentry = __d_kill(dentry, list, greedy);
+ 	if (dentry)
+ 		goto repeat;
+ }
+ 
+ /**
++ * dput - release a dentry
++ * @dentry: dentry to release
++ *
++ * Release a dentry. This will drop the usage count and if appropriate
++ * call the dentry unlink method as well as removing it from the queues and
++ * releasing its resources. If the parent dentries were scheduled for release
++ * they too may now get deleted.
++ *
++ * no dcache lock, please.
++ */
++void dput(struct dentry *dentry)
++{
++	LIST_HEAD(mortuary);
++
++	__dput(dentry, &mortuary, 1);
++	while (!list_empty(&mortuary)) {
++		dentry = list_entry(mortuary.next, struct dentry, d_lru);
++		list_del(&dentry->d_lru);
++		__d_kill_final(dentry, &mortuary);
++	}
++}
++
++/**
+  * d_invalidate - invalidate a dentry
+  * @dentry: dentry to invalidate
+  *
+@@ -689,6 +788,7 @@
+ 					iput(inode);
+ 			}
+ 
++			shrink_d_unions(dentry);
+ 			d_free(dentry);
+ 
+ 			/* finished when we fall off the top of the tree,
+@@ -951,6 +1051,10 @@
+ 	INIT_LIST_HEAD(&dentry->d_lru);
+ 	INIT_LIST_HEAD(&dentry->d_subdirs);
+ 	INIT_LIST_HEAD(&dentry->d_alias);
++#ifdef CONFIG_UNION_MOUNT
++	INIT_LIST_HEAD(&dentry->d_unions);
++	dentry->d_unionized = 0;
++#endif
+ 
+ 	if (parent) {
+ 		dentry->d_parent = dget(parent);
+@@ -981,8 +1085,10 @@
+ /* the caller must hold dcache_lock */
+ static void __d_instantiate(struct dentry *dentry, struct inode *inode)
+ {
+-	if (inode)
++	if (inode) {
++		dentry->d_flags &= ~(DCACHE_WHITEOUT|DCACHE_FALLTHRU);
+ 		list_add(&dentry->d_alias, &inode->i_dentry);
++	}
+ 	dentry->d_inode = inode;
+ 	fsnotify_d_instantiate(dentry, inode);
+ }
+@@ -1513,7 +1619,9 @@
+ 	spin_lock(&dentry->d_lock);
+ 	isdir = S_ISDIR(dentry->d_inode->i_mode);
+ 	if (atomic_read(&dentry->d_count) == 1) {
++		__d_drop_unions(dentry);
+ 		dentry_iput(dentry);
++		shrink_d_unions(dentry);
+ 		fsnotify_nameremove(dentry, isdir);
+ 		return;
+ 	}
+@@ -1524,14 +1632,14 @@
+ 	spin_unlock(&dentry->d_lock);
+ 	spin_unlock(&dcache_lock);
+ 
++	shrink_d_unions(dentry);
+ 	fsnotify_nameremove(dentry, isdir);
+ }
+ 
+ static void __d_rehash(struct dentry * entry, struct hlist_head *list)
+ {
+-
+- 	entry->d_flags &= ~DCACHE_UNHASHED;
+- 	hlist_add_head_rcu(&entry->d_hash, list);
++	entry->d_flags &= ~DCACHE_UNHASHED;
++	hlist_add_head_rcu(&entry->d_hash, list);
+ }
+ 
+ static void _d_rehash(struct dentry * entry)
+@@ -1550,6 +1658,7 @@
+ {
+ 	spin_lock(&dcache_lock);
+ 	spin_lock(&entry->d_lock);
++	BUG_ON(!d_unhashed(entry));
+ 	_d_rehash(entry);
+ 	spin_unlock(&entry->d_lock);
+ 	spin_unlock(&dcache_lock);
+@@ -2182,7 +2291,9 @@
+ 		struct list_head *tmp = next;
+ 		struct dentry *dentry = list_entry(tmp, struct dentry, d_u.d_child);
+ 		next = tmp->next;
+-		if (d_unhashed(dentry)||!dentry->d_inode)
++		if (d_unhashed(dentry)||(!dentry->d_inode &&
++					 !d_is_whiteout(dentry) &&
++					 !d_is_fallthru(dentry)))
+ 			continue;
+ 		if (!list_empty(&dentry->d_subdirs)) {
+ 			this_parent = dentry;
+--- a/fs/ext2/dir.c
++++ b/fs/ext2/dir.c
+@@ -219,7 +219,8 @@
+ {
+ 	if (len != de->name_len)
+ 		return 0;
+-	if (!de->inode)
++	if (!de->inode && ((de->file_type != EXT2_FT_WHT) &&
++			   (de->file_type != EXT2_FT_FALLTHRU)))
+ 		return 0;
+ 	return !memcmp(name, de->name, len);
+ }
+@@ -255,6 +256,8 @@
+ 	[EXT2_FT_FIFO]		= DT_FIFO,
+ 	[EXT2_FT_SOCK]		= DT_SOCK,
+ 	[EXT2_FT_SYMLINK]	= DT_LNK,
++	[EXT2_FT_WHT]		= DT_WHT,
++	[EXT2_FT_FALLTHRU]	= DT_UNKNOWN,
+ };
+ 
+ #define S_SHIFT 12
+@@ -341,6 +344,18 @@
+ 					ext2_put_page(page);
+ 					return 0;
+ 				}
++			} else if (de->file_type == EXT2_FT_FALLTHRU) {
++				int over;
++				unsigned char d_type = DT_UNKNOWN;
++
++				offset = (char *)de - kaddr;
++				over = filldir(dirent, de->name, de->name_len,
++						(n<<PAGE_CACHE_SHIFT) | offset,
++						123, d_type);
++				if (over) {
++					ext2_put_page(page);
++					return 0;
++				}
+ 			}
+ 			filp->f_pos += ext2_rec_len_from_disk(de->rec_len);
+ 		}
+@@ -448,6 +463,30 @@
+ 	return res;
+ }
+ 
++/* Special version for filetype based whiteout support */
++ino_t ext2_inode_by_dentry(struct inode *dir, struct dentry *dentry)
++{
++	ino_t res = 0;
++	struct ext2_dir_entry_2 *de;
++	struct page *page;
++
++	de = ext2_find_entry (dir, &dentry->d_name, &page);
++	if (de) {
++		res = le32_to_cpu(de->inode);
++		if (!res && de->file_type == EXT2_FT_WHT) {
++			spin_lock(&dentry->d_lock);
++			dentry->d_flags |= DCACHE_WHITEOUT;
++			spin_unlock(&dentry->d_lock);
++		} else if(!res && de->file_type == EXT2_FT_FALLTHRU) {
++			spin_lock(&dentry->d_lock);
++			dentry->d_flags |= DCACHE_FALLTHRU;
++			spin_unlock(&dentry->d_lock);
++		}
++		ext2_put_page(page);
++	}
++	return res;
++}
++
+ /* Releases the page */
+ void ext2_set_link(struct inode *dir, struct ext2_dir_entry_2 *de,
+ 		   struct page *page, struct inode *inode, int update_times)
+@@ -472,9 +511,10 @@
+ }
+ 
+ /*
+- *	Parent is locked.
++ * Find or append a given dentry to the parent directory
+  */
+-int ext2_add_link (struct dentry *dentry, struct inode *inode)
++static ext2_dirent * ext2_append_entry(struct dentry * dentry,
++				       struct page ** page)
+ {
+ 	struct inode *dir = dentry->d_parent->d_inode;
+ 	const char *name = dentry->d_name.name;
+@@ -482,13 +522,10 @@
+ 	unsigned chunk_size = ext2_chunk_size(dir);
+ 	unsigned reclen = EXT2_DIR_REC_LEN(namelen);
+ 	unsigned short rec_len, name_len;
+-	struct page *page = NULL;
+-	ext2_dirent * de;
++	ext2_dirent * de = NULL;
+ 	unsigned long npages = dir_pages(dir);
+ 	unsigned long n;
+ 	char *kaddr;
+-	loff_t pos;
+-	int err;
+ 
+ 	/*
+ 	 * We take care of directory expansion in the same loop.
+@@ -498,55 +535,97 @@
+ 	for (n = 0; n <= npages; n++) {
+ 		char *dir_end;
+ 
+-		page = ext2_get_page(dir, n, 0);
+-		err = PTR_ERR(page);
+-		if (IS_ERR(page))
++		*page = ext2_get_page(dir, n, 0);
++		de = ERR_PTR(PTR_ERR(*page));
++		if (IS_ERR(*page))
+ 			goto out;
+-		lock_page(page);
+-		kaddr = page_address(page);
++		lock_page(*page);
++		kaddr = page_address(*page);
+ 		dir_end = kaddr + ext2_last_byte(dir, n);
+ 		de = (ext2_dirent *)kaddr;
+ 		kaddr += PAGE_CACHE_SIZE - reclen;
+ 		while ((char *)de <= kaddr) {
+ 			if ((char *)de == dir_end) {
+ 				/* We hit i_size */
+-				name_len = 0;
+-				rec_len = chunk_size;
++				de->name_len = 0;
+ 				de->rec_len = ext2_rec_len_to_disk(chunk_size);
+ 				de->inode = 0;
++				de->file_type = 0;
+ 				goto got_it;
+ 			}
+ 			if (de->rec_len == 0) {
+ 				ext2_error(dir->i_sb, __func__,
+ 					"zero-length directory entry");
+-				err = -EIO;
++				de = ERR_PTR(-EIO);
+ 				goto out_unlock;
+ 			}
+-			err = -EEXIST;
+ 			if (ext2_match (namelen, name, de))
+-				goto out_unlock;
++				goto got_it;
+ 			name_len = EXT2_DIR_REC_LEN(de->name_len);
+ 			rec_len = ext2_rec_len_from_disk(de->rec_len);
+-			if (!de->inode && rec_len >= reclen)
++			if (!de->inode && (de->file_type != EXT2_FT_WHT) &&
++			    (de->file_type != EXT2_FT_FALLTHRU) &&
++			    (rec_len >= reclen))
+ 				goto got_it;
+ 			if (rec_len >= name_len + reclen)
+ 				goto got_it;
+ 			de = (ext2_dirent *) ((char *) de + rec_len);
+ 		}
+-		unlock_page(page);
+-		ext2_put_page(page);
++		unlock_page(*page);
++		ext2_put_page(*page);
+ 	}
++
+ 	BUG();
+-	return -EINVAL;
+ 
+ got_it:
++	return de;
++	/* OFFSET_CACHE */
++out_unlock:
++	unlock_page(*page);
++	ext2_put_page(*page);
++out:
++	return de;
++}
++
++/*
++ *	Parent is locked.
++ */
++int ext2_add_link (struct dentry *dentry, struct inode *inode)
++{
++	struct inode *dir = dentry->d_parent->d_inode;
++	const char *name = dentry->d_name.name;
++	int namelen = dentry->d_name.len;
++	unsigned short rec_len, name_len;
++	ext2_dirent * de;
++	struct page *page;
++	loff_t pos;
++	int err;
++
++	de = ext2_append_entry(dentry, &page);
++	if (IS_ERR(de))
++		return PTR_ERR(de);
++
++	err = -EEXIST;
++	if (ext2_match (namelen, name, de)) {
++		if ((de->file_type == EXT2_FT_WHT) ||
++		    (de->file_type == EXT2_FT_FALLTHRU))
++			goto got_it;
++		goto out_unlock;
++	}
++
++got_it:
++	name_len = EXT2_DIR_REC_LEN(de->name_len);
++	rec_len = ext2_rec_len_from_disk(de->rec_len);
++
+ 	pos = page_offset(page) +
+ 		(char*)de - (char*)page_address(page);
+ 	err = __ext2_write_begin(NULL, page->mapping, pos, rec_len, 0,
+ 							&page, NULL);
+ 	if (err)
+ 		goto out_unlock;
+-	if (de->inode) {
++	if (de->inode || (((de->file_type == EXT2_FT_WHT) ||
++			   (de->file_type == EXT2_FT_FALLTHRU)) &&
++			  !ext2_match (namelen, name, de))) {
+ 		ext2_dirent *de1 = (ext2_dirent *) ((char *) de + name_len);
+ 		de1->rec_len = ext2_rec_len_to_disk(rec_len - name_len);
+ 		de->rec_len = ext2_rec_len_to_disk(name_len);
+@@ -563,7 +642,60 @@
+ 	/* OFFSET_CACHE */
+ out_put:
+ 	ext2_put_page(page);
+-out:
++	return err;
++out_unlock:
++	unlock_page(page);
++	goto out_put;
++}
++
++/*
++ * Create a fallthru entry.
++ */
++int ext2_fallthru_entry (struct inode *dir, struct dentry *dentry)
++{
++	const char *name = dentry->d_name.name;
++	int namelen = dentry->d_name.len;
++	unsigned short rec_len, name_len;
++	ext2_dirent * de;
++	struct page *page;
++	loff_t pos;
++	int err;
++
++	de = ext2_append_entry(dentry, &page);
++	if (IS_ERR(de))
++		return PTR_ERR(de);
++
++	err = -EEXIST;
++	if (ext2_match (namelen, name, de))
++		goto out_unlock;
++
++	name_len = EXT2_DIR_REC_LEN(de->name_len);
++	rec_len = ext2_rec_len_from_disk(de->rec_len);
++
++	pos = page_offset(page) +
++		(char*)de - (char*)page_address(page);
++	err = __ext2_write_begin(NULL, page->mapping, pos, rec_len, 0,
++							&page, NULL);
++	if (err)
++		goto out_unlock;
++	if (de->inode || (de->file_type == EXT2_FT_WHT) ||
++	    (de->file_type == EXT2_FT_FALLTHRU)) {
++		ext2_dirent *de1 = (ext2_dirent *) ((char *) de + name_len);
++		de1->rec_len = ext2_rec_len_to_disk(rec_len - name_len);
++		de->rec_len = ext2_rec_len_to_disk(name_len);
++		de = de1;
++	}
++	de->name_len = namelen;
++	memcpy(de->name, name, namelen);
++	de->inode = 0;
++	de->file_type = EXT2_FT_FALLTHRU;
++	err = ext2_commit_chunk(page, pos, rec_len);
++	dir->i_mtime = dir->i_ctime = CURRENT_TIME_SEC;
++	EXT2_I(dir)->i_flags &= ~EXT2_BTREE_FL;
++	mark_inode_dirty(dir);
++	/* OFFSET_CACHE */
++out_put:
++	ext2_put_page(page);
+ 	return err;
+ out_unlock:
+ 	unlock_page(page);
+@@ -616,6 +748,70 @@
+ 	return err;
+ }
+ 
++int ext2_whiteout_entry (struct inode * dir, struct dentry * dentry,
++			 struct ext2_dir_entry_2 * de, struct page * page)
++{
++	const char *name = dentry->d_name.name;
++	int namelen = dentry->d_name.len;
++	unsigned short rec_len, name_len;
++	loff_t pos;
++	int err;
++
++	if (!de) {
++		de = ext2_append_entry(dentry, &page);
++		BUG_ON(!de);
++	}
++
++	err = -EEXIST;
++	if (ext2_match (namelen, name, de) &&
++	    (de->file_type == EXT2_FT_WHT)) {
++		ext2_error(dir->i_sb, __func__,
++			   "entry is already a whiteout in directory #%lu",
++			   dir->i_ino);
++		goto out_unlock;
++	}
++
++	name_len = EXT2_DIR_REC_LEN(de->name_len);
++	rec_len = ext2_rec_len_from_disk(de->rec_len);
++
++	pos = page_offset(page) +
++		(char*)de - (char*)page_address(page);
++	err = __ext2_write_begin(NULL, page->mapping, pos, rec_len, 0,
++							&page, NULL);
++	if (err)
++		goto out_unlock;
++	/*
++	 * We whiteout an existing entry. Do what ext2_delete_entry() would do,
++	 * except that we don't need to merge with the previous entry since
++	 * we are going to reuse it.
++	 */
++	if (ext2_match (namelen, name, de))
++		de->inode = 0;
++	if (de->inode || (((de->file_type == EXT2_FT_WHT) ||
++			   (de->file_type == EXT2_FT_FALLTHRU)) &&
++			  !ext2_match (namelen, name, de))) {
++		ext2_dirent *de1 = (ext2_dirent *) ((char *) de + name_len);
++		de1->rec_len = ext2_rec_len_to_disk(rec_len - name_len);
++		de->rec_len = ext2_rec_len_to_disk(name_len);
++		de = de1;
++	}
++	de->name_len = namelen;
++	memcpy(de->name, name, namelen);
++	de->inode = 0;
++	de->file_type = EXT2_FT_WHT;
++	err = ext2_commit_chunk(page, pos, rec_len);
++	dir->i_mtime = dir->i_ctime = CURRENT_TIME_SEC;
++	EXT2_I(dir)->i_flags &= ~EXT2_BTREE_FL;
++	mark_inode_dirty(dir);
++	/* OFFSET_CACHE */
++out_put:
++	ext2_put_page(page);
++	return err;
++out_unlock:
++	unlock_page(page);
++	goto out_put;
++}
++
+ /*
+  * Set the first fragment of directory.
+  */
+--- a/fs/ext2/ext2.h
++++ b/fs/ext2/ext2.h
+@@ -102,9 +102,13 @@
+ /* dir.c */
+ extern int ext2_add_link (struct dentry *, struct inode *);
+ extern ino_t ext2_inode_by_name(struct inode *, struct qstr *);
++extern ino_t ext2_inode_by_dentry(struct inode *, struct dentry *);
+ extern int ext2_make_empty(struct inode *, struct inode *);
+ extern struct ext2_dir_entry_2 * ext2_find_entry (struct inode *,struct qstr *, struct page **);
+ extern int ext2_delete_entry (struct ext2_dir_entry_2 *, struct page *);
++extern int ext2_whiteout_entry (struct inode *, struct dentry *,
++				struct ext2_dir_entry_2 *, struct page *);
++extern int ext2_fallthru_entry (struct inode *, struct dentry *);
+ extern int ext2_empty_dir (struct inode *);
+ extern struct ext2_dir_entry_2 * ext2_dotdot (struct inode *, struct page **);
+ extern void ext2_set_link(struct inode *, struct ext2_dir_entry_2 *, struct page *, struct inode *, int);
+--- a/fs/ext2/inode.c
++++ b/fs/ext2/inode.c
+@@ -1176,7 +1176,8 @@
+ {
+ 	unsigned int flags = EXT2_I(inode)->i_flags;
+ 
+-	inode->i_flags &= ~(S_SYNC|S_APPEND|S_IMMUTABLE|S_NOATIME|S_DIRSYNC);
++	inode->i_flags &= ~(S_SYNC|S_APPEND|S_IMMUTABLE|S_NOATIME|S_DIRSYNC|
++			    S_OPAQUE);
+ 	if (flags & EXT2_SYNC_FL)
+ 		inode->i_flags |= S_SYNC;
+ 	if (flags & EXT2_APPEND_FL)
+@@ -1187,6 +1188,8 @@
+ 		inode->i_flags |= S_NOATIME;
+ 	if (flags & EXT2_DIRSYNC_FL)
+ 		inode->i_flags |= S_DIRSYNC;
++	if (flags & EXT2_OPAQUE_FL)
++		inode->i_flags |= S_OPAQUE;
+ }
+ 
+ /* Propagate flags from i_flags to EXT2_I(inode)->i_flags */
+@@ -1194,8 +1197,8 @@
+ {
+ 	unsigned int flags = ei->vfs_inode.i_flags;
+ 
+-	ei->i_flags &= ~(EXT2_SYNC_FL|EXT2_APPEND_FL|
+-			EXT2_IMMUTABLE_FL|EXT2_NOATIME_FL|EXT2_DIRSYNC_FL);
++	ei->i_flags &= ~(EXT2_SYNC_FL|EXT2_APPEND_FL|EXT2_IMMUTABLE_FL|
++			 EXT2_NOATIME_FL|EXT2_DIRSYNC_FL|EXT2_OPAQUE_FL);
+ 	if (flags & S_SYNC)
+ 		ei->i_flags |= EXT2_SYNC_FL;
+ 	if (flags & S_APPEND)
+@@ -1206,6 +1209,8 @@
+ 		ei->i_flags |= EXT2_NOATIME_FL;
+ 	if (flags & S_DIRSYNC)
+ 		ei->i_flags |= EXT2_DIRSYNC_FL;
++	if (flags & S_OPAQUE)
++		ei->i_flags |= EXT2_OPAQUE_FL;
+ }
+ 
+ struct inode *ext2_iget (struct super_block *sb, unsigned long ino)
+--- a/fs/ext2/namei.c
++++ b/fs/ext2/namei.c
+@@ -54,15 +54,16 @@
+  * Methods themselves.
+  */
+ 
+-static struct dentry *ext2_lookup(struct inode * dir, struct dentry *dentry, struct nameidata *nd)
++static struct dentry *ext2_lookup(struct inode * dir, struct dentry *dentry,
++				  struct nameidata *nd)
+ {
+ 	struct inode * inode;
+ 	ino_t ino;
+-	
++
+ 	if (dentry->d_name.len > EXT2_NAME_LEN)
+ 		return ERR_PTR(-ENAMETOOLONG);
+ 
+-	ino = ext2_inode_by_name(dir, &dentry->d_name);
++	ino = ext2_inode_by_dentry(dir, dentry);
+ 	inode = NULL;
+ 	if (ino) {
+ 		inode = ext2_iget(dir->i_sb, ino);
+@@ -230,6 +231,10 @@
+ 	else
+ 		inode->i_mapping->a_ops = &ext2_aops;
+ 
++	/* if we call mkdir on a whiteout create an opaque directory */
++	if (dentry->d_flags & DCACHE_WHITEOUT)
++		inode->i_flags |= S_OPAQUE;
++
+ 	inode_inc_link_count(inode);
+ 
+ 	err = ext2_make_empty(inode, dir);
+@@ -293,6 +298,78 @@
+ 	return err;
+ }
+ 
++/*
++ * Create a whiteout for the dentry
++ */
++static int ext2_whiteout(struct inode *dir, struct dentry *dentry,
++			 struct dentry *new_dentry)
++{
++	struct inode * inode = dentry->d_inode;
++	struct ext2_dir_entry_2 * de = NULL;
++	struct page * page;
++	int err = -ENOTEMPTY;
++
++	if (!EXT2_HAS_INCOMPAT_FEATURE(dir->i_sb,
++				       EXT2_FEATURE_INCOMPAT_FILETYPE)) {
++		ext2_error (dir->i_sb, "ext2_whiteout",
++			    "can't set whiteout filetype");
++		err = -EPERM;
++		goto out;
++	}
++
++	if (inode) {
++		if (S_ISDIR(inode->i_mode) && !ext2_empty_dir(inode))
++			goto out;
++
++		err = -ENOENT;
++		de = ext2_find_entry (dir, &dentry->d_name, &page);
++		if (!de)
++			goto out;
++		lock_page(page);
++	}
++
++	err = ext2_whiteout_entry (dir, dentry, de, page);
++	if (err)
++		goto out;
++
++	spin_lock(&new_dentry->d_lock);
++	new_dentry->d_flags &= ~DCACHE_FALLTHRU;
++	new_dentry->d_flags |= DCACHE_WHITEOUT;
++	spin_unlock(&new_dentry->d_lock);
++	d_add(new_dentry, NULL);
++
++	if (inode) {
++		inode->i_ctime = dir->i_ctime;
++		inode_dec_link_count(inode);
++		if (S_ISDIR(inode->i_mode)) {
++			inode->i_size = 0;
++			inode_dec_link_count(inode);
++			inode_dec_link_count(dir);
++		}
++	}
++	err = 0;
++out:
++	return err;
++}
++
++/*
++ * Create a fallthru entry.
++ */
++static int ext2_fallthru (struct inode *dir, struct dentry *dentry)
++{
++	int err;
++
++	err = ext2_fallthru_entry(dir, dentry);
++	if (err)
++		return err;
++
++	d_instantiate(dentry, NULL);
++	spin_lock(&dentry->d_lock);
++	dentry->d_flags |= DCACHE_FALLTHRU;
++	spin_unlock(&dentry->d_lock);
++	return 0;
++}
++
+ static int ext2_rename (struct inode * old_dir, struct dentry * old_dentry,
+ 	struct inode * new_dir,	struct dentry * new_dentry )
+ {
+@@ -392,6 +469,8 @@
+ 	.mkdir		= ext2_mkdir,
+ 	.rmdir		= ext2_rmdir,
+ 	.mknod		= ext2_mknod,
++	.whiteout	= ext2_whiteout,
++	.fallthru	= ext2_fallthru,
+ 	.rename		= ext2_rename,
+ #ifdef CONFIG_EXT2_FS_XATTR
+ 	.setxattr	= generic_setxattr,
+--- a/fs/ext2/super.c
++++ b/fs/ext2/super.c
+@@ -1062,6 +1062,13 @@
+ 	if (EXT2_HAS_COMPAT_FEATURE(sb, EXT3_FEATURE_COMPAT_HAS_JOURNAL))
+ 		ext2_warning(sb, __func__,
+ 			"mounting ext3 filesystem as ext2");
++
++	/*
++	 * Whiteouts (and fallthrus) require explicit whiteout support.
++	 */
++	if (EXT2_HAS_INCOMPAT_FEATURE(sb, EXT2_FEATURE_INCOMPAT_WHITEOUT))
++		sb->s_flags |= MS_WHITEOUT;
++
+ 	ext2_setup_super (sb, es, sb->s_flags & MS_RDONLY);
+ 	return 0;
+ 
+--- a/fs/Kconfig
++++ b/fs/Kconfig
+@@ -58,6 +58,14 @@
+ 
+ source "fs/quota/Kconfig"
+ 
++config UNION_MOUNT
++       bool "Union mount support (EXPERIMENTAL)"
++       depends on EXPERIMENTAL
++       ---help---
++         If you say Y here, you will be able to mount file systems as
++         union mount stacks. This is a VFS based implementation and
++         should work with all file systems. If unsure, say N.
++
+ source "fs/autofs/Kconfig"
+ source "fs/autofs4/Kconfig"
+ source "fs/fuse/Kconfig"
+--- a/fs/libfs.c
++++ b/fs/libfs.c
+@@ -133,6 +133,7 @@
+ 	struct dentry *cursor = filp->private_data;
+ 	struct list_head *p, *q = &cursor->d_u.d_child;
+ 	ino_t ino;
++	int d_type;
+ 	int i = filp->f_pos;
+ 
+ 	switch (i) {
+@@ -158,14 +159,25 @@
+ 			for (p=q->next; p != &dentry->d_subdirs; p=p->next) {
+ 				struct dentry *next;
+ 				next = list_entry(p, struct dentry, d_u.d_child);
+-				if (d_unhashed(next) || !next->d_inode)
++				if (d_unhashed(next) || (!next->d_inode && !d_is_fallthru(next)))
+ 					continue;
+ 
++				if (d_is_fallthru(next)) {
++					/* XXX Make up things we can
++					 * only get out of the inode.
++					 * Should probably really do a
++					 * lookup instead. */
++					ino = 100; /* XXX Made up number of no significance */
++					d_type = DT_UNKNOWN;
++				} else {
++					ino = next->d_inode->i_ino;
++					d_type = dt_type(next->d_inode);
++				}
++
+ 				spin_unlock(&dcache_lock);
+ 				if (filldir(dirent, next->d_name.name, 
+ 					    next->d_name.len, filp->f_pos, 
+-					    next->d_inode->i_ino, 
+-					    dt_type(next->d_inode)) < 0)
++					    ino, d_type) < 0)
+ 					return 0;
+ 				spin_lock(&dcache_lock);
+ 				/* next is still alive */
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -52,6 +52,7 @@
+ obj-$(CONFIG_GENERIC_ACL)	+= generic_acl.o
+ 
+ obj-y				+= quota/
++obj-$(CONFIG_UNION_MOUNT)	+= union.o
+ 
+ obj-$(CONFIG_PROC_FS)		+= proc/
+ obj-y				+= partitions/
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -33,6 +33,7 @@
+ #include <linux/fcntl.h>
+ #include <linux/device_cgroup.h>
+ #include <linux/fs_struct.h>
++#include <linux/union.h>
+ #include <asm/uaccess.h>
+ 
+ #define ACC_MODE(x) ("\000\004\002\006"[(x)&O_ACCMODE])
+@@ -229,16 +230,17 @@
+ }
+ 
+ /**
+- * inode_permission  -  check for access rights to a given inode
++ * __inode_permission  -  check for access rights to a given inode
+  * @inode:	inode to check permission on
+  * @mask:	right to check for (%MAY_READ, %MAY_WRITE, %MAY_EXEC)
++ * @rofs:	check for read-only fs
+  *
+  * Used to check for read/write/execute permissions on an inode.
+  * We use "fsuid" for this, letting us set arbitrary permissions
+  * for filesystem access without changing the "normal" uids which
+  * are used for other things.
+  */
+-int inode_permission(struct inode *inode, int mask)
++int __inode_permission(struct inode *inode, int mask, int rofs)
+ {
+ 	int retval;
+ 
+@@ -248,7 +250,7 @@
+ 		/*
+ 		 * Nobody gets write access to a read-only fs.
+ 		 */
+-		if (IS_RDONLY(inode) &&
++		if ((rofs & IS_RDONLY(inode)) &&
+ 		    (S_ISREG(mode) || S_ISDIR(mode) || S_ISLNK(mode)))
+ 			return -EROFS;
+ 
+@@ -276,6 +278,18 @@
+ }
+ 
+ /**
++ * inode_permission  -  check for access rights to a given inode
++ * @inode:	inode to check permission on
++ * @mask:	right to check for (%MAY_READ, %MAY_WRITE, %MAY_EXEC)
++ *
++ * This version pays attention to the MS_RDONLY flag on the fs.
++ */
++int inode_permission(struct inode *inode, int mask)
++{
++	return __inode_permission(inode, mask, 1);
++}
++
++/**
+  * file_permission  -  check for additional access rights to a given file
+  * @file:	file to check access rights for
+  * @mask:	right to check for (%MAY_READ, %MAY_WRITE, %MAY_EXEC)
+@@ -404,15 +418,10 @@
+  * Internal lookup() using the new generic dcache.
+  * SMP-safe
+  */
+-static struct dentry * cached_lookup(struct dentry * parent, struct qstr * name, struct nameidata *nd)
++static struct dentry *cache_lookup(struct dentry *parent, struct qstr *name,
++				   struct nameidata *nd)
+ {
+-	struct dentry * dentry = __d_lookup(parent, name);
+-
+-	/* lockess __d_lookup may fail due to concurrent d_move() 
+-	 * in some unrelated directory, so try with d_lookup
+-	 */
+-	if (!dentry)
+-		dentry = d_lookup(parent, name);
++	struct dentry *dentry = d_lookup(parent, name);
+ 
+ 	if (dentry && dentry->d_op && dentry->d_op->d_revalidate)
+ 		dentry = do_revalidate(dentry, nd);
+@@ -421,6 +430,208 @@
+ }
+ 
+ /*
++ * Theory of operation for opaque, whiteout, and fallthru:
++ *
++ * whiteout: Unconditionally stop lookup here - ENOENT
++ *
++ * opaque: Don't lookup in directories lower in the union stack
++ *
++ * fallthru: While looking up an entry, ignore the opaque flag for the
++ * current directory only.
++ *
++ * A union stack is a linked list of directory dentries which appear
++ * in the same place in the namespace.  When constructing the union
++ * stack, we include directories below opaque directories so that we
++ * can properly handle fallthrus.  All non-fallthru lookups have to
++ * check for the opaque flag on the parent directory and obey it.
++ *
++ * In general, the code pattern is to lookup the the topmost entry
++ * first (either the first visible non-negative dentry or a negative
++ * dentry in the topmost layer of the union), then build the union
++ * stack for the newly looked-up entry (if it is a directory).
++ */
++
++/**
++ * __cache_lookup_topmost - lookup the topmost (non-)negative dentry
++ *
++ * @nd - parent's nameidata
++ * @name - pathname part to lookup
++ * @path - found dentry for pathname part
++ *
++ * This is used for union mount lookups from dcache. The first non-negative
++ * dentry is searched on all layers of the union stack. Otherwise the topmost
++ * negative dentry is returned.
++ */
++static int __cache_lookup_topmost(struct nameidata *nd, struct qstr *name,
++				  struct path *path)
++{
++	struct dentry *dentry;
++
++	dentry = d_lookup(nd->path.dentry, name);
++	if (dentry && dentry->d_op && dentry->d_op->d_revalidate)
++		dentry = do_revalidate(dentry, nd);
++
++	/*
++	 * Remember the topmost negative dentry in case we don't find anything
++	 */
++	path->dentry = dentry;
++	path->mnt = dentry ? nd->path.mnt : NULL;
++
++	if (!dentry || (dentry->d_inode || d_is_whiteout(dentry)))
++		return !dentry;
++
++	/* Keep going through opaque directories if we found a fallthru */
++	if (IS_OPAQUE(nd->path.dentry->d_inode) && !d_is_fallthru(dentry))
++		return !dentry;
++
++	/* look for the first non-negative or whiteout dentry */
++
++	while (follow_union_down(&nd->path)) {
++		dentry = d_hash_and_lookup(nd->path.dentry, name);
++
++		/*
++		 * If parts of the union stack are not in the dcache we need
++		 * to do a real lookup
++		 */
++		if (!dentry)
++			goto out_dput;
++
++		/*
++		 * If parts of the union don't survive the revalidation we
++		 * need to do a real lookup
++		 */
++		if (dentry->d_op && dentry->d_op->d_revalidate) {
++			dentry = do_revalidate(dentry, nd);
++			if (!dentry)
++				goto out_dput;
++		}
++
++		if (dentry->d_inode || d_is_whiteout(dentry))
++			goto out_dput;
++
++		/* Stop the lookup on opaque parent and non-fallthru child */
++		if (IS_OPAQUE(nd->path.dentry->d_inode) && !d_is_fallthru(dentry))
++			goto out_dput;
++
++		dput(dentry);
++	}
++
++	return !dentry;
++
++out_dput:
++	dput(path->dentry);
++	path->dentry = dentry;
++	path->mnt = dentry ? mntget(nd->path.mnt) : NULL;
++	return !dentry;
++}
++
++/**
++ * __cache_lookup_build_union - build the union stack for this part,
++ * cached version
++ *
++ * This is called after you have the topmost dentry in @path.
++ */
++static int __cache_lookup_build_union(struct nameidata *nd, struct qstr *name,
++				      struct path *path)
++{
++	struct path last = *path;
++	struct dentry *dentry;
++
++	while (follow_union_down(&nd->path)) {
++		dentry = d_hash_and_lookup(nd->path.dentry, name);
++		if (!dentry)
++			return 1;
++
++		if (dentry->d_op && dentry->d_op->d_revalidate) {
++			dentry = do_revalidate(dentry, nd);
++			if (!dentry)
++				return 1;
++		}
++
++		if (d_is_whiteout(dentry)) {
++			dput(dentry);
++			break;
++		}
++
++		if (!dentry->d_inode) {
++			dput(dentry);
++			continue;
++		}
++
++		/* only directories can be part of a union stack */
++		if (!S_ISDIR(dentry->d_inode->i_mode)) {
++			dput(dentry);
++			break;
++		}
++
++		/* Add the newly discovered dir to the union stack */
++		append_to_union(last.mnt, last.dentry, nd->path.mnt, dentry);
++
++		if (last.dentry != path->dentry)
++			path_put(&last);
++		last.dentry = dentry;
++		last.mnt = mntget(nd->path.mnt);
++	}
++
++	if (last.dentry != path->dentry)
++		path_put(&last);
++
++	return 0;
++}
++
++/**
++ * cache_lookup_union - lookup a single pathname part from dcache
++ *
++ * This is a union mount capable version of what d_lookup() & revalidate()
++ * would do. This function returns a valid (union) dentry on success.
++ *
++ * Remember: On failure it means that parts of the union aren't cached. You
++ * should call real_lookup() afterwards to find the proper (union) dentry.
++ */
++static int cache_lookup_union(struct nameidata *nd, struct qstr *name,
++			      struct path *path)
++{
++	int res ;
++
++	if (!IS_MNT_UNION(nd->path.mnt)) {
++		path->dentry = cache_lookup(nd->path.dentry, name, nd);
++		path->mnt = path->dentry ? nd->path.mnt : NULL;
++		res = path->dentry ? 0 : 1;
++	} else {
++		struct path safe = {
++			.dentry = nd->path.dentry,
++			.mnt = nd->path.mnt
++		};
++
++		path_get(&safe);
++		res = __cache_lookup_topmost(nd, name, path);
++		if (res)
++			goto out;
++
++		/* only directories can be part of a union stack */
++		if (!path->dentry->d_inode ||
++		    !S_ISDIR(path->dentry->d_inode->i_mode))
++			goto out;
++
++		/* Build the union stack for this part */
++		res = __cache_lookup_build_union(nd, name, path);
++		if (res) {
++			dput(path->dentry);
++			if (path->mnt != safe.mnt)
++				mntput(path->mnt);
++			goto out;
++		}
++
++out:
++		path_put(&nd->path);
++		nd->path.dentry = safe.dentry;
++		nd->path.mnt = safe.mnt;
++	}
++
++	return res;
++}
++
++/*
+  * Short-cut version of permission(), for calling by
+  * path_walk(), when dcache lock is held.  Combines parts
+  * of permission() and generic_permission(), and tests ONLY for
+@@ -467,10 +678,11 @@
+  * make sure that nobody added the entry to the dcache in the meantime..
+  * SMP-safe
+  */
+-static struct dentry * real_lookup(struct dentry * parent, struct qstr * name, struct nameidata *nd)
++static int real_lookup(struct nameidata *nd, struct qstr *name,
++		       struct path *path)
+ {
+-	struct dentry * result;
+-	struct inode *dir = parent->d_inode;
++	struct inode *dir = nd->path.dentry->d_inode;
++	int res = 0;
+ 
+ 	mutex_lock(&dir->i_mutex);
+ 	/*
+@@ -487,27 +699,36 @@
+ 	 *
+ 	 * so doing d_lookup() (with seqlock), instead of lockfree __d_lookup
+ 	 */
+-	result = d_lookup(parent, name);
+-	if (!result) {
++	path->dentry = d_lookup(nd->path.dentry, name);
++	path->mnt = nd->path.mnt;
++	if (!path->dentry) {
+ 		struct dentry *dentry;
+ 
+ 		/* Don't create child dentry for a dead directory. */
+-		result = ERR_PTR(-ENOENT);
+-		if (IS_DEADDIR(dir))
++		if (IS_DEADDIR(dir)) {
++			res = -ENOENT;
+ 			goto out_unlock;
++		}
+ 
+-		dentry = d_alloc(parent, name);
+-		result = ERR_PTR(-ENOMEM);
++		dentry = d_alloc(nd->path.dentry, name);
+ 		if (dentry) {
+-			result = dir->i_op->lookup(dir, dentry, nd);
+-			if (result)
++			path->dentry = dir->i_op->lookup(dir, dentry, nd);
++			if (path->dentry) {
+ 				dput(dentry);
+-			else
+-				result = dentry;
++				if (IS_ERR(path->dentry)) {
++					res = PTR_ERR(path->dentry);
++					path->dentry = NULL;
++					path->mnt = NULL;
++				}
++			} else
++				path->dentry = dentry;
++		} else {
++			res = -ENOMEM;
++			path->mnt = NULL;
+ 		}
+ out_unlock:
+ 		mutex_unlock(&dir->i_mutex);
+-		return result;
++		return res;
+ 	}
+ 
+ 	/*
+@@ -515,12 +736,170 @@
+ 	 * we waited on the semaphore. Need to revalidate.
+ 	 */
+ 	mutex_unlock(&dir->i_mutex);
+-	if (result->d_op && result->d_op->d_revalidate) {
+-		result = do_revalidate(result, nd);
+-		if (!result)
+-			result = ERR_PTR(-ENOENT);
++	if (path->dentry->d_op && path->dentry->d_op->d_revalidate) {
++		path->dentry = do_revalidate(path->dentry, nd);
++		if (!path->dentry) {
++			res = -ENOENT;
++			path->mnt = NULL;
++		}
++		if (IS_ERR(path->dentry)) {
++			res = PTR_ERR(path->dentry);
++			path->dentry = NULL;
++			path->mnt = NULL;
++		}
+ 	}
+-	return result;
++
++	return res;
++}
++
++/**
++ * __real_lookup_topmost - lookup topmost dentry, non-cached version
++ *
++ * If we reach a dentry with restricted access, we just stop the lookup
++ * because we shouldn't see through that dentry. Same thing for dentry
++ * type mismatch and whiteouts.
++ *
++ * FIXME:
++ * - handle union stacks in use
++ * - handle union stacks mounted upon union stacks
++ * - avoid unnecessary allocations of union locks
++ */
++static int __real_lookup_topmost(struct nameidata *nd, struct qstr *name,
++				 struct path *path)
++{
++	struct path next;
++	int err;
++
++	err = real_lookup(nd, name, path);
++	if (err)
++		return err;
++
++	if (path->dentry->d_inode || d_is_whiteout(path->dentry))
++		return 0;
++
++	if (IS_OPAQUE(nd->path.dentry->d_inode) && !d_is_fallthru(path->dentry))
++		return 0;
++
++	while (follow_union_down(&nd->path)) {
++		name->hash = full_name_hash(name->name, name->len);
++		if (nd->path.dentry->d_op && nd->path.dentry->d_op->d_hash) {
++			err = nd->path.dentry->d_op->d_hash(nd->path.dentry,
++							    name);
++			if (err < 0)
++				goto out;
++		}
++
++		err = real_lookup(nd, name, &next);
++		if (err)
++			goto out;
++
++		if (next.dentry->d_inode || d_is_whiteout(next.dentry)) {
++			dput(path->dentry);
++			mntget(next.mnt);
++			*path = next;
++			goto out;
++		}
++
++		if (IS_OPAQUE(nd->path.dentry->d_inode) && !d_is_fallthru(next.dentry))
++			goto out;
++
++		dput(next.dentry);
++	}
++out:
++	if (err)
++		dput(path->dentry);
++	return err;
++}
++
++/**
++ * __real_lookup_build_union: build the union stack for this pathname
++ * part, non-cached version
++ *
++ * Called when not all parts of the union stack are in cache
++ */
++
++static int __real_lookup_build_union(struct nameidata *nd, struct qstr *name,
++				     struct path *path)
++{
++	struct path last = *path;
++	struct path next;
++	int err = 0;
++
++	while (follow_union_down(&nd->path)) {
++		/* We need to recompute the hash for lower layer lookups */
++		name->hash = full_name_hash(name->name, name->len);
++		if (nd->path.dentry->d_op && nd->path.dentry->d_op->d_hash) {
++			err = nd->path.dentry->d_op->d_hash(nd->path.dentry,
++							    name);
++			if (err < 0)
++				goto out;
++		}
++
++		err = real_lookup(nd, name, &next);
++		if (err)
++			goto out;
++
++		if (d_is_whiteout(next.dentry)) {
++			dput(next.dentry);
++			break;
++		}
++
++		if (!next.dentry->d_inode) {
++			dput(next.dentry);
++			continue;
++		}
++
++		/* only directories can be part of a union stack */
++		if (!S_ISDIR(next.dentry->d_inode->i_mode)) {
++			dput(next.dentry);
++			break;
++		}
++
++		/* now we know we found something "real" */
++		append_to_union(last.mnt, last.dentry, next.mnt, next.dentry);
++
++		if (last.dentry != path->dentry)
++			path_put(&last);
++		last.dentry = next.dentry;
++		last.mnt = mntget(next.mnt);
++	}
++
++	if (last.dentry != path->dentry)
++		path_put(&last);
++out:
++	return err;
++}
++
++static int real_lookup_union(struct nameidata *nd, struct qstr *name,
++			     struct path *path)
++{
++	struct path safe = { .dentry = nd->path.dentry, .mnt = nd->path.mnt };
++	int res ;
++
++	path_get(&safe);
++	res = __real_lookup_topmost(nd, name, path);
++	if (res)
++		goto out;
++
++	/* only directories can be part of a union stack */
++	if (!path->dentry->d_inode ||
++	    !S_ISDIR(path->dentry->d_inode->i_mode))
++		goto out;
++
++	/* Build the union stack for this part */
++	res = __real_lookup_build_union(nd, name, path);
++	if (res) {
++		dput(path->dentry);
++		if (path->mnt != safe.mnt)
++			mntput(path->mnt);
++		goto out;
++	}
++
++out:
++	path_put(&nd->path);
++	nd->path.dentry = safe.dentry;
++	nd->path.mnt = safe.mnt;
++	return res;
+ }
+ 
+ /*
+@@ -623,11 +1002,8 @@
+ 	touch_atime(path->mnt, dentry);
+ 	nd_set_link(nd, NULL);
+ 
+-	if (path->mnt != nd->path.mnt) {
+-		path_to_nameidata(path, nd);
+-		dget(dentry);
+-	}
+-	mntget(path->mnt);
++	if (path->mnt == nd->path.mnt)
++		mntget(nd->path.mnt);
+ 	cookie = dentry->d_inode->i_op->follow_link(dentry, nd);
+ 	error = PTR_ERR(cookie);
+ 	if (!IS_ERR(cookie)) {
+@@ -715,7 +1091,7 @@
+ 	return res;
+ }
+ 
+-static void follow_mount(struct path *path)
++void follow_mount(struct path *path)
+ {
+ 	while (d_mountpoint(path->dentry)) {
+ 		struct vfsmount *mounted = lookup_mnt(path);
+@@ -780,6 +1156,7 @@
+ 		nd->path.mnt = parent;
+ 	}
+ 	follow_mount(&nd->path);
++	follow_union_mount(&nd->path);
+ }
+ 
+ /*
+@@ -790,35 +1167,55 @@
+ static int do_lookup(struct nameidata *nd, struct qstr *name,
+ 		     struct path *path)
+ {
+-	struct vfsmount *mnt = nd->path.mnt;
+-	struct dentry *dentry = __d_lookup(nd->path.dentry, name);
++	int err;
++
++	if (IS_MNT_UNION(nd->path.mnt))
++		goto need_union_lookup;
+ 
+-	if (!dentry)
++	path->dentry = __d_lookup(nd->path.dentry, name);
++	path->mnt = nd->path.mnt;
++	if (!path->dentry)
+ 		goto need_lookup;
+-	if (dentry->d_op && dentry->d_op->d_revalidate)
++	if (path->dentry->d_op && path->dentry->d_op->d_revalidate)
+ 		goto need_revalidate;
++
+ done:
+-	path->mnt = mnt;
+-	path->dentry = dentry;
+-	__follow_mount(path);
++	if (nd->path.mnt != path->mnt) {
++		nd->um_flags |= LAST_LOWLEVEL;
++		follow_mount(path);
++	} else
++		__follow_mount(path);
++	follow_union_mount(path);
+ 	return 0;
+ 
+ need_lookup:
+-	dentry = real_lookup(nd->path.dentry, name, nd);
+-	if (IS_ERR(dentry))
++	err = real_lookup(nd, name, path);
++	if (err)
++		goto fail;
++	goto done;
++
++need_union_lookup:
++	err = cache_lookup_union(nd, name, path);
++	if (!err && path->dentry)
++		goto done;
++
++	err = real_lookup_union(nd, name, path);
++	if (err)
+ 		goto fail;
+ 	goto done;
+ 
+ need_revalidate:
+-	dentry = do_revalidate(dentry, nd);
+-	if (!dentry)
++	path->dentry = do_revalidate(path->dentry, nd);
++	if (!path->dentry)
+ 		goto need_lookup;
+-	if (IS_ERR(dentry))
++	if (IS_ERR(path->dentry)) {
++		err = PTR_ERR(path->dentry);
+ 		goto fail;
++	}
+ 	goto done;
+ 
+ fail:
+-	return PTR_ERR(dentry);
++	return err;
+ }
+ 
+ /*
+@@ -845,6 +1242,8 @@
+ 	if (nd->depth)
+ 		lookup_flags = LOOKUP_FOLLOW | (nd->flags & LOOKUP_CONTINUE);
+ 
++	follow_union_mount(&nd->path);
++
+ 	/* At this point we know we have a real path component. */
+ 	for(;;) {
+ 		unsigned long hash;
+@@ -913,6 +1312,44 @@
+ 		if (err)
+ 			break;
+ 
++		/*
++		 * We want to create this element on the top level
++		 * file system in two cases:
++		 *
++		 * - We are specifically told to - LOOKUP_TOPMOST.
++		 * - This is a directory, and it does not yet exist on
++		 *   the top level.  Various tricks only work if
++		 *   directories always exist on the top level.
++		 *
++		 * In either case, only create this element on the top
++		 * level if the last element is located on the lower
++		 * level.  If the last element is located on the top
++		 * level, then every single element in the path
++		 * already exists on the top level.
++		 *
++		 * Note that we can assume that the parent is on the
++		 * top level since we always create the directory on
++		 * the top level.
++		 */
++
++		if ((nd->um_flags & LAST_LOWLEVEL) &&
++		    ((next.dentry->d_inode &&
++		      S_ISDIR(next.dentry->d_inode->i_mode) &&
++		      (nd->path.mnt != next.mnt)) ||
++		     (nd->flags & LOOKUP_TOPMOST))) {
++			struct dentry *dentry;
++
++			dentry = union_create_topmost(nd, &this, &next);
++			if (IS_ERR(dentry)) {
++				err = PTR_ERR(dentry);
++				goto out_dput;
++			}
++			path_put_conditional(&next, nd);
++			next.mnt = nd->path.mnt;
++			next.dentry = dentry;
++			nd->um_flags &= ~LAST_LOWLEVEL;
++		}
++
+ 		err = -ENOENT;
+ 		inode = next.dentry->d_inode;
+ 		if (!inode)
+@@ -962,6 +1399,25 @@
+ 		err = do_lookup(nd, &this, &next);
+ 		if (err)
+ 			break;
++
++		if ((nd->um_flags & LAST_LOWLEVEL) &&
++		    ((next.dentry->d_inode &&
++		      S_ISDIR(next.dentry->d_inode->i_mode) &&
++		      (nd->path.mnt != next.mnt)) ||
++		     (nd->flags & LOOKUP_TOPMOST))) {
++			struct dentry *dentry;
++
++			dentry = union_create_topmost(nd, &this, &next);
++			if (IS_ERR(dentry)) {
++				err = PTR_ERR(dentry);
++				goto out_dput;
++			}
++			path_put_conditional(&next, nd);
++			next.mnt = nd->path.mnt;
++			next.dentry = dentry;
++			nd->um_flags &= ~LAST_LOWLEVEL;
++		}
++
+ 		inode = next.dentry->d_inode;
+ 		if ((lookup_flags & LOOKUP_FOLLOW)
+ 		    && inode && inode->i_op->follow_link) {
+@@ -1029,6 +1485,7 @@
+ 
+ 	nd->last_type = LAST_ROOT; /* if there are only slashes... */
+ 	nd->flags = flags;
++	nd->um_flags = 0;
+ 	nd->depth = 0;
+ 	nd->root.mnt = NULL;
+ 
+@@ -1172,61 +1629,437 @@
+ }
+ 
+ static struct dentry *__lookup_hash(struct qstr *name,
+-		struct dentry *base, struct nameidata *nd)
++				    struct dentry *base, struct nameidata *nd)
++{
++	struct dentry *dentry;
++	struct inode *inode;
++	int err;
++
++	inode = base->d_inode;
++
++	/*
++	 * See if the low-level filesystem might want
++	 * to use its own hash..
++	 */
++	if (base->d_op && base->d_op->d_hash) {
++		err = base->d_op->d_hash(base, name);
++		dentry = ERR_PTR(err);
++		if (err < 0)
++			goto out;
++	}
++
++	dentry = cache_lookup(base, name, nd);
++	if (!dentry) {
++		struct dentry *new;
++
++		/* Don't create child dentry for a dead directory. */
++		dentry = ERR_PTR(-ENOENT);
++		if (IS_DEADDIR(inode))
++			goto out;
++
++		new = d_alloc(base, name);
++		dentry = ERR_PTR(-ENOMEM);
++		if (!new)
++			goto out;
++		dentry = inode->i_op->lookup(inode, new, nd);
++		if (!dentry)
++			dentry = new;
++		else
++			dput(new);
++	}
++out:
++	return dentry;
++}
++
++/*
++ * Restricted form of lookup. Doesn't follow links, single-component only,
++ * needs parent already locked. Doesn't follow mounts.
++ * SMP-safe.
++ */
++static int lookup_hash(struct nameidata *nd, struct qstr *name,
++		       struct path *path)
++{
++	int err;
++
++	err = inode_permission(nd->path.dentry->d_inode, MAY_EXEC);
++	if (err)
++		return err;
++	path->mnt = nd->path.mnt;
++	path->dentry =  __lookup_hash(name, nd->path.dentry, nd);
++	if (IS_ERR(path->dentry)) {
++		err = PTR_ERR(path->dentry);
++		path->dentry = NULL;
++		path->mnt = NULL;
++	}
++	return err;
++}
++
++static int __hash_lookup_topmost(struct nameidata *nd, struct qstr *name,
++				 struct path *path)
++{
++	struct path next;
++	int err;
++
++	err = lookup_hash(nd, name, path);
++	if (err)
++		return err;
++
++	if (path->dentry->d_inode || d_is_whiteout(path->dentry))
++		return 0;
++
++	if (IS_OPAQUE(nd->path.dentry->d_inode) && !d_is_fallthru(path->dentry))
++		return 0;
++
++	while (follow_union_down(&nd->path)) {
++		name->hash = full_name_hash(name->name, name->len);
++		if (nd->path.dentry->d_op && nd->path.dentry->d_op->d_hash) {
++			err = nd->path.dentry->d_op->d_hash(nd->path.dentry,
++							    name);
++			if (err < 0)
++				goto out;
++		}
++
++		mutex_lock(&nd->path.dentry->d_inode->i_mutex);
++		err = lookup_hash(nd, name, &next);
++		mutex_unlock(&nd->path.dentry->d_inode->i_mutex);
++		if (err)
++			goto out;
++
++		if (next.dentry->d_inode || d_is_whiteout(next.dentry)) {
++			dput(path->dentry);
++			mntget(next.mnt);
++			*path = next;
++			goto out;
++		}
++
++		if (IS_OPAQUE(nd->path.dentry->d_inode) && !d_is_fallthru(next.dentry))
++			goto out;
++
++		dput(next.dentry);
++	}
++out:
++	if (err)
++		dput(path->dentry);
++	return err;
++}
++
++static int __hash_lookup_build_union(struct nameidata *nd, struct qstr *name,
++				     struct path *path)
++{
++	struct path last = *path;
++	struct path next;
++	int err = 0;
++
++	while (follow_union_down(&nd->path)) {
++		/* We need to recompute the hash for lower layer lookups */
++		name->hash = full_name_hash(name->name, name->len);
++		if (nd->path.dentry->d_op && nd->path.dentry->d_op->d_hash) {
++			err = nd->path.dentry->d_op->d_hash(nd->path.dentry,
++							    name);
++			if (err < 0)
++				goto out;
++		}
++
++		mutex_lock(&nd->path.dentry->d_inode->i_mutex);
++		err = lookup_hash(nd, name, &next);
++		mutex_unlock(&nd->path.dentry->d_inode->i_mutex);
++		if (err)
++			goto out;
++
++		if (d_is_whiteout(next.dentry)) {
++			dput(next.dentry);
++			break;
++		}
++
++		if (!next.dentry->d_inode) {
++			dput(next.dentry);
++			continue;
++		}
++
++		/* only directories can be part of a union stack */
++		if (!S_ISDIR(next.dentry->d_inode->i_mode)) {
++			dput(next.dentry);
++			break;
++		}
++
++		/* now we know we found something "real" */
++		append_to_union(last.mnt, last.dentry, next.mnt, next.dentry);
++
++		if (last.dentry != path->dentry)
++			path_put(&last);
++		last.dentry = next.dentry;
++		last.mnt = mntget(next.mnt);
++	}
++
++	if (last.dentry != path->dentry)
++		path_put(&last);
++out:
++	return err;
++}
++
++int hash_lookup_union(struct nameidata *nd, struct qstr *name,
++			     struct path *path)
++{
++	struct path safe = { .dentry = nd->path.dentry, .mnt = nd->path.mnt };
++	int res ;
++
++	path_get(&safe);
++	res = __hash_lookup_topmost(nd, name, path);
++	if (res)
++		goto out;
++
++	/* only directories can be part of a union stack */
++	if (!path->dentry->d_inode ||
++	    !S_ISDIR(path->dentry->d_inode->i_mode))
++		goto out;
++
++	/* Build the union stack for this part */
++	res = __hash_lookup_build_union(nd, name, path);
++	if (res) {
++		dput(path->dentry);
++		if (path->mnt != safe.mnt)
++			mntput(path->mnt);
++		goto out;
++	}
++
++out:
++	path_put(&nd->path);
++	nd->path.dentry = safe.dentry;
++	nd->path.mnt = safe.mnt;
++	return res;
++}
++
++/**
++ * do_union_hash_lookup() - walk down the union stack and lookup_hash()
++ * @nd: nameidata of parent to lookup from
++ * @name: pathname component to lookup
++ * @path: path to store result of lookup in
++ *
++ * Walk down the union stack and search for single pathname component name. It
++ * is assumed that the caller already did a lookup_hash() in the topmost parent
++ * that gave negative lookup result. Therefore this does call lookup_hash() in
++ * every lower layer (!) of the union stack. If a directory is found the union
++ * stack for that is assembled as well.
++ *
++ * Note:
++ * The caller needs to take care of holding a valid reference to the topmost
++ * parent.
++ * On error we leave @path untouched as well as when we don't find anything.
++ */
++static int do_union_hash_lookup(struct nameidata *nd, struct qstr *name,
++				struct path *path)
++{
++	struct path next;
++	int err = 0;
++
++	while (follow_union_down(&nd->path)) {
++		/* rehash because of d_op->d_hash() by the previous layer */
++		name->hash = full_name_hash(name->name, name->len);
++
++		mutex_lock(&nd->path.dentry->d_inode->i_mutex);
++		err = lookup_hash(nd, name, &next);
++		mutex_unlock(&nd->path.dentry->d_inode->i_mutex);
++
++		if (err)
++			break;
++
++		if (next.dentry->d_inode) {
++			mntget(next.mnt);
++			if (!S_ISDIR(next.dentry->d_inode->i_mode)) {
++				*path = next;
++				break;
++			}
++			err = __hash_lookup_build_union(nd, name, &next);
++			if (err)
++				path_put(&next);
++			else
++				*path = next;
++			break;
++		}
++
++		path_put_conditional(&next, nd);
++
++		if ((IS_OPAQUE(nd->path.dentry->d_inode) &&
++		     !d_is_fallthru(next.dentry)) ||
++		    d_is_whiteout(next.dentry))
++			break;
++	}
++
++	return err;
++}
++
++/**
++ * _hash_lookup_union() - lookup single pathname component
++ * @nd: nameidata of parent to lookup from
++ * @name: pathname component to lookup
++ * @path: path to store result of lookup in
++ *
++ * Returns the topmost parent locked and the target dentry found in the union
++ * or the topmost negative target dentry otherwise.
++ *
++ * Note:
++ * Returns topmost parent locked even on error.
++ */
++static int _hash_lookup_union(struct nameidata *nd, struct qstr *name,
++			      struct path *path)
++{
++	struct path parent = nd->path;
++	struct path topmost;
++	int err;
++
++	mutex_lock(&nd->path.dentry->d_inode->i_mutex);
++	err = lookup_hash(nd, name, path);
++	if (err)
++		return err;
++
++	/* return if we found something and it isn't a directory we are done */
++	if (path->dentry->d_inode && !S_ISDIR(path->dentry->d_inode->i_mode))
++		return 0;
++
++	/* stop lookup if the parent directory is marked opaque */
++	if ((IS_OPAQUE(nd->path.dentry->d_inode) &&
++	     !d_is_fallthru(path->dentry)) ||
++	    d_is_whiteout(path->dentry))
++		return 0;
++
++	if (!strcmp(path->mnt->mnt_sb->s_type->name, "proc") ||
++	    !strcmp(path->mnt->mnt_sb->s_type->name, "sysfs"))
++		return 0;
++
++	mutex_unlock(&nd->path.dentry->d_inode->i_mutex);
++
++	/*
++	 * safe a reference to the topmost parent for walking the union stack
++	 */
++	path_get(&parent);
++	topmost = *path;
++
++	if (path->dentry->d_inode && S_ISDIR(path->dentry->d_inode->i_mode)) {
++		err = __hash_lookup_build_union(nd, name, path);
++		if (err)
++			goto err_lock_parent;
++		goto out_lock_and_revalidate_parent;
++	}
++
++	err = do_union_hash_lookup(nd, name, path);
++	if (err)
++		goto err_lock_parent;
++
++out_lock_and_revalidate_parent:
++	/* seems that we haven't found anything, so return the topmost */
++	path_to_nameidata(&parent, nd);
++	mutex_lock(&nd->path.dentry->d_inode->i_mutex);
++
++	if (topmost.dentry == path->dentry) {
++		spin_lock(&path->dentry->d_lock);
++		if (nd->path.dentry != path->dentry->d_parent) {
++			spin_unlock(&path->dentry->d_lock);
++			dput(path->dentry);
++			name->hash = full_name_hash(name->name, name->len);
++			err = lookup_hash(nd, name, path);
++			if (err)
++				return err;
++			/* FIXME: What if we find a directory here ... */
++			return err;
++		}
++		spin_unlock(&path->dentry->d_lock);
++	} else
++		dput(topmost.dentry);
++
++	return 0;
++
++err_lock_parent:
++	path_to_nameidata(&parent, nd);
++	path_put_conditional(path, nd);
++	mutex_lock(&nd->path.dentry->d_inode->i_mutex);
++	return err;
++}
++
++/**
++ * lookup_rename_source() - lookup the source used by rename
++ *
++ * This is a special version of _hash_lookup_union() which becomes necessary
++ * for finding the source of a rename on union mounts.
++ *
++ * See comment for _hash_lookup_union() above.
++ */
++static int lookup_rename_source(struct nameidata *oldnd,
++				struct nameidata *newnd,
++				struct dentry **trap, struct qstr *name,
++				struct path *old)
+ {
+-	struct dentry *dentry;
+-	struct inode *inode;
++	struct path parent = oldnd->path;
++	struct path topmost;
+ 	int err;
+ 
+-	inode = base->d_inode;
++	err = lookup_hash(oldnd, name, old);
++	if (err)
++		return err;
++
++	/* return if we found something and it isn't a directory we are done */
++	if (old->dentry->d_inode && !S_ISDIR(old->dentry->d_inode->i_mode))
++		return 0;
++
++	/* stop lookup if the parent directory is marked opaque */
++	if ((IS_OPAQUE(oldnd->path.dentry->d_inode) &&
++	     !d_is_fallthru(old->dentry)) ||
++	    d_is_whiteout(old->dentry))
++		return 0;
++
++	if (!strcmp(old->mnt->mnt_sb->s_type->name, "proc") ||
++	    !strcmp(old->mnt->mnt_sb->s_type->name, "sysfs"))
++		return 0;
++
++	unlock_rename(oldnd->path.dentry, newnd->path.dentry);
+ 
+ 	/*
+-	 * See if the low-level filesystem might want
+-	 * to use its own hash..
++	 * safe a reference to the topmost parent for walking the union stack
+ 	 */
+-	if (base->d_op && base->d_op->d_hash) {
+-		err = base->d_op->d_hash(base, name);
+-		dentry = ERR_PTR(err);
+-		if (err < 0)
+-			goto out;
++	path_get(&parent);
++	topmost = *old;
++
++	if (old->dentry->d_inode && S_ISDIR(old->dentry->d_inode->i_mode)) {
++		err = __hash_lookup_build_union(oldnd, name, old);
++		if (err)
++			goto err_lock;
++		goto out_lock_and_revalidate_parent;
+ 	}
+ 
+-	dentry = cached_lookup(base, name, nd);
+-	if (!dentry) {
+-		struct dentry *new;
++	err = do_union_hash_lookup(oldnd, name, old);
++	if (err)
++		goto err_lock;
+ 
+-		/* Don't create child dentry for a dead directory. */
+-		dentry = ERR_PTR(-ENOENT);
+-		if (IS_DEADDIR(inode))
+-			goto out;
++out_lock_and_revalidate_parent:
++	path_to_nameidata(&parent, oldnd);
++	*trap = lock_rename(oldnd->path.dentry, newnd->path.dentry);
+ 
+-		new = d_alloc(base, name);
+-		dentry = ERR_PTR(-ENOMEM);
+-		if (!new)
+-			goto out;
+-		dentry = inode->i_op->lookup(inode, new, nd);
+-		if (!dentry)
+-			dentry = new;
+-		else
+-			dput(new);
+-	}
+-out:
+-	return dentry;
+-}
++	/*
++	 * If we return the topmost dentry we have to make sure that it has not
++	 * been moved away while we gave up the topmost parents i_mutex lock.
++	 */
++	if (topmost.dentry == old->dentry) {
++		spin_lock(&old->dentry->d_lock);
++		if (oldnd->path.dentry != old->dentry->d_parent) {
++			spin_unlock(&old->dentry->d_lock);
++			dput(old->dentry);
++			name->hash = full_name_hash(name->name, name->len);
++			err = lookup_hash(oldnd, name, old);
++			if (err)
++				return err;
++			/* FIXME: What if we find a directory here ... */
++			return err;
++		}
++		spin_unlock(&old->dentry->d_lock);
++	} else
++		dput(topmost.dentry);
+ 
+-/*
+- * Restricted form of lookup. Doesn't follow links, single-component only,
+- * needs parent already locked. Doesn't follow mounts.
+- * SMP-safe.
+- */
+-static struct dentry *lookup_hash(struct nameidata *nd)
+-{
+-	int err;
++	return 0;
+ 
+-	err = inode_permission(nd->path.dentry->d_inode, MAY_EXEC);
+-	if (err)
+-		return ERR_PTR(err);
+-	return __lookup_hash(&nd->last, nd->path.dentry, nd);
++err_lock:
++	path_to_nameidata(&parent, oldnd);
++	path_put_conditional(old, oldnd);
++	*trap = lock_rename(oldnd->path.dentry, newnd->path.dentry);
++	return err;
+ }
+ 
+ static int __lookup_one_len(const char *name, struct qstr *this,
+@@ -1502,8 +2335,9 @@
+ 	return error;
+ }
+ 
+-int may_open(struct path *path, int acc_mode, int flag)
++int may_open(struct nameidata *nd, int acc_mode, int flag)
+ {
++	struct path *path = &nd->path;
+ 	struct dentry *dentry = path->dentry;
+ 	struct inode *inode = dentry->d_inode;
+ 	int error;
+@@ -1529,7 +2363,7 @@
+ 		break;
+ 	}
+ 
+-	error = inode_permission(inode, acc_mode);
++	error = union_permission(path, acc_mode);
+ 	if (error)
+ 		return error;
+ 
+@@ -1575,6 +2409,9 @@
+ 		if (!error)
+ 			error = security_path_truncate(path, 0,
+ 					       ATTR_MTIME|ATTR_CTIME|ATTR_OPEN);
++		/* XXX don't copy up file data */
++		if (is_unionized(path->dentry, path->mnt))
++			error = union_copyup(nd, flag /* XXX not used */);
+ 		if (!error) {
+ 			vfs_dq_init(inode);
+ 
+@@ -1621,7 +2458,7 @@
+ 	if (error)
+ 		return error;
+ 	/* Don't check for write permission, don't truncate */
+-	return may_open(&nd->path, 0, flag & ~O_TRUNC);
++	return may_open(nd, 0, flag & ~O_TRUNC);
+ }
+ 
+ /*
+@@ -1736,12 +2573,10 @@
+ 	if (flag & O_EXCL)
+ 		nd.flags |= LOOKUP_EXCL;
+ 	mutex_lock(&dir->d_inode->i_mutex);
+-	path.dentry = lookup_hash(&nd);
+-	path.mnt = nd.path.mnt;
++	error = hash_lookup_union(&nd, &nd.last, &path);
+ 
+ do_last:
+-	error = PTR_ERR(path.dentry);
+-	if (IS_ERR(path.dentry)) {
++	if (error) {
+ 		mutex_unlock(&dir->d_inode->i_mutex);
+ 		goto exit;
+ 	}
+@@ -1801,10 +2636,23 @@
+ 	if (path.dentry->d_inode->i_op->follow_link)
+ 		goto do_link;
+ 
+-	path_to_nameidata(&path, &nd);
+ 	error = -EISDIR;
+ 	if (path.dentry->d_inode && S_ISDIR(path.dentry->d_inode->i_mode))
+-		goto exit;
++		goto exit_dput;
++
++	/*
++	 * If this file is on a lower layer of the union stack, copy it to the
++	 * topmost layer before opening it
++	 */
++	if (path.dentry->d_inode &&
++	    (path.dentry->d_parent != dir) &&
++	    S_ISREG(path.dentry->d_inode->i_mode)) {
++		error = __union_copyup(&path, &nd, &path);
++		if (error)
++			goto exit_dput;
++	}
++
++	path_to_nameidata(&path, &nd);
+ ok:
+ 	/*
+ 	 * Consider:
+@@ -1822,12 +2670,18 @@
+ 		if (error)
+ 			goto exit;
+ 	}
+-	error = may_open(&nd.path, acc_mode, flag);
++	error = may_open(&nd, acc_mode, flag);
+ 	if (error) {
+ 		if (will_write)
+ 			mnt_drop_write(nd.path.mnt);
+ 		goto exit;
+ 	}
++	/* Okay, all permissions go, now copy up */
++	if (!(flag & O_CREAT) && (flag & FMODE_WRITE)) {
++		error = union_copyup(&nd, flag /* XXX not used */);
++		if (error)
++			goto exit;
++	}
+ 	filp = nameidata_to_filp(&nd, open_flag);
+ 	if (IS_ERR(filp))
+ 		ima_counts_put(&nd.path,
+@@ -1902,8 +2756,7 @@
+ 	}
+ 	dir = nd.path.dentry;
+ 	mutex_lock(&dir->d_inode->i_mutex);
+-	path.dentry = lookup_hash(&nd);
+-	path.mnt = nd.path.mnt;
++	error = hash_lookup_union(&nd, &nd.last, &path);
+ 	__putname(nd.last.name);
+ 	goto do_last;
+ }
+@@ -1937,7 +2790,8 @@
+  */
+ struct dentry *lookup_create(struct nameidata *nd, int is_dir)
+ {
+-	struct dentry *dentry = ERR_PTR(-EEXIST);
++	struct path path = { .dentry = ERR_PTR(-EEXIST) } ;
++	int err;
+ 
+ 	mutex_lock_nested(&nd->path.dentry->d_inode->i_mutex, I_MUTEX_PARENT);
+ 	/*
+@@ -1953,11 +2807,13 @@
+ 	/*
+ 	 * Do the final lookup.
+ 	 */
+-	dentry = lookup_hash(nd);
+-	if (IS_ERR(dentry))
++	err = hash_lookup_union(nd, &nd->last, &path);
++	if (err) {
++		path.dentry = ERR_PTR(err);
+ 		goto fail;
++	}
+ 
+-	if (dentry->d_inode)
++	if (path.dentry->d_inode)
+ 		goto eexist;
+ 	/*
+ 	 * Special case - lookup gave negative, but... we had foo/bar/
+@@ -1966,15 +2822,17 @@
+ 	 * been asking for (non-existent) directory. -ENOENT for you.
+ 	 */
+ 	if (unlikely(!is_dir && nd->last.name[nd->last.len])) {
+-		dput(dentry);
+-		dentry = ERR_PTR(-ENOENT);
++		path_put_conditional(&path, nd);
++		path.dentry = ERR_PTR(-ENOENT);
+ 	}
+-	return dentry;
++	if (nd->path.mnt != path.mnt)
++		mntput(path.mnt);
++	return path.dentry;
+ eexist:
+-	dput(dentry);
+-	dentry = ERR_PTR(-EEXIST);
++	path_put_conditional(&path, nd);
++	path.dentry = ERR_PTR(-EEXIST);
+ fail:
+-	return dentry;
++	return path.dentry;
+ }
+ EXPORT_SYMBOL_GPL(lookup_create);
+ 
+@@ -2086,6 +2944,7 @@
+ int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
+ {
+ 	int error = may_create(dir, dentry);
++	int opaque = 0;
+ 
+ 	if (error)
+ 		return error;
+@@ -2099,9 +2958,18 @@
+ 		return error;
+ 
+ 	vfs_dq_init(dir);
++
++	if (d_is_whiteout(dentry))
++		opaque = 1;
++
+ 	error = dir->i_op->mkdir(dir, dentry, mode);
+-	if (!error)
++	if (!error) {
+ 		fsnotify_mkdir(dir, dentry);
++		if (opaque) {
++			dentry->d_inode->i_flags |= S_OPAQUE;
++			mark_inode_dirty(dentry->d_inode);
++		}
++	}
+ 	return error;
+ }
+ 
+@@ -2147,6 +3015,212 @@
+ 	return sys_mkdirat(AT_FDCWD, pathname, mode);
+ }
+ 
++
++/* Checks on the victim for whiteout */
++static inline int may_whiteout(struct inode *dir, struct dentry *victim,
++			       int isdir)
++{
++	int err;
++
++	/* from may_create() */
++	if (IS_DEADDIR(dir))
++		return -ENOENT;
++	err = inode_permission(dir, MAY_WRITE | MAY_EXEC);
++	if (err)
++		return err;
++
++	/* from may_delete() */
++	if (IS_APPEND(dir))
++		return -EPERM;
++	if (!victim->d_inode)
++		return 0;
++	if (check_sticky(dir, victim->d_inode) ||
++	    IS_APPEND(victim->d_inode) ||
++	    IS_IMMUTABLE(victim->d_inode))
++		return -EPERM;
++	if (isdir) {
++		if (!S_ISDIR(victim->d_inode->i_mode))
++			return -ENOTDIR;
++		if (IS_ROOT(victim))
++			return -EBUSY;
++	} else if (S_ISDIR(victim->d_inode->i_mode))
++		return -EISDIR;
++	if (victim->d_flags & DCACHE_NFSFS_RENAMED)
++		return -EBUSY;
++	return 0;
++}
++
++/**
++ * vfs_whiteout: creates a white-out for the given directory entry
++ * @dir: parent inode
++ * @dentry: directory entry to white-out
++ *
++ * Simply white-out a given directory entry. This functionality is usually used
++ * in the sense of unlink. Therefore the given dentry can still be in-use and
++ * contains an in-use inode. The filesystem has to do what unlink or rmdir
++ * would in that case. Since the dentry still might be in-use we have to
++ * provide a fresh unhashed dentry that whiteout can fill the new inode into.
++ * In that case the given dentry is dropped and the fresh dentry containing the
++ * whiteout is rehashed instead. If the given dentry is unused, the whiteout
++ * inode is instantiated into it instead.
++ *
++ * After this returns with success, don't make any assumptions about the inode.
++ * Just dput() it dentry.
++ */
++static int vfs_whiteout(struct inode *dir, struct dentry *dentry, int isdir)
++{
++	int err;
++	struct inode *old_inode = dentry->d_inode;
++	struct dentry *parent, *whiteout;
++
++	err = may_whiteout(dir, dentry, isdir);
++	if (err)
++		return err;
++
++	BUG_ON(dentry->d_parent->d_inode != dir);
++
++	if (!dir->i_op || !dir->i_op->whiteout)
++		return -EOPNOTSUPP;
++
++	if (old_inode) {
++		vfs_dq_init(dir);
++
++		mutex_lock(&old_inode->i_mutex);
++		if (isdir)
++			dentry_unhash(dentry);
++		if (d_mountpoint(dentry))
++			err = -EBUSY;
++		else {
++			if (isdir)
++				err = security_inode_rmdir(dir, dentry);
++			else
++				err = security_inode_unlink(dir, dentry);
++		}
++	}
++
++	parent = dget_parent(dentry);
++	whiteout = d_alloc_name(parent, dentry->d_name.name);
++
++	if (!err)
++		err = dir->i_op->whiteout(dir, dentry, whiteout);
++
++	if (old_inode) {
++		mutex_unlock(&old_inode->i_mutex);
++		if (!err) {
++			fsnotify_link_count(old_inode);
++			d_delete(dentry);
++		}
++		if (isdir)
++			dput(dentry);
++	}
++
++	dput(whiteout);
++	dput(parent);
++	return err;
++}
++
++int path_whiteout(struct path *dir_path, struct dentry *dentry, int isdir)
++{
++	int error = mnt_want_write(dir_path->mnt);
++
++	if (!error) {
++		error = vfs_whiteout(dir_path->dentry->d_inode, dentry, isdir);
++		mnt_drop_write(dir_path->mnt);
++	}
++
++	return error;
++}
++EXPORT_SYMBOL(path_whiteout);
++
++/*
++ * This is abusing readdir to check if a union directory is logically empty.
++ * Al Viro barfed when he saw this, but Val said: "Well, at this point I'm
++ * aiming for working, pretty can come later"
++ */
++static int filldir_is_empty(void *__buf, const char *name, int namlen,
++			    loff_t offset, u64 ino, unsigned int d_type)
++{
++	int *is_empty = (int *)__buf;
++
++	switch (namlen) {
++	case 2:
++		if (name[1] != '.')
++			break;
++	case 1:
++		if (name[0] != '.')
++			break;
++		return 0;
++	}
++
++	if (d_type == DT_WHT)
++		return 0;
++
++	(*is_empty) = 0;
++	return 0;
++}
++
++static int directory_is_empty(struct dentry *dentry, struct vfsmount *mnt)
++{
++	struct file *file;
++	int err;
++	int is_empty = 1;
++
++	BUG_ON(!S_ISDIR(dentry->d_inode->i_mode));
++
++	/* references for the file pointer */
++	dget(dentry);
++	mntget(mnt);
++
++	file = dentry_open(dentry, mnt, O_RDONLY, current_cred());
++	if (IS_ERR(file))
++		return 0;
++
++	err = vfs_readdir(file, filldir_is_empty, &is_empty);
++
++	fput(file);
++	return is_empty;
++}
++
++static int do_whiteout(struct nameidata *nd, struct path *path, int isdir)
++{
++	struct path safe = { .dentry = dget(nd->path.dentry),
++			     .mnt = mntget(nd->path.mnt) };
++	struct dentry *dentry = path->dentry;
++	int err;
++
++	err = may_whiteout(nd->path.dentry->d_inode, dentry, isdir);
++	if (err)
++		goto out;
++
++	err = -ENOENT;
++	if (!dentry->d_inode)
++		goto out;
++
++	err = -ENOTEMPTY;
++	if (isdir && !directory_is_empty(path->dentry, path->mnt))
++		goto out;
++
++	if (nd->path.dentry != dentry->d_parent) {
++		dentry = __lookup_hash(&path->dentry->d_name, nd->path.dentry,
++				       nd);
++		err = PTR_ERR(dentry);
++		if (IS_ERR(dentry))
++			goto out;
++
++		dput(path->dentry);
++		if (path->mnt != safe.mnt)
++			mntput(path->mnt);
++		path->mnt = nd->path.mnt;
++		path->dentry = dentry;
++	}
++
++	err = vfs_whiteout(nd->path.dentry->d_inode, dentry, isdir);
++
++out:
++	path_put(&safe);
++	return err;
++}
++
+ /*
+  * We try to drop the dentry early: we should have
+  * a usage count of 2 if we're the only user of this
+@@ -2211,7 +3285,7 @@
+ {
+ 	int error = 0;
+ 	char * name;
+-	struct dentry *dentry;
++	struct path path;
+ 	struct nameidata nd;
+ 
+ 	error = user_path_parent(dfd, pathname, &nd, &name);
+@@ -2233,21 +3307,24 @@
+ 	nd.flags &= ~LOOKUP_PARENT;
+ 
+ 	mutex_lock_nested(&nd.path.dentry->d_inode->i_mutex, I_MUTEX_PARENT);
+-	dentry = lookup_hash(&nd);
+-	error = PTR_ERR(dentry);
+-	if (IS_ERR(dentry))
++	error = hash_lookup_union(&nd, &nd.last, &path);
++	if (error)
+ 		goto exit2;
++	if (is_unionized(nd.path.dentry, nd.path.mnt)) {
++		error = do_whiteout(&nd, &path, 1);
++		goto exit3;
++	}
+ 	error = mnt_want_write(nd.path.mnt);
+ 	if (error)
+ 		goto exit3;
+-	error = security_path_rmdir(&nd.path, dentry);
++	error = security_path_rmdir(&nd.path, path.dentry);
+ 	if (error)
+ 		goto exit4;
+-	error = vfs_rmdir(nd.path.dentry->d_inode, dentry);
++	error = vfs_rmdir(nd.path.dentry->d_inode, path.dentry);
+ exit4:
+ 	mnt_drop_write(nd.path.mnt);
+ exit3:
+-	dput(dentry);
++	path_put_conditional(&path, &nd);
+ exit2:
+ 	mutex_unlock(&nd.path.dentry->d_inode->i_mutex);
+ exit1:
+@@ -2302,7 +3379,7 @@
+ {
+ 	int error;
+ 	char *name;
+-	struct dentry *dentry;
++	struct path path;
+ 	struct nameidata nd;
+ 	struct inode *inode = NULL;
+ 
+@@ -2317,26 +3394,29 @@
+ 	nd.flags &= ~LOOKUP_PARENT;
+ 
+ 	mutex_lock_nested(&nd.path.dentry->d_inode->i_mutex, I_MUTEX_PARENT);
+-	dentry = lookup_hash(&nd);
+-	error = PTR_ERR(dentry);
+-	if (!IS_ERR(dentry)) {
++	error = hash_lookup_union(&nd, &nd.last, &path);
++	if (!error) {
+ 		/* Why not before? Because we want correct error value */
+ 		if (nd.last.name[nd.last.len])
+ 			goto slashes;
+-		inode = dentry->d_inode;
++		inode = path.dentry->d_inode;
+ 		if (inode)
+ 			atomic_inc(&inode->i_count);
++		if (is_unionized(nd.path.dentry, nd.path.mnt)) {
++			error = do_whiteout(&nd, &path, 0);
++			goto exit2;
++		}
+ 		error = mnt_want_write(nd.path.mnt);
+ 		if (error)
+ 			goto exit2;
+-		error = security_path_unlink(&nd.path, dentry);
++		error = security_path_unlink(&nd.path, path.dentry);
+ 		if (error)
+ 			goto exit3;
+-		error = vfs_unlink(nd.path.dentry->d_inode, dentry);
++		error = vfs_unlink(nd.path.dentry->d_inode, path.dentry);
+ exit3:
+ 		mnt_drop_write(nd.path.mnt);
+ 	exit2:
+-		dput(dentry);
++		path_put_conditional(&path, &nd);
+ 	}
+ 	mutex_unlock(&nd.path.dentry->d_inode->i_mutex);
+ 	if (inode)
+@@ -2347,8 +3427,8 @@
+ 	return error;
+ 
+ slashes:
+-	error = !dentry->d_inode ? -ENOENT :
+-		S_ISDIR(dentry->d_inode->i_mode) ? -EISDIR : -ENOTDIR;
++	error = !path.dentry->d_inode ? -ENOENT :
++		S_ISDIR(path.dentry->d_inode->i_mode) ? -EISDIR : -ENOTDIR;
+ 	goto exit2;
+ }
+ 
+@@ -2684,11 +3764,96 @@
+ 	return error;
+ }
+ 
++static int vfs_rename_union(struct nameidata *oldnd, struct path *old,
++			    struct nameidata *newnd, struct path *new)
++{
++	struct inode *old_dir = oldnd->path.dentry->d_inode;
++	struct inode *new_dir = newnd->path.dentry->d_inode;
++	struct qstr old_name;
++	char *name;
++	struct dentry *dentry;
++	int error;
++
++	if (old->dentry->d_inode == new->dentry->d_inode)
++		return 0;
++	error = may_whiteout(old_dir, old->dentry, 0);
++	if (error)
++		return error;
++	if (!old_dir->i_op || !old_dir->i_op->whiteout)
++		return -EPERM;
++
++	if (!new->dentry->d_inode)
++		error = may_create(new_dir, new->dentry);
++	else
++		error = may_delete(new_dir, new->dentry, 0);
++	if (error)
++		return error;
++
++	vfs_dq_init(old_dir);
++	vfs_dq_init(new_dir);
++
++	error = -EBUSY;
++	if (d_mountpoint(old->dentry) || d_mountpoint(new->dentry))
++		return error;
++
++	error = -ENOMEM;
++	name = kmalloc(old->dentry->d_name.len, GFP_KERNEL);
++	if (!name)
++		return error;
++	strncpy(name, old->dentry->d_name.name, old->dentry->d_name.len);
++	name[old->dentry->d_name.len] = 0;
++	old_name.len = old->dentry->d_name.len;
++	old_name.hash = old->dentry->d_name.hash;
++	old_name.name = name;
++
++	/* possibly delete the existing new file */
++	if ((newnd->path.dentry == new->dentry->d_parent) &&
++	    new->dentry->d_inode) {
++		/* FIXME: inode may be truncated while we hold a lock */
++		error = vfs_unlink(new_dir, new->dentry);
++		if (error)
++			goto freename;
++
++		dentry = __lookup_hash(&new->dentry->d_name,
++				       newnd->path.dentry, newnd);
++		if (IS_ERR(dentry))
++			goto freename;
++
++		dput(new->dentry);
++		new->dentry = dentry;
++	}
++
++	/* copyup to the new file */
++	error = __union_copyup(old, newnd, new);
++	if (error)
++		goto freename;
++
++	/* whiteout the old file */
++	dentry = __lookup_hash(&old_name, oldnd->path.dentry, oldnd);
++	error = PTR_ERR(dentry);
++	if (IS_ERR(dentry))
++		goto freename;
++	error = vfs_whiteout(old_dir, dentry, 0);
++	dput(dentry);
++
++	/* FIXME: This is acutally unlink() && create() ... */
++/*
++  if (!error) {
++  const char *new_name = old_dentry->d_name.name;
++  fsnotify_move(old_dir, new_dir, old_name.name, new_name, 0,
++  new_dentry->d_inode, old_dentry->d_inode);
++  }
++*/
++freename:
++	kfree(old_name.name);
++	return error;
++}
++
+ SYSCALL_DEFINE4(renameat, int, olddfd, const char __user *, oldname,
+ 		int, newdfd, const char __user *, newname)
+ {
+ 	struct dentry *old_dir, *new_dir;
+-	struct dentry *old_dentry, *new_dentry;
++	struct path old, new;
+ 	struct dentry *trap;
+ 	struct nameidata oldnd, newnd;
+ 	char *from;
+@@ -2722,16 +3887,28 @@
+ 
+ 	trap = lock_rename(new_dir, old_dir);
+ 
+-	old_dentry = lookup_hash(&oldnd);
+-	error = PTR_ERR(old_dentry);
+-	if (IS_ERR(old_dentry))
++	/*
++	 * For union mounts we need to call a giant lookup_rename_source()
++	 * instead.
++	 * First lock_rename() and look on the topmost fs like you would do in
++	 * the normal rename, if you find something which is not a directory,
++	 * go ahead and lookup target and do normal rename.
++	 * If you find a negative dentry, unlock_rename() and continue as
++	 * _hash_lookup_union() would do without locking the topmost parent
++	 * at the end. After that do lock_rename() of the source parent and the
++	 * target parent and do a copyup with additional whiteout creation at
++	 * the end.
++	 */
++//	error = hash_lookup_union(&oldnd, &oldnd.last, &old);
++	error = lookup_rename_source(&oldnd, &newnd, &trap, &oldnd.last, &old);
++	if (error)
+ 		goto exit3;
+ 	/* source must exist */
+ 	error = -ENOENT;
+-	if (!old_dentry->d_inode)
++	if (!old.dentry->d_inode)
+ 		goto exit4;
+ 	/* unless the source is a directory trailing slashes give -ENOTDIR */
+-	if (!S_ISDIR(old_dentry->d_inode->i_mode)) {
++	if (!S_ISDIR(old.dentry->d_inode->i_mode)) {
+ 		error = -ENOTDIR;
+ 		if (oldnd.last.name[oldnd.last.len])
+ 			goto exit4;
+@@ -2740,32 +3917,44 @@
+ 	}
+ 	/* source should not be ancestor of target */
+ 	error = -EINVAL;
+-	if (old_dentry == trap)
++	if (old.dentry == trap)
+ 		goto exit4;
+-	new_dentry = lookup_hash(&newnd);
+-	error = PTR_ERR(new_dentry);
+-	if (IS_ERR(new_dentry))
++	/* target is always on topmost fs, even with unions */
++	error = lookup_hash(&newnd, &newnd.last, &new);
++	if (error)
+ 		goto exit4;
+ 	/* target should not be an ancestor of source */
+ 	error = -ENOTEMPTY;
+-	if (new_dentry == trap)
++	if (new.dentry == trap)
++		goto exit5;
++	/* renaming of directories on unions is done by the user-space */
++	error = -EXDEV;
++	if (is_unionized(oldnd.path.dentry, oldnd.path.mnt) &&
++	    S_ISDIR(old.dentry->d_inode->i_mode))
+ 		goto exit5;
++//	if (is_unionized(newnd.path.dentry, newnd.path.mnt))
++//		goto exit5;
+ 
+ 	error = mnt_want_write(oldnd.path.mnt);
+ 	if (error)
+ 		goto exit5;
+-	error = security_path_rename(&oldnd.path, old_dentry,
+-				     &newnd.path, new_dentry);
++	error = security_path_rename(&oldnd.path, old.dentry,
++				     &newnd.path, new.dentry);
+ 	if (error)
+ 		goto exit6;
+-	error = vfs_rename(old_dir->d_inode, old_dentry,
+-				   new_dir->d_inode, new_dentry);
++	if (is_unionized(oldnd.path.dentry, oldnd.path.mnt) &&
++	    (old.dentry->d_parent != oldnd.path.dentry)) {
++		error = vfs_rename_union(&oldnd, &old, &newnd, &new);
++		goto exit6;
++	}
++	error = vfs_rename(old_dir->d_inode, old.dentry,
++				   new_dir->d_inode, new.dentry);
+ exit6:
+ 	mnt_drop_write(oldnd.path.mnt);
+ exit5:
+-	dput(new_dentry);
++	path_put_conditional(&new, &newnd);
+ exit4:
+-	dput(old_dentry);
++	path_put_conditional(&old, &oldnd);
+ exit3:
+ 	unlock_rename(new_dir, old_dir);
+ exit2:
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -29,6 +29,7 @@
+ #include <linux/log2.h>
+ #include <linux/idr.h>
+ #include <linux/fs_struct.h>
++#include <linux/union.h>
+ #include <asm/uaccess.h>
+ #include <asm/unistd.h>
+ #include "pnode.h"
+@@ -150,6 +151,9 @@
+ 		INIT_LIST_HEAD(&mnt->mnt_share);
+ 		INIT_LIST_HEAD(&mnt->mnt_slave_list);
+ 		INIT_LIST_HEAD(&mnt->mnt_slave);
++#ifdef CONFIG_UNION_MOUNT
++		INIT_LIST_HEAD(&mnt->mnt_unions);
++#endif
+ #ifdef CONFIG_SMP
+ 		mnt->mnt_writers = alloc_percpu(int);
+ 		if (!mnt->mnt_writers)
+@@ -469,6 +473,7 @@
+ 
+ static void detach_mnt(struct vfsmount *mnt, struct path *old_path)
+ {
++	detach_mnt_union(mnt);
+ 	old_path->dentry = mnt->mnt_mountpoint;
+ 	old_path->mnt = mnt->mnt_parent;
+ 	mnt->mnt_parent = mnt;
+@@ -492,6 +497,7 @@
+ 	list_add_tail(&mnt->mnt_hash, mount_hashtable +
+ 			hash(path->mnt, path->dentry));
+ 	list_add_tail(&mnt->mnt_child, &path->mnt->mnt_mounts);
++	attach_mnt_union(mnt, path->mnt, path->dentry);
+ }
+ 
+ /*
+@@ -514,6 +520,7 @@
+ 	list_add_tail(&mnt->mnt_hash, mount_hashtable +
+ 				hash(parent, mnt->mnt_mountpoint));
+ 	list_add_tail(&mnt->mnt_child, &parent->mnt_mounts);
++	attach_mnt_union(mnt, mnt->mnt_parent, mnt->mnt_mountpoint);
+ 	touch_mnt_namespace(n);
+ }
+ 
+@@ -770,6 +777,7 @@
+ 		{ MNT_NODIRATIME, ",nodiratime" },
+ 		{ MNT_RELATIME, ",relatime" },
+ 		{ MNT_STRICTATIME, ",strictatime" },
++		{ MNT_UNION, ",union" },
+ 		{ 0, NULL }
+ 	};
+ 	const struct proc_fs_info *fs_infop;
+@@ -984,6 +992,7 @@
+ 			struct dentry *dentry;
+ 			struct vfsmount *m;
+ 			spin_lock(&vfsmount_lock);
++			detach_mnt_union(mnt);
+ 			dentry = mnt->mnt_mountpoint;
+ 			m = mnt->mnt_parent;
+ 			mnt->mnt_mountpoint = mnt->mnt_root;
+@@ -1102,6 +1111,11 @@
+ 	spin_unlock(&vfsmount_lock);
+ 	if (retval)
+ 		security_sb_umount_busy(mnt);
++	/* If this was a union mount, we are no longer a read-only
++	 * user on the underlying mount */
++	if (mnt->mnt_flags & MNT_UNION)
++		mnt->mnt_parent->mnt_sb->s_readonly_users--;
++
+ 	up_write(&namespace_sem);
+ 	release_mounts(&umount_list);
+ 	return retval;
+@@ -1426,6 +1440,10 @@
+ 	if (path->dentry != path->mnt->mnt_root)
+ 		return -EINVAL;
+ 
++	/* Don't change the type of union mounts */
++	if (IS_MNT_UNION(path->mnt))
++		return -EINVAL;
++
+ 	down_write(&namespace_sem);
+ 	if (type == MS_SHARED) {
+ 		err = invent_group_ids(mnt, recurse);
+@@ -1444,10 +1462,65 @@
+ }
+ 
+ /*
++ * Mount-time check of upper and lower layer file systems to see if we
++ * can union mount one on the other.
++ *
++ * Union mounts must follow these rules:
++ *
++ * - The lower layer must be read-only.  This avoids lots of nasty
++ *   unsolvable races where file system structures disappear suddenly.
++ *   XXX - Checking the vfsmnt for read-only is a temporary hack; the
++ *   file system could be mounted read-write elsewhere.  We need to
++ *   enforce read-only at the superblock level (patches coming).
++ *
++ * - The upper layer must be writable.  This isn't an absolute
++ *   requirement; right now we need it to make readdir() work since we
++ *   copy up directory entries to the top level.  A possible
++ *   workaround is to mount a tmpfs file system transparently over the
++ *   top.
++ *
++ * - The upper layer must support whiteouts and fallthrus (if it is
++ *   writeable).
++ *
++ * - The lower layer must not also be a union mount.  This is just to
++ *   make life simpler for now, there is no inherent limitation on the
++ *   number of layers.
++ *
++ * XXX - Check other mount flags for incompatibilities - I'm sure
++ * there are some.
++ */
++
++static int
++check_union_mnt(struct path *mntpnt, struct vfsmount *top_mnt, int mnt_flags)
++{
++	struct vfsmount *lower_mnt = mntpnt->mnt;
++
++	/* Is this even a union mount? */
++	if (!(mnt_flags & MNT_UNION))
++		return 0;
++
++	/* Lower layer must be read-only and not a union mount */
++	if (!(lower_mnt->mnt_sb->s_flags & MS_RDONLY) ||
++	    (lower_mnt->mnt_flags & MNT_UNION))
++		return -EBUSY;
++
++	/* Upper layer must be writable */
++	if (mnt_flags & MNT_READONLY)
++		return -EROFS;
++
++	/* Upper layer must support whiteouts and fallthrus */
++	if (!(top_mnt->mnt_sb->s_flags & MS_WHITEOUT))
++		return -EINVAL;
++
++	/* All good! */
++	return 0;
++}
++
++/*
+  * do loopback mount.
+  */
+-static int do_loopback(struct path *path, char *old_name,
+-				int recurse)
++static int do_loopback(struct path *path, char *old_name, int recurse,
++		       int mnt_flags)
+ {
+ 	struct path old_path;
+ 	struct vfsmount *mnt = NULL;
+@@ -1477,6 +1550,13 @@
+ 	if (!mnt)
+ 		goto out;
+ 
++	err = check_union_mnt(&old_path, mnt, mnt_flags);
++	if (err)
++		goto out;
++
++	if (mnt_flags & MNT_UNION)
++		mnt->mnt_flags |= MNT_UNION;
++
+ 	err = graft_tree(mnt, path);
+ 	if (err) {
+ 		LIST_HEAD(umount_list);
+@@ -1486,6 +1566,10 @@
+ 		release_mounts(&umount_list);
+ 	}
+ 
++	/* If this is a union mount, add ourselves to the readonly users */
++	if (mnt_flags & MNT_UNION)
++		mnt->mnt_parent->mnt_sb->s_readonly_users++;
++
+ out:
+ 	up_write(&namespace_sem);
+ 	path_put(&old_path);
+@@ -1570,6 +1654,13 @@
+ 	if (err)
+ 		return err;
+ 
++	/* moving to or from a union mount is not supported */
++	err = -EINVAL;
++	if (IS_MNT_UNION(path->mnt))
++		goto exit;
++	if (IS_MNT_UNION(old_path.mnt))
++		goto exit;
++
+ 	down_write(&namespace_sem);
+ 	while (d_mountpoint(path->dentry) &&
+ 	       follow_down(path))
+@@ -1627,6 +1718,7 @@
+ 	up_write(&namespace_sem);
+ 	if (!err)
+ 		path_put(&parent_path);
++exit:
+ 	path_put(&old_path);
+ 	return err;
+ }
+@@ -1684,10 +1776,18 @@
+ 	if (S_ISLNK(newmnt->mnt_root->d_inode->i_mode))
+ 		goto unlock;
+ 
++	err = check_union_mnt(path, newmnt, mnt_flags);
++	if (err)
++		goto unlock;
++
+ 	newmnt->mnt_flags = mnt_flags;
+ 	if ((err = graft_tree(newmnt, path)))
+ 		goto unlock;
+ 
++	/* If this is a union mount, add ourselves to the readonly users */
++	if (mnt_flags & MNT_UNION)
++		newmnt->mnt_parent->mnt_sb->s_readonly_users++;
++
+ 	if (fslist) /* add to the specified expiration list */
+ 		list_add_tail(&newmnt->mnt_expire, fslist);
+ 
+@@ -1925,10 +2025,12 @@
+ 		mnt_flags &= ~(MNT_RELATIME | MNT_NOATIME);
+ 	if (flags & MS_RDONLY)
+ 		mnt_flags |= MNT_READONLY;
++	if (flags & MS_UNION)
++		mnt_flags |= MNT_UNION;
+ 
+ 	flags &= ~(MS_NOSUID | MS_NOEXEC | MS_NODEV | MS_ACTIVE |
+ 		   MS_NOATIME | MS_NODIRATIME | MS_RELATIME| MS_KERNMOUNT |
+-		   MS_STRICTATIME);
++		   MS_STRICTATIME | MS_UNION);
+ 
+ 	/* ... and get the mountpoint */
+ 	retval = kern_path(dir_name, LOOKUP_FOLLOW, &path);
+@@ -1944,7 +2046,8 @@
+ 		retval = do_remount(&path, flags & ~MS_REMOUNT, mnt_flags,
+ 				    data_page);
+ 	else if (flags & MS_BIND)
+-		retval = do_loopback(&path, dev_name, flags & MS_REC);
++		retval = do_loopback(&path, dev_name, flags & MS_REC,
++				     mnt_flags);
+ 	else if (flags & (MS_SHARED | MS_PRIVATE | MS_SLAVE | MS_UNBINDABLE))
+ 		retval = do_change_type(&path, flags);
+ 	else if (flags & MS_MOVE)
+@@ -2179,6 +2282,8 @@
+ 	if (d_unlinked(old.dentry))
+ 		goto out2;
+ 	error = -EBUSY;
++	follow_union_down(&new);
++	follow_union_down(&root);
+ 	if (new.mnt == root.mnt ||
+ 	    old.mnt == root.mnt)
+ 		goto out2; /* loop, on the same file system  */
+--- a/fs/nfsctl.c
++++ b/fs/nfsctl.c
+@@ -38,10 +38,10 @@
+ 		return ERR_PTR(error);
+ 
+ 	if (flags == O_RDWR)
+-		error = may_open(&nd.path, MAY_READ|MAY_WRITE,
+-					   FMODE_READ|FMODE_WRITE);
++		error = may_open(&nd, MAY_READ|MAY_WRITE,
++				 FMODE_READ|FMODE_WRITE);
+ 	else
+-		error = may_open(&nd.path, MAY_WRITE, FMODE_WRITE);
++		error = may_open(&nd, MAY_WRITE, FMODE_WRITE);
+ 
+ 	if (!error)
+ 		return dentry_open(nd.path.dentry, nd.path.mnt, flags,
+--- a/fs/nfsd/nfs3xdr.c
++++ b/fs/nfsd/nfs3xdr.c
+@@ -884,6 +884,11 @@
+ 	int		elen;		/* estimated entry length in words */
+ 	int		num_entry_words = 0;	/* actual number of words */
+ 
++	if (d_type == DT_WHT) {
++		cd->common.err = nfs_ok;
++		return 0;
++	}
++
+ 	if (cd->offset) {
+ 		u64 offset64 = offset;
+ 
+--- a/fs/nfsd/nfs4xdr.c
++++ b/fs/nfsd/nfs4xdr.c
+@@ -2263,7 +2263,7 @@
+ 	__be32 nfserr = nfserr_toosmall;
+ 
+ 	/* In nfsv4, "." and ".." never make it onto the wire.. */
+-	if (name && isdotent(name, namlen)) {
++	if (d_type == DT_WHT || (name && isdotent(name, namlen))) {
+ 		cd->common.err = nfs_ok;
+ 		return 0;
+ 	}
+--- a/fs/nfsd/nfsxdr.c
++++ b/fs/nfsd/nfsxdr.c
+@@ -513,6 +513,10 @@
+ 			namlen, name, offset, ino);
+ 	 */
+ 
++	if (d_type == DT_WHT) {
++		cd->common.err = nfs_ok;
++		return 0;
++	}
+ 	if (offset > ~((u32) 0)) {
+ 		cd->common.err = nfserr_fbig;
+ 		return -EINVAL;
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -30,6 +30,7 @@
+ #include <linux/audit.h>
+ #include <linux/falloc.h>
+ #include <linux/fs_struct.h>
++#include <linux/union.h>
+ 
+ int vfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ {
+@@ -222,69 +223,69 @@
+ 	return err;
+ }
+ 
+-static long do_sys_truncate(const char __user *pathname, loff_t length)
++static int __do_ftruncate(struct file *file, unsigned long length, int small)
+ {
+-	struct path path;
+-	struct inode *inode;
++	struct inode * inode;
++	struct dentry *dentry;
+ 	int error;
+ 
+ 	error = -EINVAL;
+-	if (length < 0)	/* sorry, but loff_t says... */
++	if (length < 0)
+ 		goto out;
++	/* explicitly opened as large or we are on 64-bit box */
++	if (file->f_flags & O_LARGEFILE)
++		small = 0;
+ 
+-	error = user_path(pathname, &path);
+-	if (error)
++	dentry = file->f_path.dentry;
++	inode = dentry->d_inode;
++	error = -EINVAL;
++	if (!S_ISREG(inode->i_mode) || !(file->f_mode & FMODE_WRITE))
+ 		goto out;
+-	inode = path.dentry->d_inode;
+-
+-	/* For directories it's -EISDIR, for other non-regulars - -EINVAL */
+-	error = -EISDIR;
+-	if (S_ISDIR(inode->i_mode))
+-		goto dput_and_out;
+ 
+ 	error = -EINVAL;
+-	if (!S_ISREG(inode->i_mode))
+-		goto dput_and_out;
+-
+-	error = mnt_want_write(path.mnt);
+-	if (error)
+-		goto dput_and_out;
++	/* Cannot ftruncate over 2^31 bytes without large file support */
++	if (small && length > MAX_NON_LFS)
+ 
+-	error = inode_permission(inode, MAY_WRITE);
+-	if (error)
+-		goto mnt_drop_write_and_out;
++		goto out;
+ 
+ 	error = -EPERM;
+ 	if (IS_APPEND(inode))
+-		goto mnt_drop_write_and_out;
++		goto out;
+ 
+-	error = get_write_access(inode);
+-	if (error)
+-		goto mnt_drop_write_and_out;
++	error = locks_verify_truncate(inode, file, length);
++	if (!error)
++		error = security_path_truncate(&file->f_path, length,
++					       ATTR_MTIME|ATTR_CTIME);
++	if (!error)
++		/* Already copied up for union, opened with write */
++		error = do_truncate(dentry, length, ATTR_MTIME|ATTR_CTIME, file);
++out:
++	return error;
++}
+ 
+-	/*
+-	 * Make sure that there are no leases.  get_write_access() protects
+-	 * against the truncate racing with a lease-granting setlease().
+-	 */
+-	error = break_lease(inode, FMODE_WRITE);
+-	if (error)
+-		goto put_write_and_out;
++static long do_sys_truncate(const char __user *pathname, loff_t length)
++{
++	struct file *file;
++	char *tmp;
++	int error;
+ 
+-	error = locks_verify_truncate(inode, NULL, length);
+-	if (!error)
+-		error = security_path_truncate(&path, length, 0);
+-	if (!error) {
+-		vfs_dq_init(inode);
+-		error = do_truncate(path.dentry, length, 0, NULL);
+-	}
++	error = -EINVAL;
++	if (length < 0)	/* sorry, but loff_t says... */
++		return error;
+ 
+-put_write_and_out:
+-	put_write_access(inode);
+-mnt_drop_write_and_out:
+-	mnt_drop_write(path.mnt);
+-dput_and_out:
+-	path_put(&path);
+-out:
++	tmp = getname(pathname);
++	if (IS_ERR(tmp))
++		return PTR_ERR(tmp);
++
++	file = filp_open(tmp, O_RDWR | O_LARGEFILE, 0);
++	putname(tmp);
++
++	if (IS_ERR(file))
++		return PTR_ERR(file);
++
++	error = __do_ftruncate(file, length, 0);
++
++	fput(file);
+ 	return error;
+ }
+ 
+@@ -296,45 +297,16 @@
+ 
+ static long do_sys_ftruncate(unsigned int fd, loff_t length, int small)
+ {
+-	struct inode * inode;
+-	struct dentry *dentry;
+ 	struct file * file;
+ 	int error;
+ 
+-	error = -EINVAL;
+-	if (length < 0)
+-		goto out;
+ 	error = -EBADF;
+ 	file = fget(fd);
+ 	if (!file)
+ 		goto out;
+ 
+-	/* explicitly opened as large or we are on 64-bit box */
+-	if (file->f_flags & O_LARGEFILE)
+-		small = 0;
+-
+-	dentry = file->f_path.dentry;
+-	inode = dentry->d_inode;
+-	error = -EINVAL;
+-	if (!S_ISREG(inode->i_mode) || !(file->f_mode & FMODE_WRITE))
+-		goto out_putf;
+-
+-	error = -EINVAL;
+-	/* Cannot ftruncate over 2^31 bytes without large file support */
+-	if (small && length > MAX_NON_LFS)
+-		goto out_putf;
++	error = __do_ftruncate(file, length, small);
+ 
+-	error = -EPERM;
+-	if (IS_APPEND(inode))
+-		goto out_putf;
+-
+-	error = locks_verify_truncate(inode, file, length);
+-	if (!error)
+-		error = security_path_truncate(&file->f_path, length,
+-					       ATTR_MTIME|ATTR_CTIME);
+-	if (!error)
+-		error = do_truncate(dentry, length, ATTR_MTIME|ATTR_CTIME, file);
+-out_putf:
+ 	fput(file);
+ out:
+ 	return error;
+@@ -493,7 +465,8 @@
+ 			goto out_path_release;
+ 	}
+ 
+-	res = inode_permission(inode, mode | MAY_ACCESS);
++	res = union_permission(&path, mode | MAY_ACCESS);
++
+ 	/* SuS v2 requires we report a read only fs too */
+ 	if (res || !(mode & S_IWOTH) || special_file(inode->i_mode))
+ 		goto out_path_release;
+@@ -507,7 +480,8 @@
+ 	 * inherently racy and know that the fs may change
+ 	 * state before we even see this result.
+ 	 */
+-	if (__mnt_is_readonly(path.mnt))
++	if ((!is_unionized(path.dentry, path.mnt) &&
++	     (__mnt_is_readonly(path.mnt))))
+ 		res = -EROFS;
+ 
+ out_path_release:
+@@ -553,20 +527,19 @@
+ 	error = -EBADF;
+ 	file = fget(fd);
+ 	if (!file)
+-		goto out;
++		return error;
+ 
+ 	inode = file->f_path.dentry->d_inode;
+ 
+ 	error = -ENOTDIR;
+ 	if (!S_ISDIR(inode->i_mode))
+-		goto out_putf;
++		goto out;
+ 
+ 	error = inode_permission(inode, MAY_EXEC | MAY_ACCESS);
+ 	if (!error)
+ 		set_fs_pwd(current->fs, &file->f_path);
+-out_putf:
+-	fput(file);
+ out:
++	fput(file);
+ 	return error;
+ }
+ 
+--- a/fs/readdir.c
++++ b/fs/readdir.c
+@@ -16,6 +16,7 @@
+ #include <linux/security.h>
+ #include <linux/syscalls.h>
+ #include <linux/unistd.h>
++#include <linux/union.h>
+ 
+ #include <asm/uaccess.h>
+ 
+@@ -36,9 +37,24 @@
+ 
+ 	res = -ENOENT;
+ 	if (!IS_DEADDIR(inode)) {
++		/*
++		 * XXX Think harder about locking for
++		 * union_copyup_dir.  Currently we lock the topmost
++		 * directory and hold that lock while sequentially
++		 * acquiring and dropping locks for the directories
++		 * below this one in the union stack.
++		 */
++		if (is_unionized(file->f_path.dentry, file->f_path.mnt) &&
++		    !IS_OPAQUE(inode)) {
++			res = union_copyup_dir(&file->f_path);
++			if (res)
++				goto out_unlock;
++		}
++
+ 		res = file->f_op->readdir(file, buf, filler);
+ 		file_accessed(file);
+ 	}
++out_unlock:
+ 	mutex_unlock(&inode->i_mutex);
+ out:
+ 	return res;
+@@ -77,6 +93,9 @@
+ 	struct old_linux_dirent __user * dirent;
+ 	unsigned long d_ino;
+ 
++	if (d_type == DT_WHT)
++		return 0;
++
+ 	if (buf->result)
+ 		return -EINVAL;
+ 	d_ino = ino;
+@@ -154,6 +173,9 @@
+ 	unsigned long d_ino;
+ 	int reclen = ALIGN(NAME_OFFSET(dirent) + namlen + 2, sizeof(long));
+ 
++	if (d_type == DT_WHT)
++		return 0;
++
+ 	buf->error = -EINVAL;	/* only used if we fail.. */
+ 	if (reclen > buf->count)
+ 		return -EINVAL;
+@@ -239,6 +261,9 @@
+ 	struct getdents_callback64 * buf = (struct getdents_callback64 *) __buf;
+ 	int reclen = ALIGN(NAME_OFFSET(dirent) + namlen + 1, sizeof(u64));
+ 
++	if (d_type == DT_WHT)
++		return 0;
++
+ 	buf->error = -EINVAL;	/* only used if we fail.. */
+ 	if (reclen > buf->count)
+ 		return -EINVAL;
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -553,6 +553,15 @@
+ 	}
+ 	remount_rw = !(flags & MS_RDONLY) && (sb->s_flags & MS_RDONLY);
+ 
++	/* If we are remounting read/write, make sure that none of the
++	   users require read-only for correct operation (such as
++	   union mounts). */
++	if (remount_rw && sb->s_readonly_users) {
++		printk(KERN_INFO "%s: In use by %d read-only user(s)\n",
++		       sb->s_id, sb->s_readonly_users);
++		return -EROFS;
++	}
++
+ 	if (sb->s_op->remount_fs) {
+ 		retval = sb->s_op->remount_fs(sb, &flags, data);
+ 		if (retval)
+@@ -889,6 +898,11 @@
+  	if (error)
+  		goto out_sb;
+ 
++	error = -EROFS;
++	if (!(flags & MS_RDONLY) &&
++	    (mnt->mnt_sb->s_readonly_users))
++		goto out_sb;
++
+ 	mnt->mnt_mountpoint = mnt->mnt_root;
+ 	mnt->mnt_parent = mnt;
+ 	up_write(&mnt->mnt_sb->s_umount);
+--- /dev/null
++++ b/fs/union.c
+@@ -0,0 +1,981 @@
++/*
++ * VFS based union mount for Linux
++ *
++ * Copyright (C) 2004-2007 IBM Corporation, IBM Deutschland Entwicklung GmbH.
++ * Copyright (C) 2007-2009 Novell Inc.
++ *
++ *   Author(s): Jan Blunck (j.blunck@tu-harburg.de)
++ *              Valerie Aurora <vaurora@redhat.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the Free
++ * Software Foundation; either version 2 of the License, or (at your option)
++ * any later version.
++ */
++
++#include <linux/bootmem.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/hash.h>
++#include <linux/fs.h>
++#include <linux/mount.h>
++#include <linux/fs_struct.h>
++#include <linux/union.h>
++#include <linux/namei.h>
++#include <linux/file.h>
++#include <linux/mm.h>
++#include <linux/quotaops.h>
++#include <linux/dnotify.h>
++#include <linux/security.h>
++#include <linux/pipe_fs_i.h>
++#include <linux/splice.h>
++
++/*
++ * This is borrowed from fs/inode.c. The hashtable for lookups. Somebody
++ * should try to make this good - I've just made it work.
++ */
++static unsigned int union_hash_mask __read_mostly;
++static unsigned int union_hash_shift __read_mostly;
++static struct hlist_head *union_hashtable __read_mostly;
++static unsigned int union_rhash_mask __read_mostly;
++static unsigned int union_rhash_shift __read_mostly;
++static struct hlist_head *union_rhashtable __read_mostly;
++
++/*
++ * Locking Rules:
++ * - dcache_lock (for union_rlookup() only)
++ * - union_lock
++ */
++DEFINE_SPINLOCK(union_lock);
++
++static struct kmem_cache *union_cache __read_mostly;
++
++static unsigned long hash(struct dentry *dentry, struct vfsmount *mnt)
++{
++	unsigned long tmp;
++
++	tmp = ((unsigned long)mnt * (unsigned long)dentry) ^
++		(GOLDEN_RATIO_PRIME + (unsigned long)mnt) / L1_CACHE_BYTES;
++	tmp = tmp ^ ((tmp ^ GOLDEN_RATIO_PRIME) >> union_hash_shift);
++	return tmp & union_hash_mask;
++}
++
++static __initdata unsigned long union_hash_entries;
++
++static int __init set_union_hash_entries(char *str)
++{
++	if (!str)
++		return 0;
++	union_hash_entries = simple_strtoul(str, &str, 0);
++	return 1;
++}
++
++__setup("union_hash_entries=", set_union_hash_entries);
++
++static int __init init_union(void)
++{
++	int loop;
++
++	union_cache = KMEM_CACHE(union_mount, SLAB_PANIC | SLAB_MEM_SPREAD);
++	union_hashtable = alloc_large_system_hash("Union-cache",
++						  sizeof(struct hlist_head),
++						  union_hash_entries,
++						  14,
++						  0,
++						  &union_hash_shift,
++						  &union_hash_mask,
++						  0);
++
++	for (loop = 0; loop < (1 << union_hash_shift); loop++)
++		INIT_HLIST_HEAD(&union_hashtable[loop]);
++
++
++	union_rhashtable = alloc_large_system_hash("rUnion-cache",
++						  sizeof(struct hlist_head),
++						  union_hash_entries,
++						  14,
++						  0,
++						  &union_rhash_shift,
++						  &union_rhash_mask,
++						  0);
++
++	for (loop = 0; loop < (1 << union_rhash_shift); loop++)
++		INIT_HLIST_HEAD(&union_rhashtable[loop]);
++
++	return 0;
++}
++
++fs_initcall(init_union);
++
++struct union_mount *union_alloc(struct dentry *this, struct vfsmount *this_mnt,
++				struct dentry *next, struct vfsmount *next_mnt)
++{
++	struct union_mount *um;
++
++	BUG_ON(!S_ISDIR(this->d_inode->i_mode));
++	BUG_ON(!S_ISDIR(next->d_inode->i_mode));
++
++	um = kmem_cache_alloc(union_cache, GFP_ATOMIC);
++	if (!um)
++		return NULL;
++
++	atomic_set(&um->u_count, 1);
++	INIT_LIST_HEAD(&um->u_unions);
++	INIT_LIST_HEAD(&um->u_list);
++	INIT_HLIST_NODE(&um->u_hash);
++	INIT_HLIST_NODE(&um->u_rhash);
++
++	um->u_this.mnt = this_mnt;
++	um->u_this.dentry = this;
++	um->u_next.mnt = mntget(next_mnt);
++	um->u_next.dentry = dget(next);
++
++	return um;
++}
++
++struct union_mount *union_get(struct union_mount *um)
++{
++	BUG_ON(!atomic_read(&um->u_count));
++	atomic_inc(&um->u_count);
++	return um;
++}
++
++static int __union_put(struct union_mount *um)
++{
++	if (!atomic_dec_and_test(&um->u_count))
++		return 0;
++
++	BUG_ON(!hlist_unhashed(&um->u_hash));
++	BUG_ON(!hlist_unhashed(&um->u_rhash));
++
++	kmem_cache_free(union_cache, um);
++	return 1;
++}
++
++void union_put(struct union_mount *um)
++{
++	struct path tmp = um->u_next;
++
++	if (__union_put(um))
++		path_put(&tmp);
++}
++
++static void __union_hash(struct union_mount *um)
++{
++	hlist_add_head(&um->u_hash, union_hashtable +
++		       hash(um->u_this.dentry, um->u_this.mnt));
++	hlist_add_head(&um->u_rhash, union_rhashtable +
++		       hash(um->u_next.dentry, um->u_next.mnt));
++}
++
++static void __union_unhash(struct union_mount *um)
++{
++	hlist_del_init(&um->u_hash);
++	hlist_del_init(&um->u_rhash);
++}
++
++struct union_mount *union_lookup(struct dentry *dentry, struct vfsmount *mnt)
++{
++	struct hlist_head *head = union_hashtable + hash(dentry, mnt);
++	struct hlist_node *node;
++	struct union_mount *um;
++
++	hlist_for_each_entry(um, node, head, u_hash) {
++		if ((um->u_this.dentry == dentry) &&
++		    (um->u_this.mnt == mnt))
++			return um;
++	}
++
++	return NULL;
++}
++
++struct union_mount *union_rlookup(struct dentry *dentry, struct vfsmount *mnt)
++{
++	struct hlist_head *head = union_rhashtable + hash(dentry, mnt);
++	struct hlist_node *node;
++	struct union_mount *um;
++
++	hlist_for_each_entry(um, node, head, u_rhash) {
++		if ((um->u_next.dentry == dentry) &&
++		    (um->u_next.mnt == mnt))
++			return um;
++	}
++
++	return NULL;
++}
++
++/*
++ * is_unionized - check if a dentry lives on a union mounted file system
++ *
++ * This tests if a dentry is living on an union mounted file system by walking
++ * the file system hierarchy.
++ */
++int is_unionized(struct dentry *dentry, struct vfsmount *mnt)
++{
++	struct path this = { .mnt = mntget(mnt),
++			     .dentry = dget(dentry) };
++	struct vfsmount *tmp;
++
++	do {
++		/* check if there is an union mounted on top of us */
++		spin_lock(&vfsmount_lock);
++		list_for_each_entry(tmp, &this.mnt->mnt_mounts, mnt_child) {
++			if (!(tmp->mnt_flags & MNT_UNION))
++				continue;
++			/* Isn't this a bug? */
++			if (this.dentry->d_sb != tmp->mnt_mountpoint->d_sb)
++				continue;
++			if (is_subdir(this.dentry, tmp->mnt_mountpoint)) {
++				spin_unlock(&vfsmount_lock);
++				path_put(&this);
++				return 1;
++			}
++		}
++		spin_unlock(&vfsmount_lock);
++
++		/* check our mountpoint next */
++		tmp = mntget(this.mnt->mnt_parent);
++		dput(this.dentry);
++		this.dentry = dget(this.mnt->mnt_mountpoint);
++		mntput(this.mnt);
++		this.mnt = tmp;
++	} while (this.mnt != this.mnt->mnt_parent);
++
++	path_put(&this);
++	return 0;
++}
++
++int append_to_union(struct vfsmount *mnt, struct dentry *dentry,
++		    struct vfsmount *dest_mnt, struct dentry *dest_dentry)
++{
++	struct union_mount *this, *um;
++
++	BUG_ON(!IS_MNT_UNION(mnt));
++
++	this = union_alloc(dentry, mnt, dest_dentry, dest_mnt);
++	if (!this)
++		return -ENOMEM;
++
++	spin_lock(&union_lock);
++	um = union_lookup(dentry, mnt);
++	if (um) {
++		BUG_ON((um->u_next.dentry != dest_dentry) ||
++		       (um->u_next.mnt != dest_mnt));
++		spin_unlock(&union_lock);
++		union_put(this);
++		return 0;
++	}
++	list_add(&this->u_list, &mnt->mnt_unions);
++	list_add(&this->u_unions, &dentry->d_unions);
++	dest_dentry->d_unionized++;
++	__union_hash(this);
++	spin_unlock(&union_lock);
++	return 0;
++}
++
++/*
++ * follow_union_down - follow the union stack one layer down
++ *
++ * This is called to traverse the union stack from one layer to the next
++ * overlayed one. follow_union_down() is called by various lookup functions
++ * that are aware of union mounts.
++ *
++ * Returns non-zero if followed to the next layer, zero otherwise.
++ */
++int follow_union_down(struct path *path)
++{
++	struct union_mount *um;
++
++	if (!IS_MNT_UNION(path->mnt))
++		return 0;
++
++	spin_lock(&union_lock);
++	um = union_lookup(path->dentry, path->mnt);
++	spin_unlock(&union_lock);
++	if (um) {
++		path_get(&um->u_next);
++		dput(path->dentry);
++		path->dentry = um->u_next.dentry;
++		mntput(path->mnt);
++		path->mnt = um->u_next.mnt;
++		return 1;
++	}
++	return 0;
++}
++
++/*
++ * follow_union_mount - follow the union stack to the topmost layer
++ *
++ * This is called to traverse the union stack to the topmost layer. This is
++ * necessary for following parent pointers in an union mount.
++ *
++ * Returns none zero if followed to the topmost layer, zero otherwise.
++ */
++int follow_union_mount(struct path *path)
++{
++	struct union_mount *um;
++	int res = 0;
++
++	while (IS_UNION(path->dentry)) {
++		spin_lock(&dcache_lock);
++		spin_lock(&union_lock);
++		um = union_rlookup(path->dentry, path->mnt);
++		if (um)
++			path_get(&um->u_this);
++		spin_unlock(&union_lock);
++		spin_unlock(&dcache_lock);
++
++		/*
++		 * Q: Aaargh, how do I validate the topmost dentry pointer?
++		 * A: Eeeeasy! We took the dcache_lock and union_lock. Since
++		 *    this protects from any dput'ng going on, we know that the
++		 *    dentry is valid since the union is unhashed under
++		 *    dcache_lock too.
++		 */
++		if (!um)
++			break;
++		dput(path->dentry);
++		path->dentry = um->u_this.dentry;
++		mntput(path->mnt);
++		path->mnt = um->u_this.mnt;
++		res = 1;
++	}
++
++	return res;
++}
++
++/*
++ * Union mount copyup support
++ */
++
++extern int hash_lookup_union(struct nameidata *, struct qstr *, struct path *);
++extern void follow_mount(struct path *);
++
++/*
++ * union_relookup_topmost - lookup and create the topmost path to dentry
++ * @nd: pointer to nameidata
++ * @flags: lookup flags
++ */
++static int union_relookup_topmost(struct nameidata *nd, int flags)
++{
++	int err;
++	char *kbuf, *name;
++	struct nameidata this;
++
++	kbuf = (char *)__get_free_page(GFP_KERNEL);
++	if (!kbuf)
++		return -ENOMEM;
++
++	name = d_path(&nd->path, kbuf, PAGE_SIZE);
++	err = PTR_ERR(name);
++	if (IS_ERR(name))
++		goto free_page;
++
++	err = path_lookup(name, flags|LOOKUP_CREATE|LOOKUP_TOPMOST, &this);
++	if (err)
++		goto free_page;
++
++	path_put(&nd->path);
++	nd->path.dentry = this.path.dentry;
++	nd->path.mnt = this.path.mnt;
++
++	/*
++	 * the nd->flags should be unchanged
++	 */
++	BUG_ON(this.um_flags & LAST_LOWLEVEL);
++	nd->um_flags &= ~LAST_LOWLEVEL;
++ free_page:
++	free_page((unsigned long)kbuf);
++	return err;
++}
++
++static void __update_fs_pwd(struct path *path, struct dentry *dentry,
++			    struct vfsmount *mnt)
++{
++	struct path old = { NULL, NULL };
++
++	write_lock(&current->fs->lock);
++	if (current->fs->pwd.dentry == path->dentry) {
++		old = current->fs->pwd;
++		path_get(&current->fs->pwd);
++	}
++	write_unlock(&current->fs->lock);
++
++	if (old.dentry)
++		path_put(&old);
++
++	return;
++}
++
++/**
++ * union_permission  -  check for access rights to a given inode
++ * @inode:	inode to check permission on
++ * @mask:	right to check for (%MAY_READ, %MAY_WRITE, %MAY_EXEC)
++ *
++ * In a union mount, the top layer is always read-write and the bottom
++ * is always read-only.  Ignore the read-only flag on the lower fs.
++ *
++ * Only need for certain activities, like checking to see if write
++ * access is ok.
++ */
++
++int union_permission(struct path *path, int mask)
++{
++	struct inode *inode = path->dentry->d_inode;
++
++	if (!is_unionized(path->dentry, path->mnt))
++		return inode_permission(inode, mask);
++
++	/* Tell __inode_permission to ignore MS_RDONLY */
++	return __inode_permission(inode, mask, 0);
++}
++
++/*
++ * union_create_topmost - create the topmost path component
++ * @nd: pointer to nameidata of the base directory
++ * @name: pointer to file name
++ * @path: pointer to path of the overlaid file
++ *
++ * This is called by __link_path_walk() to create the directories on a path
++ * when it is called with LOOKUP_TOPMOST.
++ */
++struct dentry *union_create_topmost(struct nameidata *nd, struct qstr *name,
++				    struct path *path)
++{
++	struct dentry *dentry, *parent = nd->path.dentry;
++	int res, mode = path->dentry->d_inode->i_mode;
++
++	if (parent->d_sb == path->dentry->d_sb)
++		return ERR_PTR(-EEXIST);
++
++	mutex_lock(&parent->d_inode->i_mutex);
++	dentry = lookup_one_len(name->name, nd->path.dentry, name->len);
++	if (IS_ERR(dentry))
++		goto out_unlock;
++
++	switch (mode & S_IFMT) {
++	case S_IFREG:
++		/*
++		 * FIXME: Does this make any sense in this case?
++		 * Special case - lookup gave negative, but... we had foo/bar/
++		 * From the vfs_mknod() POV we just have a negative dentry -
++		 * all is fine. Let's be bastards - you had / on the end,you've
++		 * been asking for (non-existent) directory. -ENOENT for you.
++		 */
++		if (name->name[name->len] && !dentry->d_inode) {
++			dput(dentry);
++			dentry = ERR_PTR(-ENOENT);
++			goto out_unlock;
++		}
++
++		res = vfs_create(parent->d_inode, dentry, mode, nd);
++		if (res) {
++			dput(dentry);
++			dentry = ERR_PTR(res);
++			goto out_unlock;
++		}
++		break;
++	case S_IFDIR:
++		res = vfs_mkdir(parent->d_inode, dentry, mode);
++		if (res) {
++			dput(dentry);
++			dentry = ERR_PTR(res);
++			goto out_unlock;
++		}
++
++		res = append_to_union(nd->path.mnt, dentry, path->mnt,
++				      path->dentry);
++		if (res) {
++			dput(dentry);
++			dentry = ERR_PTR(res);
++			goto out_unlock;
++		}
++		break;
++	default:
++		dput(dentry);
++		dentry = ERR_PTR(-EINVAL);
++		goto out_unlock;
++	}
++
++	/* FIXME: Really necessary ??? */
++/*	__update_fs_pwd(path, dentry, nd->path.mnt); */
++
++ out_unlock:
++	mutex_unlock(&parent->d_inode->i_mutex);
++	return dentry;
++}
++
++static int union_copy_file(struct dentry *old_dentry, struct vfsmount *old_mnt,
++			   struct dentry *new_dentry, struct vfsmount *new_mnt)
++{
++	int ret;
++	size_t size;
++	loff_t offset;
++	struct file *old_file, *new_file;
++	const struct cred *cred = current_cred();
++
++	dget(old_dentry);
++	mntget(old_mnt);
++	old_file = dentry_open(old_dentry, old_mnt, O_RDONLY, cred);
++	if (IS_ERR(old_file))
++		return PTR_ERR(old_file);
++
++	dget(new_dentry);
++	mntget(new_mnt);
++	new_file = dentry_open(new_dentry, new_mnt, O_WRONLY, cred);
++	ret = PTR_ERR(new_file);
++	if (IS_ERR(new_file))
++		goto fput_old;
++
++	/* XXX be smart by using a length param, which indicates max
++	 * data we'll want (e.g., we are about to truncate to 0 or 10
++	 * bytes or something */
++	size = i_size_read(old_file->f_path.dentry->d_inode);
++	if (((size_t)size != size) || ((ssize_t)size != size)) {
++		ret = -EFBIG;
++		goto fput_new;
++	}
++
++	offset = 0;
++	ret = do_splice_direct(old_file, &offset, new_file, size,
++			       SPLICE_F_MOVE);
++	if (ret >= 0)
++		ret = 0;
++ fput_new:
++	fput(new_file);
++ fput_old:
++	fput(old_file);
++	return ret;
++}
++
++/**
++ * __union_copyup - copy a file to the topmost directory
++ * @old: pointer to path of the old file name
++ * @new_nd: pointer to nameidata of the topmost directory
++ * @new: pointer to path of the new file name
++ *
++ * The topmost directory @new_nd must already be locked. Creates the topmost
++ * file if it doesn't exist yet.
++ */
++int __union_copyup(struct path *old, struct nameidata *new_nd,
++		   struct path *new)
++{
++	struct dentry *dentry;
++	int error;
++
++	/* Maybe this should be -EINVAL */
++	if (S_ISDIR(old->dentry->d_inode->i_mode))
++		return -EISDIR;
++
++	if (new_nd->path.dentry != new->dentry->d_parent) {
++		mutex_lock(&new_nd->path.dentry->d_inode->i_mutex);
++		dentry = lookup_one_len(new->dentry->d_name.name,
++					new_nd->path.dentry,
++					new->dentry->d_name.len);
++		mutex_unlock(&new_nd->path.dentry->d_inode->i_mutex);
++		if (IS_ERR(dentry))
++			return PTR_ERR(dentry);
++		error = -EEXIST;
++		if (dentry->d_inode)
++			goto out_dput;
++	} else
++		dentry = dget(new->dentry);
++
++	if (!dentry->d_inode) {
++		error = vfs_create(new_nd->path.dentry->d_inode, dentry,
++				   old->dentry->d_inode->i_mode, new_nd);
++		if (error)
++			goto out_dput;
++	}
++
++	BUG_ON(!S_ISREG(old->dentry->d_inode->i_mode));
++	error = union_copy_file(old->dentry, old->mnt, dentry,
++				new_nd->path.mnt);
++	if (error) {
++		/* FIXME: are there return value we should not
++		 * BUG() on ? */
++		BUG_ON(vfs_unlink(new_nd->path.dentry->d_inode,
++				  dentry));
++		goto out_dput;
++	}
++
++	dput(new->dentry);
++	new->dentry = dentry;
++	if (new->mnt != new_nd->path.mnt)
++		mntput(new->mnt);
++	new->mnt = new_nd->path.mnt;
++	return error;
++
++out_dput:
++	dput(dentry);
++	return error;
++}
++
++/*
++ * union_copyup - copy a file to the topmost layer of the union stack
++ * @nd: nameidata pointer to the file
++ * @flags: flags given to open_namei
++ */
++int union_copyup(struct nameidata *nd, int flags /* XXX not used */)
++{
++	struct qstr this;
++	char *name;
++	struct dentry *dir;
++	struct path path;
++	int err;
++
++	if (!is_unionized(nd->path.dentry, nd->path.mnt))
++		return 0;
++	if (!S_ISREG(nd->path.dentry->d_inode->i_mode))
++		return 0;
++
++	/* safe the name for hash_lookup_union() */
++	this.len = nd->path.dentry->d_name.len;
++	this.hash = nd->path.dentry->d_name.hash;
++	name = kmalloc(this.len + 1, GFP_KERNEL);
++	if (!name)
++		return -ENOMEM;
++	this.name = name;
++	memcpy(name, nd->path.dentry->d_name.name, nd->path.dentry->d_name.len);
++	name[this.len] = 0;
++
++	err = union_relookup_topmost(nd, nd->flags|LOOKUP_PARENT);
++	if (err) {
++		kfree(name);
++		return err;
++	}
++	nd->flags &= ~LOOKUP_PARENT;
++
++	dir = nd->path.dentry;
++	mutex_lock(&dir->d_inode->i_mutex);
++	err = hash_lookup_union(nd, &this, &path);
++	mutex_unlock(&dir->d_inode->i_mutex);
++	kfree(name);
++	if (err)
++		return err;
++
++	err = -ENOENT;
++	if (!path.dentry->d_inode)
++		goto exit_dput;
++
++	/* Necessary?! I guess not ... */
++	follow_mount(&path);
++
++	err = -ENOENT;
++	if (!path.dentry->d_inode)
++		goto exit_dput;
++
++	err = -EISDIR;
++	if (!S_ISREG(path.dentry->d_inode->i_mode))
++		goto exit_dput;
++
++	if (path.dentry->d_parent != nd->path.dentry) {
++		err = __union_copyup(&path, nd, &path);
++		if (err)
++			goto exit_dput;
++	}
++
++	dput(nd->path.dentry);
++	if (nd->path.mnt != path.mnt)
++		mntput(nd->path.mnt);
++	nd->path = path;
++	return 0;
++
++exit_dput:
++	dput(path.dentry);
++	if (path.mnt != nd->path.mnt)
++		mntput(path.mnt);
++	return err;
++}
++
++/*
++ * This must be called when unhashing a dentry. This is called with dcache_lock
++ * and unhashes all unions this dentry is in.
++ */
++void __d_drop_unions(struct dentry *dentry)
++{
++	struct union_mount *this, *next;
++
++	spin_lock(&union_lock);
++	list_for_each_entry_safe(this, next, &dentry->d_unions, u_unions)
++		__union_unhash(this);
++	spin_unlock(&union_lock);
++}
++EXPORT_SYMBOL_GPL(__d_drop_unions);
++
++/*
++ * This must be called after __d_drop_unions() without holding any locks.
++ * Note: The dentry might still be reachable via a lookup but at that time it
++ * already a negative dentry. Otherwise it would be unhashed. The union_mount
++ * structure itself is still reachable through mnt->mnt_unions (which we
++ * protect against with union_lock).
++ */
++void shrink_d_unions(struct dentry *dentry)
++{
++	struct union_mount *this, *next;
++
++repeat:
++	spin_lock(&union_lock);
++	list_for_each_entry_safe(this, next, &dentry->d_unions, u_unions) {
++		BUG_ON(!hlist_unhashed(&this->u_hash));
++		BUG_ON(!hlist_unhashed(&this->u_rhash));
++		list_del(&this->u_list);
++		list_del(&this->u_unions);
++		this->u_next.dentry->d_unionized--;
++		spin_unlock(&union_lock);
++		union_put(this);
++		goto repeat;
++	}
++	spin_unlock(&union_lock);
++}
++
++extern void __dput(struct dentry *, struct list_head *, int);
++
++/*
++ * This is the special variant for use in dput() only.
++ */
++void __shrink_d_unions(struct dentry *dentry, struct list_head *list)
++{
++	struct union_mount *this, *next;
++
++	BUG_ON(!d_unhashed(dentry));
++
++repeat:
++	spin_lock(&union_lock);
++	list_for_each_entry_safe(this, next, &dentry->d_unions, u_unions) {
++		struct dentry *n_dentry = this->u_next.dentry;
++		struct vfsmount *n_mnt = this->u_next.mnt;
++
++		BUG_ON(!hlist_unhashed(&this->u_hash));
++		BUG_ON(!hlist_unhashed(&this->u_rhash));
++		list_del(&this->u_list);
++		list_del(&this->u_unions);
++		this->u_next.dentry->d_unionized--;
++		spin_unlock(&union_lock);
++		if (__union_put(this)) {
++			__dput(n_dentry, list, 0);
++			mntput(n_mnt);
++		}
++		goto repeat;
++	}
++	spin_unlock(&union_lock);
++}
++
++/*
++ * Remove all union_mounts structures belonging to this vfsmount from the
++ * union lookup hashtable and so on ...
++ */
++void shrink_mnt_unions(struct vfsmount *mnt)
++{
++	struct union_mount *this, *next;
++
++repeat:
++	spin_lock(&union_lock);
++	list_for_each_entry_safe(this, next, &mnt->mnt_unions, u_list) {
++		if (this->u_this.dentry == mnt->mnt_root)
++			continue;
++		__union_unhash(this);
++		list_del(&this->u_list);
++		list_del(&this->u_unions);
++		this->u_next.dentry->d_unionized--;
++		spin_unlock(&union_lock);
++		union_put(this);
++		goto repeat;
++	}
++	spin_unlock(&union_lock);
++}
++
++int attach_mnt_union(struct vfsmount *mnt, struct vfsmount *dest_mnt,
++		     struct dentry *dest_dentry)
++{
++	if (!IS_MNT_UNION(mnt))
++		return 0;
++
++	return append_to_union(mnt, mnt->mnt_root, dest_mnt, dest_dentry);
++}
++
++void detach_mnt_union(struct vfsmount *mnt)
++{
++	struct union_mount *um;
++
++	if (!IS_MNT_UNION(mnt))
++		return;
++
++	shrink_mnt_unions(mnt);
++
++	spin_lock(&union_lock);
++	um = union_lookup(mnt->mnt_root, mnt);
++	__union_unhash(um);
++	list_del(&um->u_list);
++	list_del(&um->u_unions);
++	um->u_next.dentry->d_unionized--;
++	spin_unlock(&union_lock);
++	union_put(um);
++	return;
++}
++
++/**
++ * union_copyup_dir_one - copy up a single directory entry
++ *
++ * Individual directory entry copyup function for union_copyup_dir.
++ * We get the entries from higher level layers first.
++ */
++
++static int union_copyup_dir_one(void *buf, const char *name, int namlen,
++				loff_t offset, u64 ino, unsigned int d_type)
++{
++	struct dentry *topmost_dentry = (struct dentry *) buf;
++	struct dentry *dentry;
++	int err = 0;
++
++	switch (namlen) {
++	case 2:
++		if (name[1] != '.')
++			break;
++	case 1:
++		if (name[0] != '.')
++			break;
++		return 0;
++	}
++
++	/* Lookup this entry in the topmost directory */
++	dentry = lookup_one_len(name, topmost_dentry, namlen);
++
++	if (IS_ERR(dentry)) {
++		printk(KERN_INFO "error looking up %s\n", dentry->d_name.name);
++		goto out;
++	}
++
++	/*
++	 * If the entry already exists, one of the following is true:
++	 * it was already copied up (due to an earlier lookup), an
++	 * entry with the same name already exists on the topmost file
++	 * system, it is a whiteout, or it is a fallthru.  In each
++	 * case, the top level entry masks any entries from lower file
++	 * systems, so don't copy up this entry.
++	 */
++	if (dentry->d_inode || d_is_whiteout(dentry) ||
++	    d_is_fallthru(dentry)) {
++		printk(KERN_INFO "skipping copy of %s\n", dentry->d_name.name);
++		goto out_dput;
++	}
++
++	/*
++	 * If the entry doesn't exist, create a fallthru entry in the
++	 * topmost file system.  All possible directory types are
++	 * used, so each file system must implement its own way of
++	 * storing a fallthru entry.
++	 */
++	printk(KERN_INFO "creating fallthru for %s\n", dentry->d_name.name);
++	err = topmost_dentry->d_inode->i_op->fallthru(topmost_dentry->d_inode,
++						      dentry);
++	/* FIXME */
++	BUG_ON(err);
++	/*
++	 * At this point, we have a negative dentry marked as fallthru
++	 * in the cache.  We could potentially lookup the entry lower
++	 * level file system and turn this into a positive dentry
++	 * right now, but it is not clear that would be a performance
++	 * win and adds more opportunities to fail.
++	 */
++out_dput:
++	dput(dentry);
++out:
++	return 0;
++}
++
++/**
++ * union_copyup_dir - copy up low-level directory entries to topmost dir
++ *
++ * readdir() is difficult to support on union file systems for two
++ * reasons: We must eliminate duplicates and apply whiteouts, and we
++ * must return something in f_pos that lets us restart in the same
++ * place when we return.  Our solution is to, on first readdir() of
++ * the directory, copy up all visible entries from the low-level file
++ * systems and mark the entries that refer to low-level file system
++ * objects as "fallthru" entries.
++ */
++
++int union_copyup_dir(struct path *topmost_path)
++{
++	struct dentry *topmost_dentry = topmost_path->dentry;
++	struct path path = *topmost_path;
++	int res = 0;
++
++	/*
++	 * Skip opaque dirs.
++	 */
++	if (IS_OPAQUE(topmost_dentry->d_inode))
++		return 0;
++
++	/*
++	 * Mark this dir opaque to show that we have already copied up
++	 * the lower entries.  Only fallthru entries pass through to
++	 * the underlying file system.
++	 *
++	 * XXX Deal with the lower file system changing.  This could
++	 * be through running a tool over the top level file system to
++	 * make directories transparent again, or we could check the
++	 * mtime of the underlying directory.
++	 */
++
++	topmost_dentry->d_inode->i_flags |= S_OPAQUE;
++	mark_inode_dirty(topmost_dentry->d_inode);
++
++	/*
++	 * Loop through each dir on each level copying up the entries
++	 * to the topmost.
++	 */
++
++	/* Don't drop the caller's reference to the topmost path */
++	path_get(&path);
++	while (follow_union_down(&path)) {
++		struct file * ftmp;
++		struct inode * inode;
++
++		/* XXX Permit fallthrus on lower-level? Would need to
++		 * pass in opaque flag to union_copyup_dir_one() and
++		 * only copy up fallthru entries there.  We allow
++		 * fallthrus in lower level opaque directories on
++		 * lookup, so for consistency we should do one or the
++		 * other in both places. */
++		if (IS_OPAQUE(path.dentry->d_inode))
++			break;
++
++		/* dentry_open() doesn't get a path reference itself */
++		path_get(&path);
++		ftmp = dentry_open(path.dentry, path.mnt,
++				   O_RDONLY | O_DIRECTORY | O_NOATIME,
++				   current_cred());
++		if (IS_ERR(ftmp)) {
++			printk (KERN_ERR "unable to open dir %s for "
++				"directory copyup: %ld\n",
++				path.dentry->d_name.name, PTR_ERR(ftmp));
++			continue;
++		}
++
++		inode = path.dentry->d_inode;
++		mutex_lock(&inode->i_mutex);
++
++		res = -ENOENT;
++		if (IS_DEADDIR(inode))
++			goto out_fput;
++		/*
++		 * Read the whole directory, calling our directory
++		 * entry copyup function on each entry.  Pass in the
++		 * topmost dentry as our private data so we can create
++		 * new entries in the topmost directory.
++		 */
++		res = ftmp->f_op->readdir(ftmp, topmost_dentry,
++					  union_copyup_dir_one);
++out_fput:
++		mutex_unlock(&inode->i_mutex);
++		fput(ftmp);
++
++		if (res)
++			break;
++	}
++	path_put(&path);
++	return res;
++}
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -101,6 +101,15 @@
+ 	struct dentry *d_parent;	/* parent directory */
+ 	struct qstr d_name;
+ 
++#ifdef CONFIG_UNION_MOUNT
++	/*
++	 * The following fields are used by the VFS based union mount
++	 * implementation. Both are protected by union_lock!
++	 */
++	struct list_head d_unions;	/* list of union_mount's */
++	unsigned int d_unionized;	/* unions referencing this dentry */
++#endif
++
+ 	struct list_head d_lru;		/* LRU list */
+ 	/*
+ 	 * d_child and d_rcu can share memory
+@@ -186,6 +195,9 @@
+ 
+ #define DCACHE_FSNOTIFY_PARENT_WATCHED	0x0080 /* Parent inode is watched by some fsnotify listener */
+ 
++#define DCACHE_WHITEOUT		0x0100	/* This negative dentry is a whiteout */
++#define DCACHE_FALLTHRU		0x0200	/* Keep looking in the file system below */
++
+ extern spinlock_t dcache_lock;
+ extern seqlock_t rename_lock;
+ 
+@@ -205,12 +217,20 @@
+  * __d_drop requires dentry->d_lock.
+  */
+ 
++#ifdef CONFIG_UNION_MOUNT
++extern void __d_drop_unions(struct dentry *);
++#endif
++
+ static inline void __d_drop(struct dentry *dentry)
+ {
+ 	if (!(dentry->d_flags & DCACHE_UNHASHED)) {
+ 		dentry->d_flags |= DCACHE_UNHASHED;
+ 		hlist_del_rcu(&dentry->d_hash);
+ 	}
++#ifdef CONFIG_UNION_MOUNT
++	/* remove dentry from the union hashtable */
++	__d_drop_unions(dentry);
++#endif
+ }
+ 
+ static inline void d_drop(struct dentry *dentry)
+@@ -358,6 +378,16 @@
+ 	return d_unhashed(dentry) && !IS_ROOT(dentry);
+ }
+ 
++static inline int d_is_whiteout(struct dentry *dentry)
++{
++	return (dentry->d_flags & DCACHE_WHITEOUT);
++}
++
++static inline int d_is_fallthru(struct dentry *dentry)
++{
++	return (dentry->d_flags & DCACHE_FALLTHRU);
++}
++
+ static inline struct dentry *dget_parent(struct dentry *dentry)
+ {
+ 	struct dentry *ret;
+--- a/include/linux/ext2_fs.h
++++ b/include/linux/ext2_fs.h
+@@ -189,6 +189,7 @@
+ #define EXT2_NOTAIL_FL			FS_NOTAIL_FL	/* file tail should not be merged */
+ #define EXT2_DIRSYNC_FL			FS_DIRSYNC_FL	/* dirsync behaviour (directories only) */
+ #define EXT2_TOPDIR_FL			FS_TOPDIR_FL	/* Top of directory hierarchies*/
++#define EXT2_OPAQUE_FL			0x00040000
+ #define EXT2_RESERVED_FL		FS_RESERVED_FL	/* reserved for ext2 lib */
+ 
+ #define EXT2_FL_USER_VISIBLE		FS_FL_USER_VISIBLE	/* User visible flags */
+@@ -503,10 +504,12 @@
+ #define EXT3_FEATURE_INCOMPAT_RECOVER		0x0004
+ #define EXT3_FEATURE_INCOMPAT_JOURNAL_DEV	0x0008
+ #define EXT2_FEATURE_INCOMPAT_META_BG		0x0010
++#define EXT2_FEATURE_INCOMPAT_WHITEOUT		0x0020
+ #define EXT2_FEATURE_INCOMPAT_ANY		0xffffffff
+ 
+ #define EXT2_FEATURE_COMPAT_SUPP	EXT2_FEATURE_COMPAT_EXT_ATTR
+ #define EXT2_FEATURE_INCOMPAT_SUPP	(EXT2_FEATURE_INCOMPAT_FILETYPE| \
++					 EXT2_FEATURE_INCOMPAT_WHITEOUT| \
+ 					 EXT2_FEATURE_INCOMPAT_META_BG)
+ #define EXT2_FEATURE_RO_COMPAT_SUPP	(EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER| \
+ 					 EXT2_FEATURE_RO_COMPAT_LARGE_FILE| \
+@@ -573,6 +576,8 @@
+ 	EXT2_FT_FIFO,
+ 	EXT2_FT_SOCK,
+ 	EXT2_FT_SYMLINK,
++	EXT2_FT_WHT,
++	EXT2_FT_FALLTHRU,
+ 	EXT2_FT_MAX
+ };
+ 
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -188,6 +188,7 @@
+ #define MS_REMOUNT	32	/* Alter flags of a mounted FS */
+ #define MS_MANDLOCK	64	/* Allow mandatory locks on an FS */
+ #define MS_DIRSYNC	128	/* Directory modifications are synchronous */
++#define MS_UNION	256
+ #define MS_NOATIME	1024	/* Do not update access times. */
+ #define MS_NODIRATIME	2048	/* Do not update directory access times */
+ #define MS_BIND		4096
+@@ -205,6 +206,7 @@
+ #define MS_KERNMOUNT	(1<<22) /* this is a kern_mount call */
+ #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
+ #define MS_STRICTATIME	(1<<24) /* Always perform atime updates */
++#define MS_WHITEOUT	(1<<26) /* fs does support white-out filetype */
+ #define MS_ACTIVE	(1<<30)
+ #define MS_NOUSER	(1<<31)
+ 
+@@ -231,6 +233,7 @@
+ #define S_NOCMTIME	128	/* Do not update file c/mtime */
+ #define S_SWAPFILE	256	/* Do not truncate: swapon got its bmaps */
+ #define S_PRIVATE	512	/* Inode is fs-internal */
++#define S_OPAQUE	1024	/* Directory is opaque */
+ 
+ /*
+  * Note that nosuid etc flags are inode-specific: setting some file-system
+@@ -266,6 +269,8 @@
+ #define IS_SWAPFILE(inode)	((inode)->i_flags & S_SWAPFILE)
+ #define IS_PRIVATE(inode)	((inode)->i_flags & S_PRIVATE)
+ 
++#define IS_OPAQUE(inode)	((inode)->i_flags & S_OPAQUE)
++
+ /* the read-only stuff doesn't really belong here, but any other place is
+    probably as bad and I don't want to create yet another include file. */
+ 
+@@ -1379,6 +1384,11 @@
+ 	 * generic_show_options()
+ 	 */
+ 	char *s_options;
++
++	/*
++	 * Users who require read-only access - e.g., union mounts
++	 */
++	int s_readonly_users;
+ };
+ 
+ extern struct timespec current_fs_time(struct super_block *sb);
+@@ -1521,6 +1531,8 @@
+ 	int (*mkdir) (struct inode *,struct dentry *,int);
+ 	int (*rmdir) (struct inode *,struct dentry *);
+ 	int (*mknod) (struct inode *,struct dentry *,int,dev_t);
++	int (*whiteout) (struct inode *, struct dentry *, struct dentry *);
++	int (*fallthru) (struct inode *, struct dentry *);
+ 	int (*rename) (struct inode *, struct dentry *,
+ 			struct inode *, struct dentry *);
+ 	int (*readlink) (struct dentry *, char __user *,int);
+@@ -2094,6 +2106,7 @@
+ extern sector_t bmap(struct inode *, sector_t);
+ #endif
+ extern int notify_change(struct dentry *, struct iattr *);
++extern int __inode_permission(struct inode *inode, int mask, int rofs);
+ extern int inode_permission(struct inode *, int);
+ extern int generic_permission(struct inode *, int,
+ 		int (*check_acl)(struct inode *, int));
+@@ -2121,7 +2134,7 @@
+ 
+ extern struct file *do_filp_open(int dfd, const char *pathname,
+ 		int open_flag, int mode, int acc_mode);
+-extern int may_open(struct path *, int, int);
++extern int may_open(struct nameidata *, int, int);
+ 
+ extern int kernel_read(struct file *, loff_t, char *, unsigned long);
+ extern struct file * open_exec(const char *);
+--- a/include/linux/mount.h
++++ b/include/linux/mount.h
+@@ -35,6 +35,7 @@
+ #define MNT_SHARED	0x1000	/* if the vfsmount is a shared mount */
+ #define MNT_UNBINDABLE	0x2000	/* if the vfsmount is a unbindable mount */
+ #define MNT_PNODE_MASK	0x3000	/* propagation flag mask */
++#define MNT_UNION	0x4000	/* if the vfsmount is a union mount */
+ 
+ struct vfsmount {
+ 	struct list_head mnt_hash;
+@@ -53,6 +54,9 @@
+ 	struct list_head mnt_slave_list;/* list of slave mounts */
+ 	struct list_head mnt_slave;	/* slave list entry */
+ 	struct vfsmount *mnt_master;	/* slave is on master->mnt_slave_list */
++#ifdef CONFIG_UNION_MOUNT
++	struct list_head mnt_unions;	/* list of union_mount structures */
++#endif
+ 	struct mnt_namespace *mnt_ns;	/* containing namespace */
+ 	int mnt_id;			/* mount identifier */
+ 	int mnt_group_id;		/* peer group identifier */
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -20,6 +20,7 @@
+ 	struct qstr	last;
+ 	struct path	root;
+ 	unsigned int	flags;
++	unsigned int	um_flags;
+ 	int		last_type;
+ 	unsigned	depth;
+ 	char *saved_names[MAX_NESTED_LINKS + 1];
+@@ -35,6 +36,9 @@
+  */
+ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ 
++#define LAST_UNION             0x01
++#define LAST_LOWLEVEL          0x02
++
+ /*
+  * The bitmask for a lookup event:
+  *  - follow links at the end
+@@ -49,6 +53,8 @@
+ #define LOOKUP_CONTINUE		 4
+ #define LOOKUP_PARENT		16
+ #define LOOKUP_REVAL		64
++#define LOOKUP_TOPMOST	       128
++
+ /*
+  * Intent data
+  */
+--- /dev/null
++++ b/include/linux/union.h
+@@ -0,0 +1,84 @@
++/*
++ * VFS based union mount for Linux
++ *
++ * Copyright (C) 2004-2007 IBM Corporation, IBM Deutschland Entwicklung GmbH.
++ * Copyright (C) 2007 Novell Inc.
++ *   Author(s): Jan Blunck (j.blunck@tu-harburg.de)
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the Free
++ * Software Foundation; either version 2 of the License, or (at your option)
++ * any later version.
++ *
++ */
++#ifndef __LINUX_UNION_H
++#define __LINUX_UNION_H
++#ifdef __KERNEL__
++
++#include <linux/list.h>
++#include <asm/atomic.h>
++
++struct dentry;
++struct vfsmount;
++
++#ifdef CONFIG_UNION_MOUNT
++
++/*
++ * The new union mount structure.
++ */
++struct union_mount {
++	atomic_t u_count;		/* reference count */
++	struct mutex u_mutex;
++	struct list_head u_unions;	/* list head for d_unions */
++	struct list_head u_list;	/* list head for mnt_unions */
++	struct hlist_node u_hash;	/* list head for seaching */
++	struct hlist_node u_rhash;	/* list head for reverse seaching */
++
++	struct path u_this;		/* this is me */
++	struct path u_next;		/* this is what I overlay */
++};
++
++#define IS_UNION(dentry)	(!list_empty(&(dentry)->d_unions) || \
++				 (dentry)->d_unionized)
++#define IS_MNT_UNION(mnt)	((mnt)->mnt_flags & MNT_UNION)
++
++extern int is_unionized(struct dentry *, struct vfsmount *);
++extern int append_to_union(struct vfsmount *, struct dentry *,
++			   struct vfsmount *, struct dentry *);
++extern int follow_union_down(struct path *);
++extern int follow_union_mount(struct path *);
++extern void __d_drop_unions(struct dentry *);
++extern void shrink_d_unions(struct dentry *);
++extern void __shrink_d_unions(struct dentry *, struct list_head *);
++extern int attach_mnt_union(struct vfsmount *, struct vfsmount *,
++			    struct dentry *);
++extern void detach_mnt_union(struct vfsmount *);
++extern struct dentry *union_create_topmost(struct nameidata *, struct qstr *,
++					   struct path *);
++extern int __union_copyup(struct path *, struct nameidata *, struct path *);
++extern int union_copyup(struct nameidata *, int);
++extern int union_copyup_dir(struct path *path);
++extern int union_permission(struct path *, int);
++
++#else /* CONFIG_UNION_MOUNT */
++
++#define IS_UNION(x)			(0)
++#define IS_MNT_UNION(x)			(0)
++#define is_unionized(x, y)		(0)
++#define append_to_union(x1, y1, x2, y2)	({ BUG(); (0); })
++#define follow_union_down(x, y)		({ (0); })
++#define follow_union_mount(x, y)	({ (0); })
++#define __d_drop_unions(x)		do { } while (0)
++#define shrink_d_unions(x)		do { } while (0)
++#define __shrink_d_unions(x,y)		do { } while (0)
++#define attach_mnt_union(x, y, z)	do { } while (0)
++#define detach_mnt_union(x)		do { } while (0)
++#define union_create_topmost(x, y, z)	({ BUG(); (NULL); })
++#define __union_copyup(x, y, z)		({ BUG(); (0); })
++#define union_copyup(x, y)		({ (0); })
++#define union_copyup_dir(x)		({ BUG(); (0); })
++#define union_permission(x, y)		inode_permission(x->dentry->d_inode, y)
++
++#endif	/* CONFIG_UNION_MOUNT */
++#endif	/* __KERNEL__ */
++#endif	/* __LINUX_UNION_H */
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -1794,6 +1794,118 @@
+ 	return 0;
+ }
+ 
++static int shmem_rmdir(struct inode *dir, struct dentry *dentry);
++static int shmem_unlink(struct inode *dir, struct dentry *dentry);
++
++/*
++ * Create a dentry to signify a whiteout.
++ */
++static int shmem_whiteout(struct inode *dir, struct dentry *old_dentry,
++			  struct dentry *new_dentry)
++{
++	struct shmem_sb_info *sbinfo = SHMEM_SB(dir->i_sb);
++	struct dentry *dentry;
++
++	if (!(dir->i_sb->s_flags & MS_WHITEOUT))
++		return -EPERM;
++
++	/* This gives us a proper initialized negative dentry */
++	dentry = simple_lookup(dir, new_dentry, NULL);
++	if (dentry && IS_ERR(dentry))
++		return PTR_ERR(dentry);
++
++	/*
++	 * No ordinary (disk based) filesystem counts whiteouts as inodes;
++	 * but each new link needs a new dentry, pinning lowmem, and
++	 * tmpfs dentries cannot be pruned until they are unlinked.
++	 */
++	if (sbinfo->max_inodes) {
++		spin_lock(&sbinfo->stat_lock);
++		if (!sbinfo->free_inodes) {
++			spin_unlock(&sbinfo->stat_lock);
++			return -ENOSPC;
++		}
++		sbinfo->free_inodes--;
++		spin_unlock(&sbinfo->stat_lock);
++	}
++
++	if (old_dentry->d_inode || d_is_fallthru(old_dentry)) {
++		if (old_dentry->d_inode && S_ISDIR(old_dentry->d_inode->i_mode))
++			shmem_rmdir(dir, old_dentry);
++		else
++			shmem_unlink(dir, old_dentry);
++	}
++
++	dir->i_size += BOGO_DIRENT_SIZE;
++	dir->i_ctime = dir->i_mtime = CURRENT_TIME;
++	/* Extra pinning count for the created dentry */
++	dget(new_dentry);
++	spin_lock(&new_dentry->d_lock);
++	new_dentry->d_flags |= DCACHE_WHITEOUT;
++	spin_unlock(&new_dentry->d_lock);
++	return 0;
++}
++
++static void shmem_d_instantiate(struct inode *dir, struct dentry *dentry,
++				struct inode *inode);
++
++/*
++ * Create a dentry to signify a fallthru.  A fallthru lets us read the
++ * low-level dentries into the dcache once on the first readdir() and
++ * then
++ */
++static int shmem_fallthru(struct inode *dir, struct dentry *dentry)
++{
++	struct shmem_sb_info *sbinfo = SHMEM_SB(dir->i_sb);
++
++	/* FIXME: this is stupid */
++	if (!(dir->i_sb->s_flags & MS_WHITEOUT))
++		return -EPERM;
++
++	if (dentry->d_inode || d_is_fallthru(dentry) || d_is_whiteout(dentry))
++		return -EEXIST;
++
++	/*
++	 * Each new link needs a new dentry, pinning lowmem, and tmpfs
++	 * dentries cannot be pruned until they are unlinked.
++	 */
++	if (sbinfo->max_inodes) {
++		spin_lock(&sbinfo->stat_lock);
++		if (!sbinfo->free_inodes) {
++			spin_unlock(&sbinfo->stat_lock);
++			return -ENOSPC;
++		}
++		sbinfo->free_inodes--;
++		spin_unlock(&sbinfo->stat_lock);
++	}
++
++	shmem_d_instantiate(dir, dentry, NULL);
++	dir->i_ctime = dir->i_mtime = CURRENT_TIME;
++
++	spin_lock(&dentry->d_lock);
++	dentry->d_flags |= DCACHE_FALLTHRU;
++	spin_unlock(&dentry->d_lock);
++	return 0;
++}
++
++static void shmem_d_instantiate(struct inode *dir, struct dentry *dentry,
++				struct inode *inode)
++{
++	if (d_is_whiteout(dentry)) {
++		/* Re-using an existing whiteout */
++		shmem_free_inode(dir->i_sb);
++		if (S_ISDIR(inode->i_mode))
++			inode->i_mode |= S_OPAQUE;
++	} else if (d_is_fallthru(dentry)) {
++		shmem_free_inode(dir->i_sb);
++	} else {
++		/* New dentry */
++		dir->i_size += BOGO_DIRENT_SIZE;
++		dget(dentry); /* Extra count - pin the dentry in core */
++	}
++	/* Will clear DCACHE_WHITEOUT and DCACHE_FALLTHRU flags */
++	d_instantiate(dentry, inode);
++}
+ /*
+  * File creation. Allocate an inode, and we're done..
+  */
+@@ -1818,15 +1930,16 @@
+ 			iput(inode);
+ 			return error;
+ 		}
++
+ 		if (dir->i_mode & S_ISGID) {
+ 			inode->i_gid = dir->i_gid;
+ 			if (S_ISDIR(mode))
+ 				inode->i_mode |= S_ISGID;
+ 		}
+-		dir->i_size += BOGO_DIRENT_SIZE;
++
++		shmem_d_instantiate(dir, dentry, inode);
++
+ 		dir->i_ctime = dir->i_mtime = CURRENT_TIME;
+-		d_instantiate(dentry, inode);
+-		dget(dentry); /* Extra count - pin the dentry in core */
+ 	}
+ 	return error;
+ }
+@@ -1864,12 +1977,11 @@
+ 	if (ret)
+ 		goto out;
+ 
+-	dir->i_size += BOGO_DIRENT_SIZE;
++	shmem_d_instantiate(dir, dentry, inode);
++
+ 	inode->i_ctime = dir->i_ctime = dir->i_mtime = CURRENT_TIME;
+ 	inc_nlink(inode);
+ 	atomic_inc(&inode->i_count);	/* New dentry reference */
+-	dget(dentry);		/* Extra pinning count for the created dentry */
+-	d_instantiate(dentry, inode);
+ out:
+ 	return ret;
+ }
+@@ -1878,21 +1990,63 @@
+ {
+ 	struct inode *inode = dentry->d_inode;
+ 
+-	if (inode->i_nlink > 1 && !S_ISDIR(inode->i_mode))
+-		shmem_free_inode(inode->i_sb);
++	if (d_is_whiteout(dentry) || d_is_fallthru(dentry) ||
++	    (inode->i_nlink > 1 && !S_ISDIR(inode->i_mode)))
++		shmem_free_inode(dir->i_sb);
+ 
++	if (inode) {
++		inode->i_ctime = dir->i_ctime = dir->i_mtime = CURRENT_TIME;
++		drop_nlink(inode);
++	}
+ 	dir->i_size -= BOGO_DIRENT_SIZE;
+-	inode->i_ctime = dir->i_ctime = dir->i_mtime = CURRENT_TIME;
+-	drop_nlink(inode);
+ 	dput(dentry);	/* Undo the count from "create" - this does all the work */
+ 	return 0;
+ }
+ 
++static void shmem_dir_unlink_whiteouts(struct inode *dir, struct dentry *dentry)
++{
++	if (!dentry->d_inode)
++		return;
++
++	/* Remove whiteouts from logical empty directory */
++	if (S_ISDIR(dentry->d_inode->i_mode) &&
++	    dentry->d_inode->i_sb->s_flags & MS_WHITEOUT) {
++		struct dentry *child, *next;
++		LIST_HEAD(list);
++
++		spin_lock(&dcache_lock);
++		list_for_each_entry(child, &dentry->d_subdirs, d_u.d_child) {
++			spin_lock(&child->d_lock);
++			/* Unlink fallthrus too */
++			if (d_is_whiteout(child) || d_is_fallthru(child)) {
++				__d_drop(child);
++				if (!list_empty(&child->d_lru)) {
++					list_del(&child->d_lru);
++					dentry_stat.nr_unused--;
++				}
++				list_add(&child->d_lru, &list);
++			}
++			spin_unlock(&child->d_lock);
++		}
++		spin_unlock(&dcache_lock);
++
++		list_for_each_entry_safe(child, next, &list, d_lru) {
++			spin_lock(&child->d_lock);
++			list_del_init(&child->d_lru);
++			spin_unlock(&child->d_lock);
++
++			shmem_unlink(dentry->d_inode, child);
++		}
++	}
++}
++
+ static int shmem_rmdir(struct inode *dir, struct dentry *dentry)
+ {
+ 	if (!simple_empty(dentry))
+ 		return -ENOTEMPTY;
+ 
++	/* Remove whiteouts from logical empty directory */
++	shmem_dir_unlink_whiteouts(dir, dentry);
+ 	drop_nlink(dentry->d_inode);
+ 	drop_nlink(dir);
+ 	return shmem_unlink(dir, dentry);
+@@ -1901,7 +2055,7 @@
+ /*
+  * The VFS layer already does all the dentry stuff for rename,
+  * we just have to decrement the usage count for the target if
+- * it exists so that the VFS layer correctly free's it when it
++ * it exists so that the VFS layer correctly frees it when it
+  * gets overwritten.
+  */
+ static int shmem_rename(struct inode *old_dir, struct dentry *old_dentry, struct inode *new_dir, struct dentry *new_dentry)
+@@ -1912,7 +2066,12 @@
+ 	if (!simple_empty(new_dentry))
+ 		return -ENOTEMPTY;
+ 
++	if (d_is_whiteout(new_dentry))
++		shmem_unlink(new_dir, new_dentry);
++
+ 	if (new_dentry->d_inode) {
++		/* Remove whiteouts from logical empty directory */
++		shmem_dir_unlink_whiteouts(new_dir, new_dentry);
+ 		(void) shmem_unlink(new_dir, new_dentry);
+ 		if (they_are_dirs)
+ 			drop_nlink(old_dir);
+@@ -1977,12 +2136,12 @@
+ 		set_page_dirty(page);
+ 		page_cache_release(page);
+ 	}
++
++	shmem_d_instantiate(dir, dentry, inode);
++
+ 	if (dir->i_mode & S_ISGID)
+ 		inode->i_gid = dir->i_gid;
+-	dir->i_size += BOGO_DIRENT_SIZE;
+ 	dir->i_ctime = dir->i_mtime = CURRENT_TIME;
+-	d_instantiate(dentry, inode);
+-	dget(dentry);
+ 	return 0;
+ }
+ 
+@@ -2363,6 +2522,12 @@
+ 	if (!root)
+ 		goto failed_iput;
+ 	sb->s_root = root;
++
++#ifdef CONFIG_TMPFS
++	if (!(sb->s_flags & MS_NOUSER))
++		sb->s_flags |= MS_WHITEOUT;
++#endif
++
+ 	return 0;
+ 
+ failed_iput:
+@@ -2462,6 +2627,8 @@
+ 	.rmdir		= shmem_rmdir,
+ 	.mknod		= shmem_mknod,
+ 	.rename		= shmem_rename,
++	.whiteout       = shmem_whiteout,
++	.fallthru       = shmem_fallthru,
+ #endif
+ #ifdef CONFIG_TMPFS_POSIX_ACL
+ 	.setattr	= shmem_notify_change,
