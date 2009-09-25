@@ -22,7 +22,8 @@ config X86_GRUB_KERNELPART
 config X86_GRUB_ROOTPART
     string
     prompt "Root partition on target device" if X86_GRUB_IMAGES
-    default "/dev/hda2"
+    default "/dev/hda2" if LINUX_2_6_28
+    default "/dev/sda2"
     help
         The root partition on the final device.  If you don't know,
         you probably want the default (/dev/hda2).
