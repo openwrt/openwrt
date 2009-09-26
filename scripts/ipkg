@@ -794,7 +794,7 @@ Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 	fi
 
 
-	echo -n "Unpacking $pkg..."
+	printf "Unpacking $pkg..."
 	set +o noglob
 	for file in $IPKG_TMP/$pkg/control/*; do
 		local base_file="`ipkg_file_part $file`"
@@ -809,7 +809,7 @@ Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 	fi
 	echo "Done."
 
-	echo -n "Configuring $pkg..."
+	printf "Configuring $pkg..."
 	export PKG_ROOT=$dest
 	if [ -x "$info_dir/$pkg.preinst" ]; then
 		if ! $info_dir/$pkg.preinst install; then
@@ -828,7 +828,7 @@ Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 				local use_maintainers_conffile=
 				if [ -z "$FORCE_DEFAULTS" ]; then
 					while true; do
-						echo -n "Configuration file \`$conffile'
+						printf "Configuration file \`$conffile'
  ==> File on system created by you or by a script.
  ==> File also in package provided by package maintainer.
    What would you like to do about it ?  Your options are:
@@ -960,7 +960,7 @@ ipkg_install_wanted() {
 		if [ -n "$FORCE_DEFAULTS" ]; then
 			echo "Installing them now."
 		else
-			echo -n "Install them now [Y/n] ? "
+			printf "Install them now [Y/n] ? "
 			read response
 			case "$response" in
 			[Nn] | [Nn][Oo])
