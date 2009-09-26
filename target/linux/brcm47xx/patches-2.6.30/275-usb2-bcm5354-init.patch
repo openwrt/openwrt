@@ -13,8 +13,8 @@ Signed-off-by: Steve Brown <sbrown@cortland.com>
  drivers/usb/host/ohci-ssb.c |   37 +++++++++++++++++++++++--------------
  1 file changed, 23 insertions(+), 14 deletions(-)
 
---- linux-2.6.28.10.orig/drivers/usb/host/ohci-ssb.c
-+++ linux-2.6.28.10/drivers/usb/host/ohci-ssb.c
+--- a/drivers/usb/host/ohci-ssb.c
++++ b/drivers/usb/host/ohci-ssb.c
 @@ -141,22 +141,31 @@ static int ssb_ohci_attach(struct ssb_de
  		 */
  		ssb_device_enable(dev, 0);
