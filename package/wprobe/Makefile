@@ -61,6 +61,7 @@ define Build/Prepare
 endef
 
 TARGET_CPPFLAGS := \
+	-D_GNU_SOURCE \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
 	$(TARGET_CPPFLAGS)
 
