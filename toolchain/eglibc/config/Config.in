@@ -187,6 +187,31 @@ config EGLIBC_OPTION_EGLIBC_ENVZ
         envz_entry      envz_remove
         envz_get        envz_strip 
 
+config EGLIBC_OPTION_EGLIBC_FCVT
+   bool "Functions for converting floating-point numbers to strings"
+   default y
+   depends EGLIBC_VERSION_2_10
+   help
+       This option group includes functions for converting
+       floating-point numbers to strings.
+
+       This option group includes the following functions:
+
+         ecvt           qecvt
+         ecvt_r         qecvt_r
+         fcvt           qfcvt
+         fcvt_r         qfcvt_r
+         gcvt           qgcvt
+
+config EGLIBC_OPTION_EGLIBC_FMTMSG
+   bool "Functions for formatting messages"
+   default y
+   depends EGLIBC_VERSION_2_10
+   help
+       This option group includes the following functions:
+
+         addseverity    fmtmsg
+
 config EGLIBC_OPTION_EGLIBC_FSTAB
    bool "Access functions for 'fstab'"
    default y
@@ -201,6 +226,22 @@ config EGLIBC_OPTION_EGLIBC_FSTAB
          endfsent       getfsspec
          getfsent       setfsent
          getfsfile
+
+config OPTION_EGLIBC_FTRAVERSE
+   bool "Functions for traversing file hierarchies"
+   default y
+   depends EGLIBC_VERSION_2_10
+   help
+       This option group includes functions for traversing file
+       UNIX file hierachies.
+
+       This option group includes the following functions:
+
+         fts_open       ftw
+         fts_read       nftw
+         fts_children   ftw64
+         fts_set        nftw64
+         fts_close
 
 config EGLIBC_OPTION_EGLIBC_GETLOGIN
    bool "The getlogin function"
@@ -677,6 +718,19 @@ config EGLIBC_OPTION_POSIX_REGEXP
         Furthermore, the compatibility regexp interface defined in the
         <regexp.h> header file, 'compile', 'step', and 'advance', is
         omitted.
+
+config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
+   bool "Regular expressions from GLIBC"
+   default y
+   depends EGLIBC_OPTION_POSIX_REGEXP
+   depends EGLIBC_VERSION_2_10
+   help
+        This option group specifies which regular expression
+        library to use.  The choice is between regex
+        implementation from GLIBC and regex implementation from
+        libiberty.  The GLIBC variant is fully POSIX conformant and
+        optimized for speed; regex from libiberty is more than twice
+        as small while still is enough for most practical purposes.
 
 config EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
    bool "Input and output functions for wide characters"
