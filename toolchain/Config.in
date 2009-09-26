@@ -86,6 +86,15 @@ menuconfig TOOLCHAINOPTS
 	bool "Toolchain Options"  if DEVEL
 	depends NEED_TOOLCHAIN
 
+config EABI_SUPPORT
+	bool
+	depends arm||armeb
+	prompt "Enable EABI support" if TOOLCHAINOPTS
+	default n if TARGET_gemini
+	default y
+	help
+	  Enable ARM EABI support
+
 menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS

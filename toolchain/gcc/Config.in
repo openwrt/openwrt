@@ -40,15 +40,6 @@ endif
 
 endchoice
 
-config EABI_SUPPORT
-	bool
-	depends arm||armeb
-	prompt "Enable EABI support" if TOOLCHAINOPTS
-	default n if TARGET_gemini
-	default y
-	help
-	  Enable ARM EABI support
-
 config EXTRA_GCC_CONFIG_OPTIONS
 	string
 	prompt "Additional gcc configure options" if TOOLCHAINOPTS
