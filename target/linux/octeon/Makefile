@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs jffs2 pci
-CFLAGS:=-Os -pipe -funit-at-a-time
+CFLAGS:=-Os -pipe -mtune=octeon -funit-at-a-time
 
 LINUX_VERSION:=2.6.30.7
 
