@@ -1,6 +1,6 @@
 --- a/include/linux/union.h
 +++ b/include/linux/union.h
-@@ -77,7 +77,7 @@
+@@ -77,7 +77,7 @@ extern int union_permission(struct path 
  #define __union_copyup(x, y, z)		({ BUG(); (0); })
  #define union_copyup(x, y)		({ (0); })
  #define union_copyup_dir(x)		({ BUG(); (0); })
