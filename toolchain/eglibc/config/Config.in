@@ -1,7 +1,7 @@
 config EGLIBC_OPTION_EGLIBC_ADVANCED_INET6
    bool "IPv6 Advanced Sockets API support (RFC3542)"
    default y
-   depends EGLIBC_OPTION_EGLIBC_INET
+   select EGLIBC_OPTION_EGLIBC_INET
    help
        This option group includes the functions specified by RFC 3542,
        "Advanced Sockets Application Program Interface (API) for
@@ -64,8 +64,8 @@ config EGLIBC_OPTION_EGLIBC_BSD
 config EGLIBC_OPTION_EGLIBC_CXX_TESTS
    bool "Tests that link against the standard C++ library."
    default y
-   depends EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
-   depends EGLIBC_OPTION_EGLIBC_LIBM
+   select EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
+   select EGLIBC_OPTION_EGLIBC_LIBM
    help
        This option group does not include any C library functions;
        instead, it controls which EGLIBC tests an ordinary 'make
@@ -80,7 +80,7 @@ config EGLIBC_OPTION_EGLIBC_CXX_TESTS
 config EGLIBC_OPTION_EGLIBC_CATGETS
    bool "Functions for accessing message catalogs"
    default y
-   depends EGLIBC_OPTION_EGLIBC_LOCALE_CODE
+   select EGLIBC_OPTION_EGLIBC_LOCALE_CODE
    help
        This option group includes functions for accessing message
        catalogs: catopen, catclose, and catgets.
@@ -246,7 +246,7 @@ config OPTION_EGLIBC_FTRAVERSE
 config EGLIBC_OPTION_EGLIBC_GETLOGIN
    bool "The getlogin function"
    default y
-   depends EGLIBC_OPTION_EGLIBC_UTMP
+   select EGLIBC_OPTION_EGLIBC_UTMP
    help
        This function group includes the 'getlogin' and 'getlogin_r'
        functions, which return the user name associated by the login
@@ -413,7 +413,7 @@ config EGLIBC_OPTION_EGLIBC_LOCALES
 config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
    bool "Locale functions"
    default y
-   depends EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
+   select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
    help
        This option group includes locale support functions, programs,
        and libraries.  With EGLIBC_LOCALE_FUNCTIONS disabled,
@@ -437,8 +437,8 @@ config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
 config EGLIBC_OPTION_EGLIBC_NIS
    bool "Support for NIS, NIS+, and the special 'compat' services."
    default y
-   depends EGLIBC_OPTION_EGLIBC_INET
-   depends EGLIBC_OPTION_EGLIBC_SUNRPC
+   select EGLIBC_OPTION_EGLIBC_INET
+   select EGLIBC_OPTION_EGLIBC_SUNRPC
    help
        This option group includes the NIS, NIS+, and 'compat' Name
        Service Switch service libraries.  When it is disabled, those
@@ -529,7 +529,7 @@ config EGLIBC_OPTION_EGLIBC_NSSWITCH
 config EGLIBC_OPTION_EGLIBC_RCMD
    bool "Support for 'rcmd' and related library functions"
    default y
-   depends EGLIBC_OPTION_EGLIBC_INET
+   select EGLIBC_OPTION_EGLIBC_INET
    help
       This option group includes functions for running commands on
       remote machines via the 'rsh' protocol, and doing authentication
@@ -602,7 +602,7 @@ config EGLIBC_OPTION_EGLIBC_STREAMS
 config EGLIBC_OPTION_EGLIBC_SUNRPC
    bool "Support for the Sun 'RPC' protocol."
    default y
-   depends EGLIBC_OPTION_EGLIBC_INET
+   select EGLIBC_OPTION_EGLIBC_INET
    help
       This option group includes support for the Sun RPC protocols,
       including the 'rpcgen' and 'rpcinfo' programs.
@@ -638,7 +638,7 @@ config EGLIBC_OPTION_EGLIBC_UTMP
 config EGLIBC_OPTION_EGLIBC_UTMPX
    bool "POSIX access functions for 'utmp' login records"
    default y
-   depends EGLIBC_OPTION_EGLIBC_UTMP    
+   select EGLIBC_OPTION_EGLIBC_UTMP    
    help
        This option group includes the POSIX functions for reading and
        writing user login records in the 'utmp' file (usually
@@ -670,6 +670,7 @@ config EGLIBC_OPTION_EGLIBC_WORDEXP
 config EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
    bool "ISO C library wide character functions, excluding I/O"
    default y
+   depends EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
    help
         This option group includes the functions defined by the ISO C
         standard for working with wide and multibyte characters in
@@ -722,7 +723,7 @@ config EGLIBC_OPTION_POSIX_REGEXP
 config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
    bool "Regular expressions from GLIBC"
    default y
-   depends EGLIBC_OPTION_POSIX_REGEXP
+   select EGLIBC_OPTION_POSIX_REGEXP
    depends EGLIBC_VERSION_2_10
    help
         This option group specifies which regular expression
@@ -735,7 +736,7 @@ config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
 config EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
    bool "Input and output functions for wide characters"
    default y
-   depends EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
+   select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
    help
         This option group includes functions for reading and writing
         wide characters to and from <stdio.h> streams.
