@@ -445,6 +445,7 @@ define KernelPackage/pppoe
   FILES:= \
 	$(LINUX_DIR)/drivers/net/pppoe.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/pppox.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pppox pppoe)
 endef
 
 define KernelPackage/pppoe/description
