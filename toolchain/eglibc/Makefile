@@ -27,6 +27,9 @@ endif
 ifeq ($(PKG_VERSION),2.9)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_9
 endif
+ifeq ($(PKG_VERSION),2.10.1)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_10
+endif
 ifeq ($(PKG_VERSION),trunk)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/trunk
 endif

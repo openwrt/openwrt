@@ -5,5 +5,13 @@ config EGLIBC_VERSION
 	default "2.7"    if EGLIBC_VERSION_2_7
 	default "2.8"    if EGLIBC_VERSION_2_8
 	default "2.9"    if EGLIBC_VERSION_2_9
+	default "2.10.1" if EGLIBC_VERSION_2_10_1
 	default "trunk"
 
+config EGLIBC_VERSION_2_6
+	bool
+	default y	if EGLIBC_VERSION_2_6_1
+
+config EGLIBC_VERSION_2_10
+	bool
+	default y	if EGLIBC_VERSION_2_10_1
