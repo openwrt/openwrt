@@ -27,9 +27,9 @@ config EGLIBC_REVISION
 	prompt "eglibc revision"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
 	default "5887"  if EGLIBC_VERSION_2_6_1
-	default "5886"  if EGLIBC_VERSION_2_7
-	default "6913"  if EGLIBC_VERSION_2_8
-	default "7430"  if EGLIBC_VERSION_2_9
+	default "8588"  if EGLIBC_VERSION_2_7
+	default "8587"  if EGLIBC_VERSION_2_8
+	default "8690"  if EGLIBC_VERSION_2_9
 	default "HEAD"  if EGLIBC_VERSION_TRUNK
 	default ""
 
