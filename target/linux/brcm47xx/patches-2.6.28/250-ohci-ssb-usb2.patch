@@ -2,8 +2,8 @@
  drivers/usb/host/ohci-ssb.c |   39 ++++++++++++++++++++++++++++++++++++---
  1 file changed, 36 insertions(+), 3 deletions(-)
 
---- linux-2.6.28.10.orig/drivers/usb/host/ohci-ssb.c
-+++ linux-2.6.28.10/drivers/usb/host/ohci-ssb.c
+--- a/drivers/usb/host/ohci-ssb.c
++++ b/drivers/usb/host/ohci-ssb.c
 @@ -106,10 +106,42 @@ static int ssb_ohci_attach(struct ssb_de
  	int err = -ENOMEM;
  	u32 tmp, flags = 0;
