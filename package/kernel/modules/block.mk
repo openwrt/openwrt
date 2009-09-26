@@ -417,11 +417,14 @@ define KernelPackage/libsas
   TITLE:=SAS Domain Transport Attributes
   DEPENDS:=+kmod-scsi-core @TARGET_x86
   KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
+	CONFIG_SCSI_SAS_ATTRS \
 	CONFIG_SCSI_SAS_ATA=y \
 	CONFIG_SCSI_SAS_HOST_SMP=y \
 	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
-  FILES:=$(LINUX_DIR)/drivers/scsi/libsas/libsas.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,29,libsas)
+  FILES:= \
+	$(LINUX_DIR)/drivers/scsi/scsi_transport_sas.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/scsi/libsas/libsas.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,29,scsi_transport_sas libsas)
 endef
 
 define KernelPackage/libsas/description

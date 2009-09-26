@@ -784,10 +784,16 @@ define KernelPackage/rfkill
     CONFIG_RFKILL \
     CONFIG_RFKILL_INPUT \
     CONFIG_RFKILL_LEDS=y
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.31)),1)
+  FILES:= \
+    $(LINUX_DIR)/net/rfkill/rfkill.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,rfkill)
+else
   FILES:= \
     $(LINUX_DIR)/net/rfkill/rfkill.$(LINUX_KMOD_SUFFIX) \
     $(LINUX_DIR)/net/rfkill/rfkill-input.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,rfkill rfkill-input)
+endif
 endef
 
 define KernelPackage/rfkill/description
