@@ -101,7 +101,11 @@ static int do_ioctl(int cmd, void *buf)
 		robo.ifr.ifr_data = (caddr_t) buf;
 
 	set_fs(KERNEL_DS);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
+	ret = robo.dev->netdev_ops->ndo_do_ioctl(robo.dev, &robo.ifr, cmd);
+#else
 	ret = robo.dev->do_ioctl(robo.dev, &robo.ifr, cmd);
+#endif
 	set_fs(old_fs);
 
 	return ret;
