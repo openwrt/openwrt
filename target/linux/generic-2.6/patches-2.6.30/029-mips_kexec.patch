@@ -180,7 +180,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/crash.c
 +
 +    unsigned int ncpus = num_online_cpus() - 1;/* Excluding the panic cpu */
 +
-+    smp_call_function (crash_shutdown_secondary, NULL, 0, 0);
++    smp_call_function (crash_shutdown_secondary, NULL, 0);
 +    smp_wmb();
 +
 +    /*
