@@ -1,0 +1,30 @@
+--- a/fs/union.c
++++ b/fs/union.c
+@@ -842,10 +842,8 @@
+ 	/* Lookup this entry in the topmost directory */
+ 	dentry = lookup_one_len(name, topmost_dentry, namlen);
+ 
+-	if (IS_ERR(dentry)) {
+-		printk(KERN_INFO "error looking up %s\n", dentry->d_name.name);
++	if (IS_ERR(dentry))
+ 		goto out;
+-	}
+ 
+ 	/*
+ 	 * If the entry already exists, one of the following is true:
+@@ -857,7 +855,6 @@
+ 	 */
+ 	if (dentry->d_inode || d_is_whiteout(dentry) ||
+ 	    d_is_fallthru(dentry)) {
+-		printk(KERN_INFO "skipping copy of %s\n", dentry->d_name.name);
+ 		goto out_dput;
+ 	}
+ 
+@@ -867,7 +864,6 @@
+ 	 * used, so each file system must implement its own way of
+ 	 * storing a fallthru entry.
+ 	 */
+-	printk(KERN_INFO "creating fallthru for %s\n", dentry->d_name.name);
+ 	err = topmost_dentry->d_inode->i_op->fallthru(topmost_dentry->d_inode,
+ 						      dentry);
+ 	/* FIXME */
