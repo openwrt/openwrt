@@ -48,7 +48,12 @@ pivot() { # <new_root> <old_root>
 fopivot() { # <rw_root> <ro_root> <dupe?>
 	root=$1
 	{
-		mount -t mini_fo -o base=/,sto=$1 "mini_fo:$1" /mnt 2>&- && root=/mnt
+		if grep -q mini_fo /proc/filesystems; then
+			mount -t mini_fo -o base=/,sto=$1 "mini_fo:$1" /mnt 2>&- && root=/mnt
+		else
+			mount --bind / /mnt
+			mount --bind -o union "$1" /mnt && root=/mnt 
+		fi
 	} || {
 		[ "$3" = "1" ] && {
 		mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
@@ -60,6 +65,7 @@ fopivot() { # <rw_root> <ro_root> <dupe?>
 
 ramoverlay() {
 	mkdir -p /tmp/root
+	mount -t tmpfs root /tmp/root
 	fopivot /tmp/root /rom 1
 }
 
@@ -78,28 +84,59 @@ ramoverlay() {
 	}
 
 	[ "$1" = "switch2jffs" ] && {
-		mount "$mtdpart" /rom/jffs -t jffs2 || exit
+		if grep -q mini_fo /proc/filesystems; then
+			mount "$mtdpart" /rom/jffs -t jffs2 || exit
 
-		# try to avoid fs changing while copying
-		mount -o remount,ro none / 2>&-
+			# try to avoid fs changing while copying
+			mount -o remount,ro none / 2>&-
 
-		# copy ramoverlay to jffs2
-		echo -n "copying files ... "
-		cp -a /tmp/root/* /rom/jffs 2>&-
-		echo "done"
+			# copy ramoverlay to jffs2
+			echo -n "copying files ... "
+			cp -a /tmp/root/* /rom/jffs 2>&-
+			echo "done"
 
-		# switch back to squashfs (temporarily)
-		# and park the ramdisk ontop of /tmp/root
-		pivot /rom /mnt
-		mount -o move /mnt /tmp/root
+			# switch back to squashfs (temporarily)
+			# and park the ramdisk ontop of /tmp/root
+			pivot /rom /mnt
+			mount -o move /mnt /tmp/root
 
-		# /jffs is the overlay
-		# /rom is the readonly
-		fopivot /jffs /rom
+			# /jffs is the overlay
+			# /rom is the readonly
+			fopivot /jffs /rom
 
-		# try to get rid of /tmp/root
-		# this will almost always fail
-		umount /tmp/root 2>&-
+			# try to get rid of /tmp/root
+			# this will almost always fail
+			umount /tmp/root 2>&-
+		else
+			# switch back to squashfs temporarily
+			pivot /rom /mnt
+
+			# get rid of the old overlay
+			umount -l /mnt
+
+			# another umount to get rid of the bind from /tmp/root
+			umount -l /mnt
+
+			# initialize jffs2
+			mount "$mtdpart" /jffs -t jffs2 || exit
+
+			# workaround to ensure that union can attach properly
+			sync
+			ls /jffs >/dev/null
+
+			# switch to the new (empty) jffs2
+			fopivot /jffs /rom 1
+
+			# copy ramoverlay to jffs2, must be done after switching
+			# to the new rootfs to avoid creating opaque directories
+			echo -n "copying files ... "
+			cp -a /tmp/root/* / >/dev/null 2>&1
+			sync
+			echo "done"
+
+			umount -l /jffs
+			umount -l /tmp/root
+		fi
 
 		exit 0
 	}
