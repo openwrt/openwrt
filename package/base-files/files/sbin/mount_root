@@ -9,7 +9,7 @@ jffs2_ready () {
 }
 
 grep rootfs_data /proc/mtd >/dev/null 2>/dev/null && {
-	. /bin/firstboot
+	. /sbin/firstboot
 	mtd unlock rootfs_data
 	jffs2_ready && {
 		echo "switching to jffs2"
