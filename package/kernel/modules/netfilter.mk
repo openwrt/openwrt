@@ -316,11 +316,14 @@ define KernelPackage/ipt-ipset/description
  - ip_set_iphash
  - ip_set_ipmap
  - ip_set_ipporthash
+ - ip_set_ipportiphash
+ - ip_set_ipportnethash
  - ip_set_iptree
  - ip_set_iptreemap
  - ip_set_macipmap
  - ip_set_nethash
  - ip_set_portmap
+ - ip_set_setlist
  - ipt_set
  - ipt_SET
 endef
