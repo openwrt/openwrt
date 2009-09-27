@@ -17,6 +17,6 @@ export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 [ -d /etc/ppp/ip-down.d ] && {
 	for SCRIPT in /etc/ppp/ip-down.d/*
 	do
-		[ -x "$SCRIPT" ] && "$SCRIPT" $@
+		[ -x "$SCRIPT" ] && "$SCRIPT" "$@"
 	done
 }
