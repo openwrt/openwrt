@@ -136,6 +136,15 @@ define Download/rt2870
 endef
 $(eval $(call Download,rt2870))
 
+AR9170FW:=ar9170.fw
+
+define Download/ar9170
+  FILE:=$(AR9170FW)
+  URL:=http://www.kernel.org/pub/linux/kernel/people/mcgrof/firmware/ar9170
+  MD5SUM:=34feec4ec0eae3bb92c7c1ea2dfb4530
+endef
+$(eval $(call Download,ar9170))
+
 define KernelPackage/rt2x00/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Ralink Drivers for RT2x00 cards
@@ -306,6 +315,19 @@ define KernelPackage/ath9k/config
 	source "$(SOURCE)/Config.in.ath9k"
 endef
 
+define KernelPackage/ar9170
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Atheros AR9170 802.11n USB support
+  URL:=http://wireless.kernel.org/en/users/Drivers/ar9170
+  DEPENDS+= @USB_SUPPORT @!LINUX_2_6_25 @!LINUX_2_6_27 +kmod-ath +kmod-usb-core
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ar9170/ar9170usb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,ar9170usb)
+endef
+
+define KernelPackage/ar9170/description
+ This is a driver for the Atheros "otus" 802.11n USB devices.
+endef
+
 define KernelPackage/mac80211-hwsim
   $(call KernelPackage/mac80211/Default)
   TITLE:=mac80211 HW simulation device
@@ -428,7 +450,7 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PCI),-DCONFIG_B43_PCI_AUTOSELECT -DCONFIG_B43_PCICORE_AUTOSELECT -DCONFIG_SSB_DRIVER_PCICORE_POSSIBLE -DCONFIG_SSB_DRIVER_PCICORE) \
 	$(if $(CONFIG_PCI),-DCONFIG_SSB_PCIHOST_POSSIBLE -DCONFIG_SSB_PCIHOST) \
 	$(if $(CONFIG_PCI),-DCONFIG_SSB_SPROM) \
-	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS) \
+	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS -DCONFIG_AR9170_LEDS) \
 	$(if $(CONFIG_HW_RANDOM),-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG) \
 	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),-DCONFIG_MAC80211_DEBUGFS) \
 	$(if $(CONFIG_PACKAGE_ATH9K_DEBUG),-DCONFIG_ATH9K_DEBUG) \
@@ -504,7 +526,8 @@ MAKE_OPTS:= \
 	CONFIG_AT76C50X_USB= \
 	CONFIG_WL12XX= \
 	CONFIG_EEPROM_93CX6= \
-	CONFIG_AR9170_USB= \
+	CONFIG_AR9170_USB=$(if $(CONFIG_PACKAGE_kmod-ar9170),m) \
+	CONFIG_AR9170_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	CONFIG_IWM= \
 	MADWIFI= \
 	OLD_IWL= \
@@ -585,6 +608,11 @@ define KernelPackage/zd1211rw/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
 endef
 
+define KernelPackage/ar9170/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(AR9170FW) $(1)/lib/firmware/
+endef
+
 define Build/b43-common
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWCUTTER_SOURCE)" -C "$(PKG_BUILD_DIR)"
 	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_OBJECT)" \
@@ -650,5 +678,6 @@ $(eval $(call KernelPackage,zd1211rw))
 $(eval $(call KernelPackage,mac80211-hwsim))
 $(eval $(call KernelPackage,ath9k))
 $(eval $(call KernelPackage,ath))
+$(eval $(call KernelPackage,ar9170))
 $(eval $(call KernelPackage,b43))
 $(eval $(call KernelPackage,b43legacy))
