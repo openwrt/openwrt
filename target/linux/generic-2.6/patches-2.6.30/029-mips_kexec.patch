@@ -1,0 +1,637 @@
+This patch updates kernel part of kexec for MIPS platform to support
+kdump, 64-bit, SMP and simplify code adaptation to new boards. It does
+the following:
+
+- hooks for machine-specific actions are introduced
+(_machine_kexec_prepare,
+  _machine_kexec_shutdown, _machine_crash_shutdown);
+- kexec reboot on SMP machine is implemented;
+- add boot parameters passing to new kernel (array kexec_args[] is
+copied to
+  registers a0-a3 on reboot );
+- crash dump functionality is added (boot kernel with non-default physical
+  start, parse "crashkernel=..." command line parameter, copy_oldmem_page()
+  is implemeted to read memory dump after reboot-on-crashi,
+crash_setup_regs()
+  is updated to correctly store registers on crash);
+
+kexec/kdump funtionality was tested on several Cavium Octeon boards
+(mips64 SMP). The way we do it was the following:
+- _machine_kexec_prepare was find kexec segment with command line and
+save it's pointed into internal bootloader structure.
+- _machine_kexec_shutdown was used to stop boards IO and make all non-boot
+CPUs spin in function relocated_kexec_smp_wait()
+- _machine_crash_shutdown just calls default_machine_crash_shutdown()
+We tested 1) 'common' kexec reboot (by 'kexec -e'), 2) kexec-on-panic
+('kexec -p ...') and 3) access to/proc/vmcore (with gdb).
+
+Signed-off-by: Maxim Syrchin <[11]msyrchin at ru.mvista.com>
+---
+arch/mips/Kconfig                  |   23 +++++++++
+arch/mips/Makefile                 |    4 ++
+arch/mips/kernel/Makefile          |    3 +-
+arch/mips/kernel/crash.c           |   91 ++++++++++++++++++++++++++++++++++
+arch/mips/kernel/crash_dump.c      |   96 ++++++++++++++++++++++++++++++++++++
+arch/mips/kernel/machine_kexec.c   |   52 ++++++++++++++++++-
+arch/mips/kernel/relocate_kernel.S |   93 ++++++++++++++++++++++++++++++++++-
+arch/mips/kernel/setup.c           |   10 +++-
+arch/mips/include/asm/kexec.h           |   21 ++++++++-
+9 files changed, 386 insertions(+), 7 deletions(-)
+create mode 100644 arch/mips/kernel/crash.c
+create mode 100644 arch/mips/kernel/crash_dump.c
+
+---
+ arch/mips/Kconfig                  |   23 	23 +	0 -	0 !
+ arch/mips/Makefile                 |    4 	4 +	0 -	0 !
+ arch/mips/kernel/Makefile          |    3 	2 +	1 -	0 !
+ arch/mips/kernel/crash.c           |   90 	90 +	0 -	0 !
+ arch/mips/kernel/crash_dump.c      |   96 	96 +	0 -	0 !
+ arch/mips/kernel/machine_kexec.c   |   66 	60 +	6 -	0 !
+ arch/mips/kernel/relocate_kernel.S |   96 	95 +	1 -	0 !
+ arch/mips/kernel/setup.c           |   10 	9 +	1 -	0 !
+ arch/mips/include/asm/kexec.h      |   21 	20 +	1 -	0 !
+ 9 files changed, 399 insertions(+), 10 deletions(-)
+
+Index: linux-2.6.30.7/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/Kconfig	2009-09-27 20:41:06.000000000 +0200
++++ linux-2.6.30.7/arch/mips/Kconfig	2009-09-27 21:02:55.000000000 +0200
+@@ -1966,6 +1966,29 @@
+ 	  support.  As of this writing the exact hardware interface is
+ 	  strongly in flux, so no good recommendation can be made.
+ 
++config CRASH_DUMP
++    bool "kernel crash dumps (EXPERIMENTAL)"
++    depends on EXPERIMENTAL
++    help
++      Generate crash dump after being started by kexec.
++          This should be normally only set in special crash dump kernels
++      which are loaded in the main kernel with kexec-tools into
++      a specially reserved region and then later executed after
++      a crash by kdump/kexec. The crash dump kernel must be compiled
++          to a memory address not used by the main kernel or BIOS using
++          PHYSICAL_START.
++
++config PHYSICAL_START
++    hex "Physical address where the kernel is loaded"
++    default "0xffffffff84000000"
++    depends on CRASH_DUMP
++    help
++      This gives the CKSEG0 or KSEG0 address where the kernel is loaded.
++      If you plan to use kernel for capturing the crash dump change
++      this value to start of the reserved region (the "X" value as
++      specified in the "crashkernel=[12]YM at XM" command line boot parameter
++      passed to the panic-ed kernel).
++
+ config SECCOMP
+ 	bool "Enable seccomp to safely compute untrusted bytecode"
+ 	depends on PROC_FS
+Index: linux-2.6.30.7/arch/mips/Makefile
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/Makefile	2009-09-27 20:41:07.000000000 +0200
++++ linux-2.6.30.7/arch/mips/Makefile	2009-09-27 21:03:31.000000000 +0200
+@@ -603,6 +603,10 @@
+ load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
+ endif
+ 
++ifdef CONFIG_PHYSICAL_START
++load-y			= $(CONFIG_PHYSICAL_START)
++endif
++
+ cflags-y			+= -I$(srctree)/arch/mips/include/asm/mach-generic
+ drivers-$(CONFIG_PCI)		+= arch/mips/pci/
+ 
+Index: linux-2.6.30.7/arch/mips/kernel/Makefile
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/kernel/Makefile	2009-09-27 20:41:06.000000000 +0200
++++ linux-2.6.30.7/arch/mips/kernel/Makefile	2009-09-27 21:02:55.000000000 +0200
+@@ -83,7 +83,8 @@
+ 
+ obj-$(CONFIG_GPIO_TXX9)		+= gpio_txx9.o
+ 
+-obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
++obj-$(CONFIG_KEXEC)        += machine_kexec.o relocate_kernel.o crash.o
++obj-$(CONFIG_CRASH_DUMP)    += crash_dump.o
+ obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ obj-$(CONFIG_MIPS_MACHINE)	+= mips_machine.o
+ 
+Index: linux-2.6.30.7/arch/mips/kernel/crash.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.7/arch/mips/kernel/crash.c	2009-09-27 21:02:55.000000000 +0200
+@@ -0,0 +1,90 @@
++/*
++ * Architecture specific (MIPS) functions for kexec based crash dumps.
++ *
++ * Copyright (C) 2005, IBM Corp.
++ * Copyright (C) 2008, MontaVista Software Inc.
++ *
++ * This source code is licensed under the GNU General Public License,
++ * Version 2.  See the file COPYING for more details.
++ *
++ */
++
++#undef DEBUG
++
++#include <linux/kernel.h>
++#include <linux/smp.h>
++#include <linux/reboot.h>
++#include <linux/kexec.h>
++#include <linux/bootmem.h>
++#include <linux/crash_dump.h>
++#include <linux/delay.h>
++#include <linux/init.h>
++#include <linux/irq.h>
++#include <linux/types.h>
++#include <linux/sched.h>
++
++
++
++/* This keeps a track of which one is crashing cpu. */
++int crashing_cpu = -1;
++static cpumask_t cpus_in_crash = CPU_MASK_NONE;
++
++#ifdef CONFIG_SMP
++
++void crash_shutdown_secondary(void *ignore)
++{
++    struct pt_regs* regs;
++    int cpu = smp_processor_id();
++
++    regs = task_pt_regs(current);
++    if (!cpu_online(cpu))
++        return;
++
++    local_irq_disable();
++    if (!cpu_isset(cpu, cpus_in_crash))
++        crash_save_cpu(regs, cpu);
++    cpu_set(cpu, cpus_in_crash);
++
++    while(!atomic_read(&kexec_ready_to_reboot)) {
++        cpu_relax();
++    }
++    relocated_kexec_smp_wait(NULL);
++    /* NOTREACHED */
++}
++
++static void crash_kexec_prepare_cpus(void)
++{
++    unsigned int msecs;
++
++    unsigned int ncpus = num_online_cpus() - 1;/* Excluding the panic cpu */
++
++    smp_call_function (crash_shutdown_secondary, NULL, 0, 0);
++    smp_wmb();
++
++    /*
++     * FIXME: Until we will have the way to stop other CPUSs reliabally,
++     * the crash CPU will send an IPI and wait for other CPUs to
++     * respond.
++     * Delay of at least 10 seconds.
++     */
++    printk(KERN_EMERG "Sending IPI to other cpus...\n");
++    msecs = 10000;
++    while ((cpus_weight(cpus_in_crash) < ncpus) && (--msecs > 0)) {
++        cpu_relax();
++        mdelay(1);
++    }
++
++}
++
++#else
++static void crash_kexec_prepare_cpus(void) {}
++#endif
++
++void default_machine_crash_shutdown(struct pt_regs *regs)
++{
++    local_irq_disable();
++    crashing_cpu = smp_processor_id();
++    crash_save_cpu(regs, crashing_cpu);
++    crash_kexec_prepare_cpus();
++    cpu_set(crashing_cpu, cpus_in_crash);
++}
+Index: linux-2.6.30.7/arch/mips/kernel/crash_dump.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.7/arch/mips/kernel/crash_dump.c	2009-09-27 21:02:55.000000000 +0200
+@@ -0,0 +1,96 @@
++/*
++ * Routines for doing kexec-based kdump.
++ *
++ * Copyright (C) 2005, IBM Corp.
++ * Copyright (C) 2008, MontaVista Software Inc.
++ *
++ * This source code is licensed under the GNU General Public License,
++ * Version 2.  See the file COPYING for more details.
++ */
++
++#include <linux/highmem.h>
++#include <linux/bootmem.h>
++#include <linux/crash_dump.h>
++#include <asm/uaccess.h>
++
++#ifdef CONFIG_PROC_VMCORE
++static int __init parse_elfcorehdr(char *p)
++{
++    if (p)
++        elfcorehdr_addr = memparse(p, &p);
++    return 1;
++}
++__setup("elfcorehdr=", parse_elfcorehdr);
++#endif
++
++static int __init parse_savemaxmem(char *p)
++{
++    if (p)
++        saved_max_pfn = (memparse(p, &p) >> PAGE_SHIFT) - 1;
++
++    return 1;
++}
++__setup("savemaxmem=", parse_savemaxmem);
++
++
++static void *kdump_buf_page;
++
++/**
++ * copy_oldmem_page - copy one page from "oldmem"
++ * @pfn: page frame number to be copied
++ * @buf: target memory address for the copy; this can be in kernel address
++ *    space or user address space (see @userbuf)
++ * @csize: number of bytes to copy
++ * @offset: offset in bytes into the page (based on pfn) to begin the copy
++ * @userbuf: if set, @buf is in user address space, use copy_to_user(),
++ *    otherwise @buf is in kernel address space, use memcpy().
++ *
++ * Copy a page from "oldmem". For this page, there is no pte mapped
++ * in the current kernel.
++ *
++ * Calling copy_to_user() in atomic context is not desirable. Hence first
++ * copying the data to a pre-allocated kernel page and then copying to user
++ * space in non-atomic context.
++ */
++ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
++                               size_t csize, unsigned long offset, int userbuf)
++{
++    void  *vaddr;
++
++    if (!csize)
++        return 0;
++
++    vaddr = kmap_atomic_pfn(pfn, KM_PTE0);
++
++    if (!userbuf) {
++        memcpy(buf, (vaddr + offset), csize);
++        kunmap_atomic(vaddr, KM_PTE0);
++    } else {
++        if (!kdump_buf_page) {
++            printk(KERN_WARNING "Kdump: Kdump buffer page not"
++                " allocated\n");
++            return -EFAULT;
++        }
++        copy_page(kdump_buf_page, vaddr);
++        kunmap_atomic(vaddr, KM_PTE0);
++        if (copy_to_user(buf, (kdump_buf_page + offset), csize))
++            return -EFAULT;
++    }
++
++    return csize;
++}
++
++static int __init kdump_buf_page_init(void)
++{
++    int ret = 0;
++
++    kdump_buf_page = kmalloc(PAGE_SIZE, GFP_KERNEL);
++    if (!kdump_buf_page) {
++        printk(KERN_WARNING "Kdump: Failed to allocate kdump buffer"
++             " page\n");
++        ret = -ENOMEM;
++    }
++
++    return ret;
++}
++arch_initcall(kdump_buf_page_init);
+Index: linux-2.6.30.7/arch/mips/kernel/machine_kexec.c
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/kernel/machine_kexec.c	2009-09-15 19:46:05.000000000 +0200
++++ linux-2.6.30.7/arch/mips/kernel/machine_kexec.c	2009-09-27 21:02:55.000000000 +0200
+@@ -19,9 +19,25 @@
+ extern unsigned long kexec_start_address;
+ extern unsigned long kexec_indirection_page;
+ 
++extern unsigned long fw_arg0, fw_arg1, fw_arg2, fw_arg3;
++
++int (*_machine_kexec_prepare)(struct kimage *) = NULL;
++void (*_machine_kexec_shutdown)(void) = NULL;
++void (*_machine_crash_shutdown)(struct pt_regs *regs) = NULL;
++#ifdef CONFIG_SMP
++void (*relocated_kexec_smp_wait) (void *);
++atomic_t kexec_ready_to_reboot = ATOMIC_INIT(0);
++#endif
++
+ int
+ machine_kexec_prepare(struct kimage *kimage)
+ {
++	kexec_args[0] = fw_arg0;
++	kexec_args[1] = fw_arg1;
++	kexec_args[2] = fw_arg2;
++	kexec_args[3] = fw_arg3;
++	if (_machine_kexec_prepare)
++        	return _machine_kexec_prepare(kimage);
+ 	return 0;
+ }
+ 
+@@ -33,13 +49,18 @@
+ void
+ machine_shutdown(void)
+ {
++    if (_machine_kexec_shutdown)
++        _machine_kexec_shutdown();
+ }
+ 
+ void
+ machine_crash_shutdown(struct pt_regs *regs)
+ {
++    if (_machine_crash_shutdown)
++        _machine_crash_shutdown(regs);
++    else
++        default_machine_crash_shutdown(regs);
+ }
+-
+ typedef void (*noretfun_t)(void) __attribute__((noreturn));
+ 
+ void
+@@ -52,7 +73,9 @@
+ 	reboot_code_buffer =
+ 	  (unsigned long)page_address(image->control_code_page);
+ 
+-	kexec_start_address = image->start;
++     kexec_start_address =
++        (unsigned long) phys_to_virt(image->start);
++
+ 	kexec_indirection_page =
+ 		(unsigned long) phys_to_virt(image->head & PAGE_MASK);
+ 
+@@ -63,7 +86,7 @@
+ 	 * The generic kexec code builds a page list with physical
+ 	 * addresses. they are directly accessible through KSEG0 (or
+ 	 * CKSEG0 or XPHYS if on 64bit system), hence the
+-	 * pys_to_virt() call.
++     * phys_to_virt() call.
+ 	 */
+ 	for (ptr = &image->head; (entry = *ptr) && !(entry &IND_DONE);
+ 	     ptr = (entry & IND_INDIRECTION) ?
+@@ -78,8 +101,39 @@
+ 	 */
+ 	local_irq_disable();
+ 
+-	printk("Will call new kernel at %08lx\n", image->start);
+-	printk("Bye ...\n");
++	printk(KERN_EMERG "Will call new kernel at %08lx\n", image->start);
++	printk(KERN_EMERG "Bye ...\n");
+ 	__flush_cache_all();
+-	((noretfun_t) reboot_code_buffer)();
++#ifdef CONFIG_SMP
++    /* All secondary cpus now may jump to kexec_wait cycle */
++    relocated_kexec_smp_wait = (void *)(reboot_code_buffer +
++        (kexec_smp_wait - relocate_new_kernel));
++    smp_wmb();
++    atomic_set(&kexec_ready_to_reboot,1);
++#endif
++
++    	((noretfun_t) reboot_code_buffer)();
++	printk(KERN_EMERG "Bye ...\n");
++}
++
++/* crashkernel=[13]size at addr specifies the location to reserve for
++ * a crash kernel.  By reserving this memory we guarantee
++ * that linux never sets it up as a DMA target.
++ * Useful for holding code to do something appropriate
++ * after a kernel panic.
++ */
++static int __init parse_crashkernel_cmdline(char *arg)
++{
++    unsigned long size, base;
++    size = memparse(arg, &arg);
++    if (*arg == '@') {
++        base = memparse(arg+1, &arg);
++        /* FIXME: Do I want a sanity check
++         * to validate the memory range?
++         */
++        crashk_res.start = base;
++        crashk_res.end   = base + size - 1;
++    }
++    return 0;
+ }
++early_param("crashkernel", parse_crashkernel_cmdline);
+Index: linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/kernel/relocate_kernel.S	2009-09-15 19:46:05.000000000 +0200
++++ linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S	2009-09-27 21:02:55.000000000 +0200
+@@ -14,7 +14,13 @@
+ #include <asm/stackframe.h>
+ #include <asm/addrspace.h>
+ 
++
+ LEAF(relocate_new_kernel)
++     PTR_L a0,    arg0
++     PTR_L a1,    arg1
++     PTR_L a2,    arg2
++     PTR_L a3,    arg3
++
+ 	PTR_L		s0, kexec_indirection_page
+ 	PTR_L		s1, kexec_start_address
+ 
+@@ -26,7 +32,6 @@
+ 	and		s3, s2, 0x1
+ 	beq		s3, zero, 1f
+ 	and		s4, s2, ~0x1	/* store destination addr in s4 */
+-	move		a0, s4
+ 	b		process_entry
+ 
+ 1:
+@@ -40,6 +45,7 @@
+ 	/* done page */
+ 	and		s3, s2, 0x4
+ 	beq		s3, zero, 1f
++	nop
+ 	b		done
+ 1:
+ 	/* source page */
+@@ -56,14 +62,102 @@
+ 	PTR_ADD		s2, s2, SZREG
+ 	LONG_SUB	s6, s6, 1
+ 	beq		s6, zero, process_entry
++	nop
+ 	b		copy_word
++	nop
+ 	b		process_entry
+ 
+ done:
++#ifdef CONFIG_SMP
++    /* kexec_flag reset is signal to other CPUs what kernel
++        was moved to it's location. Note - we need relocated address
++        of kexec_flag.  */
++
++     bal        1f
++ 1:     move        t1,ra;
++     PTR_LA        t2,1b
++     PTR_LA        t0,kexec_flag
++     PTR_SUB        t0,t0,t2;
++     PTR_ADD        t0,t1,t0;
++     LONG_S        zero,(t0)
++#endif
++
++     /* Some platforms need I-cache to be flushed before
++     * jumping to new kernel.
++      */
++
+ 	/* jump to kexec_start_address */
+ 	j		s1
+ 	END(relocate_new_kernel)
+ 
++#ifdef CONFIG_SMP
++/*
++ * Other CPUs should wait until code is relocated and
++ * then start at entry point.
++ */
++LEAF(kexec_smp_wait)
++    PTR_L        a0, s_arg0
++    PTR_L        a1, s_arg1
++    PTR_L        a2, s_arg2
++    PTR_L        a3, s_arg3
++    PTR_L        s1, kexec_start_address
++
++    /* Non-relocated address works for args and kexec_start_address ( old
++     * kernel is not overwritten). But we need relocated address of
++     * kexec_flag.
++     */
++
++    bal        1f
++1:    move        t1,ra;
++    PTR_LA        t2,1b
++    PTR_LA        t0,kexec_flag
++    PTR_SUB        t0,t0,t2;
++    PTR_ADD        t0,t1,t0;
++
++1:    LONG_L        s0, (t0)
++    bne        s0, zero,1b
++
++    j        s1
++    END(kexec_smp_wait)
++#endif
++
++
++#ifdef __mips64
++       /* all PTR's must be aligned to 8 byte in 64-bit mode */
++       .align  3
++#endif
++
++/* All parameters to new kernel are passed in registers a0-a3.
++ * kexec_args[0..3] are uses to prepare register values.
++ */
++
++kexec_args:
++    EXPORT(kexec_args)
++arg0:    PTR        0x0
++arg1:    PTR        0x0
++arg2:    PTR        0x0
++arg3:    PTR        0x0
++    .size    kexec_args,PTRSIZE*4
++
++#ifdef CONFIG_SMP
++/*
++ * Secondary CPUs may have different kernel parameters in
++ * their registers a0-a3. secondary_kexec_args[0..3] are used
++ * to prepare register values.
++ */
++secondary_kexec_args:
++    EXPORT(secondary_kexec_args)
++s_arg0:    PTR        0x0
++s_arg1:    PTR        0x0
++s_arg2:    PTR        0x0
++s_arg3:    PTR        0x0
++    .size    secondary_kexec_args,PTRSIZE*4
++kexec_flag:
++    LONG        0x1
++
++#endif
++
++
+ kexec_start_address:
+ 	EXPORT(kexec_start_address)
+ 	PTR		0x0
+Index: linux-2.6.30.7/arch/mips/kernel/setup.c
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/kernel/setup.c	2009-09-15 19:46:05.000000000 +0200
++++ linux-2.6.30.7/arch/mips/kernel/setup.c	2009-09-27 21:02:55.000000000 +0200
+@@ -21,7 +21,7 @@
+ #include <linux/console.h>
+ #include <linux/pfn.h>
+ #include <linux/debugfs.h>
+-
++#include <linux/kexec.h>
+ #include <asm/addrspace.h>
+ #include <asm/bootinfo.h>
+ #include <asm/bugs.h>
+@@ -489,6 +489,11 @@
+ 	}
+ 
+ 	bootmem_init();
++#ifdef CONFIG_CRASH_DUMP
++    if (crashk_res.start != crashk_res.end)
++        reserve_bootmem(crashk_res.start,
++                crashk_res.end - crashk_res.start + 1);
++#endif
+ 	sparse_init();
+ 	paging_init();
+ }
+@@ -543,6 +548,9 @@
+ 		 */
+ 		request_resource(res, &code_resource);
+ 		request_resource(res, &data_resource);
++#ifdef CONFIG_KEXEC
++        request_resource(res, &crashk_res);
++#endif
+ 	}
+ }
+ 
+Index: linux-2.6.30.7/arch/mips/include/asm/kexec.h
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/include/asm/kexec.h	2009-09-15 19:46:05.000000000 +0200
++++ linux-2.6.30.7/arch/mips/include/asm/kexec.h	2009-09-27 21:02:55.000000000 +0200
+@@ -9,6 +9,8 @@
+ #ifndef _MIPS_KEXEC
+ # define _MIPS_KEXEC
+ 
++#include <asm/stacktrace.h>
++
+ /* Maximum physical address we can use pages from */
+ #define KEXEC_SOURCE_MEMORY_LIMIT (0x20000000)
+ /* Maximum address we can reach in physical address mode */
+@@ -24,7 +26,24 @@
+ static inline void crash_setup_regs(struct pt_regs *newregs,
+ 				    struct pt_regs *oldregs)
+ {
+-	/* Dummy implementation for now */
++    if (oldregs)
++        memcpy(newregs, oldregs, sizeof(*newregs));
++    else
++        prepare_frametrace(newregs);
+ }
+ 
++#ifdef CONFIG_KEXEC
++struct kimage;
++extern unsigned long kexec_args[4];
++extern int (*_machine_kexec_prepare)(struct kimage *);
++extern void (*_machine_kexec_shutdown)(void);
++extern void (*_machine_crash_shutdown)(struct pt_regs *regs);
++extern void default_machine_crash_shutdown(struct pt_regs *regs);
++#ifdef CONFIG_SMP
++extern const unsigned char kexec_smp_wait[];
++extern unsigned long secondary_kexec_args[4];
++extern void (*relocated_kexec_smp_wait) (void *);
++extern atomic_t kexec_ready_to_reboot;
++#endif
++#endif
+ #endif /* !_MIPS_KEXEC */
