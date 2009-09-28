@@ -23,6 +23,12 @@ DEVICENAME ~~ (controlC[0-9]|pcmC0D0*|timer) {
 	next
 }
 
+DEVICENAME ~~ (lp[0-9]) {
+	nothrottle
+	makedev /dev/%DEVICENAME% 0644
+	next
+}
+
 DEVPATH is set, SUBSYSTEM ~~ (input) {
 	nothrottle
 	makedev /dev/input/%DEVICENAME% 0644
