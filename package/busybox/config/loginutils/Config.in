@@ -58,7 +58,7 @@ config BUSYBOX_CONFIG_USE_BB_SHADOW
 	  password servers and whatnot.
 
 config BUSYBOX_CONFIG_USE_BB_CRYPT
-	bool "Use internal DES and MD5 crypt functions"
+	bool "Use internal crypt functions"
 	default n
 	help
 	  Busybox has internal DES and MD5 crypt functions.
@@ -78,6 +78,18 @@ config BUSYBOX_CONFIG_USE_BB_CRYPT
 	  if you are building dynamically linked executable.
 	  In static build, it makes code _smaller_ by about 1.2k,
 	  and likely many kilobytes less of bss.
+
+config BUSYBOX_CONFIG_USE_BB_CRYPT_SHA
+	bool "Enable SHA256/512 crypt functions"
+	default n
+	depends on BUSYBOX_CONFIG_USE_BB_CRYPT
+	help
+	  Enable this if you have passwords starting with "$5$" or "$6$"
+	  in your /etc/passwd or /etc/shadow files. These passwords
+	  are hashed using SHA256 and SHA512 algorithms. Support for them
+	  was added to glibc in 2008.
+	  With this option off, login will fail password check for any
+	  user which has password encrypted with these algorithms.
 
 config BUSYBOX_CONFIG_ADDGROUP
 	bool "addgroup"
@@ -230,15 +242,16 @@ config BUSYBOX_CONFIG_CRYPTPW
 	bool "cryptpw"
 	default n
 	help
-	  Applet for crypting a string.
+	  Encrypts the given password with the crypt(3) libc function
+	  using the given salt. Debian has this utility under mkpasswd
+	  name. Busybox provides mkpasswd as an alias for cryptpw.
 
 config BUSYBOX_CONFIG_CHPASSWD
 	bool "chpasswd"
 	default n
 	help
-	  chpasswd reads a file of user name and password pairs from
-	  standard input and uses this information to update a group of
-	  existing users.
+	  Reads a file of user name and password pairs from standard input
+	  and uses this information to update a group of existing users.
 
 config BUSYBOX_CONFIG_SU
 	bool "su"

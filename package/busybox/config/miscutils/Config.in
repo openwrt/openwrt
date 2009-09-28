@@ -121,6 +121,13 @@ config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
 	help
 	  Support calling /usr/sbin/sendmail for send cmd outputs.
 
+config BUSYBOX_CONFIG_FEATURE_CROND_DIR
+	string "crond spool directory"
+	default "/var/spool/cron"
+	depends on BUSYBOX_CONFIG_CROND || BUSYBOX_CONFIG_CRONTAB
+	help
+	  Location of crond spool.
+
 config BUSYBOX_CONFIG_CRONTAB
 	bool "crontab"
 	default y
@@ -151,7 +158,10 @@ config BUSYBOX_CONFIG_DEVFSD
 	default n
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
-	  This is deprecated, and will be removed at the end of 2008.
+	  This is deprecated and should NOT be used anymore.
+	  Use linux >= 2.6 (optionally with hotplug) and mdev instead!
+	  See docs/mdev.txt for detailed instructions on how to use mdev
+	  instead.
 
 	  Provides compatibility with old device names on a devfs systems.
 	  You should set it to true if you have devfs enabled.
@@ -160,7 +170,7 @@ config BUSYBOX_CONFIG_DEVFSD
 	  "PERMISSIONS", "EXECUTE", "COPY", "IGNORE",
 	  "MKOLDCOMPAT", "MKNEWCOMPAT","RMOLDCOMPAT", "RMNEWCOMPAT".
 
-	   But only if they are written UPPERCASE!!!!!!!!
+	  But only if they are written UPPERCASE!!!!!!!!
 
 config BUSYBOX_CONFIG_DEVFSD_MODLOAD
 	bool "Adds support for MODLOAD keyword in devsfd.conf"
@@ -190,9 +200,11 @@ config BUSYBOX_CONFIG_FEATURE_DEVFS
 	bool "Use devfs names for all devices (obsolete)"
 	default n
 	help
-	  This is obsolete and will be going away at the end of 2008..
+	  This is obsolete and should NOT be used anymore.
+	  Use linux >= 2.6 (optionally with hotplug) and mdev instead!
 
-	  This tells busybox to look for names like /dev/loop/0 instead of
+	  For legacy systems -- if there is no way around devfsd -- this
+	  tells busybox to look for names like /dev/loop/0 instead of
 	  /dev/loop0. If your /dev directory has normal names instead of
 	  devfs names, you don't want this.
 
@@ -237,6 +249,20 @@ config BUSYBOX_CONFIG_FBSPLASH
 	  - commands for fifo:
 	    "NN" (ASCII decimal number) - percentage to show on progress bar
 	    "exit" - well you guessed it
+
+config BUSYBOX_CONFIG_FLASH_ERASEALL
+	bool "flash_eraseall"
+	default n
+	help
+	  The flash_eraseall binary from mtd-utils as of git head c4c6a59eb.
+	  This utility is used to erase the whole MTD device.
+
+config BUSYBOX_CONFIG_IONICE
+	bool "ionice"
+	default n
+	help
+	  Set/set program io scheduling class and priority
+	  Requires kernel >= 2.6.13
 
 config BUSYBOX_CONFIG_INOTIFYD
 	bool "inotifyd"
@@ -300,14 +326,6 @@ config BUSYBOX_CONFIG_FEATURE_LESS_FLAGS
 	  The -M flag enables a more sophisticated status line.
 	  The -m flag enables a simpler status line with a percentage.
 
-config BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
-	bool "Enable flag changes ('-' command)"
-	default n
-	depends on BUSYBOX_CONFIG_LESS
-	help
-	  This enables the ability to change command-line flags within
-	  less itself ('-' keyboard command).
-
 config BUSYBOX_CONFIG_FEATURE_LESS_MARKS
 	bool "Enable marks"
 	default n
@@ -322,19 +340,27 @@ config BUSYBOX_CONFIG_FEATURE_LESS_REGEXP
 	help
 	  Enable regular expressions, allowing complex file searches.
 
-config BUSYBOX_CONFIG_FEATURE_LESS_LINENUMS
-	bool "Enable dynamic switching of line numbers"
-	default n
-	depends on BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
-	help
-	  Enable "-N" command.
-
 config BUSYBOX_CONFIG_FEATURE_LESS_WINCH
 	bool "Enable automatic resizing on window size changes"
 	default n
 	depends on BUSYBOX_CONFIG_LESS
 	help
 	  Makes less track window size changes.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
+	bool "Enable flag changes ('-' command)"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  This enables the ability to change command-line flags within
+	  less itself ('-' keyboard command).
+
+config BUSYBOX_CONFIG_FEATURE_LESS_LINENUMS
+	bool "Enable dynamic switching of line numbers"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_LESS_DASHCMD
+	help
+	  Enable "-N" command.
 
 config BUSYBOX_CONFIG_HDPARM
 	bool "hdparm"
@@ -388,12 +414,11 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_TRISTATE_HWIF
 	  stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_GETSET_DMA
-	bool "Get/set using_dma flag (DANGEROUS)"
+	bool "Get/set using_dma flag"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
 	  Enables the 'hdparm -d' option to get/set using_dma flag.
-	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_LOCK
 	bool "lock"
@@ -534,6 +559,13 @@ config BUSYBOX_CONFIG_TIME
 	  The time command runs the specified program with the given arguments.
 	  When the command finishes, time writes a message to standard output
 	  giving timing statistics about this program run.
+
+config BUSYBOX_CONFIG_TIMEOUT
+	bool "timeout"
+	default n
+	help
+	  Runs a program and watches it. If it does not terminate in
+	  specified number of seconds, it is sent a signal.
 
 config BUSYBOX_CONFIG_TTYSIZE
 	bool "ttysize"

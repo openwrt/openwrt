@@ -3,20 +3,20 @@
 @@ -24,7 +24,7 @@
  
  
- #ifndef CRONTABS
--#define CRONTABS        "/var/spool/cron/crontabs"
+ #define TMPDIR          CONFIG_FEATURE_CROND_DIR
+-#define CRONTABS        CONFIG_FEATURE_CROND_DIR "/crontabs"
 +#define CRONTABS        "/etc/crontabs"
+ #ifndef SENDMAIL
+ #define SENDMAIL        "sendmail"
  #endif
- #ifndef TMPDIR
- #define TMPDIR          "/var/spool/cron"
 --- a/miscutils/crontab.c
 +++ b/miscutils/crontab.c
-@@ -13,7 +13,7 @@
+@@ -12,7 +12,7 @@
+ 
  #include "libbb.h"
  
- #ifndef CRONTABS
--#define CRONTABS        "/var/spool/cron/crontabs"
+-#define CRONTABS        CONFIG_FEATURE_CROND_DIR "/crontabs"
 +#define CRONTABS        "/etc/crontabs"
- #endif
  #ifndef CRONUPDATE
  #define CRONUPDATE      "cron.update"
+ #endif

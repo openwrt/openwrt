@@ -1,6 +1,6 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -223,6 +223,7 @@ USE_LN(APPLET_NOEXEC(ln, ln, _BB_DIR_BIN
+@@ -228,6 +228,7 @@ USE_LN(APPLET_NOEXEC(ln, ln, _BB_DIR_BIN
  USE_LOAD_POLICY(APPLET(load_policy, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
  USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
  USE_LOADKMAP(APPLET(loadkmap, _BB_DIR_SBIN, _BB_SUID_NEVER))
@@ -10,7 +10,7 @@
  USE_LOGNAME(APPLET_NOFORK(logname, logname, _BB_DIR_USR_BIN, _BB_SUID_NEVER, logname))
 --- a/include/usage.h
 +++ b/include/usage.h
-@@ -2150,6 +2150,9 @@
+@@ -2246,6 +2246,9 @@
  #define loadkmap_example_usage \
         "$ loadkmap < /etc/i18n/lang-keymap\n"
  
@@ -22,9 +22,9 @@
  #define logger_full_usage "\n\n" \
 --- a/miscutils/Config.in
 +++ b/miscutils/Config.in
-@@ -395,6 +395,12 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
+@@ -420,6 +420,12 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
+ 	help
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
- 	  This is dangerous stuff, so you should probably say N.
  
 +config LOCK
 +	bool "lock"
@@ -37,7 +37,7 @@
  	default n
 --- a/miscutils/Kbuild
 +++ b/miscutils/Kbuild
-@@ -21,6 +21,7 @@ lib-$(CONFIG_INOTIFYD)    += inotifyd.o
+@@ -23,6 +23,7 @@ lib-$(CONFIG_INOTIFYD)    += inotifyd.o
  lib-$(CONFIG_FEATURE_LAST_SMALL)+= last.o
  lib-$(CONFIG_FEATURE_LAST_FANCY)+= last_fancy.o
  lib-$(CONFIG_LESS)        += less.o

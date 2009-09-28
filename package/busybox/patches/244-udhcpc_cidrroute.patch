@@ -1,6 +1,6 @@
 --- a/networking/udhcp/options.c
 +++ b/networking/udhcp/options.c
-@@ -46,6 +46,7 @@ const struct dhcp_option dhcp_options[] 
+@@ -48,6 +48,7 @@ const struct dhcp_option dhcp_options[] 
  #if ENABLE_FEATURE_UDHCP_RFC3397
  	{ OPTION_STR1035 | OPTION_LIST            , 0x77 }, /* search             */
  #endif
@@ -8,7 +8,7 @@
  	/* MSIE's "Web Proxy Autodiscovery Protocol" support */
  	{ OPTION_STRING                           , 0xfc }, /* wpad               */
  
-@@ -95,6 +96,7 @@ const char dhcp_option_strings[] ALIGN1 
+@@ -97,6 +98,7 @@ const char dhcp_option_strings[] ALIGN1 
  #if ENABLE_FEATURE_UDHCP_RFC3397
  	"search" "\0"
  #endif

@@ -15,7 +15,7 @@
  } func;
  
  /* I/O stream */
-@@ -1423,7 +1428,8 @@ static void parse_program(char *p)
+@@ -1420,7 +1425,8 @@ static void parse_program(char *p)
  			next_token(TC_FUNCTION);
  			g_pos++;
  			f = newfunc(t_string);
@@ -25,7 +25,7 @@
  			f->nargs = 0;
  			while (next_token(TC_VARIABLE | TC_SEQTERM) & TC_VARIABLE) {
  				v = findvar(ahash, t_string);
-@@ -1432,7 +1438,7 @@ static void parse_program(char *p)
+@@ -1429,7 +1435,7 @@ static void parse_program(char *p)
  				if (next_token(TC_COMMA | TC_SEQTERM) & TC_SEQTERM)
  					break;
  			}
@@ -34,7 +34,7 @@
  			chain_group();
  			clear_array(ahash);
  
-@@ -2397,7 +2403,8 @@ static var *evaluate(node *op, var *res)
+@@ -2408,7 +2414,8 @@ static var *evaluate(node *op, var *res)
  			break;
  
  		case XC( OC_FUNC ):
@@ -44,7 +44,7 @@
  				syntax_error(EMSG_UNDEF_FUNC);
  
  			X.v = R.v = nvalloc(op->r.f->nargs+1);
-@@ -2414,7 +2421,10 @@ static var *evaluate(node *op, var *res)
+@@ -2425,7 +2432,10 @@ static var *evaluate(node *op, var *res)
  			fnargs = X.v;
  
  			L.s = g_progname;
@@ -56,7 +56,7 @@
  			g_progname = L.s;
  
  			nvfree(fnargs);
-@@ -2777,6 +2787,143 @@ static rstream *next_input_file(void)
+@@ -2788,6 +2798,143 @@ static rstream *next_input_file(void)
  #undef files_happen
  }
  
@@ -200,7 +200,7 @@
  int awk_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
  int awk_main(int argc, char **argv)
  {
-@@ -2842,6 +2989,9 @@ int awk_main(int argc, char **argv)
+@@ -2853,6 +3000,9 @@ int awk_main(int argc, char **argv)
  			*s1 = '=';
  		}
  	}

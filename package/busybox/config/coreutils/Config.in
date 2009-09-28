@@ -189,7 +189,7 @@ config BUSYBOX_CONFIG_ECHO
 config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
 	bool "Enable echo options (-n and -e)"
 	default y
-	depends on BUSYBOX_CONFIG_ECHO || BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
+	depends on BUSYBOX_CONFIG_ECHO || BUSYBOX_CONFIG_ASH_BUILTIN_ECHO || BUSYBOX_CONFIG_HUSH
 	help
 	  This adds options (-n and -e) to echo.
 
@@ -509,6 +509,18 @@ config BUSYBOX_CONFIG_SHA1SUM
 	help
 	  Compute and check SHA1 message digest
 
+config BUSYBOX_CONFIG_SHA256SUM
+	bool "sha256sum"
+	default n
+	help
+	  Compute and check SHA256 message digest
+
+config BUSYBOX_CONFIG_SHA512SUM
+	bool "sha512sum"
+	default n
+	help
+	  Compute and check SHA512 message digest
+
 config BUSYBOX_CONFIG_SLEEP
 	bool "sleep"
 	default y
@@ -754,7 +766,7 @@ config BUSYBOX_CONFIG_FEATURE_WC_LARGE
 	default n
 	depends on BUSYBOX_CONFIG_WC
 	help
-	  Use "unsigned long long" in wc for count variables.
+	  Use "unsigned long long" in wc for counter variables.
 
 config BUSYBOX_CONFIG_WHO
 	bool "who"

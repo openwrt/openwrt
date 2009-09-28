@@ -50,20 +50,4 @@ config BUSYBOX_CONFIG_SENDMAIL
 	help
 	  Barebones sendmail.
 
-config BUSYBOX_CONFIG_FEATURE_SENDMAIL_MAILX
-	bool "Allow to specify subject, attachments, their charset etc"
-	default n
-	depends on BUSYBOX_CONFIG_SENDMAIL
-	help
-	  Allow to specify subject, attachments and their charset.
-	  Allow to use custom connection helper.
-
-config BUSYBOX_CONFIG_FEATURE_SENDMAIL_MAILXX
-	bool "Allow to specify Cc: addresses and some additional headers"
-	default n
-	depends on BUSYBOX_CONFIG_FEATURE_SENDMAIL_MAILX
-	help
-	  Allow to specify Cc: addresses and some additional headers:
-	  Errors-To:
-
 endmenu

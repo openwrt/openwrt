@@ -1,11 +1,11 @@
 --- a/networking/wget.c
 +++ b/networking/wget.c
-@@ -443,7 +443,7 @@ int wget_main(int argc UNUSED_PARAM, cha
+@@ -485,7 +485,7 @@ int wget_main(int argc UNUSED_PARAM, cha
  		// "tries\0"            Required_argument "t"
  		// "timeout\0"          Required_argument "T"
  		/* Ignored (we always use PASV): */
 -		"passive-ftp\0"      No_argument       "\xff"
 +		"passive-ftp\0"      No_argument       "\xfd"
  		"header\0"           Required_argument "\xfe"
+ 		"post-data\0"        Required_argument "\xfd"
  		;
- #endif

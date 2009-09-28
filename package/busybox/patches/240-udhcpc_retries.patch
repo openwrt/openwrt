@@ -1,6 +1,6 @@
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -353,7 +353,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+@@ -363,7 +363,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
  
  			switch (state) {
  			case INIT_SELECTING:
@@ -9,7 +9,7 @@
  					if (packet_num == 0)
  						xid = random_xid();
  
-@@ -384,7 +384,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+@@ -394,7 +394,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
  				continue;
  			case RENEW_REQUESTED:
  			case REQUESTING:

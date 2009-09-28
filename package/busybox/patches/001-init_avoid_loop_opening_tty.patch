@@ -1,20 +1,15 @@
 --- a/init/init.c
 +++ b/init/init.c
-@@ -497,12 +497,11 @@ static void run_actions(int action_type)
- 	for (a = init_action_list; a; a = tmp) {
- 		tmp = a->next;
- 		if (a->action_type & action_type) {
--			// Pointless: run() will error out if open of device fails.
--			///* a->terminal of "" means "init's console" */
--			//if (a->terminal[0] && access(a->terminal, R_OK | W_OK)) {
--			//	//message(L_LOG | L_CONSOLE, "Device %s cannot be opened in RW mode", a->terminal /*, strerror(errno)*/);
--			//	delete_init_action(a);
--			//} else
-+			/* a->terminal of "" means "init's console" */
-+			if (a->terminal[0] && access(a->terminal, R_OK | W_OK)) {
-+				//message(L_LOG | L_CONSOLE, "Device %s cannot be opened in RW mode", a->terminal /*, strerror(errno)*/);
-+				delete_init_action(a);
-+			} else
- 			if (a->action_type & (SYSINIT | WAIT | CTRLALTDEL | SHUTDOWN | RESTART)) {
- 				waitfor(run(a));
- 				delete_init_action(a);
+@@ -451,8 +451,11 @@ static void run_actions(int action_type)
+ 			/* Only run stuff with pid == 0. If pid != 0,
+ 			 * it is already running
+ 			 */
+-			if (a->pid == 0)
++			if (a->pid == 0) {
++				if (a->terminal && access(a->terminal, R_OK | W_OK))
++					continue;
+ 				a->pid = run(a);
++			}
+ 		}
+ 	}
+ }

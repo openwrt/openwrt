@@ -19,7 +19,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
  #endif
  #endif
  #endif
-@@ -86,7 +88,11 @@ static int get_groups(const char *userna
+@@ -82,7 +84,11 @@ static int get_groups(const char *userna
  		/* If the user is a member of more than
  		 * *n groups, then -1 is returned. Otherwise >= 0.
  		 * (and no defined way of detecting errors?!) */
@@ -31,7 +31,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
  		/* I guess *n < 0 might indicate error. Anyway,
  		 * malloc'ing -1 bytes won't be good, so: */
  		//if (*n < 0)
-@@ -160,6 +166,7 @@ int id_main(int argc UNUSED_PARAM, char 
+@@ -154,6 +160,7 @@ int id_main(int argc UNUSED_PARAM, char 
  			if (egid != rgid)
  				status |= print_group(egid, " ");
  		}
@@ -39,7 +39,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
  		/* We are supplying largish buffer, trying
  		 * to not run get_groups() twice. That might be slow
  		 * ("user database in remote SQL server" case) */
-@@ -187,6 +194,7 @@ int id_main(int argc UNUSED_PARAM, char 
+@@ -181,6 +188,7 @@ int id_main(int argc UNUSED_PARAM, char 
  		}
  		if (ENABLE_FEATURE_CLEAN_UP)
  			free(groups);
