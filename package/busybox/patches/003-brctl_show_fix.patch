@@ -1,6 +1,6 @@
 --- a/networking/brctl.c
 +++ b/networking/brctl.c
-@@ -90,7 +90,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
+@@ -104,7 +104,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
  		"setageing\0" "setfd\0" "sethello\0" "setmaxage\0"
  		"setpathcost\0" "setportprio\0" "setbridgeprio\0"
  	)
@@ -9,7 +9,7 @@
  
  	enum { ARG_addbr = 0, ARG_delbr, ARG_addif, ARG_delif
  		USE_FEATURE_BRCTL_FANCY(,
-@@ -98,7 +98,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
+@@ -112,7 +112,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
  		   ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
  		   ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
  		)

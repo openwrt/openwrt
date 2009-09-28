@@ -1,6 +1,6 @@
 --- a/networking/brctl.c
 +++ b/networking/brctl.c
-@@ -18,7 +18,7 @@
+@@ -32,7 +32,7 @@
  
  /* Maximum number of ports supported per bridge interface.  */
  #ifndef MAX_PORTS
@@ -9,7 +9,7 @@
  #endif
  
  /* Use internal number parsing and not the "exact" conversion.  */
-@@ -155,6 +155,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
+@@ -169,6 +169,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
  				printf(bi.stp_enabled ? "\tyes" : "\tno");
  
  				/* print interface list */
@@ -17,7 +17,7 @@
  				arm_ioctl(args, BRCTL_GET_PORT_LIST,
  							(unsigned long) ifidx, MAX_PORTS);
  				xioctl(fd, SIOCDEVPRIVATE, &ifr);
-@@ -183,9 +184,19 @@ int brctl_main(int argc UNUSED_PARAM, ch
+@@ -197,9 +198,19 @@ int brctl_main(int argc UNUSED_PARAM, ch
  		br = *argv++;
  
  		if (key == ARG_addbr || key == ARG_delbr) { /* addbr or delbr */
@@ -40,9 +40,9 @@
  			goto done;
  		}
  
-@@ -194,14 +205,27 @@ int brctl_main(int argc UNUSED_PARAM, ch
+@@ -208,14 +219,27 @@ int brctl_main(int argc UNUSED_PARAM, ch
  
- 		strncpy(ifr.ifr_name, br, IFNAMSIZ);
+ 		strncpy_IFNAMSIZ(ifr.ifr_name, br);
  		if (key == ARG_addif || key == ARG_delif) { /* addif or delif */
 +			int ret;
 +			int if_index;

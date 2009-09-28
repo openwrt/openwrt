@@ -110,6 +110,13 @@ config BUSYBOX_CONFIG_FEATURE_CPIO_O
 	  This implementation of cpio can create cpio archives in the "newc"
 	  format only.
 
+config BUSYBOX_CONFIG_FEATURE_CPIO_P
+	bool "Support for passthrough mode"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_CPIO_O
+	help
+	  Passthrough mode. Rarely used.
+
 config BUSYBOX_CONFIG_DPKG
 	bool "dpkg"
 	default n

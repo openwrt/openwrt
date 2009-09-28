@@ -100,7 +100,7 @@
  
  int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
  int insmod_main(int argc UNUSED_PARAM, char **argv)
-@@ -25,9 +118,14 @@ int insmod_main(int argc UNUSED_PARAM, c
+@@ -33,9 +126,15 @@ int insmod_main(int argc UNUSED_PARAM, c
  	if (!filename)
  		bb_show_usage();
  
@@ -111,9 +111,20 @@
 +
 +	rc = bb_init_module(g_filename, parse_cmdline_module_options(argv));
  	if (rc)
- 		bb_error_msg("cannot insert '%s': %s", filename, moderror(rc));
--
+ 		bb_error_msg("can't insert '%s': %s", filename, moderror(rc));
 +	free (g_filename);
+ 
 +done:
  	return rc;
  }
+--- a/modutils/Config.in
++++ b/modutils/Config.in
+@@ -211,7 +211,7 @@ config FEATURE_MODUTILS_SYMBOLS
+ config DEFAULT_MODULES_DIR
+ 	string "Default directory containing modules"
+ 	default "/lib/modules"
+-	depends on DEPMOD || MODPROBE || MODPROBE_SMALL
++	depends on DEPMOD || INSMOD || MODPROBE || MODPROBE_SMALL
+ 	help
+ 	  Directory that contains kernel modules.
+ 	  Defaults to "/lib/modules"

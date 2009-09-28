@@ -32,11 +32,12 @@ config BUSYBOX_CONFIG_FEATURE_KILL_DELAY
 	int "How long to wait between TERM and KILL (0 - send TERM only)" if FEATURE_KILL_REMOVED
 	range 0 1024
 	default 0
+	depends on BUSYBOX_CONFIG_FEATURE_KILL_REMOVED
 	help
 	  With nonzero setting, init sends TERM, forks, child waits N
 	  seconds, sends KILL and exits. Setting it too high is unwise
-	  (child will hang around for too long and can actually kill
-	  wrong process!)
+	  (child will hang around for too long and could actually kill
+	  the wrong process!)
 
 config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
 	bool "Run commands with leading dash with controlling tty"

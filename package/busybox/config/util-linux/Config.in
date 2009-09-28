@@ -5,6 +5,28 @@
 
 menu "Linux System Utilities"
 
+config BUSYBOX_CONFIG_ACPID
+	bool "acpid"
+	default n
+	help
+	  acpid listens to ACPI events coming either in textual form from
+	  /proc/acpi/event (though it is marked deprecated it is still widely
+	  used and _is_ a standard) or in binary form from specified evdevs
+	  (just use /dev/input/event*).
+
+	  It parses the event to retrieve ACTION and a possible PARAMETER.
+	  It then spawns /etc/acpi/<ACTION>[/<PARAMETER>] either via run-parts
+	  (if the resulting path is a directory) or directly as an executable.
+
+	  N.B. acpid relies on run-parts so have the latter installed.
+
+config BUSYBOX_CONFIG_FEATURE_ACPID_COMPAT
+	bool "Accept and ignore redundant options"
+	default n
+	depends on BUSYBOX_CONFIG_ACPID
+	help
+	  Accept and ignore compatibility options -g -m -s -S -v.
+
 config BUSYBOX_CONFIG_BLKID
 	bool "blkid"
 	default n
@@ -210,6 +232,12 @@ config BUSYBOX_CONFIG_FEATURE_MINIX2
 	  If you wish to be able to create version 2 minix filesystems, enable
 	  this. If you enabled 'mkfs_minix' then you almost certainly want to
 	  be using the version 2 filesystem support.
+
+config BUSYBOX_CONFIG_MKFS_VFAT
+	bool "mkfs_vfat"
+	default n
+	help
+	  Utility to create FAT32 filesystems.
 
 config BUSYBOX_CONFIG_GETOPT
 	bool "getopt"

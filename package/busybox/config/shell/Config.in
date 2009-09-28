@@ -84,22 +84,6 @@ config BUSYBOX_CONFIG_ASH_ALIAS
 	help
 	  Enable alias support in the ash shell.
 
-config BUSYBOX_CONFIG_ASH_MATH_SUPPORT
-	bool "Posix math support"
-	default y
-	depends on BUSYBOX_CONFIG_ASH
-	help
-	  Enable math support in the ash shell.
-
-config BUSYBOX_CONFIG_ASH_MATH_SUPPORT_64
-	bool "Extend Posix math support to 64 bit"
-	default y
-	depends on BUSYBOX_CONFIG_ASH_MATH_SUPPORT
-	help
-	  Enable 64-bit math support in the ash shell. This will make
-	  the shell slightly larger, but will allow computation with very
-	  large numbers.
-
 config BUSYBOX_CONFIG_ASH_GETOPTS
 	bool "Builtin getopt to parse positional parameters"
 	default y
@@ -152,14 +136,14 @@ config BUSYBOX_CONFIG_ASH_OPTIMIZE_FOR_SIZE
 	  Compile ash for reduced size at the price of speed.
 
 config BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT
-	bool "Pseudorandom generator and variable $RANDOM"
+	bool "Pseudorandom generator and $RANDOM variable"
 	default n
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable pseudorandom generator and dynamic variable "$RANDOM".
 	  Each read of "$RANDOM" will generate a new pseudorandom value.
 	  You can reset the generator by using a specified start value.
-	  After "unset RANDOM" then generator will switch off and this
+	  After "unset RANDOM" the generator will switch off and this
 	  variable will no longer have special treatment.
 
 config BUSYBOX_CONFIG_ASH_EXPAND_PRMT
@@ -167,7 +151,7 @@ config BUSYBOX_CONFIG_ASH_EXPAND_PRMT
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
-	  "PS#" may be contain volatile content, such as backquote commands.
+	  "PS#" may contain volatile content, such as backquote commands.
 	  This option recreates the prompt string from the environment
 	  variable each time it is displayed.
 
@@ -175,16 +159,15 @@ config BUSYBOX_CONFIG_HUSH
 	bool "hush"
 	default n
 	help
-	  hush is a very small shell (just 18k) and it has fairly complete
-	  Bourne shell grammar. It even handles all the normal flow control
-	  options such as if/then/elif/else/fi, for/in/do/done, while loops,
-	  case/esac.
+	  hush is a small shell (22k). It handles the normal flow control
+	  constructs such as if/then/elif/else/fi, for/in/do/done, while loops,
+	  case/esac. Redirections, here documents, $((arithmetic))
+	  and functions are supported.
 
-	  It uses only vfork, so it can be used on uClinux systems.
+	  It will compile and work on no-mmu systems.
 
-	  It does not handle select, functions, here documents ( <<
-	  word ), arithmetic expansion, aliases, brace expansion, tilde
-	  expansion, &> and >& redirection of stdout+stderr, etc.
+	  It does not handle select, aliases, brace expansion,
+	  tilde expansion, &>file and >&file redirection of stdout+stderr.
 
 config BUSYBOX_CONFIG_HUSH_HELP
 	bool "help builtin"
@@ -234,7 +217,6 @@ config BUSYBOX_CONFIG_HUSH_LOOPS
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable for, while and until loops in hush.
-	  As of 2008-07, break and continue statements are not supported.
 
 config BUSYBOX_CONFIG_HUSH_CASE
 	bool "Support case ... esac statement"
@@ -243,26 +225,53 @@ config BUSYBOX_CONFIG_HUSH_CASE
 	help
 	  Enable case ... esac statement in hush. +400 bytes.
 
+config BUSYBOX_CONFIG_HUSH_FUNCTIONS
+	bool "Support funcname() { commands; } syntax"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable support for shell functions in hush. +800 bytes.
+
 config BUSYBOX_CONFIG_LASH
-	bool "lash"
+	bool "lash (deprecated: aliased to hush)"
 	default n
 	select BUSYBOX_CONFIG_HUSH
 	help
 	  lash is deprecated and will be removed, please migrate to hush.
 
 config BUSYBOX_CONFIG_MSH
-	bool "msh"
+	bool "msh (deprecated: please use hush)"
 	default n
 	help
-	  The minix shell (adds just 30k) is quite complete and handles things
-	  like for/do/done, case/esac and all the things you expect a Bourne
-	  shell to do. It is not always pedantically correct about Bourne
-	  shell grammar (try running the shell testscript "tests/sh.testcases"
-	  on it and compare vs bash) but for most things it works quite well.
-	  It uses only vfork, so it can be used on uClinux systems.
+	  msh is deprecated and will be removed, please migrate to hush.
+	  If there is a feature msh has but hush does not, please let us know.
+
+#	  The minix shell (adds just 30k) is quite complete and handles things
+#	  like for/do/done, case/esac and all the things you expect a Bourne
+#	  shell to do. It is not always pedantically correct about Bourne
+#	  shell grammar (try running the shell testscript "tests/sh.testcases"
+#	  on it and compare vs bash) but for most things it works quite well.
+#	  It uses only vfork, so it can be used on uClinux systems.
+
 
 comment "Bourne Shell Options"
 	depends on BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
+
+config BUSYBOX_CONFIG_SH_MATH_SUPPORT
+	bool "POSIX math support"
+	default y
+	depends on BUSYBOX_CONFIG_ASH || BUSYBOX_CONFIG_HUSH
+	help
+	  Enable math support in the shell via $((...)) syntax.
+
+config BUSYBOX_CONFIG_SH_MATH_SUPPORT_64
+	bool "Extend POSIX math support to 64 bit"
+	default y
+	depends on BUSYBOX_CONFIG_SH_MATH_SUPPORT
+	help
+	  Enable 64-bit math support in the shell. This will make the shell
+	  slightly larger, but will allow computation with very large numbers.
+	  This is not in POSIX, so do not rely on this in portable code.
 
 config BUSYBOX_CONFIG_FEATURE_SH_EXTRA_QUIET
 	bool "Hide message on interactive shell startup"

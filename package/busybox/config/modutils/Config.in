@@ -5,20 +5,6 @@
 
 menu "Linux Module Utilities"
 
-config BUSYBOX_CONFIG_DEFAULT_MODULES_DIR
-	string "Default directory containing modules"
-	default "/lib/modules"
-	help
-	  Directory that contains kernel modules.
-	  Defaults to "/lib/modules"
-
-config BUSYBOX_CONFIG_DEFAULT_DEPMOD_FILE
-	string "Default name of modules.dep"
-	default "modules.dep"
-	help
-	  Filename that contains kernel modules dependencies.
-	  Defaults to "modules.dep"
-
 config BUSYBOX_CONFIG_MODPROBE_SMALL
 	bool "Simplified modutils"
 	default n
@@ -58,7 +44,6 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE
 	depends on BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  Allow insmod and modprobe take module options from command line.
-	  N.B. Very bloaty.
 
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_CHECK_ALREADY_LOADED
 	bool "Skip loading of already loaded modules"
@@ -66,7 +51,6 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_CHECK_ALREADY_LOADED
 	depends on BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  Check if the module is already loaded.
-	  N.B. It's racy.
 
 config BUSYBOX_CONFIG_INSMOD
 	bool "insmod"
@@ -157,7 +141,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
 	  By adding module symbols to the kernel symbol table, Oops messages
 	  occuring within kernel modules can be properly debugged. By enabling
 	  this feature, module symbols will always be added to the kernel symbol
-	  table for properly debugging support. If you are not interested in
+	  table for proper debugging support. If you are not interested in
 	  Oops messages from kernel modules, say N.
 
 config BUSYBOX_CONFIG_FEATURE_INSMOD_LOADINKMEM
@@ -193,7 +177,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP_FULL
 config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	bool "Support tainted module checking with new kernels"
 	default y
-	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
+	depends on (BUSYBOX_CONFIG_LSMOD || BUSYBOX_CONFIG_FEATURE_2_4_MODULES) && !BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  Support checking for tainted modules. These are usually binary
 	  only modules that will make the linux-kernel list ignore your
@@ -226,5 +210,21 @@ config BUSYBOX_CONFIG_FEATURE_MODUTILS_SYMBOLS
 	    alias symbol:usb_sg_init usbcore
 
 	  Say Y if unsure.
+
+config BUSYBOX_CONFIG_DEFAULT_MODULES_DIR
+	string "Default directory containing modules"
+	default "/lib/modules"
+	depends on BUSYBOX_CONFIG_DEPMOD || BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_MODPROBE_SMALL
+	help
+	  Directory that contains kernel modules.
+	  Defaults to "/lib/modules"
+
+config BUSYBOX_CONFIG_DEFAULT_DEPMOD_FILE
+	string "Default name of modules.dep"
+	default "modules.dep"
+	depends on BUSYBOX_CONFIG_DEPMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_MODPROBE_SMALL
+	help
+	  Filename that contains kernel modules dependencies.
+	  Defaults to "modules.dep"
 
 endmenu
