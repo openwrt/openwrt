@@ -6,9 +6,11 @@ precious blocks on an embedded system.
 
 Signed-off-by: Florian Fainelli <florian@openwrt.org>
 --
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
-@@ -791,6 +791,17 @@ config I8259
+Index: linux-2.6.30.7/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/Kconfig	2009-09-28 08:21:26.000000000 +0200
++++ linux-2.6.30.7/arch/mips/Kconfig	2009-09-28 08:21:31.000000000 +0200
+@@ -791,6 +791,17 @@
  config MIPS_BONITO64
  	bool
  
@@ -26,8 +28,10 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  config MIPS_MSC
  	bool
  
---- a/arch/mips/math-emu/Makefile
-+++ b/arch/mips/math-emu/Makefile
+Index: linux-2.6.30.7/arch/mips/math-emu/Makefile
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/math-emu/Makefile	2009-09-28 08:21:26.000000000 +0200
++++ linux-2.6.30.7/arch/mips/math-emu/Makefile	2009-09-28 08:21:31.000000000 +0200
 @@ -2,12 +2,14 @@
  # Makefile for the Linux/MIPS kernel FPU emulation.
  #
@@ -45,8 +49,10 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +	   dp_sqrt.o sp_sqrt.o
  
  EXTRA_CFLAGS += -Werror
---- a/arch/mips/math-emu/cp1emu.c
-+++ b/arch/mips/math-emu/cp1emu.c
+Index: linux-2.6.30.7/arch/mips/math-emu/cp1emu.c
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/math-emu/cp1emu.c	2009-09-28 08:21:26.000000000 +0200
++++ linux-2.6.30.7/arch/mips/math-emu/cp1emu.c	2009-09-28 08:21:31.000000000 +0200
 @@ -56,6 +56,12 @@
  #endif
  #define __mips 4
@@ -60,7 +66,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  /* Function which emulates a floating point instruction. */
  
  static int fpu_emu(struct pt_regs *, struct mips_fpu_struct *,
-@@ -66,10 +72,6 @@ static int fpux_emu(struct pt_regs *,
+@@ -66,10 +72,6 @@
  	struct mips_fpu_struct *, mips_instruction);
  #endif
  
@@ -71,7 +77,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  /* Control registers */
  
  #define FPCREG_RID	0	/* $0  = revision id */
-@@ -1273,6 +1275,13 @@ int fpu_emulator_cop1Handler(struct pt_r
+@@ -1273,6 +1275,13 @@
  
  	return sig;
  }
@@ -85,9 +91,11 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  
  #ifdef CONFIG_DEBUG_FS
  extern struct dentry *mips_debugfs_dir;
---- a/arch/mips/math-emu/dsemul.c
-+++ b/arch/mips/math-emu/dsemul.c
-@@ -109,6 +109,7 @@ int mips_dsemul(struct pt_regs *regs, mi
+Index: linux-2.6.30.7/arch/mips/math-emu/dsemul.c
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/math-emu/dsemul.c	2009-09-28 08:21:26.000000000 +0200
++++ linux-2.6.30.7/arch/mips/math-emu/dsemul.c	2009-09-28 08:21:31.000000000 +0200
+@@ -109,6 +109,7 @@
  	return SIGILL;		/* force out of emulation loop */
  }
  
@@ -95,7 +103,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  int do_dsemulret(struct pt_regs *xcp)
  {
  	struct emuframe __user *fr;
-@@ -165,3 +166,9 @@ int do_dsemulret(struct pt_regs *xcp)
+@@ -165,3 +166,9 @@
  
  	return 1;
  }
@@ -105,8 +113,10 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +	return 0;
 +}
 +#endif /* CONFIG_MIPS_FPU_EMU */
---- a/arch/mips/math-emu/kernel_linkage.c
-+++ b/arch/mips/math-emu/kernel_linkage.c
+Index: linux-2.6.30.7/arch/mips/math-emu/kernel_linkage.c
+===================================================================
+--- linux-2.6.30.7.orig/arch/mips/math-emu/kernel_linkage.c	2009-09-28 08:21:26.000000000 +0200
++++ linux-2.6.30.7/arch/mips/math-emu/kernel_linkage.c	2009-09-28 08:22:36.000000000 +0200
 @@ -29,6 +29,7 @@
  
  #define SIGNALLING_NAN 0x7ff800007ff80000LL
@@ -115,7 +125,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  void fpu_emulator_init_fpu(void)
  {
  	static int first = 1;
-@@ -112,4 +113,34 @@ int fpu_emulator_restore_context32(struc
+@@ -112,4 +113,36 @@
  
  	return err;
  }
@@ -125,6 +135,8 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +
 +void fpu_emulator_init_fpu(void)
 +{
++	printk(KERN_INFO "FPU emulator disabled, make sure your toolchain"
++		"was compiled with software floating point support (soft-float)\n");
 +	return;
 +}
 +

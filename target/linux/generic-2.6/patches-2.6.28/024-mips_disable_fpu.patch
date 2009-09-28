@@ -115,7 +115,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  void fpu_emulator_init_fpu(void)
  {
  	static int first = 1;
-@@ -112,4 +113,34 @@ int fpu_emulator_restore_context32(struc
+@@ -112,4 +113,36 @@ int fpu_emulator_restore_context32(struc
  
  	return err;
  }
@@ -125,6 +125,8 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +
 +void fpu_emulator_init_fpu(void)
 +{
++	printk(KERN_INFO "FPU emulator disabled, make sure your toolchain"
++		"was compiled with software floating point support (soft-float)\n");
 +	return;
 +}
 +
