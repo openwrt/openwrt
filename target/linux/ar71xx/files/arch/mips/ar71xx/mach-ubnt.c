@@ -246,6 +246,9 @@ MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
 
 static void __init ubnt_bullet_m_setup(void)
 {
+	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
+
+	ar71xx_set_mac_base(mac);
 	ar71xx_add_device_spi(NULL, ubnt_spi_info,
 				    ARRAY_SIZE(ubnt_spi_info));
 
