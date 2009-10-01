@@ -10,7 +10,7 @@ Fixes crashes with thumb syscalls.
 
 --- a/arch/arm/kernel/signal.c
 +++ b/arch/arm/kernel/signal.c
-@@ -534,6 +534,14 @@ setup_rt_frame(int usig, struct k_sigact
+@@ -499,6 +499,14 @@ setup_rt_frame(int usig, struct k_sigact
  
  static inline void restart_syscall(struct pt_regs *regs)
  {
@@ -25,7 +25,7 @@ Fixes crashes with thumb syscalls.
  	regs->ARM_r0 = regs->ARM_ORIG_r0;
  	regs->ARM_pc -= thumb_mode(regs) ? 2 : 4;
  }
-@@ -650,6 +658,7 @@ static int do_signal(sigset_t *oldset, s
+@@ -631,6 +639,7 @@ static void do_signal(struct pt_regs *re
  	 */
  	if (syscall) {
  		if (regs->ARM_r0 == -ERESTART_RESTARTBLOCK) {

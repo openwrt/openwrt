@@ -1,8 +1,6 @@
-Index: linux-2.6.30-rc5/drivers/usb/host/Makefile
-===================================================================
---- linux-2.6.30-rc5.orig/drivers/usb/host/Makefile	2009-05-09 02:14:14.000000000 +0200
-+++ linux-2.6.30-rc5/drivers/usb/host/Makefile	2009-05-13 14:07:10.000000000 +0200
-@@ -25,6 +25,7 @@
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -25,6 +25,7 @@ obj-$(CONFIG_USB_UHCI_HCD)	+= uhci-hcd.o
  obj-$(CONFIG_USB_FHCI_HCD)	+= fhci.o
  obj-$(CONFIG_USB_SL811_HCD)	+= sl811-hcd.o
  obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
@@ -10,11 +8,9 @@ Index: linux-2.6.30-rc5/drivers/usb/host/Makefile
  obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
  obj-$(CONFIG_USB_R8A66597_HCD)	+= r8a66597-hcd.o
  obj-$(CONFIG_USB_ISP1760_HCD)	+= isp1760.o
-Index: linux-2.6.30-rc5/drivers/usb/Makefile
-===================================================================
---- linux-2.6.30-rc5.orig/drivers/usb/Makefile	2009-05-13 14:06:45.000000000 +0200
-+++ linux-2.6.30-rc5/drivers/usb/Makefile	2009-05-13 14:07:10.000000000 +0200
-@@ -20,6 +20,7 @@
+--- a/drivers/usb/Makefile
++++ b/drivers/usb/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_USB_U132_HCD)	+= host/
  obj-$(CONFIG_USB_R8A66597_HCD)	+= host/
  obj-$(CONFIG_USB_HWA_HCD)	+= host/
  obj-$(CONFIG_USB_ISP1760_HCD)	+= host/

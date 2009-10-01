@@ -19,8 +19,6 @@ Signed-off-by: Arve Hjønnevåg <arve@android.com>
  create mode 100644 drivers/staging/android/timed_output.c
  create mode 100644 drivers/staging/android/timed_output.h
 
-diff --git a/drivers/staging/android/Kconfig b/drivers/staging/android/Kconfig
-index 604bd1e..1784508 100644
 --- a/drivers/staging/android/Kconfig
 +++ b/drivers/staging/android/Kconfig
 @@ -73,9 +73,13 @@ config ANDROID_RAM_CONSOLE_EARLY_SIZE
@@ -38,8 +36,6 @@ index 604bd1e..1784508 100644
  	default n
  
  config ANDROID_LOW_MEMORY_KILLER
-diff --git a/drivers/staging/android/Makefile b/drivers/staging/android/Makefile
-index 95209d6..8e057e6 100644
 --- a/drivers/staging/android/Makefile
 +++ b/drivers/staging/android/Makefile
 @@ -1,5 +1,6 @@
@@ -49,8 +45,6 @@ index 95209d6..8e057e6 100644
 +obj-$(CONFIG_ANDROID_TIMED_OUTPUT)	+= timed_output.o
  obj-$(CONFIG_ANDROID_TIMED_GPIO)	+= timed_gpio.o
  obj-$(CONFIG_ANDROID_LOW_MEMORY_KILLER)	+= lowmemorykiller.o
-diff --git a/drivers/staging/android/timed_gpio.c b/drivers/staging/android/timed_gpio.c
-index 33daff0..be7cdaa 100644
 --- a/drivers/staging/android/timed_gpio.c
 +++ b/drivers/staging/android/timed_gpio.c
 @@ -20,13 +20,12 @@
@@ -165,7 +159,7 @@ index 33daff0..be7cdaa 100644
  	if (!gpio_data)
  		return -ENOMEM;
  
-@@ -107,23 +98,26 @@ static int timed_gpio_probe(struct platform_device *pdev)
+@@ -107,23 +98,26 @@ static int timed_gpio_probe(struct platf
  		cur_gpio = &pdata->gpios[i];
  		gpio_dat = &gpio_data[i];
  
@@ -202,7 +196,7 @@ index 33daff0..be7cdaa 100644
  	}
  
  	platform_set_drvdata(pdev, gpio_data);
-@@ -137,10 +131,8 @@ static int timed_gpio_remove(struct platform_device *pdev)
+@@ -137,10 +131,8 @@ static int timed_gpio_remove(struct plat
  	struct timed_gpio_data *gpio_data = platform_get_drvdata(pdev);
  	int i;
  
@@ -215,7 +209,7 @@ index 33daff0..be7cdaa 100644
  
  	kfree(gpio_data);
  
-@@ -151,22 +143,18 @@ static struct platform_driver timed_gpio_driver = {
+@@ -151,22 +143,18 @@ static struct platform_driver timed_gpio
  	.probe		= timed_gpio_probe,
  	.remove		= timed_gpio_remove,
  	.driver		= {
@@ -239,8 +233,6 @@ index 33daff0..be7cdaa 100644
  	platform_driver_unregister(&timed_gpio_driver);
  }
  
-diff --git a/drivers/staging/android/timed_gpio.h b/drivers/staging/android/timed_gpio.h
-index 78449b2..a0e15f8 100644
 --- a/drivers/staging/android/timed_gpio.h
 +++ b/drivers/staging/android/timed_gpio.h
 @@ -16,10 +16,12 @@
@@ -257,9 +249,6 @@ index 78449b2..a0e15f8 100644
  	u8 		active_low;
  };
  
-diff --git a/drivers/staging/android/timed_output.c b/drivers/staging/android/timed_output.c
-new file mode 100644
-index 0000000..62e7918
 --- /dev/null
 +++ b/drivers/staging/android/timed_output.c
 @@ -0,0 +1,121 @@
@@ -384,9 +373,6 @@ index 0000000..62e7918
 +MODULE_AUTHOR("Mike Lockwood <lockwood@android.com>");
 +MODULE_DESCRIPTION("timed output class driver");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/staging/android/timed_output.h b/drivers/staging/android/timed_output.h
-new file mode 100644
-index 0000000..ec907ab
 --- /dev/null
 +++ b/drivers/staging/android/timed_output.h
 @@ -0,0 +1,37 @@
@@ -427,6 +413,3 @@ index 0000000..ec907ab
 +extern void timed_output_dev_unregister(struct timed_output_dev *dev);
 +
 +#endif
--- 
-1.6.2
-

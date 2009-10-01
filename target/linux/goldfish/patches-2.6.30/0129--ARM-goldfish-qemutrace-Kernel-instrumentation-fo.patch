@@ -769,7 +769,7 @@ Signed-off-by: Mike Chan <mike@android.com>
  	/* Avoid "noreturn function does return".  */
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1333,6 +1333,10 @@ struct task_struct * __cpuinit fork_idle
+@@ -1323,6 +1323,10 @@ struct task_struct * __cpuinit fork_idle
  	return task;
  }
  
@@ -780,7 +780,7 @@ Signed-off-by: Mike Chan <mike@android.com>
  /*
   *  Ok, this is the main fork-routine.
   *
-@@ -1434,6 +1438,10 @@ long do_fork(unsigned long clone_flags,
+@@ -1424,6 +1428,10 @@ long do_fork(unsigned long clone_flags,
  		tracehook_report_clone_complete(trace, regs,
  						clone_flags, nr, p);
  
@@ -793,7 +793,7 @@ Signed-off-by: Mike Chan <mike@android.com>
  			wait_for_completion(&vfork);
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -2747,6 +2747,10 @@ asmlinkage void schedule_tail(struct tas
+@@ -2748,6 +2748,10 @@ asmlinkage void schedule_tail(struct tas
  		put_user(task_pid_vnr(current), current->set_child_tid);
  }
  
@@ -804,7 +804,7 @@ Signed-off-by: Mike Chan <mike@android.com>
  /*
   * context_switch - switch to the new MM and the new
   * thread's register state.
-@@ -2789,6 +2793,11 @@ context_switch(struct rq *rq, struct tas
+@@ -2790,6 +2794,11 @@ context_switch(struct rq *rq, struct tas
  	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
  #endif
  
@@ -818,7 +818,7 @@ Signed-off-by: Mike Chan <mike@android.com>
  
 --- a/mm/mmap.c
 +++ b/mm/mmap.c
-@@ -903,6 +903,11 @@ void vm_stat_account(struct mm_struct *m
+@@ -906,6 +906,11 @@ void vm_stat_account(struct mm_struct *m
  }
  #endif /* CONFIG_PROC_FS */
  
@@ -830,7 +830,7 @@ Signed-off-by: Mike Chan <mike@android.com>
  /*
   * The caller must hold down_write(current->mm->mmap_sem).
   */
-@@ -1209,6 +1214,10 @@ munmap_back:
+@@ -1212,6 +1217,10 @@ munmap_back:
  	pgoff = vma->vm_pgoff;
  	vm_flags = vma->vm_flags;
  
@@ -841,7 +841,7 @@ Signed-off-by: Mike Chan <mike@android.com>
  	if (vma_wants_writenotify(vma))
  		vma->vm_page_prot = vm_get_page_prot(vm_flags & ~VM_SHARED);
  
-@@ -1935,6 +1944,10 @@ int do_munmap(struct mm_struct *mm, unsi
+@@ -1938,6 +1947,10 @@ int do_munmap(struct mm_struct *mm, unsi
  	 * Remove the vma's, and unmap the actual pages
  	 */
  	detach_vmas_to_be_unmapped(mm, vma, prev, end);

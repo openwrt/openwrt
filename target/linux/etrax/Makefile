@@ -10,7 +10,7 @@ ARCH:=cris
 BOARD:=etrax
 BOARDNAME:=Foxboard (ETRAX 100LX)
 FEATURES:=squashfs jffs2
-LINUX_VERSION:=2.6.30.7
+LINUX_VERSION:=2.6.30.8
 DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk

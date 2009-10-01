@@ -52,11 +52,9 @@ create mode 100644 arch/mips/kernel/crash_dump.c
  arch/mips/include/asm/kexec.h      |   21 	20 +	1 -	0 !
  9 files changed, 399 insertions(+), 10 deletions(-)
 
-Index: linux-2.6.30.7/arch/mips/Kconfig
-===================================================================
---- linux-2.6.30.7.orig/arch/mips/Kconfig	2009-09-27 20:41:06.000000000 +0200
-+++ linux-2.6.30.7/arch/mips/Kconfig	2009-09-27 21:02:55.000000000 +0200
-@@ -1966,6 +1966,29 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -1966,6 +1966,29 @@ config KEXEC
  	  support.  As of this writing the exact hardware interface is
  	  strongly in flux, so no good recommendation can be made.
  
@@ -86,11 +84,9 @@ Index: linux-2.6.30.7/arch/mips/Kconfig
  config SECCOMP
  	bool "Enable seccomp to safely compute untrusted bytecode"
  	depends on PROC_FS
-Index: linux-2.6.30.7/arch/mips/Makefile
-===================================================================
---- linux-2.6.30.7.orig/arch/mips/Makefile	2009-09-27 20:41:07.000000000 +0200
-+++ linux-2.6.30.7/arch/mips/Makefile	2009-09-27 21:03:31.000000000 +0200
-@@ -603,6 +603,10 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -603,6 +603,10 @@ else
  load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
  endif
  
@@ -101,11 +97,9 @@ Index: linux-2.6.30.7/arch/mips/Makefile
  cflags-y			+= -I$(srctree)/arch/mips/include/asm/mach-generic
  drivers-$(CONFIG_PCI)		+= arch/mips/pci/
  
-Index: linux-2.6.30.7/arch/mips/kernel/Makefile
-===================================================================
---- linux-2.6.30.7.orig/arch/mips/kernel/Makefile	2009-09-27 20:41:06.000000000 +0200
-+++ linux-2.6.30.7/arch/mips/kernel/Makefile	2009-09-27 21:02:55.000000000 +0200
-@@ -83,7 +83,8 @@
+--- a/arch/mips/kernel/Makefile
++++ b/arch/mips/kernel/Makefile
+@@ -83,7 +83,8 @@ obj-$(CONFIG_I8253)		+= i8253.o
  
  obj-$(CONFIG_GPIO_TXX9)		+= gpio_txx9.o
  
@@ -115,10 +109,8 @@ Index: linux-2.6.30.7/arch/mips/kernel/Makefile
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  obj-$(CONFIG_MIPS_MACHINE)	+= mips_machine.o
  
-Index: linux-2.6.30.7/arch/mips/kernel/crash.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30.7/arch/mips/kernel/crash.c	2009-09-27 21:02:55.000000000 +0200
+--- /dev/null
++++ b/arch/mips/kernel/crash.c
 @@ -0,0 +1,90 @@
 +/*
 + * Architecture specific (MIPS) functions for kexec based crash dumps.
@@ -210,10 +202,8 @@ Index: linux-2.6.30.7/arch/mips/kernel/crash.c
 +    crash_kexec_prepare_cpus();
 +    cpu_set(crashing_cpu, cpus_in_crash);
 +}
-Index: linux-2.6.30.7/arch/mips/kernel/crash_dump.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30.7/arch/mips/kernel/crash_dump.c	2009-09-27 21:02:55.000000000 +0200
+--- /dev/null
++++ b/arch/mips/kernel/crash_dump.c
 @@ -0,0 +1,96 @@
 +/*
 + * Routines for doing kexec-based kdump.
@@ -311,11 +301,9 @@ Index: linux-2.6.30.7/arch/mips/kernel/crash_dump.c
 +    return ret;
 +}
 +arch_initcall(kdump_buf_page_init);
-Index: linux-2.6.30.7/arch/mips/kernel/machine_kexec.c
-===================================================================
---- linux-2.6.30.7.orig/arch/mips/kernel/machine_kexec.c	2009-09-15 19:46:05.000000000 +0200
-+++ linux-2.6.30.7/arch/mips/kernel/machine_kexec.c	2009-09-27 21:02:55.000000000 +0200
-@@ -19,9 +19,25 @@
+--- a/arch/mips/kernel/machine_kexec.c
++++ b/arch/mips/kernel/machine_kexec.c
+@@ -19,9 +19,25 @@ extern const size_t relocate_new_kernel_
  extern unsigned long kexec_start_address;
  extern unsigned long kexec_indirection_page;
  
@@ -341,7 +329,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/machine_kexec.c
  	return 0;
  }
  
-@@ -33,13 +49,18 @@
+@@ -33,13 +49,18 @@ machine_kexec_cleanup(struct kimage *kim
  void
  machine_shutdown(void)
  {
@@ -361,7 +349,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/machine_kexec.c
  typedef void (*noretfun_t)(void) __attribute__((noreturn));
  
  void
-@@ -52,7 +73,9 @@
+@@ -52,7 +73,9 @@ machine_kexec(struct kimage *image)
  	reboot_code_buffer =
  	  (unsigned long)page_address(image->control_code_page);
  
@@ -372,7 +360,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/machine_kexec.c
  	kexec_indirection_page =
  		(unsigned long) phys_to_virt(image->head & PAGE_MASK);
  
-@@ -63,7 +86,7 @@
+@@ -63,7 +86,7 @@ machine_kexec(struct kimage *image)
  	 * The generic kexec code builds a page list with physical
  	 * addresses. they are directly accessible through KSEG0 (or
  	 * CKSEG0 or XPHYS if on 64bit system), hence the
@@ -381,7 +369,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/machine_kexec.c
  	 */
  	for (ptr = &image->head; (entry = *ptr) && !(entry &IND_DONE);
  	     ptr = (entry & IND_INDIRECTION) ?
-@@ -78,8 +101,39 @@
+@@ -78,8 +101,39 @@ machine_kexec(struct kimage *image)
  	 */
  	local_irq_disable();
  
@@ -424,10 +412,8 @@ Index: linux-2.6.30.7/arch/mips/kernel/machine_kexec.c
 +    return 0;
  }
 +early_param("crashkernel", parse_crashkernel_cmdline);
-Index: linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S
-===================================================================
---- linux-2.6.30.7.orig/arch/mips/kernel/relocate_kernel.S	2009-09-15 19:46:05.000000000 +0200
-+++ linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S	2009-09-27 21:02:55.000000000 +0200
+--- a/arch/mips/kernel/relocate_kernel.S
++++ b/arch/mips/kernel/relocate_kernel.S
 @@ -14,7 +14,13 @@
  #include <asm/stackframe.h>
  #include <asm/addrspace.h>
@@ -442,7 +428,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S
  	PTR_L		s0, kexec_indirection_page
  	PTR_L		s1, kexec_start_address
  
-@@ -26,7 +32,6 @@
+@@ -26,7 +32,6 @@ process_entry:
  	and		s3, s2, 0x1
  	beq		s3, zero, 1f
  	and		s4, s2, ~0x1	/* store destination addr in s4 */
@@ -450,7 +436,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S
  	b		process_entry
  
  1:
-@@ -40,6 +45,7 @@
+@@ -40,6 +45,7 @@ process_entry:
  	/* done page */
  	and		s3, s2, 0x4
  	beq		s3, zero, 1f
@@ -458,7 +444,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S
  	b		done
  1:
  	/* source page */
-@@ -56,14 +62,102 @@
+@@ -56,14 +62,102 @@ copy_word:
  	PTR_ADD		s2, s2, SZREG
  	LONG_SUB	s6, s6, 1
  	beq		s6, zero, process_entry
@@ -561,10 +547,8 @@ Index: linux-2.6.30.7/arch/mips/kernel/relocate_kernel.S
  kexec_start_address:
  	EXPORT(kexec_start_address)
  	PTR		0x0
-Index: linux-2.6.30.7/arch/mips/kernel/setup.c
-===================================================================
---- linux-2.6.30.7.orig/arch/mips/kernel/setup.c	2009-09-15 19:46:05.000000000 +0200
-+++ linux-2.6.30.7/arch/mips/kernel/setup.c	2009-09-27 21:02:55.000000000 +0200
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
 @@ -21,7 +21,7 @@
  #include <linux/console.h>
  #include <linux/pfn.h>
@@ -574,7 +558,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/setup.c
  #include <asm/addrspace.h>
  #include <asm/bootinfo.h>
  #include <asm/bugs.h>
-@@ -489,6 +489,11 @@
+@@ -489,6 +489,11 @@ static void __init arch_mem_init(char **
  	}
  
  	bootmem_init();
@@ -586,7 +570,7 @@ Index: linux-2.6.30.7/arch/mips/kernel/setup.c
  	sparse_init();
  	paging_init();
  }
-@@ -543,6 +548,9 @@
+@@ -543,6 +548,9 @@ static void __init resource_init(void)
  		 */
  		request_resource(res, &code_resource);
  		request_resource(res, &data_resource);
@@ -596,10 +580,8 @@ Index: linux-2.6.30.7/arch/mips/kernel/setup.c
  	}
  }
  
-Index: linux-2.6.30.7/arch/mips/include/asm/kexec.h
-===================================================================
---- linux-2.6.30.7.orig/arch/mips/include/asm/kexec.h	2009-09-15 19:46:05.000000000 +0200
-+++ linux-2.6.30.7/arch/mips/include/asm/kexec.h	2009-09-27 21:02:55.000000000 +0200
+--- a/arch/mips/include/asm/kexec.h
++++ b/arch/mips/include/asm/kexec.h
 @@ -9,6 +9,8 @@
  #ifndef _MIPS_KEXEC
  # define _MIPS_KEXEC

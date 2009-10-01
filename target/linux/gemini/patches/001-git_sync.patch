@@ -66,7 +66,7 @@
 +#endif
  #define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
  
- #endif
+ /*
 --- a/arch/arm/include/asm/dma-mapping.h
 +++ b/arch/arm/include/asm/dma-mapping.h
 @@ -98,7 +98,7 @@ static inline int dma_set_mask(struct de
@@ -308,7 +308,7 @@
  		__initramfs_start = .;
  			usr/built-in.o(.init.ramfs)
  		__initramfs_end = .;
-@@ -165,13 +166,13 @@ SECTIONS
+@@ -153,13 +154,13 @@ SECTIONS
  		/*
  		 * then the cacheline aligned data
  		 */
@@ -4617,7 +4617,7 @@
 +};
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -541,7 +541,12 @@ static inline unsigned int
+@@ -543,7 +543,12 @@ static inline unsigned int
  ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
  {
  	if (ehci_is_TDI(ehci)) {
@@ -4714,7 +4714,7 @@
  		/* generic layer kills/unlinks all urbs, then
  		 * uses ehci_stop to clean up the rest
  		 */
-@@ -1042,6 +1052,11 @@ MODULE_LICENSE ("GPL");
+@@ -1045,6 +1055,11 @@ MODULE_LICENSE ("GPL");
  #define	PCI_DRIVER		ehci_pci_driver
  #endif
  

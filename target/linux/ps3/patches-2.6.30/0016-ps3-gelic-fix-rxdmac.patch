@@ -28,7 +28,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
 
 --- a/drivers/net/ps3_gelic_net.c
 +++ b/drivers/net/ps3_gelic_net.c
-@@ -970,10 +970,6 @@ static int gelic_card_decode_one_descr(s
+@@ -969,10 +969,6 @@ static int gelic_card_decode_one_descr(s
  	int dmac_chain_ended;
  
  	status = gelic_descr_get_status(descr);
@@ -39,7 +39,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
  
  	if (status == GELIC_DESCR_DMA_CARDOWNED)
  		return 0;
-@@ -1036,6 +1032,11 @@ static int gelic_card_decode_one_descr(s
+@@ -1035,6 +1031,11 @@ static int gelic_card_decode_one_descr(s
  	/* ok, we've got a packet in descr */
  	gelic_net_pass_skb_up(descr, card, netdev);
  refill:
@@ -51,7 +51,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
  	/*
  	 * So that always DMAC can see the end
  	 * of the descriptor chain to avoid
-@@ -1064,10 +1065,9 @@ refill:
+@@ -1063,10 +1064,9 @@ refill:
  	 * If dmac chain was met, DMAC stopped.
  	 * thus re-enable it
  	 */
@@ -65,7 +65,7 @@ Signed-off-by: Geoff Levand <geoffrey.levand@am.sony.com>
  
  	return 1;
  }
-@@ -1133,11 +1133,6 @@ static irqreturn_t gelic_card_interrupt(
+@@ -1132,11 +1132,6 @@ static irqreturn_t gelic_card_interrupt(
  
  	status &= card->irq_mask;
  

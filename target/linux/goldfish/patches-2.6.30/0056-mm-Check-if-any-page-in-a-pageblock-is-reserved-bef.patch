@@ -13,7 +13,7 @@ contiguous memory.
 
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -2545,6 +2545,20 @@ static inline unsigned long wait_table_b
+@@ -2570,6 +2570,20 @@ static inline unsigned long wait_table_b
  #define LONG_ALIGN(x) (((x)+(sizeof(long))-1)&~((sizeof(long))-1))
  
  /*
@@ -34,7 +34,7 @@ contiguous memory.
   * Mark a number of pageblocks as MIGRATE_RESERVE. The number
   * of blocks reserved is based on zone->pages_min. The memory within the
   * reserve will tend to store contiguous free pages. Setting min_free_kbytes
-@@ -2573,7 +2587,7 @@ static void setup_zone_migrate_reserve(s
+@@ -2598,7 +2612,7 @@ static void setup_zone_migrate_reserve(s
  			continue;
  
  		/* Blocks with reserved pages will never free, skip them. */

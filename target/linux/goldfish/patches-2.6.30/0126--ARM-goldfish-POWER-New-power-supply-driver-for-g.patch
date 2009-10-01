@@ -11,8 +11,6 @@ Signed-off-by: Mike A. Chan <mikechan@google.com>
  3 files changed, 261 insertions(+), 1 deletions(-)
  create mode 100644 drivers/power/goldfish_battery.c
 
-diff --git a/drivers/power/Kconfig b/drivers/power/Kconfig
-index 33da112..593c616 100644
 --- a/drivers/power/Kconfig
 +++ b/drivers/power/Kconfig
 @@ -88,4 +88,9 @@ config CHARGER_PCF50633
@@ -25,8 +23,6 @@ index 33da112..593c616 100644
 +	  Say Y to enable support for the battery and AC power in the Goldfish emulator.
 +
  endif # POWER_SUPPLY
-diff --git a/drivers/power/Makefile b/drivers/power/Makefile
-index 2fcf41d..5be0fbb 100644
 --- a/drivers/power/Makefile
 +++ b/drivers/power/Makefile
 @@ -19,10 +19,11 @@ obj-$(CONFIG_APM_POWER)		+= apm_power.o
@@ -43,9 +39,6 @@ index 2fcf41d..5be0fbb 100644
 -obj-$(CONFIG_CHARGER_PCF50633)	+= pcf50633-charger.o
 \ No newline at end of file
 +obj-$(CONFIG_CHARGER_PCF50633)	+= pcf50633-charger.o
-diff --git a/drivers/power/goldfish_battery.c b/drivers/power/goldfish_battery.c
-new file mode 100644
-index 0000000..868dc83
 --- /dev/null
 +++ b/drivers/power/goldfish_battery.c
 @@ -0,0 +1,254 @@
@@ -303,6 +296,3 @@ index 0000000..868dc83
 +MODULE_AUTHOR("Mike Lockwood lockwood@android.com");
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Battery driver for the Goldfish emulator");
--- 
-1.6.2
-
