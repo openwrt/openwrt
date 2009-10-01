@@ -39,6 +39,9 @@ get_status_led() {
 	aw-nr580)
 		status_led="aw-nr580:green:ready"
 		;;
+	bullet-m)
+		status_led="ubnt:green:link4"
+		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;
