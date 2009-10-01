@@ -75,7 +75,7 @@ static void ar724x_pci_write(void __iomem *base, int where, int size, u32 value)
 		data |= ((value & 0xFF) << s);
 		break;
 	case 2:
-		s = ((where & 2) << 4);
+		s = ((where & 2) << 3);
 		data &= ~(0xFFFF << s);
 		data |= ((value & 0xFFFF) << s);
 		break;
