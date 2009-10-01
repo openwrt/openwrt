@@ -244,6 +244,14 @@ static void __init ubnt_lssr71_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
 
+static struct ar71xx_pci_irq ubnt_bullet_m_pci_irqs[] __initdata = {
+	{
+		.slot	= 0,
+		.pin	= 1,
+		.irq	= AR71XX_PCI_IRQ_DEV0,
+	}
+};
+
 static void __init ubnt_bullet_m_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -268,6 +276,9 @@ static void __init ubnt_bullet_m_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(ubnt_bullet_m_gpio_buttons),
 					ubnt_bullet_m_gpio_buttons);
+
+	ar71xx_pci_init(ARRAY_SIZE(ubnt_bullet_m_pci_irqs),
+			ubnt_bullet_m_pci_irqs);
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "Ubiquiti Bullet M", ubnt_bullet_m_setup);
