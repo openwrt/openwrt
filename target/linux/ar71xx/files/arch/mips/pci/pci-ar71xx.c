@@ -38,6 +38,7 @@
 
 static void __iomem *ar71xx_pcicfg_base;
 static DEFINE_SPINLOCK(ar71xx_pci_lock);
+static int ar71xx_pci_fixup_enable;
 
 static inline void ar71xx_pci_delay(void)
 {
@@ -228,6 +229,9 @@ static void ar71xx_pci_fixup(struct pci_dev *dev)
 {
 	u32 t;
 
+	if (!ar71xx_pci_fixup_enable)
+		return;
+
 	if (dev->bus->number != 0 || dev->devfn != 0)
 		return;
 
@@ -321,6 +325,7 @@ int __init ar71xx_pcibios_init(void)
 	/* clear bus errors */
 	(void)ar71xx_pci_be_handler(1);
 
+	ar71xx_pci_fixup_enable = 1;
 	register_pci_controller(&ar71xx_pci_controller);
 
 	return 0;
