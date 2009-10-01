@@ -1,0 +1,50 @@
+--- a/arch/cris/arch-v10/drivers/gpio.c
++++ b/arch/cris/arch-v10/drivers/gpio.c
+@@ -21,6 +21,7 @@
+ #include <linux/poll.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
++#include <linux/device.h>
+ 
+ #include <asm/etraxgpio.h>
+ #include <arch/svinto.h>
+@@ -771,6 +772,8 @@ static void ioif_watcher(const unsigned 
+ 
+ /* main driver initialization routine, called from mem.c */
+ 
++static struct class *gp_class;
++
+ static int __init gpio_init(void)
+ {
+ 	int res;
+@@ -784,6 +787,8 @@ static int __init gpio_init(void)
+ 		return res;
+ 	}
+ 
++	gp_class = class_create(THIS_MODULE, "gpio_etrax");
++
+ 	/* Clear all leds */
+ #if defined (CONFIG_ETRAX_CSP0_LEDS) ||  defined (CONFIG_ETRAX_PA_LEDS) || defined (CONFIG_ETRAX_PB_LEDS)
+ 	CRIS_LED_NETWORK_SET(0);
+@@ -796,6 +801,8 @@ static int __init gpio_init(void)
+ 		CRIS_LED_BIT_SET(i);
+ #endif
+ 
++	device_create(gp_class, NULL,
++		MKDEV(GPIO_MAJOR, 2), NULL, "leds");
+ #endif
+ 	/* The I/O interface allocation watcher will be called when
+ 	 * registering it. */
+@@ -822,6 +829,12 @@ static int __init gpio_init(void)
+ 	if (res)
+ 		printk(KERN_CRIT "err: PA irq for gpio\n");
+ 
++	device_create(gp_class, NULL,
++		MKDEV(GPIO_MAJOR, 0), NULL, "gpioa");
++	device_create(gp_class, NULL,
++		MKDEV(GPIO_MAJOR, 1), NULL, "gpiob");
++	device_create(gp_class, NULL,
++		MKDEV(GPIO_MAJOR, 3), NULL, "gpiog");
+ 	return res;
+ }
+ 
