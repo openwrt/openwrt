@@ -29,6 +29,7 @@
 
 static void __iomem *ar724x_pci_localcfg_base;
 static void __iomem *ar724x_pci_devcfg_base;
+static int ar724x_pci_fixup_enable;
 
 static DEFINE_SPINLOCK(ar724x_pci_lock);
 
@@ -128,6 +129,27 @@ static int ar724x_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 	return PCIBIOS_SUCCESSFUL;
 }
 
+static void ar724x_pci_fixup(struct pci_dev *dev)
+{
+	u32 t;
+
+	if (!ar724x_pci_fixup_enable)
+		return;
+
+	if (dev->bus->number != 0 || dev->devfn != 0)
+		return;
+
+	DBG("PCI: fixup host controller %s (%04x:%04x)\n", pci_name(dev),
+		dev->vendor, dev->device);
+
+	/* setup COMMAND register */
+	t = PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INVALIDATE
+	  | PCI_COMMAND_PARITY | PCI_COMMAND_SERR | PCI_COMMAND_FAST_BACK;
+
+	pci_write_config_word(dev, PCI_COMMAND, t);
+}
+DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar724x_pci_fixup);
+
 int __init ar724x_pcibios_map_irq(const struct pci_dev *dev, uint8_t slot,
 				  uint8_t pin)
 {
@@ -195,6 +217,7 @@ int __init ar724x_pcibios_init(void)
 
 	ar724x_pci_write(ar724x_pci_localcfg_base, PCI_COMMAND, 4, t);
 
+	ar724x_pci_fixup_enable = 1;
 	register_pci_controller(&ar724x_pci_controller);
 
 	return 0;
