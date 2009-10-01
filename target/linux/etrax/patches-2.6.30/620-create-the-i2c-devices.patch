@@ -1,0 +1,32 @@
+--- a/arch/cris/arch-v10/drivers/i2c.c
++++ b/arch/cris/arch-v10/drivers/i2c.c
+@@ -21,6 +21,7 @@
+ #include <linux/fs.h>
+ #include <linux/string.h>
+ #include <linux/init.h>
++#include <linux/device.h>
+ 
+ #include <asm/etraxi2c.h>
+ 
+@@ -678,6 +679,8 @@ i2c_init(void)
+ 	return res;
+ }
+ 
++static struct class *i2c_class;
++
+ static int __init
+ i2c_register(void)
+ {
+@@ -693,7 +696,11 @@ i2c_register(void)
+ 	}
+ 
+ 	printk(KERN_INFO "I2C driver v2.2, (c) 1999-2004 Axis Communications AB\n");
+-	
++
++	i2c_class = class_create(THIS_MODULE, "i2c_etrax");
++	device_create(i2c_class, NULL,
++		MKDEV(I2C_MAJOR, 0), NULL, "i2c");
++
+ 	return 0;
+ }
+ 

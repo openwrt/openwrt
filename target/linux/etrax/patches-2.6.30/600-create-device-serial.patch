@@ -1,0 +1,44 @@
+--- a/drivers/serial/crisv10.c
++++ b/drivers/serial/crisv10.c
+@@ -31,6 +31,7 @@ static char *serial_version = "$Revision
+ #include <linux/module.h>
+ #include <linux/uaccess.h>
+ #include <linux/io.h>
++#include <linux/device.h>
+ 
+ #include <asm/irq.h>
+ #include <asm/dma.h>
+@@ -4414,6 +4415,8 @@ static const struct tty_operations rs_op
+ #endif
+ };
+ 
++static struct class *rs_class;
++
+ static int __init rs_init(void)
+ {
+ 	int i;
+@@ -4547,6 +4550,24 @@ static int __init rs_init(void)
+ #endif
+ #endif /* CONFIG_SVINTO_SIM */
+ 
++	rs_class = class_create(THIS_MODULE, "rs_tty");
++#ifdef CONFIG_ETRAX_SERIAL_PORT0 
++	device_create(rs_class, NULL,
++		MKDEV(TTY_MAJOR, 64), NULL, "ttyS0");
++#endif
++#ifdef CONFIG_ETRAX_SERIAL_PORT1 
++	device_create(rs_class, NULL,
++		MKDEV(TTY_MAJOR, 65), NULL, "ttyS1");
++#endif
++#ifdef CONFIG_ETRAX_SERIAL_PORT2 
++	device_create(rs_class, NULL,
++		MKDEV(TTY_MAJOR, 66), NULL, "ttyS2");
++#endif
++#ifdef CONFIG_ETRAX_SERIAL_PORT3 
++	device_create(rs_class, NULL,
++		MKDEV(TTY_MAJOR, 67), NULL, "ttyS3");
++#endif
++
+ 	return 0;
+ }
+ 
