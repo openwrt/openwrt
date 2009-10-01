@@ -36,6 +36,7 @@
 #define UBNT_BULLET_M_GPIO_LED_L2	1
 #define UBNT_BULLET_M_GPIO_LED_L3	11
 #define UBNT_BULLET_M_GPIO_LED_L4	7
+#define UBNT_BULLET_M_GPIO_BTN_RESET	12
 
 #define UBNT_BUTTONS_POLL_INTERVAL	20
 
@@ -131,6 +132,17 @@ static struct gpio_button ubnt_gpio_buttons[] __initdata = {
 		.code		= BTN_0,
 		.threshold	= 5,
 		.gpio		= UBNT_RS_GPIO_SW4,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_button ubnt_bullet_m_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= UBNT_BULLET_M_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}
 };
@@ -249,6 +261,10 @@ static void __init ubnt_bullet_m_setup(void)
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_bullet_m_leds_gpio),
 					ubnt_bullet_m_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(ubnt_bullet_m_gpio_buttons),
+					ubnt_bullet_m_gpio_buttons);
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "Ubiquiti Bullet M", ubnt_bullet_m_setup);
