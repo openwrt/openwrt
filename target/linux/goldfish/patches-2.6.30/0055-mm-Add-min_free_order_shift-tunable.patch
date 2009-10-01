@@ -26,7 +26,7 @@ Signed-off-by: Arve Hjønnevåg <arve@android.com>
  extern int pid_max_min, pid_max_max;
  extern int sysctl_drop_caches;
  extern int percpu_pagelist_fraction;
-@@ -1109,6 +1110,14 @@ static struct ctl_table vm_table[] = {
+@@ -1138,6 +1139,14 @@ static struct ctl_table vm_table[] = {
  		.extra1		= &zero,
  	},
  	{
@@ -51,7 +51,7 @@ Signed-off-by: Arve Hjønnevåg <arve@android.com>
  
  unsigned long __meminitdata nr_kernel_pages;
  unsigned long __meminitdata nr_all_pages;
-@@ -1253,7 +1254,7 @@ int zone_watermark_ok(struct zone *z, in
+@@ -1258,7 +1259,7 @@ int zone_watermark_ok(struct zone *z, in
  		free_pages -= z->free_area[o].nr_free << o;
  
  		/* Require fewer higher order pages to be free */

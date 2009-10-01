@@ -12,7 +12,7 @@ BOARDNAME:=Marvell Orion
 FEATURES:=squashfs
 SUBTARGETS=generic harddisk
 
-LINUX_VERSION:=2.6.30.7
+LINUX_VERSION:=2.6.30.8
 
 include $(INCLUDE_DIR)/target.mk
 

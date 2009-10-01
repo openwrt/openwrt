@@ -11,7 +11,7 @@ BOARD:=cobalt
 BOARDNAME:=Cobalt Microservers
 FEATURES:=tgz pci ext2
 
-LINUX_VERSION:=2.6.30.7
+LINUX_VERSION:=2.6.30.8
 
 include $(INCLUDE_DIR)/target.mk
 

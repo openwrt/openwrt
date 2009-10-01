@@ -1,7 +1,7 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -603,6 +603,13 @@ else
- load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
+@@ -607,6 +607,13 @@ ifdef CONFIG_PHYSICAL_START
+ load-y			= $(CONFIG_PHYSICAL_START)
  endif
  
 +#

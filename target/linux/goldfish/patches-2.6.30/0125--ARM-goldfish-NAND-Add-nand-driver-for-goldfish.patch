@@ -17,8 +17,6 @@ Signed-off-by: Arve Hjønnevåg <arve@android.com>
  create mode 100644 drivers/mtd/devices/goldfish_nand.c
  create mode 100644 drivers/mtd/devices/goldfish_nand_reg.h
 
-diff --git a/drivers/mtd/devices/Kconfig b/drivers/mtd/devices/Kconfig
-index 6fde0a2..0e9bdd7 100644
 --- a/drivers/mtd/devices/Kconfig
 +++ b/drivers/mtd/devices/Kconfig
 @@ -297,5 +297,10 @@ config MTD_DOCPROBE_55AA
@@ -32,8 +30,6 @@ index 6fde0a2..0e9bdd7 100644
 +
  endmenu
  
-diff --git a/drivers/mtd/devices/Makefile b/drivers/mtd/devices/Makefile
-index 0993d5c..46cf8a8 100644
 --- a/drivers/mtd/devices/Makefile
 +++ b/drivers/mtd/devices/Makefile
 @@ -16,3 +16,4 @@ obj-$(CONFIG_MTD_LART)		+= lart.o
@@ -41,9 +37,6 @@ index 0993d5c..46cf8a8 100644
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
 +obj-$(CONFIG_MTD_GOLDFISH_NAND)	+= goldfish_nand.o
-diff --git a/drivers/mtd/devices/goldfish_nand.c b/drivers/mtd/devices/goldfish_nand.c
-new file mode 100644
-index 0000000..6b4b8b1
 --- /dev/null
 +++ b/drivers/mtd/devices/goldfish_nand.c
 @@ -0,0 +1,418 @@
@@ -465,9 +458,6 @@ index 0000000..6b4b8b1
 +module_init(goldfish_nand_init);
 +module_exit(goldfish_nand_exit);
 +
-diff --git a/drivers/mtd/devices/goldfish_nand_reg.h b/drivers/mtd/devices/goldfish_nand_reg.h
-new file mode 100644
-index 0000000..7c17a44
 --- /dev/null
 +++ b/drivers/mtd/devices/goldfish_nand_reg.h
 @@ -0,0 +1,58 @@
@@ -529,6 +519,3 @@ index 0000000..7c17a44
 +};
 +
 +#endif
--- 
-1.6.2
-

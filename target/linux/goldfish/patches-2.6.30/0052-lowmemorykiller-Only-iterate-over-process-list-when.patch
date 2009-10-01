@@ -17,11 +17,9 @@ Signed-off-by: Arve Hjønnevåg <arve@android.com>
  drivers/staging/android/lowmemorykiller.c |   35 +++++++++++++++++-----------
  1 files changed, 21 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/staging/android/lowmemorykiller.c b/drivers/staging/android/lowmemorykiller.c
-index 3715d56..b9a2e84 100644
 --- a/drivers/staging/android/lowmemorykiller.c
 +++ b/drivers/staging/android/lowmemorykiller.c
-@@ -71,23 +71,30 @@ static int lowmem_shrink(int nr_to_scan, gfp_t gfp_mask)
+@@ -71,23 +71,30 @@ static int lowmem_shrink(int nr_to_scan,
  	}
  	if(nr_to_scan > 0)
  		lowmem_print(3, "lowmem_shrink %d, %x, ofree %d, ma %d\n", nr_to_scan, gfp_mask, other_free, min_adj);
@@ -66,6 +64,3 @@ index 3715d56..b9a2e84 100644
  	}
  	if(selected != NULL) {
  		lowmem_print(1, "send sigkill to %d (%s), adj %d, size %d\n",
--- 
-1.6.2
-

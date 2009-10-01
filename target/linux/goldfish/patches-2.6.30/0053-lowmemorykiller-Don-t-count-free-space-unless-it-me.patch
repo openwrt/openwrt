@@ -14,11 +14,9 @@ Signed-off-by: Arve Hjønnevåg <arve@android.com>
  drivers/staging/android/lowmemorykiller.c |   13 +++++++++----
  1 files changed, 9 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/staging/android/lowmemorykiller.c b/drivers/staging/android/lowmemorykiller.c
-index b9a2e84..b2ab7fa 100644
 --- a/drivers/staging/android/lowmemorykiller.c
 +++ b/drivers/staging/android/lowmemorykiller.c
-@@ -58,20 +58,25 @@ static int lowmem_shrink(int nr_to_scan, gfp_t gfp_mask)
+@@ -58,20 +58,25 @@ static int lowmem_shrink(int nr_to_scan,
  	int min_adj = OOM_ADJUST_MAX + 1;
  	int selected_tasksize = 0;
  	int array_size = ARRAY_SIZE(lowmem_adj);
@@ -48,6 +46,3 @@ index b9a2e84..b2ab7fa 100644
  	if (nr_to_scan <= 0 || min_adj == OOM_ADJUST_MAX + 1) {
  		lowmem_print(5, "lowmem_shrink %d, %x, return %d\n", nr_to_scan, gfp_mask, rem);
  		return rem;
--- 
-1.6.2
-

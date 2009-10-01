@@ -13,7 +13,7 @@ MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
 SUBTARGETS=petitboot
 FEATURES+=powerpc64
 
-LINUX_VERSION:=2.6.30.7
+LINUX_VERSION:=2.6.30.8
 
 KERNEL_CC:=
 
