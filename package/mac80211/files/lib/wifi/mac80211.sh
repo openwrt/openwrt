@@ -272,12 +272,17 @@ detect_mac80211() {
 			[ -n "$type" ] || break
 			devidx=$(($devidx + 1))
 		done
+		mode_11n=""
+		mode_band="g"
+		iw phy "$dev" info | grep -q 'HT cap' && mode_11n="n"
+		iw phy "$dev" info | grep -q '2412 MHz' || mode_band="a"
 
 		cat <<EOF
 config wifi-device  wifi$devidx
 	option type     mac80211
 	option channel  5
 	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)
+	option hwmode	11${mode_11n}${mode_band}
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
 
