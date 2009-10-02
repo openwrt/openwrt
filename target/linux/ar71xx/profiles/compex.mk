@@ -7,7 +7,7 @@
 
 define Profile/WP543
 	NAME:=Compex WP543
-	PACKAGES:=kmod-usb-ohci kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/WP543/Description

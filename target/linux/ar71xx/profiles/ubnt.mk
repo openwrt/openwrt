@@ -7,7 +7,7 @@
 
 define Profile/UBNTRS
 	NAME:=Ubiquiti RouterStation
-	PACKAGES:=kmod-usb-ohci kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/UBNTRS/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,UBNTRS))
 
 define Profile/UBNTRSPRO
 	NAME:=Ubiquiti RouterStation Pro
-	PACKAGES:=kmod-usb-ohci kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/UBNTRSPRO/Description
@@ -29,7 +29,7 @@ $(eval $(call Profile,UBNTRSPRO))
 
 define Profile/UBNT
 	NAME:=Ubiquiti Products
-	PACKAGES:=kmod-usb-ohci kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/UBNT/Description
