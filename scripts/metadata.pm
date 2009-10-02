@@ -16,7 +16,6 @@ sub get_multiline {
 	my $str;
 	while (<$fh>) {
 		last if /^@@/;
-		s/^\s*//g;
 		$str .= (($_ and $prefix) ? $prefix . $_ : $_);
 	}
 
