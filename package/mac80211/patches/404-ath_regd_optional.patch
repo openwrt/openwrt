@@ -1,0 +1,68 @@
+--- a/drivers/net/wireless/ath/regd.c
++++ b/drivers/net/wireless/ath/regd.c
+@@ -19,6 +19,9 @@
+ #include <net/cfg80211.h>
+ #include <net/mac80211.h>
+ #include "regd.h"
++
++#ifndef ATH_USER_REGD
++
+ #include "regd_common.h"
+ 
+ /*
+@@ -588,3 +591,5 @@ u32 ath_regd_get_band_ctl(struct ath_reg
+ 	}
+ }
+ EXPORT_SYMBOL(ath_regd_get_band_ctl);
++
++#endif
+--- a/drivers/net/wireless/ath/regd.h
++++ b/drivers/net/wireless/ath/regd.h
+@@ -236,6 +236,41 @@ enum CountryCode {
+ 	CTRY_BELGIUM2 = 5002
+ };
+ 
++#ifdef ATH_USER_REGD
++
++static inline bool
++ath_is_world_regd(struct ath_regulatory *reg)
++{
++	return true;
++}
++
++static inline int
++ath_regd_init(struct ath_regulatory *reg, struct wiphy *wiphy,
++	      int (*reg_notifier)(struct wiphy *wiphy,
++	      struct regulatory_request *request))
++{
++	return 0;
++}
++
++
++static inline u32
++ath_regd_get_band_ctl(struct ath_regulatory *reg,
++		      enum ieee80211_band band)
++{
++	return SD_NO_CTL;
++}
++
++static inline int
++ath_reg_notifier_apply(struct wiphy *wiphy,
++		       struct regulatory_request *request,
++		       struct ath_regulatory *reg)
++{
++	return 0;
++}
++
++
++#else
++
+ bool ath_is_world_regd(struct ath_regulatory *reg);
+ int ath_regd_init(struct ath_regulatory *reg, struct wiphy *wiphy,
+ 		  int (*reg_notifier)(struct wiphy *wiphy,
+@@ -247,3 +282,5 @@ int ath_reg_notifier_apply(struct wiphy 
+ 			   struct ath_regulatory *reg);
+ 
+ #endif
++
++#endif
