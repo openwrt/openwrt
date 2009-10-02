@@ -5,6 +5,7 @@
 # See /LICENSE for more information.
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=opkg
 PKG_REV:=215
