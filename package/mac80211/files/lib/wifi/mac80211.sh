@@ -7,7 +7,7 @@ find_mac80211_phy() {
 	local macaddr="$(config_get "$device" macaddr | tr 'A-Z' 'a-z')"
 	config_get phy "$device" phy
 	[ -z "$phy" -a -n "$macaddr" ] && {
-		for phy in $(ls /sys/class/ieee80211); do
+		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
 			[ "$macaddr" = "$(cat /sys/class/ieee80211/${phy}/macaddress)" ] || continue
 			config_set "$device" phy "$phy"
 			break
@@ -58,7 +58,7 @@ disable_mac80211() (
 	done
 
 	include /lib/network
-	for wdev in $(ls /sys/class/ieee80211/${phy}/device/net); do
+	for wdev in $(ls /sys/class/ieee80211/${phy}/device/net 2>/dev/null); do
 		ifconfig "$wdev" down 2>/dev/null
 		unbridge "$dev"
 		iw dev "$wdev" del
@@ -86,7 +86,7 @@ enable_mac80211() {
 		[ -n "$ifname" ] || {
 			ifname="wlan$i"
 		}
-		config_set ifname "$vif" ifname
+		config_set "$vif" ifname "$ifname"
 
 		config_get enc "$vif" encryption
 		config_get mode "$vif" mode
