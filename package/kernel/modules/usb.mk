@@ -134,6 +134,22 @@ endef
 
 $(eval $(call KernelPackage,usb-adm5120))
 
+define KernelPackage/usb-etrax
+  $(call usbdep,@TARGET_etrax)
+  DEPENDS=kmod-usb-core
+  TITLE:=Support for the ETRAX USB host controller
+  KCONFIG:=CONFIG_ETRAX_USB_HOST \
+	CONFIG_ETRAX_USB_HOST_PORT1=y CONFIG_ETRAX_USB_HOST_PORT2=y
+  FILES:=$(LINUX_DIR)/drivers/usb/host/hc-crisv10.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,hc-crisv10)
+endef
+
+define KernelPackage/usb-etrax/description
+ Kernel support for the ETRAX USB host controller
+endef
+
+$(eval $(call KernelPackage,usb-etrax))
+
 
 define KernelPackage/usb2
   $(call usbdep,)
