@@ -99,7 +99,7 @@ static inline void gpio_set_value_cansleep(unsigned gpio, int value)
 
 static inline int gpio_is_valid(int number)
 {
-	return ((unsigned)number) < 8;
+	return ((unsigned)number) < 16;
 }
 
 #endif

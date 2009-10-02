@@ -1,0 +1,77 @@
+Index: linux-2.6.30.5/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/Kconfig	2009-09-02 22:12:48.000000000 +0200
++++ linux-2.6.30.5/arch/mips/Kconfig	2009-09-03 01:18:31.000000000 +0200
+@@ -79,6 +79,24 @@
+ 	select SYS_SUPPORTS_64BIT_KERNEL
+ 	select SYS_SUPPORTS_LITTLE_ENDIAN
+ 
++config IFXMIPS
++	bool "Infineon Twinpass, Danube, Amazon-SE"
++	select DMA_NONCOHERENT
++	select IRQ_CPU
++	select CEVT_R4K
++	select CSRC_R4K
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_CPU_MIPS32_R2
++	select HAVE_STD_PC_SERIAL_PORT
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_MULTITHREADING
++	select SYS_HAS_EARLY_PRINTK
++	select HW_HAS_PCI
++	select GENERIC_GPIO
++	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select SWAP_IO_SPACE
++
+ config MACH_DECSTATION
+ 	bool "DECstations"
+ 	select BOOT_ELF32
+@@ -643,6 +661,7 @@
+ source "arch/mips/txx9/Kconfig"
+ source "arch/mips/vr41xx/Kconfig"
+ source "arch/mips/cavium-octeon/Kconfig"
++source "arch/mips/ifxmips/Kconfig"
+ 
+ endmenu
+ 
+Index: linux-2.6.30.5/arch/mips/Makefile
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/Makefile	2009-09-02 22:12:48.000000000 +0200
++++ linux-2.6.30.5/arch/mips/Makefile	2009-09-02 22:12:53.000000000 +0200
+@@ -290,6 +290,13 @@
+ load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
+ 
+ #
++# Infineon IFXMIPS
++#
++core-$(CONFIG_IFXMIPS) += arch/mips/ifxmips/
++cflags-$(CONFIG_IFXMIPS)   += -I$(srctree)/arch/mips/include/asm/mach-ifxmips
++load-$(CONFIG_IFXMIPS) += 0xffffffff80002000
++
++#
+ # DECstation family
+ #
+ core-$(CONFIG_MACH_DECSTATION)	+= arch/mips/dec/
+Index: linux-2.6.30.5/arch/mips/pci/Makefile
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/pci/Makefile	2009-09-02 22:12:48.000000000 +0200
++++ linux-2.6.30.5/arch/mips/pci/Makefile	2009-09-02 22:12:53.000000000 +0200
+@@ -52,3 +52,4 @@
+ obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capcella.o
+ obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
+ obj-$(CONFIG_MIKROTIK_RB532)	+= pci-rc32434.o ops-rc32434.o fixup-rc32434.o
++obj-$(CONFIG_IFXMIPS)		+= pci-ifxmips.o ops-ifxmips.o
+Index: linux-2.6.30.5/arch/mips/include/asm/bootinfo.h
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/include/asm/bootinfo.h	2009-09-02 22:12:48.000000000 +0200
++++ linux-2.6.30.5/arch/mips/include/asm/bootinfo.h	2009-09-02 22:13:05.000000000 +0200
+@@ -57,6 +57,8 @@
+ #define	MACH_MIKROTIK_RB532	0	/* Mikrotik RouterBoard 532 	*/
+ #define MACH_MIKROTIK_RB532A	1	/* Mikrotik RouterBoard 532A 	*/
+ 
++#define MACH_INFINEON_IFXMIPS  0
++
+ #define CL_SIZE			COMMAND_LINE_SIZE
+ 
+ extern char *system_type;

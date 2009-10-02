@@ -13,17 +13,20 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
  *
- *   Copyright (C) 2007 John Crispin <blogic@openwrt.org> 
+ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
-#ifndef _IFXMIPS_CGU_H__
-#define _IFXMIPS_CGU_H__
+#ifndef _IFXMIPS_PMU_H__
+#define _IFXMIPS_PMU_H__
 
-unsigned int cgu_get_mips_clock(int cpu);
-unsigned int cgu_get_io_region_clock(void);
-unsigned int cgu_get_fpi_bus_clock(int fpi);
-void cgu_setup_pci_clk(int internal_clock);
-unsigned int ifxmips_get_ddr_hz(void);
-unsigned int ifxmips_get_fpi_hz(void);
-unsigned int ifxmips_get_cpu_hz(void);
+
+#define IFXMIPS_PMU_PWDCR_DMA		0x0020
+#define IFXMIPS_PMU_PWDCR_USB		0x8041
+#define IFXMIPS_PMU_PWDCR_LED		0x0800
+#define IFXMIPS_PMU_PWDCR_GPT		0x1000
+#define IFXMIPS_PMU_PWDCR_PPE		0x2000
+#define IFXMIPS_PMU_PWDCR_FPI		0x4000
+
+void ifxmips_pmu_enable(unsigned int module);
+void ifxmips_pmu_disable(unsigned int module);
 
 #endif

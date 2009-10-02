@@ -1,0 +1,13 @@
+Index: linux-2.6.30.5/arch/mips/mm/cache.c
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/mm/cache.c	2009-09-02 18:31:37.000000000 +0200
++++ linux-2.6.30.5/arch/mips/mm/cache.c	2009-09-02 18:31:42.000000000 +0200
+@@ -52,6 +52,8 @@
+ void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
+ EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_wback);
++EXPORT_SYMBOL(_dma_cache_inv);
+ 
+ #endif /* CONFIG_DMA_NONCOHERENT */
+ 

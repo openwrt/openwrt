@@ -6,7 +6,7 @@
 #include <linux/mm.h>
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_irq.h>
-#include <asm/ifxmips/ifxmips_cgu.h>
+#include <asm/mach-ifxmips/cgu.h>
 #include <asm/addrspace.h>
 #include <linux/vmalloc.h>
 

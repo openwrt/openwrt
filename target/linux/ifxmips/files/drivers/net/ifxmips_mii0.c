@@ -79,7 +79,7 @@ EXPORT_SYMBOL(ifxmips_read_mdio);
 
 int ifxmips_ifxmips_mii_open(struct net_device *dev)
 {
-	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 	int i;
 
@@ -93,7 +93,7 @@ int ifxmips_ifxmips_mii_open(struct net_device *dev)
 
 int ifxmips_mii_release(struct net_device *dev)
 {
-	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 	int i;
 
@@ -105,7 +105,7 @@ int ifxmips_mii_release(struct net_device *dev)
 
 int ifxmips_mii_hw_receive(struct net_device *dev, struct dma_device_info *dma_dev)
 {
-	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)netdev_priv(dev);
 	unsigned char *buf = NULL;
 	struct sk_buff *skb = NULL;
 	int len = 0;
@@ -154,7 +154,7 @@ ifxmips_mii_hw_receive_err_exit:
 int ifxmips_mii_hw_tx(char *buf, int len, struct net_device *dev)
 {
 	int ret = 0;
-	struct ifxmips_mii_priv *priv = dev->priv;
+	struct ifxmips_mii_priv *priv = netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 	ret = dma_device_write(dma_dev, buf, len, priv->skb);
 	return ret;
@@ -164,7 +164,7 @@ int ifxmips_mii_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	int len;
 	char *data;
-	struct ifxmips_mii_priv *priv = dev->priv;
+	struct ifxmips_mii_priv *priv = netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 
 	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
@@ -192,7 +192,7 @@ int ifxmips_mii_tx(struct sk_buff *skb, struct net_device *dev)
 void ifxmips_mii_tx_timeout(struct net_device *dev)
 {
 	int i;
-	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)dev->priv;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)netdev_priv(dev);
 
 	priv->stats.tx_errors++;
 	for (i = 0; i < priv->dma_device->max_tx_chan_num; i++)
@@ -261,14 +261,13 @@ void ifxmips_etop_dma_buffer_free(unsigned char *dataptr, void *opt)
 
 static struct net_device_stats *ifxmips_get_stats(struct net_device *dev)
 {
-	return (struct net_device_stats *)dev->priv;
+	return &((struct ifxmips_mii_priv *)netdev_priv(dev))->stats;
 }
 
 static int ifxmips_mii_dev_init(struct net_device *dev)
 {
 	int i;
-	struct ifxmips_mii_priv *priv;
-
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)netdev_priv(dev);
 	ether_setup(dev);
 	printk(KERN_INFO "ifxmips_mii0: %s is up\n", dev->name);
 	dev->open = ifxmips_ifxmips_mii_open;
@@ -277,8 +276,7 @@ static int ifxmips_mii_dev_init(struct net_device *dev)
 	dev->get_stats = ifxmips_get_stats;
 	dev->tx_timeout = ifxmips_mii_tx_timeout;
 	dev->watchdog_timeo = 10 * HZ;
-	memset(dev->priv, 0, sizeof(struct ifxmips_mii_priv));
-	priv = dev->priv;
+	memset(priv, 0, sizeof(struct ifxmips_mii_priv));
 	priv->dma_device = dma_device_reserve("PPE");
 	if (!priv->dma_device) {
 		BUG();
@@ -347,14 +345,13 @@ out:
 
 static int ifxmips_mii_remove(struct platform_device *dev)
 {
-	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)ifxmips_mii0_dev->priv;
+	struct ifxmips_mii_priv *priv = (struct ifxmips_mii_priv *)netdev_priv(ifxmips_mii0_dev);
 
 	printk(KERN_INFO "ifxmips_mii0: ifxmips_mii0 cleanup\n");
 
 	dma_device_unregister(priv->dma_device);
 	dma_device_release(priv->dma_device);
 	kfree(priv->dma_device);
-	kfree(ifxmips_mii0_dev->priv);
 	unregister_netdev(ifxmips_mii0_dev);
 	return 0;
 }
