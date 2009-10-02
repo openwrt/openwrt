@@ -103,15 +103,15 @@ define Host/Compile
 	$(UCLIBC_MAKE) PREFIX="$(TOOLCHAIN_DIR)/" install_runtime install_dev
 	ln -sf ../../lib/libc.so.0 $(TOOLCHAIN_DIR)/usr/lib/libc.so
 	$(CP) $(HOST_BUILD_DIR)/libc/libc_so.a $(TOOLCHAIN_DIR)/usr/lib/
-#	( cd $(TOOLCHAIN_DIR) ; \
-#		for d in lib usr/lib ; do \
-#		  for f in libc.so libpthread.so libgcc_s.so ; do \
-#		    if [ -f $$$$d/$$$$f -a ! -L $$$$d/$$$$f ] ; then \
-#		      $(SED) 's,/usr/lib/,,g;s,/lib/,,g' $$$$d/$$$$f ; \
-#		    fi \
-#		  done \
-#		done \
-#	)
+	( cd $(TOOLCHAIN_DIR) ; \
+		for d in lib usr/lib ; do \
+		  for f in libc.so libpthread.so libgcc_s.so ; do \
+		    if [ -f $$$$d/$$$$f -a ! -L $$$$d/$$$$f ] ; then \
+		      $(SED) 's,/usr/lib/,,g;s,/lib/,,g' $$$$d/$$$$f ; \
+		    fi \
+		  done \
+		done \
+	)
 endef
 
 define Host/Install
