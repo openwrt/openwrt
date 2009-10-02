@@ -4,7 +4,7 @@
  obj-$(CONFIG_USB_FHCI_HCD)	+= fhci.o
  obj-$(CONFIG_USB_SL811_HCD)	+= sl811-hcd.o
  obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
-+obj-$(CONFIG_ETRAX_ARCH_V10)	+= hc-crisv10.o
++obj-$(CONFIG_ETRAX_USB_HOST)	+= hc-crisv10.o
  obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
  obj-$(CONFIG_USB_R8A66597_HCD)	+= r8a66597-hcd.o
  obj-$(CONFIG_USB_ISP1760_HCD)	+= isp1760.o
@@ -18,3 +18,14 @@
  
  obj-$(CONFIG_USB_C67X00_HCD)	+= c67x00/
  
+--- a/arch/cris/arch-v10/drivers/Kconfig
++++ b/arch/cris/arch-v10/drivers/Kconfig
+@@ -410,7 +410,7 @@ config ETRAX_RS485_DISABLE_RECEIVER
+ 	  Axis 2400/2401 must disable receiver.
+ 
+ config ETRAX_USB_HOST
+-	bool "USB host"
++	tristate "ETRAX USB host"
+ 	select USB
+ 	help
+ 	   This option enables the host functionality of the ETRAX 100LX
