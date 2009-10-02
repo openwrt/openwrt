@@ -1,6 +1,8 @@
---- a/arch/mips/kernel/traps.c
-+++ b/arch/mips/kernel/traps.c
-@@ -1514,7 +1514,16 @@ void __cpuinit per_cpu_trap_init(void)
+Index: linux-2.6.30.5/arch/mips/kernel/traps.c
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/kernel/traps.c	2009-08-16 23:19:38.000000000 +0200
++++ linux-2.6.30.5/arch/mips/kernel/traps.c	2009-09-02 18:23:37.000000000 +0200
+@@ -1542,7 +1542,16 @@
  	 */
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq = (read_c0_intctl() >> 29) & 7;
@@ -17,9 +19,11 @@
  		if (cp0_perfcount_irq == cp0_compare_irq)
  			cp0_perfcount_irq = -1;
  	} else {
---- a/arch/mips/include/asm/irq.h
-+++ b/arch/mips/include/asm/irq.h
-@@ -156,8 +156,12 @@ extern void free_irqno(unsigned int irq)
+Index: linux-2.6.30.5/arch/mips/include/asm/irq.h
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/include/asm/irq.h	2009-09-02 18:24:49.000000000 +0200
++++ linux-2.6.30.5/arch/mips/include/asm/irq.h	2009-09-02 18:26:05.000000000 +0200
+@@ -157,8 +157,10 @@
   * IE7.  Since R2 their number has to be read from the c0_intctl register.
   */
  #define CP0_LEGACY_COMPARE_IRQ 7
@@ -27,8 +31,6 @@
  
  extern int cp0_compare_irq;
  extern int cp0_perfcount_irq;
- 
 +extern void __weak arch_fixup_c0_irqs(void);
-+
-+
+ 
  #endif /* _ASM_IRQ_H */

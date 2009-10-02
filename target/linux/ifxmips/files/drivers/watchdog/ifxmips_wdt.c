@@ -25,7 +25,7 @@
 #include <linux/platform_device.h>
 #include <linux/uaccess.h>
 
-#include <asm/ifxmips/ifxmips_cgu.h>
+#include <asm/mach-ifxmips/cgu.h>
 #include <asm/ifxmips/ifxmips.h>
 
 #define IFXMIPS_WDT_PW1			0x00BE0000

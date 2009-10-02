@@ -1,0 +1,26 @@
+Index: linux-2.6.28.10/include/linux/atm.h
+===================================================================
+--- linux-2.6.28.10.orig/include/linux/atm.h	2009-05-02 20:54:43.000000000 +0200
++++ linux-2.6.28.10/include/linux/atm.h	2009-09-02 15:00:30.000000000 +0200
+@@ -139,6 +139,9 @@
+ 	int		min_pcr;	/* minimum PCR in cells per second */
+ 	int		max_cdv;	/* maximum CDV in microseconds */
+ 	int		max_sdu;	/* maximum SDU in bytes */
++	int		scr;		/* sustained rate in cells per second */
++	int		mbs;		/* maximum burst size (MBS) in cells */
++	int		cdv;		/* Cell delay varition */
+         /* extra params for ABR */
+         unsigned int 	icr;         	/* Initial Cell Rate (24-bit) */
+         unsigned int	tbe;		/* Transient Buffer Exposure (24-bit) */ 
+Index: linux-2.6.28.10/kernel/time/timekeeping.c
+===================================================================
+--- linux-2.6.28.10.orig/kernel/time/timekeeping.c	2009-09-02 15:41:06.000000000 +0200
++++ linux-2.6.28.10/kernel/time/timekeeping.c	2009-09-02 15:41:23.000000000 +0200
+@@ -43,6 +43,7 @@
+  * used instead.
+  */
+ struct timespec xtime __attribute__ ((aligned (16)));
++EXPORT_SYMBOL(xtime);
+ struct timespec wall_to_monotonic __attribute__ ((aligned (16)));
+ static unsigned long total_sleep_time;		/* seconds */
+ 

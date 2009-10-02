@@ -1,5 +1,7 @@
---- a/arch/mips/kernel/cevt-r4k.c
-+++ b/arch/mips/kernel/cevt-r4k.c
+Index: linux-2.6.30.5/arch/mips/kernel/cevt-r4k.c
+===================================================================
+--- linux-2.6.30.5.orig/arch/mips/kernel/cevt-r4k.c	2009-08-16 23:19:38.000000000 +0200
++++ linux-2.6.30.5/arch/mips/kernel/cevt-r4k.c	2009-09-02 18:26:26.000000000 +0200
 @@ -21,6 +21,22 @@
  
  #ifndef CONFIG_MIPS_MT_SMTC
@@ -23,7 +25,7 @@
  static int mips_next_event(unsigned long delta,
                             struct clock_event_device *evt)
  {
-@@ -30,6 +46,7 @@ static int mips_next_event(unsigned long
+@@ -30,6 +46,7 @@
  	cnt = read_c0_count();
  	cnt += delta;
  	write_c0_compare(cnt);

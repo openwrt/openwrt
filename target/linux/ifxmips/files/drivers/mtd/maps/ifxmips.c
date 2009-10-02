@@ -134,8 +134,8 @@ int find_uImage_size(unsigned long start_offset)
 	unsigned long magic;
 	unsigned long temp;
 	ifxmips_copy_from(&ifxmips_map, &magic, start_offset, 4);
-	if (!(ntohl(magic) == 0x27051956)) {
-		printk(KERN_INFO "ifxmips_mtd: invalid magic (0x%08X) of kernel at 0x%08lx \n", ntohl(magic), start_offset);
+	if (le32_to_cpu(magic) != 0x56190527) {
+		printk(KERN_INFO "ifxmips_mtd: invalid magic (0x%08X) of kernel at 0x%08lx \n", le32_to_cpu(magic), start_offset);
 		return 0;
 	}
 	ifxmips_copy_from(&ifxmips_map, &temp, start_offset + 12, 4);
@@ -159,7 +159,7 @@ int detect_squashfs_partition(unsigned long start_offset)
 {
 	unsigned long temp;
 	ifxmips_copy_from(&ifxmips_map, &temp, start_offset, 4);
-	return temp == SQUASHFS_MAGIC;
+	return le32_to_cpu(temp) == SQUASHFS_MAGIC;
 }
 
 static int ifxmips_mtd_probe(struct platform_device *dev)

@@ -30,7 +30,7 @@
 #include <asm/ifxmips/ifxmips.h>
 #include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/ifxmips/ifxmips_pmu.h>
-#include <asm/ifxmips/ifxmips_cgu.h>
+#include <asm/mach-ifxmips/cgu.h>
 #include <asm/ifxmips/ifxmips_prom.h>
 
 static unsigned int r4k_offset;

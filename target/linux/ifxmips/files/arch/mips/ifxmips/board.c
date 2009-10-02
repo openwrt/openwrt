@@ -34,6 +34,7 @@
 #include <asm/bootinfo.h>
 #include <asm/irq.h>
 #include <asm/ifxmips/ifxmips.h>
+#include <asm/ifxmips/ifxmips_irq.h>
 
 #define MAX_BOARD_NAME_LEN		32
 #define MAX_IFXMIPS_DEVS		9
@@ -132,6 +133,7 @@ static struct gpio_led arv4519_gpio_leds[] = {
 	{ .name = "ifx:green:internet", .gpio = 5, .active_low = 1, },
 	{ .name = "ifx:red:internet", .gpio = 8, .active_low = 1, },
 	{ .name = "ifx:green:wlan", .gpio = 6, .active_low = 1, },
+	{ .name = "ifx:green:usbpwr", .gpio = 14, .active_low = 1, },
 	{ .name = "ifx:green:usb", .gpio = 19, .active_low = 1, },
 };
 
@@ -146,18 +148,41 @@ static struct platform_device ifxmips_gpio_leds = {
 };
 #endif
 
+static struct resource dwc_usb_res[] = {
+	{
+		.name = "dwc_usb_membase",
+		.flags = IORESOURCE_MEM,
+		.start = 0x1E101000,
+		.end = 0x1E101FFF
+	},
+	{
+		.name = "dwc_usb_irq",
+		.flags = IORESOURCE_IRQ,
+		.start = IFXMIPS_USB_INT,
+	}
+};
+
+static struct platform_device dwc_usb =
+{
+	.id = 0,
+	.name = "dwc_usb",
+	.resource = dwc_usb_res,
+	.num_resources = ARRAY_SIZE(dwc_usb_res),
+};
+
 struct platform_device *easy50712_devs[] = {
 	&ifxmips_led, &ifxmips_gpio, &ifxmips_mii,
-	&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev
+	&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev, &dwc_usb
 };
 
 struct platform_device *easy4010_devs[] = {
 	&ifxmips_led, &ifxmips_gpio, &ifxmips_mii,
-	&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev
+	&ifxmips_mtd, &ifxmips_wdt, &ifxmips_gpio_dev, &dwc_usb
 };
 
 struct platform_device *arv5419_devs[] = {
-	&ifxmips_gpio, &ifxmips_mii, &ifxmips_mtd, &ifxmips_wdt,
+	&ifxmips_gpio, &ifxmips_mii, &ifxmips_mtd,
+	&ifxmips_gpio_dev, &ifxmips_wdt, &dwc_usb,
 #ifdef CONFIG_LEDS_GPIO
 	&ifxmips_gpio_leds,
 #endif

@@ -30,40 +30,7 @@
 #include <asm/div64.h>
 #include <linux/errno.h>
 #include <asm/ifxmips/ifxmips.h>
-
-#define BASIC_INPUT_CLOCK_FREQUENCY_1   35328000
-#define BASIC_INPUT_CLOCK_FREQUENCY_2   36000000
-
-#define BASIS_INPUT_CRYSTAL_USB         12000000
-
-#define GET_BITS(x, msb, lsb)           (((x) & ((1 << ((msb) + 1)) - 1)) >> (lsb))
-
-
-#define CGU_PLL0_PHASE_DIVIDER_ENABLE   (ifxmips_r32(IFXMIPS_CGU_PLL0_CFG) & (1 << 31))
-#define CGU_PLL0_BYPASS                 (ifxmips_r32(IFXMIPS_CGU_PLL0_CFG) & (1 << 30))
-#define CGU_PLL0_CFG_DSMSEL             (ifxmips_r32(IFXMIPS_CGU_PLL0_CFG) & (1 << 28))
-#define CGU_PLL0_CFG_FRAC_EN            (ifxmips_r32(IFXMIPS_CGU_PLL0_CFG) & (1 << 27))
-#define CGU_PLL1_SRC                    (ifxmips_r32(IFXMIPS_CGU_PLL1_CFG) & (1 << 31))
-#define CGU_PLL1_BYPASS                 (ifxmips_r32(IFXMIPS_CGU_PLL1_CFG) & (1 << 30))
-#define CGU_PLL1_CFG_DSMSEL             (ifxmips_r32(IFXMIPS_CGU_PLL1_CFG) & (1 << 28))
-#define CGU_PLL1_CFG_FRAC_EN            (ifxmips_r32(IFXMIPS_CGU_PLL1_CFG) & (1 << 27))
-#define CGU_PLL2_PHASE_DIVIDER_ENABLE   (ifxmips_r32(IFXMIPS_CGU_PLL2_CFG) & (1 << 20))
-#define CGU_PLL2_BYPASS                 (ifxmips_r32(IFXMIPS_CGU_PLL2_CFG) & (1 << 19))
-#define CGU_SYS_FPI_SEL                 (1 << 6)
-#define CGU_SYS_DDR_SEL                 0x3
-#define CGU_PLL0_SRC                    (1 << 29)
-
-#define CGU_PLL0_CFG_PLLK               GET_BITS(*IFXMIPS_CGU_PLL0_CFG, 26, 17)
-#define CGU_PLL0_CFG_PLLN               GET_BITS(*IFXMIPS_CGU_PLL0_CFG, 12, 6)
-#define CGU_PLL0_CFG_PLLM               GET_BITS(*IFXMIPS_CGU_PLL0_CFG, 5, 2)
-#define CGU_PLL1_CFG_PLLK               GET_BITS(*IFXMIPS_CGU_PLL1_CFG, 26, 17)
-#define CGU_PLL1_CFG_PLLN               GET_BITS(*IFXMIPS_CGU_PLL1_CFG, 12, 6)
-#define CGU_PLL1_CFG_PLLM               GET_BITS(*IFXMIPS_CGU_PLL1_CFG, 5, 2)
-#define CGU_PLL2_SRC                    GET_BITS(*IFXMIPS_CGU_PLL2_CFG, 18, 17)
-#define CGU_PLL2_CFG_INPUT_DIV          GET_BITS(*IFXMIPS_CGU_PLL2_CFG, 16, 13)
-#define CGU_PLL2_CFG_PLLN               GET_BITS(*IFXMIPS_CGU_PLL2_CFG, 12, 6)
-#define CGU_PLL2_CFG_PLLM               GET_BITS(*IFXMIPS_CGU_PLL2_CFG, 5, 2)
-#define CGU_IF_CLK_PCI_CLK              GET_BITS(*IFXMIPS_CGU_IF_CLK, 23, 20)
+#include <asm/mach-ifxmips/cgu.h>
 
 static unsigned int cgu_get_pll0_fdiv(void);
 unsigned int ifxmips_clocks[] = {CLOCK_167M, CLOCK_133M, CLOCK_111M, CLOCK_83M };
@@ -185,14 +152,6 @@ unsigned int cgu_get_io_region_clock(void)
 	}
 }
 
-unsigned int cgu_get_fpi_bus_clock(int fpi)
-{
-	unsigned int ret = cgu_get_io_region_clock();
-	if ((fpi == 2) && (ifxmips_r32(IFXMIPS_CGU_SYS) & CGU_SYS_FPI_SEL))
-		ret >>= 1;
-	return ret;
-}
-
 void cgu_setup_pci_clk(int external_clock)
 {
 	/* set clock to 33Mhz */
@@ -200,7 +159,7 @@ void cgu_setup_pci_clk(int external_clock)
 		IFXMIPS_CGU_IFCCR);
 	ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) | 0x800000,
 		IFXMIPS_CGU_IFCCR);
-	if (external_clock) 	{
+	if (external_clock) {
 		ifxmips_w32(ifxmips_r32(IFXMIPS_CGU_IFCCR) & ~(1 << 16),
 			IFXMIPS_CGU_IFCCR);
 		ifxmips_w32((1 << 30), IFXMIPS_CGU_PCICR);
@@ -210,6 +169,15 @@ void cgu_setup_pci_clk(int external_clock)
 		ifxmips_w32((1 << 31) | (1 << 30), IFXMIPS_CGU_PCICR);
 	}
 }
+
+unsigned int cgu_get_fpi_bus_clock(int fpi)
+{
+	unsigned int ret = cgu_get_io_region_clock();
+	if ((fpi == 2) && (ifxmips_r32(IFXMIPS_CGU_SYS) & CGU_SYS_FPI_SEL))
+		ret >>= 1;
+	return ret;
+}
+EXPORT_SYMBOL(cgu_get_fpi_bus_clock);
 
 unsigned int ifxmips_get_cpu_hz(void)
 {
