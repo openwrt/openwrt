@@ -230,7 +230,7 @@ config BUSYBOX_CONFIG_EXPR
 
 config BUSYBOX_CONFIG_EXPR_MATH_SUPPORT_64
 	bool "Extend Posix numbers support to 64 bit"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_EXPR
 	help
 	  Enable 64-bit math support in the expr applet. This will make
@@ -660,7 +660,7 @@ config BUSYBOX_CONFIG_TEST
 
 config BUSYBOX_CONFIG_FEATURE_TEST_64
 	bool "Extend test to 64 bit"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_TEST || BUSYBOX_CONFIG_ASH_BUILTIN_TEST
 	help
 	  Enable 64-bit support in test.
