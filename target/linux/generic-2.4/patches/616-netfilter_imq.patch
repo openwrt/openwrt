@@ -23,7 +23,7 @@
  MARK target support
  CONFIG_IP_NF_TARGET_MARK
    This option adds a `MARK' target, which allows you to create rules
-@@ -9931,6 +9947,20 @@ CONFIG_BONDING
+@@ -9862,6 +9878,20 @@ CONFIG_BONDING
    say M here and read <file:Documentation/modules.txt>.  The module
    will be called bonding.o.
  
@@ -505,7 +505,7 @@
  /**
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -155,6 +155,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -141,6 +141,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
      dep_tristate '    DSCP target support' CONFIG_IP_NF_TARGET_DSCP $CONFIG_IP_NF_MANGLE
   
      dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
@@ -515,7 +515,7 @@
    if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -130,6 +130,7 @@ obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TO
+@@ -118,6 +118,7 @@ obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TO
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
  obj-$(CONFIG_IP_NF_TARGET_DSCP) += ipt_DSCP.o
  obj-$(CONFIG_IP_NF_TARGET_MARK) += ipt_MARK.o

@@ -300,37 +300,6 @@ endef
 $(eval $(call KernelPackage,ipt-iprange))
 
 
-define KernelPackage/ipt-ipset
-  SUBMENU:=$(NF_MENU)
-  TITLE:=IPSET Modules
-  KCONFIG:=$(KCONFIG_IPT_IPSET)
-  FILES:=$(foreach mod,$(IPT_IPSET-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPSET-m)))
-  DEPENDS:= kmod-ipt-core
-endef
-
-define KernelPackage/ipt-ipset/description
- Netfilter kernel modules for ipset
- Includes:
- - ip_set
- - ip_set_iphash
- - ip_set_ipmap
- - ip_set_ipporthash
- - ip_set_ipportiphash
- - ip_set_ipportnethash
- - ip_set_iptree
- - ip_set_iptreemap
- - ip_set_macipmap
- - ip_set_nethash
- - ip_set_portmap
- - ip_set_setlist
- - ipt_set
- - ipt_SET
-endef
-
-$(eval $(call KernelPackage,ipt-ipset))
-
-
 define KernelPackage/ipt-extra
   SUBMENU:=$(NF_MENU)
   TITLE:=Extra modules

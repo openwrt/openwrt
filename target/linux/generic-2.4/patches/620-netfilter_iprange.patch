@@ -49,8 +49,8 @@
    dep_tristate '  limit match support' CONFIG_IP_NF_MATCH_LIMIT $CONFIG_IP_NF_IPTABLES
 +  dep_tristate '  IP range match support' CONFIG_IP_NF_MATCH_IPRANGE $CONFIG_IP_NF_IPTABLES
    dep_tristate '  quota match support' CONFIG_IP_NF_MATCH_QUOTA $CONFIG_IP_NF_IPTABLES
- 
-   dep_tristate '  IP set support' CONFIG_IP_NF_SET $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  MAC address match support' CONFIG_IP_NF_MATCH_MAC $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  Packet type match support' CONFIG_IP_NF_MATCH_PKTTYPE $CONFIG_IP_NF_IPTABLES
 --- /dev/null
 +++ b/net/ipv4/netfilter/ipt_iprange.c
 @@ -0,0 +1,101 @@
@@ -164,4 +164,4 @@
 +obj-$(CONFIG_IP_NF_MATCH_IPRANGE) += ipt_iprange.o
  obj-$(CONFIG_IP_NF_MATCH_QUOTA) += ipt_quota.o
  obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
- obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
+ obj-$(CONFIG_IP_NF_MATCH_MAC) += ipt_mac.o
