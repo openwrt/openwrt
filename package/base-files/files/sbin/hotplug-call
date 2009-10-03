@@ -5,7 +5,7 @@ export HOTPLUG_TYPE="$1"
 
 # bypass the normal hotplug path for firmware loading
 # would otherwise cause problems with drivers like bcm43xx
-[ "firmware" = "$HOTPLUG_TYPE" -a "add" = "$ACTION" ] && {
+[ -d /sys/firmware -a "firmware" = "$HOTPLUG_TYPE" -a "add" = "$ACTION" ] && {
 	[ -f "/lib/firmware/$FIRMWARE" ] && {
 		echo 1 > "/sys$DEVPATH/loading"
 		cp "/lib/firmware/$FIRMWARE" "/sys$DEVPATH/data"
