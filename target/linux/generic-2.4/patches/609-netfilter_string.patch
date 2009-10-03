@@ -21,7 +21,7 @@
 +#endif /*_IPT_STRING_H*/
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -61,6 +61,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -47,6 +47,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    fi
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
@@ -133,7 +133,7 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -99,6 +99,7 @@ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_s
+@@ -87,6 +87,7 @@ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_s
  obj-$(CONFIG_IP_NF_MATCH_CONNMARK) += ipt_connmark.o
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o

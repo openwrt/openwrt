@@ -207,11 +207,6 @@ define Package/iptables-mod-extra/description
  - libipt_NOTRACK
 endef
 
-define Package/iptables-mod-ipset
-$(call Package/iptables/Module, +kmod-ipt-ipset)
-  TITLE:=IPset extension
-endef
-
 define Package/iptables-utils
 $(call Package/iptables/Module, )
   TITLE:=iptables save and restore utilities
@@ -365,7 +360,6 @@ $(eval $(call BuildPackage,iptables-utils))
 $(eval $(call BuildPlugin,iptables-mod-conntrack,$(IPT_CONNTRACK-m)))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-extra,$(IPT_EXTRA-m)))
-$(eval $(call BuildPlugin,iptables-mod-ipset,$(IPT_IPSET-m)))
 $(eval $(call BuildPlugin,iptables-mod-filter,$(IPT_FILTER-m),$(L7_INSTALL)))
 $(eval $(call BuildPlugin,iptables-mod-imq,$(IPT_IMQ-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))

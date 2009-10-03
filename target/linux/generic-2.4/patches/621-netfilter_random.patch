@@ -24,7 +24,7 @@
  TCPMSS match support
  CONFIG_IP_NF_MATCH_TCPMSS
    This option adds a `tcpmss' match, which allows you to examine the
-@@ -3387,6 +3397,14 @@ CONFIG_IP6_NF_MATCH_MAC
+@@ -3318,6 +3328,14 @@ CONFIG_IP6_NF_MATCH_MAC
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -69,7 +69,7 @@
 +#endif /*_IP6T_RAND_H*/
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -46,6 +46,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+@@ -32,6 +32,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
@@ -178,7 +178,7 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -105,6 +105,8 @@ obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_o
+@@ -93,6 +93,8 @@ obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_o
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
  obj-$(CONFIG_IP_NF_MATCH_CONDITION) += ipt_condition.o
  

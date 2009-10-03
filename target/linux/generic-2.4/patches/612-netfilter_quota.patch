@@ -36,9 +36,9 @@
  # The simple matches.
    dep_tristate '  limit match support' CONFIG_IP_NF_MATCH_LIMIT $CONFIG_IP_NF_IPTABLES
 +  dep_tristate '  quota match support' CONFIG_IP_NF_MATCH_QUOTA $CONFIG_IP_NF_IPTABLES
- 
-   dep_tristate '  IP set support' CONFIG_IP_NF_SET $CONFIG_IP_NF_IPTABLES
-   if [ "$CONFIG_IP_NF_SET" != "n" ]; then
+   dep_tristate '  MAC address match support' CONFIG_IP_NF_MATCH_MAC $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  Packet type match support' CONFIG_IP_NF_MATCH_PKTTYPE $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  netfilter MARK match support' CONFIG_IP_NF_MATCH_MARK $CONFIG_IP_NF_IPTABLES
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
 @@ -65,6 +65,7 @@ obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
@@ -47,8 +47,8 @@
  obj-$(CONFIG_IP_NF_MATCH_LIMIT) += ipt_limit.o
 +obj-$(CONFIG_IP_NF_MATCH_QUOTA) += ipt_quota.o
  obj-$(CONFIG_IP_NF_MATCH_MARK) += ipt_mark.o
- obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
- obj-$(CONFIG_IP_NF_TARGET_SET) += ipt_SET.o
+ obj-$(CONFIG_IP_NF_MATCH_MAC) += ipt_mac.o
+ obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
 --- /dev/null
 +++ b/net/ipv4/netfilter/ipt_quota.c
 @@ -0,0 +1,88 @@
