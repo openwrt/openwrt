@@ -415,8 +415,8 @@ sub mconf_depends {
 	my @depends = @$depends;
 	foreach my $depend (@depends) {
 		my $m = "depends";
-		$depend =~ s/^([@\+]+)//;
-		my $flags = $1;
+		my $flags = "";
+		$depend =~ s/^([@\+]+)// and $flags = $1;
 		my $vdep;
 		my $condition = $parent_condition;
 
