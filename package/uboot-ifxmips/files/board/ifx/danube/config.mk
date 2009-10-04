@@ -24,7 +24,7 @@
 #
 # Danube board with MIPS 24Kec CPU core
 #boot from ebu
-TEXT_BASE = 0xB0000000
+#TEXT_BASE = 0xB0000000
 BOOTSTRAP_TEXT_BASE = 0xB0000000
 
 #boot from ram

@@ -41,7 +41,7 @@ UBOOT_MAKE_OPTS:=\
 	CROSS_COMPILE_UCLIBC=1 \
 	COMPRESS=lzma \
 	PLATFORM_CPU=mips32r2 \
-	UBOOT_RAM_TEXT_BASE=0xA0400000
+	UBOOT_RAM_TEXT_BASE=0xA0400000 \
 
 define Build/Configure
 	$(MAKE) -s -C $(PKG_BUILD_DIR) \
@@ -50,18 +50,25 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(MAKE) -s -C $(PKG_BUILD_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(UBOOT_MAKE_OPTS) \
+		OWRT_FLAGS="-DTEXT_BASE=0xa0400000" \
 		ifx_all
-	if [ `stat -c%s $(PKG_BUILD_DIR)/u-boot.ifx` -gt 65536 ] ;\
-	then \
-		echo "u-boot.ifx file has exceeded 64MB in size."; exit 1; \
-	fi
+	$(CP) $(PKG_BUILD_DIR)/u-boot.srec $(PKG_BUILD_DIR)/asc.srec
+	$(PKG_BUILD_DIR)/gct \
+		$(PKG_BUILD_DIR)/danube_ref_ddr166.conf \
+		$(PKG_BUILD_DIR)/asc.srec \
+		$(PKG_BUILD_DIR)/u-boot.asc
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(UBOOT_MAKE_OPTS) \
+		OWRT_FLAGS="-DDANUBE_BOOT_FROM_EBU=1 -DTEXT_BASE=0xB0000000" \
+		clean ifx_all
 endef
 
 define Package/uboot-ifxmips/install
 	mkdir -p $(1)
 	dd if=$(PKG_BUILD_DIR)/u-boot.ifx of=$(1)/u-boot.ifx bs=64k conv=sync
+	$(CP) $(PKG_BUILD_DIR)/u-boot.asc $(1)
 endef
 
 $(eval $(call BuildPackage,uboot-ifxmips))
