@@ -91,29 +91,6 @@ Index: linux-2.6.30.5/drivers/net/Makefile
  
  obj-$(CONFIG_XTENSA_XT2000_SONIC) += xtsonic.o
  
-Index: linux-2.6.30.5/drivers/crypto/Kconfig
-===================================================================
---- linux-2.6.30.5.orig/drivers/crypto/Kconfig	2009-08-16 23:19:38.000000000 +0200
-+++ linux-2.6.30.5/drivers/crypto/Kconfig	2009-09-02 18:29:51.000000000 +0200
-@@ -9,6 +9,9 @@
- 	  If you say N, all options in this submenu will be skipped and disabled.
- 
- if CRYPTO_HW
-+config CRYPTO_DEV_IFXMIPS
-+	tristate "Support for IFXMIPS Data Encryption Unit"
-+	depends on IFXMIPS
- 
- config CRYPTO_DEV_PADLOCK
- 	tristate "Support for VIA PadLock ACE"
-Index: linux-2.6.30.5/drivers/crypto/Makefile
-===================================================================
---- linux-2.6.30.5.orig/drivers/crypto/Makefile	2009-08-16 23:19:38.000000000 +0200
-+++ linux-2.6.30.5/drivers/crypto/Makefile	2009-09-02 18:30:55.000000000 +0200
-@@ -5,3 +5,4 @@
- obj-$(CONFIG_CRYPTO_DEV_TALITOS) += talitos.o
- obj-$(CONFIG_CRYPTO_DEV_IXP4XX) += ixp4xx_crypto.o
- obj-$(CONFIG_CRYPTO_DEV_PPC4XX) += amcc/
-+obj-$(CONFIG_CRYPTO_DEV_IFXMIPS) += ifxdeu-aes.o ifxdeu-des.o ifxdeu-dma.o ifxdeu-generic.o ifxdeu-md5.o ifxdeu-sha1.o
 Index: linux-2.6.30.5/drivers/leds/Kconfig
 ===================================================================
 --- linux-2.6.30.5.orig/drivers/leds/Kconfig	2009-09-02 18:22:49.000000000 +0200
