@@ -378,6 +378,20 @@ endef
 
 $(eval $(call KernelPackage,fs-btrfs))
 
+define KernelPackage/fs-autofs4
+  SUBMENU:=$(FS_MENU)
+  TITLE:=AUTOFS4 filesystem support
+  KCONFIG:=CONFIG_AUTOFS4_FS 
+  FILES:=$(LINUX_DIR)/fs/autofs4/autofs4.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,autofs4)
+endef
+
+define KernelPackage/fs-autofs4/description
+  Kernel module for AutoFS4 support
+endef
+
+$(eval $(call KernelPackage,fs-autofs4))
+
 
 define KernelPackage/nls-base
   SUBMENU:=$(FS_MENU)
