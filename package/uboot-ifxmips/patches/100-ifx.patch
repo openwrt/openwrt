@@ -1,5 +1,7 @@
---- a/Makefile
-+++ b/Makefile
+Index: u-boot-1.1.5/Makefile
+===================================================================
+--- u-boot-1.1.5.orig/Makefile	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/Makefile	2009-10-04 23:06:03.000000000 +0200
 @@ -24,7 +24,7 @@
  VERSION = 1
  PATCHLEVEL = 1
@@ -244,8 +246,10 @@
  	rm -f $(obj)tools/crc32.c $(obj)tools/environment.c $(obj)tools/env/crc32.c
  	rm -f $(obj)tools/inca-swap-bytes $(obj)cpu/mpc824x/bedbug_603e.c
  	rm -f $(obj)include/asm/proc $(obj)include/asm/arch $(obj)include/asm
---- a/common/cmd_bootm.c
-+++ b/common/cmd_bootm.c
+Index: u-boot-1.1.5/common/cmd_bootm.c
+===================================================================
+--- u-boot-1.1.5.orig/common/cmd_bootm.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/common/cmd_bootm.c	2009-10-04 23:06:03.000000000 +0200
 @@ -31,6 +31,7 @@
  #include <malloc.h>
  #include <zlib.h>
@@ -329,8 +333,10 @@
  #endif /* CONFIG_LYNXKDI */
 +
 +#endif /* ! CFG_HEAD_CODE */
---- a/common/cmd_flash.c
-+++ b/common/cmd_flash.c
+Index: u-boot-1.1.5/common/cmd_flash.c
+===================================================================
+--- u-boot-1.1.5.orig/common/cmd_flash.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/common/cmd_flash.c	2009-10-04 23:06:03.000000000 +0200
 @@ -196,9 +196,17 @@
  }
  
@@ -648,8 +654,10 @@
  	"erase   - erase FLASH memory\n",
  	"start end\n"
  	"    - erase FLASH from addr 'start' to addr 'end'\n"
---- a/common/cmd_nvedit.c
-+++ b/common/cmd_nvedit.c
+Index: u-boot-1.1.5/common/cmd_nvedit.c
+===================================================================
+--- u-boot-1.1.5.orig/common/cmd_nvedit.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/common/cmd_nvedit.c	2009-10-04 23:06:03.000000000 +0200
 @@ -540,8 +540,19 @@
  	extern char * env_name_spec;
  
@@ -671,8 +679,10 @@
  }
  
  
---- a/common/console.c
-+++ b/common/console.c
+Index: u-boot-1.1.5/common/console.c
+===================================================================
+--- u-boot-1.1.5.orig/common/console.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/common/console.c	2009-10-04 23:06:03.000000000 +0200
 @@ -324,7 +324,7 @@
  #endif
  
@@ -704,8 +714,10 @@
  
  #endif /* CFG_CONSOLE_IS_IN_ENV */
 +#endif	//CFG_HEAD_CODE
---- a/common/devices.c
-+++ b/common/devices.c
+Index: u-boot-1.1.5/common/devices.c
+===================================================================
+--- u-boot-1.1.5.orig/common/devices.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/common/devices.c	2009-10-04 23:06:03.000000000 +0200
 @@ -39,6 +39,7 @@
  list_t devlist = 0;
  device_t *stdio_devices[] = { NULL, NULL, NULL };
@@ -720,8 +732,10 @@
  }
 +#endif //CFG_HEAD_CODE
 +
---- a/common/env_common.c
-+++ b/common/env_common.c
+Index: u-boot-1.1.5/common/env_common.c
+===================================================================
+--- u-boot-1.1.5.orig/common/env_common.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/common/env_common.c	2009-10-04 23:06:03.000000000 +0200
 @@ -219,7 +219,9 @@
  	 * We must allocate a buffer for the environment
  	 */
@@ -767,8 +781,10 @@
  	gd->env_addr = (ulong)&(env_ptr->data);
  
  #ifdef CONFIG_AMIGAONEG3SE
---- a/common/env_flash.c
-+++ b/common/env_flash.c
+Index: u-boot-1.1.5/common/env_flash.c
+===================================================================
+--- u-boot-1.1.5.orig/common/env_flash.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/common/env_flash.c	2009-10-04 23:06:03.000000000 +0200
 @@ -66,7 +66,6 @@
  #endif
  
@@ -855,9 +871,11 @@
  		return 1;
  
  	puts ("Writing to Flash... ");
---- a/config.mk
-+++ b/config.mk
-@@ -127,7 +127,11 @@
+Index: u-boot-1.1.5/config.mk
+===================================================================
+--- u-boot-1.1.5.orig/config.mk	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/config.mk	2009-10-04 23:32:51.000000000 +0200
+@@ -127,10 +127,15 @@
  OBJDUMP = $(CROSS_COMPILE)objdump
  RANLIB	= $(CROSS_COMPILE)RANLIB
  
@@ -869,7 +887,11 @@
  RELFLAGS= $(PLATFORM_RELFLAGS)
  DBGFLAGS= -g # -DDEBUG
  OPTFLAGS= -Os #-fomit-frame-pointer
-@@ -139,12 +143,15 @@
++OWRT_FLAGS?=
+ ifndef LDSCRIPT
+ #LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds.debug
+ ifeq ($(CONFIG_NAND_U_BOOT),y)
+@@ -139,12 +144,15 @@
  LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds
  endif
  endif
@@ -880,13 +902,14 @@
  
  gccincdir := $(shell $(CC) -print-file-name=include)
  
- CPPFLAGS := $(DBGFLAGS) $(OPTFLAGS) $(RELFLAGS)		\
+-CPPFLAGS := $(DBGFLAGS) $(OPTFLAGS) $(RELFLAGS)		\
 -	-D__KERNEL__ -DTEXT_BASE=$(TEXT_BASE)		\
++CPPFLAGS := $(DBGFLAGS) $(OPTFLAGS) $(RELFLAGS)	$(OWRT_FLAGS)	\
 +	-D__KERNEL__ -DUBOOT_RAM_TEXT_BASE=$(UBOOT_RAM_TEXT_BASE)		\
  
  ifneq ($(OBJTREE),$(SRCTREE))
  CPPFLAGS += -I$(OBJTREE)/include2 -I$(OBJTREE)/include
-@@ -180,7 +187,8 @@
+@@ -180,7 +188,8 @@
  
  AFLAGS := $(AFLAGS_DEBUG) -D__ASSEMBLY__ $(CPPFLAGS)
  
@@ -896,7 +919,7 @@
  
  # Location of a usable BFD library, where we define "usable" as
  # "built for ${HOST}, supports ${TARGET}".  Sensible values are
-@@ -214,12 +222,19 @@
+@@ -214,12 +223,19 @@
  export	CONFIG_SHELL HPATH HOSTCC HOSTCFLAGS CROSS_COMPILE \
  	AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP \
  	MAKE
@@ -917,7 +940,7 @@
  %.s:	%.S
  	$(CPP) $(AFLAGS) -o $@ $<
  %.o:	%.S
-@@ -229,12 +244,20 @@
+@@ -229,12 +245,20 @@
  
  else
  
@@ -938,8 +961,10 @@
  endif
  
  #########################################################################
---- a/drivers/Makefile
-+++ b/drivers/Makefile
+Index: u-boot-1.1.5/drivers/Makefile
+===================================================================
+--- u-boot-1.1.5.orig/drivers/Makefile	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/drivers/Makefile	2009-10-04 23:06:03.000000000 +0200
 @@ -50,7 +50,7 @@
  	  videomodes.o w83c553f.o \
  	  ks8695eth.o \
@@ -949,8 +974,10 @@
  
  SRCS	:= $(COBJS:.o=.c)
  OBJS	:= $(addprefix $(obj),$(COBJS))
---- a/include/asm-mips/mipsregs.h
-+++ b/include/asm-mips/mipsregs.h
+Index: u-boot-1.1.5/include/asm-mips/mipsregs.h
+===================================================================
+--- u-boot-1.1.5.orig/include/asm-mips/mipsregs.h	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/include/asm-mips/mipsregs.h	2009-10-04 23:06:03.000000000 +0200
 @@ -48,6 +48,7 @@
  #define CP0_CAUSE $13
  #define CP0_EPC $14
@@ -1018,8 +1045,10 @@
 +#define ECCF_WST	(0x1 << ECCB_WST)
 +
  #endif /* _ASM_MIPSREGS_H */
---- a/include/cmd_confdefs.h
-+++ b/include/cmd_confdefs.h
+Index: u-boot-1.1.5/include/cmd_confdefs.h
+===================================================================
+--- u-boot-1.1.5.orig/include/cmd_confdefs.h	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/include/cmd_confdefs.h	2009-10-04 23:06:03.000000000 +0200
 @@ -94,6 +94,7 @@
  #define CFG_CMD_EXT2	0x1000000000000000ULL	/* EXT2 Support			*/
  #define CFG_CMD_SNTP	0x2000000000000000ULL	/* SNTP support			*/
@@ -1036,21 +1065,27 @@
  			CFG_CMD_VFD	)
  
  /* Default configuration
---- /dev/null
-+++ b/include/config.h
+Index: u-boot-1.1.5/include/config.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-1.1.5/include/config.h	2009-10-04 23:06:04.000000000 +0200
 @@ -0,0 +1,2 @@
 +/* Automatically generated - do not edit */
 +#include <configs/danube.h>
---- /dev/null
-+++ b/include/config.mk
+Index: u-boot-1.1.5/include/config.mk
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-1.1.5/include/config.mk	2009-10-04 23:06:04.000000000 +0200
 @@ -0,0 +1,5 @@
 +ARCH   = mips
 +CPU    = mips
 +BOARD  = danube
 +VENDOR = ifx
 +SOC    = danube
---- a/include/flash.h
-+++ b/include/flash.h
+Index: u-boot-1.1.5/include/flash.h
+===================================================================
+--- u-boot-1.1.5.orig/include/flash.h	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/include/flash.h	2009-10-04 23:06:03.000000000 +0200
 @@ -79,7 +79,7 @@
  extern unsigned long flash_init (void);
  extern void flash_print_info (flash_info_t *);
@@ -1082,8 +1117,10 @@
  #define FLASH_UNKNOWN	0xFFFF		/* unknown flash type			*/
  
  
---- a/include/image.h
-+++ b/include/image.h
+Index: u-boot-1.1.5/include/image.h
+===================================================================
+--- u-boot-1.1.5.orig/include/image.h	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/include/image.h	2009-10-04 23:06:03.000000000 +0200
 @@ -132,6 +132,7 @@
  #define IH_COMP_NONE		0	/*  No	 Compression Used	*/
  #define IH_COMP_GZIP		1	/* gzip	 Compression Used	*/
@@ -1092,8 +1129,10 @@
  
  #define IH_MAGIC	0x27051956	/* Image Magic Number		*/
  #define IH_NMLEN		32	/* Image Name Length		*/
---- /dev/null
-+++ b/include/syscall.h
+Index: u-boot-1.1.5/include/syscall.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-1.1.5/include/syscall.h	2009-10-04 23:06:03.000000000 +0200
 @@ -0,0 +1,42 @@
 +#ifndef __MON_SYS_CALL_H__
 +#define __MON_SYS_CALL_H__
@@ -1137,8 +1176,10 @@
 +#define SYSCALL_GET_TIMER     10
 +
 +#endif
---- /dev/null
-+++ b/ld_uboot.conf
+Index: u-boot-1.1.5/ld_uboot.conf
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ u-boot-1.1.5/ld_uboot.conf	2009-10-04 23:06:03.000000000 +0200
 @@ -0,0 +1,8 @@
 +TAG_DWNLD()
 +{
@@ -1148,8 +1189,10 @@
 +{
 +   0xA0B00000
 +}; /* Start u-boot image */
---- a/lib_generic/Makefile
-+++ b/lib_generic/Makefile
+Index: u-boot-1.1.5/lib_generic/Makefile
+===================================================================
+--- u-boot-1.1.5.orig/lib_generic/Makefile	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/lib_generic/Makefile	2009-10-04 23:06:03.000000000 +0200
 @@ -28,7 +28,7 @@
  COBJS	= bzlib.o bzlib_crctable.o bzlib_decompress.o \
  	  bzlib_randtable.o bzlib_huffman.o \
@@ -1159,8 +1202,10 @@
  
  SRCS 	:= $(COBJS:.o=.c)
  OBJS	:= $(addprefix $(obj),$(COBJS))
---- a/lib_mips/board.c
-+++ b/lib_mips/board.c
+Index: u-boot-1.1.5/lib_mips/board.c
+===================================================================
+--- u-boot-1.1.5.orig/lib_mips/board.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/lib_mips/board.c	2009-10-04 23:06:03.000000000 +0200
 @@ -29,9 +29,30 @@
  #include <net.h>
  #include <environment.h>
@@ -1609,8 +1654,10 @@
 +#endif //DEBUG_ENABLE_BOOTSTRAP_PRINTF
  	for (;;);
  }
---- a/lib_mips/time.c
-+++ b/lib_mips/time.c
+Index: u-boot-1.1.5/lib_mips/time.c
+===================================================================
+--- u-boot-1.1.5.orig/lib_mips/time.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/lib_mips/time.c	2009-10-04 23:06:03.000000000 +0200
 @@ -80,6 +80,19 @@
  		/*NOP*/;
  }
@@ -1631,8 +1678,10 @@
  /*
   * This function is derived from PowerPC code (read timebase as long long).
   * On MIPS it just returns the timer value.
---- a/net/eth.c
-+++ b/net/eth.c
+Index: u-boot-1.1.5/net/eth.c
+===================================================================
+--- u-boot-1.1.5.orig/net/eth.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/net/eth.c	2009-10-04 23:06:03.000000000 +0200
 @@ -25,6 +25,9 @@
  #include <command.h>
  #include <net.h>
@@ -1664,8 +1713,10 @@
  	if (!eth_devices) {
  		puts ("No ethernet found.\n");
  	} else {
---- a/tools/mkimage.c
-+++ b/tools/mkimage.c
+Index: u-boot-1.1.5/tools/mkimage.c
+===================================================================
+--- u-boot-1.1.5.orig/tools/mkimage.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/tools/mkimage.c	2009-10-04 23:06:03.000000000 +0200
 @@ -28,6 +28,7 @@
  #ifndef __WIN32__
  #include <netinet/in.h>		/* for host / network byte order conversions	*/
@@ -1700,8 +1751,10 @@
  	(void) fdatasync (ifd);
  #else
  	(void) fsync (ifd);
---- a/cpu/mips/cache.S
-+++ b/cpu/mips/cache.S
+Index: u-boot-1.1.5/cpu/mips/cache.S
+===================================================================
+--- u-boot-1.1.5.orig/cpu/mips/cache.S	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/cache.S	2009-10-04 23:06:03.000000000 +0200
 @@ -29,7 +29,9 @@
  #include <asm/mipsregs.h>
  #include <asm/addrspace.h>
@@ -1741,8 +1794,10 @@
  
  	j  ra
  	.end  mips_cache_reset
---- a/cpu/mips/config.mk
-+++ b/cpu/mips/config.mk
+Index: u-boot-1.1.5/cpu/mips/config.mk
+===================================================================
+--- u-boot-1.1.5.orig/cpu/mips/config.mk	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/config.mk	2009-10-04 23:06:03.000000000 +0200
 @@ -20,20 +20,26 @@
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  # MA 02111-1307 USA
@@ -1778,8 +1833,10 @@
  
  MIPSFLAGS += $(ENDIANNESS) -mabicalls
  
---- a/cpu/mips/cpu.c
-+++ b/cpu/mips/cpu.c
+Index: u-boot-1.1.5/cpu/mips/cpu.c
+===================================================================
+--- u-boot-1.1.5.orig/cpu/mips/cpu.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/cpu.c	2009-10-04 23:06:03.000000000 +0200
 @@ -23,7 +23,12 @@
  
  #include <common.h>
@@ -1803,8 +1860,10 @@
  #endif
  	fprintf(stderr, "*** reset failed ***\n");
  	return 0;
---- a/cpu/mips/incaip_clock.c
-+++ b/cpu/mips/incaip_clock.c
+Index: u-boot-1.1.5/cpu/mips/incaip_clock.c
+===================================================================
+--- u-boot-1.1.5.orig/cpu/mips/incaip_clock.c	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/incaip_clock.c	2009-10-04 23:06:03.000000000 +0200
 @@ -22,8 +22,9 @@
   */
  
@@ -1822,8 +1881,10 @@
  }
 +
 +#endif /* CONFIG_INCA_IP */
---- a/cpu/mips/start.S
-+++ b/cpu/mips/start.S
+Index: u-boot-1.1.5/cpu/mips/start.S
+===================================================================
+--- u-boot-1.1.5.orig/cpu/mips/start.S	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/start.S	2009-10-04 23:06:03.000000000 +0200
 @@ -27,7 +27,9 @@
  #include <version.h>
  #include <asm/regdef.h>
@@ -2073,3 +2134,16 @@
 +	IFX_MIPS_HANDLER_1
 +#endif
 +#endif
+Index: u-boot-1.1.5/tools/Makefile
+===================================================================
+--- u-boot-1.1.5.orig/tools/Makefile	2006-10-20 17:54:33.000000000 +0200
++++ u-boot-1.1.5/tools/Makefile	2009-10-04 23:06:03.000000000 +0200
+@@ -21,7 +21,7 @@
+ # MA 02111-1307 USA
+ #
+ 
+-BIN_FILES	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX)
++BIN_FILES	= mkimage$(SFX)
+ 
+ OBJ_LINKS	= environment.o crc32.o
+ OBJ_FILES	= img2srec.o mkimage.o envcrc.o gen_eth_addr.o bmp_logo.o

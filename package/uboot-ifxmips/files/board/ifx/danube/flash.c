@@ -720,7 +720,9 @@ int	flash_erase (flash_info_t *info, int s_first, int s_last)
 
 	(*DANUBE_EBU_BUSCON0)|=0x80000000;	// disable writing
 	(*DANUBE_EBU_BUSCON1)|=0x80000000;	// disable writing
- 
+
+	flash_reset(info);	/* Homebox Black with JS28F128J3D75 had trouble reading after erase */
+
 	printf (" done\n");
 	return rcode;
 }
