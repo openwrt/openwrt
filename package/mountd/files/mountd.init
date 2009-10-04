@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+START=80
+
+start()
+{
+	/sbin/mountd
+}
+
+stop()
+{
+	killall mountd
+}
