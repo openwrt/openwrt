@@ -139,6 +139,25 @@ endef
 $(eval $(call KernelPackage,crypto-hw-ixp4xx))
 
 
+define KernelPackage/crypto-hw-ppc4xx
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=AMCC PPC4xx hardware crypto module
+  DEPENDS:= \
+	@TARGET_ppc40x||TARGET_ppc44x +kmod-crypto-core
+  KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_DEV_PPC4XX
+  FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,crypto4xx)
+endef
+
+define KernelPackage/crypto-hw-ppc4xx/description
+  Kernel support for the AMCC PPC4xx HW crypto engine.
+endef
+
+$(eval $(call KernelPackage,crypto-hw-ppc4xx))
+
+
 define KernelPackage/crypto-aes
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=AES cipher CryptoAPI module
