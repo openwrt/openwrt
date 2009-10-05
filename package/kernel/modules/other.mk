@@ -724,6 +724,23 @@ endef
 
 $(eval $(call KernelPackage,input-joydev))
 
+define KernelPackage/input-rb532
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RB532 button device support
+  DEPENDS:=+kmod-input-core @TARGET_rb532
+  KCONFIG:= \
+	CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_RB532_BUTTON
+  FILES:=$(LINUX_DIR)/drivers/input/misc/rb532_button.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,62,rb532_button)
+endef
+
+define KernelPackage/input-rb532/description
+  Kernel module for RB532 button
+endef
+
+$(eval $(call KernelPackage,input-rb532))
+
 
 define KernelPackage/mmc-atmelmci
   SUBMENU:=$(OTHER_MENU)
