@@ -36,8 +36,8 @@ static void rt2880_pci_reg_write(u32 val, u32 reg)
 	writel(val, rt2880_pci_base + reg);
 }
 
-static int config_access(unsigned char access_type, struct pci_bus *bus,
-			 unsigned int devfn, unsigned char where, u32 *data)
+static void config_access(unsigned char access_type, struct pci_bus *bus,
+			  unsigned int devfn, unsigned char where, u32 *data)
 {
 	unsigned int slot = PCI_SLOT(devfn);
 	unsigned int address;
@@ -51,8 +51,6 @@ static int config_access(unsigned char access_type, struct pci_bus *bus,
 		rt2880_pci_reg_write(*data, RT2880_PCI_REG_CONFIG_DATA);
 	else
 		*data = rt2880_pci_reg_read(RT2880_PCI_REG_CONFIG_DATA);
-
-	return 0;
 }
 
 static int rt2880_pci_config_read(struct pci_bus *bus, unsigned int devfn,
@@ -60,8 +58,7 @@ static int rt2880_pci_config_read(struct pci_bus *bus, unsigned int devfn,
 {
 	u32 data = 0;
 
-	if (config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+	config_access(PCI_ACCESS_READ, bus, devfn, where, &data);
 
 	if (size == 1)
 		*val = (data >> ((where & 3) << 3)) & 0xff;
@@ -81,8 +78,7 @@ static int rt2880_pci_config_write(struct pci_bus *bus, unsigned int devfn,
 	if (size == 4) {
 		data = val;
 	} else {
-		if (config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
-			return PCIBIOS_DEVICE_NOT_FOUND;
+		config_access(PCI_ACCESS_READ, bus, devfn, where, &data);
 		if (size == 1)
 			data = (data & ~(0xff << ((where & 3) << 3))) |
 			       (val << ((where & 3) << 3));
@@ -91,8 +87,7 @@ static int rt2880_pci_config_write(struct pci_bus *bus, unsigned int devfn,
 			       (val << ((where & 3) << 3));
 	}
 
-	if (config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+	config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data);
 
 	return PCIBIOS_SUCCESSFUL;
 }
