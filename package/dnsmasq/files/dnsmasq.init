@@ -3,6 +3,7 @@
 
 START=60
 DNS_SERVERS=""
+DOMAIN=""
 
 dhcp_calc() {
 	local ip="$1"
@@ -82,6 +83,8 @@ dnsmasq() {
 	append_parm "$cfg" "resolvfile" "-r"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
+
+	config_get DOMAIN "$cfg" domain
 
 	config_get leasefile $cfg leasefile
 	[ -e "$leasefile" ] || touch "$leasefile"
@@ -165,7 +168,7 @@ dhcp_host_add() {
 	local cfg="$1"
 
 	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	[ -n "$name" ] && dhcp_option_add "$cfg" "$name"
 
 	config_get mac "$cfg" mac
 	[ -n "$mac" ] || return 0
@@ -173,9 +176,7 @@ dhcp_host_add() {
 	config_get ip "$cfg" ip
 	[ -n "$ip" ] || return 0
 
-	append args "--dhcp-host=$mac,$ip"
-
-	dhcp_option_add "$cfg" "$name"
+	append args "--dhcp-host=$mac,$ip${name:+,$name}"
 }
 
 dhcp_mac_add() {
@@ -270,6 +271,20 @@ dhcp_option_add() {
 
 }
 
+dhcp_domain_add() {
+	local cfg="$1"
+
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+
+	config_get ip "$cfg" ip
+	[ -n "$ip" ] || return 0
+
+	local oIFS="$IFS"; IFS="."; set -- $ip; IFS="$oIFS"
+	append args "-A /$name${DOMAIN:+.$DOMAIN}/$ip"
+	append args "--ptr-record=$4.$3.$2.$1.in-addr.arpa,$name${DOMAIN:+.$DOMAIN}"
+}
+
 start() {
 	include /lib/network
 	scan_interfaces
@@ -285,6 +300,7 @@ start() {
 	config_foreach dhcp_circuitid_add circuitid
 	config_foreach dhcp_remoteid_add remoteid
 	config_foreach dhcp_subscrid_add subscrid
+	config_foreach dhcp_domain_add domain
 	config_foreach dhcp_add dhcp
 
 	/usr/sbin/dnsmasq $args && {
