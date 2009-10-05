@@ -5,10 +5,11 @@
 #include <linux/version.h>
 #include <asm/pci.h>
 #include <asm/io.h>
-#include <asm/mach-rt288x/rt288x.h>
-#include <asm/mach-rt288x/rt288x_pci.h>
 #include <linux/init.h>
 #include <linux/mod_devicetable.h>
+
+#include <asm/mach-ralink/rt288x.h>
+#include <asm/mach-ralink/rt288x_pci.h>
 
 #ifdef CONFIG_PCI
 
