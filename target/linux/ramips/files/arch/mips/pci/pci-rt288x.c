@@ -4,24 +4,37 @@
 #include <linux/init.h>
 
 #include <asm/mach-ralink/rt288x.h>
+#include <asm/mach-ralink/rt288x_regs.h>
 
 #define RT2880_PCI_SLOT1_BASE		0x20000000
-#define RALINK_PCI_BASE			0xA0440000
-#define RT2880_PCI_PCICFG_ADDR		((unsigned long*)(RALINK_PCI_BASE + 0x0000))
-#define RT2880_PCI_ARBCTL		((unsigned long*)(RALINK_PCI_BASE + 0x0080))
-#define RT2880_PCI_BAR0SETUP_ADDR	((unsigned long*)(RALINK_PCI_BASE + 0x0010))
-#define RT2880_PCI_CONFIG_ADDR		((unsigned long*)(RALINK_PCI_BASE + 0x0020))
-#define RT2880_PCI_CONFIG_DATA		((unsigned long*)(RALINK_PCI_BASE + 0x0024))
-#define RT2880_PCI_MEMBASE		((unsigned long*)(RALINK_PCI_BASE + 0x0028))
-#define RT2880_PCI_IOBASE		((unsigned long*)(RALINK_PCI_BASE + 0x002C))
-#define RT2880_PCI_IMBASEBAR0_ADDR	((unsigned long*)(RALINK_PCI_BASE + 0x0018))
-#define RT2880_PCI_ID			((unsigned long*)(RALINK_PCI_BASE + 0x0030))
-#define RT2880_PCI_CLASS		((unsigned long*)(RALINK_PCI_BASE + 0x0034))
-#define RT2880_PCI_SUBID		((unsigned long*)(RALINK_PCI_BASE + 0x0038))
-#define RT2880_PCI_PCIMSK_ADDR		((unsigned long*)(RALINK_PCI_BASE + 0x000C))
+
+#define RT2880_PCI_REG_PCICFG_ADDR	0x00
+#define RT2880_PCI_REG_PCIMSK_ADDR	0x0c
+#define RT2880_PCI_REG_BAR0SETUP_ADDR	0x10
+#define RT2880_PCI_REG_IMBASEBAR0_ADDR	0x18
+#define RT2880_PCI_REG_CONFIG_ADDR	0x20
+#define RT2880_PCI_REG_CONFIG_DATA	0x24
+#define RT2880_PCI_REG_MEMBASE		0x28
+#define RT2880_PCI_REG_IOBASE		0x2c
+#define RT2880_PCI_REG_ID		0x30
+#define RT2880_PCI_REG_CLASS		0x34
+#define RT2880_PCI_REG_SUBID		0x38
+#define RT2880_PCI_REG_ARBCTL		0x80
 
 #define PCI_ACCESS_READ  0
 #define PCI_ACCESS_WRITE 1
+
+void __iomem *rt2880_pci_base;
+
+static u32 rt2880_pci_reg_read(u32 reg)
+{
+	return readl(rt2880_pci_base + reg);
+}
+
+static void rt2880_pci_reg_write(u32 val, u32 reg)
+{
+	writel(val, rt2880_pci_base + reg);
+}
 
 static int config_access(unsigned char access_type, struct pci_bus *bus,
 			 unsigned int devfn, unsigned char where, u32 *data)
@@ -33,11 +46,11 @@ static int config_access(unsigned char access_type, struct pci_bus *bus,
 	address = (bus->number << 16) | (slot << 11) | (func << 8) |
 		  (where & 0xfc) | 0x80000000;
 
-	writel(address, RT2880_PCI_CONFIG_ADDR);
+	rt2880_pci_reg_write(address, RT2880_PCI_REG_CONFIG_ADDR);
 	if (access_type == PCI_ACCESS_WRITE)
-		writel(*data, RT2880_PCI_CONFIG_DATA);
+		rt2880_pci_reg_write(*data, RT2880_PCI_REG_CONFIG_DATA);
 	else
-		*data = readl(RT2880_PCI_CONFIG_DATA);
+		*data = rt2880_pci_reg_read(RT2880_PCI_REG_CONFIG_DATA);
 
 	return 0;
 }
@@ -117,8 +130,8 @@ void inline read_config(unsigned long bus, unsigned long dev,
 
 	address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) |
 		  0x80000000;
-	writel(address, RT2880_PCI_CONFIG_ADDR);
-	*val = readl(RT2880_PCI_CONFIG_DATA);
+	rt2880_pci_reg_write(address, RT2880_PCI_REG_CONFIG_ADDR);
+	*val = rt2880_pci_reg_read(RT2880_PCI_REG_CONFIG_DATA);
 }
 
 void inline write_config(unsigned long bus, unsigned long dev,
@@ -129,8 +142,8 @@ void inline write_config(unsigned long bus, unsigned long dev,
 
 	address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) |
 		  0x80000000;
-	writel(address, RT2880_PCI_CONFIG_ADDR);
-	writel(val, RT2880_PCI_CONFIG_DATA);
+	rt2880_pci_reg_write(address, RT2880_PCI_REG_CONFIG_ADDR);
+	rt2880_pci_reg_write(val, RT2880_PCI_REG_CONFIG_DATA);
 }
 
 int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
@@ -174,18 +187,20 @@ static int __init rt2880_pci_init(void)
 	unsigned long val = 0;
 	int i;
 
-	writel(0, RT2880_PCI_PCICFG_ADDR);
+	rt2880_pci_base = ioremap_nocache(RT2880_PCI_BASE, PAGE_SIZE);
+
+	rt2880_pci_reg_write(0, RT2880_PCI_REG_PCICFG_ADDR);
 	for(i = 0; i < 0xfffff; i++) {}
 
-	writel(0x79, RT2880_PCI_ARBCTL);
-	writel(0x07FF0001, RT2880_PCI_BAR0SETUP_ADDR);
-	writel(RT2880_PCI_SLOT1_BASE, RT2880_PCI_MEMBASE);
-	writel(0x00460000, RT2880_PCI_IOBASE);
-	writel(0x08000000, RT2880_PCI_IMBASEBAR0_ADDR);
-	writel(0x08021814, RT2880_PCI_ID);
-	writel(0x00800001, RT2880_PCI_CLASS);
-	writel(0x28801814, RT2880_PCI_SUBID);
-	writel(0x000c0000, RT2880_PCI_PCIMSK_ADDR);
+	rt2880_pci_reg_write(0x79, RT2880_PCI_REG_ARBCTL);
+	rt2880_pci_reg_write(0x07FF0001, RT2880_PCI_REG_BAR0SETUP_ADDR);
+	rt2880_pci_reg_write(RT2880_PCI_SLOT1_BASE, RT2880_PCI_REG_MEMBASE);
+	rt2880_pci_reg_write(0x00460000, RT2880_PCI_REG_IOBASE);
+	rt2880_pci_reg_write(0x08000000, RT2880_PCI_REG_IMBASEBAR0_ADDR);
+	rt2880_pci_reg_write(0x08021814, RT2880_PCI_REG_ID);
+	rt2880_pci_reg_write(0x00800001, RT2880_PCI_REG_CLASS);
+	rt2880_pci_reg_write(0x28801814, RT2880_PCI_REG_SUBID);
+	rt2880_pci_reg_write(0x000c0000, RT2880_PCI_REG_PCIMSK_ADDR);
 	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, 0x08000000);
 	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
 
