@@ -95,9 +95,10 @@ $(eval $(call KernelPackage,sound-i8x0))
 define KernelPackage/sound-ps3
   SUBMENU:=$(SOUND_MENU)
   TITLE:=PS3 Audio
-  DEPENDS:=kmod-sound-core
+  DEPENDS:=kmod-sound-core @TARGET_ps3
   KCONFIG:=CONFIG_SND_PS3 \
-		CONFIG_SND_PPC=y
+		CONFIG_SND_PPC=y \
+		CONFIG_SND_PS3_DEFAULT_START_DELAY=2000
   FILES:=$(LINUX_DIR)/sound/ppc/snd_ps3.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,35, snd_ps3)
 endef
