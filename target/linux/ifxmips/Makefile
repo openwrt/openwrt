@@ -14,8 +14,8 @@ FEATURES:=squashfs jffs2 atm
 LINUX_VERSION:=2.6.30.8
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES+=uboot-ifxmips kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl kmod-ifxmips-atm
-
+DEFAULT_PACKAGES+=uboot-ifxmips
+#kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl kmod-ifxmips-atm
 
 define Target/Description
 	Build firmware images for Infineon Mips Controllers
