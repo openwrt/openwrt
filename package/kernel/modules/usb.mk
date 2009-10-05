@@ -136,7 +136,6 @@ $(eval $(call KernelPackage,usb-adm5120))
 
 define KernelPackage/usb-etrax
   $(call usbdep,@TARGET_etrax)
-  DEPENDS=kmod-usb-core
   TITLE:=Support for the ETRAX USB host controller
   KCONFIG:=CONFIG_ETRAX_USB_HOST \
 	CONFIG_ETRAX_USB_HOST_PORT1=y CONFIG_ETRAX_USB_HOST_PORT2=y
