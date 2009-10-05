@@ -4,10 +4,77 @@
 #include <linux/init.h>
 
 #include <asm/mach-ralink/rt288x.h>
-#include <asm/mach-ralink/rt288x_pci.h>
 
-extern int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
-extern int pci_config_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
+#define RT2880_PCI_SLOT1_BASE		0x20000000
+#define RALINK_PCI_BASE			0xA0440000
+#define RT2880_PCI_PCICFG_ADDR		((unsigned long*)(RALINK_PCI_BASE + 0x0000))
+#define RT2880_PCI_ARBCTL		((unsigned long*)(RALINK_PCI_BASE + 0x0080))
+#define RT2880_PCI_BAR0SETUP_ADDR	((unsigned long*)(RALINK_PCI_BASE + 0x0010))
+#define RT2880_PCI_CONFIG_ADDR		((unsigned long*)(RALINK_PCI_BASE + 0x0020))
+#define RT2880_PCI_CONFIG_DATA		((unsigned long*)(RALINK_PCI_BASE + 0x0024))
+#define RT2880_PCI_MEMBASE		((unsigned long*)(RALINK_PCI_BASE + 0x0028))
+#define RT2880_PCI_IOBASE		((unsigned long*)(RALINK_PCI_BASE + 0x002C))
+#define RT2880_PCI_IMBASEBAR0_ADDR	((unsigned long*)(RALINK_PCI_BASE + 0x0018))
+#define RT2880_PCI_ID			((unsigned long*)(RALINK_PCI_BASE + 0x0030))
+#define RT2880_PCI_CLASS		((unsigned long*)(RALINK_PCI_BASE + 0x0034))
+#define RT2880_PCI_SUBID		((unsigned long*)(RALINK_PCI_BASE + 0x0038))
+#define RT2880_PCI_PCIMSK_ADDR		((unsigned long*)(RALINK_PCI_BASE + 0x000C))
+
+#define PCI_ACCESS_READ  0
+#define PCI_ACCESS_WRITE 1
+
+static int config_access(unsigned char access_type, struct pci_bus *bus,
+	unsigned int devfn, unsigned char where, u32 * data)
+{
+	unsigned int slot = PCI_SLOT(devfn);
+	unsigned int address;
+	u8 func = PCI_FUNC(devfn);
+	address = (bus->number << 16) | (slot << 11) | (func << 8) | (where& 0xfc) | 0x80000000;
+	writel(address, RT2880_PCI_CONFIG_ADDR);
+	if (access_type == PCI_ACCESS_WRITE)
+		writel(*data, RT2880_PCI_CONFIG_DATA);
+	else
+		*data = readl(RT2880_PCI_CONFIG_DATA);
+	return 0;
+}
+
+int
+pci_config_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 * val)
+{
+	u32 data = 0;
+	if(config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
+		return PCIBIOS_DEVICE_NOT_FOUND;
+	if(size == 1)
+		*val = (data >> ((where & 3) << 3)) & 0xff;
+	else if(size == 2)
+		*val = (data >> ((where & 3) << 3)) & 0xffff;
+	else
+		*val = data;
+	return PCIBIOS_SUCCESSFUL;
+}
+
+int
+pci_config_write(struct pci_bus *bus, unsigned int devfn,
+	int where, int size, u32 val)
+{
+	u32 data = 0;
+	if(size == 4)
+	{
+		data = val;
+	} else {
+		if(config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
+			return PCIBIOS_DEVICE_NOT_FOUND;
+		if(size == 1)
+			data = (data & ~(0xff << ((where & 3) << 3))) |
+				(val << ((where & 3) << 3));
+		else if(size == 2)
+			data = (data & ~(0xffff << ((where & 3) << 3))) |
+				(val << ((where & 3) << 3));
+	}
+	if(config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data))
+		return PCIBIOS_DEVICE_NOT_FOUND;
+	return PCIBIOS_SUCCESSFUL;
+}
 
 struct pci_ops rt2880_pci_ops = {
 	.read =  pci_config_read,
