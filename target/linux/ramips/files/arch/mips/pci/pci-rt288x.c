@@ -6,8 +6,6 @@
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_pci.h>
 
-#ifdef CONFIG_PCI
-
 extern int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val);
 extern int pci_config_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val);
 
@@ -126,5 +124,3 @@ struct pci_fixup pcibios_fixups[] = {
 };
 
 arch_initcall(init_rt2880pci);
-
-#endif

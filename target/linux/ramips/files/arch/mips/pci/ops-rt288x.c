@@ -5,8 +5,6 @@
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_pci.h>
 
-#ifdef CONFIG_PCI
-
 #define PCI_ACCESS_READ  0
 #define PCI_ACCESS_WRITE 1
 
@@ -62,4 +60,3 @@ pci_config_write(struct pci_bus *bus, unsigned int devfn,
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	return PCIBIOS_SUCCESSFUL;
 }
-#endif
