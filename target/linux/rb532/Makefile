@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,6 +14,6 @@ FEATURES:=jffs2 pci tgz
 LINUX_VERSION:=2.6.30.8
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += hostapd-mini kmod-madwifi
+DEFAULT_PACKAGES += hostapd-mini kmod-madwifi kmod-input-rb532
 
 $(eval $(call BuildTarget))
