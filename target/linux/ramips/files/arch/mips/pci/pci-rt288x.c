@@ -42,8 +42,8 @@ static int config_access(unsigned char access_type, struct pci_bus *bus,
 	return 0;
 }
 
-int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
-		    int size, u32 *val)
+static int rt2880_pci_config_read(struct pci_bus *bus, unsigned int devfn,
+				  int where, int size, u32 *val)
 {
 	u32 data = 0;
 
@@ -60,8 +60,8 @@ int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
 	return PCIBIOS_SUCCESSFUL;
 }
 
-int pci_config_write(struct pci_bus *bus, unsigned int devfn,
-		     int where, int size, u32 val)
+static int rt2880_pci_config_write(struct pci_bus *bus, unsigned int devfn,
+				   int where, int size, u32 val)
 {
 	u32 data = 0;
 
@@ -84,31 +84,29 @@ int pci_config_write(struct pci_bus *bus, unsigned int devfn,
 	return PCIBIOS_SUCCESSFUL;
 }
 
-struct pci_ops rt2880_pci_ops = {
-	.read	= pci_config_read,
-	.write	= pci_config_write,
+static struct pci_ops rt2880_pci_ops = {
+	.read	= rt2880_pci_config_read,
+	.write	= rt2880_pci_config_write,
 };
 
-static struct resource pci_io_resource = {
-	.name	= "pci MEM space",
+static struct resource rt2880_pci_io_resource = {
+	.name	= "PCI MEM space",
 	.start	= 0x20000000,
 	.end	= 0x2FFFFFFF,
 	.flags	= IORESOURCE_MEM,
 };
 
-static struct resource pci_mem_resource = {
-	.name	= "pci IO space",
+static struct resource rt2880_pci_mem_resource = {
+	.name	= "PCI IO space",
 	.start	= 0x00460000,
 	.end	= 0x0046FFFF,
 	.flags	= IORESOURCE_IO,
 };
 
-struct pci_controller rt2880_controller = {
+static struct pci_controller rt2880_pci_controller = {
 	.pci_ops	= &rt2880_pci_ops,
-	.mem_resource	= &pci_io_resource,
-	.io_resource	= &pci_mem_resource,
-	.mem_offset	= 0x00000000UL,
-	.io_offset	= 0x00000000UL,
+	.mem_resource	= &rt2880_pci_io_resource,
+	.io_resource	= &rt2880_pci_mem_resource,
 };
 
 void inline read_config(unsigned long bus, unsigned long dev,
@@ -171,7 +169,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	return irq;
 }
 
-int init_rt2880pci(void)
+static int __init rt2880_pci_init(void)
 {
 	unsigned long val = 0;
 	int i;
@@ -191,7 +189,7 @@ int init_rt2880pci(void)
 	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, 0x08000000);
 	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
 
-	register_pci_controller(&rt2880_controller);
+	register_pci_controller(&rt2880_pci_controller);
 	return 0;
 }
 
@@ -204,4 +202,4 @@ struct pci_fixup pcibios_fixups[] = {
 	{0}
 };
 
-arch_initcall(init_rt2880pci);
+arch_initcall(rt2880_pci_init);
