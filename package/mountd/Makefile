@@ -17,7 +17,7 @@ define Package/mountd
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenWrt automount daemon
-  DEPENDS:=@USB_SUPPORT +uci +kmod-usb-storage +kmod-fs-autofs4
+  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +uci +kmod-usb-storage +kmod-fs-autofs4
   URL:=http://www.openwrt.org
 endef
 
