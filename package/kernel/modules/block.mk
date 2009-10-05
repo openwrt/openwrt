@@ -256,7 +256,11 @@ define KernelPackage/ide-pdc202xx
   TITLE:=Promise PDC202xx IDE driver
   DEPENDS:=+kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
+ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
   FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+ else
+  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+ endif
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
 endef
 
