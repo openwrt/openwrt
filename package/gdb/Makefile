@@ -16,21 +16,24 @@ PKG_MD5SUM:=c9da266b884fb8fa54df786dfaadbc7a
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/gdb
+define Package/gdb/Default
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libreadline +libncurses
-  TITLE:=GNU Debugger
 endef
 
-define Package/gdbserver
-  SECTION:=utils
-  CATEGORY:=Utilities
-  TITLE:=Remote server for GNU Debugger
+define Package/gdb
+$(call Package/gdb/Default)
+  TITLE:=GNU Debugger
+  DEPENDS+= +libreadline +libncurses
 endef
 
 define Package/gdb/description
  GNU debugger
+endef
+
+define Package/gdbserver
+$(call Package/gdb/Default)
+  TITLE:=Remote server for GNU Debugger
 endef
 
 define Package/gdbserver/description
