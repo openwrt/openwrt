@@ -117,9 +117,9 @@ static struct pci_controller rt2880_pci_controller = {
 	.io_resource	= &rt2880_pci_mem_resource,
 };
 
-void inline read_config(unsigned long bus, unsigned long dev,
-			unsigned long func, unsigned long reg,
-			unsigned long *val)
+static inline void read_config(unsigned long bus, unsigned long dev,
+			       unsigned long func, unsigned long reg,
+			       unsigned long *val)
 {
 	unsigned long address;
 
@@ -129,9 +129,9 @@ void inline read_config(unsigned long bus, unsigned long dev,
 	*val = rt2880_pci_reg_read(RT2880_PCI_REG_CONFIG_DATA);
 }
 
-void inline write_config(unsigned long bus, unsigned long dev,
-			 unsigned long func, unsigned long reg,
-			 unsigned long val)
+static inline void write_config(unsigned long bus, unsigned long dev,
+				unsigned long func, unsigned long reg,
+				unsigned long val)
 {
 	unsigned long address;
 
