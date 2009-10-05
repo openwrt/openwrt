@@ -106,7 +106,7 @@ int __init bcm63xx_pcmcia_register(void)
 		break;
 
 	case BCM6358_CPU_ID:
-		pd.ready_gpio = 22;
+		pd.ready_gpio = 18;
 		break;
 
 	default:
