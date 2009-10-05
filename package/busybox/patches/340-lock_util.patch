@@ -22,13 +22,12 @@
  #define logger_full_usage "\n\n" \
 --- a/miscutils/Config.in
 +++ b/miscutils/Config.in
-@@ -420,6 +420,12 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
+@@ -420,6 +420,11 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
  	help
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  
 +config LOCK
 +	bool "lock"
-+	default y
 +	help
 +	  Small utility for using locks in scripts
 +
