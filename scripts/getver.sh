@@ -11,7 +11,7 @@ try_version() {
 
 try_svn() {
 	[ -d .svn ] || return 1
-	REV="$(svn info -r COMMITTED | awk '/^Revision:/ { print $2 }')"
+	REV="$(svn info | awk '/^Last Changed Rev:/ { print $4 }')"
 	REV="${REV:+r$REV}"
 	[ -n "$REV" ]
 }
