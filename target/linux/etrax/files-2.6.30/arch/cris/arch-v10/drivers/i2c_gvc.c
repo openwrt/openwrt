@@ -9,26 +9,21 @@
 *!
 *!***************************************************************************/
 
-#define DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
-//#undef  DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
-
 /******************** INCLUDE FILES SECTION ****************************/
 
 #include <linux/module.h>
 #include <linux/fs.h>
 
-/**GVC**/
-#ifdef DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
+#ifdef CONFIG_ETRAX_I2C_DYN_ALLOC
 #include <linux/types.h> /* for dev_t */
 #include <linux/cdev.h>  /* for struct cdev */
 #endif
-/**END GVC**/
+
+#include <linux/device.h>
 
 #include "etraxi2c.h"
 
-/**GVC**/
 #include "i2c_errno.h"
-/**END GVC**/
 
 #include <asm/io.h>
 #include <asm/delay.h>
@@ -37,7 +32,7 @@
 
 #include "i2c_gvc.h"
 
-MODULE_DESCRIPTION( "I2C Device Driver - 1.1" );
+MODULE_DESCRIPTION( "I2C Device Driver - 2.3" );
 
 /*!*********************************************************************
  *!History I2C driver Geert Vancompernolle
@@ -50,25 +45,20 @@ MODULE_DESCRIPTION( "I2C Device Driver - 1.1" );
  *!     Changes to remove unwanted spikes at ACK/NACK time.
  *!
  *!*********************************************************************/
- 
+
 MODULE_LICENSE( "GPL" );
 
 /******************            MACRO's            **********************/
 
 #define D( x )
 
-/**GVC**/
-#ifndef DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
-/**END GVC**/
+#ifndef CONFIG_ETRAX_I2C_DYN_ALLOC
 #define I2C_MAJOR 123  				/* LOCAL/EXPERIMENTAL */
-/**GVC**/
 #endif
-/**END GVC**/
 
-/**GVC**/
 #define WAITONEUS                 1
 /* Following are abbreviations taken from Philips I2C standard */
-/* Values are representing time in us and are rounded to next whole number, if relevant */ 
+/* Values are representing time in us and are rounded to next whole number, if relevant */
 #define THDSTA                    4     /* Hold delay time for (repeated) START condition */
 #define TLOW                      5     /* LOW period of the SCL clock */
 #define THDDAT	                  1     /* Hold delay time for DATA: value of 0 is allowed but 1 taken to be sure */
@@ -78,11 +68,14 @@ MODULE_LICENSE( "GPL" );
 #define TSUSTO                    4     /* Set-up time for STOP condition */
 #define TBUF                      5     /* Bus-free time between STOP and START condition */
 
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+#define MAXSCLRETRIES		  100
+#endif
+
 #define MAXBUSFREERETRIES         5
 #define MAXRETRIES                3
 #define WRITEADDRESS_MASK         ( 0xFE )
 #define READADDRESS_MASK          ( 0x01 )
-/**END GVC**/
 
 #define SCL_HIGH                  1
 #define SCL_LOW                   0
@@ -100,14 +93,21 @@ MODULE_LICENSE( "GPL" );
 
 #define SDABIT CONFIG_ETRAX_I2C_DATA_PORT
 #define SCLBIT CONFIG_ETRAX_I2C_CLK_PORT
-#define i2c_enable() 
-#define i2c_disable() 
+#define i2c_enable()
+#define i2c_disable()
 
 /* enable or disable output-enable, to select output or input on the i2c bus */
 #define i2c_sda_dir_out() \
   REG_SHADOW_SET( R_PORT_PB_DIR, port_pb_dir_shadow, SDABIT, 1 )
 #define i2c_sda_dir_in()  \
   REG_SHADOW_SET( R_PORT_PB_DIR, port_pb_dir_shadow, SDABIT, 0 )
+
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+#define i2c_scl_dir_out() \
+  REG_SHADOW_SET( R_PORT_PB_DIR, port_pb_dir_shadow, SCLBIT, 1 )
+#define i2c_scl_dir_in()  \
+  REG_SHADOW_SET( R_PORT_PB_DIR, port_pb_dir_shadow, SCLBIT, 0 )
+#endif
 
 /* control the i2c clock and data signals */
 #define i2c_set_scl( x ) \
@@ -118,10 +118,8 @@ MODULE_LICENSE( "GPL" );
 /* read status of SDA bit from the i2c interface */
 #define i2c_sda_is_high() ( ( ( *R_PORT_PB_READ & ( 1 << SDABIT ) ) ) >> SDABIT )
 
-/**GVC**/
 /* read status of SCL bit from the i2c interface */
 #define i2c_scl_is_high() ( ( ( *R_PORT_PB_READ & ( 1 << SCLBIT ) ) ) >> SCLBIT )
-/**END GVC**/
 
 #else
 /* enable or disable the i2c interface */
@@ -131,7 +129,7 @@ MODULE_LICENSE( "GPL" );
 /* enable or disable output-enable, to select output or input on the i2c bus */
 #define i2c_sda_dir_out() \
 	*R_PORT_PB_I2C = ( port_pb_i2c_shadow &= ~IO_MASK( R_PORT_PB_I2C, i2c_oe_ ) ); \
-	REG_SHADOW_SET( R_PORT_PB_DIR, port_pb_dir_shadow, 0, 1 ); 
+	REG_SHADOW_SET( R_PORT_PB_DIR, port_pb_dir_shadow, 0, 1 );
 #define i2c_sda_dir_in() \
 	*R_PORT_PB_I2C = ( port_pb_i2c_shadow |= IO_MASK( R_PORT_PB_I2C, i2c_oe_ ) ); \
 	REG_SHADOW_SET( R_PORT_PB_DIR, port_pb_dir_shadow, 0, 0 );
@@ -160,19 +158,13 @@ MODULE_LICENSE( "GPL" );
 
 /****************** STATIC (file scope) VARIABLES **********************/
 static DEFINE_SPINLOCK( i2c_lock ); /* Protect directions etc */
-/**GVC**/
-#ifdef DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
-static const char i2c_name[] = "i2cgvc";
-#else
 static const char i2c_name[] = "i2c";
-#endif
-/**END GVC**/
+
 
 
 /******************     PROTOTYPING SECTION     *************************/
 static int  i2c_open( struct inode *inode, struct file *filp );
 static int  i2c_release( struct inode *inode, struct file *filp );
-/**GVC**/
 static int  i2c_command( unsigned char  slave
                        , unsigned char* wbuf
                        , unsigned char  wlen
@@ -181,8 +173,7 @@ static int  i2c_command( unsigned char  slave
                        );
 static int  i2c_bus_free_check( unsigned char maxretries );
 static void i2c_finalise( const char* text, unsigned long irqflags );
-/**END GVC**/
-                           
+
 
 /************************************************************************/
 /******************         AUXILIARIES         *************************/
@@ -195,7 +186,7 @@ static void i2c_finalise( const char* text, unsigned long irqflags );
  *# DESCRIPTION  : opens an I2C device
  *#
  *# PARAMETERS   : *inode: reference to inode
- *#                *filp : reference to file pointer 
+ *#                *filp : reference to file pointer
  *#
  *#---------------------------------------------------------------------------
  */
@@ -212,7 +203,7 @@ static int i2c_open( struct inode *inode, struct file *filp )
  *# DESCRIPTION  : Releases the I2C device
  *#
  *# PARAMETERS   : *inode: reference to inode
- *#                *filp : reference to file pointer 
+ *#                *filp : reference to file pointer
  *#
  *#---------------------------------------------------------------------------
  */
@@ -226,13 +217,13 @@ static int i2c_release( struct inode *inode, struct file *filp )
  *#
  *# FUNCTION NAME: i2c_ioctl
  *#
- *# DESCRIPTION  : Main device API: ioctl's to write/read 
+ *# DESCRIPTION  : Main device API: ioctl's to write/read
  *#                to/from i2c registers
  *#
  *# PARAMETERS   : *inode: reference to inode
- *#                *filp : reference to file pointer 
- *#                cmd   : command to be executed during the ioctl call 
- *#                arg   : pointer to a structure with the data??? 
+ *#                *filp : reference to file pointer
+ *#                cmd   : command to be executed during the ioctl call
+ *#                arg   : pointer to a structure with the data???
  *#
  *# RETURN       : result of the ioctl call
  *#
@@ -247,13 +238,13 @@ static int i2c_ioctl( struct inode *inode
     /* the acme ioctls */
     I2C_DATA i2cdata;
     int RetVal = EI2CNOERRORS;
-    
-    if ( _IOC_TYPE( cmd ) != ETRAXI2C_IOCTYPE ) 
+
+    if ( _IOC_TYPE( cmd ) != ETRAXI2C_IOCTYPE )
     {
         return ( -EINVAL );
     }
-    
-    switch ( _IOC_NR( cmd ) ) 
+
+    switch ( _IOC_NR( cmd ) )
     {
     case I2C_WRITEREG:
         /* write to an i2c slave */
@@ -261,24 +252,23 @@ static int i2c_ioctl( struct inode *inode
                              , I2C_ARGREG( arg )
                              , I2C_ARGVALUE( arg )
                              );
-        break;                       
+        break;
 
     case I2C_READREG:
         RetVal = i2c_readreg( I2C_ARGSLAVE( arg ), I2C_ARGREG( arg ) );
         break;
-    
-/**GVC**/
-    /* New functions added by GVC */    
+
+    /* New functions added by GVC */
     case I2C_READ:
         copy_from_user( (char*)&i2cdata, (char*)arg, sizeof( I2C_DATA ) );
         {
             int RetryCntr = MAXRETRIES;
-            
+
             do
             {
                 RetVal = i2c_command( i2cdata.slave
                                     , NULL
-                                    , 0 
+                                    , 0
                                     , i2cdata.rbuf
                                     , i2cdata.rlen
                                     );
@@ -293,33 +283,33 @@ static int i2c_ioctl( struct inode *inode
         copy_from_user( (char*)&i2cdata, (char*)arg, sizeof( I2C_DATA ) );
         {
             int RetryCntr = MAXRETRIES;
-            
+
             do
             {
                 RetVal = i2c_command( i2cdata.slave
                                     , i2cdata.wbuf
                                     , i2cdata.wlen
                                     , NULL
-                                    , 0 
+                                    , 0
                                     );
              } while ( ( EI2CNOERRORS != RetVal )
                      &&( --RetryCntr )
                      );
         }
         break;
-          
+
     case I2C_WRITEREAD:
         copy_from_user( (char*)&i2cdata, (char*)arg, sizeof( I2C_DATA ) );
         {
             int RetryCntr = MAXRETRIES;
-            
+
             do
             {
                 RetVal = i2c_command( i2cdata.slave
                                     , i2cdata.wbuf
                                     , i2cdata.wlen
                                     , i2cdata.rbuf
-                                    , i2cdata.rlen 
+                                    , i2cdata.rlen
                                     );
              } while ( ( EI2CNOERRORS != RetVal )
                      &&( --RetryCntr )
@@ -327,12 +317,11 @@ static int i2c_ioctl( struct inode *inode
         }
         copy_to_user( (char*)arg, (char*)&i2cdata, sizeof( I2C_DATA ) );
         break;
-/**END GVC**/    
-    
+
     default:
         RetVal = -EINVAL;
     }
-    
+
     return ( -RetVal );
 }   /* i2c_ioctl */
 
@@ -342,22 +331,22 @@ static int i2c_ioctl( struct inode *inode
  *# FUNCTION NAME: i2c_command
  *#
  *# DESCRIPTION  : general routine to read/write bytes from an I2C device
- *#                
+ *#
  *#                'i2c_command()' sends wlen bytes to the I2c bus and receives
- *#                rlen bytes from the I2c bus.  
+ *#                rlen bytes from the I2c bus.
  *#                The data to be send must be placed in wbuf[ 0 ] upto wbuf[ wlen - 1 ).
  *#                The data to be received is assembled in rbuf[ 0 ] upto rbuf[ rlen - 1 ].
- *#                 
+ *#
  *#                If no data is to be sent or received, put appropriate buffer parameter
  *#                to "NULL" and appropriate length parameter to "0".
- *# 
+ *#
  *# PARAMETERS   : slave = slave address of the I2C device
  *#                wbuf  = address of first element of write buffer (wbuf)
  *#                wlen  = number of bytes to be written to slave
  *#                rbuf  = address of first element of read buffer (rbuf)
  *#                rlen  = number of bytes to be read from slave
  *#
- *# RETURN       : 
+ *# RETURN       :
  *#    EI2CNOERRORS: I2C communication went fine
  *#    EI2CBUSNFREE: I2C bus is not free
  *#    EI2CWADDRESS: I2C write address failed
@@ -374,15 +363,15 @@ static int i2c_ioctl( struct inode *inode
  *#    EI2CNOACKNLD: I2C no acknowledge received
  *#
  *# REMARK       :
- *#   First, the send part is completed.  
+ *#   First, the send part is completed.
  *#   In the send routine, there is no stop generated.  This is because maybe
  *#   a repeated start condition must be generated.
  *#   This happens when we want to receive some data from the I2c bus.  If not,
  *#   at the end of the general I2c loop the stopcondition is generated.
  *#   If, on the contrary, there are a number of bytes to be received, a new
- *#   startcondition is generated in the 'if' part of the main I2c routine, 
- *#   which controls the receiving part.  
- *#   Only when the receiving of data is finished, a final stopcondition is 
+ *#   startcondition is generated in the 'if' part of the main I2c routine,
+ *#   which controls the receiving part.
+ *#   Only when the receiving of data is finished, a final stopcondition is
  *#   generated.
  *#
  *#---------------------------------------------------------------------------
@@ -434,16 +423,16 @@ static int i2c_command( unsigned char  slave
         /* we don't like to be interrupted */
         local_irq_save( irqflags );
 
-        /* Check if there are bytes to be send, 
+        /* Check if there are bytes to be send,
          * or if you immediately want to receive data.
          */
         if ( 0 < wlen )
         {
-            /* start I2C communication */        
+            /* start I2C communication */
             if ( EI2CNOERRORS != i2c_start() )
             {
                 return ( i2c_finalise( "I2C: EI2CSTRTCOND\n", irqflags  )
-                       , EI2CSTRTCOND 
+                       , EI2CSTRTCOND
                        );
             }
 
@@ -451,23 +440,23 @@ static int i2c_command( unsigned char  slave
             if ( EI2CNOERRORS != i2c_outbyte( slave & WRITEADDRESS_MASK ) )
             {
                 return ( i2c_finalise( "I2C: EI2CWADDRESS\n", irqflags  )
-                       , EI2CWADDRESS 
+                       , EI2CWADDRESS
                        );
             }
 
             while ( wlen-- )
-            {   
+            {
                 /* send register data */
-                if ( EI2CNOERRORS != i2c_outbyte( *wbuf ) )
+                if ( EI2CNOERRORS != i2c_outbyte( *wbuf ) && wlen )
                 {
                     return ( i2c_finalise( "I2C: EI2CSENDDATA\n", irqflags  )
-                           , EI2CSENDDATA 
+                           , EI2CSENDDATA
                            );
                 }
-                
+
                 wbuf++;
             };
-                
+
             i2c_delay( TLOW );
         }
 
@@ -481,12 +470,12 @@ static int i2c_command( unsigned char  slave
         if ( 0 < rlen )
         {
             /*
-             * Generate start condition if wlen == 0 
+             * Generate start condition if wlen == 0
              * or repeated start condition if wlen != 0...
              */
             if ( EI2CNOERRORS != i2c_start() )
             {
-                return ( i2c_finalise( ( ( 0 < wlen ) 
+                return ( i2c_finalise( ( ( 0 < wlen )
                                        ? "I2C: EI2CRSTACOND\n"
                                        : "I2C: EI2CSTRTCOND\n"
                                        )
@@ -503,21 +492,21 @@ static int i2c_command( unsigned char  slave
                        , EI2CRADDRESS
                        );
             }
-            
+
             while ( rlen-- )
             {
                 /* fetch register */
                 *rbuf = i2c_inbyte();
                 rbuf++;
-                
+
                 /* last received byte needs to be NACK-ed instead of ACK-ed */
                 if ( rlen )
                 {
                     i2c_sendack();
                 }
-                else 
+                else
                 {
-                    i2c_sendnack(); 
+                    i2c_sendnack();
                 }
             };
         }
@@ -525,15 +514,15 @@ static int i2c_command( unsigned char  slave
         /* Generate final stop condition */
         if ( EI2CNOERRORS != i2c_stop() )
         {
-            return ( i2c_finalise( "I2C: EI2CSTOPCOND\n", irqflags )
+            return ( i2c_finalise( "I2C CMD: EI2CSTOPCOND\n", irqflags )
                    , EI2CSTOPCOND
                    );
-        } 
-    
+        }
+
         /* enable interrupt again */
         local_irq_restore( irqflags );
     }
-    
+
     return ( EI2CNOERRORS );
 } /*  i2c_command */
 
@@ -544,12 +533,12 @@ static int i2c_command( unsigned char  slave
  *#
  *# DESCRIPTION  : checks if the I2C bus is free before starting
  *#                an I2C communication
- *# 
+ *#
  *# PARAMETERS   : maxretries, the number of times we will try to release
- *#                the I2C bus  
+ *#                the I2C bus
  *#
  *# RETURN       : I2cStatus_I2cBusNotFreeError in case the bus is not free,
- *#                I2cStatus_I2cNoError otherwise 
+ *#                I2cStatus_I2cNoError otherwise
  *#
  *#---------------------------------------------------------------------------
  */
@@ -557,9 +546,9 @@ static int i2c_bus_free_check( unsigned char maxretries )
 {
     i2c_sda_dir_in();        /* Release SDA line */
     i2c_set_scl( SCL_HIGH ); /* put SCL line high */
-    
+
     i2c_delay( WAITONEUS );
-        
+
     while ( ( !i2c_sda_is_high() || !i2c_scl_is_high() )
           &&( maxretries-- )
           )
@@ -567,13 +556,13 @@ static int i2c_bus_free_check( unsigned char maxretries )
         /* Try to release I2C bus by generating STOP conditions */
         i2c_stop();
     }
-    
+
     if ( 0 == maxretries )
     {
         printk( KERN_DEBUG "I2C: EI2CBUSNFREE\n" );
         return ( EI2CBUSNFREE );
     }
-    else 
+    else
     {
         return ( EI2CNOERRORS );
     }
@@ -592,10 +581,10 @@ static void i2c_finalise( const char* errortxt
      * what I can do more for the moment...
      */
     (void)i2c_bus_free_check( MAXBUSFREERETRIES );
-}   /* i2c_finalise */                         
+}   /* i2c_finalise */
 
 
-static struct file_operations i2c_fops = 
+static struct file_operations i2c_fops =
 {
     .owner    = THIS_MODULE
 ,   .ioctl    = i2c_ioctl
@@ -623,24 +612,24 @@ int __init i2c_init( void )
     static int res = 0;
     static int first = 1;
 
-    if ( !first ) 
+    if ( !first )
     {
         return res;
     }
-    
+
     first = 0;
 
     /* Setup and enable the Port B I2C interface */
 
 #ifndef CONFIG_ETRAX_I2C_USES_PB_NOT_PB_I2C
     /* here, we're using the dedicated I2C pins of FoxBoard */
-    if ( ( res = cris_request_io_interface( if_i2c, "I2C" ) ) ) 
+    if ( ( res = cris_request_io_interface( if_i2c, "I2C" ) ) )
     {
         printk( KERN_CRIT "i2c_init: Failed to get IO interface\n" );
         return res;
     }
 
-    *R_PORT_PB_I2C = port_pb_i2c_shadow |= 
+    *R_PORT_PB_I2C = port_pb_i2c_shadow |=
         IO_STATE( R_PORT_PB_I2C, i2c_en,  on ) |
         IO_FIELD( R_PORT_PB_I2C, i2c_d,   1 )  |
         IO_FIELD( R_PORT_PB_I2C, i2c_set_scl, 1 )  |
@@ -653,34 +642,34 @@ int __init i2c_init( void )
               IO_STATE( R_PORT_PB_DIR, dir0, input )  |
               IO_STATE( R_PORT_PB_DIR, dir1, output ) );
 #else
-        /* If everything goes fine, res = 0, meaning "if" fails => 
+        /* If everything goes fine, res = 0, meaning "if" fails =>
          * will do the "else" too and as such initialise the clock port...
-         * Clever trick! 
+         * Clever trick!
          */
         if ( ( res = cris_io_interface_allocate_pins( if_i2c
                                                     , 'b'
                                                     , CONFIG_ETRAX_I2C_DATA_PORT
-                                                    , CONFIG_ETRAX_I2C_DATA_PORT 
-                                                    ) 
-             ) 
-           ) 
+                                                    , CONFIG_ETRAX_I2C_DATA_PORT
+                                                    )
+             )
+           )
         {
             printk( KERN_WARNING "i2c_init: Failed to get IO pin for I2C data port\n" );
             return ( res );
         }
-        /* Same here...*/ 
+        /* Same here...*/
         else if ( ( res = cris_io_interface_allocate_pins( if_i2c
                                                          , 'b'
                                                          , CONFIG_ETRAX_I2C_CLK_PORT
-                                                         , CONFIG_ETRAX_I2C_CLK_PORT 
-                                                         ) 
-                  ) 
-                ) 
+                                                         , CONFIG_ETRAX_I2C_CLK_PORT
+                                                         )
+                  )
+                )
         {
             cris_io_interface_free_pins( if_i2c
                                        , 'b'
                                        , CONFIG_ETRAX_I2C_DATA_PORT
-                                       , CONFIG_ETRAX_I2C_DATA_PORT 
+                                       , CONFIG_ETRAX_I2C_DATA_PORT
                                        );
             printk( KERN_WARNING "i2c_init: Failed to get IO pin for I2C clk port\n" );
         }
@@ -700,72 +689,70 @@ int __init i2c_init( void )
  *#
  *#---------------------------------------------------------------------------
  */
+
+static struct class *i2c_class;
+
 static int __init i2c_register( void )
 {
     int res;
-/**GVC**/
-#ifdef DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
+#ifdef CONFIG_ETRAX_I2C_DYN_ALLOC
     dev_t devt;
     struct cdev *my_i2cdev = NULL;
 #endif
-/**END GVC**/
 
     res = i2c_init();
-    
+
     if ( res < 0 )
     {
         return res;
     }
-    
-/**GVC**/
-#ifdef DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
+
+#ifdef CONFIG_ETRAX_I2C_DYN_ALLOC
     res = alloc_chrdev_region( &devt, 0, 1, i2c_name );
-    
+
     if ( res < 0 )
     {
         printk( KERN_DEBUG "I2C: EI2CNOMNUMBR\n" );
         return ( res );
     }
-    
+
     my_i2cdev = cdev_alloc();
     my_i2cdev->ops = &i2c_fops;
     my_i2cdev->owner = THIS_MODULE;
-   
-    /* make device "alive" */ 
+
+    /* make device "alive" */
     res = cdev_add( my_i2cdev, devt, 1 );
-    
+
     if ( res < 0 )
-    { 
+    {
         printk( KERN_DEBUG "I2C: EI2CDADDFAIL\n" );
         return ( res );
     }
+
+    int i2c_major = MAJOR( devt );
 #else
-/**END GVC**/
     res = register_chrdev( I2C_MAJOR, i2c_name, &i2c_fops );
-    
-    if ( res < 0 ) 
+
+    if ( res < 0 )
     {
         printk( KERN_ERR "i2c: couldn't get a major number.\n" );
         return res;
     }
-/**GVC**/
+   
+    int i2c_major = I2C_MAJOR;
 #endif
-/**END GVC**/
 
-    printk( KERN_INFO "I2C driver v2.2, (c) 1999-2004 Axis Communications AB\n" );
+    printk( KERN_INFO "I2C: driver v2.3, (c) 1999-2004 Axis Communications AB\n" );
+    printk( KERN_INFO "I2C: Improvements by Geert Vancompernolle, Positive Going, BK srl\n" );
 
-/**GVC**/
-    printk( KERN_INFO "  ==> Improvements done by Geert Vancompernolle - December 2006\n" );
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    printk( KERN_INFO "I2C: with master/slave delay patch\n" );
+#endif
 
-#ifdef DYNAMIC_MAJOR_I2CDEV_NUMBER_ALLOC
-    printk( KERN_INFO "I2C Major: %d / I2C Name: %s\n", MAJOR( devt ), i2c_name );
-#else
-/**END GVC**/
-    printk( KERN_INFO "I2C Major: %d / I2C Name: %s\n", I2C_MAJOR, i2c_name );
-/**GVC**/
-#endif    
-/**END GVC**/
-    
+    i2c_class = class_create (THIS_MODULE, "i2c_etrax");
+    device_create (i2c_class, NULL,
+		   MKDEV(i2c_major,0), NULL, i2c_name);
+
     return ( 0 );
 }   /* i2c_register */
 
@@ -784,32 +771,32 @@ static int __init i2c_register( void )
  */
 int i2c_start( void )
 {
-    /* Set SCL=1, SDA=1 */
-    i2c_sda_dir_out();
-    i2c_set_sda( SDA_HIGH );
-    i2c_delay( WAITONEUS );
-    i2c_set_scl( SCL_HIGH );
-    i2c_delay( WAITONEUS );
-    
-    /* Set SCL=1, SDA=0 */
-    i2c_set_sda( SDA_LOW );
-    i2c_delay( THDSTA );
-    
-    /* Set SCL=0, SDA=0 */
-    i2c_set_scl( SCL_LOW );
-    /* We can take 1 us less than defined in spec (5 us), since the next action
-     * will be to set the dataline high or low and this action is 1 us
-     * before the clock is put high, so that makes our 5 us.
-     */
-    i2c_delay( TLOW - WAITONEUS );
-    
-    if ( i2c_sda_is_high() || i2c_scl_is_high() )
+  /* Set SCL=1, SDA=1 */
+  i2c_sda_dir_out();
+  i2c_set_sda( SDA_HIGH );
+  i2c_delay( WAITONEUS );
+  i2c_set_scl( SCL_HIGH );
+  i2c_delay( WAITONEUS );
+  
+  /* Set SCL=1, SDA=0 */
+  i2c_set_sda( SDA_LOW );
+  i2c_delay( THDSTA );
+  
+  /* Set SCL=0, SDA=0 */
+  i2c_set_scl( SCL_LOW );
+  /* We can take 1 us less than defined in spec (5 us), since the next action
+   * will be to set the dataline high or low and this action is 1 us
+   * before the clock is put high, so that makes our 5 us.
+   */
+  i2c_delay( TLOW - WAITONEUS );
+  
+  if ( i2c_sda_is_high() || i2c_scl_is_high() )
     {
-        printk( KERN_DEBUG "I2C: EI2CSTRTCOND\n" );
-        return ( EI2CSTRTCOND );
+      printk( KERN_DEBUG "I2C: EI2CSTRTCOND\n" );
+      return ( EI2CSTRTCOND );
     }
-    
-    return ( EI2CNOERRORS );
+  
+  return ( EI2CNOERRORS );
 }   /* i2c_start */
 
 
@@ -827,8 +814,11 @@ int i2c_start( void )
  */
 int i2c_stop( void )
 {
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    int n=MAXSCLRETRIES;
+#endif
     i2c_sda_dir_out();
-
+    
     /* Set SCL=0, SDA=0 */
     /* Don't change order, otherwise you might generate a start condition! */
     i2c_set_scl( SCL_LOW );
@@ -837,20 +827,33 @@ int i2c_stop( void )
     i2c_delay( WAITONEUS );
     
     /* Set SCL=1, SDA=0 */
+    
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
     i2c_set_scl( SCL_HIGH );
+    i2c_scl_dir_in();
+    for( ; n>0; n-- )
+      {
+	if( i2c_scl_is_high() )
+	  break;
+	i2c_delay( TSUSTO );
+      }
+    
+    i2c_scl_dir_out();
+#else
+    i2c_set_scl( SCL_HIGH );
+#endif
     i2c_delay( TSUSTO );
     
     /* Set SCL=1, SDA=1 */
     i2c_set_sda( SDA_HIGH );
     i2c_delay( TBUF );
-
+    
     i2c_sda_dir_in();
     
     if ( !i2c_sda_is_high() || !i2c_scl_is_high() )
-    {
-        printk( KERN_DEBUG "I2C: EI2CSTOPCOND\n" );
-        return ( EI2CSTOPCOND );
-    }
+      {
+	return ( EI2CSTOPCOND );
+      }
     
     return ( EI2CNOERRORS );
 }   /* i2c_stop */
@@ -874,17 +877,17 @@ int i2c_outbyte( unsigned char x )
 
     i2c_sda_dir_out();
 
-    for ( i = 0; i < 8; i++ ) 
+    for ( i = 0; i < 8; i++ )
     {
-        if ( x & 0x80 ) 
+        if ( x & 0x80 )
         {
             i2c_set_sda( SDA_HIGH );
-        } 
-        else 
+        }
+        else
         {
             i2c_set_sda( SDA_LOW );
         }
-        
+
         i2c_delay( TSUDAT );
         i2c_set_scl( SCL_HIGH );
         i2c_delay( THIGH );
@@ -901,16 +904,15 @@ int i2c_outbyte( unsigned char x )
         i2c_delay( TLOW - TSUDAT - WAITONEUS );
         x <<= 1;
     }
-    
+
     /* enable input */
     i2c_sda_dir_in();
-    
+
     if ( !i2c_getack() )
-    {
-        printk( KERN_DEBUG "I2C: EI2CNOACKNLD\n" );
+      {
         return( EI2CNOACKNLD );
-    }
-    
+      }
+
     return ( EI2CNOERRORS );
 }   /* i2c_outbyte */
 
@@ -929,6 +931,9 @@ int i2c_outbyte( unsigned char x )
  */
 unsigned char i2c_inbyte( void )
 {
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    int n=MAXSCLRETRIES;
+#endif
     unsigned char aBitByte = 0;
     unsigned char Mask     = 0x80;    /* !!! ATTENTION: do NOT use 'char', otherwise shifting is wrong!!! */
                                       /* Must be UNSIGNED, not SIGNED! */
@@ -940,7 +945,20 @@ unsigned char i2c_inbyte( void )
 
     while ( Mask != 0 )
     {
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+	i2c_scl_dir_in();
+	for( ; n>0; n-- )
+	{	
+		if( i2c_scl_is_high() )
+			break;
+		i2c_delay( THIGH );
+	}
+
         i2c_set_scl( SCL_HIGH );
+	i2c_scl_dir_out();
+#else
+        i2c_set_scl( SCL_HIGH );
+#endif
         i2c_delay( THIGH );
 
         if ( i2c_sda_is_high() )
@@ -978,15 +996,44 @@ unsigned char i2c_inbyte( void )
 int i2c_getack( void )
 {
     int ack = 1;
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    int n=MAXSCLRETRIES;
+#endif
 
     /* generate ACK clock pulse */
     i2c_set_scl( SCL_HIGH );
-    
+
     /* switch off I2C */
     i2c_disable();
 
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    /* set clock low */
+    i2c_set_scl( SCL_LOW );
+
     /* now wait for ack */
     i2c_delay( THIGH );
+
+    /* set clock as input */
+    i2c_scl_dir_in();
+
+    /* wait for clock to rise (n=MAXSCLRETRIES) */
+    for( ; n>0; n-- )
+    {
+	if( i2c_scl_is_high() )
+            break;
+	i2c_delay( THIGH );
+    }
+
+    i2c_set_scl( SCL_HIGH );
+
+    i2c_scl_dir_out();
+
+    i2c_delay( THIGH );
+#else
+    /* now wait for ack */
+    i2c_delay( THIGH );
+#endif
+
     /* check for ack: if SDA is high, then NACK, else ACK */
     if ( i2c_sda_is_high() )
     {
@@ -996,7 +1043,7 @@ int i2c_getack( void )
     {
         ack = 1;
     }
-    
+
     /* end clock pulse */
     i2c_enable();
     i2c_set_scl( SCL_LOW );
@@ -1005,7 +1052,7 @@ int i2c_getack( void )
 
     /* Since we "lost" already THDDAT time, we can subtract it here... */
     i2c_delay( TLOW  - THDDAT );
-    
+
     return ( ack );
 }   /* i2c_getack */
 
@@ -1024,6 +1071,10 @@ int i2c_getack( void )
  */
 void i2c_sendack( void )
 {
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    int n=MAXSCLRETRIES;
+#endif
+
     /* enable output */
     /* Clock has been set to TLOW already at end of i2c_inbyte()
      * and i2c_outbyte(), so no need to do it again.
@@ -1033,8 +1084,25 @@ void i2c_sendack( void )
     i2c_set_sda( SDA_LOW );
     /* generate clock pulse */
     i2c_delay( TSUDAT );
+
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    i2c_scl_dir_in();
+    /* wait for clock to rise (n=MAXSCLRETRIES) */
+    for( ; n>0; n-- )
+    {
+	if( i2c_scl_is_high() )
+            break;
+	i2c_delay( THIGH );
+    }
+
     i2c_set_scl( SCL_HIGH );
+    i2c_scl_dir_out();
     i2c_delay( THIGH );
+#else
+    i2c_set_scl( SCL_HIGH );
+
+    i2c_delay( THIGH );
+#endif
     i2c_set_scl( SCL_LOW );
     i2c_delay( THDDAT );
     /* reset data out */
@@ -1061,6 +1129,10 @@ void i2c_sendack( void )
  */
 void i2c_sendnack( void )
 {
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    int n=MAXSCLRETRIES;
+#endif
+
     /* make sure the SDA line is set high prior to activation of the output.
      * this way, you avoid an unnecessary peak to ground when a NACK has to
      * be created.
@@ -1072,13 +1144,30 @@ void i2c_sendnack( void )
 
     /* generate clock pulse */
     i2c_delay( TSUDAT );
+
+#ifdef CONFIG_ETRAX_I2C_SLAVE_DELAY
+    i2c_scl_dir_in();
+    /* wait for clock to rise (n=MAXSCLRETRIES) */
+    for( ; n>0; n-- )
+    {
+	if( i2c_scl_is_high() )
+            break;
+	i2c_delay( THIGH );
+    }
+
     i2c_set_scl( SCL_HIGH );
+    i2c_scl_dir_out();
     i2c_delay( THIGH );
+#else
+    i2c_set_scl( SCL_HIGH );
+
+    i2c_delay( THIGH );
+#endif
     i2c_set_scl( SCL_LOW );
     i2c_delay( TSUDAT );
     i2c_set_sda( SDA_LOW );
     i2c_delay( TLOW - TSUDAT );
-    
+
     /* There's no need to change the direction of SDA to "in" again,
      * since a NACK is always followed by a stop condition.
      * A STOP condition will put the direction of SDA back to "out"
@@ -1108,7 +1197,7 @@ void i2c_sendnack( void )
  */
 int i2c_writereg( unsigned char theSlave
                 , unsigned char theReg
-                , unsigned char theValue 
+                , unsigned char theValue
                 )
 {
     int error, cntr = 3;
@@ -1116,7 +1205,7 @@ int i2c_writereg( unsigned char theSlave
 
     spin_lock( &i2c_lock );
 
-    do 
+    do
     {
         error = 0;
         /* we don't like to be interrupted */
@@ -1128,24 +1217,24 @@ int i2c_writereg( unsigned char theSlave
         {
             error = 1;
         }
-            
+
         /* now select register */
         if ( EI2CNOACKNLD == i2c_outbyte( theReg ) )
         {
             error |= 2;
         }
-        
+
         /* send register register data */
         if ( EI2CNOACKNLD == i2c_outbyte( theValue ) )
         {
             error |= 4;
         }
-             
+
         /* end byte stream */
         i2c_stop();
         /* enable interrupt again */
         local_irq_restore( flags );
-        
+
     } while ( error && cntr-- );
 
     i2c_delay( TLOW );
@@ -1163,7 +1252,7 @@ int i2c_writereg( unsigned char theSlave
  *# DESCRIPTION  : reads the value from a certain register of an I2C device.
  *#                Function first writes the register that it wants to read
  *#                later on.
- *#  
+ *#
  *# PARAMETERS   : theSlave = slave address of the I2C device
  *#                theReg   = register of the I2C device that needs to be written
  *#
@@ -1176,7 +1265,7 @@ int i2c_writereg( unsigned char theSlave
  *#---------------------------------------------------------------------------
  */
 unsigned char i2c_readreg( unsigned char theSlave
-                         , unsigned char theReg 
+                         , unsigned char theReg
                          )
 {
     unsigned char b = 0;
@@ -1185,16 +1274,16 @@ unsigned char i2c_readreg( unsigned char theSlave
 
     spin_lock( &i2c_lock );
 
-    do 
+    do
     {
         error = 0;
-        
+
         /* we don't like to be interrupted */
         local_irq_save( flags );
-        
+
         /* generate start condition */
         i2c_start();
-    
+
         /* send slave address */
         if ( EI2CNOACKNLD == i2c_outbyte( theSlave & 0xfe ) )
         {
@@ -1207,18 +1296,18 @@ unsigned char i2c_readreg( unsigned char theSlave
         if ( EI2CNOACKNLD == i2c_outbyte( theReg ) )
         {
             error |= 2;
-        }            
+        }
 
         /* repeat start condition */
         i2c_delay( TLOW );
         i2c_start();
-        
+
         /* send slave address */
         if ( EI2CNOACKNLD == i2c_outbyte( theSlave | 0x01 ) )
         {
             error |= 1;
         }
-            
+
         /* fetch register */
         b = i2c_inbyte();
         /*
@@ -1226,13 +1315,13 @@ unsigned char i2c_readreg( unsigned char theSlave
          * instead of acked
          */
         i2c_sendnack();
-        
+
         /* end sequence */
         i2c_stop();
-        
+
         /* enable interrupt again */
         local_irq_restore( flags );
-        
+
     } while ( error && cntr-- );
 
     spin_unlock( &i2c_lock );
@@ -1246,7 +1335,7 @@ unsigned char i2c_readreg( unsigned char theSlave
  *# FUNCTION NAME: i2c_read
  *#
  *# DESCRIPTION  :
- *#  
+ *#
  *# PARAMETERS   :
  *#
  *# RETURN       :
@@ -1264,7 +1353,7 @@ int i2c_read( unsigned char slave, unsigned char* rbuf, unsigned char rlen )
  *# FUNCTION NAME: i2c_write
  *#
  *# DESCRIPTION  :
- *#  
+ *#
  *# PARAMETERS   :
  *#
  *# RETURN       :
@@ -1282,7 +1371,7 @@ int i2c_write( unsigned char slave, unsigned char* wbuf, unsigned char wlen )
  *# FUNCTION NAME: i2c_writeread
  *#
  *# DESCRIPTION  :
- *#  
+ *#
  *# PARAMETERS   :
  *#
  *# RETURN       :
