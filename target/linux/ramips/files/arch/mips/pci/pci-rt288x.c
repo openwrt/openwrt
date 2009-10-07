@@ -40,7 +40,7 @@
 #define PCI_ACCESS_READ  0
 #define PCI_ACCESS_WRITE 1
 
-void __iomem *rt2880_pci_base;
+static void __iomem *rt2880_pci_base;
 
 static u32 rt2880_pci_reg_read(u32 reg)
 {
