@@ -341,7 +341,7 @@ $(eval $(call Download,usb8388))
 
 define KernelPackage/libertas
   $(call KernelPackage/mac80211/Default)
-  DEPENDS:= @USB_SUPPORT +kmod-mac8021 +kmod-usb-core1
+  DEPENDS+= @USB_SUPPORT +kmod-mac80211 +kmod-usb-core
   TITLE:=Marvell 88W8015 Wireless Driver
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.$(LINUX_KMOD_SUFFIX) \
