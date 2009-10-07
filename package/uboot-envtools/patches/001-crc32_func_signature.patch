@@ -1,0 +1,13 @@
+Index: uboot-envtools-20080520/crc32.c
+===================================================================
+--- uboot-envtools-20080520.orig/crc32.c	2008-08-03 16:02:43.000000000 +0200
++++ uboot-envtools-20080520/crc32.c	2008-08-03 16:03:25.000000000 +0200
+@@ -154,7 +154,7 @@
+ #define DO8(buf)  DO4(buf); DO4(buf);
+ 
+ /* ========================================================================= */
+-uint32_t ZEXPORT crc32 (uint32_t crc, const Bytef *buf, uInt len)
++uLong ZEXPORT crc32 (uLong crc, const Bytef *buf, uInt len)
+ {
+ #ifdef DYNAMIC_CRC_TABLE
+     if (crc_table_empty)
