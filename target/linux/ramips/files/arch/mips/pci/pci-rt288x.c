@@ -19,7 +19,10 @@
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
 
-#define RT2880_PCI_SLOT1_BASE		0x20000000
+#define RT2880_PCI_MEM_BASE	0x20000000
+#define RT2880_PCI_MEM_SIZE	0x10000000
+#define RT2880_PCI_IO_BASE	0x00460000
+#define RT2880_PCI_IO_SIZE	0x00010000
 
 #define RT2880_PCI_REG_PCICFG_ADDR	0x00
 #define RT2880_PCI_REG_PCIMSK_ADDR	0x0c
@@ -112,15 +115,15 @@ static struct pci_ops rt2880_pci_ops = {
 
 static struct resource rt2880_pci_io_resource = {
 	.name	= "PCI MEM space",
-	.start	= 0x20000000,
-	.end	= 0x2FFFFFFF,
+	.start	= RT2880_PCI_MEM_BASE,
+	.end	= RT2880_PCI_MEM_BASE + RT2880_PCI_MEM_SIZE - 1,
 	.flags	= IORESOURCE_MEM,
 };
 
 static struct resource rt2880_pci_mem_resource = {
 	.name	= "PCI IO space",
-	.start	= 0x00460000,
-	.end	= 0x0046FFFF,
+	.start	= RT2880_PCI_IO_BASE,
+	.end	= RT2880_PCI_IO_BASE + RT2880_PCI_IO_SIZE - 1,
 	.flags	= IORESOURCE_IO,
 };
 
@@ -202,8 +205,8 @@ static int __init rt2880_pci_init(void)
 
 	rt2880_pci_reg_write(0x79, RT2880_PCI_REG_ARBCTL);
 	rt2880_pci_reg_write(0x07FF0001, RT2880_PCI_REG_BAR0SETUP_ADDR);
-	rt2880_pci_reg_write(RT2880_PCI_SLOT1_BASE, RT2880_PCI_REG_MEMBASE);
-	rt2880_pci_reg_write(0x00460000, RT2880_PCI_REG_IOBASE);
+	rt2880_pci_reg_write(RT2880_PCI_MEM_BASE, RT2880_PCI_REG_MEMBASE);
+	rt2880_pci_reg_write(RT2880_PCI_IO_BASE, RT2880_PCI_REG_IOBASE);
 	rt2880_pci_reg_write(0x08000000, RT2880_PCI_REG_IMBASEBAR0_ADDR);
 	rt2880_pci_reg_write(0x08021814, RT2880_PCI_REG_ID);
 	rt2880_pci_reg_write(0x00800001, RT2880_PCI_REG_CLASS);
