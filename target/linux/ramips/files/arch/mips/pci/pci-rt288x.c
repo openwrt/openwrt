@@ -53,15 +53,20 @@ static void rt2880_pci_reg_write(u32 val, u32 reg)
 	writel(val, rt2880_pci_base + reg);
 }
 
+static inline u32 rt2880_pci_get_cfgaddr(unsigned int bus, unsigned int slot,
+					 unsigned int func, unsigned int where)
+{
+	return ((bus << 16) | (slot << 11) | (func << 8) | (where & 0xfc) |
+		0x80000000);
+}
+
 static void config_access(unsigned char access_type, struct pci_bus *bus,
 			  unsigned int devfn, unsigned char where, u32 *data)
 {
-	unsigned int slot = PCI_SLOT(devfn);
 	unsigned int address;
-	u8 func = PCI_FUNC(devfn);
 
-	address = (bus->number << 16) | (slot << 11) | (func << 8) |
-		  (where & 0xfc) | 0x80000000;
+	address = rt2880_pci_get_cfgaddr(bus->number, PCI_SLOT(devfn),
+					 PCI_FUNC(devfn), where);
 
 	rt2880_pci_reg_write(address, RT2880_PCI_REG_CONFIG_ADDR);
 	if (access_type == PCI_ACCESS_WRITE)
@@ -157,8 +162,7 @@ static inline void read_config(unsigned long bus, unsigned long dev,
 	unsigned long address;
 	unsigned long flags;
 
-	address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) |
-		  0x80000000;
+	address = rt2880_pci_get_cfgaddr(bus, dev, func, reg);
 
 	spin_lock_irqsave(&rt2880_pci_lock, flags);
 	rt2880_pci_reg_write(address, RT2880_PCI_REG_CONFIG_ADDR);
@@ -173,8 +177,7 @@ static inline void write_config(unsigned long bus, unsigned long dev,
 	unsigned long address;
 	unsigned long flags;
 
-	address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) |
-		  0x80000000;
+	address = rt2880_pci_get_cfgaddr(bus, dev, func, reg);
 
 	spin_lock_irqsave(&rt2880_pci_lock, flags);
 	rt2880_pci_reg_write(address, RT2880_PCI_REG_CONFIG_ADDR);
