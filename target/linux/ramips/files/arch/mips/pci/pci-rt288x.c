@@ -252,8 +252,4 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 	return 0;
 }
 
-struct pci_fixup pcibios_fixups[] = {
-	{0}
-};
-
 arch_initcall(rt2880_pci_init);
