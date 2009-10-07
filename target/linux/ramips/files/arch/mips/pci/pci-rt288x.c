@@ -80,12 +80,17 @@ static int rt2880_pci_config_read(struct pci_bus *bus, unsigned int devfn,
 	config_access(PCI_ACCESS_READ, bus, devfn, where, &data);
 	spin_unlock_irqrestore(&rt2880_pci_lock, flags);
 
-	if (size == 1)
+	switch (size) {
+	case 1:
 		*val = (data >> ((where & 3) << 3)) & 0xff;
-	else if (size == 2)
+		break;
+	case 2:
 		*val = (data >> ((where & 3) << 3)) & 0xffff;
-	else
+		break;
+	case 4:
 		*val = data;
+		break;
+	}
 
 	return PCIBIOS_SUCCESSFUL;
 }
@@ -97,16 +102,21 @@ static int rt2880_pci_config_write(struct pci_bus *bus, unsigned int devfn,
 	u32 data = 0;
 
 	spin_lock_irqsave(&rt2880_pci_lock, flags);
-	if (size == 4) {
-		data = val;
-	} else {
+
+	switch (size) {
+	case 1:
 		config_access(PCI_ACCESS_READ, bus, devfn, where, &data);
-		if (size == 1)
-			data = (data & ~(0xff << ((where & 3) << 3))) |
-			       (val << ((where & 3) << 3));
-		else if (size == 2)
-			data = (data & ~(0xffff << ((where & 3) << 3))) |
-			       (val << ((where & 3) << 3));
+		data = (data & ~(0xff << ((where & 3) << 3))) |
+		       (val << ((where & 3) << 3));
+		break;
+	case 2:
+		config_access(PCI_ACCESS_READ, bus, devfn, where, &data);
+		data = (data & ~(0xffff << ((where & 3) << 3))) |
+		       (val << ((where & 3) << 3));
+		break;
+	case 4:
+		data = val;
+		break;
 	}
 
 	config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data);
