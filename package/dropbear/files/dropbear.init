@@ -34,10 +34,14 @@ dropbear_start()
 	# B) listen port
 	local port
 	config_get port "${section}" Port
+	# C) banner file
+	local bannerfile
+	config_get bannerfile ${section} BannerFile
+	[ -f $bannerfile ] || bannerfile=''
 
 	# concatenate parameters
 	local args
-	args="${nopasswd:+-s }${port:+-p ${port}} -P /var/run/${NAME}.${PIDCOUNT}.pid"
+	args="${nopasswd:+-s }${port:+-p ${port} }${bannerfile:+-b $bannerfile }-P /var/run/${NAME}.${PIDCOUNT}.pid"
 
 	# execute program and return its exit code
 	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
