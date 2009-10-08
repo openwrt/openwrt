@@ -207,7 +207,7 @@
 +			if (ROOT_DEV == 0) {
 +				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
 +					"set to be root filesystem\n");
-+				ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, i);
++				ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, slave->mtd.index);
 +			}
 +#endif
 +#ifdef CONFIG_MTD_ROOTFS_SPLIT
