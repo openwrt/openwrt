@@ -1,6 +1,6 @@
 --- a/fs/union.c
 +++ b/fs/union.c
-@@ -842,10 +842,8 @@
+@@ -842,10 +842,8 @@ static int union_copyup_dir_one(void *bu
  	/* Lookup this entry in the topmost directory */
  	dentry = lookup_one_len(name, topmost_dentry, namlen);
  
@@ -12,7 +12,7 @@
  
  	/*
  	 * If the entry already exists, one of the following is true:
-@@ -857,7 +855,6 @@
+@@ -857,7 +855,6 @@ static int union_copyup_dir_one(void *bu
  	 */
  	if (dentry->d_inode || d_is_whiteout(dentry) ||
  	    d_is_fallthru(dentry)) {
@@ -20,7 +20,7 @@
  		goto out_dput;
  	}
  
-@@ -867,7 +864,6 @@
+@@ -867,7 +864,6 @@ static int union_copyup_dir_one(void *bu
  	 * used, so each file system must implement its own way of
  	 * storing a fallthru entry.
  	 */
