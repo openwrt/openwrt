@@ -1,0 +1,29 @@
+Index: linux-2.6.30.5/drivers/watchdog/Makefile
+===================================================================
+--- linux-2.6.30.5.orig/drivers/watchdog/Makefile	2009-08-16 23:19:38.000000000 +0200
++++ linux-2.6.30.5/drivers/watchdog/Makefile	2009-09-02 18:29:51.000000000 +0200
+@@ -105,6 +105,7 @@
+ obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
+ obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
++obj-$(CONFIG_IFXMIPS_WDT) += ifxmips_wdt.o
+ 
+ # PARISC Architecture
+ 
+Index: linux-2.6.30.5/drivers/watchdog/Kconfig
+===================================================================
+--- linux-2.6.30.5.orig/drivers/watchdog/Kconfig	2009-08-16 23:19:38.000000000 +0200
++++ linux-2.6.30.5/drivers/watchdog/Kconfig	2009-09-02 18:29:51.000000000 +0200
+@@ -764,6 +764,12 @@
+ 	help
+ 	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
+ 
++config IFXMIPS_WDT
++	bool "IFXMips watchdog"
++	depends on IFXMIPS
++	help
++	  Hardware driver for the IFXMIPS Watchdog Timer.
++
+ # PARISC Architecture
+ 
+ # POWERPC Architecture

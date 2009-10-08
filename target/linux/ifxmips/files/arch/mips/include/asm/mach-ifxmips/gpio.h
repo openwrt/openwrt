@@ -22,8 +22,8 @@
 #ifndef _IFXMIPS_GPIO_H_
 #define _IFXMIPS_GPIO_H_
 
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_gpio.h>
+#include <ifxmips.h>
+#include <ifxmips_gpio.h>
 
 #define GPIO_TO_PORT(x) ((x > 15) ? (1) : (0))
 #define GPIO_TO_GPIO(x) ((x > 15) ? (x-16) : (x))

@@ -4,11 +4,11 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/mm.h>
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/addrspace.h>
 #include <linux/vmalloc.h>
-#include <asm/ifxmips/ifxmips_ebu.h>
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
+#include <ifxmips_ebu.h>
 
 #define IFXMIPS_PCI_CFG_BUSNUM_SHF 16
 #define IFXMIPS_PCI_CFG_DEVNUM_SHF 11

@@ -18,8 +18,6 @@
  */
 
 #include <linux/init.h>
-
-
 #include <linux/cpu.h>
 
 #include <asm/time.h>
@@ -27,11 +25,11 @@
 #include <asm/irq.h>
 #include <asm/bootinfo.h>
 
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
-#include <asm/ifxmips/ifxmips_pmu.h>
-#include <asm/mach-ifxmips/cgu.h>
-#include <asm/ifxmips/ifxmips_prom.h>
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
+#include <ifxmips_pmu.h>
+#include <ifxmips_cgu.h>
+#include <ifxmips_prom.h>
 
 static unsigned int r4k_offset;
 static unsigned int r4k_cur;

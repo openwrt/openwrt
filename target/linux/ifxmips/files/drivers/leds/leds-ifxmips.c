@@ -31,9 +31,9 @@
 #include <linux/leds.h>
 #include <linux/delay.h>
 
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_gpio.h>
-#include <asm/ifxmips/ifxmips_pmu.h>
+#include <ifxmips.h>
+#include <ifxmips_gpio.h>
+#include <ifxmips_pmu.h>
 
 #define DRVNAME					"ifxmips_led"
 

@@ -34,10 +34,12 @@
 #include <linux/ethtool.h>
 #include <linux/init.h>
 #include <linux/delay.h>
+
 #include <asm/checksum.h>
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_dma.h>
-#include <asm/ifxmips/ifxmips_pmu.h>
+
+#include <ifxmips.h>
+#include <ifxmips_dma.h>
+#include <ifxmips_pmu.h>
 
 struct ifxmips_mii_priv {
 	struct net_device_stats stats;

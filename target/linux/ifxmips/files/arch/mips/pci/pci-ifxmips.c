@@ -4,11 +4,11 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/mm.h>
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
-#include <asm/mach-ifxmips/cgu.h>
 #include <asm/addrspace.h>
 #include <linux/vmalloc.h>
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
+#include <ifxmips_cgu.h>
 
 #define IFXMIPS_PCI_MEM_BASE    0x18000000
 #define IFXMIPS_PCI_MEM_SIZE    0x02000000
@@ -49,6 +49,8 @@ static struct pci_controller ifxmips_pci_controller =
 	.io_offset	= 0x00000000UL,
 };
 
+/* the cpu can can generate the 33Mhz or rely on an external clock the cgu needs the
+   proper setting, otherwise the cpu hangs. we have no way of runtime detecting this */
 u32 ifxmips_pci_mapped_cfg;
 int ifxmips_pci_external_clock = 0;
 

@@ -26,11 +26,13 @@
 #include <linux/init.h>
 #include <linux/uaccess.h>
 #include <linux/unistd.h>
+#include <linux/errno.h>
+
 #include <asm/irq.h>
 #include <asm/div64.h>
-#include <linux/errno.h>
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/mach-ifxmips/cgu.h>
+
+#include <ifxmips.h>
+#include <ifxmips_cgu.h>
 
 static unsigned int cgu_get_pll0_fdiv(void);
 unsigned int ifxmips_clocks[] = {CLOCK_167M, CLOCK_133M, CLOCK_111M, CLOCK_83M };

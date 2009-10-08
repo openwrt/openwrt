@@ -19,10 +19,10 @@
 #include <linux/errno.h>
 #include <linux/io.h>
 
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
-#include <asm/ifxmips/ifxmips_dma.h>
-#include <asm/ifxmips/ifxmips_pmu.h>
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
+#include <ifxmips_dma.h>
+#include <ifxmips_pmu.h>
 
 /*25 descriptors for each dma channel,4096/8/20=25.xx*/
 #define IFXMIPS_DMA_DESCRIPTOR_OFFSET 25

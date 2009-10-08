@@ -48,8 +48,8 @@
 
 #include <asm/system.h>
 
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
 
 #define PORT_IFXMIPSASC  111
 

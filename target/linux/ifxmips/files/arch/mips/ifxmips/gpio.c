@@ -34,10 +34,12 @@
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
 #include <linux/platform_device.h>
-#include <net/sock.h>
 #include <linux/uaccess.h>
 #include <linux/semaphore.h>
-#include <asm/ifxmips/ifxmips.h>
+
+#include <net/sock.h>
+
+#include <ifxmips.h>
 
 #define MAX_PORTS			2
 #define PINS_PER_PORT		16
