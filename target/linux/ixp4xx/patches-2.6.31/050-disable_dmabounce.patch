@@ -1,0 +1,164 @@
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -384,7 +384,6 @@ config ARCH_IXP4XX
+ 	select GENERIC_GPIO
+ 	select GENERIC_TIME
+ 	select GENERIC_CLOCKEVENTS
+-	select DMABOUNCE if PCI
+ 	help
+ 	  Support for Intel's IXP4XX (XScale) family of processors.
+ 
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -199,6 +199,45 @@ config IXP4XX_INDIRECT_PCI
+ 	  need to use the indirect method instead. If you don't know
+ 	  what you need, leave this option unselected.
+ 
++config IXP4XX_LEGACY_DMABOUNCE
++	bool "legacy PCI DMA bounce support"
++	depends on PCI
++	default n
++	select DMABOUNCE
++	help
++	  The IXP4xx is limited to a 64MB window for PCI DMA, which
++	  requires that PCI accesses above 64MB are bounced via buffers
++	  below 64MB. Furthermore the IXP4xx has an erratum where PCI
++	  read prefetches just below the 64MB limit can trigger lockups.
++
++	  The kernel has traditionally handled these two issue by using
++	  ARM specific DMA bounce support code for all accesses >= 64MB.
++	  That code causes problems of its own, so it is desirable to
++	  disable it. As the kernel now has a workaround for the PCI read
++	  prefetch erratum, it no longer requires the ARM bounce code.
++
++	  Enabling this option makes IXP4xx continue to use the problematic
++	  ARM DMA bounce code. Disabling this option makes IXP4xx use the
++	  kernel's generic bounce code.
++
++	  Say 'N'.
++
++config IXP4XX_ZONE_DMA
++	bool "Support > 64MB RAM"
++	depends on !IXP4XX_LEGACY_DMABOUNCE
++	default y
++	select ZONE_DMA
++	help
++	  The IXP4xx is limited to a 64MB window for PCI DMA, which
++	  requires that PCI accesses above 64MB are bounced via buffers
++	  below 64MB.
++
++	  Disabling this option allows you to omit the support code for
++	  DMA-able memory allocations and DMA bouncing, but the kernel
++	  will then not work properly if more than 64MB of RAM is present.
++
++	  Say 'Y' unless your platform is limited to <= 64MB of RAM.
++
+ config IXP4XX_QMGR
+ 	tristate "IXP4xx Queue Manager support"
+ 	help
+--- a/arch/arm/mach-ixp4xx/common-pci.c
++++ b/arch/arm/mach-ixp4xx/common-pci.c
+@@ -321,27 +321,38 @@ static int abort_handler(unsigned long a
+  */
+ static int ixp4xx_pci_platform_notify(struct device *dev)
+ {
+-	if(dev->bus == &pci_bus_type) {
+-		*dev->dma_mask =  SZ_64M - 1;
++	if (dev->bus == &pci_bus_type) {
++		*dev->dma_mask = SZ_64M - 1;
+ 		dev->coherent_dma_mask = SZ_64M - 1;
++#ifdef CONFIG_DMABOUNCE
+ 		dmabounce_register_dev(dev, 2048, 4096);
++#endif
+ 	}
+ 	return 0;
+ }
+ 
+ static int ixp4xx_pci_platform_notify_remove(struct device *dev)
+ {
+-	if(dev->bus == &pci_bus_type) {
++#ifdef CONFIG_DMABOUNCE
++	if (dev->bus == &pci_bus_type)
+ 		dmabounce_unregister_dev(dev);
+-	}
++#endif
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_DMABOUNCE
+ int dma_needs_bounce(struct device *dev, dma_addr_t dma_addr, size_t size)
+ {
++	/* Note that this returns true for the last page below 64M due to
++	 * IXP4xx erratum 15 (SCR 1289), which states that PCI prefetches
++	 * can cross the boundary between valid memory and a reserved region
++	 * causing AHB bus errors and a lock-up.
++	 */
+ 	return (dev->bus == &pci_bus_type ) && ((dma_addr + size) >= SZ_64M);
+ }
++#endif
+ 
++#ifdef CONFIG_ZONE_DMA
+ /*
+  * Only first 64MB of memory can be accessed via PCI.
+  * We use GFP_DMA to allocate safe buffers to do map/unmap.
+@@ -364,6 +375,7 @@ void __init ixp4xx_adjust_zones(int node
+ 	zhole_size[1] = zhole_size[0];
+ 	zhole_size[0] = 0;
+ }
++#endif
+ 
+ void __init ixp4xx_pci_preinit(void)
+ {
+@@ -517,19 +529,35 @@ struct pci_bus * __devinit ixp4xx_scan_b
+ int
+ pci_set_dma_mask(struct pci_dev *dev, u64 mask)
+ {
+-	if (mask >= SZ_64M - 1 )
++#ifdef CONFIG_DMABOUNCE
++	if (mask >= SZ_64M - 1)
+ 		return 0;
+ 
+ 	return -EIO;
++#else
++	/* Only honour masks < SZ_64M. Silently ignore masks >= SZ_64M
++	   as generic drivers do not know about IXP4xx PCI DMA quirks. */
++	if (mask < SZ_64M)
++		dev->dma_mask = mask;
++	return 0;
++#endif
+ }
+     
+ int
+ pci_set_consistent_dma_mask(struct pci_dev *dev, u64 mask)
+ {
+-	if (mask >= SZ_64M - 1 )
++#ifdef CONFIG_DMABOUNCE
++	if (mask >= SZ_64M - 1)
+ 		return 0;
+ 
+ 	return -EIO;
++#else
++	/* Only honour masks < SZ_64M. Silently ignore masks >= SZ_64M
++	   as generic drivers do not know about IXP4xx PCI DMA quirks. */
++	if (mask < SZ_64M)
++		dev->dev.coherent_dma_mask = mask;
++	return 0;
++#endif
+ }
+ 
+ EXPORT_SYMBOL(ixp4xx_pci_read);
+--- a/arch/arm/mach-ixp4xx/include/mach/memory.h
++++ b/arch/arm/mach-ixp4xx/include/mach/memory.h
+@@ -16,10 +16,12 @@
+ 
+ #if !defined(__ASSEMBLY__) && defined(CONFIG_PCI)
+ 
++#ifdef CONFIG_ZONE_DMA
+ void ixp4xx_adjust_zones(int node, unsigned long *size, unsigned long *holes);
+ 
+ #define arch_adjust_zones(node, size, holes) \
+ 	ixp4xx_adjust_zones(node, size, holes)
++#endif
+ 
+ #define ISA_DMA_THRESHOLD (SZ_64M - 1)
+ #define MAX_DMA_ADDRESS		(PAGE_OFFSET + SZ_64M)
