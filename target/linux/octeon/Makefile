@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
-FEATURES:=squashfs jffs2 pci
+FEATURES:=squashfs jffs2 pci usb
 CFLAGS:=-Os -pipe -mtune=octeon -funit-at-a-time
 
 LINUX_VERSION:=2.6.30.8
