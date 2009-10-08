@@ -22,7 +22,8 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
-#include <asm/ifxmips/ifxmips.h>
+
+#include <ifxmips.h>
 
 void ifxmips_pmu_enable(unsigned int module)
 {

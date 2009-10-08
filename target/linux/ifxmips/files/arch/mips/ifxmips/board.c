@@ -31,10 +31,12 @@
 #include <linux/time.h>
 #include <linux/io.h>
 #include <linux/gpio.h>
+
 #include <asm/bootinfo.h>
 #include <asm/irq.h>
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
+
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
 
 #define MAX_BOARD_NAME_LEN		32
 #define MAX_IFXMIPS_DEVS		9

@@ -29,9 +29,9 @@
 #include <linux/magic.h>
 #include <linux/platform_device.h>
 
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_prom.h>
-#include <asm/ifxmips/ifxmips_ebu.h>
+#include <ifxmips.h>
+#include <ifxmips_prom.h>
+#include <ifxmips_ebu.h>
 
 #ifndef CONFIG_MTD_PARTITIONS
 #error Please enable CONFIG_MTD_PARTITIONS
@@ -244,7 +244,7 @@ static int ifxmips_mtd_probe(struct platform_device *dev)
 	add_mtd_partitions(ifxmips_mtd, &ifxmips_meta_partition, 1);
 
 	printk(KERN_INFO "ifxmips_mtd: added %s flash with %dMB\n",
-		ifxmips_map.name, ifxmips_mtd->size >> 20);
+		ifxmips_map.name, ifxmips_mtd->size);
 	return 0;
 }
 

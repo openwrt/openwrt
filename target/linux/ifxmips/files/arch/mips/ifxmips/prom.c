@@ -20,8 +20,10 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/bootmem.h>
+
 #include <asm/bootinfo.h>
-#include <asm/ifxmips/ifxmips.h>
+
+#include <ifxmips.h>
 
 static char buf[1024]; /* for prom_printf() */
 

@@ -1,0 +1,28 @@
+Index: linux-2.6.30.5/drivers/serial/Kconfig
+===================================================================
+--- linux-2.6.30.5.orig/drivers/serial/Kconfig	2009-08-16 23:19:38.000000000 +0200
++++ linux-2.6.30.5/drivers/serial/Kconfig	2009-09-02 18:29:51.000000000 +0200
+@@ -1365,6 +1365,14 @@
+ 	help
+ 	  Support for Console on the NWP serial ports.
+ 
++config SERIAL_IFXMIPS
++	bool "IFXMips serial driver"
++	depends on IFXMIPS
++	select SERIAL_CORE
++	select SERIAL_CORE_CONSOLE
++	help
++	  Driver for the ifxmipss built in ASC hardware
++
+ config SERIAL_QE
+ 	tristate "Freescale QUICC Engine serial port support"
+ 	depends on QUICC_ENGINE
+Index: linux-2.6.30.5/drivers/serial/Makefile
+===================================================================
+--- linux-2.6.30.5.orig/drivers/serial/Makefile	2009-08-16 23:19:38.000000000 +0200
++++ linux-2.6.30.5/drivers/serial/Makefile	2009-09-02 18:29:51.000000000 +0200
+@@ -77,3 +77,4 @@
+ obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
+ obj-$(CONFIG_KGDB_SERIAL_CONSOLE) += kgdboc.o
+ obj-$(CONFIG_SERIAL_QE) += ucc_uart.o
++obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o

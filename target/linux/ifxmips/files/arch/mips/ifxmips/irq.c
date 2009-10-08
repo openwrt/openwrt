@@ -26,9 +26,10 @@
 
 #include <asm/bootinfo.h>
 #include <asm/irq.h>
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
 #include <asm/irq_cpu.h>
+
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
 
 void ifxmips_disable_irq(unsigned int irq_nr)
 {

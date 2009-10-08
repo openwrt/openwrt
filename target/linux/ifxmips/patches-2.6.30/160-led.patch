@@ -1,0 +1,29 @@
+Index: linux-2.6.30.5/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.30.5.orig/drivers/leds/Kconfig	2009-09-02 18:22:49.000000000 +0200
++++ linux-2.6.30.5/drivers/leds/Kconfig	2009-09-02 18:29:51.000000000 +0200
+@@ -227,6 +227,12 @@
+ 	  This option enables support for BD2802GU RGB LED driver chips
+ 	  accessed via the I2C bus.
+ 
++config LEDS_IFXMIPS
++	tristate "LED Support for IFXMIPS  LEDs"
++	depends on LEDS_CLASS && IFXMIPS
++	help
++	  This option enables support for the CM-X270 LEDs.
++
+ comment "LED Triggers"
+ 
+ config LEDS_TRIGGERS
+Index: linux-2.6.30.5/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.30.5.orig/drivers/leds/Makefile	2009-09-02 18:22:49.000000000 +0200
++++ linux-2.6.30.5/drivers/leds/Makefile	2009-09-02 18:31:23.000000000 +0200
+@@ -27,6 +27,7 @@
+ obj-$(CONFIG_LEDS_DA903X)		+= leds-da903x.o
+ obj-$(CONFIG_LEDS_WM8350)		+= leds-wm8350.o
+ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
++obj-$(CONFIG_LEDS_IFXMIPS)		+= leds-ifxmips.o
+ 
+ # LED SPI Drivers
+ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-dac124s085.o

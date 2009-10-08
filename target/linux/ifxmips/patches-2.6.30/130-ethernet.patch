@@ -1,0 +1,29 @@
+Index: linux-2.6.30.5/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.30.5.orig/drivers/net/Kconfig	2009-09-02 18:22:49.000000000 +0200
++++ linux-2.6.30.5/drivers/net/Kconfig	2009-09-02 18:29:51.000000000 +0200
+@@ -353,6 +353,12 @@
+ 
+ source "drivers/net/arm/Kconfig"
+ 
++config IFXMIPS_MII0
++	tristate "Infineon IFXMips eth0 driver"
++	depends on IFXMIPS
++	help
++	  Support for the MII0 inside the IFXMips SOC
++
+ config AX88796
+ 	tristate "ASIX AX88796 NE2000 clone support"
+ 	depends on ARM || MIPS || SUPERH
+Index: linux-2.6.30.5/drivers/net/Makefile
+===================================================================
+--- linux-2.6.30.5.orig/drivers/net/Makefile	2009-09-02 18:22:49.000000000 +0200
++++ linux-2.6.30.5/drivers/net/Makefile	2009-09-02 18:30:37.000000000 +0200
+@@ -234,6 +234,7 @@
+ obj-$(CONFIG_MLX4_CORE) += mlx4/
+ obj-$(CONFIG_ENC28J60) += enc28j60.o
+ obj-$(CONFIG_ETHOC) += ethoc.o
++obj-$(CONFIG_IFXMIPS_MII0) += ifxmips_mii0.o
+ 
+ obj-$(CONFIG_XTENSA_XT2000_SONIC) += xtsonic.o
+ 
