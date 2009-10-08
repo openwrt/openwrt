@@ -1,6 +1,6 @@
 --- a/fs/jffs2/dir.c
 +++ b/fs/jffs2/dir.c
-@@ -34,6 +34,9 @@
+@@ -34,6 +34,9 @@ static int jffs2_mknod (struct inode *,s
  static int jffs2_rename (struct inode *, struct dentry *,
  			 struct inode *, struct dentry *);
  
@@ -10,7 +10,7 @@
  const struct file_operations jffs2_dir_operations =
  {
  	.read =		generic_read_dir,
-@@ -55,6 +58,8 @@
+@@ -55,6 +58,8 @@ const struct inode_operations jffs2_dir_
  	.rmdir =	jffs2_rmdir,
  	.mknod =	jffs2_mknod,
  	.rename =	jffs2_rename,
@@ -19,7 +19,7 @@
  	.permission =	jffs2_permission,
  	.setattr =	jffs2_setattr,
  	.setxattr =	jffs2_setxattr,
-@@ -98,8 +103,21 @@
+@@ -98,8 +103,21 @@ static struct dentry *jffs2_lookup(struc
  			fd = fd_list;
  		}
  	}
@@ -43,7 +43,7 @@
  	mutex_unlock(&dir_f->sem);
  	if (ino) {
  		inode = jffs2_iget(dir_i->i_sb, ino);
-@@ -155,7 +173,9 @@
+@@ -155,7 +173,9 @@ static int jffs2_readdir(struct file *fi
  				  fd->name, fd->ino, fd->type, curofs, offset));
  			continue;
  		}
@@ -54,7 +54,7 @@
  			D2(printk(KERN_DEBUG "Skipping deletion dirent \"%s\"\n", fd->name));
  			offset++;
  			continue;
-@@ -498,6 +518,11 @@
+@@ -498,6 +518,11 @@ static int jffs2_mkdir (struct inode *di
  		return PTR_ERR(inode);
  	}
  
@@ -66,7 +66,7 @@
  	inode->i_op = &jffs2_dir_inode_operations;
  	inode->i_fop = &jffs2_dir_operations;
  
-@@ -779,6 +804,82 @@
+@@ -779,6 +804,82 @@ static int jffs2_mknod (struct inode *di
  	return 0;
  }
  
@@ -151,7 +151,7 @@
  {
 --- a/fs/jffs2/fs.c
 +++ b/fs/jffs2/fs.c
-@@ -301,6 +301,10 @@
+@@ -301,6 +301,10 @@ struct inode *jffs2_iget(struct super_bl
  
  		inode->i_op = &jffs2_dir_inode_operations;
  		inode->i_fop = &jffs2_dir_operations;
@@ -164,7 +164,7 @@
  	case S_IFREG:
 --- a/fs/jffs2/super.c
 +++ b/fs/jffs2/super.c
-@@ -172,7 +172,7 @@
+@@ -172,7 +172,7 @@ static int jffs2_fill_super(struct super
  
  	sb->s_op = &jffs2_super_operations;
  	sb->s_export_op = &jffs2_export_ops;
