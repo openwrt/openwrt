@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=ppc40x
 BOARDNAME:=AMCC/IBM PPC40x
-FEATURES:=squashfs usb
+FEATURES:=squashfs
 CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=405
 
 LINUX_VERSION:=2.6.30.8
