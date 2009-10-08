@@ -204,6 +204,7 @@ static struct gpio_led easy4010_leds[] = {
 
 static struct ifxmips_board boards[] = {
 	{
+		/* infineon eval kit */
 		.type = EASY50712,
 		.name = "EASY50712",
 		.system_type = SYSTEM_DANUBE_CHIPID1,
@@ -214,6 +215,7 @@ static struct ifxmips_board boards[] = {
 			.end = (1 << 0) | (1 << 1)},
 		.ifxmips_leds = easy50712_leds,
 	}, {
+		/* infineon eval kit */
 		.type = EASY4010,
 		.name = "EASY4010",
 		.system_type = SYSTEM_TWINPASS_CHIPID,
@@ -224,6 +226,7 @@ static struct ifxmips_board boards[] = {
 			.end = (1 << 0) | (1 << 1)},
 		.ifxmips_leds = easy4010_leds,
 	}, {
+		/* arcaydian annex-a board used by thompson, airties, ... */
 		.type = ARV4519,
 		.name = "ARV4519",
 		.system_type = SYSTEM_DANUBE_CHIPID2,
@@ -361,6 +364,7 @@ int __init ifxmips_init_devices(void)
 		ifxmips_led_data.num_leds = ARRAY_SIZE(easy4010_leds);
 		break;
 	case ARV4519:
+		/* set some sane defaults for the gpios */
 		gpio_set_value(3, 0);
 		gpio_set_value(4, 0);
 		gpio_set_value(5, 0);

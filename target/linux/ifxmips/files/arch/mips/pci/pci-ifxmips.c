@@ -181,7 +181,6 @@ pcibios_init(void)
 	pci_probe_only = 0;
 	printk("PCI: Probing PCI hardware on host bus 0.\n");
 	ifxmips_pci_startup ();
-	//	IFXMIPS_PCI_REG32(PCI_CR_CLK_CTRL_REG) &= (~8);
 	ifxmips_pci_mapped_cfg = (u32)ioremap_nocache(0x17000000, 0x800 * 16);
 	printk("IFXMips PCI mapped to 0x%08lX\n", (unsigned long)ifxmips_pci_mapped_cfg);
 	ifxmips_pci_controller.io_map_base = (unsigned long)ioremap(IFXMIPS_PCI_IO_BASE, IFXMIPS_PCI_IO_SIZE - 1);

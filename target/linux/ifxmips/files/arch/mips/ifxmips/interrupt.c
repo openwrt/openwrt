@@ -111,6 +111,8 @@ static struct hw_interrupt_type ifxmips_irq_type = {
 	.end = ifxmips_end_irq,
 };
 
+/* silicon bug causes only the msb set to 1 to be valid. all
+   other bits might be bogus */
 static inline int ls1bit32(unsigned long x)
 {
 	__asm__ (

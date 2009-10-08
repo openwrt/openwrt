@@ -383,5 +383,5 @@ module_exit(ifxmips_mii_cleanup);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
-MODULE_DESCRIPTION("ethernet map driver for IFXMIPS boards");
+MODULE_DESCRIPTION("ethernet driver for IFXMIPS boards");
 
