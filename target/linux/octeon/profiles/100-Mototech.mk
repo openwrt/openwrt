@@ -7,7 +7,8 @@
 
 define Profile/mototech
   NAME:=Mototech evaluation board
-  PACKAGES:=kmod-ath9k kmod-ata-core kmod-ata-sil24 kmod-usb-core kmod-usb2
+  PACKAGES:=kmod-ath9k kmod-ata-core kmod-ata-sil24 kmod-usb-core kmod-usb2 \
+		kmod-usb-octeon
 endef
 
 define Profile/mototech/Description
