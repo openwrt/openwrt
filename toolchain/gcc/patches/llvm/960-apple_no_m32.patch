@@ -1,0 +1,28 @@
+--- a/configure
++++ b/configure
+@@ -1833,11 +1833,6 @@ case "${host}" in
+   # APPLE LOCAL begin dynamic-no-pic
+   i[3456789]86-*-darwin*)
+     host_makefile_frag="config/mh-x86-darwin"
+-    # gcc can default to x86_64 code generation, avoid that
+-    if test "${build}" = "${host}"; then
+-      CC="${CC-gcc} -m32"
+-      CXX="${CXX-g++} -m32"
+-    fi
+     ;;
+   # APPLE LOCAL end dynamic-no-pic
+   powerpc-*-aix*)
+--- a/configure.in
++++ b/configure.in
+@@ -993,11 +993,6 @@ case "${host}" in
+   # APPLE LOCAL begin dynamic-no-pic
+   i[[3456789]]86-*-darwin*)
+     host_makefile_frag="config/mh-x86-darwin"
+-    # gcc can default to x86_64 code generation, avoid that
+-    if test "${build}" = "${host}"; then
+-      CC="${CC-gcc} -m32"
+-      CXX="${CXX-g++} -m32"
+-    fi
+     ;;
+   # APPLE LOCAL end dynamic-no-pic
+   powerpc-*-aix*)

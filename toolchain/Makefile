@@ -46,6 +46,11 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endif
 endif
 
+ifdef CONFIG_GCC_VERSION_LLVM
+  $(curdir)/builddirs += llvm
+  $(curdir)/gcc/prepare += $(curdir)/llvm/install
+endif
+
 ifneq ($(ARCH),)
   $(TOOLCHAIN_DIR)/info.mk: .config
 	@for dir in $(TOOLCHAIN_DIR); do ( \
