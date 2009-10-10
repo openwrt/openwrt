@@ -22,24 +22,38 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gcc
 PKG_VERSION:=$(call qstrip,$(CONFIG_GCC_VERSION))
+GCC_VERSION:=$(PKG_VERSION)
+GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 
-PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+ifdef CONFIG_GCC_VERSION_LLVM
+  PKG_SOURCE_VERSION:=c98c494b72ff875884c0c7286be67f16f9f6d7ab
+  PKG_REV:=83504
+  GCC_DIR:=llvm-gcc-4.2-r$(PKG_REV)
+  GCC_VERSION:=4.2.1
+  PKG_SOURCE:=$(GCC_DIR).tar.gz
+  PKG_SOURCE_PROTO:=git
+  PKG_SOURCE_URL:=git://repo.or.cz/llvm-gcc-4.2.git
+  PKG_SOURCE_SUBDIR:=$(GCC_DIR)
+  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
+else
+  PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
+  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),3.4.6)
-  PKG_MD5SUM:=4a21ac777d4b5617283ce488b808da7b
-endif
-ifeq ($(PKG_VERSION),4.1.2)
-  PKG_MD5SUM:=a4a3eb15c96030906d8494959eeda23c
-endif
-ifeq ($(PKG_VERSION),4.2.4)
-  PKG_MD5SUM:=d79f553e7916ea21c556329eacfeaa16
-endif
-ifeq ($(PKG_VERSION),4.3.3)
-  PKG_MD5SUM:=cc3c5565fdb9ab87a05ddb106ba0bd1f
-endif
-ifeq ($(PKG_VERSION),4.4.0)
-  PKG_MD5SUM:=cf5d787bee57f38168b74d65a7c0e6fd
+  ifeq ($(PKG_VERSION),3.4.6)
+    PKG_MD5SUM:=4a21ac777d4b5617283ce488b808da7b
+  endif
+  ifeq ($(PKG_VERSION),4.1.2)
+    PKG_MD5SUM:=a4a3eb15c96030906d8494959eeda23c
+  endif
+  ifeq ($(PKG_VERSION),4.2.4)
+    PKG_MD5SUM:=d79f553e7916ea21c556329eacfeaa16
+  endif
+  ifeq ($(PKG_VERSION),4.3.3)
+    PKG_MD5SUM:=cc3c5565fdb9ab87a05ddb106ba0bd1f
+  endif
+  ifeq ($(PKG_VERSION),4.4.0)
+    PKG_MD5SUM:=cf5d787bee57f38168b74d65a7c0e6fd
+  endif
 endif
 
 PATCH_DIR=./patches/$(PKG_VERSION)
@@ -71,6 +85,7 @@ GCC_CONFIGURE:= \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
+		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm)
 
 ifneq ($(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),)
   GCC_BUILD_TARGET_LIBGCC:=y
@@ -130,11 +145,12 @@ GCC_CONFIGURE_STAGE2:= \
 GCC_MAKE:= \
 	export SHELL="$(BASH)"; \
 	$(MAKE) \
-
+		CFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
+		CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
 
 define Host/SetToolchainInfo
 	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
-	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(GCC_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
 
 
@@ -175,7 +191,7 @@ define Stage1/Install
 		$(if $(GCC_BUILD_TARGET_LIBGCC),install-target-libgcc)
 	
 	# XXX: glibc insists on linking against libgcc_eh
-	( cd $(TOOLCHAIN_DIR)/usr/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
+	( cd $(TOOLCHAIN_DIR)/usr/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION) ; \
 		[ -e libgcc_eh.a ] || ln -sf libgcc.a libgcc_eh.a ; \
 		cp libgcc.a libgcc_initial.a; \
 	)
@@ -231,7 +247,7 @@ endef
 define Host/Prepare
 	$(call Host/SetToolchainInfo)
 	$(call Host/Prepare/Default)
-	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	ln -snf $(GCC_DIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/
 	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(HOST_BUILD_DIR)/gcc/version.c
 	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(HOST_BUILD_DIR)/gcc/version.c

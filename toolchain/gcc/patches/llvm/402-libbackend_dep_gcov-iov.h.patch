@@ -1,0 +1,11 @@
+--- a/gcc/Makefile.in
++++ b/gcc/Makefile.in
+@@ -3001,7 +3001,7 @@ ifeq ($(LLVMOBJDIR),)
+ # LLVM LOCAL
+ libbackend.o : $(OBJS-common:.o=.c) $(out_file) $(out_cxx_file) \
+   insn-config.h insn-flags.h insn-codes.h insn-constants.h \
+-  insn-attr.h  $(DATESTAMP) $(BASEVER) $(DEVPHASE)
++  insn-attr.h  $(DATESTAMP) $(BASEVER) $(DEVPHASE) gcov-iov.h
+ 	$(CC) $(ALL_CFLAGS) $(ALL_CPPFLAGS) \
+ 	  -DTARGET_NAME=\"$(target_noncanonical)\" \
+ 	  -DLOCALEDIR=\"$(localedir)\" \

@@ -1,0 +1,11 @@
+--- a/libstdc++-v3/include/c_std/std_cstdio.h
++++ b/libstdc++-v3/include/c_std/std_cstdio.h
+@@ -144,7 +144,7 @@ _GLIBCXX_BEGIN_NAMESPACE(std)
+ 
+ _GLIBCXX_END_NAMESPACE
+ 
+-#if _GLIBCXX_USE_C99
++#if _GLIBCXX_USE_C99 || defined(__UCLIBC__)
+ 
+ #undef snprintf
+ #undef vfscanf

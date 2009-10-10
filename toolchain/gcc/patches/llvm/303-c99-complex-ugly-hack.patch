@@ -1,0 +1,12 @@
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -7516,6 +7516,9 @@ cat confdefs.h >>conftest.$ac_ext
+ cat >>conftest.$ac_ext <<_ACEOF
+ /* end confdefs.h.  */
+ #include <complex.h>
++#ifdef __UCLIBC__
++#error ugly hack to make sure configure test fails here for cross until uClibc supports the complex funcs
++#endif
+ int
+ main ()
+ {

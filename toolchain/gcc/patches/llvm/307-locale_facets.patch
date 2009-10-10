@@ -1,0 +1,26 @@
+This patch fixes a bug into ostream::operator<<(double) due to the wrong size
+passed into the __convert_from_v method. The wrong size is then passed to
+std::snprintf function, that, on uClibc, doens't handle sized 0 buffer.
+
+Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+
+--- a/libstdc++-v3/include/bits/locale_facets.tcc
++++ b/libstdc++-v3/include/bits/locale_facets.tcc
+@@ -1149,7 +1149,7 @@ _GLIBCXX_BEGIN_LDBL_NAMESPACE
+ 	const int __cs_size = __fixed ? __max_exp + __prec + 4
+ 	                              : __max_digits * 2 + __prec;
+ 	char* __cs = static_cast<char*>(__builtin_alloca(__cs_size));
+-	__len = std::__convert_from_v(_S_get_c_locale(), __cs, 0, __fbuf, 
++	__len = std::__convert_from_v(_S_get_c_locale(), __cs, __cs_size, __fbuf, 
+ 				      __prec, __v);
+ #endif
+ 
+@@ -1789,7 +1789,7 @@ _GLIBCXX_BEGIN_LDBL_NAMESPACE
+       // max_exponent10 + 1 for the integer part, + 2 for sign and '\0'.
+       const int __cs_size = numeric_limits<long double>::max_exponent10 + 3;
+       char* __cs = static_cast<char*>(__builtin_alloca(__cs_size));
+-      int __len = std::__convert_from_v(_S_get_c_locale(), __cs, 0, "%.*Lf", 
++      int __len = std::__convert_from_v(_S_get_c_locale(), __cs, __cs_size, "%.*Lf", 
+ 					0, __units);
+ #endif
+       string_type __digits(__len, char_type());

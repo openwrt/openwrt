@@ -59,6 +59,10 @@ define Build/Configure
 		oldconfig
 endef
 
+ifdef CONFIG_GCC_VERSION_LLVM
+  TARGET_CFLAGS += -fnested-functions
+endif
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \

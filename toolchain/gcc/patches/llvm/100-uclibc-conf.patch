@@ -1,0 +1,200 @@
+--- a/libgomp/configure
++++ b/libgomp/configure
+@@ -3893,7 +3893,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/gcc/config/cris/linux.h
++++ b/gcc/config/cris/linux.h
+@@ -74,7 +74,11 @@ Boston, MA 02110-1301, USA.  */
+ #define CRIS_DEFAULT_CPU_VERSION CRIS_CPU_NG
+ 
+ #undef CRIS_SUBTARGET_VERSION
+-#define CRIS_SUBTARGET_VERSION " - cris-axis-linux-gnu"
++#if UCLIBC_DEFAULT
++# define CRIS_SUBTARGET_VERSION " - cris-axis-linux-uclibc"
++#else
++# define CRIS_SUBTARGET_VERSION " - cris-axis-linux-gnu"
++#endif
+ 
+ #define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
+ 
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -4283,7 +4283,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/zlib/configure
++++ b/zlib/configure
+@@ -3429,7 +3429,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/libobjc/configure
++++ b/libobjc/configure
+@@ -3314,7 +3314,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/libgfortran/configure
++++ b/libgfortran/configure
+@@ -3721,7 +3721,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/libmudflap/configure
++++ b/libmudflap/configure
+@@ -5394,7 +5394,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/boehm-gc/configure
++++ b/boehm-gc/configure
+@@ -4323,7 +4323,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/libffi/configure
++++ b/libffi/configure
+@@ -3460,7 +3460,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/libssp/configure
++++ b/libssp/configure
+@@ -4482,7 +4482,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/contrib/regression/objs-gcc.sh
++++ b/contrib/regression/objs-gcc.sh
+@@ -105,6 +105,10 @@ if [ $H_REAL_TARGET = $H_REAL_HOST -a $H
+  then
+   make all-gdb all-dejagnu all-ld || exit 1
+   make install-gdb install-dejagnu install-ld || exit 1
++elif [ $H_REAL_TARGET = $H_REAL_HOST -a $H_REAL_TARGET = i686-pc-linux-uclibc ]
++ then
++  make all-gdb all-dejagnu all-ld || exit 1
++  make install-gdb install-dejagnu install-ld || exit 1
+ elif [ $H_REAL_TARGET = $H_REAL_HOST ] ; then
+   make bootstrap || exit 1
+   make install || exit 1
+--- a/libjava/classpath/ltconfig
++++ b/libjava/classpath/ltconfig
+@@ -603,7 +603,7 @@ host_os=`echo $host | sed 's/^\([^-]*\)-
+ 
+ # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
+ case $host_os in
+-linux-gnu*) ;;
++linux-gnu*|linux-uclibc*) ;;
+ linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
+ esac
+ 
+@@ -1251,7 +1251,7 @@ linux-gnuoldld* | linux-gnuaout* | linux
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   version_type=linux
+   need_lib_prefix=no
+   need_version=no
+--- a/libjava/classpath/configure
++++ b/libjava/classpath/configure
+@@ -5307,7 +5307,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/libjava/configure
++++ b/libjava/configure
+@@ -5424,7 +5424,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/libtool.m4
++++ b/libtool.m4
+@@ -739,7 +739,7 @@ irix5* | irix6*)
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
+--- a/ltconfig
++++ b/ltconfig
+@@ -603,7 +603,7 @@ host_os=`echo $host | sed 's/^\([^-]*\)-
+ 
+ # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
+ case $host_os in
+-linux-gnu*) ;;
++linux-gnu*|linux-uclibc*) ;;
+ linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
+ esac
+ 
+@@ -1253,7 +1253,7 @@ linux-gnuoldld* | linux-gnuaout* | linux
+   ;;
+ 
+ # This must be Linux ELF.
+-linux-gnu*)
++linux*)
+   version_type=linux
+   need_lib_prefix=no
+   need_version=no
