@@ -280,7 +280,7 @@ fw_rule() {
 	[ -n "$src" -a -n "$dest" ] && ZONE=zone_${src}_forward
 	[ -n "$dest" ] && TARGET=zone_${dest}_$target
 	add_rule() {
-		$IPTABLES -I $ZONE 1 \
+		$IPTABLES -A $ZONE \
 			${proto:+-p $proto} \
 			${icmp_type:+--icmp-type $icmp_type} \
 			${src_ip:+-s $src_ip} \
