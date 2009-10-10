@@ -1,0 +1,96 @@
+--- a/libc/sysdeps/linux/i386/Makefile.arch
++++ b/libc/sysdeps/linux/i386/Makefile.arch
+@@ -9,6 +9,7 @@ CSRC := brk.c sigaction.c __syscall_erro
+ 
+ SSRC := \
+ 	__longjmp.S vfork.S clone.S setjmp.S bsd-setjmp.S bsd-_setjmp.S \
+-	sync_file_range.S syscall.S mmap.S mmap64.S posix_fadvise64.S
++	sync_file_range.S syscall.S mmap.S mmap64.S posix_fadvise64.S \
++	s_copysign.S s_copysignf.S s_copysignl.S
+ 
+ include $(top_srcdir)libc/sysdeps/linux/Makefile.commonarch
+--- /dev/null
++++ b/libc/sysdeps/linux/i386/s_copysign.S
+@@ -0,0 +1,25 @@
++/*
++ * Written by J.T. Conklin <jtc@netbsd.org>.
++ * Public domain.
++ */
++
++#define _ERRNO_H	1
++#include <features.h>
++#include <bits/errno.h>
++
++.text
++.global copysign
++.type   copysign,%function
++copysign:
++	movl	16(%esp),%edx
++	movl	8(%esp),%eax
++	andl	$0x80000000,%edx
++	andl	$0x7fffffff,%eax
++	orl	%edx,%eax
++	movl	%eax,8(%esp)
++	fldl	4(%esp)
++	ret
++.size copysign,.-copysign
++
++libc_hidden_def(copysign)
++
+--- /dev/null
++++ b/libc/sysdeps/linux/i386/s_copysignf.S
+@@ -0,0 +1,25 @@
++/*
++ * Written by J.T. Conklin <jtc@netbsd.org>.
++ * Public domain.
++ */
++
++#define _ERRNO_H	1
++#include <features.h>
++#include <bits/errno.h>
++
++.text
++.global copysignf
++.type   copysignf,%function
++copysignf:
++	movl	8(%esp),%edx
++	movl	4(%esp),%eax
++	andl	$0x80000000,%edx
++	andl	$0x7fffffff,%eax
++	orl	%edx,%eax
++	movl	%eax,4(%esp)
++	flds	4(%esp)
++	ret
++.size copysignf,.-copysignf
++
++libc_hidden_def(copysignf)
++
+--- /dev/null
++++ b/libc/sysdeps/linux/i386/s_copysignl.S
+@@ -0,0 +1,26 @@
++/*
++ * Written by J.T. Conklin <jtc@netbsd.org>.
++ * Changes for long double by Ulrich Drepper <drepper@cygnus.com>
++ * Public domain.
++ */
++
++#define _ERRNO_H	1
++#include <features.h>
++#include <bits/errno.h>
++
++.text
++.global copysignl
++.type   copysignl,%function
++copysignl:
++	movl	24(%esp),%edx
++	movl	12(%esp),%eax
++	andl	$0x8000,%edx
++	andl	$0x7fff,%eax
++	orl	%edx,%eax
++	movl	%eax,12(%esp)
++	fldt	4(%esp)
++	ret
++.size copysignl,.-copysignl
++
++libc_hidden_def(copysignl)
++
