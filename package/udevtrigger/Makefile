@@ -33,6 +33,7 @@ define Build/Compile
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		STRIP="/bin/true" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		OPTFLAGS="$(TARGET_CFLAGS)" \
  		udevtrigger
 endef
 
