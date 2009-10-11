@@ -56,8 +56,6 @@ create_zone() {
 	$IPTABLES -N zone_$1_DROP
 	$IPTABLES -N zone_$1_REJECT
 	$IPTABLES -N zone_$1_forward
-	[ "$5" ] && $IPTABLES -A zone_$1_forward -j zone_$1_$5
-	[ "$3" ] && $IPTABLES -A zone_$1 -j zone_$1_$3
 	[ "$4" ] && $IPTABLES -A output -j zone_$1_$4
 	$IPTABLES -N zone_$1_nat -t nat
 	$IPTABLES -N zone_$1_prerouting -t nat
@@ -65,6 +63,7 @@ create_zone() {
 	[ "$6" == "1" ] && $IPTABLES -t nat -A POSTROUTING -j zone_$1_nat
 	[ "$7" == "1" ] && $IPTABLES -I FORWARD 1 -j zone_$1_MSSFIX
 }
+
 
 addif() {
 	local network="$1"
@@ -217,6 +216,22 @@ fw_defaults() {
 	fw_set_chain_policy INPUT "$DEF_INPUT"
 	fw_set_chain_policy OUTPUT "$DEF_OUTPUT"
 	fw_set_chain_policy FORWARD "$DEF_FORWARD"
+}
+
+fw_zone_defaults() {
+	local name
+	local network
+	local masq
+
+	config_get name $1 name
+	config_get network $1 network
+	config_get_bool masq $1 masq "0"
+	config_get_bool conntrack $1 conntrack "0"
+	config_get_bool mtu_fix $1 mtu_fix 0
+
+	load_policy $1
+	[ "$forward" ] && $IPTABLES -A zone_${name}_forward -j zone_${name}_${forward}
+	[ "$input" ] && $IPTABLES -A zone_${name} -j zone_${name}_${input}
 }
 
 fw_zone() {
@@ -446,6 +461,8 @@ fw_init() {
 	config_foreach fw_rule rule
 	echo "Loading includes"
 	config_foreach fw_include include
+	echo "Loading zone defaults"
+	config_foreach fw_zone_defaults zone
 	uci_set_state firewall core loaded 1
 	config_foreach fw_check_notrack zone
 	unset CONFIG_APPEND
