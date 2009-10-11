@@ -147,7 +147,7 @@ enable_mac80211() {
 
 		# We attempt to set teh channel for all interfaces, although
 		# mac80211 may not support it or the driver might not yet
-		[ -n "$fixed" ] && iw dev "$ifname" set channel "$channel"
+		[ -n "$fixed" -a -n "$channel" ] && iw dev "$ifname" set channel "$channel"
 
 		local key keystring
 
