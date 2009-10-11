@@ -237,17 +237,16 @@
  	}
 --- a/drivers/ssb/scan.c
 +++ b/drivers/ssb/scan.c
-@@ -175,6 +175,9 @@ static u32 scan_read32(struct ssb_bus *b
+@@ -175,6 +175,8 @@ static u32 scan_read32(struct ssb_bus *b
  		} else
  			ssb_pcmcia_switch_segment(bus, 0);
  		break;
 +	case SSB_BUSTYPE_SDIO:
-+		offset += current_coreidx * SSB_CORE_SIZE;
-+		return ssb_sdio_scan_read32(bus, offset);
++		break;
  	}
  	return readl(bus->mmio + offset);
  }
-@@ -188,6 +191,8 @@ static int scan_switchcore(struct ssb_bu
+@@ -188,6 +190,8 @@ static int scan_switchcore(struct ssb_bu
  		return ssb_pci_switch_coreidx(bus, coreidx);
  	case SSB_BUSTYPE_PCMCIA:
  		return ssb_pcmcia_switch_coreidx(bus, coreidx);
@@ -256,7 +255,7 @@
  	}
  	return 0;
  }
-@@ -206,6 +211,8 @@ void ssb_iounmap(struct ssb_bus *bus)
+@@ -206,6 +210,8 @@ void ssb_iounmap(struct ssb_bus *bus)
  		SSB_BUG_ON(1); /* Can't reach this code. */
  #endif
  		break;
@@ -265,7 +264,7 @@
  	}
  	bus->mmio = NULL;
  	bus->mapped_device = NULL;
-@@ -230,6 +237,8 @@ static void __iomem *ssb_ioremap(struct 
+@@ -230,6 +236,8 @@ static void __iomem *ssb_ioremap(struct 
  		SSB_BUG_ON(1); /* Can't reach this code. */
  #endif
  		break;
