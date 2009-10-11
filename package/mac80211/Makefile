@@ -10,12 +10,12 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2009-08-20
-PKG_RELEASE:=2
+PKG_VERSION:=2009-10-09
+PKG_RELEASE:=1
 PKG_SOURCE_URL:= \
-	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/08 \
+	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/09 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-PKG_MD5SUM:=0b3919adf847a59478cc4fb58e1cb6ec
+PKG_MD5SUM:=15c310560765cbc35ed930fb0e815284
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -315,8 +315,10 @@ define KernelPackage/ath9k
   TITLE:=Atheros 802.11n wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
   DEPENDS+= +kmod-ath
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,27,ath9k)
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_hw.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,ath9k_hw ath9k)
 endef
 
 define KernelPackage/ath9k/description
@@ -450,6 +452,8 @@ define KernelPackage/b43-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Generic stuff for Broadcom wireless devices
   URL:=http://linuxwireless.org/en/users/Drivers/b43
+  KCONFIG:= \
+  	CONFIG_HW_RANDOM=y
   DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb
 endef
 
@@ -486,7 +490,7 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PCI),-DCONFIG_SSB_PCIHOST_POSSIBLE -DCONFIG_SSB_PCIHOST) \
 	$(if $(CONFIG_PCI),-DCONFIG_SSB_SPROM) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS -DCONFIG_AR9170_LEDS) \
-	$(if $(CONFIG_HW_RANDOM),-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG) \
+	-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG \
 	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),-DCONFIG_MAC80211_DEBUGFS) \
 	$(if $(CONFIG_PACKAGE_ATH9K_DEBUG),-DCONFIG_ATH9K_DEBUG) \
 	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \

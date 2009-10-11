@@ -1,22 +1,30 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -524,8 +524,18 @@ static int ath9k_hw_init_macaddr(struct 
- 		ah->macaddr[2 * i] = eeval >> 8;
- 		ah->macaddr[2 * i + 1] = eeval & 0xff;
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include <linux/io.h>
++#include <linux/etherdevice.h>
+ #include <asm/unaligned.h>
+ 
+ #include "hw.h"
+@@ -511,8 +512,18 @@ static int ath9k_hw_init_macaddr(struct 
+ 		common->macaddr[2 * i] = eeval >> 8;
+ 		common->macaddr[2 * i + 1] = eeval & 0xff;
  	}
 -	if (sum == 0 || sum == 0xffff * 3)
 -		return -EADDRNOTAVAIL;
-+	if (!is_valid_ether_addr(ah->macaddr)) {
++	if (!is_valid_ether_addr(common->macaddr)) {
 +		DECLARE_MAC_BUF(macbuf);
 +
-+		DPRINTF(ah->ah_sc, ATH_DBG_EEPROM,
++		ath_print(common, ATH_DBG_EEPROM,
 +			"eeprom contains invalid mac address: %s\n",
-+			print_mac(macbuf, ah->macaddr));
++			print_mac(macbuf, common->macaddr));
 +
-+		random_ether_addr(ah->macaddr);
-+		DPRINTF(ah->ah_sc, ATH_DBG_EEPROM,
++		random_ether_addr(common->macaddr);
++		ath_print(common, ATH_DBG_EEPROM,
 +			"random mac address will be used: %s\n",
-+			print_mac(macbuf, ah->macaddr));
++			print_mac(macbuf, common->macaddr));
 +	}
  
  	return 0;
