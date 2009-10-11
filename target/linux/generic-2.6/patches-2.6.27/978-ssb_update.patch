@@ -1,0 +1,1863 @@
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -1,10 +1,11 @@
+-menu "Sonics Silicon Backplane"
+-
+ config SSB_POSSIBLE
+ 	bool
+ 	depends on HAS_IOMEM && HAS_DMA
+ 	default y
+ 
++menu "Sonics Silicon Backplane"
++	depends on SSB_POSSIBLE
++
+ config SSB
+ 	tristate "Sonics Silicon Backplane support"
+ 	depends on SSB_POSSIBLE
+@@ -52,11 +53,11 @@ config SSB_B43_PCI_BRIDGE
+ 
+ config SSB_PCMCIAHOST_POSSIBLE
+ 	bool
+-	depends on SSB && (PCMCIA = y || PCMCIA = SSB) && EXPERIMENTAL
++	depends on SSB && (PCMCIA = y || PCMCIA = SSB)
+ 	default y
+ 
+ config SSB_PCMCIAHOST
+-	bool "Support for SSB on PCMCIA-bus host (EXPERIMENTAL)"
++	bool "Support for SSB on PCMCIA-bus host"
+ 	depends on SSB_PCMCIAHOST_POSSIBLE
+ 	select SSB_SPROM
+ 	help
+@@ -106,14 +107,14 @@ config SSB_DRIVER_PCICORE
+ 	  If unsure, say Y
+ 
+ config SSB_PCICORE_HOSTMODE
+-	bool "Hostmode support for SSB PCI core (EXPERIMENTAL)"
+-	depends on SSB_DRIVER_PCICORE && SSB_DRIVER_MIPS && EXPERIMENTAL
++	bool "Hostmode support for SSB PCI core"
++	depends on SSB_DRIVER_PCICORE && SSB_DRIVER_MIPS
+ 	help
+ 	  PCIcore hostmode operation (external PCI bus).
+ 
+ config SSB_DRIVER_MIPS
+-	bool "SSB Broadcom MIPS core driver (EXPERIMENTAL)"
+-	depends on SSB && MIPS && EXPERIMENTAL
++	bool "SSB Broadcom MIPS core driver"
++	depends on SSB && MIPS
+ 	select SSB_SERIAL
+ 	help
+ 	  Driver for the Sonics Silicon Backplane attached
+@@ -125,11 +126,13 @@ config SSB_DRIVER_MIPS
+ config SSB_EMBEDDED
+ 	bool
+ 	depends on SSB_DRIVER_MIPS
++	select USB_EHCI_HCD_SSB if USB_EHCI_HCD
++	select USB_OHCI_HCD_SSB if USB_OHCI_HCD
+ 	default y
+ 
+ config SSB_DRIVER_EXTIF
+-	bool "SSB Broadcom EXTIF core driver (EXPERIMENTAL)"
+-	depends on SSB_DRIVER_MIPS && EXPERIMENTAL
++	bool "SSB Broadcom EXTIF core driver"
++	depends on SSB_DRIVER_MIPS
+ 	help
+ 	  Driver for the Sonics Silicon Backplane attached
+ 	  Broadcom EXTIF core.
+--- a/drivers/ssb/Makefile
++++ b/drivers/ssb/Makefile
+@@ -9,6 +9,7 @@ ssb-$(CONFIG_SSB_PCMCIAHOST)		+= pcmcia.
+ 
+ # built-in drivers
+ ssb-y					+= driver_chipcommon.o
++ssb-y					+= driver_chipcommon_pmu.o
+ ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
+ ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
+ ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
+--- a/drivers/ssb/b43_pci_bridge.c
++++ b/drivers/ssb/b43_pci_bridge.c
+@@ -18,9 +18,11 @@
+ 
+ static const struct pci_device_id b43_pci_bridge_tbl[] = {
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4301) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4306) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4307) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4311) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4312) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4315) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4318) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4319) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4320) },
+@@ -29,6 +31,7 @@ static const struct pci_device_id b43_pc
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4325) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4328) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4329) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x432b) },
+ 	{ 0, },
+ };
+ MODULE_DEVICE_TABLE(pci, b43_pci_bridge_tbl);
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -26,19 +26,6 @@ enum ssb_clksrc {
+ };
+ 
+ 
+-static inline u32 chipco_read32(struct ssb_chipcommon *cc,
+-				u16 offset)
+-{
+-	return ssb_read32(cc->dev, offset);
+-}
+-
+-static inline void chipco_write32(struct ssb_chipcommon *cc,
+-				  u16 offset,
+-				  u32 value)
+-{
+-	ssb_write32(cc->dev, offset, value);
+-}
+-
+ static inline u32 chipco_write32_masked(struct ssb_chipcommon *cc, u16 offset,
+ 					u32 mask, u32 value)
+ {
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -473,6 +473,8 @@ static int ssb_devices_register(struct s
+ 		case SSB_BUSTYPE_SSB:
+ 			dev->dma_mask = &dev->coherent_dma_mask;
+ 			break;
++		default:
++			break;
+ 		}
+ 
+ 		sdev->dev = dev;
+@@ -1359,8 +1361,10 @@ static int __init ssb_modinit(void)
+ 	ssb_buses_lock();
+ 	err = ssb_attach_queued_buses();
+ 	ssb_buses_unlock();
+-	if (err)
++	if (err) {
+ 		bus_unregister(&ssb_bustype);
++		goto out;
++	}
+ 
+ 	err = b43_pci_ssb_bridge_init();
+ 	if (err) {
+@@ -1376,7 +1380,7 @@ static int __init ssb_modinit(void)
+ 		/* don't fail SSB init because of this */
+ 		err = 0;
+ 	}
+-
++out:
+ 	return err;
+ }
+ /* ssb must be initialized after PCI but before the ssb drivers.
+--- a/drivers/ssb/pci.c
++++ b/drivers/ssb/pci.c
+@@ -169,8 +169,14 @@ err_pci:
+ /* Get the word-offset for a SSB_SPROM_XXX define. */
+ #define SPOFF(offset)	(((offset) - SSB_SPROM_BASE) / sizeof(u16))
+ /* Helper to extract some _offset, which is one of the SSB_SPROM_XXX defines. */
+-#define SPEX(_outvar, _offset, _mask, _shift)	\
++#define SPEX16(_outvar, _offset, _mask, _shift)	\
+ 	out->_outvar = ((in[SPOFF(_offset)] & (_mask)) >> (_shift))
++#define SPEX32(_outvar, _offset, _mask, _shift)	\
++	out->_outvar = ((((u32)in[SPOFF((_offset)+2)] << 16 | \
++			   in[SPOFF(_offset)]) & (_mask)) >> (_shift))
++#define SPEX(_outvar, _offset, _mask, _shift) \
++	SPEX16(_outvar, _offset, _mask, _shift)
++
+ 
+ static inline u8 ssb_crc8(u8 crc, u8 data)
+ {
+@@ -327,11 +333,9 @@ static void sprom_extract_r123(struct ss
+ 	s8 gain;
+ 	u16 loc[3];
+ 
+-	if (out->revision == 3) {			/* rev 3 moved MAC */
++	if (out->revision == 3)			/* rev 3 moved MAC */
+ 		loc[0] = SSB_SPROM3_IL0MAC;
+-		loc[1] = SSB_SPROM3_ET0MAC;
+-		loc[2] = SSB_SPROM3_ET1MAC;
+-	} else {
++	else {
+ 		loc[0] = SSB_SPROM1_IL0MAC;
+ 		loc[1] = SSB_SPROM1_ET0MAC;
+ 		loc[2] = SSB_SPROM1_ET1MAC;
+@@ -340,13 +344,15 @@ static void sprom_extract_r123(struct ss
+ 		v = in[SPOFF(loc[0]) + i];
+ 		*(((__be16 *)out->il0mac) + i) = cpu_to_be16(v);
+ 	}
+-	for (i = 0; i < 3; i++) {
+-		v = in[SPOFF(loc[1]) + i];
+-		*(((__be16 *)out->et0mac) + i) = cpu_to_be16(v);
+-	}
+-	for (i = 0; i < 3; i++) {
+-		v = in[SPOFF(loc[2]) + i];
+-		*(((__be16 *)out->et1mac) + i) = cpu_to_be16(v);
++	if (out->revision < 3) { 	/* only rev 1-2 have et0, et1 */
++		for (i = 0; i < 3; i++) {
++			v = in[SPOFF(loc[1]) + i];
++			*(((__be16 *)out->et0mac) + i) = cpu_to_be16(v);
++		}
++		for (i = 0; i < 3; i++) {
++			v = in[SPOFF(loc[2]) + i];
++			*(((__be16 *)out->et1mac) + i) = cpu_to_be16(v);
++		}
+ 	}
+ 	SPEX(et0phyaddr, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET0A, 0);
+ 	SPEX(et1phyaddr, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET1A,
+@@ -399,30 +405,33 @@ static void sprom_extract_r123(struct ss
+ 	out->antenna_gain.ghz5.a3 = gain;
+ }
+ 
+-static void sprom_extract_r4(struct ssb_sprom *out, const u16 *in)
++static void sprom_extract_r45(struct ssb_sprom *out, const u16 *in)
+ {
+ 	int i;
+ 	u16 v;
++	u16 il0mac_offset;
+ 
+-	/* extract the equivalent of the r1 variables */
++	if (out->revision == 4)
++		il0mac_offset = SSB_SPROM4_IL0MAC;
++	else
++		il0mac_offset = SSB_SPROM5_IL0MAC;
++	/* extract the MAC address */
+ 	for (i = 0; i < 3; i++) {
+-		v = in[SPOFF(SSB_SPROM4_IL0MAC) + i];
++		v = in[SPOFF(il0mac_offset) + i];
+ 		*(((__be16 *)out->il0mac) + i) = cpu_to_be16(v);
+ 	}
+-	for (i = 0; i < 3; i++) {
+-		v = in[SPOFF(SSB_SPROM4_ET0MAC) + i];
+-		*(((__be16 *)out->et0mac) + i) = cpu_to_be16(v);
+-	}
+-	for (i = 0; i < 3; i++) {
+-		v = in[SPOFF(SSB_SPROM4_ET1MAC) + i];
+-		*(((__be16 *)out->et1mac) + i) = cpu_to_be16(v);
+-	}
+ 	SPEX(et0phyaddr, SSB_SPROM4_ETHPHY, SSB_SPROM4_ETHPHY_ET0A, 0);
+ 	SPEX(et1phyaddr, SSB_SPROM4_ETHPHY, SSB_SPROM4_ETHPHY_ET1A,
+ 	     SSB_SPROM4_ETHPHY_ET1A_SHIFT);
+-	SPEX(country_code, SSB_SPROM4_CCODE, 0xFFFF, 0);
+-	SPEX(boardflags_lo, SSB_SPROM4_BFLLO, 0xFFFF, 0);
+-	SPEX(boardflags_hi, SSB_SPROM4_BFLHI, 0xFFFF, 0);
++	if (out->revision == 4) {
++		SPEX(country_code, SSB_SPROM4_CCODE, 0xFFFF, 0);
++		SPEX(boardflags_lo, SSB_SPROM4_BFLLO, 0xFFFF, 0);
++		SPEX(boardflags_hi, SSB_SPROM4_BFLHI, 0xFFFF, 0);
++	} else {
++		SPEX(country_code, SSB_SPROM5_CCODE, 0xFFFF, 0);
++		SPEX(boardflags_lo, SSB_SPROM5_BFLLO, 0xFFFF, 0);
++		SPEX(boardflags_hi, SSB_SPROM5_BFLHI, 0xFFFF, 0);
++	}
+ 	SPEX(ant_available_a, SSB_SPROM4_ANTAVAIL, SSB_SPROM4_ANTAVAIL_A,
+ 	     SSB_SPROM4_ANTAVAIL_A_SHIFT);
+ 	SPEX(ant_available_bg, SSB_SPROM4_ANTAVAIL, SSB_SPROM4_ANTAVAIL_BG,
+@@ -433,12 +442,21 @@ static void sprom_extract_r4(struct ssb_
+ 	SPEX(maxpwr_a, SSB_SPROM4_MAXP_A, SSB_SPROM4_MAXP_A_MASK, 0);
+ 	SPEX(itssi_a, SSB_SPROM4_MAXP_A, SSB_SPROM4_ITSSI_A,
+ 	     SSB_SPROM4_ITSSI_A_SHIFT);
+-	SPEX(gpio0, SSB_SPROM4_GPIOA, SSB_SPROM4_GPIOA_P0, 0);
+-	SPEX(gpio1, SSB_SPROM4_GPIOA, SSB_SPROM4_GPIOA_P1,
+-	     SSB_SPROM4_GPIOA_P1_SHIFT);
+-	SPEX(gpio2, SSB_SPROM4_GPIOB, SSB_SPROM4_GPIOB_P2, 0);
+-	SPEX(gpio3, SSB_SPROM4_GPIOB, SSB_SPROM4_GPIOB_P3,
+-	     SSB_SPROM4_GPIOB_P3_SHIFT);
++	if (out->revision == 4) {
++		SPEX(gpio0, SSB_SPROM4_GPIOA, SSB_SPROM4_GPIOA_P0, 0);
++		SPEX(gpio1, SSB_SPROM4_GPIOA, SSB_SPROM4_GPIOA_P1,
++		     SSB_SPROM4_GPIOA_P1_SHIFT);
++		SPEX(gpio2, SSB_SPROM4_GPIOB, SSB_SPROM4_GPIOB_P2, 0);
++		SPEX(gpio3, SSB_SPROM4_GPIOB, SSB_SPROM4_GPIOB_P3,
++		     SSB_SPROM4_GPIOB_P3_SHIFT);
++	} else {
++		SPEX(gpio0, SSB_SPROM5_GPIOA, SSB_SPROM5_GPIOA_P0, 0);
++		SPEX(gpio1, SSB_SPROM5_GPIOA, SSB_SPROM5_GPIOA_P1,
++		     SSB_SPROM5_GPIOA_P1_SHIFT);
++		SPEX(gpio2, SSB_SPROM5_GPIOB, SSB_SPROM5_GPIOB_P2, 0);
++		SPEX(gpio3, SSB_SPROM5_GPIOB, SSB_SPROM5_GPIOB_P3,
++		     SSB_SPROM5_GPIOB_P3_SHIFT);
++	}
+ 
+ 	/* Extract the antenna gain values. */
+ 	SPEX(antenna_gain.ghz24.a0, SSB_SPROM4_AGAIN01,
+@@ -455,6 +473,96 @@ static void sprom_extract_r4(struct ssb_
+ 	/* TODO - get remaining rev 4 stuff needed */
+ }
+ 
++static void sprom_extract_r8(struct ssb_sprom *out, const u16 *in)
++{
++	int i;
++	u16 v;
++
++	/* extract the MAC address */
++	for (i = 0; i < 3; i++) {
++		v = in[SPOFF(SSB_SPROM8_IL0MAC) + i];
++		*(((__be16 *)out->il0mac) + i) = cpu_to_be16(v);
++	}
++	SPEX(country_code, SSB_SPROM8_CCODE, 0xFFFF, 0);
++	SPEX(boardflags_lo, SSB_SPROM8_BFLLO, 0xFFFF, 0);
++	SPEX(boardflags_hi, SSB_SPROM8_BFLHI, 0xFFFF, 0);
++	SPEX(boardflags2_lo, SSB_SPROM8_BFL2LO, 0xFFFF, 0);
++	SPEX(boardflags2_hi, SSB_SPROM8_BFL2HI, 0xFFFF, 0);
++	SPEX(ant_available_a, SSB_SPROM8_ANTAVAIL, SSB_SPROM8_ANTAVAIL_A,
++	     SSB_SPROM8_ANTAVAIL_A_SHIFT);
++	SPEX(ant_available_bg, SSB_SPROM8_ANTAVAIL, SSB_SPROM8_ANTAVAIL_BG,
++	     SSB_SPROM8_ANTAVAIL_BG_SHIFT);
++	SPEX(maxpwr_bg, SSB_SPROM8_MAXP_BG, SSB_SPROM8_MAXP_BG_MASK, 0);
++	SPEX(itssi_bg, SSB_SPROM8_MAXP_BG, SSB_SPROM8_ITSSI_BG,
++	     SSB_SPROM8_ITSSI_BG_SHIFT);
++	SPEX(maxpwr_a, SSB_SPROM8_MAXP_A, SSB_SPROM8_MAXP_A_MASK, 0);
++	SPEX(itssi_a, SSB_SPROM8_MAXP_A, SSB_SPROM8_ITSSI_A,
++	     SSB_SPROM8_ITSSI_A_SHIFT);
++	SPEX(maxpwr_ah, SSB_SPROM8_MAXP_AHL, SSB_SPROM8_MAXP_AH_MASK, 0);
++	SPEX(maxpwr_al, SSB_SPROM8_MAXP_AHL, SSB_SPROM8_MAXP_AL_MASK,
++	     SSB_SPROM8_MAXP_AL_SHIFT);
++	SPEX(gpio0, SSB_SPROM8_GPIOA, SSB_SPROM8_GPIOA_P0, 0);
++	SPEX(gpio1, SSB_SPROM8_GPIOA, SSB_SPROM8_GPIOA_P1,
++	     SSB_SPROM8_GPIOA_P1_SHIFT);
++	SPEX(gpio2, SSB_SPROM8_GPIOB, SSB_SPROM8_GPIOB_P2, 0);
++	SPEX(gpio3, SSB_SPROM8_GPIOB, SSB_SPROM8_GPIOB_P3,
++	     SSB_SPROM8_GPIOB_P3_SHIFT);
++	SPEX(tri2g, SSB_SPROM8_TRI25G, SSB_SPROM8_TRI2G, 0);
++	SPEX(tri5g, SSB_SPROM8_TRI25G, SSB_SPROM8_TRI5G,
++	     SSB_SPROM8_TRI5G_SHIFT);
++	SPEX(tri5gl, SSB_SPROM8_TRI5GHL, SSB_SPROM8_TRI5GL, 0);
++	SPEX(tri5gh, SSB_SPROM8_TRI5GHL, SSB_SPROM8_TRI5GH,
++	     SSB_SPROM8_TRI5GH_SHIFT);
++	SPEX(rxpo2g, SSB_SPROM8_RXPO, SSB_SPROM8_RXPO2G, 0);
++	SPEX(rxpo5g, SSB_SPROM8_RXPO, SSB_SPROM8_RXPO5G,
++	     SSB_SPROM8_RXPO5G_SHIFT);
++	SPEX(rssismf2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_RSSISMF2G, 0);
++	SPEX(rssismc2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_RSSISMC2G,
++	     SSB_SPROM8_RSSISMC2G_SHIFT);
++	SPEX(rssisav2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_RSSISAV2G,
++	     SSB_SPROM8_RSSISAV2G_SHIFT);
++	SPEX(bxa2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_BXA2G,
++	     SSB_SPROM8_BXA2G_SHIFT);
++	SPEX(rssismf5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_RSSISMF5G, 0);
++	SPEX(rssismc5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_RSSISMC5G,
++	     SSB_SPROM8_RSSISMC5G_SHIFT);
++	SPEX(rssisav5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_RSSISAV5G,
++	     SSB_SPROM8_RSSISAV5G_SHIFT);
++	SPEX(bxa5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_BXA5G,
++	     SSB_SPROM8_BXA5G_SHIFT);
++	SPEX(pa0b0, SSB_SPROM8_PA0B0, 0xFFFF, 0);
++	SPEX(pa0b1, SSB_SPROM8_PA0B1, 0xFFFF, 0);
++	SPEX(pa0b2, SSB_SPROM8_PA0B2, 0xFFFF, 0);
++	SPEX(pa1b0, SSB_SPROM8_PA1B0, 0xFFFF, 0);
++	SPEX(pa1b1, SSB_SPROM8_PA1B1, 0xFFFF, 0);
++	SPEX(pa1b2, SSB_SPROM8_PA1B2, 0xFFFF, 0);
++	SPEX(pa1lob0, SSB_SPROM8_PA1LOB0, 0xFFFF, 0);
++	SPEX(pa1lob1, SSB_SPROM8_PA1LOB1, 0xFFFF, 0);
++	SPEX(pa1lob2, SSB_SPROM8_PA1LOB2, 0xFFFF, 0);
++	SPEX(pa1hib0, SSB_SPROM8_PA1HIB0, 0xFFFF, 0);
++	SPEX(pa1hib1, SSB_SPROM8_PA1HIB1, 0xFFFF, 0);
++	SPEX(pa1hib2, SSB_SPROM8_PA1HIB2, 0xFFFF, 0);
++	SPEX(cck2gpo, SSB_SPROM8_CCK2GPO, 0xFFFF, 0);
++	SPEX32(ofdm2gpo, SSB_SPROM8_OFDM2GPO, 0xFFFFFFFF, 0);
++	SPEX32(ofdm5glpo, SSB_SPROM8_OFDM5GLPO, 0xFFFFFFFF, 0);
++	SPEX32(ofdm5gpo, SSB_SPROM8_OFDM5GPO, 0xFFFFFFFF, 0);
++	SPEX32(ofdm5ghpo, SSB_SPROM8_OFDM5GHPO, 0xFFFFFFFF, 0);
++
++	/* Extract the antenna gain values. */
++	SPEX(antenna_gain.ghz24.a0, SSB_SPROM8_AGAIN01,
++	     SSB_SPROM8_AGAIN0, SSB_SPROM8_AGAIN0_SHIFT);
++	SPEX(antenna_gain.ghz24.a1, SSB_SPROM8_AGAIN01,
++	     SSB_SPROM8_AGAIN1, SSB_SPROM8_AGAIN1_SHIFT);
++	SPEX(antenna_gain.ghz24.a2, SSB_SPROM8_AGAIN23,
++	     SSB_SPROM8_AGAIN2, SSB_SPROM8_AGAIN2_SHIFT);
++	SPEX(antenna_gain.ghz24.a3, SSB_SPROM8_AGAIN23,
++	     SSB_SPROM8_AGAIN3, SSB_SPROM8_AGAIN3_SHIFT);
++	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
++	       sizeof(out->antenna_gain.ghz5));
++
++	/* TODO - get remaining rev 8 stuff needed */
++}
++
+ static int sprom_extract(struct ssb_bus *bus, struct ssb_sprom *out,
+ 			 const u16 *in, u16 size)
+ {
+@@ -462,6 +570,8 @@ static int sprom_extract(struct ssb_bus 
+ 
+ 	out->revision = in[size - 1] & 0x00FF;
+ 	ssb_dprintk(KERN_DEBUG PFX "SPROM revision %d detected.\n", out->revision);
++	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
++	memset(out->et1mac, 0xFF, 6);
+ 	if ((bus->chip_id & 0xFF00) == 0x4400) {
+ 		/* Workaround: The BCM44XX chip has a stupid revision
+ 		 * number stored in the SPROM.
+@@ -471,17 +581,28 @@ static int sprom_extract(struct ssb_bus 
+ 	} else if (bus->chip_id == 0x4321) {
+ 		/* the BCM4328 has a chipid == 0x4321 and a rev 4 SPROM */
+ 		out->revision = 4;
+-		sprom_extract_r4(out, in);
++		sprom_extract_r45(out, in);
+ 	} else {
+-		if (out->revision == 0)
+-			goto unsupported;
+-		if (out->revision >= 1 && out->revision <= 3) {
++		switch (out->revision) {
++		case 1:
++		case 2:
++		case 3:
++			sprom_extract_r123(out, in);
++			break;
++		case 4:
++		case 5:
++			sprom_extract_r45(out, in);
++			break;
++		case 8:
++			sprom_extract_r8(out, in);
++			break;
++		default:
++			ssb_printk(KERN_WARNING PFX "Unsupported SPROM"
++				   "  revision %d detected. Will extract"
++				   " v1\n", out->revision);
++			out->revision = 1;
+ 			sprom_extract_r123(out, in);
+ 		}
+-		if (out->revision == 4)
+-			sprom_extract_r4(out, in);
+-		if (out->revision >= 5)
+-			goto unsupported;
+ 	}
+ 
+ 	if (out->boardflags_lo == 0xFFFF)
+@@ -490,11 +611,6 @@ static int sprom_extract(struct ssb_bus 
+ 		out->boardflags_hi = 0;  /* per specs */
+ 
+ 	return 0;
+-unsupported:
+-	ssb_printk(KERN_WARNING PFX "Unsupported SPROM revision %d "
+-		   "detected. Will extract v1\n", out->revision);
+-	sprom_extract_r123(out, in);
+-	return 0;
+ }
+ 
+ static int ssb_pci_sprom_get(struct ssb_bus *bus,
+--- a/drivers/ssb/pcmcia.c
++++ b/drivers/ssb/pcmcia.c
+@@ -80,7 +80,7 @@ static int ssb_pcmcia_cfg_write(struct s
+ 	reg.Action = CS_WRITE;
+ 	reg.Value = value;
+ 	res = pcmcia_access_configuration_register(bus->host_pcmcia, &reg);
+-	if (unlikely(res != CS_SUCCESS))
++	if (unlikely(res != 0))
+ 		return -EBUSY;
+ 
+ 	return 0;
+@@ -96,7 +96,7 @@ static int ssb_pcmcia_cfg_read(struct ss
+ 	reg.Offset = offset;
+ 	reg.Action = CS_READ;
+ 	res = pcmcia_access_configuration_register(bus->host_pcmcia, &reg);
+-	if (unlikely(res != CS_SUCCESS))
++	if (unlikely(res != 0))
+ 		return -EBUSY;
+ 	*value = reg.Value;
+ 
+@@ -583,7 +583,7 @@ static int ssb_pcmcia_sprom_write_all(st
+ 			ssb_printk(".");
+ 		err = ssb_pcmcia_sprom_write(bus, i, sprom[i]);
+ 		if (err) {
+-			ssb_printk("\n" KERN_NOTICE PFX
++			ssb_printk(KERN_NOTICE PFX
+ 				   "Failed to write to SPROM.\n");
+ 			failed = 1;
+ 			break;
+@@ -591,7 +591,7 @@ static int ssb_pcmcia_sprom_write_all(st
+ 	}
+ 	err = ssb_pcmcia_sprom_command(bus, SSB_PCMCIA_SPROMCTL_WRITEDIS);
+ 	if (err) {
+-		ssb_printk("\n" KERN_NOTICE PFX
++		ssb_printk(KERN_NOTICE PFX
+ 			   "Could not disable SPROM write access.\n");
+ 		failed = 1;
+ 	}
+@@ -638,17 +638,17 @@ int ssb_pcmcia_get_invariants(struct ssb
+ 	tuple.TupleData = buf;
+ 	tuple.TupleDataMax = sizeof(buf);
+ 	res = pcmcia_get_first_tuple(bus->host_pcmcia, &tuple);
+-	GOTO_ERROR_ON(res != CS_SUCCESS, "MAC first tpl");
++	GOTO_ERROR_ON(res != 0, "MAC first tpl");
+ 	res = pcmcia_get_tuple_data(bus->host_pcmcia, &tuple);
+-	GOTO_ERROR_ON(res != CS_SUCCESS, "MAC first tpl data");
++	GOTO_ERROR_ON(res != 0, "MAC first tpl data");
+ 	while (1) {
+ 		GOTO_ERROR_ON(tuple.TupleDataLen < 1, "MAC tpl < 1");
+ 		if (tuple.TupleData[0] == CISTPL_FUNCE_LAN_NODE_ID)
+ 			break;
+ 		res = pcmcia_get_next_tuple(bus->host_pcmcia, &tuple);
+-		GOTO_ERROR_ON(res != CS_SUCCESS, "MAC next tpl");
++		GOTO_ERROR_ON(res != 0, "MAC next tpl");
+ 		res = pcmcia_get_tuple_data(bus->host_pcmcia, &tuple);
+-		GOTO_ERROR_ON(res != CS_SUCCESS, "MAC next tpl data");
++		GOTO_ERROR_ON(res != 0, "MAC next tpl data");
+ 	}
+ 	GOTO_ERROR_ON(tuple.TupleDataLen != ETH_ALEN + 2, "MAC tpl size");
+ 	memcpy(sprom->il0mac, &tuple.TupleData[2], ETH_ALEN);
+@@ -659,9 +659,9 @@ int ssb_pcmcia_get_invariants(struct ssb
+ 	tuple.TupleData = buf;
+ 	tuple.TupleDataMax = sizeof(buf);
+ 	res = pcmcia_get_first_tuple(bus->host_pcmcia, &tuple);
+-	GOTO_ERROR_ON(res != CS_SUCCESS, "VEN first tpl");
++	GOTO_ERROR_ON(res != 0, "VEN first tpl");
+ 	res = pcmcia_get_tuple_data(bus->host_pcmcia, &tuple);
+-	GOTO_ERROR_ON(res != CS_SUCCESS, "VEN first tpl data");
++	GOTO_ERROR_ON(res != 0, "VEN first tpl data");
+ 	while (1) {
+ 		GOTO_ERROR_ON(tuple.TupleDataLen < 1, "VEN tpl < 1");
+ 		switch (tuple.TupleData[0]) {
+@@ -678,7 +678,8 @@ int ssb_pcmcia_get_invariants(struct ssb
+ 			sprom->board_rev = tuple.TupleData[1];
+ 			break;
+ 		case SSB_PCMCIA_CIS_PA:
+-			GOTO_ERROR_ON(tuple.TupleDataLen != 9,
++			GOTO_ERROR_ON((tuple.TupleDataLen != 9) &&
++				      (tuple.TupleDataLen != 10),
+ 				      "pa tpl size");
+ 			sprom->pa0b0 = tuple.TupleData[1] |
+ 				 ((u16)tuple.TupleData[2] << 8);
+@@ -718,7 +719,8 @@ int ssb_pcmcia_get_invariants(struct ssb
+ 			sprom->antenna_gain.ghz5.a3 = tuple.TupleData[1];
+ 			break;
+ 		case SSB_PCMCIA_CIS_BFLAGS:
+-			GOTO_ERROR_ON(tuple.TupleDataLen != 3,
++			GOTO_ERROR_ON((tuple.TupleDataLen != 3) &&
++				      (tuple.TupleDataLen != 5),
+ 				      "bfl tpl size");
+ 			sprom->boardflags_lo = tuple.TupleData[1] |
+ 					 ((u16)tuple.TupleData[2] << 8);
+@@ -733,11 +735,11 @@ int ssb_pcmcia_get_invariants(struct ssb
+ 			break;
+ 		}
+ 		res = pcmcia_get_next_tuple(bus->host_pcmcia, &tuple);
+-		if (res == CS_NO_MORE_ITEMS)
++		if (res == -ENOSPC)
+ 			break;
+-		GOTO_ERROR_ON(res != CS_SUCCESS, "VEN next tpl");
++		GOTO_ERROR_ON(res != 0, "VEN next tpl");
+ 		res = pcmcia_get_tuple_data(bus->host_pcmcia, &tuple);
+-		GOTO_ERROR_ON(res != CS_SUCCESS, "VEN next tpl data");
++		GOTO_ERROR_ON(res != 0, "VEN next tpl data");
+ 	}
+ 
+ 	return 0;
+--- a/drivers/ssb/scan.c
++++ b/drivers/ssb/scan.c
+@@ -175,6 +175,8 @@ static u32 scan_read32(struct ssb_bus *b
+ 		} else
+ 			ssb_pcmcia_switch_segment(bus, 0);
+ 		break;
++	default:
++		break;
+ 	}
+ 	return readl(bus->mmio + offset);
+ }
+@@ -188,6 +190,8 @@ static int scan_switchcore(struct ssb_bu
+ 		return ssb_pci_switch_coreidx(bus, coreidx);
+ 	case SSB_BUSTYPE_PCMCIA:
+ 		return ssb_pcmcia_switch_coreidx(bus, coreidx);
++	default:
++		break;
+ 	}
+ 	return 0;
+ }
+@@ -206,6 +210,8 @@ void ssb_iounmap(struct ssb_bus *bus)
+ 		SSB_BUG_ON(1); /* Can't reach this code. */
+ #endif
+ 		break;
++	default:
++		break;
+ 	}
+ 	bus->mmio = NULL;
+ 	bus->mapped_device = NULL;
+@@ -230,6 +236,8 @@ static void __iomem *ssb_ioremap(struct 
+ 		SSB_BUG_ON(1); /* Can't reach this code. */
+ #endif
+ 		break;
++	default:
++		break;
+ 	}
+ 
+ 	return mmio;
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -27,24 +27,54 @@ struct ssb_sprom {
+ 	u8 et1mdcport;		/* MDIO for enet1 */
+ 	u8 board_rev;		/* Board revision number from SPROM. */
+ 	u8 country_code;	/* Country Code */
+-	u8 ant_available_a;	/* A-PHY antenna available bits (up to 4) */
+-	u8 ant_available_bg;	/* B/G-PHY antenna available bits (up to 4) */
++	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
++	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
+ 	u16 pa0b0;
+ 	u16 pa0b1;
+ 	u16 pa0b2;
+ 	u16 pa1b0;
+ 	u16 pa1b1;
+ 	u16 pa1b2;
++	u16 pa1lob0;
++	u16 pa1lob1;
++	u16 pa1lob2;
++	u16 pa1hib0;
++	u16 pa1hib1;
++	u16 pa1hib2;
+ 	u8 gpio0;		/* GPIO pin 0 */
+ 	u8 gpio1;		/* GPIO pin 1 */
+ 	u8 gpio2;		/* GPIO pin 2 */
+ 	u8 gpio3;		/* GPIO pin 3 */
+-	u16 maxpwr_a;		/* A-PHY Amplifier Max Power (in dBm Q5.2) */
+-	u16 maxpwr_bg;		/* B/G-PHY Amplifier Max Power (in dBm Q5.2) */
++	u16 maxpwr_bg;		/* 2.4GHz Amplifier Max Power (in dBm Q5.2) */
++	u16 maxpwr_al;		/* 5.2GHz Amplifier Max Power (in dBm Q5.2) */
++	u16 maxpwr_a;		/* 5.3GHz Amplifier Max Power (in dBm Q5.2) */
++	u16 maxpwr_ah;		/* 5.8GHz Amplifier Max Power (in dBm Q5.2) */
+ 	u8 itssi_a;		/* Idle TSSI Target for A-PHY */
+ 	u8 itssi_bg;		/* Idle TSSI Target for B/G-PHY */
+-	u16 boardflags_lo;	/* Boardflags (low 16 bits) */
+-	u16 boardflags_hi;	/* Boardflags (high 16 bits) */
++	u8 tri2g;		/* 2.4GHz TX isolation */
++	u8 tri5gl;		/* 5.2GHz TX isolation */
++	u8 tri5g;		/* 5.3GHz TX isolation */
++	u8 tri5gh;		/* 5.8GHz TX isolation */
++	u8 rxpo2g;		/* 2GHz RX power offset */
++	u8 rxpo5g;		/* 5GHz RX power offset */
++	u8 rssisav2g;		/* 2GHz RSSI params */
++	u8 rssismc2g;
++	u8 rssismf2g;
++	u8 bxa2g;		/* 2GHz BX arch */
++	u8 rssisav5g;		/* 5GHz RSSI params */
++	u8 rssismc5g;
++	u8 rssismf5g;
++	u8 bxa5g;		/* 5GHz BX arch */
++	u16 cck2gpo;		/* CCK power offset */
++	u32 ofdm2gpo;		/* 2.4GHz OFDM power offset */
++	u32 ofdm5glpo;		/* 5.2GHz OFDM power offset */
++	u32 ofdm5gpo;		/* 5.3GHz OFDM power offset */
++	u32 ofdm5ghpo;		/* 5.8GHz OFDM power offset */
++	u16 boardflags_lo;	/* Board flags (bits 0-15) */
++	u16 boardflags_hi;	/* Board flags (bits 16-31) */
++	u16 boardflags2_lo;	/* Board flags (bits 32-47) */
++	u16 boardflags2_hi;	/* Board flags (bits 48-63) */
++	/* TODO store board flags in a single u64 */
+ 
+ 	/* Antenna gain values for up to 4 antennas
+ 	 * on each band. Values in dBm/4 (Q5.2). Negative gain means the
+@@ -58,7 +88,7 @@ struct ssb_sprom {
+ 		} ghz5;		/* 5GHz band */
+ 	} antenna_gain;
+ 
+-	/* TODO - add any parameters needed from rev 2, 3, or 4 SPROMs */
++	/* TODO - add any parameters needed from rev 2, 3, 4, 5 or 8 SPROMs */
+ };
+ 
+ /* Information about the PCB the circuitry is soldered on. */
+@@ -208,6 +238,7 @@ enum ssb_bustype {
+ 	SSB_BUSTYPE_SSB,	/* This SSB bus is the system bus */
+ 	SSB_BUSTYPE_PCI,	/* SSB is connected to PCI bus */
+ 	SSB_BUSTYPE_PCMCIA,	/* SSB is connected to PCMCIA bus */
++	SSB_BUSTYPE_SDIO,	/* SSB is connected to SDIO bus */
+ };
+ 
+ /* board_vendor */
+@@ -240,8 +271,12 @@ struct ssb_bus {
+ 
+ 	/* The core in the basic address register window. (PCI bus only) */
+ 	struct ssb_device *mapped_device;
+-	/* Currently mapped PCMCIA segment. (bustype == SSB_BUSTYPE_PCMCIA only) */
+-	u8 mapped_pcmcia_seg;
++	union {
++		/* Currently mapped PCMCIA segment. (bustype == SSB_BUSTYPE_PCMCIA only) */
++		u8 mapped_pcmcia_seg;
++		/* Current SSB base address window for SDIO. */
++		u32 sdio_sbaddr;
++	};
+ 	/* Lock for core and segment switching.
+ 	 * On PCMCIA-host busses this is used to protect the whole MMIO access. */
+ 	spinlock_t bar_lock;
+@@ -252,6 +287,11 @@ struct ssb_bus {
+ 	struct pci_dev *host_pci;
+ 	/* Pointer to the PCMCIA device (only if bustype == SSB_BUSTYPE_PCMCIA). */
+ 	struct pcmcia_device *host_pcmcia;
++	/* Pointer to the SDIO device (only if bustype == SSB_BUSTYPE_SDIO). */
++	struct sdio_func *host_sdio;
++
++	/* See enum ssb_quirks */
++	unsigned int quirks;
+ 
+ #ifdef CONFIG_SSB_SPROM
+ 	/* Mutex to protect the SPROM writing. */
+@@ -306,6 +346,11 @@ struct ssb_bus {
+ #endif /* DEBUG */
+ };
+ 
++enum ssb_quirks {
++	/* SDIO connected card requires performing a read after writing a 32-bit value */
++	SSB_QUIRK_SDIO_READ_AFTER_WRITE32	= (1 << 0),
++};
++
+ /* The initialization-invariants. */
+ struct ssb_init_invariants {
+ 	/* Versioning information about the PCB. */
+@@ -431,12 +476,16 @@ static inline int ssb_dma_mapping_error(
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_PCI:
++#ifdef CONFIG_SSB_PCIHOST
+ 		return pci_dma_mapping_error(dev->bus->host_pci, addr);
++#endif
++		break;
+ 	case SSB_BUSTYPE_SSB:
+ 		return dma_mapping_error(dev->dev, addr);
+ 	default:
+-		__ssb_dma_not_implemented(dev);
++		break;
+ 	}
++	__ssb_dma_not_implemented(dev);
+ 	return -ENOSYS;
+ }
+ 
+@@ -445,12 +494,16 @@ static inline dma_addr_t ssb_dma_map_sin
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_PCI:
++#ifdef CONFIG_SSB_PCIHOST
+ 		return pci_map_single(dev->bus->host_pci, p, size, dir);
++#endif
++		break;
+ 	case SSB_BUSTYPE_SSB:
+ 		return dma_map_single(dev->dev, p, size, dir);
+ 	default:
+-		__ssb_dma_not_implemented(dev);
++		break;
+ 	}
++	__ssb_dma_not_implemented(dev);
+ 	return 0;
+ }
+ 
+@@ -459,14 +512,18 @@ static inline void ssb_dma_unmap_single(
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_PCI:
++#ifdef CONFIG_SSB_PCIHOST
+ 		pci_unmap_single(dev->bus->host_pci, dma_addr, size, dir);
+ 		return;
++#endif
++		break;
+ 	case SSB_BUSTYPE_SSB:
+ 		dma_unmap_single(dev->dev, dma_addr, size, dir);
+ 		return;
+ 	default:
+-		__ssb_dma_not_implemented(dev);
++		break;
+ 	}
++	__ssb_dma_not_implemented(dev);
+ }
+ 
+ static inline void ssb_dma_sync_single_for_cpu(struct ssb_device *dev,
+@@ -476,15 +533,19 @@ static inline void ssb_dma_sync_single_f
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_PCI:
++#ifdef CONFIG_SSB_PCIHOST
+ 		pci_dma_sync_single_for_cpu(dev->bus->host_pci, dma_addr,
+ 					    size, dir);
+ 		return;
++#endif
++		break;
+ 	case SSB_BUSTYPE_SSB:
+ 		dma_sync_single_for_cpu(dev->dev, dma_addr, size, dir);
+ 		return;
+ 	default:
+-		__ssb_dma_not_implemented(dev);
++		break;
+ 	}
++	__ssb_dma_not_implemented(dev);
+ }
+ 
+ static inline void ssb_dma_sync_single_for_device(struct ssb_device *dev,
+@@ -494,15 +555,19 @@ static inline void ssb_dma_sync_single_f
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_PCI:
++#ifdef CONFIG_SSB_PCIHOST
+ 		pci_dma_sync_single_for_device(dev->bus->host_pci, dma_addr,
+ 					       size, dir);
+ 		return;
++#endif
++		break;
+ 	case SSB_BUSTYPE_SSB:
+ 		dma_sync_single_for_device(dev->dev, dma_addr, size, dir);
+ 		return;
+ 	default:
+-		__ssb_dma_not_implemented(dev);
++		break;
+ 	}
++	__ssb_dma_not_implemented(dev);
+ }
+ 
+ static inline void ssb_dma_sync_single_range_for_cpu(struct ssb_device *dev,
+@@ -513,17 +578,21 @@ static inline void ssb_dma_sync_single_r
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_PCI:
++#ifdef CONFIG_SSB_PCIHOST
+ 		/* Just sync everything. That's all the PCI API can do. */
+ 		pci_dma_sync_single_for_cpu(dev->bus->host_pci, dma_addr,
+ 					    offset + size, dir);
+ 		return;
++#endif
++		break;
+ 	case SSB_BUSTYPE_SSB:
+ 		dma_sync_single_range_for_cpu(dev->dev, dma_addr, offset,
+ 					      size, dir);
+ 		return;
+ 	default:
+-		__ssb_dma_not_implemented(dev);
++		break;
+ 	}
++	__ssb_dma_not_implemented(dev);
+ }
+ 
+ static inline void ssb_dma_sync_single_range_for_device(struct ssb_device *dev,
+@@ -534,17 +603,21 @@ static inline void ssb_dma_sync_single_r
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_PCI:
++#ifdef CONFIG_SSB_PCIHOST
+ 		/* Just sync everything. That's all the PCI API can do. */
+ 		pci_dma_sync_single_for_device(dev->bus->host_pci, dma_addr,
+ 					       offset + size, dir);
+ 		return;
++#endif
++		break;
+ 	case SSB_BUSTYPE_SSB:
+ 		dma_sync_single_range_for_device(dev->dev, dma_addr, offset,
+ 						 size, dir);
+ 		return;
+ 	default:
+-		__ssb_dma_not_implemented(dev);
++		break;
+ 	}
++	__ssb_dma_not_implemented(dev);
+ }
+ 
+ 
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
+@@ -181,6 +181,16 @@
+ #define SSB_CHIPCO_PROG_WAITCNT		0x0124
+ #define SSB_CHIPCO_FLASH_CFG		0x0128
+ #define SSB_CHIPCO_FLASH_WAITCNT	0x012C
++#define SSB_CHIPCO_CLKCTLST		0x01E0 /* Clock control and status (rev >= 20) */
++#define  SSB_CHIPCO_CLKCTLST_FORCEALP	0x00000001 /* Force ALP request */
++#define  SSB_CHIPCO_CLKCTLST_FORCEHT	0x00000002 /* Force HT request */
++#define  SSB_CHIPCO_CLKCTLST_FORCEILP	0x00000004 /* Force ILP request */
++#define  SSB_CHIPCO_CLKCTLST_HAVEALPREQ	0x00000008 /* ALP available request */
++#define  SSB_CHIPCO_CLKCTLST_HAVEHTREQ	0x00000010 /* HT available request */
++#define  SSB_CHIPCO_CLKCTLST_HWCROFF	0x00000020 /* Force HW clock request off */
++#define  SSB_CHIPCO_CLKCTLST_HAVEHT	0x00010000 /* HT available */
++#define  SSB_CHIPCO_CLKCTLST_HAVEALP	0x00020000 /* APL available */
++#define SSB_CHIPCO_HW_WORKAROUND	0x01E4 /* Hardware workaround (rev >= 20) */
+ #define SSB_CHIPCO_UART0_DATA		0x0300
+ #define SSB_CHIPCO_UART0_IMR		0x0304
+ #define SSB_CHIPCO_UART0_FCR		0x0308
+@@ -197,6 +207,196 @@
+ #define SSB_CHIPCO_UART1_LSR		0x0414
+ #define SSB_CHIPCO_UART1_MSR		0x0418
+ #define SSB_CHIPCO_UART1_SCRATCH	0x041C
++/* PMU registers (rev >= 20) */
++#define SSB_CHIPCO_PMU_CTL			0x0600 /* PMU control */
++#define  SSB_CHIPCO_PMU_CTL_ILP_DIV		0xFFFF0000 /* ILP div mask */
++#define  SSB_CHIPCO_PMU_CTL_ILP_DIV_SHIFT	16
++#define  SSB_CHIPCO_PMU_CTL_NOILPONW		0x00000200 /* No ILP on wait */
++#define  SSB_CHIPCO_PMU_CTL_HTREQEN		0x00000100 /* HT req enable */
++#define  SSB_CHIPCO_PMU_CTL_ALPREQEN		0x00000080 /* ALP req enable */
++#define  SSB_CHIPCO_PMU_CTL_XTALFREQ		0x0000007C /* Crystal freq */
++#define  SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT	2
++#define  SSB_CHIPCO_PMU_CTL_ILPDIVEN		0x00000002 /* ILP div enable */
++#define  SSB_CHIPCO_PMU_CTL_LPOSEL		0x00000001 /* LPO sel */
++#define SSB_CHIPCO_PMU_CAP			0x0604 /* PMU capabilities */
++#define  SSB_CHIPCO_PMU_CAP_REVISION		0x000000FF /* Revision mask */
++#define SSB_CHIPCO_PMU_STAT			0x0608 /* PMU status */
++#define  SSB_CHIPCO_PMU_STAT_INTPEND		0x00000040 /* Interrupt pending */
++#define  SSB_CHIPCO_PMU_STAT_SBCLKST		0x00000030 /* Backplane clock status? */
++#define  SSB_CHIPCO_PMU_STAT_HAVEALP		0x00000008 /* ALP available */
++#define  SSB_CHIPCO_PMU_STAT_HAVEHT		0x00000004 /* HT available */
++#define  SSB_CHIPCO_PMU_STAT_RESINIT		0x00000003 /* Res init */
++#define SSB_CHIPCO_PMU_RES_STAT			0x060C /* PMU res status */
++#define SSB_CHIPCO_PMU_RES_PEND			0x0610 /* PMU res pending */
++#define SSB_CHIPCO_PMU_TIMER			0x0614 /* PMU timer */
++#define SSB_CHIPCO_PMU_MINRES_MSK		0x0618 /* PMU min res mask */
++#define SSB_CHIPCO_PMU_MAXRES_MSK		0x061C /* PMU max res mask */
++#define SSB_CHIPCO_PMU_RES_TABSEL		0x0620 /* PMU res table sel */
++#define SSB_CHIPCO_PMU_RES_DEPMSK		0x0624 /* PMU res dep mask */
++#define SSB_CHIPCO_PMU_RES_UPDNTM		0x0628 /* PMU res updown timer */
++#define SSB_CHIPCO_PMU_RES_TIMER		0x062C /* PMU res timer */
++#define SSB_CHIPCO_PMU_CLKSTRETCH		0x0630 /* PMU clockstretch */
++#define SSB_CHIPCO_PMU_WATCHDOG			0x0634 /* PMU watchdog */
++#define SSB_CHIPCO_PMU_RES_REQTS		0x0640 /* PMU res req timer sel */
++#define SSB_CHIPCO_PMU_RES_REQT			0x0644 /* PMU res req timer */
++#define SSB_CHIPCO_PMU_RES_REQM			0x0648 /* PMU res req mask */
++#define SSB_CHIPCO_CHIPCTL_ADDR			0x0650
++#define SSB_CHIPCO_CHIPCTL_DATA			0x0654
++#define SSB_CHIPCO_REGCTL_ADDR			0x0658
++#define SSB_CHIPCO_REGCTL_DATA			0x065C
++#define SSB_CHIPCO_PLLCTL_ADDR			0x0660
++#define SSB_CHIPCO_PLLCTL_DATA			0x0664
++
++
++
++/** PMU PLL registers */
++
++/* PMU rev 0 PLL registers */
++#define SSB_PMU0_PLLCTL0			0
++#define  SSB_PMU0_PLLCTL0_PDIV_MSK		0x00000001
++#define  SSB_PMU0_PLLCTL0_PDIV_FREQ		25000 /* kHz */
++#define SSB_PMU0_PLLCTL1			1
++#define  SSB_PMU0_PLLCTL1_WILD_IMSK		0xF0000000 /* Wild int mask (low nibble) */
++#define  SSB_PMU0_PLLCTL1_WILD_IMSK_SHIFT	28
++#define  SSB_PMU0_PLLCTL1_WILD_FMSK		0x0FFFFF00 /* Wild frac mask */
++#define  SSB_PMU0_PLLCTL1_WILD_FMSK_SHIFT	8
++#define  SSB_PMU0_PLLCTL1_STOPMOD		0x00000040 /* Stop mod */
++#define SSB_PMU0_PLLCTL2			2
++#define  SSB_PMU0_PLLCTL2_WILD_IMSKHI		0x0000000F /* Wild int mask (high nibble) */
++#define  SSB_PMU0_PLLCTL2_WILD_IMSKHI_SHIFT	0
++
++/* PMU rev 1 PLL registers */
++#define SSB_PMU1_PLLCTL0			0
++#define  SSB_PMU1_PLLCTL0_P1DIV			0x00F00000 /* P1 div */
++#define  SSB_PMU1_PLLCTL0_P1DIV_SHIFT		20
++#define  SSB_PMU1_PLLCTL0_P2DIV			0x0F000000 /* P2 div */
++#define  SSB_PMU1_PLLCTL0_P2DIV_SHIFT		24
++#define SSB_PMU1_PLLCTL1			1
++#define  SSB_PMU1_PLLCTL1_M1DIV			0x000000FF /* M1 div */
++#define  SSB_PMU1_PLLCTL1_M1DIV_SHIFT		0
++#define  SSB_PMU1_PLLCTL1_M2DIV			0x0000FF00 /* M2 div */
++#define  SSB_PMU1_PLLCTL1_M2DIV_SHIFT		8
++#define  SSB_PMU1_PLLCTL1_M3DIV			0x00FF0000 /* M3 div */
++#define  SSB_PMU1_PLLCTL1_M3DIV_SHIFT		16
++#define  SSB_PMU1_PLLCTL1_M4DIV			0xFF000000 /* M4 div */
++#define  SSB_PMU1_PLLCTL1_M4DIV_SHIFT		24
++#define SSB_PMU1_PLLCTL2			2
++#define  SSB_PMU1_PLLCTL2_M5DIV			0x000000FF /* M5 div */
++#define  SSB_PMU1_PLLCTL2_M5DIV_SHIFT		0
++#define  SSB_PMU1_PLLCTL2_M6DIV			0x0000FF00 /* M6 div */
++#define  SSB_PMU1_PLLCTL2_M6DIV_SHIFT		8
++#define  SSB_PMU1_PLLCTL2_NDIVMODE		0x000E0000 /* NDIV mode */
++#define  SSB_PMU1_PLLCTL2_NDIVMODE_SHIFT	17
++#define  SSB_PMU1_PLLCTL2_NDIVINT		0x1FF00000 /* NDIV int */
++#define  SSB_PMU1_PLLCTL2_NDIVINT_SHIFT		20
++#define SSB_PMU1_PLLCTL3			3
++#define  SSB_PMU1_PLLCTL3_NDIVFRAC		0x00FFFFFF /* NDIV frac */
++#define  SSB_PMU1_PLLCTL3_NDIVFRAC_SHIFT	0
++#define SSB_PMU1_PLLCTL4			4
++#define SSB_PMU1_PLLCTL5			5
++#define  SSB_PMU1_PLLCTL5_CLKDRV		0xFFFFFF00 /* clk drv */
++#define  SSB_PMU1_PLLCTL5_CLKDRV_SHIFT		8
++
++/* BCM4312 PLL resource numbers. */
++#define SSB_PMURES_4312_SWITCHER_BURST		0
++#define SSB_PMURES_4312_SWITCHER_PWM    	1
++#define SSB_PMURES_4312_PA_REF_LDO		2
++#define SSB_PMURES_4312_CORE_LDO_BURST		3
++#define SSB_PMURES_4312_CORE_LDO_PWM		4
++#define SSB_PMURES_4312_RADIO_LDO		5
++#define SSB_PMURES_4312_ILP_REQUEST		6
++#define SSB_PMURES_4312_BG_FILTBYP		7
++#define SSB_PMURES_4312_TX_FILTBYP		8
++#define SSB_PMURES_4312_RX_FILTBYP		9
++#define SSB_PMURES_4312_XTAL_PU			10
++#define SSB_PMURES_4312_ALP_AVAIL		11
++#define SSB_PMURES_4312_BB_PLL_FILTBYP		12
++#define SSB_PMURES_4312_RF_PLL_FILTBYP		13
++#define SSB_PMURES_4312_HT_AVAIL		14
++
++/* BCM4325 PLL resource numbers. */
++#define SSB_PMURES_4325_BUCK_BOOST_BURST	0
++#define SSB_PMURES_4325_CBUCK_BURST		1
++#define SSB_PMURES_4325_CBUCK_PWM		2
++#define SSB_PMURES_4325_CLDO_CBUCK_BURST	3
++#define SSB_PMURES_4325_CLDO_CBUCK_PWM		4
++#define SSB_PMURES_4325_BUCK_BOOST_PWM		5
++#define SSB_PMURES_4325_ILP_REQUEST		6
++#define SSB_PMURES_4325_ABUCK_BURST		7
++#define SSB_PMURES_4325_ABUCK_PWM		8
++#define SSB_PMURES_4325_LNLDO1_PU		9
++#define SSB_PMURES_4325_LNLDO2_PU		10
++#define SSB_PMURES_4325_LNLDO3_PU		11
++#define SSB_PMURES_4325_LNLDO4_PU		12
++#define SSB_PMURES_4325_XTAL_PU			13
++#define SSB_PMURES_4325_ALP_AVAIL		14
++#define SSB_PMURES_4325_RX_PWRSW_PU		15
++#define SSB_PMURES_4325_TX_PWRSW_PU		16
++#define SSB_PMURES_4325_RFPLL_PWRSW_PU		17
++#define SSB_PMURES_4325_LOGEN_PWRSW_PU		18
++#define SSB_PMURES_4325_AFE_PWRSW_PU		19
++#define SSB_PMURES_4325_BBPLL_PWRSW_PU		20
++#define SSB_PMURES_4325_HT_AVAIL		21
++
++/* BCM4328 PLL resource numbers. */
++#define SSB_PMURES_4328_EXT_SWITCHER_PWM	0
++#define SSB_PMURES_4328_BB_SWITCHER_PWM		1
++#define SSB_PMURES_4328_BB_SWITCHER_BURST	2
++#define SSB_PMURES_4328_BB_EXT_SWITCHER_BURST	3
++#define SSB_PMURES_4328_ILP_REQUEST		4
++#define SSB_PMURES_4328_RADIO_SWITCHER_PWM	5
++#define SSB_PMURES_4328_RADIO_SWITCHER_BURST	6
++#define SSB_PMURES_4328_ROM_SWITCH		7
++#define SSB_PMURES_4328_PA_REF_LDO		8
++#define SSB_PMURES_4328_RADIO_LDO		9
++#define SSB_PMURES_4328_AFE_LDO			10
++#define SSB_PMURES_4328_PLL_LDO			11
++#define SSB_PMURES_4328_BG_FILTBYP		12
++#define SSB_PMURES_4328_TX_FILTBYP		13
++#define SSB_PMURES_4328_RX_FILTBYP		14
++#define SSB_PMURES_4328_XTAL_PU			15
++#define SSB_PMURES_4328_XTAL_EN			16
++#define SSB_PMURES_4328_BB_PLL_FILTBYP		17
++#define SSB_PMURES_4328_RF_PLL_FILTBYP		18
++#define SSB_PMURES_4328_BB_PLL_PU		19
++
++/* BCM5354 PLL resource numbers. */
++#define SSB_PMURES_5354_EXT_SWITCHER_PWM	0
++#define SSB_PMURES_5354_BB_SWITCHER_PWM		1
++#define SSB_PMURES_5354_BB_SWITCHER_BURST	2
++#define SSB_PMURES_5354_BB_EXT_SWITCHER_BURST	3
++#define SSB_PMURES_5354_ILP_REQUEST		4
++#define SSB_PMURES_5354_RADIO_SWITCHER_PWM	5
++#define SSB_PMURES_5354_RADIO_SWITCHER_BURST	6
++#define SSB_PMURES_5354_ROM_SWITCH		7
++#define SSB_PMURES_5354_PA_REF_LDO		8
++#define SSB_PMURES_5354_RADIO_LDO		9
++#define SSB_PMURES_5354_AFE_LDO			10
++#define SSB_PMURES_5354_PLL_LDO			11
++#define SSB_PMURES_5354_BG_FILTBYP		12
++#define SSB_PMURES_5354_TX_FILTBYP		13
++#define SSB_PMURES_5354_RX_FILTBYP		14
++#define SSB_PMURES_5354_XTAL_PU			15
++#define SSB_PMURES_5354_XTAL_EN			16
++#define SSB_PMURES_5354_BB_PLL_FILTBYP		17
++#define SSB_PMURES_5354_RF_PLL_FILTBYP		18
++#define SSB_PMURES_5354_BB_PLL_PU		19
++
++
++
++/** Chip specific Chip-Status register contents. */
++#define SSB_CHIPCO_CHST_4325_SPROM_OTP_SEL	0x00000003
++#define SSB_CHIPCO_CHST_4325_DEFCIS_SEL		0 /* OTP is powered up, use def. CIS, no SPROM */
++#define SSB_CHIPCO_CHST_4325_SPROM_SEL		1 /* OTP is powered up, SPROM is present */
++#define SSB_CHIPCO_CHST_4325_OTP_SEL		2 /* OTP is powered up, no SPROM */
++#define SSB_CHIPCO_CHST_4325_OTP_PWRDN		3 /* OTP is powered down, SPROM is present */
++#define SSB_CHIPCO_CHST_4325_SDIO_USB_MODE	0x00000004
++#define SSB_CHIPCO_CHST_4325_SDIO_USB_MODE_SHIFT  2
++#define SSB_CHIPCO_CHST_4325_RCAL_VALID		0x00000008
++#define SSB_CHIPCO_CHST_4325_RCAL_VALID_SHIFT	3
++#define SSB_CHIPCO_CHST_4325_RCAL_VALUE		0x000001F0
++#define SSB_CHIPCO_CHST_4325_RCAL_VALUE_SHIFT	4
++#define SSB_CHIPCO_CHST_4325_PMUTOP_2B 		0x00000200 /* 1 for 2b, 0 for to 2a */
+ 
+ 
+ 
+@@ -353,11 +553,20 @@
+ struct ssb_device;
+ struct ssb_serial_port;
+ 
++/* Data for the PMU, if available.
++ * Check availability with ((struct ssb_chipcommon)->capabilities & SSB_CHIPCO_CAP_PMU)
++ */
++struct ssb_chipcommon_pmu {
++	u8 rev;			/* PMU revision */
++	u32 crystalfreq;	/* The active crystal frequency (in kHz) */
++};
++
+ struct ssb_chipcommon {
+ 	struct ssb_device *dev;
+ 	u32 capabilities;
+ 	/* Fast Powerup Delay constant */
+ 	u16 fast_pwrup_delay;
++	struct ssb_chipcommon_pmu pmu;
+ };
+ 
+ static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
+@@ -365,6 +574,17 @@ static inline bool ssb_chipco_available(
+ 	return (cc->dev != NULL);
+ }
+ 
++/* Register access */
++#define chipco_read32(cc, offset)	ssb_read32((cc)->dev, offset)
++#define chipco_write32(cc, offset, val)	ssb_write32((cc)->dev, offset, val)
++
++#define chipco_mask32(cc, offset, mask) \
++		chipco_write32(cc, offset, chipco_read32(cc, offset) & (mask))
++#define chipco_set32(cc, offset, set) \
++		chipco_write32(cc, offset, chipco_read32(cc, offset) | (set))
++#define chipco_maskset32(cc, offset, mask, set) \
++		chipco_write32(cc, offset, (chipco_read32(cc, offset) & (mask)) | (set))
++
+ extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
+ 
+ extern void ssb_chipco_suspend(struct ssb_chipcommon *cc);
+@@ -406,4 +626,18 @@ extern int ssb_chipco_serial_init(struct
+ 				  struct ssb_serial_port *ports);
+ #endif /* CONFIG_SSB_SERIAL */
+ 
++/* PMU support */
++extern void ssb_pmu_init(struct ssb_chipcommon *cc);
++
++enum ssb_pmu_ldo_volt_id {
++	LDO_PAREF = 0,
++	LDO_VOLT1,
++	LDO_VOLT2,
++	LDO_VOLT3,
++};
++
++void ssb_pmu_set_ldo_voltage(struct ssb_chipcommon *cc,
++			     enum ssb_pmu_ldo_volt_id id, u32 voltage);
++void ssb_pmu_set_ldo_paref(struct ssb_chipcommon *cc, bool on);
++
+ #endif /* LINUX_SSB_CHIPCO_H_ */
+--- a/include/linux/ssb/ssb_regs.h
++++ b/include/linux/ssb/ssb_regs.h
+@@ -162,7 +162,7 @@
+ 
+ /* SPROM shadow area. If not otherwise noted, fields are
+  * two bytes wide. Note that the SPROM can _only_ be read
+- * in two-byte quantinies.
++ * in two-byte quantities.
+  */
+ #define SSB_SPROMSIZE_WORDS		64
+ #define SSB_SPROMSIZE_BYTES		(SSB_SPROMSIZE_WORDS * sizeof(u16))
+@@ -245,8 +245,6 @@
+ 
+ /* SPROM Revision 3 (inherits most data from rev 2) */
+ #define SSB_SPROM3_IL0MAC		0x104A	/* 6 bytes MAC address for 802.11b/g */
+-#define SSB_SPROM3_ET0MAC		0x1050	/* 6 bytes MAC address for Ethernet ?? */
+-#define SSB_SPROM3_ET1MAC		0x1050	/* 6 bytes MAC address for 802.11a ?? */
+ #define SSB_SPROM3_OFDMAPO		0x102C	/* A-PHY OFDM Mid Power Offset (4 bytes, BigEndian) */
+ #define SSB_SPROM3_OFDMALPO		0x1030	/* A-PHY OFDM Low Power Offset (4 bytes, BigEndian) */
+ #define SSB_SPROM3_OFDMAHPO		0x1034	/* A-PHY OFDM High Power Offset (4 bytes, BigEndian) */
+@@ -267,8 +265,6 @@
+ 
+ /* SPROM Revision 4 */
+ #define SSB_SPROM4_IL0MAC		0x104C	/* 6 byte MAC address for a/b/g/n */
+-#define SSB_SPROM4_ET0MAC		0x1018	/* 6 bytes MAC address for Ethernet ?? */
+-#define SSB_SPROM4_ET1MAC		0x1018	/* 6 bytes MAC address for 802.11a ?? */
+ #define SSB_SPROM4_ETHPHY		0x105A	/* Ethernet PHY settings ?? */
+ #define  SSB_SPROM4_ETHPHY_ET0A		0x001F	/* MII Address for enet0 */
+ #define  SSB_SPROM4_ETHPHY_ET1A		0x03E0	/* MII Address for enet1 */
+@@ -316,6 +312,109 @@
+ #define SSB_SPROM4_PA1B1		0x1090
+ #define SSB_SPROM4_PA1B2		0x1092
+ 
++/* SPROM Revision 5 (inherits most data from rev 4) */
++#define SSB_SPROM5_BFLLO		0x104A	/* Boardflags (low 16 bits) */
++#define SSB_SPROM5_BFLHI		0x104C  /* Board Flags Hi */
++#define SSB_SPROM5_IL0MAC		0x1052	/* 6 byte MAC address for a/b/g/n */
++#define SSB_SPROM5_CCODE		0x1044	/* Country Code (2 bytes) */
++#define SSB_SPROM5_GPIOA		0x1076	/* Gen. Purpose IO # 0 and 1 */
++#define  SSB_SPROM5_GPIOA_P0		0x00FF	/* Pin 0 */
++#define  SSB_SPROM5_GPIOA_P1		0xFF00	/* Pin 1 */
++#define  SSB_SPROM5_GPIOA_P1_SHIFT	8
++#define SSB_SPROM5_GPIOB		0x1078	/* Gen. Purpose IO # 2 and 3 */
++#define  SSB_SPROM5_GPIOB_P2		0x00FF	/* Pin 2 */
++#define  SSB_SPROM5_GPIOB_P3		0xFF00	/* Pin 3 */
++#define  SSB_SPROM5_GPIOB_P3_SHIFT	8
++
++/* SPROM Revision 8 */
++#define SSB_SPROM8_BOARDREV		0x1082	/* Board revision */
++#define SSB_SPROM8_BFLLO		0x1084	/* Board flags (bits 0-15) */
++#define SSB_SPROM8_BFLHI		0x1086	/* Board flags (bits 16-31) */
++#define SSB_SPROM8_BFL2LO		0x1088	/* Board flags (bits 32-47) */
++#define SSB_SPROM8_BFL2HI		0x108A	/* Board flags (bits 48-63) */
++#define SSB_SPROM8_IL0MAC		0x108C	/* 6 byte MAC address */
++#define SSB_SPROM8_CCODE		0x1092	/* 2 byte country code */
++#define SSB_SPROM8_ANTAVAIL		0x109C  /* Antenna available bitfields*/
++#define SSB_SPROM8_ANTAVAIL_A		0xFF00	/* A-PHY bitfield */
++#define SSB_SPROM8_ANTAVAIL_A_SHIFT	8
++#define SSB_SPROM8_ANTAVAIL_BG		0x00FF	/* B-PHY and G-PHY bitfield */
++#define SSB_SPROM8_ANTAVAIL_BG_SHIFT	0
++#define SSB_SPROM8_AGAIN01		0x109E	/* Antenna Gain (in dBm Q5.2) */
++#define  SSB_SPROM8_AGAIN0		0x00FF	/* Antenna 0 */
++#define  SSB_SPROM8_AGAIN0_SHIFT	0
++#define  SSB_SPROM8_AGAIN1		0xFF00	/* Antenna 1 */
++#define  SSB_SPROM8_AGAIN1_SHIFT	8
++#define SSB_SPROM8_AGAIN23		0x10A0
++#define  SSB_SPROM8_AGAIN2		0x00FF	/* Antenna 2 */
++#define  SSB_SPROM8_AGAIN2_SHIFT	0
++#define  SSB_SPROM8_AGAIN3		0xFF00	/* Antenna 3 */
++#define  SSB_SPROM8_AGAIN3_SHIFT	8
++#define SSB_SPROM8_GPIOA		0x1096	/*Gen. Purpose IO # 0 and 1 */
++#define  SSB_SPROM8_GPIOA_P0		0x00FF	/* Pin 0 */
++#define  SSB_SPROM8_GPIOA_P1		0xFF00	/* Pin 1 */
++#define  SSB_SPROM8_GPIOA_P1_SHIFT	8
++#define SSB_SPROM8_GPIOB		0x1098	/* Gen. Purpose IO # 2 and 3 */
++#define  SSB_SPROM8_GPIOB_P2		0x00FF	/* Pin 2 */
++#define  SSB_SPROM8_GPIOB_P3		0xFF00	/* Pin 3 */
++#define  SSB_SPROM8_GPIOB_P3_SHIFT	8
++#define SSB_SPROM8_RSSIPARM2G		0x10A4	/* RSSI params for 2GHz */
++#define  SSB_SPROM8_RSSISMF2G		0x000F
++#define  SSB_SPROM8_RSSISMC2G		0x00F0
++#define  SSB_SPROM8_RSSISMC2G_SHIFT	4
++#define  SSB_SPROM8_RSSISAV2G		0x0700
++#define  SSB_SPROM8_RSSISAV2G_SHIFT	8
++#define  SSB_SPROM8_BXA2G		0x1800
++#define  SSB_SPROM8_BXA2G_SHIFT		11
++#define SSB_SPROM8_RSSIPARM5G		0x10A6	/* RSSI params for 5GHz */
++#define  SSB_SPROM8_RSSISMF5G		0x000F
++#define  SSB_SPROM8_RSSISMC5G		0x00F0
++#define  SSB_SPROM8_RSSISMC5G_SHIFT	4
++#define  SSB_SPROM8_RSSISAV5G		0x0700
++#define  SSB_SPROM8_RSSISAV5G_SHIFT	8
++#define  SSB_SPROM8_BXA5G		0x1800
++#define  SSB_SPROM8_BXA5G_SHIFT		11
++#define SSB_SPROM8_TRI25G		0x10A8	/* TX isolation 2.4&5.3GHz */
++#define  SSB_SPROM8_TRI2G		0x00FF	/* TX isolation 2.4GHz */
++#define  SSB_SPROM8_TRI5G		0xFF00	/* TX isolation 5.3GHz */
++#define  SSB_SPROM8_TRI5G_SHIFT		8
++#define SSB_SPROM8_TRI5GHL		0x10AA	/* TX isolation 5.2/5.8GHz */
++#define  SSB_SPROM8_TRI5GL		0x00FF	/* TX isolation 5.2GHz */
++#define  SSB_SPROM8_TRI5GH		0xFF00	/* TX isolation 5.8GHz */
++#define  SSB_SPROM8_TRI5GH_SHIFT	8
++#define SSB_SPROM8_RXPO			0x10AC  /* RX power offsets */
++#define  SSB_SPROM8_RXPO2G		0x00FF	/* 2GHz RX power offset */
++#define  SSB_SPROM8_RXPO5G		0xFF00	/* 5GHz RX power offset */
++#define  SSB_SPROM8_RXPO5G_SHIFT	8
++#define SSB_SPROM8_MAXP_BG		0x10C0  /* Max Power 2GHz in path 1 */
++#define  SSB_SPROM8_MAXP_BG_MASK	0x00FF  /* Mask for Max Power 2GHz */
++#define  SSB_SPROM8_ITSSI_BG		0xFF00	/* Mask for path 1 itssi_bg */
++#define  SSB_SPROM8_ITSSI_BG_SHIFT	8
++#define SSB_SPROM8_PA0B0		0x10C2	/* 2GHz power amp settings */
++#define SSB_SPROM8_PA0B1		0x10C4
++#define SSB_SPROM8_PA0B2		0x10C6
++#define SSB_SPROM8_MAXP_A		0x10C8  /* Max Power 5.3GHz */
++#define  SSB_SPROM8_MAXP_A_MASK		0x00FF  /* Mask for Max Power 5.3GHz */
++#define  SSB_SPROM8_ITSSI_A		0xFF00	/* Mask for path 1 itssi_a */
++#define  SSB_SPROM8_ITSSI_A_SHIFT	8
++#define SSB_SPROM8_MAXP_AHL		0x10CA  /* Max Power 5.2/5.8GHz */
++#define  SSB_SPROM8_MAXP_AH_MASK	0x00FF  /* Mask for Max Power 5.8GHz */
++#define  SSB_SPROM8_MAXP_AL_MASK	0xFF00  /* Mask for Max Power 5.2GHz */
++#define  SSB_SPROM8_MAXP_AL_SHIFT	8
++#define SSB_SPROM8_PA1B0		0x10CC	/* 5.3GHz power amp settings */
++#define SSB_SPROM8_PA1B1		0x10CE
++#define SSB_SPROM8_PA1B2		0x10D0
++#define SSB_SPROM8_PA1LOB0		0x10D2	/* 5.2GHz power amp settings */
++#define SSB_SPROM8_PA1LOB1		0x10D4
++#define SSB_SPROM8_PA1LOB2		0x10D6
++#define SSB_SPROM8_PA1HIB0		0x10D8	/* 5.8GHz power amp settings */
++#define SSB_SPROM8_PA1HIB1		0x10DA
++#define SSB_SPROM8_PA1HIB2		0x10DC
++#define SSB_SPROM8_CCK2GPO		0x1140	/* CCK power offset */
++#define SSB_SPROM8_OFDM2GPO		0x1142	/* 2.4GHz OFDM power offset */
++#define SSB_SPROM8_OFDM5GPO		0x1146	/* 5.3GHz OFDM power offset */
++#define SSB_SPROM8_OFDM5GLPO		0x114A	/* 5.2GHz OFDM power offset */
++#define SSB_SPROM8_OFDM5GHPO		0x114E	/* 5.8GHz OFDM power offset */
++
+ /* Values for SSB_SPROM1_BINF_CCODE */
+ enum {
+ 	SSB_SPROM1CCODE_WORLD = 0,
+--- /dev/null
++++ b/drivers/ssb/driver_chipcommon_pmu.c
+@@ -0,0 +1,602 @@
++/*
++ * Sonics Silicon Backplane
++ * Broadcom ChipCommon Power Management Unit driver
++ *
++ * Copyright 2009, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2007, Broadcom Corporation
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/ssb/ssb.h>
++#include <linux/ssb/ssb_regs.h>
++#include <linux/ssb/ssb_driver_chipcommon.h>
++#include <linux/delay.h>
++
++#include "ssb_private.h"
++
++static u32 ssb_chipco_pll_read(struct ssb_chipcommon *cc, u32 offset)
++{
++	chipco_write32(cc, SSB_CHIPCO_PLLCTL_ADDR, offset);
++	return chipco_read32(cc, SSB_CHIPCO_PLLCTL_DATA);
++}
++
++static void ssb_chipco_pll_write(struct ssb_chipcommon *cc,
++				 u32 offset, u32 value)
++{
++	chipco_write32(cc, SSB_CHIPCO_PLLCTL_ADDR, offset);
++	chipco_write32(cc, SSB_CHIPCO_PLLCTL_DATA, value);
++}
++
++static void ssb_chipco_regctl_maskset(struct ssb_chipcommon *cc,
++				   u32 offset, u32 mask, u32 set)
++{
++	u32 value;
++
++	chipco_read32(cc, SSB_CHIPCO_REGCTL_ADDR);
++	chipco_write32(cc, SSB_CHIPCO_REGCTL_ADDR, offset);
++	chipco_read32(cc, SSB_CHIPCO_REGCTL_ADDR);
++	value = chipco_read32(cc, SSB_CHIPCO_REGCTL_DATA);
++	value &= mask;
++	value |= set;
++	chipco_write32(cc, SSB_CHIPCO_REGCTL_DATA, value);
++	chipco_read32(cc, SSB_CHIPCO_REGCTL_DATA);
++}
++
++struct pmu0_plltab_entry {
++	u16 freq;	/* Crystal frequency in kHz.*/
++	u8 xf;		/* Crystal frequency value for PMU control */
++	u8 wb_int;
++	u32 wb_frac;
++};
++
++static const struct pmu0_plltab_entry pmu0_plltab[] = {
++	{ .freq = 12000, .xf =  1, .wb_int = 73, .wb_frac = 349525, },
++	{ .freq = 13000, .xf =  2, .wb_int = 67, .wb_frac = 725937, },
++	{ .freq = 14400, .xf =  3, .wb_int = 61, .wb_frac = 116508, },
++	{ .freq = 15360, .xf =  4, .wb_int = 57, .wb_frac = 305834, },
++	{ .freq = 16200, .xf =  5, .wb_int = 54, .wb_frac = 336579, },
++	{ .freq = 16800, .xf =  6, .wb_int = 52, .wb_frac = 399457, },
++	{ .freq = 19200, .xf =  7, .wb_int = 45, .wb_frac = 873813, },
++	{ .freq = 19800, .xf =  8, .wb_int = 44, .wb_frac = 466033, },
++	{ .freq = 20000, .xf =  9, .wb_int = 44, .wb_frac = 0,      },
++	{ .freq = 25000, .xf = 10, .wb_int = 70, .wb_frac = 419430, },
++	{ .freq = 26000, .xf = 11, .wb_int = 67, .wb_frac = 725937, },
++	{ .freq = 30000, .xf = 12, .wb_int = 58, .wb_frac = 699050, },
++	{ .freq = 38400, .xf = 13, .wb_int = 45, .wb_frac = 873813, },
++	{ .freq = 40000, .xf = 14, .wb_int = 45, .wb_frac = 0,      },
++};
++#define SSB_PMU0_DEFAULT_XTALFREQ	20000
++
++static const struct pmu0_plltab_entry * pmu0_plltab_find_entry(u32 crystalfreq)
++{
++	const struct pmu0_plltab_entry *e;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(pmu0_plltab); i++) {
++		e = &pmu0_plltab[i];
++		if (e->freq == crystalfreq)
++			return e;
++	}
++
++	return NULL;
++}
++
++/* Tune the PLL to the crystal speed. crystalfreq is in kHz. */
++static void ssb_pmu0_pllinit_r0(struct ssb_chipcommon *cc,
++				u32 crystalfreq)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	const struct pmu0_plltab_entry *e = NULL;
++	u32 pmuctl, tmp, pllctl;
++	unsigned int i;
++
++	if ((bus->chip_id == 0x5354) && !crystalfreq) {
++		/* The 5354 crystal freq is 25MHz */
++		crystalfreq = 25000;
++	}
++	if (crystalfreq)
++		e = pmu0_plltab_find_entry(crystalfreq);
++	if (!e)
++		e = pmu0_plltab_find_entry(SSB_PMU0_DEFAULT_XTALFREQ);
++	BUG_ON(!e);
++	crystalfreq = e->freq;
++	cc->pmu.crystalfreq = e->freq;
++
++	/* Check if the PLL already is programmed to this frequency. */
++	pmuctl = chipco_read32(cc, SSB_CHIPCO_PMU_CTL);
++	if (((pmuctl & SSB_CHIPCO_PMU_CTL_XTALFREQ) >> SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT) == e->xf) {
++		/* We're already there... */
++		return;
++	}
++
++	ssb_printk(KERN_INFO PFX "Programming PLL to %u.%03u MHz\n",
++		   (crystalfreq / 1000), (crystalfreq % 1000));
++
++	/* First turn the PLL off. */
++	switch (bus->chip_id) {
++	case 0x4328:
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
++			      ~(1 << SSB_PMURES_4328_BB_PLL_PU));
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
++			      ~(1 << SSB_PMURES_4328_BB_PLL_PU));
++		break;
++	case 0x5354:
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
++			      ~(1 << SSB_PMURES_5354_BB_PLL_PU));
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
++			      ~(1 << SSB_PMURES_5354_BB_PLL_PU));
++		break;
++	default:
++		SSB_WARN_ON(1);
++	}
++	for (i = 1500; i; i--) {
++		tmp = chipco_read32(cc, SSB_CHIPCO_CLKCTLST);
++		if (!(tmp & SSB_CHIPCO_CLKCTLST_HAVEHT))
++			break;
++		udelay(10);
++	}
++	tmp = chipco_read32(cc, SSB_CHIPCO_CLKCTLST);
++	if (tmp & SSB_CHIPCO_CLKCTLST_HAVEHT)
++		ssb_printk(KERN_EMERG PFX "Failed to turn the PLL off!\n");
++
++	/* Set PDIV in PLL control 0. */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU0_PLLCTL0);
++	if (crystalfreq >= SSB_PMU0_PLLCTL0_PDIV_FREQ)
++		pllctl |= SSB_PMU0_PLLCTL0_PDIV_MSK;
++	else
++		pllctl &= ~SSB_PMU0_PLLCTL0_PDIV_MSK;
++	ssb_chipco_pll_write(cc, SSB_PMU0_PLLCTL0, pllctl);
++
++	/* Set WILD in PLL control 1. */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU0_PLLCTL1);
++	pllctl &= ~SSB_PMU0_PLLCTL1_STOPMOD;
++	pllctl &= ~(SSB_PMU0_PLLCTL1_WILD_IMSK | SSB_PMU0_PLLCTL1_WILD_FMSK);
++	pllctl |= ((u32)e->wb_int << SSB_PMU0_PLLCTL1_WILD_IMSK_SHIFT) & SSB_PMU0_PLLCTL1_WILD_IMSK;
++	pllctl |= ((u32)e->wb_frac << SSB_PMU0_PLLCTL1_WILD_FMSK_SHIFT) & SSB_PMU0_PLLCTL1_WILD_FMSK;
++	if (e->wb_frac == 0)
++		pllctl |= SSB_PMU0_PLLCTL1_STOPMOD;
++	ssb_chipco_pll_write(cc, SSB_PMU0_PLLCTL1, pllctl);
++
++	/* Set WILD in PLL control 2. */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU0_PLLCTL2);
++	pllctl &= ~SSB_PMU0_PLLCTL2_WILD_IMSKHI;
++	pllctl |= (((u32)e->wb_int >> 4) << SSB_PMU0_PLLCTL2_WILD_IMSKHI_SHIFT) & SSB_PMU0_PLLCTL2_WILD_IMSKHI;
++	ssb_chipco_pll_write(cc, SSB_PMU0_PLLCTL2, pllctl);
++
++	/* Set the crystalfrequency and the divisor. */
++	pmuctl = chipco_read32(cc, SSB_CHIPCO_PMU_CTL);
++	pmuctl &= ~SSB_CHIPCO_PMU_CTL_ILP_DIV;
++	pmuctl |= (((crystalfreq + 127) / 128 - 1) << SSB_CHIPCO_PMU_CTL_ILP_DIV_SHIFT)
++			& SSB_CHIPCO_PMU_CTL_ILP_DIV;
++	pmuctl &= ~SSB_CHIPCO_PMU_CTL_XTALFREQ;
++	pmuctl |= ((u32)e->xf << SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT) & SSB_CHIPCO_PMU_CTL_XTALFREQ;
++	chipco_write32(cc, SSB_CHIPCO_PMU_CTL, pmuctl);
++}
++
++struct pmu1_plltab_entry {
++	u16 freq;	/* Crystal frequency in kHz.*/
++	u8 xf;		/* Crystal frequency value for PMU control */
++	u8 ndiv_int;
++	u32 ndiv_frac;
++	u8 p1div;
++	u8 p2div;
++};
++
++static const struct pmu1_plltab_entry pmu1_plltab[] = {
++	{ .freq = 12000, .xf =  1, .p1div = 3, .p2div = 22, .ndiv_int =  0x9, .ndiv_frac = 0xFFFFEF, },
++	{ .freq = 13000, .xf =  2, .p1div = 1, .p2div =  6, .ndiv_int =  0xb, .ndiv_frac = 0x483483, },
++	{ .freq = 14400, .xf =  3, .p1div = 1, .p2div = 10, .ndiv_int =  0xa, .ndiv_frac = 0x1C71C7, },
++	{ .freq = 15360, .xf =  4, .p1div = 1, .p2div =  5, .ndiv_int =  0xb, .ndiv_frac = 0x755555, },
++	{ .freq = 16200, .xf =  5, .p1div = 1, .p2div = 10, .ndiv_int =  0x5, .ndiv_frac = 0x6E9E06, },
++	{ .freq = 16800, .xf =  6, .p1div = 1, .p2div = 10, .ndiv_int =  0x5, .ndiv_frac = 0x3CF3CF, },
++	{ .freq = 19200, .xf =  7, .p1div = 1, .p2div =  9, .ndiv_int =  0x5, .ndiv_frac = 0x17B425, },
++	{ .freq = 19800, .xf =  8, .p1div = 1, .p2div = 11, .ndiv_int =  0x4, .ndiv_frac = 0xA57EB,  },
++	{ .freq = 20000, .xf =  9, .p1div = 1, .p2div = 11, .ndiv_int =  0x4, .ndiv_frac = 0,        },
++	{ .freq = 24000, .xf = 10, .p1div = 3, .p2div = 11, .ndiv_int =  0xa, .ndiv_frac = 0,        },
++	{ .freq = 25000, .xf = 11, .p1div = 5, .p2div = 16, .ndiv_int =  0xb, .ndiv_frac = 0,        },
++	{ .freq = 26000, .xf = 12, .p1div = 1, .p2div =  2, .ndiv_int = 0x10, .ndiv_frac = 0xEC4EC4, },
++	{ .freq = 30000, .xf = 13, .p1div = 3, .p2div =  8, .ndiv_int =  0xb, .ndiv_frac = 0,        },
++	{ .freq = 38400, .xf = 14, .p1div = 1, .p2div =  5, .ndiv_int =  0x4, .ndiv_frac = 0x955555, },
++	{ .freq = 40000, .xf = 15, .p1div = 1, .p2div =  2, .ndiv_int =  0xb, .ndiv_frac = 0,        },
++};
++
++#define SSB_PMU1_DEFAULT_XTALFREQ	15360
++
++static const struct pmu1_plltab_entry * pmu1_plltab_find_entry(u32 crystalfreq)
++{
++	const struct pmu1_plltab_entry *e;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(pmu1_plltab); i++) {
++		e = &pmu1_plltab[i];
++		if (e->freq == crystalfreq)
++			return e;
++	}
++
++	return NULL;
++}
++
++/* Tune the PLL to the crystal speed. crystalfreq is in kHz. */
++static void ssb_pmu1_pllinit_r0(struct ssb_chipcommon *cc,
++				u32 crystalfreq)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	const struct pmu1_plltab_entry *e = NULL;
++	u32 buffer_strength = 0;
++	u32 tmp, pllctl, pmuctl;
++	unsigned int i;
++
++	if (bus->chip_id == 0x4312) {
++		/* We do not touch the BCM4312 PLL and assume
++		 * the default crystal settings work out-of-the-box. */
++		cc->pmu.crystalfreq = 20000;
++		return;
++	}
++
++	if (crystalfreq)
++		e = pmu1_plltab_find_entry(crystalfreq);
++	if (!e)
++		e = pmu1_plltab_find_entry(SSB_PMU1_DEFAULT_XTALFREQ);
++	BUG_ON(!e);
++	crystalfreq = e->freq;
++	cc->pmu.crystalfreq = e->freq;
++
++	/* Check if the PLL already is programmed to this frequency. */
++	pmuctl = chipco_read32(cc, SSB_CHIPCO_PMU_CTL);
++	if (((pmuctl & SSB_CHIPCO_PMU_CTL_XTALFREQ) >> SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT) == e->xf) {
++		/* We're already there... */
++		return;
++	}
++
++	ssb_printk(KERN_INFO PFX "Programming PLL to %u.%03u MHz\n",
++		   (crystalfreq / 1000), (crystalfreq % 1000));
++
++	/* First turn the PLL off. */
++	switch (bus->chip_id) {
++	case 0x4325:
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK,
++			      ~((1 << SSB_PMURES_4325_BBPLL_PWRSW_PU) |
++				(1 << SSB_PMURES_4325_HT_AVAIL)));
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MAXRES_MSK,
++			      ~((1 << SSB_PMURES_4325_BBPLL_PWRSW_PU) |
++				(1 << SSB_PMURES_4325_HT_AVAIL)));
++		/* Adjust the BBPLL to 2 on all channels later. */
++		buffer_strength = 0x222222;
++		break;
++	default:
++		SSB_WARN_ON(1);
++	}
++	for (i = 1500; i; i--) {
++		tmp = chipco_read32(cc, SSB_CHIPCO_CLKCTLST);
++		if (!(tmp & SSB_CHIPCO_CLKCTLST_HAVEHT))
++			break;
++		udelay(10);
++	}
++	tmp = chipco_read32(cc, SSB_CHIPCO_CLKCTLST);
++	if (tmp & SSB_CHIPCO_CLKCTLST_HAVEHT)
++		ssb_printk(KERN_EMERG PFX "Failed to turn the PLL off!\n");
++
++	/* Set p1div and p2div. */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL0);
++	pllctl &= ~(SSB_PMU1_PLLCTL0_P1DIV | SSB_PMU1_PLLCTL0_P2DIV);
++	pllctl |= ((u32)e->p1div << SSB_PMU1_PLLCTL0_P1DIV_SHIFT) & SSB_PMU1_PLLCTL0_P1DIV;
++	pllctl |= ((u32)e->p2div << SSB_PMU1_PLLCTL0_P2DIV_SHIFT) & SSB_PMU1_PLLCTL0_P2DIV;
++	ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL0, pllctl);
++
++	/* Set ndiv int and ndiv mode */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL2);
++	pllctl &= ~(SSB_PMU1_PLLCTL2_NDIVINT | SSB_PMU1_PLLCTL2_NDIVMODE);
++	pllctl |= ((u32)e->ndiv_int << SSB_PMU1_PLLCTL2_NDIVINT_SHIFT) & SSB_PMU1_PLLCTL2_NDIVINT;
++	pllctl |= (1 << SSB_PMU1_PLLCTL2_NDIVMODE_SHIFT) & SSB_PMU1_PLLCTL2_NDIVMODE;
++	ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL2, pllctl);
++
++	/* Set ndiv frac */
++	pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL3);
++	pllctl &= ~SSB_PMU1_PLLCTL3_NDIVFRAC;
++	pllctl |= ((u32)e->ndiv_frac << SSB_PMU1_PLLCTL3_NDIVFRAC_SHIFT) & SSB_PMU1_PLLCTL3_NDIVFRAC;
++	ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL3, pllctl);
++
++	/* Change the drive strength, if required. */
++	if (buffer_strength) {
++		pllctl = ssb_chipco_pll_read(cc, SSB_PMU1_PLLCTL5);
++		pllctl &= ~SSB_PMU1_PLLCTL5_CLKDRV;
++		pllctl |= (buffer_strength << SSB_PMU1_PLLCTL5_CLKDRV_SHIFT) & SSB_PMU1_PLLCTL5_CLKDRV;
++		ssb_chipco_pll_write(cc, SSB_PMU1_PLLCTL5, pllctl);
++	}
++
++	/* Tune the crystalfreq and the divisor. */
++	pmuctl = chipco_read32(cc, SSB_CHIPCO_PMU_CTL);
++	pmuctl &= ~(SSB_CHIPCO_PMU_CTL_ILP_DIV | SSB_CHIPCO_PMU_CTL_XTALFREQ);
++	pmuctl |= ((((u32)e->freq + 127) / 128 - 1) << SSB_CHIPCO_PMU_CTL_ILP_DIV_SHIFT)
++			& SSB_CHIPCO_PMU_CTL_ILP_DIV;
++	pmuctl |= ((u32)e->xf << SSB_CHIPCO_PMU_CTL_XTALFREQ_SHIFT) & SSB_CHIPCO_PMU_CTL_XTALFREQ;
++	chipco_write32(cc, SSB_CHIPCO_PMU_CTL, pmuctl);
++}
++
++static void ssb_pmu_pll_init(struct ssb_chipcommon *cc)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	u32 crystalfreq = 0; /* in kHz. 0 = keep default freq. */
++
++	if (bus->bustype == SSB_BUSTYPE_SSB) {
++		/* TODO: The user may override the crystal frequency. */
++	}
++
++	switch (bus->chip_id) {
++	case 0x4312:
++	case 0x4325:
++		ssb_pmu1_pllinit_r0(cc, crystalfreq);
++		break;
++	case 0x4328:
++	case 0x5354:
++		ssb_pmu0_pllinit_r0(cc, crystalfreq);
++		break;
++	default:
++		ssb_printk(KERN_ERR PFX
++			   "ERROR: PLL init unknown for device %04X\n",
++			   bus->chip_id);
++	}
++}
++
++struct pmu_res_updown_tab_entry {
++	u8 resource;	/* The resource number */
++	u16 updown;	/* The updown value */
++};
++
++enum pmu_res_depend_tab_task {
++	PMU_RES_DEP_SET = 1,
++	PMU_RES_DEP_ADD,
++	PMU_RES_DEP_REMOVE,
++};
++
++struct pmu_res_depend_tab_entry {
++	u8 resource;	/* The resource number */
++	u8 task;	/* SET | ADD | REMOVE */
++	u32 depend;	/* The depend mask */
++};
++
++static const struct pmu_res_updown_tab_entry pmu_res_updown_tab_4328a0[] = {
++	{ .resource = SSB_PMURES_4328_EXT_SWITCHER_PWM,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_BB_SWITCHER_PWM,		.updown = 0x1F01, },
++	{ .resource = SSB_PMURES_4328_BB_SWITCHER_BURST,	.updown = 0x010F, },
++	{ .resource = SSB_PMURES_4328_BB_EXT_SWITCHER_BURST,	.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_ILP_REQUEST,		.updown = 0x0202, },
++	{ .resource = SSB_PMURES_4328_RADIO_SWITCHER_PWM,	.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_RADIO_SWITCHER_BURST,	.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_ROM_SWITCH,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_PA_REF_LDO,		.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_RADIO_LDO,		.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_AFE_LDO,			.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_PLL_LDO,			.updown = 0x0F01, },
++	{ .resource = SSB_PMURES_4328_BG_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_TX_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_RX_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_XTAL_PU,			.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_XTAL_EN,			.updown = 0xA001, },
++	{ .resource = SSB_PMURES_4328_BB_PLL_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_RF_PLL_FILTBYP,		.updown = 0x0101, },
++	{ .resource = SSB_PMURES_4328_BB_PLL_PU,		.updown = 0x0701, },
++};
++
++static const struct pmu_res_depend_tab_entry pmu_res_depend_tab_4328a0[] = {
++	{
++		/* Adjust ILP Request to avoid forcing EXT/BB into burst mode. */
++		.resource = SSB_PMURES_4328_ILP_REQUEST,
++		.task = PMU_RES_DEP_SET,
++		.depend = ((1 << SSB_PMURES_4328_EXT_SWITCHER_PWM) |
++			   (1 << SSB_PMURES_4328_BB_SWITCHER_PWM)),
++	},
++};
++
++static const struct pmu_res_updown_tab_entry pmu_res_updown_tab_4325a0[] = {
++	{ .resource = SSB_PMURES_4325_XTAL_PU,			.updown = 0x1501, },
++};
++
++static const struct pmu_res_depend_tab_entry pmu_res_depend_tab_4325a0[] = {
++	{
++		/* Adjust HT-Available dependencies. */
++		.resource = SSB_PMURES_4325_HT_AVAIL,
++		.task = PMU_RES_DEP_ADD,
++		.depend = ((1 << SSB_PMURES_4325_RX_PWRSW_PU) |
++			   (1 << SSB_PMURES_4325_TX_PWRSW_PU) |
++			   (1 << SSB_PMURES_4325_LOGEN_PWRSW_PU) |
++			   (1 << SSB_PMURES_4325_AFE_PWRSW_PU)),
++	},
++};
++
++static void ssb_pmu_resources_init(struct ssb_chipcommon *cc)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	u32 min_msk = 0, max_msk = 0;
++	unsigned int i;
++	const struct pmu_res_updown_tab_entry *updown_tab = NULL;
++	unsigned int updown_tab_size;
++	const struct pmu_res_depend_tab_entry *depend_tab = NULL;
++	unsigned int depend_tab_size;
++
++	switch (bus->chip_id) {
++	case 0x4312:
++		/* We keep the default settings:
++		 * min_msk = 0xCBB
++		 * max_msk = 0x7FFFF
++		 */
++		break;
++	case 0x4325:
++		/* Power OTP down later. */
++		min_msk = (1 << SSB_PMURES_4325_CBUCK_BURST) |
++			  (1 << SSB_PMURES_4325_LNLDO2_PU);
++		if (chipco_read32(cc, SSB_CHIPCO_CHIPSTAT) &
++		    SSB_CHIPCO_CHST_4325_PMUTOP_2B)
++			min_msk |= (1 << SSB_PMURES_4325_CLDO_CBUCK_BURST);
++		/* The PLL may turn on, if it decides so. */
++		max_msk = 0xFFFFF;
++		updown_tab = pmu_res_updown_tab_4325a0;
++		updown_tab_size = ARRAY_SIZE(pmu_res_updown_tab_4325a0);
++		depend_tab = pmu_res_depend_tab_4325a0;
++		depend_tab_size = ARRAY_SIZE(pmu_res_depend_tab_4325a0);
++		break;
++	case 0x4328:
++		min_msk = (1 << SSB_PMURES_4328_EXT_SWITCHER_PWM) |
++			  (1 << SSB_PMURES_4328_BB_SWITCHER_PWM) |
++			  (1 << SSB_PMURES_4328_XTAL_EN);
++		/* The PLL may turn on, if it decides so. */
++		max_msk = 0xFFFFF;
++		updown_tab = pmu_res_updown_tab_4328a0;
++		updown_tab_size = ARRAY_SIZE(pmu_res_updown_tab_4328a0);
++		depend_tab = pmu_res_depend_tab_4328a0;
++		depend_tab_size = ARRAY_SIZE(pmu_res_depend_tab_4328a0);
++		break;
++	case 0x5354:
++		/* The PLL may turn on, if it decides so. */
++		max_msk = 0xFFFFF;
++		break;
++	default:
++		ssb_printk(KERN_ERR PFX
++			   "ERROR: PMU resource config unknown for device %04X\n",
++			   bus->chip_id);
++	}
++
++	if (updown_tab) {
++		for (i = 0; i < updown_tab_size; i++) {
++			chipco_write32(cc, SSB_CHIPCO_PMU_RES_TABSEL,
++				       updown_tab[i].resource);
++			chipco_write32(cc, SSB_CHIPCO_PMU_RES_UPDNTM,
++				       updown_tab[i].updown);
++		}
++	}
++	if (depend_tab) {
++		for (i = 0; i < depend_tab_size; i++) {
++			chipco_write32(cc, SSB_CHIPCO_PMU_RES_TABSEL,
++				       depend_tab[i].resource);
++			switch (depend_tab[i].task) {
++			case PMU_RES_DEP_SET:
++				chipco_write32(cc, SSB_CHIPCO_PMU_RES_DEPMSK,
++					       depend_tab[i].depend);
++				break;
++			case PMU_RES_DEP_ADD:
++				chipco_set32(cc, SSB_CHIPCO_PMU_RES_DEPMSK,
++					     depend_tab[i].depend);
++				break;
++			case PMU_RES_DEP_REMOVE:
++				chipco_mask32(cc, SSB_CHIPCO_PMU_RES_DEPMSK,
++					      ~(depend_tab[i].depend));
++				break;
++			default:
++				SSB_WARN_ON(1);
++			}
++		}
++	}
++
++	/* Set the resource masks. */
++	if (min_msk)
++		chipco_write32(cc, SSB_CHIPCO_PMU_MINRES_MSK, min_msk);
++	if (max_msk)
++		chipco_write32(cc, SSB_CHIPCO_PMU_MAXRES_MSK, max_msk);
++}
++
++void ssb_pmu_init(struct ssb_chipcommon *cc)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	u32 pmucap;
++
++	if (!(cc->capabilities & SSB_CHIPCO_CAP_PMU))
++		return;
++
++	pmucap = chipco_read32(cc, SSB_CHIPCO_PMU_CAP);
++	cc->pmu.rev = (pmucap & SSB_CHIPCO_PMU_CAP_REVISION);
++
++	ssb_dprintk(KERN_DEBUG PFX "Found rev %u PMU (capabilities 0x%08X)\n",
++		    cc->pmu.rev, pmucap);
++
++	if (cc->pmu.rev >= 1) {
++		if ((bus->chip_id == 0x4325) && (bus->chip_rev < 2)) {
++			chipco_mask32(cc, SSB_CHIPCO_PMU_CTL,
++				      ~SSB_CHIPCO_PMU_CTL_NOILPONW);
++		} else {
++			chipco_set32(cc, SSB_CHIPCO_PMU_CTL,
++				     SSB_CHIPCO_PMU_CTL_NOILPONW);
++		}
++	}
++	ssb_pmu_pll_init(cc);
++	ssb_pmu_resources_init(cc);
++}
++
++void ssb_pmu_set_ldo_voltage(struct ssb_chipcommon *cc,
++			     enum ssb_pmu_ldo_volt_id id, u32 voltage)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	u32 addr, shift, mask;
++
++	switch (bus->chip_id) {
++	case 0x4328:
++	case 0x5354:
++		switch (id) {
++		case LDO_VOLT1:
++			addr = 2;
++			shift = 25;
++			mask = 0xF;
++			break;
++		case LDO_VOLT2:
++			addr = 3;
++			shift = 1;
++			mask = 0xF;
++			break;
++		case LDO_VOLT3:
++			addr = 3;
++			shift = 9;
++			mask = 0xF;
++			break;
++		case LDO_PAREF:
++			addr = 3;
++			shift = 17;
++			mask = 0x3F;
++			break;
++		default:
++			SSB_WARN_ON(1);
++			return;
++		}
++		break;
++	case 0x4312:
++		if (SSB_WARN_ON(id != LDO_PAREF))
++			return;
++		addr = 0;
++		shift = 21;
++		mask = 0x3F;
++		break;
++	default:
++		return;
++	}
++
++	ssb_chipco_regctl_maskset(cc, addr, ~(mask << shift),
++				  (voltage & mask) << shift);
++}
++
++void ssb_pmu_set_ldo_paref(struct ssb_chipcommon *cc, bool on)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	int ldo;
++
++	switch (bus->chip_id) {
++	case 0x4312:
++		ldo = SSB_PMURES_4312_PA_REF_LDO;
++		break;
++	case 0x4328:
++		ldo = SSB_PMURES_4328_PA_REF_LDO;
++		break;
++	case 0x5354:
++		ldo = SSB_PMURES_5354_PA_REF_LDO;
++		break;
++	default:
++		return;
++	}
++
++	if (on)
++		chipco_set32(cc, SSB_CHIPCO_PMU_MINRES_MSK, 1 << ldo);
++	else
++		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK, ~(1 << ldo));
++	chipco_read32(cc, SSB_CHIPCO_PMU_MINRES_MSK); //SPEC FIXME found via mmiotrace - dummy read?
++}
++
++EXPORT_SYMBOL(ssb_pmu_set_ldo_voltage);
++EXPORT_SYMBOL(ssb_pmu_set_ldo_paref);
