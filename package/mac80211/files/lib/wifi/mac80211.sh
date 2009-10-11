@@ -231,14 +231,12 @@ enable_mac80211() {
 				iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid
 			;;
 			sta|mesh)
+				config_get bssid "$vif" bssid
 				case "$enc" in												 
-					*)
-						iw dev "$ifname" connect "$ssid"
-					;;
 					wep)
 						if [ -e "$keymgmt" ]; then
 							[ -n "$keystring" ] &&
-								iw dev "$ifname" connect "$ssid" key "$keystring"
+								iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid key "$keystring"
 						else
 							if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
 								wpa_supplicant_setup_vif "$vif" wext || {
@@ -259,6 +257,9 @@ enable_mac80211() {
 								continue
 							}
 						fi
+					;;
+					*)
+						iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid
 					;;
 				esac
 
