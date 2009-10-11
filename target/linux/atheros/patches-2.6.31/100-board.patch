@@ -2107,7 +2107,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,643 @@
+@@ -0,0 +1,658 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2164,6 +2164,10 @@
 +
 +	if (!pend)
 +		ar231x_write_reg(AR2315_ISR, AR2315_ISR_GPIO);
++
++	/* Enable interrupt with edge detection */
++	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(bit)) != AR2315_GPIO_CR_I(bit))
++		return;
 +
 +	if (bit >= 0)
 +		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
@@ -2222,12 +2226,22 @@
 +{
 +	unsigned int gpio = irq - AR531X_GPIO_IRQ_BASE;
 +
-+	/* reconfigure GPIO line as input */
-+	ar231x_mask_reg(AR2315_GPIO_CR, AR2315_GPIO_CR_M(gpio), AR2315_GPIO_CR_I(gpio));
-+
 +	/* Enable interrupt with edge detection */
++	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(gpio)) != AR2315_GPIO_CR_I(gpio))
++		return;
++
 +	gpiointmask |= (1 << gpio);
 +	ar2315_set_gpiointmask(gpio, 3);
++}
++
++static unsigned int ar2315_gpio_intr_startup(unsigned int irq)
++{
++	unsigned int gpio = irq - AR531X_GPIO_IRQ_BASE;
++
++	/* reconfigure GPIO line as input */
++	ar231x_mask_reg(AR2315_GPIO_CR, AR2315_GPIO_CR_M(gpio), AR2315_GPIO_CR_I(gpio));
++	ar2315_gpio_intr_enable(irq);
++	return 0;
 +}
 +
 +static void ar2315_gpio_intr_disable(unsigned int irq)
@@ -2248,6 +2262,7 @@
 +
 +static struct irq_chip ar2315_gpio_intr_controller = {
 +	.typename	= "AR2315-GPIO",
++	.startup  = ar2315_gpio_intr_startup,
 +	.ack      = ar2315_gpio_intr_disable,
 +	.mask_ack = ar2315_gpio_intr_disable,
 +	.mask     = ar2315_gpio_intr_disable,
