@@ -66,7 +66,11 @@ disable_mac80211() (
 
 	return 0
 )
-
+get_freq() {
+	local phy="$1"
+	local channel="$2"
+	iw "$phy" info | grep -E -m1 "(\* ${channel:-....} MHz${channel:+|\\[$channel\\]})" | grep MHz | awk '{print $2}'
+}
 enable_mac80211() {
 	local device="$1"
 	config_get channel "$device" channel
@@ -75,6 +79,9 @@ enable_mac80211() {
 	find_mac80211_phy "$device" || return 0
 	config_get phy "$device" phy
 	local i=0
+
+	# convert channel to frequency
+	local freq="$(get_freq "$phy" "$channel")"
 
 	wifi_fixup_hwmode "$device" "g"
 	for vif in $vifs; do
@@ -134,7 +141,7 @@ enable_mac80211() {
 
 		# We attempt to set teh channel for all interfaces, although
 		# mac80211 may not support it or the driver might not yet
-		iw dev "$ifname" set channel "$channel" 
+		[ -z "$channel" ] || iw dev "$ifname" set channel "$channel" 
 
 		local key keystring
 
@@ -213,7 +220,11 @@ enable_mac80211() {
 					}
 				fi
 			;;
-			sta|mesh|adhoc)
+			adhoc)
+				config_get bssid "$vif" bssid
+				iw dev "$ifname" ibss join "$ssid" ${freq:+$freq fixed-freq} $bssid
+			;;
+			sta|mesh)
 				# Fixup... sometimes you have to scan to get beaconing going
 				iw dev "$ifname" scan &> /dev/null
 				case "$enc" in												 

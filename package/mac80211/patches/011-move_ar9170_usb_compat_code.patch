@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ar9170/usb.c
 +++ b/drivers/net/wireless/ath/ar9170/usb.c
-@@ -96,6 +96,225 @@ static struct usb_device_id ar9170_usb_i
+@@ -98,6 +98,225 @@ static struct usb_device_id ar9170_usb_i
  };
  MODULE_DEVICE_TABLE(usb, ar9170_usb_ids);
  
@@ -510,6 +510,6 @@
  
 -extern void usb_unpoison_anchored_urbs(struct usb_anchor *anchor);
 -
- #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)) */
- 
- #endif /*  LINUX_26_29_COMPAT_H */
+ #define DIV_ROUND_CLOSEST(x, divisor)(			\
+ {							\
+ 	typeof(divisor) __divisor = divisor;		\
