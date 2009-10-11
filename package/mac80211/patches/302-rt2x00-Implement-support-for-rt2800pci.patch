@@ -35,7 +35,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
  obj-$(CONFIG_RT2800USB)			+= rt2800usb.o
 --- /dev/null
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -0,0 +1,3241 @@
+@@ -0,0 +1,3240 @@
 +/*
 +	Copyright (C) 2004 - 2009 rt2x00 SourceForge Project
 +	<http://rt2x00.serialmonkey.com>
@@ -720,8 +720,7 @@ Signed-off-by: Ivo van Doorn <IvDoorn@gmail.com>
 +	u32 reg;
 +
 +	rt2x00pci_register_read(rt2x00dev, TX_TIMEOUT_CFG, &reg);
-+	rt2x00_set_field32(&reg, TX_TIMEOUT_CFG_RX_ACK_TIMEOUT,
-+			   DIV_ROUND_UP(erp->ack_timeout, erp->slot_time));
++	rt2x00_set_field32(&reg, TX_TIMEOUT_CFG_RX_ACK_TIMEOUT, 0x20);
 +	rt2x00pci_register_write(rt2x00dev, TX_TIMEOUT_CFG, reg);
 +
 +	rt2x00pci_register_read(rt2x00dev, AUTO_RSP_CFG, &reg);
