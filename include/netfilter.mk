@@ -197,26 +197,6 @@ $(eval $(call nf_add,IPT_IPSEC,CONFIG_NETFILTER_XT_MATCH_ESP, $(P_XT)xt_esp))
 $(eval $(call nf_add,IPT_IPSEC,CONFIG_NETFILTER_XT_MATCH_POLICY, $(P_XT)xt_policy))
 
 
-# ipset
-
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET, $(P_V4)ip_set))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_IPHASH, $(P_V4)ip_set_iphash))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_IPMAP, $(P_V4)ip_set_ipmap))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_IPPORTHASH, $(P_V4)ip_set_ipporthash))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_IPPORTIPHASH, $(P_V4)ip_set_ipportiphash))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_IPPORTNETHASH, $(P_V4)ip_set_ipportnethash))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_IPTREE, $(P_V4)ip_set_iptree))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_IPTREEMAP, $(P_V4)ip_set_iptreemap))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_MACIPMAP, $(P_V4)ip_set_macipmap))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_NETHASH, $(P_V4)ip_set_nethash))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_PORTMAP, $(P_V4)ip_set_portmap))
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_SET_SETLIST, $(P_V4)ip_set_setlist))
-
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_MATCH_SET, $(P_V4)ipt_set))
-
-$(eval $(call nf_add,IPT_IPSET,CONFIG_IP_NF_TARGET_SET, $(P_V4)ipt_SET))
-
-
 # IPv6
 
 # kernel only
@@ -329,7 +309,6 @@ IPT_BUILTIN += $(IPT_IMQ-y)
 IPT_BUILTIN += $(IPT_IPOPT-y)
 IPT_BUILTIN += $(IPT_IPRANGE-y)
 IPT_BUILTIN += $(IPT_IPSEC-y)
-IPT_BUILTIN += $(IPT_IPSET-y)
 IPT_BUILTIN += $(IPT_IPV6-y)
 IPT_BUILTIN += $(IPT_NAT-y)
 IPT_BUILTIN += $(IPT_NAT_EXTRA-y)
