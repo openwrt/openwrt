@@ -1,0 +1,15 @@
+--- a/gcc/config/cris/cris.md	2009-10-12 10:28:01.000000000 +0200
++++ b/gcc/config/cris/cris.md	2009-10-12 10:29:09.000000000 +0200
+@@ -4920,7 +4920,9 @@
+   "REGNO (operands[2]) == REGNO (operands[0])
+    && INTVAL (operands[3]) <= 65535 && INTVAL (operands[3]) >= 0
+    && !CONST_OK_FOR_LETTER_P (INTVAL (operands[3]), 'I')
+-   && !side_effects_p (operands[1])"
++   && !side_effects_p (operands[1])
++   && (!REG_P (operands[1])
++       || REGNO (operands[1]) <= CRIS_LAST_GENERAL_REGISTER)"
+   ;; FIXME: CC0 valid except for M (i.e. CC_NOT_NEGATIVE).
+   [(set (match_dup 0) (match_dup 4))
+    (set (match_dup 5) (match_dup 6))]
+
+
