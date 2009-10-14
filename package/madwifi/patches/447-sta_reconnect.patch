@@ -15,19 +15,11 @@
  	ic->ic_curmode = ieee80211_chan2mode(ic->ic_curchan);
 --- a/net80211/ieee80211_proto.c
 +++ b/net80211/ieee80211_proto.c
-@@ -1512,14 +1512,13 @@ __ieee80211_newstate(struct ieee80211vap
- 			if (arg != 0)
- 				ieee80211_scan_assoc_fail(ic,
- 					vap->iv_bss->ni_macaddr, arg);
-+			ieee80211_node_leave(vap->iv_bss);
- 			if (ic->ic_roaming == IEEE80211_ROAMING_AUTO)
- 				ieee80211_check_scan(vap,
- 					IEEE80211_SCAN_ACTIVE,
- 					IEEE80211_SCAN_FOREVER,
- 					vap->iv_des_nssid, vap->iv_des_ssid,
- 					NULL);
--			else
--				ieee80211_node_leave(vap->iv_bss);
+@@ -1602,7 +1602,6 @@ __ieee80211_newstate(struct ieee80211vap
+ 				IEEE80211_FC0_SUBTYPE_ASSOC_REQ, 0);
  			break;
- 		case IEEE80211_S_RUN:		/* beacon miss */
- 			if (vap->iv_opmode == IEEE80211_M_STA) {
+ 		case IEEE80211_S_RUN:
+-			ieee80211_node_leave(ni);
+ 			if (ic->ic_roaming == IEEE80211_ROAMING_AUTO) {
+ 				/* NB: caller specifies ASSOC/REASSOC by arg */
+ 				IEEE80211_SEND_MGMT(ni, arg ?
