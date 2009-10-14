@@ -1,0 +1,12 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -3573,6 +3573,9 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 				found = 1;
+ 				ni = ni_or_null = vap->iv_wdsnode;
+ 			} else if (vap->iv_opmode == IEEE80211_M_IBSS) {
++				if (vap->iv_state != IEEE80211_S_RUN)
++					break;
++
+ 				ni_or_null = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
+ 				if (ni_or_null)
+ 					ni = ni_or_null;
