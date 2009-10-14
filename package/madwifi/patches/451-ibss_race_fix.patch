@@ -10,3 +10,25 @@
  				ni_or_null = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
  				if (ni_or_null)
  					ni = ni_or_null;
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
+@@ -317,16 +317,10 @@ ieee80211_create_ibss(struct ieee80211va
+ 	/* Check to see if we already have a node for this mac
+ 	 * NB: we gain a node reference here
+ 	 */
+-	ni = ieee80211_find_txnode(vap, vap->iv_myaddr);
++	ni = ieee80211_alloc_node(vap, vap->iv_myaddr);
+ 	if (ni == NULL) {
+-		ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
+-		IEEE80211_DPRINTF(vap, IEEE80211_MSG_ASSOC,
+-				  "%s: ni:%p allocated for " MAC_FMT "\n",
+-				  __func__, ni, MAC_ADDR(vap->iv_myaddr));
+-		if (ni == NULL) {
+-			/* XXX recovery? */
+-			return;
+-		}
++		/* XXX recovery? */
++		return;
+ 	}
+ 
+ 	IEEE80211_ADDR_COPY(ni->ni_bssid, vap->iv_myaddr);
