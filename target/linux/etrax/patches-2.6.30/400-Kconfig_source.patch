@@ -1,35 +1,69 @@
 --- a/arch/cris/Kconfig
 +++ b/arch/cris/Kconfig
-@@ -651,6 +651,8 @@ endmenu
+@@ -649,6 +649,8 @@ endchoice
  
- source "drivers/base/Kconfig"
+ endmenu
  
 +menu "Device Drivers"
 +
+ source "drivers/base/Kconfig"
+ 
  # standard linux drivers
- source "drivers/mtd/Kconfig"
+@@ -660,13 +662,19 @@ source "drivers/pnp/Kconfig"
  
-@@ -662,6 +664,12 @@ source "drivers/block/Kconfig"
+ source "drivers/block/Kconfig"
  
++# misc before ide - BLK_DEV_SGIIOC4 depends on SGI_IOC4
++
++source "drivers/misc/Kconfig"
++
  source "drivers/ide/Kconfig"
  
+-source "drivers/net/Kconfig"
 +source "drivers/scsi/Kconfig"
-+
-+source "drivers/media/Kconfig"
-+
-+source "sound/Kconfig"
-+
- source "drivers/net/Kconfig"
  
- source "drivers/i2c/Kconfig"
-@@ -675,16 +683,26 @@ source "drivers/input/Kconfig"
+-source "drivers/i2c/Kconfig"
++source "drivers/ata/Kconfig"
+ 
+-source "drivers/rtc/Kconfig"
++source "drivers/net/Kconfig"
++
++source "drivers/isdn/Kconfig"
+ 
+ #
+ # input before char - char/joystick depends on it. As does USB.
+@@ -675,14 +683,50 @@ source "drivers/input/Kconfig"
  
  source "drivers/char/Kconfig"
  
 -source "fs/Kconfig"
++source "drivers/i2c/Kconfig"
++
++#source "drivers/spi/Kconfig"
++
 +source "drivers/gpio/Kconfig"
 +
 +source "drivers/w1/Kconfig"
++
++source "drivers/power/Kconfig"
++
++source "drivers/hwmon/Kconfig"
++
++source "drivers/thermal/Kconfig"
++
++source "drivers/watchdog/Kconfig"
++
++source "drivers/ssb/Kconfig"
++
++#source "drivers/l3/Kconfig"
++
++source "drivers/mfd/Kconfig"
++
++source "drivers/media/Kconfig"
++
++source "drivers/video/Kconfig"
++
++source "sound/Kconfig"
 +
 +source "drivers/hid/Kconfig"
  
@@ -39,14 +73,14 @@
  
 +source "drivers/leds/Kconfig"
 +
++source "drivers/rtc/Kconfig"
++
  source "drivers/staging/Kconfig"
- 
- source "arch/cris/Kconfig.debug"
  
 +endmenu
 + 
 +source "fs/Kconfig"
 +
- source "security/Kconfig"
+ source "arch/cris/Kconfig.debug"
  
- source "crypto/Kconfig"
+ source "security/Kconfig"
