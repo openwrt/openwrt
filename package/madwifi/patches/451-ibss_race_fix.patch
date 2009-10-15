@@ -1,23 +1,42 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3573,6 +3573,9 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -322,7 +322,6 @@ ieee80211_input(struct ieee80211vap * va
+ 			}
+ 			/* Do not try to find a node reference if the packet really did come from the BSS */
+ 			if (type == IEEE80211_FC0_TYPE_DATA && ni == vap->iv_bss &&
+-					!IEEE80211_ADDR_EQ(vap->iv_bss->ni_macaddr, wh->i_addr2) &&
+ 					IEEE80211_ADDR_EQ(vap->iv_bssid, wh->i_addr3)) {
+ 				/* Try to find sender in local node table. */
+ 				ni = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
+@@ -3572,10 +3571,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 			} else if (vap->iv_opmode == IEEE80211_M_WDS) {
  				found = 1;
  				ni = ni_or_null = vap->iv_wdsnode;
- 			} else if (vap->iv_opmode == IEEE80211_M_IBSS) {
-+				if (vap->iv_state != IEEE80211_S_RUN)
-+					break;
-+
+-			} else if (vap->iv_opmode == IEEE80211_M_IBSS) {
++			} else if ((vap->iv_opmode == IEEE80211_M_IBSS) && (vap->iv_state == IEEE80211_S_RUN)) {
  				ni_or_null = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
- 				if (ni_or_null)
+-				if (ni_or_null)
++				if (ni_or_null) {
  					ni = ni_or_null;
++					do_unref = 1;
++				}
+ 				found = 1;
+ 			}
+ 			IEEE80211_UNLOCK_IRQ(vap->iv_ic);
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -317,16 +317,10 @@ ieee80211_create_ibss(struct ieee80211va
+@@ -317,16 +317,16 @@ ieee80211_create_ibss(struct ieee80211va
  	/* Check to see if we already have a node for this mac
  	 * NB: we gain a node reference here
  	 */
 -	ni = ieee80211_find_txnode(vap, vap->iv_myaddr);
-+	ni = ieee80211_alloc_node(vap, vap->iv_myaddr);
++	ni = ieee80211_find_node(&ic->ic_sta, vap->iv_myaddr);
++	if (ni) {
++		ieee80211_node_leave(ni);
++		ieee80211_unref_node(&ni);
++	}
++
++	ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
  	if (ni == NULL) {
 -		ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
 -		IEEE80211_DPRINTF(vap, IEEE80211_MSG_ASSOC,
@@ -32,3 +51,27 @@
  	}
  
  	IEEE80211_ADDR_COPY(ni->ni_bssid, vap->iv_myaddr);
+@@ -759,6 +759,9 @@ ieee80211_sta_join(struct ieee80211vap *
+ 	ieee80211_setup_rates(ni, se->se_rates, se->se_xrates,
+ 		IEEE80211_F_DOSORT | IEEE80211_F_DONEGO | IEEE80211_F_DODEL);
+ 
++	if (vap->iv_opmode == IEEE80211_M_IBSS)
++		ieee80211_node_table_reset(&vap->iv_ic->ic_sta, vap);
++
+ 	return ieee80211_sta_join1(PASS_NODE(ni));
+ }
+ EXPORT_SYMBOL(ieee80211_sta_join);
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -6655,10 +6655,8 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+ 			 * if the difference it too small. Otherwise we are playing
+ 			 * tsf-pingpong with other vendors drivers */
+ 			beacon_tsf = le64_to_cpu(ni->ni_tstamp.tsf);
+-			if (beacon_tsf > rtsf + 0xffff) {
++			if (beacon_tsf > rtsf + 0xffff)
+ 				ath_hal_settsf64(sc->sc_ah, beacon_tsf - rtsf);
+-				ieee80211_ibss_merge(ni);
+-			}
+ 			break;
+ 		}
+ 		/* NB: Fall Through */
