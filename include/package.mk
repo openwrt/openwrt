@@ -176,7 +176,7 @@ endif
   $(call shexport,Package/$(1)/config)
 
   $(if $(DUMP), \
-    $(Dumpinfo), \
+    $(Dumpinfo/Package), \
     $(foreach target, \
       $(if $(Package/$(1)/targets),$(Package/$(1)/targets), \
         $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg $(if $(CONFIG_DEBUG_DIR),debug)) \

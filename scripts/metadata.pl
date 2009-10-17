@@ -533,6 +533,30 @@ sub print_package_config_category($) {
 	undef $category{$cat};
 }
 
+sub print_package_features() {
+	keys %features > 0 or return;
+	print "menu \"Package features\"\n";
+	foreach my $n (keys %features) {
+		my @features = sort { $b->{priority} <=> $a->{priority} or $a->{title} cmp $b->{title} } @{$features{$n}};
+		print <<EOF;
+choice
+	prompt "$features[0]->{target_title}"
+	default FEATURE_$features[0]->{name}
+EOF
+
+		foreach my $feature (@features) {
+			print <<EOF;
+	config FEATURE_$feature->{name}
+		bool "$feature->{title}"
+		help
+$feature->{description}
+EOF
+		}
+		print "endchoice\n"
+	}
+	print "endmenu\n\n";
+}
+
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n" if %preconfig;
@@ -549,6 +573,7 @@ sub gen_package_config() {
 EOF
 		}
 	}
+	print_package_features();
 	print_package_config_category 'Base system';
 	foreach my $cat (keys %category) {
 		print_package_config_category $cat;

@@ -2,13 +2,14 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig clear_packages parse_package_metadata get_multiline);
+our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features clear_packages parse_package_metadata get_multiline);
 
 our %package;
 our %preconfig;
 our %srcpackage;
 our %category;
 our %subdir;
+our %features;
 
 sub get_multiline {
 	my $fh = shift;
@@ -28,11 +29,13 @@ sub clear_packages() {
 	%package = ();
 	%srcpackage = ();
 	%category = ();
+	%features = ();
 }
 
 sub parse_package_metadata($) {
 	my $file = shift;
 	my $pkg;
+	my $feature;
 	my $makefile;
 	my $preconfig;
 	my $subdir;
@@ -55,6 +58,7 @@ sub parse_package_metadata($) {
 		};
 		next unless $src;
 		/^Package:\s*(.+?)\s*$/ and do {
+			undef $feature;
 			$pkg = {};
 			$pkg->{src} = $src;
 			$pkg->{makefile} = $makefile;
@@ -69,6 +73,24 @@ sub parse_package_metadata($) {
 			$package{$1} = $pkg;
 			push @{$srcpackage{$src}}, $pkg;
 		};
+		/^Feature:\s*(.+?)\s*$/ and do {
+			undef $pkg;
+			$feature = {};
+			$feature->{name} = $1;
+			$feature->{priority} = 0;
+		};
+		$feature and do {
+			/^Target-Name:\s*(.+?)\s*$/ and do {
+				$features{$1} or $features{$1} = [];
+				push @{$features{$1}}, $feature;
+			};
+			/^Target-Title:\s*(.+?)\s*$/ and $feature->{target_title} = $1;
+			/^Feature-Priority:\s*(\d+)\s*$/ and $feature->{priority} = $1;
+			/^Feature-Name:\s*(.+?)\s*$/ and $feature->{title} = $1;
+			/^Feature-Description:/ and $feature->{description} = get_multiline(\*FILE, "\t\t\t");
+			next;
+		};
+		next unless $pkg;
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
 		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
 		/^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
