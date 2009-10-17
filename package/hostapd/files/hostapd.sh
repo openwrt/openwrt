@@ -107,6 +107,12 @@ ${ht_capab:+ht_capab=$ht_capab}
 ${wpa_group_rekey:+wpa_group_rekey=$wpa_group_rekey}
 ${ieee80211d:+ieee80211d=$ieee80211d}
 $hostapd_cfg
+EOF
+	case "$driver" in
+		madwifi)
+		;;
+		*) 
+			cat >> /var/run/hostapd-$ifname.conf <<EOF
 wme_enabled=1
 wme_ac_bk_cwmin=4
 wme_ac_bk_cwmax=10
@@ -145,6 +151,8 @@ tx_queue_data0_cwmin=3
 tx_queue_data0_cwmax=7
 tx_queue_data0_burst=1.5
 EOF
+		;;
+	esac
 	hostapd -P /var/run/wifi-$ifname.pid -B /var/run/hostapd-$ifname.conf
 }
 
