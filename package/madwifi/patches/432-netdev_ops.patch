@@ -69,7 +69,7 @@ http://madwifi-project.org/changeset/4005
  	case NETDEV_CHANGENAME:
 --- a/net80211/ieee80211.c
 +++ b/net80211/ieee80211.c
-@@ -450,6 +450,18 @@ ieee80211_ifdetach(struct ieee80211com *
+@@ -451,6 +451,18 @@ ieee80211_ifdetach(struct ieee80211com *
  }
  EXPORT_SYMBOL(ieee80211_ifdetach);
  
@@ -88,7 +88,7 @@ http://madwifi-project.org/changeset/4005
  int
  ieee80211_vap_setup(struct ieee80211com *ic, struct net_device *dev,
  	const char *name, int opmode, int flags, struct ieee80211vap *master)
-@@ -470,16 +482,21 @@ ieee80211_vap_setup(struct ieee80211com 
+@@ -471,16 +483,21 @@ ieee80211_vap_setup(struct ieee80211com 
  		} else
  			strncpy(dev->name, name, sizeof(dev->name));
  	}
@@ -110,7 +110,7 @@ http://madwifi-project.org/changeset/4005
  	dev->tx_queue_len = 0;			/* NB: bypass queuing */
  	dev->hard_header_len = parent->hard_header_len;
  	/*
-@@ -1823,7 +1840,11 @@ ieee80211_set_multicast_list(struct net_
+@@ -1824,7 +1841,11 @@ ieee80211_set_multicast_list(struct net_
  	IEEE80211_UNLOCK_IRQ(ic);
  
  	/* XXX: Merge multicast list into parent device */
