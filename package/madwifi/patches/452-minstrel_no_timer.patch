@@ -1,0 +1,134 @@
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
+@@ -119,6 +119,7 @@
+ #include "minstrel.h"
+ 
+ #define ONE_SECOND (1000 * 1000)  /* 1 second, or 1000 milliseconds; eternity, in other words */
++#define TIMER_INTERVAL 100 /* msecs */
+ 
+ #include "release.h"
+ 
+@@ -128,9 +129,6 @@ static char *dev_info = "ath_rate_minstr
+ #define STALE_FAILURE_TIMEOUT_MS 10000
+ #define ENABLE_MRR 1
+ 
+-static int ath_timer_interval = (1000 / 10); /* every 1/10 second, timer runs */
+-static void ath_timer_function(unsigned long data);
+-
+ /* 10% of the time, send a packet at something other than the optimal rate, which fills
+  * the statistics tables nicely. This percentage is applied to the first packet of the
+  * multi rate retry chain. */
+@@ -142,7 +140,7 @@ static void ath_rate_ctl_reset(struct at
+ /* Calculate the throughput and probability of success for each node
+  * we are talking on, based on the statistics collected during the
+  * last timer period. */
+-static void ath_rate_statistics(void *arg, struct ieee80211_node *ni);
++static void ath_rate_statistics(struct ieee80211_node *ni);
+ 
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,52))
+@@ -204,6 +202,11 @@ ath_rate_findrate(struct ath_softc *sc, 
+ 		unsigned int ndx, offset;
+ 		int mrr;
+ 
++
++		if (sn->last_update + msecs_to_jiffies(TIMER_INTERVAL) < jiffies) {
++			ath_rate_statistics(&an->an_node);
++			sn->last_update = jiffies;
++		}
+ 		if (sn->num_rates <= 0) {
+ 			    printk(KERN_WARNING "%s: no rates for " MAC_FMT "?\n",
+ 			           dev_info,
+@@ -640,54 +643,11 @@ ath_rate_newstate(struct ieee80211vap *v
+ 		}
+ }
+ 
+-static void
+-ath_timer_function(unsigned long data)
+-{
+-		struct minstrel_softc *ssc = (struct minstrel_softc *) data;
+-		struct ath_softc *sc = ssc->sc;
+-		struct ieee80211com *ic;
+-		struct net_device *dev = ssc->sc_dev;
+-		struct timer_list *timer;
+-		unsigned int interval = ath_timer_interval;
+-
+-		if (dev == NULL)
+-			DPRINTF(sc, ATH_DEBUG_RATE, "%s: 'dev' is null in this timer \n", __func__);
+-
+-		if (sc == NULL)
+-			DPRINTF(sc, ATH_DEBUG_RATE, "%s: 'sc' is null in this timer\n", __func__);
+-
+-		ic = &sc->sc_ic;
+-
+-		if (ssc->close_timer_now)
+-			return;
+-
+-		if (dev->flags & IFF_RUNNING) {
+-			sc->sc_stats.ast_rate_calls++;
+-
+-			if (ic->ic_opmode == IEEE80211_M_STA) {
+-				struct ieee80211vap *tmpvap;
+-				TAILQ_FOREACH(tmpvap, &ic->ic_vaps, iv_next) {
+-					ath_rate_statistics(sc, tmpvap->iv_bss);/* NB: no reference */
+-				}
+-			} else
+-			            ieee80211_iterate_nodes(&ic->ic_sta, ath_rate_statistics, sc);
+-		}
+-
+-		if (ic->ic_opmode == IEEE80211_M_STA)
+-			interval = ath_timer_interval >> 1;
+-
+-		timer  = &(ssc->timer);
+-		if (timer == NULL)
+-			DPRINTF(sc, ATH_DEBUG_RATE, "%s: timer is null - leave it\n", __func__);
+-
+-		timer->expires = jiffies + ((HZ * interval) / 1000);
+-		add_timer(timer);
+-}
+ 
+ static void
+-ath_rate_statistics(void *arg, struct ieee80211_node *ni)
++ath_rate_statistics(struct ieee80211_node *ni)
+ {
+-		struct ath_node *an = (struct ath_node *) ni;
++		struct ath_node *an = ATH_NODE(ni);
+ 		struct ieee80211_rateset *rs = &ni->ni_rates;
+ 		struct minstrel_node *rn = ATH_NODE_MINSTREL(an);
+ 		unsigned int i;
+@@ -786,15 +746,8 @@ ath_rate_attach(struct ath_softc *sc)
+ 		osc->arc.arc_space = sizeof(struct minstrel_node);
+ 		osc->arc.arc_vap_space = 0;
+ 
+-		osc->close_timer_now = 0;
+-		init_timer(&osc->timer);
+  	osc->sc          = sc;
+ 		osc->sc_dev      = sc->sc_dev;
+-		osc->timer.function = ath_timer_function;
+-		osc->timer.data = (unsigned long)osc;
+-
+-		osc->timer.expires = jiffies + HZ;
+-		add_timer(&osc->timer);
+ 
+ 		return &osc->arc;
+ }
+@@ -803,8 +756,6 @@ static void
+ ath_rate_detach(struct ath_ratectrl *arc)
+ {
+  	struct minstrel_softc *osc = (struct minstrel_softc *) arc;
+-		osc->close_timer_now = 1;
+-		del_timer(&osc->timer);
+ 		kfree(osc);
+ 		_MOD_DEC_USE(THIS_MODULE);
+ }
+--- a/ath_rate/minstrel/minstrel.h
++++ b/ath_rate/minstrel/minstrel.h
+@@ -167,6 +167,8 @@ struct minstrel_node {
+ 	       packet, or a packet at an optimal rate.*/
+ 	int random_n;
+ 	int a, b;          /**Coefficients of the random thing */
++
++	unsigned long last_update;
+ };
+ 
+ 
