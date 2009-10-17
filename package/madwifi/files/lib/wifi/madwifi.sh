@@ -90,11 +90,20 @@ enable_atheros() {
 	config_get_bool softled "$device" softled 1
 
 	devname="$(cat /proc/sys/dev/$device/dev_name)"
-	antgpio=
+	local antgpio=
+	local invert=
 	case "$devname" in
-		NanoStation2) antgpio=7;;
-		NanoStation5) antgpio=1;;
+		NanoStation2) antgpio=7; invert=1;;
+		NanoStation5) antgpio=1; invert=1;;
+		"NanoStation Loco2") antgpio=2;;
 	esac
+	if [ -n "$invert" ]; then
+		_set="clear"
+		_clear="set"
+	else
+		_set="set"
+		_clear="clear"
+	fi
 	if [ -n "$antgpio" ]; then
 		softled=0
 		config_get antenna "$device" antenna
@@ -106,14 +115,13 @@ enable_atheros() {
 		esac
 			
 		[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
+		gpioctl "dirout" "$antgpio" >/dev/null 2>&1
 		case "$antenna" in
 			horizontal|vertical|auto)
-				gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-				gpioctl "set" "$antgpio" >/dev/null 2>&1
+				gpioctl "$_clear" "$antgpio" >/dev/null 2>&1
 			;;
 			external)
-				gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-				gpioctl "clear" "$antgpio" >/dev/null 2>&1
+				gpioctl "$_set" "$antgpio" >/dev/null 2>&1
 			;;
 		esac
 	fi
