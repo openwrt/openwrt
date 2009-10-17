@@ -853,7 +853,7 @@
  	}
  	/* Initialize candidate channels to all available */
  	memcpy(ic->ic_chan_active, ic->ic_chan_avail,
-@@ -311,11 +296,58 @@ ieee80211_ifattach(struct ieee80211com *
+@@ -311,11 +296,59 @@ ieee80211_ifattach(struct ieee80211com *
  	 * When 11g is supported, force the rate set to
  	 * include basic rates suitable for a mixed b/g bss.
  	 */
@@ -866,6 +866,7 @@
 +	if (init)
 +		return;
 +
++	ifmedia_removeall(&ic->ic_media);
 +	ieee80211_media_setup(ic, &ic->ic_media, ic->ic_caps, NULL, NULL);
 +	ieee80211com_media_status(ic->ic_dev, &imr);
 +	ifmedia_set(&ic->ic_media, imr.ifm_active);
@@ -913,7 +914,7 @@
  	/* Setup initial channel settings */
  	ic->ic_bsschan = IEEE80211_CHAN_ANYC;
  	/* Arbitrarily pick the first channel */
-@@ -327,6 +359,7 @@ ieee80211_ifattach(struct ieee80211com *
+@@ -327,6 +360,7 @@ ieee80211_ifattach(struct ieee80211com *
  	/* Enable WME by default, if we're capable. */
  	if (ic->ic_caps & IEEE80211_C_WME)
  		ic->ic_flags |= IEEE80211_F_WME;
@@ -921,7 +922,7 @@
  	(void) ieee80211_setmode(ic, ic->ic_curmode);
  
  	/* Store default beacon interval, as nec. */
-@@ -763,7 +796,8 @@ ieee80211_media_setup(struct ieee80211co
+@@ -763,7 +797,8 @@ ieee80211_media_setup(struct ieee80211co
  	struct ieee80211_rateset allrates;
  
  	/* Fill in media characteristics. */
@@ -931,7 +932,7 @@
  	maxrate = 0;
  	memset(&allrates, 0, sizeof(allrates));
  
-@@ -793,7 +827,7 @@ ieee80211_media_setup(struct ieee80211co
+@@ -793,7 +828,7 @@ ieee80211_media_setup(struct ieee80211co
  			ADD(media, IFM_AUTO, mopt | IFM_IEEE80211_WDS);
  		if (mode == IEEE80211_MODE_AUTO)
  			continue;
@@ -940,7 +941,7 @@
  
  		for (i = 0; i < rs->rs_nrates; i++) {
  			rate = rs->rs_rates[i];
-@@ -1207,7 +1241,7 @@ ieee80211_announce(struct ieee80211com *
+@@ -1207,7 +1242,7 @@ ieee80211_announce(struct ieee80211com *
  		if ((ic->ic_modecaps & (1 << mode)) == 0)
  			continue;
  		if_printf(dev, "%s rates: ", ieee80211_phymode_name[mode]);
@@ -949,7 +950,7 @@
  		for (i = 0; i < rs->rs_nrates; i++) {
  			rate = rs->rs_rates[i];
  			mword = ieee80211_rate2media(ic, rate, mode);
-@@ -1417,7 +1451,7 @@ ieee80211com_media_change(struct net_dev
+@@ -1417,7 +1452,7 @@ ieee80211com_media_change(struct net_dev
  			 * now so drivers have a consistent state.
  			 */
  			KASSERT(vap->iv_bss != NULL, ("no bss node"));
@@ -958,7 +959,7 @@
  		}
  		error = -ENETRESET;
  	}
-@@ -1435,7 +1469,7 @@ findrate(struct ieee80211com *ic, enum i
+@@ -1435,7 +1470,7 @@ findrate(struct ieee80211com *ic, enum i
  {
  #define	IEEERATE(_ic,_m,_i) \
  	((_ic)->ic_sup_rates[_m].rs_rates[_i] & IEEE80211_RATE_VAL)
@@ -967,7 +968,7 @@
  	for (i = 0; i < nrates; i++)
  		if (IEEERATE(ic, mode, i) == rate)
  			return i;
-@@ -1877,11 +1911,6 @@ ieee80211_build_countryie(struct ieee802
+@@ -1877,11 +1912,6 @@ ieee80211_build_countryie(struct ieee802
  			if (ieee80211_chan2mode(c) != curmode_noturbo)
  				continue;
  
@@ -979,7 +980,7 @@
  			if (*cur_runlen == 0) {
  				(*cur_runlen)++;
  				*cur_pow = c->ic_maxregpower;
-@@ -1915,7 +1944,7 @@ void
+@@ -1915,7 +1945,7 @@ void
  ieee80211_build_sc_ie(struct ieee80211com *ic)
  {
  	struct ieee80211_ie_sc *ie = &ic->ic_sc_ie;

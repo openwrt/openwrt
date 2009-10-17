@@ -1,41 +1,184 @@
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -322,7 +322,6 @@ ieee80211_input(struct ieee80211vap * va
+@@ -294,10 +294,10 @@ ieee80211_input(struct ieee80211vap * va
+ 			break;
+ 		case IEEE80211_M_IBSS:
+ 		case IEEE80211_M_AHDEMO:
+-			if (!IEEE80211_ADDR_EQ(wh->i_addr3, vap->iv_bssid) ||
++			if ((!IEEE80211_ADDR_EQ(wh->i_addr3, vap->iv_bssid) ||
+ 			    (!IEEE80211_ADDR_EQ(wh->i_addr1, vap->iv_myaddr) &&
+-			     !IEEE80211_IS_MULTICAST(wh->i_addr1) &&
+-			     (subtype != IEEE80211_FC0_SUBTYPE_BEACON))) {
++			     !IEEE80211_IS_MULTICAST(wh->i_addr1))) &&
++			     (type == IEEE80211_FC0_TYPE_DATA)) {
+ 				if (!(vap->iv_dev->flags & IFF_PROMISC)) {
+ 					IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
+ 						bssid, NULL, "%s", "not to bss");
+@@ -322,22 +322,15 @@ ieee80211_input(struct ieee80211vap * va
  			}
  			/* Do not try to find a node reference if the packet really did come from the BSS */
  			if (type == IEEE80211_FC0_TYPE_DATA && ni == vap->iv_bss &&
 -					!IEEE80211_ADDR_EQ(vap->iv_bss->ni_macaddr, wh->i_addr2) &&
  					IEEE80211_ADDR_EQ(vap->iv_bssid, wh->i_addr3)) {
  				/* Try to find sender in local node table. */
- 				ni = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
-@@ -3572,10 +3571,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+-				ni = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
++				if (!ni_or_null) {
++					ieee80211_unref_node(&ni);
++					ni = ieee80211_find_txnode(vap, wh->i_addr2);
++				}
+ 				if (ni == NULL) {
+-					/*
+-					 * Fake up a node for this newly discovered
+-					 * member of the IBSS.  This should probably
+-					 * done after an ACL check.
+-					 */
+-					ni = ieee80211_fakeup_adhoc_node(vap,
+-							wh->i_addr2);
+-					if (ni == NULL) {
+-						/* NB: stat kept for alloc failure */
+-						goto err;
+-					}
++					/* NB: stat kept for alloc failure */
++					goto discard;
+ 				}
+ 			}
+ 			iwspy_event(vap, ni, rssi);
+@@ -3553,8 +3546,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 				(((vap->iv_opmode == IEEE80211_M_HOSTAP) ||
+ 				 (vap->iv_opmode == IEEE80211_M_WDS)) &&
+ 				(scan.capinfo & IEEE80211_CAPINFO_ESS))) {
++			struct ieee80211_node *tni = NULL;
+ 			struct ieee80211vap *avp = NULL;
+-			int do_unref = 0;
+ 			int found = 0;
+ 
+ 			IEEE80211_LOCK_IRQ(vap->iv_ic);
+@@ -3568,14 +3561,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 					}
+ 				}
+ 				if (found)
+-					ni = ni_or_null = avp->iv_wdsnode;
++					tni = ieee80211_ref_node(avp->iv_wdsnode);
  			} else if (vap->iv_opmode == IEEE80211_M_WDS) {
  				found = 1;
- 				ni = ni_or_null = vap->iv_wdsnode;
+-				ni = ni_or_null = vap->iv_wdsnode;
 -			} else if (vap->iv_opmode == IEEE80211_M_IBSS) {
-+			} else if ((vap->iv_opmode == IEEE80211_M_IBSS) && (vap->iv_state == IEEE80211_S_RUN)) {
- 				ni_or_null = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
+-				ni_or_null = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
 -				if (ni_or_null)
-+				if (ni_or_null) {
- 					ni = ni_or_null;
-+					do_unref = 1;
-+				}
+-					ni = ni_or_null;
++				tni = ieee80211_ref_node(vap->iv_wdsnode);
++			} else if ((vap->iv_opmode == IEEE80211_M_IBSS) && (vap->iv_state == IEEE80211_S_RUN)) {
++				tni = ieee80211_find_node(&ic->ic_sta, wh->i_addr2);
  				found = 1;
  			}
  			IEEE80211_UNLOCK_IRQ(vap->iv_ic);
+@@ -3583,20 +3574,21 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 			if (!found)
+ 				break;
+ 
+-			if (ni_or_null == NULL) {
++			memcpy(&SKB_CB(skb)->beacon_tsf, scan.tstamp, sizeof(u_int64_t));
++
++			if (tni == NULL) {
+ 				if (avp) {
+ 					IEEE80211_LOCK_IRQ(ic);
+-					ni = ieee80211_add_neighbor(avp, wh, &scan);
++					tni = ieee80211_add_neighbor(avp, wh, &scan);
+ 					/* force assoc */
+-					ni->ni_associd |= 0xc000;
+-					avp->iv_wdsnode = ieee80211_ref_node(ni);
++					tni->ni_associd |= 0xc000;
++					avp->iv_wdsnode = ieee80211_ref_node(tni);
+ 					IEEE80211_UNLOCK_IRQ(ic);
+ 				} else if ((vap->iv_opmode == IEEE80211_M_IBSS) &&
+ 				           IEEE80211_ADDR_EQ(wh->i_addr3, vap->iv_bssid)) {
+ 					/* Create a new entry in the neighbor table. */
+-					ni = ieee80211_add_neighbor(vap, wh, &scan);
++					tni = ieee80211_add_neighbor(vap, wh, &scan);
+ 				}
+-				do_unref = 1;
+ 			} else {
+ 				/*
+ 				 * Copy data from beacon to neighbor table.
+@@ -3604,39 +3596,38 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+ 				 * ieee80211_add_neighbor(), so we just copy
+ 				 * everything over to be safe.
+ 				 */
+-				ni->ni_esslen = scan.ssid[1];
+-				memcpy(ni->ni_essid, scan.ssid + 2, scan.ssid[1]);
+-				IEEE80211_ADDR_COPY(ni->ni_bssid, wh->i_addr3);
+-				memcpy(ni->ni_tstamp.data, scan.tstamp,
+-					sizeof(ni->ni_tstamp));
+-				ni->ni_inact = ni->ni_inact_reload;
+-				ni->ni_intval = 
++				tni->ni_esslen = scan.ssid[1];
++				memcpy(tni->ni_essid, scan.ssid + 2, scan.ssid[1]);
++				IEEE80211_ADDR_COPY(tni->ni_bssid, wh->i_addr3);
++				memcpy(tni->ni_tstamp.data, scan.tstamp,
++					sizeof(tni->ni_tstamp));
++				tni->ni_inact = tni->ni_inact_reload;
++				tni->ni_intval =
+ 					IEEE80211_BINTVAL_SANITISE(scan.bintval);
+-				ni->ni_capinfo = scan.capinfo;
+-				ni->ni_chan = ic->ic_curchan;
+-				ni->ni_fhdwell = scan.fhdwell;
+-				ni->ni_fhindex = scan.fhindex;
+-				ni->ni_erp = scan.erp;
+-				ni->ni_timoff = scan.timoff;
++				tni->ni_capinfo = scan.capinfo;
++				tni->ni_chan = ic->ic_curchan;
++				tni->ni_fhdwell = scan.fhdwell;
++				tni->ni_fhindex = scan.fhindex;
++				tni->ni_erp = scan.erp;
++				tni->ni_timoff = scan.timoff;
+ 				if (scan.wme != NULL)
+-					ieee80211_saveie(&ni->ni_wme_ie, scan.wme);
++					ieee80211_saveie(&tni->ni_wme_ie, scan.wme);
+ 				if (scan.wpa != NULL)
+-					ieee80211_saveie(&ni->ni_wpa_ie, scan.wpa);
++					ieee80211_saveie(&tni->ni_wpa_ie, scan.wpa);
+ 				if (scan.rsn != NULL)
+-					ieee80211_saveie(&ni->ni_rsn_ie, scan.rsn);
++					ieee80211_saveie(&tni->ni_rsn_ie, scan.rsn);
+ 				if (scan.ath != NULL)
+-					ieee80211_saveath(ni, scan.ath);
++					ieee80211_saveath(tni, scan.ath);
+ 
+ 				/* NB: must be after ni_chan is setup */
+-				ieee80211_setup_rates(ni, scan.rates,
++				ieee80211_setup_rates(tni, scan.rates,
+ 					scan.xrates, IEEE80211_F_DOSORT);
+ 			}
+-			if (ni != NULL) {
+-				ni->ni_rssi = rssi;
+-				ni->ni_rtsf = rtsf;
+-				ni->ni_last_rx = jiffies;
+-				if (do_unref)
+-					ieee80211_unref_node(&ni);
++			if (tni != NULL) {
++				tni->ni_rssi = rssi;
++				tni->ni_rtsf = rtsf;
++				tni->ni_last_rx = jiffies;
++				ieee80211_unref_node(&tni);
+ 			}
+ 		}
+ 		break;
 --- a/net80211/ieee80211_node.c
 +++ b/net80211/ieee80211_node.c
-@@ -317,16 +317,16 @@ ieee80211_create_ibss(struct ieee80211va
+@@ -53,6 +53,7 @@
+ 
+ #include <net80211/ieee80211_var.h>
+ #include <net80211/if_athproto.h>
++#include <net80211/ieee80211_node.h>
+ 
+ /*
+  * Association IDs are managed with a bit vector.
+@@ -317,16 +318,11 @@ ieee80211_create_ibss(struct ieee80211va
  	/* Check to see if we already have a node for this mac
  	 * NB: we gain a node reference here
  	 */
 -	ni = ieee80211_find_txnode(vap, vap->iv_myaddr);
-+	ni = ieee80211_find_node(&ic->ic_sta, vap->iv_myaddr);
-+	if (ni) {
-+		ieee80211_node_leave(ni);
-+		ieee80211_unref_node(&ni);
-+	}
-+
++	ieee80211_node_table_reset(&ic->ic_sta, vap);
 +	ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
  	if (ni == NULL) {
 -		ni = ieee80211_alloc_node_table(vap, vap->iv_myaddr);
@@ -51,23 +194,50 @@
  	}
  
  	IEEE80211_ADDR_COPY(ni->ni_bssid, vap->iv_myaddr);
-@@ -759,6 +759,9 @@ ieee80211_sta_join(struct ieee80211vap *
- 	ieee80211_setup_rates(ni, se->se_rates, se->se_xrates,
- 		IEEE80211_F_DOSORT | IEEE80211_F_DONEGO | IEEE80211_F_DODEL);
+@@ -429,8 +425,8 @@ ieee80211_reset_bss(struct ieee80211vap 
+ 			  __func__, ni, MAC_ADDR(vap->iv_myaddr));
+ 	KASSERT(ni != NULL, ("unable to setup inital BSS node"));
  
-+	if (vap->iv_opmode == IEEE80211_M_IBSS)
-+		ieee80211_node_table_reset(&vap->iv_ic->ic_sta, vap);
-+
- 	return ieee80211_sta_join1(PASS_NODE(ni));
- }
- EXPORT_SYMBOL(ieee80211_sta_join);
+-	vap->iv_bss = ieee80211_ref_node(ni);
+-	KASSERT((atomic_read(&vap->iv_bss->ni_refcnt) == 3), 
++	vap->iv_bss = ni;
++	KASSERT((atomic_read(&vap->iv_bss->ni_refcnt) == 2),
+ 		("wrong refcount for new node."));
+ 
+ 	if (obss != NULL) {
+@@ -647,7 +643,7 @@ ieee80211_sta_join1(struct ieee80211_nod
+ 		(vap->iv_state == IEEE80211_S_RUN) && bssid_equal(obss, selbs)); */
+ 	vap->iv_bss = selbs;
+ 	IEEE80211_ADDR_COPY(vap->iv_bssid, selbs->ni_bssid);
+-	if (obss != NULL) {
++	if ((obss != NULL) && (obss != selbs)) {
+ 		if (obss->ni_table)
+ 			ieee80211_node_leave(obss);
+ 		ieee80211_unref_node(&obss);
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6655,10 +6655,8 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+@@ -6625,14 +6625,6 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+ 
+ 	sc->sc_recv_mgmt(vap, ni_or_null, skb, subtype, rssi, rtsf);
+ 
+-	/* Lookup the new node if any (this grabs a reference to it) */
+-	ni = ieee80211_find_rxnode(vap->iv_ic, vap,
+-	         (const struct ieee80211_frame_min *)skb->data);
+-	if (ni == NULL) {
+-		DPRINTF(sc, ATH_DEBUG_BEACON, "Dropping; node unknown.\n");
+-		return;
+-	}
+-
+ 	switch (subtype) {
+ 	case IEEE80211_FC0_SUBTYPE_BEACON:
+ 		/* update RSSI statistics for use by the HAL */
+@@ -6654,11 +6646,9 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+ 			 * we do the IBSS merging in software. Also do not merge
  			 * if the difference it too small. Otherwise we are playing
  			 * tsf-pingpong with other vendors drivers */
- 			beacon_tsf = le64_to_cpu(ni->ni_tstamp.tsf);
+-			beacon_tsf = le64_to_cpu(ni->ni_tstamp.tsf);
 -			if (beacon_tsf > rtsf + 0xffff) {
++			beacon_tsf = le64_to_cpu(SKB_CB(skb)->beacon_tsf);
 +			if (beacon_tsf > rtsf + 0xffff)
  				ath_hal_settsf64(sc->sc_ah, beacon_tsf - rtsf);
 -				ieee80211_ibss_merge(ni);
@@ -75,3 +245,109 @@
  			break;
  		}
  		/* NB: Fall Through */
+@@ -6680,13 +6670,21 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+ 			hw_tsf = ath_hal_gettsf64(sc->sc_ah);
+ 			hw_tu  = hw_tsf >> 10;
+ 
+-			beacon_tsf = le64_to_cpu(ni->ni_tstamp.tsf);
++			beacon_tsf = le64_to_cpu(SKB_CB(skb)->beacon_tsf);
+ 			beacon_tu  = beacon_tsf >> 10;
+ 
++			if (!beacon_tsf)
++				break;
++
++			if (IEEE80211_ADDR_EQ(wh->i_addr3, vap->iv_bssid))
++				break;
++
+ 			DPRINTF(sc, ATH_DEBUG_BEACON,
+-					"Beacon transmitted at %10llx, "
++					"Beacon transmitted from "MAC_FMT" ("MAC_FMT") at %10llx, "
+ 					"received at %10llx(%lld), hw TSF "
+ 					"%10llx(%lld)\n",
++					MAC_ADDR(wh->i_addr3),
++					MAC_ADDR(vap->iv_bssid),
+ 					beacon_tsf,
+ 					rtsf, rtsf - beacon_tsf,
+ 					hw_tsf, hw_tsf - beacon_tsf);
+@@ -6699,39 +6697,13 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+ 				do_merge = 1;
+ 			}
+ 
+-			/* Check sc_nexttbtt */
+-			if (sc->sc_nexttbtt < hw_tu) {
+-				DPRINTF(sc, ATH_DEBUG_BEACON,
+-					"sc_nexttbtt (%8x TU) is in the past "
+-					"(tsf %8x TU), updating timers\n",
+-					sc->sc_nexttbtt, hw_tu);
+-				do_merge = 1;
+-			}
+-
+-			intval = ni->ni_intval & HAL_BEACON_PERIOD;
+-#if 0
+-			/* This code is disabled since it would produce
+-			 * unwanted merge. For instance, in a two nodes network
+-			 * A & B, A can merge to B and at the same time, B will
+-			 * merge to A, still having a split */
+-			if (intval != 0) {
+-				if ((sc->sc_nexttbtt % intval) !=
+-						(beacon_tu % intval)) {
+-					DPRINTF(sc, ATH_DEBUG_BEACON,
+-							"ibss merge: "
+-							"sc_nexttbtt %10x TU "
+-							"(%3d) beacon %10x TU "
+-							"(%3d)\n",
+-							sc->sc_nexttbtt,
+-							sc->sc_nexttbtt % intval,
+-							beacon_tu,
+-							beacon_tu % intval);
+-					do_merge = 1;
+-				}
+-			}
+-#endif
+-			if (do_merge)
++			if (do_merge) {
++				/* Lookup the new node if any (this grabs a reference to it) */
++				ni = ieee80211_find_txnode(vap, wh->i_addr2);
++				memcpy(ni->ni_bssid, wh->i_addr3, IEEE80211_ADDR_LEN);
+ 				ieee80211_ibss_merge(ni);
++				ieee80211_unref_node(&ni);
++			}
+ 
+ 			if ((sc->sc_opmode == HAL_M_IBSS) &&
+ 					ath_hw_check_atim(sc, 1, vap->iv_bss->ni_intval))
+@@ -6739,8 +6711,6 @@ ath_recv_mgmt(struct ieee80211vap * vap,
+ 		}
+ 		break;
+ 	}
+-
+-	ieee80211_unref_node(&ni);
+ }
+ 
+ static void
+--- a/net80211/ieee80211_linux.h
++++ b/net80211/ieee80211_linux.h
+@@ -411,7 +411,7 @@ typedef spinlock_t acl_lock_t;
+  *     8 bytes so we reserve/avoid it.
+  */
+ 	struct ieee80211_cb {
+-	u_int8_t vlan[8];			/* reserve for vlan tag info */
++	u_int64_t beacon_tsf;
+ 	struct ieee80211_node *ni;
+ 	u_int32_t flags;
+ #define	M_LINK0		0x01			/* frame needs WEP encryption */
+--- a/net80211/ieee80211_scan_sta.c
++++ b/net80211/ieee80211_scan_sta.c
+@@ -1125,11 +1125,8 @@ adhoc_default_action(struct ieee80211vap
+ 	u_int8_t zeroMacAddr[IEEE80211_ADDR_LEN];
+ 
+ 	memset(&zeroMacAddr, 0, IEEE80211_ADDR_LEN);
+-	if (IEEE80211_ADDR_EQ(se->se_bssid, &zeroMacAddr[0])) {
+-		ieee80211_create_ibss(vap, se->se_chan);
+-		return 1;
+-	} else
+-		return ieee80211_sta_join(vap, se);
++	ieee80211_create_ibss(vap, se->se_chan);
++	return 1;
+ }
+ 
+ static const struct ieee80211_scanner adhoc_default = {

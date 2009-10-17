@@ -1002,7 +1002,7 @@
  #define skb_tail_pointer(_skb) ((_skb)->tail)
 --- a/net80211/ieee80211.c
 +++ b/net80211/ieee80211.c
-@@ -457,7 +457,7 @@ ieee80211_vap_setup(struct ieee80211com 
+@@ -458,7 +458,7 @@ ieee80211_vap_setup(struct ieee80211com 
  #define	IEEE80211_C_OPMODE \
  	(IEEE80211_C_IBSS | IEEE80211_C_HOSTAP | IEEE80211_C_AHDEMO | \
  	 IEEE80211_C_MONITOR)
@@ -1011,7 +1011,7 @@
  	struct net_device *parent = ic->ic_dev;
  	int err;
  
-@@ -1354,7 +1354,7 @@ media_status(enum ieee80211_opmode opmod
+@@ -1355,7 +1355,7 @@ media_status(enum ieee80211_opmode opmod
  static void
  ieee80211com_media_status(struct net_device *dev, struct ifmediareq *imr)
  {
@@ -1020,7 +1020,7 @@
  
  	imr->ifm_status = IFM_AVALID;
  	if (!TAILQ_EMPTY(&ic->ic_vaps))
-@@ -1406,7 +1406,7 @@ media2mode(const struct ifmedia_entry *i
+@@ -1407,7 +1407,7 @@ media2mode(const struct ifmedia_entry *i
  static int
  ieee80211com_media_change(struct net_device *dev)
  {
@@ -1029,7 +1029,7 @@
  	struct ieee80211vap *vap;
  	struct ifmedia_entry *ime = ic->ic_media.ifm_cur;
  	enum ieee80211_phymode newphymode;
-@@ -1510,7 +1510,7 @@ checkrate(struct ieee80211com *ic, enum 
+@@ -1511,7 +1511,7 @@ checkrate(struct ieee80211com *ic, enum 
  int
  ieee80211_media_change(struct net_device *dev)
  {
@@ -1038,7 +1038,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ifmedia_entry *ime = vap->iv_media.ifm_cur;
  	enum ieee80211_phymode newmode;
-@@ -1544,7 +1544,7 @@ EXPORT_SYMBOL(ieee80211_media_change);
+@@ -1545,7 +1545,7 @@ EXPORT_SYMBOL(ieee80211_media_change);
  void
  ieee80211_media_status(struct net_device *dev, struct ifmediareq *imr)
  {
@@ -1047,7 +1047,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	enum ieee80211_phymode mode;
  	struct ieee80211_rateset *rs;
-@@ -1750,7 +1750,7 @@ EXPORT_SYMBOL(ieee80211_media2rate);
+@@ -1751,7 +1751,7 @@ EXPORT_SYMBOL(ieee80211_media2rate);
  static struct net_device_stats *
  ieee80211_getstats(struct net_device *dev)
  {
@@ -1056,7 +1056,7 @@
  	struct net_device_stats *stats = &vap->iv_devstats;
  
  	/* XXX: Total guess as to what to count where */
-@@ -1789,7 +1789,7 @@ ieee80211_change_mtu(struct net_device *
+@@ -1790,7 +1790,7 @@ ieee80211_change_mtu(struct net_device *
  static void
  ieee80211_set_multicast_list(struct net_device *dev)
  {
