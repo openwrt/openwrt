@@ -11,5 +11,6 @@ obj-y	:= irq.o setup.o devices.o rt305x.o
 
 obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 
+obj-$(CONFIG_RT305X_MACH_DIR_300_REVB)	+= mach-dir-300-revb.o
 obj-$(CONFIG_RT305X_MACH_V22RW_2X2)	+= mach-v22rw-2x2.o
 obj-$(CONFIG_RT305X_MACH_WHR_G300N)	+= mach-whr-g300n.o
