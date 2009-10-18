@@ -33,6 +33,9 @@ static struct board_rec boards[] __initdata = {
 		.name		= "RT-N15",
 		.mach_type	= RAMIPS_MACH_RT_N15,
 	}, {
+		.name		= "DIR-300-revB",
+		.mach_type	= RAMIPS_MACH_DIR_300_REVB,
+	}, {
 		.name		= "V22RW-2X2",
 		.mach_type	= RAMIPS_MACH_V22RW_2X2,
 	}, {
