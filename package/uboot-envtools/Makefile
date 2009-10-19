@@ -19,6 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/uboot-envtools
   SECTION:=utils
   CATEGORY:=Utilities
+  DEPENDS:=@BROKEN
   TITLE:=read/modify the environment for the bootloader U-Boot
 endef
 
