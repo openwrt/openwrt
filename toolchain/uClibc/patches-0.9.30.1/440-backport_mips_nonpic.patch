@@ -1,0 +1,289 @@
+--- a/include/elf.h
++++ b/include/elf.h
+@@ -1547,6 +1547,7 @@ typedef struct
+ #define STO_MIPS_INTERNAL		0x1
+ #define STO_MIPS_HIDDEN			0x2
+ #define STO_MIPS_PROTECTED		0x3
++#define STO_MIPS_PLT			0x8
+ #define STO_MIPS_SC_ALIGN_UNUSED	0xff
+ 
+ /* MIPS specific values for `st_info'.  */
+@@ -1692,8 +1693,11 @@ typedef struct
+ #define R_MIPS_TLS_TPREL64	48	/* TP-relative offset, 64 bit */
+ #define R_MIPS_TLS_TPREL_HI16	49	/* TP-relative offset, high 16 bits */
+ #define R_MIPS_TLS_TPREL_LO16	50	/* TP-relative offset, low 16 bits */
++#define R_MIPS_GLOB_DAT		51
++#define R_MIPS_COPY		126
++#define R_MIPS_JUMP_SLOT        127
+ /* Keep this the last entry.  */
+-#define R_MIPS_NUM		51
++#define R_MIPS_NUM		128
+ 
+ /* Legal values for p_type field of Elf32_Phdr.  */
+ 
+@@ -1759,7 +1763,13 @@ typedef struct
+ #define DT_MIPS_COMPACT_SIZE 0x7000002f /* (O32)Size of compact rel section. */
+ #define DT_MIPS_GP_VALUE     0x70000030 /* GP value for aux GOTs.  */
+ #define DT_MIPS_AUX_DYNAMIC  0x70000031 /* Address of aux .dynamic.  */
+-#define DT_MIPS_NUM	     0x32
++/* The address of .got.plt in an executable using the new non-PIC ABI.  */
++#define DT_MIPS_PLTGOT	     0x70000032
++/* The base of the PLT in an executable using the new non-PIC ABI if that
++   PLT is writable.  For a non-writable PLT, this is omitted or has a zero
++   value.  */
++#define DT_MIPS_RWPLT        0x70000034
++#define DT_MIPS_NUM	     0x35
+ 
+ /* Legal values for DT_MIPS_FLAGS Elf32_Dyn entry.  */
+ 
+--- a/ldso/ldso/dl-hash.c
++++ b/ldso/ldso/dl-hash.c
+@@ -160,6 +160,11 @@ check_match (const ElfW(Sym) *sym, char 
+ 		/* undefined symbol itself */
+ 		return NULL;
+ 
++#ifdef __mips__
++    if (sym->st_shndx == SHN_UNDEF && !(sym->st_other & STO_MIPS_PLT))
++        return NULL;
++#endif
++
+ 	if (sym->st_value == 0)
+ 		/* No value */
+ 		return NULL;
+--- a/ldso/ldso/mips/dl-sysdep.h
++++ b/ldso/ldso/mips/dl-sysdep.h
+@@ -93,10 +93,11 @@ typedef struct
+ 
+ #include <link.h>
+ 
+-#define ARCH_NUM 3
++#define ARCH_NUM 4
+ #define DT_MIPS_GOTSYM_IDX	(DT_NUM + OS_NUM)
+ #define DT_MIPS_LOCAL_GOTNO_IDX	(DT_NUM + OS_NUM +1)
+ #define DT_MIPS_SYMTABNO_IDX	(DT_NUM + OS_NUM +2)
++#define DT_MIPS_PLTGOT_IDX	(DT_NUM + OS_NUM +3)
+ 
+ #define ARCH_DYNAMIC_INFO(dpnt,  dynamic, debug_addr) \
+ do { \
+@@ -106,6 +107,8 @@ else if (dpnt->d_tag == DT_MIPS_LOCAL_GO
+      dynamic[DT_MIPS_LOCAL_GOTNO_IDX] = dpnt->d_un.d_val; \
+ else if (dpnt->d_tag == DT_MIPS_SYMTABNO) \
+      dynamic[DT_MIPS_SYMTABNO_IDX] = dpnt->d_un.d_val; \
++else if (dpnt->d_tag == DT_MIPS_PLTGOT) \
++     dynamic[DT_MIPS_PLTGOT_IDX] = dpnt->d_un.d_val; \
+ else if (dpnt->d_tag == DT_MIPS_RLD_MAP) \
+      *(ElfW(Addr) *)(dpnt->d_un.d_ptr) =  (ElfW(Addr)) debug_addr; \
+ } while (0)
+@@ -114,6 +117,7 @@ else if (dpnt->d_tag == DT_MIPS_RLD_MAP)
+ #define INIT_GOT(GOT_BASE,MODULE)						\
+ do {										\
+ 	unsigned long idx;							\
++	unsigned long *pltgot;							\
+ 										\
+ 	/* Check if this is the dynamic linker itself */			\
+ 	if (MODULE->libtype == program_interpreter)				\
+@@ -123,6 +127,12 @@ do {										\
+ 	GOT_BASE[0] = (unsigned long) _dl_runtime_resolve;			\
+ 	GOT_BASE[1] = (unsigned long) MODULE;					\
+ 										\
++	pltgot = MODULE->dynamic_info[DT_MIPS_PLTGOT_IDX];			\
++	if (pltgot) {								\
++		pltgot[0] = (unsigned long) _dl_runtime_pltresolve;		\
++		pltgot[1] = (unsigned long) MODULE;				\
++	}									\
++										\
+ 	/* Add load address displacement to all local GOT entries */		\
+ 	idx = 2;									\
+ 	while (idx < MODULE->dynamic_info[DT_MIPS_LOCAL_GOTNO_IDX])		\
+@@ -157,9 +167,9 @@ void _dl_perform_mips_global_got_relocat
+ #define OFFS_ALIGN 0x7ffff000
+ #endif	/* O32 || N32 */
+ 
+-#define elf_machine_type_class(type)		ELF_RTYPE_CLASS_PLT
+-/* MIPS does not have COPY relocs */
+-#define DL_NO_COPY_RELOCS
++#define elf_machine_type_class(type) \
++  ((((type) == R_MIPS_JUMP_SLOT) * ELF_RTYPE_CLASS_PLT)	\
++   | (((type) == R_MIPS_COPY) * ELF_RTYPE_CLASS_COPY))
+ 
+ #define OFFSET_GP_GOT 0x7ff0
+ 
+--- a/ldso/ldso/mips/elfinterp.c
++++ b/ldso/ldso/mips/elfinterp.c
+@@ -30,6 +30,7 @@
+ #include "ldso.h"
+ 
+ extern int _dl_runtime_resolve(void);
++extern int _dl_runtime_pltresolve(void);
+ 
+ #define OFFSET_GP_GOT 0x7ff0
+ 
+@@ -83,6 +84,61 @@ unsigned long __dl_runtime_resolve(unsig
+ 	return new_addr;
+ }
+ 
++unsigned long
++__dl_runtime_pltresolve(struct elf_resolve *tpnt, int reloc_entry)
++{
++	int reloc_type;
++	ELF_RELOC *this_reloc;
++	char *strtab;
++	Elf32_Sym *symtab;
++	int symtab_index;
++	char *rel_addr;
++	char *new_addr;
++	char **got_addr;
++	unsigned long instr_addr;
++	char *symname;
++
++	rel_addr = (char *)tpnt->dynamic_info[DT_JMPREL];
++	this_reloc = (ELF_RELOC *)(intptr_t)(rel_addr + reloc_entry);
++	reloc_type = ELF32_R_TYPE(this_reloc->r_info);
++	symtab_index = ELF32_R_SYM(this_reloc->r_info);
++
++	symtab = (Elf32_Sym *)(intptr_t)tpnt->dynamic_info[DT_SYMTAB];
++	strtab = (char *)tpnt->dynamic_info[DT_STRTAB];
++	symname = strtab + symtab[symtab_index].st_name;
++
++	/* Address of the jump instruction to fix up. */
++	instr_addr = ((unsigned long)this_reloc->r_offset +
++		      (unsigned long)tpnt->loadaddr);
++	got_addr = (char **)instr_addr;
++
++	/* Get the address of the GOT entry. */
++	new_addr = _dl_find_hash(symname, tpnt->symbol_scope, tpnt, ELF_RTYPE_CLASS_PLT);
++	if (unlikely(!new_addr)) {
++		_dl_dprintf(2, "%s: can't resolve symbol '%s' in lib '%s'.\n", _dl_progname, symname, tpnt->libname);
++		_dl_exit(1);
++	}
++
++#if defined (__SUPPORT_LD_DEBUG__)
++	if ((unsigned long)got_addr < 0x40000000) {
++		if (_dl_debug_bindings) {
++			_dl_dprintf(_dl_debug_file, "\nresolve function: %s", symname);
++			if (_dl_debug_detail)
++				_dl_dprintf(_dl_debug_file,
++				            "\n\tpatched: %x ==> %x @ %x",
++				            *got_addr, new_addr, got_addr);
++		}
++	}
++	if (!_dl_debug_nofixups) {
++		*got_addr = new_addr;
++	}
++#else
++	*got_addr = new_addr;
++#endif
++
++	return (unsigned long)new_addr;
++}
++
+ void _dl_parse_lazy_relocation_information(struct dyn_elf *rpnt,
+ 	unsigned long rel_addr, unsigned long rel_size)
+ {
+@@ -115,6 +171,7 @@ int _dl_parse_relocation_information(str
+ 	got = (unsigned long *) tpnt->dynamic_info[DT_PLTGOT];
+ 
+ 	for (i = 0; i < rel_size; i++, rpnt++) {
++		char *symname = NULL;
+ 		reloc_addr = (unsigned long *) (tpnt->loadaddr +
+ 			(unsigned long) rpnt->r_offset);
+ 		reloc_type = ELF_R_TYPE(rpnt->r_info);
+@@ -128,6 +185,16 @@ int _dl_parse_relocation_information(str
+ 			old_val = *reloc_addr;
+ #endif
+ 
++		if (reloc_type == R_MIPS_JUMP_SLOT || reloc_type == R_MIPS_COPY) {
++			symname = strtab + symtab[symtab_index].st_name;
++			symbol_addr = (unsigned long)_dl_find_hash(symname,
++								   tpnt->symbol_scope,
++								   tpnt,
++								   elf_machine_type_class(reloc_type));
++			if (unlikely(!symbol_addr && ELF32_ST_BIND(symtab[symtab_index].st_info) != STB_WEAK))
++				return 1;
++		}
++
+ 		switch (reloc_type) {
+ #if _MIPS_SIM == _MIPS_SIM_ABI64
+ 		case (R_MIPS_64 << 8) | R_MIPS_REL32:
+@@ -148,6 +215,24 @@ int _dl_parse_relocation_information(str
+ 				*reloc_addr += (unsigned long) tpnt->loadaddr;
+ 			}
+ 			break;
++		case R_MIPS_JUMP_SLOT:
++			*reloc_addr = symbol_addr;
++			break;
++		case R_MIPS_COPY:
++			if (symbol_addr) {
++#if defined (__SUPPORT_LD_DEBUG__)
++				if (_dl_debug_move)
++					_dl_dprintf(_dl_debug_file,
++						    "\n%s move %d bytes from %x to %x",
++						    symname, symtab[symtab_index].st_size,
++						    symbol_addr, reloc_addr);
++#endif
++
++				_dl_memcpy((char *)reloc_addr,
++					   (char *)symbol_addr,
++					   symtab[symtab_index].st_size);
++			}
++			break;
+ 		case R_MIPS_NONE:
+ 			break;
+ 		default:
+--- a/ldso/ldso/mips/resolve.S
++++ b/ldso/ldso/mips/resolve.S
+@@ -112,3 +112,54 @@ _dl_runtime_resolve:
+ .end	_dl_runtime_resolve
+ .previous
+ 
++/* Assembler veneer called from the PLT header code when using the
++   non-PIC ABI.
++
++   Code in each PLT entry puts the caller's return address into t7 ($15),
++   the PLT entry index into t8 ($24), the address of _dl_runtime_pltresolve
++   into t9 ($25) and the address of .got.plt into gp ($28).  __dl_runtime_pltresolve
++   needs a0 ($4) to hold the link map and a1 ($5) to hold the index into
++   .rel.plt (== PLT entry index * 4).  */
++
++	.text
++	.align	2
++	.globl	_dl_runtime_pltresolve
++	.type	_dl_runtime_pltresolve,@function
++	.ent	_dl_runtime_pltresolve
++_dl_runtime_pltresolve:
++	.frame	$29, 40, $31
++	.set noreorder
++	# Save arguments and sp value in stack.
++	subu    $29, 40
++	lw      $10, 4($28)
++	# Modify t9 ($25) so as to point .cpload instruction.
++	addiu   $25, 12
++	# Compute GP.
++	.cpload $25
++	.set reorder
++
++	/* Store function arguments from registers to stack */
++	sw	$15, 36($29)
++	sw	$4, 16($29)
++	sw	$5, 20($29)
++	sw	$6, 24($29)
++	sw	$7, 28($29)
++
++	/* Setup functions args and call __dl_runtime_pltresolve.  */
++	move	$4, $10
++	sll     $5, $24, 3
++	jal	__dl_runtime_pltresolve
++
++	/* Restore function arguments from stack to registers */
++	lw	$31, 36($29)
++	lw	$4, 16($29)
++	lw	$5, 20($29)
++	lw	$6, 24($29)
++	lw	$7, 28($29)
++
++	/* Do a tail call to the original function */
++	addiu	$29, 40
++	move	$25, $2
++	jr	$25
++	.end	_dl_runtime_pltresolve
++	.previous
