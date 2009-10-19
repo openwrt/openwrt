@@ -1,0 +1,13 @@
+\\\\
+\\ gcc PR33200
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -1460,7 +1460,7 @@ i[34567]86-*-uwin*)
+ 	if test x$enable_threads = xyes; then
+ 		thread_file='win32'
+ 	fi
+-	use_fixproto=yes
++	# XXX: why? use_fixproto=yes
+ 	;;
+ i[34567]86-*-interix3*)
+ 	tm_file="${tm_file} i386/unix.h i386/bsd.h i386/gas.h i386/i386-interix.h i386/i386-interix3.h interix.h interix3.h"
