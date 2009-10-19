@@ -106,9 +106,21 @@ endef
 
 define Image/Build/MyLoader
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) \
-		-p0x30000:0xc0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma  \
-		-p0xf0000:0:::rootfs:$(KDIR)/root.$(1) \
-		$(call imgname,$(1),$(2)).img
+		-p0x030000:0xd0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
+		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
+		$(call imgname,$(1),$(2))-2M.img
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s 0x400000 \
+		-p0x030000:0xd0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
+		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
+		$(call imgname,$(1),$(2))-4M.img
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s 0x800000 \
+		-p0x030000:0xd0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
+		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
+		$(call imgname,$(1),$(2))-8M.img
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s 0x1000000 \
+		-p0x030000:0xd0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
+		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
+		$(call imgname,$(1),$(2))-16M.img
 endef
 
 define Image/Build/UBNT
