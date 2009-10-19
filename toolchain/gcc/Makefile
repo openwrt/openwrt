@@ -69,6 +69,8 @@ HOST_BUILD_DIR2:=$(HOST_BUILD_DIR)-final
 SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
+export libgcc_cv_fixed_point=no
+
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
 	$(HOST_BUILD_DIR)/configure \
