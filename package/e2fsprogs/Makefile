@@ -8,13 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-ifneq ($(findstring "0.9.29",$(CONFIG_UCLIBC_VERSION)),"0.9.29")
 PKG_VERSION:=1.41.9
 PKG_MD5SUM:=52f60a9e19a02f142f5546f1b5681927
-else
-PKG_VERSION:=1.40.11
-PKG_MD5SUM:=004cea70d724fdc7f1a952dffe4c9db8
-endif
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
