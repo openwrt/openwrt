@@ -688,7 +688,16 @@
  MODULE_DEVICE_TABLE(pci, b43_pci_bridge_tbl);
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -1359,8 +1359,10 @@ static int __init ssb_modinit(void)
+@@ -473,6 +473,8 @@ static int ssb_devices_register(struct s
+ 		case SSB_BUSTYPE_SSB:
+ 			dev->dma_mask = &dev->coherent_dma_mask;
+ 			break;
++		default:
++			break;
+ 		}
+ 
+ 		sdev->dev = dev;
+@@ -1359,8 +1361,10 @@ static int __init ssb_modinit(void)
  	ssb_buses_lock();
  	err = ssb_attach_queued_buses();
  	ssb_buses_unlock();
@@ -700,7 +709,7 @@
  
  	err = b43_pci_ssb_bridge_init();
  	if (err) {
-@@ -1376,7 +1378,7 @@ static int __init ssb_modinit(void)
+@@ -1376,7 +1380,7 @@ static int __init ssb_modinit(void)
  		/* don't fail SSB init because of this */
  		err = 0;
  	}
@@ -1409,3 +1418,63 @@
  
  /* Values for SSB_SPROM1_BINF_CCODE */
  enum {
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -26,19 +26,6 @@ enum ssb_clksrc {
+ };
+ 
+ 
+-static inline u32 chipco_read32(struct ssb_chipcommon *cc,
+-				u16 offset)
+-{
+-	return ssb_read32(cc->dev, offset);
+-}
+-
+-static inline void chipco_write32(struct ssb_chipcommon *cc,
+-				  u16 offset,
+-				  u32 value)
+-{
+-	ssb_write32(cc->dev, offset, value);
+-}
+-
+ static inline u32 chipco_write32_masked(struct ssb_chipcommon *cc, u16 offset,
+ 					u32 mask, u32 value)
+ {
+--- a/drivers/ssb/scan.c
++++ b/drivers/ssb/scan.c
+@@ -175,6 +175,8 @@ static u32 scan_read32(struct ssb_bus *b
+ 		} else
+ 			ssb_pcmcia_switch_segment(bus, 0);
+ 		break;
++	default:
++		break;
+ 	}
+ 	return readl(bus->mmio + offset);
+ }
+@@ -188,6 +190,8 @@ static int scan_switchcore(struct ssb_bu
+ 		return ssb_pci_switch_coreidx(bus, coreidx);
+ 	case SSB_BUSTYPE_PCMCIA:
+ 		return ssb_pcmcia_switch_coreidx(bus, coreidx);
++	default:
++		break;
+ 	}
+ 	return 0;
+ }
+@@ -206,6 +210,8 @@ void ssb_iounmap(struct ssb_bus *bus)
+ 		SSB_BUG_ON(1); /* Can't reach this code. */
+ #endif
+ 		break;
++	default:
++		break;
+ 	}
+ 	bus->mmio = NULL;
+ 	bus->mapped_device = NULL;
+@@ -230,6 +236,8 @@ static void __iomem *ssb_ioremap(struct 
+ 		SSB_BUG_ON(1); /* Can't reach this code. */
+ #endif
+ 		break;
++	default:
++		break;
+ 	}
+ 
+ 	return mmio;
