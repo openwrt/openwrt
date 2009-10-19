@@ -593,6 +593,13 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			ar71xx_eth_instance);
 	}
 
+	/* Reset the device */
+	ar71xx_device_stop(pdata->reset_bit);
+	mdelay(100);
+
+	ar71xx_device_start(pdata->reset_bit);
+	mdelay(100);
+
 	platform_device_register(pdev);
 	ar71xx_eth_instance++;
 }
