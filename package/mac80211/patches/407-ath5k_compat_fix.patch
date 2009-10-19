@@ -1,0 +1,22 @@
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
+@@ -238,7 +238,7 @@ static struct pci_driver ath5k_pci_drive
+ 	.remove		= __devexit_p(ath5k_pci_remove),
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29))
+ 	.driver.pm	= ATH5K_PM_OPS,
+-#else
++#elif defined(CONFIG_PM)
+ 	.suspend        = ath5k_pci_suspend_compat,
+ 	.resume         = ath5k_pci_resume_compat,
+ #endif
+--- a/compat/patches/11-dev-pm-ops.patch
++++ b/compat/patches/11-dev-pm-ops.patch
+@@ -49,7 +49,7 @@ calls on compat code with only slight mo
+  	.remove		= __devexit_p(ath5k_pci_remove),
+ +#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29))
+  	.driver.pm	= ATH5K_PM_OPS,
+-+#else
+++#elif defined(CONFIG_PM)
+ +	.suspend        = ath5k_pci_suspend_compat,
+ +	.resume         = ath5k_pci_resume_compat,
+ +#endif
