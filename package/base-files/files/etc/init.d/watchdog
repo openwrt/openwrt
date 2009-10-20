@@ -3,5 +3,6 @@
 
 START=97
 start() {
-        [ -c /dev/watchdog ] && watchdog -t 5 /dev/watchdog
+        [ -c /dev/watchdog ] && [ -x /sbin/watchdog ] && \
+        	watchdog -t 5 /dev/watchdog
 }
