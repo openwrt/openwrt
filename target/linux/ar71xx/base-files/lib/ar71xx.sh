@@ -52,6 +52,9 @@ ar71xx_board_name() {
 	*RouterStation)
 		name="routerstation"
 		;;
+	*"RouterStation Pro")
+		name="routerstation-pro"
+		;;
 	*TEW-632BRP)
 		name="tew-632brp"
 		;;
