@@ -26,7 +26,7 @@
  DESTDIR=
  
  
-@@ -13,13 +30,15 @@ all: $(BINS)
+@@ -13,13 +30,16 @@ all: $(BINS)
  install:
  	$(INSTALL_BIN) $(BINS) $(DESTDIR)/sbin/
  
@@ -46,23 +46,24 @@
 +  CFLAGS += -DSTATIC_WORKER=1
 +else
 +  CFLAGS += $(FPIC)
++  LDFLAGS += -ldl
 +endif
 +
 --- a/common.mak
 +++ b/common.mak
-@@ -1,8 +1,11 @@
+@@ -1,7 +1,10 @@
  # vim:set sw=8 nosta:
  
 -CFLAGS=-Os -Wall -g -fPIC
+-LDFLAGS=-g -ldl
 +COPTS=-Os -Wall -g
- LDFLAGS=-g -ldl
- 
++LDFLAGS=-g
++
 +CFLAGS=$(COPTS)
 +FPIC=-fPIC
-+
+ 
  INSTALL=install -c -m 644
  INSTALL_BIN=install -c -m 755
- 
 --- a/workers/loader.c
 +++ b/workers/loader.c
 @@ -1,5 +1,23 @@
