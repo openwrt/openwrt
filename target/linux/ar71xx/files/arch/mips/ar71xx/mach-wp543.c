@@ -43,13 +43,17 @@ static struct spi_board_info wp543_spi_info[] = {
 
 static struct ar71xx_pci_irq wp543_pci_irqs[] __initdata = {
 	{
-		.slot	= 1,
+		.slot	= 0,
 		.pin	= 1,
 		.irq	= AR71XX_PCI_IRQ_DEV0,
 	}, {
 		.slot	= 1,
-		.pin	= 2,
+		.pin	= 1,
 		.irq	= AR71XX_PCI_IRQ_DEV1,
+	}, {
+		.slot	= 2,
+		.pin	= 1,
+		.irq	= AR71XX_PCI_IRQ_DEV2,
 	}
 };
 
