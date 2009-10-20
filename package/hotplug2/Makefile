@@ -36,15 +36,15 @@ define Package/hotplug2/description
  This is an implementation of Hotplug2-1.0-beta
 endef
 
-MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS) $(FPIC) -DHAVE_RULES -I."
+MAKE_FLAGS += \
+	COPTS="$(TARGET_CFLAGS)" \
+	STATIC_WORKER="fork"
 
 define Package/hotplug2/install
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/hotplug2.rules $(1)/etc/
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hotplug2 $(1)/sbin/
-	$(INSTALL_DIR) $(1)/lib/hotplug2
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/workers/worker_fork.so $(1)/lib/hotplug2
 endef
 
 $(eval $(call BuildPackage,hotplug2))
