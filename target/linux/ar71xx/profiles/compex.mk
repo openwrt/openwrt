@@ -6,12 +6,12 @@
 #
 
 define Profile/WP543
-	NAME:=Compex WP543
+	NAME:=Compex WP543/WPJ543
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/WP543/Description
-	Package set optimized for the Compex WP543.
+	Package set optimized for the Compex WP543/WPJ543 boards.
 endef
 
 $(eval $(call Profile,WP543))
