@@ -55,6 +55,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I." \
+		BUILD_WE_ESSENTIAL=y \
 		libiw.so.$(PKG_VERSION) iwmulticall
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)" \
