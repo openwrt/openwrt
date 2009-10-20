@@ -18,7 +18,9 @@ config GCC_VERSION_3
 config GCC_VERSION_3_4
 	bool
 	default y	if GCC_VERSION_3_4_6
-	
+
+if !LINUX_2_4
+
 config GCC_VERSION_4
 	bool
 	default y	if GCC_VERSION_4_1
@@ -46,10 +48,13 @@ config GCC_VERSION_4_4
 	default y	if GCC_VERSION_4_4_0
 	default y	if GCC_VERSION_4_4_1
 
+endif
+
 if !TOOLCHAINOPTS
 	config GCC_VERSION_3_4_6
 		default y if LINUX_2_4
 
+if !LINUX_2_4
 	config GCC_VERSION_4_2_4
 		default y if TARGET_avr32
 		default y if TARGET_ppc40x
@@ -69,4 +74,5 @@ if !TOOLCHAINOPTS
 
 	config GCC_VERSION_4_4_1
 		default y if TARGET_octeon
+endif
 endif
