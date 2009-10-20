@@ -247,7 +247,6 @@ TARGET_CPPFLAGS := \
 	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include \
 	$(TARGET_CPPFLAGS)
 
-TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
