@@ -53,13 +53,13 @@ endef
 define Build/Configure
 endef
 
-TARGET_CFLAGS += $(FPIC)
 UCI_MAKEOPTS = \
 		$(TARGET_CONFIGURE_OPTS) \
 		COPTS="$(TARGET_CFLAGS)" \
 		DEBUG="$(DEBUG)" \
 		VERSION="$(UCI_VERSION)" \
 		CPPFLAGS="-I$(PKG_BUILD_DIR) $(TARGET_CPPFLAGS)" \
+		FPIC="$(FPIC)" \
 		OS="Linux"
 
 # work around a nasty gcc bug
