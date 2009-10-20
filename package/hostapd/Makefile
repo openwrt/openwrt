@@ -27,12 +27,14 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-madwifi \
 	CONFIG_PACKAGE_hostapd \
 	CONFIG_PACKAGE_hostapd-mini \
+	CONFIG_PACKAGE_kmod-hostap
 
 include $(INCLUDE_DIR)/package.mk
 
 DRIVER_MAKEOPTS= \
 	CONFIG_DRIVER_NL80211=$(CONFIG_PACKAGE_kmod-mac80211) \
 	CONFIG_DRIVER_MADWIFI=$(CONFIG_PACKAGE_kmod-madwifi) \
+	CONFIG_DRIVER_HOSTAP=$(CONFIG_PACKAGE_kmod-hostap) \
 	CONFIG_IEEE80211N=$(CONFIG_PACKAGE_kmod-ath9k)
 
 define Package/hostapd/Default
