@@ -1,0 +1,56 @@
+--- a/libopkg/Makefile.am
++++ b/libopkg/Makefile.am
+@@ -30,15 +30,10 @@ opkg_util_sources = file_util.c file_uti
+ 		    sprintf_alloc.c sprintf_alloc.h str_util.c str_util.h \
+ 		    xregex.c xregex.h xsystem.c xsystem.h
+ 
+-lib_LTLIBRARIES = libopkg.la
+-libopkg_la_SOURCES = \
++noinst_LIBRARIES = libopkg.a
++libopkg_a_SOURCES = \
+ 	$(opkg_libcore_sources) \
+ 	$(opkg_cmd_sources) $(opkg_db_sources) \
+ 	$(opkg_util_sources) $(opkg_list_sources)
+ 
+-libopkg_la_LIBADD = $(top_builddir)/libbb/libbb.la $(CURL_LIBS) $(GPGME_LIBS)
+-# make sure we only export symbols that are for public use
+-libopkg_la_LDFLAGS = -export-symbols-regex "^opkg_.*"
+-
+-
+-
++libopkg_a_LIBADD = $(top_builddir)/libbb/libbb.a $(CURL_LIBS) $(GPGME_LIBS)
+--- a/libbb/Makefile.am
++++ b/libbb/Makefile.am
+@@ -2,9 +2,9 @@ HOST_CPU=@host_cpu@
+ BUILD_CPU=@build_cpu@
+ ALL_CFLAGS=-g -O -Wall -DHOST_CPU_STR=\"$(HOST_CPU)\" -DBUILD_CPU=@build_cpu@
+ 
+-noinst_LTLIBRARIES = libbb.la
++noinst_LIBRARIES = libbb.a
+ 
+-libbb_la_SOURCES = gz_open.c \
++libbb_a_SOURCES = gz_open.c \
+ 	libbb.h \
+ 	unzip.c \
+ 	wfopen.c \
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -2,5 +2,5 @@ AM_CFLAGS = -I${top_srcdir}/libopkg ${AL
+ bin_PROGRAMS = opkg-cl
+ 
+ opkg_cl_SOURCES = opkg-frontend.c
+-opkg_cl_LDADD = $(top_builddir)/libopkg/libopkg.la \
+-                $(top_builddir)/libbb/libbb.la 
++opkg_cl_LDADD = $(top_builddir)/libopkg/libopkg.a \
++                $(top_builddir)/libbb/libbb.a 
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -16,7 +16,7 @@ noinst_PROGRAMS = libopkg_test
+ #opkg_active_list_test_SOURCES = opkg_active_list_test.c
+ #opkg_active_list_test_CFLAGS = $(ALL_CFLAGS) -I$(top_srcdir)
+ 
+-libopkg_test_LDADD = $(top_builddir)/libopkg/libopkg.la
++libopkg_test_LDADD = $(top_builddir)/libopkg/libopkg.a $(top_builddir)/libbb/libbb.a
+ libopkg_test_SOURCE = libopkg_test.c
+ 
+ 
