@@ -1,0 +1,75 @@
+--- a/gcc/mklibgcc.in
++++ b/gcc/mklibgcc.in
+@@ -214,6 +214,7 @@ for ml in $MULTILIBS; do
+   flags=`echo ${ml} | sed -e 's/^[^;]*;//' -e 's/@/ -/g'`;
+   shlib_slibdir_qual=
+   libgcc_a=$dir/libgcc.a
++  libgcc_pic_a=$dir/libgcc_pic.a
+   libgcov_a=$dir/libgcov.a
+   libgcc_eh_a=
+   libgcc_s_so=
+@@ -320,6 +321,7 @@ for ml in $MULTILIBS; do
+         -c '$(srcdir)/libgcc2.c' -o $out
+ 
+       echo $libgcc_a: $out
++      echo $libgcc_pic_a: $outS
+       echo $libgcc_s_so: $outS
+       if [ "$SHLIB_MKMAP" ]; then
+         echo libgcc/${dir}/libgcc.map: $outS
+@@ -355,6 +357,7 @@ for ml in $MULTILIBS; do
+         -fexceptions -fnon-call-exceptions -c '$(srcdir)/libgcc2.c' -o $out
+ 
+       echo $libgcc_a: $out
++      echo $libgcc_pic_a: $outS
+       echo $libgcc_s_so: $outS
+       if [ "$SHLIB_MKMAP" ]; then
+         echo libgcc/${dir}/libgcc.map: $outS
+@@ -397,6 +400,7 @@ for ml in $MULTILIBS; do
+ 		      '$(vis_hide)' -c $fpbit -o $out
+ 		  
+ 		  echo $libgcc_a: $out
++		  echo $libgcc_pic_a: $outS
+ 		  echo $libgcc_s_so: $outS
+ 		  if [ "$SHLIB_MKMAP" ]; then
+ 		      echo libgcc/${dir}/libgcc.map: $outS
+@@ -502,6 +506,7 @@ for ml in $MULTILIBS; do
+       esac
+ 
+       echo $libgcc_a: $out
++      echo $libgcc_pic_a: $outS
+       echo $libgcc_s_so: $outS
+       if [ "$SHLIB_MKMAP" ]; then
+ 	echo libgcc/${dir}/libgcc.map: $outS
+@@ -621,6 +626,7 @@ for ml in $MULTILIBS; do
+ 	*)   echo "Unhandled extension: $file">&2; exit 1 ;;
+       esac
+ 
++      echo $libgcc_pic_a: $outS
+       echo $libgcc_s_so: $outS
+       if [ "$SHLIB_MKMAP" ]; then
+ 	echo libgcc/${dir}/libgcc.map: $outS
+@@ -793,6 +799,13 @@ EOF
+   echo "all: $libgcc_a"
+ 
+   echo ""
++  echo "$libgcc_pic_a: stmp-dirs"
++  echo "	-rm -f $libgcc_pic_a"
++  echo '	$(AR_CREATE_FOR_TARGET)' $libgcc_pic_a '$(objects)'
++  echo '	$(RANLIB_FOR_TARGET)' $libgcc_pic_a
++  echo "all: $libgcc_pic_a"
++
++  echo ""
+   echo "$libgcov_a: stmp-dirs"
+   echo "	-rm -f $libgcov_a"
+   echo '	$(AR_CREATE_FOR_TARGET)' $libgcov_a '$(objects)'
+@@ -894,6 +907,10 @@ for ml in $MULTILIBS; do
+     echo '	chmod 644'  ${ldir}/libgcc_eh.a
+     echo '	$(RANLIB_FOR_TARGET)' ${ldir}/libgcc_eh.a
+ 
++    echo '	$(INSTALL_DATA)' ${dir}/libgcc_pic.a ${mapfile} ${ldir}/
++    echo '	chmod 644'  ${ldir}/libgcc_pic.a
++    echo '	$(RANLIB_FOR_TARGET)' ${ldir}/libgcc_pic.a
++
+     shlib_slibdir_qual=
+     os_multilib_dir=`$GCC_FOR_TARGET $flags --print-multi-os-directory`
+     if [ "$os_multilib_dir" != . ]; then
