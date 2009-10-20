@@ -41,6 +41,7 @@ if !LINUX_2_4
 
 	config GCC_VERSION_LLVM
 		bool "llvm-gcc 4.2"
+		depends BROKEN
 
 	config GCC_VERSION_4_3_3_CS
 		bool "gcc 4.3.3 with CodeSourcery enhancements"
