@@ -1,0 +1,216 @@
+--- a/iwlist.c
++++ b/iwlist.c
+@@ -1302,7 +1302,6 @@ print_pm_info(int		skfd,
+   return(0);
+ }
+ 
+-#ifndef WE_ESSENTIAL
+ /************************** TRANSMIT POWER **************************/
+ 
+ /*------------------------------------------------------------------*/
+@@ -1405,6 +1404,7 @@ print_txpower_info(int		skfd,
+   return(0);
+ }
+ 
++#ifndef WE_ESSENTIAL
+ /*********************** RETRY LIMIT/LIFETIME ***********************/
+ 
+ /*------------------------------------------------------------------*/
+@@ -2060,8 +2060,8 @@ static const struct iwlist_entry iwlist_
+   { "encryption",	print_keys_info,	0, NULL },
+   { "keys",		print_keys_info,	0, NULL },
+   { "power",		print_pm_info,		0, NULL },
+-#ifndef WE_ESSENTIAL
+   { "txpower",		print_txpower_info,	0, NULL },
++#ifndef WE_ESSENTIAL
+   { "retry",		print_retry_info,	0, NULL },
+   { "ap",		print_ap_info,		0, NULL },
+   { "accesspoints",	print_ap_info,		0, NULL },
+--- a/iwconfig.c
++++ b/iwconfig.c
+@@ -106,16 +106,6 @@ get_info(int			skfd,
+     if(wrq.u.data.length > 1)
+       info->has_nickname = 1;
+ 
+-  if((info->has_range) && (info->range.we_version_compiled > 9))
+-    {
+-      /* Get Transmit Power */
+-      if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) >= 0)
+-	{
+-	  info->has_txpower = 1;
+-	  memcpy(&(info->txpower), &(wrq.u.txpower), sizeof(iwparam));
+-	}
+-    }
+-
+   /* Get sensitivity */
+   if(iw_get_ext(skfd, ifname, SIOCGIWSENS, &wrq) >= 0)
+     {
+@@ -132,6 +122,17 @@ get_info(int			skfd,
+ 	  memcpy(&(info->retry), &(wrq.u.retry), sizeof(iwparam));
+ 	}
+     }
++#endif	/* WE_ESSENTIAL */
++
++  if((info->has_range) && (info->range.we_version_compiled > 9))
++    {
++      /* Get Transmit Power */
++      if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) >= 0)
++	{
++	  info->has_txpower = 1;
++	  memcpy(&(info->txpower), &(wrq.u.txpower), sizeof(iwparam));
++	}
++    }
+ 
+   /* Get RTS threshold */
+   if(iw_get_ext(skfd, ifname, SIOCGIWRTS, &wrq) >= 0)
+@@ -146,7 +147,6 @@ get_info(int			skfd,
+       info->has_frag = 1;
+       memcpy(&(info->frag), &(wrq.u.frag), sizeof(iwparam));
+     }
+-#endif	/* WE_ESSENTIAL */
+ 
+   return(0);
+ }
+@@ -269,7 +269,6 @@ display_info(struct wireless_info *	info
+       printf("Bit Rate%c%s   ", (info->bitrate.fixed ? '=' : ':'), buffer);
+     }
+ 
+-#ifndef WE_ESSENTIAL
+   /* Display the Transmit Power */
+   if(info->has_txpower)
+     {
+@@ -286,6 +285,7 @@ display_info(struct wireless_info *	info
+       printf("Tx-Power%c%s   ", (info->txpower.fixed ? '=' : ':'), buffer);
+     }
+ 
++#ifndef WE_ESSENTIAL
+   /* Display sensitivity */
+   if(info->has_sens)
+     {
+@@ -340,6 +340,7 @@ display_info(struct wireless_info *	info
+       printf("   ");
+       tokens += 5;	/* Between 3 and 5, depend on flags */
+     }
++#endif	/* WE_ESSENTIAL */
+ 
+   /* Display the RTS threshold */
+   if(info->has_rts)
+@@ -383,7 +384,6 @@ display_info(struct wireless_info *	info
+   /* Formating */
+   if(tokens > 0)
+     printf("\n          ");
+-#endif	/* WE_ESSENTIAL */
+ 
+   /* Display encryption information */
+   /* Note : we display only the "current" key, use iwlist to list all keys */
+@@ -995,6 +995,7 @@ set_enc_info(int		skfd,
+   return(i);
+ }
+ 
++#ifndef WE_ESSENTIAL
+ /*------------------------------------------------------------------*/
+ /*
+  * Set Power Management
+@@ -1111,7 +1112,6 @@ set_power_info(int		skfd,
+   return(i);
+ }
+ 
+-#ifndef WE_ESSENTIAL
+ /*------------------------------------------------------------------*/
+ /*
+  * Set Nickname
+@@ -1196,6 +1196,7 @@ set_nwid_info(int		skfd,
+   /* 1 arg */
+   return(1);
+ }
++#endif	/* WE_ESSENTIAL */
+ 
+ /*------------------------------------------------------------------*/
+ /*
+@@ -1362,6 +1363,7 @@ set_txpower_info(int		skfd,
+   return(i);
+ }
+ 
++#ifndef WE_ESSENTIAL
+ /*------------------------------------------------------------------*/
+ /*
+  * Set Sensitivity
+@@ -1459,6 +1461,7 @@ set_retry_info(int		skfd,
+   /* Var args */
+   return(i);
+ }
++#endif	/* WE_ESSENTIAL */
+ 
+ /*------------------------------------------------------------------*/
+ /*
+@@ -1565,6 +1568,7 @@ set_frag_info(int		skfd,
+   return(1);
+ }
+ 
++#ifndef WE_ESSENTIAL
+ /*------------------------------------------------------------------*/
+ /*
+  * Set Modulation
+@@ -1712,28 +1716,28 @@ static const struct iwconfig_entry iwcon
+ 	"Set Encode",			"{NNNN-NNNN|off}" },
+   { "key",		set_enc_info,		1,	SIOCSIWENCODE,
+ 	"Set Encode",			"{NNNN-NNNN|off}"  },
++#ifndef WE_ESSENTIAL
+   { "power",		set_power_info,		1,	SIOCSIWPOWER,
+ 	"Set Power Management",		"{period N|timeout N|saving N|off}" },
+-#ifndef WE_ESSENTIAL
+   { "nickname",		set_nick_info,		1,	SIOCSIWNICKN,
+ 	"Set Nickname",			"NNN" },
+   { "nwid",		set_nwid_info,		1,	SIOCSIWNWID,
+ 	"Set NWID",			"{NN|on|off}" },
+-  { "ap",		set_apaddr_info,	1,	SIOCSIWAP,
+-	"Set AP Address",		"{N|off|auto}" },
+-  { "txpower",		set_txpower_info,	1,	SIOCSIWTXPOW,
+-	"Set Tx Power",			"{NmW|NdBm|off|auto}" },
+   { "sens",		set_sens_info,		1,	SIOCSIWSENS,
+ 	"Set Sensitivity",		"N" },
++  { "modulation",	set_modulation_info,	1,	SIOCGIWMODUL,
++	"Set Modulation",		"{11g|11a|CCK|OFDMg|...}" },
+   { "retry",		set_retry_info,		1,	SIOCSIWRETRY,
+ 	"Set Retry Limit",		"{limit N|lifetime N}" },
++#endif	/* WE_ESSENTIAL */
++  { "ap",		set_apaddr_info,	1,	SIOCSIWAP,
++	"Set AP Address",		"{N|off|auto}" },
++  { "txpower",		set_txpower_info,	1,	SIOCSIWTXPOW,
++	"Set Tx Power",			"{NmW|NdBm|off|auto}" },
+   { "rts",		set_rts_info,		1,	SIOCSIWRTS,
+ 	"Set RTS Threshold",		"{N|auto|fixed|off}" },
+   { "frag",		set_frag_info,		1,	SIOCSIWFRAG,
+ 	"Set Fragmentation Threshold",	"{N|auto|fixed|off}" },
+-  { "modulation",	set_modulation_info,	1,	SIOCGIWMODUL,
+-	"Set Modulation",		"{11g|11a|CCK|OFDMg|...}" },
+-#endif	/* WE_ESSENTIAL */
+   { "commit",		set_commit_info,	0,	SIOCSIWCOMMIT,
+ 	"Commit changes",		"" },
+   { NULL, NULL, 0, 0, NULL, NULL },
+--- a/iwmulticall.c
++++ b/iwmulticall.c
+@@ -76,12 +76,10 @@ extern int
+ #undef iw_usage
+ #undef main
+ 
+-#ifndef WE_ESSENTIAL
+ /* Get iwspy in there, it's not that big. */
+ #define main(args...) main_iwspy(args)
+ #include "iwspy.c"
+ #undef main
+-#endif	/* WE_ESSENTIAL */
+ 
+ /* Get iwpriv in there. Mandatory for HostAP and some other drivers. */
+ #define main(args...) main_iwpriv(args)
+@@ -128,10 +126,8 @@ main(int	argc,
+     return(main_iwconfig(argc, argv));
+   if(!strcmp(call_name, "iwlist"))
+     return(main_iwlist(argc, argv));
+-#ifndef WE_ESSENTIAL
+   if(!strcmp(call_name, "iwspy"))
+     return(main_iwspy(argc, argv));
+-#endif	/* WE_ESSENTIAL */
+   if(!strcmp(call_name, "iwpriv"))
+     return(main_iwpriv(argc, argv));
+   if(!strcmp(call_name, "iwgetid"))
