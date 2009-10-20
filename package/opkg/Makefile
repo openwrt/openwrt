@@ -41,9 +41,8 @@ define Package/opkg/conffiles
 /etc/opkg.conf
 endef
 
-TARGET_CFLAGS += $(FPIC) $(if $(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),-Wno-array-bounds)
+TARGET_CFLAGS += $(if $(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),-Wno-array-bounds)
 EXTRA_CFLAGS += $(TARGET_CPPFLAGS)
-EXTRA_LDFLAGS += $(TARGET_LDFLAGS) -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
 
 CONFIGURE_ARGS += \
 	--disable-curl \
@@ -72,8 +71,6 @@ define Package/opkg/install
 	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/
 	$(SED) 's,$$$$S,$(PKGARCH),g' $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopkg.so.* $(1)/usr/lib/
 endef
 
 define Build/InstallDev
