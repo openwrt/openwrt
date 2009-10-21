@@ -173,16 +173,17 @@
      if(strcmp(progname, "athstats") == 0)
 --- a/tools/Makefile
 +++ b/tools/Makefile
-@@ -48,6 +48,8 @@ endif
+@@ -48,14 +48,16 @@ endif
  
  all: compile
  
 +DEBUG = -DAR_DEBUG
 +
  ALLPROGS=	athstats 80211stats athkey athchans athctrl \
- 	athdebug 80211debug wlanconfig ath_info
+-	athdebug 80211debug wlanconfig ath_info
++	$(if $(DEBUG),athdebug 80211debug) wlanconfig ath_info
  
-@@ -55,7 +57,7 @@ OBJS=	$(patsubst %,%.o,$(ALLPROGS))
+ OBJS=	$(patsubst %,%.o,$(ALLPROGS))
  
  INCS=	-I. -I../ath -I$(HAL) -I$(TOP) -I$(ATH_HAL)
  CFLAGS=	-g -O2 -Wall

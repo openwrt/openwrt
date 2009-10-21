@@ -568,7 +568,7 @@
  
 -ALLPROGS=	athstats 80211stats athkey athchans athctrl \
 +ALLPROGS=	athstats 80211stats athkey athchans \
- 	athdebug 80211debug wlanconfig ath_info
+ 	$(if $(DEBUG),athdebug 80211debug) wlanconfig ath_info
  
  OBJS=	$(patsubst %,%.o,$(ALLPROGS))
 --- a/tools/athctrl.c
