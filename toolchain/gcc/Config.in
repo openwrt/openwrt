@@ -9,7 +9,7 @@ choice
 	default GCC_VERSION_4_3_3 if powerpc64
 	default GCC_VERSION_4_3_3 if TARGET_etrax
 	default GCC_VERSION_4_3_3 if TARGET_coldfire
-	default GCC_VERSION_4_4_0 if ubicom32
+	default GCC_VERSION_4_4_1 if ubicom32
 	default GCC_VERSION_4_4_1 if TARGET_octeon
 	default GCC_VERSION_4_3_3_CS if mips || mipsel
 	default GCC_VERSION_4_3_3_CS if arm || armeb
@@ -32,9 +32,6 @@ if !LINUX_2_4
 
 	config GCC_VERSION_4_3_4
 		bool "gcc 4.3.4"
-
-	config GCC_VERSION_4_4_0
-		bool "gcc 4.4.0"
 
 	config GCC_VERSION_4_4_1
 		bool "gcc 4.4.1"
