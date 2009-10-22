@@ -1,6 +1,6 @@
 --- a/libopkg/args.c
 +++ b/libopkg/args.c
-@@ -267,8 +267,6 @@
+@@ -268,8 +268,6 @@
       printf("\tinstall <file.opk>	Install package <file.opk>\n");
       printf("\tconfigure [<pkg>]	Configure unpacked packages\n");
       printf("\tremove <pkg|regexp>	Remove package <pkg|packages following regexp>\n");
@@ -11,23 +11,23 @@
       printf("\tlist    		List available packages and descriptions\n");
 --- a/libopkg/opkg_cmd.c
 +++ b/libopkg/opkg_cmd.c
-@@ -56,7 +56,6 @@
- static int opkg_list_installed_cmd(opkg_conf_t *conf, int argc, char **argv);
+@@ -58,7 +58,6 @@
+ static int opkg_list_upgradable_cmd(opkg_conf_t *conf, int argc, char **argv);
  static int opkg_remove_cmd(opkg_conf_t *conf, int argc, char **argv);
  static int opkg_purge_cmd(opkg_conf_t *conf, int argc, char **argv);
 -static int opkg_flag_cmd(opkg_conf_t *conf, int argc, char **argv);
  static int opkg_files_cmd(opkg_conf_t *conf, int argc, char **argv);
  static int opkg_search_cmd(opkg_conf_t *conf, int argc, char **argv);
  static int opkg_download_cmd(opkg_conf_t *conf, int argc, char **argv);
-@@ -80,7 +79,6 @@
-      {"list", 0, (opkg_cmd_fun_t)opkg_list_cmd},
+@@ -84,7 +83,6 @@
       {"list_installed", 0, (opkg_cmd_fun_t)opkg_list_installed_cmd},
+      {"list_upgradable", 0, (opkg_cmd_fun_t)opkg_list_upgradable_cmd},
       {"info", 0, (opkg_cmd_fun_t)opkg_info_cmd},
 -     {"flag", 1, (opkg_cmd_fun_t)opkg_flag_cmd},
       {"status", 0, (opkg_cmd_fun_t)opkg_status_cmd},
       {"install_pending", 0, (opkg_cmd_fun_t)opkg_install_pending_cmd},
       {"install", 1, (opkg_cmd_fun_t)opkg_install_cmd},
-@@ -974,48 +972,6 @@
+@@ -1050,48 +1048,6 @@
       return 0;
  }
  

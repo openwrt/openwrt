@@ -84,7 +84,7 @@
       rewind(control_file);
 -     raw = read_raw_pkgs_from_stream(control_file);
 -     pkg_parse_raw(pkg, &raw, NULL, NULL);
-+     pkg_parse_fd(pkg, fileno(control_file), NULL, NULL);
++     pkg_parse_fd(pkg, fileno(control_file), NULL, NULL, 0);
  
       fclose(control_file);
  
@@ -151,9 +151,12 @@
  
  #include "hash_table.h"
  #include "pkg.h"
-@@ -112,43 +114,50 @@
+@@ -110,45 +112,52 @@
+ }
+ 
  int pkg_hash_add_from_file(opkg_conf_t *conf, const char *file_name,
- 			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file)
+-			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file)
++			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file, int no_desc)
  {
 -     hash_table_t *hash = &conf->pkg_hash;
 -     char **raw;
@@ -207,7 +210,7 @@
 +				break;
 +			}
 +
-+			if (pkg_parse_fd(pkg, fd, src, dest) == 0) {
++			if (pkg_parse_fd(pkg, fd, src, dest, no_desc) == 0) {
 +				if (!pkg->architecture) {
 +					char *version_str = pkg_version_str_alloc(pkg);
 +					pkg->architecture = pkg_get_default_arch(conf);
@@ -240,7 +243,7 @@
  abstract_pkg_t * abstract_pkg_fetch_by_name(hash_table_t * hash, const char * pkg_name)
 --- a/libopkg/pkg_parse.c
 +++ b/libopkg/pkg_parse.c
-@@ -191,214 +191,297 @@
+@@ -191,214 +191,301 @@
   
  }
  
@@ -262,7 +265,7 @@
 -   code duplication.
 -*/
 -int pkg_parse_raw(pkg_t *pkg, char ***raw, pkg_src_t *src, pkg_dest_t *dest)
-+int pkg_parse_fd(pkg_t *pkg, int fd, pkg_src_t *src, pkg_dest_t *dest)
++int pkg_parse_fd(pkg_t *pkg, int fd, pkg_src_t *src, pkg_dest_t *dest, int no_desc)
  {
 -    int reading_conffiles, reading_description;
 -    int pkg_false_provides=1;
@@ -584,7 +587,8 @@
 +
 +				case 'D':
 +					if(isGenericFieldType("Description", line)) {
-+						pkg->description = parseGenericFieldType("Description", line);
++						if(!no_desc)
++							pkg->description = parseGenericFieldType("Description", line);
 +						reading_conffiles = 0;
 +						reading_description = 1;
 +					}
@@ -601,11 +605,14 @@
 +
 +				case ' ':
 +					if(reading_description) {
-+						/* we already know it's not blank, so the rest of description */      
-+						pkg->description = realloc(pkg->description,
-+						strlen(pkg->description) + 1 + strlen(line) + 1);
-+						strcat(pkg->description, "\n");
-+						strcat(pkg->description, (line));
++						/* we already know it's not blank, so the rest of description */
++						if(!no_desc)
++						{
++							pkg->description = realloc(pkg->description,
++								strlen(pkg->description) + 1 + strlen(line) + 1);
++							strcat(pkg->description, "\n");
++							strcat(pkg->description, (line));
++						}
 +					}
 +					else if(reading_conffiles)
 +						parseConffiles(pkg, line);
@@ -748,7 +755,7 @@
  void parseConffiles(pkg_t * pkg, char * raw);
 -int pkg_parse_raw(pkg_t *pkg, char ***raw, pkg_src_t *src, pkg_dest_t *dest);
 -int pkg_valorize_other_field(pkg_t *pkg, char ***raw);
-+int pkg_parse_fd(pkg_t *pkg, int fd, pkg_src_t *src, pkg_dest_t *dest);
++int pkg_parse_fd(pkg_t *pkg, int fd, pkg_src_t *src, pkg_dest_t *dest, int no_desc);
 +int pkg_valorize_other_field(pkg_t *pkg, int fd);
  
  #endif
@@ -763,3 +770,162 @@
  char *trim_alloc(char * line);
  int line_is_blank(const char *line);
  
+--- a/libopkg/libopkg.c
++++ b/libopkg/libopkg.c
+@@ -88,6 +88,7 @@
+ 	char *cmd_name;
+ 	opkg_cmd_t *cmd;
+ 	opkg_conf_t opkg_conf;
++	int no_desc = 1;
+ 
+ 	args_init (&args);
+ 
+@@ -122,12 +123,18 @@
+              !strcmp(cmd_name,"status") )
+            args.noreadfeedsfile = 1;
+ 
++	if( !strcmp(cmd_name,"list") ||
++	    !strcmp(cmd_name,"list-installed") ||
++	    !strcmp(cmd_name,"list_installed") ||
++	    !strcmp(cmd_name,"search") )
++	   no_desc = 0;
++
+ 	opkg_cb_message = default_opkg_message_callback;
+ 	opkg_cb_response = default_opkg_response_callback;
+ 	opkg_cb_status = default_opkg_status_callback;
+ 
+ 
+-	err = opkg_conf_init (&opkg_conf, &args);
++	err = opkg_conf_init (&opkg_conf, &args, no_desc);
+ 	if (err)
+ 	{
+ 		opkg_print_error_list (&opkg_conf);
+--- a/libopkg/opkg.c
++++ b/libopkg/opkg.c
+@@ -205,7 +205,7 @@
+   }
+ 
+   opkg->conf = calloc (1, sizeof (opkg_conf_t));
+-  err = opkg_conf_init (opkg->conf, opkg->args);
++  err = opkg_conf_init (opkg->conf, opkg->args, 0);
+   if (err)
+   {
+     free (opkg->conf);
+@@ -286,7 +286,7 @@
+ 
+   /* throw away old opkg_conf and start again */
+   opkg_conf_deinit (opkg->conf);
+-  opkg_conf_init (opkg->conf, opkg->args);
++  opkg_conf_init (opkg->conf, opkg->args, 0);
+ 
+   free (opkg->options);
+   opkg_init_options_array (opkg->conf, &opkg->options);
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -44,9 +44,9 @@
+ static int opkg_conf_set_default_dest(opkg_conf_t *conf,
+ 				      const char *default_dest_name);
+ static int set_and_load_pkg_src_list(opkg_conf_t *conf,
+-				     pkg_src_list_t *nv_pair_list);
++				     pkg_src_list_t *nv_pair_list, int no_desc);
+ static int set_and_load_pkg_dest_list(opkg_conf_t *conf,
+-				      nv_pair_list_t *nv_pair_list, char * lists_dir);
++				      nv_pair_list_t *nv_pair_list, char * lists_dir, int no_desc);
+ 
+ int opkg_init_options_array(const opkg_conf_t *conf, opkg_option_t **options)
+ {
+@@ -106,7 +106,7 @@
+      }
+ }
+ 
+-int opkg_conf_init(opkg_conf_t *conf, const args_t *args)
++int opkg_conf_init(opkg_conf_t *conf, const args_t *args, int no_desc)
+ {
+      int err;
+      char *tmp_dir_base;
+@@ -294,12 +294,12 @@
+      if ( !(args->nocheckfordirorfile)){
+         /* need to run load the source list before dest list -Jamey */
+         if ( !(args->noreadfeedsfile))
+-           set_and_load_pkg_src_list(conf, &conf->pkg_src_list);
++           set_and_load_pkg_src_list(conf, &conf->pkg_src_list, no_desc);
+    
+         /* Now that we have resolved conf->offline_root, we can commit to
+ 	   the directory names for the dests and load in all the package
+ 	   lists. */
+-        set_and_load_pkg_dest_list(conf, &tmp_dest_nv_pair_list,lists_dir);
++        set_and_load_pkg_dest_list(conf, &tmp_dest_nv_pair_list,lists_dir, no_desc);
+    
+         if (args->dest) {
+ 	     err = opkg_conf_set_default_dest(conf, args->dest);
+@@ -409,7 +409,7 @@
+      return 1;
+ }
+ 
+-static int set_and_load_pkg_src_list(opkg_conf_t *conf, pkg_src_list_t *pkg_src_list)
++static int set_and_load_pkg_src_list(opkg_conf_t *conf, pkg_src_list_t *pkg_src_list, int no_desc)
+ {
+      pkg_src_list_elt_t *iter;
+      pkg_src_t *src;
+@@ -426,7 +426,7 @@
+ 			  src->name);
+ 
+ 	  if (file_exists(list_file)) {
+-	       pkg_hash_add_from_file(conf, list_file, src, NULL, 0);
++	       pkg_hash_add_from_file(conf, list_file, src, NULL, 0, no_desc);
+ 	  }
+ 	  free(list_file);
+      }
+@@ -434,7 +434,7 @@
+      return 0;
+ }
+ 
+-static int set_and_load_pkg_dest_list(opkg_conf_t *conf, nv_pair_list_t *nv_pair_list, char *lists_dir )
++static int set_and_load_pkg_dest_list(opkg_conf_t *conf, nv_pair_list_t *nv_pair_list, char *lists_dir, int no_desc)
+ {
+      nv_pair_list_elt_t *iter;
+      nv_pair_t *nv_pair;
+@@ -459,7 +459,7 @@
+ 	  }
+ 	  if (file_exists(dest->status_file_name)) {
+ 	       pkg_hash_add_from_file(conf, dest->status_file_name,
+-				      NULL, dest, 1);
++				      NULL, dest, 1, no_desc);
+ 	  }
+      }
+ 
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -102,7 +102,7 @@
+      const void *value;
+ };
+ 
+-int opkg_conf_init(opkg_conf_t *conf, const args_t *args);
++int opkg_conf_init(opkg_conf_t *conf, const args_t *args, int no_desc);
+ void opkg_conf_deinit(opkg_conf_t *conf);
+ 
+ int opkg_conf_write_status_files(opkg_conf_t *conf);
+--- a/tests/opkg_hash_test.c
++++ b/tests/opkg_hash_test.c
+@@ -33,8 +33,8 @@
+     }
+     pkg_hash_init("test", hash, 1024);
+ 
+-    pkg_hash_add_from_file(&conf, argv[1], NULL, NULL, 0);
+-    pkg_hash_add_from_file(&conf, argv[2], NULL, NULL, 0);
++    pkg_hash_add_from_file(&conf, argv[1], NULL, NULL, 0, 0);
++    pkg_hash_add_from_file(&conf, argv[2], NULL, NULL, 0, 0);
+ 
+     if (argc < 4) {
+ 	pkg_print_info( pkg_hash_fetch_by_name_version(hash, "libc6", "2.2.3-2"), stdout);
+--- a/libopkg/pkg_hash.h
++++ b/libopkg/pkg_hash.h
+@@ -33,7 +33,7 @@
+ void pkg_hash_fetch_available(hash_table_t *hash, pkg_vec_t *available);
+ 
+ int pkg_hash_add_from_file(opkg_conf_t *conf, const char *file_name,
+-			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file);
++			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file, int no_desc);
+ pkg_t *hash_insert_pkg(hash_table_t *hash, pkg_t *pkg, int set_status,opkg_conf_t *conf);
+ 
+ abstract_pkg_t * ensure_abstract_pkg_by_name(hash_table_t * hash, const char * pkg_name);
