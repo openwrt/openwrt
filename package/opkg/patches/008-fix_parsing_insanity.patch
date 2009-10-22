@@ -1,0 +1,765 @@
+--- a/libopkg/opkg_utils.c
++++ b/libopkg/opkg_utils.c
+@@ -44,58 +44,6 @@
+     return 0;
+ }
+ 
+-char **read_raw_pkgs_from_file(const char *file_name)
+-{
+-     FILE *fp; 
+-     char **ret;
+-    
+-     if(!(fp = fopen(file_name, "r"))){
+-	  fprintf(stderr, "can't get %s open for read\n", file_name);
+-	  return NULL;
+-     }
+-
+-     ret = read_raw_pkgs_from_stream(fp);
+-
+-     fclose(fp);
+-
+-     return ret;
+-}
+-
+-char **read_raw_pkgs_from_stream(FILE *fp)
+-{    
+-     char **raw = NULL, *buf, *scout;
+-     int count = 0;
+-     size_t size = 512;
+-     
+-     buf = calloc (1, size);
+-
+-     while (fgets(buf, size, fp)) {
+-	  while (strlen (buf) == (size - 1)
+-		 && buf[size-2] != '\n') {
+-	       size_t o = size - 1;
+-	       size *= 2;
+-	       buf = realloc (buf, size);
+-	       if (fgets (buf + o, size - o, fp) == NULL)
+-		    break;
+-	  }
+-	  
+-	  if(!(count % 50))
+-	       raw = realloc(raw, (count + 50) * sizeof(char *));
+-	
+-	  if((scout = strchr(buf, '\n')))
+-	       *scout = '\0';
+-
+-	  raw[count++] = strdup(buf);
+-     }
+-    
+-     raw = realloc(raw, (count + 1) * sizeof(char *));
+-     raw[count] = NULL;
+-
+-     free (buf);
+-    
+-     return raw;
+-}
+-
+ /* something to remove whitespace, a hash pooper */
+ char *trim_alloc(char *line)
+ {
+--- a/libopkg/pkg.c
++++ b/libopkg/pkg.c
+@@ -20,6 +20,8 @@
+ #include <alloca.h>
+ #include <string.h>
+ #include <stdbool.h>
++#include <unistd.h>
++#include <fcntl.h>
+ #include <errno.h>
+ 
+ #include "pkg.h"
+@@ -277,7 +279,6 @@
+ int pkg_init_from_file(pkg_t *pkg, const char *filename)
+ {
+      int err;
+-     char **raw;
+      FILE *control_file;
+ 
+      err = pkg_init(pkg);
+@@ -290,8 +291,7 @@
+      if (err) { return err; }
+ 
+      rewind(control_file);
+-     raw = read_raw_pkgs_from_stream(control_file);
+-     pkg_parse_raw(pkg, &raw, NULL, NULL);
++     pkg_parse_fd(pkg, fileno(control_file), NULL, NULL);
+ 
+      fclose(control_file);
+ 
+@@ -459,8 +459,7 @@
+ 
+ void set_flags_from_control(opkg_conf_t *conf, pkg_t *pkg){
+      char * temp_str;
+-     char **raw =NULL;
+-     char **raw_start=NULL; 
++     int fd;
+ 
+      size_t str_size = strlen(pkg->dest->info_dir)+strlen(pkg->name)+12;
+      temp_str = (char *) alloca (str_size);
+@@ -471,28 +470,23 @@
+         return;
+      }
+      sprintf( temp_str,"%s/%s.control",pkg->dest->info_dir,pkg->name);
+-   
+-     raw = raw_start = read_raw_pkgs_from_file(temp_str);
+-     if (raw == NULL ){
+-        opkg_message(conf, OPKG_ERROR, "Unable to open the control file in  %s\n", __FUNCTION__);
+-        return;
+-     }
+ 
+-     while(*raw){
+-        if (!pkg_valorize_other_field(pkg, &raw ) == 0) {
+-            opkg_message(conf, OPKG_DEBUG, "unable to read control file for %s. May be empty\n", pkg->name);
+-        }
+-     }
+-     raw = raw_start;
+-     while (*raw) {
+-        if (raw!=NULL)
+-          free(*raw++);
+-     }
++	if( (fd = open(temp_str, O_RDONLY)) > 0 )
++	{
++		if( pkg_valorize_other_field(pkg, fd) )
++		{
++			opkg_message(conf, OPKG_DEBUG, "unable to read control file for %s. May be empty\n", pkg->name);
++		}
+ 
+-     free(raw_start); 
++		close(fd);
++	}
++	else
++	{
++	        opkg_message(conf, OPKG_ERROR, "Unable to open the control file in  %s\n", __FUNCTION__);
++	        return;
++	}
+ 
+      return ;
+-
+ }
+ 
+ #define CHECK_BUFF_SIZE(buff, line, buf_size, page_size) do { \
+--- a/libopkg/pkg_hash.c
++++ b/libopkg/pkg_hash.c
+@@ -20,6 +20,8 @@
+ #include <ctype.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <unistd.h>
++#include <fcntl.h>
+ 
+ #include "hash_table.h"
+ #include "pkg.h"
+@@ -112,43 +114,50 @@
+ int pkg_hash_add_from_file(opkg_conf_t *conf, const char *file_name,
+ 			   pkg_src_t *src, pkg_dest_t *dest, int is_status_file)
+ {
+-     hash_table_t *hash = &conf->pkg_hash;
+-     char **raw;
+-     char **raw_start;
+-     pkg_t *pkg;
+-    
+-     raw = raw_start = read_raw_pkgs_from_file(file_name);
+-     if (!raw)
+-        return -ENOMEM;
+-
+-     while(*raw){         /* don't worry, we'll increment raw in the parsing function */
+-	  pkg = pkg_new();
+-	  if (!pkg)
+-	       return -ENOMEM;
+-
+-	  if (pkg_parse_raw(pkg, &raw, src, dest) == 0) {
+-	       if (!pkg->architecture) {
+-		    char *version_str = pkg_version_str_alloc(pkg);
+-		    pkg->architecture = pkg_get_default_arch(conf);
+-		    opkg_message(conf, OPKG_ERROR, "Package %s version %s has no architecture specified, defaulting to %s.\n",
+-				 pkg->name, version_str, pkg->architecture);
+-		    free(version_str);
+-	       }
+-	       hash_insert_pkg(hash, pkg, is_status_file,conf);
+-	  } else {
+-	       pkg_deinit (pkg);
+-	       free(pkg);
+-	  }
+-     }
++	hash_table_t *hash = &conf->pkg_hash;
++	pkg_t *pkg;
+ 
+-     /* XXX: CLEANUP: I'd like a cleaner interface for cleaning up
+-	memory after read_raw_pkgs_from_file */
+-     raw = raw_start;
+-     while (*raw) {
+-	  free(*raw++);
+-     }
+-     free(raw_start);
+-     return 0;
++	int fd;
++	int rv = 0;
++
++	if( (fd = open(file_name, O_RDONLY)) > 0 )
++	{
++		while(1)
++		{
++			pkg = pkg_new();
++			if(!pkg) {
++				rv = -ENOMEM;
++				break;
++			}
++
++			if (pkg_parse_fd(pkg, fd, src, dest) == 0) {
++				if (!pkg->architecture) {
++					char *version_str = pkg_version_str_alloc(pkg);
++					pkg->architecture = pkg_get_default_arch(conf);
++					opkg_message(conf, OPKG_ERROR, "Package %s version %s has no architecture specified, defaulting to %s.\n",
++					pkg->name, version_str, pkg->architecture);
++					free(version_str);
++				}
++
++				hash_insert_pkg(hash, pkg, is_status_file, conf);
++			} else {
++				pkg_deinit (pkg);
++				free(pkg);
++				break;
++			}
++		}
++
++		close(fd);
++	}
++	else
++	{
++		opkg_message (conf, OPKG_ERROR,
++			"Unable to open package list %s\n", file_name);
++
++		rv = -EINVAL;
++	}
++ 
++	return rv;
+ }
+ 
+ abstract_pkg_t * abstract_pkg_fetch_by_name(hash_table_t * hash, const char * pkg_name)
+--- a/libopkg/pkg_parse.c
++++ b/libopkg/pkg_parse.c
+@@ -191,214 +191,297 @@
+  
+ }
+ 
+-/* Some random thoughts from Carl:
+-
+-   This function could be considerably simplified if we just kept
+-   an array of all the generic string-valued field names, and looped
+-   through those looking for a match. Also, these fields could perhaps
+-   be stored in the package as an array as well, (or, probably better,
+-   as an nv_pair_list_t).
+-
+-   Fields which require special parsing or storage, (such as Depends:
+-   and Status:) could be handled as they are now. 
+-*/
+-/* XXX: FEATURE: The Suggests: field needs to be changed from a string
+-   to a dependency list. And, since we already have
+-   Depends/Pre-Depends and need to add Conflicts, Recommends, and
+-   Enhances, perhaps we could generalize all of these and save some
+-   code duplication.
+-*/
+-int pkg_parse_raw(pkg_t *pkg, char ***raw, pkg_src_t *src, pkg_dest_t *dest)
++int pkg_parse_fd(pkg_t *pkg, int fd, pkg_src_t *src, pkg_dest_t *dest)
+ {
+-    int reading_conffiles, reading_description;
+-    int pkg_false_provides=1;
+-    char ** lines;
+-    char * provide=NULL;
+-
+-    pkg->src = src;
+-    pkg->dest = dest;
+-
+-    reading_conffiles = reading_description = 0;
+-
+-    for (lines = *raw; *lines; lines++) {
+-	/*	fprintf(stderr, "PARSING %s\n", *lines);*/
+-	switch (**lines) {
+-	case 'P':
+-	    if(isGenericFieldType("Package:", *lines)) 
+-		pkg->name = parseGenericFieldType("Package", *lines);
+-	    else if(isGenericFieldType("Priority:", *lines))
+-		pkg->priority = parseGenericFieldType("Priority", *lines);
+-	    else if(isGenericFieldType("Provides", *lines)){
+-/* Here we add the internal_use to align the off by one problem between provides_str and provides */
+-        	provide = (char * ) calloc(1, strlen(*lines)+ 35 ); /* Preparing the space for the new opkg_internal_use_only */
+-        	if ( alterProvidesLine(*lines,provide) ){
+-        	    return EINVAL;
+-        	}
+-		pkg->provides_str = parseDependsString( provide, &pkg->provides_count);
+-/* Let's try to hack a bit here.
+-   The idea is that if a package has no Provides, we would add one generic, to permit the check of dependencies
+-   in alot of other places. We will remove it before writing down the status database */
+-        	pkg_false_provides=0;
+-        	free(provide);
+-    	    } 
+-	    else if(isGenericFieldType("Pre-Depends", *lines))
+-		pkg->pre_depends_str = parseDependsString(*lines, &pkg->pre_depends_count);
+-	    break;
+-
+-	case 'A':
+-	    if(isGenericFieldType("Architecture:", *lines))
+-		pkg->architecture = parseGenericFieldType("Architecture", *lines);
+-	    else if(isGenericFieldType("Auto-Installed:", *lines)) {
+-		char *auto_installed_value;
+-		auto_installed_value = parseGenericFieldType("Auto-Installed:", *lines);
+-		if (strcmp(auto_installed_value, "yes") == 0) {
+-		    pkg->auto_installed = 1;
+-		}
+-		free(auto_installed_value);
+-	    }
+-	    break;
+-
+-	case 'F':
+-	    if(isGenericFieldType("Filename:", *lines))
+-		pkg->filename = parseGenericFieldType("Filename", *lines);
+-	    break;
+-
+-	case 'S':
+-	    if(isGenericFieldType("Section:", *lines))
+-		pkg->section = parseGenericFieldType("Section", *lines);
+-	    else if(isGenericFieldType("Size:", *lines))
+-		pkg->size = parseGenericFieldType("Size", *lines);
+-	    else if(isGenericFieldType("Source:", *lines))
+-		pkg->source = parseGenericFieldType("Source", *lines);
+-	    else if(isGenericFieldType("Status", *lines))
+-		parseStatus(pkg, *lines);
+-	    else if(isGenericFieldType("Suggests", *lines))
+-		pkg->suggests_str = parseDependsString(*lines, &pkg->suggests_count);
+-	    break;
+-
+-	case 'T':
+-	    if(isGenericFieldType("Tags:", *lines))
+-		pkg->tags = parseGenericFieldType("Tags", *lines);
+-	    break;
+-
+-	case 'M':
+-	    if(isGenericFieldType("MD5sum:", *lines))
+-		pkg->md5sum = parseGenericFieldType("MD5sum", *lines);
+-	    /* The old opkg wrote out status files with the wrong case for MD5sum,
+-		let's parse it either way */
+-	    else if(isGenericFieldType("MD5Sum:", *lines))
+-		pkg->md5sum = parseGenericFieldType("MD5Sum", *lines);
+-	    else if(isGenericFieldType("Maintainer", *lines))
+-		pkg->maintainer = parseGenericFieldType("Maintainer", *lines);
+-	    break;
+-
+-	case 'I':
+-	    if(isGenericFieldType("Installed-Size:", *lines))
+-		pkg->installed_size = parseGenericFieldType("Installed-Size", *lines);
+-	    else if(isGenericFieldType("Installed-Time:", *lines)) {
+-		char *time_str = parseGenericFieldType("Installed-Time", *lines);
+-		pkg->installed_time = strtoul(time_str, NULL, 0);
+-		free (time_str);
+-	    }	    
+-	    break;
+-
+-	case 'E':
+-	    if(isGenericFieldType("Essential:", *lines)) {
+-		char *essential_value;
+-		essential_value = parseGenericFieldType("Essential", *lines);
+-		if (strcmp(essential_value, "yes") == 0) {
+-		    pkg->essential = 1;
+-		}
+-		free(essential_value);
+-	    }
+-	    break;
+-
+-	case 'V':
+-	    if(isGenericFieldType("Version", *lines))
+-		parseVersion(pkg, *lines);
+-	    break;
+-
+-	case 'C':
+-	    if(isGenericFieldType("Conffiles", *lines)){
+-		parseConffiles(pkg, *lines);
+-		reading_conffiles = 1;
+-	    }
+-	    else if(isGenericFieldType("Conflicts", *lines))
+-		pkg->conflicts_str = parseDependsString(*lines, &pkg->conflicts_count);
+-	    break;
+-
+-	case 'D':
+-	    if(isGenericFieldType("Description", *lines)) {
+-		pkg->description = parseGenericFieldType("Description", *lines);
+-		reading_conffiles = 0;
+-		reading_description = 1;
+-	    }
+-	    else if(isGenericFieldType("Depends", *lines))
+-		pkg->depends_str = parseDependsString(*lines, &pkg->depends_count);
+-	    break;
+-
+-	case 'R':
+-	    if(isGenericFieldType("Recommends", *lines))
+-	        pkg->recommends_str = parseDependsString(*lines, &pkg->recommends_count);
+-	    else if(isGenericFieldType("Replaces", *lines))
+-		pkg->replaces_str = parseDependsString(*lines, &pkg->replaces_count);
+-	    
+-	    break;
+-
+-	case ' ':
+-	    if(reading_description) {
+-		/* we already know it's not blank, so the rest of description */      
+-		pkg->description = realloc(pkg->description,
+-					   strlen(pkg->description)
+-					   + 1 + strlen(*lines) + 1);
+-		strcat(pkg->description, "\n");
+-		strcat(pkg->description, (*lines));
+-	    }
+-	    else if(reading_conffiles)
+-		parseConffiles(pkg, *lines);
+-		
+-	    break;
+-
+-	default:
+-	    if(line_is_blank(*lines)) {
+-		lines++;
+-		goto out;
+-	    }
++	char buf[4096];
++	char line[4096];
++	char *nl;
++	int bsz = 0;
++	int eof = 0;
++	int rv = EINVAL;
++
++	int reading_conffiles, reading_description;
++	int pkg_false_provides=1;
++	char *provide = NULL;
++
++	pkg->src = src;
++	pkg->dest = dest;
++
++	reading_conffiles = reading_description = 0;
++
++	memset(buf, 0, sizeof(buf));
++
++	while(!eof || (bsz > 0))
++	{
++		if(!eof)
++		{
++			rv = read(fd, &buf[bsz], sizeof(buf) - bsz - 1);
++
++			if( rv == 0 )
++			{
++				eof = 1;
++
++				if( bsz == 0 )
++				{
++					rv = EINVAL;
++					break;
++				}
++			}
++			else if( rv < 0 )
++			{
++				/*opkg_message(conf, OPKG_ERROR, "I/O error while parsing package list\n");*/
++				printf("I/O error while parsing package list\n");
++				rv = EINVAL;
++				break;
++			}
++			else
++			{
++				bsz += rv;
++				buf[bsz] = 0;
++				rv = 0;
++			}
++		}
++
++		if( (nl = strchr(buf, '\n')) != NULL )
++		{
++			bsz -= (int)(nl - buf) + 1;
++
++			memset(line, 0, sizeof(line));
++			memcpy(line, buf, (int)(nl - buf));
++			memmove(buf, &buf[(int)(nl - buf) + 1], bsz);
++
++			switch(line[0])
++			{
++				case 'P':
++					if(isGenericFieldType("Package:", line)) 
++						pkg->name = parseGenericFieldType("Package", line);
++					else if(isGenericFieldType("Priority:", line))
++						pkg->priority = parseGenericFieldType("Priority", line);
++					else if(isGenericFieldType("Provides", line)){
++						/* Here we add the internal_use to align the off by one problem between provides_str and provides */
++						provide = (char * ) calloc(1, strlen(line)+ 35 ); /* Preparing the space for the new opkg_internal_use_only */
++						if ( alterProvidesLine(line,provide) ){
++							rv = EINVAL;
++							break;
++        					}
++						pkg->provides_str = parseDependsString( provide, &pkg->provides_count);
++						/* Let's try to hack a bit here.
++						   The idea is that if a package has no Provides, we would add one generic, to permit the check of dependencies
++						   in alot of other places. We will remove it before writing down the status database */
++						pkg_false_provides=0;
++						free(provide);
++					}
++					else if(isGenericFieldType("Pre-Depends", line))
++						pkg->pre_depends_str = parseDependsString(line, &pkg->pre_depends_count);
++						break;
++
++				case 'A':
++					if(isGenericFieldType("Architecture:", line))
++						pkg->architecture = parseGenericFieldType("Architecture", line);
++					else if(isGenericFieldType("Auto-Installed:", line)) {
++						char *auto_installed_value;
++						auto_installed_value = parseGenericFieldType("Auto-Installed:", line);
++						if (strcmp(auto_installed_value, "yes") == 0) {
++							pkg->auto_installed = 1;
++						}
++						free(auto_installed_value);
++					}
++					break;
++
++				case 'F':
++					if(isGenericFieldType("Filename:", line))
++						pkg->filename = parseGenericFieldType("Filename", line);
++					break;
++
++				case 'S':
++					if(isGenericFieldType("Section:", line))
++						pkg->section = parseGenericFieldType("Section", line);
++					else if(isGenericFieldType("Size:", line))
++						pkg->size = parseGenericFieldType("Size", line);
++					else if(isGenericFieldType("Source:", line))
++						pkg->source = parseGenericFieldType("Source", line);
++					else if(isGenericFieldType("Status", line))
++						parseStatus(pkg, line);
++					else if(isGenericFieldType("Suggests", line))
++						pkg->suggests_str = parseDependsString(line, &pkg->suggests_count);
++					break;
++
++				case 'T':
++					if(isGenericFieldType("Tags:", line))
++						pkg->tags = parseGenericFieldType("Tags", line);
++					break;
++
++				case 'M':
++					if(isGenericFieldType("MD5sum:", line))
++						pkg->md5sum = parseGenericFieldType("MD5sum", line);
++					/* The old opkg wrote out status files with the wrong case for MD5sum,
++					   let's parse it either way */
++					else if(isGenericFieldType("MD5Sum:", line))
++						pkg->md5sum = parseGenericFieldType("MD5Sum", line);
++					else if(isGenericFieldType("Maintainer", line))
++						pkg->maintainer = parseGenericFieldType("Maintainer", line);
++					break;
++
++				case 'I':
++	    				if(isGenericFieldType("Installed-Size:", line))
++						pkg->installed_size = parseGenericFieldType("Installed-Size", line);
++					else if(isGenericFieldType("Installed-Time:", line)) {
++						char *time_str = parseGenericFieldType("Installed-Time", line);
++						pkg->installed_time = strtoul(time_str, NULL, 0);
++						free (time_str);
++					}	    
++					break;
++
++				case 'E':
++					if(isGenericFieldType("Essential:", line)) {
++						char *essential_value;
++						essential_value = parseGenericFieldType("Essential", line);
++						if (strcmp(essential_value, "yes") == 0) {
++							pkg->essential = 1;
++						}
++						free(essential_value);
++					}
++					break;
++
++				case 'V':
++					if(isGenericFieldType("Version", line))
++						parseVersion(pkg, line);
++					break;
++
++				case 'C':
++					if(isGenericFieldType("Conffiles", line)){
++						parseConffiles(pkg, line);
++						reading_conffiles = 1;
++					}
++					else if(isGenericFieldType("Conflicts", line))
++						pkg->conflicts_str = parseDependsString(line, &pkg->conflicts_count);
++					break;
++
++				case 'D':
++					if(isGenericFieldType("Description", line)) {
++						pkg->description = parseGenericFieldType("Description", line);
++						reading_conffiles = 0;
++						reading_description = 1;
++					}
++					else if(isGenericFieldType("Depends", line))
++						pkg->depends_str = parseDependsString(line, &pkg->depends_count);
++					break;
++
++				case 'R':
++					if(isGenericFieldType("Recommends", line))
++						pkg->recommends_str = parseDependsString(line, &pkg->recommends_count);
++					else if(isGenericFieldType("Replaces", line))
++						pkg->replaces_str = parseDependsString(line, &pkg->replaces_count);
++					break;
++
++				case ' ':
++					if(reading_description) {
++						/* we already know it's not blank, so the rest of description */      
++						pkg->description = realloc(pkg->description,
++						strlen(pkg->description) + 1 + strlen(line) + 1);
++						strcat(pkg->description, "\n");
++						strcat(pkg->description, (line));
++					}
++					else if(reading_conffiles)
++						parseConffiles(pkg, line);
++					break;
++
++				default:
++					if(line_is_blank(line))
++						goto out;
++			}
++		}
++		else
++		{
++			/*opkg_message(conf, OPKG_ERROR, "Buffer exceeded while parsing line:\n[%s]\n", buf);*/
++			printf("Buffer exceeded while parsing line:\n[%s]\n", buf);
++			rv = EINVAL;
++			break;
++		}
+ 	}
+-    }
+-out:;
+-    
+-    *raw = lines;
+-/* If the opk has not a Provides line, we insert our false line */ 
+-    if ( pkg_false_provides==1)
+-    {
+-       pkg->provides_count = 1;
+-       pkg->provides_str = calloc (1, sizeof (char*));
+-       pkg->provides_str[0] = strdup ("opkg_internal_use_only");
+-    }
+-
+-    if (pkg->name) {
+-	return 0;
+-    } else {
+-	return EINVAL;
+-    }
++
++	out:
++
++	if (bsz)
++		lseek(fd, -(off_t)bsz, SEEK_CUR);
++
++	if (!rv && pkg->name)
++		return 0;
++	else
++		return EINVAL;
+ }
+ 
+-int pkg_valorize_other_field(pkg_t *pkg, char ***raw)
++int pkg_valorize_other_field(pkg_t *pkg, int fd)
+ {
+-    char ** lines;
++	char buf[4096];
++	char line[4096];
++	char *nl;
++	int bsz = 0;
++	int eof = 0;
++	int rv = EINVAL;
++
++	memset(buf, 0, sizeof(buf));
++
++	while(!eof || (bsz > 0))
++	{
++		if(!eof)
++		{
++			rv = read(fd, &buf[bsz], sizeof(buf) - bsz - 1);
++
++			if( rv == 0 )
++			{
++				eof = 1;
++
++				if( bsz == 0 )
++				{
++					rv = EINVAL;
++					break;
++				}
++			}
++			else if( rv < 0 )
++			{
++				rv = EINVAL;
++				break;
++			}
++			else
++			{
++				bsz += rv;
++				buf[bsz] = 0;
++				rv = 0;
++			}
++		}
+ 
+-    for (lines = *raw; *lines; lines++) {
+-	if(isGenericFieldType("Essential:", *lines)) {
+-	    char *essential_value;
+-	    essential_value = parseGenericFieldType("Essential", *lines);
+-	    if (strcmp(essential_value, "yes") == 0) {
+-		pkg->essential = 1;
+-	    }
+-	    free(essential_value);
++		if( (nl = strchr(buf, '\n')) != NULL )
++		{
++			bsz -= (int)(nl - buf) + 1;
++
++			memset(line, 0, sizeof(line));
++			memcpy(line, buf, (int)(nl - buf));
++			memmove(buf, &buf[(int)(nl - buf) + 1], bsz);
++
++			if(isGenericFieldType("Essential:", line))
++			{
++				char *essential_value;
++				essential_value = parseGenericFieldType("Essential", line);
++				if (strcmp(essential_value, "yes") == 0) {
++					pkg->essential = 1;
++				}
++				free(essential_value);
++			}
++		}
++		else
++		{
++			rv = EINVAL;
++			break;
++		}
+ 	}
+-    }
+-    *raw = lines;
+ 
+-    return 0;
++	if (bsz)
++		lseek(fd, -(off_t)bsz, SEEK_CUR);
++
++	if (!rv && pkg->name)
++		return 0;
++	else
++		return EINVAL;
+ }
++
+--- a/libopkg/pkg_parse.h
++++ b/libopkg/pkg_parse.h
+@@ -25,7 +25,7 @@
+ char ** parseDependsString(char * raw, int * depends_count);
+ int parseVersion(pkg_t *pkg, char *raw);
+ void parseConffiles(pkg_t * pkg, char * raw);
+-int pkg_parse_raw(pkg_t *pkg, char ***raw, pkg_src_t *src, pkg_dest_t *dest);
+-int pkg_valorize_other_field(pkg_t *pkg, char ***raw);
++int pkg_parse_fd(pkg_t *pkg, int fd, pkg_src_t *src, pkg_dest_t *dest);
++int pkg_valorize_other_field(pkg_t *pkg, int fd);
+ 
+ #endif
+--- a/libopkg/opkg_utils.h
++++ b/libopkg/opkg_utils.h
+@@ -26,8 +26,6 @@
+ void free_error_list();
+ 
+ long unsigned int get_available_blocks(char * filesystem);
+-char **read_raw_pkgs_from_file(const char *file_name);
+-char **read_raw_pkgs_from_stream(FILE *fp);
+ char *trim_alloc(char * line);
+ int line_is_blank(const char *line);
+ 

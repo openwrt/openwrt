@@ -1,0 +1,78 @@
+--- a/libopkg/args.c
++++ b/libopkg/args.c
+@@ -267,8 +267,6 @@
+      printf("\tinstall <file.opk>	Install package <file.opk>\n");
+      printf("\tconfigure [<pkg>]	Configure unpacked packages\n");
+      printf("\tremove <pkg|regexp>	Remove package <pkg|packages following regexp>\n");
+-     printf("\tflag <flag> <pkg> ...	Flag package(s) <pkg>\n");
+-     printf("\t <flag>=hold|noprune|user|ok|installed|unpacked (one per invocation)	\n");
+     
+      printf("\nInformational Commands:\n");
+      printf("\tlist    		List available packages and descriptions\n");
+--- a/libopkg/opkg_cmd.c
++++ b/libopkg/opkg_cmd.c
+@@ -56,7 +56,6 @@
+ static int opkg_list_installed_cmd(opkg_conf_t *conf, int argc, char **argv);
+ static int opkg_remove_cmd(opkg_conf_t *conf, int argc, char **argv);
+ static int opkg_purge_cmd(opkg_conf_t *conf, int argc, char **argv);
+-static int opkg_flag_cmd(opkg_conf_t *conf, int argc, char **argv);
+ static int opkg_files_cmd(opkg_conf_t *conf, int argc, char **argv);
+ static int opkg_search_cmd(opkg_conf_t *conf, int argc, char **argv);
+ static int opkg_download_cmd(opkg_conf_t *conf, int argc, char **argv);
+@@ -80,7 +79,6 @@
+      {"list", 0, (opkg_cmd_fun_t)opkg_list_cmd},
+      {"list_installed", 0, (opkg_cmd_fun_t)opkg_list_installed_cmd},
+      {"info", 0, (opkg_cmd_fun_t)opkg_info_cmd},
+-     {"flag", 1, (opkg_cmd_fun_t)opkg_flag_cmd},
+      {"status", 0, (opkg_cmd_fun_t)opkg_status_cmd},
+      {"install_pending", 0, (opkg_cmd_fun_t)opkg_install_pending_cmd},
+      {"install", 1, (opkg_cmd_fun_t)opkg_install_cmd},
+@@ -974,48 +972,6 @@
+      return 0;
+ }
+ 
+-static int opkg_flag_cmd(opkg_conf_t *conf, int argc, char **argv)
+-{
+-     int i;
+-     pkg_t *pkg;
+-     const char *flags = argv[0];
+-    
+-     global_conf = conf;
+-     signal(SIGINT, sigint_handler);
+-
+-     for (i=1; i < argc; i++) {
+-	  if (conf->restrict_to_default_dest) {
+-	       pkg = pkg_hash_fetch_installed_by_name_dest(&conf->pkg_hash,
+-							   argv[i],
+-							   conf->default_dest);
+-	  } else {
+-	       pkg = pkg_hash_fetch_installed_by_name(&conf->pkg_hash, argv[i]);
+-	  }
+-
+-	  if (pkg == NULL) {
+-	       opkg_message(conf, OPKG_ERROR,
+-			    "Package %s is not installed.\n", argv[i]);
+-	       continue;
+-	  }
+-          if (( strcmp(flags,"hold")==0)||( strcmp(flags,"noprune")==0)||
+-              ( strcmp(flags,"user")==0)||( strcmp(flags,"ok")==0)) {
+-	      pkg->state_flag = pkg_state_flag_from_str(flags);
+-          }
+-/* pb_ asked this feature 03292004 */
+-/* Actually I will use only this two, but this is an open for various status */
+-          if (( strcmp(flags,"installed")==0)||( strcmp(flags,"unpacked")==0)){
+-	      pkg->state_status = pkg_state_status_from_str(flags);
+-          }
+-	  opkg_state_changed++;
+-	  opkg_message(conf, OPKG_NOTICE,
+-		       "Setting flags for package %s to %s\n",
+-		       pkg->name, flags);
+-     }
+-
+-     write_status_files_if_changed(conf);
+-     return 0;
+-}
+-
+ static int opkg_files_cmd(opkg_conf_t *conf, int argc, char **argv)
+ {
+      pkg_t *pkg;
