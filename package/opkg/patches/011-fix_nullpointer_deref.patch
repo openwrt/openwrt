@@ -1,0 +1,11 @@
+--- a/libopkg/opkg_cmd.c
++++ b/libopkg/opkg_cmd.c
+@@ -878,7 +878,7 @@
+ 	            pkg_to_remove = pkg_hash_fetch_installed_by_name(&conf->pkg_hash, pkg->name );
+                }
+         
+-               if (pkg == NULL) {
++               if (pkg_to_remove == NULL) {
+ 	            opkg_message(conf, OPKG_ERROR, "Package %s is not installed.\n", pkg->name);
+ 	            continue;
+                }
