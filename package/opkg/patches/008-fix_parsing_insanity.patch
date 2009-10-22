@@ -522,11 +522,11 @@
 +					break;
 +
 +				case 'S':
-+					if(isGenericFieldType("Section:", line))
++					if(isGenericFieldType("Section:", line) && !no_desc)
 +						pkg->section = parseGenericFieldType("Section", line);
 +					else if(isGenericFieldType("Size:", line))
 +						pkg->size = parseGenericFieldType("Size", line);
-+					else if(isGenericFieldType("Source:", line))
++					else if(isGenericFieldType("Source:", line) && !no_desc)
 +						pkg->source = parseGenericFieldType("Source", line);
 +					else if(isGenericFieldType("Status", line))
 +						parseStatus(pkg, line);
@@ -546,7 +546,7 @@
 +					   let's parse it either way */
 +					else if(isGenericFieldType("MD5Sum:", line))
 +						pkg->md5sum = parseGenericFieldType("MD5Sum", line);
-+					else if(isGenericFieldType("Maintainer", line))
++					else if(isGenericFieldType("Maintainer", line) && !no_desc)
 +						pkg->maintainer = parseGenericFieldType("Maintainer", line);
 +					break;
 +
