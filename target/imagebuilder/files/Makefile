@@ -86,12 +86,7 @@ BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $($(PROFILE)_PACKAGES) kernel)
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 
 image:
-	if [ -z "$($(PROFILE)_NAME)" ]; then \
-		echo Profile $(PROFILE) not found.; \
-		echo 'Use "make info" to get a list of available target profiles'; \
-		false; \
-	fi
-	echo 'Building images for $(BOARD) - $($(PROFILE)_NAME)'
+	echo 'Building images for $(BOARD)$(if $($(PROFILE)_NAME), - $($(PROFILE)_NAME))'
 	echo 'Packages: $(BUILD_PACKAGES)'
 	echo
 	rm -rf $(TARGET_DIR)
