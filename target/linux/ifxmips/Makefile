@@ -11,7 +11,7 @@ BOARD:=ifxmips
 BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2 atm
 
-LINUX_VERSION:=2.6.30.8
+LINUX_VERSION:=2.6.30.9
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=uboot-ifxmips

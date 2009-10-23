@@ -12,7 +12,7 @@ BOARDNAME:=Samsung S3C24xx
 FEATURES:=jffs2
 CFLAGS:=-O2 -pipe -march=armv4t -mtune=arm920t -funit-at-a-time
 
-LINUX_VERSION:=2.6.30.8
+LINUX_VERSION:=2.6.30.9
 
 DEVICE_TYPE=phone
 

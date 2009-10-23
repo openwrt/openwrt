@@ -12,7 +12,7 @@ BOARDNAME:=Broadcom/SiByte SB-1
 FEATURES:=fpu
 CFLAGS:=-Os -pipe -march=sb1 -funit-at-a-time
 
-LINUX_VERSION:=2.6.30.8
+LINUX_VERSION:=2.6.30.9
 
 include $(INCLUDE_DIR)/target.mk
 
