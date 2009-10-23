@@ -11,7 +11,7 @@ BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
 FEATURES:=jffs2 pci tgz
 
-LINUX_VERSION:=2.6.30.8
+LINUX_VERSION:=2.6.30.9
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += hostapd-mini kmod-madwifi kmod-input-rb532
