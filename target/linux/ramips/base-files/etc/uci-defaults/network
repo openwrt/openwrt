@@ -1,0 +1,13 @@
+#!/bin/sh
+RT305X=`cat /proc/cpuinfo | grep RT305`
+[ -z "${RT305X}" ] || {
+	uci batch <<EOF
+set network.lan.ifname=eth0.1
+set network.wan=interface
+set network.wan.ifname=eth0.2
+set network.wan.proto=dhcp
+commit network
+EOF
+}
+
+uci commit network
