@@ -1,5 +1,7 @@
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
+Index: linux-2.6.31.5/include/asm-generic/vmlinux.lds.h
+===================================================================
+--- linux-2.6.31.5.orig/include/asm-generic/vmlinux.lds.h	2009-10-23 00:57:56.000000000 +0200
++++ linux-2.6.31.5/include/asm-generic/vmlinux.lds.h	2009-10-23 12:43:50.000000000 +0200
 @@ -55,6 +55,27 @@
  #define LOAD_OFFSET 0
  #endif
@@ -84,9 +86,11 @@
  	}								\
  									\
  	/* __*init sections */						\
---- a/include/linux/module.h
-+++ b/include/linux/module.h
-@@ -188,16 +188,24 @@ void *__symbol_get_gpl(const char *symbo
+Index: linux-2.6.31.5/include/linux/module.h
+===================================================================
+--- linux-2.6.31.5.orig/include/linux/module.h	2009-10-23 00:57:56.000000000 +0200
++++ linux-2.6.31.5/include/linux/module.h	2009-10-23 12:43:50.000000000 +0200
+@@ -188,16 +188,24 @@
  #define __CRC_SYMBOL(sym, sec)
  #endif
  
@@ -113,20 +117,11 @@
  	= { (unsigned long)&sym, __kstrtab_##sym }
  
  #define EXPORT_SYMBOL(sym)					\
---- a/Makefile
-+++ b/Makefile
-@@ -986,7 +986,7 @@ prepare: prepare0
- # Leave this as default for preprocessing vmlinux.lds.S, which is now
- # done in arch/$(ARCH)/kernel/Makefile
- 
--export CPPFLAGS_vmlinux.lds += -P -C -U$(ARCH)
-+export CPPFLAGS_vmlinux.lds += -P -C -U$(ARCH) $(EXTRA_LDSFLAGS)
- 
- # The asm symlink changes when $(ARCH) changes.
- # Detect this and ask user to run make mrproper
---- a/arch/arm/kernel/vmlinux.lds.S
-+++ b/arch/arm/kernel/vmlinux.lds.S
-@@ -79,26 +79,6 @@ SECTIONS
+Index: linux-2.6.31.5/arch/arm/kernel/vmlinux.lds.S
+===================================================================
+--- linux-2.6.31.5.orig/arch/arm/kernel/vmlinux.lds.S	2009-10-23 00:57:56.000000000 +0200
++++ linux-2.6.31.5/arch/arm/kernel/vmlinux.lds.S	2009-10-23 12:43:50.000000000 +0200
+@@ -79,26 +79,6 @@
  #endif
  	}
  
@@ -153,7 +148,7 @@
  	.text : {			/* Real text segment		*/
  		_text = .;		/* Text and read-only data	*/
  			__exception_text_start = .;
-@@ -205,6 +185,28 @@ SECTIONS
+@@ -205,6 +185,28 @@
  		__bss_stop = .;
  		_end = .;
  	}
@@ -182,9 +177,11 @@
  					/* Stabs debugging sections.	*/
  	.stab 0 : { *(.stab) }
  	.stabstr 0 : { *(.stabstr) }
---- a/arch/powerpc/kernel/vmlinux.lds.S
-+++ b/arch/powerpc/kernel/vmlinux.lds.S
-@@ -37,12 +37,6 @@ jiffies = jiffies_64 + 4;
+Index: linux-2.6.31.5/arch/powerpc/kernel/vmlinux.lds.S
+===================================================================
+--- linux-2.6.31.5.orig/arch/powerpc/kernel/vmlinux.lds.S	2009-10-23 00:57:56.000000000 +0200
++++ linux-2.6.31.5/arch/powerpc/kernel/vmlinux.lds.S	2009-10-23 12:43:50.000000000 +0200
+@@ -37,12 +37,6 @@
  #endif
  SECTIONS
  {
@@ -197,7 +194,7 @@
  	. = KERNELBASE;
  
  /*
-@@ -295,6 +289,12 @@ SECTIONS
+@@ -295,6 +289,12 @@
  		__bss_stop = .;
  	}
  
