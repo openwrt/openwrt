@@ -1,0 +1,29 @@
+Index: linux-2.6.30.5/drivers/net/Kconfig
+===================================================================
+--- linux-2.6.30.5.orig/drivers/net/Kconfig	2009-09-04 16:13:12.000000000 +0200
++++ linux-2.6.30.5/drivers/net/Kconfig	2009-09-04 16:19:05.000000000 +0200
+@@ -612,6 +612,12 @@
+ 	  If you have an Alchemy Semi AU1X00 based system
+ 	  say Y.  Otherwise, say N.
+ 
++config MIPS_RAMIPS_NET
++	tristate "Ethernet driver for rt288x/rt305x"
++	depends on MIPS_RALINK
++	help
++	  This driver supports the etehrnet mac inside the ralink wisocs
++
+ config SGI_IOC3_ETH
+ 	bool "SGI IOC3 Ethernet"
+ 	depends on PCI && SGI_IP27
+Index: linux-2.6.30.5/drivers/net/Makefile
+===================================================================
+--- linux-2.6.30.5.orig/drivers/net/Makefile	2009-09-04 16:13:08.000000000 +0200
++++ linux-2.6.30.5/drivers/net/Makefile	2009-09-04 16:16:34.000000000 +0200
+@@ -204,6 +204,7 @@
+ obj-$(CONFIG_MIPS_JAZZ_SONIC) += jazzsonic.o
+ obj-$(CONFIG_MIPS_AU1X00_ENET) += au1000_eth.o
+ obj-$(CONFIG_MIPS_SIM_NET) += mipsnet.o
++obj-$(CONFIG_MIPS_RAMIPS_NET) += ramips.o
+ obj-$(CONFIG_SGI_IOC3_ETH) += ioc3-eth.o
+ obj-$(CONFIG_DECLANCE) += declance.o
+ obj-$(CONFIG_ATARILANCE) += atarilance.o
