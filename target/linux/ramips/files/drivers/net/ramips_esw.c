@@ -113,7 +113,7 @@ rt305x_esw_init(void)
 
 	/* set default vlan */
 	ramips_esw_wr(0x2001, 0x50);
-	ramips_esw_wr(0x5041, 0x70);
+	ramips_esw_wr(0x504f, 0x70);
 
 	return 0;
 }
