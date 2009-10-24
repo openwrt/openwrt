@@ -41,7 +41,7 @@
 #define RT305X_UART0_SIZE	0x100
 #define RT305X_UART1_SIZE	0x100
 #define RT305X_FLASH1_SIZE	(16 * 1024 * 1024)
-#define RT305X_FLASH0_SIZE	(4 * 1024 * 1024)
+#define RT305X_FLASH0_SIZE	(8 * 1024 * 1024)
 
 /* SYSC registers */
 #define SYSC_REG_CHIP_NAME0	0x000	/* Chip Name 0 */

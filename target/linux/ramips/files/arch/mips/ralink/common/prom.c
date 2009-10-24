@@ -41,6 +41,9 @@ static struct board_rec boards[] __initdata = {
 	}, {
 		.name		= "WHR-G300N",
 		.mach_type	= RAMIPS_MACH_WHR_G300N,
+	}, {
+		.name		= "FONERA20N",
+		.mach_type	= RAMIPS_MACH_FONERA20N,
 	}
 };
 
