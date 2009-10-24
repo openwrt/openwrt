@@ -10,7 +10,7 @@
  
  /*
   * If 'obj' is a string, it is tried to be interpreted as a number.
-@@ -564,12 +567,63 @@
+@@ -562,12 +565,63 @@ static inline int arith_mode( const TVal
      ARITH_OP1_END
  #endif
  
@@ -74,7 +74,7 @@
   reentry:  /* entry point */
    lua_assert(isLua(L->ci));
    pc = L->savedpc;
-@@ -594,33 +648,33 @@
+@@ -592,33 +646,33 @@ void luaV_execute (lua_State *L, int nex
      lua_assert(base == L->base && L->base == L->ci->base);
      lua_assert(base <= L->top && L->top <= L->stack + L->stacksize);
      lua_assert(L->top == L->ci->top || luaG_checkopenop(i));
@@ -115,7 +115,7 @@
          TValue g;
          TValue *rb = KBx(i);
          sethvalue(L, &g, cl->env);
-@@ -628,88 +682,88 @@
+@@ -626,88 +680,88 @@ void luaV_execute (lua_State *L, int nex
          Protect(luaV_gettable(L, &g, rb, ra));
          continue;
        }
@@ -219,7 +219,7 @@
          const TValue *rb = RB(i);
          switch (ttype(rb)) {
            case LUA_TTABLE: {
-@@ -729,18 +783,18 @@
+@@ -727,18 +781,18 @@ void luaV_execute (lua_State *L, int nex
          }
          continue;
        }
@@ -241,7 +241,7 @@
          TValue *rb = RKB(i);
          TValue *rc = RKC(i);
          Protect(
-@@ -750,7 +804,7 @@
+@@ -748,7 +802,7 @@ void luaV_execute (lua_State *L, int nex
          pc++;
          continue;
        }
@@ -250,7 +250,7 @@
          Protect(
            if (luaV_lessthan(L, RKB(i), RKC(i)) == GETARG_A(i))
              dojump(L, pc, GETARG_sBx(*pc));
-@@ -758,7 +812,7 @@
+@@ -756,7 +810,7 @@ void luaV_execute (lua_State *L, int nex
          pc++;
          continue;
        }
@@ -259,7 +259,7 @@
          Protect(
            if (lessequal(L, RKB(i), RKC(i)) == GETARG_A(i))
              dojump(L, pc, GETARG_sBx(*pc));
-@@ -766,13 +820,13 @@
+@@ -764,13 +818,13 @@ void luaV_execute (lua_State *L, int nex
          pc++;
          continue;
        }
@@ -275,7 +275,7 @@
          TValue *rb = RB(i);
          if (l_isfalse(rb) != GETARG_C(i)) {
            setobjs2s(L, ra, rb);
-@@ -781,7 +835,7 @@
+@@ -779,7 +833,7 @@ void luaV_execute (lua_State *L, int nex
          pc++;
          continue;
        }
@@ -284,7 +284,7 @@
          int b = GETARG_B(i);
          int nresults = GETARG_C(i) - 1;
          if (b != 0) L->top = ra+b;  /* else previous instruction set top */
-@@ -802,7 +856,7 @@
+@@ -800,7 +854,7 @@ void luaV_execute (lua_State *L, int nex
            }
          }
        }
@@ -293,7 +293,7 @@
          int b = GETARG_B(i);
          if (b != 0) L->top = ra+b;  /* else previous instruction set top */
          L->savedpc = pc;
-@@ -834,7 +888,7 @@
+@@ -832,7 +886,7 @@ void luaV_execute (lua_State *L, int nex
            }
          }
        }
@@ -302,7 +302,7 @@
          int b = GETARG_B(i);
          if (b != 0) L->top = ra+b-1;
          if (L->openupval) luaF_close(L, base);
-@@ -849,7 +903,7 @@
+@@ -847,7 +901,7 @@ void luaV_execute (lua_State *L, int nex
            goto reentry;
          }
        }
@@ -311,7 +311,7 @@
          /* If start,step and limit are all integers, we don't need to check
           * against overflow in the looping.
           */
-@@ -877,7 +931,7 @@
+@@ -875,7 +929,7 @@ void luaV_execute (lua_State *L, int nex
          }
          continue;
        }
@@ -320,7 +320,7 @@
          const TValue *init = ra;
          const TValue *plimit = ra+1;
          const TValue *pstep = ra+2;
-@@ -900,7 +954,7 @@
+@@ -898,7 +952,7 @@ void luaV_execute (lua_State *L, int nex
          dojump(L, pc, GETARG_sBx(i));
          continue;
        }
@@ -329,7 +329,7 @@
          StkId cb = ra + 3;  /* call base */
          setobjs2s(L, cb+2, ra+2);
          setobjs2s(L, cb+1, ra+1);
-@@ -916,7 +970,7 @@
+@@ -914,7 +968,7 @@ void luaV_execute (lua_State *L, int nex
          pc++;
          continue;
        }
@@ -338,7 +338,7 @@
          int n = GETARG_B(i);
          int c = GETARG_C(i);
          int last;
-@@ -938,11 +992,11 @@
+@@ -936,11 +990,11 @@ void luaV_execute (lua_State *L, int nex
          }
          continue;
        }
@@ -352,7 +352,7 @@
          Proto *p;
          Closure *ncl;
          int nup, j;
-@@ -962,7 +1016,7 @@
+@@ -960,7 +1014,7 @@ void luaV_execute (lua_State *L, int nex
          Protect(luaC_checkGC(L));
          continue;
        }
