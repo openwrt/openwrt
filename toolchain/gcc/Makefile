@@ -253,13 +253,16 @@ define Stage2/Install
 endef
 
 
+BUGURL=https://dev.openwrt.org/
+
 define Host/Prepare
 	$(call Host/SetToolchainInfo)
 	$(call Host/Prepare/Default)
 	ln -snf $(GCC_DIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/
 	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(HOST_BUILD_DIR)/gcc/version.c
-	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(HOST_BUILD_DIR)/gcc/version.c
+	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:$(BUGURL)>\2,' $(HOST_BUILD_DIR)/gcc/version.c
+	$(SED) 's,http://gcc.gnu.org/bugs.html,$(BUGURL),' $(HOST_BUILD_DIR)/gcc/configure
 	#(cd $(HOST_BUILD_DIR)/libstdc++-v3; autoconf;);
 	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(HOST_BUILD_DIR)/libstdc++-v3/configure
 	$(call Stage0/Configure)
