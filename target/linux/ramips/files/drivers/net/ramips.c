@@ -25,12 +25,11 @@
 #include <linux/skbuff.h>
 #include <linux/if_vlan.h>
 #include <linux/if_ether.h>
+#include <linux/platform_device.h>
 #include <asm/uaccess.h>
 #include <net/sock.h>
 #include <asm/uaccess.h>
 
-#include <rt305x.h>
-#include <rt305x_regs.h>
 #include <eth.h>
 
 #define TX_TIMEOUT (20 * HZ / 100)
@@ -112,19 +111,19 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 	unsigned long tx;
 	unsigned int tx_next;
 
-#ifdef CONFIG_RALINK_RT305X
-#define MIN_PKT_LEN  64
-	 if(skb->len < MIN_PKT_LEN)
-	 {
-	     if(skb_padto(skb, MIN_PKT_LEN))
+	if(priv->plat->min_pkt_len)
+	{
+		if(skb->len < priv->plat->min_pkt_len)
 		 {
-			 printk(KERN_ERR "ramips_eth: skb_padto failed\n");
-			 kfree_skb(skb);
-			 return 0;
-	     }
-	     skb_put(skb, MIN_PKT_LEN - skb->len);
-	 }
-#endif
+		     if(skb_padto(skb, priv->plat->min_pkt_len))
+			 {
+				 printk(KERN_ERR "ramips_eth: skb_padto failed\n");
+				 kfree_skb(skb);
+				 return 0;
+			 }
+		     skb_put(skb, priv->plat->min_pkt_len - skb->len);
+		 }
+	}
 	dev->trans_start = jiffies;
 	dma_cache_wback_inv((unsigned long)skb->data, skb->len);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
@@ -321,16 +320,13 @@ ramips_eth_stop(struct net_device *dev)
 int __init
 ramips_eth_probe(struct net_device *dev)
 {
+	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
 	struct sockaddr addr;
-	unsigned char mac_addr01234[5] = {0x00, 0x0C, 0x43, 0x28, 0x80};
 
-	/* reset frame engine */
-	rt305x_sysc_wr(RAMIPS_FE_RESET_BIT, RAMIPS_FE_RESET);
-	rt305x_sysc_wr(0, RAMIPS_FE_RESET);
-
+	BUG(!priv->plat->reset_fe);
+	priv->plat->reset_fe();
 	net_srandom(jiffies);
-	memcpy(addr.sa_data, mac_addr01234, 5);
-	addr.sa_data[5] = net_random()&0xFF;
+	memcpy(addr.sa_data, priv->plat->mac, 6);
 	ramips_eth_set_mac_addr(dev, &addr);
 
 	ether_setup(dev);
@@ -345,20 +341,24 @@ ramips_eth_probe(struct net_device *dev)
 	return 0;
 }
 
-int __init
-ramips_eth_init(void)
+static int
+ramips_eth_plat_probe(struct platform_device *plat)
 {
-	ramips_fe_base = ioremap_nocache(RT305X_FE_BASE, PAGE_SIZE);
+	struct raeth_priv *priv;
+
+	ramips_fe_base = ioremap_nocache(plat->base_addr, PAGE_SIZE);
 	if(!ramips_fe_base)
 		return -ENOMEM;
 	ramips_dev = alloc_etherdev(sizeof(struct raeth_priv));
 	if(!ramips_dev)
 		return -ENOMEM;
 	strcpy(ramips_dev->name, "eth%d");
-	ramips_dev->irq = RT305X_CPU_IRQ_FE;
+	ramips_dev->irq = plat->irq;
 	ramips_dev->addr_len = ETH_ALEN;
 	ramips_dev->base_addr = (unsigned long)ramips_fe_base;
 	ramips_dev->init = ramips_eth_probe;
+	priv = (struct raeth_priv*)netdev_priv(ramips_dev);
+	priv->plat = (struct ramips_eth_platform_data*)plat->dev.platform_data;
 	if(register_netdev(ramips_dev))
 	{
 		printk(KERN_ERR "ramips_eth: error bringing up device\n");
@@ -371,12 +371,35 @@ ramips_eth_init(void)
 	return 0;
 }
 
-void
-ramips_eth_cleanup(void)
+static int
+ramips_eth_plat_remove(struct platform_device *plat)
 {
 	unregister_netdev(ramips_dev);
 	free_netdev(ramips_dev);
 	printk(KERN_INFO "ramips_eth: unloaded");
+	return 0;
+}
+
+static struct platform_driver ramips_eth_driver = {
+	.probe = ramips_eth_plat_probe,
+	.remove = ramips_eth_plat_remove,
+	.driver = {
+		.name = "ramips_eth",
+		.owner = THIS_MODULE,
+	},
+};
+
+int __init ramips_eth_init(void)
+{
+	int ret = platform_driver_register(&ramips_eth_driver);
+	if (ret)
+		printk(KERN_INFO "ramips_eth: Error registering platfom driver!");
+	return ret;
+}
+
+static void __exit ramips_eth_cleanup(void)
+{
+	platform_driver_unregister(&ramips_eth_driver);
 }
 
 module_init(ramips_eth_init);

@@ -19,6 +19,8 @@
 #include <asm/mach-ralink/rt305x_regs.h>
 #include "devices.h"
 
+#include <eth.h>
+
 static struct resource rt305x_flash0_resources[] = {
 	{
 		.flags	= IORESOURCE_MEM,
@@ -93,4 +95,30 @@ void __init rt305x_register_flash(unsigned int id,
 
 	platform_device_register(pdev);
 	rt305x_flash_instance++;
+}
+
+static void rt305x_fe_reset(void)
+{
+	rt305x_sysc_wr(RAMIPS_FE_RESET_BIT, RAMIPS_FE_RESET);
+	rt305x_sysc_wr(0, RAMIPS_FE_RESET);
+}
+
+static struct ramips_eth_platform_data ramips_eth_data = {
+	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
+	.base_addr = RT305X_FE_BASE,
+	.irq = RT305X_CPU_IRQ_FE,
+	.reset_fe = rt305x_fe_reset,
+	.min_pkt_len = 64
+};
+
+static struct platform_device rt305x_eth_device = {
+	.name = "ramips_eth",
+	.dev = {
+		.platform_data = (void *) &ramips_eth_data,
+	}
+};
+
+void __init rt305x_register_ethernet(void)
+{
+	platform_device_register(&rt305x_eth_device);
 }

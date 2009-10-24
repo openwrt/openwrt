@@ -21,6 +21,8 @@
 #define RAMIPS_ETH_H
 
 #include <linux/mii.h>
+#include <linux/interrupt.h>
+#include <linux/netdevice.h>
 
 #define NUM_RX_DESC     256
 #define NUM_TX_DESC     256
@@ -34,7 +36,6 @@
 
 #define RAMIPS_FE_RESET					0x34
 #define RAMIPS_FE_RESET_BIT				BIT(21)
-
 
 /* interrupt bitd */
 #define RAMIPS_CNT_PPE_AF				BIT(31)
@@ -161,7 +162,6 @@
 #define RAMIPS_US_CYC_CNT_SHIFT			0x8
 #define RAMIPS_US_CYC_CNT_DIVISOR		1000000
 
-
 #define RX_DMA_PLEN0(x)					((x >> 16) & 0x3fff)
 #define RX_DMA_LSO						BIT(30)
 #define RX_DMA_DONE						BIT(31)
@@ -187,6 +187,15 @@ struct ramips_tx_dma {
 	unsigned int txd4;
 };
 
+struct ramips_eth_platform_data
+{
+	unsigned char mac[6];
+	unsigned int base_addr;
+	void (*reset_fe)(void);
+	int min_pkt_len;
+	int irq;
+};
+
 struct raeth_priv
 {
 	unsigned int			phy_rx;
@@ -199,6 +208,8 @@ struct raeth_priv
 
     unsigned int			skb_free_idx;
     struct net_device_stats	stat;
+
+	struct ramips_eth_platform_data *plat;
 };
 
 #endif
