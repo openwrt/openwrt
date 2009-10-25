@@ -313,7 +313,7 @@ ramips_eth_stop(struct net_device *dev)
 		priv->tx, priv->phy_tx);
 	pci_free_consistent(NULL, NUM_RX_DESC * sizeof(struct ramips_rx_dma),
 		priv->rx, priv->phy_rx);
-	printk(KERN_INFO "ramips_eth: stopped\n");
+	printk(KERN_DEBUG "ramips_eth: stopped\n");
 	return 0;
 }
 
@@ -368,7 +368,7 @@ ramips_eth_plat_probe(struct platform_device *plat)
 #ifdef CONFIG_RALINK_RT305X
 	rt305x_esw_init();
 #endif
-	printk(KERN_INFO "ramips_eth: loaded\n");
+	printk(KERN_DEBUG "ramips_eth: loaded\n");
 	return 0;
 }
 
@@ -377,7 +377,7 @@ ramips_eth_plat_remove(struct platform_device *plat)
 {
 	unregister_netdev(ramips_dev);
 	free_netdev(ramips_dev);
-	printk(KERN_INFO "ramips_eth: unloaded");
+	printk(KERN_DEBUG "ramips_eth: unloaded\n");
 	return 0;
 }
 
@@ -395,7 +395,8 @@ ramips_eth_init(void)
 {
 	int ret = platform_driver_register(&ramips_eth_driver);
 	if (ret)
-		printk(KERN_INFO "ramips_eth: Error registering platfom driver!");
+		printk(KERN_ERR
+		       "ramips_eth: Error registering platfom driver!\n");
 	return ret;
 }
 
