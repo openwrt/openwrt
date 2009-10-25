@@ -1,0 +1,78 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FindBin '$Bin';
+use File::Temp 'tempfile';
+
+@ARGV == 2 || do {
+	die "Usage: $0 <host:port> <executable>\n";
+	exit 1;
+};
+
+if( opendir SD, "$Bin/../staging_dir" )
+{
+	my ( $tid, $arch, $libc, @arches );
+
+	if( $ARGV[1] =~ m!\btarget-([^_/]+)_([^_/]+)\b! )
+	{
+		print("Using target $1 ($2)\n");
+		($arch, $libc) = ($1, $2);
+	}
+	else
+	{
+		# Find arches
+		print("Choose target:\n");
+
+		while( defined( my $e = readdir SD ) )
+		{
+			if( -d "$Bin/../staging_dir/$e" && $e =~ /^target-([^_]+)_([^_]+)/ )
+			{
+				push @arches, [ $1, $2 ];
+				printf(" %2d) %s (%s)\n", @arches + 0, $1, $2);
+			}
+		}
+
+		# Query arch
+		do {
+			print("Target? > ");
+			chomp($tid = <STDIN>);
+		} while( !defined($tid) || $tid !~ /^\d+$/ || $tid < 1 || $tid > @arches );
+
+		($arch, $libc) = @{$arches[$tid-1]};
+	}
+
+	closedir SD;
+
+	# Find gdb
+	my ($gdb) = glob("$Bin/../build_dir/toolchain-${arch}_*_${libc}/gdb-*/gdb/gdb");
+
+	if( -x $gdb )
+	{
+		my ( $fh, $fp ) = tempfile();
+
+		# Find library paths
+		my $libdirs = join ':', (
+			glob("$Bin/../staging_dir/target-${arch}_${libc}/{usr/,}lib"),
+			glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}/lib")
+		);
+
+		print $fh "set solib-search-path $libdirs\n";
+		print $fh "target remote $ARGV[0]\n";
+
+		system($gdb, '-x', $fp, $ARGV[1]);
+
+		close($fh);
+		unlink($fp);
+	}
+	else
+	{
+		print("No gdb found! Make sure that CONFIG_GDB is set!\n");
+		exit(1);
+	}
+}
+else
+{
+	print("No staging_dir found! You need to compile at least once!\n");
+	exit(1);
+}
