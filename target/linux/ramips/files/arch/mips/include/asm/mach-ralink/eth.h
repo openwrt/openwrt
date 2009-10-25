@@ -209,7 +209,6 @@ struct raeth_priv
 	struct sk_buff			*tx_skb[NUM_RX_DESC];
 
 	unsigned int			skb_free_idx;
-	struct net_device_stats	stat;
 
 	struct ramips_eth_platform_data *plat;
 };
