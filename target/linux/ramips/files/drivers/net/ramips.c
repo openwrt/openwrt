@@ -39,6 +39,8 @@
 #include "ramips_esw.c"
 #endif
 
+#define phys_to_bus(a)  (a & 0x1FFFFFFF)
+
 static struct net_device * ramips_dev;
 static void __iomem *ramips_fe_base = 0;
 
@@ -57,15 +59,14 @@ ramips_fe_rr(unsigned reg)
 static int
 ramips_alloc_dma(struct net_device *dev)
 {
-#define phys_to_bus(a)  (a & 0x1FFFFFFF)
 	struct raeth_priv *priv = netdev_priv(dev);
 	int i;
 
 	priv->skb_free_idx = 0;
 
 	/* setup tx ring */
-	priv->tx = pci_alloc_consistent(NULL,
-		NUM_TX_DESC * sizeof(struct ramips_tx_dma), &priv->phy_tx);
+	priv->tx = dma_alloc_coherent(NULL,
+		NUM_TX_DESC * sizeof(struct ramips_tx_dma), &priv->phy_tx, GFP_ATOMIC);
 	for(i = 0; i < NUM_TX_DESC; i++)
 	{
 		memset(&priv->tx[i], 0, sizeof(struct ramips_tx_dma));
@@ -79,8 +80,8 @@ ramips_alloc_dma(struct net_device *dev)
 	ramips_fe_wr(RAMIPS_PST_DTX_IDX0, RAMIPS_PDMA_RST_CFG);
 
 	/* setup rx ring */
-	priv->rx = pci_alloc_consistent(NULL,
-		NUM_RX_DESC * sizeof(struct ramips_rx_dma), &priv->phy_rx);
+	priv->rx = dma_alloc_coherent(NULL,
+		NUM_RX_DESC * sizeof(struct ramips_rx_dma), &priv->phy_rx, GFP_ATOMIC);
 	memset(priv->rx, 0, sizeof(struct ramips_rx_dma) * NUM_RX_DESC);
 	for(i = 0; i < NUM_RX_DESC; i++)
 	{
@@ -93,9 +94,6 @@ ramips_alloc_dma(struct net_device *dev)
 		priv->rx[i].rxd2 |= RX_DMA_LSO;
 		priv->rx_skb[i] = new_skb;
 	}
-	dma_cache_wback_inv((unsigned long)priv->rx,
-		NUM_RX_DESC * (sizeof(struct ramips_rx_dma)));
-
 	ramips_fe_wr(phys_to_bus(priv->phy_rx), RAMIPS_RX_BASE_PTR0);
 	ramips_fe_wr(NUM_RX_DESC, RAMIPS_RX_MAX_CNT0);
 	ramips_fe_wr((NUM_RX_DESC - 1), RAMIPS_RX_CALC_IDX0);
@@ -110,7 +108,7 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 	struct raeth_priv *priv = netdev_priv(dev);
 	unsigned long tx;
 	unsigned int tx_next;
-
+	unsigned int mapped_addr;
 	if(priv->plat->min_pkt_len)
 	{
 		if(skb->len < priv->plat->min_pkt_len)
@@ -125,7 +123,9 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 		 }
 	}
 	dev->trans_start = jiffies;
-	dma_cache_wback_inv((unsigned long)skb->data, skb->len);
+	mapped_addr = (unsigned int)dma_map_single(NULL, skb->data, skb->len,
+			PCI_DMA_TODEVICE);
+	dma_sync_single_for_device(NULL, mapped_addr, skb->len, PCI_DMA_TODEVICE);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
 	if(tx == NUM_TX_DESC - 1)
 		tx_next = 0;
@@ -190,8 +190,6 @@ ramips_eth_rx_hw(unsigned long ptr)
 			dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH + 2,
 			PCI_DMA_FROMDEVICE);
 		priv->rx[rx].rxd2 &= ~RX_DMA_DONE;
-		dma_cache_wback_inv((unsigned long)&priv->rx[rx],
-			sizeof(struct ramips_rx_dma));
 		ramips_fe_wr(rx, RAMIPS_RX_CALC_IDX0);
 	}
 	if(max_rx == 0)
