@@ -248,6 +248,8 @@ ramips_eth_irq(int irq, void *dev)
 	struct raeth_priv *priv = netdev_priv(dev);
 	unsigned long fe_int = ramips_fe_rr(RAMIPS_FE_INT_STATUS);
 
+	ramips_fe_wr(0xFFFFFFFF, RAMIPS_FE_INT_STATUS);
+
 	if(fe_int & RAMIPS_RX_DLY_INT)
 	{
 		ramips_fe_wr(ramips_fe_rr(RAMIPS_FE_INT_ENABLE) & ~(RAMIPS_RX_DLY_INT),
@@ -255,8 +257,7 @@ ramips_eth_irq(int irq, void *dev)
 		tasklet_schedule(&priv->rx_tasklet);
 	}
 	if(fe_int & RAMIPS_TX_DLY_INT)
-		tasklet_schedule(&priv->tx_housekeeping_tasklet);
-	ramips_fe_wr(0xFFFFFFFF, RAMIPS_FE_INT_STATUS);
+		ramips_eth_tx_housekeeping((unsigned long)dev);
 	return IRQ_HANDLED;
 }
 
