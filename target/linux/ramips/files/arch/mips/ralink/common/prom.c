@@ -24,10 +24,6 @@ struct board_rec {
 	enum ramips_mach_type	mach_type;
 };
 
-static int ramips_prom_argc __initdata;
-static char **ramips_prom_argv __initdata;
-static char **ramips_prom_envp __initdata;
-
 static struct board_rec boards[] __initdata = {
 	{
 		.name		= "RT-N15",
@@ -70,46 +66,82 @@ static inline void *to_ram_addr(void *addr)
 	return NULL;
 }
 
-static __init char *ramips_prom_getargv(const char *name)
+static void __init prom_append_cmdline(const char *name,
+				       const char *value)
 {
-	int len = strlen(name);
-	int i;
+	char buf[CL_SIZE];
 
-	if (!ramips_prom_argv) {
-		printk(KERN_DEBUG "argv=%p is invalid, skipping\n",
-		       ramips_prom_argv);
-		return NULL;
+	snprintf(buf, sizeof(buf), " %s=%s", name, value);
+	strlcat(arcs_cmdline, buf, sizeof(arcs_cmdline));
+}
+
+#ifdef CONFIG_IMAGE_CMDLINE_HACK
+extern char __image_cmdline[];
+
+static int __init use_image_cmdline(void)
+{
+	char *p = __image_cmdline;
+	int replace = 0;
+
+	if (*p == '-') {
+		replace = 1;
+		p++;
 	}
 
-	for (i = 0; i < ramips_prom_argc; i++) {
-		char *argv = to_ram_addr(ramips_prom_argv[i]);
+	if (*p == '\0')
+		return 0;
 
-		if (!argv) {
+	if (replace) {
+		strlcpy(arcs_cmdline, p, sizeof(arcs_cmdline));
+	} else {
+		strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
+		strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
+	}
+
+	return 1;
+}
+#else
+static int inline use_image_cmdline(void) { return 0; }
+#endif
+
+static __init void prom_init_cmdline(int argc, char **argv)
+{
+	int i;
+
+	if (use_image_cmdline())
+		return;
+
+	if (!argv) {
+		printk(KERN_DEBUG "argv=%p is invalid, skipping\n",
+		       argv);
+		return;
+	}
+
+	for (i = 0; i < argc; i++) {
+		char *p = to_ram_addr(argv[i]);
+
+		if (!p) {
 			printk(KERN_DEBUG
 			       "argv[%d]=%p is invalid, skipping\n",
-			       i, ramips_prom_argv[i]);
+			       i, argv[i]);
 			continue;
 		}
 
-		printk(KERN_DEBUG "argv[%d]: %s\n", i, argv);
-		if (strncmp(name, argv, len) == 0 && (argv)[len] == '=')
-			return argv + len + 1;
+		printk(KERN_DEBUG "argv[%d]: %s\n", i, p);
+		strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
+		strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
 	}
-
-	return NULL;
 }
 
-static __init char *ramips_prom_getenv(const char *envname)
+static __init char *prom_append_env(char **env, const char *envname)
 {
 #define PROM_MAX_ENVS	256
 	int len = strlen(envname);
-	char **env;
 	int i;
 
-	env = ramips_prom_envp;
 	if (!env) {
-		printk(KERN_DEBUG "envp=%p is not in RAM, skipping\n",
-		       ramips_prom_envp);
+		printk(KERN_DEBUG "env=%p is not in RAM, skipping\n",
+		       env);
 		return NULL;
 	}
 
@@ -121,14 +153,14 @@ static __init char *ramips_prom_getenv(const char *envname)
 
 		printk(KERN_DEBUG "env[%d]: %s\n", i, p);
 		if (strncmp(envname, p, len) == 0 && p[len] == '=')
-			return p + len + 1;
+			prom_append_cmdline(envname, p + len + 1);
 	}
 
 	return NULL;
 #undef PROM_MAX_ENVS
 }
 
-static __init void find_board_byname(char *name)
+static __init int ramips_board_setup(char *name)
 {
 	int i;
 
@@ -137,26 +169,29 @@ static __init void find_board_byname(char *name)
 			ramips_mach = boards[i].mach_type;
 			break;
 		}
+
+	return 1;
 }
+__setup("board=", ramips_board_setup);
 
 void __init prom_init(void)
 {
-	char *p;
+	int argc;
+	char **envp;
+	char **argv;
 
 	printk(KERN_DEBUG
 	       "prom: fw_arg0=%08x, fw_arg1=%08x, fw_arg2=%08x, fw_arg3=%08x\n",
 	       (unsigned int)fw_arg0, (unsigned int)fw_arg1,
 	       (unsigned int)fw_arg2, (unsigned int)fw_arg3);
 
-	ramips_prom_argc = fw_arg0;
-	ramips_prom_argv = to_ram_addr((void *)fw_arg1);
-	ramips_prom_envp = to_ram_addr((void *)fw_arg2);
+	argc = fw_arg0;
+	argv = to_ram_addr((void *)fw_arg1);
+	prom_init_cmdline(argc, argv);
 
-	p = ramips_prom_getargv("board");
-	if (!p)
-		p = ramips_prom_getenv("board");
-	if (p)
-		find_board_byname(p);
+	envp = to_ram_addr((void *)fw_arg2);
+	prom_append_env(envp, "board");
+	prom_append_env(envp, "ethaddr");
 }
 
 void __init prom_free_prom_memory(void)
