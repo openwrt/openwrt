@@ -16,6 +16,7 @@ FEATURES:=squashfs broken
 LINUX_VERSION:=2.6.30.9
 
 include $(INCLUDE_DIR)/target.mk
+DEFAULT_PACKAGES+=kmod-leds-gpio
 
 define Target/Description
 	Build firmware images for Ralink RT288x/RT305x based boards.
