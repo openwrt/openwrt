@@ -199,15 +199,17 @@ struct ramips_eth_platform_data
 struct raeth_priv
 {
 	unsigned int			phy_rx;
-    struct tasklet_struct	rx_tasklet;
-    struct ramips_rx_dma	*rx;
+	struct tasklet_struct	rx_tasklet;
+	struct ramips_rx_dma	*rx;
+	struct sk_buff			*rx_skb[NUM_RX_DESC];
 
 	unsigned int			phy_tx;
-    struct tasklet_struct	tx_housekeeping_tasklet;
-    struct ramips_tx_dma	*tx;
+	struct tasklet_struct	tx_housekeeping_tasklet;
+	struct ramips_tx_dma	*tx;
+	struct sk_buff			*tx_skb[NUM_RX_DESC];
 
-    unsigned int			skb_free_idx;
-    struct net_device_stats	stat;
+	unsigned int			skb_free_idx;
+	struct net_device_stats	stat;
 
 	struct ramips_eth_platform_data *plat;
 };

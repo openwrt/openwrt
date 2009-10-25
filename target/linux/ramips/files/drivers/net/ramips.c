@@ -91,7 +91,7 @@ ramips_alloc_dma(struct net_device *dev)
 			dma_map_single(NULL, skb_put(new_skb, 2), MAX_RX_LENGTH + 2,
 				PCI_DMA_FROMDEVICE);
 		priv->rx[i].rxd2 |= RX_DMA_LSO;
-		priv->rx[i].rxd3 = (unsigned int)new_skb;
+		priv->rx_skb[i] = new_skb;
 	}
 	dma_cache_wback_inv((unsigned long)priv->rx,
 		NUM_RX_DESC * (sizeof(struct ramips_rx_dma)));
@@ -131,7 +131,7 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 		tx_next = 0;
 	else
 		tx_next = tx + 1;
-	if((priv->tx[tx].txd3 == 0) && (priv->tx[tx_next].txd3 == 0))
+	if((priv->tx_skb[tx]== 0) && (priv->tx_skb[tx_next] == 0))
 	{
 		if(!(priv->tx[tx].txd2 & TX_DMA_DONE))
 		{
@@ -146,7 +146,7 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
 		priv->stat.tx_packets++;
 		priv->stat.tx_bytes += skb->len;
-		priv->tx[tx].txd3 = (unsigned int)skb;
+		priv->tx_skb[tx] = skb;
 		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
 	} else {
 		priv->stat.tx_dropped++;
@@ -172,7 +172,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 			break;
 		max_rx--;
 
-		rx_skb = (struct sk_buff*)priv->rx[rx].rxd3;
+		rx_skb = priv->rx_skb[rx];
 		rx_skb->len = RX_DMA_PLEN0(priv->rx[rx].rxd2);
 		rx_skb->tail = rx_skb->data + rx_skb->len;
 		rx_skb->dev = dev;
@@ -183,7 +183,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 		netif_rx(rx_skb);
 
 		new_skb = __dev_alloc_skb(MAX_RX_LENGTH + 2, GFP_DMA | GFP_ATOMIC);
-		priv->rx[rx].rxd3 = (unsigned int)new_skb;
+		priv->rx_skb[rx] = new_skb;
 		BUG_ON(!new_skb);
 		skb_reserve(new_skb, 2);
 		priv->rx[rx].rxd1 =
@@ -208,10 +208,10 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
 
 	while((priv->tx[priv->skb_free_idx].txd2 & TX_DMA_DONE) &&
-		(priv->tx[priv->skb_free_idx].txd3))
+		(priv->tx_skb[priv->skb_free_idx]))
 	{
-		dev_kfree_skb_irq((struct sk_buff*)priv->tx[priv->skb_free_idx].txd3);
-		priv->tx[priv->skb_free_idx].txd3 = 0;
+		dev_kfree_skb_irq((struct sk_buff*)priv->tx_skb[priv->skb_free_idx]);
+		priv->tx_skb[priv->skb_free_idx] = 0;
 		priv->skb_free_idx++;
 		if(priv->skb_free_idx >= NUM_TX_DESC)
 			priv->skb_free_idx = 0;
@@ -323,7 +323,7 @@ ramips_eth_probe(struct net_device *dev)
 	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
 	struct sockaddr addr;
 
-	BUG(!priv->plat->reset_fe);
+	BUG_ON(!priv->plat->reset_fe);
 	priv->plat->reset_fe();
 	net_srandom(jiffies);
 	memcpy(addr.sa_data, priv->plat->mac, 6);
@@ -345,20 +345,21 @@ static int
 ramips_eth_plat_probe(struct platform_device *plat)
 {
 	struct raeth_priv *priv;
-
-	ramips_fe_base = ioremap_nocache(plat->base_addr, PAGE_SIZE);
+	struct ramips_eth_platform_data *data =
+		(struct ramips_eth_platform_data*)plat->dev.platform_data;
+	ramips_fe_base = ioremap_nocache(data->base_addr, PAGE_SIZE);
 	if(!ramips_fe_base)
 		return -ENOMEM;
 	ramips_dev = alloc_etherdev(sizeof(struct raeth_priv));
 	if(!ramips_dev)
 		return -ENOMEM;
 	strcpy(ramips_dev->name, "eth%d");
-	ramips_dev->irq = plat->irq;
+	ramips_dev->irq = data->irq;
 	ramips_dev->addr_len = ETH_ALEN;
 	ramips_dev->base_addr = (unsigned long)ramips_fe_base;
 	ramips_dev->init = ramips_eth_probe;
 	priv = (struct raeth_priv*)netdev_priv(ramips_dev);
-	priv->plat = (struct ramips_eth_platform_data*)plat->dev.platform_data;
+	priv->plat = data;
 	if(register_netdev(ramips_dev))
 	{
 		printk(KERN_ERR "ramips_eth: error bringing up device\n");
