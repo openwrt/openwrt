@@ -317,7 +317,7 @@ ramips_eth_stop(struct net_device *dev)
 	return 0;
 }
 
-int __init
+static int __init
 ramips_eth_probe(struct net_device *dev)
 {
 	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
@@ -390,7 +390,8 @@ static struct platform_driver ramips_eth_driver = {
 	},
 };
 
-int __init ramips_eth_init(void)
+static int __init
+ramips_eth_init(void)
 {
 	int ret = platform_driver_register(&ramips_eth_driver);
 	if (ret)
@@ -398,7 +399,8 @@ int __init ramips_eth_init(void)
 	return ret;
 }
 
-static void __exit ramips_eth_cleanup(void)
+static void __exit
+ramips_eth_cleanup(void)
 {
 	platform_driver_unregister(&ramips_eth_driver);
 }
