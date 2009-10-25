@@ -1,3 +1,6 @@
+#include <rt305x.h>
+#include <rt305x_regs.h>
+
 #define GPIO_PRUPOSE           0x60
 #define GPIO_MDIO_BIT          (1<<7)
 #define RT305X_ESW_PHY_WRITE		(1 << 13)
