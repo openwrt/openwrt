@@ -136,7 +136,7 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 		if(!(priv->tx[tx].txd2 & TX_DMA_DONE))
 		{
 			kfree_skb(skb);
-			priv->stat.tx_dropped++;
+			dev->stats.tx_dropped++;
 			printk(KERN_ERR "%s: dropping\n", dev->name);
 			return 0;
 		}
@@ -144,12 +144,12 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 		priv->tx[tx].txd2 &= ~(TX_DMA_PLEN0_MASK | TX_DMA_DONE);
 		priv->tx[tx].txd2 |= TX_DMA_PLEN0(skb->len);
 		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
-		priv->stat.tx_packets++;
-		priv->stat.tx_bytes += skb->len;
+		dev->stats.tx_packets++;
+		dev->stats.tx_bytes += skb->len;
 		priv->tx_skb[tx] = skb;
 		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
 	} else {
-		priv->stat.tx_dropped++;
+		dev->stats.tx_dropped++;
 		kfree_skb(skb);
 	}
 	return 0;
@@ -178,8 +178,8 @@ ramips_eth_rx_hw(unsigned long ptr)
 		rx_skb->dev = dev;
 		rx_skb->protocol = eth_type_trans(rx_skb, dev);
 		rx_skb->ip_summed = CHECKSUM_NONE;
-		priv->stat.rx_packets++;
-		priv->stat.rx_bytes += rx_skb->len;
+		dev->stats.rx_packets++;
+		dev->stats.rx_bytes += rx_skb->len;
 		netif_rx(rx_skb);
 
 		new_skb = __dev_alloc_skb(MAX_RX_LENGTH + 2, GFP_DMA | GFP_ATOMIC);
@@ -218,14 +218,6 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 	}
 	ramips_fe_wr(ramips_fe_rr(RAMIPS_FE_INT_ENABLE) | RAMIPS_TX_DLY_INT,
 		RAMIPS_FE_INT_ENABLE);
-}
-
-static struct net_device_stats*
-ramips_eth_get_stats(struct net_device *dev)
-{
-	struct raeth_priv *priv = netdev_priv(dev);
-
-	return &priv->stat;
 }
 
 static int
@@ -336,7 +328,6 @@ ramips_eth_probe(struct net_device *dev)
 	dev->open = ramips_eth_open;
 	dev->stop = ramips_eth_stop;
 	dev->hard_start_xmit = ramips_eth_hard_start_xmit;
-	dev->get_stats = ramips_eth_get_stats;
 	dev->set_mac_address = ramips_eth_set_mac_addr;
 	dev->mtu = MAX_RX_LENGTH;
 	dev->tx_timeout = ramips_eth_timeout;
