@@ -58,7 +58,7 @@ static int
 ramips_alloc_dma(struct net_device *dev)
 {
 #define phys_to_bus(a)  (a & 0x1FFFFFFF)
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 	int i;
 
 	priv->skb_free_idx = 0;
@@ -107,7 +107,7 @@ ramips_alloc_dma(struct net_device *dev)
 static int
 ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 {
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 	unsigned long tx;
 	unsigned int tx_next;
 
@@ -159,7 +159,7 @@ static void
 ramips_eth_rx_hw(unsigned long ptr)
 {
 	struct net_device *dev = (struct net_device*)ptr;
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 	int rx;
 	int max_rx = 16;
 
@@ -205,7 +205,7 @@ static void
 ramips_eth_tx_housekeeping(unsigned long ptr)
 {
 	struct net_device *dev = (struct net_device*)ptr;
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 
 	while((priv->tx[priv->skb_free_idx].txd2 & TX_DMA_DONE) &&
 		(priv->tx_skb[priv->skb_free_idx]))
@@ -223,7 +223,9 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 static struct net_device_stats*
 ramips_eth_get_stats(struct net_device *dev)
 {
-	return &((struct raeth_priv*)netdev_priv(dev))->stat;
+	struct raeth_priv *priv = netdev_priv(dev);
+
+	return &priv->stat;
 }
 
 static int
@@ -243,14 +245,15 @@ ramips_eth_set_mac_addr(struct net_device *dev, void *priv)
 static void
 ramips_eth_timeout(struct net_device *dev)
 {
-	tasklet_schedule(
-		&((struct raeth_priv*)netdev_priv(dev))->tx_housekeeping_tasklet);
+	struct raeth_priv *priv = netdev_priv(dev);
+
+	tasklet_schedule(&priv->tx_housekeeping_tasklet);
 }
 
 static irqreturn_t
 ramips_eth_irq(int irq, void *dev)
 {
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 	unsigned long fe_int = ramips_fe_rr(RAMIPS_FE_INT_STATUS);
 
 	if(fe_int & RAMIPS_RX_DLY_INT)
@@ -268,7 +271,7 @@ ramips_eth_irq(int irq, void *dev)
 static int
 ramips_eth_open(struct net_device *dev)
 {
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 
 	ramips_alloc_dma(dev);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) & 0xff) |
@@ -301,7 +304,7 @@ ramips_eth_open(struct net_device *dev)
 static int
 ramips_eth_stop(struct net_device *dev)
 {
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 
 	ramips_fe_wr(RAMIPS_PDMA_GLO_CFG, ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) &
 		~(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN | RAMIPS_TX_DMA_EN));
@@ -320,7 +323,7 @@ ramips_eth_stop(struct net_device *dev)
 static int __init
 ramips_eth_probe(struct net_device *dev)
 {
-	struct raeth_priv *priv = (struct raeth_priv*)netdev_priv(dev);
+	struct raeth_priv *priv = netdev_priv(dev);
 	struct sockaddr addr;
 
 	BUG_ON(!priv->plat->reset_fe);
@@ -345,8 +348,7 @@ static int
 ramips_eth_plat_probe(struct platform_device *plat)
 {
 	struct raeth_priv *priv;
-	struct ramips_eth_platform_data *data =
-		(struct ramips_eth_platform_data*)plat->dev.platform_data;
+	struct ramips_eth_platform_data *data = plat->dev.platform_data;
 	ramips_fe_base = ioremap_nocache(data->base_addr, PAGE_SIZE);
 	if(!ramips_fe_base)
 		return -ENOMEM;
