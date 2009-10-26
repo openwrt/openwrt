@@ -186,13 +186,6 @@ struct ramips_tx_dma {
 	unsigned int txd4;
 };
 
-struct ramips_eth_platform_data
-{
-	unsigned char mac[6];
-	void (*reset_fe)(void);
-	int min_pkt_len;
-};
-
 struct raeth_priv
 {
 	unsigned int			phy_rx;
