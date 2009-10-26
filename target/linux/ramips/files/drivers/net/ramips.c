@@ -19,7 +19,7 @@
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/pci.h>
+#include <linux/dma-mapping.h>
 #include <linux/init.h>
 #include <linux/skbuff.h>
 #include <linux/if_vlan.h>
@@ -89,7 +89,7 @@ ramips_alloc_dma(struct net_device *dev)
 		skb_reserve(new_skb, 2);
 		priv->rx[i].rxd1 =
 			dma_map_single(NULL, skb_put(new_skb, 2), MAX_RX_LENGTH + 2,
-				PCI_DMA_FROMDEVICE);
+				DMA_FROM_DEVICE);
 		priv->rx[i].rxd2 |= RX_DMA_LSO;
 		priv->rx_skb[i] = new_skb;
 	}
@@ -123,8 +123,8 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 	}
 	dev->trans_start = jiffies;
 	mapped_addr = (unsigned int)dma_map_single(NULL, skb->data, skb->len,
-			PCI_DMA_TODEVICE);
-	dma_sync_single_for_device(NULL, mapped_addr, skb->len, PCI_DMA_TODEVICE);
+			DMA_TO_DEVICE);
+	dma_sync_single_for_device(NULL, mapped_addr, skb->len, DMA_TO_DEVICE);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
 	if(tx == NUM_TX_DESC - 1)
 		tx_next = 0;
@@ -187,7 +187,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 		skb_reserve(new_skb, 2);
 		priv->rx[rx].rxd1 =
 			dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH + 2,
-			PCI_DMA_FROMDEVICE);
+			DMA_FROM_DEVICE);
 		priv->rx[rx].rxd2 &= ~RX_DMA_DONE;
 		ramips_fe_wr(rx, RAMIPS_RX_CALC_IDX0);
 	}
@@ -302,9 +302,9 @@ ramips_eth_stop(struct net_device *dev)
 	netif_stop_queue(dev);
 	tasklet_kill(&priv->tx_housekeeping_tasklet);
 	tasklet_kill(&priv->rx_tasklet);
-	pci_free_consistent(NULL, NUM_TX_DESC * sizeof(struct ramips_tx_dma),
+	dma_free_coherent(NULL, NUM_TX_DESC * sizeof(struct ramips_tx_dma),
 		priv->tx, priv->phy_tx);
-	pci_free_consistent(NULL, NUM_RX_DESC * sizeof(struct ramips_rx_dma),
+	dma_free_coherent(NULL, NUM_RX_DESC * sizeof(struct ramips_rx_dma),
 		priv->rx, priv->phy_rx);
 	printk(KERN_DEBUG "ramips_eth: stopped\n");
 	return 0;
