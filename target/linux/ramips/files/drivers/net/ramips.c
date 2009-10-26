@@ -338,12 +338,24 @@ ramips_eth_plat_probe(struct platform_device *plat)
 {
 	struct raeth_priv *priv;
 	struct ramips_eth_platform_data *data = plat->dev.platform_data;
+	int err;
+
+	if (!data) {
+		dev_err(&plat->dev, "no platform data specified\n");
+		return -EINVAL;
+	}
+
 	ramips_fe_base = ioremap_nocache(data->base_addr, PAGE_SIZE);
 	if(!ramips_fe_base)
 		return -ENOMEM;
+
 	ramips_dev = alloc_etherdev(sizeof(struct raeth_priv));
-	if(!ramips_dev)
-		return -ENOMEM;
+	if(!ramips_dev) {
+		dev_err(&plat->dev, "alloc_etherdev failed\n");
+		err = -ENOMEM;
+		goto err_unmap;
+	}
+
 	strcpy(ramips_dev->name, "eth%d");
 	ramips_dev->irq = data->irq;
 	ramips_dev->addr_len = ETH_ALEN;
@@ -351,16 +363,24 @@ ramips_eth_plat_probe(struct platform_device *plat)
 	ramips_dev->init = ramips_eth_probe;
 	priv = (struct raeth_priv*)netdev_priv(ramips_dev);
 	priv->plat = data;
-	if(register_netdev(ramips_dev))
-	{
-		printk(KERN_ERR "ramips_eth: error bringing up device\n");
-		return -ENXIO;
+
+	err = register_netdev(ramips_dev);
+	if (err) {
+		dev_err(&plat->dev, "error bringing up device\n");
+		goto err_free_dev;
 	}
+
 #ifdef CONFIG_RALINK_RT305X
 	rt305x_esw_init();
 #endif
 	printk(KERN_DEBUG "ramips_eth: loaded\n");
 	return 0;
+
+ err_free_dev:
+	kfree(ramips_dev);
+ err_unmap:
+	iounmap(ramips_fe_base);
+	return err;
 }
 
 static int
