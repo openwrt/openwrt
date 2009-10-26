@@ -338,6 +338,7 @@ ramips_eth_plat_probe(struct platform_device *plat)
 {
 	struct raeth_priv *priv;
 	struct ramips_eth_platform_data *data = plat->dev.platform_data;
+	struct resource *res;
 	int err;
 
 	if (!data) {
@@ -345,7 +346,13 @@ ramips_eth_plat_probe(struct platform_device *plat)
 		return -EINVAL;
 	}
 
-	ramips_fe_base = ioremap_nocache(data->base_addr, PAGE_SIZE);
+	res = platform_get_resource(plat, IORESOURCE_MEM, 0);
+	if (!res) {
+		dev_err(&plat->dev, "no memory resource found\n");
+		return -ENXIO;
+	}
+
+	ramips_fe_base = ioremap_nocache(res->start, res->end - res->start + 1);
 	if(!ramips_fe_base)
 		return -ENOMEM;
 
@@ -357,7 +364,12 @@ ramips_eth_plat_probe(struct platform_device *plat)
 	}
 
 	strcpy(ramips_dev->name, "eth%d");
-	ramips_dev->irq = data->irq;
+	ramips_dev->irq = platform_get_irq(plat, 0);
+	if (ramips_dev->irq < 0) {
+		dev_err(&plat->dev, "no IRQ resource found\n");
+		err = -ENXIO;
+		goto err_free_dev;
+	}
 	ramips_dev->addr_len = ETH_ALEN;
 	ramips_dev->base_addr = (unsigned long)ramips_fe_base;
 	ramips_dev->init = ramips_eth_probe;
