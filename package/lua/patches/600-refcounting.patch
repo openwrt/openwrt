@@ -205,7 +205,7 @@
    lua_unlock(L);
    return res;
  }
-@@ -1040,20 +1046,22 @@ LUA_API int lua_next (lua_State *L, int 
+@@ -1040,20 +1046,21 @@ LUA_API int lua_next (lua_State *L, int 
    if (more) {
      api_incr_top(L);
    }
@@ -220,7 +220,6 @@
  
  
  LUA_API void lua_concat (lua_State *L, int n) {
-+  int i;
    lua_lock(L);
    api_checknelems(L, n);
    if (n >= 2) {
@@ -519,36 +518,6 @@
      }
    }
    return p;
-@@ -452,22 +455,27 @@ static void GCTM (lua_State *L) {
-     g->tmudata = NULL;
-   else
-     g->tmudata->gch.next = udata->uv.next;
-+  udata->uv.prev = (GCObject *)g->mainthread;
-   udata->uv.next = g->mainthread->next;  /* return it to `root' list */
-   g->mainthread->next = o;
-+  if (udata->uv.next)
-+    udata->uv.next->uv.prev = o;
-   makewhite(g, o);
-+  L->top++;
-   tm = fasttm(L, udata->uv.metatable, TM_GC);
-   if (tm != NULL) {
-     lu_byte oldah = L->allowhook;
-     lu_mem oldt = g->GCthreshold;
-     L->allowhook = 0;  /* stop debug hooks during GC tag method */
-     g->GCthreshold = 2*g->totalbytes;  /* avoid GC steps */
--    setobj2s(L, L->top, tm);
--    setuvalue(L, L->top+1, udata);
-     L->top += 2;
-+    setobj2s(L, L->top - 2, tm);
-+    setuvalue(L, L->top - 1, udata);
-     luaD_call(L, L->top - 2, 0);
-     L->allowhook = oldah;  /* restore hooks */
-     g->GCthreshold = oldt;  /* restore threshold */
-   }
-+  L->top--;
- }
- 
- 
 @@ -543,7 +551,7 @@ static void atomic (lua_State *L) {
    udsize = luaC_separateudata(L, 0);  /* separate userdata to be finalized */
    marktmu(g);  /* mark `preserved' userdata */
@@ -1008,14 +977,6 @@
    lua_Number d;
    lua_Integer i;
    
-@@ -104,6 +105,7 @@ static void callTMres (lua_State *L, Stk
-   res = restorestack(L, result);
-   L->top--;
-   setobjs2s(L, res, L->top);
-+  setnilvalue(L, L->top);
- }
- 
- 
 @@ -384,6 +386,7 @@ void luaV_concat (lua_State *L, int tota
          size_t l = tsvalue(top-i)->len;
          memcpy(buffer+tl, svalue(top-i), l);
@@ -1060,35 +1021,6 @@
          sethvalue(L, &g, cl->env);
          lua_assert(ttisstring(KBx(i)));
          Protect(luaV_settable(L, &g, KBx(i), ra));
-@@ -693,7 +696,7 @@ void luaV_execute (lua_State *L, int nex
-       }
-       OPCODE_TARGET(SETUPVAL) {
-         UpVal *uv = cl->upvals[GETARG_B(i)];
--        setobj(L, uv->v, ra);
-+        setobj(L, uv->v, luaV_ref(ra));
-         luaC_barrier(L, uv, ra);
-         continue;
-       }
-@@ -856,7 +859,8 @@ void luaV_execute (lua_State *L, int nex
-       }
-       OPCODE_TARGET(TAILCALL) {
-         int b = GETARG_B(i);
--        if (b != 0) L->top = ra+b;  /* else previous instruction set top */
-+        if (b != 0)
-+          L->top = ra+b;  /* else previous instruction set top */
-         L->savedpc = pc;
-         lua_assert(GETARG_C(i) - 1 == LUA_MULTRET);
-         switch (luaD_precall(L, ra, LUA_MULTRET)) {
-@@ -870,7 +874,8 @@ void luaV_execute (lua_State *L, int nex
-             L->base = ci->base = ci->func + ((ci+1)->base - pfunc);
-             for (aux = 0; pfunc+aux < L->top; aux++)  /* move frame down */
-               setobjs2s(L, func+aux, pfunc+aux);
--            ci->top = L->top = func+aux;  /* correct top */
-+            ci->top = func+aux;  /* correct top */
-+			L->top = ci->top;
-             lua_assert(L->top == L->base + clvalue(func)->l.p->maxstacksize);
-             ci->savedpc = L->savedpc;
-             ci->tailcalls++;  /* one more call lost */
 @@ -895,7 +900,7 @@ void luaV_execute (lua_State *L, int nex
          if (--nexeccalls == 0)  /* was previous function running `here'? */
            return;  /* no: return */
@@ -1102,7 +1034,7 @@
          for (; n > 0; n--) {
            TValue *val = ra+n;
            setobj2t(L, luaH_setint(L, h, last--), val);
-+		  setnilvalue(L, val);
++          setnilvalue(L, val);
            luaC_barriert(L, h, val);
          }
          continue;
@@ -1191,7 +1123,7 @@
 +#define setlvmtop(L, val) do { \
 +	int __i; \
 +	for (__i = L->top - val; __i-- > 0;) \
-+		setnilvalue(L, L->top + __i); \
++		setnilvalue(L, val + __i); \
 +	L->top = val; \
 +} while (0)
 +
