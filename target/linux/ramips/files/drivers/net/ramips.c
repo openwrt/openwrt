@@ -54,6 +54,11 @@ static void
 ramips_cleanup_dma(struct net_device *dev)
 {
 	struct raeth_priv *priv = netdev_priv(dev);
+	int i;
+
+	for (i = 0; i < NUM_RX_DESC; i++)
+		if (priv->rx_skb[i])
+			dev_kfree_skb_any(priv->rx_skb[i]);
 
 	dma_free_coherent(NULL, NUM_RX_DESC * sizeof(struct ramips_rx_dma),
 		priv->rx, priv->phy_rx);
