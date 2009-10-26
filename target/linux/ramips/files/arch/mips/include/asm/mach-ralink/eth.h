@@ -189,10 +189,8 @@ struct ramips_tx_dma {
 struct ramips_eth_platform_data
 {
 	unsigned char mac[6];
-	unsigned int base_addr;
 	void (*reset_fe)(void);
 	int min_pkt_len;
-	int irq;
 };
 
 struct raeth_priv
