@@ -19,7 +19,7 @@
 #include <asm/mach-ralink/rt305x_regs.h>
 #include "devices.h"
 
-#include <eth.h>
+#include <ramips_eth_platform.h>
 
 static struct resource rt305x_flash0_resources[] = {
 	{

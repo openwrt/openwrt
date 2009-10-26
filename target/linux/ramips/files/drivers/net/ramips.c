@@ -25,6 +25,7 @@
 #include <linux/platform_device.h>
 
 #include <eth.h>
+#include <ramips_eth_platform.h>
 
 #define TX_TIMEOUT (20 * HZ / 100)
 #define	MAX_RX_LENGTH	1500
