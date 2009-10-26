@@ -302,9 +302,14 @@ ramips_eth_open(struct net_device *dev)
 	struct raeth_priv *priv = netdev_priv(dev);
 	int err;
 
-	err = ramips_alloc_dma(dev);
+	err = request_irq(dev->irq, ramips_eth_irq, IRQF_DISABLED,
+			  dev->name, dev);
 	if (err)
 		return err;
+
+	err = ramips_alloc_dma(dev);
+	if (err)
+		goto err_free_irq;
 
 	ramips_setup_dma(dev);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) & 0xff) |
@@ -315,7 +320,6 @@ ramips_eth_open(struct net_device *dev)
 		~(RAMIPS_US_CYC_CNT_MASK << RAMIPS_US_CYC_CNT_SHIFT)) |
 		((rt305x_sys_freq / RAMIPS_US_CYC_CNT_DIVISOR) << RAMIPS_US_CYC_CNT_SHIFT),
 		RAMIPS_FE_GLO_CFG);
-	request_irq(dev->irq, ramips_eth_irq, IRQF_DISABLED, dev->name, dev);
 	tasklet_init(&priv->tx_housekeeping_tasklet, ramips_eth_tx_housekeeping,
 		(unsigned long)dev);
 	tasklet_init(&priv->rx_tasklet, ramips_eth_rx_hw, (unsigned long)dev);
@@ -332,6 +336,10 @@ ramips_eth_open(struct net_device *dev)
 	ramips_fe_wr(0, RAMIPS_FE_RST_GL);
 	netif_start_queue(dev);
 	return 0;
+
+ err_free_irq:
+	free_irq(dev->irq, dev);
+	return err;
 }
 
 static int
