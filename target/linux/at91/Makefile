@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=at91
 BOARDNAME:=Atmel AT91
-FEATURES:=squashfs usb
+FEATURES:=squashfs usb broken
 
 LINUX_VERSION:=2.6.25.20
 
