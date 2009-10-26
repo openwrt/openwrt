@@ -11,7 +11,7 @@ BOARD:=olpc
 BOARDNAME:=OLPC XO-1
 FEATURES:=squashfs ext2
 
-LINUX_VERSION:=2.6.27.35
+LINUX_VERSION:=2.6.30.9
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
