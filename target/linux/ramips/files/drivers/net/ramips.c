@@ -16,18 +16,13 @@
  */
 
 #include <linux/module.h>
-#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/dma-mapping.h>
 #include <linux/init.h>
 #include <linux/skbuff.h>
-#include <linux/if_vlan.h>
-#include <linux/if_ether.h>
+#include <linux/etherdevice.h>
 #include <linux/platform_device.h>
-#include <asm/uaccess.h>
-#include <net/sock.h>
-#include <asm/uaccess.h>
 
 #include <eth.h>
 
