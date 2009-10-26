@@ -50,6 +50,18 @@ ramips_fe_rr(unsigned reg)
 	return __raw_readl(ramips_fe_base + reg);
 }
 
+static void
+ramips_cleanup_dma(struct net_device *dev)
+{
+	struct raeth_priv *priv = netdev_priv(dev);
+
+	dma_free_coherent(NULL, NUM_RX_DESC * sizeof(struct ramips_rx_dma),
+		priv->rx, priv->phy_rx);
+
+	dma_free_coherent(NULL, NUM_TX_DESC * sizeof(struct ramips_tx_dma),
+		priv->tx, priv->phy_tx);
+}
+
 static int
 ramips_alloc_dma(struct net_device *dev)
 {
@@ -297,10 +309,7 @@ ramips_eth_stop(struct net_device *dev)
 	netif_stop_queue(dev);
 	tasklet_kill(&priv->tx_housekeeping_tasklet);
 	tasklet_kill(&priv->rx_tasklet);
-	dma_free_coherent(NULL, NUM_TX_DESC * sizeof(struct ramips_tx_dma),
-		priv->tx, priv->phy_tx);
-	dma_free_coherent(NULL, NUM_RX_DESC * sizeof(struct ramips_rx_dma),
-		priv->rx, priv->phy_rx);
+	ramips_cleanup_dma(dev);
 	printk(KERN_DEBUG "ramips_eth: stopped\n");
 	return 0;
 }
