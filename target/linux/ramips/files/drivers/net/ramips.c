@@ -80,10 +80,6 @@ ramips_alloc_dma(struct net_device *dev)
 		priv->tx[i].txd4 &= (TX_DMA_QN_MASK | TX_DMA_PN_MASK);
 		priv->tx[i].txd4 |= TX_DMA_QN(3) | TX_DMA_PN(1);
 	}
-	ramips_fe_wr(phys_to_bus(priv->phy_tx), RAMIPS_TX_BASE_PTR0);
-	ramips_fe_wr(NUM_TX_DESC, RAMIPS_TX_MAX_CNT0);
-	ramips_fe_wr(0, RAMIPS_TX_CTX_IDX0);
-	ramips_fe_wr(RAMIPS_PST_DTX_IDX0, RAMIPS_PDMA_RST_CFG);
 
 	/* setup rx ring */
 	priv->rx = dma_alloc_coherent(NULL,
@@ -100,12 +96,24 @@ ramips_alloc_dma(struct net_device *dev)
 		priv->rx[i].rxd2 |= RX_DMA_LSO;
 		priv->rx_skb[i] = new_skb;
 	}
+
+	return 0;
+}
+
+static void
+ramips_setup_dma(struct net_device *dev)
+{
+	struct raeth_priv *priv = netdev_priv(dev);
+
+	ramips_fe_wr(phys_to_bus(priv->phy_tx), RAMIPS_TX_BASE_PTR0);
+	ramips_fe_wr(NUM_TX_DESC, RAMIPS_TX_MAX_CNT0);
+	ramips_fe_wr(0, RAMIPS_TX_CTX_IDX0);
+	ramips_fe_wr(RAMIPS_PST_DTX_IDX0, RAMIPS_PDMA_RST_CFG);
+
 	ramips_fe_wr(phys_to_bus(priv->phy_rx), RAMIPS_RX_BASE_PTR0);
 	ramips_fe_wr(NUM_RX_DESC, RAMIPS_RX_MAX_CNT0);
 	ramips_fe_wr((NUM_RX_DESC - 1), RAMIPS_RX_CALC_IDX0);
 	ramips_fe_wr(RAMIPS_PST_DRX_IDX0, RAMIPS_PDMA_RST_CFG);
-
-	return 0;
 }
 
 static int
@@ -271,6 +279,7 @@ ramips_eth_open(struct net_device *dev)
 	struct raeth_priv *priv = netdev_priv(dev);
 
 	ramips_alloc_dma(dev);
+	ramips_setup_dma(dev);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) & 0xff) |
 		(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN |
 		RAMIPS_TX_DMA_EN | RAMIPS_PDMA_SIZE_4DWORDS),
