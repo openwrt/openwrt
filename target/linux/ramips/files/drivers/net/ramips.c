@@ -60,17 +60,22 @@ ramips_cleanup_dma(struct net_device *dev)
 		if (priv->rx_skb[i])
 			dev_kfree_skb_any(priv->rx_skb[i]);
 
-	dma_free_coherent(NULL, NUM_RX_DESC * sizeof(struct ramips_rx_dma),
-		priv->rx, priv->phy_rx);
+	if (priv->rx)
+		dma_free_coherent(NULL,
+				  NUM_RX_DESC * sizeof(struct ramips_rx_dma),
+				  priv->rx, priv->phy_rx);
 
-	dma_free_coherent(NULL, NUM_TX_DESC * sizeof(struct ramips_tx_dma),
-		priv->tx, priv->phy_tx);
+	if (priv->tx)
+		dma_free_coherent(NULL,
+				  NUM_TX_DESC * sizeof(struct ramips_tx_dma),
+				  priv->tx, priv->phy_tx);
 }
 
 static int
 ramips_alloc_dma(struct net_device *dev)
 {
 	struct raeth_priv *priv = netdev_priv(dev);
+	int err = -ENOMEM;
 	int i;
 
 	priv->skb_free_idx = 0;
@@ -78,6 +83,9 @@ ramips_alloc_dma(struct net_device *dev)
 	/* setup tx ring */
 	priv->tx = dma_alloc_coherent(NULL,
 		NUM_TX_DESC * sizeof(struct ramips_tx_dma), &priv->phy_tx, GFP_ATOMIC);
+	if (!priv->tx)
+		goto err_cleanup;
+
 	for(i = 0; i < NUM_TX_DESC; i++)
 	{
 		memset(&priv->tx[i], 0, sizeof(struct ramips_tx_dma));
@@ -89,11 +97,17 @@ ramips_alloc_dma(struct net_device *dev)
 	/* setup rx ring */
 	priv->rx = dma_alloc_coherent(NULL,
 		NUM_RX_DESC * sizeof(struct ramips_rx_dma), &priv->phy_rx, GFP_ATOMIC);
+	if (!priv->rx)
+		goto err_cleanup;
+
 	memset(priv->rx, 0, sizeof(struct ramips_rx_dma) * NUM_RX_DESC);
 	for(i = 0; i < NUM_RX_DESC; i++)
 	{
 		struct sk_buff *new_skb = dev_alloc_skb(MAX_RX_LENGTH + 2);
-		BUG_ON(!new_skb);
+
+		if (!new_skb)
+			goto err_cleanup;
+
 		skb_reserve(new_skb, 2);
 		priv->rx[i].rxd1 =
 			dma_map_single(NULL, skb_put(new_skb, 2), MAX_RX_LENGTH + 2,
@@ -103,6 +117,10 @@ ramips_alloc_dma(struct net_device *dev)
 	}
 
 	return 0;
+
+ err_cleanup:
+	ramips_cleanup_dma(dev);
+	return err;
 }
 
 static void
@@ -282,8 +300,12 @@ static int
 ramips_eth_open(struct net_device *dev)
 {
 	struct raeth_priv *priv = netdev_priv(dev);
+	int err;
 
-	ramips_alloc_dma(dev);
+	err = ramips_alloc_dma(dev);
+	if (err)
+		return err;
+
 	ramips_setup_dma(dev);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) & 0xff) |
 		(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN |
