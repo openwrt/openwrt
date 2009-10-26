@@ -33,9 +33,6 @@
 #define RAMIPS_DELAY_INIT				((RAMIPS_DELAY_CHAN << 16) | RAMIPS_DELAY_CHAN)
 #define RAMIPS_PSE_FQFC_CFG_INIT		0x80504000
 
-#define RAMIPS_FE_RESET					0x34
-#define RAMIPS_FE_RESET_BIT				BIT(21)
-
 /* interrupt bitd */
 #define RAMIPS_CNT_PPE_AF				BIT(31)
 #define RAMIPS_CNT_GDM_AF				BIT(29)

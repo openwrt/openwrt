@@ -99,8 +99,8 @@ void __init rt305x_register_flash(unsigned int id,
 
 static void rt305x_fe_reset(void)
 {
-	rt305x_sysc_wr(RAMIPS_FE_RESET_BIT, RAMIPS_FE_RESET);
-	rt305x_sysc_wr(0, RAMIPS_FE_RESET);
+	rt305x_sysc_wr(RT305X_RESET_FE, SYSC_REG_RESET_CTRL);
+	rt305x_sysc_wr(0, SYSC_REG_RESET_CTRL);
 }
 
 static struct resource rt305x_eth_resources[] = {
