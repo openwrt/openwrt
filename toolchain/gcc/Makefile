@@ -151,6 +151,10 @@ GCC_CONFIGURE_STAGE2:= \
 		--disable-tls \
 		--with-slibdir=$(TOOLCHAIN_DIR)/lib \
 
+ifdef CONFIG_powerpc
+  TARGET_CFLAGS := $(patsubst -Os,-O2,$(TARGET_CFLAGS))
+endif
+
 GCC_MAKE:= \
 	export SHELL="$(BASH)"; \
 	$(MAKE) \
