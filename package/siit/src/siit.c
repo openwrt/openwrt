@@ -1386,10 +1386,19 @@ static bool header_ops_init = false;
 static struct header_ops siit_header_ops ____cacheline_aligned;
 #endif
 
+#ifndef CONFIG_COMPAT_NET_DEV_OPS
+static const struct net_device_ops siit_netdev_ops = {
+	.ndo_open		= siit_open,
+	.ndo_stop		= siit_release,
+	.ndo_start_xmit		= siit_xmit,
+};
+#endif
+
 /*
  * The init function initialize of the SIIT device..
  * It is invoked by register_netdev()
  */
+
 static void
 siit_init(struct net_device *dev)
 {
@@ -1399,9 +1408,15 @@ siit_init(struct net_device *dev)
 	/*
 	 * Assign device function.
 	 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
 	dev->open            = siit_open;
 	dev->stop            = siit_release;
 	dev->hard_start_xmit = siit_xmit;
+#else
+#ifndef CONFIG_COMPAT_NET_DEV_OPS
+	dev->netdev_ops = &siit_netdev_ops;
+#endif
+#endif
 	dev->flags           |= IFF_NOARP;     /* ARP not used */
 	dev->tx_queue_len = 10;
 
