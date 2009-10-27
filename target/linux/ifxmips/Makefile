@@ -21,11 +21,4 @@ define Target/Description
 	Build firmware images for Infineon Mips Controllers
 endef
 
-ifeq ($(KERNEL_PATCHVER),2.6.28)
-  define Kernel/Prepare
-	$(call Kernel/Prepare/Default)
-	mv $(LINUX_DIR)/include/asm-mips/* $(LINUX_DIR)/arch/mips/include/asm/
-  endef
-endif
-
 $(eval $(call BuildTarget))
