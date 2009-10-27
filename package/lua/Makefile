@@ -18,7 +18,10 @@ PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
 PKG_MD5SUM:=d0870f2de55d59c1c8419f36e8fac150
 
+HOST_PATCH_DIR := ./patches-host
+
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/lua/Default
   SUBMENU:=Lua
@@ -108,6 +111,27 @@ define Build/Compile
 		install
 endef
 
+define Build/Configure
+	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOST)/",' $(HOST_BUILD_DIR)/src/luaconf.h
+endef
+
+LUA_OS.Darwin:=macosx
+LUA_OS.FreeBSD:=freebsd
+LUA_OS:=$(LUA_OS.$(HOST_OS))
+LUA_OS?=linux
+
+define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC) -std=gnu99" \
+		$(LUA_OS)
+endef
+
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		INSTALL_TOP="$(STAGING_DIR_HOST)" \
+		install
+endef
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua{,lib,conf}.h $(1)/usr/include/
@@ -145,3 +169,5 @@ $(eval $(call BuildPackage,liblua))
 $(eval $(call BuildPackage,lua))
 $(eval $(call BuildPackage,luac))
 $(eval $(call BuildPackage,lua-examples))
+$(eval $(call HostBuild))
+
