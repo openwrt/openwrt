@@ -111,7 +111,7 @@ define Build/Compile
 		install
 endef
 
-define Build/Configure
+define Host/Configure
 	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOST)/",' $(HOST_BUILD_DIR)/src/luaconf.h
 endef
 
