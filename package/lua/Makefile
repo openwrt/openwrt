@@ -115,10 +115,15 @@ define Host/Configure
 	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOST)/",' $(HOST_BUILD_DIR)/src/luaconf.h
 endef
 
-LUA_OS.Darwin:=macosx
-LUA_OS.FreeBSD:=freebsd
-LUA_OS:=$(LUA_OS.$(HOST_OS))
-LUA_OS?=linux
+ifeq ($(HOST_OS),Darwin)
+	LUA_OS:=macosx
+else
+	ifeq ($(HOST_OS),FreeBSD)
+		LUA_OS:=freebsd
+	else
+		LUA_OS:=linux
+	endif
+endif
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
