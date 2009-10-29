@@ -7,10 +7,10 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=insight
-PKG_VERSION:=6.8
+PKG_VERSION:=6.8-1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=b403972b35520399663c7054e8132ca9
+PKG_MD5SUM:=4ee9824c1e8d6108d886c6c09b24f0ac
 PKG_SOURCE_URL:=ftp://sourceware.org/pub/insight/releases
 PKG_CAT:=bzcat
 
@@ -30,6 +30,7 @@ define Host/Configure
 		--target=$(REAL_GNU_TARGET_NAME) \
 		$(DISABLE_NLS) \
 		--enable-threads \
+		--enable-werror=no \
 	);
 endef
 
