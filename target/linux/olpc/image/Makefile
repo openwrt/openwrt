@@ -27,7 +27,7 @@ ifeq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),y)
   endef
 
   define Image/cmdline/ext2
-    root=$(ROOTPART) rootfstype=ext2
+    root=$(ROOTPART) rootfstype=ext2 rootwait
   endef
 
   define Image/Build/bootscript
