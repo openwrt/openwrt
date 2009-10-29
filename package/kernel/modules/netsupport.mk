@@ -473,7 +473,7 @@ $(eval $(call KernelPackage,pppoa))
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoL2TP support
-  DEPENDS:=kmod-ppp +kmod-pppoe @!LINUX_2_6_21||!LINUX_2_6_25||!LINUX_2_6_27
+  DEPENDS:=kmod-ppp +kmod-pppoe @!LINUX_2_6_21||!LINUX_2_6_25
   KCONFIG:=CONFIG_PPPOL2TP
   FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pppol2tp)

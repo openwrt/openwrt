@@ -356,7 +356,7 @@ define KernelPackage/ar9170
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros AR9170 802.11n USB support
   URL:=http://wireless.kernel.org/en/users/Drivers/ar9170
-  DEPENDS+= @USB_SUPPORT @!LINUX_2_6_25 @!LINUX_2_6_27 +kmod-ath +kmod-usb-core
+  DEPENDS+= @USB_SUPPORT @!LINUX_2_6_25 +kmod-ath +kmod-usb-core
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ar9170/ar9170usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ar9170usb)
 endef
