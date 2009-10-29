@@ -43,7 +43,7 @@ define Build/InstallDev
 	dd if=$(PKG_BUILD_DIR)/u-boot.bin of=$(PKG_BUILD_DIR)/u-boot.block bs=232k count=1 conv=sync
 #	$(INSTALL_DIR) $(STAGING_DIR)/ubclient/sbin
 #	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ubclient/ubpar $(STAGING_DIR)/ubclient/sbin/
-	$(CP) $(PKG_BUILD_DIR)/ubclient/ubpar ../../base-files/default/sbin
+	$(CP) $(PKG_BUILD_DIR)/ubclient/ubpar ../../base-files/sbin
 endef
 
 $(eval $(call Build/DefaultTargets))
