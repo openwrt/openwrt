@@ -28,7 +28,7 @@
 #include "ramips_eth.h"
 
 #define TX_TIMEOUT (20 * HZ / 100)
-#define	MAX_RX_LENGTH	1500
+#define	MAX_RX_LENGTH	1600
 
 #ifdef CONFIG_RALINK_RT305X
 #include "ramips_esw.c"
@@ -147,7 +147,7 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 	unsigned long tx;
 	unsigned int tx_next;
 	unsigned int mapped_addr;
-
+	unsigned long flags;
 
 	if(priv->plat->min_pkt_len)
 	{
@@ -166,35 +166,30 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 	mapped_addr = (unsigned int)dma_map_single(NULL, skb->data, skb->len,
 			DMA_TO_DEVICE);
 	dma_sync_single_for_device(NULL, mapped_addr, skb->len, DMA_TO_DEVICE);
+	spin_lock_irqsave(&priv->page_lock, flags);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
 	if(tx == NUM_TX_DESC - 1)
 		tx_next = 0;
 	else
 		tx_next = tx + 1;
-	if((priv->tx_skb[tx] == 0) && (priv->tx_skb[tx_next] == 0))
-	{
-		if(!(priv->tx[tx].txd2 & TX_DMA_DONE) || !(priv->tx[tx_next].txd2 & TX_DMA_DONE))
-		{
-			kfree_skb(skb);
-			dev->stats.tx_dropped++;
-			printk(KERN_ERR "%s: dropping\n", dev->name);
-			return 0;
-		}
-		priv->tx[tx].txd1 = virt_to_phys(skb->data);
-		priv->tx[tx].txd2 &= ~(TX_DMA_PLEN0_MASK | TX_DMA_DONE);
-		priv->tx[tx].txd2 |= TX_DMA_PLEN0(skb->len);
-		wmb();
-		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
-		dev->stats.tx_packets++;
-		dev->stats.tx_bytes += skb->len;
-		priv->tx_skb[tx] = skb;
-		wmb();
-		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
-	} else {
-		dev->stats.tx_dropped++;
-		kfree_skb(skb);
-	}
-	return 0;
+	if((priv->tx_skb[tx]) || (priv->tx_skb[tx_next]) ||
+		!(priv->tx[tx].txd2 & TX_DMA_DONE) || !(priv->tx[tx_next].txd2 & TX_DMA_DONE))
+		goto out;
+	priv->tx[tx].txd1 = mapped_addr;
+	priv->tx[tx].txd2 &= ~(TX_DMA_PLEN0_MASK | TX_DMA_DONE);
+	priv->tx[tx].txd2 |= TX_DMA_PLEN0(skb->len);
+	dev->stats.tx_packets++;
+	dev->stats.tx_bytes += skb->len;
+	priv->tx_skb[tx] = skb;
+	wmb();
+	ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
+	spin_unlock_irqrestore(&priv->page_lock, flags);
+	return NETDEV_TX_OK;
+out:
+	spin_unlock_irqrestore(&priv->page_lock, flags);
+	dev->stats.tx_dropped++;
+	kfree_skb(skb);
+	return NETDEV_TX_OK;
 }
 
 static void
@@ -216,7 +211,6 @@ ramips_eth_rx_hw(unsigned long ptr)
 
 		rx_skb = priv->rx_skb[rx];
 		rx_skb->len = RX_DMA_PLEN0(priv->rx[rx].rxd2);
-		rx_skb->tail = rx_skb->data + rx_skb->len;
 		rx_skb->dev = dev;
 		rx_skb->protocol = eth_type_trans(rx_skb, dev);
 		rx_skb->ip_summed = CHECKSUM_NONE;
@@ -224,7 +218,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 		dev->stats.rx_bytes += rx_skb->len;
 		netif_rx(rx_skb);
 
-		new_skb = __dev_alloc_skb(MAX_RX_LENGTH + 2, GFP_DMA | GFP_ATOMIC);
+		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + 2);
 		priv->rx_skb[rx] = new_skb;
 		BUG_ON(!new_skb);
 		skb_reserve(new_skb, 2);
@@ -384,6 +378,7 @@ ramips_eth_probe(struct net_device *dev)
 	dev->mtu = MAX_RX_LENGTH;
 	dev->tx_timeout = ramips_eth_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
+	spin_lock_init(&priv->page_lock);
 	return 0;
 }
 
