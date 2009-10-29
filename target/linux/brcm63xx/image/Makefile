@@ -94,7 +94,6 @@ define Image/Prepare
 endef
 
 define Image/Build
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
 	# Various routers
 	$(call Image/Build/CFE,$(1),96345GW2,6345,bccfe,,bccfe,)
