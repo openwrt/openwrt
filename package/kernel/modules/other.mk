@@ -255,7 +255,7 @@ $(eval $(call KernelPackage,ssb))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-input-core
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-hid
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
