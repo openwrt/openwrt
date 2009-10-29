@@ -147,6 +147,8 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 	unsigned long tx;
 	unsigned int tx_next;
 	unsigned int mapped_addr;
+
+
 	if(priv->plat->min_pkt_len)
 	{
 		if(skb->len < priv->plat->min_pkt_len)
@@ -169,9 +171,9 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 		tx_next = 0;
 	else
 		tx_next = tx + 1;
-	if((priv->tx_skb[tx]== 0) && (priv->tx_skb[tx_next] == 0))
+	if((priv->tx_skb[tx] == 0) && (priv->tx_skb[tx_next] == 0))
 	{
-		if(!(priv->tx[tx].txd2 & TX_DMA_DONE))
+		if(!(priv->tx[tx].txd2 & TX_DMA_DONE) || !(priv->tx[tx_next].txd2 & TX_DMA_DONE))
 		{
 			kfree_skb(skb);
 			dev->stats.tx_dropped++;
@@ -181,10 +183,12 @@ ramips_eth_hard_start_xmit(struct sk_buff* skb, struct net_device *dev)
 		priv->tx[tx].txd1 = virt_to_phys(skb->data);
 		priv->tx[tx].txd2 &= ~(TX_DMA_PLEN0_MASK | TX_DMA_DONE);
 		priv->tx[tx].txd2 |= TX_DMA_PLEN0(skb->len);
+		wmb();
 		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
 		dev->stats.tx_packets++;
 		dev->stats.tx_bytes += skb->len;
 		priv->tx_skb[tx] = skb;
+		wmb();
 		ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
 	} else {
 		dev->stats.tx_dropped++;
@@ -228,6 +232,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 			dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH + 2,
 			DMA_FROM_DEVICE);
 		priv->rx[rx].rxd2 &= ~RX_DMA_DONE;
+		wmb();
 		ramips_fe_wr(rx, RAMIPS_RX_CALC_IDX0);
 	}
 	if(max_rx == 0)
