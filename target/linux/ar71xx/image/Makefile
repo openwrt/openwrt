@@ -18,28 +18,47 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	VMLINUX:=$(IMGNAME)-vmlinux-initramfs
 endif
 
+define CompressLzma
+  $(STAGING_DIR_HOST)/bin/lzma e $(1) -lc1 -lp2 -pb2 $(2)
+endef
+
+define PatchKernelLzma
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
+	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).bin.lzma)
+endef
+
+define PatchKernelGzip
+	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
+	gzip -9 -c $(KDIR)/vmlinux-$(1) > $(KDIR)/vmlinux-$(1).bin.gz
+endef
+
+define MkImageLzma
+	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma \
+		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(1) $(2)
+endef
+
+define MkImageGzip
+	mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip \
+		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(1) $(2)
+endef
+
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(VMLINUX).bin
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux -lc1 -lp2 -pb2 $(KDIR)/vmlinux.bin.lzma
-	dd if=$(KDIR)/vmlinux.bin.l7 of=$(VMLINUX).lzma bs=65536 conv=sync
+	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
+	dd if=$(KDIR)/vmlinux.bin.lzma of=$(VMLINUX).lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
-		0x80060000 \
-		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux.bin.gz $(IMGNAME)-uImage-gzip.bin
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-		0x80060000 \
-		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux.bin.lzma $(IMGNAME)-uImage-lzma.bin
+	$(call MkImageGzip,$(KDIR)/vmlinux.bin.gz,$(IMGNAME)-uImage-gzip.bin)
+	$(call MkImageLzma,$(KDIR)/vmlinux.bin.lzma,$(IMGNAME)-uImage-lzma.bin)
 endef
 
 define Image/Build/WRT400N
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
+	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1310720 ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6488064 ]; then \
@@ -58,10 +77,8 @@ define Image/Build/WRT400N
 	fi; fi
 endef
 
-define Image/Build/AP81
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.lzma
+define Image/Build/Cameo
+	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 851968 ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 3014656 ]; then \
@@ -80,9 +97,7 @@ define Image/Build/AP81
 endef
 
 define Image/Build/AP83
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gz
+	$(call PatchKernelGzip,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.gz"` -gt 1310720 ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).bin.gz is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6619136 ]; then \
@@ -124,30 +139,26 @@ define Image/Build/MyLoader
 endef
 
 define Image/Build/UBNT
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).lzma
-	dd if=$(KDIR)/vmlinux-$(2).lzma of=$(KDIR)/vmlinux-$(2).bin.lzma bs=64k conv=sync
+	$(call PatchKernelLzma,$(2),$(3))
+	dd if=$(KDIR)/vmlinux-$(2).bin.lzma of=$(KDIR)/vmlinux-$(2).lzma bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
-		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-k $(KDIR)/vmlinux-$(2).lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
 		-o $(call imgname,$(1),$(2)).bin
 endef
 
 define Image/Build/Planex
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gzip
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.gzip"` -gt 1441792 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.gzip is too big"; \
+	$(call PatchKernelGzip,$(2),$(3))
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.gz"` -gt 1441792 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.gz is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6356992 ]; then \
 		echo "Warning: $(KDIR)/root.$(1) is too big"; \
 	else \
 		mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
 			0x80060000 \
 			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.gzip $(KDIR)/vmlinux-$(2).uImage; \
+			-d $(KDIR)/vmlinux-$(2).bin.gz $(KDIR)/vmlinux-$(2).uImage; \
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1408k conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=6208k conv=sync; \
@@ -161,24 +172,17 @@ define Image/Build/Planex
 endef
 
 define Image/Build/TPLINK
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gzip
+	$(call PatchKernelGzip,$(2),$(3))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION)\
-		-k $(KDIR)/vmlinux-$(2).bin.gzip \
+		-k $(KDIR)/vmlinux-$(2).bin.gz \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
 		-o $(call imgname,$(1),$(2)).uni
 endef
 
 define Image/Build/CyberTAN
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(2)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(2) '$(strip $(3))'
-	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gzip
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
-		0x80060000 \
-		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(2).bin.gzip $(KDIR)/vmlinux-$(2).uImage
+	$(call PatchKernelGzip,$(2),$(3))
+	$(call MkImageGzip,$(KDIR)/vmlinux-$(2).bin.gz,$(KDIR)/vmlinux-$(2).uImage)
 	( \
 		dd if=$(KDIR)/vmlinux-$(2).uImage bs=64k conv=sync; \
 		dd if=/dev/zero bs=1 count=65476; \
@@ -223,12 +227,12 @@ define Image/Build/Template/CyberTAN/jffs2-64k
 	$(call Image/Build/Template/CyberTAN,jffs2-64k,$(1),$(2),$(3))
 endef
 
-define Image/Build/Template/AP81
-	$(call Image/Build/AP81,$(1),$(2),$(3),$(4))
+define Image/Build/Template/Cameo
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(4))
 endef
 
-define Image/Build/Template/AP81/squashfs
-	$(call Image/Build/Template/AP81,squashfs,$(1),$(2),$(3))
+define Image/Build/Template/Cameo/squashfs
+	$(call Image/Build/Template/Cameo,squashfs,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/AP83
@@ -292,19 +296,19 @@ define Image/Build/Profile/WP543
 endef
 
 define Image/Build/Profile/DIR615C1
-	$(call Image/Build/Template/AP81/$(1),dir-615c1,board=TEW-632BRP,"AP81-AR9130-RT-070614-02")
+	$(call Image/Build/Template/Cameo/$(1),dir-615c1,board=TEW-632BRP,"AP81-AR9130-RT-070614-02")
 endef
 
 define Image/Build/Profile/TEW632BRP
-	$(call Image/Build/Template/AP81/$(1),tew-632brp,board=TEW-632BRP,"AP81-AR9130-RT-070614-00")
+	$(call Image/Build/Template/Cameo/$(1),tew-632brp,board=TEW-632BRP,"AP81-AR9130-RT-070614-00")
 endef
 
 define Image/Build/Profile/TEW652BRP
-	$(call Image/Build/Template/AP81/$(1),tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
+	$(call Image/Build/Template/Cameo/$(1),tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
 endef
 
 define Image/Build/Profile/A02RBW300N
-	$(call Image/Build/Template/AP81/$(1),a02-rb-w300n,board=TEW-632BRP,"AP81-AR9130-RT-070614-03")
+	$(call Image/Build/Template/Cameo/$(1),a02-rb-w300n,board=TEW-632BRP,"AP81-AR9130-RT-070614-03")
 endef
 
 define Image/Build/Profile/UBNTRS
