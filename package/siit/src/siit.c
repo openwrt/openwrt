@@ -1386,7 +1386,7 @@ static bool header_ops_init = false;
 static struct header_ops siit_header_ops ____cacheline_aligned;
 #endif
 
-#ifndef CONFIG_COMPAT_NET_DEV_OPS
+#if !(defined CONFIG_COMPAT_NET_DEV_OPS) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
 static const struct net_device_ops siit_netdev_ops = {
 	.ndo_open		= siit_open,
 	.ndo_stop		= siit_release,
@@ -1413,7 +1413,7 @@ siit_init(struct net_device *dev)
 	dev->stop            = siit_release;
 	dev->hard_start_xmit = siit_xmit;
 #else
-#ifndef CONFIG_COMPAT_NET_DEV_OPS
+#if !(defined CONFIG_COMPAT_NET_DEV_OPS) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
 	dev->netdev_ops = &siit_netdev_ops;
 #endif
 #endif
