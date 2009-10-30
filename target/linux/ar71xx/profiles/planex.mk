@@ -15,3 +15,14 @@ define Profile/MZKW04NU/Description
 endef
 
 $(eval $(call Profile,MZKW04NU))
+
+define Profile/MZKW300NH
+	NAME:=Planex MZK-W300NH
+	PACKAGES:=kmod-ath9k hostapd-mini
+endef
+
+define Profile/MZKW300NH/Description
+	Package set optimized for the Planex MZK-W300NH.
+endef
+
+$(eval $(call Profile,MZKW300NH))
