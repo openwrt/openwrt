@@ -375,7 +375,7 @@ ramips_eth_probe(struct net_device *dev)
 	dev->stop = ramips_eth_stop;
 	dev->hard_start_xmit = ramips_eth_hard_start_xmit;
 	dev->set_mac_address = ramips_eth_set_mac_addr;
-	dev->mtu = MAX_RX_LENGTH;
+	dev->mtu = 1500;
 	dev->tx_timeout = ramips_eth_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
 	spin_lock_init(&priv->page_lock);
