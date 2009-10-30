@@ -85,7 +85,7 @@ static void __init v22rw_2x2_init(void)
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
 	rt305x_register_flash(0, &v22rw_2x2_flash_data);
-
+	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(v22rw_2x2_leds_gpio),
 				  v22rw_2x2_leds_gpio);
 }

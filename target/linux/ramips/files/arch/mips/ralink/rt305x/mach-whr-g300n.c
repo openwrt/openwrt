@@ -92,7 +92,7 @@ static void __init whr_g300n_init(void)
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
 	rt305x_register_flash(0, &whr_g300n_flash_data);
-
+	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(whr_g300n_leds_gpio),
 				  whr_g300n_leds_gpio);
 }
