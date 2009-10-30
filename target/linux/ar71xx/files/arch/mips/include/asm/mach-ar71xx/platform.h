@@ -37,6 +37,7 @@ struct ag71xx_platform_data {
 
 struct ag71xx_mdio_platform_data {
 	u32		phy_mask;
+	int		is_ar7240;
 };
 
 struct ar71xx_ehci_platform_data {

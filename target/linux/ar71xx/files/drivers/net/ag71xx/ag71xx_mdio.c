@@ -106,7 +106,10 @@ static int ag71xx_mdio_reset(struct mii_bus *bus)
 	struct ag71xx_mdio *am = bus->priv;
 	u32 t;
 
-	t = MII_CFG_CLK_DIV_28;
+	if (am->pdata->is_ar7240)
+		t = MII_CFG_CLK_DIV_6;
+	else
+		t = MII_CFG_CLK_DIV_28;
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CFG, t | MII_CFG_RESET);
 	udelay(100);
@@ -143,11 +146,19 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	if (ag71xx_mdio_bus)
 		return -EBUSY;
 
+	pdata = pdev->dev.platform_data;
+	if (!pdata) {
+		dev_err(&pdev->dev, "no platform data specified\n");
+		return -EINVAL;
+	}
+
 	am = kzalloc(sizeof(*am), GFP_KERNEL);
 	if (!am) {
 		err = -ENOMEM;
 		goto err_out;
 	}
+
+	am->pdata = pdata;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
@@ -177,10 +188,7 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	am->mii_bus->priv = am;
 	am->mii_bus->parent = &pdev->dev;
 	snprintf(am->mii_bus->id, MII_BUS_ID_SIZE, "%x", 0);
-
-	pdata = pdev->dev.platform_data;
-	if (pdata)
-		am->mii_bus->phy_mask = pdata->phy_mask;
+	am->mii_bus->phy_mask = pdata->phy_mask;
 
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		am->mii_irq[i] = PHY_POLL;
