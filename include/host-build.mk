@@ -36,6 +36,7 @@ define Host/Prepare
 endef
 
 HOST_CONFIGURE_VARS = \
+	CFLAGS="$(HOST_CFLAGS)" \
 	CPPFLAGS="$(HOST_CFLAGS)" \
 	LDFLAGS="$(HOST_LDFLAGS)" \
 	SHELL="$(BASH)"
