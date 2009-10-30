@@ -197,6 +197,7 @@ struct raeth_priv
 
 	unsigned int			skb_free_idx;
 
+	spinlock_t				page_lock;
 	struct ramips_eth_platform_data *plat;
 };
 
