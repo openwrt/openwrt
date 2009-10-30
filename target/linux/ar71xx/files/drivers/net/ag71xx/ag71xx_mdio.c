@@ -104,11 +104,14 @@ static void ag71xx_mdio_mii_write(struct ag71xx_mdio *am,
 static int ag71xx_mdio_reset(struct mii_bus *bus)
 {
 	struct ag71xx_mdio *am = bus->priv;
+	u32 t;
 
-	ag71xx_mdio_wr(am, AG71XX_REG_MII_CFG, MII_CFG_RESET);
+	t = MII_CFG_CLK_DIV_28;
+
+	ag71xx_mdio_wr(am, AG71XX_REG_MII_CFG, t | MII_CFG_RESET);
 	udelay(100);
 
-	ag71xx_mdio_wr(am, AG71XX_REG_MII_CFG, MII_CFG_CLK_DIV_28);
+	ag71xx_mdio_wr(am, AG71XX_REG_MII_CFG, t);
 	udelay(100);
 
 	return 0;
