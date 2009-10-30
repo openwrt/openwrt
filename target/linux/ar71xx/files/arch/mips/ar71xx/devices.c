@@ -186,9 +186,7 @@ static struct resource ar71xx_mdio_resources[] = {
 	}
 };
 
-static struct ag71xx_mdio_platform_data ar71xx_mdio_data = {
-	.phy_mask	= 0xffffffff,
-};
+static struct ag71xx_mdio_platform_data ar71xx_mdio_data;
 
 static struct platform_device ar71xx_mdio_device = {
 	.name		= "ag71xx-mdio",
@@ -202,7 +200,11 @@ static struct platform_device ar71xx_mdio_device = {
 
 void __init ar71xx_add_device_mdio(u32 phy_mask)
 {
+	if (ar71xx_soc == AR71XX_SOC_AR7240)
+		ar71xx_mdio_data.is_ar7240 = 1;
+
 	ar71xx_mdio_data.phy_mask = phy_mask;
+
 	platform_device_register(&ar71xx_mdio_device);
 }
 
