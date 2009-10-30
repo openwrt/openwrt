@@ -13,4 +13,4 @@ endef
 define Profile/WRT350Nv1/Description
 	Package set compatible with the Linksys WRT350Nv1. Contains USB support
 endef
-$(eval $(call Profile,WRT350Nv1)
+$(eval $(call Profile,WRT350Nv1))
