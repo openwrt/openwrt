@@ -75,7 +75,7 @@ TODO: take care of additional PHYs through the PHY abstraction layer
  	snprintf(phy_id, BUS_ID_SIZE, PHY_ID_FMT, "0", plat->phy);
  	port->phydev = phy_connect(dev, phy_id, &ixp4xx_adjust_link, 0,
  				   PHY_INTERFACE_MODE_MII);
-@@ -445,21 +476,32 @@ static void ixp4xx_phy_disconnect(struct
+@@ -438,21 +469,32 @@ static void ixp4xx_phy_disconnect(struct
  {
  	struct port *port = netdev_priv(dev);
  
@@ -111,7 +111,7 @@ TODO: take care of additional PHYs through the PHY abstraction layer
  }
  
  static inline void debug_pkt(struct net_device *dev, const char *func,
-@@ -831,6 +873,10 @@ static int eth_ioctl(struct net_device *
+@@ -824,6 +866,10 @@ static int eth_ioctl(struct net_device *
  
  	if (!netif_running(dev))
  		return -EINVAL;
@@ -122,7 +122,7 @@ TODO: take care of additional PHYs through the PHY abstraction layer
  	return phy_mii_ioctl(port->phydev, if_mii(req), cmd);
  }
  
-@@ -850,18 +896,30 @@ static void ixp4xx_get_drvinfo(struct ne
+@@ -843,18 +889,30 @@ static void ixp4xx_get_drvinfo(struct ne
  static int ixp4xx_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct port *port = netdev_priv(dev);
