@@ -99,12 +99,21 @@
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
  
-@@ -1247,7 +1281,7 @@ static int __devexit eth_remove_one(stru
- 	struct net_device *dev = platform_get_drvdata(pdev);
- 	struct port *port = netdev_priv(dev);
+@@ -1230,7 +1264,7 @@ static int __devinit eth_init_one(struct
+ 	return 0;
  
+ err_phy_dis:
 -	phy_disconnect(port->phydev);
 +	ixp4xx_phy_disconnect(dev);
- 	unregister_netdev(dev);
- 	phy_disconnect(port->phydev);
+ err_free_mem:
  	npe_port_tab[NPE_ID(port->id)] = NULL;
+ 	platform_set_drvdata(pdev, NULL);
+@@ -1248,7 +1282,7 @@ static int __devexit eth_remove_one(stru
+ 	struct port *port = netdev_priv(dev);
+ 
+ 	unregister_netdev(dev);
+-	phy_disconnect(port->phydev);
++	ixp4xx_phy_disconnect(dev);
+ 	npe_port_tab[NPE_ID(port->id)] = NULL;
+ 	platform_set_drvdata(pdev, NULL);
+ 	npe_release(port->npe);
