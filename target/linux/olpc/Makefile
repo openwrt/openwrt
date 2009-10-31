@@ -14,7 +14,7 @@ FEATURES:=squashfs ext2
 LINUX_VERSION:=2.6.30.9
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
+DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci kmod-libertas
 
 $(eval $(call Target,generic))
 $(eval $(call BuildTarget))
