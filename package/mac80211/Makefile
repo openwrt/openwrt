@@ -330,7 +330,6 @@ define KernelPackage/ath9k/config
 	source "$(SOURCE)/Config.in.ath9k"
 endef
 
-
 USB8388FW_NAME:=usb8388
 USB8388FW_VERSION:=5.110.22.p23
 
@@ -343,7 +342,7 @@ $(eval $(call Download,usb8388))
 
 define KernelPackage/libertas
   $(call KernelPackage/mac80211/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-mac80211 +kmod-usb-core
+  DEPENDS+= @USB_SUPPORT +kmod-mac80211 +kmod-usb-core +kmod-lib80211
   TITLE:=Marvell 88W8015 Wireless Driver
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.$(LINUX_KMOD_SUFFIX) \
