@@ -1,6 +1,6 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -396,6 +396,53 @@ static void ixp4xx_adjust_link(struct ne
+@@ -396,6 +396,50 @@ static void ixp4xx_adjust_link(struct ne
  	       dev->name, port->speed, port->duplex ? "full" : "half");
  }
  
@@ -23,9 +23,6 @@
 +	port->phydev->advertising = port->phydev->supported;
 +
 +	port->phydev->irq = PHY_POLL;
-+
-+	printk(KERN_INFO "%s: MII PHY %i on %s\n", dev->name, plat->phy,
-+	       npe_name(port->npe));
 +
 +	return 0;
 +}
@@ -54,7 +51,7 @@
  
  static inline void debug_pkt(struct net_device *dev, const char *func,
  			     u8 *data, int len)
-@@ -1005,8 +1052,7 @@ static int eth_open(struct net_device *d
+@@ -1005,8 +1049,7 @@ static int eth_open(struct net_device *d
  		return err;
  	}
  
@@ -64,7 +61,7 @@
  
  	for (i = 0; i < ETH_ALEN; i++)
  		__raw_writel(dev->dev_addr[i], &port->regs->hw_addr[i]);
-@@ -1127,7 +1173,7 @@ static int eth_close(struct net_device *
+@@ -1127,7 +1170,7 @@ static int eth_close(struct net_device *
  		printk(KERN_CRIT "%s: unable to disable loopback\n",
  		       dev->name);
  
@@ -73,7 +70,7 @@
  
  	if (!ports_open)
  		qmgr_disable_irq(TXDONE_QUEUE);
-@@ -1153,7 +1199,6 @@ static int __devinit eth_init_one(struct
+@@ -1153,7 +1196,6 @@ static int __devinit eth_init_one(struct
  	struct net_device *dev;
  	struct eth_plat_info *plat = pdev->dev.platform_data;
  	u32 regs_phys;
@@ -81,7 +78,7 @@
  	int err;
  
  	if (!(dev = alloc_etherdev(sizeof(struct port))))
-@@ -1211,18 +1256,10 @@ static int __devinit eth_init_one(struct
+@@ -1211,18 +1253,10 @@ static int __devinit eth_init_one(struct
  	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
  	udelay(50);
  
@@ -102,7 +99,7 @@
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
  
-@@ -1249,7 +1286,7 @@ static int __devexit eth_remove_one(stru
+@@ -1249,7 +1283,7 @@ static int __devexit eth_remove_one(stru
  	struct net_device *dev = platform_get_drvdata(pdev);
  	struct port *port = netdev_priv(dev);
  

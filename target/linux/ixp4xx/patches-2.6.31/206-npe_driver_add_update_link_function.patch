@@ -77,9 +77,17 @@
  static int ixp4xx_phy_connect(struct net_device *dev)
  {
  	struct port *port = netdev_priv(dev);
-@@ -416,6 +431,10 @@ static int ixp4xx_phy_connect(struct net
+@@ -430,7 +445,6 @@ static void ixp4xx_phy_start(struct net_
+ {
+ 	struct port *port = netdev_priv(dev);
  
- 	port->phydev->irq = PHY_POLL;
+-	port->speed = 0;	/* force "link up" message */
+ 	phy_start(port->phydev);
+ }
+ 
+@@ -1260,6 +1274,10 @@ static int __devinit eth_init_one(struct
+ 	if ((err = register_netdev(dev)))
+ 		goto err_phy_dis;
  
 +	port->link = 0;
 +	port->speed = 0;
@@ -87,12 +95,4 @@
 +
  	printk(KERN_INFO "%s: MII PHY %i on %s\n", dev->name, plat->phy,
  	       npe_name(port->npe));
- 
-@@ -433,7 +452,6 @@ static void ixp4xx_phy_start(struct net_
- {
- 	struct port *port = netdev_priv(dev);
- 
--	port->speed = 0;	/* force "link up" message */
- 	phy_start(port->phydev);
- }
  

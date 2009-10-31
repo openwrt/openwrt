@@ -9,7 +9,7 @@
  #define RX_BUFF_SIZE		ALIGN((NET_IP_ALIGN) + MAX_MRU, 4)
  
  #define NAPI_WEIGHT		16
-@@ -1068,6 +1068,32 @@ static void destroy_queues(struct port *
+@@ -1061,6 +1061,32 @@ static void destroy_queues(struct port *
  	}
  }
  
@@ -42,7 +42,7 @@
  static int eth_open(struct net_device *dev)
  {
  	struct port *port = netdev_priv(dev);
-@@ -1119,6 +1145,8 @@ static int eth_open(struct net_device *d
+@@ -1112,6 +1138,8 @@ static int eth_open(struct net_device *d
  	if (npe_send_recv_message(port->npe, &msg, "ETH_SET_FIREWALL_MODE"))
  		return -EIO;
  
@@ -51,7 +51,7 @@
  	if ((err = request_queues(port)) != 0)
  		return err;
  
-@@ -1258,7 +1286,26 @@ static int eth_close(struct net_device *
+@@ -1251,7 +1279,26 @@ static int eth_close(struct net_device *
  	return 0;
  }
  
