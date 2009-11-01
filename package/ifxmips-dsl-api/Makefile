@@ -28,8 +28,9 @@ FW_B_MD5:=349de7cd20368f4ac9b7e8322114a512
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ifxmips-dsl-api
-  SECTION:=driver
-  CATEGORY:=Infineon
+  SECTION:=sys
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
   TITLE:=DSL CPE API driver
   URL:=http://www.infineon.com/
   MAINTAINER:=Infineon Technologies AG / Lantiq / blogic@openwrt.org
