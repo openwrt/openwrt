@@ -1,0 +1,168 @@
+Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_core.c	2009-11-01 14:29:05.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c	2009-11-01 16:07:46.000000000 +0100
+@@ -58,9 +58,8 @@
+ /*
+  *  Chip Specific Head File
+  */
+-#include <asm/ifx/ifx_types.h>
+-#include <asm/ifx/ifx_regs.h>
+-#include <asm/ifx/common_routines.h>
++#include <ifxmips.h>
++#include <ifxmips_cgu.h>
+ #include "ifxmips_atm_core.h"
+ 
+ 
+@@ -1146,7 +1145,7 @@
+ 
+ static void set_qsb(struct atm_vcc *vcc, struct atm_qos *qos, unsigned int queue)
+ {
+-    unsigned int qsb_clk = ifx_get_fpi_hz();
++    unsigned int qsb_clk = ifxmips_get_fpi_hz();
+     unsigned int qsb_qid = queue + FIRST_QSB_QID;
+     union qsb_queue_parameter_table qsb_queue_parameter_table = {{0}};
+     union qsb_queue_vbr_parameter_table qsb_queue_vbr_parameter_table = {{0}};
+@@ -1318,7 +1317,7 @@
+ 
+ static void qsb_global_set(void)
+ {
+-    unsigned int qsb_clk = ifx_get_fpi_hz();
++    unsigned int qsb_clk = ifxmips_get_fpi_hz();
+     int i;
+     unsigned int tmp1, tmp2, tmp3;
+ 
+@@ -2505,3 +2504,4 @@
+ 
+ module_init(ifx_atm_init);
+ module_exit(ifx_atm_exit);
++MODULE_LICENSE("Dual BSD/GPL");
+Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_common.h
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_ppe_common.h	2009-11-01 14:30:55.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_common.h	2009-11-01 15:58:50.000000000 +0100
+@@ -1,9 +1,10 @@
+ #ifndef IFXMIPS_ATM_PPE_COMMON_H
+ #define IFXMIPS_ATM_PPE_COMMON_H
+ 
+-
+-
+-#if defined(CONFIG_DANUBE)
++#if defined(CONFIG_IFXMIPS)
++  #include "ifxmips_atm_ppe_danube.h"
++  #define CONFIG_DANUBE
++#elif defined(CONFIG_DANUBE) 
+   #include "ifxmips_atm_ppe_danube.h"
+ #elif defined(CONFIG_AMAZON_SE)
+   #include "ifxmips_atm_ppe_amazon_se.h"
+@@ -16,7 +17,6 @@
+ #endif
+ 
+ 
+-
+ /*
+  *  Code/Data Memory (CDM) Interface Configuration Register
+  */
+Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.h
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_core.h	2009-11-01 14:30:55.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.h	2009-11-01 15:58:50.000000000 +0100
+@@ -25,8 +25,8 @@
+ #define IFXMIPS_ATM_CORE_H
+ 
+ 
+-
+-#include <asm/ifx/ifx_atm.h>
++#include "ifxmips_compat.h"
++#include "ifx_atm.h"
+ #include "ifxmips_atm_ppe_common.h"
+ #include "ifxmips_atm_fw_regs_common.h"
+ 
+Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_compat.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_compat.h	2009-11-01 15:58:50.000000000 +0100
+@@ -0,0 +1,43 @@
++#ifndef _IFXMIPS_COMPAT_H__
++#define _IFXMIPS_COMPAT_H__
++
++#define	IFX_SUCCESS	0
++#define IFX_ERROR	(-1)
++
++#define ATM_VBR_NRT     ATM_VBR
++#define ATM_VBR_RT      6
++#define ATM_UBR_PLUS    7
++#define ATM_GFR         8
++
++#define NUM_ENTITY(x)	(sizeof(x) / sizeof(*(x)))
++
++#define SET_BITS(x, msb, lsb, value)	\
++    (((x) & ~(((1 << ((msb) + 1)) - 1) ^ ((1 << (lsb)) - 1))) | (((value) & ((1 << (1 + (msb) - (lsb))) - 1)) << (lsb)))
++
++
++#define IFX_PMU_ENABLE    1
++#define IFX_PMU_DISABLE   0
++
++#define IFX_PMU_MODULE_DSL_DFE    (1 << 9)
++#define IFX_PMU_MODULE_AHBS		  (1 << 13)
++#define IFX_PMU_MODULE_PPE_QSB    (1 << 18)
++#define IFX_PMU_MODULE_PPE_SLL01  (1 << 19)
++#define IFX_PMU_MODULE_PPE_TC     (1 << 21)
++#define IFX_PMU_MODULE_PPE_EMA    (1 << 22)
++#define IFX_PMU_MODULE_PPE_TOP    (1 << 29)
++
++#define ifx_pmu_set(a,b)	{if(a == IFX_PMU_ENABLE) ifxmips_pmu_enable(b); else ifxmips_pmu_disable(b);}
++
++#define PPE_TOP_PMU_SETUP(__x)    ifx_pmu_set(IFX_PMU_MODULE_PPE_TOP, (__x))
++#define PPE_SLL01_PMU_SETUP(__x)  ifx_pmu_set(IFX_PMU_MODULE_PPE_SLL01, (__x))
++#define PPE_TC_PMU_SETUP(__x)     ifx_pmu_set(IFX_PMU_MODULE_PPE_TC, (__x))
++#define PPE_EMA_PMU_SETUP(__x)    ifx_pmu_set(IFX_PMU_MODULE_PPE_EMA, (__x))
++#define PPE_QSB_PMU_SETUP(__x)    ifx_pmu_set(IFX_PMU_MODULE_PPE_QSB, (__x))
++#define PPE_TPE_PMU_SETUP(__x)    ifx_pmu_set(IFX_PMU_MODULE_AHBS, (__x))
++#define DSL_DFE_PMU_SETUP(__x)    ifx_pmu_set(IFX_PMU_MODULE_DSL_DFE, (__x))
++
++#define IFX_REG_W32(_v, _r)               __raw_writel((_v), (_r))
++
++#define CONFIG_IFXMIPS_DSL_CPE_MEI	y
++
++#endif
+Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_danube.h
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_ppe_danube.h	2009-11-01 14:30:55.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_danube.h	2009-11-01 15:58:50.000000000 +0100
+@@ -1,7 +1,7 @@
+ #ifndef IFXMIPS_ATM_PPE_DANUBE_H
+ #define IFXMIPS_ATM_PPE_DANUBE_H
+ 
+-
++#include <ifxmips_irq.h>
+ 
+ /*
+  *  FPI Configuration Bus Register and Memory Address Mapping
+@@ -93,7 +93,7 @@
+ /*
+  *  Mailbox IGU1 Interrupt
+  */
+-#define PPE_MAILBOX_IGU1_INT            INT_NUM_IM2_IRL24
++#define PPE_MAILBOX_IGU1_INT            IFXMIPS_PPE_MBOX_INT
+ 
+ 
+ 
+Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_danube.c
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_danube.c	2009-11-01 14:29:18.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_danube.c	2009-11-01 15:58:50.000000000 +0100
+@@ -45,10 +45,9 @@
+ /*
+  *  Chip Specific Head File
+  */
+-#include <asm/ifx/ifx_types.h>
+-#include <asm/ifx/ifx_regs.h>
+-#include <asm/ifx/common_routines.h>
+-#include <asm/ifx/ifx_pmu.h>
++#include <ifxmips.h>
++#include <ifxmips_pmu.h>
++#include "ifxmips_compat.h"
+ #include "ifxmips_atm_core.h"
+ #include "ifxmips_atm_fw_danube.h"
+ 

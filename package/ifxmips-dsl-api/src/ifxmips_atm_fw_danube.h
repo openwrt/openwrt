@@ -1,10 +1,10 @@
-#ifndef __DANUBE_PPE_FW_H__2005_08_04__12_00__
-#define __DANUBE_PPE_FW_H__2005_08_04__12_00__
+#ifndef IFXMIPS_ATM_FW_DANUBE_H
+#define IFXMIPS_ATM_FW_DANUBE_H
 
 
 /******************************************************************************
 **
-** FILE NAME    : danube_ppe_fw.h
+** FILE NAME    : ifxmips_atm_fw_danube.h
 ** PROJECT      : Danube
 ** MODULES     	: ATM (ADSL)
 **
@@ -27,7 +27,11 @@
 *******************************************************************************/
 
 
-static u32 firmware_binary_code[] = {
+#define ATM_FW_VER_MAJOR        0
+#define ATM_FW_VER_MINOR        1
+
+
+static unsigned int firmware_binary_code[] = {
     0x800004A0, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
     0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x8000FFC8, 0x00000000, 0x00000000, 0x00000000,
     0xC1000002, 0xD90C0000, 0xC2000002, 0xDA080001, 0x80004710, 0xC2000000, 0xDA080001, 0x80003D98,
@@ -418,9 +422,8 @@ static u32 firmware_binary_code[] = {
     0x00000000,
 };
 
-static u32 firmware_binary_data[] = {
+static unsigned int firmware_binary_data[] = {
 };
 
 
-#endif  //  __DANUBE_PPE_FW_H__2005_08_04__12_00__
-
+#endif  //  IFXMIPS_ATM_FW_DANUBE_H

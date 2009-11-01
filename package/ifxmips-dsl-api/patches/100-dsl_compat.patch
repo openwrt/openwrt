@@ -1,0 +1,43 @@
+Index: drv_dsl_cpe_api-3.24.4.4/src/include/drv_dsl_cpe_device_danube.h
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/include/drv_dsl_cpe_device_danube.h	2009-05-12 20:02:16.000000000 +0200
++++ drv_dsl_cpe_api-3.24.4.4/src/include/drv_dsl_cpe_device_danube.h	2009-11-01 00:57:23.000000000 +0100
+@@ -24,7 +24,7 @@
+    #include "drv_dsl_cpe_simulator_danube.h"
+ #else
+ /* Include for the low level driver interface header file */
+-#include "asm/ifx/ifx_mei_bsp.h"
++#include "mei/ifxmips_mei_interface.h"
+ #endif /* defined(DSL_CPE_SIMULATOR_DRIVER) && defined(WIN32)*/
+ 
+ #define DSL_MAX_LINE_NUMBER 1
+Index: drv_dsl_cpe_api-3.24.4.4/src/common/drv_dsl_cpe_os_linux.c
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/common/drv_dsl_cpe_os_linux.c	2009-11-01 01:00:08.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/common/drv_dsl_cpe_os_linux.c	2009-11-01 01:03:51.000000000 +0100
+@@ -11,6 +11,7 @@
+ #ifdef __LINUX__
+ 
+ #define DSL_INTERN
++#include <linux/device.h>
+ 
+ #include "drv_dsl_cpe_api.h"
+ #include "drv_dsl_cpe_api_ioctl.h"
+@@ -1058,6 +1059,7 @@
+ /* Entry point of driver */
+ int __init DSL_ModuleInit(void)
+ {
++   struct class *dsl_class;
+    DSL_int_t i;
+ 
+    printk(DSL_DRV_CRLF DSL_DRV_CRLF "Infineon CPE API Driver version: %s" DSL_DRV_CRLF,
+@@ -1104,7 +1106,8 @@
+    }
+ 
+    DSL_DRV_DevNodeInit();
+-
++   dsl_class = class_create(THIS_MODULE, "dsl_cpe_api");
++   device_create(dsl_class, NULL, MKDEV(DRV_DSL_CPE_API_DEV_MAJOR, 0), NULL, "dsl_cpe_api");
+    return 0;
+ }
+ 
