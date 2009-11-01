@@ -18,8 +18,8 @@ PKG_MD5SUM:=ee315306626b68794d3d3636dabfe161
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ifxmips-dsl-control
-  SECTION:=application
-  CATEGORY:=Infineon
+  SECTION:=net
+  CATEGORY:=Network
   TITLE:=DSL CPE control application
   URL:=http://www.infineon.com/
   MAINTAINER:=Infineon Technologies AG / Lantiq / blogic@openwrt.org
