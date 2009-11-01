@@ -1,0 +1,44 @@
+From 9b1ce526eb917c8b5c8497c327768130ee683392 Mon Sep 17 00:00:00 2001
+From: =?utf8?q?Bj=C3=B6rn=20Smedman?= <bjorn.smedman@venatech.se>
+Date: Sat, 24 Oct 2009 20:55:09 +0200
+Subject: [PATCH] mac80211: fix for incorrect sequence number on hostapd injected frames
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf8
+Content-Transfer-Encoding: 8bit
+
+When hostapd injects a frame, e.g. an authentication or association
+response, mac80211 looks for a suitable access point virtual interface
+to associate the frame with based on its source address. This makes it
+possible e.g. to correctly assign sequence numbers to the frames.
+
+A small typo in the ethernet address comparison statement caused a
+failure to find a suitable ap interface. Sequence numbers on such
+frames where therefore left unassigned causing some clients
+(especially windows-based 11b/g clients) to reject them and fail to
+authenticate or associate with the access point. This patch fixes the
+typo in the address comparison statement.
+
+Signed-off-by: BjÃ¶rn Smedman <bjorn.smedman@venatech.se>
+Reviewed-by: Johannes Berg <johannes@sipsolutions.net>
+Cc: stable@kernel.org
+Signed-off-by: John W. Linville <linville@tuxdriver.com>
+---
+ net/mac80211/tx.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index db4bda6..eaa4118 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1445,7 +1445,7 @@ static void ieee80211_xmit(struct ieee80211_sub_if_data *sdata,
+ 				if (tmp_sdata->vif.type != NL80211_IFTYPE_AP)
+ 					continue;
+ 				if (compare_ether_addr(tmp_sdata->dev->dev_addr,
+-						       hdr->addr2)) {
++						       hdr->addr2) == 0) {
+ 					dev_hold(tmp_sdata->dev);
+ 					dev_put(sdata->dev);
+ 					sdata = tmp_sdata;
+-- 
+1.6.5.1
+
