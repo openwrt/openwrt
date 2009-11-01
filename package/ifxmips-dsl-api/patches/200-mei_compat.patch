@@ -1,0 +1,95 @@
+Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
+===================================================================
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_mei.c	2009-10-31 23:30:20.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c	2009-11-01 04:41:58.000000000 +0100
+@@ -41,18 +41,19 @@
+ #include <linux/init.h>
+ #include <linux/ioport.h>
+ #include <linux/delay.h>
++#include <linux/device.h>
+ #include <asm/uaccess.h>
+ #include <asm/hardirq.h>
+-#include <asm/ifx/ifx_regs.h>
+-#include <asm/ifx/irq.h>
+-#include <asm/ifx/ifx_gpio.h>
+-//#include <asm/ifx/ifx_led.h>
+-#include <asm/ifx/ifx_pmu.h>
+-#include <asm/ifx/ifx_atm.h>
++
++#include <ifxmips.h>
++#include <ifxmips_irq.h>
++#include <ifxmips_gpio.h>
++#include <ifxmips_pmu.h>
++#include "ifxmips_atm.h"
+ #define IFX_MEI_BSP
+ #include "ifxmips_mei_interface.h"
+ 
+-#define IFXMIPS_RCU_RST                   IFX_RCU_RST_REQ
++/*#define IFXMIPS_RCU_RST                   IFX_RCU_RST_REQ
+ #define IFXMIPS_RCU_RST_REQ_ARC_JTAG      IFX_RCU_RST_REQ_ARC_JTAG
+ #define IFXMIPS_RCU_RST_REQ_DFE		  IFX_RCU_RST_REQ_DFE
+ #define IFXMIPS_RCU_RST_REQ_AFE		  IFX_RCU_RST_REQ_AFE
+@@ -76,7 +77,7 @@
+ #define ifxmips_r32(reg)                        __raw_readl(reg)
+ #define ifxmips_w32(val, reg)                   __raw_writel(val, reg)
+ #define ifxmips_w32_mask(clear, set, reg)       ifxmips_w32((ifxmips_r32(reg) & ~clear) | set, reg)
+-
++*/
+ #define IFX_MEI_EMSG(fmt, args...) printk(KERN_ERR  "[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
+ #define IFX_MEI_DMSG(fmt, args...) printk(KERN_INFO "[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
+ 
+@@ -173,7 +174,8 @@
+ extern void ifxmips_mask_and_ack_irq(unsigned int irq_nr);
+ #define MEI_MASK_AND_ACK_IRQ ifxmips_mask_and_ack_irq
+ 
+-static int dev_major = 105;
++#define MEI_MAJOR	105
++static int dev_major = MEI_MAJOR;
+ 
+ static struct file_operations bsp_mei_operations = {
+       owner:THIS_MODULE,
+@@ -2294,10 +2296,10 @@
+ 		IFX_MEI_EMSG ("request_irq %d failed!\n", pDev->nIrq[IFX_DFEIR]);
+ 		return -1;
+ 	}
+-	if (request_irq (pDev->nIrq[IFX_DYING_GASP], IFX_MEI_Dying_Gasp_IrqHandle, 0, "DYING_GASP", pDev) != 0) {
++	/*if (request_irq (pDev->nIrq[IFX_DYING_GASP], IFX_MEI_Dying_Gasp_IrqHandle, 0, "DYING_GASP", pDev) != 0) {
+ 		IFX_MEI_EMSG ("request_irq %d failed!\n", pDev->nIrq[IFX_DYING_GASP]);
+ 		return -1;
+-	}
++	}*/
+ //	IFX_MEI_DMSG("Device %d initialized. IER %#x\n", num, bsp_get_irq_ier(pDev->nIrq[IFX_DYING_GASP]));
+ 	return 0;
+ }
+@@ -2922,6 +2924,7 @@
+ IFX_MEI_ModuleInit (void)
+ {
+ 	int i = 0;
++	static struct class *dsl_class;
+ 
+ 	printk ("IFX MEI Version %ld.%02ld.%02ld", bsp_mei_version.major, bsp_mei_version.minor, bsp_mei_version.revision);
+ 
+@@ -2935,14 +2938,15 @@
+ 		IFX_MEI_InitProcFS (i);
+ #endif
+ 	}
+-        for (i = 0; i <= DSL_BSP_CB_LAST ; i++)
++		for (i = 0; i <= DSL_BSP_CB_LAST ; i++)
+ 		dsl_bsp_event_callback[i].function = NULL;
+ 
+ #ifdef CONFIG_IFXMIPS_MEI_FW_LOOPBACK
+ 	printk(KERN_INFO "[%s %s %d]: Start loopback test...\n", __FILE__, __func__, __LINE__);
+ 	DFE_Loopback_Test ();
+ #endif
+-
++	dsl_class = class_create(THIS_MODULE, "ifx_mei");
++	device_create(dsl_class, NULL, MKDEV(MEI_MAJOR, 0), NULL, "ifx_mei");
+ 	return 0;
+ }
+ 
+@@ -2996,3 +3000,5 @@
+ 
+ module_init (IFX_MEI_ModuleInit);
+ module_exit (IFX_MEI_ModuleExit);
++
++MODULE_LICENSE("Dual BSD/GPL");

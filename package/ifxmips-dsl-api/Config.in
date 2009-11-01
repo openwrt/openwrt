@@ -1,0 +1,18 @@
+choice
+	prompt "Firmware"
+	depends on PACKAGE_kmod-ifxmips-dsl-api
+	default IFXMIPS_ANNEX_B
+	help
+	  This option controls which firmware is loaded
+
+config IFXMIPS_ANNEX_A
+	bool "Annex-A"
+	help
+	  Annex-A
+
+config IFXMIPS_ANNEX_B
+	bool "Annex-B"
+	help
+	  Annex-B
+
+endchoice
