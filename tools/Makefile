@@ -19,6 +19,11 @@ tools-$(CONFIG_CCACHE) += ccache
 tools-$(CONFIG_powerpc) += dtc
 tools-dep += lzma
 
+ifdef CONFIG_GCC_VERSION_4_4
+  tools-y += ppl cloog
+  $(curdir)/cloog/compile := $(curdir)/ppl/install
+endif
+
 # builddir dependencies
 $(curdir)/pkg-config/compile := $(curdir)/sed/install
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
