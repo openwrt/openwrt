@@ -2343,7 +2343,7 @@
  	if (error)
  		return error;
  
-@@ -1575,6 +2409,9 @@ int may_open(struct path *path, int acc_
+@@ -1577,6 +2411,9 @@ int may_open(struct path *path, int acc_
  		if (!error)
  			error = security_path_truncate(path, 0,
  					       ATTR_MTIME|ATTR_CTIME|ATTR_OPEN);
@@ -2353,7 +2353,7 @@
  		if (!error) {
  			vfs_dq_init(inode);
  
-@@ -1621,7 +2458,7 @@ out_unlock:
+@@ -1623,7 +2460,7 @@ out_unlock:
  	if (error)
  		return error;
  	/* Don't check for write permission, don't truncate */
@@ -2362,7 +2362,7 @@
  }
  
  /*
-@@ -1736,12 +2573,10 @@ struct file *do_filp_open(int dfd, const
+@@ -1738,12 +2575,10 @@ struct file *do_filp_open(int dfd, const
  	if (flag & O_EXCL)
  		nd.flags |= LOOKUP_EXCL;
  	mutex_lock(&dir->d_inode->i_mutex);
@@ -2377,7 +2377,7 @@
  		mutex_unlock(&dir->d_inode->i_mutex);
  		goto exit;
  	}
-@@ -1801,10 +2636,23 @@ do_last:
+@@ -1803,10 +2638,23 @@ do_last:
  	if (path.dentry->d_inode->i_op->follow_link)
  		goto do_link;
  
@@ -2403,7 +2403,7 @@
  ok:
  	/*
  	 * Consider:
-@@ -1822,12 +2670,18 @@ ok:
+@@ -1824,12 +2672,18 @@ ok:
  		if (error)
  			goto exit;
  	}
@@ -2423,7 +2423,7 @@
  	filp = nameidata_to_filp(&nd, open_flag);
  	if (IS_ERR(filp))
  		ima_counts_put(&nd.path,
-@@ -1902,8 +2756,7 @@ do_link:
+@@ -1904,8 +2758,7 @@ do_link:
  	}
  	dir = nd.path.dentry;
  	mutex_lock(&dir->d_inode->i_mutex);
@@ -2433,7 +2433,7 @@
  	__putname(nd.last.name);
  	goto do_last;
  }
-@@ -1937,7 +2790,8 @@ EXPORT_SYMBOL(filp_open);
+@@ -1939,7 +2792,8 @@ EXPORT_SYMBOL(filp_open);
   */
  struct dentry *lookup_create(struct nameidata *nd, int is_dir)
  {
@@ -2443,7 +2443,7 @@
  
  	mutex_lock_nested(&nd->path.dentry->d_inode->i_mutex, I_MUTEX_PARENT);
  	/*
-@@ -1953,11 +2807,13 @@ struct dentry *lookup_create(struct name
+@@ -1955,11 +2809,13 @@ struct dentry *lookup_create(struct name
  	/*
  	 * Do the final lookup.
  	 */
@@ -2460,7 +2460,7 @@
  		goto eexist;
  	/*
  	 * Special case - lookup gave negative, but... we had foo/bar/
-@@ -1966,15 +2822,17 @@ struct dentry *lookup_create(struct name
+@@ -1968,15 +2824,17 @@ struct dentry *lookup_create(struct name
  	 * been asking for (non-existent) directory. -ENOENT for you.
  	 */
  	if (unlikely(!is_dir && nd->last.name[nd->last.len])) {
@@ -2484,7 +2484,7 @@
  }
  EXPORT_SYMBOL_GPL(lookup_create);
  
-@@ -2086,6 +2944,7 @@ SYSCALL_DEFINE3(mknod, const char __user
+@@ -2088,6 +2946,7 @@ SYSCALL_DEFINE3(mknod, const char __user
  int vfs_mkdir(struct inode *dir, struct dentry *dentry, int mode)
  {
  	int error = may_create(dir, dentry);
@@ -2492,7 +2492,7 @@
  
  	if (error)
  		return error;
-@@ -2099,9 +2958,18 @@ int vfs_mkdir(struct inode *dir, struct 
+@@ -2101,9 +2960,18 @@ int vfs_mkdir(struct inode *dir, struct 
  		return error;
  
  	vfs_dq_init(dir);
@@ -2512,7 +2512,7 @@
  	return error;
  }
  
-@@ -2147,6 +3015,212 @@ SYSCALL_DEFINE2(mkdir, const char __user
+@@ -2149,6 +3017,212 @@ SYSCALL_DEFINE2(mkdir, const char __user
  	return sys_mkdirat(AT_FDCWD, pathname, mode);
  }
  
@@ -2725,7 +2725,7 @@
  /*
   * We try to drop the dentry early: we should have
   * a usage count of 2 if we're the only user of this
-@@ -2211,7 +3285,7 @@ static long do_rmdir(int dfd, const char
+@@ -2213,7 +3287,7 @@ static long do_rmdir(int dfd, const char
  {
  	int error = 0;
  	char * name;
@@ -2734,7 +2734,7 @@
  	struct nameidata nd;
  
  	error = user_path_parent(dfd, pathname, &nd, &name);
-@@ -2233,21 +3307,24 @@ static long do_rmdir(int dfd, const char
+@@ -2235,21 +3309,24 @@ static long do_rmdir(int dfd, const char
  	nd.flags &= ~LOOKUP_PARENT;
  
  	mutex_lock_nested(&nd.path.dentry->d_inode->i_mutex, I_MUTEX_PARENT);
@@ -2765,7 +2765,7 @@
  exit2:
  	mutex_unlock(&nd.path.dentry->d_inode->i_mutex);
  exit1:
-@@ -2302,7 +3379,7 @@ static long do_unlinkat(int dfd, const c
+@@ -2304,7 +3381,7 @@ static long do_unlinkat(int dfd, const c
  {
  	int error;
  	char *name;
@@ -2774,7 +2774,7 @@
  	struct nameidata nd;
  	struct inode *inode = NULL;
  
-@@ -2317,26 +3394,29 @@ static long do_unlinkat(int dfd, const c
+@@ -2319,26 +3396,29 @@ static long do_unlinkat(int dfd, const c
  	nd.flags &= ~LOOKUP_PARENT;
  
  	mutex_lock_nested(&nd.path.dentry->d_inode->i_mutex, I_MUTEX_PARENT);
@@ -2811,7 +2811,7 @@
  	}
  	mutex_unlock(&nd.path.dentry->d_inode->i_mutex);
  	if (inode)
-@@ -2347,8 +3427,8 @@ exit1:
+@@ -2349,8 +3429,8 @@ exit1:
  	return error;
  
  slashes:
@@ -2822,7 +2822,7 @@
  	goto exit2;
  }
  
-@@ -2684,11 +3764,96 @@ int vfs_rename(struct inode *old_dir, st
+@@ -2686,11 +3766,96 @@ int vfs_rename(struct inode *old_dir, st
  	return error;
  }
  
@@ -2920,7 +2920,7 @@
  	struct dentry *trap;
  	struct nameidata oldnd, newnd;
  	char *from;
-@@ -2722,16 +3887,28 @@ SYSCALL_DEFINE4(renameat, int, olddfd, c
+@@ -2724,16 +3889,28 @@ SYSCALL_DEFINE4(renameat, int, olddfd, c
  
  	trap = lock_rename(new_dir, old_dir);
  
@@ -2954,7 +2954,7 @@
  		error = -ENOTDIR;
  		if (oldnd.last.name[oldnd.last.len])
  			goto exit4;
-@@ -2740,32 +3917,44 @@ SYSCALL_DEFINE4(renameat, int, olddfd, c
+@@ -2742,32 +3919,44 @@ SYSCALL_DEFINE4(renameat, int, olddfd, c
  	}
  	/* source should not be ancestor of target */
  	error = -EINVAL;
