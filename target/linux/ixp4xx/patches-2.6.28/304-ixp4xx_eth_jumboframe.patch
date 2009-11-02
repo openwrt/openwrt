@@ -5,7 +5,7 @@
  #define POOL_ALLOC_SIZE		(sizeof(struct desc) * (RX_DESCS + TX_DESCS))
  #define REGS_SIZE		0x1000
 -#define MAX_MRU			1536 /* 0x600 */
-+#define MAX_MRU			(16320 - ETH_HLEN - ETH_FCS_LEN)
++#define MAX_MRU			(14320 - ETH_HLEN - ETH_FCS_LEN)
  #define RX_BUFF_SIZE		ALIGN((NET_IP_ALIGN) + MAX_MRU, 4)
  
  #define NAPI_WEIGHT		16
