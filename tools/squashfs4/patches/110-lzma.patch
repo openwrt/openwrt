@@ -1982,13 +1982,11 @@ diff -Nur squashfs4.0/squashfs-tools/unsquash-4.c squashfs4.0-lzma-snapshot/squa
 diff -Nur squashfs4.0/squashfs-tools/unsquashfs.c squashfs4.0-lzma-snapshot/squashfs-tools/unsquashfs.c
 --- squashfs4.0/squashfs-tools/unsquashfs.c	2009-04-05 23:23:06.000000000 +0200
 +++ squashfs4.0-lzma-snapshot/squashfs-tools/unsquashfs.c	2009-10-20 06:03:39.000000000 +0200
-@@ -25,6 +25,9 @@
+@@ -25,6 +25,7 @@
  #include "squashfs_swap.h"
  #include "squashfs_compat.h"
  #include "read_fs.h"
 +#include "compressor.h"
-+
-+#include <sys/sysinfo.h>
  
  struct cache *fragment_cache, *data_cache;
  struct queue *to_reader, *to_deflate, *to_writer, *from_writer;
