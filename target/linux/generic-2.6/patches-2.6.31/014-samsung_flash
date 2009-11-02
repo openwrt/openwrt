@@ -8,7 +8,7 @@
  
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
-@@ -386,12 +387,19 @@ struct mtd_info *cfi_cmdset_0002(struct 
+@@ -375,12 +376,19 @@ struct mtd_info *cfi_cmdset_0002(struct 
  
  		if (extp->MajorVersion != '1' ||
  		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {

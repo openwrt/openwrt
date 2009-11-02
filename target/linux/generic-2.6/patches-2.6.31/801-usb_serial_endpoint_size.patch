@@ -1,6 +1,6 @@
 --- a/drivers/usb/serial/usb-serial.c
 +++ b/drivers/usb/serial/usb-serial.c
-@@ -62,6 +62,7 @@ static struct usb_driver usb_serial_driv
+@@ -60,6 +60,7 @@ static struct usb_driver usb_serial_driv
     drivers depend on it.
  */
  
@@ -8,7 +8,7 @@
  static int debug;
  /* initially all NULL */
  static struct usb_serial *serial_table[SERIAL_TTY_MINORS];
-@@ -946,7 +947,7 @@ int usb_serial_probe(struct usb_interfac
+@@ -947,7 +948,7 @@ int usb_serial_probe(struct usb_interfac
  			dev_err(&interface->dev, "No free urbs available\n");
  			goto probe_error;
  		}
@@ -17,7 +17,7 @@
  		port->bulk_in_size = buffer_size;
  		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
  		port->bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
-@@ -1416,3 +1417,5 @@ MODULE_LICENSE("GPL");
+@@ -1381,3 +1382,5 @@ MODULE_LICENSE("GPL");
  
  module_param(debug, bool, S_IRUGO | S_IWUSR);
  MODULE_PARM_DESC(debug, "Debug enabled or not");
