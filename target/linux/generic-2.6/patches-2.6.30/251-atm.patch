@@ -1,8 +1,6 @@
-Index: linux-2.6.28.10/include/linux/atm.h
-===================================================================
---- linux-2.6.28.10.orig/include/linux/atm.h	2009-05-02 20:54:43.000000000 +0200
-+++ linux-2.6.28.10/include/linux/atm.h	2009-09-02 15:00:30.000000000 +0200
-@@ -139,6 +139,9 @@
+--- a/include/linux/atm.h
++++ b/include/linux/atm.h
+@@ -139,6 +139,9 @@ struct atm_trafprm {
  	int		min_pcr;	/* minimum PCR in cells per second */
  	int		max_cdv;	/* maximum CDV in microseconds */
  	int		max_sdu;	/* maximum SDU in bytes */
