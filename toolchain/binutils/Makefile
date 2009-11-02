@@ -46,6 +46,10 @@ BINUTILS_CONFIGURE:= \
 		--disable-multilib \
 		--disable-werror \
 		--disable-nls \
+		$(if $(CONFIG_GCC_VERSION_4_4), \
+		  --with-ppl=$(REAL_STAGING_DIR_HOST) \
+		  --with-cloog=$(REAL_STAGING_DIR_HOST) \
+		) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) \
 
