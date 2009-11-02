@@ -1,153 +1,1952 @@
-Index: squashfs4.0/squashfs-tools/mksquashfs.c
-===================================================================
---- squashfs4.0.orig/squashfs-tools/mksquashfs.c	2009-04-05 23:22:48.000000000 +0200
-+++ squashfs4.0/squashfs-tools/mksquashfs.c	2009-09-14 17:21:46.210480446 +0200
-@@ -64,6 +64,18 @@
+diff -Nur squashfs4.0/squashfs-tools/compressor.c squashfs4.0-lzma-snapshot/squashfs-tools/compressor.c
+--- squashfs4.0/squashfs-tools/compressor.c	1970-01-01 01:00:00.000000000 +0100
++++ squashfs4.0-lzma-snapshot/squashfs-tools/compressor.c	2009-10-20 06:03:37.000000000 +0200
+@@ -0,0 +1,78 @@
++/*
++ *
++ * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
++ * Phillip Lougher <phillip@lougher.demon.co.uk>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ *
++ * compressor.c
++ */
++
++#include <stdio.h>
++#include <string.h>
++#include "compressor.h"
++#include "squashfs_fs.h"
++
++extern int gzip_compress(void **, char *, char *, int, int, int *);
++extern int gzip_uncompress(char *, char *, int, int, int *);
++extern int lzma_compress(void **, char *, char *, int, int, int *);
++extern int lzma_uncompress(char *, char *, int, int, int *);
++
++struct compressor compressor[] = {
++	{ gzip_compress, gzip_uncompress, ZLIB_COMPRESSION, "gzip", 1 },
++#ifdef LZMA_SUPPORT
++	{ lzma_compress, lzma_uncompress, LZMA_COMPRESSION, "lzma", 1 },
++#else
++	{ NULL, NULL, LZMA_COMPRESSION, "lzma", 0 },
++#endif
++	{ NULL, NULL , 0, "unknown", 0}
++};
++
++
++struct compressor *lookup_compressor(char *name)
++{
++	int i;
++
++	for(i = 0; compressor[i].id; i++)
++		if(strcmp(compressor[i].name, name) == 0)
++			break;
++
++	return &compressor[i];
++}
++
++
++struct compressor *lookup_compressor_id(int id)
++{
++	int i;
++
++	for(i = 0; compressor[i].id; i++)
++		if(id == compressor[i].id)
++			break;
++
++	return &compressor[i];
++}
++
++
++void display_compressors(char *indent, char *def_comp)
++{
++	int i;
++
++	for(i = 0; compressor[i].id; i++)
++		if(compressor[i].supported)
++			fprintf(stderr, "%s\t%s%s\n", indent,
++				compressor[i].name,
++				strcmp(compressor[i].name, def_comp) == 0 ?
++				" (default)" : "");
++}
+diff -Nur squashfs4.0/squashfs-tools/compressor.h squashfs4.0-lzma-snapshot/squashfs-tools/compressor.h
+--- squashfs4.0/squashfs-tools/compressor.h	1970-01-01 01:00:00.000000000 +0100
++++ squashfs4.0-lzma-snapshot/squashfs-tools/compressor.h	2009-10-20 06:03:37.000000000 +0200
+@@ -0,0 +1,33 @@
++/*
++ *
++ * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
++ * Phillip Lougher <phillip@lougher.demon.co.uk>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ *
++ * compressor.h
++ */
++
++struct compressor {
++	int (*compress)(void **, char *, char *, int, int, int *);
++	int (*uncompress)(char *, char *, int, int, int *);
++	int id;
++	char *name;
++	int supported;
++};
++
++extern struct compressor *lookup_compressor(char *);
++extern struct compressor *lookup_compressor_id(int);
++extern void display_compressors(char *, char *);
+diff -Nur squashfs4.0/squashfs-tools/gzip_wrapper.c squashfs4.0-lzma-snapshot/squashfs-tools/gzip_wrapper.c
+--- squashfs4.0/squashfs-tools/gzip_wrapper.c	1970-01-01 01:00:00.000000000 +0100
++++ squashfs4.0-lzma-snapshot/squashfs-tools/gzip_wrapper.c	2009-10-20 06:03:37.000000000 +0200
+@@ -0,0 +1,80 @@
++/*
++ * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
++ * Phillip Lougher <phillip@lougher.demon.co.uk>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ *
++ * gzip_wrapper.c
++ */
++
++#include <stdlib.h>
++#include <zlib.h>
++
++int gzip_compress(void **strm, char *d, char *s, int size, int block_size,
++		int *error)
++{
++	int res = 0;
++	z_stream *stream = *strm;
++
++	if(stream == NULL) {
++		if((stream = *strm = malloc(sizeof(z_stream))) == NULL)
++			goto failed;
++
++		stream->zalloc = Z_NULL;
++		stream->zfree = Z_NULL;
++		stream->opaque = 0;
++
++		if((res = deflateInit(stream, 9)) != Z_OK)
++			goto failed;
++	} else if((res = deflateReset(stream)) != Z_OK)
++		goto failed;
++
++	stream->next_in = (unsigned char *) s;
++	stream->avail_in = size;
++	stream->next_out = (unsigned char *) d;
++	stream->avail_out = block_size;
++
++	res = deflate(stream, Z_FINISH);
++	if(res == Z_STREAM_END)
++		/*
++		 * Success, return the compressed size.
++		 */
++		return (int) stream->total_out;
++	if(res == Z_OK)
++		/*
++		 * Output buffer overflow.  Return out of buffer space
++		 */
++		return 0;
++failed:
++	/*
++	 * All other errors return failure, with the compressor
++	 * specific error code in *error
++	 */
++	*error = res;
++	return -1;
++}
++
++
++int gzip_uncompress(char *d, char *s, int size, int block_size, int *error)
++{
++	int res;
++	unsigned long bytes = block_size;
++
++	res = uncompress((unsigned char *) d, &bytes,
++		(const unsigned char *) s, size);
++
++	*error = res;
++	return res == Z_OK ? (int) bytes : -1;
++}
+diff -Nur squashfs4.0/squashfs-tools/lzma_wrapper.c squashfs4.0-lzma-snapshot/squashfs-tools/lzma_wrapper.c
+--- squashfs4.0/squashfs-tools/lzma_wrapper.c	1970-01-01 01:00:00.000000000 +0100
++++ squashfs4.0-lzma-snapshot/squashfs-tools/lzma_wrapper.c	2009-10-14 05:32:57.000000000 +0200
+@@ -0,0 +1,93 @@
++/*
++ * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
++ * Phillip Lougher <phillip@lougher.demon.co.uk>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ *
++ * lzma_wrapper.c
++ */
++
++#include <LzmaLib.h>
++
++#define LZMA_HEADER_SIZE	(LZMA_PROPS_SIZE + 8)
++
++int lzma_compress(void **strm, char *dest, char *src,  int size,int block_size,
++		int *error)
++{
++	unsigned char *d = (unsigned char *) dest, *s = (unsigned char *) src;
++	size_t props_size = LZMA_PROPS_SIZE,
++		outlen = block_size - LZMA_HEADER_SIZE;
++	int res;
++
++	res = LzmaCompress(d + LZMA_HEADER_SIZE, &outlen, s, size, d,
++		&props_size, 5, block_size, 3, 0, 2, 32, 1);
++	
++	if(res == SZ_ERROR_OUTPUT_EOF) {
++		/*
++		 * Output buffer overflow.  Return out of buffer space error
++		 */
++		return 0;
++	}
++
++	if(res != SZ_OK) {
++		/*
++		 * All other errors return failure, with the compressor
++		 * specific error code in *error
++		 */
++		*error = res;
++		return -1;
++	}
++
++	/*
++	 * Fill in the 8 byte little endian uncompressed size field in the
++	 * LZMA header.  8 bytes is excessively large for squashfs but
++	 * this is the standard LZMA header and which is expected by the kernel
++	 * code
++	 */
++	d[LZMA_PROPS_SIZE] = size & 255;
++	d[LZMA_PROPS_SIZE + 1] = (size >> 8) & 255;
++	d[LZMA_PROPS_SIZE + 2] = (size >> 16) & 255;
++	d[LZMA_PROPS_SIZE + 3] = (size >> 24) & 255;
++	d[LZMA_PROPS_SIZE + 4] = 0;
++	d[LZMA_PROPS_SIZE + 5] = 0;
++	d[LZMA_PROPS_SIZE + 6] = 0;
++	d[LZMA_PROPS_SIZE + 7] = 0;
++
++	/*
++	 * Success, return the compressed size.  Outlen returned by the LZMA
++	 * compressor does not include the LZMA header space
++	 */
++	return outlen + LZMA_HEADER_SIZE;
++}
++
++
++int lzma_uncompress(char *dest, char *src, int size, int block_size,
++	int *error)
++{
++	unsigned char *d = (unsigned char *) dest, *s = (unsigned char *) src;
++	size_t outlen, inlen = size - LZMA_HEADER_SIZE;
++	int res;
++
++	outlen = s[LZMA_PROPS_SIZE] |
++		(s[LZMA_PROPS_SIZE + 1] << 8) |
++		(s[LZMA_PROPS_SIZE + 2] << 16) |
++		(s[LZMA_PROPS_SIZE + 3] << 24);
++
++	res = LzmaUncompress(d, &outlen, s + LZMA_HEADER_SIZE, &inlen,
++		s, LZMA_PROPS_SIZE);
++	
++	*error = res;
++	return res == SZ_OK ? outlen : -1;
++}
+diff -Nur squashfs4.0/squashfs-tools/Makefile squashfs4.0-lzma-snapshot/squashfs-tools/Makefile
+--- squashfs4.0/squashfs-tools/Makefile	2009-04-05 04:03:36.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/Makefile	2009-10-22 06:17:12.000000000 +0200
+@@ -1,40 +1,76 @@
++#
++# Building LZMA support
++# Download LZMA sdk (4.65 used in development, other versions may work),
++# set LZMA_DIR to unpacked source, and uncomment next line
++LZMA_SUPPORT = 1
++LZMA_DIR = ../../lzma-4.65
++
++#Compression default.
++COMP_DEFAULT = gzip
++
++INCLUDEDIR = -I.
+ INSTALL_DIR = /usr/local/bin
+ 
+-INCLUDEDIR = .
++MKSQUASHFS_OBJS = mksquashfs.o read_fs.o sort.o swap.o pseudo.o compressor.o \
++	gzip_wrapper.o
++
++UNSQUASHFS_OBJS = unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o \
++	unsquash-4.o swap.o compressor.o gzip_wrapper.o
+ 
+-CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_GNU_SOURCE -O2
++CFLAGS = $(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE \
++	-D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" -O2 -Wall
+ 
++ifdef LZMA_SUPPORT
++LZMA_OBJS = $(LZMA_DIR)/C/Alloc.o $(LZMA_DIR)/C/LzFind.o \
++	$(LZMA_DIR)/C/LzmaDec.o $(LZMA_DIR)/C/LzmaEnc.o $(LZMA_DIR)/C/LzmaLib.o
++INCLUDEDIR += -I$(LZMA_DIR)/C
++CFLAGS += -DLZMA_SUPPORT
++MKSQUASHFS_OBJS += lzma_wrapper.o $(LZMA_OBJS)
++UNSQUASHFS_OBJS += lzma_wrapper.o $(LZMA_OBJS)
++endif
++
++.PHONY: all
+ all: mksquashfs unsquashfs
+ 
+-mksquashfs: mksquashfs.o read_fs.o sort.o swap.o pseudo.o
+-	$(CC) mksquashfs.o read_fs.o sort.o swap.o pseudo.o -lz -lpthread -lm -o $@
++mksquashfs: $(MKSQUASHFS_OBJS)
++	$(CC) $(MKSQUASHFS_OBJS) -lz -lpthread -lm -o $@
++
++mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h \
++	squashfs_swap.h
+ 
+-mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h squashfs_swap.h Makefile
++read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h squashfs_swap.h
+ 
+-read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h squashfs_swap.h Makefile
++sort.o: sort.c squashfs_fs.h global.h sort.h
+ 
+-sort.o: sort.c squashfs_fs.h global.h sort.h Makefile
++swap.o: swap.c
+ 
+-swap.o: swap.c Makefile
++pseudo.o: pseudo.c pseudo.h
+ 
+-pseudo.o: pseudo.c pseudo.h Makefile
++compressor.o: compressor.c compressor.h
+ 
+-unsquashfs: unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o
+-	$(CC) unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o -lz -lpthread -lm -o $@
++unsquashfs: $(UNSQUASHFS_OBJS)
++	$(CC) $(UNSQUASHFS_OBJS) -lz -lpthread -lm -o $@
+ 
+-unsquashfs.o: unsquashfs.h unsquashfs.c squashfs_fs.h squashfs_swap.h squashfs_compat.h global.h Makefile
++unsquashfs.o: unsquashfs.h unsquashfs.c squashfs_fs.h squashfs_swap.h \
++	squashfs_compat.h global.h
+ 
+-unsquash-1.o: unsquashfs.h unsquash-1.c squashfs_fs.h squashfs_compat.h global.h Makefile
++unsquash-1.o: unsquashfs.h unsquash-1.c squashfs_fs.h squashfs_compat.h \
++	global.h
+ 
+-unsquash-2.o: unsquashfs.h unsquash-2.c unsquashfs.h squashfs_fs.h squashfs_compat.h global.h Makefile
++unsquash-2.o: unsquashfs.h unsquash-2.c unsquashfs.h squashfs_fs.h \
++	squashfs_compat.h global.h
+ 
+-unsquash-3.o: unsquashfs.h unsquash-3.c squashfs_fs.h squashfs_compat.h global.h Makefile
++unsquash-3.o: unsquashfs.h unsquash-3.c squashfs_fs.h squashfs_compat.h \
++	global.h
+ 
+-unsquash-4.o: unsquashfs.h unsquash-4.c squashfs_fs.h squashfs_swap.h global.h Makefile
++unsquash-4.o: unsquashfs.h unsquash-4.c squashfs_fs.h squashfs_swap.h \
++	global.h
+ 
++.PHONY: clean
+ clean:
+ 	-rm -f *.o mksquashfs unsquashfs
+ 
++.PHONY: install
+ install: mksquashfs unsquashfs
+ 	mkdir -p $(INSTALL_DIR)
+ 	cp mksquashfs $(INSTALL_DIR)
+diff -Nur squashfs4.0/squashfs-tools/mksquashfs.c squashfs4.0-lzma-snapshot/squashfs-tools/mksquashfs.c
+--- squashfs4.0/squashfs-tools/mksquashfs.c	2009-04-05 23:22:48.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/mksquashfs.c	2009-10-20 06:03:38.000000000 +0200
+@@ -36,7 +36,6 @@
+ #include <errno.h>
+ #include <dirent.h>
+ #include <string.h>
+-#include <zlib.h>
+ #include <stdlib.h>
+ #include <signal.h>
+ #include <setjmp.h>
+@@ -47,6 +46,7 @@
+ #include <math.h>
+ #include <regex.h>
+ #include <fnmatch.h>
++#include <sys/wait.h>
+ 
+ #ifndef linux
+ #define __BYTE_ORDER BYTE_ORDER
+@@ -64,6 +64,7 @@
  #include "global.h"
  #include "sort.h"
  #include "pseudo.h"
-+#include "uncompress.h"
-+
-+#ifdef USE_LZMA
-+#include <LzmaEnc.h>
-+#include <LzmaDec.h>
-+#define LZMA_DEFAULT_LEVEL	5
-+#define LZMA_DEFAULT_DICT	0
-+#define LZMA_DEFAULT_LC	1
-+#define LZMA_DEFAULT_LP	2
-+#define LZMA_DEFAULT_PB 2
-+#define LZMA_DEFAULT_FB 32
-+#endif
++#include "compressor.h"
  
  #ifdef SQUASHFS_TRACE
  #define TRACE(s, args...)	do { \
-@@ -830,6 +842,19 @@
- 	rotate = (rotate + 1) % 4;
+@@ -245,10 +246,8 @@
+ /* list of root directory entries read from original filesystem */
+ int old_root_entries = 0;
+ struct old_root_entry_info {
+-	char			name[SQUASHFS_NAME_LEN + 1];
+-	squashfs_inode		inode;
+-	int			type;
+-	int			inode_number;
++	char			*name;
++	struct inode_info	inode;
+ };
+ struct old_root_entry_info *old_root_entry;
+ 
+@@ -371,10 +370,15 @@
+ int reader_buffer_size;
+ int fragment_buffer_size;
+ 
++/* compression operations structure */
++static struct compressor *comp;
++char *comp_name = COMP_DEFAULT;
++
+ char *read_from_disk(long long start, unsigned int avail_bytes);
+ void add_old_root_entry(char *name, squashfs_inode inode, int inode_number,
+ 	int type);
+-extern int read_super(int fd, squashfs_super_block *sBlk, char *source);
++extern struct compressor  *read_super(int fd, squashfs_super_block *sBlk,
++	char *source);
+ extern long long read_filesystem(char *root_name, int fd,
+ 	squashfs_super_block *sBlk, char **cinode_table, char **data_cache,
+ 	char **cdirectory_table, char **directory_data_cache,
+@@ -831,83 +835,32 @@
  }
  
-+#ifdef USE_LZMA
-+static void *lzma_malloc(void *p, size_t size)
-+{
-+	(void)p;
-+	return malloc(size);
-+}
-+static void lzma_free(void *p, void *addr)
-+{
-+	(void)p;
-+	free(addr);
-+}
-+static ISzAlloc lzma_alloc = { lzma_malloc, lzma_free };
-+#endif
  
- unsigned int mangle2(z_stream **strm, char *d, char *s, int size,
+-unsigned int mangle2(z_stream **strm, char *d, char *s, int size,
++int mangle2(void **strm, char *d, char *s, int size,
  	int block_size, int uncompressed, int data_block)
-@@ -841,6 +866,50 @@
- 	if(uncompressed)
- 		goto notcompressed;
+ {
+-	unsigned long c_byte;
+-	unsigned int res;
+-	z_stream *stream = *strm;
+-
+-	if(uncompressed)
+-		goto notcompressed;
+-
+-	if(stream == NULL) {
+-		if((stream = *strm = malloc(sizeof(z_stream))) == NULL)
+-			BAD_ERROR("mangle::compress failed, not enough "
+-				"memory\n");
+-
+-		stream->zalloc = Z_NULL;
+-		stream->zfree = Z_NULL;
+-		stream->opaque = 0;
+-
+-		if((res = deflateInit(stream, 9)) != Z_OK) {
+-			if(res == Z_MEM_ERROR)
+-				BAD_ERROR("zlib::compress failed, not enough "
+-					"memory\n");
+-			else if(res == Z_STREAM_ERROR)
+-				BAD_ERROR("zlib::compress failed, not a valid "
+-					"compression level\n");
+-			else if(res == Z_VERSION_ERROR)
+-				BAD_ERROR("zlib::compress failed, incorrect "
+-					"zlib version\n");
+-			else
+-				BAD_ERROR("zlib::compress failed, unknown "
+-					"error %d\n", res);
+-		}
+-	} else if((res = deflateReset(stream)) != Z_OK) {
+-		if(res == Z_STREAM_ERROR)
+-			BAD_ERROR("zlib::compress failed, stream state "
+-				"inconsistent\n");
+-		else
+-			BAD_ERROR("zlib::compress failed, unknown error %d\n",
+-				res);
+-	}
++	int error, c_byte = 0;
  
-+#ifdef USE_LZMA
-+	if (compression == LZMA_COMPRESSION) {
-+		size_t outsize = block_size - LZMA_PROPS_SIZE;
-+		size_t propsize = LZMA_PROPS_SIZE;
-+		CLzmaEncProps props;
-+
-+		LzmaEncProps_Init(&props);
-+		props.level = LZMA_DEFAULT_LEVEL;
-+		props.dictSize = LZMA_DEFAULT_DICT;
-+		props.lc = LZMA_DEFAULT_LC;
-+		props.lp = LZMA_DEFAULT_LP;
-+		props.pb = LZMA_DEFAULT_PB;
-+		props.fb = LZMA_DEFAULT_FB;
-+		props.numThreads = 1;
-+
-+		res = LzmaEncode((unsigned char *) d + LZMA_PROPS_SIZE, &outsize,
-+			(unsigned char *) s, size,
-+			&props, (unsigned char *) d, &propsize,
-+			1, NULL, &lzma_alloc, &lzma_alloc);
-+		switch(res) {
-+		case SZ_OK:
-+			outsize += LZMA_PROPS_SIZE;
-+			break;
-+		case SZ_ERROR_DATA:
-+			BAD_ERROR("lzma::compress failed, data error\n");
-+			break;
-+		case SZ_ERROR_MEM:
-+			BAD_ERROR("lzma::compress failed, memory allocation error\n");
-+			break;
-+		case SZ_ERROR_PARAM:
-+			BAD_ERROR("lzma::compress failed, invalid parameters\n");
-+			break;
-+		case SZ_ERROR_OUTPUT_EOF:
-+			goto notcompressed;
-+		/* should not happen */
-+		default:
-+			BAD_ERROR("lzma::compress failed, unknown error (%d)\n", res);
-+			break;
-+		}
-+
-+		return outsize;
-+	}
-+#endif
-+
- 	if(stream == NULL) {
- 		if((stream = *strm = malloc(sizeof(z_stream))) == NULL)
- 			BAD_ERROR("mangle::compress failed, not enough "
-@@ -1669,17 +1738,17 @@
+-	stream->next_in = (unsigned char *) s;
+-	stream->avail_in = size;
+-	stream->next_out = (unsigned char *) d;
+-	stream->avail_out = block_size;
+-
+-	res = deflate(stream, Z_FINISH);
+-	if(res != Z_STREAM_END && res != Z_OK) {
+-		if(res == Z_STREAM_ERROR)
+-			BAD_ERROR("zlib::compress failed, stream state "
+-				"inconsistent\n");
+-		else if(res == Z_BUF_ERROR)
+-			BAD_ERROR("zlib::compress failed, no progress possible"
+-				"\n");
+-		else
+-			BAD_ERROR("zlib::compress failed, unknown error %d\n",
+-				res);
++	if(!uncompressed) {
++		c_byte = comp->compress(strm, d, s, size, block_size, &error);
++		if(c_byte == -1)
++			BAD_ERROR("mangle2:: %s compress failed with error "
++				"code %d\n", comp->name, error);
+ 	}
+ 
+-	c_byte = stream->total_out;
+-
+-	if(res != Z_STREAM_END || c_byte >= size) {
+-notcompressed:
++	if(c_byte == 0 || c_byte >= size) {
+ 		memcpy(d, s, size);
+ 		return size | (data_block ? SQUASHFS_COMPRESSED_BIT_BLOCK :
+ 			SQUASHFS_COMPRESSED_BIT);
+ 	}
+ 
+-	return (unsigned int) c_byte;
++	return c_byte;
+ }
+ 
+ 
+-unsigned int mangle(char *d, char *s, int size, int block_size,
++int mangle(char *d, char *s, int size, int block_size,
+ 	int uncompressed, int data_block)
+ {
+-	static z_stream *stream = NULL;
++	static void *stream = NULL;
+ 
+ 	return mangle2(&stream, d, s, size, block_size, uncompressed,
+ 		data_block);
+@@ -1660,8 +1613,7 @@
+ 	pthread_mutex_unlock(&fragment_mutex);
+ 
+ 	if(SQUASHFS_COMPRESSED_BLOCK(disk_fragment->size)) {
+-		int res;
+-		unsigned long bytes = block_size;
++		int error, res;
+ 		char *data;
+ 
+ 		if(compressed_buffer)
+@@ -1669,19 +1621,11 @@
  		else
  			data = read_from_disk(start_block, size);
  
 -		res = uncompress((unsigned char *) buffer->data, &bytes,
-+		res = uncompress_wrapper((unsigned char *) buffer->data, &bytes,
- 			(const unsigned char *) data, size);
- 		if(res != Z_OK) {
- 			if(res == Z_MEM_ERROR)
+-			(const unsigned char *) data, size);
+-		if(res != Z_OK) {
+-			if(res == Z_MEM_ERROR)
 -				BAD_ERROR("zlib::uncompress failed, not enough "
-+				BAD_ERROR("uncompress failed, not enough "
- 					"memory\n");
- 			else if(res == Z_BUF_ERROR)
+-					"memory\n");
+-			else if(res == Z_BUF_ERROR)
 -				BAD_ERROR("zlib::uncompress failed, not enough "
-+				BAD_ERROR("uncompress failed, not enough "
- 					"room in output buffer\n");
- 			else
+-					"room in output buffer\n");
+-			else
 -				BAD_ERROR("zlib::uncompress failed,"
-+				BAD_ERROR("uncompress failed,"
- 					"  unknown error %d\n", res);
- 		}
+-					"  unknown error %d\n", res);
+-		}
++		res = comp->uncompress(buffer->data, data, size, block_size,
++			&error);
++		if(res == -1)
++			BAD_ERROR("%s uncompress failed with error code %d\n",
++				comp->name, error);
  	} else if(compressed_buffer)
-@@ -4282,6 +4351,10 @@
+ 		memcpy(buffer->data, compressed_buffer->data, size);
+ 	else
+@@ -1733,9 +1677,7 @@
+ 		entry->buffer->block = bytes;
+ 		bytes += compressed_size;
+ 		fragments_outstanding --;
+-		pthread_mutex_unlock(&fragment_mutex);
+ 		queue_put(to_writer, entry->buffer);
+-		pthread_mutex_lock(&fragment_mutex);
+ 		TRACE("fragment_locked writing fragment %d, compressed size %d"
+ 			"\n", entry->fragment, compressed_size);
+ 		free(entry);
+@@ -1758,6 +1700,8 @@
+ 	pthread_mutex_lock(&fragment_mutex);
+ 	insert_fragment_list(&frag_locked_list, entry);
+ 	pthread_mutex_unlock(&fragment_mutex);
++
++	return TRUE;
+ }
+ 
+ 
+@@ -1824,7 +1768,9 @@
+ 	unsigned short c_byte;
+ 	char cbuffer[(SQUASHFS_METADATA_SIZE << 2) + 2];
+ 	
++#ifdef SQUASHFS_TRACE
+ 	long long obytes = bytes;
++#endif
+ 
+ 	for(i = 0; i < meta_blocks; i++) {
+ 		int avail_bytes = length > SQUASHFS_METADATA_SIZE ?
+@@ -2170,11 +2116,85 @@
+ }
+ 
+ 
++static int seq = 0;
++void reader_read_process(struct dir_ent *dir_ent)
++{
++	struct file_buffer *prev_buffer = NULL, *file_buffer;
++	int status, res, byte, count = 0;
++	int file = get_pseudo_file(dir_ent->inode->pseudo_id)->fd;
++	int child = get_pseudo_file(dir_ent->inode->pseudo_id)->child;
++	long long bytes = 0;
++
++	while(1) {
++		file_buffer = cache_get(reader_buffer, 0, 0);
++		file_buffer->sequence = seq ++;
++
++		byte = read_bytes(file, file_buffer->data, block_size);
++		if(byte == -1)
++			goto read_err;
++
++		file_buffer->size = byte;
++		file_buffer->file_size = -1;
++		file_buffer->block = count ++;
++		file_buffer->error = FALSE;
++		file_buffer->fragment = FALSE;
++		bytes += byte;
++
++		if(byte == 0)
++			break;
++
++		/*
++		 * Update estimated_uncompressed block count.  This is done
++		 * on every block rather than waiting for all blocks to be
++		 * read incase write_file_process() is running in parallel
++		 * with this.  Otherwise cur uncompressed block count may
++		 * get ahead of the total uncompressed block count.
++		 */ 
++		estimated_uncompressed ++;
++
++		if(prev_buffer)
++			queue_put(from_reader, prev_buffer);
++		prev_buffer = file_buffer;
++	}
++
++	/*
++ 	 * Update inode file size now that the size of the dynamic pseudo file
++	 * is known.  This is needed for the -info option.
++	 */
++	dir_ent->inode->buf.st_size = bytes;
++
++	res = waitpid(child, &status, 0);
++	if(res == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
++		goto read_err;
++
++	if(prev_buffer == NULL)
++		prev_buffer = file_buffer;
++	else {
++		cache_block_put(file_buffer);
++		seq --;
++	}
++	prev_buffer->file_size = bytes;
++	prev_buffer->fragment = !no_fragments &&
++		(count == 2 || always_use_fragments) && (byte < block_size);
++	queue_put(from_reader, prev_buffer);
++
++	return;
++
++read_err:
++	if(prev_buffer) {
++		cache_block_put(file_buffer);
++		seq --;
++		file_buffer = prev_buffer;
++	}
++	file_buffer->error = TRUE;
++	queue_put(from_deflate, file_buffer);
++}
++
++
+ void reader_read_file(struct dir_ent *dir_ent)
+ {
+ 	struct stat *buf = &dir_ent->inode->buf, buf2;
+ 	struct file_buffer *file_buffer;
+-	static int index = 0;
+ 	int blocks, byte, count, expected, file, frag_block;
+ 	long long bytes, read_size;
+ 
+@@ -2202,7 +2222,7 @@
+ 		if(file_buffer)
+ 			queue_put(from_reader, file_buffer);
+ 		file_buffer = cache_get(reader_buffer, 0, 0);
+-		file_buffer->sequence = index ++;
++		file_buffer->sequence = seq ++;
+ 
+ 		byte = file_buffer->size = read_bytes(file, file_buffer->data,
+ 			block_size);
+@@ -2238,7 +2258,7 @@
+ 
+ read_err:
+ 	file_buffer = cache_get(reader_buffer, 0, 0);
+-	file_buffer->sequence = index ++;
++	file_buffer->sequence = seq ++;
+ read_err2:
+ 	file_buffer->error = TRUE;
+ 	queue_put(from_deflate, file_buffer);
+@@ -2262,9 +2282,14 @@
+ 	for(i = 0; i < dir->count; i++) {
+ 		struct dir_ent *dir_ent = dir->list[i];
+ 		struct stat *buf = &dir_ent->inode->buf;
+-		if(dir_ent->data)
++		if(dir_ent->inode->root_entry)
+ 			continue;
+ 
++		if(dir_ent->inode->pseudo_file) {
++			reader_read_process(dir_ent);
++			continue;
++		}
++
+ 		switch(buf->st_mode & S_IFMT) {
+ 			case S_IFREG:
+ 				reader_read_file(dir_ent);
+@@ -2365,7 +2390,7 @@
+ 
+ void *deflator(void *arg)
+ {
+-	z_stream *stream = NULL;
++	void *stream = NULL;
+ 	int oldstate;
+ 
+ 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
+@@ -2402,7 +2427,7 @@
+ 
+ void *frag_deflator(void *arg)
+ {
+-	z_stream *stream = NULL;
++	void *stream = NULL;
+ 	int oldstate;
+ 
+ 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
+@@ -2426,8 +2451,8 @@
+ 			write_buffer->block = bytes;
+ 			bytes += compressed_size;
+ 			fragments_outstanding --;
+-			pthread_mutex_unlock(&fragment_mutex);
+ 			queue_put(to_writer, write_buffer);
++			pthread_mutex_unlock(&fragment_mutex);
+ 			TRACE("Writing fragment %lld, uncompressed size %d, "
+ 				"compressed size %d\n", file_buffer->block,
+ 				file_buffer->size, compressed_size);
+@@ -2674,6 +2699,98 @@
+ }
+ 
+ 
++int write_file_process(squashfs_inode *inode, struct dir_ent *dir_ent,
++	struct file_buffer *read_buffer, int *duplicate_file)
++{
++	long long read_size, file_bytes, start;
++	struct fragment *fragment;
++	unsigned int *block_list = NULL;
++	int block = 0, status;
++	long long sparse = 0;
++	struct file_buffer *fragment_buffer = NULL;
++
++	*duplicate_file = FALSE;
++
++	lock_fragments();
++
++	file_bytes = 0;
++	start = bytes;
++	while (1) {
++		read_size = read_buffer->file_size;
++		if(read_buffer->fragment && read_buffer->c_byte)
++			fragment_buffer = read_buffer;
++		else {
++			block_list = realloc(block_list, (block + 1) *
++				sizeof(unsigned int));
++			if(block_list == NULL)
++				BAD_ERROR("Out of memory allocating block_list"
++					"\n");
++			block_list[block ++] = read_buffer->c_byte;
++			if(read_buffer->c_byte) {
++				read_buffer->block = bytes;
++				bytes += read_buffer->size;
++				cache_rehash(read_buffer, read_buffer->block);
++				file_bytes += read_buffer->size;
++				queue_put(to_writer, read_buffer);
++			} else {
++				sparse += read_buffer->size;
++				cache_block_put(read_buffer);
++			}
++		}
++		inc_progress_bar();
++
++		if(read_size != -1)
++			break;
++
++		read_buffer = get_file_buffer(from_deflate);
++		if(read_buffer->error)
++			goto read_err;
++	}
++
++	unlock_fragments();
++	fragment = get_and_fill_fragment(fragment_buffer);
++	cache_block_put(fragment_buffer);
++
++	if(duplicate_checking)
++		add_non_dup(read_size, file_bytes, block_list, start, fragment,
++			0, 0, FALSE);
++	file_count ++;
++	total_bytes += read_size;
++
++	if(read_size < (1LL << 32) && start < (1LL << 32) && sparse == 0)
++		create_inode(inode, dir_ent, SQUASHFS_FILE_TYPE, read_size,
++			start, block, block_list, fragment, NULL, 0);
++	else
++		create_inode(inode, dir_ent, SQUASHFS_LREG_TYPE, read_size,
++			start, block, block_list, fragment, NULL, sparse);
++
++	if(duplicate_checking == FALSE)
++		free(block_list);
++
++	return 0;
++
++read_err:
++	cur_uncompressed -= block;
++	status = read_buffer->error;
++	bytes = start;
++	if(!block_device) {
++		int res;
++
++		queue_put(to_writer, NULL);
++		if(queue_get(from_writer) != 0)
++			EXIT_MKSQUASHFS();
++		res = ftruncate(fd, bytes);
++		if(res != 0)
++			BAD_ERROR("Failed to truncate dest file because %s\n",
++				strerror(errno));
++	}
++	unlock_fragments();
++	free(block_list);
++	cache_block_put(read_buffer);
++	return status;
++}
++
++
+ int write_file_blocks(squashfs_inode *inode, struct dir_ent *dir_ent,
+ 	long long read_size, struct file_buffer *read_buffer,
+ 	int *duplicate_file)
+@@ -2941,7 +3058,10 @@
+ 	
+ 	read_size = read_buffer->file_size;
+ 
+-	if(read_size == 0) {
++	if(read_size == -1)
++		status = write_file_process(inode, dir_ent, read_buffer,
++			duplicate_file);
++	else if(read_size == 0) {
+ 		write_file_empty(inode, dir_ent, duplicate_file);
+ 		cache_block_put(read_buffer);
+ 	} else if(read_buffer->fragment && read_buffer->c_byte)
+@@ -3036,6 +3156,8 @@
+ 
+ 	memcpy(&inode->buf, buf, sizeof(struct stat));
+ 	inode->read = FALSE;
++	inode->root_entry = FALSE;
++	inode->pseudo_file = FALSE;
+ 	inode->inode = SQUASHFS_INVALID_BLK;
+ 	inode->nlink = 1;
+ 
+@@ -3056,7 +3178,7 @@
+ 
+ 
+ inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
+-	struct inode_info *inode_info, void *data, struct dir_info *dir)
++	struct inode_info *inode_info, struct dir_info *dir)
+ {
+ 	if((dir->count % DIR_ENTRIES) == 0) {
+ 		dir->list = realloc(dir->list, (dir->count + DIR_ENTRIES) *
+@@ -3075,8 +3197,7 @@
+ 		NULL;
+ 	dir->list[dir->count]->inode = inode_info;
+ 	dir->list[dir->count]->dir = sub_dir;
+-	dir->list[dir->count]->our_dir = dir;
+-	dir->list[dir->count++]->data = data;
++	dir->list[dir->count++]->our_dir = dir;
+ 	dir->byte_count += strlen(name) + sizeof(squashfs_dir_entry);
+ }
+ 
+@@ -3128,10 +3249,10 @@
+ 
+ 	if(dir->count < old_root_entries)
+ 		for(i = 0; i < old_root_entries; i++) {
+-			if(old_root_entry[i].type == SQUASHFS_DIR_TYPE)
++			if(old_root_entry[i].inode.type == SQUASHFS_DIR_TYPE)
+ 				dir->directory_count ++;
+-			add_dir_entry(old_root_entry[i].name, "", NULL, NULL,
+-				&old_root_entry[i], dir);
++			add_dir_entry(old_root_entry[i].name, "", NULL,
++				&old_root_entry[i].inode, dir);
+ 		}
+ 
+ 	while(index < source) {
+@@ -3167,10 +3288,10 @@
+ 
+ 	if(dir->count < old_root_entries)
+ 		for(i = 0; i < old_root_entries; i++) {
+-			if(old_root_entry[i].type == SQUASHFS_DIR_TYPE)
++			if(old_root_entry[i].inode.type == SQUASHFS_DIR_TYPE)
+ 				dir->directory_count ++;
+-			add_dir_entry(old_root_entry[i].name, "", NULL, NULL,
+-				&old_root_entry[i], dir);
++			add_dir_entry(old_root_entry[i].name, "", NULL,
++				&old_root_entry[i].inode, dir);
+ 		}
+ 
+ 	if((d_name = readdir(dir->linuxdir)) != NULL) {
+@@ -3215,7 +3336,7 @@
+ 	int current_count;
+ 
+ 	while((current_count = dir_info->current_count++) < dir_info->count)
+-		if(dir_info->list[current_count]->data)
++		if(dir_info->list[current_count]->inode->root_entry)
+ 			continue;
+ 		else 
+ 			return dir_info->list[current_count];
+@@ -3240,11 +3361,11 @@
+ 	int current_count;
+ 
+ 	while((current_count = dir_info->current_count++) < dir_info->count)
+-		if(dir_info->list[current_count]->data)
+-			add_dir(dir_info->list[current_count]->data->inode,
+-				dir_info->list[current_count]->data->inode_number,
++		if(dir_info->list[current_count]->inode->root_entry)
++			add_dir(dir_info->list[current_count]->inode->inode,
++				dir_info->list[current_count]->inode->inode_number,
+ 				dir_info->list[current_count]->name,
+-				dir_info->list[current_count]->data->type, dir);
++				dir_info->list[current_count]->inode->type, dir);
+ 		else 
+ 			return dir_info->list[current_count];
+ 	return NULL;	
+@@ -3313,7 +3434,6 @@
+ 	dir_ent->name = dir_ent->pathname = strdup(pathname);
+ 	dir_ent->dir = dir_info;
+ 	dir_ent->our_dir = NULL;
+-	dir_ent->data = NULL;
+ 	dir_info->dir_ent = dir_ent;
+ 
+ 	if(sorted)
+@@ -3383,7 +3503,7 @@
+ 			sub_dir = NULL;
+ 
+ 		add_dir_entry(dir_name, filename, sub_dir, lookup_inode(&buf),
+-			NULL, dir);
++			dir);
+ 	}
+ 
+ 	scan1_freedir(dir);
+@@ -3399,7 +3519,7 @@
+ 	struct dir_ent *dir_ent;
+ 	struct pseudo_entry *pseudo_ent;
+ 	struct stat buf;
+-	static pseudo_ino = 1;
++	static int pseudo_ino = 1;
+ 	
+ 	if(dir == NULL && (dir = scan1_opendir("")) == NULL)
+ 		return NULL;
+@@ -3415,6 +3535,29 @@
+ 
+ 	while((pseudo_ent = pseudo_readdir(pseudo)) != NULL) {
+ 		dir_ent = scan2_lookup(dir, pseudo_ent->name);
++		if(pseudo_ent->dev->type == 's') {
++			struct stat *buf;
++			if(dir_ent == NULL) {
++				ERROR("Pseudo set file \"%s\" does not exist "
++					"in source filesystem.  Ignoring\n",
++					pseudo_ent->pathname);
++				continue;
++			}
++			if(dir_ent->inode->root_entry) {
++				ERROR("Pseudo set file \"%s\" is a pre-existing"
++					" file in the filesystem being appended"
++					"  to.  It cannot be modified. "
++					"Ignoring!\n", pseudo_ent->pathname);
++				continue;
++			}
++			buf = &dir_ent->inode->buf;
++			buf->st_mode = (buf->st_mode & S_IFMT) |
++				pseudo_ent->dev->mode;
++			buf->st_uid = pseudo_ent->dev->uid;
++			buf->st_gid = pseudo_ent->dev->gid;
++			continue;
++		}
++
+ 		if(dir_ent) {
+ 			ERROR("Pseudo file \"%s\" exists in source filesystem "
+ 				"\"%s\"\n", pseudo_ent->pathname,
+@@ -3444,8 +3587,29 @@
+ 		buf.st_mtime = time(NULL);
+ 		buf.st_ino = pseudo_ino ++;
+ 
+-		add_dir_entry(pseudo_ent->name, pseudo_ent->pathname, sub_dir,
+-			lookup_inode(&buf), NULL, dir);
++		if(pseudo_ent->dev->type == 'f') {
++#ifdef USE_TMP_FILE
++			struct stat buf2;
++			int res = stat(pseudo_ent->dev->filename, &buf2);
++			if(res == -1) {
++				ERROR("Stat on pseudo file \"%s\" failed, "
++					"skipping...", pseudo_ent->pathname);
++				continue;
++			}
++			buf.st_size = buf2.st_size;
++			add_dir_entry(pseudo_ent->name,
++				pseudo_ent->dev->filename, sub_dir,
++				lookup_inode(&buf), dir);
++#else
++			struct inode_info *inode = lookup_inode(&buf);
++			inode->pseudo_id = pseudo_ent->dev->pseudo_id;
++			inode->pseudo_file = TRUE;		
++			add_dir_entry(pseudo_ent->name, pseudo_ent->pathname,
++				sub_dir, inode, dir);
++#endif
++		} else
++			add_dir_entry(pseudo_ent->name, pseudo_ent->pathname,
++				sub_dir, lookup_inode(&buf), dir);
+ 	}
+ 
+ 	scan2_freedir(dir);
+@@ -3482,8 +3646,9 @@
+ 						&duplicate_file);
+ 					INFO("file %s, uncompressed size %lld "
+ 						"bytes %s\n", filename,
+-						buf->st_size, duplicate_file ?
+-						"DUPLICATE" : "");
++						(long long) buf->st_size,
++						duplicate_file ?  "DUPLICATE" :
++						 "");
+ 					break;
+ 
+ 				case S_IFDIR:
+@@ -3557,6 +3722,7 @@
+ 						INFO("file %s, uncompressed "
+ 							"size %lld bytes LINK"
+ 							"\n", filename,
++							(long long)
+ 							buf->st_size);
+ 					break;
+ 				case SQUASHFS_SYMLINK_TYPE:
+@@ -3667,10 +3833,11 @@
+ 		BAD_ERROR("Out of memory in old root directory entries "
+ 			"reallocation\n");
+ 
+-	strcpy(old_root_entry[old_root_entries].name, name);
+-	old_root_entry[old_root_entries].inode = inode;
+-	old_root_entry[old_root_entries].inode_number = inode_number;
+-	old_root_entry[old_root_entries++].type = type;
++	old_root_entry[old_root_entries].name = strdup(name);
++	old_root_entry[old_root_entries].inode.inode = inode;
++	old_root_entry[old_root_entries].inode.inode_number = inode_number;
++	old_root_entry[old_root_entries].inode.type = type;
++	old_root_entry[old_root_entries++].inode.root_entry = TRUE;
+ }
+ 
+ 
+@@ -4137,7 +4304,7 @@
+ 
+ 
+ #define VERSION() \
+-	printf("mksquashfs version 4.0 (2009/04/05)\n");\
++	printf("mksquashfs version 4.1-CVS (2009/09/20)\n");\
+ 	printf("copyright (C) 2009 Phillip Lougher <phillip@lougher.demon.co.uk>\n\n"); \
+ 	printf("This program is free software; you can redistribute it and/or\n");\
+ 	printf("modify it under the terms of the GNU General Public License\n");\
+@@ -4172,26 +4339,28 @@
+ 	source_path = argv + 1;
+ 	source = i - 2;
+ 	for(; i < argc; i++) {
+-		if(strcmp(argv[i], "-pf") == 0) {
++		if(strcmp(argv[i], "-comp") == 0) {
+ 			if(++i == argc) {
+-				ERROR("%s: -pf missing filename\n", argv[0]);
++				ERROR("%s: -comp missing compression type\n",
++					argv[0]);
+ 				exit(1);
+ 			}
+-			if(read_pseudo_file(&pseudo, argv[i]) == FALSE) {
+-				ERROR("Failed to parse pseudo file \"%s\"\n",
+-					argv[i]);
++			comp_name = argv[i];
++		} else if(strcmp(argv[i], "-pf") == 0) {
++			if(++i == argc) {
++				ERROR("%s: -pf missing filename\n", argv[0]);
+ 				exit(1);
+ 			}
++			if(read_pseudo_file(&pseudo, argv[i]) == FALSE)
++				exit(1);
+ 		} else if(strcmp(argv[i], "-p") == 0) {
+ 			if(++i == argc) {
+ 				ERROR("%s: -p missing pseudo file definition\n",
  					argv[0]);
  				exit(1);
  			}
-+#ifdef USE_LZMA
-+		} else if(strcmp(argv[i], "-lzma") == 0) {
-+			compression = LZMA_COMPRESSION;
-+#endif
- 		} else if(strcmp(argv[i], "-ef") == 0) {
+-			if(read_pseudo_def(&pseudo, argv[i]) == FALSE) {
+-				ERROR("Failed to parse pseudo definition\n");
++			if(read_pseudo_def(&pseudo, argv[i]) == FALSE)
+ 				exit(1);
+-			}
+ 		} else if(strcmp(argv[i], "-recover") == 0) {
  			if(++i == argc) {
- 				ERROR("%s: -ef missing filename\n", argv[0]);
-@@ -4410,6 +4483,9 @@
+ 				ERROR("%s: -recover missing recovery file\n",
+@@ -4394,34 +4563,16 @@
+ printOptions:
+ 			ERROR("SYNTAX:%s source1 source2 ...  dest [options] "
+ 				"[-e list of exclude\ndirs/files]\n", argv[0]);
+-			ERROR("\nOptions are\n");
+-			ERROR("-version\t\tprint version, licence and "
+-				"copyright message\n");
+-			ERROR("-recover <name>\t\trecover filesystem data "
+-				"using recovery file <name>\n");
+-			ERROR("-no-recovery\t\tdon't generate a recovery "
+-				"file\n");
+-			ERROR("-info\t\t\tprint files written to filesystem\n");
+-			ERROR("-no-exports\t\tdon't make the filesystem "
+-				"exportable via NFS\n");
+-			ERROR("-no-progress\t\tdon't display the progress "
+-				"bar\n");
+-			ERROR("-no-sparse\t\tdon't detect sparse files\n");
++			ERROR("\nFilesystem build options:\n");
++			ERROR("-comp <comp>\t\tselect <comp> compression\n");
++			ERROR("\t\t\tCompressors available:\n");
++			display_compressors("\t\t\t", COMP_DEFAULT);
  			ERROR("-b <block_size>\t\tset data block to "
  				"<block_size>.  Default %d bytes\n",
  				SQUASHFS_FILE_SIZE);
-+#ifdef USE_LZMA
-+			ERROR("-lzma Enable LZMA compression\n");
-+#endif
- 			ERROR("-processors <number>\tUse <number> processors."
- 				"  By default will use number of\n");
- 			ERROR("\t\t\tprocessors available\n");
-@@ -4804,7 +4880,7 @@
+-			ERROR("-processors <number>\tUse <number> processors."
+-				"  By default will use number of\n");
+-			ERROR("\t\t\tprocessors available\n");
+-			ERROR("-read-queue <size>\tSet input queue to <size> "
+-				"Mbytes.  Default %d Mbytes\n",
+-				READER_BUFFER_DEFAULT);
+-			ERROR("-write-queue <size>\tSet output queue to <size> "
+-				"Mbytes.  Default %d Mbytes\n",
+-				WRITER_BUFFER_DEFAULT);
+-			ERROR("-fragment-queue <size>\tSet fagment queue to "
+-				"<size> Mbytes.  Default %d Mbytes\n",
+-				FRAGMENT_BUFFER_DEFAULT);
++			ERROR("-no-exports\t\tdon't make the filesystem "
++				"exportable via NFS\n");
++			ERROR("-no-sparse\t\tdon't detect sparse files\n");
+ 			ERROR("-noI\t\t\tdo not compress inode table\n");
+ 			ERROR("-noD\t\t\tdo not compress data blocks\n");
+ 			ERROR("-noF\t\t\tdo not compress fragment blocks\n");
+@@ -4430,13 +4581,34 @@
+ 				"files larger than block size\n");
+ 			ERROR("-no-duplicates\t\tdo not perform duplicate "
+ 				"checking\n");
+-			ERROR("-noappend\t\tdo not append to existing "
+-				"filesystem\n");
++			ERROR("-all-root\t\tmake all files owned by root\n");
++			ERROR("-force-uid uid\t\tset all file uids to uid\n");
++			ERROR("-force-gid gid\t\tset all file gids to gid\n");
++			ERROR("-nopad\t\t\tdo not pad filesystem to a multiple "
++				"of 4K\n");
+ 			ERROR("-keep-as-directory\tif one source directory is "
+ 				"specified, create a root\n");
+ 			ERROR("\t\t\tdirectory containing that directory, "
+ 				"rather than the\n");
+ 			ERROR("\t\t\tcontents of the directory\n");
++			ERROR("\nFilesystem filter options:\n");
++			ERROR("-p <pseudo-definition>\tAdd pseudo file definition\n");
++			ERROR("-pf <pseudo-file>\tAdd list of pseudo file definitions\n");
++			ERROR("-sort <sort_file>\tsort files according to "
++				"priorities in <sort_file>.  One\n");
++			ERROR("\t\t\tfile or dir with priority per line.  "
++				"Priority -32768 to\n");
++			ERROR("\t\t\t32767, default priority 0\n");
++			ERROR("-ef <exclude_file>\tlist of exclude dirs/files."
++				"  One per line\n");
++			ERROR("-wildcards\t\tAllow extended shell wildcards "
++				"(globbing) to be used in\n\t\t\texclude "
++				"dirs/files\n");
++			ERROR("-regex\t\t\tAllow POSIX regular expressions to "
++				"be used in exclude\n\t\t\tdirs/files\n");
++			ERROR("\nFilesystem append options:\n");
++			ERROR("-noappend\t\tdo not append to existing "
++				"filesystem\n");
+ 			ERROR("-root-becomes <name>\twhen appending source "
+ 				"files/directories, make the\n");
+ 			ERROR("\t\t\toriginal root become a subdirectory in "
+@@ -4444,11 +4616,29 @@
+ 			ERROR("\t\t\tcalled <name>, rather than adding the new "
+ 				"source items\n");
+ 			ERROR("\t\t\tto the original root\n");
+-			ERROR("-all-root\t\tmake all files owned by root\n");
+-			ERROR("-force-uid uid\t\tset all file uids to uid\n");
+-			ERROR("-force-gid gid\t\tset all file gids to gid\n");
+-			ERROR("-nopad\t\t\tdo not pad filesystem to a multiple "
+-				"of 4K\n");
++			ERROR("\nMksquashfs runtime options:\n");
++			ERROR("-version\t\tprint version, licence and "
++				"copyright message\n");
++			ERROR("-recover <name>\t\trecover filesystem data "
++				"using recovery file <name>\n");
++			ERROR("-no-recovery\t\tdon't generate a recovery "
++				"file\n");
++			ERROR("-info\t\t\tprint files written to filesystem\n");
++			ERROR("-no-progress\t\tdon't display the progress "
++				"bar\n");
++			ERROR("-processors <number>\tUse <number> processors."
++				"  By default will use number of\n");
++			ERROR("\t\t\tprocessors available\n");
++			ERROR("-read-queue <size>\tSet input queue to <size> "
++				"Mbytes.  Default %d Mbytes\n",
++				READER_BUFFER_DEFAULT);
++			ERROR("-write-queue <size>\tSet output queue to <size> "
++				"Mbytes.  Default %d Mbytes\n",
++				WRITER_BUFFER_DEFAULT);
++			ERROR("-fragment-queue <size>\tSet fagment queue to "
++				"<size> Mbytes.  Default %d Mbytes\n",
++				FRAGMENT_BUFFER_DEFAULT);
++			ERROR("\nMiscellaneous options:\n");
+ 			ERROR("-root-owned\t\talternative name for -all-root"
+ 				"\n");
+ 			ERROR("-noInodeCompression\talternative name for -noI"
+@@ -4457,20 +4647,6 @@
+ 				"\n");
+ 			ERROR("-noFragmentCompression\talternative name for "
+ 				"-noF\n");
+-			ERROR("-sort <sort_file>\tsort files according to "
+-				"priorities in <sort_file>.  One\n");
+-			ERROR("\t\t\tfile or dir with priority per line.  "
+-				"Priority -32768 to\n");
+-			ERROR("\t\t\t32767, default priority 0\n");
+-			ERROR("-ef <exclude_file>\tlist of exclude dirs/files."
+-				"  One per line\n");
+-			ERROR("-wildcards\t\tAllow extended shell wildcards "
+-				"(globbing) to be used in\n\t\t\texclude "
+-				"dirs/files\n");
+-			ERROR("-regex\t\t\tAllow POSIX regular expressions to "
+-				"be used in exclude\n\t\t\tdirs/files\n");
+-			ERROR("-p <pseudo-definition>\tAdd pseudo file definition\n");
+-			ERROR("-pf <pseudo-file>\tAdd list of pseudo file definitions\n");
+ 			exit(1);
+ 		}
+ 	}
+@@ -4548,11 +4724,10 @@
+ 			fclose(fd);
+ 		} else if(strcmp(argv[i], "-e") == 0)
+ 			break;
+-		else if(strcmp(argv[i], "-b") == 0 ||
+-				strcmp(argv[i], "-root-becomes") == 0 ||
++		else if(strcmp(argv[i], "-root-becomes") == 0 ||
+ 				strcmp(argv[i], "-sort") == 0 ||
+ 				strcmp(argv[i], "-pf") == 0 ||
+-				strcmp(argv[i], "-p") == 0)
++				strcmp(argv[i], "-comp") == 0)
+ 			i++;
+ 
+ 	if(i != argc) {
+@@ -4574,11 +4749,10 @@
+ 			sorted ++;
+ 		} else if(strcmp(argv[i], "-e") == 0)
+ 			break;
+-		else if(strcmp(argv[i], "-b") == 0 ||
+-				strcmp(argv[i], "-root-becomes") == 0 ||
++		else if(strcmp(argv[i], "-root-becomes") == 0 ||
+ 				strcmp(argv[i], "-ef") == 0 ||
+ 				strcmp(argv[i], "-pf") == 0 ||
+-				strcmp(argv[i], "-p") == 0)
++				strcmp(argv[i], "-comp") == 0)
+ 			i++;
+ 
+ #ifdef SQUASHFS_TRACE
+@@ -4586,7 +4760,8 @@
+ #endif
+ 
+ 	if(!delete) {
+-	        if(read_super(fd, &sBlk, argv[source + 1]) == 0) {
++	        comp = read_super(fd, &sBlk, argv[source + 1]);
++	        if(comp == NULL) {
+ 			ERROR("Failed to read existing filesystem - will not "
+ 				"overwrite - ABORTING!\n");
+ 			ERROR("To force Mksquashfs to write to this block "
+@@ -4603,6 +4778,15 @@
+ 		always_use_fragments = SQUASHFS_ALWAYS_FRAGMENTS(sBlk.flags);
+ 		duplicate_checking = SQUASHFS_DUPLICATES(sBlk.flags);
+ 		exportable = SQUASHFS_EXPORTABLE(sBlk.flags);
++	} else {
++		comp = lookup_compressor(comp_name);
++		if(!comp->supported) {
++			ERROR("FATAL_ERROR: Compressor \"%s\" is not "
++				"supported!\n", comp_name);
++			ERROR("Compressors available:\n");
++			display_compressors("", COMP_DEFAULT);
++			EXIT_MKSQUASHFS();
++		}
+ 	}
+ 
+ 	initialise_threads();
+@@ -4648,8 +4832,8 @@
+ 			"size %d\n", SQUASHFS_MAJOR, s_minor, argv[source + 1],
+ 			block_size);
+ 		printf("All -b, -noI, -noD, -noF, no-duplicates, no-fragments, "
+-			"-always-use-fragments and -exportable options ignored"
+-			"\n");
++			"-always-use-fragments,\n-exportable and -comp options "
++			"ignored\n");
+ 		printf("\nIf appending is not wanted, please re-run with "
+ 			"-noappend specified!\n\n");
+ 
+@@ -4803,8 +4987,7 @@
+ 
  	sBlk.bytes_used = bytes;
  
- 	/* Only compression supported */
+-	/* Only compression supported */
 -	sBlk.compression = ZLIB_COMPRESSION;
-+	sBlk.compression = compression;
++	sBlk.compression = comp->id;
  
  	/* Xattrs are not currently supported */
  	sBlk.xattr_table_start = SQUASHFS_INVALID_BLK;
-Index: squashfs4.0/squashfs-tools/squashfs_fs.h
-===================================================================
---- squashfs4.0.orig/squashfs-tools/squashfs_fs.h	2009-03-18 03:50:20.000000000 +0100
-+++ squashfs4.0/squashfs-tools/squashfs_fs.h	2009-09-14 17:20:36.310480350 +0200
+@@ -4820,6 +5003,8 @@
+ 
+ 	close(fd);
+ 
++	delete_pseudo_files();
++
+ 	if(recovery_file[0] != '\0')
+ 		unlink(recovery_file);
+ 
+@@ -4827,9 +5012,9 @@
+ 		* sizeof(unsigned short) + guid_count * sizeof(unsigned short) +
+ 		sizeof(squashfs_super_block);
+ 
+-	printf("\n%sSquashfs %d.%d filesystem, data block size %d\n",
+-		exportable ? "Exportable " : "", SQUASHFS_MAJOR, SQUASHFS_MINOR,
+-		block_size);
++	printf("\n%sSquashfs %d.%d filesystem, %s compressed, data block size"
++		" %d\n", exportable ? "Exportable " : "", SQUASHFS_MAJOR,
++		SQUASHFS_MINOR, comp->name, block_size);
+ 	printf("\t%s data, %s metadata, %s fragments\n",
+ 		noD ? "uncompressed" : "compressed", noI ?  "uncompressed" :
+ 		"compressed", no_fragments ? "no" : noF ? "uncompressed" :
+diff -Nur squashfs4.0/squashfs-tools/pseudo.c squashfs4.0-lzma-snapshot/squashfs-tools/pseudo.c
+--- squashfs4.0/squashfs-tools/pseudo.c	2009-04-05 04:01:58.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/pseudo.c	2009-10-20 06:03:38.000000000 +0200
+@@ -30,6 +30,7 @@
+ #include <string.h>
+ #include <stdlib.h>
+ #include <sys/types.h>
++#include <sys/wait.h>
+ 
+ #include "pseudo.h"
+ 
+@@ -55,6 +56,9 @@
+ #define TRUE 1
+ #define FALSE 0
+ 
++struct pseudo_dev **pseudo_file = NULL;
++int pseudo_count = 0;
++
+ static void dump_pseudo(struct pseudo *pseudo, char *string)
+ {
+ 	int i;
+@@ -99,7 +103,7 @@
+ 	char *target, char *alltarget)
+ {
+ 	char targname[1024];
+-	int i, error;
++	int i;
+ 
+ 	target = get_component(target, targname);
+ 
+@@ -128,12 +132,8 @@
+ 		if(target[0] == '\0') {
+ 			/* at leaf pathname component */
+ 			pseudo->name[i].pseudo = NULL;
+-			pseudo->name[i].dev = malloc(sizeof(struct pseudo_dev));
+-			if(pseudo->name[i].dev == NULL)
+-				BAD_ERROR("failed to allocate pseudo file\n");
+ 			pseudo->name[i].pathname = strdup(alltarget);
+-			memcpy(pseudo->name[i].dev, pseudo_dev,
+-				sizeof(struct pseudo_dev));
++			pseudo->name[i].dev = pseudo_dev;
+ 		} else {
+ 			/* recurse adding child components */
+ 			pseudo->name[i].dev = NULL;
+@@ -169,15 +169,9 @@
+ 			if(target[0] == '\0') {
+ 				if(pseudo->name[i].dev == NULL &&
+ 						pseudo_dev->type == 'd') {
+-					pseudo->name[i].dev =
+-						malloc(sizeof(struct pseudo_dev));
+-					if(pseudo->name[i].dev == NULL)
+-						BAD_ERROR("failed to allocate "
+-							"pseudo file\n");
+ 					pseudo->name[i].pathname =
+ 						strdup(alltarget);
+-					memcpy(pseudo->name[i].dev, pseudo_dev,
+-						sizeof(struct pseudo_dev));
++					pseudo->name[i].dev = pseudo_dev;
+ 				} else
+ 					ERROR("%s already exists as a "
+ 						"directory.  Ignoring %s!\n",
+@@ -229,16 +223,113 @@
+ }
+ 
+ 
++int exec_file(char *command, struct pseudo_dev *dev)
++{
++	int child, res;
++	static pid_t pid = -1;
++	int pipefd[2];
++#ifdef USE_TMP_FILE
++	char filename[1024];
++	int status;
++	static int number = 0;
++#endif
++
++	if(pid == -1)
++		pid = getpid();
++
++#ifdef USE_TMP_FILE
++	sprintf(filename, "/tmp/squashfs_pseudo_%d_%d", pid, number ++);
++	pipefd[1] = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRWXU);
++	if(pipefd[1] == -1) {
++		printf("open failed\n");
++		return -1;
++	}
++#else
++	res = pipe(pipefd);
++	if(res == -1) {
++		printf("pipe failed\n");
++		return -1;
++	}
++#endif
++
++	child = fork();
++	if(child == -1) {
++		printf("fork failed\n");
++		goto failed;
++	}
++
++	if(child == 0) {
++		close(STDOUT_FILENO);
++		res = dup(pipefd[1]);
++		if(res == -1) {
++			printf("dup failed\n");
++			exit(EXIT_FAILURE);
++		}
++		execl("/bin/sh", "sh", "-c", command, (char *) NULL);
++		printf("execl failed\n");
++		exit(EXIT_FAILURE);
++	}
++
++#ifdef USE_TMP_FILE
++	res = waitpid(child, &status, 0);
++	close(pipefd[1]);
++	if(res != -1 && WIFEXITED(status) && WEXITSTATUS(status) == 0) {
++		dev->filename = strdup(filename);
++		return 0;
++	}
++failed:
++	unlink(filename);
++	return -1;
++#else
++	close(pipefd[1]);
++	dev->fd = pipefd[0];
++	dev->child = child;
++	return 0;
++failed:
++	return -1;
++#endif
++}
++
++
++void add_pseudo_file(struct pseudo_dev *dev)
++{
++	pseudo_file = realloc(pseudo_file, (pseudo_count + 1) *
++		sizeof(struct pseudo_dev *));
++	if(pseudo_file == NULL)
++		BAD_ERROR("Failed to realloc pseudo_file\n");
++
++	dev->pseudo_id = pseudo_count;
++	pseudo_file[pseudo_count ++] = dev;
++}
++
++
++void delete_pseudo_files()
++{
++#ifdef USE_TMP_FILE
++	int i;
++
++	for(i = 0; i < pseudo_count; i++)
++		unlink(pseudo_file[i]->filename);
++#endif
++}
++
++
++struct pseudo_dev *get_pseudo_file(int pseudo_id)
++{
++	return pseudo_file[pseudo_id];
++}
++
++
+ int read_pseudo_def(struct pseudo **pseudo, char *def)
+ {
+-	int n;
++	int n, bytes;
+ 	unsigned int major = 0, minor = 0, mode;
+ 	char filename[2048], type, suid[100], sgid[100], *ptr;
+ 	long long uid, gid;
+-	struct pseudo_dev dev;
++	struct pseudo_dev *dev;
+ 
+-	n = sscanf(def, "%s %c %o %s %s %u %u", filename, &type, &mode, suid, sgid,
+-			&major, &minor);
++	n = sscanf(def, "%s %c %o %s %s %n", filename, &type, &mode, suid,
++			sgid, &bytes);
+ 
+ 	if(n < 5) {
+ 		ERROR("Not enough or invalid arguments in pseudo file "
+@@ -249,7 +340,9 @@
+ 	switch(type) {
+ 	case 'b':
+ 	case 'c':
+-		if(n < 7) {
++		n = sscanf(def + bytes,  "%u %u", &major, &minor);
++
++		if(n < 2) {
+ 			ERROR("Not enough or invalid arguments in pseudo file "
+ 				"definition\n");
+ 			goto error;
+@@ -265,47 +358,15 @@
+ 			goto error;
+ 		}
+ 
+-		/* fall through */
+-	case 'd':
+-		if(mode > 0777) {
+-			ERROR("Mode %o out of range\n", mode);
++	case 'f':
++		if(def[bytes] == '\0') {
++			ERROR("Not enough arguments in pseudo file "
++				"definition\n");
+ 			goto error;
+-		}
+-
+-		uid = strtoll(suid, &ptr, 10);
+-		if(*ptr == '\0') {
+-			if(uid < 0 || uid > ((1LL << 32) - 1)) {
+-				ERROR("Uid %s out of range\n", suid);
+-				goto error;
+-			}
+-		} else {
+-			struct passwd *pwuid = getpwnam(suid);
+-			if(pwuid)
+-				uid = pwuid->pw_uid;
+-			else {
+-				ERROR("Uid %s invalid uid or unknown user\n",
+-					suid);
+-				goto error;
+-			}
+-		}
+-		
+-		gid = strtoll(sgid, &ptr, 10);
+-		if(*ptr == '\0') {
+-			if(gid < 0 || gid > ((1LL << 32) - 1)) {
+-				ERROR("Gid %s out of range\n", sgid);
+-				goto error;
+-			}
+-		} else {
+-			struct group *grgid = getgrnam(sgid);
+-			if(grgid)
+-				gid = grgid->gr_gid;
+-			else {
+-				ERROR("Gid %s invalid uid or unknown user\n",
+-					sgid);
+-				goto error;
+-			}
+-		}
+-
++		}	
++		break;
++	case 'd':
++	case 'm':
+ 		break;
+ 	default:
+ 		ERROR("Unsupported type %c\n", type);
+@@ -313,6 +374,43 @@
+ 	}
+ 
+ 
++	if(mode > 0777) {
++		ERROR("Mode %o out of range\n", mode);
++		goto error;
++	}
++
++	uid = strtoll(suid, &ptr, 10);
++	if(*ptr == '\0') {
++		if(uid < 0 || uid > ((1LL << 32) - 1)) {
++			ERROR("Uid %s out of range\n", suid);
++			goto error;
++		}
++	} else {
++		struct passwd *pwuid = getpwnam(suid);
++		if(pwuid)
++			uid = pwuid->pw_uid;
++		else {
++			ERROR("Uid %s invalid uid or unknown user\n", suid);
++			goto error;
++		}
++	}
++		
++	gid = strtoll(sgid, &ptr, 10);
++	if(*ptr == '\0') {
++		if(gid < 0 || gid > ((1LL << 32) - 1)) {
++			ERROR("Gid %s out of range\n", sgid);
++			goto error;
++		}
++	} else {
++		struct group *grgid = getgrnam(sgid);
++		if(grgid)
++			gid = grgid->gr_gid;
++		else {
++			ERROR("Gid %s invalid uid or unknown user\n", sgid);
++			goto error;
++		}
++	}
++
+ 	switch(type) {
+ 	case 'b':
+ 		mode |= S_IFBLK;
+@@ -323,16 +421,37 @@
+ 	case 'd':
+ 		mode |= S_IFDIR;
+ 		break;
++	case 'f':
++		mode |= S_IFREG;
++		break;
+ 	}
+ 
+-	dev.type = type;
+-	dev.mode = mode;
+-	dev.uid = uid;
+-	dev.gid = gid;
+-	dev.major = major;
+-	dev.minor = minor;
++	dev = malloc(sizeof(struct pseudo_dev));
++	if(dev == NULL)
++		BAD_ERROR("Failed to create pseudo_dev\n");
++
++	dev->type = type;
++	dev->mode = mode;
++	dev->uid = uid;
++	dev->gid = gid;
++	dev->major = major;
++	dev->minor = minor;
++
++	if(type == 'f') {
++		int res;
++
++		printf("Executing dynamic pseudo file\n");
++		printf("\t\"%s\"\n", def);
++		res = exec_file(def + bytes, dev);
++		if(res == -1) {
++			ERROR("Failed to execute dynamic pseudo file definition"
++				" \"%s\"\n", def);
++			return FALSE;
++		}
++		add_pseudo_file(dev);
++	}
+ 
+-	*pseudo = add_pseudo(*pseudo, &dev, filename, filename);
++	*pseudo = add_pseudo(*pseudo, dev, filename, filename);
+ 
+ 	return TRUE;
+ 
+diff -Nur squashfs4.0/squashfs-tools/pseudo.h squashfs4.0-lzma-snapshot/squashfs-tools/pseudo.h
+--- squashfs4.0/squashfs-tools/pseudo.h	2009-04-04 03:44:24.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/pseudo.h	2009-10-20 06:03:38.000000000 +0200
+@@ -27,6 +27,12 @@
+ 	unsigned int	gid;
+ 	unsigned int	major;
+ 	unsigned int	minor;
++	int		pseudo_id;
++	int		fd;
++	int		child;
++#ifdef USE_TMP_FILE
++	char		*filename;
++#endif
+ };
+ 
+ struct pseudo_entry {
+@@ -46,3 +52,5 @@
+ extern int read_pseudo_file(struct pseudo **, char *);
+ extern struct pseudo *pseudo_subdir(char *, struct pseudo *);
+ extern struct pseudo_entry *pseudo_readdir(struct pseudo *);
++extern struct pseudo_dev *get_pseudo_file(int);
++extern void delete_pseudo_files();
+diff -Nur squashfs4.0/squashfs-tools/read_fs.c squashfs4.0-lzma-snapshot/squashfs-tools/read_fs.c
+--- squashfs4.0/squashfs-tools/read_fs.c	2009-03-31 06:23:14.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/read_fs.c	2009-10-20 06:03:38.000000000 +0200
+@@ -36,7 +36,6 @@
+ #include <fcntl.h>
+ #include <errno.h>
+ #include <string.h>
+-#include <zlib.h>
+ #include <sys/mman.h>
+ 
+ #ifndef linux
+@@ -51,6 +50,7 @@
+ #include "squashfs_swap.h"
+ #include "read_fs.h"
+ #include "global.h"
++#include "compressor.h"
+ 
+ #include <stdlib.h>
+ 
+@@ -66,7 +66,9 @@
+ 						fprintf(stderr, s, ## args); \
+ 					} while(0)
+ 
+-int read_block(int fd, long long start, long long *next, unsigned char *block,
++static struct compressor *comp;
++
++int read_block(int fd, long long start, long long *next, void *block,
+ 	squashfs_super_block *sBlk)
+ {
+ 	unsigned short c_byte;
+@@ -77,32 +79,24 @@
+ 
+ 	if(SQUASHFS_COMPRESSED(c_byte)) {
+ 		char buffer[SQUASHFS_METADATA_SIZE];
+-		int res;
+-		unsigned long bytes = SQUASHFS_METADATA_SIZE;
++		int error, res;
+ 
+ 		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
+ 		read_destination(fd, start + offset, c_byte, buffer);
+ 
+-		res = uncompress(block, &bytes, (const unsigned char *) buffer,
+-			c_byte);
+-		if(res != Z_OK) {
+-			if(res == Z_MEM_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
+-					"memory\n");
+-			else if(res == Z_BUF_ERROR)
+-				ERROR("zlib::uncompress failed, not enough "
+-					"room in output buffer\n");
+-			else
+-				ERROR("zlib::uncompress failed, unknown error "
+-					"%d\n", res);
++		res = comp->uncompress(block, buffer, c_byte,
++			SQUASHFS_METADATA_SIZE, &error);
++		if(res == -1) {
++			ERROR("%s uncompress failed with error code %d\n",
++				comp->name, error);
+ 			return 0;
+ 		}
+ 		if(next)
+ 			*next = start + offset + c_byte;
+-		return bytes;
++		return res;
+ 	} else {
+ 		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
+-		read_destination(fd, start + offset, c_byte, (char *) block);
++		read_destination(fd, start + offset, c_byte, block);
+ 		if(next)
+ 			*next = start + offset + c_byte;
+ 		return c_byte;
+@@ -356,7 +350,7 @@
+ }
+ 
+ 
+-int read_super(int fd, squashfs_super_block *sBlk, char *source)
++struct compressor *read_super(int fd, squashfs_super_block *sBlk, char *source)
+ {
+ 	read_destination(fd, SQUASHFS_START, sizeof(squashfs_super_block),
+ 		(char *) sBlk);
+@@ -388,8 +382,18 @@
+ 		goto failed_mount;
+ 	}
+ 
++	/* Check the compression type */
++	comp = lookup_compressor_id(sBlk->compression);
++	if(!comp->supported) {
++		ERROR("Filesystem on %s uses %s compression, this is"
++			"unsupported by this version\n", source, comp->name);
++		display_compressors("", "");
++		goto failed_mount;
++	}
++
+ 	printf("Found a valid %sSQUASHFS superblock on %s.\n",
+ 		SQUASHFS_EXPORTABLE(sBlk->flags) ? "exportable " : "", source);
++	printf("\tCompression used %s\n", comp->name);
+ 	printf("\tInodes are %scompressed\n",
+ 		SQUASHFS_UNCOMPRESSED_INODES(sBlk->flags) ? "un" : "");
+ 	printf("\tData is %scompressed\n",
+@@ -417,10 +421,10 @@
+ 	TRACE("sBlk->lookup_table_start %llx\n", sBlk->lookup_table_start);
+ 	printf("\n");
+ 
+-	return TRUE;
++	return comp;
+ 
+ failed_mount:
+-	return FALSE;
++	return NULL;
+ }
+ 
+ 
+@@ -514,12 +518,17 @@
+ 	SQUASHFS_INSWAP_ID_BLOCKS(index, indexes);
+ 
+ 	for(i = 0; i < indexes; i++) {
+-		int length;
+-		length = read_block(fd, index[i], NULL,
++		int length = read_block(fd, index[i], NULL,
+ 			((unsigned char *) id_table) +
+ 			(i * SQUASHFS_METADATA_SIZE), sBlk);
+ 		TRACE("Read id table block %d, from 0x%llx, length %d\n", i,
+ 			index[i], length);
++		if(length == 0) {
++			ERROR("Failed to read id table block %d, from 0x%llx, "
++				"length %d\n", i, index[i], length);
++			free(id_table);
++			return NULL;
++		}
+ 	}
+ 
+ 	SQUASHFS_INSWAP_INTS(id_table, sBlk->no_ids);
+@@ -563,6 +572,13 @@
+ 			(i * SQUASHFS_METADATA_SIZE), sBlk);
+ 		TRACE("Read fragment table block %d, from 0x%llx, length %d\n",
+ 			i, fragment_table_index[i], length);
++		if(length == 0) {
++			ERROR("Failed to read fragment table block %d, from "
++				"0x%llx, length %d\n", i,
++				fragment_table_index[i], length);
++			free(*fragment_table);
++			return 0;
++		}
+ 	}
+ 
+ 	for(i = 0; i < sBlk->fragments; i++)
+@@ -599,6 +615,13 @@
+ 			(i * SQUASHFS_METADATA_SIZE), sBlk);
+ 		TRACE("Read inode lookup table block %d, from 0x%llx, length "
+ 			"%d\n", i, index[i], length);
++		if(length == 0) {
++			ERROR("Failed to read inode lookup table block %d, "
++				"from 0x%llx, length %d\n", i, index[i],
++				length);
++			free(*inode_lookup_table);
++			return 0;
++		}
+ 	}
+ 
+ 	SQUASHFS_INSWAP_LONG_LONGS(*inode_lookup_table, sBlk->inodes);
+diff -Nur squashfs4.0/squashfs-tools/sort.c squashfs4.0-lzma-snapshot/squashfs-tools/sort.c
+--- squashfs4.0/squashfs-tools/sort.c	2009-03-31 06:25:53.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/sort.c	2009-10-20 06:03:38.000000000 +0200
+@@ -198,7 +198,7 @@
+ 	while(dir->current_count < dir->count) {
+ 		struct dir_ent *dir_ent = dir->list[dir->current_count++];
+ 		struct stat *buf = &dir_ent->inode->buf;
+-		if(dir_ent->data)
++		if(dir_ent->inode->root_entry)
+ 			continue;
+ 
+ 		switch(buf->st_mode & S_IFMT) {
+@@ -254,6 +254,7 @@
+ 				write_file(&inode, entry->dir, &duplicate_file);
+ 				INFO("file %s, uncompressed size %lld bytes %s"
+ 					"\n", entry->dir->pathname,
++					(long long)
+ 					entry->dir->inode->buf.st_size,
+ 					duplicate_file ? "DUPLICATE" : "");
+ 				entry->dir->inode->inode = inode;
+@@ -261,6 +262,7 @@
+ 			} else
+ 				INFO("file %s, uncompressed size %lld bytes "
+ 					"LINK\n", entry->dir->pathname,
++					(long long)
+ 					entry->dir->inode->buf.st_size);
+ 		}
+ }
+diff -Nur squashfs4.0/squashfs-tools/sort.h squashfs4.0-lzma-snapshot/squashfs-tools/sort.h
+--- squashfs4.0/squashfs-tools/sort.h	2009-02-08 13:02:53.000000000 +0100
++++ squashfs4.0-lzma-snapshot/squashfs-tools/sort.h	2009-10-20 06:03:38.000000000 +0200
+@@ -42,17 +42,19 @@
+ 	struct inode_info	*inode;
+ 	struct dir_info		*dir;
+ 	struct dir_info		*our_dir;
+-	struct old_root_entry_info *data;
+ };
+ 
+ struct inode_info {
+-	unsigned int		nlink;
+ 	struct stat		buf;
++	struct inode_info	*next;
+ 	squashfs_inode		inode;
+-	unsigned int		type;
+ 	unsigned int		inode_number;
++	unsigned int		nlink;
++	int			pseudo_id;
++	char			type;
+ 	char			read;
+-	struct inode_info	*next;
++	char			root_entry;
++	char			pseudo_file;
+ };
+ 
+ struct priority_entry {
+diff -Nur squashfs4.0/squashfs-tools/squashfs_compat.h squashfs4.0-lzma-snapshot/squashfs-tools/squashfs_compat.h
+--- squashfs4.0/squashfs-tools/squashfs_compat.h	2009-03-16 05:27:27.000000000 +0100
++++ squashfs4.0-lzma-snapshot/squashfs-tools/squashfs_compat.h	2009-10-20 06:03:38.000000000 +0200
+@@ -777,11 +777,10 @@
+ #endif
+ 
+ #define _SQUASHFS_SWAP(value, p, pos, tbits, SHIFT) {\
+-	int bits;\
+-	int b_pos = pos % 8;\
+-	unsigned long long val = 0;\
+-	unsigned char *s = (unsigned char *)p + (pos / 8);\
+-	unsigned char *d = ((unsigned char *) &val) + 7;\
++	b_pos = pos % 8;\
++	val = 0;\
++	s = (unsigned char *)p + (pos / 8);\
++	d = ((unsigned char *) &val) + 7;\
+ 	for(bits = 0; bits < (tbits + b_pos); bits += 8) \
+ 		*d-- = *s++;\
+ 	value = (val >> (SHIFT))/* & ((1 << tbits) - 1)*/;\
+diff -Nur squashfs4.0/squashfs-tools/squashfs_fs.h squashfs4.0-lzma-snapshot/squashfs-tools/squashfs_fs.h
+--- squashfs4.0/squashfs-tools/squashfs_fs.h	2009-03-18 03:50:20.000000000 +0100
++++ squashfs4.0-lzma-snapshot/squashfs-tools/squashfs_fs.h	2009-10-20 06:03:38.000000000 +0200
 @@ -229,6 +229,7 @@
  typedef long long		squashfs_inode_t;
  
@@ -156,307 +1955,274 @@ Index: squashfs4.0/squashfs-tools/squashfs_fs.h
  
  struct squashfs_super_block {
  	unsigned int		s_magic;
-Index: squashfs4.0/squashfs-tools/Makefile
-===================================================================
---- squashfs4.0.orig/squashfs-tools/Makefile	2009-04-05 04:03:36.000000000 +0200
-+++ squashfs4.0/squashfs-tools/Makefile	2009-09-14 17:20:36.310480350 +0200
-@@ -4,14 +4,20 @@
+diff -Nur squashfs4.0/squashfs-tools/unsquash-3.c squashfs4.0-lzma-snapshot/squashfs-tools/unsquash-3.c
+--- squashfs4.0/squashfs-tools/unsquash-3.c	2009-03-31 06:35:10.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/unsquash-3.c	2009-10-20 06:03:38.000000000 +0200
+@@ -36,7 +36,7 @@
+ 		sBlk.fragment_table_start);
  
- CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_GNU_SOURCE -O2
+ 	if(sBlk.fragments == 0)
+-		return;
++		return TRUE;
  
-+ifdef USE_LZMA
-+  LZMA_CFLAGS = -DUSE_LZMA
-+  LZMA_LIB = -llzma
-+  CFLAGS += $(LZMA_CFLAGS)
-+endif
-+
- all: mksquashfs unsquashfs
+ 	if((fragment_table = malloc(sBlk.fragments *
+ 			sizeof(squashfs_fragment_entry_3))) == NULL)
+diff -Nur squashfs4.0/squashfs-tools/unsquash-4.c squashfs4.0-lzma-snapshot/squashfs-tools/unsquash-4.c
+--- squashfs4.0/squashfs-tools/unsquash-4.c	2009-03-31 06:38:31.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/unsquash-4.c	2009-10-20 06:03:38.000000000 +0200
+@@ -38,7 +38,7 @@
+ 		sBlk.fragment_table_start);
  
--mksquashfs: mksquashfs.o read_fs.o sort.o swap.o pseudo.o
--	$(CC) mksquashfs.o read_fs.o sort.o swap.o pseudo.o -lz -lpthread -lm -o $@
-+mksquashfs: mksquashfs.o read_fs.o sort.o swap.o pseudo.o uncompress.o
-+	$(CC) mksquashfs.o read_fs.o sort.o swap.o pseudo.o uncompress.o -lz -lpthread -lm $(LZMA_LIB) -o $@
+ 	if(sBlk.fragments == 0)
+-		return;
++		return TRUE;
  
--mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h squashfs_swap.h Makefile
-+mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h squashfs_swap.h uncompress.h Makefile
- 
--read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h squashfs_swap.h Makefile
-+read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h squashfs_swap.h uncompress.h Makefile
- 
- sort.o: sort.c squashfs_fs.h global.h sort.h Makefile
- 
-@@ -19,18 +25,20 @@
- 
- pseudo.o: pseudo.c pseudo.h Makefile
- 
--unsquashfs: unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o
--	$(CC) unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o -lz -lpthread -lm -o $@
-+uncompress.o: uncompress.c uncompress.h
-+
-+unsquashfs: unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o uncompress.o
-+	$(CC) unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o unsquash-4.o swap.o uncompress.o -lz -lpthread -lm $(LZMA_LIB) -o $@
- 
--unsquashfs.o: unsquashfs.h unsquashfs.c squashfs_fs.h squashfs_swap.h squashfs_compat.h global.h Makefile
-+unsquashfs.o: unsquashfs.h unsquashfs.c squashfs_fs.h squashfs_swap.h squashfs_compat.h global.h uncompress.h Makefile
- 
--unsquash-1.o: unsquashfs.h unsquash-1.c squashfs_fs.h squashfs_compat.h global.h Makefile
-+unsquash-1.o: unsquashfs.h unsquash-1.c squashfs_fs.h squashfs_compat.h global.h uncompress.h Makefile
- 
--unsquash-2.o: unsquashfs.h unsquash-2.c unsquashfs.h squashfs_fs.h squashfs_compat.h global.h Makefile
-+unsquash-2.o: unsquashfs.h unsquash-2.c unsquashfs.h squashfs_fs.h squashfs_compat.h global.h uncompress.h Makefile
- 
--unsquash-3.o: unsquashfs.h unsquash-3.c squashfs_fs.h squashfs_compat.h global.h Makefile
-+unsquash-3.o: unsquashfs.h unsquash-3.c squashfs_fs.h squashfs_compat.h global.h uncompress.h Makefile
- 
--unsquash-4.o: unsquashfs.h unsquash-4.c squashfs_fs.h squashfs_swap.h global.h Makefile
-+unsquash-4.o: unsquashfs.h unsquash-4.c squashfs_fs.h squashfs_swap.h global.h uncompress.h Makefile
- 
- clean:
- 	-rm -f *.o mksquashfs unsquashfs
-Index: squashfs4.0/squashfs-tools/read_fs.c
-===================================================================
---- squashfs4.0.orig/squashfs-tools/read_fs.c	2009-03-31 06:23:14.000000000 +0200
-+++ squashfs4.0/squashfs-tools/read_fs.c	2009-09-14 17:20:36.310480350 +0200
-@@ -51,6 +51,7 @@
- #include "squashfs_swap.h"
- #include "read_fs.h"
- #include "global.h"
-+#include "uncompress.h"
- 
- #include <stdlib.h>
- 
-@@ -83,17 +84,17 @@
- 		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
- 		read_destination(fd, start + offset, c_byte, buffer);
- 
--		res = uncompress(block, &bytes, (const unsigned char *) buffer,
--			c_byte);
-+		res = uncompress_wrapper(block, &bytes,
-+			(const unsigned char *) buffer, c_byte);
- 		if(res != Z_OK) {
- 			if(res == Z_MEM_ERROR)
--				ERROR("zlib::uncompress failed, not enough "
-+				ERROR("uncompress failed, not enough "
- 					"memory\n");
- 			else if(res == Z_BUF_ERROR)
--				ERROR("zlib::uncompress failed, not enough "
-+				ERROR("uncompress failed, not enough "
- 					"room in output buffer\n");
- 			else
--				ERROR("zlib::uncompress failed, unknown error "
-+				ERROR("uncompress failed, unknown error "
- 					"%d\n", res);
- 			return 0;
- 		}
-Index: squashfs4.0/squashfs-tools/unsquashfs.c
-===================================================================
---- squashfs4.0.orig/squashfs-tools/unsquashfs.c	2009-04-05 23:23:06.000000000 +0200
-+++ squashfs4.0/squashfs-tools/unsquashfs.c	2009-09-14 17:20:36.310480350 +0200
-@@ -24,6 +24,7 @@
- #include "unsquashfs.h"
+ 	if((fragment_table = malloc(sBlk.fragments *
+ 			sizeof(squashfs_fragment_entry))) == NULL)
+diff -Nur squashfs4.0/squashfs-tools/unsquashfs.c squashfs4.0-lzma-snapshot/squashfs-tools/unsquashfs.c
+--- squashfs4.0/squashfs-tools/unsquashfs.c	2009-04-05 23:23:06.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/unsquashfs.c	2009-10-20 06:03:39.000000000 +0200
+@@ -25,6 +25,9 @@
  #include "squashfs_swap.h"
  #include "squashfs_compat.h"
-+#include "uncompress.h"
  #include "read_fs.h"
++#include "compressor.h"
++
++#include <sys/sysinfo.h>
  
  struct cache *fragment_cache, *data_cache;
-@@ -597,18 +598,17 @@
+ struct queue *to_reader, *to_deflate, *to_writer, *from_writer;
+@@ -36,6 +39,7 @@
+ 
+ struct super_block sBlk;
+ squashfs_operations s_ops;
++struct compressor *comp;
+ 
+ int bytes = 0, swap, file_count = 0, dir_count = 0, sym_count = 0,
+ 	dev_count = 0, fifo_count = 0;
+@@ -590,31 +594,23 @@
+ 		offset = 3;
+ 	if(SQUASHFS_COMPRESSED(c_byte)) {
+ 		char buffer[SQUASHFS_METADATA_SIZE];
+-		int res;
+-		unsigned long bytes = SQUASHFS_METADATA_SIZE;
++		int error, res;
+ 
+ 		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
  		if(read_bytes(start + offset, c_byte, buffer) == FALSE)
  			goto failed;
  
 -		res = uncompress((unsigned char *) block, &bytes,
-+		res = uncompress_wrapper((unsigned char *) block, &bytes,
- 			(const unsigned char *) buffer, c_byte);
--
- 		if(res != Z_OK) {
- 			if(res == Z_MEM_ERROR)
+-			(const unsigned char *) buffer, c_byte);
++		res = comp->uncompress(block, buffer, c_byte,
++			SQUASHFS_METADATA_SIZE, &error);
+ 
+-		if(res != Z_OK) {
+-			if(res == Z_MEM_ERROR)
 -				ERROR("zlib::uncompress failed, not enough "
-+				ERROR("uncompress failed, not enough "
- 					"memory\n");
- 			else if(res == Z_BUF_ERROR)
+-					"memory\n");
+-			else if(res == Z_BUF_ERROR)
 -				ERROR("zlib::uncompress failed, not enough "
-+				ERROR("uncompress failed, not enough "
- 					"room in output buffer\n");
- 			else
+-					"room in output buffer\n");
+-			else
 -				ERROR("zlib::uncompress failed, unknown error "
-+				ERROR("uncompress failed, unknown error "
- 					"%d\n", res);
+-					"%d\n", res);
++		if(res == -1) {
++			ERROR("%s uncompress failed with error code %d\n",
++				comp->name, error);
  			goto failed;
  		}
-@@ -645,18 +645,17 @@
+ 		if(next)
+ 			*next = start + offset + c_byte;
+-		return bytes;
++		return res;
+ 	} else {
+ 		c_byte = SQUASHFS_COMPRESSED_SIZE(c_byte);
+ 		if(read_bytes(start + offset, c_byte, block) == FALSE)
+@@ -632,36 +628,26 @@
+ 
+ int read_data_block(long long start, unsigned int size, char *block)
+ {
+-	int res;
+-	unsigned long bytes = block_size;
++	int error, res;
+ 	int c_byte = SQUASHFS_COMPRESSED_SIZE_BLOCK(size);
+ 
+ 	TRACE("read_data_block: block @0x%llx, %d %s bytes\n", start,
+-		SQUASHFS_COMPRESSED_SIZE_BLOCK(c_byte),
+-		SQUASHFS_COMPRESSED_BLOCK(c_byte) ? "compressed" :
++		c_byte, SQUASHFS_COMPRESSED_BLOCK(size) ? "compressed" :
+ 		"uncompressed");
+ 
+ 	if(SQUASHFS_COMPRESSED_BLOCK(size)) {
  		if(read_bytes(start, c_byte, data) == FALSE)
  			goto failed;
  
 -		res = uncompress((unsigned char *) block, &bytes,
-+		res = uncompress_wrapper((unsigned char *) block, &bytes,
- 			(const unsigned char *) data, c_byte);
--
- 		if(res != Z_OK) {
- 			if(res == Z_MEM_ERROR)
+-			(const unsigned char *) data, c_byte);
++		res = comp->uncompress(block, data, c_byte, block_size, &error);
+ 
+-		if(res != Z_OK) {
+-			if(res == Z_MEM_ERROR)
 -				ERROR("zlib::uncompress failed, not enough "
-+				ERROR("uncompress failed, not enough "
- 					"memory\n");
- 			else if(res == Z_BUF_ERROR)
+-					"memory\n");
+-			else if(res == Z_BUF_ERROR)
 -				ERROR("zlib::uncompress failed, not enough "
-+				ERROR("uncompress failed, not enough "
- 					"room in output buffer\n");
- 			else
+-					"room in output buffer\n");
+-			else
 -				ERROR("zlib::uncompress failed, unknown error "
-+				ERROR("uncompress failed, unknown error "
- 					"%d\n", res);
+-					"%d\n", res);
++		if(res == -1) {
++			ERROR("%s uncompress failed with error code %d\n",
++				comp->name, error);
  			goto failed;
  		}
-@@ -1459,7 +1458,7 @@
+ 
+-		return bytes;
++		return res;
+ 	} else {
+ 		if(read_bytes(start, c_byte, block) == FALSE)
+ 			goto failed;
+@@ -671,7 +657,7 @@
+ 
+ failed:
+ 	ERROR("read_data_block: failed to read block @0x%llx, size %d\n", start,
+-		size);
++		c_byte);
+ 	return FALSE;
+ }
+ 
+@@ -1383,6 +1369,11 @@
+ #endif
+ 	printf("Creation or last append time %s", mkfs_str ? mkfs_str :
+ 		"failed to get time\n");
++	printf("Filesystem size %.2f Kbytes (%.2f Mbytes)\n",
++		sBlk.bytes_used / 1024.0, sBlk.bytes_used / (1024.0 * 1024.0));
++	if(sBlk.s_major == 4)
++		printf("Compression %s\n", comp->name);
++	printf("Block size %d\n", sBlk.block_size);
+ 	printf("Filesystem is %sexportable via NFS\n",
+ 		SQUASHFS_EXPORTABLE(sBlk.flags) ? "" : "not ");
+ 
+@@ -1409,9 +1400,6 @@
+ 			SQUASHFS_DUPLICATES(sBlk.flags) ? "" : "not ");
+ 	else
+ 		printf("Duplicates are removed\n");
+-	printf("Filesystem size %.2f Kbytes (%.2f Mbytes)\n",
+-		sBlk.bytes_used / 1024.0, sBlk.bytes_used / (1024.0 * 1024.0));
+-	printf("Block size %d\n", sBlk.block_size);
+ 	if(sBlk.s_major > 1)
+ 		printf("Number of fragments %d\n", sBlk.fragments);
+ 	printf("Number of inodes %d\n", sBlk.inodes);
+@@ -1459,6 +1447,18 @@
  		s_ops.read_inode = read_inode_4;
  		s_ops.read_uids_guids = read_uids_guids_4;
  		memcpy(&sBlk, &sBlk_4, sizeof(sBlk_4));
--		return TRUE;
-+		goto done;
++
++		/*
++		 * Check the compression type
++		 */
++		comp = lookup_compressor_id(sBlk.compression);
++		if(!comp->supported) {
++			ERROR("Filesystem uses %s compression, this is "
++				"unsupported by this version\n", comp->name);
++			ERROR("Decompressors available:\n");
++			display_compressors("", "");
++			goto failed_mount;
++		}
+ 		return TRUE;
  	}
  
- 	/*
-@@ -1548,6 +1547,9 @@
+@@ -1548,6 +1548,11 @@
  		goto failed_mount;
  	}
  
-+done:
-+	compression = sBlk.compression;
-+
++	/*
++	 * 1.x, 2.x and 3.x filesystems use gzip compression.  Gzip is always
++	 * suppported.
++	 */
++	comp = lookup_compressor("gzip");
  	return TRUE;
  
  failed_mount:
-@@ -1710,19 +1712,19 @@
- 		int res;
- 		unsigned long bytes = block_size;
+@@ -1707,32 +1712,24 @@
+ 
+ 	while(1) {
+ 		struct cache_entry *entry = queue_get(to_deflate);
+-		int res;
+-		unsigned long bytes = block_size;
++		int error, res;
  
 -		res = uncompress((unsigned char *) tmp, &bytes,
-+		res = uncompress_wrapper((unsigned char *) tmp, &bytes,
- 			(const unsigned char *) entry->data,
- 			SQUASHFS_COMPRESSED_SIZE_BLOCK(entry->size));
- 
- 		if(res != Z_OK) {
- 			if(res == Z_MEM_ERROR)
+-			(const unsigned char *) entry->data,
+-			SQUASHFS_COMPRESSED_SIZE_BLOCK(entry->size));
+-
+-		if(res != Z_OK) {
+-			if(res == Z_MEM_ERROR)
 -				ERROR("zlib::uncompress failed, not enough"
-+				ERROR("uncompress failed, not enough"
- 					"memory\n");
- 			else if(res == Z_BUF_ERROR)
+-					"memory\n");
+-			else if(res == Z_BUF_ERROR)
 -				ERROR("zlib::uncompress failed, not enough "
-+				ERROR("uncompress failed, not enough "
- 					"room in output buffer\n");
- 			else
+-					"room in output buffer\n");
+-			else
 -				ERROR("zlib::uncompress failed, unknown error "
-+				ERROR("uncompress failed, unknown error "
- 					"%d\n", res);
- 		} else
- 			memcpy(entry->data, tmp, bytes);
-Index: squashfs4.0/squashfs-tools/mksquashfs.h
-===================================================================
---- squashfs4.0.orig/squashfs-tools/mksquashfs.h	2009-02-19 19:31:08.000000000 +0100
-+++ squashfs4.0/squashfs-tools/mksquashfs.h	2009-09-14 17:20:36.310480350 +0200
-@@ -41,4 +41,9 @@
- #define SQUASHFS_SWAP_LONG_LONGS(s, d, n) \
- 					memcpy(d, s, n * sizeof(long long))
- #endif
+-					"%d\n", res);
+-		} else
+-			memcpy(entry->data, tmp, bytes);
++		res = comp->uncompress(tmp, entry->data,
++			SQUASHFS_COMPRESSED_SIZE_BLOCK(entry->size), block_size,
++			&error);
 +
-+extern int uncompress_wrapper(unsigned char *dest, unsigned long *dest_len,
-+    const unsigned char *src, unsigned long src_len);
-+
-+
- #endif
-Index: squashfs4.0/squashfs-tools/uncompress.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ squashfs4.0/squashfs-tools/uncompress.c	2009-09-14 17:20:36.310480350 +0200
-@@ -0,0 +1,58 @@
-+/*
-+ * Copyright (c) 2009  Felix Fietkau <nbd@openwrt.org>
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2,
-+ * or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-+ *
-+ * uncompress.c
-+ */
-+
-+
-+
-+#ifdef USE_LZMA
-+#include <LzmaLib.h>
-+#endif
-+#include <zlib.h>
-+#include "squashfs_fs.h"
-+
-+/* compression algorithm */
-+int compression = ZLIB_COMPRESSION;
-+
-+
-+int uncompress_wrapper(unsigned char *dest, unsigned long *dest_len,
-+	const unsigned char *src, unsigned long src_len)
-+{
-+	int res;
-+
-+#ifdef USE_LZMA
-+	if (compression == LZMA_COMPRESSION) {
-+		size_t slen = src_len - LZMA_PROPS_SIZE;
-+		res = LzmaUncompress((unsigned char *)dest, dest_len,
-+			(const unsigned char *) src + LZMA_PROPS_SIZE, &slen,
-+			(const unsigned char *) src, LZMA_PROPS_SIZE);
-+		switch(res) {
-+		case SZ_OK:
-+			res = Z_OK;
-+			break;
-+		case SZ_ERROR_MEM:
-+			res = Z_MEM_ERROR;
-+			break;
-+		}
-+	} else
-+#endif
-+	res = uncompress(dest, dest_len, src, src_len);
-+	return res;
-+}
-+
-+
-Index: squashfs4.0/squashfs-tools/uncompress.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ squashfs4.0/squashfs-tools/uncompress.h	2009-09-14 17:20:36.310480350 +0200
-@@ -0,0 +1,29 @@
-+/*
-+ * Copyright (c) 2009  Felix Fietkau <nbd@openwrt.org>
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2,
-+ * or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-+ *
-+ * uncompress.h
-+ */
-+
-+#ifdef USE_LZMA
-+#include <LzmaLib.h>
-+#endif
-+
-+extern int compression;
-+extern int uncompress_wrapper(unsigned char *dest, unsigned long *dest_len,
-+    const unsigned char *src, unsigned long src_len);
-+
-+
++		if(res == -1)
++			ERROR("%s uncompress failed with error code %d\n",
++				comp->name, error);
++		else
++			memcpy(entry->data, tmp, res);
+ 
+ 		/*
+ 		 * block has been either successfully decompressed, or an error
+  		 * occurred, clear pending flag, set error appropriately and
+  		 * wake up any threads waiting on this block
+  		 */ 
+-		cache_block_ready(entry, res != Z_OK);
++		cache_block_ready(entry, res == -1);
+ 	}
+ }
+ 
+@@ -1913,7 +1910,7 @@
+ 
+ 
+ #define VERSION() \
+-	printf("unsquashfs version 4.0 (2009/04/05)\n");\
++	printf("unsquashfs version 4.1-CVS (2009/08/30)\n");\
+ 	printf("copyright (C) 2009 Phillip Lougher <phillip@lougher.demon.co.uk>"\
+ 		"\n\n");\
+     	printf("This program is free software; you can redistribute it and/or\n");\
+@@ -1938,7 +1935,6 @@
+ 	int fragment_buffer_size = FRAGMENT_BUFFER_DEFAULT;
+ 	int data_buffer_size = DATA_BUFFER_DEFAULT;
+ 	char *b;
+-	struct winsize winsize;
+ 
+ 	pthread_mutex_init(&screen_mutex, NULL);
+ 	root_process = geteuid() == 0;
+@@ -2087,6 +2083,8 @@
+ 				"regular expressions\n");
+ 			ERROR("\t\t\t\trather than use the default shell "
+ 				"wildcard\n\t\t\t\texpansion (globbing)\n");
++			ERROR("\nDecompressors available:\n");
++			display_compressors("", "");
+ 		}
+ 		exit(1);
+ 	}
+diff -Nur squashfs4.0/squashfs-tools/unsquashfs.h squashfs4.0-lzma-snapshot/squashfs-tools/unsquashfs.h
+--- squashfs4.0/squashfs-tools/unsquashfs.h	2009-03-29 04:29:02.000000000 +0200
++++ squashfs4.0-lzma-snapshot/squashfs-tools/unsquashfs.h	2009-10-20 06:03:39.000000000 +0200
+@@ -31,7 +31,6 @@
+ #include <fcntl.h>
+ #include <errno.h>
+ #include <string.h>
+-#include <zlib.h>
+ #include <sys/mman.h>
+ #include <utime.h>
+ #include <pwd.h>
