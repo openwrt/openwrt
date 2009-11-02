@@ -11,7 +11,7 @@ export PATH=$(TARGET_PATH):/sbin
 ROOTPART=$(strip $(subst ",, $(CONFIG_OLPC_BOOTSCRIPT_ROOTPART)))
 #"))")) # fix vim's broken syntax highlighting
 
-ROOTDELAY=5
+ROOTDELAY=10
 
 ifeq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),y)
   define Image/cmdline/squashfs
