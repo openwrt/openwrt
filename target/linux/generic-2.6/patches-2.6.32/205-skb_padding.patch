@@ -1,0 +1,56 @@
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -1383,11 +1383,18 @@ static inline int skb_network_offset(con
+  *
+  * Various parts of the networking layer expect at least 32 bytes of
+  * headroom, you should not reduce this.
++ *
++ * This has been changed to 64 to acommodate for routing between ethernet
++ * and wireless, but only for new allocations
+  */
+ #ifndef NET_SKB_PAD
+ #define NET_SKB_PAD	32
+ #endif
+ 
++#ifndef NET_SKB_PAD_ALLOC
++#define NET_SKB_PAD_ALLOC	64
++#endif
++
+ extern int ___pskb_trim(struct sk_buff *skb, unsigned int len);
+ 
+ static inline void __skb_trim(struct sk_buff *skb, unsigned int len)
+@@ -1477,9 +1484,9 @@ static inline void __skb_queue_purge(str
+ static inline struct sk_buff *__dev_alloc_skb(unsigned int length,
+ 					      gfp_t gfp_mask)
+ {
+-	struct sk_buff *skb = alloc_skb(length + NET_SKB_PAD, gfp_mask);
++	struct sk_buff *skb = alloc_skb(length + NET_SKB_PAD_ALLOC, gfp_mask);
+ 	if (likely(skb))
+-		skb_reserve(skb, NET_SKB_PAD);
++		skb_reserve(skb, NET_SKB_PAD_ALLOC);
+ 	return skb;
+ }
+ 
+@@ -1552,7 +1559,7 @@ static inline int __skb_cow(struct sk_bu
+ 		delta = headroom - skb_headroom(skb);
+ 
+ 	if (delta || cloned)
+-		return pskb_expand_head(skb, ALIGN(delta, NET_SKB_PAD), 0,
++		return pskb_expand_head(skb, ALIGN(delta, NET_SKB_PAD_ALLOC), 0,
+ 					GFP_ATOMIC);
+ 	return 0;
+ }
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -336,9 +336,9 @@ struct sk_buff *__netdev_alloc_skb(struc
+ 	int node = dev->dev.parent ? dev_to_node(dev->dev.parent) : -1;
+ 	struct sk_buff *skb;
+ 
+-	skb = __alloc_skb(length + NET_SKB_PAD, gfp_mask, 0, node);
++	skb = __alloc_skb(length + NET_SKB_PAD_ALLOC, gfp_mask, 0, node);
+ 	if (likely(skb)) {
+-		skb_reserve(skb, NET_SKB_PAD);
++		skb_reserve(skb, NET_SKB_PAD_ALLOC);
+ 		skb->dev = dev;
+ 	}
+ 	return skb;
