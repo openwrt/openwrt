@@ -199,8 +199,15 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	}
 
 	if (!tagid_match) {
-	  printk(KERN_ERR PFX "Failed to find a valid tag id\n");
-	  return -EIO;
+	    tagid = "bcram";
+	    sscanf(buf->bccfe.rootAddress,"%u", &rootfsaddr);
+	    sscanf(buf->bccfe.rootLength, "%u", &rootfslen);
+	    sscanf(buf->bccfe.kernelAddress, "%u", &kerneladdr);
+	    sscanf(buf->bccfe.kernelLength, "%u", &kernellen);
+	    sscanf(buf->bccfe.totalLength, "%u", &totallen);
+	    tagidcrc = *(uint32_t *)&(buf->bccfe.tagIdCRC[0]);
+	    tagversion = &(buf->bccfe.tagVersion[0]);
+	    boardid = &(buf->bccfe.boardid[0]);
 	}
 
 	printk(KERN_INFO PFX "CFE boot tag found with version %s, board type %s, and tagid %s.\n",tagversion,boardid,tagid);
