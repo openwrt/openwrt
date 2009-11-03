@@ -500,8 +500,8 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
 		(1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
-		(robo.devid == ROBO_DEVICE_ID_5325 ? (1 << 1) : 0) | /* RSV multicast */
-		robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0) | (1 << 2) | (1 << 3));
+		(robo.devid == ROBO_DEVICE_ID_5325 ? (1 << 1) :
+		0) | (1 << 2) | (1 << 3)); /* RSV multicast */
 
 	if (robo.devid != ROBO_DEVICE_ID_5325)
 		return 0;
