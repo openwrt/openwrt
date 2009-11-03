@@ -1,6 +1,6 @@
 config X86_GRUB_IMAGES
     bool "Build GRUB images (Linux x86 or x86_64 host only)"
-    depends TARGET_x86
+    depends TARGET_x86_generic
     depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
 	select PACKAGE_grub
     default y
@@ -38,14 +38,38 @@ config X86_GRUB_BOOTOPTS
 
 config X86_VDI_IMAGES
     bool "Build VirtualBox image files (VDI). Requires VBoxManage"
-    depends TARGET_x86
+    depends TARGET_x86_generic
     depends TARGET_ROOTFS_EXT2FS
     depends X86_GRUB_IMAGES
     select PACKAGE_kmod-pcnet32
 
 config X86_VMDK_IMAGES
     bool "Build VMware image files (VMDK). Requires qemu-img"
-    depends TARGET_x86
+    depends TARGET_x86_generic
     depends TARGET_ROOTFS_EXT2FS
     depends X86_GRUB_IMAGES
     select PACKAGE_kmod-e1000
+
+config OLPC_BOOTSCRIPT_IMAGES
+    bool "Build images with bootscript"
+    depends TARGET_x86_olpc
+    depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
+    default y
+
+config OLPC_BOOTSCRIPT_IMAGES_PAD
+	bool "Pad bootscript images to filesystem size (for JFFS2)"
+	depends OLPC_BOOTSCRIPT_IMAGES
+
+config OLPC_BOOTSCRIPT_KERNELPART
+    int "Kernel partition size (in MB)"
+    depends OLPC_BOOTSCRIPT_IMAGES
+    default 4
+
+config OLPC_BOOTSCRIPT_ROOTPART
+    string
+    prompt "Root partition on target device" if OLPC_BOOTSCRIPT_IMAGES
+    default "/dev/sda2"
+    help
+        The root partition on the final device.  If you don't know,
+        you probably want the default (/dev/sda2).
+

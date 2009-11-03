@@ -8,10 +8,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 export PATH=$(TARGET_PATH):/sbin
+
+ifeq ($(CONFIG_TARGET_x86_generic),y)
 BOOTOPTS=$(strip $(subst ",, $(CONFIG_X86_GRUB_BOOTOPTS)))
 ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
 #"))")) # fix vim's broken syntax highlighting
+endif
 
+ifeq ($(CONFIG_TARGET_x86_olpc),y)
+ROOTPART=$(strip $(subst ",, $(CONFIG_OLPC_BOOTSCRIPT_ROOTPART)))
+endif
+#"))")) # fix vim's broken syntax highlighting
 
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 ifneq ($(HOST_OS),Darwin)
@@ -42,7 +49,7 @@ ifneq ($(HOST_OS),Darwin)
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
 		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
 		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
-	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 	$(call Image/Build/grub/$(1))
   endef
 
@@ -56,7 +63,7 @@ ifneq ($(HOST_OS),Darwin)
   endef
 else
   define Image/Build/grub
-	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) "" $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image_x86.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) "" $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
   endef
 endif
 endif
@@ -82,9 +89,43 @@ ifeq ($(CONFIG_X86_VMDK_IMAGES),y)
   endef
 endif
 
+ROOTDELAY=10
+
+ifeq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),y)
+  define Image/cmdline/squashfs
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs rootdelay=$(ROOTDELAY)
+  endef
+
+  define Image/cmdline/jffs2-64k
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootdelay=$(ROOTDELAY)
+  endef
+
+  define Image/cmdline/jffs2-128k
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 rootdelay=$(ROOTDELAY)
+  endef
+
+  define Image/cmdline/ext2
+    root=$(ROOTPART) rootfstype=ext2 rootwait
+  endef
+
+  define Image/Build/bootscript
+	# left here because the image builder doesnt need these
+	$(INSTALL_DIR) $(KDIR)/root.bootscript/boot
+	$(CP) $(KDIR)/bzImage $(KDIR)/root.bootscript/boot/vmlinuz
+	sed -e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
+		./olpc.fth > $(KDIR)/root.bootscript/boot/olpc.fth
+	PADDING="$(CONFIG_OLPC_BOOTSCRIPT_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_olpc.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_OLPC_BOOTSCRIPT_KERNELPART) $(KDIR)/root.bootscript $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+  endef
+endif
+
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
+ifeq ($(CONFIG_TARGET_x86_generic),y)
 	$(call Image/Prepare/grub)
+endif
+ifeq ($(CONFIG_TARGET_x86_olpc),y)
+	$(call Image/Prepare/bootscript)
+endif
 endef
   
 define Image/Build/squashfs
@@ -112,6 +153,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
+	$(call Image/Build/bootscript,$(1))
 ifneq ($(1),iso)
 	$(call Image/Build/grub,$(1))
 	$(call Image/Build/vdi,$(1))

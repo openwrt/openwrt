@@ -10,9 +10,9 @@ ARCH=i386
 BOARD:=x86
 BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2 vdi vmdk pcmcia tgz
-SUBTARGETS=generic
+SUBTARGETS=generic olpc
 
-LINUX_VERSION:=2.6.31.5
+LINUX_VERSION:=2.6.30.9
 
 include $(INCLUDE_DIR)/target.mk
 
