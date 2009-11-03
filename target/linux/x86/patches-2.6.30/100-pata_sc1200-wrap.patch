@@ -1,6 +1,6 @@
 --- a/drivers/ata/pata_sc1200.c
 +++ b/drivers/ata/pata_sc1200.c
-@@ -236,7 +236,7 @@
+@@ -236,7 +236,7 @@ static int sc1200_init_one(struct pci_de
  		.port_ops = &sc1200_port_ops
  	};
  	/* Can't enable port 2 yet, see top comments */
