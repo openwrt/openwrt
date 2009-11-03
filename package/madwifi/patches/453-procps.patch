@@ -1,0 +1,55 @@
+--- a/net80211/ieee80211_linux.h	2009-10-04 22:27:05.528151949 +0300
++++ b/net80211/ieee80211_linux.h	2009-10-04 22:28:06.255777139 +0300
+@@ -640,12 +640,24 @@
+ 	  void __user *buffer, size_t *lenp)
+ #define	IEEE80211_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
+ 	proc_dointvec(ctl, write, filp, buffer, lenp)
+-#else
++#define IEEE80211_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
++        proc_dostring(ctl, write, filp, buffer, lenp)
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
+ #define	IEEE80211_SYSCTL_DECL(f, ctl, write, filp, buffer, lenp, ppos) \
+ 	f(ctl_table *ctl, int write, struct file *filp, \
+ 	  void __user *buffer, size_t *lenp, loff_t *ppos)
+ #define	IEEE80211_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
+ 	proc_dointvec(ctl, write, filp, buffer, lenp, ppos)
++#define IEEE80211_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
++        proc_dostring(ctl, write, filp, buffer, lenp, ppos)
++#else /* Linux 2.6.32+ */
++#define	IEEE80211_SYSCTL_DECL(f, ctl, write, filp, buffer, lenp, ppos) \
++	f(ctl_table *ctl, int write, \
++	  void __user *buffer, size_t *lenp, loff_t *ppos)
++#define	IEEE80211_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
++	proc_dointvec(ctl, write, buffer, lenp, ppos)
++#define IEEE80211_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
++        proc_dostring(ctl, write, buffer, lenp, ppos)
+ #endif
+ 
+ void ieee80211_virtfs_latevattach(struct ieee80211vap *);
+--- a/ath/if_athvar.h	2009-10-04 22:27:05.543151943 +0300
++++ b/ath/if_athvar.h	2009-10-04 22:27:40.115902053 +0300
+@@ -173,14 +173,22 @@
+ 	proc_dointvec(ctl, write, filp, buffer, lenp)
+ #define	ATH_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
+ 	proc_dostring(ctl, write, filp, buffer, lenp)
+-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,8) */
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
+ #define	ATH_SYSCTL_DECL(f, ctl, write, filp, buffer, lenp, ppos) \
+ 	f(ctl_table *ctl, int write, struct file *filp, \
+ 	  void __user *buffer, size_t *lenp, loff_t *ppos)
+ #define	ATH_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
+ 	proc_dointvec(ctl, write, filp, buffer, lenp, ppos)
++#define ATH_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
++        proc_dostring(ctl, write, filp, buffer, lenp, ppos)
++#else /* Linux 2.6.32+ */
++#define	ATH_SYSCTL_DECL(f, ctl, write, filp, buffer, lenp, ppos) \
++	f(ctl_table *ctl, int write, \
++	  void __user *buffer, size_t *lenp, loff_t *ppos)
++#define	ATH_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
++	proc_dointvec(ctl, write, buffer, lenp, ppos)
+ #define	ATH_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
+-	proc_dostring(ctl, write, filp, buffer, lenp, ppos)
++	proc_dostring(ctl, write, buffer, lenp, ppos)
+ #endif
+ 
+ #define	ATH_TIMEOUT	1000
