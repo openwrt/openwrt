@@ -293,7 +293,17 @@ detect_mac80211() {
 		done
 		mode_11n=""
 		mode_band="g"
-		iw phy "$dev" info | grep -q 'HT cap' && mode_11n="n"
+		ht_cap="$(iw phy "$dev" info | grep 'HT capabilities' | cut -d: -f2)"
+		ht_capab="";
+		[ -n "$ht_cap" ] && {
+			mode_11n="n"
+			list="	list ht_capab"
+			[ "$(($ht_cap & 2))" -eq 1 ] && append ht_capab "$list	LDPC" "$N"
+			[ "$(($ht_cap & 2))" -eq 2 ] && append ht_capab "$list	HT40-" "$N"
+			[ "$(($ht_cap & 32))" -eq 32 ] && append ht_capab "$list	SHORT-GI-20" "$N"
+			[ "$(($ht_cap & 64))" -eq 64 ] && append ht_capab "$list	SHORT-GI-40" "$N"
+			[ "$(($ht_cap & 4096))" -eq 4096 ] && append ht_capab "$list	DSSS_CCK-40" "$N"
+		}
 		iw phy "$dev" info | grep -q '2412 MHz' || mode_band="a"
 
 		cat <<EOF
@@ -304,6 +314,7 @@ config wifi-device  wifi$devidx
 	option hwmode	11${mode_11n}${mode_band}
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
+$ht_capab
 
 config wifi-iface
 	option device   wifi$devidx
