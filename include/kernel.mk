@@ -113,7 +113,7 @@ define KernelPackage
     VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(KERNEL))
-    $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL))
+    $(call KernelPackage/$(1)/$(BOARD))
   endef
 
   ifdef KernelPackage/$(1)/description
