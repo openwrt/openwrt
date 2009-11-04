@@ -89,6 +89,9 @@ hostapd_setup_vif() {
 		[ -n "$hwmode_11n" ] && {
 			hwmode="$hwmode_11n"
 			config_get ht_capab "$device" ht_capab
+			[ -n "$ht_capab" -a -n "${ht_capab%%\[*}" ] && {
+				ht_capab=`echo "[$ht_capab]" | sed -e 's, ,][,g'`
+			}
 		}
 	}
 	cat > /var/run/hostapd-$ifname.conf <<EOF
