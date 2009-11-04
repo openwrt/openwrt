@@ -194,17 +194,6 @@
  	}
  
  	IEEE80211_ADDR_COPY(ni->ni_bssid, vap->iv_myaddr);
-@@ -429,8 +425,8 @@ ieee80211_reset_bss(struct ieee80211vap 
- 			  __func__, ni, MAC_ADDR(vap->iv_myaddr));
- 	KASSERT(ni != NULL, ("unable to setup inital BSS node"));
- 
--	vap->iv_bss = ieee80211_ref_node(ni);
--	KASSERT((atomic_read(&vap->iv_bss->ni_refcnt) == 3), 
-+	vap->iv_bss = ni;
-+	KASSERT((atomic_read(&vap->iv_bss->ni_refcnt) == 2),
- 		("wrong refcount for new node."));
- 
- 	if (obss != NULL) {
 @@ -647,7 +643,7 @@ ieee80211_sta_join1(struct ieee80211_nod
  		(vap->iv_state == IEEE80211_S_RUN) && bssid_equal(obss, selbs)); */
  	vap->iv_bss = selbs;
