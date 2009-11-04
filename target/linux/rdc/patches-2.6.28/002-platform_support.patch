@@ -1,7 +1,7 @@
 Index: linux-2.6.28.10/arch/x86/mach-rdc321x/gpio.c
 ===================================================================
---- linux-2.6.28.10.orig/arch/x86/mach-rdc321x/gpio.c	2009-05-02 11:54:43.000000000 -0700
-+++ linux-2.6.28.10/arch/x86/mach-rdc321x/gpio.c	2009-10-30 22:24:23.779705091 -0700
+--- linux-2.6.28.10.orig/arch/x86/mach-rdc321x/gpio.c	2009-11-03 21:01:29.800401126 -0800
++++ linux-2.6.28.10/arch/x86/mach-rdc321x/gpio.c	2009-11-03 21:01:32.164401226 -0800
 @@ -26,7 +26,7 @@
  #include <linux/types.h>
  #include <linux/module.h>
@@ -39,8 +39,8 @@ Index: linux-2.6.28.10/arch/x86/mach-rdc321x/gpio.c
 +arch_initcall(rdc321x_gpio_setup);
 Index: linux-2.6.28.10/arch/x86/mach-rdc321x/platform.c
 ===================================================================
---- linux-2.6.28.10.orig/arch/x86/mach-rdc321x/platform.c	2009-05-02 11:54:43.000000000 -0700
-+++ linux-2.6.28.10/arch/x86/mach-rdc321x/platform.c	2009-10-30 22:37:01.595670310 -0700
+--- linux-2.6.28.10.orig/arch/x86/mach-rdc321x/platform.c	2009-11-03 21:01:29.836402559 -0800
++++ linux-2.6.28.10/arch/x86/mach-rdc321x/platform.c	2009-11-03 21:13:27.212398945 -0800
 @@ -1,7 +1,9 @@
  /*
   *  Generic RDC321x platform devices
@@ -113,7 +113,7 @@ Index: linux-2.6.28.10/arch/x86/mach-rdc321x/platform.c
  };
  
  static struct gpio_led_platform_data rdc321x_led_data = {
-@@ -54,16 +102,163 @@
+@@ -54,16 +102,189 @@
  	.num_resources = 0,
  };
  
@@ -174,7 +174,7 @@ Index: linux-2.6.28.10/arch/x86/mach-rdc321x/platform.c
 -	rdc321x_gpio_setup();
 +#ifndef CONFIG_MTD_RDC3210
 +	struct map_info rdc_map_info;
-+	u32 the_header[4];
++	u32 the_header[8];
  
 +	ROOT_DEV = 0;
 +	rdc_map_info.name = rdc_flash_device.name;
@@ -198,10 +198,36 @@ Index: linux-2.6.28.10/arch/x86/mach-rdc321x/platform.c
 +	the_header[2] = ((u32 *)rdc_map_info.virt)[2];
 +	the_header[3] = ((u32 *)rdc_map_info.virt)[3];
 +	iounmap(rdc_map_info.virt);
++	rdc_map_info.virt = ioremap_nocache(rdc_map_info.phys + 0x8000, 0x10);
++	if (rdc_map_info.virt == NULL)
++		panic("Could not ioremap to read device magic!");
++	the_header[4] = ((u32 *)rdc_map_info.virt)[0];
++	the_header[5] = ((u32 *)rdc_map_info.virt)[1];
++	the_header[6] = ((u32 *)rdc_map_info.virt)[2];
++	the_header[7] = ((u32 *)rdc_map_info.virt)[3];
++	iounmap(rdc_map_info.virt);
 +	if (!memcmp(the_header, "GMTK", 4)) {	/* Gemtek */
 +		/* TODO */
-+	} else if (!memcmp(the_header, "CSYS", 4)) {	/* Sitecom */
-+		/* TODO */
++	} else if (!memcmp(the_header + 4, "CSYS", 4)) {	/* Sitecom */
++		rdc_flash_parts[0].name = "system";
++		rdc_flash_parts[0].offset = 0;
++		rdc_flash_parts[0].size = rdc_map_info.size - 0x10000;
++		rdc_flash_parts[1].name = "config";
++		rdc_flash_parts[1].offset = 0;
++		rdc_flash_parts[1].size = 0x8000;
++		rdc_flash_parts[2].name = "magic";
++		rdc_flash_parts[2].offset = 0x8000;
++		rdc_flash_parts[2].size = 0x14;
++		rdc_flash_parts[3].name = "kernel";
++		rdc_flash_parts[3].offset = 0x8014;
++		rdc_flash_parts[3].size = the_header[5];
++		rdc_flash_parts[4].name = "rootfs";
++		rdc_flash_parts[4].offset = 0x8014 + the_header[5];
++		rdc_flash_parts[4].size = rdc_flash_parts[0].size - rdc_flash_parts[4].offset;
++		rdc_flash_parts[5].name = "bootloader";
++		rdc_flash_parts[5].offset = rdc_flash_parts[0].size;
++		rdc_flash_parts[5].size = 0x10000;
++		rdc_flash_data.nr_parts = 6;
 +	} else if (!memcmp(((u8 *)the_header) + 14, "Li", 2)) {	/* AMIT */
 +		rdc_flash_parts[0].name = "kernel_parthdr";
 +		rdc_flash_parts[0].offset = 0;
@@ -281,8 +307,8 @@ Index: linux-2.6.28.10/arch/x86/mach-rdc321x/platform.c
 +#endif
 Index: linux-2.6.28.10/arch/x86/Makefile
 ===================================================================
---- linux-2.6.28.10.orig/arch/x86/Makefile	2009-05-02 11:54:43.000000000 -0700
-+++ linux-2.6.28.10/arch/x86/Makefile	2009-10-30 22:04:55.444672426 -0700
+--- linux-2.6.28.10.orig/arch/x86/Makefile	2009-11-03 21:01:29.756400281 -0800
++++ linux-2.6.28.10/arch/x86/Makefile	2009-11-03 21:01:32.164401226 -0800
 @@ -113,6 +113,10 @@
  mflags-$(CONFIG_X86_VOYAGER)	:= -Iarch/x86/include/asm/mach-voyager
  mcore-$(CONFIG_X86_VOYAGER)	:= arch/x86/mach-voyager/
@@ -296,8 +322,8 @@ Index: linux-2.6.28.10/arch/x86/Makefile
  fcore-$(CONFIG_X86_GENERICARCH)	+= arch/x86/mach-generic/
 Index: linux-2.6.28.10/arch/x86/include/asm/mach-rdc321x/gpio.h
 ===================================================================
---- linux-2.6.28.10.orig/arch/x86/include/asm/mach-rdc321x/gpio.h	2009-10-30 22:31:04.680702348 -0700
-+++ linux-2.6.28.10/arch/x86/include/asm/mach-rdc321x/gpio.h	2009-10-30 22:34:24.024670851 -0700
+--- linux-2.6.28.10.orig/arch/x86/include/asm/mach-rdc321x/gpio.h	2009-11-03 21:01:29.784401606 -0800
++++ linux-2.6.28.10/arch/x86/include/asm/mach-rdc321x/gpio.h	2009-11-03 21:01:32.164401226 -0800
 @@ -9,7 +9,6 @@
  extern int rdc_gpio_direction_output(unsigned gpio, int value);
  extern int rdc_gpio_request(unsigned gpio, const char *label);

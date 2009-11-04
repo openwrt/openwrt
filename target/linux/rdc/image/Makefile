@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -21,6 +21,10 @@ define trxalign/squashfs
 bs=1024
 endef
 
+define Image/Prepare/squashfs
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+endef
+
 define Image/Build/ar525w
 	touch $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	touch $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
@@ -30,15 +34,24 @@ define Image/Build/ar525w
 	$(STAGING_DIR_HOST)/bin/airlink -e -b 1 -j $(shell bash -c 'echo $$[$(3)]') $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
 endef
 
+define Image/Prepare/wl153/squashfs
+	dd if=/dev/null of=$(KDIR)/root.tmp seek=1 bs=32k
+	echo -n "0123456789abcdef0123" >> $(KDIR)/root.tmp
+	cat $(KDIR)/bzImage $(KDIR)/root.squashfs >> $(KDIR)/root.tmp
+	dd if=$(KDIR)/root.tmp of=$(KDIR)/root2.tmp bs=64k conv=sync
+	dd if=$(KDIR)/root2.tmp of=$(KDIR)/root.squashfs bs=1 skip=$$$$[0x$$$$(cat $(KDIR)/bzSize) + 0x8014]
+	$(call add_jffs2_mark,$(KDIR)/root.squashfs)
+endef
+
 define Image/Build/wl153
 	ls -l $(KDIR)/bzImage | sed -r 's/^[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+([^[:blank:]]+).+$$$$/\1/' | xargs printf '%.8x' > $(KDIR)/bzSize
-	gzip -9c $(KDIR)/root.$(1) > $(KDIR)/root.$(1).gz
-	ls -l $(KDIR)/root.$(1).gz | sed -r 's/^[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+([^[:blank:]]+).+$$$$/\1/' | xargs printf '%.8x' > $(KDIR)/rdSize
+	$(call Image/Prepare/wl153/$(1))
+	ls -l $(KDIR)/root.$(1) | sed -r 's/^[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+([^[:blank:]]+).+$$$$/\1/' | xargs printf '%.8x' > $(KDIR)/rdSize
 	echo -ne "\x$$$$(cut -c 7,8 < $(KDIR)/bzSize)\x$$$$(cut -c 5,6 < $(KDIR)/bzSize)\x$$$$(cut -c 3,4 < $(KDIR)/bzSize)\x$$$$(cut -c 1,2 < $(KDIR)/bzSize)" > $(KDIR)/bzSize.tmp
 	echo -n 'CSYS' > $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	cat $(KDIR)/bzSize.tmp >> $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	echo -ne "\x$$$$(cut -c 7,8 < $(KDIR)/rdSize)\x$$$$(cut -c 5,6 < $(KDIR)/rdSize)\x$$$$(cut -c 3,4 < $(KDIR)/rdSize)\x$$$$(cut -c 1,2 < $(KDIR)/rdSize)WRRM" >> $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
-	cat $(KDIR)/bzSize.tmp $(KDIR)/bzImage $(KDIR)/root.$(1).gz >> $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
+	cat $(KDIR)/bzSize.tmp $(KDIR)/bzImage $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	$(RM) $(KDIR)/bzSize.tmp $(KDIR)/bzSize $(KDIR)/rdSize
 	if [ `ls -l $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img | sed -r 's/^[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+[^[:blank:]]+[[:blank:]]+([^[:blank:]]+).+$$$$/\1/'` -gt $$$$((0xffff0000-0xffe08000)) ]; then mv $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img.too_big; echo "#ERR image too big"; fi 
 endef
@@ -51,6 +64,7 @@ define Image/Build/dir450
 endef
 
 define Image/Build/g570s
+	$(call Image/Prepare/$(1))
 	mv $(KDIR)/root.$(1) $(KDIR)/root.tmp
 	dd of=$(KDIR)/root.$(1) if=$(KDIR)/root.tmp $(call trxalign/$(1)) conv=sync
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-tftp-$(BOARD)-$(1)-$(2).img
@@ -62,6 +76,7 @@ define Image/Build/g570s
 endef
 
 define Image/Build/amit
+	$(call Image/Prepare/$(1))
 	if [ ! -x $(STAGING_DIR_HOST)/bin/amit_makebin ]; then echo "#ERR Please copy the AMIT \"makebin\" tool from http://mgb111.pradnik.net/ as $(STAGING_DIR_HOST)/bin/amit_makebin to build."; fi
 	sh -c "mkdir -p $(KDIR)/amit.tmp/linux_src/arch/i386/boot $(KDIR)/amit.tmp/rom_disk && cd $(KDIR)/amit.tmp && ln -s ../../root.$(1) rom_disk/fs.img && ln -s ../../../../../bzImage linux_src/arch/i386/boot && $(STAGING_DIR_HOST)/bin/amit_makebin && mv upgrade.img $(BIN_DIR)/openwrt-$(BOARD)-$(1)-anas350.bin" || :
 	$(RM) -r $(KDIR)/amit.tmp
