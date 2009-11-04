@@ -18,7 +18,7 @@
 +#endif
 --- a/drivers/net/wireless/ath/regd.h
 +++ b/drivers/net/wireless/ath/regd.h
-@@ -242,6 +242,41 @@ enum CountryCode {
+@@ -250,6 +250,41 @@ enum CountryCode {
  	CTRY_BELGIUM2 = 5002
  };
  
@@ -60,7 +60,7 @@
  bool ath_is_world_regd(struct ath_regulatory *reg);
  int ath_regd_init(struct ath_regulatory *reg, struct wiphy *wiphy,
  		  int (*reg_notifier)(struct wiphy *wiphy,
-@@ -253,3 +288,5 @@ int ath_reg_notifier_apply(struct wiphy 
+@@ -261,3 +296,5 @@ int ath_reg_notifier_apply(struct wiphy 
  			   struct ath_regulatory *reg);
  
  #endif
