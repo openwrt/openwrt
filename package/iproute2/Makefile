@@ -51,9 +51,15 @@ define Build/Configure
 	$(SED) "s, misc,," $(PKG_BUILD_DIR)/Makefile
 endef
 
+MAKE_FLAGS += \
+	EXTRA_CCOPTS="$(TARGET_CFLAGS)" \
+	KERNEL_INCLUDE="$(LINUX_DIR)/include" \
+	FPIC="$(FPIC)" \
+	all tc/tc ip/ip
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/netem HOSTCC="$(HOSTCC)" EXTRA_CCOPTS="$(TARGET_CFLAGS)" CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -I ../include -DRESOLVE_HOSTNAMES"
-	$(MAKE) -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) EXTRA_CCOPTS="$(TARGET_CFLAGS)" KERNEL_INCLUDE=$(LINUX_DIR)/include all tc/tc ip/ip
+	$(Build/Compile/Default)
 endef
 
 define Build/InstallDev
