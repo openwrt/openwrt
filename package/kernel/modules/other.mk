@@ -506,7 +506,7 @@ define KernelPackage/leds-alix
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_LEDS_ALIX2
   FILES:=$(LINUX_DIR)/drivers/leds/leds-alix2.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,leds-alix)
+  AUTOLOAD:=$(call AutoLoad,50,leds-alix2)
 endef
 
 define KernelPackage/leds-alix/description
