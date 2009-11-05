@@ -1,0 +1,25 @@
+--- a/cpu/mips/Makefile
++++ b/cpu/mips/Makefile
+@@ -36,6 +36,9 @@ START	:= $(addprefix $(obj),$(START))
+ 
+ all:	$(obj).depend $(START) $(LIB)
+ 
++start.o: start.S
++	$(CC) $(AFLAGS) -fPIC -c -o $@ $<
++
+ $(LIB):	$(OBJS)
+ 	$(AR) $(ARFLAGS) $@ $(OBJS)
+ 
+--- a/Makefile
++++ b/Makefile
+@@ -185,8 +185,8 @@ include $(TOPDIR)/config.mk
+ OBJS  = cpu/$(CPU)/start.o
+ OBJS_BOOTSTRAP  = cpu/$(CPU)/start_bootstrap.o
+ 
+-cpu/$(CPU)/start_bootstrap.S: cpu/$(CPU)/start.S
+-	ln -s start.S cpu/$(CPU)/start_bootstrap.S
++cpu/$(CPU)/start_bootstrap.o: cpu/$(CPU)/start.S
++	$(CC) $(AFLAGS) -fPIC -DCFG_BOOTSTRAP_CODE -c -o $@ $<
+ 
+ ifeq ($(CPU),i386)
+ OBJS += cpu/$(CPU)/start16.o
