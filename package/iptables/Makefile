@@ -19,6 +19,8 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 
+PATCH_DIR:=./patches/$(PKG_VERSION)
+
 PKG_FIXUP = libtool
 
 include $(INCLUDE_DIR)/package.mk
