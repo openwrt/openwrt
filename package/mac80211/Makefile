@@ -13,7 +13,7 @@ PKG_NAME:=mac80211
 PKG_VERSION:=2009-11-03
 PKG_RELEASE:=1
 PKG_SOURCE_URL:= \
-	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/10 \
+	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/11 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
 PKG_MD5SUM:=f8434790c9552abb9c98926d7ae616fe
 
