@@ -504,8 +504,8 @@ define KernelPackage/leds-alix
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PCengines ALIX LED support
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_LEDS_ALIX
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-alix.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=CONFIG_LEDS_ALIX2
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-alix2.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,leds-alix)
 endef
 
