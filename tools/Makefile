@@ -10,7 +10,9 @@ curdir:=tools
 
 # subdirectories to descend into
 tools-y :=
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
+endif
 tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs squashfs squashfs4 mtd-utils lzma-old mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2
