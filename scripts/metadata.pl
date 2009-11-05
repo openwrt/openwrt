@@ -225,25 +225,26 @@ EOF
 	}
 	if (@{$target->{subtargets}} > 0) {
 		$confstr .= "\tselect HAS_SUBTARGETS\n";
-	} else {
-		$confstr .= "\tselect $target->{arch}\n";
-		foreach my $dep (@{$target->{depends}}) {
-			my $mode = "depends";
-			my $flags;
-			my $name;
-
-			$dep =~ /^([@\+\-]+)(.+)$/;
-			$flags = $1;
-			$name = $2;
-
-			next if $name =~ /:/;
-			$flags =~ /-/ and $mode = "deselect";
-			$flags =~ /\+/ and $mode = "select";
-			$flags =~ /@/ and $confstr .= "\t$mode $name\n";
-		}
-		$confstr .= $features;
 	}
 
+	if ($target->{arch} =~ /\w/) {
+		$confstr .= "\tselect $target->{arch}\n";
+	}
+	foreach my $dep (@{$target->{depends}}) {
+		my $mode = "depends";
+		my $flags;
+		my $name;
+
+		$dep =~ /^([@\+\-]+)(.+)$/;
+		$flags = $1;
+		$name = $2;
+
+		next if $name =~ /:/;
+		$flags =~ /-/ and $mode = "deselect";
+		$flags =~ /\+/ and $mode = "select";
+		$flags =~ /@/ and $confstr .= "\t$mode $name\n";
+	}
+	$confstr .= $features;
 	$confstr .= "$help\n\n";
 	print $confstr;
 }
