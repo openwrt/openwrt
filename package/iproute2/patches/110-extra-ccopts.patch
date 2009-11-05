@@ -1,0 +1,11 @@
+--- ./Makefile.old	2009-10-18 21:14:18.344641842 +0200
++++ ./Makefile	2009-10-18 21:14:33.558618672 +0200
+@@ -22,7 +22,7 @@
+ 
+ CC = gcc
+ HOSTCC = gcc
+-CCOPTS = -D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall
++CCOPTS = -D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall $(EXTRA_CCOPTS)
+ CFLAGS = $(CCOPTS) -I../include $(DEFINES)
+ YACCFLAGS = -d -t -v
+ 
