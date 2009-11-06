@@ -24,3 +24,7 @@ define Target/Description
 endef
 
 $(eval $(call BuildTarget))
+
+$(eval $(call RequireCommand,lzma, \
+        Please install lzma-4.4x. \
+))
