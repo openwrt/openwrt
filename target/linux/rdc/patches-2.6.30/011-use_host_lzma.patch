@@ -1,0 +1,8 @@
+--- a/scripts/Makefile.lib	2009-11-06 08:55:20.000000000 +0100
++++ b/scripts/Makefile.lib	2009-11-06 09:08:45.000000000 +0100
+@@ -204,4 +204,4 @@
+ # ---------------------------------------------------------------------------
+ 
+ quiet_cmd_lzma = LZMA    $@
+-cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 -eos
++cmd_lzma = (/usr/bin/lzma -9 -c $< ; $(size_append) $<) >$@ || (rm -f $@ ; false)
