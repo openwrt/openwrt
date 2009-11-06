@@ -1,9 +1,9 @@
 /*
  *  Generic RDC321x platform devices
  *
- *  Copyright (C) 2007-2008 OpenWrt.org
+ *  Copyright (C) 2007-2009 OpenWrt.org
  *  Copyright (C) 2007 Florian Fainelli <florian@openwrt.org>
- *  Copyright (C) 2008 Daniel Gimpelevich <daniel@gimpelevich.san-francisco.ca.us>
+ *  Copyright (C) 2008-2009 Daniel Gimpelevich <daniel@gimpelevich.san-francisco.ca.us>
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -157,7 +157,7 @@ static int __init rdc_board_setup(void)
 {
 #ifndef CONFIG_MTD_RDC3210
 	struct map_info rdc_map_info;
-	u32 the_header[4];
+	u32 the_header[8];
 
 	ROOT_DEV = 0;
 	rdc_map_info.name = rdc_flash_device.name;
@@ -181,10 +181,36 @@ static int __init rdc_board_setup(void)
 	the_header[2] = ((u32 *)rdc_map_info.virt)[2];
 	the_header[3] = ((u32 *)rdc_map_info.virt)[3];
 	iounmap(rdc_map_info.virt);
+	rdc_map_info.virt = ioremap_nocache(rdc_map_info.phys + 0x8000, 0x10);
+	if (rdc_map_info.virt == NULL)
+		panic("Could not ioremap to read device magic!");
+	the_header[4] = ((u32 *)rdc_map_info.virt)[0];
+	the_header[5] = ((u32 *)rdc_map_info.virt)[1];
+	the_header[6] = ((u32 *)rdc_map_info.virt)[2];
+	the_header[7] = ((u32 *)rdc_map_info.virt)[3];
+	iounmap(rdc_map_info.virt);
 	if (!memcmp(the_header, "GMTK", 4)) {	/* Gemtek */
 		/* TODO */
-	} else if (!memcmp(the_header, "CSYS", 4)) {	/* Sitecom */
-		/* TODO */
+	} else if (!memcmp(the_header + 4, "CSYS", 4)) {	/* Sitecom */
+		rdc_flash_parts[0].name = "system";
+		rdc_flash_parts[0].offset = 0;
+		rdc_flash_parts[0].size = rdc_map_info.size - 0x10000;
+		rdc_flash_parts[1].name = "config";
+		rdc_flash_parts[1].offset = 0;
+		rdc_flash_parts[1].size = 0x8000;
+		rdc_flash_parts[2].name = "magic";
+		rdc_flash_parts[2].offset = 0x8000;
+		rdc_flash_parts[2].size = 0x14;
+		rdc_flash_parts[3].name = "kernel";
+		rdc_flash_parts[3].offset = 0x8014;
+		rdc_flash_parts[3].size = the_header[5];
+		rdc_flash_parts[4].name = "rootfs";
+		rdc_flash_parts[4].offset = 0x8014 + the_header[5];
+		rdc_flash_parts[4].size = rdc_flash_parts[0].size - rdc_flash_parts[4].offset;
+		rdc_flash_parts[5].name = "bootloader";
+		rdc_flash_parts[5].offset = rdc_flash_parts[0].size;
+		rdc_flash_parts[5].size = 0x10000;
+		rdc_flash_data.nr_parts = 6;
 	} else if (!memcmp(((u8 *)the_header) + 14, "Li", 2)) {	/* AMIT */
 		rdc_flash_parts[0].name = "kernel_parthdr";
 		rdc_flash_parts[0].offset = 0;
