@@ -1,6 +1,5 @@
-diff -Nru linux-2.6.31.5/arch/mips/kernel/Makefile linux-2.6.31.5.new/arch/mips/kernel/Makefile
---- linux-2.6.31.5/arch/mips/kernel/Makefile	2009-10-25 12:35:46.137368384 +0200
-+++ linux-2.6.31.5.new/arch/mips/kernel/Makefile	2009-10-25 15:24:04.713493469 +0200
+--- a/arch/mips/kernel/Makefile
++++ b/arch/mips/kernel/Makefile
 @@ -2,6 +2,8 @@
  # Makefile for the Linux/MIPS kernel.
  #
@@ -10,10 +9,9 @@ diff -Nru linux-2.6.31.5/arch/mips/kernel/Makefile linux-2.6.31.5.new/arch/mips/
  extra-y		:= head.o init_task.o vmlinux.lds
  
  obj-y		+= cpu-probe.o branch.o entry.o genex.o irq.o process.o \
-diff -Nru linux-2.6.31.5/arch/mips/kernel/vmlinux.lds.S linux-2.6.31.5.new/arch/mips/kernel/vmlinux.lds.S
---- linux-2.6.31.5/arch/mips/kernel/vmlinux.lds.S	2009-10-23 01:57:56.000000000 +0300
-+++ linux-2.6.31.5.new/arch/mips/kernel/vmlinux.lds.S	2009-10-25 15:26:11.631618513 +0200
-@@ -10,15 +10,15 @@
+--- a/arch/mips/kernel/vmlinux.lds.S
++++ b/arch/mips/kernel/vmlinux.lds.S
+@@ -10,15 +10,15 @@ PHDRS {
  	note PT_NOTE FLAGS(4);	/* R__ */
  }
  
