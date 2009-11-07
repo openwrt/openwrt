@@ -8,6 +8,15 @@
  
  #include <bcm63xx_dev_enet.h>
  #include "bcm63xx_enet.h"
+@@ -91,7 +90,7 @@
+ 		if (enet_readl(priv, ENET_IR_REG) & ENET_IR_MII)
+ 			break;
+ 		udelay(1);
+-	} while (limit-- >= 0);
++	} while (limit-- > 0);
+ 
+ 	return (limit < 0) ? 1 : 0;
+ }
 @@ -321,7 +320,7 @@
  		if (len < copybreak) {
  			struct sk_buff *nskb;
