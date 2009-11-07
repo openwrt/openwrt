@@ -1,7 +1,24 @@
+Index: linux-2.6.31.5/arch/x86/kernel/vmlinux.lds.S
+===================================================================
+--- linux-2.6.31.5.orig/arch/x86/kernel/vmlinux.lds.S	2009-10-23 00:57:56.000000000 +0200
++++ linux-2.6.31.5/arch/x86/kernel/vmlinux.lds.S	2009-11-07 14:31:54.000000000 +0100
+@@ -244,6 +244,12 @@
+ 		__initcall_end = .;
+ 	}
+ 
++	.root_initcall.init : AT(ADDR(.root_initcall.init) - LOAD_OFFSET) {
++		__root_initcall_start = .;
++		INITCALLS_ROOT
++		__root_initcall_end = .;
++	}
++
+ 	.con_initcall.init : AT(ADDR(.con_initcall.init) - LOAD_OFFSET) {
+ 		__con_initcall_start = .;
+ 		*(.con_initcall.init)
 Index: linux-2.6.31.5/drivers/mtd/devices/block2mtd.c
 ===================================================================
---- linux-2.6.31.5.orig/drivers/mtd/devices/block2mtd.c	2009-11-07 13:52:05.000000000 +0100
-+++ linux-2.6.31.5/drivers/mtd/devices/block2mtd.c	2009-11-07 13:52:17.000000000 +0100
+--- linux-2.6.31.5.orig/drivers/mtd/devices/block2mtd.c	2009-11-07 14:30:57.000000000 +0100
++++ linux-2.6.31.5/drivers/mtd/devices/block2mtd.c	2009-11-07 14:31:19.000000000 +0100
 @@ -18,10 +18,18 @@
  #include <linux/buffer_head.h>
  #include <linux/mutex.h>
@@ -69,8 +86,8 @@ Index: linux-2.6.31.5/drivers/mtd/devices/block2mtd.c
  }
 Index: linux-2.6.31.5/include/asm-generic/vmlinux.lds.h
 ===================================================================
---- linux-2.6.31.5.orig/include/asm-generic/vmlinux.lds.h	2009-11-07 13:52:04.000000000 +0100
-+++ linux-2.6.31.5/include/asm-generic/vmlinux.lds.h	2009-11-07 13:52:17.000000000 +0100
+--- linux-2.6.31.5.orig/include/asm-generic/vmlinux.lds.h	2009-11-07 14:30:57.000000000 +0100
++++ linux-2.6.31.5/include/asm-generic/vmlinux.lds.h	2009-11-07 14:31:19.000000000 +0100
 @@ -622,12 +622,14 @@
    	*(.initcall4s.init)						\
    	*(.initcall5.init)						\
@@ -90,7 +107,7 @@ Index: linux-2.6.31.5/include/asm-generic/vmlinux.lds.h
 Index: linux-2.6.31.5/init/do_mounts.c
 ===================================================================
 --- linux-2.6.31.5.orig/init/do_mounts.c	2009-10-23 00:57:56.000000000 +0200
-+++ linux-2.6.31.5/init/do_mounts.c	2009-11-07 13:52:17.000000000 +0100
++++ linux-2.6.31.5/init/do_mounts.c	2009-11-07 14:31:19.000000000 +0100
 @@ -176,16 +176,8 @@
  	return 1;
  }
@@ -134,8 +151,8 @@ Index: linux-2.6.31.5/init/do_mounts.c
  		if (!strncmp(root_device_name, "mtd", 3) ||
 Index: linux-2.6.31.5/init/main.c
 ===================================================================
---- linux-2.6.31.5.orig/init/main.c	2009-11-07 13:52:16.000000000 +0100
-+++ linux-2.6.31.5/init/main.c	2009-11-07 14:00:29.000000000 +0100
+--- linux-2.6.31.5.orig/init/main.c	2009-11-07 14:30:59.000000000 +0100
++++ linux-2.6.31.5/init/main.c	2009-11-07 14:31:19.000000000 +0100
 @@ -79,6 +79,7 @@
  #ifdef CONFIG_X86_LOCAL_APIC
  #include <asm/smp.h>
