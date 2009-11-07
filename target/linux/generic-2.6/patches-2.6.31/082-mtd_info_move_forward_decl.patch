@@ -1,5 +1,5 @@
---- a/include/linux/mtd/partitions.h	2009-10-29 11:24:29.000000000 +0100
-+++ b/include/linux/mtd/partitions.h	2009-10-29 11:26:35.000000000 +0100
+--- a/include/linux/mtd/partitions.h
++++ b/include/linux/mtd/partitions.h
 @@ -33,6 +33,7 @@
   * Note: writeable partitions require their size and offset be
   * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
@@ -8,7 +8,7 @@
  
  struct mtd_partition;
  struct mtd_partition {
-@@ -49,7 +50,6 @@
+@@ -49,7 +50,6 @@ struct mtd_partition {
  #define MTDPART_SIZ_FULL	(0)
  
  
