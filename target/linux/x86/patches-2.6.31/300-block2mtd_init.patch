@@ -1,5 +1,7 @@
---- a/drivers/mtd/devices/block2mtd.c
-+++ b/drivers/mtd/devices/block2mtd.c
+Index: linux-2.6.31.5/drivers/mtd/devices/block2mtd.c
+===================================================================
+--- linux-2.6.31.5.orig/drivers/mtd/devices/block2mtd.c	2009-11-07 13:52:05.000000000 +0100
++++ linux-2.6.31.5/drivers/mtd/devices/block2mtd.c	2009-11-07 13:52:17.000000000 +0100
 @@ -18,10 +18,18 @@
  #include <linux/buffer_head.h>
  #include <linux/mutex.h>
@@ -19,7 +21,7 @@
  
  /* Info for the block device */
  struct block2mtd_dev {
-@@ -33,10 +41,34 @@ struct block2mtd_dev {
+@@ -33,10 +41,34 @@
  	char devname[0];
  };
  
@@ -54,7 +56,7 @@
  
  static struct page *page_read(struct address_space *mapping, int index)
  {
-@@ -511,7 +543,9 @@ static int block2mtd_setup2(const char *
+@@ -511,7 +543,9 @@
  	if (token[2] && (strlen(token[2]) + 1 > 80))
  		parse_err("mtd device name too long");
  
@@ -65,8 +67,10 @@
  
  	return 0;
  }
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
+Index: linux-2.6.31.5/include/asm-generic/vmlinux.lds.h
+===================================================================
+--- linux-2.6.31.5.orig/include/asm-generic/vmlinux.lds.h	2009-11-07 13:52:04.000000000 +0100
++++ linux-2.6.31.5/include/asm-generic/vmlinux.lds.h	2009-11-07 13:52:17.000000000 +0100
 @@ -622,12 +622,14 @@
    	*(.initcall4s.init)						\
    	*(.initcall5.init)						\
@@ -83,9 +87,11 @@
  #define INIT_CALLS							\
  		VMLINUX_SYMBOL(__initcall_start) = .;			\
  		INITCALLS						\
---- a/init/do_mounts.c
-+++ b/init/do_mounts.c
-@@ -176,16 +176,8 @@ static int __init fs_names_setup(char *s
+Index: linux-2.6.31.5/init/do_mounts.c
+===================================================================
+--- linux-2.6.31.5.orig/init/do_mounts.c	2009-10-23 00:57:56.000000000 +0200
++++ linux-2.6.31.5/init/do_mounts.c	2009-11-07 13:52:17.000000000 +0100
+@@ -176,16 +176,8 @@
  	return 1;
  }
  
@@ -102,7 +108,7 @@
  
  static void __init get_fs_names(char *page)
  {
-@@ -366,23 +358,6 @@ void __init prepare_namespace(void)
+@@ -366,23 +358,6 @@
  {
  	int is_floppy;
  
@@ -126,8 +132,10 @@
  	if (saved_root_name[0]) {
  		root_device_name = saved_root_name;
  		if (!strncmp(root_device_name, "mtd", 3) ||
---- a/init/main.c
-+++ b/init/main.c
+Index: linux-2.6.31.5/init/main.c
+===================================================================
+--- linux-2.6.31.5.orig/init/main.c	2009-11-07 13:52:16.000000000 +0100
++++ linux-2.6.31.5/init/main.c	2009-11-07 14:00:29.000000000 +0100
 @@ -79,6 +79,7 @@
  #ifdef CONFIG_X86_LOCAL_APIC
  #include <asm/smp.h>
@@ -136,7 +144,7 @@
  
  static int kernel_init(void *);
  
-@@ -784,12 +785,13 @@ int do_one_initcall(initcall_t fn)
+@@ -784,12 +785,13 @@
  
  
  extern initcall_t __initcall_start[], __initcall_end[], __early_initcall_end[];
@@ -152,7 +160,16 @@
  		do_one_initcall(*call);
  
  	/* Make sure there is no pending stuff from the initcall sequence */
-@@ -873,6 +875,13 @@ static noinline int init_post(void)
+@@ -812,7 +814,7 @@
+ 	driver_init();
+ 	init_irq_proc();
+ 	do_ctors();
+-	do_initcalls();
++	do_initcalls(__early_initcall_end, __initcall_end);
+ }
+ 
+ static void __init do_pre_smp_initcalls(void)
+@@ -873,6 +875,13 @@
  	panic("No init found.  Try passing init= option to kernel.");
  }
  
@@ -166,7 +183,7 @@
  static int __init kernel_init(void * unused)
  {
  	lock_kernel();
-@@ -917,7 +926,16 @@ static int __init kernel_init(void * unu
+@@ -917,7 +926,16 @@
  
  	if (sys_access((const char __user *) ramdisk_execute_command, 0) != 0) {
  		ramdisk_execute_command = NULL;
