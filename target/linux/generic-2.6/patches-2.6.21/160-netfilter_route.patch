@@ -538,9 +538,9 @@
 +module_exit(fini);
 --- a/net/ipv4/netfilter/Kconfig
 +++ b/net/ipv4/netfilter/Kconfig
-@@ -825,5 +825,22 @@ config IP_NF_TARGET_SET
- 	  To compile it as a module, choose M here.  If unsure, say N.
- 
+@@ -684,5 +684,22 @@ config IP_NF_ARP_MANGLE
+ 	  Allows altering the ARP packet payload: source and destination
+ 	  hardware and network addresses.
  
 +config IP_NF_TARGET_ROUTE
 +	tristate  'ROUTE target support'
@@ -563,7 +563,7 @@
  
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -101,6 +101,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
+@@ -100,6 +100,7 @@ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_EC
  obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
