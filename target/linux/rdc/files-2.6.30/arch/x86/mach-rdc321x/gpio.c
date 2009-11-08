@@ -26,8 +26,8 @@
 #include <linux/types.h>
 #include <linux/module.h>
 
-#include <asm/mach-rdc321x/gpio.h>
-#include <asm/mach-rdc321x/rdc321x_defs.h>
+#include <asm/rdc321x_gpio.h>
+#include <asm/rdc321x_defs.h>
 
 
 /* spin lock to protect our private copy of GPIO data register plus

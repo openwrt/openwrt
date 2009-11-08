@@ -1,11 +1,12 @@
---- a/arch/x86/Makefile
-+++ b/arch/x86/Makefile
-@@ -124,6 +124,10 @@ core-y += $(fcore-y)
+Index: linux-2.6.30.9/arch/x86/Makefile
+===================================================================
+--- linux-2.6.30.9.orig/arch/x86/Makefile	2009-11-06 07:29:13.739468521 -0800
++++ linux-2.6.30.9/arch/x86/Makefile	2009-11-06 07:30:29.383510569 -0800
+@@ -124,6 +124,9 @@
  # Xen paravirtualization support
  core-$(CONFIG_XEN) += arch/x86/xen/
  
 +# RDC R-321X support
-+cflags-$(CONFIG_X86_RDC321X)  := -Iarch/x86/include/asm/mach-rdc321x
 +core-$(CONFIG_X86_RDC321X)   += arch/x86/mach-rdc321x/
 +
  # lguest paravirtualization support
