@@ -36,7 +36,7 @@
 #include <linux/mtd/physmap.h>
 #include <linux/root_dev.h>
 
-#include <asm/mach-rdc321x/gpio.h>
+#include <asm/rdc321x_gpio.h>
 
 /* Flash */
 #ifdef CONFIG_MTD_R8610
