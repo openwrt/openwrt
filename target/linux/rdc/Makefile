@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=i386
 BOARD:=rdc
 BOARDNAME:=RDC 321x
-FEATURES:=squashfs jffs2 pci usb
+FEATURES:=squashfs jffs2 pci usb pcmcia
 CFLAGS:=-Os -pipe -march=i486 -funit-at-a-time
 
 LINUX_VERSION:=2.6.30.9
