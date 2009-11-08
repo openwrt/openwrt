@@ -15,8 +15,8 @@
  
  #include "boot.h"
  #include <asm/segment.h>
-+#ifdef CONFIG_X86_RDC
-+#include <asm/mach-rdc/rdc321x_defs.h>
++#ifdef CONFIG_X86_RDC321X
++#include <asm/rdc321x_defs.h>
 +#endif
  
  /*
@@ -25,7 +25,7 @@
  		die();
  	}
  
-+#ifdef CONFIG_X86_RDC
++#ifdef CONFIG_X86_RDC321X
 +	{
 +		u32 bootctl;
 +
