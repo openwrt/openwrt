@@ -293,9 +293,12 @@ detect_mac80211() {
 		done
 		mode_11n=""
 		mode_band="g"
-		ht_cap="$(iw phy "$dev" info | grep 'HT capabilities' | cut -d: -f2)"
+		ht_cap=0
+		for cap in $(iw phy "$dev" info | grep 'HT capabilities' | cut -d: -f2); do
+			ht_cap="$(($ht_cap | $cap))"
+		done
 		ht_capab="";
-		[ -n "$ht_cap" ] && {
+		[ "$ht_cap" -gt 0 ] && {
 			mode_11n="n"
 			list="	list ht_capab"
 			[ "$(($ht_cap & 2))" -eq 1 ] && append ht_capab "$list	LDPC" "$N"
