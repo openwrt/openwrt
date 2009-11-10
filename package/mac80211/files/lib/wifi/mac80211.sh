@@ -248,7 +248,8 @@ enable_mac80211() {
 							fi
 						fi
 					;;
-					wpa)
+					wpa*|psk*)
+						config_get key "$vif" key
 						if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
 							wpa_supplicant_setup_vif "$vif" wext || {
 								echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
