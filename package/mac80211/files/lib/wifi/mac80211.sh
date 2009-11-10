@@ -104,6 +104,7 @@ enable_mac80211() {
 		config_get enc "$vif" encryption
 		config_get mode "$vif" mode
 		config_get ssid "$vif" ssid
+		config_get_bool wds "$vif" wds 0
 
 		# It is far easier to delete and create the desired interface
 		case "$mode" in
@@ -123,7 +124,9 @@ enable_mac80211() {
 				iw phy "$phy" interface add "$ifname" type monitor
 			;;
 			sta)
-				iw phy "$phy" interface add "$ifname" type managed
+				local wdsflag
+				[ "$wds" -gt 0 ] && wdsflag="wds on"
+				iw phy "$phy" interface add "$ifname" type managed $wdsflag
 			;;
 		esac
 
