@@ -1,0 +1,69 @@
+--- a/station.c
++++ b/station.c
+@@ -196,7 +196,7 @@ COMMAND(station, del, "<MAC address>",
+ 	NL80211_CMD_DEL_STATION, 0, CIB_NETDEV, handle_station_get,
+ 	"Remove the given station entry (use with caution!)");
+ 
+-static int handle_station_set(struct nl80211_state *state,
++static int handle_station_set_plink(struct nl80211_state *state,
+ 			      struct nl_cb *cb,
+ 			      struct nl_msg *msg,
+ 			      int argc, char **argv)
+@@ -241,9 +241,56 @@ static int handle_station_set(struct nl8
+ 	return -ENOBUFS;
+ }
+ COMMAND(station, set, "<MAC address> plink_action <open|block>",
+-	NL80211_CMD_SET_STATION, 0, CIB_NETDEV, handle_station_set,
++	NL80211_CMD_SET_STATION, 0, CIB_NETDEV, handle_station_set_plink,
+ 	"Set mesh peer link action for this station (peer).");
+ 
++static int handle_station_set_vlan(struct nl80211_state *state,
++			      struct nl_cb *cb,
++			      struct nl_msg *msg,
++			      int argc, char **argv)
++{
++	unsigned char mac_addr[ETH_ALEN];
++	unsigned long sta_vlan = 0;
++	char *err = NULL;
++
++	if (argc < 3)
++		return 1;
++
++	if (mac_addr_a2n(mac_addr, argv[0])) {
++		fprintf(stderr, "invalid mac address\n");
++		return 2;
++	}
++	argc--;
++	argv++;
++
++	if (strcmp("vlan", argv[0]) != 0)
++		return 1;
++	argc--;
++	argv++;
++
++	sta_vlan = strtoul(argv[0], &err, 0);
++	if (err && *err) {
++		fprintf(stderr, "invalid vlan id\n");
++		return 2;
++	}
++	argc--;
++	argv++;
++
++	if (argc)
++		return 1;
++
++	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, mac_addr);
++	NLA_PUT_U32(msg, NL80211_ATTR_STA_VLAN, sta_vlan);
++
++	return 0;
++ nla_put_failure:
++	return -ENOBUFS;
++}
++COMMAND(station, set, "<MAC address> vlan <ifindex>",
++	NL80211_CMD_SET_STATION, 0, CIB_NETDEV, handle_station_set_vlan,
++	"Set an AP VLAN for this station.");
++
++
+ static int handle_station_dump(struct nl80211_state *state,
+ 			       struct nl_cb *cb,
+ 			       struct nl_msg *msg,
