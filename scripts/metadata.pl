@@ -620,6 +620,9 @@ sub gen_package_mk() {
 		if ($config) {
 			$pkg->{buildonly} and $config = "";
 			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
+			if ($pkg->{variant}) {
+				print "\$(curdir)/$pkg->{subdir}$pkg->{src}/variants += \$(if $config,$pkg->{variant})\n"
+			}
 			$pkg->{prereq} and print "prereq-$config += $pkg->{subdir}$pkg->{src}\n";
 		}
 

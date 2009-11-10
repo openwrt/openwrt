@@ -35,7 +35,9 @@ define subdir
       )
       $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
 	  	$(if $(BUILD_LOG),@mkdir -p $(BUILD_LOG_DIR)/$(1)/$(bd))
-		+$(if $(BUILD_LOG),set -o pipefail;) $$(SUBMAKE) -C $(1)/$(bd) $(target) $(if $(BUILD_LOG),SILENT= 2>&1 | tee $(BUILD_LOG_DIR)/$(1)/$(bd)/$(target).txt) $(if $(findstring $(bd),$($(1)/builddirs-ignore-$(target))), || $(call MESSAGE,   ERROR: $(1)/$(bd) failed to build.))
+        $(foreach variant,$(if $(BUILD_VARIANT),$(BUILD_VARIANT),$(if $($(1)/$(bd)/variants),$($(1)/$(bd)/variants),__default)),
+			+$(if $(BUILD_LOG),set -o pipefail;) $$(SUBMAKE) -C $(1)/$(bd) $(target) BUILD_VARIANT="$(filter-out __default,$(variant))" $(if $(BUILD_LOG),SILENT= 2>&1 | tee $(BUILD_LOG_DIR)/$(1)/$(bd)/$(target).txt) $(if $(findstring $(bd),$($(1)/builddirs-ignore-$(target))), || $(call MESSAGE,   ERROR: $(1)/$(bd) failed to build$(if $(filter-out __default,$(variant)), (build variant: $(variant))).))
+        )
         $$(if $(call debug,$(1)/$(bd),v),,.SILENT: $(1)/$(bd)/$(target))
 
       # legacy targets
