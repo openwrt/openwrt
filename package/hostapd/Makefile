@@ -29,6 +29,8 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_hostapd-mini \
 	CONFIG_PACKAGE_kmod-hostap
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
 
 DRIVER_MAKEOPTS= \
@@ -49,11 +51,8 @@ define Package/hostapd
 $(call Package/hostapd/Default)
   TITLE+= (full)
   DEPENDS+= +PACKAGE_hostapd:libopenssl
+  VARIANT:=full
 endef
-
-#define Package/hostapd/conffiles
-#/etc/hostapd.conf
-#endef
 
 define Package/hostapd/description
  This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS
@@ -63,15 +62,11 @@ endef
 define Package/hostapd-mini
 $(call Package/hostapd/Default)
   TITLE+= (WPA-PSK only)
+  VARIANT:=mini
 endef
 
-#define Package/hostapd-mini/conffiles
-#/etc/hostapd.conf
-#endef
-
 define Package/hostapd-mini/description
- This package contains a minimal IEEE 802.1x/WPA/EAP/RADIUS Authenticator
- (WPA-PSK only).
+ This package contains a minimal IEEE 802.1x/WPA Authenticator (WPA-PSK only).
 endef
 
 define Package/hostapd-utils
@@ -85,14 +80,8 @@ define Package/hostapd-utils/description
  IEEE 802.1x/WPA/EAP/RADIUS Authenticator.
 endef
 
-define Build/ConfigureTarget
-	rm -rf $(PKG_BUILD_DIR)/hostapd.$(1)
-	mkdir -p $(PKG_BUILD_DIR)/hostapd.$(1)
-	$(CP) \
-		$(PKG_BUILD_DIR)/hostapd \
-		$(PKG_BUILD_DIR)/src \
-		$(PKG_BUILD_DIR)/hostapd.$(1)/
-	$(CP) ./files/$(1).config $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/.config
+define Build/Configure
+	$(CP) ./files/$(BUILD_VARIANT).config $(PKG_BUILD_DIR)/hostapd/.config
 endef
 
 TARGET_CPPFLAGS := \
@@ -104,65 +93,39 @@ TARGET_CPPFLAGS := \
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE
 
-define Build/CompileTarget
+ifdef CONFIG_PACKAGE_kmod-mac80211
+  TARGET_LDFLAGS += -lm -lnl-tiny
+endif
+ifeq ($(BUILD_VARIANT),full)
+  TARGET_LDFLAGS += -lssl -lcrypto
+endif
+
+define Build/Compile
 	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
-	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd \
+	$(MAKE) -C $(PKG_BUILD_DIR)/hostapd \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(DRIVER_MAKEOPTS) \
-		LIBS="$(TARGET_LDFLAGS) \
-			$(if $(CONFIG_PACKAGE_kmod-mac80211),-lm -lnl-tiny) \
-			$(if $(findstring default,$(1)),-lssl -lcrypto)" \
+		LIBS="$(TARGET_LDFLAGS)" \
 		hostapd hostapd_cli
-	$(CP) $(PKG_BUILD_DIR)/hostapd.$(1)/hostapd/hostapd_cli $(PKG_BUILD_DIR)/
 endef
 
 define Package/InstallTemplate
-	$(INSTALL_DIR) $$(1)/lib/wifi
-	$(INSTALL_DATA) ./files/hostapd.sh $$(1)/lib/wifi/hostapd.sh
-	$(INSTALL_DIR) $$(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd/hostapd $$(1)/usr/sbin/
-# config is managed through uci
-#	$(INSTALL_DIR) $$(1)/etc
-#	$(INSTALL_CONF) $(PKG_BUILD_DIR)/hostapd.$(2)/hostapd/hostapd.conf $$(1)/etc/hostapd.conf
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/hostapd.sh $(1)/lib/wifi/hostapd.sh
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd $(1)/usr/sbin/
 endef
 
-define Package/Template
- ifneq ($(CONFIG_PACKAGE_$(1)),)
-  define Build/Configure/$(2)
-	$(call Build/ConfigureTarget,$(2))
-  endef
-  define Build/Compile/$(2)
-	$(call Build/CompileTarget,$(2))
-  endef
-  define Package/$(1)/install
-	$(call Package/InstallTemplate,$(1),$(2))
-  endef
- endif
-endef
-
-define Build/Configure
-	rm -f $(PKG_BUILD_DIR)/.configured*
-	$(call Build/Configure/default)
-	$(call Build/Configure/mini)
-endef
-
-define Build/Compile
-	$(call Build/Compile/default)
-	$(call Build/Compile/mini)
-endef
-
-define Build/Clean
-	rm -rf $(PKG_BUILD_DIR)_default
-	rm -rf $(PKG_BUILD_DIR)_mini
-endef
+ifeq ($(BUILD_VARIANT),full)
+  Package/hostapd/install = $(Package/InstallTemplate)
+else
+  Package/hostapd-mini/install = $(Package/InstallTemplate)
+endif
 
 define Package/hostapd-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd_cli $(1)/usr/sbin/
 endef
-
-$(eval $(call Package/Template,hostapd,default))
-$(eval $(call Package/Template,hostapd-mini,mini))
 
 $(eval $(call BuildPackage,hostapd))
 $(eval $(call BuildPackage,hostapd-mini))
