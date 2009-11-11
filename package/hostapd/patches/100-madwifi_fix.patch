@@ -1,6 +1,6 @@
---- a/hostapd/driver_madwifi.c
-+++ b/hostapd/driver_madwifi.c
-@@ -312,6 +312,7 @@ madwifi_set_iface_flags(void *priv, int 
+--- a/src/drivers/driver_madwifi.c
++++ b/src/drivers/driver_madwifi.c
+@@ -318,6 +318,7 @@ madwifi_set_iface_flags(void *priv, int 
  {
  	struct madwifi_driver_data *drv = priv;
  	struct ifreq ifr;
@@ -8,7 +8,7 @@
  
  	wpa_printf(MSG_DEBUG, "%s: dev_up=%d", __func__, dev_up);
  
-@@ -326,10 +327,14 @@ madwifi_set_iface_flags(void *priv, int 
+@@ -332,10 +333,14 @@ madwifi_set_iface_flags(void *priv, int 
  		return -1;
  	}
  

@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=0.6.9
+PKG_VERSION:=20091111
 PKG_RELEASE:=1
+PKG_REV:=dc6d9ac250f793a62b21ca828445967fb484305f
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=git://w1.fi/srv/git/hostap.git
 PKG_SOURCE_SUBDIR:=hostapd-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_MD5SUM:=83630d11fa66ade9091f1b304fccd74c
+PKG_SOURCE_PROTO:=git
 
 PKG_BUILD_DEPENDS:= \
 	PACKAGE_kmod-madwifi:madwifi \
@@ -50,7 +51,6 @@ endef
 define Package/hostapd
 $(call Package/hostapd/Default)
   TITLE+= (full)
-  DEPENDS+= +PACKAGE_hostapd:libopenssl
   VARIANT:=full
 endef
 
@@ -81,6 +81,8 @@ define Package/hostapd-utils/description
 endef
 
 define Build/Configure
+	rm -f $(PKG_BUILD_DIR)/hostapd/hostapd
+	rm -f $(PKG_BUILD_DIR)/src/drivers/drivers.o
 	$(CP) ./files/$(BUILD_VARIANT).config $(PKG_BUILD_DIR)/hostapd/.config
 endef
 
@@ -95,9 +97,6 @@ TARGET_CPPFLAGS := \
 
 ifdef CONFIG_PACKAGE_kmod-mac80211
   TARGET_LDFLAGS += -lm -lnl-tiny
-endif
-ifeq ($(BUILD_VARIANT),full)
-  TARGET_LDFLAGS += -lssl -lcrypto
 endif
 
 define Build/Compile
