@@ -103,22 +103,6 @@
  
    /* Display encryption information */
    /* Note : we display only the "current" key, use iwlist to list all keys */
-@@ -995,6 +995,7 @@ set_enc_info(int		skfd,
-   return(i);
- }
- 
-+#ifndef WE_ESSENTIAL
- /*------------------------------------------------------------------*/
- /*
-  * Set Power Management
-@@ -1111,7 +1112,6 @@ set_power_info(int		skfd,
-   return(i);
- }
- 
--#ifndef WE_ESSENTIAL
- /*------------------------------------------------------------------*/
- /*
-  * Set Nickname
 @@ -1196,6 +1196,7 @@ set_nwid_info(int		skfd,
    /* 1 arg */
    return(1);
@@ -151,15 +135,7 @@
  /*------------------------------------------------------------------*/
  /*
   * Set Modulation
-@@ -1712,28 +1716,28 @@ static const struct iwconfig_entry iwcon
- 	"Set Encode",			"{NNNN-NNNN|off}" },
-   { "key",		set_enc_info,		1,	SIOCSIWENCODE,
- 	"Set Encode",			"{NNNN-NNNN|off}"  },
-+#ifndef WE_ESSENTIAL
-   { "power",		set_power_info,		1,	SIOCSIWPOWER,
- 	"Set Power Management",		"{period N|timeout N|saving N|off}" },
--#ifndef WE_ESSENTIAL
-   { "nickname",		set_nick_info,		1,	SIOCSIWNICKN,
+@@ -1719,21 +1723,21 @@ static const struct iwconfig_entry iwcon
  	"Set Nickname",			"NNN" },
    { "nwid",		set_nwid_info,		1,	SIOCSIWNWID,
  	"Set NWID",			"{NN|on|off}" },
