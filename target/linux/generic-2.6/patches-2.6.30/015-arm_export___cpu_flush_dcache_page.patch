@@ -1,0 +1,33 @@
+From ba9b42e4ff5eb68f9c946378229d7e45299d7151 Mon Sep 17 00:00:00 2001
+From: Russell King <rmk@dyn-67.arm.linux.org.uk>
+Date: Sun, 5 Jul 2009 10:50:37 +0100
+Subject: [PATCH] [ARM] export __cpu_flush_dcache_page
+
+Now required for libsas:
+
+  Kernel: arch/arm/boot/Image is ready
+  Kernel: arch/arm/boot/zImage is ready
+  Building modules, stage 2.
+  MODPOST 1096 modules
+ERROR: "xscale_flush_kern_dcache_page" [drivers/scsi/libsas/libsas.ko] undefined!
+
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/arm/mm/proc-syms.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mm/proc-syms.c b/arch/arm/mm/proc-syms.c
+index 195e48e..ac5c800 100644
+--- a/arch/arm/mm/proc-syms.c
++++ b/arch/arm/mm/proc-syms.c
+@@ -27,6 +27,7 @@ EXPORT_SYMBOL(__cpuc_flush_kern_all);
+ EXPORT_SYMBOL(__cpuc_flush_user_all);
+ EXPORT_SYMBOL(__cpuc_flush_user_range);
+ EXPORT_SYMBOL(__cpuc_coherent_kern_range);
++EXPORT_SYMBOL(__cpuc_flush_dcache_page);
+ EXPORT_SYMBOL(dmac_inv_range);  /* because of flush_ioremap_region() */
+ #else
+ EXPORT_SYMBOL(cpu_cache);
+-- 
+1.6.5.1
+
