@@ -1,6 +1,6 @@
 --- a/libopkg/args.c
 +++ b/libopkg/args.c
-@@ -263,7 +263,7 @@
+@@ -259,7 +259,7 @@
      
       printf("\nPackage Manipulation:\n");
       printf("\tupdate  		Update list of available packages\n");
@@ -11,7 +11,7 @@
       printf("\tconfigure [<pkg>]	Configure unpacked packages\n");
 --- a/libopkg/opkg_cmd.c
 +++ b/libopkg/opkg_cmd.c
-@@ -79,7 +79,7 @@
+@@ -75,7 +75,7 @@
     array for easier maintenance */
  static opkg_cmd_t cmds[] = {
       {"update", 0, (opkg_cmd_fun_t)opkg_update_cmd}, 
@@ -20,7 +20,7 @@
       {"list", 0, (opkg_cmd_fun_t)opkg_list_cmd},
       {"list_installed", 0, (opkg_cmd_fun_t)opkg_list_installed_cmd},
       {"list_upgradable", 0, (opkg_cmd_fun_t)opkg_list_upgradable_cmd},
-@@ -640,17 +640,6 @@
+@@ -607,17 +607,6 @@
  		    opkg_install_by_name(conf, arg);
                 }
  	  }
@@ -37,4 +37,4 @@
 -	  pkg_vec_free(installed);
       }
  
-      /* recheck to verify that all dependences are satisfied */
+      opkg_configure_packages(conf, NULL);
