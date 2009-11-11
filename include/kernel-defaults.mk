@@ -67,7 +67,8 @@ ifeq ($(KERNEL),2.6)
   ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     define Kernel/SetInitramfs
 		mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
-		grep -v -e INITRAMFS -e CONFIG_RD_ $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
+		grep -v -e INITRAMFS -e CONFIG_RD_ -e CONFIG_BLK_DEV_INITRD $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
+		echo 'CONFIG_BLK_DEV_INITRD=y' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(TARGET_DIR) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(LINUX_DIR)/.config
