@@ -6,7 +6,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
 
 --- a/libopkg/opkg_conf.c
 +++ b/libopkg/opkg_conf.c
-@@ -70,6 +70,7 @@ int opkg_init_options_array(const opkg_c
+@@ -72,6 +72,7 @@
  	  { "offline_root_path", OPKG_OPT_TYPE_STRING, &conf->offline_root_path },
  	  { "offline_root_post_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_post_script_cmd },
  	  { "offline_root_pre_script_cmd", OPKG_OPT_TYPE_STRING, &conf->offline_root_pre_script_cmd },
@@ -16,7 +16,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
  	  { "query-all", OPKG_OPT_TYPE_BOOL, &conf->query_all },
 --- a/libopkg/opkg_conf.h
 +++ b/libopkg/opkg_conf.h
-@@ -70,6 +70,7 @@ struct opkg_conf
+@@ -70,6 +70,7 @@
       char *offline_root_path;
       char *offline_root_pre_script_cmd;
       char *offline_root_post_script_cmd;
@@ -26,7 +26,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
       int noaction;
 --- a/libopkg/opkg_install.c
 +++ b/libopkg/opkg_install.c
-@@ -474,12 +474,15 @@ static int verify_pkg_installable(opkg_c
+@@ -470,12 +470,15 @@
       *    my diddling with the .opk file size below isn't going to cut it.
       * 3) return a proper error code instead of 1
       */
@@ -46,7 +46,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
  	  /* round up a blocks count without doing fancy-but-slow casting jazz */ 
 --- a/libopkg/opkg_utils.c
 +++ b/libopkg/opkg_utils.c
-@@ -30,10 +30,8 @@ long unsigned int get_available_blocks(c
+@@ -31,10 +31,8 @@
  {
      struct statfs sfs;
  
