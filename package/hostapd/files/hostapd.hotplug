@@ -1,0 +1,12 @@
+if [ "$ACTION" = "add" -o "$ACTION" = "register" ]; then
+	case "$INTERFACE" in
+		wlan*.sta*)
+			local BASEIF="${INTERFACE%%\.*}"
+
+			include /lib/network
+			scan_interfaces
+			local CONFIG="$(find_config "$BASEIF")" 
+			[ -n "$CONFIG" ] && setup_interface "$INTERFACE" "$CONFIG"
+		;;
+	esac
+fi

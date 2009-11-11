@@ -109,6 +109,8 @@ define Build/Compile
 endef
 
 define Package/InstallTemplate
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
+	$(INSTALL_DATA) ./files/hostapd.hotplug $(1)/etc/hotplug.d/net/
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/hostapd.sh $(1)/lib/wifi/hostapd.sh
 	$(INSTALL_DIR) $(1)/usr/sbin
