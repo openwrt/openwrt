@@ -213,6 +213,15 @@
  
  	return ieee80211_data_to_8023(rx->skb, dev->dev_addr, sdata->vif.type);
  }
+@@ -1285,7 +1292,7 @@ ieee80211_deliver_skb(struct ieee80211_r
+ 	if ((sdata->vif.type == NL80211_IFTYPE_AP ||
+ 	     sdata->vif.type == NL80211_IFTYPE_AP_VLAN) &&
+ 	    !(sdata->flags & IEEE80211_SDATA_DONT_BRIDGE_PACKETS) &&
+-	    (rx->flags & IEEE80211_RX_RA_MATCH)) {
++	    (rx->flags & IEEE80211_RX_RA_MATCH) && !rx->sdata->use_4addr) {
+ 		if (is_multicast_ether_addr(ehdr->h_dest)) {
+ 			/*
+ 			 * send multicast frames both to higher layers in
 @@ -1590,6 +1597,7 @@ ieee80211_rx_h_data(struct ieee80211_rx_
  {
  	struct net_device *dev = rx->dev;
