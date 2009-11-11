@@ -1,0 +1,247 @@
+--- a/hostapd/config.c
++++ b/hostapd/config.c
+@@ -1526,6 +1526,8 @@ struct hostapd_config * hostapd_config_r
+ 					   line, pos);
+ 				errors++;
+ 			}
++		} else if (os_strcmp(buf, "wds_sta") == 0) {
++			bss->wds_sta = atoi(pos);
+ 		} else if (os_strcmp(buf, "ap_max_inactivity") == 0) {
+ 			bss->ap_max_inactivity = atoi(pos);
+ 		} else if (os_strcmp(buf, "country_code") == 0) {
+--- a/hostapd/config.h
++++ b/hostapd/config.h
+@@ -198,6 +198,7 @@ struct hostapd_bss_config {
+ 	int num_accept_mac;
+ 	struct mac_acl_entry *deny_mac;
+ 	int num_deny_mac;
++	int wds_sta;
+ 
+ 	int auth_algs; /* bitfield of allowed IEEE 802.11 authentication
+ 			* algorithms, WPA_AUTH_ALG_{OPEN,SHARED,LEAP} */
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -1305,6 +1305,7 @@ struct wpa_driver_ops {
+ 			 const char *ifname, const u8 *addr);
+ 	int (*set_sta_vlan)(void *priv, const u8 *addr, const char *ifname,
+ 			    int vlan_id);
++	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val);
+ 	/**
+ 	 * commit - Optional commit changes handler
+ 	 * @priv: driver private data
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -2755,7 +2755,7 @@ static void nl80211_remove_iface(struct 
+ static int nl80211_create_iface_once(struct wpa_driver_nl80211_data *drv,
+ 				     const char *ifname,
+ 				     enum nl80211_iftype iftype,
+-				     const u8 *addr)
++				     const u8 *addr, int wds)
+ {
+ 	struct nl_msg *msg, *flags = NULL;
+ 	int ifidx;
+@@ -2786,6 +2786,8 @@ static int nl80211_create_iface_once(str
+ 
+ 		if (err)
+ 			goto nla_put_failure;
++	} else if (wds) {
++		NLA_PUT_U8(msg, NL80211_ATTR_4ADDR, wds);
+ 	}
+ 
+ 	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
+@@ -2816,11 +2818,11 @@ static int nl80211_create_iface_once(str
+ }
+ static int nl80211_create_iface(struct wpa_driver_nl80211_data *drv,
+ 				const char *ifname, enum nl80211_iftype iftype,
+-				const u8 *addr)
++				const u8 *addr, int wds)
+ {
+ 	int ret;
+ 
+-	ret = nl80211_create_iface_once(drv, ifname, iftype, addr);
++	ret = nl80211_create_iface_once(drv, ifname, iftype, addr, wds);
+ 
+ 	/* if error occured and interface exists already */
+ 	if (ret == -ENFILE && if_nametoindex(ifname)) {
+@@ -2830,7 +2832,7 @@ static int nl80211_create_iface(struct w
+ 		nl80211_remove_iface(drv, if_nametoindex(ifname));
+ 
+ 		/* Try to create the interface again */
+-		ret = nl80211_create_iface_once(drv, ifname, iftype, addr);
++		ret = nl80211_create_iface_once(drv, ifname, iftype, addr, wds);
+ 	}
+ 
+ 	return ret;
+@@ -3055,7 +3057,7 @@ static struct sock_filter msock_filter_i
+ 
+ #if 0
+ 	/*
+-	 * drop non-data frames, WDS frames
++	 * drop non-data frames
+ 	 */
+ 	/* load the lower byte of the frame control field */
+ 	BPF_STMT(BPF_LD   | BPF_B | BPF_IND, 0),
+@@ -3063,13 +3065,13 @@ static struct sock_filter msock_filter_i
+ 	BPF_STMT(BPF_ALU  | BPF_AND | BPF_K, 0x0c),
+ 	/* drop non-data frames */
+ 	BPF_JUMP(BPF_JMP  | BPF_JEQ | BPF_K, 8, 0, FAIL),
++#endif
+ 	/* load the upper byte of the frame control field */
+-	BPF_STMT(BPF_LD   | BPF_B | BPF_IND, 0),
++	BPF_STMT(BPF_LD   | BPF_B | BPF_IND, 1),
+ 	/* mask off toDS/fromDS */
+ 	BPF_STMT(BPF_ALU  | BPF_AND | BPF_K, 0x03),
+-	/* drop WDS frames */
+-	BPF_JUMP(BPF_JMP  | BPF_JEQ | BPF_K, 3, FAIL, 0),
+-#endif
++	/* accept WDS frames */
++	BPF_JUMP(BPF_JMP  | BPF_JEQ | BPF_K, 3, PASS, 0),
+ 
+ 	/*
+ 	 * add header length to index
+@@ -3175,7 +3177,7 @@ nl80211_create_monitor_interface(struct 
+ 	buf[IFNAMSIZ - 1] = '\0';
+ 
+ 	drv->monitor_ifidx =
+-		nl80211_create_iface(drv, buf, NL80211_IFTYPE_MONITOR, NULL);
++		nl80211_create_iface(drv, buf, NL80211_IFTYPE_MONITOR, NULL, 0);
+ 
+ 	if (drv->monitor_ifidx < 0)
+ 		return -1;
+@@ -4155,7 +4157,7 @@ static int i802_bss_add(void *priv, cons
+ 	if (bss == NULL)
+ 		return -1;
+ 
+-	ifidx = nl80211_create_iface(priv, ifname, NL80211_IFTYPE_AP, bssid);
++	ifidx = nl80211_create_iface(priv, ifname, NL80211_IFTYPE_AP, bssid, 0);
+ 	if (ifidx < 0) {
+ 		os_free(bss);
+ 		return -1;
+@@ -4264,7 +4266,7 @@ static int i802_if_add(const char *iface
+ 		       enum hostapd_driver_if_type type, char *ifname,
+ 		       const u8 *addr)
+ {
+-	if (nl80211_create_iface(priv, ifname, i802_if_type(type), addr) < 0)
++	if (nl80211_create_iface(priv, ifname, i802_if_type(type), addr, 0) < 0)
+ 		return -1;
+ 	return 0;
+ }
+@@ -4310,6 +4312,21 @@ static int i802_set_sta_vlan(void *priv,
+ 	return -ENOBUFS;
+ }
+ 
++static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val)
++{
++	struct wpa_driver_nl80211_data *drv = priv;
++	char name[16];
++
++	sprintf(name, "%s.sta%d", drv->ifname, aid);
++	if (val) {
++		if (nl80211_create_iface(priv, name, NL80211_IFTYPE_AP_VLAN, NULL, 1) < 0)
++			return -1;
++		return i802_set_sta_vlan(priv, addr, name, 0);
++	} else {
++		i802_set_sta_vlan(priv, addr, drv->ifname, 0);
++		return i802_if_remove(priv, HOSTAPD_IF_VLAN, name, NULL);
++	}
++}
+ 
+ static void handle_eapol(int sock, void *eloop_ctx, void *sock_ctx)
+ {
+@@ -4536,5 +4553,6 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.if_update = i802_if_update,
+ 	.if_remove = i802_if_remove,
+ 	.set_sta_vlan = i802_set_sta_vlan,
++	.set_wds_sta = i802_set_wds_sta,
+ #endif /* HOSTAPD */
+ };
+--- a/hostapd/driver_i.h
++++ b/hostapd/driver_i.h
+@@ -453,6 +453,14 @@ hostapd_set_sta_vlan(const char *ifname,
+ }
+ 
+ static inline int
++hostapd_set_wds_sta(struct hostapd_data *hapd, const u8 *addr, int aid, int val)
++{
++	if (hapd->driver == NULL || hapd->driver->set_wds_sta == NULL)
++		return 0;
++	return hapd->driver->set_wds_sta(hapd->drv_priv, addr, aid, val);
++}
++
++static inline int
+ hostapd_driver_commit(struct hostapd_data *hapd)
+ {
+ 	if (hapd->driver == NULL || hapd->driver->commit == NULL)
+--- a/hostapd/drv_callbacks.c
++++ b/hostapd/drv_callbacks.c
+@@ -167,6 +167,7 @@ static const u8 * get_hdr_bssid(const st
+ 		if (len < 24)
+ 			return NULL;
+ 		switch (fc & (WLAN_FC_FROMDS | WLAN_FC_TODS)) {
++		case WLAN_FC_FROMDS|WLAN_FC_TODS:
+ 		case WLAN_FC_TODS:
+ 			return hdr->addr1;
+ 		case WLAN_FC_FROMDS:
+@@ -213,6 +214,7 @@ void hostapd_rx_from_unknown_sta(struct 
+ {
+ 	struct sta_info *sta;
+ 	const u8 *addr;
++	u16 fc = le_to_host16(hdr->frame_control);
+ 
+ 	hapd = get_hapd_bssid(hapd->iface, get_hdr_bssid(hdr, len));
+ 	if (hapd == NULL || hapd == HAPD_BROADCAST)
+@@ -231,6 +233,14 @@ void hostapd_rx_from_unknown_sta(struct 
+ 			hostapd_sta_deauth(
+ 				hapd, addr,
+ 				WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
++	} else {
++		if (!sta->wds_sta) {
++			if ((fc & (WLAN_FC_TODS | WLAN_FC_FROMDS)) ==
++			    (WLAN_FC_TODS | WLAN_FC_FROMDS)) {
++				sta->wds_sta = 1;
++				hostapd_set_wds_sta(hapd, addr, sta->aid, 1);
++			}
++		}
+ 	}
+ }
+ 
+--- a/hostapd/sta_info.c
++++ b/hostapd/sta_info.c
+@@ -120,6 +120,7 @@ void ap_free_sta(struct hostapd_data *ha
+ 
+ 	accounting_sta_stop(hapd, sta);
+ 
++	hostapd_set_wds_sta(hapd, sta->addr, sta->aid, 0);
+ 	if (!ap_sta_in_other_bss(hapd, sta, WLAN_STA_ASSOC) &&
+ 	    !(sta->flags & WLAN_STA_PREAUTH))
+ 		hostapd_sta_remove(hapd, sta->addr);
+--- a/hostapd/sta_info.h
++++ b/hostapd/sta_info.h
+@@ -78,6 +78,7 @@ struct sta_info {
+ 	struct hostapd_ssid *ssid_probe; /* SSID selection based on ProbeReq */
+ 
+ 	int vlan_id;
++	int wds_sta;
+ 
+ #ifdef CONFIG_IEEE80211N
+ 	struct ht_cap_ie ht_capabilities; /* IEEE 802.11n capabilities */
+--- a/src/common/nl80211_copy.h
++++ b/src/common/nl80211_copy.h
+@@ -584,6 +584,8 @@ enum nl80211_commands {
+  *	changed then the list changed and the dump should be repeated
+  *	completely from scratch.
+  *
++ * @NL80211_ATTR_4ADDR: Use 4-address frames on a virtual interface
++ *
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+  */
+@@ -714,6 +716,8 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_PID,
+ 
++	NL80211_ATTR_4ADDR,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,

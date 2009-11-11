@@ -77,7 +77,9 @@ hostapd_setup_vif() {
 	config_get channel "$device" channel
 	config_get hwmode "$device" hwmode
 	config_get wpa_group_rekey "$vif" wpa_group_rekey
-	config_get ieee80211d "$vif" ieee80211d 
+	config_get ieee80211d "$vif" ieee80211d
+	config_get_bool wds "$vif" wds 0
+	[ "$wds" -gt 0 -a "$driver" = "nl80211" ] && wds="wds_sta=1" || wds=""
 	case "$hwmode" in
 		bg) hwmode=g;;
 	esac
@@ -109,6 +111,7 @@ ${hwmode_11n:+ieee80211n=1}
 ${ht_capab:+ht_capab=$ht_capab}
 ${wpa_group_rekey:+wpa_group_rekey=$wpa_group_rekey}
 ${ieee80211d:+ieee80211d=$ieee80211d}
+$wds
 $hostapd_cfg
 EOF
 	case "$driver" in
