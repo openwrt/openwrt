@@ -11,7 +11,7 @@ JFFS2_BLOCKSIZE=128k 64k
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/powerpc/boot/uImage $(KDIR)/uImage
-	dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/kilauea.dts > $(KDIR)/openwrt-kilauea.dtb
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/kilauea.dts > $(KDIR)/openwrt-kilauea.dtb
 endef
 
 define Image/BuildKernel

@@ -11,7 +11,7 @@ JFFS2_BLOCKSIZE=256k
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/powerpc/boot/cuImage.taishan $(KDIR)/uImage
-		dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
 endef
 
 define Image/BuildKernel
