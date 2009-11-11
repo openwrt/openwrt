@@ -18,7 +18,6 @@ tools-y += sstrip ipkg-utils genext2fs squashfs squashfs4 mtd-utils lzma-old mki
 tools-y += firmware-utils patch-cmdline quilt yaffs2
 
 tools-$(CONFIG_CCACHE) += ccache
-tools-$(CONFIG_powerpc) += dtc
 tools-dep += lzma
 
 ifdef CONFIG_GCC_VERSION_4_4
