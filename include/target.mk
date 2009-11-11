@@ -115,7 +115,7 @@ GENERIC_FILES_DIR := $(foreach dir,$(wildcard $(GENERIC_PLATFORM_DIR)/files $(GE
 
 GENERIC_LINUX_CONFIG?=$(firstword $(wildcard $(GENERIC_PLATFORM_DIR)/config-$(KERNEL_PATCHVER) $(GENERIC_PLATFORM_DIR)/config-default))
 LINUX_CONFIG?=$(firstword $(wildcard $(foreach subdir,$(PLATFORM_DIR) $(PLATFORM_SUBDIR),$(subdir)/config-$(KERNEL_PATCHVER) $(subdir)/config-default)) $(PLATFORM_DIR)/config-$(KERNEL_PATCHVER))
-LINUX_SUBCONFIG?=$(firstword $(wildcard $(PLATFORM_SUBDIR)/config-$(KERNEL_PATCHVER) $(PLATFORM_SUBDIR)/config-default))
+LINUX_SUBCONFIG?=$(if $(SHARED_LINUX_CONFIG),,$(firstword $(wildcard $(PLATFORM_SUBDIR)/config-$(KERNEL_PATCHVER) $(PLATFORM_SUBDIR)/config-default)))
 ifeq ($(LINUX_CONFIG),$(LINUX_SUBCONFIG))
   LINUX_SUBCONFIG:=
 endif
