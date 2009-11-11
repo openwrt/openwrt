@@ -126,7 +126,7 @@
  		return -1;
  	return 0;
  }
-@@ -4310,6 +4312,21 @@ static int i802_set_sta_vlan(void *priv,
+@@ -4310,6 +4312,22 @@ static int i802_set_sta_vlan(void *priv,
  	return -ENOBUFS;
  }
  
@@ -139,6 +139,7 @@
 +	if (val) {
 +		if (nl80211_create_iface(priv, name, NL80211_IFTYPE_AP_VLAN, NULL, 1) < 0)
 +			return -1;
++		hostapd_set_iface_flags(drv, name, 1);
 +		return i802_set_sta_vlan(priv, addr, name, 0);
 +	} else {
 +		i802_set_sta_vlan(priv, addr, drv->ifname, 0);
@@ -148,7 +149,7 @@
  
  static void handle_eapol(int sock, void *eloop_ctx, void *sock_ctx)
  {
-@@ -4536,5 +4553,6 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -4536,5 +4554,6 @@ const struct wpa_driver_ops wpa_driver_n
  	.if_update = i802_if_update,
  	.if_remove = i802_if_remove,
  	.set_sta_vlan = i802_set_sta_vlan,
