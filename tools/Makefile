@@ -20,7 +20,7 @@ tools-y += firmware-utils patch-cmdline quilt yaffs2
 tools-$(CONFIG_CCACHE) += ccache
 tools-dep += lzma
 
-ifdef CONFIG_GCC_VERSION_4_4
+ifdef CONFIG_GCC_USE_GRAPHITE
   tools-y += ppl cloog
   $(curdir)/cloog/compile := $(curdir)/ppl/install
 endif
@@ -82,5 +82,5 @@ $(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(
 $(curdir)/ := .config prereq
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3))
+$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3 CONFIG_GCC_USE_GRAPHITE))
 $(eval $(call subdir,$(curdir)))
