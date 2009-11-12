@@ -549,9 +549,10 @@ EOF
 			print <<EOF;
 	config FEATURE_$feature->{name}
 		bool "$feature->{title}"
-		help
-$feature->{description}
 EOF
+			$feature->{description} =~ /\w/ and do {
+				print "\t\thelp\n".$feature->{description}."\n";
+			};
 		}
 		print "endchoice\n"
 	}
