@@ -50,6 +50,11 @@ endif
 
 endchoice
 
+config GCC_USE_GRAPHITE
+	bool
+	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS
+	depends GCC_VERSION_4_4_1 || GCC_VERSION_4_4_2
+
 config EXTRA_GCC_CONFIG_OPTIONS
 	string
 	prompt "Additional gcc configure options" if TOOLCHAINOPTS
