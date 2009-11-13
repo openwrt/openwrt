@@ -13,8 +13,8 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  	bool
  
 +config MIPS_FPU_EMU
-+	bool
-+	default n
++	bool "Enable FPU emulation"
++	default y
 +	help
 +	   This option allows building a kernel with or without the Algorithmics
 +	   FPU emulator enabled. Turning off this option results in a kernel which
