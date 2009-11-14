@@ -125,7 +125,7 @@ endif
 
 define Package/hostapd-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd_cli $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd_cli $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,hostapd))
