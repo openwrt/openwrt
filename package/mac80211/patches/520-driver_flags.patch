@@ -1,0 +1,27 @@
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -386,11 +386,12 @@ struct ieee80211_tx_rate {
+  * @flags: transmit info flags, defined above
+  * @band: the band to transmit on (use for checking for races)
+  * @antenna_sel_tx: antenna to use, 0 for automatic diversity
++ * @driver_flags: flags for internal driver use
+  * @pad: padding, ignore
+  * @control: union for control data
+  * @status: union for status data
+  * @driver_data: array of driver_data pointers
+- * @ampdu_ack_len: number of aggregated frames.
++ * @ampdu_ack_len: number of acked aggregated frames.
+  * 	relevant only if IEEE80211_TX_STATUS_AMPDU was set.
+  * @ampdu_ack_map: block ack bit map for the aggregation.
+  * 	relevant only if IEEE80211_TX_STATUS_AMPDU was set.
+@@ -403,8 +404,8 @@ struct ieee80211_tx_info {
+ 
+ 	u8 antenna_sel_tx;
+ 
+-	/* 2 byte hole */
+-	u8 pad[2];
++	u8 driver_flags;
++	u8 ampdu_len;
+ 
+ 	union {
+ 		struct {

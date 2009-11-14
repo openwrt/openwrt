@@ -10,12 +10,12 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2009-11-03
-PKG_RELEASE:=2
+PKG_VERSION:=2009-11-13
+PKG_RELEASE:=1
 PKG_SOURCE_URL:= \
 	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2009/11 \
 	http://wireless.kernel.org/download/compat-wireless-2.6
-PKG_MD5SUM:=f8434790c9552abb9c98926d7ae616fe
+PKG_MD5SUM:=920c3bcfd1b4cd6079a8f9db4afe4e4f
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -323,9 +323,10 @@ define KernelPackage/ath9k
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
   DEPENDS+= +kmod-ath
   FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_common.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_hw.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,27,ath9k_hw ath9k)
+  AUTOLOAD:=$(call AutoLoad,27,ath9k_hw ath9k_common ath9k)
 endef
 
 define KernelPackage/ath9k/description
