@@ -20,6 +20,16 @@ start() {
 		if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
 	}
 
+	function vlan(id, name) {
+		if (c[name] != "") {
+			print "config switch_vlan eth0_" id
+			print "	option device   \"eth0\""
+			print "	option vlan     " id
+			print "	option ports    \"" c[name] "\""
+			print ""
+		}
+	}
+
 	function macinc(mac, maca, i, result) {
 		split(mac, maca, ":")
 		for (i = 1; i <= 6; i++) maca[i] = "0x" maca[i]
@@ -165,10 +175,10 @@ start() {
 		if (c["vlan0ports"] || c["vlan1ports"]) {
 			print "#### VLAN configuration "
 			print "config switch eth0"
-			p("vlan0", "vlan0ports")
-			p("vlan1", "vlan1ports")
-			print ""
-			print ""
+			print "	option enable   1"
+			print ""		
+			vlan(0, "vlan0ports")
+			vlan(1, "vlan1ports")
 		}
 		print "#### Loopback configuration"
 		print "config interface loopback"
