@@ -98,7 +98,7 @@ endef
 
 define Image/Build
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD).bzImage
-	$(call Image/Build/$(PROFILE),$(1),$(PROFILE),$(patsubst jffs2-%k,%,$(1)))
+	$(call Image/Build/$(SUBTARGET),$(1),$(SUBTARGET),$(patsubst jffs2-%k,%,$(1)))
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
