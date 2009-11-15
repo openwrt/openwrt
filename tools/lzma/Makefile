@@ -27,6 +27,7 @@ endef
 
 define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib $(STAGING_DIR_HOST)/include $(STAGING_DIR_HOST)/bin
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/CPP/7zip/Compress/LZMA_Alone/lzma_alone $(STAGING_DIR_HOST)/bin/lzma
 	$(CP) $(HOST_BUILD_DIR)/C/*.h $(STAGING_DIR_HOST)/include/
 	$(CP) $(UTIL_DIR)/liblzma.a $(STAGING_DIR_HOST)/lib/
 endef
