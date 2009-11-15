@@ -4,7 +4,41 @@
 START=05
 
 start() {
-	[ -e /etc/config/network ] && exit 0
+	[ -e /etc/config/network ] && {
+		local batch
+
+		config_cb() {
+			case "$1" in
+			switch)
+				option_cb() {
+					case "$1" in
+					vlan[0-9]|vlan1[0-5])
+						local id="${1#vlan}"
+						append batch "delete network.eth0.${1}${N}"
+						append batch "set network.eth0_${n}=switch_vlan${N}"
+						append batch "set network.eth0_${n}.device=eth0${N}"
+						append batch "set network.eth0_${n}.vlan=${id}${N}"
+						append batch "set network.eth0_${n}.ports='${2}'${N}"
+					;;
+					esac
+				}
+			;;
+			switch_vlan)
+				option_cb() { :; }
+				batch=""
+			;;
+			esac
+		}
+
+		config_load network
+
+		[ -n "$batch" ] && {
+			logger -t netconfig "migrating switch config to new format ..."
+			echo "$batch${N}commit network" | uci batch
+		}
+
+		exit 0
+	}
 
 	mkdir -p /etc/config
 
