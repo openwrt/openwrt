@@ -52,7 +52,7 @@
 -	struct ath_tx_info_priv *tx_info_priv = ATH_TX_INFO_PRIV(tx_info);
  
 -	if (tx_info_priv && tx_info_priv->frame_type == ATH9K_INT_PAUSE &&
-+	if ((tx_info->driver_flags & ATH_TX_INFO_FRAME_TYPE_PAUSE) &&
++	if ((tx_info->pad[0] & ATH_TX_INFO_FRAME_TYPE_PAUSE) &&
  	    aphy->state == ATH_WIPHY_PAUSING) {
 -		if (!(info->flags & IEEE80211_TX_STAT_ACK)) {
 +		if (!(tx_info->flags & IEEE80211_TX_STAT_ACK)) {
@@ -127,15 +127,15 @@
 -	tx_info->rate_driver_data[0] = tx_info_priv;
 -	tx_info_priv->aphy = aphy;
 -	tx_info_priv->frame_type = txctl->frame_type;
-+	tx_info->driver_flags = 0;
++	tx_info->pad[0] = 0;
 +	switch (txctl->frame_type) {
 +	case ATH9K_NOT_INTERNAL:
 +		break;
 +	case ATH9K_INT_PAUSE:
-+		tx_info->driver_flags |= ATH_TX_INFO_FRAME_TYPE_PAUSE;
++		tx_info->pad[0] |= ATH_TX_INFO_FRAME_TYPE_PAUSE;
 +		/* fall through */
 +	case ATH9K_INT_UNPAUSE:
-+		tx_info->driver_flags |= ATH_TX_INFO_FRAME_TYPE_INTERNAL;
++		tx_info->pad[0] |= ATH_TX_INFO_FRAME_TYPE_INTERNAL;
 +		break;
 +	}
  	hdrlen = ieee80211_get_hdrlen_from_skb(skb);
@@ -194,7 +194,7 @@
 -	if (frame_type == ATH9K_NOT_INTERNAL)
 -		ieee80211_tx_status(hw, skb);
 -	else
-+	if (unlikely(tx_info->driver_flags & ATH_TX_INFO_FRAME_TYPE_INTERNAL))
++	if (unlikely(tx_info->pad[0] & ATH_TX_INFO_FRAME_TYPE_INTERNAL))
  		ath9k_tx_status(hw, skb);
 +	else
 +		ieee80211_tx_status(hw, skb);
@@ -226,7 +226,7 @@
  
 -	tx_info_priv->update_rc = update_rc;
 +	if (update_rc)
-+		tx_info->driver_flags |= ATH_TX_INFO_UPDATE_RC;
++		tx_info->pad[0] |= ATH_TX_INFO_UPDATE_RC;
  	if (ds->ds_txstat.ts_status & ATH9K_TXERR_FILT)
  		tx_info->flags |= IEEE80211_TX_STAT_TX_FILTERED;
  
@@ -239,10 +239,10 @@
 -			tx_info_priv->n_bad_frames = nbad;
 +			if (ds->ds_txstat.ts_flags &
 +			    (ATH9K_TX_DATA_UNDERRUN | ATH9K_TX_DELIM_UNDERRUN))
-+				tx_info->driver_flags |= ATH_TX_INFO_UNDERRUN;
++				tx_info->pad[0] |= ATH_TX_INFO_UNDERRUN;
 +			if ((ds->ds_txstat.ts_status & ATH9K_TXERR_XRETRY) ||
 +			    (ds->ds_txstat.ts_status & ATH9K_TXERR_FIFO))
-+				tx_info->driver_flags |= ATH_TX_INFO_XRETRY;
++				tx_info->pad[0] |= ATH_TX_INFO_XRETRY;
 +			tx_info->status.ampdu_len = bf->bf_nframes;
 +			tx_info->status.ampdu_ack_len = bf->bf_nframes - nbad;
  		}
@@ -414,7 +414,7 @@
  	if (!priv_sta || !ieee80211_is_data(fc) ||
 -	    !tx_info_priv->update_rc)
 -		goto exit;
-+	    !(tx_info->driver_flags & ATH_TX_INFO_UPDATE_RC))
++	    !(tx_info->pad[0] & ATH_TX_INFO_UPDATE_RC))
 +		return;
  
 -	if (tx_info_priv->tx.ts_status & ATH9K_TXERR_FILT)
@@ -431,7 +431,7 @@
 -	if (tx_info_priv->tx.ts_flags &
 -	    (ATH9K_TX_DATA_UNDERRUN | ATH9K_TX_DELIM_UNDERRUN) &&
 -	    ((sc->sc_ah->tx_trig_level) >= ath_rc_priv->tx_triglevel_max)) {
-+	if ((tx_info->driver_flags & ATH_TX_INFO_UNDERRUN) &&
++	if ((tx_info->pad[0] & ATH_TX_INFO_UNDERRUN) &&
 +	    (sc->sc_ah->tx_trig_level >= ath_rc_priv->tx_triglevel_max)) {
  		tx_status = 1;
  		is_underrun = 1;
@@ -439,7 +439,7 @@
  
 -	if ((tx_info_priv->tx.ts_status & ATH9K_TXERR_XRETRY) ||
 -	    (tx_info_priv->tx.ts_status & ATH9K_TXERR_FIFO))
-+	if (tx_info->driver_flags & ATH_TX_INFO_XRETRY)
++	if (tx_info->pad[0] & ATH_TX_INFO_XRETRY)
  		tx_status = 1;
  
  	ath_rc_tx_status(sc, ath_rc_priv, tx_info, final_ts_idx, tx_status,
