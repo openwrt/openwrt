@@ -910,7 +910,7 @@
  	struct ath_led radio_led;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -104,37 +104,71 @@ static struct ieee80211_channel ath9k_5g
+@@ -105,37 +105,71 @@ static struct ieee80211_channel ath9k_5g
  	CHAN5G(5825, 37), /* Channel 165 */
  };
  
@@ -998,7 +998,7 @@
  		break;
  	default:
  		BUG_ON(1);
-@@ -190,51 +224,6 @@ static u8 parse_mpdudensity(u8 mpdudensi
+@@ -191,51 +225,6 @@ static u8 parse_mpdudensity(u8 mpdudensi
  	}
  }
  
@@ -1050,7 +1050,7 @@
  static struct ath9k_channel *ath_get_curchannel(struct ath_softc *sc,
  						struct ieee80211_hw *hw)
  {
-@@ -1707,12 +1696,6 @@ static int ath_init_softc(u16 devid, str
+@@ -1713,12 +1702,6 @@ static int ath_init_softc(u16 devid, str
  	/* default to MONITOR mode */
  	sc->sc_ah->opmode = NL80211_IFTYPE_MONITOR;
  
@@ -1063,7 +1063,7 @@
  	/*
  	 * Allocate hardware transmit queues: one queue for
  	 * beacon frames and one data queue for each QoS
-@@ -1833,19 +1816,22 @@ static int ath_init_softc(u16 devid, str
+@@ -1839,19 +1822,22 @@ static int ath_init_softc(u16 devid, str
  	/* setup channels and rates */
  
  	sc->sbands[IEEE80211_BAND_2GHZ].channels = ath9k_2ghz_chantable;
