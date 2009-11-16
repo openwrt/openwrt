@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/main.c
++++ b/drivers/net/wireless/ath/main.c
+@@ -43,7 +43,7 @@ struct sk_buff *ath_rxbuf_alloc(struct a
+ 	 * Unfortunately this means we may get 8 KB here from the
+ 	 * kernel... and that is actually what is observed on some
+ 	 * systems :( */
+-	skb = __dev_alloc_skb(len + common->cachelsz - 1, gfp_mask);
++	skb = __dev_alloc_skb(len + common->cachelsz - 1, gfp_mask | GFP_DMA);
+ 	if (skb != NULL) {
+ 		off = ((unsigned long) skb->data) % common->cachelsz;
+ 		if (off != 0)
