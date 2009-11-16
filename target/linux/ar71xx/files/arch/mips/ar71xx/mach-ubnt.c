@@ -10,10 +10,12 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/pci.h>
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/input.h>
+#include <linux/ath9k_platform.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -244,6 +246,7 @@ static void __init ubnt_lssr71_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
 
+#ifdef CONFIG_PCI
 static struct ar71xx_pci_irq ubnt_bullet_m_pci_irqs[] __initdata = {
 	{
 		.slot	= 0,
@@ -251,6 +254,30 @@ static struct ar71xx_pci_irq ubnt_bullet_m_pci_irqs[] __initdata = {
 		.irq	= AR71XX_PCI_IRQ_DEV0,
 	}
 };
+
+static struct ath9k_platform_data ubnt_bullet_m_wmac_data;
+
+static int ubmnt_bullet_m_pci_plat_dev_init(struct pci_dev *dev)
+{
+	dev->dev.platform_data = &ubnt_bullet_m_wmac_data;
+	return 0;
+}
+
+static void __init ubnt_bullet_m_pci_init(void)
+{
+	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
+
+	memcpy(ubnt_bullet_m_wmac_data.eeprom_data, ee,
+	       sizeof(ubnt_bullet_m_wmac_data.eeprom_data));
+
+	ar71xx_pci_plat_dev_init = ubmnt_bullet_m_pci_plat_dev_init;
+
+	ar71xx_pci_init(ARRAY_SIZE(ubnt_bullet_m_pci_irqs),
+			ubnt_bullet_m_pci_irqs);
+}
+#else
+static inline void ubnt_bullet_m_pci_init(void) { };
+#endif /* CONFIG_PCI */
 
 static void __init ubnt_bullet_m_setup(void)
 {
@@ -277,8 +304,7 @@ static void __init ubnt_bullet_m_setup(void)
 					ARRAY_SIZE(ubnt_bullet_m_gpio_buttons),
 					ubnt_bullet_m_gpio_buttons);
 
-	ar71xx_pci_init(ARRAY_SIZE(ubnt_bullet_m_pci_irqs),
-			ubnt_bullet_m_pci_irqs);
+	ubnt_bullet_m_pci_init();
 }
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "Ubiquiti Bullet M", ubnt_bullet_m_setup);
