@@ -14,12 +14,24 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
+#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+
+#define WNDR3700_GPIO_LED_WPS_ORANGE	0
+#define WNDR3700_GPIO_LED_POWER_ORANGE	1
+#define WNDR3700_GPIO_LED_POWER_GREEN	2
+#define WNDR3700_GPIO_LED_WPS_GREEN	4
+
+#define WNDR3700_GPIO_BTN_WPS		3
+#define WNDR3700_GPIO_BTN_RESET		8
+#define WNDR3700_GPIO_BTN_WIFI		11
+
+#define WNDR3700_BUTTONS_POLL_INTERVAL    20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wndr3700_partitions[] = {
@@ -100,6 +112,48 @@ static struct spi_board_info wndr3700_spi_info[] = {
 	}
 };
 
+static struct gpio_led wndr3700_leds_gpio[] __initdata = {
+	{
+		.name		= "wndr3700:green:power",
+		.gpio		= WNDR3700_GPIO_LED_POWER_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "wndr3700:orange:power",
+		.gpio		= WNDR3700_GPIO_LED_POWER_ORANGE,
+		.active_low	= 1,
+	}, {
+		.name		= "wndr3700:green:wps",
+		.gpio		= WNDR3700_GPIO_LED_WPS_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "wndr3700:orange:wps",
+		.gpio		= WNDR3700_GPIO_LED_WPS_ORANGE,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_button wndr3700_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= WNDR3700_GPIO_BTN_RESET,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= WNDR3700_GPIO_BTN_WPS,
+	} , {
+		.desc		= "wifi",
+		.type		= EV_KEY,
+		.code		= BTN_2,
+		.threshold	= 5,
+		.gpio		= WNDR3700_GPIO_BTN_WIFI,
+	}
+};
+
 static void __init wndr3700_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -125,7 +179,12 @@ static void __init wndr3700_setup(void)
 	ar71xx_add_device_spi(NULL, wndr3700_spi_info,
 			      ARRAY_SIZE(wndr3700_spi_info));
 
-	/* TODO: LEDs, buttons support */
+        ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wndr3700_leds_gpio),
+				    wndr3700_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, WNDR3700_BUTTONS_POLL_INTERVAL,
+				      ARRAY_SIZE(wndr3700_gpio_buttons),
+				      wndr3700_gpio_buttons);
 }
 
 MIPS_MACHINE(AR71XX_MACH_WNDR3700, "NETGEAR WNDR3700", wndr3700_setup);

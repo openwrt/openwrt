@@ -66,6 +66,9 @@ get_status_led() {
 	tl-wr941nd)
 		status_led="tl-wr941nd:green:system"
 		;;
+	wndr3700)
+		status_led="wndr3700:green:power"
+		;;
 	wnr2000)
 		status_led="wnr2000:green:power"
 		;;
