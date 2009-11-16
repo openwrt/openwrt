@@ -90,7 +90,7 @@ static struct platform_device ar71xx_ehci_device = {
 	(RESET_MODULE_USB_HOST | RESET_MODULE_USB_PHY \
 	| RESET_MODULE_USB_OHCI_DLL)
 
-static void ar71xx_usb_setup(void)
+static void __init ar71xx_usb_setup(void)
 {
 	ar71xx_device_stop(AR71XX_USB_RESET_MASK);
 	mdelay(1000);
@@ -105,7 +105,7 @@ static void ar71xx_usb_setup(void)
 	mdelay(900);
 }
 
-static void ar91xx_usb_setup(void)
+static void __init ar91xx_usb_setup(void)
 {
 	ar71xx_device_stop(RESET_MODULE_USBSUS_OVERRIDE);
 	mdelay(10);
