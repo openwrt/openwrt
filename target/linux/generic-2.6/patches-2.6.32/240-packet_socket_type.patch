@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (dev_net(dev) != sock_net(sk))
  		goto drop;
  
-@@ -1384,6 +1387,7 @@ static int packet_create(struct net *net
+@@ -1381,6 +1384,7 @@ static int packet_create(struct net *net
  	spin_lock_init(&po->bind_lock);
  	mutex_init(&po->pg_vec_lock);
  	po->prot_hook.func = packet_rcv;
@@ -99,7 +99,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
-@@ -1731,6 +1735,16 @@ packet_setsockopt(struct socket *sock, i
+@@ -1728,6 +1732,16 @@ packet_setsockopt(struct socket *sock, i
  			ret = packet_mc_drop(sk, &mreq);
  		return ret;
  	}
@@ -116,7 +116,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  #ifdef CONFIG_PACKET_MMAP
  	case PACKET_RX_RING:
-@@ -1876,6 +1890,13 @@ static int packet_getsockopt(struct sock
+@@ -1873,6 +1887,13 @@ static int packet_getsockopt(struct sock
  
  		data = &val;
  		break;
