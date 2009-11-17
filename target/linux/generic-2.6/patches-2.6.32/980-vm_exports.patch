@@ -40,7 +40,7 @@
  {
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -510,6 +510,7 @@ struct files_struct *get_files_struct(st
+@@ -507,6 +507,7 @@ struct files_struct *get_files_struct(st
  
  	return files;
  }
@@ -48,7 +48,7 @@
  
  void put_files_struct(struct files_struct *files)
  {
-@@ -529,6 +530,7 @@ void put_files_struct(struct files_struc
+@@ -526,6 +527,7 @@ void put_files_struct(struct files_struc
  		free_fdtable(fdt);
  	}
  }
@@ -68,7 +68,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6046,6 +6046,7 @@ int can_nice(const struct task_struct *p
+@@ -6075,6 +6075,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
@@ -78,7 +78,7 @@
  
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -1097,6 +1097,7 @@ unsigned long zap_page_range(struct vm_a
+@@ -1100,6 +1100,7 @@ unsigned long zap_page_range(struct vm_a
  		tlb_finish_mmu(tlb, address, end);
  	return end;
  }
@@ -86,7 +86,7 @@
  
  /**
   * zap_vma_ptes - remove ptes mapping the vma
-@@ -2483,6 +2484,7 @@ int vmtruncate_range(struct inode *inode
+@@ -2486,6 +2487,7 @@ int vmtruncate_range(struct inode *inode
  
  	return 0;
  }
