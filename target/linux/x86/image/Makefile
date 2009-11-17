@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 
 export PATH=$(TARGET_PATH):/sbin
 
-ifeq ($(CONFIG_TARGET_x86_generic),y)
+ifneq ($(CONFIG_TARGET_x86_olpc),y)
 BOOTOPTS=$(strip $(subst ",, $(CONFIG_X86_GRUB_BOOTOPTS)))
 ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
 #"))")) # fix vim's broken syntax highlighting
@@ -120,14 +120,13 @@ endif
 
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
-ifeq ($(CONFIG_TARGET_x86_generic),y)
-	$(call Image/Prepare/grub)
-endif
 ifeq ($(CONFIG_TARGET_x86_olpc),y)
 	$(call Image/Prepare/bootscript)
+else
+	$(call Image/Prepare/grub)
 endif
 endef
-  
+
 define Image/Build/squashfs
     $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
