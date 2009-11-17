@@ -55,7 +55,7 @@ define Image/Build
 	-sh $(TOPDIR)/scripts/combined-image.sh \
 		"$(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma" \
 		"$(BIN_DIR)/openwrt-$(BOARD)-root.$(1)" \
-		"$(BIN_DIR)/openwrt-$(BOARD)-combined.img"
+		"$(BIN_DIR)/openwrt-$(BOARD)-combined.$(1).img"
   endif
 endef
 
