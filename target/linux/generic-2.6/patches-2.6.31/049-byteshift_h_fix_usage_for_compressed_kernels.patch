@@ -1,0 +1,79 @@
+From 2fa4341074cd02fb39aa23410740764948755635 Mon Sep 17 00:00:00 2001
+From: Albin Tonnerre <albin.tonnerre@free-electrons.com>
+Date: Wed, 23 Sep 2009 15:57:38 -0700
+Subject: [PATCH] include/linux/unaligned/{l,b}e_byteshift.h: fix usage for compressed kernels
+
+When unaligned accesses are required for uncompressing a kernel (such as
+for LZO decompression on ARM in a patch that follows), including
+<linux/kernel.h> causes issues as it brings in a lot of things that are
+not available in the decompression environment.
+
+linux/kernel.h brings at least:
+extern int console_printk[];
+extern const char hex_asc[];
+which causes errors at link-time as they are not available when
+compiling the pre-boot environement. There are also a few others:
+
+  arch/arm/boot/compressed/misc.o: In function `valid_user_regs':
+   arch/arm/include/asm/ptrace.h:158: undefined reference to `elf_hwcap'
+  arch/arm/boot/compressed/misc.o: In function `console_silent':
+   include/linux/kernel.h:292: undefined reference to `console_printk'
+  arch/arm/boot/compressed/misc.o: In function `console_verbose':
+   include/linux/kernel.h:297: undefined reference to `console_printk'
+  arch/arm/boot/compressed/misc.o: In function `pack_hex_byte':
+   include/linux/kernel.h:360: undefined reference to `hex_asc'
+  arch/arm/boot/compressed/misc.o: In function `hweight_long':
+   include/linux/bitops.h:45: undefined reference to `hweight32'
+  arch/arm/boot/compressed/misc.o: In function `__cmpxchg_local_generic':
+   include/asm-generic/cmpxchg-local.h:21: undefined reference to `wrong_size_cmpxchg'
+   include/asm-generic/cmpxchg-local.h:42: undefined reference to `wrong_size_cmpxchg'
+  arch/arm/boot/compressed/misc.o: In function `__xchg':
+   arch/arm/include/asm/system.h:309: undefined reference to `__bad_xchg'
+
+However, those files apparently use nothing from <linux/kernel.h>, all
+they need is the declaration of types such as u32 or u64, so
+<linux/types.h> should be enough
+
+Signed-off-by: Albin Tonnerre <albin.tonnerre@free-electrons.com>
+Cc: Sam Ravnborg <sam@ravnborg.org>
+Cc: Russell King <rmk@arm.linux.org.uk>
+Cc: Ingo Molnar <mingo@elte.hu>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Phillip Lougher <phillip@lougher.demon.co.uk>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ include/linux/unaligned/be_byteshift.h |    2 +-
+ include/linux/unaligned/le_byteshift.h |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/unaligned/be_byteshift.h b/include/linux/unaligned/be_byteshift.h
+index 46dd12c..9356b24 100644
+--- a/include/linux/unaligned/be_byteshift.h
++++ b/include/linux/unaligned/be_byteshift.h
+@@ -1,7 +1,7 @@
+ #ifndef _LINUX_UNALIGNED_BE_BYTESHIFT_H
+ #define _LINUX_UNALIGNED_BE_BYTESHIFT_H
+ 
+-#include <linux/kernel.h>
++#include <linux/types.h>
+ 
+ static inline u16 __get_unaligned_be16(const u8 *p)
+ {
+diff --git a/include/linux/unaligned/le_byteshift.h b/include/linux/unaligned/le_byteshift.h
+index 59777e9..be376fb 100644
+--- a/include/linux/unaligned/le_byteshift.h
++++ b/include/linux/unaligned/le_byteshift.h
+@@ -1,7 +1,7 @@
+ #ifndef _LINUX_UNALIGNED_LE_BYTESHIFT_H
+ #define _LINUX_UNALIGNED_LE_BYTESHIFT_H
+ 
+-#include <linux/kernel.h>
++#include <linux/types.h>
+ 
+ static inline u16 __get_unaligned_le16(const u8 *p)
+ {
+-- 
+1.6.5.1
+
