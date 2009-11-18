@@ -1,6 +1,6 @@
 config X86_GRUB_IMAGES
     bool "Build GRUB images (Linux x86 or x86_64 host only)"
-    depends !TARGET_x86_olpc
+    depends TARGET_x86 && !TARGET_x86_olpc
     depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
 	select PACKAGE_grub
     default y
