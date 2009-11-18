@@ -138,6 +138,22 @@ define Image/Build/MyLoader
 		$(call imgname,$(1),$(2))-16M.img
 endef
 
+ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),1024k(kernel),6528k(rootfs),256k(cfg),64k(EEPROM)
+define Image/Build/UBNTXM
+	$(call PatchKernelLzma,$(2),$(3) $(ubntxm_mtdlayout))
+	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
+		0x80060000 \
+		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/vmlinux-$(2).bin.lzma \
+		$(KDIR)/vmlinux-$(2).uImage.bin
+	dd if=$(KDIR)/vmlinux-$(2).uImage.bin of=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync
+	-$(STAGING_DIR_HOST)/bin/mkfwimage \
+		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
+		-k $(KDIR)/vmlinux-$(2).uImage \
+		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-o $(call imgname,$(1),$(2)).bin
+endef
+
 define Image/Build/UBNT
 	$(call PatchKernelLzma,$(2),$(3))
 	dd if=$(KDIR)/vmlinux-$(2).bin.lzma of=$(KDIR)/vmlinux-$(2).lzma bs=64k conv=sync
@@ -275,6 +291,18 @@ define Image/Build/Template/UBNT/jffs2-64k
 	$(call Image/Build/Template/UBNT,jffs2-64k,$(1),$(2),$(3),$(4),$(5))
 endef
 
+define Image/Build/Template/UBNTXM
+	$(call Image/Build/UBNTXM,$(1),$(2),$(3),$(4),$(5),$(6))
+endef
+
+define Image/Build/Template/UBNTXM/squashfs
+	$(call Image/Build/Template/UBNTXM,squashfs,$(1),$(2),$(3),$(4),$(5))
+endef
+
+define Image/Build/Template/UBNTXM/jffs2-64k
+	$(call Image/Build/Template/UBNTXM,jffs2-64k,$(1),$(2),$(3),$(4),$(5))
+endef
+
 define Image/Build/Template/Planex
 	$(call Image/Build/Planex,$(1),$(2),$(3))
 endef
@@ -323,10 +351,25 @@ define Image/Build/Profile/UBNTLSSR71
 	$(call Image/Build/Template/UBNT/$(1),ubnt-ls-sr71,board=UBNT-LS-SR71,LS-SR71,LS-SR71,ar7100)
 endef
 
+define Image/Build/Profile/UBNTBULLETM
+	$(call Image/Build/Template/UBNTXM/$(1),ubnt-bullet-m,board=UBNT-BM,XM,UBNTXM,ar7240)
+endef
+
+define Image/Build/Profile/UBNTROCKETM
+	$(call Image/Build/Template/UBNTXM/$(1),ubnt-rocket-m,board=UBNT-RM,XM,UBNTXM,ar7240)
+endef
+
+define Image/Build/Profile/UBNTNANOM
+	$(call Image/Build/Template/UBNTXM/$(1),ubnt-nano-m,board=UBNT-NM,XM,UBNTXM,ar7240)
+endef
+
 define Image/Build/Profile/UBNT
 	$(call Image/Build/Profile/UBNTRS,$(1))
 	$(call Image/Build/Profile/UBNTRSPRO,$(1))
 	$(call Image/Build/Profile/UBNTLSSR71,$(1))
+	$(call Image/Build/Profile/UBNTBULLETM,$(1))
+	$(call Image/Build/Profile/UBNTROCKETM,$(1))
+	$(call Image/Build/Profile/UBNTNANOM,$(1))
 endef
 
 define Image/Build/Profile/MZKW04NU
