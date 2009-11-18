@@ -308,7 +308,8 @@ static void __init ubnt_m_setup(void)
 					ubnt_m_gpio_buttons);
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_M, "Ubiquiti Bullet/Rocket M", ubnt_m_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "Ubiquiti Bullet M", ubnt_m_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_ROCKET_M, "Ubiquiti Rocket M", ubnt_m_setup);
 
 /* TODO detect the second ethernet port and use one
    init function for all Ubiquiti MIMO series products */
