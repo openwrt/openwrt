@@ -75,6 +75,12 @@ fw_layout_t fw_layout_data[] = {
 		.kern_entry	=	0x80041000,
 		.firmware_max_length=	0x006C0000,
 	},
+	{
+		.name		=	"XM",
+		.kern_start	=	0x9f050000,
+		.kern_entry	=	0x80002000,
+		.firmware_max_length=	0x006A0000,
+	},
 	{	.name		=	"",
 	},
 };
@@ -179,7 +185,7 @@ static void usage(const char* progname)
 	     "\t-o <output file>\t - firmware output file, default: %s\n"
 	     "\t-k <kernel file>\t\t - kernel file\n"
 	     "\t-r <rootfs file>\t\t - rootfs file\n"
-	     "\t-B <board name>\t\t - choose firmware layout for specified board (XS2, XS5, RS)\n"
+	     "\t-B <board name>\t\t - choose firmware layout for specified board (XS2, XS5, RS, XM)\n"
 	     "\t-h\t\t\t - this help\n", VERSION,
 	     progname, DEFAULT_VERSION, DEFAULT_OUTPUT_FILE);
 }
