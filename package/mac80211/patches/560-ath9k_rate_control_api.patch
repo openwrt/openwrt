@@ -1148,6 +1148,15 @@
  void ath_debug_stat_tx(struct ath_softc *sc, struct ath_txq *txq,
  		       struct ath_buf *bf);
  void ath_debug_stat_retries(struct ath_softc *sc, int rix,
+@@ -170,7 +171,7 @@ static inline void ath_debug_stat_interr
+ }
+ 
+ static inline void ath_debug_stat_rc(struct ath_softc *sc,
+-				     struct sk_buff *skb)
++				     int final_rate)
+ {
+ }
+ 
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
 @@ -255,21 +255,11 @@ static const struct file_operations fops
