@@ -34,11 +34,11 @@
 #define UBNT_LS_SR71_GPIO_LED_D27	6
 #define UBNT_LS_SR71_GPIO_LED_D28	7
 
-#define UBNT_BULLET_M_GPIO_LED_L1	0
-#define UBNT_BULLET_M_GPIO_LED_L2	1
-#define UBNT_BULLET_M_GPIO_LED_L3	11
-#define UBNT_BULLET_M_GPIO_LED_L4	7
-#define UBNT_BULLET_M_GPIO_BTN_RESET	12
+#define UBNT_M_GPIO_LED_L1	0
+#define UBNT_M_GPIO_LED_L2	1
+#define UBNT_M_GPIO_LED_L3	11
+#define UBNT_M_GPIO_LED_L4	7
+#define UBNT_M_GPIO_BTN_RESET	12
 
 #define UBNT_BUTTONS_POLL_INTERVAL	20
 
@@ -107,22 +107,22 @@ static struct gpio_led ubnt_ls_sr71_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_led ubnt_bullet_m_leds_gpio[] __initdata = {
+static struct gpio_led ubnt_m_leds_gpio[] __initdata = {
 	{
 		.name		= "ubnt:red:link1",
-		.gpio		= UBNT_BULLET_M_GPIO_LED_L1,
+		.gpio		= UBNT_M_GPIO_LED_L1,
 		.active_low	= 0,
 	}, {
 		.name		= "ubnt:orange:link2",
-		.gpio		= UBNT_BULLET_M_GPIO_LED_L2,
+		.gpio		= UBNT_M_GPIO_LED_L2,
 		.active_low	= 0,
 	}, {
 		.name		= "ubnt:green:link3",
-		.gpio		= UBNT_BULLET_M_GPIO_LED_L3,
+		.gpio		= UBNT_M_GPIO_LED_L3,
 		.active_low	= 0,
 	}, {
 		.name		= "ubnt:green:link4",
-		.gpio		= UBNT_BULLET_M_GPIO_LED_L4,
+		.gpio		= UBNT_M_GPIO_LED_L4,
 		.active_low	= 0,
 	}
 };
@@ -138,13 +138,13 @@ static struct gpio_button ubnt_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct gpio_button ubnt_bullet_m_gpio_buttons[] __initdata = {
+static struct gpio_button ubnt_m_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= BTN_0,
 		.threshold	= 5,
-		.gpio		= UBNT_BULLET_M_GPIO_BTN_RESET,
+		.gpio		= UBNT_M_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}
 };
@@ -247,7 +247,7 @@ static void __init ubnt_lssr71_setup(void)
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
 
 #ifdef CONFIG_PCI
-static struct ar71xx_pci_irq ubnt_bullet_m_pci_irqs[] __initdata = {
+static struct ar71xx_pci_irq ubnt_m_pci_irqs[] __initdata = {
 	{
 		.slot	= 0,
 		.pin	= 1,
@@ -255,35 +255,36 @@ static struct ar71xx_pci_irq ubnt_bullet_m_pci_irqs[] __initdata = {
 	}
 };
 
-static struct ath9k_platform_data ubnt_bullet_m_wmac_data;
+static struct ath9k_platform_data ubnt_m_wmac_data;
 
-static int ubmnt_bullet_m_pci_plat_dev_init(struct pci_dev *dev)
+static int ubmnt_m_pci_plat_dev_init(struct pci_dev *dev)
 {
-	dev->dev.platform_data = &ubnt_bullet_m_wmac_data;
+	dev->dev.platform_data = &ubnt_m_wmac_data;
 	return 0;
 }
 
-static void __init ubnt_bullet_m_pci_init(void)
+static void __init ubnt_m_pci_init(void)
 {
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	memcpy(ubnt_bullet_m_wmac_data.eeprom_data, ee,
-	       sizeof(ubnt_bullet_m_wmac_data.eeprom_data));
+	memcpy(ubnt_m_wmac_data.eeprom_data, ee,
+	       sizeof(ubnt_m_wmac_data.eeprom_data));
 
-	ar71xx_pci_plat_dev_init = ubmnt_bullet_m_pci_plat_dev_init;
+	ar71xx_pci_plat_dev_init = ubmnt_m_pci_plat_dev_init;
 
-	ar71xx_pci_init(ARRAY_SIZE(ubnt_bullet_m_pci_irqs),
-			ubnt_bullet_m_pci_irqs);
+	ar71xx_pci_init(ARRAY_SIZE(ubnt_m_pci_irqs),
+			ubnt_m_pci_irqs);
 }
 #else
-static inline void ubnt_bullet_m_pci_init(void) { };
+static inline void ubnt_m_pci_init(void) { };
 #endif /* CONFIG_PCI */
 
-static void __init ubnt_bullet_m_setup(void)
+static void __init ubnt_m_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
 
 	ar71xx_set_mac_base(mac);
+
 	ar71xx_add_device_spi(NULL, ubnt_spi_info,
 				    ARRAY_SIZE(ubnt_spi_info));
 
@@ -297,14 +298,31 @@ static void __init ubnt_bullet_m_setup(void)
 
 	ar71xx_add_device_eth(0);
 
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_bullet_m_leds_gpio),
-					ubnt_bullet_m_leds_gpio);
+	ubnt_m_pci_init();
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_m_leds_gpio),
+					ubnt_m_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ubnt_bullet_m_gpio_buttons),
-					ubnt_bullet_m_gpio_buttons);
-
-	ubnt_bullet_m_pci_init();
+					ARRAY_SIZE(ubnt_m_gpio_buttons),
+					ubnt_m_gpio_buttons);
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "Ubiquiti Bullet M", ubnt_bullet_m_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_M, "Ubiquiti Bullet/Rocket M", ubnt_m_setup);
+
+/* TODO detect the second ethernet port and use one
+   init function for all Ubiquiti MIMO series products */
+static void __init ubnt_nano_m_setup(void)
+{
+	ubnt_m_setup();
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0;
+
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(1);
+}
+
+MIPS_MACHINE(AR71XX_MACH_UBNT_NANO_M, "Ubiquiti Nanostation M", ubnt_nano_m_setup);
