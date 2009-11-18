@@ -83,8 +83,11 @@ static struct board_rec boards[] __initdata = {
 		.name		= "UBNT-LSX",
 		.mach_type	= AR71XX_MACH_UBNT_LSX,
 	}, {
-		.name		= "UBNT-M",
-		.mach_type	= AR71XX_MACH_UBNT_M,
+		.name		= "UBNT-BM",
+		.mach_type	= AR71XX_MACH_UBNT_BULLET_M,
+	}, {
+		.name		= "UBNT-RM",
+		.mach_type	= AR71XX_MACH_UBNT_ROCKET_M,
 	}, {
 		.name		= "UBNT-NM",
 		.mach_type	= AR71XX_MACH_UBNT_NANO_M,

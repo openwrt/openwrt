@@ -140,8 +140,9 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_UBNT_LSX,	/* Ubiquiti LSX */
 	AR71XX_MACH_UBNT_RS,	/* Ubiquiti RouterStation */
 	AR71XX_MACH_UBNT_RSPRO,	/* Ubiquiti RouterStation Pro */
-	AR71XX_MACH_UBNT_M, /* Ubiquiti Bullet M */
-	AR71XX_MACH_UBNT_NANO_M, /* Ubiquiti Bullet M */
+	AR71XX_MACH_UBNT_BULLET_M, /* Ubiquiti Bullet M */
+	AR71XX_MACH_UBNT_ROCKET_M, /* Ubiquiti Rocket M */
+	AR71XX_MACH_UBNT_NANO_M, /* Ubiquiti NanoStation M */
 	AR71XX_MACH_WNR2000,	/* NETGEAR WNR2000 */
 	AR71XX_MACH_WNDR3700,	/* NETGEAR WNDR3700 */
 	AR71XX_MACH_WP543,	/* Compex WP543 */
