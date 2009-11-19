@@ -26,6 +26,8 @@ EXCLUDE_DIRS:=*/ccache \
 
 all: compile
 
+TOOLCHAIN_PREFIX:=$(TOOLCHAIN_BUILD_DIR)/toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)
+
 $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
 	$(TAR) -cf - -C $(TOPDIR)/staging_dir/  \
@@ -36,6 +38,14 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 	$(CP)  $(TOPDIR)/LICENSE ./files/README.TOOLCHAIN \
 		$(TOOLCHAIN_BUILD_DIR)/
 
+	$(CP) ./files/wrapper.sh $(TOOLCHAIN_PREFIX)/usr/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
+	chmod +x $(TOOLCHAIN_PREFIX)/usr/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
+	(cd $(TOOLCHAIN_PREFIX)/usr/bin; \
+		for app in cc gcc g++ c++ cpp ld as ; do \
+			[ -f $(REAL_GNU_TARGET_NAME)-$${app} ] && mv $(REAL_GNU_TARGET_NAME)-$${app} $(REAL_GNU_TARGET_NAME)-$${app}.bin ; \
+			ln -sf $(REAL_GNU_TARGET_NAME)-wrapper.sh $(REAL_GNU_TARGET_NAME)-$${app} ; \
+		done; \
+	)
 	echo REVISION:="$(REVISION)" > $(TOOLCHAIN_BUILD_DIR)/version.mk
 	find $(TOOLCHAIN_BUILD_DIR) -name .git | $(XARGS) rm -rf
 	find $(TOOLCHAIN_BUILD_DIR) -name .svn | $(XARGS) rm -rf

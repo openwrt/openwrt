@@ -246,18 +246,12 @@ define Stage2/Install
 	$(GCC_MAKE) -C $(HOST_BUILD_DIR2) install
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
-	$(CP) ./files/wrapper.sh $(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
-	chmod +x $(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
 	(cd $(TOOLCHAIN_DIR)/usr; \
 		ln -sf $(REAL_GNU_TARGET_NAME) $(GNU_TARGET_NAME); \
 		cd bin; \
 		for app in $(REAL_GNU_TARGET_NAME)-* ; do \
 			ln -sf $$$${app} \
 		   	$(GNU_TARGET_NAME)$$$${app##$(REAL_GNU_TARGET_NAME)}; \
-		done; \
-		for app in cc gcc g++ c++ cpp ld as ; do \
-			[ -f $(REAL_GNU_TARGET_NAME)-$$$${app} ] && mv $(REAL_GNU_TARGET_NAME)-$$$${app} $(REAL_GNU_TARGET_NAME)-$$$${app}.bin ; \
-			ln -sf $(REAL_GNU_TARGET_NAME)-wrapper.sh $(REAL_GNU_TARGET_NAME)-$$$${app} ; \
 		done; \
 	);
 	$(if $(CONFIG_EXTRA_TARGET_ARCH),$(call SetupExtraArch))
