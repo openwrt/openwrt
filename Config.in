@@ -43,6 +43,9 @@ menu "Target Images"
 
 		config TARGET_INITRAMFS_COMPRESSION_LZMA
 			bool "LZMA"
+
+		config TARGET_INITRAMFS_COMPRESSION_LZO
+			bool "LZO"
 	endchoice
 
 	config TARGET_ROOTFS_JFFS2
