@@ -49,6 +49,10 @@ append_notinterface() {
 	append args "-I $1"
 }
 
+append_addnhosts() {
+	append args "-H $1"
+}
+
 dnsmasq() {
 	local cfg="$1"
 	append_bool "$cfg" authoritative "-K"
@@ -72,13 +76,13 @@ dnsmasq() {
 	append_parm "$cfg" port "-p"
 	append_parm "$cfg" ednspacket_max "-P"
 	append_parm "$cfg" dhcpleasemax "-X"
-	append_parm "$cfg" "addnhosts" "-H"
 	append_parm "$cfg" "queryport" "-Q"
 	append_parm "$cfg" "domain" "-s"
 	append_parm "$cfg" "local" "-S"
 	config_list_foreach "$cfg" "server" append_server
 	config_list_foreach "$cfg" "interface" append_interface
 	config_list_foreach "$cfg" "notinterface" append_notinterface
+	config_list_foreach "$cfg" "addnhosts" append_addnhosts
 	append_parm "$cfg" "leasefile" "-l"
 	append_parm "$cfg" "resolvfile" "-r"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
