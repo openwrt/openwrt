@@ -418,7 +418,23 @@ static struct board_info __initdata board_96348gw_a = {
 	.has_ohci0 = 1,
 };
 
+static struct board_info __initdata board_rta1025w_16 = {
+	.name				= "RTA1025W_16",
+	.expected_cpu_id		= 0x6348,
+	
+	.has_enet0			= 1,
+	.has_enet1			= 1,
+	.has_pci			= 1,
 
+	.enet0 = {
+		.has_phy		= 1,
+		.use_internal_phy	= 1,
+	},
+	.enet1 = {
+		.force_speed_100	= 1,
+		.force_duplex_full	= 1,
+	},
+};
 #endif
 
 /*
@@ -586,6 +602,7 @@ static const struct board_info __initdata *bcm963xx_boards[] = {
 	&board_FAST2404,
 	&board_DV201AMR,
 	&board_96348gw_a,
+	&board_rta1025w_16,
 #endif
 
 #ifdef CONFIG_BCM63XX_CPU_6358
