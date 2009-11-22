@@ -6,7 +6,7 @@
  			 */
 -			if (a->pid == 0)
 +			if (a->pid == 0) {
-+				if (a->terminal && access(a->terminal, R_OK | W_OK))
++				if (a->terminal[0] && access(a->terminal, R_OK | W_OK))
 +					continue;
  				a->pid = run(a);
 +			}
