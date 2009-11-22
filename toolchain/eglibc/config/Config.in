@@ -1,781 +1,808 @@
 config EGLIBC_OPTION_EGLIBC_ADVANCED_INET6
-   bool "IPv6 Advanced Sockets API support (RFC3542)"
-   default y
-   select EGLIBC_OPTION_EGLIBC_INET
-   help
-       This option group includes the functions specified by RFC 3542,
-       "Advanced Sockets Application Program Interface (API) for
-       IPv6".
+	bool "IPv6 Advanced Sockets API support (RFC3542)"
+	default y
+	select EGLIBC_OPTION_EGLIBC_INET
+	help
+	  This option group includes the functions specified by RFC 3542,
+	  "Advanced Sockets Application Program Interface (API) for
+	  IPv6".
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         inet6_opt_append
-         inet6_opt_find
-         inet6_opt_finish
-         inet6_opt_get_val
-         inet6_opt_init
-         inet6_alloc
-         inet6_append
-         inet6_find
-         inet6_init
-         inet6_next
-         inet6_space
-         inet6_opt_next
-         inet6_opt_set_val
-         inet6_rth_add
-         inet6_rth_getaddr
-         inet6_rth_init
-         inet6_rth_reverse
-         inet6_rth_segments
-         inet6_rth_space
+		inet6_opt_append
+		inet6_opt_find
+		inet6_opt_finish
+		inet6_opt_get_val
+		inet6_opt_init
+		inet6_option_alloc
+		inet6_option_append
+		inet6_option_find
+		inet6_option_init
+		inet6_option_next
+		inet6_option_space
+		inet6_opt_next
+		inet6_opt_set_val
+		inet6_rth_add
+		inet6_rth_getaddr
+		inet6_rth_init
+		inet6_rth_reverse
+		inet6_rth_segments
+		inet6_rth_space
+
 
 config EGLIBC_OPTION_EGLIBC_BACKTRACE
-   bool "Functions for producing backtraces"
-   default y
-   help
-       This option group includes functions for producing a list of
-       the function calls that are currently active in a thread, from
-       within the thread itself.  These functions are often used
-       within signal handlers, to produce diagnostic output.
+	bool "Functions for producing backtraces"
+	default y
+	help
+	  This option group includes functions for producing a list of
+	  the function calls that are currently active in a thread, from
+	  within the thread itself.  These functions are often used
+	  within signal handlers, to produce diagnostic output.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         backtrace
-         backtrace_symbols
-         backtrace_symbols_fd
+		backtrace
+		backtrace_symbols
+		backtrace_symbols_fd
+
 
 config EGLIBC_OPTION_EGLIBC_BSD
-   bool "BSD-specific functions, and their compatibility stubs"
-   default y
-   help
-       This option group includes functions specific to BSD kernels.
-       A number of these functions have stub versions that are also
-       included in libraries built for non-BSD systems for
-       compatibility.
+	bool "BSD-specific functions, and their compatibility stubs"
+	default y
+	help
+	  This option group includes functions specific to BSD kernels.
+	  A number of these functions have stub versions that are also
+	  included in libraries built for non-BSD systems for
+	  compatibility.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         chflags
-         fchflags
-         lchmod
-         revoke
-         setlogin
+		chflags
+		fchflags
+		lchmod
+		revoke
+		setlogin
+
 
 config EGLIBC_OPTION_EGLIBC_CXX_TESTS
-   bool "Tests that link against the standard C++ library."
-   default y
-   select EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
-   select EGLIBC_OPTION_EGLIBC_LIBM
-   help
-       This option group does not include any C library functions;
-       instead, it controls which EGLIBC tests an ordinary 'make
-       tests' runs.  With this group disabled, tests that would
-       normally link against the standard C++ library are not
-       run.
+	bool "Tests that link against the standard C++ library."
+	default y
+	select EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
+	select EGLIBC_OPTION_EGLIBC_LIBM
+	help
+	  This option group does not include any C library functions;
+	  instead, it controls which EGLIBC tests an ordinary 'make
+	  tests' runs.  With this group disabled, tests that would
+	  normally link against the standard C++ library are not
+	  run.
 
-       The standard C++ library depends on the math library 'libm' and
-       the wide character I/O functions included in EGLIBC.  If those
-       option groups are disabled, this test must also be disabled.
+	  The standard C++ library depends on the math library 'libm' and
+	  the wide character I/O functions included in EGLIBC.  If those
+	  option groups are disabled, this test must also be disabled.
+
 
 config EGLIBC_OPTION_EGLIBC_CATGETS
-   bool "Functions for accessing message catalogs"
-   default y
-   select EGLIBC_OPTION_EGLIBC_LOCALE_CODE
-   help
-       This option group includes functions for accessing message
-       catalogs: catopen, catclose, and catgets.
+	bool "Functions for accessing message catalogs"
+	default y
+	select EGLIBC_OPTION_EGLIBC_LOCALE_CODE
+	help
+	  This option group includes functions for accessing message
+	  catalogs: catopen, catclose, and catgets.
 
-       This option group depends on the EGLIBC_LOCALE_CODE
-       option group; if you disable that, you must also disable this.
+	  This option group depends on the EGLIBC_OPTION_EGLIBC_LOCALE_CODE
+	  option group; if you disable that, you must also disable this.
+
 
 config EGLIBC_OPTION_EGLIBC_CHARSETS
-   bool "iconv/gconv character set conversion libraries"
-   default y
-   help
+	bool "iconv/gconv character set conversion libraries"
+	default y
+	help
 
-       This option group includes support for character sets other
-       than ASCII (ANSI_X3.4-1968) and Unicode and ISO-10646 in their
-       various encodings.  This affects both the character sets
-       supported by the wide and multibyte character functions, and
-       those supported by the 'iconv' functions.
+	  This option group includes support for character sets other
+	  than ASCII (ANSI_X3.4-1968) and Unicode and ISO-10646 in their
+	  various encodings.  This affects both the character sets
+	  supported by the wide and multibyte character functions, and
+	  those supported by the 'iconv' functions.
 
-       With this option group disabled, EGLIBC supports only the
-       following character sets:
+	  With this option group disabled, EGLIBC supports only the
+	  following character sets:
 
-          ANSI_X3.4         - ASCII
-          ANSI_X3.4-1968
-          ANSI_X3.4-1986
-          ASCII
-          CP367
-          CSASCII
-          IBM367
-          ISO-IR-6
-          ISO646-US
-          ISO_646.IRV:1991
-          OSF00010020
-          US
-          US-ASCII
+		ANSI_X3.4         - ASCII
+		ANSI_X3.4-1968
+		ANSI_X3.4-1986
+		ASCII
+		CP367
+		CSASCII
+		IBM367
+		ISO-IR-6
+		ISO646-US
+		ISO_646.IRV:1991
+		OSF00010020
+		US
+		US-ASCII
 
-          10646-1:1993      - ISO 10646, in big-endian UCS4 form
-          10646-1:1993/UCS4
-          CSUCS4
-          ISO-10646
-          ISO-10646/UCS4
-          OSF00010104
-          OSF00010105
-          OSF00010106
-          UCS-4
-          UCS-4BE
-          UCS4
+		10646-1:1993      - ISO 10646, in big-endian UCS4 form
+		10646-1:1993/UCS4
+		CSUCS4
+		ISO-10646
+		ISO-10646/UCS4
+		OSF00010104
+		OSF00010105
+		OSF00010106
+		UCS-4
+		UCS-4BE
+		UCS4
 
-          UCS-4LE           - ISO 10646, in little-endian UCS4 form
+		UCS-4LE           - ISO 10646, in little-endian UCS4 form
 
-          ISO-10646/UTF-8   - ISO 10646, in UTF-8 form
-          ISO-10646/UTF8
-          ISO-IR-193
-          OSF05010001
-          UTF-8
-          UTF8
+		ISO-10646/UTF-8   - ISO 10646, in UTF-8 form
+		ISO-10646/UTF8
+		ISO-IR-193
+		OSF05010001
+		UTF-8
+		UTF8
 
-          ISO-10646/UCS2    - ISO 10646, in target-endian UCS2 form
-          OSF00010100
-          OSF00010101
-          OSF00010102
-          UCS-2
-          UCS2
+		ISO-10646/UCS2    - ISO 10646, in target-endian UCS2 form
+		OSF00010100
+		OSF00010101
+		OSF00010102
+		UCS-2
+		UCS2
 
-          UCS-2BE           - ISO 10646, in big-endian UCS2 form
-          UNICODEBIG
+		UCS-2BE           - ISO 10646, in big-endian UCS2 form
+		UNICODEBIG
 
-          UCS-2LE           - ISO 10646, in little-endian UCS2 form
-          UNICODELITTLE
+		UCS-2LE           - ISO 10646, in little-endian UCS2 form
+		UNICODELITTLE
 
-          WCHAR_T           - EGLIBC's internal form (target-endian,
-                              32-bit ISO 10646)
+		WCHAR_T           - EGLIBC's internal form (target-endian,
+							32-bit ISO 10646)
+
 
 config EGLIBC_OPTION_EGLIBC_DB_ALIASES
-   bool "Functions for accessing the mail aliases database"
-   default y
-   help
-       This option group includes functions for looking up mail
-       aliases in '/etc/aliases' or using nsswitch.  It includes the
-       following functions:
+	bool "Functions for accessing the mail aliases database"
+	default y
+	help
+	  This option group includes functions for looking up mail
+	  aliases in '/etc/aliases' or using nsswitch.  It includes the
+	  following functions:
 
-         endaliasent
-         getaliasbyname
-         getaliasbyname_r
-         getaliasent
-         getaliasent_r
-         setaliasent
+		endaliasent
+		getaliasbyname
+		getaliasbyname_r
+		getaliasent
+		getaliasent_r
+		setaliasent
 
-       When this option group is disabled, the NSS service libraries
-       also lack support for querying their mail alias tables.
+	  When this option group is disabled, the NSS service libraries
+	  also lack support for querying their mail alias tables.
+
 
 config EGLIBC_OPTION_EGLIBC_ENVZ
-   bool "Functions for handling envz-style environment vectors."
-   default y
-   help
-       This option group contains functions for creating and operating
-       on envz vectors.  An "envz vector" is a vector of strings in a
-       contiguous block of memory, where each element is a name-value
-       pair, and elements are separated from their neighbors by null
-       characters.
+	bool "Functions for handling envz-style environment vectors."
+	default y
+	help
+	  This option group contains functions for creating and operating
+	  on envz vectors.  An "envz vector" is a vector of strings in a
+	  contiguous block of memory, where each element is a name-value
+	  pair, and elements are separated from their neighbors by null
+	  characters.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-        envz_add        envz_merge 
-        envz_entry      envz_remove
-        envz_get        envz_strip 
+		envz_add        envz_merge 
+		envz_entry      envz_remove
+		envz_get        envz_strip 
+
 
 config EGLIBC_OPTION_EGLIBC_FCVT
-   bool "Functions for converting floating-point numbers to strings"
-   default y
-   depends EGLIBC_VERSION_2_10
-   help
-       This option group includes functions for converting
-       floating-point numbers to strings.
+	bool "Functions for converting floating-point numbers to strings"
+	default y
+	depends EGLIBC_VERSION_2_10
+	help
+	  This option group includes functions for converting
+	  floating-point numbers to strings.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         ecvt           qecvt
-         ecvt_r         qecvt_r
-         fcvt           qfcvt
-         fcvt_r         qfcvt_r
-         gcvt           qgcvt
+		ecvt           qecvt
+		ecvt_r         qecvt_r
+		fcvt           qfcvt
+		fcvt_r         qfcvt_r
+		gcvt           qgcvt
+
 
 config EGLIBC_OPTION_EGLIBC_FMTMSG
-   bool "Functions for formatting messages"
-   default y
-   depends EGLIBC_VERSION_2_10
-   help
-       This option group includes the following functions:
+	bool "Functions for formatting messages"
+	default y
+	depends EGLIBC_VERSION_2_10
+	help
+	  This option group includes the following functions:
 
-         addseverity    fmtmsg
+		addseverity    fmtmsg
+
 
 config EGLIBC_OPTION_EGLIBC_FSTAB
-   bool "Access functions for 'fstab'"
-   default y
-   help
-       This option group includes functions for reading the mount
-       point specification table, '/etc/fstab'.  These functions are
-       not included in the POSIX standard, which provides the
-       'getmntent' family of functions instead.
+	bool "Access functions for 'fstab'"
+	default y
+	help
+	  This option group includes functions for reading the mount
+	  point specification table, '/etc/fstab'.  These functions are
+	  not included in the POSIX standard, which provides the
+	  'getmntent' family of functions instead.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         endfsent       getfsspec
-         getfsent       setfsent
-         getfsfile
+		endfsent       getfsspec
+		getfsent       setfsent
+		getfsfile
 
 config EGLIBC_OPTION_EGLIBC_FTRAVERSE
-   bool "Functions for traversing file hierarchies"
-   default y
-   depends EGLIBC_VERSION_2_10
-   help
-       This option group includes functions for traversing file
-       UNIX file hierachies.
+	bool "Functions for traversing file hierarchies"
+	default y
+	depends EGLIBC_VERSION_2_10
+	help
+	  This option group includes functions for traversing file
+	  UNIX file hierachies.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         fts_open       ftw
-         fts_read       nftw
-         fts_children   ftw64
-         fts_set        nftw64
-         fts_close
+		fts_open       ftw
+		fts_read       nftw
+		fts_children   ftw64
+		fts_set        nftw64
+		fts_close
+
 
 config EGLIBC_OPTION_EGLIBC_GETLOGIN
-   bool "The getlogin function"
-   default y
-   select EGLIBC_OPTION_EGLIBC_UTMP
-   help
-       This function group includes the 'getlogin' and 'getlogin_r'
-       functions, which return the user name associated by the login
-       activity with the current process's controlling terminal.
+	bool "The getlogin function"
+	default y
+	select EGLIBC_OPTION_EGLIBC_UTMP
+	help
+	  This function group includes the 'getlogin' and 'getlogin_r'
+	  functions, which return the user name associated by the login
+	  activity with the current process's controlling terminal.
 
-       With this option group disabled, the 'glob' function will not
-       fall back on 'getlogin' to find the user's login name for tilde
-       expansion when the 'HOME' environment variable is not set.
+	  With this option group disabled, the 'glob' function will not
+	  fall back on 'getlogin' to find the user's login name for tilde
+	  expansion when the 'HOME' environment variable is not set.
+
 
 config EGLIBC_OPTION_EGLIBC_INET
-   bool "Networking support"
-   default y
-   help
-       This option group includes networking-specific functions and
-       data.  With EGLIBC_INET disabled, the EGLIBC
-       installation and API changes as follows:
+	bool "Networking support"
+	default y
+	help
+	  This option group includes networking-specific functions and
+	  data.  With EGLIBC_OPTION_EGLIBC_INET disabled, the EGLIBC
+	  installation and API changes as follows:
 
-       - The following libraries are not installed:
+	  - The following libraries are not installed:
 
-         libanl
-         libnsl
-         libnss_compat
-         libnss_dns
-         libnss_hesiod
-         libnss_nis
-         libnss_nisplus
-         libresolv
-         
-       - The following functions and variables are omitted from libc:
+		libanl
+		libnsl
+		libnss_compat
+		libnss_dns
+		libnss_hesiod
+		libnss_nis
+		libnss_nisplus
+		libresolv
+		 
+	  - The following functions and variables are omitted from libc:
 
-         authdes_create           hstrerror              svc_fdset
-         authdes_getucred         htonl                  svc_getreq
-         authdes_pk_create        htons                  svc_getreq_common
-         authnone_create          if_freenameindex       svc_getreq_poll
-         authunix_create          if_indextoname         svc_getreqset
-         authunix_create_default  if_nameindex           svc_max_pollfd
-         bindresvport             if_nametoindex         svc_pollfd
-         callrpc                  in6addr_any            svcraw_create
-         cbc_crypt                in6addr_loopback       svc_register
-         clnt_broadcast           inet6_opt_append       svc_run
-         clnt_create              inet6_opt_find         svc_sendreply
-         clnt_pcreateerror        inet6_opt_finish       svctcp_create
-         clnt_perrno              inet6_opt_get_val      svcudp_bufcreate
-         clnt_perror              inet6_opt_init         svcudp_create
-         clntraw_create           inet6_alloc     svcudp_enablecache
-         clnt_spcreateerror       inet6_append    svcunix_create
-         clnt_sperrno             inet6_find      svcunixfd_create
-         clnt_sperror             inet6_init      svc_unregister
-         clnttcp_create           inet6_next      user2netname
-         clntudp_bufcreate        inet6_space     xdecrypt
-         clntudp_create           inet6_opt_next         xdr_accepted_reply
-         clntunix_create          inet6_opt_set_val      xdr_array
-         des_setparity            inet6_rth_add          xdr_authdes_cred
-         ecb_crypt                inet6_rth_getaddr      xdr_authdes_verf
-         endaliasent              inet6_rth_init         xdr_authunix_parms
-         endhostent               inet6_rth_reverse      xdr_bool
-         endnetent                inet6_rth_segments     xdr_bytes
-         endnetgrent              inet6_rth_space        xdr_callhdr
-         endprotoent              inet_addr              xdr_callmsg
-         endrpcent                inet_aton              xdr_char
-         endservent               inet_lnaof             xdr_cryptkeyarg
-         ether_aton               inet_makeaddr          xdr_cryptkeyarg2
-         ether_aton_r             inet_netof             xdr_cryptkeyres
-         ether_hostton            inet_network           xdr_des_block
-         ether_line               inet_nsap_addr         xdr_double
-         ether_ntoa               inet_nsap_ntoa         xdr_enum
-         ether_ntoa_r             inet_ntoa              xdr_float
-         ether_ntohost            inet_ntop              xdr_free
-         freeaddrinfo             inet_pton              xdr_getcredres
-         freeifaddrs              innetgr                xdr_hyper
-         gai_strerror             iruserok               xdr_int
-         getaddrinfo              iruserok_af            xdr_int16_t
-         getaliasbyname           key_decryptsession     xdr_int32_t
-         getaliasbyname_r         key_decryptsession_pk  xdr_int64_t
-         getaliasent              key_encryptsession     xdr_int8_t
-         getaliasent_r            key_encryptsession_pk  xdr_keybuf
-         gethostbyaddr            key_gendes             xdr_key_netstarg
-         gethostbyaddr_r          key_get_conv           xdr_key_netstres
-         gethostbyname            key_secretkey_is_set   xdr_keystatus
-         gethostbyname2           key_setnet             xdr_long
-         gethostbyname2_r         key_setsecret          xdr_longlong_t
-         gethostbyname_r          netname2host           xdrmem_create
-         gethostent               netname2user           xdr_netnamestr
-         gethostent_r             ntohl                  xdr_netobj
-         getifaddrs               ntohs                  xdr_opaque
-         getipv4sourcefilter      passwd2des             xdr_opaque_auth
-         get_myaddress            pmap_getmaps           xdr_pmap
-         getnameinfo              pmap_getport           xdr_pmaplist
-         getnetbyaddr             pmap_rmtcall           xdr_pointer
-         getnetbyaddr_r           pmap_set               xdr_quad_t
-         getnetbyname             pmap_unset             xdrrec_create
-         getnetbyname_r           rcmd                   xdrrec_endofrecord
-         getnetent                rcmd_af                xdrrec_eof
-         getnetent_r              registerrpc            xdrrec_skiprecord
-         getnetgrent              res_init               xdr_reference
-         getnetgrent_r            rexec                  xdr_rejected_reply
-         getnetname               rexec_af               xdr_replymsg
-         getprotobyname           rexecoptions           xdr_rmtcall_args
-         getprotobyname_r         rpc_createerr          xdr_rmtcallres
-         getprotobynumber         rresvport              xdr_short
-         getprotobynumber_r       rresvport_af           xdr_sizeof
-         getprotoent              rtime                  xdrstdio_create
-         getprotoent_r            ruserok                xdr_string
-         getpublickey             ruserok_af             xdr_u_char
-         getrpcbyname             ruserpass              xdr_u_hyper
-         getrpcbyname_r           setaliasent            xdr_u_int
-         getrpcbynumber           sethostent             xdr_uint16_t
-         getrpcbynumber_r         setipv4sourcefilter    xdr_uint32_t
-         getrpcent                setnetent              xdr_uint64_t
-         getrpcent_r              setnetgrent            xdr_uint8_t
-         getrpcport               setprotoent            xdr_u_long
-         getsecretkey             setrpcent              xdr_u_longlong_t
-         getservbyname            setservent             xdr_union
-         getservbyname_r          setsourcefilter        xdr_unixcred
-         getservbyport            svcauthdes_stats       xdr_u_quad_t
-         getservbyport_r          svcerr_auth            xdr_u_short
-         getservent               svcerr_decode          xdr_vector
-         getservent_r             svcerr_noproc          xdr_void
-         getsourcefilter          svcerr_noprog          xdr_wrapstring
-         h_errlist                svcerr_progvers        xencrypt
-         h_errno                  svcerr_systemerr       xprt_register
-         herror                   svcerr_weakauth        xprt_unregister
-         h_nerr                   svc_exit
-         host2netname             svcfd_create
+		authdes_create           hstrerror              svc_fdset
+		authdes_getucred         htonl                  svc_getreq
+		authdes_pk_create        htons                  svc_getreq_common
+		authnone_create          if_freenameindex       svc_getreq_poll
+		authunix_create          if_indextoname         svc_getreqset
+		authunix_create_default  if_nameindex           svc_max_pollfd
+		bindresvport             if_nametoindex         svc_pollfd
+		callrpc                  in6addr_any            svcraw_create
+		cbc_crypt                in6addr_loopback       svc_register
+		clnt_broadcast           inet6_opt_append       svc_run
+		clnt_create              inet6_opt_find         svc_sendreply
+		clnt_pcreateerror        inet6_opt_finish       svctcp_create
+		clnt_perrno              inet6_opt_get_val      svcudp_bufcreate
+		clnt_perror              inet6_opt_init         svcudp_create
+		clntraw_create           inet6_option_alloc     svcudp_enablecache
+		clnt_spcreateerror       inet6_option_append    svcunix_create
+		clnt_sperrno             inet6_option_find      svcunixfd_create
+		clnt_sperror             inet6_option_init      svc_unregister
+		clnttcp_create           inet6_option_next      user2netname
+		clntudp_bufcreate        inet6_option_space     xdecrypt
+		clntudp_create           inet6_opt_next         xdr_accepted_reply
+		clntunix_create          inet6_opt_set_val      xdr_array
+		des_setparity            inet6_rth_add          xdr_authdes_cred
+		ecb_crypt                inet6_rth_getaddr      xdr_authdes_verf
+		endaliasent              inet6_rth_init         xdr_authunix_parms
+		endhostent               inet6_rth_reverse      xdr_bool
+		endnetent                inet6_rth_segments     xdr_bytes
+		endnetgrent              inet6_rth_space        xdr_callhdr
+		endprotoent              inet_addr              xdr_callmsg
+		endrpcent                inet_aton              xdr_char
+		endservent               inet_lnaof             xdr_cryptkeyarg
+		ether_aton               inet_makeaddr          xdr_cryptkeyarg2
+		ether_aton_r             inet_netof             xdr_cryptkeyres
+		ether_hostton            inet_network           xdr_des_block
+		ether_line               inet_nsap_addr         xdr_double
+		ether_ntoa               inet_nsap_ntoa         xdr_enum
+		ether_ntoa_r             inet_ntoa              xdr_float
+		ether_ntohost            inet_ntop              xdr_free
+		freeaddrinfo             inet_pton              xdr_getcredres
+		freeifaddrs              innetgr                xdr_hyper
+		gai_strerror             iruserok               xdr_int
+		getaddrinfo              iruserok_af            xdr_int16_t
+		getaliasbyname           key_decryptsession     xdr_int32_t
+		getaliasbyname_r         key_decryptsession_pk  xdr_int64_t
+		getaliasent              key_encryptsession     xdr_int8_t
+		getaliasent_r            key_encryptsession_pk  xdr_keybuf
+		gethostbyaddr            key_gendes             xdr_key_netstarg
+		gethostbyaddr_r          key_get_conv           xdr_key_netstres
+		gethostbyname            key_secretkey_is_set   xdr_keystatus
+		gethostbyname2           key_setnet             xdr_long
+		gethostbyname2_r         key_setsecret          xdr_longlong_t
+		gethostbyname_r          netname2host           xdrmem_create
+		gethostent               netname2user           xdr_netnamestr
+		gethostent_r             ntohl                  xdr_netobj
+		getifaddrs               ntohs                  xdr_opaque
+		getipv4sourcefilter      passwd2des             xdr_opaque_auth
+		get_myaddress            pmap_getmaps           xdr_pmap
+		getnameinfo              pmap_getport           xdr_pmaplist
+		getnetbyaddr             pmap_rmtcall           xdr_pointer
+		getnetbyaddr_r           pmap_set               xdr_quad_t
+		getnetbyname             pmap_unset             xdrrec_create
+		getnetbyname_r           rcmd                   xdrrec_endofrecord
+		getnetent                rcmd_af                xdrrec_eof
+		getnetent_r              registerrpc            xdrrec_skiprecord
+		getnetgrent              res_init               xdr_reference
+		getnetgrent_r            rexec                  xdr_rejected_reply
+		getnetname               rexec_af               xdr_replymsg
+		getprotobyname           rexecoptions           xdr_rmtcall_args
+		getprotobyname_r         rpc_createerr          xdr_rmtcallres
+		getprotobynumber         rresvport              xdr_short
+		getprotobynumber_r       rresvport_af           xdr_sizeof
+		getprotoent              rtime                  xdrstdio_create
+		getprotoent_r            ruserok                xdr_string
+		getpublickey             ruserok_af             xdr_u_char
+		getrpcbyname             ruserpass              xdr_u_hyper
+		getrpcbyname_r           setaliasent            xdr_u_int
+		getrpcbynumber           sethostent             xdr_uint16_t
+		getrpcbynumber_r         setipv4sourcefilter    xdr_uint32_t
+		getrpcent                setnetent              xdr_uint64_t
+		getrpcent_r              setnetgrent            xdr_uint8_t
+		getrpcport               setprotoent            xdr_u_long
+		getsecretkey             setrpcent              xdr_u_longlong_t
+		getservbyname            setservent             xdr_union
+		getservbyname_r          setsourcefilter        xdr_unixcred
+		getservbyport            svcauthdes_stats       xdr_u_quad_t
+		getservbyport_r          svcerr_auth            xdr_u_short
+		getservent               svcerr_decode          xdr_vector
+		getservent_r             svcerr_noproc          xdr_void
+		getsourcefilter          svcerr_noprog          xdr_wrapstring
+		h_errlist                svcerr_progvers        xencrypt
+		h_errno                  svcerr_systemerr       xprt_register
+		herror                   svcerr_weakauth        xprt_unregister
+		h_nerr                   svc_exit
+		host2netname             svcfd_create
 
-       - The rpcgen, nscd, and rpcinfo commands are not installed.
+	  - The rpcgen, nscd, and rpcinfo commands are not installed.
 
-       - The 'rpc' file (a text file listing RPC services) is not installed.
+	  - The 'rpc' file (a text file listing RPC services) is not installed.
 
-       Socket-related system calls do not fall in this option group,
-       because many are also used for other inter-process
-       communication mechanisms.  For example, the 'syslog' routines
-       use Unix-domain sockets to communicate with the syslog daemon;
-       syslog is valuable in non-networked contexts.
+	  Socket-related system calls do not fall in this option group,
+	  because many are also used for other inter-process
+	  communication mechanisms.  For example, the 'syslog' routines
+	  use Unix-domain sockets to communicate with the syslog daemon;
+	  syslog is valuable in non-networked contexts.
+
 
 config EGLIBC_OPTION_EGLIBC_LIBM
-   bool "libm (math library)"
-   default y
-   help
-       This option group includes the 'libm' library, containing
-       mathematical functions.  If this option group is omitted, then
-       an EGLIBC installation does not include shared or unshared versions
-       of the math library.
+	bool "libm (math library)"
+	default y
+	help
+	  This option group includes the 'libm' library, containing
+	  mathematical functions.  If this option group is omitted, then
+	  an EGLIBC installation does not include shared or unshared versions
+	  of the math library.
 
-       Note that this does not remove all floating-point related
-       functionality from EGLIBC; for example, 'printf' and 'scanf'
-       can still print and read floating-point values with this option
-       group disabled.
+	  Note that this does not remove all floating-point related
+	  functionality from EGLIBC; for example, 'printf' and 'scanf'
+	  can still print and read floating-point values with this option
+	  group disabled.
 
-       Note that the ISO Standard C++ library 'libstdc++' depends on
-       EGLIBC's math library 'libm'.  If you disable this option
-       group, you will not be able to build 'libstdc++' against the
-       resulting EGLIBC installation.
+	  Note that the ISO Standard C++ library 'libstdc++' depends on
+	  EGLIBC's math library 'libm'.  If you disable this option
+	  group, you will not be able to build 'libstdc++' against the
+	  resulting EGLIBC installation.
+
 
 config EGLIBC_OPTION_EGLIBC_LOCALES
-   bool "Locale definitions"
-   default y
-   help
-       This option group includes all locale definitions other than
-       that for the "C" locale.  If this option group is omitted, then
-       only the "C" locale is supported.
+	bool "Locale definitions"
+	default y
+	help
+	  This option group includes all locale definitions other than
+	  that for the "C" locale.  If this option group is omitted, then
+	  only the "C" locale is supported.
 
 
 config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
-   bool "Locale functions"
-   default y
-   select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
-   help
-       This option group includes locale support functions, programs,
-       and libraries.  With EGLIBC_LOCALE_FUNCTIONS disabled,
-       EGLIBC supports only the 'C' locale (also known as 'POSIX'),
-       and ignores the settings of the 'LANG' and 'LC_*' environment
-       variables.
+	bool "Locale functions"
+	default y
+	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
+	help
+	  This option group includes locale support functions, programs,
+	  and libraries.  With EGLIBC_LOCALE_FUNCTIONS disabled,
+	  EGLIBC supports only the 'C' locale (also known as 'POSIX'),
+	  and ignores the settings of the 'LANG' and 'LC_*' environment
+	  variables.
 
-       With EGLIBC_LOCALE_CODE disabled, the following
-       functions are omitted from libc:
+	  With EGLIBC_OPTION_LOCALE_CODE disabled, the following
+	  functions are omitted from libc:
 
-         duplocale   localeconv  nl_langinfo    rpmatch  strfmon_l
-         freelocale  newlocale   nl_langinfo_l  strfmon  uselocale
+		duplocale   localeconv  nl_langinfo    rpmatch  strfmon_l
+		freelocale  newlocale   nl_langinfo_l  strfmon  uselocale
 
-       Furthermore, only the LC_CTYPE and LC_TIME categories of the
-       standard "C" locale are available.
+	  Furthermore, only the LC_CTYPE and LC_TIME categories of the
+	  standard "C" locale are available.
 
-       The EGLIBC_CATGETS option group depends on this option
-       group; if you disable EGLIBC_LOCALE_CODE, you must also
-       disable EGLIBC_CATGETS.
+	  The EGLIBC_OPTION_EGLIBC_CATGETS option group depends on this option
+	  group; if you disable EGLIBC_OPTION_EGLIBC_LOCALE_CODE, you must also
+	  disable EGLIBC_OPTION_EGLIBC_CATGETS.
+
 
 config EGLIBC_OPTION_EGLIBC_NIS
-   bool "Support for NIS, NIS+, and the special 'compat' services."
-   default y
-   select EGLIBC_OPTION_EGLIBC_INET
-   select EGLIBC_OPTION_EGLIBC_SUNRPC
-   help
-       This option group includes the NIS, NIS+, and 'compat' Name
-       Service Switch service libraries.  When it is disabled, those
-       services libraries are not installed; you should remove any
-       references to them from your 'nsswitch.conf' file.
+	bool "Support for NIS, NIS+, and the special 'compat' services."
+	default y
+	select EGLIBC_OPTION_EGLIBC_INET
+	select EGLIBC_OPTION_EGLIBC_SUNRPC
+	help
+	  This option group includes the NIS, NIS+, and 'compat' Name
+	  Service Switch service libraries.  When it is disabled, those
+	  services libraries are not installed; you should remove any
+	  references to them from your 'nsswitch.conf' file.
 
-       This option group depends on the EGLIBC_INET option
-       group; you must enable that to enable this option group.
+	  This option group depends on the EGLIBC_OPTION_EGLIBC_INET option
+	  group; you must enable that to enable this option group.
+
 
 config EGLIBC_OPTION_EGLIBC_NSSWITCH
-   bool "Name service switch (nsswitch) support"
-   default y
-   help
+	bool "Name service switch (nsswitch) support"
+	default y
+	help
 
-       This option group includes support for the 'nsswitch' facility.
-       With this option group enabled, all EGLIBC functions for
-       accessing various system databases (passwords and groups;
-       networking; aliases; public keys; and so on) consult the
-       '/etc/nsswitch.conf' configuration file to decide how to handle
-       queries.
+	  This option group includes support for the 'nsswitch' facility.
+	  With this option group enabled, all EGLIBC functions for
+	  accessing various system databases (passwords and groups;
+	  networking; aliases; public keys; and so on) consult the
+	  '/etc/nsswitch.conf' configuration file to decide how to handle
+	  queries.
 
-       With this option group disabled, EGLIBC uses a fixed list of
-       services to satisfy queries on each database, as requested by
-       configuration files specified when EGLIBC is built.  Your
-       'option-groups.config' file must set the following two
-       variables:
+	  With this option group disabled, EGLIBC uses a fixed list of
+	  services to satisfy queries on each database, as requested by
+	  configuration files specified when EGLIBC is built.  Your
+	  'option-groups.config' file must set the following two
+	  variables:
 
-       EGLIBC_NSSWITCH_FIXED_CONFIG
+	  EGLIBC_OPTION_EGLIBC_NSSWITCH_FIXED_CONFIG
 
-          Set this to the name of a file whose contents observe the
-          same syntax as an ordinary '/etc/nsswitch.conf' file.  The
-          EGLIBC build process parses this file just as EGLIBC would
-          at run time if EGLIBC_NSSWITCH were enabled, and
-          produces a C library that uses the nsswitch service
-          libraries to search for database entries as this file
-          specifies, instead of consulting '/etc/nsswitch.conf' at run
-          time.
+		Set this to the name of a file whose contents observe the
+		same syntax as an ordinary '/etc/nsswitch.conf' file.  The
+		EGLIBC build process parses this file just as EGLIBC would
+		at run time if EGLIBC_NSSWITCH were enabled, and
+		produces a C library that uses the nsswitch service
+		libraries to search for database entries as this file
+		specifies, instead of consulting '/etc/nsswitch.conf' at run
+		time.
 
-          This should be an absolute filename.  The EGLIBC build
-          process may use it from several different working
-          directories.  It may include references to Makefile
-          variables like 'common-objpfx' (the top of the build tree,
-          with a trailing slash), or '..' (the top of the source tree,
-          with a trailing slash).
+		This should be an absolute filename.  The EGLIBC build
+		process may use it from several different working
+		directories.  It may include references to Makefile
+		variables like 'common-objpfx' (the top of the build tree,
+		with a trailing slash), or '..' (the top of the source tree,
+		with a trailing slash).
 
-          The EGLIBC source tree includes a sample configuration file
-          named 'nss/fixed-nsswitch.conf'; for simple configurations,
-          you will probably want to delete references to databases not
-          needed on your system.
+		The EGLIBC source tree includes a sample configuration file
+		named 'nss/fixed-nsswitch.conf'; for simple configurations,
+		you will probably want to delete references to databases not
+		needed on your system.
 
-       EGLIBC_NSSWITCH_FIXED_FUNCTIONS
+	  EGLIBC_OPTION_EGLIBC_NSSWITCH_FIXED_FUNCTIONS
 
-          The EGLIBC build process uses this file to decide which
-          functions to make available from which service libraries.
-          The file 'nss/fixed-nsswitch.functions' serves as a sample
-          configuration file for this setting, and explains its syntax
-          and meaning in more detail.
+		The EGLIBC build process uses this file to decide which
+		functions to make available from which service libraries.
+		The file 'nss/fixed-nsswitch.functions' serves as a sample
+		configuration file for this setting, and explains its syntax
+		and meaning in more detail.
 
-          This should be an absolute file name.  The EGLIBC build
-          process may use it from several different working
-          directories.  It may include references to Makefile
-          variables like 'common-objpfx' (the top of the build tree,
-          with a trailing slash), or '..' (the top of the source tree,
-          with a trailing slash).
+		This should be an absolute file name.  The EGLIBC build
+		process may use it from several different working
+		directories.  It may include references to Makefile
+		variables like 'common-objpfx' (the top of the build tree,
+		with a trailing slash), or '..' (the top of the source tree,
+		with a trailing slash).
 
-          Be sure to mention each function in each service you wish to
-          use.  If you do not mention a service's function here, the
-          EGLIBC database access functions will not find it, even if
-          it is listed in the EGLIBC_NSSWITCH_FIXED_CONFIG
-          file.
+		Be sure to mention each function in each service you wish to
+		use.  If you do not mention a service's function here, the
+		EGLIBC database access functions will not find it, even if
+		it is listed in the EGLIBC_OPTION_EGLIBC_NSSWITCH_FIXED_CONFIG
+		file.
 
-       In this arrangement, EGLIBC will not use the 'dlopen' and
-       'dlsym' functions to find database access functions.  Instead,
-       libc hard-codes references to the service libraries' database
-       access functions.  You must explicitly link your program
-       against the name service libraries (those whose names start
-       with 'libnss_', in the sysroot's '/lib' directory) whose
-       functions you intend to use.  This arrangement helps
-       system-wide static analysis tools decide which functions a
-       system actually uses.
+	  In this arrangement, EGLIBC will not use the 'dlopen' and
+	  'dlsym' functions to find database access functions.  Instead,
+	  libc hard-codes references to the service libraries' database
+	  access functions.  You must explicitly link your program
+	  against the name service libraries (those whose names start
+	  with 'libnss_', in the sysroot's '/lib' directory) whose
+	  functions you intend to use.  This arrangement helps
+	  system-wide static analysis tools decide which functions a
+	  system actually uses.
 
-       Note that some nsswitch service libraries require other option
-       groups to be enabled; for example, the EGLIBC_INET
-       option group must be enabled to use the 'libnss_dns.so.2'
-       service library, which uses the Domain Name System network
-       protocol to answer queries.
+	  Note that some nsswitch service libraries require other option
+	  groups to be enabled; for example, the EGLIBC_INET
+	  option group must be enabled to use the 'libnss_dns.so.2'
+	  service library, which uses the Domain Name System network
+	  protocol to answer queries.
+
 
 config EGLIBC_OPTION_EGLIBC_RCMD
-   bool "Support for 'rcmd' and related library functions"
-   default y
-   select EGLIBC_OPTION_EGLIBC_INET
-   help
-      This option group includes functions for running commands on
-      remote machines via the 'rsh' protocol, and doing authentication
-      related to those functions.  This also includes functions that
-      use the 'rexec' protocol.
+	bool "Support for 'rcmd' and related library functions"
+	default y
+	select EGLIBC_OPTION_EGLIBC_INET
+	help
+	  This option group includes functions for running commands on
+	  remote machines via the 'rsh' protocol, and doing authentication
+	  related to those functions.  This also includes functions that
+	  use the 'rexec' protocol.
 
-      This option group includes the following functions:
+	  This option group includes the following functions:
 
-        rcmd            ruserok
-        rcmd_af         ruserok_af
-        rexec           iruserok
-        rexec_af        iruserok_af
-        rresvport       ruserpass
-        rresvport_af
-        
+		rcmd            ruserok
+		rcmd_af         ruserok_af
+		rexec           iruserok
+		rexec_af        iruserok_af
+		rresvport       ruserpass
+		rresvport_af
+
+
 config EGLIBC_OPTION_EGLIBC_SPAWN
-   bool "Support for POSIX posix_spawn functions"
-   default y
-   help
-      This option group includes the POSIX functions for executing
-      programs in child processes without using 'fork' or 'vfork'.
+	bool "Support for POSIX posix_spawn functions"
+	default y
+	help
+	  This option group includes the POSIX functions for executing
+	  programs in child processes without using 'fork' or 'vfork'.
 
-      This option group includes the following functions:
+	  This option group includes the following functions:
 
-        posix_spawn
-        posix_spawnattr_destroy
-        posix_spawnattr_getflags
-        posix_spawnattr_getpgroup
-        posix_spawnattr_getschedparam
-        posix_spawnattr_getschedpolicy
-        posix_spawnattr_getsigdefault
-        posix_spawnattr_getsigmask
-        posix_spawnattr_init
-        posix_spawnattr_setflags
-        posix_spawnattr_setpgroup
-        posix_spawnattr_setschedparam
-        posix_spawnattr_setschedpolicy
-        posix_spawnattr_setsigdefault
-        posix_spawnattr_setsigmask
-        posix_spawn_file_actions_addclose
-        posix_spawn_file_actions_adddup2
-        posix_spawn_file_actions_addopen
-        posix_spawn_file_actions_destroy
-        posix_spawn_file_actions_init
-        posix_spawnp
+		posix_spawn
+		posix_spawnattr_destroy
+		posix_spawnattr_getflags
+		posix_spawnattr_getpgroup
+		posix_spawnattr_getschedparam
+		posix_spawnattr_getschedpolicy
+		posix_spawnattr_getsigdefault
+		posix_spawnattr_getsigmask
+		posix_spawnattr_init
+		posix_spawnattr_setflags
+		posix_spawnattr_setpgroup
+		posix_spawnattr_setschedparam
+		posix_spawnattr_setschedpolicy
+		posix_spawnattr_setsigdefault
+		posix_spawnattr_setsigmask
+		posix_spawn_file_actions_addclose
+		posix_spawn_file_actions_adddup2
+		posix_spawn_file_actions_addopen
+		posix_spawn_file_actions_destroy
+		posix_spawn_file_actions_init
+		posix_spawnp
 
-      This option group also provides the ability for the iconv,
-      localedef, and locale programs to operate transparently on
-      compressed charset definitions.  When this option group is
-      disabled, those programs will only operate on uncompressed
-      charmap files.
+	  This option group also provides the ability for the iconv,
+	  localedef, and locale programs to operate transparently on
+	  compressed charset definitions.  When this option group is
+	  disabled, those programs will only operate on uncompressed
+	  charmap files.
+
 
 config EGLIBC_OPTION_EGLIBC_STREAMS
-   bool "Support for accessing STREAMS."
-   default y
-   help
-      This option group includes functions for reading and writing
-      messages to and from STREAMS.  The STREAMS interface provides a
-      uniform mechanism for implementing networking services and other
-      character-based I/O.  (STREAMS are not to be confused with
-      <stdio.h> FILE objects, also called 'streams'.)
+	bool "Support for accessing STREAMS."
+	default y
+	help
+	  This option group includes functions for reading and writing
+	  messages to and from STREAMS.  The STREAMS interface provides a
+	  uniform mechanism for implementing networking services and other
+	  character-based I/O.  (STREAMS are not to be confused with
+	  <stdio.h> FILE objects, also called 'streams'.)
 
-      This option group includes the following functions:
+	  This option group includes the following functions:
 
-        getmsg          putpmsg
-        getpmsg         fattach
-        isastream       fdetach
-        putmsg
+		getmsg          putpmsg
+		getpmsg         fattach
+		isastream       fdetach
+		putmsg
+
 
 config EGLIBC_OPTION_EGLIBC_SUNRPC
-   bool "Support for the Sun 'RPC' protocol."
-   default y
-   select EGLIBC_OPTION_EGLIBC_INET
-   help
-      This option group includes support for the Sun RPC protocols,
-      including the 'rpcgen' and 'rpcinfo' programs.
+	bool "Support for the Sun 'RPC' protocol."
+	default y
+	select EGLIBC_OPTION_EGLIBC_INET
+	help
+	  This option group includes support for the Sun RPC protocols,
+	  including the 'rpcgen' and 'rpcinfo' programs.
+
 
 config EGLIBC_OPTION_EGLIBC_UTMP
-   bool "Older access functions for 'utmp' login records"
-   default y
-   help
-       This option group includes the older 'utent' family of
-       functions for accessing user login records in the 'utmp' file.
-       POSIX omits these functions in favor of the 'utxent' family,
-       and they are obsolete on systems other than Linux.
+	bool "Older access functions for 'utmp' login records"
+	default y
+	help
+	  This option group includes the older 'utent' family of
+	  functions for accessing user login records in the 'utmp' file.
+	  POSIX omits these functions in favor of the 'utxent' family,
+	  and they are obsolete on systems other than Linux.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         endutent
-         getutent
-         getutent_r
-         getutid
-         getutid_r
-         getutline
-         getutline_r
-         logwtmp
-         pututline
-         setutent
-         updwtmp
-         utmpname
+		endutent
+		getutent
+		getutent_r
+		getutid
+		getutid_r
+		getutline
+		getutline_r
+		logwtmp
+		pututline
+		setutent
+		updwtmp
+		utmpname
 
-       This option group includes the following libraries:
+	  This option group includes the following libraries:
 
-         libutil.so (and libutil.a)
+		libutil.so (and libutil.a)
+
 
 config EGLIBC_OPTION_EGLIBC_UTMPX
-   bool "POSIX access functions for 'utmp' login records"
-   default y
-   select EGLIBC_OPTION_EGLIBC_UTMP    
-   help
-       This option group includes the POSIX functions for reading and
-       writing user login records in the 'utmp' file (usually
-       '/var/run/utmp').  The POSIX functions operate on 'struct
-       utmpx' structures, as opposed to the family of older 'utent'
-       functions, which operate on 'struct utmp' structures.
+	bool "POSIX access functions for 'utmp' login records"
+	default y
+	select EGLIBC_OPTION_EGLIBC_UTMP    
+	help
+	  This option group includes the POSIX functions for reading and
+	  writing user login records in the 'utmp' file (usually
+	  '/var/run/utmp').  The POSIX functions operate on 'struct
+	  utmpx' structures, as opposed to the family of older 'utent'
+	  functions, which operate on 'struct utmp' structures.
 
-       This option group includes the following functions:
+	  This option group includes the following functions:
 
-         endutxent
-         getutmp
-         getutmpx
-         getutxent
-         getutxid
-         getutxline
-         pututxline
-         setutxent
-         updwtmpx
-         utmpxname
+		endutxent
+		getutmp
+		getutmpx
+		getutxent
+		getutxid
+		getutxline
+		pututxline
+		setutxent
+		updwtmpx
+		utmpxname
+
 
 config EGLIBC_OPTION_EGLIBC_WORDEXP
-   bool "Shell-style word expansion"
-   default y
-   help
-        This option group includes the 'wordexp' function for
-        performing word expansion in the manner of the shell, and the
-        accompanying 'wordfree' function.
+	bool "Shell-style word expansion"
+	default y
+	help
+	  This option group includes the 'wordexp' function for
+	  performing word expansion in the manner of the shell, and the
+	  accompanying 'wordfree' function.
+
 
 config EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
-   bool "ISO C library wide character functions, excluding I/O"
-   default y
-   depends EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
-   help
-        This option group includes the functions defined by the ISO C
-        standard for working with wide and multibyte characters in
-        memory.  Functions for reading and writing wide and multibyte
-        characters from and to files call in the
-        POSIX_WIDE_CHAR_DEVICE_IO option group.
+	bool "ISO C library wide character functions, excluding I/O"
+	default y
+	depends EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
+	help
+	  This option group includes the functions defined by the ISO C
+	  standard for working with wide and multibyte characters in
+	  memory.  Functions for reading and writing wide and multibyte
+	  characters from and to files call in the
+	  EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO option group.
 
-        This option group includes the following functions:
+	  This option group includes the following functions:
 
-          btowc         mbsinit       wcscspn       wcstoll
-          iswalnum      mbsrtowcs     wcsftime      wcstombs
-          iswalpha      mbstowcs      wcslen        wcstoul
-          iswblank      mbtowc        wcsncat       wcstoull
-          iswcntrl      swprintf      wcsncmp       wcstoumax
-          iswctype      swscanf       wcsncpy       wcsxfrm
-          iswdigit      towctrans     wcspbrk       wctob
-          iswgraph      towlower      wcsrchr       wctomb
-          iswlower      towupper      wcsrtombs     wctrans
-          iswprint      vswprintf     wcsspn        wctype
-          iswpunct      vswscanf      wcsstr        wmemchr
-          iswspace      wcrtomb       wcstod        wmemcmp
-          iswupper      wcscat        wcstof        wmemcpy
-          iswxdigit     wcschr        wcstoimax     wmemmove
-          mblen         wcscmp        wcstok        wmemset
-          mbrlen        wcscoll       wcstol
-          mbrtowc       wcscpy        wcstold
+		btowc         mbsinit       wcscspn       wcstoll
+		iswalnum      mbsrtowcs     wcsftime      wcstombs
+		iswalpha      mbstowcs      wcslen        wcstoul
+		iswblank      mbtowc        wcsncat       wcstoull
+		iswcntrl      swprintf      wcsncmp       wcstoumax
+		iswctype      swscanf       wcsncpy       wcsxfrm
+		iswdigit      towctrans     wcspbrk       wctob
+		iswgraph      towlower      wcsrchr       wctomb
+		iswlower      towupper      wcsrtombs     wctrans
+		iswprint      vswprintf     wcsspn        wctype
+		iswpunct      vswscanf      wcsstr        wmemchr
+		iswspace      wcrtomb       wcstod        wmemcmp
+		iswupper      wcscat        wcstof        wmemcpy
+		iswxdigit     wcschr        wcstoimax     wmemmove
+		mblen         wcscmp        wcstok        wmemset
+		mbrlen        wcscoll       wcstol
+		mbrtowc       wcscpy        wcstold
+
 
 config EGLIBC_OPTION_POSIX_REGEXP
-   bool "Regular expressions"
-   default y
-   help
-        This option group includes the POSIX regular expression
-        functions, and the associated non-POSIX extensions and
-        compatibility functions.
+	bool "Regular expressions"
+	default y
+	help
+	  This option group includes the POSIX regular expression
+	  functions, and the associated non-POSIX extensions and
+	  compatibility functions.
 
-        With POSIX_REGEXP disabled, the following functions are
-        omitted from libc:
+	  With EGLIBC_OPTION_POSIX_REGEXP disabled, the following functions are
+	  omitted from libc:
 
-          re_comp                 re_max_failures         regcomp
-          re_compile_fastmap      re_search               regerror
-          re_compile_pattern      re_search_2             regexec
-          re_exec                 re_set_registers        regfree
-          re_match                re_set_syntax           rpmatch
-          re_match_2              re_syntax_options
+		re_comp                 re_max_failures         regcomp
+		re_compile_fastmap      re_search               regerror
+		re_compile_pattern      re_search_2             regexec
+		re_exec                 re_set_registers        regfree
+		re_match                re_set_syntax           rpmatch
+		re_match_2              re_syntax_options
 
-        Furthermore, the compatibility regexp interface defined in the
-        <regexp.h> header file, 'compile', 'step', and 'advance', is
-        omitted.
+	  Furthermore, the compatibility regexp interface defined in the
+	  <regexp.h> header file, 'compile', 'step', and 'advance', is
+	  omitted.
+
 
 config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
-   bool "Regular expressions from GLIBC"
-   default y
-   select EGLIBC_OPTION_POSIX_REGEXP
-   depends EGLIBC_VERSION_2_10
-   help
-        This option group specifies which regular expression
-        library to use.  The choice is between regex
-        implementation from GLIBC and regex implementation from
-        libiberty.  The GLIBC variant is fully POSIX conformant and
-        optimized for speed; regex from libiberty is more than twice
-        as small while still is enough for most practical purposes.
+	bool "Regular expressions from GLIBC"
+	default y
+	depends EGLIBC_VERSION_2_10
+	select EGLIBC_OPTION_POSIX_REGEXP
+	help
+	  This option group specifies which regular expression
+	  library to use.  The choice is between regex
+	  implementation from GLIBC and regex implementation from
+	  libiberty.  The GLIBC variant is fully POSIX conformant and
+	  optimized for speed; regex from libiberty is more than twice
+	  as small while still is enough for most practical purposes.
+
 
 config EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
-   bool "Input and output functions for wide characters"
-   default y
-   select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
-   help
-        This option group includes functions for reading and writing
-        wide characters to and from <stdio.h> streams.
+	bool "Input and output functions for wide characters"
+	default y
+	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
+	help
+	  This option group includes functions for reading and writing
+	  wide characters to and from <stdio.h> streams.
 
-        This option group includes the following functions:
+	  This option group includes the following functions:
 
-          fgetwc        fwprintf      putwchar      vwscanf
-          fgetws        fwscanf       ungetwc       wprintf
-          fputwc        getwc         vfwprintf     wscanf
-          fputws        getwchar      vfwscanf
-          fwide         putwc         vwprintf
+		fgetwc        fwprintf      putwchar      vwscanf
+		fgetws        fwscanf       ungetwc       wprintf
+		fputwc        getwc         vfwprintf     wscanf
+		fputws        getwchar      vfwscanf
+		fwide         putwc         vwprintf
 
-        This option group further includes the following unlocked
-        variants of the above functions:
+	  This option group further includes the following unlocked
+	  variants of the above functions:
 
-          fgetwc_unlocked           getwc_unlocked
-          fgetws_unlocked           getwchar_unlocked
-          fputwc_unlocked           putwc_unlocked
-          fputws_unlocked           putwchar_unlocked
-                    
-        Note that the GNU standard C++ library, 'libstdc++.so', uses
-        some of these functions; you will not be able to link or run
-        C++ programs if you disable this option group.
+		fgetwc_unlocked           getwc_unlocked
+		fgetws_unlocked           getwchar_unlocked
+		fputwc_unlocked           putwc_unlocked
+		fputws_unlocked           putwchar_unlocked
+					
+	  Note that the GNU standard C++ library, 'libstdc++.so', uses
+	  some of these functions; you will not be able to link or run
+	  C++ programs if you disable this option group.
 
-        This option group also affects the behavior of the following
-        functions:
+	  This option group also affects the behavior of the following
+	  functions:
 
-          fdopen
-          fopen
-          fopen64
-          freopen
-          freopen64
+		fdopen
+		fopen
+		fopen64
+		freopen
+		freopen64
 
-        These functions all take an OPENTYPE parameter which may
-        contain a string of the form ",ccs=CHARSET", indicating that
-        the underlying file uses the character set named CHARSET.
-        This produces a wide-oriented stream, which is only useful
-        when the functions included in this option group are present.
-        If the user attempts to open a file specifying a character set
-        in the OPENTYPE parameter, and EGLIBC was built with this
-        option group disabled, the function returns NULL, and sets
-        errno to EINVAL.
+	  These functions all take an OPENTYPE parameter which may
+	  contain a string of the form ",ccs=CHARSET", indicating that
+	  the underlying file uses the character set named CHARSET.
+	  This produces a wide-oriented stream, which is only useful
+	  when the functions included in this option group are present.
+	  If the user attempts to open a file specifying a character set
+	  in the OPENTYPE parameter, and EGLIBC was built with this
+	  option group disabled, the function returns NULL, and sets
+	  errno to EINVAL.
