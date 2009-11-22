@@ -36,6 +36,7 @@ ifeq ($(DUMP),)
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
+    ifeq ($(if $(VARIANT),$(BUILD_VARIANT)),$(VARIANT))
     ifdef Package/$(1)/install
       ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
         compile: $$(IPKG_$(1)) $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
@@ -48,6 +49,7 @@ ifeq ($(DUMP),)
         $(1)-disabled:
 		@echo "WARNING: skipping $(1) -- package not selected"
       endif
+    endif
     endif
 
     IDEPEND_$(1):=$$(call filter_deps,$$(DEPENDS))

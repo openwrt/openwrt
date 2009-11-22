@@ -108,7 +108,7 @@ define Build/Compile
 		hostapd hostapd_cli
 endef
 
-define Package/InstallTemplate
+define Package/hostapd/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
 	$(INSTALL_DATA) ./files/hostapd.hotplug $(1)/etc/hotplug.d/net/
 	$(INSTALL_DIR) $(1)/lib/wifi
@@ -116,12 +116,7 @@ define Package/InstallTemplate
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd/hostapd $(1)/usr/sbin/
 endef
-
-ifeq ($(BUILD_VARIANT),full)
-  Package/hostapd/install = $(Package/InstallTemplate)
-else
-  Package/hostapd-mini/install = $(Package/InstallTemplate)
-endif
+Package/hostapd-mini/install = $(Package/hostapd/install)
 
 define Package/hostapd-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
