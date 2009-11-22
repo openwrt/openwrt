@@ -15,22 +15,22 @@ PKG_SOURCE_VERSION:=$(PKG_REVISION)
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)-r$(PKG_REVISION)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
 
-ifeq ($(PKG_VERSION),2.6.1)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_6),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_6
 endif
-ifeq ($(PKG_VERSION),2.7)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_7),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_7
 endif
-ifeq ($(PKG_VERSION),2.8)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_8),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_8
 endif
-ifeq ($(PKG_VERSION),2.9)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_9),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_9
 endif
-ifeq ($(PKG_VERSION),2.10.1)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_10),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_10
 endif
-ifeq ($(PKG_VERSION),trunk)
+ifneq ($(CONFIG_EGLIBC_VERSION_TRUNK),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/trunk
 endif
 

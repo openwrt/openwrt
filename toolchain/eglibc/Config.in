@@ -5,8 +5,8 @@ choice
 	help
 	  Select the version of eglibc you wish to use.
 
-	config EGLIBC_VERSION_2_6_1
-		bool "eglibc 2.6.1"
+	config EGLIBC_VERSION_2_6
+		bool "eglibc 2.6"
 
 	config EGLIBC_VERSION_2_7
 		bool "eglibc 2.7"
@@ -17,8 +17,8 @@ choice
 	config EGLIBC_VERSION_2_9
 		bool "eglibc 2.9"
 
-	config EGLIBC_VERSION_2_10_1
-		bool "eglibc 2.10.1"
+	config EGLIBC_VERSION_2_10
+		bool "eglibc 2.10"
 
 	config EGLIBC_VERSION_TRUNK
 		bool "eglibc trunk"
@@ -29,11 +29,11 @@ config EGLIBC_REVISION
 	string
 	prompt "eglibc revision"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
-	default "5887"  if EGLIBC_VERSION_2_6_1
+	default "5887"  if EGLIBC_VERSION_2_6
 	default "8588"  if EGLIBC_VERSION_2_7
 	default "8587"  if EGLIBC_VERSION_2_8
 	default "8690"  if EGLIBC_VERSION_2_9
-	default "8873"  if EGLIBC_VERSION_2_10_1
+	default "8873"  if EGLIBC_VERSION_2_10
 	default "HEAD"  if EGLIBC_VERSION_TRUNK
 	default ""
 
