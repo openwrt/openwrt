@@ -237,6 +237,7 @@ config EGLIBC_OPTION_EGLIBC_FSTAB
 		getfsent       setfsent
 		getfsfile
 
+
 config EGLIBC_OPTION_EGLIBC_FTRAVERSE
 	bool "Functions for traversing file hierarchies"
 	default y
@@ -430,12 +431,12 @@ config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
 	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10
 	help
 	  This option group includes locale support functions, programs,
-	  and libraries.  With EGLIBC_LOCALE_FUNCTIONS disabled,
+	  and libraries.  With EGLIBC_OPTION_EGLIBC_LOCALE_CODE disabled,
 	  EGLIBC supports only the 'C' locale (also known as 'POSIX'),
 	  and ignores the settings of the 'LANG' and 'LC_*' environment
 	  variables.
 
-	  With EGLIBC_OPTION_LOCALE_CODE disabled, the following
+	  With EGLIBC_OPTION_EGLIBC_LOCALE_CODE disabled, the following
 	  functions are omitted from libc:
 
 		duplocale   localeconv  nl_langinfo    rpmatch  strfmon_l
