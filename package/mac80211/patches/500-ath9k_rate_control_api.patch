@@ -750,7 +750,7 @@
  	minlen = (nsymbols * nsymbits) / BITS_PER_BYTE;
  
  	if (frmlen < minlen) {
-@@ -1430,22 +1458,14 @@ static int setup_tx_flags(struct ath_sof
+@@ -1425,22 +1453,14 @@ static int setup_tx_flags(struct ath_sof
  static u32 ath_pkt_duration(struct ath_softc *sc, u8 rix, struct ath_buf *bf,
  			    int width, int half_gi, bool shortPreamble)
  {
@@ -774,7 +774,7 @@
  	nsymbols = (nbits + nsymbits - 1) / nsymbits;
  
  	if (!half_gi)
-@@ -1454,7 +1474,7 @@ static u32 ath_pkt_duration(struct ath_s
+@@ -1449,7 +1469,7 @@ static u32 ath_pkt_duration(struct ath_s
  		duration = SYMBOL_TIME_HALFGI(nsymbols);
  
  	/* addup duration for legacy/ht training and signal fields */
@@ -783,7 +783,7 @@
  	duration += L_STF + L_LTF + L_SIG + HT_SIG + HT_STF + HT_LTF(streams);
  
  	return duration;
-@@ -1463,11 +1483,11 @@ static u32 ath_pkt_duration(struct ath_s
+@@ -1458,11 +1478,11 @@ static u32 ath_pkt_duration(struct ath_s
  static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf)
  {
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
@@ -796,7 +796,7 @@
  	struct ieee80211_hdr *hdr;
  	int i, flags = 0;
  	u8 rix = 0, ctsrate = 0;
-@@ -1486,11 +1506,10 @@ static void ath_buf_set_rate(struct ath_
+@@ -1481,11 +1501,10 @@ static void ath_buf_set_rate(struct ath_
  	 * checking the BSS's global flag.
  	 * But for the rate series, IEEE80211_TX_RC_USE_SHORT_PREAMBLE is used.
  	 */
@@ -811,7 +811,7 @@
  
  	/*
  	 * ATH9K_TXDESC_RTSENA and ATH9K_TXDESC_CTSENA are mutually exclusive.
-@@ -1513,6 +1532,9 @@ static void ath_buf_set_rate(struct ath_
+@@ -1508,6 +1527,9 @@ static void ath_buf_set_rate(struct ath_
  		flags &= ~(ATH9K_TXDESC_RTSENA);
  
  	for (i = 0; i < 4; i++) {
@@ -821,7 +821,7 @@
  		if (!rates[i].count || (rates[i].idx < 0))
  			continue;
  
-@@ -1520,12 +1542,6 @@ static void ath_buf_set_rate(struct ath_
+@@ -1515,12 +1537,6 @@ static void ath_buf_set_rate(struct ath_
  		series[i].Tries = rates[i].count;
  		series[i].ChSel = common->tx_chainmask;
  
@@ -834,7 +834,7 @@
  		if (rates[i].flags & IEEE80211_TX_RC_USE_RTS_CTS)
  			series[i].RateFlags |= ATH9K_RATESERIES_RTS_CTS;
  		if (rates[i].flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
-@@ -1533,10 +1549,36 @@ static void ath_buf_set_rate(struct ath_
+@@ -1528,10 +1544,36 @@ static void ath_buf_set_rate(struct ath_
  		if (rates[i].flags & IEEE80211_TX_RC_SHORT_GI)
  			series[i].RateFlags |= ATH9K_RATESERIES_HALFGI;
  
@@ -875,7 +875,7 @@
  	}
  
  	/* set dur_update_en for l-sig computation except for PS-Poll frames */
-@@ -1925,8 +1967,10 @@ static void ath_tx_rc_status(struct ath_
+@@ -1920,8 +1962,10 @@ static void ath_tx_rc_status(struct ath_
  		}
  	}
  
@@ -897,7 +897,7 @@
  #include "debug.h"
  #include "common.h"
  
-@@ -433,6 +432,7 @@ struct ath_led {
+@@ -423,6 +422,7 @@ struct ath_led {
  #define SC_OP_BT_PRIORITY_DETECTED BIT(21)
  
  struct ath_wiphy;
@@ -905,7 +905,7 @@
  
  struct ath_softc {
  	struct ieee80211_hw *hw;
-@@ -477,9 +477,8 @@ struct ath_softc {
+@@ -467,9 +467,8 @@ struct ath_softc {
  	struct ath_rx rx;
  	struct ath_tx tx;
  	struct ath_beacon beacon;
@@ -1223,7 +1223,7 @@
  	}
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -670,7 +670,7 @@ bool ath9k_hw_wait(struct ath_hw *ah, u3
+@@ -647,7 +647,7 @@ bool ath9k_hw_wait(struct ath_hw *ah, u3
  u32 ath9k_hw_reverse_bits(u32 val, u32 n);
  bool ath9k_get_channel_edges(struct ath_hw *ah, u16 flags, u16 *low, u16 *high);
  u16 ath9k_hw_computetxtime(struct ath_hw *ah,
