@@ -296,7 +296,7 @@ define Image/Build/Template/UBNTXM
 endef
 
 define Image/Build/Template/UBNTXM/squashfs
-	$(call Image/Build/Template/UBNTXM,squashfs,$(1),$(2),$(3),$(4),$(5))
+	$(call Image/Build/Template/UBNTXM,squashfs-4k,$(1),$(2),$(3),$(4),$(5))
 endef
 
 define Image/Build/Template/UBNTXM/jffs2-64k
