@@ -1,6 +1,6 @@
-diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c
---- compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2008-08-13 06:33:34.000000000 +0200
-+++ compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2009-01-21 08:00:35.000000000 +0100
+diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_compress.c compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_compress.c
+--- compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2009-04-20 06:28:30.000000000 +0200
++++ compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2009-04-20 06:29:21.000000000 +0200
 @@ -62,8 +62,12 @@
  		goto literal;
  
@@ -55,9 +55,9 @@ diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_compress.c compc
  MODULE_LICENSE("GPL");
  MODULE_DESCRIPTION("LZO1X-1 Compressor");
 -
-diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
---- compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2008-08-13 06:33:42.000000000 +0200
-+++ compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2009-01-21 07:49:41.000000000 +0100
+diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress.c compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
+--- compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2009-04-20 06:28:30.000000000 +0200
++++ compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2009-04-20 06:29:21.000000000 +0200
 @@ -45,10 +45,7 @@
  			goto output_overrun;
  		if (HAVE_IP(t + 1, ip_end, ip))
@@ -70,7 +70,7 @@ diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c com
  	}
  
  	while ((ip < ip_end)) {
-@@ -71,23 +68,20 @@
+@@ -71,30 +68,27 @@
  		if (HAVE_IP(t + 4, ip_end, ip))
  			goto input_overrun;
  
@@ -108,6 +108,14 @@ diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c com
  				do {
  					*op++ = *ip++;
  				} while (--t > 0);
+ 			}
+ 		}
+ 
+-first_literal_run:
++//first_literal_run:
+ 		t = *ip++;
+ 		if (t >= 16)
+ 			goto match;
 @@ -139,8 +133,7 @@
  					t += 31 + *ip++;
  				}
@@ -173,13 +181,3 @@ diff -uNr compcache-0.5/sub-projects/compression/lzo-kmod/lzo1x_decompress.c com
  			} else {
  copy_match:
  				*op++ = *m_pos++;
-@@ -247,9 +251,7 @@
- 	*out_len = op - out;
- 	return LZO_E_LOOKBEHIND_OVERRUN;
- }
--
- EXPORT_SYMBOL_GPL(lzo1x_decompress_safe);
- 
- MODULE_LICENSE("GPL");
- MODULE_DESCRIPTION("LZO1X Decompressor");
--

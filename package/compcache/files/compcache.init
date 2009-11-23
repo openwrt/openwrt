@@ -1,18 +1,28 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2008 OpenWrt.org
-START=19
+START=14
 
 load_modules() {
 	local section="$1"
 	config_get "size_kbytes" "$section" "size_kbytes"
+	config_get "backup_dev" "$section" "backup_dev"
+	#CC_PARAM_STR="memlimit_kb=$1 backing_dev=$BACKING_DEV"
 	config_get_bool "enabled" "$section" "enabled" '1'
 	if [ "$enabled" -gt 0 ]; then
-		if [ "`lsmod | grep 'compcache'`" != "" ]; then
-			echo "compcache allready loaded"
+		if [ "`cat /proc/swaps | grep 'ramzswap0'`" != "" ]; then
+			echo "compcache already loaded"
 		else
-			insmod xvmalloc
-			insmod lzo1x
-			insmod compcache compcache_size_kbytes=$size_kbytes
+			if [ "$backup_dev" != "" ]; then
+				params_set="memlimit_kb=$size_kbytes backing_swap=$backup_dev"
+			else
+				params_set="disksize_kb=$size_kbytes"
+			fi
+			if [ "`lsmod | grep 'ramzswap'`" == "" ]; then
+				insmod xvmalloc
+				insmod lzo1x
+				insmod ramzswap $params_set
+				swapon /dev/ramzswap0
+			fi
 		fi
 	fi
 }
@@ -22,9 +32,9 @@ remove_modules() {
 	config_get_bool "enabled" "$section" "enabled" '1'
 	if [ "$enabled" -gt 0 ]; then
 		[ "`cat /proc/swaps | grep 'ramzswap0'`" != "" ] && swapoff /dev/ramzswap0
-		[ "`lsmod | grep 'compcache'`" != "" ] && rmmod compcache > /dev/null
-		[ "`lsmod | grep 'lzo1x'`" != "" ] && rmmod lzo1x > /dev/null
-		[ "`lsmod | grep 'xvmalloc'`" != "" ] && rmmod xvmalloc > /dev/null
+		[ "`lsmod | grep 'ramzswap'`" != "" ] && rmmod ramzswap &> /dev/null
+		[ "`lsmod | grep 'lzo1x'`" != "" ] && rmmod lzo1x &> /dev/null
+		[ "`lsmod | grep 'xvmalloc'`" != "" ] && rmmod xvmalloc &> /dev/null
 	fi
 }
 
