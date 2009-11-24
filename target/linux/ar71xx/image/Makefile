@@ -276,7 +276,7 @@ define Image/Build/Template/TPLINK4K
 endef
 
 define Image/Build/Template/TPLINK4K/squashfs
-	$(call Image/Build/Template/TPLINK,squashfs-4k,$(1),$(2),$(3))
+	$(call Image/Build/Template/TPLINK,squashfs,$(1),$(2),$(3))
 endef
 
 define Image/Build/Template/UBNT
@@ -296,7 +296,7 @@ define Image/Build/Template/UBNTXM
 endef
 
 define Image/Build/Template/UBNTXM/squashfs
-	$(call Image/Build/Template/UBNTXM,squashfs-4k,$(1),$(2),$(3),$(4),$(5))
+	$(call Image/Build/Template/UBNTXM,squashfs,$(1),$(2),$(3),$(4),$(5))
 endef
 
 define Image/Build/Template/UBNTXM/jffs2-64k
@@ -428,8 +428,6 @@ define Image/Build/Profile/Madwifi
 endef
 
 define Image/Build/squashfs
-	dd if=$(KDIR)/root.squashfs of=$(IMGNAME)-root.squashfs-4k bs=4k conv=sync
-	$(call add_jffs2_mark,$(IMGNAME)-root.squashfs-4k)
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
