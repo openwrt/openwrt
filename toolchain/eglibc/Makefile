@@ -30,6 +30,9 @@ endif
 ifneq ($(CONFIG_EGLIBC_VERSION_2_10),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_10
 endif
+ifneq ($(CONFIG_EGLIBC_VERSION_2_11),)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_11
+endif
 ifneq ($(CONFIG_EGLIBC_VERSION_TRUNK),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/trunk
 endif
