@@ -24,7 +24,8 @@ define KernelPackage/sound-core
 	CONFIG_SND_SEQUENCER_OSS=y \
 	CONFIG_HOSTAUDIO \
 	CONFIG_SND_PCM_OSS \
-	CONFIG_SND_MIXER_OSS
+	CONFIG_SND_MIXER_OSS \
+	CONFIG_SOUND_OSS_CORE_PRECLAIM=y
 endef
 
 define KernelPackage/sound-core/2.4
