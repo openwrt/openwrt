@@ -40,13 +40,17 @@ define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
 
-# pad to 64k and add jffs2 end-of-filesystem mark
-# do this twice to make sure that this works with 128k blocksize as well
+# pad to 4k, 8k, 64k, 128k and add jffs2 end-of-filesystem mark
 define prepare_generic_squashfs
-	dd if=$(1) of=$(KDIR)/tmpfile.1 bs=64k conv=sync
+	dd if=$(1) of=$(KDIR)/tmpfile.0 bs=4k conv=sync
+	$(call add_jffs2_mark,$(KDIR)/tmpfile.0)
+	dd if=$(KDIR)/tmpfile.0 of=$(KDIR)/tmpfile.1 bs=4k conv=sync
 	$(call add_jffs2_mark,$(KDIR)/tmpfile.1)
-	dd of=$(1) if=$(KDIR)/tmpfile.1 bs=64k conv=sync
+	dd if=$(KDIR)/tmpfile.1 of=$(KDIR)/tmpfile.2 bs=64k conv=sync
+	$(call add_jffs2_mark,$(KDIR)/tmpfile.2)
+	dd if=$(KDIR)/tmpfile.2 of=$(1) bs=64k conv=sync
 	$(call add_jffs2_mark,$(1))
+	rm -f $(KDIR)/tmpfile.*
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
