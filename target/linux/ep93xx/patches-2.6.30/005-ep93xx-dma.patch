@@ -1,0 +1,3622 @@
+--- /dev/null
++++ b/arch/arm/mach-ep93xx/dma_ep93xx.c
+@@ -0,0 +1,2940 @@
++/******************************************************************************
++ * arch/arm/mach-ep9312/dma_ep93xx.c
++ *
++ * Support functions for the ep93xx internal DMA channels.
++ * (see also Documentation/arm/ep93xx/dma.txt)
++ *
++ * Copyright (C) 2003  Cirrus Logic
++ *
++ * A large portion of this file is based on the dma api implemented by
++ * Nicolas Pitre, dma-sa1100.c, copyrighted 2000.
++ *
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ ****************************************************************************/
++#include <linux/autoconf.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/sched.h>
++#include <linux/spinlock.h>
++#include <linux/slab.h>
++#include <linux/errno.h>
++#include <linux/delay.h>
++#include <linux/interrupt.h>
++
++#include <asm/system.h>
++#include <asm/irq.h>
++#include <asm/hardware.h>
++#include <asm/io.h>
++#include <asm/dma.h>
++#include <asm/mach/dma.h>
++#include "dma_ep93xx.h"
++
++/*****************************************************************************
++ *
++ * Debugging macros
++ *
++ ****************************************************************************/
++#undef DEBUG
++//#define DEBUG   1
++#ifdef DEBUG
++#define DPRINTK( fmt, arg... )  printk( fmt, ##arg )
++#else
++#define DPRINTK( fmt, arg... )
++#endif
++
++/*****************************************************************************
++ *
++ * static global variables
++ *
++ ****************************************************************************/
++ep93xx_dma_t dma_chan[MAX_EP93XX_DMA_CHANNELS];
++
++/*
++ *  lock used to protect the list of dma channels while searching for a free
++ *  channel during dma_request.
++ */
++//static spinlock_t dma_list_lock;
++static spinlock_t dma_list_lock = SPIN_LOCK_UNLOCKED;
++
++/*****************************************************************************
++ *
++ *  Internal DMA processing functions.
++ *
++ ****************************************************************************/
++/*****************************************************************************
++ *
++ *  get_dma_channel_from_handle()
++ *
++ *  If Handle is valid, returns the DMA channel # (0 to 9 for channels 1-10)
++ *  If Handle is not valid, returns -1.
++ *
++ ****************************************************************************/
++static int
++dma_get_channel_from_handle(int handle)
++{
++	int channel;
++
++	/*
++	 *  Get the DMA channel # from the handle.
++	 */
++	channel = ((int)handle & DMA_HANDLE_SPECIFIER_MASK) >> 28;
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (dma_chan[channel].last_valid_handle != (int)handle) {
++		DPRINTK("DMA ERROR - invalid handle 0x%x \n", handle);
++		return(-1);
++	}
++
++	/*
++	 *  See if this instance is still open
++	 */
++	if (!dma_chan[channel].ref_count )
++		return(-1);
++
++	return(channel);
++}
++
++static void dma_m2m_transfer_done(ep93xx_dma_t *dma)
++{
++	unsigned int uiCONTROL;
++	unsigned int M2M_reg_base = dma->reg_base;
++	unsigned int read_back;
++
++	DPRINTK("1  ");
++
++	outl( 0, M2M_reg_base+M2M_OFFSET_INTERRUPT );
++
++	if (dma->total_buffers) {
++		/*
++		 * The current_buffer has already been tranfered, so add the
++		 * byte count to the total_bytes field.
++		 */
++		dma->total_bytes = dma->total_bytes +
++			dma->buffer_queue[dma->current_buffer].size;
++
++		/*
++		 * Mark the current_buffer as used.
++		 */
++		dma->buffer_queue[dma->current_buffer].used = TRUE;
++
++		/*
++		 * Increment the used buffer counter
++		 */
++		dma->used_buffers++;
++
++		DPRINTK("#%d", dma->current_buffer);
++
++		/*
++		 * Increment the current_buffer
++		 */
++		dma->current_buffer = (dma->current_buffer + 1) %
++				      MAX_EP93XX_DMA_BUFFERS;
++
++		/*
++		 * check if there's a new buffer to transfer.
++		 */
++		if (dma->new_buffers && dma->xfer_enable) {
++			/*
++			 * We have a new buffer to transfer so program in the
++			 * buffer values.  Since a STALL interrupt was
++			 * triggered, we program the buffer descriptor 0
++			 *
++			 * Set the SAR_BASE/DAR_BASE/BCR registers with values
++			 * from the next buffer in the queue.
++			 */
++			outl( dma->buffer_queue[dma->current_buffer].source,
++			      M2M_reg_base + M2M_OFFSET_SAR_BASE0 );
++
++			outl( dma->buffer_queue[dma->current_buffer].dest,
++			      M2M_reg_base + M2M_OFFSET_DAR_BASE0 );
++
++			outl( dma->buffer_queue[dma->current_buffer].size,
++			      M2M_reg_base + M2M_OFFSET_BCR0 );
++
++			DPRINTK("SAR_BASE0 - 0x%x\n", dma->buffer_queue[dma->current_buffer].source);
++			DPRINTK("DAR_BASE0 - 0x%x\n", dma->buffer_queue[dma->current_buffer].dest);
++			DPRINTK("BCR0 - 0x%x\n", dma->buffer_queue[dma->current_buffer].size);
++
++			/*
++			 * Decrement the new buffer counter
++			 */
++			dma->new_buffers--;
++
++			/*
++			 * If there's a second new buffer, we program the
++			 * second buffer descriptor.
++			 */
++			if (dma->new_buffers) {
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].source,
++				      M2M_reg_base+M2M_OFFSET_SAR_BASE1 );
++
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].dest,
++				      M2M_reg_base+M2M_OFFSET_DAR_BASE1 );
++
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].size,
++				      M2M_reg_base+M2M_OFFSET_BCR1 );
++
++				uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++				uiCONTROL |= CONTROL_M2M_NFBINTEN;
++				outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++				dma->new_buffers--;
++			}
++		} else {
++			DPRINTK("2 \n");
++			/*
++			 * There's a chance we setup both buffer descriptors,
++			 * but didn't service the NFB quickly enough, causing
++			 * the channel to transfer both buffers, then enter the
++			 * stall state.  So, we need to be able to process the
++			 * second buffer.
++			 */
++			if ((dma->used_buffers + dma->new_buffers) < dma->total_buffers)
++			{
++				DPRINTK("3 ");
++
++				/*
++				 * The current_buffer has already been
++				 * tranferred, so add the byte count to the
++				 * total_bytes field.
++				 */
++				dma->total_bytes = dma->total_bytes +
++					dma->buffer_queue[dma->current_buffer].size;
++
++				/*
++				 * Mark the current_buffer as used.
++				 */
++				dma->buffer_queue[dma->current_buffer].used = TRUE;
++
++				/*
++				 * Increment the used buffer counter
++				 */
++				dma->used_buffers++;
++
++				DPRINTK("#%d", dma->current_buffer);
++
++				/*
++				 * Increment the current buffer pointer.
++				 */
++				dma->current_buffer = (dma->current_buffer + 1) %
++						      MAX_EP93XX_DMA_BUFFERS;
++
++			}
++
++			/*
++			 * No new buffers to transfer, so disable the channel.
++			 */
++			uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++			uiCONTROL &= ~CONTROL_M2M_ENABLE;
++			outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++			/*
++			 * Indicate that this channel is in the pause by
++			 * starvation state by setting the pause bit to true.
++			 */
++			dma->pause = TRUE;
++		}
++	} else {
++		/*
++		 * No buffers to transfer, or old buffers to mark as used,
++		 * so disable the channel
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~CONTROL_M2M_ENABLE;
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++		/*
++		 * Must read the control register back after a write.
++		 */
++		read_back = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++
++		/*
++		 * Indicate that this channel is in the pause by
++		 * starvation state by setting the pause bit to true.
++		 */
++		dma->pause = TRUE;
++	}
++}
++
++static void dma_m2m_next_frame_buffer(ep93xx_dma_t *dma)
++{
++	int loop;
++	unsigned int uiCONTROL;
++	unsigned int M2M_reg_base = dma->reg_base;
++
++	DPRINTK("5  ");
++
++	if (dma->total_buffers) {
++		DPRINTK("6  ");
++		/*
++		 * The iCurrentBuffer has already been transfered.  so add the
++		 * byte count from the current buffer to the total byte count.
++		 */
++		dma->total_bytes = dma->total_bytes +
++			dma->buffer_queue[dma->current_buffer].size;
++
++		/*
++		 * Mark the Current Buffer as used.
++		 */
++		dma->buffer_queue[dma->current_buffer].used = TRUE;
++
++		/*
++		 * Increment the used buffer counter
++		 */
++		dma->used_buffers++;
++
++		DPRINTK("#%d", dma->current_buffer);
++
++		if ((dma->buffer_queue[
++		    (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS].last) ||
++		    (dma->new_buffers == 0) || (dma->xfer_enable == FALSE)) {
++			DPRINTK("7  ");
++
++			/*
++			 * This is the last Buffer in this transaction, so
++			 * disable the NFB interrupt.  We shouldn't get an NFB
++			 * int when the FSM moves to the ON state where it
++			 * would typically get the NFB int indicating a new
++			 * buffer can be programmed.  Instead, once in the ON
++			 * state, the DMA will just proceed to complete the
++			 * transfer of the current buffer, move the FSB
++			 * directly to the STALL state where a STALL interrupt
++			 * will be generated.
++			 */
++			uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++			uiCONTROL &= ~CONTROL_M2M_NFBINTEN ;
++			outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++			/*
++			 * The current buffer has been transferred, so
++			 * increment the current buffer counter to reflect
++			 * this.
++			 */
++			dma->current_buffer = (dma->current_buffer + 1) %
++					      MAX_EP93XX_DMA_BUFFERS;
++
++			DPRINTK("End of NFB handling. \n");
++			DPRINTK("CONTROL - 0x%x \n",
++                                inl(M2M_reg_base+M2M_OFFSET_CONTROL) );
++			DPRINTK("STATUS - 0x%x \n",
++                                inl(M2M_reg_base+M2M_OFFSET_STATUS) );
++			DPRINTK("SAR_BASE0 - 0x%x \n",
++                                inl(M2M_reg_base+M2M_OFFSET_SAR_BASE0) );
++			DPRINTK("SAR_CUR0 - 0x%x \n",
++                                inl(M2M_reg_base+M2M_OFFSET_SAR_CURRENT0) );
++			DPRINTK("DAR_BASE0 - 0x%x \n",
++                                inl(M2M_reg_base+M2M_OFFSET_DAR_BASE0) );
++			DPRINTK("DAR_CUR0 - 0x%x \n",
++                                inl(M2M_reg_base+M2M_OFFSET_DAR_CURRENT0) );
++
++			DPRINTK("Buffer	buf_id	 source	   size	   last	   used \n");
++			for (loop = 0; loop < 32; loop ++)
++				DPRINTK("%d		0x%x		0x%x		 0x%x		%d		 %d \n",
++					loop, dma->buffer_queue[loop].buf_id,
++					dma->buffer_queue[loop].source,
++					dma->buffer_queue[loop].size,
++					dma->buffer_queue[loop].last,
++					dma->buffer_queue[loop].used);
++			DPRINTK("pause	 0x%x		0x%x		 0x%x		%d		 %d \n",
++				dma->pause_buf.buf_id, dma->pause_buf.source,
++				dma->pause_buf.size, dma->pause_buf.last,
++				dma->pause_buf.used);
++
++			DPRINTK("Pause - %d \n", dma->pause);
++			DPRINTK("xfer_enable - %d \n", dma->xfer_enable);
++			DPRINTK("total bytes - 0x%x \n", dma->total_bytes);
++			DPRINTK("total buffer - %d \n", dma->total_buffers);
++			DPRINTK("new buffers - %d \n", dma->new_buffers);
++			DPRINTK("current buffer - %d \n", dma->current_buffer);
++			DPRINTK("last buffer - %d \n", dma->last_buffer);
++			DPRINTK("used buffers - %d \n", dma->used_buffers);
++			DPRINTK("callback addr - 0x%p \n", dma->callback);
++
++		} else if (dma->new_buffers) {
++			DPRINTK("8  ");
++			/*
++			 * We have a new buffer, so increment the current
++			 * buffer to point to the next buffer, which is already
++			 * programmed into the DMA. Next time around, it'll be
++			 * pointing to the current buffer.
++			 */
++			dma->current_buffer = (dma->current_buffer + 1) %
++					      MAX_EP93XX_DMA_BUFFERS;
++
++			/*
++			 * We know we have a new buffer to program as the next
++			 * buffer, so check which set of SAR_BASE/DAR_BASE/BCR
++			 * registers to program.
++			 */
++			if ( inl(M2M_reg_base+M2M_OFFSET_STATUS) & STATUS_M2M_NB ) {
++				/*
++				 * Set the SAR_BASE1/DAR_BASE1/BCR1 registers
++				 * with values from the next buffer in the
++				 * queue.
++				 */
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].source,
++				      M2M_reg_base+M2M_OFFSET_SAR_BASE1 );
++
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].dest,
++				      M2M_reg_base+M2M_OFFSET_DAR_BASE1 );
++
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].size,
++				      M2M_reg_base+M2M_OFFSET_BCR1 );
++			} else {
++				/*
++				 * Set the SAR_BASE0/DAR_BASE0/BCR0 registers
++				 * with values from the next buffer in the
++				 * queue.
++				 */
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].source,
++				      M2M_reg_base+M2M_OFFSET_SAR_BASE0 );
++
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].dest,
++				      M2M_reg_base+M2M_OFFSET_DAR_BASE0 );
++
++				outl( dma->buffer_queue[(dma->current_buffer + 1) %
++							MAX_EP93XX_DMA_BUFFERS].size,
++				      M2M_reg_base+M2M_OFFSET_BCR0 );
++			}
++
++			/*
++			 *  Decrement the new buffers counter
++			 */
++			dma->new_buffers--;
++		}
++	} else {
++		/*
++		 * Total number of buffers is 0 - really we should never get
++		 * here, but just in case.
++		 */
++		DPRINTK("9 \n");
++
++		/*
++		 *  No new buffers to transfer, so Disable the channel
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~CONTROL_M2M_ENABLE;
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++		/*
++		 *  Indicate that the channel is paused by starvation.
++		 */
++		dma->pause = 1;
++	}
++}
++
++/*****************************************************************************
++ *
++ * dma_m2m_irq_handler
++ *
++ ****************************************************************************/
++static irqreturn_t
++dma_m2m_irq_handler(int irq, void *dev_id)
++{
++	ep93xx_dma_t *dma = (ep93xx_dma_t *)dev_id;
++	unsigned int M2M_reg_base = dma->reg_base;
++	ep93xx_dma_dev_t dma_int = UNDEF_INT;
++	int status;
++
++//	printk("+m2m irq=%d\n", irq);
++
++	/*
++	 *  Determine what kind of dma interrupt this is.
++	 */
++	status = inl(M2M_reg_base + M2M_OFFSET_INTERRUPT);
++	if ( status & INTERRUPT_M2M_DONEINT )
++		dma_int = DONE; // we're done with a requested dma
++	else if ( status & INTERRUPT_M2M_NFBINT )
++		dma_int = NFB;  // we're done with one dma buffer
++
++	DPRINTK("IRQ: b=%#x st=%#x\n", (int)dma->current_buffer, dma_int);
++
++	switch (dma_int) {
++	/*
++	 *  Next Frame Buffer Interrupt.  If there's a new buffer program it
++	 *  Check if this is the last buffer in the transfer,
++	 *  and if it is, disable the NFB int to prevent being
++	 *  interrupted for another buffer when we know there won't be
++	 *  another.
++	 */
++	case NFB:
++		dma_m2m_next_frame_buffer(dma);
++		break;
++	/*
++	 *  Done interrupt generated, indicating that the transfer is complete.
++	 */
++	case DONE:
++		dma_m2m_transfer_done(dma);
++		break;
++
++	default:
++		break;
++	}
++
++	if ((dma_int != UNDEF_INT) && dma->callback)
++		dma->callback(dma_int, dma->device, dma->user_data);
++
++	return IRQ_HANDLED;
++}
++
++/*****************************************************************************
++ *
++ * dma_m2p_irq_handler
++ *
++ *
++ *
++ ****************************************************************************/
++static irqreturn_t
++dma_m2p_irq_handler(int irq, void *dev_id)
++{
++	ep93xx_dma_t *dma = (ep93xx_dma_t *) dev_id;
++	unsigned int M2P_reg_base = dma->reg_base;
++	unsigned int read_back;
++	ep93xx_dma_dev_t dma_int = UNDEF_INT;
++	unsigned int loop, uiCONTROL, uiINTERRUPT;
++
++	/*
++	 *  Determine what kind of dma interrupt this is.
++	 */
++	if ( inl(M2P_reg_base+M2P_OFFSET_INTERRUPT) & INTERRUPT_M2P_STALLINT )
++		dma_int = STALL;
++	else if ( inl(M2P_reg_base+M2P_OFFSET_INTERRUPT) & INTERRUPT_M2P_NFBINT )
++		dma_int = NFB;
++	else if ( inl(M2P_reg_base+M2P_OFFSET_INTERRUPT) & INTERRUPT_M2P_CHERRORINT )
++		dma_int = CHERROR;
++
++	/*
++	 *  Stall Interrupt: The Channel is stalled, meaning nothing is
++	 *  programmed to transfer right now.  So, we're back to the
++	 *  beginnning.  If there's a buffer to transfer, program it into
++	 *  max and base 0 registers.
++	 */
++	if (dma_int == STALL) {
++		DPRINTK("1  ");
++
++		if (dma->total_buffers) {
++			/*
++			 * The current_buffer has already been tranfered, so
++			 * add the byte count to the total_bytes field.
++			 */
++			dma->total_bytes = dma->total_bytes +
++				dma->buffer_queue[dma->current_buffer].size;
++
++			/*
++			 *  Mark the current_buffer as used.
++			 */
++			dma->buffer_queue[dma->current_buffer].used = TRUE;
++
++			/*
++			 *  Increment the used buffer counter
++			 */
++			dma->used_buffers++;
++
++			DPRINTK("#%d", dma->current_buffer);
++
++			/*
++			 *  Increment the current_buffer
++			 */
++			dma->current_buffer = (dma->current_buffer + 1) %
++					      MAX_EP93XX_DMA_BUFFERS;
++
++			/*
++			 *  check if there's a new buffer to transfer.
++			 */
++			if (dma->new_buffers && dma->xfer_enable) {
++				/*
++				 * We have a new buffer to transfer so program
++				 * in the buffer values.  Since a STALL
++				 * interrupt was triggered, we program the
++				 * base0 and maxcnt0
++				 *
++				 * Set the MAXCNT0 register with the buffer
++				 * size
++				 */
++				outl( dma->buffer_queue[dma->current_buffer].size,
++					  M2P_reg_base+M2P_OFFSET_MAXCNT0 );
++
++				/*
++				 * Set the BASE0 register with the buffer base
++				 * address
++				 */
++				outl( dma->buffer_queue[dma->current_buffer].source,
++					  M2P_reg_base+M2P_OFFSET_BASE0 );
++
++				/*
++				 *  Decrement the new buffer counter
++				 */
++				dma->new_buffers--;
++
++				if (dma->new_buffers) {
++					DPRINTK("A  ");
++					/*
++					 * Set the MAXCNT1 register with the
++					 * buffer size
++					 */
++					outl( dma->buffer_queue[(dma->current_buffer + 1) %
++											MAX_EP93XX_DMA_BUFFERS].size,
++						  M2P_reg_base+M2P_OFFSET_MAXCNT1 );
++
++					/*
++					 * Set the BASE1 register with the
++					 * buffer base address
++					 */
++					outl( dma->buffer_queue[dma->current_buffer + 1 %
++											MAX_EP93XX_DMA_BUFFERS].source,
++						  M2P_reg_base+M2P_OFFSET_BASE1 );
++
++					/*
++					 *  Decrement the new buffer counter
++					 */
++					dma->new_buffers--;
++
++					/*
++					 *  Enable the NFB Interrupt.
++					 */
++					uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++					uiCONTROL |= CONTROL_M2P_NFBINTEN;
++					outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++				}
++			} else {
++				/*
++				 *  No new buffers.
++				 */
++				DPRINTK("2 \n");
++
++				/*
++				 *  There's a chance we setup both buffer descriptors, but
++				 *  didn't service the NFB quickly enough, causing the channel
++				 *  to transfer both buffers, then enter the stall state.
++				 *  So, we need to be able to process the second buffer.
++				 */
++				if ((dma->used_buffers + dma->new_buffers) < dma->total_buffers) {
++					DPRINTK("3 ");
++
++					/*
++					 *  The current_buffer has already been tranfered, so add the
++					 *  byte count to the total_bytes field.
++					 */
++					dma->total_bytes = dma->total_bytes +
++						dma->buffer_queue[dma->current_buffer].size;
++
++					/*
++					 *  Mark the current_buffer as used.
++					 */
++					dma->buffer_queue[dma->current_buffer].used = TRUE;
++
++					/*
++					 *  Increment the used buffer counter
++					 */
++					dma->used_buffers++;
++
++					DPRINTK("#%d", dma->current_buffer);
++
++					/*
++					 *  Increment the current buffer pointer.
++					 */
++					dma->current_buffer = (dma->current_buffer + 1) %
++						MAX_EP93XX_DMA_BUFFERS;
++
++				}
++
++				/*
++				 *  No new buffers to transfer, so disable the channel.
++				 */
++				uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++				uiCONTROL &= ~CONTROL_M2P_ENABLE;
++				outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++				/*
++				 *  Indicate that this channel is in the pause by starvation
++				 *  state by setting the pause bit to true.
++				 */
++				dma->pause = TRUE;
++
++				DPRINTK("STATUS - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_STATUS) );
++				DPRINTK("CONTROL - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_CONTROL) );
++				DPRINTK("REMAIN - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_REMAIN) );
++				DPRINTK("PPALLOC - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_PPALLOC) );
++				DPRINTK("BASE0 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE0) );
++				DPRINTK("MAXCNT0 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT0) );
++				DPRINTK("CURRENT0 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT0) );
++				DPRINTK("BASE1 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE1) );
++				DPRINTK("MAXCNT1 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT1) );
++				DPRINTK("CURRENT1 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT1) );
++
++				DPRINTK("Buffer	buf_id	 source	   size	   last	   used \n");
++				for (loop = 0; loop < 32; loop ++)
++					DPRINTK("%d		0x%x		0x%x		 0x%x		%d		 %d \n",
++							loop, dma->buffer_queue[loop].buf_id, dma->buffer_queue[loop].source,
++							dma->buffer_queue[loop].size,
++							dma->buffer_queue[loop].last, dma->buffer_queue[loop].used);
++				DPRINTK("pause	 0x%x		0x%x		 0x%x		%d		 %d \n",
++						dma->pause_buf.buf_id, dma->pause_buf.source, dma->pause_buf.size,
++						dma->pause_buf.last, dma->pause_buf.used);
++
++				DPRINTK("Pause - %d \n", dma->pause);
++				DPRINTK("xfer_enable - %d \n", dma->xfer_enable);
++				DPRINTK("total bytes - 0x%x \n", dma->total_bytes);
++				DPRINTK("total buffer - %d \n", dma->total_buffers);
++				DPRINTK("new buffers - %d \n", dma->new_buffers);
++				DPRINTK("current buffer - %d \n", dma->current_buffer);
++				DPRINTK("last buffer - %d \n", dma->last_buffer);
++				DPRINTK("used buffers - %d \n", dma->used_buffers);
++				DPRINTK("callback addr - 0x%p \n", dma->callback);
++			}
++		} else {
++			/*
++			 *  No buffers to transfer, or old buffers to mark as used,
++			 *  so Disable the channel
++			 */
++			uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++			uiCONTROL &= ~CONTROL_M2P_ENABLE;
++			outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++			/*
++			 *  Must read the control register back after a write.
++			 */
++			read_back = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++
++			/*
++			 *  Indicate that this channel is in the pause by
++			 *  starvation state by setting the pause bit to true.
++			 */
++			dma->pause = TRUE;
++		}
++	}
++
++	/*
++	 *  Next Frame Buffer Interrupt.  If there's a new buffer program it
++	 *  Check if this is the last buffer in the transfer,
++	 *  and if it is, disable the NFB int to prevent being
++	 *  interrupted for another buffer when we know there won't be
++	 *  another.
++	 */
++	if (dma_int == NFB) {
++		DPRINTK("5  ");
++
++		if (dma->total_buffers) {
++			DPRINTK("6  ");
++			/*
++			 *  The iCurrentBuffer has already been transfered.  so add the
++			 *  byte count from the current buffer to the total byte count.
++			 */
++			dma->total_bytes = dma->total_bytes +
++				dma->buffer_queue[dma->current_buffer].size;
++
++			/*
++			 *  Mark the Current Buffer as used.
++			 */
++			dma->buffer_queue[dma->current_buffer].used = TRUE;
++
++			/*
++			 *  Increment the used buffer counter
++			 */
++			dma->used_buffers++;
++
++			DPRINTK("#%d", dma->current_buffer);
++
++			if ((dma->buffer_queue[
++			    (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS].last) ||
++			    (dma->new_buffers == 0) || (dma->xfer_enable == FALSE)) {
++				DPRINTK("7  ");
++
++				/*
++				 *  This is the last Buffer in this transaction, so disable
++				 *  the NFB interrupt.  We shouldn't get an NFB int when the
++				 *  FSM moves to the ON state where it would typically get the
++				 *  NFB int indicating a new buffer can be programmed.
++				 *  Instead, once in the ON state, the DMA will just proceed
++				 *  to complet the transfer of the current buffer, move the
++				 *  FSB directly to the STALL state where a STALL interrupt
++				 *  will be generated.
++				 */
++				uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++				uiCONTROL &= ~CONTROL_M2P_NFBINTEN;
++				outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++				/*
++				 *  The current buffer has been transferred, so increment
++				 *  the current buffer counter to reflect this.
++				 */
++				dma->current_buffer = (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS;
++
++				DPRINTK("End of NFB handling. \n");
++				DPRINTK("STATUS - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_STATUS) );
++				DPRINTK("CONTROL - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_CONTROL) );
++				DPRINTK("REMAIN - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_REMAIN) );
++				DPRINTK("PPALLOC - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_PPALLOC) );
++				DPRINTK("BASE0 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE0) );
++				DPRINTK("MAXCNT0 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT0) );
++				DPRINTK("CURRENT0 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT0) );
++				DPRINTK("BASE1 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE1) );
++				DPRINTK("MAXCNT1 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT1) );
++				DPRINTK("CURRENT1 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT1) );
++
++				DPRINTK("Buffer	buf_id	 source	   size	   last	   used \n");
++				for (loop = 0; loop < 32; loop ++)
++					DPRINTK("%d		0x%x		0x%x		 0x%x		%d		 %d \n",
++							loop, dma->buffer_queue[loop].buf_id, dma->buffer_queue[loop].source,
++							dma->buffer_queue[loop].size,
++							dma->buffer_queue[loop].last, dma->buffer_queue[loop].used);
++				DPRINTK("pause	 0x%x		0x%x		 0x%x		%d		 %d \n",
++						dma->pause_buf.buf_id, dma->pause_buf.source, dma->pause_buf.size,
++						dma->pause_buf.last, dma->pause_buf.used);
++
++				DPRINTK("Pause - %d \n", dma->pause);
++				DPRINTK("xfer_enable - %d \n", dma->xfer_enable);
++				DPRINTK("total bytes - 0x%x \n", dma->total_bytes);
++				DPRINTK("total buffer - %d \n", dma->total_buffers);
++				DPRINTK("new buffers - %d \n", dma->new_buffers);
++				DPRINTK("current buffer - %d \n", dma->current_buffer);
++				DPRINTK("last buffer - %d \n", dma->last_buffer);
++				DPRINTK("used buffers - %d \n", dma->used_buffers);
++				DPRINTK("callback addr - 0x%p \n", dma->callback);
++
++			} else if (dma->new_buffers) {
++				DPRINTK("8  ");
++				/*
++				 *  we have a new buffer, so increment the current buffer to
++				 *  point to the next buffer, which is already programmed into
++				 *  the DMA. Next time around, it'll be pointing to the
++				 *  current buffer.
++				 */
++				dma->current_buffer = (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS;
++
++				/*
++				 *  we know we have a new buffer to program as the next
++				 *  buffer, so check which set of MAXCNT and BASE registers
++				 *  to program.
++				 */
++				if ( inl(M2P_reg_base+M2P_OFFSET_STATUS) & STATUS_M2P_NEXTBUFFER ) {
++					/*
++					 *  Set the MAXCNT1 register with the buffer size
++					 */
++					outl( dma->buffer_queue[
++					      (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS].size,
++					      M2P_reg_base+M2P_OFFSET_MAXCNT1 );
++
++					/*
++					 *  Set the BASE1 register with the buffer base address
++					 */
++					outl( dma->buffer_queue[
++					      (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS].source,
++					      M2P_reg_base+M2P_OFFSET_BASE1 );
++				} else {
++					/*
++					 *  Set the MAXCNT0 register with the buffer size
++					 */
++					outl( dma->buffer_queue[
++					      (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS].size,
++					       M2P_reg_base+M2P_OFFSET_MAXCNT0 );
++
++					/*
++					 *  Set the BASE0 register with the buffer base address
++					 */
++					outl( dma->buffer_queue[
++					      (dma->current_buffer + 1) % MAX_EP93XX_DMA_BUFFERS].source,
++					      M2P_reg_base+M2P_OFFSET_BASE0 );
++				}
++
++				/*
++				 *  Decrement the new buffers counter
++				 */
++				dma->new_buffers--;
++			}
++		} else {
++			/*
++			 *  Total number of buffers is 0 - really we should never get here,
++			 *  but just in case.
++			 */
++			DPRINTK("9 \n");
++
++			/*
++			 *  No new buffers to transfer, so Disable the channel
++			 */
++			uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++			uiCONTROL &= ~CONTROL_M2P_ENABLE;
++			outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++		}
++	}
++
++	/*
++	 *  Channel Error Interrupt, or perhipheral interrupt, specific to the
++	 *  memory to/from peripheral channels.
++	 */
++	if (dma_int == CHERROR) {
++		/*
++		 *  just clear the interrupt, it's really up to the peripheral
++		 *  driver to determine if any further action is necessary.
++		 */
++		uiINTERRUPT = inl(M2P_reg_base+M2P_OFFSET_INTERRUPT);
++		uiINTERRUPT &= ~INTERRUPT_M2P_CHERRORINT;
++		outl( uiINTERRUPT, M2P_reg_base+M2P_OFFSET_INTERRUPT );
++	}
++
++	/*
++	 *  Make sure the interrupt was valid, and if it was, then check
++	 *  if a callback function was installed for this DMA channel.  If a
++	 *  callback was installed call it.
++	 */
++	if ((dma_int != UNDEF_INT) && dma->callback)
++		dma->callback(dma_int, dma->device, dma->user_data);
++
++	return IRQ_HANDLED;
++}
++
++/*****************************************************************************
++ *
++ * ep9312_dma_open_m2p(int device)
++ *
++ * Description: This function will attempt to open a M2P/P2M DMA channel.
++ *			  If the open is successful, the channel number is returned,
++ *			  otherwise a negative number is returned.
++ *
++ * Parameters:
++ *  device:	 device for which the dma channel is requested.
++ *
++ ****************************************************************************/
++static int
++dma_open_m2p(int device)
++{
++	int channel = -1;
++	unsigned int loop;
++	unsigned int M2P_reg_base;
++	unsigned int uiPWRCNT;
++	/*unsigned long flags;*/
++
++	DPRINTK("DMA Open M2P with hw dev %d\n", device);
++
++	/*
++	 *  Lock the dma channel list.
++	 */
++	//spin_lock_irqsave(&dma_list_lock, flags);
++	spin_lock(&dma_list_lock);
++
++	/*
++	 * Verify that the device requesting DMA isn't already using a DMA channel
++	 */
++	if (device >= 10)
++		loop = 1;		 // Rx transfer requested
++	else
++		loop = 0;		 // Tx transfer requested
++
++	for (; loop < 10; loop = loop + 2)
++		/*
++		 *  Before checking for a matching device, check that the
++		 *  channel is in use, otherwise the device field is
++		 *  invalid.
++		 */
++		if (dma_chan[loop].ref_count)
++			if (device == dma_chan[loop].device) {
++				DPRINTK("DMA Open M2P - Error\n");
++				return(-1);
++			}
++
++	/*
++	 *  Get a DMA channel instance for the given hardware device.
++	 *  If this is a TX look for even numbered channels, else look for
++	 *  odd numbered channels
++	 */
++	if (device >= 10)
++		loop = 1;		 /* Rx transfer requested */
++	else
++		loop = 0;		 /* Tx transfer requested */
++
++	for (; loop < 10; loop = loop + 2)
++		if (!dma_chan[loop].ref_count) {
++			/*
++			 *  Capture the channel and increment the reference count.
++			 */
++			channel = loop;
++			dma_chan[channel].ref_count++;
++			break;
++		}
++
++	/*
++	 *  Unlock the dma channel list.
++	 */
++	//spin_unlock_irqrestore(&dma_list_lock, flags);
++	spin_unlock(&dma_list_lock);
++	/*
++	 *  See if we got a valid channel.
++	 */
++	if (channel < 0)
++		return(-1);
++
++	/*
++	 *  Point regs to the correct dma channel register base.
++	 */
++	M2P_reg_base = dma_chan[channel].reg_base;
++
++	/*
++	 *  Turn on the clock for the specified DMA channel
++	 *  TODO: need to use the correct register name for the
++	 *  power control register.
++	 */
++	uiPWRCNT = inl(/*SYSCON_PWRCNT*/EP93XX_SYSCON_CLOCK_CONTROL);
++	switch (channel) {
++	case 0:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH0;
++		break;
++
++	case 1:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH1;
++		break;
++
++	case 2:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH2;
++		break;
++
++	case 3:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH3;
++		break;
++
++	case 4:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH4;
++		break;
++
++	case 5:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH5;
++		break;
++
++	case 6:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH6;
++		break;
++
++	case 7:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH7;
++		break;
++
++	case 8:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH8;
++		break;
++
++	case 9:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2PCH9;
++		break;
++
++	default:
++		return(-1);
++	}
++	outl( uiPWRCNT, /*SYSCON_PWRCNT*/EP93XX_SYSCON_CLOCK_CONTROL );
++
++	/*
++	 *  Clear out the control register before any further setup.
++	 */
++	outl( 0, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++	/*
++	 *  Setup the peripheral port value in the DMA channel registers.
++	 */
++	if (device < 10)
++		outl( (unsigned int)device, M2P_reg_base+M2P_OFFSET_PPALLOC );
++	else
++		outl( (unsigned int)(device - 10), M2P_reg_base+M2P_OFFSET_PPALLOC );
++
++	/*
++	 *  Let's hold on to the value of the Hw device for comparison later.
++	 */
++	dma_chan[channel].device = device;
++
++	/*
++	 *  Success.
++	 */
++	return(channel);
++}
++
++/*****************************************************************************
++ *
++ * dma_open_m2m(int device)
++ *
++ * Description: This function will attempt to open a M2M DMA channel.
++ *			  If the open is successful, the channel number is returned,
++ *			  otherwise a negative number is returned.
++ *
++ * Parameters:
++ *  device:	 device for which the dma channel is requested.
++ *
++ ****************************************************************************/
++static int
++dma_open_m2m(int device)
++{
++	int channel = -1;
++	unsigned int loop;
++	unsigned int M2M_reg_base;
++	unsigned int uiPWRCNT, uiCONTROL;
++	/*unsigned long flags;*/
++
++	DPRINTK("DMA Open M2M with hw dev %d\n", device);
++
++	/*
++	 *  Lock the dma channel list.
++	 */
++	//spin_lock_irqsave(&dma_list_lock, flags);
++	spin_lock(&dma_list_lock);
++
++
++	/*
++	 *  Check if this device is already allocated a channel.
++	 *  TODO: can one M2M device be allocated multiple channels?
++	 */
++	for (loop = 10; loop < 12; loop++)
++		/*
++		 *  Before checking for a matching device, check that the
++		 *  channel is in use, otherwise the device field is
++		 *  invalid.
++		 */
++		if (dma_chan[loop].ref_count)
++			if (device == dma_chan[loop].device) {
++				DPRINTK("Error - dma_open_m2m - already allocated channel\n");
++
++				/*
++				 *  Unlock the dma channel list.
++				 */
++				//spin_unlock_irqrestore(&dma_list_lock, flags);
++				spin_unlock(&dma_list_lock);
++				/*
++				 *  Fail.
++				 */
++				return(-1);
++			}
++
++	/*
++	 *  Get a DMA channel instance for the given hardware device.
++	 */
++	for (loop = 10; loop < 12; loop++)
++		if (!dma_chan[loop].ref_count) {
++			/*
++			 *  Capture the channel and increment the reference count.
++			 */
++			channel = loop;
++			dma_chan[channel].ref_count++;
++			break;
++		}
++
++	/*
++	 *  Unlock the dma channel list.
++	 */
++	//spin_unlock(dma_list_lock);
++	spin_unlock(&dma_list_lock);
++	//spin_unlock_irqrestore(&dma_list_lock, flags);
++
++	/*
++	 *  See if we got a valid channel.
++	 */
++	if (channel < 0)
++		return(-1);
++
++	/*
++	 *  Point regs to the correct dma channel register base.
++	 */
++	M2M_reg_base = dma_chan[channel].reg_base;
++
++	/*
++	 *  Turn on the clock for the specified DMA channel
++	 *  TODO: need to use the correct register name for the
++	 *  power control register.
++	 */
++	uiPWRCNT = inl(/*SYSCON_PWRCNT*/EP93XX_SYSCON_CLOCK_CONTROL);
++	switch (channel) {
++	case 10:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2MCH0;
++		break;
++
++	case 11:
++		uiPWRCNT |= SYSCON_PWRCNT_DMA_M2MCH1;
++		break;
++
++	default:
++		return(-1);
++	}
++	outl( uiPWRCNT, /*SYSCON_PWRCNT*/EP93XX_SYSCON_CLOCK_CONTROL);
++
++	DPRINTK("DMA Open - power control: 0x%x \n", inl(SYSCON_PWRCNT) );
++
++	/*
++	 *  Clear out the control register before any further setup.
++	 */
++	outl( 0, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++	/*
++	 *  Setup the transfer mode and the request source selection within
++	 *  the DMA M2M channel registers.
++	 */
++	switch (device) {
++	case DMA_MEMORY:
++		/*
++		 * Clear TM field, set RSS field to 0
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~(CONTROL_M2M_TM_MASK | CONTROL_M2M_RSS_MASK);
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++		break;
++
++	case DMA_IDE:
++		/*
++		 * Set RSS field to 3, Set NO_HDSK, Set PW field to 1
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~(CONTROL_M2M_RSS_MASK|CONTROL_M2M_PW_MASK);
++		uiCONTROL |= (3<<CONTROL_M2M_RSS_SHIFT) |
++			CONTROL_M2M_NO_HDSK |
++			(2<<CONTROL_M2M_PW_SHIFT);
++
++		uiCONTROL &= ~(CONTROL_M2M_ETDP_MASK);
++		uiCONTROL &= ~(CONTROL_M2M_DACKP);
++		uiCONTROL &= ~(CONTROL_M2M_DREQP_MASK);
++
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++		inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		break;
++
++	case DMARx_SSP:
++		/*
++		 * Set RSS field to 1, Set NO_HDSK, Set TM field to 2
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~(CONTROL_M2M_RSS_MASK|CONTROL_M2M_TM_MASK);
++		uiCONTROL |= (1<<CONTROL_M2M_RSS_SHIFT) |
++			CONTROL_M2M_NO_HDSK |
++			(2<<CONTROL_M2M_TM_SHIFT);
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++		break;
++
++	case DMATx_SSP:
++		/*
++		 * Set RSS field to 2, Set NO_HDSK, Set TM field to 1
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~(CONTROL_M2M_RSS_MASK|CONTROL_M2M_TM_MASK);
++		uiCONTROL |= (2<<CONTROL_M2M_RSS_SHIFT) |
++			CONTROL_M2M_NO_HDSK |
++			(1<<CONTROL_M2M_TM_SHIFT);
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++		break;
++
++	case DMATx_EXT_DREQ:
++		/*
++		 * Set TM field to 2, set RSS field to 0
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~(CONTROL_M2M_RSS_MASK|CONTROL_M2M_TM_MASK);
++		uiCONTROL |= 1<<CONTROL_M2M_TM_SHIFT;
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++		break;
++
++	case DMARx_EXT_DREQ:
++		/*
++		 * Set TM field to 2, set RSS field to 0
++		 */
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~(CONTROL_M2M_RSS_MASK|CONTROL_M2M_TM_MASK);
++		uiCONTROL |= 2<<CONTROL_M2M_TM_SHIFT;
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++		break;
++
++	default:
++		return -1;
++	}
++
++	/*
++	 *  Let's hold on to the value of the Hw device for comparison later.
++	 */
++	dma_chan[channel].device = device;
++
++	/*
++	 *  Success.
++	 */
++	return(channel);
++}
++
++/*****************************************************************************
++ *
++ *  int dma_config_m2m(ep93xx_dma_t * dma, unsigned int flags_m2m,
++ *			   dma_callback callback, unsigned int user_data)
++ *
++ *  Description: Configure the DMA channel and install a callback function.
++ *			   This function will have to be called for every transfer
++ *
++ *  dma:		Pointer to the dma instance data for the M2M channel to
++ *			  configure.
++ *  flags_m2m   Flags used to configure an M2M dma channel and determine
++ *			  if a callback function and user_data information are included
++ *			  in this call.
++ *  callback	function pointer which is called near the end of the
++ *			  dma channel's irq handler.
++ *  user_data   defined by the calling driver.
++ *
++ ****************************************************************************/
++static int
++dma_config_m2m(ep93xx_dma_t * dma, unsigned int flags_m2m,
++			   dma_callback callback, unsigned int user_data)
++{
++	unsigned long flags;
++	unsigned int M2M_reg_base, uiCONTROL;
++
++	/*
++	 *  Make sure the channel is disabled before configuring the channel.
++	 *
++	 *  TODO: Is this correct??   Making a big change here...
++	 */
++	/* if (!dma->pause || (!dma->pause && dma->xfer_enable)) */
++	if (dma->xfer_enable) {
++		/*
++		 *  DMA channel is not paused, so we can't configure it.
++		 */
++		DPRINTK("DMA channel not paused, so can't configure! \n");
++		return(-1);
++	}
++
++	/*
++	 *  Mask interrupts.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  Setup a pointer into the dma channel's register set.
++	 */
++	M2M_reg_base = dma->reg_base;
++
++	uiCONTROL = inl(M2M_reg_base + M2M_OFFSET_CONTROL);
++	outl(0, M2M_reg_base + M2M_OFFSET_CONTROL);
++	inl(M2M_reg_base + M2M_OFFSET_CONTROL);
++	outl(uiCONTROL, M2M_reg_base + M2M_OFFSET_CONTROL);
++
++	/*
++	 *  By default we disable the stall interrupt.
++	 */
++	uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++	uiCONTROL &= ~CONTROL_M2M_STALLINTEN;
++	outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++	/*
++	 *  By default we disable the done interrupt.
++	 */
++	uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++	uiCONTROL &= ~CONTROL_M2M_DONEINTEN;
++	outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++	/*
++	 *  Set up the transfer control fields based on values passed in
++	 *  the flags_m2m field.
++	 */
++	uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++
++	if ( flags_m2m & DESTINATION_HOLD )
++		uiCONTROL |= CONTROL_M2M_DAH;
++	else
++		uiCONTROL &= ~CONTROL_M2M_DAH;
++
++	if ( flags_m2m & SOURCE_HOLD )
++		uiCONTROL |= CONTROL_M2M_SAH;
++	else
++		uiCONTROL &= ~CONTROL_M2M_SAH;
++
++	uiCONTROL &= ~CONTROL_M2M_TM_MASK;
++	uiCONTROL |= (((flags_m2m & TRANSFER_MODE_MASK) >> TRANSFER_MODE_SHIFT) <<
++				  CONTROL_M2M_TM_SHIFT) & CONTROL_M2M_TM_MASK;
++
++	uiCONTROL &= ~CONTROL_M2M_PWSC_MASK;
++	uiCONTROL |= (((flags_m2m & WAIT_STATES_MASK) >> WAIT_STATES_SHIFT) <<
++				  CONTROL_M2M_PWSC_SHIFT) & CONTROL_M2M_PWSC_MASK;
++
++	outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++	inl(M2M_reg_base + M2M_OFFSET_CONTROL);
++
++	/*
++	 *  Save the callback function in the dma instance for this channel.
++	 */
++	dma->callback = callback;
++
++	/*
++	 *  Save the user data in the the dma instance for this channel.
++	 */
++	dma->user_data = user_data;
++
++	/*
++	 *  Put the dma instance into the pause state by setting the
++	 *  pause bit to true.
++	 */
++	dma->pause = TRUE;
++
++	local_irq_restore(flags);
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  int dma_start(int handle, unsigned int channels, unsigned int * handles)
++ *
++ *  Description: Initiate a transfer on up to 3 channels.
++ *
++ *  handle:	 handle for the channel to initiate transfer on.
++ *  channels:   number of channels to initiate transfers on.
++ *  handles:	pointer to an array of handles, one for each channel which
++ *			   is to be started.
++ *
++ ****************************************************************************/
++static int
++dma_start_m2m(int channel, ep93xx_dma_t * dma)
++{
++	unsigned long flags;
++	unsigned int M2M_reg_base = dma->reg_base;
++	unsigned int uiCONTROL;
++
++	/*
++	 *  Mask interrupts while we get this started.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  Make sure the channel has at least one buffer in the queue.
++	 */
++	if (dma->new_buffers < 1) {
++		/*
++		 *  Unmask irqs
++		 */
++		local_irq_restore(flags);
++
++		DPRINTK("DMA Start: Channel starved.\n");
++
++		/*
++		 *  This channel does not have enough buffers queued up,
++		 *  so enter the pause by starvation state.
++		 */
++		dma->xfer_enable = TRUE;
++		dma->pause = TRUE;
++
++		/*
++		 *  Success.
++		 */
++		return(0);
++	}
++
++	/*
++	 *  Clear any pending interrupts.
++	 */
++	outl(0x0, M2M_reg_base+M2M_OFFSET_INTERRUPT);
++
++	/*
++	 *  Set up one or both buffer descriptors with values from the next one or
++	 *  two buffers in the queue.  By default disable the next frame buffer
++	 *  interrupt on the channel.
++	 */
++	uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++	uiCONTROL &= ~CONTROL_M2M_NFBINTEN;
++	outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++	/*
++	 * enable the done interrupt.
++	 */
++	uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++	uiCONTROL |= CONTROL_M2M_DONEINTEN;
++	outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++	/*
++	 *  Update the dma channel instance transfer state.
++	 */
++	dma->xfer_enable = TRUE;
++	dma->pause = FALSE;
++
++	/*
++	 *  Program up the first buffer descriptor with a source and destination
++	 *  and a byte count.
++	 */
++	outl( dma->buffer_queue[dma->current_buffer].source,
++	      M2M_reg_base+M2M_OFFSET_SAR_BASE0 );
++
++	outl( dma->buffer_queue[dma->current_buffer].dest,
++	      M2M_reg_base+M2M_OFFSET_DAR_BASE0 );
++
++	outl( dma->buffer_queue[dma->current_buffer].size,
++	      M2M_reg_base+M2M_OFFSET_BCR0 );
++
++	/*
++	 *  Decrement the new buffers counter.
++	 */
++	dma->new_buffers--;
++
++	/*
++	 * Set up the second buffer descriptor with a second buffer if we have
++	 * a second buffer.
++	 */
++	if (dma->new_buffers) {
++		outl( dma->buffer_queue[(dma->current_buffer + 1) %
++					MAX_EP93XX_DMA_BUFFERS].source,
++		      M2M_reg_base+M2M_OFFSET_SAR_BASE1 );
++
++		outl( dma->buffer_queue[(dma->current_buffer + 1) %
++					MAX_EP93XX_DMA_BUFFERS].dest,
++		      M2M_reg_base+M2M_OFFSET_DAR_BASE1 );
++
++		outl( dma->buffer_queue[(dma->current_buffer + 1) %
++					MAX_EP93XX_DMA_BUFFERS].size,
++		      M2M_reg_base+M2M_OFFSET_BCR1 );
++
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL |= CONTROL_M2M_NFBINTEN;
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++
++		dma->new_buffers--;
++	}
++
++	/*
++	 *  Now we enable the channel.  This initiates the transfer.
++	 */
++	uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++	uiCONTROL |= CONTROL_M2M_ENABLE;
++	outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++	inl(M2M_reg_base + M2M_OFFSET_CONTROL);
++
++	/*
++	 *  If this is a memory to memory transfer, we need to s/w trigger the
++	 *  transfer by setting the start bit within the control register.
++	 */
++	if (dma->device == DMA_MEMORY) {
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL |= CONTROL_M2M_START;
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++	}
++
++	DPRINTK("DMA - It's been started!!");
++	DPRINTK("CONTROL - 0x%x \n",	inl(M2M_reg_base+M2M_OFFSET_CONTROL) );
++	DPRINTK("STATUS - 0x%x \n",	 inl(M2M_reg_base+M2M_OFFSET_STATUS) );
++	DPRINTK("BCR0 - 0x%x \n",	   dma->buffer_queue[dma->current_buffer].size);
++	DPRINTK("SAR_BASE0 - 0x%x \n",  inl(M2M_reg_base+M2M_OFFSET_SAR_BASE0) );
++	DPRINTK("SAR_CUR0 - 0x%x \n",   inl(M2M_reg_base+M2M_OFFSET_SAR_CURRENT0) );
++	DPRINTK("DAR_BASE0 - 0x%x \n",  inl(M2M_reg_base+M2M_OFFSET_DAR_BASE0) );
++	DPRINTK("DAR_CUR0 - 0x%x \n",   inl(M2M_reg_base+M2M_OFFSET_DAR_CURRENT0) );
++
++	/*
++	 *  Unmask irqs
++	 */
++	local_irq_restore(flags);
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  DMA interface functions
++ *
++ ****************************************************************************/
++
++/*****************************************************************************
++ *
++ *  int dma_init(int handle, unsigned int flags_m2p, unsigned int flags_m2m,
++ *			   dma_callback callback, unsigned int user_data)
++ *
++ *  Description: Configure the DMA channel and install a callback function.
++ *
++ *  handle:	 Handle unique the each instance of the dma interface, used
++ *			  to verify this call.
++ *  flags_m2p   Flags used to configure an M2P/P2M dma channel and determine
++ *			  if a callback function and user_data information are included
++ *			  in this call. This field should be NULL if handle represents
++ *			  an M2M channel.
++ *  flags_m2m   Flags used to configure an M2M dma channel and determine
++ *			  if a callback function and user_data information are included
++ *			  in this call. This field should be NULL if handle represents
++ *			  an M2P/P2M channel.
++ *  callback	function pointer which is called near the end of the
++ *			  dma channel's irq handler.
++ *  user_data   defined by the calling driver.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_config(int handle, unsigned int flags_m2p, unsigned int flags_m2m,
++		  dma_callback callback, unsigned int user_data)
++{
++	int  channel;
++	ep93xx_dma_t * dma;
++	unsigned long flags;
++	unsigned int M2P_reg_base, uiCONTROL;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR
++			   "DMA Config: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	DPRINTK("DMA Config \n");
++
++	dma = &dma_chan[channel];
++
++	local_irq_save(flags);
++
++	/*
++	 *  Check if the channel is currently transferring.
++	 */
++	if (dma->xfer_enable) {
++		local_irq_restore(flags);
++		return(-EINVAL);
++	}
++
++	/*
++	 *  Check if this is an m2m function.
++	 */
++	if (channel >= 10) {
++		local_irq_restore(flags);
++
++		/*
++		 *  Call another function to handle m2m config.
++		 */
++		return(dma_config_m2m(dma, flags_m2m, callback, user_data));
++	}
++
++	/*
++	 *  Setup a pointer into the dma channel's register set.
++	 */
++	M2P_reg_base = dma->reg_base;
++
++	/*
++	 *  By default we enable the stall interrupt.
++	 */
++	uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++	uiCONTROL |= CONTROL_M2P_STALLINTEN;
++	outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++	/*
++	 *  Configure the channel for an error from the peripheral.
++	 */
++	uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++	if ( flags_m2p && CHANNEL_ERROR_INT_ENABLE )
++		uiCONTROL |= CONTROL_M2P_CHERRORINTEN;
++	else
++		uiCONTROL &= ~CONTROL_M2P_CHERRORINTEN;
++	outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++	uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++	if ( flags_m2p && CHANNEL_ABORT )
++		uiCONTROL |= CONTROL_M2P_ABRT;
++	else
++		uiCONTROL &= ~CONTROL_M2P_ABRT;
++	outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++	uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++	if ( flags_m2p && IGNORE_CHANNEL_ERROR )
++		uiCONTROL |= CONTROL_M2P_ICE;
++	else
++		uiCONTROL &= ~CONTROL_M2P_ICE;
++	outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++
++	/*
++	 *  Save the callback function in the dma instance for this channel.
++	 */
++	dma->callback = callback;
++
++	/*
++	 *  Save the user data in the the dma instance for this channel.
++	 */
++	dma->user_data = user_data;
++
++	/*
++	 *  Put the dma instance into the pause state by setting the
++	 *  pause bit to true.
++	 */
++	dma->pause = TRUE;
++
++	local_irq_restore(flags);
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  int dma_start(int handle, unsigned int channels, unsigned int * handles)
++ *
++ *  Description: Initiate a transfer on up to 3 channels.
++ *
++ *  handle:	 handle for the channel to initiate transfer on.
++ *  channels:   number of channels to initiate transfers on.
++ *  handles:	pointer to an array of handles, one for each channel which
++ *			   is to be started.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_start(int handle, unsigned int channels, unsigned int * handles)
++{
++	ep93xx_dma_t * dma_pointers[3];
++	unsigned int M2P_reg_bases[3];
++	unsigned int loop, uiCONTROL;
++	unsigned long flags;
++	int  channel;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR "DMA Start: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	if (channels < 1) {
++		printk(KERN_ERR "DMA Start: Invalid parameter.\n");
++		return(-EINVAL);
++	}
++
++	DPRINTK("DMA Start \n");
++
++	/*
++	 *  Mask off registers.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  Check if this is a start multiple.
++	 */
++	if (channels > 1) {
++		DPRINTK("DMA ERROR: Start, multiple start not supported yet \n");
++		return(-1);
++	} else {
++		/*
++		 *  Check if this channel is already transferring.
++		 */
++		if (dma_chan[channel].xfer_enable && !dma_chan[channel].pause) {
++			printk(KERN_ERR
++				   "DMA Start: Invalid command for channel %d.\n", channel);
++
++			/*
++			 *  Unmask irqs
++			 */
++			local_irq_restore(flags);
++
++			/*
++			 *  This channel is already transferring, so return an error.
++			 */
++			return(-EINVAL);
++		}
++
++		/*
++		 *  If this is an M2M channel, call a different function.
++		 */
++		if (channel >= 10) {
++			/*
++			 *  Unmask irqs
++			 */
++			local_irq_restore(flags);
++
++			/*
++			 *  Call the m2m start function.  Only start one channel.
++			 */
++			return(dma_start_m2m(channel, &dma_chan[channel]));
++		}
++
++		/*
++		 *  Make sure the channel has at least one buffer in the queue.
++		 */
++		if (dma_chan[channel].new_buffers < 1) {
++			DPRINTK("DMA Start: Channel starved.\n");
++
++			/*
++			 *  This channel does not have enough buffers queued up,
++			 *  so enter the pause by starvation state.
++			 */
++			dma_chan[channel].xfer_enable = TRUE;
++			dma_chan[channel].pause = TRUE;
++
++			/*
++			 *  Unmask irqs
++			 */
++			local_irq_restore(flags);
++
++			/*
++			 *  Success.
++			 */
++			return(0);
++		}
++
++		/*
++		 *  Set up a dma instance pointer for this dma channel.
++		 */
++		dma_pointers[0] = &dma_chan[channel];
++
++		/*
++		 * Set up a pointer to the register set for this channel.
++		 */
++		M2P_reg_bases[0] = dma_pointers[0]->reg_base;
++	}
++
++	/*
++	 *  Setup both MAXCNT registers with values from the next two buffers
++	 *  in the queue, and enable the next frame buffer interrupt on the channel.
++	 */
++	for (loop = 0; loop < channels; loop++) {
++		/*
++		 *  Check if we need to restore a paused transfer.
++		 */
++		if (dma_pointers[loop]->pause_buf.buf_id != -1)
++			outl( dma_pointers[loop]->pause_buf.size,
++			      M2P_reg_bases[loop]+M2P_OFFSET_MAXCNT0 );
++		else
++			outl( dma_pointers[loop]->buffer_queue[dma_pointers[loop]->current_buffer].size,
++			      M2P_reg_bases[loop]+M2P_OFFSET_MAXCNT0 );
++	}
++
++	for (loop = 0; loop < channels; loop++) {
++		/*
++		 *  Enable the specified dma channels.
++		 */
++		uiCONTROL = inl(M2P_reg_bases[loop]+M2P_OFFSET_CONTROL);
++		uiCONTROL |= CONTROL_M2P_ENABLE;
++		outl( uiCONTROL, M2P_reg_bases[loop]+M2P_OFFSET_CONTROL );
++
++		/*
++		 *  Update the dma channel instance transfer state.
++		 */
++		dma_pointers[loop]->xfer_enable = TRUE;
++		dma_pointers[loop]->pause = FALSE;
++	}
++
++	/*
++	 *  Program up the BASE0 registers for all specified channels, this
++	 *  will initiate transfers on all specified channels.
++	 */
++	for (loop = 0; loop < channels; loop++)
++		/*
++		 *  Check if we need to restore a paused transfer.
++		 */
++		if (dma_pointers[loop]->pause_buf.buf_id != -1) {
++			outl( dma_pointers[loop]->pause_buf.source,
++			      M2P_reg_bases[loop]+M2P_OFFSET_BASE0 );
++
++			/*
++			 *  Set the pause buffer to NULL
++			 */
++			dma_pointers[loop]->pause_buf.buf_id = -1;
++			dma_pointers[loop]->pause_buf.size = 0;
++		} else if(dma_pointers[loop]->new_buffers){
++			outl( dma_pointers[loop]->buffer_queue[
++				  dma_pointers[loop]->current_buffer].source,
++			      M2P_reg_bases[loop]+M2P_OFFSET_BASE0 );
++            dma_pointers[loop]->new_buffers--;
++
++          }
++
++	/*
++	 *  Before restoring irqs setup the second MAXCNT/BASE
++	 *  register with a second buffer.
++	 */
++	for (loop = 0; loop < channels; loop++)
++		if (dma_pointers[loop]->new_buffers) {
++        	/*
++        	 *  By default we enable the next frame buffer interrupt.
++        	 */
++        	uiCONTROL = inl(M2P_reg_bases[loop]+M2P_OFFSET_CONTROL);
++        	uiCONTROL |= CONTROL_M2P_NFBINTEN;
++        	outl( uiCONTROL, M2P_reg_bases[loop]+M2P_OFFSET_CONTROL );
++
++			outl( dma_pointers[loop]->buffer_queue[
++				  (dma_pointers[loop]->current_buffer + 1) %
++				  MAX_EP93XX_DMA_BUFFERS].size,
++			      M2P_reg_bases[loop]+M2P_OFFSET_MAXCNT1 );
++
++			outl( dma_pointers[loop]->buffer_queue[
++				  (dma_pointers[loop]->current_buffer + 1) %
++				  MAX_EP93XX_DMA_BUFFERS].source,
++			      M2P_reg_bases[loop]+M2P_OFFSET_BASE1 );
++            dma_pointers[loop]->new_buffers--;
++		}
++
++	/*
++	  DPRINTK("DMA - It's been started!!");
++	  DPRINTK("STATUS - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_STATUS) );
++	  DPRINTK("CONTROL - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_CONTROL) );
++	  DPRINTK("REMAIN - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_REMAIN) );
++	  DPRINTK("PPALLOC - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_PPALLOC) );
++	  DPRINTK("BASE0 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE0) );
++	  DPRINTK("MAXCNT0 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT0) );
++	  DPRINTK("CURRENT0 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT0) );
++	  DPRINTK("BASE1 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE1) );
++	  DPRINTK("MAXCNT1 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT1) );
++	  DPRINTK("CURRENT1 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT1) );
++
++	  DPRINTK("Pause - %d \n", dma_pointers[0]->pause);
++	  DPRINTK("xfer_enable - %d \n", dma_pointers[0]->xfer_enable);
++	  DPRINTK("total bytes - 0x%x \n", dma_pointers[0]->total_bytes);
++	  DPRINTK("total buffer - %d \n", dma_pointers[0]->total_buffers);
++	  DPRINTK("new buffers - %d \n", dma_pointers[0]->new_buffers);
++	  DPRINTK("current buffer - %d \n", dma_pointers[0]->current_buffer);
++	  DPRINTK("last buffer - %d \n", dma_pointers[0]->last_buffer);
++	  DPRINTK("used buffers - %d \n", dma_pointers[0]->used_buffers);
++	*/
++	/*
++	 *  Unmask irqs
++	 */
++	local_irq_restore(flags);
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  int ep93xx_dma_add_buffer(int handle, unsigned int * address,
++ *						 unsigned int size, unsigned int last)
++ *
++ *  Description: Add a buffer entry to the DMA buffer queue.
++ *
++ *  handle:	 handle for the channel to add this buffer to.
++ *  address:	Pointer to an integer which is the start address of the
++ *			  buffer which is to be added to the queue.
++ *  size:	   size of the buffer in bytes.
++ *  last:	   1 if this is the last buffer in this stream, 0 otherwise.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_add_buffer(int handle, unsigned int source, unsigned int dest,
++		      unsigned int size, unsigned int last,
++		      unsigned int buf_id)
++{
++	unsigned long flags;
++	ep93xx_dma_t * dma;
++	int  channel;
++#if 0
++	static int peak_total_buffers=0;
++#endif
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR
++			   "DMA Add Buffer: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	/*
++	 *  Get a pointer to the dma instance.
++	 */
++	dma = &dma_chan[channel];
++
++#if 0
++	if( dma->total_buffers > peak_total_buffers )
++	{
++	    peak_total_buffers=dma->total_buffers;
++	    printk("peak_total_buffers=%d\n", peak_total_buffers );
++	}
++#endif
++	/*
++	 *  Mask interrupts and hold on to the original state.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  If the buffer queue is full, last_buffer is the same as current_buffer and
++	 *  we're not tranfering, or last_buffer is pointing to a used buffer, then exit.
++	 *  TODO: do I need to do any more checks?
++	 */
++	if (dma->total_buffers >= MAX_EP93XX_DMA_BUFFERS)
++	{
++		DPRINTK("too many dma buffers: MAX_EP93XX_DMA_BUFFERS set to low ?\n");
++		/*
++		 *  Restore the state of the irqs
++		 */
++		local_irq_restore(flags);
++
++		/*
++		 *  Fail.
++		 */
++		return(-1);
++	}
++
++	/*
++	 *  Add this buffer to the queue
++	 */
++	dma->buffer_queue[dma->last_buffer].source = source;
++	dma->buffer_queue[dma->last_buffer].dest = dest;
++	dma->buffer_queue[dma->last_buffer].size = size;
++	dma->buffer_queue[dma->last_buffer].last = last;
++	dma->buffer_queue[dma->last_buffer].buf_id = buf_id;
++
++	/*
++	 *  Reset the used field of the buffer structure.
++	 */
++	dma->buffer_queue[dma->last_buffer].used = FALSE;
++
++	/*
++	 *  Increment the End Item Pointer.
++	 */
++	dma->last_buffer = (dma->last_buffer + 1) % MAX_EP93XX_DMA_BUFFERS;
++
++	/*
++	 *  Increment the new buffers counter and the total buffers counter
++	 */
++	dma->new_buffers++;
++	dma->total_buffers++;
++
++	/*
++	 *  restore the interrupt state.
++	 */
++	local_irq_restore(flags);
++
++	/*
++	 *  Check if the channel was starved into a stopped state.
++	 */
++	if (dma->pause && dma->xfer_enable) {
++		if (dma->new_buffers >= 1) {
++			DPRINTK("DMA - calling start from add after starve. \n");
++
++			/*
++			 *  The channel was starved into a stopped state, and we've got
++			 *  2 new buffers, so start tranferring again.
++			 */
++			ep93xx_dma_start(handle, 1, 0);
++		}
++	}
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  int ep93xx_dma_remove_buffer(int handle, unsigned int * address,
++ *								unsigned int * size)
++ *
++ *  Description: Remove a buffer entry from the DMA buffer queue. If
++ *			   buffer was removed successfully, return 0, otherwise
++ *			   return -1.
++ *
++ *  handle:	 handle for the channel to remove a buffer from.
++ *  address:	Pointer to an integer which is filled in with the start
++ *			  address of the removed buffer.
++ *  size:	   Pointer to an integer which is filled in with the size in
++ *			  bytes of the removed buffer.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_remove_buffer(int handle, unsigned int * buf_id)
++{
++	unsigned int test;
++	unsigned int loop;
++	int return_val = -1;
++	unsigned long flags;
++	ep93xx_dma_t *dma;
++	int  channel;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR
++			   "DMA Remove Buffer: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	dma = &dma_chan[channel];
++
++	/*
++	 *  Mask interrupts and hold on to the original state.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  Make sure there are used buffers to be returned.
++	 */
++	if (dma->used_buffers) {
++		test = dma->last_buffer;
++
++		for (loop = 0; loop < MAX_EP93XX_DMA_BUFFERS; loop++) {
++			if (dma->buffer_queue[test].used && (dma->buffer_queue[test].buf_id != -1)) {
++				/*DPRINTK("buffer %d used \n", test); */
++
++				/*
++				 *  This is a used buffer, fill in the buf_id pointer
++				 *  with the buf_id for this buffer.
++				 */
++				*buf_id = dma->buffer_queue[test].buf_id;
++
++				/*
++				 *  Reset this buffer structure
++				 */
++				dma->buffer_queue[test].buf_id = -1;
++
++				/*
++				 *  Decrement the used buffer counter, and the total buffer counter.
++				 */
++				dma->used_buffers--;
++				dma->total_buffers--;
++
++				/*
++				 *  Successful removal of a buffer, so set the return
++				 *  value to 0, then exit this loop.
++				 */
++				return_val = 0;
++				break;
++			}
++
++			/*
++			 *  This buffer isn't used, let's see if the next one is.
++			 */
++			test = (test + 1) % MAX_EP93XX_DMA_BUFFERS;
++		}
++	}
++
++	/*
++	 *  Restore interrupts.
++	 */
++	local_irq_restore(flags);
++
++	/*
++	 *  Success.
++	 */
++	return(return_val);
++}
++
++/*****************************************************************************
++ *
++ *  int ep93xx_dma_pause(int handle, unsigned int channels,
++ *					   unsigned int * handles)
++ *
++ *  Description: Disable any ongoing transfer for the given channel, retaining
++ *			   the state of the current buffer transaction so that upon
++ *			   resume, the dma will continue where it left off.
++ *
++ *  handle:	 Handle for the channel to be paused.  If this is a pause for
++ *			  for multiple channels, handle is a valid handle for one of
++ *			  the channels to be paused.
++ *  channels:   number of channel to pause transfers on.
++ *  handles:	Pointer to an array of handles, one for each channel which
++ *			  to be paused.  If this pause is intended only for one
++ *			  channel, this field should be set to NULL.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_pause(int handle, unsigned int channels, unsigned int * handles)
++{
++	unsigned long flags;
++	ep93xx_dma_t * dma;
++	int channel;
++
++	DPRINTK("ep93xx_dma_pause \n");
++
++	/*
++	 *  Mask interrupts and hold on to the original state.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		/*
++		 *  restore interrupts.
++		 */
++		local_irq_restore(flags);
++
++		printk(KERN_ERR
++			   "DMA Pause: Invalid dma handle.\n");
++
++		/*
++		 *  Fail.
++		 */
++		return(-EINVAL);
++	}
++
++	DPRINTK("DMA %d: pause \n", channel);
++
++	/*
++	 *  Set up a pointer to the dma instance data.
++	 */
++	dma = &dma_chan[channel];
++
++	/*
++	 *  Check if we're already paused.
++	 */
++	if (dma->pause) {
++		/*
++		 *  We're paused, but are we stopped?
++		 */
++		if (dma->xfer_enable)
++			/*
++			 *  Put the channel in the stopped state.
++			 */
++			dma->xfer_enable = FALSE;
++
++		DPRINTK("DMA Pause - already paused.");
++	} else {
++		/*
++		 *  Put the channel into the stopped state.
++		 */
++		dma->xfer_enable = FALSE;
++		dma->pause = TRUE;
++	}
++
++	/*
++	 *  restore interrupts.
++	 */
++	local_irq_restore(flags);
++
++	/*
++	 *  Already paused, so exit.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  void ep93xx_dma_flush(int handle)
++ *
++ *  Description: Flushes all queued buffers and transfers in progress
++ *			   for the given channel.  Return the buffer entries
++ *			   to the calling function.
++ *
++ *  handle:	 handle for the channel for which the flush is intended.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_flush(int handle)
++{
++	unsigned int loop;
++	unsigned long flags;
++	ep93xx_dma_t * dma;
++	int  channel;
++	unsigned int M2P_reg_base,uiCONTROL;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR "DMA Flush: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	DPRINTK("DMA %d: flush \n", channel);
++
++	/*
++	 *  Set up a pointer to the dma instance data for this channel
++	 */
++	dma = &dma_chan[channel];
++
++	/*
++	 *  Mask interrupts and hold on to the original state.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  Disable the dma channel
++	 */
++	if (channel < 10) {
++		/*
++		 *  M2P channel
++		 */
++		uiCONTROL = inl(dma->reg_base+M2P_OFFSET_CONTROL);
++		uiCONTROL &= ~CONTROL_M2P_ENABLE;
++		outl( uiCONTROL, dma->reg_base+M2P_OFFSET_CONTROL );
++	} else {
++		/*
++		 *  M2M channel
++		 */
++		uiCONTROL = inl(dma->reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~CONTROL_M2M_ENABLE;
++		outl( uiCONTROL, dma->reg_base+M2M_OFFSET_CONTROL );
++	}
++
++	for (loop = 0; loop < MAX_EP93XX_DMA_BUFFERS; loop++)
++	{
++		dma->buffer_queue[loop].buf_id = -1;
++		dma->buffer_queue[loop].last = 0;
++	}
++
++	/*
++	 *  Set the Current and Last item to zero.
++	 */
++	dma->current_buffer = 0;
++	dma->last_buffer = 0;
++
++	/*
++	 *  Reset the Buffer counters
++	 */
++	dma->used_buffers = 0;
++	dma->new_buffers = 0;
++	dma->total_buffers = 0;
++
++	/*
++	 *  reset the Total bytes counter.
++	 */
++	dma->total_bytes = 0;
++
++    /*
++     * Reset the paused buffer.
++     */
++     dma->pause_buf.last = 0;
++     dma->pause_buf.buf_id = -1;
++
++	M2P_reg_base = dma_chan[channel].reg_base;
++
++	/*
++	 *  restore interrupts.
++	 */
++	local_irq_restore(flags);
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  int ep93xx_dma_queue_full(int handle)
++ *
++ *  Description: Query to determine if the DMA queue of buffers for
++ *			  a given channel is full.
++ *			  0 = queue is full
++ *			  1 = queue is not full
++ *
++ *  handle:	 handle for the channel to query.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_queue_full(int handle)
++{
++	int list_full = 0;
++	unsigned long flags;
++	int  channel;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR "DMA Queue Full: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	DPRINTK("DMA %d: queue full \n", channel);
++
++	/*
++	 *  Mask interrupts and hold on to the original state.
++	 */
++	local_irq_save(flags);
++
++	/*
++	 *  If the last item is equal to the used item then
++	 *  the queue is full.
++	 */
++	if (dma_chan[channel].total_buffers < MAX_EP93XX_DMA_BUFFERS)
++		list_full =  FALSE;
++	else
++		list_full = TRUE;
++
++	/*
++	 *  restore interrupts.
++	 */
++	local_irq_restore(flags);
++
++	return(list_full);
++}
++
++/*****************************************************************************
++ *
++ *  int ep93xx_dma_get_position()
++ *
++ *  Description:  Takes two integer pointers and fills them with the start
++ *                and current address of the buffer currently transferring
++ *                on the specified DMA channel.
++ *
++ *  handle         handle for the channel to query.
++ *  *buf_id        buffer id for the current buffer transferring on the
++ *                 dma channel.
++ *  *total         total bytes transferred on the channel.  Only counts
++ *                 whole buffers transferred.
++ *  *current_frac  number of bytes transferred so far in the current buffer.
++ ****************************************************************************/
++int
++ep93xx_dma_get_position(int handle, unsigned int * buf_id,
++                        unsigned int * total, unsigned int * current_frac )
++{
++	int  channel;
++	ep93xx_dma_t * dma;
++	unsigned int buf_id1, total1, current_frac1, buf_id2, total2;
++	unsigned int Status, NextBuffer, StateIsBufNext, M2P_reg_base=0;
++	unsigned int pause1, pause2;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.  See if this is a
++	 *  valid handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++	if (channel < 0) {
++		printk(KERN_ERR "DMA Get Position: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	dma = &dma_chan[channel];
++
++	/*
++	 * If DMA moves to a new buffer in the middle of us grabbing the
++	 * buffer info, then do it over again.
++	 */
++	do{
++		buf_id1 = dma->buffer_queue[dma->current_buffer].buf_id;
++		total1  = dma->total_bytes;
++		pause1  = dma->pause;
++
++		if (channel < 10) {
++			// M2P
++			M2P_reg_base = dma->reg_base;
++
++			Status = inl(M2P_reg_base+M2P_OFFSET_STATUS);
++
++			NextBuffer = ((Status & STATUS_M2P_NEXTBUFFER) != 0);
++
++			StateIsBufNext = ((Status & STATUS_M2P_CURRENT_MASK) ==
++			                  STATUS_M2P_DMA_BUF_NEXT);
++
++			if( NextBuffer ^ StateIsBufNext )
++				current_frac1 = inl(M2P_reg_base+M2P_OFFSET_CURRENT1) -
++				                inl(M2P_reg_base+M2P_OFFSET_BASE1);
++			else
++				current_frac1 = inl(M2P_reg_base+M2P_OFFSET_CURRENT0) -
++				                inl(M2P_reg_base+M2P_OFFSET_BASE0);
++
++		} else {
++			// M2M - TODO implement this for M2M
++			current_frac1 = 0;
++		}
++
++		buf_id2 = dma->buffer_queue[dma->current_buffer].buf_id;
++		total2 = dma->total_bytes;
++		pause2  = dma->pause;
++
++	} while ( (buf_id1 != buf_id2) || (total1 != total2) || (pause1 != pause2) );
++
++	if (pause1)
++		current_frac1 = 0;
++
++	if (buf_id)
++		*buf_id = buf_id1;
++
++	if (total)
++		*total  = total1;
++
++	if (current_frac)
++		*current_frac = current_frac1;
++
++//	DPRINTK("DMA buf_id %d, total %d, frac %d\n", buf_id1, total1, current_frac1);
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ *  int ep93xx_dma_get_total(int handle)
++ *
++ *  Description:	Returns the total number of bytes transferred on the
++ *			specified channel since the channel was requested.
++ *
++ *  handle:	 handle for the channel to query.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_get_total(int handle)
++{
++	int  channel;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR "DMA Get Total: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	DPRINTK("DMA %d: total: %d \n", channel, dma_chan[channel].total_bytes);
++
++	/*
++	 *  Return the total number of bytes transferred on this channel since
++	 *  it was requested.
++	 */
++	return(dma_chan[channel].total_bytes);
++}
++
++/*****************************************************************************
++ *
++ *  int ep93xx_dma_is_done(int handle)
++ *
++ *  Description:	Determines if the specified channel is done
++ *			transferring the requested data.
++ *
++ *  handle:	 handle for the channel to query.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_is_done(int handle)
++{
++	ep93xx_dma_t *dma;
++	int channel;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR "ep93xx_dma_is_done: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++        /*
++         * Get a pointer to the DMA channel state structure.
++         */
++        dma = &dma_chan[channel];
++
++        /*
++         * See if there are any buffers remaining to be provided to the HW.
++         */
++        if (dma->new_buffers)
++            return 0;
++
++        /*
++         * See if this is a M2P or M2M channel.
++         */
++        if (channel < 10) {
++            /*
++             * If the bytes remaining register of the HW is not zero, then
++             * there is more work to be done.
++             */
++            if (inl(dma->reg_base + M2P_OFFSET_REMAIN) != 0)
++                return 0;
++        } else {
++            /*
++             * If either byte count register in the HW is not zero, then there
++             * is more work to be done.
++             */
++            if ((inl(dma->reg_base + M2M_OFFSET_BCR0) != 0) ||
++                (inl(dma->reg_base + M2M_OFFSET_BCR1) != 0))
++                return 0;
++        }
++
++        /*
++         * The DMA is complete.
++         */
++        return 1;
++}
++
++/*****************************************************************************
++ * ep93xx_dma_request
++ *
++ * Description: This function will allocate a DMA channel for a particular
++ * hardware peripheral.  Before initiating a transfer on the allocated
++ * channel, the channel must be set up and buffers have to queued up.
++ *
++ *  handle:	 pointer to an integer which is filled in with a unique
++ *			  handle for this instance of the dma interface.
++ *  device_id   string with the device name, primarily used by /proc.
++ *  device	  hardware device ID for which the requested dma channel will
++ *			  transfer data.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_request(int * handle, const char *device_id,
++				   ep93xx_dma_dev_t device)
++{
++	ep93xx_dma_t *dma = NULL;
++	int channel;
++	unsigned int error = 0;
++	unsigned int loop;
++	unsigned int M2P_reg_base;
++
++	/*
++	 *  Check if the device requesting a DMA channel is a valid device.
++	 */
++	if ((device >= UNDEF_DMA) || (device < 0))
++		return(-ENODEV);
++
++	/*
++	 *  We've got a valid hardware device requesting a DMA channel.
++	 *  Now check if the device should open an M2P or M2M channel
++	 */
++	if (device < 20)
++		channel = dma_open_m2p(device);
++	else
++		channel = dma_open_m2m(device);
++
++	/*
++	 *  Check if we successfully opened a DMA channel
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR "%s: Could not open dma channel for this device.\n",
++			   device_id);
++		return(-EBUSY);
++	}
++
++	dma = &dma_chan[channel];
++
++        if(dma->terminated==1) {
++           free_irq(dma->irq, (void *) dma);
++           dma->terminated=0;
++        }
++
++	/*
++	 *  Request the appropriate IRQ for the specified channel
++	 */
++	if (channel < 10)
++		error = request_irq(dma->irq, dma_m2p_irq_handler,
++				    IRQF_DISABLED, device_id, (void *) dma);
++	else
++		error = request_irq(dma->irq, &dma_m2m_irq_handler,
++				    IRQF_DISABLED, device_id, (void *) dma);
++
++	/*
++	 *  Check for any errors during the irq request
++	 */
++	if (error) {
++		printk(KERN_ERR "%s: unable to request IRQ %d for DMA channel\n",
++			   device_id, dma->irq);
++		return(error);
++	}
++
++	/*
++	 *  Generate a valid handle and exit.
++	 *
++	 *  Increment the last valid handle.
++	 *  Check for wraparound (unlikely, but we like to be complete).
++	 */
++	dma->last_valid_handle++;
++
++	if ( (dma->last_valid_handle & DMA_HANDLE_SPECIFIER_MASK) !=
++	     (channel << 28) )
++		dma->last_valid_handle = (channel << 28) + 1;
++
++	/*
++	 *  Fill in the handle pointer with a valid handle for
++	 *  this dma channel instance.
++	 */
++	*handle = dma->last_valid_handle;
++
++	DPRINTK("Handle for channel %d: 0x%x\n", channel, *handle);
++
++	/*
++	 * Save the device ID and device name.
++	 */
++	dma->device = device;
++	dma->device_id = device_id;
++
++	/*
++	 *  Init all fields within the dma instance.
++	 */
++	for (loop = 0; loop < MAX_EP93XX_DMA_BUFFERS; loop++)
++		dma->buffer_queue[loop].buf_id = -1;
++
++	/*
++	 *  Initialize all buffer queue variables.
++	 */
++	dma->current_buffer = 0;
++	dma->last_buffer = 0;
++
++	dma->new_buffers = 0;
++	dma->used_buffers = 0;
++	dma->total_buffers = 0;
++
++	/*
++	 *  Initialize the total bytes variable
++	 */
++	dma->total_bytes = 0;
++
++	/*
++	 *  Initialize the transfer and pause state variables to 0.
++	 */
++	dma->xfer_enable = 0;
++
++	dma->pause = 0;
++
++	/*
++	 *  Initialize the pause buffer structure.
++	 */
++	dma->pause_buf.buf_id = -1;
++
++	/*
++	 *  Initialize the callback function and user data fields.
++	 */
++	dma->callback = NULL;
++
++	/*
++	 * User data used as a parameter for the Callback function.  The user
++	 * sets up the data and sends it with the callback function.
++	 */
++	dma->user_data = 0;
++
++	M2P_reg_base = dma_chan[channel].reg_base;
++
++	/*
++	 *  Debugging message.
++	 */
++	DPRINTK("Successfully requested dma channel %d\n", channel);
++	DPRINTK("STATUS - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_STATUS) );
++	DPRINTK("CONTROL - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_CONTROL) );
++	DPRINTK("REMAIN - 0x%x \n",	 inl(M2P_reg_base+M2P_OFFSET_REMAIN) );
++	DPRINTK("PPALLOC - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_PPALLOC) );
++	DPRINTK("BASE0 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE0) );
++	DPRINTK("MAXCNT0 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT0) );
++	DPRINTK("CURRENT0 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT0) );
++	DPRINTK("BASE1 - 0x%x \n",	  inl(M2P_reg_base+M2P_OFFSET_BASE1) );
++	DPRINTK("MAXCNT1 - 0x%x \n",	inl(M2P_reg_base+M2P_OFFSET_MAXCNT1) );
++	DPRINTK("CURRENT1 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT1) );
++
++	DPRINTK("Buffer	source	   size	   last	   used \n");
++	for (loop = 0; loop < 5; loop ++)
++		DPRINTK("%d		0x%x		 0x%x		%d		 %d \n",
++			loop, dma->buffer_queue[loop].source, dma->buffer_queue[loop].size,
++			dma->buffer_queue[loop].last, dma->buffer_queue[loop].used);
++	DPRINTK("pause	 0x%x		 0x%x		%d		 %d \n",
++		dma->pause_buf.source, dma->pause_buf.size,
++		dma->pause_buf.last, dma->pause_buf.used);
++
++	DPRINTK("Pause - %d \n", dma->pause);
++	DPRINTK("xfer_enable - %d \n", dma->xfer_enable);
++	DPRINTK("total bytes - 0x%x \n", dma->total_bytes);
++	DPRINTK("total buffer - %d \n", dma->total_buffers);
++	DPRINTK("new buffers - %d \n", dma->new_buffers);
++	DPRINTK("current buffer - %d \n", dma->current_buffer);
++	DPRINTK("last buffer - %d \n", dma->last_buffer);
++	DPRINTK("used buffers - %d \n", dma->used_buffers);
++
++	DPRINTK("CURRENT1 - 0x%x \n",   inl(M2P_reg_base+M2P_OFFSET_CURRENT1) );
++	DPRINTK("VIC0IRQSTATUS - 0x%x, VIC0INTENABLE - 0x%x \n",
++		*(unsigned int *)(VIC0IRQSTATUS),
++		*(unsigned int *)(VIC0INTENABLE));
++
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ * ep93xx_dma_free
++ *
++ * Description: This function will free the dma channel for future requests.
++ *
++ *  handle:	 handle for the channel to be freed.
++ *
++ ****************************************************************************/
++int
++ep93xx_dma_free(int handle)
++{
++	ep93xx_dma_t *dma;
++	unsigned int M2M_reg_base, M2P_reg_base, uiCONTROL;
++	int channel;
++
++	/*
++	 *  Get the DMA hw channel # from the handle.
++	 */
++	channel = dma_get_channel_from_handle(handle);
++
++	/*
++	 *  See if this is a valid handle.
++	 */
++	if (channel < 0) {
++		printk(KERN_ERR "DMA Free: Invalid dma handle.\n");
++		return(-EINVAL);
++	}
++
++	/*
++	 *  Get a pointer to the dma instance.
++	 */
++	dma = &dma_chan[channel];
++
++	/*
++	 *  Disable the dma channel
++	 */
++	if (channel < 10) {
++		/*
++		 *  M2P channel
++		 */
++		M2P_reg_base = dma->reg_base;
++
++		uiCONTROL = inl(M2P_reg_base+M2P_OFFSET_CONTROL);
++		uiCONTROL &= ~CONTROL_M2P_ENABLE;
++		outl( uiCONTROL, M2P_reg_base+M2P_OFFSET_CONTROL );
++	} else {
++		/*
++		 *  M2M channel
++		 */
++		M2M_reg_base = dma->reg_base;
++
++		uiCONTROL = inl(M2M_reg_base+M2M_OFFSET_CONTROL);
++		uiCONTROL &= ~CONTROL_M2M_ENABLE;
++		outl( uiCONTROL, M2M_reg_base+M2M_OFFSET_CONTROL );
++	}
++
++	/*
++	 *  Free the interrupt servicing this dma channel
++	 */
++	//free_irq(dma->irq, (void *) dma);
++        dma->terminated=1;
++
++	/*
++	 *  Decrement the reference count for this instance of the dma interface
++	 */
++	dma->ref_count--;
++
++	/*
++	 *  Set the transfer and pause state variables to 0
++	 *  (unititialized state).
++	 */
++	dma->xfer_enable = 0;
++	dma->pause = 0;
++
++	/*
++	 *  Debugging message.
++	 */
++	DPRINTK("Successfully freed dma channel %d\n", channel);
++	/*
++	 *  Success.
++	 */
++	return(0);
++}
++
++/*****************************************************************************
++ *
++ * ep93xx_dma_init(void)
++ *
++ * Description: This function is called during system initialization to
++ * setup the interrupt number and register set base address for each DMA
++ * channel.
++ *
++ ****************************************************************************/
++static int __init
++ep93xx_dma_init(void)
++{
++	int channel;
++
++	/*
++	 * Init some values in each dma instance.
++	 */
++	for (channel = 0; channel < MAX_EP93XX_DMA_CHANNELS; channel++) {
++		/*
++		 *  IRQ for the specified dma channel.
++		 */
++		dma_chan[channel].irq = IRQ_EP93XX_DMAM2P0 + channel;
++
++                 dma_chan[channel].terminated = 0;
++
++		/*
++		 *  Initial value of the dma channel handle.
++		 */
++		dma_chan[channel].last_valid_handle = channel << 28;
++
++		/*
++		 *  Give the instance a pointer to the dma channel register
++		 *  base.
++		 */
++		if (channel < 10)
++			dma_chan[channel].reg_base = DMAM2PChannelBase[channel];
++		else
++			dma_chan[channel].reg_base = DMAM2MChannelBase[channel - 10];
++
++		/*
++		 *  Initialize the reference count for this channel.
++		 */
++		dma_chan[channel].ref_count = 0;
++	}
++
++	DPRINTK("DMA Interface intitialization complete\n");
++
++	/*
++	 * Success
++	 */
++	return 0;
++}
++
++arch_initcall(ep93xx_dma_init);
++
++EXPORT_SYMBOL(ep93xx_dma_free);
++EXPORT_SYMBOL(ep93xx_dma_request);
++EXPORT_SYMBOL(ep93xx_dma_flush);
++EXPORT_SYMBOL(ep93xx_dma_pause);
++EXPORT_SYMBOL(ep93xx_dma_remove_buffer);
++EXPORT_SYMBOL(ep93xx_dma_add_buffer);
++EXPORT_SYMBOL(ep93xx_dma_start);
++EXPORT_SYMBOL(ep93xx_dma_config);
+--- /dev/null
++++ b/arch/arm/mach-ep93xx/dma_ep93xx.h
+@@ -0,0 +1,676 @@
++/*****************************************************************************
++ *
++ * arch/arm/mach-ep93xx/dma_ep93xx.h
++ *
++ * DESCRIPTION:    93XX DMA controller API private defintions.
++ *
++ * Copyright Cirrus Logic Corporation, 2003.  All rights reserved
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ ****************************************************************************/
++#ifndef _EP93XX_DMA_H_
++#define _EP93XX_DMA_H_
++
++// as it turns out the ide dma is the biggest dma buffer hog so far
++// in case the HDD is "thinking" (seek/buffer flush)
++// the continueing r/w DMAs to the HDD will be queued up to up to PRD_ENTRIES entries...
++#include <linux/ide.h>
++#define MAX_EP93XX_DMA_BUFFERS      PRD_ENTRIES
++
++#ifndef TRUE
++#define TRUE                        1
++#endif
++
++#ifndef FALSE
++#define FALSE                       0
++#endif
++
++#ifndef NULL
++#define NULL                        0
++#endif
++
++#define EP93XX_DMA_BASE			(EP93XX_AHB_VIRT_BASE + 0x00000000)
++
++/*****************************************************************************
++ * 0x8000.0000 -> 0x8000.003C M2P Channel 0 Registers (Tx)
++ * 0x8000.0040 -> 0x8000.007C M2P Channel 1 Registers (Rx)
++ * 0x8000.0080 -> 0x8000.00BC M2P Channel 2 Registers (Tx)
++ * 0x8000.00C0 -> 0x8000.00FC M2P Channel 3 Registers (Rx)
++ * 0x8000.0100 -> 0x8000.013C M2M Channel 0 Registers
++ * 0x8000.0140 -> 0x8000.017C M2M Channel 1 Registers
++ * 0x8000.0180 -> 0x8000.01BC Not Used
++ * 0x8000.01C0 -> 0x8000.01FC Not Used
++ * 0x8000.0200 -> 0x8000.023C M2P Channel 5 Registers (Rx)
++ * 0x8000.0240 -> 0x8000.027C M2P Channel 4 Registers (Tx)
++ * 0x8000.0280 -> 0x8000.02BC M2P Channel 7 Registers (Rx)
++ * 0x8000.02C0 -> 0x8000.02FC M2P Channel 6 Registers (Tx)
++ * 0x8000.0300 -> 0x8000.033C M2P Channel 9 Registers (Rx)
++ * 0x8000.0340 -> 0x8000.037C M2P Channel 8 Registers (Tx)
++ * 0x8000.0380 DMA Channel Arbitration register
++ * 0x8000.03C0 DMA Global Interrupt register
++ * 0x8000.03C4 -> 0x8000.03FC Not Used
++ *
++ *
++ * Internal M2P/P2M Channel Register Map
++ *
++ * Offset Name      Access  Bits Reset Value
++ * 0x00   CONTROL   R/W     6    0
++ * 0x04   INTERRUPT R/W TC* 3    0
++ * 0x08   PPALLOC   R/W     4    channel dependant
++ *                               (see reg description)
++ * 0x0C   STATUS    RO      8    0
++ * 0x10   reserved
++ * 0x14   REMAIN    RO      16   0
++ * 0X18   Reserved
++ * 0X1C   Reserved
++ * 0x20   MAXCNT0   R/W     16   0
++ * 0x24   BASE0     R/W     32   0
++ * 0x28   CURRENT0  RO      32   0
++ * 0x2C   Reserved
++ * 0x30   MAXCNT1   R/W     16   0
++ * 0x34   BASE1     R/W     32   0
++ * 0X38   CURRENT1  RO      32   0
++ * 0X3C   Reserved
++ *
++ * M2M Channel Register Map
++ * Offset Name         Access   Bits Reset Value
++ *
++ * 0x00   CONTROL      R/W      22   0
++ * 0x04   INTERRUPT    R/W TC*  3    0
++ * 0x08   Reserved
++ * 0x0C   STATUS       R/W TC*  14   0
++ * 0x10   BCR0         R/W      16   0
++ * 0x14   BCR1         R/W      16   0
++ * 0x18   SAR_BASE0    R/W      32   0
++ * 0x1C   SAR_BASE1    R/W      32   0
++ * 0x20   Reserved
++ * 0x24   SAR_CURRENT0 RO       32   0
++ * 0x28   SAR_CURRENT1 RO       32   0
++ * 0x2C   DAR_BASE0    R/W      32   0
++ * 0x30   DAR_BASE1    R/W      32   0
++ * 0x34   DAR_CURRENT0 RO       32   0
++ * 0X38   Reserved
++ * 0X3C   DAR_CURRENT1 RO       32   0
++ * * Write this location once to clear the bit (see
++ * Interrupt/Status register description for which bits
++ * this rule applies to).
++ *
++ ****************************************************************************/
++
++
++/*----------------------------------------------------------------------------------*/
++/* M2P Registers                                                                    */
++/*----------------------------------------------------------------------------------*/
++/*
++ * M2P CONTROL register bit defines
++ */
++#define CONTROL_M2P_STALLINTEN      0x00000001	    /* Enables the STALL interrupt  */
++#define CONTROL_M2P_NFBINTEN        0x00000002	    /* Enables the NFB interrupt    */
++#define CONTROL_M2P_CHERRORINTEN    0x00000008      /* Enables the ChError interrupt*/
++#define CONTROL_M2P_ENABLE		    0x00000010      /* Enables the channel          */
++#define CONTROL_M2P_ABRT		    0x00000020      /* Determines how DMA behaves in*/
++			                                        /* NEXT state with peripheral   */
++                                                    /* error                        */
++			                                        /* 0: NEXT -> ON, ignore error  */
++			                                        /* 1: NEXT -> STALL, disable ch.*/
++#define CONTROL_M2P_ICE			    0x00000040      /* Ignore Channel Error         */
++
++/*
++ * M2P INTERRUPT register bit defines
++ */
++#define INTERRUPT_M2P_STALLINT      0x00000001	    /* Indicates channel stalled.   */
++#define INTERRUPT_M2P_NFBINT        0x00000002		/* Indicates channel is hungry. */
++#define INTERRUPT_M2P_CHERRORINT    0x00000008	    /* Peripheral detects error     */
++
++
++/*
++ * STATUS register bit defines
++ */
++#define STATUS_M2P_STALL            0x00000001		/* A '1' indicates channel is       */
++                                                    /* stalled                          */
++#define STATUS_M2P_NFB			    0x00000002      /* A '1' indicates channel has moved*/
++			                                        /* from NEXT state to ON state, but */
++			                                        /* waiting for next buffer to be    */
++                                                    /* programmed.                      */
++#define STATUS_M2P_CHERROR		    0x00000008      /* Enables the ChError interrupt    */
++#define STATUS_M2P_CURRENT_MASK     0x00000030      /* Current state of the FSM         */
++#define STATUS_M2P_CURRENT_SHIFT    4
++#define STATUS_M2P_NEXTBUFFER	    0x00000040      /* Informs the int handler after an */
++			                                        /* NFB int which pair of maxcnt and */
++                                                    /* base regs to update.             */
++#define STATUS_M2P_BYTES_MASK       0x0000f800 		/* number of valid DMA data         */
++#define STATUS_M2P_BYTES_SHIFT      7               /* currently in                     */
++								        		    /* packer/unpacker                  */
++
++#define STATUS_M2P_DMA_NO_BUF		0x00000000
++#define STATUS_M2P_DMA_BUF_ON		0x00000010
++#define STATUS_M2P_DMA_BUF_NEXT		0x00000020
++
++/*
++ * Register masks to mask off reserved bits after reading register.
++ */
++#define M2P_MASK_PPALLOC            0x0000000f
++#define M2P_MASK_REMAIN             0x0000ffff
++#define M2P_MASK_MAXCNT0            0x0000ffff
++#define M2P_MASK_BASE0              0xffffffff
++#define M2P_MASK_CURRENT0           0xffffffff
++#define M2P_MASK_MAXCNT1            0x0000ffff
++#define M2P_MASK_BASE1              0xffffffff
++#define M2P_MASK_CURRENT1           0xffffffff
++
++
++/*----------------------------------------------------------------------------------*/
++/* M2M Registers                                                                    */
++/*----------------------------------------------------------------------------------*/
++
++#define CONTROL_M2M_STALLINTEN	0x00000001  /* Enables the STALL interrupt                     */
++#define CONTROL_M2M_SCT			0x00000002  /* Source Copy Transfer. Setup a                   */
++										    /* block transfer from 1 memory source             */
++										    /* location.                                       */
++#define CONTROL_M2M_DONEINTEN	0x00000004  /* Enables the DONE interrupt which                */
++										    /* indicates if the xfer completed                 */
++										    /* successfully                                    */
++#define CONTROL_M2M_ENABLE		0x00000008  /* Enables the channel                             */
++#define CONTROL_M2M_START		0x00000010  /* Initiates the xfer. 'software trigger'          */
++#define CONTROL_M2M_BWC_MASK	0x000001e0  /* Bandwidth control. Indicate number of           */
++#define CONTROL_M2M_BWC_SHIFT   5			/* bytes in a transfer.                            */
++#define CONTROL_M2M_PW_MASK		0x00000600  /* Peripheral width. Used for xfers                */
++#define CONTROL_M2M_PW_SHIFT    9			/* between memory and external peripheral.         */
++										    /* 00: byte, 01: halfword, 10: word.               */
++#define CONTROL_M2M_DAH			0x00000800  /* Destination Address Hold                        */
++#define CONTROL_M2M_SAH			0x00001000  /* Source Address Hold                             */
++#define CONTROL_M2M_TM_MASK     0x00006000  /* Transfer Mode. 00: sw triggered,                */
++#define CONTROL_M2M_TM_SHIFT    13			/* 01: hw initiated M2P, 01: hw initiated P2M      */
++#define CONTROL_M2M_ETDP_MASK	0x00018000  /* End-of-Transfer/Terminal Count pin              */
++#define CONTROL_M2M_ETDP_SHIFT  15		    /* direction and polarity.                         */
++#define CONTROL_M2M_DACKP		0x00020000  /* DMA acknowledge pin polarity                    */
++
++#define CONTROL_M2M_DREQP_MASK  0x00180000	/* DMA request pin polarity. must be set           */
++#define CONTROL_M2M_DREQP_SHIFT 19			/* before enable bit.                              */
++#define CONTROL_M2M_NFBINTEN	0x00200000  /* Enables generation of the NFB interrupt.        */
++#define CONTROL_M2M_RSS_MASK    0x00c00000	/* Request source selection:                       */
++#define CONTROL_M2M_RSS_SHIFT	22			/*		000 - External DReq[0]                     */
++										    /*		001 - External DReq[1]                     */
++										    /*		01X - Internal SSPRx                       */
++										    /*		10X - Internal SSPTx                       */
++										    /*		11X - Internal IDE                         */
++#define CONTROL_M2M_NO_HDSK		0x01000000  /* No handshake.  When set the peripheral doesn't  */
++										    /* require the regular handshake protocal. Must    */
++									    	/* be set for SSP and IDE operations, optional     */
++										    /* for external peripherals.                       */
++#define CONTROL_M2M_PWSC_MASK   0xfe000000	/* Peripheral wait states count. Gives the latency */
++#define CONTROL_M2M_PWSC_SHIFT	25			/* (in PCLK cycles) needed by the peripheral to    */
++								    		/* deassert its' request once the M2M xfer w/ DMA  */
++									    	/* is complete.                                    */
++
++/*
++ * M2M INTERRUPT register bit defines
++ */
++#define INTERRUPT_M2M_STALLINT	0x00000001	/* Stall interrupt indicates channel stalled. */
++#define INTERRUPT_M2M_DONEINT	0x00000002	/* Transaction done.                          */
++#define INTERRUPT_M2M_NFBINT	0x00000004	/* Next frame buffer interrupt indicates      */
++											/* channel requires a new buffer              */
++
++
++
++/*
++ * M2M STATUS register bit defines
++ */
++#define STATUS_M2M_STALL		0x00000001  /* A '1' indicates channel is stalled           */
++#define STATUS_M2M_CURRENTSTATE_MASK  0x0000003e  /* Indicates state of M2M Channel control       */
++#define STATUS_M2M_CURRENTSTATE_SHIFT 1		/* FSM (0-2):                                   */
++										    /*	000 - IDLE, 001 - STALL, 010 - MEM_RD,      */
++										    /*  011 - MEM_WR, 100 - BWC_WAIT                */
++										    /* and M2M buffer FSM (3-2):                    */
++										    /* 	00 - NO_BUF, 01 - BUF_ON, 10 - BUF_NEXT     */
++#define STATUS_M2M_DONE		    0x00000040  /* Transfer completed successfully if 1.        */
++#define STATUS_M2M_TCS_MASK		0x00000180  /* Terminal Count status. Indicates whether or  */
++#define STATUS_M2M_TCS_SHIFT    7			/* or not the actual byte count reached         */
++								    		/* programmed limit for buffer descriptor       */
++#define STATUS_M2M_EOTS_MASK    0x00000600  /* End-of-Transfer status for buffer            */
++#define STATUS_M2M_EOTS_SHIFT   9
++#define STATUS_M2M_NFB			0x00000800  /* A '1' indicates channel has moved            */
++										    /* from NEXT state to ON state, but	the next    */
++										    /* byte count reg for next buffer has not been  */
++										    /* programmed yet.                              */
++#define STATUS_M2M_NB			0x00001000  /* NextBuffer status. Informs NFB service       */
++										    /* routine, after NFB int, which pair of buffer */
++										    /* descriptor registers is free to update.      */
++#define STATUS_M2M_DREQS		0x00002000  /* DREQ status.  Reflects the status of the     */
++										    /* synchronized external peripherals DMA        */
++										    /* request signal.                              */
++
++/*
++ * Register masks to mask off reserved bits after reading register.
++ */
++#define M2M_MASK_BCR0             0x0000ffff
++#define M2M_MASK_BCR1             0x0000ffff
++#define M2M_MASK_SAR_BASE0        0xffffffff
++#define M2M_MASK_SAR_BASE1        0xffffffff
++#define M2M_MASK_SAR_CURRENT0     0xffffffff
++#define M2M_MASK_SAR_CURRENT1     0xffffffff
++#define M2M_MASK_DAR_BASE0        0xffffffff
++#define M2M_MASK_DAR_BASE1        0xffffffff
++#define M2M_MASK_DAR_CURRENT0     0xffffffff
++#define M2M_MASK_DAR_CURRENT1     0xffffffff
++
++
++//
++/* 8000_0000 - 8000_ffff: DMA  */
++#define DMA_OFFSET              0x000000
++#define DMA_BASE                (EP93XX_DMA_BASE)
++#define DMAMP_TX_0_CONTROL      (DMA_BASE+0x0000)
++#define DMAMP_TX_0_INTERRUPT    (DMA_BASE+0x0004)
++#define DMAMP_TX_0_PPALLOC      (DMA_BASE+0x0008)
++#define DMAMP_TX_0_STATUS       (DMA_BASE+0x000C)
++#define DMAMP_TX_0_REMAIN       (DMA_BASE+0x0014)
++#define DMAMP_TX_0_MAXCNT0      (DMA_BASE+0x0020)
++#define DMAMP_TX_0_BASE0        (DMA_BASE+0x0024)
++#define DMAMP_TX_0_CURRENT0     (DMA_BASE+0x0028)
++#define DMAMP_TX_0_MAXCNT1      (DMA_BASE+0x0030)
++#define DMAMP_TX_0_BASE1        (DMA_BASE+0x0034)
++#define DMAMP_TX_0_CURRENT1     (DMA_BASE+0x0038)
++
++#define DMAMP_RX_1_CONTROL      (DMA_BASE+0x0040)
++#define DMAMP_RX_1_INTERRUPT    (DMA_BASE+0x0044)
++#define DMAMP_RX_1_PPALLOC      (DMA_BASE+0x0048)
++#define DMAMP_RX_1_STATUS       (DMA_BASE+0x004C)
++#define DMAMP_RX_1_REMAIN       (DMA_BASE+0x0054)
++#define DMAMP_RX_1_MAXCNT0      (DMA_BASE+0x0060)
++#define DMAMP_RX_1_BASE0        (DMA_BASE+0x0064)
++#define DMAMP_RX_1_CURRENT0     (DMA_BASE+0x0068)
++#define DMAMP_RX_1_MAXCNT1      (DMA_BASE+0x0070)
++#define DMAMP_RX_1_BASE1        (DMA_BASE+0x0074)
++#define DMAMP_RX_1_CURRENT1     (DMA_BASE+0x0078)
++
++#define DMAMP_TX_2_CONTROL      (DMA_BASE+0x0080)
++#define DMAMP_TX_2_INTERRUPT    (DMA_BASE+0x0084)
++#define DMAMP_TX_2_PPALLOC      (DMA_BASE+0x0088)
++#define DMAMP_TX_2_STATUS       (DMA_BASE+0x008C)
++#define DMAMP_TX_2_REMAIN       (DMA_BASE+0x0094)
++#define DMAMP_TX_2_MAXCNT0      (DMA_BASE+0x00A0)
++#define DMAMP_TX_2_BASE0        (DMA_BASE+0x00A4)
++#define DMAMP_TX_2_CURRENT0     (DMA_BASE+0x00A8)
++#define DMAMP_TX_2_MAXCNT1      (DMA_BASE+0x00B0)
++#define DMAMP_TX_2_BASE1        (DMA_BASE+0x00B4)
++#define DMAMP_TX_2_CURRENT1     (DMA_BASE+0x00B8)
++
++#define DMAMP_RX_3_CONTROL      (DMA_BASE+0x00C0)
++#define DMAMP_RX_3_INTERRUPT    (DMA_BASE+0x00C4)
++#define DMAMP_RX_3_PPALLOC      (DMA_BASE+0x00C8)
++#define DMAMP_RX_3_STATUS       (DMA_BASE+0x00CC)
++#define DMAMP_RX_3_REMAIN       (DMA_BASE+0x00D4)
++#define DMAMP_RX_3_MAXCNT0      (DMA_BASE+0x00E0)
++#define DMAMP_RX_3_BASE0        (DMA_BASE+0x00E4)
++#define DMAMP_RX_3_CURRENT0     (DMA_BASE+0x00E8)
++#define DMAMP_RX_3_MAXCNT1      (DMA_BASE+0x00F0)
++#define DMAMP_RX_3_BASE1        (DMA_BASE+0x00F4)
++#define DMAMP_RX_3_CURRENT1     (DMA_BASE+0x00F8)
++
++#define DMAMM_0_CONTROL         (DMA_BASE+0x0100)
++#define DMAMM_0_INTERRUPT       (DMA_BASE+0x0104)
++#define DMAMM_0_STATUS          (DMA_BASE+0x010C)
++#define DMAMM_0_BCR0            (DMA_BASE+0x0110)
++#define DMAMM_0_BCR1            (DMA_BASE+0x0114)
++#define DMAMM_0_SAR_BASE0       (DMA_BASE+0x0118)
++#define DMAMM_0_SAR_BASE1       (DMA_BASE+0x011C)
++#define DMAMM_0_SAR_CURRENT0    (DMA_BASE+0x0124)
++#define DMAMM_0_SAR_CURRENT1    (DMA_BASE+0x0128)
++#define DMAMM_0_DAR_BASE0       (DMA_BASE+0x012C)
++#define DMAMM_0_DAR_BASE1       (DMA_BASE+0x0130)
++#define DMAMM_0_DAR_CURRENT0    (DMA_BASE+0x0134)
++#define DMAMM_0_DAR_CURRENT1    (DMA_BASE+0x013C)
++
++#define DMAMM_1_CONTROL         (DMA_BASE+0x0140)
++#define DMAMM_1_INTERRUPT       (DMA_BASE+0x0144)
++#define DMAMM_1_STATUS          (DMA_BASE+0x014C)
++#define DMAMM_1_BCR0            (DMA_BASE+0x0150)
++#define DMAMM_1_BCR1            (DMA_BASE+0x0154)
++#define DMAMM_1_SAR_BASE0       (DMA_BASE+0x0158)
++#define DMAMM_1_SAR_BASE1       (DMA_BASE+0x015C)
++#define DMAMM_1_SAR_CURRENT0    (DMA_BASE+0x0164)
++#define DMAMM_1_SAR_CURRENT1    (DMA_BASE+0x0168)
++#define DMAMM_1_DAR_BASE0       (DMA_BASE+0x016C)
++#define DMAMM_1_DAR_BASE1       (DMA_BASE+0x0170)
++#define DMAMM_1_DAR_CURRENT0    (DMA_BASE+0x0174)
++#define DMAMM_1_DAR_CURRENT1    (DMA_BASE+0x017C)
++
++#define DMAMP_RX_5_CONTROL      (DMA_BASE+0x0200)
++#define DMAMP_RX_5_INTERRUPT    (DMA_BASE+0x0204)
++#define DMAMP_RX_5_PPALLOC      (DMA_BASE+0x0208)
++#define DMAMP_RX_5_STATUS       (DMA_BASE+0x020C)
++#define DMAMP_RX_5_REMAIN       (DMA_BASE+0x0214)
++#define DMAMP_RX_5_MAXCNT0      (DMA_BASE+0x0220)
++#define DMAMP_RX_5_BASE0        (DMA_BASE+0x0224)
++#define DMAMP_RX_5_CURRENT0     (DMA_BASE+0x0228)
++#define DMAMP_RX_5_MAXCNT1      (DMA_BASE+0x0230)
++#define DMAMP_RX_5_BASE1        (DMA_BASE+0x0234)
++#define DMAMP_RX_5_CURRENT1     (DMA_BASE+0x0238)
++
++#define DMAMP_TX_4_CONTROL      (DMA_BASE+0x0240)
++#define DMAMP_TX_4_INTERRUPT    (DMA_BASE+0x0244)
++#define DMAMP_TX_4_PPALLOC      (DMA_BASE+0x0248)
++#define DMAMP_TX_4_STATUS       (DMA_BASE+0x024C)
++#define DMAMP_TX_4_REMAIN       (DMA_BASE+0x0254)
++#define DMAMP_TX_4_MAXCNT0      (DMA_BASE+0x0260)
++#define DMAMP_TX_4_BASE0        (DMA_BASE+0x0264)
++#define DMAMP_TX_4_CURRENT0     (DMA_BASE+0x0268)
++#define DMAMP_TX_4_MAXCNT1      (DMA_BASE+0x0270)
++#define DMAMP_TX_4_BASE1        (DMA_BASE+0x0274)
++#define DMAMP_TX_4_CURRENT1     (DMA_BASE+0x0278)
++
++#define DMAMP_RX_7_CONTROL      (DMA_BASE+0x0280)
++#define DMAMP_RX_7_INTERRUPT    (DMA_BASE+0x0284)
++#define DMAMP_RX_7_PPALLOC      (DMA_BASE+0x0288)
++#define DMAMP_RX_7_STATUS       (DMA_BASE+0x028C)
++#define DMAMP_RX_7_REMAIN       (DMA_BASE+0x0294)
++#define DMAMP_RX_7_MAXCNT0      (DMA_BASE+0x02A0)
++#define DMAMP_RX_7_BASE0        (DMA_BASE+0x02A4)
++#define DMAMP_RX_7_CURRENT0     (DMA_BASE+0x02A8)
++#define DMAMP_RX_7_MAXCNT1      (DMA_BASE+0x02B0)
++#define DMAMP_RX_7_BASE1        (DMA_BASE+0x02B4)
++#define DMAMP_RX_7_CURRENT1     (DMA_BASE+0x02B8)
++
++#define DMAMP_TX_6_CONTROL      (DMA_BASE+0x02C0)
++#define DMAMP_TX_6_INTERRUPT    (DMA_BASE+0x02C4)
++#define DMAMP_TX_6_PPALLOC      (DMA_BASE+0x02C8)
++#define DMAMP_TX_6_STATUS       (DMA_BASE+0x02CC)
++#define DMAMP_TX_6_REMAIN       (DMA_BASE+0x02D4)
++#define DMAMP_TX_6_MAXCNT0      (DMA_BASE+0x02E0)
++#define DMAMP_TX_6_BASE0        (DMA_BASE+0x02E4)
++#define DMAMP_TX_6_CURRENT0     (DMA_BASE+0x02E8)
++#define DMAMP_TX_6_MAXCNT1      (DMA_BASE+0x02F0)
++#define DMAMP_TX_6_BASE1        (DMA_BASE+0x02F4)
++#define DMAMP_TX_6_CURRENT1     (DMA_BASE+0x02F8)
++
++#define DMAMP_RX_9_CONTROL      (DMA_BASE+0x0300)
++#define DMAMP_RX_9_INTERRUPT    (DMA_BASE+0x0304)
++#define DMAMP_RX_9_PPALLOC      (DMA_BASE+0x0308)
++#define DMAMP_RX_9_STATUS       (DMA_BASE+0x030C)
++#define DMAMP_RX_9_REMAIN       (DMA_BASE+0x0314)
++#define DMAMP_RX_9_MAXCNT0      (DMA_BASE+0x0320)
++#define DMAMP_RX_9_BASE0        (DMA_BASE+0x0324)
++#define DMAMP_RX_9_CURRENT0     (DMA_BASE+0x0328)
++#define DMAMP_RX_9_MAXCNT1      (DMA_BASE+0x0330)
++#define DMAMP_RX_9_BASE1        (DMA_BASE+0x0334)
++#define DMAMP_RX_9_CURRENT1     (DMA_BASE+0x0338)
++
++#define DMAMP_TX_8_CONTROL      (DMA_BASE+0x0340)
++#define DMAMP_TX_8_INTERRUPT    (DMA_BASE+0x0344)
++#define DMAMP_TX_8_PPALLOC      (DMA_BASE+0x0348)
++#define DMAMP_TX_8_STATUS       (DMA_BASE+0x034C)
++#define DMAMP_TX_8_REMAIN       (DMA_BASE+0x0354)
++#define DMAMP_TX_8_MAXCNT0      (DMA_BASE+0x0360)
++#define DMAMP_TX_8_BASE0        (DMA_BASE+0x0364)
++#define DMAMP_TX_8_CURRENT0     (DMA_BASE+0x0368)
++#define DMAMP_TX_8_MAXCNT1      (DMA_BASE+0x0370)
++#define DMAMP_TX_8_BASE1        (DMA_BASE+0x0374)
++#define DMAMP_TX_8_CURRENT1     (DMA_BASE+0x0378)
++
++#define DMA_ARBITRATION         (DMA_BASE+0x0380)
++#define DMA_INTERRUPT           (DMA_BASE+0x03C0)
++
++
++/*
++ * DMA Register Base addresses and Offsets
++ */
++#define DMA_M2P_TX_0_BASE       DMAMP_TX_0_CONTROL
++#define DMA_M2P_RX_1_BASE       DMAMP_RX_1_CONTROL
++#define DMA_M2P_TX_2_BASE       DMAMP_TX_2_CONTROL
++#define DMA_M2P_RX_3_BASE       DMAMP_RX_3_CONTROL
++#define DMA_M2M_0_BASE          DMAMM_0_CONTROL
++#define DMA_M2M_1_BASE          DMAMM_1_CONTROL
++#define DMA_M2P_RX_5_BASE       DMAMP_RX_5_CONTROL
++#define DMA_M2P_TX_4_BASE       DMAMP_TX_4_CONTROL
++#define DMA_M2P_RX_7_BASE       DMAMP_RX_7_CONTROL
++#define DMA_M2P_TX_6_BASE       DMAMP_TX_6_CONTROL
++#define DMA_M2P_RX_9_BASE       DMAMP_RX_9_CONTROL
++#define DMA_M2P_TX_8_BASE       DMAMP_TX_8_CONTROL
++
++#define M2P_OFFSET_CONTROL          0x0000
++#define M2P_OFFSET_INTERRUPT        0x0004
++#define M2P_OFFSET_PPALLOC          0x0008
++#define M2P_OFFSET_STATUS           0x000C
++#define M2P_OFFSET_REMAIN           0x0014
++#define M2P_OFFSET_MAXCNT0          0x0020
++#define M2P_OFFSET_BASE0            0x0024
++#define M2P_OFFSET_CURRENT0         0x0028
++#define M2P_OFFSET_MAXCNT1          0x0030
++#define M2P_OFFSET_BASE1            0x0034
++#define M2P_OFFSET_CURRENT1         0x0038
++
++#define M2M_OFFSET_CONTROL          0x0000
++#define M2M_OFFSET_INTERRUPT        0x0004
++#define M2M_OFFSET_STATUS           0x000C
++#define M2M_OFFSET_BCR0             0x0010
++#define M2M_OFFSET_BCR1             0x0014
++#define M2M_OFFSET_SAR_BASE0        0x0018
++#define M2M_OFFSET_SAR_BASE1        0x001C
++#define M2M_OFFSET_SAR_CURRENT0     0x0024
++#define M2M_OFFSET_SAR_CURRENT1     0x0028
++#define M2M_OFFSET_DAR_BASE0        0x002C
++#define M2M_OFFSET_DAR_BASE1        0x0030
++#define M2M_OFFSET_DAR_CURRENT0     0x0034
++#define M2M_OFFSET_DAR_CURRENT1     0x003C
++
++
++
++//-----------------------------------------------------------------------------
++// PWRCNT Register Defines
++//-----------------------------------------------------------------------------
++#define SYSCON_PWRCNT_FIREN             0x80000000
++#define SYSCON_PWRCNT_UARTBAUD          0x20000000
++#define SYSCON_PWRCNT_USHEN             0x10000000
++#define SYSCON_PWRCNT_DMA_M2MCH1        0x08000000
++#define SYSCON_PWRCNT_DMA_M2MCH0        0x04000000
++#define SYSCON_PWRCNT_DMA_M2PCH8        0x02000000
++#define SYSCON_PWRCNT_DMA_M2PCH9        0x01000000
++#define SYSCON_PWRCNT_DMA_M2PCH6        0x00800000
++#define SYSCON_PWRCNT_DMA_M2PCH7        0x00400000
++#define SYSCON_PWRCNT_DMA_M2PCH4        0x00200000
++#define SYSCON_PWRCNT_DMA_M2PCH5        0x00100000
++#define SYSCON_PWRCNT_DMA_M2PCH2        0x00080000
++#define SYSCON_PWRCNT_DMA_M2PCH3        0x00040000
++#define SYSCON_PWRCNT_DMA_M2PCH0        0x00020000
++#define SYSCON_PWRCNT_DMA_M2PCH1        0x00010000
++
++#ifndef __ASSEMBLY__
++/*
++ * DMA Register Base addresses
++ */
++static unsigned int const DMAM2PChannelBase[10] =
++{
++    DMA_M2P_TX_0_BASE,
++    DMA_M2P_RX_1_BASE,
++    DMA_M2P_TX_2_BASE,
++    DMA_M2P_RX_3_BASE,
++    DMA_M2P_TX_4_BASE,
++    DMA_M2P_RX_5_BASE,
++    DMA_M2P_TX_6_BASE,
++    DMA_M2P_RX_7_BASE,
++    DMA_M2P_TX_8_BASE,
++    DMA_M2P_RX_9_BASE
++};
++
++static unsigned int const DMAM2MChannelBase[2] =
++{
++    DMA_M2M_0_BASE,
++    DMA_M2M_1_BASE
++};
++
++#endif /* __ASSEMBLY__ */
++
++/*****************************************************************************
++ *
++ * DMA buffer structure type.
++ *
++ ****************************************************************************/
++typedef struct ep93xx_dma_buffer_s
++{
++    unsigned int    source;     /* buffer physical source address.          */
++    unsigned int    dest;       /* buffer physical destination address,     */
++                                /* only used with the 2 M2M channels.       */
++    unsigned int    size;       /* buffer size in bytes                     */
++    unsigned int    last;       /* 1 if this is the last buffer             */
++                                /* in this transaction.  If 1,              */
++                                /* disable the NFBint so we aren't          */
++                                /* interrupted for another buffer           */
++                                /* when we know there won't be another.     */
++    unsigned int    used;       /* This field is set to 1 by the DMA        */
++                                /* interface after the buffer is transferred*/
++    int    buf_id;              /* unique identifyer specified by the       */
++                                /* the driver which requested the dma       */
++} ep93xx_dma_buffer_t;
++
++typedef ep93xx_dma_buffer_t * ep93xx_dma_buffer_p;
++
++/*****************************************************************************
++ *
++ * Instance definition for the DMA interface.
++ *
++ ****************************************************************************/
++typedef struct ep9312_dma_s
++{
++    /*
++     *  This 1 when the instance is in use, and 0 when it's not.
++     */
++    unsigned int ref_count;
++
++    /*
++     * This is the last valid handle for this instance.  When giving out a
++     * new handle this will be incremented and given out.
++     */
++    int last_valid_handle;
++
++    /*
++     * device specifies one of the 20 DMA hardware ports this
++     * DMA channel will service.
++     */
++    ep93xx_dma_dev_t device;
++
++    /*
++     * DMABufferQueue is the queue of buffer structure pointers which the
++     * dma channel will use to setup transfers.
++     */
++    ep93xx_dma_buffer_t buffer_queue[MAX_EP93XX_DMA_BUFFERS];
++
++    /*
++     * currnt_buffer : This is the buffer currently being transfered on
++     *                 this channel.
++     * last_buffer : This is the last buffer for this transfer.
++     * Note: current_buffer + 1 is already programmed into the dma
++     *       channel as the next buffer to transfer. Don't write
++     *       over either entry.
++     */
++    int current_buffer;
++    int last_buffer;
++
++    /*
++     * The following 3 fields are buffer counters.
++     *
++     * iNewBuffers: Buffers in the queue which have not been transfered.
++     * iUsedBuffers: Buffers in the queue which have have been tranferred,
++     *               and are waiting to be returned.
++     * iTotalBuffers: Total number of buffers in the queue.
++     */
++    int new_buffers;
++    int used_buffers;
++    int total_buffers;
++
++    /*
++     * uiTotalBytes has the total bytes transfered on the channel since the
++     * last flush.  This value does not include the bytes tranfered in the
++     * current buffer.  A byte count is only added after a complete buffer
++     * is tranfered.
++     */
++    unsigned int total_bytes;
++
++    /*
++     *  Interrupt number for this channel
++     */
++    unsigned int irq;
++
++    /*
++     * Indicates whether or not the channel is currently enabled to transfer
++     * data.
++     */
++    unsigned int xfer_enable;
++
++    /*
++     * pause indicates if the dma channel was paused by calling the pause
++     * ioctl.
++     */
++    unsigned int pause;
++
++    /*
++     *  buffer structure used during a pause to capture the current
++     *  address and remaining bytes for the buffer actively being transferred
++     *  on the channel. This buffer will be used to reprogram the dma
++     *  channel upon a resume.
++     */
++    ep93xx_dma_buffer_t pause_buf;
++
++    /*
++     * DMACallback is a function pointer which the calling application can
++     * use install a function to.  this fuction can be used to notify the
++     * calling application of an interrupt.
++     */
++    dma_callback callback;
++
++    /*
++     * User data used as a parameter for the Callback function.  The user
++     * sets up the data and sends it with the callback function.
++     */
++    unsigned int user_data;
++
++    /*
++     * A string representation of the device attached to the channel.
++     */
++    const char * device_id;
++
++    /*
++     * The register base address for this dma channel.
++     */
++    unsigned int reg_base;
++
++    /*
++     * terminated indicates
++     */
++    unsigned int terminated;
++
++
++} ep93xx_dma_t;
++
++/*****************************************************************************
++ *
++ * DMA macros
++ *
++ ****************************************************************************/
++#define DMA_HANDLE_SPECIFIER_MASK   0xF0000000
++#define DMA_CH0_HANDLE_SPECIFIER    0x00000000
++#define DMA_CH1_HANDLE_SPECIFIER    0x10000000
++#define DMA_CH2_HANDLE_SPECIFIER    0x20000000
++#define DMA_CH3_HANDLE_SPECIFIER    0x30000000
++#define DMA_CH4_HANDLE_SPECIFIER    0x40000000
++#define DMA_CH5_HANDLE_SPECIFIER    0x50000000
++#define DMA_CH6_HANDLE_SPECIFIER    0x60000000
++#define DMA_CH7_HANDLE_SPECIFIER    0x70000000
++#define DMA_CH8_HANDLE_SPECIFIER    0x80000000
++#define DMA_CH9_HANDLE_SPECIFIER    0x90000000
++#define DMA_CH10_HANDLE_SPECIFIER   0xA0000000
++#define DMA_CH11_HANDLE_SPECIFIER   0xB0000000
++
++#endif // _DMADRV_H_

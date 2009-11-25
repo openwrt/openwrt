@@ -1,0 +1,714 @@
+Index: linux-2.6.30.9/drivers/spi/Kconfig
+===================================================================
+--- linux-2.6.30.9.orig/drivers/spi/Kconfig	2009-11-24 21:09:23.000000000 +0100
++++ linux-2.6.30.9/drivers/spi/Kconfig	2009-11-24 21:09:53.000000000 +0100
+@@ -125,6 +125,12 @@
+ 
+ 	  If unsure, say N.
+ 
++config SPI_EP93XX
++	tristate "EP93xx SSP SPI master"
++	depends on SPI_MASTER && ARCH_EP93XX && EXPERIMENTAL
++	help
++	  This enables the EP93xx SPI master controller.
++
+ config SPI_IMX
+ 	tristate "Freescale iMX SPI controller"
+ 	depends on ARCH_IMX && EXPERIMENTAL
+Index: linux-2.6.30.9/drivers/spi/Makefile
+===================================================================
+--- linux-2.6.30.9.orig/drivers/spi/Makefile	2009-11-24 21:09:23.000000000 +0100
++++ linux-2.6.30.9/drivers/spi/Makefile	2009-11-24 21:09:53.000000000 +0100
+@@ -16,6 +16,7 @@
+ obj-$(CONFIG_SPI_BITBANG)		+= spi_bitbang.o
+ obj-$(CONFIG_SPI_AU1550)		+= au1550_spi.o
+ obj-$(CONFIG_SPI_BUTTERFLY)		+= spi_butterfly.o
++obj-$(CONFIG_SPI_EP93XX)		+= spi_ep93xx.o
+ obj-$(CONFIG_SPI_GPIO)			+= spi_gpio.o
+ obj-$(CONFIG_SPI_GPIO_OLD)		+= spi_gpio_old.o
+ obj-$(CONFIG_SPI_IMX)			+= spi_imx.o
+Index: linux-2.6.30.9/drivers/spi/spi_ep93xx.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/spi/spi_ep93xx.c	2009-11-24 21:21:25.000000000 +0100
+@@ -0,0 +1,680 @@
++/*
++ * linux/drivers/spi/spi_ep93xx.c
++ *
++ * Copyright (C) 2007 Manfred Gruber <m.gruber@tirol.com>
++ * Small changes by Peter Ivanov <ivanovp@gmail.com> to support MMC over SPI, 2008
++ * SIM.ONE changes by Nuccio Raciti Simplemachine <nuccio.raciti@gmail.com>
++ *
++ * Based on pxa2xx_spi.c/spi_imx.c and bitbang.c driver
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#include <linux/blkdev.h>
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/dma-mapping.h>
++#include <linux/err.h>
++#include <linux/errno.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
++
++#include <linux/spi/spi.h>
++
++#include <mach/hardware.h>
++#include <mach/ep93xx-regs.h>
++#include <asm/gpio.h>
++
++/* #define SPI_EP93XX_DEBUG */
++
++#define DEFINE_SSP_REG(reg, off)			\
++	static inline u32 read_##reg(void *p)		\
++		{ return __raw_readl(p + (off)); }	\
++	static inline void write_##reg(u32 v, void *p)	\
++		{ __raw_writel(v, p + (off)); }
++
++DEFINE_SSP_REG(SSPCR0, 0x00)
++DEFINE_SSP_REG(SSPCR1, 0x04)
++DEFINE_SSP_REG(SSPDR, 0x08)
++DEFINE_SSP_REG(SSPSR, 0x0c)
++DEFINE_SSP_REG(SSPCPSR, 0x10)
++DEFINE_SSP_REG(SSPIIR, 0x14)
++DEFINE_SSP_REG(SSPICR, 0x14)
++
++/* Bits in SSPCR0 */
++#define SSPCR0_DSS_MASK		0x0000000f
++#define SSPCR0_FRF_MASK		0x00000030
++#define SSPCR0_FRF_SHIFT	4
++#define SSPCR0_FRF_MOTOROLA	(0 << SSPCR0_FRF_SHIFT)
++#define SSPCR0_FRF_TI		(1 << SSPCR0_FRF_SHIFT)
++#define SSPCR0_FRF_NI		(2 << SSPCR0_FRF_SHIFT)
++#define SSPCR0_SPO		0x00000040
++#define SSPCR0_SPH		0x00000080
++#define SSPCR0_SCR_MASK		0x0000ff00
++#define SSPCR0_SCR_SHIFT	8
++
++/* Bits in SSPCR1 */
++#define SSPC1_RIE		0x00000001
++#define SSPC1_TIE		0x00000002
++#define SSPC1_RORIE		0x00000004
++#define SSPC1_LBM		0x00000008
++#define SSPC1_SSE		0x00000010
++#define SSPC1_MS		0x00000020
++#define SSPC1_SOD		0x00000040
++
++/* Bits in SSPSR */
++#define SSPSR_TFE		0x00000001	/* TX FIFO is empty */
++#define SSPSR_TNF		0x00000002	/* TX FIFO is not full */
++#define SSPSR_RNE		0x00000004	/* RX FIFO is not empty */
++#define SSPSR_RFF		0x00000008	/* RX FIFO is full */
++#define SSPSR_BSY		0x00000010	/* SSP is busy */
++#define SSPSR_MASK		0x0000001F	/* SSP is busy */
++
++/* Bits in SSPCPSR */
++#define SSPCPSR_SCR_MASK	0x000000ff
++
++/* Bits in SSPIIR */
++#define SSPIIR_RIS		0x00000001	/* RX FIFO IRQ status */
++#define SSPIIR_TIS		0x00000002	/* TX FIFO is not full */
++#define SSPIIR_RORIS		0x00000004	/* RX FIFO is full */
++
++#define SPI_SSPCLK		7.4e6
++#define SPI_SSPCLK_REV_E2	14.8e6		/* only for chip Rev E2 */
++#define SPI_MAX_SPEED		3.7e6
++#define SPI_MAX_SPEED_REV_E2	7.4e6		/* only for chip Rev E2 */
++#define SPI_CPSDVR_DIV_MIN	2
++#define SPI_CPSDVR_DIV_MAX	254
++#define SPI_SCR_DIV_MIN		0
++#define SPI_SCR_DIV_MAX		255
++#define SPI_DATARATE_OK		0
++#define SPI_DATARATE_NOK	-1
++
++struct driver_data {
++	/* Driver model hookup */
++	struct platform_device *pdev;
++
++	/* SPI framework hookup */
++	struct spi_master *master;
++
++	/* SSP register addresses */
++	void *ioaddr;
++
++	/* SSP irq */
++	int irq;
++
++	struct list_head queue;
++
++	/* SSP spinlock */
++	spinlock_t lock;
++
++	struct workqueue_struct *workqueue;
++	struct work_struct      work;
++
++	u8 busy;
++	u8 use_dma;
++};
++
++static unsigned ep93xx_txrx_8(struct spi_device *spi, struct spi_transfer *t)
++{
++	struct driver_data *drv_data;
++	const u8 *tx = t->tx_buf;
++	u8 *rx = t->rx_buf;
++	unsigned count = t->len;
++	u8 byte;
++	int busy;
++
++	drv_data = spi_master_get_devdata(spi->master);
++
++#ifdef SPI_EP93XX_DEBUG
++	dev_info(&spi->dev,
++		"ep93xx_txrx_8: t->len %u \n", t->len);
++#endif
++
++	while (likely(count > 0)) {
++		byte = 0;
++		if (tx) {
++			byte = *tx++;
++#ifdef SPI_EP93XX_DEBUG
++			dev_info(&spi->dev,
++				"ep93xx_txrx_8: write 0x%x \n", byte);
++#endif
++		}
++
++		write_SSPDR(byte, drv_data->ioaddr);
++		busy = read_SSPSR(drv_data->ioaddr);
++		while (busy & SSPSR_BSY) {
++			cpu_relax();
++			busy = read_SSPSR(drv_data->ioaddr);
++#ifdef SPI_EP93XX_DEBUG
++			dev_info(&spi->dev,
++				"ep93xx_txrx_8: delay. SSPSR: 0x%X\n", busy);
++#endif
++		}
++		byte = read_SSPDR(drv_data->ioaddr);
++
++		if (rx) {
++			*rx++ = byte;
++#ifdef SPI_EP93XX_DEBUG
++			dev_info(&spi->dev,
++				"ep93xx_txrx_8: read 0x%x \n", byte);
++#endif
++		}
++		count -= 1;
++	}
++	return t->len - count;
++}
++
++
++static unsigned ep93xx_txrx_16(struct spi_device *spi, struct spi_transfer *t)
++{
++
++	struct driver_data *drv_data;
++	const u16 *tx = t->tx_buf;
++	u16 *rx = t->rx_buf;
++	unsigned count = t->len;
++	u16 word;
++	int busy;
++
++	drv_data = spi_master_get_devdata(spi->master);
++
++#ifdef SPI_EP93XX_DEBUG
++	dev_info(&spi->dev,
++		"ep93xx_txrx_16: t->len %u \n", t->len);
++#endif
++	while (likely(count > 0)) {
++		word = 0;
++		if (tx) {
++			word = *tx++;
++#ifdef SPI_EP93XX_DEBUG
++			dev_info(&spi->dev,
++				"ep93xx_txrx_16: write 0x%x \n", word);
++#endif
++		}
++
++		write_SSPDR(word, drv_data->ioaddr);
++		busy = read_SSPSR(drv_data->ioaddr);
++		while (busy & SSPSR_BSY) {
++			cpu_relax();
++			busy = read_SSPSR(drv_data->ioaddr);
++#ifdef SPI_EP93XX_DEBUG
++			dev_info(&spi->dev,
++				"ep93xx_txrx_8: delay.\n");
++#endif
++		}
++
++		word = read_SSPDR(drv_data->ioaddr);
++
++		if (rx) {
++			*rx++ = word;
++#ifdef SPI_EP93XX_DEBUG
++			dev_info(&spi->dev,
++				"ep93xx_txrx_16: read 0x%x \n", word);
++#endif
++		}
++		count -= 2;
++	}
++	return t->len - count;
++}
++
++static u32 spi_data_rate(u32 speed_hz, u32 *div_cpsdvr, u32 *div_scr,
++	struct driver_data *drv_data, struct spi_device *spi)
++{
++	unsigned int spi_sspclk = SPI_SSPCLK;
++	unsigned int bus_speed_max = SPI_MAX_SPEED;
++	unsigned int bus_hz_tmp = 0;
++	u32 div_cpsdvr_tmp;
++	u32 div_scr_tmp;
++	u32 rv = SPI_DATARATE_NOK;
++	int chip_rev;
++
++	/* Checking CHIP_ID */
++	chip_rev = (__raw_readl (EP93XX_SYSCON_CHIP_ID) >> 28) & 0xF;
++	if (chip_rev == 7)
++	{
++		/* Chip version: Rev E2 */
++		/* This device has double speed SSP clock */
++		spi_sspclk = SPI_SSPCLK_REV_E2;
++		bus_speed_max = SPI_MAX_SPEED_REV_E2;
++#ifdef SPI_EP93XX_DEBUG
++		dev_info(&spi->dev,
++				"Chip Rev E2 detected! This device has double speed SSP clock.\n");
++#endif
++	}
++
++	*div_cpsdvr = SPI_CPSDVR_DIV_MAX;
++	*div_scr = SPI_SCR_DIV_MAX;
++
++	for (div_cpsdvr_tmp = SPI_CPSDVR_DIV_MIN;
++			div_cpsdvr_tmp <= SPI_CPSDVR_DIV_MAX && rv; div_cpsdvr_tmp++) {
++		for (div_scr_tmp = SPI_SCR_DIV_MIN;
++				div_scr_tmp <= SPI_SCR_DIV_MAX && rv; div_scr_tmp++) {
++			bus_hz_tmp = spi_sspclk / (div_cpsdvr_tmp * (1 + div_scr_tmp));
++			if (bus_hz_tmp <= speed_hz && bus_hz_tmp <= bus_speed_max) {
++				*div_cpsdvr = div_cpsdvr_tmp;
++				*div_scr = div_scr_tmp;
++				rv = SPI_DATARATE_OK;
++			}
++		}
++	}
++#ifdef SPI_EP93XX_DEBUG
++	dev_info(&spi->dev,
++			"Needed SPI bus frequency: %i Hz\n", speed_hz);
++	dev_info(&spi->dev,
++			"Actual SPI bus frequency: %i Hz\n", bus_hz_tmp);
++#endif
++	return rv;
++}
++
++/* Supported modes (returns -EINVAL if not supported mode requested) */
++#define MODEBITS (SPI_CPOL | SPI_CPHA | SPI_CS_HIGH)
++
++static int ep93xx_spi_setup(struct spi_device *spi)
++{
++	struct driver_data *drv_data;
++	u16 val;
++	u32 div_scr;
++	u32 div_cpsdvr;
++	unsigned int bits = spi->bits_per_word;
++	unsigned long speed_hz = spi->max_speed_hz;
++
++	drv_data = spi_master_get_devdata(spi->master);
++
++	/* enable SSP */
++	write_SSPCR1(SSPC1_SSE, drv_data->ioaddr);
++	/* Enable SSP and loopback mode (only for testing!) */
++	/* write_SSPCR1(SSPC1_SSE | SSPC1_LBM, drv_data->ioaddr);  */
++
++	if (bits == 0)
++		bits = 8;
++	if (bits < 4 || bits > 16) {
++		dev_err(&spi->dev,
++			"setup invalid bits_per_word %u (4 to 16)\n", bits);
++		return -EINVAL;
++	} else {
++		val = read_SSPCR0(drv_data->ioaddr);
++		val = val & ~SSPCR0_DSS_MASK ;
++		val = val | (bits-1);
++		write_SSPCR0(val, drv_data->ioaddr);
++#ifdef SPI_EP93XX_DEBUG
++		dev_info (&spi->dev, "Bits per word: %i\n", bits);
++#endif
++	}
++
++	if (spi->mode & ~MODEBITS) {
++		dev_err(&spi->dev, "unsupported mode bits: %x\n",
++			spi->mode & ~MODEBITS);
++		return -EINVAL;
++	} else {
++		val = read_SSPCR0(drv_data->ioaddr);
++		val = val & ~SSPCR0_SPO;
++		val = val & ~SSPCR0_SPH;
++		if (spi->mode & SPI_CPOL)
++		{
++			val = val | SSPCR0_SPO;
++		}
++#ifdef SPI_EP93XX_DEBUG
++		dev_info (&spi->dev, "Clock polarity (CPOL): %s\n", (spi->mode & SPI_CPHA) ? "1" : "0");
++#endif
++		if (spi->mode & SPI_CPHA)
++		{
++			val = val | SSPCR0_SPH;
++		}
++#ifdef SPI_EP93XX_DEBUG
++		dev_info (&spi->dev, "Clock phase (CPHA): %s\n", (spi->mode & SPI_CPHA) ? "1" : "0");
++#endif
++		write_SSPCR0(val, drv_data->ioaddr);
++	}
++
++	if (SPI_DATARATE_OK == (spi_data_rate(speed_hz, &div_cpsdvr,
++		&div_scr, drv_data, spi))) {
++
++		val = read_SSPCPSR(drv_data->ioaddr);
++		val = val & ~SSPCPSR_SCR_MASK;
++		val = val | div_cpsdvr;
++#ifdef SPI_EP93XX_DEBUG
++		dev_info (&spi->dev, "SSPCPSR: 0x%X\n", val);
++#endif
++		write_SSPCPSR(val, drv_data->ioaddr);
++
++		val = read_SSPCR0(drv_data->ioaddr);
++		val = val & ~SSPCR0_SCR_MASK;
++		val = val | (div_scr << SSPCR0_SCR_SHIFT);
++#ifdef SPI_EP93XX_DEBUG
++		dev_info (&spi->dev, "SSPCR0: 0x%X (div_scr: 0x%X)\n", val, div_scr);
++#endif
++		write_SSPCR0(val, drv_data->ioaddr);
++	} else
++		return -EINVAL;
++
++	/* reenable */
++	val = read_SSPCR1(drv_data->ioaddr);
++	val = val & ~SSPC1_SSE;
++	write_SSPCR1(val, drv_data->ioaddr);
++	val = read_SSPCR1(drv_data->ioaddr);
++	val = val | SSPC1_SSE;
++	write_SSPCR1(val, drv_data->ioaddr);
++#ifdef SPI_EP93XX_DEBUG
++	dev_info (&spi->dev, "Loopback mode: %s\n", (val & SSPC1_LBM) ? "On" : "Off");
++#endif
++
++	return 0;
++}
++
++static int ep93xx_spi_transfer(struct spi_device *spi, struct spi_message *m)
++{
++	struct driver_data *drv_data;
++	unsigned long flags;
++	int status = 0;
++
++	m->actual_length = 0;
++	m->status = -EINPROGRESS;
++
++	drv_data = spi_master_get_devdata(spi->master);
++
++	spin_lock_irqsave(&drv_data->lock, flags);
++	if (!spi->max_speed_hz)
++		status = -ENETDOWN;
++	else {
++		list_add_tail(&m->queue, &drv_data->queue);
++		queue_work(drv_data->workqueue, &drv_data->work);
++	}
++	spin_unlock_irqrestore(&drv_data->lock, flags);
++	return status;
++}
++
++static void ep93xx_work(struct work_struct *work)
++{
++	struct driver_data *drv_data =
++		container_of(work, struct driver_data, work);
++	unsigned long flags;
++
++	spin_lock_irqsave(&drv_data->lock, flags);
++	drv_data->busy = 1;
++
++	while (!list_empty(&drv_data->queue)) {
++		struct spi_message *m;
++		struct spi_device *spi;
++		struct spi_transfer *t = NULL;
++		int status;
++
++		m = container_of(drv_data->queue.next, struct spi_message,
++			queue);
++		list_del_init(&m->queue);
++		spin_unlock_irqrestore(&drv_data->lock, flags);
++
++		spi = m->spi;
++		status = 0;
++
++		list_for_each_entry(t, &m->transfers, transfer_list) {
++
++			if (!t->tx_buf && !t->rx_buf && t->len) {
++				status = -EINVAL;
++				break;
++			}
++
++			if (t->len) {
++				if (!m->is_dma_mapped) {
++					t->rx_dma = 0;
++					t->tx_dma = 0;
++				}
++				if (t->bits_per_word <= 8)
++					status = ep93xx_txrx_8(spi, t);
++				else
++					status = ep93xx_txrx_16(spi, t);
++			}
++
++			if (status != t->len) {
++				if (status > 0)
++					status = -EMSGSIZE;
++				break;
++			}
++			m->actual_length += status;
++			status = 0;
++
++			/* protocol tweaks before next transfer */
++			if (t->delay_usecs)
++				udelay(t->delay_usecs);
++
++			if (t->transfer_list.next == &m->transfers)
++				break;
++		}
++
++		m->status = status;
++		m->complete(m->context);
++
++		spin_lock_irqsave(&drv_data->lock, flags);
++	}
++	drv_data->busy = 0;
++	spin_unlock_irqrestore(&drv_data->lock, flags);
++}
++
++static irqreturn_t ssp_int(int irq, void *dev_id)
++{
++	struct driver_data *drv_data = dev_id;
++	u8 status;
++	status = read_SSPIIR(drv_data->ioaddr);
++
++	if (status & SSPIIR_RORIS) {
++		dev_err(&drv_data->pdev->dev, "SPI rx overrun.\n");
++
++		/* We clear the overrun here ! */
++		write_SSPICR(0, drv_data->ioaddr);
++	}
++
++	/* RX interrupt */
++	if (status & SSPIIR_RIS)
++		dev_info(&drv_data->pdev->dev, "SPI RX interrupt\n");
++
++	/* TX interrupt */
++	if (status & SSPIIR_TIS)
++		dev_info(&drv_data->pdev->dev, "SPI TX interrupt\n");
++
++	write_SSPICR(0, drv_data->ioaddr);
++	return IRQ_HANDLED;
++}
++
++static int __init ep93xx_spi_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct spi_master *master;
++	struct driver_data *drv_data = 0;
++	struct resource *memory_resource;
++	int status = 0;
++	u16 val;
++
++	/* Allocate master with space for drv_data and null dma buffer */
++	master = spi_alloc_master(dev, sizeof(struct driver_data));
++	if (!master) {
++		dev_err(&pdev->dev, "cannot alloc spi_master\n");
++		return -ENOMEM;
++	}
++	drv_data = spi_master_get_devdata(master);
++	drv_data->master = master;
++	drv_data->pdev = pdev;
++
++        master->num_chipselect = EP93XX_GPIO_LINE_H(7) + 1;
++	master->bus_num = pdev->id;
++	master->setup = ep93xx_spi_setup;
++	master->transfer = ep93xx_spi_transfer;
++
++	spin_lock_init(&drv_data->lock);
++	INIT_LIST_HEAD(&drv_data->queue);
++
++	/* Setup register addresses */
++	memory_resource = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!memory_resource) {
++	    dev_err(&pdev->dev, "memory resources not defined\n");
++	    status = -EIO;
++	    goto out_error_master_alloc;
++	} else {
++	    drv_data->ioaddr = ioremap(memory_resource->start,
++				memory_resource->end - memory_resource->start);
++	    if (drv_data->ioaddr == NULL) {
++		    dev_err(&pdev->dev, "ioremap failed\n");
++		    status = -EIO;
++		    goto out_error_master_alloc;
++	    }
++	}
++
++	/* Attach to IRQ */
++	drv_data->irq = platform_get_irq(pdev, 0);
++	if (drv_data->irq < 0)
++		return drv_data->irq;
++
++	if (drv_data->irq <= 0) {
++		dev_err(&pdev->dev, "IRQ resource not defined\n");
++		status = -ENODEV;
++		goto out_error_master_alloc;
++	}
++
++	status = request_irq(drv_data->irq, ssp_int, 0, "ep93xx-spi", drv_data);
++	if (status < 0) {
++		dev_err(&pdev->dev, "cannot get SPI IRQ 0\n");
++		goto out_error_master_alloc;
++	}
++
++	/* SSP default configuration, enable */
++	write_SSPCR1(SSPC1_SSE, drv_data->ioaddr);
++
++	/* run as master */
++	val = read_SSPCR1(drv_data->ioaddr);
++	val = val & ~SSPC1_MS;
++	write_SSPCR1(val, drv_data->ioaddr);
++
++	/* frame format to Motorola SPI Format */
++	val = read_SSPCR0(drv_data->ioaddr);
++	val = val & ~SSPCR0_FRF_MASK ;
++	val = val | SSPCR0_FRF_MOTOROLA;
++	write_SSPCR0(val, drv_data->ioaddr);
++
++	/* enable interrupts */
++	val = read_SSPCR1(drv_data->ioaddr);
++	/* for now only overrun is handled */
++	/* val = val | SSPC1_RIE | SSPC1_TIE | SSPC1_RORIE; */
++	val = val | SSPC1_RORIE;
++	write_SSPCR1(val, drv_data->ioaddr);
++
++	/* SSP default configuration, re enable */
++	val = read_SSPCR1(drv_data->ioaddr);
++	val = val & ~SSPC1_SSE;
++	write_SSPCR1(val, drv_data->ioaddr);
++	val = read_SSPCR1(drv_data->ioaddr);
++	val = val | SSPC1_SSE;
++	write_SSPCR1(val, drv_data->ioaddr);
++
++	/* Register with the SPI framework */
++	platform_set_drvdata(pdev, drv_data);
++	status = spi_register_master(master);
++	if (status != 0) {
++		dev_err(&pdev->dev, "cannot register SPI master\n");
++		goto out_error_master_alloc;
++	} else
++		dev_info(&pdev->dev, "SPI Controller initalized\n");
++
++	INIT_WORK(&drv_data->work, ep93xx_work);
++	spin_lock_init(&drv_data->lock);
++	INIT_LIST_HEAD(&drv_data->queue);
++
++	/* this task is the only thing to touch the SPI bits */
++	drv_data->busy = 0;
++	drv_data->workqueue = create_singlethread_workqueue(
++		dev_name(drv_data->master->dev.parent));
++/*              drv_data->master->cdev.dev->bus_id); */
++	if (drv_data->workqueue == NULL) {
++		status = -EBUSY;
++		goto out_error_free_irq;
++	}
++
++	return status;
++
++out_error_free_irq:
++	free_irq(drv_data->irq, master);
++out_error_master_alloc:
++	if (drv_data->ioaddr != NULL)
++		iounmap(drv_data->ioaddr);
++	spi_master_put(master);
++	return status;
++}
++
++static int __exit ep93xx_spi_remove(struct platform_device *pdev)
++{
++	struct driver_data *drv_data = platform_get_drvdata(pdev);
++	u8 val;
++
++	WARN_ON(!list_empty(&drv_data->queue));
++
++	destroy_workqueue(drv_data->workqueue);
++
++	/* switch off SSP*/
++	val = read_SSPCR1(drv_data->ioaddr);
++	val = val & ~SSPC1_SSE;
++	write_SSPCR1(val, drv_data->ioaddr);
++
++	/* release irqs */
++	if (drv_data->irq > 0)
++		free_irq(drv_data->irq, drv_data);
++
++	/* Disconnect from the SPI framework */
++	spi_unregister_master(drv_data->master);
++	spi_master_put(drv_data->master);
++
++	if (drv_data->ioaddr != NULL)
++		iounmap(drv_data->ioaddr);
++
++	/* Prevent double remove */
++	platform_set_drvdata(pdev, NULL);
++	return 0;
++}
++
++#ifdef CONFIG_PM
++static int ep93xx_spi_suspend(struct platform_device *pdev, pm_message_t msg)
++{
++	return 0;
++}
++
++static int ep93xx_spi_resume(struct platform_device *pdev)
++{
++	return 0;
++}
++
++#else
++#define ep93xx_spi_suspend NULL
++#define ep93xx_spi_resume  NULL
++#endif
++
++struct platform_driver ep93xx_spi_device = {
++	.remove		= __exit_p(ep93xx_spi_remove),
++#ifdef CONFIG_PM
++	.suspend	= ep93xx_spi_suspend,
++	.resume		= ep93xx_spi_resume,
++#endif
++	.driver		= {
++		.name	= "ep93xx-spi",
++		.bus	= &spi_bus_type,
++		.owner	= THIS_MODULE,
++	},
++};
++
++int __init ep93xx_spi_init(void)
++{
++	return platform_driver_probe(&ep93xx_spi_device, ep93xx_spi_probe);
++}
++
++void __exit ep93xx_spi_exit(void)
++{
++	platform_driver_unregister(&ep93xx_spi_device);
++}
++
++module_init(ep93xx_spi_init);
++module_exit(ep93xx_spi_exit);
++
++MODULE_DESCRIPTION("EP93XX SPI Driver");
++MODULE_AUTHOR("Manfred Gruber, <m.gruber@tirol.com>");
++MODULE_LICENSE("GPL");
