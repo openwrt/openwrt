@@ -68,7 +68,7 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
-	ap83 | mzk-w04nu | mzk-w300nh | tew-632brp | wrt-400n)
+	ap83 | mzk-w04nu | mzk-w300nh | tew-632brp | wrt-400n | bullet-m | nano-m | rocket-m)
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
 			return 1
