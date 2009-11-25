@@ -161,7 +161,11 @@ define Image/Build/UBNT
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).lzma \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(call imgname,$(1),$(2)).bin
+		-o $(call imgname,$(1),$(2))-factory.bin
+	-sh $(TOPDIR)/scripts/combined-image.sh \
+		"$(KDIR)/vmlinux-$(2).lzma" \
+		"$(BIN_DIR)/openwrt-$(BOARD)-root.$(1)" \
+		$(call imgname,$(1),$(2))-sysupgrade.bin
 endef
 
 define Image/Build/Planex
@@ -431,6 +435,11 @@ endef
 
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.squashfs-4k.tmp0 bs=4k conv=sync
+	$(call add_jffs2_mark,$(KDIR)/root.squashfs-4k.tmp0)
+	dd if=$(KDIR)/root.squashfs-4k.tmp0 of=$(IMGNAME)-root.squashfs-4k bs=4k conv=sync
+	$(call add_jffs2_mark,$(IMGNAME)-root.squashfs-4k)
+	rm -f $(KDIR)/root.squashfs-4k.tmp0
 endef
 
 define Image/Build
