@@ -423,7 +423,9 @@ define Image/Build/Profile/Default
 endef
 
 define Image/Build/Profile/Madwifi
-	$(call Image/Build/Profile/UBNT,$(1))
+	$(call Image/Build/Profile/UBNTRS,$(1))
+	$(call Image/Build/Profile/UBNTRSPRO,$(1))
+	$(call Image/Build/Profile/UBNTLSSR71,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 endef
 
