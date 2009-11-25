@@ -141,11 +141,7 @@ endef
 ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6528k(rootfs),256k(cfg)ro,64k(EEPROM)ro,7552k@0x50000(firmware)
 define Image/Build/UBNTXM
 	$(call PatchKernelLzma,$(2),$(3) $(ubntxm_mtdlayout))
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-		0x80060000 \
-		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(2).bin.lzma \
-		$(KDIR)/vmlinux-$(2).uImage.bin
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage.bin)
 	dd if=$(KDIR)/vmlinux-$(2).uImage.bin of=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
