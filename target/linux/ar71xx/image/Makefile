@@ -138,7 +138,7 @@ define Image/Build/MyLoader
 		$(call imgname,$(1),$(2))-16M.img
 endef
 
-ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),1024k(kernel),6528k(rootfs),256k(cfg),64k(EEPROM)
+ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6528k(rootfs),256k(cfg)ro,64k(EEPROM)ro,7552k@0x50000(firmware)
 define Image/Build/UBNTXM
 	$(call PatchKernelLzma,$(2),$(3) $(ubntxm_mtdlayout))
 	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
@@ -151,7 +151,11 @@ define Image/Build/UBNTXM
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).uImage \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(call imgname,$(1),$(2)).bin
+		-o $(call imgname,$(1),$(2))-factory.bin
+	( \
+		dd if=$(KDIR)/vmlinux-$(2).uImage; \
+		dd if=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1); \
+	) > $(call imgname,$(1),$(2))-sysupgrade.bin
 endef
 
 define Image/Build/UBNT
