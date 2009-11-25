@@ -1,0 +1,4342 @@
+Index: linux-2.6.30.9/arch/arm/Kconfig
+===================================================================
+--- linux-2.6.30.9.orig/arch/arm/Kconfig	2009-10-05 17:38:08.000000000 +0200
++++ linux-2.6.30.9/arch/arm/Kconfig	2009-11-24 02:01:42.000000000 +0100
+@@ -1407,6 +1407,8 @@
+ 
+ source "drivers/accessibility/Kconfig"
+ 
++source "drivers/lcd-linux/Kconfig"
++
+ source "drivers/leds/Kconfig"
+ 
+ source "drivers/rtc/Kconfig"
+Index: linux-2.6.30.9/drivers/Makefile
+===================================================================
+--- linux-2.6.30.9.orig/drivers/Makefile	2009-10-05 17:38:08.000000000 +0200
++++ linux-2.6.30.9/drivers/Makefile	2009-11-24 02:01:42.000000000 +0100
+@@ -106,4 +106,5 @@
+ obj-$(CONFIG_SSB)		+= ssb/
+ obj-$(CONFIG_VIRTIO)		+= virtio/
+ obj-$(CONFIG_STAGING)		+= staging/
++obj-$(CONFIG_LCD_LINUX)		+= lcd-linux/
+ obj-y				+= platform/
+Index: linux-2.6.30.9/drivers/lcd-linux/Config.in
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/Config.in	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,8 @@
++if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
++   mainmenu_option next_comment
++   comment 'LCD support'
++
++   tristate 'LCD-Linux layer' CONFIG_LCD_LINUX
++   dep_tristate '  HD44780 controller' CONFIG_LCD_HD44780 $CONFIG_LCD_LINUX
++   endmenu
++fi
+Index: linux-2.6.30.9/drivers/lcd-linux/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/Kconfig	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,33 @@
++menu "LCD-Linux support"
++	depends on EXPERIMENTAL
++
++config LCD_LINUX
++	tristate "LCD-Linux layer"
++	default m
++	help
++	  LCD-Linux provides an easy way to drive LCD displays under
++	  Linux by creating a character which can be read or written.
++	  It features complete VT102 emulation and recognizes
++	  many escape sequences. If you want to use it you must also
++	  choose an appropriate driver, otherwise it will not be
++	  very useful. For more information see
++	  http://lcd-linux.sourceforge.net/
++
++	  To compile LCD-Linux as a module, choose M here:
++	  the module will be called lcd-linux.
++
++config LCD_HD44780
++	tristate "HD44780 controller"
++	depends on LCD_LINUX && MACH_SIM_ONE
++	default m
++	help
++	  This is a LCD-Linux driver for LCD displays based on the
++	  Hitachi HD44780 (and compatible) controllers connected
++	  to the SimOne LCD port.
++
++	  To compile this driver as a module, choose M here:
++	  the module will be called hd44780.
++
++	  If unsure, say N.
++
++endmenu
+Index: linux-2.6.30.9/drivers/lcd-linux/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/Makefile	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,8 @@
++#
++#
++# Standard Makefile to statically compile LCD-Linux into the kernel
++# Linux 2.6
++
++obj-$(CONFIG_LCD_LINUX)		+= lcd-linux.o
++obj-$(CONFIG_LCD_HD44780)	+= hd44780.o
++
+Index: linux-2.6.30.9/drivers/lcd-linux/cgram/default.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/cgram/default.h	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,37 @@
++/* default.h
++ *
++ *
++ *
++ * Default user defined characters for lcdmod.
++ *
++ * Copyright (C) by Michael McLellan (mikey@cs.auckland.ac.nz)
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ *
++ */
++
++static void init_charmap(void)
++{
++}
++
++static unsigned char cg0[] = { 0x1f, 0x1f, 0x11, 0x0f, 0x11, 0x1e, 0x01, 0x1f };
++static unsigned char cg1[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f };
++static unsigned char cg2[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x1f };
++static unsigned char cg3[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x1f, 0x1f };
++static unsigned char cg4[] = { 0x00, 0x00, 0x00, 0x00, 0x1f, 0x1f, 0x1f, 0x1f };
++static unsigned char cg5[] = { 0x00, 0x00, 0x00, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f };
++static unsigned char cg6[] = { 0x00, 0x00, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f };
++static unsigned char cg7[] = { 0x00, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f };
+Index: linux-2.6.30.9/drivers/lcd-linux/charmap.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/charmap.h	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,79 @@
++/* charmap.h
++ *
++ *
++ *
++ * Character mapping for HD44780 devices by Mark Haemmerling <mail@markh.de>.
++ *
++ * Translates ISO 8859-1 to HD44780 charset.
++ * HD44780 charset reference: http://markh.de/hd44780-charset.png
++ *
++ * Initial table taken from lcd.o Linux kernel driver by
++ * Nils Faerber <nilsf@users.sourceforge.net>. Thanks!
++ *
++ * This file is released under the GNU General Public License. Refer to the
++ * COPYING file distributed with this package.
++ *
++ * Following translations are being performed:
++ * - maps umlaut accent characters to the corresponding umlaut characters
++ * - maps other accent characters to the characters without accents
++ * - maps beta (=ringel-S), micro and Yen
++ *
++ * Alternative mappings:
++ * - #112 ("p") -> #240 (large "p"), orig. mapped -> #112
++ * - #113 ("q") -> #241 (large "q"), orig. mapped -> #113
++ *
++ * HD44780 misses backslash
++ *
++ */
++
++static unsigned char charmap[] = {
++
++/* 0 - 31 */
++  0,   1,   2,   3,   4,   5,   6,   7,
++  8,   9,  10,  11,  12,  13,  14,  15,
++ 16,  17,  18,  19,  20,  21,  22,  23,
++ 24,  25,  26,  27,  28,  29,  30,  31,
++
++/* 32 - 63 */
++ 32,  33,  34,  35,  36,  37,  38,  39,
++ 40,  41,  42,  43,  44,  45,  46,  47,
++ 48,  49,  50,  51,  52,  53,  54,  55,
++ 56,  57,  58,  59,  60,  61,  62,  63,
++
++/* 64 - 95 */
++ 64,  65,  66,  67,  68,  69,  70,  71,
++ 72,  73,  74,  75,  76,  77,  78,  79,
++ 80,  81,  82,  83,  84,  85,  86,  87,
++ 88,  89,  90,  91,  47,  93,  94,  95,
++
++/* 96 - 127 */
++ 96,  97,  98,  99, 100, 101, 102, 103,
++104, 105, 106, 107, 108, 109, 110, 111,
++112, 113, 114, 115, 116, 117, 118, 119,
++120, 121, 122, 123, 124, 125, 126, 127,
++
++/* 128 - 159 */
++128, 129, 130, 131, 132, 133, 134, 135,
++136, 137, 138, 139, 140, 141, 142, 143,
++144, 145, 146, 147, 148, 149, 150, 151,
++152, 153, 154, 155, 156, 157, 158, 159,
++
++/* 160 - 191 */
++160,  33, 236, 237, 164,  92, 124, 167,
++ 34, 169, 170, 171, 172, 173, 174, 175,
++223, 177, 178, 179,  39, 249, 247, 165,
++ 44, 185, 186, 187, 188, 189, 190,  63,
++
++/* 192 - 223 */
++ 65,  65,  65,  65, 225,  65,  65,  67,
++ 69,  69,  69,  69,  73,  73,  73,  73,
++ 68,  78,  79,  79,  79,  79, 239, 120,
++ 48,  85,  85,  85, 245,  89, 240, 226,
++
++/* 224 - 255 */
++ 97,  97,  97,  97, 225,  97,  97,  99,
++101, 101, 101, 101, 105, 105, 105, 105,
++111, 110, 111, 111, 111, 111, 239, 253,
++ 48, 117, 117, 117, 245, 121, 240, 255
++
++};
+Index: linux-2.6.30.9/drivers/lcd-linux/commands.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/commands.h	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,77 @@
++/* commands.h
++ *
++ *
++ *
++ * LCD-Linux:
++ * Driver for HD44780 compatible displays connected to the parallel port.
++ *
++ * HD44780 commands.
++ *
++ * Copyright (C) 2004 - 2007  Mattia Jona-Lasinio (mjona@users.sourceforge.net)
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#ifndef HD44780_COMMANDS_H
++#define HD44780_COMMANDS_H
++
++/*** HD44780 Command Set ***/
++
++/* Clear Display*/
++#define CLR_DISP	0x01	/* Clear entire display; cursor at row 0, column 0 */
++
++/* Return Home */
++#define	RET_HOME	0x02	/* Cursor at row 0, column 0; display content doesn't change */
++
++/* Entry Mode Set */
++#define ENTRY_MODE_SET	0x04
++#define DISP_SHIFT_ON	(ENTRY_MODE_SET | 0x01)		/* Shift display, not cursor after data write */
++#define DISP_SHIFT_OFF	(ENTRY_MODE_SET | 0x00)		/* Shift cursor, not display after data write */
++#define CURS_INC	(ENTRY_MODE_SET | 0x02)		/* Shift on the right after data read/write */
++#define CURS_DEC	(ENTRY_MODE_SET | 0x00)		/* Shift on the left after data read/write */
++
++/* Display on/off Control */
++#define DISP_ONOFF_CNTR	0x08
++#define BLINK_ON	(DISP_ONOFF_CNTR | 0x01)	/* Cursor blinking on */
++#define BLINK_OFF	(DISP_ONOFF_CNTR | 0x00)	/* Cursor blinking off */
++#define CURS_ON		(DISP_ONOFF_CNTR | 0x02)	/* Display Cursor */
++#define CURS_OFF	(DISP_ONOFF_CNTR | 0x00)	/* Hide Cursor */
++#define DISP_ON		(DISP_ONOFF_CNTR | 0x04)	/* Turn on display updating */
++#define DISP_OFF	(DISP_ONOFF_CNTR | 0x00)	/* Freeze display content */
++
++/* Cursor or Display Shift */
++#define CURS_DISP_SHIFT	0x10
++#define SHIFT_RIGHT	(CURS_DISP_SHIFT | 0x04)	/* Shift on the right */
++#define SHIFT_LEFT	(CURS_DISP_SHIFT | 0x00)	/* Shift on the left */
++#define SHIFT_DISP	(CURS_DISP_SHIFT | 0x08)	/* Shift display */
++#define SHIFT_CURS	(CURS_DISP_SHIFT | 0x00)	/* Shift cursor */
++
++/* Function Set */
++#define FUNC_SET	0x20
++#define FONT_5X10	(FUNC_SET | 0x04)	/* Select 5x10 dots font */
++#define FONT_5X8	(FUNC_SET | 0x00)	/* Select 5x8 dots font */
++#define DISP_2_LINES	(FUNC_SET | 0x08)	/* Select 2 lines display (only 5x8 font allowed) */
++#define DISP_1_LINE	(FUNC_SET | 0x00)	/* Select 1 line display */
++#define BUS_8_BITS	(FUNC_SET | 0x10)	/* Set 8 data bits */
++#define BUS_4_BITS	(FUNC_SET | 0x00)	/* Set 4 data bits */
++
++/* Set CGRAM Address */
++#define CGRAM_IO	0x40	/* Base CGRAM address */
++
++/* Set DDRAM Address */
++#define DDRAM_IO	0x80	/* Base DDRAM address */
++
++#endif /* commands included */
+Index: linux-2.6.30.9/drivers/lcd-linux/config.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/config.h	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,73 @@
++/* config.h
++ *
++ *
++ *
++ * Configure file for LCD-Linux. Here you must specify your hardware setup and
++ * timings constants. The default values will probably be right for you.
++ *
++ * Copyright (C) 2005 - 2007  Mattia Jona-Lasinio (mjona@users.sourceforge.net)
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ *
++ */
++
++/* Setup the default user defined characters in CGRAM */
++#include "cgram/default.h"
++
++/* Don't modify the default timing constants
++ * unless you know what you are doing.
++ */
++
++/* Execution times (in microseconds) */
++#define T_READ			60	/* Read execution time (min 43 us) */
++#define T_WRITE			60	/* Write execution time (min 43 us) */
++#define T_BF			2	/* Busy flag polling time (min 1 us) */
++
++/* Timings in nanoseconds */
++#define T_AS			200	/* Address set-up time (min 140 ns) */
++#define T_EH			500	/* Enable high time (min 450 ns) */
++#define T_EL			600	/* Enable low time (min 500 ns) */
++
++/* Various constants */
++#define DFLT_NUM_CNTR		1	/* Default number of controllers the display has */
++#define DFLT_CNTR_ROWS		2	/* Default number of rows per controller */
++#define DFLT_CNTR_COLS		16	/* Default number of columns the display has */
++#define DFLT_VS_ROWS		25	/* Default number of rows for the virtual screen */
++#define DFLT_VS_COLS		80	/* Default number of columns for the virtual screen */
++#define DFLT_TABSTOP		3	/* Default length of tabs */
++#define DFLT_FLAGS		(HD44780_CHECK_BF | HD44780_4BITS_BUS ) /* Default flags */
++
++#define MAX_CNTR_ROWS		4	/* The HD44780 supports up to 4 lines as a fake 2 lines mode */
++#define MAX_CNTR_COLS		80	/* The HD44780 supports up to 80 characters (1*80; 2*40; etc) */
++
++#define SETUP			4
++#define HIGH_NIBBLE_WRITE(x)	(((x) >> (4-SETUP)) & (0x0f << SETUP))
++#define LOW_NIBBLE_WRITE(x)	(((x) << SETUP) & (0x0f << SETUP))
++#define HIGH_NIBBLE_READ(x)	(((x) & (0x0f << SETUP)) << (4-SETUP))
++#define LOW_NIBBLE_READ(x)	(((x) & (0x0f << SETUP)) >> SETUP)
++
++
++#define SIMONE_LCD_RS           EP93XX_GPIO_LINE_A(2) /* OUT */
++#define SIMONE_LCD_RD           EP93XX_GPIO_LINE_A(3) /* OUT */
++#define SIMONE_LCD_EN           EP93XX_GPIO_LINE_B(4) /* EGPIO12 OUT */
++#define SIMONE_LCD_BCKLIGHT     EP93XX_GPIO_LINE_B(5) /* EGPIO13 OUT */
++
++#define SIMONE_LCD_DATA0        EP93XX_GPIO_LINE_A(4)
++#define SIMONE_LCD_DATA1        EP93XX_GPIO_LINE_A(5)
++#define SIMONE_LCD_DATA2        EP93XX_GPIO_LINE_A(6)
++#define SIMONE_LCD_DATA3        EP93XX_GPIO_LINE_A(7)
++
++
+Index: linux-2.6.30.9/drivers/lcd-linux/hd44780.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/hd44780.c	2009-11-24 02:05:29.000000000 +0100
+@@ -0,0 +1,860 @@
++/* hd44780.c
++ *
++ *
++ *
++ * LCD-Linux:
++ * Driver for HD44780 compatible displays connected to the parallel port.
++ *
++ * Copyright (C) 2005 - 2007  Mattia Jona-Lasinio (mjona@users.sourceforge.net)
++ * Adapted to Sim.One Hardware by Nuccio Raciti (raciti.nuccio@gmail.com)
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++
++#include <linux/autoconf.h>
++
++
++#ifdef CONFIG_PROC_FS
++#define USE_PROC
++#else
++#undef USE_PROC
++#endif
++
++#include <linux/bitops.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++
++#include <linux/delay.h>
++#include <linux/fs.h>
++
++#include <asm/uaccess.h>
++#include <linux/init.h>
++
++#include <asm/io.h>
++#include <linux/ioport.h>
++#include <asm/gpio.h>
++
++#ifdef USE_PROC
++#include <linux/proc_fs.h>
++#endif
++
++#define LCD_LINUX_MAIN
++#include <linux/hd44780.h>
++
++#include "charmap.h"
++#include "commands.h"
++#include "config.h"
++
++/** Function prototypes **/
++static void read_display(unsigned char *byte, unsigned char bitmask);
++static void write_display(unsigned char byte, unsigned char bitmask);
++
++/* Initialization */
++static int hd44780_validate_driver(void);
++static int hd44780_init_port(void);
++static int hd44780_cleanup_port(void);
++static int hd44780_init_display(void);
++static int hd44780_cleanup_display(void);
++
++/* Write */
++static void hd44780_address_mode(int);
++static void hd44780_clear_display(void);
++static void hd44780_write_char(unsigned int, unsigned short);
++static void hd44780_write_cgram_char(unsigned char, unsigned char *);
++
++/* Read */
++static void check_bf(unsigned char);
++static void hd44780_read_char(unsigned int, unsigned short *);
++static void hd44780_read_cgram_char(unsigned char, unsigned char *);
++
++/* Input handling */
++static int hd44780_handle_custom_char(unsigned int);
++static int hd44780_handle_custom_ioctl(unsigned int,unsigned long , unsigned int);
++
++/* Proc operations */
++#ifdef USE_PROC
++static void create_proc_entries(void);
++static void remove_proc_entries(void);
++#endif
++
++/* hd44780 access */
++#define ACCESS_TO_READ    0
++#define ACCESS_TO_WRITE   1
++#define ACCESS_TO_DATA    2
++
++/* hd44780_flags */
++#define _CHECK_BF	0	/* Do busy-flag checking */
++#define _4BITS_BUS	1	/* The bus is 4 bits long */
++#define _5X10_FONT	2	/* Use 5x10 font */
++#define CURSOR_BLINK	3	/* Make the cursor blinking */
++#define SHOW_CURSOR	4	/* Make the cursor visible */
++#define DISPLAY_ON	5	/* Display status: on or off */
++#define INC_ADDR	6	/* Increment address after data read/write */
++#define BACKLIGHT	7	/* Display backlight: on or off */
++#define CGRAM_STATE	9	/* Controller status bitmask (bits 9->15): DDRAM or CGRAM access */
++#define ESC_MASK	0x00ff0000
++#define PROC_MASK	0x0f000000
++
++#define SET_STATE(state, mask)	(hd44780_flags = (hd44780_flags & ~(mask)) | ((state) & (mask)))
++#define SET_ESC_STATE(state)	SET_STATE((state) << 16, ESC_MASK)
++#define SET_PROC_LEVEL(level)	SET_STATE((level) << 24, PROC_MASK)
++#define ESC_STATE		((hd44780_flags & ESC_MASK) >> 16)
++#define PROC_LEVEL		((hd44780_flags & PROC_MASK) >> 24)
++
++/* globals */
++static unsigned int disp_size;			/* Display size (rows*columns) */
++static unsigned int disp_offset[1];	/* Physical cursor position on the display */
++static unsigned long hd44780_flags;		/* Driver flags for internal use only */
++
++static struct lcd_parameters par = {
++	.name		= HD44780_STRING,
++	.minor		= HD44780_MINOR,
++	.flags		= DFLT_FLAGS,
++	.tabstop	= DFLT_TABSTOP,
++	.num_cntr	= 1,
++	.cntr_rows	= DFLT_CNTR_ROWS,
++	.cntr_cols	= DFLT_CNTR_COLS,
++	.vs_rows	= DFLT_VS_ROWS,
++	.vs_cols	= DFLT_VS_COLS,
++	.cgram_chars	= 8,
++	.cgram_bytes	= 8,
++	.cgram_char0	= 0,
++};
++/* End of globals */
++
++#ifdef MODULE
++#include <linux/device.h>
++MODULE_ALIAS_CHARDEV(LCD_MAJOR, HD44780_MINOR);
++#include <linux/kmod.h>
++
++static unsigned short flags	= DFLT_FLAGS;
++static unsigned short tabstop	= DFLT_TABSTOP;
++static unsigned short cntr_rows	= DFLT_CNTR_ROWS;
++static unsigned short cntr_cols	= DFLT_CNTR_COLS;
++static unsigned short vs_rows	= DFLT_VS_ROWS;
++static unsigned short vs_cols	= DFLT_VS_COLS;
++static unsigned short minor	= HD44780_MINOR;
++
++MODULE_DESCRIPTION("LCD SimOne driver for HD44780 compatible controllers.");
++MODULE_AUTHOR("Nuccio Raciti (raciti.nuccio@gmail.com)");
++#ifdef MODULE_LICENSE
++MODULE_LICENSE("GPL");
++#endif
++module_param(flags,	ushort, 0444);
++module_param(cntr_rows,	ushort, 0444);
++module_param(cntr_cols,	ushort, 0444);
++module_param(vs_rows,	ushort, 0444);
++module_param(vs_cols,	ushort, 0444);
++module_param(tabstop,	ushort, 0444);
++module_param(minor,	ushort, 0444);
++
++MODULE_PARM_DESC(flags,		"Various flags (see Documentation)");
++MODULE_PARM_DESC(cntr_rows,	"Number of rows per controller on the LCD: 1, 2, 4 (default: " string(DFLT_CNTR_ROWS) ")");
++MODULE_PARM_DESC(cntr_cols,	"Number of columns on the LCD (default: " string(DFLT_CNTR_COLS) ", max: " string(MAX_CNTR_COLS) ")");
++MODULE_PARM_DESC(vs_rows,	"Number of rows of the virtual screen (default: " string(DFLT_VS_ROWS) ")");
++MODULE_PARM_DESC(vs_cols,	"Number of columns of the virtual screen (default: " string(DFLT_VS_COLS) ")");
++MODULE_PARM_DESC(tabstop,	"Tab character length (default: " string(DFLT_TABSTOP) ")");
++MODULE_PARM_DESC(minor,		"Assigned minor number (default: " string(HD44780_MINOR) ")");
++#else
++
++/*
++ * Parse boot command line
++ *
++ * hd44780=cntr_rows,cntr_cols,vs_rows,vs_cols,flags,minor,tabstop
++ */
++static int __init hd44780_boot_init(char *cmdline)
++{
++	char *str = cmdline;
++	int idx = 0;
++	unsigned short *args[] = {
++		&par.cntr_rows,
++		&par.cntr_cols,
++		&par.vs_rows,
++		&par.vs_cols,
++		&par.flags,
++		&par.num_cntr,
++		&par.minor,
++		&par.tabstop,
++	};
++
++	while (*cmdline && idx < (sizeof(args)/sizeof(unsigned short *))) {
++		switch (*str) {
++		case ',':
++			*str++ = 0;
++		case 0:
++			if (strlen(cmdline))
++				*args[idx] = simple_strtoul(cmdline, NULL, 0);
++			++idx;
++			cmdline = str;
++			break;
++		default:
++			++str;
++			break;
++		}
++	}
++
++	return (1);
++}
++
++__setup("hd44780=", hd44780_boot_init);
++#endif /* MODULE */
++
++/* Macros for iterator handling */
++static inline unsigned int iterator_inc_(unsigned int iterator, const unsigned int module)
++{
++    return ((++iterator)%module);
++}
++
++static inline unsigned int iterator_dec_(unsigned int iterator, const unsigned int module)
++{
++    return (iterator ? --iterator : module-1);
++}
++
++#define iterator_inc(iterator, module)		(iterator = iterator_inc_(iterator, module))
++#define iterator_dec(iterator, module)		(iterator = iterator_dec_(iterator, module))
++
++static inline void set_lines(unsigned char bitmask)
++{
++    gpio_set_value(SIMONE_LCD_EN, 0);  /* Disable */
++
++    if(bitmask & ACCESS_TO_WRITE ) {
++        gpio_direction_output (SIMONE_LCD_DATA0   , 0);
++        gpio_direction_output (SIMONE_LCD_DATA1   , 0);
++        gpio_direction_output (SIMONE_LCD_DATA2   , 0);
++        gpio_direction_output (SIMONE_LCD_DATA3   , 0);
++        gpio_set_value(SIMONE_LCD_RD, 0);  /* Write */
++    } else {
++
++        gpio_direction_input (SIMONE_LCD_DATA0);
++        gpio_direction_input (SIMONE_LCD_DATA1);
++        gpio_direction_input (SIMONE_LCD_DATA2);
++        gpio_direction_input (SIMONE_LCD_DATA3);
++        gpio_set_value(SIMONE_LCD_RD, 1);  /* Read */
++    }
++
++    if(bitmask & ACCESS_TO_DATA )
++        gpio_set_value(SIMONE_LCD_RS, 1);  /* Data */
++    else
++        gpio_set_value(SIMONE_LCD_RS, 0);  /* Cmds*/
++
++    if(test_bit(BACKLIGHT, &hd44780_flags))
++        gpio_set_value(SIMONE_LCD_BCKLIGHT, 1);
++    else
++        gpio_set_value(SIMONE_LCD_BCKLIGHT, 0);
++}
++
++
++/* Low level read from the display */
++static inline unsigned char __read_display(unsigned char bitmask)
++{
++    unsigned char byte;
++
++    set_lines (bitmask);
++
++    ndelay(T_AS); /* Address set-up time */
++    gpio_set_value(SIMONE_LCD_EN, 1); /* Enable */
++    ndelay(T_EH);/* Enable high time */
++
++    byte  = (gpio_get_value(SIMONE_LCD_DATA0) << 4);
++    byte |= (gpio_get_value(SIMONE_LCD_DATA1) << 5);
++    byte |= (gpio_get_value(SIMONE_LCD_DATA2) << 6);
++    byte |= (gpio_get_value(SIMONE_LCD_DATA3) << 7);
++
++    gpio_set_value(SIMONE_LCD_EN, 0); /* Disable */
++
++    ndelay(T_EL); /* Enable low time */
++
++
++   return (byte);
++
++}
++
++/* Low level write to the display */
++static inline void __write_display(unsigned char data, unsigned char bitmask)
++{
++    set_lines(bitmask);
++
++    if(data & 0x10)
++        gpio_set_value(SIMONE_LCD_DATA0, 1);
++    else
++        gpio_set_value(SIMONE_LCD_DATA0, 0);
++
++    if(data & 0x20)
++        gpio_set_value(SIMONE_LCD_DATA1, 1);
++    else
++        gpio_set_value(SIMONE_LCD_DATA1, 0);
++
++    if(data & 0x40)
++        gpio_set_value(SIMONE_LCD_DATA2, 1);
++    else
++        gpio_set_value(SIMONE_LCD_DATA2, 0);
++
++    if(data & 0x80)
++        gpio_set_value(SIMONE_LCD_DATA3, 1);
++    else
++        gpio_set_value(SIMONE_LCD_DATA3, 0);
++
++    ndelay(T_AS); /* Address set-up time */
++    gpio_set_value(SIMONE_LCD_EN, 1);
++    ndelay(T_EH); /* Enable high time */
++
++    gpio_set_value(SIMONE_LCD_EN, 0); /* Disable */
++    ndelay(T_EL);  /* Enable low time */
++}
++
++
++/* Read data from the display (4 bit bus, check busy flag) */
++static void read_display (unsigned char *byte,unsigned char bitmask)
++{
++    if(bitmask) check_bf(bitmask);
++    *byte = HIGH_NIBBLE_READ(__read_display(bitmask));
++    if(bitmask) check_bf(bitmask);
++    *byte |= LOW_NIBBLE_READ(__read_display(bitmask));
++}
++
++
++/* Output commands or data to the display (4 bit bus, check busy flag) */
++static void write_display(unsigned char byte,unsigned char bitmask)
++{
++    check_bf(bitmask);
++    __write_display(HIGH_NIBBLE_WRITE(byte),bitmask);
++     check_bf(bitmask);
++    __write_display(LOW_NIBBLE_WRITE(byte),bitmask);
++}
++
++
++/* Read Address Counter AC from the display */
++static unsigned char read_ac(unsigned char bitmask)
++{
++    unsigned char byte;
++
++    read_display(&byte, bitmask);
++
++    return (byte);
++}
++
++
++/* Do busy-flag check */
++static void  check_bf(unsigned char bitmask)
++{
++    unsigned int timeout = 20;
++    static unsigned char do_check_bf = 5;
++    gpio_set_value(SIMONE_LCD_EN, 0);  /* Disable */
++
++    gpio_direction_input (SIMONE_LCD_DATA0);
++    gpio_direction_input (SIMONE_LCD_DATA1);
++    gpio_direction_input (SIMONE_LCD_DATA2);
++    gpio_direction_input (SIMONE_LCD_DATA3);
++
++    gpio_set_value(SIMONE_LCD_RD, 1);  /* Read */
++    gpio_set_value(SIMONE_LCD_RS, 0);  /* Instru */
++
++    ndelay(T_AS); /* Address set-up time */
++    gpio_set_value(SIMONE_LCD_EN, 1); /* Enable */
++    ndelay(T_EH);/* Enable high time */
++
++    do{
++       udelay(T_BF);
++    } while (gpio_get_value(SIMONE_LCD_DATA3) && --timeout);
++
++    if (! timeout) {
++        if (! --do_check_bf) {
++            printk(KERN_NOTICE "hd44780 error: is the LCD connected?\n");
++	}
++    }
++
++    gpio_set_value(SIMONE_LCD_EN, 0); /* Disable */
++
++    ndelay(T_EL); /* Enable low time */
++}
++
++/* Send commands to the display */
++static void write_command(unsigned char command)
++{
++    write_display(command, ACCESS_TO_WRITE);
++
++    if (command <= 0x03)
++        mdelay(2);
++}
++
++static inline void set_cursor(unsigned int offset)
++{
++    unsigned int disp_number = offset/disp_size;
++    unsigned int local_offset = offset%disp_size;
++
++    if (disp_offset[disp_number] != local_offset || test_bit(CGRAM_STATE+disp_number, &hd44780_flags)) {
++        unsigned int disp_row = local_offset/par.cntr_cols;
++        unsigned int disp_column = local_offset%par.cntr_cols;
++
++        write_command(DDRAM_IO | ((disp_row%2)*0x40) | (((disp_row >= 2)*par.cntr_cols)+disp_column));
++        clear_bit(CGRAM_STATE+disp_number, &hd44780_flags);
++		disp_offset[disp_number] = local_offset;
++	}
++}
++
++/* HD44780 DDRAM addresses are consecutive only when
++ * the cursor moves on the same row of the display.
++ * Every time the row of the cursor changes we invalidate
++ * the cursor position to force hardware cursor repositioning.
++ */
++static inline void mov_cursor(unsigned int disp_number)
++{
++    if (test_bit(INC_ADDR, &hd44780_flags)) {
++        iterator_inc(disp_offset[disp_number], disp_size);
++        if (disp_offset[disp_number]%par.cntr_cols == 0)
++			disp_offset[disp_number] = disp_size;
++	} else {
++		iterator_dec(disp_offset[disp_number], disp_size);
++		if (disp_offset[disp_number]%par.cntr_cols == par.cntr_cols-1)
++			disp_offset[disp_number] = disp_size;
++    }
++}
++
++static struct lcd_driver hd44780 = {
++	.read_char		= hd44780_read_char,
++	.read_cgram_char	= hd44780_read_cgram_char,
++	.write_char		= hd44780_write_char,
++	.write_cgram_char	= hd44780_write_cgram_char,
++	.address_mode		= hd44780_address_mode,
++	.clear_display		= hd44780_clear_display,
++	.validate_driver	= hd44780_validate_driver,
++	.init_display		= hd44780_init_display,
++	.cleanup_display	= hd44780_cleanup_display,
++	.init_port		= hd44780_init_port,
++	.cleanup_port		= hd44780_cleanup_port,
++	.handle_custom_char	= hd44780_handle_custom_char,
++	.handle_custom_ioctl	= hd44780_handle_custom_ioctl,
++
++	.charmap		= charmap,
++};
++
++static void hd44780_read_char(unsigned int offset, unsigned short *data)
++{
++    unsigned int disp_number = offset/disp_size;
++    unsigned char tmp;
++
++    set_cursor(offset);
++    read_display(&tmp, ACCESS_TO_DATA);
++    *data = tmp;
++    mov_cursor(disp_number);
++}
++
++static void hd44780_read_cgram_char(unsigned char index, unsigned char *pixels)
++{
++    unsigned int i;
++
++    write_command(CGRAM_IO | (index << 3));
++    set_bit(CGRAM_STATE+0, &hd44780_flags);
++
++    for (i = 0; i < 8; ++i) {
++		read_display(pixels+i, ACCESS_TO_DATA );
++		pixels[i] &= 0x1f;
++    }
++}
++
++static void hd44780_write_char(unsigned int offset, unsigned short data)
++{
++    unsigned int disp_number = offset/disp_size;
++
++    set_cursor(offset);
++    write_display(data & 0xff, ACCESS_TO_WRITE | ACCESS_TO_DATA );
++    mov_cursor(disp_number);
++}
++
++static void hd44780_write_cgram_char(unsigned char index, unsigned char *pixels)
++{
++	unsigned int i;
++
++	/* Move address pointer to index in CGRAM */
++	write_command(CGRAM_IO | (index << 3));
++
++	set_bit(CGRAM_STATE+0, &hd44780_flags);
++
++	for (i = 0; i < 8; ++i) {
++		pixels[i] &= 0x1f;
++		write_display(pixels[i], ACCESS_TO_WRITE | ACCESS_TO_DATA );
++	}
++}
++
++/* Increment/decrement address mode after a data read/write */
++static void hd44780_address_mode(int mode)
++{
++	if (mode > 0 && ! test_bit(INC_ADDR, &hd44780_flags)) {
++		write_command(CURS_INC | DISP_SHIFT_OFF);
++		set_bit(INC_ADDR, &hd44780_flags);
++	} else if (mode < 0 && test_bit(INC_ADDR, &hd44780_flags)) {
++		write_command(CURS_DEC | DISP_SHIFT_OFF);
++		clear_bit(INC_ADDR, &hd44780_flags);
++	}
++}
++
++static void hd44780_clear_display(void)
++{
++	write_command(CLR_DISP);
++	if (! test_bit(INC_ADDR, &hd44780_flags))
++		write_command(CURS_DEC | DISP_SHIFT_OFF);
++	memset(disp_offset, 0, sizeof(disp_offset));
++}
++
++static int hd44780_validate_driver(void)
++{
++	if (par.cntr_rows != 1 && par.cntr_rows != 2 && par.cntr_rows != 4)
++		par.cntr_rows = DFLT_CNTR_ROWS;
++
++	if (par.cntr_rows != 1)
++		par.flags &= ~HD44780_5X10_FONT;
++
++
++	if (! par.cntr_cols || par.cntr_cols > MAX_CNTR_COLS/par.cntr_rows)
++		par.cntr_cols = MAX_CNTR_COLS/par.cntr_rows;
++
++	disp_size = par.cntr_rows*par.cntr_cols;
++
++	/* These parameters depend on the hardware and cannot be changed */
++	par.cgram_chars = 8;
++	par.cgram_bytes = 8;
++	par.cgram_char0 = 0;
++
++	return (0);
++}
++
++/* Send init commands to the display */
++static void write_init_command(void)
++{
++    unsigned char command = 0x30;
++
++    __write_display(HIGH_NIBBLE_WRITE(command), ACCESS_TO_WRITE);
++    mdelay(20);	/* Wait more than 4.1 ms */
++    __write_display(HIGH_NIBBLE_WRITE(command), ACCESS_TO_WRITE);
++    udelay(200);	/* Wait more than 100 us */
++    __write_display(HIGH_NIBBLE_WRITE(command), ACCESS_TO_WRITE);
++    udelay(200);	/* Wait more than 100 us */
++    command = BUS_4_BITS;
++    command |= ((par.cntr_rows == 1) ? DISP_1_LINE : DISP_2_LINES);
++    command |= (test_bit(_5X10_FONT, &hd44780_flags) ? FONT_5X10 : FONT_5X8);
++    write_command(command);
++    /* set_bit(BACKLIGHT, &hd44780_flags); */
++}
++
++static int hd44780_init_display(void)
++{
++	if (par.flags & HD44780_CHECK_BF)
++		set_bit(_CHECK_BF, &hd44780_flags);
++	else
++		clear_bit(_CHECK_BF, &hd44780_flags);
++
++	if (par.flags & HD44780_4BITS_BUS)
++		set_bit(_4BITS_BUS, &hd44780_flags);
++	else
++		clear_bit(_4BITS_BUS, &hd44780_flags);
++
++	if (par.flags & HD44780_5X10_FONT)
++		set_bit(_5X10_FONT, &hd44780_flags);
++	else
++		clear_bit(_5X10_FONT, &hd44780_flags);
++
++	write_init_command();
++
++	hd44780_clear_display();
++	hd44780_address_mode(1);
++	write_command(DISP_ON | CURS_OFF | BLINK_OFF);
++	set_bit(DISPLAY_ON, &hd44780_flags);
++	clear_bit(SHOW_CURSOR, &hd44780_flags);
++	clear_bit(CURSOR_BLINK, &hd44780_flags);
++
++	/* Set the CGRAM to default values */
++	hd44780_write_cgram_char(0, cg0);
++	hd44780_write_cgram_char(1, cg1);
++	hd44780_write_cgram_char(2, cg2);
++	hd44780_write_cgram_char(3, cg3);
++	hd44780_write_cgram_char(4, cg4);
++	hd44780_write_cgram_char(5, cg5);
++	hd44780_write_cgram_char(6, cg6);
++	hd44780_write_cgram_char(7, cg7);
++	init_charmap();
++
++	return (0);
++}
++
++static int hd44780_cleanup_display(void)
++{
++    hd44780_clear_display();
++
++    return (0);
++}
++
++static int hd44780_init_port(void)
++{
++    gpio_direction_output (SIMONE_LCD_BCKLIGHT, 0);
++    gpio_direction_output (SIMONE_LCD_RD      , 0);
++    gpio_direction_output (SIMONE_LCD_RS      , 0);
++    gpio_direction_output (SIMONE_LCD_EN      , 0);
++    gpio_set_value(SIMONE_LCD_EN, 0);           /* Disable */
++
++    return (0);
++}
++
++static int hd44780_cleanup_port(void)
++{
++
++    gpio_direction_input (SIMONE_LCD_BCKLIGHT);
++    gpio_direction_input (SIMONE_LCD_RD);
++    gpio_direction_input (SIMONE_LCD_RS);
++    gpio_direction_input (SIMONE_LCD_EN);
++    gpio_direction_input (SIMONE_LCD_DATA0);
++    gpio_direction_input (SIMONE_LCD_DATA1);
++    gpio_direction_input (SIMONE_LCD_DATA2);
++    gpio_direction_input (SIMONE_LCD_DATA3);
++    return (0);
++}
++
++static void display_attr(unsigned char input)
++{
++	unsigned char command;
++
++	switch (ESC_STATE) {
++	case 'a':	/* Turn on/off the display cursor */
++		if (input == '1')
++			set_bit(SHOW_CURSOR, &hd44780_flags);
++		else if (input == '0')
++			clear_bit(SHOW_CURSOR, &hd44780_flags);
++		break;
++	case 'b':	/* Turn on/off the display cursor blinking */
++		if (input == '1')
++			set_bit(CURSOR_BLINK, &hd44780_flags);
++		else if (input == '0')
++			clear_bit(CURSOR_BLINK, &hd44780_flags);
++		break;
++	case 'h':	/* Turn on/off the display */
++		if (input == '1')
++			set_bit(DISPLAY_ON, &hd44780_flags);
++		else if (input == '0')
++			clear_bit(DISPLAY_ON, &hd44780_flags);
++		break;
++	}
++
++        command = (test_bit(DISPLAY_ON, &hd44780_flags) ? DISP_ON : DISP_OFF);
++        command |= (test_bit(SHOW_CURSOR, &hd44780_flags) ? CURS_ON : CURS_OFF);
++	command |= (test_bit(CURSOR_BLINK, &hd44780_flags) ? BLINK_ON : BLINK_OFF);
++
++	if (ESC_STATE == 'h')
++		write_command(command);
++}
++
++static int hd44780_handle_custom_char(unsigned int _input)
++{
++	unsigned char input = _input & 0xff;
++
++	if (_input & (~0xff)) {
++		switch (ESC_STATE) {
++		case 'a':	/* Turn on/off the display cursor */
++		case 'b':	/* Turn on/off the display cursor blinking */
++		case 'h':	/* Turn on/off the the display */
++			display_attr(input);
++			return (0);
++		case 'l':	/* Turn on/off the backlight */
++			if (input == '1')
++				set_bit(BACKLIGHT, &hd44780_flags);
++			else if (input == '0')
++				clear_bit(BACKLIGHT, &hd44780_flags);
++			read_ac(ACCESS_TO_READ);
++			return (0);
++		}
++	}
++
++	switch (input) {
++	case 'a':	/* Turn on/off the display cursor */
++	case 'b':	/* Turn on/off the display cursor blinking */
++	case 'h':	/* Turn on/off the display */
++	case 'l':	/* Turn on/off the backlight */
++		SET_ESC_STATE(input);
++		return (1);
++	case 'd':	/* Shift display cursor Right */
++		write_command(SHIFT_CURS | SHIFT_RIGHT);
++		return (0);
++	case 'e':	/* Shift display cursor Left */
++		write_command(SHIFT_CURS | SHIFT_LEFT);
++		return (0);
++	case 'f':	/* Shift display Right */
++		write_command(SHIFT_DISP | SHIFT_RIGHT);
++		return (0);
++	case 'g':	/* Shift display Left */
++		write_command(SHIFT_DISP | SHIFT_LEFT);
++		return (0);
++	}
++
++	return (-1);
++}
++
++static int hd44780_handle_custom_ioctl(unsigned int num, unsigned long arg, unsigned int user_space)
++{
++	unsigned char *buffer = (unsigned char *)arg;
++
++	if (num != HD44780_READ_AC)
++		return (-ENOIOCTLCMD);
++
++	if (user_space)
++		put_user(read_ac(ACCESS_TO_READ), buffer);
++	else
++		buffer[0] = read_ac(ACCESS_TO_READ);
++
++	return (0);
++}
++
++#ifdef USE_PROC
++static int hd44780_proc_status(char *buffer, char **start, off_t offset, int size, int *eof, void *data)
++{
++	char *temp = buffer;
++
++	/* Print display configuration */
++	temp += sprintf(temp,
++			"Interface:\t%u bits\n"
++			"Display rows:\t%d\n"
++			"Display cols:\t%d\n"
++			"Screen rows:\t%d\n"
++			"Screen cols:\t%d\n"
++			"Read:\t\t%sabled\n"
++			"Busy flag chk:\t%sabled\n"
++			"Assigned minor:\t%u\n",
++			(test_bit(_4BITS_BUS, &hd44780_flags) ? 4 : 8),
++			par.cntr_rows, par.cntr_cols,
++			par.vs_rows, par.vs_cols,
++			(hd44780.read_char ? "En" : "Dis"),
++			(test_bit(_CHECK_BF, &hd44780_flags) ? "En" : "Dis"),
++			par.minor);
++
++	return (temp-buffer);
++}
++
++static int hd44780_proc_cgram(char *buffer, char **start, off_t offset, int size, int *eof, void *data)
++{
++	char *temp = buffer;
++	unsigned int i;
++
++	temp += sprintf(temp,	"static void init_charmap(void)\n{\n"
++				"\t/*\n"
++				"\t * charmap[char mapped to cg0] = 0;\n"
++				"\t * charmap[char mapped to cg1] = 1;\n"
++				"\t * charmap[char mapped to cg2] = 2;\n"
++				"\t * charmap[char mapped to cg3] = 3;\n"
++				"\t * charmap[char mapped to cg4] = 4;\n"
++				"\t * charmap[char mapped to cg5] = 5;\n"
++				"\t * charmap[char mapped to cg6] = 6;\n"
++				"\t * charmap[char mapped to cg7] = 7;\n"
++				"\t */\n"
++				"}\n\n");
++
++	for (i = 0; i < 8; ++i) {
++		unsigned char cgram_buffer[8];
++		unsigned int j;
++
++		temp += sprintf(temp, "static unsigned char cg%u[] = { ", i);
++		hd44780_read_cgram_char(i, cgram_buffer);
++		for (j = 0; j < 8; ++j)
++			temp += sprintf(temp, "0x%.2x%s", cgram_buffer[j], (j == 7 ? " };\n" : ", "));
++	}
++
++	return (temp-buffer);
++}
++
++static void create_proc_entries(void)
++{
++	int count = 0;
++
++	SET_PROC_LEVEL(count);
++	if (create_proc_read_entry("status", 0, hd44780.driver_proc_root, hd44780_proc_status, NULL) == NULL) {
++		printk(KERN_ERR "hd44780: cannot create /proc/lcd/%s/status\n", par.name);
++		return;
++	}
++	SET_PROC_LEVEL(++count);
++	if (hd44780.read_cgram_char) {
++		if (create_proc_read_entry("cgram.h", 0, hd44780.driver_proc_root, hd44780_proc_cgram, NULL) == NULL) {
++			printk(KERN_ERR "hd44780: cannot create /proc/lcd/%s/cgram.h\n", par.name);
++			return;
++		}
++		SET_PROC_LEVEL(++count);
++	}
++}
++
++static void remove_proc_entries(void)
++{
++	switch (PROC_LEVEL) {
++	case 2:
++		remove_proc_entry("cgram.h", hd44780.driver_proc_root);
++	case 1:
++		remove_proc_entry("status", hd44780.driver_proc_root);
++	}
++	SET_PROC_LEVEL(0);
++}
++#endif
++
++/* Initialization */
++static int __init hd44780_init_module(void)
++{
++	int ret;
++
++#ifdef MODULE
++#ifdef NOT_DEF
++	if ((ret = request_module("lcd-linux"))) {
++		if (ret != -ENOSYS) {
++			printk(KERN_ERR "hd44780: failure while loading module lcd-linux\n");
++			return (ret);
++		}
++		printk(KERN_ERR "hd44780: your kernel does not have kmod or kerneld support;\n");
++		printk(KERN_ERR "hd44780: remember to load the lcd-linux module before\n");
++		printk(KERN_ERR "hd44780: loading the hd44780 module\n");
++	}
++#endif
++	if (flags	!= DFLT_FLAGS)		par.flags	= flags;
++	if (tabstop	!= DFLT_TABSTOP)	par.tabstop	= tabstop;
++	if (cntr_rows	!= DFLT_CNTR_ROWS)	par.cntr_rows	= cntr_rows;
++	if (cntr_cols	!= DFLT_CNTR_COLS)	par.cntr_cols	= cntr_cols;
++	if (vs_rows	!= DFLT_VS_ROWS)	par.vs_rows	= vs_rows;
++	if (vs_cols	!= DFLT_VS_COLS)	par.vs_cols	= vs_cols;
++	if (minor	!= HD44780_MINOR)	par.minor	= minor;
++#endif
++
++	lcd_driver_setup(&hd44780);
++	if ((ret = lcd_register_driver(&hd44780, &par)))
++		return (ret);
++
++#ifdef USE_PROC
++	if (hd44780.driver_proc_root)
++		create_proc_entries();
++#endif
++
++	printk(KERN_INFO "HD44780 driver (LCD-Linux" HD44780_VERSION ")\n");
++	printk(KERN_INFO "Nuccio Raciti <raciti.nuccio@gmail.com>\n");
++
++
++	return (0);
++}
++
++/* Cleanup */
++
++static void __exit hd44780_cleanup_module(void)
++{
++#ifdef USE_PROC
++	if (hd44780.driver_proc_root)
++		remove_proc_entries();
++#endif
++
++	lcd_unregister_driver(&hd44780, &par);
++}
++
++module_init(hd44780_init_module)
++module_exit(hd44780_cleanup_module)
+Index: linux-2.6.30.9/drivers/lcd-linux/lcd-linux.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/drivers/lcd-linux/lcd-linux.c	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,2892 @@
++/* lcd-linux.c
++ *
++ *
++ *
++ * Software layer to drive LCD displays under Linux.
++ *
++ * Copyright (C) 2005 - 2007  Mattia Jona-Lasinio (mjona@users.sourceforge.net)
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#include <linux/version.h>
++
++#ifndef KERNEL_VERSION
++#define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
++#endif
++
++#ifndef LINUX_VERSION_CODE
++#error - LINUX_VERSION_CODE undefined in 'linux/version.h'
++#endif
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++#include <linux/autoconf.h>
++#else
++#include <linux/config.h>
++#endif
++#ifdef CONFIG_PROC_FS
++#define USE_PROC
++#else
++#undef USE_PROC
++#endif
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
++#include <linux/semaphore.h>
++#else
++#include <asm/semaphore.h>
++#endif
++#include <linux/bitops.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/sched.h>
++
++#include <linux/fs.h>
++
++#include <asm/uaccess.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++#include <linux/device.h>
++#endif
++#include <linux/init.h>
++#include <linux/list.h>
++#include <linux/slab.h>
++#include <linux/selection.h>
++#include <linux/vmalloc.h>
++
++#ifdef USE_PROC
++#include <linux/proc_fs.h>
++#endif
++
++#define LCD_LINUX_MAIN
++#include <linux/lcd-linux.h>
++
++/*** struct_flags ***/
++#define NEED_WRAP	0		/* Next char will trigger a newline */
++#define DECIM		1		/* Insert mode */
++#define DECAWM		2		/* Autowrap */
++#define DECSCNM		3		/* Inverted screen */
++#define CRLF		4		/* Follow lf, vt, ff, with a cr */
++#define INC_CURS_POS	5		/* Increment cursor position after data read/write */
++#define QUES		6		/* CSI Esc sequence contains a question mark */
++#define USER_SPACE	7		/* If set, the buffer pointed by arg in do_lcd_ioctl() is
++					 * assumed to be in user space otherwise it is in kernel space */
++#define NULL_CHARMAP	8		/* The driver doesn't provide a charmap so the
++					 * lcd-linux layer provides one*/
++#define CAN_DO_COLOR	9		/* The display is color capable */
++#define WITH_ATTR	10		/* If set, the void * buffer in do_lcd_read/write() contains
++					 * attributes and therefore is an unsigned short * otherwise it
++					 * is an unsigned char *
++					 */
++
++/*** attributes ***/
++#define I_MASK		0x03		/* Intensity (0 = low, 1 = normal, 2 = bright) */
++#define ULINE		0x04		/* Underlined text */
++#define	REVERSE		0x08		/* Reversed video text */
++#define BLINK		0x80		/* Blinking text */
++
++/*** Color attributes ***/
++#define FG_MASK		0x0f		/* Foreground color */
++#define BG_MASK		0xf0		/* Background color */
++
++/* input states */
++#define NORMAL		0x00001000	/* Normal mode */
++#define RAW		0x00002000	/* Raw mode (console emulation disabled) */
++#define SYN		0x00003000	/* Synchronous Idle mode */
++#define ESC		0x00004000	/* Escape mode */
++#define CSI		0x00005000	/* CSI escape mode */
++#define ESC_G0		0x00006000	/* G0 character set */
++#define ESC_G1		0x00007000	/* G1 character set */
++#define ESC_HASH	0x00008000	/* ESC # escape sequence */
++#define ESC_PERCENT	0x00009000	/* ESC % escape sequence */
++#define ARG		0x0000a000	/* Waiting for arguments for the lcd-linux layer */
++#define ARG_DRIVER 	0x0000b000	/* Waiting for arguments for the display driver */
++#define INPUT_MASK	0x0000f000
++#define ESC_MASK	0x00ff0000
++#define INIT_MASK	0x0f000000
++#define PROC_MASK	0xf0000000
++
++#define SET_STATE(p, state, mask)	((p)->struct_flags = ((p)->struct_flags & ~(mask)) | ((state) & (mask)))
++#define SET_INPUT_STATE(p, state)	SET_STATE(p, state, INPUT_MASK)
++#define SET_ESC_STATE(p, state)		SET_STATE(p, (state) << 16, ESC_MASK)
++#define SET_INIT_LEVEL(p, level)	SET_STATE(p, (level) << 24, INIT_MASK)
++#define SET_PROC_LEVEL(p, level)	SET_STATE(p, (level) << 28, PROC_MASK)
++#define INPUT_STATE(p)			((p)->struct_flags & INPUT_MASK)
++#define ESC_STATE(p)			(((p)->struct_flags & ESC_MASK) >> 16)
++#define INIT_LEVEL(p)			(((p)->struct_flags & INIT_MASK) >> 24)
++#define PROC_LEVEL(p)			(((p)->struct_flags & PROC_MASK) >> 28)
++
++#define NPAR	16			/* Max number of parameters in CSI escape sequence */
++#define FLIP_BUF_SIZE	(1 << 6)	/* Flip buffer size (64 bytes) */
++
++struct lcd_struct {
++	struct list_head	lcd_list;		/* Doubly linked list */
++	struct semaphore	lcd_sem;		/* Locks this structure */
++	struct lcd_driver	*driver;		/* The driver associated to this struct */
++	struct lcd_parameters	*par;			/* The parameters associated to this struct */
++	unsigned long		struct_flags;		/* Flags for internal use only */
++	unsigned int		refcount;		/* Number of references to this struct */
++
++	unsigned short		*display;		/* The display buffer */
++
++	unsigned short		*fb;			/* The virtual screen framebuffer */
++	unsigned int		fb_size;		/* Size of the framebuffer */
++	unsigned int		frame_base;		/* Offset of row 0, column 0 of a frame in fb */
++	unsigned int		frame_size;		/* Size of the frame */
++
++	unsigned int		row;			/* Current row in virtual screen */
++	unsigned int		col;			/* Current column in virtual screen */
++	unsigned int		s_offset;		/* Saved cursor position in virtual screen */
++
++	unsigned int		top;			/* Top scroll row in virtual screen */
++	unsigned int		bot;			/* Bottom scroll row in virtual screen */
++
++	int			esc_args;		/* Number of arguments for a normal escape sequence */
++	unsigned int		csi_args[NPAR];		/* CSI parameters */
++	unsigned int		index;			/* Index in csi_args and counter for cgram characters generation */
++	unsigned char		cgram_index;		/* Index of the cgram character to be created */
++	unsigned char		*cgram_buffer;		/* Buffer for cgram operations in this driver */
++
++	unsigned short		erase_char;		/* Character to be used when erasing */
++	unsigned char		attr;			/* Current attributes */
++	unsigned char		color;			/* Color for normal intensity mode */
++	unsigned char		s_color;		/* Saved color for normal intensity mode */
++	unsigned char		defcolor;		/* Default color for normal intensity mode */
++	unsigned char		ulcolor;		/* Color for underline mode */
++	unsigned char		halfcolor;		/* Color for low intensity mode */
++	unsigned char		attributes;		/* Packed attributes */
++	unsigned char		s_attributes;		/* Saved packed attributes */
++
++	unsigned char		*s_charmap;		/* Saved character map for this driver */
++	unsigned char		*flip_buf;		/* High speed flip buffer */
++};
++
++/** Function prototypes **/
++
++/* Init/Cleanup the driver */
++static int init_driver(struct lcd_struct *);
++static int cleanup_driver(struct lcd_struct *);
++
++/* Read from/Write to the driver */
++static void read_data(struct lcd_struct *, unsigned short *);
++static void read_cgram(struct lcd_struct *, unsigned char, unsigned char *);
++static void write_data(struct lcd_struct *, unsigned short);
++static void write_cgram(struct lcd_struct *, unsigned char, unsigned char *);
++
++/* Input handlers */
++static void cr(struct lcd_struct *);
++static void lf(struct lcd_struct *);
++static void control_char(struct lcd_struct *, unsigned char);
++static void handle_csi(struct lcd_struct *, unsigned char);
++static int handle_custom_esc(struct lcd_struct *, unsigned int);
++static int handle_esc(struct lcd_struct *, unsigned char);
++static void handle_input(struct lcd_struct *, unsigned short);
++
++/* Low level file operations */
++static ssize_t do_lcd_read(struct lcd_struct *, void *, size_t);
++static ssize_t do_lcd_write(struct lcd_struct *, const void *, size_t);
++static int do_lcd_open(struct lcd_struct *);
++static int do_lcd_release(struct lcd_struct *);
++static int do_lcd_ioctl(struct lcd_struct *, unsigned int, unsigned long);
++
++/* Proc functions */
++#ifdef USE_PROC
++static void create_driver_proc_entries(struct lcd_struct *);
++static void remove_driver_proc_entries(struct lcd_struct *);
++#endif
++
++/* globals */
++static unsigned int major	= LCD_MAJOR;		/* Major number for LCD-Linux device */
++static unsigned short minors	= LCD_MINORS;		/* Minor numbers allocated for LCD-Linux */
++static LIST_HEAD(lcd_drivers);				/* Registered lcd drivers */
++static struct semaphore drivers_sem;			/* Locks the lcd_drivers list */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
++static struct class *lcd_linux_class;
++#endif
++#ifdef USE_PROC
++static struct proc_dir_entry *lcd_proc_root;
++#endif
++/* End of globals */
++
++#ifdef MODULE
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++#include <linux/device.h>
++MODULE_ALIAS_CHARDEV_MAJOR(LCD_MAJOR);
++#endif
++MODULE_DESCRIPTION("Software layer to drive LCD displays under Linux.");
++MODULE_AUTHOR("Mattia Jona-Lasinio <mjona@users.sourceforge.net>");
++#ifdef MODULE_LICENSE
++MODULE_LICENSE("GPL");
++#endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++module_param(minors, ushort, 0444);
++#else
++MODULE_PARM(minors, "h");
++#endif
++MODULE_PARM_DESC(minors, "Minor numbers allocated for LCD-Linux (default: " string(LCD_MINORS) ")");
++#else
++
++/*
++ * Parse boot command line
++ *
++ * lcd=minors
++ */
++static int __init lcd_linux_boot_init(char *cmdline)
++{
++	unsigned short args;
++
++	if ((args = simple_strtoul(cmdline, NULL, 0)))
++		minors = args;
++
++	return (1);
++}
++
++__setup("lcd=", lcd_linux_boot_init);
++#endif /* MODULE */
++
++/* Macros for iterator handling */
++static inline unsigned int iterator_inc_(unsigned int iterator, const unsigned int module)
++{
++	return ((++iterator)%module);
++}
++
++static inline unsigned int iterator_dec_(unsigned int iterator, const unsigned int module)
++{
++	return (iterator ? --iterator : module-1);
++}
++
++#define iterator_inc(iterator, module)		(iterator = iterator_inc_(iterator, module))
++#define iterator_dec(iterator, module)		(iterator = iterator_dec_(iterator, module))
++
++/* Uncomment the following two lines
++ * for non-atomic set_bit and clear_bit
++#define set_bit		__set_bit
++#define clear_bit	__clear_bit
++*/
++
++/************************************
++ * Low level routines and utilities *
++ ************************************/
++/*
++ * Set whether the address counter should be incremented
++ * or decremented after a Read/Write
++ */
++static void address_mode(struct lcd_struct *p, int mode)
++{
++	struct lcd_driver *driver = p->driver;
++
++	if (mode > 0 && ! test_bit(INC_CURS_POS, &p->struct_flags)) {
++		if (driver->address_mode)
++			driver->address_mode(mode);
++		set_bit(INC_CURS_POS, &p->struct_flags);
++	} else if (mode < 0 && test_bit(INC_CURS_POS, &p->struct_flags)) {
++		if (driver->address_mode)
++			driver->address_mode(mode);
++		clear_bit(INC_CURS_POS, &p->struct_flags);
++	}
++}
++
++/* WARNING!! This function returns an int because if iterator is not
++ * within the visible area of the frame it returns -1
++ */
++static inline int vs_to_frame_(struct lcd_struct *p, unsigned int iterator)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int row = iterator/vs_cols;
++	unsigned int col = iterator%vs_cols;
++	unsigned int frame_base_row = p->frame_base/vs_cols;
++	unsigned int frame_base_col = p->frame_base%vs_cols;
++	unsigned int frame_rows = p->par->cntr_rows*p->par->num_cntr;
++	unsigned int frame_cols = p->par->cntr_cols;
++
++	if (row < frame_base_row || row >= frame_base_row+frame_rows)
++		return (-1);
++	if (col < frame_base_col || col >= frame_base_col+frame_cols)
++		return (-1);
++
++	return ((row-frame_base_row)*frame_cols+(col-frame_base_col));
++}
++
++/* Given 'iterator' in vs, returns the offset in vs corresponding to the nearest
++ * visible offset in vs, or returns 'iterator' if it is already visible.
++ */
++static unsigned int round_vs_(struct lcd_struct *p, unsigned int iterator)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int row = iterator/vs_cols;
++	unsigned int col = iterator%vs_cols;
++	unsigned int frame_base_row = p->frame_base/vs_cols;
++	unsigned int frame_base_col = p->frame_base%vs_cols;
++	unsigned int frame_rows = p->par->cntr_rows*p->par->num_cntr;
++	unsigned int frame_cols = p->par->cntr_cols;
++
++	if (row < frame_base_row)
++		row = frame_base_row;
++	else if (row >= frame_base_row+frame_rows)
++		row = frame_base_row+(frame_rows-1);
++
++	if (col < frame_base_col)
++		col = frame_base_col;
++	else if (col >= frame_base_col+frame_cols)
++		col = frame_base_col+(frame_cols-1);
++
++	return ((row*vs_cols)+col);
++}
++
++#define round_vs(p, iterator)			(iterator = round_vs_(p, iterator))
++
++/*
++ * Sync the frame area starting at offset s, ending at offset e with fb content.
++ */
++static void redraw_screen(struct lcd_struct *p, unsigned int s, unsigned int e)
++{
++	unsigned int len;
++	unsigned int row = p->row, col = p->col;
++	unsigned int inc_set = test_bit(INC_CURS_POS, &p->struct_flags);
++	unsigned int frame_cols = p->par->cntr_cols;
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned long flags;
++
++	if (s >= p->fb_size || e >= p->fb_size || e < s || e < p->frame_base)
++		return;
++
++	round_vs(p, s);
++	round_vs(p, e);
++
++	len = 1+e-s;
++
++	if (! inc_set)
++		s = e;
++
++	p->row = s/vs_cols;
++	p->col = s%vs_cols;
++
++	flags = p->struct_flags;
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	clear_bit(DECIM, &p->struct_flags);
++	set_bit(DECAWM, &p->struct_flags);
++	SET_INPUT_STATE(p, RAW);
++	if (inc_set)
++		while (len--)
++			if (vs_to_frame_(p, (p->row*vs_cols)+p->col) < 0) {
++				s += vs_cols-frame_cols;
++				len -= vs_cols-frame_cols-1;
++				p->row = s/vs_cols;
++				p->col = s%vs_cols;
++			} else {
++				write_data(p, p->fb[s++]);
++				if (test_bit(NEED_WRAP, &p->struct_flags)) {
++					cr(p);
++					lf(p);
++				}
++			}
++	else
++		while (len--)
++			if (vs_to_frame_(p, (p->row*vs_cols)+p->col) < 0) {
++				s -= vs_cols-frame_cols;
++				len -= vs_cols-frame_cols-1;
++				p->row = s/vs_cols;
++				p->col = s%vs_cols;
++			} else {
++				write_data(p, p->fb[s--]);
++				if (test_bit(NEED_WRAP, &p->struct_flags)) {
++					cr(p);
++					lf(p);
++				}
++			}
++	p->struct_flags = flags;
++
++	p->row = row; p->col = col;
++}
++
++static int make_cursor_visible(struct lcd_struct *p)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int frame_base, frame_base_row, frame_base_col;
++	unsigned int frame_rows = p->par->cntr_rows*p->par->num_cntr;
++	unsigned int frame_cols = p->par->cntr_cols;
++	unsigned int tmp = frame_cols/2;
++
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++	/* cursor always on the lowest row of the display */
++		frame_base_row = 0;
++		frame_base_col = 0;
++		if (p->row >= frame_rows)
++			frame_base_row = p->row-(frame_rows-1);
++		if (p->col >= frame_cols) {
++			frame_base_col = p->col-(frame_cols-1);
++			if (tmp) {
++				tmp = (tmp-(frame_base_col%tmp))%tmp;
++				if (frame_base_col+tmp <= vs_cols-frame_cols)
++					frame_base_col += tmp;
++			}
++		}
++	} else {
++	/* cursor always on the uppermost row of the display */
++		frame_base_row = vs_rows-frame_rows;
++		frame_base_col = vs_cols-frame_cols;
++		if (p->row < vs_rows-frame_rows)
++			frame_base_row = p->row;
++		if (p->col < vs_cols-frame_cols) {
++			frame_base_col = p->col;
++			if (tmp) {
++				tmp = frame_base_col%tmp;
++				if (frame_base_col >= tmp)
++					frame_base_col -= tmp;
++			}
++		}
++	}
++
++	frame_base = p->frame_base;
++	p->frame_base = (frame_base_row*vs_cols)+frame_base_col;
++
++	return (frame_base != p->frame_base);
++}
++
++/*
++ * Move the visible screen area at user's wish
++ */
++static void browse_screen(struct lcd_struct *p, unsigned char dir)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int frame_base_row = p->frame_base/vs_cols;
++	unsigned int frame_base_col = p->frame_base%vs_cols;
++	unsigned int frame_rows = p->par->cntr_rows*p->par->num_cntr;
++	unsigned int frame_cols = p->par->cntr_cols;
++
++	switch (dir) {
++	case '1':	/* Up */
++		if (! frame_base_row)
++			return;
++		--frame_base_row;
++		break;
++	case '2':	/* Down */
++		if (frame_base_row >= vs_rows-frame_rows)
++			return;
++		++frame_base_row;
++		break;
++	case '3':	/* Left */
++		if (! frame_base_col)
++			return;
++		--frame_base_col;
++		break;
++	case '4':	/* Right */
++		if (frame_base_col >= vs_cols-frame_cols)
++			return;
++		++frame_base_col;
++		break;
++	default:
++		return;
++	}
++
++	p->frame_base = (frame_base_row*vs_cols)+frame_base_col;
++	redraw_screen(p, 0, p->fb_size-1);
++}
++
++static inline void __memset_short(unsigned short *buf, unsigned short c, unsigned int len)
++{
++	while (len--)
++		*buf++ = c;
++}
++
++/*
++ * A memset implementation writing to LCD instead of memory locations.
++ */
++static void lcd_memset(struct lcd_struct *p, unsigned int d, unsigned short c, unsigned int len)
++{
++	unsigned int inc_set = test_bit(INC_CURS_POS, &p->struct_flags);
++
++	if (! len || d >= p->fb_size)
++		return;
++
++	if (inc_set && d+len > p->fb_size)
++		len = p->fb_size-d;
++	else if (! inc_set && len > d+1)
++		len = d+1;
++
++	if (! inc_set)
++		d -= len-1;
++	__memset_short(p->fb+d, c, len);
++
++	if (make_cursor_visible(p))
++		redraw_screen(p, 0, p->fb_size-1);
++	else
++		redraw_screen(p, d, d+(len-1));
++}
++
++static inline void __memcpy_short(unsigned short *d, unsigned short *s, unsigned int len, int dir)
++{
++	if (dir > 0)
++		while (len--)
++			*d++ = *s++;
++	else
++		while (len--)
++			*d-- = *s--;
++}
++
++/*
++ * A memmove implementation writing to LCD instead of memory locations.
++ * Copy is done in a non destructive way. Display regions may overlap.
++ */
++static void lcd_memmove(struct lcd_struct *p, unsigned int d, unsigned int s, unsigned int len)
++{
++	if (! len || d == s || d >= p->fb_size || s >= p->fb_size)
++		return;
++
++	if (d < s) {
++		if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++			if (s+len > p->fb_size)
++				len = p->fb_size-s;
++		} else {
++			if (len > d+1)
++				len = d+1;
++			d -= len-1;
++			s -= len-1;
++		}
++		__memcpy_short(p->fb+d, p->fb+s, len, 1);
++		if (make_cursor_visible(p))
++			redraw_screen(p, 0, p->fb_size-1);
++		else
++			redraw_screen(p, d, d+(len-1));
++	} else {
++		if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++			if (d+len > p->fb_size)
++				len = p->fb_size-d;
++			d += len-1;
++			s += len-1;
++		} else {
++			if (len > s+1)
++				len = s+1;
++		}
++		__memcpy_short(p->fb+d, p->fb+s, len, -1);
++		if (make_cursor_visible(p))
++			redraw_screen(p, 0, p->fb_size-1);
++		else
++			redraw_screen(p, d-(len-1), d);
++	}
++}
++
++static void scrup(struct lcd_struct *p, unsigned int t, unsigned int b, unsigned int nr)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int d, s;
++
++	if (t+nr >= b)
++		nr = b-t-1;
++	if (b > vs_rows || t >= b || nr < 1)
++		return;
++	d = t*vs_cols;
++	s = (t+nr)*vs_cols;
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		lcd_memmove(p, d, s, (b-t-nr)*vs_cols);
++		lcd_memset(p, d+(b-t-nr)*vs_cols, p->erase_char, nr*vs_cols);
++	} else {
++		lcd_memmove(p, d+(b-t-nr)*vs_cols-1, s+(b-t-nr)*vs_cols-1, (b-t-nr)*vs_cols);
++		lcd_memset(p, d+(b-t)*vs_cols-1, p->erase_char, nr*vs_cols);
++	}
++}
++
++static void scrdown(struct lcd_struct *p, unsigned int t, unsigned int b, unsigned int nr)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int d, s;
++
++	if (t+nr >= b)
++		nr = b-t-1;
++	if (b > vs_rows || t >= b || nr < 1)
++		return;
++	s = t*vs_cols;
++	d = (t+nr)*vs_cols;
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		lcd_memmove(p, d, s, (b-t-nr)*vs_cols);
++		lcd_memset(p, s, p->erase_char, nr*vs_cols);
++	} else {
++		lcd_memmove(p, d+(b-t-nr)*vs_cols-1, s+(b-t-nr)*vs_cols-1, (b-t-nr)*vs_cols);
++		lcd_memset(p, s+nr*vs_cols-1, p->erase_char, nr*vs_cols);
++	}
++}
++
++static void lcd_insert_char(struct lcd_struct *p, unsigned int nr)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int pos = (p->row*vs_cols)+p->col;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (test_bit(INC_CURS_POS, &p->struct_flags))
++		lcd_memmove(p, pos+nr, pos, vs_cols-p->col-nr);
++	else
++		lcd_memmove(p, pos-nr, pos, p->col-(nr-1));
++	lcd_memset(p, pos, p->erase_char, nr);
++}
++
++static void lcd_delete_char(struct lcd_struct *p, unsigned int nr)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int pos = (p->row*vs_cols)+p->col;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		lcd_memmove(p, pos, pos+nr, vs_cols-(p->col+nr));
++		lcd_memset(p, (p->row+1)*vs_cols-nr, p->erase_char, nr);
++	} else {
++		lcd_memmove(p, pos, pos-nr, p->col-(nr-1));
++		lcd_memset(p, (p->row*vs_cols)+(nr-1), p->erase_char, nr);
++	}
++}
++
++
++
++
++
++/******************************************************************************
++ *************************      VT 102 Emulation      *************************
++ ******************************************************************************/
++
++/**********************
++ * Control characters *
++ **********************/
++static void bs(struct lcd_struct *p)
++{
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		if (p->col)
++			--p->col;
++	} else {
++		if (p->col+1 < p->par->vs_cols)
++			++p->col;
++	}
++}
++
++static void cr(struct lcd_struct *p)
++{
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	p->col = (test_bit(INC_CURS_POS, &p->struct_flags) ? 0 : p->par->vs_cols-1);
++}
++
++static void lf(struct lcd_struct *p)
++{
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		if (p->row+1 == p->bot && INPUT_STATE(p) != RAW) {
++			make_cursor_visible(p);
++			scrup(p, p->top, p->bot, 1);
++		} else if (p->row+1 < p->par->vs_rows)
++			++p->row;
++	} else {
++		if (p->row == p->top && INPUT_STATE(p) != RAW) {
++			make_cursor_visible(p);
++			scrdown(p, p->top, p->bot, 1);
++		} else if (p->row)
++			--p->row;
++	}
++}
++
++static void ri(struct lcd_struct *p)
++{
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		if (p->row == p->top) {
++			make_cursor_visible(p);
++			scrdown(p, p->top, p->bot, 1);
++		} else if (p->row)
++			--p->row;
++	} else {
++		if (p->row+1 == p->bot) {
++			make_cursor_visible(p);
++			scrup(p, p->top, p->bot, 1);
++		} else if (p->row+1 < p->par->vs_rows)
++			++p->row;
++	}
++}
++
++static void ff(struct lcd_struct *p)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (p->driver->clear_display) {
++		p->driver->clear_display();
++		__memset_short(p->fb, p->erase_char, p->fb_size);
++		__memset_short(p->display, p->erase_char, p->frame_size);
++		p->frame_base = 0;
++	} else if (test_bit(INC_CURS_POS, &p->struct_flags))
++		lcd_memset(p, 0, p->erase_char, p->fb_size);
++	else
++		lcd_memset(p, p->fb_size-1, p->erase_char, p->fb_size);
++
++	if (test_bit(INC_CURS_POS, &p->struct_flags))
++		p->row = p->col = 0;
++	else {
++		p->row = vs_rows-1;
++		p->col = vs_cols-1;
++	}
++}
++
++static void tab(struct lcd_struct *p)
++{
++	struct lcd_parameters *par = p->par;
++	unsigned int i, vs_cols = par->vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++
++	if (! par->tabstop)
++		return;
++
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		i = par->tabstop-(p->col%par->tabstop);
++		if (p->col+i < vs_cols)
++			p->col += i;
++	} else {
++		i = p->col%par->tabstop;
++		i = (i == 0 ? par->tabstop : i);
++		if (p->col >= i)
++			p->col -= i;
++	}
++}
++
++/*
++ * Control character handler.
++ */
++static void control_char(struct lcd_struct *p, unsigned char val)
++{
++	switch (val) {
++	case 0x08: 	/* BS: Back Space (^H) */
++	case 0x7f:	/* DEL: Delete */
++		bs(p);
++		return;
++
++	case 0x09: 	/* HT: Horizontal Tab (^I) */
++		tab(p);
++		return;
++
++	case 0x0c: 	/* FF: Form Feed (^L) */
++		ff(p);
++		return;
++
++	case 0x0a: 	/* LF: Line Feed (^J) */
++	case 0x0b: 	/* VT: Vertical Tab (^K) */
++		lf(p);
++		if (! test_bit(CRLF, &p->struct_flags))
++			return;
++
++	case 0x0d: 	/* CR: Carriage Return (^M) */
++		cr(p);
++		return;
++
++	case 0x16: 	/* SYN: Synchronous Idle (^V) */
++		SET_INPUT_STATE(p, SYN);
++		return;
++
++	case 0x1b: 	/* ESC: Start of escape sequence */
++		SET_INPUT_STATE(p, ESC);
++		return;
++
++	case 0x9b: 	/* CSI: Start of CSI escape sequence */
++		memset(p->csi_args, 0, sizeof(p->csi_args));
++		p->index = 0;
++		SET_INPUT_STATE(p, CSI);
++		return;
++	}
++}
++
++static void gotoxy(struct lcd_struct *p, int new_col, int new_row)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (new_row < 0)
++		p->row = 0;
++	else if (new_row >= vs_rows)
++		p->row = vs_rows-1;
++	else
++		p->row = new_row;
++
++	if (new_col < 0)
++		p->col = 0;
++	else if (new_col >= vs_cols)
++		p->col = vs_cols-1;
++	else
++		p->col = new_col;
++
++	if (make_cursor_visible(p))
++		redraw_screen(p, 0, p->fb_size-1);
++}
++
++
++/******************************
++ * ECMA-48 CSI ESC- sequences *
++ ******************************/
++static void csi_at(struct lcd_struct *p, unsigned int nr)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++
++	if (p->col+nr > vs_cols)
++		nr = vs_cols-p->col;
++	else if (! nr)
++		++nr;
++	lcd_insert_char(p, nr);
++}
++
++static void csi_J(struct lcd_struct *p, unsigned int action)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int pos = (p->row*vs_cols)+p->col;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	switch (action) {
++	case 0:		/* From cursor to end of display */
++		lcd_memset(p, pos, p->erase_char, p->fb_size-pos);
++		return;
++
++	case 1:		/* From start of display to cursor */
++		lcd_memset(p, 0, p->erase_char, pos+1);
++		return;
++
++	case 2:		/* Whole display */
++		lcd_memset(p, 0, p->erase_char, p->fb_size);
++		return;
++	}
++}
++
++static void csi_K(struct lcd_struct *p, unsigned int action)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int row_start = p->row*vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	switch (action) {
++	case 0:		/* From cursor to end of line */
++		lcd_memset(p, row_start+p->col, p->erase_char, vs_cols-p->col);
++		return;
++
++	case 1:		/* From start of line to cursor */
++		lcd_memset(p, row_start, p->erase_char, p->col+1);
++		return;
++
++	case 2:		/* Whole line */
++		lcd_memset(p, row_start, p->erase_char, vs_cols);
++		return;
++	}
++}
++
++static void csi_L(struct lcd_struct *p, unsigned int nr)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (p->row+nr > vs_rows)
++		nr = vs_rows-p->row;
++	else if (! nr)
++		++nr;;
++	lcd_memmove(p, (p->row+nr)*vs_cols, p->row*vs_cols, (vs_rows-p->row-nr)*vs_cols);
++	lcd_memset(p, p->row*vs_cols, p->erase_char, nr*vs_cols);
++}
++
++static void csi_M(struct lcd_struct *p, unsigned int nr)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (p->row+nr > vs_rows)
++		nr = vs_rows-p->row;
++	else if (! nr)
++		++nr;;
++	lcd_memmove(p, p->row*vs_cols, (p->row+nr)*vs_cols, (vs_rows-p->row-nr)*vs_cols);
++	lcd_memset(p, (vs_rows-nr)*vs_cols, p->erase_char, nr*vs_cols);
++}
++
++static void csi_P(struct lcd_struct *p, unsigned int nr)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++
++	if (p->col+nr > vs_cols)
++		nr = vs_cols-p->col;
++	else if (! nr)
++		++nr;
++	lcd_delete_char(p, nr);
++}
++
++static void csi_X(struct lcd_struct *p, unsigned int nr)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (p->col+nr > vs_cols)
++		nr = vs_cols-p->col;
++	else if (! nr)
++		++nr;
++	lcd_memset(p, (p->row*vs_cols)+p->col, p->erase_char, nr);
++}
++
++static void csi_su(struct lcd_struct *p, unsigned char input)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++
++	clear_bit(NEED_WRAP, &p->struct_flags);
++	if (input == 'u') {
++		p->row = p->s_offset/vs_cols;
++		p->col = p->s_offset%vs_cols;
++		p->color = p->s_color;
++		p->attributes = p->s_attributes;
++		return;
++	}
++	p->s_offset = (p->row*vs_cols)+p->col;
++	p->s_color = p->color;
++	p->s_attributes = p->attributes;
++}
++
++static unsigned char build_attr(struct lcd_struct *p, unsigned char color, unsigned char intensity,
++				unsigned char blink, unsigned char underline, unsigned char reverse)
++{
++	unsigned char attr;
++
++	if (test_bit(CAN_DO_COLOR, &p->struct_flags)) {
++		attr = color;
++		if (underline)
++			attr = (attr & BG_MASK) | p->ulcolor;
++		else if (intensity == 0)
++			attr = (attr & BG_MASK) | p->halfcolor;
++		if (reverse)
++			attr = (attr & 0x88) | ((attr & 0x70) >> 4) | ((attr & 0x07) << 4);
++		if (blink)
++			attr ^= 0x80;
++		if (intensity == 2)
++			attr ^= 0x08;
++	} else {
++		attr = intensity;
++		attr |= (underline ? ULINE : 0x00);
++		attr |= (reverse ? REVERSE : 0x00);
++		attr |= (blink ? BLINK : 0x00);
++	}
++
++	return (attr);
++}
++
++static void update_attr(struct lcd_struct *p)
++{
++	unsigned char intensity = p->attributes & 0x03;
++	unsigned char underline = (p->attributes >> 2) & 0x01;
++	unsigned char reverse = (p->attributes >> 3) & 0x01;
++	unsigned char blink = (p->attributes >> 7) & 0x01;
++	unsigned char decscnm = (p->struct_flags >> DECSCNM) & 0x01;
++
++	p->attr = build_attr(p, p->color, intensity, blink, underline, reverse^decscnm);
++	p->erase_char = (build_attr(p, p->color, 1, blink, 0, decscnm) << 8) | ' ';
++}
++
++static void default_attr(struct lcd_struct *p)
++{
++	p->attributes = 0x01;
++	p->color = p->defcolor;
++}
++
++static void lcd_invert_screen(struct lcd_struct *p, unsigned int offset, unsigned int len)
++{
++	if (test_bit(CAN_DO_COLOR, &p->struct_flags))
++		while (len--) {
++			p->fb[offset] = (p->fb[offset] & 0x88ff) | ((p->fb[offset] & 0x7000) >> 4) | ((p->fb[offset] & 0x0700) << 4);
++			++offset;
++		}
++	else
++		while (len--) {
++			p->fb[offset] ^= 0x0800;
++			++offset;
++		}
++}
++
++static void csi_m(struct lcd_struct *p, unsigned int n)
++{
++	int i, arg;
++
++	for (i = 0; i <= n; ++i)
++		switch ((arg = p->csi_args[i]))
++		{
++			case 0:
++				default_attr(p);
++				break;
++
++			case 1:
++				p->attributes = (p->attributes & ~I_MASK) | 2;
++				break;
++
++			case 2:
++				p->attributes = (p->attributes & ~I_MASK) | 0;
++				break;
++
++			case 4:
++				p->attributes |= ULINE;
++				break;
++
++			case 5:
++				p->attributes |= BLINK;
++				break;
++
++			case 7:
++				p->attributes |= REVERSE;
++				break;
++
++			case 21: case 22:
++				p->attributes = (p->attributes & ~I_MASK) | 1;
++				break;
++
++			case 24:
++				p->attributes &= ~ULINE;
++				break;
++
++			case 25:
++				p->attributes &= ~BLINK;
++				break;
++
++			case 27:
++				p->attributes &= ~REVERSE;
++				break;
++
++			case 38:
++				p->attributes |= ULINE;
++				p->color = (p->color & BG_MASK) | (p->defcolor & FG_MASK);
++				break;
++
++			case 39:
++				p->attributes &= ~ULINE;
++				p->color = (p->color & BG_MASK) | (p->defcolor & FG_MASK);
++				break;
++
++			case 49:
++				p->color = (p->defcolor & BG_MASK) | (p->color & FG_MASK);
++				break;
++
++			default:
++				if (arg >= 30 && arg <= 37)
++					p->color = (p->color & BG_MASK) | color_table[arg-30];
++				else if (arg >= 40 && arg <= 47)
++					p->color = (p->color & FG_MASK) | (color_table[arg-40] << 4);
++				break;
++		}
++
++	update_attr(p);
++}
++
++static void csi_h(struct lcd_struct *p, unsigned char n)
++{
++	switch (n) {
++		case 4:		/* Set insert mode */
++			set_bit(DECIM, &p->struct_flags);
++			return;
++
++		case 5:		/* Inverted screen mode */
++			if (test_bit(QUES, &p->struct_flags) && ! test_bit(DECSCNM, &p->struct_flags)) {
++				set_bit(DECSCNM, &p->struct_flags);
++				lcd_invert_screen(p, 0, p->fb_size);
++				update_attr(p);
++				redraw_screen(p, 0, p->fb_size-1);
++			}
++			return;
++
++		case 7:		/* Set autowrap */
++			if (test_bit(QUES, &p->struct_flags))
++				set_bit(DECAWM, &p->struct_flags);
++			return;
++
++		case 20:	/* Set cr lf */
++			set_bit(CRLF, &p->struct_flags);
++			return;
++	}
++}
++
++static void csi_l(struct lcd_struct *p, unsigned char n)
++{
++	switch (n) {
++		case 4:		/* Reset insert mode */
++			clear_bit(DECIM, &p->struct_flags);
++			return;
++
++		case 5:		/* Normal screen mode */
++			if (test_bit(QUES, &p->struct_flags) && test_bit(DECSCNM, &p->struct_flags)) {
++				clear_bit(DECSCNM, &p->struct_flags);
++				lcd_invert_screen(p, 0, p->fb_size);
++				update_attr(p);
++				redraw_screen(p, 0, p->fb_size-1);
++			}
++			return;
++
++		case 7:		/* Reset autowrap */
++			if (test_bit(QUES, &p->struct_flags))
++				clear_bit(DECAWM, &p->struct_flags);
++			return;
++
++		case 20:	/* Reset cr lf */
++			clear_bit(CRLF, &p->struct_flags);
++			return;
++	}
++}
++
++static void csi_linux(struct lcd_struct *p)
++{
++	switch (p->csi_args[0]) {
++	case 1:
++		if (test_bit(CAN_DO_COLOR, &p->struct_flags) && p->csi_args[1] < 16) {
++			p->ulcolor = color_table[p->csi_args[1]];
++			if (p->attributes & ULINE)
++				update_attr(p);
++		}
++		return;
++
++	case 2:
++		if (test_bit(CAN_DO_COLOR, &p->struct_flags) && p->csi_args[1] < 16) {
++			p->halfcolor = color_table[p->csi_args[1]];
++			if ((p->attributes & I_MASK) == 0)
++				update_attr(p);
++		}
++		return;
++
++	case 8:
++		p->defcolor = p->color;
++		default_attr(p);
++		update_attr(p);
++		return;
++	}
++}
++
++static void csi_r(struct lcd_struct *p, unsigned int top, unsigned int bot)
++{
++	/* Minimum allowed region is 2 lines */
++	if (top < bot) {
++		p->top = top-1;
++		p->bot = bot;
++		gotoxy(p, 0, 0);
++	}
++}
++
++/*
++ * ECMA-48 CSI ESC- sequence handler.
++ */
++static void handle_csi(struct lcd_struct *p, unsigned char input)
++{
++	if (p->index >= NPAR) {
++		SET_INPUT_STATE(p, NORMAL);
++		printk(KERN_NOTICE "LCD: too many parameters in CSI escape sequence\n");
++	} else if (input == '?') {
++		set_bit(QUES, &p->struct_flags);
++	} else if (input == ';') {
++		++p->index;
++	} else if (input >= '0' && input <= '9') {
++		p->csi_args[p->index] = (p->csi_args[p->index]*10)+(input-'0');
++	} else {
++		SET_INPUT_STATE(p, NORMAL);
++		if (! test_bit(INC_CURS_POS, &p->struct_flags))
++			return;
++		switch (input) {
++		case 'h':		/* DECSET sequences and mode switches */
++			csi_h(p, p->csi_args[0]);
++			clear_bit(QUES, &p->struct_flags);
++			return;
++
++		case 'l':		/* DECRST sequences and mode switches */
++			csi_l(p, p->csi_args[0]);
++			clear_bit(QUES, &p->struct_flags);
++			return;
++		}
++		clear_bit(QUES, &p->struct_flags);
++		switch (input) {
++		case '@':		/* Insert # Blank character */
++			csi_at(p, p->csi_args[0]);
++			return;
++
++		case 'G': case '`':	/* Cursor to indicated column in current row */
++			if (p->csi_args[0])
++				--p->csi_args[0];
++			gotoxy(p, p->csi_args[0], p->row);
++			return;
++
++		case 'A':		/* Cursor # rows Up */
++			if (! p->csi_args[0])
++				++p->csi_args[0];
++			gotoxy(p, p->col, p->row-p->csi_args[0]);
++			return;
++
++		case 'B': case 'e':	/* Cursor # rows Down */
++			if (! p->csi_args[0])
++				++p->csi_args[0];
++			gotoxy(p, p->col, p->row+p->csi_args[0]);
++			return;
++
++		case 'C': case 'a':	/* Cursor # columns Right */
++			if (! p->csi_args[0])
++				++p->csi_args[0];
++			gotoxy(p, p->col+p->csi_args[0], p->row);
++			return;
++
++		case 'D':		/* Cursor # columns Left */
++			if (! p->csi_args[0])
++				++p->csi_args[0];
++			gotoxy(p, p->col-p->csi_args[0], p->row);
++			return;
++
++		case 'E':		/* Cursor # rows Down, column 1 */
++			if (! p->csi_args[0])
++				++p->csi_args[0];
++			gotoxy(p, 0, p->row+p->csi_args[0]);
++			return;
++
++		case 'F':		/* Cursor # rows Up, column 1 */
++			if (! p->csi_args[0])
++				++p->csi_args[0];
++			gotoxy(p, 0, p->row-p->csi_args[0]);
++			return;
++
++		case 'd':		/* Cursor to indicated row in current column */
++			if (p->csi_args[0])
++				--p->csi_args[0];
++			gotoxy(p, p->col, p->csi_args[0]);
++			return;
++
++		case 'H': case 'f':	/* Cursor to indicated row, column (origin 1, 1) */
++			if (p->csi_args[0])
++				--p->csi_args[0];
++			if (p->csi_args[1])
++				--p->csi_args[1];
++			gotoxy(p, p->csi_args[1], p->csi_args[0]);
++			return;
++
++		case 'J':		/* Erase display */
++			csi_J(p, p->csi_args[0]);
++			return;
++
++		case 'K':		/* Erase line */
++			csi_K(p, p->csi_args[0]);
++			return;
++
++		case 'L':		/* Insert # blank lines */
++			csi_L(p, p->csi_args[0]);
++			return;
++
++		case 'M':		/* Delete # blank lines */
++			csi_M(p, p->csi_args[0]);
++			return;
++
++		case 'P':		/* Delete # characters on the current line */
++			csi_P(p, p->csi_args[0]);
++			return;
++
++		case 'X':		/* Erase # characters on the current line */
++			csi_X(p, p->csi_args[0]);
++			return;
++
++		case 'm':		/* Set video attributes */
++			csi_m(p, p->index);
++			return;
++
++		case 's':		/* Save cursor position */
++		case 'u':		/* Restore cursor position */
++			csi_su(p, input);
++			return;
++
++		case ']':		/* Linux private ESC [ ] sequence */
++			csi_linux(p);
++			return;
++
++		case 'r':		/* Set the scrolling region */
++			if (! p->csi_args[0])
++				++p->csi_args[0];
++			if (! p->csi_args[1] || p->csi_args[1] > p->par->vs_rows)
++		 		p->csi_args[1] = p->par->vs_rows;
++			csi_r(p, p->csi_args[0], p->csi_args[1]);
++			return;
++
++					/* Ignored escape sequences */
++		case 'c':
++		case 'g':
++		case 'n':
++		case 'q':
++			return;
++
++		default:
++			printk(KERN_NOTICE "LCD: unrecognized CSI escape sequence: ESC [ %u\n", input);
++			return;
++		}
++	}
++}
++
++/*
++ * Custom ESC- sequence handler.
++ */
++static int handle_custom_esc(struct lcd_struct *p, unsigned int _input)
++{
++	unsigned char input = _input & 0xff;
++	struct lcd_parameters *par = p->par;
++
++	if (_input & (~0xff)) {
++		switch (ESC_STATE(p)) {
++		case 's':
++			if (p->index++) {
++				unsigned char *buf = p->cgram_buffer+(p->cgram_index-par->cgram_char0)*par->cgram_bytes;
++
++				buf[p->index-2] = input;
++				if (p->index == par->cgram_bytes+1)
++					write_cgram(p, p->cgram_index, buf);
++			} else {
++				if (! p->driver->write_cgram_char) {
++					printk(KERN_ERR "LCD: %s: missing function to write to CGRAM\n", p->par->name);
++					return (-1);
++				}
++				if (input >= par->cgram_char0 && input < par->cgram_char0+par->cgram_chars)
++					p->cgram_index = input;
++				else {
++					printk(KERN_NOTICE "LCD: bad CGRAM index\n");
++					return (-1);
++				}
++			}
++			return (0);
++
++		case 'G':
++			if (input >= par->cgram_char0 && input < par->cgram_char0+par->cgram_chars)
++				write_data(p, (p->attr << 8) | p->driver->charmap[input]);
++			else {
++				SET_INPUT_STATE(p, NORMAL);
++				handle_input(p, (p->attr << 8) | input);
++			}
++			return (0);
++
++		case 'r':
++			if (input == '1')
++				address_mode(p, -1);
++			else if (input == '0')
++				address_mode(p, 1);
++			return (0);
++
++		case 'A':
++			scrup(p, p->top, p->bot, input);
++			return (0);
++
++		case 'B':
++			scrdown(p, p->top, p->bot, input);
++			return (0);
++
++		case 'C':
++			browse_screen(p, input);
++			return (0);
++		}
++	}
++
++	/* These are the custom ESC- sequences */
++	switch (input) {
++	case 's':	/* CGRAM select */
++		if (p->cgram_buffer) {
++			SET_ESC_STATE(p, input);
++			p->index = 0;
++			return (par->cgram_bytes+1);
++		} else {
++			printk(KERN_NOTICE "LCD: driver %s does not support CGRAM chars\n", par->name);
++			return (0);
++		}
++
++	case 'A':	/* Scroll up */
++	case 'B':	/* Scroll down */
++	case 'C':	/* Browse screen */
++	case 'G':	/* Enter cgram mode */
++	case 'r':	/* Decrement counter after data read/write */
++		SET_ESC_STATE(p, input);
++		return (1);
++	}
++
++	return (-1);
++}
++
++/*
++ * ESC- but not CSI sequence handler.
++ */
++static int handle_esc(struct lcd_struct *p, unsigned char input)
++{
++	int ret;
++
++	SET_INPUT_STATE(p, NORMAL);
++	switch (input) {
++	case 'c':	/* Reset */
++		set_bit(DECAWM, &p->struct_flags);
++		set_bit(INC_CURS_POS, &p->struct_flags);
++		ff(p);
++		return (0);
++
++	case 'D':	/* Line Feed */
++		lf(p);
++		return (0);
++
++	case 'E':	/* New Line */
++		cr(p);
++		lf(p);
++		return (0);
++
++	case 'M':	/* Reverse Line Feed */
++		ri(p);
++		return (0);
++
++	case '7':
++	case '8':
++		csi_su(p, (input == '7' ? 's' : 'u'));
++		return (0);
++
++	/* CSI: Start of CSI escape sequence */
++	case '[':
++		memset(p->csi_args, 0, sizeof(p->csi_args));
++		p->index = 0;
++		SET_INPUT_STATE(p, CSI);
++		return (0);
++
++	/* Ignored escape sequences */
++	case '(':
++		SET_INPUT_STATE(p, ESC_G0);
++		return (1);
++
++	case ')':
++		SET_INPUT_STATE(p, ESC_G1);
++		return (1);
++
++	case '#':
++		SET_INPUT_STATE(p, ESC_HASH);
++		return (1);
++
++	case '%':
++		SET_INPUT_STATE(p, ESC_PERCENT);
++		return (1);
++
++	case 'H':
++	case 'Z':
++	case '>':
++	case '=':
++	case ']':
++		return (0);
++	}
++
++	/* These are the custom ESC- sequences */
++	if ((ret = handle_custom_esc(p, input)) > 0) {
++		SET_INPUT_STATE(p, ARG);
++		return (ret);
++	}
++
++	if (ret < 0 && p->driver->handle_custom_char)
++		if ((ret = p->driver->handle_custom_char(input)) > 0) {
++			SET_INPUT_STATE(p, ARG_DRIVER);
++			return (ret);
++		}
++
++	if (ret < 0)
++		printk(KERN_NOTICE "LCD: unrecognized escape sequence: ESC %u\n", input);
++
++	return (0);
++}
++
++/*
++ * Main input handler.
++ */
++static void handle_input(struct lcd_struct *p, unsigned short _input)
++{
++	unsigned char input = _input & 0xff;
++	struct lcd_driver *driver = p->driver;
++
++	switch (INPUT_STATE(p)) {
++	case NORMAL:
++		if (input < 0x20 || input == 0x9b)
++			control_char(p, input);
++		else
++			write_data(p, (_input & 0xff00) | driver->charmap[input]);
++		return;
++
++	case RAW:
++		write_data(p, (_input & 0xff00) | driver->charmap[input]);
++		return;
++
++	case SYN:
++		write_data(p, _input);
++		SET_INPUT_STATE(p, NORMAL);
++		return;
++
++	case ESC:
++		p->esc_args = handle_esc(p, input);
++		return;
++
++	case ESC_G0:
++	case ESC_G1:
++	case ESC_HASH:
++	case ESC_PERCENT:
++		if (! --p->esc_args)
++			SET_INPUT_STATE(p, NORMAL);
++		return;
++
++	case CSI:
++		handle_csi(p, input);
++		return;
++
++	case ARG:
++		if (handle_custom_esc(p, 0x100 | input) || ! --p->esc_args)
++			SET_INPUT_STATE(p, NORMAL);
++		return;
++
++	case ARG_DRIVER:
++		if (driver->handle_custom_char(0x100 | input) || ! --p->esc_args)
++			SET_INPUT_STATE(p, NORMAL);
++		return;
++	}
++}
++
++
++
++
++
++/***************************************
++ * Read from/Write to display routines *
++ ***************************************/
++
++/*
++ * Write character data to the display.
++ */
++static void write_data(struct lcd_struct *p, unsigned short data)
++{
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int pos;
++	int frame_pos;
++
++	if (test_bit(NEED_WRAP, &p->struct_flags)) {
++		cr(p);
++		lf(p);
++	}
++
++	if (test_bit(DECIM, &p->struct_flags))
++		lcd_insert_char(p, 1);
++
++	pos = (p->row*vs_cols)+p->col;
++	if ((frame_pos = vs_to_frame_(p, pos)) < 0) {
++		make_cursor_visible(p);
++		redraw_screen(p, 0, p->fb_size-1);
++		frame_pos = vs_to_frame_(p, pos);
++	}
++
++	if (p->display[frame_pos] != data) {
++		p->driver->write_char(frame_pos, data);
++		p->display[frame_pos] = data;
++	}
++
++	p->fb[pos] = data;
++
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		if (p->col+1 < vs_cols)
++			iterator_inc(p->col, vs_cols);
++		else if (test_bit(DECAWM, &p->struct_flags))
++			set_bit(NEED_WRAP, &p->struct_flags);
++	} else {
++		if (p->col)
++			iterator_dec(p->col, vs_cols);
++		else if (test_bit(DECAWM, &p->struct_flags))
++			set_bit(NEED_WRAP, &p->struct_flags);
++	}
++}
++
++/*
++ * Write an entire CGRAM character to the display.
++ */
++static void write_cgram(struct lcd_struct *p, unsigned char index, unsigned char *pixels)
++{
++	unsigned int inc_set = test_bit(INC_CURS_POS, &p->struct_flags);
++
++	if (! inc_set)
++		address_mode(p, 1);
++
++	p->driver->write_cgram_char(index, pixels);
++
++	if (! inc_set)
++		address_mode(p, -1);
++}
++
++/*
++ * Read character data from the display.
++ */
++static void read_data(struct lcd_struct *p, unsigned short *data)
++{
++	unsigned int vs_rows = p->par->vs_rows;
++	unsigned int vs_cols = p->par->vs_cols;
++	unsigned int pos = (p->row*vs_cols)+p->col;
++	int frame_pos;
++
++	if ((frame_pos = vs_to_frame_(p, pos)) < 0) {
++		make_cursor_visible(p);
++		redraw_screen(p, 0, p->fb_size-1);
++		frame_pos = vs_to_frame_(p, pos);
++	}
++
++	p->driver->read_char(frame_pos, data);
++
++	if (test_bit(INC_CURS_POS, &p->struct_flags)) {
++		iterator_inc(p->col, vs_cols);
++		if (! p->col) {
++			if (p->row+1 < vs_rows)
++				++p->row;
++		}
++	} else {
++		iterator_dec(p->col, vs_cols);
++		if (p->col+1 == vs_cols) {
++			if (p->row)
++				--p->row;
++		}
++	}
++}
++
++/*
++ * Read an entire CGRAM character from the display.
++ */
++static void read_cgram(struct lcd_struct *p, unsigned char index, unsigned char *pixels)
++{
++	unsigned int inc_set = test_bit(INC_CURS_POS, &p->struct_flags);
++
++	if (! inc_set)
++		address_mode(p, 1);
++
++	p->driver->read_cgram_char(index, pixels);
++
++	if (! inc_set)
++		address_mode(p, -1);
++}
++
++
++
++
++
++/****************************
++ * Proc filesystem routines *
++ ****************************/
++#ifdef USE_PROC
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
++/* create_proc_read_entry is missing in 2.2.x kernels */
++static struct proc_dir_entry *create_proc_read_entry(const char *name, mode_t mode,
++			struct proc_dir_entry *parent, read_proc_t *read_proc, void *data)
++{
++	struct proc_dir_entry *res = create_proc_entry(name, mode, parent);
++
++	if (res) {
++		res->read_proc = read_proc;
++		res->data = data;
++	}
++
++	return (res);
++}
++#endif
++
++static int proc_fb_read(char *buffer, char **start, off_t offset, int size, int *eof, void *data)
++{
++	char *temp = buffer;
++	struct lcd_struct *p = (struct lcd_struct *)data;
++	unsigned int vs_cols;
++	static unsigned int nr, need_wrap;
++	static off_t _offset;
++
++	down(&p->lcd_sem);
++	if (! offset)
++		_offset = 0;
++	if ((*eof = (_offset >= p->fb_size))) {
++		up(&p->lcd_sem);
++		return (0);
++	}
++	vs_cols = p->par->vs_cols;
++	if (size && need_wrap) {
++		need_wrap = 0;
++		temp += sprintf(temp, "\n");
++		--size;
++	}
++	if (! nr)
++		nr = vs_cols;
++	*start = (char *)0;
++	while (size && nr) {
++		unsigned char c = (p->fb[_offset] & 0xff);
++
++		temp += sprintf(temp, "%c", (c < 0x20 ? '·' : c));
++		--size;
++		--nr;
++		++*start;
++		++_offset;
++	}
++	if (! nr) {
++		if (size) {
++			temp += sprintf(temp, "\n");
++			--size;
++		} else
++			need_wrap = 1;
++	}
++	up(&p->lcd_sem);
++
++	return (temp-buffer);
++}
++
++static int proc_display_read(char *buffer, char **start, off_t offset, int size, int *eof, void *data)
++{
++	char *temp = buffer;
++	struct lcd_struct *p = (struct lcd_struct *)data;
++	unsigned int i, frame_cols;
++	int frame_pos;
++
++	down(&p->lcd_sem);
++	frame_cols = p->par->cntr_cols;
++	frame_pos = vs_to_frame_(p, (p->row*p->par->vs_cols)+p->col);
++	temp += sprintf(temp, "    ");
++	for (i = 2; i <= frame_cols; i += 2)
++		temp += sprintf(temp, " %d", i%10);
++	temp += sprintf(temp, "\n");
++
++	temp += sprintf(temp, "   +");
++	for (i = 0; i < frame_cols; ++i)
++		temp += sprintf(temp, "-");
++	temp += sprintf(temp, "+\n");
++
++	for (i = 0; i < p->frame_size; ++i) {
++		unsigned char c = (p->display[i] & 0xff);
++
++		if (! (i%frame_cols))
++			temp += sprintf(temp, "%2d |", 1+i/frame_cols);
++		if (frame_pos--)
++			temp += sprintf(temp, "%c", (c < 0x20 ? '·' : c));
++		else
++			temp += sprintf(temp, "_");
++		if (! ((i+1)%frame_cols))
++			temp += sprintf(temp, "|\n");
++	}
++
++	temp += sprintf(temp, "   +");
++	for (i = 0; i < frame_cols; ++i)
++		temp += sprintf(temp, "-");
++	temp += sprintf(temp, "+\n");
++	up(&p->lcd_sem);
++
++	return (temp-buffer);
++}
++
++static int proc_charmap_read(char *buffer, char **start, off_t offset, int size, int *eof, void *data)
++{
++	char *temp = buffer;
++	struct lcd_struct *p = (struct lcd_struct *)data;
++	unsigned char *charmap;
++	unsigned int i;
++
++	down(&p->lcd_sem);
++	charmap = p->driver->charmap;
++	temp += sprintf(temp,	"static unsigned char charmap[] = {");
++	for (i = 0; i < 255; ++i) {
++		if (! (i & 7)) {
++			temp += sprintf(temp, "\n");
++			if (! (i & 31))
++				temp += sprintf(temp, "\n/* %d - %d */\n", i, i+31);
++		}
++		temp += sprintf(temp, "0x%.2x, ", *charmap++);
++	}
++	temp += sprintf(temp, "0x%.2x\n\n};\n", *charmap);
++	up(&p->lcd_sem);
++
++	return (temp-buffer);
++}
++
++static int proc_registered_drivers(char *buffer, char **start, off_t offset, int size, int *eof, void *data)
++{
++	char *temp = buffer;
++	struct list_head *entry;
++
++	down(&drivers_sem);
++	temp += sprintf(temp, "Registered drivers:\n");
++	list_for_each(entry, &lcd_drivers) {
++		struct lcd_struct *p = list_entry(entry, struct lcd_struct, lcd_list);
++
++		down(&p->lcd_sem);
++		temp += sprintf(temp, "%3d %s\n", p->par->minor, p->par->name);
++		up(&p->lcd_sem);
++	}
++	up(&drivers_sem);
++
++	return (temp-buffer);
++}
++
++static void create_driver_proc_entries(struct lcd_struct *p)
++{
++	struct proc_dir_entry *driver_proc_root = p->driver->driver_proc_root;
++	int proc_level = 0;
++
++	SET_PROC_LEVEL(p, proc_level);
++	if (create_proc_read_entry("framebuffer", 0, driver_proc_root, proc_fb_read, p) == NULL) {
++		printk(KERN_ERR "LCD: cannot create /proc/lcd/%s/framebuffer\n", p->par->name);
++		return;
++	}
++	SET_PROC_LEVEL(p, ++proc_level);
++	if (create_proc_read_entry("display", 0, driver_proc_root, proc_display_read, p) == NULL) {
++		printk(KERN_ERR "LCD: cannot create /proc/lcd/%s/display\n", p->par->name);
++		return;
++	}
++	SET_PROC_LEVEL(p, ++proc_level);
++	if (create_proc_read_entry("charmap.h", 0, driver_proc_root, proc_charmap_read, p) == NULL) {
++		printk(KERN_ERR "LCD: cannot create /proc/lcd/%s/charmap.h\n", p->par->name);
++		return;
++	}
++	SET_PROC_LEVEL(p, ++proc_level);
++}
++
++static void remove_driver_proc_entries(struct lcd_struct *p)
++{
++	struct proc_dir_entry *driver_proc_root = p->driver->driver_proc_root;
++
++	switch (PROC_LEVEL(p)) {
++	case 3:
++		remove_proc_entry("charmap.h", driver_proc_root);
++	case 2:
++		remove_proc_entry("display", driver_proc_root);
++	case 1:
++		remove_proc_entry("framebuffer", driver_proc_root);
++	}
++	SET_PROC_LEVEL(p, 0);
++}
++#endif
++
++
++
++
++
++/*****************************
++ * Low level file operations *
++ *****************************/
++static ssize_t do_lcd_read(struct lcd_struct *p, void *buffer, size_t length)
++{
++	unsigned int i;
++	unsigned short tmp;
++
++	if (! p->refcount)
++		return (-ENXIO);
++
++	if (! p->driver->read_char) {
++		printk(KERN_NOTICE "LCD: driver %s doesn't support reading\n", p->par->name);
++		return (-ENOSYS);
++	}
++
++	if (test_bit(WITH_ATTR, &p->struct_flags))
++		for (i = 0; i < length; ++i) {
++			read_data(p, &tmp);
++			((unsigned short *)buffer)[i] = tmp;
++		}
++	else
++		for (i = 0; i < length; ++i) {
++			read_data(p, &tmp);
++			((unsigned char *)buffer)[i] = tmp & 0xff;
++		}
++
++	return (length);
++}
++
++static ssize_t do_lcd_write(struct lcd_struct *p, const void *buffer, size_t length)
++{
++	unsigned int i;
++
++	if (! p->refcount)
++		return (-ENXIO);
++
++	if (test_bit(WITH_ATTR, &p->struct_flags))
++		for (i = 0; i < length; ++i)
++			handle_input(p, ((const unsigned short *)buffer)[i]);
++	else
++		for (i = 0; i < length; ++i)
++			handle_input(p, (p->attr << 8) | ((const unsigned char *)buffer)[i]);
++
++	return (length);
++}
++
++static int do_lcd_open(struct lcd_struct *p)
++{
++	if (! p->refcount) {
++		if (p->driver->driver_module) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++			if (! try_module_get(p->driver->driver_module))
++				return (-EBUSY);
++#else
++			if (__MOD_IN_USE(p->driver->driver_module))
++				return (-EBUSY);
++
++			__MOD_INC_USE_COUNT(p->driver->driver_module);
++#endif
++		}
++	}
++
++	++p->refcount;
++
++	return (0);
++}
++
++static int do_lcd_release(struct lcd_struct *p)
++{
++	if (! p->refcount)
++		return (0);
++
++	if (p->refcount == 1) {
++		if (p->driver->driver_module)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++			module_put(p->driver->driver_module);
++#else
++			__MOD_DEC_USE_COUNT(p->driver->driver_module);
++#endif
++	}
++
++	--p->refcount;
++
++	return (0);
++}
++
++static int cgram_ioctl(struct lcd_struct *p, unsigned int cmd, unsigned char *argp)
++{
++	struct lcd_parameters *par = p->par;
++	unsigned int length = par->cgram_bytes;
++	unsigned char index = argp[0];
++	unsigned char *buffer = argp+1;
++	unsigned char *cgram_buffer = p->cgram_buffer+(index-par->cgram_char0)*length;
++
++	if (index < par->cgram_char0 || index >= par->cgram_char0+par->cgram_chars)
++		return (-EINVAL);
++
++	if (cmd == LCDL_SET_CGRAM_CHAR) {
++		if (! p->driver->write_cgram_char) {
++			printk(KERN_ERR "LCD: %s: missing function to write to CGRAM\n", p->par->name);
++			return (-ENOSYS);
++		}
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			if (copy_from_user(cgram_buffer, buffer, length))
++				return (-EFAULT);
++		} else
++			memcpy(cgram_buffer, buffer, length);
++		write_cgram(p, index, cgram_buffer);
++	} else {
++		if (! p->driver->read_cgram_char) {
++			printk(KERN_ERR "LCD: %s: missing function to read from CGRAM or unable to read\n", p->par->name);
++			return (-ENOSYS);
++		}
++		read_cgram(p, index, cgram_buffer);
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			if (copy_to_user(buffer, cgram_buffer, length))
++				return (-EFAULT);
++		} else
++			memcpy(buffer, cgram_buffer, length);
++	}
++
++	return (0);
++}
++
++static int do_lcd_ioctl(struct lcd_struct *p, unsigned int cmd, unsigned long arg)
++{
++	int i;
++	struct lcd_driver *driver = p->driver;
++	struct lcd_parameters *par = p->par;
++	unsigned char *argp = (unsigned char *)arg;
++
++	if (! p->refcount)
++		return (-ENXIO);
++
++	switch (cmd) {
++	case LCDL_SET_PARAM:
++		if ((i = cleanup_driver(p)))
++			return (i);
++		i = par->minor;
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			if (copy_from_user(par, argp, sizeof(struct lcd_parameters)))
++				return (-EFAULT);
++		} else
++			memcpy(par, argp, sizeof(struct lcd_parameters));
++		par->minor = i;
++		return (init_driver(p));
++
++	case LCDL_GET_PARAM:
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			if (copy_to_user(argp, par, sizeof(struct lcd_parameters)))
++				return (-EFAULT);
++		} else
++			memcpy(argp, par, sizeof(struct lcd_parameters));
++		return (0);
++
++	case LCDL_RESET_CHARMAP:
++		for (i = 0; i < 256; ++i)
++			driver->charmap[i] = i;
++		return (0);
++
++	case LCDL_CHARSUBST:
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			get_user(i, argp);
++			get_user(driver->charmap[i], argp+1);
++		} else {
++			i = argp[0];
++			driver->charmap[i] = argp[1];
++		}
++		return (0);
++
++	case LCDL_SAVE_CHARMAP:
++		memcpy(p->s_charmap, driver->charmap, 256);
++		return (0);
++
++	case LCDL_RESTORE_CHARMAP:
++		memcpy(driver->charmap, p->s_charmap, 256);
++		return (0);
++
++	case LCDL_SWAP_CHARMAP:
++		{
++			unsigned char *tmp;
++
++			tmp = driver->charmap;
++			driver->charmap = p->s_charmap;
++			p->s_charmap = tmp;
++		}
++		return (0);
++
++	case LCDL_RAW_MODE:
++		if (arg) {
++			clear_bit(NEED_WRAP, &p->struct_flags);
++			clear_bit(DECIM, &p->struct_flags);
++			clear_bit(DECAWM, &p->struct_flags);
++			SET_INPUT_STATE(p, RAW);
++		} else {
++			set_bit(DECAWM, &p->struct_flags);
++			SET_INPUT_STATE(p, NORMAL);
++		}
++		return (0);
++
++	case LCDL_CLEAR_DISP:
++		ff(p);
++		return (0);
++
++	case LCDL_SET_CGRAM_CHAR:
++	case LCDL_GET_CGRAM_CHAR:
++		if (p->cgram_buffer)
++			return (cgram_ioctl(p, cmd, argp));
++		else
++			printk(KERN_NOTICE "LCD: driver %s does not support CGRAM chars\n", par->name);
++		return (0);
++
++	case LCDL_SET_CHARMAP:
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			if (copy_from_user(driver->charmap, argp, 256))
++				return (-EFAULT);
++		} else
++			memcpy(driver->charmap, argp, 256);
++		return (0);
++
++	case LCDL_GET_CHARMAP:
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			if (copy_to_user(argp, driver->charmap, 256))
++				return (-EFAULT);
++		} else
++			memcpy(argp, driver->charmap, 256);
++		return (0);
++
++	case LCDL_MEMSET:
++	case LCDL_MEMMOVE:
++	{
++		int buf[3];
++
++		if (test_bit(USER_SPACE, &p->struct_flags)) {
++			if (copy_from_user(buf, argp, sizeof(buf)))
++				return (-EFAULT);
++		} else
++			memcpy(buf, argp, sizeof(buf));
++
++		if (cmd == LCDL_MEMSET)
++			lcd_memset(p, buf[0], buf[1], buf[2]);
++		else
++			lcd_memmove(p, buf[0], buf[1], buf[2]);
++
++		return (0);
++	}
++
++	default:
++		if (driver->handle_custom_ioctl)
++			return (driver->handle_custom_ioctl(cmd, arg, test_bit(USER_SPACE, &p->struct_flags)));
++	}
++
++	return (-ENOIOCTLCMD);
++}
++
++
++
++
++
++/**************************************************
++ * Kernel register/unregister lcd driver routines *
++ **************************************************/
++/*
++ * Find a driver in lcd_drivers linked list
++ */
++static struct lcd_struct *find_lcd_struct(unsigned short minor)
++{
++	struct list_head *entry;
++
++	list_for_each(entry, &lcd_drivers) {
++		struct lcd_struct *p = list_entry(entry, struct lcd_struct, lcd_list);
++
++		if (p->par->minor == minor)
++			return (p);
++	}
++
++	return (NULL);
++}
++
++static void list_add_sorted(struct list_head *new)
++{
++	struct list_head *entry;
++	unsigned short new_minor = (list_entry(new, struct lcd_struct, lcd_list))->par->minor;
++
++	list_for_each(entry, &lcd_drivers) {
++		struct lcd_struct *p = list_entry(entry, struct lcd_struct, lcd_list);
++
++		if (p->par->minor > new_minor)
++			break;
++	}
++	list_add_tail(new, entry);
++}
++
++/* Exported function */
++int lcd_register_driver(struct lcd_driver *driver, struct lcd_parameters *par)
++{
++	int ret;
++	struct lcd_struct *p;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
++	struct device *lcd_device;
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
++	struct class_device *lcd_class_device;
++#endif
++
++	if (! driver || ! par || par->minor >= minors)
++		return (-EINVAL);
++	if (! driver->write_char || ! driver->init_port || ! driver->cleanup_port) {
++		printk(KERN_ERR "LCD: missing functions\n");
++		return (-EINVAL);
++	}
++
++	down(&drivers_sem);
++
++	if (find_lcd_struct(par->minor)) {
++		up(&drivers_sem);
++		return (-EBUSY);
++	}
++
++	if ((p = (struct lcd_struct *)kmalloc(sizeof(struct lcd_struct), GFP_KERNEL)) == NULL) {
++		printk(KERN_ERR "LCD: memory allocation failed (kmalloc)\n");
++		up(&drivers_sem);
++		return (-ENOMEM);
++	}
++	memset(p, 0, sizeof(struct lcd_struct));
++
++	p->driver = driver;
++	p->par = par;
++	p->refcount = 0;
++	SET_INIT_LEVEL(p, 0);
++	SET_INPUT_STATE(p, NORMAL);
++	set_bit(DECAWM, &p->struct_flags);
++	set_bit(INC_CURS_POS, &p->struct_flags);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
++	lcd_device = device_create(lcd_linux_class, NULL, MKDEV(major, par->minor), "%s", par->name);
++	if (IS_ERR(lcd_device)) {
++		kfree(p);
++		up(&drivers_sem);
++		return (PTR_ERR(lcd_device));
++	}
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
++	lcd_class_device = class_device_create(lcd_linux_class, NULL, MKDEV(major, par->minor), NULL, "%s", par->name);
++	if (IS_ERR(lcd_class_device)) {
++		kfree(p);
++		up(&drivers_sem);
++		return (PTR_ERR(lcd_class_device));
++	}
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
++	lcd_class_device = class_device_create(lcd_linux_class, MKDEV(major, par->minor), NULL, "%s", par->name);
++	if (IS_ERR(lcd_class_device)) {
++		kfree(p);
++		up(&drivers_sem);
++		return (PTR_ERR(lcd_class_device));
++	}
++#endif
++
++#ifdef USE_PROC
++	if (lcd_proc_root && (driver->driver_proc_root = proc_mkdir(par->name, lcd_proc_root)) == NULL)
++		printk(KERN_ERR "LCD: cannot create /proc/lcd/%s/\n", par->name);
++#endif
++
++	if ((ret = init_driver(p))) {
++#ifdef USE_PROC
++		if (driver->driver_proc_root)
++			remove_proc_entry(p->par->name, lcd_proc_root);
++#endif
++		kfree(p);
++		up(&drivers_sem);
++		return (ret);
++	}
++
++	init_MUTEX(&p->lcd_sem);
++
++	list_add_sorted(&p->lcd_list);
++
++	up(&drivers_sem);
++
++#ifdef MODULE
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++	try_module_get(THIS_MODULE);
++#else
++	MOD_INC_USE_COUNT;
++#endif
++#endif
++
++	return (0);
++}
++EXPORT_SYMBOL(lcd_register_driver);
++
++/* Exported function */
++int lcd_unregister_driver(struct lcd_driver *driver, struct lcd_parameters *par)
++{
++	int ret;
++	struct lcd_struct *p;
++
++	if (! driver || ! par || par->minor >= minors)
++		return (-EINVAL);
++
++	down(&drivers_sem);
++
++	if ((p = find_lcd_struct(par->minor)) == NULL || p->driver != driver) {
++		printk(KERN_ERR "LCD: driver not found; lcd_unregister_driver failed\n");
++		up(&drivers_sem);
++		return (-ENODEV);
++	}
++
++	down(&p->lcd_sem);
++
++	if (p->refcount) {
++		printk(KERN_ERR "LCD: driver busy; lcd_unregister_driver failed\n");
++		up(&p->lcd_sem);
++		up(&drivers_sem);
++		return (-EBUSY);
++	}
++
++	if ((ret = cleanup_driver(p))) {
++		up(&p->lcd_sem);
++		up(&drivers_sem);
++		return (ret);
++	}
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
++	device_destroy(lcd_linux_class, MKDEV(major, par->minor));
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
++	class_device_destroy(lcd_linux_class, MKDEV(major, par->minor));
++#endif
++
++#ifdef USE_PROC
++	if (p->driver->driver_proc_root)
++		remove_proc_entry(p->par->name, lcd_proc_root);
++#endif
++
++	list_del(&p->lcd_list);
++	kfree(p);
++
++	up(&drivers_sem);
++
++#ifdef MODULE
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
++	module_put(THIS_MODULE);
++#else
++	MOD_DEC_USE_COUNT;
++#endif
++#endif
++
++	return (0);
++}
++EXPORT_SYMBOL(lcd_unregister_driver);
++
++
++
++
++
++/************************
++ * Kernel I/O interface *
++ ************************/
++/* Exported function */
++int lcd_open(unsigned short minor, struct lcd_struct **pp)
++{
++	int ret;
++	struct lcd_struct *p;
++
++	down(&drivers_sem);
++
++	if (minor >= minors || (*pp = p = find_lcd_struct(minor)) == NULL) {
++		printk(KERN_ERR "LCD: lcd_open failed. Device not found.\n");
++		up(&drivers_sem);
++		return (-ENODEV);
++	}
++
++	down(&p->lcd_sem);
++	up(&drivers_sem);
++
++	ret = do_lcd_open(p);
++
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++EXPORT_SYMBOL(lcd_open);
++
++/* Exported function */
++int lcd_close(struct lcd_struct **pp)
++{
++	int ret;
++	struct lcd_struct *p;
++
++	if (! pp || ! (p = *pp)) {
++		printk(KERN_ERR "LCD: NULL pointer in lcd_close\n");
++		return (-ENODEV);
++	}
++
++	down(&p->lcd_sem);
++
++	if (! (ret = do_lcd_release(p)))
++		*pp = NULL;
++
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++EXPORT_SYMBOL(lcd_close);
++
++static inline loff_t offset_to_row_col(struct lcd_struct *p, loff_t offset)
++{
++	unsigned long _offset = offset;
++	unsigned int vs_cols = p->par->vs_cols;
++
++	gotoxy(p, _offset%vs_cols, _offset/vs_cols);
++
++	return ((p->row*vs_cols)+p->col);
++}
++
++/* Exported function */
++ssize_t lcd_read(struct lcd_struct *p, void *bufp, size_t length, loff_t offset, unsigned int with_attr)
++{
++	ssize_t ret = 0;
++
++	if (! p) {
++		printk(KERN_ERR "LCD: NULL pointer in lcd_read\n");
++		return (-ENODEV);
++	}
++	if (! bufp)
++		return (-EFAULT);
++	if (offset < 0 || offset >= p->fb_size)
++		return (-EINVAL);
++
++	if (length+offset > p->fb_size)
++		length = p->fb_size-offset;
++
++	if (with_attr)
++		set_bit(WITH_ATTR, &p->struct_flags);
++
++	offset_to_row_col(p, offset);
++	ret = do_lcd_read(p, bufp, length);
++
++	if (with_attr)
++		clear_bit(WITH_ATTR, &p->struct_flags);
++
++	return (ret);
++}
++EXPORT_SYMBOL(lcd_read);
++
++/* Exported function */
++ssize_t lcd_write(struct lcd_struct *p, const void *bufp, size_t length, loff_t offset, unsigned int with_attr)
++{
++	ssize_t ret;
++
++	if (! p) {
++		printk(KERN_ERR "LCD: NULL pointer in lcd_write\n");
++		return (-ENODEV);
++	}
++	if (! bufp)
++		return (-EFAULT);
++	if (offset < 0 || offset >= p->fb_size)
++		return (-EINVAL);
++
++	if (with_attr)
++		set_bit(WITH_ATTR, &p->struct_flags);
++
++	offset_to_row_col(p, offset);
++	ret = do_lcd_write(p, bufp, length);
++
++	if (with_attr)
++		clear_bit(WITH_ATTR, &p->struct_flags);
++
++	return (ret);
++}
++EXPORT_SYMBOL(lcd_write);
++
++/* Exported function */
++int lcd_ioctl(struct lcd_struct *p, unsigned int cmd, ...)
++{
++	int ret;
++	unsigned long arg;
++	va_list ap;
++
++	if (! p) {
++		printk(KERN_ERR "LCD: NULL pointer in lcd_ioctl\n");
++		return (-ENODEV);
++	}
++
++	down(&p->lcd_sem);
++	va_start(ap, cmd);
++	arg = va_arg(ap, unsigned long);
++	ret = do_lcd_ioctl(p, cmd, arg);
++	va_end(ap);
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++EXPORT_SYMBOL(lcd_ioctl);
++
++
++
++
++
++/*******************
++ * File operations *
++ *******************/
++static loff_t lcd_fops_llseek(struct file *filp, loff_t offset, int orig)
++{
++	struct lcd_struct *p;
++
++	if (! (p = filp->private_data))
++		return (-ENODEV);
++
++	down(&p->lcd_sem);
++
++	switch (orig) {
++	case 0:
++		filp->f_pos = offset;
++		break;
++
++	case 1:
++		filp->f_pos += offset;
++		break;
++
++	default:
++		up(&p->lcd_sem);
++		return (-EINVAL);     /* SEEK_END not supported */
++	}
++
++	filp->f_pos = offset_to_row_col(p, filp->f_pos);
++
++	up(&p->lcd_sem);
++
++	return (filp->f_pos);
++}
++
++static ssize_t lcd_fops_read(struct file *filp, char *buffer, size_t length, loff_t *offp)
++{
++	ssize_t ret = 0;
++	char *bufp = buffer;
++	struct lcd_struct *p;
++
++	if (! bufp)
++		return (-EFAULT);
++	if (! (p = filp->private_data))
++		return (-ENODEV);
++
++	down(&p->lcd_sem);
++
++	if (*offp < 0 || *offp >= p->fb_size) {
++		up(&p->lcd_sem);
++		return (-EINVAL);
++	}
++
++	if (length+(*offp) > p->fb_size)
++		length = p->fb_size-(*offp);
++
++	while (length) {
++		ret = (length > FLIP_BUF_SIZE ? FLIP_BUF_SIZE : length);
++		if ((ret = do_lcd_read(p, p->flip_buf, ret)) < 0)
++			break;
++		*offp = (p->row*p->par->vs_cols)+p->col;
++		if (copy_to_user(bufp, p->flip_buf, ret)) {
++			ret = -EFAULT;
++			break;
++		}
++		length -= ret;
++		bufp += ret;
++		ret = bufp-buffer;
++		if (length)
++			schedule();
++	}
++
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++
++static ssize_t lcd_fops_write(struct file *filp, const char *buffer, size_t length, loff_t *offp)
++{
++	ssize_t ret = 0;
++	const char *bufp = buffer;
++	struct lcd_struct *p;
++
++	if (! bufp)
++		return (-EFAULT);
++	if (! (p = filp->private_data))
++		return (-ENODEV);
++
++	down(&p->lcd_sem);
++
++	if (*offp < 0 || *offp >= p->fb_size) {
++		up(&p->lcd_sem);
++		return (-EINVAL);
++	}
++
++	while (length) {
++		ret = (length > FLIP_BUF_SIZE ? FLIP_BUF_SIZE : length);
++		if (copy_from_user(p->flip_buf, bufp, ret)) {
++			ret = -EFAULT;
++			break;
++		}
++		if ((ret = do_lcd_write(p, p->flip_buf, ret)) < 0)
++			break;
++		*offp = (p->row*p->par->vs_cols)+p->col;
++		length -= ret;
++		bufp += ret;
++		ret = bufp-buffer;
++		if (length)
++			schedule();
++	}
++
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++
++static int lcd_fops_open(struct inode *inop, struct file *filp)
++{
++	unsigned short minor;
++	int ret;
++	struct lcd_struct *p;
++
++	down(&drivers_sem);
++
++	if ((minor = MINOR(inop->i_rdev)) >= minors || (filp->private_data = p = find_lcd_struct(minor)) == NULL) {
++		up(&drivers_sem);
++		return (-ENODEV);
++	}
++
++	down(&p->lcd_sem);
++	up(&drivers_sem);
++
++	ret = do_lcd_open(p);
++
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++
++static int lcd_fops_release(struct inode *inop, struct file *filp)
++{
++	struct lcd_struct *p;
++	int ret;
++
++	if (! (p = filp->private_data))
++		return (-ENODEV);
++
++	down(&p->lcd_sem);
++
++	if (! (ret = do_lcd_release(p)))
++		filp->private_data = NULL;
++
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++
++static int lcd_fops_ioctl(struct inode *inop, struct file *filp, unsigned int cmd, unsigned long arg)
++{
++	struct lcd_struct *p;
++	int ret;
++
++	if (! (p = filp->private_data))
++		return (-ENODEV);
++
++	down(&p->lcd_sem);
++
++	set_bit(USER_SPACE, &p->struct_flags);
++	ret = do_lcd_ioctl(p, cmd, arg);
++	clear_bit(USER_SPACE, &p->struct_flags);
++
++	up(&p->lcd_sem);
++
++	return (ret);
++}
++
++static struct file_operations lcd_linux_fops = {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
++	.owner		= THIS_MODULE,
++#endif
++	.llseek		= lcd_fops_llseek,
++	.read		= lcd_fops_read,
++	.write		= lcd_fops_write,
++	.open		= lcd_fops_open,
++	.release	= lcd_fops_release,
++	.ioctl		= lcd_fops_ioctl,
++};
++
++
++
++
++
++/********************************
++ * Init/Cleanup driver routines *
++ ********************************/
++static int do_init_driver(struct lcd_struct *p)
++{
++	int ret, init_level;
++	struct lcd_driver *driver = p->driver;
++	struct lcd_parameters *par = p->par;
++	unsigned int frame_rows = par->cntr_rows*par->num_cntr;
++	unsigned int frame_cols = par->cntr_cols;
++
++	switch ((init_level = INIT_LEVEL(p))) {
++	case 0:
++		if (frame_rows == 0 || frame_cols == 0 || ! par->name) {
++			printk(KERN_ERR "LCD: wrong lcd parameters\n");
++			return (-EINVAL);
++		}
++		if (driver->validate_driver) {
++			if ((ret = driver->validate_driver()) < 0) {
++				printk(KERN_ERR "LCD: validate_driver failed\n");
++				return (-EINVAL);
++			} else if (ret > 0) {
++				set_bit(CAN_DO_COLOR, &p->struct_flags);
++				p->defcolor = 0x07;
++				p->ulcolor = 0x0f;
++				p->halfcolor = 0x08;
++			}
++		}
++		default_attr(p);
++		update_attr(p);
++		p->frame_size = frame_rows*frame_cols;
++		if (par->vs_rows < frame_rows)
++			par->vs_rows = frame_rows;
++		if (par->vs_cols < frame_cols)
++			par->vs_cols = frame_cols;
++		p->fb_size = par->vs_rows*par->vs_cols;
++
++		ret = sizeof(short)*p->fb_size;
++		ret += sizeof(short)*p->frame_size;
++		ret += FLIP_BUF_SIZE;
++		ret += (p->driver->charmap ? 256 : 512);
++		ret += par->cgram_chars*par->cgram_bytes;
++		if ((p->fb = (unsigned short *)vmalloc(ret)) == NULL) {
++			printk(KERN_ERR "LCD: memory allocation failed (vmalloc)\n");
++			return (-ENOMEM);
++		}
++		__memset_short(p->fb, p->erase_char, p->fb_size+p->frame_size);
++
++		p->display = p->fb+p->fb_size;
++		p->flip_buf = (unsigned char *)(p->display+p->frame_size);
++
++		if (! p->driver->charmap) {
++			set_bit(NULL_CHARMAP, &p->struct_flags);
++			p->driver->charmap = p->flip_buf+FLIP_BUF_SIZE;
++			for (ret = 0; ret < 256; ++ret)
++				p->driver->charmap[ret] = ret;
++			p->s_charmap = p->driver->charmap+256;
++		} else
++			p->s_charmap = p->flip_buf+FLIP_BUF_SIZE;
++		memset(p->s_charmap, 0, 256);
++
++		if (par->cgram_chars*par->cgram_bytes) {
++			p->cgram_buffer = p->s_charmap+256;
++			memset(p->cgram_buffer, 0, par->cgram_chars*par->cgram_bytes);
++		} else
++			p->cgram_buffer = NULL;
++
++		p->frame_base = 0;
++		p->row = p->col = 0;
++		p->top = 0;
++		p->bot = par->vs_rows;
++		SET_INIT_LEVEL(p, ++init_level);
++
++	case 1:
++		/* Initialize the communication port */
++		if ((ret = driver->init_port())) {
++			printk(KERN_ERR "LCD: failure while initializing the communication port\n");
++			return (ret);
++		}
++		SET_INIT_LEVEL(p, ++init_level);
++
++	case 2:
++		/* Initialize LCD display */
++		if (driver->init_display && (ret = driver->init_display())) {
++			printk(KERN_ERR "LCD: failure while initializing the display\n");
++			return (ret);
++		}
++
++#ifdef USE_PROC
++		/* Create entries in /proc/lcd/"driver" */
++		if (driver->driver_proc_root)
++			create_driver_proc_entries(p);
++#endif
++		SET_INIT_LEVEL(p, ++init_level);
++	}
++
++	return (0);
++}
++
++static int do_cleanup_driver(struct lcd_struct *p)
++{
++	int ret, init_level;
++	struct lcd_driver *driver = p->driver;
++
++	switch ((init_level = INIT_LEVEL(p))) {
++	case 3:
++#ifdef USE_PROC
++		if (driver->driver_proc_root)
++			remove_driver_proc_entries(p);
++#endif
++		if (driver->cleanup_display && (ret = driver->cleanup_display())) {
++			printk(KERN_ERR "LCD: failure while cleaning the display\n");
++			return (ret);
++		}
++		SET_INIT_LEVEL(p, --init_level);
++
++	case 2:
++		if ((ret = driver->cleanup_port())) {
++			printk(KERN_ERR "LCD: failure while cleaning the communication port\n");
++			return (ret);
++		}
++		SET_INIT_LEVEL(p, --init_level);
++
++	case 1:
++		if (test_bit(NULL_CHARMAP, &p->struct_flags)) {
++			p->driver->charmap = NULL;
++			clear_bit(NULL_CHARMAP, &p->struct_flags);
++		}
++		vfree(p->fb);
++		p->fb = NULL;
++		SET_INIT_LEVEL(p, --init_level);
++	}
++
++	return (0);
++}
++
++static int init_driver(struct lcd_struct *p)
++{
++	int ret;
++
++	if ((ret = do_init_driver(p))) {
++		do_cleanup_driver(p);
++		printk(KERN_ERR "LCD: init_driver failed\n");
++	}
++
++	return (ret);
++}
++
++static int cleanup_driver(struct lcd_struct *p)
++{
++	int ret;
++
++	if ((ret = do_cleanup_driver(p))) {
++		do_init_driver(p);
++		printk(KERN_ERR "LCD: cleanup_driver failed\n");
++	}
++
++	return (ret);
++}
++
++
++
++
++
++/********************************
++ * Init/Cleanup module routines *
++ ********************************/
++static int __init lcd_linux_init_module(void)
++{
++	int ret;
++
++	if (! minors || minors > 256)
++		minors = LCD_MINORS;
++
++	init_MUTEX(&drivers_sem);
++
++	if ((ret = register_chrdev(major, LCD_LINUX_STRING, &lcd_linux_fops)) < 0) {
++		printk(KERN_ERR "LCD: register_chrdev failed\n");
++		return (ret);
++	}
++	if (major == 0)
++		major = ret;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
++	if (IS_ERR((lcd_linux_class = class_create(THIS_MODULE, "lcd")))) {
++		ret = PTR_ERR(lcd_linux_class);
++		unregister_chrdev(major, LCD_LINUX_STRING);
++		return (ret);
++	}
++#endif
++
++#ifdef USE_PROC
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
++	if ((lcd_proc_root = proc_mkdir("lcd", NULL)) == NULL)
++#else
++	if ((lcd_proc_root = proc_mkdir("lcd", &proc_root)) == NULL)
++#endif
++		printk(KERN_ERR "LCD: cannot create /proc/lcd/\n");
++	else if (create_proc_read_entry("drivers", 0, lcd_proc_root, proc_registered_drivers, NULL) == NULL)
++		printk(KERN_ERR "LCD: cannot create /proc/lcd/drivers\n");
++#endif
++
++	printk(KERN_INFO "LCD: --> LCD-Linux " LCD_LINUX_VERSION " <--\n");
++	printk(KERN_INFO "LCD: --> Mattia Jona-Lasinio <mjona@users.sourceforge.net> <--\n" );
++
++
++	return (0);
++}
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
++static void __exit lcd_linux_cleanup_module(void)
++#else
++/* __exit is not defined in 2.2.x kernels */
++static void lcd_linux_cleanup_module(void)
++#endif
++{
++#ifdef USE_PROC
++	if (lcd_proc_root) {
++		remove_proc_entry("drivers", lcd_proc_root);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
++		remove_proc_entry("lcd", NULL);
++#else
++		remove_proc_entry("lcd", &proc_root);
++#endif
++	}
++#endif
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
++	class_destroy(lcd_linux_class);
++#endif
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
++	unregister_chrdev(major, LCD_LINUX_STRING);
++#else
++	if (unregister_chrdev(major, LCD_LINUX_STRING))
++		printk(KERN_ERR "LCD: unregister_chrdev failed\n");
++#endif
++}
++
++module_init(lcd_linux_init_module)
++module_exit(lcd_linux_cleanup_module)
+Index: linux-2.6.30.9/include/linux/hd44780.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/include/linux/hd44780.h	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,46 @@
++/* hd44780.h
++ *
++ *
++ * LCD-Linux:
++ * Driver for HD44780 compatible displays connected to the parallel port.
++ *
++ * HD44780 header file.
++ *
++ * Copyright (C) 2004 - 2007  Mattia Jona-Lasinio (mjona@users.sourceforge.net)
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#ifndef HD44780_H
++#define HD44780_H
++
++#include <linux/lcd-linux.h>
++
++#define HD44780_VERSION		LCD_LINUX_VERSION	/* Version number */
++#define HD44780_STRING		"hd44780"
++
++#define HD44780_MINOR		0	/* Minor number for the hd44780 driver */
++
++
++/* flags */
++#define HD44780_CHECK_BF	0x00000001	/* Do busy flag checking */
++#define HD44780_4BITS_BUS	0x00000002	/* Set the bus length to 4 bits */
++#define HD44780_5X10_FONT	0x00000004	/* Use 5x10 dots fonts */
++
++/* IOCTLs */
++#define HD44780_READ_AC		_IOR(LCD_MAJOR, 0x00, unsigned char *)
++
++#endif /* HD44780 included */
+Index: linux-2.6.30.9/include/linux/lcd-linux.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.30.9/include/linux/lcd-linux.h	2009-11-24 02:01:42.000000000 +0100
+@@ -0,0 +1,151 @@
++/* lcd-linux.h
++ *
++ *
++ * Software layer to drive LCD displays under Linux.
++ *
++ * External interface header file.
++ *
++ * Copyright (C) 2005 - 2007  Mattia Jona-Lasinio (mjona@users.sourceforge.net)
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#ifndef LCD_LINUX_H
++#define LCD_LINUX_H
++
++#ifndef LCD_LINUX_MAIN
++#warning
++#warning LCD-Linux is still in development stage and
++#warning aims at speed and optimization. For these
++#warning reasons there is no guarantee of backward
++#warning compatibility between different LCD-Linux
++#warning versions. Be sure to use the lcd-linux.h
++#warning file of the same version as the module.
++#warning "http://lcd-linux.sourceforge.net/"
++#warning
++#endif
++
++#define LCD_LINUX_VERSION	"0.13.6"	/* Version number */
++#define LCD_LINUX_STRING	"lcd"
++
++#define LCD_MAJOR		120	/* Major number for this device
++					 * Set this to 0 for dynamic allocation
++					 */
++#define LCD_MINORS		8	/* Minors allocated for LCD-Linux*/
++
++#include <linux/types.h>
++
++#define	str(s) #s
++#define	string(s) str(s)
++
++struct lcd_parameters {
++	const char	*name;		/* Driver's name */
++	unsigned long	flags;		/* Flags (see documentation) */
++	unsigned short	minor;		/* Minor number of the char device */
++	unsigned short	tabstop;	/* Tab character length */
++	unsigned short	num_cntr;	/* Controllers to drive */
++	unsigned short	cntr_rows;	/* Rows per controller */
++	unsigned short	cntr_cols;	/* Display columns */
++	unsigned short	vs_rows;	/* Virtual screen rows */
++	unsigned short	vs_cols;	/* Virtual screen columns */
++	unsigned short	cgram_chars;	/* Number of user definable characters */
++	unsigned short	cgram_bytes;	/* Number of bytes required to define a
++					 * user definable character */
++	unsigned char	cgram_char0;	/* Ascii of first user definable character */
++};
++
++/* IOCTLs */
++#include <asm/ioctl.h>
++#define LCDL_SET_PARAM		_IOW(LCD_MAJOR, 0x80, struct lcd_parameters *)
++#define LCDL_GET_PARAM		_IOR(LCD_MAJOR, 0x81, struct lcd_parameters *)
++#define LCDL_CHARSUBST		_IOW(LCD_MAJOR, 0x82, unsigned char *)
++#define LCDL_RAW_MODE		_IOW(LCD_MAJOR, 0x83, unsigned int)
++#define LCDL_RESET_CHARMAP	_IO(LCD_MAJOR, 0x84)
++#define LCDL_SAVE_CHARMAP	_IO(LCD_MAJOR, 0x85)
++#define LCDL_RESTORE_CHARMAP	_IO(LCD_MAJOR, 0x86)
++#define LCDL_SWAP_CHARMAP	_IO(LCD_MAJOR, 0x87)
++#define LCDL_CLEAR_DISP		_IO(LCD_MAJOR, 0x88)
++#define LCDL_SET_CGRAM_CHAR	_IOW(LCD_MAJOR, 0x89, unsigned char *)
++#define LCDL_GET_CGRAM_CHAR	_IOR(LCD_MAJOR, 0x8a, unsigned char *)
++#define LCDL_SET_CHARMAP	_IOW(LCD_MAJOR, 0x8b, unsigned char *)
++#define LCDL_GET_CHARMAP	_IOR(LCD_MAJOR, 0x8c, unsigned char *)
++#define LCDL_MEMSET		_IOW(LCD_MAJOR, 0x8d, unsigned int *)
++#define LCDL_MEMMOVE		_IOW(LCD_MAJOR, 0x8e, unsigned int *)
++
++
++
++#ifdef __KERNEL__ /* The rest is for kernel only */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++
++
++struct lcd_driver {
++	void	(*read_char)(unsigned int offset, unsigned short *data);
++	void	(*read_cgram_char)(unsigned char index, unsigned char *pixmap);
++	void	(*write_char)(unsigned int offset, unsigned short data);
++	void	(*write_cgram_char)(unsigned char index, unsigned char *pixmap);
++	void	(*clear_display)(void);
++	void	(*address_mode)(int mode);
++	int	(*validate_driver)(void);
++	int	(*init_display)(void);
++	int	(*cleanup_display)(void);
++	int	(*init_port)(void);
++	int	(*cleanup_port)(void);
++	int	(*handle_custom_char)(unsigned int data);
++	int	(*handle_custom_ioctl)(unsigned int cmd, unsigned long arg, unsigned int arg_in_userspace);
++
++	/* The character map to be used */
++	unsigned char *charmap;
++
++	/* The root where the driver can create its own proc files.
++	 * Will be filled by the lcd-linux layer.
++	 */
++	struct proc_dir_entry *driver_proc_root;
++
++	/* Set this field to 'driver_module_init' or call lcd_driver_setup
++	 * just before registering the driver with lcd_register_driver.
++	 */
++	struct module *driver_module;
++};
++
++#ifdef MODULE
++#define driver_module_init	THIS_MODULE
++#else
++#define driver_module_init	NULL
++#endif
++
++/* Always call lcd_driver_setup just before registering the driver
++ * with lcd_register_driver.
++ */
++static inline void lcd_driver_setup(struct lcd_driver *p)
++{
++	p->driver_module = driver_module_init;
++}
++
++/* External interface */
++struct lcd_struct;
++int lcd_register_driver(struct lcd_driver *drv, struct lcd_parameters *par);
++int lcd_unregister_driver(struct lcd_driver *drv, struct lcd_parameters *par);
++int lcd_open(unsigned short minor, struct lcd_struct **lcd);
++int lcd_close(struct lcd_struct **lcd);
++int lcd_ioctl(struct lcd_struct *lcd, unsigned int cmd, ...);
++ssize_t lcd_write(struct lcd_struct *lcd, const void *buffer, size_t length, loff_t offset, unsigned int);
++ssize_t lcd_read(struct lcd_struct *lcd, void *buffer, size_t length, loff_t offset, unsigned int);
++
++#endif /* __KERNEL__ */
++
++#endif /* External interface included */

@@ -1,0 +1,479 @@
+--- a/arch/arm/mach-ep93xx/include/mach/ep93xx-regs.h
++++ b/arch/arm/mach-ep93xx/include/mach/ep93xx-regs.h
+@@ -57,6 +57,33 @@
+ #define EP93XX_APB_SIZE			0x00200000
+ 
+ 
++/* 8081_0000 - 8081_ffff: Timers */
++#define TIMERS_OFFSET           0x010000
++#define TIMERS_BASE             (EP93XX_APB_VIRT_BASE|TIMERS_OFFSET)
++
++#define TIMER1LOAD              (TIMERS_BASE+0x00)
++#define TIMER1VALUE             (TIMERS_BASE+0x04)
++#define TIMER1CONTROL           (TIMERS_BASE+0x08)
++#define TIMER1CLEAR             (TIMERS_BASE+0x0C)
++#define TIMER1TEST              (TIMERS_BASE+0x10)
++
++#define TIMER2LOAD              (TIMERS_BASE+0x20)
++#define TIMER2VALUE             (TIMERS_BASE+0x24)
++#define TIMER2CONTROL           (TIMERS_BASE+0x28)
++#define TIMER2CLEAR             (TIMERS_BASE+0x2C)
++#define TIMER2TEST              (TIMERS_BASE+0x30)
++
++#define TIMER3LOAD              (TIMERS_BASE+0x80)
++#define TIMER3VALUE             (TIMERS_BASE+0x84)
++#define TIMER3CONTROL           (TIMERS_BASE+0x88)
++#define TIMER3CLEAR             (TIMERS_BASE+0x8C)
++#define TIMER3TEST              (TIMERS_BASE+0x90)
++
++#define TTIMERBZCONT            (TIMERS_BASE+0x40)
++
++#define TIMER4VALUELOW          (TIMERS_BASE+0x60)
++#define TIMER4VALUEHIGH         (TIMERS_BASE+0x64)
++
+ /* AHB peripherals */
+ #define EP93XX_DMA_BASE			((void __iomem *)		\
+ 					 (EP93XX_AHB_VIRT_BASE + 0x00000000))
+@@ -105,6 +132,8 @@
+ #define EP93XX_I2S_BASE			(EP93XX_APB_VIRT_BASE + 0x00020000)
+ 
+ #define EP93XX_SECURITY_BASE		(EP93XX_APB_VIRT_BASE + 0x00030000)
++#define EP93XX_SECURITY_REG(x)		(EP93XX_SECURITY_BASE + (x))
++#define EP93XX_SECURITY_UNIQID		EP93XX_SECURITY_REG(0x2440)
+ 
+ #define EP93XX_GPIO_BASE		(EP93XX_APB_VIRT_BASE + 0x00040000)
+ #define EP93XX_GPIO_REG(x)		(EP93XX_GPIO_BASE + (x))
+@@ -127,6 +156,7 @@
+ #define EP93XX_AAC_BASE			(EP93XX_APB_VIRT_BASE + 0x00080000)
+ 
+ #define EP93XX_SPI_BASE			(EP93XX_APB_VIRT_BASE + 0x000a0000)
++#define EP93XX_SPI_BASE_PHYS	(EP93XX_APB_PHYS_BASE + 0x000a0000)
+ 
+ #define EP93XX_IRDA_BASE		(EP93XX_APB_VIRT_BASE + 0x000b0000)
+ 
+@@ -164,8 +194,425 @@
+ #define EP93XX_SYSCON_DEVICE_CONFIG_U2EN		(1<<20)
+ #define EP93XX_SYSCON_DEVICE_CONFIG_U1EN		(1<<18)
+ #define EP93XX_SYSCON_SWLOCK		EP93XX_SYSCON_REG(0xc0)
++#define EP93XX_SYSCON_CHIP_ID		EP93XX_SYSCON_REG(0x94)
++#define EP93XX_SYSCON_BMAR              EP93XX_SYSCON_REG(0x54)
++#define EP93XX_SYSCON_I2SDIV            EP93XX_SYSCON_REG(0x8C)
++#define EP93XX_SYSCON_DEVCFG_CONFIG_Mong   	0x02000000
++#define EP93XX_SYSCON_DEVCFG_CONFIG_Tong   	0x04000000
++#define EP93XX_SYSCON_DEVCFG_CONFIG_I2SONSSP   	0x00000080
++#define EP93XX_SYSCON_DEVCFG_CONFIG_I2SONAC97  	0x00000040
++#define EP93XX_SYSCON_DEVCFG_RasOnP3            0x00000010
++#define EP93XX_SYSCON_DEVCFG_A1onG              0x00200000
++#define EP93XX_SYSCON_DEVCFG_A2onG              0x00400000
++#define EP93XX_SYSCON_DEVCFG_U1EN               0x00040000
++#define EP93XX_SYSCON_DEVCFG_TIN                0x00020000
+ 
+ #define EP93XX_WATCHDOG_BASE		(EP93XX_APB_VIRT_BASE + 0x00140000)
+ 
+ 
++#define SYSCON_PWRCNT           (EP93XX_SYSCON_BASE+0x0004)
++#define SYSCON_VIDDIV           (EP93XX_SYSCON_BASE+0x0084)
++#define SYSCON_MIRDIV           (EP93XX_SYSCON_BASE+0x0088)
++#define SYSCON_KTDIV            (EP93XX_SYSCON_BASE+0x0090)
++#define SYSCON_KTDIV_TSEN       0x80000000
++//-----------------------------------------------------------------------------
++// SYSCON_CLKSET1
++//-----------------------------------------------------------------------------
++#define SYSCON_CLKSET1_PLL1_X2IPD_SHIFT     0
++#define SYSCON_CLKSET1_PLL1_X2IPD_MASK      0x0000001f
++#define SYSCON_CLKSET1_PLL1_X2FBD2_SHIFT    5
++#define SYSCON_CLKSET1_PLL1_X2FBD2_MASK     0x000007e0
++#define SYSCON_CLKSET1_PLL1_X1FBD1_SHIFT    11
++#define SYSCON_CLKSET1_PLL1_X1FBD1_MASK     0x0000f800
++#define SYSCON_CLKSET1_PLL1_PS_SHIFT        16
++#define SYSCON_CLKSET1_PLL1_PS_MASK         0x00030000
++#define SYSCON_CLKSET1_PCLKDIV_SHIFT        18
++#define SYSCON_CLKSET1_PCLKDIV_MASK         0x000c0000
++#define SYSCON_CLKSET1_HCLKDIV_SHIFT        20
++#define SYSCON_CLKSET1_HCLKDIV_MASK         0x00700000
++#define SYSCON_CLKSET1_nBYP1                0x00800000
++#define SYSCON_CLKSET1_SMCROM               0x01000000
++#define SYSCON_CLKSET1_FCLKDIV_SHIFT        25
++#define SYSCON_CLKSET1_FCLKDIV_MASK         0x0e000000
++
++#define SYSCON_CLKSET1_HSEL                 0x00000001
++#define SYSCON_CLKSET1_PLL1_EXCLKSEL        0x00000002
++
++#define SYSCON_CLKSET1_PLL1_P_MASK          0x0000007C
++#define SYSCON_CLKSET1_PLL1_P_SHIFT         2
++
++#define SYSCON_CLKSET1_PLL1_M1_MASK         0x00000780
++#define SYSCON_CLKSET1_PLL1_M1_SHIFT        7
++#define SYSCON_CLKSET1_PLL1_M2_MASK         0x0000F800
++#define SYSCON_CLKSET1_PLL1_M2_SHIFT        11
++#define SYSCON_CLKSET1_PLL1_PS_MASK         0x00030000
++#define SYSCON_CLKSET1_PLL1_PS_SHIFT        16
++#define SYSCON_CLKSET1_PCLK_DIV_MASK        0x000C0000
++#define SYSCON_CLKSET1_PCLK_DIV_SHIFT       18
++#define SYSCON_CLKSET1_HCLK_DIV_MASK        0x00700000
++#define SYSCON_CLKSET1_HCLK_DIV_SHIFT       20
++#define SYSCON_CLKSET1_SMCROM               0x01000000
++#define SYSCON_CLKSET1_FCLK_DIV_MASK        0x0E000000
++#define SYSCON_CLKSET1_FCLK_DIV_SHIFT       25
++
++#define SYSCON_CLKSET2_PLL2_EN              0x00000001
++#define SYSCON_CLKSET2_PLL2EXCLKSEL         0x00000002
++#define SYSCON_CLKSET2_PLL2_P_MASK          0x0000007C
++#define SYSCON_CLKSET2_PLL2_P_SHIFT         2
++#define SYSCON_CLKSET2_PLL2_M2_MASK         0x00000F80
++#define SYSCON_CLKSET2_PLL2_M2_SHIFT        7
++#define SYSCON_CLKSET2_PLL2_M1_MASK         0x0001F000
++#define SYSCON_CLKSET2_PLL2_M1              12
++#define SYSCON_CLKSET2_PLL2_PS_MASK         0x000C0000
++#define SYSCON_CLKSET2_PLL2_PS_SHIFT        18
++#define SYSCON_CLKSET2_USBDIV_MASK          0xF0000000
++#define SYSCON_CLKSET2_USBDIV_SHIFT         28
++
++//-----------------------------------------------------------------------------
++// I2SDIV Register Defines
++//-----------------------------------------------------------------------------
++#define SYSCON_I2SDIV_MDIV_MASK         0x0000007f
++#define SYSCON_I2SDIV_MDIV_SHIFT        0
++#define SYSCON_I2SDIV_PDIV_MASK         0x00000300
++#define SYSCON_I2SDIV_PDIV_SHIFT        8
++#define SYSCON_I2SDIV_PSEL              0x00002000
++#define SYSCON_I2SDIV_ESEL              0x00004000
++#define SYSCON_I2SDIV_MENA              0x00008000
++#define SYSCON_I2SDIV_SDIV              0x00010000
++#define SYSCON_I2SDIV_LRDIV_MASK        0x00060000
++#define SYSCON_I2SDIV_LRDIV_SHIFT       17
++#define SYSCON_I2SDIV_SPOL              0x00080000
++#define SYSCON_I2SDIV_DROP              0x00100000
++#define SYSCON_I2SDIV_ORIDE             0x20000000
++#define SYSCON_I2SDIV_SLAVE             0x40000000
++#define SYSCON_I2SDIV_SENA              0x80000000
++
++#define SYSCON_I2SDIV_PDIV_OFF          0x00000000
++#define SYSCON_I2SDIV_PDIV_2            0x00000100
++#define SYSCON_I2SDIV_PDIV_25           0x00000200
++#define SYSCON_I2SDIV_PDIV_3            0x00000300
++
++#define SYSCON_I2SDIV_LRDIV_32          0x00000000
++#define SYSCON_I2SDIV_LRDIV_64          0x00020000
++#define SYSCON_I2SDIV_LRDIV_128         0x00040000
++
++//-----------------------------------------------------------------------------
++// VIDDIV Register Defines
++//-----------------------------------------------------------------------------
++#define SYSCON_VIDDIV_VDIV_MASK         0x0000007f
++#define SYSCON_VIDDIV_VDIV_SHIFT        0
++#define SYSCON_VIDDIV_PDIV_MASK         0x00000300
++#define SYSCON_VIDDIV_PDIV_SHIFT        8
++#define SYSCON_VIDDIV_PSEL              0x00002000
++#define SYSCON_VIDDIV_ESEL              0x00004000
++#define SYSCON_VIDDIV_VENA              0x00008000
++
++//-----------------------------------------------------------------------------
++// MIRDIV Register Defines
++//-----------------------------------------------------------------------------
++#define SYSCON_MIRDIV_MDIV_MASK         0x0000003f
++#define SYSCON_MIRDIV_MDIV_SHIFT        0
++#define SYSCON_MIRDIV_PDIV_MASK         0x00000300
++#define SYSCON_MIRDIV_PDIV_SHIFT        8
++#define SYSCON_MIRDIV_PSEL              0x00002000
++#define SYSCON_MIRDIV_ESEL              0x00004000
++#define SYSCON_MIRDIV_MENA              0x00008000
++
++/* 8082_0000 - 8082_ffff: I2S */
++#define I2S_OFFSET            0x020000
++#define I2S_BASE              (EP93XX_APB_VIRT_BASE|I2S_OFFSET)
++#define I2S_PHYS_BASE         (EP93XX_APB_PHYS_BASE + I2S_OFFSET)
++
++
++
++#define I2STxClkCfg           (I2S_BASE+0x00) /* 8082.0000 R/W Transmitter clock config register  */
++#define I2SRxClkCfg           (I2S_BASE+0x04) /* 8082.0004 R/W Receiver clock config register     */
++#define I2SGlSts              (I2S_BASE+0x08) /* 8082.0008 R/W SAI Global Status register.        */
++#define I2SGlCtrl             (I2S_BASE+0x0C) /* 8082.000C R/W SAI Global Control register        */
++
++#define I2STX0Lft             (I2S_BASE+0x10) /* 8082.0010 R/W Left  TX data reg for channel 0    */
++#define I2STX0Rt              (I2S_BASE+0x14) /* 8082.0014 R/W Right TX data reg for channel 0    */
++#define I2STX1Lft             (I2S_BASE+0x18) /* 8082.0018 R/W Left  TX data reg for channel 1    */
++#define I2STX1Rt              (I2S_BASE+0x1C) /* 8082.001C R/W Right TX data reg for channel 1    */
++#define I2STX2Lft             (I2S_BASE+0x20) /* 8082.0020 R/W Left  TX data reg for channel 2    */
++#define I2STX2Rt              (I2S_BASE+0x24) /* 8082.0024 R/W Right TX data reg for channel 2    */
++
++#define I2STXLinCtrlData      (I2S_BASE+0x28) /* 8082.0028 R/W TX Line Control data register      */
++#define I2STXCtrl             (I2S_BASE+0x2C) /* 8082.002C R/W TX Control register                */
++#define I2STXWrdLen           (I2S_BASE+0x30) /* 8082.0030 R/W TX Word Length                     */
++#define I2STX0En              (I2S_BASE+0x34) /* 8082.0034 R/W TX0 Channel Enable                 */
++#define I2STX1En              (I2S_BASE+0x38) /* 8082.0038 R/W TX1 Channel Enable                 */
++#define I2STX2En              (I2S_BASE+0x3C) /* 8082.003C R/W TX2 Channel Enable                 */
++
++#define I2SRX0Lft             (I2S_BASE+0x40) /* 8082.0040 R   Left  RX data reg for channel 0    */
++#define I2SRX0Rt              (I2S_BASE+0x44) /* 8082.0044 R   Right RX data reg for channel 0    */
++#define I2SRX1Lft             (I2S_BASE+0x48) /* 8082.0048 R   Left  RX data reg for channel 1    */
++#define I2SRX1Rt              (I2S_BASE+0x4C) /* 8082.004c R   Right RX data reg for channel 1    */
++#define I2SRX2Lft             (I2S_BASE+0x50) /* 8082.0050 R   Left  RX data reg for channel 2    */
++#define I2SRX2Rt              (I2S_BASE+0x54) /* 8082.0054 R   Right RX data reg for channel 2    */
++
++#define I2SRXLinCtrlData      (I2S_BASE+0x58) /* 8082.0058 R/W RX Line Control data register      */
++#define I2SRXCtrl             (I2S_BASE+0x5C) /* 8082.005C R/W RX Control register                */
++#define I2SRXWrdLen           (I2S_BASE+0x60) /* 8082.0060 R/W RX Word Length                     */
++#define I2SRX0En              (I2S_BASE+0x64) /* 8082.0064 R/W RX0 Channel Enable                 */
++#define I2SRX1En              (I2S_BASE+0x68) /* 8082.0068 R/W RX1 Channel Enable                 */
++#define I2SRX2En              (I2S_BASE+0x6C) /* 8082.006C R/W RX2 Channel Enable                 */
++
++/* 8084_0000 - 8084_ffff: GPIO */
++#define GPIO_OFFSET              0x040000
++#define GPIO_BASE                (EP93XX_APB_VIRT_BASE|GPIO_OFFSET)
++#define GPIO_PADR                (GPIO_BASE+0x00)
++#define GPIO_PBDR                (GPIO_BASE+0x04)
++#define GPIO_PCDR                (GPIO_BASE+0x08)
++#define GPIO_PDDR                (GPIO_BASE+0x0C)
++#define GPIO_PADDR               (GPIO_BASE+0x10)
++#define GPIO_PBDDR               (GPIO_BASE+0x14)
++#define GPIO_PCDDR               (GPIO_BASE+0x18)
++#define GPIO_PDDDR               (GPIO_BASE+0x1C)
++#define GPIO_PEDR                (GPIO_BASE+0x20)
++#define GPIO_PEDDR               (GPIO_BASE+0x24)
++// #define 0x8084.0028 Reserved
++// #define 0x8084.002C Reserved
++#define GPIO_PFDR                (GPIO_BASE+0x30)
++#define GPIO_PFDDR               (GPIO_BASE+0x34)
++#define GPIO_PGDR                (GPIO_BASE+0x38)
++#define GPIO_PGDDR               (GPIO_BASE+0x3C)
++#define GPIO_PHDR                (GPIO_BASE+0x40)
++#define GPIO_PHDDR               (GPIO_BASE+0x44)
++// #define 0x8084.0048 RAZ RAZ
++#define GPIO_FINTTYPE1           (GPIO_BASE+0x4C)
++#define GPIO_FINTTYPE2           (GPIO_BASE+0x50)
++#define GPIO_FEOI                (GPIO_BASE+0x54) /* WRITE ONLY - READ UNDEFINED */
++#define GPIO_FINTEN              (GPIO_BASE+0x58)
++#define GPIO_INTSTATUSF          (GPIO_BASE+0x5C)
++#define GPIO_RAWINTSTASUSF       (GPIO_BASE+0x60)
++#define GPIO_FDB                 (GPIO_BASE+0x64)
++#define GPIO_PAPINDR             (GPIO_BASE+0x68)
++#define GPIO_PBPINDR             (GPIO_BASE+0x6C)
++#define GPIO_PCPINDR             (GPIO_BASE+0x70)
++#define GPIO_PDPINDR             (GPIO_BASE+0x74)
++#define GPIO_PEPINDR             (GPIO_BASE+0x78)
++#define GPIO_PFPINDR             (GPIO_BASE+0x7C)
++#define GPIO_PGPINDR             (GPIO_BASE+0x80)
++#define GPIO_PHPINDR             (GPIO_BASE+0x84)
++#define GPIO_AINTTYPE1           (GPIO_BASE+0x90)
++#define GPIO_AINTTYPE2           (GPIO_BASE+0x94)
++#define GPIO_AEOI                (GPIO_BASE+0x98) /* WRITE ONLY - READ UNDEFINED */
++#define GPIO_AINTEN              (GPIO_BASE+0x9C)
++#define GPIO_INTSTATUSA          (GPIO_BASE+0xA0)
++#define GPIO_RAWINTSTSTISA       (GPIO_BASE+0xA4)
++#define GPIO_ADB                 (GPIO_BASE+0xA8)
++#define GPIO_BINTTYPE1           (GPIO_BASE+0xAC)
++#define GPIO_BINTTYPE2           (GPIO_BASE+0xB0)
++#define GPIO_BEOI                (GPIO_BASE+0xB4) /* WRITE ONLY - READ UNDEFINED */
++#define GPIO_BINTEN              (GPIO_BASE+0xB8)
++#define GPIO_INTSTATUSB          (GPIO_BASE+0xBC)
++#define GPIO_RAWINTSTSTISB       (GPIO_BASE+0xC0)
++#define GPIO_BDB                 (GPIO_BASE+0xC4)
++#define GPIO_EEDRIVE             (GPIO_BASE+0xC8)
++//#define Reserved               (GPIO_BASE+0xCC)
++#define GPIO_TCR                 (GPIO_BASE+0xD0) /* Test Registers */
++#define GPIO_TISRA               (GPIO_BASE+0xD4) /* Test Registers */
++#define GPIO_TISRB               (GPIO_BASE+0xD8) /* Test Registers */
++#define GPIO_TISRC               (GPIO_BASE+0xDC) /* Test Registers */
++#define GPIO_TISRD               (GPIO_BASE+0xE0) /* Test Registers */
++#define GPIO_TISRE               (GPIO_BASE+0xE4) /* Test Registers */
++#define GPIO_TISRF               (GPIO_BASE+0xE8) /* Test Registers */
++#define GPIO_TISRG               (GPIO_BASE+0xEC) /* Test Registers */
++#define GPIO_TISRH               (GPIO_BASE+0xF0) /* Test Registers */
++#define GPIO_TCER                (GPIO_BASE+0xF4) /* Test Registers */
++
++
++/* 8088_0000 - 8088_ffff: Ac97 Controller (AAC) */
++#define AC97_OFFSET             0x080000
++#define AC97_BASE               (EP93XX_APB_VIRT_BASE|AC97_OFFSET)
++#define EP93XX_AC97_PHY_BASE    (EP93XX_APB_PHYS_BASE|AC97_OFFSET)
++#define AC97DR1                 (AC97_BASE+0x00) /* 8088.0000 R/W Data read or written from/to FIFO1  */
++#define AC97RXCR1               (AC97_BASE+0x04) /* 8088.0004 R/W Control register for receive        */
++#define AC97TXCR1               (AC97_BASE+0x08) /* 8088.0008 R/W Control register for transmit       */
++#define AC97SR1                 (AC97_BASE+0x0C) /* 8088.000C R   Status register                     */
++#define AC97RISR1               (AC97_BASE+0x10) /* 8088.0010 R   Raw interrupt status register       */
++#define AC97ISR1                (AC97_BASE+0x14) /* 8088.0014 R   Interrupt Status                    */
++#define AC97IE1                 (AC97_BASE+0x18) /* 8088.0018 R/W Interrupt Enable                    */
++                                                               /* 8088.001C Reserved - RAZ                          */
++#define AC97DR2                 (AC97_BASE+0x20) /* 8088.0020 R/W Data read or written from/to FIFO2  */
++#define AC97RXCR2               (AC97_BASE+0x24) /* 8088.0024 R/W Control register for receive        */
++#define AC97TXCR2               (AC97_BASE+0x28) /* 8088.0028 R/W Control register for transmit       */
++#define AC97SR2                 (AC97_BASE+0x2C) /* 8088.002C R   Status register                     */
++#define AC97RISR2               (AC97_BASE+0x30) /* 8088.0030 R   Raw interrupt status register       */
++#define AC97ISR2                (AC97_BASE+0x34) /* 8088.0034 R   Interrupt Status                    */
++#define AC97IE2                 (AC97_BASE+0x38) /* 8088.0038 R/W Interrupt Enable                    */
++                                                               /* 8088.003C Reserved - RAZ                          */
++#define AC97DR3                 (AC97_BASE+0x40) /* 8088.0040 R/W Data read or written from/to FIFO3. */
++#define AC97RXCR3               (AC97_BASE+0x44) /* 8088.0044 R/W Control register for receive        */
++#define AC97TXCR3               (AC97_BASE+0x48) /* 8088.0048 R/W Control register for transmit       */
++#define AC97SR3                 (AC97_BASE+0x4C) /* 8088.004C R   Status register                     */
++#define AC97RISR3               (AC97_BASE+0x50) /* 8088.0050 R   Raw interrupt status register       */
++#define AC97ISR3                (AC97_BASE+0x54) /* 8088.0054 R   Interrupt Status                    */
++#define AC97IE3                 (AC97_BASE+0x58) /* 8088.0058 R/W Interrupt Enable                    */
++                                                               /* 8088.005C Reserved - RAZ                          */
++#define AC97DR2                 (AC97_BASE+0x20) /* 8088.0020 R/W Data read or written from/to FIFO2  */
++#define AC97RXCR2               (AC97_BASE+0x24) /* 8088.0024 R/W Control register for receive        */
++#define AC97TXCR2               (AC97_BASE+0x28) /* 8088.0028 R/W Control register for transmit       */
++#define AC97SR2                 (AC97_BASE+0x2C) /* 8088.002C R   Status register                     */
++#define AC97RISR2               (AC97_BASE+0x30) /* 8088.0030 R   Raw interrupt status register       */
++#define AC97ISR2                (AC97_BASE+0x34) /* 8088.0034 R   Interrupt Status                    */
++#define AC97IE2                 (AC97_BASE+0x38) /* 8088.0038 R/W Interrupt Enable                    */
++                                                               /* 8088.003C Reserved - RAZ                          */
++#define AC97DR3                 (AC97_BASE+0x40) /* 8088.0040 R/W Data read or written from/to FIFO3. */
++#define AC97RXCR3               (AC97_BASE+0x44) /* 8088.0044 R/W Control register for receive        */
++#define AC97TXCR3               (AC97_BASE+0x48) /* 8088.0048 R/W Control register for transmit       */
++#define AC97SR3                 (AC97_BASE+0x4C) /* 8088.004C R   Status register                     */
++#define AC97RISR3               (AC97_BASE+0x50) /* 8088.0050 R   Raw interrupt status register       */
++#define AC97ISR3                (AC97_BASE+0x54) /* 8088.0054 R   Interrupt Status                    */
++#define AC97IE3                 (AC97_BASE+0x58) /* 8088.0058 R/W Interrupt Enable                    */
++                                                               /* 8088.005C Reserved - RAZ                          */
++#define AC97DR4                 (AC97_BASE+0x60) /* 8088.0060 R/W Data read or written from/to FIFO4. */
++#define AC97RXCR4               (AC97_BASE+0x64) /* 8088.0064 R/W Control register for receive        */
++#define AC97TXCR4               (AC97_BASE+0x68) /* 8088.0068 R/W Control register for transmit       */
++#define AC97SR4                 (AC97_BASE+0x6C) /* 8088.006C R   Status register                     */
++#define AC97RISR4               (AC97_BASE+0x70) /* 8088.0070 R   Raw interrupt status register       */
++#define AC97ISR4                (AC97_BASE+0x74) /* 8088.0074 R   Interrupt Status                    */
++#define AC97IE4                 (AC97_BASE+0x78) /* 8088.0078 R/W Interrupt Enable                    */
++                                                               /* 8088.007C Reserved - RAZ                          */
++#define AC97S1DATA              (AC97_BASE+0x80) /* 8088.0080 R/W Data received/transmitted on SLOT1  */
++#define AC97S2DATA              (AC97_BASE+0x84) /* 8088.0084 R/W Data received/transmitted on SLOT2  */
++#define AC97S12DATA             (AC97_BASE+0x88) /* 8088.0088 R/W Data received/transmitted on SLOT12 */
++#define AC97RGIS                (AC97_BASE+0x8C) /* 8088.008C R/W Raw Global interrupt status register*/
++#define AC97GIS                 (AC97_BASE+0x90) /* 8088.0090 R   Global interrupt status register    */
++#define AC97IM                  (AC97_BASE+0x94) /* 8088.0094 R/W Interrupt mask register             */
++#define AC97EOI                 (AC97_BASE+0x98) /* 8088.0098 W   Interrupt clear register            */
++#define AC97GCR                 (AC97_BASE+0x9C) /* 8088.009C R/W Main Control register               */
++#define AC97RESET               (AC97_BASE+0xA0) /* 8088.00A0 R/W RESET control register.             */
++#define AC97SYNC                (AC97_BASE+0xA4) /* 8088.00A4 R/W SYNC control register.              */
++#define AC97GCIS                (AC97_BASE+0xA8) /* 8088.00A8 R  Global chan FIFO int status register */
++
++
++/* 800B_0000 - 800B_FFFF: VIC 0 */
++#define VIC0_OFFSET              0x0B0000
++#define VIC0_BASE                (EP93XX_AHB_VIRT_BASE|VIC0_OFFSET)
++#define VIC0                     (VIC0_BASE+0x000)
++#define VIC0IRQSTATUS            (VIC0_BASE+0x000) /* R   IRQ status register               */
++#define VIC0FIQSTATUS            (VIC0_BASE+0x004) /* R   FIQ status register               */
++#define VIC0RAWINTR              (VIC0_BASE+0x008) /* R   Raw interrupt status register     */
++#define VIC0INTSELECT            (VIC0_BASE+0x00C) /* R/W Interrupt select register         */
++#define VIC0INTENABLE            (VIC0_BASE+0x010) /* R/W Interrupt enable register         */
++#define VIC0INTENCLEAR           (VIC0_BASE+0x014) /* W   Interrupt enable clear register   */
++
++/* 8003_0000 - 8003_ffff: Raster */
++#define RASTER_OFFSET           0x030000
++#define RASTER_BASE             (EP93XX_AHB_VIRT_BASE|RASTER_OFFSET)
++#define VLINESTOTAL             (RASTER_BASE+0x00)
++#define VSYNCSTRTSTOP           (RASTER_BASE+0x04)
++#define VACTIVESTRTSTOP         (RASTER_BASE+0x08)
++#define VCLKSTRTSTOP            (RASTER_BASE+0x0C)
++#define HCLKSTOTAL              (RASTER_BASE+0x10)
++#define HSYNCSTRTSTOP           (RASTER_BASE+0x14)
++#define HACTIVESTRTSTOP         (RASTER_BASE+0x18)
++#define HCLKSTRTSTOP            (RASTER_BASE+0x1C)
++#define BRIGHTNESS              (RASTER_BASE+0x20)
++#define VIDEOATTRIBS            (RASTER_BASE+0x24)
++#define VIDSCRNPAGE             (RASTER_BASE+0x28)
++#define VIDSCRNHPG              (RASTER_BASE+0x2C)
++#define SCRNLINES               (RASTER_BASE+0x30)
++#define LINELENGTH              (RASTER_BASE+0x34)
++#define VLINESTEP               (RASTER_BASE+0x38)
++#define LINECARRY               (RASTER_BASE+0x3C)
++#define BLINKRATE               (RASTER_BASE+0x40)
++#define BLINKMASK               (RASTER_BASE+0x44)
++#define BLINKPATTRN             (RASTER_BASE+0x48)
++#define PATTRNMASK              (RASTER_BASE+0x4C)
++#define BG_OFFSET               (RASTER_BASE+0x50)
++#define PIXELMODE               (RASTER_BASE+0x54)
++#define PARLLIFOUT              (RASTER_BASE+0x58)
++#define PARLLIFIN               (RASTER_BASE+0x5C)
++#define CURSOR_ADR_START        (RASTER_BASE+0x60)
++#define CURSOR_ADR_RESET        (RASTER_BASE+0x64)
++#define CURSORSIZE              (RASTER_BASE+0x68)
++#define CURSORCOLOR1            (RASTER_BASE+0x6C)
++#define CURSORCOLOR2            (RASTER_BASE+0x70)
++#define CURSORXYLOC             (RASTER_BASE+0x74)
++#define CURSOR_DHSCAN_LH_YLOC   (RASTER_BASE+0x78)
++#define RASTER_SWLOCK           (RASTER_BASE+0x7C)
++#define GS_LUT                  (RASTER_BASE+0x80)
++#define RASTER_TCR              (RASTER_BASE+0x100)
++#define RASTER_TISRA            (RASTER_BASE+0x104)
++#define RASTER_TISRB            (RASTER_BASE+0x108)
++#define CURSOR_TISR             (RASTER_BASE+0x10C)
++#define RASTER_TOCRA            (RASTER_BASE+0x110)
++#define RASTER_TOCRB            (RASTER_BASE+0x114)
++#define FIFO_TOCRA              (RASTER_BASE+0x118)
++#define FIFO_TOCRB              (RASTER_BASE+0x11C)
++#define BLINK_TISR              (RASTER_BASE+0x120)
++#define DAC_TISRA               (RASTER_BASE+0x124)
++#define DAC_TISRB               (RASTER_BASE+0x128)
++#define SHIFT_TISR              (RASTER_BASE+0x12C)
++#define DACMUX_TOCRA            (RASTER_BASE+0x130)
++#define DACMUX_TOCRB            (RASTER_BASE+0x134)
++#define PELMUX_TOCR             (RASTER_BASE+0x138)
++#define VIDEO_TOCRA             (RASTER_BASE+0x13C)
++#define VIDEO_TOCRB             (RASTER_BASE+0x140)
++#define YCRCB_TOCR              (RASTER_BASE+0x144)
++#define CURSOR_TOCR             (RASTER_BASE+0x148)
++#define VIDEO_TOCRC             (RASTER_BASE+0x14C)
++#define SHIFT_TOCR              (RASTER_BASE+0x150)
++#define BLINK_TOCR              (RASTER_BASE+0x154)
++#define RASTER_TCER             (RASTER_BASE+0x180)
++#define SIGVAL                  (RASTER_BASE+0x200)
++#define SIGCTL                  (RASTER_BASE+0x204)
++#define VSIGSTRTSTOP            (RASTER_BASE+0x208)
++#define HSIGSTRTSTOP            (RASTER_BASE+0x20C)
++#define SIGCLR                  (RASTER_BASE+0x210)
++#define ACRATE                  (RASTER_BASE+0x214)
++#define LUTCONT                 (RASTER_BASE+0x218)
++#define VBLANKSTRTSTOP          (RASTER_BASE+0x228)
++#define HBLANKSTRTSTOP          (RASTER_BASE+0x22C)
++#define LUT                     (RASTER_BASE+0x400)
++#define CURSORBLINK1            (RASTER_BASE+0x21C)
++#define CURSORBLINK2            (RASTER_BASE+0x220)
++#define CURSORBLINK             (RASTER_BASE+0x224)
++#define EOLOFFSET               (RASTER_BASE+0x230)
++#define FIFOLEVEL               (RASTER_BASE+0x234)
++#define GS_LUT2                 (RASTER_BASE+0x280)
++#define GS_LUT3                 (RASTER_BASE+0x300)
++#define COLOR_LUT               (RASTER_BASE+0x400)
++
++/* 8004_0000 - 8004_ffff: Graphics */
++#define GRAPHICS_OFFSET         0x040000
++#define GRAPHICS_BASE           (EP93XX_AHB_VIRT_BASE|GRAPHICS_OFFSET)
++#define SRCPIXELSTRT            (GRAPHICS_BASE+0x00)
++#define DESTPIXELSTRT           (GRAPHICS_BASE+0x04)
++#define BLKSRCSTRT              (GRAPHICS_BASE+0x08)
++#define BLKDSTSTRT              (GRAPHICS_BASE+0x0C)
++#define BLKSRCWIDTH             (GRAPHICS_BASE+0x10)
++#define SRCLINELENGTH           (GRAPHICS_BASE+0x14)
++#define BLKDESTWIDTH            (GRAPHICS_BASE+0x18)
++#define BLKDESTHEIGHT           (GRAPHICS_BASE+0x1C)
++#define DESTLINELENGTH          (GRAPHICS_BASE+0x20)
++#define BLOCKCTRL               (GRAPHICS_BASE+0x24)
++#define TRANSPATTRN             (GRAPHICS_BASE+0x28)
++#define BLOCKMASK               (GRAPHICS_BASE+0x2C)
++#define BACKGROUND              (GRAPHICS_BASE+0x30)
++#define LINEINC                 (GRAPHICS_BASE+0x34)
++#define LINEINIT                (GRAPHICS_BASE+0x38)
++#define LINEPATTRN              (GRAPHICS_BASE+0x3C)
++
++#define EP93XX_RASTER_BASE		(EP93XX_AHB_VIRT_BASE + 0x00030000)
++#define EP93XX_RASTER_PHYS_BASE         (EP93XX_AHB_PHYS_BASE + 0x00030000)
++
++#define EP93XX_GRAPHICS_ACCEL_BASE	(EP93XX_AHB_VIRT_BASE + 0x00040000)
++#define EP93XX_GRAPHICS_ACCEL_PHYS_BASE (EP93XX_AHB_PHYS_BASE + 0x00040000)
++
++#ifndef __ASSEMBLY__
++
++#define SysconSetLocked(registername,value)     \
++    {                                           \
++        local_irq_disable();			\
++	outl( 0xAA, EP93XX_SYSCON_SWLOCK);             \
++        outl( value, registername);             \
++	local_irq_enable();                    \
++    }
++
++#endif /* Not __ASSEMBLY__ */
++
+ #endif
