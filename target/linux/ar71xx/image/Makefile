@@ -197,7 +197,7 @@ define Image/Build/TPLINK
 		-B $(4) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.gz \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(call imgname,$(1),$(2)).uni
+		-o $(call imgname,$(1),$(2))-universal.bin
 endef
 
 define Image/Build/CyberTAN
