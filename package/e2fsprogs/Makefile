@@ -107,6 +107,8 @@ $(call Package/e2fsprogs)
   DEPENDS:=libuuid libblkid
 endef
 
+TARGET_CFLAGS += $(FPIC)
+
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
