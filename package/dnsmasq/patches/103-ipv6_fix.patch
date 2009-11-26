@@ -1,5 +1,7 @@
---- a/src/netlink.c
-+++ b/src/netlink.c
+Index: dnsmasq-2.51/src/netlink.c
+===================================================================
+--- dnsmasq-2.51.orig/src/netlink.c
++++ dnsmasq-2.51/src/netlink.c
 @@ -129,6 +129,7 @@ int iface_enumerate(void *parm, int (*ip
    ssize_t len;
    static unsigned int seq = 0;
@@ -31,9 +33,11 @@
  	      }
  #endif
  	  }
---- a/src/network.c
-+++ b/src/network.c
-@@ -296,7 +296,7 @@ static int create_ipv6_listener(struct l
+Index: dnsmasq-2.51/src/network.c
+===================================================================
+--- dnsmasq-2.51.orig/src/network.c
++++ dnsmasq-2.51/src/network.c
+@@ -302,7 +302,7 @@ static int create_ipv6_listener(struct l
        bind(tcpfd, (struct sockaddr *)&addr, sa_len(&addr)) == -1 ||
        listen(tcpfd, 5) == -1 ||
        bind(fd, (struct sockaddr *)&addr, sa_len(&addr)) == -1) 
