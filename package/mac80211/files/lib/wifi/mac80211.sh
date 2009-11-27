@@ -300,6 +300,7 @@ detect_mac80211() {
 		done
 		mode_11n=""
 		mode_band="g"
+		channel="5"
 		ht_cap=0
 		for cap in $(iw phy "$dev" info | grep 'HT capabilities' | cut -d: -f2); do
 			ht_cap="$(($ht_cap | $cap))"
@@ -314,12 +315,12 @@ detect_mac80211() {
 			[ "$(($ht_cap & 64))" -eq 64 ] && append ht_capab "$list	SHORT-GI-40" "$N"
 			[ "$(($ht_cap & 4096))" -eq 4096 ] && append ht_capab "$list	DSSS_CCK-40" "$N"
 		}
-		iw phy "$dev" info | grep -q '2412 MHz' || mode_band="a"
+		iw phy "$dev" info | grep -q '2412 MHz' || mode_band="a"; channel="36"
 
 		cat <<EOF
 config wifi-device  wifi$devidx
 	option type     mac80211
-	option channel  5
+	option channel  ${channel}
 	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)
 	option hwmode	11${mode_11n}${mode_band}
 	# REMOVE THIS LINE TO ENABLE WIFI:
