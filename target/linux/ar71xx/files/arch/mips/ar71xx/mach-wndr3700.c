@@ -17,6 +17,7 @@
 #include <linux/input.h>
 #include <linux/pci.h>
 #include <linux/ath9k_platform.h>
+#include <linux/delay.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -107,6 +108,82 @@ static struct ar71xx_pci_irq wndr3700_pci_irqs[] __initdata = {
 
 static struct ath9k_platform_data wndr3700_wmac0_data;
 static struct ath9k_platform_data wndr3700_wmac1_data;
+
+static void wndr3700_pci_fixup(struct pci_dev *dev)
+{
+	void __iomem *mem;
+	u16 *cal_data;
+	u16 cmd;
+	u32 bar0;
+	u32 val;
+
+	if (ar71xx_mach != AR71XX_MACH_WNDR3700)
+		return;
+
+	switch (PCI_SLOT(dev->devfn)) {
+	case 17:
+		cal_data = wndr3700_wmac0_data.eeprom_data;
+		break;
+	case 18:
+		cal_data = wndr3700_wmac1_data.eeprom_data;
+		break;
+	default:
+		return;
+	}
+
+	if (*cal_data != 0xa55a) {
+		printk(KERN_ERR "PCI: no calibration data found for %s\n",
+		       pci_name(dev));
+		return;
+	}
+
+	mem = ioremap(AR71XX_PCI_MEM_BASE, 0x10000);
+	if (!mem) {
+		printk(KERN_ERR "PCI: ioremap error for device %s\n",
+		       pci_name(dev));
+		return;
+	}
+
+	printk(KERN_INFO "PCI: fixup device %s\n", pci_name(dev));
+
+	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
+
+	/* Setup the PCI device to allow access to the internal registers */
+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, AR71XX_PCI_MEM_BASE);
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
+	cmd |= PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
+	pci_write_config_word(dev, PCI_COMMAND, cmd);
+
+        /* set pointer to first reg address */
+	cal_data += 3;
+	while (*cal_data != 0xffff) {
+		u32 reg;
+		reg = *cal_data++;
+		val = *cal_data++;
+		val |= (*cal_data++) << 16;
+
+		__raw_writel(val, mem + reg);
+		udelay(100);
+	}
+
+	pci_read_config_dword(dev, PCI_VENDOR_ID, &val);
+	dev->vendor = val & 0xffff;
+	dev->device = (val >> 16) & 0xffff;
+
+	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
+	dev->revision = val & 0xff;
+	dev->class = val >> 8; /* upper 3 bytes */
+
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
+	cmd &= ~(PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY);
+	pci_write_config_word(dev, PCI_COMMAND, cmd);
+
+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
+
+	iounmap(mem);
+}
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID,
+			wndr3700_pci_fixup);
 
 static int wndr3700_pci_plat_dev_init(struct pci_dev *dev)
 {
