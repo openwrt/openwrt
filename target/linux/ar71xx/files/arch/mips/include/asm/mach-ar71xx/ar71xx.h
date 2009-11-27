@@ -253,7 +253,7 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 
 #define AR71XX_GPIO_COUNT	16
 
-#define AR724X_GPIO_COUNT	16
+#define AR724X_GPIO_COUNT	18
 
 #define AR91XX_GPIO_FUNC_WMAC_LED_EN	BIT(22)
 #define AR91XX_GPIO_FUNC_EXP_PORT_CS_EN	BIT(21)
