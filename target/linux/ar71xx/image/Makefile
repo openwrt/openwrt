@@ -241,6 +241,10 @@ define Image/Build/WNDR3700
 		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1M conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k; \
 	) > $(call imgname,$(1),$(2))-sysupgrade.bin
+	$(STAGING_DIR_HOST)/bin/mkdniimg \
+		-B WNDR3700 -v OpenWrt.$(REVISION) \
+		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+		-o $(call imgname,$(1),$(2))-factory.bin
 endef
 
 define Image/Build/Template/Compex
