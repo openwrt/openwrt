@@ -1,0 +1,10 @@
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -105,6 +105,7 @@ obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
+ obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
+ obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
++obj-$(CONFIG_AMAZON_WDT) += amazon_wdt.o
+ 
+ # PARISC Architecture
+ 
