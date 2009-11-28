@@ -222,7 +222,7 @@ int __init amazon_wdt_init_module(void)
 #endif
 
 	amazon_wdt_isopen=0;
-	printk(KERN_INFO DRV_NAME "driver loaded but inactive");
+	printk(KERN_INFO DRV_NAME "driver loaded but inactive\n");
 	return 0;
 }
 
@@ -233,7 +233,7 @@ void amazon_wdt_cleanup_module(void)
 	remove_proc_entry("wdt_register", amazon_wdt_dir);
 	remove_proc_entry("amazon_wdt", NULL);
 #endif
-	printk(KERN_INFO DRV_NAME "unregistered");
+	printk(KERN_INFO DRV_NAME "unregistered\n");
 	return;
 }
 
