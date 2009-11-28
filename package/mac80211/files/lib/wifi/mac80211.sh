@@ -315,7 +315,7 @@ detect_mac80211() {
 			[ "$(($ht_cap & 64))" -eq 64 ] && append ht_capab "$list	SHORT-GI-40" "$N"
 			[ "$(($ht_cap & 4096))" -eq 4096 ] && append ht_capab "$list	DSSS_CCK-40" "$N"
 		}
-		iw phy "$dev" info | grep -q '2412 MHz' || mode_band="a"; channel="36"
+		iw phy "$dev" info | grep -q '2412 MHz' || { mode_band="a"; channel="36"; }
 
 		cat <<EOF
 config wifi-device  wifi$devidx
