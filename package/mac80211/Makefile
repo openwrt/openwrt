@@ -56,12 +56,12 @@ endef
 
 # Prism54 drivers
 P54PCIFW:=2.13.12.0.arm
-P54USBFW:=2.13.24.0.lm86.arm
+P54USBFW:=2.13.24.0.lm87.arm
 
 define Download/p54usb
   FILE:=$(P54USBFW)
   URL:=http://daemonizer.de/prism54/prism54-fw/fw-usb
-  MD5SUM:=2efd50eab43c0d0376765576a54b7a30
+  MD5SUM:=8e8ab005a4f8f0123bcdc51bc25b47f6
 endef
 $(eval $(call Download,p54usb))
 
