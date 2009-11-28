@@ -18,4 +18,12 @@ define Target/Description
 	Build firmware images for Infineon Amazon boards
 endef
 
+ifeq ($(KERNEL_PATCHVER),2.6.30)
+  define Kernel/Prepare
+	$(call Kernel/Prepare/Default)
+	mv $(LINUX_DIR)/include/asm-mips/mach-amazon $(LINUX_DIR)/arch/mips/include/asm/mach-amazon
+	mv $(LINUX_DIR)/drivers/char/watchdog/amazon_wdt.c $(LINUX_DIR)/drivers/watchdog/amazon_wdt.c
+  endef
+endif
+
 $(eval $(call BuildTarget))

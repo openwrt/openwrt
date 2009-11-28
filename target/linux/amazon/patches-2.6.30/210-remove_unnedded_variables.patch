@@ -1,0 +1,12 @@
+--- a/arch/mips/amazon/prom.c
++++ b/arch/mips/amazon/prom.c
+@@ -59,9 +59,6 @@ void prom_printf(const char * fmt, ...)
+ 
+ void __init prom_init(void)
+ {
+-	mips_machgroup = MACH_GROUP_INFINEON;
+-	mips_machtype = MACH_INFINEON_AMAZON;
+-
+ 	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2");
+ 	
+ 	add_memory_region(0x00000000, 0x1000000, BOOT_MEM_RAM);
