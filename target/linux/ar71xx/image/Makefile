@@ -77,11 +77,12 @@ define Image/Build/WRT400N
 	fi; fi
 endef
 
+cameo_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,896k(kernel),2880k(rootfs),64k(art)ro,3776k@0x30000(firmware)
 define Image/Build/Cameo
-	$(call PatchKernelLzma,$(2),$(3))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 851968 ]; then \
+	$(call PatchKernelLzma,$(2),$(3) $(cameo_mtdlayout))
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 917504 ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 3014656 ]; then \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2949120 ]; then \
 		echo "Warning: $(KDIR)/root.$(1) is too big"; \
 	else \
 		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
@@ -89,8 +90,8 @@ define Image/Build/Cameo
 			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
 			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
 		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=832k conv=sync; \
-			dd if=$(KDIR)/root.$(1) bs=2944k conv=sync; \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=2880k conv=sync; \
 			echo -n $(4); \
 		) > $(call imgname,$(1),$(2)).uni; \
 	fi; fi
