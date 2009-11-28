@@ -288,16 +288,16 @@ check_device() {
 detect_mac80211() {
 	devidx=0
 	config_load wireless
+	while :; do
+		config_get type "wifi$devidx" type
+		[ -n "$type" ] || break
+		devidx=$(($devidx + 1))
+	done
 	for dev in $(ls /sys/class/ieee80211); do
 		found=0
 		config_foreach check_device wifi-device
 		[ "$found" -gt 0 ] && continue
 
-		while :; do
-			config_get type "wifi$devidx" type
-			[ -n "$type" ] || break
-			devidx=$(($devidx + 1))
-		done
 		mode_11n=""
 		mode_band="g"
 		channel="5"
@@ -335,6 +335,7 @@ config wifi-iface
 	option encryption none
 
 EOF
+	devidx=$(($devidx + 1))
 	done
 }
 
