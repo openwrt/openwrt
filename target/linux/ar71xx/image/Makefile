@@ -245,7 +245,7 @@ define Image/Build/WNDR3700
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
 		-B WNDR3700 -v OpenWrt.$(REVISION) \
 		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
-		-o $(call imgname,$(1),$(2))-factory.bin
+		-o $(call imgname,$(1),$(2))-factory.img
 endef
 
 define Image/Build/Template/Compex
