@@ -134,7 +134,7 @@ enable_mac80211() {
 		esac
 
 		# All interfaces must have unique mac addresses
-		# which can either be explicitly set in the device 
+		# which can either be explicitly set in the device
 		# section, or automatically generated
 		config_get macaddr "$device" macaddr
 		local mac_1="${macaddr%%:*}"
@@ -142,7 +142,7 @@ enable_mac80211() {
 
 		config_get vif_mac "$vif" macaddr
 		[ -n "$vif_mac" ] || {
-			if [ "$i" -gt 0 ]; then 
+			if [ "$i" -gt 0 ]; then
 				offset="$(( 2 + $i * 4 ))"
 			else
 				offset="0"
@@ -168,7 +168,7 @@ enable_mac80211() {
 		# none -> NO encryption
 		#
 		# wep + keymgmt = '' -> we use iw to connect to the
-		# network.  
+		# network.
 		#
 		# wep + keymgmt = 'NONE' -> wpa_supplicant will be
 		# configured to handle the wep connection
@@ -182,7 +182,7 @@ enable_mac80211() {
 							zidx = idx - 1
 							config_get key "$vif" "key${idx}"
 							if [ -n "$key" ]; then
-								append keystring "${zidx}:${key} " 
+								append keystring "${zidx}:${key} "
 							fi
 						done
 					fi
@@ -238,7 +238,7 @@ enable_mac80211() {
 			;;
 			sta|mesh)
 				config_get bssid "$vif" bssid
-				case "$enc" in												 
+				case "$enc" in
 					wep)
 						if [ -e "$keymgmt" ]; then
 							[ -n "$keystring" ] &&
@@ -293,7 +293,7 @@ detect_mac80211() {
 		config_foreach check_device wifi-device
 		[ "$found" -gt 0 ] && continue
 
-		while :; do 
+		while :; do
 			config_get type "wifi$devidx" type
 			[ -n "$type" ] || break
 			devidx=$(($devidx + 1))
