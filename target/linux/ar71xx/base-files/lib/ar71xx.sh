@@ -74,7 +74,7 @@ ar71xx_board_name() {
 		name="wp543"
 		;;
 	*WNDR3700)
-		name"wndr3700"
+		name="wndr3700"
 		;;
 	*WNR2000)
 		name="wnr2000"
