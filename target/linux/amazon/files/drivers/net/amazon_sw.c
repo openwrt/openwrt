@@ -105,10 +105,7 @@ module_param(timeout, int, 0);
 int switch_init(struct net_device *dev);
 void switch_tx_timeout(struct net_device *dev);
 
-struct net_device switch_devs[2] = {
-	{init:switch_init,},
-	{init:switch_init,}
-};
+static struct net_device *switch_devs[2];
 
 int add_mac_table_entry(u64 entry_value)
 {
@@ -274,7 +271,7 @@ __setup("ethaddr=", ethaddr_setup);
 
 static void open_rx_dma(struct net_device *dev)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 	int i;
 
@@ -286,7 +283,7 @@ static void open_rx_dma(struct net_device *dev)
 #ifdef CONFIG_NET_HW_FLOWCONTROL
 static void close_rx_dma(struct net_device *dev)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 	int i;
 
@@ -306,7 +303,7 @@ void amazon_xon(struct net_device *dev)
 
 int switch_open(struct net_device *dev)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	if (!strcmp(dev->name, "eth1")) {
 		priv->mdio_phy_addr = PHY0_ADDR;
 	}
@@ -325,7 +322,7 @@ int switch_open(struct net_device *dev)
 int switch_release(struct net_device *dev)
 {
 	int i;
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 
 	for (i = 0; i < dma_dev->num_tx_chan; i++)
@@ -348,7 +345,7 @@ int switch_release(struct net_device *dev)
 
 void switch_rx(struct net_device *dev, int len, struct sk_buff *skb)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 #ifdef CONFIG_NET_HW_FLOWCONTROL
 	int mit_sel = 0;
 #endif
@@ -381,7 +378,7 @@ void switch_rx(struct net_device *dev, int len, struct sk_buff *skb)
 
 int asmlinkage switch_hw_tx(char *buf, int len, struct net_device *dev)
 {
-	struct switch_priv *priv = dev->priv;
+	struct switch_priv *priv = netdev_priv(dev);
 	struct dma_device_info *dma_dev = priv->dma_device;
 
 	dma_dev->current_tx_chan = 0;
@@ -392,7 +389,7 @@ int asmlinkage switch_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	int len;
 	char *data;
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 
 	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
 	data = skb->data;
@@ -411,7 +408,7 @@ int asmlinkage switch_tx(struct sk_buff *skb, struct net_device *dev)
 
 void switch_tx_timeout(struct net_device *dev)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	priv->stats.tx_errors++;
 	netif_wake_queue(dev);
 	return;
@@ -419,7 +416,7 @@ void switch_tx_timeout(struct net_device *dev)
 
 void negotiate(struct net_device *dev)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	unsigned short data = get_mdio_reg(priv->mdio_phy_addr, MDIO_ADVERTISMENT_REG);
 
 	data &= ~(MDIO_ADVERT_100_HD | MDIO_ADVERT_100_FD | MDIO_ADVERT_10_FD | MDIO_ADVERT_10_HD);
@@ -470,7 +467,7 @@ void negotiate(struct net_device *dev)
 
 void set_duplex(struct net_device *dev, enum duplex new_duplex)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	if (new_duplex != priv->current_duplex) {
 		priv->current_duplex = new_duplex;
 		negotiate(dev);
@@ -479,14 +476,14 @@ void set_duplex(struct net_device *dev, enum duplex new_duplex)
 
 void set_speed(struct net_device *dev, unsigned long speed)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	priv->current_speed_selection = speed;
 	negotiate(dev);
 }
 
 static int switch_ethtool_ioctl(struct net_device *dev, struct ifreq *ifr)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	struct ethtool_cmd ecmd;
 
 	if (copy_from_user(&ecmd, ifr->ifr_data, sizeof(ecmd)))
@@ -642,7 +639,7 @@ int switch_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 struct net_device_stats *switch_stats(struct net_device *dev)
 {
-	struct switch_priv *priv = (struct switch_priv *) dev->priv;
+	struct switch_priv *priv = (struct switch_priv *) netdev_priv(dev);
 	return &priv->stats;
 }
 
@@ -692,7 +689,7 @@ int dma_intr_handler(struct dma_device_info *dma_dev, int status)
 {
 	struct net_device *dev;
 
-	dev = switch_devs + (u32) dma_dev->priv;
+	dev = dma_dev->priv;
 	switch (status) {
 	case RCV_INT:
 		switch_hw_receive(dev, dma_dev);
@@ -735,19 +732,18 @@ int dma_buffer_free(u8 * dataptr, void *opt)
 	return OK;
 }
 
-int init_dma_device(_dma_device_info * dma_dev)
+int init_dma_device(_dma_device_info * dma_dev, struct net_device *dev)
 {
 	int i;
 	int num_tx_chan, num_rx_chan;
 	if (strcmp(dma_dev->device_name, "switch1") == 0) {
 		num_tx_chan = 1;
 		num_rx_chan = 2;
-		dma_dev->priv = (void *) 0;
 	} else {
 		num_tx_chan = 1;
 		num_rx_chan = 2;
-		dma_dev->priv = (void *) 1;
 	}
+	dma_dev->priv = dev;
 
 	dma_dev->weight = 1;
 	dma_dev->num_tx_chan = num_tx_chan;
@@ -799,21 +795,15 @@ int switch_init(struct net_device *dev)
 	dev->tx_timeout = switch_tx_timeout;
 	dev->watchdog_timeo = timeout;
 
-	SET_MODULE_OWNER(dev);
-
-	dev->priv = kmalloc(sizeof(struct switch_priv), GFP_KERNEL);
-	if (dev->priv == NULL)
-		return -ENOMEM;
-	memset(dev->priv, 0, sizeof(struct switch_priv));
-	priv = dev->priv;
+	priv = netdev_priv(dev);
 	priv->dma_device = (struct dma_device_info *) kmalloc(sizeof(struct dma_device_info), GFP_KERNEL);
-	if ((dev - switch_devs) == 0) {
+	if (priv->num == 0) {
 		sprintf(priv->dma_device->device_name, "switch1");
-	} else if ((dev - switch_devs) == 1) {
+	} else if (priv->num == 1) {
 		sprintf(priv->dma_device->device_name, "switch2");
 	}
 	printk("\"%s\"\n", priv->dma_device->device_name);
-	init_dma_device(priv->dma_device);
+	init_dma_device(priv->dma_device, dev);
 	result = dma_device_register(priv->dma_device);
 
 	/* read the mac address from the mac table and put them into the mac table. */
@@ -827,12 +817,12 @@ int switch_init(struct net_device *dev)
 		dev->dev_addr[2] = 0xda;
 		dev->dev_addr[3] = 0x86;
 		dev->dev_addr[4] = 0x23;
-		dev->dev_addr[5] = 0x74 + (unsigned char) (dev - switch_devs);
+		dev->dev_addr[5] = 0x74 + (unsigned char) priv->num;
 	} else {
 		for (i = 0; i < 6; i++) {
 			dev->dev_addr[i] = my_ethaddr[i];
 		}
-		dev->dev_addr[5] += +(unsigned char) (dev - switch_devs);
+		dev->dev_addr[5] += +(unsigned char) priv->num;
 	}
 	return OK;
 }
@@ -840,12 +830,16 @@ int switch_init(struct net_device *dev)
 int switch_init_module(void)
 {
 	int i = 0, result, device_present = 0;
+	struct switch_priv *priv;
 
 	for (i = 0; i < AMAZON_SW_INT_NO; i++) {
-		sprintf(switch_devs[i].name, "eth%d", i);
-
-		if ((result = register_netdev(switch_devs + i)))
-			printk("error %i registering device \"%s\"\n", result, switch_devs[i].name);
+		switch_devs[i] = alloc_etherdev(sizeof(struct switch_priv));
+		switch_devs[i]->init = switch_init;
+		strcpy(switch_devs[i]->name, "eth%d");
+		priv = (struct switch_priv *) netdev_priv(switch_devs[i]);
+		priv->num = i;
+		if ((result = register_netdev(switch_devs[i])))
+			printk("error %i registering device \"%s\"\n", result, switch_devs[i]->name);
 		else
 			device_present++;
 	}
@@ -858,13 +852,13 @@ void switch_cleanup(void)
 	int i;
 	struct switch_priv *priv;
 	for (i = 0; i < AMAZON_SW_INT_NO; i++) {
-		priv = switch_devs[i].priv;
+		priv = netdev_priv(switch_devs[i]);
 		if (priv->dma_device) {
 			dma_device_unregister(priv->dma_device);
 			kfree(priv->dma_device);
 		}
-		kfree(switch_devs[i].priv);
-		unregister_netdev(switch_devs + i);
+		kfree(netdev_priv(switch_devs[i]));
+		unregister_netdev(switch_devs[i]);
 	}
 	return;
 }

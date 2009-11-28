@@ -102,10 +102,16 @@ static void amazonasc_enable_ms(struct uart_port *port)
 	return;
 }
 
+#include <linux/version.h>
+
 static void
 amazonasc_rx_chars(struct uart_port *port)
 {
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26))
+	struct tty_struct *tty = port->info->port.tty;
+#else
 	struct tty_struct *tty = port->info->tty;
+#endif
 	unsigned int ch = 0, rsr = 0, fifocnt;
 
 	fifocnt = amazon_readl(AMAZON_ASC_FSTAT) & ASCFSTAT_RXFFLMASK;

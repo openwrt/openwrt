@@ -166,6 +166,7 @@ struct switch_priv {
     int rx_queue_len;
     int full_duplex;
     enum duplex current_duplex;
+    int num;
 };
 
 #endif //AMAZON_SW_H
