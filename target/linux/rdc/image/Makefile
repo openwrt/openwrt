@@ -34,7 +34,7 @@ define Image/Build/ar525w
 	$(STAGING_DIR_HOST)/bin/airlink -e -b 1 -j $(shell bash -c 'echo $$[$(3)]') $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
 endef
 
-define Image/Prepare/wl153/squashfs
+define Image/Prepare/sitecom/squashfs
 	dd if=/dev/null of=$(KDIR)/root.tmp seek=1 bs=32k
 	echo -n "0123456789abcdef0123" >> $(KDIR)/root.tmp
 	cat $(KDIR)/bzImage $(KDIR)/root.squashfs >> $(KDIR)/root.tmp
@@ -44,13 +44,13 @@ define Image/Prepare/wl153/squashfs
 	$(call add_jffs2_mark,$(KDIR)/root.squashfs)
 endef
 
-define Image/Build/wl153
+define Image/Build/sitecom
 	echo -ne "\0\0" >> $(KDIR)/bzImage
 	dd if=$(KDIR)/bzImage of=$(KDIR)/bzImage.tmp bs=4 conv=sync
 	dd if=$(KDIR)/bzImage.tmp of=$(KDIR)/bzImage bs=1 count=$$$$(perl -we 'print((-s"$(KDIR)/bzImage.tmp")-2)')
 	perl -we 'while(<>){$$$$i.=$$$$_}print pack"v",-(unpack"%v*",$$$$i)' < $(KDIR)/bzImage.tmp >> $(KDIR)/bzImage
 	$(RM) $(KDIR)/bzImage.tmp
-	$(call Image/Prepare/wl153/$(1))
+	$(call Image/Prepare/sitecom/$(1))
 	perl -we 'print "CSYS",pack("V",-s"$(KDIR)/bzImage"),pack("V",-s"$(KDIR)/root.$(1)"),"WRRM",pack("V",-s"$(KDIR)/bzImage")' > $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	cat $(KDIR)/bzImage $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
 	if [ `perl -we 'print -s"$(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img"'` -gt $$$$((0xffff0000-0xffe08000)) ]; then mv $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img.too_big; echo "#ERR image too big"; fi 

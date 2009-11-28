@@ -11,7 +11,7 @@ BOARD:=rdc
 BOARDNAME:=RDC 321x
 FEATURES:=squashfs jffs2 pci usb pcmcia
 CFLAGS:=-Os -pipe -march=i486 -funit-at-a-time
-SUBTARGETS:=amit ar525w r8610 dir-450
+SUBTARGETS:=amit ar525w r8610 dir-450 sitecom
 
 LINUX_VERSION:=2.6.30.9
 
