@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_VERSION:=0.9.17
+PKG_VERSION:=0.9.18
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/iw/
-PKG_MD5SUM:=427841093ac11c5cbc025a3e13aac139
+PKG_MD5SUM:=9734080d8a5c4b768c5e0da665a48950
 PKG_BUILD_DEPENDS:=mac80211
 
 include $(INCLUDE_DIR)/package.mk
