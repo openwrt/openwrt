@@ -107,7 +107,9 @@ static struct ar71xx_pci_irq wndr3700_pci_irqs[] __initdata = {
 };
 
 static struct ath9k_platform_data wndr3700_wmac0_data;
+static u8 wndr3700_wmac0_macaddr[6];
 static struct ath9k_platform_data wndr3700_wmac1_data;
+static u8 wndr3700_wmac1_macaddr[6];
 
 static void wndr3700_pci_fixup(struct pci_dev *dev)
 {
@@ -201,15 +203,17 @@ static int wndr3700_pci_plat_dev_init(struct pci_dev *dev)
 
 static void __init wndr3700_pci_init(void)
 {
-	u8 *ee;
+	u8 *ee = (u8 *) KSEG1ADDR(0x1fff0000);
 
-	ee = (u8 *) KSEG1ADDR(0x1fff1000);
-	memcpy(wndr3700_wmac0_data.eeprom_data, ee,
+	memcpy(wndr3700_wmac0_data.eeprom_data, ee + 0x1000,
 	       sizeof(wndr3700_wmac0_data.eeprom_data));
+	memcpy(wndr3700_wmac0_macaddr, ee, sizeof(wndr3700_wmac0_macaddr));
+	wndr3700_wmac0_data.macaddr = wndr3700_wmac0_macaddr;
 
-	ee = (u8 *) KSEG1ADDR(0x1fff5000);
-	memcpy(wndr3700_wmac1_data.eeprom_data, ee,
+	memcpy(wndr3700_wmac1_data.eeprom_data, ee + 0x5000,
 	       sizeof(wndr3700_wmac1_data.eeprom_data));
+	memcpy(wndr3700_wmac1_macaddr, ee + 12, sizeof(wndr3700_wmac1_macaddr));
+	wndr3700_wmac1_data.macaddr = wndr3700_wmac1_macaddr;
 
 	ar71xx_pci_plat_dev_init = wndr3700_pci_plat_dev_init;
 	ar71xx_pci_init(ARRAY_SIZE(wndr3700_pci_irqs), wndr3700_pci_irqs);
