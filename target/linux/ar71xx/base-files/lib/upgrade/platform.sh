@@ -82,6 +82,13 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	wndr3700)
+		[ "$magic" != "3337" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
 	wrt160nl)
 		[ "$magic" != "4e4c" ] && {
 			echo "Invalid image type."

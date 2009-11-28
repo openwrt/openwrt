@@ -215,6 +215,34 @@ define Image/Build/CyberTAN
 		-o $(call imgname,$(1),$(2)).bin
 endef
 
+wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
+define Image/Build/WNDR3700
+	$(call PatchKernelLzma,$(2),$(3) $(wndr3700_mtdlayout))
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
+	mkdir $(KDIR)/wndr3700
+	mkdir $(KDIR)/wndr3700/image
+	$(STAGING_DIR_HOST)/bin/wndr3700 \
+		$(KDIR)/vmlinux-$(2).uImage \
+		$(KDIR)/wndr3700/image/uImage
+	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
+		$(KDIR)/wndr3700 $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp \
+		-nopad -noappend -root-owned -be
+	-rm -rf $(KDIR)/wndr3700
+	mkimage -A mips -O linux -T filesystem -C none \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp \
+		$(KDIR)/vmlinux-$(2).uImage.squashfs.tmp2
+	$(STAGING_DIR_HOST)/bin/wndr3700 \
+		$(KDIR)/vmlinux-$(2).uImage.squashfs.tmp2 \
+		$(KDIR)/vmlinux-$(2).uImage.squashfs
+	-rm -f $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp*
+	( \
+		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1M conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=64k; \
+	) > $(call imgname,$(1),$(2))-sysupgrade.bin
+endef
+
 define Image/Build/Template/Compex
 	$(call Image/Build/MyLoader,$(1),$(2))
 endef
@@ -319,6 +347,18 @@ define Image/Build/Template/Planex/jffs2-64k
 	$(call Image/Build/Template/Planex,jffs2-64k,$(1),$(2))
 endef
 
+define Image/Build/Template/WNDR3700
+	$(call Image/Build/WNDR3700,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/WNDR3700/squashfs
+	$(call Image/Build/Template/WNDR3700,squashfs,$(1),$(2))
+endef
+
+define Image/Build/Template/WNDR3700/jffs2-64k
+	$(call Image/Build/Template/WNDR3700,jffs2-64k,$(1),$(2))
+endef
+
 define Image/Build/Profile/AP83
 	$(call Image/Build/Template/AP83/$(1),ap83,board=AP83)
 endef
@@ -400,6 +440,10 @@ define Image/Build/Profile/TLWR941NDV2
 	$(call Image/Build/Template/TPLINK/$(1),tl-wr941ndv2,board=TL-WR941ND,TL-WR941NDv2)
 endef
 
+define Image/Build/Profile/WNDR3700
+	$(call Image/Build/Template/WNDR3700/$(1),wndr3700,board=WNDR3700)
+endef
+
 define Image/Build/Profile/WRT400N
 	$(call Image/Build/Template/WRT400N/$(1),wrt400n,board=WRT400N)
 endef
@@ -422,6 +466,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR941NDV2,$(1))
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
+	$(call Image/Build/Profile/WNDR3700,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
 	$(call Image/Build/Profile/WRT160NL,$(1))
 endef
