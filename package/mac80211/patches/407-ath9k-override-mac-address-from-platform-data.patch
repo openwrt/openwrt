@@ -1,0 +1,53 @@
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -16,8 +16,10 @@
+ 
+ #include <linux/io.h>
+ #include <linux/etherdevice.h>
++#include <linux/ath9k_platform.h>
+ #include <asm/unaligned.h>
+ 
++#include "ath9k.h"
+ #include "hw.h"
+ #include "rc.h"
+ #include "initvals.h"
+@@ -472,17 +474,23 @@ static int ath9k_hw_rf_claim(struct ath_
+ static int ath9k_hw_init_macaddr(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	struct ath_softc *sc = (struct ath_softc *) common->priv;
++	struct ath9k_platform_data *pdata = sc->dev->platform_data;
+ 	u32 sum;
+ 	int i;
+ 	u16 eeval;
+ 
+ 	sum = 0;
+-	for (i = 0; i < 3; i++) {
+-		eeval = ah->eep_ops->get_eeprom(ah, AR_EEPROM_MAC(i));
+-		sum += eeval;
+-		common->macaddr[2 * i] = eeval >> 8;
+-		common->macaddr[2 * i + 1] = eeval & 0xff;
+-	}
++	if (pdata && pdata->macaddr)
++		memcpy(common->macaddr, pdata->macaddr, ETH_ALEN);
++	else
++		for (i = 0; i < 3; i++) {
++			eeval = ah->eep_ops->get_eeprom(ah, AR_EEPROM_MAC(i));
++			sum += eeval;
++			common->macaddr[2 * i] = eeval >> 8;
++			common->macaddr[2 * i + 1] = eeval & 0xff;
++		}
++
+ 	if (!is_valid_ether_addr(common->macaddr)) {
+ 		DECLARE_MAC_BUF(macbuf);
+ 
+--- a/include/linux/ath9k_platform.h
++++ b/include/linux/ath9k_platform.h
+@@ -23,6 +23,7 @@
+ 
+ struct ath9k_platform_data {
+ 	u16 eeprom_data[ATH9K_PLAT_EEP_MAX_WORDS];
++	u8 *macaddr;
+ };
+ 
+ #endif /* _LINUX_ATH9K_PLATFORM_H */
