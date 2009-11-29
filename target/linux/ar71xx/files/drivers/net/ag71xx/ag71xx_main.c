@@ -318,6 +318,7 @@ static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
 
 static void ag71xx_dma_reset(struct ag71xx *ag)
 {
+	u32 val;
 	int i;
 
 	ag71xx_dump_dma_regs(ag);
@@ -340,13 +341,19 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 	ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_BE | RX_STATUS_OF);
 	ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_BE | TX_STATUS_UR);
 
-	if (ag71xx_rr(ag, AG71XX_REG_RX_STATUS))
-		printk(KERN_ALERT "%s: unable to clear DMA Rx status\n",
-			ag->dev->name);
+	val = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
+	if (val)
+		printk(KERN_ALERT "%s: unable to clear DMA Rx status: %08x\n",
+			ag->dev->name, val);
 
-	if (ag71xx_rr(ag, AG71XX_REG_TX_STATUS))
-		printk(KERN_ALERT "%s: unable to clear DMA Tx status\n",
-			ag->dev->name);
+	val = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
+
+	/* mask out reserved bits */
+	val &= ~0xff000000;
+
+	if (val)
+		printk(KERN_ALERT "%s: unable to clear DMA Tx status: %08x\n",
+			ag->dev->name, val);
 
 	ag71xx_dump_dma_regs(ag);
 }
