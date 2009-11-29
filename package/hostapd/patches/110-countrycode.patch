@@ -1,6 +1,6 @@
 --- a/hostapd/hostapd.c
 +++ b/hostapd/hostapd.c
-@@ -1344,10 +1344,8 @@ static int setup_interface(struct hostap
+@@ -1339,10 +1339,8 @@ static int setup_interface(struct hostap
  	if (hapd->iconf->country[0] && hapd->iconf->country[1]) {
  		os_memcpy(country, hapd->iconf->country, 3);
  		country[3] = '\0';
