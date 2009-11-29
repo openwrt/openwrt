@@ -125,7 +125,7 @@ enable_mac80211() {
 			;;
 			sta)
 				local wdsflag
-				[ "$wds" -gt 0 ] && wdsflag="wds on"
+				[ "$wds" -gt 0 ] && wdsflag="4addr on"
 				iw phy "$phy" interface add "$ifname" type managed $wdsflag
 				config_get_bool powersave "$vif" powersave 0
 				[ "$powersave" -gt 0 ] && powersave="on" || powersave="off"
