@@ -42,6 +42,19 @@ static struct resource ar71xx_ohci_resources[] = {
 	},
 };
 
+static struct resource ar7240_ohci_resources[] = {
+	[0] = {
+		.start	= AR7240_OHCI_BASE,
+		.end	= AR7240_OHCI_BASE + AR7240_OHCI_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= AR71XX_CPU_IRQ_USB,
+		.end	= AR71XX_CPU_IRQ_USB,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
 static u64 ar71xx_ohci_dmamask = DMA_BIT_MASK(32);
 static struct platform_device ar71xx_ohci_device = {
 	.name		= "ar71xx-ohci",
@@ -90,6 +103,9 @@ static struct platform_device ar71xx_ehci_device = {
 	(RESET_MODULE_USB_HOST | RESET_MODULE_USB_PHY \
 	| RESET_MODULE_USB_OHCI_DLL)
 
+#define AR7240_USB_RESET_MASK \
+	(RESET_MODULE_USB_HOST | RESET_MODULE_USB_OHCI_DLL_7240)
+
 static void __init ar71xx_usb_setup(void)
 {
 	ar71xx_device_stop(AR71XX_USB_RESET_MASK);
@@ -103,6 +119,18 @@ static void __init ar71xx_usb_setup(void)
 	ar71xx_usb_ctrl_wr(USB_CTRL_REG_FLADJ, 0x20c00);
 
 	mdelay(900);
+}
+
+static void __init ar7240_usb_setup(void)
+{
+	ar71xx_ohci_device.resource = ar7240_ohci_resources;
+
+	ar71xx_device_stop(AR7240_USB_RESET_MASK);
+	mdelay(1000);
+	ar71xx_device_start(AR7240_USB_RESET_MASK);
+
+	/* WAR for HW bug. Here it adjusts the duration between two SOFS */
+	ar71xx_usb_ctrl_wr(USB_CTRL_REG_FLADJ, 0x3);
 }
 
 static void __init ar91xx_usb_setup(void)
@@ -120,6 +148,11 @@ static void __init ar91xx_usb_setup(void)
 void __init ar71xx_add_device_usb(void)
 {
 	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7240:
+		ar7240_usb_setup();
+		platform_device_register(&ar71xx_ohci_device);
+		break;
+
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
