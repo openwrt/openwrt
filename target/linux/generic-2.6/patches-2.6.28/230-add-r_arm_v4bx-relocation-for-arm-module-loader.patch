@@ -10,7 +10,7 @@
   * These are used to set parameters in the core dumps.
 --- a/arch/arm/kernel/module.c
 +++ b/arch/arm/kernel/module.c
-@@ -132,6 +132,15 @@ apply_relocate(Elf32_Shdr *sechdrs, cons
+@@ -136,6 +136,15 @@ apply_relocate(Elf32_Shdr *sechdrs, cons
  			*(u32 *)loc |= offset & 0x00ffffff;
  			break;
  
