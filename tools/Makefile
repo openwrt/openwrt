@@ -17,11 +17,13 @@ tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2
 ifneq ($(CONFIG_LINUX_2_4)$(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_28),)
-tools-y += squashfs lzma-old 
+tools-y += squashfs lzma-old
 else
+ifneq ($(CONFIG_TARGET_ar71xx),)
+tools-y += squashfs lzma-old
+endif
 tools-y += squashfs4 lzma
 endif
-
 tools-$(CONFIG_CCACHE) += ccache
 
 ifdef CONFIG_GCC_USE_GRAPHITE
