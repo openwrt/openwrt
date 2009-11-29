@@ -59,12 +59,28 @@ void prom_printf(const char * fmt, ...)
 
 void __init prom_init(void)
 {
+	char **envp = (char **) fw_arg2;
+
+	int memsize = 16; /* assume 16M as default */
+
 	mips_machgroup = MACH_GROUP_INFINEON;
 	mips_machtype = MACH_INFINEON_AMAZON;
 
+	envp = (char **)KSEG1ADDR((unsigned long)envp);
+	while (*envp) {
+		char *e = (char *)KSEG1ADDR(*envp);
+
+		if (!strncmp(e, "memsize=", 8)) {
+			e += 8;
+			memsize = simple_strtoul(e, NULL, 10);
+		}
+		envp++;
+	}
+	memsize *= 1024 * 1024;
+
 	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2");
 	
-	add_memory_region(0x00000000, 0x1000000, BOOT_MEM_RAM);
+	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
 }
 
 void prom_free_prom_memory(void)
