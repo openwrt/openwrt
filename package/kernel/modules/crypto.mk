@@ -108,7 +108,7 @@ $(eval $(call KernelPackage,crypto-hw-geode))
 define KernelPackage/crypto-hw-hifn-795x
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=HIFN 795x crypto accelerator
-  DEPENDS:=+kmod-crypto-core +kmod-crypto-des
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-des @!TARGET_ubicom32
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
