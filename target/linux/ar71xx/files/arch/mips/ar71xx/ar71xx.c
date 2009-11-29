@@ -36,6 +36,7 @@ EXPORT_SYMBOL_GPL(ar71xx_usb_ctrl_base);
 void ar71xx_device_stop(u32 mask)
 {
 	unsigned long flags;
+	u32 mask_inv;
 	u32 t;
 
 	switch (ar71xx_soc) {
@@ -49,9 +50,12 @@ void ar71xx_device_stop(u32 mask)
 		break;
 
 	case AR71XX_SOC_AR7240:
+		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
 		local_irq_save(flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
-		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t | mask);
+		t |= mask;
+		t &= ~mask_inv;
+		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t);
 		local_irq_restore(flags);
 		break;
 
@@ -72,6 +76,7 @@ EXPORT_SYMBOL_GPL(ar71xx_device_stop);
 void ar71xx_device_start(u32 mask)
 {
 	unsigned long flags;
+	u32 mask_inv;
 	u32 t;
 
 	switch (ar71xx_soc) {
@@ -85,9 +90,12 @@ void ar71xx_device_start(u32 mask)
 		break;
 
 	case AR71XX_SOC_AR7240:
+		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
 		local_irq_save(flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
-		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t & ~mask);
+		t &= ~mask;
+		t |= mask_inv;
+		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t);
 		local_irq_restore(flags);
 		break;
 
