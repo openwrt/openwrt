@@ -1,35 +1,11 @@
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -2,6 +2,8 @@
- # Makefile for the Linux/MIPS kernel.
- #
+@@ -4,6 +4,8 @@
+ 
+ CPPFLAGS_vmlinux.lds := $(KBUILD_CFLAGS)
  
 +CPPFLAGS_vmlinux.lds := $(KBUILD_CFLAGS) $(EXTRA_LDSFLAGS)
 +
  extra-y		:= head.o init_task.o vmlinux.lds
  
  obj-y		+= cpu-probe.o branch.o entry.o genex.o irq.o process.o \
---- a/arch/mips/kernel/vmlinux.lds.S
-+++ b/arch/mips/kernel/vmlinux.lds.S
-@@ -10,15 +10,15 @@ PHDRS {
- 	note PT_NOTE FLAGS(4);	/* R__ */
- }
- 
--ifdef CONFIG_32BIT
--	ifdef CONFIG_CPU_LITTLE_ENDIAN
-+#ifdef CONFIG_32BIT
-+	#ifdef CONFIG_CPU_LITTLE_ENDIAN
- 		jiffies  = jiffies_64;
--	else
-+	#else
- 		jiffies  = jiffies_64 + 4;
--	endif
--else
-+	#endif
-+#else
- 	jiffies  = jiffies_64;
--endif
-+#endif
- 
- SECTIONS
- {

@@ -48,8 +48,6 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  include/linux/unaligned/le_byteshift.h |    2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/unaligned/be_byteshift.h b/include/linux/unaligned/be_byteshift.h
-index 46dd12c..9356b24 100644
 --- a/include/linux/unaligned/be_byteshift.h
 +++ b/include/linux/unaligned/be_byteshift.h
 @@ -1,7 +1,7 @@
@@ -61,8 +59,6 @@ index 46dd12c..9356b24 100644
  
  static inline u16 __get_unaligned_be16(const u8 *p)
  {
-diff --git a/include/linux/unaligned/le_byteshift.h b/include/linux/unaligned/le_byteshift.h
-index 59777e9..be376fb 100644
 --- a/include/linux/unaligned/le_byteshift.h
 +++ b/include/linux/unaligned/le_byteshift.h
 @@ -1,7 +1,7 @@
@@ -74,6 +70,3 @@ index 59777e9..be376fb 100644
  
  static inline u16 __get_unaligned_le16(const u8 *p)
  {
--- 
-1.6.5.1
-
