@@ -834,7 +834,7 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1703,7 +1706,11 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -1704,7 +1707,11 @@ int dev_hard_start_xmit(struct sk_buff *
  	int rc;
  
  	if (likely(!skb->next)) {
@@ -847,7 +847,7 @@
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-@@ -1788,8 +1795,7 @@ u16 skb_tx_hash(const struct net_device 
+@@ -1789,8 +1796,7 @@ u16 skb_tx_hash(const struct net_device 
  }
  EXPORT_SYMBOL(skb_tx_hash);
  
@@ -857,7 +857,7 @@
  {
  	const struct net_device_ops *ops = dev->netdev_ops;
  	u16 queue_index = 0;
-@@ -1802,6 +1808,7 @@ static struct netdev_queue *dev_pick_tx(
+@@ -1803,6 +1809,7 @@ static struct netdev_queue *dev_pick_tx(
  	skb_set_queue_mapping(skb, queue_index);
  	return netdev_get_tx_queue(dev, queue_index);
  }
@@ -1033,7 +1033,7 @@
  	new->csum		= old->csum;
  	new->local_df		= old->local_df;
  	new->pkt_type		= old->pkt_type;
-@@ -2775,6 +2864,13 @@ void __init skb_init(void)
+@@ -2776,6 +2865,13 @@ void __init skb_init(void)
  						0,
  						SLAB_HWCACHE_ALIGN|SLAB_PANIC,
  						NULL);
