@@ -176,7 +176,7 @@ This patch adds support for bfs v230, modified for diff size reduction
  #define sched_exec()   {}
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -441,9 +441,22 @@ config LOG_BUF_SHIFT
+@@ -451,9 +451,22 @@ config LOG_BUF_SHIFT
  config HAVE_UNSTABLE_SCHED_CLOCK
  	bool
  
@@ -199,7 +199,7 @@ This patch adds support for bfs v230, modified for diff size reduction
  	default n
  	help
  	  This feature lets CPU scheduler recognize task groups and control CPU
-@@ -494,6 +507,7 @@ endchoice
+@@ -504,6 +517,7 @@ endchoice
  
  menuconfig CGROUPS
  	boolean "Control Group support"

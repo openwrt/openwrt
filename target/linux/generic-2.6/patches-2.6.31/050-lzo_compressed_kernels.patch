@@ -1,6 +1,3 @@
-diff --git a/include/linux/decompress/unlzo.h b/include/linux/decompress/unlzo.h
-new file mode 100644
-index 0000000..9872297
 --- /dev/null
 +++ b/include/linux/decompress/unlzo.h
 @@ -0,0 +1,10 @@
@@ -14,8 +11,6 @@ index 0000000..9872297
 +	int *pos,
 +	void(*error)(char *x));
 +#endif
-diff --git a/init/Kconfig b/init/Kconfig
-index f515864..eb65318 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -115,10 +115,13 @@ config HAVE_KERNEL_BZIP2
@@ -60,9 +55,6 @@ index f515864..eb65318 100644
  endchoice
  
  config SWAP
-diff --git a/lib/decompress_unlzo.c b/lib/decompress_unlzo.c
-new file mode 100644
-index 0000000..2bb736f
 --- /dev/null
 +++ b/lib/decompress_unlzo.c
 @@ -0,0 +1,208 @@
@@ -274,8 +266,6 @@ index 0000000..2bb736f
 +}
 +
 +#define decompress unlzo
-diff --git a/lib/lzo/lzo1x_decompress.c b/lib/lzo/lzo1x_decompress.c
-index 5dc6b29..f2fd098 100644
 --- a/lib/lzo/lzo1x_decompress.c
 +++ b/lib/lzo/lzo1x_decompress.c
 @@ -11,11 +11,13 @@
@@ -306,8 +296,6 @@ index 5dc6b29..f2fd098 100644
  MODULE_DESCRIPTION("LZO1X Decompressor");
  
 +#endif
-diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index ffdafb2..39c3483 100644
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
 @@ -230,3 +230,8 @@ quiet_cmd_lzma = LZMA    $@

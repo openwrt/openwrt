@@ -13,8 +13,6 @@ Signed-off-by: Albin Tonnerre <albin.tonnerre@free-electrons.com>
  4 files changed, 12 insertions(+), 0 deletions(-)
  create mode 100644 arch/arm/boot/compressed/piggy.lzma.S
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index ea71c0c..f5bf779 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -20,6 +20,7 @@ config ARM
@@ -25,11 +23,9 @@ index ea71c0c..f5bf779 100644
  	help
  	  The ARM series is a line of low-power-consumption RISC chip designs
  	  licensed by ARM Ltd and targeted at embedded applications and
-diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
-index 5b4629b..dcfcb74 100644
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -65,6 +65,7 @@ SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/BSS_START/$(ZBSSADDR)/
+@@ -65,6 +65,7 @@ SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/
  
  suffix_$(CONFIG_KERNEL_GZIP) = gzip
  suffix_$(CONFIG_KERNEL_LZO)  = lzo
@@ -37,8 +33,6 @@ index 5b4629b..dcfcb74 100644
  
  targets       := vmlinux vmlinux.lds \
  		 piggy.$(suffix_y) piggy.$(suffix_y).o \
-diff --git a/arch/arm/boot/compressed/misc.c b/arch/arm/boot/compressed/misc.c
-index 7e0fe4d..4e35a10 100644
 --- a/arch/arm/boot/compressed/misc.c
 +++ b/arch/arm/boot/compressed/misc.c
 @@ -237,6 +237,10 @@ static unsigned long free_mem_end_ptr;
@@ -52,9 +46,6 @@ index 7e0fe4d..4e35a10 100644
  #ifdef CONFIG_KERNEL_LZO
  #include "../../../../lib/decompress_unlzo.c"
  #endif
-diff --git a/arch/arm/boot/compressed/piggy.lzma.S b/arch/arm/boot/compressed/piggy.lzma.S
-new file mode 100644
-index 0000000..d7e69cf
 --- /dev/null
 +++ b/arch/arm/boot/compressed/piggy.lzma.S
 @@ -0,0 +1,6 @@
@@ -64,6 +55,3 @@ index 0000000..d7e69cf
 +	.incbin	"arch/arm/boot/compressed/piggy.lzma"
 +	.globl	input_data_end
 +input_data_end:
--- 
-1.6.5
-

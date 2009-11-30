@@ -1,10 +1,8 @@
-diff --git a/lib/Kconfig b/lib/Kconfig
-index bb1326d..8639349 100644
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -117,6 +117,10 @@ config DECOMPRESS_BZIP2
- config DECOMPRESS_LZMA
- 	tristate
+@@ -120,6 +120,10 @@ config DECOMPRESS_LZMA
+ config DECOMPRESS_LZMA_NEEDED
+ 	 boolean
  
 +config DECOMPRESS_LZO
 +	select LZO_DECOMPRESS
@@ -13,8 +11,6 @@ index bb1326d..8639349 100644
  #
  # Generic allocator support is selected if needed
  #
-diff --git a/lib/Makefile b/lib/Makefile
-index 2e78277..cfa4041 100644
 --- a/lib/Makefile
 +++ b/lib/Makefile
 @@ -69,6 +69,7 @@ obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
@@ -25,8 +21,6 @@ index 2e78277..cfa4041 100644
  
  obj-$(CONFIG_TEXTSEARCH) += textsearch.o
  obj-$(CONFIG_TEXTSEARCH_KMP) += ts_kmp.o
-diff --git a/lib/decompress.c b/lib/decompress.c
-index d2842f5..a760681 100644
 --- a/lib/decompress.c
 +++ b/lib/decompress.c
 @@ -9,6 +9,7 @@
@@ -55,8 +49,6 @@ index d2842f5..a760681 100644
  	{ {0, 0}, NULL, NULL }
  };
  
-diff --git a/usr/Kconfig b/usr/Kconfig
-index 1c3039f..e2721f5 100644
 --- a/usr/Kconfig
 +++ b/usr/Kconfig
 @@ -72,6 +72,15 @@ config RD_LZMA
