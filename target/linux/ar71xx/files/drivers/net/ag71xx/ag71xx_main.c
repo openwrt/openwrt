@@ -402,8 +402,13 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 
 	/* setup FIFO configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
+	if (pdata->is_ar724x) {
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, pdata->fifo_cfg1);
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, pdata->fifo_cfg2);
+	} else {
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
+	}
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, FIFO_CFG4_INIT);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, FIFO_CFG5_INIT);
 

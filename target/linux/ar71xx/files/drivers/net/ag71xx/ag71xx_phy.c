@@ -72,8 +72,12 @@ static void ag71xx_phy_link_update(struct ag71xx *ag)
 		return;
 	}
 
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3,
-			pdata->is_ar91xx ? 0x780fff : 0x008001ff);
+	if (pdata->is_ar91xx)
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, 0x00780fff);
+	else if (pdata->is_ar724x)
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, pdata->fifo_cfg3);
+	else
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, 0x008001ff);
 
 	if (pdata->set_pll)
 		pdata->set_pll(ag->speed);
