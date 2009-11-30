@@ -637,7 +637,7 @@ endef
 
 define KernelPackage/p54-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(P54USBFW) $(1)/lib/firmware/isl3886usb
+	$(INSTALL_DATA) $(DL_DIR)/$(P54USBFW) $(1)/lib/firmware/isl3887usb
 endef
 
 define KernelPackage/rt61-pci/install
