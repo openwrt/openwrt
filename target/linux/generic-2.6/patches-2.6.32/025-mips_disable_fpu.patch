@@ -8,7 +8,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 --
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -827,6 +827,17 @@ config I8259
+@@ -828,6 +828,17 @@ config I8259
  config MIPS_BONITO64
  	bool
  
@@ -71,7 +71,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  /* Control registers */
  
  #define FPCREG_RID	0	/* $0  = revision id */
-@@ -1273,6 +1275,13 @@ int fpu_emulator_cop1Handler(struct pt_r
+@@ -1274,6 +1276,13 @@ int fpu_emulator_cop1Handler(struct pt_r
  
  	return sig;
  }
