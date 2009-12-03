@@ -19,6 +19,9 @@ ar71xx_board_name() {
 	*AW-NR580)
 		name="aw-nr580"
 		;;
+	*DIR825B1)
+		name="dir825b1"
+		;;
 	*"Bullet M")
 		name="bullet-m"
 		;;
