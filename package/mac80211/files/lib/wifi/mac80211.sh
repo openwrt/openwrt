@@ -289,7 +289,7 @@ detect_mac80211() {
 	devidx=0
 	config_load wireless
 	while :; do
-		config_get type "wifi$devidx" type
+		config_get type "radio$devidx" type
 		[ -n "$type" ] || break
 		devidx=$(($devidx + 1))
 	done
@@ -318,7 +318,7 @@ detect_mac80211() {
 		iw phy "$dev" info | grep -q '2412 MHz' || { mode_band="a"; channel="36"; }
 
 		cat <<EOF
-config wifi-device  wifi$devidx
+config wifi-device  radio$devidx
 	option type     mac80211
 	option channel  ${channel}
 	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)
@@ -328,7 +328,7 @@ config wifi-device  wifi$devidx
 $ht_capab
 
 config wifi-iface
-	option device   wifi$devidx
+	option device   radio$devidx
 	option network  lan
 	option mode     ap
 	option ssid     OpenWrt
