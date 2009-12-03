@@ -187,7 +187,7 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	am->mii_bus->irq = am->mii_irq;
 	am->mii_bus->priv = am;
 	am->mii_bus->parent = &pdev->dev;
-	snprintf(am->mii_bus->id, MII_BUS_ID_SIZE, "%x", 0);
+	snprintf(am->mii_bus->id, MII_BUS_ID_SIZE, "%s", dev_name(&pdev->dev));
 	am->mii_bus->phy_mask = pdata->phy_mask;
 
 	for (i = 0; i < PHY_MAX_ADDR; i++)
