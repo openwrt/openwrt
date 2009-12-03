@@ -16,17 +16,15 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/input.h>
+#include <linux/pci.h>
+#include <linux/ath9k_platform.h>
+#include <linux/delay.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
-#include <linux/pci.h>
-#include <linux/ath9k_platform.h>
-#include <linux/delay.h>
-
 #include "devices.h"
-
 
 #define DIR825B1_GPIO_LED_BLUE_USB		0
 #define DIR825B1_GPIO_LED_ORANGE_POWER		1
@@ -40,19 +38,16 @@
 
 #define DIR825B1_BUTTONS_POLL_INTERVAL		20
 
-
-#define DIR825B1_CAL_LOCATION_0			0xbf661000
-#define DIR825B1_CAL_LOCATION_1			0xbf665000
+#define DIR825B1_CAL_LOCATION_0			0x1f661000
+#define DIR825B1_CAL_LOCATION_1			0x1f665000
 
 #define DIR825B1_MAC_LOCATION_0			0x2ffa81b8
 #define DIR825B1_MAC_LOCATION_1			0x2ffa8370
-
 
 static struct ath9k_platform_data dir825b1_wmac0_data;
 static struct ath9k_platform_data dir825b1_wmac1_data;
 static char dir825b1_wmac0_mac[6];
 static char dir825b1_wmac1_mac[6];
-
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition dir825b1_partitions[] = {
@@ -79,14 +74,12 @@ static struct mtd_partition dir825b1_partitions[] = {
 };
 #endif /* CONFIG_MTD_PARTITIONS */
 
-
 static struct flash_platform_data dir825b1_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
         .parts          = dir825b1_partitions,
         .nr_parts       = ARRAY_SIZE(dir825b1_partitions),
 #endif
 };
-
 
 static struct spi_board_info dir825b1_spi_info[] = {
 	{
@@ -97,7 +90,6 @@ static struct spi_board_info dir825b1_spi_info[] = {
 		.platform_data  = &dir825b1_flash_data,
 	}
 };
-
 
 static struct gpio_led dir825b1_leds_gpio[] __initdata = {
 	{
@@ -127,7 +119,6 @@ static struct gpio_led dir825b1_leds_gpio[] __initdata = {
 	}
 };
 
-
 static struct gpio_button dir825b1_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
@@ -146,7 +137,6 @@ static struct gpio_button dir825b1_gpio_buttons[] __initdata = {
 	}
 };
 
-
 #ifdef CONFIG_PCI
 static struct ar71xx_pci_irq dir825b1_pci_irqs[] __initdata = {
         {
@@ -160,23 +150,20 @@ static struct ar71xx_pci_irq dir825b1_pci_irqs[] __initdata = {
         }
 };
 
-
 static int dir825b1_pci_plat_dev_init(struct pci_dev *dev)
 {
-	switch(PCI_SLOT(dev->devfn))
-	{
-		case 17:
-			dev->dev.platform_data = &dir825b1_wmac0_data;
-			break;
+	switch(PCI_SLOT(dev->devfn)) {
+	case 17:
+		dev->dev.platform_data = &dir825b1_wmac0_data;
+		break;
 
-		case 18:
-			dev->dev.platform_data = &dir825b1_wmac1_data;
-			break;
+	case 18:
+		dev->dev.platform_data = &dir825b1_wmac1_data;
+		break;
 	}
 
-	return(0);
+	return 0;
 }
-
 
 static void dir825b1_pci_fixup(struct pci_dev *dev)
 {
@@ -186,21 +173,20 @@ static void dir825b1_pci_fixup(struct pci_dev *dev)
 	u32 bar0;
 	u32 val;
 
-	if (ar71xx_mach != AR71XX_MACH_DIR825B1) return;
+	if (ar71xx_mach != AR71XX_MACH_DIR_825_B1)
+		return;
 
 	dir825b1_pci_plat_dev_init(dev);
 	cal_data = dev->dev.platform_data;
 
-	if (*cal_data != 0xa55a)
-	{
+	if (*cal_data != 0xa55a) {
 		printk(KERN_ERR "PCI: no calibration data found for %s\n",
 		       pci_name(dev));
 		return;
 	}
 
 	mem = ioremap(AR71XX_PCI_MEM_BASE, 0x10000);
-	if (!mem)
-	{
+	if (!mem) {
 		printk(KERN_ERR "PCI: ioremap error for device %s\n",
 		       pci_name(dev));
 		return;
@@ -218,12 +204,11 @@ static void dir825b1_pci_fixup(struct pci_dev *dev)
 
 	/* set pointer to first reg address */
 	cal_data += 3;
-	while (*cal_data != 0xffff)
-	{
+	while (*cal_data != 0xffff) {
 		u32 reg;
 		reg = *cal_data++;
 		val = *cal_data++;
-		val |= (*cal_data++) << 16; 
+		val |= (*cal_data++) << 16;
 
 		__raw_writel(val, mem + reg);
 		udelay(100);
@@ -248,8 +233,7 @@ static void dir825b1_pci_fixup(struct pci_dev *dev)
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID,
 			dir825b1_pci_fixup);
 
-
-static void __init dir825b1_pci_init(void) 
+static void __init dir825b1_pci_init(void)
 {
 	memcpy(dir825b1_wmac0_data.eeprom_data,
 	       (u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_0),
@@ -271,7 +255,6 @@ static void __init dir825b1_pci_init(void)
 static void __init dir825b1_pci_init(void) { }
 #endif /* CONFIG_PCI */
 
-
 static void __init dir825b1_setup(void)
 {
         u8 mac[6], i;
@@ -285,13 +268,13 @@ static void __init dir825b1_setup(void)
 	ar71xx_add_device_mdio(0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth0_data.phy_mask = 0x1E;
+	ar71xx_eth0_data.phy_mask = 0x1e;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth1_data.phy_mask = 0xC0;
+	ar71xx_eth1_data.phy_mask = 0xc0;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_pll_data.pll_1000 = 0x11110000;
@@ -314,4 +297,4 @@ static void __init dir825b1_setup(void)
 	dir825b1_pci_init();
 }
 
-MIPS_MACHINE(AR71XX_MACH_DIR825B1, "D-Link DIR825B1", dir825b1_setup);
+MIPS_MACHINE(AR71XX_MACH_DIR_825_B1, "D-Link DIR-825 rev. B1", dir825b1_setup);

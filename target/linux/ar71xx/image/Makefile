@@ -483,7 +483,7 @@ define Image/Build/Profile/WRT400N
 endef
 
 define Image/Build/Profile/DIR825B1
-	$(call Image/Build/Template/DIR825B1/$(1),dir825b1,board=DIR825B1)
+	$(call Image/Build/Template/DIR825B1/$(1),dir-825-b1,board=DIR-825-B1)
 endef
 
 define Image/Build/Profile/WRT160NL

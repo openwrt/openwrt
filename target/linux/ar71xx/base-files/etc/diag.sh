@@ -42,7 +42,7 @@ get_status_led() {
 	bullet-m | rocket-m | nano-m)
 		status_led="ubnt:green:link4"
 		;;
-	dir825b1)
+	dir-825-b1)
 		status_led="dir825b1:orange:power"
 		;;
 	ls-sr71)
