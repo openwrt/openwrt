@@ -124,6 +124,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_AP81,	/* Atheros AP81 */
 	AR71XX_MACH_AP83,	/* Atheros AP83 */
 	AR71XX_MACH_AW_NR580,	/* AzureWave AW-NR580 */
+	AR71XX_MACH_DIR825B1,	/* D-Link DIR-825 rev. B1 */
 	AR71XX_MACH_RB_411,	/* MikroTik RouterBOARD 411/411A/411AH */
 	AR71XX_MACH_RB_411U,	/* MikroTik RouterBOARD 411U */
 	AR71XX_MACH_RB_433,	/* MikroTik RouterBOARD 433/433AH */

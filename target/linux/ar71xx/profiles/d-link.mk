@@ -15,3 +15,15 @@ define Profile/DIR615C1/Description
 endef
 
 $(eval $(call Profile,DIR615C1))
+
+
+define Profile/DIR825B1
+	NAME:=D-Link DIR-825 rev. B1
+	PACKAGES:=kmod-ath9k hostapd-mini
+endef
+
+define Profile/DIR825B1/Description
+	Package set optimized for the D-Link DIR-825 rev. B1.
+endef
+
+$(eval $(call Profile,DIR825B1))

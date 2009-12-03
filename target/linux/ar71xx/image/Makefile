@@ -77,6 +77,23 @@ define Image/Build/WRT400N
 	fi; fi
 endef
 
+dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,6208k@0x50000(firmware)
+define Image/Build/DIR825B1
+	$(call PatchKernelLzma,$(2),$(3) $(dir825b1_mtdlayout))
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(call imgname,$(1),$(2)).bin)
+	if [ `stat -c%s "$(call imgname,$(1),$(2)).bin"` -gt 1048576 ]; then \
+	        echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+		rm -f $(call imgname,$(1),$(2)).bin; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 5308416 ]; then \
+	        echo "Warning: $(KDIR)/root.$(1) is too big"; \
+		rm -f $(call imgname,$(1),$(2)).bin; \
+	else \
+		dd if=$(KDIR)/root.$(1) of=$(call imgname,$(1),$(2)).bin bs=1k seek=1024; \
+		cp $(call imgname,$(1),$(2)).bin $(call imgname,$(1),$(2))-backup-loader.bin; \
+		echo -n "01AP94-AR7161-RT-080619-00" >> $(call imgname,$(1),$(2))-backup-loader.bin; \
+	fi; fi
+endef
+
 cameo_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,896k(kernel),2880k(rootfs),64k(art)ro,3776k@0x30000(firmware)
 define Image/Build/Cameo
 	$(call PatchKernelLzma,$(2),$(3) $(cameo_mtdlayout))
@@ -268,6 +285,18 @@ define Image/Build/Template/WRT400N/jffs2-64k
 	$(call Image/Build/Template/WRT400N,jffs2-64k,$(1),$(2),$(3))
 endef
 
+define Image/Build/Template/DIR825B1
+	$(call Image/Build/DIR825B1,$(1),$(2),$(3),$(4))
+endef
+
+define Image/Build/Template/DIR825B1/squashfs
+	$(call Image/Build/Template/DIR825B1,squashfs,$(1),$(2),$(3))
+endef
+
+define Image/Build/Template/DIR825B1/jffs2-64k
+	$(call Image/Build/Template/DIR825B1,jffs2-64k,$(1),$(2),$(3))
+endef
+
 define Image/Build/Template/CyberTAN
 	$(call Image/Build/CyberTAN,$(1),$(2),$(3),$(4))
 endef
@@ -453,6 +482,10 @@ define Image/Build/Profile/WRT400N
 	$(call Image/Build/Template/WRT400N/$(1),wrt400n,board=WRT400N)
 endef
 
+define Image/Build/Profile/DIR825B1
+	$(call Image/Build/Template/DIR825B1/$(1),dir825b1,board=DIR825B1)
+endef
+
 define Image/Build/Profile/WRT160NL
 	$(call Image/Build/Template/CyberTAN/$(1),wrt160nl,board=WRT160NL,1.00.01)
 endef
@@ -461,6 +494,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP83,$(1))
 	$(call Image/Build/Profile/A02RBW300N,$(1))
 	$(call Image/Build/Profile/DIR615C1,$(1))
+	$(call Image/Build/Profile/DIR825B1,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/MZKW300NH,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
