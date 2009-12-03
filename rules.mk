@@ -45,7 +45,7 @@ else
 endif
 
 DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
-BIN_DIR:=$(TOPDIR)/bin
+BIN_DIR:=$(TOPDIR)/bin/$(BOARD)
 INCLUDE_DIR:=$(TOPDIR)/include
 SCRIPT_DIR:=$(TOPDIR)/scripts
 BUILD_DIR_BASE:=$(TOPDIR)/build_dir
