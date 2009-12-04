@@ -814,7 +814,7 @@ define KernelPackage/rfkill
   DEPENDS:=@TARGET_x86||TARGET_olpc||TARGET_s3c24xx||TARGET_brcm47xx
   KCONFIG:= \
     CONFIG_RFKILL \
-    CONFIG_RFKILL_INPUT \
+    CONFIG_RFKILL_INPUT=y \
     CONFIG_RFKILL_LEDS=y
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.31)),1)
   FILES:= \
