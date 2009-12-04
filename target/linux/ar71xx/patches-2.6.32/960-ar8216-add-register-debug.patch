@@ -1,0 +1,257 @@
+--- a/drivers/net/phy/ar8216.c
++++ b/drivers/net/phy/ar8216.c
+@@ -563,10 +563,227 @@ ar8216_config_aneg(struct phy_device *ph
+ 	return 0;
+ }
+ 
++#define ar8216_dbg(fmt, args...) printk(KERN_DEBUG "ar8216: " fmt, ## args)
++
++static inline const char *ctrl_state_str(u32 ctrl)
++{
++	switch (ctrl & AR8216_PORT_CTRL_STATE) {
++	case AR8216_PORT_STATE_DISABLED:
++		return "disabled";
++	case AR8216_PORT_STATE_BLOCK:
++		return "block";
++	case AR8216_PORT_STATE_LISTEN:
++		return "listen";
++	case AR8216_PORT_STATE_LEARN:
++		return "learn";
++	case AR8216_PORT_STATE_FORWARD:
++		return "forward";
++	default:
++		break;
++	}
++
++	return "????";
++}
++
++static inline const char *ctrl_vlanmode_str(u32 ctrl)
++{
++	u32 vlan_mode;
++
++	vlan_mode = (ctrl & AR8216_PORT_CTRL_VLAN_MODE) >>
++		    AR8216_PORT_CTRL_VLAN_MODE_S;
++	switch (vlan_mode)  {
++	case AR8216_OUT_KEEP:
++		return "keep";
++	case AR8216_OUT_STRIP_VLAN:
++		return "strip vlan";
++	case AR8216_OUT_ADD_VLAN:
++		return "add_vlan";
++	default:
++		break;
++	}
++
++	return "????";
++}
++
++static inline const char *vlan_vlanmode_str(u32 vlan)
++{
++	u32 vlan_mode;
++
++	vlan_mode = (vlan & AR8216_PORT_VLAN_MODE) >>
++		    AR8216_PORT_VLAN_MODE_S;
++	switch (vlan_mode)  {
++	case AR8216_IN_PORT_ONLY:
++		return "port only";
++	case AR8216_IN_PORT_FALLBACK:
++		return "port fallback";
++	case AR8216_IN_VLAN_ONLY:
++		return "VLAN only";
++	case AR8216_IN_SECURE:
++		return "secure";
++	default:
++		break;
++	}
++
++	return "????";
++}
++
++static void
++ar8216_dump_regs(struct ar8216_priv *ap)
++{
++	unsigned int i;
++	u32 t;
++
++	t = ar8216_mii_read(ap, AR8216_REG_CTRL);
++	ar8216_dbg("CTRL\t\t: %08x\n", t);
++	ar8216_dbg("  version\t: %u\n", (t & 0xff00) >> 8);
++	ar8216_dbg("  revision\t: %u\n", (t & 0xff));
++
++	ar8216_dbg("POWER_ON\t: %08x\n",
++		   ar8216_mii_read(ap, 0x04));
++	ar8216_dbg("INT\t\t: %08x\n",
++		   ar8216_mii_read(ap, 0x10));
++	ar8216_dbg("INT_MASK\t: %08x\n",
++		   ar8216_mii_read(ap, 0x14));
++	ar8216_dbg("MAC_ADDR0\t: %08x\n",
++		   ar8216_mii_read(ap, 0x20));
++	ar8216_dbg("MAC_ADDR1\t: %08x\n",
++		ar8216_mii_read(ap, 0x24));
++	ar8216_dbg("FLOOD_MASK\t: %08x\n",
++		ar8216_mii_read(ap, 0x2c));
++
++	t = ar8216_mii_read(ap, AR8216_REG_GLOBAL_CTRL);
++	ar8216_dbg("GLOBAL_CTRL\t: %08x\n", t);
++	ar8216_dbg("  mtu\t\t: %lu\n", t & AR8216_GCTRL_MTU);
++
++	ar8216_dbg("FLOW_CONTROL0\t: %08x\n",
++		ar8216_mii_read(ap, 0x34));
++	ar8216_dbg("FLOW_CONTROL1\t: %08x\n",
++		ar8216_mii_read(ap, 0x38));
++	ar8216_dbg("QM_CONTROL\t: %08x\n",
++		ar8216_mii_read(ap, 0x3c));
++	ar8216_dbg("VLAN_TABLE0\t: %08x\n",
++		ar8216_mii_read(ap, AR8216_REG_VTU));
++	ar8216_dbg("VLAN_TABLE1\t: %08x\n",
++		ar8216_mii_read(ap, AR8216_REG_VTU_DATA));
++	ar8216_dbg("ADDR_TABLE0\t: %08x\n",
++		ar8216_mii_read(ap, AR8216_REG_ATU));
++	ar8216_dbg("ADDR_TABLE1\t: %08x\n",
++		ar8216_mii_read(ap, AR8216_REG_ATU_DATA));
++	ar8216_dbg("ADDR_TABLE2\t: %08x\n",
++		ar8216_mii_read(ap, 0x58));
++	ar8216_dbg("ADDR_CTRL\t: %08x\n",
++		ar8216_mii_read(ap, 0x5c));
++	ar8216_dbg("IP_PRIO0\t: %08x\n",
++		ar8216_mii_read(ap, 0x60));
++	ar8216_dbg("IP_PRIO1\t: %08x\n",
++		ar8216_mii_read(ap, 0x64));
++	ar8216_dbg("IP_PRIO2\t: %08x\n",
++		ar8216_mii_read(ap, 0x68));
++	ar8216_dbg("IP_PRIO3\t: %08x\n",
++		ar8216_mii_read(ap, 0x6c));
++	ar8216_dbg("TAG_PRIO\t: %08x\n",
++		ar8216_mii_read(ap, 0x70));
++	ar8216_dbg("SERVICE_TAG\t: %08x\n",
++		ar8216_mii_read(ap, 0x74));
++	ar8216_dbg("CPU_PORT\t: %08x\n",
++		ar8216_mii_read(ap, 0x78));
++	ar8216_dbg("MIB_FUNC\t: %08x\n",
++		ar8216_mii_read(ap, 0x80));
++	ar8216_dbg("MDIO\t\t: %08x\n",
++		ar8216_mii_read(ap, 0x98));
++	ar8216_dbg("LED0\t\t: %08x\n",
++		ar8216_mii_read(ap, 0xb0));
++	ar8216_dbg("LED1\t\t: %08x\n",
++		ar8216_mii_read(ap, 0xb4));
++	ar8216_dbg("LED2\t\t: %08x\n",
++		ar8216_mii_read(ap, 0xb8));
++
++	for (i = 0; i < 6; i++) {
++		u32 reg = 0x100 * (i + 1);
++
++		t = ar8216_mii_read(ap, AR8216_REG_PORT_STATUS(i));
++		ar8216_dbg("PORT%d_STATUS\t: %08x\n", i, t);
++		ar8216_dbg("  speed\t\t: %s\n",
++			   (t & AR8216_PORT_STATUS_SPEED) ? "100" : "10");
++		ar8216_dbg("  speed error\t: %s\n",
++			   (t & AR8216_PORT_STATUS_SPEED_ERR) ? "yes" : "no");
++		ar8216_dbg("  txmac\t\t: %d\n",
++			   (t & AR8216_PORT_STATUS_TXMAC) ? 1 : 0);
++		ar8216_dbg("  rxmac\t\t: %d\n",
++			   (t & AR8216_PORT_STATUS_RXMAC) ? 1 : 0);
++		ar8216_dbg("  tx_flow\t: %s\n",
++			   (t & AR8216_PORT_STATUS_TXFLOW) ? "on" : "off");
++		ar8216_dbg("  rx_flow\t: %s\n",
++			   (t & AR8216_PORT_STATUS_RXFLOW) ? "on" : "off");
++		ar8216_dbg("  duplex\t: %s\n",
++			   (t & AR8216_PORT_STATUS_DUPLEX) ? "full" : "half");
++		ar8216_dbg("  link\t\t: %s\n",
++			   (t & AR8216_PORT_STATUS_LINK_UP) ? "up" : "down");
++		ar8216_dbg("  auto\t\t: %s\n",
++			   (t & AR8216_PORT_STATUS_LINK_AUTO) ? "on" : "off");
++		ar8216_dbg("  pause\t\t: %s\n",
++			   (t & AR8216_PORT_STATUS_LINK_PAUSE) ? "on" : "off");
++
++		t = ar8216_mii_read(ap, AR8216_REG_PORT_CTRL(i));
++		ar8216_dbg("PORT%d_CTRL\t: %08x\n", i, t);
++		ar8216_dbg("  state\t\t: %s\n", ctrl_state_str(t));
++		ar8216_dbg("  learn lock\t: %s\n",
++			   (t & AR8216_PORT_CTRL_LEARN_LOCK) ? "on" : "off");
++		ar8216_dbg("  vlan_mode\t: %s\n", ctrl_vlanmode_str(t));
++		ar8216_dbg("  igmp_snoop\t: %s\n",
++			   (t & AR8216_PORT_CTRL_IGMP_SNOOP) ? "on" : "off");
++		ar8216_dbg("  header\t: %s\n",
++			   (t & AR8216_PORT_CTRL_HEADER) ? "on" : "off");
++		ar8216_dbg("  mac_loop\t: %s\n",
++			   (t & AR8216_PORT_CTRL_MAC_LOOP) ? "on" : "off");
++		ar8216_dbg("  single_vlan\t: %s\n",
++			   (t & AR8216_PORT_CTRL_SINGLE_VLAN) ? "on" : "off");
++		ar8216_dbg("  mirror tx\t: %s\n",
++			   (t & AR8216_PORT_CTRL_MIRROR_TX) ? "on" : "off");
++		ar8216_dbg("  mirror rx\t: %s\n",
++			   (t & AR8216_PORT_CTRL_MIRROR_RX) ? "on" : "off");
++
++		t = ar8216_mii_read(ap, AR8216_REG_PORT_VLAN(i));
++		ar8216_dbg("PORT%d_VLAN\t: %08x\n", i, t);
++		ar8216_dbg("  default id\t: %lu\n",
++			   (t & AR8216_PORT_VLAN_DEFAULT_ID));
++		ar8216_dbg("  dest ports\t: %s%s%s%s%s%s\n",
++			   (t & 0x010000) ? "0 " : "",
++			   (t & 0x020000) ? "1 " : "",
++			   (t & 0x040000) ? "2 " : "",
++			   (t & 0x080000) ? "3 " : "",
++			   (t & 0x100000) ? "4 " : "",
++			   (t & 0x200000) ? "5 " : "");
++		ar8216_dbg("  tx priority\t: %s\n",
++			   (t & AR8216_PORT_VLAN_TX_PRIO) ? "on" : "off");
++		ar8216_dbg("  port priority\t: %lu\n",
++			   (t & AR8216_PORT_VLAN_PRIORITY) >>
++			   AR8216_PORT_VLAN_PRIORITY_S);
++		ar8216_dbg("  ingress mode\t: %s\n", vlan_vlanmode_str(t));
++
++		t = ar8216_mii_read(ap, AR8216_REG_PORT_RATE(i));
++		ar8216_dbg("PORT%d_RATE0\t: %08x\n", i, t);
++
++		ar8216_dbg("PORT%d_PRIO\t: %08x\n", i,
++			   ar8216_mii_read(ap, AR8216_REG_PORT_PRIO(i)));
++		ar8216_dbg("PORT%d_STORM\t: %08x\n", i,
++			   ar8216_mii_read(ap, reg + 0x14));
++		ar8216_dbg("PORT%d_QUEUE\t: %08x\n", i,
++			   ar8216_mii_read(ap, reg + 0x18));
++		ar8216_dbg("PORT%d_RATE1\t: %08x\n", i,
++			   ar8216_mii_read(ap, reg + 0x1c));
++		ar8216_dbg("PORT%d_RATE2\t: %08x\n", i,
++			   ar8216_mii_read(ap, reg + 0x20));
++		ar8216_dbg("PORT%d_RATE3\t: %08x\n", i,
++			   ar8216_mii_read(ap, reg + 0x24));
++	}
++}
++
+ static int
+ ar8216_probe(struct phy_device *pdev)
+ {
+ 	struct ar8216_priv priv;
++	static int regs_dumped;
+ 
+ 	u8 id, rev;
+ 	u32 val;
+@@ -575,9 +792,14 @@ ar8216_probe(struct phy_device *pdev)
+ 	val = ar8216_mii_read(&priv, AR8216_REG_CTRL);
+ 	rev = val & 0xff;
+ 	id = (val >> 8) & 0xff;
+-	if ((id != 1) || (rev != 1))
++	if ((id != 1) || (rev != 1 && rev != 2))
+ 		return -ENODEV;
+ 
++	if (!regs_dumped) {
++		ar8216_dump_regs(&priv);
++		regs_dumped++;
++	}
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/phy/ar8216.h
++++ b/drivers/net/phy/ar8216.h
+@@ -27,7 +27,7 @@
+ #define   AR8216_CTRL_RESET		BIT(31)
+ 
+ #define AR8216_REG_GLOBAL_CTRL		0x0030
+-#define   AR8216_GCTRL_MTU		BITS(0, 10)
++#define   AR8216_GCTRL_MTU		BITS(0, 12)
+ 
+ #define AR8216_REG_VTU			0x0040
+ #define   AR8216_VTU_OP			BITS(0, 3)
