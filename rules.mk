@@ -73,7 +73,7 @@ else
   STAGING_DIR:=$(TOPDIR)/staging_dir/target-$(GNU_TARGET_NAME)
   BUILD_DIR_TOOLCHAIN:=$(BUILD_DIR_BASE)/toolchain-$(GNU_TARGET_NAME)
   TOOLCHAIN_DIR:=$(TOPDIR)/staging_dir/toolchain-$(GNU_TARGET_NAME)
-  PACKAGE_DIR:=$(BIN_DIR)/packages/$(BOARD)_$(GNU_TARGET_NAME)
+  PACKAGE_DIR:=$(BIN_DIR)/packages
 endif
 STAMP_DIR:=$(BUILD_DIR)/stamp
 STAMP_DIR_HOST=$(BUILD_DIR_HOST)/stamp
