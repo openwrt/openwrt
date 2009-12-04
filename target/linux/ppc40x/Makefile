@@ -12,7 +12,7 @@ BOARDNAME:=AMCC/IBM PPC40x
 FEATURES:=squashfs
 CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=405
 
-LINUX_VERSION:=2.6.30.9
+LINUX_VERSION:=2.6.30.10
 LINUX_KARCH:=powerpc
 
 include $(INCLUDE_DIR)/target.mk

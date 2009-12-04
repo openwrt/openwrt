@@ -10,7 +10,7 @@ ARCH:=avr32
 BOARD:=avr32
 BOARDNAME:=Atmel AVR32
 FEATURES:=squashfs
-LINUX_VERSION:=2.6.30.9
+LINUX_VERSION:=2.6.30.10
 
 include $(INCLUDE_DIR)/target.mk
 

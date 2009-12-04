@@ -13,7 +13,7 @@ FEATURES:=squashfs jffs2 pci usb pcmcia
 CFLAGS:=-Os -pipe -march=i486 -funit-at-a-time
 SUBTARGETS:=amit ar525w r8610 dir-450 sitecom
 
-LINUX_VERSION:=2.6.30.9
+LINUX_VERSION:=2.6.30.10
 
 include $(INCLUDE_DIR)/target.mk
 

@@ -11,7 +11,7 @@ BOARD:=ifxmips
 BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2 atm
 
-LINUX_VERSION:=2.6.30.9
+LINUX_VERSION:=2.6.30.10
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 
