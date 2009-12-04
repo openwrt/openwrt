@@ -16,8 +16,6 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  arch/arm/mm/proc-syms.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mm/proc-syms.c b/arch/arm/mm/proc-syms.c
-index 195e48e..ac5c800 100644
 --- a/arch/arm/mm/proc-syms.c
 +++ b/arch/arm/mm/proc-syms.c
 @@ -27,6 +27,7 @@ EXPORT_SYMBOL(__cpuc_flush_kern_all);
@@ -28,6 +26,3 @@ index 195e48e..ac5c800 100644
  EXPORT_SYMBOL(dmac_inv_range);  /* because of flush_ioremap_region() */
  #else
  EXPORT_SYMBOL(cpu_cache);
--- 
-1.6.5.1
-
