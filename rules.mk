@@ -61,7 +61,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   STAGING_DIR:=$(TOPDIR)/staging_dir/target-$(ARCH)_$(LIBC)-$(LIBCV)
   BUILD_DIR_TOOLCHAIN:=$(BUILD_DIR_BASE)/toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)
   TOOLCHAIN_DIR:=$(TOPDIR)/staging_dir/toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)
-  PACKAGE_DIR:=$(BIN_DIR)/packages/$(BOARD)_$(LIBC)-$(LIBCV)
+  PACKAGE_DIR:=$(BIN_DIR)/packages
 else
   ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
     GNU_TARGET_NAME=$(call qstrip,$(CONFIG_TARGET_NAME))
