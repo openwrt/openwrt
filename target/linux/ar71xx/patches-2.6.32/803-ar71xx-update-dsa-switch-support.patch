@@ -1,0 +1,46 @@
+--- a/arch/mips/ar71xx/devices.c
++++ b/arch/mips/ar71xx/devices.c
+@@ -825,6 +825,8 @@ static struct platform_device ar71xx_dsa
+ void __init ar71xx_add_device_dsa(unsigned int id,
+ 				  struct dsa_platform_data *d)
+ {
++	int i;
++
+ 	switch (id) {
+ 	case 0:
+ 		d->netdev = &ar71xx_eth0_device.dev;
+@@ -838,7 +840,10 @@ void __init ar71xx_add_device_dsa(unsign
+ 			id);
+ 		return;
+ 	}
+-	d->mii_bus = &ar71xx_mdio_device.dev;
++
++	for (i = 0; i < d->nr_chips; i++)
++		d->chip[i].mii_bus = &ar71xx_mdio_device.dev;
++
+ 	ar71xx_dsa_switch_device.dev.platform_data = d;
+ 
+ 	platform_device_register(&ar71xx_dsa_switch_device);
+--- a/arch/mips/ar71xx/mach-tl-wr941nd.c
++++ b/arch/mips/ar71xx/mach-tl-wr941nd.c
+@@ -104,7 +104,7 @@ static struct gpio_button tl_wr941nd_gpi
+ 	}
+ };
+ 
+-static struct dsa_platform_data tl_wr941nd_dsa_data = {
++static struct dsa_chip_data tl_wr941nd_dsa_chip = {
+ 	.port_names[0]  = "wan",
+ 	.port_names[1]  = "lan1",
+ 	.port_names[2]  = "lan2",
+@@ -113,6 +113,11 @@ static struct dsa_platform_data tl_wr941
+ 	.port_names[5]  = "cpu",
+ };
+ 
++static struct dsa_platform_data tl_wr941nd_dsa_data = {
++	.nr_chips	= 1,
++	.chip		= &tl_wr941nd_dsa_chip,
++};
++
+ static void __init tl_wr941nd_setup(void)
+ {
+ 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);

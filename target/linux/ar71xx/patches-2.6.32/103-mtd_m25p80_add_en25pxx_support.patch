@@ -1,0 +1,13 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -626,6 +626,10 @@ static struct flash_info __devinitdata m
+ 	{ "mx25l12805d", 0xc22018, 0, 64 * 1024, 256, },
+ 	{ "mx25l12855e", 0xc22618, 0, 64 * 1024, 256, },
+ 
++	/* EON -- en25pxx */
++	{ "en25p32", 0x1c2016, 0, 64 * 1024,  64, },
++	{ "en25p64", 0x1c2017, 0, 64 * 1024, 128, },
++
+ 	/* PMC -- pm25x "blocks" are 32K, sectors are 4K */
+ 	{ "pm25lv512",         0, 32 * 1024, 2, SECT_4K },
+ 	{ "pm25lv010",         0, 32 * 1024, 4, SECT_4K },
