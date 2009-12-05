@@ -15,10 +15,10 @@ start() {
 					vlan[0-9]|vlan1[0-5])
 						local id="${1#vlan}"
 						append batch "delete network.eth0.${1}${N}"
-						append batch "set network.eth0_${n}=switch_vlan${N}"
-						append batch "set network.eth0_${n}.device=eth0${N}"
-						append batch "set network.eth0_${n}.vlan=${id}${N}"
-						append batch "set network.eth0_${n}.ports='${2}'${N}"
+						append batch "set network.eth0_${id}=switch_vlan${N}"
+						append batch "set network.eth0_${id}.device=eth0${N}"
+						append batch "set network.eth0_${id}.vlan=${id}${N}"
+						append batch "set network.eth0_${id}.ports='${2}'${N}"
 					;;
 					esac
 				}
