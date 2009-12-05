@@ -1,25 +1,31 @@
 wpa_supplicant_setup_vif() {
 	local vif="$1"
 	local driver="$2"
-	
+	local key="$key"
+
 	# wpa_supplicant should use wext for mac80211 cards
 	[ "$driver" = "mac80211" ] && driver='wext'
 
+	# make sure we have the psk
+	[ -n "$key" ] || {
+		config_get key "$vif" key
+	}
+
 	case "$enc" in
-		PSK|psk|psk2|PSK2)
+		*psk*)
 			key_mgmt='WPA-PSK'
 			config_get_bool usepassphrase "$vif" passphrase 1
 			case "$enc" in
-				psk|PSK)
-					proto='WPA'
+				*psk2*)
+					proto='RSN'
 					if [ "$usepassphrase" = "1" ]; then
 						passphrase="psk=\"${key}\""
 					else
 						passphrase="psk=${key}"
 					fi
 				;;
-				psk2|PSK2)
-					proto='RSN'
+				*psk*)
+					proto='WPA'
 					if [ "$usepassphrase" = "1" ]; then
 						passphrase="psk=\"${key}\""
 					else
@@ -28,13 +34,13 @@ wpa_supplicant_setup_vif() {
 				;;
 			esac
 		;;
-		WPA|wpa|WPA2|wpa2|8021x|8021X)
+		*wpa*|*8021x*)
 			proto='WPA2'
 			key_mgmt='WPA-EAP'
 			config_get ca_cert "$vif" ca_cert
 			ca_cert=${ca_cert:+"ca_cert=\"$ca_cert\""}
 			case "$eap_type" in
-				tls|TLS)
+				tls)
 					pairwise='pairwise=CCMP'
 					group='group=CCMP'
 					config_get priv_key "$vif" priv_key
@@ -42,7 +48,7 @@ wpa_supplicant_setup_vif() {
 					priv_key="private_key=\"$priv_key\""
 					priv_key_pwd="private_key_passwd=\"$priv_key_pwd\""
 				;;
-				peap|PEAP|ttls|TTLS)
+				peap|ttls)
 					config_get auth "$vif" auth
 					config_get identity "$vif" identity
 					config_get password "$vif" password
