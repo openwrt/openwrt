@@ -76,11 +76,13 @@ enable_mac80211() {
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
 	config_get txpower "$device" txpower
+	config_get country "$device" country
 	find_mac80211_phy "$device" || return 0
 	config_get phy "$device" phy
 	local i=0
 	fixed=""
 
+	[ -n "$country" ] && iw reg set "$country"
 	[ "$channel" = "auto" -o "$channel" = "0" ] || {
 		fixed=1
 	}
