@@ -179,7 +179,7 @@ enable_mac80211() {
 					if [ -n "$keymgmt" ]; then
 						for idx in 1 2 3 4; do
 							local zidx
-							zidx = $((idx - 1))
+							zidx=$(($idx - 1))
 							config_get key "$vif" "key${idx}"
 							if [ -n "$key" ]; then
 								append keystring "${zidx}:${key} "
