@@ -176,10 +176,10 @@ enable_mac80211() {
 			case "$enc" in
 				wep)
 					config_get keymgmt "$vif" keymgmt
-					if [ -e "$keymgmt" ]; then
+					if [ -n "$keymgmt" ]; then
 						for idx in 1 2 3 4; do
 							local zidx
-							zidx = idx - 1
+							zidx = $((idx - 1))
 							config_get key "$vif" "key${idx}"
 							if [ -n "$key" ]; then
 								append keystring "${zidx}:${key} "
@@ -187,7 +187,7 @@ enable_mac80211() {
 						done
 					fi
 				;;
-				wpa)
+				*wpa*|*psk*)
 					config_get key "$vif" key
 				;;
 			esac
@@ -240,7 +240,7 @@ enable_mac80211() {
 				config_get bssid "$vif" bssid
 				case "$enc" in
 					wep)
-						if [ -e "$keymgmt" ]; then
+						if [ -n "$keymgmt" ]; then
 							[ -n "$keystring" ] &&
 								iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid key "$keystring"
 						else
@@ -254,7 +254,7 @@ enable_mac80211() {
 							fi
 						fi
 					;;
-					wpa*|psk*)
+					*wpa*|*psk*)
 						config_get key "$vif" key
 						if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
 							wpa_supplicant_setup_vif "$vif" wext || {
