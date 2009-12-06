@@ -161,15 +161,15 @@ static int __init rdc_board_setup(void)
 
 	ROOT_DEV = 0;
 	rdc_map_info.name = rdc_flash_device.name;
-	rdc_map_info.phys = 0xff000000;
-	rdc_map_info.size = 0x1000000;
+	rdc_map_info.size = 0x800000;	//8MB
+	rdc_map_info.phys = (u32) -rdc_map_info.size;
 	rdc_map_info.bankwidth = 2;
 	rdc_map_info.set_vpp = NULL;
 	simple_map_init(&rdc_map_info);
 	while (probe_flash_start(&rdc_map_info)) {
-		rdc_map_info.phys++;
-		if (--rdc_map_info.size)
+		if (rdc_map_info.size /= 2 < 0x100000)	//1MB
 			panic("Could not find start of flash!");
+		rdc_map_info.phys = (u32) -rdc_map_info.size;
 	}
 	rdc_flash_resource.start = rdc_map_info.phys;
 	rdc_flash_data.width = rdc_map_info.bankwidth;
