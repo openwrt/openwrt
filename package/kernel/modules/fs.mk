@@ -459,6 +459,23 @@ endef
 $(eval $(call KernelPackage,nls-cp852))
 
 
+define KernelPackage/nls-cp866
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Codepage 866 (Cyrillic)
+  KCONFIG:=CONFIG_NLS_CODEPAGE_866
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp866.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp866)
+$(call KernelPackage/nls/Depends)
+endef
+
+
+define KernelPackage/nls-cp866/description
+  Kernel module for NLS Codepage 866 (Cyrillic)
+endef
+
+$(eval $(call KernelPackage,nls-cp866))
+
+
 define KernelPackage/nls-cp1250
   SUBMENU:=$(FS_MENU)
   TITLE:=Codepage 1250 (Eastern Europe)
