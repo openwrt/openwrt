@@ -250,6 +250,13 @@ config BUSYBOX_CONFIG_GETOPT
 	  written by others, this utility may be for you. Most people will
 	  wisely leave this disabled.
 
+config BUSYBOX_CONFIG_FEATURE_GETOPT_LONG
+	bool "Support option -l"
+	default n if BUSYBOX_CONFIG_LONG_OPTS
+	depends on BUSYBOX_CONFIG_GETOPT
+	help
+	  Enable support for long options (option -l).
+
 config BUSYBOX_CONFIG_HEXDUMP
 	bool "hexdump"
 	default y
@@ -286,7 +293,7 @@ config BUSYBOX_CONFIG_HWCLOCK
 config BUSYBOX_CONFIG_FEATURE_HWCLOCK_LONG_OPTIONS
 	bool "Support long options (--hctosys,...)"
 	default n
-	depends on BUSYBOX_CONFIG_HWCLOCK && BUSYBOX_CONFIG_GETOPT_LONG
+	depends on BUSYBOX_CONFIG_HWCLOCK && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  By default, the hwclock utility only uses short options. If you
 	  are overly fond of its long options, such as --hctosys, --utc, etc)
@@ -399,15 +406,12 @@ config BUSYBOX_CONFIG_MKSWAP
 	  Once you have created swap space using 'mkswap' you need to enable
 	  the swap space using the 'swapon' utility.
 
-config BUSYBOX_CONFIG_FEATURE_MKSWAP_V0
-	bool "Version 0 support"
+config BUSYBOX_CONFIG_FEATURE_MKSWAP_UUID
+	bool "UUID support"
 	default n
 	depends on BUSYBOX_CONFIG_MKSWAP
-#	depends on MKSWAP && BUSYBOX_CONFIG_DEPRECATED
 	help
-	  Enable support for the old v0 style.
-	  If your kernel is older than 2.1.117, then v0 support is the
-	  only option.
+	  Generate swap spaces with universally unique identifiers.
 
 config BUSYBOX_CONFIG_MORE
 	bool "more"
@@ -763,6 +767,13 @@ config BUSYBOX_CONFIG_SCRIPT
 	default n
 	help
 	  The script makes typescript of terminal session.
+
+config BUSYBOX_CONFIG_SCRIPTREPLAY
+	bool "scriptreplay"
+	default n
+	help
+	  This program replays a typescript, using timing information
+	  given by script -t.
 
 config BUSYBOX_CONFIG_SETARCH
 	bool "setarch"

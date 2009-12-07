@@ -13,7 +13,7 @@ config BUSYBOX_CONFIG_PASSWORD_MINLEN
 	  Minimum allowable password length.
 
 config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
-	int "MD5: Trade Bytes for Speed"
+	int "MD5: Trade bytes for speed (0:fast, 3:slow)"
 	default 2
 	range 0 3
 	help
@@ -102,6 +102,28 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_FANCY_PROMPT
 	  Setting this option allows for prompts to use things like \w and
 	  \$ and escape codes.
 
+config BUSYBOX_CONFIG_FEATURE_EDITING_ASK_TERMINAL
+	bool "Query cursor position from terminal"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
+	help
+	  Allow usage of "ESC [ 6 n" sequence. Terminal answers back with
+	  current cursor position. This information is used to make line
+	  editing more robust in some cases.
+	  If you are not sure whether your terminals respond to this code
+	  correctly, or want to save on code size (about 300 bytes),
+	  then do not turn this option on.
+
+config BUSYBOX_CONFIG_FEATURE_NON_POSIX_CP
+	bool "Non-POSIX, but safer, copying to special nodes"
+	default y
+	help
+	  With this option, "cp file symlink" will delete symlink
+	  and create a regular file. This does not conform to POSIX,
+	  but prevents a symlink attack.
+	  Similarly, "cp file device" will not send file's data
+	  to the device.
+
 config BUSYBOX_CONFIG_FEATURE_VERBOSE_CP_MESSAGE
 	bool "Give more precise messages when copy fails (cp, mv etc)"
 	default n
@@ -151,4 +173,5 @@ config BUSYBOX_CONFIG_FEATURE_HWIB
 	help
 	  Support for printing infiniband addresses in
 	  network applets.
+
 endmenu

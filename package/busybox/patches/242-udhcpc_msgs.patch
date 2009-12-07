@@ -3,7 +3,7 @@
 @@ -126,6 +126,7 @@ int FAST_FUNC send_decline(uint32_t xid,
  int FAST_FUNC send_discover(uint32_t xid, uint32_t requested)
  {
- 	struct dhcpMessage packet;
+ 	struct dhcp_packet packet;
 +	static int msgs = 0;
  
  	init_packet(&packet, DHCPDISCOVER);

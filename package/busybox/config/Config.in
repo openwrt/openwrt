@@ -29,18 +29,6 @@ config BUSYBOX_CONFIG_EXTRA_COMPAT
 	  some GNU extensions in libc. You probably only need this option
 	  if you plan to run busybox on desktop.
 
-config BUSYBOX_CONFIG_FEATURE_ASSUME_UNICODE
-	bool "Assume that 1:1 char/glyph correspondence is not true"
-	default n
-	help
-	  This makes various applets aware that one byte is not
-	  one character on screen.
-
-	  Busybox aims to eventually work correctly with Unicode displays.
-	  Any older encodings are not guaranteed to work.
-	  Probably by the time when busybox will be fully Unicode-clean,
-	  other encodings will be mainly of historic interest.
-
 choice
 	prompt "Buffer allocation policy"
 	default BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_ON_STACK
@@ -113,7 +101,29 @@ config BUSYBOX_CONFIG_LOCALE_SUPPORT
 	  Enable this if your system has locale support and you would like
 	  busybox to support locale settings.
 
-config BUSYBOX_CONFIG_GETOPT_LONG
+config BUSYBOX_CONFIG_FEATURE_ASSUME_UNICODE
+	bool "Support Unicode"
+	default n
+	help
+	  This makes various applets aware that one byte is not
+	  one character on screen.
+
+	  Busybox aims to eventually work correctly with Unicode displays.
+	  Any older encodings are not guaranteed to work.
+	  Probably by the time when busybox will be fully Unicode-clean,
+	  other encodings will be mainly of historic interest.
+
+config BUSYBOX_CONFIG_FEATURE_CHECK_UNICODE_IN_ENV
+	bool "Check $LANG environment variable"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_ASSUME_UNICODE && !BUSYBOX_CONFIG_LOCALE_SUPPORT
+	help
+	  With this option on, Unicode support is activated
+	  only if LANG variable has the value of the form "xxxx.utf8"
+
+	  Otherwise, Unicode support will be always enabled and active.
+
+config BUSYBOX_CONFIG_LONG_OPTS
 	bool "Support for --long-options"
 	default y
 	help

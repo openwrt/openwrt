@@ -1,16 +1,16 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -271,6 +271,7 @@ USE_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_
- USE_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_NEVER))
- USE_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_NEVER))
- USE_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-+USE_NETMSG(APPLET(netmsg, _BB_DIR_BIN, _BB_SUID_ALWAYS))
- USE_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_NEVER))
- USE_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_NEVER))
- USE_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+@@ -278,6 +278,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_D
+ IF_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_DROP))
+ IF_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_DROP))
+ IF_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_DROP))
++IF_NETMSG(APPLET(netmsg, _BB_DIR_BIN, _BB_SUID_REQUIRE))
+ IF_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_DROP))
+ IF_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_DROP))
+ IF_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_DROP))
 --- a/include/usage.h
 +++ b/include/usage.h
-@@ -3010,6 +3010,9 @@
+@@ -3101,6 +3101,9 @@
  
  #endif
  
@@ -18,11 +18,11 @@
 +#define netmsg_full_usage ""
 +
  #define netstat_trivial_usage \
-        "[-laentuwxr"USE_FEATURE_NETSTAT_WIDE("W")USE_FEATURE_NETSTAT_PRG("p")"]"
+        "[-laentuwxr"IF_FEATURE_NETSTAT_WIDE("W")IF_FEATURE_NETSTAT_PRG("p")"]"
  #define netstat_full_usage "\n\n" \
 --- a/networking/Config.in
 +++ b/networking/Config.in
-@@ -600,6 +600,12 @@ config NC
+@@ -617,6 +617,12 @@ config NC
  	  A simple Unix utility which reads and writes data across network
  	  connections.
  
@@ -37,7 +37,7 @@
  	default n
 --- a/networking/Kbuild
 +++ b/networking/Kbuild
-@@ -24,6 +24,7 @@ lib-$(CONFIG_IP)           += ip.o
+@@ -25,6 +25,7 @@ lib-$(CONFIG_IP)           += ip.o
  lib-$(CONFIG_IPCALC)       += ipcalc.o
  lib-$(CONFIG_NAMEIF)       += nameif.o
  lib-$(CONFIG_NC)           += nc.o

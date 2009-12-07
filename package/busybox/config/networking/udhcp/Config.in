@@ -75,11 +75,16 @@ config BUSYBOX_CONFIG_FEATURE_UDHCP_PORT
 	  This feature is typically not needed.
 
 config BUSYBOX_CONFIG_UDHCP_DEBUG
-	bool "Compile udhcp with noisy debugging messages"
-	default n
-	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
+	int "Maximum verbosity level for udhcp applets (0..9)"
+	default 0
+	range 0 9
+	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC || BUSYBOX_CONFIG_APP_DHCPRELAY
 	help
-	  If selected, udhcpd will output extra debugging output.
+	  Verbosity can be increased with multiple -v options.
+	  This options controls how high it can be cranked up.
+
+	  Bigger values result in bigger code. Levels above 1
+	  are very verbose and useful for debugging only.
 
 config BUSYBOX_CONFIG_FEATURE_UDHCP_RFC3397
 	bool "Support for RFC3397 domain search (experimental)"

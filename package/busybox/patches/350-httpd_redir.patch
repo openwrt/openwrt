@@ -1,24 +1,22 @@
 --- a/include/usage.h
 +++ b/include/usage.h
-@@ -1638,7 +1638,8 @@
- 	USE_FEATURE_HTTPD_BASIC_AUTH(" [-r realm]") \
- 	USE_FEATURE_HTTPD_AUTH_MD5(" [-m pass]") \
-        " [-h home]" \
--       " [-d/-e string]"
-+       " [-d/-e string]" \
+@@ -1693,6 +1693,7 @@
+ 	IF_FEATURE_HTTPD_BASIC_AUTH(" [-r REALM]") \
+        " [-h HOME]\n" \
+        "or httpd -d/-e" IF_FEATURE_HTTPD_AUTH_MD5("/-m") " STRING"
 +       " [-R <path> [-H <host>]]"
  #define httpd_full_usage "\n\n" \
         "Listen for incoming HTTP requests\n" \
       "\nOptions:" \
-@@ -1656,6 +1657,8 @@
-      "\n	-h HOME		Home directory (default .)" \
+@@ -1710,6 +1711,8 @@
+      "\n	-m STRING	MD5 crypt STRING") \
       "\n	-e STRING	HTML encode STRING" \
       "\n	-d STRING	URL decode STRING" \
 +     "\n	-R PATH 	Redirect target path" \
 +     "\n	-H HOST 	Redirect target host" \
  
  #define hwclock_trivial_usage \
- 	USE_FEATURE_HWCLOCK_LONG_OPTIONS( \
+ 	IF_FEATURE_HWCLOCK_LONG_OPTIONS( \
 --- a/networking/httpd.c
 +++ b/networking/httpd.c
 @@ -248,6 +248,8 @@ struct globals {
@@ -29,7 +27,7 @@
 +	const char *redirect_host;
  	Htaccess_IP *ip_a_d;    /* config allow/deny lines */
  
- 	USE_FEATURE_HTTPD_BASIC_AUTH(const char *g_realm;)
+ 	IF_FEATURE_HTTPD_BASIC_AUTH(const char *g_realm;)
 @@ -294,6 +296,8 @@ struct globals {
  #define index_page        (G.index_page       )
  #define found_mime_type   (G.found_mime_type  )
@@ -76,19 +74,19 @@
 +	c_opt_config_file,
  	d_opt_decode_url,
  	h_opt_home_httpd,
- 	USE_FEATURE_HTTPD_ENCODE_URL_STR(e_opt_encode_url,)
+ 	IF_FEATURE_HTTPD_ENCODE_URL_STR(e_opt_encode_url,)
 @@ -2315,12 +2328,13 @@ int httpd_main(int argc UNUSED_PARAM, ch
  	/* We do not "absolutize" path given by -h (home) opt.
  	 * If user gives relative path in -h,
  	 * $SCRIPT_FILENAME will not be set. */
 -	opt = getopt32(argv, "c:d:h:"
 +	opt = getopt32(argv, "R:H:c:d:h:"
- 			USE_FEATURE_HTTPD_ENCODE_URL_STR("e:")
- 			USE_FEATURE_HTTPD_BASIC_AUTH("r:")
- 			USE_FEATURE_HTTPD_AUTH_MD5("m:")
- 			USE_FEATURE_HTTPD_SETUID("u:")
+ 			IF_FEATURE_HTTPD_ENCODE_URL_STR("e:")
+ 			IF_FEATURE_HTTPD_BASIC_AUTH("r:")
+ 			IF_FEATURE_HTTPD_AUTH_MD5("m:")
+ 			IF_FEATURE_HTTPD_SETUID("u:")
  			"p:ifv",
 +			&redirect_path, &redirect_host,
  			&opt_c_configFile, &url_for_decode, &home_httpd
- 			USE_FEATURE_HTTPD_ENCODE_URL_STR(, &url_for_encode)
- 			USE_FEATURE_HTTPD_BASIC_AUTH(, &g_realm)
+ 			IF_FEATURE_HTTPD_ENCODE_URL_STR(, &url_for_encode)
+ 			IF_FEATURE_HTTPD_BASIC_AUTH(, &g_realm)

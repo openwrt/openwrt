@@ -90,12 +90,8 @@ config BUSYBOX_CONFIG_MODPROBE
 	  Handle the loading of modules, and their dependencies on a high
 	  level.
 
-	  Note that in the state, modprobe does not understand multiple
-	  module options from the configuration file. See option below.
-
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_BLACKLIST
-	bool
-	prompt "Blacklist support"
+	bool "Blacklist support"
 	default n
 	depends on BUSYBOX_CONFIG_MODPROBE
 	help
