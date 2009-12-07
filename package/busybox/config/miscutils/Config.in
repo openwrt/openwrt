@@ -19,6 +19,28 @@ config BUSYBOX_CONFIG_BBCONFIG
 	  The bbconfig applet will print the config file with which
 	  busybox was built.
 
+config BUSYBOX_CONFIG_BEEP
+	bool "beep"
+	default n
+	help
+	  The beep applets beeps in a given freq/Hz.
+
+config BUSYBOX_CONFIG_FEATURE_BEEP_FREQ
+	int "default frequency"
+	range 0 2147483647
+	default 4000
+	depends on BUSYBOX_CONFIG_BEEP
+	help
+	  Frequency for default beep.
+
+config BUSYBOX_CONFIG_FEATURE_BEEP_LENGTH_MS
+	int "default length"
+	range 0 2147483647
+	default 30
+	depends on BUSYBOX_CONFIG_BEEP
+	help
+	  Length in ms for default beep.
+
 config BUSYBOX_CONFIG_CHAT
 	bool "chat"
 	default n
@@ -249,6 +271,20 @@ config BUSYBOX_CONFIG_FBSPLASH
 	  - commands for fifo:
 	    "NN" (ASCII decimal number) - percentage to show on progress bar
 	    "exit" - well you guessed it
+
+config BUSYBOX_CONFIG_FLASH_LOCK
+	bool "flash_lock"
+	default n
+	help
+	  The flash_lock binary from mtd-utils as of git head 5ec0c10d0. This
+	  utility locks part or all of the flash device.
+
+config BUSYBOX_CONFIG_FLASH_UNLOCK
+	bool "flash_unlock"
+	default n
+	help
+	  The flash_unlock binary from mtd-utils as of git head 5ec0c10d0. This
+	  utility unlocks part or all of the flash device.
 
 config BUSYBOX_CONFIG_FLASH_ERASEALL
 	bool "flash_eraseall"
@@ -575,6 +611,12 @@ config BUSYBOX_CONFIG_TTYSIZE
 	  only height, or both, in any order. It also does not complain on
 	  error, but returns default 80x24.
 	  Usage in shell scripts: width=`ttysize w`.
+
+config BUSYBOX_CONFIG_VOLNAME
+	bool "volname"
+	default n
+	help
+	  Prints a CD-ROM volume name.
 
 config BUSYBOX_CONFIG_WATCHDOG
 	bool "watchdog"

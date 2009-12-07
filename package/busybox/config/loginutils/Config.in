@@ -97,6 +97,13 @@ config BUSYBOX_CONFIG_ADDGROUP
 	help
 	  Utility for creating a new group account.
 
+config BUSYBOX_CONFIG_FEATURE_ADDGROUP_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_ADDGROUP && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Support long options for the addgroup applet.
+
 config BUSYBOX_CONFIG_FEATURE_ADDUSER_TO_GROUP
 	bool "Support for adding users to groups"
 	default n
@@ -141,9 +148,25 @@ config BUSYBOX_CONFIG_ADDUSER
 config BUSYBOX_CONFIG_FEATURE_ADDUSER_LONG_OPTIONS
 	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_ADDUSER && BUSYBOX_CONFIG_GETOPT_LONG
+	depends on BUSYBOX_CONFIG_ADDUSER && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Support long options for the adduser applet.
+
+config BUSYBOX_CONFIG_FIRST_SYSTEM_ID
+	int "First valid system uid or gid for adduser and addgroup"
+	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
+	range 0 64900
+	default 100
+	help
+	  First valid system uid or gid for adduser and addgroup
+
+config BUSYBOX_CONFIG_LAST_SYSTEM_ID
+	int "Last valid system uid or gid for adduser and addgroup"
+	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
+	range 0 64900
+	default 999
+	help
+	  Last valid system uid or gid for adduser and addgroup
 
 config BUSYBOX_CONFIG_DELUSER
 	bool "deluser"

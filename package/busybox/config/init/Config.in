@@ -93,6 +93,26 @@ config BUSYBOX_CONFIG_HALT
 	help
 	  Stop all processes and either halt, reboot, or power off the system.
 
+config BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
+	bool "Call telinit on shutdown and reboot"
+	default n
+	depends on BUSYBOX_CONFIG_HALT && !BUSYBOX_CONFIG_INIT
+	help
+	  Call an external program (normally telinit) to facilitate
+	  a switch to a proper runlevel.
+
+	  This option is only available if you selected halt and friends,
+	  but did not select init.
+
+config BUSYBOX_CONFIG_TELINIT_PATH
+	string "Path to telinit executable"
+	default "/sbin/telinit"
+	depends on BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
+	help
+	  When busybox halt and friends have to call external telinit
+	  to facilitate proper shutdown, this path is to be used when
+	  locating telinit executable.
+
 config BUSYBOX_CONFIG_MESG
 	bool "mesg"
 	default y

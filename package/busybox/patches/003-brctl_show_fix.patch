@@ -4,23 +4,23 @@
  		"setageing\0" "setfd\0" "sethello\0" "setmaxage\0"
  		"setpathcost\0" "setportprio\0" "setbridgeprio\0"
  	)
--	USE_FEATURE_BRCTL_SHOW("showmacs\0" "show\0");
-+	USE_FEATURE_BRCTL_SHOW("show\0");
+-	IF_FEATURE_BRCTL_SHOW("showmacs\0" "show\0");
++	IF_FEATURE_BRCTL_SHOW("show\0");
  
  	enum { ARG_addbr = 0, ARG_delbr, ARG_addif, ARG_delif
- 		USE_FEATURE_BRCTL_FANCY(,
+ 		IF_FEATURE_BRCTL_FANCY(,
 @@ -112,7 +112,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
  		   ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
  		   ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
  		)
--		USE_FEATURE_BRCTL_SHOW(, ARG_showmacs, ARG_show)
-+		USE_FEATURE_BRCTL_SHOW(, ARG_show)
+-		IF_FEATURE_BRCTL_SHOW(, ARG_showmacs, ARG_show)
++		IF_FEATURE_BRCTL_SHOW(, ARG_show)
  	};
  
  	int fd;
 --- a/networking/Config.in
 +++ b/networking/Config.in
-@@ -66,12 +66,12 @@ config FEATURE_BRCTL_FANCY
+@@ -77,12 +77,12 @@ config FEATURE_BRCTL_FANCY
  	  This adds about 600 bytes.
  
  config FEATURE_BRCTL_SHOW

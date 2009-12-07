@@ -35,7 +35,7 @@ config BUSYBOX_CONFIG_RUN_PARTS
 config BUSYBOX_CONFIG_FEATURE_RUN_PARTS_LONG_OPTIONS
 	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_RUN_PARTS && BUSYBOX_CONFIG_GETOPT_LONG
+	depends on BUSYBOX_CONFIG_RUN_PARTS && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Support long options for the run-parts applet.
 
@@ -69,7 +69,7 @@ config BUSYBOX_CONFIG_FEATURE_START_STOP_DAEMON_FANCY
 config BUSYBOX_CONFIG_FEATURE_START_STOP_DAEMON_LONG_OPTIONS
 	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_START_STOP_DAEMON && BUSYBOX_CONFIG_GETOPT_LONG
+	depends on BUSYBOX_CONFIG_START_STOP_DAEMON && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Support long options for the start-stop-daemon applet.
 

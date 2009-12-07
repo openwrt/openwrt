@@ -1,6 +1,6 @@
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -363,7 +363,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+@@ -380,7 +380,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
  
  			switch (state) {
  			case INIT_SELECTING:
@@ -8,13 +8,13 @@
 +				if (!discover_retries || packet_num < discover_retries) {
  					if (packet_num == 0)
  						xid = random_xid();
- 
-@@ -394,7 +394,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+ 					/* broadcast */
+@@ -409,7 +409,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+ 				packet_num = 0;
  				continue;
- 			case RENEW_REQUESTED:
  			case REQUESTING:
 -				if (packet_num < discover_retries) {
 +				if (!discover_retries || packet_num < discover_retries) {
- 					/* send request packet */
- 					if (state == RENEW_REQUESTED) /* unicast */
- 						send_renew(xid, server_addr, requested_ip);
+ 					/* send broadcast select packet */
+ 					send_select(xid, server_addr, requested_ip);
+ 					timeout = discover_timeout;

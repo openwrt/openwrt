@@ -53,12 +53,12 @@ config BUSYBOX_CONFIG_AR
 	  probably say N here.
 
 config BUSYBOX_CONFIG_FEATURE_AR_LONG_FILENAMES
-	bool "Support for long filenames (not need for debs)"
+	bool "Support for long filenames (not needed for debs)"
 	default n
 	depends on BUSYBOX_CONFIG_AR
 	help
-	  By default the ar format can only store the first 15 characters of
-	  the filename, this option removes that limitation.
+	  By default the ar format can only store the first 15 characters
+	  of the filename, this option removes that limitation.
 	  It supports the GNU ar long filename method which moves multiple long
 	  filenames into a the data section of a new ar entry.
 
@@ -165,6 +165,21 @@ config BUSYBOX_CONFIG_GZIP
 	  gzip is used to compress files.
 	  It's probably the most widely used UNIX compression program.
 
+config BUSYBOX_CONFIG_LZOP
+	bool "lzop"
+	default n
+	help
+	  Lzop compression/decompresion.
+
+config BUSYBOX_CONFIG_LZOP_COMPR_HIGH
+	bool "lzop complession levels 7,8,9 (not very useful)"
+	default n
+	depends on BUSYBOX_CONFIG_LZOP
+	help
+	  High levels (7,8,9) of lzop compression. These levels
+	  are actually slower than gzip at equivalent compression ratios
+	  and take up 3.2K of code.
+
 config BUSYBOX_CONFIG_RPM2CPIO
 	bool "rpm2cpio"
 	default n
@@ -196,11 +211,11 @@ config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
 	  tar archives using the `-c' option.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_AUTODETECT
-	bool "Autodetect gz/bz2 compressed tarballs"
+	bool "Autodetect compressed tarballs"
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_SEAMLESS_Z || BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ || BUSYBOX_CONFIG_FEATURE_SEAMLESS_BZ2 || BUSYBOX_CONFIG_FEATURE_SEAMLESS_LZMA
 	help
-	  With this option tar can automatically detect gzip/bzip2 compressed
+	  With this option tar can automatically detect compressed
 	  tarballs. Currently it works only on files (not pipes etc).
 
 config BUSYBOX_CONFIG_FEATURE_TAR_FROM
@@ -241,7 +256,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_GNU_EXTENSIONS
 config BUSYBOX_CONFIG_FEATURE_TAR_LONG_OPTIONS
 	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_TAR && BUSYBOX_CONFIG_GETOPT_LONG
+	depends on BUSYBOX_CONFIG_TAR && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Enable use of long options, increases size by about 400 Bytes
 
@@ -283,8 +298,8 @@ config BUSYBOX_CONFIG_FEATURE_LZMA_FAST
 	default n
 	depends on BUSYBOX_CONFIG_UNLZMA
 	help
-	  This option reduces decompression time by about 33% at the cost of
-	  a 2K bigger binary.
+	  This option reduces decompression time by about 25% at the cost of
+	  a 1K bigger binary.
 
 config BUSYBOX_CONFIG_UNZIP
 	bool "unzip"

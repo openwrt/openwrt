@@ -91,13 +91,13 @@ config BUSYBOX_CONFIG_PS
 	  ps gives a snapshot of the current processes.
 
 config BUSYBOX_CONFIG_FEATURE_PS_WIDE
-	bool "Enable argument for wide output (-w)"
+	bool "Enable wide output option (-w)"
 	default n
 	depends on BUSYBOX_CONFIG_PS
 	help
 	  Support argument 'w' for wide output.
-	  If given once, 132 chars are printed and given more than
-	  one, the length is unlimited.
+	  If given once, 132 chars are printed, and if given more
+	  than once, the length is unlimited.
 
 config BUSYBOX_CONFIG_FEATURE_PS_TIME
 	bool "Enable time and elapsed time output"
@@ -105,6 +105,13 @@ config BUSYBOX_CONFIG_FEATURE_PS_TIME
 	depends on BUSYBOX_CONFIG_PS && BUSYBOX_CONFIG_DESKTOP
 	help
 	  Support -o time and -o etime output specifiers.
+
+config BUSYBOX_CONFIG_FEATURE_PS_ADDITIONAL_COLUMNS
+	bool "Enable additional ps columns"
+	default n
+	depends on BUSYBOX_CONFIG_PS && BUSYBOX_CONFIG_DESKTOP
+	help
+	  Support -o rgroup, -o ruser, -o nice output specifiers.
 
 config BUSYBOX_CONFIG_FEATURE_PS_UNUSUAL_SYSTEMS
 	bool "Support Linux prior to 2.4.0 and non-ELF systems"
