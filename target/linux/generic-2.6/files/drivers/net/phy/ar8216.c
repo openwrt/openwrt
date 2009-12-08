@@ -546,7 +546,7 @@ ar8216_read_status(struct phy_device *phydev)
 
 	phydev->speed = SPEED_100;
 	phydev->duplex = DUPLEX_FULL;
-	phydev->state = PHY_UP;
+	phydev->link = 1;
 
 	/* flush the address translation unit */
 	if (ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0))
