@@ -1,6 +1,6 @@
 --- a/arch/mips/ar71xx/devices.c
 +++ b/arch/mips/ar71xx/devices.c
-@@ -822,6 +822,8 @@ static struct platform_device ar71xx_dsa
+@@ -825,6 +825,8 @@ static struct platform_device ar71xx_dsa
  void __init ar71xx_add_device_dsa(unsigned int id,
  				  struct dsa_platform_data *d)
  {
@@ -9,7 +9,7 @@
  	switch (id) {
  	case 0:
  		d->netdev = &ar71xx_eth0_device.dev;
-@@ -835,7 +837,10 @@ void __init ar71xx_add_device_dsa(unsign
+@@ -838,7 +840,10 @@ void __init ar71xx_add_device_dsa(unsign
  			id);
  		return;
  	}
