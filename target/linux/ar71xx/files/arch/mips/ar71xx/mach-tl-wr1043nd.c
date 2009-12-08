@@ -50,7 +50,7 @@ static struct mtd_partition tl_wr1043nd_partitions[] = {
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
 	} , {
-		.name		= "firmware",    
+		.name		= "firmware",
 		.offset		= 0x020000,
 		.size		= 0x7d0000,
 	}
@@ -59,8 +59,8 @@ static struct mtd_partition tl_wr1043nd_partitions[] = {
 
 static struct flash_platform_data tl_wr1043nd_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = tl_wr1043nd_partitions,
-        .nr_parts       = ARRAY_SIZE(tl_wr1043nd_partitions),
+	.parts		= tl_wr1043nd_partitions,
+	.nr_parts	= ARRAY_SIZE(tl_wr1043nd_partitions),
 #endif
 };
 
@@ -116,11 +116,11 @@ static void __init tl_wr1043nd_setup(void)
 	ar71xx_eth0_data.phy_mask = 0x0;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
-	
+
 	ar71xx_add_device_eth(0);
-	
+
 	ar71xx_add_device_usb();
-	
+
 	ar71xx_add_device_spi(NULL, tl_wr1043nd_spi_info,
 					ARRAY_SIZE(tl_wr1043nd_spi_info));
 

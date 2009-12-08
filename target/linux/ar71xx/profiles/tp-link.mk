@@ -50,7 +50,7 @@ $(eval $(call Profile,TLWR941NDV2))
 
 define Profile/TLWR1043NDV1
 	NAME:=TP-LINK TL-WR1043ND v1
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb-core kmod-usb2
 endef
 
 define Profile/TLWR1043NDV1/Description
