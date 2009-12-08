@@ -18,6 +18,7 @@
 #include <linux/pci.h>
 #include <linux/ath9k_platform.h>
 #include <linux/delay.h>
+#include <linux/rtl8366_smi.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -33,6 +34,9 @@
 #define WNDR3700_GPIO_BTN_WPS		3
 #define WNDR3700_GPIO_BTN_RESET		8
 #define WNDR3700_GPIO_BTN_WIFI		11
+
+#define WNDR3700_GPIO_RTL8366_SDA	5
+#define WNDR3700_GPIO_RTL8366_SCK	7
 
 #define WNDR3700_BUTTONS_POLL_INTERVAL    20
 
@@ -274,20 +278,34 @@ static struct gpio_button wndr3700_gpio_buttons[] __initdata = {
 	}
 };
 
+static struct rtl8366_smi_platform_data wndr3700_rtl8366_smi_data = {
+	.gpio_sda        = WNDR3700_GPIO_RTL8366_SDA,
+	.gpio_sck        = WNDR3700_GPIO_RTL8366_SCK,
+};
+
+static struct platform_device wndr3700_rtl8366_smi_device = {
+	.name		= "rtl8366-smi",
+	.id		= -1,
+	.dev = {
+		.platform_data	= &wndr3700_rtl8366_smi_data,
+	}
+};
+
 static void __init wndr3700_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
 
 	ar71xx_set_mac_base(mac);
-	ar71xx_add_device_mdio(0x0);
 
 	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
+	ar71xx_eth0_data.mii_bus_dev = &wndr3700_rtl8366_smi_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = 0xf;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_eth1_pll_data.pll_1000 = 0x11110000;
+	ar71xx_eth1_data.mii_bus_dev = &wndr3700_rtl8366_smi_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;
 
@@ -306,6 +324,7 @@ static void __init wndr3700_setup(void)
 				      ARRAY_SIZE(wndr3700_gpio_buttons),
 				      wndr3700_gpio_buttons);
 
+	platform_device_register(&wndr3700_rtl8366_smi_device);
 	wndr3700_pci_init();
 }
 
