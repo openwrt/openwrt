@@ -628,6 +628,9 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			ar71xx_eth_instance);
 	}
 
+	if (pdata->mii_bus_dev == NULL)
+		pdata->mii_bus_dev = &ar71xx_mdio_device.dev;
+
 	/* Reset the device */
 	ar71xx_device_stop(pdata->reset_bit);
 	mdelay(100);

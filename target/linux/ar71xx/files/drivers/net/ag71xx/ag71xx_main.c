@@ -824,6 +824,12 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
+	if (pdata->mii_bus_dev == NULL) {
+		dev_err(&pdev->dev, "no MII bus device specified\n");
+		err = -EINVAL;
+		goto err_out;
+	}
+
 	dev = alloc_etherdev(sizeof(*ag));
 	if (!dev) {
 		dev_err(&pdev->dev, "alloc_etherdev failed\n");
@@ -836,7 +842,6 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	ag = netdev_priv(dev);
 	ag->pdev = pdev;
 	ag->dev = dev;
-	ag->mii_bus = ag71xx_mdio_bus->mii_bus;
 	ag->msg_enable = netif_msg_init(ag71xx_msg_level,
 					AG71XX_DEFAULT_MSG_ENABLE);
 	spin_lock_init(&ag->lock);

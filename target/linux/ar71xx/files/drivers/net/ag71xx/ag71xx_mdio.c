@@ -16,8 +16,6 @@
 #define AG71XX_MDIO_RETRY	1000
 #define AG71XX_MDIO_DELAY	5
 
-struct ag71xx_mdio *ag71xx_mdio_bus;
-
 static inline void ag71xx_mdio_wr(struct ag71xx_mdio *am, unsigned reg,
 				  u32 value)
 {
@@ -143,9 +141,6 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	int i;
 	int err;
 
-	if (ag71xx_mdio_bus)
-		return -EBUSY;
-
 	pdata = pdev->dev.platform_data;
 	if (!pdata) {
 		dev_err(&pdev->dev, "no platform data specified\n");
@@ -202,7 +197,6 @@ static int __init ag71xx_mdio_probe(struct platform_device *pdev)
 	ag71xx_mdio_dump_regs(am);
 
 	platform_set_drvdata(pdev, am);
-	ag71xx_mdio_bus = am;
 	return 0;
 
  err_free_bus:
@@ -220,7 +214,6 @@ static int __exit ag71xx_mdio_remove(struct platform_device *pdev)
 	struct ag71xx_mdio *am = platform_get_drvdata(pdev);
 
 	if (am) {
-		ag71xx_mdio_bus = NULL;
 		mdiobus_unregister(am->mii_bus);
 		mdiobus_free(am->mii_bus);
 		iounmap(am->mdio_base);
