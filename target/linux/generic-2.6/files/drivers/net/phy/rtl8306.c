@@ -913,6 +913,9 @@ rtl8306_fixup(struct phy_device *pdev)
 	struct rtl_priv priv;
 	u16 chipid;
 
+	if (pdev->addr != 0)
+		return 0;
+
 	priv.page = -1;
 	priv.bus = pdev->bus;
 	chipid = rtl_get(&priv.dev, RTL_REG_CHIPID);
