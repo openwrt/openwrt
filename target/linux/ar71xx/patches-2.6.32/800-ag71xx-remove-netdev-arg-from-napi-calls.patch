@@ -1,6 +1,6 @@
 --- a/drivers/net/ag71xx/ag71xx_main.c
 +++ b/drivers/net/ag71xx/ag71xx_main.c
-@@ -593,7 +593,7 @@ static void ag71xx_oom_timer_handler(uns
+@@ -595,7 +595,7 @@ static void ag71xx_oom_timer_handler(uns
  	struct net_device *dev = (struct net_device *) data;
  	struct ag71xx *ag = netdev_priv(dev);
  
@@ -9,7 +9,7 @@
  }
  
  static void ag71xx_tx_timeout(struct net_device *dev)
-@@ -749,7 +749,7 @@ static int ag71xx_poll(struct napi_struc
+@@ -751,7 +751,7 @@ static int ag71xx_poll(struct napi_struc
  		DBG("%s: disable polling mode, done=%d, limit=%d\n",
  			dev->name, done, limit);
  
@@ -18,7 +18,7 @@
  
  		/* enable interrupts */
  		spin_lock_irqsave(&ag->lock, flags);
-@@ -768,7 +768,7 @@ static int ag71xx_poll(struct napi_struc
+@@ -770,7 +770,7 @@ static int ag71xx_poll(struct napi_struc
  		printk(KERN_DEBUG "%s: out of memory\n", dev->name);
  
  	mod_timer(&ag->oom_timer, jiffies + AG71XX_OOM_REFILL);
@@ -27,7 +27,7 @@
  	return 0;
  }
  
-@@ -798,7 +798,7 @@ static irqreturn_t ag71xx_interrupt(int 
+@@ -800,7 +800,7 @@ static irqreturn_t ag71xx_interrupt(int 
  	if (likely(status & AG71XX_INT_POLL)) {
  		ag71xx_int_disable(ag, AG71XX_INT_POLL);
  		DBG("%s: enable polling mode\n", dev->name);

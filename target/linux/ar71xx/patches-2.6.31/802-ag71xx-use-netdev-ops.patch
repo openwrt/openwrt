@@ -1,6 +1,6 @@
 --- a/drivers/net/ag71xx/ag71xx_main.c
 +++ b/drivers/net/ag71xx/ag71xx_main.c
-@@ -805,6 +805,18 @@ static void ag71xx_set_multicast_list(st
+@@ -811,6 +811,18 @@ static void ag71xx_set_multicast_list(st
  	/* TODO */
  }
  
@@ -19,7 +19,7 @@
  static int __init ag71xx_probe(struct platform_device *pdev)
  {
  	struct net_device *dev;
-@@ -875,14 +887,9 @@ static int __init ag71xx_probe(struct pl
+@@ -886,14 +898,9 @@ static int __init ag71xx_probe(struct pl
  	}
  
  	dev->base_addr = (unsigned long)ag->mac_base;
