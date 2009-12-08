@@ -124,7 +124,7 @@ static void __init wrt160nl_setup(void)
 	ar71xx_add_device_mdio(0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.phy_mask = 0xf;
+	ar71xx_eth0_data.phy_mask = 0x01;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
