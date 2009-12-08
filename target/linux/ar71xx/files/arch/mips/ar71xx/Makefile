@@ -26,6 +26,7 @@ obj-$(CONFIG_AR71XX_MACH_RB_4XX)	+= mach-rb-4xx.o
 obj-$(CONFIG_AR71XX_MACH_TEW_632BRP)	+= mach-tew-632brp.o
 obj-$(CONFIG_AR71XX_MACH_TL_WR741ND)	+= mach-tl-wr741nd.o
 obj-$(CONFIG_AR71XX_MACH_TL_WR941ND)	+= mach-tl-wr941nd.o
+obj-$(CONFIG_AR71XX_MACH_TL_WR1043ND)	+= mach-tl-wr1043nd.o
 obj-$(CONFIG_AR71XX_MACH_UBNT)		+= mach-ubnt.o
 obj-$(CONFIG_AR71XX_MACH_WNDR3700)	+= mach-wndr3700.o
 obj-$(CONFIG_AR71XX_MACH_WNR2000)	+= mach-wnr2000.o

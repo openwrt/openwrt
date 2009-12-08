@@ -474,6 +474,10 @@ define Image/Build/Profile/TLWR941NDV2
 	$(call Image/Build/Template/TPLINK/$(1),tl-wr941ndv2,board=TL-WR941ND,TL-WR941NDv2)
 endef
 
+define Image/Build/Profile/TLWR1043NDV1
+	$(call Image/Build/Template/TPLINK/$(1),tl-wr1043ndv1,board=TL-WR1043ND,TL-WR1043NDv1)
+endef
+
 define Image/Build/Profile/WNDR3700
 	$(call Image/Build/Template/WNDR3700/$(1),wndr3700,board=WNDR3700)
 endef
@@ -503,6 +507,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR841NDV3,$(1))
 	$(call Image/Build/Profile/TLWR841NDV5,$(1))
 	$(call Image/Build/Profile/TLWR941NDV2,$(1))
+	$(call Image/Build/Profile/TLWR1043NDV1,$(1))
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/WNDR3700,$(1))

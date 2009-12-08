@@ -37,6 +37,7 @@
 #define HWID_TL_WR841ND_V3	0x08410003
 #define HWID_TL_WR841ND_V5	0x08410005
 #define HWID_TL_WR941ND_V2	0x09410002
+#define HWID_TL_WR1043ND_V1    0x10430001
 
 #define MD5SUM_LEN	16
 
@@ -133,6 +134,14 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_WR941ND_V2,
 		.hw_rev		= 2,
 		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id		= "TL-WR1043NDv1",
+		.hw_id		= HWID_TL_WR1043ND_V1,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x7c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x140000,
