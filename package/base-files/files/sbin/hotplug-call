@@ -8,7 +8,7 @@ export HOTPLUG_TYPE="$1"
 [ -d /sys/firmware -a "firmware" = "$HOTPLUG_TYPE" -a "add" = "$ACTION" ] && {
 	[ -f "/lib/firmware/$FIRMWARE" ] && {
 		echo 1 > "/sys$DEVPATH/loading"
-		cp "/lib/firmware/$FIRMWARE" "/sys$DEVPATH/data"
+		dd if="/lib/firmware/$FIRMWARE" of="/sys$DEVPATH/data" bs=64k
 		echo 0 > "/sys$DEVPATH/loading"
 	}
 	exit 0
