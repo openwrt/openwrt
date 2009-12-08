@@ -36,10 +36,10 @@
 
 #ifdef DANUBE_USE_DDR_RAM
 //#define  DANUBE_DDR_RAM_111M
-#define DANUBE_DDR_RAM_166M
+//#define DANUBE_DDR_RAM_166M
 //#define PROMOSDDR400
 //#define DDR_SAMSUNG_166M
-//#define DDR_PSC_166M
+#define DDR_PSC_166M
 //#define DANUBE_DDR_RAM_133M
 #define DANUBE_DDR_RAM_SIZE	32	/* 32M DDR-DRAM for reference board */
 #endif
