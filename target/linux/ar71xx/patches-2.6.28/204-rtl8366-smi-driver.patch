@@ -1,0 +1,21 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -114,4 +114,8 @@ config MDIO_OF_GPIO
+ 	---help---
+ 	  Supports GPIO lib-based MDIO busses.
+ 
++config RTL8366_SMI
++	tristate "Support for RTL8366 switch via SMI interface"
++	depends on GENERIC_GPIO
++
+ endif # PHYLIB
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+ obj-$(CONFIG_IP175C_PHY)	+= ip175c.o
+ obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
++obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi.o
+ obj-$(CONFIG_MICREL_PHY)	+= micrel.o
+ obj-$(CONFIG_FIXED_PHY)		+= fixed.o
+ obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
