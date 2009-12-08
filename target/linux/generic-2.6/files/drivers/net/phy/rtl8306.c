@@ -954,7 +954,7 @@ rtl8306_read_status(struct phy_device *pdev)
 {
 	pdev->speed = SPEED_100;
 	pdev->duplex = DUPLEX_FULL;
-	pdev->state = PHY_UP;
+	pdev->link = 1;
 
 	return 0;
 }

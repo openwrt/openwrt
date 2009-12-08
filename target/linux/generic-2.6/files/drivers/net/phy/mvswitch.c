@@ -366,7 +366,7 @@ mvswitch_read_status(struct phy_device *pdev)
 {
 	pdev->speed = SPEED_100;
 	pdev->duplex = DUPLEX_FULL;
-	pdev->state = PHY_UP;
+	pdev->link = 1;
 
 	/* XXX ugly workaround: we can't force the switch
 	 * to gracefully handle hosts moving from one port to another,

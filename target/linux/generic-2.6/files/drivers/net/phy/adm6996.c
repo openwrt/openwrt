@@ -96,7 +96,7 @@ static int adm6996_read_status(struct phy_device *phydev)
 {
 	phydev->speed = SPEED_100;
 	phydev->duplex = DUPLEX_FULL;
-	phydev->state = PHY_UP;
+	phydev->link = 1;
 	return 0;
 }
 
