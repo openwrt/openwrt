@@ -135,7 +135,6 @@ struct ag71xx {
 
 extern struct ethtool_ops ag71xx_ethtool_ops;
 
-extern struct ag71xx_mdio *ag71xx_mdio_bus;
 int ag71xx_mdio_driver_init(void) __init;
 void ag71xx_mdio_driver_exit(void);
 
