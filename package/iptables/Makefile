@@ -52,6 +52,7 @@ endef
 define Package/iptables/description
  IPv4 firewall administration tool.
  Includes support for:
+ - comment
  - limit
  - LOG
  - mac
