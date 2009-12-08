@@ -1,7 +1,7 @@
 Index: u-boot-1.1.5/Makefile
 ===================================================================
 --- u-boot-1.1.5.orig/Makefile	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/Makefile	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/Makefile	2009-11-09 16:35:03.000000000 +0100
 @@ -24,7 +24,7 @@
  VERSION = 1
  PATCHLEVEL = 1
@@ -249,7 +249,7 @@ Index: u-boot-1.1.5/Makefile
 Index: u-boot-1.1.5/common/cmd_bootm.c
 ===================================================================
 --- u-boot-1.1.5.orig/common/cmd_bootm.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/common/cmd_bootm.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/common/cmd_bootm.c	2009-11-09 16:35:03.000000000 +0100
 @@ -31,6 +31,7 @@
  #include <malloc.h>
  #include <zlib.h>
@@ -336,7 +336,7 @@ Index: u-boot-1.1.5/common/cmd_bootm.c
 Index: u-boot-1.1.5/common/cmd_flash.c
 ===================================================================
 --- u-boot-1.1.5.orig/common/cmd_flash.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/common/cmd_flash.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/common/cmd_flash.c	2009-11-09 16:35:03.000000000 +0100
 @@ -196,9 +196,17 @@
  }
  
@@ -657,7 +657,7 @@ Index: u-boot-1.1.5/common/cmd_flash.c
 Index: u-boot-1.1.5/common/cmd_nvedit.c
 ===================================================================
 --- u-boot-1.1.5.orig/common/cmd_nvedit.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/common/cmd_nvedit.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/common/cmd_nvedit.c	2009-11-09 16:35:03.000000000 +0100
 @@ -540,8 +540,19 @@
  	extern char * env_name_spec;
  
@@ -682,7 +682,7 @@ Index: u-boot-1.1.5/common/cmd_nvedit.c
 Index: u-boot-1.1.5/common/console.c
 ===================================================================
 --- u-boot-1.1.5.orig/common/console.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/common/console.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/common/console.c	2009-11-09 16:35:03.000000000 +0100
 @@ -324,7 +324,7 @@
  #endif
  
@@ -717,7 +717,7 @@ Index: u-boot-1.1.5/common/console.c
 Index: u-boot-1.1.5/common/devices.c
 ===================================================================
 --- u-boot-1.1.5.orig/common/devices.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/common/devices.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/common/devices.c	2009-11-09 16:35:03.000000000 +0100
 @@ -39,6 +39,7 @@
  list_t devlist = 0;
  device_t *stdio_devices[] = { NULL, NULL, NULL };
@@ -735,7 +735,7 @@ Index: u-boot-1.1.5/common/devices.c
 Index: u-boot-1.1.5/common/env_common.c
 ===================================================================
 --- u-boot-1.1.5.orig/common/env_common.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/common/env_common.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/common/env_common.c	2009-11-09 16:35:03.000000000 +0100
 @@ -219,7 +219,9 @@
  	 * We must allocate a buffer for the environment
  	 */
@@ -784,7 +784,7 @@ Index: u-boot-1.1.5/common/env_common.c
 Index: u-boot-1.1.5/common/env_flash.c
 ===================================================================
 --- u-boot-1.1.5.orig/common/env_flash.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/common/env_flash.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/common/env_flash.c	2009-11-09 16:35:03.000000000 +0100
 @@ -66,7 +66,6 @@
  #endif
  
@@ -874,7 +874,7 @@ Index: u-boot-1.1.5/common/env_flash.c
 Index: u-boot-1.1.5/config.mk
 ===================================================================
 --- u-boot-1.1.5.orig/config.mk	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/config.mk	2009-10-04 23:32:51.000000000 +0200
++++ u-boot-1.1.5/config.mk	2009-11-09 16:35:03.000000000 +0100
 @@ -127,10 +127,15 @@
  OBJDUMP = $(CROSS_COMPILE)objdump
  RANLIB	= $(CROSS_COMPILE)RANLIB
@@ -964,7 +964,7 @@ Index: u-boot-1.1.5/config.mk
 Index: u-boot-1.1.5/drivers/Makefile
 ===================================================================
 --- u-boot-1.1.5.orig/drivers/Makefile	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/drivers/Makefile	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/drivers/Makefile	2009-11-09 16:35:03.000000000 +0100
 @@ -50,7 +50,7 @@
  	  videomodes.o w83c553f.o \
  	  ks8695eth.o \
@@ -977,7 +977,7 @@ Index: u-boot-1.1.5/drivers/Makefile
 Index: u-boot-1.1.5/include/asm-mips/mipsregs.h
 ===================================================================
 --- u-boot-1.1.5.orig/include/asm-mips/mipsregs.h	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/include/asm-mips/mipsregs.h	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/include/asm-mips/mipsregs.h	2009-11-09 16:35:03.000000000 +0100
 @@ -48,6 +48,7 @@
  #define CP0_CAUSE $13
  #define CP0_EPC $14
@@ -1048,7 +1048,7 @@ Index: u-boot-1.1.5/include/asm-mips/mipsregs.h
 Index: u-boot-1.1.5/include/cmd_confdefs.h
 ===================================================================
 --- u-boot-1.1.5.orig/include/cmd_confdefs.h	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/include/cmd_confdefs.h	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/include/cmd_confdefs.h	2009-11-09 16:35:03.000000000 +0100
 @@ -94,6 +94,7 @@
  #define CFG_CMD_EXT2	0x1000000000000000ULL	/* EXT2 Support			*/
  #define CFG_CMD_SNTP	0x2000000000000000ULL	/* SNTP support			*/
@@ -1068,14 +1068,14 @@ Index: u-boot-1.1.5/include/cmd_confdefs.h
 Index: u-boot-1.1.5/include/config.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-1.1.5/include/config.h	2009-10-04 23:06:04.000000000 +0200
++++ u-boot-1.1.5/include/config.h	2009-11-09 16:35:03.000000000 +0100
 @@ -0,0 +1,2 @@
 +/* Automatically generated - do not edit */
 +#include <configs/danube.h>
 Index: u-boot-1.1.5/include/config.mk
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-1.1.5/include/config.mk	2009-10-04 23:06:04.000000000 +0200
++++ u-boot-1.1.5/include/config.mk	2009-11-09 16:35:03.000000000 +0100
 @@ -0,0 +1,5 @@
 +ARCH   = mips
 +CPU    = mips
@@ -1085,7 +1085,7 @@ Index: u-boot-1.1.5/include/config.mk
 Index: u-boot-1.1.5/include/flash.h
 ===================================================================
 --- u-boot-1.1.5.orig/include/flash.h	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/include/flash.h	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/include/flash.h	2009-11-09 16:36:11.000000000 +0100
 @@ -79,7 +79,7 @@
  extern unsigned long flash_init (void);
  extern void flash_print_info (flash_info_t *);
@@ -1095,7 +1095,18 @@ Index: u-boot-1.1.5/include/flash.h
  extern int flash_sect_protect (int flag, ulong addr_first, ulong addr_last);
  
  /* common/flash.c */
-@@ -299,6 +299,10 @@
+@@ -131,7 +131,9 @@
+ #define MT2_MANUFACT	0x002C002C	/* alternate MICRON manufacturer ID*/
+ #define EXCEL_MANUFACT	0x004A004A	/* Excel Semiconductor			*/
+ 
+-					/* Micron Technologies (INTEL compat.)	*/
++#define	EON_ID_EN29LV320B 0x22f9
++#define FLASH_29LV320B	0xE0
++/* Micron Technologies (INTEL compat.)	*/
+ #define MT_ID_28F400_T	0x44704470	/* 28F400B3 ID ( 4 M, top boot sector)	*/
+ #define MT_ID_28F400_B	0x44714471	/* 28F400B3 ID ( 4 M, bottom boot sect) */
+ 
+@@ -299,6 +301,10 @@
  #define TOSH_ID_FVT160	0xC2		/* TC58FVT160 ID (16 M, top )		*/
  #define TOSH_ID_FVB160	0x43		/* TC58FVT160 ID (16 M, bottom )	*/
  
@@ -1106,7 +1117,7 @@ Index: u-boot-1.1.5/include/flash.h
  /*-----------------------------------------------------------------------
   * Internal FLASH identification codes
   *
-@@ -422,6 +426,10 @@
+@@ -422,6 +428,10 @@
  #define FLASH_S29GL064M 0x00F0		/* Spansion S29GL064M-R6		*/
  #define FLASH_S29GL128N 0x00F1		/* Spansion S29GL128N			*/
  
@@ -1120,7 +1131,7 @@ Index: u-boot-1.1.5/include/flash.h
 Index: u-boot-1.1.5/include/image.h
 ===================================================================
 --- u-boot-1.1.5.orig/include/image.h	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/include/image.h	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/include/image.h	2009-11-09 16:35:03.000000000 +0100
 @@ -132,6 +132,7 @@
  #define IH_COMP_NONE		0	/*  No	 Compression Used	*/
  #define IH_COMP_GZIP		1	/* gzip	 Compression Used	*/
@@ -1132,7 +1143,7 @@ Index: u-boot-1.1.5/include/image.h
 Index: u-boot-1.1.5/include/syscall.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-1.1.5/include/syscall.h	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/include/syscall.h	2009-11-09 16:35:03.000000000 +0100
 @@ -0,0 +1,42 @@
 +#ifndef __MON_SYS_CALL_H__
 +#define __MON_SYS_CALL_H__
@@ -1179,7 +1190,7 @@ Index: u-boot-1.1.5/include/syscall.h
 Index: u-boot-1.1.5/ld_uboot.conf
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ u-boot-1.1.5/ld_uboot.conf	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/ld_uboot.conf	2009-11-09 16:35:03.000000000 +0100
 @@ -0,0 +1,8 @@
 +TAG_DWNLD()
 +{
@@ -1192,7 +1203,7 @@ Index: u-boot-1.1.5/ld_uboot.conf
 Index: u-boot-1.1.5/lib_generic/Makefile
 ===================================================================
 --- u-boot-1.1.5.orig/lib_generic/Makefile	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/lib_generic/Makefile	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/lib_generic/Makefile	2009-11-09 16:35:03.000000000 +0100
 @@ -28,7 +28,7 @@
  COBJS	= bzlib.o bzlib_crctable.o bzlib_decompress.o \
  	  bzlib_randtable.o bzlib_huffman.o \
@@ -1205,7 +1216,7 @@ Index: u-boot-1.1.5/lib_generic/Makefile
 Index: u-boot-1.1.5/lib_mips/board.c
 ===================================================================
 --- u-boot-1.1.5.orig/lib_mips/board.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/lib_mips/board.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/lib_mips/board.c	2009-11-09 16:35:03.000000000 +0100
 @@ -29,9 +29,30 @@
  #include <net.h>
  #include <environment.h>
@@ -1657,7 +1668,7 @@ Index: u-boot-1.1.5/lib_mips/board.c
 Index: u-boot-1.1.5/lib_mips/time.c
 ===================================================================
 --- u-boot-1.1.5.orig/lib_mips/time.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/lib_mips/time.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/lib_mips/time.c	2009-11-09 16:35:03.000000000 +0100
 @@ -80,6 +80,19 @@
  		/*NOP*/;
  }
@@ -1681,7 +1692,7 @@ Index: u-boot-1.1.5/lib_mips/time.c
 Index: u-boot-1.1.5/net/eth.c
 ===================================================================
 --- u-boot-1.1.5.orig/net/eth.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/net/eth.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/net/eth.c	2009-11-09 16:35:03.000000000 +0100
 @@ -25,6 +25,9 @@
  #include <command.h>
  #include <net.h>
@@ -1716,7 +1727,7 @@ Index: u-boot-1.1.5/net/eth.c
 Index: u-boot-1.1.5/tools/mkimage.c
 ===================================================================
 --- u-boot-1.1.5.orig/tools/mkimage.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/tools/mkimage.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/tools/mkimage.c	2009-11-09 16:35:03.000000000 +0100
 @@ -28,6 +28,7 @@
  #ifndef __WIN32__
  #include <netinet/in.h>		/* for host / network byte order conversions	*/
@@ -1754,7 +1765,7 @@ Index: u-boot-1.1.5/tools/mkimage.c
 Index: u-boot-1.1.5/cpu/mips/cache.S
 ===================================================================
 --- u-boot-1.1.5.orig/cpu/mips/cache.S	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/cpu/mips/cache.S	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/cache.S	2009-11-09 16:35:03.000000000 +0100
 @@ -29,7 +29,9 @@
  #include <asm/mipsregs.h>
  #include <asm/addrspace.h>
@@ -1797,7 +1808,7 @@ Index: u-boot-1.1.5/cpu/mips/cache.S
 Index: u-boot-1.1.5/cpu/mips/config.mk
 ===================================================================
 --- u-boot-1.1.5.orig/cpu/mips/config.mk	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/cpu/mips/config.mk	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/config.mk	2009-11-09 16:35:03.000000000 +0100
 @@ -20,20 +20,26 @@
  # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  # MA 02111-1307 USA
@@ -1836,7 +1847,7 @@ Index: u-boot-1.1.5/cpu/mips/config.mk
 Index: u-boot-1.1.5/cpu/mips/cpu.c
 ===================================================================
 --- u-boot-1.1.5.orig/cpu/mips/cpu.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/cpu/mips/cpu.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/cpu.c	2009-11-09 16:35:03.000000000 +0100
 @@ -23,7 +23,12 @@
  
  #include <common.h>
@@ -1863,7 +1874,7 @@ Index: u-boot-1.1.5/cpu/mips/cpu.c
 Index: u-boot-1.1.5/cpu/mips/incaip_clock.c
 ===================================================================
 --- u-boot-1.1.5.orig/cpu/mips/incaip_clock.c	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/cpu/mips/incaip_clock.c	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/incaip_clock.c	2009-11-09 16:35:03.000000000 +0100
 @@ -22,8 +22,9 @@
   */
  
@@ -1884,7 +1895,7 @@ Index: u-boot-1.1.5/cpu/mips/incaip_clock.c
 Index: u-boot-1.1.5/cpu/mips/start.S
 ===================================================================
 --- u-boot-1.1.5.orig/cpu/mips/start.S	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/cpu/mips/start.S	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/cpu/mips/start.S	2009-11-09 16:35:03.000000000 +0100
 @@ -27,7 +27,9 @@
  #include <version.h>
  #include <asm/regdef.h>
@@ -2137,7 +2148,7 @@ Index: u-boot-1.1.5/cpu/mips/start.S
 Index: u-boot-1.1.5/tools/Makefile
 ===================================================================
 --- u-boot-1.1.5.orig/tools/Makefile	2006-10-20 17:54:33.000000000 +0200
-+++ u-boot-1.1.5/tools/Makefile	2009-10-04 23:06:03.000000000 +0200
++++ u-boot-1.1.5/tools/Makefile	2009-11-09 16:35:03.000000000 +0100
 @@ -21,7 +21,7 @@
  # MA 02111-1307 USA
  #
