@@ -47,3 +47,14 @@ define Profile/TLWR941NDV2/Description
 endef
 
 $(eval $(call Profile,TLWR941NDV2))
+
+define Profile/TLWR1043NDV1
+	NAME:=TP-LINK TL-WR1043ND v1
+	PACKAGES:=kmod-ath9k hostapd-mini
+endef
+
+define Profile/TLWR1043NDV1/Description
+	Package set optimized for the TP-LINK TL-WR1043ND v1.
+endef
+
+$(eval $(call Profile,TLWR1043NDV1))
