@@ -35,10 +35,9 @@ system_config() {
 	[ -x /sbin/klogd ] && klogd ${klogconloglevel:+-c $klogconloglevel}
 }
 
-apply_uci_config() {(
-	include /lib/config
-	uci_apply_defaults
-)}
+apply_uci_config() {
+	sh -c '. /etc/functions.sh; include /lib/config; uci_apply_defaults'
+}
 
 start() {
 	[ -f /proc/mounts ] || /sbin/mount_root
