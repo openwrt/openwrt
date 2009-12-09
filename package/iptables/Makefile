@@ -33,7 +33,7 @@ endif
 
 define Package/iptables/Default
   SECTION:=net
-  CATEGORY:=Base system
+  CATEGORY:=Network
   URL:=http://netfilter.org/
 endef
 
