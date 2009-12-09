@@ -1,164 +1,22 @@
---- a/Makefile
-+++ b/Makefile
-@@ -4,7 +4,24 @@ SOFTWARE=hotplug2
- VERSION=1.0-alpha
- 
- BINS=hotplug2 hotplug2-modwrap
--SUBDIRS=parser rules workers
-+SUBDIRS=parser rules
-+
-+hotplug2-objs := \
-+	hotplug2.o netlink.o seqnum.o settings.o uevent.o xmemutils.o \
-+	workers/loader.o parser/parser.o parser/buffer.o parser/token.o \
-+	parser/token_queue.o parser/lexer.o rules/ruleset.o rules/rule.o \
-+	rules/condition.o rules/expression.o rules/execution.o \
-+	rules/command.o
-+
-+ifdef STATIC_WORKER
-+  ifeq ($(wildcard workers/worker_$(STATIC_WORKER).c),)
-+    $(error Worker source worker/worker_$(STATIC_WORKER).c not found)
-+  endif
-+  hotplug2-objs += action.o workers/worker_$(STATIC_WORKER).o
-+else
-+  SUBDIRS += workers
-+endif
-+
- DESTDIR=
- 
- 
-@@ -13,13 +30,16 @@ all: $(BINS)
- install:
- 	$(INSTALL_BIN) $(BINS) $(DESTDIR)/sbin/
- 
--
--hotplug2: hotplug2.o netlink.o seqnum.o settings.o uevent.o xmemutils.o \
--          workers/loader.o parser/parser.o parser/buffer.o parser/token.o \
--          parser/token_queue.o parser/lexer.o rules/ruleset.o rules/rule.o \
--          rules/condition.o rules/expression.o rules/execution.o \
--          rules/command.o 
-+hotplug2: $(hotplug2-objs)
- 
- coldplug2: coldplug2.o
- 
- include common.mak
-+
-+ifdef STATIC_WORKER
-+  CFLAGS += -DSTATIC_WORKER=1
-+else
-+  CFLAGS += $(FPIC)
-+  LDFLAGS += -ldl
-+endif
-+
---- a/common.mak
-+++ b/common.mak
-@@ -1,7 +1,10 @@
+diff -Naur a/common.mak b/common.mak
+--- a/common.mak	2009-11-18 13:15:21.000000000 +0000
++++ b/common.mak	2009-11-18 13:25:18.000000000 +0000
+@@ -1,7 +1,7 @@
  # vim:set sw=8 nosta:
  
--CFLAGS=-Os -Wall -g -fPIC
+ COPTS=-Os -Wall -g
 -LDFLAGS=-g -ldl
-+COPTS=-Os -Wall -g
 +LDFLAGS=-g
-+
-+CFLAGS=$(COPTS)
-+FPIC=-fPIC
  
- INSTALL=install -c -m 644
- INSTALL_BIN=install -c -m 755
---- a/workers/loader.c
-+++ b/workers/loader.c
-@@ -1,5 +1,23 @@
- #include "loader.h"
+ CFLAGS=$(COPTS)
+ FPIC=-fPIC
+diff -Naur a/Makefile b/Makefile
+--- a/Makefile	2009-11-18 13:15:21.000000000 +0000
++++ b/Makefile	2009-11-18 13:25:18.000000000 +0000
+@@ -40,5 +40,6 @@
+   CFLAGS += -DSTATIC_WORKER=1
+ else
+   CFLAGS += $(FPIC)
++  LDFLAGS += -ldl
+ endif
  
-+#ifdef STATIC_WORKER
-+
-+extern struct worker_module_t worker_module;
-+static struct loader_ctx_t static_ctx = {
-+	.module = &worker_module
-+};
-+
-+struct loader_ctx_t *worker_load(const char *name)
-+{
-+	return &static_ctx;
-+}
-+
-+void worker_free(struct loader_ctx_t *ctx)
-+{
-+}
-+
-+#else
-+
- struct loader_ctx_t *worker_load(const char *name) {
- 	struct loader_ctx_t *ctx;
- 
-@@ -12,7 +30,7 @@ struct loader_ctx_t *worker_load(const c
- 		return NULL;
- 	}
- 	
--	ctx->module = dlsym(ctx->dl_handle, "module");
-+	ctx->module = dlsym(ctx->dl_handle, "worker_module");
- 	if (ctx->module == NULL) {
- 		fprintf(stderr, "Loader error: %s\n", dlerror());
- 		worker_free(ctx);
-@@ -31,3 +49,5 @@ void worker_free(struct loader_ctx_t *ct
- 	
- 	free(ctx);
- }
-+
-+#endif
---- a/hotplug2.c
-+++ b/hotplug2.c
-@@ -261,17 +261,21 @@ int main(int argc, char *argv[]) {
- 	}
- 
- 	/* Load the worker. */
-+#ifndef STATIC_WORKER
- 	if (settings->worker_name == NULL) {
- 		fprintf(stderr, "Missing worker name.\n");
- 		settings_clear(settings);
- 		exit(1);
- 	}
-+#endif
- 	settings->worker = worker_load(settings->worker_name);
-+#ifndef STATIC_WORKER
- 	if (settings->worker == NULL) {
- 		fprintf(stderr, "Unable to load worker: %s\n", settings->worker_name);
- 		settings_clear(settings);
- 		exit(1);
- 	}
-+#endif
- 	
- 	/* Prepare a netlink connection to the kernel. */
- 	settings->netlink_socket = netlink_init();
---- a/workers/worker_example.c
-+++ b/workers/worker_example.c
-@@ -62,7 +62,7 @@ static int worker_example_process(void *
- 	return 0;
- }
- 
--struct worker_module_t module = {
-+struct worker_module_t worker_module = {
- 	"Hotplug2 example module",
- 	worker_example_init,
- 	worker_example_deinit,
---- a/workers/worker_fork.c
-+++ b/workers/worker_fork.c
-@@ -443,7 +443,7 @@ static int worker_fork_process(void *in_
- 	return 0;
- }
- 
--struct worker_module_t module = {
-+struct worker_module_t worker_module = {
- 	"Hotplug2 forking module",
- 	worker_fork_init,
- 	worker_fork_deinit,
---- a/workers/worker_single.c
-+++ b/workers/worker_single.c
-@@ -18,7 +18,7 @@ static int worker_single_process(void *s
- 	return 0;
- }
- 
--struct worker_module_t module = {
-+struct worker_module_t worker_module = {
- 	"Hotplug2 single process module",
- 	worker_single_init,
- 	worker_single_deinit,

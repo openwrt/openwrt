@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hotplug2
-PKG_REV:=199
+PKG_REV:=201
 PKG_VERSION:=$(PKG_REV)
 PKG_RELEASE:=1
 
