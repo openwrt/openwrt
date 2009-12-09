@@ -18,7 +18,7 @@ define Package/firewall
   CATEGORY:=Base system
   URL:=http://openwrt.org/
   TITLE:=OpenWrt firewall
-  DEPENDS:=+iptables-mod-conntrack +iptables-mod-nat
+  DEPENDS:=+iptables +iptables-mod-conntrack +iptables-mod-nat
   PKGARCH:=all
 endef
 
