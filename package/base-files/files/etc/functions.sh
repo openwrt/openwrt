@@ -4,10 +4,10 @@
 
 
 debug () {
-	${DEBUG:-:}
+	${DEBUG:-:} "$@"
 }
 mount() {
-	busybox mount
+	busybox mount "$@"
 }
 
 # newline
