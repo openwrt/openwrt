@@ -2,35 +2,4 @@
 unset ZONE
 config_get ifname $INTERFACE ifname
 [ "$ifname" == "lo" ] && exit 0
-
-load_zones() {
-	local name
-	local network
-	config_get name $1 name
-	config_get network $1 network
-	[ -z "$network" ] && network=$name 
-	for n in $network; do
-		[ "$n" = "$INTERFACE" ] && ZONE="$ZONE $name"
-	done
-}
-
-config_foreach load_zones zone
-
-[ -z "$ZONE" ] && exit 0
-
-[ ifup = "$ACTION" ] && {
-	for z in $ZONE; do 
-		local loaded
-		config_get loaded core loaded
-		[ -n "$loaded" ] && addif "$INTERFACE" "$ifname" "$z"
-	done
-}
-
-[ ifdown = "$ACTION" ] && {
-	local up
-	config_get up "$INTERFACE" up
-
-	for z in $ZONE; do 
-		[ "$up" == "1" ] && delif "$INTERFACE" "$ifname" "$z"
-	done
-}
+fw_event "$ACTION" "$INTERFACE"
