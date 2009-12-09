@@ -78,6 +78,7 @@ hostapd_setup_vif() {
 	config_get hwmode "$device" hwmode
 	config_get wpa_group_rekey "$vif" wpa_group_rekey
 	config_get ieee80211d "$vif" ieee80211d
+	config_get_bool hidden "$vif" hidden 0
 	config_get_bool wds "$vif" wds 0
 	[ "$wds" -gt 0 -a "$driver" = "nl80211" ] && wds="wds_sta=1" || wds=""
 	case "$hwmode" in
@@ -119,6 +120,7 @@ EOF
 		;;
 		*) 
 			cat >> /var/run/hostapd-$ifname.conf <<EOF
+ignore_broadcast_ssid=$hidden
 wmm_enabled=1
 wmm_ac_bk_cwmin=4
 wmm_ac_bk_cwmax=10
