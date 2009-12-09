@@ -175,14 +175,14 @@ config BUSYBOX_CONFIG_HUSH_BASH_COMPAT
 
 config BUSYBOX_CONFIG_HUSH_HELP
 	bool "help builtin"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable help builtin in hush. Code size + ~1 kbyte.
 
 config BUSYBOX_CONFIG_HUSH_INTERACTIVE
 	bool "Interactive mode"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable interactive mode (prompt and command editing).
@@ -192,7 +192,7 @@ config BUSYBOX_CONFIG_HUSH_INTERACTIVE
 
 config BUSYBOX_CONFIG_HUSH_JOB
 	bool "Job control"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH_INTERACTIVE
 	help
 	  Enable job control: Ctrl-Z backgrounds, Ctrl-C interrupts current
@@ -203,49 +203,49 @@ config BUSYBOX_CONFIG_HUSH_JOB
 
 config BUSYBOX_CONFIG_HUSH_TICK
 	bool "Process substitution"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable process substitution `command` and $(command) in hush.
 
 config BUSYBOX_CONFIG_HUSH_IF
 	bool "Support if/then/elif/else/fi"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable if/then/elif/else/fi in hush.
 
 config BUSYBOX_CONFIG_HUSH_LOOPS
 	bool "Support for, while and until loops"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable for, while and until loops in hush.
 
 config BUSYBOX_CONFIG_HUSH_CASE
 	bool "Support case ... esac statement"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable case ... esac statement in hush. +400 bytes.
 
 config BUSYBOX_CONFIG_HUSH_FUNCTIONS
 	bool "Support funcname() { commands; } syntax"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable support for shell functions in hush. +800 bytes.
 
 config BUSYBOX_CONFIG_HUSH_LOCAL
 	bool "Support local builtin"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH_FUNCTIONS
 	help
 	  Enable support for local variables in functions.
 
 config BUSYBOX_CONFIG_HUSH_EXPORT_N
 	bool "Support export '-n' option"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable support for export '-n' option in hush. It is a bash extension.
