@@ -2,8 +2,13 @@
 # Copyright (C) 2006 OpenWrt.org
 # Copyright (C) 2006 Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 
-alias debug=${DEBUG:-:}
-alias mount='busybox mount'
+
+debug () {
+	${DEBUG:-:}
+}
+mount() {
+	busybox mount
+}
 
 # newline
 N="
