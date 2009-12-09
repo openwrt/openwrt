@@ -402,13 +402,52 @@ fw_include() {
 	[ -e $path ] && . $path
 }
 
+get_interface_zones() {
+	local interface="$2"
+	local name
+	local network
+	config_get name $1 name
+	config_get network $1 network
+	[ -z "$network" ] && network=$name 
+	for n in $network; do
+		[ "$n" = "$interface" ] && append add_zone "$name"
+	done
+}
+
+fw_event() {
+	local action="$1"
+	local interface="$2"
+	local ifname="$(sh -c ". /etc/functions.sh; config_load network; config_get "$interface" ifname")"
+	local up
+
+	[ -z "$ifname" ] && return 0
+	config_foreach get_interface_zones zone "$interface"
+	[ -z "$add_zone" ] && return 0
+
+	case "$action" in
+		ifup)
+			for z in $add_zone; do 
+				local loaded
+				config_get loaded core loaded
+				[ -n "$loaded" ] && addif "$interface" "$ifname" "$z"
+			done
+		;;
+		ifdown)
+			config_get up "$interface" up
+
+			for z in $ZONE; do 
+				[ "$up" == "1" ] && delif "$interface" "$ifname" "$z"
+			done
+		;;
+	esac
+}
+
 fw_addif() {
 	local up
 	local ifname
 	config_get up $1 up
-	config_get ifname $1 ifname
 	[ -n "$up" ] || return 0
-	(ACTION="ifup" INTERFACE="$1" . /etc/hotplug.d/iface/20-firewall)
+	fw_event ifup "$1"
 }
 
 fw_custom_chains() {
@@ -465,9 +504,10 @@ fw_init() {
 	config_foreach fw_zone_defaults zone
 	uci_set_state firewall core loaded 1
 	config_foreach fw_check_notrack zone
-	unset CONFIG_APPEND
-	config_load network
-	config_foreach fw_addif interface
+	INTERFACES="$(sh -c '. /etc/functions.sh; config_load network; config_foreach echo interface')"
+	for interface in $INTERFACES; do
+		fw_addif "$interface"
+	done
 }
 
 fw_stop() {
