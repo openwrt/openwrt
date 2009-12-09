@@ -46,18 +46,22 @@
 
 #define RTL8306_MAGIC	0x8306
 
+static LIST_HEAD(phydevs);
+
 struct rtl_priv {
+	struct list_head list;
 	struct switch_dev dev;
 	int page;
 	int type;
 	int do_cpu;
 	struct mii_bus *bus;
 	char hwname[sizeof(RTL_NAME_UNKNOWN)];
+};
 
-	/* temporary register saves for port operations */
-	int tmp_speed;
-	int tmp_nway;
-	int tmp_duplex;
+struct rtl_phyregs {
+	int nway;
+	int speed;
+	int duplex;
 };
 
 #define to_rtl(_dev) container_of(_dev, struct rtl_priv, dev)
@@ -157,6 +161,7 @@ enum rtl_regidx {
 	RTL_REG_PORT##id##_LINK, \
 	RTL_REG_PORT##id##_SPEED, \
 	RTL_REG_PORT##id##_NWAY, \
+	RTL_REG_PORT##id##_NRESTART, \
 	RTL_REG_PORT##id##_DUPLEX, \
 	RTL_REG_PORT##id##_RXEN, \
 	RTL_REG_PORT##id##_TXEN
@@ -217,6 +222,7 @@ static const struct rtl_reg rtl_regs[] = {
 #define REG_PORT_SETTING(port, phy) \
 	[RTL_REG_PORT##port##_SPEED] = { 0, phy, 0, 1, 13, 0 }, \
 	[RTL_REG_PORT##port##_NWAY] = { 0, phy, 0, 1, 12, 0 }, \
+	[RTL_REG_PORT##port##_NRESTART] = { 0, phy, 0, 1, 9, 0 }, \
 	[RTL_REG_PORT##port##_DUPLEX] = { 0, phy, 0, 1, 8, 0 }, \
 	[RTL_REG_PORT##port##_TXEN] = { 0, phy, 24, 1, 11, 0 }, \
 	[RTL_REG_PORT##port##_RXEN] = { 0, phy, 24, 1, 10, 0 }, \
@@ -355,23 +361,19 @@ rtl_set(struct switch_dev *dev, enum rtl_regidx s, unsigned int val)
 }
 
 static void
-rtl_phy_save(struct switch_dev *dev, int port)
+rtl_phy_save(struct switch_dev *dev, int port, struct rtl_phyregs *regs)
 {
-	struct rtl_priv *priv = to_rtl(dev);
-
-	priv->tmp_nway = rtl_get(dev, RTL_PORT_REG(port, NWAY));
-	priv->tmp_speed = rtl_get(dev, RTL_PORT_REG(port, SPEED));
-	priv->tmp_duplex = rtl_get(dev, RTL_PORT_REG(port, DUPLEX));
+	regs->nway = rtl_get(dev, RTL_PORT_REG(port, NWAY));
+	regs->speed = rtl_get(dev, RTL_PORT_REG(port, SPEED));
+	regs->duplex = rtl_get(dev, RTL_PORT_REG(port, DUPLEX));
 }
 
 static void
-rtl_phy_restore(struct switch_dev *dev, int port)
+rtl_phy_restore(struct switch_dev *dev, int port, struct rtl_phyregs *regs)
 {
-	struct rtl_priv *priv = to_rtl(dev);
-
-	rtl_set(dev, RTL_PORT_REG(port, NWAY), priv->tmp_nway);
-	rtl_set(dev, RTL_PORT_REG(port, SPEED), priv->tmp_speed);
-	rtl_set(dev, RTL_PORT_REG(port, DUPLEX), priv->tmp_duplex);
+	rtl_set(dev, RTL_PORT_REG(port, NWAY), regs->nway);
+	rtl_set(dev, RTL_PORT_REG(port, SPEED), regs->speed);
+	rtl_set(dev, RTL_PORT_REG(port, DUPLEX), regs->duplex);
 }
 
 static void
@@ -379,6 +381,12 @@ rtl_port_set_enable(struct switch_dev *dev, int port, int enabled)
 {
 	rtl_set(dev, RTL_PORT_REG(port, RXEN), enabled);
 	rtl_set(dev, RTL_PORT_REG(port, TXEN), enabled);
+
+	if ((port >= 5) || !enabled)
+		return;
+
+	/* restart autonegotiation if enabled */
+	rtl_set(dev, RTL_PORT_REG(port, NRESTART), 1);
 }
 
 static int
@@ -386,8 +394,9 @@ rtl_hw_apply(struct switch_dev *dev)
 {
 	int i;
 	int trunk_en, trunk_psel;
+	struct rtl_phyregs port5;
 
-	rtl_phy_save(dev, 5);
+	rtl_phy_save(dev, 5, &port5);
 
 	/* disable rx/tx from PHYs */
 	for (i = 0; i < RTL8306_NUM_PORTS - 1; i++) {
@@ -423,8 +432,7 @@ rtl_hw_apply(struct switch_dev *dev)
 	/* restore trunking settings */
 	rtl_set(dev, RTL_REG_EN_TRUNK, trunk_en);
 	rtl_set(dev, RTL_REG_TRUNK_PORTSEL, trunk_psel);
-
-	rtl_phy_restore(dev, 5);
+	rtl_phy_restore(dev, 5, &port5);
 
 	return 0;
 }
@@ -522,6 +530,7 @@ static int
 rtl_attr_set_int(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	int idx = attr->id + (val->port_vlan * attr->ofs);
+	struct rtl_phyregs port;
 
 	if (attr->id >= ARRAY_SIZE(rtl_regs))
 		return -EINVAL;
@@ -535,9 +544,9 @@ rtl_attr_set_int(struct switch_dev *dev, const struct switch_attr *attr, struct 
 		(rtl_regs[idx].reg == 22) &&
 		(rtl_regs[idx].page == 0)) {
 
-		rtl_phy_save(dev, val->port_vlan);
+		rtl_phy_save(dev, val->port_vlan, &port);
 		rtl_set(dev, idx, val->value.i);
-		rtl_phy_restore(dev, val->port_vlan);
+		rtl_phy_restore(dev, val->port_vlan, &port);
 	} else {
 		rtl_set(dev, idx, val->value.i);
 	}
@@ -617,6 +626,7 @@ static int
 rtl_set_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct rtl_priv *priv = to_rtl(dev);
+	struct rtl_phyregs port;
 	int en = val->value.i;
 	int i;
 
@@ -629,12 +639,12 @@ rtl_set_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct swit
 
 	for (i = 0; i < RTL8306_NUM_PORTS; i++) {
 		if (i > 3)
-			rtl_phy_save(dev, val->port_vlan);
+			rtl_phy_save(dev, val->port_vlan, &port);
 		rtl_set(dev, RTL_PORT_REG(i, NULL_VID_REPLACE), 1);
 		rtl_set(dev, RTL_PORT_REG(i, VID_INSERT), (en ? (i == dev->cpu_port ? 0 : 1) : 1));
 		rtl_set(dev, RTL_PORT_REG(i, TAG_INSERT), (en ? (i == dev->cpu_port ? 2 : 1) : 3));
 		if (i > 3)
-			rtl_phy_restore(dev, val->port_vlan);
+			rtl_phy_restore(dev, val->port_vlan, &port);
 	}
 	rtl_set(dev, RTL_REG_VLAN_ENABLE, en);
 
@@ -705,6 +715,10 @@ rtl8306_config_init(struct phy_device *pdev)
 	struct switch_val val;
 	unsigned int chipid, chipver, chiptype;
 	int err;
+
+	/* Only init the switch for the primary PHY */
+	if (pdev->addr != 0)
+		return 0;
 
 	val.value.i = 1;
 	memcpy(&priv->dev, &rtldev, sizeof(struct switch_dev));
@@ -913,7 +927,8 @@ rtl8306_fixup(struct phy_device *pdev)
 	struct rtl_priv priv;
 	u16 chipid;
 
-	if (pdev->addr != 0)
+	/* Attach to primary LAN port and WAN port */
+	if (pdev->addr != 0 && pdev->addr != 4)
 		return 0;
 
 	priv.page = -1;
@@ -930,10 +945,21 @@ rtl8306_probe(struct phy_device *pdev)
 {
 	struct rtl_priv *priv;
 
+	list_for_each_entry(priv, &phydevs, list) {
+		/*
+		 * share one rtl_priv instance between virtual phy
+		 * devices on the same bus
+		 */
+		if (priv->bus == pdev->bus)
+			goto found;
+	}
 	priv = kzalloc(sizeof(struct rtl_priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
+	priv->bus = pdev->bus;
+
+found:
 	pdev->priv = priv;
 	return 0;
 }
@@ -949,15 +975,50 @@ rtl8306_remove(struct phy_device *pdev)
 static int
 rtl8306_config_aneg(struct phy_device *pdev)
 {
+	struct rtl_priv *priv = pdev->priv;
+
+	/* Only for WAN */
+	if (pdev->addr == 0)
+		return 0;
+
+	/* Restart autonegotiation */
+	rtl_set(&priv->dev, RTL_PORT_REG(4, NWAY), 1);
+	rtl_set(&priv->dev, RTL_PORT_REG(4, NRESTART), 1);
+
 	return 0;
 }
 
 static int
 rtl8306_read_status(struct phy_device *pdev)
 {
-	pdev->speed = SPEED_100;
-	pdev->duplex = DUPLEX_FULL;
-	pdev->link = 1;
+	struct rtl_priv *priv = pdev->priv;
+	struct switch_dev *dev = &priv->dev;
+
+	if (pdev->addr == 4) {
+		/* WAN */
+		pdev->speed = rtl_get(dev, RTL_PORT_REG(4, SPEED)) ? SPEED_100 : SPEED_10;
+		pdev->duplex = rtl_get(dev, RTL_PORT_REG(4, DUPLEX)) ? DUPLEX_FULL : DUPLEX_HALF;
+		pdev->link = !!rtl_get(dev, RTL_PORT_REG(4, LINK));
+	} else {
+		/* LAN */
+		pdev->speed = SPEED_100;
+		pdev->duplex = DUPLEX_FULL;
+		pdev->link = 1;
+	}
+
+	/*
+	 * Bypass generic PHY status read,
+	 * it doesn't work with this switch
+	 */
+	if (pdev->link) {
+		pdev->state = PHY_RUNNING;
+		netif_carrier_on(pdev->attached_dev);
+		pdev->adjust_link(pdev->attached_dev);
+	} else {
+		pdev->state = PHY_NOLINK;
+		netif_carrier_off(pdev->attached_dev);
+		pdev->adjust_link(pdev->attached_dev);
+	}
 
 	return 0;
 }
@@ -965,6 +1026,7 @@ rtl8306_read_status(struct phy_device *pdev)
 
 static struct phy_driver rtl8306_driver = {
 	.name		= "Realtek RTL8306S",
+	.flags		= PHY_HAS_MAGICANEG,
 	.phy_id		= RTL8306_MAGIC,
 	.phy_id_mask	= 0xffffffff,
 	.features	= PHY_BASIC_FEATURES,
