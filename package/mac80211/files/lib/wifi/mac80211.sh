@@ -209,7 +209,7 @@ enable_mac80211() {
 
 		config_get rts "$vif" rts
 		if [ -n "$rts" ]; then
-			iw phy "$phy" set rts "${frag%%.*}"
+			iw phy "$phy" set rts "${rts%%.*}"
 		fi
 
 		ifconfig "$ifname" up
