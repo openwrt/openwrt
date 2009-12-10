@@ -417,7 +417,8 @@ get_interface_zones() {
 fw_event() {
 	local action="$1"
 	local interface="$2"
-	local ifname="$(sh -c ". /etc/functions.sh; config_load network; config_get "$interface" ifname")"
+	local ifname="$(sh -c ". /etc/functions.sh; include /lib/network; scan_interfaces; config_get "$interface" ifname")"
+	add_zone=
 	local up
 
 	[ -z "$ifname" ] && return 0
@@ -503,6 +504,7 @@ fw_init() {
 	echo "Loading zone defaults"
 	config_foreach fw_zone_defaults zone
 	uci_set_state firewall core loaded 1
+	config_set core loaded 1
 	config_foreach fw_check_notrack zone
 	INTERFACES="$(sh -c '. /etc/functions.sh; config_load network; config_foreach echo interface')"
 	for interface in $INTERFACES; do
