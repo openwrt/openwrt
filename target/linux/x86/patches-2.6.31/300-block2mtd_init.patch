@@ -151,7 +151,7 @@
  
  static int kernel_init(void *);
  
-@@ -784,12 +785,13 @@ int do_one_initcall(initcall_t fn)
+@@ -779,12 +780,13 @@ int do_one_initcall(initcall_t fn)
  
  
  extern initcall_t __initcall_start[], __initcall_end[], __early_initcall_end[];
@@ -167,7 +167,7 @@
  		do_one_initcall(*call);
  
  	/* Make sure there is no pending stuff from the initcall sequence */
-@@ -812,7 +814,7 @@ static void __init do_basic_setup(void)
+@@ -807,7 +809,7 @@ static void __init do_basic_setup(void)
  	driver_init();
  	init_irq_proc();
  	do_ctors();
@@ -176,7 +176,7 @@
  }
  
  static void __init do_pre_smp_initcalls(void)
-@@ -873,6 +875,13 @@ static noinline int init_post(void)
+@@ -868,6 +870,13 @@ static noinline int init_post(void)
  	panic("No init found.  Try passing init= option to kernel.");
  }
  
@@ -190,7 +190,7 @@
  static int __init kernel_init(void * unused)
  {
  	lock_kernel();
-@@ -917,7 +926,16 @@ static int __init kernel_init(void * unu
+@@ -912,7 +921,16 @@ static int __init kernel_init(void * unu
  
  	if (sys_access((const char __user *) ramdisk_execute_command, 0) != 0) {
  		ramdisk_execute_command = NULL;
