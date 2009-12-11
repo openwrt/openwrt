@@ -22,11 +22,16 @@
 #include <stdlib.h>
 #include <zlib.h> /* crc32 */
 
+
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+
 #define checksum_add32(csum, data) \
-  csum += ((uint8_t *)&data)[0]; \
-  csum += ((uint8_t *)&data)[1]; \
-  csum += ((uint8_t *)&data)[2]; \
-  csum += ((uint8_t *)&data)[3];
+  do { \
+    csum += (((data) >> 0)  & 0x000000FF); \
+    csum += (((data) >> 8)  & 0x000000FF); \
+    csum += (((data) >> 16) & 0x000000FF); \
+    csum += (((data) >> 24) & 0x000000FF); \
+  } while (0)
 
 void
 usage(void)
@@ -42,10 +47,68 @@ pexit(const char *msg)
   exit(1);
 }
 
+/* Read an 8bit value */
+static int fread_8(uint8_t *buf, FILE *fd)
+{
+  return (fread(buf, sizeof(*buf), 1, fd) == 1) ? 0 : -1;
+}
+
+/* Read a 32bit little endian value and convert to host endianness. */
+static int fread_le32(uint32_t *buf, FILE *fd)
+{
+  size_t count;
+  uint8_t tmp[4];
+  unsigned int i;
+
+  if (fread(tmp, sizeof(tmp), 1, fd) != 1)
+    return -1;
+  *buf = 0;
+  for (i = 0; i < ARRAY_SIZE(tmp); i++)
+    *buf |= (uint32_t)(tmp[i]) << (i * 8);
+
+  return 0;
+}
+
+/* Read a 64bit little endian value and convert to host endianness. */
+static int fread_le64(uint64_t *buf, FILE *fd)
+{
+  size_t count;
+  uint8_t tmp[8];
+  unsigned int i;
+
+  if (fread(tmp, sizeof(tmp), 1, fd) != 1)
+    return -1;
+  *buf = 0;
+  for (i = 0; i < ARRAY_SIZE(tmp); i++)
+    *buf |= (uint64_t)(tmp[i]) << (i * 8);
+
+  return 0;
+}
+
+/* Write an 8bit value */
+static int fwrite_8(uint8_t buf, FILE *fd)
+{
+  return (fwrite(&buf, sizeof(buf), 1, fd) == 1) ? 0 : -1;
+}
+
+/* Convert to little endian and write a 32bit value */
+static int fwrite_le32(uint32_t buf, FILE *fd)
+{
+  size_t count;
+  uint8_t tmp[4];
+  unsigned int i;
+
+  for (i = 0; i < ARRAY_SIZE(tmp); i++)
+    tmp[i] = buf >> (i * 8);
+  if (fwrite(tmp, sizeof(tmp), 1, fd) != 1)
+    return -1;
+
+  return 0;
+}
+
 int
 main(int argc, char *argv[])
 {
-
   const char *infile, *outfile;
   FILE *in, *out;
   static const uint8_t buf[4096];
@@ -67,7 +130,6 @@ main(int argc, char *argv[])
   uint32_t datasize32 = 0;
   uint32_t datacrc32 = crc32(0, 0, 0);
 
-  uint32_t zero = 0;
   uint32_t entry = 0;
 
   if (argc != 5)
@@ -87,43 +149,43 @@ main(int argc, char *argv[])
     pexit("fopen");
 
   /* read LZMA header */
-  if (1 != fread(&properties, sizeof properties, 1, in))
+  if (fread_8(&properties, in))
     pexit("fread");
-  if (1 != fread(&dictsize, sizeof dictsize, 1, in))
+  if (fread_le32(&dictsize, in))
     pexit("fread");
-  if (1 != fread(&datasize, sizeof datasize, 1, in))
+  if (fread_le64(&datasize, in))
     pexit("fread");
 
   /* write EVA header */
-  if (1 != fwrite(&magic, sizeof magic, 1, out))
+  if (fwrite_le32(magic, out))
     pexit("fwrite");
   if (fgetpos(out, &reclengthpos))
     pexit("fgetpos");
-  if (1 != fwrite(&reclength, sizeof reclength, 1, out))
+  if (fwrite_le32(reclength, out))
     pexit("fwrite");
-  if (1 != fwrite(&loadaddress, sizeof loadaddress, 1, out))
+  if (fwrite_le32(loadaddress, out))
     pexit("fwrite");
-  if (1 != fwrite(&type, sizeof type, 1, out))
+  if (fwrite_le32(type, out))
     pexit("fwrite");
 
   /* write EVA LZMA header */
   if (fgetpos(out, &compsizepos))
     pexit("fgetpos");
-  if (1 != fwrite(&compsize, sizeof compsize, 1, out))
+  if (fwrite_le32(compsize, out))
     pexit("fwrite");
   /* XXX check length */
   datasize32 = (uint32_t)datasize;
-  if (1 != fwrite(&datasize32, sizeof datasize32, 1, out))
+  if (fwrite_le32(datasize32, out))
     pexit("fwrite");
-  if (1 != fwrite(&datacrc32, sizeof datacrc32, 1, out))
+  if (fwrite_le32(datacrc32, out))
     pexit("fwrite");
 
   /* write modified LZMA header */
-  if (1 != fwrite(&properties, sizeof properties, 1, out))
+  if (fwrite_8(properties, out))
     pexit("fwrite");
-  if (1 != fwrite(&dictsize, sizeof dictsize, 1, out))
+  if (fwrite_le32(dictsize, out))
     pexit("fwrite");
-  if (1 != fwrite(&zero, 3, 1, out))
+  if (fwrite_le32(0, out))
     pexit("fwrite");
 
   /* copy compressed data, calculate crc32 */
@@ -141,17 +203,17 @@ main(int argc, char *argv[])
   reclength = compsize + 24;
   if (fsetpos(out, &reclengthpos))
     pexit("fsetpos");
-  if (1 != fwrite(&reclength, sizeof reclength, 1, out))
+  if (fwrite_le32(reclength, out))
     pexit("fwrite");
 
   /* re-write EVA LZMA header including size and data crc */
   if (fsetpos(out, &compsizepos))
     pexit("fsetpos");
-  if (1 != fwrite(&compsize, sizeof compsize, 1, out))
+  if (fwrite_le32(compsize, out))
     pexit("fwrite");
-  if (1 != fwrite(&datasize32, sizeof datasize32, 1, out))
+  if (fwrite_le32(datasize32, out))
     pexit("fwrite");
-  if (1 != fwrite(&datacrc32, sizeof datacrc32, 1, out))
+  if (fwrite_le32(datacrc32, out))
     pexit("fwrite");
 
   /* calculate record checksum */
@@ -174,13 +236,13 @@ main(int argc, char *argv[])
     pexit("fseek");
 
   checksum = ~checksum + 1;
-  if (1 != fwrite(&checksum, sizeof checksum, 1, out))
+  if (fwrite_le32(checksum, out))
     pexit("fwrite");
 
   /* write entry record */
-  if (1 != fwrite(&zero, sizeof zero, 1, out))
+  if (fwrite_le32(0, out))
     pexit("fwrite");
-  if (1 != fwrite(&entry, sizeof entry, 1, out))
+  if (fwrite_le32(entry, out))
     pexit("fwrite");
 
   if (fclose(out))
