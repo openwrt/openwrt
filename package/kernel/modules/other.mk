@@ -516,6 +516,22 @@ endef
 $(eval $(call KernelPackage,leds-alix))
 
 
+define KernelPackage/leds-wndr3700-usb
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=WNDR3700 USB LED support
+  DEPENDS:= @TARGET_ar71xx
+  KCONFIG:=CONFIG_LEDS_WNDR3700_USB
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-wndr3700-usb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,leds-wndr3700-usb)
+endef
+
+define KernelPackage/leds-wndr3700-usb/description
+ Kernel module for the USB LED on the NETGWR WNDR3700 board.
+endef
+
+$(eval $(call KernelPackage,leds-wndr3700-usb))
+
+
 define KernelPackage/ledtrig-netdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED NETDEV Trigger
