@@ -1,0 +1,95 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -379,6 +379,7 @@ static u_int32_t ath_get_clamped_maxtxpo
+ static u_int32_t ath_set_clamped_maxtxpower(struct ath_softc *sc, 
+ 		u_int32_t new_clamped_maxtxpower);
+ 
++static void ath_bcn_timer(unsigned long arg);
+ static void ath_poll_disable(struct net_device *dev);
+ static void ath_poll_enable(struct net_device *dev);
+ static void ath_fetch_idle_time(struct ath_softc *sc);
+@@ -829,6 +830,10 @@ ath_attach(u_int16_t devid, struct net_d
+ 	sc->sc_cal_ch.function = ath_calibrate;
+ 	sc->sc_cal_ch.data = (unsigned long) dev;
+ 
++	init_timer(&sc->sc_bcntimer);
++	sc->sc_bcntimer.function = ath_bcn_timer;
++	sc->sc_bcntimer.data = (unsigned long) dev;
++
+ 	/* initialize DFS related variables */
+ 	sc->sc_dfswait = 0;
+ 	sc->sc_dfs_cac = 0;
+@@ -2704,6 +2709,7 @@ ath_stop_locked(struct net_device *dev)
+ 	DPRINTF(sc, ATH_DEBUG_RESET, "invalid=%u flags=0x%x\n",
+ 		sc->sc_invalid, dev->flags);
+ 
++	del_timer_sync(&sc->sc_bcntimer);
+ 	if (dev->flags & IFF_RUNNING) {
+ 		/*
+ 		 * Shutdown the hardware and driver:
+@@ -3006,6 +3012,7 @@ ath_reset(struct net_device *dev)
+ 	struct ieee80211_channel *c;
+ 	HAL_STATUS status;
+ 
++	del_timer_sync(&sc->sc_bcntimer);
+ 	/*
+ 	 * XXX: starting the calibration too early seems to lead to
+ 	 * problems with the beacons.
+@@ -5305,6 +5312,7 @@ ath_beacon_send(struct ath_softc *sc, in
+ 	if (ath_chan_unavail_dbgmsg(sc))
+ 		return;
+ 
++	mod_timer(&sc->sc_bcntimer, jiffies + sc->sc_bcntimer_reload);
+ 	/*
+ 	 * Check if the previous beacon has gone out.  If
+ 	 * not don't try to post another, skip this period
+@@ -5487,6 +5495,18 @@ ath_beacon_free(struct ath_softc *sc)
+ 		cleanup_ath_buf(sc, bf, BUS_DMA_TODEVICE);
+ }
+ 
++static void ath_bcn_timer(unsigned long arg)
++{
++	struct net_device *dev = (struct net_device *)arg;
++	struct ath_softc *sc = netdev_priv(dev);
++	struct ath_hal *ah = sc->sc_ah;
++
++	if (!sc->sc_beacons)
++		return;
++
++	ath_reset(dev);
++}
++
+ /*
+  * Configure the beacon and sleep timers.
+  *
+@@ -5523,6 +5543,7 @@ ath_beacon_config(struct ath_softc *sc, 
+ 	if (vap == NULL)
+ 		vap = TAILQ_FIRST(&ic->ic_vaps);   /* XXX */
+ 
++	del_timer_sync(&sc->sc_bcntimer);
+ 	ni = vap->iv_bss;
+ 
+ 	/* TSF calculation is timing critical - we don't want to be interrupted here */
+@@ -5699,6 +5720,9 @@ ath_beacon_config(struct ath_softc *sc, 
+ 			sc->sc_imask |= HAL_INT_SWBA;
+ 			ath_set_beacon_cal(sc, 1);
+ 			ath_beaconq_config(sc);
++
++			sc->sc_bcntimer_reload = msecs_to_jiffies(10 * (intval & HAL_BEACON_PERIOD));
++			mod_timer(&sc->sc_bcntimer, jiffies + sc->sc_bcntimer_reload);
+ 		} else
+ 			ath_set_beacon_cal(sc, 0);
+ 
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -789,6 +789,10 @@ struct ath_softc {
+ 	u_int16_t sc_ledoff;			/* off time for current blink */
+ 	struct timer_list sc_ledtimer;		/* led off timer */
+ 
++	/* beacon watchdog timer */
++	u_int32_t sc_bcntimer_reload;
++	struct timer_list sc_bcntimer;
++
+ 	struct ATH_TQ_STRUCT sc_fataltq;	/* fatal error intr tasklet */
+ 
+ 	int sc_rxbufsize;			/* rx size based on mtu */
