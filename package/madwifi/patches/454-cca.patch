@@ -1,0 +1,186 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -383,6 +383,8 @@ static void ath_poll_disable(struct net_
+ static void ath_poll_enable(struct net_device *dev);
+ static void ath_fetch_idle_time(struct ath_softc *sc);
+ static void ath_set_timing(struct ath_softc *sc);
++static void ath_update_cca_thresh(struct ath_softc *sc);
++static int ath_hw_read_nf(struct ath_softc *sc);
+ 
+ /* calibrate every 30 secs in steady state but check every second at first. */
+ static int ath_calinterval = ATH_SHORT_CALINTERVAL;
+@@ -2623,6 +2625,10 @@ ath_init(struct net_device *dev)
+ 		goto done;
+ 	}
+ 
++	ath_hal_process_noisefloor(ah);
++	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
++	ath_update_cca_thresh(sc);
++
+ 	if (sc->sc_softled)
+ 		ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
+ 
+@@ -3024,6 +3030,10 @@ ath_reset(struct net_device *dev)
+ 		EPRINTF(sc, "Unable to reset hardware: '%s' (HAL status %u)\n",
+ 			ath_get_hal_status_desc(status), status);
+ 
++	ath_hal_process_noisefloor(ah);
++	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
++	ath_update_cca_thresh(sc);
++
+ 	ath_setintmit(sc);
+ 	ath_update_txpow(sc);		/* update tx power state */
+ 	ath_radar_update(sc);
+@@ -9374,9 +9384,11 @@ ath_calibrate(unsigned long arg)
+ 			sc->sc_curchan.channel);
+ 		sc->sc_stats.ast_per_calfail++;
+ 	}
+-	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
+ 
+ 	ath_hal_process_noisefloor(ah);
++	ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
++	ath_update_cca_thresh(sc);
++
+ 	if (isIQdone == AH_TRUE) {
+ 		/* Unless user has overridden calibration interval,
+ 		 * upgrade to less frequent calibration */
+@@ -9711,8 +9723,6 @@ ath_newstate(struct ieee80211vap *vap, e
+ 			break;
+ 		}
+ 
+-		ath_hal_process_noisefloor(ah);
+-		ic->ic_channoise = ath_hal_get_channel_noise(ah, &(sc->sc_curchan));
+ 		/*
+ 		 * Reset rssi stats; maybe not the best place...
+ 		 */
+@@ -10968,6 +10978,7 @@ enum {
+ 	ATH_INTMIT,
+ 	ATH_NOISE_IMMUNITY,
+ 	ATH_OFDM_WEAK_DET,
++	ATH_CCA_THRESH,
+ 	ATH_CHANBW,
+ 	ATH_OUTDOOR,
+ 	ATH_DISTANCE,
+@@ -11110,6 +11121,66 @@ ath_sysctl_get_intmit(struct ath_softc *
+ 	return 0;
+ }
+ 
++#define AR_PHY_CCA              0x9864
++#define AR_PHY_MINCCA_PWR       0x0FF80000
++#define AR_PHY_MINCCA_PWR_S     19
++#define AR_PHY_CCA_THRESH62     0x0007F000
++#define AR_PHY_CCA_THRESH62_S   12
++
++static int
++ath_nf_from_cca(u32 phy_cca)
++{
++	int nf = (phy_cca >> 19) & 0x1ff;
++	nf = -((nf ^ 0x1ff) + 1);
++	return nf;
++}
++
++static int
++ath_hw_read_nf(struct ath_softc *sc)
++{
++	return ath_nf_from_cca(OS_REG_READ(sc->sc_ah, AR_PHY_CCA));
++}
++
++static void
++ath_update_cca_thresh(struct ath_softc *sc)
++{
++	struct ath_hal *ah = sc->sc_ah;
++	int newthr = 0;
++	u32 phy_cca;
++	int nf;
++
++	phy_cca = OS_REG_READ(ah, AR_PHY_CCA);
++	if (sc->sc_cca_thresh < 0) {
++		newthr = sc->sc_cca_thresh - ath_nf_from_cca(phy_cca);
++
++		/* 0xf is a typical eeprom value for thresh62,
++		 * use it as minimum for signal based thresholds
++		 * to prevent complete connection drops */
++		if (newthr < 0xf)
++			newthr = 0xf;
++	} else {
++		newthr = sc->sc_cca_thresh;
++	}
++
++	if ((newthr < 4) || (newthr >= 127))
++		return;
++
++	phy_cca &= ~AR_PHY_CCA_THRESH62;
++	phy_cca |= newthr << AR_PHY_CCA_THRESH62_S;
++	OS_REG_WRITE(ah, AR_PHY_CCA, phy_cca);
++}
++
++static int
++ath_get_cca_thresh(struct ath_softc *sc)
++{
++	struct ath_hal *ah = sc->sc_ah;
++	u32 phy_cca;
++
++	phy_cca = OS_REG_READ(ah, AR_PHY_CCA);
++	return ath_nf_from_cca(phy_cca) +
++		((phy_cca & AR_PHY_CCA_THRESH62) >> AR_PHY_CCA_THRESH62_S);
++}
++
+ static int
+ ATH_SYSCTL_DECL(ath_sysctl_hwinfo, ctl, write, filp, buffer, lenp, ppos)
+ {
+@@ -11356,6 +11427,10 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+ 			case ATH_OFDM_WEAK_DET:
+ 				ret = ath_sysctl_set_intmit(sc, (long)ctl->extra2, val);
+ 				break;
++			case ATH_CCA_THRESH:
++				sc->sc_cca_thresh = val;
++				ath_update_cca_thresh(sc);
++				break;
+ 			default:
+ 				ret = -EINVAL;
+ 				break;
+@@ -11436,6 +11511,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+ 		case ATH_OFDM_WEAK_DET:
+ 			ret = ath_sysctl_get_intmit(sc, (long)ctl->extra2, &val);
+ 			break;
++		case ATH_CCA_THRESH:
++			val = ath_get_cca_thresh(sc);
++			break;
+ 		default:
+ 			ret = -EINVAL;
+ 			break;
+@@ -11667,6 +11745,12 @@ static const ctl_table ath_sysctl_templa
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_OFDM_WEAK_DET,
+ 	},
++	{ .ctl_name	= CTL_AUTO,
++	  .procname     = "cca_thresh",
++	  .mode         = 0644,
++	  .proc_handler = ath_sysctl_halparam,
++	  .extra2	= (void *)ATH_CCA_THRESH,
++	},
+ 	{ 0 }
+ };
+ 
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -844,6 +844,7 @@ struct ath_softc {
+ 	int sc_cal_interval;			/* current calibration interval */
+ 	struct timer_list sc_cal_ch;		/* calibration timer */
+ 	HAL_NODE_STATS sc_halstats;		/* station-mode rssi stats */
++	int sc_cca_thresh;				/* configured CCA threshold */
+ 
+ 	struct ctl_table_header *sc_sysctl_header;
+ 	struct ctl_table *sc_sysctls;
+--- a/ath/ath_wprobe.c
++++ b/ath/ath_wprobe.c
+@@ -133,8 +133,7 @@ ath_wprobe_sync(struct wprobe_iface *dev
+ 	rx = READ_CLR(ah, AR5K_RXFC);
+ 	tx = READ_CLR(ah, AR5K_TXFC);
+ 	OS_REG_WRITE(ah, AR5K_MIBC, 0);
+-	noise = ath_hal_get_channel_noise(sc->sc_ah, &(sc->sc_curchan));
+-	ic->ic_channoise = noise;
++	noise = ath_hw_read_nf(sc);
+ 
+ 	WPROBE_FILL_BEGIN(val, ath_wprobe_globals);
+ 	if (cc & 0xf0000000) {
