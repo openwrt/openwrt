@@ -308,6 +308,11 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 		return -ENODEV;
 	}
 
+	/* Reset the mdio bus explicitly */
+	mutex_lock(&ag->mii_bus->mdio_lock);
+	ag->mii_bus->reset(ag->mii_bus);
+	mutex_unlock(&ag->mii_bus->mdio_lock);
+
 	if (pdata->phy_mask)
 		return ag71xx_phy_connect_multi(ag);
 
