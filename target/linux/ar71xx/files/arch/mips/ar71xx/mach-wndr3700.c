@@ -325,6 +325,7 @@ static void __init wndr3700_setup(void)
 				      wndr3700_gpio_buttons);
 
 	platform_device_register(&wndr3700_rtl8366_smi_device);
+	platform_device_register_simple("wndr3700-led-usb", -1, NULL, 0);
 	wndr3700_pci_init();
 }
 
