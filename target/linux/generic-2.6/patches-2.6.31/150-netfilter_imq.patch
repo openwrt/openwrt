@@ -811,7 +811,7 @@
  extern void kfree_skb(struct sk_buff *skb);
  extern void consume_skb(struct sk_buff *skb);
  extern void	       __kfree_skb(struct sk_buff *skb);
-@@ -1974,6 +1992,10 @@ static inline void __nf_copy(struct sk_b
+@@ -1976,6 +1994,10 @@ static inline void __nf_copy(struct sk_b
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
