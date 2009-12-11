@@ -825,6 +825,8 @@ static struct platform_device ar71xx_dsa_switch_device = {
 void __init ar71xx_add_device_dsa(unsigned int id,
 				  struct dsa_platform_data *d)
 {
+	int i;
+
 	switch (id) {
 	case 0:
 		d->netdev = &ar71xx_eth0_device.dev;
@@ -838,7 +840,10 @@ void __init ar71xx_add_device_dsa(unsigned int id,
 			id);
 		return;
 	}
-	d->mii_bus = &ar71xx_mdio_device.dev;
+
+	for (i = 0; i < d->nr_chips; i++)
+		d->chip[i].mii_bus = &ar71xx_mdio_device.dev;
+
 	ar71xx_dsa_switch_device.dev.platform_data = d;
 
 	platform_device_register(&ar71xx_dsa_switch_device);

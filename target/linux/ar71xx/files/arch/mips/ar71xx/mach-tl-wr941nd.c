@@ -104,13 +104,18 @@ static struct gpio_button tl_wr941nd_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct dsa_platform_data tl_wr941nd_dsa_data = {
+static struct dsa_chip_data tl_wr941nd_dsa_chip = {
 	.port_names[0]  = "wan",
 	.port_names[1]  = "lan1",
 	.port_names[2]  = "lan2",
 	.port_names[3]  = "lan3",
 	.port_names[4]  = "lan4",
 	.port_names[5]  = "cpu",
+};
+
+static struct dsa_platform_data tl_wr941nd_dsa_data = {
+	.nr_chips	= 1,
+	.chip		= &tl_wr941nd_dsa_chip,
 };
 
 static void __init tl_wr941nd_setup(void)
