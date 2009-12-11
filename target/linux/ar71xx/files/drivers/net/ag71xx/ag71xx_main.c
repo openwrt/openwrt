@@ -593,7 +593,7 @@ static void ag71xx_oom_timer_handler(unsigned long data)
 	struct net_device *dev = (struct net_device *) data;
 	struct ag71xx *ag = netdev_priv(dev);
 
-	netif_rx_schedule(dev, &ag->napi);
+	napi_schedule(&ag->napi);
 }
 
 static void ag71xx_tx_timeout(struct net_device *dev)
@@ -749,7 +749,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		DBG("%s: disable polling mode, done=%d, limit=%d\n",
 			dev->name, done, limit);
 
-		netif_rx_complete(dev, napi);
+		napi_complete(napi);
 
 		/* enable interrupts */
 		spin_lock_irqsave(&ag->lock, flags);
@@ -768,7 +768,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		printk(KERN_DEBUG "%s: out of memory\n", dev->name);
 
 	mod_timer(&ag->oom_timer, jiffies + AG71XX_OOM_REFILL);
-	netif_rx_complete(dev, napi);
+	napi_complete(napi);
 	return 0;
 }
 
@@ -798,7 +798,7 @@ static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
 	if (likely(status & AG71XX_INT_POLL)) {
 		ag71xx_int_disable(ag, AG71XX_INT_POLL);
 		DBG("%s: enable polling mode\n", dev->name);
-		netif_rx_schedule(dev, &ag->napi);
+		napi_schedule(&ag->napi);
 	}
 
 	return IRQ_HANDLED;
@@ -808,6 +808,18 @@ static void ag71xx_set_multicast_list(struct net_device *dev)
 {
 	/* TODO */
 }
+
+static const struct net_device_ops ag71xx_netdev_ops = {
+	.ndo_open		= ag71xx_open,
+	.ndo_stop		= ag71xx_stop,
+	.ndo_start_xmit		= ag71xx_hard_start_xmit,
+	.ndo_set_multicast_list	= ag71xx_set_multicast_list,
+	.ndo_do_ioctl		= ag71xx_do_ioctl,
+	.ndo_tx_timeout		= ag71xx_tx_timeout,
+	.ndo_change_mtu		= eth_change_mtu,
+	.ndo_set_mac_address	= eth_mac_addr,
+	.ndo_validate_addr	= eth_validate_addr,
+};
 
 static int __init ag71xx_probe(struct platform_device *pdev)
 {
@@ -884,14 +896,9 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	}
 
 	dev->base_addr = (unsigned long)ag->mac_base;
-	dev->open = ag71xx_open;
-	dev->stop = ag71xx_stop;
-	dev->hard_start_xmit = ag71xx_hard_start_xmit;
-	dev->set_multicast_list = ag71xx_set_multicast_list;
-	dev->do_ioctl = ag71xx_do_ioctl;
+	dev->netdev_ops = &ag71xx_netdev_ops;
 	dev->ethtool_ops = &ag71xx_ethtool_ops;
 
-	dev->tx_timeout = ag71xx_tx_timeout;
 	INIT_WORK(&ag->restart_work, ag71xx_restart_work_func);
 
 	init_timer(&ag->oom_timer);
