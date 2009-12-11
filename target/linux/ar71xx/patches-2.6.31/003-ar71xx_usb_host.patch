@@ -30,7 +30,7 @@
  	depends on USB_OHCI_HCD && (STB03xxx || PPC_MPC52xx)
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1117,6 +1117,11 @@ MODULE_LICENSE ("GPL");
+@@ -1119,6 +1119,11 @@ MODULE_LICENSE ("GPL");
  #define	PLATFORM_DRIVER		ixp4xx_ehci_driver
  #endif
  
@@ -44,7 +44,7 @@
  #error "missing bus glue for ehci-hcd"
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -1081,6 +1081,11 @@ MODULE_LICENSE ("GPL");
+@@ -1086,6 +1086,11 @@ MODULE_LICENSE ("GPL");
  #define TMIO_OHCI_DRIVER	ohci_hcd_tmio_driver
  #endif
  
