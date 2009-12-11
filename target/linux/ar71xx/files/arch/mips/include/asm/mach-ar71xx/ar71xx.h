@@ -510,6 +510,7 @@ static inline u32 ar71xx_reset_rr(unsigned reg)
 
 void ar71xx_device_stop(u32 mask);
 void ar71xx_device_start(u32 mask);
+int ar71xx_device_stopped(u32 mask);
 
 /*
  * SPI block
