@@ -2268,7 +2268,10 @@ void zconf_nextfile(const char *name)
 	struct buffer *buf;
 
 	retval = glob(name, GLOB_ERR | GLOB_MARK, NULL, &files);
-	if (retval == GLOB_NOSPACE || retval == GLOB_ABORTED || retval == GLOB_NOMATCH) {
+	if (retval == GLOB_NOMATCH)
+		return;
+
+	if (retval == GLOB_NOSPACE || retval == GLOB_ABORTED) {
 		printf("%s:%d: glob failed: %s \"%s\"\n", zconf_curname(), zconf_lineno(),
 			retval == GLOB_NOSPACE ? "failed to allocate memory" :
 				retval == GLOB_ABORTED ? "read error" : "no match",
