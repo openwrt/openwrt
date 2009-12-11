@@ -79,7 +79,7 @@ static struct platform_device rdc_flash_device = {
 
 /* LEDS */
 static struct gpio_led default_leds[] = {
-	{ .name = "rdc321x:dmz", .gpio = 1, },
+	{ .name = "rdc321x:dmz", .gpio = 1, .active_low = 1},
 };
 
 static struct gpio_led_platform_data rdc321x_led_data = {

@@ -1,10 +1,11 @@
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -380,6 +380,7 @@ config X86_RDC321X
+@@ -380,6 +380,8 @@ config X86_RDC321X
  	depends on X86_EXTENDED_PLATFORM
  	select M486
  	select X86_REBOOTFIXUPS
 +	select EMBEDDED
++	select ARCH_REQUIRE_GPIOLIB
  	---help---
  	  This option is needed for RDC R-321x system-on-chip, also known
  	  as R-8610-(G).

@@ -25,6 +25,7 @@
 #include <linux/io.h>
 #include <linux/types.h>
 #include <linux/module.h>
+#include <linux/gpio.h>
 
 #include <asm/rdc321x_gpio.h>
 #include <asm/rdc321x_defs.h>
@@ -37,9 +38,6 @@ static DEFINE_SPINLOCK(gpio_lock);
 /* copy of GPIO data registers */
 static u32 gpio_data_reg1;
 static u32 gpio_data_reg2;
-
-static u32 gpio_request_data[2];
-
 
 static inline void rdc321x_conf_write(unsigned addr, u32 value)
 {
@@ -73,63 +71,8 @@ static void rdc321x_configure_gpio(unsigned gpio)
 	spin_unlock_irqrestore(&gpio_lock, flags);
 }
 
-/* initially setup the 2 copies of the gpio data registers.
-   This function is called before the platform setup code. */
-static int __init rdc321x_gpio_setup(void)
-{
-	/* this might not be, what others (BIOS, bootloader, etc.)
-	   wrote to these registers before, but it's a good guess. Still
-	   better than just using 0xffffffff. */
-
-	gpio_data_reg1 = rdc321x_conf_read(RDC321X_GPIO_DATA_REG1);
-	gpio_data_reg2 = rdc321x_conf_read(RDC321X_GPIO_DATA_REG2);
-
-	return 0;
-}
-
-/* determine, if gpio number is valid */
-static inline int rdc321x_is_gpio(unsigned gpio)
-{
-	return gpio <= RDC321X_MAX_GPIO;
-}
-
-/* request GPIO */
-int rdc_gpio_request(unsigned gpio, const char *label)
-{
-	unsigned long flags;
-
-	if (!rdc321x_is_gpio(gpio))
-		return -EINVAL;
-
-	spin_lock_irqsave(&gpio_lock, flags);
-	if (gpio_request_data[(gpio & 0x20) ? 1 : 0] & (1 << (gpio & 0x1f)))
-		goto inuse;
-	gpio_request_data[(gpio & 0x20) ? 1 : 0] |= (1 << (gpio & 0x1f));
-	spin_unlock_irqrestore(&gpio_lock, flags);
-
-	return 0;
-inuse:
-	spin_unlock_irqrestore(&gpio_lock, flags);
-	return -EINVAL;
-}
-EXPORT_SYMBOL(rdc_gpio_request);
-
-/* release previously-claimed GPIO */
-void rdc_gpio_free(unsigned gpio)
-{
-	unsigned long flags;
-
-	if (!rdc321x_is_gpio(gpio))
-		return;
-
-	spin_lock_irqsave(&gpio_lock, flags);
-	gpio_request_data[(gpio & 0x20) ? 1 : 0] &= ~(1 << (gpio & 0x1f));
-	spin_unlock_irqrestore(&gpio_lock, flags);
-}
-EXPORT_SYMBOL(rdc_gpio_free);
-
 /* read GPIO pin */
-int rdc_gpio_get_value(unsigned gpio)
+static int rdc_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
 {
 	u32 reg;
 	unsigned long flags;
@@ -141,10 +84,10 @@ int rdc_gpio_get_value(unsigned gpio)
 
 	return (1 << (gpio & 0x1f)) & reg ? 1 : 0;
 }
-EXPORT_SYMBOL(rdc_gpio_get_value);
 
 /* set GPIO pin to value */
-void rdc_gpio_set_value(unsigned gpio, int value)
+static void rdc_gpio_set_value(struct gpio_chip *chip,
+				unsigned gpio, int value)
 {
 	unsigned long flags;
 	u32 reg;
@@ -168,31 +111,48 @@ void rdc_gpio_set_value(unsigned gpio, int value)
 		spin_unlock_irqrestore(&gpio_lock, flags);
 	}
 }
-EXPORT_SYMBOL(rdc_gpio_set_value);
 
 /* configure GPIO pin as input */
-int rdc_gpio_direction_input(unsigned gpio)
+static int rdc_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
 {
-	if (!rdc321x_is_gpio(gpio))
-		return -EINVAL;
-
 	rdc321x_configure_gpio(gpio);
 
 	return 0;
 }
-EXPORT_SYMBOL(rdc_gpio_direction_input);
 
 /* configure GPIO pin as output and set value */
-int rdc_gpio_direction_output(unsigned gpio, int value)
+static int rdc_gpio_direction_output(struct gpio_chip *chip,
+				unsigned gpio, int value)
 {
-	if (!rdc321x_is_gpio(gpio))
-		return -EINVAL;
-
-	gpio_set_value(gpio, value);
 	rdc321x_configure_gpio(gpio);
+	gpio_set_value(gpio, value);
 
 	return 0;
 }
-EXPORT_SYMBOL(rdc_gpio_direction_output);
+
+static struct gpio_chip rdc321x_gpio_chip = {
+	.label			= "rdc321x-gpio",
+	.direction_input	= rdc_gpio_direction_input,
+	.direction_output	= rdc_gpio_direction_output,
+	.get			= rdc_gpio_get_value,
+	.set			= rdc_gpio_set_value,
+	.base			= 0,
+	.ngpio			= RDC321X_MAX_GPIO,
+};
+
+/* initially setup the 2 copies of the gpio data registers.
+   This function is called before the platform setup code. */
+static int __init rdc321x_gpio_setup(void)
+{
+	/* this might not be, what others (BIOS, bootloader, etc.)
+	   wrote to these registers before, but it's a good guess. Still
+	   better than just using 0xffffffff. */
+
+	gpio_data_reg1 = rdc321x_conf_read(RDC321X_GPIO_DATA_REG1);
+	gpio_data_reg2 = rdc321x_conf_read(RDC321X_GPIO_DATA_REG2);
+
+	printk(KERN_INFO "rdc321x: registering %d GPIOs\n", rdc321x_gpio_chip.ngpio);
+	return gpiochip_add(&rdc321x_gpio_chip);
+}
 
 arch_initcall(rdc321x_gpio_setup);
