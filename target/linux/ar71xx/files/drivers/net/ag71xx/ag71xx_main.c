@@ -917,13 +917,6 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 
 	ag71xx_dump_regs(ag);
 
-	/* Reset the mdio bus explicitly */
-	if (ag->mii_bus) {
-		mutex_lock(&ag->mii_bus->mdio_lock);
-		ag->mii_bus->reset(ag->mii_bus);
-		mutex_unlock(&ag->mii_bus->mdio_lock);
-	}
-
 	platform_set_drvdata(pdev, dev);
 
 	return 0;
