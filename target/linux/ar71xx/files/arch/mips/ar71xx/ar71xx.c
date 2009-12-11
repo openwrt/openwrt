@@ -113,6 +113,41 @@ void ar71xx_device_start(u32 mask)
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
 
+int ar71xx_device_stopped(u32 mask)
+{
+	unsigned long flags;
+	u32 t;
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE);
+		local_irq_restore(flags);
+		break;
+
+	case AR71XX_SOC_AR7240:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
+		local_irq_restore(flags);
+		break;
+
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		local_irq_save(flags);
+		t = ar71xx_reset_rr(AR91XX_RESET_REG_RESET_MODULE);
+		local_irq_restore(flags);
+		break;
+
+	default:
+		BUG();
+	}
+
+	return ((t & mask) == mask);
+}
+EXPORT_SYMBOL_GPL(ar71xx_device_stopped);
+
 void ar71xx_ddr_flush(u32 reg)
 {
 	ar71xx_ddr_wr(reg, 1);
