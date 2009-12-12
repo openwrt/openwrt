@@ -73,6 +73,7 @@
 #include <stdlib.h>	// system(), etc.
 #include <string.h>	// basename(), strerror(), strdup(), etc.
 #include <unistd.h>	// optopt(), access(), etc.
+#include <libgen.h>
 #include <sys/wait.h>	// WEXITSTATUS, etc.
 
 // custom includes
@@ -186,8 +187,8 @@ int parse_par_file(FILE *f_par) {
 	int lineno;
 	int count;
 
-	char *string1;
-	char *string2;
+	char string1[64];
+	char string2[64];
 	int value;
 
 	mtd_info *mtd;
@@ -207,7 +208,7 @@ int parse_par_file(FILE *f_par) {
 			}
 			if (buffer == NULL) {
 				exitcode = 1;
-				printf("parse_par_file: can not allocate %i bytes\n", buffer_size);
+				printf("parse_par_file: can not allocate %i bytes\n", (int) buffer_size);
 				break;
 			}
 
@@ -250,15 +251,13 @@ int parse_par_file(FILE *f_par) {
 
 		lprintf(DEBUG_LVL2, " line %i (%i) %s", lineno, count, line);
 
-		string1 = NULL;
-		string2 = NULL;
 		value = 0;
 		mtd = NULL;
 
 		// split line if starting with a colon
 		switch (line[0]) {
 			case ':':
-				count = sscanf(line, ":%ms %i %ms", &string1, &value, &string2);
+				count = sscanf(line, ":%64s %i %64s", string1, &value, string2);
 				if (count != 3) {
 					printf("line %i does not meet defined format (:<mtdname> <mtdsize> <file>)\n", lineno);
 				} else {
@@ -278,8 +277,7 @@ int parse_par_file(FILE *f_par) {
 						printf("mtd %s in line %i multiple definitions\n", string1, lineno);
 					} else {
 						mtd->size = value;
-						mtd->filename = string2;
-						string2 = NULL;	// do not free
+						mtd->filename = strdup(string2);
 
 						// Get file size
 						f_in = fopen(mtd->filename, "rb");
@@ -318,7 +316,7 @@ int parse_par_file(FILE *f_par) {
 				}
 				break;
 			case '#':	// integer values
-				count = sscanf(line, "#%ms %i", &string1, &value);
+				count = sscanf(line, "#%64s %i", string1, &value);
 				if (count != 2) {
 					printf("line %i does not meet defined format (:<variable name> <integer>\n", lineno);
 				} else {
@@ -334,7 +332,7 @@ int parse_par_file(FILE *f_par) {
 				}
 				break;
 			case '$':	// strings
-				count = sscanf(line, "$%ms %ms", &string1, &string2);
+				count = sscanf(line, "$%64s %64s", string1, string2);
 				if (count != 2) {
 					printf("line %i does not meet defined format (:<mtdname> <mtdsize> <file>)\n", lineno);
 				} else {
@@ -351,13 +349,6 @@ int parse_par_file(FILE *f_par) {
 				break;
 			default:
 				break;
-		}
-
-		if (string1) {
-			free(string1);
-		}
-		if (string2) {
-			free(string2);
 		}
 	}
 	free(buffer);
@@ -561,7 +552,7 @@ int create_zip_file(char *zip_filename, char *bin_filename) {
 		}
 		if (buffer == NULL) {
 			exitcode = 1;
-			printf("create_zip_file: can not allocate %i bytes\n", buffer_size);
+			printf("create_zip_file: can not allocate %i bytes\n", (int) buffer_size);
 			break;
 		}
 
@@ -979,7 +970,7 @@ int main(int argc, char *argv[]) {
 			if (mtd == &mtd_kernel) {
 				if (mtd->filesize < 0x00050000) {
 					exitcode = 1;
-					printf("mtd %s input file %s too unrealistic small (0x%08lX)\n", mtd->name, mtd->filesize);
+					printf("mtd %s input file %s too unrealistic small (0x%08lX)\n", mtd->name, mtd->filename, mtd->filesize);
 				}
 			}
 
