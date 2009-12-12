@@ -425,7 +425,7 @@ define KernelPackage/rdc321x-wdt
   DEPENDS:=@TARGET_rdc
   KCONFIG:=CONFIG_RDC321X_WDT
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/rdc321x_wdt.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,rdc321_wdt)
+  AUTOLOAD:=$(call AutoLoad,50,rdc321x_wdt)
 endef
 
 define KernelPackage/rdc321x-wdt/description
