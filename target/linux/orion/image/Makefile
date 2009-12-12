@@ -1,9 +1,10 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2009 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -48,7 +49,25 @@ define Image/Build/Netgear
 endef
 
 define Image/Build/Linksys
-# placeholder for the WRT350N v2
+	# WRT350N v2 sysupgrade image
+	( \
+		dd if="${KDIR}/$2-uImage" bs=$5 conv=sync; \
+		dd if="${KDIR}/root.$1" bs=64k conv=sync; \
+	) > "${BIN_DIR}/openwrt-$2-$1.img"
+	# WRT350N v2 webupgrade image for stock firmware
+	rm -rf "${TMP_DIR}/$2_webupgrade"
+	mkdir "${TMP_DIR}/$2_webupgrade"
+	# create parameter file
+	echo ":kernel $5 ${BIN_DIR}/openwrt-$2-uImage" >"${TMP_DIR}/$2_webupgrade/$2.par"
+	echo ":rootfs 0 ${KDIR}/root.$1" >>"${TMP_DIR}/$2_webupgrade/$2.par"
+	# create webupgrade file
+	( cd "${TMP_DIR}/$2_webupgrade"; \
+		"${STAGING_DIR_HOST}/bin/$2-builder" \
+			-v "${TMP_DIR}/$2_webupgrade/$2.par" \
+			"${BIN_DIR}/openwrt-$2-$(1)-webupgrade.img"; \
+		$(CP) openwrt-$2-$(1)-webupgrade.bin $(BIN_DIR)/openwrt-$2-$(1)-recovery.bin; \
+	)
+	rm -rf "${TMP_DIR}/$2_webupgrade"
 endef
 
 define Image/Build/Freecom
@@ -64,7 +83,7 @@ endef
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Netgear,$(1),wnr854t,NG_WNR854T,$(1))
-	$(call Image/Build/Linksys,$(1),wrt350nv2,WNR350Nv2,$(1))
+	$(call Image/Build/Linksys,$(1),wrt350nv2,WNR350Nv2,$(1),1048576)	# 5th parameter is kernel mtd size 0x00100000 = 1048576 / 0x001A0000 = 1703936
 	$(call Image/Build/Freecom,$(1),dt2,DT,$(1))
 endef
 
