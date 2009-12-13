@@ -84,6 +84,11 @@ define Image/Build/amit
 	$(STAGING_DIR_HOST)/bin/makeamitbin -o $(BIN_DIR)/openwrt-$(BOARD)-$(1)-ar360w3g.bin -1 ALK_ATG001 -2 Atropos linux3g $(KDIR)/bzImage ramdisk3g $(KDIR)/root.$(1)
 endef
 
+define Image/Build/bifferboard
+	$(TOPDIR)/target/linux/rdc/image/mkimg_bifferboard.py $(KDIR)/bzImage $(KDIR)/root.$(1) $(KDIR)/tmp.img
+	$(CP) $(KDIR)/tmp.img $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
+endef
+
 define Image/Build/Initramfs
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-ramfs.bzImage
 endef
