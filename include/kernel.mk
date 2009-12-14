@@ -42,7 +42,9 @@ else
 
   LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
   TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
-  LINUX_SITE:=@KERNEL/linux/kernel/v$(KERNEL)$(TESTING) \
+  ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE)),)
+    LINUX_SITE:=@KERNEL/linux/kernel/v$(KERNEL)$(TESTING)
+  endif
 
   ifneq ($(TARGET_BUILD),1)
     PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
