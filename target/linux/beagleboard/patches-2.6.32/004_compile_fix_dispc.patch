@@ -1,0 +1,13 @@
+--- a/drivers/video/omap2/dss/dispc.c	2009-11-29 18:41:44.396505079 +0100
++++ b/drivers/video/omap2/dss/dispc.c	2009-11-09 00:19:03.466830538 +0100
+@@ -3077,8 +3077,8 @@ static void _omap_dispc_initial_config(v
+ 	REG_FLD_MOD(DISPC_CONFIG, 1, 9, 9);
+ 
+ 	/* L3 firewall setting: enable access to OCM RAM */
+-	if (cpu_is_omap24xx())
+-		__raw_writel(0x402000b0, OMAP2_IO_ADDRESS(0x680050a0));
++//	if (cpu_is_omap24xx())
++//		__raw_writel(0x402000b0, OMAP2_IO_ADDRESS(0x680050a0));
+ 
+ 	_dispc_setup_color_conv_coef();
+ 
