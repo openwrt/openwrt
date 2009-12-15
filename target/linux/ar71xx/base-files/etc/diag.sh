@@ -57,7 +57,7 @@ get_status_led() {
 	pb44)
 		status_led="pb44:amber:jump1"
 		;;
-	routerstation)
+	routerstation | routerstation-pro)
 		status_led="ubnt:green:rf"
 		;;
 	tew-632brp)
