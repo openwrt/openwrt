@@ -514,7 +514,7 @@ define KernelPackage/usb-video
   TITLE:=Support for USB video devices
   KCONFIG:=CONFIG_VIDEO_USBVIDEO
   FILES:=$(LINUX_DIR)/drivers/media/video/usbvideo/usbvideo.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,60,usbvideo)
+  AUTOLOAD:=$(call AutoLoad,61,usbvideo)
 endef
 
 define KernelPackage/usb-video/description
