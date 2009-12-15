@@ -435,15 +435,11 @@ static void ag71xx_hw_stop(struct ag71xx *ag)
 static int ag71xx_open(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
-	int err;
+	int ret;
 
-	err = ag71xx_phy_connect(ag);
-	if (err)
+	ret = ag71xx_rings_init(ag);
+	if (ret)
 		goto err;
-
-	err = ag71xx_rings_init(ag);
-	if (err)
-		goto err_ring_cleanup;
 
 	napi_enable(&ag->napi);
 
@@ -461,10 +457,9 @@ static int ag71xx_open(struct net_device *dev)
 
 	return 0;
 
- err_ring_cleanup:
-	ag71xx_rings_cleanup(ag);
  err:
-	return err;
+	ag71xx_rings_cleanup(ag);
+	return ret;
 }
 
 static int ag71xx_stop(struct net_device *dev)
@@ -487,7 +482,6 @@ static int ag71xx_stop(struct net_device *dev)
 	spin_unlock_irqrestore(&ag->lock, flags);
 
 	ag71xx_rings_cleanup(ag);
-	ag71xx_phy_disconnect(ag);
 
 	return 0;
 }
@@ -924,10 +918,16 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 
 	ag71xx_dump_regs(ag);
 
+	err = ag71xx_phy_connect(ag);
+	if (err)
+		goto err_unregister_netdev;
+
 	platform_set_drvdata(pdev, dev);
 
 	return 0;
 
+ err_unregister_netdev:
+	unregister_netdev(dev);
  err_free_irq:
 	free_irq(dev->irq, dev);
  err_unmap_mii_ctrl:
@@ -948,6 +948,7 @@ static int __exit ag71xx_remove(struct platform_device *pdev)
 	if (dev) {
 		struct ag71xx *ag = netdev_priv(dev);
 
+		ag71xx_phy_disconnect(ag);
 		unregister_netdev(dev);
 		free_irq(dev->irq, dev);
 		iounmap(ag->mii_ctrl);
