@@ -71,12 +71,16 @@ OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
 					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
 ifeq ($(BOARD),ixp4xx)
 OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic \
-					no-sse2 no-perlasm --with-cryptodev
+					no-sse2 --with-cryptodev
 else
 OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic \
-					no-engines no-sse2 no-perlasm
+					no-engines no-sse2
 endif
-
+ifdef CONFIG_arm
+OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
+else
+OPENSSL_OPTIONS += no-perlasm
+endif
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
@@ -100,21 +104,25 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		MAKEDEPPROG="$(TARGET_CROSS)gcc" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
+		$(OPENSSL_MAKEFLAGS) \
 		depend
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
+		$(OPENSSL_MAKEFLAGS) \
 		all build-shared
 	# Work around openssl build bug to link libssl.so with libcrypto.so.
 	-rm $(PKG_BUILD_DIR)/libssl.so.*.*.*
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
+		$(OPENSSL_MAKEFLAGS) \
 		do_linux-shared
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		INSTALL_PREFIX="$(PKG_INSTALL_DIR)" \
+		$(OPENSSL_MAKEFLAGS) \
 		install
 endef
 

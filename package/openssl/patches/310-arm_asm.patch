@@ -1,0 +1,13 @@
+--- a/crypto/aes/Makefile
++++ b/crypto/aes/Makefile
+@@ -47,6 +47,9 @@ lib:	$(LIBOBJ)
+ 
+ $(LIBOBJ): $(LIBSRC)
+ 
++aes-armv4.s: asm/aes-armv4.pl
++	$(PERL) $^ > $@
++
+ aes-ia64.s: asm/aes-ia64.S
+ 	$(CC) $(CFLAGS) -E asm/aes-ia64.S > $@
+ 
+
