@@ -187,8 +187,8 @@ int parse_par_file(FILE *f_par) {
 	int lineno;
 	int count;
 
-	char string1[64];
-	char string2[64];
+	char string1[256];
+	char string2[256];
 	int value;
 
 	mtd_info *mtd;
@@ -257,7 +257,7 @@ int parse_par_file(FILE *f_par) {
 		// split line if starting with a colon
 		switch (line[0]) {
 			case ':':
-				count = sscanf(line, ":%63s %i %63s", string1, &value, string2);
+				count = sscanf(line, ":%255s %i %255s", string1, &value, string2);
 				if (count != 3) {
 					printf("line %i does not meet defined format (:<mtdname> <mtdsize> <file>)\n", lineno);
 				} else {
@@ -316,7 +316,7 @@ int parse_par_file(FILE *f_par) {
 				}
 				break;
 			case '#':	// integer values
-				count = sscanf(line, "#%63s %i", string1, &value);
+				count = sscanf(line, "#%255s %i", string1, &value);
 				if (count != 2) {
 					printf("line %i does not meet defined format (:<variable name> <integer>\n", lineno);
 				} else {
@@ -332,7 +332,7 @@ int parse_par_file(FILE *f_par) {
 				}
 				break;
 			case '$':	// strings
-				count = sscanf(line, "$%63s %63s", string1, string2);
+				count = sscanf(line, "$%255s %255s", string1, string2);
 				if (count != 2) {
 					printf("line %i does not meet defined format (:<mtdname> <mtdsize> <file>)\n", lineno);
 				} else {
