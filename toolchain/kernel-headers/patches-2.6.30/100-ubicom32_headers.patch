@@ -1,0 +1,4852 @@
+--- /dev/null
++++ b/arch/ubicom32/include/asm/a.out.h
+@@ -0,0 +1,47 @@
++/*
++ * arch/ubicom32/include/asm/a.out.h
++ *   Definitions for Ubicom32 a.out executable format.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_A_OUT_H
++#define _ASM_UBICOM32_A_OUT_H
++
++struct exec
++{
++  unsigned long a_info;		/* Use macros N_MAGIC, etc for access */
++  unsigned a_text;		/* length of text, in bytes */
++  unsigned a_data;		/* length of data, in bytes */
++  unsigned a_bss;		/* length of uninitialized data area for file, in bytes */
++  unsigned a_syms;		/* length of symbol table data in file, in bytes */
++  unsigned a_entry;		/* start address */
++  unsigned a_trsize;		/* length of relocation info for text, in bytes */
++  unsigned a_drsize;		/* length of relocation info for data, in bytes */
++};
++
++#define N_TRSIZE(a)	((a).a_trsize)
++#define N_DRSIZE(a)	((a).a_drsize)
++#define N_SYMSIZE(a)	((a).a_syms)
++
++#endif /* _ASM_UBICOM32_A_OUT_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/auxvec.h
+@@ -0,0 +1,32 @@
++/*
++ * arch/ubicom32/include/asm/auxvec.h
++ *   Symbolic values for the entries in the auxiliary table
++ *   put on the initial stack.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_AUXVEC_H
++#define _ASM_UBICOM32_AUXVEC_H
++
++#endif /* _ASM_UBICOM32_AUXVEC_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/bitops.h
+@@ -0,0 +1,41 @@
++/*
++ * arch/ubicom32/include/asm/bitops.h
++ *   Bit manipulation definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_BITOPS_H
++#define _ASM_UBICOM32_BITOPS_H
++
++/*
++ * Copyright 1992, Linus Torvalds.
++ */
++
++#include <linux/compiler.h>
++#include <asm/byteorder.h>	/* swab32 */
++
++#include <asm-generic/bitops/fls.h>
++#include <asm-generic/bitops/fls64.h>
++
++#endif /* _ASM_UBICOM32_BITOPS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/board.h
+@@ -0,0 +1,34 @@
++/*
++ * arch/ubicom32/include/asm/board.h
++ *   Board init and revision definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_BOARD_H
++#define _ASM_UBICOM32_BOARD_H
++
++extern const char *board_get_revision(void);
++extern void __init board_init(void);
++
++#endif /* _ASM_UBICOM32_BOARD_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/byteorder.h
+@@ -0,0 +1,35 @@
++/*
++ * arch/ubicom32/include/asm/byteorder.h
++ *   Byte order swapping utility routines.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_BYTEORDER_H
++#define _ASM_UBICOM32_BYTEORDER_H
++
++#include <linux/types.h>
++#include <linux/byteorder/big_endian.h>
++
++#endif /* _ASM_UBICOM32_BYTEORDER_H */
++
+--- /dev/null
++++ b/arch/ubicom32/include/asm/elf.h
+@@ -0,0 +1,167 @@
++/*
++ * arch/ubicom32/include/asm/elf.h
++ *   Definitions for elf executable format for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not,
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_ELF_H
++#define _ASM_UBICOM32_ELF_H
++
++/*
++ * ELF register definitions..
++ */
++
++#include <asm/ptrace.h>
++#include <asm/user.h>
++
++/*
++ * Processor specific flags for the ELF header e_flags field.
++ */
++#define EF_UBICOM32_V3		0x00000001	/* -fmarch=ubicom32v3 */
++#define EF_UBICOM32_V4		0x00000002	/* -fmarch=ubicom32v4 */
++#define EF_UBICOM32_PIC		0x80000000	/* -fpic */
++#define EF_UBICOM32_FDPIC	0x40000000	/* -mfdpic */
++
++/*
++ * Ubicom32 ELF relocation types
++ */
++#define R_UBICOM32_NONE			0
++#define R_UBICOM32_16			1
++#define R_UBICOM32_32			2
++#define R_UBICOM32_LO16			3
++#define R_UBICOM32_HI16			4
++#define R_UBICOM32_21_PCREL		5
++#define R_UBICOM32_24_PCREL		6
++#define R_UBICOM32_HI24			7
++#define R_UBICOM32_LO7_S		8
++#define R_UBICOM32_LO7_2_S		9
++#define R_UBICOM32_LO7_4_S		10
++#define R_UBICOM32_LO7_D		11
++#define R_UBICOM32_LO7_2_D		12
++#define R_UBICOM32_LO7_4_D		13
++#define R_UBICOM32_32_HARVARD		14
++#define R_UBICOM32_LO7_CALLI		15
++#define R_UBICOM32_LO16_CALLI		16
++#define R_UBICOM32_GOT_HI24		17
++#define R_UBICOM32_GOT_LO7_S		18
++#define R_UBICOM32_GOT_LO7_2_S		19
++#define R_UBICOM32_GOT_LO7_4_S		20
++#define R_UBICOM32_GOT_LO7_D		21
++#define R_UBICOM32_GOT_LO7_2_D		22
++#define R_UBICOM32_GOT_LO7_4_D		23
++#define R_UBICOM32_FUNCDESC_GOT_HI24    24
++#define R_UBICOM32_FUNCDESC_GOT_LO7_S   25
++#define R_UBICOM32_FUNCDESC_GOT_LO7_2_S 26
++#define R_UBICOM32_FUNCDESC_GOT_LO7_4_S 27
++#define R_UBICOM32_FUNCDESC_GOT_LO7_D   28
++#define R_UBICOM32_FUNCDESC_GOT_LO7_2_D 29
++#define R_UBICOM32_FUNCDESC_GOT_LO7_4_D 30
++#define R_UBICOM32_GOT_LO7_CALLI        31
++#define R_UBICOM32_FUNCDESC_GOT_LO7_CALLI 32
++#define R_UBICOM32_FUNCDESC_VALUE       33
++#define R_UBICOM32_FUNCDESC             34
++#define R_UBICOM32_GOTOFFSET_LO         35
++#define R_UBICOM32_GOTOFFSET_HI         36
++#define R_UBICOM32_FUNCDESC_GOTOFFSET_LO 37
++#define R_UBICOM32_FUNCDESC_GOTOFFSET_HI 38
++#define R_UBICOM32_GNU_VTINHERIT        200
++#define R_UBICOM32_GNU_VTENTRY          201
++
++typedef unsigned long elf_greg_t;
++
++#define ELF_NGREG (sizeof(struct pt_regs) / sizeof(elf_greg_t))
++typedef elf_greg_t elf_gregset_t[ELF_NGREG];
++
++typedef struct user_ubicom32fp_struct elf_fpregset_t;
++
++/*
++ * This is used to ensure we don't load something for the wrong architecture.
++ */
++#define elf_check_arch(x) ((x)->e_machine == EM_UBICOM32)
++
++#define elf_check_fdpic(x) ((x)->e_flags & EF_UBICOM32_FDPIC)
++
++#define elf_check_const_displacement(x) ((x)->e_flags & EF_UBICOM32_PIC)
++
++/*
++ * These are used to set parameters in the core dumps.
++ */
++#define ELF_CLASS	ELFCLASS32
++#define ELF_DATA	ELFDATA2MSB
++#define ELF_ARCH	EM_UBICOM32
++
++/* For SVR4/m68k the function pointer to be registered with `atexit' is
++   passed in %a1.  Although my copy of the ABI has no such statement, it
++   is actually used on ASV.  */
++#define ELF_PLAT_INIT(_r, load_addr)	_r->a1 = 0
++
++#define ELF_FDPIC_PLAT_INIT(_regs, _exec_map_addr, _interp_map_addr,	\
++			    _dynamic_addr)				\
++	do {								\
++		_regs->dn[1]	= _exec_map_addr;			\
++		_regs->dn[2]	= _interp_map_addr;			\
++		_regs->dn[3]	= _dynamic_addr;			\
++		_regs->an[1]	= 0; /* dl_fini will be set by ldso */	\
++	} while (0)
++
++#define USE_ELF_CORE_DUMP
++#define ELF_EXEC_PAGESIZE	4096
++
++#ifdef __KERNEL__
++#ifdef CONFIG_UBICOM32_V4
++#define ELF_FDPIC_CORE_EFLAGS	(EF_UBICOM32_FDPIC | EF_UBICOM32_V4)
++#elif defined CONFIG_UBICOM32_V3
++#define ELF_FDPIC_CORE_EFLAGS	(EF_UBICOM32_FDPIC | EF_UBICOM32_V3)
++#else
++#error Unknown/Unsupported ubicom32 architecture.
++#endif
++#endif
++
++/* This is the location that an ET_DYN program is loaded if exec'ed.  Typical
++   use of this is to invoke "./ld.so someprog" to test out a new version of
++   the loader.  We need to make sure that it is out of the way of the program
++   that it will "exec", and that there is sufficient room for the brk.  */
++
++#define ELF_ET_DYN_BASE         0xD0000000UL
++
++/*
++ * For Ubicom32, the elf_gregset_t and struct pt_regs are the same size
++ * data structure so a copy is performed instead of providing the
++ * ELF_CORE_COPY_REGS macro.
++ */
++
++/* This yields a mask that user programs can use to figure out what
++   instruction set this cpu supports.  */
++
++#define ELF_HWCAP	(0)
++
++/* This yields a string that ld.so will use to load implementation
++   specific libraries for optimization.  This is more specific in
++   intent than poking at uname or /proc/cpuinfo.  */
++
++#define ELF_PLATFORM  (NULL)
++
++#define SET_PERSONALITY(ex, ibcs2) set_personality((ibcs2)?PER_SVR4:PER_LINUX)
++
++#endif /* _ASM_UBICOM32_ELF_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/errno.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/errno.h
++ *   Generic errno.h for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_ERRNO_H
++#define _ASM_UBICOM32_ERRNO_H
++
++#include <asm-generic/errno.h>
++
++#endif /* _ASM_UBICOM32_ERRNO_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/fcntl.h
+@@ -0,0 +1,38 @@
++/*
++ * arch/ubicom32/include/asm/fcntl.h
++ *   File control bit definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_FCNTL_H
++#define _ASM_UBICOM32_FCNTL_H
++
++#define O_DIRECTORY	040000	/* must be a directory */
++#define O_NOFOLLOW	0100000	/* don't follow links */
++#define O_DIRECT	0200000	/* direct disk access hint - currently ignored */
++#define O_LARGEFILE	0400000
++
++#include <asm-generic/fcntl.h>
++
++#endif /* _ASM_UBICOM32_FCNTL_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/flat.h
+@@ -0,0 +1,73 @@
++/*
++ * arch/ubicom32/include/asm/flat.h
++ *   Definitions to support flat-format executables.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++
++#ifndef _ASM_UBICOM32_FLAT_H
++#define _ASM_UBICOM32_FLAT_H
++
++#define ARCH_FLAT_ALIGN 0x80
++#define ARCH_FLAT_ALIGN_TEXT 1
++
++#define  R_UBICOM32_32		2
++#define  R_UBICOM32_HI24	7
++#define  R_UBICOM32_LO7_S	8
++#define  R_UBICOM32_LO7_2_S	9
++#define  R_UBICOM32_LO7_4_S	10
++#define  R_UBICOM32_LO7_D	11
++#define  R_UBICOM32_LO7_2_D	12
++#define  R_UBICOM32_LO7_4_D	13
++#define  R_UBICOM32_LO7_CALLI	15
++#define  R_UBICOM32_LO16_CALLI	16
++
++extern void ubicom32_flat_put_addr_at_rp(unsigned long *rp, u32_t val, u32_t rval, unsigned long  *p);
++extern unsigned long ubicom32_flat_get_addr_from_rp(unsigned long *rp, u32_t relval, u32_t flags, unsigned long *p);
++
++#define	flat_stack_align(sp)			/* nothing needed */
++#define	flat_argvp_envp_on_stack()		1
++#define	flat_old_ram_flag(flags)		(flags)
++#define	flat_reloc_valid(reloc, size)		((reloc) <= (size))
++#define	flat_get_addr_from_rp(rp, relval, flags, p)	(ubicom32_flat_get_addr_from_rp(rp, relval,flags, p))
++#define	flat_put_addr_at_rp(rp, val, relval)	do {ubicom32_flat_put_addr_at_rp(rp, val, relval, &persistent);} while(0)
++#define	flat_get_relocate_addr(rel)		((persistent) ? (persistent & 0x07ffffff) : (rel & 0x07ffffff))
++
++static inline int flat_set_persistent(unsigned int relval, unsigned long *p)
++{
++	if (*p) {
++		return 0;
++	} else {
++		if ((relval >> 27) != R_UBICOM32_32) {
++			/*
++			 * Something other than UBICOM32_32. The next entry has the relocation.
++			 */
++			*p = relval;
++			return 1;
++		}
++	}
++	return 0;
++}
++
++#endif /* _ASM_UBICOM32_FLAT_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/fpu.h
+@@ -0,0 +1,37 @@
++/*
++ * arch/ubicom32/include/asm/fpu.h
++ *   Floating point state definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_FPU_H
++#define _ASM_UBICOM32_FPU_H
++
++/*
++ * MAX floating point unit state size (FSAVE/FRESTORE)
++ */
++/* No FP unit present then... */
++#define FPSTATESIZE (2) /* dummy size */
++
++#endif /* _ASM_UBICOM32_FPU_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/futex.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/futex.h
++ *   Generic futex.h for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_FUTEX_H
++#define _ASM_UBICOM32_FUTEX_H
++
++#include <asm-generic/futex.h>
++
++#endif /* _ASM_UBICOM32_FUTEX_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/ioctl.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/ioctl.h
++ *   Generic ioctl.h for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_IOCTL_H
++#define _ASM_UBICOM32_IOCTL_H
++
++#include <asm-generic/ioctl.h>
++
++#endif /* _ASM_UBICOM32_IOCTL_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/ioctls.h
+@@ -0,0 +1,111 @@
++/*
++ * arch/ubicom32/include/asm/ioctls.h
++ *   Definitions of ioctls for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_IOCTLS_H
++#define _ASM_UBICOM32_IOCTLS_H
++
++#include <asm/ioctl.h>
++
++/* 0x54 is just a magic number to make these relatively unique ('T') */
++
++#define TCGETS		0x5401
++#define TCSETS		0x5402
++#define TCSETSW		0x5403
++#define TCSETSF		0x5404
++#define TCGETA		0x5405
++#define TCSETA		0x5406
++#define TCSETAW		0x5407
++#define TCSETAF		0x5408
++#define TCSBRK		0x5409
++#define TCXONC		0x540A
++#define TCFLSH		0x540B
++#define TIOCEXCL	0x540C
++#define TIOCNXCL	0x540D
++#define TIOCSCTTY	0x540E
++#define TIOCGPGRP	0x540F
++#define TIOCSPGRP	0x5410
++#define TIOCOUTQ	0x5411
++#define TIOCSTI		0x5412
++#define TIOCGWINSZ	0x5413
++#define TIOCSWINSZ	0x5414
++#define TIOCMGET	0x5415
++#define TIOCMBIS	0x5416
++#define TIOCMBIC	0x5417
++#define TIOCMSET	0x5418
++#define TIOCGSOFTCAR	0x5419
++#define TIOCSSOFTCAR	0x541A
++#define FIONREAD	0x541B
++#define TIOCINQ		FIONREAD
++#define TIOCLINUX	0x541C
++#define TIOCCONS	0x541D
++#define TIOCGSERIAL	0x541E
++#define TIOCSSERIAL	0x541F
++#define TIOCPKT		0x5420
++#define FIONBIO		0x5421
++#define TIOCNOTTY	0x5422
++#define TIOCSETD	0x5423
++#define TIOCGETD	0x5424
++#define TCSBRKP		0x5425	/* Needed for POSIX tcsendbreak() */
++#define TIOCSBRK	0x5427  /* BSD compatibility */
++#define TIOCCBRK	0x5428  /* BSD compatibility */
++#define TIOCGSID	0x5429  /* Return the session ID of FD */
++#define TCGETS2		_IOR('T',0x2A, struct termios2)
++#define TCSETS2		_IOW('T',0x2B, struct termios2)
++#define TCSETSW2	_IOW('T',0x2C, struct termios2)
++#define TCSETSF2	_IOW('T',0x2D, struct termios2)
++#define TIOCGPTN	_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
++#define TIOCSPTLCK	_IOW('T',0x31, int)  /* Lock/unlock Pty */
++
++#define FIONCLEX	0x5450  /* these numbers need to be adjusted. */
++#define FIOCLEX		0x5451
++#define FIOASYNC	0x5452
++#define TIOCSERCONFIG	0x5453
++#define TIOCSERGWILD	0x5454
++#define TIOCSERSWILD	0x5455
++#define TIOCGLCKTRMIOS	0x5456
++#define TIOCSLCKTRMIOS	0x5457
++#define TIOCSERGSTRUCT	0x5458 /* For debugging only */
++#define TIOCSERGETLSR   0x5459 /* Get line status register */
++#define TIOCSERGETMULTI 0x545A /* Get multiport config  */
++#define TIOCSERSETMULTI 0x545B /* Set multiport config */
++
++#define TIOCMIWAIT	0x545C	/* wait for a change on serial input line(s) */
++#define TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
++#define FIOQSIZE	0x545E
++
++/* Used for packet mode */
++#define TIOCPKT_DATA		 0
++#define TIOCPKT_FLUSHREAD	 1
++#define TIOCPKT_FLUSHWRITE	 2
++#define TIOCPKT_STOP		 4
++#define TIOCPKT_START		 8
++#define TIOCPKT_NOSTOP		16
++#define TIOCPKT_DOSTOP		32
++
++#define TIOCSER_TEMT    0x01	/* Transmitter physically empty */
++
++#endif /* _ASM_UBICOM32_IOCTLS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/ipcbuf.h
+@@ -0,0 +1,55 @@
++/*
++ * arch/ubicom32/include/asm/ipcbuf.h
++ *   Definition of ipc64_perm struct for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_IPCBUF_H
++#define _ASM_UBICOM32_IPCBUF_H
++
++/*
++ * The user_ipc_perm structure for m68k architecture.
++ * Note extra padding because this structure is passed back and forth
++ * between kernel and user space.
++ *
++ * Pad space is left for:
++ * - 32-bit mode_t and seq
++ * - 2 miscellaneous 32-bit values
++ */
++struct ipc64_perm
++{
++	__kernel_key_t		key;
++	__kernel_uid32_t	uid;
++	__kernel_gid32_t	gid;
++	__kernel_uid32_t	cuid;
++	__kernel_gid32_t	cgid;
++	__kernel_mode_t		mode;
++	unsigned short		__pad1;
++	unsigned short		seq;
++	unsigned short		__pad2;
++	unsigned long		__unused1;
++	unsigned long		__unused2;
++};
++
++#endif /* _ASM_UBICOM32_IPCBUF_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/irqflags.h
+@@ -0,0 +1,94 @@
++/*
++ * arch/ubicom32/include/asm/irqflags.h
++ *   Raw implementation of local IRQ functions.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not,
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_IRQFLAGS_H
++#define _ASM_UBICOM32_IRQFLAGS_H
++
++#include <linux/thread_info.h>
++#include <asm/ubicom32-common.h>
++#include <asm/smp.h>
++#include <asm/ldsr.h>
++
++#if defined(CONFIG_PREEMPT)
++#error Not supported by Ubicom32 irq handling, yet!
++#endif
++
++/*
++ * raw_local_irq_enable()
++ *	Enable interrupts for this thread.
++ */
++static inline void raw_local_irq_enable(void)
++{
++	ldsr_local_irq_enable();
++}
++
++/*
++ * raw_local_irq_disable()
++ *	Disable interrupts for this thread.
++ */
++static inline void raw_local_irq_disable(void)
++{
++	ldsr_local_irq_disable();
++}
++
++/*
++ * raw_local_save_flags()
++ *	Get the current IRQ state.
++ */
++#define raw_local_save_flags(flags) 		\
++do {						\
++	(flags) = ldsr_local_irq_is_disabled();	\
++} while (0)
++
++/*
++ * raw_local_irq_save()
++ *	Save the current interrupt state and disable interrupts.
++ */
++#define raw_local_irq_save(flags)		\
++do {						\
++	(flags) = ldsr_local_irq_save();	\
++} while (0)
++
++/*
++ * raw_local_irq_restore()
++ *	Restore the IRQ state back to flags.
++ */
++static inline void raw_local_irq_restore(unsigned long flags)
++{
++	ldsr_local_irq_restore(flags);
++}
++
++/*
++ * raw_irqs_disabled_flags()
++ *	Return true if the flags indicate that IRQ(s) are disabled.
++ */
++static inline int raw_irqs_disabled_flags(unsigned long flags)
++{
++	return (flags);
++}
++
++#endif /* _ASM_UBICOM32_IRQFLAGS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/Kbuild
+@@ -0,0 +1 @@
++include include/asm-generic/Kbuild.asm
+--- /dev/null
++++ b/arch/ubicom32/include/asm/kdebug.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/kdebug.h
++ *   Generic kdebug.h for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_KDEBUG_H
++#define _ASM_UBICOM32_KDEBUG_H
++
++#include <asm-generic/kdebug.h>
++
++#endif /* _ASM_UBICOM32_KDEBUG_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/linkage.h
+@@ -0,0 +1,34 @@
++/*
++ * arch/ubicom32/include/asm/linkage.h
++ *   Definition of Ubicom32 architecture specific linkage types.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_LINKAGE_H
++#define _ASM_UBICOM32_LINKAGE_H
++
++#define __ocm_text __section(.ocm_text)
++#define __ocm_data __section(.ocm_data)
++
++#endif	/* _ASM_UBICOM32_LINKAGE_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/local.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/local.h
++ *   Generic local.h for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_LOCAL_H
++#define _ASM_UBICOM32_LOCAL_H
++
++#include <asm-generic/local.h>
++
++#endif /* _ASM_UBICOM32_LOCAL_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/mman.h
+@@ -0,0 +1,44 @@
++/*
++ * arch/ubicom32/include/asm/mman.h
++ *   Memory mapping definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_MMAN_H
++#define _ASM_UBICOM32_MMAN_H
++
++#include <asm-generic/mman.h>
++
++#define MAP_GROWSDOWN	0x0100		/* stack-like segment */
++#define MAP_DENYWRITE	0x0800		/* ETXTBSY */
++#define MAP_EXECUTABLE	0x1000		/* mark it as an executable */
++#define MAP_LOCKED	0x2000		/* pages are locked */
++#define MAP_NORESERVE	0x4000		/* don't check for reservations */
++#define MAP_POPULATE	0x8000		/* populate (prefault) pagetables */
++#define MAP_NONBLOCK	0x10000		/* do not block on IO */
++
++#define MCL_CURRENT	1		/* lock all current mappings */
++#define MCL_FUTURE	2		/* lock all future mappings */
++
++#endif /* _ASM_UBICOM32_MMAN_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/msgbuf.h
+@@ -0,0 +1,58 @@
++/*
++ * arch/ubicom32/include/asm/msgbuf.h
++ *   Definition of msqid64_ds struct for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_MSGBUF_H
++#define _ASM_UBICOM32_MSGBUF_H
++
++/*
++ * The msqid64_ds structure for ubicom32 architecture.
++ * Note extra padding because this structure is passed back and forth
++ * between kernel and user space.
++ *
++ * Pad space is left for:
++ * - 64-bit time_t to solve y2038 problem
++ * - 2 miscellaneous 32-bit values
++ */
++
++struct msqid64_ds {
++	struct ipc64_perm msg_perm;
++	__kernel_time_t msg_stime;	/* last msgsnd time */
++	unsigned long	__unused1;
++	__kernel_time_t msg_rtime;	/* last msgrcv time */
++	unsigned long	__unused2;
++	__kernel_time_t msg_ctime;	/* last change time */
++	unsigned long	__unused3;
++	unsigned long  msg_cbytes;	/* current number of bytes on queue */
++	unsigned long  msg_qnum;	/* number of messages in queue */
++	unsigned long  msg_qbytes;	/* max number of bytes on queue */
++	__kernel_pid_t msg_lspid;	/* pid of last msgsnd */
++	__kernel_pid_t msg_lrpid;	/* last receive pid */
++	unsigned long  __unused4;
++	unsigned long  __unused5;
++};
++
++#endif /* _ASM_UBICOM32_MSGBUF_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/namei.h
+@@ -0,0 +1,38 @@
++/*
++ * arch/ubicom32/include/asm/namei.h
++ *   Definition of __emul_prefix() for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_NAMEI_H
++#define _ASM_UBICOM32_NAMEI_H
++
++/* This dummy routine maybe changed to something useful
++ * for /usr/gnemul/ emulation stuff.
++ * Look at asm-sparc/namei.h for details.
++ */
++
++#define __emul_prefix() NULL
++
++#endif /* _ASM_UBICOM32_NAMEI_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/page.h
+@@ -0,0 +1,106 @@
++/*
++ * arch/ubicom32/include/asm/page.h
++ *   Memory page related operations and definitions.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not,
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_PAGE_H
++#define _ASM_UBICOM32_PAGE_H
++
++/* PAGE_SHIFT determines the page size */
++
++#define PAGE_SHIFT	12
++#define PAGE_SIZE	(1 << PAGE_SHIFT)
++#define PAGE_MASK	(~(PAGE_SIZE-1))
++
++#include <asm/setup.h>
++
++#ifndef __ASSEMBLY__
++
++#define get_user_page(vaddr)		__get_free_page(GFP_KERNEL)
++#define free_user_page(page, addr)	free_page(addr)
++
++#define clear_page(page)	memset((page), 0, PAGE_SIZE)
++#define copy_page(to,from)	memcpy((to), (from), PAGE_SIZE)
++
++#define clear_user_page(page, vaddr, pg)	clear_page(page)
++#define copy_user_page(to, from, vaddr, pg)	copy_page(to, from)
++
++#define __alloc_zeroed_user_highpage(movableflags, vma, vaddr) \
++	alloc_page_vma(GFP_HIGHUSER | __GFP_ZERO | movableflags, vma, vaddr)
++#define __HAVE_ARCH_ALLOC_ZEROED_USER_HIGHPAGE
++
++/*
++ * These are used to make use of C type-checking..
++ */
++typedef struct { unsigned long pte; } pte_t;
++typedef struct { unsigned long pmd[16]; } pmd_t;
++typedef struct { unsigned long pgd; } pgd_t;
++typedef struct { unsigned long pgprot; } pgprot_t;
++typedef struct page *pgtable_t;
++
++#define pte_val(x)	((x).pte)
++#define pmd_val(x)	((&x)->pmd[0])
++#define pgd_val(x)	((x).pgd)
++#define pgprot_val(x)	((x).pgprot)
++
++#define __pte(x)	((pte_t) { (x) } )
++#define __pmd(x)	((pmd_t) { (x) } )
++#define __pgd(x)	((pgd_t) { (x) } )
++#define __pgprot(x)	((pgprot_t) { (x) } )
++
++extern unsigned long memory_start;
++extern unsigned long memory_end;
++
++#endif /* !__ASSEMBLY__ */
++
++#include <asm/page_offset.h>
++
++#define PAGE_OFFSET		(PAGE_OFFSET_RAW)
++
++#ifndef __ASSEMBLY__
++
++#define __pa(vaddr)		virt_to_phys((void *)(vaddr))
++#define __va(paddr)		phys_to_virt((unsigned long)(paddr))
++
++#define virt_to_pfn(kaddr)	(__pa(kaddr) >> PAGE_SHIFT)
++#define pfn_to_virt(pfn)	__va((pfn) << PAGE_SHIFT)
++
++#define virt_to_page(addr)	(mem_map + (((unsigned long)(addr)-PAGE_OFFSET) >> PAGE_SHIFT))
++#define page_to_virt(page)	((((page) - mem_map) << PAGE_SHIFT) + PAGE_OFFSET)
++
++#define pfn_to_page(pfn)	virt_to_page(pfn_to_virt(pfn))
++#define page_to_pfn(page)	virt_to_pfn(page_to_virt(page))
++#define pfn_valid(pfn)	        ((pfn) < max_mapnr)
++
++#define	virt_addr_valid(kaddr)	(((void *)(kaddr) >= (void *)PAGE_OFFSET) && \
++				((void *)(kaddr) < (void *)memory_end))
++
++#endif /* __ASSEMBLY__ */
++
++#ifdef __KERNEL__
++#include <asm-generic/page.h>
++#endif
++
++#endif /* _ASM_UBICOM32_PAGE_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/page_offset.h
+@@ -0,0 +1,35 @@
++/*
++ * arch/ubicom32/include/asm/page_offset.h
++ *   Definition of PAGE_OFFSET_RAW for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++
++#ifndef _ASM_UBICOM32_PAGE_OFFSET_H
++#define _ASM_UBICOM32_PAGE_OFFSET_H
++
++/* This handles the memory map.. */
++#define	PAGE_OFFSET_RAW		0x3ffc0000
++
++#endif /* _ASM_UBICOM32_PAGE_OFFSET_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/param.h
+@@ -0,0 +1,49 @@
++/*
++ * arch/ubicom32/include/asm/param.h
++ *   Definition of miscellaneous constants, including HZ.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_PARAM_H
++#define _ASM_UBICOM32_PARAM_H
++
++#ifdef __KERNEL__
++#define HZ CONFIG_HZ
++#define	USER_HZ		HZ
++#define	CLOCKS_PER_SEC	(USER_HZ)
++#endif
++
++#ifndef HZ
++#define HZ	100
++#endif
++
++#define EXEC_PAGESIZE	4096
++
++#ifndef NOGROUP
++#define NOGROUP		(-1)
++#endif
++
++#define MAXHOSTNAMELEN	64	/* max length of hostname */
++
++#endif /* _ASM_UBICOM32_PARAM_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/poll.h
+@@ -0,0 +1,36 @@
++/*
++ * arch/ubicom32/include/asm/poll.h
++ *   Ubicom32 specific poll() related flags definitions.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_POLL_H
++#define _ASM_UBICOM32_POLL_H
++
++#define POLLWRNORM	POLLOUT
++#define POLLWRBAND	0x0100
++
++#include <asm-generic/poll.h>
++
++#endif /* _ASM_UBICOM32_POLL_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/posix_types.h
+@@ -0,0 +1,93 @@
++/*
++ * arch/ubicom32/include/asm/posix_types.h
++ *   Ubicom32 architecture posix types.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ * Copyright (C) 2004   Microtronix Datacom Ltd
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef __ARCH_UBICOM32_POSIX_TYPES_H
++#define __ARCH_UBICOM32_POSIX_TYPES_H
++
++/*
++ * This file is generally used by user-level software, so you need to
++ * be a little careful about namespace pollution etc.  Also, we cannot
++ * assume GCC is being used.
++ */
++
++typedef unsigned long	__kernel_ino_t;
++typedef unsigned short	__kernel_mode_t;
++typedef unsigned short	__kernel_nlink_t;
++typedef long		__kernel_off_t;
++typedef int		__kernel_pid_t;
++typedef unsigned short	__kernel_ipc_pid_t;
++typedef unsigned short	__kernel_uid_t;
++typedef unsigned short	__kernel_gid_t;
++typedef unsigned int	__kernel_size_t;
++typedef int		__kernel_ssize_t;
++typedef int		__kernel_ptrdiff_t;
++typedef long		__kernel_time_t;
++typedef long		__kernel_suseconds_t;
++typedef long		__kernel_clock_t;
++typedef int		__kernel_timer_t;
++typedef int		__kernel_clockid_t;
++typedef int		__kernel_daddr_t;
++typedef char *		__kernel_caddr_t;
++typedef unsigned short	__kernel_uid16_t;
++typedef unsigned short	__kernel_gid16_t;
++typedef unsigned int	__kernel_uid32_t;
++typedef unsigned int	__kernel_gid32_t;
++
++typedef unsigned short	__kernel_old_uid_t;
++typedef unsigned short	__kernel_old_gid_t;
++typedef unsigned short	__kernel_old_dev_t;
++
++#ifdef __GNUC__
++typedef long long	__kernel_loff_t;
++#endif
++
++typedef struct {
++#if defined(__KERNEL__) || defined(__USE_ALL)
++	int	val[2];
++#else /* !defined(__KERNEL__) && !defined(__USE_ALL) */
++	int	__val[2];
++#endif /* !defined(__KERNEL__) && !defined(__USE_ALL) */
++} __kernel_fsid_t;
++
++#if defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2)
++
++#undef	__FD_SET
++#define	__FD_SET(d, set)	((set)->fds_bits[__FDELT(d)] |= __FDMASK(d))
++
++#undef	__FD_CLR
++#define	__FD_CLR(d, set)	((set)->fds_bits[__FDELT(d)] &= ~__FDMASK(d))
++
++#undef	__FD_ISSET
++#define	__FD_ISSET(d, set)	((set)->fds_bits[__FDELT(d)] & __FDMASK(d))
++
++#undef	__FD_ZERO
++#define __FD_ZERO(fdsetp) (memset (fdsetp, 0, sizeof(*(fd_set *)fdsetp)))
++
++#endif /* defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2) */
++
++#endif
+--- /dev/null
++++ b/arch/ubicom32/include/asm/ptrace.h
+@@ -0,0 +1,177 @@
++/*
++ * arch/ubicom32/include/asm/ptrace.h
++ *   Ubicom32 architecture ptrace support.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not,
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_PTRACE_H
++#define _ASM_UBICOM32_PTRACE_H
++
++#ifndef __ASSEMBLY__
++
++/*
++ * We use hard coded constants because this is shared with user
++ * space and the values are NOT allowed to change.  Only fields
++ * that are intended to be exposed get values.
++ */
++#define PT_D0           0
++#define PT_D1           4
++#define PT_D2           8
++#define PT_D3           12
++#define PT_D4           16
++#define PT_D5           20
++#define PT_D6           24
++#define PT_D7           28
++#define PT_D8           32
++#define PT_D9           36
++#define PT_D10          40
++#define PT_D11          44
++#define PT_D12          48
++#define PT_D13          52
++#define PT_D14          56
++#define PT_D15          60
++#define PT_A0           64
++#define PT_A1           68
++#define PT_A2           72
++#define PT_A3           76
++#define PT_A4           80
++#define PT_A5           84
++#define PT_A6           88
++#define PT_A7           92
++#define PT_SP           92
++#define PT_ACC0HI       96
++#define PT_ACC0LO       100
++#define PT_MAC_RC16     104
++#define PT_ACC1HI       108
++#define PT_ACC1LO       112
++#define PT_SOURCE3      116
++#define PT_INST_CNT     120
++#define PT_CSR          124
++#define PT_DUMMY_UNUSED 128
++#define PT_INT_MASK0    132
++#define PT_INT_MASK1    136
++#define PT_TRAP_CAUSE   140
++#define PT_PC           144
++#define PT_ORIGINAL_D0  148
++#define PT_FRAME_TYPE   152
++
++/*
++ * The following 'registers' are not registers at all but are used
++ * locate the relocated sections.
++ */
++#define PT_TEXT_ADDR		200
++#define PT_TEXT_END_ADDR	204
++#define PT_DATA_ADDR		208
++#define PT_EXEC_FDPIC_LOADMAP	212
++#define PT_INTERP_FDPIC_LOADMAP	216
++
++/*
++ * This struct defines the way the registers are stored on the
++ * stack during a system call.
++ */
++enum thread_type {
++	NORMAL_THREAD,
++	KERNEL_THREAD,
++};
++
++#define UBICOM32_FRAME_TYPE_SYSCALL	-1 /* System call frame */
++#define UBICOM32_FRAME_TYPE_INVALID	0 /* Invalid frame, no longer in use */
++#define UBICOM32_FRAME_TYPE_INTERRUPT	1 /* Interrupt frame */
++#define UBICOM32_FRAME_TYPE_TRAP	2 /* Trap frame */
++#define UBICOM32_FRAME_TYPE_SIGTRAMP	3 /* Signal trampoline frame. */
++#define UBICOM32_FRAME_TYPE_NEW_THREAD	4 /* New Thread. */
++
++struct pt_regs {
++	/*
++	 * Data Registers
++	 */
++	unsigned long dn[16];
++
++	/*
++	 * Address Registers
++	 */
++	unsigned long an[8];
++
++	/*
++	 * Per thread misc registers.
++	 */
++	unsigned long acc0[2];
++	unsigned long mac_rc16;
++	unsigned long acc1[2];
++	unsigned long source3;
++	unsigned long inst_cnt;
++	unsigned long csr;
++	unsigned long dummy_unused;
++	unsigned long int_mask0;
++	unsigned long int_mask1;
++	unsigned long trap_cause;
++	unsigned long pc;
++	unsigned long original_dn_0;
++
++	/*
++	 * Frame type. Syscall frames are -1. For other types look above.
++	 */
++	unsigned long frame_type;
++
++	/*
++	 * These fields are not exposed to ptrace.
++	 */
++	unsigned long previous_pc;
++	long nesting_level;		/* When the kernel in in user space this
++					 * will be -1. */
++	unsigned long thread_type;	/* This indicates if this is a kernel
++					 * thread. */
++};
++
++/*
++ * This is the extended stack used by signal handlers and the context
++ * switcher: it's pushed after the normal "struct pt_regs".
++ */
++struct switch_stack {
++	unsigned long  dummy;
++};
++
++#ifdef __KERNEL__
++
++/* Arbitrarily choose the same ptrace numbers as used by the Sparc code. */
++#define PTRACE_GETREGS		12
++#define PTRACE_SETREGS		13
++
++#ifndef PS_S
++#define PS_S  (0x2000)
++#define PS_M  (0x1000)
++#endif
++
++extern  int __user_mode(unsigned long sp);
++
++#define user_mode(regs) (__user_mode((regs->an[7])))
++#define user_stack(regs) ((regs)->an[7])
++#define instruction_pointer(regs) ((regs)->pc)
++#define profile_pc(regs) instruction_pointer(regs)
++extern void show_regs(struct pt_regs *);
++#endif /* __KERNEL__ */
++
++#endif /* __ASSEMBLY__ */
++
++#endif /* _ASM_UBICOM32_PTRACE_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/resource.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/resource.h
++ *   Generic definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_RESOURCE_H
++#define _ASM_UBICOM32_RESOURCE_H
++
++#include <asm-generic/resource.h>
++
++#endif /* _ASM_UBICOM32_RESOURCE_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/sections.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/sections.h
++ *   Generic sections.h definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SECTIONS_H
++#define _ASM_UBICOM32_SECTIONS_H
++
++#include <asm-generic/sections.h>
++
++#endif /* _ASM_UBICOM32_SECTIONS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/segment.h
+@@ -0,0 +1,78 @@
++/*
++ * arch/ubicom32/include/asm/segment.h
++ *   Memory segment definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SEGMENT_H
++#define _ASM_UBICOM32_SEGMENT_H
++
++/* define constants */
++/* Address spaces (FC0-FC2) */
++#define USER_DATA     (1)
++#ifndef __USER_DS
++#define __USER_DS     (USER_DATA)
++#endif
++#define USER_PROGRAM  (2)
++#define SUPER_DATA    (5)
++#ifndef __KERNEL_DS
++#define __KERNEL_DS   (SUPER_DATA)
++#endif
++#define SUPER_PROGRAM (6)
++#define CPU_SPACE     (7)
++
++#ifndef __ASSEMBLY__
++
++typedef struct {
++	unsigned long seg;
++} mm_segment_t;
++
++#define MAKE_MM_SEG(s)	((mm_segment_t) { (s) })
++#define USER_DS		MAKE_MM_SEG(__USER_DS)
++#define KERNEL_DS	MAKE_MM_SEG(__KERNEL_DS)
++
++/*
++ * Get/set the SFC/DFC registers for MOVES instructions
++ */
++
++static inline mm_segment_t get_fs(void)
++{
++    return USER_DS;
++}
++
++static inline mm_segment_t get_ds(void)
++{
++    /* return the supervisor data space code */
++    return KERNEL_DS;
++}
++
++static inline void set_fs(mm_segment_t val)
++{
++}
++
++#define segment_eq(a,b)	((a).seg == (b).seg)
++
++#endif /* __ASSEMBLY__ */
++
++#endif /* _ASM_UBICOM32_SEGMENT_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/sembuf.h
+@@ -0,0 +1,52 @@
++/*
++ * arch/ubicom32/include/asm/sembuf.h
++ *   The semid64_ds structure for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SEMBUF_H
++#define _ASM_UBICOM32_SEMBUF_H
++
++/*
++ * The semid64_ds structure for ubicom32 architecture.
++ * Note extra padding because this structure is passed back and forth
++ * between kernel and user space.
++ *
++ * Pad space is left for:
++ * - 64-bit time_t to solve y2038 problem
++ * - 2 miscellaneous 32-bit values
++ */
++
++struct semid64_ds {
++	struct ipc64_perm sem_perm;		/* permissions .. see ipc.h */
++	__kernel_time_t	sem_otime;		/* last semop time */
++	unsigned long	__unused1;
++	__kernel_time_t	sem_ctime;		/* last change time */
++	unsigned long	__unused2;
++	unsigned long	sem_nsems;		/* no. of semaphores in array */
++	unsigned long	__unused3;
++	unsigned long	__unused4;
++};
++
++#endif /* _ASM_UBICOM32_SEMBUF_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/setup.h
+@@ -0,0 +1,35 @@
++/*
++ * arch/ubicom32/include/asm/setup.h
++ *   Kernel command line length definition.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ * Copyright (C) 2004, Microtronix Datacom Ltd., All rights reserved.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++
++#ifndef _ASM_UBICOM32_SETUP_H
++#define _ASM_UBICOM32_SETUP_H
++
++#define COMMAND_LINE_SIZE 512
++
++#endif /* _ASM_UBICOM32_SETUP_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/shmbuf.h
+@@ -0,0 +1,69 @@
++/*
++ * arch/ubicom32/include/asm/shmbuf.h
++ *   The shmid64_ds structure for the Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SHMBUF_H
++#define _ASM_UBICOM32_SHMBUF_H
++
++/*
++ * The shmid64_ds structure for m68k architecture.
++ * Note extra padding because this structure is passed back and forth
++ * between kernel and user space.
++ *
++ * Pad space is left for:
++ * - 64-bit time_t to solve y2038 problem
++ * - 2 miscellaneous 32-bit values
++ */
++
++struct shmid64_ds {
++	struct ipc64_perm	shm_perm;	/* operation perms */
++	size_t			shm_segsz;	/* size of segment (bytes) */
++	__kernel_time_t		shm_atime;	/* last attach time */
++	unsigned long		__unused1;
++	__kernel_time_t		shm_dtime;	/* last detach time */
++	unsigned long		__unused2;
++	__kernel_time_t		shm_ctime;	/* last change time */
++	unsigned long		__unused3;
++	__kernel_pid_t		shm_cpid;	/* pid of creator */
++	__kernel_pid_t		shm_lpid;	/* pid of last operator */
++	unsigned long		shm_nattch;	/* no. of current attaches */
++	unsigned long		__unused4;
++	unsigned long		__unused5;
++};
++
++struct shminfo64 {
++	unsigned long	shmmax;
++	unsigned long	shmmin;
++	unsigned long	shmmni;
++	unsigned long	shmseg;
++	unsigned long	shmall;
++	unsigned long	__unused1;
++	unsigned long	__unused2;
++	unsigned long	__unused3;
++	unsigned long	__unused4;
++};
++
++#endif /* _ASM_UBICOM32_SHMBUF_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/shmparam.h
+@@ -0,0 +1,35 @@
++/*
++ * arch/ubicom32/include/asm/shmparam.h
++ *   Shared memory definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ * Copyright (C) 2004   Microtronix Datacom Ltd
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ *   Alpha, ix86, M68K, Sparc, ...et al
++ */
++#ifndef _ASM_UBICOM32_SHMPARAM_H
++#define _ASM_UBICOM32_SHMPARAM_H
++
++#define	SHMLBA		PAGE_SIZE	/* attach addr a multiple of this */
++
++#endif /* _ASM_UBICOM32_SHMPARAM_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/sigcontext.h
+@@ -0,0 +1,37 @@
++/*
++ * arch/ubicom32/include/asm/sigcontext.h
++ *   Definition of sigcontext struct for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SIGCONTEXT_H
++#define _ASM_UBICOM32_SIGCONTEXT_H
++
++#include <asm/ptrace.h>
++
++struct sigcontext {
++	struct pt_regs sc_regs;
++};
++
++#endif /* _ASM_UBICOM32_SIGCONTEXT_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/siginfo.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/siginfo.h
++ *   Generic siginfo.h definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SIGINFO_H
++#define _ASM_UBICOM32_SIGINFO_H
++
++#include <asm-generic/siginfo.h>
++
++#endif /* _ASM_UBICOM32_SIGINFO_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/signal.h
+@@ -0,0 +1,180 @@
++/*
++ * arch/ubicom32/include/asm/signal.h
++ *   Signal related definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SIGNAL_H
++#define _ASM_UBICOM32_SIGNAL_H
++
++#include <linux/types.h>
++
++/* Avoid too many header ordering problems.  */
++struct siginfo;
++
++#ifdef __KERNEL__
++/* Most things should be clean enough to redefine this at will, if care
++   is taken to make libc match.  */
++
++#define _NSIG		64
++#define _NSIG_BPW	32
++#define _NSIG_WORDS	(_NSIG / _NSIG_BPW)
++
++typedef unsigned long old_sigset_t;		/* at least 32 bits */
++
++typedef struct {
++	unsigned long sig[_NSIG_WORDS];
++} sigset_t;
++
++#endif /* __KERNEL__ */
++
++#define SIGHUP		 1
++#define SIGINT		 2
++#define SIGQUIT		 3
++#define SIGILL		 4
++#define SIGTRAP		 5
++#define SIGABRT		 6
++#define SIGIOT		 6
++#define SIGBUS		 7
++#define SIGFPE		 8
++#define SIGKILL		 9
++#define SIGUSR1		10
++#define SIGSEGV		11
++#define SIGUSR2		12
++#define SIGPIPE		13
++#define SIGALRM		14
++#define SIGTERM		15
++#define SIGSTKFLT	16
++#define SIGCHLD		17
++#define SIGCONT		18
++#define SIGSTOP		19
++#define SIGTSTP		20
++#define SIGTTIN		21
++#define SIGTTOU		22
++#define SIGURG		23
++#define SIGXCPU		24
++#define SIGXFSZ		25
++#define SIGVTALRM	26
++#define SIGPROF		27
++#define SIGWINCH	28
++#define SIGIO		29
++#define SIGPOLL		SIGIO
++/*
++#define SIGLOST		29
++*/
++#define SIGPWR		30
++#define SIGSYS		31
++#define	SIGUNUSED	31
++
++/* These should not be considered constants from userland.  */
++#define SIGRTMIN	32
++#define SIGRTMAX	_NSIG
++
++/*
++ * SA_FLAGS values:
++ *
++ * SA_ONSTACK indicates that a registered stack_t will be used.
++ * SA_RESTART flag to get restarting signals (which were the default long ago)
++ * SA_NOCLDSTOP flag to turn off SIGCHLD when children stop.
++ * SA_RESETHAND clears the handler when the signal is delivered.
++ * SA_NOCLDWAIT flag on SIGCHLD to inhibit zombies.
++ * SA_NODEFER prevents the current signal from being masked in the handler.
++ *
++ * SA_ONESHOT and SA_NOMASK are the historical Linux names for the Single
++ * Unix names RESETHAND and NODEFER respectively.
++ */
++#define SA_NOCLDSTOP	0x00000001
++#define SA_NOCLDWAIT	0x00000002
++#define SA_SIGINFO	0x00000004
++#define SA_ONSTACK	0x08000000
++#define SA_RESTART	0x10000000
++#define SA_NODEFER	0x40000000
++#define SA_RESETHAND	0x80000000
++
++#define SA_NOMASK	SA_NODEFER
++#define SA_ONESHOT	SA_RESETHAND
++
++/* 
++ * sigaltstack controls
++ */
++#define SS_ONSTACK	1
++#define SS_DISABLE	2
++
++#define MINSIGSTKSZ	2048
++#define SIGSTKSZ	8192
++
++#include <asm-generic/signal.h>
++
++#ifdef __KERNEL__
++struct old_sigaction {
++	__sighandler_t sa_handler;
++	old_sigset_t sa_mask;
++	unsigned long sa_flags;
++	void (*sa_restorer)(void);
++};
++
++struct sigaction {
++	__sighandler_t sa_handler;
++	unsigned long sa_flags;
++	void (*sa_restorer)(void);
++	sigset_t sa_mask;		/* mask last for extensibility */
++};
++
++struct k_sigaction {
++	struct sigaction sa;
++};
++#else
++/* Here we must cater to libcs that poke about in kernel headers.  */
++
++struct sigaction {
++	union {
++	  __sighandler_t _sa_handler;
++	  void (*_sa_sigaction)(int, struct siginfo *, void *);
++	} _u;
++	sigset_t sa_mask;
++	unsigned long sa_flags;
++	void (*sa_restorer)(void);
++};
++
++#define sa_handler	_u._sa_handler
++#define sa_sigaction	_u._sa_sigaction
++
++#endif /* __KERNEL__ */
++
++typedef struct sigaltstack {
++	void *ss_sp;
++	int ss_flags;
++	size_t ss_size;
++} stack_t;
++
++#ifdef __KERNEL__
++
++#include <asm/sigcontext.h>
++#undef __HAVE_ARCH_SIG_BITOPS
++
++#define ptrace_signal_deliver(regs, cookie) do { } while (0)
++
++#endif /* __KERNEL__ */
++
++#endif /* _ASM_UBICOM32_SIGNAL_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/socket.h
+@@ -0,0 +1,84 @@
++/*
++ * arch/ubicom32/include/asm/socket.h
++ *   Socket options definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SOCKET_H
++#define _ASM_UBICOM32_SOCKET_H
++
++#include <asm/sockios.h>
++
++/* For setsockopt(2) */
++#define SOL_SOCKET	1
++
++#define SO_DEBUG	1
++#define SO_REUSEADDR	2
++#define SO_TYPE		3
++#define SO_ERROR	4
++#define SO_DONTROUTE	5
++#define SO_BROADCAST	6
++#define SO_SNDBUF	7
++#define SO_RCVBUF	8
++#define SO_SNDBUFFORCE	32
++#define SO_RCVBUFFORCE	33
++#define SO_KEEPALIVE	9
++#define SO_OOBINLINE	10
++#define SO_NO_CHECK	11
++#define SO_PRIORITY	12
++#define SO_LINGER	13
++#define SO_BSDCOMPAT	14
++/* To add :#define SO_REUSEPORT 15 */
++#define SO_PASSCRED	16
++#define SO_PEERCRED	17
++#define SO_RCVLOWAT	18
++#define SO_SNDLOWAT	19
++#define SO_RCVTIMEO	20
++#define SO_SNDTIMEO	21
++
++/* Security levels - as per NRL IPv6 - don't actually do anything */
++#define SO_SECURITY_AUTHENTICATION		22
++#define SO_SECURITY_ENCRYPTION_TRANSPORT	23
++#define SO_SECURITY_ENCRYPTION_NETWORK		24
++
++#define SO_BINDTODEVICE	25
++
++/* Socket filtering */
++#define SO_ATTACH_FILTER        26
++#define SO_DETACH_FILTER        27
++
++#define SO_PEERNAME             28
++#define SO_TIMESTAMP		29
++#define SCM_TIMESTAMP		SO_TIMESTAMP
++
++#define SO_ACCEPTCONN		30
++
++#define SO_PEERSEC              31
++#define SO_PASSSEC		34
++#define SO_TIMESTAMPNS		35
++#define SCM_TIMESTAMPNS		SO_TIMESTAMPNS
++
++#define SO_MARK			36
++
++#endif /* _ASM_UBICOM32_SOCKET_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/sockios.h
+@@ -0,0 +1,40 @@
++/*
++ * arch/ubicom32/include/asm/sockios.h
++ *   Socket-level ioctl definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SOCKIOS_H
++#define _ASM_UBICOM32_SOCKIOS_H
++
++/* Socket-level I/O control calls. */
++#define FIOSETOWN	0x8901
++#define SIOCSPGRP	0x8902
++#define FIOGETOWN	0x8903
++#define SIOCGPGRP	0x8904
++#define SIOCATMARK	0x8905
++#define SIOCGSTAMP	0x8906		/* Get stamp (timeval) */
++#define SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
++
++#endif /* _ASM_UBICOM32_SOCKIOS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/statfs.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/statfs.h
++ *   Generic statfs.h definitions
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_STATFS_H
++#define _ASM_UBICOM32_STATFS_H
++
++#include <asm-generic/statfs.h>
++
++#endif /* _ASM_UBICOM32_STATFS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/stat.h
+@@ -0,0 +1,104 @@
++/*
++ * arch/ubicom32/include/asm/stat.h
++ *   File status definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_STAT_H
++#define _ASM_UBICOM32_STAT_H
++
++struct __old_kernel_stat {
++	unsigned short st_dev;
++	unsigned short st_ino;
++	unsigned short st_mode;
++	unsigned short st_nlink;
++	unsigned short st_uid;
++	unsigned short st_gid;
++	unsigned short st_rdev;
++	unsigned long  st_size;
++	unsigned long  st_atime;
++	unsigned long  st_mtime;
++	unsigned long  st_ctime;
++};
++
++struct stat {
++	unsigned short st_dev;
++	unsigned short __pad1;
++	unsigned long  st_ino;
++	unsigned short st_mode;
++	unsigned short st_nlink;
++	unsigned short st_uid;
++	unsigned short st_gid;
++	unsigned short st_rdev;
++	unsigned short __pad2;
++	unsigned long  st_size;
++	unsigned long  st_blksize;
++	unsigned long  st_blocks;
++	unsigned long  st_atime;
++	unsigned long  __unused1;
++	unsigned long  st_mtime;
++	unsigned long  __unused2;
++	unsigned long  st_ctime;
++	unsigned long  __unused3;
++	unsigned long  __unused4;
++	unsigned long  __unused5;
++};
++
++/* This matches struct stat64 in glibc2.1, hence the absolutely
++ * insane amounts of padding around dev_t's.
++ */
++struct stat64 {
++	unsigned long long	st_dev;
++	unsigned char	__pad1[2];
++
++#define STAT64_HAS_BROKEN_ST_INO	1
++	unsigned long	__st_ino;
++
++	unsigned int	st_mode;
++	unsigned int	st_nlink;
++
++	unsigned long	st_uid;
++	unsigned long	st_gid;
++
++	unsigned long long	st_rdev;
++	unsigned char	__pad3[2];
++
++	long long	st_size;
++	unsigned long	st_blksize;
++
++	unsigned long long	st_blocks;	/* Number 512-byte blocks allocated. */
++
++	unsigned long	st_atime;
++	unsigned long	st_atime_nsec;
++
++	unsigned long	st_mtime;
++	unsigned long	st_mtime_nsec;
++
++	unsigned long	st_ctime;
++	unsigned long	st_ctime_nsec;
++
++	unsigned long long	st_ino;
++};
++
++#endif /* _ASM_UBICOM32_STAT_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/swab.h
+@@ -0,0 +1,46 @@
++/*
++ * arch/ubicom32/include/asm/swab.h
++ *   Byte order swapping utility routines.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_SWAB_H
++#define _ASM_UBICOM32_SWAB_H
++
++#include <linux/types.h>
++
++#if defined(__GNUC__) && !defined(__STRICT_ANSI__) || defined(__KERNEL__)
++#  define __BYTEORDER_HAS_U64__
++#  define __SWAB_64_THRU_32__
++#endif
++
++#if defined(IP7000) || defined(IP7000_REV2)
++
++#define __arch__swab16 __builtin_ubicom32_swapb_2
++#define __arch__swab32 __builtin_ubicom32_swapb_4
++
++#endif /* IP7000 */
++
++#endif /* _ASM_UBICOM32_SWAB_H */
++
+--- /dev/null
++++ b/arch/ubicom32/include/asm/termbits.h
+@@ -0,0 +1,227 @@
++/*
++ * arch/ubicom32/include/asm/termbits.h
++ *   Terminal/serial port definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_TERMBITS_H
++#define _ASM_UBICOM32_TERMBITS_H
++
++#include <linux/posix_types.h>
++
++typedef unsigned char	cc_t;
++typedef unsigned int	speed_t;
++typedef unsigned int	tcflag_t;
++
++#define NCCS 19
++struct termios {
++	tcflag_t c_iflag;		/* input mode flags */
++	tcflag_t c_oflag;		/* output mode flags */
++	tcflag_t c_cflag;		/* control mode flags */
++	tcflag_t c_lflag;		/* local mode flags */
++	cc_t c_line;			/* line discipline */
++	cc_t c_cc[NCCS];		/* control characters */
++};
++
++struct termios2 {
++	tcflag_t c_iflag;		/* input mode flags */
++	tcflag_t c_oflag;		/* output mode flags */
++	tcflag_t c_cflag;		/* control mode flags */
++	tcflag_t c_lflag;		/* local mode flags */
++	cc_t c_line;			/* line discipline */
++	cc_t c_cc[NCCS];		/* control characters */
++	speed_t c_ispeed;		/* input speed */
++	speed_t c_ospeed;		/* output speed */
++};
++
++struct ktermios {
++	tcflag_t c_iflag;		/* input mode flags */
++	tcflag_t c_oflag;		/* output mode flags */
++	tcflag_t c_cflag;		/* control mode flags */
++	tcflag_t c_lflag;		/* local mode flags */
++	cc_t c_line;			/* line discipline */
++	cc_t c_cc[NCCS];		/* control characters */
++	speed_t c_ispeed;		/* input speed */
++	speed_t c_ospeed;		/* output speed */
++};
++
++/* c_cc characters */
++#define VINTR 0
++#define VQUIT 1
++#define VERASE 2
++#define VKILL 3
++#define VEOF 4
++#define VTIME 5
++#define VMIN 6
++#define VSWTC 7
++#define VSTART 8
++#define VSTOP 9
++#define VSUSP 10
++#define VEOL 11
++#define VREPRINT 12
++#define VDISCARD 13
++#define VWERASE 14
++#define VLNEXT 15
++#define VEOL2 16
++
++
++/* c_iflag bits */
++#define IGNBRK	0000001
++#define BRKINT	0000002
++#define IGNPAR	0000004
++#define PARMRK	0000010
++#define INPCK	0000020
++#define ISTRIP	0000040
++#define INLCR	0000100
++#define IGNCR	0000200
++#define ICRNL	0000400
++#define IUCLC	0001000
++#define IXON	0002000
++#define IXANY	0004000
++#define IXOFF	0010000
++#define IMAXBEL	0020000
++#define IUTF8	0040000
++
++/* c_oflag bits */
++#define OPOST	0000001
++#define OLCUC	0000002
++#define ONLCR	0000004
++#define OCRNL	0000010
++#define ONOCR	0000020
++#define ONLRET	0000040
++#define OFILL	0000100
++#define OFDEL	0000200
++#define NLDLY	0000400
++#define   NL0	0000000
++#define   NL1	0000400
++#define CRDLY	0003000
++#define   CR0	0000000
++#define   CR1	0001000
++#define   CR2	0002000
++#define   CR3	0003000
++#define TABDLY	0014000
++#define   TAB0	0000000
++#define   TAB1	0004000
++#define   TAB2	0010000
++#define   TAB3	0014000
++#define   XTABS	0014000
++#define BSDLY	0020000
++#define   BS0	0000000
++#define   BS1	0020000
++#define VTDLY	0040000
++#define   VT0	0000000
++#define   VT1	0040000
++#define FFDLY	0100000
++#define   FF0	0000000
++#define   FF1	0100000
++
++/* c_cflag bit meaning */
++#define CBAUD	0010017
++#define  B0	0000000		/* hang up */
++#define  B50	0000001
++#define  B75	0000002
++#define  B110	0000003
++#define  B134	0000004
++#define  B150	0000005
++#define  B200	0000006
++#define  B300	0000007
++#define  B600	0000010
++#define  B1200	0000011
++#define  B1800	0000012
++#define  B2400	0000013
++#define  B4800	0000014
++#define  B9600	0000015
++#define  B19200	0000016
++#define  B38400	0000017
++#define EXTA B19200
++#define EXTB B38400
++#define CSIZE	0000060
++#define   CS5	0000000
++#define   CS6	0000020
++#define   CS7	0000040
++#define   CS8	0000060
++#define CSTOPB	0000100
++#define CREAD	0000200
++#define PARENB	0000400
++#define PARODD	0001000
++#define HUPCL	0002000
++#define CLOCAL	0004000
++#define CBAUDEX 0010000
++#define    BOTHER 0010000
++#define    B57600 0010001
++#define   B115200 0010002
++#define   B230400 0010003
++#define   B460800 0010004
++#define   B500000 0010005
++#define   B576000 0010006
++#define   B921600 0010007
++#define  B1000000 0010010
++#define  B1152000 0010011
++#define  B1500000 0010012
++#define  B2000000 0010013
++#define  B2500000 0010014
++#define  B3000000 0010015
++#define  B3500000 0010016
++#define  B4000000 0010017
++#define CIBAUD	  002003600000		/* input baud rate */
++#define CMSPAR	  010000000000		/* mark or space (stick) parity */
++#define CRTSCTS	  020000000000		/* flow control */
++
++#define IBSHIFT	16			/* Shift from CBAUD to CIBAUD */
++
++/* c_lflag bits */
++#define ISIG	0000001
++#define ICANON	0000002
++#define XCASE	0000004
++#define ECHO	0000010
++#define ECHOE	0000020
++#define ECHOK	0000040
++#define ECHONL	0000100
++#define NOFLSH	0000200
++#define TOSTOP	0000400
++#define ECHOCTL	0001000
++#define ECHOPRT	0002000
++#define ECHOKE	0004000
++#define FLUSHO	0010000
++#define PENDIN	0040000
++#define IEXTEN	0100000
++
++
++/* tcflow() and TCXONC use these */
++#define	TCOOFF		0
++#define	TCOON		1
++#define	TCIOFF		2
++#define	TCION		3
++
++/* tcflush() and TCFLSH use these */
++#define	TCIFLUSH	0
++#define	TCOFLUSH	1
++#define	TCIOFLUSH	2
++
++/* tcsetattr uses these */
++#define	TCSANOW		0
++#define	TCSADRAIN	1
++#define	TCSAFLUSH	2
++
++#endif /* _ASM_UBICOM32_TERMBITS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/termios.h
+@@ -0,0 +1,119 @@
++/*
++ * arch/ubicom32/include/asm/termios.h
++ *   Ubicom32 termio definitions.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_TERMIOS_H
++#define _ASM_UBICOM32_TERMIOS_H
++
++#include <asm/termbits.h>
++#include <asm/ioctls.h>
++
++struct winsize {
++	unsigned short ws_row;
++	unsigned short ws_col;
++	unsigned short ws_xpixel;
++	unsigned short ws_ypixel;
++};
++
++#define NCC 8
++struct termio {
++	unsigned short c_iflag;		/* input mode flags */
++	unsigned short c_oflag;		/* output mode flags */
++	unsigned short c_cflag;		/* control mode flags */
++	unsigned short c_lflag;		/* local mode flags */
++	unsigned char c_line;		/* line discipline */
++	unsigned char c_cc[NCC];	/* control characters */
++};
++
++#ifdef __KERNEL__
++/*	intr=^C		quit=^|		erase=del	kill=^U
++	eof=^D		vtime=\0	vmin=\1		sxtc=\0
++	start=^Q	stop=^S		susp=^Z		eol=\0
++	reprint=^R	discard=^U	werase=^W	lnext=^V
++	eol2=\0
++*/
++#define INIT_C_CC "\003\034\177\025\004\0\1\0\021\023\032\0\022\017\027\026\0"
++#endif
++
++/* modem lines */
++#define TIOCM_LE	0x001
++#define TIOCM_DTR	0x002
++#define TIOCM_RTS	0x004
++#define TIOCM_ST	0x008
++#define TIOCM_SR	0x010
++#define TIOCM_CTS	0x020
++#define TIOCM_CAR	0x040
++#define TIOCM_RNG	0x080
++#define TIOCM_DSR	0x100
++#define TIOCM_CD	TIOCM_CAR
++#define TIOCM_RI	TIOCM_RNG
++#define TIOCM_OUT1	0x2000
++#define TIOCM_OUT2	0x4000
++#define TIOCM_LOOP	0x8000
++
++/* ioctl (fd, TIOCSERGETLSR, &result) where result may be as below */
++
++#ifdef __KERNEL__
++
++/*
++ * Translate a "termio" structure into a "termios". Ugh.
++ */
++#define user_termio_to_kernel_termios(termios, termio) \
++({ \
++	unsigned short tmp; \
++	get_user(tmp, &(termio)->c_iflag); \
++	(termios)->c_iflag = (0xffff0000 & ((termios)->c_iflag)) | tmp; \
++	get_user(tmp, &(termio)->c_oflag); \
++	(termios)->c_oflag = (0xffff0000 & ((termios)->c_oflag)) | tmp; \
++	get_user(tmp, &(termio)->c_cflag); \
++	(termios)->c_cflag = (0xffff0000 & ((termios)->c_cflag)) | tmp; \
++	get_user(tmp, &(termio)->c_lflag); \
++	(termios)->c_lflag = (0xffff0000 & ((termios)->c_lflag)) | tmp; \
++	get_user((termios)->c_line, &(termio)->c_line); \
++	copy_from_user((termios)->c_cc, (termio)->c_cc, NCC); \
++})
++
++/*
++ * Translate a "termios" structure into a "termio". Ugh.
++ */
++#define kernel_termios_to_user_termio(termio, termios) \
++({ \
++	put_user((termios)->c_iflag, &(termio)->c_iflag); \
++	put_user((termios)->c_oflag, &(termio)->c_oflag); \
++	put_user((termios)->c_cflag, &(termio)->c_cflag); \
++	put_user((termios)->c_lflag, &(termio)->c_lflag); \
++	put_user((termios)->c_line,  &(termio)->c_line); \
++	copy_to_user((termio)->c_cc, (termios)->c_cc, NCC); \
++})
++
++#define user_termios_to_kernel_termios(k, u) copy_from_user(k, u, sizeof(struct termios2))
++#define kernel_termios_to_user_termios(u, k) copy_to_user(u, k, sizeof(struct termios2))
++#define user_termios_to_kernel_termios_1(k, u) copy_from_user(k, u, sizeof(struct termios))
++#define kernel_termios_to_user_termios_1(u, k) copy_to_user(u, k, sizeof(struct termios))
++
++#endif	/* __KERNEL__ */
++
++#endif /* _ASM_UBICOM32_TERMIOS_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/thread_info.h
+@@ -0,0 +1,134 @@
++/*
++ * arch/ubicom32/include/asm/thread_info.h
++ *   Ubicom32 architecture low-level thread information.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ * Adapted from the i386 and PPC versions by Greg Ungerer (gerg@snapgear.com)
++ * Copyright (C) 2002  David Howells (dhowells@redhat.com)
++ * - Incorporating suggestions made by Linus Torvalds and Dave Miller
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++
++#ifndef _ASM_UBICOM32_THREAD_INFO_H
++#define _ASM_UBICOM32_THREAD_INFO_H
++
++#include <asm/page.h>
++
++/*
++ * Size of kernel stack for each process. This must be a power of 2...
++ */
++#ifdef CONFIG_4KSTACKS
++#define THREAD_SIZE_ORDER (0)
++#else
++#define THREAD_SIZE_ORDER (1)
++#endif
++
++/*
++ * for asm files, THREAD_SIZE is now generated by asm-offsets.c
++ */
++#define THREAD_SIZE (PAGE_SIZE<<THREAD_SIZE_ORDER)
++
++#ifdef __KERNEL__
++
++#ifndef __ASSEMBLY__
++
++/*
++ * low level task data.
++ */
++struct thread_info {
++	struct task_struct *task;		/* main task structure */
++	struct exec_domain *exec_domain;	/* execution domain */
++	unsigned long	   flags;		/* low level flags */
++	int		   cpu;			/* cpu we're on */
++	int		   preempt_count;	/* 0 => preemptable, <0 => BUG */
++	int		   interrupt_nesting; 	/* Interrupt nesting level. */
++	struct restart_block restart_block;
++};
++
++/*
++ * macros/functions for gaining access to the thread information structure
++ */
++#define INIT_THREAD_INFO(tsk)			\
++{						\
++	.task		= &tsk,			\
++	.exec_domain	= &default_exec_domain,	\
++	.flags		= 0,			\
++	.cpu		= 0,			\
++	.interrupt_nesting	= 0,		\
++	.restart_block	= {			\
++		.fn = do_no_restart_syscall,	\
++	},					\
++}
++
++#define init_thread_info	(init_thread_union.thread_info)
++#define init_stack		(init_thread_union.stack)
++
++
++/* how to get the thread information struct from C */
++static inline struct thread_info *current_thread_info(void)
++{
++	struct thread_info *ti;
++
++	asm (
++		"and.4	%0, sp, %1\n\t"
++		: "=&r" (ti)
++		: "d" (~(THREAD_SIZE-1))
++		: "cc"
++	);
++
++	return ti;
++}
++
++#define STACK_WARN (THREAD_SIZE / 8)
++
++#define __HAVE_ARCH_THREAD_INFO_ALLOCATOR 1
++
++/* thread information allocation */
++#define alloc_thread_info(tsk) ((struct thread_info *) \
++				__get_free_pages(GFP_KERNEL, THREAD_SIZE_ORDER))
++#define free_thread_info(ti)	free_pages((unsigned long) (ti), THREAD_SIZE_ORDER)
++#endif /* __ASSEMBLY__ */
++
++#define	PREEMPT_ACTIVE	0x4000000
++
++/*
++ * thread information flag bit numbers
++ */
++#define TIF_SYSCALL_TRACE	0	/* syscall trace active */
++#define TIF_SIGPENDING		1	/* signal pending */
++#define TIF_NEED_RESCHED	2	/* rescheduling necessary */
++#define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling
++					   TIF_NEED_RESCHED */
++#define TIF_MEMDIE		4
++
++/* as above, but as bit values */
++#define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
++#define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
++#define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
++#define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
++
++#define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
++
++#endif /* __KERNEL__ */
++
++#endif /* _ASM_UBICOM32_THREAD_INFO_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/types.h
+@@ -0,0 +1,75 @@
++/*
++ * arch/ubicom32/include/asm/types.h
++ *   Date type definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_TYPES_H
++#define _ASM_UBICOM32_TYPES_H
++
++/*
++ * This file is never included by application software unless
++ * explicitly requested (e.g., via linux/types.h) in which case the
++ * application is Linux specific so (user-) name space pollution is
++ * not a major issue.  However, for interoperability, libraries still
++ * need to be careful to avoid a name clashes.
++ */
++
++#include <asm-generic/int-ll64.h>
++
++#ifndef __ASSEMBLY__
++
++typedef unsigned short umode_t;
++
++#endif /* __ASSEMBLY__ */
++
++/*
++ * These aren't exported outside the kernel to avoid name space clashes
++ */
++#ifdef __KERNEL__
++
++#define BITS_PER_LONG 32
++
++#ifndef __ASSEMBLY__
++
++/* DMA addresses are always 32-bits wide */
++
++typedef u32 dma_addr_t;
++typedef u32 dma64_addr_t;
++
++/*
++ * XXX These are "Ubicom style" typedefs. They should be removed in all files used by linux.
++ */
++typedef u32 u32_t;
++typedef s32 s32_t;
++typedef u16 u16_t;
++typedef s16 s16_t;
++typedef u8 u8_t;
++typedef s8 s8_t;
++
++#endif /* __ASSEMBLY__ */
++
++#endif /* __KERNEL__ */
++
++#endif /* _ASM_UBICOM32_TYPES_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/ucontext.h
+@@ -0,0 +1,39 @@
++/*
++ * arch/ubicom32/include/asm/ucontext.h
++ *   Definition of ucontext structure for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_UCONTEXT_H
++#define _ASM_UBICOM32_UCONTEXT_H
++
++struct ucontext {
++	unsigned long	  uc_flags;
++	struct ucontext  *uc_link;
++	stack_t		  uc_stack;
++	struct sigcontext	  uc_mcontext;
++	sigset_t	  uc_sigmask;	/* mask last for extensibility */
++};
++
++#endif /* _ASM_UBICOM32_UCONTEXT_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/unistd.h
+@@ -0,0 +1,400 @@
++/*
++ * arch/ubicom32/include/asm/unistd.h
++ *   Ubicom32 architecture syscall definitions.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_UNISTD_H
++#define _ASM_UBICOM32_UNISTD_H
++
++/*
++ * This file contains the system call numbers.
++ */
++
++#define __NR_restart_syscall      0
++#define __NR_exit		  1
++#define __NR_fork		  2
++#define __NR_read		  3
++#define __NR_write		  4
++#define __NR_open		  5
++#define __NR_close		  6
++#define __NR_waitpid		  7
++#define __NR_creat		  8
++#define __NR_link		  9
++#define __NR_unlink		 10
++#define __NR_execve		 11
++#define __NR_chdir		 12
++#define __NR_time		 13
++#define __NR_mknod		 14
++#define __NR_chmod		 15
++#define __NR_chown		 16
++#define __NR_break		 17
++#define __NR_oldstat		 18
++#define __NR_lseek		 19
++#define __NR_getpid		 20
++#define __NR_mount		 21
++#define __NR_umount		 22
++#define __NR_setuid		 23
++#define __NR_getuid		 24
++#define __NR_stime		 25
++#define __NR_ptrace		 26
++#define __NR_alarm		 27
++#define __NR_oldfstat		 28
++#define __NR_pause		 29
++#define __NR_utime		 30
++#define __NR_stty		 31
++#define __NR_gtty		 32
++#define __NR_access		 33
++#define __NR_nice		 34
++#define __NR_ftime		 35
++#define __NR_sync		 36
++#define __NR_kill		 37
++#define __NR_rename		 38
++#define __NR_mkdir		 39
++#define __NR_rmdir		 40
++#define __NR_dup		 41
++#define __NR_pipe		 42
++#define __NR_times		 43
++#define __NR_prof		 44
++#define __NR_brk		 45
++#define __NR_setgid		 46
++#define __NR_getgid		 47
++#define __NR_signal		 48
++#define __NR_geteuid		 49
++#define __NR_getegid		 50
++#define __NR_acct		 51
++#define __NR_umount2		 52
++#define __NR_lock		 53
++#define __NR_ioctl		 54
++#define __NR_fcntl		 55
++#define __NR_mpx		 56
++#define __NR_setpgid		 57
++#define __NR_ulimit		 58
++#define __NR_oldolduname	 59
++#define __NR_umask		 60
++#define __NR_chroot		 61
++#define __NR_ustat		 62
++#define __NR_dup2		 63
++#define __NR_getppid		 64
++#define __NR_getpgrp		 65
++#define __NR_setsid		 66
++#define __NR_sigaction		 67
++#define __NR_sgetmask		 68
++#define __NR_ssetmask		 69
++#define __NR_setreuid		 70
++#define __NR_setregid		 71
++#define __NR_sigsuspend		 72
++#define __NR_sigpending		 73
++#define __NR_sethostname	 74
++#define __NR_setrlimit		 75
++#define __NR_getrlimit		 76
++#define __NR_getrusage		 77
++#define __NR_gettimeofday	 78
++#define __NR_settimeofday	 79
++#define __NR_getgroups		 80
++#define __NR_setgroups		 81
++#define __NR_select		 82
++#define __NR_symlink		 83
++#define __NR_oldlstat		 84
++#define __NR_readlink		 85
++#define __NR_uselib		 86
++#define __NR_swapon		 87
++#define __NR_reboot		 88
++#define __NR_readdir		 89
++#define __NR_mmap		 90
++#define __NR_munmap		 91
++#define __NR_truncate		 92
++#define __NR_ftruncate		 93
++#define __NR_fchmod		 94
++#define __NR_fchown		 95
++#define __NR_getpriority	 96
++#define __NR_setpriority	 97
++#define __NR_profil		 98
++#define __NR_statfs		 99
++#define __NR_fstatfs		100
++#define __NR_ioperm		101
++#define __NR_socketcall		102
++#define __NR_syslog		103
++#define __NR_setitimer		104
++#define __NR_getitimer		105
++#define __NR_stat		106
++#define __NR_lstat		107
++#define __NR_fstat		108
++#define __NR_olduname		109
++#define __NR_iopl		/* 110 */ not supported
++#define __NR_vhangup		111
++#define __NR_idle		/* 112 */ Obsolete
++#define __NR_vm86		/* 113 */ not supported
++#define __NR_wait4		114
++#define __NR_swapoff		115
++#define __NR_sysinfo		116
++#define __NR_ipc		117
++#define __NR_fsync		118
++#define __NR_sigreturn		119
++#define __NR_clone		120
++#define __NR_setdomainname	121
++#define __NR_uname		122
++#define __NR_cacheflush		123
++#define __NR_adjtimex		124
++#define __NR_mprotect		125
++#define __NR_sigprocmask	126
++#define __NR_create_module	127
++#define __NR_init_module	128
++#define __NR_delete_module	129
++#define __NR_get_kernel_syms	130
++#define __NR_quotactl		131
++#define __NR_getpgid		132
++#define __NR_fchdir		133
++#define __NR_bdflush		134
++#define __NR_sysfs		135
++#define __NR_personality	136
++#define __NR_afs_syscall	137 /* Syscall for Andrew File System */
++#define __NR_setfsuid		138
++#define __NR_setfsgid		139
++#define __NR__llseek		140
++#define __NR_getdents		141
++#define __NR__newselect		142
++#define __NR_flock		143
++#define __NR_msync		144
++#define __NR_readv		145
++#define __NR_writev		146
++#define __NR_getsid		147
++#define __NR_fdatasync		148
++#define __NR__sysctl		149
++#define __NR_mlock		150
++#define __NR_munlock		151
++#define __NR_mlockall		152
++#define __NR_munlockall		153
++#define __NR_sched_setparam		154
++#define __NR_sched_getparam		155
++#define __NR_sched_setscheduler		156
++#define __NR_sched_getscheduler		157
++#define __NR_sched_yield		158
++#define __NR_sched_get_priority_max	159
++#define __NR_sched_get_priority_min	160
++#define __NR_sched_rr_get_interval	161
++#define __NR_nanosleep		162
++#define __NR_mremap		163
++#define __NR_setresuid		164
++#define __NR_getresuid		165
++#define __NR_getpagesize	166
++#define __NR_query_module	167
++#define __NR_poll		168
++#define __NR_nfsservctl		169
++#define __NR_setresgid		170
++#define __NR_getresgid		171
++#define __NR_prctl		172
++#define __NR_rt_sigreturn	173
++#define __NR_rt_sigaction	174
++#define __NR_rt_sigprocmask	175
++#define __NR_rt_sigpending	176
++#define __NR_rt_sigtimedwait	177
++#define __NR_rt_sigqueueinfo	178
++#define __NR_rt_sigsuspend	179
++#define __NR_pread64		180
++#define __NR_pwrite64		181
++#define __NR_lchown		182
++#define __NR_getcwd		183
++#define __NR_capget		184
++#define __NR_capset		185
++#define __NR_sigaltstack	186
++#define __NR_sendfile		187
++#define __NR_getpmsg		188	/* some people actually want streams */
++#define __NR_putpmsg		189	/* some people actually want streams */
++#define __NR_vfork		190
++#define __NR_ugetrlimit		191
++#define __NR_mmap2		192
++#define __NR_truncate64		193
++#define __NR_ftruncate64	194
++#define __NR_stat64		195
++#define __NR_lstat64		196
++#define __NR_fstat64		197
++#define __NR_chown32		198
++#define __NR_getuid32		199
++#define __NR_getgid32		200
++#define __NR_geteuid32		201
++#define __NR_getegid32		202
++#define __NR_setreuid32		203
++#define __NR_setregid32		204
++#define __NR_getgroups32	205
++#define __NR_setgroups32	206
++#define __NR_fchown32		207
++#define __NR_setresuid32	208
++#define __NR_getresuid32	209
++#define __NR_setresgid32	210
++#define __NR_getresgid32	211
++#define __NR_lchown32		212
++#define __NR_setuid32		213
++#define __NR_setgid32		214
++#define __NR_setfsuid32		215
++#define __NR_setfsgid32		216
++#define __NR_pivot_root		217
++#define __NR_getdents64		220
++#define __NR_gettid		221
++#define __NR_tkill		222
++#define __NR_setxattr		223
++#define __NR_lsetxattr		224
++#define __NR_fsetxattr		225
++#define __NR_getxattr		226
++#define __NR_lgetxattr		227
++#define __NR_fgetxattr		228
++#define __NR_listxattr		229
++#define __NR_llistxattr		230
++#define __NR_flistxattr		231
++#define __NR_removexattr	232
++#define __NR_lremovexattr	233
++#define __NR_fremovexattr	234
++#define __NR_futex		235
++#define __NR_sendfile64		236
++#define __NR_mincore		237
++#define __NR_madvise		238
++#define __NR_fcntl64		239
++#define __NR_readahead		240
++#define __NR_io_setup		241
++#define __NR_io_destroy		242
++#define __NR_io_getevents	243
++#define __NR_io_submit		244
++#define __NR_io_cancel		245
++#define __NR_fadvise64		246
++#define __NR_exit_group		247
++#define __NR_lookup_dcookie	248
++#define __NR_epoll_create	249
++#define __NR_epoll_ctl		250
++#define __NR_epoll_wait		251
++#define __NR_remap_file_pages	252
++#define __NR_set_tid_address	253
++#define __NR_timer_create	254
++#define __NR_timer_settime	255
++#define __NR_timer_gettime	256
++#define __NR_timer_getoverrun	257
++#define __NR_timer_delete	258
++#define __NR_clock_settime	259
++#define __NR_clock_gettime	260
++#define __NR_clock_getres	261
++#define __NR_clock_nanosleep	262
++#define __NR_statfs64		263
++#define __NR_fstatfs64		264
++#define __NR_tgkill		265
++#define __NR_utimes		266
++#define __NR_fadvise64_64	267
++#define __NR_mbind		268
++#define __NR_get_mempolicy	269
++#define __NR_set_mempolicy	270
++#define __NR_mq_open		271
++#define __NR_mq_unlink		272
++#define __NR_mq_timedsend	273
++#define __NR_mq_timedreceive	274
++#define __NR_mq_notify		275
++#define __NR_mq_getsetattr	276
++#define __NR_waitid		277
++#define __NR_vserver		278
++#define __NR_add_key		279
++#define __NR_request_key	280
++#define __NR_keyctl		281
++#define __NR_ioprio_set		282
++#define __NR_ioprio_get		283
++#define __NR_inotify_init	284
++#define __NR_inotify_add_watch	285
++#define __NR_inotify_rm_watch	286
++#define __NR_migrate_pages	287
++#define __NR_openat		288
++#define __NR_mkdirat		289
++#define __NR_mknodat		290
++#define __NR_fchownat		291
++#define __NR_futimesat		292
++#define __NR_fstatat64		293
++#define __NR_unlinkat		294
++#define __NR_renameat		295
++#define __NR_linkat		296
++#define __NR_symlinkat		297
++#define __NR_readlinkat		298
++#define __NR_fchmodat		299
++#define __NR_faccessat		300
++#define __NR_pselect6		301
++#define __NR_ppoll		302
++#define __NR_unshare		303
++#define __NR_set_robust_list	304
++#define __NR_get_robust_list	305
++#define __NR_splice		306
++#define __NR_sync_file_range	307
++#define __NR_tee		308
++#define __NR_vmsplice		309
++#define __NR_move_pages		310
++#define __NR_sched_setaffinity	311
++#define __NR_sched_getaffinity	312
++#define __NR_kexec_load		313
++#define __NR_getcpu		314
++#define __NR_epoll_pwait	315
++#define __NR_utimensat		316
++#define __NR_signalfd		317
++#define __NR_timerfd_create	318
++#define __NR_eventfd		319
++#define __NR_fallocate		320
++#define __NR_timerfd_settime	321
++#define __NR_timerfd_gettime	322
++#define __NR_signalfd4		323
++#define __NR_eventfd2		324
++#define __NR_epoll_create1	325
++#define __NR_dup3		326
++#define __NR_pipe2		327
++#define __NR_inotify_init1	328
++
++#ifdef __KERNEL__
++
++#define NR_syscalls		329
++
++#define __ARCH_WANT_IPC_PARSE_VERSION
++#define __ARCH_WANT_OLD_READDIR
++#define __ARCH_WANT_OLD_STAT
++#define __ARCH_WANT_STAT64
++#define __ARCH_WANT_SYS_ALARM
++#define __ARCH_WANT_SYS_GETHOSTNAME
++#define __ARCH_WANT_SYS_PAUSE
++#define __ARCH_WANT_SYS_SGETMASK
++#define __ARCH_WANT_SYS_SIGNAL
++#define __ARCH_WANT_SYS_TIME
++#define __ARCH_WANT_SYS_UTIME
++#define __ARCH_WANT_SYS_WAITPID
++#define __ARCH_WANT_SYS_SOCKETCALL
++#define __ARCH_WANT_SYS_FADVISE64
++#define __ARCH_WANT_SYS_GETPGRP
++#define __ARCH_WANT_SYS_LLSEEK
++#define __ARCH_WANT_SYS_NICE
++#define __ARCH_WANT_SYS_OLD_GETRLIMIT
++#define __ARCH_WANT_SYS_OLDUMOUNT
++#define __ARCH_WANT_SYS_SIGPENDING
++#define __ARCH_WANT_SYS_SIGPROCMASK
++#define __ARCH_WANT_SYS_RT_SIGACTION
++
++/*
++ * "Conditional" syscalls
++ *
++ * What we want is __attribute__((weak,alias("sys_ni_syscall"))),
++ * but it doesn't work on all toolchains, so we just do it by hand
++ */
++//#define cond_syscall(x) asm(".weak\t" #x "\n\t.set\t" #x ",sys_ni_syscall")
++#define cond_syscall(x) long x(void)  __attribute__((weak,alias("sys_ni_syscall")))
++#endif /* __KERNEL__ */
++
++#endif /* _ASM_UBICOM32_UNISTD_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/user.h
+@@ -0,0 +1,82 @@
++/*
++ * arch/ubicom32/include/asm/user.h
++ *   Ubicom32 architecture core file definitions.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_USER_H
++#define _ASM_UBICOM32_USER_H
++
++#include <asm/ptrace.h>
++#include <asm/page.h>
++/*
++ * Adapted from <asm-powerpc/user.h>
++ *
++ * Core file format: The core file is written in such a way that gdb
++ * can understand it and provide useful information to the user (under
++ * linux we use the `trad-core' bfd, NOT the osf-core).  The file contents
++ * are as follows:
++ *
++ *  upage: 1 page consisting of a user struct that tells gdb
++ *	what is present in the file.  Directly after this is a
++ *	copy of the task_struct, which is currently not used by gdb,
++ *	but it may come in handy at some point.  All of the registers
++ *	are stored as part of the upage.  The upage should always be
++ *	only one page long.
++ *  data: The data segment follows next.  We use current->end_text to
++ *	current->brk to pick up all of the user variables, plus any memory
++ *	that may have been sbrk'ed.  No attempt is made to determine if a
++ *	page is demand-zero or if a page is totally unused, we just cover
++ *	the entire range.  All of the addresses are rounded in such a way
++ *	that an integral number of pages is written.
++ *  stack: We need the stack information in order to get a meaningful
++ *	backtrace.  We need to write the data from usp to
++ *	current->start_stack, so we round each of these in order to be able
++ *	to write an integer number of pages.
++ */
++
++struct user_ubicom32fp_struct {
++};
++
++struct user {
++	struct pt_regs	regs;			/* entire machine state */
++	size_t		u_tsize;		/* text size (pages) */
++	size_t		u_dsize;		/* data size (pages) */
++	size_t		u_ssize;		/* stack size (pages) */
++	unsigned long	start_code;		/* text starting address */
++	unsigned long	start_data;		/* data starting address */
++	unsigned long	start_stack;		/* stack starting address */
++	long int	signal;			/* signal causing core dump */
++	unsigned long	u_ar0;			/* help gdb find registers */
++	unsigned long	magic;			/* identifies a core file */
++	char		u_comm[32];		/* user command name */
++};
++
++#define NBPG			PAGE_SIZE
++#define UPAGES			1
++#define HOST_TEXT_START_ADDR	(u.start_code)
++#define HOST_DATA_START_ADDR	(u.start_data)
++#define HOST_STACK_END_ADDR	(u.start_stack + u.u_ssize * NBPG)
++
++#endif	/* _ASM_UBICOM32_USER_H */
+--- /dev/null
++++ b/arch/ubicom32/include/asm/xor.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/ubicom32/include/asm/xor.h
++ *   Generic xor.h definitions for Ubicom32 architecture.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not, 
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++#ifndef _ASM_UBICOM32_XOR_H
++#define _ASM_UBICOM32_XOR_H
++
++#include <asm-generic/xor.h>
++
++#endif /* _ASM_UBICOM32_XOR_H */
+--- /dev/null
++++ b/arch/ubicom32/Kconfig
+@@ -0,0 +1,455 @@
++#
++# For a description of the syntax of this configuration file,
++# see Documentation/kbuild/kconfig-language.txt.
++#
++
++mainmenu "uClinux/ubicom32 (w/o MMU) Kernel Configuration"
++
++config RAMBASE
++	hex
++	default "0x40000000"
++	help
++		Define the address that RAM starts at.
++
++config UBICOM32
++	bool
++	select HAVE_OPROFILE
++	default y
++
++config RAMKERNEL
++	bool
++	default y
++
++config CPU_BIG_ENDIAN
++	bool
++	default y
++
++config FORCE_MAX_ZONEORDER
++	int
++	default "14"
++
++config HAVE_CLK
++	bool
++	default y
++
++config MMU
++	bool
++	default n
++
++config FPU
++	bool
++	default n
++
++config ZONE_DMA
++	bool
++	default y
++
++config RWSEM_GENERIC_SPINLOCK
++	bool
++	default y
++
++config RWSEM_XCHGADD_ALGORITHM
++	bool
++	default n
++
++config ARCH_HAS_ILOG2_U32
++	bool
++	default n
++
++config ARCH_HAS_ILOG2_U64
++	bool
++	default n
++
++config GENERIC_FIND_NEXT_BIT
++	bool
++	default y
++
++config GENERIC_GPIO
++	bool
++	default y
++
++config GPIOLIB
++	bool
++	default y
++
++config GENERIC_HWEIGHT
++	bool
++	default y
++
++config GENERIC_HARDIRQS
++	bool
++	default y
++
++config STACKTRACE_SUPPORT
++	bool
++	default y
++
++config LOCKDEP_SUPPORT
++	bool
++	default y
++
++config GENERIC_CALIBRATE_DELAY
++	bool
++	default y
++
++config GENERIC_TIME
++	bool
++	default y
++
++config TIME_LOW_RES
++	bool
++	default y
++
++config GENERIC_CLOCKEVENTS
++	bool
++	default y
++
++config GENERIC_CLOCKEVENTS_BROADCAST
++	bool
++	depends on GENERIC_CLOCKEVENTS
++	default y if SMP && !LOCAL_TIMERS
++
++config NO_IOPORT
++	def_bool y
++
++config ARCH_SUPPORTS_AOUT
++	def_bool y
++
++config IRQ_PER_CPU
++	bool
++	default y
++
++config SCHED_NO_NO_OMIT_FRAME_POINTER
++	bool
++	default y
++
++menu "Processor type and features"
++
++config BRD_32MB
++	bool
++	depends on IP5160EVAL
++	help
++		Board has 32MB of RAM on it.  It is a hidden option used to select default for size of RAM
++	default n
++
++config BRD_64MB
++	bool
++	depends on IP7145DPF || IP7160RGW || IP7160BRINGUP || IP7160DPF || IP5170DPF || IP5160DEV
++	help
++		Board has 64MB of RAM on it.  It is a hidden option used to select default for size of RAM
++	default n
++
++config BRD_128MB
++	bool
++	depends on IP7500MODULE || IP7500AV || IP7500MEDIA
++	help
++		Board has 128MB of RAM on it.  It is a hidden option used to select default for size of RAM
++	default n
++
++comment "Processor type will be selected by Board"
++
++config UBICOM32_V3
++	bool
++	help
++	  Ubicom IP5xxx series processor support.
++
++config UBICOM32_V4
++	bool
++	help
++	  Ubicom IP7xxx series processor support.
++
++comment "Board"
++choice
++	prompt "Board type"
++	help
++		Select your board.
++
++config NOBOARD
++	bool "No board selected"
++	help
++		Default. Don't select any board specific config. Will not build unless you change!
++
++# Add your boards here
++source "arch/ubicom32/mach-ip5k/Kconfig"
++source "arch/ubicom32/mach-ip7k/Kconfig"
++
++endchoice
++
++comment "Kernel Options"
++config SMP
++	bool "Symmetric multi-processing support"
++	select USE_GENERIC_SMP_HELPERS
++	default n
++	help
++	  Enables multithreading support.  Enabling SMP support increases
++	  the size of system data structures.  SMP support can have either 
++	  positive or negative impact on performance depending on workloads. 
++
++	  If you do not know what to do here, say N.
++
++config NR_CPUS
++	int "Number of configured CPUs"
++	range 2 32
++	default 2
++	depends on SMP
++	help
++		Upper bound on the number of CPUs. Space is reserved 
++		at compile time for this many CPUs.
++		
++config LOCAL_TIMERS
++	bool "Use local timer interrupts"
++	depends on SMP
++	default y
++	help
++	  Enable support for local timers on SMP platforms, rather then the
++	  legacy IPI broadcast method.  Local timers allows the system
++	  accounting to be spread across the timer interval, preventing a
++	  "thundering herd" at every timer tick.  A physical timer is allocated
++	  per cpu.		
++
++config TIMER_EXTRA_ALLOC
++	int "Number of additional physical timer events to create"
++	depends on GENERIC_CLOCKEVENTS
++	default 0
++	help
++		The Ubicom32 processor has a number of event timers that can be wrapped
++		in Linux clock event structures (assuming that the timers are not being
++		used for another purpose).  Based on the value of LOCAL_TIMERS, either 
++		2 timers will be used or a timer will be used for every CPU.  This value
++		allows the programmer to select additional timers over that amount.
++			
++config IRQSTACKS
++	bool "Create separate stacks for interrupt handling"
++	default n
++	help
++		Selecting this causes interrupts to be created on a separate
++		stack instead of nesting the interrupts on the kernel stack.
++		
++config IRQSTACKS_USEOCM
++	bool "Use OCM for interrupt stacks"
++	default n
++	depends on IRQSTACKS
++	help
++		Selecting this cause the interrupt stacks to be placed in OCM
++		reducing cache misses at the expense of using the OCM for servicing
++		interrupts.
++
++menu "OCM Instruction Heap"
++
++config OCM_MODULES_RESERVATION
++	int "OCM Instruction heap reservation. 0-192 kB"
++	range 0 192
++	default "0"
++	help
++	  The minimum amount of OCM memory to reserve for kernel loadable module
++	  code. If you are not using this memory it cannot be used for anything
++	  else. Leave it as 0 if you have prebuilt modules that are compiled with
++	  OCM support.
++
++config OCM_MODULES_MAY_CONSUME_REMAINING_CODESPACE
++	bool "Give all unused ocm code space to the ocm instruction heap."
++	default n
++	help
++	  Allow the OCM instruction heap allocation to consume any remaining
++	  unused OCM code space.  The result of this is that you will not have
++	  and deterministic results, but you will not have any waste either.
++
++config OCM_MODULES_FALLBACK_TO_DDR
++	bool "Loadable Modules requiring OCM may fallback to use DDR."
++	default n
++	help
++	  If a module cannot get the OCM code it requires allow DDR to
++	  be used instead.
++endmenu
++
++config HZ
++	int "Frequency of 'jiffies' (for polling)"
++	default 1000
++	help
++		100 is common for embedded systems, but 1000 allows
++		you to do more drivers without actually having
++		interrupts working properly.
++
++comment "RAM configuration"
++
++if BRD_32MB
++
++config RAMSIZE
++	hex "Size of RAM (in bytes)"
++	range 0x00000000 0x02000000
++	default "0x02000000"
++	help
++		Define the size of the system RAM. If you select 0 then the
++		kernel will try to probe the RAM size at runtime. This is not
++		supported on all CPU types.
++
++endif
++
++if BRD_64MB
++
++config RAMSIZE
++	hex "Size of RAM (in bytes)"
++	range 0x00000000 0x04000000
++	default "0x04000000"
++	help
++		Define the size of the system RAM. If you select 0 then the
++		kernel will try to probe the RAM size at runtime. This is not
++		supported on all CPU types.
++
++endif
++
++if BRD_128MB
++
++config RAMSIZE
++	hex "Size of RAM (in bytes)"
++	range 0x00000000 0x08000000
++	default "0x08000000"
++	help
++		Define the size of the system RAM. If you select 0 then the
++		kernel will try to probe the RAM size at runtime. This is not
++		supported on all CPU types.
++
++endif
++
++config KERNELBASE
++	hex "Address of the base of kernel code"
++	default "0x40400000"
++	help
++		For the time being we are going to start the Kernel at a 4 meg offset.
++
++comment "Build options"
++config LINKER_RELAXATION
++	bool "Linker Relaxation"
++	default y
++	help
++	  Turns on linker relaxation that will produce smaller
++	  faster code. Increases link time.
++
++comment "Driver options"
++menu "PCI Bus"
++config PCI
++	bool "PCI bus"
++	default true
++	help
++	  Enable/Disable PCI bus
++	source "drivers/pci/Kconfig"
++
++
++config PCI_DEV0_IDSEL
++	hex "slot 0 address"
++	depends on PCI
++	default "0x01000000"
++	help
++	  Slot 0 address.  This address should correspond to the address line
++	  which the IDSEL bit for this slot is connected to.
++
++config PCI_DEV1_IDSEL
++	hex "slot 1 address"
++	depends on PCI
++	default "0x02000000"
++	help
++	  Slot 1 address.  This address should correspond to the address line
++	  which the IDSEL bit for this slot is connected to.
++endmenu
++# End PCI
++
++menu "Input devices"
++config UBICOM_INPUT
++	bool "Ubicom polled GPIO input driver"
++	select INPUT
++	select INPUT_POLLDEV
++	help
++		Polling input driver, much like the GPIO input driver, except that it doesn't
++		rely on interrupts.  It will report events via the input subsystem.
++	default n
++
++config UBICOM_INPUT_I2C
++	bool "Ubicom polled GPIO input driver over I2C"
++	select INPUT
++	select INPUT_POLLDEV
++	help
++		Polling input driver, much like the PCA953x driver, it can support a variety of
++		different I2C I/O expanders.  This device polls the I2C I/O expander for events
++		and reports them via the input subsystem.
++	default n
++endmenu
++# Input devices
++
++menu "Misc devices"
++config UBICOM_HID
++	bool "Ubicom HID driver"
++	select INPUT
++	select INPUT_POLLDEV
++	select LCD_CLASS_DEVICE
++	help
++		Driver for HID chip found on some Ubicom reference designs.  This chip handles
++		PWM, button input, and IR remote control.  It registers as an input device and
++		a backlight device.
++	default n
++endmenu
++# Misc devices
++
++config CMDLINE_BOOL
++	bool "Built-in kernel command line"
++	default n
++	help
++	  Allow for specifying boot arguments to the kernel at
++	  build time.  On some systems (e.g. embedded ones), it is
++	  necessary or convenient to provide some or all of the
++	  kernel boot arguments with the kernel itself (that is,
++	  to not rely on the boot loader to provide them.)
++
++	  To compile command line arguments into the kernel,
++	  set this option to 'Y', then fill in the
++	  the boot arguments in CONFIG_CMDLINE.
++
++	  Systems with fully functional boot loaders (i.e. non-embedded)
++	  should leave this option set to 'N'.
++
++config CMDLINE
++	string "Built-in kernel command string"
++	depends on CMDLINE_BOOL
++	default ""
++	help
++	  Enter arguments here that should be compiled into the kernel
++	  image and used at boot time.  If the boot loader provides a
++	  command line at boot time, it is appended to this string to
++	  form the full kernel command line, when the system boots.
++
++	  However, you can use the CONFIG_CMDLINE_OVERRIDE option to
++	  change this behavior.
++
++	  In most cases, the command line (whether built-in or provided
++	  by the boot loader) should specify the device for the root
++	  file system.
++
++config CMDLINE_OVERRIDE
++	bool "Built-in command line overrides boot loader arguments"
++	default n
++	depends on CMDLINE_BOOL
++	help
++	  Set this option to 'Y' to have the kernel ignore the boot loader
++	  command line, and use ONLY the built-in command line.
++
++	  This is used to work around broken boot loaders.  This should
++	  be set to 'N' under normal conditions.
++
++endmenu
++# End Processor type and features
++
++source "arch/ubicom32/Kconfig.debug"
++
++menu "Executable file formats"
++source "fs/Kconfig.binfmt"
++endmenu
++
++source "init/Kconfig"
++source "kernel/Kconfig.preempt"
++source "kernel/time/Kconfig"
++source "mm/Kconfig"
++source "net/Kconfig"
++source "drivers/Kconfig"
++source "fs/Kconfig"
++source "security/Kconfig"
++source "crypto/Kconfig"
++source "lib/Kconfig"
+--- /dev/null
++++ b/arch/ubicom32/Kconfig.debug
+@@ -0,0 +1,117 @@
++menu "Kernel hacking"
++
++config TRACE_IRQFLAGS_SUPPORT
++	def_bool y
++	
++config PROTECT_KERNEL
++	default y
++	bool 'Enable Kernel range register Protection'
++	help
++	  Adds code to enable/disable range registers to protect static
++	  kernel code/data from userspace.  Currently the ranges covered
++	  do no protect kernel loadable modules or dynamically allocated
++	  kernel data.
++
++config NO_KERNEL_MSG
++	bool "Suppress Kernel BUG Messages"
++	help
++	  Do not output any debug BUG messages within the kernel.
++
++config EARLY_PRINTK
++	bool "Use the driver that you selected as console also for early printk (to debug kernel bootup)."
++	default n
++	help
++	  If you want to use the serdes driver (console=ttyUS0) for
++	  early printk, you must also supply an additional kernel boot
++	  parameter like this:
++
++		serdes=ioportaddr,irq,clockrate,baud
++
++	  For an IP7160RGW eval board, you could use this:
++
++		serdes=0x2004000,61,250000000,57600
++
++	  which will let you see early printk output at 57600 baud.
++
++config STOP_ON_TRAP
++	bool "Enable stopping at the LDSR for all traps"
++	default n
++	help
++	Cause the LDSR to stop all threads whenever a trap is about to be serviced
++	
++config STOP_ON_BUG
++	bool "Enable stopping on failed BUG_ON()"
++	default n
++	help
++	Cause all BUG_ON failures to stop all threads
++	
++config DEBUG_IRQMEASURE
++	bool "Enable IRQ handler measurements"
++	default n
++	help
++	When enabled each IRQ's min/avg/max times will be printed.  If the handler
++	re-enables interrupt, the times will show the full time including to service
++	nested interrupts.  See /proc/irq_measurements.
++	
++config DEBUG_PCIMEASURE
++	bool "Enable PCI transaction measurements"
++	default n
++	help
++	When enabled the system will measure the min/avg/max timer for each PCI transactions.
++	See /proc/pci_measurements.
++
++config ACCESS_OK_CHECKS_ENABLED
++	bool "Enable user space access checks"
++	default n
++	help
++	Enabling this check causes the kernel to verify that addresses passed
++	to the kernel by the user space code are within the processes 
++	address space.  On a no-mmu system, this is done by examining the
++	processes memory data structures (adversly affecting performance) but
++	ensuring that a process does not ask the kernel to violate another 
++	processes address space.  Sadly, the kernel uses access_ok() for 
++	address that are in the kernel which results in a large volume of 
++	false positives.
++
++choice
++	prompt "Unaligned Access Support"
++	default UNALIGNED_ACCESS_ENABLED
++	help
++		Kernel / Userspace unaligned access handling.
++
++config  UNALIGNED_ACCESS_ENABLED
++	bool "Kernel and Userspace"
++	help
++
++config  UNALIGNED_ACCESS_USERSPACE_ONLY
++	bool "Userspace Only"
++	help
++
++config  UNALIGNED_ACCESS_DISABLED
++	bool "Disabled"
++	help
++
++endchoice
++
++config DEBUG_STACKOVERFLOW
++	bool "Check for stack overflows"
++	default n
++	depends on DEBUG_KERNEL
++	help
++	  This option will cause messages to be printed if free kernel stack space
++	  drops below a certain limit (THREAD_SIZE /8).
++
++config DEBUG_STACK_USAGE
++	bool "Stack utilization instrumentation"
++	default n
++	depends on DEBUG_KERNEL
++	help
++	  Enables the display of the minimum amount of free kernel stack which each
++	  task has ever had available in the sysrq-T and sysrq-P debug output.
++
++	  This option will slow down process creation somewhat.
++
++source "lib/Kconfig.debug"
++
++endmenu
++
+--- /dev/null
++++ b/arch/ubicom32/Makefile
+@@ -0,0 +1,103 @@
++#
++# arch/ubicom32/Makefile
++#	<TODO: Replace with short file description>
++#
++# (C) Copyright 2009, Ubicom, Inc.
++#
++# This file is part of the Ubicom32 Linux Kernel Port.
++#
++# The Ubicom32 Linux Kernel Port is free software: you can redistribute
++# it and/or modify it under the terms of the GNU General Public License
++# as published by the Free Software Foundation, either version 2 of the
++# License, or (at your option) any later version.
++#
++# The Ubicom32 Linux Kernel Port is distributed in the hope that it
++# will be useful, but WITHOUT ANY WARRANTY; without even the implied
++# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++# the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with the Ubicom32 Linux Kernel Port.  If not, 
++# see <http://www.gnu.org/licenses/>.
++#
++# Ubicom32 implementation derived from (with many thanks):
++#   arch/m68knommu
++#   arch/blackfin
++#   arch/parisc
++#
++
++KBUILD_DEFCONFIG := 
++
++# setup the machine name and machine dependent settings
++machine-$(CONFIG_UBICOM32_V3)	:= ip5k
++machine-$(CONFIG_UBICOM32_V4)	:= ip7k
++MACHINE := $(machine-y)
++export MACHINE
++
++model-$(CONFIG_RAMKERNEL)	:= ram
++model-$(CONFIG_ROMKERNEL)	:= rom
++MODEL := $(model-y)
++export MODEL
++
++CPUCLASS := $(cpuclass-y)
++
++export CPUCLASS
++
++#
++# We want the core kernel built using the fastcall ABI but modules need
++# to be built using the slower calling convention because they could be
++# loaded out of range for fast calls.
++#
++CFLAGS_KERNEL    += -mfastcall
++CFLAGS_MODULE    += -mno-fastcall
++
++#
++# Some CFLAG additions based on specific CPU type.
++#
++cflags-$(CONFIG_UBICOM32_V3)		:= -march=ubicom32v3 -mno-fdpic -DIP5000
++cflags-$(CONFIG_UBICOM32_V4)		:= -march=ubicom32v4 -mno-fdpic -DIP7000
++
++ldflags-$(CONFIG_LINKER_RELAXATION)	:= --relax
++LDFLAGS_vmlinux := $(ldflags-y)
++
++GCCLIBDIR := $(dir $(shell $(CC) $(cflags-y) -print-libgcc-file-name))
++
++KBUILD_CFLAGS += $(cflags-y) -ffunction-sections
++KBUILD_AFLAGS += $(cflags-y)
++
++KBUILD_CFLAGS += -D__linux__ -Dlinux
++KBUILD_CFLAGS += -DUTS_SYSNAME=\"uClinux\"
++
++# include any machine specific directory
++ifneq ($(machine-y),)
++core-y += arch/$(ARCH)/mach-$(MACHINE)/
++endif
++
++head-y := arch/$(ARCH)/kernel/head.o
++
++core-y	+= arch/$(ARCH)/kernel/ \
++	   arch/$(ARCH)/mm/ \
++	   arch/$(ARCH)/crypto/ \
++	   arch/$(ARCH)/mach-common/
++
++drivers-$(CONFIG_OPROFILE)	+= arch/ubicom32/oprofile/
++
++libs-y	+= arch/$(ARCH)/lib/
++
++archclean:
++
++# make sure developer has selected a valid board
++ifeq ($(CONFIG_NOBOARD),y)
++# $(error have to select a valid board file $(CONFIG_NOBOARD), please run kernel config again)
++_all: config_board_error
++endif
++
++config_board_error:
++	@echo "*************************************************"
++	@echo "You have not selected a proper board."
++	@echo "Please run menuconfig (or config) against your"
++	@echo "kernel and choose your board under Processor"
++	@echo "options"
++	@echo "*************************************************"
++	@exit 1
++
+--- /dev/null
++++ b/arch/ubicom32/kernel/asm-offsets.c
+@@ -0,0 +1,162 @@
++/*
++ * arch/ubicom32/kernel/asm-offsets.c
++ *   Ubicom32 architecture definitions needed by assembly language modules.
++ *
++ * (C) Copyright 2009, Ubicom, Inc.
++ *
++ * This file is part of the Ubicom32 Linux Kernel Port.
++ *
++ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
++ * it and/or modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, either version 2 of the
++ * License, or (at your option) any later version.
++ *
++ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
++ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++ * the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with the Ubicom32 Linux Kernel Port.  If not,
++ * see <http://www.gnu.org/licenses/>.
++ *
++ * Ubicom32 implementation derived from (with many thanks):
++ *   arch/m68knommu
++ *   arch/blackfin
++ *   arch/parisc
++ */
++/*
++ * This program is used to generate definitions needed by
++ * assembly language modules.
++ *
++ * We use the technique used in the OSF Mach kernel code:
++ * generate asm statements containing #defines,
++ * compile this file to assembler, and then extract the
++ * #defines from the assembly-language output.
++ */
++
++#include <linux/module.h>
++#include <linux/stddef.h>
++#include <linux/sched.h>
++#include <linux/kernel_stat.h>
++#include <linux/ptrace.h>
++#include <linux/hardirq.h>
++#include <asm/bootinfo.h>
++#include <asm/irq.h>
++#include <asm/thread_info.h>
++
++#define DEFINE(sym, val) \
++        asm volatile("\n->" #sym " %0 " #val : : "i" (val))
++
++#define BLANK() asm volatile("\n->" : : )
++
++int main(void)
++{
++	/* offsets into the task struct */
++	DEFINE(TASK_STATE, offsetof(struct task_struct, state));
++	DEFINE(TASK_FLAGS, offsetof(struct task_struct, flags));
++	DEFINE(TASK_PTRACE, offsetof(struct task_struct, ptrace));
++	DEFINE(TASK_BLOCKED, offsetof(struct task_struct, blocked));
++	DEFINE(TASK_THREAD, offsetof(struct task_struct, thread));
++	DEFINE(TASK_THREAD_INFO, offsetof(struct task_struct, stack));
++	DEFINE(TASK_MM, offsetof(struct task_struct, mm));
++	DEFINE(TASK_ACTIVE_MM, offsetof(struct task_struct, active_mm));
++
++	/* offsets into the kernel_stat struct */
++	DEFINE(STAT_IRQ, offsetof(struct kernel_stat, irqs));
++
++	/* offsets into the irq_cpustat_t struct */
++	DEFINE(CPUSTAT_SOFTIRQ_PENDING, offsetof(irq_cpustat_t, __softirq_pending));
++
++	/* offsets into the thread struct */
++	DEFINE(THREAD_D10, offsetof(struct thread_struct, d10));
++	DEFINE(THREAD_D11, offsetof(struct thread_struct, d11));
++	DEFINE(THREAD_D12, offsetof(struct thread_struct, d12));
++	DEFINE(THREAD_D13, offsetof(struct thread_struct, d13));
++	DEFINE(THREAD_A1, offsetof(struct thread_struct, a1));
++	DEFINE(THREAD_A2, offsetof(struct thread_struct, a2));
++	DEFINE(THREAD_A5, offsetof(struct thread_struct, a5));
++	DEFINE(THREAD_A6, offsetof(struct thread_struct, a6));
++	DEFINE(THREAD_SP, offsetof(struct thread_struct, sp));
++
++	/* offsets into the pt_regs */
++	DEFINE(PT_D0, offsetof(struct pt_regs, dn[0]));
++	DEFINE(PT_D1, offsetof(struct pt_regs, dn[1]));
++	DEFINE(PT_D2, offsetof(struct pt_regs, dn[2]));
++	DEFINE(PT_D3, offsetof(struct pt_regs, dn[3]));
++	DEFINE(PT_D4, offsetof(struct pt_regs, dn[4]));
++	DEFINE(PT_D5, offsetof(struct pt_regs, dn[5]));
++	DEFINE(PT_D6, offsetof(struct pt_regs, dn[6]));
++	DEFINE(PT_D7, offsetof(struct pt_regs, dn[7]));
++	DEFINE(PT_D8, offsetof(struct pt_regs, dn[8]));
++	DEFINE(PT_D9, offsetof(struct pt_regs, dn[9]));
++	DEFINE(PT_D10, offsetof(struct pt_regs, dn[10]));
++	DEFINE(PT_D11, offsetof(struct pt_regs, dn[11]));
++	DEFINE(PT_D12, offsetof(struct pt_regs, dn[12]));
++	DEFINE(PT_D13, offsetof(struct pt_regs, dn[13]));
++	DEFINE(PT_D14, offsetof(struct pt_regs, dn[14]));
++	DEFINE(PT_D15, offsetof(struct pt_regs, dn[15]));
++	DEFINE(PT_A0, offsetof(struct pt_regs, an[0]));
++	DEFINE(PT_A1, offsetof(struct pt_regs, an[1]));
++	DEFINE(PT_A2, offsetof(struct pt_regs, an[2]));
++	DEFINE(PT_A3, offsetof(struct pt_regs, an[3]));
++	DEFINE(PT_A4, offsetof(struct pt_regs, an[4]));
++	DEFINE(PT_A5, offsetof(struct pt_regs, an[5]));
++	DEFINE(PT_A6, offsetof(struct pt_regs, an[6]));
++	DEFINE(PT_A7, offsetof(struct pt_regs, an[7]));
++	DEFINE(PT_SP, offsetof(struct pt_regs, an[7]));
++
++	DEFINE(PT_ACC0HI, offsetof(struct pt_regs, acc0[0]));
++	DEFINE(PT_ACC0LO, offsetof(struct pt_regs, acc0[1]));
++	DEFINE(PT_MAC_RC16, offsetof(struct pt_regs, mac_rc16));
++
++	DEFINE(PT_ACC1HI, offsetof(struct pt_regs, acc1[0]));
++	DEFINE(PT_ACC1LO, offsetof(struct pt_regs, acc1[1]));
++
++	DEFINE(PT_SOURCE3, offsetof(struct pt_regs, source3));
++	DEFINE(PT_INST_CNT, offsetof(struct pt_regs, inst_cnt));
++	DEFINE(PT_CSR, offsetof(struct pt_regs, csr));
++	DEFINE(PT_DUMMY_UNUSED, offsetof(struct pt_regs, dummy_unused));
++
++	DEFINE(PT_INT_MASK0, offsetof(struct pt_regs, int_mask0));
++	DEFINE(PT_INT_MASK1, offsetof(struct pt_regs, int_mask1));
++
++	DEFINE(PT_PC, offsetof(struct pt_regs, pc));
++
++	DEFINE(PT_TRAP_CAUSE, offsetof(struct pt_regs, trap_cause));
++
++	DEFINE(PT_SIZE, sizeof(struct pt_regs));
++
++	DEFINE(PT_FRAME_TYPE, offsetof(struct pt_regs, frame_type));
++
++	DEFINE(PT_ORIGINAL_D0, offsetof(struct pt_regs, original_dn_0));
++	DEFINE(PT_PREVIOUS_PC, offsetof(struct pt_regs, previous_pc));
++
++	/* offsets into the kernel_stat struct */
++	DEFINE(STAT_IRQ, offsetof(struct kernel_stat, irqs));
++
++	/* signal defines */
++	DEFINE(SIGSEGV, SIGSEGV);
++	//DEFINE(SEGV_MAPERR, SEGV_MAPERR);
++	DEFINE(SIGTRAP, SIGTRAP);
++	//DEFINE(TRAP_TRACE, TRAP_TRACE);
++
++	DEFINE(PT_PTRACED, PT_PTRACED);
++	DEFINE(PT_DTRACE, PT_DTRACE);
++
++	DEFINE(ASM_THREAD_SIZE, THREAD_SIZE);
++
++	/* Offsets in thread_info structure */
++	DEFINE(TI_TASK, offsetof(struct thread_info, task));
++	DEFINE(TI_EXECDOMAIN, offsetof(struct thread_info, exec_domain));
++	DEFINE(TI_FLAGS, offsetof(struct thread_info, flags));
++	DEFINE(TI_PREEMPTCOUNT, offsetof(struct thread_info, preempt_count));
++	DEFINE(TI_CPU, offsetof(struct thread_info, cpu));
++	DEFINE(TI_INTR_NESTING, offsetof(struct thread_info, interrupt_nesting));
++	DEFINE(ASM_TIF_NEED_RESCHED, TIF_NEED_RESCHED);
++	DEFINE(ASM_TIF_SYSCALL_TRACE, TIF_SYSCALL_TRACE);
++	DEFINE(ASM_TIF_SIGPENDING, TIF_SIGPENDING);
++
++	DEFINE(ASM_RAM_END, (CONFIG_RAMBASE + CONFIG_RAMSIZE));
++	return 0;
++}
+--- /dev/null
++++ b/arch/ubicom32/kernel/Makefile
+@@ -0,0 +1,64 @@
++#
++# arch/ubicom32/kernel/Makefile
++#	Main Makefile for the Ubicom32 arch directory.
++#
++# (C) Copyright 2009, Ubicom, Inc.
++#
++# This file is part of the Ubicom32 Linux Kernel Port.
++#
++# The Ubicom32 Linux Kernel Port is free software: you can redistribute
++# it and/or modify it under the terms of the GNU General Public License
++# as published by the Free Software Foundation, either version 2 of the
++# License, or (at your option) any later version.
++#
++# The Ubicom32 Linux Kernel Port is distributed in the hope that it
++# will be useful, but WITHOUT ANY WARRANTY; without even the implied
++# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
++# the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with the Ubicom32 Linux Kernel Port.  If not, 
++# see <http://www.gnu.org/licenses/>.
++#
++# Ubicom32 implementation derived from (with many thanks):
++#   arch/m68knommu
++#   arch/blackfin
++#   arch/parisc
++#
++
++extra-y := head.o vmlinux.lds
++
++obj-y += \
++	devtree.o \
++	dma.o \
++	flat.o \
++	init_task.o \
++	irq.o \
++	ldsr.o \
++	os_node.o \
++	process.o \
++	processor.o \
++	ptrace.o \
++	setup.o \
++	signal.o \
++	stacktrace.o \
++	sys_ubicom32.o \
++	syscalltable.o \
++	thread.o \
++	time.o \
++	traps.o \
++	ubicom32_context_switch.o \
++	ubicom32_ksyms.o \
++	ubicom32_syscall.o \
++	unaligned_trap.o
++
++obj-$(CONFIG_MODULES)				+= module.o
++obj-$(CONFIG_COMEMPCI)				+= comempci.o
++obj-$(CONFIG_SMP)				+= smp.o topology.o
++obj-$(CONFIG_ACCESS_OK_CHECKS_ENABLED)		+= uaccess.o
++obj-$(CONFIG_GENERIC_CLOCKEVENTS)		+= timer_device.o
++obj-$(CONFIG_GENERIC_CLOCKEVENTS_BROADCAST)	+= timer_broadcast.o
++
++ifndef CONFIG_GENERIC_CLOCKEVENTS
++obj-y			+= timer_tick.o
++endif
+--- /dev/null
++++ b/arch/ubicom32/mach-ip5k/Kconfig
+@@ -0,0 +1,32 @@
++
++config IP5170DPF
++	bool "IP5170DPF"
++	select UBICOM32_V3
++	select I2C
++	select I2C_GPIO
++	select FB
++	select FB_UBICOM32
++	select BACKLIGHT_LCD_SUPPORT
++	select BACKLIGHT_CLASS_DEVICE
++	select UBICOM_HID
++	select NEW_LEDS
++	select LEDS_CLASS
++	select LEDS_GPIO
++	select BRD_64MB
++	help
++		IP5170 Digital Picture Frame board, 8005-1113, IP5K-BEV-0011-13 v1.3
++
++config IP5160DEV
++	bool "IP5160Dev_Ver1Dot1"
++	select UBICOM32_V3
++	select BRD_64MB
++	help
++		Ubicom StreamEngine 5000 Development Board, IP5K-BDV-0004-11 v1.1
++
++config IP5160EVAL
++	bool "IP5160RGWEval_Ver2Rev2"
++	select UBICOM32_V3
++	select BRD_32MB
++	help
++		Ubicom StreamEngine 5000 RGW Evaluation Board, IP5K-RGW-0004-11 v2.2
++
+--- /dev/null
++++ b/arch/ubicom32/mach-ip7k/Kconfig
+@@ -0,0 +1,132 @@
++config IP7145DPF
++	bool "IP7145DPF"
++	select UBICOM32_V4
++	select UBICOM_INPUT
++	select UBICOM_INPUT_I2C
++	select RTC_CLASS
++	select RTC_DRV_S35390A
++	select I2C
++	select I2C_GPIO
++	select GPIO_PCA953X
++	select FB
++	select FB_UBICOM32
++	select BACKLIGHT_LCD_SUPPORT
++	select LCD_CLASS_DEVICE
++	select LCD_UBICOM32
++	select BACKLIGHT_CLASS_DEVICE
++	select BACKLIGHT_UBICOM32
++	select SND_UBI32
++	select MMC_UBICOM32
++	select MMC
++	select MMC_BLOCK
++	select BRD_64MB
++	help
++		IP7145 Digital Picture Frame reference design, supports:
++			8007-0410 v1.0
++
++config IP7160RGW
++	bool "IP7160RGW"
++	select UBICOM32_V4
++	select UBICOM_INPUT
++	select NEW_LEDS
++	select LEDS_CLASS
++	select LEDS_GPIO
++	select BRD_64MB
++	select SPI
++	select SPI_UBICOM32_GPIO
++	select VLAN_8021Q
++	select UBICOM_SWITCH
++	select UBICOM_SWITCH_BCM539X
++	help
++		Ubicom IP7160 RGW Eval, supports:
++			8007-0110 v1.0
++			8007-0111 v1.1
++			8007-0112 v1.2
++
++config IP7160BRINGUP
++	bool "IP7160BRINGUP"
++	select UBICOM32_V4
++	select NEW_LEDS
++	select LEDS_CLASS
++	select LEDS_GPIO
++	select BRD_64MB
++	help
++		Ubicom IP7160 Bringup, supports:
++			8007-0010 v1.0
++
++config IP7160DPF
++	bool "IP7160DPF"
++	select UBICOM32_V4
++	select I2C
++	select I2C_GPIO
++	select FB
++	select FB_UBICOM32
++	select BACKLIGHT_LCD_SUPPORT
++	select BACKLIGHT_CLASS_DEVICE
++	select SND_UBI32
++	select SND_UBI32_AUDIO_CS4350
++	select UBICOM_HID
++	select BRD_64MB
++	help
++		IP7160 Digital Picture Frame board, supports:
++			8007-0211 Rev 1.1
++
++config IP7500MODULE
++	bool "IP7500MODULE"
++	select UBICOM32_V4
++	select BRD_128MB
++	help
++		Ubicom IP7500 CPU Module board, supports:
++			8007-0510  v1.0
++			8007-0510A v1.0
++
++		Please see ip7500module.c for more details.
++
++config IP7500AV
++	bool "IP7500AV"
++	select UBICOM32_V4
++	select BRD_128MB
++	select I2C
++	select I2C_GPIO
++	select SND_UBI32
++	select SND_UBI32_AUDIO_CS4384
++	select FB
++	select FB_UBICOM32
++	help
++		Ubicom IP7500 Audio Video board, supports:
++			8007-0810  v1.0
++
++		With Ubicom IP7500 CPU Module board:
++			8007-0510  v1.0 -or-
++			8007-0510A v1.0
++
++		Please see ip7500av.c for more details.
++
++config IP7500MEDIA
++	bool "IP7500MEDIA"
++	select UBICOM32_V4
++	select UBICOM_INPUT_I2C
++	select RTC_CLASS
++	select RTC_DRV_S35390A
++	select I2C
++	select I2C_GPIO
++	select GPIO_PCA953X
++	select FB
++	select FB_UBICOM32
++	select BACKLIGHT_LCD_SUPPORT
++	select LCD_CLASS_DEVICE
++	select LCD_UBICOM32
++	select BACKLIGHT_CLASS_DEVICE
++	select BACKLIGHT_UBICOM32
++	select SND_UBI32
++	select SND_UBI32_AUDIO_CS4350
++	select MMC_UBICOM32
++	select MMC
++	select MMC_BLOCK
++	select BRD_128MB
++	help
++		IP7500 Media Board w/ IP7500 CPU Module board, supports:
++			8007-0610 v1.0 w/ 8007-0510 v1.0
++
++		Please see ip7500media.c for more details.
++
+--- a/fs/Kconfig.binfmt
++++ b/fs/Kconfig.binfmt
+@@ -30,7 +30,7 @@ config COMPAT_BINFMT_ELF
+ config BINFMT_ELF_FDPIC
+ 	bool "Kernel support for FDPIC ELF binaries"
+ 	default y
+-	depends on (FRV || BLACKFIN || (SUPERH32 && !MMU))
++	depends on (FRV || BLACKFIN || (SUPERH32 && !MMU) || UBICOM32)
+ 	help
+ 	  ELF FDPIC binaries are based on ELF, but allow the individual load
+ 	  segments of a binary to be located in memory independently of each
+
