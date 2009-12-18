@@ -18,7 +18,6 @@
 #include <linux/etherdevice.h>
 #include <linux/platform_device.h>
 #include <linux/serial_8250.h>
-#include <linux/ath9k_platform.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -775,46 +774,6 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 	else
 		printk(KERN_DEBUG "ar71xx: failed to parse mac address "
 				"\"%s\"\n", mac_str);
-}
-
-static struct resource ar91xx_wmac_resources[] = {
-	{
-		.start	= AR91XX_WMAC_BASE,
-		.end	= AR91XX_WMAC_BASE + AR91XX_WMAC_SIZE - 1,
-		.flags	= IORESOURCE_MEM,
-	}, {
-		.start	= AR71XX_CPU_IRQ_WMAC,
-		.end	= AR71XX_CPU_IRQ_WMAC,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-static struct ath9k_platform_data ar91xx_wmac_data;
-
-static struct platform_device ar91xx_wmac_device = {
-	.name		= "ath9k",
-	.id		= -1,
-	.resource	= ar91xx_wmac_resources,
-	.num_resources	= ARRAY_SIZE(ar91xx_wmac_resources),
-	.dev = {
-		.platform_data = &ar91xx_wmac_data,
-	},
-};
-
-void __init ar91xx_add_device_wmac(void)
-{
-	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
-
-	memcpy(ar91xx_wmac_data.eeprom_data, ee,
-	       sizeof(ar91xx_wmac_data.eeprom_data));
-
-	ar71xx_device_stop(RESET_MODULE_AMBA2WMAC);
-	mdelay(10);
-
-	ar71xx_device_start(RESET_MODULE_AMBA2WMAC);
-	mdelay(10);
-
-	platform_device_register(&ar91xx_wmac_device);
 }
 
 static struct platform_device ar71xx_dsa_switch_device = {

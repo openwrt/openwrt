@@ -20,6 +20,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-ar913x-wmac.h"
 
 #define DIR_615C1_GPIO_LED_ORANGE_STATUS 1	/* ORANGE:STATUS:TRICOLOR */
 #define DIR_615C1_GPIO_LED_BLUE_WPS	3	/* BLUE:WPS */
@@ -148,7 +149,7 @@ static void __init dir_615c1_setup(void)
 					ARRAY_SIZE(dir_615c1_gpio_buttons),
 					dir_615c1_gpio_buttons);
 
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_DIR_615_C1, "D-Link DIR-615 rev. C1", dir_615c1_setup);

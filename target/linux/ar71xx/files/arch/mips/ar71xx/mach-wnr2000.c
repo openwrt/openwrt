@@ -21,6 +21,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-ar913x-wmac.h"
 
 #define WNR2000_GPIO_LED_PWR_GREEN	14
 #define WNR2000_GPIO_LED_PWR_AMBER	7
@@ -143,7 +144,7 @@ static void __init wnr2000_setup(void)
 					wnr2000_gpio_buttons);
 
 
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_WNR2000, "NETGEAR WNR2000", wnr2000_setup);

@@ -23,6 +23,7 @@
 #include <asm/mach-ar71xx/ar91xx_flash.h>
 
 #include "devices.h"
+#include "dev-ar913x-wmac.h"
 
 #define AP83_GPIO_LED_WLAN	6
 #define AP83_GPIO_LED_POWER	14
@@ -217,7 +218,7 @@ static void __init ap83_generic_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 
 	platform_device_register(&ap83_flash_device);
 
