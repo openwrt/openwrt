@@ -142,6 +142,18 @@ define Package/iptables-mod-ipsec/description
  - libipt_policy
 endef
 
+define Package/iptables-mod-ipset
+$(call Package/iptables/Module, @LINUX_2_6)
+  TITLE:=IPset iptables extensions
+endef
+
+define Package/iptables-mod-ipset/description
+ IPset iptables extensions.
+ Includes:
+ - libipt_set
+ - libipt_SET
+endef
+
 define Package/iptables-mod-nat
 $(call Package/iptables/Module, +kmod-ipt-nat)
   TITLE:=Basic NAT extensions
@@ -360,6 +372,7 @@ $(eval $(call BuildPlugin,iptables-mod-filter,$(IPT_FILTER-m),$(L7_INSTALL)))
 $(eval $(call BuildPlugin,iptables-mod-imq,$(IPT_IMQ-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipsec,$(IPT_IPSEC-m)))
+$(eval $(call BuildPlugin,iptables-mod-ipset,ipt_set ipt_SET))
 $(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
 $(eval $(call BuildPlugin,iptables-mod-nat-extra,$(IPT_NAT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
