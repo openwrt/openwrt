@@ -54,8 +54,6 @@ void ar71xx_add_device_uart(void) __init;
 
 void ar71xx_add_device_wdt(void) __init;
 
-void ar91xx_add_device_wmac(void) __init;
-
 void ar71xx_add_device_dsa(unsigned int id,
 			   struct dsa_platform_data *d) __init;
 

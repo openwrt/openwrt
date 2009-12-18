@@ -19,6 +19,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-ar913x-wmac.h"
 
 #define AP81_GPIO_LED_STATUS	1
 #define AP81_GPIO_LED_AOSS	3
@@ -133,7 +134,7 @@ static void __init ap81_setup(void)
 					ARRAY_SIZE(ap81_gpio_buttons),
 					ap81_gpio_buttons);
 
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_AP81, "Atheros AP81", ap81_setup);

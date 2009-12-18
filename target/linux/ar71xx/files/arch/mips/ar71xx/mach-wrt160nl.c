@@ -18,6 +18,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-ar913x-wmac.h"
 
 #define WRT160NL_GPIO_LED_POWER		14
 #define WRT160NL_GPIO_LED_WPS_AMBER	9
@@ -124,7 +125,7 @@ static void __init wrt160nl_setup(void)
 	ar71xx_add_device_m25p80(&wrt160nl_flash_data);
 
 	ar71xx_add_device_usb();
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wrt160nl_leds_gpio),
 					wrt160nl_leds_gpio);

@@ -20,6 +20,7 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "devices.h"
+#include "dev-ar913x-wmac.h"
 
 #define MZK_W04NU_GPIO_LED_USB		0
 #define MZK_W04NU_GPIO_LED_STATUS	1
@@ -167,7 +168,7 @@ static void __init mzk_w04nu_setup(void)
 					mzk_w04nu_gpio_buttons);
 	ar71xx_add_device_usb();
 
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_MZK_W04NU, "Planex MZK-W04NU", mzk_w04nu_setup);

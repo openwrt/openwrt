@@ -20,6 +20,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-ar913x-wmac.h"
 
 #define MZK_W300NH_GPIO_LED_STATUS	1
 #define MZK_W300NH_GPIO_LED_WPS		3
@@ -153,7 +154,7 @@ static void __init mzk_w300nh_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, MZK_W04NU_BUTTONS_POLL_INTERVAL,
 				       ARRAY_SIZE(mzk_w300nh_gpio_buttons),
 				       mzk_w300nh_gpio_buttons);
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_MZK_W300NH, "Planex MZK-W300NH", mzk_w300nh_setup);

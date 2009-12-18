@@ -19,6 +19,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-ar913x-wmac.h"
 
 #define TEW_632BRP_GPIO_LED_STATUS	1
 #define TEW_632BRP_GPIO_LED_WPS		3
@@ -123,7 +124,7 @@ static void __init tew_632brp_setup(void)
 					ARRAY_SIZE(tew_632brp_gpio_buttons),
 					tew_632brp_gpio_buttons);
 
-	ar91xx_add_device_wmac();
+	ar913x_add_device_wmac();
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TRENDnet TEW-632BRP", tew_632brp_setup);
