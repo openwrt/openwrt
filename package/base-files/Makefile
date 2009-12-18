@@ -434,7 +434,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   define Package/libpthread/install_lib
-	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/libc_so.a),$(CP) $(TOOLCHAIN_DIR)/usr/lib/libpthread_so.a $(1)/lib/libpthread_pic.a)
+	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/libpthread_so.a),$(CP) $(TOOLCHAIN_DIR)/usr/lib/libpthread_so.a $(1)/lib/libpthread_pic.a)
   endef
 
   define Package/librt/install
