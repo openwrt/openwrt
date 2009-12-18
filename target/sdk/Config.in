@@ -1,5 +1,6 @@
 config SDK
 	bool "Build the OpenWrt SDK"
+	depends !EXTERNAL_TOOLCHAIN
 	help
 	  This is essentially a stripped-down version of the buildroot
 	  with a precompiled toolchain. It can be used to develop and
