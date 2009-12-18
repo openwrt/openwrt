@@ -12,8 +12,6 @@
 
 #include <linux/pci.h>
 #include <linux/platform_device.h>
-#include <linux/spi/spi.h>
-#include <linux/spi/flash.h>
 #include <linux/input.h>
 #include <linux/ath9k_platform.h>
 
@@ -22,6 +20,7 @@
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+#include "dev-m25p80.h"
 
 #define UBNT_RS_GPIO_LED_RF	2
 #define UBNT_RS_GPIO_SW4	8
@@ -41,15 +40,6 @@
 #define UBNT_M_GPIO_BTN_RESET	12
 
 #define UBNT_BUTTONS_POLL_INTERVAL	20
-
-static struct spi_board_info ubnt_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz	= 25000000,
-		.modalias	= "m25p80",
-	}
-};
 
 static struct ar71xx_pci_irq ubnt_pci_irqs[] __initdata = {
 	{
@@ -151,8 +141,7 @@ static struct gpio_button ubnt_m_gpio_buttons[] __initdata = {
 
 static void __init ubnt_generic_setup(void)
 {
-	ar71xx_add_device_spi(NULL, ubnt_spi_info,
-				    ARRAY_SIZE(ubnt_spi_info));
+	ar71xx_add_device_m25p80(NULL);
 
 	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(ubnt_gpio_buttons),
@@ -285,8 +274,7 @@ static void __init ubnt_m_setup(void)
 
 	ar71xx_set_mac_base(mac);
 
-	ar71xx_add_device_spi(NULL, ubnt_spi_info,
-				    ARRAY_SIZE(ubnt_spi_info));
+	ar71xx_add_device_m25p80(NULL);
 
 	ar71xx_add_device_mdio(~0);
 

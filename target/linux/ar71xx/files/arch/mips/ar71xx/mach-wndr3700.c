@@ -12,8 +12,6 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/spi/spi.h>
-#include <linux/spi/flash.h>
 #include <linux/input.h>
 #include <linux/pci.h>
 #include <linux/ath9k_platform.h>
@@ -25,6 +23,7 @@
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+#include "dev-m25p80.h"
 
 #define WNDR3700_GPIO_LED_WPS_ORANGE	0
 #define WNDR3700_GPIO_LED_POWER_ORANGE	1
@@ -226,16 +225,6 @@ static void __init wndr3700_pci_init(void)
 static inline void wndr3700_pci_init(void) { };
 #endif /* CONFIG_PCI */
 
-static struct spi_board_info wndr3700_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz	= 25000000,
-		.modalias	= "m25p80",
-		.platform_data  = &wndr3700_flash_data,
-	}
-};
-
 static struct gpio_led wndr3700_leds_gpio[] __initdata = {
 	{
 		.name		= "wndr3700:green:power",
@@ -314,8 +303,7 @@ static void __init wndr3700_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar71xx_add_device_spi(NULL, wndr3700_spi_info,
-			      ARRAY_SIZE(wndr3700_spi_info));
+	ar71xx_add_device_m25p80(&wndr3700_flash_data);
 
         ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wndr3700_leds_gpio),
 				    wndr3700_leds_gpio);

@@ -4,6 +4,7 @@ menu "Atheros AR71xx machine selection"
 
 config AR71XX_MACH_AP81
 	bool "Atheros AP81 board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_AP83
@@ -12,10 +13,12 @@ config AR71XX_MACH_AP83
 
 config AR71XX_MACH_DIR_825_B1
 	bool "D-Link DIR-825 rev. B1 board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_PB42
 	bool "Atheros PB42 board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_PB44
@@ -24,6 +27,7 @@ config AR71XX_MACH_PB44
 
 config AR71XX_MACH_AW_NR580
 	bool "AzureWave AW-NR580 board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_GENERIC
@@ -33,14 +37,17 @@ config AR71XX_MACH_GENERIC
 config AR71XX_MACH_WP543
 	bool "Compex WP543/WPJ543 board support"
 	select MYLOADER
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_WRT160NL
 	bool "Linksys WRT160NL board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_WRT400N
 	bool "Linksys WRT400N board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_RB_4XX
@@ -49,40 +56,52 @@ config AR71XX_MACH_RB_4XX
 
 config AR71XX_MACH_WNDR3700
 	bool "NETGEAR WNDR3700 board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_WNR2000
 	bool "NETGEAR WNR2000 board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_MZK_W04NU
 	bool "Planex MZK-W04NU board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_MZK_W300NH
 	bool "Planex MZK-W300NH board support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_TL_WR741ND
 	bool "TP-LINK TL-WR741ND support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_TL_WR941ND
 	bool "TP-LINK TL-WR941ND support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_TL_WR1043ND
 	bool "TP-LINK TL-WR1043ND support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_TEW_632BRP
 	bool "TRENDnet TEW-632BRP support"
+	select AR71XX_DEV_M25P80
 	default y
 
 config AR71XX_MACH_UBNT
 	bool "Ubiquiti AR71xx based boards support"
+	select AR71XX_DEV_M25P80
 	default y
 
 endmenu
+
+config AR71XX_DEV_M25P80
+	def_bool n
 
 endif

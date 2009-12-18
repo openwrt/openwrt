@@ -12,14 +12,13 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/spi/spi.h>
-#include <linux/spi/flash.h>
 #include <linux/input.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "devices.h"
+#include "dev-m25p80.h"
 
 #define WRT400N_GPIO_LED_ORANGE	5
 #define WRT400N_GPIO_LED_GREEN	4
@@ -86,16 +85,6 @@ static struct flash_platform_data wrt400n_flash_data = {
 #endif
 };
 
-static struct spi_board_info wrt400n_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz	= 25000000,
-		.modalias	= "m25p80",
-		.platform_data  = &wrt400n_flash_data,
-	}
-};
-
 static struct gpio_led wrt400n_leds_gpio[] __initdata = {
 	{
 		.name		= "wrt400n:green:status",
@@ -150,8 +139,7 @@ static void __init wrt400n_setup(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
 
-	ar71xx_add_device_spi(NULL, wrt400n_spi_info,
-			      ARRAY_SIZE(wrt400n_spi_info));
+	ar71xx_add_device_m25p80(&wrt400n_flash_data);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wrt400n_leds_gpio),
 					wrt400n_leds_gpio);

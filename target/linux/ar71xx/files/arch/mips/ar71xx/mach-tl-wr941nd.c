@@ -11,8 +11,6 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/spi/spi.h>
-#include <linux/spi/flash.h>
 #include <linux/input.h>
 
 #include <asm/mips_machine.h>
@@ -20,6 +18,7 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "devices.h"
+#include "dev-m25p80.h"
 
 #define TL_WR941ND_GPIO_LED_SYSTEM	2
 #define TL_WR941ND_GPIO_LED_QSS		5
@@ -62,16 +61,6 @@ static struct flash_platform_data tl_wr941nd_flash_data = {
         .parts          = tl_wr941nd_partitions,
         .nr_parts       = ARRAY_SIZE(tl_wr941nd_partitions),
 #endif
-};
-
-static struct spi_board_info tl_wr941nd_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz	= 25000000,
-		.modalias	= "m25p80",
-		.platform_data  = &tl_wr941nd_flash_data,
-	}
 };
 
 static struct gpio_led tl_wr941nd_leds_gpio[] __initdata = {
@@ -134,8 +123,7 @@ static void __init tl_wr941nd_setup(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_dsa(0, &tl_wr941nd_dsa_data);
 
-	ar71xx_add_device_spi(NULL, tl_wr941nd_spi_info,
-					ARRAY_SIZE(tl_wr941nd_spi_info));
+	ar71xx_add_device_m25p80(&tl_wr941nd_flash_data);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_wr941nd_leds_gpio),
 					tl_wr941nd_leds_gpio);
