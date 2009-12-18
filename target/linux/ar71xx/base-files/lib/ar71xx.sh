@@ -70,6 +70,9 @@ ar71xx_board_name() {
 	*TL-WR1043ND)
 		name="tl-wr1043nd"
 		;;
+	*"DIR-615 rev. C1")
+		name="dir-615-c1"
+		;;
 	*TL-WR741ND)
 		name="tl-wr741nd"
 		;;

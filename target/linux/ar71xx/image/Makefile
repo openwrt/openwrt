@@ -402,7 +402,7 @@ define Image/Build/Profile/WP543
 endef
 
 define Image/Build/Profile/DIR615C1
-	$(call Image/Build/Template/Cameo/$(1),dir-615c1,board=TEW-632BRP,"AP81-AR9130-RT-070614-02")
+	$(call Image/Build/Template/Cameo/$(1),dir-615-c1,board=DIR-615-C1,"AP81-AR9130-RT-070614-02")
 endef
 
 define Image/Build/Profile/TEW632BRP

@@ -11,6 +11,11 @@ config AR71XX_MACH_AP83
 	bool "Atheros AP83 board support"
 	default y
 
+config AR71XX_MACH_DIR_615_C1
+	bool "D-Link DIR-615 rev. C1 support"
+	select AR71XX_DEV_M25P80
+	default y
+
 config AR71XX_MACH_DIR_825_B1
 	bool "D-Link DIR-825 rev. B1 board support"
 	select AR71XX_DEV_M25P80

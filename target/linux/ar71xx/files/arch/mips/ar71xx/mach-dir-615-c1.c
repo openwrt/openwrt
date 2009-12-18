@@ -1,0 +1,154 @@
+/*
+ *  D-Link DIR-615 rev C1 board support
+ *
+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
+ */
+
+#include <linux/platform_device.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include <linux/input.h>
+
+#include <asm/mips_machine.h>
+
+#include <asm/mach-ar71xx/ar71xx.h>
+
+#include "devices.h"
+#include "dev-m25p80.h"
+
+#define DIR_615C1_GPIO_LED_ORANGE_STATUS 1	/* ORANGE:STATUS:TRICOLOR */
+#define DIR_615C1_GPIO_LED_BLUE_WPS	3	/* BLUE:WPS */
+#define DIR_615C1_GPIO_LED_GREEN_WAN	4       /* GREEN:WAN:TRICOLOR */
+#define DIR_615C1_GPIO_LED_GREEN_WANCPU	5       /* GREEN:WAN:CPU:TRICOLOR */
+#define DIR_615C1_GPIO_LED_GREEN_WLAN	6	/* GREEN:WLAN */
+#define DIR_615C1_GPIO_LED_GREEN_STATUS	14	/* GREEN:STATUS:TRICOLOR */
+#define DIR_615C1_GPIO_LED_ORANGE_WAN	15	/* ORANGE:WAN:TRICOLOR */
+
+/* buttons may need refinement */
+
+#define DIR_615C1_GPIO_BTN_WPS		12
+#define DIR_615C1_GPIO_BTN_RESET	21
+
+#define DIR_615C1_BUTTONS_POLL_INTERVAL	20
+
+#ifdef CONFIG_MTD_PARTITIONS
+static struct mtd_partition dir_615c1_partitions[] = {
+	{
+		.name		= "u-boot",
+		.offset		= 0,
+		.size		= 0x020000,
+		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "config",
+		.offset		= 0x020000,
+		.size		= 0x010000,
+	} , {
+		.name		= "kernel",
+		.offset		= 0x030000,
+		.size		= 0x0d0000,
+	} , {
+		.name		= "rootfs",
+		.offset		= 0x100000,
+		.size		= 0x2f0000,
+	} , {
+		.name		= "art",
+		.offset		= 0x3f0000,
+		.size		= 0x010000,
+		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "firmware",
+		.offset		= 0x030000,
+		.size		= 0x3c0000,
+	}
+};
+#endif /* CONFIG_MTD_PARTITIONS */
+
+static struct flash_platform_data dir_615c1_flash_data = {
+#ifdef CONFIG_MTD_PARTITIONS
+        .parts          = dir_615c1_partitions,
+        .nr_parts       = ARRAY_SIZE(dir_615c1_partitions),
+#endif
+};
+
+static struct gpio_led dir_615c1_leds_gpio[] __initdata = {
+	{
+		.name		= "dir-615c1:orange:status",
+		.gpio		= DIR_615C1_GPIO_LED_ORANGE_STATUS,
+		.active_low	= 1,
+	}, {
+		.name		= "dir-615c1:blue:wps",
+		.gpio		= DIR_615C1_GPIO_LED_BLUE_WPS,
+		.active_low	= 1,
+	}, {
+		.name		= "dir-615c1:green:wan",
+		.gpio		= DIR_615C1_GPIO_LED_GREEN_WAN,
+		.active_low	= 1,
+	}, {
+		.name		= "dir-615c1:green:wancpu",
+		.gpio		= DIR_615C1_GPIO_LED_GREEN_WANCPU,
+		.active_low	= 1,
+        }, {
+		.name		= "dir-615c1:green:wlan",
+		.gpio		= DIR_615C1_GPIO_LED_GREEN_WLAN,
+		.active_low	= 1,
+        }, {
+		.name           = "dir-615c1:green:status",
+		.gpio           = DIR_615C1_GPIO_LED_GREEN_STATUS,
+		.active_low     = 1,
+	}, {
+		.name		= "dir-615c1:orange:wan",
+		.gpio		= DIR_615C1_GPIO_LED_ORANGE_WAN,
+		.active_low	= 1,
+	}
+
+};
+
+static struct gpio_button dir_615c1_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 5,
+		.gpio		= DIR_615C1_GPIO_BTN_RESET,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 5,
+		.gpio		= DIR_615C1_GPIO_BTN_WPS,
+	}
+};
+
+static void __init dir_615c1_setup(void)
+{
+	ar71xx_add_device_mdio(0x0);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth0_data.phy_mask = 0xf;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_mask = 0x10;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
+
+	ar71xx_add_device_m25p80(&dir_615c1_flash_data);
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(dir_615c1_leds_gpio),
+					dir_615c1_leds_gpio);
+
+	ar71xx_add_device_gpio_buttons(-1, DIR_615C1_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(dir_615c1_gpio_buttons),
+					dir_615c1_gpio_buttons);
+
+	ar91xx_add_device_wmac();
+}
+
+MIPS_MACHINE(AR71XX_MACH_DIR_615_C1, "D-Link DIR-615 rev. C1", dir_615c1_setup);
