@@ -18,6 +18,7 @@ obj-$(CONFIG_AR71XX_DEV_M25P80)		+= dev-m25p80.o
 obj-$(CONFIG_AR71XX_MACH_AP81)		+= mach-ap81.o
 obj-$(CONFIG_AR71XX_MACH_AP83)		+= mach-ap83.o
 obj-$(CONFIG_AR71XX_MACH_AW_NR580)	+= mach-aw-nr580.o
+obj-$(CONFIG_AR71XX_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
 obj-$(CONFIG_AR71XX_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
 obj-$(CONFIG_AR71XX_MACH_GENERIC)	+= mach-generic.o
 obj-$(CONFIG_AR71XX_MACH_MZK_W04NU)	+= mach-mzk-w04nu.o

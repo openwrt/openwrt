@@ -32,6 +32,10 @@ preinit_set_mac_address() {
 		tew-632brp)
 			fetch_mac_from_mtd config lan_mac wan_mac
 			;;
+		dir-615-c1)
+			fetch_mac_from_mtd config lan_mac wan_mac
+			echo 1 > /sys/class/leds/dir-615-c1:green:wancpu/brightness
+			;;
 		wrt160nl)
 			fetch_mac_from_mtd nvram lan_hwaddr wan_hwaddr
 			;;

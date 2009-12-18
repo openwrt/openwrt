@@ -65,6 +65,9 @@ static struct board_rec boards[] __initdata = {
 		.name		= "TEW-632BRP",
 		.mach_type	= AR71XX_MACH_TEW_632BRP,
 	}, {
+		.name		= "DIR-615-C1",
+		.mach_type	= AR71XX_MACH_DIR_615_C1,
+	}, {
 		.name		= "TL-WR741ND",
 		.mach_type	= AR71XX_MACH_TL_WR741ND,
 	}, {
