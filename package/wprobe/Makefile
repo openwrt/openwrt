@@ -18,9 +18,13 @@ PKG_CONFIG_DEPENDS = \
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/wprobe/Default
+  DEPENDS:=@LINUX_2_6 @(!(TARGET_ps3||TARGET_pxcab)||BROKEN)
+endef
+
 define KernelPackage/wprobe
+$(call Package/wprobe/Default)
   SUBMENU:=Network Support
-  DEPENDS:=@LINUX_2_6
   TITLE:=Wireless driver probe infrastructure
   FILES:= \
   	$(PKG_BUILD_DIR)/kernel/wprobe.$(LINUX_KMOD_SUFFIX)
@@ -32,9 +36,10 @@ define KernelPackage/wprobe/description
 endef
 
 define Package/wprobe-util
+$(call Package/wprobe/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-wprobe +libnl-tiny
+  DEPENDS+=+kmod-wprobe +libnl-tiny
   TITLE:=Wireless measurement utility
 endef
 
@@ -44,9 +49,10 @@ define Package/wprobe-util/description
 endef
 
 define Package/wprobe-export
+$(call Package/wprobe/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+wprobe-util
+  DEPENDS+=+wprobe-util
   TITLE:=Wireless measurement data exporter
 endef
 
