@@ -12,8 +12,6 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/spi/spi.h>
-#include <linux/spi/flash.h>
 #include <linux/input.h>
 
 #include <asm/mips_machine.h>
@@ -21,6 +19,7 @@
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+#include "dev-m25p80.h"
 
 #define WP543_GPIO_SW6		2
 #define WP543_GPIO_LED_1	3
@@ -31,15 +30,6 @@
 #define WP543_GPIO_SW4		8
 
 #define WP543_BUTTONS_POLL_INTERVAL	20
-
-static struct spi_board_info wp543_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz	= 25000000,
-		.modalias	= "m25p80",
-	}
-};
 
 static struct ar71xx_pci_irq wp543_pci_irqs[] __initdata = {
 	{
@@ -99,7 +89,7 @@ static struct gpio_button wp543_gpio_buttons[] __initdata = {
 
 static void __init wp543_setup(void)
 {
-	ar71xx_add_device_spi(NULL, wp543_spi_info, ARRAY_SIZE(wp543_spi_info));
+	ar71xx_add_device_m25p80(NULL);
 
 	ar71xx_add_device_mdio(0xfffffff7);
 

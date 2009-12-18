@@ -13,28 +13,18 @@
 #include <linux/bitops.h>
 #include <linux/input.h>
 #include <linux/platform_device.h>
-#include <linux/spi/spi.h>
-#include <linux/spi/flash.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+#include "dev-m25p80.h"
 
 #define PB42_BUTTONS_POLL_INTERVAL	20
 
 #define PB42_GPIO_BTN_SW4	8
 #define PB42_GPIO_BTN_SW5	3
-
-static struct spi_board_info pb42_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz	= 25000000,
-		.modalias	= "m25p80",
-	}
-};
 
 static struct ar71xx_pci_irq pb42_pci_irqs[] __initdata = {
 	{
@@ -76,8 +66,7 @@ static struct gpio_button pb42_gpio_buttons[] __initdata = {
 
 static void __init pb42_init(void)
 {
-	ar71xx_add_device_spi(NULL, pb42_spi_info,
-				ARRAY_SIZE(pb42_spi_info));
+	ar71xx_add_device_m25p80(NULL);
 
 	ar71xx_add_device_mdio(~PB42_MDIO_PHYMASK);
 
