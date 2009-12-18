@@ -3,6 +3,7 @@ config IB
 	depends !TARGET_ROOTFS_INITRAMFS
 	depends !TARGET_uml
 	depends !PROFILE_KCONFIG
+	depends !EXTERNAL_TOOLCHAIN
 	select ALL
 	help
 	  This is essentially a stripped-down version of the buildroot
