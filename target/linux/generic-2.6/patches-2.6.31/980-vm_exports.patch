@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2769,6 +2769,16 @@ int shmem_unuse(swp_entry_t entry, struc
+@@ -2602,6 +2602,16 @@ int shmem_unuse(swp_entry_t entry, struc
  
  /* common code */
  
@@ -17,7 +17,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2848,10 +2858,7 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2681,10 +2691,7 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
