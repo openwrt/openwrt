@@ -286,6 +286,7 @@ $(eval $(call KernelPackage,ipt-ulog))
 define KernelPackage/ipt-iprange
   SUBMENU:=$(NF_MENU)
   TITLE:=Module for matching ip ranges
+  KCONFIG:=$(KCONFIG_IPT_IPRANGE)
   FILES:=$(foreach mod,$(IPT_IPRANGE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPRANGE-m)))
   DEPENDS:= kmod-ipt-core
