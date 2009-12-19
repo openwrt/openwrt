@@ -88,6 +88,7 @@ enable_atheros() {
 	config_get antrx "$device" rxantenna
 	config_get anttx "$device" txantenna
 	config_get_bool softled "$device" softled 1
+	config_get antenna "$device" antenna
 
 	devname="$(cat /proc/sys/dev/$device/dev_name)"
 	local antgpio=
@@ -96,6 +97,13 @@ enable_atheros() {
 		NanoStation2) antgpio=7; invert=1;;
 		NanoStation5) antgpio=1; invert=1;;
 		"NanoStation Loco2") antgpio=2;;
+		"NanoStation Loco5")
+			case "$antenna" in
+				horizontal) antdiv=0; anttx=1; antrx=1;;
+				vertical) antdiv=0; anttx=2; antrx=2;;
+				*) antdiv=1; anttx=0; antrx=0;;
+			esac
+		;;
 	esac
 	if [ -n "$invert" ]; then
 		_set="clear"
@@ -106,21 +114,33 @@ enable_atheros() {
 	fi
 	if [ -n "$antgpio" ]; then
 		softled=0
-		config_get antenna "$device" antenna
-		case "$antenna" in
-			external) antdiv=0; antrx=1; anttx=1 ;;
-			horizontal) antdiv=0; antrx=1; anttx=1 ;;
-			vertical) antdiv=0; antrx=2; anttx=2 ;;
-			auto) antdiv=1; antrx=0; anttx=0 ;;
+		case "$devname" in
+			"NanoStation Loco2")
+				antdiv=0
+				antrx=1
+				anttx=1
+				case "$antenna" in
+					horizontal) gpioval=0;;
+					*) gpioval=1;;
+				esac
+			;;
+			*)
+				case "$antenna" in
+					external) antdiv=0; antrx=1; anttx=1; gpioval=1;;
+					horizontal) antdiv=0; antrx=1; anttx=1; gpioval=0;;
+					vertical) antdiv=0; antrx=2; anttx=2; gpioval=0;;
+					auto) antdiv=1; antrx=0; anttx=0; gpioval=0;;
+				esac
+			;;
 		esac
 			
 		[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
 		gpioctl "dirout" "$antgpio" >/dev/null 2>&1
-		case "$antenna" in
-			horizontal|vertical|auto)
+		case "$gpioval" in
+			0)
 				gpioctl "$_clear" "$antgpio" >/dev/null 2>&1
 			;;
-			external)
+			1)
 				gpioctl "$_set" "$antgpio" >/dev/null 2>&1
 			;;
 		esac
@@ -358,6 +378,18 @@ detect_atheros() {
 		config_get type "$dev" type
 		devname="$(cat /proc/sys/dev/$dev/dev_name)"
 		case "$devname" in
+			"NanoStation Loco2")
+				EXTRA_DEV="
+# Ubiquiti NanoStation Loco2 features
+	option antenna	vertical # (horizontal|vertical)
+"
+			;;
+			"NanoStation Loco5")
+				EXTRA_DEV="
+# Ubiquiti NanoStation Loco5 features
+	option antenna	auto # (auto|horizontal|vertical)
+"
+			;;
 			NanoStation*)
 				EXTRA_DEV="
 # Ubiquiti NanoStation features
