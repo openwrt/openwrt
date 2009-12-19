@@ -237,14 +237,13 @@ wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kerne
 define Image/Build/WNDR3700
 	$(call PatchKernelLzma,$(2),$(3) $(wndr3700_mtdlayout))
 	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
-	mkdir $(KDIR)/wndr3700
-	mkdir $(KDIR)/wndr3700/image
+	mkdir -p $(KDIR)/wndr3700/image
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR)/vmlinux-$(2).uImage \
 		$(KDIR)/wndr3700/image/uImage
-	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
+	$(MKSQUASHFS_CMD) \
 		$(KDIR)/wndr3700 $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp \
-		-nopad -noappend -root-owned -be
+		-nopad -noappend -root-owned $(SQUASHFS_OPTS)
 	-rm -rf $(KDIR)/wndr3700
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
