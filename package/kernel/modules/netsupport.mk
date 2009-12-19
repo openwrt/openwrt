@@ -577,7 +577,7 @@ $(eval $(call KernelPackage,sched))
 define KernelPackage/ax25
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
-  DEPENDS:=kmod-crc16
+  DEPENDS:= +kmod-crc16
   KCONFIG:= \
 	CONFIG_AX25 \
 	CONFIG_MKISS
