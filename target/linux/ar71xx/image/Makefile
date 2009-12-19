@@ -241,9 +241,9 @@ define Image/Build/WNDR3700
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR)/vmlinux-$(2).uImage \
 		$(KDIR)/wndr3700/image/uImage
-	$(MKSQUASHFS_CMD) \
+	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$(KDIR)/wndr3700 $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp \
-		-nopad -noappend -root-owned $(SQUASHFS_OPTS)
+		-nopad -noappend -root-owned -be
 	-rm -rf $(KDIR)/wndr3700
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
