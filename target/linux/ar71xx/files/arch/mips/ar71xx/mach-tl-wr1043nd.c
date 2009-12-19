@@ -70,19 +70,19 @@ static struct gpio_led tl_wr1043nd_leds_gpio[] __initdata = {
 	{
 		.name		= "tl-wr1043nd:green:usb",
 		.gpio		= TL_WR1043ND_GPIO_LED_USB,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, {
 		.name		= "tl-wr1043nd:green:system",
 		.gpio		= TL_WR1043ND_GPIO_LED_SYSTEM,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, {
 		.name		= "tl-wr1043nd:green:qss",
 		.gpio		= TL_WR1043ND_GPIO_LED_QSS,
-		.active_low	= 1,
+		.active_low	= 0,
 	}, {
 		.name		= "tl-wr1043nd:green:wlan",
 		.gpio		= TL_WR1043ND_GPIO_LED_WLAN,
-		.active_low	= 0,
+		.active_low	= 1,
 	}
 };
 
