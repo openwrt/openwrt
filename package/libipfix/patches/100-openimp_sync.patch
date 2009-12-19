@@ -329,7 +329,16 @@
  /** exporter funcs
 --- a/lib/ipfix_col.c
 +++ b/lib/ipfix_col.c
-@@ -907,7 +907,7 @@ int ipfix_decode_datarecord( ipfixt_node
+@@ -897,6 +897,8 @@ int ipfix_decode_datarecord( ipfixt_node
+             return -1;
+         }
+ 
++        n->ipfixt->fields[i].elem->decode(p,p,len);
++
+         data->lens[i]  = len;
+         data->addrs[i] = p;
+ 
+@@ -907,7 +909,7 @@ int ipfix_decode_datarecord( ipfixt_node
      return 0;
  }
  
@@ -338,7 +347,7 @@
  { 
      if ( data ) {
          if ( data->addrs )
-@@ -925,6 +925,7 @@ int ipfix_parse_msg( ipfix_input_t *inpu
+@@ -925,6 +927,7 @@ int ipfix_parse_msg( ipfix_input_t *inpu
      ipfix_hdr_t          hdr;                  /* ipfix packet header */
      ipfixs_node_t        *s;
      ipfix_datarecord_t   data = { NULL, NULL, 0 };
@@ -346,7 +355,7 @@
      uint8_t              *buf;                 /* ipfix payload */
      uint16_t             setid, setlen;        /* set id, set lenght */
      int                  i, nread, offset;     /* counter */
-@@ -1042,6 +1043,12 @@ int ipfix_parse_msg( ipfix_input_t *inpu
+@@ -1042,6 +1045,12 @@ int ipfix_parse_msg( ipfix_input_t *inpu
                  err_flag = 1;
              } 
              else {
@@ -359,7 +368,7 @@
                  /** read data records
                   */
                  for ( offset=nread, bytesleft=setlen; bytesleft>4; ) {
-@@ -1076,11 +1083,11 @@ int ipfix_parse_msg( ipfix_input_t *inpu
+@@ -1076,11 +1085,11 @@ int ipfix_parse_msg( ipfix_input_t *inpu
          goto errend;
  
   end:
@@ -373,7 +382,7 @@
      return -1;
  }
  
-@@ -1093,7 +1100,7 @@ void process_client_tcp( int fd, int mas
+@@ -1093,7 +1102,7 @@ void process_client_tcp( int fd, int mas
      tcp_conn_t   *tcon = (tcp_conn_t*)data;
      char         *func = "process_client_tcp";
  
@@ -403,3 +412,63 @@
          if ( (access( s->fname, R_OK ) <0 )
               && (mkdir( s->fname, S_IRWXU ) <0) ) {
              mlogf( 0, "[%s] cannot access dir '%s': %s\n",
+--- a/lib/ipfix_FOKUS_IEs.txt
++++ b/lib/ipfix_FOKUS_IEs.txt
+@@ -24,6 +24,8 @@
+ 196, IPFIX_FT_PKTID,                4, IPFIX_CODING_UINT, "pktId", "FOKUS packet id"
+ 197, IPFIX_FT_STARTTIME,            4, IPFIX_CODING_INT, "startTime", "FOKUS interval start"
+ 198, IPFIX_FT_ENDTIME,              4, IPFIX_CODING_INT, "endTime", "FOKUS interval end"
++199, IPFIX_FT_RTT_USEC,             8, IPFIX_CODING_UINT, "rtt_usec", "FOKUS rtt in us"
++
+ 300, IPFIX_FT_FLOWCREATIONTIMEUSEC, 4, IPFIX_CODING_INT, "flowCreationTimeUsec", "FOKUS flow start usec fraction"
+ 301, IPFIX_FT_FLOWENDTIMEUSEC,      4, IPFIX_CODING_INT, "flowEndTimeUsec", "FOKUS flow end usec fraction"
+ 303, IPFIX_FT_TC_PACKETS,           4, IPFIX_CODING_UINT, "tcPackets", "DAIDALOS Packets seen"
+@@ -39,3 +41,48 @@
+ 313, IPFIX_FT_OWDVARMIN_NSEC,       4, IPFIX_CODING_INT, "owdvarmin_nsec", "FOKUS minimum owd variance in ns"
+ 314, IPFIX_FT_OWDVARMAX_NSEC,       4, IPFIX_CODING_INT, "owdvarmax_nsec", "FOKUS maximum ow variance in ns"
+ 
++# Project INTERSECTION
++315, IPFIX_FT_SOURCEIPV4FANOUT,     4, IPFIX_CODING_UINT,"sourceIPv4FanOut", "FOKUS IPv4 fanout"
++316, IPFIX_FT_DESTINATIONIPV4FANIN, 4, IPFIX_CODING_UINT,"destinationIPv4FanIn", "FOKUS IPv4 fanin"
++
++# Project PRISM
++
++330, IPFIX_FT_PR_SESSIONID,	4, IPFIX_CODING_UINT, "sessionId", "PRISM Session ID"
++331, IPFIX_FT_PR_TRANSACTIONID, 4, IPFIX_CODING_UINT, "transactionId", "PRISM Transaction ID"
++332, IPFIX_FT_PR_ENCRYPTEDDATA, 65535, IPFIX_CODING_STRING, "encryptedData", "PRISM encrypted data"
++333, IPFIX_FT_PR_DECRYPTIONKEY, 65535, IPFIX_CODING_STRING, "decryptionKey", "PRISM decryption key"
++334, IPFIX_FT_PR_KEYSHARE,      65535, IPFIX_CODING_STRING, "keyShare", "PRISM key share"
++335, IPFIX_FT_PR_KEYSHAREADP,   65535, IPFIX_CODING_STRING, "keyShareAdp", "PRISM key share ADP"
++336, IPFIX_FT_PR_INITVECTOR,    65535, IPFIX_CODING_STRING, "cryptoInitVector", "PRISM crypto init vector"
++
++
++# these information elements have been defined by FOKUS for the Oracle project
++
++402, IPFIX_FT_ORsignalBandwidth, 4, IPFIX_CODING_UINT, "ORsignalBandwidth", "signal bandwidth" 
++403, IPFIX_FT_ORsignalPower, 2, IPFIX_CODING_UINT, "ORsignalPower", "ERIP" 
++404, IPFIX_FT_ORmodulationType, 2, IPFIX_CODING_UINT, "ORmodulationType", "AM/FM,.."
++405, IPFIX_FT_ORsymbolRate, 2, IPFIX_CODING_UINT, "ORsymbolRate", "symbol rate"
++406, IPFIX_FT_ORmodulationOrder, 1, IPFIX_CODING_UINT, "ORmodulationOrder", "number of levels"
++407, IPFIX_FT_ORrolloffFactor, 2, IPFIX_CODING_UINT, "ORrolloffFactor", "roll of factor"
++408, IPFIX_FT_ORgeopositionLon, 4, IPFIX_CODING_UINT, "ORgeopositionLon", "GPS coordinate, resolution 1 cm"
++409, IPFIX_FT_ORgeopositionLat, 4, IPFIX_CODING_UINT, "ORgeopositionLat", "GPS coordinate, resolution 1 cm"
++410, IPFIX_FT_ORgeopositionElev, 4, IPFIX_CODING_UINT, "ORgeopositionElev", "GPS coordinate, resolution 1 cm"
++411, IPFIX_FT_ORpolicyRecord, 65535, IPFIX_CODING_STRING, "ORpolicyRecord", "policy record has variable length, First 8 bits in data describe the length (in bytes) of the field"
++420, IPFIX_FT_channel_status, 1, IPFIX_CODING_UINT, "channel_status", vacancy of the scanned channel (1: channel busy, 0: channel idle)"
++421, IPFIX_FT_sensing_value, 2, IPFIX_CODING_UINT, "sensing_value", "Cost function output"
++422, IPFIX_FT_sensing_threshold, 2, IPFIX_CODING_UINT, "sensing_threshold", "Decision threshold"
++423, IPFIX_FT_OR_terminal_id, 1, IPFIX_CODING_UINT, "OR_terminal_id", "terminal identifier"
++424, IPFIX_FT_OR_terminal_id_list, 65535, IPFIX_CODING_STRING, "OR_terminal_id_list", "terminal identifier list"
++425, IPFIX_FT_Infrastructure_network_id, 1, IPFIX_CODING_UINT, "Infrastructure_network_id", "network identifier"
++426, IPFIX_FT_Infrastructure_network_type, 1, IPFIX_CODING_UINT, "Infrastructure_network_type", "network type (GSM - 1, UMTS - 2, WiMAX - 3, WiFi - 4)" 
++427, IPFIX_FT_Battery_lifetime_min, 1, IPFIX_CODING_UINT, "Battery_lifetime_min", "expected battery lifetime to provide requested services or functionalities, in minutes"
++428, IPFIX_FT_Battery_lifetime_h, 1, IPFIX_CODING_UINT, "Battery_lifetime_h", "expected battery lifetime to provide requested services or functionalities, in hours"
++429, IPFIX_FT_Battery_status, 1, IPFIX_CODING_UINT, "Battery_status", "expected battery lifetime to provide requested services or functionalities, 1 bit status flag, values 1 or 0"
++430, IPFIX_FT_Cell_id_number, 4, IPFIX_CODING_UINT, "Cell_id_number", "16-32 bit cell id number, identifier"
++431, IPFIX_FT_Spectral_allocation_vector, 1, IPFIX_CODING_UINT, "Spectral_allocation_vector", "binary vector to indicate whether a band is free 1 bit 0 or not 1 bit 1"
++432, IPFIX_FT_Spectral_allocation_profile, 2, IPFIX_CODING_UINT, "Spectral_allocation_profile", "received power spectral density vs. frequency to indicate spectral activity in the band of interest (8-16 bits per discrete frequency value)"
++433, IPFIX_FT_Center_frequency, 2, IPFIX_CODING_UINT, "Center_frequency", "Center frequency of the sensed band"
++434, IPFIX_FT_Bandwidth_of_CAP, 2, IPFIX_CODING_UINT, "Bandwidth_of_CAP", "Bandwidth of the spectral allocation profile"
++435, IPFIX_FT_ORmodulation, 1, IPFIX_CODING_UINT, "ORmodulation", "CREST factor"
++436, IPFIX_FT_ORprofileRecord, 65535, IPFIX_CODING_STRING, "ORprofileRecord", "profile record has variable length, First 8 bits in data describe the length (in bytes) of the field"
++
