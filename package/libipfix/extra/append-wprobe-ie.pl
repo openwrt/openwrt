@@ -6,16 +6,12 @@ my @fields = (
 	[ "_ss", "UINT", " - Sum of squared samples", 8 ],
 );
 
-my $file = $ARGV[0] or die "Syntax: $0 <file>\n";
+my $file = $ARGV[0] or die "Syntax: $0 <file> <start>\n";
 -f $file or die "File not found\n";
-my $last_ie = 0;
-my $line;
-open IES, "<$file" or die "Can't open file";
-while ($line = <IES>) {
-	$line =~ /^(\d+)\s*,/ and $last_ie = $1;
-}
-close IES;
-while (<STDIN>) {
+my $start = $ARGV[1];
+$start =~ /^\d+$/ or die "Invalid start number";
+open FILE, "<$file" or die "Can't open file";
+while (<FILE>) {
 	/^(%?)(\w+),\s*(\w+),\s*(.+)$/ and do {
 		my $counter = $1;
 		my $rfield = $2;
@@ -28,7 +24,7 @@ while (<STDIN>) {
 			@f = @fields;
 		}
 		foreach my $f (@f) {
-			my $nr = ++$last_ie;
+			my $nr = $start++;
 			my $n = $f->[0];
 			my $N = uc $n;
 			my $ftype = $f->[1];
@@ -38,4 +34,5 @@ while (<STDIN>) {
 		}
 	};
 }
+close FILE;
 
