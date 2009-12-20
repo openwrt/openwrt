@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/include/asm-mips/mips_machine.h
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,47 @@
 +/*
 + *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
 + *
@@ -25,6 +25,7 @@
 +
 +void mips_machine_register(struct mips_machine *) __init;
 +void mips_machine_setup(unsigned long machtype) __init;
++void mips_machine_set_name(char *name) __init;
 +
 +extern char *mips_machine_name;
 +
@@ -49,7 +50,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/kernel/mips_machine.c
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,74 @@
 +/*
 + *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
 + *
@@ -88,6 +89,25 @@
 +	list_add_tail(&mach->list, &mips_machines);
 +}
 +
++void __init mips_machine_set_name(char *name)
++{
++	unsigned int len;
++	char *p;
++
++	if (name == NULL)
++		return;
++
++	len = strlen(name);
++	p = kmalloc(len + 1, GFP_KERNEL);
++	if (p) {
++		strncpy(p, name, len);
++		p[len] = '\0';
++		mips_machine_name = p;
++	} else {
++		printk(KERN_WARNING "MIPS: no memory for machine_name\n");
++	}
++}
++
 +void __init mips_machine_setup(unsigned long machtype)
 +{
 +	struct mips_machine *mach;
@@ -99,30 +119,15 @@
 +		return;
 +	}
 +
-+	if (mach->mach_name) {
-+		char *name;
-+		unsigned int len;
-+
-+		len = strlen(mach->mach_name);
-+		name = kmalloc(len + 1, GFP_KERNEL);
-+		if (name) {
-+			strncpy(name, mach->mach_name,len);
-+			name[len] = '\0';
-+			mips_machine_name = name;
-+		} else {
-+			printk(KERN_WARNING "MIPS: no memory for machine_name\n");
-+		}
-+	}
-+
++	mips_machine_set_name(mach->mach_name);
 +	printk(KERN_INFO "MIPS: machine is %s\n", mips_machine_name);
 +
 +	if (mach->mach_setup)
 +		mach->mach_setup();
 +}
-+
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -87,6 +87,7 @@ obj-$(CONFIG_GPIO_TXX9)		+= gpio_txx9.o
+@@ -87,6 +87,7 @@
  
  obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
@@ -132,7 +137,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -837,6 +837,9 @@ config MIPS_DISABLE_OBSOLETE_IDE
+@@ -837,6 +837,9 @@
  config SYNC_R4K
  	bool
  
@@ -152,7 +157,7 @@
  
  unsigned int vced_count, vcei_count;
  
-@@ -31,8 +32,12 @@ static int show_cpuinfo(struct seq_file 
+@@ -31,8 +32,12 @@
  	/*
  	 * For the first processor also print the system type
  	 */
