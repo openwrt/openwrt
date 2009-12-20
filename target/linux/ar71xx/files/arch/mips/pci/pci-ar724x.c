@@ -131,7 +131,7 @@ static int ar724x_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 
 static void ar724x_pci_fixup(struct pci_dev *dev)
 {
-	u32 t;
+	u16 cmd;
 
 	if (!ar724x_pci_fixup_enable)
 		return;
@@ -139,14 +139,13 @@ static void ar724x_pci_fixup(struct pci_dev *dev)
 	if (dev->bus->number != 0 || dev->devfn != 0)
 		return;
 
-	DBG("PCI: fixup host controller %s (%04x:%04x)\n", pci_name(dev),
-		dev->vendor, dev->device);
-
 	/* setup COMMAND register */
-	t = PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INVALIDATE
-	  | PCI_COMMAND_PARITY | PCI_COMMAND_SERR | PCI_COMMAND_FAST_BACK;
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
+	cmd |= PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
+	       PCI_COMMAND_INVALIDATE | PCI_COMMAND_PARITY | PCI_COMMAND_SERR |
+	       PCI_COMMAND_FAST_BACK;
 
-	pci_write_config_word(dev, PCI_COMMAND, t);
+	pci_write_config_word(dev, PCI_COMMAND, cmd);
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar724x_pci_fixup);
 
@@ -201,9 +200,55 @@ static struct pci_controller ar724x_pci_controller = {
 	.io_resource	= &ar724x_pci_io_resource,
 };
 
-int __init ar724x_pcibios_init(void)
+static void __init ar724x_pci_reset(void)
+{
+	ar71xx_device_stop(AR724X_RESET_PCIE);
+	ar71xx_device_stop(AR724X_RESET_PCIE_PHY);
+	ar71xx_device_stop(AR724X_RESET_PCIE_PHY_SERIAL);
+	udelay(100);
+
+	ar71xx_device_start(AR724X_RESET_PCIE_PHY_SERIAL);
+	udelay(100);
+	ar71xx_device_start(AR724X_RESET_PCIE_PHY);
+	ar71xx_device_start(AR724X_RESET_PCIE);
+}
+
+static int __init ar724x_pci_setup(void)
 {
 	u32 t;
+
+	/* setup COMMAND register */
+	t = PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INVALIDATE |
+	    PCI_COMMAND_PARITY|PCI_COMMAND_SERR|PCI_COMMAND_FAST_BACK;
+
+	ar724x_pci_write(ar724x_pci_localcfg_base, PCI_COMMAND, 4, t);
+	ar724x_pci_write(ar724x_pci_localcfg_base, 0x20, 4, 0x1ff01000);
+	ar724x_pci_write(ar724x_pci_localcfg_base, 0x24, 4, 0x1ff01000);
+
+	t = ar724x_pci_rr(AR724X_PCI_REG_RESET);
+	if (t != 0x7) {
+		udelay(100000);
+		ar724x_pci_wr_nf(AR724X_PCI_REG_RESET, 0);
+		udelay(100);
+		ar724x_pci_wr_nf(AR724X_PCI_REG_RESET, 4);
+		udelay(100000);
+	}
+
+	ar724x_pci_wr(AR724X_PCI_REG_APP, AR724X_PCI_APP_LTSSM_ENABLE);
+	udelay(1000);
+
+	t = ar724x_pci_rr(AR724X_PCI_REG_APP);
+	if ((t & AR724X_PCI_APP_LTSSM_ENABLE) == 0x0) {
+		printk(KERN_WARNING "PCI: no PCIe module found\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+int __init ar724x_pcibios_init(void)
+{
+	int ret;
 
 	ar724x_pci_localcfg_base = ioremap_nocache(AR724X_PCI_CRP_BASE,
 						   AR724X_PCI_CRP_SIZE);
@@ -211,11 +256,10 @@ int __init ar724x_pcibios_init(void)
 	ar724x_pci_devcfg_base = ioremap_nocache(AR724X_PCI_CFG_BASE,
 						 AR724X_PCI_CFG_SIZE);
 
-	/* setup COMMAND register */
-	t = PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INVALIDATE |
-	    PCI_COMMAND_PARITY | PCI_COMMAND_SERR | PCI_COMMAND_FAST_BACK;
-
-	ar724x_pci_write(ar724x_pci_localcfg_base, PCI_COMMAND, 4, t);
+	ar724x_pci_reset();
+	ret = ar724x_pci_setup();
+	if (ret)
+		return ret;
 
 	ar724x_pci_fixup_enable = 1;
 	register_pci_controller(&ar724x_pci_controller);
