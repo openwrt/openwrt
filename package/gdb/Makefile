@@ -42,8 +42,10 @@ define Package/gdbserver/description
  than the one which is running the program being debugged.
 endef
 
+# XXX: add --disable-werror to prevent build failure with arm
 CONFIGURE_ARGS+= \
-	--with-system-readline
+	--with-system-readline \
+	--disable-werror \
 
 CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"
