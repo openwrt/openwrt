@@ -1,40 +1,29 @@
---- a/libopkg/args.c
-+++ b/libopkg/args.c
-@@ -259,7 +259,7 @@
-     
-      printf("\nPackage Manipulation:\n");
-      printf("\tupdate  		Update list of available packages\n");
--     printf("\tupgrade			Upgrade all installed packages to latest version\n");
-+     printf("\tupgrade <pkg>		Upgrade package to latest version\n");
-      printf("\tinstall <pkg>		Download and install <pkg> (and dependencies)\n");
-      printf("\tinstall <file.opk>	Install package <file.opk>\n");
-      printf("\tconfigure [<pkg>]	Configure unpacked packages\n");
 --- a/libopkg/opkg_cmd.c
 +++ b/libopkg/opkg_cmd.c
-@@ -75,7 +75,7 @@
-    array for easier maintenance */
- static opkg_cmd_t cmds[] = {
-      {"update", 0, (opkg_cmd_fun_t)opkg_update_cmd}, 
--     {"upgrade", 0, (opkg_cmd_fun_t)opkg_upgrade_cmd},
-+     {"upgrade", 1, (opkg_cmd_fun_t)opkg_upgrade_cmd},
-      {"list", 0, (opkg_cmd_fun_t)opkg_list_cmd},
-      {"list_installed", 0, (opkg_cmd_fun_t)opkg_list_installed_cmd},
-      {"list_upgradable", 0, (opkg_cmd_fun_t)opkg_list_upgradable_cmd},
-@@ -607,17 +607,6 @@
- 		    opkg_install_by_name(conf, arg);
+@@ -495,17 +495,6 @@
+ 		    opkg_install_by_name(arg);
                 }
  	  }
 -     } else {
 -	  pkg_vec_t *installed = pkg_vec_alloc();
 -
--	  pkg_info_preinstall_check(conf);
+-	  pkg_info_preinstall_check();
 -
--	  pkg_hash_fetch_all_installed(&conf->pkg_hash, installed);
+-	  pkg_hash_fetch_all_installed(installed);
 -	  for (i = 0; i < installed->len; i++) {
 -	       pkg = installed->pkgs[i];
--	       opkg_upgrade_pkg(conf, pkg);
+-	       opkg_upgrade_pkg(pkg);
 -	  }
 -	  pkg_vec_free(installed);
       }
  
-      opkg_configure_packages(conf, NULL);
+      opkg_configure_packages(NULL);
+@@ -1163,7 +1152,7 @@
+    array for easier maintenance */
+ static opkg_cmd_t cmds[] = {
+      {"update", 0, (opkg_cmd_fun_t)opkg_update_cmd, PFM_DESCRIPTION|PFM_SOURCE},
+-     {"upgrade", 0, (opkg_cmd_fun_t)opkg_upgrade_cmd, PFM_DESCRIPTION|PFM_SOURCE},
++     {"upgrade", 1, (opkg_cmd_fun_t)opkg_upgrade_cmd, PFM_DESCRIPTION|PFM_SOURCE},
+      {"list", 0, (opkg_cmd_fun_t)opkg_list_cmd, PFM_SOURCE},
+      {"list_installed", 0, (opkg_cmd_fun_t)opkg_list_installed_cmd, PFM_SOURCE},
+      {"list-installed", 0, (opkg_cmd_fun_t)opkg_list_installed_cmd, PFM_SOURCE},

@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=opkg
-PKG_REV:=284
+PKG_REV:=503
 PKG_VERSION:=$(PKG_REV)
 PKG_RELEASE:=1
 
