@@ -91,6 +91,7 @@ config AR71XX_MACH_MZK_W300NH
 config AR71XX_MACH_TL_WR741ND
 	bool "TP-LINK TL-WR741ND support"
 	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_PCI if PCI
 	default y
 
 config AR71XX_MACH_TL_WR941ND
@@ -114,11 +115,15 @@ config AR71XX_MACH_TEW_632BRP
 config AR71XX_MACH_UBNT
 	bool "Ubiquiti AR71xx based boards support"
 	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_PCI if PCI
 	default y
 
 endmenu
 
 config AR71XX_DEV_M25P80
+	def_bool n
+
+config AR71XX_DEV_AP91_PCI
 	def_bool n
 
 config AR71XX_DEV_AP94_PCI
