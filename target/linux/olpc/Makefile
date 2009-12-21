@@ -6,7 +6,7 @@
 #
 include $(TOPDIR)/rules.mk
 
-ARCH=i386
+ARCH:=i386
 BOARD:=olpc
 BOARDNAME:=OLPC XO-1
 FEATURES:=squashfs ext2
