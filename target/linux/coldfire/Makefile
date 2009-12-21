@@ -12,7 +12,6 @@ BOARDNAME:=Freescale Coldfire v4e
 FEATURES:=squashfs broken
 
 LINUX_VERSION:=2.6.25.20
-LINUX_KARCH:=m68k
 
 include $(INCLUDE_DIR)/target.mk
 

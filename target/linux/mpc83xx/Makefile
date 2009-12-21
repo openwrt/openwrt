@@ -12,7 +12,6 @@ BOARDNAME:=Freescale MPC83xx
 FEATURES:=tgz broken
 
 LINUX_VERSION:=2.6.30.10
-LINUX_KARCH:=powerpc
 
 include $(INCLUDE_DIR)/target.mk
 

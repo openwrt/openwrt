@@ -13,7 +13,6 @@ FEATURES:=squashfs
 CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=440
 
 LINUX_VERSION:=2.6.30.10
-LINUX_KARCH:=powerpc
 
 include $(INCLUDE_DIR)/target.mk
 
