@@ -289,7 +289,7 @@ setup_interface() {
 				# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
 				local dhcpopts
 				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
-				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -R &}
+				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -O rootpath -R &}
 				lock -u "/var/lock/dhcp-$iface"
 			fi
 		;;
