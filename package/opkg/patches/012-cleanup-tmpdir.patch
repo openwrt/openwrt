@@ -1,12 +1,35 @@
 --- a/src/opkg-cl.c
 +++ b/src/opkg-cl.c
-@@ -333,6 +333,9 @@
+@@ -263,7 +263,7 @@
+ int
+ main(int argc, char *argv[])
+ {
+-	int opts;
++	int opts, err = -1;
+ 	char *cmd_name;
+ 	opkg_cmd_t *cmd;
+ 	int nocheckfordirorfile = 0;
+@@ -327,15 +327,8 @@
+ 		usage();
+ 	}
+ 
+-	if (opkg_cmd_exec(cmd, argc - opts, (const char **) (argv + opts)))
+-		goto err2;
++	err = opkg_cmd_exec(cmd, argc - opts, (const char **) (argv + opts));
+ 
+-	print_error_list();
+-	free_error_list();
+-
+-	return 0;
+-
+-err2:
+ #ifdef HAVE_CURL
+ 	opkg_curl_cleanup();
+ #endif
+@@ -346,5 +339,5 @@
  	print_error_list();
  	free_error_list();
  
-+	if( conf->tmp_dir )
-+		rm_r(conf->tmp_dir);
-+
- 	return 0;
- 
- err2:
+-	return -1;
++	return err;
+ }
