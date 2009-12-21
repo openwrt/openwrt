@@ -1,0 +1,12 @@
+--- a/src/opkg-cl.c
++++ b/src/opkg-cl.c
+@@ -333,6 +333,9 @@
+ 	print_error_list();
+ 	free_error_list();
+ 
++	if( conf->tmp_dir )
++		rm_r(conf->tmp_dir);
++
+ 	return 0;
+ 
+ err2:
