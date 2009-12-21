@@ -49,7 +49,7 @@ endef
 
 define Package/uuidgen
 $(call Package/e2fsprogs)
-  DEPENDS:=libuuid
+  DEPENDS:=+libuuid
   TITLE:=Command line utility to create a new UUID value
 endef
 
@@ -86,25 +86,25 @@ endef
 define Package/tune2fs
 $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem tune utility
-  DEPENDS:=e2fsprogs
+  DEPENDS:= +e2fsprogs
 endef
 
 define Package/resize2fs
 $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem resize utility
-  DEPENDS:=e2fsprogs
+  DEPENDS:= +e2fsprogs
 endef
 
 define Package/badblocks
 $(call Package/e2fsprogs)
   TITLE:=Ext2 Filesystem badblocks utility
-  DEPENDS:=e2fsprogs
+  DEPENDS:= +e2fsprogs
 endef
 
 define Package/blkid
 $(call Package/e2fsprogs)
   TITLE:=Command-line utility to locate/print block device attributes
-  DEPENDS:=libuuid libblkid
+  DEPENDS:=+libuuid +libblkid
 endef
 
 TARGET_CFLAGS += $(FPIC)
@@ -177,7 +177,7 @@ endef
 
 define Package/libext2fs/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libext2fs.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libext2fs.so.* $(1)/usr/lib/
 endef
 
 define Package/tune2fs/install
