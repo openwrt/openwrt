@@ -76,6 +76,9 @@ ar71xx_board_name() {
 	*TL-WR741ND)
 		name="tl-wr741nd"
 		;;
+	*"TL-WR841N v1")
+		name="tl-wr841n-v1"
+		;;
 	*TL-WR941ND)
 		name="tl-wr941nd"
 		;;

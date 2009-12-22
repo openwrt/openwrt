@@ -94,6 +94,11 @@ config AR71XX_MACH_TL_WR741ND
 	select AR71XX_DEV_AP91_PCI if PCI
 	default y
 
+config AR71XX_MACH_TL_WR841N_V1
+	bool "TP-LINK TL-WR841N v1 support"
+	select AR71XX_DEV_M25P80
+	default y
+
 config AR71XX_MACH_TL_WR941ND
 	bool "TP-LINK TL-WR941ND support"
 	select AR71XX_DEV_M25P80

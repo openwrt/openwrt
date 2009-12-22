@@ -15,6 +15,17 @@ endef
 
 $(eval $(call Profile,TLWR741NDV1))
 
+define Profile/TLWR841NV15
+	NAME:=TP-LINK TL-WR841N v1.5
+	PACKAGES:=kmod-ath9k hostapd-mini
+endef
+
+define Profile/TLWR841NV15/Description
+	Package set optimized for the TP-LINK TL-WR841N v1.5.
+endef
+
+$(eval $(call Profile,TLWR841NV15))
+
 define Profile/TLWR841NDV3
 	NAME:=TP-LINK TL-WR841ND v3
 	PACKAGES:=kmod-ath9k hostapd-mini
