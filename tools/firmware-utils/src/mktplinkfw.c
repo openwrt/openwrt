@@ -34,6 +34,7 @@
 
 #define HEADER_VERSION_V1	0x01000000
 #define HWID_TL_WR741ND_V1	0x07410001
+#define HWID_TL_WR841N_V1_5	0x08410002
 #define HWID_TL_WR841ND_V3	0x08410003
 #define HWID_TL_WR841ND_V5	0x08410005
 #define HWID_TL_WR941ND_V2	0x09410002
@@ -109,6 +110,14 @@ static struct board_info boards[] = {
 		.id		= "TL-WR741NDv1",
 		.hw_id		= HWID_TL_WR741ND_V1,
 		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id		= "TL-WR841Nv1.5",
+		.hw_id		= HWID_TL_WR841N_V1_5,
+		.hw_rev		= 2,
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
