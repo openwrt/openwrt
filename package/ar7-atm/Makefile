@@ -9,21 +9,34 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=sangam_atm
+
+ifeq ($(CONFIG_AR7_ATM_FW_VERSION_704),y)
 PKG_VERSION:=D7.04.03.00
+PKG_MD5SUM:=3d76004e46f09e88931f91670cb420ad
 PKG_RELEASE:=R1
+endif
+
+ifeq ($(CONFIG_AR7_ATM_FW_VERSION_703),y)
+PKG_VERSION:=D7.03.01.00
+PKG_MD5SUM:=bc6e9c6adb1be25820c7ee661de8ca7d
+PKG_RELEASE:=R2
+endif
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=3d76004e46f09e88931f91670cb420ad
 
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/sangam-atm/Default
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_ar7 +kmod-atm 
+  DEPENDS:=@TARGET_ar7 +kmod-atm
   TITLE:=AR7 ADSL driver
   FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,tiatm)
+endef
+
+define KernelPackage/sangam-atm/config
+	source "$(SOURCE)/Config.in"
 endef
 
 define KernelPackage/sangam-atm-annex-a
@@ -35,6 +48,10 @@ define KernelPackage/sangam-atm-annex-a/description
  The AR7 ADSL driver for Annex A (ADSL over POTS).
 endef
 
+define KernelPackage/sangam-atm-annex-a/config
+$(call KernelPackage/sangam-atm/config)
+endef
+
 define KernelPackage/sangam-atm-annex-b
 $(call KernelPackage/sangam-atm/Default)
   TITLE+= (Annex B, ADSL over ISDN)
@@ -42,6 +59,10 @@ endef
 
 define KernelPackage/sangam-atm-annex-b/description
  The AR7 ADSL driver for Annex B (ADSL over ISDN).
+endef
+
+define KernelPackage/sangam-atm-annex-a/config
+$(call KernelPackage/sangam-atm/config)
 endef
 
 define Build/Compile
