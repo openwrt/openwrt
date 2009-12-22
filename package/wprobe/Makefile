@@ -18,8 +18,12 @@ PKG_CONFIG_DEPENDS = \
 
 include $(INCLUDE_DIR)/package.mk
 
+# XXX: build failure on cris
+# wprobe-lib.c:145: error: 'packed' attribute ignored for field of type 'struct <anonymous>'
+# wprobe-lib.c:149: error: 'packed' attribute ignored for field of type 'struct <anonymous>'
+
 define Package/wprobe/Default
-  DEPENDS:=@LINUX_2_6 @(!(TARGET_ps3||TARGET_pxcab)||BROKEN)
+  DEPENDS:=@LINUX_2_6 @(!(TARGET_ps3||TARGET_pxcab||cris)||BROKEN)
 endef
 
 define KernelPackage/wprobe
