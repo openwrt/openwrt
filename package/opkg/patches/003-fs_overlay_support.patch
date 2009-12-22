@@ -26,17 +26,26 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
       int noaction;
 --- a/libopkg/opkg_install.c
 +++ b/libopkg/opkg_install.c
-@@ -194,8 +194,11 @@
+@@ -189,13 +189,19 @@
+ verify_pkg_installable(pkg_t *pkg)
+ {
+ 	unsigned long kbs_available, pkg_size_kbs;
+-	char *root_dir;
++	char *root_dir = NULL;
+ 
  	if (conf->force_space || pkg->installed_size == 0)
  		return 0;
  
 -	root_dir = pkg->dest ? pkg->dest->root_dir :
 -						conf->default_dest->root_dir;
-+	root_dir = pkg->dest
-+		? pkg->dest->root_dir
-+		: conf->overlay_root
-+			? conf->overlay_root
-+			: conf->default_dest->root_dir;
++	if( !pkg->dest || !strcmp(pkg->dest->name, "root") )
++		root_dir = conf->overlay_root;
++	else
++		root_dir = pkg->dest->root_dir;
++
++	if( !root_dir )
++		root_dir = conf->default_dest->root_dir;
++
  	kbs_available = get_available_kbytes(root_dir);
  
  	pkg_size_kbs = (pkg->installed_size + 1023)/1024;
