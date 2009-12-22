@@ -281,7 +281,7 @@ enable_mac80211() {
 check_device() {
 	config_get phy "$1" phy
 	[ -z "$phy" ] && {
-		find_mac80211_phy "$1" || return 0
+		find_mac80211_phy "$1" >/dev/null || return 0
 		config_get phy "$1" phy
 	}
 	[ "$phy" = "$dev" ] && found=1
