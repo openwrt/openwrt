@@ -7,6 +7,7 @@
 
 define Profile/TLWR741NDV1
 	NAME:=TP-LINK TL-WR741ND v1
+	PACKAGES:=kmod-ath9k hostapd-mini
 endef
 
 define Profile/TLWR741NDV1/Description
