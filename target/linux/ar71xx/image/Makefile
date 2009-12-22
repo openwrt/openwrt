@@ -458,7 +458,7 @@ define Image/Build/Profile/MZKW300NH
 endef
 
 define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/TPLINK4K/$(1),tl-wr741ndv1,board=TL-WR741ND,TL-WR741NDv1)
+	$(call Image/Build/Template/TPLINK4K/$(1),tl-wr741nd-v1,board=TL-WR741ND,TL-WR741NDv1)
 endef
 
 define Image/Build/Profile/TLWR841NV15
@@ -466,19 +466,19 @@ define Image/Build/Profile/TLWR841NV15
 endef
 
 define Image/Build/Profile/TLWR841NDV3
-	$(call Image/Build/Template/TPLINK/$(1),tl-wr841ndv3,board=TL-WR941ND,TL-WR841NDv3)
+	$(call Image/Build/Template/TPLINK/$(1),tl-wr841nd-v3,board=TL-WR941ND,TL-WR841NDv3)
 endef
 
 define Image/Build/Profile/TLWR841NDV5
-	$(call Image/Build/Template/TPLINK4K/$(1),tl-wr841ndv5,board=TL-WR741ND,TL-WR841NDv5)
+	$(call Image/Build/Template/TPLINK4K/$(1),tl-wr841nd-v5,board=TL-WR741ND,TL-WR841NDv5)
 endef
 
 define Image/Build/Profile/TLWR941NDV2
-	$(call Image/Build/Template/TPLINK/$(1),tl-wr941ndv2,board=TL-WR941ND,TL-WR941NDv2)
+	$(call Image/Build/Template/TPLINK/$(1),tl-wr941nd-v2,board=TL-WR941ND,TL-WR941NDv2)
 endef
 
 define Image/Build/Profile/TLWR1043NDV1
-	$(call Image/Build/Template/TPLINK/$(1),tl-wr1043ndv1,board=TL-WR1043ND,TL-WR1043NDv1)
+	$(call Image/Build/Template/TPLINK/$(1),tl-wr1043nd-v1,board=TL-WR1043ND,TL-WR1043NDv1)
 endef
 
 define Image/Build/Profile/WNDR3700
