@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/gdb/Default
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:= @!avr32
+  DEPENDS:= @!(avr32||cris)
 endef
 
 define Package/gdb
