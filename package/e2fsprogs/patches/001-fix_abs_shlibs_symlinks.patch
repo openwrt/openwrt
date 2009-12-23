@@ -1,0 +1,11 @@
+--- a/lib/Makefile.elf-lib
++++ b/lib/Makefile.elf-lib
+@@ -45,7 +45,7 @@ install-shlibs install:: $(ELF_LIB) inst
+ 	@echo "	SYMLINK $(ELF_INSTALL_DIR)/$(ELF_SONAME)"
+ 	@$(LN_S) -f $(ELF_LIB) $(DESTDIR)$(ELF_INSTALL_DIR)/$(ELF_SONAME)
+ 	@echo "	SYMLINK $(libdir)/$(ELF_IMAGE).so"
+-	@$(LN_S) -f $(ELF_INSTALL_DIR)/$(ELF_SONAME) \
++	@$(LN_S) -f $(ELF_SONAME) \
+ 		$(DESTDIR)$(libdir)/$(ELF_IMAGE).so
+ 	@echo "	LDCONFIG"
+ 	@-$(LDCONFIG)
