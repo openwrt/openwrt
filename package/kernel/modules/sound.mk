@@ -10,7 +10,7 @@ SOUND_MENU:=Sound Support
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT
+  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT||TARGET_uml
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
@@ -63,7 +63,7 @@ define KernelPackage/sound-core/2.6
   AUTOLOAD:=$(call AutoLoad,30,$(SOUNDCORE_LOAD))
 endef
 
-define KernelPackage/sound-core/uml-2.6
+define KernelPackage/sound-core/uml
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX)
@@ -79,7 +79,7 @@ $(eval $(call KernelPackage,sound-core))
 define KernelPackage/sound-i8x0
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
-  DEPENDS:=kmod-sound-core
+  DEPENDS:=kmod-sound-core @!TARGET_uml
   KCONFIG:=CONFIG_SND_INTEL8X0
   FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,35,snd-i8x0)
@@ -113,7 +113,7 @@ $(eval $(call KernelPackage,sound-ps3))
 define KernelPackage/sound-cs5535audio
   SUBMENU:=$(SOUND_MENU)
   TITLE:=CS5535 PCI Controller
-  DEPENDS:=kmod-sound-core
+  DEPENDS:=kmod-sound-core @!TARGET_uml
   KCONFIG:=CONFIG_SND_CS5535AUDIO
   FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/ac97_bus.$(LINUX_KMOD_SUFFIX) \
