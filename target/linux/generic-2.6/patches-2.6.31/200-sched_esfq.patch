@@ -90,7 +90,7 @@
  obj-$(CONFIG_NET_SCH_PRIO)	+= sch_prio.o
 --- /dev/null
 +++ b/net/sched/sch_esfq.c
-@@ -0,0 +1,700 @@
+@@ -0,0 +1,702 @@
 +/*
 + * net/sched/sch_esfq.c	Extended Stochastic Fairness Queueing discipline.
 + *
@@ -144,7 +144,9 @@
 +#include <net/sock.h>
 +#include <net/pkt_sched.h>
 +#include <linux/jhash.h>
++#ifdef CONFIG_NET_SCH_ESFQ_NFCT
 +#include <net/netfilter/nf_conntrack.h>
++#endif
 +
 +/*	Stochastic Fairness Queuing algorithm.
 +	For more comments look at sch_sfq.c.
