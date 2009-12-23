@@ -18,10 +18,15 @@ PKG_MD5SUM:=d104007fdf5ea64fef774c22b1c0a97b
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/ipset/Default
+  DEPENDS:= @LINUX_2_6
+endef
+
 define Package/ipset
+$(call Package/ipset/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:= @LINUX_2_6 +iptables-mod-ipset +kmod-ipt-ipset
+  DEPENDS+= +iptables-mod-ipset +kmod-ipt-ipset
   TITLE:=IPset administration utility
   URL:=http://ipset.netfilter.org/
 endef
@@ -67,9 +72,10 @@ define Package/ipset/install
 endef
 
 define KernelPackage/ipt-ipset
+$(call Package/ipset/Default)
   SUBMENU:=Netfilter Extensions
   TITLE:=IPset netfilter modules
-  DEPENDS:= @LINUX_2_6 kmod-ipt-core
+  DEPENDS+= kmod-ipt-core
   FILES:=$(foreach mod,$(IPSET_MODULES),$(PKG_BUILD_DIR)/kernel/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,46,$(IPSET_MODULES))
 endef
