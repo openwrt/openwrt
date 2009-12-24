@@ -149,7 +149,10 @@ add_template_fields(ipfix_t *handle, ipfix_template_t *t, struct wprobe_mapping 
 		if (map[i].counter)
 			continue;
 
+		g_data.lens[f] = 8;
 		g_data.addrs[f++] = &map[i].val->s;
+
+		g_data.lens[f] = 8;
 		g_data.addrs[f++] = &map[i].val->ss;
         if (ipfix_add_field( handle, t, FOKUS_USERID, map[i].id + 1, 8) < 0)
             exit(1);
