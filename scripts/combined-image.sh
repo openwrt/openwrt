@@ -7,9 +7,11 @@ BLKSZ=65536
 	exit 1
 }
 
+IMAGE=${3:-openwrt-combined.img}
+
 # Make sure provided images are 64k aligned.
-kern=$(mktemp)
-root=$(mktemp)
+kern="${IMAGE}.kernel"
+root="${IMAGE}.rootfs"
 dd if="$1" of="$kern" bs=$BLKSZ conv=sync 2>/dev/null
 dd if="$2" of="$root" bs=$BLKSZ conv=sync 2>/dev/null
 
@@ -26,7 +28,7 @@ md5=$(cat "$kern" "$root" | md5sum -)
 	$(stat -c "%s" "$kern") $(stat -c "%s" "$root") "${md5%% *}" | \
 	dd bs=$BLKSZ conv=sync;
   cat "$kern" "$root"
-) > ${3:-openwrt-combined.img} 2>/dev/null
+) > ${IMAGE} 2>/dev/null
 
 # Clean up.
 rm -f "$kern" "$root"
