@@ -164,8 +164,10 @@ start() {
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
 		}
-		if (nvram["boardtype"] == "0x478") {
-			# generic broadcom 4785 processor with 5397 switch?
+		# generic broadcom 4705/4785 processor with 5397 switch?
+		#  EXCEPT Linksys WRT300N V1.1
+		if ((nvram["boardtype"] == "0x478") && \
+		    (model != "Linksys WRT300N V1.1")) {
 			c["vlan0ports"] = "1 2 3 4 8*"
 			c["vlan1ports"] = "0 8"
 		}

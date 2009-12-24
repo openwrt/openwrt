@@ -61,6 +61,7 @@ enum {
 	WRTSL54GS,
 	WRT54G3G,
 	WRT160N,
+	WRT300NV11,
 	WRT350N,
 	WRT600N,
 	WRT600NV11,
@@ -254,6 +255,19 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "ses_blue",	.gpio = 1 << 5, .polarity = REVERSE },
 			{ .name = "ses_orange", .gpio = 1 << 3, .polarity = REVERSE },
 		},
+	},
+	[WRT300NV11] = {
+		.name           = "Linksys WRT300N V1.1",
+		.buttons        = {
+			{ .name = "reset",     .gpio = 1 << 6 }, // "Reset" on back panel
+			{ .name = "ses",       .gpio = 1 << 4 }, // "Reserved" on top panel
+		},
+		.leds           = {
+			{ .name = "power",     .gpio = 1 << 1, .polarity = NORMAL  }, // "Power"
+			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE }, // "Security" Amber
+			{ .name = "ses_green", .gpio = 1 << 5, .polarity = REVERSE }, // "Security" Green
+		},
+		.platform_init = bcm57xx_init,
 	},
 	[WRT350N] = {
 		.name		= "Linksys WRT350N",
@@ -886,6 +900,9 @@ static struct platform_t __init *platform_detect(void)
 	if (startswith(getvar("pmon_ver"), "CFE")) {
 		/* CFE based - newer hardware */
 		if (!strcmp(boardnum, "42")) { /* Linksys */
+			if (!strcmp(boardtype, "0x478") && !strcmp(getvar("boot_hw_model"), "WRT300N") && !strcmp(getvar("boot_hw_ver"), "1.1"))
+				return &platforms[WRT300NV11];
+
 			if (!strcmp(boardtype, "0x478") && !strcmp(getvar("cardbus"), "1"))
 				return &platforms[WRT350N];
 
