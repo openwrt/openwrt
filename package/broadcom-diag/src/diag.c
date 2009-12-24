@@ -132,6 +132,9 @@ enum {
 
 	/* Sitecom */
 	WL105B,
+
+	/* Askey */
+	RT210W,
 };
 
 static void __init bcm4780_init(void) {
@@ -807,6 +810,21 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 3},
 		},
 	},
+	/* Askey (and clones) */
+	[RT210W] = {
+		.name		= "Askey RT210W",
+		.buttons	= {
+			/* Power button is hard-wired to hardware reset */
+			/* but is also connected to GPIO 7 (probably for bootloader recovery)  */
+			{ .name = "power",	.gpio = 1 << 7},
+		},
+		.leds		= {
+		 	/* These were verified and named based on Belkin F5D4230-4 v1112 */
+			{ .name = "connected",	.gpio = 1 << 0, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 3, .polarity = REVERSE },
+			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -976,6 +994,18 @@ static struct platform_t __init *platform_detect(void)
 		/* unknown asus stuff, probably bcm4702 */
 		if (startswith(boardnum, "asusX"))
 			return &platforms[ASUS_4702];
+
+		/* bcm4702 based Askey RT210W clones, Including:
+		 * Askey RT210W (duh?)
+		 * Siemens SE505v1
+		 * Belkin F5D7230-4 before version v1444 (MiniPCI slot, not integrated)
+		 */
+		if (!strcmp(boardtype,"bcm94710r4")
+		 && !strcmp(boardnum ,"100")
+		 && !strcmp(getvar("pmon_ver"),"v1.03.12.bk")
+		   ){
+			return &platforms[RT210W];
+		}
 	}
 
 	if (buf || !strcmp(boardnum, "00")) {/* probably buffalo */
