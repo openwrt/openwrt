@@ -21,8 +21,9 @@
 #include "dev-m25p80.h"
 #include "dev-ar913x-wmac.h"
 
-#define TL_WR841ND_V1_GPIO_LED_SYSTEM	2
-#define TL_WR841ND_V1_GPIO_LED_QSS	5
+#define TL_WR841ND_V1_GPIO_LED_SYSTEM		2
+#define TL_WR841ND_V1_GPIO_LED_QSS_GREEN	4
+#define TL_WR841ND_V1_GPIO_LED_QSS_RED		5
 
 #define TL_WR841ND_V1_GPIO_BTN_RESET	3
 #define TL_WR841ND_V1_GPIO_BTN_QSS	7
@@ -87,8 +88,10 @@ static struct gpio_led tl_wr841n_v1_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	}, {
 		.name		= "tl-wr841n:red:qss",
-		.gpio		= TL_WR841ND_V1_GPIO_LED_QSS,
-		.active_low	= 1,
+		.gpio		= TL_WR841ND_V1_GPIO_LED_QSS_RED,
+	}, {
+		.name		= "tl-wr841n:green:qss",
+		.gpio		= TL_WR841ND_V1_GPIO_LED_QSS_GREEN,
 	}
 };
 
