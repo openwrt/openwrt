@@ -15,11 +15,10 @@
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-pb42-pci.h"
 
 #define TL_WR841ND_V1_GPIO_LED_SYSTEM		2
 #define TL_WR841ND_V1_GPIO_LED_QSS_GREEN	4
@@ -63,22 +62,6 @@ static struct flash_platform_data tl_wr841n_v1_flash_data = {
         .parts          = tl_wr841n_v1_partitions,
         .nr_parts       = ARRAY_SIZE(tl_wr841n_v1_partitions),
 #endif
-};
-
-static struct ar71xx_pci_irq tl_wr841n_v1_pci_irqs[] __initdata = {
-	{
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	}, {
-		.slot	= 1,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV1,
-	}, {
-		.slot	= 2,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV2,
-	}
 };
 
 static struct gpio_led tl_wr841n_v1_leds_gpio[] __initdata = {
@@ -153,8 +136,7 @@ static void __init tl_wr841n_v1_setup(void)
 					ARRAY_SIZE(tl_wr841n_v1_gpio_buttons),
 					tl_wr841n_v1_gpio_buttons);
 
-	ar71xx_pci_init(ARRAY_SIZE(tl_wr841n_v1_pci_irqs),
-			tl_wr841n_v1_pci_irqs);
+	pb42_pci_init();
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_WR841N_V1, "TP-LINK TL-WR841N v1",

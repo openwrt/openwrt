@@ -20,6 +20,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-pb42-pci.h"
 
 #define WP543_GPIO_SW6		2
 #define WP543_GPIO_LED_1	3
@@ -30,22 +31,6 @@
 #define WP543_GPIO_SW4		8
 
 #define WP543_BUTTONS_POLL_INTERVAL	20
-
-static struct ar71xx_pci_irq wp543_pci_irqs[] __initdata = {
-	{
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	}, {
-		.slot	= 1,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV1,
-	}, {
-		.slot	= 2,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV2,
-	}
-};
 
 static struct gpio_led wp543_leds_gpio[] __initdata = {
 	{
@@ -101,7 +86,7 @@ static void __init wp543_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar71xx_pci_init(ARRAY_SIZE(wp543_pci_irqs), wp543_pci_irqs);
+	pb42_pci_init();
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wp543_leds_gpio),
 					wp543_leds_gpio);

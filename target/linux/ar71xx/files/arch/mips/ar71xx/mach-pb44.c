@@ -22,9 +22,9 @@
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+#include "dev-pb42-pci.h"
 
 #define PB44_PCF8757_VSC7395_CS	0
 #define PB44_PCF8757_STEREO_CS	1
@@ -51,22 +51,6 @@
 #define PB44_GPIO_SW_JUMP	(PB44_GPIO_EXP_BASE + PB44_PCF8757_SW_JUMP)
 #define PB44_GPIO_LED_JUMP1	(PB44_GPIO_EXP_BASE + PB44_PCF8757_LED_JUMP1)
 #define PB44_GPIO_LED_JUMP2	(PB44_GPIO_EXP_BASE + PB44_PCF8757_LED_JUMP2)
-
-static struct ar71xx_pci_irq pb44_pci_irqs[] __initdata = {
-	{
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	}, {
-		.slot	= 1,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV1,
-	}, {
-		.slot	= 2,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV2,
-	}
-};
 
 static struct i2c_gpio_platform_data pb44_i2c_gpio_data = {
 	.sda_pin        = PB44_GPIO_I2C_SDA,
@@ -202,7 +186,7 @@ static void __init pb44_init(void)
 
 	ar71xx_add_device_usb();
 
-	ar71xx_pci_init(ARRAY_SIZE(pb44_pci_irqs), pb44_pci_irqs);
+	pb42_pci_init();
 
 	i2c_register_board_info(0, pb44_i2c_board_info,
  				ARRAY_SIZE(pb44_i2c_board_info));

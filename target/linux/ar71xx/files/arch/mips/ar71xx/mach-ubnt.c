@@ -16,11 +16,11 @@
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ap91-pci.h"
+#include "dev-pb42-pci.h"
 
 #define UBNT_RS_GPIO_LED_RF	2
 #define UBNT_RS_GPIO_SW4	8
@@ -40,22 +40,6 @@
 #define UBNT_M_GPIO_BTN_RESET	12
 
 #define UBNT_BUTTONS_POLL_INTERVAL	20
-
-static struct ar71xx_pci_irq ubnt_pci_irqs[] __initdata = {
-	{
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	}, {
-		.slot	= 1,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV1,
-	}, {
-		.slot	= 2,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV2,
-	}
-};
 
 static struct gpio_led ubnt_rs_leds_gpio[] __initdata = {
 	{
@@ -147,7 +131,7 @@ static void __init ubnt_generic_setup(void)
 					ARRAY_SIZE(ubnt_gpio_buttons),
 					ubnt_gpio_buttons);
 
-	ar71xx_pci_init(ARRAY_SIZE(ubnt_pci_irqs), ubnt_pci_irqs);
+	pb42_pci_init();
 }
 
 #define UBNT_RS_WAN_PHYMASK	(1 << 20)
