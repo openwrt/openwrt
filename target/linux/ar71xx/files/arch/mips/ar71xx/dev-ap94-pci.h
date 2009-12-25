@@ -11,8 +11,6 @@
 #ifndef _AR71XX_DEV_AP94_PCI_H
 #define _AR71XX_DEV_AP94_PCI_H
 
-#include <linux/spi/flash.h>
-
 #if defined(CONFIG_AR71XX_DEV_AP94_PCI)
 void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
 		   u8 *cal_data1, u8 *mac_addr1) __init;
