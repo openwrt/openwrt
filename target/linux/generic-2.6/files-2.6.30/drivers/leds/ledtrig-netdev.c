@@ -46,7 +46,7 @@
  *   link: LED's normal state reflects whether the link is up (has carrier) or not
  *   tx:   LED blinks on transmitted data
  *   rx:   LED blinks on receive data
- * 
+ *
  * Some suggestions:
  *
  *  Simple link status LED:
@@ -307,7 +307,7 @@ done:
 static void netdev_trig_timer(unsigned long arg)
 {
 	struct led_netdev_data *trigger_data = (struct led_netdev_data *)arg;
-	struct net_device_stats *dev_stats;
+	const struct net_device_stats *dev_stats;
 	unsigned new_activity;
 
 	write_lock(&trigger_data->lock);
@@ -317,11 +317,8 @@ static void netdev_trig_timer(unsigned long arg)
 		led_set_brightness(trigger_data->led_cdev, ((trigger_data->mode & MODE_LINK) != 0 && trigger_data->link_up) ? LED_FULL : LED_OFF);
 		goto no_restart;
 	}
-#ifdef CONFIG_COMPAT_NET_DEV_OPS
-	dev_stats = trigger_data->net_dev->get_stats(trigger_data->net_dev);
-#else
-	dev_stats = trigger_data->net_dev->netdev_ops->ndo_get_stats(trigger_data->net_dev);
-#endif
+
+	dev_stats = dev_get_stats(trigger_data->net_dev);
 	new_activity =
 		((trigger_data->mode & MODE_TX) ? dev_stats->tx_packets : 0) +
 		((trigger_data->mode & MODE_RX) ? dev_stats->rx_packets : 0);
