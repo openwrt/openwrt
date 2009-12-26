@@ -15,6 +15,7 @@
 
 #include "machtype.h"
 #include "devices.h"
+#include "dev-dsa.h"
 #include "dev-m25p80.h"
 #include "dev-ar913x-wmac.h"
 #include "dev-gpio-buttons.h"

@@ -142,6 +142,7 @@ config AR71XX_MACH_TL_WR841N_V1
 	bool "TP-LINK TL-WR841N v1 support"
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_PB42_PCI if PCI
+	select AR71XX_DEV_DSA
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	default n
@@ -150,6 +151,7 @@ config AR71XX_MACH_TL_WR941ND
 	bool "TP-LINK TL-WR941ND support"
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR913X_WMAC
+	select AR71XX_DEV_DSA
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	default n
@@ -193,6 +195,9 @@ config AR71XX_DEV_AP94_PCI
 	def_bool n
 
 config AR71XX_DEV_AR913X_WMAC
+	def_bool n
+
+config AR71XX_DEV_DSA
 	def_bool n
 
 config AR71XX_DEV_GPIO_BUTTONS
