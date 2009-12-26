@@ -22,6 +22,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ap94-pci.h"
+#include "dev-leds-gpio.h"
 
 #define WNDR3700_GPIO_LED_WPS_ORANGE	0
 #define WNDR3700_GPIO_LED_POWER_ORANGE	1

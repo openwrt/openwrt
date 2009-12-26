@@ -22,6 +22,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ar913x-wmac.h"
+#include "dev-leds-gpio.h"
 
 #define WNR2000_GPIO_LED_PWR_GREEN	14
 #define WNR2000_GPIO_LED_PWR_AMBER	7

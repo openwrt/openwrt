@@ -14,12 +14,12 @@
 #include <linux/input.h>
 
 #include <asm/mips_machine.h>
-
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ar913x-wmac.h"
+#include "dev-leds-gpio.h"
 
 #define TL_WR941ND_GPIO_LED_SYSTEM	2
 #define TL_WR941ND_GPIO_LED_QSS		5

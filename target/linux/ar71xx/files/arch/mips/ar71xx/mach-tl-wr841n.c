@@ -19,6 +19,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-pb42-pci.h"
+#include "dev-leds-gpio.h"
 
 #define TL_WR841ND_V1_GPIO_LED_SYSTEM		2
 #define TL_WR841ND_V1_GPIO_LED_QSS_GREEN	4

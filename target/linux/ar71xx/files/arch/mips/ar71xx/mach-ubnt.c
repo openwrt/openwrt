@@ -21,6 +21,7 @@
 #include "dev-m25p80.h"
 #include "dev-ap91-pci.h"
 #include "dev-pb42-pci.h"
+#include "dev-leds-gpio.h"
 
 #define UBNT_RS_GPIO_LED_RF	2
 #define UBNT_RS_GPIO_SW4	8
