@@ -9,7 +9,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 

@@ -9,10 +9,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/init.h>
-#include <linux/bitops.h>
-#include <linux/platform_device.h>
-
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
