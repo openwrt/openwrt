@@ -25,6 +25,7 @@
 #include "dev-ar913x-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define AP83_GPIO_LED_WLAN	6
 #define AP83_GPIO_LED_POWER	14

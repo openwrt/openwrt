@@ -38,7 +38,6 @@ void ar71xx_add_device_eth(unsigned int id) __init;
 
 void ar71xx_add_device_mdio(u32 phy_mask) __init;
 
-void ar71xx_add_device_usb(void) __init;
 void ar71xx_add_device_uart(void) __init;
 
 void ar71xx_add_device_wdt(void) __init;

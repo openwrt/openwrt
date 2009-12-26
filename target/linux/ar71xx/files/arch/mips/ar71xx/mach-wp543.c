@@ -20,6 +20,7 @@
 #include "dev-pb42-pci.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define WP543_GPIO_SW6		2
 #define WP543_GPIO_LED_1	3

@@ -20,6 +20,7 @@ obj-$(CONFIG_AR71XX_DEV_GPIO_BUTTONS)	+= dev-gpio-buttons.o
 obj-$(CONFIG_AR71XX_DEV_LEDS_GPIO)	+= dev-leds-gpio.o
 obj-$(CONFIG_AR71XX_DEV_M25P80)		+= dev-m25p80.o
 obj-$(CONFIG_AR71XX_DEV_PB42_PCI)	+= dev-pb42-pci.o
+obj-$(CONFIG_AR71XX_DEV_USB)		+= dev-usb.o
 
 obj-$(CONFIG_AR71XX_MACH_AP81)		+= mach-ap81.o
 obj-$(CONFIG_AR71XX_MACH_AP83)		+= mach-ap83.o

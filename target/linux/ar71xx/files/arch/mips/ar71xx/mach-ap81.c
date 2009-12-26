@@ -20,6 +20,7 @@
 #include "dev-ar913x-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define AP81_GPIO_LED_STATUS	1
 #define AP81_GPIO_LED_AOSS	3

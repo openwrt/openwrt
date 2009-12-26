@@ -19,6 +19,7 @@
 #include "dev-ar913x-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define WRT160NL_GPIO_LED_POWER		14
 #define WRT160NL_GPIO_LED_WPS_AMBER	9
