@@ -20,6 +20,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ar913x-wmac.h"
+#include "dev-leds-gpio.h"
 
 #define TL_WR1043ND_GPIO_LED_USB        1
 #define TL_WR1043ND_GPIO_LED_SYSTEM     2

@@ -20,6 +20,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ap91-pci.h"
+#include "dev-leds-gpio.h"
 
 #define TL_WR741ND_GPIO_LED_QSS		0
 #define TL_WR741ND_GPIO_LED_SYSTEM	1

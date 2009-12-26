@@ -20,6 +20,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ar913x-wmac.h"
+#include "dev-leds-gpio.h"
 
 #define AP81_GPIO_LED_STATUS	1
 #define AP81_GPIO_LED_AOSS	3

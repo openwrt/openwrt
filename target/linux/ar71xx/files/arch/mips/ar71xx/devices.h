@@ -14,7 +14,6 @@
 
 #include <asm/mach-ar71xx/platform.h>
 
-#include <linux/leds.h>
 #include <linux/gpio_buttons.h>
 #include <net/dsa.h>
 
@@ -39,10 +38,6 @@ extern struct ag71xx_platform_data ar71xx_eth1_data;
 void ar71xx_add_device_eth(unsigned int id) __init;
 
 void ar71xx_add_device_mdio(u32 phy_mask) __init;
-
-void ar71xx_add_device_leds_gpio(int id,
-				 unsigned num_leds,
-				 struct gpio_led *leds) __init;
 
 void ar71xx_add_device_gpio_buttons(int id,
 				    unsigned poll_interval,

@@ -23,6 +23,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ap94-pci.h"
+#include "dev-leds-gpio.h"
 
 #define DIR825B1_GPIO_LED_BLUE_USB		0
 #define DIR825B1_GPIO_LED_ORANGE_POWER		1

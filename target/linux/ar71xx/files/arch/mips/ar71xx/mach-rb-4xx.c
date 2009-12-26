@@ -22,6 +22,7 @@
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+#include "dev-leds-gpio.h"
 
 #define RB4XX_GPIO_USER_LED	4
 #define RB4XX_GPIO_RESET_SWITCH	7

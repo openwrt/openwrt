@@ -19,6 +19,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ar913x-wmac.h"
+#include "dev-leds-gpio.h"
 
 #define WRT160NL_GPIO_LED_POWER		14
 #define WRT160NL_GPIO_LED_WPS_AMBER	9

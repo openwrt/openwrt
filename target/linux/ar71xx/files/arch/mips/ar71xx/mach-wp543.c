@@ -21,6 +21,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-pb42-pci.h"
+#include "dev-leds-gpio.h"
 
 #define WP543_GPIO_SW6		2
 #define WP543_GPIO_LED_1	3

@@ -20,6 +20,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-pb42-pci.h"
+#include "dev-leds-gpio.h"
 
 #define AW_NR580_GPIO_LED_READY_RED	0
 #define AW_NR580_GPIO_LED_WLAN		1
