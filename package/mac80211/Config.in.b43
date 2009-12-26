@@ -47,10 +47,7 @@ config B43_FW_SQUASH
 	  from the final rootfs image. This can reduce the rootfs size by
 	  up to 200k.
 
-	  Do _NOT_ use this option, if you don't know the core revision
-	  and/or PHY type of your wireless chip.
-
-	  If unsure, say N.
+	  If unsure, say Y.
 
 config B43_FW_SQUASH_COREREVS
 	string "Core revisions to include"
@@ -66,7 +63,7 @@ config B43_FW_SQUASH_COREREVS
 config B43_FW_SQUASH_PHYTYPES
 	string "PHY types to include"
 	depends on PACKAGE_kmod-b43 && B43_FW_SQUASH
-	default "A,AG,G,LP"
+	default "G,LP"
 	help
 	  This is a comma seperated list of PHY types:
 	  A         => A-PHY

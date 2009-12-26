@@ -62,17 +62,21 @@ def phytypes_match(types_a, types_b):
 	return False
 
 revmapping = {
+	"ucode2.fw"		: (2,),
+	"ucode4.fw"		: (4,),
 	"ucode5.fw"		: (5,6,7,8,9,10,),
 	"ucode11.fw"		: (11,12,),
 	"ucode13.fw"		: (13,),
 	"ucode14.fw"		: (14,),
 	"ucode15.fw"		: (15,),
+	"pcm4.fw"		: (1,2,3,4,),
 	"pcm5.fw"		: (5,6,7,8,9,10,),
 }
 
 initvalmapping = {
 	"a0g1initvals5.fw"	: ( (5,6,7,8,9,10,),	("AG",), ),
 	"a0g0initvals5.fw"	: ( (5,6,7,8,9,10,),	("A", "AG",), ),
+	"b0g0initvals2.fw"	: ( (2,4,),		("G",), ),
 	"b0g0initvals5.fw"	: ( (5,6,7,8,9,10,),	("G",), ),
 	"b0g0initvals13.fw"	: ( (13,),		("G",), ),
 	"n0initvals11.fw"	: ( (11,12,),		("N",), ),
