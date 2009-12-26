@@ -14,7 +14,6 @@
 
 #include <asm/mach-ar71xx/platform.h>
 
-#include <linux/gpio_buttons.h>
 #include <net/dsa.h>
 
 void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
@@ -38,11 +37,6 @@ extern struct ag71xx_platform_data ar71xx_eth1_data;
 void ar71xx_add_device_eth(unsigned int id) __init;
 
 void ar71xx_add_device_mdio(u32 phy_mask) __init;
-
-void ar71xx_add_device_gpio_buttons(int id,
-				    unsigned poll_interval,
-				    unsigned nbuttons,
-				    struct gpio_button *buttons) __init;
 
 void ar71xx_add_device_usb(void) __init;
 void ar71xx_add_device_uart(void) __init;

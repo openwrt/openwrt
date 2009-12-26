@@ -11,7 +11,6 @@
 
 #include <linux/delay.h>
 #include <linux/platform_device.h>
-#include <linux/input.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
@@ -24,6 +23,7 @@
 
 #include "devices.h"
 #include "dev-ar913x-wmac.h"
+#include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
 #define AP83_GPIO_LED_WLAN	6
@@ -36,6 +36,8 @@
 #define AP83_050_GPIO_VSC7385_MISO	3
 #define AP83_050_GPIO_VSC7385_MOSI	16
 #define AP83_050_GPIO_VSC7385_SCK	17
+
+#define AP83_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition ap83_flash_partitions[] = {
@@ -214,7 +216,8 @@ static void __init ap83_generic_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap83_leds_gpio),
 					ap83_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, 20, ARRAY_SIZE(ap83_gpio_buttons),
+	ar71xx_add_device_gpio_buttons(-1, AP83_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(ap83_gpio_buttons),
 					ap83_gpio_buttons);
 
 	ar71xx_add_device_usb();
