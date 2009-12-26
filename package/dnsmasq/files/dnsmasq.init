@@ -180,7 +180,7 @@ dhcp_host_add() {
 	config_get ip "$cfg" ip
 	[ -n "$ip" ] || return 0
 
-	append args "--dhcp-host=$mac,$ip${name:+,$name}"
+	append args "--dhcp-host=$mac,${name:+net:$name,}$ip"
 }
 
 dhcp_mac_add() {
