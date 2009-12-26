@@ -72,7 +72,7 @@ static struct resource ar71xx_mdio_resources[] = {
 
 static struct ag71xx_mdio_platform_data ar71xx_mdio_data;
 
-static struct platform_device ar71xx_mdio_device = {
+struct platform_device ar71xx_mdio_device = {
 	.name		= "ag71xx-mdio",
 	.id		= -1,
 	.resource	= ar71xx_mdio_resources,
@@ -252,7 +252,7 @@ struct ag71xx_platform_data ar71xx_eth0_data = {
 	.reset_bit	= RESET_MODULE_GE0_MAC,
 };
 
-static struct platform_device ar71xx_eth0_device = {
+struct platform_device ar71xx_eth0_device = {
 	.name		= "ag71xx",
 	.id		= 0,
 	.resource	= ar71xx_eth0_resources,
@@ -285,7 +285,7 @@ struct ag71xx_platform_data ar71xx_eth1_data = {
 	.reset_bit	= RESET_MODULE_GE1_MAC,
 };
 
-static struct platform_device ar71xx_eth1_device = {
+struct platform_device ar71xx_eth1_device = {
 	.name		= "ag71xx",
 	.id		= 1,
 	.resource	= ar71xx_eth1_resources,
@@ -544,36 +544,4 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 	else
 		printk(KERN_DEBUG "ar71xx: failed to parse mac address "
 				"\"%s\"\n", mac_str);
-}
-
-static struct platform_device ar71xx_dsa_switch_device = {
-	.name		= "dsa",
-	.id		= 0,
-};
-
-void __init ar71xx_add_device_dsa(unsigned int id,
-				  struct dsa_platform_data *d)
-{
-	int i;
-
-	switch (id) {
-	case 0:
-		d->netdev = &ar71xx_eth0_device.dev;
-		break;
-	case 1:
-		d->netdev = &ar71xx_eth1_device.dev;
-		break;
-	default:
-		printk(KERN_ERR
-			"ar71xx: invalid ethernet id %d for DSA switch\n",
-			id);
-		return;
-	}
-
-	for (i = 0; i < d->nr_chips; i++)
-		d->chip[i].mii_bus = &ar71xx_mdio_device.dev;
-
-	ar71xx_dsa_switch_device.dev.platform_data = d;
-
-	platform_device_register(&ar71xx_dsa_switch_device);
 }

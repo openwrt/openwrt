@@ -14,7 +14,7 @@
 
 #include <asm/mach-ar71xx/platform.h>
 
-#include <net/dsa.h>
+struct platform_device;
 
 void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 			   struct spi_board_info const *info,
@@ -34,15 +34,15 @@ extern struct ar71xx_eth_pll_data ar71xx_eth1_pll_data;
 
 extern struct ag71xx_platform_data ar71xx_eth0_data;
 extern struct ag71xx_platform_data ar71xx_eth1_data;
+extern struct platform_device ar71xx_eth0_device;
+extern struct platform_device ar71xx_eth1_device;
 void ar71xx_add_device_eth(unsigned int id) __init;
 
+extern struct platform_device ar71xx_mdio_device;
 void ar71xx_add_device_mdio(u32 phy_mask) __init;
 
 void ar71xx_add_device_uart(void) __init;
 
 void ar71xx_add_device_wdt(void) __init;
-
-void ar71xx_add_device_dsa(unsigned int id,
-			   struct dsa_platform_data *d) __init;
 
 #endif /* __AR71XX_DEVICES_H */

@@ -16,6 +16,7 @@ obj-$(CONFIG_PCI)			+= pci.o
 obj-$(CONFIG_AR71XX_DEV_AP91_PCI)	+= dev-ap91-pci.o
 obj-$(CONFIG_AR71XX_DEV_AP94_PCI)	+= dev-ap94-pci.o
 obj-$(CONFIG_AR71XX_DEV_AR913X_WMAC)	+= dev-ar913x-wmac.o
+obj-$(CONFIG_AR71XX_DEV_DSA)		+= dev-dsa.o
 obj-$(CONFIG_AR71XX_DEV_GPIO_BUTTONS)	+= dev-gpio-buttons.o
 obj-$(CONFIG_AR71XX_DEV_LEDS_GPIO)	+= dev-leds-gpio.o
 obj-$(CONFIG_AR71XX_DEV_M25P80)		+= dev-m25p80.o
