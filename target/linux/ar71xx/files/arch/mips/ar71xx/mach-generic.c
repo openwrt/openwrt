@@ -11,8 +11,8 @@
 
 #include <linux/init.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
+#include "machtype.h"
 
 static void __init ar71xx_generic_init(void)
 {

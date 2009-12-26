@@ -9,9 +9,9 @@
  *  by the Free Software Foundation.
  */
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
+#include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-gpio-buttons.h"
