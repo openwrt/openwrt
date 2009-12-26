@@ -95,7 +95,7 @@ static int amazon_pci_config_access(unsigned char access_type,
    
 	/* Amazon support slot from 0 to 15 */
 	/* devfn 0 & 0x20 is itself */
-	if ((bus != 0) || (devfn == 0) || (devfn == 0x20))
+	if ((bus->number != 0) || (devfn == 0) || (devfn == 0x20))
 		return 1;
 
 	pci_addr=AMAZON_PCI_CFG_BASE |
@@ -124,49 +124,42 @@ static int amazon_pci_config_access(unsigned char access_type,
 static int amazon_pci_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 *val)
 {
 	u32 data = 0;
-	int ret = PCIBIOS_SUCCESSFUL;
 
-	if (amazon_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data)) {
-		data = ~0;
-		ret = -1;
-	}
+	if (amazon_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
+		return PCIBIOS_DEVICE_NOT_FOUND;
 
-	switch (size) {
-		case 1:
-			*((u8 *) val) = (data >> ((where & 3) << 3)) & 0xff;
-			break;
-		case 2:
-			*((u16 *) val) = (data >> ((where & 3) << 3)) & 0xffff;
-			break;
-		case 4:
-			*val = data;
-			break;
-		default:
-			return -1;
-	}
+	if (size == 1)
+		*val = (data >> ((where & 3) << 3)) & 0xff;
+	else if (size == 2)
+		*val = (data >> ((where & 3) << 3)) & 0xffff;
+	else
+		*val = data;
 
-	return ret;
+	return PCIBIOS_SUCCESSFUL;
 }
 
 
 static int amazon_pci_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val)
 {
-	if (size != 4) {
-		u32 data;
+	u32 data = 0;
 
+	if (size == 4)
+	{
+		data = val;
+	} else {
 		if (amazon_pci_config_access(PCI_ACCESS_READ, bus, devfn, where, &data))
-			return -1;
+			return PCIBIOS_DEVICE_NOT_FOUND;
 
 		if (size == 1)
-			val = (data & ~(0xff << ((where & 3) << 3))) | (val << ((where & 3) << 3));
+			data = (data & ~(0xff << ((where & 3) << 3))) |
+				(val << ((where & 3) << 3));
 		else if (size == 2)
-			val = (data & ~(0xffff << ((where & 3) << 3))) | (val << ((where & 3) << 3));
-		else
-			return -1;
+			data = (data & ~(0xffff << ((where & 3) << 3))) |
+				(val << ((where & 3) << 3));
 	}
 
-	if (amazon_pci_config_access(PCI_ACCESS_WRITE, bus, devfn, where, &val))
-	       return -1;
+	if (amazon_pci_config_access(PCI_ACCESS_WRITE, bus, devfn, where, &data))
+		return PCIBIOS_DEVICE_NOT_FOUND;
 
 	return PCIBIOS_SUCCESSFUL;
 }
@@ -182,7 +175,7 @@ static struct pci_controller amazon_pci_controller = {
 	.io_resource = &pci_io_resource
 };
 
-int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	switch (slot) {
 		case 13:
@@ -240,7 +233,7 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 	return 0;
 }
 
-int amazon_pci_init(void)
+int __init amazon_pci_init(void)
 {
 	u32 temp_buffer;
 
@@ -286,7 +279,7 @@ int amazon_pci_init(void)
 	//use 8 dw burse length
 	AMAZON_PCI_REG32(FPI_BURST_LENGTH) = 0x303;
 
-	set_io_port_base(ioremap(AMAZON_PCI_IO_BASE, AMAZON_PCI_IO_SIZE));
+	amazon_pci_controller.io_map_base = (unsigned long)ioremap(AMAZON_PCI_IO_BASE, AMAZON_PCI_IO_SIZE);
 	register_pci_controller(&amazon_pci_controller);
 	return 0;
 }
