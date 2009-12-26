@@ -62,7 +62,7 @@ def phytypes_match(types_a, types_b):
 	return False
 
 revmapping = {
-	"ucode2.fw"		: (2,),
+	"ucode2.fw"		: (2,3,),
 	"ucode4.fw"		: (4,),
 	"ucode5.fw"		: (5,6,7,8,9,10,),
 	"ucode11.fw"		: (11,12,),
