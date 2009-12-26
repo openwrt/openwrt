@@ -3,7 +3,7 @@
 choice
 	prompt "b43 firmware version"
 	depends on PACKAGE_kmod-b43
-	default B43_STABLE
+	default B43_EXPERIMENTAL
 	help
 	  This option allows you to select the version of the b43 firmware.
 
@@ -41,6 +41,7 @@ endchoice
 config B43_FW_SQUASH
 	bool "Remove unnecessary firmware files"
 	depends on PACKAGE_kmod-b43 && !B43_OPENFIRMWARE
+	default y
 	help
 	  This options allows you to remove unnecessary b43 firmware files
 	  from the final rootfs image. This can reduce the rootfs size by
@@ -54,7 +55,7 @@ config B43_FW_SQUASH
 config B43_FW_SQUASH_COREREVS
 	string "Core revisions to include"
 	depends on PACKAGE_kmod-b43 && B43_FW_SQUASH
-	default "5,6,7,8,9,10"
+	default "5,6,7,8,9,10,13,14,15"
 	help
 	  This is a comma seperated list of core revision numbers.
 	  Example (keep files for rev5 only):
@@ -65,7 +66,7 @@ config B43_FW_SQUASH_COREREVS
 config B43_FW_SQUASH_PHYTYPES
 	string "PHY types to include"
 	depends on PACKAGE_kmod-b43 && B43_FW_SQUASH
-	default "G,LP,N"
+	default "A,AG,G,LP"
 	help
 	  This is a comma seperated list of PHY types:
 	  A         => A-PHY
