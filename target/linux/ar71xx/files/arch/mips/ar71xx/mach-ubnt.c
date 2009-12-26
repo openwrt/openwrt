@@ -19,6 +19,7 @@
 #include "dev-gpio-buttons.h"
 #include "dev-pb42-pci.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define UBNT_RS_GPIO_LED_RF	2
 #define UBNT_RS_GPIO_SW4	8

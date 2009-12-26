@@ -19,6 +19,7 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-m25p80.h"
+#include "dev-usb.h"
 
 #define MZK_W04NU_GPIO_LED_USB		0
 #define MZK_W04NU_GPIO_LED_STATUS	1

@@ -8,6 +8,7 @@ config AR71XX_MACH_AP81
 	select AR71XX_DEV_AR913X_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_AP83
@@ -15,6 +16,7 @@ config AR71XX_MACH_AP83
 	select AR71XX_DEV_AR913X_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_DIR_615_C1
@@ -31,6 +33,7 @@ config AR71XX_MACH_DIR_825_B1
 	select AR71XX_DEV_AP94_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_PB42
@@ -45,6 +48,7 @@ config AR71XX_MACH_PB44
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_AW_NR580
@@ -66,6 +70,7 @@ config AR71XX_MACH_WP543
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_WRT160NL
@@ -74,6 +79,7 @@ config AR71XX_MACH_WRT160NL
 	select AR71XX_DEV_AR913X_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_WRT400N
@@ -87,6 +93,7 @@ config AR71XX_MACH_RB_4XX
 	bool "MikroTik RouterBOARD 4xx series support"
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_WNDR3700
@@ -95,6 +102,7 @@ config AR71XX_MACH_WNDR3700
 	select AR71XX_DEV_AP94_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_WNR2000
@@ -111,6 +119,7 @@ config AR71XX_MACH_MZK_W04NU
 	select AR71XX_DEV_AR913X_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_MZK_W300NH
@@ -151,6 +160,7 @@ config AR71XX_MACH_TL_WR1043ND
 	select AR71XX_DEV_AR913X_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
 	default y
 
 config AR71XX_MACH_TEW_632BRP
@@ -168,6 +178,7 @@ config AR71XX_MACH_UBNT
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_PB42_PCI if PCI
+	select AR71XX_DEV_USB
 	default y
 
 endmenu
@@ -191,6 +202,9 @@ config AR71XX_DEV_LEDS_GPIO
 	def_bool n
 
 config AR71XX_DEV_PB42_PCI
+	def_bool n
+
+config AR71XX_DEV_USB
 	def_bool n
 
 endif

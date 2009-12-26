@@ -26,6 +26,7 @@
 #include "dev-pb42-pci.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define PB44_PCF8757_VSC7395_CS	0
 #define PB44_PCF8757_STEREO_CS	1

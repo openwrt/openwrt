@@ -23,6 +23,7 @@
 #include "devices.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define RB4XX_GPIO_USER_LED	4
 #define RB4XX_GPIO_RESET_SWITCH	7

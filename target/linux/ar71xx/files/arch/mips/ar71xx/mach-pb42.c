@@ -16,6 +16,7 @@
 #include "dev-m25p80.h"
 #include "dev-gpio-buttons.h"
 #include "dev-pb42-pci.h"
+#include "dev-usb.h"
 
 #define PB42_BUTTONS_POLL_INTERVAL	20
 

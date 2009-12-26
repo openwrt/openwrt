@@ -23,6 +23,7 @@
 #include "dev-ap94-pci.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "dev-usb.h"
 
 #define WNDR3700_GPIO_LED_WPS_ORANGE	0
 #define WNDR3700_GPIO_LED_POWER_ORANGE	1
