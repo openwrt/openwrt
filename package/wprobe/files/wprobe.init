@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 START=90
-EXPORTER=/usr/sbin/wprobe-ipfix
+EXPORTER=/sbin/wprobe-export
 UTIL=/sbin/wprobe-util
 
 wprobe_ssd() {
@@ -30,7 +30,7 @@ start_proxy() {
 
 start_ipfix() {
 	local cfg="$1"
-	config_get ifname "$cfg" interface
+	config_get ifname "$cfg" ifname
 	config_get host "$cfg" host
 	config_get port "$cfg" port
 	config_get proto "$cfg" proto
