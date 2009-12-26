@@ -489,6 +489,10 @@ $(call KernelPackage/b43-common)
   AUTOLOAD:=$(call AutoLoad,30,b43legacy)
 endef
 
+define KernelPackage/b43legacy/config
+	source "$(SOURCE)/Config.in.b43legacy"
+endef
+
 define KernelPackage/b43legacy/description
 Kernel module for Broadcom 43xx-legacy wireless support (mac80211 stack) new
 endef
@@ -712,6 +716,9 @@ define KernelPackage/b43legacy/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
 
 	b43-fwcutter --unsupported -w $(1)/lib/firmware/ $(DL_DIR)/$(PKG_B43_FWV3_SOURCE)
+ifneq ($(CONFIG_B43LEGACY_FW_SQUASH),)
+	b43-fwsquash.py "G" "$(CONFIG_B43LEGACY_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43legacy"
+endif
 endef
 
 $(eval $(call KernelPackage,ath5k))
