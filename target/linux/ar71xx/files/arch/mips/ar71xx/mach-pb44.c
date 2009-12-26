@@ -19,9 +19,9 @@
 #include <linux/i2c-gpio.h>
 #include <linux/i2c/pcf857x.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
+#include "machtype.h"
 #include "devices.h"
 #include "dev-pb42-pci.h"
 #include "dev-gpio-buttons.h"

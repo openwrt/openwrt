@@ -17,10 +17,10 @@
 #include <linux/spi/spi_gpio.h>
 #include <linux/spi/vsc7385.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/ar91xx_flash.h>
 
+#include "machtype.h"
 #include "devices.h"
 #include "dev-ar913x-wmac.h"
 #include "dev-gpio-buttons.h"

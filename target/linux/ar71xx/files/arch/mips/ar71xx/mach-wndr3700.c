@@ -15,9 +15,9 @@
 #include <linux/delay.h>
 #include <linux/rtl8366_smi.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
+#include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ap94-pci.h"

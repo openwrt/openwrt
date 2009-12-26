@@ -24,6 +24,7 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
+#include "machtype.h"
 #include "devices.h"
 
 #define AR71XX_SYS_TYPE_LEN	64

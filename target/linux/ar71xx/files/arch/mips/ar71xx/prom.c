@@ -20,6 +20,7 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
+#include "machtype.h"
 #include "devices.h"
 
 struct board_rec {
