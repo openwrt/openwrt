@@ -11,7 +11,6 @@
 
 #include <linux/init.h>
 #include <linux/bitops.h>
-#include <linux/input.h>
 #include <linux/platform_device.h>
 
 #include <asm/mips_machine.h>
@@ -19,6 +18,7 @@
 
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-gpio-buttons.h"
 #include "dev-pb42-pci.h"
 
 #define PB42_BUTTONS_POLL_INTERVAL	20

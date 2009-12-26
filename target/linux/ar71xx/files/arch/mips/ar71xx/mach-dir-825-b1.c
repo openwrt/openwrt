@@ -13,7 +13,6 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/input.h>
 #include <linux/delay.h>
 #include <linux/rtl8366_smi.h>
 
@@ -23,6 +22,7 @@
 #include "devices.h"
 #include "dev-m25p80.h"
 #include "dev-ap94-pci.h"
+#include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
 #define DIR825B1_GPIO_LED_BLUE_USB		0

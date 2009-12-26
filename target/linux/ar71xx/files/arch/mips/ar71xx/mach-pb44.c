@@ -10,7 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/bitops.h>
-#include <linux/input.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
@@ -25,6 +24,7 @@
 
 #include "devices.h"
 #include "dev-pb42-pci.h"
+#include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
 #define PB44_PCF8757_VSC7395_CS	0

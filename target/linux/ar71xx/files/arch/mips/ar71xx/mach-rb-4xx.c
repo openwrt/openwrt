@@ -15,13 +15,13 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/spi/mmc_spi.h>
-#include <linux/input.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
 #include "devices.h"
+#include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
 #define RB4XX_GPIO_USER_LED	4
