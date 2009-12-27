@@ -167,13 +167,6 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.30)),1)
 	$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,orinoco)
 else
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)hermes.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)hermes_dld.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hermes hermes_dld orinoco)
-else
   FILES:= \
 	$(LINUX_DIR)/drivers/net/wireless/hermes.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/net/wireless/orinoco.$(LINUX_KMOD_SUFFIX)
