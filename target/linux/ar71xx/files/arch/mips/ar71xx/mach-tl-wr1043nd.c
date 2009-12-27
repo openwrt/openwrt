@@ -107,6 +107,7 @@ static struct gpio_button tl_wr1043nd_gpio_buttons[] __initdata = {
 static void __init tl_wr1043nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	ar71xx_set_mac_base(mac);
 
@@ -129,7 +130,7 @@ static void __init tl_wr1043nd_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, TL_WR1043ND_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(tl_wr1043nd_gpio_buttons),
 					tl_wr1043nd_gpio_buttons);
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_WR1043ND, "TP-LINK TL-WR1043ND", tl_wr1043nd_setup);

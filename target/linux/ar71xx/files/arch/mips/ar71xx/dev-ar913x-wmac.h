@@ -14,6 +14,6 @@
 #ifndef _AR71XX_DEV_AR913X_WMAC_H
 #define _AR71XX_DEV_AR913X_WMAC_H
 
-void ar913x_add_device_wmac(void) __init;
+void ar913x_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
 #endif /* _AR71XX_DEV_AR913X_WMAC_H */

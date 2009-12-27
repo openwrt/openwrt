@@ -194,9 +194,9 @@ static struct spi_board_info ap83_spi_info[] = {
 
 static void __init ap83_generic_setup(void)
 {
-	u8 *mac = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(mac);
+	ar71xx_set_mac_base(eeprom);
 
 	ar71xx_add_device_mdio(0xfffffffe);
 
@@ -223,7 +223,7 @@ static void __init ap83_generic_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, NULL);
 
 	platform_device_register(&ap83_flash_device);
 

@@ -102,6 +102,8 @@ static struct gpio_button tew_632brp_gpio_buttons[] __initdata = {
 
 static void __init tew_632brp_setup(void)
 {
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+
 	ar71xx_add_device_mdio(0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
@@ -124,7 +126,7 @@ static void __init tew_632brp_setup(void)
 					ARRAY_SIZE(tew_632brp_gpio_buttons),
 					tew_632brp_gpio_buttons);
 
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TRENDnet TEW-632BRP", tew_632brp_setup);

@@ -127,9 +127,9 @@ static struct gpio_button mzk_w300nh_gpio_buttons[] __initdata = {
 
 static void __init mzk_w300nh_setup(void)
 {
-	u8 *mac = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(mac);
+	ar71xx_set_mac_base(eeprom);
 
 	ar71xx_add_device_mdio(0x0);
 
@@ -153,7 +153,7 @@ static void __init mzk_w300nh_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, MZK_W04NU_BUTTONS_POLL_INTERVAL,
 				       ARRAY_SIZE(mzk_w300nh_gpio_buttons),
 				       mzk_w300nh_gpio_buttons);
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_MZK_W300NH, "Planex MZK-W300NH", mzk_w300nh_setup);

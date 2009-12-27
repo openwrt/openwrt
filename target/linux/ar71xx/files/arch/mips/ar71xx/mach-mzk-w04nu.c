@@ -128,9 +128,9 @@ static struct gpio_button mzk_w04nu_gpio_buttons[] __initdata = {
 
 static void __init mzk_w04nu_setup(void)
 {
-	u8 *mac = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(mac);
+	ar71xx_set_mac_base(eeprom);
 
 	ar71xx_add_device_mdio(0x0);
 
@@ -156,7 +156,7 @@ static void __init mzk_w04nu_setup(void)
 					mzk_w04nu_gpio_buttons);
 	ar71xx_add_device_usb();
 
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_MZK_W04NU, "Planex MZK-W04NU", mzk_w04nu_setup);

@@ -112,6 +112,8 @@ static struct gpio_button wrt160nl_gpio_buttons[] __initdata = {
 
 static void __init wrt160nl_setup(void)
 {
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+
 	ar71xx_add_device_mdio(0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
@@ -126,7 +128,7 @@ static void __init wrt160nl_setup(void)
 	ar71xx_add_device_m25p80(&wrt160nl_flash_data);
 
 	ar71xx_add_device_usb();
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, NULL);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wrt160nl_leds_gpio),
 					wrt160nl_leds_gpio);
