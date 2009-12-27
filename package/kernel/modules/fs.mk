@@ -111,12 +111,6 @@ endef
 
 $(eval $(call KernelPackage,fs-ext3))
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.28)),1)
-	EXT4_NAME:=ext4dev
-else
-	EXT4_NAME:=ext4
-endif
-
 define KernelPackage/fs-ext4
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT4 filesystem support
@@ -129,7 +123,7 @@ define KernelPackage/fs-ext4
 	CONFIG_JBD2
   DEPENDS:= @LINUX_2_6 +kmod-crc16 $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:= \
-	$(LINUX_DIR)/fs/ext4/$(EXT4_NAME).$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/ext4/ext4.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd2/jbd2.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,jbd2 $(EXT4_NAME))
 endef
@@ -278,16 +272,11 @@ endef
 $(eval $(call KernelPackage,fs-nfsd))
 
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-  MSDOS_DIR:=fat
-endif
-MSDOS_DIR?=msdos
-
 define KernelPackage/fs-msdos
   SUBMENU:=$(FS_MENU)
   TITLE:=MSDOS filesystem support
   KCONFIG:=CONFIG_MSDOS_FS
-  FILES:=$(LINUX_DIR)/fs/$(MSDOS_DIR)/msdos.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,msdos)
 $(call KernelPackage/nls/Depends)
 endef
@@ -314,11 +303,6 @@ endef
 
 $(eval $(call KernelPackage,fs-reiserfs))
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-  VFAT_DIR:=fat
-endif
-VFAT_DIR?=vfat
-
 define KernelPackage/fs-vfat
   SUBMENU:=$(FS_MENU)
   TITLE:=VFAT filesystem support
@@ -327,7 +311,7 @@ define KernelPackage/fs-vfat
 	CONFIG_VFAT_FS
   FILES:= \
 	$(LINUX_DIR)/fs/fat/fat.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/$(VFAT_DIR)/vfat.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/vfat/vfat.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
 $(call KernelPackage/nls/Depends)
 endef

@@ -192,17 +192,10 @@ define KernelPackage/ide-core
 	CONFIG_IDE_GD_ATAPI=n \
 	CONFIG_BLK_DEV_IDEDMA_PCI=y \
 	CONFIG_BLK_DEV_IDEPCI=y
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-    FILES:= \
-  	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
-      AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-gd_mod)
-else
     FILES:= \
   	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
   	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
       AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-disk)
-endif
 endef
 
 define KernelPackage/ide-core/2.4
@@ -233,11 +226,7 @@ define KernelPackage/ide-aec62xx
   TITLE:=Acard AEC62xx IDE driver
   DEPENDS:=@PCI_SUPPORT +kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-  FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.$(LINUX_KMOD_SUFFIX)
-else
   FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
-endif
   AUTOLOAD:=$(call AutoLoad,30,aec62xx)
 endef
 
@@ -269,11 +258,7 @@ define KernelPackage/ide-pdc202xx
   TITLE:=Promise PDC202xx IDE driver
   DEPENDS:=+kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
- ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-  FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
- else
   FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
- endif
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
 endef
 
@@ -294,11 +279,7 @@ define KernelPackage/ide-it821x
   TITLE:=ITE IT821x IDE driver
   DEPENDS:=+kmod-ide-core
   KCONFIG:=CONFIG_BLK_DEV_IT821X
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
-  FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
-else
   FILES=$(LINUX_DIR)/drivers/ide/pci/it821x.$(LINUX_KMOD_SUFFIX)
-endif
   AUTOLOAD:=$(call AutoLoad,30,it821x)
 endef
 
