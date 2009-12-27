@@ -305,18 +305,6 @@ define KernelPackage/bluetooth/2.6
 #	CONFIG_BT_BNEP \
 #	CONFIG_BT_HCIUSB \
 #	CONFIG_BT_HCIUART
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.27)),1)
-  FILES:= \
-	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/hidp/hidp.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/bluetooth/btusb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart btusb)
-else
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -327,7 +315,6 @@ else
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart hci_usb)
-endif
 endef
 
 define KernelPackage/bluetooth/description
@@ -383,9 +370,6 @@ $(eval $(call KernelPackage,mmc-at91))
 # XXX: added a workaround for watchdog path changes
 ifeq ($(KERNEL),2.4)
   WATCHDOG_DIR=char
-endif
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.24)),1)
-  WATCHDOG_DIR=watchdog
 endif
 WATCHDOG_DIR?=char/watchdog
 

@@ -290,7 +290,7 @@ define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
   FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_TIGON3
-  DEPENDS:=@LINUX_2_6 +LINUX_2_6_28||LINUX_2_6_30||LINUX_2_6_31:kmod-libphy @!TARGET_ubicom32
+  DEPENDS:=@LINUX_2_6 +LINUX_2_6_30||LINUX_2_6_31:kmod-libphy @!TARGET_ubicom32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   AUTOLOAD:=$(call AutoLoad,50,tg3)
 endef

@@ -14,19 +14,9 @@ CRYPTO_MENU:=Cryptographic API modules
 #  - sha1 > sha1_generic (2.6.24)
 #  - sha256 > sha256_generic (2.6.24)
 #  - sha512 > sha512_generic (2.6.26)
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.24)),1)
-  CRYPTO_GENERIC:=_generic
-  AES_SUFFIX:=$(CRYPTO_GENERIC)
-  DES_SUFFIX:=$(CRYPTO_GENERIC)
-  SHA1_SUFFIX:=$(CRYPTO_GENERIC)
-  SHA256_SUFFIX:=$(CRYPTO_GENERIC)
-endif
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.25)),1)
   CRYPTO_PREFIX:=crypto_
   BLKCIPHER_PREFIX:=$(CRYPTO_PREFIX)
-endif
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.26)),1)
-  SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 endif
 AEAD_CONF:=AEAD
 MANAGER_CONF:=MANAGER
