@@ -22,6 +22,9 @@
 
 #include "dev-ar913x-wmac.h"
 
+static struct ath9k_platform_data ar913x_wmac_data;
+static char ar913x_wmac_mac[6];
+
 static struct resource ar913x_wmac_resources[] = {
 	{
 		.start	= AR91XX_WMAC_BASE,
@@ -34,8 +37,6 @@ static struct resource ar913x_wmac_resources[] = {
 	},
 };
 
-static struct ath9k_platform_data ar913x_wmac_data;
-
 static struct platform_device ar913x_wmac_device = {
 	.name		= "ath9k",
 	.id		= -1,
@@ -46,12 +47,16 @@ static struct platform_device ar913x_wmac_device = {
 	},
 };
 
-void __init ar913x_add_device_wmac(void)
+void __init ar913x_add_device_wmac(u8 *cal_data, u8 *mac_addr)
 {
-	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
+	if (cal_data)
+		memcpy(ar913x_wmac_data.eeprom_data, cal_data,
+		       sizeof(ar913x_wmac_data.eeprom_data));
 
-	memcpy(ar913x_wmac_data.eeprom_data, ee,
-	       sizeof(ar913x_wmac_data.eeprom_data));
+	if (mac_addr) {
+		memcpy(ar913x_wmac_mac, mac_addr, sizeof(ar913x_wmac_mac));
+		ar913x_wmac_data.macaddr = ar913x_wmac_mac;
+	}
 
 	ar71xx_device_stop(RESET_MODULE_AMBA2WMAC);
 	mdelay(10);

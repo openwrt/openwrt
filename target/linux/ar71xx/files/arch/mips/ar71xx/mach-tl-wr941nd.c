@@ -111,6 +111,7 @@ static struct dsa_platform_data tl_wr941nd_dsa_data = {
 static void __init tl_wr941nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	ar71xx_set_mac_base(mac);
 
@@ -132,7 +133,7 @@ static void __init tl_wr941nd_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, TL_WR941ND_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(tl_wr941nd_gpio_buttons),
 					tl_wr941nd_gpio_buttons);
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_WR941ND, "TP-LINK TL-WR941ND", tl_wr941nd_setup);

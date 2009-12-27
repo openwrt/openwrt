@@ -126,6 +126,8 @@ static struct gpio_button dir_615c1_gpio_buttons[] __initdata = {
 
 static void __init dir_615c1_setup(void)
 {
+	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+
 	ar71xx_add_device_mdio(0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
@@ -148,7 +150,7 @@ static void __init dir_615c1_setup(void)
 					ARRAY_SIZE(dir_615c1_gpio_buttons),
 					dir_615c1_gpio_buttons);
 
-	ar913x_add_device_wmac();
+	ar913x_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_DIR_615_C1, "D-Link DIR-615 rev. C1", dir_615c1_setup);
