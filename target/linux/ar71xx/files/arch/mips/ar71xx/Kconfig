@@ -25,6 +25,7 @@ config AR71XX_MACH_DIR_615_C1
 	select AR71XX_DEV_AR913X_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_NVRAM
 	default n
 
 config AR71XX_MACH_DIR_825_B1
@@ -171,6 +172,7 @@ config AR71XX_MACH_TEW_632BRP
 	select AR71XX_DEV_AR913X_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_NVRAM
 	default n
 
 config AR71XX_MACH_UBNT
@@ -210,6 +212,9 @@ config AR71XX_DEV_PB42_PCI
 	def_bool n
 
 config AR71XX_DEV_USB
+	def_bool n
+
+config AR71XX_NVRAM
 	def_bool n
 
 endif

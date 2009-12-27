@@ -20,6 +20,7 @@
 #include "dev-ar913x-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "nvram.h"
 
 #define TEW_632BRP_GPIO_LED_STATUS	1
 #define TEW_632BRP_GPIO_LED_WPS		3
@@ -28,6 +29,9 @@
 #define TEW_632BRP_GPIO_BTN_RESET	21
 
 #define TEW_632BRP_BUTTONS_POLL_INTERVAL	20
+
+#define TEW_632BRP_CONFIG_ADDR	0x1f020000
+#define TEW_632BRP_CONFIG_SIZE	0x10000
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition tew_632brp_partitions[] = {
@@ -102,7 +106,16 @@ static struct gpio_button tew_632brp_gpio_buttons[] __initdata = {
 
 static void __init tew_632brp_setup(void)
 {
+	const char *config = (char *) KSEG1ADDR(TEW_632BRP_CONFIG_ADDR);
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 mac[6];
+	u8 *wlan_mac = NULL;
+
+	if (nvram_parse_mac_addr(config, TEW_632BRP_CONFIG_SIZE,
+			         "lan_mac=", mac) == 0) {
+		ar71xx_set_mac_base(mac);
+		wlan_mac = mac;
+	}
 
 	ar71xx_add_device_mdio(0x0);
 
@@ -126,7 +139,7 @@ static void __init tew_632brp_setup(void)
 					ARRAY_SIZE(tew_632brp_gpio_buttons),
 					tew_632brp_gpio_buttons);
 
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar913x_add_device_wmac(eeprom, wlan_mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TRENDnet TEW-632BRP", tew_632brp_setup);

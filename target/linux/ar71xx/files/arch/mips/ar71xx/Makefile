@@ -23,6 +23,8 @@ obj-$(CONFIG_AR71XX_DEV_M25P80)		+= dev-m25p80.o
 obj-$(CONFIG_AR71XX_DEV_PB42_PCI)	+= dev-pb42-pci.o
 obj-$(CONFIG_AR71XX_DEV_USB)		+= dev-usb.o
 
+obj-$(CONFIG_AR71XX_NVRAM)		+= nvram.o
+
 obj-$(CONFIG_AR71XX_MACH_AP81)		+= mach-ap81.o
 obj-$(CONFIG_AR71XX_MACH_AP83)		+= mach-ap83.o
 obj-$(CONFIG_AR71XX_MACH_AW_NR580)	+= mach-aw-nr580.o
