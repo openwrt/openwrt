@@ -25,8 +25,6 @@ menu "Target Images"
 		depends TARGET_ROOTFS_INITRAMFS
 		depends !LINUX_2_6_21
 		depends !LINUX_2_6_25
-		depends !LINUX_2_6_27
-		depends !LINUX_2_6_28
 		default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ar71xx
 		default TARGET_INITRAMFS_COMPRESSION_NONE
 		help
