@@ -20,6 +20,7 @@
 #include "dev-ar913x-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "nvram.h"
 
 #define DIR_615C1_GPIO_LED_ORANGE_STATUS 1	/* ORANGE:STATUS:TRICOLOR */
 #define DIR_615C1_GPIO_LED_BLUE_WPS	3	/* BLUE:WPS */
@@ -35,6 +36,9 @@
 #define DIR_615C1_GPIO_BTN_RESET	21
 
 #define DIR_615C1_BUTTONS_POLL_INTERVAL	20
+
+#define DIR_615C1_CONFIG_ADDR		0x1f020000
+#define DIR_615C1_CONFIG_SIZE		0x10000
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition dir_615c1_partitions[] = {
@@ -126,7 +130,16 @@ static struct gpio_button dir_615c1_gpio_buttons[] __initdata = {
 
 static void __init dir_615c1_setup(void)
 {
+	const char *config = (char *) KSEG1ADDR(DIR_615C1_CONFIG_ADDR);
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 mac[6];
+	u8 *wlan_mac = NULL;
+
+	if (nvram_parse_mac_addr(config, DIR_615C1_CONFIG_SIZE,
+			         "lan_mac=", mac) == 0) {
+		ar71xx_set_mac_base(mac);
+		wlan_mac = mac;
+	}
 
 	ar71xx_add_device_mdio(0x0);
 
@@ -150,7 +163,7 @@ static void __init dir_615c1_setup(void)
 					ARRAY_SIZE(dir_615c1_gpio_buttons),
 					dir_615c1_gpio_buttons);
 
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar913x_add_device_wmac(eeprom, wlan_mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_DIR_615_C1, "D-Link DIR-615 rev. C1", dir_615c1_setup);
