@@ -14,7 +14,7 @@ BOARD:=ubicom32
 BOARDNAME:=Ubicom IPxx
 FEATURES:=nommu ramdisk
 
-LINUX_VERSION:=2.6.28.10
+LINUX_VERSION:=2.6.30.10
 
 include $(INCLUDE_DIR)/target.mk
 
