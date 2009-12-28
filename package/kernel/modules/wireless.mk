@@ -172,7 +172,6 @@ else
 	$(LINUX_DIR)/drivers/net/wireless/orinoco.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,hermes orinoco)
 endif
-endif
 endef
 
 define KernelPackage/net-hermes/description
