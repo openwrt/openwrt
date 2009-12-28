@@ -271,12 +271,16 @@ endef
 
 $(eval $(call KernelPackage,fs-nfsd))
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.30)),1)
+  MSDOS_DIR:=fat
+endif
+MSDOS_DIR?=msdos
 
 define KernelPackage/fs-msdos
   SUBMENU:=$(FS_MENU)
   TITLE:=MSDOS filesystem support
   KCONFIG:=CONFIG_MSDOS_FS
-  FILES:=$(LINUX_DIR)/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/$(MSDOS_DIR)/msdos.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,msdos)
 $(call KernelPackage/nls/Depends)
 endef
@@ -303,6 +307,11 @@ endef
 
 $(eval $(call KernelPackage,fs-reiserfs))
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),1)
+  VFAT_DIR:=fat
+endif
+VFAT_DIR?=vfat
+
 define KernelPackage/fs-vfat
   SUBMENU:=$(FS_MENU)
   TITLE:=VFAT filesystem support
@@ -311,7 +320,7 @@ define KernelPackage/fs-vfat
 	CONFIG_VFAT_FS
   FILES:= \
 	$(LINUX_DIR)/fs/fat/fat.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/vfat/vfat.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/$(VFAT_DIR)/vfat.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
 $(call KernelPackage/nls/Depends)
 endef
