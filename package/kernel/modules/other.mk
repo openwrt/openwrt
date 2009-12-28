@@ -371,7 +371,7 @@ $(eval $(call KernelPackage,mmc-at91))
 ifeq ($(KERNEL),2.4)
   WATCHDOG_DIR=char
 endif
-WATCHDOG_DIR?=char/watchdog
+WATCHDOG_DIR?=watchdog
 
 define KernelPackage/atmel-wdt
   SUBMENU:=$(OTHER_MENU)
