@@ -313,8 +313,8 @@ define KernelPackage/bluetooth/2.6
 	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/hidp/hidp.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart hci_usb)
+	$(LINUX_DIR)/drivers/bluetooth/btusb.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart btusb)
 endef
 
 define KernelPackage/bluetooth/description
