@@ -359,3 +359,19 @@ endef
 
 $(eval $(call KernelPackage,gigaset))
 
+
+define KernelPackage/macvlan
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MAC-VLAN support
+  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21
+  KCONFIG:=CONFIG_MACVLAN
+  FILES:=$(LINUX_DIR)/drivers/net/macvlan.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,macvlan)
+endef
+
+define KernelPackage/macvlan/description
+ A kernel module which allows one to create virtual interfaces that
+ map packets to or from specific MAC addresses to a particular interface.
+endef
+
+$(eval $(call KernelPackage,macvlan))
