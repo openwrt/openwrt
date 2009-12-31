@@ -20,6 +20,7 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
+#include "nvram.h"
 
 #define WRT160NL_GPIO_LED_POWER		14
 #define WRT160NL_GPIO_LED_WPS_AMBER	9
@@ -30,6 +31,9 @@
 #define WRT160NL_GPIO_BTN_RESET		21
 
 #define WRT160NL_BUTTONS_POLL_INTERVAL	20
+
+#define WRT160NL_NVRAM_ADDR	0x1f7e0000
+#define WRT160NL_NVRAM_SIZE	0x10000
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wrt160nl_partitions[] = {
@@ -112,7 +116,13 @@ static struct gpio_button wrt160nl_gpio_buttons[] __initdata = {
 
 static void __init wrt160nl_setup(void)
 {
+	const char *nvram = (char *) KSEG1ADDR(WRT160NL_NVRAM_ADDR);
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 mac[6];
+
+	if (nvram_parse_mac_addr(nvram, WRT160NL_NVRAM_SIZE,
+			         "lan_hwaddr=", mac) == 0)
+		ar71xx_set_mac_base(mac);
 
 	ar71xx_add_device_mdio(0x0);
 
@@ -128,7 +138,12 @@ static void __init wrt160nl_setup(void)
 	ar71xx_add_device_m25p80(&wrt160nl_flash_data);
 
 	ar71xx_add_device_usb();
-	ar913x_add_device_wmac(eeprom, NULL);
+
+	if (nvram_parse_mac_addr(nvram, WRT160NL_NVRAM_SIZE,
+			         "wl0_hwaddr=", mac) == 0)
+		ar913x_add_device_wmac(eeprom, mac);
+	else
+		ar913x_add_device_wmac(eeprom, NULL);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wrt160nl_leds_gpio),
 					wrt160nl_leds_gpio);
@@ -136,6 +151,7 @@ static void __init wrt160nl_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, WRT160NL_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(wrt160nl_gpio_buttons),
 					wrt160nl_gpio_buttons);
+
 }
 
 MIPS_MACHINE(AR71XX_MACH_WRT160NL, "Linksys WRT160NL", wrt160nl_setup);
