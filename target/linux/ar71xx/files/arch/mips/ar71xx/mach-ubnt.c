@@ -163,7 +163,11 @@ static void __init ubnt_rs_setup(void)
 					ubnt_rs_leds_gpio);
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "Ubiquiti RouterStation", ubnt_rs_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "UBNT-RS", "Ubiquiti RouterStation",
+	     ubnt_rs_setup);
+
+MIPS_MACHINE(AR71XX_MACH_UBNT_AR71XX, "Ubiquiti AR71xx-based board",
+	     "Ubiquiti RouterStation", ubnt_rs_setup);
 
 static void __init ubnt_rspro_setup(void)
 {
@@ -189,7 +193,7 @@ static void __init ubnt_rspro_setup(void)
 					ubnt_rs_leds_gpio);
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_RSPRO, "Ubiquiti RouterStation Pro",
+MIPS_MACHINE(AR71XX_MACH_UBNT_RSPRO, "UBNT-RSPRO", "Ubiquiti RouterStation Pro",
 	     ubnt_rspro_setup);
 
 static void __init ubnt_lsx_setup(void)
@@ -197,7 +201,7 @@ static void __init ubnt_lsx_setup(void)
 	ubnt_generic_setup();
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_LSX, "Ubiquiti LSX", ubnt_lsx_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_LSX, "UBNT-LSX", "Ubiquiti LSX", ubnt_lsx_setup);
 
 #define UBNT_LSSR71_PHY_MASK	(1 << 1)
 
@@ -216,7 +220,8 @@ static void __init ubnt_lssr71_setup(void)
 					ubnt_ls_sr71_leds_gpio);
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "Ubiquiti LS-SR71", ubnt_lssr71_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "UBNT-LS-SR71", "Ubiquiti LS-SR71",
+	     ubnt_lssr71_setup);
 
 static void __init ubnt_m_setup(void)
 {
@@ -255,8 +260,10 @@ static void __init ubnt_rocket_m_setup(void)
 	ar71xx_add_device_usb();
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "Ubiquiti Bullet M", ubnt_m_setup);
-MIPS_MACHINE(AR71XX_MACH_UBNT_ROCKET_M, "Ubiquiti Rocket M", ubnt_rocket_m_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_BULLET_M, "UBNT-BM", "Ubiquiti Bullet M",
+	     ubnt_m_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_ROCKET_M, "UBNT-RM", "Ubiquiti Rocket M",
+	     ubnt_rocket_m_setup);
 
 /* TODO detect the second ethernet port and use one
    init function for all Ubiquiti MIMO series products */
@@ -275,4 +282,5 @@ static void __init ubnt_nano_m_setup(void)
 	ar71xx_add_device_eth(1);
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_NANO_M, "Ubiquiti Nanostation M", ubnt_nano_m_setup);
+MIPS_MACHINE(AR71XX_MACH_UBNT_NANO_M, "UBNT-NM", "Ubiquiti Nanostation M",
+	     ubnt_nano_m_setup);

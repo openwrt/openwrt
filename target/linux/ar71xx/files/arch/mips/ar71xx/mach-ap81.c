@@ -138,4 +138,4 @@ static void __init ap81_setup(void)
 	ar913x_add_device_wmac(eeprom, NULL);
 }
 
-MIPS_MACHINE(AR71XX_MACH_AP81, "Atheros AP81", ap81_setup);
+MIPS_MACHINE(AR71XX_MACH_AP81, "AP81", "Atheros AP81", ap81_setup);

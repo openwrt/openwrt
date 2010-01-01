@@ -159,4 +159,5 @@ static void __init mzk_w04nu_setup(void)
 	ar913x_add_device_wmac(eeprom, NULL);
 }
 
-MIPS_MACHINE(AR71XX_MACH_MZK_W04NU, "Planex MZK-W04NU", mzk_w04nu_setup);
+MIPS_MACHINE(AR71XX_MACH_MZK_W04NU, "MZK-W04NU", "Planex MZK-W04NU",
+	     mzk_w04nu_setup);

@@ -142,4 +142,5 @@ static void __init tew_632brp_setup(void)
 	ar913x_add_device_wmac(eeprom, wlan_mac);
 }
 
-MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TRENDnet TEW-632BRP", tew_632brp_setup);
+MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TEW-632BRP", "TRENDnet TEW-632BRP",
+	     tew_632brp_setup);

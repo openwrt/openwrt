@@ -166,4 +166,5 @@ static void __init dir_615c1_setup(void)
 	ar913x_add_device_wmac(eeprom, wlan_mac);
 }
 
-MIPS_MACHINE(AR71XX_MACH_DIR_615_C1, "D-Link DIR-615 rev. C1", dir_615c1_setup);
+MIPS_MACHINE(AR71XX_MACH_DIR_615_C1, "DIR-615-C1", "D-Link DIR-615 rev. C1",
+	     dir_615c1_setup);

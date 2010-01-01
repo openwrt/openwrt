@@ -151,4 +151,4 @@ static void __init wrt400n_setup(void)
 	/* TODO: PCI support */
 }
 
-MIPS_MACHINE(AR71XX_MACH_WRT400N, "Linksys WRT400N", wrt400n_setup);
+MIPS_MACHINE(AR71XX_MACH_WRT400N, "WRT400N", "Linksys WRT400N", wrt400n_setup);

@@ -96,4 +96,4 @@ static void __init wp543_setup(void)
 					wp543_gpio_buttons);
 }
 
-MIPS_MACHINE(AR71XX_MACH_WP543, "Compex WP543", wp543_setup);
+MIPS_MACHINE(AR71XX_MACH_WP543, "WP543", "Compex WP543", wp543_setup);

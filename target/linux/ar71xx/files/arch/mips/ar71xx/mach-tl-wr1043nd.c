@@ -133,4 +133,5 @@ static void __init tl_wr1043nd_setup(void)
 	ar913x_add_device_wmac(eeprom, NULL);
 }
 
-MIPS_MACHINE(AR71XX_MACH_TL_WR1043ND, "TP-LINK TL-WR1043ND", tl_wr1043nd_setup);
+MIPS_MACHINE(AR71XX_MACH_TL_WR1043ND, "TL-WR1043ND", "TP-LINK TL-WR1043ND",
+	     tl_wr1043nd_setup);

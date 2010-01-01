@@ -32,8 +32,6 @@
 #define AR91XX_BASE_FREQ	5000000
 #define AR724X_BASE_FREQ	5000000
 
-enum ar71xx_mach_type ar71xx_mach;
-
 u32 ar71xx_cpu_freq;
 EXPORT_SYMBOL_GPL(ar71xx_cpu_freq);
 
@@ -276,6 +274,8 @@ void __init plat_time_init(void)
 	mips_hpt_frequency = ar71xx_cpu_freq / 2;
 }
 
+__setup("board=", mips_machtype_setup);
+
 static int __init ar71xx_machine_setup(void)
 {
 	ar71xx_gpio_init();
@@ -283,7 +283,7 @@ static int __init ar71xx_machine_setup(void)
 	ar71xx_add_device_uart();
 	ar71xx_add_device_wdt();
 
-	mips_machine_setup(ar71xx_mach);
+	mips_machine_setup();
 	return 0;
 }
 

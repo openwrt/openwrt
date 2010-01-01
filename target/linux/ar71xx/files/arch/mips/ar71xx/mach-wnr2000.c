@@ -146,4 +146,4 @@ static void __init wnr2000_setup(void)
 	ar913x_add_device_wmac(eeprom, NULL);
 }
 
-MIPS_MACHINE(AR71XX_MACH_WNR2000, "NETGEAR WNR2000", wnr2000_setup);
+MIPS_MACHINE(AR71XX_MACH_WNR2000, "WNR2000", "NETGEAR WNR2000", wnr2000_setup);

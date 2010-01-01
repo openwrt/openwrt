@@ -545,3 +545,17 @@ void __init ar71xx_parse_mac_addr(char *mac_str)
 		printk(KERN_DEBUG "ar71xx: failed to parse mac address "
 				"\"%s\"\n", mac_str);
 }
+
+static int __init ar71xx_ethaddr_setup(char *str)
+{
+	ar71xx_parse_mac_addr(str);
+	return 1;
+}
+__setup("ethaddr=", ar71xx_ethaddr_setup);
+
+static int __init ar71xx_kmac_setup(char *str)
+{
+	ar71xx_parse_mac_addr(str);
+	return 1;
+}
+__setup("kmac=", ar71xx_kmac_setup);
