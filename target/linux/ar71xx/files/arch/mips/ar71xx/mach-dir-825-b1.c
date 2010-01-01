@@ -183,4 +183,5 @@ static void __init dir825b1_setup(void)
 		      (u8 *) KSEG1ADDR(DIR825B1_MAC_LOCATION_1));
 }
 
-MIPS_MACHINE(AR71XX_MACH_DIR_825_B1, "D-Link DIR-825 rev. B1", dir825b1_setup);
+MIPS_MACHINE(AR71XX_MACH_DIR_825_B1, "DIR-825-B1", "D-Link DIR-825 rev. B1",
+	     dir825b1_setup);

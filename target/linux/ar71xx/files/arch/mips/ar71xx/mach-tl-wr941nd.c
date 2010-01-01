@@ -136,4 +136,5 @@ static void __init tl_wr941nd_setup(void)
 	ar913x_add_device_wmac(eeprom, mac);
 }
 
-MIPS_MACHINE(AR71XX_MACH_TL_WR941ND, "TP-LINK TL-WR941ND", tl_wr941nd_setup);
+MIPS_MACHINE(AR71XX_MACH_TL_WR941ND, "TL-WR941ND", "TP-LINK TL-WR941ND",
+	     tl_wr941nd_setup);

@@ -69,4 +69,4 @@ static void __init pb42_init(void)
 	pb42_pci_init();
 }
 
-MIPS_MACHINE(AR71XX_MACH_PB42, "Atheros PB42", pb42_init);
+MIPS_MACHINE(AR71XX_MACH_PB42, "PB42", "Atheros PB42", pb42_init);

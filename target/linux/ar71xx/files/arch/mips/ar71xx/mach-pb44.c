@@ -205,4 +205,4 @@ static void __init pb44_init(void)
 				       pb44_gpio_buttons);
 }
 
-MIPS_MACHINE(AR71XX_MACH_PB44, "Atheros PB44", pb44_init);
+MIPS_MACHINE(AR71XX_MACH_PB44, "PB44", "Atheros PB44", pb44_init);

@@ -154,4 +154,5 @@ static void __init wrt160nl_setup(void)
 
 }
 
-MIPS_MACHINE(AR71XX_MACH_WRT160NL, "Linksys WRT160NL", wrt160nl_setup);
+MIPS_MACHINE(AR71XX_MACH_WRT160NL, "WRT160NL", "Linksys WRT160NL",
+	     wrt160nl_setup);

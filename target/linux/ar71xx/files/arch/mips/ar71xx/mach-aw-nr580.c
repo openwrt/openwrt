@@ -98,4 +98,5 @@ static void __init aw_nr580_setup(void)
 					aw_nr580_gpio_buttons);
 }
 
-MIPS_MACHINE(AR71XX_MACH_AW_NR580, "AzureWave AW-NR580", aw_nr580_setup);
+MIPS_MACHINE(AR71XX_MACH_AW_NR580, "AW-NR580", "AzureWave AW-NR580",
+	     aw_nr580_setup);

@@ -156,4 +156,5 @@ static void __init mzk_w300nh_setup(void)
 	ar913x_add_device_wmac(eeprom, NULL);
 }
 
-MIPS_MACHINE(AR71XX_MACH_MZK_W300NH, "Planex MZK-W300NH", mzk_w300nh_setup);
+MIPS_MACHINE(AR71XX_MACH_MZK_W300NH, "MZK-W300NH", "Planex MZK-W300NH",
+	     mzk_w300nh_setup);

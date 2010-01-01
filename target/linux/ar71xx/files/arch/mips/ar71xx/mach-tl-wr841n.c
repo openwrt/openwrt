@@ -140,5 +140,5 @@ static void __init tl_wr841n_v1_setup(void)
 	pb42_pci_init();
 }
 
-MIPS_MACHINE(AR71XX_MACH_TL_WR841N_V1, "TP-LINK TL-WR841N v1",
+MIPS_MACHINE(AR71XX_MACH_TL_WR841N_V1, "TL-WR841N-v1.5", "TP-LINK TL-WR841N v1",
 	     tl_wr841n_v1_setup);

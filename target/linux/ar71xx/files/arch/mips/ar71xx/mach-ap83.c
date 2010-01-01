@@ -264,4 +264,4 @@ static void __init ap83_setup(void)
 	}
 }
 
-MIPS_MACHINE(AR71XX_MACH_AP83, "Atheros AP83", ap83_setup);
+MIPS_MACHINE(AR71XX_MACH_AP83, "AP83", "Atheros AP83", ap83_setup);

@@ -133,4 +133,5 @@ static void __init tl_wr741nd_setup(void)
 
 	ap91_pci_init(ee, NULL);
 }
-MIPS_MACHINE(AR71XX_MACH_TL_WR741ND, "TP-LINK TL-WR741ND", tl_wr741nd_setup);
+MIPS_MACHINE(AR71XX_MACH_TL_WR741ND, "TL-WR741ND", "TP-LINK TL-WR741ND",
+	     tl_wr741nd_setup);
