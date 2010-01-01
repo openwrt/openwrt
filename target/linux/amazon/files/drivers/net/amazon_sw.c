@@ -38,6 +38,7 @@
 
 // copyright 2007 john crispin <blogic@openwrt.org>
 // copyright 2007 felix fietkau <nbd@openwrt.org>
+// copyright 2009 hauke mehrtens <hauke@hauke-m.de>
 
 
 // TODO
@@ -85,6 +86,7 @@
 #include <linux/ethtool.h>
 #include <asm/checksum.h>
 #include <linux/init.h>
+#include <linux/platform_device.h>
 
 #include <asm/amazon/amazon.h>
 #include <asm/amazon/amazon_dma.h>
@@ -263,7 +265,7 @@ static int __init ethaddr_setup(char *line)
 		if (line)
 			line = (*ep) ? ep + 1 : ep;
 	}
-	printk("mac address %2x-%2x-%2x-%2x-%2x-%2x \n", my_ethaddr[0], my_ethaddr[1], my_ethaddr[2], my_ethaddr[3], my_ethaddr[4], my_ethaddr[5]);
+	printk(KERN_INFO "amazon_mii0: mac address %2x-%2x-%2x-%2x-%2x-%2x \n", my_ethaddr[0], my_ethaddr[1], my_ethaddr[2], my_ethaddr[3], my_ethaddr[4], my_ethaddr[5]);
 	return 0;
 }
 
@@ -311,7 +313,7 @@ int switch_open(struct net_device *dev)
 
 #ifdef CONFIG_NET_HW_FLOWCONTROL
 	if ((priv->fc_bit = netdev_register_fc(dev, amazon_xon)) == 0) {
-		printk("Hardware Flow Control register fails\n");
+		printk(KERN_WARNING "amazon_mii0: Hardware Flow Control register fails\n");
 	}
 #endif
 
@@ -660,18 +662,18 @@ int switch_hw_receive(struct net_device *dev, struct dma_device_info *dma_dev)
 	len = dma_device_read(dma_dev, &buf, (void **) &skb);
 
 	if (len >= 0x600) {
-		printk("packet too large %d\n", len);
+		printk(KERN_WARNING "amazon_mii0: packet too large %d\n", len);
 		goto switch_hw_receive_err_exit;
 	}
 
 	/* remove CRC */
 	len -= 4;
 	if (skb == NULL) {
-		printk("cannot restore pointer\n");
+		printk(KERN_WARNING "amazon_mii0: cannot restore pointer\n");
 		goto switch_hw_receive_err_exit;
 	}
 	if (len > (skb->end - skb->tail)) {
-		printk("BUG, len:%d end:%p tail:%p\n", (len + 4), skb->end, skb->tail);
+		printk(KERN_WARNING "amazon_mii0: BUG, len:%d end:%p tail:%p\n", (len + 4), skb->end, skb->tail);
 		goto switch_hw_receive_err_exit;
 	}
 	skb_put(skb, len);
@@ -784,7 +786,7 @@ int switch_init(struct net_device *dev)
 	int result;
 	struct switch_priv *priv;
 	ether_setup(dev);			/* assign some of the fields */
-	printk("%s up using ", dev->name);
+	printk(KERN_INFO "amazon_mii0: %s up using ", dev->name);
 	dev->open = switch_open;
 	dev->stop = switch_release;
 	dev->hard_start_xmit = switch_tx;
@@ -827,7 +829,7 @@ int switch_init(struct net_device *dev)
 	return OK;
 }
 
-int switch_init_module(void)
+static int amazon_mii_probe(struct platform_device *dev)
 {
 	int i = 0, result, device_present = 0;
 	struct switch_priv *priv;
@@ -839,7 +841,7 @@ int switch_init_module(void)
 		priv = (struct switch_priv *) netdev_priv(switch_devs[i]);
 		priv->num = i;
 		if ((result = register_netdev(switch_devs[i])))
-			printk("error %i registering device \"%s\"\n", result, switch_devs[i]->name);
+			printk(KERN_WARNING "amazon_mii0: error %i registering device \"%s\"\n", result, switch_devs[i]->name);
 		else
 			device_present++;
 	}
@@ -847,7 +849,7 @@ int switch_init_module(void)
 	return device_present ? 0 : -ENODEV;
 }
 
-void switch_cleanup(void)
+static int amazon_mii_remove(struct platform_device *dev)
 {
 	int i;
 	struct switch_priv *priv;
@@ -860,11 +862,35 @@ void switch_cleanup(void)
 		kfree(netdev_priv(switch_devs[i]));
 		unregister_netdev(switch_devs[i]);
 	}
-	return;
+	return 0;
 }
 
-module_init(switch_init_module);
-module_exit(switch_cleanup);
+static struct platform_driver amazon_mii_driver = {
+	.probe = amazon_mii_probe,
+	.remove = amazon_mii_remove,
+	.driver = {
+		.name = "amazon_mii0",
+		.owner = THIS_MODULE,
+	},
+};
+
+static int __init amazon_mii_init(void)
+{
+	int ret = platform_driver_register(&amazon_mii_driver);
+	if (ret)
+		printk(KERN_WARNING "amazon_mii0: Error registering platfom driver!\n");
+	return ret;
+}
+
+static void __exit amazon_mii_cleanup(void)
+{
+	platform_driver_unregister(&amazon_mii_driver);
+}
+
+module_init(amazon_mii_init);
+module_exit(amazon_mii_cleanup);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Wu Qi Ming");
+MODULE_DESCRIPTION("ethernet driver for AMAZON boards");
+

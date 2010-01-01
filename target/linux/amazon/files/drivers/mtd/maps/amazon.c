@@ -20,6 +20,7 @@
 
 // copyright 2007 john crispin <blogic@openwrt.org>
 // copyright 2007 felix fietkau <nbd@openwrt.org>
+// copyright 2009 hauke mehrtens <hauke@hauke-m.de>
 
 #include <linux/module.h>
 #include <linux/types.h>
@@ -32,6 +33,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/cfi.h>
 #include <linux/mutex.h>
+#include <linux/platform_device.h>
 #include <asm/amazon/amazon.h>
 
 #define AMAZON_PCI_ARB_CTL_ALT 0xb100205c
@@ -41,7 +43,6 @@
 static struct map_info amazon_map = {
 	.name = "AMAZON_FLASH",
 	.bankwidth = 2,
-	.size = 0x1000000,
 };
 
 static map_word amazon_read16(struct map_info * map, unsigned long ofs)
@@ -62,7 +63,6 @@ void amazon_copy_from(struct map_info *map, void *to, unsigned long from, ssize_
 {
 	u8 *p;
 	u8 *to_8;
-	ssize_t l = len;
 	from = (unsigned long) (from + map->virt);
 	p = (u8 *) from;
 	to_8 = (u8 *) to;
@@ -102,9 +102,6 @@ static struct mtd_partition	amazon_partitions[3] = {
 	  },
 };
 
-
-unsigned long flash_start = 0x13000000;
-unsigned long flash_size = 0x800000;
 unsigned long uImage_size = 0x10000d;
 
 int find_uImage_size(unsigned long start_offset)
@@ -121,9 +118,8 @@ int find_uImage_size(unsigned long start_offset)
 	return temp + 0x40;
 }
 
-int __init init_amazon_mtd(void)
+static int __init amazon_mtd_probe(struct platform_device *dev)
 {
-	int ret = 0;
 	unsigned long uimage_size;
 	struct mtd_info *mymtd = NULL;
 	struct mtd_partition *parts = NULL;
@@ -135,18 +131,19 @@ int __init init_amazon_mtd(void)
 	amazon_map.copy_from = amazon_copy_from;
 	amazon_map.copy_to = amazon_copy_to;
 
-	amazon_map.phys = flash_start;
-	amazon_map.virt = ioremap_nocache(flash_start, flash_size);
+	amazon_map.phys = dev->resource->start;
+	amazon_map.size = dev->resource->end - amazon_map.phys + 1;
+	amazon_map.virt = ioremap_nocache(amazon_map.phys, amazon_map.size);
 	
 	if (!amazon_map.virt) {
-		printk(KERN_WARNING "Failed to ioremap!\n");
+		printk(KERN_WARNING "amazon_mtd: Failed to ioremap!\n");
 		return -EIO;
 	}
 	
 	mymtd = (struct mtd_info *) do_map_probe("cfi_probe", &amazon_map);
 	if (!mymtd) {
 		iounmap(amazon_map.virt);
-		printk("probing failed\n");
+		printk(KERN_WARNING "amazon_mtd: probing failed\n");
 		return -ENXIO;
 	}
 
@@ -173,18 +170,35 @@ int __init init_amazon_mtd(void)
 	add_mtd_partitions(mymtd, parts, 3);
 
 	printk(KERN_INFO "amazon_mtd: added %s flash with %dMB\n",
-		amazon_map.name, mymtd->size >> 20);
+		amazon_map.name, ((int)mymtd->size) >> 20);
 	return 0;
 }
 
-static void __exit cleanup_amazon_mtd(void)
+static struct platform_driver amazon_mtd_driver = {
+	.probe = amazon_mtd_probe,
+	.driver = {
+		.name = "amazon_mtd",
+		.owner = THIS_MODULE,
+	},
+};
+
+static int __init amazon_mtd_init(void)
 {
-	/* FIXME! */
+	int ret = platform_driver_register(&amazon_mtd_driver);
+	if (ret)
+		printk(KERN_WARNING "amazon_mtd: error registering platfom driver!\n");
+	return ret;
 }
 
-module_init(init_amazon_mtd);
-module_exit(cleanup_amazon_mtd);
+static void __exit amazon_mtd_cleanup(void)
+{
+	platform_driver_unregister(&amazon_mtd_driver);
+}
+
+module_init(amazon_mtd_init);
+module_exit(amazon_mtd_cleanup);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("john crispin blogic@openwrt.org");
 MODULE_DESCRIPTION("MTD map driver for AMAZON boards");
+
