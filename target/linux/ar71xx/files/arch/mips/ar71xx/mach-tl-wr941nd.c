@@ -1,7 +1,7 @@
 /*
  *  TP-LINK TL-WR941ND board support
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -22,7 +22,8 @@
 #include "dev-leds-gpio.h"
 
 #define TL_WR941ND_GPIO_LED_SYSTEM	2
-#define TL_WR941ND_GPIO_LED_QSS		5
+#define TL_WR941ND_GPIO_LED_QSS_RED	4
+#define TL_WR941ND_GPIO_LED_QSS_GREEN	5
 
 #define TL_WR941ND_GPIO_BTN_RESET	3
 #define TL_WR941ND_GPIO_BTN_QSS		7
@@ -71,8 +72,10 @@ static struct gpio_led tl_wr941nd_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	}, {
 		.name		= "tl-wr941nd:red:qss",
-		.gpio		= TL_WR941ND_GPIO_LED_QSS,
-		.active_low	= 1,
+		.gpio		= TL_WR941ND_GPIO_LED_QSS_RED,
+	}, {
+		.name		= "tl-wr941nd:green:qss",
+		.gpio		= TL_WR941ND_GPIO_LED_QSS_GREEN,
 	}
 };
 
