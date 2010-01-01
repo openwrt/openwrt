@@ -1,6 +1,6 @@
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -36,6 +36,13 @@
+@@ -36,6 +36,13 @@ config NET_DSA_MV88E6060
  	  This enables support for the Marvell 88E6060 ethernet switch
  	  chip.
  
@@ -16,7 +16,7 @@
  	default n
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -6,6 +6,7 @@
+@@ -6,6 +6,7 @@ obj-$(CONFIG_NET_DSA_TAG_TRAILER) += tag
  # switch drivers
  obj-$(CONFIG_NET_DSA_MV88E6XXX) += mv88e6xxx.o
  obj-$(CONFIG_NET_DSA_MV88E6060) += mv88e6060.o
