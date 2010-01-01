@@ -44,6 +44,7 @@
 #include <linux/console.h>
 #include <linux/sysrq.h>
 #include <linux/irq.h>
+#include <linux/platform_device.h>
 
 #include <asm/system.h>
 #include <asm/io.h>
@@ -670,7 +671,7 @@ static struct uart_driver amazonasc_reg = {
 	.cons =				&amazonasc_console,
 };
 
-static int __init amazonasc_init(void)
+static int __init amazon_asc_probe(struct platform_device *dev)
 {
 	unsigned char res;
 	uart_register_driver(&amazonasc_reg);
@@ -678,14 +679,38 @@ static int __init amazonasc_init(void)
 	return res;
 }
 
-static void __exit amazonasc_exit(void)
+static int __exit amazon_asc_remove(struct platform_device *dev)
 {
 	uart_unregister_driver(&amazonasc_reg);
+	return 0;
 }
 
-module_init(amazonasc_init);
-module_exit(amazonasc_exit);
+static struct platform_driver amazon_asc_driver = {
+	.probe = amazon_asc_probe,
+	.remove = amazon_asc_remove,
+	.driver = {
+		.name = "amazon_asc",
+		.owner = THIS_MODULE,
+	},
+};
+
+static int __init amazon_asc_init(void)
+{
+	int ret = platform_driver_register(&amazon_asc_driver);
+	if (ret)
+		printk(KERN_WARNING "amazon_asc: error registering platfom driver!\n");
+	return ret;
+}
+
+static void __exit amazon_asc_cleanup(void)
+{
+	platform_driver_unregister(&amazon_asc_driver);
+}
+
+module_init(amazon_asc_init);
+module_exit(amazon_asc_cleanup);
 
 MODULE_AUTHOR("Gary Jennejohn, Felix Fietkau, John Crispin");
 MODULE_DESCRIPTION("MIPS AMAZONASC serial port driver");
 MODULE_LICENSE("GPL");
+

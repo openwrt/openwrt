@@ -36,6 +36,7 @@
 #include <linux/ioctl.h>
 #include <asm/uaccess.h>
 #include <asm/system.h>
+#include <linux/platform_device.h>
 #include <asm/amazon/amazon.h>
 #include <asm/amazon/amazon_wdt.h>
 
@@ -206,7 +207,7 @@ static struct file_operations wdt_fops = {
 	release:	wdt_release,	
 };
 
-int __init amazon_wdt_init_module(void)
+static int __init amazon_wdt_probe(struct platform_device *dev)
 {
 	int result = result = register_chrdev(0, "watchdog", &wdt_fops);
    	
@@ -226,7 +227,7 @@ int __init amazon_wdt_init_module(void)
 	return 0;
 }
 
-void amazon_wdt_cleanup_module(void)
+static int amazon_wdt_remove(struct platform_device *dev)
 {
 	unregister_chrdev(0, "watchdog");
 #ifdef AMAZON_WDT_DEBUG
@@ -234,13 +235,35 @@ void amazon_wdt_cleanup_module(void)
 	remove_proc_entry("amazon_wdt", NULL);
 #endif
 	printk(KERN_INFO DRV_NAME "unregistered\n");
-	return;
+	return 0;
 }
+
+static struct platform_driver amazon_wdt_driver = {
+	.probe = amazon_wdt_probe,
+	.remove = amazon_wdt_remove,
+	.driver = {
+		.name = "amazon_wdt",
+		.owner = THIS_MODULE,
+	},
+};
+
+static int __init amazon_wdt_init(void)
+{
+	int ret = platform_driver_register(&amazon_wdt_driver);
+	if (ret)
+		printk(KERN_WARNING "amazon_wdt: error registering platfom driver!\n");
+	return ret;
+}
+
+static void __exit amazon_wdt_exit(void)
+{
+	platform_driver_unregister(&amazon_wdt_driver);
+}
+
+module_init(amazon_wdt_init);
+module_exit(amazon_wdt_exit);
 
 MODULE_LICENSE ("GPL");
 MODULE_AUTHOR("Infineon / John Crispin <blogic@openwrt.org>");
 MODULE_DESCRIPTION("AMAZON WDT driver");
-
-module_init(amazon_wdt_init_module);
-module_exit(amazon_wdt_cleanup_module);
 
