@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2775,6 +2775,16 @@ int shmem_lock(struct file *file, int lo
+@@ -2608,6 +2608,16 @@ int shmem_lock(struct file *file, int lo
  
  /* common code */
  
@@ -17,7 +17,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2854,9 +2864,6 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2687,9 +2697,6 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
@@ -68,7 +68,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6075,6 +6075,7 @@ int can_nice(const struct task_struct *p
+@@ -6095,6 +6095,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }

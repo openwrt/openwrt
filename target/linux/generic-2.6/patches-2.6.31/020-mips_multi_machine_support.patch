@@ -127,7 +127,7 @@
 +}
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -87,6 +87,7 @@
+@@ -87,6 +87,7 @@ obj-$(CONFIG_GPIO_TXX9)		+= gpio_txx9.o
  
  obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
@@ -137,7 +137,7 @@
  
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -837,6 +837,9 @@
+@@ -837,6 +837,9 @@ config MIPS_DISABLE_OBSOLETE_IDE
  config SYNC_R4K
  	bool
  
@@ -157,7 +157,7 @@
  
  unsigned int vced_count, vcei_count;
  
-@@ -31,8 +32,12 @@
+@@ -31,8 +32,12 @@ static int show_cpuinfo(struct seq_file 
  	/*
  	 * For the first processor also print the system type
  	 */
