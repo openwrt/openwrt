@@ -25,9 +25,14 @@
    other party has been advised of the possibility of such damages. 
 ******************************************************************************/
 
-#define amazon_readl(a)					readl(((u32*)(a)))
-#define amazon_writel(a,b)				writel(a, ((u32*)(b)))
-#define amazon_writel_masked(a,b,c)		writel((readl(((u32*)(a))) & ~b) | (c & b), ((u32*)(a)))
+#define amazon_readl(a)					__raw_readl(((u32*)(a)))
+#define amazon_writel(a,b)				__raw_writel(a, ((u32*)(b)))
+#define amazon_writel_masked(a,b,c)		__raw_writel((__raw_readl(((u32*)(a))) & ~b) | (c & b), ((u32*)(a)))
+
+#define IOPORT_RESOURCE_START		0x10000000
+#define IOPORT_RESOURCE_END		0xffffffff
+#define IOMEM_RESOURCE_START		0x10000000
+#define IOMEM_RESOURCE_END		0xffffffff
 
 /* check ADSL link status */
 #define AMAZON_CHECK_LINK
