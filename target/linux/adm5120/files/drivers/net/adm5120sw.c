@@ -517,7 +517,7 @@ static int adm5120_if_poll(struct napi_struct *napi, int limit)
 	status = sw_int_status() & SWITCH_INTS_POLL;
 	if ((done < limit) && (!status)) {
 		SW_DBG("disable polling mode for %s\n", dev->name);
-		netif_rx_complete(dev, napi);
+		napi_complete(napi);
 		sw_int_unmask(SWITCH_INTS_POLL);
 		return 0;
 	}
@@ -548,7 +548,7 @@ static irqreturn_t adm5120_switch_irq(int irq, void *dev_id)
 		sw_dump_intr_mask("poll ints", status);
 		SW_DBG("enable polling mode for %s\n", dev->name);
 		sw_int_mask(SWITCH_INTS_POLL);
-		netif_rx_schedule(dev, &priv->napi);
+		napi_schedule(&priv->napi);
 	}
 #else
 	sw_int_ack(status);
@@ -973,9 +973,12 @@ static void adm5120_if_set_multicast_list(struct net_device *dev)
 
 static int adm5120_if_set_mac_address(struct net_device *dev, void *p)
 {
-	struct sockaddr *addr = p;
+	int ret;
 
-	memcpy(dev->dev_addr, addr->sa_data, dev->addr_len);
+	ret = eth_mac_addr(dev, p);
+	if (ret)
+		return ret;
+
 	adm5120_write_mac(dev);
 	return 0;
 }
@@ -1017,6 +1020,18 @@ static int adm5120_if_do_ioctl(struct net_device *dev, struct ifreq *rq,
 	return 0;
 }
 
+static const struct net_device_ops adm5120sw_netdev_ops = {
+        .ndo_open               = adm5120_if_open,
+        .ndo_stop               = adm5120_if_stop,
+        .ndo_start_xmit         = adm5120_if_hard_start_xmit,
+        .ndo_set_multicast_list = adm5120_if_set_multicast_list,
+        .ndo_do_ioctl           = adm5120_if_do_ioctl,
+        .ndo_tx_timeout         = adm5120_if_tx_timeout,
+        .ndo_validate_addr      = eth_validate_addr,
+        .ndo_change_mtu         = eth_change_mtu,
+	.ndo_set_mac_address    = adm5120_if_set_mac_address,
+};
+
 static struct net_device *adm5120_if_alloc(void)
 {
 	struct net_device *dev;
@@ -1030,14 +1045,8 @@ static struct net_device *adm5120_if_alloc(void)
 	priv->dev = dev;
 
 	dev->irq		= ADM5120_IRQ_SWITCH;
-	dev->open		= adm5120_if_open;
-	dev->hard_start_xmit 	= adm5120_if_hard_start_xmit;
-	dev->stop		= adm5120_if_stop;
-	dev->set_multicast_list	= adm5120_if_set_multicast_list;
-	dev->do_ioctl		= adm5120_if_do_ioctl;
-	dev->tx_timeout		= adm5120_if_tx_timeout;
+	dev->netdev_ops		= &adm5120sw_netdev_ops;
 	dev->watchdog_timeo 	= TX_TIMEOUT;
-	dev->set_mac_address 	= adm5120_if_set_mac_address;
 
 #ifdef CONFIG_ADM5120_SWITCH_NAPI
 	netif_napi_add(dev, &priv->napi, adm5120_if_poll, 64);
