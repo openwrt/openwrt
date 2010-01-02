@@ -133,6 +133,9 @@ enum {
 	/* Sitecom */
 	WL105B,
 
+	/* Western Digital */
+	WDNetCenter,
+
 	/* Askey */
 	RT210W,
 };
@@ -149,6 +152,21 @@ static void __init bcm4780_init(void) {
 		/* Wait 5s, so the HDD can spin up */
 		set_current_state(TASK_INTERRUPTIBLE);
 		schedule_timeout(HZ * 5);
+}
+
+static void __init NetCenter_init(void) {
+		/* unset pin 6 (+12V) */
+		int pin = 1 << 6;
+		gpio_outen(pin, pin);
+		gpio_control(pin, 0);
+		gpio_out(pin, pin);
+		/* unset pin 1 (turn off red led, blue will light alone if +5V comes up) */
+		pin = 1 << 1;
+		gpio_outen(pin, pin);
+		gpio_control(pin, 0);
+		gpio_out(pin, pin);
+		/* unset pin 3 (+5V) and wait 5 seconds (harddisk spin up) */
+		bcm4780_init();
 }
 
 static void __init bcm57xx_init(void) {
@@ -810,6 +828,15 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 3},
 		},
 	},
+	/* Western Digital Net Center */
+	[WDNetCenter] = {
+		.name   = "Western Digital NetCenter",
+		.buttons        = {
+			{ .name = "power",	.gpio = 1 << 0},
+			{ .name = "reset",	.gpio = 1 << 7},
+		},
+		.platform_init = NetCenter_init,
+	},
 	/* Askey (and clones) */
 	[RT210W] = {
 		.name		= "Askey RT210W",
@@ -964,6 +991,10 @@ static struct platform_t __init *platform_detect(void)
 		if (!strcmp(boardtype, "0x048e") && !strcmp(getvar("boardrev"),"0x35") &&
 				!strcmp(getvar("boardflags"), "0x750")) /* D-Link DIR-320 */
 			return &platforms[DIR320];
+
+		if (!strncmp(boardnum, "TH",2) && !strcmp(boardtype,"0x042f")) {
+			return &platforms[WDNetCenter];
+		}
 
 	} else { /* PMON based - old stuff */
 		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
