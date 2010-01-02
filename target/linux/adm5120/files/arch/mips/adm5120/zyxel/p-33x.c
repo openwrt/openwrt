@@ -27,11 +27,15 @@ static struct mtd_partition p33x_partitions[] = {
 		.name	= "rom",
 		.offset	= MTDPART_OFS_APPEND,
 		.size	= 16*1024,
-	} , {
-		.name	= "bootext",
-		.offset	= MTDPART_OFS_APPEND,
-		.size	= 96*1024,
 		.mask_flags = MTD_WRITEABLE,
+	} , {
+		.name	= "bootext1",
+		.offset	= MTDPART_OFS_APPEND,
+		.size	= 32*1024,
+	} , {
+		.name	= "bootext2",
+		.offset	= MTDPART_OFS_APPEND,
+		.size	= 64*1024,
 	} , {
 		.name	= "trx",
 		.offset	= MTDPART_OFS_APPEND,
@@ -83,7 +87,7 @@ void __init p33x_generic_setup(void)
 	adm5120_add_device_gpio(P33X_GPIO_DEV_MASK);
 
 	adm5120_setup_eth_macs(bootbase_info.mac);
-	adm5120_add_device_switch(5, p33x_vlans);
+	adm5120_add_device_switch(6, p33x_vlans);
 
 	adm5120_pci_set_irq_map(ARRAY_SIZE(p33x_pci_irqs), p33x_pci_irqs);
 }
