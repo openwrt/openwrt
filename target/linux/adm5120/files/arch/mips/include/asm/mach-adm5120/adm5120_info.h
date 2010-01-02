@@ -37,8 +37,6 @@ extern unsigned int adm5120_package;
 
 extern unsigned long adm5120_memsize;
 
-extern unsigned long adm5120_mach_type;
-
 #define MACH_ADM5120_GENERIC	0	/* Generic board */
 #define MACH_ADM5120_WP54G_WRT	1	/* Compex WP54G-WRT */
 #define MACH_ADM5120_WP54	2	/* Compex WP54G/WP54AG/WPP54G/WPP54AG */
