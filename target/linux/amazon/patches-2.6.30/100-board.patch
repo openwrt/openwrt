@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -60,6 +60,21 @@ config BCM47XX
+@@ -60,6 +60,22 @@ config BCM47XX
  	help
  	 Support for BCM47XX based boards
  
@@ -18,11 +18,12 @@
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select SYS_HAS_EARLY_PRINTK
 +	select HW_HAS_PCI
++	select SWAP_IO_SPACE
 +
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-@@ -633,6 +648,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -633,6 +649,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  
  endchoice
  

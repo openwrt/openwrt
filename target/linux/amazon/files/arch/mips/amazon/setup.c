@@ -155,6 +155,11 @@ void __init plat_mem_setup(void)
 	amazon_writel(0x3fff, AMAZON_PMU_PWDCR);
 	//reenable trace capability
 	part_no = readl(AMAZON_BCU_ECON);
+
+	ioport_resource.start = IOPORT_RESOURCE_START;
+	ioport_resource.end = IOPORT_RESOURCE_END;
+	iomem_resource.start = IOMEM_RESOURCE_START;
+	iomem_resource.end = IOMEM_RESOURCE_END;
 }
 
 static void amazon_machine_restart(char *command)
