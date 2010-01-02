@@ -12,7 +12,6 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
-//#include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
@@ -24,7 +23,6 @@ unsigned int adm5120_revision;
 unsigned int adm5120_package;
 unsigned int adm5120_nand_boot;
 unsigned long adm5120_speed;
-unsigned long adm5120_mach_type;
 
 /*
  * CPU settings detection

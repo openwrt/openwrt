@@ -21,6 +21,7 @@
 #include <linux/kernel.h>
 #include <linux/io.h>
 
+#include <asm/bootinfo.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
 #include <asm/mips_machine.h>
@@ -106,7 +107,7 @@ static int __init adm5120_board_setup(void)
 {
 	adm5120_gpio_init();
 
-	mips_machine_setup(adm5120_mach_type);
+	mips_machine_setup(mips_machtype);
 
 	return 0;
 }

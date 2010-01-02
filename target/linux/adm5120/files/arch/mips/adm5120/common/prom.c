@@ -202,35 +202,35 @@ static void __init prom_detect_machtype(void)
 {
 	if (bootbase_present()) {
 		adm5120_prom_type = ADM5120_PROM_BOOTBASE;
-		adm5120_mach_type = detect_machtype_bootbase();
+		mips_machtype = detect_machtype_bootbase();
 		return;
 	}
 
 	if (cfe_present()) {
 		adm5120_prom_type = ADM5120_PROM_CFE;
-		adm5120_mach_type = detect_machtype_cfe();
+		mips_machtype = detect_machtype_cfe();
 		return;
 	}
 
 	if (myloader_present()) {
 		adm5120_prom_type = ADM5120_PROM_MYLOADER;
-		adm5120_mach_type = detect_machtype_myloader();
+		mips_machtype = detect_machtype_myloader();
 		return;
 	}
 
 	if (routerboot_present()) {
 		adm5120_prom_type = ADM5120_PROM_ROUTERBOOT;
-		adm5120_mach_type = detect_machtype_routerboot();
+		mips_machtype = detect_machtype_routerboot();
 		return;
 	}
 
 	if (generic_prom_present()) {
 		adm5120_prom_type = ADM5120_PROM_GENERIC;
-		adm5120_mach_type = detect_machtype_generic();
+		mips_machtype = detect_machtype_generic();
 		return;
 	}
 
-	adm5120_mach_type = MACH_ADM5120_GENERIC;
+	mips_machtype = MACH_ADM5120_GENERIC;
 }
 
 #ifdef CONFIG_IMAGE_CMDLINE_HACK
