@@ -190,7 +190,7 @@ struct amba_pl010_data adm5120_uart0_data = {
 
 struct amba_device adm5120_uart0_device = {
 	.dev		= {
-		.bus_id	= "APB:UART0",
+		.init_name = "apb:uart0",
 		.platform_data = &adm5120_uart0_data,
 	},
 	.res		= {
@@ -208,7 +208,7 @@ struct amba_pl010_data adm5120_uart1_data = {
 
 struct amba_device adm5120_uart1_device = {
 	.dev		= {
-		.bus_id	= "APB:UART1",
+		.init_name = "apb:uart1",
 		.platform_data = &adm5120_uart1_data,
 	},
 	.res		= {
