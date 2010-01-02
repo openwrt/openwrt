@@ -35,6 +35,7 @@ status_led_off() {
 set_state() {
 	case "$1" in
 	preinit)
+		insmod leds-gpio
 		status_led_set_timer 200 200
 		;;
 	failsafe)
