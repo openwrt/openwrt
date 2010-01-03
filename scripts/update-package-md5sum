@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+#
+# update-package-md5sum - Updates md5sum of OpenWrt packages
+#
+# update-package-md5sum will update the md5sum for all recusivly found OpenWrt packages
+# in a given directory.
+#
+# Usage: scripts/update-package-md5sum <package directory>
+#
+# Example: `scripts/update-package-md5sum feeds/packages/python`
+
+DL_FOLDER=`grep -Eo '^CONFIG_DOWNLOAD_FOLDER=".*"$' .config | \
+    sed 's,^CONFIG_DOWNLOAD_FOLDER="\(.*\)"$,\1,'`
+if test -z ${DL_FOLDER}; then
+    DL_FOLDER=./dl
+fi
+
+if test -z "$1"; then
+	echo "Usage: $0 <package directory>"
+	exit
+fi
+
+for file in `find $1 -name Makefile`; do
+    if grep BuildPackage ${file} > /dev/null; then
+        source=`DUMP=1 TOPDIR=\`pwd\` make -f ${file} | grep -m 1 Source | cut -f 2 -d ' '`
+        if test -n "${source}"; then
+			if test ! -f "${DL_FOLDER}/${source}"; then
+				make package/`basename \`dirname ${file}\``/download
+			fi
+            sum=`md5sum ${DL_FOLDER}/${source} 2> /dev/null` || continue
+            echo Updating ${file}...
+            sum=`echo ${sum} | cut -d ' ' -f 1`
+            sed -i "s,^PKG_MD5SUM:=.*,PKG_MD5SUM:=${sum}," ${file}
+        else
+            echo No source for ${file}
+        fi
+    fi
+done
