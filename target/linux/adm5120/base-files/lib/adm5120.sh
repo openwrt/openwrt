@@ -9,7 +9,7 @@ status_led=""
 sys_mtd_part=""
 
 adm5120_detect() {
-	board_name=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /system type/ {print $2}' /proc/cpuinfo)
+	board_name=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$board_name" in
 	"Cellvision"*)
