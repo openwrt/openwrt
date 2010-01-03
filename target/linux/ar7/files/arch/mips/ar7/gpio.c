@@ -21,11 +21,11 @@
 
 #include <asm/ar7/gpio.h>
 
-static const char *ar7_gpio_list[AR7_GPIO_MAX];
+static const char *ar7_gpio_list[TITAN_GPIO_MAX];
 
 int gpio_request(unsigned gpio, const char *label)
 {
-	if (gpio >= AR7_GPIO_MAX)
+	if (gpio >= (ar7_is_titan() ? TITAN_GPIO_MAX : AR7_GPIO_MAX))
 		return -EINVAL;
 
 	if (ar7_gpio_list[gpio])

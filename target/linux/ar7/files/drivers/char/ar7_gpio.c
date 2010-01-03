@@ -98,7 +98,7 @@ static int ar7_gpio_open(struct inode *inode, struct file *file)
 {
 	int m = iminor(inode);
 
-	if (m >= AR7_GPIO_MAX)
+	if (m >= (ar7_is_titan() ? TITAN_GPIO_MAX : AR7_GPIO_MAX))
 		return -EINVAL;
 
 	return nonseekable_open(inode, file);
