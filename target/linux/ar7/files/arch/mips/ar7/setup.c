@@ -23,8 +23,10 @@
 #include <asm/reboot.h>
 #include <asm/time.h>
 #include <asm/ar7/ar7.h>
+#include <asm/ar7/gpio.h>
 #include <asm/ar7/prom.h>
 
+static int titan_variant;  /*hold the results of the gpio_init_titan_variant() so that it is only called once*/
 static void ar7_machine_restart(char *command);
 static void ar7_machine_halt(void);
 static void ar7_machine_power_off(void);
@@ -59,6 +61,18 @@ const char *get_system_type(void)
 		return "TI AR7 (TNETD7100)";
 	case AR7_CHIP_7200:
 		return "TI AR7 (TNETD7200)";
+	case AR7_CHIP_TITAN:
+		titan_variant = ar7_init_titan_variant();
+		switch (titan_variant /*(gpio_get_value_titan(1) >> 12) & 0xf*/) {
+		case TITAN_CHIP_1050:
+			return "TI AR7 (TNETV1050)";
+		case TITAN_CHIP_1055:
+			return "TI AR7 (TNETV1055)";
+		case TITAN_CHIP_1056:
+			return "TI AR7 (TNETV1056)";
+		case TITAN_CHIP_1060:
+			return "TI AR7 (TNETV1060)";
+		}
 	default:
 		return "TI AR7 (Unknown)";
 	}

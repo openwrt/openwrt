@@ -1,0 +1,248 @@
+--- a/arch/mips/ar7/platform.c	2009-11-18 14:57:44.000000000 +0800
++++ b/arch/mips/ar7/platform.c	2009-11-18 15:43:04.000000000 +0800
+@@ -128,6 +128,36 @@
+ 	},
+ };
+ 
++static struct resource cpmac_low_res_titan[] = {
++	{
++		.name = "regs",
++		.flags = IORESOURCE_MEM,
++		.start = TITAN_REGS_MAC0,
++		.end = TITAN_REGS_MAC0 + 0x7ff,
++	},
++	{
++		.name = "irq",
++		.flags = IORESOURCE_IRQ,
++		.start = 27,
++		.end = 27,
++	},
++};
++
++static struct resource cpmac_high_res_titan[] = {
++	{
++		.name = "regs",
++		.flags = IORESOURCE_MEM,
++		.start = TITAN_REGS_MAC1,
++		.end = TITAN_REGS_MAC1 + 0x7ff,
++	},
++	{
++		.name = "irq",
++		.flags = IORESOURCE_IRQ,
++		.start = 41,
++		.end = 41,
++	},
++};
++
+ static struct resource vlynq_low_res[] = {
+ 	{
+ 		.name = "regs",
+@@ -182,6 +212,60 @@
+ 	},
+ };
+ 
++static struct resource vlynq_low_res_titan[] = {
++	{
++		.name = "regs",
++		.flags = IORESOURCE_MEM,
++		.start = TITAN_REGS_VLYNQ0,
++		.end = TITAN_REGS_VLYNQ0 + 0xff,
++	},
++	{
++		.name = "irq",
++		.flags = IORESOURCE_IRQ,
++		.start = 33,
++		.end = 33,
++	},
++	{
++		.name = "mem",
++		.flags = IORESOURCE_MEM,
++		.start = 0x0c000000,
++		.end = 0x0fffffff,
++	},
++	{
++		.name = "devirq",
++		.flags = IORESOURCE_IRQ,
++		.start = 80,
++		.end = 111,
++	},
++};
++
++static struct resource vlynq_high_res_titan[] = {
++	{
++		.name = "regs",
++		.flags = IORESOURCE_MEM,
++		.start = TITAN_REGS_VLYNQ1,
++		.end = TITAN_REGS_VLYNQ1 + 0xff,
++	},
++	{
++		.name = "irq",
++		.flags = IORESOURCE_IRQ,
++		.start = 34,
++		.end = 34,
++	},
++	{
++		.name = "mem",
++		.flags = IORESOURCE_MEM,
++		.start = 0x40000000,
++		.end = 0x43ffffff,
++	},
++	{
++		.name = "devirq",
++		.flags = IORESOURCE_IRQ,
++		.start = 112,
++		.end = 143,
++	},
++};
++
+ static struct resource usb_res[] = {
+ 	{
+ 		.name = "regs",
+@@ -226,6 +310,18 @@
+ 	.phy_mask = 0x7fffffff,
+ };
+ 
++static struct plat_cpmac_data cpmac_low_data_titan = {
++	.reset_bit = 17,
++	.power_bit = 20,
++	.phy_mask = 0x40000000,
++};
++
++static struct plat_cpmac_data cpmac_high_data_titan = {
++	.reset_bit = 21,
++	.power_bit = 22,
++	.phy_mask = 0x80000000,
++};
++
+ static struct plat_vlynq_data vlynq_low_data = {
+ 	.ops.on = vlynq_on,
+ 	.ops.off = vlynq_off,
+@@ -240,6 +336,20 @@
+ 	.gpio_bit = 19,
+ };
+ 
++static struct plat_vlynq_data vlynq_low_data_titan = {
++	.ops.on = vlynq_on,
++	.ops.off = vlynq_off,
++	.reset_bit = 15,
++	.gpio_bit = 14,
++};
++
++static struct plat_vlynq_data vlynq_high_data_titan = {
++	.ops.on = vlynq_on,
++	.ops.off = vlynq_off,
++	.reset_bit = 16,
++	.gpio_bit = 7,
++};
++
+ static struct platform_device physmap_flash = {
+ 	.id = 0,
+ 	.name = "physmap-flash",
+@@ -273,6 +383,30 @@
+ 	.num_resources = ARRAY_SIZE(cpmac_high_res),
+ };
+ 
++static struct platform_device cpmac_low_titan = {
++	.id = 0,
++	.name = "cpmac",
++	.dev = {
++		.dma_mask = &cpmac_dma_mask,
++		.coherent_dma_mask = DMA_32BIT_MASK,
++		.platform_data = &cpmac_low_data_titan,
++	},
++	.resource = cpmac_low_res_titan,
++	.num_resources = ARRAY_SIZE(cpmac_low_res_titan),
++};
++
++static struct platform_device cpmac_high_titan = {
++	.id = 1,
++	.name = "cpmac",
++	.dev = {
++		.dma_mask = &cpmac_dma_mask,
++		.coherent_dma_mask = DMA_32BIT_MASK,
++		.platform_data = &cpmac_high_data_titan,
++	},
++	.resource = cpmac_high_res_titan,
++	.num_resources = ARRAY_SIZE(cpmac_high_res_titan),
++};
++
+ static struct platform_device vlynq_low = {
+ 	.id = 0,
+ 	.name = "vlynq",
+@@ -289,6 +423,22 @@
+ 	.num_resources = ARRAY_SIZE(vlynq_high_res),
+ };
+ 
++static struct platform_device vlynq_low_titan = {
++	.id = 0,
++	.name = "vlynq",
++	.dev.platform_data = &vlynq_low_data_titan,
++	.resource = vlynq_low_res_titan,
++	.num_resources = ARRAY_SIZE(vlynq_low_res_titan),
++};
++
++static struct platform_device vlynq_high_titan = {
++	.id = 1,
++	.name = "vlynq",
++	.dev.platform_data = &vlynq_high_data_titan,
++	.resource = vlynq_high_res_titan,
++	.num_resources = ARRAY_SIZE(vlynq_high_res_titan),
++};
++
+ 
+ /* This is proper way to define uart ports, but they are then detected
+  * as xscale and, obviously, don't work...
+@@ -333,6 +483,11 @@
+ 	{ .name = "status", .gpio = 8, .active_low = 1, },
+ };
+ 
++static struct gpio_led titan_leds[] = {
++	{ .name = "status", .gpio = 8, .active_low = 1, },
++	{ .name = "wifi", .gpio = 13, .active_low = 1, },
++};
++
+ static struct gpio_led dsl502t_leds[] = {
+ 	{ .name = "status", .gpio = 9, .active_low = 1, },
+ 	{ .name = "ethernet", .gpio = 7, .active_low = 1, },
+@@ -425,7 +580,7 @@
+ 	/* FIXME: the whole thing is unreliable */
+ 	prId = prom_getenv("ProductID");
+ 	usb_prod = prom_getenv("usb_prod");
+-	
++
+ 	/* If we can't get the product id from PROM, use the default LEDs */
+ 	if (!prId)
+ 		return;
+@@ -442,6 +597,9 @@
+ 	} else if (strstr(prId, "DG834")) {
+ 		ar7_led_data.num_leds = ARRAY_SIZE(dg834g_leds);
+ 		ar7_led_data.leds = dg834g_leds;
++	} else if (strstr(prId, "CYWM")) {
++		ar7_led_data.num_leds = ARRAY_SIZE(titan_leds);
++		ar7_led_data.leds = titan_leds;
+ 	}
+ }
+ 
+@@ -502,14 +660,18 @@
+ 	if (res)
+ 		return res;
+ 
+-	ar7_device_disable(vlynq_low_data.reset_bit);
+-	res = platform_device_register(&vlynq_low);
++	ar7_device_disable(ar7_is_titan() ? vlynq_low_data_titan.reset_bit :
++		vlynq_low_data.reset_bit);
++	res = platform_device_register(ar7_is_titan() ? &vlynq_low_titan :
++		&vlynq_low);
+ 	if (res)
+ 		return res;
+ 
+ 	if (ar7_has_high_vlynq()) {
+-		ar7_device_disable(vlynq_high_data.reset_bit);
+-		res = platform_device_register(&vlynq_high);
++		ar7_device_disable(ar7_is_titan() ? vlynq_high_data_titan.reset_bit :
++			vlynq_high_data.reset_bit);
++		res = platform_device_register(ar7_is_titan() ? &vlynq_high_titan :
++			&vlynq_high);
+ 		if (res)
+ 			return res;
+ 	}
