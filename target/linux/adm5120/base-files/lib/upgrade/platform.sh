@@ -1,19 +1,38 @@
-PART_NAME=partition1
+#
+# Copyright (C) 2009-2010 OpenWrt.org
+#
+
+. /lib/adm5120.sh
+
+PART_NAME="firmware"
+RAMFS_COPY_DATA=/lib/adm5120.sh
 
 platform_check_image() {
+	local magic="$(get_magic_word "$1")"
+
 	[ "$ARGC" -gt 1 ] && return 1
 
-	case "$(get_magic_word "$1")" in
+	case "$board_name" in
+	"ZyXEL"*)
 		# .trx files
-		4844) return 0;;
-		*)
-			echo "Invalid image type. Please use only .trx files"
+		[ "$magic" != "4844" ] && {
+			echo "Invalid image type."
 			return 1
+		}
+		return 0
+		;;
+	*)
 		;;
 	esac
+
+	echo "Sysupgrade is not yet supported on $board_name."
+	return 1
 }
 
-# use default for platform_do_upgrade()
+platform_do_upgrade() {
+	PART_NAME="$sys_mtd_part"
+	default_do_upgrade "$ARGV"
+}
 
 disable_watchdog() {
 	killall watchdog
