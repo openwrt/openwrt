@@ -808,8 +808,8 @@ static int adm5120_if_open(struct net_device *dev)
 
 	adm5120_if_napi_enable(dev);
 
-	err = request_irq(dev->irq, adm5120_switch_irq,
-		(IRQF_SHARED | IRQF_DISABLED), dev->name, dev);
+	err = request_irq(dev->irq, adm5120_switch_irq, IRQF_SHARED,
+			  dev->name, dev);
 	if (err) {
 		SW_ERR("unable to get irq for %s\n", dev->name);
 		goto err;
