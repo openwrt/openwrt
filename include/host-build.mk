@@ -130,17 +130,8 @@ ifndef DUMP
 	touch $$@
 
   $(call Host/Exports,$(HOST_STAMP_BUILT))
-  $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
-	$(call Host/Compile)
-	touch $$@
-
-  $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT)
-	$(call Host/Install)
-	mkdir -p $$(shell dirname $$@)
-	touch $$@
-
   ifdef Host/Install
-    host-install: $(HOST_STAMP_INSTALLED)
+    host-install: $(if $(STAMP_BUILT),$(HOST_STAMP_BUILT),$(HOST_STAMP_INSTALLED))
   endif
 
   ifndef STAMP_BUILT
@@ -149,8 +140,20 @@ ifndef DUMP
     install: host-install
     clean: host-clean
     update: host-update
+
+    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(call Host/Compile)
+		touch $$@
+
+    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT)
+		$(call Host/Install)
+		mkdir -p $$(shell dirname $$@)
+		touch $$@
   else
-    host-compile: $(HOST_STAMP_INSTALLED)
+    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(call Host/Compile)
+		$(call Host/Install)
+		touch $$@
   endif
   host-prepare: $(HOST_STAMP_PREPARED)
   host-configure: $(HOST_STAMP_CONFIGURED)
