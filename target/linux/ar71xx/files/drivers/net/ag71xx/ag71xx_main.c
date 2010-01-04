@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx built-in ethernet mac driver
  *
- *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  Based on Atheros' AG7100 driver
@@ -922,10 +922,16 @@ static int __init ag71xx_probe(struct platform_device *pdev)
 	if (err)
 		goto err_unregister_netdev;
 
+	err = ag71xx_debugfs_init(ag);
+	if (err)
+		goto err_phy_disconnect;
+
 	platform_set_drvdata(pdev, dev);
 
 	return 0;
 
+ err_phy_disconnect:
+	ag71xx_phy_disconnect(ag);
  err_unregister_netdev:
 	unregister_netdev(dev);
  err_free_irq:
@@ -948,6 +954,7 @@ static int __exit ag71xx_remove(struct platform_device *pdev)
 	if (dev) {
 		struct ag71xx *ag = netdev_priv(dev);
 
+		ag71xx_debugfs_exit(ag);
 		ag71xx_phy_disconnect(ag);
 		unregister_netdev(dev);
 		free_irq(dev->irq, dev);
@@ -972,9 +979,13 @@ static int __init ag71xx_module_init(void)
 {
 	int ret;
 
-	ret = ag71xx_mdio_driver_init();
+	ret = ag71xx_debugfs_root_init();
 	if (ret)
 		goto err_out;
+
+	ret = ag71xx_mdio_driver_init();
+	if (ret)
+		goto err_debugfs_exit;
 
 	ret = platform_driver_register(&ag71xx_driver);
 	if (ret)
@@ -984,6 +995,8 @@ static int __init ag71xx_module_init(void)
 
  err_mdio_exit:
 	ag71xx_mdio_driver_exit();
+ err_debugfs_exit:
+	ag71xx_debugfs_root_exit();
  err_out:
 	return ret;
 }
@@ -992,6 +1005,7 @@ static void __exit ag71xx_module_exit(void)
 {
 	platform_driver_unregister(&ag71xx_driver);
 	ag71xx_mdio_driver_exit();
+	ag71xx_debugfs_root_exit();
 }
 
 module_init(ag71xx_module_init);

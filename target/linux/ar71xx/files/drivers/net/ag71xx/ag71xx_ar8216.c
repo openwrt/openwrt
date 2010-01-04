@@ -2,7 +2,7 @@
  *  Atheros AR71xx built-in ethernet mac driver
  *  Special support for the Atheros ar8216 switch chip
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  Based on Atheros' AG7100 driver
  *
