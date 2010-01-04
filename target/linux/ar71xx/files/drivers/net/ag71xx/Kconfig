@@ -13,6 +13,14 @@ config AG71XX_DEBUG
 	help
 	  Atheros AR71xx built-in ethernet driver debugging messages.
 
+config AG71XX_DEBUG_FS
+	bool "Atheros AR71xx built-in ethernet driver debugfs support"
+	depends on AG71XX && DEBUG_FS
+	default n
+	help
+	  Say Y, if you need access to various statistics provided by
+	  the ag71xx driver.
+
 config AG71XX_AR8216_SUPPORT
 	bool "special support for the Atheros AR8216 switch"
 	depends on AG71XX
