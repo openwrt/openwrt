@@ -15,7 +15,7 @@
  
  char *mips_machine_name = "Unknown";
  
-@@ -55,20 +56,64 @@ void __init mips_machine_set_name(char *
+@@ -55,20 +56,65 @@ void __init mips_machine_set_name(char *
  	}
  }
  
@@ -62,9 +62,10 @@
 +
 +	list_for_each(this, &mips_machines) {
 +		mach = list_entry(this, struct mips_machine, list);
-+		if (strncmp(mach->mach_id, mips_machid,
-+			    strlen(mips_machid)) == 0
-+		) {
++		if (mach->mach_id == NULL)
++			continue;
++
++		if (strcmp(mach->mach_id, mips_machid) == 0) {
 +			mips_machtype = mach->mach_type;
 +			return 0;
 +		}
@@ -78,7 +79,7 @@
 +	list_for_each(this, &mips_machines) {
 +		mach = list_entry(this, struct mips_machine, list);
 +		printk(KERN_WARNING "%32s %s\n",
-+		       mach->mach_id, mach->mach_name);
++		       mach->mach_id ? mach->mach_id : "", mach->mach_name);
 +	}
 +
 +	return 0;
