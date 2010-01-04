@@ -6,16 +6,17 @@ config AG71XX
 	  If you wish to compile a kernel for AR71xx/91xx and enable
 	  ethernet support, then you should always answer Y to this.
 
+if AG71XX
+
 config AG71XX_DEBUG
 	bool "Atheros AR71xx built-in ethernet driver debugging"
-	depends on AG71XX
 	default n
 	help
 	  Atheros AR71xx built-in ethernet driver debugging messages.
 
 config AG71XX_DEBUG_FS
 	bool "Atheros AR71xx built-in ethernet driver debugfs support"
-	depends on AG71XX && DEBUG_FS
+	depends on DEBUG_FS
 	default n
 	help
 	  Say Y, if you need access to various statistics provided by
@@ -23,9 +24,10 @@ config AG71XX_DEBUG_FS
 
 config AG71XX_AR8216_SUPPORT
 	bool "special support for the Atheros AR8216 switch"
-	depends on AG71XX
 	default n
 	default y if AR71XX_MACH_WNR2000 || AR71XX_MACH_MZK_W04NU || AR71XX_MACH_WRT400N
 	help
 	  Say 'y' here if you want to enable special support for the
 	  Atheros AR8216 switch found on some boards.
+
+endif
