@@ -316,6 +316,14 @@ define Image/Build/Template/AP83/jffs2-64k
 	$(call Image/Build/AP83,jffs2-64k,$(1),$(2))
 endef
 
+define Image/Build/Template/PB4X/squashfs
+	$(call Image/Build/PB4X,squashfs,$(1),$(2))
+endef
+
+define Image/Build/Template/PB4X/jffs2-64k
+	$(call Image/Build/PB4X,jffs2-64k,$(1),$(2))
+endef
+
 define Image/Build/Template/TPLINK/squashfs
 	$(call Image/Build/TPLINK,squashfs,$(1),$(2),$(3))
 endef
@@ -365,11 +373,11 @@ define Image/Build/Profile/AP83
 endef
 
 define Image/Build/Profile/PB42
-	$(call Image/Build/PB4X,$(1),pb42,board=PB42)
+	$(call Image/Build/Template/PB4X/$(1),pb42,board=PB42)
 endef
 
 define Image/Build/Profile/PB44
-	$(call Image/Build/PB4X,$(1),pb44,board=PB44)
+	$(call Image/Build/Template/PB4X/$(1),pb44,board=PB44)
 endef
 
 define Image/Build/Profile/WP543
