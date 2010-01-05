@@ -1,0 +1,322 @@
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -15,12 +15,14 @@
+ #include <linux/netdevice.h>
+ #include <linux/rtnetlink.h>
+ #include <net/mac80211.h>
++#include <net/ieee80211_radiotap.h>
+ #include "ieee80211_i.h"
+ #include "sta_info.h"
+ #include "debugfs_netdev.h"
+ #include "mesh.h"
+ #include "led.h"
+ #include "driver-ops.h"
++#include "wme.h"
+ 
+ /**
+  * DOC: Interface list locking
+@@ -644,6 +646,37 @@ static void ieee80211_teardown_sdata(str
+ 	WARN_ON(flushed);
+ }
+ 
++static u16 ieee80211_netdev_select_queue(struct net_device *dev,
++					 struct sk_buff *skb)
++{
++	return ieee80211_select_queue(IEEE80211_DEV_TO_SUB_IF(dev), skb);
++}
++
++static u16 ieee80211_monitor_select_queue(struct net_device *dev,
++					  struct sk_buff *skb)
++{
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_hdr *hdr;
++	struct ieee80211_radiotap_header *rtap = (void *)skb->data;
++
++	if (local->hw.queues < 4)
++		return 0;
++
++	if (skb->len < 4 ||
++	    skb->len < rtap->it_len + 2 /* frame control */)
++		return 0; /* doesn't matter, frame will be dropped */
++
++	hdr = (void *)((u8 *)skb->data + rtap->it_len);
++
++	if (!ieee80211_is_data(hdr->frame_control)) {
++		skb->priority = 7;
++		return ieee802_1d_to_ac[skb->priority];
++	}
++
++	return ieee80211_downgrade_queue(local, skb);
++}
++
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29))
+ static const struct net_device_ops ieee80211_dataif_ops = {
+ 	.ndo_open		= ieee80211_open,
+@@ -653,6 +686,7 @@ static const struct net_device_ops ieee8
+ 	.ndo_set_multicast_list = ieee80211_set_multicast_list,
+ 	.ndo_change_mtu 	= ieee80211_change_mtu,
+ 	.ndo_set_mac_address 	= eth_mac_addr,
++	.ndo_select_queue	= ieee80211_monitor_select_queue,
+ };
+ 
+ static const struct net_device_ops ieee80211_monitorif_ops = {
+@@ -663,6 +697,7 @@ static const struct net_device_ops ieee8
+ 	.ndo_set_multicast_list = ieee80211_set_multicast_list,
+ 	.ndo_change_mtu 	= ieee80211_change_mtu,
+ 	.ndo_set_mac_address 	= eth_mac_addr,
++	.ndo_select_queue	= ieee80211_monitor_select_queue,
+ };
+ #endif
+ 
+@@ -677,6 +712,7 @@ static void ieee80211_if_setup(struct ne
+ 	dev->change_mtu = ieee80211_change_mtu;
+ 	dev->open = ieee80211_open;
+ 	dev->stop = ieee80211_stop;
++	dev->select_queue = ieee80211_netdev_select_queue;
+ 	/* we will validate the address ourselves in ->open */
+ 	dev->validate_addr = NULL;
+ #endif
+@@ -725,6 +761,7 @@ static void ieee80211_setup_sdata(struct
+ 		sdata->dev->netdev_ops = &ieee80211_monitorif_ops;
+ #else
+ 		sdata->dev->hard_start_xmit = ieee80211_monitor_start_xmit;
++		sdata->dev->select_queue = ieee80211_monitor_select_queue;
+ #endif
+ 		sdata->u.mntr_flags = MONITOR_FLAG_CONTROL |
+ 				      MONITOR_FLAG_OTHER_BSS;
+@@ -794,8 +831,8 @@ int ieee80211_if_add(struct ieee80211_lo
+ 
+ 	ASSERT_RTNL();
+ 
+-	ndev = alloc_netdev(sizeof(*sdata) + local->hw.vif_data_size,
+-			    name, ieee80211_if_setup);
++	ndev = alloc_netdev_mq(sizeof(*sdata) + local->hw.vif_data_size,
++			       name, ieee80211_if_setup, local->hw.queues);
+ 	if (!ndev)
+ 		return -ENOMEM;
+ 	dev_net_set(ndev, wiphy_net(local->hw.wiphy));
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1747,7 +1747,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+ 			memset(info, 0, sizeof(*info));
+ 			info->flags |= IEEE80211_TX_INTFL_NEED_TXPROCESSING;
+ 			info->control.vif = &rx->sdata->vif;
+-			ieee80211_select_queue(local, fwd_skb);
++			skb_set_queue_mapping(skb,
++				ieee80211_select_queue(rx->sdata, fwd_skb));
++			ieee80211_set_qos_hdr(local, skb);
+ 			if (is_multicast_ether_addr(fwd_hdr->addr1))
+ 				IEEE80211_IFSTA_MESH_CTR_INC(&sdata->u.mesh,
+ 								fwded_mcast);
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1507,7 +1507,7 @@ static void ieee80211_xmit(struct ieee80
+ 				return;
+ 			}
+ 
+-	ieee80211_select_queue(local, skb);
++	ieee80211_set_qos_hdr(local, skb);
+ 	ieee80211_tx(sdata, skb, false);
+ 	rcu_read_unlock();
+ }
+@@ -2286,6 +2286,9 @@ void ieee80211_tx_skb(struct ieee80211_s
+ 	skb_set_network_header(skb, 0);
+ 	skb_set_transport_header(skb, 0);
+ 
++	/* send all internal mgmt frames on VO */
++	skb_set_queue_mapping(skb, 0);
++
+ 	/*
+ 	 * The other path calling ieee80211_xmit is from the tasklet,
+ 	 * and while we can handle concurrent transmissions locking
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -269,6 +269,7 @@ static void __ieee80211_wake_queue(struc
+ 				   enum queue_stop_reason reason)
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
++	struct ieee80211_sub_if_data *sdata;
+ 
+ 	if (WARN_ON(queue >= hw->queues))
+ 		return;
+@@ -281,6 +282,11 @@ static void __ieee80211_wake_queue(struc
+ 
+ 	if (!skb_queue_empty(&local->pending[queue]))
+ 		tasklet_schedule(&local->tx_pending_tasklet);
++
++	rcu_read_lock();
++	list_for_each_entry_rcu(sdata, &local->interfaces, list)
++		netif_tx_wake_queue(netdev_get_tx_queue(sdata->dev, queue));
++	rcu_read_unlock();
+ }
+ 
+ void ieee80211_wake_queue_by_reason(struct ieee80211_hw *hw, int queue,
+@@ -305,11 +311,17 @@ static void __ieee80211_stop_queue(struc
+ 				   enum queue_stop_reason reason)
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
++	struct ieee80211_sub_if_data *sdata;
+ 
+ 	if (WARN_ON(queue >= hw->queues))
+ 		return;
+ 
+ 	__set_bit(reason, &local->queue_stop_reasons[queue]);
++
++	rcu_read_lock();
++	list_for_each_entry_rcu(sdata, &local->interfaces, list)
++		netif_tx_stop_queue(netdev_get_tx_queue(sdata->dev, queue));
++	rcu_read_unlock();
+ }
+ 
+ void ieee80211_stop_queue_by_reason(struct ieee80211_hw *hw, int queue,
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -44,22 +44,69 @@ static int wme_downgrade_ac(struct sk_bu
+ }
+ 
+ 
+-/* Indicate which queue to use.  */
+-static u16 classify80211(struct ieee80211_local *local, struct sk_buff *skb)
++/* Indicate which queue to use. */
++u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
++			   struct sk_buff *skb)
+ {
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
++	struct ieee80211_local *local = sdata->local;
++	struct sta_info *sta = NULL;
++	u32 sta_flags = 0;
++	const u8 *ra = NULL;
++	bool qos = false;
+ 
+-	if (!ieee80211_is_data(hdr->frame_control)) {
+-		/* management frames go on AC_VO queue, but are sent
+-		* without QoS control fields */
+-		return 0;
++	if (local->hw.queues < 4 || skb->len < 6) {
++		skb->priority = 0; /* required for correct WPA/11i MIC */
++		return min_t(u16, local->hw.queues - 1,
++			     ieee802_1d_to_ac[skb->priority]);
++	}
++
++	rcu_read_lock();
++	switch (sdata->vif.type) {
++	case NL80211_IFTYPE_AP_VLAN:
++		rcu_read_lock();
++		sta = rcu_dereference(sdata->u.vlan.sta);
++		if (sta)
++			sta_flags = get_sta_flags(sta);
++		rcu_read_unlock();
++		if (sta)
++			break;
++	case NL80211_IFTYPE_AP:
++		ra = skb->data;
++		break;
++	case NL80211_IFTYPE_WDS:
++		ra = sdata->u.wds.remote_addr;
++		break;
++#ifdef CONFIG_MAC80211_MESH
++	case NL80211_IFTYPE_MESH_POINT:
++		/*
++		 * XXX: This is clearly broken ... but already was before,
++		 * because ieee80211_fill_mesh_addresses() would clear A1
++		 * except for multicast addresses.
++		 */
++		break;
++#endif
++	case NL80211_IFTYPE_STATION:
++		ra = sdata->u.mgd.bssid;
++		break;
++	case NL80211_IFTYPE_ADHOC:
++		ra = skb->data;
++		break;
++	default:
++		break;
+ 	}
+ 
+-	if (0 /* injected */) {
+-		/* use AC from radiotap */
++	if (!sta && ra && !is_multicast_ether_addr(ra)) {
++		sta = sta_info_get(sdata, ra);
++		if (sta)
++			sta_flags = get_sta_flags(sta);
+ 	}
+ 
+-	if (!ieee80211_is_data_qos(hdr->frame_control)) {
++	if (sta_flags & WLAN_STA_WME)
++		qos = true;
++
++	rcu_read_unlock();
++
++	if (!qos) {
+ 		skb->priority = 0; /* required for correct WPA/11i MIC */
+ 		return ieee802_1d_to_ac[skb->priority];
+ 	}
+@@ -68,6 +115,12 @@ static u16 classify80211(struct ieee8021
+ 	 * data frame has */
+ 	skb->priority = cfg80211_classify8021d(skb);
+ 
++	return ieee80211_downgrade_queue(local, skb);
++}
++
++u16 ieee80211_downgrade_queue(struct ieee80211_local *local,
++			      struct sk_buff *skb)
++{
+ 	/* in case we are a client verify acm is not set for this ac */
+ 	while (unlikely(local->wmm_acm & BIT(skb->priority))) {
+ 		if (wme_downgrade_ac(skb)) {
+@@ -85,24 +138,17 @@ static u16 classify80211(struct ieee8021
+ 	return ieee802_1d_to_ac[skb->priority];
+ }
+ 
+-void ieee80211_select_queue(struct ieee80211_local *local, struct sk_buff *skb)
++void ieee80211_set_qos_hdr(struct ieee80211_local *local, struct sk_buff *skb)
+ {
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
+-	u16 queue;
+-	u8 tid;
+-
+-	queue = classify80211(local, skb);
+-	if (unlikely(queue >= local->hw.queues))
+-		queue = local->hw.queues - 1;
+-
+-	/*
+-	 * Now we know the 1d priority, fill in the QoS header if
+-	 * there is one (and we haven't done this before).
+-	 */
++	struct ieee80211_hdr *hdr = (void *)skb->data;
++
++	/* Fill in the QoS header if there is one. */
+ 	if (ieee80211_is_data_qos(hdr->frame_control)) {
+ 		u8 *p = ieee80211_get_qos_ctl(hdr);
+-		u8 ack_policy = 0;
++		u8 ack_policy = 0, tid;
++
+ 		tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
++
+ 		if (unlikely(local->wifi_wme_noack_test))
+ 			ack_policy |= QOS_CONTROL_ACK_POLICY_NOACK <<
+ 					QOS_CONTROL_ACK_POLICY_SHIFT;
+@@ -110,6 +156,4 @@ void ieee80211_select_queue(struct ieee8
+ 		*p++ = ack_policy | tid;
+ 		*p = 0;
+ 	}
+-
+-	skb_set_queue_mapping(skb, queue);
+ }
+--- a/net/mac80211/wme.h
++++ b/net/mac80211/wme.h
+@@ -20,7 +20,11 @@
+ 
+ extern const int ieee802_1d_to_ac[8];
+ 
+-void ieee80211_select_queue(struct ieee80211_local *local,
+-			    struct sk_buff *skb);
++u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
++			   struct sk_buff *skb);
++void ieee80211_set_qos_hdr(struct ieee80211_local *local, struct sk_buff *skb);
++u16 ieee80211_downgrade_queue(struct ieee80211_local *local,
++                              struct sk_buff *skb);
++
+ 
+ #endif /* _WME_H */
