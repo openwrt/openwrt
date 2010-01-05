@@ -86,6 +86,7 @@ config AR71XX_MACH_WRT160NL
 
 config AR71XX_MACH_WRT400N
 	bool "Linksys WRT400N board support"
+	select AR71XX_DEV_AP94_PCI if PCI
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
