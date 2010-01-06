@@ -795,6 +795,8 @@ static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
 		napi_schedule(&ag->napi);
 	}
 
+	ag71xx_debugfs_update_int_stats(ag, status);
+
 	return IRQ_HANDLED;
 }
 

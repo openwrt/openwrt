@@ -17,6 +17,89 @@
 
 static struct dentry *ag71xx_debugfs_root;
 
+static int ag71xx_debugfs_generic_open(struct inode *inode, struct file *file)
+{
+	file->private_data = inode->i_private;
+	return 0;
+}
+
+void ag71xx_debugfs_update_int_stats(struct ag71xx *ag, u32 status)
+{
+	if (status)
+		ag->debug.int_stats.total++;
+	if (status & AG71XX_INT_TX_PS)
+		ag->debug.int_stats.tx_ps++;
+	if (status & AG71XX_INT_TX_UR)
+		ag->debug.int_stats.tx_ur++;
+	if (status & AG71XX_INT_TX_BE)
+		ag->debug.int_stats.tx_be++;
+	if (status & AG71XX_INT_RX_PR)
+		ag->debug.int_stats.rx_pr++;
+	if (status & AG71XX_INT_RX_OF)
+		ag->debug.int_stats.rx_of++;
+	if (status & AG71XX_INT_RX_BE)
+		ag->debug.int_stats.rx_be++;
+}
+
+static ssize_t read_file_int_stats(struct file *file, char __user *user_buf,
+				   size_t count, loff_t *ppos)
+{
+#define PR_INT_STAT(_label, _field) 					\
+	len += snprintf(buf + len, sizeof(buf) - len, 			\
+		"%20s: %10lu\n", _label, ag->debug.int_stats._field);
+
+	struct ag71xx *ag = file->private_data;
+	char buf[256];
+	unsigned int len = 0;
+
+	PR_INT_STAT("TX Packet Sent", tx_ps);
+	PR_INT_STAT("TX Underrun", tx_ur);
+	PR_INT_STAT("TX Bus Error", tx_be);
+	PR_INT_STAT("RX Packet Received", rx_pr);
+	PR_INT_STAT("RX Overflow", rx_of);
+	PR_INT_STAT("RX Bus Error", rx_be);
+	len += snprintf(buf + len, sizeof(buf) - len, "\n");
+	PR_INT_STAT("Total", total);
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+#undef PR_INT_STAT
+}
+
+static const struct file_operations ag71xx_fops_int_stats = {
+	.open	= ag71xx_debugfs_generic_open,
+	.read	= read_file_int_stats,
+	.owner	= THIS_MODULE
+};
+
+void ag71xx_debugfs_exit(struct ag71xx *ag)
+{
+	debugfs_remove(ag->debug.debugfs_int_stats);
+	debugfs_remove(ag->debug.debugfs_dir);
+}
+
+int ag71xx_debugfs_init(struct ag71xx *ag)
+{
+	ag->debug.debugfs_dir = debugfs_create_dir(ag->dev->name,
+						   ag71xx_debugfs_root);
+	if (!ag->debug.debugfs_dir)
+		goto err;
+
+	ag->debug.debugfs_int_stats =
+			debugfs_create_file("int_stats",
+					    S_IRUGO,
+					    ag->debug.debugfs_dir,
+					    ag,
+					    &ag71xx_fops_int_stats);
+	if (!ag->debug.debugfs_int_stats)
+		goto err;
+
+	return 0;
+
+ err:
+	ag71xx_debugfs_exit(ag);
+	return -ENOMEM;
+}
+
 int ag71xx_debugfs_root_init(void)
 {
 	if (ag71xx_debugfs_root)
@@ -33,23 +116,4 @@ void ag71xx_debugfs_root_exit(void)
 {
 	debugfs_remove(ag71xx_debugfs_root);
 	ag71xx_debugfs_root = NULL;
-}
-
-void ag71xx_debugfs_exit(struct ag71xx *ag)
-{
-	debugfs_remove(ag->debug.debugfs_dir);
-}
-
-int ag71xx_debugfs_init(struct ag71xx *ag)
-{
-	ag->debug.debugfs_dir = debugfs_create_dir(ag->dev->name,
-						   ag71xx_debugfs_root);
-	if (!ag->debug.debugfs_dir)
-		goto err;
-
-	return 0;
-
- err:
-	ag71xx_debugfs_exit(ag);
-	return -ENOMEM;
 }

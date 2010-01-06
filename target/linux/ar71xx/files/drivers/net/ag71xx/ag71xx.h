@@ -109,8 +109,20 @@ struct ag71xx_mdio {
 	struct ag71xx_mdio_platform_data *pdata;
 };
 
+struct ag71xx_int_stats {
+	unsigned long		rx_pr;
+	unsigned long		rx_be;
+	unsigned long		rx_of;
+	unsigned long		tx_ps;
+	unsigned long		tx_be;
+	unsigned long		tx_ur;
+	unsigned long		total;
+};
+
 struct ag71xx_debug {
 	struct dentry		*debugfs_dir;
+	struct dentry		*debugfs_int_stats;
+	struct ag71xx_int_stats int_stats;
 };
 
 struct ag71xx {
@@ -463,11 +475,14 @@ int ag71xx_debugfs_root_init(void);
 void ag71xx_debugfs_root_exit(void);
 int ag71xx_debugfs_init(struct ag71xx *ag);
 void ag71xx_debugfs_exit(struct ag71xx *ag);
+void ag71xx_debugfs_update_int_stats(struct ag71xx *ag, u32 status);
 #else
 static inline int ag71xx_debugfs_root_init(void) { return 0; }
 static inline void ag71xx_debugfs_root_exit(void) {}
 static inline int ag71xx_debugfs_init(struct ag71xx *ag) { return 0; }
 static inline void ag71xx_debugfs_exit(struct ag71xx *ag) {}
+static inline void ag71xx_debug_update_int_stats(struct ag71xx *ag,
+						 u32 status) {}
 #endif /* CONFIG_AG71XX_DEBUG_FS */
 
 #endif /* _AG71XX_H */
