@@ -192,15 +192,23 @@ define KernelPackage/ide-core
 	CONFIG_IDE_GD_ATAPI=n \
 	CONFIG_BLK_DEV_IDEDMA_PCI=y \
 	CONFIG_BLK_DEV_IDEPCI=y
-    FILES:= \
+  FILES:= \
   	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
   	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
-      AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,40,ide-gd_mod)
+  AUTOLOAD:= \
+	$(call AutoLoad,20,ide-core) \
+	$(call AutoLoad,40,ide-gd_mod)
 endef
 
 define KernelPackage/ide-core/2.4
-  FILES+=$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD+=$(call AutoLoad,35,ide-detect)
+  FILES:= \
+  	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:= \
+	$(call AutoLoad,20,ide-core) \
+	$(call AutoLoad,35,ide-detect) \
+	$(call AutoLoad,40,ide-disk)
 endef
 
 ifneq ($(CONFIG_arm)$(CONFIG_powerpc),y)
@@ -228,6 +236,10 @@ define KernelPackage/ide-aec62xx
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
   FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,aec62xx)
+endef
+
+define KernelPackage/ide-aec62xx/2.4
+  FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/ide-aec62xx/description
