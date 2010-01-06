@@ -71,11 +71,7 @@ define KernelPackage/eeprom-93cx6
   TITLE:=EEPROM 93CX6 support
   DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_EEPROM_93CX6
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/eeprom_93cx6.$(LINUX_KMOD_SUFFIX)
-else
-  FILES:=$(LINUX_DIR)/drivers/misc/eeprom_93cx6.$(LINUX_KMOD_SUFFIX)
-endif
   AUTOLOAD:=$(call AutoLoad,20,eeprom_93cx6)
 endef
 

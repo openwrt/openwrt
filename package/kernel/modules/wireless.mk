@@ -80,16 +80,12 @@ endef
 $(eval $(call KernelPackage,lib80211))
 
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
-  IPW_DIR:=ipw2x00/
-endif
-
 define KernelPackage/net-libipw
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=libipw for ipw2100 and ipw2200
   DEPENDS:=@PCI_SUPPORT +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211 @LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32
   KCONFIG:=CONFIG_LIBIPW
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(IPW_DIR)libipw.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/libipw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,49,libipw)
 endef
 
@@ -105,7 +101,7 @@ define KernelPackage/net-ipw2100
   TITLE:=Intel IPW2100 driver
   DEPENDS:=@PCI_SUPPORT +!(LINUX_2_6_30||LINUX_2_6_31):kmod-ieee80211 +LINUX_2_6_30||LINUX_2_6_31:kmod-net-libipw
   KCONFIG:=CONFIG_IPW2100
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(IPW_DIR)ipw2100.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/ipw2100.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2100)
 endef
 
@@ -123,7 +119,7 @@ define KernelPackage/net-ipw2200
   TITLE:=Intel IPW2200 driver
   DEPENDS:=@PCI_SUPPORT +!(LINUX_2_6_30||LINUX_2_6_31):kmod-ieee80211 +LINUX_2_6_30||LINUX_2_6_31:kmod-net-libipw
   KCONFIG:=CONFIG_IPW2200
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(IPW_DIR)ipw2200.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/ipw2200.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2200)
 endef
 
@@ -152,26 +148,15 @@ endef
 $(eval $(call KernelPackage,net-airo))
 
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
-  ORINOCO_DIR:=orinoco/
-endif
-
 define KernelPackage/net-hermes
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Hermes 802.11b chipset support
   DEPENDS:=@LINUX_2_6 @PCI_SUPPORT||PCMCIA_SUPPORT
   KCONFIG:=CONFIG_HERMES \
 	CONFIG_HERMES_CACHE_FW_ON_INIT=n
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.30)),1)
   FILES:= \
-	$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,orinoco)
-else
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/wireless/hermes.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/wireless/orinoco.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hermes orinoco)
-endif
 endef
 
 define KernelPackage/net-hermes/description
@@ -186,7 +171,7 @@ define KernelPackage/net-hermes-pci
   TITLE:=Intersil Prism 2.5 PCI support
   DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PCI_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco_pci.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
 endef
 
@@ -202,7 +187,7 @@ define KernelPackage/net-hermes-plx
   TITLE:=PLX9052 based PCI adaptor
   DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PLX_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco_plx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_plx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_plx)
 endef
 

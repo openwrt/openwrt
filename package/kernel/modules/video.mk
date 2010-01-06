@@ -26,7 +26,6 @@ define KernelPackage/video-core/2.4
   AUTOLOAD:=$(call AutoLoad,60,videodev)
 endef
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.29)),1)
 define KernelPackage/video-core/2.6
   FILES:= \
 	$(LINUX_DIR)/drivers/media/video/v4l2-common.$(LINUX_KMOD_SUFFIX) \
@@ -38,21 +37,6 @@ define KernelPackage/video-core/2.6
 	v4l2-common \
   )
 endef
-else
-define KernelPackage/video-core/2.6
-  FILES:= \
-	$(LINUX_DIR)/drivers/media/video/v4l2-common.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/media/video/v4l1-compat.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/media/video/compat_ioctl32.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/media/video/videodev.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,60, \
-	v4l1-compat \
-	videodev \
-	v4l2-common \
-	compat_ioctl32 \
-  )
-endef
-endif
 
 define KernelPackage/video-core/description
  Kernel modules for Video4Linux support
