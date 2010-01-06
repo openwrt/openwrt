@@ -20,7 +20,6 @@
 #include "dev-m25p80.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
-#include "nvram.h"
 
 #define WRT400N_GPIO_LED_ORANGE	5
 #define WRT400N_GPIO_LED_GREEN	4
