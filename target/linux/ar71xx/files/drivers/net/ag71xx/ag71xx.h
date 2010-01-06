@@ -481,7 +481,7 @@ static inline int ag71xx_debugfs_root_init(void) { return 0; }
 static inline void ag71xx_debugfs_root_exit(void) {}
 static inline int ag71xx_debugfs_init(struct ag71xx *ag) { return 0; }
 static inline void ag71xx_debugfs_exit(struct ag71xx *ag) {}
-static inline void ag71xx_debug_update_int_stats(struct ag71xx *ag,
+static inline void ag71xx_debugfs_update_int_stats(struct ag71xx *ag,
 						 u32 status) {}
 #endif /* CONFIG_AG71XX_DEBUG_FS */
 
