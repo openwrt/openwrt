@@ -1,0 +1,251 @@
+From 67441c596f016f69c230eaa31ecb2272c6cbf4bf Mon Sep 17 00:00:00 2001
+From: Hamish Guthrie <hamish.guthrie@sonycom.com>
+Date: Wed, 6 Jan 2010 10:00:22 +0100
+Subject: [PATCH] Remove PS3 gelic legacy wpa support
+
+The ps3 wireless driver now supports wireless extensions. There is dedicated support code in wpa_supplicant for the old gelic wireless driver. The current gelic driver retains the old API with CONFIG_GELIC_WIRELESS_OLD_PSK_INTERFACE, which is being removed from the driver.
+
+Signed-off-by: Hamish Guthrie <hamish.guthrie@sonycom.com>
+---
+ src/drivers/driver_ps3.c |  186 ----------------------------------------------
+ src/drivers/drivers.c    |    6 --
+ wpa_supplicant/Makefile  |    6 --
+ 3 files changed, 0 insertions(+), 198 deletions(-)
+ delete mode 100644 src/drivers/driver_ps3.c
+
+diff --git a/src/drivers/driver_ps3.c b/src/drivers/driver_ps3.c
+deleted file mode 100644
+index fde3425..0000000
+--- a/src/drivers/driver_ps3.c
++++ /dev/null
+@@ -1,186 +0,0 @@
+-/*
+- * WPA Supplicant - PS3 Linux wireless extension driver interface
+- * Copyright 2007, 2008 Sony Corporation
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * Alternatively, this software may be distributed under the terms of BSD
+- * license.
+- *
+- * See README and COPYING for more details.
+- */
+-
+-#include "includes.h"
+-#include <sys/ioctl.h>
+-#include "wireless_copy.h"
+-#include "common.h"
+-#include "wpa_common.h"
+-#include "driver.h"
+-#include "eloop.h"
+-#include "driver_wext.h"
+-#include "ieee802_11_defs.h"
+-
+-static int wpa_driver_ps3_set_wpa_key(struct wpa_driver_wext_data *drv,
+-				struct wpa_driver_associate_params *params)
+-{
+-	int ret, i;
+-	struct iwreq iwr;
+-	char *buf, *str;
+-
+-	if (!params->psk && !params->passphrase) {
+-		wpa_printf(MSG_INFO, "%s:no PSK error", __func__);
+-		return -EINVAL;
+-	}
+-
+-	os_memset(&iwr, 0, sizeof(iwr));
+-	if (params->psk) {
+-		/* includes null */
+-		iwr.u.data.length = PMK_LEN * 2 + 1;
+-		buf = os_malloc(iwr.u.data.length);
+-		if (!buf)
+-			return -ENOMEM;
+-		str = buf;
+-		for (i = 0; i < PMK_LEN; i++) {
+-			str += snprintf(str, iwr.u.data.length - (str - buf),
+-					"%02x", params->psk[i]);
+-		}
+-	} else if (params->passphrase) {
+-		/* including quotations and null */
+-		iwr.u.data.length = strlen(params->passphrase) + 3;
+-		buf = os_malloc(iwr.u.data.length);
+-		if (!buf)
+-			return -ENOMEM;
+-		buf[0] = '"';
+-		os_memcpy(buf + 1, params->passphrase, iwr.u.data.length - 3);
+-		buf[iwr.u.data.length - 2] = '"';
+-		buf[iwr.u.data.length - 1] = '\0';
+-	} else
+-		return -EINVAL;
+-	iwr.u.data.pointer = (caddr_t) buf;
+-	os_strlcpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+-	ret = ioctl(drv->ioctl_sock, SIOCIWFIRSTPRIV, &iwr);
+-	os_free(buf);
+-
+-	return ret;
+-}
+-
+-static int wpa_driver_ps3_set_wep_keys(struct wpa_driver_wext_data *drv,
+-				struct wpa_driver_associate_params *params)
+-{
+-	int ret, i;
+-	struct iwreq iwr;
+-
+-	for (i = 0; i < 4; i++) {
+-		os_memset(&iwr, 0, sizeof(iwr));
+-		os_strlcpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+-		iwr.u.encoding.flags = i + 1;
+-		if (params->wep_key_len[i]) {
+-			iwr.u.encoding.pointer = (caddr_t) params->wep_key[i];
+-			iwr.u.encoding.length = params->wep_key_len[i];
+-		} else
+-			iwr.u.encoding.flags = IW_ENCODE_NOKEY |
+-				IW_ENCODE_DISABLED;
+-
+-		if (ioctl(drv->ioctl_sock, SIOCSIWENCODE, &iwr) < 0) {
+-			perror("ioctl[SIOCSIWENCODE]");
+-			ret = -1;
+-		}
+-	}
+-	return ret;
+-}
+-
+-static int wpa_driver_ps3_associate(void *priv,
+-				    struct wpa_driver_associate_params *params)
+-{
+-	struct wpa_driver_wext_data *drv = priv;
+-	int ret, value;
+-
+-	wpa_printf(MSG_DEBUG, "%s: <-", __func__);
+-
+-	/* clear BSSID */
+-	if (!params->bssid &&
+-	    wpa_driver_wext_set_bssid(drv, NULL) < 0)
+-		ret = -1;
+-
+-	if (wpa_driver_wext_set_mode(drv, params->mode) < 0)
+-		ret = -1;
+-
+-	if (params->wpa_ie == NULL || params->wpa_ie_len == 0)
+-		value = IW_AUTH_WPA_VERSION_DISABLED;
+-	else if (params->wpa_ie[0] == WLAN_EID_RSN)
+-		value = IW_AUTH_WPA_VERSION_WPA2;
+-	else
+-		value = IW_AUTH_WPA_VERSION_WPA;
+-	if (wpa_driver_wext_set_auth_param(drv,
+-					   IW_AUTH_WPA_VERSION, value) < 0)
+-		ret = -1;
+-	value = wpa_driver_wext_cipher2wext(params->pairwise_suite);
+-	if (wpa_driver_wext_set_auth_param(drv,
+-					   IW_AUTH_CIPHER_PAIRWISE, value) < 0)
+-		ret = -1;
+-	value = wpa_driver_wext_cipher2wext(params->group_suite);
+-	if (wpa_driver_wext_set_auth_param(drv,
+-					   IW_AUTH_CIPHER_GROUP, value) < 0)
+-		ret = -1;
+-	value = wpa_driver_wext_keymgmt2wext(params->key_mgmt_suite);
+-	if (wpa_driver_wext_set_auth_param(drv, IW_AUTH_KEY_MGMT, value) < 0)
+-		ret = -1;
+-
+-	/* set selected BSSID */
+-	if (params->bssid &&
+-	    wpa_driver_wext_set_bssid(drv, params->bssid) < 0)
+-		ret = -1;
+-
+-	switch (params->group_suite) {
+-	case CIPHER_NONE:
+-		ret = 0;
+-		break;
+-	case CIPHER_WEP40:
+-	case CIPHER_WEP104:
+-		ret = wpa_driver_ps3_set_wep_keys(drv, params);
+-		break;
+-	case CIPHER_TKIP:
+-	case CIPHER_CCMP:
+-		ret = wpa_driver_ps3_set_wpa_key(drv, params);
+-		break;
+-	}
+-
+-	/* start to associate */
+-	ret = wpa_driver_wext_set_ssid(drv, params->ssid, params->ssid_len);
+-
+-	wpa_printf(MSG_DEBUG, "%s: ->", __func__);
+-
+-	return ret;
+-}
+-
+-static int wpa_driver_ps3_get_capa(void *priv, struct wpa_driver_capa *capa)
+-{
+-	int ret;
+-	wpa_printf(MSG_DEBUG, "%s:<-", __func__);
+-
+-	ret = wpa_driver_wext_get_capa(priv, capa);
+-	if (ret) {
+-		wpa_printf(MSG_INFO, "%s: base wext returns error %d",
+-			   __func__, ret);
+-		return ret;
+-	}
+-	/* PS3 hypervisor does association and 4way handshake by itself */
+-	capa->flags |= WPA_DRIVER_FLAGS_4WAY_HANDSHAKE;
+-	wpa_printf(MSG_DEBUG, "%s:->", __func__);
+-	return 0;
+-}
+-
+-const struct wpa_driver_ops wpa_driver_ps3_ops = {
+-	.name = "ps3",
+-	.desc = "PLAYSTATION3 Linux wireless extension driver",
+-	.get_bssid = wpa_driver_wext_get_bssid,
+-	.get_ssid = wpa_driver_wext_get_ssid,
+-	.scan = wpa_driver_wext_scan,
+-	.get_scan_results2 = wpa_driver_wext_get_scan_results,
+-	.associate = wpa_driver_ps3_associate, /* PS3 */
+-	.init = wpa_driver_wext_init,
+-	.deinit = wpa_driver_wext_deinit,
+-	.get_capa = wpa_driver_ps3_get_capa, /* PS3 */
+-};
+diff --git a/src/drivers/drivers.c b/src/drivers/drivers.c
+index d278797..7e7d720 100644
+--- a/src/drivers/drivers.c
++++ b/src/drivers/drivers.c
+@@ -64,9 +64,6 @@ extern struct wpa_driver_ops wpa_driver_ralink_ops; /* driver_ralink.c */
+ #ifdef CONFIG_DRIVER_OSX
+ extern struct wpa_driver_ops wpa_driver_osx_ops; /* driver_osx.m */
+ #endif /* CONFIG_DRIVER_OSX */
+-#ifdef CONFIG_DRIVER_PS3
+-extern struct wpa_driver_ops wpa_driver_ps3_ops; /* driver_ps3.c */
+-#endif /* CONFIG_DRIVER_PS3 */
+ #ifdef CONFIG_DRIVER_IPHONE
+ extern struct wpa_driver_ops wpa_driver_iphone_ops; /* driver_iphone.m */
+ #endif /* CONFIG_DRIVER_IPHONE */
+@@ -126,9 +123,6 @@ struct wpa_driver_ops *wpa_supplicant_drivers[] =
+ #ifdef CONFIG_DRIVER_OSX
+ 	&wpa_driver_osx_ops,
+ #endif /* CONFIG_DRIVER_OSX */
+-#ifdef CONFIG_DRIVER_PS3
+-	&wpa_driver_ps3_ops,
+-#endif /* CONFIG_DRIVER_PS3 */
+ #ifdef CONFIG_DRIVER_IPHONE
+ 	&wpa_driver_iphone_ops,
+ #endif /* CONFIG_DRIVER_IPHONE */
+diff --git a/wpa_supplicant/Makefile b/wpa_supplicant/Makefile
+index 45d6ada..f131e92 100644
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -226,12 +226,6 @@ LDFLAGS += -framework CoreFoundation
+ LDFLAGS += -F/System/Library/PrivateFrameworks -framework Apple80211
+ endif
+ 
+-ifdef CONFIG_DRIVER_PS3
+-CFLAGS += -DCONFIG_DRIVER_PS3 -m64
+-OBJS_d += ../src/drivers/driver_ps3.o
+-LDFLAGS += -m64
+-endif
+-
+ ifdef CONFIG_DRIVER_IPHONE
+ CFLAGS += -DCONFIG_DRIVER_IPHONE
+ OBJS_d += ../src/drivers/driver_iphone.o
+-- 
+1.6.2.4
+
