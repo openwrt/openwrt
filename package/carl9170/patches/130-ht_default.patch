@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/carl9170/main.c
++++ b/drivers/net/wireless/ath/carl9170/main.c
+@@ -50,7 +50,7 @@ static int modparam_nohwcrypt;
+ module_param_named(nohwcrypt, modparam_nohwcrypt, bool, S_IRUGO);
+ MODULE_PARM_DESC(nohwcrypt, "Disable hardware encryption.");
+ 
+-int modparam_ht;
++int modparam_ht = 1;
+ module_param_named(ht, modparam_ht, bool, S_IRUGO);
+ MODULE_PARM_DESC(ht, "enable MPDU aggregation.");
+ 
