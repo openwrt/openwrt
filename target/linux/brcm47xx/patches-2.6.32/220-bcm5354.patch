@@ -1,0 +1,42 @@
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -258,6 +258,8 @@ void ssb_chipco_resume(struct ssb_chipco
+ void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
+                              u32 *plltype, u32 *n, u32 *m)
+ {
++	if ((chipco_read32(cc, SSB_CHIPCO_CHIPID) & SSB_CHIPCO_IDMASK) == 0x5354)
++		return;
+ 	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
+ 	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
+ 	switch (*plltype) {
+@@ -281,6 +283,8 @@ void ssb_chipco_get_clockcpu(struct ssb_
+ void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
+ 				 u32 *plltype, u32 *n, u32 *m)
+ {
++	if ((chipco_read32(cc, SSB_CHIPCO_CHIPID) & SSB_CHIPCO_IDMASK) == 0x5354)
++		return;
+ 	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
+ 	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
+ 	switch (*plltype) {
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -161,6 +161,8 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
+ 
+ 	if ((pll_type == SSB_PLLTYPE_5) || (bus->chip_id == 0x5365)) {
+ 		rate = 200000000;
++	} else if (bus->chip_id == 0x5354) {
++		rate = 240000000;
+ 	} else {
+ 		rate = ssb_calc_clock_rate(pll_type, n, m);
+ 	}
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -1010,6 +1010,8 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
+ 
+ 	if (bus->chip_id == 0x5365) {
+ 		rate = 100000000;
++	} else if (bus->chip_id == 0x5354) {
++		rate = 120000000;
+ 	} else {
+ 		rate = ssb_calc_clock_rate(plltype, clkctl_n, clkctl_m);
+ 		if (plltype == SSB_PLLTYPE_3) /* 25Mhz, 2 dividers */
