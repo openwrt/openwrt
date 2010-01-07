@@ -43,7 +43,10 @@ define Build/Prepare
 	$(Build/Patch)
 endef
 
-BUILDFLAGS= \
+BUILDFLAGS = \
+	CONFIG_MAC80211_DEBUGFS=$(CONFIG_PACKAGE_MAC80211_DEBUGFS)
+
+EXTRA_CFLAGS = \
 	$(if $(CONFIG_ATH_USER_REGD),-DATH_USER_REGD)
 
 define Build/Compile
@@ -51,7 +54,8 @@ define Build/Compile
 		SUBDIRS="$(DRV_PATH)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(KERNEL_CROSS)" \
-		CC="$(TARGET_CC) -I$(STAGING_DIR)/usr/include/mac80211 $(BUILDFLAGS)"
+		CC="$(TARGET_CC) -I$(STAGING_DIR)/usr/include/mac80211 $(EXTRA_CFLAGS)" \
+		$(BUILDFLAGS)
 endef
 
 define KernelPackage/carl9170/install
