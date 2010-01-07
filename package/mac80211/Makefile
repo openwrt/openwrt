@@ -620,9 +620,13 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include/mac80211 $(1)/usr/include/net/mac80211
+	mkdir -p \
+		$(1)/usr/include/mac80211 \
+		$(1)/usr/include/mac80211/ath \
+		$(1)/usr/include/net/mac80211
 	$(CP) $(PKG_BUILD_DIR)/net/mac80211/*.h $(PKG_BUILD_DIR)/include/* $(1)/usr/include/mac80211/
 	$(CP) $(PKG_BUILD_DIR)/net/mac80211/rate.h $(1)/usr/include/net/mac80211/
+	$(CP) $(PKG_BUILD_DIR)/drivers/net/wireless/ath/*.h $(1)/usr/include/mac80211/ath/
 endef
 
 define KernelPackage/libertas/install
