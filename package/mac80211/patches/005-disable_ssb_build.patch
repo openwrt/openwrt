@@ -1,10 +1,11 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -22,7 +22,6 @@ NOSTDINC_FLAGS := -I$(M)/include/ -inclu
- obj-y := net/wireless/ net/mac80211/ net/rfkill/
- ifeq ($(ONLY_CORE),)
- obj-m += \
--	drivers/ssb/ \
- 	drivers/misc/eeprom/ \
- 	drivers/net/ \
- 	drivers/net/usb/ \
+@@ -28,7 +28,7 @@ obj-$(CONFIG_COMPAT_WIRELESS_MODULES) +=
+ obj-$(CONFIG_COMPAT_NET_USB_MODULES) += drivers/net/usb/
+ 
+ obj-$(CONFIG_COMPAT_NETWORK_MODULES) += drivers/net/
+-obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/ssb/ drivers/misc/eeprom/
++obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/misc/eeprom/
+ endif
+ 
+ obj-$(CONFIG_COMPAT_BLUETOOTH) += net/bluetooth/

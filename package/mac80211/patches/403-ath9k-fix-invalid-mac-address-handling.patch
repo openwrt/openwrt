@@ -8,7 +8,7 @@
  #include <asm/unaligned.h>
  
  #include "hw.h"
-@@ -485,8 +486,18 @@ static int ath9k_hw_init_macaddr(struct 
+@@ -461,8 +462,18 @@ static int ath9k_hw_init_macaddr(struct 
  		common->macaddr[2 * i] = eeval >> 8;
  		common->macaddr[2 * i + 1] = eeval & 0xff;
  	}

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1112,6 +1112,9 @@ static void ath_unregister_led(struct at
+@@ -1103,6 +1103,9 @@ static void ath_unregister_led(struct at
  
  static void ath_deinit_leds(struct ath_softc *sc)
  {
@@ -10,7 +10,7 @@
  	ath_unregister_led(&sc->assoc_led);
  	sc->sc_flags &= ~SC_OP_LED_ASSOCIATED;
  	ath_unregister_led(&sc->tx_led);
-@@ -1130,6 +1133,9 @@ static void ath_init_leds(struct ath_sof
+@@ -1121,6 +1124,9 @@ static void ath_init_leds(struct ath_sof
  	else
  		sc->sc_ah->led_pin = ATH_LED_PIN_DEF;
  
