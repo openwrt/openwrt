@@ -6,8 +6,8 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
 
 --- a/libopkg/opkg_conf.c
 +++ b/libopkg/opkg_conf.c
-@@ -58,6 +58,7 @@
- 	  { "noaction", OPKG_OPT_TYPE_BOOL, &_conf.noaction },
+@@ -62,6 +62,7 @@
+ 	  { "download_only", OPKG_OPT_TYPE_BOOL, &_conf.download_only },
  	  { "nodeps", OPKG_OPT_TYPE_BOOL, &_conf.nodeps },
  	  { "offline_root", OPKG_OPT_TYPE_STRING, &_conf.offline_root },
 +	  { "overlay_root", OPKG_OPT_TYPE_STRING, &_conf.overlay_root },
@@ -16,7 +16,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
  	  { "query-all", OPKG_OPT_TYPE_BOOL, &_conf.query_all },
 --- a/libopkg/opkg_conf.h
 +++ b/libopkg/opkg_conf.h
-@@ -74,6 +74,7 @@
+@@ -76,6 +76,7 @@
       int check_signature;
       int nodeps; /* do not follow dependences */
       char *offline_root;

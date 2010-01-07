@@ -1,6 +1,6 @@
 --- a/libopkg/opkg_cmd.c
 +++ b/libopkg/opkg_cmd.c
-@@ -495,17 +495,6 @@
+@@ -498,17 +498,6 @@
  		    opkg_install_by_name(arg);
                 }
  	  }
@@ -18,7 +18,7 @@
       }
  
       opkg_configure_packages(NULL);
-@@ -1163,7 +1152,7 @@
+@@ -1166,7 +1155,7 @@
     array for easier maintenance */
  static opkg_cmd_t cmds[] = {
       {"update", 0, (opkg_cmd_fun_t)opkg_update_cmd, PFM_DESCRIPTION|PFM_SOURCE},
