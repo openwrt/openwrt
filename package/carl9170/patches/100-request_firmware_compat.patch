@@ -1,0 +1,31 @@
+--- a/drivers/net/wireless/ath/carl9170/usb.c
++++ b/drivers/net/wireless/ath/carl9170/usb.c
+@@ -983,11 +983,28 @@ err_failed:
+ 	ar9170_usb_firmware_failed(aru);
+ }
+ 
++
++
+ static int ar9170_usb_request_firmware(struct ar9170_usb *aru)
+ {
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
++	const struct firmware *fw;
++	int ret;
++
++	ret = request_firmware(&fw,
++		ar9170_fws[aru->fw_load].files[aru->fw_files].name,
++		&aru->udev->dev);
++
++	if (ret < 0)
++		return ret;
++
++	ar9170_usb_firmware_step2(fw, aru);
++	return 0;
++#else
+ 	return request_firmware_nowait(THIS_MODULE, 1,
+ 		ar9170_fws[aru->fw_load].files[aru->fw_files].name,
+ 		&aru->udev->dev, GFP_KERNEL, aru, ar9170_usb_firmware_step2);
++#endif
+ }
+ 
+ static void ar9170_usb_disconnect(struct usb_interface *intf)
