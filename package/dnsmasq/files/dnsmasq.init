@@ -101,78 +101,80 @@ dnsmasq() {
 dhcp_subscrid_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || return 0
 
 	config_get subscriberid "$cfg" subscriberid
 	[ -n "$subscriberid" ] || return 0
 
-	append args "--dhcp-subscrid=$name,$subscriberid"
+	append args "--dhcp-subscrid=$networkid,$subscriberid"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_remoteid_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || return 0
 
 	config_get remoteid "$cfg" remoteid
 	[ -n "$remoteid" ] || return 0
 
-	append args "--dhcp-remoteid=$name,$remoteid"
+	append args "--dhcp-remoteid=$networkid,$remoteid"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_circuitid_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || return 0
 
 	config_get circuitid "$cfg" circuitid
 	[ -n "$circuitid" ] || return 0
 
-	append args "--dhcp-circuitid=$name,$circuitid"
+	append args "--dhcp-circuitid=$networkid,$circuitid"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_userclass_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || return 0
 
 	config_get userclass "$cfg" userclass
 	[ -n "$userclass" ] || return 0
 
-	append args "--dhcp-userclass=$name,$userclass"
+	append args "--dhcp-userclass=$networkid,$userclass"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_vendorclass_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || return 0
 
 	config_get vendorclass "$cfg" vendorclass
 	[ -n "$vendorclass" ] || return 0
 
-	append args "--dhcp-vendorclass=$name,$vendorclass"
+	append args "--dhcp-vendorclass=$networkid,$vendorclass"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_host_add() {
 	local cfg="$1"
 
 	config_get name "$cfg" name
-	[ -n "$name" ] && dhcp_option_add "$cfg" "$name"
+
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] && dhcp_option_add "$cfg" "$networkid"
 
 	config_get mac "$cfg" mac
 	[ -n "$mac" ] || return 0
@@ -180,27 +182,27 @@ dhcp_host_add() {
 	config_get ip "$cfg" ip
 	[ -n "$ip" ] || return 0
 
-	append args "--dhcp-host=$mac,${name:+net:$name,}$ip"
+	append args "--dhcp-host=$mac,${networkid:+net:$networkid,}$ip${name:+,$name}"
 }
 
 dhcp_mac_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || return 0
 
 	config_get mac "$cfg" mac
 	[ -n "$mac" ] || return 0
 
-	append args "--dhcp-mac=$name,$mac"
+	append args "--dhcp-mac=$networkid,$mac"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_boot_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
+	config_get networkid "$cfg" networkid
 
 	config_get filename "$cfg" filename
 	[ -n "$filename" ] || return 0
@@ -211,9 +213,9 @@ dhcp_boot_add() {
 	config_get serveraddress "$cfg" serveraddress
 	[ -n "$serveraddress" ] || return 0
 
-	append args "--dhcp-boot=${name:+net:$name,}$filename,$servername,$serveraddress"
+	append args "--dhcp-boot=${networkid:+net:$networkid,}$filename,$servername,$serveraddress"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 
@@ -222,8 +224,8 @@ dhcp_add() {
 	config_get net "$cfg" interface
 	[ -n "$net" ] || return 0
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || name="$net"
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || networkid="$net"
 
 	config_get ifname "$net" ifname
 	[ -n "$ifname" ] || return 0
@@ -259,18 +261,18 @@ dhcp_add() {
 	limit="$((${limit:-150} + 1))"
 	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
 	if [ "$dynamicdhcp" = "0" ]; then END="static"; fi
-	append args "--dhcp-range=$name,$START,$END,$NETMASK,$leasetime${options:+ $options}"
+	append args "--dhcp-range=$networkid,$START,$END,$NETMASK,$leasetime${options:+ $options}"
 
-	dhcp_option_add "$cfg" "$name"
+	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_option_add() {
 	local cfg="$1"
-	local name="$2"
+	local networkid="$2"
 
 	config_get dhcp_option "$cfg" dhcp_option
 	for o in $dhcp_option; do
-		append args "-O $name","$o"
+		append args "-O $networkid","$o"
 	done
 
 }
