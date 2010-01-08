@@ -77,7 +77,7 @@ define Image/Build/WRT400N
 	fi; fi
 endef
 
-dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,6208k@0x50000(firmware)
+dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,1600k(unknown)ro,6208k@0x50000(firmware)
 define Image/Build/DIR825B1
 	$(call PatchKernelLzma,$(2),$(3) $(dir825b1_mtdlayout))
 	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(call imgname,$(1),$(2)).bin)
