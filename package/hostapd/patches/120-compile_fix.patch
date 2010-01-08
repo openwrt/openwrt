@@ -1,10 +1,10 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -23,6 +23,7 @@
+@@ -22,6 +22,7 @@
  #include <netlink/genl/genl.h>
  #include <netlink/genl/family.h>
  #include <netlink/genl/ctrl.h>
 +#include <linux/rtnetlink.h>
+ #include <netpacket/packet.h>
+ #include <linux/filter.h>
  #include "nl80211_copy.h"
- 
- #include "common.h"

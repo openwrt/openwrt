@@ -8,9 +8,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=20091129
+PKG_VERSION:=20100108
 PKG_RELEASE:=1
-PKG_REV:=be8eb8ab3ee42aa66930aea827bdcb05a2172276
+PKG_REV:=d97572a40fd7ec77094e2e4ef83424a4c0f7e24d
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=git://w1.fi/srv/git/hostap.git
