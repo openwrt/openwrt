@@ -1,27 +1,21 @@
 --- a/src/drivers/driver_madwifi.c
 +++ b/src/drivers/driver_madwifi.c
-@@ -323,6 +323,7 @@ madwifi_set_iface_flags(void *priv, int 
- {
- 	struct madwifi_driver_data *drv = priv;
- 	struct ifreq ifr;
-+	short flags;
- 
- 	wpa_printf(MSG_DEBUG, "%s: dev_up=%d", __func__, dev_up);
- 
-@@ -337,10 +338,14 @@ madwifi_set_iface_flags(void *priv, int 
- 		return -1;
+@@ -1170,8 +1170,6 @@ madwifi_init(struct hostapd_data *hapd, 
+ 		goto bad;
  	}
  
-+	flags = ifr.ifr_flags;
- 	if (dev_up)
--		ifr.ifr_flags |= IFF_UP;
-+		flags |= IFF_UP;
- 	else
--		ifr.ifr_flags &= ~IFF_UP;
-+		flags &= ~IFF_UP;
-+
-+	if (flags == ifr.ifr_flags)
-+		return 0;
+-	/* mark down during setup */
+-	linux_set_iface_flags(drv->ioctl_sock, drv->iface, 0);
+ 	madwifi_set_privacy(drv->iface, drv, 0); /* default to no privacy */
  
- 	if (ioctl(drv->ioctl_sock, SIOCSIFFLAGS, &ifr) != 0) {
- 		perror("ioctl[SIOCSIFFLAGS]");
+ 	madwifi_receive_probe_req(drv);
+@@ -1261,8 +1259,7 @@ madwifi_set_countermeasures(void *priv, 
+ static int
+ madwifi_commit(void *priv)
+ {
+-	struct madwifi_driver_data *drv = priv;
+-	return linux_set_iface_flags(drv->ioctl_sock, drv->iface, 1);
++	return 0;
+ }
+ 
+ #else /* HOSTAPD */
