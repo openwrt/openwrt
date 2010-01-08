@@ -71,8 +71,77 @@ static const struct file_operations ag71xx_fops_int_stats = {
 	.owner	= THIS_MODULE
 };
 
+void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag, int rx, int tx)
+{
+	struct ag71xx_napi_stats *stats = &ag->debug.napi_stats;
+
+	if (rx) {
+		stats->rx_count++;
+		stats->rx_packets += rx;
+		if (rx <= AG71XX_NAPI_WEIGHT)
+			stats->rx[rx]++;
+		if (rx > stats->rx_packets_max)
+			stats->rx_packets_max = rx;
+	}
+
+	if (tx) {
+		stats->tx_count++;
+		stats->tx_packets += tx;
+		if (tx <= AG71XX_NAPI_WEIGHT)
+			stats->tx[tx]++;
+		if (tx > stats->tx_packets_max)
+			stats->tx_packets_max = tx;
+	}
+}
+
+static ssize_t read_file_napi_stats(struct file *file, char __user *user_buf,
+				    size_t count, loff_t *ppos)
+{
+	struct ag71xx *ag = file->private_data;
+	struct ag71xx_napi_stats *stats = &ag->debug.napi_stats;
+	char buf[2048];
+	unsigned int len = 0;
+	unsigned long rx_avg = 0;
+	unsigned long tx_avg = 0;
+	int i;
+
+	if (stats->rx_count)
+		rx_avg = stats->rx_packets / stats->rx_count;
+
+	if (stats->tx_count)
+		tx_avg = stats->tx_packets / stats->tx_count;
+
+	len += snprintf(buf + len, sizeof(buf) - len, "%3s  %10s %10s\n",
+			"len", "rx", "tx");
+
+	for (i = 1; i <= AG71XX_NAPI_WEIGHT; i++)
+		len += snprintf(buf + len, sizeof(buf) - len,
+				"%3d: %10lu %10lu\n",
+				i, stats->rx[i], stats->tx[i]);
+
+	len += snprintf(buf + len, sizeof(buf) - len, "\n");
+
+	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+			"sum", stats->rx_count, stats->tx_count);
+	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+			"avg", rx_avg, tx_avg);
+	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+			"max", stats->rx_packets_max, stats->tx_packets_max);
+	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+			"pkt", stats->rx_packets, stats->tx_packets);
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
+static const struct file_operations ag71xx_fops_napi_stats = {
+	.open	= ag71xx_debugfs_generic_open,
+	.read	= read_file_napi_stats,
+	.owner	= THIS_MODULE
+};
+
 void ag71xx_debugfs_exit(struct ag71xx *ag)
 {
+	debugfs_remove(ag->debug.debugfs_napi_stats);
 	debugfs_remove(ag->debug.debugfs_int_stats);
 	debugfs_remove(ag->debug.debugfs_dir);
 }
@@ -91,6 +160,15 @@ int ag71xx_debugfs_init(struct ag71xx *ag)
 					    ag,
 					    &ag71xx_fops_int_stats);
 	if (!ag->debug.debugfs_int_stats)
+		goto err;
+
+	ag->debug.debugfs_napi_stats =
+			debugfs_create_file("napi_stats",
+					    S_IRUGO,
+					    ag->debug.debugfs_dir,
+					    ag,
+					    &ag71xx_fops_napi_stats);
+	if (!ag->debug.debugfs_napi_stats)
 		goto err;
 
 	return 0;

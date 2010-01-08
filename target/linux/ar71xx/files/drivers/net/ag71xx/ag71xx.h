@@ -119,10 +119,26 @@ struct ag71xx_int_stats {
 	unsigned long		total;
 };
 
+struct ag71xx_napi_stats {
+	unsigned long		napi_calls;
+	unsigned long		rx_count;
+	unsigned long		rx_packets;
+	unsigned long		rx_packets_max;
+	unsigned long		tx_count;
+	unsigned long		tx_packets;
+	unsigned long		tx_packets_max;
+
+	unsigned long		rx[AG71XX_NAPI_WEIGHT + 1];
+	unsigned long		tx[AG71XX_NAPI_WEIGHT + 1];
+};
+
 struct ag71xx_debug {
 	struct dentry		*debugfs_dir;
 	struct dentry		*debugfs_int_stats;
+	struct dentry		*debugfs_napi_stats;
+
 	struct ag71xx_int_stats int_stats;
+	struct ag71xx_napi_stats napi_stats;
 };
 
 struct ag71xx {
@@ -476,13 +492,16 @@ void ag71xx_debugfs_root_exit(void);
 int ag71xx_debugfs_init(struct ag71xx *ag);
 void ag71xx_debugfs_exit(struct ag71xx *ag);
 void ag71xx_debugfs_update_int_stats(struct ag71xx *ag, u32 status);
+void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag, int rx, int tx);
 #else
 static inline int ag71xx_debugfs_root_init(void) { return 0; }
 static inline void ag71xx_debugfs_root_exit(void) {}
 static inline int ag71xx_debugfs_init(struct ag71xx *ag) { return 0; }
 static inline void ag71xx_debugfs_exit(struct ag71xx *ag) {}
 static inline void ag71xx_debugfs_update_int_stats(struct ag71xx *ag,
-						 u32 status) {}
+						   u32 status) {}
+static inline void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag,
+						    int rx, int tx) {}
 #endif /* CONFIG_AG71XX_DEBUG_FS */
 
 #endif /* _AG71XX_H */
