@@ -68,6 +68,11 @@ static struct mtd_partition dir825b1_partitions[] = {
 		.offset		= 0x660000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
+	} , {
+		.name		= "unknown",
+		.offset		= 0x670000,
+		.size		= 0x190000,
+		.mask_flags	= MTD_WRITEABLE,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
