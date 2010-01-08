@@ -8,3 +8,21 @@
  #include <netpacket/packet.h>
  #include <linux/filter.h>
  #include "nl80211_copy.h"
+--- a/src/drivers/driver_madwifi.c
++++ b/src/drivers/driver_madwifi.c
+@@ -69,6 +69,7 @@
+ #define MADWIFI_NG
+ #endif /* IEEE80211_IOCTL_SETWMMPARAMS */
+ 
++#define WPA_KEY_RSC_LEN 8
+ 
+ #ifdef HOSTAPD
+ 
+@@ -1499,7 +1500,6 @@ wpa_driver_madwifi_set_key(const char *i
+ 	wk.ik_keyix = key_idx;
+ 	wk.ik_keylen = key_len;
+ #ifdef WORDS_BIGENDIAN
+-#define WPA_KEY_RSC_LEN 8
+ 	{
+ 		size_t i;
+ 		u8 tmp[WPA_KEY_RSC_LEN];
