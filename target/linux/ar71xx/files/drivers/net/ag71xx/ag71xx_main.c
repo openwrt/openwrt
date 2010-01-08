@@ -608,10 +608,10 @@ static void ag71xx_restart_work_func(struct work_struct *work)
 	ag71xx_open(ag->dev);
 }
 
-static void ag71xx_tx_packets(struct ag71xx *ag)
+static int ag71xx_tx_packets(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
-	unsigned int sent;
+	int sent;
 
 	DBG("%s: processing TX ring\n", ag->dev->name);
 
@@ -641,6 +641,7 @@ static void ag71xx_tx_packets(struct ag71xx *ag)
 	if ((ring->curr - ring->dirty) < AG71XX_TX_THRES_WAKEUP)
 		netif_wake_queue(ag->dev);
 
+	return sent;
 }
 
 static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
@@ -711,13 +712,16 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	struct ag71xx_ring *rx_ring;
 	unsigned long flags;
 	u32 status;
-	int done;
+	int tx_done;
+	int rx_done;
 
 	pdata->ddr_flush();
-	ag71xx_tx_packets(ag);
+	tx_done = ag71xx_tx_packets(ag);
 
 	DBG("%s: processing RX ring\n", dev->name);
-	done = ag71xx_rx_packets(ag, limit);
+	rx_done = ag71xx_rx_packets(ag, limit);
+
+	ag71xx_debugfs_update_napi_stats(ag, rx_done, tx_done);
 
 	rx_ring = &ag->rx_ring;
 	if (rx_ring->buf[rx_ring->dirty % AG71XX_RX_RING_SIZE].skb == NULL)
@@ -732,7 +736,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
 	}
 
-	if (done < limit) {
+	if (rx_done < limit) {
 		if (status & RX_STATUS_PR)
 			goto more;
 
@@ -740,8 +744,8 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		if (status & TX_STATUS_PS)
 			goto more;
 
-		DBG("%s: disable polling mode, done=%d, limit=%d\n",
-			dev->name, done, limit);
+		DBG("%s: disable polling mode, rx=%d, tx=%d,limit=%d\n",
+			dev->name, rx_done, tx_done, limit);
 
 		napi_complete(napi);
 
@@ -749,13 +753,13 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		spin_lock_irqsave(&ag->lock, flags);
 		ag71xx_int_enable(ag, AG71XX_INT_POLL);
 		spin_unlock_irqrestore(&ag->lock, flags);
-		return done;
+		return rx_done;
 	}
 
  more:
-	DBG("%s: stay in polling mode, done=%d, limit=%d\n",
-			dev->name, done, limit);
-	return done;
+	DBG("%s: stay in polling mode, rx=%d, tx=%d, limit=%d\n",
+			dev->name, rx_done, tx_done, limit);
+	return rx_done;
 
  oom:
 	if (netif_msg_rx_err(ag))
