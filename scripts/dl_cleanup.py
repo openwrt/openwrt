@@ -27,7 +27,10 @@ def parseVer_1234(match):
 
 def parseVer_123(match):
 	progname = match.group(1)
-	patchlevel = match.group(5)
+	try:
+		patchlevel = match.group(5)
+	except (IndexError), e:
+		patchlevel = None
 	if patchlevel:
 		patchlevel = ord(patchlevel[0])
 	else:
@@ -40,7 +43,10 @@ def parseVer_123(match):
 
 def parseVer_12(match):
 	progname = match.group(1)
-	patchlevel = match.group(4)
+	try:
+		patchlevel = match.group(4)
+	except (IndexError), e:
+		patchlevel = None
 	if patchlevel:
 		patchlevel = ord(patchlevel[0])
 	else:
@@ -76,6 +82,7 @@ versionRegex = (
 	(re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)\.(\d+)"), parseVer_1234),	# xxx-1.2.3.4
 	(re.compile(r"(.+)[-_](\d\d\d\d)-?(\d\d)-?(\d\d)"), parseVer_ymd),	# xxx-YYYY-MM-DD
 	(re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)(\w?)"), parseVer_123),	# xxx-1.2.3a
+	(re.compile(r"(.+)[-_](\d+)_(\d+)_(\d+)"), parseVer_123),		# xxx-1_2_3
 	(re.compile(r"(.+)[-_](\d+)\.(\d+)(\w?)"), parseVer_12),		# xxx-1.2a
 	(re.compile(r"(.+)[-_]r?(\d+)"), parseVer_r),				# xxx-r1111
 )
@@ -83,7 +90,6 @@ versionRegex = (
 blacklist = [
 	("linux",		re.compile(r"linux-.*")),
 	("gcc",			re.compile(r"gcc-.*")),
-	("boost",		re.compile(r"boost.*")),
 	("wl_apsta",		re.compile(r"wl_apsta.*")),
 	(".fw",			re.compile(r".*\.fw")),
 	(".arm",		re.compile(r".*\.arm")),
