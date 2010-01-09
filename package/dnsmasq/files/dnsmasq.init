@@ -315,6 +315,7 @@ start() {
 		for DNS_SERVER in $DNS_SERVERS ; do
 			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
 		done
+		echo "search $DOMAIN" >> /tmp/resolv.conf
 	}
 }
 
