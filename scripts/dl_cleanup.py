@@ -11,8 +11,6 @@ import os
 import re
 import getopt
 
-DEBUG = 0
-
 # Commandline options
 opt_dryrun = False
 
@@ -94,7 +92,7 @@ blacklist = [
 	(".fw",			re.compile(r".*\.fw")),
 	(".arm",		re.compile(r".*\.arm")),
 	(".bin",		re.compile(r".*\.bin")),
-	("rt-firmware",		re.compile(r"RT\d+_Firmware.*")),
+	("rt-firmware",		re.compile(r"RT[\d\w]+_Firmware.*")),
 ]
 
 class EntryParseError(Exception): pass
@@ -110,8 +108,7 @@ class Entry:
 				filename = filename[0:0-len(ext)]
 				break
 		else:
-			if DEBUG:
-				print "Extension did not match on", filename
+			print self.filename, "has an unknown file-extension"
 			raise EntryParseError("ext")
 		for (regex, parseVersion) in versionRegex:
 			match = regex.match(filename)
@@ -119,8 +116,7 @@ class Entry:
 				(self.progname, self.version) = parseVersion(match)
 				break
 		else:
-			if DEBUG:
-				print "Version regex did not match on", filename
+			print self.filename, "has an unknown version pattern"
 			raise EntryParseError("ver")
 
 	def deleteFile(self):
