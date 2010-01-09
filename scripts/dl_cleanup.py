@@ -9,8 +9,12 @@
 import sys
 import os
 import re
+import getopt
 
 DEBUG = 0
+
+# Commandline options
+opt_dryrun = False
 
 
 def parseVer_1234(match):
@@ -114,7 +118,7 @@ class Entry:
 	def deleteFile(self):
 		path = (self.directory + "/" + self.filename).replace("//", "/")
 		print "Deleting", path
-		if not DEBUG:
+		if not opt_dryrun:
 			os.unlink(path)
 
 	def __eq__(self, y):
@@ -125,13 +129,29 @@ class Entry:
 
 def usage():
 	print "OpenWRT download directory cleanup utility"
-	print "Usage: " + sys.argv[0] + " path/to/dl"
+	print "Usage: " + sys.argv[0] + " [OPTIONS] <path/to/dl>"
+	print ""
+	print " -d|--dry-run            Do a dry-run. Don't delete any files"
 
 def main(argv):
-	if len(argv) != 2:
+	global opt_dryrun
+
+	try:
+		(opts, args) = getopt.getopt(argv[1:],
+			"hd",
+			[ "help", "dry-run", ])
+		if len(args) != 1:
+			raise getopt.GetoptError()
+	except getopt.GetoptError:
 		usage()
 		return 1
-	directory = argv[1]
+	directory = args[0]
+	for (o, v) in opts:
+		if o in ("-h", "--help"):
+			usage()
+			return 0
+		if o in ("-d", "--dry-run"):
+			opt_dryrun = True
 
 	# Create a directory listing and parse the file names.
 	entries = []
@@ -140,7 +160,7 @@ def main(argv):
 			continue
 		for black in blacklist:
 			if black.match(filename):
-				if DEBUG:
+				if opt_dryrun:
 					print filename, "is blacklisted"
 				break
 		else:
@@ -167,7 +187,7 @@ def main(argv):
 			for version in versions:
 				if version != lastVersion:
 					version.deleteFile()
-			if DEBUG:
+			if opt_dryrun:
 				print "Keeping", lastVersion.filename
 
 	return 0
