@@ -81,12 +81,14 @@ versionRegex = (
 )
 
 blacklist = (
-	re.compile(r"wl_apsta.*"),
-	re.compile(r"boost.*"),
-	re.compile(r".*\.fw"),
-	re.compile(r".*\.arm"),
-	re.compile(r".*\.bin"),
-	re.compile(r"RT\d+_Firmware.*"),
+	("linux",		re.compile(r"linux-.*")),
+	("gcc",			re.compile(r"gcc-.*")),
+	("boost",		re.compile(r"boost.*")),
+	("wl_apsta",		re.compile(r"wl_apsta.*")),
+	(".fw",			re.compile(r".*\.fw")),
+	(".arm",		re.compile(r".*\.arm")),
+	(".bin",		re.compile(r".*\.bin")),
+	("rt-firmware",		re.compile(r"RT\d+_Firmware.*")),
 )
 
 class EntryParseError(Exception): pass
@@ -132,14 +134,15 @@ def usage():
 	print "Usage: " + sys.argv[0] + " [OPTIONS] <path/to/dl>"
 	print ""
 	print " -d|--dry-run            Do a dry-run. Don't delete any files"
+	print " -B|--show-blacklist     Show the blacklist and exit"
 
 def main(argv):
 	global opt_dryrun
 
 	try:
 		(opts, args) = getopt.getopt(argv[1:],
-			"hd",
-			[ "help", "dry-run", ])
+			"hdB",
+			[ "help", "dry-run", "show-blacklist", ])
 		if len(args) != 1:
 			raise getopt.GetoptError()
 	except getopt.GetoptError:
@@ -152,14 +155,18 @@ def main(argv):
 			return 0
 		if o in ("-d", "--dry-run"):
 			opt_dryrun = True
+		if o in ("-B", "--show-blacklist"):
+			for (name, regex) in blacklist:
+				print name
+			return 0
 
 	# Create a directory listing and parse the file names.
 	entries = []
 	for filename in os.listdir(directory):
 		if filename == "." or filename == "..":
 			continue
-		for black in blacklist:
-			if black.match(filename):
+		for (name, regex) in blacklist:
+			if regex.match(filename):
 				if opt_dryrun:
 					print filename, "is blacklisted"
 				break
