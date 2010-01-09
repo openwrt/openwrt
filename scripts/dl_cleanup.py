@@ -80,7 +80,7 @@ versionRegex = (
 	(re.compile(r"(.+)[-_]r?(\d+)"), parseVer_r),				# xxx-r1111
 )
 
-blacklist = (
+blacklist = [
 	("linux",		re.compile(r"linux-.*")),
 	("gcc",			re.compile(r"gcc-.*")),
 	("boost",		re.compile(r"boost.*")),
@@ -89,7 +89,7 @@ blacklist = (
 	(".arm",		re.compile(r".*\.arm")),
 	(".bin",		re.compile(r".*\.bin")),
 	("rt-firmware",		re.compile(r"RT\d+_Firmware.*")),
-)
+]
 
 class EntryParseError(Exception): pass
 
@@ -135,14 +135,15 @@ def usage():
 	print ""
 	print " -d|--dry-run            Do a dry-run. Don't delete any files"
 	print " -B|--show-blacklist     Show the blacklist and exit"
+	print " -w|--whitelist ITEM     Remove ITEM from blacklist"
 
 def main(argv):
 	global opt_dryrun
 
 	try:
 		(opts, args) = getopt.getopt(argv[1:],
-			"hdB",
-			[ "help", "dry-run", "show-blacklist", ])
+			"hdBw:",
+			[ "help", "dry-run", "show-blacklist", "whitelist=", ])
 		if len(args) != 1:
 			raise getopt.GetoptError()
 	except getopt.GetoptError:
@@ -155,6 +156,16 @@ def main(argv):
 			return 0
 		if o in ("-d", "--dry-run"):
 			opt_dryrun = True
+		if o in ("-w", "--whitelist"):
+			for i in range(0, len(blacklist)):
+				(name, regex) = blacklist[i]
+				if name == v:
+					del blacklist[i]
+					break
+			else:
+				print "Whitelist error: Item", v,\
+				      "is not in blacklist"
+				return 1
 		if o in ("-B", "--show-blacklist"):
 			for (name, regex) in blacklist:
 				print name
