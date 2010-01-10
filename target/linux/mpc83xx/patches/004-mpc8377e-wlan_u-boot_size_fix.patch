@@ -1,0 +1,24 @@
+From 850f785a1f8c8448db4d70983595b2b088cf60b7 Mon Sep 17 00:00:00 2001
+From: Anton Vorontsov <avorontsov@ru.mvista.com>
+Date: Fri, 16 Oct 2009 20:47:22 +0400
+Subject: [PATCH] powerpc/83xx: Fix u-boot partion size for MPC8377E-WLAN boards
+
+u-boot partition size should be 0x80000 (512 KB), not 0x8000 (32 KB).
+
+Signed-off-by: Anton Vorontsov <avorontsov@ru.mvista.com>
+Signed-off-by: Kumar Gala <galak@kernel.crashing.org>
+---
+ arch/powerpc/boot/dts/mpc8377_wlan.dts |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/arch/powerpc/boot/dts/mpc8377_wlan.dts
++++ b/arch/powerpc/boot/dts/mpc8377_wlan.dts
+@@ -67,7 +67,7 @@
+ 			device-width = <1>;
+ 
+ 			partition@0 {
+-				reg = <0 0x8000>;
++				reg = <0 0x80000>;
+ 				label = "u-boot";
+ 				read-only;
+ 			};

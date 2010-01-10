@@ -358,7 +358,7 @@
      ;;
 --- a/arch/powerpc/kernel/Makefile
 +++ b/arch/powerpc/kernel/Makefile
-@@ -97,9 +97,11 @@ obj-$(CONFIG_FUNCTION_GRAPH_TRACER)	+= f
+@@ -104,9 +104,11 @@ obj32-$(CONFIG_PPC_PERF_CTRS)	+= mpc7450
  
  obj-$(CONFIG_8XX_MINIMAL_FPEMU) += softemu8xx.o
  
@@ -369,7 +369,7 @@
 +endif
  
  obj-$(CONFIG_PPC64)		+= $(obj64-y)
- 
+ obj-$(CONFIG_PPC32)		+= $(obj32-y)
 --- a/arch/powerpc/platforms/83xx/Kconfig
 +++ b/arch/powerpc/platforms/83xx/Kconfig
 @@ -30,6 +30,15 @@ config MPC832x_RDB
@@ -732,7 +732,7 @@
  menu "CPU Frequency drivers"
 --- a/arch/powerpc/sysdev/Makefile
 +++ b/arch/powerpc/sysdev/Makefile
-@@ -50,3 +50,5 @@ obj-$(CONFIG_UCODE_PATCH)	+= micropatch.
+@@ -56,3 +56,5 @@ obj-$(CONFIG_PPC_MPC52xx)	+= mpc5xxx_clo
  ifeq ($(CONFIG_SUSPEND),y)
  obj-$(CONFIG_6xx)		+= 6xx-suspend.o
  endif
@@ -966,7 +966,7 @@
 +EXPORT_SYMBOL(localbus_unmap);
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
-@@ -734,5 +734,12 @@ config PATA_BF54X
+@@ -751,5 +751,12 @@ config PATA_BF54X
  
  	  If unsure, say N.
  
@@ -981,8 +981,8 @@
  endif # ATA
 --- a/drivers/ata/Makefile
 +++ b/drivers/ata/Makefile
-@@ -73,6 +73,7 @@ obj-$(CONFIG_PATA_OCTEON_CF)	+= pata_oct
- obj-$(CONFIG_PATA_PLATFORM)	+= pata_platform.o
+@@ -75,6 +75,7 @@ obj-$(CONFIG_PATA_PLATFORM)	+= pata_plat
+ obj-$(CONFIG_PATA_AT91)	+= pata_at91.o
  obj-$(CONFIG_PATA_OF_PLATFORM)	+= pata_of_platform.o
  obj-$(CONFIG_PATA_ICSIDE)	+= pata_icside.o
 +obj-$(CONFIG_PATA_RB_PPC)	+= pata_rbppc_cf.o
@@ -1695,7 +1695,7 @@
 +module_exit(rbppc_exit);
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -380,6 +380,13 @@ config MTD_NAND_PLATFORM
+@@ -386,6 +386,13 @@ config MTD_NAND_PLATFORM
  	  devices. You will need to provide platform-specific functions
  	  via platform_data.
  
@@ -1711,7 +1711,7 @@
  	depends on MTD_NAND && USB
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -30,6 +30,7 @@ obj-$(CONFIG_MTD_NAND_BASLER_EXCITE)	+= 
+@@ -31,6 +31,7 @@ obj-$(CONFIG_MTD_NAND_BASLER_EXCITE)	+= 
  obj-$(CONFIG_MTD_NAND_PXA3xx)		+= pxa3xx_nand.o
  obj-$(CONFIG_MTD_NAND_TMIO)		+= tmio_nand.o
  obj-$(CONFIG_MTD_NAND_PLATFORM)		+= plat_nand.o
