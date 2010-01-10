@@ -311,11 +311,11 @@ start() {
 
 	/usr/sbin/dnsmasq $args && {
 		rm -f /tmp/resolv.conf
+		[ -n "$DOMAIN" ] && echo "search $DOMAIN" >> /tmp/resolv.conf
 		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
 		for DNS_SERVER in $DNS_SERVERS ; do
 			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
 		done
-		echo "search $DOMAIN" >> /tmp/resolv.conf
 	}
 }
 
