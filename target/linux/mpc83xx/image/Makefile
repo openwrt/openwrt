@@ -9,7 +9,6 @@ include $(INCLUDE_DIR)/image.mk
 
 
 define Image/Prepare
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/mpc8377_wlan.dts > $(KDIR)/openwrt-mpc8377_wlan.dtb
 endef
 
 define Image/BuildKernel
@@ -22,12 +21,10 @@ endef
 
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-# We'll do FIT here
-#	( \
-#		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
-#		dd if=$(KDIR)/openwrt-mpc8377_wlan.dtb bs=128k conv=sync; \
-#		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
-#	) > $(BIN_DIR)/openwrt-$(BOARD)-mpc8377_wlan-$(1).img
+	( \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage.fit.mpc8377_wlan bs=3072k conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-mpc8377_wlan-$(1).img
 endef
 
 $(eval $(call BuildImage))
