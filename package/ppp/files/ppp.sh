@@ -51,9 +51,16 @@ start_pppd() {
 	interval="${keepalive##*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
 
-	config_get_bool peerdns "$cfg" peerdns 1 
-	[ "$peerdns" -eq 1 ] && peerdns="usepeerdns" || peerdns="" 
-	
+	config_get_bool peerdns "$cfg" peerdns 1
+	[ "$peerdns" -eq 1 ] && peerdns="usepeerdns" || {
+		peerdns=""
+		config_get dns "$config" dns
+		for dns in $dns; do
+			grep -q "$dns" /tmp/resolv.conf.auto 2>/dev/null || \
+				echo "nameserver $dns" >> /tmp/resolv.conf.auto
+		done
+	}
+
 	config_get demand "$cfg" demand
 	[ -n "$demand" ] && echo "nameserver 1.1.1.1" > /tmp/resolv.conf.auto
 
