@@ -1,0 +1,25 @@
+From f6bc2e17eaa2628f614a675781e9dc101084df9a Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:47 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/220-add-2gb-nand-support.patch
+
+---
+ include/mtd/mtd-abi.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/include/mtd/mtd-abi.h b/include/mtd/mtd-abi.h
+index be51ae2..cf90168 100644
+--- a/include/mtd/mtd-abi.h
++++ b/include/mtd/mtd-abi.h
+@@ -134,7 +134,7 @@ struct nand_oobfree {
+  */
+ struct nand_ecclayout {
+ 	__u32 eccbytes;
+-	__u32 eccpos[64];
++	__u32 eccpos[72];
+ 	__u32 oobavail;
+ 	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES];
+ };
+-- 
+1.5.6.5
+

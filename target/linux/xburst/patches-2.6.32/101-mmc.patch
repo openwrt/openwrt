@@ -1,0 +1,45 @@
+From 146308ee673df13fafe40aaddc799e9ad58e6ecb Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:42 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/101-mmc.patch
+
+---
+ drivers/mmc/host/Kconfig  |    9 +++++++++
+ drivers/mmc/host/Makefile |    1 +
+ 2 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index 432ae83..16e0cb9 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -66,6 +66,15 @@ config MMC_RICOH_MMC
+ 	  useless. It is safe to select this driver even if you don't
+ 	  have a Ricoh based card reader.
+ 
++config MMC_JZ
++	tristate "JZ SD/Multimedia Card Interface support"
++	depends on SOC_JZ4720 || SOC_JZ4740
++	help
++	  This selects the Ingenic JZ4720/JZ4740 SD/Multimedia card Interface.
++	  If you have abIngenic platform with a Multimedia Card slot,
++	  say Y or M here.
++
++	  If unsure, say N.
+ 
+ 	  To compile this driver as a module, choose M here:
+ 	  the module will be called ricoh_mmc.
+diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
+index abcb040..b5cbeb5 100644
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -6,6 +6,7 @@ ifeq ($(CONFIG_MMC_DEBUG),y)
+ 	EXTRA_CFLAGS		+= -DDEBUG
+ endif
+ 
++obj-$(CONFIG_MMC_JZ)		+= jz_mmc.o
+ obj-$(CONFIG_MMC_ARMMMCI)	+= mmci.o
+ obj-$(CONFIG_MMC_PXA)		+= pxamci.o
+ obj-$(CONFIG_MMC_IMX)		+= imxmmc.o
+-- 
+1.5.6.5
+

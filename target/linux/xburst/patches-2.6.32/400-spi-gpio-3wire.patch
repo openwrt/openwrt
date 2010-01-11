@@ -1,0 +1,51 @@
+From df07ed6a52d9f6027ff1753c00b3128fa18dde31 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:48 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/400-spi-gpio-3wire.patch
+
+---
+ drivers/spi/spi_gpio.c |   14 +++++++++-----
+ 1 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/spi/spi_gpio.c b/drivers/spi/spi_gpio.c
+index 26bd03e..5f89c21 100644
+--- a/drivers/spi/spi_gpio.c
++++ b/drivers/spi/spi_gpio.c
+@@ -243,9 +243,11 @@ spi_gpio_request(struct spi_gpio_platform_data *pdata, const char *label)
+ 	if (value)
+ 		goto done;
+ 
+-	value = spi_gpio_alloc(SPI_MISO_GPIO, label, true);
+-	if (value)
+-		goto free_mosi;
++	if (SPI_MISO_GPIO != SPI_MOSI_GPIO) {
++		value = spi_gpio_alloc(SPI_MISO_GPIO, label, true);
++		if (value)
++			goto free_mosi;
++	}
+ 
+ 	value = spi_gpio_alloc(SPI_SCK_GPIO, label, false);
+ 	if (value)
+@@ -308,7 +310,8 @@ static int __init spi_gpio_probe(struct platform_device *pdev)
+ 	if (status < 0) {
+ 		spi_master_put(spi_gpio->bitbang.master);
+ gpio_free:
+-		gpio_free(SPI_MISO_GPIO);
++		if (SPI_MISO_GPIO != SPI_MOSI_GPIO)
++			gpio_free(SPI_MISO_GPIO);
+ 		gpio_free(SPI_MOSI_GPIO);
+ 		gpio_free(SPI_SCK_GPIO);
+ 		spi_master_put(master);
+@@ -332,7 +335,8 @@ static int __exit spi_gpio_remove(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, NULL);
+ 
+-	gpio_free(SPI_MISO_GPIO);
++	if (SPI_MISO_GPIO != SPI_MOSI_GPIO)
++		gpio_free(SPI_MISO_GPIO);
+ 	gpio_free(SPI_MOSI_GPIO);
+ 	gpio_free(SPI_SCK_GPIO);
+ 
+-- 
+1.5.6.5
+

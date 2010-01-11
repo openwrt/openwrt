@@ -1,0 +1,42 @@
+From 2d00c901d3a438c6f750f8b13b329845775ec3b5 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:50 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/420-fb-notifier-pre-post.patch
+
+---
+ drivers/video/fbmem.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
+index 99bbd28..5e121b8 100644
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
+@@ -1008,12 +1008,12 @@ fb_set_var(struct fb_info *info, struct fb_var_screeninfo *var)
+ int
+ fb_blank(struct fb_info *info, int blank)
+ {	
+- 	int ret = -EINVAL;
++ 	int ret = 0;
+ 
+  	if (blank > FB_BLANK_POWERDOWN)
+  		blank = FB_BLANK_POWERDOWN;
+ 
+-	if (info->fbops->fb_blank)
++	if (info->fbops->fb_blank && blank == FB_BLANK_UNBLANK)
+  		ret = info->fbops->fb_blank(blank, info);
+ 
+  	if (!ret) {
+@@ -1024,6 +1024,10 @@ fb_blank(struct fb_info *info, int blank)
+ 		fb_notifier_call_chain(FB_EVENT_BLANK, &event);
+ 	}
+ 
++	if (info->fbops->fb_blank && blank != FB_BLANK_UNBLANK)
++ 		ret = info->fbops->fb_blank(blank, info);
++
++
+  	return ret;
+ }
+ 
+-- 
+1.5.6.5
+

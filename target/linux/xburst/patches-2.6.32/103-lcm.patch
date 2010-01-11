@@ -1,0 +1,43 @@
+From 060fafbe37894116fd264d15c6949f00e9f86343 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:43 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-lcm.patch
+
+---
+ drivers/video/backlight/Kconfig  |    7 +++++++
+ drivers/video/backlight/Makefile |    1 +
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
+index 09bfa96..aaca1eb 100644
+--- a/drivers/video/backlight/Kconfig
++++ b/drivers/video/backlight/Kconfig
+@@ -100,6 +100,13 @@ config LCD_HP700
+ 	  If you have an HP Jornada 700 series handheld (710/720/728)
+ 	  say Y to enable LCD control driver.
+ 
++config LCD_GPM940B0
++	tristate "Giantplus GPM940B0 LCD and backlight driver"
++	depends on LCD_CLASS_DEVICE && BACKLIGHT_CLASS_DEVICE && SPI
++	default n
++	help
++      LCD and backlight driver for the Giantplus GPM940B0 LCD module.
++
+ #
+ # Backlight
+ #
+diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
+index 9a40554..ef29baa 100644
+--- a/drivers/video/backlight/Makefile
++++ b/drivers/video/backlight/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_LCD_PLATFORM)	   += platform_lcd.o
+ obj-$(CONFIG_LCD_VGG2432A4)	   += vgg2432a4.o
+ obj-$(CONFIG_LCD_TDO24M)	   += tdo24m.o
+ obj-$(CONFIG_LCD_TOSA)		   += tosa_lcd.o
++obj-$(CONFIG_LCD_GPM940B0)	   += gpm940b0.o
+ 
+ obj-$(CONFIG_BACKLIGHT_CLASS_DEVICE) += backlight.o
+ obj-$(CONFIG_BACKLIGHT_ATMEL_PWM)    += atmel-pwm-bl.o
+-- 
+1.5.6.5
+

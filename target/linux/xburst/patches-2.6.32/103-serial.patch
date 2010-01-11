@@ -1,0 +1,178 @@
+From 5b3f9de4171368d9a99fa4c8b8b1bcc8505fb3c6 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:44 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-serial.patch
+
+---
+ drivers/serial/8250.c |  104 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 103 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/serial/8250.c b/drivers/serial/8250.c
+index 737b4c9..65ee974 100644
+--- a/drivers/serial/8250.c
++++ b/drivers/serial/8250.c
+@@ -196,7 +196,7 @@ static const struct serial8250_config uart_config[] = {
+ 	[PORT_16550A] = {
+ 		.name		= "16550A",
+ 		.fifo_size	= 16,
+-		.tx_loadsz	= 16,
++		.tx_loadsz	= 8,
+ 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
+ 		.flags		= UART_CAP_FIFO,
+ 	},
+@@ -403,6 +403,10 @@ static unsigned int mem_serial_in(struct uart_port *p, int offset)
+ static void mem_serial_out(struct uart_port *p, int offset, int value)
+ {
+ 	offset = map_8250_out_reg(p, offset) << p->regshift;
++#if defined(CONFIG_JZSOC)
++		if (offset == (UART_FCR << p->regshift))
++			value |= 0x10; /* set FCR.UUE */
++#endif
+ 	writeb(value, p->membase + offset);
+ }
+ 
+@@ -2215,6 +2219,83 @@ static void serial8250_shutdown(struct uart_port *port)
+ 		serial_unlink_irq_chain(up);
+ }
+ 
++#if defined(CONFIG_JZSOC) && !defined(CONFIG_SOC_JZ4730)
++static unsigned short quot1[3] = {0}; /* quot[0]:baud_div, quot[1]:umr, quot[2]:uacr */
++static unsigned short * serial8250_get_divisor(struct uart_port *port, unsigned int baud)
++{
++	int err, sum, i, j;
++	int a[12], b[12];
++	unsigned short div, umr, uacr;
++	unsigned short umr_best, div_best, uacr_best;
++	long long t0, t1, t2, t3;
++
++	sum = 0;
++	umr_best = div_best = uacr_best = 0;
++	div = 1;
++
++	if ((port->uartclk % (16 * baud)) == 0) {
++		quot1[0] = port->uartclk / (16 * baud);
++		quot1[1] = 16;
++		quot1[2] = 0;
++		return quot1;
++	}
++
++	while (1) {
++		umr = port->uartclk / (baud * div);
++  		if (umr > 32) {
++			div++;
++			continue;
++		}
++		if (umr < 4) {
++			break;
++		}
++		for (i = 0; i < 12; i++) {
++			a[i] = umr;
++			b[i] = 0;
++			sum = 0;
++			for (j = 0; j <= i; j++) {
++				sum += a[j];
++			}
++
++                        /* the precision could be 1/2^(36) due to the value of t0 */
++			t0 = 0x1000000000LL;
++			t1 = (i + 1) * t0;
++			t2 = (sum * div) * t0;
++			t3 = div * t0;
++			do_div(t1, baud);
++			do_div(t2, port->uartclk);
++			do_div(t3, (2 * port->uartclk));
++			err = t1 - t2 - t3;
++
++			if (err > 0) {
++				a[i] += 1;
++				b[i] = 1;
++			}
++		}
++
++		uacr = 0;
++		for (i = 0; i < 12; i++) {
++			if (b[i] == 1) {
++				uacr |= 1 << i;
++			}
++		}
++
++                /* the best value of umr should be near 16, and the value of uacr should better be smaller */
++		if (abs(umr - 16) < abs(umr_best - 16) || (abs(umr - 16) == abs(umr_best - 16) && uacr_best > uacr)) {
++			div_best = div;
++			umr_best = umr;
++			uacr_best = uacr;
++		}
++		div++;
++	}
++
++	quot1[0] = div_best;
++	quot1[1] = umr_best;
++	quot1[2] = uacr_best;
++
++	return quot1;
++}
++#else
+ static unsigned int serial8250_get_divisor(struct uart_port *port, unsigned int baud)
+ {
+ 	unsigned int quot;
+@@ -2234,6 +2315,7 @@ static unsigned int serial8250_get_divisor(struct uart_port *port, unsigned int
+ 
+ 	return quot;
+ }
++#endif
+ 
+ static void
+ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+@@ -2243,6 +2325,9 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	unsigned char cval, fcr = 0;
+ 	unsigned long flags;
+ 	unsigned int baud, quot;
++#if defined(CONFIG_JZSOC) && !defined(CONFIG_SOC_JZ4730)
++	unsigned short *quot1;
++#endif
+ 
+ 	switch (termios->c_cflag & CSIZE) {
+ 	case CS5:
+@@ -2277,7 +2362,12 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	baud = uart_get_baud_rate(port, termios, old,
+ 				  port->uartclk / 16 / 0xffff,
+ 				  port->uartclk / 16);
++#if defined(CONFIG_JZSOC) && !defined(CONFIG_SOC_JZ4730)
++	quot1 = serial8250_get_divisor(port, baud);
++	quot = quot1[0]; /* not usefull, just let gcc happy */
++#else
+ 	quot = serial8250_get_divisor(port, baud);
++#endif
+ 
+ 	/*
+ 	 * Oxford Semi 952 rev B workaround
+@@ -2355,6 +2445,10 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	if (up->capabilities & UART_CAP_UUE)
+ 		up->ier |= UART_IER_UUE | UART_IER_RTOIE;
+ 
++#ifdef CONFIG_JZSOC
++	up->ier |= UART_IER_RTOIE; /* Set this flag, or very slow */
++#endif
++
+ 	serial_out(up, UART_IER, up->ier);
+ 
+ 	if (up->capabilities & UART_CAP_EFR) {
+@@ -2389,7 +2483,15 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+ 		serial_outp(up, UART_LCR, cval | UART_LCR_DLAB);/* set DLAB */
+ 	}
+ 
++#if defined(CONFIG_JZSOC) && !defined(CONFIG_SOC_JZ4730)
++#define UART_UMR  9
++#define UART_UACR 10
++	serial_dl_write(up, quot1[0]);
++	serial_outp(up, UART_UMR, quot1[1]);
++	serial_outp(up, UART_UACR, quot1[2]);
++#else
+ 	serial_dl_write(up, quot);
++#endif
+ 
+ 	/*
+ 	 * LCR DLAB must be set to enable 64-byte FIFO mode. If the FCR
+-- 
+1.5.6.5
+
