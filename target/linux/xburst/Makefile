@@ -11,7 +11,7 @@ BOARD:=xburst
 BOARDNAME:=XBurst JZ47x0
 FEATURES:=jffs2 tgz ubifs
 
-LINUX_VERSION:=2.6.32
+LINUX_VERSION:=2.6.32.3
 
 DEVICE_TYPE=other
 
