@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx machine type definitions
  *
- *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -19,6 +19,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_AP81,	/* Atheros AP81 */
 	AR71XX_MACH_AP83,	/* Atheros AP83 */
 	AR71XX_MACH_AW_NR580,	/* AzureWave AW-NR580 */
+	AR71XX_MACH_DIR_600_A1,	/* D-Link DIR-600 rev. A1 */
 	AR71XX_MACH_DIR_615_C1,	/* D-Link DIR-615 rev. C1 */
 	AR71XX_MACH_DIR_825_B1,	/* D-Link DIR-825 rev. B1 */
 	AR71XX_MACH_RB_411,	/* MikroTik RouterBOARD 411/411A/411AH */
