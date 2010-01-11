@@ -39,21 +39,17 @@ define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR)/ubi-utils \
 		$(MTD_MAKEOPTS) \
 		TARGETS=ubinize
-	$(MAKE) -C $(HOST_BUILD_DIR)/mkfs.ubifs \
-		$(MTD_MAKEOPTS) \
-		BUILDDIR="$(HOST_BUILD_DIR)/mkfs.ubifs"
 endef
 
 define Host/Install
 	$(CP) \
 		$(HOST_BUILD_DIR)/mkfs.jffs2 \
-		$(HOST_BUILD_DIR)/mkfs.ubifs/mkfs.ubifs \
 		$(HOST_BUILD_DIR)/ubinize \
 		$(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/{mkfs.jffs2,mkfs.ubifs,ubinize}
+	rm -f $(STAGING_DIR_HOST)/bin/{mkfs.jffs2,ubinize}
 endef
 
 $(eval $(call HostBuild))
