@@ -1,0 +1,43 @@
+From 806ead1e454a8a5876b777b22ca67187c4749f32 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:30:42 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/800-n526-lpc.patch
+
+---
+ drivers/i2c/chips/Kconfig  |    9 +++++++++
+ drivers/i2c/chips/Makefile |    1 +
+ 2 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/i2c/chips/Kconfig b/drivers/i2c/chips/Kconfig
+index f9618f4..d84da61 100644
+--- a/drivers/i2c/chips/Kconfig
++++ b/drivers/i2c/chips/Kconfig
+@@ -26,4 +26,13 @@ config SENSORS_TSL2550
+ 	  This driver can also be built as a module.  If so, the module
+ 	  will be called tsl2550.
+ 
++config N526_LPC
++	tristate "N526 LPC934 coprocessor"
++	depends on JZ4740_N526
++	help
++	  If you say yes here you get support for the N526s NXP LPC934 coprocessor.
++	  It is used as a keyboard controllor and for power management.
++
++	  If you have a N526 you probably want to say Y here.
++
+ endmenu
+diff --git a/drivers/i2c/chips/Makefile b/drivers/i2c/chips/Makefile
+index 749cf36..856c8b5 100644
+--- a/drivers/i2c/chips/Makefile
++++ b/drivers/i2c/chips/Makefile
+@@ -12,6 +12,7 @@
+ 
+ obj-$(CONFIG_DS1682)		+= ds1682.o
+ obj-$(CONFIG_SENSORS_TSL2550)	+= tsl2550.o
++obj-$(CONFIG_N526_LPC)		+= n526-lpc.o
+ 
+ ifeq ($(CONFIG_I2C_DEBUG_CHIP),y)
+ EXTRA_CFLAGS += -DDEBUG
+-- 
+1.5.6.5
+

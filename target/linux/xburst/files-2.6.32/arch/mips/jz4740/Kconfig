@@ -1,0 +1,35 @@
+choice
+    prompt "Machine type"
+    depends on MACH_JZ
+    default JZ4740_QI_LB60
+
+config JZ4740_QI_LB60
+	bool "Qi Hardware Ben NanoNote"
+	select DMA_NONCOHERENT
+	select SOC_JZ4740
+
+config JZ4740_N526
+	bool "Hanvon n526 eBook reader"
+	select DMA_NONCOHERENT
+	select SOC_JZ4740
+
+
+endchoice
+
+config SOC_JZ4740
+	bool
+	select JZSOC
+	select GENERIC_GPIO
+	select ARCH_REQUIRE_GPIOLIB
+	select SYS_HAS_EARLY_PRINTK
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select IRQ_CPU
+
+config JZSOC
+	bool
+	select JZRISC
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_SUPPORTS_32BIT_KERNEL
+
+config JZRISC
+	bool

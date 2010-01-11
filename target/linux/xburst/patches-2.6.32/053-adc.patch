@@ -1,0 +1,46 @@
+From 7b55ff7b9fd37ac8857746603ec580d277208f01 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:40 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/053-adc.patch
+
+---
+ drivers/misc/Kconfig  |   11 +++++++++++
+ drivers/misc/Makefile |    1 +
+ 2 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index df1f86b..d79902a 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -246,6 +246,17 @@ config EP93XX_PWM
+ 	  To compile this driver as a module, choose M here: the module will
+ 	  be called ep93xx_pwm.
+ 
++config JZ4740_ADC
++	tristate "Ingenic JZ4720/JZ4740 SoC ADC driver"
++	depends on SOC_JZ4740
++    help
++      If you say yes here you get support for the Ingenic JZ4720/JZ4740 SoC ADC
++      core. It is required for the JZ4720/JZ4740 battery and touchscreen driver
++      and is used to synchronize access to the adc core between those two.
++
++      This driver can also be build as a module. If so, the module will be
++      called jz4740-adc.
++
+ source "drivers/misc/c2port/Kconfig"
+ source "drivers/misc/eeprom/Kconfig"
+ source "drivers/misc/cb710/Kconfig"
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index f982d2e..49b6e76 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -21,5 +21,6 @@ obj-$(CONFIG_HP_ILO)		+= hpilo.o
+ obj-$(CONFIG_ISL29003)		+= isl29003.o
+ obj-$(CONFIG_EP93XX_PWM)	+= ep93xx_pwm.o
+ obj-$(CONFIG_C2PORT)		+= c2port/
++obj-$(CONFIG_JZ4740_ADC)	+= jz4740-adc.o
+ obj-y				+= eeprom/
+ obj-y				+= cb710/
+-- 
+1.5.6.5
+

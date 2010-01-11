@@ -1,0 +1,186 @@
+From d76e6b85f28891eecded962793fb8a02cdf26f39 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Mon, 11 Jan 2010 04:29:51 +0100
+Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/500-modifier-keys.patch
+
+---
+ drivers/char/defkeymap.map |   74 +++++++++++++++++++++++++++++++-------------
+ 1 files changed, 52 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/char/defkeymap.map b/drivers/char/defkeymap.map
+index 50b30ca..ce141c8 100644
+--- a/drivers/char/defkeymap.map
++++ b/drivers/char/defkeymap.map
+@@ -1,5 +1,5 @@
+ # Default kernel keymap. This uses 7 modifier combinations.
+-keymaps 0-2,4-5,8,12
++keymaps 0-2,4-5,8,12,64
+ # Change the above line into
+ #	keymaps 0-2,4-6,8,12
+ # in case you want the entries
+@@ -45,24 +45,38 @@ keycode  12 = minus            underscore       backslash
+ 	control	keycode  12 = Control_underscore
+ 	shift	control	keycode  12 = Control_underscore
+ 	alt	keycode  12 = Meta_minus      
+-keycode  13 = equal            plus            
++keycode  13 = equal            plus             
+ 	alt     keycode  13 = Meta_equal      
++	altgr   keycode  13 = asciitilde 
++	ctrll   keycode  13 = three
+ keycode  14 = Delete           Delete          
+-	control keycode  14 = BackSpace
++	altgr   keycode  14 = BackSpace
+ 	alt     keycode  14 = Meta_Delete     
+ keycode  15 = Tab              Tab             
+ 	alt     keycode  15 = Meta_Tab        
+ keycode  16 = q               
++	altgr   keycode  16 = exclam
+ keycode  17 = w               
++	altgr   keycode  17 = at
+ keycode  18 = e
+-	altgr   keycode  18 = Hex_E   
++	altgr   keycode  18 = numbersign
+ keycode  19 = r               
++	altgr   keycode  19 = dollar
+ keycode  20 = t               
++	altgr   keycode  20 = percent
+ keycode  21 = y               
++	altgr   keycode  21 = asciicircum 
+ keycode  22 = u               
++	altgr   keycode  22 = ampersand
++	ctrll   keycode  22 = seven
+ keycode  23 = i               
++	altgr   keycode  23 = asterisk
++	ctrll   keycode  23 = eight
+ keycode  24 = o               
++	altgr   keycode  24 = parenleft
++	ctrll   keycode  24 = nine
+ keycode  25 = p               
++	altgr   keycode  25 = parenright
+ keycode  26 = bracketleft      braceleft       
+ 	control keycode  26 = Escape          
+ 	alt     keycode  26 = Meta_bracketleft
+@@ -71,19 +85,28 @@ keycode  27 = bracketright     braceright       asciitilde
+ 	alt     keycode  27 = Meta_bracketright
+ keycode  28 = Return          
+ 	alt     keycode  28 = Meta_Control_m  
+-keycode  29 = Control         
++keycode  29 = CtrlL         
+ keycode  30 = a
+-	altgr   keycode  30 = Hex_A
++	altgr   keycode  30 = U+00B0
+ keycode  31 = s               
++	altgr   keycode  31 = U+00A8
+ keycode  32 = d
+-	altgr   keycode  32 = Hex_D   
++	altgr   keycode  32 = U+20AC
+ keycode  33 = f
+-	altgr   keycode  33 = Hex_F               
++	altgr   keycode  33 = minus
+ keycode  34 = g               
++	altgr   keycode  34 = underscore
+ keycode  35 = h               
++	altgr   keycode  35 = braceleft
+ keycode  36 = j               
++	altgr   keycode  36 = bracketleft
++	ctrll   keycode  36 = four
+ keycode  37 = k               
++	altgr   keycode  37 = bracketright
++	ctrll   keycode  37 = five
+ keycode  38 = l               
++	altgr   keycode  38 = braceright
++	ctrll   keycode  38 = six
+ keycode  39 = semicolon        colon           
+ 	alt     keycode  39 = Meta_semicolon  
+ keycode  40 = apostrophe       quotedbl        
+@@ -97,58 +120,65 @@ keycode  43 = backslash        bar
+ 	control keycode  43 = Control_backslash
+ 	alt     keycode  43 = Meta_backslash  
+ keycode  44 = z               
++	altgr   keycode  44 = nine
+ keycode  45 = x               
++	altgr   keycode  45 = zero
+ keycode  46 = c
+ 	altgr   keycode  46 = Hex_C   
+ keycode  47 = v               
+ keycode  48 = b
+ 	altgr   keycode  48 = Hex_B
+ keycode  49 = n               
++	altgr   keycode  49 = less
++	ctrll   keycode  49 = one
+ keycode  50 = m               
+-keycode  51 = comma            less            
+-	alt     keycode  51 = Meta_comma      
+-keycode  52 = period           greater         
++	altgr   keycode  50 = greater
++	ctrll   keycode  50 = two
++keycode  51 = comma            semicolon
++	altgr   keycode  51 = apostrophe
++keycode  52 = period           colon
+ 	control keycode  52 = Compose         
+-	alt     keycode  52 = Meta_period     
++	altgr   keycode  52 =  quotedbl
+ keycode  53 = slash            question        
+ 	control keycode  53 = Delete          
+ 	alt     keycode  53 = Meta_slash      
+-keycode  54 = Shift           
++	ctrll   keycode  53 = zero
++keycode  54 = AltGr
+ keycode  55 = KP_Multiply     
+ keycode  56 = Alt             
+ keycode  57 = space            space           
+ 	control keycode  57 = nul             
+ 	alt     keycode  57 = Meta_space      
+ keycode  58 = Caps_Lock       
+-keycode  59 = F1               F11              Console_13      
++keycode  59 = F1               F11              one
+ 	control keycode  59 = F1              
+ 	alt     keycode  59 = Console_1       
+ 	control alt     keycode  59 = Console_1       
+-keycode  60 = F2               F12              Console_14      
++keycode  60 = F2               F12              two
+ 	control keycode  60 = F2              
+ 	alt     keycode  60 = Console_2       
+ 	control alt     keycode  60 = Console_2       
+-keycode  61 = F3               F13              Console_15      
++keycode  61 = F3               F13              three
+ 	control keycode  61 = F3              
+ 	alt     keycode  61 = Console_3       
+ 	control alt     keycode  61 = Console_3       
+-keycode  62 = F4               F14              Console_16      
++keycode  62 = F4               F14              four
+ 	control keycode  62 = F4              
+ 	alt     keycode  62 = Console_4       
+ 	control alt     keycode  62 = Console_4       
+-keycode  63 = F5               F15              Console_17      
++keycode  63 = F5               F15              five
+ 	control keycode  63 = F5              
+ 	alt     keycode  63 = Console_5       
+ 	control alt     keycode  63 = Console_5       
+-keycode  64 = F6               F16              Console_18      
++keycode  64 = F6               F16              six
+ 	control keycode  64 = F6              
+ 	alt     keycode  64 = Console_6       
+ 	control alt     keycode  64 = Console_6       
+-keycode  65 = F7               F17              Console_19      
++keycode  65 = F7               F17              seven
+ 	control keycode  65 = F7              
+ 	alt     keycode  65 = Console_7       
+ 	control alt     keycode  65 = Console_7       
+-keycode  66 = F8               F18              Console_20      
++keycode  66 = F8               F18              eight
+ 	control keycode  66 = F8              
+ 	alt     keycode  66 = Console_8       
+ 	control alt     keycode  66 = Console_8       
+@@ -220,7 +250,7 @@ keycode  93 =
+ keycode  94 =
+ keycode  95 =
+ keycode  96 = KP_Enter        
+-keycode  97 = Control         
++keycode  97 = Control
+ keycode  98 = KP_Divide       
+ keycode  99 = Control_backslash
+ 	control keycode  99 = Control_backslash
+-- 
+1.5.6.5
+

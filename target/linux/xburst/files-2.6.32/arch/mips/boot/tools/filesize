@@ -1,0 +1,7 @@
+#!/bin/sh
+HOSTNAME=`uname`
+if [ "$HOSTNAME" = "Linux" ]; then
+echo `ls -l $1 | awk '{print $5}'`
+else
+echo `ls -l $1 | awk '{print $6}'`
+fi
