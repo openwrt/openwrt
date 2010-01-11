@@ -28,6 +28,7 @@ obj-$(CONFIG_AR71XX_NVRAM)		+= nvram.o
 obj-$(CONFIG_AR71XX_MACH_AP81)		+= mach-ap81.o
 obj-$(CONFIG_AR71XX_MACH_AP83)		+= mach-ap83.o
 obj-$(CONFIG_AR71XX_MACH_AW_NR580)	+= mach-aw-nr580.o
+obj-$(CONFIG_AR71XX_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
 obj-$(CONFIG_AR71XX_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
 obj-$(CONFIG_AR71XX_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
 obj-$(CONFIG_AR71XX_MACH_GENERIC)	+= mach-generic.o
