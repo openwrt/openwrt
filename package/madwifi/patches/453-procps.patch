@@ -1,6 +1,6 @@
---- a/net80211/ieee80211_linux.h	2009-10-04 22:27:05.528151949 +0300
-+++ b/net80211/ieee80211_linux.h	2009-10-04 22:28:06.255777139 +0300
-@@ -640,12 +640,24 @@
+--- a/net80211/ieee80211_linux.h
++++ b/net80211/ieee80211_linux.h
+@@ -640,12 +640,24 @@ static __inline unsigned long msecs_to_j
  	  void __user *buffer, size_t *lenp)
  #define	IEEE80211_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp, ppos) \
  	proc_dointvec(ctl, write, filp, buffer, lenp)
@@ -26,9 +26,9 @@
  #endif
  
  void ieee80211_virtfs_latevattach(struct ieee80211vap *);
---- a/ath/if_athvar.h	2009-10-04 22:27:05.543151943 +0300
-+++ b/ath/if_athvar.h	2009-10-04 22:27:40.115902053 +0300
-@@ -173,14 +173,22 @@
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -173,14 +173,22 @@ static inline struct net_device *_alloc_
  	proc_dointvec(ctl, write, filp, buffer, lenp)
  #define	ATH_SYSCTL_PROC_DOSTRING(ctl, write, filp, buffer, lenp, ppos) \
  	proc_dostring(ctl, write, filp, buffer, lenp)
