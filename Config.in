@@ -88,6 +88,13 @@ menu "Target Images"
 		help
 		  Create some bootable ISO image
 
+	config TARGET_ROOTFS_UBIFS
+		bool "ubifs"
+		default y if USES_UBIFS
+		depends !TARGET_ROOTFS_INITRAMFS && USES_UBIFS
+		help
+		  Build a ubifs root filesystem
+
 comment "Image Options"
 
 source "target/linux/*/image/Config.in"

@@ -163,6 +163,7 @@ sub target_config_features(@) {
 		/ext2/ and $ret .= "\tselect USES_EXT2\n";
 		/tgz/ and $ret .= "\tselect USES_TGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
+		/ubifs/ and $ret .= "\tselect USES_UBIFS\n";
 		/fpu/ and $ret .= "\tselect HAS_FPU\n";
 		/ramdisk/ and $ret .= "\tselect USES_INITRAMFS\n";
 		/powerpc64/ and $ret .= "\tselect powerpc64\n";
