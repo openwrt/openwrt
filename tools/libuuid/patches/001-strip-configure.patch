@@ -1,0 +1,1994 @@
+--- a/configure
++++ b/configure
+@@ -3602,143 +3602,6 @@ fi
+ 
+ done
+ 
+-
+-if test "${ac_cv_header_linux_fs_h+set}" = set; then
+-  { echo "$as_me:$LINENO: checking for linux/fs.h" >&5
+-echo $ECHO_N "checking for linux/fs.h... $ECHO_C" >&6; }
+-if test "${ac_cv_header_linux_fs_h+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-fi
+-{ echo "$as_me:$LINENO: result: $ac_cv_header_linux_fs_h" >&5
+-echo "${ECHO_T}$ac_cv_header_linux_fs_h" >&6; }
+-else
+-  # Is the header compilable?
+-{ echo "$as_me:$LINENO: checking linux/fs.h usability" >&5
+-echo $ECHO_N "checking linux/fs.h usability... $ECHO_C" >&6; }
+-cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-$ac_includes_default
+-#include <linux/fs.h>
+-_ACEOF
+-rm -f conftest.$ac_objext
+-if { (ac_try="$ac_compile"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_compile") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest.$ac_objext; then
+-  ac_header_compiler=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-	ac_header_compiler=no
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+-{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+-echo "${ECHO_T}$ac_header_compiler" >&6; }
+-
+-# Is the header present?
+-{ echo "$as_me:$LINENO: checking linux/fs.h presence" >&5
+-echo $ECHO_N "checking linux/fs.h presence... $ECHO_C" >&6; }
+-cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <linux/fs.h>
+-_ACEOF
+-if { (ac_try="$ac_cpp conftest.$ac_ext"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } >/dev/null && {
+-	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       }; then
+-  ac_header_preproc=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-  ac_header_preproc=no
+-fi
+-
+-rm -f conftest.err conftest.$ac_ext
+-{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+-echo "${ECHO_T}$ac_header_preproc" >&6; }
+-
+-# So?  What about this header?
+-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+-  yes:no: )
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h: accepted by the compiler, rejected by the preprocessor!" >&5
+-echo "$as_me: WARNING: linux/fs.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h: proceeding with the compiler's result" >&5
+-echo "$as_me: WARNING: linux/fs.h: proceeding with the compiler's result" >&2;}
+-    ac_header_preproc=yes
+-    ;;
+-  no:yes:* )
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h: present but cannot be compiled" >&5
+-echo "$as_me: WARNING: linux/fs.h: present but cannot be compiled" >&2;}
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h:     check for missing prerequisite headers?" >&5
+-echo "$as_me: WARNING: linux/fs.h:     check for missing prerequisite headers?" >&2;}
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h: see the Autoconf documentation" >&5
+-echo "$as_me: WARNING: linux/fs.h: see the Autoconf documentation" >&2;}
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h:     section \"Present But Cannot Be Compiled\"" >&5
+-echo "$as_me: WARNING: linux/fs.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h: proceeding with the preprocessor's result" >&5
+-echo "$as_me: WARNING: linux/fs.h: proceeding with the preprocessor's result" >&2;}
+-    { echo "$as_me:$LINENO: WARNING: linux/fs.h: in the future, the compiler will take precedence" >&5
+-echo "$as_me: WARNING: linux/fs.h: in the future, the compiler will take precedence" >&2;}
+-
+-    ;;
+-esac
+-{ echo "$as_me:$LINENO: checking for linux/fs.h" >&5
+-echo $ECHO_N "checking for linux/fs.h... $ECHO_C" >&6; }
+-if test "${ac_cv_header_linux_fs_h+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  ac_cv_header_linux_fs_h=$ac_header_preproc
+-fi
+-{ echo "$as_me:$LINENO: result: $ac_cv_header_linux_fs_h" >&5
+-echo "${ECHO_T}$ac_cv_header_linux_fs_h" >&6; }
+-
+-fi
+-if test $ac_cv_header_linux_fs_h = yes; then
+-  linux_headers=yes
+-else
+-  linux_headers=no
+-fi
+-
+-
+-if test "$linux_headers" != yes; then
+-  LINUX_INCLUDE='-I$(top_builddir)/include'
+-fi
+-
+ { echo "$as_me:$LINENO: checking for additional special compiler flags" >&5
+ echo $ECHO_N "checking for additional special compiler flags... $ECHO_C" >&6; }
+ if test "$GCC" = yes
+@@ -10016,81 +9879,6 @@ _ACEOF
+ 
+   fi
+ 
+-                      for ac_prog in bison
+-do
+-  # Extract the first word of "$ac_prog", so it can be a program name with args.
+-set dummy $ac_prog; ac_word=$2
+-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+-if test "${ac_cv_prog_INTLBISON+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  if test -n "$INTLBISON"; then
+-  ac_cv_prog_INTLBISON="$INTLBISON" # Let the user override the test.
+-else
+-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+-for as_dir in $PATH
+-do
+-  IFS=$as_save_IFS
+-  test -z "$as_dir" && as_dir=.
+-  for ac_exec_ext in '' $ac_executable_extensions; do
+-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+-    ac_cv_prog_INTLBISON="$ac_prog"
+-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+-    break 2
+-  fi
+-done
+-done
+-IFS=$as_save_IFS
+-
+-fi
+-fi
+-INTLBISON=$ac_cv_prog_INTLBISON
+-if test -n "$INTLBISON"; then
+-  { echo "$as_me:$LINENO: result: $INTLBISON" >&5
+-echo "${ECHO_T}$INTLBISON" >&6; }
+-else
+-  { echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6; }
+-fi
+-
+-
+-  test -n "$INTLBISON" && break
+-done
+-
+-  if test -z "$INTLBISON"; then
+-    ac_verc_fail=yes
+-  else
+-        { echo "$as_me:$LINENO: checking version of bison" >&5
+-echo $ECHO_N "checking version of bison... $ECHO_C" >&6; }
+-    ac_prog_version=`$INTLBISON --version 2>&1 | sed -n 's/^.*GNU Bison.* \([0-9]*\.[0-9.]*\).*$/\1/p'`
+-    case $ac_prog_version in
+-      '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
+-      1.2[6-9]* | 1.[3-9][0-9]* | [2-9].*)
+-         ac_prog_version="$ac_prog_version, ok"; ac_verc_fail=no;;
+-      *) ac_prog_version="$ac_prog_version, bad"; ac_verc_fail=yes;;
+-    esac
+-    { echo "$as_me:$LINENO: result: $ac_prog_version" >&5
+-echo "${ECHO_T}$ac_prog_version" >&6; }
+-  fi
+-  if test $ac_verc_fail = yes; then
+-    INTLBISON=:
+-  fi
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+ 
+   { echo "$as_me:$LINENO: checking whether NLS is requested" >&5
+ echo $ECHO_N "checking whether NLS is requested... $ECHO_C" >&6; }
+--- a/configure
++++ b/configure
+@@ -4505,287 +4505,6 @@ fi
+ echo "${ECHO_T}$USE_NLS" >&6; }
+ 
+ 
+-
+-
+-
+-
+-# Prepare PATH_SEPARATOR.
+-# The user is always right.
+-if test "${PATH_SEPARATOR+set}" != set; then
+-  echo "#! /bin/sh" >conf$$.sh
+-  echo  "exit 0"   >>conf$$.sh
+-  chmod +x conf$$.sh
+-  if (PATH="/nonexistent;."; conf$$.sh) >/dev/null 2>&1; then
+-    PATH_SEPARATOR=';'
+-  else
+-    PATH_SEPARATOR=:
+-  fi
+-  rm -f conf$$.sh
+-fi
+-
+-# Find out how to test for executable files. Don't use a zero-byte file,
+-# as systems may use methods other than mode bits to determine executability.
+-cat >conf$$.file <<_ASEOF
+-#! /bin/sh
+-exit 0
+-_ASEOF
+-chmod +x conf$$.file
+-if test -x conf$$.file >/dev/null 2>&1; then
+-  ac_executable_p="test -x"
+-else
+-  ac_executable_p="test -f"
+-fi
+-rm -f conf$$.file
+-
+-# Extract the first word of "msgfmt", so it can be a program name with args.
+-set dummy msgfmt; ac_word=$2
+-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+-if test "${ac_cv_path_MSGFMT+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  case "$MSGFMT" in
+-  [\\/]* | ?:[\\/]*)
+-    ac_cv_path_MSGFMT="$MSGFMT" # Let the user override the test with a path.
+-    ;;
+-  *)
+-    ac_save_IFS="$IFS"; IFS=$PATH_SEPARATOR
+-    for ac_dir in $PATH; do
+-      IFS="$ac_save_IFS"
+-      test -z "$ac_dir" && ac_dir=.
+-      for ac_exec_ext in '' $ac_executable_extensions; do
+-        if $ac_executable_p "$ac_dir/$ac_word$ac_exec_ext"; then
+-          if $ac_dir/$ac_word --statistics /dev/null >/dev/null 2>&1 &&
+-     (if $ac_dir/$ac_word --statistics /dev/null 2>&1 >/dev/null | grep usage >/dev/null; then exit 1; else exit 0; fi); then
+-            ac_cv_path_MSGFMT="$ac_dir/$ac_word$ac_exec_ext"
+-            break 2
+-          fi
+-        fi
+-      done
+-    done
+-    IFS="$ac_save_IFS"
+-  test -z "$ac_cv_path_MSGFMT" && ac_cv_path_MSGFMT=":"
+-    ;;
+-esac
+-fi
+-MSGFMT="$ac_cv_path_MSGFMT"
+-if test "$MSGFMT" != ":"; then
+-  { echo "$as_me:$LINENO: result: $MSGFMT" >&5
+-echo "${ECHO_T}$MSGFMT" >&6; }
+-else
+-  { echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6; }
+-fi
+-
+-  # Extract the first word of "gmsgfmt", so it can be a program name with args.
+-set dummy gmsgfmt; ac_word=$2
+-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+-if test "${ac_cv_path_GMSGFMT+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  case $GMSGFMT in
+-  [\\/]* | ?:[\\/]*)
+-  ac_cv_path_GMSGFMT="$GMSGFMT" # Let the user override the test with a path.
+-  ;;
+-  *)
+-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+-for as_dir in $PATH
+-do
+-  IFS=$as_save_IFS
+-  test -z "$as_dir" && as_dir=.
+-  for ac_exec_ext in '' $ac_executable_extensions; do
+-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+-    ac_cv_path_GMSGFMT="$as_dir/$ac_word$ac_exec_ext"
+-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+-    break 2
+-  fi
+-done
+-done
+-IFS=$as_save_IFS
+-
+-  test -z "$ac_cv_path_GMSGFMT" && ac_cv_path_GMSGFMT="$MSGFMT"
+-  ;;
+-esac
+-fi
+-GMSGFMT=$ac_cv_path_GMSGFMT
+-if test -n "$GMSGFMT"; then
+-  { echo "$as_me:$LINENO: result: $GMSGFMT" >&5
+-echo "${ECHO_T}$GMSGFMT" >&6; }
+-else
+-  { echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6; }
+-fi
+-
+-
+-
+-
+-# Prepare PATH_SEPARATOR.
+-# The user is always right.
+-if test "${PATH_SEPARATOR+set}" != set; then
+-  echo "#! /bin/sh" >conf$$.sh
+-  echo  "exit 0"   >>conf$$.sh
+-  chmod +x conf$$.sh
+-  if (PATH="/nonexistent;."; conf$$.sh) >/dev/null 2>&1; then
+-    PATH_SEPARATOR=';'
+-  else
+-    PATH_SEPARATOR=:
+-  fi
+-  rm -f conf$$.sh
+-fi
+-
+-# Find out how to test for executable files. Don't use a zero-byte file,
+-# as systems may use methods other than mode bits to determine executability.
+-cat >conf$$.file <<_ASEOF
+-#! /bin/sh
+-exit 0
+-_ASEOF
+-chmod +x conf$$.file
+-if test -x conf$$.file >/dev/null 2>&1; then
+-  ac_executable_p="test -x"
+-else
+-  ac_executable_p="test -f"
+-fi
+-rm -f conf$$.file
+-
+-# Extract the first word of "xgettext", so it can be a program name with args.
+-set dummy xgettext; ac_word=$2
+-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+-if test "${ac_cv_path_XGETTEXT+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  case "$XGETTEXT" in
+-  [\\/]* | ?:[\\/]*)
+-    ac_cv_path_XGETTEXT="$XGETTEXT" # Let the user override the test with a path.
+-    ;;
+-  *)
+-    ac_save_IFS="$IFS"; IFS=$PATH_SEPARATOR
+-    for ac_dir in $PATH; do
+-      IFS="$ac_save_IFS"
+-      test -z "$ac_dir" && ac_dir=.
+-      for ac_exec_ext in '' $ac_executable_extensions; do
+-        if $ac_executable_p "$ac_dir/$ac_word$ac_exec_ext"; then
+-          if $ac_dir/$ac_word --omit-header --copyright-holder= --msgid-bugs-address= /dev/null >/dev/null 2>&1 &&
+-     (if $ac_dir/$ac_word --omit-header --copyright-holder= --msgid-bugs-address= /dev/null 2>&1 >/dev/null | grep usage >/dev/null; then exit 1; else exit 0; fi); then
+-            ac_cv_path_XGETTEXT="$ac_dir/$ac_word$ac_exec_ext"
+-            break 2
+-          fi
+-        fi
+-      done
+-    done
+-    IFS="$ac_save_IFS"
+-  test -z "$ac_cv_path_XGETTEXT" && ac_cv_path_XGETTEXT=":"
+-    ;;
+-esac
+-fi
+-XGETTEXT="$ac_cv_path_XGETTEXT"
+-if test "$XGETTEXT" != ":"; then
+-  { echo "$as_me:$LINENO: result: $XGETTEXT" >&5
+-echo "${ECHO_T}$XGETTEXT" >&6; }
+-else
+-  { echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6; }
+-fi
+-
+-    rm -f messages.po
+-
+-
+-# Prepare PATH_SEPARATOR.
+-# The user is always right.
+-if test "${PATH_SEPARATOR+set}" != set; then
+-  echo "#! /bin/sh" >conf$$.sh
+-  echo  "exit 0"   >>conf$$.sh
+-  chmod +x conf$$.sh
+-  if (PATH="/nonexistent;."; conf$$.sh) >/dev/null 2>&1; then
+-    PATH_SEPARATOR=';'
+-  else
+-    PATH_SEPARATOR=:
+-  fi
+-  rm -f conf$$.sh
+-fi
+-
+-# Find out how to test for executable files. Don't use a zero-byte file,
+-# as systems may use methods other than mode bits to determine executability.
+-cat >conf$$.file <<_ASEOF
+-#! /bin/sh
+-exit 0
+-_ASEOF
+-chmod +x conf$$.file
+-if test -x conf$$.file >/dev/null 2>&1; then
+-  ac_executable_p="test -x"
+-else
+-  ac_executable_p="test -f"
+-fi
+-rm -f conf$$.file
+-
+-# Extract the first word of "msgmerge", so it can be a program name with args.
+-set dummy msgmerge; ac_word=$2
+-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+-if test "${ac_cv_path_MSGMERGE+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  case "$MSGMERGE" in
+-  [\\/]* | ?:[\\/]*)
+-    ac_cv_path_MSGMERGE="$MSGMERGE" # Let the user override the test with a path.
+-    ;;
+-  *)
+-    ac_save_IFS="$IFS"; IFS=$PATH_SEPARATOR
+-    for ac_dir in $PATH; do
+-      IFS="$ac_save_IFS"
+-      test -z "$ac_dir" && ac_dir=.
+-      for ac_exec_ext in '' $ac_executable_extensions; do
+-        if $ac_executable_p "$ac_dir/$ac_word$ac_exec_ext"; then
+-          if $ac_dir/$ac_word --update -q /dev/null /dev/null >/dev/null 2>&1; then
+-            ac_cv_path_MSGMERGE="$ac_dir/$ac_word$ac_exec_ext"
+-            break 2
+-          fi
+-        fi
+-      done
+-    done
+-    IFS="$ac_save_IFS"
+-  test -z "$ac_cv_path_MSGMERGE" && ac_cv_path_MSGMERGE=":"
+-    ;;
+-esac
+-fi
+-MSGMERGE="$ac_cv_path_MSGMERGE"
+-if test "$MSGMERGE" != ":"; then
+-  { echo "$as_me:$LINENO: result: $MSGMERGE" >&5
+-echo "${ECHO_T}$MSGMERGE" >&6; }
+-else
+-  { echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6; }
+-fi
+-
+-
+-      if test "$GMSGFMT" != ":"; then
+-            if $GMSGFMT --statistics /dev/null >/dev/null 2>&1 &&
+-       (if $GMSGFMT --statistics /dev/null 2>&1 >/dev/null | grep usage >/dev/null; then exit 1; else exit 0; fi); then
+-      : ;
+-    else
+-      GMSGFMT=`echo "$GMSGFMT" | sed -e 's,^.*/,,'`
+-      { echo "$as_me:$LINENO: result: found $GMSGFMT program is not GNU msgfmt; ignore it" >&5
+-echo "${ECHO_T}found $GMSGFMT program is not GNU msgfmt; ignore it" >&6; }
+-      GMSGFMT=":"
+-    fi
+-  fi
+-
+-      if test "$XGETTEXT" != ":"; then
+-            if $XGETTEXT --omit-header --copyright-holder= --msgid-bugs-address= /dev/null >/dev/null 2>&1 &&
+-       (if $XGETTEXT --omit-header --copyright-holder= --msgid-bugs-address= /dev/null 2>&1 >/dev/null | grep usage >/dev/null; then exit 1; else exit 0; fi); then
+-      : ;
+-    else
+-      { echo "$as_me:$LINENO: result: found xgettext program is not GNU xgettext; ignore it" >&5
+-echo "${ECHO_T}found xgettext program is not GNU xgettext; ignore it" >&6; }
+-      XGETTEXT=":"
+-    fi
+-        rm -f messages.po
+-  fi
+-
+-  ac_config_commands="$ac_config_commands default-1"
+-
+-
+ if test -n "$ac_tool_prefix"; then
+   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
+ set dummy ${ac_tool_prefix}ranlib; ac_word=$2
+@@ -8466,375 +8185,6 @@ fi
+   prefix="$acl_save_prefix"
+ 
+ 
+-# Check whether --with-libiconv-prefix was given.
+-if test "${with_libiconv_prefix+set}" = set; then
+-  withval=$with_libiconv_prefix;
+-    if test "X$withval" = "Xno"; then
+-      use_additional=no
+-    else
+-      if test "X$withval" = "X"; then
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-
+-          eval additional_includedir=\"$includedir\"
+-          eval additional_libdir=\"$libdir\"
+-
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-      else
+-        additional_includedir="$withval/include"
+-        additional_libdir="$withval/lib"
+-      fi
+-    fi
+-
+-fi
+-
+-      LIBICONV=
+-  LTLIBICONV=
+-  INCICONV=
+-  rpathdirs=
+-  ltrpathdirs=
+-  names_already_handled=
+-  names_next_round='iconv '
+-  while test -n "$names_next_round"; do
+-    names_this_round="$names_next_round"
+-    names_next_round=
+-    for name in $names_this_round; do
+-      already_handled=
+-      for n in $names_already_handled; do
+-        if test "$n" = "$name"; then
+-          already_handled=yes
+-          break
+-        fi
+-      done
+-      if test -z "$already_handled"; then
+-        names_already_handled="$names_already_handled $name"
+-                        uppername=`echo "$name" | sed -e 'y|abcdefghijklmnopqrstuvwxyz./-|ABCDEFGHIJKLMNOPQRSTUVWXYZ___|'`
+-        eval value=\"\$HAVE_LIB$uppername\"
+-        if test -n "$value"; then
+-          if test "$value" = yes; then
+-            eval value=\"\$LIB$uppername\"
+-            test -z "$value" || LIBICONV="${LIBICONV}${LIBICONV:+ }$value"
+-            eval value=\"\$LTLIB$uppername\"
+-            test -z "$value" || LTLIBICONV="${LTLIBICONV}${LTLIBICONV:+ }$value"
+-          else
+-                                    :
+-          fi
+-        else
+-                              found_dir=
+-          found_la=
+-          found_so=
+-          found_a=
+-          if test $use_additional = yes; then
+-            if test -n "$shlibext" && test -f "$additional_libdir/lib$name.$shlibext"; then
+-              found_dir="$additional_libdir"
+-              found_so="$additional_libdir/lib$name.$shlibext"
+-              if test -f "$additional_libdir/lib$name.la"; then
+-                found_la="$additional_libdir/lib$name.la"
+-              fi
+-            else
+-              if test -f "$additional_libdir/lib$name.$libext"; then
+-                found_dir="$additional_libdir"
+-                found_a="$additional_libdir/lib$name.$libext"
+-                if test -f "$additional_libdir/lib$name.la"; then
+-                  found_la="$additional_libdir/lib$name.la"
+-                fi
+-              fi
+-            fi
+-          fi
+-          if test "X$found_dir" = "X"; then
+-            for x in $LDFLAGS $LTLIBICONV; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-              case "$x" in
+-                -L*)
+-                  dir=`echo "X$x" | sed -e 's/^X-L//'`
+-                  if test -n "$shlibext" && test -f "$dir/lib$name.$shlibext"; then
+-                    found_dir="$dir"
+-                    found_so="$dir/lib$name.$shlibext"
+-                    if test -f "$dir/lib$name.la"; then
+-                      found_la="$dir/lib$name.la"
+-                    fi
+-                  else
+-                    if test -f "$dir/lib$name.$libext"; then
+-                      found_dir="$dir"
+-                      found_a="$dir/lib$name.$libext"
+-                      if test -f "$dir/lib$name.la"; then
+-                        found_la="$dir/lib$name.la"
+-                      fi
+-                    fi
+-                  fi
+-                  ;;
+-              esac
+-              if test "X$found_dir" != "X"; then
+-                break
+-              fi
+-            done
+-          fi
+-          if test "X$found_dir" != "X"; then
+-                        LTLIBICONV="${LTLIBICONV}${LTLIBICONV:+ }-L$found_dir -l$name"
+-            if test "X$found_so" != "X"; then
+-                                                        if test "$enable_rpath" = no || test "X$found_dir" = "X/usr/lib"; then
+-                                LIBICONV="${LIBICONV}${LIBICONV:+ }$found_so"
+-              else
+-                                                                                haveit=
+-                for x in $ltrpathdirs; do
+-                  if test "X$x" = "X$found_dir"; then
+-                    haveit=yes
+-                    break
+-                  fi
+-                done
+-                if test -z "$haveit"; then
+-                  ltrpathdirs="$ltrpathdirs $found_dir"
+-                fi
+-                                if test "$hardcode_direct" = yes; then
+-                                                      LIBICONV="${LIBICONV}${LIBICONV:+ }$found_so"
+-                else
+-                  if test -n "$hardcode_libdir_flag_spec" && test "$hardcode_minus_L" = no; then
+-                                                            LIBICONV="${LIBICONV}${LIBICONV:+ }$found_so"
+-                                                            haveit=
+-                    for x in $rpathdirs; do
+-                      if test "X$x" = "X$found_dir"; then
+-                        haveit=yes
+-                        break
+-                      fi
+-                    done
+-                    if test -z "$haveit"; then
+-                      rpathdirs="$rpathdirs $found_dir"
+-                    fi
+-                  else
+-                                                                                haveit=
+-                    for x in $LDFLAGS $LIBICONV; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                      if test "X$x" = "X-L$found_dir"; then
+-                        haveit=yes
+-                        break
+-                      fi
+-                    done
+-                    if test -z "$haveit"; then
+-                      LIBICONV="${LIBICONV}${LIBICONV:+ }-L$found_dir"
+-                    fi
+-                    if test "$hardcode_minus_L" != no; then
+-                                                                                        LIBICONV="${LIBICONV}${LIBICONV:+ }$found_so"
+-                    else
+-                                                                                                                                                                                LIBICONV="${LIBICONV}${LIBICONV:+ }-l$name"
+-                    fi
+-                  fi
+-                fi
+-              fi
+-            else
+-              if test "X$found_a" != "X"; then
+-                                LIBICONV="${LIBICONV}${LIBICONV:+ }$found_a"
+-              else
+-                                                LIBICONV="${LIBICONV}${LIBICONV:+ }-L$found_dir -l$name"
+-              fi
+-            fi
+-                        additional_includedir=
+-            case "$found_dir" in
+-              */lib | */lib/)
+-                basedir=`echo "X$found_dir" | sed -e 's,^X,,' -e 's,/lib/*$,,'`
+-                additional_includedir="$basedir/include"
+-                ;;
+-            esac
+-            if test "X$additional_includedir" != "X"; then
+-                                                                                                                if test "X$additional_includedir" != "X/usr/include"; then
+-                haveit=
+-                if test "X$additional_includedir" = "X/usr/local/include"; then
+-                  if test -n "$GCC"; then
+-                    case $host_os in
+-                      linux*) haveit=yes;;
+-                    esac
+-                  fi
+-                fi
+-                if test -z "$haveit"; then
+-                  for x in $CPPFLAGS $INCICONV; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                    if test "X$x" = "X-I$additional_includedir"; then
+-                      haveit=yes
+-                      break
+-                    fi
+-                  done
+-                  if test -z "$haveit"; then
+-                    if test -d "$additional_includedir"; then
+-                                            INCICONV="${INCICONV}${INCICONV:+ }-I$additional_includedir"
+-                    fi
+-                  fi
+-                fi
+-              fi
+-            fi
+-                        if test -n "$found_la"; then
+-                                                        save_libdir="$libdir"
+-              case "$found_la" in
+-                */* | *\\*) . "$found_la" ;;
+-                *) . "./$found_la" ;;
+-              esac
+-              libdir="$save_libdir"
+-                            for dep in $dependency_libs; do
+-                case "$dep" in
+-                  -L*)
+-                    additional_libdir=`echo "X$dep" | sed -e 's/^X-L//'`
+-                                                                                                                                                                if test "X$additional_libdir" != "X/usr/lib"; then
+-                      haveit=
+-                      if test "X$additional_libdir" = "X/usr/local/lib"; then
+-                        if test -n "$GCC"; then
+-                          case $host_os in
+-                            linux*) haveit=yes;;
+-                          esac
+-                        fi
+-                      fi
+-                      if test -z "$haveit"; then
+-                        haveit=
+-                        for x in $LDFLAGS $LIBICONV; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                          if test "X$x" = "X-L$additional_libdir"; then
+-                            haveit=yes
+-                            break
+-                          fi
+-                        done
+-                        if test -z "$haveit"; then
+-                          if test -d "$additional_libdir"; then
+-                                                        LIBICONV="${LIBICONV}${LIBICONV:+ }-L$additional_libdir"
+-                          fi
+-                        fi
+-                        haveit=
+-                        for x in $LDFLAGS $LTLIBICONV; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                          if test "X$x" = "X-L$additional_libdir"; then
+-                            haveit=yes
+-                            break
+-                          fi
+-                        done
+-                        if test -z "$haveit"; then
+-                          if test -d "$additional_libdir"; then
+-                                                        LTLIBICONV="${LTLIBICONV}${LTLIBICONV:+ }-L$additional_libdir"
+-                          fi
+-                        fi
+-                      fi
+-                    fi
+-                    ;;
+-                  -R*)
+-                    dir=`echo "X$dep" | sed -e 's/^X-R//'`
+-                    if test "$enable_rpath" != no; then
+-                                                                  haveit=
+-                      for x in $rpathdirs; do
+-                        if test "X$x" = "X$dir"; then
+-                          haveit=yes
+-                          break
+-                        fi
+-                      done
+-                      if test -z "$haveit"; then
+-                        rpathdirs="$rpathdirs $dir"
+-                      fi
+-                                                                  haveit=
+-                      for x in $ltrpathdirs; do
+-                        if test "X$x" = "X$dir"; then
+-                          haveit=yes
+-                          break
+-                        fi
+-                      done
+-                      if test -z "$haveit"; then
+-                        ltrpathdirs="$ltrpathdirs $dir"
+-                      fi
+-                    fi
+-                    ;;
+-                  -l*)
+-                                        names_next_round="$names_next_round "`echo "X$dep" | sed -e 's/^X-l//'`
+-                    ;;
+-                  *.la)
+-                                                                                names_next_round="$names_next_round "`echo "X$dep" | sed -e 's,^X.*/,,' -e 's,^lib,,' -e 's,\.la$,,'`
+-                    ;;
+-                  *)
+-                                        LIBICONV="${LIBICONV}${LIBICONV:+ }$dep"
+-                    LTLIBICONV="${LTLIBICONV}${LTLIBICONV:+ }$dep"
+-                    ;;
+-                esac
+-              done
+-            fi
+-          else
+-                                                            LIBICONV="${LIBICONV}${LIBICONV:+ }-l$name"
+-            LTLIBICONV="${LTLIBICONV}${LTLIBICONV:+ }-l$name"
+-          fi
+-        fi
+-      fi
+-    done
+-  done
+-  if test "X$rpathdirs" != "X"; then
+-    if test -n "$hardcode_libdir_separator"; then
+-                        alldirs=
+-      for found_dir in $rpathdirs; do
+-        alldirs="${alldirs}${alldirs:+$hardcode_libdir_separator}$found_dir"
+-      done
+-            acl_save_libdir="$libdir"
+-      libdir="$alldirs"
+-      eval flag=\"$hardcode_libdir_flag_spec\"
+-      libdir="$acl_save_libdir"
+-      LIBICONV="${LIBICONV}${LIBICONV:+ }$flag"
+-    else
+-            for found_dir in $rpathdirs; do
+-        acl_save_libdir="$libdir"
+-        libdir="$found_dir"
+-        eval flag=\"$hardcode_libdir_flag_spec\"
+-        libdir="$acl_save_libdir"
+-        LIBICONV="${LIBICONV}${LIBICONV:+ }$flag"
+-      done
+-    fi
+-  fi
+-  if test "X$ltrpathdirs" != "X"; then
+-            for found_dir in $ltrpathdirs; do
+-      LTLIBICONV="${LTLIBICONV}${LTLIBICONV:+ }-R$found_dir"
+-    done
+-  fi
+-
+-
+-
+-
+-
+-
+-
+-
+   { echo "$as_me:$LINENO: checking for ptrdiff_t" >&5
+ echo $ECHO_N "checking for ptrdiff_t... $ECHO_C" >&6; }
+ if test "${ac_cv_type_ptrdiff_t+set}" = set; then
+@@ -9894,744 +9244,6 @@ echo "${ECHO_T}$USE_NLS" >&6; }
+ 
+ 
+ 
+-
+-    BUILD_INCLUDED_LIBINTL=no
+-    USE_INCLUDED_LIBINTL=no
+-
+-  LIBINTL=
+-  LTLIBINTL=
+-  POSUB=
+-
+-    if test "$USE_NLS" = "yes"; then
+-    gt_use_preinstalled_gnugettext=no
+-
+-      { echo "$as_me:$LINENO: checking whether included gettext is requested" >&5
+-echo $ECHO_N "checking whether included gettext is requested... $ECHO_C" >&6; }
+-
+-# Check whether --with-included-gettext was given.
+-if test "${with_included_gettext+set}" = set; then
+-  withval=$with_included_gettext; nls_cv_force_use_gnu_gettext=$withval
+-else
+-  nls_cv_force_use_gnu_gettext=no
+-fi
+-
+-      { echo "$as_me:$LINENO: result: $nls_cv_force_use_gnu_gettext" >&5
+-echo "${ECHO_T}$nls_cv_force_use_gnu_gettext" >&6; }
+-
+-      nls_cv_use_gnu_gettext="$nls_cv_force_use_gnu_gettext"
+-      if test "$nls_cv_force_use_gnu_gettext" != "yes"; then
+-
+-
+-
+-
+-
+-
+-        { echo "$as_me:$LINENO: checking for GNU gettext in libc" >&5
+-echo $ECHO_N "checking for GNU gettext in libc... $ECHO_C" >&6; }
+-if test "${gt_cv_func_gnugettext1_libc+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <libintl.h>
+-extern int _nl_msg_cat_cntr;
+-extern int *_nl_domain_bindings;
+-int
+-main ()
+-{
+-bindtextdomain ("", "");
+-return (int) gettext ("") + _nl_msg_cat_cntr + *_nl_domain_bindings
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (ac_try="$ac_link"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_link") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest$ac_exeext &&
+-       $as_test_x conftest$ac_exeext; then
+-  gt_cv_func_gnugettext1_libc=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-	gt_cv_func_gnugettext1_libc=no
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+-      conftest$ac_exeext conftest.$ac_ext
+-fi
+-{ echo "$as_me:$LINENO: result: $gt_cv_func_gnugettext1_libc" >&5
+-echo "${ECHO_T}$gt_cv_func_gnugettext1_libc" >&6; }
+-
+-        if test "$gt_cv_func_gnugettext1_libc" != "yes"; then
+-
+-
+-
+-    use_additional=yes
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-
+-    eval additional_includedir=\"$includedir\"
+-    eval additional_libdir=\"$libdir\"
+-
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-
+-# Check whether --with-libintl-prefix was given.
+-if test "${with_libintl_prefix+set}" = set; then
+-  withval=$with_libintl_prefix;
+-    if test "X$withval" = "Xno"; then
+-      use_additional=no
+-    else
+-      if test "X$withval" = "X"; then
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-
+-          eval additional_includedir=\"$includedir\"
+-          eval additional_libdir=\"$libdir\"
+-
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-      else
+-        additional_includedir="$withval/include"
+-        additional_libdir="$withval/lib"
+-      fi
+-    fi
+-
+-fi
+-
+-      LIBINTL=
+-  LTLIBINTL=
+-  INCINTL=
+-  rpathdirs=
+-  ltrpathdirs=
+-  names_already_handled=
+-  names_next_round='intl '
+-  while test -n "$names_next_round"; do
+-    names_this_round="$names_next_round"
+-    names_next_round=
+-    for name in $names_this_round; do
+-      already_handled=
+-      for n in $names_already_handled; do
+-        if test "$n" = "$name"; then
+-          already_handled=yes
+-          break
+-        fi
+-      done
+-      if test -z "$already_handled"; then
+-        names_already_handled="$names_already_handled $name"
+-                        uppername=`echo "$name" | sed -e 'y|abcdefghijklmnopqrstuvwxyz./-|ABCDEFGHIJKLMNOPQRSTUVWXYZ___|'`
+-        eval value=\"\$HAVE_LIB$uppername\"
+-        if test -n "$value"; then
+-          if test "$value" = yes; then
+-            eval value=\"\$LIB$uppername\"
+-            test -z "$value" || LIBINTL="${LIBINTL}${LIBINTL:+ }$value"
+-            eval value=\"\$LTLIB$uppername\"
+-            test -z "$value" || LTLIBINTL="${LTLIBINTL}${LTLIBINTL:+ }$value"
+-          else
+-                                    :
+-          fi
+-        else
+-                              found_dir=
+-          found_la=
+-          found_so=
+-          found_a=
+-          if test $use_additional = yes; then
+-            if test -n "$shlibext" && test -f "$additional_libdir/lib$name.$shlibext"; then
+-              found_dir="$additional_libdir"
+-              found_so="$additional_libdir/lib$name.$shlibext"
+-              if test -f "$additional_libdir/lib$name.la"; then
+-                found_la="$additional_libdir/lib$name.la"
+-              fi
+-            else
+-              if test -f "$additional_libdir/lib$name.$libext"; then
+-                found_dir="$additional_libdir"
+-                found_a="$additional_libdir/lib$name.$libext"
+-                if test -f "$additional_libdir/lib$name.la"; then
+-                  found_la="$additional_libdir/lib$name.la"
+-                fi
+-              fi
+-            fi
+-          fi
+-          if test "X$found_dir" = "X"; then
+-            for x in $LDFLAGS $LTLIBINTL; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-              case "$x" in
+-                -L*)
+-                  dir=`echo "X$x" | sed -e 's/^X-L//'`
+-                  if test -n "$shlibext" && test -f "$dir/lib$name.$shlibext"; then
+-                    found_dir="$dir"
+-                    found_so="$dir/lib$name.$shlibext"
+-                    if test -f "$dir/lib$name.la"; then
+-                      found_la="$dir/lib$name.la"
+-                    fi
+-                  else
+-                    if test -f "$dir/lib$name.$libext"; then
+-                      found_dir="$dir"
+-                      found_a="$dir/lib$name.$libext"
+-                      if test -f "$dir/lib$name.la"; then
+-                        found_la="$dir/lib$name.la"
+-                      fi
+-                    fi
+-                  fi
+-                  ;;
+-              esac
+-              if test "X$found_dir" != "X"; then
+-                break
+-              fi
+-            done
+-          fi
+-          if test "X$found_dir" != "X"; then
+-                        LTLIBINTL="${LTLIBINTL}${LTLIBINTL:+ }-L$found_dir -l$name"
+-            if test "X$found_so" != "X"; then
+-                                                        if test "$enable_rpath" = no || test "X$found_dir" = "X/usr/lib"; then
+-                                LIBINTL="${LIBINTL}${LIBINTL:+ }$found_so"
+-              else
+-                                                                                haveit=
+-                for x in $ltrpathdirs; do
+-                  if test "X$x" = "X$found_dir"; then
+-                    haveit=yes
+-                    break
+-                  fi
+-                done
+-                if test -z "$haveit"; then
+-                  ltrpathdirs="$ltrpathdirs $found_dir"
+-                fi
+-                                if test "$hardcode_direct" = yes; then
+-                                                      LIBINTL="${LIBINTL}${LIBINTL:+ }$found_so"
+-                else
+-                  if test -n "$hardcode_libdir_flag_spec" && test "$hardcode_minus_L" = no; then
+-                                                            LIBINTL="${LIBINTL}${LIBINTL:+ }$found_so"
+-                                                            haveit=
+-                    for x in $rpathdirs; do
+-                      if test "X$x" = "X$found_dir"; then
+-                        haveit=yes
+-                        break
+-                      fi
+-                    done
+-                    if test -z "$haveit"; then
+-                      rpathdirs="$rpathdirs $found_dir"
+-                    fi
+-                  else
+-                                                                                haveit=
+-                    for x in $LDFLAGS $LIBINTL; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                      if test "X$x" = "X-L$found_dir"; then
+-                        haveit=yes
+-                        break
+-                      fi
+-                    done
+-                    if test -z "$haveit"; then
+-                      LIBINTL="${LIBINTL}${LIBINTL:+ }-L$found_dir"
+-                    fi
+-                    if test "$hardcode_minus_L" != no; then
+-                                                                                        LIBINTL="${LIBINTL}${LIBINTL:+ }$found_so"
+-                    else
+-                                                                                                                                                                                LIBINTL="${LIBINTL}${LIBINTL:+ }-l$name"
+-                    fi
+-                  fi
+-                fi
+-              fi
+-            else
+-              if test "X$found_a" != "X"; then
+-                                LIBINTL="${LIBINTL}${LIBINTL:+ }$found_a"
+-              else
+-                                                LIBINTL="${LIBINTL}${LIBINTL:+ }-L$found_dir -l$name"
+-              fi
+-            fi
+-                        additional_includedir=
+-            case "$found_dir" in
+-              */lib | */lib/)
+-                basedir=`echo "X$found_dir" | sed -e 's,^X,,' -e 's,/lib/*$,,'`
+-                additional_includedir="$basedir/include"
+-                ;;
+-            esac
+-            if test "X$additional_includedir" != "X"; then
+-                                                                                                                if test "X$additional_includedir" != "X/usr/include"; then
+-                haveit=
+-                if test "X$additional_includedir" = "X/usr/local/include"; then
+-                  if test -n "$GCC"; then
+-                    case $host_os in
+-                      linux*) haveit=yes;;
+-                    esac
+-                  fi
+-                fi
+-                if test -z "$haveit"; then
+-                  for x in $CPPFLAGS $INCINTL; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                    if test "X$x" = "X-I$additional_includedir"; then
+-                      haveit=yes
+-                      break
+-                    fi
+-                  done
+-                  if test -z "$haveit"; then
+-                    if test -d "$additional_includedir"; then
+-                                            INCINTL="${INCINTL}${INCINTL:+ }-I$additional_includedir"
+-                    fi
+-                  fi
+-                fi
+-              fi
+-            fi
+-                        if test -n "$found_la"; then
+-                                                        save_libdir="$libdir"
+-              case "$found_la" in
+-                */* | *\\*) . "$found_la" ;;
+-                *) . "./$found_la" ;;
+-              esac
+-              libdir="$save_libdir"
+-                            for dep in $dependency_libs; do
+-                case "$dep" in
+-                  -L*)
+-                    additional_libdir=`echo "X$dep" | sed -e 's/^X-L//'`
+-                                                                                                                                                                if test "X$additional_libdir" != "X/usr/lib"; then
+-                      haveit=
+-                      if test "X$additional_libdir" = "X/usr/local/lib"; then
+-                        if test -n "$GCC"; then
+-                          case $host_os in
+-                            linux*) haveit=yes;;
+-                          esac
+-                        fi
+-                      fi
+-                      if test -z "$haveit"; then
+-                        haveit=
+-                        for x in $LDFLAGS $LIBINTL; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                          if test "X$x" = "X-L$additional_libdir"; then
+-                            haveit=yes
+-                            break
+-                          fi
+-                        done
+-                        if test -z "$haveit"; then
+-                          if test -d "$additional_libdir"; then
+-                                                        LIBINTL="${LIBINTL}${LIBINTL:+ }-L$additional_libdir"
+-                          fi
+-                        fi
+-                        haveit=
+-                        for x in $LDFLAGS $LTLIBINTL; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-                          if test "X$x" = "X-L$additional_libdir"; then
+-                            haveit=yes
+-                            break
+-                          fi
+-                        done
+-                        if test -z "$haveit"; then
+-                          if test -d "$additional_libdir"; then
+-                                                        LTLIBINTL="${LTLIBINTL}${LTLIBINTL:+ }-L$additional_libdir"
+-                          fi
+-                        fi
+-                      fi
+-                    fi
+-                    ;;
+-                  -R*)
+-                    dir=`echo "X$dep" | sed -e 's/^X-R//'`
+-                    if test "$enable_rpath" != no; then
+-                                                                  haveit=
+-                      for x in $rpathdirs; do
+-                        if test "X$x" = "X$dir"; then
+-                          haveit=yes
+-                          break
+-                        fi
+-                      done
+-                      if test -z "$haveit"; then
+-                        rpathdirs="$rpathdirs $dir"
+-                      fi
+-                                                                  haveit=
+-                      for x in $ltrpathdirs; do
+-                        if test "X$x" = "X$dir"; then
+-                          haveit=yes
+-                          break
+-                        fi
+-                      done
+-                      if test -z "$haveit"; then
+-                        ltrpathdirs="$ltrpathdirs $dir"
+-                      fi
+-                    fi
+-                    ;;
+-                  -l*)
+-                                        names_next_round="$names_next_round "`echo "X$dep" | sed -e 's/^X-l//'`
+-                    ;;
+-                  *.la)
+-                                                                                names_next_round="$names_next_round "`echo "X$dep" | sed -e 's,^X.*/,,' -e 's,^lib,,' -e 's,\.la$,,'`
+-                    ;;
+-                  *)
+-                                        LIBINTL="${LIBINTL}${LIBINTL:+ }$dep"
+-                    LTLIBINTL="${LTLIBINTL}${LTLIBINTL:+ }$dep"
+-                    ;;
+-                esac
+-              done
+-            fi
+-          else
+-                                                            LIBINTL="${LIBINTL}${LIBINTL:+ }-l$name"
+-            LTLIBINTL="${LTLIBINTL}${LTLIBINTL:+ }-l$name"
+-          fi
+-        fi
+-      fi
+-    done
+-  done
+-  if test "X$rpathdirs" != "X"; then
+-    if test -n "$hardcode_libdir_separator"; then
+-                        alldirs=
+-      for found_dir in $rpathdirs; do
+-        alldirs="${alldirs}${alldirs:+$hardcode_libdir_separator}$found_dir"
+-      done
+-            acl_save_libdir="$libdir"
+-      libdir="$alldirs"
+-      eval flag=\"$hardcode_libdir_flag_spec\"
+-      libdir="$acl_save_libdir"
+-      LIBINTL="${LIBINTL}${LIBINTL:+ }$flag"
+-    else
+-            for found_dir in $rpathdirs; do
+-        acl_save_libdir="$libdir"
+-        libdir="$found_dir"
+-        eval flag=\"$hardcode_libdir_flag_spec\"
+-        libdir="$acl_save_libdir"
+-        LIBINTL="${LIBINTL}${LIBINTL:+ }$flag"
+-      done
+-    fi
+-  fi
+-  if test "X$ltrpathdirs" != "X"; then
+-            for found_dir in $ltrpathdirs; do
+-      LTLIBINTL="${LTLIBINTL}${LTLIBINTL:+ }-R$found_dir"
+-    done
+-  fi
+-
+-          { echo "$as_me:$LINENO: checking for GNU gettext in libintl" >&5
+-echo $ECHO_N "checking for GNU gettext in libintl... $ECHO_C" >&6; }
+-if test "${gt_cv_func_gnugettext1_libintl+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  gt_save_CPPFLAGS="$CPPFLAGS"
+-            CPPFLAGS="$CPPFLAGS $INCINTL"
+-            gt_save_LIBS="$LIBS"
+-            LIBS="$LIBS $LIBINTL"
+-                        cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <libintl.h>
+-extern int _nl_msg_cat_cntr;
+-extern
+-#ifdef __cplusplus
+-"C"
+-#endif
+-const char *_nl_expand_alias ();
+-int
+-main ()
+-{
+-bindtextdomain ("", "");
+-return (int) gettext ("") + _nl_msg_cat_cntr + *_nl_expand_alias (0)
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (ac_try="$ac_link"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_link") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest$ac_exeext &&
+-       $as_test_x conftest$ac_exeext; then
+-  gt_cv_func_gnugettext1_libintl=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-	gt_cv_func_gnugettext1_libintl=no
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+-      conftest$ac_exeext conftest.$ac_ext
+-                        if test "$gt_cv_func_gnugettext1_libintl" != yes && test -n "$LIBICONV"; then
+-              LIBS="$LIBS $LIBICONV"
+-              cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <libintl.h>
+-extern int _nl_msg_cat_cntr;
+-extern
+-#ifdef __cplusplus
+-"C"
+-#endif
+-const char *_nl_expand_alias ();
+-int
+-main ()
+-{
+-bindtextdomain ("", "");
+-return (int) gettext ("") + _nl_msg_cat_cntr + *_nl_expand_alias (0)
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (ac_try="$ac_link"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_link") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest$ac_exeext &&
+-       $as_test_x conftest$ac_exeext; then
+-  LIBINTL="$LIBINTL $LIBICONV"
+-                LTLIBINTL="$LTLIBINTL $LTLIBICONV"
+-                gt_cv_func_gnugettext1_libintl=yes
+-
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+-      conftest$ac_exeext conftest.$ac_ext
+-            fi
+-            CPPFLAGS="$gt_save_CPPFLAGS"
+-            LIBS="$gt_save_LIBS"
+-fi
+-{ echo "$as_me:$LINENO: result: $gt_cv_func_gnugettext1_libintl" >&5
+-echo "${ECHO_T}$gt_cv_func_gnugettext1_libintl" >&6; }
+-        fi
+-
+-                                        if test "$gt_cv_func_gnugettext1_libc" = "yes" \
+-           || { test "$gt_cv_func_gnugettext1_libintl" = "yes" \
+-                && test "$PACKAGE" != gettext-runtime \
+-                && test "$PACKAGE" != gettext-tools; }; then
+-          gt_use_preinstalled_gnugettext=yes
+-        else
+-                    LIBINTL=
+-          LTLIBINTL=
+-          INCINTL=
+-        fi
+-
+-
+-        if test "$gt_use_preinstalled_gnugettext" != "yes"; then
+-                              nls_cv_use_gnu_gettext=yes
+-        fi
+-      fi
+-
+-      if test "$nls_cv_use_gnu_gettext" = "yes"; then
+-                BUILD_INCLUDED_LIBINTL=yes
+-        USE_INCLUDED_LIBINTL=yes
+-        LIBINTL="\${top_builddir}/intl/libintl.a $LIBICONV"
+-        LTLIBINTL="\${top_builddir}/intl/libintl.a $LTLIBICONV"
+-        LIBS=`echo " $LIBS " | sed -e 's/ -lintl / /' -e 's/^ //' -e 's/ $//'`
+-      fi
+-
+-      if test "$gt_use_preinstalled_gnugettext" = "yes" \
+-         || test "$nls_cv_use_gnu_gettext" = "yes"; then
+-                CATOBJEXT=.gmo
+-      fi
+-
+-
+-    if test "$gt_use_preinstalled_gnugettext" = "yes" \
+-       || test "$nls_cv_use_gnu_gettext" = "yes"; then
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define ENABLE_NLS 1
+-_ACEOF
+-
+-    else
+-      USE_NLS=no
+-    fi
+-  fi
+-
+-  { echo "$as_me:$LINENO: checking whether to use NLS" >&5
+-echo $ECHO_N "checking whether to use NLS... $ECHO_C" >&6; }
+-  { echo "$as_me:$LINENO: result: $USE_NLS" >&5
+-echo "${ECHO_T}$USE_NLS" >&6; }
+-  if test "$USE_NLS" = "yes"; then
+-    { echo "$as_me:$LINENO: checking where the gettext function comes from" >&5
+-echo $ECHO_N "checking where the gettext function comes from... $ECHO_C" >&6; }
+-    if test "$gt_use_preinstalled_gnugettext" = "yes"; then
+-      if test "$gt_cv_func_gnugettext1_libintl" = "yes"; then
+-        gt_source="external libintl"
+-      else
+-        gt_source="libc"
+-      fi
+-    else
+-      gt_source="included intl directory"
+-    fi
+-    { echo "$as_me:$LINENO: result: $gt_source" >&5
+-echo "${ECHO_T}$gt_source" >&6; }
+-  fi
+-
+-  if test "$USE_NLS" = "yes"; then
+-
+-    if test "$gt_use_preinstalled_gnugettext" = "yes"; then
+-      if test "$gt_cv_func_gnugettext1_libintl" = "yes"; then
+-        { echo "$as_me:$LINENO: checking how to link with libintl" >&5
+-echo $ECHO_N "checking how to link with libintl... $ECHO_C" >&6; }
+-        { echo "$as_me:$LINENO: result: $LIBINTL" >&5
+-echo "${ECHO_T}$LIBINTL" >&6; }
+-
+-  for element in $INCINTL; do
+-    haveit=
+-    for x in $CPPFLAGS; do
+-
+-  acl_save_prefix="$prefix"
+-  prefix="$acl_final_prefix"
+-  acl_save_exec_prefix="$exec_prefix"
+-  exec_prefix="$acl_final_exec_prefix"
+-  eval x=\"$x\"
+-  exec_prefix="$acl_save_exec_prefix"
+-  prefix="$acl_save_prefix"
+-
+-      if test "X$x" = "X$element"; then
+-        haveit=yes
+-        break
+-      fi
+-    done
+-    if test -z "$haveit"; then
+-      CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }$element"
+-    fi
+-  done
+-
+-      fi
+-
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define HAVE_GETTEXT 1
+-_ACEOF
+-
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define HAVE_DCGETTEXT 1
+-_ACEOF
+-
+-    fi
+-
+-        POSUB=po
+-  fi
+-
+-
+-            if test "$PACKAGE" = gettext-runtime || test "$PACKAGE" = gettext-tools; then
+-      BUILD_INCLUDED_LIBINTL=yes
+-    fi
+-
+-
+-
+-
+-
+-        nls_cv_header_intl=
+-    nls_cv_header_libgt=
+-
+-        DATADIRNAME=share
+-
+-
+-        INSTOBJEXT=.mo
+-
+-
+-        GENCAT=gencat
+-
+-
+-        if test "$USE_INCLUDED_LIBINTL" = yes; then
+-      INTLOBJS="\$(GETTOBJS)"
+-    fi
+-
+-
+-        INTL_LIBTOOL_SUFFIX_PREFIX=
+-
+-
+-
+-    INTLLIBS="$LIBINTL"
+-
+-
+-
+-
+-
+-
+-
+ { echo "$as_me:$LINENO: checking whether ${MAKE-make} sets \$(MAKE)" >&5
+ echo $ECHO_N "checking whether ${MAKE-make} sets \$(MAKE)... $ECHO_C" >&6; }
+ set x ${MAKE-make}; ac_make=`echo "$2" | sed 's/+/p/g; s/[^a-zA-Z0-9_]/_/g'`
+diff --git a/configure b/configure
+index 2aff6f0..c6673fa 100755
+--- a/configure
++++ b/configure
+@@ -8900,350 +8900,6 @@ _ACEOF
+   done
+ 
+ 
+-  { echo "$as_me:$LINENO: checking for iconv" >&5
+-echo $ECHO_N "checking for iconv... $ECHO_C" >&6; }
+-if test "${am_cv_func_iconv+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-
+-    am_cv_func_iconv="no, consider installing GNU libiconv"
+-    am_cv_lib_iconv=no
+-    cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <stdlib.h>
+-#include <iconv.h>
+-int
+-main ()
+-{
+-iconv_t cd = iconv_open("","");
+-       iconv(cd,NULL,NULL,NULL,NULL);
+-       iconv_close(cd);
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (ac_try="$ac_link"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_link") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest$ac_exeext &&
+-       $as_test_x conftest$ac_exeext; then
+-  am_cv_func_iconv=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+-      conftest$ac_exeext conftest.$ac_ext
+-    if test "$am_cv_func_iconv" != yes; then
+-      am_save_LIBS="$LIBS"
+-      LIBS="$LIBS $LIBICONV"
+-      cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <stdlib.h>
+-#include <iconv.h>
+-int
+-main ()
+-{
+-iconv_t cd = iconv_open("","");
+-         iconv(cd,NULL,NULL,NULL,NULL);
+-         iconv_close(cd);
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (ac_try="$ac_link"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_link") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest$ac_exeext &&
+-       $as_test_x conftest$ac_exeext; then
+-  am_cv_lib_iconv=yes
+-        am_cv_func_iconv=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+-      conftest$ac_exeext conftest.$ac_ext
+-      LIBS="$am_save_LIBS"
+-    fi
+-
+-fi
+-{ echo "$as_me:$LINENO: result: $am_cv_func_iconv" >&5
+-echo "${ECHO_T}$am_cv_func_iconv" >&6; }
+-  if test "$am_cv_func_iconv" = yes; then
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define HAVE_ICONV 1
+-_ACEOF
+-
+-  fi
+-  if test "$am_cv_lib_iconv" = yes; then
+-    { echo "$as_me:$LINENO: checking how to link with libiconv" >&5
+-echo $ECHO_N "checking how to link with libiconv... $ECHO_C" >&6; }
+-    { echo "$as_me:$LINENO: result: $LIBICONV" >&5
+-echo "${ECHO_T}$LIBICONV" >&6; }
+-  else
+-            CPPFLAGS="$am_save_CPPFLAGS"
+-    LIBICONV=
+-    LTLIBICONV=
+-  fi
+-
+-
+-
+-  if test "$am_cv_func_iconv" = yes; then
+-    { echo "$as_me:$LINENO: checking for iconv declaration" >&5
+-echo $ECHO_N "checking for iconv declaration... $ECHO_C" >&6; }
+-    if test "${am_cv_proto_iconv+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-
+-      cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#include <stdlib.h>
+-#include <iconv.h>
+-extern
+-#ifdef __cplusplus
+-"C"
+-#endif
+-#if defined(__STDC__) || defined(__cplusplus)
+-size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);
+-#else
+-size_t iconv();
+-#endif
+-
+-int
+-main ()
+-{
+-
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext
+-if { (ac_try="$ac_compile"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_compile") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest.$ac_objext; then
+-  am_cv_proto_iconv_arg1=""
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-	am_cv_proto_iconv_arg1="const"
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+-      am_cv_proto_iconv="extern size_t iconv (iconv_t cd, $am_cv_proto_iconv_arg1 char * *inbuf, size_t *inbytesleft, char * *outbuf, size_t *outbytesleft);"
+-fi
+-
+-    am_cv_proto_iconv=`echo "$am_cv_proto_iconv" | tr -s ' ' | sed -e 's/( /(/'`
+-    { echo "$as_me:$LINENO: result: ${ac_t:-
+-         }$am_cv_proto_iconv" >&5
+-echo "${ECHO_T}${ac_t:-
+-         }$am_cv_proto_iconv" >&6; }
+-
+-cat >>confdefs.h <<_ACEOF
+-#define ICONV_CONST $am_cv_proto_iconv_arg1
+-_ACEOF
+-
+-  fi
+-
+-
+-  { echo "$as_me:$LINENO: checking for nl_langinfo and CODESET" >&5
+-echo $ECHO_N "checking for nl_langinfo and CODESET... $ECHO_C" >&6; }
+-if test "${am_cv_langinfo_codeset+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <langinfo.h>
+-int
+-main ()
+-{
+-char* cs = nl_langinfo(CODESET);
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (ac_try="$ac_link"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_link") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest$ac_exeext &&
+-       $as_test_x conftest$ac_exeext; then
+-  am_cv_langinfo_codeset=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-	am_cv_langinfo_codeset=no
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+-      conftest$ac_exeext conftest.$ac_ext
+-
+-fi
+-{ echo "$as_me:$LINENO: result: $am_cv_langinfo_codeset" >&5
+-echo "${ECHO_T}$am_cv_langinfo_codeset" >&6; }
+-  if test $am_cv_langinfo_codeset = yes; then
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define HAVE_LANGINFO_CODESET 1
+-_ACEOF
+-
+-  fi
+-
+-  if test $ac_cv_header_locale_h = yes; then
+-
+-  { echo "$as_me:$LINENO: checking for LC_MESSAGES" >&5
+-echo $ECHO_N "checking for LC_MESSAGES... $ECHO_C" >&6; }
+-if test "${am_cv_val_LC_MESSAGES+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-#include <locale.h>
+-int
+-main ()
+-{
+-return LC_MESSAGES
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (ac_try="$ac_link"
+-case "(($ac_try" in
+-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+-  *) ac_try_echo=$ac_try;;
+-esac
+-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+-  (eval "$ac_link") 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && {
+-	 test -z "$ac_c_werror_flag" ||
+-	 test ! -s conftest.err
+-       } && test -s conftest$ac_exeext &&
+-       $as_test_x conftest$ac_exeext; then
+-  am_cv_val_LC_MESSAGES=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-	am_cv_val_LC_MESSAGES=no
+-fi
+-
+-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+-      conftest$ac_exeext conftest.$ac_ext
+-fi
+-{ echo "$as_me:$LINENO: result: $am_cv_val_LC_MESSAGES" >&5
+-echo "${ECHO_T}$am_cv_val_LC_MESSAGES" >&6; }
+-  if test $am_cv_val_LC_MESSAGES = yes; then
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define HAVE_LC_MESSAGES 1
+-_ACEOF
+-
+-  fi
+-
+-  fi
+-
+-
+-  { echo "$as_me:$LINENO: checking whether NLS is requested" >&5
+-echo $ECHO_N "checking whether NLS is requested... $ECHO_C" >&6; }
+-    # Check whether --enable-nls was given.
+-if test "${enable_nls+set}" = set; then
+-  enableval=$enable_nls; USE_NLS=$enableval
+-else
+-  USE_NLS=yes
+-fi
+-
+-  { echo "$as_me:$LINENO: result: $USE_NLS" >&5
+-echo "${ECHO_T}$USE_NLS" >&6; }
+-
+-
+-
+ { echo "$as_me:$LINENO: checking whether ${MAKE-make} sets \$(MAKE)" >&5
+ echo $ECHO_N "checking whether ${MAKE-make} sets \$(MAKE)... $ECHO_C" >&6; }
+ set x ${MAKE-make}; ac_make=`echo "$2" | sed 's/+/p/g; s/[^a-zA-Z0-9_]/_/g'`
