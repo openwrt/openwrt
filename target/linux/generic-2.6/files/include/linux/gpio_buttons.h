@@ -1,7 +1,7 @@
 /*
  *  Definitions for the GPIO buttons interface driver
  *
- *  Copyright (C) 2007,2008 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This file was based on: /include/linux/gpio_keys.h
  *	The original gpio_keys.h seems not to have a license.
@@ -21,7 +21,6 @@ struct gpio_button {
 	char	*desc;		/* button description */
 	int	type;		/* input event type (EV_KEY, EV_SW) */
 	int	code;		/* input event code (KEY_*, SW_*) */
-	int	count;
 	int	threshold;	/* count threshold */
 };
 
@@ -32,4 +31,3 @@ struct gpio_buttons_platform_data {
 };
 
 #endif /* _GPIO_BUTTONS_H_ */
-
