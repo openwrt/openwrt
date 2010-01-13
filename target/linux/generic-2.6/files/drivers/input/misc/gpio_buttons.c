@@ -1,7 +1,8 @@
 /*
  *  Driver for buttons on GPIO lines not capable of generating interrupts
  *
- *  Copyright (C) 2007,2008 Gabor Juhos <juhosg at openwrt.org>
+ *  Copyright (C) 2007-2010 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2010 Nuno Goncalves <nunojpg@gmail.com>
  *
  *  This file was based on: /drivers/input/misc/cobalt_btns.c
  *	Copyright (C) 2007 Yoichi Yuasa <yoichi_yuasa@tripeaks.co.jp>
@@ -29,12 +30,18 @@
 #include <asm/gpio.h>
 
 #define DRV_NAME	"gpio-buttons"
-#define DRV_VERSION	"0.1.1"
+#define DRV_VERSION	"0.1.2"
 #define PFX		DRV_NAME ": "
+
+struct gpio_button_data {
+	int last_state;
+	int count;
+};
 
 struct gpio_buttons_dev {
 	struct input_polled_dev *poll_dev;
 	struct gpio_buttons_platform_data *pdata;
+	struct gpio_button_data *data;
 };
 
 static void gpio_buttons_poll(struct input_polled_dev *dev)
@@ -49,22 +56,18 @@ static void gpio_buttons_poll(struct input_polled_dev *dev)
 		unsigned int type = button->type ?: EV_KEY;
 		int state;
 
-		state = gpio_get_value(button->gpio) ? 1 : 0;
-		state ^= button->active_low;
-
-		if (state) {
-			button->count++;
-		} else {
-			if (button->count >= button->threshold) {
-				input_event(input, type, button->code, 1);
-				input_sync(input);
-			}
-			button->count = 0;
+		if (bdev->data[i].count < button->threshold) {
+			bdev->data[i].count++;
+			continue;
 		}
 
-		if (button->count == button->threshold) {
-			input_event(input, type, button->code, 0);
+		state = gpio_get_value(button->gpio) ? 1 : 0;
+		if (state != bdev->data[i].last_state) {
+			input_event(input, type, button->code,
+				    !!(state ^ button->active_low));
 			input_sync(input);
+			bdev->data[i].count = 0;
+			bdev->data[i].last_state = state;
 		}
 	}
 }
@@ -77,15 +80,18 @@ static int __devinit gpio_buttons_probe(struct platform_device *pdev)
 	struct input_dev *input;
 	int error, i;
 
-
 	if (!pdata)
 		return -ENXIO;
 
-	bdev = kzalloc(sizeof(*bdev), GFP_KERNEL);
+	bdev = kzalloc(sizeof(struct gpio_buttons_dev) +
+		       sizeof(struct gpio_button_data) * pdata->nbuttons,
+		       GFP_KERNEL);
 	if (!bdev) {
 		printk(KERN_ERR DRV_NAME "no memory for device\n");
 		return -ENOMEM;
 	}
+
+	bdev->data = (struct gpio_button_data *) &bdev[1];
 
 	poll_dev = input_allocate_polled_device();
 	if (!poll_dev) {
@@ -131,7 +137,7 @@ static int __devinit gpio_buttons_probe(struct platform_device *pdev)
 		}
 
 		input_set_capability(input, type, button->code);
-		button->count = 0;
+		bdev->data[i].last_state = gpio_get_value(button->gpio) ? 1 : 0;
 	}
 
 	bdev->poll_dev = poll_dev;
