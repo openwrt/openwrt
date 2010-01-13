@@ -28,14 +28,14 @@ static struct gpio_button pb42_gpio_buttons[] __initdata = {
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= PB42_GPIO_BTN_SW4,
 		.active_low	= 1,
 	} , {
 		.desc		= "sw5",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= PB42_GPIO_BTN_SW5,
 		.active_low	= 1,
 	}

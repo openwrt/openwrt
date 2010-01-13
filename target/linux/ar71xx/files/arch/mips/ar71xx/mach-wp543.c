@@ -61,13 +61,13 @@ static struct gpio_button wp543_gpio_buttons[] __initdata = {
 		.desc		= "sw6",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= WP543_GPIO_SW6,
 	}, {
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= WP543_GPIO_SW4,
 	}
 };

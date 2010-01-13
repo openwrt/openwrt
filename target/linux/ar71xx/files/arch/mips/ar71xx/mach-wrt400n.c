@@ -115,14 +115,14 @@ static struct gpio_button wrt400n_gpio_buttons[] __initdata = {
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= WRT400N_GPIO_BTN_RESET,
 		.active_low	= 1,
 	} , {
 		.desc		= "wlsec",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= WRT400N_GPIO_BTN_WLSEC,
 		.active_low	= 1,
 	}

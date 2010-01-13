@@ -92,14 +92,14 @@ static struct gpio_button ap81_gpio_buttons[] __initdata = {
 		.desc		= "sw1",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= AP81_GPIO_BTN_SW1,
 		.active_low	= 1,
 	} , {
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= AP81_GPIO_BTN_SW4,
 		.active_low	= 1,
 	}
