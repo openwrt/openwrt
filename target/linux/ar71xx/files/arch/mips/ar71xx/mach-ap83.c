@@ -120,14 +120,14 @@ static struct gpio_button ap83_gpio_buttons[] __initdata = {
 		.desc		= "soft_reset",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= AP83_GPIO_BTN_RESET,
 		.active_low	= 1,
 	} , {
 		.desc		= "jumpstart",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= AP83_GPIO_BTN_JUMPSTART,
 		.active_low	= 1,
 	}

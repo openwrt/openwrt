@@ -126,19 +126,19 @@ static struct gpio_button wndr3700_gpio_buttons[] __initdata = {
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= WNDR3700_GPIO_BTN_RESET,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= WNDR3700_GPIO_BTN_WPS,
 	} , {
 		.desc		= "wifi",
 		.type		= EV_KEY,
 		.code		= BTN_2,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= WNDR3700_GPIO_BTN_WIFI,
 	}
 };

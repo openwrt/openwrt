@@ -80,14 +80,14 @@ static struct gpio_button tl_wr741nd_gpio_buttons[] __initdata = {
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= TL_WR741ND_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "qss",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= TL_WR741ND_GPIO_BTN_QSS,
 		.active_low	= 1,
 	}
