@@ -36,13 +36,13 @@ define Host/Compile
 endef
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/{lib,include}
-	$(CP) $(HOST_BUILD_DIR)/lib/uuid/uuid.h $(STAGING_DIR_HOST)/include/
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/{lib,include/uuid}
+	$(CP) $(HOST_BUILD_DIR)/lib/uuid/uuid.h $(STAGING_DIR_HOST)/include/uuid/
 	$(CP) $(HOST_BUILD_DIR)/lib/uuid/libuuid.{so*,a} $(STAGING_DIR_HOST)/lib/
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/include/uuid.h
+	rm -f $(STAGING_DIR_HOST)/include/uuid/uuid.h
 	rm -f $(STAGING_DIR_HOST)/lib/uuid/libuuid.{so*,a}
 	$(call Host/Clean/Default)
 endef
