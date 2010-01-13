@@ -12,3 +12,18 @@
  	/* PMC -- pm25x "blocks" are 32K, sectors are 4K */
  	{ "pm25lv512",         0, 32 * 1024, 2, SECT_4K },
  	{ "pm25lv010",         0, 32 * 1024, 4, SECT_4K },
+@@ -656,11 +661,12 @@ static int __devinit m25p_probe(struct s
+ 	dev_set_drvdata(&spi->dev, flash);
+ 
+ 	/*
+-	 * Atmel serial flash tend to power up
++	 * Atmel and Intel/Numonyx serial flash tend to power up
+ 	 * with the software protection bits set
+ 	 */
+ 
+-	if (info->jedec_id >> 16 == 0x1f) {
++	if (info->jedec_id >> 16 == 0x1f ||
++	    info->jedec_id >> 16 == 0x89) {
+ 		write_enable(flash);
+ 		write_sr(flash, 0);
+ 	}
