@@ -12,12 +12,33 @@ wpa_supplicant_setup_vif() {
 	}
 
 	case "$enc" in
+		*wep*)
+			key_mgmt='NONE'
+			config_get key "$vif" key
+			key="${key:-1}"
+			case "$key" in
+				[1234])
+					for idx in 1 2 3 4; do
+						local zidx
+						zidx=$(($idx - 1))
+						config_get ckey "$vif" "key${idx}"
+						if [ -n "$ckey" ] && \
+							append "wep_key${zidx}" "wep_key${zidx}=$(prepare_key_wep "$ckey")"
+					done
+					wep_tx_keyidx="wep_tx_keyidx=$((key - 1))"
+				;;
+				*)
+					wep_key0="wep_key0=$(prepare_key_wep "$key")"
+					wep_tx_keyidx="wep_tx_keyidx=0"
+				;;
+			esac
+		;;
 		*psk*)
 			key_mgmt='WPA-PSK'
 			config_get_bool usepassphrase "$vif" passphrase 1
 			case "$enc" in
 				*psk2*)
-					proto='RSN'
+					proto='proto=RSN'
 					if [ "$usepassphrase" = "1" ]; then
 						passphrase="psk=\"${key}\""
 					else
@@ -25,7 +46,7 @@ wpa_supplicant_setup_vif() {
 					fi
 				;;
 				*psk*)
-					proto='WPA'
+					proto='proto=WPA'
 					if [ "$usepassphrase" = "1" ]; then
 						passphrase="psk=\"${key}\""
 					else
@@ -35,7 +56,7 @@ wpa_supplicant_setup_vif() {
 			esac
 		;;
 		*wpa*|*8021x*)
-			proto='WPA2'
+			proto='proto=WPA2'
 			key_mgmt='WPA-EAP'
 			config_get ca_cert "$vif" ca_cert
 			ca_cert=${ca_cert:+"ca_cert=\"$ca_cert\""}
@@ -72,7 +93,7 @@ network={
 	ssid="$ssid"
 	$bssid
 	key_mgmt=$key_mgmt
-	proto=$proto
+	$proto
 	$passphrase
 	$pairwise
 	$group
@@ -83,7 +104,13 @@ network={
 	$phase2
 	$identity
 	$password
+	$wep_key0
+	$wep_key1
+	$wep_key2
+	$wep_key3
+	$wep_tx_keyidx
 }
 EOF
-	[ -z "$proto" ] || wpa_supplicant ${bridge:+ -b $bridge} -B -P "/var/run/wifi-${ifname}.pid" -D ${driver:-wext} -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
+	[ -z "$proto" -a "$key_mgmt" != "NONE" ] ||
+		wpa_supplicant ${bridge:+ -b $bridge} -B -P "/var/run/wifi-${ifname}.pid" -D ${driver:-wext} -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
 }
