@@ -176,20 +176,30 @@ enable_mac80211() {
 		# configured to handle the wep connection
 		if [ ! "$mode" = "ap" ]; then
 			case "$enc" in
-				wep)
+				*wep*)
 					config_get keymgmt "$vif" keymgmt
-					if [ -n "$keymgmt" ]; then
-						for idx in 1 2 3 4; do
-							local zidx
-							zidx=$(($idx - 1))
-							config_get key "$vif" "key${idx}"
-							if [ -n "$key" ]; then
-								append keystring "${zidx}:${key} "
-							fi
-						done
+					if [ -z "$keymgmt" ]; then
+						config_get key "$vif" key
+						key="${key:-1}"
+						case "$key" in
+							[1234])
+								for idx in 1 2 3 4; do
+									local zidx
+									zidx=$(($idx - 1))
+									config_get ckey "$vif" "key${idx}"
+									if [ -n "$ckey" ]; then
+										[ $idx -eq $key ] && zidx="d:${zidx}"
+										append keystring "${zidx}:$(prepare_key_wep "$ckey")"
+									fi
+								done
+								;;
+							*)
+								keystring="d:0:$(prepare_key_wep "$key")"
+								;;
+						esac
 					fi
 				;;
-				*wpa*|*psk*)
+				*psk*|*wpa*)
 					config_get key "$vif" key
 				;;
 			esac
@@ -241,10 +251,10 @@ enable_mac80211() {
 			sta|mesh)
 				config_get bssid "$vif" bssid
 				case "$enc" in
-					wep)
-						if [ -n "$keymgmt" ]; then
+					*wep*)
+						if [ -z "$keymgmt" ]; then
 							[ -n "$keystring" ] &&
-								iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid key "$keystring"
+								iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid key $keystring
 						else
 							if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
 								wpa_supplicant_setup_vif "$vif" wext || {
