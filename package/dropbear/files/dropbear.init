@@ -38,10 +38,13 @@ dropbear_start()
 	local bannerfile
 	config_get bannerfile ${section} BannerFile
 	[ -f $bannerfile ] || bannerfile=''
-
+	# D) gatewayports
+	local gatewayports
+	config_get_bool gatewayports "${section}" GatewayPorts 0
+	[ "${gatewayports}" -eq 1 ] || gatewayports=''
 	# concatenate parameters
 	local args
-	args="${nopasswd:+-s }${port:+-p ${port} }${bannerfile:+-b $bannerfile }-P /var/run/${NAME}.${PIDCOUNT}.pid"
+	args="${nopasswd:+-s }${port:+-p ${port} }${bannerfile:+-b $bannerfile }${gatewayports:+-a }-P /var/run/${NAME}.${PIDCOUNT}.pid"
 
 	# execute program and return its exit code
 	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
