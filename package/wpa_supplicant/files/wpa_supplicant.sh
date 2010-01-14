@@ -22,7 +22,7 @@ wpa_supplicant_setup_vif() {
 						local zidx
 						zidx=$(($idx - 1))
 						config_get ckey "$vif" "key${idx}"
-						if [ -n "$ckey" ] && \
+						[ -n "$ckey" ] && \
 							append "wep_key${zidx}" "wep_key${zidx}=$(prepare_key_wep "$ckey")"
 					done
 					wep_tx_keyidx="wep_tx_keyidx=$((key - 1))"
@@ -111,6 +111,6 @@ network={
 	$wep_tx_keyidx
 }
 EOF
-	[ -z "$proto" -a "$key_mgmt" != "NONE" ] ||
+	[ -z "$proto" -a "$key_mgmt" != "NONE" ] || \
 		wpa_supplicant ${bridge:+ -b $bridge} -B -P "/var/run/wifi-${ifname}.pid" -D ${driver:-wext} -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
 }
