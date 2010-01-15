@@ -51,6 +51,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_WP543,	/* Compex WP543 */
 	AR71XX_MACH_WRT160NL,	/* Linksys WRT160NL */
 	AR71XX_MACH_WRT400N,	/* Linksys WRT400N */
+	AR71XX_MACH_WZR_HP_G300NH, /* Buffalo WZR-HP-G300NH */
 };
 
 #endif /* _AR71XX_MACHTYPE_H */

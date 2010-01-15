@@ -96,6 +96,9 @@ get_status_led() {
 	wrt160nl)
 		status_led="wrt160nl:blue:wps"
 		;;
+	wzr-hp-g300nh)
+		status_led="wzr-hp-g300nh:green:router"
+		;;
 	esac;
 }
 

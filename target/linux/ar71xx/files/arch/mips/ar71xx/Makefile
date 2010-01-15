@@ -48,3 +48,4 @@ obj-$(CONFIG_AR71XX_MACH_WNR2000)	+= mach-wnr2000.o
 obj-$(CONFIG_AR71XX_MACH_WP543)		+= mach-wp543.o
 obj-$(CONFIG_AR71XX_MACH_WRT160NL)	+= mach-wrt160nl.o
 obj-$(CONFIG_AR71XX_MACH_WRT400N)	+= mach-wrt400n.o
+obj-$(CONFIG_AR71XX_MACH_WZR_HP_G300NH)	+= mach-wzr-hp-g300nh.o
