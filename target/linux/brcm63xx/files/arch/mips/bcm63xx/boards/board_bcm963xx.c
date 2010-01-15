@@ -559,6 +559,55 @@ static struct board_info __initdata board_AGPFS0 = {
 
 	.has_ohci0 = 1,
 	.has_ehci0 = 1,
+
+	.leds = {
+		/*Each led on alice gate is bi-color so final char */
+		/* is r for red and g for green leds */
+		{
+			.name		= "pwrr",
+			.gpio		= 5,
+			.active_low	= 1,
+		},
+		{
+			.name		= "pwrg",
+			.gpio		= 4,
+			.active_low	= 1,
+			.default_trigger = "default-on",
+		},
+		{
+			.name		= "wifir",
+			.gpio		= 23,
+			.active_low	= 1,
+		},
+		{
+			.name		= "wifig",
+			.gpio		= 22,
+			.active_low	= 1,
+		},
+		{
+			.name		= "usr1r",
+			.gpio		= 27,
+			.active_low	= 1,
+		},
+		{
+			.name		= "usr1g",
+			.gpio		= 26,
+			.active_low	= 1,
+		},
+		{
+			.name		= "usr2r",
+			.gpio		= 30,
+			.active_low	= 1,
+		},
+		{
+			.name		= "usr2g",
+			.gpio		= 29,
+			.active_low	= 1,
+		},
+	},
+
+	.reset_btn = 37; /* sw2 */
+	/* sw1 is connected to gpio34*/
 };
 
 static struct board_info __initdata board_DWVS0 = {
