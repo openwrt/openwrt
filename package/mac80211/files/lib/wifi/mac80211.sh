@@ -77,6 +77,7 @@ enable_mac80211() {
 	config_get vifs "$device" vifs
 	config_get txpower "$device" txpower
 	config_get country "$device" country
+	config_get distance "$device" distance
 	find_mac80211_phy "$device" || return 0
 	config_get phy "$device" phy
 	local i=0
@@ -86,6 +87,8 @@ enable_mac80211() {
 	[ "$channel" = "auto" -o "$channel" = "0" ] || {
 		fixed=1
 	}
+
+	[ -n "$distance" ] && iw phy "$phy" set distance "$distance"
 
 	export channel fixed
 	# convert channel to frequency
