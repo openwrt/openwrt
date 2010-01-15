@@ -1,0 +1,25 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -230,4 +230,12 @@ config GPIO_UCB1400
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called ucb1400_gpio.
+ 
++comment "Other GPIO expanders"
++
++config GPIO_NXP_74HC153
++	tristate "NXP 74HC153 Dual 4-input multiplexer"
++	help
++	  Platform driver for NXP 74HC153 Dual 4-input Multiplexer. This
++	  provides a GPIO interface supporting inputs.
++
+ endif
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_GPIO_MAX7301)	+= max7301.o
+ obj-$(CONFIG_GPIO_MAX732X)	+= max732x.o
+ obj-$(CONFIG_GPIO_MC33880)	+= mc33880.o
+ obj-$(CONFIG_GPIO_MCP23S08)	+= mcp23s08.o
++obj-$(CONFIG_GPIO_NXP_74HC153)	+= nxp_74hc153.o
+ obj-$(CONFIG_GPIO_PCA953X)	+= pca953x.o
+ obj-$(CONFIG_GPIO_PCF857X)	+= pcf857x.o
+ obj-$(CONFIG_GPIO_PL061)	+= pl061.o
