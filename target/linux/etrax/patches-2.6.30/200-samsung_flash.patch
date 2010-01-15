@@ -5,7 +5,7 @@
  		cfi_fixup_major_minor(cfi, extp);
  
 -		if (extp->MajorVersion != '1' ||
-+		if (extp->MajorVersion < '1' || extp->MajorVersion > '3' ||
++		if (extp->MajorVersion < '0' || extp->MajorVersion > '3' ||
  		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
  		        if (cfi->mfr == MANUFACTURER_SAMSUNG &&
  			    (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
