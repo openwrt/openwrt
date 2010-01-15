@@ -1,0 +1,60 @@
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -1211,6 +1211,7 @@ void ath9k_hw_init_global_settings(struc
+ {
+ 	struct ieee80211_conf *conf = &ath9k_hw_common(ah)->hw->conf;
+ 	int acktimeout;
++	int slottime;
+ 	int sifstime;
+ 
+ 	ath_print(ath9k_hw_common(ah), ATH_DBG_RESET, "ah->misc_mode 0x%x\n",
+@@ -1225,8 +1226,10 @@ void ath9k_hw_init_global_settings(struc
+ 	else
+ 		sifstime = 10;
+ 
+-	acktimeout = ah->slottime + sifstime;
+-	ath9k_hw_setslottime(ah, ah->slottime);
++	/* As defined by IEEE 802.11-2007 17.3.8.6 */
++	slottime = ah->slottime + 3 * ah->coverage_class;
++	acktimeout = slottime + sifstime;
++	ath9k_hw_setslottime(ah, slottime);
+ 	ath9k_hw_set_ack_timeout(ah, acktimeout);
+ 	ath9k_hw_set_cts_timeout(ah, acktimeout);
+ 	if (ah->globaltxtimeout != (u32) -1)
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -551,6 +551,7 @@ struct ath_hw {
+ 	u32 *bank6Temp;
+ 
+ 	int16_t txpower_indexoffset;
++	int coverage_class;
+ 	u32 beacon_interval;
+ 	u32 slottime;
+ 	u32 globaltxtimeout;
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -2015,6 +2015,18 @@ static void ath9k_sw_scan_complete(struc
+ 	mutex_unlock(&sc->mutex);
+ }
+ 
++static void ath9k_set_coverage_class(struct ieee80211_hw *hw, u8 coverage_class)
++{
++	struct ath_wiphy *aphy = hw->priv;
++	struct ath_softc *sc = aphy->sc;
++	struct ath_hw *ah = sc->sc_ah;
++
++	mutex_lock(&sc->mutex);
++	ah->coverage_class = coverage_class;
++	ath9k_hw_init_global_settings(ah);
++	mutex_unlock(&sc->mutex);
++}
++
+ struct ieee80211_ops ath9k_ops = {
+ 	.tx 		    = ath9k_tx,
+ 	.start 		    = ath9k_start,
+@@ -2034,4 +2046,5 @@ struct ieee80211_ops ath9k_ops = {
+ 	.sw_scan_start      = ath9k_sw_scan_start,
+ 	.sw_scan_complete   = ath9k_sw_scan_complete,
+ 	.rfkill_poll        = ath9k_rfkill_poll_state,
++	.set_coverage_class = ath9k_set_coverage_class,
+ };
