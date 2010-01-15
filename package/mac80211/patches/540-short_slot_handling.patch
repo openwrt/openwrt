@@ -9,3 +9,19 @@
  
  	if (use_protection != bss_conf->use_cts_prot) {
  		bss_conf->use_cts_prot = use_protection;
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1087,6 +1087,13 @@ static int ieee80211_change_bss(struct w
+ 			params->use_short_preamble;
+ 		changed |= BSS_CHANGED_ERP_PREAMBLE;
+ 	}
++
++	if (!sdata->vif.bss_conf.use_short_slot &&
++	    sdata->local->hw.conf.channel->band == IEEE80211_BAND_5GHZ) {
++		sdata->vif.bss_conf.use_short_slot = true;
++		changed |= BSS_CHANGED_ERP_SLOT;
++	}
++
+ 	if (params->use_short_slot_time >= 0) {
+ 		sdata->vif.bss_conf.use_short_slot =
+ 			params->use_short_slot_time;
