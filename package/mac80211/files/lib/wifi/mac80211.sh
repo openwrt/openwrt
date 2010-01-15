@@ -317,7 +317,7 @@ detect_mac80211() {
 		mode_band="g"
 		channel="5"
 		ht_cap=0
-		for cap in $(iw phy "$dev" info | grep 'HT capabilities' | cut -d: -f2); do
+		for cap in $(iw phy "$dev" info | grep 'Capabilities:' | cut -d: -f2); do
 			ht_cap="$(($ht_cap | $cap))"
 		done
 		ht_capab="";
