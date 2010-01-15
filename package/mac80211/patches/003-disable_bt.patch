@@ -1,13 +1,13 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -36,8 +36,8 @@ endif
+@@ -95,8 +95,8 @@ ifndef CONFIG_COMPAT_KERNEL_27
  ifeq ($(CONFIG_BT),y)
  # we'll ignore compiling bluetooth
  else
--CONFIG_COMPAT_BLUETOOTH=y
--CONFIG_COMPAT_BLUETOOTH_MODULES=m
+- CONFIG_COMPAT_BLUETOOTH=y
+- CONFIG_COMPAT_BLUETOOTH_MODULES=m
 +# CONFIG_COMPAT_BLUETOOTH=y
 +# CONFIG_COMPAT_BLUETOOTH_MODULES=m
  endif
+ endif # Kernel >= 2.6.26
  
- # We will warn when you don't have MQ support or NET_SCHED enabled.
