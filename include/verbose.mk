@@ -49,7 +49,7 @@ ifneq ($(KBUILD_VERBOSE),99)
 
   .SILENT: $(MAKECMDGOALS)
 else
-  SUBMAKE=$(MAKE)
+  SUBMAKE=$(MAKE) -w
   define MESSAGE
     printf "%s\n" "$(1)"
   endef
