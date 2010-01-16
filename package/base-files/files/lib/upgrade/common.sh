@@ -21,6 +21,9 @@ install_bin() { # <file> [ <symlink> ... ]
 	files=$1
 	[ -x "$src" ] && files="$src $(libs $src)"
 	install_file $files
+	[ -e /lib/ld-linux.so.3 ] && {
+		install_file /lib/ld-linux.so.3
+	}
 	shift
 	for link in "$@"; do {
 		dest="$RAM_ROOT/$link"
