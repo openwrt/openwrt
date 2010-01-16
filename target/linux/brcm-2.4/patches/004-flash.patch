@@ -1,3 +1,13 @@
+--- a/arch/mips/bcm947xx/Makefile	
++++ b/arch/mips/bcm947xx/Makefile	
+@@ -11,6 +11,7 @@
+ obj-y		:= prom.o setup.o time.o sbmips.o gpio.o
+ obj-y		+= nvram.o nvram_linux.o cfe_env.o hndpmu.o
+ obj-y		+= sbutils.o utils.o bcmsrom.o hndchipc.o
++obj-y		+= sflash.o
+ obj-$(CONFIG_PCI) += sbpci.o pcibios.o
+ obj-y 		+= export.o
+ 
 --- a/drivers/mtd/devices/Config.in
 +++ b/drivers/mtd/devices/Config.in
 @@ -5,6 +5,7 @@
