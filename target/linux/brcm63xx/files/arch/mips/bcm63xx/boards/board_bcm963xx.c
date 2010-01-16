@@ -606,7 +606,7 @@ static struct board_info __initdata board_AGPFS0 = {
 		},
 	},
 
-	.reset_btn = 37; /* sw2 */
+	.reset_btn = 37, /* sw2 */
 	/* sw1 is connected to gpio34*/
 };
 
