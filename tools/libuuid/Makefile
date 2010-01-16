@@ -32,18 +32,18 @@ define Host/Configure
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)/lib/uuid
+	$(MAKE) -C $(HOST_BUILD_DIR)/lib/uuid libuuid.a
 endef
 
 define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/{lib,include/uuid}
 	$(CP) $(HOST_BUILD_DIR)/lib/uuid/uuid.h $(STAGING_DIR_HOST)/include/uuid/
-	$(CP) $(HOST_BUILD_DIR)/lib/uuid/libuuid.{so*,a} $(STAGING_DIR_HOST)/lib/
+	$(CP) $(HOST_BUILD_DIR)/lib/uuid/libuuid.a $(STAGING_DIR_HOST)/lib/
 endef
 
 define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/include/uuid/uuid.h
-	rm -f $(STAGING_DIR_HOST)/lib/uuid/libuuid.{so*,a}
+	rm -f $(STAGING_DIR_HOST)/lib/uuid/libuuid.*
 	$(call Host/Clean/Default)
 endef
 
