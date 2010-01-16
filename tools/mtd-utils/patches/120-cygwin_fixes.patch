@@ -1,7 +1,6 @@
-diff -urN mtd-20090505/Makefile mtd-20090505.new/Makefile
---- mtd-20090505/Makefile	2009-06-05 16:59:08.000000000 +0200
-+++ mtd-20090505.new/Makefile	2010-01-05 11:11:24.000000000 +0100
-@@ -7,6 +7,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -7,6 +7,11 @@ ifeq ($(WITHOUT_XATTR), 1)
    CPPFLAGS += -DWITHOUT_XATTR
  endif
  
@@ -13,7 +12,7 @@ diff -urN mtd-20090505/Makefile mtd-20090505.new/Makefile
  SUBDIRS = ubi-utils mkfs.ubifs
  
  TARGETS = ftl_format flash_erase flash_eraseall nanddump doc_loadbios \
-@@ -17,6 +22,10 @@
+@@ -17,6 +22,10 @@ TARGETS = ftl_format flash_erase flash_e
  	rfddump rfdformat \
  	serve_image recv_image \
  	sumtool #jffs2reader
@@ -24,9 +23,8 @@ diff -urN mtd-20090505/Makefile mtd-20090505.new/Makefile
  
  SYMLINKS =
  
-diff -urN mtd-20090505/include/cygwin/bits-byteswap.h mtd-20090505.new/include/cygwin/bits-byteswap.h
---- mtd-20090505/include/cygwin/bits-byteswap.h	1970-01-01 01:00:00.000000000 +0100
-+++ mtd-20090505.new/include/cygwin/bits-byteswap.h	2010-01-05 11:09:45.000000000 +0100
+--- /dev/null
++++ b/include/cygwin/bits-byteswap.h
 @@ -0,0 +1,132 @@
 +/* Macros to swap the order of bytes in integer values.
 +   Copyright (C) 1997, 1998, 2000, 2002 Free Software Foundation, Inc.
@@ -160,9 +158,8 @@ diff -urN mtd-20090505/include/cygwin/bits-byteswap.h mtd-20090505.new/include/c
 +#endif
 +
 +#endif /* _BITS_BYTESWAP_H */
-diff -urN mtd-20090505/include/cygwin/byteswap.h mtd-20090505.new/include/cygwin/byteswap.h
---- mtd-20090505/include/cygwin/byteswap.h	1970-01-01 01:00:00.000000000 +0100
-+++ mtd-20090505.new/include/cygwin/byteswap.h	2010-01-05 11:09:45.000000000 +0100
+--- /dev/null
++++ b/include/cygwin/byteswap.h
 @@ -0,0 +1,40 @@
 +/* Copyright (C) 1997 Free Software Foundation, Inc.
 +   This file is part of the GNU C Library.
@@ -204,9 +201,8 @@ diff -urN mtd-20090505/include/cygwin/byteswap.h mtd-20090505.new/include/cygwin
 +#endif
 +
 +#endif /* byteswap.h */
-diff -urN mtd-20090505/include/cygwin/endian.h mtd-20090505.new/include/cygwin/endian.h
---- mtd-20090505/include/cygwin/endian.h	1970-01-01 01:00:00.000000000 +0100
-+++ mtd-20090505.new/include/cygwin/endian.h	2010-01-05 11:43:10.000000000 +0100
+--- /dev/null
++++ b/include/cygwin/endian.h
 @@ -0,0 +1,26 @@
 +#ifndef _CYGENDIAN_H_
 +#define _CYGENDIAN_H_
@@ -234,9 +230,8 @@ diff -urN mtd-20090505/include/cygwin/endian.h mtd-20090505.new/include/cygwin/e
 +#endif /* __CYGWIN__ */
 +
 +#endif /* _CYGENDIAN_H_ */
-diff -urN mtd-20090505/include/cygwin/ioctl.h mtd-20090505.new/include/cygwin/ioctl.h
---- mtd-20090505/include/cygwin/ioctl.h	1970-01-01 01:00:00.000000000 +0100
-+++ mtd-20090505.new/include/cygwin/ioctl.h	2010-01-05 11:09:45.000000000 +0100
+--- /dev/null
++++ b/include/cygwin/ioctl.h
 @@ -0,0 +1,38 @@
 +#ifndef _CYGIOCTL_H_
 +#define _CYGIOCTL_H_
@@ -276,9 +271,8 @@ diff -urN mtd-20090505/include/cygwin/ioctl.h mtd-20090505.new/include/cygwin/io
 +#endif /* __CYGWIN__ */
 +
 +#endif /* _CYGIOCTL_H_ */
-diff -urN mtd-20090505/include/cygwin/pread.c mtd-20090505.new/include/cygwin/pread.c
---- mtd-20090505/include/cygwin/pread.c	1970-01-01 01:00:00.000000000 +0100
-+++ mtd-20090505.new/include/cygwin/pread.c	2010-01-05 11:09:45.000000000 +0100
+--- /dev/null
++++ b/include/cygwin/pread.c
 @@ -0,0 +1,41 @@
 +#ifdef __CYGWIN__
 +
@@ -321,9 +315,8 @@ diff -urN mtd-20090505/include/cygwin/pread.c mtd-20090505.new/include/cygwin/pr
 +}
 +
 +#endif /* __CYGWIN__ */
-diff -urN mtd-20090505/lnconf.sh mtd-20090505.new/lnconf.sh
---- mtd-20090505/lnconf.sh	1970-01-01 01:00:00.000000000 +0100
-+++ mtd-20090505.new/lnconf.sh	2010-01-05 11:09:45.000000000 +0100
+--- /dev/null
++++ b/lnconf.sh
 @@ -0,0 +1,53 @@
 +#!/bin/sh
 +#
@@ -378,9 +371,8 @@ diff -urN mtd-20090505/lnconf.sh mtd-20090505.new/lnconf.sh
 +
 +lndir "$tdir"
 +
-diff -urN mtd-20090505/mkfs.jffs2.c mtd-20090505.new/mkfs.jffs2.c
---- mtd-20090505/mkfs.jffs2.c	2009-06-05 16:59:08.000000000 +0200
-+++ mtd-20090505.new/mkfs.jffs2.c	2010-01-05 11:25:52.000000000 +0100
+--- a/mkfs.jffs2.c
++++ b/mkfs.jffs2.c
 @@ -75,6 +75,14 @@
  #include "crc32.h"
  #include "rbtree.h"
@@ -396,7 +388,7 @@ diff -urN mtd-20090505/mkfs.jffs2.c mtd-20090505.new/mkfs.jffs2.c
  /* Do not use the weird XPG version of basename */
  #undef basename
  
-@@ -474,7 +482,7 @@
+@@ -474,7 +482,7 @@ static struct filesystem_entry *recursiv
     the following macros use it if available or use a hacky workaround...
   */
  
@@ -405,7 +397,7 @@ diff -urN mtd-20090505/mkfs.jffs2.c mtd-20090505.new/mkfs.jffs2.c
  #define SCANF_PREFIX "a"
  #define SCANF_STRING(s) (&s)
  #define GETCWD_SIZE 0
-@@ -557,6 +565,14 @@
+@@ -557,6 +565,14 @@ static int interpret_table_entry(struct 
  	}
  	entry = find_filesystem_entry(root, name, mode);
  	if (entry) {
@@ -420,7 +412,7 @@ diff -urN mtd-20090505/mkfs.jffs2.c mtd-20090505.new/mkfs.jffs2.c
  		/* Ok, we just need to fixup the existing entry
  		 * and we will be all done... */
  		entry->sb.st_uid = uid;
-@@ -566,11 +582,21 @@
+@@ -566,11 +582,21 @@ static int interpret_table_entry(struct 
  			entry->sb.st_rdev = makedev(major, minor);
  		}
  	} else {
@@ -443,7 +435,7 @@ diff -urN mtd-20090505/mkfs.jffs2.c mtd-20090505.new/mkfs.jffs2.c
  		free(tmp);
  		if (parent == NULL) {
  			error_msg ("skipping device_table entry '%s': no parent directory!", name);
-@@ -584,6 +610,7 @@
+@@ -584,6 +610,7 @@ static int interpret_table_entry(struct 
  				add_host_filesystem_entry(name, hostpath, uid, gid, mode, 0, parent);
  				break;
  			case 'f':
@@ -451,9 +443,8 @@ diff -urN mtd-20090505/mkfs.jffs2.c mtd-20090505.new/mkfs.jffs2.c
  				add_host_filesystem_entry(name, hostpath, uid, gid, mode, 0, parent);
  				break;
  			case 'p':
-diff -urN mtd-20090505/ubi-utils/src/libubi.c mtd-20090505.new/ubi-utils/src/libubi.c
---- mtd-20090505/ubi-utils/src/libubi.c	2009-06-05 16:59:08.000000000 +0200
-+++ mtd-20090505.new/ubi-utils/src/libubi.c	2010-01-05 11:46:24.000000000 +0100
+--- a/ubi-utils/src/libubi.c
++++ b/ubi-utils/src/libubi.c
 @@ -30,6 +30,9 @@
  #include <sys/ioctl.h>
  #include <sys/stat.h>
