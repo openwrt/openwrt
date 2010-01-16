@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 CFLAGS := $(HOST_CFLAGS) -I$(HOST_BUILD_DIR)/include -L$(HOST_BUILD_DIR) -L$(STAGING_DIR_HOST)/lib
 ifneq ($(HOST_OS),Linux)
-CFLAGS += -Dloff_t=off_t -D__BYTE_ORDER=BYTE_ORDER -include getline.h -include endian.h
+CFLAGS += -Dloff_t=off_t -D__BYTE_ORDER=BYTE_ORDER -include getline.h -include endian.h -I$(CURDIR)/include -include fls.h
 endif
 
 MTD_MAKEOPTS = \
