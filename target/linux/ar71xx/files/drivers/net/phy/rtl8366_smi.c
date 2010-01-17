@@ -1718,6 +1718,27 @@ static struct switch_dev rtldev = {
 	.reset_switch = rtl8366_reset_switch,
 };
 
+static int rtl8366_smi_switch_init(struct rtl8366_smi *smi)
+{
+	struct switch_dev *dev = &smi->dev;
+	int err;
+
+	memcpy(dev, &rtldev, sizeof(struct switch_dev));
+	dev->priv = smi;
+	dev->devname = dev_name(&smi->pdev->dev);
+
+	err = register_switch(dev, NULL);
+	if (err)
+		dev_err(&smi->pdev->dev, "switch registration failed\n");
+
+	return;
+}
+
+static void rtl8366_smi_switch_cleanup(struct rtl8366_smi *smi)
+{
+	unregister_switch(&smi->dev);
+}
+
 static int rtl8366_smi_mii_read(struct mii_bus *bus, int addr, int reg)
 {
 	struct rtl8366_smi *smi = bus->priv;
@@ -1785,6 +1806,12 @@ static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
 {
 	mdiobus_unregister(smi->mii_bus);
 	mdiobus_free(smi->mii_bus);
+}
+
+static int rtl8366_smi_mii_bus_match(struct mii_bus *bus)
+{
+	return (bus->read == rtl8366_smi_mii_read &&
+		bus->write == rtl8366_smi_mii_write);
 }
 
 static int rtl8366_smi_setup(struct rtl8366_smi *smi)
@@ -1878,8 +1905,14 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 	if (err)
 		goto err_clear_drvdata;
 
+	err = rtl8366_smi_switch_init(smi);
+	if (err)
+		goto err_mii_cleanup;
+
 	return 0;
 
+ err_mii_cleanup:
+	rtl8366_smi_mii_cleanup(smi);
  err_clear_drvdata:
 	platform_set_drvdata(pdev, NULL);
 	gpio_free(pdata->gpio_sck);
@@ -1893,26 +1926,8 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 
 int rtl8366_phy_config_init(struct phy_device *phydev)
 {
-	int err;
-	struct net_device *netdev = phydev->attached_dev;
-	struct rtl8366_smi *smi = phydev->bus->priv;
-	struct switch_dev *dev = &smi->dev;
-
-	/* Only init the switch for the primary PHY */
-	if (phydev->addr != 4) {
-		printk(KERN_INFO "Discarding address: %d\n", phydev->addr);
-		return 0;
-	}
-
-	memcpy(&smi->dev, &rtldev, sizeof(struct switch_dev));
-	dev->priv = smi;
-	dev->netdev = netdev;
-
-	err = register_switch(dev, netdev);
-	if (err < 0) {
-		printk(KERN_INFO "Switch registration failed\n");
-		return err;
-	}
+	if (!rtl8366_smi_mii_bus_match(phydev->bus))
+		return -EINVAL;
 
 	return 0;
 }
@@ -1944,8 +1959,8 @@ static int __devexit rtl8366_smi_remove(struct platform_device *pdev)
 
 		pdata = pdev->dev.platform_data;
 
+		rtl8366_smi_switch_cleanup(smi);
 		rtl8366_debugfs_remove(smi);
-		phy_driver_unregister(&rtl8366_smi_phy_driver);
 		rtl8366_smi_mii_cleanup(smi);
 		platform_set_drvdata(pdev, NULL);
 		gpio_free(pdata->gpio_sck);
