@@ -49,24 +49,26 @@ define Image/Build/Netgear
 endef
 
 define Image/Build/Linksys
-	# WRT350N v2 sysupgrade image
+# WRT350N v2 images
+# sysupgrade image
 	( \
 		dd if="${KDIR}/$2-uImage" bs=$5 conv=sync; \
 		dd if="${KDIR}/root.$1" bs=64k conv=sync; \
 	) > "${BIN_DIR}/openwrt-$2-$1.img"
-	# WRT350N v2 webupgrade image for stock firmware
+# recovery image and webupgrade image for stock firmware
 	rm -rf "${TMP_DIR}/$2_webupgrade"
 	mkdir "${TMP_DIR}/$2_webupgrade"
-	# create parameter file
+# create parameter file
 	echo ":kernel $5 ${BIN_DIR}/openwrt-$2-uImage" >"${TMP_DIR}/$2_webupgrade/$2.par"
 	echo ":rootfs 0 ${KDIR}/root.$1" >>"${TMP_DIR}/$2_webupgrade/$2.par"
-	# create webupgrade file
+# create webupgrade image
 	( cd "${TMP_DIR}/$2_webupgrade"; \
 		"${STAGING_DIR_HOST}/bin/$2-builder" \
 			-v "${TMP_DIR}/$2_webupgrade/$2.par" \
-			"${BIN_DIR}/openwrt-$2-$(1)-webupgrade.img"; \
-		$(CP) openwrt-$2-$(1)-webupgrade.bin $(BIN_DIR)/openwrt-$2-$(1)-recovery.bin; \
+			"${BIN_DIR}/openwrt-$2-$1-webupgrade.img"; \
 	)
+# copy bin file as recovery image
+	$(CP) "${TMP_DIR}/$2_webupgrade/openwrt-$2-$1-webupgrade.bin" "$(BIN_DIR)/openwrt-$2-$1-recovery.bin"
 	rm -rf "${TMP_DIR}/$2_webupgrade"
 endef
 
@@ -96,3 +98,8 @@ define Image/Build/squashfs
 endef
 
 $(eval $(call BuildImage))
+
+# Dependency for WRT350N v2 webupgrade image
+$(eval $(call RequireCommand,zip, \
+	Please install zip. \
+))
