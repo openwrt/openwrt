@@ -1,0 +1,30 @@
+--- a/info.c
++++ b/info.c
+@@ -62,6 +62,27 @@ static int print_phy_handler(struct nl_m
+ 	if (tb_msg[NL80211_ATTR_WIPHY_NAME])
+ 		printf("Wiphy %s\n", nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]));
+ 
++	if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
++		const char *mode;
++
++		if (tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE])
++			switch(nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE])) {
++			case NL80211_CHAN_HT20:
++				mode = "HT20";
++				break;
++			case NL80211_CHAN_HT40PLUS:
++				mode = "HT40+";
++				break;
++			case NL80211_CHAN_HT40MINUS:
++				mode = "HT40-";
++				break;
++			default:
++				mode = "";
++			}
++
++		printf("\tCurrent frequency: %d MHz %s\n", nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]), mode);
++	}
++
+ 	nla_for_each_nested(nl_band, tb_msg[NL80211_ATTR_WIPHY_BANDS], rem_band) {
+ 		printf("\tBand %d:\n", bandidx);
+ 		bandidx++;
