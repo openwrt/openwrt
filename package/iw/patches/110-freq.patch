@@ -1,9 +1,9 @@
---- a/info.c
-+++ b/info.c
-@@ -62,6 +62,27 @@ static int print_phy_handler(struct nl_m
- 	if (tb_msg[NL80211_ATTR_WIPHY_NAME])
- 		printf("Wiphy %s\n", nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]));
- 
+--- a/interface.c
++++ b/interface.c
+@@ -260,6 +260,27 @@ static int print_iface_handler(struct nl
+ 		printf("%s\tifindex %d\n", indent, nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]));
+ 	if (tb_msg[NL80211_ATTR_IFTYPE])
+ 		printf("%s\ttype %s\n", indent, iftype_name(nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE])));
 +	if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
 +		const char *mode;
 +
@@ -22,9 +22,9 @@
 +				mode = "";
 +			}
 +
-+		printf("\tCurrent frequency: %d MHz %s\n", nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]), mode);
++		printf("%s\tfrequency %d MHz %s\n", indent, nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]), mode);
 +	}
 +
- 	nla_for_each_nested(nl_band, tb_msg[NL80211_ATTR_WIPHY_BANDS], rem_band) {
- 		printf("\tBand %d:\n", bandidx);
- 		bandidx++;
+ 
+ 	return NL_SKIP;
+ }
