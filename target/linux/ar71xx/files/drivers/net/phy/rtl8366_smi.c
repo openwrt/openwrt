@@ -1731,7 +1731,7 @@ static int rtl8366_smi_switch_init(struct rtl8366_smi *smi)
 	if (err)
 		dev_err(&smi->pdev->dev, "switch registration failed\n");
 
-	return;
+	return err;
 }
 
 static void rtl8366_smi_switch_cleanup(struct rtl8366_smi *smi)
