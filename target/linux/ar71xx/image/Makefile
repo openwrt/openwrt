@@ -114,6 +114,24 @@ define Image/Build/DIR825B1
 	fi; fi
 endef
 
+define Image/Build/WZRHPG300NH
+	$(call PatchKernelLzma,$(2),$(3))
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1048576 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 31850496 ]; then \
+	        echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1M conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+	fi; fi
+endef
+
 cameo_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,896k(kernel),2880k(rootfs),64k(art)ro,3776k@0x30000(firmware)
 define Image/Build/Cameo
 	$(call PatchKernelLzma,$(2),$(3) $(cameo_mtdlayout))
@@ -449,6 +467,10 @@ define Image/Build/Profile/WRT160NL
 	$(call Image/Build/Template/64k/$(1),CyberTAN,wrt160nl,board=WRT160NL,1.00.01)
 endef
 
+define Image/Build/Profile/WZRHPG300NH
+	$(call Image/Build/Template/128k/$(1),WZRHPG300NH,wzr-hp-g300nh,board=WZR-HP-G300NH)
+endef
+
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP81,$(1))
 	$(call Image/Build/Profile/AP83,$(1))
@@ -473,6 +495,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WNDR3700,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
 	$(call Image/Build/Profile/WRT160NL,$(1))
+	$(call Image/Build/Profile/WZRHPG300NH,$(1))
 endef
 
 define Image/Build/Profile/Madwifi
