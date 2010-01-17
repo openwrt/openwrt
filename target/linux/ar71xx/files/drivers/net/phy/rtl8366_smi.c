@@ -604,6 +604,7 @@ static int rtl8366s_get_vlan_4k_entry(struct rtl8366_smi *smi, u32 vid,
 	u32 data;
 	u16 *tableaddr;
 
+	memset(vlan4k, '\0', sizeof(struct rtl8366s_vlan4kentry));
 	vlan4k->vid = vid;
 
 	if (vid >= RTL8366_NUM_VIDS)
@@ -855,7 +856,6 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 
 
 	/* Updating the 4K entry; lookup it and change the port member set */
-	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
 	rtl8366s_get_vlan_4k_entry(smi, val, &vlan4K);
 	vlan4K.member |= ((1 << port) | RTL8366_PORT_CPU);
 	vlan4K.untag = RTL8366_PORT_ALL_BUT_CPU;
@@ -1367,7 +1367,6 @@ static int rtl8366_attr_get_vlan_info(struct switch_dev *dev,
 
 	memset(buf, '\0', sizeof(buf));
 	memset(&vlanMC, '\0', sizeof(struct rtl8366s_vlanconfig));
-	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
 
 	rtl8366s_get_vlan_member_config(smi, val->port_vlan, &vlanMC);
 	rtl8366s_get_vlan_4k_entry(smi, vlanMC.vid, &vlan4K);
@@ -1494,7 +1493,6 @@ static int rtl8366_set_member(struct switch_dev *dev,
 	struct rtl8366s_vlan4kentry vlan4K;
 	struct rtl8366_smi *smi = to_rtl8366(dev);
 	memset(&vlanMC, '\0', sizeof(struct rtl8366s_vlanconfig));
-	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
 
 	if (val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
@@ -1518,7 +1516,6 @@ static int rtl8366_get_member(struct switch_dev *dev,
 	struct rtl8366s_vlan4kentry vlan4K;
 	struct rtl8366_smi *smi = to_rtl8366(dev);
 	memset(&vlanMC, '\0', sizeof(struct rtl8366s_vlanconfig));
-	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
 
 	if (val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
@@ -1540,7 +1537,6 @@ static int rtl8366_set_untag(struct switch_dev *dev,
 	struct rtl8366s_vlan4kentry vlan4K;
 	struct rtl8366_smi *smi = to_rtl8366(dev);
 	memset(&vlanMC, '\0', sizeof(struct rtl8366s_vlanconfig));
-	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
 
 	if (val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
@@ -1563,7 +1559,6 @@ static int rtl8366_get_untag(struct switch_dev *dev,
 	struct rtl8366s_vlan4kentry vlan4K;
 	struct rtl8366_smi *smi = to_rtl8366(dev);
 	memset(&vlanMC, '\0', sizeof(struct rtl8366s_vlanconfig));
-	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
 
 	if (val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
