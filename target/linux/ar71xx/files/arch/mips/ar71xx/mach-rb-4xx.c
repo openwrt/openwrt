@@ -248,12 +248,12 @@ static void __init rb450_generic_setup(int gige)
 
 	ar71xx_add_device_mdio(0xffffffe0);
 
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_if_mode = (gige) ? PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = 0x0000000f;
 	ar71xx_eth0_data.speed = (gige) ? SPEED_1000 : SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_if_mode = (gige) ? PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = 0x00000010;
 
 	ar71xx_add_device_eth(1);
