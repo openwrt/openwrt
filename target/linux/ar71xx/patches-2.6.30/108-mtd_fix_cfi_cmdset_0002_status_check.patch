@@ -1,31 +1,6 @@
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -39,7 +39,7 @@
- #include <linux/mtd/xip.h>
- 
- #define AMD_BOOTLOC_BUG
--#define FORCE_WORD_WRITE 0
-+#define FORCE_WORD_WRITE 1
- 
- #define MAX_WORD_RETRIES 3
- 
-@@ -190,6 +190,7 @@ static void fixup_amd_bootblock(struct m
- }
- #endif
- 
-+#if !FORCE_WORD_WRITE
- static void fixup_use_write_buffers(struct mtd_info *mtd, void *param)
- {
- 	struct map_info *map = mtd->priv;
-@@ -199,6 +200,7 @@ static void fixup_use_write_buffers(stru
- 		mtd->write = cfi_amdstd_write_buffers;
- 	}
- }
-+#endif
- 
- /* Atmel chips don't use the same PRI format as AMD chips */
- static void fixup_convert_atmel_pri(struct mtd_info *mtd, void *param)
-@@ -1152,8 +1154,8 @@ static int __xipram do_write_oneword(str
+@@ -1152,8 +1152,8 @@ static int __xipram do_write_oneword(str
  			break;
  		}
  
@@ -36,7 +11,7 @@
  
  		/* Latency issues. Drop the lock, wait a while and retry */
  		UDELAY(map, chip, adr, 1);
-@@ -1169,6 +1171,8 @@ static int __xipram do_write_oneword(str
+@@ -1169,6 +1169,8 @@ static int __xipram do_write_oneword(str
  
  		ret = -EIO;
  	}
@@ -45,24 +20,15 @@
  	xip_enable(map, chip, adr);
   op_done:
  	chip->state = FL_READY;
-@@ -1436,6 +1440,7 @@ static int __xipram do_write_buffer(stru
- }
- 
- 
-+#if !FORCE_WORD_WRITE
- static int cfi_amdstd_write_buffers(struct mtd_info *mtd, loff_t to, size_t len,
- 				    size_t *retlen, const u_char *buf)
- {
-@@ -1514,7 +1519,7 @@ static int cfi_amdstd_write_buffers(stru
- 
+@@ -1515,7 +1517,6 @@ static int cfi_amdstd_write_buffers(stru
  	return 0;
  }
--
-+#endif
  
+-
  /*
   * Handle devices with one erase region, that only implement
-@@ -1579,8 +1584,8 @@ static int __xipram do_erase_chip(struct
+  * the chip erase command.
+@@ -1579,8 +1580,8 @@ static int __xipram do_erase_chip(struct
  			chip->erase_suspended = 0;
  		}
  
@@ -73,7 +39,7 @@
  
  		if (time_after(jiffies, timeo)) {
  			printk(KERN_WARNING "MTD %s(): software timeout\n",
-@@ -1600,6 +1605,7 @@ static int __xipram do_erase_chip(struct
+@@ -1600,6 +1601,7 @@ static int __xipram do_erase_chip(struct
  		ret = -EIO;
  	}
  
@@ -81,7 +47,7 @@
  	chip->state = FL_READY;
  	xip_enable(map, chip, adr);
  	put_chip(map, chip, adr);
-@@ -1667,9 +1673,9 @@ static int __xipram do_erase_oneblock(st
+@@ -1667,9 +1669,9 @@ static int __xipram do_erase_oneblock(st
  			chip->erase_suspended = 0;
  		}
  
@@ -93,7 +59,7 @@
  		}
  
  		if (time_after(jiffies, timeo)) {
-@@ -1691,6 +1697,7 @@ static int __xipram do_erase_oneblock(st
+@@ -1691,6 +1693,7 @@ static int __xipram do_erase_oneblock(st
  		ret = -EIO;
  	}
  
