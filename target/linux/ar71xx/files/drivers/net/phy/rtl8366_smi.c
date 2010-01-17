@@ -597,15 +597,14 @@ static int rtl8366_get_mib_counter(struct rtl8366_smi *smi, int counter,
 	return 0;
 }
 
-static int rtl8366s_get_vlan_4k_entry(struct rtl8366_smi *smi,
+static int rtl8366s_get_vlan_4k_entry(struct rtl8366_smi *smi, u32 vid,
 				      struct rtl8366s_vlan4kentry *vlan4k)
 {
 	int err;
 	u32 data;
-	u32 vid;
 	u16 *tableaddr;
 
-	vid = vlan4k->vid;
+	vlan4k->vid = vid;
 
 	if (vid >= RTL8366_NUM_VIDS)
 		return -EINVAL;
@@ -857,8 +856,7 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 
 	/* Updating the 4K entry; lookup it and change the port member set */
 	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
-	vlan4K.vid = val;
-	rtl8366s_get_vlan_4k_entry(smi, &vlan4K);
+	rtl8366s_get_vlan_4k_entry(smi, val, &vlan4K);
 	vlan4K.member |= ((1 << port) | RTL8366_PORT_CPU);
 	vlan4K.untag = RTL8366_PORT_ALL_BUT_CPU;
 	rtl8366s_set_vlan_4k_entry(smi, &vlan4K);
@@ -1372,8 +1370,7 @@ static int rtl8366_attr_get_vlan_info(struct switch_dev *dev,
 	memset(&vlan4K, '\0', sizeof(struct rtl8366s_vlan4kentry));
 
 	rtl8366s_get_vlan_member_config(smi, val->port_vlan, &vlanMC);
-	vlan4K.vid = vlanMC.vid;
-	rtl8366s_get_vlan_4k_entry(smi, &vlan4K);
+	rtl8366s_get_vlan_4k_entry(smi, vlanMC.vid, &vlan4K);
 
 	len += snprintf(buf + len, sizeof(buf) - len, "VLAN %d: Ports: ",
 			val->port_vlan);
@@ -1504,8 +1501,7 @@ static int rtl8366_set_member(struct switch_dev *dev,
 
 	rtl8366s_get_vlan_member_config(smi, val->port_vlan, &vlanMC);
 
-	vlan4K.vid = vlanMC.vid;
-	rtl8366s_get_vlan_4k_entry(smi, &vlan4K);
+	rtl8366s_get_vlan_4k_entry(smi, vlanMC.vid, &vlan4K);
 
 	vlan4K.member = vlanMC.member = val->value.i;
 	rtl8366s_set_vlan_member_config(smi, val->port_vlan, &vlanMC);
@@ -1529,8 +1525,7 @@ static int rtl8366_get_member(struct switch_dev *dev,
 
 	rtl8366s_get_vlan_member_config(smi, val->port_vlan, &vlanMC);
 
-	vlan4K.vid = vlanMC.vid;
-	rtl8366s_get_vlan_4k_entry(smi, &vlan4K);
+	rtl8366s_get_vlan_4k_entry(smi, vlanMC.vid, &vlan4K);
 
 	val->value.i = vlanMC.member;
 
@@ -1551,9 +1546,7 @@ static int rtl8366_set_untag(struct switch_dev *dev,
 		return -EINVAL;
 
 	rtl8366s_get_vlan_member_config(smi, val->port_vlan, &vlanMC);
-
-	vlan4K.vid = vlanMC.vid;
-	rtl8366s_get_vlan_4k_entry(smi, &vlan4K);
+	rtl8366s_get_vlan_4k_entry(smi, vlanMC.vid, &vlan4K);
 
 	vlan4K.untag = vlanMC.untag = val->value.i;
 	rtl8366s_set_vlan_member_config(smi, val->port_vlan, &vlanMC);
@@ -1576,8 +1569,7 @@ static int rtl8366_get_untag(struct switch_dev *dev,
 		return -EINVAL;
 
 	rtl8366s_get_vlan_member_config(smi, val->port_vlan, &vlanMC);
-	vlan4K.vid = vlanMC.vid;
-	rtl8366s_get_vlan_4k_entry(smi, &vlan4K);
+	rtl8366s_get_vlan_4k_entry(smi, vlanMC.vid, &vlan4K);
 
 
 	val->value.i = vlanMC.untag;
