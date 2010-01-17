@@ -56,6 +56,10 @@ static struct platform_device rb4xx_nand_device = {
 
 static struct ar71xx_pci_irq rb4xx_pci_irqs[] __initdata = {
 	{
+		.slot	= 0,
+		.pin	= 1,
+		.irq	= AR71XX_PCI_IRQ_DEV2,
+	}, {
 		.slot	= 1,
 		.pin	= 1,
 		.irq	= AR71XX_PCI_IRQ_DEV0,
