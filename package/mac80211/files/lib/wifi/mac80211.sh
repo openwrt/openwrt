@@ -81,6 +81,7 @@ enable_mac80211() {
 	find_mac80211_phy "$device" || return 0
 	config_get phy "$device" phy
 	local i=0
+	local macidx=0
 	fixed=""
 
 	[ -n "$country" ] && iw reg set "$country"
@@ -147,12 +148,13 @@ enable_mac80211() {
 
 		config_get vif_mac "$vif" macaddr
 		[ -n "$vif_mac" ] || {
-			if [ "$i" -gt 0 ]; then
-				offset="$(( 2 + $i * 4 ))"
+			if [ "$macidx" -gt 0 ]; then
+				offset="$(( 2 + $macidx * 4 ))"
 			else
 				offset="0"
 			fi
 			vif_mac="$( printf %02x $((0x$mac_1 + $offset)) ):$mac_2"
+			macidx="$(($macidx + 1))"
 		}
 		ifconfig "$ifname" hw ether "$vif_mac"
 
