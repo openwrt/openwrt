@@ -1,6 +1,6 @@
 --- a/include/linux/compat-2.6.32.h
 +++ b/include/linux/compat-2.6.32.h
-@@ -7,7 +7,7 @@
+@@ -6,7 +6,7 @@
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32))
  
  #include <linux/netdevice.h>
@@ -8,4 +8,4 @@
 +#include <linux/compat.h>
  #include <net/iw_handler.h>
  #include <linux/workqueue.h>
- 
+ #include <linux/firmware.h>
