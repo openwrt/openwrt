@@ -129,6 +129,10 @@ define Image/Build/WZRHPG300NH
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
 		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+		( \
+			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
+			dd if=$(call imgname,$(1),$(2))-sysupgrade.bin; \
+		) > $(call imgname,$(1),$(2))-tftp.bin; \
 	fi; fi
 endef
 
