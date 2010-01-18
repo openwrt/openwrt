@@ -50,6 +50,8 @@
 
 #define WZRHPG300NH_BUTTONS_POLL_INTERVAL	20
 
+#define WZRHPG300NH_MAC_OFFSET		0x20c
+
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wzrhpg300nh_flash_partitions[] = {
 	{
@@ -227,7 +229,7 @@ static void __init wzrhpg300nh_setup(void)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(eeprom);
+	ar71xx_set_mac_base(eeprom + WZRHPG300NH_MAC_OFFSET);
 
 	ar71xx_eth0_pll_data.pll_1000 = 0x1e000100;
 	ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366_smi_device.dev;
