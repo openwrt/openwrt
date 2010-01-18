@@ -31,7 +31,7 @@ $(eval $(call Profile,DIR615C1))
 
 define Profile/DIR825B1
 	NAME:=D-Link DIR-825 rev. B1
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/DIR825B1/Description
