@@ -107,6 +107,7 @@ int swlib_apply_from_uci(struct switch_dev *dev, struct uci_package *p)
 	struct uci_element *e;
 	struct uci_section *s;
 	struct uci_option *o;
+	struct uci_ptr ptr;
 	struct switch_val val;
 	int i;
 
@@ -114,10 +115,27 @@ int swlib_apply_from_uci(struct switch_dev *dev, struct uci_package *p)
 	head = &settings;
 
 	uci_foreach_element(&p->sections, e) {
+		struct uci_element *n;
+
 		s = uci_to_section(e);
 
 		if (strcmp(s->type, "switch") != 0)
 			continue;
+
+		uci_foreach_element(&s->options, n) {
+			struct uci_option *o = uci_to_option(n);
+
+			if (strcmp(n->name, "name") != 0)
+				continue;
+
+			if (o->type != UCI_TYPE_STRING)
+				continue;
+
+			if (!strcmp(o->v.string, dev->dev_name))
+				goto found;
+
+			break;
+		}
 
 		if (strcmp(e->name, dev->dev_name) != 0)
 			continue;
