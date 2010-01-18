@@ -219,7 +219,10 @@ struct rtl8366_smi {
 u16 g_dbg_reg;
 #endif
 
-#define to_rtl8366(_dev) container_of(_dev, struct rtl8366_smi, dev)
+static inline struct rtl8366_smi *sw_to_rtl8366(struct switch_dev *sw)
+{
+	return container_of(sw, struct rtl8366_smi, dev);
+}
 
 static inline void rtl8366_smi_clk_delay(struct rtl8366_smi *smi)
 {
@@ -1197,7 +1200,7 @@ static int rtl8366_global_reset_mibs(struct switch_dev *dev,
 				     struct switch_val *val)
 {
 	u32 data = 0;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 
 	if (val->value.i == 1) {
 		rtl8366_smi_read_reg(smi, RTL8366S_MIB_CTRL_REG, &data);
@@ -1213,7 +1216,7 @@ static int rtl8366_get_vlan(struct switch_dev *dev,
 			    struct switch_val *val)
 {
 	u32 data;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 
 	if (attr->ofs == 1) {
 		rtl8366_smi_read_reg(smi, RTL8366_CHIP_GLOBAL_CTRL_REG, &data);
@@ -1239,7 +1242,7 @@ static int rtl8366_global_get_blinkrate(struct switch_dev *dev,
 					struct switch_val *val)
 {
 	u32 data;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	rtl8366_smi_read_reg(smi, RTL8366_LED_BLINKRATE_REG, &data);
 
 	val->value.i = (data & (RTL8366_LED_BLINKRATE_MASK));
@@ -1252,7 +1255,7 @@ static int rtl8366_global_set_blinkrate(struct switch_dev *dev,
 					struct switch_val *val)
 {
 	u32 data;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 
 	if (val->value.i >= 6)
 		return -EINVAL;
@@ -1271,7 +1274,7 @@ static int rtl8366_set_vlan(struct switch_dev *dev,
 			    const struct switch_attr *attr,
 			    struct switch_val *val)
 {
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 
 	if (attr->ofs == 1)
 		return rtl8366_vlan_set_vlan(smi, val->value.i);
@@ -1285,7 +1288,7 @@ static int rtl8366_attr_get_port_link(struct switch_dev *dev,
 {
 	u32 len = 0, data = 0;
 	int speed, duplex, link, txpause, rxpause, nway;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	char *buf = smi->buf;
 
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
@@ -1349,7 +1352,7 @@ static int rtl8366_attr_get_vlan_info(struct switch_dev *dev,
 	u32 len = 0;
 	struct rtl8366s_vlanconfig vlanmc;
 	struct rtl8366s_vlan4kentry vlan4k;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	char *buf = smi->buf;
 
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
@@ -1394,7 +1397,7 @@ static int rtl8366_set_port_led(struct switch_dev *dev,
 				struct switch_val *val)
 {
 	u32 data = 0;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	if (val->port_vlan >= RTL8366_NUM_PORTS ||
 	    (1 << val->port_vlan) == RTL8366_PORT_UNKNOWN)
 		return -EINVAL;
@@ -1418,7 +1421,7 @@ static int rtl8366_get_port_led(struct switch_dev *dev,
 				struct switch_val *val)
 {
 	u32 data = 0;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	if (val->port_vlan >= RTL8366_NUM_LEDGROUPS)
 		return -EINVAL;
 
@@ -1433,7 +1436,7 @@ static int rtl8366_reset_port_mibs(struct switch_dev *dev,
 				   struct switch_val *val)
 {
 	u32 data = 0;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
 		return -EINVAL;
 
@@ -1450,7 +1453,7 @@ static int rtl8366_get_port_mib(struct switch_dev *dev,
 {
 	int i, len = 0;
 	unsigned long long counter = 0;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	char *buf = smi->buf;
 
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
@@ -1479,7 +1482,7 @@ static int rtl8366_get_ports(struct switch_dev *dev,
 			     struct switch_val *val)
 {
 	struct rtl8366s_vlanconfig vlanmc;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	struct switch_port *port;
 	int i;
 
@@ -1507,7 +1510,7 @@ static int rtl8366_set_ports(struct switch_dev *dev,
 {
 	struct rtl8366s_vlanconfig vlanmc;
 	struct rtl8366s_vlan4kentry vlan4k;
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	struct switch_port *port;
 	int i;
 
@@ -1538,19 +1541,19 @@ static int rtl8366_set_ports(struct switch_dev *dev,
 
 static int rtl8366_get_port_pvid(struct switch_dev *dev, int port, int *val)
 {
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	return rtl8366_get_vlan_port_pvid(smi, port, val);
 }
 
 static int rtl8366_set_port_pvid(struct switch_dev *dev, int port, int val)
 {
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	return rtl8366_set_vlan_port_pvid(smi, port, val);
 }
 
 static int rtl8366_reset_switch(struct switch_dev *dev)
 {
-	struct rtl8366_smi *smi = to_rtl8366(dev);
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	int timeout = 10;
 	u32 data;
 
