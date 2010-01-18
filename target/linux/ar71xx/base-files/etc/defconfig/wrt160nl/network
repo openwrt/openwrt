@@ -15,7 +15,8 @@ config interface wan
 	option ifname	eth1
 	option proto	dhcp
 
-config switch eth0
+config switch
+	option name	eth0
 	option reset	1
 	option enable_vlan 1
 
