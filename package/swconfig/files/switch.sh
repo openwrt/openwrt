@@ -2,8 +2,10 @@
 # Copyright (C) 2009 OpenWrt.org
 
 setup_switch_dev() {
-	ifconfig "$1" 0.0.0.0
-	swconfig dev "$1" load network
+	config_get name "$1" name
+	name="${name:-$1}"
+	[ -d "/sys/class/net/$name" ] && ifconfig "$name" up
+	swconfig dev "$name" load network
 }
 
 setup_switch() {
