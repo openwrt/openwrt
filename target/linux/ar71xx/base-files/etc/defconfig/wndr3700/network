@@ -14,3 +14,13 @@ config interface lan
 config interface wan
 	option ifname	eth1
 	option proto	dhcp
+
+config switch
+	option name	rtl8366-smi
+	option reset	1
+	option enable_vlan 1
+
+config switch_vlan
+	option device	rtl8366-smi
+	option vlan 	0
+	option ports	"0 1 2 3 5"
