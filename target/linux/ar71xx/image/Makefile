@@ -126,7 +126,7 @@ define Image/Build/WZRHPG300NH
 			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
 			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
 		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1M conv=sync; \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
 		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
 	fi; fi
@@ -305,7 +305,7 @@ define Image/Build/WNDR3700
 		$(KDIR)/vmlinux-$(2).uImage.squashfs
 	-rm -f $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp*
 	( \
-		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1M conv=sync; \
+		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k; \
 	) > $(call imgname,$(1),$(2))-sysupgrade.bin
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
