@@ -7,7 +7,7 @@
 
 define Profile/WNDR3700
 	NAME:=NETGEAR WNDR3700
-	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb-core kmod-usb-ohci kmod-usb2
+	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb-core kmod-usb2
 endef
 
 define Profile/WNDR3700/Description
