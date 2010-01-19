@@ -506,9 +506,13 @@ fw_init() {
 	uci_set_state firewall core loaded 1
 	config_set core loaded 1
 	config_foreach fw_check_notrack zone
-	INTERFACES="$(sh -c '. /etc/functions.sh; config_load network; config_foreach echo interface')"
+	INTERFACES="$(sh -c '
+		. /etc/functions.sh; config_load network
+		echo_up() { local up; config_get_bool up "$1" up 0; [ $up = 1 ] && echo "$1"; }
+		config_foreach echo_up interface
+	')"
 	for interface in $INTERFACES; do
-		fw_addif "$interface"
+		fw_event ifup "$interface"
 	done
 }
 
