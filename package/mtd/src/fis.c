@@ -99,7 +99,7 @@ fis_validate(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 
 	desc = fis_open();
 	if (!desc)
-		return 0;
+		return -1;
 
 	for (i = 0; i < n_new - 1; i++) {
 		if (!new[i].size) {
