@@ -83,9 +83,8 @@ endef
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   $(warning $(wildcard $(PKG_BUILD_DIR)/.config_*) != $(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
+	$(FIND) $(PKG_BUILD_DIR) -name \*.o | $(XARGS) rm -f
 	rm -f $(PKG_BUILD_DIR)/hostapd/hostapd
-	rm -f $(PKG_BUILD_DIR)/hostapd/*.o
-	rm -f $(PKG_BUILD_DIR)/src/drivers/drivers.o
 	rm -f $(PKG_BUILD_DIR)/.config_*
 	touch $(subst .configured_,.config_,$(STAMP_CONFIGURED))
   endef
