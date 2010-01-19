@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2009 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ BOARDNAME:=TI OMAP35xx
 FEATURES:=broken
 SUBTARGETS=generic
 
-LINUX_VERSION:=2.6.32.3
+LINUX_VERSION:=2.6.32.4
 KERNELNAME:="uImage"
 
 DEVICE_TYPE=developerboard
