@@ -11,7 +11,7 @@ BOARD:=mpc83xx
 BOARDNAME:=Freescale MPC83xx
 FEATURES:=squashfs tgz broken
 
-LINUX_VERSION:=2.6.31.11
+LINUX_VERSION:=2.6.31.12
 
 include $(INCLUDE_DIR)/target.mk
 
