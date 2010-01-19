@@ -334,6 +334,10 @@ define Image/Build/Template/squashfs-only/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7))
 endef
 
+define Image/Build/Template/4k/squashfs
+	$(call Image/Build/$(1),squashfs-4k,$(2),$(3),$(4),$(5),$(6),$(7))
+endef
+
 define Image/Build/Template/64k/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7))
 endef
@@ -432,7 +436,7 @@ define Image/Build/Profile/MZKW300NH
 endef
 
 define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/squashfs-only/$(1),TPLINK4K,tl-wr741nd-v1,board=TL-WR741ND,TL-WR741NDv1)
+	$(call Image/Build/Template/4k/$(1),TPLINK,tl-wr741nd-v1,board=TL-WR741ND,TL-WR741NDv1)
 endef
 
 define Image/Build/Profile/TLWR841NV15
@@ -444,7 +448,7 @@ define Image/Build/Profile/TLWR841NDV3
 endef
 
 define Image/Build/Profile/TLWR841NDV5
-	$(call Image/Build/Template/squashfs-only/$(1),TPLINK4K,tl-wr841nd-v5,board=TL-WR741ND,TL-WR841NDv5)
+	$(call Image/Build/Template/4k/$(1),TPLINK,tl-wr841nd-v5,board=TL-WR741ND,TL-WR841NDv5)
 endef
 
 define Image/Build/Profile/TLWR941NDV2
