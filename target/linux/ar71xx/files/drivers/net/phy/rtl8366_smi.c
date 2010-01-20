@@ -85,6 +85,12 @@
 
 
 #define RTL8366S_PORT_VLAN_CTRL_BASE        0x0058
+#define RTL8366S_PORT_VLAN_CTRL_REG(_p)  \
+		(RTL8366S_PORT_VLAN_CTRL_BASE + (_p) / 4)
+#define RTL8366S_PORT_VLAN_CTRL_MASK	    0xf
+#define RTL8366S_PORT_VLAN_CTRL_SHIFT(_p)   (4 * ((_p) % 4))
+
+
 #define RTL8366S_VLAN_TABLE_READ_BASE       0x018B
 #define RTL8366S_VLAN_TABLE_WRITE_BASE      0x0185
 
@@ -755,27 +761,19 @@ static int rtl8366s_set_vlan_member_config(struct rtl8366_smi *smi, u32 index,
 static int rtl8366_get_port_vlan_index(struct rtl8366_smi *smi, int port,
 				       int *val)
 {
-	int err;
-	u32 addr;
 	u32 data;
-
-	/* bits mapping to port vlan control register of port n */
-	const u16 bits[RTL8366_NUM_PORTS] = { 0x000F, 0x00F0, 0x0F00,
-					     0xF000, 0x000F, 0x00F0 };
-	/* bits offset to port vlan control register of port n */
-	const u16 bitoffset[RTL8366_NUM_PORTS] = { 0, 4, 8, 12, 0, 4 };
-	/* address offset to port vlan control register of port n */
-	const u16 addroffset[RTL8366_NUM_PORTS] = { 0, 0, 0, 0, 1, 1 };
+	int err;
 
 	if (port >= RTL8366_NUM_PORTS)
 		return -EINVAL;
 
-	addr = RTL8366S_PORT_VLAN_CTRL_BASE + addroffset[port];
-	err = rtl8366_smi_read_reg(smi, addr, &data);
+	err = rtl8366_smi_read_reg(smi, RTL8366S_PORT_VLAN_CTRL_REG(port),
+				   &data);
 	if (err)
 		return err;
 
-	*val = (data & bits[port]) >> bitoffset[port];
+	*val = (data >> RTL8366S_PORT_VLAN_CTRL_SHIFT(port)) &
+	       RTL8366S_PORT_VLAN_CTRL_MASK;
 
 	return 0;
 
@@ -803,41 +801,25 @@ static int rtl8366_get_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 static int rtl8366_set_port_vlan_index(struct rtl8366_smi *smi, int port,
 				       int index)
 {
-	int err;
-	u32 addr;
 	u32 data;
-	u32 vlan_data;
-	u32 bits;
-
-	/* bits mapping to port vlan control register of port n */
-	const u16 bitmasks[6] = { 0x000F, 0x00F0, 0x0F00,
-				 0xF000, 0x000F, 0x00F0 };
-	/* bits offset to port vlan control register of port n */
-	const u16 bitOff[6] = { 0, 4, 8, 12, 0, 4 };
-	/* address offset to port vlan control register of port n */
-	const u16 addrOff[6] = { 0, 0, 0, 0, 1, 1 };
+	int err;
 
 	if (port >= RTL8366_NUM_PORTS || index >= RTL8366_NUM_VLANS)
 		return -EINVAL;
 
-	addr = RTL8366S_PORT_VLAN_CTRL_BASE + addrOff[port];
-
-	bits = bitmasks[port];
-
-	data = (index << bitOff[port]) & bits;
-
-	err = rtl8366_smi_read_reg(smi, addr, &vlan_data);
+	err = rtl8366_smi_read_reg(smi, RTL8366S_PORT_VLAN_CTRL_REG(port),
+				   &data);
 	if (err)
 		return err;
 
-	vlan_data &= ~bits;
-	vlan_data |= data;
+	data &= ~(RTL8366S_PORT_VLAN_CTRL_MASK <<
+		  RTL8366S_PORT_VLAN_CTRL_SHIFT(port));
+	data |= (index & RTL8366S_PORT_VLAN_CTRL_MASK) <<
+		 RTL8366S_PORT_VLAN_CTRL_SHIFT(port);
 
-	err = rtl8366_smi_write_reg(smi, addr, vlan_data);
-	if (err)
-		return err;
-
-	return 0;
+	err = rtl8366_smi_write_reg(smi, RTL8366S_PORT_VLAN_CTRL_REG(port),
+				    data);
+	return err;
 }
 
 static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
