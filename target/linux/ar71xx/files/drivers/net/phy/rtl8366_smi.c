@@ -21,9 +21,7 @@
 #include <linux/phy.h>
 #include <linux/rtl8366_smi.h>
 
-/* #define DEBUG 1 */
-
-#ifdef DEBUG
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 #include <linux/debugfs.h>
 #endif
 
@@ -210,12 +208,12 @@ struct rtl8366_smi {
 	struct switch_dev                  dev;
 	int				   mii_irq[PHY_MAX_ADDR];
 	char buf[4096];
-#ifdef DEBUG
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 	struct dentry                      *debugfs_root;
 #endif
 };
 
-#ifdef DEBUG
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 u16 g_dbg_reg;
 #endif
 
@@ -972,7 +970,7 @@ static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 	return 0;
 }
 
-#ifdef DEBUG
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 static int rtl8366_debugfs_open(struct inode *inode, struct file *file)
 {
 	file->private_data = inode->i_private;
@@ -1197,7 +1195,7 @@ static void rtl8366_debugfs_remove(struct rtl8366_smi *smi)
 #else
 static inline void rtl8366_debugfs_init(struct rtl8366_smi *smi) {}
 static inline void rtl8366_debugfs_remove(struct rtl8366_smi *smi) {}
-#endif
+#endif /* CONFIG_RTL8366_SMI_DEBUG_FS */
 
 static int rtl8366_global_reset_mibs(struct switch_dev *dev,
 				     const struct switch_attr *attr,

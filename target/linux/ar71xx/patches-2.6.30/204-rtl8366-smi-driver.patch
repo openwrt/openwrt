@@ -1,12 +1,18 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -140,4 +140,8 @@ config MDIO_GPIO
+@@ -140,4 +140,14 @@ config MDIO_GPIO
  	  To compile this driver as a module, choose M here: the module
  	  will be called mdio-gpio.
  
 +config RTL8366_SMI
 +	tristate "Support for RTL8366 switch via SMI interface"
 +	depends on GENERIC_GPIO
++
++config RTL8366_SMI_DEBUG_FS
++	bool "RTL8366S driver DEBUG_FS support"
++	depends on RTL8366_SMI
++	depends on DEBUG_FS
++	default n
 +
  endif # PHYLIB
 --- a/drivers/net/phy/Makefile
