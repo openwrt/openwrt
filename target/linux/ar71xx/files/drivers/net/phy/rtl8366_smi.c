@@ -941,12 +941,12 @@ static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 	struct rtl8366s_vlanconfig vlanmc;
 
 	/* clear 16 VLAN member configuration */
+	vlanmc.vid = 0;
+	vlanmc.priority = 0;
+	vlanmc.member = 0;
+	vlanmc.untag = 0;
+	vlanmc.fid = 0;
 	for (i = 0; i < RTL8366_NUM_VLANS; i++) {
-		vlanmc.vid = 0;
-		vlanmc.priority = 0;
-		vlanmc.member = 0;
-		vlanmc.untag = 0;
-		vlanmc.fid = 0;
 		if (rtl8366s_set_vlan_member_config(smi, i, &vlanmc) != 0)
 			return -EIO;
 	}
