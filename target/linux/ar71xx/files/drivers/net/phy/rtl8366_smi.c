@@ -553,13 +553,10 @@ static int rtl8366_get_mib_counter(struct rtl8366_smi *smi, int counter,
 	if (port > RTL8366_NUM_PORTS || counter >= RTL8366S_MIB_COUNT)
 		return -EINVAL;
 
-	i = 0;
 	regoffset = RTL8366S_MIB_COUNTER_PORT_OFFSET * (port);
 
-	while (i < counter) {
+	for (i = 0; i < counter; i++)
 		regoffset += mibLength[i];
-		i++;
-	}
 
 	addr = RTL8366S_MIB_COUNTER_BASE + regoffset;
 
@@ -833,7 +830,7 @@ static int rtl8366_set_port_vlan_index(struct rtl8366_smi *smi, int port,
 	if (err)
 		return err;
 
-	vlan_data &= ~(vlan_data & bits);
+	vlan_data &= ~bits;
 	vlan_data |= data;
 
 	err = rtl8366_smi_write_reg(smi, addr, vlan_data);
@@ -918,9 +915,10 @@ static int rtl8366_vlan_set_vlan(struct rtl8366_smi *smi, int enable)
 
 	rtl8366_smi_read_reg(smi, RTL8366_CHIP_GLOBAL_CTRL_REG, &data);
 
-	data &= ~(data & RTL8366_CHIP_CTRL_VLAN);
 	if (enable)
 		data |= RTL8366_CHIP_CTRL_VLAN;
+	else
+		data &= ~RTL8366_CHIP_CTRL_VLAN;
 
 	return rtl8366_smi_write_reg(smi, RTL8366_CHIP_GLOBAL_CTRL_REG, data);
 }
@@ -931,9 +929,10 @@ static int rtl8366_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
 
 	rtl8366_smi_read_reg(smi, RTL8366S_VLAN_TB_CTRL_REG, &data);
 
-	data &= ~(data & 1);
 	if (enable)
 		data |= 1;
+	else
+		data &= ~1;
 
 	return rtl8366_smi_write_reg(smi, RTL8366S_VLAN_TB_CTRL_REG, data);
 }
@@ -1274,7 +1273,7 @@ static int rtl8366_global_set_blinkrate(struct switch_dev *dev,
 
 	rtl8366_smi_read_reg(smi, RTL8366_LED_BLINKRATE_REG, &data);
 
-	data &= ~(data & RTL8366_LED_BLINKRATE_MASK);
+	data &= ~RTL8366_LED_BLINKRATE_MASK;
 	data |= val->value.i;
 
 	rtl8366_smi_write_reg(smi, RTL8366_LED_BLINKRATE_REG, data);
