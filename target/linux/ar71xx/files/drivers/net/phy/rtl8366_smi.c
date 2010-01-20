@@ -165,40 +165,42 @@ struct rtl8366s_vlan4kentry {
 	u16 	member:6;
 };
 
-static const char *MIBCOUNTERS[] = { "IfInOctets                        ",
-				     "EtherStatsOctets                  ",
-				     "EtherStatsUnderSizePkts           ",
-				     "EtherFregament                    ",
-				     "EtherStatsPkts64Octets            ",
-				     "EtherStatsPkts65to127Octets       ",
-				     "EtherStatsPkts128to255Octets      ",
-				     "EtherStatsPkts256to511Octets      ",
-				     "EtherStatsPkts512to1023Octets     ",
-				     "EtherStatsPkts1024to1518Octets    ",
-				     "EtherOversizeStats                ",
-				     "EtherStatsJabbers                 ",
-				     "IfInUcastPkts                     ",
-				     "EtherStatsMulticastPkts           ",
-				     "EtherStatsBroadcastPkts           ",
-				     "EtherStatsDropEvents              ",
-				     "Dot3StatsFCSErrors                ",
-				     "Dot3StatsSymbolErrors             ",
-				     "Dot3InPauseFrames                 ",
-				     "Dot3ControlInUnknownOpcodes       ",
-				     "IfOutOctets                       ",
-				     "Dot3StatsSingleCollisionFrames    ",
-				     "Dot3StatMultipleCollisionFrames   ",
-				     "Dot3sDeferredTransmissions        ",
-				     "Dot3StatsLateCollisions           ",
-				     "EtherStatsCollisions              ",
-				     "Dot3StatsExcessiveCollisions      ",
-				     "Dot3OutPauseFrames                ",
-				     "Dot1dBasePortDelayExceededDiscards",
-				     "Dot1dTpPortInDiscards             ",
-				     "IfOutUcastPkts                    ",
-				     "IfOutMulticastPkts                ",
-				     "IfOutBroadcastPkts                ",
-				     NULL };
+static const char *MIBCOUNTERS[] = {
+	"IfInOctets                        ",
+	"EtherStatsOctets                  ",
+	"EtherStatsUnderSizePkts           ",
+	"EtherFregament                    ",
+	"EtherStatsPkts64Octets            ",
+	"EtherStatsPkts65to127Octets       ",
+	"EtherStatsPkts128to255Octets      ",
+	"EtherStatsPkts256to511Octets      ",
+	"EtherStatsPkts512to1023Octets     ",
+	"EtherStatsPkts1024to1518Octets    ",
+	"EtherOversizeStats                ",
+	"EtherStatsJabbers                 ",
+	"IfInUcastPkts                     ",
+	"EtherStatsMulticastPkts           ",
+	"EtherStatsBroadcastPkts           ",
+	"EtherStatsDropEvents              ",
+	"Dot3StatsFCSErrors                ",
+	"Dot3StatsSymbolErrors             ",
+	"Dot3InPauseFrames                 ",
+	"Dot3ControlInUnknownOpcodes       ",
+	"IfOutOctets                       ",
+	"Dot3StatsSingleCollisionFrames    ",
+	"Dot3StatMultipleCollisionFrames   ",
+	"Dot3sDeferredTransmissions        ",
+	"Dot3StatsLateCollisions           ",
+	"EtherStatsCollisions              ",
+	"Dot3StatsExcessiveCollisions      ",
+	"Dot3OutPauseFrames                ",
+	"Dot1dBasePortDelayExceededDiscards",
+	"Dot1dTpPortInDiscards             ",
+	"IfOutUcastPkts                    ",
+	"IfOutMulticastPkts                ",
+	"IfOutBroadcastPkts                ",
+	NULL,
+};
 
 struct rtl8366_smi {
 	struct platform_device		   *pdev;
@@ -207,7 +209,7 @@ struct rtl8366_smi {
 	struct mii_bus			   *mii_bus;
 	struct switch_dev                  dev;
 	int				   mii_irq[PHY_MAX_ADDR];
-	char buf[4096];
+	char				   buf[4096];
 #ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 	struct dentry                      *debugfs_root;
 #endif
@@ -561,10 +563,11 @@ static int rtl8366_get_mib_counter(struct rtl8366_smi *smi, int counter,
 
 	addr = RTL8366S_MIB_COUNTER_BASE + regoffset;
 
-
-	/* writing access counter address first */
-	/* then ASIC will prepare 64bits counter wait for being retrived */
-	data = 0;/* writing data will be discard by ASIC */
+	/*
+	 * Writing access counter address first
+	 * then ASIC will prepare 64bits counter wait for being retrived
+	 */
+	data = 0; /* writing data will be discard by ASIC */
 	err = rtl8366_smi_write_reg(smi, addr, data);
 	if (err)
 		return err;
@@ -697,7 +700,6 @@ static int rtl8366s_get_vlan_member_config(struct rtl8366_smi *smi, u32 index,
 	tableaddr = (u16 *)vlanmc;
 
 	addr = RTL8366S_VLAN_MEMCONF_BASE + (index << 1);
-
 	err = rtl8366_smi_read_reg(smi, addr, &data);
 	if (err)
 		return err;
@@ -706,7 +708,6 @@ static int rtl8366s_get_vlan_member_config(struct rtl8366_smi *smi, u32 index,
 	tableaddr++;
 
 	addr = RTL8366S_VLAN_MEMCONF_BASE + 1 + (index << 1);
-
 	err = rtl8366_smi_read_reg(smi, addr, &data);
 	if (err)
 		return err;
@@ -726,15 +727,14 @@ static int rtl8366s_set_vlan_member_config(struct rtl8366_smi *smi, u32 index,
 	u16 *tableaddr;
 
 	if (index >= RTL8366_NUM_VLANS ||
-	   vlanmc->vid >= RTL8366_NUM_VIDS ||
-	   vlanmc->priority > RTL8366S_PRIORITYMAX ||
-	   vlanmc->member > RTL8366_PORT_ALL ||
-	   vlanmc->untag > RTL8366_PORT_ALL ||
-	   vlanmc->fid > RTL8366S_FIDMAX)
+	    vlanmc->vid >= RTL8366_NUM_VIDS ||
+	    vlanmc->priority > RTL8366S_PRIORITYMAX ||
+	    vlanmc->member > RTL8366_PORT_ALL ||
+	    vlanmc->untag > RTL8366_PORT_ALL ||
+	    vlanmc->fid > RTL8366S_FIDMAX)
 		return -EINVAL;
 
 	addr = RTL8366S_VLAN_MEMCONF_BASE + (index << 1);
-
 
 	tableaddr = (u16 *)vlanmc;
 	data = *tableaddr;
@@ -774,7 +774,6 @@ static int rtl8366_get_port_vlan_index(struct rtl8366_smi *smi, int port,
 		return -EINVAL;
 
 	addr = RTL8366S_PORT_VLAN_CTRL_BASE + addroffset[port];
-
 	err = rtl8366_smi_read_reg(smi, addr, &data);
 	if (err)
 		return err;
@@ -788,9 +787,9 @@ static int rtl8366_get_port_vlan_index(struct rtl8366_smi *smi, int port,
 static int rtl8366_get_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 				      int *val)
 {
+	struct rtl8366s_vlanconfig vlanmc;
 	int err;
 	int index;
-	struct rtl8366s_vlanconfig vlanmc;
 
 	err = rtl8366_get_port_vlan_index(smi, port, &index);
 	if (err)
@@ -854,16 +853,16 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 	if (port >= RTL8366_NUM_PORTS || val >= RTL8366_NUM_VIDS)
 		return -EINVAL;
 
-
-
 	/* Updating the 4K entry; lookup it and change the port member set */
 	rtl8366s_get_vlan_4k_entry(smi, val, &vlan4k);
 	vlan4k.member |= ((1 << port) | RTL8366_PORT_CPU);
 	vlan4k.untag = RTL8366_PORT_ALL_BUT_CPU;
 	rtl8366s_set_vlan_4k_entry(smi, &vlan4k);
 
-	/* For the 16 entries more work needs to be done. First see if such
-	   VID is already there and change it */
+	/*
+	 * For the 16 entries more work needs to be done. First see if such
+	 * VID is already there and change it
+	 */
 	for (i = 0; i < RTL8366_NUM_VLANS; ++i) {
 		rtl8366s_get_vlan_member_config(smi, i, &vlanmc);
 
@@ -879,13 +878,17 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 		}
 	}
 
-	/* PVID could not be found from vlan table. Replace unused (one that
-	   has no member ports) with new one */
+	/*
+         * PVID could not be found from vlan table. Replace unused (one that
+	 * has no member ports) with new one
+	 */
 	for (i = 0; i < RTL8366_NUM_VLANS; ++i) {
 		rtl8366s_get_vlan_member_config(smi, i, &vlanmc);
 
-		/* See if this vlan member configuration is unused. It is
-		   unused if member set contains no ports or CPU port only */
+		/*
+		 * See if this vlan member configuration is unused. It is
+		 * unused if member set contains no ports or CPU port only
+		 */
 		if (!vlanmc.member || vlanmc.member == RTL8366_PORT_CPU) {
 			vlanmc.vid = val;
 			vlanmc.priority = 0;
@@ -902,8 +905,9 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 		}
 	}
 
-	dev_err(&smi->pdev->dev, "All 16 vlan member configurations are in "
-		"use\n");
+	dev_err(&smi->pdev->dev,
+		"All 16 vlan member configurations are in use\n");
+
 	return -EINVAL;
 }
 
@@ -911,6 +915,7 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 static int rtl8366_vlan_set_vlan(struct rtl8366_smi *smi, int enable)
 {
 	u32 data = 0;
+
 	rtl8366_smi_read_reg(smi, RTL8366_CHIP_GLOBAL_CTRL_REG, &data);
 
 	data &= ~(data & RTL8366_CHIP_CTRL_VLAN);
@@ -923,6 +928,7 @@ static int rtl8366_vlan_set_vlan(struct rtl8366_smi *smi, int enable)
 static int rtl8366_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
 {
 	u32 data = 0;
+
 	rtl8366_smi_read_reg(smi, RTL8366S_VLAN_TB_CTRL_REG, &data);
 
 	data &= ~(data & 1);
@@ -981,8 +987,8 @@ static ssize_t rtl8366_read_debugfs_mibs(struct file *file,
 					 char __user *user_buf,
 					 size_t count, loff_t *ppos)
 {
-	int i, j, len = 0;
 	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	int i, j, len = 0;
 	char *buf = smi->buf;
 
 	len += snprintf(buf + len, sizeof(smi->buf) - len, "MIB Counters:\n");
@@ -992,17 +998,18 @@ static ssize_t rtl8366_read_debugfs_mibs(struct file *file,
 			"Port 4\n");
 
 	for (i = 0; i < 33; ++i) {
-
 		len += snprintf(buf + len, sizeof(smi->buf) - len, "%d:%s ",
 				i, MIBCOUNTERS[i]);
 		for (j = 0; j < RTL8366_NUM_PORTS; ++j) {
 			unsigned long long counter = 0;
 
 			if (!rtl8366_get_mib_counter(smi, i, j, &counter))
-				len += snprintf(buf + len, sizeof(smi->buf) - len,
+				len += snprintf(buf + len,
+						sizeof(smi->buf) - len,
 						"[%llu]", counter);
 			else
-				len += snprintf(buf + len, sizeof(smi->buf) - len,
+				len += snprintf(buf + len,
+						sizeof(smi->buf) - len,
 						"[error]");
 
 			if (j != RTL8366_NUM_PORTS - 1) {
@@ -1011,7 +1018,8 @@ static ssize_t rtl8366_read_debugfs_mibs(struct file *file,
 							sizeof(smi->buf) - len,
 							"\t");
 
-				len += snprintf(buf + len, sizeof(smi->buf) - len,
+				len += snprintf(buf + len,
+						sizeof(smi->buf) - len,
 						"\t");
 			}
 		}
@@ -1027,11 +1035,12 @@ static ssize_t rtl8366_read_debugfs_vlan(struct file *file,
 					 char __user *user_buf,
 					 size_t count, loff_t *ppos)
 {
-	int i, j, len = 0;
 	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	int i, j, len = 0;
 	char *buf = smi->buf;
 
-	len += snprintf(buf + len, sizeof(smi->buf) - len, "VLAN Member Config:\n");
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
+			"VLAN Member Config:\n");
 	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"\t id \t vid \t prio \t member \t untag  \t fid "
 			"\tports\n");
@@ -1065,9 +1074,9 @@ static ssize_t rtl8366_read_debugfs_reg(struct file *file,
 					char __user *user_buf,
 					size_t count, loff_t *ppos)
 {
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
 	u32 t, reg = g_dbg_reg;
 	int err, len = 0;
-	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
 	char *buf = smi->buf;
 
 	memset(buf, '\0', sizeof(smi->buf));
@@ -1089,11 +1098,11 @@ static ssize_t rtl8366_write_debugfs_reg(struct file *file,
 					 const char __user *user_buf,
 					 size_t count, loff_t *ppos)
 {
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
 	unsigned long data;
 	u32 reg = g_dbg_reg;
 	int err;
 	size_t len;
-	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
 	char *buf = smi->buf;
 
 	len = min(count, sizeof(smi->buf) - 1);
@@ -1170,16 +1179,16 @@ static void rtl8366_debugfs_init(struct rtl8366_smi *smi)
 	node = debugfs_create_file("vlan", S_IRUSR, root, smi,
 				   &fops_rtl8366_vlan);
 	if (!node) {
-		dev_err(&smi->pdev->dev, "Creating debugfs file vlan "
-			"failed\n");
+		dev_err(&smi->pdev->dev,
+			"Creating debugfs file vlan failed\n");
 		return;
 	}
 
 	node = debugfs_create_file("mibs", S_IRUSR, root, smi,
 				   &fops_rtl8366_mibs);
 	if (!node) {
-		dev_err(&smi->pdev->dev, "Creating debugfs file mibs "
-			"xfailed\n");
+		dev_err(&smi->pdev->dev,
+			"Creating debugfs file mibs failed\n");
 		return;
 	}
 }
@@ -1201,8 +1210,8 @@ static int rtl8366_global_reset_mibs(struct switch_dev *dev,
 				     const struct switch_attr *attr,
 				     struct switch_val *val)
 {
-	u32 data = 0;
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
+	u32 data = 0;
 
 	if (val->value.i == 1) {
 		rtl8366_smi_read_reg(smi, RTL8366S_MIB_CTRL_REG, &data);
@@ -1217,8 +1226,8 @@ static int rtl8366_get_vlan(struct switch_dev *dev,
 			    const struct switch_attr *attr,
 			    struct switch_val *val)
 {
-	u32 data;
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
+	u32 data;
 
 	if (attr->ofs == 1) {
 		rtl8366_smi_read_reg(smi, RTL8366_CHIP_GLOBAL_CTRL_REG, &data);
@@ -1243,8 +1252,9 @@ static int rtl8366_global_get_blinkrate(struct switch_dev *dev,
 					const struct switch_attr *attr,
 					struct switch_val *val)
 {
-	u32 data;
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
+	u32 data;
+
 	rtl8366_smi_read_reg(smi, RTL8366_LED_BLINKRATE_REG, &data);
 
 	val->value.i = (data & (RTL8366_LED_BLINKRATE_MASK));
@@ -1322,23 +1332,31 @@ static int rtl8366_attr_get_port_link(struct switch_dev *dev,
 				"Link DOWN, Speed: ");
 
 	if (speed == 0)
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "10Base-TX ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"10Base-TX ");
 	else if (speed == 1)
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "100Base-TX ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"100Base-TX ");
 	else if (speed == 2)
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "1000Base-TX ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"1000Base-TX ");
 
 	if (duplex)
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "Full-Duplex, ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"Full-Duplex, ");
 	else
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "Half-Duplex, ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"Half-Duplex, ");
 
 	if (txpause)
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "TX-Pause ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"TX-Pause ");
 	if (rxpause)
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "RX-Pause ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"RX-Pause ");
 	if (nway)
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "nway ");
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"nway ");
 
 	val->value.s = buf;
 	val->len = len;
@@ -1372,7 +1390,8 @@ static int rtl8366_attr_get_vlan_info(struct switch_dev *dev,
 		int index = 0;
 		if (!rtl8366_get_port_vlan_index(smi, i, &index) &&
 		    index == val->port_vlan)
-			len += snprintf(buf + len, sizeof(smi->buf) - len, "%d", i);
+			len += snprintf(buf + len, sizeof(smi->buf) - len,
+					"%d", i);
 	}
 	len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
 
@@ -1398,8 +1417,9 @@ static int rtl8366_set_port_led(struct switch_dev *dev,
 				const struct switch_attr *attr,
 				struct switch_val *val)
 {
-	u32 data = 0;
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
+	u32 data = 0;
+
 	if (val->port_vlan >= RTL8366_NUM_PORTS ||
 	    (1 << val->port_vlan) == RTL8366_PORT_UNKNOWN)
 		return -EINVAL;
@@ -1422,8 +1442,9 @@ static int rtl8366_get_port_led(struct switch_dev *dev,
 				const struct switch_attr *attr,
 				struct switch_val *val)
 {
-	u32 data = 0;
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
+	u32 data = 0;
+
 	if (val->port_vlan >= RTL8366_NUM_LEDGROUPS)
 		return -EINVAL;
 
@@ -1437,8 +1458,9 @@ static int rtl8366_reset_port_mibs(struct switch_dev *dev,
 				   const struct switch_attr *attr,
 				   struct switch_val *val)
 {
-	u32 data = 0;
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
+	u32 data = 0;
+
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
 		return -EINVAL;
 
@@ -1453,18 +1475,19 @@ static int rtl8366_get_port_mib(struct switch_dev *dev,
 				const struct switch_attr *attr,
 				struct switch_val *val)
 {
+	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	int i, len = 0;
 	unsigned long long counter = 0;
-	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	char *buf = smi->buf;
 
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
 		return -EINVAL;
 
-	len += snprintf(buf + len, sizeof(smi->buf) - len, "Port %d MIB counters\n",
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
+			"Port %d MIB counters\n",
 			val->port_vlan);
-	for (i = 0; i < RTL8366S_MIB_COUNT; ++i) {
 
+	for (i = 0; i < RTL8366S_MIB_COUNT; ++i) {
 		len += snprintf(buf + len, sizeof(smi->buf) - len,
 				"%d:%s\t", i, MIBCOUNTERS[i]);
 		if (!rtl8366_get_mib_counter(smi, i, val->port_vlan, &counter))
@@ -1588,8 +1611,7 @@ static struct switch_attr rtl8366_globals[] = {
 		.get = rtl8366_get_vlan,
 		.max = 1,
 		.ofs = 1
-	},
-	{
+	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan4k",
 		.description = "Enable VLAN 4K mode",
@@ -1597,16 +1619,14 @@ static struct switch_attr rtl8366_globals[] = {
 		.get = rtl8366_get_vlan,
 		.max = 1,
 		.ofs = 2
-	},
-	{
+	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "reset_mibs",
 		.description = "Reset all MIB counters",
 		.set = rtl8366_global_reset_mibs,
 		.get = NULL,
 		.max = 1
-	},
-	{
+	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "blinkrate",
 		.description = "Get/Set LED blinking rate (0 = 43ms, 1 = 84ms,"
@@ -1625,24 +1645,21 @@ static struct switch_attr rtl8366_port[] = {
 		.max = 1,
 		.set = NULL,
 		.get = rtl8366_attr_get_port_link
-	},
-	{
+	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "reset_mib",
 		.description = "Reset single port MIB counters",
 		.max = 1,
 		.set = rtl8366_reset_port_mibs,
 		.get = NULL
-	},
-	{
+	}, {
 		.type = SWITCH_TYPE_STRING,
 		.name = "mib",
 		.description = "Get MIB counters for port",
 		.max = 33,
 		.set = NULL,
 		.get = rtl8366_get_port_mib
-	},
-	{
+	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "led",
 		.description = "Get/Set port group (0 - 3) led mode (0 - 15)",
