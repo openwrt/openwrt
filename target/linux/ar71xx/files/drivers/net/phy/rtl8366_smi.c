@@ -936,9 +936,10 @@ static int rtl8366_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
 
 static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 {
-	int i;
 	struct rtl8366s_vlan4kentry vlan4k;
 	struct rtl8366s_vlanconfig vlanmc;
+	int err;
+	int i;
 
 	/* clear 16 VLAN member configuration */
 	vlanmc.vid = 0;
@@ -947,8 +948,9 @@ static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 	vlanmc.untag = 0;
 	vlanmc.fid = 0;
 	for (i = 0; i < RTL8366_NUM_VLANS; i++) {
-		if (rtl8366s_set_vlan_member_config(smi, i, &vlanmc) != 0)
-			return -EIO;
+		err = rtl8366s_set_vlan_member_config(smi, i, &vlanmc);
+		if (err)
+			return err;
 	}
 
 	/* Set a default VLAN with vid 1 to 4K table for all ports */
@@ -956,13 +958,15 @@ static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 	vlan4k.member = RTL8366_PORT_ALL;
 	vlan4k.untag = RTL8366_PORT_ALL;
 	vlan4k.fid = 0;
-	if (rtl8366s_set_vlan_4k_entry(smi, &vlan4k) != 0)
-		return -EIO;
+	err = rtl8366s_set_vlan_4k_entry(smi, &vlan4k);
+	if (err)
+		return err;
 
 	/* Set all ports PVID to default VLAN */
 	for (i = 0; i < RTL8366_NUM_PORTS; i++) {
-		if (rtl8366_set_vlan_port_pvid(smi, i, 0) != 0)
-			return -EIO;
+		err = rtl8366_set_vlan_port_pvid(smi, i, 0);
+		if (err)
+			return err;
 	}
 
 	return 0;
