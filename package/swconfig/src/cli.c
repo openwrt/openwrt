@@ -249,8 +249,12 @@ int main(int argc, char **argv)
 			printf("%s\n", val.value.s);
 			break;
 		case SWITCH_TYPE_PORTS:
-			for(i = 0; i < val.len; i++)
-				printf("%d ", val.value.ports[i]);
+			for(i = 0; i < val.len; i++) {
+				printf("%d%s ",
+					val.value.ports[i].id,
+					(val.value.ports[i].flags &
+					 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
+			}
 			printf("\n");
 			break;
 		}
