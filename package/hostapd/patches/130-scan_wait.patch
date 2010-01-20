@@ -1,0 +1,148 @@
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -238,6 +238,7 @@ struct hostapd_iface {
+ 	int (*for_each_interface)(struct hapd_interfaces *interfaces,
+ 				  int (*cb)(struct hostapd_iface *iface,
+ 					    void *ctx), void *ctx);
++	int (*init_complete)(struct hostapd_iface *iface);
+ };
+ 
+ /* hostapd.c */
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -745,6 +745,9 @@ int hostapd_setup_interface_complete(str
+ 	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
+ 		   iface->bss[0]->conf->iface);
+ 
++	if (iface->init_complete)
++		iface->init_complete(iface);
++
+ 	return 0;
+ }
+ 
+--- a/hostapd/main.c
++++ b/hostapd/main.c
+@@ -35,6 +35,8 @@
+ extern int wpa_debug_level;
+ extern int wpa_debug_show_keys;
+ extern int wpa_debug_timestamp;
++static int daemonize = 0;
++static char *pid_file = NULL;
+ 
+ 
+ struct hapd_interfaces {
+@@ -162,6 +164,15 @@ static void hostapd_logger_cb(void *ctx,
+ }
+ #endif /* CONFIG_NO_HOSTAPD_LOGGER */
+ 
++static int hostapd_init_complete(struct hostapd_iface *iface)
++{
++	if (daemonize && os_daemonize(pid_file)) {
++		perror("daemon");
++		return -1;
++	}
++	daemonize = 0;
++}
++
+ 
+ /**
+  * hostapd_init - Allocate and initialize per-interface data
+@@ -183,6 +194,7 @@ static struct hostapd_iface * hostapd_in
+ 	if (hapd_iface == NULL)
+ 		goto fail;
+ 
++	hapd_iface->init_complete = hostapd_init_complete;
+ 	hapd_iface->reload_config = hostapd_reload_config;
+ 	hapd_iface->config_read_cb = hostapd_config_read;
+ 	hapd_iface->config_fname = os_strdup(config_file);
+@@ -390,7 +402,7 @@ static int hostapd_global_init(struct ha
+ }
+ 
+ 
+-static void hostapd_global_deinit(const char *pid_file)
++static void hostapd_global_deinit(void)
+ {
+ #ifdef EAP_SERVER_TNC
+ 	tncs_global_deinit();
+@@ -408,8 +420,7 @@ static void hostapd_global_deinit(const 
+ }
+ 
+ 
+-static int hostapd_global_run(struct hapd_interfaces *ifaces, int daemonize,
+-			      const char *pid_file)
++static int hostapd_global_run(struct hapd_interfaces *iface)
+ {
+ #ifdef EAP_SERVER_TNC
+ 	int tnc = 0;
+@@ -430,11 +441,6 @@ static int hostapd_global_run(struct hap
+ 	}
+ #endif /* EAP_SERVER_TNC */
+ 
+-	if (daemonize && os_daemonize(pid_file)) {
+-		perror("daemon");
+-		return -1;
+-	}
+-
+ 	eloop_run();
+ 
+ 	return 0;
+@@ -478,8 +484,7 @@ int main(int argc, char *argv[])
+ 	struct hapd_interfaces interfaces;
+ 	int ret = 1;
+ 	size_t i;
+-	int c, debug = 0, daemonize = 0;
+-	char *pid_file = NULL;
++	int c, debug = 0;
+ 
+ 	if (os_program_init())
+ 		return -1;
+@@ -544,7 +549,7 @@ int main(int argc, char *argv[])
+ 			goto out;
+ 	}
+ 
+-	if (hostapd_global_run(&interfaces, daemonize, pid_file))
++	if (hostapd_global_run(&interfaces))
+ 		goto out;
+ 
+ 	ret = 0;
+@@ -555,7 +560,7 @@ int main(int argc, char *argv[])
+ 		hostapd_interface_deinit_free(interfaces.iface[i]);
+ 	os_free(interfaces.iface);
+ 
+-	hostapd_global_deinit(pid_file);
++	hostapd_global_deinit();
+ 	os_free(pid_file);
+ 
+ 	os_program_deinit();
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -1854,6 +1854,8 @@ struct hostapd_config * hostapd_config_r
+ 			}
+ #endif /* CONFIG_IEEE80211W */
+ #ifdef CONFIG_IEEE80211N
++		} else if (os_strcmp(buf, "noscan") == 0) {
++			conf->noscan = atoi(pos);
+ 		} else if (os_strcmp(buf, "ieee80211n") == 0) {
+ 			conf->ieee80211n = atoi(pos);
+ 		} else if (os_strcmp(buf, "ht_capab") == 0) {
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -366,6 +366,7 @@ struct hostapd_config {
+ 
+ 	int ht_op_mode_fixed;
+ 	u16 ht_capab;
++	int noscan;
+ 	int ieee80211n;
+ 	int secondary_channel;
+ };
+--- a/src/ap/hw_features.c
++++ b/src/ap/hw_features.c
+@@ -460,7 +460,7 @@ static int ieee80211n_check_40mhz(struct
+ {
+ 	struct wpa_driver_scan_params params;
+ 
+-	if (!iface->conf->secondary_channel)
++	if (!iface->conf->secondary_channel || iface->conf->noscan)
+ 		return 0; /* HT40 not used */
+ 
+ 	wpa_printf(MSG_DEBUG, "Scan for neighboring BSSes prior to enabling "
