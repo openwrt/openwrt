@@ -14,8 +14,10 @@ $(IMGNAME)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 endef
 
 VMLINUX:=$(IMGNAME)-vmlinux
+UIMAGE:=$(IMGNAME)-uImage
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	VMLINUX:=$(IMGNAME)-vmlinux-initramfs
+	UIMAGE:=$(IMGNAME)-uImage-initramfs
 endif
 
 define CompressLzma
@@ -53,8 +55,8 @@ define Image/BuildKernel
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	dd if=$(KDIR)/vmlinux.bin.lzma of=$(VMLINUX).lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
-	$(call MkImageGzip,$(KDIR)/vmlinux.bin.gz,$(IMGNAME)-uImage-gzip.bin)
-	$(call MkImageLzma,$(KDIR)/vmlinux.bin.lzma,$(IMGNAME)-uImage-lzma.bin)
+	$(call MkImageGzip,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
+	$(call MkImageLzma,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 endef
 
 define Image/Build/WRT400N
