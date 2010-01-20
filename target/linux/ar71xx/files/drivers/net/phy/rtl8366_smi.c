@@ -671,16 +671,16 @@ static int rtl8366s_set_vlan_4k_entry(struct rtl8366_smi *smi,
 
 	data = *tableaddr;
 
-	rtl8366_smi_write_reg(smi, RTL8366S_VLAN_TABLE_WRITE_BASE + 1, data);
-
+	err = rtl8366_smi_write_reg(smi, RTL8366S_VLAN_TABLE_WRITE_BASE + 1,
+				    data);
+	if (err)
+		return err;
 
 	/* write table access control word */
 	err = rtl8366_smi_write_reg(smi, RTL8366S_TABLE_ACCESS_CTRL_REG,
 				    RTL8366S_TABLE_VLAN_WRITE_CTRL);
-	if (err)
-		return err;
 
-	return 0;
+	return err;
 }
 
 static int rtl8366s_get_vlan_member_config(struct rtl8366_smi *smi, u32 index,
