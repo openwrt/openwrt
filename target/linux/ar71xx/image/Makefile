@@ -15,7 +15,17 @@ endef
 
 VMLINUX:=$(IMGNAME)-vmlinux
 UIMAGE:=$(IMGNAME)-uImage
+fs_squash:=squashfs-only
+fs_all:=all
+fs_4k:=4k
+fs_64k:=64k
+fs_128k:=128k
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	fs_squash:=initramfs
+	fs_all:=initramfs
+	fs_4k:=initramfs
+	fs_64k:=initramfs
+	fs_128k:=initramfs
 	VMLINUX:=$(IMGNAME)-vmlinux-initramfs
 	UIMAGE:=$(IMGNAME)-uImage-initramfs
 endif
@@ -57,6 +67,7 @@ define Image/BuildKernel
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
 	$(call MkImageGzip,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
 	$(call MkImageLzma,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
+	$(call Image/Build/Initramfs)
 endef
 
 define Image/Build/WRT400N
@@ -274,6 +285,14 @@ define Image/Build/TPLINK
 		-o $(call imgname,$(1),$(2))-universal.bin
 endef
 
+define Image/Build/TPLINK/initramfs
+	$(call PatchKernelGzip,$(2),$(3))
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
+		-B $(4) -N OpenWrt -V $(REVISION)\
+		-k $(KDIR)/vmlinux-$(2).bin.gz \
+		-o $(call imgname,$(1),$(2))-uImage.bin
+endef
+
 define Image/Build/CyberTAN
 	$(call PatchKernelGzip,$(2),$(3))
 	$(call MkImageGzip,$(KDIR)/vmlinux-$(2).bin.gz,$(KDIR)/vmlinux-$(2).uImage)
@@ -320,6 +339,18 @@ define Image/Build/WNDR3700
 		-o $(call imgname,$(1),$(2))-factory.img
 endef
 
+define Image/Build/WNDR3700/initramfs
+	$(call PatchKernelLzma,$(2),$(3) $(wndr3700_mtdlayout))
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
+	$(STAGING_DIR_HOST)/bin/wndr3700 \
+		$(KDIR)/vmlinux-$(2).uImage \
+		$(call imgname,$(1),$(2))-uImage.bin
+endef
+
+define Image/Build/Template/initramfs/initramfs
+	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7))
+endef
+
 define Image/Build/Template/all/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7))
 endef
@@ -357,67 +388,67 @@ define Image/Build/Template/128k/jffs2-128k
 endef
 
 define Image/Build/Profile/AP81
-	$(call Image/Build/Template/64k/$(1),AP83,ap81,board=AP81)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap81,board=AP81)
 endef
 
 define Image/Build/Profile/AP83
-	$(call Image/Build/Template/64k/$(1),AP83,ap83,board=AP83)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap83,board=AP83)
 endef
 
 define Image/Build/Profile/PB42
-	$(call Image/Build/Template/64k/$(1),PB4X,pb42,board=PB42)
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb42,board=PB42)
 endef
 
 define Image/Build/Profile/PB44
-	$(call Image/Build/Template/64k/$(1),PB4X,pb44,board=PB44)
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb44,board=PB44)
 endef
 
 define Image/Build/Profile/WP543
-	$(call Image/Build/Template/64k/$(1),MyLoader,wp543)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543)
 endef
 
 define Image/Build/Profile/DIR600A1
-	$(call Image/Build/Template/64k/$(1),DIR600A1,dir-600-a1,board=DIR-600-A1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),DIR600A1,dir-600-a1,board=DIR-600-A1)
 endef
 
 define Image/Build/Profile/DIR615C1
-	$(call Image/Build/Template/squashfs-only/$(1),Cameo,dir-615-c1,board=DIR-615-C1,"AP81-AR9130-RT-070614-02")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,dir-615-c1,board=DIR-615-C1,"AP81-AR9130-RT-070614-02")
 endef
 
 define Image/Build/Profile/TEW632BRP
-	$(call Image/Build/Template/squashfs-only/$(1),Cameo,tew-632brp,board=TEW-632BRP,"AP81-AR9130-RT-070614-00")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-632brp,board=TEW-632BRP,"AP81-AR9130-RT-070614-00")
 endef
 
 define Image/Build/Profile/TEW652BRP
-	$(call Image/Build/Template/squashfs-only/$(1),Cameo,tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
 endef
 
 define Image/Build/Profile/A02RBW300N
-	$(call Image/Build/Template/squashfs-only/$(1),Cameo,a02-rb-w300n,board=TEW-632BRP,"AP81-AR9130-RT-070614-03")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,a02-rb-w300n,board=TEW-632BRP,"AP81-AR9130-RT-070614-03")
 endef
 
 define Image/Build/Profile/UBNTRS
-	$(call Image/Build/Template/64k/$(1),UBNT,ubnt-rs,board=UBNT-RS,RS,RSx,ar7100)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rs,board=UBNT-RS,RS,RSx,ar7100)
 endef
 
 define Image/Build/Profile/UBNTRSPRO
-	$(call Image/Build/Template/64k/$(1),UBNT,ubnt-rspro,board=UBNT-RSPRO,RSPRO,RSPRO,ar7100pro)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rspro,board=UBNT-RSPRO,RSPRO,RSPRO,ar7100pro)
 endef
 
 define Image/Build/Profile/UBNTLSSR71
-	$(call Image/Build/Template/64k/$(1),UBNT,ubnt-ls-sr71,board=UBNT-LS-SR71,LS-SR71,LS-SR71,ar7100)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-ls-sr71,board=UBNT-LS-SR71,LS-SR71,LS-SR71,ar7100)
 endef
 
 define Image/Build/Profile/UBNTBULLETM
-	$(call Image/Build/Template/64k/$(1),UBNTXM,ubnt-bullet-m,board=UBNT-BM,XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-bullet-m,board=UBNT-BM,XM,UBNTXM,ar7240)
 endef
 
 define Image/Build/Profile/UBNTROCKETM
-	$(call Image/Build/Template/64k/$(1),UBNTXM,ubnt-rocket-m,board=UBNT-RM,XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-rocket-m,board=UBNT-RM,XM,UBNTXM,ar7240)
 endef
 
 define Image/Build/Profile/UBNTNANOM
-	$(call Image/Build/Template/64k/$(1),UBNTXM,ubnt-nano-m,board=UBNT-NM,XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,board=UBNT-NM,XM,UBNTXM,ar7240)
 endef
 
 define Image/Build/Profile/UBNT
@@ -430,55 +461,55 @@ define Image/Build/Profile/UBNT
 endef
 
 define Image/Build/Profile/MZKW04NU
-	$(call Image/Build/Template/64k/$(1),Planex,mzk-w04nu,board=MZK-W04NU)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w04nu,board=MZK-W04NU)
 endef
 
 define Image/Build/Profile/MZKW300NH
-	$(call Image/Build/Template/64k/$(1),Planex,mzk-w300nh,board=MZK-W300NH)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w300nh,board=MZK-W300NH)
 endef
 
 define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/4k/$(1),TPLINK,tl-wr741nd-v1,board=TL-WR741ND,TL-WR741NDv1)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr741nd-v1,board=TL-WR741ND,TL-WR741NDv1)
 endef
 
 define Image/Build/Profile/TLWR841NV15
-	$(call Image/Build/Template/squashfs-only/$(1),TPLINK,tl-wr841n-v1.5,board=TL-WR841N-v1.5,TL-WR841Nv1.5)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841n-v1.5,board=TL-WR841N-v1.5,TL-WR841Nv1.5)
 endef
 
 define Image/Build/Profile/TLWR841NDV3
-	$(call Image/Build/Template/squashfs-only/$(1),TPLINK,tl-wr841nd-v3,board=TL-WR941ND,TL-WR841NDv3)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841nd-v3,board=TL-WR941ND,TL-WR841NDv3)
 endef
 
 define Image/Build/Profile/TLWR841NDV5
-	$(call Image/Build/Template/4k/$(1),TPLINK,tl-wr841nd-v5,board=TL-WR741ND,TL-WR841NDv5)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v5,board=TL-WR741ND,TL-WR841NDv5)
 endef
 
 define Image/Build/Profile/TLWR941NDV2
-	$(call Image/Build/Template/squashfs-only/$(1),TPLINK,tl-wr941nd-v2,board=TL-WR941ND,TL-WR941NDv2)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v2,board=TL-WR941ND,TL-WR941NDv2)
 endef
 
 define Image/Build/Profile/TLWR1043NDV1
-	$(call Image/Build/Template/squashfs-only/$(1),TPLINK,tl-wr1043nd-v1,board=TL-WR1043ND,TL-WR1043NDv1)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,board=TL-WR1043ND,TL-WR1043NDv1)
 endef
 
 define Image/Build/Profile/WNDR3700
-	$(call Image/Build/Template/64k/$(1),WNDR3700,wndr3700,board=WNDR3700)
+	$(call Image/Build/Template/$(fs_64k)/$(1),WNDR3700,wndr3700,board=WNDR3700)
 endef
 
 define Image/Build/Profile/WRT400N
-	$(call Image/Build/Template/64k/$(1),WRT400N,wrt400n,board=WRT400N)
+	$(call Image/Build/Template/$(fs_64k)/$(1),WRT400N,wrt400n,board=WRT400N)
 endef
 
 define Image/Build/Profile/DIR825B1
-	$(call Image/Build/Template/64k/$(1),DIR825B1,dir-825-b1,board=DIR-825-B1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,dir-825-b1,board=DIR-825-B1)
 endef
 
 define Image/Build/Profile/WRT160NL
-	$(call Image/Build/Template/64k/$(1),CyberTAN,wrt160nl,board=WRT160NL,1.00.01)
+	$(call Image/Build/Template/$(fs_64k)/$(1),CyberTAN,wrt160nl,board=WRT160NL,1.00.01)
 endef
 
 define Image/Build/Profile/WZRHPG300NH
-	$(call Image/Build/Template/128k/$(1),WZRHPG300NH,wzr-hp-g300nh,board=WZR-HP-G300NH)
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG300NH,wzr-hp-g300nh,board=WZR-HP-G300NH)
 endef
 
 define Image/Build/Profile/Default
@@ -522,6 +553,10 @@ define Image/Build/squashfs
 	dd if=$(KDIR)/root.squashfs-4k.tmp0 of=$(IMGNAME)-root.squashfs-4k bs=4k conv=sync
 	$(call add_jffs2_mark,$(IMGNAME)-root.squashfs-4k)
 	rm -f $(KDIR)/root.squashfs-4k.tmp0
+endef
+
+define Image/Build/Initramfs
+	$(call Image/Build/Profile/$(PROFILE),initramfs)
 endef
 
 define Image/Build
