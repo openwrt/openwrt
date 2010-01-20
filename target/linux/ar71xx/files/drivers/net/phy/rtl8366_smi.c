@@ -1894,7 +1894,7 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 	return err;
 }
 
-int rtl8366_phy_config_init(struct phy_device *phydev)
+static int rtl8366_phy_config_init(struct phy_device *phydev)
 {
 	if (!rtl8366_smi_mii_bus_match(phydev->bus))
 		return -EINVAL;
@@ -1902,7 +1902,7 @@ int rtl8366_phy_config_init(struct phy_device *phydev)
 	return 0;
 }
 
-int rtl8366_phy_config_aneg(struct phy_device *phydev)
+static int rtl8366_phy_config_aneg(struct phy_device *phydev)
 {
 	return 0;
 }
