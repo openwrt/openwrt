@@ -1498,7 +1498,8 @@ static int rtl8366_get_ports(struct switch_dev *dev,
 			continue;
 
 		port->id = i;
-		port->flags = vlanmc.untag ? 0 : BIT(SWITCH_PORT_FLAG_TAGGED);
+		port->flags = (vlanmc.untag & BIT(i)) ?
+					0 : BIT(SWITCH_PORT_FLAG_TAGGED);
 		val->len++;
 		port++;
 	}
