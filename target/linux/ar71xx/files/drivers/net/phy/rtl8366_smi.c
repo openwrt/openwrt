@@ -1275,71 +1275,52 @@ static int rtl8366_set_vlan(struct switch_dev *dev,
 		return rtl8366_vlan_set_4ktable(smi, val->value.i);
 }
 
+static const char *rtl8366_speed_str(unsigned speed)
+{
+	switch (speed) {
+	case 0:
+		return "10baseT";
+	case 1:
+		return "100baseT";
+	case 2:
+		return "1000baseT";
+	}
+
+	return "unknown";
+}
+
 static int rtl8366_attr_get_port_link(struct switch_dev *dev,
 				      const struct switch_attr *attr,
 				      struct switch_val *val)
 {
-	u32 len = 0, data = 0;
-	int speed, duplex, link, txpause, rxpause, nway;
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
-	char *buf = smi->buf;
+	u32 len = 0, data = 0;
 
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
 		return -EINVAL;
 
-	memset(buf, '\0', sizeof(smi->buf));
+	memset(smi->buf, '\0', sizeof(smi->buf));
 	rtl8366_smi_read_reg(smi, RTL8366S_PORT_LINK_STATUS_BASE +
-			     (val->port_vlan >> 1),
-			     &data);
+			     (val->port_vlan / 2), &data);
 
-	if (val->port_vlan & 0x1)
+	if (val->port_vlan % 2)
 		data = data >> 8;
 
-	speed = (data & RTL8366S_PORT_STATUS_SPEED_MASK);
-	duplex = (data & RTL8366S_PORT_STATUS_DUPLEX_MASK) >> 2;
-	link = (data & RTL8366S_PORT_STATUS_LINK_MASK) >> 4;
-	txpause = (data & RTL8366S_PORT_STATUS_TXPAUSE_MASK) >> 5;
-	rxpause = (data & RTL8366S_PORT_STATUS_RXPAUSE_MASK) >> 6;
-	nway = (data & RTL8366S_PORT_STATUS_AN_MASK) >> 7;
+	len = snprintf(smi->buf, sizeof(smi->buf),
+			"port:%d link:%s speed:%s %s-duplex %s%s%s",
+			val->port_vlan,
+			(data & RTL8366S_PORT_STATUS_LINK_MASK) ? "up" : "down",
+			rtl8366_speed_str(data &
+					  RTL8366S_PORT_STATUS_SPEED_MASK),
+			(data & RTL8366S_PORT_STATUS_DUPLEX_MASK) ?
+				"full" : "half",
+			(data & RTL8366S_PORT_STATUS_TXPAUSE_MASK) ?
+				"tx-pause ": "",
+			(data & RTL8366S_PORT_STATUS_RXPAUSE_MASK) ?
+				"rx-pause " : "",
+			(data & RTL8366S_PORT_STATUS_AN_MASK) ? "nway ": "");
 
-	len += snprintf(buf + len, sizeof(smi->buf) - len, "Port %d: ",
-			val->port_vlan);
-
-	if (link)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"Link UP, Speed: ");
-	else
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"Link DOWN, Speed: ");
-
-	if (speed == 0)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"10Base-TX ");
-	else if (speed == 1)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"100Base-TX ");
-	else if (speed == 2)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"1000Base-TX ");
-
-	if (duplex)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"Full-Duplex, ");
-	else
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"Half-Duplex, ");
-
-	if (txpause)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"TX-Pause ");
-	if (rxpause)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"RX-Pause ");
-	if (nway)
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"nway ");
-
-	val->value.s = buf;
+	val->value.s = smi->buf;
 	val->len = len;
 
 	return 0;
