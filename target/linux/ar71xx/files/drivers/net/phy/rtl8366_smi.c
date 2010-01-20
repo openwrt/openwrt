@@ -1359,7 +1359,7 @@ static int rtl8366_attr_get_vlan_info(struct switch_dev *dev,
 	struct rtl8366_smi *smi = sw_to_rtl8366(dev);
 	char *buf = smi->buf;
 
-	if (val->port_vlan >= RTL8366_NUM_PORTS)
+	if (val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
 
 	memset(buf, '\0', sizeof(smi->buf));
