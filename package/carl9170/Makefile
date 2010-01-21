@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,7 +13,8 @@ PKG_VERSION:=0.9.2.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.kernel.org/pub/linux/kernel/people/chr/carl9170/$(PKG_VERSION)
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/chr/carl9170/$(PKG_VERSION) \
+	@KERNEL/linux/kernel/people/chr/carl9170/old/$(PKG_VERSION)
 PKG_MD5SUM:=5f0057ea651343460ea4f1fb093a4bdf
 
 include $(INCLUDE_DIR)/package.mk
