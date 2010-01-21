@@ -202,8 +202,8 @@
 +        }
 +        while (driver_probe_done() != 0)
 +            msleep(100);
-+        md_run_setup();
 +        do_initcalls(__root_initcall_start, __root_initcall_end);
++        md_run_setup();
 +        prepare_namespace();
  	}
  
