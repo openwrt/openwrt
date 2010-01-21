@@ -664,6 +664,13 @@ static const struct wlc_call wlc_calls[] = {
 		.desc = "Set/Remove WEP keys"
 	},
 	{
+		.name = "wepauth",
+		.param = INT,
+		.handler = wlc_ioctl,
+		.data.num = ((WLC_GET_AUTH << 16) | WLC_SET_AUTH),
+		.desc = "WEP authentication type. 0 = OpenSystem, 1 = SharedKey"
+	},
+	{
 		.name = "wsec_restrict",
 		.param = INT,
 		.handler = wlc_bssiovar,
