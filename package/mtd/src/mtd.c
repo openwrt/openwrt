@@ -396,7 +396,7 @@ resume:
 				if (!quiet)
 					fprintf(stderr, "\b\b\b   ");
 				if (quiet < 2)
-					fprintf(stderr, "\nAppending jffs2 data to from %s to %s...", jffs2file, mtd);
+					fprintf(stderr, "\nAppending jffs2 data from %s to %s...", jffs2file, mtd);
 				/* got an EOF marker - this is the place to add some jffs2 data */
 				mtd_replace_jffs2(mtd, fd, e, jffs2file);
 				goto done;
