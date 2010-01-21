@@ -181,11 +181,15 @@ enable_broadcom() {
 		nasopts=
 		config_get enc "$vif" encryption
 		case "$enc" in
-			WEP|wep)
+			*WEP*|*wep*)
 				wsec_r=1
 				wsec=1
 				defkey=1
 				config_get key "$vif" key
+				case "$enc" in
+					*shared*) append vif_do_up "wepauth 1" "$N";;
+					*) append vif_do_up "wepauth 0" "$N";;
+				esac
 				case "$key" in
 					[1234])
 						defkey="$key"
