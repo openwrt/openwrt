@@ -138,6 +138,9 @@ enum {
 
 	/* Askey */
 	RT210W,
+
+	/* OvisLink */
+	WL1600GL,
 };
 
 static void __init bcm4780_init(void) {
@@ -852,6 +855,19 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
 		},
 	},
+	[WL1600GL] = {
+		.name		= "OvisLink WL-1600GL",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 3 },
+			{ .name = "ses",	.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "wps",	.gpio = 1 << 2, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 1, .polarity = REVERSE },
+			{ .name = "connected",	.gpio = 1 << 0, .polarity = REVERSE },
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -965,6 +981,10 @@ static struct platform_t __init *platform_detect(void)
 		}
 		if (!strcmp(boardnum, "1024") && !strcmp(boardtype, "0x0446"))
 			return &platforms[WAP54GV2];
+
+		if (!strcmp(boardnum, "8") && !strcmp(boardtype, "0x048e"))
+			return &platforms[WL1600GL];
+
 
 		if (!strcmp(boardnum, "44") || !strcmp(boardnum, "44\r")) {
 			if (!strcmp(boardtype,"0x0101") || !strcmp(boardtype, "0x0101\r"))

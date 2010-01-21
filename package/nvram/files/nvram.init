@@ -74,5 +74,13 @@ start() {
 		nvram set il0macaddr=$(nvram get et0macaddr|
 		awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
 	}
+
+	[ "$(nvram get et0macaddr)" = "00:90:4c:c0:00:08" ] && {
+		# OvisLink WL-1600GL mac workaround
+		nvram set et0macaddr=$(hexdump -n 6 -s 130976 -e '5/1 "%02x:" "%02x" ' /dev/mtd/0)
+		nvram set il0macaddr=$(nvram get et0macaddr|
+		awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
+	}
+
 	[ "$COMMIT" = "1" ] && nvram commit
 }
