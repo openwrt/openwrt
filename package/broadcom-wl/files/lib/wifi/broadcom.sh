@@ -132,6 +132,7 @@ enable_broadcom() {
 
 	_c=0
 	nas="$(which nas)"
+	[ -n "$nas" ] && nas="start-stop-daemon -S -b -x $nas -- "
 	nas_cmd=
 	if_up=
 
