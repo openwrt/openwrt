@@ -32,6 +32,7 @@
 #include <linux/proc_fs.h>
 #include <linux/usb.h>
 #include <linux/usb/gadget.h>
+#include <linux/clk.h>
 
 #include <asm/byteorder.h>
 #include <asm/io.h>
@@ -345,11 +346,7 @@ static void udc_disable(struct jz4740_udc *dev)
 	usb_clearb(dev, JZ_REG_UDC_POWER, USB_POWER_SOFTCONN);
 
 	/* Disable the USB PHY */
-#ifdef CONFIG_SOC_JZ4740
-	REG_CPM_SCR &= ~CPM_SCR_USBPHY_ENABLE;
-#elif defined(CONFIG_SOC_JZ4750) || defined(CONFIG_SOC_JZ4750D)
-	REG_CPM_OPCR &= ~CPM_OPCR_UDCPHY_ENABLE;
-#endif
+	clk_disable(dev->clk);
 
 	dev->ep0state = WAIT_FOR_SETUP;
 	dev->gadget.speed = USB_SPEED_UNKNOWN;
@@ -410,14 +407,10 @@ static void udc_enable(struct jz4740_udc *dev)
 	 * there are no actions on the USB bus.
 	 * UDC still works during this bit was set.
 	 */
-	__cpm_stop_udc();
+	 jz4740_clock_udc_enable_auto_suspend();
 
 	/* Enable the USB PHY */
-#ifdef CONFIG_SOC_JZ4740
-	REG_CPM_SCR |= CPM_SCR_USBPHY_ENABLE;
-#elif defined(CONFIG_SOC_JZ4750) || defined(CONFIG_SOC_JZ4750D)
-	REG_CPM_OPCR |= CPM_OPCR_UDCPHY_ENABLE;
-#endif
+	clk_enable(dev->clk);
 
 	/* Disable interrupts */
 /*	usb_writew(dev, JZ_REG_UDC_INTRINE, 0);
@@ -2302,8 +2295,15 @@ static int jz4740_udc_probe(struct platform_device *pdev)
 	dev->gadget.dev.release = gadget_release;
 
 	ret = device_register(&dev->gadget.dev);
-        if (ret)
+	if (ret)
 		return ret;
+
+	dev->clk = clk_get(&pdev->dev, "udc");
+	if (IS_ERR(dev->clk)) {
+		ret = PTR_ERR(dev->clk);
+		dev_err(&pdev->dev, "Failed to get udc clock: %d\n", ret);
+		goto err_device_unregister;
+	}
 
 	platform_set_drvdata(pdev, dev);
 
@@ -2312,7 +2312,7 @@ static int jz4740_udc_probe(struct platform_device *pdev)
 	if (!dev->mem) {
 		ret = -ENOENT;
 		dev_err(&pdev->dev, "Failed to get mmio memory resource\n");
-		goto err_device_unregister;
+		goto err_clk_put;
 	}
 
 	dev->mem = request_mem_region(dev->mem->start, resource_size(dev->mem), pdev->name);
@@ -2349,6 +2349,8 @@ err_iounmap:
 	iounmap(dev->base);
 err_release_mem_region:
 	release_mem_region(dev->mem->start, resource_size(dev->mem));
+err_clk_put:
+	clk_put(dev->clk);
 err_device_unregister:
 	device_unregister(&dev->gadget.dev);
 	platform_set_drvdata(pdev, NULL);
@@ -2366,13 +2368,11 @@ static int jz4740_udc_remove(struct platform_device *pdev)
 		return -EBUSY;
 
 	udc_disable(dev);
-#ifdef	UDC_PROC_FILE
-	remove_proc_entry(proc_node_name, NULL);
-#endif
 
 	free_irq(dev->irq, dev);
 	iounmap(dev->base);
 	release_mem_region(dev->mem->start, resource_size(dev->mem));
+	clk_put(dev->clk);
 
 	platform_set_drvdata(pdev, NULL);
 	device_unregister(&dev->gadget.dev);

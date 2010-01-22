@@ -48,16 +48,6 @@ extern void jz_halt(void);
 extern void jz_power_off(void);
 extern void jz_time_init(void);
 
-static void __init soc_cpm_setup(void)
-{
-	/* Enable CKO to external memory */
-	__cpm_enable_cko();
-
-	/* CPU enters IDLE mode when executing 'wait' instruction */
-	__cpm_idle_mode();
-}
-
-
 static void __init jz_serial_setup(void)
 {
 #ifdef CONFIG_SERIAL_8250
@@ -102,7 +92,6 @@ void __init plat_mem_setup(void)
 	_machine_restart = jz_restart;
 	_machine_halt = jz_halt;
 	pm_power_off = jz_power_off;
-	soc_cpm_setup();
 	jz_serial_setup();
 }
 
