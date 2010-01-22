@@ -1,0 +1,83 @@
+From 9c343fd4030dcd7a52616f365893177dded50346 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Wed, 13 Jan 2010 01:51:32 +0000
+Subject: mips/nptl: Pass correct parameters to dl_find_hash when resolving TLS relocations.
+
+Make use of macros from sys/asm.h in crt1.S
+These two changes are needed for mips nptl to boot once again.
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+---
+diff --git a/libc/sysdeps/linux/mips/crt1.S b/libc/sysdeps/linux/mips/crt1.S
+index e851d52..6a80412 100644
+--- a/libc/sysdeps/linux/mips/crt1.S
++++ b/libc/sysdeps/linux/mips/crt1.S
+@@ -85,29 +85,10 @@
+ 
+ __start:
+ #ifdef __PIC__
+-#if _MIPS_SIM == _MIPS_SIM_ABI32
+-	.frame	sp, 24, sp
+-        .set noreorder
+-	move $0, $31		/* Save old ra.  */
+-	bal 10f			/* Find addr of cpload.  */
+-        nop
+-10:
+-	.cpload $31
+-	move $31, $0
+-	.set reorder
+-	.cprestore 16
+-#else
+-	move $0, $31; /* Save old ra.  */
+-	.set noreorder
+-	bal 10f /* Find addr of .cpsetup.  */
+-	nop
+-10:
+-	.set reorder
+-	.cpsetup $31, $25, 10b
+-	move $31, $0
+-#endif
++	SETUP_GPX($0)
++	SETUP_GPX64($25,$0)
+ #else
+-	la $28, _gp             /* Setup GP correctly if we're non-PIC.  */
++	PTR_LA $28, _gp             /* Setup GP correctly if we're non-PIC.  */
+ 	move $31, $0
+ #endif
+ 
+@@ -118,18 +99,18 @@ __start:
+ 	/* Allocate space on the stack for seven arguments and
+ 	 * make sure the stack is aligned to double words (8 bytes) */
+ 
++	and $29, -2 * SZREG
++
+ #if _MIPS_SIM == _MIPS_SIM_ABI32
+-	and $29, -2 * 4
+-	subu $29, 32
+-	la $7, _init		/* init */
+-	la $8, _fini
+-	sw $8, 16($29)		/* fini */
+-	sw $2, 20($29)		/* rtld_fini */
+-	sw $29, 24($29)		/* stack_end */
+-#else
+-	and $29, -2 * PTRSIZE
++	PTR_SUBIU $29, 32
++#endif
+ 	PTR_LA $7, _init		/* init */
+-	PTR_LA $8, _fini		/* fini */
++	PTR_LA $8, _fini
++#if _MIPS_SIM == _MIPS_SIM_ABI32
++	PTR_S $8, 16($29)		/* fini */
++	PTR_S $2, 20($29)		/* rtld_fini */
++	PTR_S $29, 24($29)		/* stack_end */
++#else
+ 	move $9, $2		/* rtld_fini */
+ 	move $10, $29		/* stack_end */
+ #endif
+@@ -148,4 +129,3 @@ __data_start:
+ 	.weak data_start
+ 	data_start = __data_start
+ 
+-
+--
+cgit v0.8.2.1
