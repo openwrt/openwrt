@@ -209,7 +209,7 @@ static const char *MIBCOUNTERS[] = {
 };
 
 struct rtl8366_smi {
-	struct platform_device		   *pdev;
+	struct device		   	   *parent;
 	struct rtl8366_smi_platform_data   *pdata;
 	spinlock_t			   lock;
 	struct mii_bus			   *mii_bus;
@@ -884,7 +884,7 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366_smi *smi, int port,
 		}
 	}
 
-	dev_err(&smi->pdev->dev,
+	dev_err(smi->parent,
 		"All 16 vlan member configurations are in use\n");
 
 	return -EINVAL;
@@ -1088,7 +1088,7 @@ static ssize_t rtl8366_write_debugfs_reg(struct file *file,
 
 	len = min(count, sizeof(smi->buf) - 1);
 	if (copy_from_user(buf, user_buf, len)) {
-		dev_err(&smi->pdev->dev, "copy from user failed\n");
+		dev_err(smi->parent, "copy from user failed\n");
 		return -EFAULT;
 	}
 
@@ -1098,11 +1098,11 @@ static ssize_t rtl8366_write_debugfs_reg(struct file *file,
 
 
 	if (strict_strtoul(buf, 16, &data)) {
-		dev_err(&smi->pdev->dev, "Invalid reg value %s\n", buf);
+		dev_err(smi->parent, "Invalid reg value %s\n", buf);
 	} else {
 		err = rtl8366_smi_write_reg(smi, reg, data);
 		if (err) {
-			dev_err(&smi->pdev->dev,
+			dev_err(smi->parent,
 				"writing reg 0x%04x val 0x%04lx failed\n",
 				reg, data);
 		}
@@ -1139,28 +1139,28 @@ static void rtl8366_debugfs_init(struct rtl8366_smi *smi)
 		smi->debugfs_root = debugfs_create_dir("rtl8366s", NULL);
 
 	if (!smi->debugfs_root) {
-		dev_err(&smi->pdev->dev, "Unable to create debugfs dir\n");
+		dev_err(smi->parent, "Unable to create debugfs dir\n");
 		return;
 	}
 	root = smi->debugfs_root;
 
 	node = debugfs_create_x16("reg", S_IRUGO | S_IWUSR, root, &g_dbg_reg);
 	if (!node) {
-		dev_err(&smi->pdev->dev, "Creating debugfs file reg failed\n");
+		dev_err(smi->parent, "Creating debugfs file reg failed\n");
 		return;
 	}
 
 	node = debugfs_create_file("val", S_IRUGO | S_IWUSR, root, smi,
 				   &fops_rtl8366_regs);
 	if (!node) {
-		dev_err(&smi->pdev->dev, "Creating debugfs file val failed\n");
+		dev_err(smi->parent, "Creating debugfs file val failed\n");
 		return;
 	}
 
 	node = debugfs_create_file("vlan", S_IRUSR, root, smi,
 				   &fops_rtl8366_vlan);
 	if (!node) {
-		dev_err(&smi->pdev->dev,
+		dev_err(smi->parent,
 			"Creating debugfs file vlan failed\n");
 		return;
 	}
@@ -1168,7 +1168,7 @@ static void rtl8366_debugfs_init(struct rtl8366_smi *smi)
 	node = debugfs_create_file("mibs", S_IRUSR, root, smi,
 				   &fops_rtl8366_mibs);
 	if (!node) {
-		dev_err(&smi->pdev->dev,
+		dev_err(smi->parent,
 			"Creating debugfs file mibs failed\n");
 		return;
 	}
@@ -1676,11 +1676,11 @@ static int rtl8366_smi_switch_init(struct rtl8366_smi *smi)
 
 	memcpy(dev, &rtldev, sizeof(struct switch_dev));
 	dev->priv = smi;
-	dev->devname = dev_name(&smi->pdev->dev);
+	dev->devname = dev_name(smi->parent);
 
 	err = register_switch(dev, NULL);
 	if (err)
-		dev_err(&smi->pdev->dev, "switch registration failed\n");
+		dev_err(smi->parent, "switch registration failed\n");
 
 	return err;
 }
@@ -1734,8 +1734,8 @@ static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 	smi->mii_bus->read = rtl8366_smi_mii_read;
 	smi->mii_bus->write = rtl8366_smi_mii_write;
 	snprintf(smi->mii_bus->id, MII_BUS_ID_SIZE, "%s",
-			dev_name(&smi->pdev->dev));
-	smi->mii_bus->parent = &smi->pdev->dev;
+			dev_name(smi->parent));
+	smi->mii_bus->parent = smi->parent;
 	smi->mii_bus->phy_mask = ~(0x1f);
 	smi->mii_bus->irq = smi->mii_irq;
 	for (i = 0; i < PHY_MAX_ADDR; i++)
@@ -1773,7 +1773,7 @@ static int rtl8366_smi_setup(struct rtl8366_smi *smi)
 
 	ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_ID_REG, &chip_id);
 	if (ret) {
-		dev_err(&smi->pdev->dev, "unable to read chip id\n");
+		dev_err(smi->parent, "unable to read chip id\n");
 		return ret;
 	}
 
@@ -1781,18 +1781,18 @@ static int rtl8366_smi_setup(struct rtl8366_smi *smi)
 	case RTL8366S_CHIP_ID_8366:
 		break;
 	default:
-		dev_err(&smi->pdev->dev, "unknown chip id (%04x)\n", chip_id);
+		dev_err(smi->parent, "unknown chip id (%04x)\n", chip_id);
 		return -ENODEV;
 	}
 
 	ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_VERSION_CTRL_REG,
 				   &chip_ver);
 	if (ret) {
-		dev_err(&smi->pdev->dev, "unable to read chip version\n");
+		dev_err(smi->parent, "unable to read chip version\n");
 		return ret;
 	}
 
-	dev_info(&smi->pdev->dev, "RTL%04x ver. %u chip found\n",
+	dev_info(smi->parent, "RTL%04x ver. %u chip found\n",
 		 chip_id, chip_ver & RTL8366S_CHIP_VERSION_MASK);
 
 	rtl8366_debugfs_init(smi);
@@ -1839,7 +1839,7 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 		goto err_free_sda;
 	}
 
-	smi->pdev = pdev;
+	smi->parent = &pdev->dev;
 	smi->pdata = pdata;
 	spin_lock_init(&smi->lock);
 
