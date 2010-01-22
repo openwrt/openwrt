@@ -13,7 +13,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/delay.h>
-#include <linux/rtl8366_smi.h>
+#include <linux/rtl8366s.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -143,16 +143,16 @@ static struct gpio_button wndr3700_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct rtl8366_smi_platform_data wndr3700_rtl8366_smi_data = {
+static struct rtl8366s_platform_data wndr3700_rtl8366s_data = {
 	.gpio_sda        = WNDR3700_GPIO_RTL8366_SDA,
 	.gpio_sck        = WNDR3700_GPIO_RTL8366_SCK,
 };
 
-static struct platform_device wndr3700_rtl8366_smi_device = {
-	.name		= "rtl8366-smi",
+static struct platform_device wndr3700_rtl8366s_device = {
+	.name		= RTL8366S_DRIVER_NAME,
 	.id		= -1,
 	.dev = {
-		.platform_data	= &wndr3700_rtl8366_smi_data,
+		.platform_data	= &wndr3700_rtl8366s_data,
 	}
 };
 
@@ -163,14 +163,14 @@ static void __init wndr3700_setup(void)
 	ar71xx_set_mac_base(art);
 
 	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
-	ar71xx_eth0_data.mii_bus_dev = &wndr3700_rtl8366_smi_device.dev;
+	ar71xx_eth0_data.mii_bus_dev = &wndr3700_rtl8366s_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = 0xf;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_eth1_pll_data.pll_1000 = 0x11110000;
-	ar71xx_eth1_data.mii_bus_dev = &wndr3700_rtl8366_smi_device.dev;
+	ar71xx_eth1_data.mii_bus_dev = &wndr3700_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;
 
@@ -188,7 +188,7 @@ static void __init wndr3700_setup(void)
 				      ARRAY_SIZE(wndr3700_gpio_buttons),
 				      wndr3700_gpio_buttons);
 
-	platform_device_register(&wndr3700_rtl8366_smi_device);
+	platform_device_register(&wndr3700_rtl8366s_device);
 	platform_device_register_simple("wndr3700-led-usb", -1, NULL, 0);
 
 	ap94_pci_init(art + WNDR3700_CALDATA0_OFFSET,

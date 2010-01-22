@@ -14,7 +14,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/delay.h>
-#include <linux/rtl8366_smi.h>
+#include <linux/rtl8366s.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -130,16 +130,16 @@ static struct gpio_button dir825b1_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct rtl8366_smi_platform_data dir825b1_rtl8366_smi_data = {
+static struct rtl8366s_platform_data dir825b1_rtl8366s_data = {
 	.gpio_sda        = DIR825B1_GPIO_RTL8366_SDA,
 	.gpio_sck        = DIR825B1_GPIO_RTL8366_SCK,
 };
 
-static struct platform_device dir825b1_rtl8366_smi_device = {
-	.name		= "rtl8366-smi",
+static struct platform_device dir825b1_rtl8366s_device = {
+	.name		= RTL8366S_DRIVER_NAME,
 	.id		= -1,
 	.dev = {
-		.platform_data	= &dir825b1_rtl8366_smi_data,
+		.platform_data	= &dir825b1_rtl8366s_data,
 	}
 };
 
@@ -155,13 +155,13 @@ static void __init dir825b1_setup(void)
 
 	ar71xx_add_device_mdio(0x0);
 
-	ar71xx_eth0_data.mii_bus_dev = &dir825b1_rtl8366_smi_device.dev;
+	ar71xx_eth0_data.mii_bus_dev = &dir825b1_rtl8366s_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
 
-	ar71xx_eth1_data.mii_bus_dev = &dir825b1_rtl8366_smi_device.dev;
+	ar71xx_eth1_data.mii_bus_dev = &dir825b1_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;
 	ar71xx_eth1_pll_data.pll_1000 = 0x11110000;
@@ -180,7 +180,7 @@ static void __init dir825b1_setup(void)
 
 	ar71xx_add_device_usb();
 
-	platform_device_register(&dir825b1_rtl8366_smi_device);
+	platform_device_register(&dir825b1_rtl8366s_device);
 
 	ap94_pci_init((u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_0),
 		      (u8 *) KSEG1ADDR(DIR825B1_MAC_LOCATION_0),

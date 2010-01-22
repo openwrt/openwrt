@@ -12,7 +12,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/nxp_74hc153.h>
-#include <linux/rtl8366_smi.h>
+#include <linux/rtl8366s.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -212,16 +212,16 @@ static struct platform_device wzrhpg300nh_74hc153_device = {
 	}
 };
 
-static struct rtl8366_smi_platform_data wzrhpg300nh_rtl8366_smi_data = {
+static struct rtl8366s_platform_data wzrhpg300nh_rtl8366s_data = {
 	.gpio_sda        = WZRHPG300NH_GPIO_RTL8366_SDA,
 	.gpio_sck        = WZRHPG300NH_GPIO_RTL8366_SCK,
 };
 
-static struct platform_device wzrhpg300nh_rtl8366_smi_device = {
-	.name		= "rtl8366-smi",
+static struct platform_device wzrhpg300nh_rtl8366s_device = {
+	.name		= RTL8366S_DRIVER_NAME,
 	.id		= -1,
 	.dev = {
-		.platform_data	= &wzrhpg300nh_rtl8366_smi_data,
+		.platform_data	= &wzrhpg300nh_rtl8366s_data,
 	}
 };
 
@@ -232,14 +232,14 @@ static void __init wzrhpg300nh_setup(void)
 	ar71xx_set_mac_base(eeprom + WZRHPG300NH_MAC_OFFSET);
 
 	ar71xx_eth0_pll_data.pll_1000 = 0x1e000100;
-	ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366_smi_device.dev;
+	ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = 0xf;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_eth1_pll_data.pll_1000 = 0x1e000100;
-	ar71xx_eth1_data.mii_bus_dev = &wzrhpg300nh_rtl8366_smi_device.dev;
+	ar71xx_eth1_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;
 
@@ -251,7 +251,7 @@ static void __init wzrhpg300nh_setup(void)
 
 	platform_device_register(&wzrhpg300nh_74hc153_device);
 	platform_device_register(&wzrhpg300nh_flash_device);
-	platform_device_register(&wzrhpg300nh_rtl8366_smi_device);
+	platform_device_register(&wzrhpg300nh_rtl8366s_device);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wzrhpg300nh_leds_gpio),
 				    wzrhpg300nh_leds_gpio);

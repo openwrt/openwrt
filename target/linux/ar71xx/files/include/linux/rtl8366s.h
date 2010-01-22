@@ -1,17 +1,19 @@
 /*
- * Platform data definition for the Realtek RTL8366 ethernet switch driver
+ * Platform data definition for the Realtek RTL8366S ethernet switch driver
  *
- * Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
  */
 
-#ifndef _RTL8366_SMI_H
-#define _RTL8366_SMI_H
+#ifndef _RTL8366S_H
+#define _RTL8366S_H
 
-struct rtl8366_smi_platform_data {
+#define RTL8366S_DRIVER_NAME	"rtl8366s"
+
+struct rtl8366s_platform_data {
 	unsigned	gpio_sda;
 	unsigned	gpio_sck;
 };
