@@ -32,7 +32,6 @@ mac80211_hostapd_setup_base() {
 	cat > "$cfgfile" <<EOF
 ctrl_interface=/var/run/hostapd-$phy
 driver=nl80211
-wmm_enabled=1
 wmm_ac_bk_cwmin=4
 wmm_ac_bk_cwmax=10
 wmm_ac_bk_aifs=7
@@ -106,6 +105,7 @@ mac80211_hostapd_setup_bss() {
 	config_get_bool hidden "$vif" hidden 0
 	cat >> /var/run/hostapd-$phy.conf <<EOF
 $hostapd_cfg
+wmm_enabled=1
 bssid=$macaddr
 ignore_broadcast_ssid=$hidden
 EOF
