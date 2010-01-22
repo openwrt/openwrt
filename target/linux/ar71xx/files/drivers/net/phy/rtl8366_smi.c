@@ -25,9 +25,9 @@
 #include <linux/debugfs.h>
 #endif
 
-#define RTL8366_SMI_DRIVER_NAME	"rtl8366-smi"
-#define RTL8366_SMI_DRIVER_DESC	"Realtek RTL8366 switch driver"
-#define RTL8366_SMI_DRIVER_VER	"0.1.1"
+#define RTL8366S_DRIVER_NAME	"rtl8366-smi"
+#define RTL8366S_DRIVER_DESC	"Realtek RTL8366 switch driver"
+#define RTL8366S_DRIVER_VER	"0.1.1"
 
 #define RTL8366S_PHY_NO_MAX                 4
 #define RTL8366S_PHY_PAGE_MAX               7
@@ -482,8 +482,8 @@ static int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 	return ret;
 }
 
-static int rtl8366_smi_read_phy_reg(struct rtl8366s *rtl,
-				    u32 phy_no, u32 page, u32 addr, u32 *data)
+static int rtl8366s_read_phy_reg(struct rtl8366s *rtl,
+				 u32 phy_no, u32 page, u32 addr, u32 *data)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 reg;
@@ -518,8 +518,8 @@ static int rtl8366_smi_read_phy_reg(struct rtl8366s *rtl,
 	return 0;
 }
 
-static int rtl8366_smi_write_phy_reg(struct rtl8366s *rtl,
-				     u32 phy_no, u32 page, u32 addr, u32 data)
+static int rtl8366s_write_phy_reg(struct rtl8366s *rtl,
+				  u32 phy_no, u32 page, u32 addr, u32 data)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 reg;
@@ -771,7 +771,7 @@ static int rtl8366s_set_vlan_member_config(struct rtl8366s *rtl, u32 index,
 	return 0;
 }
 
-static int rtl8366_get_port_vlan_index(struct rtl8366s *rtl, int port,
+static int rtl8366s_get_port_vlan_index(struct rtl8366s *rtl, int port,
 				       int *val)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -793,14 +793,14 @@ static int rtl8366_get_port_vlan_index(struct rtl8366s *rtl, int port,
 
 }
 
-static int rtl8366_get_vlan_port_pvid(struct rtl8366s *rtl, int port,
-				      int *val)
+static int rtl8366s_get_vlan_port_pvid(struct rtl8366s *rtl, int port,
+				       int *val)
 {
 	struct rtl8366s_vlanconfig vlanmc;
 	int err;
 	int index;
 
-	err = rtl8366_get_port_vlan_index(rtl, port, &index);
+	err = rtl8366s_get_port_vlan_index(rtl, port, &index);
 	if (err)
 		return err;
 
@@ -812,8 +812,8 @@ static int rtl8366_get_vlan_port_pvid(struct rtl8366s *rtl, int port,
 	return 0;
 }
 
-static int rtl8366_set_port_vlan_index(struct rtl8366s *rtl, int port,
-				       int index)
+static int rtl8366s_set_port_vlan_index(struct rtl8366s *rtl, int port,
+					int index)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 data;
@@ -837,8 +837,7 @@ static int rtl8366_set_port_vlan_index(struct rtl8366s *rtl, int port,
 	return err;
 }
 
-static int rtl8366_set_vlan_port_pvid(struct rtl8366s *rtl, int port,
-				      int val)
+static int rtl8366s_set_vlan_port_pvid(struct rtl8366s *rtl, int port, int val)
 {
 	int i;
 	struct rtl8366s_vlanconfig vlanmc;
@@ -866,7 +865,7 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366s *rtl, int port,
 			rtl8366s_set_vlan_member_config(rtl, i, &vlanmc);
 
 			/* Now update PVID register settings */
-			rtl8366_set_port_vlan_index(rtl, port, i);
+			rtl8366s_set_port_vlan_index(rtl, port, i);
 
 			return 0;
 		}
@@ -893,7 +892,7 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366s *rtl, int port,
 			rtl8366s_set_vlan_member_config(rtl, i, &vlanmc);
 
 			/* Now update PVID register settings */
-			rtl8366_set_port_vlan_index(rtl, port, i);
+			rtl8366s_set_port_vlan_index(rtl, port, i);
 
 			return 0;
 		}
@@ -906,7 +905,7 @@ static int rtl8366_set_vlan_port_pvid(struct rtl8366s *rtl, int port,
 }
 
 
-static int rtl8366_vlan_set_vlan(struct rtl8366s *rtl, int enable)
+static int rtl8366s_vlan_set_vlan(struct rtl8366s *rtl, int enable)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 data = 0;
@@ -921,7 +920,7 @@ static int rtl8366_vlan_set_vlan(struct rtl8366s *rtl, int enable)
 	return rtl8366_smi_write_reg(smi, RTL8366_CHIP_GLOBAL_CTRL_REG, data);
 }
 
-static int rtl8366_vlan_set_4ktable(struct rtl8366s *rtl, int enable)
+static int rtl8366s_vlan_set_4ktable(struct rtl8366s *rtl, int enable)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 data = 0;
@@ -966,7 +965,7 @@ static int rtl8366s_reset_vlan(struct rtl8366s *rtl)
 
 	/* Set all ports PVID to default VLAN */
 	for (i = 0; i < RTL8366_NUM_PORTS; i++) {
-		err = rtl8366_set_vlan_port_pvid(rtl, i, 0);
+		err = rtl8366s_set_vlan_port_pvid(rtl, i, 0);
 		if (err)
 			return err;
 	}
@@ -975,15 +974,15 @@ static int rtl8366s_reset_vlan(struct rtl8366s *rtl)
 }
 
 #ifdef CONFIG_RTL8366_SMI_DEBUG_FS
-static int rtl8366_debugfs_open(struct inode *inode, struct file *file)
+static int rtl8366s_debugfs_open(struct inode *inode, struct file *file)
 {
 	file->private_data = inode->i_private;
 	return 0;
 }
 
-static ssize_t rtl8366_read_debugfs_mibs(struct file *file,
-					 char __user *user_buf,
-					 size_t count, loff_t *ppos)
+static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
+					  char __user *user_buf,
+					  size_t count, loff_t *ppos)
 {
 	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
 	int i, j, len = 0;
@@ -1029,9 +1028,9 @@ static ssize_t rtl8366_read_debugfs_mibs(struct file *file,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
-static ssize_t rtl8366_read_debugfs_vlan(struct file *file,
-					 char __user *user_buf,
-					 size_t count, loff_t *ppos)
+static ssize_t rtl8366s_read_debugfs_vlan(struct file *file,
+					  char __user *user_buf,
+					  size_t count, loff_t *ppos)
 {
 	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
 	int i, j, len = 0;
@@ -1055,7 +1054,7 @@ static ssize_t rtl8366_read_debugfs_vlan(struct file *file,
 
 		for (j = 0; j < RTL8366_NUM_PORTS; ++j) {
 			int index = 0;
-			if (!rtl8366_get_port_vlan_index(rtl, j, &index)) {
+			if (!rtl8366s_get_port_vlan_index(rtl, j, &index)) {
 				if (index == i)
 					len += snprintf(buf + len,
 							sizeof(rtl->buf) - len,
@@ -1068,9 +1067,9 @@ static ssize_t rtl8366_read_debugfs_vlan(struct file *file,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
-static ssize_t rtl8366_read_debugfs_reg(struct file *file,
-					char __user *user_buf,
-					size_t count, loff_t *ppos)
+static ssize_t rtl8366s_read_debugfs_reg(struct file *file,
+					 char __user *user_buf,
+					 size_t count, loff_t *ppos)
 {
 	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1093,9 +1092,9 @@ static ssize_t rtl8366_read_debugfs_reg(struct file *file,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
-static ssize_t rtl8366_write_debugfs_reg(struct file *file,
-					 const char __user *user_buf,
-					 size_t count, loff_t *ppos)
+static ssize_t rtl8366s_write_debugfs_reg(struct file *file,
+					  const char __user *user_buf,
+					  size_t count, loff_t *ppos)
 {
 	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1130,26 +1129,26 @@ static ssize_t rtl8366_write_debugfs_reg(struct file *file,
 	return count;
 }
 
-static const struct file_operations fops_rtl8366_regs = {
-	.read = rtl8366_read_debugfs_reg,
-	.write = rtl8366_write_debugfs_reg,
-	.open = rtl8366_debugfs_open,
+static const struct file_operations fops_rtl8366s_regs = {
+	.read = rtl8366s_read_debugfs_reg,
+	.write = rtl8366s_write_debugfs_reg,
+	.open = rtl8366s_debugfs_open,
 	.owner = THIS_MODULE
 };
 
-static const struct file_operations fops_rtl8366_vlan = {
-	.read = rtl8366_read_debugfs_vlan,
-	.open = rtl8366_debugfs_open,
+static const struct file_operations fops_rtl8366s_vlan = {
+	.read = rtl8366s_read_debugfs_vlan,
+	.open = rtl8366s_debugfs_open,
 	.owner = THIS_MODULE
 };
 
-static const struct file_operations fops_rtl8366_mibs = {
-	.read = rtl8366_read_debugfs_mibs,
-	.open = rtl8366_debugfs_open,
+static const struct file_operations fops_rtl8366s_mibs = {
+	.read = rtl8366s_read_debugfs_mibs,
+	.open = rtl8366s_debugfs_open,
 	.owner = THIS_MODULE
 };
 
-static void rtl8366_debugfs_init(struct rtl8366s *rtl)
+static void rtl8366s_debugfs_init(struct rtl8366s *rtl)
 {
 	struct dentry *node;
 	struct dentry *root;
@@ -1170,14 +1169,14 @@ static void rtl8366_debugfs_init(struct rtl8366s *rtl)
 	}
 
 	node = debugfs_create_file("val", S_IRUGO | S_IWUSR, root, rtl,
-				   &fops_rtl8366_regs);
+				   &fops_rtl8366s_regs);
 	if (!node) {
 		dev_err(rtl->parent, "Creating debugfs file val failed\n");
 		return;
 	}
 
 	node = debugfs_create_file("vlan", S_IRUSR, root, rtl,
-				   &fops_rtl8366_vlan);
+				   &fops_rtl8366s_vlan);
 	if (!node) {
 		dev_err(rtl->parent,
 			"Creating debugfs file vlan failed\n");
@@ -1185,7 +1184,7 @@ static void rtl8366_debugfs_init(struct rtl8366s *rtl)
 	}
 
 	node = debugfs_create_file("mibs", S_IRUSR, root, rtl,
-				   &fops_rtl8366_mibs);
+				   &fops_rtl8366s_mibs);
 	if (!node) {
 		dev_err(rtl->parent,
 			"Creating debugfs file mibs failed\n");
@@ -1193,7 +1192,7 @@ static void rtl8366_debugfs_init(struct rtl8366s *rtl)
 	}
 }
 
-static void rtl8366_debugfs_remove(struct rtl8366s *rtl)
+static void rtl8366s_debugfs_remove(struct rtl8366s *rtl)
 {
 	if (rtl->debugfs_root) {
 		debugfs_remove_recursive(rtl->debugfs_root);
@@ -1202,13 +1201,13 @@ static void rtl8366_debugfs_remove(struct rtl8366s *rtl)
 }
 
 #else
-static inline void rtl8366_debugfs_init(struct rtl8366s *rtl) {}
-static inline void rtl8366_debugfs_remove(struct rtl8366s *rtl) {}
+static inline void rtl8366s_debugfs_init(struct rtl8366s *rtl) {}
+static inline void rtl8366s_debugfs_remove(struct rtl8366s *rtl) {}
 #endif /* CONFIG_RTL8366_SMI_DEBUG_FS */
 
-static int rtl8366_sw_reset_mibs(struct switch_dev *dev,
-				 const struct switch_attr *attr,
-				 struct switch_val *val)
+static int rtl8366s_sw_reset_mibs(struct switch_dev *dev,
+				  const struct switch_attr *attr,
+				  struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1223,9 +1222,9 @@ static int rtl8366_sw_reset_mibs(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,
-				      const struct switch_attr *attr,
-				      struct switch_val *val)
+static int rtl8366s_sw_get_vlan_enable(struct switch_dev *dev,
+				       const struct switch_attr *attr,
+				       struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1250,9 +1249,9 @@ static int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_get_blinkrate(struct switch_dev *dev,
-				    const struct switch_attr *attr,
-				    struct switch_val *val)
+static int rtl8366s_sw_get_blinkrate(struct switch_dev *dev,
+				     const struct switch_attr *attr,
+				     struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1265,7 +1264,7 @@ static int rtl8366_sw_get_blinkrate(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_set_blinkrate(struct switch_dev *dev,
+static int rtl8366s_sw_set_blinkrate(struct switch_dev *dev,
 				    const struct switch_attr *attr,
 				    struct switch_val *val)
 {
@@ -1286,19 +1285,19 @@ static int rtl8366_sw_set_blinkrate(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_set_vlan_enable(struct switch_dev *dev,
-				      const struct switch_attr *attr,
-				      struct switch_val *val)
+static int rtl8366s_sw_set_vlan_enable(struct switch_dev *dev,
+				       const struct switch_attr *attr,
+				       struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 
 	if (attr->ofs == 1)
-		return rtl8366_vlan_set_vlan(rtl, val->value.i);
+		return rtl8366s_vlan_set_vlan(rtl, val->value.i);
 	else
-		return rtl8366_vlan_set_4ktable(rtl, val->value.i);
+		return rtl8366s_vlan_set_4ktable(rtl, val->value.i);
 }
 
-static const char *rtl8366_speed_str(unsigned speed)
+static const char *rtl8366s_speed_str(unsigned speed)
 {
 	switch (speed) {
 	case 0:
@@ -1312,9 +1311,9 @@ static const char *rtl8366_speed_str(unsigned speed)
 	return "unknown";
 }
 
-static int rtl8366_sw_get_port_link(struct switch_dev *dev,
-				    const struct switch_attr *attr,
-				    struct switch_val *val)
+static int rtl8366s_sw_get_port_link(struct switch_dev *dev,
+				     const struct switch_attr *attr,
+				     struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1334,7 +1333,7 @@ static int rtl8366_sw_get_port_link(struct switch_dev *dev,
 			"port:%d link:%s speed:%s %s-duplex %s%s%s",
 			val->port_vlan,
 			(data & RTL8366S_PORT_STATUS_LINK_MASK) ? "up" : "down",
-			rtl8366_speed_str(data &
+			rtl8366s_speed_str(data &
 					  RTL8366S_PORT_STATUS_SPEED_MASK),
 			(data & RTL8366S_PORT_STATUS_DUPLEX_MASK) ?
 				"full" : "half",
@@ -1350,9 +1349,9 @@ static int rtl8366_sw_get_port_link(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_get_vlan_info(struct switch_dev *dev,
-				    const struct switch_attr *attr,
-				    struct switch_val *val)
+static int rtl8366s_sw_get_vlan_info(struct switch_dev *dev,
+				     const struct switch_attr *attr,
+				     struct switch_val *val)
 {
 	int i;
 	u32 len = 0;
@@ -1374,7 +1373,7 @@ static int rtl8366_sw_get_vlan_info(struct switch_dev *dev,
 
 	for (i = 0; i < RTL8366_NUM_PORTS; ++i) {
 		int index = 0;
-		if (!rtl8366_get_port_vlan_index(rtl, i, &index) &&
+		if (!rtl8366s_get_port_vlan_index(rtl, i, &index) &&
 		    index == val->port_vlan)
 			len += snprintf(buf + len, sizeof(rtl->buf) - len,
 					"%d", i);
@@ -1399,9 +1398,9 @@ static int rtl8366_sw_get_vlan_info(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_set_port_led(struct switch_dev *dev,
-				   const struct switch_attr *attr,
-				   struct switch_val *val)
+static int rtl8366s_sw_set_port_led(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1425,9 +1424,9 @@ static int rtl8366_sw_set_port_led(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_get_port_led(struct switch_dev *dev,
-				   const struct switch_attr *attr,
-				   struct switch_val *val)
+static int rtl8366s_sw_get_port_led(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1442,9 +1441,9 @@ static int rtl8366_sw_get_port_led(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_reset_port_mibs(struct switch_dev *dev,
-				      const struct switch_attr *attr,
-				      struct switch_val *val)
+static int rtl8366s_sw_reset_port_mibs(struct switch_dev *dev,
+				       const struct switch_attr *attr,
+				       struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1460,9 +1459,9 @@ static int rtl8366_sw_reset_port_mibs(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_get_port_mib(struct switch_dev *dev,
-				   const struct switch_attr *attr,
-				   struct switch_val *val)
+static int rtl8366s_sw_get_port_mib(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	int i, len = 0;
@@ -1492,8 +1491,8 @@ static int rtl8366_sw_get_port_mib(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_get_vlan_ports(struct switch_dev *dev,
-				     struct switch_val *val)
+static int rtl8366s_sw_get_vlan_ports(struct switch_dev *dev,
+				      struct switch_val *val)
 {
 	struct rtl8366s_vlanconfig vlanmc;
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
@@ -1520,8 +1519,8 @@ static int rtl8366_sw_get_vlan_ports(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_set_vlan_ports(struct switch_dev *dev,
-				     struct switch_val *val)
+static int rtl8366s_sw_set_vlan_ports(struct switch_dev *dev,
+				      struct switch_val *val)
 {
 	struct rtl8366s_vlanconfig vlanmc;
 	struct rtl8366s_vlan4kentry vlan4k;
@@ -1554,19 +1553,19 @@ static int rtl8366_sw_set_vlan_ports(struct switch_dev *dev,
 	return 0;
 }
 
-static int rtl8366_sw_get_port_pvid(struct switch_dev *dev, int port, int *val)
+static int rtl8366s_sw_get_port_pvid(struct switch_dev *dev, int port, int *val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
-	return rtl8366_get_vlan_port_pvid(rtl, port, val);
+	return rtl8366s_get_vlan_port_pvid(rtl, port, val);
 }
 
-static int rtl8366_sw_set_port_pvid(struct switch_dev *dev, int port, int val)
+static int rtl8366s_sw_set_port_pvid(struct switch_dev *dev, int port, int val)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
-	return rtl8366_set_vlan_port_pvid(rtl, port, val);
+	return rtl8366s_set_vlan_port_pvid(rtl, port, val);
 }
 
-static int rtl8366_sw_reset_switch(struct switch_dev *dev)
+static int rtl8366s_sw_reset_switch(struct switch_dev *dev)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	struct rtl8366_smi *smi = &rtl->smi;
@@ -1592,28 +1591,28 @@ static int rtl8366_sw_reset_switch(struct switch_dev *dev)
 	return rtl8366s_reset_vlan(rtl);
 }
 
-static struct switch_attr rtl8366_globals[] = {
+static struct switch_attr rtl8366s_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
-		.set = rtl8366_sw_set_vlan_enable,
-		.get = rtl8366_sw_get_vlan_enable,
+		.set = rtl8366s_sw_set_vlan_enable,
+		.get = rtl8366s_sw_get_vlan_enable,
 		.max = 1,
 		.ofs = 1
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan4k",
 		.description = "Enable VLAN 4K mode",
-		.set = rtl8366_sw_set_vlan_enable,
-		.get = rtl8366_sw_get_vlan_enable,
+		.set = rtl8366s_sw_set_vlan_enable,
+		.get = rtl8366s_sw_get_vlan_enable,
 		.max = 1,
 		.ofs = 2
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "reset_mibs",
 		.description = "Reset all MIB counters",
-		.set = rtl8366_sw_reset_mibs,
+		.set = rtl8366s_sw_reset_mibs,
 		.get = NULL,
 		.max = 1
 	}, {
@@ -1621,26 +1620,26 @@ static struct switch_attr rtl8366_globals[] = {
 		.name = "blinkrate",
 		.description = "Get/Set LED blinking rate (0 = 43ms, 1 = 84ms,"
 		" 2 = 120ms, 3 = 170ms, 4 = 340ms, 5 = 670ms)",
-		.set = rtl8366_sw_set_blinkrate,
-		.get = rtl8366_sw_get_blinkrate,
+		.set = rtl8366s_sw_set_blinkrate,
+		.get = rtl8366s_sw_get_blinkrate,
 		.max = 5
 	},
 };
 
-static struct switch_attr rtl8366_port[] = {
+static struct switch_attr rtl8366s_port[] = {
 	{
 		.type = SWITCH_TYPE_STRING,
 		.name = "link",
 		.description = "Get port link information",
 		.max = 1,
 		.set = NULL,
-		.get = rtl8366_sw_get_port_link,
+		.get = rtl8366s_sw_get_port_link,
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "reset_mib",
 		.description = "Reset single port MIB counters",
 		.max = 1,
-		.set = rtl8366_sw_reset_port_mibs,
+		.set = rtl8366s_sw_reset_port_mibs,
 		.get = NULL,
 	}, {
 		.type = SWITCH_TYPE_STRING,
@@ -1648,61 +1647,61 @@ static struct switch_attr rtl8366_port[] = {
 		.description = "Get MIB counters for port",
 		.max = 33,
 		.set = NULL,
-		.get = rtl8366_sw_get_port_mib,
+		.get = rtl8366s_sw_get_port_mib,
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "led",
 		.description = "Get/Set port group (0 - 3) led mode (0 - 15)",
 		.max = 15,
-		.set = rtl8366_sw_set_port_led,
-		.get = rtl8366_sw_get_port_led,
+		.set = rtl8366s_sw_set_port_led,
+		.get = rtl8366s_sw_get_port_led,
 	},
 };
 
-static struct switch_attr rtl8366_vlan[] = {
+static struct switch_attr rtl8366s_vlan[] = {
 	{
 		.type = SWITCH_TYPE_STRING,
 		.name = "info",
 		.description = "Get vlan information",
 		.max = 1,
 		.set = NULL,
-		.get = rtl8366_sw_get_vlan_info,
+		.get = rtl8366s_sw_get_vlan_info,
 	},
 };
 
 
 /* template */
-static struct switch_dev rtldev = {
+static struct switch_dev rtl8366_switch_dev = {
 	.name = "RTL8366S",
 	.cpu_port = RTL8366_PORT_NUM_CPU,
 	.ports = RTL8366_NUM_PORTS,
 	.vlans = RTL8366_NUM_VLANS,
 	.attr_global = {
-		.attr = rtl8366_globals,
-		.n_attr = ARRAY_SIZE(rtl8366_globals),
+		.attr = rtl8366s_globals,
+		.n_attr = ARRAY_SIZE(rtl8366s_globals),
 	},
 	.attr_port = {
-		.attr = rtl8366_port,
-		.n_attr = ARRAY_SIZE(rtl8366_port),
+		.attr = rtl8366s_port,
+		.n_attr = ARRAY_SIZE(rtl8366s_port),
 	},
 	.attr_vlan = {
-		.attr = rtl8366_vlan,
-		.n_attr = ARRAY_SIZE(rtl8366_vlan),
+		.attr = rtl8366s_vlan,
+		.n_attr = ARRAY_SIZE(rtl8366s_vlan),
 	},
 
-	.get_vlan_ports = rtl8366_sw_get_vlan_ports,
-	.set_vlan_ports = rtl8366_sw_set_vlan_ports,
-	.get_port_pvid = rtl8366_sw_get_port_pvid,
-	.set_port_pvid = rtl8366_sw_set_port_pvid,
-	.reset_switch = rtl8366_sw_reset_switch,
+	.get_vlan_ports = rtl8366s_sw_get_vlan_ports,
+	.set_vlan_ports = rtl8366s_sw_set_vlan_ports,
+	.get_port_pvid = rtl8366s_sw_get_port_pvid,
+	.set_port_pvid = rtl8366s_sw_set_port_pvid,
+	.reset_switch = rtl8366s_sw_reset_switch,
 };
 
-static int rtl8366_smi_switch_init(struct rtl8366s *rtl)
+static int rtl8366s_switch_init(struct rtl8366s *rtl)
 {
 	struct switch_dev *dev = &rtl->dev;
 	int err;
 
-	memcpy(dev, &rtldev, sizeof(struct switch_dev));
+	memcpy(dev, &rtl8366_switch_dev, sizeof(struct switch_dev));
 	dev->priv = rtl;
 	dev->devname = dev_name(rtl->parent);
 
@@ -1713,39 +1712,38 @@ static int rtl8366_smi_switch_init(struct rtl8366s *rtl)
 	return err;
 }
 
-static void rtl8366_smi_switch_cleanup(struct rtl8366s *rtl)
+static void rtl8366s_switch_cleanup(struct rtl8366s *rtl)
 {
 	unregister_switch(&rtl->dev);
 }
 
-static int rtl8366_smi_mii_read(struct mii_bus *bus, int addr, int reg)
+static int rtl8366s_mii_read(struct mii_bus *bus, int addr, int reg)
 {
 	struct rtl8366s *rtl = bus->priv;
 	u32 val = 0;
 	int err;
 
-	err = rtl8366_smi_read_phy_reg(rtl, addr, 0, reg, &val);
+	err = rtl8366s_read_phy_reg(rtl, addr, 0, reg, &val);
 	if (err)
 		return 0xffff;
 
 	return val;
 }
 
-static int rtl8366_smi_mii_write(struct mii_bus *bus, int addr, int reg,
-				     u16 val)
+static int rtl8366s_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 {
 	struct rtl8366s *rtl = bus->priv;
 	u32 t;
 	int err;
 
-	err = rtl8366_smi_write_phy_reg(rtl, addr, 0, reg, val);
+	err = rtl8366s_write_phy_reg(rtl, addr, 0, reg, val);
 	/* flush write */
-	(void) rtl8366_smi_read_phy_reg(rtl, addr, 0, reg, &t);
+	(void) rtl8366s_read_phy_reg(rtl, addr, 0, reg, &t);
 
 	return err;
 }
 
-static int rtl8366_smi_mii_init(struct rtl8366s *rtl)
+static int rtl8366s_mii_init(struct rtl8366s *rtl)
 {
 	int ret;
 	int i;
@@ -1758,8 +1756,8 @@ static int rtl8366_smi_mii_init(struct rtl8366s *rtl)
 
 	rtl->mii_bus->priv = (void *) rtl;
 	rtl->mii_bus->name = "rtl8366-rtl";
-	rtl->mii_bus->read = rtl8366_smi_mii_read;
-	rtl->mii_bus->write = rtl8366_smi_mii_write;
+	rtl->mii_bus->read = rtl8366s_mii_read;
+	rtl->mii_bus->write = rtl8366s_mii_write;
 	snprintf(rtl->mii_bus->id, MII_BUS_ID_SIZE, "%s",
 		 dev_name(rtl->parent));
 	rtl->mii_bus->parent = rtl->parent;
@@ -1780,19 +1778,19 @@ static int rtl8366_smi_mii_init(struct rtl8366s *rtl)
 	return ret;
 }
 
-static void rtl8366_smi_mii_cleanup(struct rtl8366s *rtl)
+static void rtl8366s_mii_cleanup(struct rtl8366s *rtl)
 {
 	mdiobus_unregister(rtl->mii_bus);
 	mdiobus_free(rtl->mii_bus);
 }
 
-static int rtl8366_smi_mii_bus_match(struct mii_bus *bus)
+static int rtl8366s_mii_bus_match(struct mii_bus *bus)
 {
-	return (bus->read == rtl8366_smi_mii_read &&
-		bus->write == rtl8366_smi_mii_write);
+	return (bus->read == rtl8366s_mii_read &&
+		bus->write == rtl8366s_mii_write);
 }
 
-static int rtl8366_smi_setup(struct rtl8366s *rtl)
+static int rtl8366s_setup(struct rtl8366s *rtl)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 chip_id = 0;
@@ -1823,7 +1821,7 @@ static int rtl8366_smi_setup(struct rtl8366s *rtl)
 	dev_info(rtl->parent, "RTL%04x ver. %u chip found\n",
 		 chip_id, chip_ver & RTL8366S_CHIP_VERSION_MASK);
 
-	rtl8366_debugfs_init(rtl);
+	rtl8366s_debugfs_init(rtl);
 
 	return 0;
 }
@@ -1868,7 +1866,7 @@ static void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 	gpio_free(smi->gpio_sda);
 }
 
-static int __init rtl8366_smi_probe(struct platform_device *pdev)
+static int __init rtl8366s_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
 	struct rtl8366_smi_platform_data *pdata;
@@ -1877,8 +1875,8 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 	int err;
 
 	if (!rtl8366_smi_version_printed++)
-		printk(KERN_NOTICE RTL8366_SMI_DRIVER_DESC
-		       " version " RTL8366_SMI_DRIVER_VER"\n");
+		printk(KERN_NOTICE RTL8366S_DRIVER_DESC
+		       " version " RTL8366S_DRIVER_VER"\n");
 
 	pdata = pdev->dev.platform_data;
 	if (!pdata) {
@@ -1907,22 +1905,22 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, rtl);
 
-	err = rtl8366_smi_setup(rtl);
+	err = rtl8366s_setup(rtl);
 	if (err)
 		goto err_clear_drvdata;
 
-	err = rtl8366_smi_mii_init(rtl);
+	err = rtl8366s_mii_init(rtl);
 	if (err)
 		goto err_clear_drvdata;
 
-	err = rtl8366_smi_switch_init(rtl);
+	err = rtl8366s_switch_init(rtl);
 	if (err)
 		goto err_mii_cleanup;
 
 	return 0;
 
  err_mii_cleanup:
-	rtl8366_smi_mii_cleanup(rtl);
+	rtl8366s_mii_cleanup(rtl);
  err_clear_drvdata:
 	platform_set_drvdata(pdev, NULL);
 	rtl8366_smi_cleanup(smi);
@@ -1932,40 +1930,40 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 	return err;
 }
 
-static int rtl8366_phy_config_init(struct phy_device *phydev)
+static int rtl8366s_phy_config_init(struct phy_device *phydev)
 {
-	if (!rtl8366_smi_mii_bus_match(phydev->bus))
+	if (!rtl8366s_mii_bus_match(phydev->bus))
 		return -EINVAL;
 
 	return 0;
 }
 
-static int rtl8366_phy_config_aneg(struct phy_device *phydev)
+static int rtl8366s_phy_config_aneg(struct phy_device *phydev)
 {
 	return 0;
 }
 
-static struct phy_driver rtl8366_smi_phy_driver = {
+static struct phy_driver rtl8366s_phy_driver = {
 	.phy_id		= 0x001cc960,
 	.name		= "Realtek RTL8366",
 	.phy_id_mask	= 0x1ffffff0,
 	.features	= PHY_GBIT_FEATURES,
-	.config_aneg	= rtl8366_phy_config_aneg,
-	.config_init    = rtl8366_phy_config_init,
+	.config_aneg	= rtl8366s_phy_config_aneg,
+	.config_init    = rtl8366s_phy_config_init,
 	.read_status	= genphy_read_status,
 	.driver		= {
 		.owner = THIS_MODULE,
 	},
 };
 
-static int __devexit rtl8366_smi_remove(struct platform_device *pdev)
+static int __devexit rtl8366s_remove(struct platform_device *pdev)
 {
 	struct rtl8366s *rtl = platform_get_drvdata(pdev);
 
 	if (rtl) {
-		rtl8366_smi_switch_cleanup(rtl);
-		rtl8366_debugfs_remove(rtl);
-		rtl8366_smi_mii_cleanup(rtl);
+		rtl8366s_switch_cleanup(rtl);
+		rtl8366s_debugfs_remove(rtl);
+		rtl8366s_mii_cleanup(rtl);
 		platform_set_drvdata(pdev, NULL);
 		rtl8366_smi_cleanup(&rtl->smi);
 		kfree(rtl);
@@ -1974,44 +1972,44 @@ static int __devexit rtl8366_smi_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver rtl8366_smi_driver = {
+static struct platform_driver rtl8366s_driver = {
 	.driver = {
-		.name		= RTL8366_SMI_DRIVER_NAME,
+		.name		= RTL8366S_DRIVER_NAME,
 		.owner		= THIS_MODULE,
 	},
-	.probe		= rtl8366_smi_probe,
-	.remove		= __devexit_p(rtl8366_smi_remove),
+	.probe		= rtl8366s_probe,
+	.remove		= __devexit_p(rtl8366s_remove),
 };
 
-static int __init rtl8366_smi_module_init(void)
+static int __init rtl8366s_module_init(void)
 {
 	int ret;
-	ret = platform_driver_register(&rtl8366_smi_driver);
+	ret = platform_driver_register(&rtl8366s_driver);
 	if (ret)
 		return ret;
 
-	ret = phy_driver_register(&rtl8366_smi_phy_driver);
+	ret = phy_driver_register(&rtl8366s_phy_driver);
 	if (ret)
 		goto err_platform_unregister;
 
 	return 0;
 
  err_platform_unregister:
-	platform_driver_unregister(&rtl8366_smi_driver);
+	platform_driver_unregister(&rtl8366s_driver);
 	return ret;
 }
-module_init(rtl8366_smi_module_init);
+module_init(rtl8366s_module_init);
 
-static void __exit rtl8366_smi_exit(void)
+static void __exit rtl8366s_module_exit(void)
 {
-	phy_driver_unregister(&rtl8366_smi_phy_driver);
-	platform_driver_unregister(&rtl8366_smi_driver);
+	phy_driver_unregister(&rtl8366s_phy_driver);
+	platform_driver_unregister(&rtl8366s_driver);
 }
-module_exit(rtl8366_smi_exit);
+module_exit(rtl8366s_module_exit);
 
-MODULE_DESCRIPTION(RTL8366_SMI_DRIVER_DESC);
-MODULE_VERSION(RTL8366_SMI_DRIVER_VER);
+MODULE_DESCRIPTION(RTL8366S_DRIVER_DESC);
+MODULE_VERSION(RTL8366S_DRIVER_VER);
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_AUTHOR("Antti Seppälä <a.seppala@gmail.com>");
 MODULE_LICENSE("GPL v2");
-MODULE_ALIAS("platform:" RTL8366_SMI_DRIVER_NAME);
+MODULE_ALIAS("platform:" RTL8366S_DRIVER_NAME);
