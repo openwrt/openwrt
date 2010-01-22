@@ -173,6 +173,15 @@ choice
 
 endchoice
 
+config STRIP_ARGS
+	string
+	prompt "Strip arguments"
+	depends USE_STRIP
+	default "--strip-unneeded --remove-section=.comment --remove-section=.note" if DEBUG
+	default "--strip-all"
+	help
+	  Specifies arguments passed to the strip command when stripping binaries
+
 config USE_MKLIBS
 	bool "Strip unnecessary functions from libraries"
 	help
