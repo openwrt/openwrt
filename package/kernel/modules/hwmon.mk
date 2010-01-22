@@ -26,10 +26,15 @@ endef
 $(eval $(call KernelPackage,hwmon-core))
 
 
-define KernelPackage/hwmon-lm75
+define KernelPackage/hwmon/Depends
   SUBMENU:=$(HWMON_MENU)
+  DEPENDS:=kmod-hwmon-core $(1)
+endef
+
+
+define KernelPackage/hwmon-lm75
+$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
   TITLE:=LM75 monitoring support
-  DEPENDS:=kmod-hwmon-core +kmod-i2c-core
   KCONFIG:=CONFIG_SENSORS_LM75
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,lm75)
@@ -43,9 +48,8 @@ $(eval $(call KernelPackage,hwmon-lm75))
 
 
 define KernelPackage/hwmon-lm77
-  SUBMENU:=$(HWMON_MENU)
+$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
   TITLE:=LM77 monitoring support
-  DEPENDS:=kmod-hwmon-core +kmod-i2c-core
   KCONFIG:=CONFIG_SENSORS_LM77
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,lm77)
@@ -58,9 +62,8 @@ endef
 $(eval $(call KernelPackage,hwmon-lm77))
 
 define KernelPackage/hwmon-lm90
-  SUBMENU:=$(HWMON_MENU)
+$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
   TITLE:=LM90 monitoring support
-  DEPENDS:=kmod-hwmon-core +kmod-i2c-core
   KCONFIG:=CONFIG_SENSORS_LM90
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm90.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,lm90)
@@ -73,9 +76,8 @@ endef
 $(eval $(call KernelPackage,hwmon-lm90))
 
 define KernelPackage/hwmon-pc87360
-  SUBMENU:=$(HWMON_MENU)
+$(call KernelPackage/hwmon/Depends,@TARGET_x86)
   TITLE:=PC87360 monitoring support
-  DEPENDS:=kmod-hwmon-core @TARGET_x86
   KCONFIG:= \
 	CONFIG_SENSORS_PC87360 \
 	CONFIG_HWMON_VID
@@ -92,9 +94,8 @@ endef
 $(eval $(call KernelPackage,hwmon-pc87360))
 
 define KernelPackage/hwmon-w83627hf
-  SUBMENU:=$(HWMON_MENU)
+$(call KernelPackage/hwmon/Depends,@TARGET_rdc||TARGET_x86)
   TITLE:=Winbond W83627HF monitoring support
-  DEPENDS:=kmod-hwmon-core @TARGET_x86||TARGET_rdc
   KCONFIG:= \
 	CONFIG_SENSORS_W83627HF \
 	CONFIG_HWMON_VID

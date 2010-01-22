@@ -56,10 +56,15 @@ endef
 $(eval $(call KernelPackage,crypto-core))
 
 
-define KernelPackage/crypto-hw-padlock
+define KernelPackage/crypto/Depends
   SUBMENU:=$(CRYPTO_MENU)
+  DEPENDS:=kmod-crypto-core $(1)
+endef
+
+
+define KernelPackage/crypto-hw-padlock
+$(call KernelPackage/crypto/Depends,)
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PADLOCK \
@@ -75,9 +80,8 @@ $(eval $(call KernelPackage,crypto-hw-padlock))
 
 
 define KernelPackage/crypto-hw-geode
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=AMD Geode hardware crypto module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
@@ -89,9 +93,8 @@ $(eval $(call KernelPackage,crypto-hw-geode))
 
 
 define KernelPackage/crypto-hw-hifn-795x
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,+kmod-crypto-des @!TARGET_ubicom32)
   TITLE:=HIFN 795x crypto accelerator
-  DEPENDS:=+kmod-crypto-core +kmod-crypto-des @!TARGET_ubicom32
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
@@ -104,10 +107,8 @@ $(eval $(call KernelPackage,crypto-hw-hifn-795x))
 
 
 define KernelPackage/crypto-hw-ixp4xx
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,@TARGET_ixp4xx +kmod-crypto-des +kmod-crypto-authenc)
   TITLE:=Intel IXP4xx hardware crypto module
-  DEPENDS:= \
-	@TARGET_ixp4xx +kmod-crypto-core +kmod-crypto-des +kmod-crypto-authenc
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_IXP4XX
@@ -123,10 +124,8 @@ $(eval $(call KernelPackage,crypto-hw-ixp4xx))
 
 
 define KernelPackage/crypto-hw-ppc4xx
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,@TARGET_ppc40x||TARGET_ppc44x)
   TITLE:=AMCC PPC4xx hardware crypto module
-  DEPENDS:= \
-	@TARGET_ppc40x||TARGET_ppc44x +kmod-crypto-core
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PPC4XX
@@ -142,9 +141,8 @@ $(eval $(call KernelPackage,crypto-hw-ppc4xx))
 
 
 define KernelPackage/crypto-aes
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=AES cipher CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_AES CONFIG_CRYPTO_AES_586
   FILES:=$(LINUX_DIR)/crypto/aes$(AES_SUFFIX).$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX))
@@ -159,9 +157,8 @@ $(eval $(call KernelPackage,crypto-aes))
 
 
 define KernelPackage/crypto-arc4
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=ARC4 (RC4) cipher CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_ARC4
   FILES:=$(LINUX_DIR)/crypto/arc4.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,arc4)
@@ -171,9 +168,8 @@ $(eval $(call KernelPackage,crypto-arc4))
 
 
 define KernelPackage/crypto-authenc
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=Combined mode wrapper for IPsec
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_AUTHENC
   FILES:=$(LINUX_DIR)/crypto/authenc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,authenc)
@@ -182,9 +178,8 @@ endef
 $(eval $(call KernelPackage,crypto-authenc))
 
 define KernelPackage/crypto-des
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=DES/3DES cipher CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_DES
   FILES:=$(LINUX_DIR)/crypto/des$(DES_SUFFIX).$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,des$(DES_SUFFIX))
@@ -194,9 +189,8 @@ $(eval $(call KernelPackage,crypto-des))
 
 
 define KernelPackage/crypto-hmac
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=HMAC digest CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_HMAC
   FILES:=$(LINUX_DIR)/crypto/hmac.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,hmac)
@@ -206,9 +200,8 @@ $(eval $(call KernelPackage,crypto-hmac))
 
 
 define KernelPackage/crypto-md5
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=MD5 digest CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_MD5
   FILES:=$(LINUX_DIR)/crypto/md5.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,md5)
@@ -218,9 +211,8 @@ $(eval $(call KernelPackage,crypto-md5))
 
 
 define KernelPackage/crypto-michael-mic
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=Michael MIC keyed digest CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_MICHAEL_MIC
   FILES:=$(LINUX_DIR)/crypto/michael_mic.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,michael_mic)
@@ -230,9 +222,8 @@ $(eval $(call KernelPackage,crypto-michael-mic))
 
 
 define KernelPackage/crypto-sha1
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=SHA1 digest CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_SHA1
   FILES:=$(LINUX_DIR)/crypto/sha1$(SHA1_SUFFIX).$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,sha1$(SHA1_SUFFIX))
@@ -242,9 +233,8 @@ $(eval $(call KernelPackage,crypto-sha1))
 
 
 define KernelPackage/crypto-misc
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=Other CryptoAPI modules
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:= \
 	CONFIG_CRYPTO_ANUBIS \
 	CONFIG_CRYPTO_BLOWFISH \
@@ -288,10 +278,10 @@ endef
 
 $(eval $(call KernelPackage,crypto-misc))
 
+
 define KernelPackage/crypto-ocf
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,@!TARGET_uml)
   TITLE:=OCF modules
-  DEPENDS:=+kmod-crypto-core @!TARGET_uml
   KCONFIG:= \
 	CONFIG_OCF_OCF \
 	CONFIG_OCF_CRYPTODEV \
@@ -313,9 +303,8 @@ $(eval $(call KernelPackage,crypto-ocf))
 
 
 define KernelPackage/crypto-null
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=Null CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_NULL
   FILES:=$(LINUX_DIR)/crypto/crypto_null.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,crypto_null)
@@ -325,9 +314,8 @@ $(eval $(call KernelPackage,crypto-null))
 
 
 define KernelPackage/crypto-test
-  SUBMENU:=$(CRYPTO_MENU)
+$(call KernelPackage/crypto/Depends,)
   TITLE:=Test CryptoAPI module
-  DEPENDS:=+kmod-crypto-core
   KCONFIG:=CONFIG_CRYPTO_TEST
   FILES:=$(LINUX_DIR)/crypto/tcrypt.$(LINUX_KMOD_SUFFIX)
 endef
