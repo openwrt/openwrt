@@ -408,7 +408,7 @@ enable_mac80211() {
 		start_hostapd=1
 	done
 
-	[ -n "$start_hostapd" ] || return
+	[ -n "$start_hostapd" ] || return 0
 
 	hostapd -P /var/run/wifi-$phy.pid -B /var/run/hostapd-$phy.conf || {
 		echo "Failed to start hostapd for $phy"
