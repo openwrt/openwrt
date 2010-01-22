@@ -42,7 +42,7 @@ scan_broadcom() {
 
 	local _c=
 	for vif in ${adhoc_if:-$sta_if $ap_if $mon_if}; do
-		config_set "$vif" ifname "wl0${_c:+.$_c}"
+		config_set "$vif" ifname "${device}${_c:+.$_c}"
 		_c=$((${_c:-0} + 1))
 	done
 	config_set "$device" vifs "${adhoc_if:-$sta_if $ap_if $mon_if}"
@@ -93,13 +93,14 @@ scan_broadcom() {
 }
 
 disable_broadcom() {
-	set_wifi_down "$1"
-	wlc down
+	local device="$1"
+	set_wifi_down "$device"
+	wlc ifname "$device" down
 	(
 		include /lib/network
 
 		# make sure the interfaces are down and removed from all bridges
-		for dev in wl0 wl0.1 wl0.2 wl0.3; do
+		for dev in $device ${device}.1 ${device}.2 ${device}.3; do
 			ifconfig "$dev" down 2>/dev/null >/dev/null && {
 				unbridge "$dev"
 			}
@@ -109,6 +110,7 @@ disable_broadcom() {
 }
 
 enable_broadcom() {
+	local device="$1"
 	local _c
 	config_get channel "$device" channel
 	config_get country "$device" country
@@ -285,7 +287,7 @@ enable_broadcom() {
 		_c=$(($_c + 1))
 	done
 	killall -KILL nas >&- 2>&-
-	wlc stdin <<EOF
+	wlc ifname "$device" stdin <<EOF
 $ifdown
 
 apsta $apsta
@@ -319,7 +321,7 @@ up
 $vif_post_up
 EOF
 	eval "$if_up"
-	wlc stdin <<EOF
+	wlc ifname "$device" stdin <<EOF
 $vif_do_up
 EOF
 
@@ -333,11 +335,13 @@ EOF
 
 
 detect_broadcom() {
-	[ -f /proc/net/wl0 ] || return
-	config_get type wl0 type
-	[ "$type" = broadcom ] && return
-	cat <<EOF
-config wifi-device  wl0
+	local i=0
+
+	while [ -f /proc/net/wl$((i++)) ]; do
+		config_get type wl${i} type
+		[ "$type" = broadcom ] && continue
+		cat <<EOF
+config wifi-device  wl${i}
 	option type     broadcom
 	option channel  5
 
@@ -345,10 +349,12 @@ config wifi-device  wl0
 	option disabled 1
 
 config wifi-iface
-	option device   wl0
+	option device   wl${i}
 	option network	lan
 	option mode     ap
-	option ssid     OpenWrt
+	option ssid     OpenWrt${i#0}
 	option encryption none
+
 EOF
+	done
 }
