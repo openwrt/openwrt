@@ -126,9 +126,9 @@ endif
 
 
 define Image/mkfs/prepare/default
-	- find $(TARGET_DIR) -type f -not -perm +0100 -not -name 'ssh_host*' | $(XARGS) chmod 0644
-	- find $(TARGET_DIR) -type f -perm +0100 | $(XARGS) chmod 0755
-	- find $(TARGET_DIR) -type d | $(XARGS) chmod 0755
+	- $(FIND) $(TARGET_DIR) -type f -not -perm +0100 -not -name 'ssh_host*' -print0 | $(XARGS) -0 chmod 0644
+	- $(FIND) $(TARGET_DIR) -type f -perm +0100 -print0 | $(XARGS) -0 chmod 0755
+	- $(FIND) $(TARGET_DIR) -type d -print0 | $(XARGS) -0 chmod 0755
 	$(INSTALL_DIR) $(TARGET_DIR)/tmp
 	chmod 0777 $(TARGET_DIR)/tmp
 endef
