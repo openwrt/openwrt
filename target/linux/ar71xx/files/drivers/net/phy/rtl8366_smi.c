@@ -1801,6 +1801,46 @@ static int rtl8366_smi_setup(struct rtl8366_smi *smi)
 	return 0;
 }
 
+static int __init rtl8366_smi_init(struct rtl8366_smi *smi)
+{
+	int err;
+
+	if (!smi->parent)
+		return -EINVAL;
+
+	err = gpio_request(smi->gpio_sda, dev_name(smi->parent));
+	if (err) {
+		dev_err(smi->parent, "gpio_request failed for %u, err=%d\n",
+			smi->gpio_sda, err);
+		goto err_out;
+	}
+
+	err = gpio_request(smi->gpio_sck, dev_name(smi->parent));
+	if (err) {
+		dev_err(smi->parent, "gpio_request failed for %u, err=%d\n",
+			smi->gpio_sck, err);
+		goto err_free_sda;
+	}
+
+	spin_lock_init(&smi->lock);
+
+	dev_info(smi->parent, "using GPIO pins %u (SDA) and %u (SCK)\n",
+		 smi->gpio_sda, smi->gpio_sck);
+
+	return 0;
+
+ err_free_sda:
+	gpio_free(smi->gpio_sda);
+ err_out:
+	return err;
+}
+
+static void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
+{
+	gpio_free(smi->gpio_sck);
+	gpio_free(smi->gpio_sda);
+}
+
 static int __init rtl8366_smi_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
@@ -1826,30 +1866,15 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
+	smi->parent = &pdev->dev;
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
 
-	err = gpio_request(smi->gpio_sda, dev_name(&pdev->dev));
-	if (err) {
-		dev_err(&pdev->dev, "gpio_request failed for %u, err=%d\n",
-			smi->gpio_sda, err);
+	err = rtl8366_smi_init(smi);
+	if (err)
 		goto err_free_smi;
-	}
-
-	err = gpio_request(smi->gpio_sck, dev_name(&pdev->dev));
-	if (err) {
-		dev_err(&pdev->dev, "gpio_request failed for %u, err=%d\n",
-			smi->gpio_sck, err);
-		goto err_free_sda;
-	}
-
-	smi->parent = &pdev->dev;
-	spin_lock_init(&smi->lock);
 
 	platform_set_drvdata(pdev, smi);
-
-	dev_info(&pdev->dev, "using GPIO pins %u (SDA) and %u (SCK)\n",
-		 smi->gpio_sda, smi->gpio_sck);
 
 	err = rtl8366_smi_setup(smi);
 	if (err)
@@ -1869,9 +1894,6 @@ static int __init rtl8366_smi_probe(struct platform_device *pdev)
 	rtl8366_smi_mii_cleanup(smi);
  err_clear_drvdata:
 	platform_set_drvdata(pdev, NULL);
-	gpio_free(pdata->gpio_sck);
- err_free_sda:
-	gpio_free(pdata->gpio_sda);
  err_free_smi:
 	kfree(smi);
  err_out:
@@ -1913,8 +1935,7 @@ static int __devexit rtl8366_smi_remove(struct platform_device *pdev)
 		rtl8366_debugfs_remove(smi);
 		rtl8366_smi_mii_cleanup(smi);
 		platform_set_drvdata(pdev, NULL);
-		gpio_free(smi->gpio_sck);
-		gpio_free(smi->gpio_sda);
+		rtl8366_smi_cleanup(smi);
 		kfree(smi);
 	}
 
@@ -1930,7 +1951,7 @@ static struct platform_driver rtl8366_smi_driver = {
 	.remove		= __devexit_p(rtl8366_smi_remove),
 };
 
-static int __init rtl8366_smi_init(void)
+static int __init rtl8366_smi_module_init(void)
 {
 	int ret;
 	ret = platform_driver_register(&rtl8366_smi_driver);
@@ -1947,7 +1968,7 @@ static int __init rtl8366_smi_init(void)
 	platform_driver_unregister(&rtl8366_smi_driver);
 	return ret;
 }
-module_init(rtl8366_smi_init);
+module_init(rtl8366_smi_module_init);
 
 static void __exit rtl8366_smi_exit(void)
 {
