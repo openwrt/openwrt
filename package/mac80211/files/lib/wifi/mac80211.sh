@@ -174,12 +174,13 @@ disable_mac80211() (
 	# kill all running hostapd and wpa_supplicant processes that
 	# are running on atheros/mac80211 vifs
 	for pid in `pidof hostapd wpa_supplicant`; do
-		grep "$phy" /proc/$pid/cmdline >/dev/null && \
+		grep -E "($phy|wlan)" /proc/$pid/cmdline >/dev/null && \
 			kill $pid
 	done
 
 	include /lib/network
 	for wdev in $(ls /sys/class/ieee80211/${phy}/device/net 2>/dev/null); do
+		[ -f "/var/run/$wdev.pid" ] && kill $(cat /var/run/$wdev.pid) >&/dev/null 2>&1
 		ifconfig "$wdev" down 2>/dev/null
 		unbridge "$dev"
 		iw dev "$wdev" del
