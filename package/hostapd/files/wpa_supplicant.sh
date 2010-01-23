@@ -86,6 +86,7 @@ wpa_supplicant_setup_vif() {
 	config_get ssid "$vif" ssid
 	config_get bssid "$vif" bssid
 	bssid=${bssid:+"bssid=$bssid"}
+	rm -rf /var/run/wpa_supplicant-$ifname
 	cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
 ctrl_interface=/var/run/wpa_supplicant-$ifname
 network={
