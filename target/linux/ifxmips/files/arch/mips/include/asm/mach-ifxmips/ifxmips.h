@@ -223,7 +223,7 @@
 #define MDIO_ACC_READ			0x40000000
 #define MDIO_ACC_ADDR_MASK		0x1f
 #define MDIO_ACC_ADDR_OFFSET		0x15
-#define MDIO_ACC_REG_MASK		0xff
+#define MDIO_ACC_REG_MASK		0x1f
 #define MDIO_ACC_REG_OFFSET		0x10
 #define MDIO_ACC_VAL_MASK		0xffff
 
