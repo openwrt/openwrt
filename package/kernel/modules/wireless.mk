@@ -7,49 +7,10 @@
 
 WIRELESS_MENU:=Wireless Drivers
 
-# NOTE: dependency on 2.6 was removed since it was inherited by kmod-hostap
-#       and prevented it from even showing up in menuconfig on 2.4
-define KernelPackage/ieee80211
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=802.11 Networking stack
-  DEPENDS:=+kmod-crypto-core kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic @LINUX_2_4||@LINUX_2_6_21||LINUX_2_6_25
-  KCONFIG:= \
-	CONFIG_IEEE80211 \
-	CONFIG_IEEE80211_CRYPT_WEP \
-	CONFIG_IEEE80211_CRYPT_CCMP \
-	CONFIG_IEEE80211_CRYPT_TKIP
-  FILES:= \
-  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/ieee80211/ieee80211.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt_wep.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt_tkip.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/ieee80211/ieee80211_crypt_ccmp.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,10, \
-	ieee80211_crypt \
-	ieee80211 \
-	ieee80211_crypt_wep \
-	ieee80211_crypt_tkip \
-	ieee80211_crypt_ccmp \
-  )
-endef
-
-define KernelPackage/ieee80211/description
- Kernel modules for 802.11 Networking stack
- Includes:
- - ieee80211_crypt
- - ieee80211
- - ieee80211_crypt_wep
- - ieee80211_crypt_tkip
- - ieee80211_crytp_ccmp
-endef
-
-$(eval $(call KernelPackage,ieee80211))
-
-
 define KernelPackage/lib80211
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=802.11 Networking stack
-  DEPENDS:=@LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32
+  DEPENDS:=@!LINUX_2_4
   KCONFIG:= \
 	CONFIG_LIB80211 \
 	CONFIG_LIB80211_CRYPT_WEP \
@@ -83,7 +44,7 @@ $(eval $(call KernelPackage,lib80211))
 define KernelPackage/net-libipw
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=libipw for ipw2100 and ipw2200
-  DEPENDS:=@PCI_SUPPORT +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211 @LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32
+  DEPENDS:=@PCI_SUPPORT +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211
   KCONFIG:=CONFIG_LIBIPW
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/libipw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,49,libipw)
@@ -99,7 +60,7 @@ $(eval $(call KernelPackage,net-libipw))
 define KernelPackage/net-ipw2100
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intel IPW2100 driver
-  DEPENDS:=@PCI_SUPPORT +!(LINUX_2_6_30||LINUX_2_6_31):kmod-ieee80211 +LINUX_2_6_30||LINUX_2_6_31:kmod-net-libipw
+  DEPENDS:=@PCI_SUPPORT +kmod-net-libipw
   KCONFIG:=CONFIG_IPW2100
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/ipw2100.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2100)
@@ -117,7 +78,7 @@ $(eval $(call KernelPackage,net-ipw2100))
 define KernelPackage/net-ipw2200
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intel IPW2200 driver
-  DEPENDS:=@PCI_SUPPORT +!(LINUX_2_6_30||LINUX_2_6_31):kmod-ieee80211 +LINUX_2_6_30||LINUX_2_6_31:kmod-net-libipw
+  DEPENDS:=@PCI_SUPPORT +kmod-net-libipw
   KCONFIG:=CONFIG_IPW2200
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/ipw2200.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ipw2200)
