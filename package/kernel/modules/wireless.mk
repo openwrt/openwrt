@@ -12,7 +12,7 @@ WIRELESS_MENU:=Wireless Drivers
 define KernelPackage/ieee80211
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=802.11 Networking stack
-  DEPENDS:=+kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic @LINUX_2_4||@LINUX_2_6_21||LINUX_2_6_25
+  DEPENDS:=+kmod-crypto-core kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic @LINUX_2_4||@LINUX_2_6_21||LINUX_2_6_25
   KCONFIG:= \
 	CONFIG_IEEE80211 \
 	CONFIG_IEEE80211_CRYPT_WEP \
@@ -83,7 +83,7 @@ $(eval $(call KernelPackage,lib80211))
 define KernelPackage/net-libipw
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=libipw for ipw2100 and ipw2200
-  DEPENDS:=@PCI_SUPPORT +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211 @LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32
+  DEPENDS:=@PCI_SUPPORT +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211 @LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32
   KCONFIG:=CONFIG_LIBIPW
   FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/libipw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,49,libipw)
