@@ -218,8 +218,8 @@ endef
 
 define Build/Compile/wpad
 	echo ` \
-		$(call Build/RunMake,hostapd,MULTICALL=1 dump_cflags); \
-		$(call Build/RunMake,wpa_supplicant,dump_cflags) | sed -e 's,$(TARGET_CFLAGS),,' \
+		$(call Build/RunMake,hostapd,-s MULTICALL=1 dump_cflags); \
+		$(call Build/RunMake,wpa_supplicant,-s dump_cflags) | sed -e 's,$(TARGET_CFLAGS),,' \
 	` > $(PKG_BUILD_DIR)/.cflags
 	$(call Build/RunMake,hostapd, \
 		CFLAGS="$$$$(cat $(PKG_BUILD_DIR)/.cflags)" \
