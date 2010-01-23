@@ -15,7 +15,7 @@ INITRAMFS_EXTRA_FILES:=
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += admswconfig hostapd-mini kmod-input-core \
+DEFAULT_PACKAGES += admswconfig wpad-mini kmod-input-core \
 		    kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug \
 		    kmod-leds-gpio kmod-ledtrig-adm5120-switch
 
