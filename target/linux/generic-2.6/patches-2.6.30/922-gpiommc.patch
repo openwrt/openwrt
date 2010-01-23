@@ -618,7 +618,7 @@
 +
 +config GPIOMMC
 +	tristate "MMC/SD over GPIO-based SPI"
-+	depends on MMC && MMC_SPI && SPI_GPIO
++	depends on MMC && MMC_SPI && SPI_GPIO_OLD
 +	help
 +	  This driver hooks up the mmc_spi and spi_gpio modules so that
 +	  MMC/SD cards can be used on a GPIO based bus by bitbanging
