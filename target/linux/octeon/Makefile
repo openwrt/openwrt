@@ -16,7 +16,7 @@ LINUX_VERSION:=2.6.30.10
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += hostapd-mini
+DEFAULT_PACKAGES += wpad-mini
 
 define Target/Description
 	Build firmware images for Cavium Networks Octeon-based boards.

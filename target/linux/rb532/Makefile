@@ -14,6 +14,6 @@ FEATURES:=jffs2 pci tgz
 LINUX_VERSION:=2.6.30.10
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += hostapd-mini kmod-madwifi kmod-input-rb532
+DEFAULT_PACKAGES += wpad-mini kmod-madwifi kmod-input-rb532
 
 $(eval $(call BuildTarget))

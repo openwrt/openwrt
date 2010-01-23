@@ -15,7 +15,7 @@ SUBTARGETS=au1500 au1550
 LINUX_VERSION:=2.6.30.10
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += hostapd-mini yamonenv
+DEFAULT_PACKAGES += wpad-mini yamonenv
 
 define Target/Description
 	Build firmware for RMI/AMD Alchemy 1500,1550 boards
