@@ -48,7 +48,7 @@
 +
 +	switch(c) {
 +	case '1':
-+		if (xtables_check_inverse(optarg, &invert, NULL, 0))
++		if (xtables_check_inverse(optarg, &invert, NULL, 0, argv))
 +			xtables_error(PARAMETER_PROBLEM,
 +				   "Unexpected `!' after --todev");
 +		mr->todev=atoi(optarg);
@@ -80,7 +80,7 @@
 +static struct xtables_target imq_target = {
 +	.name		= "IMQ",
 +	.version	= XTABLES_VERSION,
-+	.family		= AF_INET,
++	.family		= NFPROTO_IPV4,
 +	.size		= XT_ALIGN(sizeof(struct xt_imq_info)),
 +	.userspacesize	= XT_ALIGN(sizeof(struct xt_imq_info)),
 +	.help		= IMQ_help,
@@ -94,7 +94,7 @@
 +static struct xtables_target imq_target6 = {
 +	.name		= "IMQ",
 +	.version	= XTABLES_VERSION,
-+	.family		= AF_INET6,
++	.family		= NFPROTO_IPV6,
 +	.size		= XT_ALIGN(sizeof(struct xt_imq_info)),
 +	.userspacesize	= XT_ALIGN(sizeof(struct xt_imq_info)),
 +	.help		= IMQ_help,

@@ -9,17 +9,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
-PKG_VERSION:=1.4.4
-PKG_RELEASE:=3
+PKG_VERSION:=1.4.6
+PKG_RELEASE:=1
 
-PKG_MD5SUM:=08cd9196881657ea0615d926334cb7e9
+PKG_MD5SUM:=c67cf30e281a924def6426be0973df56
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.be.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
-
-PATCH_DIR:=./patches/$(PKG_VERSION)
 
 PKG_FIXUP = libtool
 
@@ -336,7 +334,7 @@ endef
 
 define Package/libiptc/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiptc.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libip*tc.so* $(1)/usr/lib/
 endef
 
 define Package/libxtables/install
