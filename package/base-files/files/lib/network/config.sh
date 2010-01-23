@@ -233,48 +233,50 @@ setup_interface_alias() {
 }
 
 setup_interface() {
-	local iface="$1"
+	local iface_main="$1"
 	local config="$2"
 	local proto="$3"
 	local vifmac="$4"
+	local ip6addr_main=
 
 	[ -n "$config" ] || {
-		config=$(find_config "$iface")
+		config=$(find_config "$iface_main")
 		[ "$?" = 0 ] || return 1
 	}
 
-	prepare_interface "$iface" "$config" "$vifmac" || return 0
+	prepare_interface "$iface_main" "$config" "$vifmac" || return 0
 
-	[ "$iface" = "br-$config" ] && {
+	[ "$iface_main" = "br-$config" ] && {
 		# need to bring up the bridge and wait a second for
 		# it to switch to the 'forwarding' state, otherwise
 		# it will lose its routes...
-		ifconfig "$iface" up
+		ifconfig "$iface_main" up
 		sleep 1
 	}
 
 	# Interface settings
-	grep "$iface:" /proc/net/dev > /dev/null && {
+	grep "$iface_main:" /proc/net/dev > /dev/null && {
 		local mtu macaddr
 		config_get mtu "$config" mtu
 		config_get macaddr "$config" macaddr
-		[ -n "$macaddr" ] && $DEBUG ifconfig "$iface" down
-		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
+		[ -n "$macaddr" ] && $DEBUG ifconfig "$iface_main" down
+		$DEBUG ifconfig "$iface_main" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
 	}
-	set_interface_ifname "$config" "$iface"
+	set_interface_ifname "$config" "$iface_main"
 
-	pidfile="/var/run/$iface.pid"
+	pidfile="/var/run/$iface_main.pid"
 	[ -n "$proto" ] || config_get proto "$config" proto
 	case "$proto" in
 		static)
-			setup_interface_static "$iface" "$config"
+			config_get ip6addr_main "$config" ip6addr
+			setup_interface_static "$iface_main" "$config"
 		;;
 		dhcp)
 			# prevent udhcpc from starting more than once
-			lock "/var/lock/dhcp-$iface"
+			lock "/var/lock/dhcp-$iface_main"
 			local pid="$(cat "$pidfile" 2>/dev/null)"
 			if [ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null; then
-				lock -u "/var/lock/dhcp-$iface"
+				lock -u "/var/lock/dhcp-$iface_main"
 			else
 				local ipaddr netmask hostname proto1 clientid
 				config_get ipaddr "$config" ipaddr
@@ -284,21 +286,21 @@ setup_interface() {
 				config_get clientid "$config" clientid
 
 				[ -z "$ipaddr" ] || \
-					$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
+					$DEBUG ifconfig "$iface_main" "$ipaddr" ${netmask:+netmask "$netmask"}
 
 				# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
 				local dhcpopts
 				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
-				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -O rootpath -R &}
-				lock -u "/var/lock/dhcp-$iface"
+				$DEBUG eval udhcpc -t 0 -i "$iface_main" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -O rootpath -R &}
+				lock -u "/var/lock/dhcp-$iface_main"
 			fi
 		;;
 		none)
-			setup_interface_none "$iface" "$config"
+			setup_interface_none "$iface_main" "$config"
 		;;
 		*)
 			if ( eval "type setup_interface_$proto" ) >/dev/null 2>/dev/null; then
-				eval "setup_interface_$proto '$iface' '$config' '$proto'"
+				eval "setup_interface_$proto '$iface_main' '$config' '$proto'"
 			else
 				echo "Interface type $proto not supported."
 				return 1
@@ -306,7 +308,7 @@ setup_interface() {
 		;;
 	esac
 	[ "$proto" = none ] || {
-		for ifn in `ifconfig | grep "^$iface:" | awk '{print $1}'`; do
+		for ifn in `ifconfig | grep "^$iface_main:" | awk '{print $1}'`; do
 			ifconfig "$ifn" down
 		done
 	}
@@ -314,9 +316,15 @@ setup_interface() {
 	local aliases
 	config_set "$config" aliases ""
 	config_set "$config" alias_count 0
-	config_foreach setup_interface_alias alias "$config" "$iface"
+	config_foreach setup_interface_alias alias "$config" "$iface_main"
 	config_get aliases "$config" aliases
 	[ -z "$aliases" ] || uci_set_state network "$config" aliases "$aliases"
+
+	# put the ip6addr back to the beginning to become the main ip again
+	[ -z "$ip6addr_main" ] || {
+		$DEBUG ifconfig "$iface_main" del "$ip6addr_main"
+		$DEBUG ifconfig "$iface_main" add "$ip6addr_main"
+	}
 }
 
 unbridge() {
