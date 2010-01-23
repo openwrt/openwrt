@@ -788,7 +788,7 @@ $(eval $(call KernelPackage,cs5535-gpio))
 define KernelPackage/textsearch
 SUBMENU:=$(OTHER_MENU)
   TITLE:=Textsearch support is selected if needed
-  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21
+  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
     CONFIG_TEXTSEARCH=y \
     CONFIG_TEXTSEARCH_KMP \

@@ -355,7 +355,7 @@ define KernelPackage/fs-btrfs
 	CONFIG_BTRFS_FS \
 	CONFIG_BTRFS_FS_POSIX_ACL=n
   # for crc32c
-  DEPENDS:=+kmod-crypto-core @!LINUX_2_6_21&&!LINUX_2_6_25
+  DEPENDS:=+kmod-crypto-core
   FILES:=\
 	$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/lib/libcrc32c.$(LINUX_KMOD_SUFFIX) \

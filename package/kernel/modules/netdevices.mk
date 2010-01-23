@@ -290,7 +290,7 @@ define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
   FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_TIGON3
-  DEPENDS:=@LINUX_2_6 +LINUX_2_6_30||LINUX_2_6_31:kmod-libphy @!TARGET_ubicom32
+  DEPENDS:=@LINUX_2_6 +kmod-libphy @!TARGET_ubicom32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   AUTOLOAD:=$(call AutoLoad,50,tg3)
 endef
@@ -363,7 +363,7 @@ $(eval $(call KernelPackage,gigaset))
 define KernelPackage/macvlan
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=MAC-VLAN support
-  DEPENDS:=@LINUX_2_6 @!LINUX_2_6_21
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_MACVLAN
   FILES:=$(LINUX_DIR)/drivers/net/macvlan.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,macvlan)
