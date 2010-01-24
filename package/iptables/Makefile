@@ -256,7 +256,6 @@ TARGET_CPPFLAGS := \
 
 CONFIGURE_ARGS += \
 	--enable-shared \
-	--enable-static \
 	--enable-devel \
 	--enable-ipv6 \
 	--with-kernel="$(LINUX_DIR)" \
