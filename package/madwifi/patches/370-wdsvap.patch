@@ -794,7 +794,7 @@
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -3471,13 +3519,54 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3471,13 +3519,56 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  		 */
  		if (ic->ic_flags & IEEE80211_F_SCAN) {
  			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, rtsf);
@@ -822,13 +822,15 @@
 +					if (!memcmp(avp->wds_mac, wh->i_addr2, IEEE80211_ADDR_LEN)) {
 +						if (avp->iv_state != IEEE80211_S_RUN)
 +							continue;
++						if (!avp->iv_wdsnode)
++							continue;
 +						found = 1;
 +						break;
 +					}
 +				}
 +				if (found)
 +					ni = ni_or_null = avp->iv_wdsnode;
-+			} else if (vap->iv_opmode == IEEE80211_M_WDS) {
++			} else if ((vap->iv_opmode == IEEE80211_M_WDS) && vap->iv_wdsnode) {
 +				found = 1;
 +				ni = ni_or_null = vap->iv_wdsnode;
 +			}
@@ -854,7 +856,7 @@
  			} else {
  				/*
  				 * Copy data from beacon to neighbor table.
-@@ -3490,6 +3579,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3490,6 +3581,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  				IEEE80211_ADDR_COPY(ni->ni_bssid, wh->i_addr3);
  				memcpy(ni->ni_tstamp.data, scan.tstamp,
  					sizeof(ni->ni_tstamp));
