@@ -1,6 +1,7 @@
 /*
  *  Ralink SoC specific prom routines
  *
+ *  Copyright (C) 2010 Joonas Lahtinen <joonas.lahtinen@gmail.com>
  *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -28,6 +29,9 @@ static struct board_rec boards[] __initdata = {
 	{
 		.name		= "RT-N15",
 		.mach_type	= RAMIPS_MACH_RT_N15,
+	}, {
+		.name		= "WZR-AGL300NH",
+		.mach_type	= RAMIPS_MACH_WZR_AGL300NH,
 	}, {
 		.name		= "DIR-300-revB",
 		.mach_type	= RAMIPS_MACH_DIR_300_REVB,

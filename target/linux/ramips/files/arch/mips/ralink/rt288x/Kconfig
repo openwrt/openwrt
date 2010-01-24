@@ -7,6 +7,11 @@ config RT288X_MACH_RT_N15
 	default y
 	select RALINK_DEV_GPIO_LEDS
 
+config RT288X_MACH_WZR_AGL300NH
+	bool "Buffalo WZR-AGL300NH board support"
+	default y
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif
