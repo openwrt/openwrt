@@ -327,7 +327,7 @@
  			int found = 0;
  
  			IEEE80211_LOCK_IRQ(vap->iv_ic);
-@@ -3551,10 +3561,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3553,10 +3563,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  					ni->ni_associd |= 0xc000;
  					avp->iv_wdsnode = ieee80211_ref_node(ni);
  					IEEE80211_UNLOCK_IRQ(ic);
@@ -341,7 +341,7 @@
  			} else {
  				/*
  				 * Copy data from beacon to neighbor table.
-@@ -3593,6 +3605,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3595,6 +3607,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  				ni->ni_rssi = rssi;
  				ni->ni_rtsf = rtsf;
  				ni->ni_last_rx = jiffies;

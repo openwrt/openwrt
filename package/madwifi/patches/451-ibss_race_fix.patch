@@ -53,13 +53,13 @@
  			int found = 0;
  
  			IEEE80211_LOCK_IRQ(vap->iv_ic);
-@@ -3568,14 +3561,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3570,14 +3563,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  					}
  				}
  				if (found)
 -					ni = ni_or_null = avp->iv_wdsnode;
 +					tni = ieee80211_ref_node(avp->iv_wdsnode);
- 			} else if (vap->iv_opmode == IEEE80211_M_WDS) {
+ 			} else if ((vap->iv_opmode == IEEE80211_M_WDS) && vap->iv_wdsnode) {
  				found = 1;
 -				ni = ni_or_null = vap->iv_wdsnode;
 -			} else if (vap->iv_opmode == IEEE80211_M_IBSS) {
@@ -72,7 +72,7 @@
  				found = 1;
  			}
  			IEEE80211_UNLOCK_IRQ(vap->iv_ic);
-@@ -3583,20 +3574,21 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3585,20 +3576,21 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  			if (!found)
  				break;
  
@@ -100,7 +100,7 @@
  			} else {
  				/*
  				 * Copy data from beacon to neighbor table.
-@@ -3604,39 +3596,38 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3606,39 +3598,38 @@ ieee80211_recv_mgmt(struct ieee80211vap 
  				 * ieee80211_add_neighbor(), so we just copy
  				 * everything over to be safe.
  				 */
