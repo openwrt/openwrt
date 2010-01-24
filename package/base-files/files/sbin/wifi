@@ -61,7 +61,7 @@ wifi_fixup_hwmode() {
 		11g) hwmode=g;;
 		11n*)
 			hwmode_11n="${hwmode##11n}"
-			case "$hwmode" in
+			case "$hwmode_11n" in
 				a|g) ;;
 				default) hwmode_11n="$default"
 			esac
