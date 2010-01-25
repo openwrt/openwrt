@@ -1,0 +1,10 @@
+#!/bin/sh
+
+check_skip() {
+    if [ "$firsboot_skip_next" = "true" ]; then
+	return 0
+    else 
+	return 1
+    fi
+}
+

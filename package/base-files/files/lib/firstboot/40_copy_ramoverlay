@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+copy_ramoverlay() {
+    # try to avoid fs changing while copying
+    mount -o remount,ro none / 2>&-
+    # copy ramoverlay to jffs2
+    echo -n "copying files ... "
+    cp -a /tmp/root/* /rom/jffs 2>&-
+    echo "done"
+}
+
+boot_hook_add switch2jffs copy_ramoverlay

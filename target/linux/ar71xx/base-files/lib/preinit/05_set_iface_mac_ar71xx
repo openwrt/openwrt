@@ -1,0 +1,39 @@
+#
+# Copyright (C) 2009 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+fetch_mac_from_mtd() {
+	local mtd_part=$1
+	local lan_env=$2
+	local wan_env=$3
+	local mtd mac
+
+	mtd=$(grep $mtd_part /proc/mtd | cut -d: -f1)
+	[ -z $mtd ] && return
+
+	mac=$(grep $lan_env /dev/$mtd | cut -d= -f2)
+	[ ! -z $mac ] && ifconfig eth0 hw ether $mac 2>/dev/null
+
+	mac=$(grep $wan_env /dev/$mtd | cut -d= -f2)
+	[ ! -z $mac ] && ifconfig eth1 hw ether $mac 2>/dev/null
+}
+
+preinit_set_mac_address() {
+	case $(ar71xx_board_name) in
+		tew-632brp)
+			fetch_mac_from_mtd config lan_mac wan_mac
+			;;
+		dir-615-c1)
+			fetch_mac_from_mtd config lan_mac wan_mac
+			echo 1 > /sys/class/leds/dir-615-c1:green:wancpu/brightness
+			;;
+		wrt160nl)
+			fetch_mac_from_mtd nvram lan_hwaddr wan_hwaddr
+			;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_set_mac_address
+

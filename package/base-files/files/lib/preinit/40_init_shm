@@ -1,0 +1,10 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+init_shm() {
+    [ -d /dev/shm ] || mkdir -p /dev/shm
+}
+
+boot_hook_add preinit_essential init_shm
+

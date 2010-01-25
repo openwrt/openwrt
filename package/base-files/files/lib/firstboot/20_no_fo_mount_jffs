@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+no_fo_mount_jffs() {
+    # initialize jffs2
+    mount "$mtdpart" /jffs -t jffs2 || exit
+    
+    # workaround to ensure that union can attach properly
+    sync
+    ls /jffs >/dev/null
+}
+
+boot_hook_add no_fo no_fo_mount_jffs

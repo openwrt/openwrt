@@ -1,0 +1,19 @@
+#!/bin/sh
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+mount_no_jffs2() {
+    echo "jffs2 not ready yet; using ramdisk"
+    ramoverlay
+}
+
+check_for_jffs2() {
+    check_skip || {
+	jffs2_ready || {
+	    mount_no_jffs2 && pi_mount_skip_next=true
+	}
+    }
+}
+
+boot_hook_add preinit_mount_root check_for_jffs2
+

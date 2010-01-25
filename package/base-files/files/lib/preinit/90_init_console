@@ -1,0 +1,14 @@
+#!/bin/sh
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+init_console() {
+    if [ "$pi_suppress_stderr" = "y" ]; then
+	exec <$M0 >$M1 2>&0
+    else 
+	exec <$M0 >$M1 2>$M2
+    fi
+}
+
+boot_hook_add preinit_essential init_console
+

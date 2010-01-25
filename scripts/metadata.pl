@@ -562,19 +562,23 @@ EOF
 
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
-	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n" if %preconfig;
+	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
 	foreach my $preconfig (keys %preconfig) {
 		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
 			my $conf = $preconfig{$preconfig}->{$cfg}->{id};
 			$conf =~ tr/\.-/__/;
 			print <<EOF
 	config UCI_PRECONFIG_$conf
-		string "$preconfig{$preconfig}->{$cfg}->{label}" if UCI_PRECONFIG
+		string "$preconfig{$preconfig}->{$cfg}->{label}" if IMAGEOPT
 		depends PACKAGE_$preconfig
 		default "$preconfig{$preconfig}->{$cfg}->{default}"
 
 EOF
 		}
+	}
+	print "source \"package/*/image-config.in\"\n";
+	if (scalar glob "package/feeds/*/*/image-config.in") {
+	    print "source \"package/feeds/*/*/image-config.in\"\n";
 	}
 	print_package_features();
 	print_package_config_category 'Base system';

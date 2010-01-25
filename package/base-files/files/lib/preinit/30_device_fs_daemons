@@ -1,0 +1,36 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+init_devfs() {
+    HOTPLUG=/sbin/hotplug-call
+}
+
+init_hotplug2() {
+    [ -c /dev/console ] || mknod /dev/console c 5 1
+    /sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --no-persistent --set-coldplug-cmd /sbin/udevtrigger
+    /sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --persistent &
+}
+
+init_udev() {
+    [ -d /lib/udev/devices ] && cp -af /lib/udev/devices/* /dev/
+    [ -c /dev/console ] || mknod -m 0600 /dev/console c 5 1
+    [ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
+    /sbin/udevd --daemon --resolve-names=never
+    /sbin/udevadm trigger
+    /sbin/udevadm settle    
+}
+
+init_device_fs() {
+    HOTPLUG=
+    if grep devfs /proc/filesystems > /dev/null; then
+	init_devfs
+    elif [ -x /sbin/hotplug2 ]; then
+	init_hotplug2
+    elif [ -x /sbin/udevd ]; then
+	init_udev
+    fi
+}
+
+boot_hook_add preinit_essential init_device_fs
+

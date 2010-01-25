@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+reset_clear_jffs() {
+    [ "$reset_has_fo" = "true" ] && {
+	rm -rf $jffs/* 2>&-
+	mount -o remount $jffs / 2>&-
+	exit 0
+    } || reset_has_fo=false
+}
+
+boot_hook_add jffs2reset reset_clear_jffs

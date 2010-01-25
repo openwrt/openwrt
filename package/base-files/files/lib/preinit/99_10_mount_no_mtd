@@ -1,0 +1,12 @@
+#!/bin/sh
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+do_mount_no_mtd() {
+    check_skip || {
+	mount_no_mtd
+    }
+}
+
+boot_hook_add preinit_mount_root do_mount_no_mtd
+

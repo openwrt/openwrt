@@ -1,5 +1,0 @@
-
-grep "/dev/root" /proc/mounts |grep -q nfs && {
-	echo "- init nfs -"
-	exec /sbin/init
-}

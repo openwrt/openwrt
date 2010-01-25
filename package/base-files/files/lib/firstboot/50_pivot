@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+with_fo_pivot() {
+    # switch back to squashfs (temporarily)
+    # and park the ramdisk ontop of /tmp/root
+    pivot /rom /mnt
+    mount -o move /mnt /tmp/root
+
+    # /jffs is the overlay
+    # /rom is the readonly
+    fopivot /jffs /rom
+}
+
+boot_hook_add switch2jffs with_fo_pivot

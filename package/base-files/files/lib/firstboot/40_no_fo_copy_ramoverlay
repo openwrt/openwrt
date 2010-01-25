@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+no_fo_copy_ramoverlay() {
+    # copy ramoverlay to jffs2, must be done after switching
+    # to the new rootfs to avoid creating opaque directories
+    echo -n "copying files ... "
+    cp -a /tmp/root/* / >/dev/null 2>&1
+    sync
+}
+
+boot_hook_add no_fo no_fo_ramoverlay

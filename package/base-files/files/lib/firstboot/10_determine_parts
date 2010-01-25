@@ -1,0 +1,46 @@
+#!/bin/sh
+
+set_mtd_part() {
+    partname="rootfs_data"
+    mtdpart="$(find_mtd_part $partname)"
+}
+
+set_rom_part() {
+    rom=$(awk '/squashfs/ {print $2}' /proc/mounts)
+}
+
+set_jffs_part() {
+    jffs=$(awk '/jffs2/ {print $2}' /proc/mounts)
+}
+
+determine_mtd_part() {
+    set_mtd_part
+    if [ -z "$mtdpart" ]; then
+	echo "MTD partition not found."
+	exit 1
+    fi
+}
+
+determine_rom_part() {
+    check_skip || {
+	set_rom_part
+	if [ -z "$rom" ]; then
+	    echo "You do not have a squashfs partition; aborting"
+	    echo "(firstboot cannot be run on jffs2 based firmwares)"
+	    exit 1
+	fi
+    }
+}
+
+determine_jffs2_part() {
+    check_skip || {
+	set_jffs_part
+    }
+}
+
+boot_hook_add switch2jffs determine_mtd_part
+boot_hook_add jffs2reset determine_mtd_part
+boot_hook_add switch2jffs determine_rom_part
+boot_hook_add jffs2reset determine_rom_part
+boot_hook_add switch2jffs determine_jffs2_part
+boot_hook_add jffs2reset determine_jffs2_part

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+run_failsafe_hook() {
+    if [ "$FAILSAFE" = "true" ]; then
+	boot_run_hook failsafe
+	lock -w /tmp/.failsafe
+    fi
+}
+
+boot_hook_add preinit_main run_failsafe_hook
+

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+skip_if_rootfs_mounted() {
+    mount "$mtdpart" /rom/jffs -t jffs2 || exit
+}
+
+boot_hook_add switch2jffs skip_if_rootfs_mounted

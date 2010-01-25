@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+reset_check_for_mini_fo() {
+    if grep -q mini_fo /proc/filesystems; then
+	reset_has_fo=true
+    fi
+}
+
+boot_hook_add jffs2reset reset_check_for_mini_fo
