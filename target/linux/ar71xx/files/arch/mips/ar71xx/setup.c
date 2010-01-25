@@ -288,3 +288,11 @@ static int __init ar71xx_machine_setup(void)
 }
 
 arch_initcall(ar71xx_machine_setup);
+
+static void __init ar71xx_generic_init(void)
+{
+	/* Nothing to do */
+}
+
+MIPS_MACHINE(AR71XX_MACH_GENERIC, "Generic", "Generic AR71xx board",
+	     ar71xx_generic_init);
