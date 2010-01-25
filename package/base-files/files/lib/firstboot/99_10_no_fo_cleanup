@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+no_fo_cleanup() {
+    echo "done"
+    umount -l /jffs
+    umount -l /tmp/root
+    exit 0
+}
+
+boot_hook_add no_fo no_fo_cleanup

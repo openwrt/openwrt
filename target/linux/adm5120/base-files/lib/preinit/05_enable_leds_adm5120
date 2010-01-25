@@ -1,0 +1,12 @@
+#!/bin/sh
+
+enable_leds() {
+	insmod input-core
+	insmod input-polldev
+	insmod gpio_buttons
+	insmod button-hotplug
+}
+
+boot_hook_add preinit_main enable_leds
+
+

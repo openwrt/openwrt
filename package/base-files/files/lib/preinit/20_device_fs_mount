@@ -1,0 +1,28 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+do_mount_devfs() {
+    mount devfs /dev -t devfs
+}
+
+do_mount_hotplug() {
+    mount -t tmpfs tmpfs /dev -o size=512K
+}
+
+do_mount_udev() {
+    mount -n -t tmpfs -o mode=0755 udev /dev
+}
+
+choose_device_fs() {
+    if grep devfs /proc/filesystems > /dev/null; then
+        do_mount_devfs
+    elif [ -x /sbin/hotplug2 ]; then
+        do_mount_hotplug
+    elif [ -x /sbin/udevd ]; then
+        do_mount_udev
+    fi
+}
+
+boot_hook_add preinit_essential choose_device_fs
+

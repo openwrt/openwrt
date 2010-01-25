@@ -1,0 +1,12 @@
+#!/bin/sh
+
+
+init_nfs() {
+	grep "/dev/root" /proc/mounts |grep -q nfs && {
+		echo "- init nfs -"
+		exec /sbin/init
+	}
+}
+
+boot_hook_add preinit_main init_nfs
+

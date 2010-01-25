@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+reset_copy_rom() {
+    [ "$reset_has_fo" != "true" ] && {
+	dupe $jffs $rom
+	exit 0
+    } 
+}
+
+boot_hook_add jffs2reset reset_copy_rom

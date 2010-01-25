@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+no_fo_clear_overlay() {
+    # switch back to squashfs temporarily
+    pivot /rom /mnt
+
+    # get rid of the old overlay
+    umount -l /mnt
+
+    # another umount to get rid of the bind from /tmp/root
+    umount -l /mnt
+}
+
+boot_hook_add no_fo no_fo_clear_overlay

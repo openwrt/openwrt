@@ -1,0 +1,15 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+init_devpts() {
+    [ -d /dev/pts ] || mkdir -p /dev/pts
+}
+
+do_mount_devpts() {
+    mount devpts /dev/pts -t devpts
+}
+
+boot_hook_add preinit_essential init_devpts
+boot_hook_add preinit_essential do_mount_devpts
+

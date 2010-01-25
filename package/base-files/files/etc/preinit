@@ -1,98 +1,45 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 . /etc/diag.sh
 
-failsafe_ip() {
-	ifconfig $ifname 192.168.1.1 netmask 255.255.255.0 broadcast 192.168.1.255 up
-}
+preinit_essential_hook=
+preinit_main_hook=
+failsafe_hook=
+initramfs_hook=
+preinit_mount_root=
 
-failsafe() {
-	set_state failsafe
-	[ -n "$ifname" ] && grep "$ifname" /proc/net/dev >/dev/null && {
-		failsafe_ip
-		netmsg 192.168.1.255 "Entering Failsafe!"
-		telnetd -l /bin/login.sh <> /dev/null 2>&1
-	}
-	lock /tmp/.failsafe
-	ash --login
-}
+pi_ifname=
+pi_ip=192.168.1.1
+pi_broadcast=192.168.1.255
+pi_netmask=255.255.255.0
 
-mount proc /proc -t proc
-mount sysfs /sys -t sysfs
+fs_failsafe_ifname=
+fs_failsafe_ip=192.168.1.1
+fs_failsafe_broadcast=192.168.1.255
+fs_failsafe_netmask=255.255.255.0
 
-size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)&&(mt>l)?mt-l:s}' /proc/meminfo)
-mount tmpfs /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
+fs_failsafe_wait_timeout=2
 
-if grep devfs /proc/filesystems > /dev/null; then
-	mount devfs /dev -t devfs
-	M0=/dev/pty/m0
-	M1=/dev/pty/m1
-	HOTPLUG=/sbin/hotplug-call
+pi_suppress_stderr="y"
+pi_init_suppress_stderr="y"
+pi_init_path="/bin:/sbin:/usr/bin:/usr/sbin"
+pi_init_cmd="/sbin/init"
 
-elif [ -x /sbin/hotplug2 ]; then
-	mount -t tmpfs tmpfs /dev -o size=512K
-	mknod /dev/console c 5 1
-	/sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --no-persistent --set-coldplug-cmd /sbin/udevtrigger
-	/sbin/hotplug2 --set-worker /lib/hotplug2/worker_fork.so --set-rules-file /etc/hotplug2-init.rules --persistent &
-	M0=/dev/ptmx
-	M1=/dev/ptmx
-	HOTPLUG=
+. /lib/functions/boot.sh
 
-elif [ -x /sbin/udevd ]; then
-	mount -n -t tmpfs -o mode=0755 udev /dev
-	[ -d /lib/udev/devices ] && cp -af /lib/udev/devices/* /dev/
-	[ -c /dev/console ] || mknod -m 0600 /dev/console c 5 1
-	[ -c /dev/null ] || mknod -m 0666 /dev/null c 1 3
-	/sbin/udevd --daemon --resolve-names=never
-	/sbin/udevadm trigger
-	/sbin/udevadm settle
-	M0=/dev/pty/ptmx
-	M1=/dev/pty/ptmx
-	HOTPLUG=
-fi
 
-[ -d /dev/pts ] || mkdir -p /dev/pts
-[ -d /dev/shm ] || mkdir -p /dev/shm
-mount devpts /dev/pts -t devpts
+for pi_source_file in /lib/preinit/*; do
+    . $pi_source_file
+done
 
-# the shell really doesn't like having stdin/out closed
-# that's why we use /dev/pty/m0 and m1 as replacement
-# for /dev/console if there's no serial console available
-dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null && {
-	M0=/dev/console
-	M1=/dev/console
-}
+boot_run_hook preinit_essential
 
-exec <$M0 >$M1 2>&0
+pi_mount_skip_next=false
+pi_jffs2_mount_success=false
+pi_failsafe_net_message=false
 
-echo "- preinit -"
-set_state preinit
-echo "Press CTRL-C for failsafe"
-trap 'FAILSAFE=true' INT
-trap 'FAILSAFE=true' USR1
-if [ -e /etc/preinit.arch ]; then
-	. /etc/preinit.arch
-else
-	sleep 2
-fi
-echo "$HOTPLUG" > /proc/sys/kernel/hotplug
-export FAILSAFE
-eval ${FAILSAFE:+failsafe}
-lock -w /tmp/.failsafe
+boot_run_hook preinit_main
 
-if [ -z "$INITRAMFS" ]; then
-	mount_root
-	[ -f /sysupgrade.tgz ] && {
-		echo "- config restore -"
-		cd /
-		mv sysupgrade.tgz /tmp
-		tar xzf /tmp/sysupgrade.tgz
-		rm -f /tmp/sysupgrade.tgz
-		sync
-	}
-
-	echo "- init -"
-
-	exec /sbin/init
-fi

@@ -1,0 +1,52 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+preinit_ip() {
+    # if the preinit interface isn't specified and ifname is set in 
+    # preinit.arch use that interface
+    if [ -z "$pi_ifname" ]; then
+	pi_ifname=$ifname    
+    fi
+
+    [ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+	ifconfig $pi_ifname $pi_ip netmask $pi_netmask broadcast $pi_broadcast up
+    }
+}
+
+preinit_ip_deconfig() {
+    [ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+	ifconfig $pi_ifname 0.0.0.0 down
+    }
+}
+
+preinit_net_echo() {
+	[ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+		{ 
+			[ "$pi_preinit_net_messages" = "y" ] || {
+    		     		[ "$pi_failsafe_net_message"  = "true" ] && 
+    		         	    [ "$pi_preinit_no_failsafe_netmsg" != "y" ] 
+    		         }
+	    			
+		} && netmsg $pi_broadcast "$1"
+    	}
+}
+
+preinit_echo() {
+    preinit_net_echo $1
+    echo $1
+}
+
+pi_indicate_led() {
+    set_state preinit
+}
+
+pi_indicate_preinit() {
+    echo "- preinit -"
+    preinit_net_echo "Doing OpenWRT Preinit\n"
+    pi_indicate_led
+}
+
+boot_hook_add preinit_main preinit_ip
+boot_hook_add preinit_main pi_indicate_preinit
+

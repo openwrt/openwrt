@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+with_fo_cleanup() {
+    # try to get rid of /tmp/root
+    # this will almost always fail
+    mount /tmp/root 2>&-
+    exit 0
+}
+
+boot_hook_add switch2jffs with_fo_cleanup

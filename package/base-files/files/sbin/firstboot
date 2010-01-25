@@ -1,162 +1,34 @@
 #!/bin/sh
-. /etc/functions.sh
 
-partname="rootfs_data"
-mtdpart="$(find_mtd_part $partname)"
+switch2jffs_hook=
+jffs2reset_hook=
+no_fo_hook=
 
-rom=$(awk '/squashfs/ {print $2}' /proc/mounts)
-jffs=$(awk '/jffs2/ {print $2}' /proc/mounts)
+. /lib/functions/boot.sh
 
-dupe() { # <new_root> <old_root>
-	cd $1
-	echo -n "creating directories... "
-	{
-		cd $2 
-		find . -xdev -type d
-		echo "./dev ./jffs ./mnt ./proc ./tmp"
-		# xdev skips mounted directories
-		cd $1 
-	} | xargs mkdir -p
-	echo "done"
+firstboot_skip_next=false
 
-	echo -n "setting up symlinks... "
-	for file in $(cd $2; find . -xdev -type f;); do
-		case "$file" in
-		./rom/note) ;; #nothing
-		./etc/config*|\
-		./usr/lib/opkg/info/*) cp -af $2/$file $file;;
-		*) ln -sf /rom/${file#./*} $file;;
-		esac
-	done
-	for file in $(cd $2; find . -xdev -type l;); do
-		cp -af $2/${file#./*} $file
-	done
-	echo "done"
-}
-
-pivot() { # <new_root> <old_root>
-	mount -o move /proc $1/proc && \
-	pivot_root $1 $1$2 && {
-		mount -o move $2/dev /dev
-		mount -o move $2/tmp /tmp
-		mount -o move $2/sys /sys 2>&-
-		mount -o move $2/jffs /jffs 2>&-
-		return 0
-	}
-}
-
-fopivot() { # <rw_root> <ro_root> <dupe?>
-	root=$1
-	{
-		if grep -q mini_fo /proc/filesystems; then
-			mount -t mini_fo -o base=/,sto=$1 "mini_fo:$1" /mnt 2>&- && root=/mnt
-		else
-			mount --bind / /mnt
-			mount --bind -o union "$1" /mnt && root=/mnt 
-		fi
-	} || {
-		[ "$3" = "1" ] && {
-		mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
-		dupe $1 $rom
-		}
-	}
-	pivot $root $2
-}
-
-ramoverlay() {
-	mkdir -p /tmp/root
-	mount -t tmpfs root /tmp/root
-	fopivot /tmp/root /rom 1
-}
+for fb_source_file in /lib/firstboot/*; do
+    . $fb_source_file
+done
 
 # invoked as an executable
-[ "${0##*/}" = "firstboot" ] && {
-
-	[ -z "$mtdpart" ] && {
-		echo "MTD partition not found."
-		exit 1
-	}
-
-	[ -z "$rom" ] && {
-		echo "You do not have a squashfs partition; aborting"
-		echo "(firstboot cannot be run on jffs2 based firmwares)"
-		exit 1
-	}
-
-	[ "$1" = "switch2jffs" ] && {
-		if grep -q mini_fo /proc/filesystems; then
-			mount "$mtdpart" /rom/jffs -t jffs2 || exit
-
-			# try to avoid fs changing while copying
-			mount -o remount,ro none / 2>&-
-
-			# copy ramoverlay to jffs2
-			echo -n "copying files ... "
-			cp -a /tmp/root/* /rom/jffs 2>&-
-			echo "done"
-
-			# switch back to squashfs (temporarily)
-			# and park the ramdisk ontop of /tmp/root
-			pivot /rom /mnt
-			mount -o move /mnt /tmp/root
-
-			# /jffs is the overlay
-			# /rom is the readonly
-			fopivot /jffs /rom
-
-			# try to get rid of /tmp/root
-			# this will almost always fail
-			umount /tmp/root 2>&-
-		else
-			# switch back to squashfs temporarily
-			pivot /rom /mnt
-
-			# get rid of the old overlay
-			umount -l /mnt
-
-			# another umount to get rid of the bind from /tmp/root
-			umount -l /mnt
-
-			# initialize jffs2
-			mount "$mtdpart" /jffs -t jffs2 || exit
-
-			# workaround to ensure that union can attach properly
-			sync
-			ls /jffs >/dev/null
-
-			# switch to the new (empty) jffs2
-			fopivot /jffs /rom 1
-
-			# copy ramoverlay to jffs2, must be done after switching
-			# to the new rootfs to avoid creating opaque directories
-			echo -n "copying files ... "
-			cp -a /tmp/root/* / >/dev/null 2>&1
-			sync
-			echo "done"
-
-			umount -l /jffs
-			umount -l /tmp/root
-		fi
-
-		exit 0
-	}
-
-	# script run manually
-	[ \! -z "$jffs" ] && {
-		echo "firstboot has already been run"
-		echo "jffs2 partition is mounted, only resetting files"
-		grep mini_fo /proc/filesystems >&-
-		[ $? != 0 ] && {
-			dupe $jffs $rom
-			exit 0
-		} || { 
-			rm -rf $jffs/* 2>&-
-			mount -o remount $jffs / 2>&-
-			exit 0
-		}
-	}
-
+if [ "${0##*/}" = "firstboot" ]; then
+    if [ "$1" = "switch2jffs" ]; then
+	boot_run_hook switch2jffs
+    elif [ -z "$jffs" ]; then
+	reset_has_fo=true
+	echo "firstboot has already been run"
+	echo "jffs2 partition is mounted, only resetting files"
+	boot_run_hook jffs2reset
+    else
 	mtd erase "$partname"
 	mount "$mtdpart" /jffs -t jffs2
 	fopivot /jffs /rom 1
-}
+    fi
+else 
+    set_mtd_part
+    set_rom_part
+    set_jffs_part
+fi
+

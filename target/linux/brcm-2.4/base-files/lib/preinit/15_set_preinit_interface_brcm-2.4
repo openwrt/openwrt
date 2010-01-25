@@ -1,0 +1,38 @@
+. /etc/functions.sh
+
+port_net_echo() {
+    [ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null ] {
+        if [ "$pi_preinit_net_messages" = "y" ] || [ "$pi_failsafe_net_message"  = "true"] && [ "$pi_preinit_no_failsafe_netmsg" != "y" ]; then
+                netmsg $pi_broadcast "$1"
+        }
+    }
+}
+
+preinit_ip_deconfig() {
+	if [ -z "$pi_ifname" ]; then
+		ifconfig $ifname 0.0.0.0 down
+	else
+		grep "$pi_ifname" /proc/net/dev >/dev/null && {
+	        ifconfig $pi_ifname 0.0.0.0 down
+	    }
+	fi
+}
+
+preinit_net_echo() {
+	preinit_ip
+	
+	[ -d /proc/switch/eth0 ] && [ "$pi_ifname" = "eth0" ] && {
+		echo 1 > /proc/switch/eth0/reset
+
+		# this would be easier if we blasted the message across all ports
+		# but we don't want packets leaking across interfaces
+		for port in $(seq 0 4); do {
+			echo "$port ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
+			port_net_echo $1
+		}; done
+	} || port_net_echo $1
+
+	preinit_ip_deconfig
+}
+
+

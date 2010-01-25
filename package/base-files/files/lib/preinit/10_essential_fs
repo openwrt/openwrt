@@ -1,0 +1,25 @@
+#!/bin/sh 
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+do_mount_procfs() {
+   mount proc /proc -t proc
+}
+
+do_mount_sysfs() {
+    mount sysfs /sys -t sysfs
+}
+
+calc_tmpfs_size() {
+    pi_size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)&&(mt>l)?mt-l:s}' /proc/meminfo)
+}
+
+do_mount_tmpfs() {
+    calc_tmpfs_size
+    mount tmpfs /tmp -t tmpfs -o size=$pi_size,nosuid,nodev,mode=1777
+}
+
+boot_hook_add preinit_essential do_mount_procfs
+boot_hook_add preinit_essential do_mount_sysfs
+boot_hook_add preinit_essential do_mount_tmpfs
+

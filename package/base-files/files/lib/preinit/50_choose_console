@@ -1,0 +1,31 @@
+#!/bin/sh
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+choose_console() {
+    # the shell really doesn't like having stdin/out closed
+    # that's why we use /dev/pty/m0 and m1 (or equivalent) as replacement
+    # for /dev/console if there's no serial console available
+
+    if grep devfs /proc/filesystems > /dev/null; then
+	M0=/dev/pty/m0
+	M1=/dev/pty/m1
+	M2=/dev/pty/m1
+    elif [ -x /sbin/hotplug2 ]; then
+	M0=/dev/ptmx
+	M1=/dev/ptmx
+	M2=/dev/ptmx
+    elif [ -x /sbin/udevd ]; then
+	M0=/dev/pty/ptmx
+	M1=/dev/pty/ptmx
+	M2=/dev/pty/ptmx
+    fi
+    dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null && {
+	M0=/dev/console
+	M1=/dev/console
+	M2=/dev/console    
+    }
+}
+
+boot_hook_add preinit_essential choose_console
+

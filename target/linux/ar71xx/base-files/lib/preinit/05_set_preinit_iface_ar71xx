@@ -1,0 +1,16 @@
+#!/bin/sh
+
+#
+# Copyright (C) 2009 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+set_preinit_iface() {
+	ifname=eth0
+}
+
+boot_hook_add preinit_main set_preinit_iface
+
+
+

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+no_fo_pivot() {
+    # switch to the new (empty) jffs2
+    fopivot /jffs /rom 1
+}
+
+boot_hook_add no_fo no_fo_pivot

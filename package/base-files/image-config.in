@@ -1,0 +1,132 @@
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+menuconfig PREINITOPT
+     bool "Preinit configuration options" if IMAGEOPT
+     default n
+     help
+	These options are used to control the environment used to initialize
+	the system before running init (which typically mean /sbin/init which
+	switches to multiuser mode).
+
+config TARGET_PREINIT_SUPPRESS_STDERR
+      bool "Suppress stderr messages during preinit" if PREINITOPT
+      default y
+      help
+	Sends stderr to null during preinit.  This is the default behaviour
+	in previous versions of OpenWRT.  This also prevents init process
+	itself from displaying stderr, however processes launched by init
+	in multiuser through inittab will use the current terminal (e.g.
+	the ash shell launched by inittab will display stderr).  That's
+	the same behaviour as seen in previous version of OpenWRT.
+
+config TARGET_PREINIT_TIMEOUT
+       int
+       prompt "Failsafe wait timeout" if PREINITOPT
+       default 2
+       help
+		How long to wait for failsafe mode to be entered before
+		continuing with a regular boot if failsafe not selected.
+		
+config TARGET_PREINIT_SHOW_NETMSG
+	bool
+	prompt "Show all preinit network messages" if PREINITOPT
+	default n
+	help
+		Show preinit all network messages (via netmsg broadcast), not only
+		the message indicating to press reset to enter failsafe.  Note that
+		if the architecture doesn't define an interface, and there is no
+		'Preinit network interface' defined, then no messages will be
+		emitted, even if this is set.
+		
+config TARGET_PREINIT_SUPPRESS_FAILSAFE_NETMSG
+	bool
+	prompt "Suppress network message indicating failsafe" if PREINITOPT
+	default n
+	help
+		If "Show all preinit network messages" above is not set, then
+		setting this option suppresses the only message that would be
+		emitted otherwise, name the network message to enter failsafe
+		(via netmsg).
+
+config TARGET_PREINIT_IFNAME
+       string
+       prompt "Preinit network interface" if PREINITOPT
+       default ""
+       help
+		Interface for sending preinit messages to network, and any other
+		default networking in failsafe or preinit.  If empty
+		uses $ifname (if defined in /etc/preinit.arch).
+
+config TARGET_PREINIT_IP
+       string
+       prompt "IP address for preinit network messages" if PREINITOPT
+       default "192.168.1.1"
+       help    
+       	       IP address used to configure interface for preinit network
+	       messages, including failsafe messages
+
+config TARGET_PREINIT_NETMASK
+       string
+       prompt "Netmask for preinit network messages" if PREINITOPT
+       default "255.255.255.0"
+       help
+		Netmask used to configure interface for preinit network	
+		messages, including failsafes messages
+
+config TARGET_PREINIT_BROADCAST
+       string
+       prompt "Broadcast address for preinit network messages" if PREINITOPT
+       default "192.168.1.255
+       help
+		Broadcast address to which to send preinit network messages, as
+		as failsafe messages
+
+
+menuconfig INITOPT
+    bool "Init configuration options" if IMAGEOPT
+    default n
+    help
+	These option choose the command that will run as the 'init' command
+	(that is which is responsible for controlling the system once preinit
+	transfers control to it) as well as some options controlling its
+	behaviour.  Normally init is /sbin/init.
+
+    config TARGET_INIT_PATH
+        string
+    	prompt "PATH for regular boot" if INITOPT
+	default "/bin:/sbin:/usr/bin:/usr/sbin"
+	help
+		Default PATH used during normal operation
+
+    config TARGET_INIT_ENV
+        string
+	    prompt "Environment variables to set when starting init (start with none)" if INITOPT
+	    default ""
+	    help
+		Should be a space seperated list of variable assignments.  These
+		variables will be present in the environment.  Spaces may not be
+		present (including through expansion) even in a quoted string
+        	(env doesn't understanding quoting).
+
+    config TARGET_INIT_CMD
+        string
+	    prompt "Init command" if INITOPT
+            default "/sbin/init"
+	    help
+		The executable to run as the init process.  Is 'exec'd by
+		preinit (which is the init that the kernel launches on boot).
+
+    config TARGET_INIT_SUPPRESS_STDERR
+        bool
+        prompt "Suppress stderr messages of init" if INITOPT
+        default y
+	help
+		Prevents showing stderr messages for init command if not already
+		suppressed during preinit.  This is the default behaviour in 
+		previous versions of OpenWRT.  Removing this does nothing if 
+		stderr is suppressed during preinit (which is the default).

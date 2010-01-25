@@ -1,0 +1,10 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+init_hotplug() {
+   echo "$HOTPLUG" > /proc/sys/kernel/hotplug
+}
+
+boot_hook_add preinit_main init_hotplug
+
