@@ -144,6 +144,7 @@ define Package/wpa-supplicant
   CATEGORY:=Network
   TITLE:=WPA Supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
+  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +PACKAGE_kmod-mac80211:libnl-tiny
   VARIANT:=supplicant-full
 endef
 
