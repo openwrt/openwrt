@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -140,4 +140,25 @@ config MDIO_GPIO
+@@ -141,4 +141,25 @@ config MDIO_GPIO
  	  To compile this driver as a module, choose M here: the module
  	  will be called mdio-gpio.
  
@@ -28,12 +28,12 @@
  endif # PHYLIB
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -19,6 +19,8 @@ obj-$(CONFIG_IP175C_PHY)	+= ip175c.o
+@@ -20,6 +20,8 @@ obj-$(CONFIG_IP175C_PHY)	+= ip175c.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
  obj-$(CONFIG_AR8216_PHY)	+= ar8216.o
  obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
 +obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi.o
 +obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
  obj-$(CONFIG_LSI_ET1011C_PHY)	+= et1011c.o
- obj-$(CONFIG_MICREL)		+= micrel.o
  obj-$(CONFIG_FIXED_PHY)		+= fixed.o
+ obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o

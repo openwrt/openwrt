@@ -14,9 +14,9 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
- obj-$(CONFIG_AR8216_PHY)	+= ar8216.o
- obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
+@@ -22,6 +22,7 @@ obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
+ obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi.o
+ obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
  obj-$(CONFIG_LSI_ET1011C_PHY)	+= et1011c.o
 +obj-$(CONFIG_MICREL)		+= micrel.o
  obj-$(CONFIG_FIXED_PHY)		+= fixed.o
