@@ -183,41 +183,46 @@ struct rtl8366s_vlan4kentry {
 u16 g_dbg_reg;
 #endif
 
-static const char *MIBCOUNTERS[] = {
-	"IfInOctets                        ",
-	"EtherStatsOctets                  ",
-	"EtherStatsUnderSizePkts           ",
-	"EtherFregament                    ",
-	"EtherStatsPkts64Octets            ",
-	"EtherStatsPkts65to127Octets       ",
-	"EtherStatsPkts128to255Octets      ",
-	"EtherStatsPkts256to511Octets      ",
-	"EtherStatsPkts512to1023Octets     ",
-	"EtherStatsPkts1024to1518Octets    ",
-	"EtherOversizeStats                ",
-	"EtherStatsJabbers                 ",
-	"IfInUcastPkts                     ",
-	"EtherStatsMulticastPkts           ",
-	"EtherStatsBroadcastPkts           ",
-	"EtherStatsDropEvents              ",
-	"Dot3StatsFCSErrors                ",
-	"Dot3StatsSymbolErrors             ",
-	"Dot3InPauseFrames                 ",
-	"Dot3ControlInUnknownOpcodes       ",
-	"IfOutOctets                       ",
-	"Dot3StatsSingleCollisionFrames    ",
-	"Dot3StatMultipleCollisionFrames   ",
-	"Dot3sDeferredTransmissions        ",
-	"Dot3StatsLateCollisions           ",
-	"EtherStatsCollisions              ",
-	"Dot3StatsExcessiveCollisions      ",
-	"Dot3OutPauseFrames                ",
-	"Dot1dBasePortDelayExceededDiscards",
-	"Dot1dTpPortInDiscards             ",
-	"IfOutUcastPkts                    ",
-	"IfOutMulticastPkts                ",
-	"IfOutBroadcastPkts                ",
-	NULL,
+struct mib_counter {
+	unsigned	offset;
+	unsigned	length;
+	const char	*name;
+};
+
+static struct mib_counter rtl8366s_mib_counters[RTL8366S_MIB_COUNT] = {
+	{  0, 4, "IfInOctets                        " },
+	{  4, 4, "EtherStatsOctets                  " },
+	{  8, 2, "EtherStatsUnderSizePkts           " },
+	{ 10, 2, "EtherFregament                    " },
+	{ 12, 2, "EtherStatsPkts64Octets            " },
+	{ 14, 2, "EtherStatsPkts65to127Octets       " },
+	{ 16, 2, "EtherStatsPkts128to255Octets      " },
+	{ 18, 2, "EtherStatsPkts256to511Octets      " },
+	{ 20, 2, "EtherStatsPkts512to1023Octets     " },
+	{ 22, 2, "EtherStatsPkts1024to1518Octets    " },
+	{ 24, 2, "EtherOversizeStats                " },
+	{ 26, 2, "EtherStatsJabbers                 " },
+	{ 28, 2, "IfInUcastPkts                     " },
+	{ 30, 2, "EtherStatsMulticastPkts           " },
+	{ 32, 2, "EtherStatsBroadcastPkts           " },
+	{ 34, 2, "EtherStatsDropEvents              " },
+	{ 36, 2, "Dot3StatsFCSErrors                " },
+	{ 38, 2, "Dot3StatsSymbolErrors             " },
+	{ 40, 2, "Dot3InPauseFrames                 " },
+	{ 42, 2, "Dot3ControlInUnknownOpcodes       " },
+	{ 44, 2, "IfOutOctets                       " },
+	{ 46, 2, "Dot3StatsSingleCollisionFrames    " },
+	{ 48, 2, "Dot3StatMultipleCollisionFrames   " },
+	{ 50, 2, "Dot3sDeferredTransmissions        " },
+	{ 52, 2, "Dot3StatsLateCollisions           " },
+	{ 54, 2, "EtherStatsCollisions              " },
+	{ 56, 2, "Dot3StatsExcessiveCollisions      " },
+	{ 58, 2, "Dot3OutPauseFrames                " },
+	{ 60, 2, "Dot1dBasePortDelayExceededDiscards" },
+	{ 62, 2, "Dot1dTpPortInDiscards             " },
+	{ 64, 2, "IfOutUcastPkts                    " },
+	{ 66, 2, "IfOutMulticastPkts                " },
+	{ 68, 2, "IfOutBroadcastPkts                " },
 };
 
 static inline struct rtl8366s *sw_to_rtl8366s(struct switch_dev *sw)
@@ -299,24 +304,15 @@ static int rtl8366_get_mib_counter(struct rtl8366s *rtl, int counter,
 	struct rtl8366_smi *smi = &rtl->smi;
 	int i;
 	int err;
-	u32 addr, data, regoffset;
+	u32 addr, data;
 	u64 mibvalue;
-
-	/* address offset to MIBs counter */
-	const u16 mibLength[RTL8366S_MIB_COUNT] = {4, 4, 2, 2, 2, 2, 2, 2, 2,
-						   2, 2, 2, 2, 2, 2, 2, 2, 2,
-						   2, 2, 4, 2, 2, 2, 2, 2, 2,
-						   2, 2, 2, 2, 2, 2};
 
 	if (port > RTL8366_NUM_PORTS || counter >= RTL8366S_MIB_COUNT)
 		return -EINVAL;
 
-	regoffset = RTL8366S_MIB_COUNTER_PORT_OFFSET * (port);
-
-	for (i = 0; i < counter; i++)
-		regoffset += mibLength[i];
-
-	addr = RTL8366S_MIB_COUNTER_BASE + regoffset;
+	addr = RTL8366S_MIB_COUNTER_BASE +
+	       RTL8366S_MIB_COUNTER_PORT_OFFSET * (port) +
+	       rtl8366s_mib_counters[counter].offset;
 
 	/*
 	 * Writing access counter address first
@@ -339,18 +335,12 @@ static int rtl8366_get_mib_counter(struct rtl8366s *rtl, int counter,
 		return -EIO;
 
 	mibvalue = 0;
-	addr = addr + mibLength[counter] - 1;
-	i = mibLength[counter];
-
-	while (i) {
-		err = rtl8366_smi_read_reg(smi, addr, &data);
+	for (i = rtl8366s_mib_counters[counter].length; i > 0; i--) {
+		err = rtl8366_smi_read_reg(smi, addr + (i - 1), &data);
 		if (err)
 			return err;
 
 		mibvalue = (mibvalue << 16) | (data & 0xFFFF);
-
-		addr--;
-		i--;
 	}
 
 	*val = mibvalue;
@@ -739,7 +729,7 @@ static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
 
 	for (i = 0; i < 33; ++i) {
 		len += snprintf(buf + len, sizeof(rtl->buf) - len, "%d:%s ",
-				i, MIBCOUNTERS[i]);
+				i, rtl8366s_mib_counters[i].name);
 		for (j = 0; j < RTL8366_NUM_PORTS; ++j) {
 			unsigned long long counter = 0;
 
@@ -1220,7 +1210,7 @@ static int rtl8366s_sw_get_port_mib(struct switch_dev *dev,
 
 	for (i = 0; i < RTL8366S_MIB_COUNT; ++i) {
 		len += snprintf(buf + len, sizeof(rtl->buf) - len,
-				"%d:%s\t", i, MIBCOUNTERS[i]);
+				"%d:%s\t", i, rtl8366s_mib_counters[i].name);
 		if (!rtl8366_get_mib_counter(rtl, i, val->port_vlan, &counter))
 			len += snprintf(buf + len, sizeof(rtl->buf) - len,
 					"[%llu]\n", counter);
