@@ -29,6 +29,9 @@ export DYLD_LIBRARY_PATH:=$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(STAG
 # prevent perforce from messing with the patch utility
 unexport P4PORT P4USER P4CONFIG P4CLIENT
 
+# prevent user defaults for quilt from interfering
+unexport QUILT_PATCHES QUILT_PATCH_OPTS
+
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
