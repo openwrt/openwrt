@@ -49,6 +49,10 @@ if !LINUX_2_4
 	config GCC_VERSION_4_3_3_CS
 		bool "gcc 4.3.3 with CodeSourcery enhancements"
 
+	config GCC_VERSION_4_4_1_CS
+		bool "gcc 4.4.1 with CodeSourcery enhancements"
+		depends BROKEN
+
 endif
 
 endchoice
