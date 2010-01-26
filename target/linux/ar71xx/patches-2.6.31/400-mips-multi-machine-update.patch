@@ -88,7 +88,7 @@
 +core_initcall(mips_machtype_init);
 --- a/include/asm-mips/mips_machine.h
 +++ b/include/asm-mips/mips_machine.h
-@@ -13,24 +13,32 @@
+@@ -13,25 +13,33 @@
  #include <linux/init.h>
  #include <linux/list.h>
  
@@ -113,16 +113,22 @@
  
 -#define MIPS_MACHINE(_type, _name, _setup) 			\
 -static char machine_name_##_type[] __initdata = _name;		\
--static struct mips_machine machine_##_type __initdata =		\
 +#define MIPS_MACHINE(_type, _id, _name, _setup) 		\
-+static char machine_name_##_type[] __initconst 			\
++static const char machine_name_##_type[] __initconst		\
 +			__aligned(1) = _name;			\
-+static char machine_id_##_type[] __initconst			\
++static const char machine_id_##_type[] __initconst		\
 +			__aligned(1) = _id;			\
-+static struct mips_machine machine_##_type __initconst =	\
+ static struct mips_machine machine_##_type __initdata =		\
  {								\
  	.mach_type	= _type,				\
-+	.mach_id	= machine_id_##_type,			\
- 	.mach_name	= machine_name_##_type,			\
+-	.mach_name	= machine_name_##_type,			\
++	.mach_id	= (char *) machine_id_##_type,		\
++	.mach_name	= (char *) machine_name_##_type,	\
  	.mach_setup	= _setup,				\
  };								\
+ 								\
+@@ -44,4 +52,3 @@ static int __init register_machine_##_ty
+ pure_initcall(register_machine_##_type)
+ 
+ #endif /* __ASM_MIPS_MACHINE_H */
+-
