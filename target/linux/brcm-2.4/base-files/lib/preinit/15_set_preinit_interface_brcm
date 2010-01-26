@@ -1,11 +1,11 @@
-. /etc/functions.sh
+#!/bin/sh
 
 port_net_echo() {
-    [ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null ] {
-        if [ "$pi_preinit_net_messages" = "y" ] || [ "$pi_failsafe_net_message"  = "true"] && [ "$pi_preinit_no_failsafe_netmsg" != "y" ]; then
-                netmsg $pi_broadcast "$1"
-        }
-    }
+	[ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+		if [ "$pi_preinit_net_messages" = "y" ] || [ "$pi_failsafe_net_message" = "true" ] && [ "$pi_preinit_no_failsafe_netmsg" != "y" ]; then 
+			netmsg $pi_broadcast "$1"
+		}
+	}
 }
 
 preinit_ip_deconfig() {
@@ -13,8 +13,8 @@ preinit_ip_deconfig() {
 		ifconfig $ifname 0.0.0.0 down
 	else
 		grep "$pi_ifname" /proc/net/dev >/dev/null && {
-	        ifconfig $pi_ifname 0.0.0.0 down
-	    }
+			ifconfig $pi_ifname 0.0.0.0 down
+		}
 	fi
 }
 
