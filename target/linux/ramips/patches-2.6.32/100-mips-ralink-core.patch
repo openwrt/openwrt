@@ -1,0 +1,58 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -624,6 +624,26 @@ else
+ load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
+ endif
+ 
++#
++# Ralink SoC common stuff
++#
++core-$(CONFIG_MIPS_RALINK)	+= arch/mips/ralink/common/
++cflags-$(CONFIG_MIPS_RALINK)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink
++
++#
++# Ralink RT288x
++#
++core-$(CONFIG_RALINK_RT288X)	+= arch/mips/ralink/rt288x/
++cflags-$(CONFIG_RALINK_RT288X)	+= -I$(srctree)//arch/mips/include/asm/mach-ralink/rt288x
++load-$(CONFIG_RALINK_RT288X)	+= 0xffffffff88000000
++
++#
++# Ralink RT305x
++#
++core-$(CONFIG_RALINK_RT305X)	+= arch/mips/ralink/rt305x/
++cflags-$(CONFIG_RALINK_RT305X)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt305x
++load-$(CONFIG_RALINK_RT305X)	+= 0xffffffff80000000
++
+ # temporary until string.h is fixed
+ cflags-y += -ffreestanding
+ 
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -43,6 +43,9 @@ config AR7
+ 	  Support for the Texas Instruments AR7 System-on-a-Chip
+ 	  family: TNETD7100, 7200 and 7300.
+ 
++config MIPS_RALINK
++	bool "Ralink MIPS SoC based boards"
++
+ config BASLER_EXCITE
+ 	bool "Basler eXcite smart camera"
+ 	select CEVT_R4K
+@@ -679,6 +682,7 @@ source "arch/mips/bcm63xx/Kconfig"
+ source "arch/mips/jazz/Kconfig"
+ source "arch/mips/lasat/Kconfig"
+ source "arch/mips/pmc-sierra/Kconfig"
++source "arch/mips/ralink/Kconfig"
+ source "arch/mips/sgi-ip27/Kconfig"
+ source "arch/mips/sibyte/Kconfig"
+ source "arch/mips/txx9/Kconfig"
+@@ -1045,7 +1049,7 @@ config BOOT_ELF32
+ 
+ config MIPS_L1_CACHE_SHIFT
+ 	int
+-	default "4" if MACH_DECSTATION || MIKROTIK_RB532 || PMC_MSP4200_EVAL
++	default "4" if MACH_DECSTATION || MIKROTIK_RB532 || PMC_MSP4200_EVAL || RALINK_RT288X
+ 	default "6" if MIPS_CPU_SCACHE
+ 	default "7" if SGI_IP22 || SGI_IP27 || SGI_IP28 || SNI_RM || CPU_CAVIUM_OCTEON
+ 	default "5"
