@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=carl9170
-PKG_VERSION:=0.9.2.1
+PKG_VERSION:=0.9.9.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/chr/carl9170/$(PKG_VERSION) \
 	@KERNEL/linux/kernel/people/chr/carl9170/old/$(PKG_VERSION)
-PKG_MD5SUM:=5f0057ea651343460ea4f1fb093a4bdf
+PKG_MD5SUM:=122610b254125d93c7f64cc559d3341a
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -39,7 +39,7 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(HOST_TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(PKG_SOURCE)
 	$(HOST_TAR) -C $(PKG_BUILD_DIR) -xf $(PKG_BUILD_DIR)/$(PKG_VERSION)/driver/carl9170-driver-$(PKG_VERSION).tar
-	ln -s Makefile.standalone $(DRV_PATH)/Makefile
+	ln -sf Makefile.standalone $(DRV_PATH)/Makefile
 	ln -s $(STAGING_DIR)/usr/include/mac80211/ath/*.h $(PKG_BUILD_DIR)/drivers/net/wireless/ath/
 	$(Build/Patch)
 endef
