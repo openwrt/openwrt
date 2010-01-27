@@ -26,7 +26,7 @@
 #endif
 
 #define RTL8366S_DRIVER_DESC	"Realtek RTL8366S ethernet switch driver"
-#define RTL8366S_DRIVER_VER	"0.2.0"
+#define RTL8366S_DRIVER_VER	"0.2.1"
 
 #define RTL8366S_PHY_NO_MAX                 4
 #define RTL8366S_PHY_PAGE_MAX               7
@@ -228,6 +228,31 @@ static struct mib_counter rtl8366s_mib_counters[RTL8366S_MIB_COUNT] = {
 static inline struct rtl8366s *sw_to_rtl8366s(struct switch_dev *sw)
 {
 	return container_of(sw, struct rtl8366s, dev);
+}
+
+static int rtl8366s_reset_chip(struct rtl8366s *rtl)
+{
+	struct rtl8366_smi *smi = &rtl->smi;
+	int timeout = 10;
+	u32 data;
+
+	rtl8366_smi_write_reg(smi, RTL8366_RESET_CTRL_REG,
+			      RTL8366_CHIP_CTRL_RESET_HW);
+	do {
+		msleep(1);
+		if (rtl8366_smi_read_reg(smi, RTL8366_RESET_CTRL_REG, &data))
+			return -EIO;
+
+		if (!(data & RTL8366_CHIP_CTRL_RESET_HW))
+			break;
+	} while (--timeout);
+
+	if (!timeout) {
+		printk("Timeout waiting for the switch to reset\n");
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int rtl8366s_read_phy_reg(struct rtl8366s *rtl,
@@ -1301,25 +1326,11 @@ static int rtl8366s_sw_set_port_pvid(struct switch_dev *dev, int port, int val)
 static int rtl8366s_sw_reset_switch(struct switch_dev *dev)
 {
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
-	struct rtl8366_smi *smi = &rtl->smi;
-	int timeout = 10;
-	u32 data;
+	int err;
 
-	rtl8366_smi_write_reg(smi, RTL8366_RESET_CTRL_REG,
-			      RTL8366_CHIP_CTRL_RESET_HW);
-	do {
-		msleep(1);
-		if (rtl8366_smi_read_reg(smi, RTL8366_RESET_CTRL_REG, &data))
-			return -EIO;
-
-		if (!(data & RTL8366_CHIP_CTRL_RESET_HW))
-			break;
-	} while (--timeout);
-
-	if (!timeout) {
-		printk("Timeout waiting for the switch to reset\n");
-		return -EIO;
-	}
+	err = rtl8366s_reset_chip(rtl);
+	if (err)
+		return err;
 
 	return rtl8366s_reset_vlan(rtl);
 }
@@ -1553,8 +1564,11 @@ static int rtl8366s_setup(struct rtl8366s *rtl)
 	dev_info(rtl->parent, "RTL%04x ver. %u chip found\n",
 		 chip_id, chip_ver & RTL8366S_CHIP_VERSION_MASK);
 
-	rtl8366s_debugfs_init(rtl);
+	ret = rtl8366s_reset_chip(rtl);
+	if (ret)
+		return ret;
 
+	rtl8366s_debugfs_init(rtl);
 	return 0;
 }
 
