@@ -10,6 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ubsec-ssb
 PKG_VERSION:=2009-02-21
+PKG_RELEASE:=1
 
 CRYPTO_MENU:=OCF Configuration
 
@@ -17,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ocf-ubsec-ssb
   SUBMENU:=$(CRYPTO_MENU)
-  DEPENDS:=@TARGET_brcm47xx +kmod-crypto-core +kmod-crypto-ocf
+  DEPENDS:=@TARGET_brcm47xx +@OPENSSL_ENGINE +kmod-crypto-core +kmod-crypto-ocf
   TITLE:=BCM5365P IPSec Core driver
   FILES:=$(PKG_BUILD_DIR)/src/ubsec_ssb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,ubsec_ssb)
