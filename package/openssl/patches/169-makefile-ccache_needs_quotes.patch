@@ -1,6 +1,6 @@
---- openssl-0.9.8k/Makefile.org	2009-04-06 13:52:21.000000000 +0200
-+++ openssl-0.9.8k.patched/Makefile.org	2009-04-06 13:54:04.000000000 +0200
-@@ -357,7 +357,7 @@
+--- a/Makefile.org
++++ b/Makefile.org
+@@ -357,7 +357,7 @@ libcrypto$(SHLIB_EXT): libcrypto.a $(SHA
  			$(AR) libcrypto.a fips/fipscanister.o ; \
  		else \
  			if [ "$(FIPSCANLIB)" = "libcrypto" ]; then \
@@ -9,7 +9,7 @@
  				export CC FIPSLD_CC; \
  			fi; \
  			$(MAKE) -e SHLIBDIRS='crypto' build-shared; \
-@@ -380,7 +380,7 @@
+@@ -380,7 +380,7 @@ libssl$(SHLIB_EXT): libcrypto$(SHLIB_EXT
  fips/fipscanister.o:	build_fips
  libfips$(SHLIB_EXT):		fips/fipscanister.o
  	@if [ "$(SHLIB_TARGET)" != "" ]; then \
@@ -18,18 +18,15 @@
  		$(MAKE) -f Makefile.shared -e $(BUILDENV) \
  			CC=$${CC} LIBNAME=fips THIS=$@ \
  			LIBEXTRAS=fips/fipscanister.o \
---- openssl-0.9.8k/apps/Makefile	2009-04-06 22:07:06.000000000 +0200
-+++ openssl-0.9.8k.patched/apps/Makefile	2009-04-06 22:12:39.000000000 +0200
-@@ -153,7 +153,7 @@
+--- a/apps/Makefile
++++ b/apps/Makefile
+@@ -153,12 +153,12 @@ $(EXE): progs.h $(E_OBJ) $(PROGRAM).o $(
  	shlib_target=; if [ -n "$(SHARED_LIBS)" ]; then \
  		shlib_target="$(SHLIB_TARGET)"; \
  	elif [ -n "$(FIPSCANLIB)" ]; then \
 -	  FIPSLD_CC=$(CC); CC=$(TOP)/fips/fipsld; export CC FIPSLD_CC; \
 +	  FIPSLD_CC="$(CC)"; CC=$(TOP)/fips/fipsld; export CC FIPSLD_CC; \
  	fi; \
- 	LIBRARIES="$(LIBSSL) $(LIBKRB5) $(LIBCRYPTO)" ; \
- 	[ "x$(FIPSCANLIB)" = "xlibfips" ] && LIBRARIES="$$LIBRARIES -lfips"; \
-@@ -158,7 +158,7 @@
  	LIBRARIES="$(LIBSSL) $(LIBKRB5) $(LIBCRYPTO)" ; \
  	[ "x$(FIPSCANLIB)" = "xlibfips" ] && LIBRARIES="$$LIBRARIES -lfips"; \
  	$(MAKE) -f $(TOP)/Makefile.shared -e \

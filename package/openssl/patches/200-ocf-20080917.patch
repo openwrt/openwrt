@@ -1,6 +1,6 @@
 --- a/Configure
 +++ b/Configure
-@@ -34,6 +34,8 @@ my $usage="Usage: Configure [no-<cipher>
+@@ -36,6 +36,8 @@ my $usage="Usage: Configure [no-<cipher>
  #		(Default: KRB5_DIR/include)
  # --with-krb5-flavor  Declare what flavor of Kerberos 5 is used.  Currently
  #		supported values are "MIT" and "Heimdal".  A value is required.
@@ -9,7 +9,7 @@
  #
  # --test-sanity Make a number of sanity checks on the data in this file.
  #               This is a debugging tool for OpenSSL developers.
-@@ -540,6 +542,9 @@ my %table=(
+@@ -547,6 +549,9 @@ my %table=(
  ##### Compaq Non-Stop Kernel (Tandem)
  "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
  
@@ -19,7 +19,7 @@
  );
  
  my @MK1MF_Builds=qw(VC-WIN64I VC-WIN64A
-@@ -589,6 +594,8 @@ my $montasm=1;   # but "no-montasm" is d
+@@ -601,6 +606,8 @@ my $montasm=1;   # but "no-montasm" is d
  my $no_asm=0;
  my $no_dso=0;
  my $no_gmp=0;
@@ -28,7 +28,7 @@
  my @skip=();
  my $Makefile="Makefile";
  my $des_locl="crypto/des/des_locl.h";
-@@ -716,6 +723,14 @@ PROCESS_ARGS:
+@@ -749,6 +756,14 @@ PROCESS_ARGS:
  			{
  			exit(&test_sanity());
  			}
@@ -43,7 +43,7 @@
  		elsif (/^reconfigure/ || /^reconf/)
  			{
  			if (open(IN,"<$Makefile"))
-@@ -924,6 +939,7 @@ foreach (sort (keys %disabled))
+@@ -1037,6 +1052,7 @@ foreach (sort (keys %disabled))
  			print " OPENSSL_NO_$ALGO";
  		
  			if (/^err$/)	{ $flags .= "-DOPENSSL_NO_ERR "; }
@@ -51,7 +51,7 @@
  			elsif (/^asm$/)	{ $no_asm = 1; }
  			}
  		else
-@@ -1064,6 +1080,16 @@ if (!$no_krb5)
+@@ -1161,6 +1177,16 @@ if (!$no_krb5)
  		   $withargs{"krb5-dir"} ne "";
  	}
  
@@ -85,15 +85,15 @@
   ----------------------
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -367,7 +367,7 @@ files:
+@@ -502,7 +502,7 @@ files:
  
  links:
  	@$(PERL) $(TOP)/util/mkdir-p.pl include/openssl
 -	@$(PERL) $(TOP)/util/mklink.pl include/openssl $(EXHEADER)
 +	@$(PERL) $(TOP)/util/mklink.pl include/openssl $(HEADER) $(EXHEADER)
  	@set -e; target=links; $(RECURSIVE_BUILD_CMD)
- 
- gentests:
+ 	@if [ -z "$(FIPSCANLIB)" ]; then \
+ 		set -e; target=links; dir=fips ; $(BUILD_CMD) ; \
 --- a/Makefile.shared
 +++ b/Makefile.shared
 @@ -6,13 +6,13 @@
@@ -159,9 +159,9 @@
 -  CC=cc
 +  CC="${CC:-cc}"
  fi
- GCCVER=${GCCVER:-0}
- if [ "$SYSTEM" = "HP-UX" ];then
-@@ -482,6 +482,9 @@ echo Operating system: $GUESSOS
+ 
+ # Only set CC if not supplied already
+@@ -493,6 +493,9 @@ echo Operating system: $GUESSOS
  # script above so we end up with values in vars but that would take
  # more time that I want to waste at the moment
  case "$GUESSOS" in
@@ -639,7 +639,7 @@
  	results[alg][run_no]=((double)count)/time_used*lengths[run_no];
  	}
  
-@@ -2806,29 +2928,11 @@ static int do_multi(int multi)
+@@ -2808,29 +2930,11 @@ static int do_multi(int multi)
  				p=buf+3;
  				alg=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
@@ -672,7 +672,7 @@
  				}
  			else if(!strncmp(buf,"+F2:",4))
  				{
-@@ -2839,12 +2943,18 @@ static int do_multi(int multi)
+@@ -2841,12 +2945,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  
@@ -691,7 +691,7 @@
  				d=atof(sstrsep(&p,sep));
  				if(n)
  					rsa_results[k][1]=1/(1/rsa_results[k][1]+1/d);
-@@ -2860,12 +2970,18 @@ static int do_multi(int multi)
+@@ -2862,12 +2972,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  

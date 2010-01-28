@@ -1,7 +1,6 @@
-diff -burN openssl-0.9.8k/Makefile openssl-0.9.8k.patched/Makefile
---- openssl-0.9.8k/Makefile	2009-03-25 14:11:43.000000000 +0100
-+++ openssl-0.9.8k.patched/Makefile	2009-03-26 15:28:35.483566078 +0100
-@@ -133,7 +133,7 @@
+--- a/Makefile
++++ b/Makefile
+@@ -133,7 +133,7 @@ FIPSCANLIB=
  
  BASEADDR=0xFB00000
  
@@ -10,7 +9,7 @@ diff -burN openssl-0.9.8k/Makefile openssl-0.9.8k.patched/Makefile
  SHLIBDIRS= crypto ssl
  
  # dirs in crypto to build
-@@ -150,7 +150,7 @@
+@@ -150,7 +150,7 @@ SDIRS=  \
  
  # tests to perform.  "alltests" is a special word indicating that all tests
  # should be performed.
@@ -19,7 +18,7 @@ diff -burN openssl-0.9.8k/Makefile openssl-0.9.8k.patched/Makefile
  
  MAKEFILE= Makefile
  
-@@ -162,7 +162,7 @@
+@@ -162,7 +162,7 @@ SHELL=/bin/sh
  
  TOP=    .
  ONEDIRS=out tmp
@@ -28,7 +27,7 @@ diff -burN openssl-0.9.8k/Makefile openssl-0.9.8k.patched/Makefile
  WDIRS=  windows
  LIBS=   libcrypto.a libssl.a
  SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
-@@ -321,7 +321,7 @@
+@@ -321,7 +321,7 @@ FIPS_EX_OBJ= ../crypto/aes/aes_cfb.o \
  	../crypto/uid.o
  
  sub_all: build_all
@@ -37,7 +36,7 @@ diff -burN openssl-0.9.8k/Makefile openssl-0.9.8k.patched/Makefile
  
  build_libs: build_crypto build_fips build_ssl build_shared build_engines
  
-@@ -613,7 +613,7 @@
+@@ -613,7 +613,7 @@ dist:   
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -46,10 +45,9 @@ diff -burN openssl-0.9.8k/Makefile openssl-0.9.8k.patched/Makefile
  
  install_sw:
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
-diff -burN openssl-0.9.8k/Makefile.org openssl-0.9.8k.patched/Makefile.org
---- openssl-0.9.8k/Makefile.org	2009-03-03 23:40:29.000000000 +0100
-+++ openssl-0.9.8k.patched/Makefile.org	2009-03-26 15:29:05.243750064 +0100
-@@ -611,7 +611,7 @@
+--- a/Makefile.org
++++ b/Makefile.org
+@@ -611,7 +611,7 @@ dist:   
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
