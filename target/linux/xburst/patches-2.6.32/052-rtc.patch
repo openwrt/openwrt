@@ -8,8 +8,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/052-rt
  drivers/rtc/Makefile |    1 +
  2 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
-index 3c20dae..930bc4a 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
 @@ -469,6 +469,17 @@ config RTC_DRV_EFI
@@ -30,11 +28,9 @@ index 3c20dae..930bc4a 100644
  config RTC_DRV_STK17TA8
  	tristate "Simtek STK17TA8"
  	depends on RTC_CLASS
-diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
-index aa3fbd5..2153d90 100644
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -44,6 +44,7 @@ obj-$(CONFIG_RTC_DRV_EP93XX)	+= rtc-ep93xx.o
+@@ -44,6 +44,7 @@ obj-$(CONFIG_RTC_DRV_EP93XX)	+= rtc-ep93
  obj-$(CONFIG_RTC_DRV_FM3130)	+= rtc-fm3130.o
  obj-$(CONFIG_RTC_DRV_GENERIC)	+= rtc-generic.o
  obj-$(CONFIG_RTC_DRV_ISL1208)	+= rtc-isl1208.o
@@ -42,6 +38,3 @@ index aa3fbd5..2153d90 100644
  obj-$(CONFIG_RTC_DRV_M41T80)	+= rtc-m41t80.o
  obj-$(CONFIG_RTC_DRV_M41T94)	+= rtc-m41t94.o
  obj-$(CONFIG_RTC_DRV_M48T35)	+= rtc-m48t35.o
--- 
-1.5.6.5
-

@@ -9,8 +9,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/050-na
  drivers/mtd/nand/nand_base.c |   19 +++++++------------
  3 files changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index 2fda0b6..8b28828 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -482,4 +482,10 @@ config MTD_NAND_W90P910
@@ -24,22 +22,18 @@ index 2fda0b6..8b28828 100644
 +	Support NAND Flash device on Jz4740 board
 +
  endif # MTD_NAND
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index 6950d3d..1661534 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -42,5 +42,6 @@ obj-$(CONFIG_MTD_NAND_SOCRATES)		+= socrates_nand.o
+@@ -42,5 +42,6 @@ obj-$(CONFIG_MTD_NAND_SOCRATES)		+= socr
  obj-$(CONFIG_MTD_NAND_TXX9NDFMC)	+= txx9ndfmc.o
  obj-$(CONFIG_MTD_NAND_W90P910)		+= w90p910_nand.o
  obj-$(CONFIG_MTD_NAND_NOMADIK)		+= nomadik_nand.o
 +obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
  
  nand-objs := nand_base.o nand_bbt.o
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 2957cc7..33ed710 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -956,29 +956,22 @@ static int nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
+@@ -956,29 +956,22 @@ static int nand_read_page_hwecc(struct m
  	uint8_t *ecc_calc = chip->buffers->ecccalc;
  	uint8_t *ecc_code = chip->buffers->ecccode;
  	uint32_t *eccpos = chip->ecc.layout->eccpos;
@@ -74,7 +68,7 @@ index 2957cc7..33ed710 100644
  	return 0;
  }
  
-@@ -1178,6 +1171,8 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+@@ -1178,6 +1171,8 @@ static int nand_do_read_ops(struct mtd_i
  			bufpoi = aligned ? buf : chip->buffers->databuf;
  
  			if (likely(sndcmd)) {
@@ -83,6 +77,3 @@ index 2957cc7..33ed710 100644
  				chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
  				sndcmd = 0;
  			}
--- 
-1.5.6.5
-

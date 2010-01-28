@@ -7,8 +7,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/500-mo
  drivers/char/defkeymap.map |   74 +++++++++++++++++++++++++++++++-------------
  1 files changed, 52 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/char/defkeymap.map b/drivers/char/defkeymap.map
-index 50b30ca..ce141c8 100644
 --- a/drivers/char/defkeymap.map
 +++ b/drivers/char/defkeymap.map
 @@ -1,5 +1,5 @@
@@ -18,7 +16,7 @@ index 50b30ca..ce141c8 100644
  # Change the above line into
  #	keymaps 0-2,4-6,8,12
  # in case you want the entries
-@@ -45,24 +45,38 @@ keycode  12 = minus            underscore       backslash
+@@ -45,24 +45,38 @@ keycode  12 = minus            underscor
  	control	keycode  12 = Control_underscore
  	shift	control	keycode  12 = Control_underscore
  	alt	keycode  12 = Meta_minus      
@@ -60,7 +58,7 @@ index 50b30ca..ce141c8 100644
  keycode  26 = bracketleft      braceleft       
  	control keycode  26 = Escape          
  	alt     keycode  26 = Meta_bracketleft
-@@ -71,19 +85,28 @@ keycode  27 = bracketright     braceright       asciitilde
+@@ -71,19 +85,28 @@ keycode  27 = bracketright     bracerigh
  	alt     keycode  27 = Meta_bracketright
  keycode  28 = Return          
  	alt     keycode  28 = Meta_Control_m  
@@ -93,7 +91,7 @@ index 50b30ca..ce141c8 100644
  keycode  39 = semicolon        colon           
  	alt     keycode  39 = Meta_semicolon  
  keycode  40 = apostrophe       quotedbl        
-@@ -97,58 +120,65 @@ keycode  43 = backslash        bar
+@@ -97,58 +120,65 @@ keycode  43 = backslash        bar      
  	control keycode  43 = Control_backslash
  	alt     keycode  43 = Meta_backslash  
  keycode  44 = z               
@@ -181,6 +179,3 @@ index 50b30ca..ce141c8 100644
  keycode  98 = KP_Divide       
  keycode  99 = Control_backslash
  	control keycode  99 = Control_backslash
--- 
-1.5.6.5
-

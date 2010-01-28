@@ -68,7 +68,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6095,6 +6095,7 @@ int can_nice(const struct task_struct *p
+@@ -6091,6 +6091,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
@@ -96,7 +96,7 @@
   * We enter with non-exclusive mmap_sem (to exclude vma changes,
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -1113,6 +1113,7 @@ void unmap_kernel_range(unsigned long ad
+@@ -1111,6 +1111,7 @@ void unmap_kernel_range(unsigned long ad
  	vunmap_page_range(addr, end);
  	flush_tlb_kernel_range(addr, end);
  }
@@ -104,7 +104,7 @@
  
  int map_vm_area(struct vm_struct *area, pgprot_t prot, struct page ***pages)
  {
-@@ -1228,6 +1229,7 @@ struct vm_struct *get_vm_area(unsigned l
+@@ -1226,6 +1227,7 @@ struct vm_struct *get_vm_area(unsigned l
  	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
  				-1, GFP_KERNEL, __builtin_return_address(0));
  }
@@ -124,7 +124,7 @@
  #ifndef CONFIG_MMU
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -1069,6 +1069,7 @@ struct sighand_struct *lock_task_sighand
+@@ -1070,6 +1070,7 @@ struct sighand_struct *lock_task_sighand
  
  	return sighand;
  }

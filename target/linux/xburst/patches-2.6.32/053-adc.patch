@@ -8,8 +8,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/053-ad
  drivers/misc/Makefile |    1 +
  2 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index df1f86b..d79902a 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
 @@ -246,6 +246,17 @@ config EP93XX_PWM
@@ -30,8 +28,6 @@ index df1f86b..d79902a 100644
  source "drivers/misc/c2port/Kconfig"
  source "drivers/misc/eeprom/Kconfig"
  source "drivers/misc/cb710/Kconfig"
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index f982d2e..49b6e76 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -21,5 +21,6 @@ obj-$(CONFIG_HP_ILO)		+= hpilo.o
@@ -41,6 +37,3 @@ index f982d2e..49b6e76 100644
 +obj-$(CONFIG_JZ4740_ADC)	+= jz4740-adc.o
  obj-y				+= eeprom/
  obj-y				+= cb710/
--- 
-1.5.6.5
-

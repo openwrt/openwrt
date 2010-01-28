@@ -7,11 +7,9 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/420-fb
  drivers/video/fbmem.c |    8 ++++++--
  1 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
-index 99bbd28..5e121b8 100644
 --- a/drivers/video/fbmem.c
 +++ b/drivers/video/fbmem.c
-@@ -1008,12 +1008,12 @@ fb_set_var(struct fb_info *info, struct fb_var_screeninfo *var)
+@@ -1008,12 +1008,12 @@ fb_set_var(struct fb_info *info, struct 
  int
  fb_blank(struct fb_info *info, int blank)
  {	
@@ -26,7 +24,7 @@ index 99bbd28..5e121b8 100644
   		ret = info->fbops->fb_blank(blank, info);
  
   	if (!ret) {
-@@ -1024,6 +1024,10 @@ fb_blank(struct fb_info *info, int blank)
+@@ -1024,6 +1024,10 @@ fb_blank(struct fb_info *info, int blank
  		fb_notifier_call_chain(FB_EVENT_BLANK, &event);
  	}
  
@@ -37,6 +35,3 @@ index 99bbd28..5e121b8 100644
   	return ret;
  }
  
--- 
-1.5.6.5
-

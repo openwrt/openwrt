@@ -8,8 +8,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/051-fb
  drivers/video/Makefile |    1 +
  2 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index 188e1ba..c8ec6ad 100644
 --- a/drivers/video/Kconfig
 +++ b/drivers/video/Kconfig
 @@ -2160,6 +2160,15 @@ config FB_BROADSHEET
@@ -28,11 +26,9 @@ index 188e1ba..c8ec6ad 100644
  source "drivers/video/omap/Kconfig"
  
  source "drivers/video/backlight/Kconfig"
-diff --git a/drivers/video/Makefile b/drivers/video/Makefile
-index 80232e1..b3ce701 100644
 --- a/drivers/video/Makefile
 +++ b/drivers/video/Makefile
-@@ -128,6 +128,7 @@ obj-$(CONFIG_XEN_FBDEV_FRONTEND)  += xen-fbfront.o
+@@ -128,6 +128,7 @@ obj-$(CONFIG_XEN_FBDEV_FRONTEND)  += xen
  obj-$(CONFIG_FB_CARMINE)          += carminefb.o
  obj-$(CONFIG_FB_MB862XX)	  += mb862xx/
  obj-$(CONFIG_FB_MSM)              += msm/
@@ -40,6 +36,3 @@ index 80232e1..b3ce701 100644
  
  # Platform or fallback drivers go here
  obj-$(CONFIG_FB_UVESA)            += uvesafb.o
--- 
-1.5.6.5
-

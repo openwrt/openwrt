@@ -7,11 +7,9 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/400-sp
  drivers/spi/spi_gpio.c |   14 +++++++++-----
  1 files changed, 9 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/spi/spi_gpio.c b/drivers/spi/spi_gpio.c
-index 26bd03e..5f89c21 100644
 --- a/drivers/spi/spi_gpio.c
 +++ b/drivers/spi/spi_gpio.c
-@@ -243,9 +243,11 @@ spi_gpio_request(struct spi_gpio_platform_data *pdata, const char *label)
+@@ -254,9 +254,11 @@ spi_gpio_request(struct spi_gpio_platfor
  	if (value)
  		goto done;
  
@@ -26,7 +24,7 @@ index 26bd03e..5f89c21 100644
  
  	value = spi_gpio_alloc(SPI_SCK_GPIO, label, false);
  	if (value)
-@@ -308,7 +310,8 @@ static int __init spi_gpio_probe(struct platform_device *pdev)
+@@ -319,7 +321,8 @@ static int __devinit spi_gpio_probe(stru
  	if (status < 0) {
  		spi_master_put(spi_gpio->bitbang.master);
  gpio_free:
@@ -36,7 +34,7 @@ index 26bd03e..5f89c21 100644
  		gpio_free(SPI_MOSI_GPIO);
  		gpio_free(SPI_SCK_GPIO);
  		spi_master_put(master);
-@@ -332,7 +335,8 @@ static int __exit spi_gpio_remove(struct platform_device *pdev)
+@@ -343,7 +346,8 @@ static int __devexit spi_gpio_remove(str
  
  	platform_set_drvdata(pdev, NULL);
  
@@ -46,6 +44,3 @@ index 26bd03e..5f89c21 100644
  	gpio_free(SPI_MOSI_GPIO);
  	gpio_free(SPI_SCK_GPIO);
  
--- 
-1.5.6.5
-

@@ -18,8 +18,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  arch/mips/mm/tlbex.c                     |    5 +
  12 files changed, 379 insertions(+), 4 deletions(-)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index fd7620f..9b40aa8 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -174,6 +174,9 @@ config MACH_JAZZ
@@ -40,7 +38,7 @@ index fd7620f..9b40aa8 100644
  source "arch/mips/lasat/Kconfig"
  source "arch/mips/pmc-sierra/Kconfig"
  source "arch/mips/sgi-ip27/Kconfig"
-@@ -1895,6 +1899,14 @@ config NR_CPUS
+@@ -1913,6 +1917,14 @@ config NR_CPUS
  
  source "kernel/time/Kconfig"
  
@@ -55,11 +53,9 @@ index fd7620f..9b40aa8 100644
  #
  # Timer Interrupt Frequency Configuration
  #
-diff --git a/arch/mips/Makefile b/arch/mips/Makefile
-index 77f5021..1b22297 100644
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -184,6 +184,14 @@ cflags-$(CONFIG_AR7)		+= -I$(srctree)/arch/mips/include/asm/mach-ar7
+@@ -184,6 +184,14 @@ cflags-$(CONFIG_AR7)		+= -I$(srctree)/ar
  load-$(CONFIG_AR7)		+= 0xffffffff94100000
  
  #
@@ -74,7 +70,7 @@ index 77f5021..1b22297 100644
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
  #
  core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
-@@ -702,6 +710,12 @@ makeboot =$(Q)$(MAKE) $(build)=arch/mips/boot VMLINUX=$(vmlinux-32) $(1)
+@@ -705,6 +713,12 @@ makeboot =$(Q)$(MAKE) $(build)=arch/mips
  
  all:	$(all-y)
  
@@ -87,7 +83,7 @@ index 77f5021..1b22297 100644
  vmlinux.bin: $(vmlinux-32)
  	+@$(call makeboot,$@)
  
-@@ -731,6 +745,7 @@ install:
+@@ -734,6 +748,7 @@ install:
  
  archclean:
  	@$(MAKE) $(clean)=arch/mips/boot
@@ -95,7 +91,7 @@ index 77f5021..1b22297 100644
  	@$(MAKE) $(clean)=arch/mips/lasat
  
  define archhelp
-@@ -738,6 +753,9 @@ define archhelp
+@@ -741,6 +756,9 @@ define archhelp
  	echo '  vmlinux.ecoff        - ECOFF boot image'
  	echo '  vmlinux.bin          - Raw binary boot image'
  	echo '  vmlinux.srec         - SREC boot image'
@@ -105,8 +101,6 @@ index 77f5021..1b22297 100644
  	echo
  	echo '  These will be default as apropriate for a configured platform.'
  endef
-diff --git a/arch/mips/boot/Makefile b/arch/mips/boot/Makefile
-index 2a209d7..1cfce3e 100644
 --- a/arch/mips/boot/Makefile
 +++ b/arch/mips/boot/Makefile
 @@ -7,6 +7,9 @@
@@ -119,7 +113,7 @@ index 2a209d7..1cfce3e 100644
  #
  # Some DECstations need all possible sections of an ECOFF executable
  #
-@@ -25,7 +28,7 @@ strip-flags	= $(addprefix --remove-section=,$(drop-sections))
+@@ -25,7 +28,7 @@ strip-flags	= $(addprefix --remove-secti
  
  VMLINUX = vmlinux
  
@@ -154,8 +148,6 @@ index 2a209d7..1cfce3e 100644
 +	       vmlinux.bin.gz \
 +	       uImage \
 +	       zImage
-diff --git a/arch/mips/include/asm/bootinfo.h b/arch/mips/include/asm/bootinfo.h
-index f5dfaf6..584376f 100644
 --- a/arch/mips/include/asm/bootinfo.h
 +++ b/arch/mips/include/asm/bootinfo.h
 @@ -69,6 +69,12 @@
@@ -171,8 +163,6 @@ index f5dfaf6..584376f 100644
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  extern char *system_type;
-diff --git a/arch/mips/include/asm/cpu.h b/arch/mips/include/asm/cpu.h
-index 4b96d1a..478a527 100644
 --- a/arch/mips/include/asm/cpu.h
 +++ b/arch/mips/include/asm/cpu.h
 @@ -34,7 +34,7 @@
@@ -209,8 +199,6 @@ index 4b96d1a..478a527 100644
  	CPU_LAST
  };
  
-diff --git a/arch/mips/include/asm/mach-generic/irq.h b/arch/mips/include/asm/mach-generic/irq.h
-index 70d9a25..73b7a83 100644
 --- a/arch/mips/include/asm/mach-generic/irq.h
 +++ b/arch/mips/include/asm/mach-generic/irq.h
 @@ -9,7 +9,7 @@
@@ -222,8 +210,6 @@ index 70d9a25..73b7a83 100644
  #endif
  
  #ifdef CONFIG_I8259
-diff --git a/arch/mips/include/asm/r4kcache.h b/arch/mips/include/asm/r4kcache.h
-index 387bf59..b500056 100644
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
 @@ -17,6 +17,58 @@
@@ -285,7 +271,7 @@ index 387bf59..b500056 100644
  /*
   * This macro return a properly sign-extended address suitable as base address
   * for indexed cache operations.  Two issues here:
-@@ -144,6 +196,7 @@ static inline void flush_icache_line_indexed(unsigned long addr)
+@@ -144,6 +196,7 @@ static inline void flush_icache_line_ind
  {
  	__iflush_prologue
  	cache_op(Index_Invalidate_I, addr);
@@ -293,7 +279,7 @@ index 387bf59..b500056 100644
  	__iflush_epilogue
  }
  
-@@ -151,6 +204,7 @@ static inline void flush_dcache_line_indexed(unsigned long addr)
+@@ -151,6 +204,7 @@ static inline void flush_dcache_line_ind
  {
  	__dflush_prologue
  	cache_op(Index_Writeback_Inv_D, addr);
@@ -301,7 +287,7 @@ index 387bf59..b500056 100644
  	__dflush_epilogue
  }
  
-@@ -163,6 +217,7 @@ static inline void flush_icache_line(unsigned long addr)
+@@ -163,6 +217,7 @@ static inline void flush_icache_line(uns
  {
  	__iflush_prologue
  	cache_op(Hit_Invalidate_I, addr);
@@ -309,7 +295,7 @@ index 387bf59..b500056 100644
  	__iflush_epilogue
  }
  
-@@ -170,6 +225,7 @@ static inline void flush_dcache_line(unsigned long addr)
+@@ -170,6 +225,7 @@ static inline void flush_dcache_line(uns
  {
  	__dflush_prologue
  	cache_op(Hit_Writeback_Inv_D, addr);
@@ -317,7 +303,7 @@ index 387bf59..b500056 100644
  	__dflush_epilogue
  }
  
-@@ -177,6 +233,7 @@ static inline void invalidate_dcache_line(unsigned long addr)
+@@ -177,6 +233,7 @@ static inline void invalidate_dcache_lin
  {
  	__dflush_prologue
  	cache_op(Hit_Invalidate_D, addr);
@@ -325,7 +311,7 @@ index 387bf59..b500056 100644
  	__dflush_epilogue
  }
  
-@@ -209,6 +266,7 @@ static inline void flush_scache_line(unsigned long addr)
+@@ -209,6 +266,7 @@ static inline void flush_scache_line(uns
  static inline void protected_flush_icache_line(unsigned long addr)
  {
  	protected_cache_op(Hit_Invalidate_I, addr);
@@ -333,7 +319,7 @@ index 387bf59..b500056 100644
  }
  
  /*
-@@ -220,6 +278,7 @@ static inline void protected_flush_icache_line(unsigned long addr)
+@@ -220,6 +278,7 @@ static inline void protected_flush_icach
  static inline void protected_writeback_dcache_line(unsigned long addr)
  {
  	protected_cache_op(Hit_Writeback_Inv_D, addr);
@@ -341,7 +327,7 @@ index 387bf59..b500056 100644
  }
  
  static inline void protected_writeback_scache_line(unsigned long addr)
-@@ -396,8 +455,10 @@ static inline void blast_##pfx##cache##lsize##_page_indexed(unsigned long page)
+@@ -396,8 +455,10 @@ static inline void blast_##pfx##cache##l
  __BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16)
  __BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16)
  __BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16)
@@ -352,7 +338,7 @@ index 387bf59..b500056 100644
  __BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 32)
  __BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 64)
  __BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64)
-@@ -405,12 +466,122 @@ __BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 64)
+@@ -405,12 +466,122 @@ __BUILD_BLAST_CACHE(s, scache, Index_Wri
  __BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 128)
  
  __BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 16)
@@ -475,7 +461,7 @@ index 387bf59..b500056 100644
  /* build blast_xxx_range, protected_blast_xxx_range */
  #define __BUILD_BLAST_CACHE_RANGE(pfx, desc, hitop, prot) \
  static inline void prot##blast_##pfx##cache##_range(unsigned long start, \
-@@ -432,13 +603,73 @@ static inline void prot##blast_##pfx##cache##_range(unsigned long start, \
+@@ -432,13 +603,73 @@ static inline void prot##blast_##pfx##ca
  	__##pfx##flush_epilogue						\
  }
  
@@ -549,8 +535,6 @@ index 387bf59..b500056 100644
 +#endif /* CONFIG_JZRISC */
 +
  #endif /* _ASM_R4KCACHE_H */
-diff --git a/arch/mips/include/asm/suspend.h b/arch/mips/include/asm/suspend.h
-index 294cdb6..94dc597 100644
 --- a/arch/mips/include/asm/suspend.h
 +++ b/arch/mips/include/asm/suspend.h
 @@ -2,6 +2,9 @@
@@ -563,8 +547,6 @@ index 294cdb6..94dc597 100644
  
  /* References to section boundaries */
  extern const void __nosave_begin, __nosave_end;
-diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
-index 7a51866..fd12b0c 100644
 --- a/arch/mips/kernel/cpu-probe.c
 +++ b/arch/mips/kernel/cpu-probe.c
 @@ -160,6 +160,7 @@ void __init check_wait(void)
@@ -575,7 +557,7 @@ index 7a51866..fd12b0c 100644
  		cpu_wait = r4k_wait;
  		break;
  
-@@ -902,6 +903,23 @@ static inline void cpu_probe_cavium(struct cpuinfo_mips *c, unsigned int cpu)
+@@ -902,6 +903,23 @@ static inline void cpu_probe_cavium(stru
  	}
  }
  
@@ -609,8 +591,6 @@ index 7a51866..fd12b0c 100644
  	}
  
  	BUG_ON(!__cpu_name[cpu]);
-diff --git a/arch/mips/mm/c-r4k.c b/arch/mips/mm/c-r4k.c
-index 6721ee2..dd4b70b 100644
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
 @@ -928,6 +928,36 @@ static void __cpuinit probe_pcache(void)
@@ -650,11 +630,9 @@ index 6721ee2..dd4b70b 100644
  	default:
  		if (!(config & MIPS_CONF_M))
  			panic("Don't know how to probe P-caches on this cpu.");
-diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
-index 694d51f..4b2bc95 100644
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
-@@ -52,6 +52,8 @@ void (*_dma_cache_wback)(unsigned long start, unsigned long size);
+@@ -52,6 +52,8 @@ void (*_dma_cache_wback)(unsigned long s
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  
  EXPORT_SYMBOL(_dma_cache_wback_inv);
@@ -663,11 +641,9 @@ index 694d51f..4b2bc95 100644
  
  #endif /* CONFIG_DMA_NONCOHERENT */
  
-diff --git a/arch/mips/mm/tlbex.c b/arch/mips/mm/tlbex.c
-index bb1719a..13c128d 100644
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -389,6 +389,11 @@ static void __cpuinit build_tlb_write_entry(u32 **p, struct uasm_label **l,
+@@ -389,6 +389,11 @@ static void __cpuinit build_tlb_write_en
  		tlbw(p);
  		break;
  
@@ -679,6 +655,3 @@ index bb1719a..13c128d 100644
  	default:
  		panic("No TLB refill handler yet (CPU type: %d)",
  		      current_cpu_data.cputype);
--- 
-1.5.6.5
-

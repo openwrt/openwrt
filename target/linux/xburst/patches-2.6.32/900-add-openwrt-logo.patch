@@ -10,8 +10,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/900-ad
  include/linux/linux_logo.h  |    1 +
  4 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/logo/Kconfig b/drivers/video/logo/Kconfig
-index 39ac49e..03da067 100644
 --- a/drivers/video/logo/Kconfig
 +++ b/drivers/video/logo/Kconfig
 @@ -82,4 +82,8 @@ config LOGO_M32R_CLUT224
@@ -23,11 +21,9 @@ index 39ac49e..03da067 100644
 +	default y
 +
  endif # LOGO
-diff --git a/drivers/video/logo/Makefile b/drivers/video/logo/Makefile
-index 3b43781..cbed3a5 100644
 --- a/drivers/video/logo/Makefile
 +++ b/drivers/video/logo/Makefile
-@@ -15,6 +15,7 @@ obj-$(CONFIG_LOGO_SUPERH_MONO)		+= logo_superh_mono.o
+@@ -15,6 +15,7 @@ obj-$(CONFIG_LOGO_SUPERH_MONO)		+= logo_
  obj-$(CONFIG_LOGO_SUPERH_VGA16)		+= logo_superh_vga16.o
  obj-$(CONFIG_LOGO_SUPERH_CLUT224)	+= logo_superh_clut224.o
  obj-$(CONFIG_LOGO_M32R_CLUT224)		+= logo_m32r_clut224.o
@@ -35,11 +31,9 @@ index 3b43781..cbed3a5 100644
  
  obj-$(CONFIG_SPU_BASE)			+= logo_spe_clut224.o
  
-diff --git a/drivers/video/logo/logo.c b/drivers/video/logo/logo.c
-index ea7a8cc..7208830 100644
 --- a/drivers/video/logo/logo.c
 +++ b/drivers/video/logo/logo.c
-@@ -100,6 +100,10 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
+@@ -100,6 +100,10 @@ const struct linux_logo * __init_refok f
  		/* M32R Linux logo */
  		logo = &logo_m32r_clut224;
  #endif
@@ -50,11 +44,9 @@ index ea7a8cc..7208830 100644
  	}
  	return logo;
  }
-diff --git a/include/linux/linux_logo.h b/include/linux/linux_logo.h
-index ca5bd91..67166f3 100644
 --- a/include/linux/linux_logo.h
 +++ b/include/linux/linux_logo.h
-@@ -47,6 +47,7 @@ extern const struct linux_logo logo_superh_vga16;
+@@ -47,6 +47,7 @@ extern const struct linux_logo logo_supe
  extern const struct linux_logo logo_superh_clut224;
  extern const struct linux_logo logo_m32r_clut224;
  extern const struct linux_logo logo_spe_clut224;
@@ -9734,4 +9726,3 @@ index ca5bd91..67166f3 100644
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0
-

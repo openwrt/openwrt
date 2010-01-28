@@ -8,8 +8,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/100-ba
  drivers/power/Makefile |    1 +
  2 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/power/Kconfig b/drivers/power/Kconfig
-index cea6cef..f10934e 100644
 --- a/drivers/power/Kconfig
 +++ b/drivers/power/Kconfig
 @@ -110,4 +110,15 @@ config CHARGER_PCF50633
@@ -28,15 +26,10 @@ index cea6cef..f10934e 100644
 +	  called jz4740-battery.
 +
  endif # POWER_SUPPLY
-diff --git a/drivers/power/Makefile b/drivers/power/Makefile
-index b96f29d..664d589 100644
 --- a/drivers/power/Makefile
 +++ b/drivers/power/Makefile
-@@ -29,3 +29,4 @@ obj-$(CONFIG_BATTERY_BQ27x00)	+= bq27x00_battery.o
+@@ -29,3 +29,4 @@ obj-$(CONFIG_BATTERY_BQ27x00)	+= bq27x00
  obj-$(CONFIG_BATTERY_DA9030)	+= da9030_battery.o
  obj-$(CONFIG_BATTERY_MAX17040)	+= max17040_battery.o
  obj-$(CONFIG_CHARGER_PCF50633)	+= pcf50633-charger.o
 +obj-$(CONFIG_BATTERY_JZ4740)	+= jz4740-battery.o
--- 
-1.5.6.5
-

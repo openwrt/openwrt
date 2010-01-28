@@ -7,11 +7,9 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  drivers/serial/8250.c |  104 ++++++++++++++++++++++++++++++++++++++++++++++++-
  1 files changed, 103 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/serial/8250.c b/drivers/serial/8250.c
-index 737b4c9..65ee974 100644
 --- a/drivers/serial/8250.c
 +++ b/drivers/serial/8250.c
-@@ -196,7 +196,7 @@ static const struct serial8250_config uart_config[] = {
+@@ -196,7 +196,7 @@ static const struct serial8250_config ua
  	[PORT_16550A] = {
  		.name		= "16550A",
  		.fifo_size	= 16,
@@ -20,7 +18,7 @@ index 737b4c9..65ee974 100644
  		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
  		.flags		= UART_CAP_FIFO,
  	},
-@@ -403,6 +403,10 @@ static unsigned int mem_serial_in(struct uart_port *p, int offset)
+@@ -403,6 +403,10 @@ static unsigned int mem_serial_in(struct
  static void mem_serial_out(struct uart_port *p, int offset, int value)
  {
  	offset = map_8250_out_reg(p, offset) << p->regshift;
@@ -31,7 +29,7 @@ index 737b4c9..65ee974 100644
  	writeb(value, p->membase + offset);
  }
  
-@@ -2215,6 +2219,83 @@ static void serial8250_shutdown(struct uart_port *port)
+@@ -2213,6 +2217,83 @@ static void serial8250_shutdown(struct u
  		serial_unlink_irq_chain(up);
  }
  
@@ -115,7 +113,7 @@ index 737b4c9..65ee974 100644
  static unsigned int serial8250_get_divisor(struct uart_port *port, unsigned int baud)
  {
  	unsigned int quot;
-@@ -2234,6 +2315,7 @@ static unsigned int serial8250_get_divisor(struct uart_port *port, unsigned int
+@@ -2232,6 +2313,7 @@ static unsigned int serial8250_get_divis
  
  	return quot;
  }
@@ -123,7 +121,7 @@ index 737b4c9..65ee974 100644
  
  static void
  serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
-@@ -2243,6 +2325,9 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+@@ -2241,6 +2323,9 @@ serial8250_set_termios(struct uart_port 
  	unsigned char cval, fcr = 0;
  	unsigned long flags;
  	unsigned int baud, quot;
@@ -133,7 +131,7 @@ index 737b4c9..65ee974 100644
  
  	switch (termios->c_cflag & CSIZE) {
  	case CS5:
-@@ -2277,7 +2362,12 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+@@ -2275,7 +2360,12 @@ serial8250_set_termios(struct uart_port 
  	baud = uart_get_baud_rate(port, termios, old,
  				  port->uartclk / 16 / 0xffff,
  				  port->uartclk / 16);
@@ -146,7 +144,7 @@ index 737b4c9..65ee974 100644
  
  	/*
  	 * Oxford Semi 952 rev B workaround
-@@ -2355,6 +2445,10 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+@@ -2353,6 +2443,10 @@ serial8250_set_termios(struct uart_port 
  	if (up->capabilities & UART_CAP_UUE)
  		up->ier |= UART_IER_UUE | UART_IER_RTOIE;
  
@@ -157,7 +155,7 @@ index 737b4c9..65ee974 100644
  	serial_out(up, UART_IER, up->ier);
  
  	if (up->capabilities & UART_CAP_EFR) {
-@@ -2389,7 +2483,15 @@ serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
+@@ -2387,7 +2481,15 @@ serial8250_set_termios(struct uart_port 
  		serial_outp(up, UART_LCR, cval | UART_LCR_DLAB);/* set DLAB */
  	}
  
@@ -173,6 +171,3 @@ index 737b4c9..65ee974 100644
  
  	/*
  	 * LCR DLAB must be set to enable 64-byte FIFO mode. If the FCR
--- 
-1.5.6.5
-
