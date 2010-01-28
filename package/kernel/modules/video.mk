@@ -591,3 +591,33 @@ define KernelPackage/video-gspca-stv06xx/description
 endef
 
 $(eval $(call KernelPackage,video-gspca-stv06xx))
+
+
+define KernelPackage/video-gspca-gl860
+$(call KernelPackage/video-gspca/Depends,@LINUX_2_6_32)
+  TITLE:=gl860 webcam support
+  KCONFIG:=CONFIG_USB_GL860
+  FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gl860/gspca_gl860.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,75,gspca_gl860)
+endef
+
+define KernelPackage/video-gspca-gl800/description
+ The GL860 USB Camera Driver (gl860) kernel module.
+endef
+
+$(eval $(call KernelPackage,video-gspca-gl860))
+
+
+define KernelPackage/video-gspca-jeilinj
+$(call KernelPackage/video-gspca/Depends,@LINUX_2_6_32)
+  TITLE:=jeilinj webcam support
+  KCONFIG:=CONFIG_USB_GSPCA_JEILINJ
+  FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_jeilinj.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,75,gspca_jeilinj)
+endef
+
+define KernelPackage/video-gspca-jeilinj/description
+ The JEILINJ USB Camera Driver (jeilinj) kernel module.
+endef
+
+$(eval $(call KernelPackage,video-gspca-jeilinj))
