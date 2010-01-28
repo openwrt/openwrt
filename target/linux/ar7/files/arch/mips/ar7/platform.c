@@ -454,6 +454,7 @@ static int __init ar7_register_devices(void)
 	uart_port[0].mapbase = AR7_REGS_UART0;
 	uart_port[0].membase = ioremap(uart_port[0].mapbase, 256);
 	uart_port[0].regshift = 2;
+	uart_port[0].flags = UPF_IOREMAP;
 	res = early_serial_setup(&uart_port[0]);
 	if (res)
 		return res;
@@ -469,6 +470,7 @@ static int __init ar7_register_devices(void)
 		uart_port[1].mapbase = UR8_REGS_UART1;
 		uart_port[1].membase = ioremap(uart_port[1].mapbase, 256);
 		uart_port[1].regshift = 2;
+		uart_port[1].flags = UPF_IOREMAP;
 		res = early_serial_setup(&uart_port[1]);
 		if (res)
 			return res;
