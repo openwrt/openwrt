@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/ehci-q.c
 +++ b/drivers/usb/host/ehci-q.c
-@@ -1167,6 +1167,9 @@ static void end_unlink_async (struct ehc
+@@ -1172,6 +1172,9 @@ static void end_unlink_async (struct ehc
  		ehci->reclaim = NULL;
  		start_unlink_async (ehci, next);
  	}
