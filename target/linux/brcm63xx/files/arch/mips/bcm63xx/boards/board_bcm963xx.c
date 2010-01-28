@@ -33,6 +33,7 @@
 #include <bcm63xx_dev_usb_udc.h>
 #include <bcm63xx_dev_spi.h>
 #include <board_bcm963xx.h>
+#include <linux/input.h>
 
 #define PFX	"board_bcm963xx: "
 
@@ -295,6 +296,16 @@ static struct board_info __initdata board_96348gw_11 = {
 			.active_low	= 1,
 		},
 	},
+	.reset_buttons = {
+		{
+			.desc		= "reset",
+			.gpio		= 32,
+			.active_low	= 1,
+			.type	        = EV_KEY,
+			.code           = BTN_0,
+			.threshold      = 3,
+		},
+	},
 };
 
 static struct board_info __initdata board_96348gw = {
@@ -331,16 +342,6 @@ static struct board_info __initdata board_96348gw = {
 			.active_low	= 1,
 		},
 		{
-			.name		= "ppp",
-			.gpio		= 3,
-			.active_low	= 1,
-		},
-		{
-			.name		= "ppp-fail",
-			.gpio		= 4,
-			.active_low	= 1,
-		},
-		{
 			.name		= "power",
 			.gpio		= 0,
 			.active_low	= 1,
@@ -351,7 +352,41 @@ static struct board_info __initdata board_96348gw = {
 			.gpio		= 1,
 			.active_low	= 1,
 		},
+		{
+			.name		= "line1",
+			.gpio		= 4,
+			.active_low	= 1,
+		},
+		{
+			.name		= "line2",
+			.gpio		= 5,
+			.active_low	= 1,
+		},
+		{	.name		= "line3",
+			.gpio		= 6,
+			.active_low	= 1,
+		},
+		{
+			.name		= "tel",
+			.gpio		= 7,
+			.active_low	= 1,
+		},
+		{
+			.name		= "eth",
+			.gpio		= 35,
+			.active_low	= 1,
+		},
 	},
+	.reset_buttons = {
+		{
+			.desc		= "reset",
+			.gpio		= 36,
+			.active_low	= 1,
+			.type	        = EV_KEY,
+			.code           = BTN_0,
+			.threshold      = 3,
+		},
+	},	
 };
 
 static struct board_info __initdata board_FAST2404 = {
@@ -606,7 +641,16 @@ static struct board_info __initdata board_AGPFS0 = {
 		},
 	},
 
-	.reset_btn = 37, /* sw2 */
+	.reset_buttons = {
+		{
+			.desc		= "sw2",
+			.gpio		= 37,
+			.active_low	= 1,
+			.type	        = EV_KEY,
+			.code           = BTN_0,
+			.threshold      = 3,
+		},
+	},
 	/* sw1 is connected to gpio34*/
 };
 
@@ -869,11 +913,11 @@ static struct platform_device bcm63xx_gpio_leds = {
 	.dev.platform_data	= &bcm63xx_led_data,
 };
 
-struct gpio_buttons_platform_data bcm63xx_gpio_buttons_data = {
+static struct gpio_buttons_platform_data bcm63xx_gpio_buttons_data = {
 	.poll_interval  = 20,
 };
 
-struct platform_device bcm63xx_gpio_buttons_device = {
+static struct platform_device bcm63xx_gpio_buttons_device = {
         .name           = "gpio-buttons",
         .id             = 0,
         .dev.platform_data = &bcm63xx_gpio_buttons_data,
@@ -947,9 +991,9 @@ int __init board_register_devices(void)
 
 	platform_device_register(&bcm63xx_gpio_leds);
 
-	if (board.reset_btn) {
-		bcm63xx_gpio_buttons_data.nbuttons = 1,
-		bcm63xx_gpio_buttons_data.buttons = board.reset_btn;
+	if (board.reset_buttons) {
+		bcm63xx_gpio_buttons_data.nbuttons = ARRAY_SIZE(board.reset_buttons);
+		bcm63xx_gpio_buttons_data.buttons = board.reset_buttons;
 
 		platform_device_register(&bcm63xx_gpio_buttons_device);
 	}
