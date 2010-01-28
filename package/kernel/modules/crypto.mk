@@ -280,7 +280,7 @@ $(eval $(call KernelPackage,crypto-misc))
 
 
 define KernelPackage/crypto-ocf
-$(call KernelPackage/crypto/Depends,@!TARGET_uml)
+$(call KernelPackage/crypto/Depends,@!TARGET_uml +@OPENSSL_ENGINE)
   TITLE:=OCF modules
   KCONFIG:= \
 	CONFIG_OCF_OCF \

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=0.9.8l
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
@@ -18,13 +18,18 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
 PKG_MD5SUM:=05a0ece1372392a2cf310ebb96333025
 
-PKG_BUILD_DEPENDS:=ocf-crypto-headers
+PKG_BUILD_DEPENDS := ocf-crypto-headers
+PKG_CONFIG_DEPENDS := CONFIG_OPENSSL_ENGINE
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/openssl/Default
   TITLE:=Open source SSL toolkit
   URL:=http://www.openssl.org/
+endef
+
+define Package/libopenssl/config
+source "$(SOURCE)/Config.in"
 endef
 
 define Package/openssl/Default/description
@@ -69,13 +74,14 @@ endef
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
 					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
-ifeq ($(BOARD),ixp4xx)
-OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic \
-					no-sse2 --with-cryptodev
+OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic no-sse2
+
+ifdef CONFIG_OPENSSL_ENGINE
+  OPENSSL_OPTIONS += --with-cryptodev
 else
-OPENSSL_OPTIONS:= shared no-ec no-err no-hw no-threads zlib-dynamic \
-					no-engines no-sse2
+  OPENSSL_OPTIONS += no-engines
 endif
+
 ifdef CONFIG_arm
 OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 else
