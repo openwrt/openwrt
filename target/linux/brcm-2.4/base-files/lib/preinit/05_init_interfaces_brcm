@@ -13,6 +13,7 @@ set_preinit_iface() {
 		"ASUS (unknown, BCM4702)") ifname=eth1;;
 		"Sitecom WL-105b") ifname=eth1;;
 	esac
+	ifconfig $ifname 0.0.0.0 up
 }
 
 check_module () {
@@ -32,7 +33,5 @@ init_iface() {
 	} || rmmod switch-core
 }
 
-boot_hook_add preinit_main init_iface
 boot_hook_add preinit_main set_preinit_iface
-
-
+boot_hook_add preinit_main init_iface
