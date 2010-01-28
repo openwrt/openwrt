@@ -7,7 +7,7 @@ failsafe_wait() {
     grep 'failsafe=' /proc/cmdline > /dev/null && FAILSAFE=true && export FAILSAFE
     if [ "$FAILSAFE" != "true" ]; then
         preinit_net_echo "Please press button now to enter failsafe"
-        echo -n "Press CTRL-C or "
+        echo -n "Press "
         fs_wait_for_key f 'to enter failsafe mode' $fs_failsafe_wait_timeout && FAILSAFE=true && export FAILSAFE
     fi
 }
