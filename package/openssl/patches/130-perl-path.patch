@@ -1,77 +1,61 @@
-Index: openssl-0.9.8e/Configure
-===================================================================
---- openssl-0.9.8e.orig/Configure	2007-06-04 13:23:32.217836040 +0200
-+++ openssl-0.9.8e/Configure	2007-06-04 13:23:32.598778128 +0200
+--- a/Configure
++++ b/Configure
 @@ -1,4 +1,4 @@
 -:
 +#!/usr/bin/perl
  eval 'exec perl -S $0 ${1+"$@"}'
      if $running_under_some_shell;
  ##
-Index: openssl-0.9.8e/tools/c_rehash.in
-===================================================================
---- openssl-0.9.8e.orig/tools/c_rehash.in	2007-06-04 13:23:32.074857776 +0200
-+++ openssl-0.9.8e/tools/c_rehash.in	2007-06-04 13:23:32.598778128 +0200
+--- a/tools/c_rehash.in
++++ b/tools/c_rehash.in
 @@ -1,4 +1,4 @@
 -#!/usr/local/bin/perl
 +#!/usr/bin/perl
  
  
  # Perl c_rehash script, scan all files in a directory
-Index: openssl-0.9.8e/util/clean-depend.pl
-===================================================================
---- openssl-0.9.8e.orig/util/clean-depend.pl	2007-06-04 13:23:32.080856864 +0200
-+++ openssl-0.9.8e/util/clean-depend.pl	2007-06-04 13:23:32.598778128 +0200
+--- a/util/clean-depend.pl
++++ b/util/clean-depend.pl
 @@ -1,4 +1,4 @@
 -#!/usr/local/bin/perl -w
 +#!/usr/bin/perl -w
  # Clean the dependency list in a makefile of standard includes...
  # Written by Ben Laurie <ben@algroup.co.uk> 19 Jan 1999
  
-Index: openssl-0.9.8e/util/mkdef.pl
-===================================================================
---- openssl-0.9.8e.orig/util/mkdef.pl	2007-06-04 13:23:32.085856104 +0200
-+++ openssl-0.9.8e/util/mkdef.pl	2007-06-04 13:23:32.599777976 +0200
+--- a/util/mkdef.pl
++++ b/util/mkdef.pl
 @@ -1,4 +1,4 @@
 -#!/usr/local/bin/perl -w
 +#!/usr/bin/perl
  #
  # generate a .def file
  #
-Index: openssl-0.9.8e/util/mkerr.pl
-===================================================================
---- openssl-0.9.8e.orig/util/mkerr.pl	2007-06-04 13:23:32.091855192 +0200
-+++ openssl-0.9.8e/util/mkerr.pl	2007-06-04 13:23:32.599777976 +0200
+--- a/util/mkerr.pl
++++ b/util/mkerr.pl
 @@ -1,4 +1,4 @@
 -#!/usr/local/bin/perl -w
 +#!/usr/bin/perl
  
  my $config = "crypto/err/openssl.ec";
  my $debug = 0;
-Index: openssl-0.9.8e/util/mkstack.pl
-===================================================================
---- openssl-0.9.8e.orig/util/mkstack.pl	2007-06-04 13:23:32.096854432 +0200
-+++ openssl-0.9.8e/util/mkstack.pl	2007-06-04 13:23:32.600777824 +0200
+--- a/util/mkstack.pl
++++ b/util/mkstack.pl
 @@ -1,4 +1,4 @@
 -#!/usr/local/bin/perl -w
 +#!/usr/bin/perl
  
  # This is a utility that searches out "DECLARE_STACK_OF()"
  # declarations in .h and .c files, and updates/creates/replaces
-Index: openssl-0.9.8e/util/pod2man.pl
-===================================================================
---- openssl-0.9.8e.orig/util/pod2man.pl	2007-06-04 13:23:32.102853520 +0200
-+++ openssl-0.9.8e/util/pod2man.pl	2007-06-04 13:23:32.600777824 +0200
+--- a/util/pod2man.pl
++++ b/util/pod2man.pl
 @@ -1,4 +1,4 @@
 -: #!/usr/bin/perl-5.005
 +#!/usr/bin/perl
      eval 'exec /usr/bin/perl -S $0 ${1+"$@"}'
  	if $running_under_some_shell;
  
-Index: openssl-0.9.8e/util/selftest.pl
-===================================================================
---- openssl-0.9.8e.orig/util/selftest.pl	2007-06-04 13:23:32.109852456 +0200
-+++ openssl-0.9.8e/util/selftest.pl	2007-06-04 13:23:32.600777824 +0200
+--- a/util/selftest.pl
++++ b/util/selftest.pl
 @@ -1,4 +1,4 @@
 -#!/usr/local/bin/perl -w
 +#!/usr/bin/perl
