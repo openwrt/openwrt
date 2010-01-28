@@ -5,12 +5,12 @@
 . /lib/ar71xx.sh
 
 
-preinit_enable_leds() {
+preinit_enable_reset_button() {
 	insmod input-core
 	insmod input-polldev
 	insmod gpio_buttons
 	insmod button-hotplug
 }
 
-boot_hook_add preinit_main preinit_enable_leds
+boot_hook_add preinit_main preinit_enable_reset_button
 
