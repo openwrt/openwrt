@@ -10,8 +10,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/104-us
  drivers/usb/gadget/gadget_chips.h |    9 +++++++++
  4 files changed, 25 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/usb/Kconfig b/drivers/usb/Kconfig
-index 2407508..dac9129 100644
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
 @@ -44,6 +44,7 @@ config USB_ARCH_HAS_OHCI
@@ -22,8 +20,6 @@ index 2407508..dac9129 100644
  	# SH:
  	default y if CPU_SUBTYPE_SH7720
  	default y if CPU_SUBTYPE_SH7721
-diff --git a/drivers/usb/gadget/Kconfig b/drivers/usb/gadget/Kconfig
-index a18e3c5..c5c77e1 100644
 --- a/drivers/usb/gadget/Kconfig
 +++ b/drivers/usb/gadget/Kconfig
 @@ -121,11 +121,25 @@ choice
@@ -52,8 +48,6 @@ index a18e3c5..c5c77e1 100644
  	help
  	   Many Atmel AT91 processors (such as the AT91RM2000) have a
  	   full speed USB Device Port with support for five configurable
-diff --git a/drivers/usb/gadget/Makefile b/drivers/usb/gadget/Makefile
-index 9d7b87c..cb2920e 100644
 --- a/drivers/usb/gadget/Makefile
 +++ b/drivers/usb/gadget/Makefile
 @@ -28,6 +28,7 @@ obj-$(CONFIG_USB_FSL_QE)	+= fsl_qe_udc.o
@@ -64,8 +58,6 @@ index 9d7b87c..cb2920e 100644
  
  #
  # USB gadget drivers
-diff --git a/drivers/usb/gadget/gadget_chips.h b/drivers/usb/gadget/gadget_chips.h
-index f2d270b..369f20a 100644
 --- a/drivers/usb/gadget/gadget_chips.h
 +++ b/drivers/usb/gadget/gadget_chips.h
 @@ -15,6 +15,12 @@
@@ -81,7 +73,7 @@ index f2d270b..369f20a 100644
  #ifdef CONFIG_USB_GADGET_NET2280
  #define	gadget_is_net2280(g)	!strcmp("net2280", (g)->name)
  #else
-@@ -247,6 +253,9 @@ static inline int usb_gadget_controller_number(struct usb_gadget *gadget)
+@@ -247,6 +253,9 @@ static inline int usb_gadget_controller_
  		return 0x24;
  	else if (gadget_is_r8a66597(gadget))
  		return 0x25;
@@ -91,6 +83,3 @@ index f2d270b..369f20a 100644
  	return -ENOENT;
  }
  
--- 
-1.5.6.5
-

@@ -12,8 +12,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/105-so
  sound/soc/codecs/Makefile |    2 ++
  6 files changed, 28 insertions(+), 16 deletions(-)
 
-diff --git a/include/sound/pcm.h b/include/sound/pcm.h
-index de6d981..6ecc22b 100644
 --- a/include/sound/pcm.h
 +++ b/include/sound/pcm.h
 @@ -113,23 +113,23 @@ struct snd_pcm_ops {
@@ -53,11 +51,9 @@ index de6d981..6ecc22b 100644
  #define SNDRV_PCM_RATE_8000_48000	(SNDRV_PCM_RATE_8000_44100|SNDRV_PCM_RATE_48000)
  #define SNDRV_PCM_RATE_8000_96000	(SNDRV_PCM_RATE_8000_48000|SNDRV_PCM_RATE_64000|\
  					 SNDRV_PCM_RATE_88200|SNDRV_PCM_RATE_96000)
-diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
-index ab73edf..35c22d7 100644
 --- a/sound/core/pcm_native.c
 +++ b/sound/core/pcm_native.c
-@@ -1721,12 +1721,13 @@ static int snd_pcm_hw_rule_sample_bits(struct snd_pcm_hw_params *params,
+@@ -1721,12 +1721,13 @@ static int snd_pcm_hw_rule_sample_bits(s
  	return snd_interval_refine(hw_param_interval(params, rule->var), &t);
  }
  
@@ -74,8 +70,6 @@ index ab73edf..35c22d7 100644
  
  const struct snd_pcm_hw_constraint_list snd_pcm_known_rates = {
  	.count = ARRAY_SIZE(rates),
-diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
-index b1749bc..5a7a724 100644
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
 @@ -36,6 +36,7 @@ source "sound/soc/s3c24xx/Kconfig"
@@ -86,8 +80,6 @@ index b1749bc..5a7a724 100644
  
  # Supported codecs
  source "sound/soc/codecs/Kconfig"
-diff --git a/sound/soc/Makefile b/sound/soc/Makefile
-index 0c5eac0..8e7b5cb 100644
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
 @@ -14,3 +14,4 @@ obj-$(CONFIG_SND_SOC)	+= s3c24xx/
@@ -95,8 +87,6 @@ index 0c5eac0..8e7b5cb 100644
  obj-$(CONFIG_SND_SOC)	+= sh/
  obj-$(CONFIG_SND_SOC)	+= txx9/
 +obj-$(CONFIG_SND_SOC)	+= jz4740/
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 0edca93..cd5e44a 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -217,6 +217,13 @@ config SND_SOC_WM9712
@@ -113,8 +103,6 @@ index 0edca93..cd5e44a 100644
  # Amp
  config SND_SOC_MAX9877
  	tristate
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index fb4af28..d58b0fa 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
 @@ -44,6 +44,7 @@ snd-soc-wm9705-objs := wm9705.o
@@ -125,7 +113,7 @@ index fb4af28..d58b0fa 100644
  
  # Amp
  snd-soc-max9877-objs := max9877.o
-@@ -94,6 +95,7 @@ obj-$(CONFIG_SND_SOC_WM9705)	+= snd-soc-wm9705.o
+@@ -94,6 +95,7 @@ obj-$(CONFIG_SND_SOC_WM9705)	+= snd-soc-
  obj-$(CONFIG_SND_SOC_WM9712)	+= snd-soc-wm9712.o
  obj-$(CONFIG_SND_SOC_WM9713)	+= snd-soc-wm9713.o
  obj-$(CONFIG_SND_SOC_WM_HUBS)	+= snd-soc-wm-hubs.o
@@ -133,6 +121,3 @@ index fb4af28..d58b0fa 100644
  
  # Amp
  obj-$(CONFIG_SND_SOC_MAX9877)	+= snd-soc-max9877.o
--- 
-1.5.6.5
-

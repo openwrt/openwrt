@@ -1,6 +1,3 @@
-diff --git a/Documentation/arm/OMAP/DSS b/Documentation/arm/OMAP/DSS
-new file mode 100644
-index 0000000..0af0e9e
 --- /dev/null
 +++ b/Documentation/arm/OMAP/DSS
 @@ -0,0 +1,317 @@
@@ -321,11 +318,9 @@ index 0000000..0af0e9e
 +OMAP1 support
 +- Not sure if needed
 +
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 8824115..3f5d39f 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -3819,6 +3819,23 @@ L:	linux-omap@vger.kernel.org
+@@ -3848,6 +3848,23 @@ L:	linux-omap@vger.kernel.org
  S:	Maintained
  F:	drivers/video/omap/
  
@@ -349,8 +344,6 @@ index 8824115..3f5d39f 100644
  OMAP MMC SUPPORT
  M:	Jarkko Lavinen <jarkko.lavinen@nokia.com>
  L:	linux-omap@vger.kernel.org
-diff --git a/arch/arm/configs/omap_3430sdp_defconfig b/arch/arm/configs/omap_3430sdp_defconfig
-index 8a4a7e2..59e26e4 100644
 --- a/arch/arm/configs/omap_3430sdp_defconfig
 +++ b/arch/arm/configs/omap_3430sdp_defconfig
 @@ -1336,10 +1336,33 @@ CONFIG_FB_CFB_IMAGEBLIT=y
@@ -390,8 +383,6 @@ index 8a4a7e2..59e26e4 100644
  # CONFIG_BACKLIGHT_LCD_SUPPORT is not set
  
  #
-diff --git a/arch/arm/mach-omap1/board-nokia770.c b/arch/arm/mach-omap1/board-nokia770.c
-index ed2a48a..6fbde33 100644
 --- a/arch/arm/mach-omap1/board-nokia770.c
 +++ b/arch/arm/mach-omap1/board-nokia770.c
 @@ -14,6 +14,7 @@
@@ -410,19 +401,17 @@ index ed2a48a..6fbde33 100644
  #include <mach/hwa742.h>
  #include <mach/lcd_mipid.h>
  #include <mach/mmc.h>
-diff --git a/arch/arm/mach-omap2/board-3430sdp.c b/arch/arm/mach-omap2/board-3430sdp.c
-index efaf053..60631be 100644
 --- a/arch/arm/mach-omap2/board-3430sdp.c
 +++ b/arch/arm/mach-omap2/board-3430sdp.c
-@@ -36,6 +36,7 @@
+@@ -37,6 +37,7 @@
  #include <mach/common.h>
  #include <mach/dma.h>
  #include <mach/gpmc.h>
 +#include <mach/display.h>
  
  #include <mach/control.h>
- #include <mach/keypad.h>
-@@ -152,31 +153,152 @@ static struct spi_board_info sdp3430_spi_board_info[] __initdata = {
+ #include <mach/gpmc-smc91x.h>
+@@ -152,31 +153,152 @@ static struct spi_board_info sdp3430_spi
  	},
  };
  
@@ -524,11 +513,8 @@ index efaf053..60631be 100644
 +	.phy.dpi.data_lines	= 16,
 +	.platform_enable	= sdp3430_panel_enable_lcd,
 +	.platform_disable	= sdp3430_panel_disable_lcd,
- };
- 
--static struct regulator_consumer_supply sdp3430_vdac_supply = {
--	.supply		= "vdac",
--	.dev		= &sdp3430_lcd_device.dev,
++};
++
 +static struct omap_dss_device sdp3430_dvi_device = {
 +	.name			= "dvi",
 +	.driver_name		= "generic_panel",
@@ -536,11 +522,8 @@ index efaf053..60631be 100644
 +	.phy.dpi.data_lines	= 24,
 +	.platform_enable	= sdp3430_panel_enable_dvi,
 +	.platform_disable	= sdp3430_panel_disable_dvi,
- };
- 
--static struct regulator_consumer_supply sdp3430_vdvi_supply = {
--	.supply		= "vdvi",
--	.dev		= &sdp3430_lcd_device.dev,
++};
++
 +static struct omap_dss_device sdp3430_tv_device = {
 +	.name			= "tv",
 +	.driver_name		= "venc",
@@ -548,37 +531,44 @@ index efaf053..60631be 100644
 +	.phy.venc.type		= OMAP_DSS_VENC_TYPE_SVIDEO,
 +	.platform_enable	= sdp3430_panel_enable_tv,
 +	.platform_disable	= sdp3430_panel_disable_tv,
- };
- 
--static struct platform_device *sdp3430_devices[] __initdata = {
++};
++
 +
 +static struct omap_dss_device *sdp3430_dss_devices[] = {
- 	&sdp3430_lcd_device,
++	&sdp3430_lcd_device,
 +	&sdp3430_dvi_device,
 +	&sdp3430_tv_device,
  };
  
--static struct omap_lcd_config sdp3430_lcd_config __initdata = {
--	.ctrl_name	= "internal",
+-static struct regulator_consumer_supply sdp3430_vdac_supply = {
+-	.supply		= "vdac",
+-	.dev		= &sdp3430_lcd_device.dev,
 +static struct omap_dss_board_info sdp3430_dss_data = {
 +	.num_devices	= ARRAY_SIZE(sdp3430_dss_devices),
 +	.devices	= sdp3430_dss_devices,
 +	.default_device	= &sdp3430_lcd_device,
-+};
-+
+ };
+ 
+-static struct regulator_consumer_supply sdp3430_vdvi_supply = {
+-	.supply		= "vdvi",
+-	.dev		= &sdp3430_lcd_device.dev,
 +static struct platform_device sdp3430_dss_device = {
 +	.name		= "omapdss",
 +	.id		= -1,
 +	.dev		= {
 +		.platform_data = &sdp3430_dss_data,
 +	},
-+};
-+
+ };
+ 
+-static struct platform_device *sdp3430_devices[] __initdata = {
+-	&sdp3430_lcd_device,
 +static struct regulator_consumer_supply sdp3430_vdda_dac_supply = {
 +	.supply		= "vdda_dac",
 +	.dev		= &sdp3430_dss_device.dev,
-+};
-+
+ };
+ 
+-static struct omap_lcd_config sdp3430_lcd_config __initdata = {
+-	.ctrl_name	= "internal",
 +static struct platform_device *sdp3430_devices[] __initdata = {
 +	&sdp3430_dss_device,
  };
@@ -588,7 +578,7 @@ index efaf053..60631be 100644
  };
  
  static void __init omap_3430sdp_init_irq(void)
-@@ -392,22 +514,34 @@ static struct regulator_init_data sdp3430_vdac = {
+@@ -392,22 +514,34 @@ static struct regulator_init_data sdp343
  					| REGULATOR_CHANGE_STATUS,
  	},
  	.num_consumer_supplies	= 1,
@@ -626,7 +616,7 @@ index efaf053..60631be 100644
  };
  
  static struct twl4030_platform_data sdp3430_twldata = {
-@@ -499,6 +633,7 @@ static void __init omap_3430sdp_init(void)
+@@ -499,6 +633,7 @@ static void __init omap_3430sdp_init(voi
  	omap_serial_init();
  	usb_musb_init();
  	board_smc91x_init();
@@ -634,11 +624,9 @@ index efaf053..60631be 100644
  	enable_board_wakeup_source();
  }
  
-diff --git a/arch/arm/mach-omap2/clock24xx.c b/arch/arm/mach-omap2/clock24xx.c
-index e2dbedd..8524067 100644
 --- a/arch/arm/mach-omap2/clock24xx.c
 +++ b/arch/arm/mach-omap2/clock24xx.c
-@@ -116,10 +116,10 @@ static struct omap_clk omap24xx_clks[] = {
+@@ -116,10 +116,10 @@ static struct omap_clk omap24xx_clks[] =
  	CLK(NULL,	"mdm_ick",	&mdm_ick,	CK_243X),
  	CLK(NULL,	"mdm_osc_ck",	&mdm_osc_ck,	CK_243X),
  	/* DSS domain clocks */
@@ -653,11 +641,9 @@ index e2dbedd..8524067 100644
  	/* L3 domain clocks */
  	CLK(NULL,	"core_l3_ck",	&core_l3_ck,	CK_243X | CK_242X),
  	CLK(NULL,	"ssi_fck",	&ssi_ssr_sst_fck, CK_243X | CK_242X),
-diff --git a/arch/arm/mach-omap2/clock34xx.c b/arch/arm/mach-omap2/clock34xx.c
-index 489556e..0a7e9ac 100644
 --- a/arch/arm/mach-omap2/clock34xx.c
 +++ b/arch/arm/mach-omap2/clock34xx.c
-@@ -236,13 +236,13 @@ static struct omap_clk omap34xx_clks[] = {
+@@ -236,13 +236,13 @@ static struct omap_clk omap34xx_clks[] =
  	CLK("omap_rng",	"ick",		&rng_ick,	CK_343X),
  	CLK(NULL,	"sha11_ick",	&sha11_ick,	CK_343X),
  	CLK(NULL,	"des1_ick",	&des1_ick,	CK_343X),
@@ -678,8 +664,6 @@ index 489556e..0a7e9ac 100644
  	CLK(NULL,	"cam_mclk",	&cam_mclk,	CK_343X),
  	CLK(NULL,	"cam_ick",	&cam_ick,	CK_343X),
  	CLK(NULL,	"csi2_96m_fck",	&csi2_96m_fck,	CK_343X),
-diff --git a/arch/arm/mach-omap2/io.c b/arch/arm/mach-omap2/io.c
-index e3a3bad..adbb905 100644
 --- a/arch/arm/mach-omap2/io.c
 +++ b/arch/arm/mach-omap2/io.c
 @@ -22,17 +22,18 @@
@@ -710,11 +694,9 @@ index e3a3bad..adbb905 100644
  }
  
  /*
-diff --git a/arch/arm/mach-omap2/sdrc.c b/arch/arm/mach-omap2/sdrc.c
-index 9e3bd4f..6a5a2c5 100644
 --- a/arch/arm/mach-omap2/sdrc.c
 +++ b/arch/arm/mach-omap2/sdrc.c
-@@ -133,3 +133,19 @@ void __init omap2_sdrc_init(struct omap_sdrc_params *sdrc_cs0,
+@@ -133,3 +133,19 @@ void __init omap2_sdrc_init(struct omap_
  		(1 << SDRC_POWER_PAGEPOLICY_SHIFT);
  	sdrc_write_reg(l, SDRC_POWER);
  }
@@ -734,8 +716,6 @@ index 9e3bd4f..6a5a2c5 100644
 +	sms_write_reg(val, SMS_ROT_PHYSICAL_BA(ctx));
 +}
 +
-diff --git a/arch/arm/plat-omap/fb.c b/arch/arm/plat-omap/fb.c
-index 3746222..70fbeae 100644
 --- a/arch/arm/plat-omap/fb.c
 +++ b/arch/arm/plat-omap/fb.c
 @@ -28,13 +28,13 @@
@@ -788,7 +768,7 @@ index 3746222..70fbeae 100644
  
  void omapfb_reserve_sdram(void) {}
  unsigned long omapfb_reserve_sram(unsigned long sram_pstart,
-@@ -339,5 +365,16 @@ unsigned long omapfb_reserve_sram(unsigned long sram_pstart,
+@@ -339,5 +365,16 @@ unsigned long omapfb_reserve_sram(unsign
  	return 0;
  }
  
@@ -805,9 +785,6 @@ index 3746222..70fbeae 100644
 +}
  
  #endif
-diff --git a/arch/arm/plat-omap/include/mach/display.h b/arch/arm/plat-omap/include/mach/display.h
-new file mode 100644
-index 0000000..4c7422e
 --- /dev/null
 +++ b/arch/arm/plat-omap/include/mach/display.h
 @@ -0,0 +1,540 @@
@@ -1351,9 +1328,6 @@ index 0000000..4c7422e
 +#define to_dss_device(x) container_of((x), struct omap_dss_device, dev)
 +
 +#endif
-diff --git a/arch/arm/plat-omap/include/mach/omapfb.h b/arch/arm/plat-omap/include/mach/omapfb.h
-deleted file mode 100644
-index b226bdf..0000000
 --- a/arch/arm/plat-omap/include/mach/omapfb.h
 +++ /dev/null
 @@ -1,398 +0,0 @@
@@ -1755,8 +1729,6 @@ index b226bdf..0000000
 -#endif /* __KERNEL__ */
 -
 -#endif /* __OMAPFB_H */
-diff --git a/arch/arm/plat-omap/include/mach/sdrc.h b/arch/arm/plat-omap/include/mach/sdrc.h
-index 1c09c78..3b157ce 100644
 --- a/arch/arm/plat-omap/include/mach/sdrc.h
 +++ b/arch/arm/plat-omap/include/mach/sdrc.h
 @@ -88,7 +88,10 @@
@@ -1771,7 +1743,7 @@ index 1c09c78..3b157ce 100644
  /* REVISIT: fill in other SMS registers here */
  
  
-@@ -121,6 +124,10 @@ int omap2_sdrc_get_params(unsigned long r,
+@@ -121,6 +124,10 @@ int omap2_sdrc_get_params(unsigned long 
  			  struct omap_sdrc_params **sdrc_cs0,
  			  struct omap_sdrc_params **sdrc_cs1);
  
@@ -1782,9 +1754,6 @@ index 1c09c78..3b157ce 100644
  #ifdef CONFIG_ARCH_OMAP2
  
  struct memory_timings {
-diff --git a/arch/arm/plat-omap/include/mach/vram.h b/arch/arm/plat-omap/include/mach/vram.h
-new file mode 100644
-index 0000000..fe72f81
 --- /dev/null
 +++ b/arch/arm/plat-omap/include/mach/vram.h
 @@ -0,0 +1,63 @@
@@ -1851,9 +1820,6 @@ index 0000000..fe72f81
 +#endif
 +
 +#endif
-diff --git a/arch/arm/plat-omap/include/mach/vrfb.h b/arch/arm/plat-omap/include/mach/vrfb.h
-new file mode 100644
-index 0000000..8790612
 --- /dev/null
 +++ b/arch/arm/plat-omap/include/mach/vrfb.h
 @@ -0,0 +1,46 @@
@@ -1903,8 +1869,6 @@ index 0000000..8790612
 +extern void omap_vrfb_restore_context(void);
 +
 +#endif /* __VRFB_H */
-diff --git a/arch/arm/plat-omap/sram.c b/arch/arm/plat-omap/sram.c
-index 75d1f26..aa9fb63 100644
 --- a/arch/arm/plat-omap/sram.c
 +++ b/arch/arm/plat-omap/sram.c
 @@ -28,6 +28,7 @@
@@ -1929,8 +1893,6 @@ index 75d1f26..aa9fb63 100644
  	omap_sram_ceil = omap_sram_base + omap_sram_size;
  }
  
-diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index 9bbb285..af0448f 100644
 --- a/drivers/video/Kconfig
 +++ b/drivers/video/Kconfig
 @@ -2161,6 +2161,7 @@ config FB_BROADSHEET
@@ -1941,11 +1903,9 @@ index 9bbb285..af0448f 100644
  
  source "drivers/video/backlight/Kconfig"
  source "drivers/video/display/Kconfig"
-diff --git a/drivers/video/Makefile b/drivers/video/Makefile
-index 80232e1..0f8da33 100644
 --- a/drivers/video/Makefile
 +++ b/drivers/video/Makefile
-@@ -124,6 +124,7 @@ obj-$(CONFIG_FB_SM501)            += sm501fb.o
+@@ -124,6 +124,7 @@ obj-$(CONFIG_FB_SM501)            += sm5
  obj-$(CONFIG_FB_XILINX)           += xilinxfb.o
  obj-$(CONFIG_FB_SH_MOBILE_LCDC)	  += sh_mobile_lcdcfb.o
  obj-$(CONFIG_FB_OMAP)             += omap/
@@ -1953,8 +1913,6 @@ index 80232e1..0f8da33 100644
  obj-$(CONFIG_XEN_FBDEV_FRONTEND)  += xen-fbfront.o
  obj-$(CONFIG_FB_CARMINE)          += carminefb.o
  obj-$(CONFIG_FB_MB862XX)	  += mb862xx/
-diff --git a/drivers/video/omap/Kconfig b/drivers/video/omap/Kconfig
-index 551e3e9..455c605 100644
 --- a/drivers/video/omap/Kconfig
 +++ b/drivers/video/omap/Kconfig
 @@ -1,6 +1,7 @@
@@ -1975,8 +1933,6 @@ index 551e3e9..455c605 100644
  	help
  	  Say Y here if you want to enable checking if the bootloader has
  	  already initialized the display controller. In this case the
-diff --git a/drivers/video/omap/blizzard.c b/drivers/video/omap/blizzard.c
-index 70dadf9..e0d693e 100644
 --- a/drivers/video/omap/blizzard.c
 +++ b/drivers/video/omap/blizzard.c
 @@ -27,9 +27,9 @@
@@ -1990,8 +1946,6 @@ index 70dadf9..e0d693e 100644
  #include "dispc.h"
  
  #define MODULE_NAME				"blizzard"
-diff --git a/drivers/video/omap/dispc.c b/drivers/video/omap/dispc.c
-index f16e421..3f828e6 100644
 --- a/drivers/video/omap/dispc.c
 +++ b/drivers/video/omap/dispc.c
 @@ -24,11 +24,12 @@
@@ -2020,7 +1974,7 @@ index f16e421..3f828e6 100644
  static void enable_lcd_clocks(int enable);
  
  static void inline dispc_write_reg(int idx, u32 val)
-@@ -907,20 +913,20 @@ static irqreturn_t omap_dispc_irq_handler(int irq, void *dev)
+@@ -907,20 +913,20 @@ static irqreturn_t omap_dispc_irq_handle
  
  static int get_dss_clocks(void)
  {
@@ -2044,7 +1998,7 @@ index f16e421..3f828e6 100644
  	if (IS_ERR(dispc.dss_54m_fck)) {
  		dev_err(dispc.fbdev->dev, "can't get tv_fck\n");
  		clk_put(dispc.dss_ick);
-@@ -1371,6 +1377,12 @@ static int omap_dispc_init(struct omapfb_device *fbdev, int ext_mode,
+@@ -1371,6 +1377,12 @@ static int omap_dispc_init(struct omapfb
  	int skip_init = 0;
  	int i;
  
@@ -2065,8 +2019,6 @@ index f16e421..3f828e6 100644
  }
  
  const struct lcd_ctrl omap2_int_ctrl = {
-diff --git a/drivers/video/omap/hwa742.c b/drivers/video/omap/hwa742.c
-index ca51583..b84fb7c 100644
 --- a/drivers/video/omap/hwa742.c
 +++ b/drivers/video/omap/hwa742.c
 @@ -27,8 +27,8 @@
@@ -2079,8 +2031,6 @@ index ca51583..b84fb7c 100644
  
  #define HWA742_REV_CODE_REG       0x0
  #define HWA742_CONFIG_REG         0x2
-diff --git a/drivers/video/omap/lcd_2430sdp.c b/drivers/video/omap/lcd_2430sdp.c
-index 393712b..7b7690a 100644
 --- a/drivers/video/omap/lcd_2430sdp.c
 +++ b/drivers/video/omap/lcd_2430sdp.c
 @@ -28,9 +28,10 @@
@@ -2095,8 +2045,6 @@ index 393712b..7b7690a 100644
  #define SDP2430_LCD_PANEL_BACKLIGHT_GPIO	91
  #define SDP2430_LCD_PANEL_ENABLE_GPIO		154
  #define SDP3430_LCD_PANEL_BACKLIGHT_GPIO	24
-diff --git a/drivers/video/omap/lcd_ams_delta.c b/drivers/video/omap/lcd_ams_delta.c
-index 1f74399..1d3fd13 100644
 --- a/drivers/video/omap/lcd_ams_delta.c
 +++ b/drivers/video/omap/lcd_ams_delta.c
 @@ -27,7 +27,8 @@
@@ -2109,8 +2057,6 @@ index 1f74399..1d3fd13 100644
  
  #define AMS_DELTA_DEFAULT_CONTRAST	112
  
-diff --git a/drivers/video/omap/lcd_apollon.c b/drivers/video/omap/lcd_apollon.c
-index 626ae3a..e099ad1 100644
 --- a/drivers/video/omap/lcd_apollon.c
 +++ b/drivers/video/omap/lcd_apollon.c
 @@ -26,7 +26,8 @@
@@ -2123,8 +2069,6 @@ index 626ae3a..e099ad1 100644
  
  /* #define USE_35INCH_LCD 1 */
  
-diff --git a/drivers/video/omap/lcd_h3.c b/drivers/video/omap/lcd_h3.c
-index 417ae5e..8df6887 100644
 --- a/drivers/video/omap/lcd_h3.c
 +++ b/drivers/video/omap/lcd_h3.c
 @@ -24,7 +24,7 @@
@@ -2136,8 +2080,6 @@ index 417ae5e..8df6887 100644
  
  #define MODULE_NAME	"omapfb-lcd_h3"
  
-diff --git a/drivers/video/omap/lcd_h4.c b/drivers/video/omap/lcd_h4.c
-index 0c398bd..03a06a9 100644
 --- a/drivers/video/omap/lcd_h4.c
 +++ b/drivers/video/omap/lcd_h4.c
 @@ -22,7 +22,7 @@
@@ -2149,8 +2091,6 @@ index 0c398bd..03a06a9 100644
  
  static int h4_panel_init(struct lcd_panel *panel, struct omapfb_device *fbdev)
  {
-diff --git a/drivers/video/omap/lcd_inn1510.c b/drivers/video/omap/lcd_inn1510.c
-index cdbd8bb..18f1422 100644
 --- a/drivers/video/omap/lcd_inn1510.c
 +++ b/drivers/video/omap/lcd_inn1510.c
 @@ -24,7 +24,7 @@
@@ -2162,8 +2102,6 @@ index cdbd8bb..18f1422 100644
  
  static int innovator1510_panel_init(struct lcd_panel *panel,
  				    struct omapfb_device *fbdev)
-diff --git a/drivers/video/omap/lcd_inn1610.c b/drivers/video/omap/lcd_inn1610.c
-index 268f7f8..9fff86f 100644
 --- a/drivers/video/omap/lcd_inn1610.c
 +++ b/drivers/video/omap/lcd_inn1610.c
 @@ -23,7 +23,7 @@
@@ -2175,8 +2113,6 @@ index 268f7f8..9fff86f 100644
  
  #define MODULE_NAME	"omapfb-lcd_h3"
  
-diff --git a/drivers/video/omap/lcd_ldp.c b/drivers/video/omap/lcd_ldp.c
-index dbfe897..44a43ea 100644
 --- a/drivers/video/omap/lcd_ldp.c
 +++ b/drivers/video/omap/lcd_ldp.c
 @@ -28,9 +28,10 @@
@@ -2191,8 +2127,6 @@ index dbfe897..44a43ea 100644
  #define LCD_PANEL_BACKLIGHT_GPIO	(15 + OMAP_MAX_GPIO_LINES)
  #define LCD_PANEL_ENABLE_GPIO		(7 + OMAP_MAX_GPIO_LINES)
  
-diff --git a/drivers/video/omap/lcd_mipid.c b/drivers/video/omap/lcd_mipid.c
-index 918ee89..62e1975 100644
 --- a/drivers/video/omap/lcd_mipid.c
 +++ b/drivers/video/omap/lcd_mipid.c
 @@ -23,9 +23,10 @@
@@ -2207,8 +2141,6 @@ index 918ee89..62e1975 100644
  #define MIPID_MODULE_NAME		"lcd_mipid"
  
  #define MIPID_CMD_READ_DISP_ID		0x04
-diff --git a/drivers/video/omap/lcd_omap2evm.c b/drivers/video/omap/lcd_omap2evm.c
-index 7a2bbe2..c3be87c 100644
 --- a/drivers/video/omap/lcd_omap2evm.c
 +++ b/drivers/video/omap/lcd_omap2evm.c
 @@ -27,9 +27,10 @@
@@ -2223,8 +2155,6 @@ index 7a2bbe2..c3be87c 100644
  #define LCD_PANEL_ENABLE_GPIO	154
  #define LCD_PANEL_LR		128
  #define LCD_PANEL_UD		129
-diff --git a/drivers/video/omap/lcd_omap3beagle.c b/drivers/video/omap/lcd_omap3beagle.c
-index 4011910..0608a25 100644
 --- a/drivers/video/omap/lcd_omap3beagle.c
 +++ b/drivers/video/omap/lcd_omap3beagle.c
 @@ -26,9 +26,10 @@
@@ -2239,8 +2169,6 @@ index 4011910..0608a25 100644
  #define LCD_PANEL_ENABLE_GPIO       170
  
  static int omap3beagle_panel_init(struct lcd_panel *panel,
-diff --git a/drivers/video/omap/lcd_omap3evm.c b/drivers/video/omap/lcd_omap3evm.c
-index b6a4c2c..c204afb 100644
 --- a/drivers/video/omap/lcd_omap3evm.c
 +++ b/drivers/video/omap/lcd_omap3evm.c
 @@ -26,9 +26,10 @@
@@ -2255,8 +2183,6 @@ index b6a4c2c..c204afb 100644
  #define LCD_PANEL_ENABLE_GPIO       153
  #define LCD_PANEL_LR                2
  #define LCD_PANEL_UD                3
-diff --git a/drivers/video/omap/lcd_osk.c b/drivers/video/omap/lcd_osk.c
-index b3fa88b..5755b5c 100644
 --- a/drivers/video/omap/lcd_osk.c
 +++ b/drivers/video/omap/lcd_osk.c
 @@ -25,7 +25,7 @@
@@ -2268,8 +2194,6 @@ index b3fa88b..5755b5c 100644
  
  static int osk_panel_init(struct lcd_panel *panel, struct omapfb_device *fbdev)
  {
-diff --git a/drivers/video/omap/lcd_overo.c b/drivers/video/omap/lcd_overo.c
-index 2bc5c92..63ebb1f 100644
 --- a/drivers/video/omap/lcd_overo.c
 +++ b/drivers/video/omap/lcd_overo.c
 @@ -25,9 +25,10 @@
@@ -2284,8 +2208,6 @@ index 2bc5c92..63ebb1f 100644
  #define LCD_ENABLE       144
  
  static int overo_panel_init(struct lcd_panel *panel,
-diff --git a/drivers/video/omap/lcd_palmte.c b/drivers/video/omap/lcd_palmte.c
-index 4bf3c79..7e11a75 100644
 --- a/drivers/video/omap/lcd_palmte.c
 +++ b/drivers/video/omap/lcd_palmte.c
 @@ -24,7 +24,7 @@
@@ -2297,8 +2219,6 @@ index 4bf3c79..7e11a75 100644
  
  static int palmte_panel_init(struct lcd_panel *panel,
  				struct omapfb_device *fbdev)
-diff --git a/drivers/video/omap/lcd_palmtt.c b/drivers/video/omap/lcd_palmtt.c
-index 48ea1f9..ff0e6d7 100644
 --- a/drivers/video/omap/lcd_palmtt.c
 +++ b/drivers/video/omap/lcd_palmtt.c
 @@ -30,7 +30,7 @@ GPIO13 - screen blanking
@@ -2310,8 +2230,6 @@ index 48ea1f9..ff0e6d7 100644
  
  static int palmtt_panel_init(struct lcd_panel *panel,
  	struct omapfb_device *fbdev)
-diff --git a/drivers/video/omap/lcd_palmz71.c b/drivers/video/omap/lcd_palmz71.c
-index 0697d29..2334e56 100644
 --- a/drivers/video/omap/lcd_palmz71.c
 +++ b/drivers/video/omap/lcd_palmz71.c
 @@ -24,7 +24,7 @@
@@ -2323,8 +2241,6 @@ index 0697d29..2334e56 100644
  
  static int palmz71_panel_init(struct lcd_panel *panel,
  			      struct omapfb_device *fbdev)
-diff --git a/drivers/video/omap/lcdc.c b/drivers/video/omap/lcdc.c
-index ab39492..520ed97 100644
 --- a/drivers/video/omap/lcdc.c
 +++ b/drivers/video/omap/lcdc.c
 @@ -30,10 +30,11 @@
@@ -2340,9 +2256,6 @@ index ab39492..520ed97 100644
  #include "lcdc.h"
  
  #define MODULE_NAME			"lcdc"
-diff --git a/drivers/video/omap/omapfb.h b/drivers/video/omap/omapfb.h
-new file mode 100644
-index 0000000..46e4714
 --- /dev/null
 +++ b/drivers/video/omap/omapfb.h
 @@ -0,0 +1,227 @@
@@ -2573,8 +2486,6 @@ index 0000000..46e4714
 +				       void *callback_data);
 +
 +#endif /* __OMAPFB_H */
-diff --git a/drivers/video/omap/omapfb_main.c b/drivers/video/omap/omapfb_main.c
-index 0d0c8c8..a27614d 100644
 --- a/drivers/video/omap/omapfb_main.c
 +++ b/drivers/video/omap/omapfb_main.c
 @@ -29,8 +29,8 @@
@@ -2587,8 +2498,6 @@ index 0d0c8c8..a27614d 100644
  #include "lcdc.h"
  #include "dispc.h"
  
-diff --git a/drivers/video/omap/rfbi.c b/drivers/video/omap/rfbi.c
-index ee01e84..fed7b1b 100644
 --- a/drivers/video/omap/rfbi.c
 +++ b/drivers/video/omap/rfbi.c
 @@ -27,8 +27,7 @@
@@ -2601,8 +2510,6 @@ index ee01e84..fed7b1b 100644
  #include "dispc.h"
  
  /* To work around an RFBI transfer rate limitation */
-diff --git a/drivers/video/omap/sossi.c b/drivers/video/omap/sossi.c
-index a769462..6853627 100644
 --- a/drivers/video/omap/sossi.c
 +++ b/drivers/video/omap/sossi.c
 @@ -25,8 +25,8 @@
@@ -2615,9 +2522,6 @@ index a769462..6853627 100644
  #include "lcdc.h"
  
  #define MODULE_NAME		"omapfb-sossi"
-diff --git a/drivers/video/omap2/Kconfig b/drivers/video/omap2/Kconfig
-new file mode 100644
-index 0000000..d877c36
 --- /dev/null
 +++ b/drivers/video/omap2/Kconfig
 @@ -0,0 +1,9 @@
@@ -2630,9 +2534,6 @@ index 0000000..d877c36
 +source "drivers/video/omap2/dss/Kconfig"
 +source "drivers/video/omap2/omapfb/Kconfig"
 +source "drivers/video/omap2/displays/Kconfig"
-diff --git a/drivers/video/omap2/Makefile b/drivers/video/omap2/Makefile
-new file mode 100644
-index 0000000..d853d05
 --- /dev/null
 +++ b/drivers/video/omap2/Makefile
 @@ -0,0 +1,6 @@
@@ -2642,9 +2543,6 @@ index 0000000..d853d05
 +obj-y += dss/
 +obj-y += omapfb/
 +obj-y += displays/
-diff --git a/drivers/video/omap2/displays/Kconfig b/drivers/video/omap2/displays/Kconfig
-new file mode 100644
-index 0000000..79d2861
 --- /dev/null
 +++ b/drivers/video/omap2/displays/Kconfig
 @@ -0,0 +1,28 @@
@@ -2676,9 +2574,6 @@ index 0000000..79d2861
 +          Taal DSI command mode panel from TPO.
 +
 +endmenu
-diff --git a/drivers/video/omap2/displays/Makefile b/drivers/video/omap2/displays/Makefile
-new file mode 100644
-index 0000000..d44e765
 --- /dev/null
 +++ b/drivers/video/omap2/displays/Makefile
 @@ -0,0 +1,5 @@
@@ -2687,9 +2582,6 @@ index 0000000..d44e765
 +obj-$(CONFIG_PANEL_SHARP_LS037V7DW01) += panel-sharp-ls037v7dw01.o
 +
 +obj-$(CONFIG_PANEL_TAAL) += panel-taal.o
-diff --git a/drivers/video/omap2/displays/panel-generic.c b/drivers/video/omap2/displays/panel-generic.c
-new file mode 100644
-index 0000000..738147e
 --- /dev/null
 +++ b/drivers/video/omap2/displays/panel-generic.c
 @@ -0,0 +1,104 @@
@@ -2797,9 +2689,6 @@ index 0000000..738147e
 +module_init(generic_panel_drv_init);
 +module_exit(generic_panel_drv_exit);
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/video/omap2/displays/panel-samsung-lte430wq-f0c.c b/drivers/video/omap2/displays/panel-samsung-lte430wq-f0c.c
-new file mode 100644
-index 0000000..eafe581
 --- /dev/null
 +++ b/drivers/video/omap2/displays/panel-samsung-lte430wq-f0c.c
 @@ -0,0 +1,113 @@
@@ -2916,9 +2805,6 @@ index 0000000..eafe581
 +module_init(samsung_lte_panel_drv_init);
 +module_exit(samsung_lte_panel_drv_exit);
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/video/omap2/displays/panel-sharp-ls037v7dw01.c b/drivers/video/omap2/displays/panel-sharp-ls037v7dw01.c
-new file mode 100644
-index 0000000..2f8f0df
 --- /dev/null
 +++ b/drivers/video/omap2/displays/panel-sharp-ls037v7dw01.c
 @@ -0,0 +1,153 @@
@@ -3075,9 +2961,6 @@ index 0000000..2f8f0df
 +module_init(sharp_ls_panel_drv_init);
 +module_exit(sharp_ls_panel_drv_exit);
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/video/omap2/displays/panel-taal.c b/drivers/video/omap2/displays/panel-taal.c
-new file mode 100644
-index 0000000..84f0d47
 --- /dev/null
 +++ b/drivers/video/omap2/displays/panel-taal.c
 @@ -0,0 +1,900 @@
@@ -3981,9 +3864,6 @@ index 0000000..84f0d47
 +MODULE_AUTHOR("Tomi Valkeinen <tomi.valkeinen@nokia.com>");
 +MODULE_DESCRIPTION("Taal Driver");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/video/omap2/dss/Kconfig b/drivers/video/omap2/dss/Kconfig
-new file mode 100644
-index 0000000..71d8dec
 --- /dev/null
 +++ b/drivers/video/omap2/dss/Kconfig
 @@ -0,0 +1,89 @@
@@ -4076,9 +3956,6 @@ index 0000000..71d8dec
 +	  is very high.
 +
 +endif
-diff --git a/drivers/video/omap2/dss/Makefile b/drivers/video/omap2/dss/Makefile
-new file mode 100644
-index 0000000..980c72c
 --- /dev/null
 +++ b/drivers/video/omap2/dss/Makefile
 @@ -0,0 +1,6 @@
@@ -4088,9 +3965,6 @@ index 0000000..980c72c
 +omapdss-$(CONFIG_OMAP2_DSS_VENC) += venc.o
 +omapdss-$(CONFIG_OMAP2_DSS_SDI) += sdi.o
 +omapdss-$(CONFIG_OMAP2_DSS_DSI) += dsi.o
-diff --git a/drivers/video/omap2/dss/core.c b/drivers/video/omap2/dss/core.c
-new file mode 100644
-index 0000000..e8d430c
 --- /dev/null
 +++ b/drivers/video/omap2/dss/core.c
 @@ -0,0 +1,917 @@
@@ -5011,9 +4885,6 @@ index 0000000..e8d430c
 +MODULE_DESCRIPTION("OMAP2/3 Display Subsystem");
 +MODULE_LICENSE("GPL v2");
 +
-diff --git a/drivers/video/omap2/dss/dispc.c b/drivers/video/omap2/dss/dispc.c
-new file mode 100644
-index 0000000..d648475
 --- /dev/null
 +++ b/drivers/video/omap2/dss/dispc.c
 @@ -0,0 +1,3182 @@
@@ -8199,9 +8070,6 @@ index 0000000..d648475
 +
 +	return r;
 +}
-diff --git a/drivers/video/omap2/dss/display.c b/drivers/video/omap2/dss/display.c
-new file mode 100644
-index 0000000..6b5d0cf
 --- /dev/null
 +++ b/drivers/video/omap2/dss/display.c
 @@ -0,0 +1,658 @@
@@ -8863,9 +8731,6 @@ index 0000000..6b5d0cf
 +}
 +EXPORT_SYMBOL(omap_dss_stop_device);
 +
-diff --git a/drivers/video/omap2/dss/dpi.c b/drivers/video/omap2/dss/dpi.c
-new file mode 100644
-index 0000000..b6543c8
 --- /dev/null
 +++ b/drivers/video/omap2/dss/dpi.c
 @@ -0,0 +1,388 @@
@@ -9257,9 +9122,6 @@ index 0000000..b6543c8
 +{
 +}
 +
-diff --git a/drivers/video/omap2/dss/dsi.c b/drivers/video/omap2/dss/dsi.c
-new file mode 100644
-index 0000000..d43b9ce
 --- /dev/null
 +++ b/drivers/video/omap2/dss/dsi.c
 @@ -0,0 +1,3509 @@
@@ -12772,9 +12634,6 @@ index 0000000..d43b9ce
 +	DSSDBG("omap_dsi_exit\n");
 +}
 +
-diff --git a/drivers/video/omap2/dss/dss.c b/drivers/video/omap2/dss/dss.c
-new file mode 100644
-index 0000000..aab9758
 --- /dev/null
 +++ b/drivers/video/omap2/dss/dss.c
 @@ -0,0 +1,347 @@
@@ -13125,9 +12984,6 @@ index 0000000..aab9758
 +	iounmap(dss.base);
 +}
 +
-diff --git a/drivers/video/omap2/dss/dss.h b/drivers/video/omap2/dss/dss.h
-new file mode 100644
-index 0000000..50f7f5f
 --- /dev/null
 +++ b/drivers/video/omap2/dss/dss.h
 @@ -0,0 +1,356 @@
@@ -13487,9 +13343,6 @@ index 0000000..50f7f5f
 +int rfbi_init_display(struct omap_dss_device *display);
 +
 +#endif
-diff --git a/drivers/video/omap2/dss/manager.c b/drivers/video/omap2/dss/manager.c
-new file mode 100644
-index 0000000..7ee0b2b
 --- /dev/null
 +++ b/drivers/video/omap2/dss/manager.c
 @@ -0,0 +1,1487 @@
@@ -14980,9 +14833,6 @@ index 0000000..7ee0b2b
 +}
 +EXPORT_SYMBOL(omap_dss_get_overlay_manager);
 +
-diff --git a/drivers/video/omap2/dss/overlay.c b/drivers/video/omap2/dss/overlay.c
-new file mode 100644
-index 0000000..c7cb81b
 --- /dev/null
 +++ b/drivers/video/omap2/dss/overlay.c
 @@ -0,0 +1,673 @@
@@ -15659,9 +15509,6 @@ index 0000000..c7cb81b
 +	num_overlays = 0;
 +}
 +
-diff --git a/drivers/video/omap2/dss/rfbi.c b/drivers/video/omap2/dss/rfbi.c
-new file mode 100644
-index 0000000..9dd2349
 --- /dev/null
 +++ b/drivers/video/omap2/dss/rfbi.c
 @@ -0,0 +1,1310 @@
@@ -16975,9 +16822,6 @@ index 0000000..9dd2349
 +
 +	return 0;
 +}
-diff --git a/drivers/video/omap2/dss/sdi.c b/drivers/video/omap2/dss/sdi.c
-new file mode 100644
-index 0000000..a9c727e
 --- /dev/null
 +++ b/drivers/video/omap2/dss/sdi.c
 @@ -0,0 +1,261 @@
@@ -17242,9 +17086,6 @@ index 0000000..a9c727e
 +void sdi_exit(void)
 +{
 +}
-diff --git a/drivers/video/omap2/dss/venc.c b/drivers/video/omap2/dss/venc.c
-new file mode 100644
-index 0000000..cf7827e
 --- /dev/null
 +++ b/drivers/video/omap2/dss/venc.c
 @@ -0,0 +1,797 @@
@@ -18045,9 +17886,6 @@ index 0000000..cf7827e
 +
 +#undef DUMPREG
 +}
-diff --git a/drivers/video/omap2/omapfb/Kconfig b/drivers/video/omap2/omapfb/Kconfig
-new file mode 100644
-index 0000000..bb694cc
 --- /dev/null
 +++ b/drivers/video/omap2/omapfb/Kconfig
 @@ -0,0 +1,37 @@
@@ -18088,17 +17926,11 @@ index 0000000..bb694cc
 +	help
 +	  Select the number of framebuffers created. OMAP2/3 has 3 overlays
 +	  so normally this would be 3.
-diff --git a/drivers/video/omap2/omapfb/Makefile b/drivers/video/omap2/omapfb/Makefile
-new file mode 100644
-index 0000000..51c2e00
 --- /dev/null
 +++ b/drivers/video/omap2/omapfb/Makefile
 @@ -0,0 +1,2 @@
 +obj-$(CONFIG_FB_OMAP2) += omapfb.o
 +omapfb-y := omapfb-main.o omapfb-sysfs.o omapfb-ioctl.o
-diff --git a/drivers/video/omap2/omapfb/omapfb-ioctl.c b/drivers/video/omap2/omapfb/omapfb-ioctl.c
-new file mode 100644
-index 0000000..70fb64e
 --- /dev/null
 +++ b/drivers/video/omap2/omapfb/omapfb-ioctl.c
 @@ -0,0 +1,727 @@
@@ -18829,9 +18661,6 @@ index 0000000..70fb64e
 +}
 +
 +
-diff --git a/drivers/video/omap2/omapfb/omapfb-main.c b/drivers/video/omap2/omapfb/omapfb-main.c
-new file mode 100644
-index 0000000..7f5ec3b
 --- /dev/null
 +++ b/drivers/video/omap2/omapfb/omapfb-main.c
 @@ -0,0 +1,2137 @@
@@ -20972,9 +20801,6 @@ index 0000000..7f5ec3b
 +MODULE_AUTHOR("Tomi Valkeinen <tomi.valkeinen@nokia.com>");
 +MODULE_DESCRIPTION("OMAP2/3 Framebuffer");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/video/omap2/omapfb/omapfb-sysfs.c b/drivers/video/omap2/omapfb/omapfb-sysfs.c
-new file mode 100644
-index 0000000..ef30e0e
 --- /dev/null
 +++ b/drivers/video/omap2/omapfb/omapfb-sysfs.c
 @@ -0,0 +1,507 @@
@@ -21485,9 +21311,6 @@ index 0000000..ef30e0e
 +	}
 +}
 +
-diff --git a/drivers/video/omap2/omapfb/omapfb.h b/drivers/video/omap2/omapfb/omapfb.h
-new file mode 100644
-index 0000000..d9ee986
 --- /dev/null
 +++ b/drivers/video/omap2/omapfb/omapfb.h
 @@ -0,0 +1,146 @@
@@ -21637,9 +21460,6 @@ index 0000000..d9ee986
 +}
 +
 +#endif
-diff --git a/drivers/video/omap2/vram.c b/drivers/video/omap2/vram.c
-new file mode 100644
-index 0000000..634ce23
 --- /dev/null
 +++ b/drivers/video/omap2/vram.c
 @@ -0,0 +1,655 @@
@@ -22298,9 +22118,6 @@ index 0000000..634ce23
 +	omap_vram_sram_start = start;
 +	omap_vram_sram_size = size;
 +}
-diff --git a/drivers/video/omap2/vrfb.c b/drivers/video/omap2/vrfb.c
-new file mode 100644
-index 0000000..8726689
 --- /dev/null
 +++ b/drivers/video/omap2/vrfb.c
 @@ -0,0 +1,277 @@
@@ -22581,9 +22398,6 @@ index 0000000..8726689
 +}
 +EXPORT_SYMBOL(omap_vrfb_resume_ctx);
 +
-diff --git a/include/linux/omapfb.h b/include/linux/omapfb.h
-new file mode 100644
-index 0000000..52e0987
 --- /dev/null
 +++ b/include/linux/omapfb.h
 @@ -0,0 +1,242 @@

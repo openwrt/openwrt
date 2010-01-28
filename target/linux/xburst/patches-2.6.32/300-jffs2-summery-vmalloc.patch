@@ -7,11 +7,9 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/300-jf
  fs/jffs2/summary.c |    4 ++--
  1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/jffs2/summary.c b/fs/jffs2/summary.c
-index 6caf1e1..b4882c6 100644
 --- a/fs/jffs2/summary.c
 +++ b/fs/jffs2/summary.c
-@@ -32,7 +32,7 @@ int jffs2_sum_init(struct jffs2_sb_info *c)
+@@ -32,7 +32,7 @@ int jffs2_sum_init(struct jffs2_sb_info 
  		return -ENOMEM;
  	}
  
@@ -20,7 +18,7 @@ index 6caf1e1..b4882c6 100644
  
  	if (!c->summary->sum_buf) {
  		JFFS2_WARNING("Can't allocate buffer for writing out summary information!\n");
-@@ -51,7 +51,7 @@ void jffs2_sum_exit(struct jffs2_sb_info *c)
+@@ -51,7 +51,7 @@ void jffs2_sum_exit(struct jffs2_sb_info
  
  	jffs2_sum_disable_collecting(c->summary);
  
@@ -29,6 +27,3 @@ index 6caf1e1..b4882c6 100644
  	c->summary->sum_buf = NULL;
  
  	kfree(c->summary);
--- 
-1.5.6.5
-

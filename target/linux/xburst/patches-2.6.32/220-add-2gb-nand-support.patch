@@ -7,11 +7,9 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/220-ad
  include/mtd/mtd-abi.h |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/mtd/mtd-abi.h b/include/mtd/mtd-abi.h
-index be51ae2..cf90168 100644
 --- a/include/mtd/mtd-abi.h
 +++ b/include/mtd/mtd-abi.h
-@@ -134,7 +134,7 @@ struct nand_oobfree {
+@@ -135,7 +135,7 @@ struct nand_oobfree {
   */
  struct nand_ecclayout {
  	__u32 eccbytes;
@@ -20,6 +18,3 @@ index be51ae2..cf90168 100644
  	__u32 oobavail;
  	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES];
  };
--- 
-1.5.6.5
-
