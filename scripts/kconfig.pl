@@ -12,19 +12,32 @@ use strict;
 my @arg;
 my $PREFIX = "CONFIG_";
 
-sub load_config($) {
+sub set_config($$$$) {
+	my $config = shift;
+	my $idx = shift;
+	my $newval = shift;
+	my $mod_plus = shift;
+
+	if (!defined($config->{$idx}) or !$mod_plus or
+	    $config->{$idx} eq '#undef' or $newval eq 'y') {
+		$config->{$idx} = $newval;
+	}
+}
+
+sub load_config($$) {
 	my $file = shift;
+	my $mod_plus = shift;
 	my %config;
 
 	open FILE, "$file" or die "can't open file";
 	while (<FILE>) {
 		chomp;
 		/^$PREFIX(.+?)=(.+)/ and do {
-			$config{$1} = $2;
+			set_config(\%config, $1, $2, $mod_plus);
 			next;
 		};
 		/^# $PREFIX(.+?) is not set/ and do {
-			$config{$1} = "#undef";
+			set_config(\%config, $1, "#undef", $mod_plus);
 			next;
 		};
 		/^#/ and next;
@@ -111,14 +124,13 @@ sub dump_config($) {
 	}
 }
 
-sub parse_expr($);
-
-sub parse_expr($) {
+sub parse_expr {
 	my $pos = shift;
+	my $mod_plus = shift;
 	my $arg = $arg[$$pos++];
-	
+
 	die "Parse error" if (!$arg);
-	
+
 	if ($arg eq '&') {
 		my $arg1 = parse_expr($pos);
 		my $arg2 = parse_expr($pos);
@@ -129,7 +141,7 @@ sub parse_expr($) {
 		return config_add($arg1, $arg2, 0);
 	} elsif ($arg =~ /^m\+/) {
 		my $arg1 = parse_expr($pos);
-		my $arg2 = parse_expr($pos);
+		my $arg2 = parse_expr($pos, 1);
 		return config_add($arg1, $arg2, 1);
 	} elsif ($arg eq '>') {
 		my $arg1 = parse_expr($pos);
@@ -140,7 +152,7 @@ sub parse_expr($) {
 		my $arg2 = parse_expr($pos);
 		return config_sub($arg1, $arg2);
 	} else {
-		return load_config($arg);
+		return load_config($arg, $mod_plus);
 	}
 }
 
