@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.51
-PKG_RELEASE:=3
+PKG_VERSION:=2.52
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=97465261a6de5258a3c3edfe51ca16a4
+PKG_MD5SUM:=1bb32fffdb4f977ead607802b5d701d0
 
 include $(INCLUDE_DIR)/package.mk
 
