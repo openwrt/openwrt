@@ -3,5 +3,5 @@
 
 START=99
 start() {
-	[ -f /etc/sysctl.conf ] && sysctl -p >&-
+	[ -f /etc/sysctl.conf ] && sysctl -p -e >&-
 }
