@@ -1,0 +1,33 @@
+--- a/compat/compat-2.6.28.c
++++ b/compat/compat-2.6.28.c
+@@ -166,7 +166,7 @@ EXPORT_SYMBOL(pcmcia_loop_config);
+ 
+ #endif /* CONFIG_PCMCIA */
+ 
+-#if defined(CONFIG_USB) || defined(CONFIG_USB_MODULE)
++#if 0
+ 
+ void usb_unpoison_urb(struct urb *urb)
+ {
+--- a/compat/compat-2.6.29.c
++++ b/compat/compat-2.6.29.c
+@@ -16,7 +16,7 @@
+ #include <linux/etherdevice.h>
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23))
+-#if defined(CONFIG_USB) || defined(CONFIG_USB_MODULE)
++#if 0
+ /**
+  * usb_unpoison_anchored_urbs - let an anchor be used successfully again
+  * @anchor: anchor the requests are bound to
+--- a/include/linux/compat-2.6.28.h
++++ b/include/linux/compat-2.6.28.h
+@@ -52,7 +52,7 @@ int pcmcia_loop_config(struct pcmcia_dev
+ /* USB anchors were added as of 2.6.23 */
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23))
+ 
+-#if defined(CONFIG_USB) || defined(CONFIG_USB_MODULE)
++#if 0
+ #if 0
+ extern void usb_poison_urb(struct urb *urb);
+ #endif
