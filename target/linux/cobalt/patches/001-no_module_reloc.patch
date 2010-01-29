@@ -1,6 +1,7 @@
---- a/arch/mips/Makefile
-+++ b/arch/mips/Makefile
-@@ -83,7 +83,7 @@ all-$(CONFIG_BOOT_ELF64)	:= $(vmlinux-64
+diff -urN linux-2.6.30.10/arch/mips/Makefile linux-2.6.30.10.new//arch/mips/Makefile
+--- linux-2.6.30.10/arch/mips/Makefile	2010-01-29 16:12:01.000000000 +0100
++++ linux-2.6.30.10.new//arch/mips/Makefile	2009-12-04 07:00:07.000000000 +0100
+@@ -83,7 +83,7 @@
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
@@ -9,23 +10,25 @@
  
  cflags-y += -ffreestanding
  
---- a/arch/mips/include/asm/module.h
-+++ b/arch/mips/include/asm/module.h
-@@ -9,11 +9,6 @@ struct mod_arch_specific {
+diff -urN linux-2.6.30.10/arch/mips/include/asm/module.h linux-2.6.30.10.new//arch/mips/include/asm/module.h
+--- linux-2.6.30.10/arch/mips/include/asm/module.h	2010-01-29 16:12:01.000000000 +0100
++++ linux-2.6.30.10.new//arch/mips/include/asm/module.h	2009-12-04 07:00:07.000000000 +0100
+@@ -9,11 +9,6 @@
  	struct list_head dbe_list;
  	const struct exception_table_entry *dbe_start;
  	const struct exception_table_entry *dbe_end;
 -
--	void *plt_tbl;
--	unsigned int core_plt_offset;
--	unsigned int core_plt_size;
--	unsigned int init_plt_offset;
+-	void *phys_plt_tbl;
+-	void *virt_plt_tbl;
+-	unsigned int phys_plt_offset;
+-	unsigned int virt_plt_offset;
  };
  
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
---- a/arch/mips/kernel/module.c
-+++ b/arch/mips/kernel/module.c
-@@ -43,116 +43,6 @@ static struct mips_hi16 *mips_hi16_list;
+diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mips/kernel/module.c
+--- linux-2.6.30.10/arch/mips/kernel/module.c	2010-01-29 16:12:01.000000000 +0100
++++ linux-2.6.30.10.new//arch/mips/kernel/module.c	2009-12-04 07:00:07.000000000 +0100
+@@ -43,116 +43,6 @@
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -142,7 +145,7 @@
  void *module_alloc(unsigned long size)
  {
  #ifdef MODULE_START
-@@ -168,45 +58,16 @@ void *module_alloc(unsigned long size)
+@@ -168,101 +58,23 @@
  
  	return __vmalloc_area(area, GFP_KERNEL, PAGE_KERNEL);
  #else
@@ -190,7 +193,26 @@
  	/* FIXME: If module_region == mod->init_region, trim exception
             table entries. */
  }
-@@ -214,24 +75,6 @@ void module_free(struct module *mod, voi
+ 
+-static void *__module_alloc(int size, bool phys)
+-{
+-	void *ptr;
+-
+-	if (phys)
+-		ptr = kmalloc(size, GFP_KERNEL);
+-	else
+-		ptr = vmalloc(size);
+-	return ptr;
+-}
+-
+-static void __module_free(void *ptr)
+-{
+-	if (is_phys_addr(ptr))
+-		kfree(ptr);
+-	else
+-		vfree(ptr);
+-}
+-
  int module_frob_arch_sections(Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
  			      char *secstrings, struct module *mod)
  {
@@ -205,17 +227,29 @@
 -	core_size = get_plt_size(hdr, sechdrs, secstrings, symindex, false);
 -	init_size = get_plt_size(hdr, sechdrs, secstrings, symindex, true);
 -
--	mod->arch.core_plt_offset = 0;
--	mod->arch.core_plt_size = core_size;
--	mod->arch.init_plt_offset = core_size;
--	mod->arch.plt_tbl = kmalloc(core_size + init_size, GFP_KERNEL);
--	if (!mod->arch.plt_tbl)
+-	mod->arch.phys_plt_offset = 0;
+-	mod->arch.virt_plt_offset = 0;
+-	mod->arch.phys_plt_tbl = NULL;
+-	mod->arch.virt_plt_tbl = NULL;
+-
+-	if ((core_size + init_size) == 0)
+-		return 0;
+-
+-	mod->arch.phys_plt_tbl = __module_alloc(core_size + init_size, 1);
+-	if (!mod->arch.phys_plt_tbl)
 -		return -ENOMEM;
+-
+-	mod->arch.virt_plt_tbl = __module_alloc(core_size + init_size, 0);
+-	if (!mod->arch.virt_plt_tbl) {
+-		__module_free(mod->arch.phys_plt_tbl);
+-		mod->arch.phys_plt_tbl = NULL;
+-		return -ENOMEM;
+-	}
 -
  	return 0;
  }
  
-@@ -254,41 +97,27 @@ static int apply_r_mips_32_rela(struct m
+@@ -285,37 +97,27 @@
  	return 0;
  }
  
@@ -235,20 +269,13 @@
 -	tramp[1] = 0x27390000 | (v & 0xffff);   /* addiu t9, t9, lo16 */
 -	tramp[2] = 0x03200008;                  /* jr t9 */
 -	tramp[3] = 0x00000000;                  /* nop */
--
--	return (Elf_Addr) tramp;
--}
 +	if (v % 4) {
 +		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
 +		return -ENOEXEC;
 +	}
  
--static Elf_Addr add_plt_entry(struct module *me, void *location, Elf_Addr v)
--{
--	if (location >= me->module_core &&
--	    location < me->module_core + me->core_size)
--		return add_plt_entry_to(&me->arch.core_plt_offset,
--				me->arch.plt_tbl, v);
+-	return (Elf_Addr) tramp;
+-}
 +	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
 +		printk(KERN_ERR
 +		       "module %s: relocation overflow\n",
@@ -256,14 +283,18 @@
 +		return -ENOEXEC;
 +	}
  
--	if (location >= me->module_init &&
--	    location < me->module_init + me->init_size)
--		return add_plt_entry_to(&me->arch.init_plt_offset,
--				me->arch.plt_tbl, v);
+-static Elf_Addr add_plt_entry(struct module *me, void *location, Elf_Addr v)
+-{
+-	if (is_phys_addr(location))
+-		return add_plt_entry_to(&me->arch.phys_plt_offset,
+-				me->arch.phys_plt_tbl, v);
+-	else
+-		return add_plt_entry_to(&me->arch.virt_plt_offset,
+-				me->arch.virt_plt_tbl, v);
 +	*location = (*location & ~0x03ffffff) |
 +	            ((*location + (v >> 2)) & 0x03ffffff);
  
- 	return 0;
++	return 0;
  }
  
 -static int set_r_mips_26(struct module *me, u32 *location, u32 ofs, Elf_Addr v)
@@ -271,7 +302,7 @@
  {
  	if (v % 4) {
  		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
-@@ -296,31 +125,17 @@ static int set_r_mips_26(struct module *
+@@ -323,31 +125,17 @@
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -306,18 +337,20 @@
  static int apply_r_mips_hi16_rel(struct module *me, u32 *location, Elf_Addr v)
  {
  	struct mips_hi16 *n;
-@@ -585,23 +400,11 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -612,32 +400,11 @@
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
 -
 -	/* Get rid of the fixup trampoline if we're running the module
 -	 * from physically mapped address space */
--	if (me->arch.core_plt_offset == 0 &&
--	    me->arch.init_plt_offset == me->arch.core_plt_size &&
--	    is_phys_addr(me->module_core)) {
--		kfree(me->arch.plt_tbl);
--		me->arch.plt_tbl = NULL;
+-	if (me->arch.phys_plt_offset == 0) {
+-		__module_free(me->arch.phys_plt_tbl);
+-		me->arch.phys_plt_tbl = NULL;
+-	}
+-	if (me->arch.virt_plt_offset == 0) {
+-		__module_free(me->arch.virt_plt_tbl);
+-		me->arch.virt_plt_tbl = NULL;
 -	}
 -
  	return 0;
@@ -325,8 +358,15 @@
  
  void module_arch_cleanup(struct module *mod)
  {
--	if (mod->arch.plt_tbl)
--		kfree(mod->arch.plt_tbl);
+-	if (mod->arch.phys_plt_tbl) {
+-		__module_free(mod->arch.phys_plt_tbl);
+-		mod->arch.phys_plt_tbl = NULL;
+-	}
+-	if (mod->arch.virt_plt_tbl) {
+-		__module_free(mod->arch.virt_plt_tbl);
+-		mod->arch.virt_plt_tbl = NULL;
+-	}
+-
  	spin_lock_irq(&dbe_lock);
  	list_del(&mod->arch.dbe_list);
  	spin_unlock_irq(&dbe_lock);
