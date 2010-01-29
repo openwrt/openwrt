@@ -86,6 +86,8 @@ struct jz4740_udc {
 	int irq;
 	uint32_t in_mask;
 	uint32_t out_mask;
+
+	struct clk *clk;
 };
 
 extern struct jz4740_udc *the_controller;
