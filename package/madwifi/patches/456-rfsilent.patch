@@ -1,0 +1,85 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -2996,6 +2996,19 @@ ath_fetch_idle_time(struct ath_softc *sc
+ #undef AR5K_RXCLEAR
+ #undef AR5K_CYCLES
+ 
++static void
++ath_set_silent(struct ath_softc *sc)
++{
++	struct ath_hal *ah = sc->sc_ah;
++
++	if (!sc->sc_silent)
++		return;
++
++	del_timer_sync(&sc->sc_bcntimer);
++	ath_hal_intrset(ah, 0);
++	OS_REG_WRITE(ah, 0x8048, 0x60); /* set tx loopback and rx disable */
++}
++
+ /*
+  * Reset the hardware w/o losing operational state.  This is
+  * basically a more efficient way of doing ath_stop, ath_init,
+@@ -3073,6 +3086,7 @@ ath_reset(struct net_device *dev)
+ 		ath_grppoll_start(vap, sc->sc_xrpollcount);
+ 	}
+ #endif
++	ath_set_silent(sc);
+ 	return 0;
+ }
+ 
+@@ -10972,6 +10986,7 @@ enum {
+  * mirrored in /proc/sys.
+  */
+ enum {
++	ATH_SILENT,
+ 	ATH_SLOTTIME,
+ 	ATH_ACKTIMEOUT,
+ 	ATH_CTSTIMEOUT,
+@@ -11294,6 +11309,13 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+ 					sc->sc_ctstimeconf = 0;
+ 				ath_set_timing(sc);
+ 				break;
++			case ATH_SILENT:
++				sc->sc_silent = !!val;
++				if (val)
++					ath_set_silent(sc);
++				else
++					ath_reset(sc->sc_dev);
++				break;
+ 			case ATH_DISTANCE:
+ 				if (val > 0) {
+ 					sc->sc_coverage = ((val - 1) / 300) + 1;
+@@ -11477,6 +11499,9 @@ ATH_SYSCTL_DECL(ath_sysctl_halparam, ctl
+ 		case ATH_CTSTIMEOUT:
+ 			val = ath_hal_getctstimeout(ah);
+ 			break;
++		case ATH_SILENT:
++			val = sc->sc_silent;
++			break;
+ 		case ATH_SOFTLED:
+ 			val = sc->sc_softled;
+ 			break;
+@@ -11598,6 +11623,12 @@ static const ctl_table ath_sysctl_templa
+ 	  .extra2	= (void *)ATH_DISTANCE,
+ 	},
+ 	{ .ctl_name	= CTL_AUTO,
++	  .procname	= "silent",
++	  .mode		= 0644,
++	  .proc_handler	= ath_sysctl_halparam,
++	  .extra2	= (void *)ATH_SILENT,
++	},
++	{ .ctl_name	= CTL_AUTO,
+ 	  .procname	= "softled",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+--- a/ath/if_athvar.h
++++ b/ath/if_athvar.h
+@@ -737,6 +737,7 @@ struct ath_softc {
+ 						 * 'channel availability check' indefinately,
+ 						 * reporting radar and interference detections.
+ 						 */
++	unsigned int	sc_silent:1;	/* Turn RF silent */
+ 	unsigned int sc_txcont_power; /* Continuous transmit power in 0.5dBm units */
+ 	unsigned int sc_txcont_rate;  /* Continuous transmit rate in Mbps */
+ 
