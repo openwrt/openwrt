@@ -724,9 +724,8 @@ $(eval $(call KernelPackage,usb-net-cdc-ether))
 
 
 define KernelPackage/usb-net-rndis
-$(call KernelPackage/usb-net/Depends,@LINUX_2_6)
+$(call KernelPackage/usb-net/Depends,@LINUX_2_6 +kmod-usb-net-cdc-ether)
   TITLE:=Support for RNDIS connections
-  DEPENDS:=+kmod-usb-net-cdc-ether
   KCONFIG:=CONFIG_USB_NET_RNDIS_HOST 
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/rndis_host.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,62,rndis_host)
