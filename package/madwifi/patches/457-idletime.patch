@@ -1,0 +1,151 @@
+--- a/net80211/ieee80211.c
++++ b/net80211/ieee80211.c
+@@ -355,6 +355,8 @@ ieee80211_ifattach(struct ieee80211com *
+ 	/* Arbitrarily pick the first channel */
+ 	ic->ic_curchan = &ic->ic_channels[0];
+ 
++	ic->ic_inact_tick = IEEE80211_INACT_WAIT;
++
+ 	/* Enable marking of dfs by default */
+ 	ic->ic_flags_ext |= IEEE80211_FEXT_MARKDFS;
+ 
+--- a/net80211/ieee80211_var.h
++++ b/net80211/ieee80211_var.h
+@@ -350,6 +350,7 @@ struct ieee80211com {
+ 	u_int8_t ic_protmode_rssi;			/* rssi threshold for protection mode */
+ 	u_int64_t ic_protmode_lasttrig;		/* last trigger for protection mode */
+ 	u_int16_t ic_protmode_timeout;		/* protection mode timeout */
++	u_int16_t ic_inact_tick;			/* inact timer tick interval (seconds) */
+ 
+ 	/* Channel state:
+ 	 *
+--- a/net80211/ieee80211_ioctl.h
++++ b/net80211/ieee80211_ioctl.h
+@@ -591,6 +591,7 @@ enum {
+ 	IEEE80211_PARAM_INACT_AUTH		= 24,	/* station auth inact timeout */
+ 	IEEE80211_PARAM_INACT_INIT		= 25,	/* station init inact timeout */
+ 	IEEE80211_PARAM_ABOLT			= 26,	/* Atheros Adv. Capabilities */
++	IEEE80211_PARAM_INACT_TICK		= 27,	/* station inactivity timer tick (seconds) */
+ 	IEEE80211_PARAM_DTIM_PERIOD		= 28,	/* DTIM period (beacons) */
+ 	IEEE80211_PARAM_BEACON_INTERVAL		= 29,	/* beacon interval (ms) */
+ 	IEEE80211_PARAM_DOTH			= 30,	/* 11.h is on/off */
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
+@@ -2504,13 +2504,18 @@ ieee80211_ioctl_setparam(struct net_devi
+ 			vap->iv_flags &= ~IEEE80211_F_NOBRIDGE;
+ 		break;
+ 	case IEEE80211_PARAM_INACT:
+-		vap->iv_inact_run = value / IEEE80211_INACT_WAIT;
++		vap->iv_inact_run = value / ic->ic_inact_tick;
++		break;
++	case IEEE80211_PARAM_INACT_TICK:
++		if (value <= 0)
++			return -EINVAL;
++		ic->ic_inact_tick = value;
+ 		break;
+ 	case IEEE80211_PARAM_INACT_AUTH:
+-		vap->iv_inact_auth = value / IEEE80211_INACT_WAIT;
++		vap->iv_inact_auth = value / ic->ic_inact_tick;
+ 		break;
+ 	case IEEE80211_PARAM_INACT_INIT:
+-		vap->iv_inact_init = value / IEEE80211_INACT_WAIT;
++		vap->iv_inact_init = value / ic->ic_inact_tick;
+ 		break;
+ 	case IEEE80211_PARAM_ABOLT:
+ 		caps = 0;
+@@ -3050,13 +3055,16 @@ ieee80211_ioctl_getparam(struct net_devi
+ 		param[0] = (vap->iv_flags & IEEE80211_F_NOBRIDGE) == 0;
+ 		break;
+ 	case IEEE80211_PARAM_INACT:
+-		param[0] = vap->iv_inact_run * IEEE80211_INACT_WAIT;
++		param[0] = vap->iv_inact_run * ic->ic_inact_tick;
+ 		break;
+ 	case IEEE80211_PARAM_INACT_AUTH:
+-		param[0] = vap->iv_inact_auth * IEEE80211_INACT_WAIT;
++		param[0] = vap->iv_inact_auth * ic->ic_inact_tick;
+ 		break;
+ 	case IEEE80211_PARAM_INACT_INIT:
+-		param[0] = vap->iv_inact_init * IEEE80211_INACT_WAIT;
++		param[0] = vap->iv_inact_init * ic->ic_inact_tick;
++		break;
++	case IEEE80211_PARAM_INACT_TICK:
++		param[0] = ic->ic_inact_tick;
+ 		break;
+ 	case IEEE80211_PARAM_ABOLT:
+ 		/*
+@@ -4557,14 +4565,7 @@ get_sta_info(void *arg, struct ieee80211
+ 		si->isi_opmode = IEEE80211_STA_OPMODE_XR;
+ 	else
+ 		si->isi_opmode = IEEE80211_STA_OPMODE_NORMAL;
+-	/* NB: leave all cases in case we relax ni_associd == 0 check */
+-	if (ieee80211_node_is_authorized(ni))
+-		si->isi_inact = vap->iv_inact_run;
+-	else if (ni->ni_associd != 0)
+-		si->isi_inact = vap->iv_inact_auth;
+-	else
+-		si->isi_inact = vap->iv_inact_init;
+-	si->isi_inact = (si->isi_inact - ni->ni_inact) * IEEE80211_INACT_WAIT;
++	si->isi_inact = (ni->ni_inact_reload - ni->ni_inact) * ic->ic_inact_tick;
+ 
+ 	cp = (u_int8_t *)(si+1);
+ 	if (ni->ni_rsn_ie != NULL) {
+@@ -5597,6 +5598,10 @@ static const struct iw_priv_args ieee802
+ 	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "inact_init" },
+ 	{ IEEE80211_PARAM_INACT_INIT,
+ 	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_inact_init" },
++	{ IEEE80211_PARAM_INACT_TICK,
++	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "inact_tick" },
++	{ IEEE80211_PARAM_INACT_TICK,
++	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_inact_tick" },
+ 	{ IEEE80211_PARAM_ABOLT,
+ 	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "abolt" },
+ 	{ IEEE80211_PARAM_ABOLT,
+--- a/net80211/ieee80211_node.c
++++ b/net80211/ieee80211_node.c
+@@ -137,7 +137,7 @@ ieee80211_node_attach(struct ieee80211co
+ 	init_timer(&ic->ic_inact);
+ 	ic->ic_inact.function = ieee80211_node_timeout;
+ 	ic->ic_inact.data = (unsigned long) ic;
+-	ic->ic_inact.expires = jiffies + IEEE80211_INACT_WAIT * HZ;
++	ic->ic_inact.expires = jiffies + ic->ic_inact_tick * HZ;
+ 	add_timer(&ic->ic_inact);
+ 
+ #ifdef IEEE80211_DEBUG_REFCNT
+@@ -261,7 +261,7 @@ void
+ ieee80211_node_authorize(struct ieee80211_node *ni)
+ {
+ 	ni->ni_flags |= IEEE80211_NODE_AUTH;
+-	ni->ni_inact_reload = ni->ni_vap->iv_inact_run;
++	ni->ni_inact = ni->ni_inact_reload = ni->ni_vap->iv_inact_run;
+ }
+ EXPORT_SYMBOL(ieee80211_node_authorize);
+ 
+@@ -1819,7 +1819,7 @@ ieee80211_node_timeout(unsigned long arg
+ 		}
+ 	}
+ 
+-	ic->ic_inact.expires = jiffies + IEEE80211_INACT_WAIT * HZ;
++	ic->ic_inact.expires = jiffies + ic->ic_inact_tick * HZ;
+ 	add_timer(&ic->ic_inact);
+ }
+ 
+--- a/net80211/ieee80211_power.c
++++ b/net80211/ieee80211_power.c
+@@ -148,7 +148,7 @@ ieee80211_node_saveq_age(struct ieee8021
+ 
+ 		IEEE80211_NODE_SAVEQ_LOCK_IRQ(ni);
+ 		while ((skb = skb_peek(&ni->ni_savedq)) != NULL &&
+-		     M_AGE_GET(skb) < IEEE80211_INACT_WAIT) {
++		     M_AGE_GET(skb) <  ni->ni_vap->iv_ic->ic_inact_tick) {
+ 			IEEE80211_NOTE(vap, IEEE80211_MSG_POWER, ni,
+ 				"discard frame, age %u", M_AGE_GET(skb));
+ 
+@@ -159,7 +159,7 @@ ieee80211_node_saveq_age(struct ieee8021
+ 			discard++;
+ 		}
+ 		if (skb != NULL)
+-			M_AGE_SUB(skb, IEEE80211_INACT_WAIT);
++			M_AGE_SUB(skb, ni->ni_vap->iv_ic->ic_inact_tick);
+ 		IEEE80211_NODE_SAVEQ_UNLOCK_IRQ(ni);
+ 
+ 		IEEE80211_NOTE(vap, IEEE80211_MSG_POWER, ni,
