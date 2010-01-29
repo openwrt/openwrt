@@ -24,7 +24,7 @@ DRV_PATH:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/carl9170
 define KernelPackage/carl9170
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for Atheros AR9170 USB sticks
-  DEPENDS:=+kmod-mac80211 +kmod-ath
+  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core
   URL:=http://www.kernel.org/pub/linux/kernel/people/chr/carl9170
   FILES:=$(DRV_PATH)/carl9170usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,carl9170usb)
