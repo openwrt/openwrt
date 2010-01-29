@@ -32,7 +32,7 @@
  		int mrr;
  
 +
-+		if (sn->last_update + msecs_to_jiffies(TIMER_INTERVAL) < jiffies) {
++		if (abs(jiffies - sn->last_update) > msecs_to_jiffies(TIMER_INTERVAL)) {
 +			ath_rate_statistics(&an->an_node);
 +			sn->last_update = jiffies;
 +		}
