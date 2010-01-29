@@ -1,0 +1,67 @@
+--- a/compat/compat-2.6.28.c
++++ b/compat/compat-2.6.28.c
+@@ -87,7 +87,7 @@ EXPORT_SYMBOL_GPL(usb_poison_urb);
+ #endif
+ #endif /* CONFIG_USB */
+ 
+-#if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
++#if 0
+ 
+ #include <pcmcia/ds.h>
+ struct pcmcia_cfg_mem {
+--- a/compat/compat-2.6.33.c
++++ b/compat/compat-2.6.33.c
+@@ -14,7 +14,7 @@
+ 
+ #include <linux/autoconf.h>
+ 
+-#if defined(CONFIG_PCCARD) || defined(CONFIG_PCCARD_MODULE)
++#if 0
+ 
+ /**
+  * pccard_loop_tuple() - loop over tuples in the CIS
+@@ -76,7 +76,7 @@ next_entry:
+ EXPORT_SYMBOL(pccard_loop_tuple);
+ /* Source: drivers/pcmcia/cistpl.c */
+ 
+-#if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
++#if 0
+ 
+ struct pcmcia_loop_mem {
+ 	struct pcmcia_device *p_dev;
+--- a/include/linux/compat-2.6.28.h
++++ b/include/linux/compat-2.6.28.h
+@@ -27,7 +27,7 @@
+ })
+ #endif /* From include/asm-generic/bug.h */
+ 
+-#if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
++#if 0
+ 
+ #include <pcmcia/cs_types.h>
+ #include <pcmcia/cs.h>
+--- a/include/linux/compat-2.6.33.h
++++ b/include/linux/compat-2.6.33.h
+@@ -6,8 +6,8 @@
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
+ 
+ #include <linux/skbuff.h>
+-#if defined(CONFIG_PCCARD) || defined(CONFIG_PCCARD_MODULE)
+-#if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
++#if 0
++#if 0
+ #include <pcmcia/cs_types.h>
+ #include <pcmcia/cistpl.h>
+ #include <pcmcia/ds.h>
+@@ -68,9 +68,9 @@ static inline struct sk_buff *netdev_all
+ 	return skb;
+ }
+ 
+-#if defined(CONFIG_PCCARD) || defined(CONFIG_PCCARD_MODULE)
++#if 0
+ 
+-#if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
++#if 0
+ 
+ #define pcmcia_request_window(a, b, c) pcmcia_request_window(&a, b, c)
+ 
