@@ -765,7 +765,7 @@ sub gen_package_mk() {
 $cmds \\
 	) > \$@
 	
-ifneq (\$(UCI_PRECONFIG)\$(CONFIG_UCI_PRECONFIG),)
+ifneq (\$(IMAGEOPT)\$(CONFIG_IMAGEOPT),)
   package/preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
 endif
 EOF
