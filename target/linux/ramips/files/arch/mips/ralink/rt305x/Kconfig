@@ -5,6 +5,7 @@ menu "Ralink RT350x machine selection"
 config RT305X_MACH_WHR_G300N
 	bool "Buffalo WHR-G300N support"
 	default y
+	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_DIR_300_REVB
