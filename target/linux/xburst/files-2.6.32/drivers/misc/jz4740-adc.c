@@ -21,6 +21,8 @@
 #include <linux/platform_device.h>
 #include <linux/spinlock.h>
 #include <linux/interrupt.h>
+#include <linux/clk.h>
+#include <linux/err.h>
 #include <linux/jz4740-adc.h>
 
 #define JZ_REG_ADC_ENABLE	0x00
@@ -71,6 +73,9 @@ struct jz4740_adc {
 	void __iomem *base;
 
 	int irq;
+
+	struct clk *clk;
+	unsigned int clk_ref;
 
 	struct completion bat_completion;
 	struct completion adc_completion;
@@ -169,6 +174,26 @@ uint32_t val)
 	spin_unlock_irqrestore(&adc->lock, flags);
 }
 
+static inline void jz4740_adc_clk_enable(struct jz4740_adc *adc)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&adc->lock, flags);
+	if (adc->clk_ref++ == 0)
+		clk_enable(adc->clk);
+	spin_unlock_irqrestore(&adc->lock, flags);
+}
+
+static inline void jz4740_adc_clk_disable(struct jz4740_adc *adc)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&adc->lock, flags);
+	if (--adc->clk_ref == 0)
+		clk_disable(adc->clk);
+	spin_unlock_irqrestore(&adc->lock, flags);
+}
+
 long jz4740_adc_read_battery_voltage(struct device *dev,
 						enum jz_adc_battery_scale scale)
 {
@@ -179,6 +204,8 @@ long jz4740_adc_read_battery_voltage(struct device *dev,
 
 	if (!adc)
 		return -ENODEV;
+
+	jz4740_adc_clk_enable(adc);
 
 	if (scale == JZ_ADC_BATTERY_SCALE_2V5)
 		jz4740_adc_set_cfg(adc, JZ_ADC_CFG_BAT_MB, JZ_ADC_CFG_BAT_MB);
@@ -200,6 +227,8 @@ long jz4740_adc_read_battery_voltage(struct device *dev,
 
 	val = readw(adc->base + JZ_REG_ADC_BATTERY);
 
+	jz4740_adc_clk_disable(adc);
+
 	if (scale == JZ_ADC_BATTERY_SCALE_2V5)
 		voltage = (((long long)val) * 2500000LL) >> 12LL;
 	else
@@ -217,6 +246,8 @@ static ssize_t jz4740_adc_read_adcin(struct device *dev,
 	unsigned long t;
 	uint16_t val;
 
+	jz4740_adc_clk_enable(adc);
+
 	jz4740_adc_enable_irq(adc, JZ_ADC_IRQ_ADCIN);
 	jz4740_adc_enable_adc(adc, JZ_ADC_ENABLE_ADCIN);
 
@@ -231,6 +262,7 @@ static ssize_t jz4740_adc_read_adcin(struct device *dev,
 	}
 
 	val = readw(adc->base + JZ_REG_ADC_ADCIN);
+	jz4740_adc_clk_disable(adc);
 
 	return sprintf(buf, "%d\n", val);
 }
@@ -277,11 +309,20 @@ static int __devinit jz4740_adc_probe(struct platform_device *pdev)
 		goto err_release_mem_region;
 	}
 
+	adc->clk = clk_get(&pdev->dev, "adc");
+
+	if (IS_ERR(adc->clk)) {
+		ret = PTR_ERR(adc->clk);
+		dev_err(&pdev->dev, "Failed to get clock: %d\n", ret);
+		goto err_iounmap;
+	}
 
 	init_completion(&adc->bat_completion);
 	init_completion(&adc->adc_completion);
 
 	spin_lock_init(&adc->lock);
+
+	adc->clk_ref = 0;
 
 	platform_set_drvdata(pdev, adc);
 
@@ -289,7 +330,7 @@ static int __devinit jz4740_adc_probe(struct platform_device *pdev)
 
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to request irq: %d\n", ret);
-		goto err_iounmap;
+		goto err_clk_put;
 	}
 
 	ret = device_create_file(&pdev->dev, &dev_attr_adcin);
@@ -305,6 +346,8 @@ static int __devinit jz4740_adc_probe(struct platform_device *pdev)
 
 err_free_irq:
 	free_irq(adc->irq, adc);
+err_clk_put:
+	clk_put(adc->clk);
 err_iounmap:
 	platform_set_drvdata(pdev, NULL);
 	iounmap(adc->base);
@@ -326,6 +369,8 @@ static int __devexit jz4740_adc_remove(struct platform_device *pdev)
 
 	iounmap(adc->base);
 	release_mem_region(adc->mem->start, resource_size(adc->mem));
+
+	clk_put(adc->clk);
 
 	platform_set_drvdata(pdev, NULL);
 
