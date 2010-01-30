@@ -131,7 +131,7 @@ static int ramips_gpio_get(struct gpio_chip *chip, unsigned offset)
 	u32 t;
 
 	t = ramips_gpio_rr(rg, RAMIPS_GPIO_REG_DATA);
-	return (t & (1 << offset));
+	return !!(t & (1 << offset));
 }
 
 static struct ramips_gpio_chip ramips_gpio_chip0 = {
