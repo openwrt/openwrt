@@ -17,6 +17,7 @@
 #include <linux/rtl8366s.h>
 
 #include <asm/mach-ralink/machine.h>
+#include <asm/mach-ralink/dev-gpio-buttons.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
@@ -29,6 +30,8 @@
 
 #define RT_N15_GPIO_RTL8366_SCK		2
 #define RT_N15_GPIO_RTL8366_SDA		1
+
+#define RT_N15_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rt_n15_partitions[] = {
@@ -78,6 +81,24 @@ static struct gpio_led rt_n15_leds_gpio[] __initdata = {
 	}
 };
 
+static struct gpio_button rt_n15_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 3,
+		.gpio		= RT_N15_GPIO_BUTTON_RESET,
+		.active_low	= 1,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 3,
+		.gpio		= RT_N15_GPIO_BUTTON_WPS,
+		.active_low	= 1,
+	}
+};
+
 static struct rtl8366s_platform_data rt_n15_rtl8366s_data = {
 	.gpio_sda        = RT_N15_GPIO_RTL8366_SDA,
 	.gpio_sck        = RT_N15_GPIO_RTL8366_SCK,
@@ -99,6 +120,10 @@ static void __init rt_n15_init(void)
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(rt_n15_leds_gpio),
 				  rt_n15_leds_gpio);
+
+	ramips_register_gpio_buttons(-1, RT_N15_BUTTONS_POLL_INTERVAL,
+				     ARRAY_SIZE(rt_n15_gpio_buttons),
+				     rt_n15_gpio_buttons);
 
 	platform_device_register(&rt_n15_rtl8366s_device);
 }
