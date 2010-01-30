@@ -12,7 +12,7 @@
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 
-#include <asm/mach-ralink/dev_gpio_leds.h>
+#include <asm/mach-ralink/dev-gpio-leds.h>
 
 void __init ramips_register_gpio_leds(int id, unsigned num_leds,
 				      struct gpio_led *leds)
