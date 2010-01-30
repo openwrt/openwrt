@@ -20,33 +20,6 @@
 #include <asm/mach-ralink/machine.h>
 #include <ralink_soc.h>
 
-struct board_rec {
-	char			*name;
-	enum ramips_mach_type	mach_type;
-};
-
-static struct board_rec boards[] __initdata = {
-	{
-		.name		= "RT-N15",
-		.mach_type	= RAMIPS_MACH_RT_N15,
-	}, {
-		.name		= "WZR-AGL300NH",
-		.mach_type	= RAMIPS_MACH_WZR_AGL300NH,
-	}, {
-		.name		= "DIR-300-revB",
-		.mach_type	= RAMIPS_MACH_DIR_300_REVB,
-	}, {
-		.name		= "V22RW-2X2",
-		.mach_type	= RAMIPS_MACH_V22RW_2X2,
-	}, {
-		.name		= "WHR-G300N",
-		.mach_type	= RAMIPS_MACH_WHR_G300N,
-	}, {
-		.name		= "FONERA20N",
-		.mach_type	= RAMIPS_MACH_FONERA20N,
-	}
-};
-
 static inline void *to_ram_addr(void *addr)
 {
 	u32 base;
@@ -163,20 +136,6 @@ static __init char *prom_append_env(char **env, const char *envname)
 	return NULL;
 #undef PROM_MAX_ENVS
 }
-
-static __init int ramips_board_setup(char *name)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(boards); i++)
-		if (strcmp(name, boards[i].name) == 0) {
-			ramips_mach = boards[i].mach_type;
-			break;
-		}
-
-	return 1;
-}
-__setup("board=", ramips_board_setup);
 
 void __init prom_init(void)
 {

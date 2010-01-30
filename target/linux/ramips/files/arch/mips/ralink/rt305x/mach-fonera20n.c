@@ -15,7 +15,6 @@
 #include <linux/mtd/physmap.h>
 #include <linux/leds.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
 #include <asm/mach-ralink/rt305x.h>
@@ -97,4 +96,5 @@ static void __init fonera20n_init(void)
 	rt305x_register_ethernet();
 }
 
-MIPS_MACHINE(RAMIPS_MACH_FONERA20N, "La Fonera 2.0N", fonera20n_init);
+MIPS_MACHINE(RAMIPS_MACH_FONERA20N, "FONERA20N", "La Fonera 2.0N",
+	     fonera20n_init);

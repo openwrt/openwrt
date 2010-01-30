@@ -1,0 +1,134 @@
+--- a/arch/mips/kernel/mips_machine.c
++++ b/arch/mips/kernel/mips_machine.c
+@@ -7,12 +7,13 @@
+  *
+  */
+ #include <linux/mm.h>
++#include <linux/string.h>
+ 
+ #include <asm/mips_machine.h>
+-#include <asm/bootinfo.h>
+ 
+ static struct list_head mips_machines __initdata =
+ 		LIST_HEAD_INIT(mips_machines);
++static char *mips_machid __initdata;
+ 
+ char *mips_machine_name = "Unknown";
+ 
+@@ -55,20 +56,65 @@ void __init mips_machine_set_name(char *
+ 	}
+ }
+ 
+-void __init mips_machine_setup(unsigned long machtype)
++void __init mips_machine_setup(void)
+ {
+ 	struct mips_machine *mach;
+ 
+-	mach = mips_machine_find(machtype);
++	mach = mips_machine_find(mips_machtype);
+ 	if (!mach) {
+-		printk(KERN_ALERT "MIPS: no machine registered for "
+-			"machtype %lu\n", machtype);
++		printk(KERN_WARNING "MIPS: no machine registered for "
++			"machtype %lu\n", mips_machtype);
+ 		return;
+ 	}
+ 
+ 	mips_machine_set_name(mach->mach_name);
+-	printk(KERN_INFO "MIPS: machine is %s\n", mips_machine_name);
++	printk(KERN_NOTICE "MIPS: machine is %s\n", mips_machine_name);
+ 
+ 	if (mach->mach_setup)
+ 		mach->mach_setup();
+ }
++
++int __init mips_machtype_setup(char *id)
++{
++	if (mips_machid == NULL)
++		mips_machid = id;
++
++	return 1;
++}
++
++__setup("machtype=", mips_machtype_setup);
++
++static int __init mips_machtype_init(void)
++{
++	struct list_head *this;
++	struct mips_machine *mach;
++
++	if (mips_machid == NULL)
++		return 0;
++
++	list_for_each(this, &mips_machines) {
++		mach = list_entry(this, struct mips_machine, list);
++		if (mach->mach_id == NULL)
++			continue;
++
++		if (strcmp(mach->mach_id, mips_machid) == 0) {
++			mips_machtype = mach->mach_type;
++			return 0;
++		}
++	}
++
++	printk(KERN_WARNING
++	       "MIPS: no machine found for id: '%s', registered machines:\n",
++	       mips_machid);
++	printk(KERN_WARNING "%32s %s\n", "id", "name");
++
++	list_for_each(this, &mips_machines) {
++		mach = list_entry(this, struct mips_machine, list);
++		printk(KERN_WARNING "%32s %s\n",
++		       mach->mach_id ? mach->mach_id : "", mach->mach_name);
++	}
++
++	return 0;
++}
++
++core_initcall(mips_machtype_init);
+--- a/arch/mips/include/asm/mips_machine.h
++++ b/arch/mips/include/asm/mips_machine.h
+@@ -13,25 +13,33 @@
+ #include <linux/init.h>
+ #include <linux/list.h>
+ 
++#include <asm/bootinfo.h>
++
+ struct mips_machine {
+ 	unsigned long		mach_type;
+-	void			(*mach_setup)(void);
++	char			*mach_id;
+ 	char			*mach_name;
++	void			(*mach_setup)(void);
+ 	struct list_head	list;
+ };
+ 
+ void mips_machine_register(struct mips_machine *) __init;
+-void mips_machine_setup(unsigned long machtype) __init;
++void mips_machine_setup(void) __init;
++int  mips_machtype_setup(char *id) __init;
+ void mips_machine_set_name(char *name) __init;
+ 
+ extern char *mips_machine_name;
+ 
+-#define MIPS_MACHINE(_type, _name, _setup) 			\
+-static char machine_name_##_type[] __initdata = _name;		\
++#define MIPS_MACHINE(_type, _id, _name, _setup) 		\
++static const char machine_name_##_type[] __initconst		\
++			__aligned(1) = _name;			\
++static const char machine_id_##_type[] __initconst		\
++			__aligned(1) = _id;			\
+ static struct mips_machine machine_##_type __initdata =		\
+ {								\
+ 	.mach_type	= _type,				\
+-	.mach_name	= machine_name_##_type,			\
++	.mach_id	= (char *) machine_id_##_type,		\
++	.mach_name	= (char *) machine_name_##_type,	\
+ 	.mach_setup	= _setup,				\
+ };								\
+ 								\
+@@ -44,4 +52,3 @@ static int __init register_machine_##_ty
+ pure_initcall(register_machine_##_type)
+ 
+ #endif /* __ASM_MIPS_MACHINE_H */
+-

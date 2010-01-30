@@ -15,7 +15,6 @@
 #include <linux/mtd/physmap.h>
 #include <linux/leds.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
 #include <asm/mach-ralink/rt288x.h>
@@ -102,4 +101,5 @@ static void __init wzr_agl300nh_init(void)
 */
 }
 
-MIPS_MACHINE(RAMIPS_MACH_WZR_AGL300NH, "Buffalo WZR-AGL300NH", wzr_agl300nh_init);
+MIPS_MACHINE(RAMIPS_MACH_WZR_AGL300NH, "WZR-AGL300NH",
+	     "Buffalo WZR-AGL300NH", wzr_agl300nh_init);
