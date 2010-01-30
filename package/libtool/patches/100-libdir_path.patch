@@ -10,6 +10,15 @@
  	(rm -f $@ && cp ltmain.shT $@ && rm -f ltmain.shT)
 --- a/ltmain.in
 +++ b/ltmain.in
+@@ -2827,7 +2827,7 @@ EOF
+ 	      fi
+ 	    else
+ 	      # We cannot seem to hardcode it, guess we'll fake it.
+-	      add_dir="-L$libdir"
++	      add_dir="-L@GLOBAL_LIBDIR@"
+ 	      # Try looking first in the location we're being installed to.
+ 	      if test -n "$inst_prefix_dir"; then
+ 		case $libdir in
 @@ -5669,7 +5669,7 @@ fi\
  		  $echo "$modename: \`$deplib' is not a valid libtool archive" 1>&2
  		  exit $EXIT_FAILURE
