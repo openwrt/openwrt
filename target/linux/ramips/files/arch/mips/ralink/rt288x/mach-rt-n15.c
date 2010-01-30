@@ -18,7 +18,7 @@
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
-#include <asm/mach-ralink/dev_gpio_leds.h>
+#include <asm/mach-ralink/dev-gpio-leds.h>
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
 
