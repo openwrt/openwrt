@@ -13,33 +13,24 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
-#include <linux/leds.h>
 
 #include <asm/mach-ralink/machine.h>
-#include <asm/mach-ralink/dev_gpio_leds.h>
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
 
 #include "devices.h"
 
-#if 0
-#define WZR_AGL300NH_GPIO_LED_POWER	XX
-#define WZR_AGL300NH_GPIO_BUTTON_AOSS	XX
-#define WZR_AGL300NH_GPIO_BUTTON_RESET	XX
-#endif // 0
+/*
+ * MTD layout from stock firmware:
+ * mtd0: 00030000 00010000 "uboot"
+ * mtd1: 00010000 00010000 "uboot_environ"
+ * mtd2: 00010000 00010000 "factory_default"
+ * mtd3: 000b0000 00010000 "linux"
+ * mtd4: 002f0000 00010000 "rootfs"
+ * mtd5: 00010000 00010000 "user_property"
+ */
 
 #ifdef CONFIG_MTD_PARTITIONS
-
-/*
-From stock firmware:
-mtd0: 00030000 00010000 "uboot"
-mtd1: 00010000 00010000 "uboot_environ"
-mtd2: 00010000 00010000 "factory_default"
-mtd3: 000b0000 00010000 "linux"
-mtd4: 002f0000 00010000 "rootfs"
-mtd5: 00010000 00010000 "user_property"
-*/
-
 static struct mtd_partition wzr_agl300nh_partitions[] = {
 	{
 		.name	= "uboot",
@@ -79,26 +70,11 @@ static struct physmap_flash_data wzr_agl300nh_flash_data = {
 #endif
 };
 
-#if 0
-static struct gpio_led wzr_agl300nh_leds_gpio[] __initdata = {
-	{
-		.name		= "wzr-agl300nh:green:power",
-		.gpio		= WZR_AGL300NH_GPIO_LED_POWER,
-		.active_low	= ??,
-	}
-};
-#endif
-
 static void __init wzr_agl300nh_init(void)
 {
 	rt288x_gpio_init(RT2880_GPIO_MODE_UART0);
 
 	rt288x_register_flash(0, &wzr_agl300nh_flash_data);
-
-/*
-	ramips_register_gpio_leds(-1, ARRAY_SIZE(wzr_agl300nh_leds_gpio),
-				  wzr_agl300nh_leds_gpio);
-*/
 }
 
 MIPS_MACHINE(RAMIPS_MACH_WZR_AGL300NH, "WZR-AGL300NH",
