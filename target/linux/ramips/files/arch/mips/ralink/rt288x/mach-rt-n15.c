@@ -13,7 +13,6 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
-#include <linux/leds.h>
 #include <linux/rtl8366s.h>
 
 #include <asm/mach-ralink/machine.h>

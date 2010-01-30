@@ -10,7 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/leds.h>
 
 #include <asm/mach-ralink/dev-gpio-leds.h>
 
