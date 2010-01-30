@@ -270,8 +270,8 @@ ramips_eth_set_mac_addr(struct net_device *dev, void *priv)
 
 	memcpy(dev->dev_addr, ((struct sockaddr*)priv)->sa_data, dev->addr_len);
 	ramips_fe_wr((mac[0] << 8) | mac[1], RAMIPS_GDMA1_MAC_ADRH);
-	ramips_fe_wr(RAMIPS_GDMA1_MAC_ADRL,
-		     (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5]);
+	ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
+		     RAMIPS_GDMA1_MAC_ADRL);
 	return 0;
 }
 
@@ -357,8 +357,9 @@ ramips_eth_stop(struct net_device *dev)
 {
 	struct raeth_priv *priv = netdev_priv(dev);
 
-	ramips_fe_wr(RAMIPS_PDMA_GLO_CFG, ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) &
-		~(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN | RAMIPS_TX_DMA_EN));
+	ramips_fe_wr(ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) &
+		     ~(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN | RAMIPS_TX_DMA_EN),
+		     RAMIPS_PDMA_GLO_CFG);
 	free_irq(dev->irq, dev);
 	netif_stop_queue(dev);
 	tasklet_kill(&priv->tx_housekeeping_tasklet);
