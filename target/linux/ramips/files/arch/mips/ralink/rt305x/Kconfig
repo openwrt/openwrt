@@ -16,6 +16,7 @@ config RT305X_MACH_DIR_300_REVB
 config RT305X_MACH_V22RW_2X2
 	bool "Ralink AP-RT3052-V22RW-2X2 board support"
 	default y
+	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_FONERA20N
