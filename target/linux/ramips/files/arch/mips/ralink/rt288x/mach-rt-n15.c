@@ -1,7 +1,7 @@
 /*
  *  Asus RT-N15 board support
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -14,6 +14,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 #include <linux/leds.h>
+#include <linux/rtl8366s.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
@@ -25,6 +26,9 @@
 #define RT_N15_GPIO_LED_POWER		11
 #define RT_N15_GPIO_BUTTON_WPS		0
 #define RT_N15_GPIO_BUTTON_RESET	12
+
+#define RT_N15_GPIO_RTL8366_SCK		2
+#define RT_N15_GPIO_RTL8366_SDA		1
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rt_n15_partitions[] = {
@@ -74,14 +78,29 @@ static struct gpio_led rt_n15_leds_gpio[] __initdata = {
 	}
 };
 
+static struct rtl8366s_platform_data rt_n15_rtl8366s_data = {
+	.gpio_sda        = RT_N15_GPIO_RTL8366_SDA,
+	.gpio_sck        = RT_N15_GPIO_RTL8366_SCK,
+};
+
+static struct platform_device rt_n15_rtl8366s_device = {
+	.name		= RTL8366S_DRIVER_NAME,
+	.id		= -1,
+	.dev = {
+		.platform_data	= &rt_n15_rtl8366s_data,
+	}
+};
+
 static void __init rt_n15_init(void)
 {
-	rt288x_gpio_init(RT2880_GPIO_MODE_UART0);
+	rt288x_gpio_init(RT2880_GPIO_MODE_UART0 | RT2880_GPIO_MODE_I2C);
 
 	rt288x_register_flash(0, &rt_n15_flash_data);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(rt_n15_leds_gpio),
 				  rt_n15_leds_gpio);
+
+	platform_device_register(&rt_n15_rtl8366s_device);
 }
 
 MIPS_MACHINE(RAMIPS_MACH_RT_N15, "RT-N15", "Asus RT-N15", rt_n15_init);
