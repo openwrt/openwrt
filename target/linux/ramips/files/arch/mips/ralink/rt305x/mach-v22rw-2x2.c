@@ -1,7 +1,7 @@
 /*
  *  Ralink AP-RT3052-V22RW-2X2 board support
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -15,6 +15,7 @@
 #include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
+#include <asm/mach-ralink/dev-gpio-buttons.h>
 #include <asm/mach-ralink/dev-gpio-leds.h>
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
@@ -25,6 +26,8 @@
 #define V22RW_2X2_GPIO_BUTTON_SWRST	10
 #define V22RW_2X2_GPIO_LED_SECURITY	13
 #define V22RW_2X2_GPIO_LED_WPS		14
+
+#define V22RW_2X2_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition v22rw_2x2_partitions[] = {
@@ -78,6 +81,24 @@ static struct gpio_led v22rw_2x2_leds_gpio[] __initdata = {
 	}
 };
 
+static struct gpio_button v22rw_2x2_gpio_buttons[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.threshold	= 3,
+		.gpio		= V22RW_2X2_GPIO_BUTTON_SWRST,
+		.active_low	= 1,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.threshold	= 3,
+		.gpio		= V22RW_2X2_GPIO_BUTTON_WPS,
+		.active_low	= 1,
+	}
+};
+
 static void __init v22rw_2x2_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
@@ -86,6 +107,9 @@ static void __init v22rw_2x2_init(void)
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(v22rw_2x2_leds_gpio),
 				  v22rw_2x2_leds_gpio);
+	ramips_register_gpio_buttons(-1, V22RW_2X2_BUTTONS_POLL_INTERVAL,
+				     ARRAY_SIZE(v22rw_2x2_gpio_buttons),
+				     v22rw_2x2_gpio_buttons);
 }
 
 MIPS_MACHINE(RAMIPS_MACH_V22RW_2X2, "V22RW-2X2", "Ralink AP-RT3052-V22RW-2X2",
