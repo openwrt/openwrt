@@ -1,7 +1,7 @@
 /*
  *  Ralink RT288x SoC register definitions
  *
- *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 #define RT2880_I2C_BASE		0x00300900
 #define RT2880_SPI_BASE		0x00300b00
 #define RT2880_UART1_BASE	0x00300c00
-#define RT2880_FE_BASE		0x00310000
-#define RT2880_ROM_BASE		0x00400000
+#define RT2880_FE_BASE		0x00400000
+#define RT2880_ROM_BASE		0x00410000
+#define RT2880_PCM_BASE		0x00420000
 #define RT2880_PCI_BASE		0x00440000
-#define RT2880_WMAC_BASE	0x00600000
+#define RT2880_WMAC_BASE	0x00480000
 #define RT2880_FLASH1_BASE	0x01000000
 #define RT2880_FLASH0_BASE	0x1fc00000
 #define RT2880_SDRAM_BASE	0x08000000
