@@ -48,6 +48,9 @@ config SOC_RT305X
 	select SYS_HAS_EARLY_PRINTK
 	select MIPS_MACHINE
 
+config RALINK_DEV_GPIO_BUTTONS
+	def_bool n
+
 config RALINK_DEV_GPIO_LEDS
 	def_bool n
 
