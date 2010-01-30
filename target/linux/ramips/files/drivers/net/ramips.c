@@ -88,8 +88,8 @@ ramips_alloc_dma(struct net_device *dev)
 	if (!priv->tx)
 		goto err_cleanup;
 
+	memset(priv->tx, 0, NUM_TX_DESC * sizeof(struct ramips_tx_dma));
 	for (i = 0; i < NUM_TX_DESC; i++) {
-		memset(&priv->tx[i], 0, sizeof(struct ramips_tx_dma));
 		priv->tx[i].txd2 |= TX_DMA_LSO | TX_DMA_DONE;
 		priv->tx[i].txd4 &= (TX_DMA_QN_MASK | TX_DMA_PN_MASK);
 		priv->tx[i].txd4 |= TX_DMA_QN(3) | TX_DMA_PN(1);
