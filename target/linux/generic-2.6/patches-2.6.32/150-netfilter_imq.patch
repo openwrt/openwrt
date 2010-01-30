@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/net/imq.c
-@@ -0,0 +1,571 @@
+@@ -0,0 +1,632 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
 + *
@@ -50,7 +50,7 @@
 + *             I didn't forget anybody). I apologize again for my lack of time.
 + *
 + *
-+ *             2008/06/17 - 2.6.25 - Changed imq.c to use qdisc_run() instead
++ *             2008/06/17 - 2.6.25 - Changed imq.c to use qdisc_run() instead 
 + *             of qdisc_restart() and moved qdisc_run() to tasklet to avoid
 + *             recursive locking. New initialization routines to fix 'rmmod' not
 + *             working anymore. Used code from ifb.c. (Jussi Kivilinna)
@@ -72,6 +72,15 @@
 + *             2009/04/20 - (Jussi Kivilinna)
 + *              - Use netdevice feature flags to avoid extra packet handling
 + *                by core networking layer and possibly increase performance.
++ *
++ *             2009/09/26 - (Jussi Kivilinna)
++ *              - Add imq_nf_reinject_lockless to fix deadlock with
++ *                imq_nf_queue/imq_nf_reinject.
++ *
++ *             2009/12/08 - (Jussi Kivilinna)
++ *              - Port to 2.6.32
++ *              - Add check for skb->nf_queue_entry==NULL in imq_dev_xmit()
++ *              - Also add better error checking for skb->nf_queue_entry usage
 + *
 + *	       Also, many thanks to pablo Sebastian Greco for making the initial
 + *	       patch and to those who helped the testing.
@@ -170,12 +179,33 @@
 +{
 +	struct nf_queue_entry *entry = skb->nf_queue_entry;
 +
++	skb->nf_queue_entry = NULL;
++
 +	if (entry) {
 +		nf_queue_entry_release_refs(entry);
 +		kfree(entry);
 +	}
 +
 +	skb_restore_cb(skb); /* kfree backup */
++}
++
++/* locking not needed when called from imq_nf_queue */
++static void imq_nf_reinject_lockless(struct nf_queue_entry *entry,
++						unsigned int verdict)
++{
++	int status;
++
++	if (!entry->next_outfn) {
++		nf_reinject(entry, verdict);
++		return;
++	}
++
++	status = entry->next_outfn(entry, entry->next_queuenum);
++	if (status < 0) {
++		nf_queue_entry_release_refs(entry);
++		kfree_skb(entry->skb);
++		kfree(entry);
++	}
 +}
 +
 +static void imq_nf_reinject(struct nf_queue_entry *entry, unsigned int verdict)
@@ -202,19 +232,48 @@
 +	rcu_read_unlock();
 +}
 +
-+static int imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
++static netdev_tx_t imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 +{
++	struct nf_queue_entry *entry = skb->nf_queue_entry;
++
++	skb->nf_queue_entry = NULL;
++	dev->trans_start = jiffies;
++
 +	dev->stats.tx_bytes += skb->len;
 +	dev->stats.tx_packets++;
++
++	if (entry == NULL) {
++		/* We don't know what is going on here.. packet is queued for
++		 * imq device, but (probably) not by us.
++		 *
++		 * If this packet was not send here by imq_nf_queue(), then
++		 * skb_save_cb() was not used and skb_free() should not show:
++		 *   WARNING: IMQ: kfree_skb: skb->cb_next:..
++		 * and/or
++		 *   WARNING: IMQ: kfree_skb: skb->nf_queue_entry...
++		 *
++		 * However if this message is shown, then IMQ is somehow broken
++		 * and you should report this to linuximq.net.
++		 */
++
++		/* imq_dev_xmit is black hole that eats all packets, report that
++		 * we eat this packet happily and increase dropped counters.
++		 */
++
++		dev->stats.tx_dropped++;
++		dev_kfree_skb(skb);
++
++		return NETDEV_TX_OK;
++	}
++
++	skb_restore_cb(skb); /* restore skb->cb */
 +
 +	skb->imq_flags = 0;
 +	skb->destructor = NULL;
 +
-+	skb_restore_cb(skb); /* restore skb->cb */
++	imq_nf_reinject(entry, NF_ACCEPT);
 +
-+	dev->trans_start = jiffies;
-+	imq_nf_reinject(skb->nf_queue_entry, NF_ACCEPT);
-+	return 0;
++	return NETDEV_TX_OK;
 +}
 +
 +static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
@@ -257,7 +316,7 @@
 +
 +	if (unlikely(!(dev->flags & IFF_UP))) {
 +		entry->skb->imq_flags = 0;
-+		imq_nf_reinject(entry, NF_ACCEPT);
++		imq_nf_reinject_lockless(entry, NF_ACCEPT);
 +		retval = 0;
 +		goto out;
 +	}
@@ -315,6 +374,7 @@
 +		goto out;
 +	} else {
 +		skb_restore_cb(skb_shared); /* restore skb->cb */
++		skb->nf_queue_entry = NULL;
 +		/* qdisc dropped packet and decreased skb reference count of
 +		 * skb, so we don't really want to and try refree as that would
 +		 * actually destroy the skb. */
@@ -378,6 +438,7 @@
 +	dev->features           = NETIF_F_SG | NETIF_F_FRAGLIST |
 +				  NETIF_F_GSO | NETIF_F_HW_CSUM |
 +				  NETIF_F_HIGHDMA;
++	dev->priv_flags		&= ~IFF_XMIT_DST_RELEASE;
 +}
 +
 +static int imq_validate(struct nlattr *tb[], struct nlattr *data[])
@@ -730,6 +791,28 @@
 +
 +#endif /* _IMQ_H */
 +
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -1114,6 +1114,7 @@ extern int		dev_alloc_name(struct net_de
+ extern int		dev_open(struct net_device *dev);
+ extern int		dev_close(struct net_device *dev);
+ extern void		dev_disable_lro(struct net_device *dev);
++extern struct netdev_queue *dev_pick_tx(struct net_device *dev, struct sk_buff *skb);
+ extern int		dev_queue_xmit(struct sk_buff *skb);
+ extern int		register_netdevice(struct net_device *dev);
+ extern void		unregister_netdevice(struct net_device *dev);
+--- /dev/null
++++ b/include/linux/netfilter/xt_IMQ.h
+@@ -0,0 +1,9 @@
++#ifndef _XT_IMQ_H
++#define _XT_IMQ_H
++
++struct xt_imq_info {
++	unsigned int todev;     /* target imq device */
++};
++
++#endif /* _XT_IMQ_H */
++
 --- /dev/null
 +++ b/include/linux/netfilter_ipv4/ipt_IMQ.h
 @@ -0,0 +1,10 @@
@@ -788,17 +871,18 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -382,6 +391,9 @@ struct sk_buff {
- 	kmemcheck_bitfield_end(flags2);
+@@ -383,6 +392,10 @@ struct sk_buff {
  
  	/* 0/14 bit hole */
+ 
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 +	__u8			imq_flags:IMQ_F_BITS;
 +#endif
- 
++
  #ifdef CONFIG_NET_DMA
  	dma_cookie_t		dma_cookie;
-@@ -437,6 +449,12 @@ static inline struct rtable *skb_rtable(
+ #endif
+@@ -437,6 +450,12 @@ static inline struct rtable *skb_rtable(
  	return (struct rtable *)skb_dst(skb);
  }
  
@@ -811,7 +895,7 @@
  extern void kfree_skb(struct sk_buff *skb);
  extern void consume_skb(struct sk_buff *skb);
  extern void	       __kfree_skb(struct sk_buff *skb);
-@@ -1972,6 +1990,10 @@ static inline void __nf_copy(struct sk_b
+@@ -1972,6 +1991,10 @@ static inline void __nf_copy(struct sk_b
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -822,6 +906,33 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	dst->nf_bridge  = src->nf_bridge;
  	nf_bridge_get(src->nf_bridge);
+--- a/include/net/netfilter/nf_queue.h
++++ b/include/net/netfilter/nf_queue.h
+@@ -13,6 +13,12 @@ struct nf_queue_entry {
+ 	struct net_device	*indev;
+ 	struct net_device	*outdev;
+ 	int			(*okfn)(struct sk_buff *);
++
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++	int			(*next_outfn)(struct nf_queue_entry *entry,
++					      unsigned int queuenum);
++	unsigned int		next_queuenum;
++#endif
+ };
+ 
+ #define nf_queue_entry_reroute(x) ((void *)x + sizeof(struct nf_queue_entry))
+@@ -30,5 +36,11 @@ extern int nf_unregister_queue_handler(u
+ 				       const struct nf_queue_handler *qh);
+ extern void nf_unregister_queue_handlers(const struct nf_queue_handler *qh);
+ extern void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict);
++extern void nf_queue_entry_release_refs(struct nf_queue_entry *entry);
++
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++extern void nf_register_queue_imq_handler(const struct nf_queue_handler *qh);
++extern void nf_unregister_queue_imq_handler(void);
++#endif
+ 
+ #endif /* _NF_QUEUE_H */
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -96,6 +96,9 @@
@@ -865,55 +976,6 @@
  
  static inline int __dev_xmit_skb(struct sk_buff *skb, struct Qdisc *q,
  				 struct net_device *dev,
---- a/include/linux/netdevice.h
-+++ b/include/linux/netdevice.h
-@@ -1114,6 +1114,7 @@ extern int		dev_alloc_name(struct net_de
- extern int		dev_open(struct net_device *dev);
- extern int		dev_close(struct net_device *dev);
- extern void		dev_disable_lro(struct net_device *dev);
-+extern struct netdev_queue *dev_pick_tx(struct net_device *dev, struct sk_buff *skb);
- extern int		dev_queue_xmit(struct sk_buff *skb);
- extern int		register_netdevice(struct net_device *dev);
- extern void		unregister_netdevice(struct net_device *dev);
---- /dev/null
-+++ b/include/linux/netfilter/xt_IMQ.h
-@@ -0,0 +1,9 @@
-+#ifndef _XT_IMQ_H
-+#define _XT_IMQ_H
-+
-+struct xt_imq_info {
-+	unsigned int todev;     /* target imq device */
-+};
-+
-+#endif /* _XT_IMQ_H */
-+
---- a/include/net/netfilter/nf_queue.h
-+++ b/include/net/netfilter/nf_queue.h
-@@ -13,6 +13,12 @@ struct nf_queue_entry {
- 	struct net_device	*indev;
- 	struct net_device	*outdev;
- 	int			(*okfn)(struct sk_buff *);
-+
-+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+	int			(*next_outfn)(struct nf_queue_entry *entry,
-+					      unsigned int queuenum);
-+	unsigned int		next_queuenum;
-+#endif
- };
- 
- #define nf_queue_entry_reroute(x) ((void *)x + sizeof(struct nf_queue_entry))
-@@ -30,5 +36,11 @@ extern int nf_unregister_queue_handler(u
- 				       const struct nf_queue_handler *qh);
- extern void nf_unregister_queue_handlers(const struct nf_queue_handler *qh);
- extern void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict);
-+extern void nf_queue_entry_release_refs(struct nf_queue_entry *entry);
-+
-+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+extern void nf_register_queue_imq_handler(const struct nf_queue_handler *qh);
-+extern void nf_unregister_queue_imq_handler(void);
-+#endif
- 
- #endif /* _NF_QUEUE_H */
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -72,6 +72,9 @@
@@ -926,7 +988,7 @@
  
  static void sock_pipe_buf_release(struct pipe_inode_info *pipe,
  				  struct pipe_buffer *buf)
-@@ -91,6 +94,80 @@ static int sock_pipe_buf_steal(struct pi
+@@ -91,6 +94,83 @@ static int sock_pipe_buf_steal(struct pi
  	return 1;
  }
  
@@ -986,16 +1048,19 @@
 +}
 +EXPORT_SYMBOL(skb_restore_cb);
 +
-+static void skb_copy_stored_cb(struct sk_buff *new, struct sk_buff *old)
++static void skb_copy_stored_cb(struct sk_buff *new, const struct sk_buff *__old)
 +{
 +	struct skb_cb_table *next;
++	struct sk_buff *old;
 +
-+	if (!old->cb_next) {
-+		new->cb_next = 0;
++	if (!__old->cb_next) {
++		new->cb_next = NULL;
 +		return;
 +	}
 +
 +	spin_lock(&skb_cb_store_lock);
++
++	old = (struct sk_buff *)__old;
 +
 +	next = old->cb_next;
 +	atomic_inc(&next->refcnt);
@@ -1007,7 +1072,7 @@
  
  /* Pipe buffer operations for a socket. */
  static struct pipe_buf_operations sock_pipe_buf_ops = {
-@@ -398,6 +475,15 @@ static void skb_release_head_state(struc
+@@ -398,6 +478,26 @@ static void skb_release_head_state(struc
  		WARN_ON(in_irq());
  		skb->destructor(skb);
  	}
@@ -1015,25 +1080,36 @@
 +	/* This should not happen. When it does, avoid memleak by restoring
 +	the chain of cb-backups. */
 +	while(skb->cb_next != NULL) {
-+		printk(KERN_WARNING "kfree_skb: skb->cb_next: %08x\n",
-+			skb->cb_next);
++		if (net_ratelimit())
++			printk(KERN_WARNING "IMQ: kfree_skb: skb->cb_next: "
++				"%08x\n", (unsigned int)skb->cb_next);
++
 +		skb_restore_cb(skb);
 +	}
++	/* This should not happen either, nf_queue_entry is nullified in
++	 * imq_dev_xmit(). If we have non-NULL nf_queue_entry then we are
++	 * leaking entry pointers, maybe memory. We don't know if this is
++	 * pointer to already freed memory, or should this be freed.
++	 * If this happens we need to add refcounting, etc for nf_queue_entry.
++	 */
++	if (skb->nf_queue_entry && net_ratelimit())
++		printk(KERN_WARNING
++				"IMQ: kfree_skb: skb->nf_queue_entry != NULL");
 +#endif
  #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
  	nf_conntrack_put(skb->nfct);
  	nf_conntrack_put_reasm(skb->nfct_reasm);
-@@ -535,6 +621,9 @@ static void __copy_skb_header(struct sk_
+@@ -535,6 +635,9 @@ static void __copy_skb_header(struct sk_
  	new->sp			= secpath_get(old->sp);
  #endif
  	memcpy(new->cb, old->cb, sizeof(old->cb));
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+   skb_copy_stored_cb(new, old);
++	skb_copy_stored_cb(new, old);
 +#endif
  	new->csum		= old->csum;
  	new->local_df		= old->local_df;
  	new->pkt_type		= old->pkt_type;
-@@ -2776,6 +2865,13 @@ void __init skb_init(void)
+@@ -2776,6 +2879,13 @@ void __init skb_init(void)
  						0,
  						SLAB_HWCACHE_ALIGN|SLAB_PANIC,
  						NULL);
