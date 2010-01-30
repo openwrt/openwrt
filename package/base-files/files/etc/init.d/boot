@@ -2,6 +2,7 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=10
+STOP=98
 
 system_config() {
 	local cfg="$1"
@@ -80,3 +81,8 @@ start() {
 
 	load_modules /etc/modules.d/*
 }
+
+stop() {
+        killall -9 syslogd 2> /dev/null
+}
+
