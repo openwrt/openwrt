@@ -15,7 +15,6 @@
 #include <linux/mtd/physmap.h>
 #include <linux/leds.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
 #include <asm/mach-ralink/rt305x.h>
@@ -90,5 +89,5 @@ static void __init v22rw_2x2_init(void)
 				  v22rw_2x2_leds_gpio);
 }
 
-MIPS_MACHINE(RAMIPS_MACH_V22RW_2X2, "Ralink AP-RT3052-V22RW-2X2",
+MIPS_MACHINE(RAMIPS_MACH_V22RW_2X2, "V22RW-2X2", "Ralink AP-RT3052-V22RW-2X2",
 	     v22rw_2x2_init);

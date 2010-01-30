@@ -9,6 +9,8 @@
  * by the Free Software Foundation.
  */
 
+#include <asm/mips_machine.h>
+
 enum ramips_mach_type {
 	RAMIPS_MACH_GENERIC,
 	/* RT2880 based machines */
@@ -23,5 +25,3 @@ enum ramips_mach_type {
 	RAMIPS_MACH_WHR_G300N,		/* Buffalo WHR-G300N */
 	RAMIPS_MACH_FONERA20N,		/* La Fonera 2.0N */
 };
-
-extern enum ramips_mach_type ramips_mach;

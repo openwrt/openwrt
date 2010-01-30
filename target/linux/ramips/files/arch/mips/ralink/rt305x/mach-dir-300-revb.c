@@ -15,7 +15,6 @@
 #include <linux/mtd/physmap.h>
 #include <linux/leds.h>
 
-#include <asm/mips_machine.h>
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev_gpio_leds.h>
 #include <asm/mach-ralink/rt305x.h>
@@ -96,4 +95,5 @@ static void __init dir_300b_init(void)
 				  dir_300b_leds_gpio);
 }
 
-MIPS_MACHINE(RAMIPS_MACH_DIR_300_REVB, "D-Link DIR-300 revB", dir_300b_init);
+MIPS_MACHINE(RAMIPS_MACH_DIR_300_REVB, "DIR-300-revB", "D-Link DIR-300 revB",
+	     dir_300b_init);
