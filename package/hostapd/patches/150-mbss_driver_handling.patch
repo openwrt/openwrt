@@ -735,7 +735,7 @@
  	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, addr);
  	NLA_PUT_U32(msg, NL80211_ATTR_STA_VLAN,
  		    if_nametoindex(ifname));
-@@ -4181,10 +4174,11 @@ static int i802_set_sta_vlan(void *priv,
+@@ -4181,18 +4174,19 @@ static int i802_set_sta_vlan(void *priv,
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val)
  {
@@ -747,9 +747,10 @@
 -	os_snprintf(name, sizeof(name), "%s.sta%d", drv->ifname, aid);
 +	os_snprintf(name, sizeof(name), "%s.sta%d", bss->ifname, aid);
  	if (val) {
- 		if (nl80211_create_iface(priv, name, NL80211_IFTYPE_AP_VLAN,
+-		if (nl80211_create_iface(priv, name, NL80211_IFTYPE_AP_VLAN,
++		if (nl80211_create_iface(drv, name, NL80211_IFTYPE_AP_VLAN,
  					 NULL, 1) < 0)
-@@ -4192,7 +4186,7 @@ static int i802_set_wds_sta(void *priv, 
+ 			return -1;
  		linux_set_iface_flags(drv->ioctl_sock, name, 1);
  		return i802_set_sta_vlan(priv, addr, name, 0);
  	} else {
