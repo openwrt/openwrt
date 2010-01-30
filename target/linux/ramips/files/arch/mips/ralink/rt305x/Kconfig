@@ -10,6 +10,7 @@ config RT305X_MACH_WHR_G300N
 config RT305X_MACH_DIR_300_REVB
 	bool "D-Link DIR-300 revB board support"
 	default y
+	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_V22RW_2X2
