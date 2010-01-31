@@ -382,17 +382,23 @@ ramips_eth_probe(struct net_device *dev)
 	ramips_eth_set_mac_addr(dev, &addr);
 
 	ether_setup(dev);
-	dev->open = ramips_eth_open;
-	dev->stop = ramips_eth_stop;
-	dev->hard_start_xmit = ramips_eth_hard_start_xmit;
-	dev->set_mac_address = ramips_eth_set_mac_addr;
 	dev->mtu = 1500;
-	dev->tx_timeout = ramips_eth_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
 	spin_lock_init(&priv->page_lock);
 
 	return 0;
 }
+
+static const struct net_device_ops ramips_eth_netdev_ops = {
+	.ndo_init		= ramips_eth_probe,
+	.ndo_open		= ramips_eth_open,
+	.ndo_stop		= ramips_eth_stop,
+	.ndo_start_xmit		= ramips_eth_hard_start_xmit,
+	.ndo_tx_timeout		= ramips_eth_timeout,
+	.ndo_change_mtu		= eth_change_mtu,
+	.ndo_set_mac_address	= ramips_eth_set_mac_addr,
+	.ndo_validate_addr	= eth_validate_addr,
+};
 
 static int
 ramips_eth_plat_probe(struct platform_device *plat)
@@ -433,7 +439,7 @@ ramips_eth_plat_probe(struct platform_device *plat)
 	}
 	ramips_dev->addr_len = ETH_ALEN;
 	ramips_dev->base_addr = (unsigned long)ramips_fe_base;
-	ramips_dev->init = ramips_eth_probe;
+	ramips_dev->netdev_ops = &ramips_eth_netdev_ops;
 
 	priv = netdev_priv(ramips_dev);
 	priv->plat = data;
