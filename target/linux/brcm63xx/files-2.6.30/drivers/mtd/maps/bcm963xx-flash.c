@@ -211,7 +211,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	}
 
 	printk(KERN_INFO PFX "CFE boot tag found with version %s, board type %s, and tagid %s.\n",tagversion,boardid,tagid);
-	
+
 	rootfsaddr = rootfsaddr - EXTENDED_SIZE;
 	kerneladdr = kerneladdr - EXTENDED_SIZE;
 	spareaddr = roundup(totallen,master->erasesize) + master->erasesize;
@@ -234,7 +234,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 		vfree(buf);
 		return -ENOMEM;
 	};
-	
+
 	/* Start building partition list */
 	parts[curpart].name = "CFE";
 	parts[curpart].offset = 0;
@@ -256,7 +256,7 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 			parts[curpart].size += sparelen;
 		curpart++;
 	};
-	
+
 	parts[curpart].name = "nvram";
 	parts[curpart].offset = master->size - master->erasesize;
 	parts[curpart].size = master->erasesize;
@@ -266,9 +266,9 @@ static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition *
 	parts[curpart].name = "linux";
 	parts[curpart].offset = parts[0].size;
 	parts[curpart].size = master->size - parts[0].size - parts[3].size;
-       
+ 
 	for (i = 0; i < nrparts; i++)
-		printk(KERN_INFO PFX "Partition %d is %s offset %llx and length %llx\n", i, parts[i].name, parts[i].offset, parts[i].size);
+		printk(KERN_INFO PFX "Partition %d is %s offset %lx and length %lx\n", i, parts[i].name, parts[i].offset, parts[i].size);
 
  	printk(KERN_INFO PFX "Spare partition is %x offset and length %x\n", spareaddr, sparelen);
 	*pparts = parts;
@@ -288,7 +288,7 @@ static int bcm963xx_detect_cfe(struct mtd_info *master)
 	ret = master->read(master, idoffset, 8, &retlen, (void *)buf);
 	buf[retlen] = 0;
 	printk(KERN_INFO PFX "Read Signature value of %s\n", buf);
-	
+
 	return strncmp(idstring, buf, 8);
 }
 
@@ -334,7 +334,7 @@ static int bcm963xx_probe(struct platform_device *pdev)
 	} else {
 		printk(KERN_INFO PFX "assuming RedBoot bootloader\n");
 		if (bcm963xx_mtd_info->size > 0x00400000) {
-			printk(KERN_INFO PFX "Support for extended flash memory size : 0x%llx ; ONLY 64MBIT SUPPORT\n", bcm963xx_mtd_info->size);
+			printk(KERN_INFO PFX "Support for extended flash memory size : 0x%lx ; ONLY 64MBIT SUPPORT\n", bcm963xx_mtd_info->size);
 			bcm963xx_map.virt = (u32)(EXTENDED_SIZE);
 		}
 
@@ -348,7 +348,7 @@ static int bcm963xx_probe(struct platform_device *pdev)
 		}
 #endif
 	}
-	
+
 	return add_mtd_partitions(bcm963xx_mtd_info, parsed_parts, parsed_nr_parts);
 
 err_probe:
