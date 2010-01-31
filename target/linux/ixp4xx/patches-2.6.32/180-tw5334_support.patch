@@ -149,7 +149,6 @@
 +
 +static void __init tw5334_init(void)
 +{
-+	DECLARE_MAC_BUF(mac_buf);
 +	uint8_t __iomem *f;
 +	int i;
 +
@@ -180,10 +179,11 @@
 +#endif
 +		iounmap(f);
 +	}
-+	printk(KERN_INFO "TW-533-4: Using MAC address %s for port 0\n",
-+		print_mac(mac_buf, tw5334_plat_eth[0].hwaddr));
-+	printk(KERN_INFO "TW-533-4: Using MAC address %s for port 1\n",
-+		print_mac(mac_buf, tw5334_plat_eth[1].hwaddr));
++
++	printk(KERN_INFO "TW-533-4: Using MAC address %pM for port 0\n",
++		tw5334_plat_eth[0].hwaddr);
++	printk(KERN_INFO "TW-533-4: Using MAC address %pM for port 1\n",
++		tw5334_plat_eth[1].hwaddr);
 +}
 +
 +#ifdef CONFIG_MACH_TW5334

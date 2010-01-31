@@ -410,7 +410,7 @@
 +
 +static struct memory_accessor *at24_mem_acc;
 +
-+static int at24_setup(struct memory_accessor *mem_acc, void *context)
++static void at24_setup(struct memory_accessor *mem_acc, void *context)
 +{
 +	char mac_addr[ETH_ALEN];
 +	char model[6];
@@ -421,6 +421,7 @@
 +	if (at24_mem_acc->read(at24_mem_acc, mac_addr, 0x0, 6) == 6) {
 +		memcpy(&cambria_npec_data.hwaddr, mac_addr, ETH_ALEN);
 +	}
++
 +	if (at24_mem_acc->read(at24_mem_acc, mac_addr, 0x6, 6) == 6) {
 +		memcpy(&cambria_npea_data.hwaddr, mac_addr, ETH_ALEN);
 +	}
@@ -430,7 +431,6 @@
 +		cambria_info = cambria_find_board_info(model);
 +	}
 +
-+	return 0;
 +}
 +
 +static struct at24_platform_data cambria_eeprom_info = {
