@@ -15,7 +15,7 @@ do_mount_udev() {
 }
 
 choose_device_fs() {
-    if grep devfs /proc/filesystems; then
+    if grep -q devfs /proc/filesystems; then
         do_mount_devfs
     elif [ -x /sbin/hotplug2 ]; then
         do_mount_hotplug
