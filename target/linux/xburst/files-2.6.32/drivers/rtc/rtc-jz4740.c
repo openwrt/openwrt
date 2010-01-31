@@ -22,7 +22,8 @@
 #define JZ_REG_RTC_CTRL		0x00
 #define JZ_REG_RTC_SEC		0x04
 #define JZ_REG_RTC_SEC_ALARM	0x08
-#define JZ_REG_REGULATOR	0x0C
+#define JZ_REG_RTC_REGULATOR	0x0C
+#define JZ_REG_RTC_SCRATCHPAD	0x34
 
 #define JZ_RTC_CTRL_WRDY	BIT(7)
 #define JZ_RTC_CTRL_1HZ		BIT(6)
@@ -211,6 +212,7 @@ static int __devinit jz4740_rtc_probe(struct platform_device *pdev)
 {
 	int ret;
 	struct jz4740_rtc *rtc;
+	uint32_t scratchpad;
 
 	rtc = kmalloc(sizeof(*rtc), GFP_KERNEL);
 
@@ -264,7 +266,12 @@ static int __devinit jz4740_rtc_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to request rtc irq: %d\n", ret);
 		goto err_unregister_rtc;
 	}
-	printk("rtc-ctrl: %d\n", jz4740_rtc_reg_read(rtc, JZ_REG_RTC_CTRL));
+
+	scratchpad = jz4740_rtc_reg_read(rtc, JZ_REG_RTC_SCRATCHPAD);
+	if (scratchpad != 0x12345678) {
+		jz4740_rtc_reg_write(rtc, JZ_REG_RTC_SCRATCHPAD, 0x12345678);
+		jz4740_rtc_reg_write(rtc, JZ_REG_RTC_SEC, 0);
+	}
 
 	return 0;
 
