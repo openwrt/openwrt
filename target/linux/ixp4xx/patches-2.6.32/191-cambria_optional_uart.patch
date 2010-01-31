@@ -165,7 +165,7 @@
  #ifdef CONFIG_SERIAL_8250_AU1X00
  	case UPIO_AU:
  #endif
-@@ -2451,6 +2471,7 @@ static int serial8250_request_std_resour
+@@ -2449,6 +2469,7 @@ static int serial8250_request_std_resour
  	case UPIO_MEM32:
  	case UPIO_MEM:
  	case UPIO_DWAPB:
@@ -173,7 +173,7 @@
  		if (!up->port.mapbase)
  			break;
  
-@@ -2488,6 +2509,7 @@ static void serial8250_release_std_resou
+@@ -2486,6 +2507,7 @@ static void serial8250_release_std_resou
  	case UPIO_MEM32:
  	case UPIO_MEM:
  	case UPIO_DWAPB:
@@ -181,7 +181,7 @@
  		if (!up->port.mapbase)
  			break;
  
-@@ -2960,6 +2982,7 @@ static int __devinit serial8250_probe(st
+@@ -2958,6 +2980,7 @@ static int __devinit serial8250_probe(st
  		port.serial_in		= p->serial_in;
  		port.serial_out		= p->serial_out;
  		port.dev		= &dev->dev;
@@ -189,7 +189,7 @@
  		if (share_irqs)
  			port.irqflags |= IRQF_SHARED;
  		ret = serial8250_register_port(&port);
-@@ -3110,6 +3133,7 @@ int serial8250_register_port(struct uart
+@@ -3108,6 +3131,7 @@ int serial8250_register_port(struct uart
  		uart->port.iotype       = port->iotype;
  		uart->port.flags        = port->flags | UPF_BOOT_AUTOCONF;
  		uart->port.mapbase      = port->mapbase;
