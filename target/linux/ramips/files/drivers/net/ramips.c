@@ -332,7 +332,7 @@ ramips_eth_open(struct net_device *dev)
 		RAMIPS_PDMA_GLO_CFG);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_FE_GLO_CFG) &
 		~(RAMIPS_US_CYC_CNT_MASK << RAMIPS_US_CYC_CNT_SHIFT)) |
-		((rt305x_sys_freq / RAMIPS_US_CYC_CNT_DIVISOR) << RAMIPS_US_CYC_CNT_SHIFT),
+		((priv->plat->sys_freq / RAMIPS_US_CYC_CNT_DIVISOR) << RAMIPS_US_CYC_CNT_SHIFT),
 		RAMIPS_FE_GLO_CFG);
 
 	tasklet_init(&priv->tx_housekeeping_tasklet, ramips_eth_tx_housekeeping,

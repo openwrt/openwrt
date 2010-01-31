@@ -118,7 +118,7 @@ static struct resource rt305x_eth_resources[] = {
 static struct ramips_eth_platform_data ramips_eth_data = {
 	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.reset_fe = rt305x_fe_reset,
-	.min_pkt_len = 64
+	.min_pkt_len = 64,
 };
 
 static struct platform_device rt305x_eth_device = {
@@ -132,5 +132,7 @@ static struct platform_device rt305x_eth_device = {
 
 void __init rt305x_register_ethernet(void)
 {
+	ramips_eth_data.sys_freq = rt305x_sys_freq;
+
 	platform_device_register(&rt305x_eth_device);
 }
