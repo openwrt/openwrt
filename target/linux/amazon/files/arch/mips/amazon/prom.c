@@ -63,9 +63,6 @@ void __init prom_init(void)
 
 	int memsize = 16; /* assume 16M as default */
 
-	mips_machgroup = MACH_GROUP_INFINEON;
-	mips_machtype = MACH_INFINEON_AMAZON;
-
 	envp = (char **)KSEG1ADDR((unsigned long)envp);
 	while (*envp) {
 		char *e = (char *)KSEG1ADDR(*envp);
