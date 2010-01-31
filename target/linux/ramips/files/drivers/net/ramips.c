@@ -51,6 +51,24 @@ ramips_fe_rr(unsigned reg)
 	return __raw_readl(ramips_fe_base + reg);
 }
 
+static inline void
+ramips_fe_int_disable(u32 mask)
+{
+	ramips_fe_wr(ramips_fe_rr(RAMIPS_FE_INT_ENABLE) & ~mask,
+		     RAMIPS_FE_INT_ENABLE);
+	/* flush write */
+	ramips_fe_rr(RAMIPS_FE_INT_ENABLE);
+}
+
+static inline void
+ramips_fe_int_enable(u32 mask)
+{
+	ramips_fe_wr(ramips_fe_rr(RAMIPS_FE_INT_ENABLE) | mask,
+		     RAMIPS_FE_INT_ENABLE);
+	/* flush write */
+	ramips_fe_rr(RAMIPS_FE_INT_ENABLE);
+}
+
 static void
 ramips_cleanup_dma(struct raeth_priv *re)
 {
@@ -229,8 +247,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 	if (max_rx == 0)
 		tasklet_schedule(&priv->rx_tasklet);
 	else
-		ramips_fe_wr(ramips_fe_rr(RAMIPS_FE_INT_ENABLE) | RAMIPS_RX_DLY_INT,
-			     RAMIPS_FE_INT_ENABLE);
+		ramips_fe_int_enable(RAMIPS_RX_DLY_INT);
 }
 
 static void
@@ -248,8 +265,7 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 			priv->skb_free_idx = 0;
 	}
 
-	ramips_fe_wr(ramips_fe_rr(RAMIPS_FE_INT_ENABLE) | RAMIPS_TX_DLY_INT,
-		     RAMIPS_FE_INT_ENABLE);
+	ramips_fe_int_enable(RAMIPS_TX_DLY_INT);
 }
 
 static int
@@ -284,8 +300,7 @@ ramips_eth_irq(int irq, void *dev)
 	ramips_fe_wr(0xFFFFFFFF, RAMIPS_FE_INT_STATUS);
 
 	if (fe_int & RAMIPS_RX_DLY_INT) {
-		ramips_fe_wr(ramips_fe_rr(RAMIPS_FE_INT_ENABLE) & ~(RAMIPS_RX_DLY_INT),
-			     RAMIPS_FE_INT_ENABLE);
+		ramips_fe_int_disable(RAMIPS_RX_DLY_INT);
 		tasklet_schedule(&priv->rx_tasklet);
 	}
 
