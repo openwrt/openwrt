@@ -76,6 +76,7 @@ define Package/hostapd/Default
   TITLE:=IEEE 802.1x Authenticator
   URL:=http://hostap.epitest.fi/
   DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +PACKAGE_kmod-mac80211:libnl-tiny
+  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/hostapd
@@ -116,6 +117,7 @@ define Package/wpad/Default
   TITLE:=IEEE 802.1x Authenticator/Supplicant
   URL:=http://hostap.epitest.fi/
   DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +PACKAGE_kmod-mac80211:libnl-tiny
+  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/wpad
@@ -146,6 +148,7 @@ define Package/wpa-supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
   DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +PACKAGE_kmod-mac80211:libnl-tiny
   VARIANT:=supplicant-full
+  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/wpa-supplicant/Description
@@ -172,6 +175,7 @@ define Package/wpa-cli
   CATEGORY:=Network
   DEPENDS:=wpa-supplicant
   TITLE:=WPA Supplicant command line interface
+  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/wpa-cli/Description
