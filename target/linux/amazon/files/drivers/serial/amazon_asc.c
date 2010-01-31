@@ -71,7 +71,6 @@ static void amazonasc_tx_chars(struct uart_port *port);
 static struct uart_port amazonasc_ports[UART_NR];
 static struct uart_driver amazonasc_reg;
 static unsigned int uartclk = 0;
-extern unsigned int amazon_get_fpi_hz(void);
 
 static void amazonasc_stop_tx(struct uart_port *port)
 {

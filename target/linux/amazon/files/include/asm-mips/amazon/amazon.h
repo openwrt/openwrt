@@ -29,6 +29,8 @@
 #define amazon_writel(a,b)				__raw_writel(a, ((u32*)(b)))
 #define amazon_writel_masked(a,b,c)		__raw_writel((__raw_readl(((u32*)(a))) & ~b) | (c & b), ((u32*)(a)))
 
+unsigned int amazon_get_fpi_hz(void);
+
 #define IOPORT_RESOURCE_START		0x10000000
 #define IOPORT_RESOURCE_END		0xffffffff
 #define IOMEM_RESOURCE_START		0x10000000
