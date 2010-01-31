@@ -778,6 +778,17 @@ int switch_set_mac_address(struct net_device *dev, void *p)
 	return OK;
 }
 
+static const struct net_device_ops amazon_mii_ops = {
+	.ndo_init		= switch_init,
+	.ndo_open		= switch_open,
+	.ndo_stop		= switch_release,
+	.ndo_start_xmit		= switch_tx,
+	.ndo_do_ioctl		= switch_ioctl,
+	.ndo_get_stats		= switch_stats,
+	.ndo_change_mtu		= switch_change_mtu,
+	.ndo_set_mac_address		= switch_set_mac_address,
+	.ndo_tx_timeout		= switch_tx_timeout,
+};
 
 int switch_init(struct net_device *dev)
 {
@@ -787,14 +798,6 @@ int switch_init(struct net_device *dev)
 	struct switch_priv *priv;
 	ether_setup(dev);			/* assign some of the fields */
 	printk(KERN_INFO "amazon_mii0: %s up using ", dev->name);
-	dev->open = switch_open;
-	dev->stop = switch_release;
-	dev->hard_start_xmit = switch_tx;
-	dev->do_ioctl = switch_ioctl;
-	dev->get_stats = switch_stats;
-	dev->change_mtu = switch_change_mtu;
-	dev->set_mac_address = switch_set_mac_address;
-	dev->tx_timeout = switch_tx_timeout;
 	dev->watchdog_timeo = timeout;
 
 	priv = netdev_priv(dev);
@@ -836,7 +839,7 @@ static int amazon_mii_probe(struct platform_device *dev)
 
 	for (i = 0; i < AMAZON_SW_INT_NO; i++) {
 		switch_devs[i] = alloc_etherdev(sizeof(struct switch_priv));
-		switch_devs[i]->init = switch_init;
+		switch_devs[i]->netdev_ops = &amazon_mii_ops;
 		strcpy(switch_devs[i]->name, "eth%d");
 		priv = (struct switch_priv *) netdev_priv(switch_devs[i]);
 		priv->num = i;
