@@ -241,7 +241,7 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 
 	while ((priv->tx[priv->skb_free_idx].txd2 & TX_DMA_DONE) &&
 	       (priv->tx_skb[priv->skb_free_idx])) {
-		dev_kfree_skb_irq((struct sk_buff *) priv->tx_skb[priv->skb_free_idx]);
+		dev_kfree_skb_irq(priv->tx_skb[priv->skb_free_idx]);
 		priv->tx_skb[priv->skb_free_idx] = 0;
 		priv->skb_free_idx++;
 		if (priv->skb_free_idx >= NUM_TX_DESC)
@@ -255,7 +255,7 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 static int
 ramips_eth_set_mac_addr(struct net_device *dev, void *priv)
 {
-	unsigned char *mac = (unsigned char *) priv;
+	unsigned char *mac = priv;
 
 	if (netif_running(dev))
 		return -EBUSY;
