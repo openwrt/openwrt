@@ -13,7 +13,7 @@ SUBTARGETS:=rt288x rt305x
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 FEATURES:=squashfs broken
 
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=2.6.32.7
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=kmod-leds-gpio
