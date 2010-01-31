@@ -177,12 +177,11 @@ void __init arch_init_irq(void)
 		setup_irq(i, &cascade);
 	}
 
-	for (i = INT_NUM_IRQ0; i <= INT_NUM_IM4_IRL31; i++) {
-		irq_desc[i].status	= IRQ_DISABLED;
-		irq_desc[i].action	= 0;
-		irq_desc[i].depth	= 1;
-		set_irq_chip(i, &amazon_irq_type);
-	}
+	for (i = INT_NUM_IRQ0; i <= INT_NUM_IM4_IRL31; i++)
+		set_irq_chip_and_handler(i, &amazon_irq_type,
+			handle_level_irq);
+
+	set_c0_status(IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5);
 }
 
 void __cpuinit arch_fixup_c0_irqs(void)
