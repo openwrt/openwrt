@@ -88,9 +88,8 @@ ramips_alloc_dma(struct raeth_priv *re)
 
 	memset(re->tx, 0, NUM_TX_DESC * sizeof(struct ramips_tx_dma));
 	for (i = 0; i < NUM_TX_DESC; i++) {
-		re->tx[i].txd2 |= TX_DMA_LSO | TX_DMA_DONE;
-		re->tx[i].txd4 &= (TX_DMA_QN_MASK | TX_DMA_PN_MASK);
-		re->tx[i].txd4 |= TX_DMA_QN(3) | TX_DMA_PN(1);
+		re->tx[i].txd2 = TX_DMA_LSO | TX_DMA_DONE;
+		re->tx[i].txd4 = TX_DMA_QN(3) | TX_DMA_PN(1);
 	}
 
 	/* setup rx ring */
