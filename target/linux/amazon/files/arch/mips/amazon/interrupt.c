@@ -157,7 +157,7 @@ out:
 
 static struct irqaction cascade = {
 	.handler	= no_action,
-	.flags  	= SA_INTERRUPT,
+	.flags  	= IRQF_DISABLED,
 	.name   	= "cascade",
 };
 
