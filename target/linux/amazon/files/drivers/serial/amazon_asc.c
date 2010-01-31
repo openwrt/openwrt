@@ -68,7 +68,6 @@
 #define SERIAL_AMAZONASC_NR	UART_NR
 
 static void amazonasc_tx_chars(struct uart_port *port);
-extern void prom_printf(const char * fmt, ...);
 static struct uart_port amazonasc_ports[UART_NR];
 static struct uart_driver amazonasc_reg;
 static unsigned int uartclk = 0;
@@ -657,13 +656,6 @@ static struct console amazonasc_console = {
 	index:		-1,
 	data:		&amazonasc_reg,
 };
-
-static int __init amazonasc_console_init(void)
-{
-	register_console(&amazonasc_console);
-	return 0;
-}
-console_initcall(amazonasc_console_init);
 
 static struct uart_driver amazonasc_reg = {
 	.owner =			THIS_MODULE,
