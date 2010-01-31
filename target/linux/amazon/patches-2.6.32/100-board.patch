@@ -1,0 +1,49 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -96,6 +96,22 @@ config BCM63XX
+ 	help
+ 	 Support for BCM63XX based boards
+ 
++config AMAZON
++	bool "Amazon support (EXPERIMENTAL)"
++	depends on EXPERIMENTAL
++	select DMA_NONCOHERENT
++	select IRQ_CPU
++	select CEVT_R4K
++	select CSRC_R4K
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_CPU_MIPS32_R2
++	select HAVE_STD_PC_SERIAL_PORT
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_HAS_EARLY_PRINTK
++	select HW_HAS_PCI
++	select SWAP_IO_SPACE
++
+ config MIPS_COBALT
+ 	bool "Cobalt Server"
+ 	select CEVT_R4K
+@@ -673,6 +689,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+ 
+ endchoice
+ 
++source "arch/mips/amazon/Kconfig"
+ source "arch/mips/alchemy/Kconfig"
+ source "arch/mips/basler/excite/Kconfig"
+ source "arch/mips/bcm63xx/Kconfig"
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -296,6 +296,13 @@ cflags-$(CONFIG_SOC_AU1X00)	+= -I$(srctr
+ 
+ 
+ #
++# Infineon AMAZON
++#
++core-$(CONFIG_AMAZON)		+= arch/mips/amazon/
++cflags-$(CONFIG_AMAZON)	+= -I$(srctree)/arch/mips/include/asm/mach-amazon
++load-$(CONFIG_AMAZON)		+= 0xffffffff80002000
++
++#
+ # Cobalt Server
+ #
+ core-$(CONFIG_MIPS_COBALT)	+= arch/mips/cobalt/

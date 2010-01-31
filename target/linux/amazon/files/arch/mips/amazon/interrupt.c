@@ -109,8 +109,8 @@ static void amazon_end_irq(unsigned int irq)
 	}
 }
 
-static struct hw_interrupt_type amazon_irq_type = {
-	"AMAZON",
+static struct irq_chip amazon_irq_type = {
+	.name = "AMAZON",
 	.startup = amazon_startup_irq,
 	.enable = amazon_enable_irq,
 	.disable = amazon_disable_irq,

@@ -1,0 +1,9 @@
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -286,3 +286,6 @@ obj-$(CONFIG_VIRTIO_NET) += virtio_net.o
+ obj-$(CONFIG_SFC) += sfc/
+ 
+ obj-$(CONFIG_WIMAX) += wimax/
++
++obj-$(CONFIG_AMAZON_NET_SW) += amazon_sw.o
++obj-$(CONFIG_ADM6996_SUPPORT) += admmod.o

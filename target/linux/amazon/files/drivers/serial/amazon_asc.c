@@ -108,10 +108,10 @@ static void amazonasc_enable_ms(struct uart_port *port)
 static void
 amazonasc_rx_chars(struct uart_port *port)
 {
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 26))
-	struct tty_struct *tty = port->info->port.tty;
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 31))
+	struct tty_struct *tty = port->state->port.tty;
 #else
-	struct tty_struct *tty = port->info->tty;
+	struct tty_struct *tty = port->info->port.tty;
 #endif
 	unsigned int ch = 0, rsr = 0, fifocnt;
 
@@ -169,7 +169,11 @@ amazonasc_rx_chars(struct uart_port *port)
 
 static void amazonasc_tx_chars(struct uart_port *port)
 {
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 31))
+	struct circ_buf *xmit = &port->state->xmit;
+#else
 	struct circ_buf *xmit = &port->info->xmit;
+#endif
 
 	if (uart_tx_stopped(port)) {
 		amazonasc_stop_tx(port);
@@ -679,7 +683,7 @@ static int __init amazon_asc_probe(struct platform_device *dev)
 	return res;
 }
 
-static int __exit amazon_asc_remove(struct platform_device *dev)
+static int amazon_asc_remove(struct platform_device *dev)
 {
 	uart_unregister_driver(&amazonasc_reg);
 	return 0;
