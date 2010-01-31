@@ -184,3 +184,10 @@ void __init arch_init_irq(void)
 		set_irq_chip(i, &amazon_irq_type);
 	}
 }
+
+void __cpuinit arch_fixup_c0_irqs(void)
+{
+	/* FIXME: check for CPUID and only do fix for specific chips/versions */
+	cp0_compare_irq = CP0_LEGACY_COMPARE_IRQ;
+	cp0_perfcount_irq = CP0_LEGACY_PERFCNT_IRQ;
+}

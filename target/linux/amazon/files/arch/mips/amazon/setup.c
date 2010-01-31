@@ -36,6 +36,12 @@
 #include <asm/amazon/irq.h>
 #include <asm/amazon/model.h>
 
+static unsigned int r4k_offset;
+static unsigned int r4k_cur;
+
+/* required in arch/mips/kernel/kspd.c */
+unsigned long cpu_khz;
+
 extern void prom_printf(const char * fmt, ...);
 static void amazon_reboot_setup(void);
 
@@ -91,35 +97,32 @@ unsigned int amazon_get_cpu_ver(void)
 	return cpu_ver;
 }
 
-void amazon_time_init(void)
+static inline u32 amazon_get_counter_resolution(void)
 {
-	mips_hpt_frequency = amazon_get_cpu_hz()/2;
+	u32 res;
+	__asm__ __volatile__(
+		".set   push\n"
+		".set   mips32r2\n"
+		".set   noreorder\n"
+		"rdhwr  %0, $3\n"
+		"ehb\n"
+		".set pop\n"
+		: "=&r" (res)
+		: /* no input */
+		: "memory");
+	instruction_hazard();
+	return res;
+}
+
+void __init plat_time_init(void)
+{
+	mips_hpt_frequency = amazon_get_cpu_hz() / amazon_get_counter_resolution();
+	r4k_offset = mips_hpt_frequency / HZ;
 	printk("mips_hpt_frequency:%d\n", mips_hpt_frequency);
-}
+	printk("r4k_offset: %08x(%d)\n", r4k_offset, r4k_offset);
 
-extern int hr_time_resolution;
-
-/* ISR GPTU Timer 6 for high resolution timer */
-static void amazon_timer6_interrupt(int irq, void *dev_id)
-{
-	timer_interrupt(AMAZON_TIMER6_INT, NULL);
-}
-
-static struct irqaction hrt_irqaction = {
-	.handler = amazon_timer6_interrupt,
-	.flags = IRQF_DISABLED,
-	.name = "hrt",
-};
-
-/*
- * THe CPU counter for System timer, set to HZ
- * GPTU Timer 6 for high resolution timer, set to hr_time_resolution
- * Also misuse this routine to print out the CPU type and clock.
- */
-void __init plat_timer_setup(struct irqaction *irq)
-{
-	/* cpu counter for timer interrupts */
-	setup_irq(MIPS_CPU_TIMER_IRQ, irq);
+	r4k_cur = (read_c0_count() + r4k_offset);
+	write_c0_compare(r4k_cur);
 
 	/* enable the timer in the PMU */
 	amazon_writel(amazon_readl(AMAZON_PMU_PWDCR)| AMAZON_PMU_PWDCR_GPT|AMAZON_PMU_PWDCR_FPI, AMAZON_PMU_PWDCR);
@@ -147,7 +150,6 @@ void __init plat_mem_setup(void)
 	}
 	
 	amazon_reboot_setup();
-	board_time_init = amazon_time_init;
 
 	//stop reset TPE and DFE
 	amazon_writel(0, AMAZON_RST_REQ);
