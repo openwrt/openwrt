@@ -13,8 +13,9 @@ preinit_ip() {
 			else
 				ifname=eth0
 			fi
-		pi_ifname=$ifname
-	}
+			pi_ifname=$ifname
+		}
+	fi
 	[ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
 		ifconfig $pi_ifname $pi_ip netmask $pi_netmask broadcast $pi_broadcast up
     	}
