@@ -163,10 +163,7 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	dma_sync_single_for_device(NULL, mapped_addr, skb->len, DMA_TO_DEVICE);
 	spin_lock_irqsave(&priv->page_lock, flags);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
-	if (tx == NUM_TX_DESC - 1)
-		tx_next = 0;
-	else
-		tx_next = tx + 1;
+	tx_next = (tx + 1) % NUM_TX_DESC;
 
 	if ((priv->tx_skb[tx]) || (priv->tx_skb[tx_next]) ||
 	    !(priv->tx[tx].txd2 & TX_DMA_DONE) ||
@@ -180,7 +177,7 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	dev->stats.tx_bytes += skb->len;
 	priv->tx_skb[tx] = skb;
 	wmb();
-	ramips_fe_wr((tx + 1) % NUM_TX_DESC, RAMIPS_TX_CTX_IDX0);
+	ramips_fe_wr(tx_next, RAMIPS_TX_CTX_IDX0);
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 	return NETDEV_TX_OK;
 
