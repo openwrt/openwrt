@@ -107,7 +107,7 @@ static void amazon_timer6_interrupt(int irq, void *dev_id)
 
 static struct irqaction hrt_irqaction = {
 	.handler = amazon_timer6_interrupt,
-	.flags = SA_INTERRUPT,
+	.flags = IRQF_DISABLED,
 	.name = "hrt",
 };
 

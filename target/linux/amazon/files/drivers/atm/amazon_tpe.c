@@ -2404,13 +2404,13 @@ amazon_atm_dev_t * amazon_atm_create(void)
 
 
 	// Register interrupts for insertion and extraction
-	request_irq(AMAZON_SWIE_INT, amazon_atm_swie_isr, SA_INTERRUPT, "tpe_swie", NULL);
-	request_irq(AMAZON_CBM_INT, amazon_atm_cbm_isr, SA_INTERRUPT, "tpe_cbm", NULL);
+	request_irq(AMAZON_SWIE_INT, amazon_atm_swie_isr, IRQF_DISABLED, "tpe_swie", NULL);
+	request_irq(AMAZON_CBM_INT, amazon_atm_cbm_isr, IRQF_DISABLED, "tpe_cbm", NULL);
 #ifdef AMAZON_ATM_DEBUG
-	request_irq(AMAZON_HTU_INT , amazon_atm_htu_isr, SA_INTERRUPT, "tpe_htu", NULL);
+	request_irq(AMAZON_HTU_INT , amazon_atm_htu_isr, IRQF_DISABLED, "tpe_htu", NULL);
 #endif
 #ifdef AMAZON_TPE_TEST_AAL5_INT	
-	request_irq(AMAZON_AAL5_INT, amazon_atm_aal5_isr, SA_INTERRUPT, "tpe_aal5", NULL);
+	request_irq(AMAZON_AAL5_INT, amazon_atm_aal5_isr, IRQF_DISABLED, "tpe_aal5", NULL);
 #endif
 	return &g_atm_dev;
 }

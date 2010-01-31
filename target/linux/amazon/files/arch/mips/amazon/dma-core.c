@@ -1387,7 +1387,7 @@ static int dma_init(void)
 		AMAZON_DMA_EMSG("cannot register device dma-core!\n");
 		return result;
 	}
-	result = request_irq(AMAZON_DMA_INT, dma_interrupt, SA_INTERRUPT, "dma-core", (void *) &dma_interrupt);
+	result = request_irq(AMAZON_DMA_INT, dma_interrupt, IRQF_DISABLED, "dma-core", (void *) &dma_interrupt);
 	if (result) {
 		AMAZON_DMA_EMSG("error, cannot get dma_irq!\n");
 		free_irq(AMAZON_DMA_INT, (void *) &dma_interrupt);
