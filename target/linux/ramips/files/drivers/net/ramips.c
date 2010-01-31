@@ -69,6 +69,14 @@ ramips_fe_int_enable(u32 mask)
 	ramips_fe_rr(RAMIPS_FE_INT_ENABLE);
 }
 
+static inline void
+ramips_hw_set_macaddr(unsigned char *mac)
+{
+	ramips_fe_wr((mac[0] << 8) | mac[1], RAMIPS_GDMA1_MAC_ADRH);
+	ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
+		     RAMIPS_GDMA1_MAC_ADRL);
+}
+
 static void
 ramips_cleanup_dma(struct raeth_priv *re)
 {
@@ -268,21 +276,6 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 	ramips_fe_int_enable(RAMIPS_TX_DLY_INT);
 }
 
-static int
-ramips_eth_set_mac_addr(struct net_device *dev, void *priv)
-{
-	unsigned char *mac = priv;
-
-	if (netif_running(dev))
-		return -EBUSY;
-
-	memcpy(dev->dev_addr, ((struct sockaddr*)priv)->sa_data, dev->addr_len);
-	ramips_fe_wr((mac[0] << 8) | mac[1], RAMIPS_GDMA1_MAC_ADRH);
-	ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
-		     RAMIPS_GDMA1_MAC_ADRL);
-	return 0;
-}
-
 static void
 ramips_eth_timeout(struct net_device *dev)
 {
@@ -324,6 +317,8 @@ ramips_eth_open(struct net_device *dev)
 	err = ramips_alloc_dma(priv);
 	if (err)
 		goto err_free_irq;
+
+	ramips_hw_set_macaddr(dev->dev_addr);
 
 	ramips_setup_dma(priv);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) & 0xff) |
@@ -380,13 +375,11 @@ static int __init
 ramips_eth_probe(struct net_device *dev)
 {
 	struct raeth_priv *priv = netdev_priv(dev);
-	struct sockaddr addr;
 
 	BUG_ON(!priv->plat->reset_fe);
 	priv->plat->reset_fe();
 	net_srandom(jiffies);
-	memcpy(addr.sa_data, priv->plat->mac, 6);
-	ramips_eth_set_mac_addr(dev, &addr);
+	memcpy(dev->dev_addr, priv->plat->mac, ETH_ALEN);
 
 	ether_setup(dev);
 	dev->mtu = 1500;
@@ -403,7 +396,7 @@ static const struct net_device_ops ramips_eth_netdev_ops = {
 	.ndo_start_xmit		= ramips_eth_hard_start_xmit,
 	.ndo_tx_timeout		= ramips_eth_timeout,
 	.ndo_change_mtu		= eth_change_mtu,
-	.ndo_set_mac_address	= ramips_eth_set_mac_addr,
+	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
