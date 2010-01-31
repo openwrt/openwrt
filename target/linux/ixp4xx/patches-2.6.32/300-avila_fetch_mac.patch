@@ -159,7 +159,7 @@
 +
 +static struct memory_accessor *at24_mem_acc;
 +
-+static int at24_setup(struct memory_accessor *mem_acc, void *context)
++static void at24_setup(struct memory_accessor *mem_acc, void *context)
 +{
 +	char mac_addr[ETH_ALEN];
 +	char model[6];
@@ -170,6 +170,7 @@
 +	if (at24_mem_acc->read(at24_mem_acc, mac_addr, 0x0, 6) == 6) {
 +		memcpy(&avila_npeb_data.hwaddr, mac_addr, ETH_ALEN);
 +	}
++
 +	if (at24_mem_acc->read(at24_mem_acc, mac_addr, 0x6, 6) == 6) {
 +		memcpy(&avila_npec_data.hwaddr, mac_addr, ETH_ALEN);
 +	}
@@ -179,7 +180,6 @@
 +		avila_info = avila_find_board_info(model);
 +	}
 +
-+	return 0;
 +}
 +
 +static struct at24_platform_data avila_eeprom_info = {
