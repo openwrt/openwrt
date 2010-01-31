@@ -24,6 +24,7 @@ struct ramips_eth_platform_data
 	unsigned char mac[6];
 	void (*reset_fe)(void);
 	int min_pkt_len;
+	unsigned long sys_freq;
 };
 
 #endif /* _RAMIPS_ETH_PLATFORM_H */
