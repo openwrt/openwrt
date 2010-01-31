@@ -33,6 +33,7 @@ WMENU:=Wireless Drivers
 define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
   URL:=http://linuxwireless.org/
+  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
   DEPENDS:=@LINUX_2_6 @!TARGET_avr32 @(!(TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN)
 endef
 
