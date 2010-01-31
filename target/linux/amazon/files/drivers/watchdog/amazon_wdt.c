@@ -44,7 +44,6 @@
 
 #undef AMAZON_WDT_DEBUG 
 
-extern unsigned int amazon_get_fpi_hz(void);
 static int amazon_wdt_isopen = 0;
 
 #ifdef AMAZON_WDT_DEBUG

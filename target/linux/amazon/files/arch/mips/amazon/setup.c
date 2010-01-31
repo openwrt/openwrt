@@ -86,6 +86,7 @@ unsigned int amazon_get_fpi_hz(void)
 		/* '11' is reserved */
 	}
 }
+EXPORT_SYMBOL(amazon_get_fpi_hz);
 
 /* this doesn't really belong here, but it's a convenient location */
 unsigned int amazon_get_cpu_ver(void)
