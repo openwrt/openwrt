@@ -42,7 +42,6 @@ static unsigned int r4k_cur;
 /* required in arch/mips/kernel/kspd.c */
 unsigned long cpu_khz;
 
-extern void prom_printf(const char * fmt, ...);
 static void amazon_reboot_setup(void);
 
 /* the CPU clock rate - lifted from u-boot */
@@ -142,11 +141,11 @@ void __init plat_mem_setup(void)
 	part_no = AMAZON_MCD_CHIPID_PART_NUMBER_GET(chipid);
 	
 	if(part_no == AMAZON_CHIPID_YANGTSE){
-		prom_printf("Yangtse Version\n");	
+		printk("Yangtse Version\n");	
 	} else if (part_no == AMAZON_CHIPID_STANDARD) {
-		prom_printf(SYSTEM_MODEL_NAME "\n");
+		printk(SYSTEM_MODEL_NAME "\n");
 	} else {
-		prom_printf("unknown version %8x\n",part_no);
+		printk("unknown version %8x\n",part_no);
 	}
 	
 	amazon_reboot_setup();
