@@ -560,7 +560,9 @@ wprobe_msg_to_network(int socket, struct nl_msg *msg)
 	mhdr.status = WPROBE_MSG_DATA;
 	mhdr.len = buflen;
 	wprobe_swap_msg_hdr(&mhdr);
-	write(socket, &mhdr, sizeof(mhdr));
+	ret = write(socket, &mhdr, sizeof(mhdr));
+	if (ret < 0)
+		goto out;
 
 	memcpy(buf, nlh, buflen);
 	nlh = buf;
@@ -572,6 +574,8 @@ wprobe_msg_to_network(int socket, struct nl_msg *msg)
 	swap_genlmsghdr(gnlh);
 	swap_nlmsghdr(nlh);
 	ret = write(socket, buf, buflen);
+
+out:
 	free(buf);
 
 	return ret;
