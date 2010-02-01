@@ -260,7 +260,7 @@ static int __devinit jz4740_rtc_probe(struct platform_device *pdev)
 	}
 
 	ret = request_irq(rtc->irq, jz4740_rtc_irq, 0,
-				pdev->name,  rtc);
+				pdev->name, rtc);
 
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to request rtc irq: %d\n", ret);
@@ -291,6 +291,8 @@ err_free:
 static int __devexit jz4740_rtc_remove(struct platform_device *pdev)
 {
 	struct jz4740_rtc *rtc = platform_get_drvdata(pdev);
+
+	free_irq(rtc->irq, rtc);
 
 	rtc_device_unregister(rtc->rtc);
 
@@ -329,4 +331,3 @@ MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("RTC driver for the JZ4720/JZ4740 SoC\n");
 MODULE_ALIAS("platform:jz4740-rtc");
-MODULE_ALIAS("platform:jz4720-rtc");

@@ -108,7 +108,7 @@ struct platform_device jz4740_mmc_device = {
 static struct resource jz4740_rtc_resources[] = {
 	[0] = {
 		.start	= CPHYSADDR(RTC_BASE),
-		.end	= CPHYSADDR(RTC_BASE) + 0x10,
+		.end	= CPHYSADDR(RTC_BASE) + 0x38 - 1,
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] = {
