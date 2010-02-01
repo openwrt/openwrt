@@ -7,7 +7,7 @@ choose_console() {
     # that's why we use /dev/pty/m0 and m1 (or equivalent) as replacement
     # for /dev/console if there's no serial console available
 
-    if grep devfs /proc/filesystems > /dev/null; then
+    if grep -q devfs /proc/filesystems; then
 	M0=/dev/pty/m0
 	M1=/dev/pty/m1
 	M2=/dev/pty/m1

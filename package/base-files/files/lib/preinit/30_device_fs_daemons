@@ -23,7 +23,7 @@ init_udev() {
 
 init_device_fs() {
     HOTPLUG=
-    if grep devfs /proc/filesystems > /dev/null; then
+    if grep -q devfs /proc/filesystems; then
 	init_devfs
     elif [ -x /sbin/hotplug2 ]; then
 	init_hotplug2

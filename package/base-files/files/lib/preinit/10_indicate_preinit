@@ -9,19 +9,19 @@ preinit_ip() {
 	pi_ifname=$ifname    
     fi
 
-    [ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+    [ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
 	ifconfig $pi_ifname $pi_ip netmask $pi_netmask broadcast $pi_broadcast up
     }
 }
 
 preinit_ip_deconfig() {
-    [ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+    [ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
 	ifconfig $pi_ifname 0.0.0.0 down
     }
 }
 
 preinit_net_echo() {
-	[ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
 		{ 
 			[ "$pi_preinit_net_messages" = "y" ] || {
     		     		[ "$pi_failsafe_net_message"  = "true" ] && 

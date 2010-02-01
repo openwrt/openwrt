@@ -10,7 +10,7 @@ mount_no_mtd() {
 
 check_for_mtd() {
     check_skip || {
-	grep rootfs_data /proc/mtd >/dev/null 2>/dev/null || {
+	grep -qs rootfs_data /proc/mtd || {
 	    mount_no_mtd && pi_mount_skip_next=true
 	}
     }
