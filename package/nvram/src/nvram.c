@@ -2,7 +2,7 @@
  * NVRAM variable manipulation (common)
  *
  * Copyright 2004, Broadcom Corporation
- * Copyright 2009, OpenWrt.org
+ * Copyright 2009-2010, OpenWrt.org
  * All Rights Reserved.
  *
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -357,7 +357,7 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 	{
 		char *mmap_area = (char *) mmap(
 			NULL, nvram_erase_size, PROT_READ | PROT_WRITE,
-			( rdonly == NVRAM_RO ) ? MAP_PRIVATE : MAP_SHARED, fd, 0);
+			(( rdonly == NVRAM_RO ) ? MAP_PRIVATE : MAP_SHARED) | MAP_LOCKED, fd, 0);
 
 		if( mmap_area != MAP_FAILED )
 		{
