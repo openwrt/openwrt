@@ -6,7 +6,7 @@ failsafe_ip() {
 		echo "0 1 2 3 4 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
 	}
 	
-	[ -n "$pi_ifname" ] && grep "$pi_ifname" /proc/net/dev >/dev/null && {
+	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
         	ifconfig $pi_ifname $pi_ip netmask $pi_netmask broadcast $pi_broadcast up
         }
 }
