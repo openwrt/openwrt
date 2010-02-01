@@ -161,6 +161,10 @@ setup_interface_none() {
 	env -i ACTION="ifup" INTERFACE="$2" DEVICE="$1" PROTO=none /sbin/hotplug-call "iface" &
 }
 
+stop_interface_none() {
+	env -i ACTION="ifdown" INTERFACE="$2" DEVICE="$1" PROTO=none /sbin/hotplug-call "iface" &
+}
+
 setup_interface_static() {
 	local iface="$1"
 	local config="$2"
