@@ -247,6 +247,7 @@ enable_mac80211() {
 				# Hostapd will handle recreating the interface and
 				# it's accompanying monitor
 				apidx="$(($apidx + 1))"
+				i=$(($i + 1))
 				[ "$apidx" -gt 1 ] || iw phy "$phy" interface add "$ifname" type managed
 			;;
 			mesh)
