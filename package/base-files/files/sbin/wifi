@@ -84,7 +84,10 @@ wifi_fixup_hwmode() {
 }
 
 wifi_updown() {
-	[ enable = "$1" ] && wifi_updown disable "$2"
+	[ enable = "$1" ] && {
+		wifi_updown disable "$2"
+		scan_wifi
+	}
 	for device in ${2:-$DEVICES}; do (
 		config_get disabled "$device" disabled
 		[ 1 == "$disabled" ] && {
@@ -134,7 +137,7 @@ set_wifi_down() {
 	local vifs vif vifstr
 
 	[ -f "/var/run/wifi-${cfg}.pid" ] &&
-		kill "$(cat "/var/run/wifi-${cfg}.pid")"
+		kill "$(cat "/var/run/wifi-${cfg}.pid")" 2>/dev/null
 	uci_revert_state wireless "$cfg"
 	config_get vifs "$cfg" vifs
 	for vif in $vifs; do
@@ -144,11 +147,13 @@ set_wifi_down() {
 
 scan_wifi() {
 	local cfgfile="$1"
+	DEVICES=
 	config_cb() {
 		config_get TYPE "$CONFIG_SECTION" TYPE
 		case "$TYPE" in
 			wifi-device)
 				append DEVICES "$CONFIG_SECTION"
+				config_set "$CONFIG_SECTION" vifs ""
 			;;
 			wifi-iface)
 				config_get device "$CONFIG_SECTION" device
