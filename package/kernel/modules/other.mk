@@ -785,6 +785,24 @@ endef
 $(eval $(call KernelPackage,cs5535-gpio))
 
 
+define KernelPackage/ixp4xx-beeper
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=IXP4XX Beeper support
+  DEPENDS:=@TARGET_ixp4xx +kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_IXP4XX_BEEPER
+  FILES:=$(LINUX_DIR)/drivers/input/misc/ixp4xx-beeper.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,ixp4xx-beeper)
+endef
+
+define KernelPackage/ixp4xx-beeper/description
+ IXP4XX Beeper support
+endef
+
+$(eval $(call KernelPackage,ixp4xx-beeper))
+
+
 define KernelPackage/textsearch
 SUBMENU:=$(OTHER_MENU)
   TITLE:=Textsearch support is selected if needed
