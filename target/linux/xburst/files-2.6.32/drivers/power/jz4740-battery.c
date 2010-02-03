@@ -24,9 +24,7 @@
 #include <linux/jz4740-adc.h>
 
 struct jz_battery_info {
-	struct power_supply usb;
 	struct power_supply bat;
-	struct power_supply ac;
 	int bat_status;
 	struct jz_batt_info *pdata;
 	struct mutex work_lock;
@@ -35,74 +33,6 @@ struct jz_battery_info {
 };
 
 #define ps_to_jz_battery(x) container_of((x), struct jz_battery_info, bat);
-
-/*********************************************************************
- *		Power
- *********************************************************************/
-
-
-static int jz_get_power_prop(struct jz_battery_info *bat_info,
-			     struct power_supply *psy,
-			     enum power_supply_property psp,
-			     union power_supply_propval *val)
-{
-	int gpio;
-	
-	if (bat_info == 0 || bat_info->pdata == 0)
-		return -EINVAL;
-	gpio = (psy->type == POWER_SUPPLY_TYPE_MAINS) ?
-		bat_info->pdata->dc_dect_gpio :
-		bat_info->pdata->usb_dect_gpio;
-	if (!gpio_is_valid(gpio))
-		return -EINVAL;
-	switch (psp) {
-	case POWER_SUPPLY_PROP_ONLINE:
-		val->intval = !gpio_get_value(gpio);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int jz_usb_get_power_prop(struct power_supply *psy,
-				 enum power_supply_property psp,
-				 union power_supply_propval *val)
-{
-	struct jz_battery_info *bat_info = container_of(psy, struct jz_battery_info, usb);
-	return jz_get_power_prop(bat_info, psy, psp, val);
-}
-
-static int jz_ac_get_power_prop(struct power_supply *psy,
-				 enum power_supply_property psp,
-				 union power_supply_propval *val)
-{
-	struct jz_battery_info *bat_info = container_of(psy, struct jz_battery_info, ac);
-	return jz_get_power_prop(bat_info, psy, psp, val);
-}
-
-
-static enum power_supply_property jz_power_props[] = {
-	POWER_SUPPLY_PROP_ONLINE,
-};
-
-static struct power_supply jz_ac = {
-	.name = "ac",
-	.type = POWER_SUPPLY_TYPE_MAINS,
-	.properties = jz_power_props,
-	.num_properties = ARRAY_SIZE(jz_power_props),
-	.get_property = jz_ac_get_power_prop,
-};
-
-static struct power_supply jz_usb = {
-	.name = "usb",
-	.type = POWER_SUPPLY_TYPE_USB,
-	.properties = jz_power_props,
-	.num_properties = ARRAY_SIZE(jz_power_props),
-	.get_property = jz_usb_get_power_prop,
-};
-
 
 /*********************************************************************
  *		Battery properties
@@ -307,57 +237,23 @@ static int jz_bat_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct jz_battery_info *bat_info;
-	
+
+	if (!pdev->dev.platform_data) {
+		dev_err(&pdev->dev, "Please set battery info\n");
+		return -EINVAL;
+	}
+
 	bat_info = kzalloc(sizeof(struct jz_battery_info), GFP_KERNEL);
 
 	if (!bat_info) {
 		return -ENOMEM;
 	}
 
-	if (!pdev->dev.platform_data) {
-		dev_err(&pdev->dev, "Please set battery info\n");
-		ret = -EINVAL;
-		goto err_platform_data;
-	}
 	platform_set_drvdata(pdev, bat_info);
 	bat_info->pdata = pdev->dev.platform_data;
 	bat_info->bat = bat_ps;
-	bat_info->usb = jz_usb;
-	bat_info->ac =  jz_ac;
 	mutex_init(&bat_info->work_lock);
 	INIT_DELAYED_WORK(&bat_info->bat_work, jz_bat_work);
-
-	if (gpio_is_valid(bat_info->pdata->dc_dect_gpio)) {
-		ret = gpio_request(bat_info->pdata->dc_dect_gpio, "AC/DC DECT");
-		if (ret) {
-			dev_err(&pdev->dev, "ac/dc dect gpio request failed.\n");
-
-			goto err_dc_gpio_request;
-		}
-		ret = gpio_direction_input(bat_info->pdata->dc_dect_gpio);
-		if (ret) {
-			dev_err(&pdev->dev, "ac/dc dect gpio direction failed.\n");
-
-			goto err_dc_gpio_direction;
-		}
-	}
-
-	if (gpio_is_valid(bat_info->pdata->usb_dect_gpio)) {
-		ret = gpio_request(bat_info->pdata->usb_dect_gpio, "USB DECT");
-		if (ret) {
-			dev_err(&pdev->dev, "usb dect gpio request failed.\n");
-
-			goto err_usb_gpio_request;
-		}
-		ret = gpio_direction_input(bat_info->pdata->usb_dect_gpio);
-		if (ret) {
-			dev_err(&pdev->dev, "usb dect gpio set direction failed.\n");
-			goto err_usb_gpio_direction;
-		}
-
-		jz_gpio_disable_pullup(bat_info->pdata->usb_dect_gpio);
-		/* TODO: Use generic gpio is better */
-	}
 
 	if (gpio_is_valid(bat_info->pdata->charg_stat_gpio)) {
 		ret = gpio_request(bat_info->pdata->charg_stat_gpio, "CHARG STAT");
@@ -370,25 +266,7 @@ static int jz_bat_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "charger state gpio set direction failed.\n");
 			goto err_charg_gpio_direction;
 		}
-	}
-	
-	if (gpio_is_valid(bat_info->pdata->dc_dect_gpio)) {
-		ret = power_supply_register(&pdev->dev, &bat_info->ac);
-		if (ret) {
-			dev_err(&pdev->dev, "power supply ac/dc register failed.\n");
-			goto err_power_register_ac;
-		}
-	}
 
-	if (gpio_is_valid(bat_info->pdata->usb_dect_gpio)) {
-		ret = power_supply_register(&pdev->dev, &bat_info->usb);
-		if (ret) {
-			dev_err(&pdev->dev, "power supply usb register failed.\n");
-			goto err_power_register_usb;
-		}
-	}
-
-	if (gpio_is_valid(bat_info->pdata->charg_stat_gpio)) {
 		ret = power_supply_register(&pdev->dev, &bat_info->bat);
 		if (ret) {
 			dev_err(&pdev->dev, "power supply battery register failed.\n");
@@ -405,20 +283,9 @@ static int jz_bat_probe(struct platform_device *pdev)
 	return ret;
 
 err_power_register_bat:
-	power_supply_unregister(&bat_info->usb);
-err_power_register_usb:
-	power_supply_unregister(&bat_info->ac);
-err_power_register_ac:
 err_charg_gpio_direction:
 	gpio_free(bat_info->pdata->charg_stat_gpio);
 err_charg_gpio_request:
-err_usb_gpio_direction:
-	gpio_free(bat_info->pdata->usb_dect_gpio);
-err_usb_gpio_request:
-err_dc_gpio_direction:
-	gpio_free(bat_info->pdata->dc_dect_gpio);
-err_dc_gpio_request:
-err_platform_data:
 	kfree(bat_info);
 	return ret;
 }
@@ -426,19 +293,13 @@ err_platform_data:
 static int jz_bat_remove(struct platform_device *pdev)
 {
 	struct jz_battery_info *bat_info = platform_get_drvdata(pdev);
-		
+
 	if (bat_info->pdata) {
-		if (gpio_is_valid(bat_info->pdata->dc_dect_gpio))
-			gpio_free(bat_info->pdata->dc_dect_gpio);
-		if (gpio_is_valid(bat_info->pdata->usb_dect_gpio))
-			gpio_free(bat_info->pdata->usb_dect_gpio);
 		if (gpio_is_valid(bat_info->pdata->charg_stat_gpio))
 			gpio_free(bat_info->pdata->charg_stat_gpio);
 	}
 
 	power_supply_unregister(&bat_ps);
-	power_supply_unregister(&jz_ac);
-	power_supply_unregister(&jz_usb);
 
 	return 0;
 }
