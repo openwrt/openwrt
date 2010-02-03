@@ -7,7 +7,7 @@
 
 define Profile/TLWR741NDV1
 	NAME:=TP-LINK TL-WR741ND v1
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k wpad-mini
 endef
 
 define Profile/TLWR741NDV1/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,TLWR741NDV1))
 
 define Profile/TLWR841NV15
 	NAME:=TP-LINK TL-WR841N v1.5
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k wpad-mini
 endef
 
 define Profile/TLWR841NV15/Description
@@ -29,7 +29,7 @@ $(eval $(call Profile,TLWR841NV15))
 
 define Profile/TLWR841NDV3
 	NAME:=TP-LINK TL-WR841ND v3
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k wpad-mini
 endef
 
 define Profile/TLWR841NDV3/Description
@@ -40,7 +40,7 @@ $(eval $(call Profile,TLWR841NDV3))
 
 define Profile/TLWR841NDV5
 	NAME:=TP-LINK TL-WR841ND v5
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k wpad-mini
 endef
 
 define Profile/TLWR841NDV5/Description
@@ -51,7 +51,7 @@ $(eval $(call Profile,TLWR841NDV5))
 
 define Profile/TLWR941NDV2
 	NAME:=TP-LINK TL-WR941ND v2
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k wpad-mini
 endef
 
 define Profile/TLWR941NDV2/Description
@@ -62,7 +62,7 @@ $(eval $(call Profile,TLWR941NDV2))
 
 define Profile/TLWR1043NDV1
 	NAME:=TP-LINK TL-WR1043ND v1
-	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2
 endef
 
 define Profile/TLWR1043NDV1/Description

@@ -7,7 +7,7 @@
 
 define Profile/MZKW04NU
 	NAME:=Planex MZK-W04NU
-	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2
 endef
 
 define Profile/MZKW04NU/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,MZKW04NU))
 
 define Profile/MZKW300NH
 	NAME:=Planex MZK-W300NH
-	PACKAGES:=kmod-ath9k hostapd-mini
+	PACKAGES:=kmod-ath9k wpad-mini
 endef
 
 define Profile/MZKW300NH/Description
