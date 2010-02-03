@@ -7,7 +7,7 @@
 
 define Profile/None
   NAME:=Generic, No WiFi
-  PACKAGES:=-hostapd-mini
+  PACKAGES:=-wpad-mini
 endef
 
 define Profile/None/Description

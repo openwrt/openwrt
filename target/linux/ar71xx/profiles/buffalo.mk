@@ -7,7 +7,7 @@
 
 define Profile/WZRHPG300NH
 	NAME:=Buffalo WZR-HP-G300NH
-	PACKAGES:=kmod-ath9k hostapd-mini kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2
 endef
 
 define Profile/WZRHPG300NH/Description

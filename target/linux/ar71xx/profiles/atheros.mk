@@ -7,7 +7,7 @@
 
 define Profile/AP81
 	NAME:=Atheros AP81 reference board
-	PACKAGES:=hostapd-mini kmod-ath9k kmod-usb-core kmod-usb2
+	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2
 endef
 
 define Profile/AP81/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,AP81))
 
 define Profile/AP83
 	NAME:=Atheros AP83 reference board
-	PACKAGES:=hostapd-mini kmod-ath9k kmod-usb-core kmod-usb2
+	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2
 endef
 
 define Profile/AP83/Description
@@ -29,7 +29,7 @@ $(eval $(call Profile,AP83))
 
 define Profile/PB42
 	NAME:=Atheros PB42 reference board
-	PACKAGES:=hostapd-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2
+	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/PB42/Description
@@ -40,7 +40,7 @@ $(eval $(call Profile,PB42))
 
 define Profile/PB44
 	NAME:=Atheros PB44 reference board
-	PACKAGES:=hostapd-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2
+	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/PB44/Description

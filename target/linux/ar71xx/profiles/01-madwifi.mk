@@ -7,7 +7,7 @@
 
 define Profile/Madwifi
 	NAME:=Atheros WiFi (madwifi)
-	PACKAGES:=kmod-madwifi hostapd-mini
+	PACKAGES:=kmod-madwifi wpad-mini
 endef
 
 define Profile/Madwifi/Description
