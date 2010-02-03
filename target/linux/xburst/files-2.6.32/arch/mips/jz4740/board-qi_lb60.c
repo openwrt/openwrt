@@ -28,6 +28,7 @@
 #include <linux/spi/spi_gpio.h>
 #include <linux/power_supply.h>
 #include <linux/power/jz4740-battery.h>
+#include <linux/power/gpio-charger.h>
 #include <linux/mmc/jz4740_mmc.h>
 
 
@@ -286,13 +287,31 @@ static struct spi_board_info qi_lb60_spi_board_info[] = {
 
 /* Battery */
 static struct jz_batt_info qi_lb60_battery_pdata = {
-	.dc_dect_gpio	= GPIO_DC_DETE_N,
-	.usb_dect_gpio	= GPIO_USB_DETE,
 	.charg_stat_gpio  = GPIO_CHARG_STAT_N,
 
 	.min_voltag	= 3600000,
 	.max_voltag	= 4200000,
 	.batt_tech	= POWER_SUPPLY_TECHNOLOGY_LIPO,
+};
+
+static char *qi_lb60_batteries[] = {
+	"battery",
+};
+
+static struct gpio_charger_platform_data qi_lb60_charger_pdata = {
+	.name = "USB",
+	.type = POWER_SUPPLY_TYPE_USB,
+	.gpio = GPIO_USB_DETE,
+	.gpio_active_low = 1,
+	.batteries = qi_lb60_batteries,
+	.num_batteries = ARRAY_SIZE(qi_lb60_batteries),
+};
+
+static struct platform_device qi_lb60_charger_device = {
+	.name = "gpio-charger",
+	.dev = {
+		.platform_data = &qi_lb60_charger_pdata,
+	},
 };
 
 /* GPIO Key: power */
@@ -340,6 +359,7 @@ static struct platform_device *jz_platform_devices[] __initdata = {
 	&jz4740_adc_device,
 	&jz4740_battery_device,
 	&qi_lb60_gpio_keys,
+	&qi_lb60_charger_device,
 };
 
 static void __init board_gpio_setup(void)

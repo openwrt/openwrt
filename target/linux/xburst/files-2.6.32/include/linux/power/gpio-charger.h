@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2009, Jiejing Zhang <kzjeef@gmail.com>
+ *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
  *
  *  This program is free software; you can redistribute	 it and/or modify it
  *  under  the terms of	 the GNU General  Public License as published by the
@@ -12,15 +12,17 @@
  *
  */
 
-#ifndef __JZ4740_BATTERY_H
-#define __JZ4740_BATTERY_H
+#ifndef __LINUX_POWER_GPIO_CHARGER_H__
+#define __LINUX_POWER_GPIO_CHARGER_H__
 
-struct jz_batt_info {
-	int charg_stat_gpio;	/* GPIO port of Charger state */
+struct gpio_charger_platform_data {
+	const char *name;
+	enum power_supply_type type;
+	int gpio;
+	int gpio_active_low;
 
-	int min_voltag;		/* Mininal battery voltage in uV */
-	int max_voltag;		/* Maximum battery voltage in uV */
-	int batt_tech;		/* Battery technology */
+	char **batteries;
+	size_t num_batteries;
 };
 
 #endif
