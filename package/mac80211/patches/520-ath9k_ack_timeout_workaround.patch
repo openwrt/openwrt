@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1228,6 +1228,11 @@ void ath9k_hw_init_global_settings(struc
+@@ -1233,6 +1233,11 @@ void ath9k_hw_init_global_settings(struc
  	/* As defined by IEEE 802.11-2007 17.3.8.6 */
  	slottime = ah->slottime + 3 * ah->coverage_class;
  	acktimeout = slottime + sifstime;
