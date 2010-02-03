@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -774,6 +774,86 @@ static const struct file_operations fops
+@@ -783,6 +783,86 @@ static const struct file_operations fops
  	.owner = THIS_MODULE
  };
  
@@ -87,7 +87,7 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -843,6 +923,17 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -852,6 +932,17 @@ int ath9k_init_debug(struct ath_hw *ah)
  	if (!sc->debug.debugfs_recv)
  		goto err;
  
@@ -105,7 +105,7 @@
  	return 0;
  err:
  	ath9k_exit_debug(ah);
-@@ -856,6 +947,8 @@ void ath9k_exit_debug(struct ath_hw *ah)
+@@ -865,6 +956,8 @@ void ath9k_exit_debug(struct ath_hw *ah)
  
  	debugfs_remove(sc->debug.debugfs_tx_chainmask);
  	debugfs_remove(sc->debug.debugfs_rx_chainmask);

@@ -8,7 +8,7 @@
  #include "ath9k.h"
  
  static struct pci_device_id ath_pci_id_table[] __devinitdata = {
-@@ -61,21 +62,36 @@ static void ath_pci_cleanup(struct ath_c
+@@ -52,21 +53,36 @@ static void ath_pci_read_cachesize(struc
  
  static bool ath_pci_eeprom_read(struct ath_common *common, u32 off, u16 *data)
  {
