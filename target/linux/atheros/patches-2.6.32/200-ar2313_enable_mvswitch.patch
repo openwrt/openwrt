@@ -1,0 +1,74 @@
+Index: linux-2.6.32.7/drivers/net/ar231x.c
+===================================================================
+--- linux-2.6.32.7.orig/drivers/net/ar231x.c	2010-02-03 17:00:35.874430230 +0100
++++ linux-2.6.32.7/drivers/net/ar231x.c	2010-02-03 17:02:28.998430523 +0100
+@@ -735,6 +735,7 @@
+ 	for (i = 0; i < nr_bufs; i++) {
+ 		struct sk_buff *skb;
+ 		ar231x_descr_t *rd;
++		int offset = RX_OFFSET;
+ 
+ 		if (sp->rx_skb[idx])
+ 			break;
+@@ -750,7 +751,9 @@
+ 		 * Make sure IP header starts on a fresh cache line.
+ 		 */
+ 		skb->dev = dev;
+-		skb_reserve(skb, RX_OFFSET);
++		if (sp->phy_dev)
++			offset += sp->phy_dev->pkt_align;
++		skb_reserve(skb, offset);
+ 		sp->rx_skb[idx] = skb;
+ 
+ 		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
+@@ -824,20 +827,23 @@
+ 			/* alloc new buffer. */
+ 			skb_new = netdev_alloc_skb(dev, AR2313_BUFSIZE + RX_OFFSET);
+ 			if (skb_new != NULL) {
++				int offset;
+ 
+ 				skb = sp->rx_skb[idx];
+ 				/* set skb */
+ 				skb_put(skb,
+ 						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
+-
+ 				dev->stats.rx_bytes += skb->len;
+-				skb->protocol = eth_type_trans(skb, dev);
+-				/* pass the packet to upper layers */
+-				netif_rx(skb);
+ 
++				/* pass the packet to upper layers */
++				sp->rx(skb);
+ 				skb_new->dev = dev;
++
+ 				/* 16 bit align */
+-				skb_reserve(skb_new, RX_OFFSET);
++				offset = RX_OFFSET;
++				if (sp->phy_dev)
++					offset += sp->phy_dev->pkt_align;
++				skb_reserve(skb_new, offset);
+ 				/* reset descriptor's curr_addr */
+ 				rxdesc->addr = virt_to_phys(skb_new->data);
+ 
+@@ -1239,6 +1245,8 @@
+ 		return PTR_ERR(phydev);
+ 	}
+ 
++	sp->rx = phydev->netif_rx;
++
+ 	/* mask with MAC supported features */
+ 	phydev->supported &= (SUPPORTED_10baseT_Half
+ 		| SUPPORTED_10baseT_Full
+Index: linux-2.6.32.7/drivers/net/ar231x.h
+===================================================================
+--- linux-2.6.32.7.orig/drivers/net/ar231x.h	2010-02-03 17:00:35.874430230 +0100
++++ linux-2.6.32.7/drivers/net/ar231x.h	2010-02-03 17:02:28.998430523 +0100
+@@ -221,6 +221,8 @@
+  */
+ struct ar231x_private {
+ 	struct net_device *dev;
++	int (*rx)(struct sk_buff *skb);
++
+ 	int version;
+ 	u32 mb[2];
+ 

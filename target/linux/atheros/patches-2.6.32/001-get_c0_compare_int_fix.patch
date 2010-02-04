@@ -1,0 +1,41 @@
+Fix the usage of get_c0_compare_int: override cp0_compare_irq if the returned
+value is in the MIPS CPU IRQ range to ensure that c0_compare_int_usable()
+still works.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+Index: linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c
+===================================================================
+--- linux-2.6.32.7.orig/arch/mips/kernel/cevt-r4k.c	2010-01-29 00:06:20.000000000 +0100
++++ linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c	2010-02-03 16:59:28.310430064 +0100
+@@ -168,20 +168,23 @@
+ 	struct clock_event_device *cd;
+ 	unsigned int irq;
+ 
+-	if (!cpu_has_counter || !mips_hpt_frequency)
+-		return -ENXIO;
+-
+-	if (!c0_compare_int_usable())
+-		return -ENXIO;
+-
+ 	/*
+ 	 * With vectored interrupts things are getting platform specific.
+ 	 * get_c0_compare_int is a hook to allow a platform to return the
+ 	 * interrupt number of it's liking.
+ 	 */
+ 	irq = MIPS_CPU_IRQ_BASE + cp0_compare_irq;
+-	if (get_c0_compare_int)
++	if (get_c0_compare_int) {
+ 		irq = get_c0_compare_int();
++		if ((irq >= MIPS_CPU_IRQ_BASE) && (irq < MIPS_CPU_IRQ_BASE + 8))
++			cp0_compare_irq = irq - MIPS_CPU_IRQ_BASE;
++	}
++
++	if (!cpu_has_counter || !mips_hpt_frequency)
++		return -ENXIO;
++
++	if (!c0_compare_int_usable())
++		return -ENXIO;
+ 
+ 	cd = &per_cpu(mips_clockevent_device, cpu);
+ 
