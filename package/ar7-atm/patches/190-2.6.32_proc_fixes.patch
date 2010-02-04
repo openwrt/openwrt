@@ -1,0 +1,29 @@
+Index: sangam_atm-D7.04.03.00/tn7dsl.c
+===================================================================
+--- sangam_atm-D7.04.03.00.orig/tn7dsl.c	2010-02-01 22:30:45.000000000 +0100
++++ sangam_atm-D7.04.03.00/tn7dsl.c	2010-02-01 22:32:41.000000000 +0100
+@@ -3431,8 +3431,11 @@
+    */
+   if(write)
+     {
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
+     ret = proc_dostring(ctl, write, filp, buffer, lenp, 0);
+-
++#else
++    ret = proc_dostring(ctl, write, buffer, lenp, 0);
++#endif
+     switch (ctl->ctl_name)
+       {
+       case DEV_DSLMOD:
+@@ -3517,7 +3520,11 @@
+   else
+     {
+     len += sprintf(info+len, mod_req);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
+     ret = proc_dostring(ctl, write, filp, buffer, lenp, 0);
++#else
++    ret = proc_dostring(ctl, write, buffer, lenp, 0);
++#endif
+     }
+   return ret;
+ }
