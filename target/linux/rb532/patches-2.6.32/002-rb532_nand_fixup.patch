@@ -1,6 +1,6 @@
 --- a/arch/mips/rb532/devices.c
 +++ b/arch/mips/rb532/devices.c
-@@ -140,6 +140,19 @@ static struct platform_device cf_slot0 =
+@@ -139,6 +139,19 @@ static struct platform_device cf_slot0 =
  };
  
  /* Resources and device for NAND */
@@ -20,7 +20,7 @@
  static int rb532_dev_ready(struct mtd_info *mtd)
  {
  	return gpio_get_value(GPIO_RDY);
-@@ -281,6 +294,16 @@ static void __init parse_mac_addr(char *
+@@ -280,6 +293,16 @@ static void __init parse_mac_addr(char *
  /* NAND definitions */
  #define NAND_CHIP_DELAY	25
  
@@ -37,7 +37,7 @@
  static void __init rb532_nand_setup(void)
  {
  	switch (mips_machtype) {
-@@ -300,6 +323,8 @@ static void __init rb532_nand_setup(void
+@@ -299,6 +322,8 @@ static void __init rb532_nand_setup(void
  	rb532_nand_data.chip.partitions = rb532_partition_info;
  	rb532_nand_data.chip.chip_delay = NAND_CHIP_DELAY;
  	rb532_nand_data.chip.options = NAND_NO_AUTOINCR;
