@@ -1,0 +1,305 @@
+Index: linux-2.6.32.7/arch/mips/ar231x/Makefile
+===================================================================
+--- linux-2.6.32.7.orig/arch/mips/ar231x/Makefile	2010-02-03 17:00:08.814429898 +0100
++++ linux-2.6.32.7/arch/mips/ar231x/Makefile	2010-02-03 17:00:21.031428952 +0100
+@@ -11,3 +11,4 @@
+ obj-y += board.o prom.o devices.o
+ obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
+ obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
++obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
+Index: linux-2.6.32.7/arch/mips/ar231x/pci.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.7/arch/mips/ar231x/pci.c	2010-02-03 17:00:21.031428952 +0100
+@@ -0,0 +1,230 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++ */
++
++#include <linux/types.h>
++#include <linux/pci.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/mm.h>
++#include <linux/spinlock.h>
++#include <linux/delay.h>
++#include <linux/irq.h>
++#include <asm/bootinfo.h>
++#include <asm/paccess.h>
++#include <asm/irq_cpu.h>
++#include <asm/io.h>
++#include <ar231x_platform.h>
++#include <ar231x.h>
++#include <ar2315_regs.h>
++#include "devices.h"
++
++#define AR531X_MEM_BASE    0x80800000UL
++#define AR531X_MEM_SIZE    0x00ffffffUL
++#define AR531X_IO_SIZE     0x00007fffUL
++
++static unsigned long configspace;
++
++static int config_access(int devfn, int where, int size, u32 *ptr, bool write)
++{
++	unsigned long flags;
++	int func = PCI_FUNC(devfn);
++	int dev = PCI_SLOT(devfn);
++	u32 value = 0;
++	int err = 0;
++	u32 addr;
++
++	if (((dev != 0) && (dev != 3)) || (func > 2))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	/* Select Configuration access */
++	local_irq_save(flags);
++	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, 0, AR2315_PCIMISC_CFG_SEL);
++	mb();
++
++	addr = (u32) configspace + (1 << (13 + dev)) + (func << 8) + where;
++	if (size == 1)
++		addr ^= 0x3;
++	else if (size == 2)
++		addr ^= 0x2;
++
++	if (write) {
++		value = *ptr;
++		if (size == 1)
++			err = put_dbe(value, (u8 *) addr);
++		else if (size == 2)
++			err = put_dbe(value, (u16 *) addr);
++		else if (size == 4)
++			err = put_dbe(value, (u32 *) addr);
++	} else {
++		if (size == 1)
++			err = get_dbe(value, (u8 *) addr);
++		else if (size == 2)
++			err = get_dbe(value, (u16 *) addr);
++		else if (size == 4)
++			err = get_dbe(value, (u32 *) addr);
++		if (err)
++			*ptr = 0xffffffff;
++		else
++			*ptr = value;
++	}
++
++	/* Select Memory access */
++	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, AR2315_PCIMISC_CFG_SEL, 0);
++	local_irq_restore(flags);
++
++	return (err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL);
++}
++
++static int ar231x_pci_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 * value)
++{
++	return config_access(devfn, where, size, value, 0);
++}
++
++static int ar231x_pci_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 value)
++{
++	return config_access(devfn, where, size, &value, 1);
++}
++
++struct pci_ops ar231x_pci_ops = {
++	.read	= ar231x_pci_read,
++	.write	= ar231x_pci_write,
++};
++
++static struct resource ar231x_mem_resource = {
++	.name	= "AR531x PCI MEM",
++	.start	= AR531X_MEM_BASE,
++	.end	= AR531X_MEM_BASE + AR531X_MEM_SIZE - AR531X_IO_SIZE - 1 + 0x4000000,
++	.flags	= IORESOURCE_MEM,
++};
++
++static struct resource ar231x_io_resource = {
++	.name	= "AR531x PCI I/O",
++	.start	= AR531X_MEM_BASE + AR531X_MEM_SIZE - AR531X_IO_SIZE,
++	.end	= AR531X_MEM_BASE + AR531X_MEM_SIZE - 1,
++	.flags	= IORESOURCE_IO,
++};
++
++struct pci_controller ar231x_pci_controller = {
++	.pci_ops		= &ar231x_pci_ops,
++	.mem_resource	= &ar231x_mem_resource,
++	.io_resource	= &ar231x_io_resource,
++	.mem_offset     = 0x00000000UL,
++	.io_offset      = 0x00000000UL,
++};
++
++int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
++{
++	return AR2315_IRQ_LCBUS_PCI;
++}
++
++int pcibios_plat_dev_init(struct pci_dev *dev)
++{
++	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, 5);
++	pci_write_config_word(dev, 0x40, 0);
++
++	/* Clear any pending Abort or external Interrupts
++	 * and enable interrupt processing */
++	ar231x_mask_reg(AR2315_PCI_INTEN_REG, AR2315_PCI_INT_ENABLE, 0);
++	ar231x_write_reg(AR2315_PCI_INT_STATUS, (AR2315_PCI_ABORT_INT | AR2315_PCI_EXT_INT));
++	ar231x_write_reg(AR2315_PCI_INT_MASK, (AR2315_PCI_ABORT_INT | AR2315_PCI_EXT_INT));
++	ar231x_mask_reg(AR2315_PCI_INTEN_REG, 0, AR2315_PCI_INT_ENABLE);
++
++	return 0;
++}
++
++static void
++ar2315_pci_fixup(struct pci_dev *dev)
++{
++	unsigned int devfn = dev->devfn;
++
++	if (dev->bus->number != 0)
++		return;
++
++	/* Only fix up the PCI host settings */
++	if ((PCI_SLOT(devfn) != 3) || (PCI_FUNC(devfn) != 0))
++		return;
++
++	/* Fix up MBARs */
++	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, HOST_PCI_MBAR0);
++	pci_write_config_dword(dev, PCI_BASE_ADDRESS_1, HOST_PCI_MBAR1);
++	pci_write_config_dword(dev, PCI_BASE_ADDRESS_2, HOST_PCI_MBAR2);
++	pci_write_config_dword(dev, PCI_COMMAND,
++		PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
++		PCI_COMMAND_INVALIDATE | PCI_COMMAND_PARITY | PCI_COMMAND_SERR |
++		PCI_COMMAND_FAST_BACK);
++}
++DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, ar2315_pci_fixup);
++
++static int __init
++ar2315_pci_init(void)
++{
++	u32 reg;
++
++	if (ar231x_devtype != DEV_TYPE_AR2315)
++		return -ENODEV;
++
++	configspace = (unsigned long) ioremap_nocache(0x80000000, 1*1024*1024); /* Remap PCI config space */
++	ar231x_pci_controller.io_map_base =
++		(unsigned long) ioremap_nocache(AR531X_MEM_BASE + AR531X_MEM_SIZE, AR531X_IO_SIZE);
++	set_io_port_base(ar231x_pci_controller.io_map_base); /* PCI I/O space */
++
++	reg = ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
++	msleep(10);
++
++	reg &= ~AR2315_RESET_PCIDMA;
++	ar231x_write_reg(AR2315_RESET, reg);
++	msleep(10);
++
++	ar231x_mask_reg(AR2315_ENDIAN_CTL, 0,
++		AR2315_CONFIG_PCIAHB | AR2315_CONFIG_PCIAHB_BRIDGE);
++
++	ar231x_write_reg(AR2315_PCICLK, AR2315_PCICLK_PLLC_CLKM |
++		(AR2315_PCICLK_IN_FREQ_DIV_6 << AR2315_PCICLK_DIV_S));
++	ar231x_mask_reg(AR2315_AHB_ARB_CTL, 0, AR2315_ARB_PCI);
++	ar231x_mask_reg(AR2315_IF_CTL, AR2315_IF_PCI_CLK_MASK | AR2315_IF_MASK,
++		AR2315_IF_PCI | AR2315_IF_PCI_HOST | AR2315_IF_PCI_INTR |
++		 (AR2315_IF_PCI_CLK_OUTPUT_CLK << AR2315_IF_PCI_CLK_SHIFT));
++
++	/* Reset the PCI bus by setting bits 5-4 in PCI_MCFG */
++	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, AR2315_PCIMISC_RST_MODE,
++		AR2315_PCIRST_LOW);
++	msleep(100);
++
++	/* Bring the PCI out of reset */
++	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, AR2315_PCIMISC_RST_MODE,
++		AR2315_PCIRST_HIGH | AR2315_PCICACHE_DIS | 0x8);
++
++	ar231x_write_reg(AR2315_PCI_UNCACHE_CFG,
++			0x1E | /* 1GB uncached */
++			(1 << 5) | /* Enable uncached */
++			(0x2 << 30) /* Base: 0x80000000 */
++	);
++	ar231x_read_reg(AR2315_PCI_UNCACHE_CFG);
++
++	msleep(500);
++
++	/* dirty hack - anyone with a datasheet that knows the memory map ? */
++	ioport_resource.start = 0x10000000;
++	ioport_resource.end = 0xffffffff;
++	iomem_resource.start = 0x10000000;
++	iomem_resource.end = 0xffffffff;
++
++	register_pci_controller(&ar231x_pci_controller);
++
++	return 0;
++}
++
++arch_initcall(ar2315_pci_init);
+Index: linux-2.6.32.7/arch/mips/ar231x/Kconfig
+===================================================================
+--- linux-2.6.32.7.orig/arch/mips/ar231x/Kconfig	2010-02-03 17:00:08.814429898 +0100
++++ linux-2.6.32.7/arch/mips/ar231x/Kconfig	2010-02-03 17:00:21.031428952 +0100
+@@ -15,3 +15,13 @@
+ 	select SYS_SUPPORTS_BIG_ENDIAN
+ 	select GENERIC_GPIO
+ 	default y
++
++config ATHEROS_AR2315_PCI
++	bool "PCI support"
++	depends on ATHEROS_AR2315
++	select HW_HAS_PCI
++	select PCI
++	select USB_ARCH_HAS_HCD
++	select USB_ARCH_HAS_OHCI
++	select USB_ARCH_HAS_EHCI
++	default y
+Index: linux-2.6.32.7/arch/mips/ar231x/ar2315.c
+===================================================================
+--- linux-2.6.32.7.orig/arch/mips/ar231x/ar2315.c	2010-02-03 17:00:08.818431986 +0100
++++ linux-2.6.32.7/arch/mips/ar231x/ar2315.c	2010-02-03 17:00:21.031428952 +0100
+@@ -63,6 +63,27 @@
+ 		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
+ }
+ 
++#ifdef CONFIG_ATHEROS_AR2315_PCI
++static inline void pci_abort_irq(void)
++{
++	ar231x_write_reg(AR2315_PCI_INT_STATUS, AR2315_PCI_ABORT_INT);
++}
++
++static inline void pci_ack_irq(void)
++{
++	ar231x_write_reg(AR2315_PCI_INT_STATUS, AR2315_PCI_EXT_INT);
++}
++
++void ar2315_pci_irq(int irq)
++{
++	if (ar231x_read_reg(AR2315_PCI_INT_STATUS) == AR2315_PCI_ABORT_INT)
++		pci_abort_irq();
++	else {
++		do_IRQ(irq);
++		pci_ack_irq();
++	}
++}
++#endif /* CONFIG_ATHEROS_AR2315_PCI */
+ 
+ /*
+  * Called when an interrupt is received, this function
+@@ -81,6 +102,10 @@
+ 		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
+ 	else if (pending & CAUSEF_IP4)
+ 		do_IRQ(AR2315_IRQ_ENET0_INTRS);
++#ifdef CONFIG_ATHEROS_AR2315_PCI
++	else if (pending & CAUSEF_IP5)
++		ar2315_pci_irq(AR2315_IRQ_LCBUS_PCI);
++#endif
+ 	else if (pending & CAUSEF_IP2) {
+ 		unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) & ar231x_read_reg(AR2315_IMR);
+ 
