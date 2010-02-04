@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/arch/mips/ar7/platform.c
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/ar7/platform.c	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/arch/mips/ar7/platform.c	2010-02-04 14:40:23.000000000 +0100
-@@ -131,6 +131,36 @@
+--- a/arch/mips/ar7/platform.c
++++ b/arch/mips/ar7/platform.c
+@@ -131,6 +131,36 @@ static struct resource cpmac_high_res[] 
  	},
  };
  
@@ -39,7 +37,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  static struct resource vlynq_low_res[] = {
  	{
  		.name = "regs",
-@@ -185,6 +215,60 @@
+@@ -185,6 +215,60 @@ static struct resource vlynq_high_res[] 
  	},
  };
  
@@ -100,7 +98,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  static struct resource usb_res[] = {
  	{
  		.name = "regs",
-@@ -228,6 +312,18 @@
+@@ -228,6 +312,18 @@ static struct plat_cpmac_data cpmac_high
  	.phy_mask = 0x7fffffff,
  };
  
@@ -119,7 +117,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  static struct plat_vlynq_data vlynq_low_data = {
  	.ops.on = vlynq_on,
  	.ops.off = vlynq_off,
-@@ -242,6 +338,20 @@
+@@ -242,6 +338,20 @@ static struct plat_vlynq_data vlynq_high
  	.gpio_bit = 19,
  };
  
@@ -140,7 +138,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  static struct platform_device physmap_flash = {
  	.id = 0,
  	.name = "physmap-flash",
-@@ -275,6 +385,30 @@
+@@ -275,6 +385,30 @@ static struct platform_device cpmac_high
  	.num_resources = ARRAY_SIZE(cpmac_high_res),
  };
  
@@ -171,7 +169,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  static struct platform_device vlynq_low = {
  	.id = 0,
  	.name = "vlynq",
-@@ -291,6 +425,22 @@
+@@ -291,6 +425,22 @@ static struct platform_device vlynq_high
  	.num_resources = ARRAY_SIZE(vlynq_high_res),
  };
  
@@ -194,7 +192,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  
  static struct gpio_led default_leds[] = {
  	{
-@@ -300,6 +450,11 @@
+@@ -300,6 +450,11 @@ static struct gpio_led default_leds[] = 
  	},
  };
  
@@ -206,7 +204,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  static struct gpio_led dsl502t_leds[] = {
  	{
  		.name = "status",
-@@ -496,6 +651,9 @@
+@@ -496,6 +651,9 @@ static void __init detect_leds(void)
  	} else if (strstr(prid, "DG834")) {
  		ar7_led_data.num_leds = ARRAY_SIZE(dg834g_leds);
  		ar7_led_data.leds = dg834g_leds;
@@ -216,7 +214,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  	}
  }
  
-@@ -541,14 +699,18 @@
+@@ -541,14 +699,18 @@ static int __init ar7_register_devices(v
  	if (res)
  		return res;
  
@@ -239,10 +237,8 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  		if (res)
  			return res;
  	}
-Index: linux-2.6.32.7/arch/mips/ar7/gpio.c
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/ar7/gpio.c	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/arch/mips/ar7/gpio.c	2010-02-04 14:33:24.000000000 +0100
+--- a/arch/mips/ar7/gpio.c
++++ b/arch/mips/ar7/gpio.c
 @@ -21,11 +21,11 @@
  
  #include <asm/mach-ar7/gpio.h>
@@ -257,10 +253,8 @@ Index: linux-2.6.32.7/arch/mips/ar7/gpio.c
  		return -EINVAL;
  
  	if (ar7_gpio_list[gpio])
-Index: linux-2.6.32.7/arch/mips/ar7/setup.c
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/ar7/setup.c	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/arch/mips/ar7/setup.c	2010-02-04 14:33:24.000000000 +0100
+--- a/arch/mips/ar7/setup.c
++++ b/arch/mips/ar7/setup.c
 @@ -23,6 +23,9 @@
  #include <asm/reboot.h>
  #include <asm/mach-ar7/ar7.h>
@@ -271,7 +265,7 @@ Index: linux-2.6.32.7/arch/mips/ar7/setup.c
  
  static void ar7_machine_restart(char *command)
  {
-@@ -55,6 +58,18 @@
+@@ -55,6 +58,18 @@ const char *get_system_type(void)
  		return "TI AR7 (TNETD7100)";
  	case AR7_CHIP_7200:
  		return "TI AR7 (TNETD7200)";
@@ -290,10 +284,8 @@ Index: linux-2.6.32.7/arch/mips/ar7/setup.c
  	default:
  		return "TI AR7 (Unknown)";
  	}
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/ar7.h
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/include/asm/mach-ar7/ar7.h	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar7/ar7.h	2010-02-04 14:33:24.000000000 +0100
+--- a/arch/mips/include/asm/mach-ar7/ar7.h
++++ b/arch/mips/include/asm/mach-ar7/ar7.h
 @@ -50,6 +50,11 @@
  #define UR8_REGS_WDT	(AR7_REGS_BASE + 0x0b00)
  #define UR8_REGS_UART1	(AR7_REGS_BASE + 0x0f00)
@@ -337,7 +329,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/ar7.h
  
  /* Interrupts */
  #define AR7_IRQ_UART0	15
-@@ -95,14 +115,22 @@
+@@ -95,14 +115,22 @@ struct plat_dsl_data {
  
  extern int ar7_cpu_clock, ar7_bus_clock, ar7_dsp_clock;
  
@@ -362,10 +354,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/ar7.h
  }
  
  static inline int ar7_cpu_freq(void)
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/include/asm/mach-ar7/gpio.h	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h	2010-02-04 14:39:21.000000000 +0100
+--- a/arch/mips/include/asm/mach-ar7/gpio.h
++++ b/arch/mips/include/asm/mach-ar7/gpio.h
 @@ -20,14 +20,18 @@
  #define __AR7_GPIO_H__
  
@@ -386,7 +376,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  {
  	void __iomem *gpio_in =
  		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_INPUT);
-@@ -35,7 +39,23 @@
+@@ -35,7 +39,23 @@ static inline int gpio_get_value(unsigne
  	return readl(gpio_in) & (1 << gpio);
  }
  
@@ -411,7 +401,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  {
  	void __iomem *gpio_out =
  		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_OUTPUT);
-@@ -47,7 +67,29 @@
+@@ -47,7 +67,29 @@ static inline void gpio_set_value(unsign
  	writel(tmp, gpio_out);
  }
  
@@ -442,7 +432,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  {
  	void __iomem *gpio_dir =
  		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
-@@ -60,7 +102,29 @@
+@@ -60,7 +102,29 @@ static inline int gpio_direction_input(u
  	return 0;
  }
  
@@ -473,7 +463,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  {
  	void __iomem *gpio_dir =
  		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_DIR);
-@@ -74,6 +138,29 @@
+@@ -74,6 +138,29 @@ static inline int gpio_direction_output(
  	return 0;
  }
  
@@ -503,7 +493,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  static inline int gpio_to_irq(unsigned gpio)
  {
  	return -EINVAL;
-@@ -85,7 +172,7 @@
+@@ -85,7 +172,7 @@ static inline int irq_to_gpio(unsigned i
  }
  
  /* Board specific GPIO functions */
@@ -512,7 +502,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  {
  	void __iomem *gpio_en =
  		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
-@@ -95,7 +182,26 @@
+@@ -95,7 +182,26 @@ static inline int ar7_gpio_enable(unsign
  	return 0;
  }
  
@@ -540,7 +530,7 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  {
  	void __iomem *gpio_en =
  		(void __iomem *)KSEG1ADDR(AR7_REGS_GPIO + AR7_GPIO_ENABLE);
-@@ -105,6 +211,60 @@
+@@ -105,6 +211,60 @@ static inline int ar7_gpio_disable(unsig
  	return 0;
  }
  
@@ -601,10 +591,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/gpio.h
  #include <asm-generic/gpio.h>
  
  #endif
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar7/titan.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar7/titan.h	2010-02-04 14:40:44.000000000 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar7/titan.h
 @@ -0,0 +1,176 @@
 +/*
 + * Copyright (C) 2008 Stanley Pinchak <stanley_dot_pinchak_at_gmail_dot_com>
