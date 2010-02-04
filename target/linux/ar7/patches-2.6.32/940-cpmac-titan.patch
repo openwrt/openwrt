@@ -1,0 +1,72 @@
+Index: linux-2.6.32.7/arch/mips/ar7/platform.c
+===================================================================
+--- linux-2.6.32.7.orig/arch/mips/ar7/platform.c	2010-02-04 14:00:53.000000000 +0100
++++ linux-2.6.32.7/arch/mips/ar7/platform.c	2010-02-04 14:14:21.000000000 +0100
+@@ -716,23 +716,35 @@
+ 	}
+ 
+ 	if (ar7_has_high_cpmac()) {
+-		res = fixed_phy_add(PHY_POLL, cpmac_high.id, &fixed_phy_status);
++		res = fixed_phy_add(PHY_POLL, ar7_is_titan() ? cpmac_high_titan.id : cpmac_high.id,
++						&fixed_phy_status);
+ 		if (res && res != -ENODEV)
+ 			return res;
+-		cpmac_get_mac(1, cpmac_high_data.dev_addr);
+-		res = platform_device_register(&cpmac_high);
++
++		cpmac_get_mac(1, ar7_is_titan() ? cpmac_high_data_titan.dev_addr :
++						cpmac_high_data.dev_addr);
++		res = platform_device_register(ar7_is_titan() ? &cpmac_high_titan :
++						&cpmac_high);
++
+ 		if (res)
+ 			return res;
+ 	} else {
+-		cpmac_low_data.phy_mask = 0xffffffff;
++		if (ar7_is_titan())
++			cpmac_low_data_titan.phy_mask = 0xffffffff;
++		else
++			cpmac_low_data.phy_mask = 0xffffffff;
++
+ 	}
+ 
+-	res = fixed_phy_add(PHY_POLL, cpmac_low.id, &fixed_phy_status);
++	res = fixed_phy_add(PHY_POLL, ar7_is_titan() ? cpmac_low_titan.id :
++			cpmac_low.id, &fixed_phy_status);
+ 	if (res && res != -ENODEV)
+ 		return res;
+ 
+-	cpmac_get_mac(0, cpmac_low_data.dev_addr);
+-	res = platform_device_register(&cpmac_low);
++	cpmac_get_mac(0, ar7_is_titan() ? cpmac_low_data_titan.dev_addr :
++			cpmac_low_data.dev_addr);
++	res = platform_device_register(ar7_is_titan() ? &cpmac_low_titan :
++			&cpmac_low);
+ 	if (res)
+ 		return res;
+ 
+Index: linux-2.6.32.7/drivers/net/cpmac.c
+===================================================================
+--- linux-2.6.32.7.orig/drivers/net/cpmac.c	2010-01-29 00:06:20.000000000 +0100
++++ linux-2.6.32.7/drivers/net/cpmac.c	2010-02-04 14:05:24.000000000 +0100
+@@ -1243,6 +1243,10 @@
+ 	ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
+ 	ar7_device_reset(AR7_RESET_BIT_EPHY);
+ 
++	if (ar7_is_titan()) {
++		ar7_device_reset(TITAN_RESET_BIT_EPHY1);
++	}
++
+ 	cpmac_mii->reset(cpmac_mii);
+ 
+ 	for (i = 0; i < 300; i++)
+@@ -1257,7 +1261,8 @@
+ 		mask = 0;
+ 	}
+ 
+-	cpmac_mii->phy_mask = ~(mask | 0x80000000);
++	cpmac_mii->phy_mask = ar7_is_titan()? ~(mask | 0x80000000 | 0x40000000):
++		~(mask | 0x80000000);
+ 	snprintf(cpmac_mii->id, MII_BUS_ID_SIZE, "1");
+ 
+ 	res = mdiobus_register(cpmac_mii);
