@@ -7,7 +7,7 @@
 +extern char __image_cmdline[];
  void __init prom_setup_cmdline(void)
  {
- 	char cmd_line[CL_SIZE];
+ 	static char cmd_line[CL_SIZE] __initdata;
 @@ -109,6 +110,9 @@ void __init prom_setup_cmdline(void)
  	}
  	*(cp++) = ' ';
