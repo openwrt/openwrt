@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/arch/mips/ar7/platform.c
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/ar7/platform.c	2010-02-04 14:00:53.000000000 +0100
-+++ linux-2.6.32.7/arch/mips/ar7/platform.c	2010-02-04 14:14:21.000000000 +0100
-@@ -716,23 +716,35 @@
+--- a/arch/mips/ar7/platform.c
++++ b/arch/mips/ar7/platform.c
+@@ -716,23 +716,35 @@ static int __init ar7_register_devices(v
  	}
  
  	if (ar7_has_high_cpmac()) {
@@ -45,11 +43,9 @@ Index: linux-2.6.32.7/arch/mips/ar7/platform.c
  	if (res)
  		return res;
  
-Index: linux-2.6.32.7/drivers/net/cpmac.c
-===================================================================
---- linux-2.6.32.7.orig/drivers/net/cpmac.c	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/drivers/net/cpmac.c	2010-02-04 14:05:24.000000000 +0100
-@@ -1243,6 +1243,10 @@
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
+@@ -1243,6 +1243,10 @@ int __devinit cpmac_init(void)
  	ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
  	ar7_device_reset(AR7_RESET_BIT_EPHY);
  
@@ -60,7 +56,7 @@ Index: linux-2.6.32.7/drivers/net/cpmac.c
  	cpmac_mii->reset(cpmac_mii);
  
  	for (i = 0; i < 300; i++)
-@@ -1257,7 +1261,8 @@
+@@ -1257,7 +1261,8 @@ int __devinit cpmac_init(void)
  		mask = 0;
  	}
  
