@@ -335,9 +335,9 @@ EOF
 
 
 detect_broadcom() {
-	local i=0
+	local i=-1
 
-	while [ -f /proc/net/wl$((i++)) ]; do
+	while [ -f /proc/net/wl$((++i)) ]; do
 		config_get type wl${i} type
 		[ "$type" = broadcom ] && continue
 		cat <<EOF
