@@ -31,7 +31,8 @@ setup_interface () {
 		config_get old_subnet    "$ifc" netmask
 	}
 
-	[ "$ip" != "$old_ip" ] \
+	[ "$1" = "ifup" ] \
+	|| [ "$ip" != "$old_ip" ] \
 	|| [ "${broadcast:-+}" != "$old_broadcast" ] \
 	|| [ "${subnet:-255.255.255.0}" != "$old_subnet" ] && {
 		echo "udhcpc: ifconfig $interface $ip netmask ${subnet:-255.255.255.0} broadcast ${broadcast:-+}"
