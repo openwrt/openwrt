@@ -1,7 +1,7 @@
 /*
  *  Bus Glue for Atheros AR71xx built-in EHCI controller.
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  Parts of this file are based on Atheros' 2.6.15 BSP
@@ -152,6 +152,7 @@ static const struct hc_driver ehci_ar71xx_hc_driver = {
 	.urb_enqueue		= ehci_urb_enqueue,
 	.urb_dequeue		= ehci_urb_dequeue,
 	.endpoint_disable	= ehci_endpoint_disable,
+	.endpoint_reset		= ehci_endpoint_reset,
 
 	.get_frame_number	= ehci_get_frame,
 
@@ -163,6 +164,8 @@ static const struct hc_driver ehci_ar71xx_hc_driver = {
 #endif
 	.relinquish_port	= ehci_relinquish_port,
 	.port_handed_over	= ehci_port_handed_over,
+
+	.clear_tt_buffer_complete = ehci_clear_tt_buffer_complete,
 };
 
 static const struct hc_driver ehci_ar91xx_hc_driver = {
@@ -180,6 +183,7 @@ static const struct hc_driver ehci_ar91xx_hc_driver = {
 	.urb_enqueue		= ehci_urb_enqueue,
 	.urb_dequeue		= ehci_urb_dequeue,
 	.endpoint_disable	= ehci_endpoint_disable,
+	.endpoint_reset		= ehci_endpoint_reset,
 
 	.get_frame_number	= ehci_get_frame,
 
@@ -191,6 +195,8 @@ static const struct hc_driver ehci_ar91xx_hc_driver = {
 #endif
 	.relinquish_port	= ehci_relinquish_port,
 	.port_handed_over	= ehci_port_handed_over,
+
+	.clear_tt_buffer_complete = ehci_clear_tt_buffer_complete,
 };
 
 static int ehci_ar71xx_driver_probe(struct platform_device *pdev)
