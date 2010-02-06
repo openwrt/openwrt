@@ -5,7 +5,7 @@
  quiet_cmd_lzma = LZMA    $@
  cmd_lzma = (cat $(filter-out FORCE,$^) | \
 -	lzma -9 && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
-+	lzma e -lc1 -lp2 -pb2 -eos -si -so && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
++	lzma e -d20 -lc1 -lp2 -pb2 -eos -si -so && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
  	(rm -f $@ ; false)
  
  quiet_cmd_lzo = LZO    $@
@@ -29,7 +29,7 @@
 -		echo "$output_file" | grep -q "\.lzma$" && compr="lzma -9 -f"
 +		echo "$output_file" | grep -q "\.gz$" && compr="gzip -9 -f -"
 +		echo "$output_file" | grep -q "\.bz2$" && compr="bzip2 -9 -f -"
-+		echo "$output_file" | grep -q "\.lzma$" && compr="lzma e -lc1 -lp2 -pb2 -eos -si -so"
++		echo "$output_file" | grep -q "\.lzma$" && compr="lzma e -d20 -lc1 -lp2 -pb2 -eos -si -so"
  		echo "$output_file" | grep -q "\.cpio$" && compr="cat"
  		shift
  		;;
@@ -42,3 +42,13 @@
  		|| (rm -f ${output_file} ; false)
  	fi
  	[ -z ${cpio_file} ] && rm ${cpio_tfile}
+--- a/lib/decompress.c
++++ b/lib/decompress.c
+@@ -36,6 +36,7 @@ static const struct compress_format {
+ 	{ {037, 0236}, "gzip", gunzip },
+ 	{ {0x42, 0x5a}, "bzip2", bunzip2 },
+ 	{ {0x5d, 0x00}, "lzma", unlzma },
++	{ {0x6d, 0x00}, "lzma-openwrt", unlzma },
+ 	{ {0x89, 0x4c}, "lzo", unlzo },
+ 	{ {0, 0}, NULL, NULL }
+ };
