@@ -286,12 +286,15 @@ static struct spi_board_info qi_lb60_spi_board_info[] = {
 };
 
 /* Battery */
-static struct jz_batt_info qi_lb60_battery_pdata = {
-	.charg_stat_gpio  = GPIO_CHARG_STAT_N,
-
-	.min_voltag	= 3600000,
-	.max_voltag	= 4200000,
-	.batt_tech	= POWER_SUPPLY_TECHNOLOGY_LIPO,
+static struct jz_battery_platform_data qi_lb60_battery_pdata = {
+	.gpio_charge = GPIO_CHARG_STAT_N,
+	.gpio_charge_active_low = 1,
+	.info = {
+		.name = "battery",
+		.technology = POWER_SUPPLY_TECHNOLOGY_LIPO,
+		.voltage_max_design = 4200000,
+		.voltage_min_design = 3600000,
+	},
 };
 
 static char *qi_lb60_batteries[] = {
