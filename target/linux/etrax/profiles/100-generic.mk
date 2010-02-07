@@ -10,7 +10,7 @@ define Profile/default
 endef
 
 define Profile/default/Description
-	Normal Foxboard setup (no vhdl)
+	Normal Foxboard setup
 endef
 $(eval $(call Profile,default))
 
