@@ -1,8 +1,6 @@
-Index: linux-2.6.30.8/arch/cris/arch-v10/drivers/Kconfig
-===================================================================
---- linux-2.6.30.8.orig/arch/cris/arch-v10/drivers/Kconfig	2009-10-02 11:31:49.000000000 +0200
-+++ linux-2.6.30.8/arch/cris/arch-v10/drivers/Kconfig	2009-10-06 10:36:23.000000000 +0200
-@@ -450,11 +450,31 @@
+--- a/arch/cris/arch-v10/drivers/Kconfig
++++ b/arch/cris/arch-v10/drivers/Kconfig
+@@ -450,11 +450,31 @@ config ETRAX_I2C
  	  i2c_arg = I2C_READARG(STA013_READ_ADDR, reg);
  	  val = ioctl(fd, _IO(ETRAXI2C_IOCTYPE, I2C_READREG), i2c_arg);
  
@@ -35,7 +33,7 @@ Index: linux-2.6.30.8/arch/cris/arch-v10/drivers/Kconfig
  	help
  	  Select whether to use the special I2C mode in the PB I/O register or
  	  not.  This option needs to be selected in order to use some drivers
-@@ -478,7 +498,7 @@
+@@ -478,7 +498,7 @@ config ETRAX_I2C_CLK_PORT
  
  config ETRAX_I2C_EEPROM
  	bool "I2C EEPROM (non-volatile RAM) support"
@@ -44,10 +42,8 @@ Index: linux-2.6.30.8/arch/cris/arch-v10/drivers/Kconfig
  	help
  	  Enables I2C EEPROM (non-volatile RAM) on PB0 and PB1 using the I2C
  	  driver.  Select size option: Probed, 2k, 8k, 16k.
-Index: linux-2.6.30.8/arch/cris/arch-v10/drivers/Makefile
-===================================================================
---- linux-2.6.30.8.orig/arch/cris/arch-v10/drivers/Makefile	2009-10-02 11:31:14.000000000 +0200
-+++ linux-2.6.30.8/arch/cris/arch-v10/drivers/Makefile	2009-10-02 11:31:50.000000000 +0200
+--- a/arch/cris/arch-v10/drivers/Makefile
++++ b/arch/cris/arch-v10/drivers/Makefile
 @@ -4,6 +4,7 @@
  
  obj-$(CONFIG_ETRAX_AXISFLASHMAP)	+= axisflashmap.o
