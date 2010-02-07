@@ -1,0 +1,25 @@
+Provide a dummy implementation of clocksource_max_deferment() for such
+platforms.
+
+Signed-off-by: Aaro Koskinen <aaro.koskinen <at> iki.fi>
+---
+ kernel/time/clocksource.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/kernel/time/clocksource.c b/kernel/time/clocksource.c
+index 5155dc3..7b3a9d0 100644
+--- a/kernel/time/clocksource.c
++++ b/kernel/time/clocksource.c
+@@ -502,6 +502,11 @@ static void clocksource_select(void)
+
+ #else /* CONFIG_GENERIC_TIME */
+
++static inline u64 clocksource_max_deferment(struct clocksource *cs)
++{
++	return 0;
++}
++
+ static inline void clocksource_select(void) { }
+
+ #endif
+
