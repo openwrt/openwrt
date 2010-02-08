@@ -12,6 +12,9 @@ wpa_supplicant_setup_vif() {
 	}
 
 	case "$enc" in
+		*none*)
+			key_mgmt='NONE'
+		;;
 		*wep*)
 			key_mgmt='NONE'
 			config_get key "$vif" key
