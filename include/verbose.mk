@@ -18,8 +18,10 @@ ifeq ("$(origin V)", "command line")
 endif
 
 ifeq ($(IS_TTY),1)
-  _Y:=\\033[33m
-  _N:=\\033[m
+  ifneq ($(strip $(NO_COLOR)),1)
+    _Y:=\\033[33m
+    _N:=\\033[m
+  endif
 endif
 
 ifneq ($(KBUILD_VERBOSE),99)
