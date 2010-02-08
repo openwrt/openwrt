@@ -8,7 +8,7 @@
  
  /*
   * Debugging stuff
-@@ -330,7 +331,7 @@ params:		ldr	r0, =params_phys
+@@ -337,7 +338,7 @@ params:		ldr	r0, =params_phys
   * This routine must preserve:
   *  r4, r5, r6, r7, r8
   */
@@ -17,7 +17,7 @@
  cache_on:	mov	r3, #8			@ cache_on function
  		b	call_cache_fn
  
-@@ -499,7 +500,7 @@ __common_mmu_cache_on:
+@@ -519,7 +520,7 @@ __common_mmu_cache_on:
  		mcr	p15, 0, r3, c2, c0, 0	@ load page table pointer
  		mcr	p15, 0, r1, c3, c0, 0	@ load domain access control
  		b	1f
@@ -26,16 +26,16 @@
  1:		mcr	p15, 0, r0, c1, c0, 0	@ load control register
  		mrc	p15, 0, r0, c1, c0, 0	@ and read it back to
  		sub	pc, lr, r0, lsr #32	@ properly flush pipeline
-@@ -518,7 +519,7 @@ __common_mmu_cache_on:
+@@ -539,7 +540,7 @@ __common_mmu_cache_on:
   * r8     = atags pointer
-  * r9-r14 = corrupted
+  * r9-r12,r14 = corrupted
   */
 -		.align	5
 +		.align	L1_CACHE_SHIFT
  reloc_start:	add	r9, r5, r0
  		sub	r9, r9, #128		@ do not copy the stack
  		debug_reloc_start
-@@ -722,7 +723,7 @@ proc_types:
+@@ -768,7 +769,7 @@ proc_types:
   * On exit,   r0, r1, r2, r3, r12 corrupted
   * This routine must preserve: r4, r6, r7
   */
@@ -44,7 +44,7 @@
  cache_off:	mov	r3, #12			@ cache_off function
  		b	call_cache_fn
  
-@@ -791,7 +792,7 @@ __armv3_mmu_cache_off:
+@@ -845,7 +846,7 @@ __armv3_mmu_cache_off:
   * This routine must preserve:
   *  r0, r4, r5, r6, r7
   */
@@ -53,20 +53,6 @@
  cache_clean_flush:
  		mov	r3, #16
  		b	call_cache_fn
---- a/arch/arm/include/asm/cache.h
-+++ b/arch/arm/include/asm/cache.h
-@@ -4,7 +4,11 @@
- #ifndef __ASMARM_CACHE_H
- #define __ASMARM_CACHE_H
- 
-+#ifdef CONFIG_CPU_FA526
-+#define L1_CACHE_SHIFT		4
-+#else
- #define L1_CACHE_SHIFT		5
-+#endif
- #define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
- 
- /*
 --- a/arch/arm/include/asm/dma-mapping.h
 +++ b/arch/arm/include/asm/dma-mapping.h
 @@ -98,7 +98,7 @@ static inline int dma_set_mask(struct de
@@ -80,7 +66,7 @@
  static inline int dma_is_consistent(struct device *dev, dma_addr_t handle)
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -825,7 +825,7 @@ config ISA_DMA_API
+@@ -923,7 +923,7 @@ config ISA_DMA_API
  	bool
  
  config PCI
@@ -91,16 +77,16 @@
  	  bus system, i.e. the way the CPU talks to the other stuff inside
 --- a/arch/arm/kernel/entry-armv.S
 +++ b/arch/arm/kernel/entry-armv.S
-@@ -21,6 +21,7 @@
- #include <mach/entry-macro.S>
+@@ -22,6 +22,7 @@
  #include <asm/thread_notify.h>
  #include <asm/unwind.h>
+ #include <asm/unistd.h>
 +#include <asm/cache.h>
  
  #include "entry-header.S"
  
-@@ -153,7 +154,7 @@ ENDPROC(__und_invalid)
- 	stmia	r5, {r0 - r4}
+@@ -166,7 +167,7 @@ ENDPROC(__und_invalid)
+ 	asm_trace_hardirqs_off
  	.endm
  
 -	.align	5
@@ -108,7 +94,7 @@
  __dabt_svc:
  	svc_entry
  
-@@ -202,7 +203,7 @@ __dabt_svc:
+@@ -214,7 +215,7 @@ __dabt_svc:
   UNWIND(.fnend		)
  ENDPROC(__dabt_svc)
  
@@ -117,7 +103,7 @@
  __irq_svc:
  	svc_entry
  
-@@ -247,7 +248,7 @@ svc_preempt:
+@@ -255,7 +256,7 @@ svc_preempt:
  	b	1b
  #endif
  
@@ -126,7 +112,7 @@
  __und_svc:
  #ifdef CONFIG_KPROBES
  	@ If a kprobe is about to simulate a "stmdb sp..." instruction,
-@@ -286,7 +287,7 @@ __und_svc:
+@@ -301,7 +302,7 @@ __und_svc:
   UNWIND(.fnend		)
  ENDPROC(__und_svc)
  
@@ -135,7 +121,7 @@
  __pabt_svc:
  	svc_entry
  
-@@ -329,7 +330,7 @@ __pabt_svc:
+@@ -337,7 +338,7 @@ __pabt_svc:
   UNWIND(.fnend		)
  ENDPROC(__pabt_svc)
  
@@ -144,7 +130,7 @@
  .LCcralign:
  	.word	cr_alignment
  #ifdef MULTI_DABORT
-@@ -400,7 +401,7 @@ ENDPROC(__pabt_svc)
+@@ -412,7 +413,7 @@ ENDPROC(__pabt_svc)
  #endif
  	.endm
  
@@ -153,7 +139,7 @@
  __dabt_usr:
  	usr_entry
  	kuser_cmpxchg_check
-@@ -432,7 +433,7 @@ __dabt_usr:
+@@ -444,7 +445,7 @@ __dabt_usr:
   UNWIND(.fnend		)
  ENDPROC(__dabt_usr)
  
@@ -162,7 +148,7 @@
  __irq_usr:
  	usr_entry
  	kuser_cmpxchg_check
-@@ -465,7 +466,7 @@ ENDPROC(__irq_usr)
+@@ -476,7 +477,7 @@ ENDPROC(__irq_usr)
  
  	.ltorg
  
@@ -171,7 +157,7 @@
  __und_usr:
  	usr_entry
  
-@@ -668,7 +669,7 @@ __und_usr_unknown:
+@@ -692,7 +693,7 @@ __und_usr_unknown:
  	b	do_undefinstr
  ENDPROC(__und_usr_unknown)
  
@@ -180,7 +166,7 @@
  __pabt_usr:
  	usr_entry
  
-@@ -778,7 +779,7 @@ ENDPROC(__switch_to)
+@@ -803,7 +804,7 @@ ENDPROC(__switch_to)
  #endif
  	.endm
  
@@ -189,7 +175,7 @@
  	.globl	__kuser_helper_start
  __kuser_helper_start:
  
-@@ -818,7 +819,7 @@ __kuser_memory_barrier:				@ 0xffff0fa0
+@@ -843,7 +844,7 @@ __kuser_memory_barrier:				@ 0xffff0fa0
  	smp_dmb
  	usr_ret	lr
  
@@ -198,7 +184,7 @@
  
  /*
   * Reference prototype:
-@@ -950,7 +951,7 @@ kuser_cmpxchg_fixup:
+@@ -975,7 +976,7 @@ kuser_cmpxchg_fixup:
  
  #endif
  
@@ -207,7 +193,7 @@
  
  /*
   * Reference prototype:
-@@ -1032,7 +1033,7 @@ __kuser_helper_end:
+@@ -1058,7 +1059,7 @@ __kuser_helper_end:
   * of which is copied into r0 for the mode specific abort handler.
   */
  	.macro	vector_stub, name, mode, correction=0
@@ -216,7 +202,7 @@
  
  vector_\name:
  	.if \correction
-@@ -1157,7 +1158,7 @@ __stubs_start:
+@@ -1189,7 +1190,7 @@ __stubs_start:
  	.long	__und_invalid			@  e
  	.long	__und_invalid			@  f
  
@@ -225,7 +211,7 @@
  
  /*=============================================================================
   * Undefined FIQs
-@@ -1187,7 +1188,7 @@ vector_addrexcptn:
+@@ -1219,7 +1220,7 @@ vector_addrexcptn:
   * We group all the following data together to optimise
   * for CPUs with separate I & D caches.
   */
@@ -252,7 +238,7 @@
  /*
   * This is the fast syscall return path.  We do as little as
   * possible here, and this includes saving r0 back into the SVC
-@@ -178,7 +179,7 @@ ftrace_stub:
+@@ -183,7 +184,7 @@ ftrace_stub:
  #define A710(code...)
  #endif
  
@@ -261,7 +247,7 @@
  ENTRY(vector_swi)
  	sub	sp, sp, #S_FRAME_SIZE
  	stmia	sp, {r0 - r12}			@ Calling r0 - r12
-@@ -306,7 +307,7 @@ __sys_trace_return:
+@@ -316,7 +317,7 @@ __sys_trace_return:
  	bl	syscall_trace
  	b	ret_slow_syscall
  
@@ -280,7 +266,7 @@
  
  #if (PHYS_OFFSET & 0x001fffff)
  #error "PHYS_OFFSET must be at an even 2MiB boundary!"
-@@ -187,7 +188,7 @@ ENDPROC(__enable_mmu)
+@@ -192,7 +193,7 @@ ENDPROC(__enable_mmu)
   *
   * other registers depend on the function called upon completion
   */
@@ -291,15 +277,15 @@
  	mcr	p15, 0, r0, c1, c0, 0		@ write control reg
 --- a/arch/arm/kernel/vmlinux.lds.S
 +++ b/arch/arm/kernel/vmlinux.lds.S
-@@ -6,6 +6,7 @@
- #include <asm-generic/vmlinux.lds.h>
+@@ -7,6 +7,7 @@
  #include <asm/thread_info.h>
  #include <asm/memory.h>
+ #include <asm/page.h>
 +#include <asm/cache.h>
  	
  OUTPUT_ARCH(arm)
  ENTRY(stext)
-@@ -58,7 +59,7 @@ SECTIONS
+@@ -59,7 +60,7 @@ SECTIONS
  			*(.security_initcall.init)
  		__security_initcall_end = .;
  #ifdef CONFIG_BLK_DEV_INITRD
@@ -308,7 +294,7 @@
  		__initramfs_start = .;
  			usr/built-in.o(.init.ramfs)
  		__initramfs_end = .;
-@@ -153,13 +154,13 @@ SECTIONS
+@@ -176,13 +177,13 @@ SECTIONS
  		/*
  		 * then the cacheline aligned data
  		 */
@@ -324,22 +310,6 @@
  		__start___ex_table = .;
  #ifdef CONFIG_MMU
  		*(__ex_table)
---- a/arch/arm/lib/copy_page.S
-+++ b/arch/arm/lib/copy_page.S
-@@ -12,11 +12,12 @@
- #include <linux/linkage.h>
- #include <asm/assembler.h>
- #include <asm/asm-offsets.h>
-+#include <asm/cache.h>
- 
- #define COPY_COUNT (PAGE_SZ/64 PLD( -1 ))
- 
- 		.text
--		.align	5
-+		.align	L1_CACHE_SHIFT
- /*
-  * StrongARM optimised copy_page routine
-  * now 1.78bytes/cycle, was 1.60 bytes/cycle (50MHz bus -> 89MB/s)
 --- a/arch/arm/lib/memchr.S
 +++ b/arch/arm/lib/memchr.S
 @@ -11,9 +11,10 @@
@@ -4129,7 +4099,7 @@
 +gemini_negmac-objs := gm_gmac.o
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -2087,6 +2087,13 @@ config ACENIC_OMIT_TIGON_I
+@@ -2126,6 +2126,13 @@ config ACENIC_OMIT_TIGON_I
  
  	  The safe and default value for this is N.
  
@@ -4145,7 +4115,7 @@
  	depends on PCI
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -234,6 +234,7 @@ pasemi_mac_driver-objs := pasemi_mac.o p
+@@ -247,6 +247,7 @@ pasemi_mac_driver-objs := pasemi_mac.o p
  obj-$(CONFIG_MLX4_CORE) += mlx4/
  obj-$(CONFIG_ENC28J60) += enc28j60.o
  obj-$(CONFIG_ETHOC) += ethoc.o
@@ -4617,7 +4587,7 @@
 +};
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -543,7 +543,12 @@ static inline unsigned int
+@@ -552,7 +552,12 @@ static inline unsigned int
  ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
  {
  	if (ehci_is_TDI(ehci)) {
@@ -4625,14 +4595,14 @@
 +		portsc = readl(ehci_to_hcd(ehci)->regs + 0x80);
 +		switch ((portsc>>22)&3) {
 +#else
- 		switch ((portsc>>26)&3) {
+ 		switch ((portsc >> (ehci->has_hostpc ? 25 : 26)) & 3) {
 +#endif
  		case 0:
  			return 0;
  		case 1:
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -192,9 +192,11 @@ static int ehci_halt (struct ehci_hcd *e
+@@ -194,9 +194,11 @@ static int ehci_halt (struct ehci_hcd *e
  	if ((temp & STS_HALT) != 0)
  		return 0;
  
@@ -4644,7 +4614,7 @@
  	return handshake (ehci, &ehci->regs->status,
  			  STS_HALT, STS_HALT, 16 * 125);
  }
-@@ -250,8 +252,8 @@ static int ehci_reset (struct ehci_hcd *
+@@ -263,8 +265,8 @@ static int ehci_reset (struct ehci_hcd *
  	if (retval)
  		return retval;
  
@@ -4653,9 +4623,9 @@
 +//	if (ehci_is_TDI(ehci))
 +//		tdi_reset (ehci);
  
- 	return retval;
- }
-@@ -381,12 +383,13 @@ static void ehci_silence_controller(stru
+ 	if (ehci->debug)
+ 		dbgp_external_startup();
+@@ -397,12 +399,13 @@ static void ehci_silence_controller(stru
  {
  	ehci_halt(ehci);
  	ehci_turn_off_all_ports(ehci);
@@ -4670,7 +4640,7 @@
  }
  
  /* ehci_shutdown kick in for silicon on any bus (not just pci, etc).
-@@ -631,7 +634,9 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -653,7 +656,9 @@ static int ehci_run (struct usb_hcd *hcd
  	// Philips, Intel, and maybe others need CMD_RUN before the
  	// root hub will detect new devices (why?); NEC doesn't
  	ehci->command &= ~(CMD_LRESET|CMD_IAAD|CMD_PSE|CMD_ASE|CMD_RESET);
@@ -4680,7 +4650,7 @@
  	ehci_writel(ehci, ehci->command, &ehci->regs->command);
  	dbg_cmd (ehci, "init", ehci->command);
  
-@@ -651,9 +656,11 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -673,9 +678,11 @@ static int ehci_run (struct usb_hcd *hcd
  	 */
  	down_write(&ehci_cf_port_reset_rwsem);
  	hcd->state = HC_STATE_RUNNING;
@@ -4690,9 +4660,9 @@
  	msleep(5);
 +#endif
  	up_write(&ehci_cf_port_reset_rwsem);
+ 	ehci->last_periodic_enable = ktime_get_real();
  
- 	temp = HC_VERSION(ehci_readl(ehci, &ehci->caps->hc_capbase));
-@@ -744,9 +751,10 @@ static irqreturn_t ehci_irq (struct usb_
+@@ -767,9 +774,10 @@ static irqreturn_t ehci_irq (struct usb_
  		pcd_status = status;
  
  		/* resume root hub? */
@@ -4704,7 +4674,7 @@
  		while (i--) {
  			int pstatus = ehci_readl(ehci,
  						 &ehci->regs->port_status [i]);
-@@ -778,7 +786,9 @@ static irqreturn_t ehci_irq (struct usb_
+@@ -802,7 +810,9 @@ static irqreturn_t ehci_irq (struct usb_
  		ehci_halt(ehci);
  dead:
  		ehci_reset(ehci);
@@ -4714,7 +4684,7 @@
  		/* generic layer kills/unlinks all urbs, then
  		 * uses ehci_stop to clean up the rest
  		 */
-@@ -1045,6 +1055,11 @@ MODULE_LICENSE ("GPL");
+@@ -1101,6 +1111,11 @@ MODULE_LICENSE ("GPL");
  #define	PCI_DRIVER		ehci_pci_driver
  #endif
  
@@ -4728,7 +4698,7 @@
  #define	PLATFORM_DRIVER		ehci_fsl_driver
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -749,6 +749,12 @@ static int ehci_hub_control (
+@@ -809,6 +809,12 @@ static int ehci_hub_control (
  			/* see what we found out */
  			temp = check_reset_complete (ehci, wIndex, status_reg,
  					ehci_readl(ehci, status_reg));
@@ -4743,10 +4713,10 @@
  		if (!(temp & (PORT_RESUME|PORT_RESET)))
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
-@@ -57,6 +57,7 @@ config USB_ARCH_HAS_EHCI
- 	default y if PPC_83xx
- 	default y if SOC_AU1200
+@@ -60,6 +60,7 @@ config USB_ARCH_HAS_EHCI
  	default y if ARCH_IXP4XX
+ 	default y if ARCH_W90X900
+ 	default y if ARCH_AT91SAM9G45
 +	default y if ARCH_GEMINI
  	default PCI
  
@@ -5124,7 +5094,7 @@
 +MODULE_ALIAS("platform:gemini-wdt");
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -104,6 +104,16 @@ config 977_WATCHDOG
+@@ -111,6 +111,16 @@ config 977_WATCHDOG
  
  	  Not sure? It's safe to say N.
  
@@ -5143,8 +5113,8 @@
  	depends on ARCH_IXP2000
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -30,6 +30,7 @@ obj-$(CONFIG_AT91SAM9X_WATCHDOG) += at91
- obj-$(CONFIG_OMAP_WATCHDOG) += omap_wdt.o
+@@ -31,6 +31,7 @@ obj-$(CONFIG_OMAP_WATCHDOG) += omap_wdt.
+ obj-$(CONFIG_TWL4030_WATCHDOG) += twl4030_wdt.o
  obj-$(CONFIG_21285_WATCHDOG) += wdt285.o
  obj-$(CONFIG_977_WATCHDOG) += wdt977.o
 +obj-$(CONFIG_GEMINI_WATCHDOG) += gemini_wdt.o
@@ -5165,3 +5135,23 @@
  	/* CONFIGFLAG: offset 0x40 */
  	u32		configured_flag;
  #define FLAG_CF		(1<<0)		/* true: we'll support "high speed" */
+--- a/arch/arm/mm/Kconfig
++++ b/arch/arm/mm/Kconfig
+@@ -774,5 +774,6 @@ config CACHE_XSC3L2
+ 
+ config ARM_L1_CACHE_SHIFT
+ 	int
++	default 4 if CPU_FA526
+ 	default 6 if ARCH_OMAP3
+ 	default 5
+--- a/arch/arm/lib/copy_page.S
++++ b/arch/arm/lib/copy_page.S
+@@ -17,7 +17,7 @@
+ #define COPY_COUNT (PAGE_SZ / (2 * L1_CACHE_BYTES) PLD( -1 ))
+ 
+ 		.text
+-		.align	5
++		.align	L1_CACHE_SHIFT
+ /*
+  * StrongARM optimised copy_page routine
+  * now 1.78bytes/cycle, was 1.60 bytes/cycle (50MHz bus -> 89MB/s)
