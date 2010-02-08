@@ -312,6 +312,9 @@ enable_mac80211() {
 			local key keystring
 
 			case "$enc" in
+				*none*)
+					config_get keymgmt "$vif" keymgmt
+				;;
 				*wep*)
 					config_get keymgmt "$vif" keymgmt
 					if [ -z "$keymgmt" ]; then
@@ -397,7 +400,18 @@ enable_mac80211() {
 						fi
 					;;
 					*)
-						iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid
+						if [ -z "$keymgmt" ]; then
+							iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid
+						else
+							if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
+								wpa_supplicant_setup_vif "$vif" wext || {
+									echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
+									# make sure this wifi interface won't accidentally stay open without encryption
+									ifconfig "$ifname" down
+									continue
+								}
+							fi
+						fi
 					;;
 				esac
 
