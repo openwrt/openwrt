@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux-ng
 PKG_VERSION:=2.13.0.1
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.13
@@ -107,12 +107,25 @@ define Package/flock/description
   This package contains a utility for managing file locks from shell scripts.
 endef
 
+define Package/setterm
+$(call Package/util-linux/Default)
+  TITLE:=Tool for setting terminal attributes
+  SUBMENU:=terminal
+  DEPENDS:= +libncurses
+endef
+
+define Package/setterm/description
+  This package contains a utility for setting terminal attributes
+endef
+
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/disk-utils mkswap
 	$(MAKE) -C $(PKG_BUILD_DIR)/mount swapon losetup umount mount
 	$(MAKE) -C $(PKG_BUILD_DIR)/fdisk fdisk cfdisk sfdisk
 	$(MAKE) -C $(PKG_BUILD_DIR)/hwclock hwclock
 	$(MAKE) -C $(PKG_BUILD_DIR)/sys-utils flock
+	$(MAKE) -C $(PKG_BUILD_DIR)/misc-utils setterm
 endef
 
 define Package/fdisk/install
@@ -156,6 +169,12 @@ define Package/flock/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/sys-utils/flock $(1)/usr/bin/
 endef
 
+define Package/setterm/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/setterm $(1)/usr/bin/
+endef
+
+
 $(eval $(call BuildPackage,fdisk))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,sfdisk))
@@ -164,3 +183,4 @@ $(eval $(call BuildPackage,mount-utils))
 $(eval $(call BuildPackage,swap-utils))
 $(eval $(call BuildPackage,hwclock))
 $(eval $(call BuildPackage,flock))
+$(eval $(call BuildPackage,setterm))
