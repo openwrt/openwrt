@@ -167,12 +167,11 @@ int jzfb_setcolreg(unsigned regno, unsigned red, unsigned green, unsigned blue,
 static int jzfb_get_controller_bpp(struct jzfb *jzfb)
 {
 	switch(jzfb->pdata->bpp) {
-		case 18:
-		case 24:
-			return 32;
-			break;
-		default:
-			return jzfb->pdata->bpp;
+	case 18:
+	case 24:
+		return 32;
+	default:
+		return jzfb->pdata->bpp;
 	}
 }
 
@@ -305,7 +304,7 @@ static int jzfb_set_par(struct fb_info *info)
 static int jzfb_blank(int blank_mode, struct fb_info *info)
 {
 	struct jzfb* jzfb = info->par;
-	uint32_t ctrl = readl(jzfb->base + JZ_REG_LCD_CTRL);
+	uint32_t ctrl;
 
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
@@ -313,13 +312,13 @@ static int jzfb_blank(int blank_mode, struct fb_info *info)
 			return 0;
 
 		jz_gpio_bulk_resume(jz_lcd_pins, ARRAY_SIZE(jz_lcd_pins));
-		clk_enable(jzfb->ldclk);
 		clk_enable(jzfb->lpclk);
 
 		writel(0, jzfb->base + JZ_REG_LCD_STATE);
 
 		writel(jzfb->framedesc->next, jzfb->base + JZ_REG_LCD_DA0);
 
+		ctrl = readl(jzfb->base + JZ_REG_LCD_CTRL);
 		ctrl |= JZ_LCD_CTRL_ENABLE;
 		ctrl &= ~JZ_LCD_CTRL_DISABLE;
 		writel(ctrl, jzfb->base + JZ_REG_LCD_CTRL);
@@ -330,6 +329,7 @@ static int jzfb_blank(int blank_mode, struct fb_info *info)
 		if (!jzfb->is_enabled)
 			return 0;
 
+		ctrl = readl(jzfb->base + JZ_REG_LCD_CTRL);
 		ctrl |= JZ_LCD_CTRL_DISABLE;
 		writel(ctrl, jzfb->base + JZ_REG_LCD_CTRL);
 		do {
@@ -337,7 +337,6 @@ static int jzfb_blank(int blank_mode, struct fb_info *info)
 		} while (!(ctrl & JZ_LCD_STATE_DISABLED));
 
 		clk_disable(jzfb->lpclk);
-		clk_disable(jzfb->ldclk);
 		jz_gpio_bulk_suspend(jz_lcd_pins, ARRAY_SIZE(jz_lcd_pins));
 		jzfb->is_enabled = 0;
 		break;
@@ -511,6 +510,8 @@ static int __devinit jzfb_probe(struct platform_device *pdev)
 
 	fb_alloc_cmap(&fb->cmap, 256, 0);
 
+	clk_enable(jzfb->ldclk);
+
 	jzfb_set_par(fb);
 	writel(jzfb->framedesc->next, jzfb->base + JZ_REG_LCD_DA0);
 
@@ -547,12 +548,44 @@ static int __devexit jzfb_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+
+static int jzfb_suspend(struct device *dev)
+{
+	struct jzfb *jzfb = dev_get_drvdata(dev);
+	clk_disable(jzfb->ldclk);
+
+	return 0;
+}
+
+static int jzfb_resume(struct device *dev)
+{
+	struct jzfb *jzfb = dev_get_drvdata(dev);
+	clk_enable(jzfb->ldclk);
+
+	return 0;
+}
+
+static const struct dev_pm_ops jzfb_pm_ops = {
+	.suspend	= jzfb_suspend,
+	.resume		= jzfb_resume,
+	.poweroff	= jzfb_suspend,
+	.restore	= jzfb_resume,
+};
+
+#define JZFB_PM_OPS (&jzfb_pm_ops)
+
+#else
+#define JZFB_PM_OPS NULL
+#endif
+
 static struct platform_driver jzfb_driver = {
 	.probe = jzfb_probe,
 	.remove = __devexit_p(jzfb_remove),
 
 	.driver = {
 		.name = "jz4740-fb",
+		.pm = JZFB_PM_OPS,
 	},
 };
 
