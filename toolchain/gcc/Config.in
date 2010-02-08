@@ -12,7 +12,7 @@ choice
 	default GCC_VERSION_4_4_1 if ubicom32
 	default GCC_VERSION_4_4_1 if TARGET_octeon
 	default GCC_VERSION_4_3_3_CS if (mips || mipsel) && !TARGET_octeon
-	default GCC_VERSION_4_3_3_CS if arm || armeb
+	default GCC_VERSION_4_3_3_CS if (arm || armeb) && !TARGET_gemini
 	default GCC_VERSION_4_1_2
 	help
 	  Select the version of gcc you wish to use.

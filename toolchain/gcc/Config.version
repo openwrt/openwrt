@@ -73,7 +73,7 @@ if !LINUX_2_4
 
 	config GCC_VERSION_4_3_3_CS
 		default y if (mips || mipsel) && !TARGET_octeon
-		default y if arm || armeb
+		default y if (arm || armeb) && !TARGET_gemini
 
 	config GCC_VERSION_4_4_1
 		default y if ubicom32
