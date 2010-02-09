@@ -1,0 +1,837 @@
+From 4f4bb58cba3a6c44e9f9f113609287d9d50be9c4 Mon Sep 17 00:00:00 2001
+From: Joseph Kortje <jpktech@rogers.com>
+Date: Wed, 28 Oct 2009 21:11:28 -0400
+Subject: [PATCH] [ARM] Gumstix Verdex Pro arch support
+
+add an option for Verdex Pro when ARCH_GUMSTIX is selected, and
+factor earlier Gumstix support into a seperate option
+
+Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
+---
+ arch/arm/mach-pxa/Kconfig                   |   29 +-
+ arch/arm/mach-pxa/Makefile                  |    3 +-
+ arch/arm/mach-pxa/gumstix-verdex.c          |  749 +++++++++++++++++++++++++++
+ arch/arm/mach-pxa/include/mach/mfp-pxa27x.h |    1 +
+ 4 files changed, 772 insertions(+), 10 deletions(-)
+ create mode 100644 arch/arm/mach-pxa/gumstix-verdex.c
+
+--- a/arch/arm/mach-pxa/Kconfig
++++ b/arch/arm/mach-pxa/Kconfig
+@@ -32,23 +32,34 @@ endmenu
+ endif
+ 
+ config ARCH_GUMSTIX
+-	bool "Gumstix XScale 255 boards"
+-	select PXA25x
++	bool "Gumstix boards"
+ 	help
+-	  Say Y here if you intend to run this kernel on
+-	  Basix, Connex, ws-200ax, ws-400ax systems
++        Say Y here if you intend to run this kernel on a
++	  gumstix computer.
+ 
+-choice
+-	prompt "Gumstix Carrier/Expansion Board"
+ 	depends on ARCH_GUMSTIX
+ 
+-config GUMSTIX_AM200EPD
++config MACH_GUMSTIX_F
++	bool "Gumstix Basix/Connex ..."
++	depends on ARCH_GUMSTIX
++	select PXA25x
++
++ choice
++	prompt "Gumstix Carrier/Expansion Board"
++	depends on MACH_GUMSTIX_F
++
++ config GUMSTIX_AM200EPD
+ 	bool "Enable AM200EPD board support"
+ 
+-config GUMSTIX_AM300EPD
++ config GUMSTIX_AM300EPD
+ 	bool "Enable AM300EPD board support"
+ 
+-endchoice
++ endchoice
++
++config MACH_GUMSTIX_VERDEX
++	bool "Gumstix VERDEX ..."
++	depends on ARCH_GUMSTIX
++	select PXA27x
+ 
+ config MACH_INTELMOTE2
+ 	bool "Intel Mote 2 Platform"
+--- a/arch/arm/mach-pxa/Makefile
++++ b/arch/arm/mach-pxa/Makefile
+@@ -25,7 +25,8 @@ obj-$(CONFIG_CPU_PXA320)	+= pxa320.o
+ obj-$(CONFIG_CPU_PXA930)	+= pxa930.o
+ 
+ # Specific board support
+-obj-$(CONFIG_ARCH_GUMSTIX)	+= gumstix.o
++obj-$(CONFIG_MACH_GUMSTIX_F)	+= gumstix.o
++obj-$(CONFIG_MACH_GUMSTIX_VERDEX)	+= gumstix-verdex.o
+ obj-$(CONFIG_GUMSTIX_AM200EPD)	+= am200epd.o
+ obj-$(CONFIG_GUMSTIX_AM300EPD)	+= am300epd.o
+ obj-$(CONFIG_ARCH_LUBBOCK)	+= lubbock.o
+--- /dev/null
++++ b/arch/arm/mach-pxa/gumstix-verdex.c
+@@ -0,0 +1,749 @@
++/*
++ *  linux/arch/arm/mach-pxa/gumstix-verdex.c
++ *
++ *  Support for the Gumstix verdex motherboard.
++ *
++ *  Original Author:  Craig Hughes
++ *  Created:          Feb 14, 2008
++ *  Copyright:        Craig Hughes
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License version 2 as
++ *  published by the Free Software Foundation.
++ *
++ *  Implemented based on lubbock.c by Nicolas Pitre and code from Craig
++ *  Hughes
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/interrupt.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/i2c/tsc2007.h>
++
++#include <asm/setup.h>
++#include <asm/memory.h>
++#include <asm/mach-types.h>
++#include <asm/irq.h>
++#include <asm/sizes.h>
++#include <asm/io.h>
++
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++#include <asm/mach/irq.h>
++#include <asm/mach/flash.h>
++
++#include <mach/mmc.h>
++#include <mach/udc.h>
++#include <mach/pxafb.h>
++#include <mach/ohci.h>
++#include <plat/i2c.h>
++#include <mach/pxa27x.h>
++#include <mach/pxa27x-udc.h>
++#include <mach/gpio.h>
++
++#include <mach/gumstix.h>
++
++#include "generic.h"
++
++#include <linux/delay.h>
++
++#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
++
++#include <linux/smsc911x.h>
++
++static struct resource verdex_smsc911x_resources[] = {
++	[0] = {
++		.name	= "smsc911x-memory",
++		.start  = PXA_CS1_PHYS,
++		.end    = PXA_CS1_PHYS + 0x000fffff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = IRQ_GPIO(GPIO_GUMSTIX_ETH0),
++		.end    = IRQ_GPIO(GPIO_GUMSTIX_ETH0),
++		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_LOWEDGE,
++	},
++};
++
++static struct smsc911x_platform_config verdex_smsc911x_config = {
++	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
++	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
++	.flags		= SMSC911X_USE_16BIT | SMSC911X_SAVE_MAC_ADDRESS,
++	.phy_interface	= PHY_INTERFACE_MODE_MII,
++};
++
++static struct platform_device verdex_smsc911x_device = {
++	.name		= "smsc911x",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(verdex_smsc911x_resources),
++	.resource	= verdex_smsc911x_resources,
++	.dev		= {
++		.platform_data = &verdex_smsc911x_config,
++	},
++};
++
++static void __init verdex_init_smsc911x(void)
++{
++
++        printk(KERN_INFO "Initializing Gumstix verdex smsc911x\n");
++
++	if (gpio_request(GPIO_GUMSTIX_ETH0_RST, "SMSC911x_ETH0_RST") != 0) {
++		printk(KERN_ERR "could not obtain gpio for SMSC911x_ETH0_RST\n");
++		goto err_request_gpio_eth0_rst;
++	}
++
++	if (gpio_request(GPIO_GUMSTIX_ETH0, "SMSC911x_ETH0_IRQ") != 0) {
++		printk(KERN_ERR "could not obtain gpio for SMSC911x_ETH0_IRQ\n");
++		goto err_request_gpio_eth0_irq;
++	}
++
++	if (gpio_direction_output(GPIO_GUMSTIX_ETH0_RST, 0) != 0) {
++		printk(KERN_ERR "could not set SMSC911x_ETH0_RST pin to output\n");
++		goto err_dir;
++	}
++
++	gpio_set_value(GPIO_GUMSTIX_ETH0_RST, 0);
++
++	msleep(500); // Hold RESET for at least 200ms
++
++	gpio_set_value(GPIO_GUMSTIX_ETH0_RST, 1);
++
++	msleep(50);
++
++	if (gpio_direction_input(GPIO_GUMSTIX_ETH0) != 0) {
++		printk(KERN_ERR "could not set SMSC911x_ETH0_IRQ pin to input\n");
++		goto err_dir;
++	}
++
++	gpio_export(GPIO_GUMSTIX_ETH0, 0);
++	platform_device_register(&verdex_smsc911x_device);
++	return;
++
++err_dir:
++	gpio_free(GPIO_GUMSTIX_ETH0_RST);
++
++err_request_gpio_eth0_irq:
++	gpio_free(GPIO_GUMSTIX_ETH0);
++
++err_request_gpio_eth0_rst:
++	return;
++}
++
++#else
++static void __init verdex_init_smsc911x(void) { return; }
++#endif
++
++static unsigned long verdex_pin_config[] = {
++    /* MMC */
++    GPIO32_MMC_CLK,
++    GPIO112_MMC_CMD,
++    GPIO92_MMC_DAT_0,
++    GPIO109_MMC_DAT_1,
++    GPIO110_MMC_DAT_2,
++    GPIO111_MMC_DAT_3,
++
++    /* BTUART */
++    GPIO42_BTUART_RXD,
++    GPIO43_BTUART_TXD,
++    GPIO44_BTUART_CTS,
++    GPIO45_BTUART_RTS,
++
++    /* STUART */
++    GPIO46_STUART_RXD,
++    GPIO47_STUART_TXD,
++
++    /* FFUART */
++    GPIO34_FFUART_RXD,
++    GPIO39_FFUART_TXD,
++
++    /* SSP 2 */
++    GPIO19_SSP2_SCLK,
++    GPIO14_SSP2_SFRM,
++    GPIO13_SSP2_TXD,
++    GPIO11_SSP2_RXD,
++
++    /* SDRAM and local bus */
++    GPIO49_nPWE,
++    GPIO15_nCS_1,
++
++    /* I2C */
++    GPIO117_I2C_SCL,
++    GPIO118_I2C_SDA,
++
++    /* PWM 0 */
++    GPIO16_PWM0_OUT,
++
++    /* BRIGHTNESS */
++    GPIO17_PWM1_OUT,
++
++    /* LCD */
++    GPIO58_LCD_LDD_0,
++    GPIO59_LCD_LDD_1,
++    GPIO60_LCD_LDD_2,
++    GPIO61_LCD_LDD_3,
++    GPIO62_LCD_LDD_4,
++    GPIO63_LCD_LDD_5,
++    GPIO64_LCD_LDD_6,
++    GPIO65_LCD_LDD_7,
++    GPIO66_LCD_LDD_8,
++    GPIO67_LCD_LDD_9,
++    GPIO68_LCD_LDD_10,
++    GPIO69_LCD_LDD_11,
++    GPIO70_LCD_LDD_12,
++    GPIO71_LCD_LDD_13,
++    GPIO72_LCD_LDD_14,
++    GPIO73_LCD_LDD_15,
++    GPIO74_LCD_FCLK,
++    GPIO75_LCD_LCLK,
++    GPIO76_LCD_PCLK,
++#ifdef CONFIG_FB_PXA_SHARP_LQ043_PSP
++    /* DISP must be always high while screen is on */
++    /* Done below in verdex_init */
++#else
++    GPIO77_LCD_BIAS,
++#endif
++
++};
++
++#if defined(CONFIG_PCMCIA_PXA2XX) || defined(CONFIG_PCMCIA_PXA2XX_MODULE)
++
++static unsigned long gpio_ntschg_0[] = {
++	GPIO104_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_nCD_0_MD);
++};
++
++static unsigned long gpio_ntschg_1[] = {
++	GPIO18_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_nSTSCHG_1_MD);
++	GPIO36_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_nCD_1_MD);
++	GPIO27_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_PRDY_nBSY_1_MD);
++};
++
++static unsigned long gpio_prdy_nbsy_old[] = {
++	GPIO111_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_nSTSCHG_0_MD);
++	GPIO109_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_PRDY_nBSY_0_OLD_MD);
++};
++
++static unsigned long gpio_prdy_nbsy[] = {
++	GPIO96_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_PRDY_nBSY_0_MD);
++};
++
++static unsigned long gpio_nhw_init[] = {
++	GPIO48_nPOE,			// pxa_gpio_mode(GPIO_GUMSTIX_nPOE_MD);
++	GPIO102_nPCE_1,			// pxa_gpio_mode(GPIO_GUMSTIX_nPCE_1_MD);
++	GPIO105_nPCE_2,			// pxa_gpio_mode(GPIO_GUMSTIX_nPCE_2_MD);
++	GPIO104_GPIO,			// pxa_gpio_mode(GPIO_GUMSTIX_nCD_0_MD);
++
++	GPIO49_nPWE,			// pxa_gpio_mode(GPIO_GUMSTIX_nPWE_MD);
++	GPIO50_nPIOR,			// pxa_gpio_mode(GPIO_GUMSTIX_nPIOR_MD);
++	GPIO51_nPIOW,			// pxa_gpio_mode(GPIO_GUMSTIX_nPIOW_MD);
++	GPIO79_PSKTSEL,			// pxa_gpio_mode(GPIO_GUMSTIX_pSKTSEL_MD);
++	GPIO55_nPREG,			// pxa_gpio_mode(GPIO_GUMSTIX_nPREG_MD);
++	GPIO56_nPWAIT,			// pxa_gpio_mode(GPIO_GUMSTIX_nPWAIT_MD);
++	GPIO57_nIOIS16,			// pxa_gpio_mode(GPIO_GUMSTIX_nIOIS16_MD);
++};
++
++static	int net_cf_vx_mode = 0;
++static	int pcmcia_cf_nr = 2; 
++
++inline void __init gumstix_pcmcia_cpld_clk(void)
++{
++	GPCR(GPIO_GUMSTIX_nPOE) = GPIO_bit(GPIO_GUMSTIX_nPOE);
++	GPSR(GPIO_GUMSTIX_nPOE) = GPIO_bit(GPIO_GUMSTIX_nPOE);
++}
++
++inline unsigned char __init gumstix_pcmcia_cpld_read_bits(int bits)
++{
++	unsigned char result = 0;
++	unsigned int shift = 0;
++	while(bits--)
++	{
++		result |= !!(GPLR(GPIO_GUMSTIX_nCD_0) & GPIO_bit(GPIO_GUMSTIX_nCD_0)) << shift;
++		shift ++;
++		gumstix_pcmcia_cpld_clk();
++	}
++	printk("CPLD responded with: %02x\n",result);
++	return result;
++}
++
++/* We use the CPLD on the CF-CF card to read a value from a shift register.  If we can read that
++ * magic sequence, then we have 2 CF cards; otherwise we assume just one
++ * The CPLD will send the value of the shift register on GPIO11 (the CD line for slot 0)
++ * when RESET is held in reset.  We use GPIO48 (nPOE) as a clock signal,
++ * GPIO52/53 (card enable for both cards) to control read/write to the shift register
++ */
++static void __init gumstix_count_cards(void)
++{
++
++	if ((gpio_request(GPIO_GUMSTIX_nPOE, "GPIO_GUMSTIX_nPOE") == 0) &&
++	    (gpio_direction_output(GPIO_GUMSTIX_nPOE, 1) == 0))
++		gpio_export(GPIO_GUMSTIX_nPOE, 0);
++	else
++		printk(KERN_ERR "could not obtain gpio for GPIO_GUMSTIX_nPOE\n");
++	
++	if ((gpio_request(GPIO_GUMSTIX_nPCE_1, "GPIO_GUMSTIX_nPCE_1") == 0) &&
++	    (gpio_direction_output(GPIO_GUMSTIX_nPCE_1, 1) == 0))
++		gpio_export(GPIO_GUMSTIX_nPCE_1, 0);
++	else
++		printk(KERN_ERR "could not obtain gpio for GPIO_GUMSTIX_nPCE_1\n");
++
++	if ((gpio_request(GPIO_GUMSTIX_nPCE_2, "GPIO_GUMSTIX_nPCE_2") == 0) &&
++	    (gpio_direction_output(GPIO_GUMSTIX_nPCE_2, 1) == 0))
++		gpio_export(GPIO_GUMSTIX_nPCE_2, 0);
++	else
++		printk(KERN_ERR "could not obtain gpio for GPIO_GUMSTIX_nPCE_2\n");
++
++	if ((gpio_request(GPIO_GUMSTIX_nCD_0, "GPIO_GUMSTIX_nCD_0") == 0) &&
++	    (gpio_direction_input(GPIO_GUMSTIX_nCD_0) == 0))
++		gpio_export(GPIO_GUMSTIX_nCD_0, 0);
++	else
++		printk(KERN_ERR "could not obtain gpio for GPIO_GUMSTIX_nCD_0\n");
++
++	if (net_cf_vx_mode) {
++		if ((gpio_request(GPIO_GUMSTIX_CF_OLD_RESET, "GPIO_GUMSTIX_CF_OLD_RESET") == 0) &&
++	    	    (gpio_direction_output(GPIO_GUMSTIX_CF_OLD_RESET, 1) == 0)) {
++			gpio_export(GPIO_GUMSTIX_CF_OLD_RESET, 0);
++		} else {
++			printk(KERN_ERR "could not obtain gpio for GPIO_GUMSTIX_CF_OLD_RESET\n");
++		}
++	} else {
++		if ((gpio_request(GPIO_GUMSTIX_CF_RESET, "GPIO_GUMSTIX_CF_RESET") == 0) &&
++	    	    (gpio_direction_output(GPIO_GUMSTIX_CF_RESET, 1) == 0)) {
++			gpio_export(GPIO_GUMSTIX_CF_RESET, 0);
++		} else {
++			printk(KERN_ERR "could not obtain gpio for GPIO_GUMSTIX_CF_RESET\n");
++		}
++	}
++
++	// Setup the shift register
++	GPSR(GPIO_GUMSTIX_nPCE_1) = GPIO_bit(GPIO_GUMSTIX_nPCE_1);
++	GPCR(GPIO_GUMSTIX_nPCE_2) = GPIO_bit(GPIO_GUMSTIX_nPCE_2);
++
++	// Tick the clock to program the shift register
++	gumstix_pcmcia_cpld_clk();
++
++	// Now set shift register into read mode
++	GPCR(GPIO_GUMSTIX_nPCE_1) = GPIO_bit(GPIO_GUMSTIX_nPCE_1);
++	GPSR(GPIO_GUMSTIX_nPCE_2) = GPIO_bit(GPIO_GUMSTIX_nPCE_2);
++
++	// We can read the bits now -- 0xC2 means "Dual compact flash"
++	if(gumstix_pcmcia_cpld_read_bits(8) != 0xC2)
++	{
++		// We do not have 2 CF slots
++		pcmcia_cf_nr = 1;
++	}
++
++	udelay(50);
++
++	if (net_cf_vx_mode) {
++		gpio_set_value(GPIO_GUMSTIX_CF_OLD_RESET, 0);
++		gpio_free(GPIO_GUMSTIX_CF_OLD_RESET);
++	} else {
++		gpio_set_value(GPIO_GUMSTIX_CF_RESET, 0);
++		gpio_free(GPIO_GUMSTIX_CF_RESET);
++	}
++
++	printk(KERN_INFO "found %d CF slots\n", pcmcia_cf_nr);
++
++	gpio_free(GPIO_GUMSTIX_nPCE_2);
++	gpio_free(GPIO_GUMSTIX_nPCE_1);
++	gpio_free(GPIO_GUMSTIX_nPOE);
++	return;
++}
++
++#define	SMC_IO_EXTENT	16
++#define	BANK_SELECT	14
++
++static void __init verdex_pcmcia_pin_config(void)
++{
++	struct resource *res;
++	void *network_controller_memory;
++	struct platform_device *pdev = &verdex_smsc911x_device;
++
++        printk(KERN_INFO "Initializing Gumstix verdex pcmcia\n");
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (res == NULL) {
++		printk(KERN_ERR "no memory resource defined\n");
++		goto err_done;
++	}
++
++	res = request_mem_region(res->start, SMC_IO_EXTENT, "smc91x probe");
++	if (res == NULL) {
++		printk(KERN_ERR "failed to request memory resource\n");
++		goto err_done;
++	}
++
++	// We check for the possibility of SMSC91c111 (reg base offset 0x300 from CS1 base)
++	network_controller_memory = ioremap(res->start + 0x300, SMC_IO_EXTENT);
++	if (network_controller_memory == NULL) {
++		printk(KERN_ERR "failed to ioremap() registers\n");
++		goto err_free_mem;
++	}
++
++	// Look for the special 91c111 value in the bank select register
++	if((0xff00 & readw(network_controller_memory+BANK_SELECT)) == 0x3300) {
++		printk(KERN_INFO "Detected netCF-vx board: pcmcia using older GPIO configuration\n");
++		net_cf_vx_mode = 1;
++	} else {
++		printk(KERN_INFO "Not netCF-vx board: pcmcia using newer GPIO configuration\n");
++		net_cf_vx_mode = 0;
++	}
++
++	iounmap(network_controller_memory);
++err_free_mem:
++	release_mem_region(res->start, SMC_IO_EXTENT);
++err_done:
++
++	gumstix_count_cards();	// this can update pcmcia_cf_nr
++
++	// If pcmcia_cf_nr is 1 then we do not have 2 CF slots
++	// Note: logic sequence was altered from previous kernel revs
++	// so that this works as intended now.
++	if (pcmcia_cf_nr != 0)
++	{
++		pxa2xx_mfp_config(ARRAY_AND_SIZE(gpio_ntschg_0));
++
++		if(net_cf_vx_mode)
++			pxa2xx_mfp_config(gpio_prdy_nbsy_old, 1);
++		else
++			pxa2xx_mfp_config(gpio_prdy_nbsy, 1);
++
++	} else {
++		// Note: this reconfigures pin GPIO18 to be GPIO-IN so make
++		// sure that this only gets done for the old dual slot board
++		// since that pin is an active AF1 out-mode signal (RDY) on
++		// newer boards and changing the pin mode on the newer boards
++		// would result in memory corruption for the NIC (and hang during
++		// PHY test). 
++		pxa2xx_mfp_config(ARRAY_AND_SIZE(gpio_ntschg_1));
++	}
++
++	pxa2xx_mfp_config(ARRAY_AND_SIZE(gpio_nhw_init));
++	return;
++}
++
++int __init gumstix_get_cf_cards(void)
++{
++	return pcmcia_cf_nr;
++}
++EXPORT_SYMBOL(gumstix_get_cf_cards);
++
++#ifdef CONFIG_MACH_GUMSTIX_VERDEX
++int __init gumstix_check_if_netCF_vx(void)
++{
++	return net_cf_vx_mode;
++}
++EXPORT_SYMBOL(gumstix_check_if_netCF_vx);
++#endif
++
++#endif
++
++#if defined(CONFIG_FB_PXA_SHARP_LQ043_PSP) || defined(CONFIG_FB_PXA_SAMSUNG_LTE430WQ_F0C)
++static void gumstix_lcd_backlight(int on_or_off)
++{
++	int err;
++	err = gpio_request(17, "LCD BACKLIGHT");
++	if (err) {
++		//pr_warning("Gumstix Verdex: Failed to request LCD Backlight gpio\n");
++		return;
++	}
++
++	if(on_or_off) {
++		gpio_direction_input(17);
++	} else {
++		GPCR(17) = GPIO_bit(17);
++		gpio_direction_output(17, 0);
++		GPCR(17) = GPIO_bit(17);
++	}
++
++	return;	
++}
++#endif
++
++#ifdef CONFIG_FB_PXA_ALPS_CDOLLAR
++static struct pxafb_mode_info gumstix_fb_mode = {
++	.pixclock	= 300000,
++	.xres		= 240,
++	.yres		= 320,
++	.bpp		= 16,
++	.hsync_len	= 2,
++	.left_margin	= 1,
++	.right_margin	= 1,
++	.vsync_len	= 3,
++	.upper_margin	= 0,
++	.lower_margin	= 0,
++	.sync		= FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++};
++
++static struct pxafb_mach_info gumstix_fb_info = {
++	.modes		= &gumstix_fb_mode,
++	.num_modes	= 1,
++	.lccr0		= LCCR0_Pas | LCCR0_Sngl | LCCR0_Color,
++	.lccr3		= LCCR3_PixFlEdg,
++};
++#elif defined(CONFIG_FB_PXA_SHARP_LQ043_PSP)
++static struct pxafb_mode_info gumstix_fb_mode = {
++	.pixclock	= 110000,
++	.xres		= 480,
++	.yres		= 272,
++	.bpp		= 16,
++	.hsync_len	= 41,
++	.left_margin	= 2,
++	.right_margin	= 2,
++	.vsync_len	= 10,
++	.upper_margin	= 2,
++	.lower_margin	= 2,
++	.sync		= 0, // Hsync and Vsync both active low
++};
++
++static struct pxafb_mach_info gumstix_fb_info = {
++	.modes			= &gumstix_fb_mode,
++	.num_modes		= 1,
++	.lccr0			= LCCR0_Act | LCCR0_Sngl | LCCR0_Color,
++	.lccr3			= LCCR3_OutEnH | LCCR3_PixFlEdg | (0 << 30),
++	.pxafb_backlight_power	= &gumstix_lcd_backlight,
++};
++#elif defined(CONFIG_FB_PXA_SAMSUNG_LTE430WQ_F0C)
++static struct pxafb_mode_info gumstix_fb_mode = {
++	.pixclock	= 108696, // 9.2MHz typical DOTCLK from datasheet
++	.xres		= 480,
++	.hsync_len	= 41, // HLW from datasheet: 41 typ
++	.left_margin	= 4, // HBP - HLW from datasheet: 45 - 41 = 4
++	.right_margin	= 8, // HFP from datasheet: 8 typ
++	.yres		= 272,
++	.vsync_len	= 10, // VLW from datasheet: 10 typ
++	.upper_margin	= 2, // VBP - VLW from datasheet: 12 - 10 = 2
++	.lower_margin	= 4, // VFP from datasheet: 4 typ
++	.bpp		= 16,
++	.sync		= 0, // Hsync and Vsync both active low
++};
++
++static struct pxafb_mach_info gumstix_fb_info = {
++	.modes			= &gumstix_fb_mode,
++	.num_modes		= 1,
++	.lccr0			= LCCR0_Act | LCCR0_Sngl | LCCR0_Color,
++	.lccr3			= LCCR3_OutEnH | LCCR3_PixFlEdg | (0 << 30),
++	.pxafb_backlight_power	= &gumstix_lcd_backlight,
++};
++#endif
++
++static struct platform_device verdex_audio_device = {
++    .name       = "pxa2xx-ac97",
++    .id         = -1,
++};
++
++static struct platform_device *devices[] __initdata = {
++    &verdex_audio_device,
++};
++
++/* PXA27x OHCI controller setup */
++#if defined(CONFIG_USB_OHCI_HCD) || defined(CONFIG_USB_OHCI_HCD_MODULE)
++static int ohci_verdex_init(struct device *dev)
++{
++	// Turn on port 2 in host mode
++	UP2OCR = UP2OCR_HXS | UP2OCR_HXOE | UP2OCR_DPPDE | UP2OCR_DMPDE;
++
++	/* See drivers/usb/host/ohci-pxa27x.c for further details but
++           ENABLE_PORT_ALL flag is equivalent to using this old sequence:
++ 	UHCHR = (UHCHR) &
++		~(UHCHR_SSEP1 | UHCHR_SSEP2 | UHCHR_SSEP3 | UHCHR_SSE);
++	*/
++	return 0;
++}
++
++static struct pxaohci_platform_data verdex_ohci_platform_data = {
++	.port_mode	= PMM_PERPORT_MODE,
++	.flags		= ENABLE_PORT_ALL,
++	.init		= ohci_verdex_init,
++};
++
++static void __init verdex_ohci_init(void)
++{
++	pxa_set_ohci_info(&verdex_ohci_platform_data);
++}
++#else
++static void __init verdex_ohci_init(void) {
++    printk(KERN_INFO "Gumstix verdex host usb ohci is disabled\n");
++}
++#endif
++
++
++#if defined(CONFIG_MMC_PXA) || defined(CONFIG_MMC_PXA_MODULE)
++static struct pxamci_platform_data verdex_mci_platform_data;
++
++static int verdex_mci_init(struct device *dev, irq_handler_t detect_int,
++                void *data)
++{
++    /* GPIO setup for MMC on the 120-pin connector is done in verdex_init.
++     * There is no card detect on a uSD connector so no interrupt to register.
++     * There is no WP detect GPIO line either.
++     */
++
++    return 0;
++}
++
++static struct pxamci_platform_data verdex_mci_platform_data = {
++    .ocr_mask   = MMC_VDD_32_33|MMC_VDD_33_34,
++    .init       = verdex_mci_init,
++};
++
++static void __init verdex_mmc_init(void)
++{
++    pxa_set_mci_info(&verdex_mci_platform_data);
++}
++#else
++static void __init verdex_mmc_init(void)
++{
++    printk(KERN_INFO "Gumstix verdex mmc disabled\n");
++}
++#endif
++
++#if defined(CONFIG_USB_GADGET_PXA2XX) || defined(CONFIG_USB_GADGET_PXA2XX_MODULE)
++static struct pxa2xx_udc_mach_info verdex_udc_info __initdata = {
++    .gpio_vbus      = GPIO35,
++    .gpio_pullup    = GPIO41,
++};
++
++static void __init verdex_udc_init(void)
++{
++    pxa_set_udc_info(&verdex_udc_info);
++}
++#else
++static void __init verdex_udc_init(void)
++{
++    printk(KERN_INFO "Gumstix verdex udc is disabled\n");
++}
++#endif
++
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
++
++#if defined(CONFIG_TOUCHSCREEN_TSC2003) || defined(CONFIG_TOUCHSCREEN_TSC2003_MODULE)
++
++#define VERDEX_GPIO_PENDOWN	16
++
++static int tsc2003_init_platform_hw(void)
++{
++	return 0;
++}
++
++static void tsc2003_exit_platform_hw(void)
++{
++	return;
++}
++
++static void tsc2003_clear_penirq(void)
++{
++	return;
++}
++
++static int tsc2003_get_pendown_state(void)
++{
++	return !gpio_get_value(VERDEX_GPIO_PENDOWN);
++}
++
++static struct tsc2007_platform_data tsc2003_config = {
++	.model = 2003,
++	.x_plate_ohms = 100,
++	.get_pendown_state	= tsc2003_get_pendown_state,
++	.clear_penirq		= tsc2003_clear_penirq,
++	.init_platform_hw	= tsc2003_init_platform_hw,
++	.exit_platform_hw	= tsc2003_exit_platform_hw,
++};
++#endif
++
++static struct i2c_board_info __initdata verdex_i2c_board_info[] = {
++#if defined(CONFIG_RTC_DRV_DS1307) || defined(CONFIG_RTC_DRV_DS1307_MODULE)
++
++	{
++		I2C_BOARD_INFO("rtc-ds1307", 0x68),
++	},
++#endif
++#if defined(CONFIG_TOUCHSCREEN_TSC2003) || defined(CONFIG_TOUCHSCREEN_TSC2003_MODULE)
++	{
++		I2C_BOARD_INFO("tsc2003", 0x48),
++		.platform_data	= &tsc2003_config,
++		.irq		= IRQ_GPIO(VERDEX_GPIO_PENDOWN),
++	},
++#endif
++};
++
++static struct i2c_pxa_platform_data verdex_i2c_pwr_info = {
++	.fast_mode = 1,
++};
++
++static struct i2c_pxa_platform_data verdex_i2c_info = {
++	.fast_mode = 1,
++};
++
++static void __init verdex_i2c_init(void)
++{
++        printk(KERN_INFO "Initializing Gumstix verdex i2c\n");
++
++#if defined(CONFIG_TOUCHSCREEN_TSC2003) || defined(CONFIG_TOUCHSCREEN_TSC2003_MODULE)
++	if ((gpio_request(VERDEX_GPIO_PENDOWN, "TSC2003_PENDOWN") == 0) &&
++	    (gpio_direction_input(VERDEX_GPIO_PENDOWN) == 0)) {
++		gpio_export(VERDEX_GPIO_PENDOWN, 0);
++	} else {
++		printk(KERN_ERR "could not obtain gpio for TSC2003_PENDOWN\n");
++		return;
++	}
++#endif
++
++	i2c_register_board_info(0, verdex_i2c_board_info,
++				ARRAY_SIZE(verdex_i2c_board_info));
++	pxa_set_i2c_info(&verdex_i2c_info);
++	pxa27x_set_i2c_power_info(&verdex_i2c_pwr_info);
++}
++#else
++static inline void verdex_i2c_init(void) {}
++#endif
++
++#if defined(CONFIG_PCMCIA_PXA2XX) || defined(CONFIG_PCMCIA_PXA2XX_MODULE)
++static void __init verdex_pcmcia_init(void)
++{
++	verdex_pcmcia_pin_config();
++}
++#else
++static void __init verdex_pcmcia_init(void) {
++	printk(KERN_INFO "Gumstix verdex pcmcia is disabled\n");
++}
++#endif
++
++
++static void __init verdex_init(void)
++{
++    pxa2xx_mfp_config(ARRAY_AND_SIZE(verdex_pin_config));
++
++#ifdef CONFIG_FB_PXA_SHARP_LQ043_PSP
++    /* DISP must be always high while screen is on */
++	gpio_direction_output(GPIO77, 0);
++	GPSR(GPIO77) = GPIO_bit(GPIO77);
++#endif 
++    verdex_udc_init();
++    verdex_mmc_init();
++    verdex_ohci_init();
++    verdex_i2c_init();
++    verdex_init_smsc911x();
++    verdex_pcmcia_init();
++ 
++#if defined(CONFIG_FB_PXA_ALPS_CDOLLAR) || defined(CONFIG_FB_PXA_SHARP_LQ043_PSP) || defined(CONFIG_FB_PXA_SAMSUNG_LTE430WQ_F0C)
++        printk(KERN_INFO "Initializing Gumstix verdex FB info\n");
++	set_pxa_fb_info(&gumstix_fb_info);
++#endif
++    printk(KERN_INFO "Initializing Gumstix platform_add_devices\n");
++    (void) platform_add_devices(devices, ARRAY_SIZE(devices));
++}
++
++MACHINE_START(GUMSTIX, "Gumstix verdex")
++    .phys_io        = 0x40000000,
++    .boot_params    = 0xa0000100, /* match u-boot bi_boot_params */
++    .io_pg_offst    = (io_p2v(0x40000000) >> 18) & 0xfffc,
++    .map_io         = pxa_map_io,
++    .init_irq       = pxa27x_init_irq,
++    .timer          = &pxa_timer,
++    .init_machine   = verdex_init,
++MACHINE_END
++
+--- a/arch/arm/mach-pxa/include/mach/mfp-pxa27x.h
++++ b/arch/arm/mach-pxa/include/mach/mfp-pxa27x.h
+@@ -109,6 +109,7 @@
+ #define GPIO54_nPCE_2		MFP_CFG_OUT(GPIO54, AF2, DRIVE_HIGH)
+ #define GPIO78_nPCE_2		MFP_CFG_OUT(GPIO78, AF1, DRIVE_HIGH)
+ #define GPIO87_nPCE_2		MFP_CFG_IN(GPIO87, AF1)
++#define GPIO105_nPCE_2		MFP_CFG_OUT(GPIO105, AF1, DRIVE_HIGH)
+ #define GPIO55_nPREG		MFP_CFG_OUT(GPIO55, AF2, DRIVE_HIGH)
+ #define GPIO50_nPIOR		MFP_CFG_OUT(GPIO50, AF2, DRIVE_HIGH)
+ #define GPIO51_nPIOW		MFP_CFG_OUT(GPIO51, AF2, DRIVE_HIGH)

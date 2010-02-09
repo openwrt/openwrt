@@ -1,0 +1,57 @@
+--- a/arch/arm/mach-pxa/gumstix-verdex.c
++++ b/arch/arm/mach-pxa/gumstix-verdex.c
+@@ -51,6 +51,46 @@
+ 
+ #include <linux/delay.h>
+ 
++static struct resource flash_resource = {
++	.start	= 0x00000000,
++	.end	= SZ_64M - 1,
++	.flags	= IORESOURCE_MEM,
++};
++
++static struct mtd_partition gumstix_partitions[] = {
++	{
++		.name =		"u-boot",
++		.size =		0x00040000,
++		.offset =	0,
++		.mask_flags =	MTD_WRITEABLE  /* force read-only */
++	} , {
++		.name =		"rootfs",
++		.size =		0x01ec0000,
++		.offset =	0x00040000
++	} , {
++		.name =		"kernel",
++		.size =		0x00100000,
++		.offset =	0x01f00000
++	}
++};
++
++static struct flash_platform_data gumstix_flash_data = {
++	.map_name	= "cfi_probe",
++	.parts		= gumstix_partitions,
++	.nr_parts	= ARRAY_SIZE(gumstix_partitions),
++	.width		= 2,
++};
++
++static struct platform_device gumstix_flash_device = {
++	.name		= "pxa2xx-flash",
++	.id		= 0,
++	.dev = {
++		.platform_data = &gumstix_flash_data,
++	},
++	.resource = &flash_resource,
++	.num_resources = 1,
++};
++
+ 
+ #if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE) \
+     || defined(CONFIG_PCMCIA_PXA2XX) || defined(CONFIG_PCMCIA_PXA2XX_MODULE)
+@@ -540,6 +580,7 @@ static struct platform_device verdex_aud
+ };
+ 
+ static struct platform_device *devices[] __initdata = {
++    &gumstix_flash_device,
+     &verdex_audio_device,
+ };
+ 

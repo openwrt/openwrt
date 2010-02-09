@@ -1,0 +1,30 @@
+From 7169c68fec79e61549b8e9c0106dde88e4d1bf9d Mon Sep 17 00:00:00 2001
+From: Bobby Powers <rpowers@harttech.com>
+Date: Thu, 29 Oct 2009 15:39:45 -0400
+Subject: [PATCH] [ARM] pxa: fix Verdex Pro mmc initialization
+
+The MicroSD port doesn't have card detect, read-only switch
+support, and is continuously powered.  Somewhere in the
+forward-porting this got lost in the structure initialization.
+
+Signed-off-by: Bobby Powers <rpowers@harttech.com>
+---
+ arch/arm/mach-pxa/gumstix-verdex.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/mach-pxa/gumstix-verdex.c
++++ b/arch/arm/mach-pxa/gumstix-verdex.c
+@@ -590,8 +590,11 @@ static int verdex_mci_init(struct device
+ }
+ 
+ static struct pxamci_platform_data verdex_mci_platform_data = {
+-    .ocr_mask   = MMC_VDD_32_33|MMC_VDD_33_34,
+-    .init       = verdex_mci_init,
++	.ocr_mask   = MMC_VDD_32_33|MMC_VDD_33_34,
++	.init       = verdex_mci_init,
++	.gpio_card_detect 	= -1,
++	.gpio_card_ro		= -1,
++	.gpio_power		= -1,
+ };
+ 
+ static void __init verdex_mmc_init(void)

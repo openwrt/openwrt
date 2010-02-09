@@ -1,0 +1,37 @@
+From ddd30dbf3cfd805b0de99fc581d0fa1cc7236ef9 Mon Sep 17 00:00:00 2001
+From: Bobby Powers <bobbypowers@gmail.com>
+Date: Fri, 13 Nov 2009 01:33:05 -0500
+Subject: [PATCH] pxa: define smsc911x structures for pcmcia too
+
+The gumstix pcmcia support (which the wireless driver uses) needs
+to know about the smsc911x platform device even if smsc811x support
+is disabled, as they share resources.
+
+Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
+---
+ arch/arm/mach-pxa/gumstix-verdex.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+--- a/arch/arm/mach-pxa/gumstix-verdex.c
++++ b/arch/arm/mach-pxa/gumstix-verdex.c
+@@ -51,7 +51,9 @@
+ 
+ #include <linux/delay.h>
+ 
+-#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
++
++#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE) \
++    || defined(CONFIG_PCMCIA_PXA2XX) || defined(CONFIG_PCMCIA_PXA2XX_MODULE)
+ 
+ #include <linux/smsc911x.h>
+ 
+@@ -85,7 +87,9 @@ static struct platform_device verdex_sms
+ 		.platform_data = &verdex_smsc911x_config,
+ 	},
+ };
++#endif
+ 
++#if defined(CONFIG_SMSC911X) || defined(CONFIG_SMSC911X_MODULE)
+ static void __init verdex_init_smsc911x(void)
+ {
+ 
