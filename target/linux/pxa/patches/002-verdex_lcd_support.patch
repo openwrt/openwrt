@@ -1,0 +1,52 @@
+From eb92a178eceae4e5d18bbb442b8e44cb88457d60 Mon Sep 17 00:00:00 2001
+From: Joseph Kortje <jpktech@rogers.com>
+Date: Wed, 28 Oct 2009 21:25:57 -0400
+Subject: [PATCH] [ARM] Gumstix Verdex LCD config options
+
+add options to Kconfig for Verdex LCD support
+
+Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
+---
+ drivers/video/Kconfig |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
+
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -1772,6 +1772,37 @@ config FB_PXA
+ 	  say M here and read <file:Documentation/kbuild/modules.txt>.
+ 
+ 	  If unsure, say N.
++choice
++	depends on FB_PXA
++	prompt "LCD Panel"
++	default FB_PXA_SAMSUNG_LTE430WQ_F0C
++
++config FB_PXA_ALPS_CDOLLAR
++	boolean "Chris Dollar's ALPS screen"
++	---help---
++	  Enable definitions (over-ridable on the kernel command line if
++	  "PXA LCD command line parameters" is also selected) for an ALPS
++	  screen which Chris Dollar uses
++
++config FB_PXA_SHARP_LQ043_PSP
++	boolean "SHARP LQ043... series"
++	---help---
++	  Enable definitions (over-ridable on the kernel command line if
++	  "PXA LCD command line parameters" is also selected) for a SHARP
++	  LQ043... screen, such as the one used by the PSP.  These screens are
++	  the ones normally sold by gumstix with its boards.
++
++config FB_PXA_SAMSUNG_LTE430WQ_F0C
++	boolean "Samsung LTE430WQ-F0C (standard gumstix LCD)"
++	---help---
++	  Enable definitions for a Samsung LTE430WQ-F0C LCD panel, such as the ones resold
++	  by gumstix for use with their "LCD-Ready" boards.
++
++config FB_PXA_NONEOFTHEABOVE
++	boolean "None of the above"
++
++endchoice
++
+ 
+ config FB_PXA_OVERLAY
+ 	bool "Support PXA27x/PXA3xx Overlay(s) as framebuffer"
