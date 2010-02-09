@@ -2,7 +2,7 @@
  *  Netgear WNDR3700 board support
  *
  *  Copyright (C) 2009 Marco Porsch
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -191,6 +191,7 @@ static void __init wndr3700_setup(void)
 	platform_device_register(&wndr3700_rtl8366s_device);
 	platform_device_register_simple("wndr3700-led-usb", -1, NULL, 0);
 
+	ap94_pci_enable_quirk_wndr3700();
 	ap94_pci_init(art + WNDR3700_CALDATA0_OFFSET,
 		      art + WNDR3700_WMAC0_MAC_OFFSET,
 		      art + WNDR3700_CALDATA1_OFFSET,

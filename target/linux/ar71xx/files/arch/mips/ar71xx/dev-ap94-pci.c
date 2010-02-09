@@ -1,7 +1,7 @@
 /*
  *  Atheros AP94 reference board PCI initialization
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -124,6 +124,12 @@ static void ap94_pci_fixup(struct pci_dev *dev)
 	iounmap(mem);
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ap94_pci_fixup);
+
+void __init ap94_pci_enable_quirk_wndr3700(void)
+{
+	ap94_wmac0_data.quirk_wndr3700 = 1;
+	ap94_wmac1_data.quirk_wndr3700 = 1;
+}
 
 void __init ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
 			  u8 *cal_data1, u8 *mac_addr1)
