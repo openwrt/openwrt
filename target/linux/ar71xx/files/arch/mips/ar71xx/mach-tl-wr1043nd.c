@@ -130,7 +130,7 @@ static void __init tl_wr1043nd_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, TL_WR1043ND_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(tl_wr1043nd_gpio_buttons),
 					tl_wr1043nd_gpio_buttons);
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar913x_add_device_wmac(eeprom, mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_WR1043ND, "TL-WR1043ND", "TP-LINK TL-WR1043ND",
