@@ -40,7 +40,7 @@ endef
 define KernelPackage/mac80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=Linux 802.11 Wireless Networking Stack
-  DEPENDS+= +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools +iw @!LINUX_2_6_21 @!LINUX_2_6_25
+  DEPENDS+= +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools +iw @!LINUX_2_6_25
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/compat/compat_firmware_class.$(LINUX_KMOD_SUFFIX) \
