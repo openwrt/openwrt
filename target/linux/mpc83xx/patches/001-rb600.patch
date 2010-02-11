@@ -329,7 +329,7 @@
 +	int node, size;
 +
 +	fw_dtb = (const void *)r3;
-+	
++
 +	/* Find the memory range. */
 +	node = fdt_node_offset_by_prop_value(fw_dtb, -1, "device_type", "memory", sizeof("memory"));
 +	reg = fdt_getprop(fw_dtb, node, "reg", &size);
@@ -704,7 +704,7 @@
 +
 +	return 0;
 +}
-+device_initcall(rbppc_declare_of_platform_devices);
++machine_device_initcall(rb600, rbppc_declare_of_platform_devices);
 +
 +define_machine(rb600) {
 +	.name 				= "MikroTik RouterBOARD 600 series",
