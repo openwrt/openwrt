@@ -69,21 +69,25 @@
  		VMLINUX_SYMBOL(__stop___ksymtab_gpl_future) = .;	\
  	}								\
  									\
-@@ -323,7 +344,13 @@
+@@ -323,7 +344,7 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
 -		*(__ksymtab_strings)					\
 +		SYMTAB_KEEP_STR						\
-+	}								\
-+									\
-+	/DISCARD/ : {							\
-+		SYMTAB_DISCARD						\
-+		SYMTAB_DISCARD_GPL					\
-+		SYMTAB_DISCARD_STR					\
  	}								\
  									\
  	/* __*init sections */						\
+@@ -638,6 +659,9 @@
+ 	EXIT_TEXT							\
+ 	EXIT_DATA							\
+ 	EXIT_CALL							\
++	SYMTAB_DISCARD							\
++	SYMTAB_DISCARD_GPL						\
++	SYMTAB_DISCARD_STR						\
+ 	*(.discard)							\
+ 	}
+ 
 --- a/include/linux/module.h
 +++ b/include/linux/module.h
 @@ -192,16 +192,24 @@ void *__symbol_get_gpl(const char *symbo
