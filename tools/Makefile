@@ -17,7 +17,7 @@ tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2
 tools-$(CONFIG_TARGET_orion) += wrt350nv2-builder upslug2
-ifneq ($(CONFIG_LINUX_2_4)$(CONFIG_LINUX_2_6_21)$(CONFIG_LINUX_2_6_25),)
+ifneq ($(CONFIG_LINUX_2_4)$(CONFIG_LINUX_2_6_25),)
 tools-y += squashfs lzma-old
 else
 ifneq ($(CONFIG_TARGET_ar71xx),)
