@@ -343,6 +343,7 @@ fw_redirect() {
 
 	config_get src $1 src
 	config_get src_ip $1 src_ip
+	config_get src_dip $1 src_dip
 	config_get src_port $1 src_port
 	config_get src_dport $1 src_dport
 	config_get src_mac $1 src_mac
@@ -372,6 +373,7 @@ fw_redirect() {
 		$IPTABLES -A zone_${src}_prerouting -t nat \
 			${proto:+-p $proto} \
 			${src_ip:+-s $src_ip} \
+			${src_dip:+-d $src_dip} \
 			${src_port:+--sport $src_port} \
 			${src_dport:+--dport $src_dport} \
 			${src_mac:+-m mac --mac-source $src_mac} \
