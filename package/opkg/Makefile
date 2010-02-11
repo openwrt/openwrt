@@ -70,7 +70,7 @@ define Package/opkg/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/opkg.conf $(1)/etc/
-	$(SED) 's,$$$$S,$(PKGARCH),g' $(1)/etc/opkg.conf
+	$(SED) 's,$$$$S,$(TARGET),g' $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 endef
 
