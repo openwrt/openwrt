@@ -34,6 +34,12 @@ DEVPATH is set, SUBSYSTEM ~~ (input) {
 	makedev /dev/input/%DEVICENAME% 0644
 }
 
+DEVICENAME == device-mapper {
+       nothrottle
+       makedev /dev/mapper/control 0600
+}
+
+
 DEVPATH is set {
 	nothrottle
 	makedev /dev/%DEVICENAME% 0644
