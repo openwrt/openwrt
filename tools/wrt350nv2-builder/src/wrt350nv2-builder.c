@@ -1,8 +1,8 @@
 /*
 
-	WRT350Nv2-Builder 2.0 (previously called buildimg)
+	WRT350Nv2-Builder 2.1 (previously called buildimg)
 	Copyright (C) 2008-2009 Dirk Teurlings <info@upexia.nl>
-	Copyright (C) 2009      Matthias Buecher (http://www.maddes.net/)
+	Copyright (C) 2009-2010 Matthias Buecher (http://www.maddes.net/)
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -36,18 +36,19 @@
 		1	wrt350nv2.par		parameter file describing the image layout
 		2	wrt350nv2.img		output file for linksys style image
 
-	An u-boot image inside the bin file is not necessary.
+	A u-boot image inside the bin file is not necessary.
 	The version is not important.
-	The name of the bin file is not important.
+	The name of the bin file is not important, but still "wrt350n.bin" is used to
+	keep as close as possible to the stock firmware.
 
 	Linksys assumes that no mtd will be used to its maximum, so the last 16 bytes
 	of the mtd are abused to define the length of the next mtd content (4 bytes for
 	size + 12 pad bytes).
 
-	At the end of "rootfs" additional 16 bytes are abused for some data and an
+	At the end of "rootfs" additional 16 bytes are abused for some data and a
 	highly important eRcOmM identifier, so the last 32 bytes of "rootfs" are abused.
 
-	At the end of "u-boot" 128 bytes are abused for some data, a checksum and an
+	At the end of "u-boot" 128 bytes are abused for some data, a checksum and a
 	highly important sErCoMm identifier.
 
 
@@ -82,7 +83,7 @@
 
 
 // version info
-#define VERSION "2.0"
+#define VERSION "2.1"
 char program_info[] = "WRT350Nv2-Builder v%s by Dirk Teurlings <info@upexia.nl> and Matthias Buecher (http://www.maddes.net/)\n";
 
 // verbosity
@@ -105,7 +106,8 @@ mtd_info mtd_rootfs = { "rootfs", 0, 0, NULL, 0L, { 0, 0 } };
 mtd_info mtd_uboot = { "u-boot", 0, 0, NULL, 0L, { 0, 0 } };
 
 #define ROOTFS_END_OFFSET	0x00760000
-#define ROOTFS_MIN_OFFSET	0x00700000	// should be filled up to here, to make sure that the zip file is big enough to pass the size check of the stock firmware
+#define ROOTFS_MIN_OFFSET	0x00640000	// should be filled up to here, to make sure that the zip file is big enough to pass the size check of the stock firmware
+						// 2.0.17: filled up to 0x00640000, 2.0.19: filled up to 0x0670000
 
 // rootfs statics via: hexdump -v -e '1/1 "0x%02X, "' -s 0x0075FFE0 -n 16 "wrt350n.bin" ; echo -en "\n"
 unsigned char product_id[] = { 0x00, 0x03 };	// seems to be a fixed value
@@ -203,17 +205,17 @@ int parse_par_file(FILE *f_par) {
 		// read next line into memory
 		do {
 			// allocate memory for input line
-			if (buffer == NULL) {
+			if (!buffer) {
 				buffer = malloc(buffer_size);
 			}
-			if (buffer == NULL) {
+			if (!buffer) {
 				exitcode = 1;
 				printf("parse_par_file: can not allocate %i bytes\n", (int) buffer_size);
 				break;
 			}
 
 			line = fgets(buffer, buffer_size, f_par);
-			if (line == NULL) {
+			if (!line) {
 				exitcode = ferror(f_par);
 				if (exitcode) {
 					printf("parse_par_file: %s\n", strerror(exitcode));
@@ -243,7 +245,7 @@ int parse_par_file(FILE *f_par) {
 			buffer_size *= 2;
 			lprintf(DEBUG_LVL2, " extending buffer to %i bytes\n", buffer_size);
 		} while (1);
-		if (line == NULL || exitcode) {
+		if ((!line) || (exitcode)) {
 			break;
 		}
 
@@ -262,17 +264,17 @@ int parse_par_file(FILE *f_par) {
 					printf("line %i does not meet defined format (:<mtdname> <mtdsize> <file>)\n", lineno);
 				} else {
 					// populate mtd_info if supported mtd names
-					if (strcmp(string1, mtd_kernel.name) == 0) {
+					if (!strcmp(string1, mtd_kernel.name)) {
 						mtd = &mtd_kernel;
-					} else if (strcmp(string1, mtd_rootfs.name) == 0) {
+					} else if (!strcmp(string1, mtd_rootfs.name)) {
 						mtd = &mtd_rootfs;
-					} else if (strcmp(string1, mtd_uboot.name) == 0) {
+					} else if (!strcmp(string1, mtd_uboot.name)) {
 						mtd = &mtd_uboot;
 					}
 
-					if (mtd == NULL) {
+					if (!mtd) {
 						printf("unknown mtd %s in line %i\n", string1, lineno);
-					} else if (mtd->filename != NULL) {
+					} else if (mtd->filename) {
 						f_exitcode = 1;
 						printf("mtd %s in line %i multiple definitions\n", string1, lineno);
 					} else {
@@ -281,7 +283,7 @@ int parse_par_file(FILE *f_par) {
 
 						// Get file size
 						f_in = fopen(mtd->filename, "rb");
-						if (f_in == NULL) {
+						if (!f_in) {
 							f_exitcode = errno;
 							printf("input file %s: %s\n", mtd->filename, strerror(f_exitcode));
 						} else {
@@ -320,7 +322,7 @@ int parse_par_file(FILE *f_par) {
 				if (count != 2) {
 					printf("line %i does not meet defined format (:<variable name> <integer>\n", lineno);
 				} else {
-					if (strcmp(string1, "version") == 0) {
+					if (!strcmp(string1, "version")) {
 						// changing version
 						fw_version[0] = 0x000000FF & ( value >> 8 );
 						fw_version[1] = 0x000000FF &   value;
@@ -337,9 +339,8 @@ int parse_par_file(FILE *f_par) {
 					printf("line %i does not meet defined format (:<mtdname> <mtdsize> <file>)\n", lineno);
 				} else {
 /*
-					if (strcmp(string1, "something") == 0) {
-						something = string2;
-						string2 = NULL;	// do not free
+					if (!strcmp(string1, "something")) {
+						something = strdup(string2);
 					} else {
 */
 						printf("unknown string variable %s in line %i\n", string1, lineno);
@@ -382,7 +383,7 @@ int create_bin_file(char *bin_filename) {
 
 	// allocate memory for bin file
 	buffer = malloc(KERNEL_CODE_OFFSET + FLASH_SIZE);
-	if (buffer == NULL) {
+	if (!buffer) {
 		exitcode = 1;
 		printf("create_bin_file: can not allocate %i bytes\n", FLASH_SIZE);
 	} else {
@@ -415,10 +416,10 @@ int create_bin_file(char *bin_filename) {
 					printf("create_bin_file: unknown mtd %i\n", i);
 					break;
 			}
-			if (mtd == NULL) {
+			if (!mtd) {
 				break;
 			}
-			if (mtd->filename == NULL) {
+			if (!mtd->filename) {
 				continue;
 			}
 
@@ -434,7 +435,7 @@ int create_bin_file(char *bin_filename) {
 
 			// adding file content
 			f_in = fopen(mtd->filename, "rb");
-			if (f_in == NULL) {
+			if (!f_in) {
 				exitcode = errno;
 				printf("input file %s: %s\n", mtd->filename, strerror(exitcode));
 			} else {
@@ -461,7 +462,7 @@ int create_bin_file(char *bin_filename) {
 				lprintf(DEBUG, " padding offset 0x%08X length 0x%08X\n", addsize, padsize);
 
 				f_in = fopen(rand_filename, "rb");
-				if (f_in == NULL) {
+				if (!f_in) {
 					exitcode = errno;
 					printf("input file %s: %s\n", rand_filename, strerror(exitcode));
 				} else {
@@ -514,7 +515,7 @@ int create_bin_file(char *bin_filename) {
 	if (!exitcode) {
 		lprintf(DEBUG, "writing file %s\n", bin_filename);
 		f_out = fopen(bin_filename, "wb");
-		if (f_out == NULL) {
+		if (!f_out) {
 			exitcode = errno;
 			printf("output file %s: %s\n", bin_filename, strerror(exitcode));
 		} else {
@@ -547,18 +548,18 @@ int create_zip_file(char *zip_filename, char *bin_filename) {
 	buffer = NULL;
 	do {
 		// allocate memory for command line
-		if (buffer == NULL) {
+		if (!buffer) {
 			buffer = malloc(buffer_size);
 		}
-		if (buffer == NULL) {
+		if (!buffer) {
 			exitcode = 1;
 			printf("create_zip_file: can not allocate %i bytes\n", (int) buffer_size);
 			break;
 		}
 
 		// if buffer was not completely filled, then line fit in completely
-		count = snprintf(buffer, buffer_size, "zip %s %s", zip_filename, bin_filename);
-		if (count > -1 && count < buffer_size) {
+		count = snprintf(buffer, buffer_size, "zip \"%s\" \"%s\"", zip_filename, bin_filename);
+		if ((count > -1) && (count < buffer_size)) {
 			break;
 		}
 
@@ -577,7 +578,7 @@ int create_zip_file(char *zip_filename, char *bin_filename) {
 		// zipping binfile
 		lprintf(DEBUG, "%s\n", buffer);
 		count = system(buffer);
-		if (count < 0 || WEXITSTATUS(count)) {
+		if ((count < 0) || (WEXITSTATUS(count))) {
 			exitcode = 1;
 			printf("create_zip_file: can not execute %s bytes\n", buffer);
 		}
@@ -624,7 +625,7 @@ int create_img_file(FILE *f_out, char *out_filename, char *zip_filename) {
 	if (!exitcode) {
 		lprintf(DEBUG_LVL2, " adding zip file\n");
 		f_in = fopen(zip_filename, "rb");
-		if (f_in == NULL) {
+		if (!f_in) {
 			exitcode = errno;
 			printf("input file %s: %s\n", zip_filename, strerror(exitcode));
 		} else {
@@ -696,16 +697,17 @@ int main(int argc, char *argv[]) {
 	int exitcode = 0;
 
 	int help;
+	int onlybin;
 	int havezip;
 	char option;
 	char *par_filename = NULL;
-	char *out_filename = NULL;
+	char *img_filename = NULL;
 	char *base_filename = NULL;
 	char *bin_filename = NULL;
 	char *zip_filename = NULL;
 
-	FILE *f_par;
-	FILE *f_out;
+	FILE *f_par = NULL;
+	FILE *f_img = NULL;
 
 	int i;
 	mtd_info *mtd;
@@ -722,11 +724,15 @@ int main(int argc, char *argv[]) {
 // command line processing
 	// options
 	help = 0;
+	onlybin = 0;
 	havezip = 0;
-	while ((option = getopt(argc, argv, ":hzf:v")) != -1) {
+	while ((option = getopt(argc, argv, ":hbzf:v")) != -1) {
 		switch(option) {
 			case 'h':
 				help = 1;
+				break;
+			case 'b':
+				onlybin = 1;
 				break;
 			case 'z':
 				havezip = 1;
@@ -734,7 +740,7 @@ int main(int argc, char *argv[]) {
 			case 'f':
 				sizecheck = sscanf(optarg, "%i", &i);
 				if (sizecheck != 1) {
-					printf("firmware version of -f option not a valid integer\n");
+					printf("Firmware version of -f option not a valid integer\n");
 					exitcode = 1;
 				} else {
 					fw_version[0] = 0x000000FF & ( i >> 8 );
@@ -757,7 +763,7 @@ int main(int argc, char *argv[]) {
 
 	// files
 	for ( ; optind < argc; optind++) {
-		if (par_filename == NULL) {
+		if (!par_filename) {
 			par_filename = argv[optind];
 
 			if (access(par_filename, R_OK)) {
@@ -772,12 +778,12 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		if (out_filename == NULL) {
-			out_filename = argv[optind];
+		if ((!onlybin) && (!img_filename)) {
+			img_filename = argv[optind];
 
-			if (!access(out_filename, F_OK)) {	// if file already exists then check write access
-				if (access(out_filename, W_OK)) {
-					printf("No write access to output file %s\n", out_filename);
+			if (!access(img_filename, F_OK)) {	// if file already exists then check write access
+				if (access(img_filename, W_OK)) {
+					printf("No write access to image file %s\n", img_filename);
 					exitcode = 1;
 				}
 			}
@@ -791,7 +797,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// file name checks
-	if (par_filename == NULL) {
+	if (!par_filename) {
 		if (havezip) {
 			printf("Zip file not stated\n");
 		} else {
@@ -800,7 +806,7 @@ int main(int argc, char *argv[]) {
 		exitcode = 1;
 	} else {
 		base_filename = basename(par_filename);
-		if (base_filename == NULL) {
+		if (!base_filename) {
 			if (havezip) {
 				printf("Zip file is a directory\n");
 			} else {
@@ -810,33 +816,35 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (out_filename == NULL) {
-		printf("Output file not stated\n");
-		exitcode = 1;
-	} else {
-		base_filename = basename(out_filename);
-		if (base_filename == NULL) {
-			printf("Output file is a directory\n");
+	if (!onlybin) {
+		if (!img_filename) {
+			printf("Image file not stated\n");
 			exitcode = 1;
 		} else {
-			base_filename = strdup(base_filename);
-			zip_filename = strrchr(base_filename, '.');
-			if (zip_filename != NULL) {
-				zip_filename[0] = 0;
-				zip_filename = NULL;	// clean up
+			base_filename = basename(img_filename);
+			if (!base_filename) {
+				printf("Image file is a directory\n");
+				exitcode = 1;
 			}
 		}
 	}
 
-	// react on parameter problems or help request, and exit
-	if ((exitcode != 0) || help) {
+	// check for mutually exclusive options
+	if ((onlybin) && (havezip)) {
+		printf("Option -b and -z are mutually exclusive\n");
+		exitcode = 1;
+	}
+
+	// react on option problems or help request, then exit
+	if ((exitcode) || (help)) {
 		if (help) {
 			printf("This program creates Linksys style images for the WRT350Nv2 router.\n");
 		}
 		printf("  Usage:\n\
-  %s [-h] [-z] [-f <version>] [-v] <parameter or zip file> <output file>\n\n\
+  %s [-h] [-b] [-z] [-f <version>] [-v] <parameter or zip file> [<image file>]\n\n\
   Options:\n\
   -h            -  Show this help\n\
+  -b            -  Create only bin file, no img or zip file is created\n\
   -z            -  Have zip file, the img file will be directly created from it\n\
   -f <version>  -  Wanted firmware version to use with -z\n\
                    Default firmware version is 0x2019 = 2.00.19.\n\
@@ -853,29 +861,37 @@ int main(int argc, char *argv[]) {
 		par_filename = NULL;
 	}
 
-	lprintf(DEBUG_LVL2, " verbosity: %i\n", verbosity);
-	lprintf(DEBUG_LVL2, " program: %s\n", argv[0]);
+	lprintf(DEBUG_LVL2, " Verbosity: %i\n", verbosity);
+	lprintf(DEBUG_LVL2, " Program: %s\n", argv[0]);
 
-	lprintf(DEBUG, "Parameter file: %s\n", par_filename);
-	lprintf(DEBUG, "Output file: %s\n", out_filename);
-	lprintf(DEBUG_LVL2, " basename: %s (%i)\n", base_filename, strlen(base_filename));
+	if (par_filename) {
+		lprintf(DEBUG, "Parameter file: %s\n", par_filename);
+	}
+	if (zip_filename) {
+		lprintf(DEBUG, "Zip file: %s\n", zip_filename);
+	}
+	if (img_filename) {
+		lprintf(DEBUG, "Image file: %s\n", img_filename);
+	}
 
 
 // open files from command line
-	// parameter file
-	if (par_filename != NULL) {
-		f_par = fopen(par_filename, "r");
-		if (f_par == NULL) {
+	// parameter/zip file
+	if (par_filename) {
+		f_par = fopen(par_filename, "rt");
+		if (!f_par) {
 			exitcode = errno;
-			printf("input file %s: %s\n", par_filename, strerror(exitcode));
+			printf("Input file %s: %s\n", par_filename, strerror(exitcode));
 		}
 	}
 
-	// output file
-	f_out = fopen(out_filename, "w");
-	if (f_out == NULL) {
-		exitcode = errno;
-		printf("Output file %s: %s\n", out_filename, strerror(exitcode));
+	// image file
+	if (img_filename) {
+		f_img = fopen(img_filename, "wb");
+		if (!f_img) {
+			exitcode = errno;
+			printf("Output file %s: %s\n", img_filename, strerror(exitcode));
+		}
 	}
 
 	if (exitcode) {
@@ -884,20 +900,20 @@ int main(int argc, char *argv[]) {
 
 
 // parameter file processing
-	if (!exitcode && par_filename != NULL) {
+	if ((!exitcode) && (f_par)) {
 		lprintf(DEBUG, "parsing parameter file...\n");
 
 		exitcode = parse_par_file(f_par);
 
 		lprintf(DEBUG, "...done parsing file\n");
 	}
-	if (par_filename != NULL) {
+	if (f_par) {
 		fclose(f_par);
 	}
 
 
 // check all input data
-	if (!exitcode && par_filename != NULL) {
+	if ((!exitcode) && (par_filename)) {
 		lprintf(DEBUG, "checking mtd data...\n");
 
 		for (i = 1; i <= 3; i++) {
@@ -936,20 +952,20 @@ int main(int argc, char *argv[]) {
 					printf("unknown mtd check %i\n", i);
 					break;
 			}
-			if (mtd == NULL) {
+			if (!mtd) {
 				break;
 			}
 
 			lprintf(DEBUG_LVL2, " checking mtd %s\n", mtd->name);
 
 			// general checks
-			if (mandatory && mtd->filename == NULL) {
+			if ((mandatory) && (!mtd->filename)) {
 				exitcode = 1;
 				printf("mtd %s not specified correctly or at all in parameter file\n", mtd->name);
 			}
 
 			// end checks if no file data present
-			if (mtd->filename == NULL) {
+			if (!mtd->filename) {
 				continue;
 			}
 
@@ -960,7 +976,7 @@ int main(int argc, char *argv[]) {
 
 			// general magic number check
 			if (magic[0]) {
-				if (mtd->magic[0] != magic[0] || mtd->magic[1] != magic[1]) {
+				if ((mtd->magic[0] != magic[0]) || (mtd->magic[1] != magic[1])) {
 					exitcode = 1;
 					printf("mtd %s input file %s has wrong magic number (0x%02X%02X)\n", mtd->name, mtd->filename, mtd->magic[0], mtd->magic[1]);
 				}
@@ -992,10 +1008,8 @@ int main(int argc, char *argv[]) {
 
 
 // bin creation in memory
-	if (!exitcode && par_filename != NULL) {
-		// create bin name from basename
-		bin_filename = malloc(strlen(base_filename)+10);
-		sprintf(bin_filename, "%s.bin", base_filename);
+	if ((!exitcode) && (par_filename)) {
+		bin_filename = "wrt350n.bin";
 
 		lprintf(DEBUG, "creating bin file %s...\n", bin_filename);
 
@@ -1004,12 +1018,9 @@ int main(int argc, char *argv[]) {
 		lprintf(DEBUG, "...done creating bin file\n");
 	}
 
-
 // zip file creation
-	if (!exitcode && zip_filename == NULL) {
-		// create zip name from basename
-		zip_filename = malloc(strlen(base_filename)+10);
-		sprintf(zip_filename, "%s.zip", base_filename);
+	if ((!exitcode) && (!onlybin) && (!zip_filename)) {
+		zip_filename = "wrt350n.zip";
 
 		lprintf(DEBUG, "creating zip file %s...\n", zip_filename);
 
@@ -1020,15 +1031,18 @@ int main(int argc, char *argv[]) {
 
 
 // img file creation
-	if (!exitcode) {
+	if ((!exitcode) && (f_img)) {
 		lprintf(DEBUG, "creating img file...\n");
 
-		exitcode = create_img_file(f_out, out_filename, zip_filename);
+		exitcode = create_img_file(f_img, img_filename, zip_filename);
 
 		lprintf(DEBUG, "...done creating img file\n");
 	}
-	fclose(f_out);
 
+// clean up
+	if (f_img) {
+		fclose(f_img);
+	}
 
 // end program
 	return exitcode;
