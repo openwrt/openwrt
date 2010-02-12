@@ -9,6 +9,13 @@ config X86_GRUB_IMAGES_PAD
 	bool "Pad GRUB images to filesystem size (for JFFS2)"
 	depends X86_GRUB_IMAGES
 
+config X86_GRUB_CONSOLE
+    string
+    prompt "Serial port device"
+    depends X86_GRUB_IMAGES
+    default "hvc0" if TARGET_x86_xen_domu
+    default "ttyS0" if ! TARGET_x86_xen_domu
+
 config X86_GRUB_BAUDRATE
     int "Serial port baud rate"
     depends X86_GRUB_IMAGES
@@ -22,15 +29,17 @@ config X86_GRUB_KERNELPART
 config X86_GRUB_ROOTPART
     string
     prompt "Root partition on target device" if X86_GRUB_IMAGES
-    default "/dev/sda2"
+    default "/dev/xvda2" if TARGET_x86_xen_domu
+    default "/dev/sda2" if ! TARGET_x86_xen_domu
     help
         The root partition on the final device.  If you don't know,
-        you probably want the default (/dev/hda2).
+        you probably want the default (/dev/sda2).
 
 config X86_GRUB_BOOTOPTS
     string
     prompt "Extra kernel boot options" if X86_GRUB_IMAGES
-    default ""
+    default "xencons=hvc" if TARGET_x86_xen_domu
+    default "" if ! TARGET_x86_xen_domu
     help
         If you don't know, just leave it blank.
 

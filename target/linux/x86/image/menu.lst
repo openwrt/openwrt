@@ -6,10 +6,10 @@ timeout 5
 
 title   OpenWrt
 root    (hd0,0)
-kernel  /boot/vmlinuz @CMDLINE@ noinitrd console=tty0 console=ttyS0,@BAUDRATE@n8 reboot=bios
+kernel  /boot/vmlinuz @CMDLINE@ noinitrd console=tty0 console=@CONSOLE@,@BAUDRATE@n8 reboot=bios
 boot
 
 title	OpenWrt (failsafe)
 root	(hd0,0)
-kernel  /boot/vmlinuz failsafe=true @CMDLINE@ noinitrd console=tty0 console=ttyS0,@BAUDRATE@n8 reboot=bios
+kernel  /boot/vmlinuz failsafe=true @CMDLINE@ noinitrd console=tty0 console=@CONSOLE@,@BAUDRATE@n8 reboot=bios
 boot
