@@ -11,7 +11,7 @@ BOARD:=pxa
 BOARDNAME:=Marvell/Intel PXA2xx
 FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.32.7
+LINUX_VERSION:=2.6.32.8
 
 include $(INCLUDE_DIR)/target.mk
 
