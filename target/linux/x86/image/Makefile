@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -19,6 +19,9 @@ ifeq ($(CONFIG_TARGET_x86_olpc),y)
 ROOTPART=$(strip $(subst ",, $(CONFIG_OLPC_BOOTSCRIPT_ROOTPART)))
 endif
 #"))")) # fix vim's broken syntax highlighting
+
+CONSOLE=$(strip $(subst ",, $(CONFIG_X86_GRUB_CONSOLE)))
+
 
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 ifneq ($(HOST_OS),Darwin)
@@ -47,6 +50,7 @@ ifneq ($(HOST_OS),Darwin)
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
 	sed \
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
+		-e 's#@CONSOLE@#$(CONSOLE)#g' \
 		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
 		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
@@ -153,13 +157,16 @@ endef
 define Image/Build
 	$(call Image/Build/$(1))
 	$(call Image/Build/bootscript,$(1))
-ifneq ($(1),iso)
+  ifneq ($(1),iso)
 	$(call Image/Build/grub,$(1))
 	$(call Image/Build/vdi,$(1))
 	$(call Image/Build/vmdk,$(1))
-endif
+  endif
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).fs
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-vmlinuz
+  ifeq ($(1),ext2)
+	gzip -f9 $(BIN_DIR)/openwrt-$(BOARD)-$(1).image
+  endif
 endef
 
 $(eval $(call BuildImage))
