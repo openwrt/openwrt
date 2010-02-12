@@ -360,6 +360,35 @@ endef
 $(eval $(call KernelPackage,nbd))
 
 
+define KernelPackage/dm
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper
+  # All the "=n" are unnecessary, they're only there
+  # to stop the config from asking the question.
+  # MIRROR is M because I've needed it for pvmove.
+  KCONFIG:= \
+       CONFIG_BLK_DEV_MD=n \
+       CONFIG_DM_DEBUG=n \
+       CONFIG_DM_CRYPT=n \
+       CONFIG_DM_UEVENT=n \
+       CONFIG_DM_DELAY=n \
+       CONFIG_DM_MULTIPATH=n \
+       CONFIG_DM_ZERO=n \
+       CONFIG_DM_SNAPSHOT=n \
+       CONFIG_MD=y \
+       CONFIG_BLK_DEV_DM \
+       CONFIG_DM_MIRROR
+  FILES:=$(LINUX_DIR)/drivers/md/dm-*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-region-hash dm-mirror dm-log)
+endef
+
+define KernelPackage/dm/description
+ Kernel module necessary for LVM2 support
+endef
+
+$(eval $(call KernelPackage,dm))
+
+
 define KernelPackage/pata-rb153-cf
 $(call KernelPackage/ata/Depends,@TARGET_adm5120_router_le)
   TITLE:=RouterBOARD 153 CF Slot support
