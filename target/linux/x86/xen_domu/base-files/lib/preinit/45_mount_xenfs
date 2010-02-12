@@ -1,0 +1,11 @@
+#!/bin/sh
+# Copyright (C) 2010 OpenWrt.org
+
+do_mount_xenfs() {
+	[ -f /etc/modules.d/??-xenfs ] && {
+		insmod $(cat /etc/modules.d/??-xenfs)
+		mount none /proc/xen -t xenfs
+	}
+}
+
+boot_hook_add preinit_mount_root do_mount_xenfs
