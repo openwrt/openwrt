@@ -1,5 +1,5 @@
 
-DEVICENAME ~~ (null|full|ptmx|tty|zero|gpio) {
+DEVICENAME ~~ (null|full|ptmx|tty|zero|gpio|hvc) {
 	nothrottle
 	makedev /dev/%DEVICENAME% 0666
 	next
