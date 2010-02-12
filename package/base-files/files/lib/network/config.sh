@@ -327,6 +327,11 @@ setup_interface() {
 	}
 }
 
+stop_interface_dhcp() {
+	local config="$1"
+	uci -P /var/state revert "network.$config"
+}
+
 unbridge() {
 	local dev="$1"
 	local brdev
