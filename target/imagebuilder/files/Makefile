@@ -81,7 +81,7 @@ $(TOPDIR)/tmp/ipkg.conf: FORCE
 	@echo 'dest root /' > $@
 	@echo 'src packages file:$(PACKAGE_DIR)' >> $@
 
-BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $($(PROFILE)_PACKAGES) kernel)
+BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(PACKAGES) $($(PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 
