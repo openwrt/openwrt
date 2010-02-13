@@ -1,0 +1,213 @@
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
+@@ -18,10 +18,18 @@
+ #include <linux/buffer_head.h>
+ #include <linux/mutex.h>
+ #include <linux/mount.h>
++#include <linux/list.h>
++#include <linux/delay.h>
+ 
+ #define ERROR(fmt, args...) printk(KERN_ERR "block2mtd: " fmt "\n" , ## args)
+ #define INFO(fmt, args...) printk(KERN_INFO "block2mtd: " fmt "\n" , ## args)
+ 
++struct retry {
++    struct list_head list;
++    const char *val;
++};
++
++static LIST_HEAD(retry_list);
+ 
+ /* Info for the block device */
+ struct block2mtd_dev {
+@@ -33,10 +41,34 @@
+ 	char devname[0];
+ };
+ 
++static int block2mtd_setup2(const char *val);
+ 
+ /* Static info about the MTD, used in cleanup_module */
+ static LIST_HEAD(blkmtd_device_list);
+ 
++static int add_retry(const char *val) {
++    struct retry *r = kmalloc(sizeof(struct retry), GFP_KERNEL);
++
++    INIT_LIST_HEAD(&r->list);
++    r->val = val;
++    list_add(&r->list, &retry_list);
++
++    return 0;
++}
++
++static int __init process_retries(void) {
++    struct list_head *p, *tmp;
++
++    list_for_each_safe(p, tmp, &retry_list) {
++        struct retry *r = list_entry(p, struct retry, list);
++        block2mtd_setup2(r->val);
++        msleep(100);
++        list_del(p);
++        kfree(r);
++    }
++    return 0;
++}
++rootfs_initcall(process_retries);
+ 
+ static struct page *page_read(struct address_space *mapping, int index)
+ {
+@@ -511,7 +543,9 @@
+ 	if (token[2] && (strlen(token[2]) + 1 > 80))
+ 		parse_err("mtd device name too long");
+ 
+-	add_device(name, erase_size, token[2]);
++	if (add_device(name, erase_size, token[2]) == NULL) {
++        add_retry(val);
++    }   
+ 
+ 	return 0;
+ }
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -614,17 +614,24 @@
+   	*(.initcall4s.init)						\
+   	*(.initcall5.init)						\
+   	*(.initcall5s.init)						\
+-	*(.initcallrootfs.init)						\
+   	*(.initcall6.init)						\
+   	*(.initcall6s.init)						\
+   	*(.initcall7.init)						\
+   	*(.initcall7s.init)
+ 
++#define INITCALLS_ROOT							\
++	*(.initcallrootfs.init)
++
+ #define INIT_CALLS							\
+ 		VMLINUX_SYMBOL(__initcall_start) = .;			\
+ 		INITCALLS						\
+ 		VMLINUX_SYMBOL(__initcall_end) = .;
+ 
++#define INIT_CALLS_ROOT						\
++		VMLINUX_SYMBOL(__root_initcall_start) = .;		\
++		INITCALLS_ROOT						\
++		VMLINUX_SYMBOL(__root_initcall_end) = .;
++
+ #define CON_INITCALL							\
+ 		VMLINUX_SYMBOL(__con_initcall_start) = .;		\
+ 		*(.con_initcall.init)					\
+@@ -766,6 +773,7 @@
+ 		INIT_DATA						\
+ 		INIT_SETUP(initsetup_align)				\
+ 		INIT_CALLS						\
++		INIT_CALLS_ROOT						\
+ 		CON_INITCALL						\
+ 		SECURITY_INITCALL					\
+ 		INIT_RAM_FS						\
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -176,16 +176,8 @@
+ 	return 1;
+ }
+ 
+-static unsigned int __initdata root_delay;
+-static int __init root_delay_setup(char *str)
+-{
+-	root_delay = simple_strtoul(str, NULL, 0);
+-	return 1;
+-}
+-
+ __setup("rootflags=", root_data_setup);
+ __setup("rootfstype=", fs_names_setup);
+-__setup("rootdelay=", root_delay_setup);
+ 
+ static void __init get_fs_names(char *page)
+ {
+@@ -366,23 +358,6 @@
+ {
+ 	int is_floppy;
+ 
+-	if (root_delay) {
+-		printk(KERN_INFO "Waiting %dsec before mounting root device...\n",
+-		       root_delay);
+-		ssleep(root_delay);
+-	}
+-
+-	/*
+-	 * wait for the known devices to complete their probing
+-	 *
+-	 * Note: this is a potential source of long boot delays.
+-	 * For example, it is not atypical to wait 5 seconds here
+-	 * for the touchpad of a laptop to initialize.
+-	 */
+-	wait_for_device_probe();
+-
+-	md_run_setup();
+-
+ 	if (saved_root_name[0]) {
+ 		root_device_name = saved_root_name;
+ 		if (!strncmp(root_device_name, "mtd", 3) ||
+--- a/init/main.c
++++ b/init/main.c
+@@ -80,6 +80,7 @@
+ #ifdef CONFIG_X86_LOCAL_APIC
+ #include <asm/smp.h>
+ #endif
++#include "do_mounts.h"
+ 
+ static int kernel_init(void *);
+ 
+@@ -752,12 +753,13 @@
+ 
+ 
+ extern initcall_t __initcall_start[], __initcall_end[], __early_initcall_end[];
++extern initcall_t __root_initcall_start[], __root_initcall_end[];
+ 
+-static void __init do_initcalls(void)
++static void __init do_initcalls(initcall_t *start, initcall_t *end)
+ {
+ 	initcall_t *call;
+ 
+-	for (call = __early_initcall_end; call < __initcall_end; call++)
++	for (call = start; call < end; call++)
+ 		do_one_initcall(*call);
+ 
+ 	/* Make sure there is no pending stuff from the initcall sequence */
+@@ -780,7 +782,7 @@
+ 	driver_init();
+ 	init_irq_proc();
+ 	do_ctors();
+-	do_initcalls();
++	do_initcalls(__early_initcall_end, __initcall_end);
+ }
+ 
+ static void __init do_pre_smp_initcalls(void)
+@@ -841,6 +843,13 @@
+ 	panic("No init found.  Try passing init= option to kernel.");
+ }
+ 
++static unsigned int __initdata root_delay;
++static int __init root_delay_setup(char *str)
++{
++    root_delay = simple_strtoul(str, NULL, 0);
++    return 1;
++}
++__setup("rootdelay=", root_delay_setup);
+ static int __init kernel_init(void * unused)
+ {
+ 	lock_kernel();
+@@ -885,7 +894,16 @@
+ 
+ 	if (sys_access((const char __user *) ramdisk_execute_command, 0) != 0) {
+ 		ramdisk_execute_command = NULL;
+-		prepare_namespace();
++		if (root_delay) {
++            printk(KERN_INFO "Waiting %desc before mounting root device...\n", 
++                root_delay);
++            ssleep(root_delay);
++        }
++        while (driver_probe_done() != 0)
++            msleep(100);
++        do_initcalls(__root_initcall_start, __root_initcall_end);
++        md_run_setup();
++        prepare_namespace();
+ 	}
+ 
+ 	/*
