@@ -34,9 +34,11 @@
 #include "swlib.h"
 
 enum {
-	GET,
-	SET,
-	LOAD
+	CMD_NONE,
+	CMD_GET,
+	CMD_SET,
+	CMD_LOAD,
+	CMD_HELP,
 };
 
 static void
@@ -124,13 +126,12 @@ int main(int argc, char **argv)
 
 	struct switch_port *ports;
 
-	int cmd = 0;
+	int cmd = CMD_NONE;
 	char *cdev = NULL;
 	int cport = -1;
 	int cvlan = -1;
 	char *ckey = NULL;
 	char *cvalue = NULL;
-	int chelp = 0;
 
 	if(argc < 4)
 		print_usage();
@@ -142,44 +143,36 @@ int main(int argc, char **argv)
 
 	for(i = 3; i < argc; i++)
 	{
-		int p;
-		if (!strcmp(argv[i], "help")) {
-			chelp = 1;
-			continue;
-		}
-		if( i + 1 >= argc)
+		char *arg = argv[i];
+		if (cmd != CMD_NONE) {
 			print_usage();
-		p = atoi(argv[i + 1]);
-		if (!strcmp(argv[i], "port")) {
-			cport = p;
-		} else if (!strcmp(argv[i], "vlan")) {
-			cvlan = p;
-		} else if (!strcmp(argv[i], "set")) {
-			if(argc <= i + 1)
-				print_usage();
-			cmd = SET;
-			ckey = argv[i + 1];
-			if (argc > i + 2)
-				cvalue = argv[i + 2];
-			else
-				cvalue = NULL;
-			i++;
-		} else if (!strcmp(argv[i], "get")) {
-			cmd = GET;
-			ckey = argv[i + 1];
-		} else if (!strcmp(argv[i], "load")) {
+		} else if (!strcmp(arg, "port") && i+1 < argc) {
+			cport = atoi(argv[++i]);
+		} else if (!strcmp(arg, "vlan") && i+1 < argc) {
+			cvlan = atoi(argv[++i]);
+		} else if (!strcmp(arg, "help")) {
+			cmd = CMD_HELP;
+		} else if (!strcmp(arg, "set") && i+1 < argc) {
+			cmd = CMD_SET;
+			ckey = argv[++i];
+			if (i+1 < argc)
+				cvalue = argv[++i];
+		} else if (!strcmp(arg, "get") && i+1 < argc) {
+			cmd = CMD_GET;
+			ckey = argv[++i];
+		} else if (!strcmp(arg, "load") && i+1 < argc) {
 			if ((cport >= 0) || (cvlan >= 0))
 				print_usage();
-
-			ckey = argv[i + 1];
-			cmd = LOAD;
+			cmd = CMD_LOAD;
+			ckey = argv[++i];
 		} else {
 			print_usage();
 		}
-		i++;
 	}
 
-	if(cport > -1 && cvlan > -1)
+	if (cmd == CMD_NONE)
+		print_usage();
+	if (cport > -1 && cvlan > -1)
 		print_usage();
 
 	dev = swlib_connect(cdev);
@@ -192,13 +185,7 @@ int main(int argc, char **argv)
 	memset(ports, 0, sizeof(struct switch_port) * dev->ports);
 	swlib_scan(dev);
 
-	if(chelp)
-	{
-		list_attributes(dev);
-		goto out;
-	}
-
-	if (cmd != LOAD) {
+	if (cmd == CMD_GET || cmd == CMD_SET) {
 		if(cport > -1)
 			a = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_PORT, ckey);
 		else if(cvlan > -1)
@@ -215,7 +202,7 @@ int main(int argc, char **argv)
 
 	switch(cmd)
 	{
-	case SET:
+	case CMD_SET:
 		if ((a->type != SWITCH_TYPE_NOVAL) &&
 				(cvalue == NULL))
 			print_usage();
@@ -230,7 +217,7 @@ int main(int argc, char **argv)
 			goto out;
 		}
 		break;
-	case GET:
+	case CMD_GET:
 		if(cvlan > -1)
 			val.port_vlan = cvlan;
 		if(cport > -1)
@@ -259,8 +246,11 @@ int main(int argc, char **argv)
 			break;
 		}
 		break;
-	case LOAD:
+	case CMD_LOAD:
 		swconfig_load_uci(dev, ckey);
+		break;
+	case CMD_HELP:
+		list_attributes(dev);
 		break;
 	}
 
