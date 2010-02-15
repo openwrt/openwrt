@@ -5580,22 +5580,22 @@
      case EM_XTENSA:		return "Tensilica Xtensa Processor";
 --- a/config.sub
 +++ b/config.sub
-@@ -283,6 +283,7 @@ case $basic_machine in
+@@ -285,6 +285,7 @@ case $basic_machine in
  	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
  	| spu | strongarm \
  	| tahoe | thumb | tic4x | tic80 | tron \
 +	| ubicom32 \
  	| v850 | v850e \
- 	| ubicom32 \
  	| we32k \
-@@ -367,6 +368,7 @@ case $basic_machine in
+ 	| x86 | xc16x | xscale | xscalee[bl] | xstormy16 | xtensa \
+@@ -370,6 +371,7 @@ case $basic_machine in
  	| tahoe-* | thumb-* \
- 	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
+ 	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* | tile-* \
  	| tron-* \
 +	| ubicom32-* \
  	| v850-* | v850e-* | vax-* \
- 	| ubicom32-* \
  	| we32k-* \
+ 	| x86-* | x86_64-* | xc16x-* | xps100-* | xscale-* | xscalee[bl]-* \
 --- a/configure
 +++ b/configure
 @@ -2666,6 +2666,12 @@ case "${target}" in
