@@ -10,7 +10,7 @@ SOUND_MENU:=Sound Support
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT||TARGET_uml
+  DEPENDS:=@AUDIO_SUPPORT
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \

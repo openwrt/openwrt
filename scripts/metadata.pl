@@ -152,6 +152,7 @@ sub target_config_features(@) {
 
 	while ($_ = shift @_) {
 		/broken/ and $ret .= "\tdepends BROKEN\n";
+		/audio/ and $ret .= "\tselect AUDIO_SUPPORT\n";
 		/display/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
 		/gpio/ and $ret .= "\tselect GPIO_SUPPORT\n";
 		/pci/ and $ret .= "\tselect PCI_SUPPORT\n";
