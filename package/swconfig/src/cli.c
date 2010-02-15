@@ -2,6 +2,7 @@
  * swconfig.c: Switch configuration utility
  *
  * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2010 Martin Mares <mj@ucw.cz>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
