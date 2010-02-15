@@ -301,23 +301,8 @@ int main(int argc, char **argv)
 			retval = -1;
 			goto out;
 		}
-		switch(a->type) {
-		case SWITCH_TYPE_INT:
-			printf("%d\n", val.value.i);
-			break;
-		case SWITCH_TYPE_STRING:
-			printf("%s\n", val.value.s);
-			break;
-		case SWITCH_TYPE_PORTS:
-			for(i = 0; i < val.len; i++) {
-				printf("%d%s ",
-					val.value.ports[i].id,
-					(val.value.ports[i].flags &
-					 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
-			}
-			printf("\n");
-			break;
-		}
+		print_attr_val(a, &val);
+		putchar('\n');
 		break;
 	case CMD_LOAD:
 		swconfig_load_uci(dev, ckey);
