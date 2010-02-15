@@ -39,6 +39,7 @@ enum {
 	CMD_SET,
 	CMD_LOAD,
 	CMD_HELP,
+	CMD_SHOW,
 };
 
 static void
@@ -82,9 +83,79 @@ list_attributes(struct switch_dev *dev)
 }
 
 static void
+print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
+{
+	int i;
+
+	switch (attr->type) {
+	case SWITCH_TYPE_INT:
+		printf("%d", val->value.i);
+		break;
+	case SWITCH_TYPE_STRING:
+		printf("%s", val->value.s);
+		break;
+	case SWITCH_TYPE_PORTS:
+		for(i = 0; i < val->len; i++) {
+			printf("%d%s ",
+				val->value.ports[i].id,
+				(val->value.ports[i].flags &
+				 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
+		}
+		break;
+	default:
+		printf("?unknown-type?");
+	}
+}
+
+static void
+show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *val)
+{
+	while (attr) {
+		if (attr->type != SWITCH_TYPE_NOVAL) {
+			printf("\t%s: ", attr->name);
+			if (swlib_get_attr(dev, attr, val) < 0)
+				printf("???");
+			else
+				print_attr_val(attr, val);
+			putchar('\n');
+		}
+		attr = attr->next;
+	}
+}
+
+static void
+show_global(struct switch_dev *dev)
+{
+	struct switch_val val;
+
+	printf("Global attributes:\n");
+	show_attrs(dev, dev->ops, &val);
+}
+
+static void
+show_port(struct switch_dev *dev, int port)
+{
+	struct switch_val val;
+
+	printf("Port %d:\n", port);
+	val.port_vlan = port;
+	show_attrs(dev, dev->port_ops, &val);
+}
+
+static void
+show_vlan(struct switch_dev *dev, int vlan)
+{
+	struct switch_val val;
+
+	printf("VLAN %d:\n", vlan);
+	val.port_vlan = vlan;
+	show_attrs(dev, dev->vlan_ops, &val);
+}
+
+static void
 print_usage(void)
 {
-	printf("swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>)\n");
+	printf("swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
 	exit(1);
 }
 
@@ -165,6 +236,8 @@ int main(int argc, char **argv)
 				print_usage();
 			cmd = CMD_LOAD;
 			ckey = argv[++i];
+		} else if (!strcmp(arg, "show")) {
+			cmd = CMD_SHOW;
 		} else {
 			print_usage();
 		}
@@ -251,6 +324,20 @@ int main(int argc, char **argv)
 		break;
 	case CMD_HELP:
 		list_attributes(dev);
+		break;
+	case CMD_SHOW:
+		if (cport >= 0 || cvlan >= 0) {
+			if (cport >= 0)
+				show_port(dev, cport);
+			else
+				show_vlan(dev, cvlan);
+		} else {
+			show_global(dev);
+			for (i=0; i < dev->ports; i++)
+				show_port(dev, i);
+			for (i=0; i < dev->vlans; i++)
+				show_vlan(dev, i);
+		}
 		break;
 	}
 
