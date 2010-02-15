@@ -8,6 +8,7 @@ choice
 	  Select the version of binutils you wish to use.
 
 	config BINUTILS_VERSION_2_18
+		depends !ubicom32
 		bool "binutils 2.18"
 
 	config BINUTILS_VERSION_2_19_1
