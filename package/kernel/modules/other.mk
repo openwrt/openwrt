@@ -7,6 +7,14 @@
 
 OTHER_MENU:=Other modules
 
+define KernelPackage/block2mtd
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Block device MTD emulation
+  KCONFIG:=CONFIG_MTD_BLOCK2MTD
+  FILES:=$(LINUX_DIR)/drivers/mtd/devices/block2mtd.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,block2mtd))
+
 define KernelPackage/crc-itu-t
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC ITU-T V.41 support
