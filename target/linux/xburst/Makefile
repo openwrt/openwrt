@@ -11,7 +11,7 @@ BOARD:=xburst
 BOARDNAME:=XBurst JZ47x0
 FEATURES:=jffs2 tgz ubifs audio
 
-LINUX_VERSION:=2.6.32.7
+LINUX_VERSION:=2.6.32.8
 
 DEVICE_TYPE=other
 
