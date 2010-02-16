@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ BOARDNAME:=AMCC/IBM PPC44x
 FEATURES:=squashfs
 CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=440
 
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=2.6.32.8
 
 include $(INCLUDE_DIR)/target.mk
 
