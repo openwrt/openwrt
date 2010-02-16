@@ -1,6 +1,6 @@
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
-@@ -698,6 +698,16 @@ config PATA_IXP4XX_CF
+@@ -745,6 +745,16 @@ config PATA_IXP4XX_CF
  
  	  If unsure, say N.
  
@@ -19,14 +19,14 @@
  	depends on CPU_CAVIUM_OCTEON
 --- a/drivers/ata/Makefile
 +++ b/drivers/ata/Makefile
-@@ -48,6 +48,7 @@ obj-$(CONFIG_PATA_OPTI)		+= pata_opti.o
+@@ -49,6 +49,7 @@ obj-$(CONFIG_PATA_OPTI)		+= pata_opti.o
  obj-$(CONFIG_PATA_OPTIDMA)	+= pata_optidma.o
  obj-$(CONFIG_PATA_MPC52xx)	+= pata_mpc52xx.o
  obj-$(CONFIG_PATA_MARVELL)	+= pata_marvell.o
 +obj-$(CONFIG_PATA_MAGICBOX_CF)	+= pata_magicbox_cf.o
  obj-$(CONFIG_PATA_MPIIX)	+= pata_mpiix.o
  obj-$(CONFIG_PATA_OLDPIIX)	+= pata_oldpiix.o
- obj-$(CONFIG_PATA_PCMCIA)	+= pata_pcmcia.o
+ obj-$(CONFIG_PATA_PALMLD)	+= pata_palmld.o
 --- /dev/null
 +++ b/drivers/ata/pata_magicbox_cf.c
 @@ -0,0 +1,404 @@
