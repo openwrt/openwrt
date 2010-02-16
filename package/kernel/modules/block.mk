@@ -39,6 +39,20 @@ endef
 
 $(eval $(call KernelPackage,ata-ahci))
 
+define KernelPackage/ata-sil
+$(call KernelPackage/ata/Depends,)
+  TITLE:=Silicon Image SATA support
+  KCONFIG:=CONFIG_SATA_SIL
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,sata_sil)
+endef
+
+define KernelPackage/ata-sil/description
+ Support for Silicon Image Serial ATA controllers.
+endef
+
+$(eval $(call KernelPackage,ata-sil))
+
 
 define KernelPackage/ata-sil24
 $(call KernelPackage/ata/Depends,)
