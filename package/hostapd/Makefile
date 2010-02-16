@@ -65,9 +65,9 @@ endif
 ifneq ($(LOCAL_TYPE),hostapd)
   ifdef CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
     TARGET_CFLAGS += -DNO_TIMESTAMP_CHECK
-    DRIVER_MAKEOPTS += \
-		CONFIG_DRIVER_ROBOSWITCH=$(CONFIG_PACKAGE_kmod-switch)
   endif
+  DRIVER_MAKEOPTS += \
+	CONFIG_DRIVER_ROBOSWITCH=$(CONFIG_PACKAGE_kmod-switch)
 endif
 
 define Package/hostapd/Default
