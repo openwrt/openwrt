@@ -377,7 +377,7 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -42,6 +42,7 @@ $(obj)/ebony.o: BOOTCFLAGS += -mcpu=440
+@@ -43,6 +43,7 @@ $(obj)/cuboot-hotfoot.o: BOOTCFLAGS += -
  $(obj)/cuboot-taishan.o: BOOTCFLAGS += -mcpu=440
  $(obj)/cuboot-katmai.o: BOOTCFLAGS += -mcpu=440
  $(obj)/cuboot-acadia.o: BOOTCFLAGS += -mcpu=405
@@ -385,17 +385,18 @@
  $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
  $(obj)/virtex405-head.o: BOOTAFLAGS += -mcpu=405
  
-@@ -75,7 +76,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
+@@ -76,7 +77,8 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
--		cuboot-acadia.c cuboot-amigaone.c
-+		cuboot-acadia.c cuboot-amigaone.c cuboot-magicbox.c
+-		cuboot-acadia.c cuboot-amigaone.c cuboot-kilauea.c
++		cuboot-acadia.c cuboot-amigaone.c cuboot-kilauea.c \
++		cuboot-magicbox.c
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -192,6 +193,7 @@ image-$(CONFIG_DEFAULT_UIMAGE)		+= uImag
- image-$(CONFIG_EP405)			+= dtbImage.ep405
+@@ -194,6 +196,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
+ image-$(CONFIG_HOTFOOT)			+= cuImage.hotfoot
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
 +image-$(CONFIG_MAGICBOX)		+= cuImage.magicbox
@@ -404,7 +405,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -50,6 +50,16 @@ config KILAUEA
+@@ -60,6 +60,16 @@ config KILAUEA
  	help
  	  This option enables support for the AMCC PPC405EX evaluation board.
  
@@ -423,12 +424,12 @@
  	depends on 40x
 --- a/arch/powerpc/platforms/40x/ppc40x_simple.c
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -54,7 +54,8 @@ static char *board[] __initdata = {
- 	"amcc,acadia",
+@@ -55,7 +55,8 @@ static char *board[] __initdata = {
  	"amcc,haleakala",
  	"amcc,kilauea",
--	"amcc,makalu"
-+	"amcc,makalu",
+ 	"amcc,makalu",
+-	"est,hotfoot"
++	"est,hotfoot",
 +	"magicbox"
  };
  

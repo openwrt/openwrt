@@ -353,7 +353,7 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -43,6 +43,7 @@ $(obj)/cuboot-taishan.o: BOOTCFLAGS += -
+@@ -44,6 +44,7 @@ $(obj)/cuboot-taishan.o: BOOTCFLAGS += -
  $(obj)/cuboot-katmai.o: BOOTCFLAGS += -mcpu=440
  $(obj)/cuboot-acadia.o: BOOTCFLAGS += -mcpu=405
  $(obj)/cuboot-magicbox.o: BOOTCFLAGS += -mcpu=405
@@ -361,17 +361,16 @@
  $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
  $(obj)/virtex405-head.o: BOOTAFLAGS += -mcpu=405
  
-@@ -76,7 +77,8 @@ src-plat := of.c cuboot-52xx.c cuboot-82
- 		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
+@@ -78,7 +79,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
--		cuboot-acadia.c cuboot-amigaone.c cuboot-magicbox.c
-+		cuboot-acadia.c cuboot-amigaone.c cuboot-magicbox.c \
-+		cuboot-openrb.c
+ 		cuboot-acadia.c cuboot-amigaone.c cuboot-kilauea.c \
+-		cuboot-magicbox.c
++		cuboot-magicbox.c cuboot-openrb.c
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -194,6 +196,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
+@@ -197,6 +198,7 @@ image-$(CONFIG_HOTFOOT)			+= cuImage.hot
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_MAGICBOX)		+= cuImage.magicbox
@@ -381,7 +380,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -60,6 +60,16 @@ config MAGICBOX
+@@ -70,6 +70,16 @@ config MAGICBOX
  	help
  	  This option enables support for the Magicbox boards.
  
@@ -400,10 +399,10 @@
  	depends on 40x
 --- a/arch/powerpc/platforms/40x/ppc40x_simple.c
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -55,7 +55,8 @@ static char *board[] __initdata = {
- 	"amcc,haleakala",
+@@ -56,7 +56,8 @@ static char *board[] __initdata = {
  	"amcc,kilauea",
  	"amcc,makalu",
+ 	"est,hotfoot",
 -	"magicbox"
 +	"magicbox",
 +	"openrb"
