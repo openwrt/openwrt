@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 
 
 define Image/Prepare
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/mpc8377_wlan.dts > $(BIN_DIR)/openwrt-mpc8377_wlan.dtb
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/mpc8377_wlan.dts > $(BIN_DIR)/openwrt-mpc83xx-mpc8377_wlan.dtb
 endef
 
 define Image/BuildKernel
