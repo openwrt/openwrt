@@ -321,7 +321,7 @@ define KernelPackage/scsi-core
 	CONFIG_SCSI \
 	CONFIG_BLK_DEV_SD
   FILES:= \
-	$(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
+	$(if $(findstring y,$(CONFIG_SCSI)),,$(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX)) \
 	$(LINUX_DIR)/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,scsi_mod) $(call AutoLoad,40,sd_mod)
 endef
