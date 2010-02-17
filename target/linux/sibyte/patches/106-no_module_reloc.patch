@@ -1,7 +1,6 @@
-diff -urN linux-2.6.30.10/arch/mips/Makefile linux-2.6.30.10.new//arch/mips/Makefile
---- linux-2.6.30.10/arch/mips/Makefile	2010-01-29 16:12:01.000000000 +0100
-+++ linux-2.6.30.10.new//arch/mips/Makefile	2009-12-04 07:00:07.000000000 +0100
-@@ -83,7 +83,7 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -83,7 +83,7 @@ all-$(CONFIG_BOOT_ELF64)	:= $(vmlinux-64
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
@@ -10,10 +9,9 @@ diff -urN linux-2.6.30.10/arch/mips/Makefile linux-2.6.30.10.new//arch/mips/Make
  
  cflags-y += -ffreestanding
  
-diff -urN linux-2.6.30.10/arch/mips/include/asm/module.h linux-2.6.30.10.new//arch/mips/include/asm/module.h
---- linux-2.6.30.10/arch/mips/include/asm/module.h	2010-01-29 16:12:01.000000000 +0100
-+++ linux-2.6.30.10.new//arch/mips/include/asm/module.h	2009-12-04 07:00:07.000000000 +0100
-@@ -9,11 +9,6 @@
+--- a/arch/mips/include/asm/module.h
++++ b/arch/mips/include/asm/module.h
+@@ -9,11 +9,6 @@ struct mod_arch_specific {
  	struct list_head dbe_list;
  	const struct exception_table_entry *dbe_start;
  	const struct exception_table_entry *dbe_end;
@@ -25,10 +23,9 @@ diff -urN linux-2.6.30.10/arch/mips/include/asm/module.h linux-2.6.30.10.new//ar
  };
  
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
-diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mips/kernel/module.c
---- linux-2.6.30.10/arch/mips/kernel/module.c	2010-01-29 16:12:01.000000000 +0100
-+++ linux-2.6.30.10.new//arch/mips/kernel/module.c	2009-12-04 07:00:07.000000000 +0100
-@@ -43,116 +43,6 @@
+--- a/arch/mips/kernel/module.c
++++ b/arch/mips/kernel/module.c
+@@ -43,117 +43,6 @@ static struct mips_hi16 *mips_hi16_list;
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -142,10 +139,11 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
 -		__free_page(page);
 -}
 -
+-
  void *module_alloc(unsigned long size)
  {
  #ifdef MODULE_START
-@@ -168,101 +58,23 @@
+@@ -169,99 +58,21 @@ void *module_alloc(unsigned long size)
  
  	return __vmalloc_area(area, GFP_KERNEL, PAGE_KERNEL);
  #else
@@ -189,11 +187,8 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
 -	} else {
 -		vfree(module_region);
 -	}
-+	vfree(module_region);
- 	/* FIXME: If module_region == mod->init_region, trim exception
-            table entries. */
- }
- 
+-}
+-
 -static void *__module_alloc(int size, bool phys)
 -{
 -	void *ptr;
@@ -211,8 +206,9 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
 -		kfree(ptr);
 -	else
 -		vfree(ptr);
--}
--
++	vfree(module_region);
+ }
+ 
  int module_frob_arch_sections(Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
  			      char *secstrings, struct module *mod)
  {
@@ -249,7 +245,7 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
  	return 0;
  }
  
-@@ -285,37 +97,27 @@
+@@ -284,36 +95,28 @@ static int apply_r_mips_32_rela(struct m
  	return 0;
  }
  
@@ -258,7 +254,6 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
 +static int apply_r_mips_26_rel(struct module *me, u32 *location, Elf_Addr v)
  {
 -	unsigned *tramp = start + *plt_offset;
--
 -	*plt_offset += 4 * sizeof(int);
 -
 -	/* adjust carry for addiu */
@@ -270,7 +265,8 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
 -	tramp[2] = 0x03200008;                  /* jr t9 */
 -	tramp[3] = 0x00000000;                  /* nop */
 +	if (v % 4) {
-+		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
++		pr_err("module %s: dangerous R_MIPS_26 REL relocation\n",
++		       me->name);
 +		return -ENOEXEC;
 +	}
  
@@ -301,8 +297,8 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
 +static int apply_r_mips_26_rela(struct module *me, u32 *location, Elf_Addr v)
  {
  	if (v % 4) {
- 		printk(KERN_ERR "module %s: dangerous relocation\n", me->name);
-@@ -323,31 +125,17 @@
+ 		pr_err("module %s: dangerous R_MIPS_26 RELArelocation\n",
+@@ -322,31 +125,17 @@ static int set_r_mips_26(struct module *
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -337,7 +333,7 @@ diff -urN linux-2.6.30.10/arch/mips/kernel/module.c linux-2.6.30.10.new//arch/mi
  static int apply_r_mips_hi16_rel(struct module *me, u32 *location, Elf_Addr v)
  {
  	struct mips_hi16 *n;
-@@ -612,32 +400,11 @@
+@@ -611,32 +400,11 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
