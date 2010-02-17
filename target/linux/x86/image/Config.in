@@ -2,14 +2,21 @@ config X86_GRUB_IMAGES
     bool "Build GRUB images (Linux x86 or x86_64 host only)"
     depends TARGET_x86 && !TARGET_x86_olpc
     depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
-	select PACKAGE_grub
+    select PACKAGE_grub
     default y
 
 config X86_GRUB_IMAGES_PAD
-	bool "Pad GRUB images to filesystem size (for JFFS2)"
-	depends X86_GRUB_IMAGES
+    bool "Pad GRUB images to filesystem size (for JFFS2)"
+    depends X86_GRUB_IMAGES
 
 config X86_GRUB_CONSOLE
+    bool
+    depends X86_GRUB_IMAGES
+    prompt "Use Console Terminal (in addition to Serial)"
+    default n if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx
+    default y if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx)
+
+config X86_GRUB_SERIAL
     string
     prompt "Serial port device"
     depends X86_GRUB_IMAGES
@@ -19,7 +26,8 @@ config X86_GRUB_CONSOLE
 config X86_GRUB_BAUDRATE
     int "Serial port baud rate"
     depends X86_GRUB_IMAGES
-    default 38400
+    default 19200 if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx
+    default 38400 if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx)
 
 config X86_GRUB_KERNELPART
     int "Kernel partition size (in MB)"
