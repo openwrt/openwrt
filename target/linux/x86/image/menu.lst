@@ -1,15 +1,15 @@
-serial --unit=0 --speed=@BAUDRATE@ --word=8 --parity=no --stop=1
-terminal --timeout=2 console serial
+@SERIAL_CONFIG@
+@TERMINAL_CONFIG@
 
 default 0
 timeout 5
 
 title   OpenWrt
 root    (hd0,0)
-kernel  /boot/vmlinuz @CMDLINE@ noinitrd console=tty0 console=@CONSOLE@,@BAUDRATE@n8 reboot=bios
+kernel  /boot/vmlinuz @CMDLINE@ noinitrd reboot=bios
 boot
 
 title	OpenWrt (failsafe)
 root	(hd0,0)
-kernel  /boot/vmlinuz failsafe=true @CMDLINE@ noinitrd console=tty0 console=@CONSOLE@,@BAUDRATE@n8 reboot=bios
+kernel  /boot/vmlinuz failsafe=true @CMDLINE@ noinitrd reboot=bios
 boot

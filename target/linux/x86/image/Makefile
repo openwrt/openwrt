@@ -20,7 +20,25 @@ ROOTPART=$(strip $(subst ",, $(CONFIG_OLPC_BOOTSCRIPT_ROOTPART)))
 endif
 #"))")) # fix vim's broken syntax highlighting
 
-CONSOLE=$(strip $(subst ",, $(CONFIG_X86_GRUB_CONSOLE)))
+GRUB_TERMINALS =
+GRUB_SERIAL_CONFIG =
+GRUB_TERMINAL_CONFIG =
+GRUB_CONSOLE_CMDLINE =
+
+ifeq ($(CONFIG_X86_GRUB_CONSOLE),y)
+GRUB_CONSOLE_CMDLINE += console=tty0
+GRUB_TERMINALS += console
+endif
+
+ifneq ($(CONFIG_X86_GRUB_SERIAL),)
+GRUB_CONSOLE_CMDLINE += console=$(strip $(subst ",, $(CONFIG_X86_GRUB_SERIAL))),$(CONFIG_X86_GRUB_BAUDRATE)n8
+GRUB_SERIAL_CONFIG = serial --unit=0 --speed=$(CONFIG_X86_GRUB_BAUDRATE) --word=8 --parity=no --stop=1
+GRUB_TERMINALS += serial
+endif
+
+ifneq ($(GRUB_TERMINALS),)
+GRUB_TERMINAL_CONFIG = terminal --timeout=2 $(GRUB_TERMINALS)
+endif
 
 
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
@@ -49,9 +67,9 @@ ifneq ($(HOST_OS),Darwin)
 		$(KDIR)/root.grub/boot/grub/
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
 	sed \
-		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
-		-e 's#@CONSOLE@#$(CONSOLE)#g' \
-		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
+		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
+		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
+		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
 		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 	$(call Image/Build/grub/$(1))
@@ -141,8 +159,9 @@ define Image/Build/iso
 		$(STAGING_DIR_HOST)/usr/lib/grub/i386-openwrt/stage2_eltorito \
 		$(KDIR)/root.grub/boot/grub/stage2_eltorito 
 	sed \
-		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
-		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
+		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
+		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
+		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
 		-e 's#(hd0,0)#(cd)#g' \
 		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz 
