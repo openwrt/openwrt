@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=carl9170
-PKG_VERSION:=0.9.9.1
+PKG_VERSION:=1.0.1.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/chr/carl9170/$(PKG_VERSION) \
 	@KERNEL/linux/kernel/people/chr/carl9170/old/$(PKG_VERSION)
-PKG_MD5SUM:=122610b254125d93c7f64cc559d3341a
+PKG_MD5SUM:=8abbb4ae09a45a82af6f63cb65c7e2d8
 
 include $(INCLUDE_DIR)/package.mk
 
