@@ -1,0 +1,11 @@
+--- a/config.mk
++++ b/config.mk
+@@ -8,7 +8,7 @@ ifeq ($(wildcard $(KLIB_BUILD)/.config),
+ # These will be ignored by compat autoconf
+  CONFIG_PCI=y
+  CONFIG_USB=y
+- CONFIG_PCMCIA=y
++ # CONFIG_PCMCIA=y
+  CONFIG_SSB=m
+ else
+ include $(KLIB_BUILD)/.config

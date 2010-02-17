@@ -17,7 +17,7 @@
  
  	common = ath9k_hw_common(ah);
  	common->ops = &ath9k_common_ops;
-@@ -670,6 +673,24 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -671,6 +674,24 @@ void ath9k_set_hw_capab(struct ath_softc
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
  }
  
@@ -42,7 +42,7 @@
  int ath9k_init_device(u16 devid, struct ath_softc *sc, u16 subsysid,
  		    const struct ath_bus_ops *bus_ops)
  {
-@@ -688,6 +709,9 @@ int ath9k_init_device(u16 devid, struct 
+@@ -689,6 +710,9 @@ int ath9k_init_device(u16 devid, struct 
  	common = ath9k_hw_common(ah);
  	ath9k_set_hw_capab(sc, hw);
  
@@ -54,7 +54,7 @@
  			      ath9k_reg_notifier);
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -510,6 +510,8 @@ struct ath_softc {
+@@ -511,6 +511,8 @@ struct ath_softc {
  	struct ath_beacon_config cur_beacon_conf;
  	struct delayed_work tx_complete_work;
  	struct ath_btcoex btcoex;

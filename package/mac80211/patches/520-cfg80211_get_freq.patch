@@ -20,7 +20,7 @@
  }
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -881,6 +881,11 @@ static int nl80211_send_iface(struct sk_
+@@ -885,6 +885,11 @@ static int nl80211_send_iface(struct sk_
  	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, rdev->wiphy_idx);
  	NLA_PUT_STRING(msg, NL80211_ATTR_IFNAME, dev->name);
  	NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, dev->ieee80211_ptr->iftype);
