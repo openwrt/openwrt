@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wrt350nv2-builder
-PKG_VERSION:=2.1
+PKG_VERSION:=2.2
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/${PKG_NAME}-$(PKG_VERSION)
 

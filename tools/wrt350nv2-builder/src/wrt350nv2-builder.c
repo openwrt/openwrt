@@ -1,6 +1,6 @@
 /*
 
-	WRT350Nv2-Builder 2.1 (previously called buildimg)
+	WRT350Nv2-Builder 2.2 (previously called buildimg)
 	Copyright (C) 2008-2009 Dirk Teurlings <info@upexia.nl>
 	Copyright (C) 2009-2010 Matthias Buecher (http://www.maddes.net/)
 
@@ -31,6 +31,7 @@
 		:kernel	0x001A0000	/path/to/uImage
 		:rootfs	0	/path/to/root.squashfs
 		:u-boot	0	/path/to/u-boot.bin
+		#version	0x2020
 
 	args:
 		1	wrt350nv2.par		parameter file describing the image layout
@@ -60,10 +61,16 @@
 	To extract everything from a Linksys style firmware image see
 	https://forum.openwrt.org/viewtopic.php?pid=92928#p92928
 
-*/
+	Changelog:
+	v2.2 - fixed checksum byte calculation for other versions than 0x2019
+	       fixed rare problem with padsize
+	       updated info to stock firmware 2.00.20
+	       fixed typos
+	v2.1 - used "wrt350n.bin" for the created image (closer to stock)
+		added option to create the image in two separate steps (-b / -z)
+	v2.0 - complete re-write
 
-// ToDo:
-// * Has NODE to be added to bin file *after* creating checksum byte?
+*/
 
 // includes
 #define _GNU_SOURCE	// for GNU's basename()
@@ -79,11 +86,11 @@
 
 // custom includes
 #include "md5.h"	// MD5 routines
-#include "upgrade.h"	// Linksys definitions from firmware 2.0.19
+#include "upgrade.h"	// Linksys definitions from firmware 2.0.19 (unchanged up to 2.0.20)
 
 
 // version info
-#define VERSION "2.1"
+#define VERSION "2.2"
 char program_info[] = "WRT350Nv2-Builder v%s by Dirk Teurlings <info@upexia.nl> and Matthias Buecher (http://www.maddes.net/)\n";
 
 // verbosity
@@ -107,12 +114,14 @@ mtd_info mtd_uboot = { "u-boot", 0, 0, NULL, 0L, { 0, 0 } };
 
 #define ROOTFS_END_OFFSET	0x00760000
 #define ROOTFS_MIN_OFFSET	0x00640000	// should be filled up to here, to make sure that the zip file is big enough to pass the size check of the stock firmware
-						// 2.0.17: filled up to 0x00640000, 2.0.19: filled up to 0x0670000
+						// 2.0.17: filled up to 0x00640000
+						// 2.0.19: filled up to 0x00670000
+						// 2.0.20: filled up to 0x00670000
 
 // rootfs statics via: hexdump -v -e '1/1 "0x%02X, "' -s 0x0075FFE0 -n 16 "wrt350n.bin" ; echo -en "\n"
 unsigned char product_id[] = { 0x00, 0x03 };	// seems to be a fixed value
 unsigned char protocol_id[] = { 0x00, 0x00 };	// seems to be a fixed value
-unsigned char fw_version[] = { 0x20, 0x19 };
+unsigned char fw_version[] = { 0x20, 0x20 };
 unsigned char rootfs_unknown[] = { 0x90, 0xF7 };	// seems to be a fixed value
 unsigned char sign[] = { 0x65, 0x52, 0x63, 0x4F, 0x6D, 0x4D, 0x00, 0x00 };	// eRcOmM
 
@@ -130,7 +139,7 @@ unsigned char pid[] = {	0x73, 0x45, 0x72, 0x43, 0x6F, 0x4D, 0x6D, 0x00, 0x01, 0x
 				0x00, 0x00, 0x00, 0x04,
 				0x73, 0x45, 0x72, 0x43, 0x6F, 0x4D, 0x6D };	// sErCoMm
 
-// img statics via: hexdump -v -e '1/1 "0x%02X, "' -s 0 -n 512 "WRT350N-EU-ETSI-2.00.19.img" ; echo -en "\n"
+// img statics via: hexdump -v -e '1/1 "0x%02X, "' -s 0 -n 512 "WRT350N-EU-ETSI-2.00.19.img" ; echo -en "\n" (unchanged up to 2.0.20)
 unsigned char img_hdr[] = {	0x00, 0x01, 0x00, 0x00, 0x59, 0x42, 0x50, 0x00, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,
@@ -320,7 +329,7 @@ int parse_par_file(FILE *f_par) {
 			case '#':	// integer values
 				count = sscanf(line, "#%255s %i", string1, &value);
 				if (count != 2) {
-					printf("line %i does not meet defined format (:<variable name> <integer>\n", lineno);
+					printf("line %i does not meet defined format (#<variable name> <integer>\n", lineno);
 				} else {
 					if (!strcmp(string1, "version")) {
 						// changing version
@@ -454,10 +463,12 @@ int create_bin_file(char *bin_filename) {
 
 			// padding
 			if (padsize > 0) {
-				printf("mtd %s input file %s is too small (0x%08lX), adding 0x%08X random bytes\n", mtd->name, mtd->filename, mtd->filesize, padsize);
-
 				addsize = padsize & 0x0000FFFF;	// start on next 64KB border
 				padsize -= addsize;
+			}
+			if (padsize > 0) {
+				printf("mtd %s input file %s is too small (0x%08lX), adding 0x%08X random bytes\n", mtd->name, mtd->filename, mtd->filesize, padsize);
+
 				addsize += KERNEL_CODE_OFFSET + mtd->offset + mtd->filesize;	// get offset
 				lprintf(DEBUG, " padding offset 0x%08X length 0x%08X\n", addsize, padsize);
 
@@ -491,10 +502,12 @@ int create_bin_file(char *bin_filename) {
 		memcpy(&buffer[KERNEL_CODE_OFFSET + FW_VERSION_OFFSET + 2], rootfs_unknown, 2);
 		memcpy(&buffer[KERNEL_CODE_OFFSET + SIGN_OFFSET], sign, 8);	// eRcOmM
 
-		lprintf(DEBUG, "adding u-boot special data 1/2\n");	// ToDo: or after creating the checksum byte?
-//		memcpy(&buffer[KERNEL_CODE_OFFSET + SN_OFF], sn, 12);	// ToDo: find out what's this for?
-//		memcpy(&buffer[KERNEL_CODE_OFFSET + PIN_OFF], pin, 8);	// ToDo: find out what's this for?
-//		memcpy(&buffer[KERNEL_CODE_OFFSET + NODE_BASE_OFF], node, 25);	// ToDo: find out what's this for?
+		lprintf(DEBUG, "adding u-boot special data\n");
+//		memcpy(&buffer[KERNEL_CODE_OFFSET + SN_OFF], sn, 12);	// ToDo: currently zero, find out what's this for?
+//		memcpy(&buffer[KERNEL_CODE_OFFSET + PIN_OFF], pin, 8);	// ToDo: currently zero, find out what's this for?
+//		memcpy(&buffer[KERNEL_CODE_OFFSET + NODE_BASE_OFF], node, 25);	// ToDo: currently zero, find out what's this for?
+		memcpy(&buffer[KERNEL_CODE_OFFSET + BOOT_ADDR_BASE_OFF + PID_OFFSET], pid, 70);	// sErCoMm
+		memcpy(&buffer[KERNEL_CODE_OFFSET + BOOT_ADDR_BASE_OFF + PID_OFFSET + 57], fw_version, 2);
 
 		lprintf(DEBUG, "adding checksum byte\n");
 		csum = 0;
@@ -503,12 +516,8 @@ int create_bin_file(char *bin_filename) {
 		}
 		lprintf(DEBUG_LVL2, " checksum 0x%016lX (%li)\n", csum, csum);
 
-		buffer[KERNEL_CODE_OFFSET + NODE_BASE_OFF + 25] = ~(csum+108)+1;
+		buffer[KERNEL_CODE_OFFSET + NODE_BASE_OFF + 25] = ~csum + 1;
 		lprintf(DEBUG, " byte 0x%02X\n", buffer[KERNEL_CODE_OFFSET + NODE_BASE_OFF + 25]);
-
-		lprintf(DEBUG, "adding u-boot special data 2/2\n");
-		memcpy(&buffer[KERNEL_CODE_OFFSET + BOOT_ADDR_BASE_OFF + PID_OFFSET], pid, 70);	// sErCoMm
-		memcpy(&buffer[KERNEL_CODE_OFFSET + BOOT_ADDR_BASE_OFF + PID_OFFSET + 57], fw_version, 2);
 	}
 
 	// write bin file
@@ -847,7 +856,7 @@ int main(int argc, char *argv[]) {
   -b            -  Create only bin file, no img or zip file is created\n\
   -z            -  Have zip file, the img file will be directly created from it\n\
   -f <version>  -  Wanted firmware version to use with -z\n\
-                   Default firmware version is 0x2019 = 2.00.19.\n\
+                   Default firmware version is 0x2020 = 2.00.20.\n\
                    Note: version from parameter file will supersede this\n\
   -v            -  Increase debug verbosity level\n\n\
   Example:\n\

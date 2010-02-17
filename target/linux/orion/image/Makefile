@@ -63,6 +63,7 @@ define Image/Build/Linksys
 	echo ":rootfs 0 ${KDIR}/root.$1" >>"${TMP_DIR}/$2_webupgrade/$2.par"
 	[ ! -f "$(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin" ] || ( \
 		echo ":u-boot 0 $(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin" >>"${TMP_DIR}/$2_webupgrade/$2.par"; )
+	echo "#version 0x2020" >>"${TMP_DIR}/$2_webupgrade/$2.par"
 # create bin file for recovery and webupgrade image
 	( cd "${TMP_DIR}/$2_webupgrade"; \
 		"${STAGING_DIR_HOST}/bin/$2-builder" \
