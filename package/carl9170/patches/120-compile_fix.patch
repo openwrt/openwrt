@@ -1,0 +1,13 @@
+--- a/drivers/net/wireless/ath/carl9170/fw.c
++++ b/drivers/net/wireless/ath/carl9170/fw.c
+@@ -185,8 +185,10 @@ static int ar9170_fw_check(struct ar9170
+ 	if (SUPP(CARL9170FW_WLANTX_CAB))
+ 		ar->hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP);
+ 
++#ifdef CONFIG_CARL9170_WPS_BUTTON
+ 	if (!SUPP(CARL9170FW_GPIO_INTERRUPT))
+ 		ar->has_wps_button = false;
++#endif
+ 
+ #undef SUPPORTED
+ 	return 0;
