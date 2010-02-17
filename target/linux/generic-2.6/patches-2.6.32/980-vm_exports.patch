@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2608,6 +2608,16 @@
+@@ -2608,6 +2608,16 @@ int shmem_lock(struct file *file, int lo
  
  /* common code */
  
@@ -17,7 +17,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2687,9 +2697,6 @@
+@@ -2687,9 +2697,6 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
@@ -30,7 +30,7 @@
  }
 --- a/fs/file.c
 +++ b/fs/file.c
-@@ -271,6 +271,7 @@
+@@ -271,6 +271,7 @@ int expand_files(struct files_struct *fi
  	/* All good, so we try */
  	return expand_fdtable(files, nr);
  }
@@ -40,7 +40,7 @@
  {
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -507,6 +507,7 @@
+@@ -507,6 +507,7 @@ struct files_struct *get_files_struct(st
  
  	return files;
  }
@@ -48,7 +48,7 @@
  
  void put_files_struct(struct files_struct *files)
  {
-@@ -526,6 +527,7 @@
+@@ -526,6 +527,7 @@ void put_files_struct(struct files_struc
  		free_fdtable(fdt);
  	}
  }
@@ -58,7 +58,7 @@
  {
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -168,6 +168,7 @@
+@@ -168,6 +168,7 @@ void __put_task_struct(struct task_struc
  	if (!profile_handoff_task(tsk))
  		free_task(tsk);
  }
@@ -68,7 +68,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6093,6 +6093,7 @@
+@@ -6093,6 +6093,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
@@ -78,7 +78,7 @@
  
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -1100,6 +1100,7 @@
+@@ -1100,6 +1100,7 @@ unsigned long zap_page_range(struct vm_a
  		tlb_finish_mmu(tlb, address, end);
  	return end;
  }
@@ -86,7 +86,7 @@
  
  /**
   * zap_vma_ptes - remove ptes mapping the vma
-@@ -2486,6 +2487,7 @@
+@@ -2486,6 +2487,7 @@ int vmtruncate_range(struct inode *inode
  
  	return 0;
  }
@@ -96,7 +96,7 @@
   * We enter with non-exclusive mmap_sem (to exclude vma changes,
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -1172,6 +1172,7 @@
+@@ -1172,6 +1172,7 @@ void unmap_kernel_range(unsigned long ad
  	vunmap_page_range(addr, end);
  	flush_tlb_kernel_range(addr, end);
  }
@@ -104,7 +104,7 @@
  
  int map_vm_area(struct vm_struct *area, pgprot_t prot, struct page ***pages)
  {
-@@ -1287,6 +1288,7 @@
+@@ -1287,6 +1288,7 @@ struct vm_struct *get_vm_area(unsigned l
  	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
  				-1, GFP_KERNEL, __builtin_return_address(0));
  }
@@ -114,7 +114,7 @@
  				void *caller)
 --- a/include/linux/mm.h
 +++ b/include/linux/mm.h
-@@ -713,6 +713,7 @@
+@@ -713,6 +713,7 @@ extern void show_free_areas(void);
  
  int shmem_lock(struct file *file, int lock, struct user_struct *user);
  struct file *shmem_file_setup(const char *name, loff_t size, unsigned long flags);
@@ -124,7 +124,7 @@
  #ifndef CONFIG_MMU
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -1070,6 +1070,7 @@
+@@ -1070,6 +1070,7 @@ struct sighand_struct *lock_task_sighand
  
  	return sighand;
  }
