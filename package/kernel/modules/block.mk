@@ -389,6 +389,7 @@ define KernelPackage/dm
        CONFIG_DM_MULTIPATH=n \
        CONFIG_DM_ZERO=n \
        CONFIG_DM_SNAPSHOT=n \
+       CONFIG_DM_LOG_USERSPACE=n \
        CONFIG_MD=y \
        CONFIG_BLK_DEV_DM \
        CONFIG_DM_MIRROR
