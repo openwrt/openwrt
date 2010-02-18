@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,10 +13,24 @@ define replace
 	
 endef
 
+PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
+
 # replace copies of ltmain.sh with the build system's version
-update_libtool_common=$(call replace,ltmain.sh,$(STAGING_DIR)/host/share/libtool,$(CONFIGURE_PATH)/)$(call replace,libtool.m4,$(STAGING_DIR)/host/share/aclocal,$(CONFIGURE_PATH)/)
-update_libtool=$(call replace,libtool,$(STAGING_DIR)/host/bin,$(CONFIGURE_PATH)/)$(call update_libtool_common)
-update_libtool_ucxx=$(call replace,libtool,$(STAGING_DIR)/host/bin,$(CONFIGURE_PATH)/,libtool-ucxx)$(call update_libtool_common)
+update_libtool_common = \
+	$(foreach p,$(LIBTOOL_PATHS), \
+		$(call replace,ltmain.sh,$(STAGING_DIR)/host/share/libtool,$(p)/) \
+		$(call replace,libtool.m4,$(STAGING_DIR)/host/share/aclocal,$(p)/) \
+	)
+update_libtool = \
+	$(foreach p,$(PKG_LIBTOOL_PATHS), \
+		$(call replace,libtool,$(STAGING_DIR)/host/bin,$(p)/) \
+	) \
+	$(call update_libtool_common)
+update_libtool_ucxx = \
+	$(foreach p,$(PKG_LIBTOOL_PATHS), \
+		$(call replace,libtool,$(STAGING_DIR)/host/bin,$(p)/,libtool-ucxx) \
+	) \
+	$(call update_libtool_common)
 
 
 # prevent libtool from linking against host development libraries
@@ -32,7 +46,7 @@ endef
 define remove_version_check
 	if [ -f "$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/configure" ]; then \
 		$(SED) \
-			's,pardus_ltmain_version=.*,pardus_ltmain_version="$$$$pardus_lt_version",' \
+			's,\(gentoo\|pardus\)_ltmain_version=.*,\1_ltmain_version="$$$$\1_lt_version",' \
 			$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/configure; \
 	fi
 endef
