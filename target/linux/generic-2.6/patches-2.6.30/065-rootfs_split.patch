@@ -441,7 +441,7 @@
  		if (devt) {
  			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
  		}
-@@ -263,17 +276,97 @@ static struct block2mtd_dev *add_device(
+@@ -263,17 +276,98 @@ static struct block2mtd_dev *add_device(
  #endif
  
  	if (IS_ERR(bdev)) {
@@ -505,9 +505,10 @@
 +	bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
 +	if (!bdev || !bdev->bd_disk)
 +		err = -EINVAL;
-+	else {
++#ifndef CONFIG_MTD_BLOCK2MTD_MODULE
++	else
 +		err = rescan_partitions(bdev->bd_disk, bdev);
-+	}
++#endif
 +	if (bdev)
 +		close_bdev_exclusive(bdev, FMODE_READ|FMODE_WRITE);
 +
@@ -542,7 +543,7 @@
  
  	if (!mtdname)
  		mtdname = devname;
-@@ -297,6 +390,7 @@ static struct block2mtd_dev *add_device(
+@@ -297,6 +391,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
