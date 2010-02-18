@@ -17,9 +17,8 @@ Description: Contains various fixes and enhancements
 
 http://trac.cross-lfs.org/browser/trunk/patches/grub-0.97-fixes-1.patch
 
-diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
---- grub-0.97.orig/aclocal.m4	2005-05-07 19:41:18.000000000 -0700
-+++ grub-0.97/aclocal.m4	2006-07-04 00:08:22.000000000 -0700
+--- a/aclocal.m4
++++ b/aclocal.m4
 @@ -1,7 +1,7 @@
 -# generated automatically by aclocal 1.9.4 -*- Autoconf -*-
 +# generated automatically by aclocal 1.9.6 -*- Autoconf -*-
@@ -60,7 +59,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # AM_AUTOMAKE_VERSION(VERSION)
  # ----------------------------
-@@ -40,26 +28,15 @@
+@@ -40,26 +28,15 @@ AC_DEFUN([AM_AUTOMAKE_VERSION], [am__api
  # Call AM_AUTOMAKE_VERSION so it can be traced.
  # This function is AC_REQUIREd by AC_INIT_AUTOMAKE.
  AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
@@ -94,7 +93,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # For projects using AC_CONFIG_AUX_DIR([foo]), Autoconf sets
  # $ac_aux_dir to `$srcdir/foo'.  In other projects, it is set to
-@@ -106,26 +83,16 @@
+@@ -106,26 +83,16 @@ AC_PREREQ([2.50])dnl
  am_aux_dir=`cd $ac_aux_dir && pwd`
  ])
  
@@ -129,7 +128,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # AM_CONDITIONAL(NAME, SHELL-CONDITION)
  # -------------------------------------
-@@ -149,26 +116,15 @@
+@@ -149,26 +116,15 @@ AC_CONFIG_COMMANDS_PRE(
  Usually this means the macro was only invoked conditionally.]])
  fi])])
  
@@ -162,7 +161,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # There are a few dirty hacks below to avoid letting `AC_PROG_CC' be
  # written in clear, in which case automake, when reading aclocal.m4,
-@@ -177,7 +133,6 @@
+@@ -177,7 +133,6 @@ fi])])
  # CC etc. in the Makefile, will ask for an AC_PROG_CC use...
  
  
@@ -170,7 +169,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  # _AM_DEPENDENCIES(NAME)
  # ----------------------
  # See how the compiler implements dependency checking.
-@@ -317,27 +272,16 @@
+@@ -317,27 +272,16 @@ AM_CONDITIONAL([AMDEP], [test "x$enable_
  AC_SUBST([AMDEPBACKSLASH])
  ])
  
@@ -206,7 +205,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # _AM_OUTPUT_DEPENDENCY_COMMANDS
  # ------------------------------
-@@ -396,30 +340,19 @@
+@@ -396,30 +340,19 @@ AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS]
       [AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"])
  ])
  
@@ -246,7 +245,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])
  # AM_INIT_AUTOMAKE([OPTIONS])
-@@ -521,51 +454,27 @@
+@@ -521,51 +454,27 @@ for _am_header in $config_headers :; do
  done
  echo "timestamp for $1" >`AS_DIRNAME([$1])`/stamp-h[]$_am_stamp_count])
  
@@ -310,7 +309,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # Check whether the underlying file-system supports filenames
  # with a leading dot.  For instance MS-DOS doesn't.
-@@ -580,28 +489,17 @@
+@@ -580,28 +489,17 @@ fi
  rmdir .tst 2>/dev/null
  AC_SUBST([am__leading_dot])])
  
@@ -346,7 +345,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  AC_DEFUN([AM_MAINTAINER_MODE],
  [AC_MSG_CHECKING([whether to enable maintainer-specific portions of Makefiles])
-@@ -620,26 +518,15 @@
+@@ -620,26 +518,15 @@ AC_DEFUN([AM_MAINTAINER_MODE],
  
  AU_DEFUN([jm_MAINTAINER_MODE], [AM_MAINTAINER_MODE])
  
@@ -380,7 +379,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # AM_MAKE_INCLUDE()
  # -----------------
-@@ -683,27 +570,16 @@
+@@ -683,27 +570,16 @@ AC_MSG_RESULT([$_am_result])
  rm -f confinc confmf
  ])
  
@@ -416,7 +415,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # AM_MISSING_PROG(NAME, PROGRAM)
  # ------------------------------
-@@ -729,27 +605,16 @@
+@@ -729,27 +605,16 @@ else
  fi
  ])
  
@@ -451,7 +450,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  # Automake 1.8 used `mkdir -m 0755 -p --' to ensure that directories
  # created by `make install' are always world readable, even if the
  # installer happens to have an overly restrictive umask (e.g. 077).
-@@ -803,26 +668,15 @@
+@@ -803,26 +668,15 @@ else
  fi
  AC_SUBST([mkdir_p])])
  
@@ -485,7 +484,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # _AM_MANGLE_OPTION(NAME)
  # -----------------------
-@@ -847,28 +701,16 @@
+@@ -847,28 +701,16 @@ AC_DEFUN([_AM_SET_OPTIONS],
  AC_DEFUN([_AM_IF_OPTION],
  [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
  
@@ -522,7 +521,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # AM_SANITY_CHECK
  # ---------------
-@@ -911,25 +753,14 @@
+@@ -911,25 +753,14 @@ Check your system clock])
  fi
  AC_MSG_RESULT(yes)])
  
@@ -555,7 +554,7 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  # One issue with vendor `install' (even GNU) is that you can't
  # specify the program used to strip binaries.  This is especially
  # annoying in cross-compiling environments, where the build's strip
-@@ -952,25 +783,13 @@
+@@ -952,25 +783,13 @@ AC_SUBST([INSTALL_STRIP_PROGRAM])])
  
  # Check how to create a tarball.                            -*- Autoconf -*-
  
@@ -587,9 +586,8 @@ diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
  
  # _AM_PROG_TAR(FORMAT)
  # --------------------
-diff -Naur grub-0.97.orig/ChangeLog grub-0.97/ChangeLog
---- grub-0.97.orig/ChangeLog	2005-05-07 19:47:02.000000000 -0700
-+++ grub-0.97/ChangeLog	2006-07-04 00:01:50.000000000 -0700
+--- a/ChangeLog
++++ b/ChangeLog
 @@ -1,3 +1,51 @@
 +2006-05-02  Pavel Roskin  <proski@gnu.org>
 +
@@ -642,10 +640,9 @@ diff -Naur grub-0.97.orig/ChangeLog grub-0.97/ChangeLog
  2005-05-08  Yoshinori K. Okuji  <okuji@enbug.org>
  
  	* configure.ac (AC_INIT): Upgraded to 0.97.
-diff -Naur grub-0.97.orig/configure grub-0.97/configure
---- grub-0.97.orig/configure	2005-05-07 19:48:12.000000000 -0700
-+++ grub-0.97/configure	2006-07-04 00:08:05.000000000 -0700
-@@ -311,7 +311,7 @@
+--- a/configure
++++ b/configure
+@@ -311,7 +311,7 @@ ac_includes_default="\
  # include <unistd.h>
  #endif"
  
@@ -654,7 +651,7 @@ diff -Naur grub-0.97.orig/configure grub-0.97/configure
  ac_subst_files=''
  
  # Initialize some variables set by options.
-@@ -914,6 +914,7 @@
+@@ -914,6 +914,7 @@ Optional Features:
                            set the default memory location for WD/SMC
    --enable-cs-scan=LIST   probe for CS89x0 base address using LIST
    --enable-diskless       enable diskless support
@@ -662,7 +659,7 @@ diff -Naur grub-0.97.orig/configure grub-0.97/configure
    --disable-hercules      disable hercules terminal support
    --disable-serial        disable serial terminal support
    --enable-serial-speed-simulation
-@@ -5966,6 +5967,22 @@
+@@ -5966,6 +5967,22 @@ else
  fi
  
  
@@ -685,7 +682,7 @@ diff -Naur grub-0.97.orig/configure grub-0.97/configure
  # Check whether --enable-hercules or --disable-hercules was given.
  if test "${enable_hercules+set}" = set; then
    enableval="$enable_hercules"
-@@ -6270,6 +6287,13 @@
+@@ -6270,6 +6287,13 @@ echo "$as_me: error: conditional \"DISKL
  Usually this means the macro was only invoked conditionally." >&2;}
     { (exit 1); exit 1; }; }
  fi
@@ -699,7 +696,7 @@ diff -Naur grub-0.97.orig/configure grub-0.97/configure
  if test -z "${HERCULES_SUPPORT_TRUE}" && test -z "${HERCULES_SUPPORT_FALSE}"; then
    { { echo "$as_me:$LINENO: error: conditional \"HERCULES_SUPPORT\" was never defined.
  Usually this means the macro was only invoked conditionally." >&5
-@@ -6907,6 +6931,8 @@
+@@ -6907,6 +6931,8 @@ s,@NETBOOT_SUPPORT_TRUE@,$NETBOOT_SUPPOR
  s,@NETBOOT_SUPPORT_FALSE@,$NETBOOT_SUPPORT_FALSE,;t t
  s,@DISKLESS_SUPPORT_TRUE@,$DISKLESS_SUPPORT_TRUE,;t t
  s,@DISKLESS_SUPPORT_FALSE@,$DISKLESS_SUPPORT_FALSE,;t t
@@ -708,10 +705,9 @@ diff -Naur grub-0.97.orig/configure grub-0.97/configure
  s,@HERCULES_SUPPORT_TRUE@,$HERCULES_SUPPORT_TRUE,;t t
  s,@HERCULES_SUPPORT_FALSE@,$HERCULES_SUPPORT_FALSE,;t t
  s,@SERIAL_SUPPORT_TRUE@,$SERIAL_SUPPORT_TRUE,;t t
-diff -Naur grub-0.97.orig/configure.ac grub-0.97/configure.ac
---- grub-0.97.orig/configure.ac	2005-05-07 19:36:03.000000000 -0700
-+++ grub-0.97/configure.ac	2006-07-03 23:58:41.000000000 -0700
-@@ -595,6 +595,11 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -595,6 +595,11 @@ AC_ARG_ENABLE(diskless,
    [  --enable-diskless       enable diskless support])
  AM_CONDITIONAL(DISKLESS_SUPPORT, test "x$enable_diskless" = xyes)
  
@@ -723,9 +719,8 @@ diff -Naur grub-0.97.orig/configure.ac grub-0.97/configure.ac
  dnl Hercules terminal
  AC_ARG_ENABLE(hercules,
    [  --disable-hercules      disable hercules terminal support])
-diff -Naur grub-0.97.orig/docs/grub.8 grub-0.97/docs/grub.8
---- grub-0.97.orig/docs/grub.8	2005-05-07 19:48:56.000000000 -0700
-+++ grub-0.97/docs/grub.8	2006-07-04 00:01:50.000000000 -0700
+--- a/docs/grub.8
++++ b/docs/grub.8
 @@ -1,5 +1,5 @@
  .\" DO NOT MODIFY THIS FILE!  It was generated by help2man 1.23.
 -.TH GRUB "8" "May 2005" "grub (GNU GRUB 0.97)" FSF
@@ -733,10 +728,9 @@ diff -Naur grub-0.97.orig/docs/grub.8 grub-0.97/docs/grub.8
  .SH NAME
  grub \- the grub shell
  .SH SYNOPSIS
-diff -Naur grub-0.97.orig/docs/grub.texi grub-0.97/docs/grub.texi
---- grub-0.97.orig/docs/grub.texi	2005-05-07 19:59:59.000000000 -0700
-+++ grub-0.97/docs/grub.texi	2006-07-04 00:00:54.000000000 -0700
-@@ -2199,6 +2199,7 @@
+--- a/docs/grub.texi
++++ b/docs/grub.texi
+@@ -2199,6 +2199,7 @@ Commands usable anywhere in the menu and
  * rarp::                        Initialize a network device via RARP
  * serial::                      Set up a serial device
  * setkey::                      Configure the key map
@@ -744,7 +738,7 @@ diff -Naur grub-0.97.orig/docs/grub.texi grub-0.97/docs/grub.texi
  * terminal::                    Choose a terminal
  * terminfo::                    Define escape sequences for a terminal
  * tftpserver::                  Specify a TFTP server
-@@ -2578,6 +2579,16 @@
+@@ -2578,6 +2579,16 @@ character each of the symbols correspond
  @end deffn
  
  
@@ -761,7 +755,7 @@ diff -Naur grub-0.97.orig/docs/grub.texi grub-0.97/docs/grub.texi
  @node terminal
  @subsection terminal
  
-@@ -2685,6 +2696,7 @@
+@@ -2685,6 +2696,7 @@ you forget a command, you can run the co
  * module::                      Load a module
  * modulenounzip::               Load a module without decompression
  * pause::                       Wait for a key press
@@ -769,7 +763,7 @@ diff -Naur grub-0.97.orig/docs/grub.texi grub-0.97/docs/grub.texi
  * quit::                        Exit from the grub shell
  * reboot::                      Reboot your computer
  * read::                        Read data from memory
-@@ -3091,6 +3103,16 @@
+@@ -3091,6 +3103,16 @@ change floppies.
  @end deffn
  
  
@@ -786,9 +780,8 @@ diff -Naur grub-0.97.orig/docs/grub.texi grub-0.97/docs/grub.texi
  @node quit
  @subsection quit
  
-diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
---- grub-0.97.orig/docs/multiboot.texi	2003-07-09 04:45:36.000000000 -0700
-+++ grub-0.97/docs/multiboot.texi	2006-07-04 00:01:50.000000000 -0700
+--- a/docs/multiboot.texi
++++ b/docs/multiboot.texi
 @@ -25,7 +25,7 @@
  @ifinfo
  Copyright @copyright{} 1995, 96 Bryan Ford <baford@@cs.utah.edu>
@@ -798,7 +791,7 @@ diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
  
  Permission is granted to make and distribute verbatim copies of
  this manual provided the copyright notice and this permission notice
-@@ -57,7 +57,7 @@
+@@ -57,7 +57,7 @@ into another language, under the above c
  @vskip 0pt plus 1filll
  Copyright @copyright{} 1995, 96 Bryan Ford <baford@@cs.utah.edu>
  Copyright @copyright{} 1995, 96 Erich Stefan Boleyn <erich@@uruk.org>
@@ -807,7 +800,7 @@ diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
  
  Permission is granted to make and distribute verbatim copies of
  this manual provided the copyright notice and this permission notice
-@@ -80,7 +80,7 @@
+@@ -80,7 +80,7 @@ into another language, under the above c
  @top Multiboot Specification
  
  This file documents Multiboot Specification, the proposal for the boot
@@ -816,7 +809,7 @@ diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
  @end ifnottex
  
  @menu
-@@ -426,7 +426,7 @@
+@@ -426,7 +426,7 @@ mode table (@pxref{Boot information form
  kernel.
  
  If bit 16 in the @samp{flags} word is set, then the fields at offsets
@@ -825,7 +818,7 @@ diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
  them instead of the fields in the actual executable header to calculate
  where to load the OS image. This information does not need to be
  provided if the kernel image is in @sc{elf} format, but it @emph{must}
-@@ -677,7 +677,7 @@
+@@ -677,7 +677,7 @@ follows:
  @example
  @group
  +-------+-------+-------+-------+
@@ -834,7 +827,7 @@ diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
  +-------+-------+-------+-------+
  @end group
  @end example
-@@ -1199,6 +1199,13 @@
+@@ -1199,6 +1199,13 @@ The maintainer changes to the GNU GRUB m
  @email{bug-grub@@gnu.org}, from Bryan Ford and Erich Stefan Boleyn.
  @end itemize
  
@@ -848,10 +841,9 @@ diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
  @item 0.6
  @itemize @bullet
  @item
-diff -Naur grub-0.97.orig/grub/asmstub.c grub-0.97/grub/asmstub.c
---- grub-0.97.orig/grub/asmstub.c	2005-02-16 12:45:14.000000000 -0800
-+++ grub-0.97/grub/asmstub.c	2006-07-04 00:01:50.000000000 -0700
-@@ -42,6 +42,12 @@
+--- a/grub/asmstub.c
++++ b/grub/asmstub.c
+@@ -42,6 +42,12 @@ int grub_stage2 (void);
  #include <sys/time.h>
  #include <termios.h>
  #include <signal.h>
@@ -864,7 +856,7 @@ diff -Naur grub-0.97.orig/grub/asmstub.c grub-0.97/grub/asmstub.c
  
  #ifdef __linux__
  # include <sys/ioctl.h>		/* ioctl */
-@@ -55,6 +61,10 @@
+@@ -55,6 +61,10 @@ int grub_stage2 (void);
  # endif /* ! BLKFLSBUF */
  #endif /* __linux__ */
  
@@ -875,7 +867,7 @@ diff -Naur grub-0.97.orig/grub/asmstub.c grub-0.97/grub/asmstub.c
  /* We want to prevent any circularararity in our stubs, as well as
     libc name clashes. */
  #define WITHOUT_LIBC_STUBS 1
-@@ -144,6 +154,22 @@
+@@ -144,6 +154,22 @@ grub_stage2 (void)
    assert (grub_scratch_mem == 0);
    scratch = malloc (0x100000 + EXTENDED_MEMSIZE + 15);
    assert (scratch);
@@ -898,7 +890,7 @@ diff -Naur grub-0.97.orig/grub/asmstub.c grub-0.97/grub/asmstub.c
    grub_scratch_mem = (char *) ((((int) scratch) >> 4) << 4);
  
    /* FIXME: simulate the memory holes using mprot, if available. */
-@@ -777,7 +803,39 @@
+@@ -777,7 +803,39 @@ get_diskinfo (int drive, struct geometry
  
        /* Open read/write, or read-only if that failed. */
        if (! read_only)
@@ -939,10 +931,9 @@ diff -Naur grub-0.97.orig/grub/asmstub.c grub-0.97/grub/asmstub.c
  
        if (disks[drive].flags == -1)
  	{
-diff -Naur grub-0.97.orig/grub/main.c grub-0.97/grub/main.c
---- grub-0.97.orig/grub/main.c	2003-07-09 04:45:36.000000000 -0700
-+++ grub-0.97/grub/main.c	2006-07-04 00:01:50.000000000 -0700
-@@ -32,6 +32,7 @@
+--- a/grub/main.c
++++ b/grub/main.c
+@@ -32,6 +32,7 @@ int grub_stage2 (void);
  #define WITHOUT_LIBC_STUBS 1
  #include <shared.h>
  #include <term.h>
@@ -950,7 +941,7 @@ diff -Naur grub-0.97.orig/grub/main.c grub-0.97/grub/main.c
  
  char *program_name = 0;
  int use_config_file = 1;
-@@ -192,6 +193,12 @@
+@@ -192,6 +193,12 @@ main (int argc, char **argv)
  	      perror ("strtoul");
  	      exit (1);
  	    }
@@ -963,10 +954,9 @@ diff -Naur grub-0.97.orig/grub/main.c grub-0.97/grub/main.c
  	  break;
  
  	case OPT_NO_CONFIG_FILE:
-diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
---- grub-0.97.orig/lib/device.c	2005-03-27 15:14:25.000000000 -0800
-+++ grub-0.97/lib/device.c	2006-07-04 00:00:44.000000000 -0700
-@@ -131,6 +131,152 @@
+--- a/lib/device.c
++++ b/lib/device.c
+@@ -131,6 +131,152 @@ get_kfreebsd_version ()
  #include <shared.h>
  #include <device.h>
  
@@ -1119,7 +1109,7 @@ diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
  /* Get the geometry of a drive DRIVE.  */
  void
  get_drive_geometry (struct geometry *geom, char **map, int drive)
-@@ -151,21 +297,16 @@
+@@ -151,21 +297,16 @@ get_drive_geometry (struct geometry *geo
  #if defined(__linux__)
    /* Linux */
    {
@@ -1144,7 +1134,7 @@ diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
      goto success;
    }
  
-@@ -403,6 +544,18 @@
+@@ -403,6 +544,18 @@ get_dac960_disk_name (char *name, int co
  }
  
  static void
@@ -1163,7 +1153,7 @@ diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
  get_ataraid_disk_name (char *name, int unit)
  {
    sprintf (name, "/dev/ataraid/d%c", unit + '0');
-@@ -801,6 +954,74 @@
+@@ -801,6 +954,74 @@ init_device_map (char ***map, const char
  	  }
        }
    }
@@ -1238,7 +1228,7 @@ diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
  #endif /* __linux__ */
    
    /* OK, close the device map file if opened.  */
-@@ -844,6 +1065,7 @@
+@@ -844,6 +1065,7 @@ write_to_partition (char **map, int driv
  {
    char dev[PATH_MAX];	/* XXX */
    int fd;
@@ -1246,7 +1236,7 @@ diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
    
    if ((partition & 0x00FF00) != 0x00FF00)
      {
-@@ -861,8 +1083,14 @@
+@@ -861,8 +1083,14 @@ write_to_partition (char **map, int driv
        if (strcmp (dev + strlen(dev) - 5, "/disc") == 0)
  	strcpy (dev + strlen(dev) - 5, "/part");
      }
@@ -1263,7 +1253,7 @@ diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
    /* Open the partition.  */
    fd = open (dev, O_RDWR);
    if (fd < 0)
-@@ -870,35 +1098,13 @@
+@@ -870,35 +1098,13 @@ write_to_partition (char **map, int driv
        errnum = ERR_NO_PART;
        return 0;
      }
@@ -1304,10 +1294,9 @@ diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
    
    if (write (fd, buf, size * SECTOR_SIZE) != (size * SECTOR_SIZE))
      {
-diff -Naur grub-0.97.orig/stage2/asm.S grub-0.97/stage2/asm.S
---- grub-0.97.orig/stage2/asm.S	2004-06-19 09:55:22.000000000 -0700
-+++ grub-0.97/stage2/asm.S	2006-07-04 00:01:19.000000000 -0700
-@@ -1651,7 +1651,29 @@
+--- a/stage2/asm.S
++++ b/stage2/asm.S
+@@ -1651,7 +1651,29 @@ ENTRY(gateA20)
  	jnz	3f
  	ret
  
@@ -1338,7 +1327,7 @@ diff -Naur grub-0.97.orig/stage2/asm.S grub-0.97/stage2/asm.S
  	pushl	%eax
  
  	call    gloop1
-@@ -1661,9 +1683,12 @@
+@@ -1661,9 +1683,12 @@ ENTRY(gateA20)
  
  gloopint1:
  	inb	$K_STATUS
@@ -1351,7 +1340,7 @@ diff -Naur grub-0.97.orig/stage2/asm.S grub-0.97/stage2/asm.S
  	movb	$KB_OUTPUT_MASK, %al
  	cmpb	$0, 0x8(%esp)
  	jz	gdoit
-@@ -1684,6 +1709,8 @@
+@@ -1684,6 +1709,8 @@ gdoit:
  
  gloop1:
  	inb	$K_STATUS
@@ -1360,7 +1349,7 @@ diff -Naur grub-0.97.orig/stage2/asm.S grub-0.97/stage2/asm.S
  	andb	$K_IBUF_FUL, %al
  	jnz	gloop1
  
-@@ -1991,6 +2018,11 @@
+@@ -1991,6 +2018,11 @@ ENTRY(ascii_key_map)
  ENTRY(console_getkey)
  	push	%ebp
  
@@ -1372,7 +1361,7 @@ diff -Naur grub-0.97.orig/stage2/asm.S grub-0.97/stage2/asm.S
  	call	EXT_C(prot_to_real)
  	.code16
  
-@@ -2216,7 +2248,304 @@
+@@ -2216,7 +2248,304 @@ ENTRY(console_setcursor)
  	pop	%ebx
  	pop	%ebp
  	ret
@@ -1678,9 +1667,8 @@ diff -Naur grub-0.97.orig/stage2/asm.S grub-0.97/stage2/asm.S
  /*
   * getrtsecs()
   *	if a seconds value can be read, read it and return it (BCD),
-diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
---- grub-0.97.orig/stage2/boot.c	2004-03-30 03:44:08.000000000 -0800
-+++ grub-0.97/stage2/boot.c	2006-07-04 00:01:50.000000000 -0700
+--- a/stage2/boot.c
++++ b/stage2/boot.c
 @@ -1,7 +1,7 @@
  /* boot.c - load and bootstrap a kernel */
  /*
@@ -1690,7 +1678,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
   *
   *  This program is free software; you can redistribute it and/or modify
   *  it under the terms of the GNU General Public License as published by
-@@ -29,6 +29,8 @@
+@@ -29,6 +29,8 @@ static int cur_addr;
  entry_func entry_addr;
  static struct mod_list mll[99];
  static int linux_mem_size;
@@ -1699,7 +1687,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
  
  /*
   *  The next two functions, 'load_image' and 'load_module', are the building
-@@ -96,7 +98,7 @@
+@@ -96,7 +98,7 @@ load_image (char *kernel, char *arg, ker
    lh = (struct linux_kernel_header *) buffer;
    
    /* ELF loading supported if multiboot, FreeBSD and NetBSD.  */
@@ -1708,7 +1696,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
         || pu.elf->e_ident[EI_OSABI] == ELFOSABI_FREEBSD
         || grub_strcmp (pu.elf->e_ident + EI_BRAND, "FreeBSD") == 0
         || suggested_type == KERNEL_TYPE_NETBSD)
-@@ -594,6 +596,7 @@
+@@ -594,6 +596,7 @@ load_image (char *kernel, char *arg, ker
  
        /* reset this to zero for now */
        cur_addr = 0;
@@ -1716,7 +1704,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
  
        /* scan for program segments */
        for (i = 0; i < pu.elf->e_phnum; i++)
-@@ -630,6 +633,8 @@
+@@ -630,6 +633,8 @@ load_image (char *kernel, char *arg, ker
  	      /* mark memory as used */
  	      if (cur_addr < memaddr + memsiz)
  		cur_addr = memaddr + memsiz;
@@ -1725,7 +1713,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
  	      printf (", <0x%x:0x%x:0x%x>", memaddr, filesiz,
  		      memsiz - filesiz);
  	      /* increment number of segments */
-@@ -647,6 +652,8 @@
+@@ -647,6 +652,8 @@ load_image (char *kernel, char *arg, ker
  	    }
  	}
  
@@ -1734,7 +1722,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
        if (! errnum)
  	{
  	  if (! loaded)
-@@ -824,8 +831,11 @@
+@@ -824,8 +831,11 @@ load_initrd (char *initrd)
      moveto = (mbi.mem_upper + 0x400) << 10;
    
    moveto = (moveto - len) & 0xfffff000;
@@ -1748,7 +1736,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
    if (moveto + len >= max_addr)
      moveto = (max_addr - len) & 0xfffff000;
    
-@@ -864,6 +874,129 @@
+@@ -864,6 +874,129 @@ bsd_boot_entry (int flags, int bootdev, 
  }
  #endif
  
@@ -1878,7 +1866,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
  
  /*
   *  All "*_boot" commands depend on the images being loaded into memory
-@@ -877,7 +1010,10 @@
+@@ -877,7 +1010,10 @@ void
  bsd_boot (kernel_t type, int bootdev, char *arg)
  {
    char *str;
@@ -1890,7 +1878,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
    struct bootinfo bi;
  
  #ifdef GRUB_UTIL
-@@ -886,8 +1022,21 @@
+@@ -886,8 +1022,21 @@ bsd_boot (kernel_t type, int bootdev, ch
    stop_floppy ();
  #endif
  
@@ -1912,7 +1900,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
    while (*str)
      {
        if (*str == '-')
-@@ -910,6 +1059,8 @@
+@@ -910,6 +1059,8 @@ bsd_boot (kernel_t type, int bootdev, ch
  		clval |= RB_GDB;
  	      if (*str == 'h')
  		clval |= RB_SERIAL;
@@ -1921,7 +1909,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
  	      if (*str == 'm')
  		clval |= RB_MUTE;
  	      if (*str == 'r')
-@@ -927,14 +1078,17 @@
+@@ -927,14 +1078,17 @@ bsd_boot (kernel_t type, int bootdev, ch
  
    if (type == KERNEL_TYPE_FREEBSD)
      {
@@ -1943,7 +1931,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
        else
  	bi.bi_kernelname = 0;
  
-@@ -961,6 +1115,30 @@
+@@ -961,6 +1115,30 @@ bsd_boot (kernel_t type, int bootdev, ch
        bi.bi_basemem = mbi.mem_lower;
        bi.bi_extmem = extended_memory;
  
@@ -1974,7 +1962,7 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
        if (mbi.flags & MB_INFO_AOUT_SYMS)
  	{
  	  bi.bi_symtab = mbi.syms.a.addr;
-@@ -970,8 +1148,9 @@
+@@ -970,8 +1148,9 @@ bsd_boot (kernel_t type, int bootdev, ch
  #if 0
        else if (mbi.flags & MB_INFO_ELF_SHDR)
  	{
@@ -1986,9 +1974,8 @@ diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
  	}
  #endif
        else
-diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
---- grub-0.97.orig/stage2/builtins.c	2005-02-15 13:58:23.000000000 -0800
-+++ grub-0.97/stage2/builtins.c	2006-07-04 00:01:50.000000000 -0700
+--- a/stage2/builtins.c
++++ b/stage2/builtins.c
 @@ -28,6 +28,10 @@
  #include <filesys.h>
  #include <term.h>
@@ -2000,7 +1987,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  #ifdef SUPPORT_NETBOOT
  # define GRUB	1
  # include <etherboot.h>
-@@ -82,6 +86,10 @@
+@@ -82,6 +86,10 @@ static unsigned short bios_drive_map[DRI
     inside other functions.  */
  static int configfile_func (char *arg, int flags);
  
@@ -2011,7 +1998,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  /* Initialize the data for builtins.  */
  void
  init_builtins (void)
-@@ -237,12 +245,22 @@
+@@ -237,12 +245,22 @@ static struct builtin builtin_blocklist 
  static int
  boot_func (char *arg, int flags)
  {
@@ -2034,7 +2021,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  #ifdef SUPPORT_NETBOOT
    /* Shut down the networking.  */
    cleanup_net ();
-@@ -306,6 +324,13 @@
+@@ -306,6 +324,13 @@ boot_func (char *arg, int flags)
        return 1;
      }
  
@@ -2048,7 +2035,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
    return 0;
  }
  
-@@ -852,6 +877,251 @@
+@@ -852,6 +877,251 @@ static struct builtin builtin_dhcp =
  };
  #endif /* SUPPORT_NETBOOT */
  
@@ -2300,7 +2287,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  
  /* displayapm */
  static int
-@@ -1454,14 +1724,20 @@
+@@ -1454,14 +1724,20 @@ static struct builtin builtin_halt =
  
  
  /* help */
@@ -2326,7 +2313,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
    if (grub_memcmp (arg, "--all", sizeof ("--all") - 1) == 0)
      {
        all = 1;
-@@ -1491,13 +1767,13 @@
+@@ -1491,13 +1767,13 @@ help_func (char *arg, int flags)
  
  	  len = grub_strlen ((*builtin)->short_doc);
  	  /* If the length of SHORT_DOC is too long, truncate it.  */
@@ -2343,7 +2330,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  	    grub_putchar (' ');
  
  	  if (! left)
-@@ -1546,10 +1822,10 @@
+@@ -1546,10 +1822,10 @@ help_func (char *arg, int flags)
  		      int i;
  
  		      /* If LEN is too long, fold DOC.  */
@@ -2356,7 +2343,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  			    if (doc[len - 1] == ' ')
  			      break;
  			}
-@@ -2323,6 +2599,25 @@
+@@ -2323,6 +2599,25 @@ static struct builtin builtin_ioprobe =
    "Probe I/O ports used for the drive DRIVE."
  };
  
@@ -2382,7 +2369,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  
  /* kernel */
  static int
-@@ -3221,7 +3516,102 @@
+@@ -3221,7 +3516,102 @@ static struct builtin builtin_rootnoveri
  static int
  savedefault_func (char *arg, int flags)
  {
@@ -2486,7 +2473,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
    unsigned long tmp_drive = saved_drive;
    unsigned long tmp_partition = saved_partition;
    char *default_file = (char *) DEFAULT_FILE_BUF;
-@@ -3300,19 +3690,23 @@
+@@ -3300,19 +3690,23 @@ savedefault_func (char *arg, int flags)
        disk_read_hook = 0;
        grub_close ();
        
@@ -2517,7 +2504,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
        
        /* Set up a string to be written.  */
        grub_memset (buf, '\n', sizeof (buf));
-@@ -3830,15 +4224,15 @@
+@@ -3830,15 +4224,15 @@ setup_func (char *arg, int flags)
  	{
  	  char tmp[16];
  	  grub_sprintf (tmp, ",%d", (partition >> 16) & 0xFF);
@@ -2536,7 +2523,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
      }
    
    int embed_stage1_5 (char *stage1_5, int drive, int partition)
-@@ -4085,7 +4479,7 @@
+@@ -4085,7 +4479,7 @@ static struct builtin builtin_setup =
  };
  
  
@@ -2545,7 +2532,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  /* terminal */
  static int
  terminal_func (char *arg, int flags)
-@@ -4244,17 +4638,29 @@
+@@ -4244,17 +4638,29 @@ terminal_func (char *arg, int flags)
   end:
    current_term = term_table + default_term;
    current_term->flags = term_flags;
@@ -2580,7 +2567,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
    
    return 0;
  }
-@@ -4264,7 +4670,7 @@
+@@ -4264,7 +4670,7 @@ static struct builtin builtin_terminal =
    "terminal",
    terminal_func,
    BUILTIN_MENU | BUILTIN_CMDLINE | BUILTIN_HELP_LIST,
@@ -2589,7 +2576,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
    "Select a terminal. When multiple terminals are specified, wait until"
    " you push any key to continue. If both console and serial are specified,"
    " the terminal to which you input a key first will be selected. If no"
-@@ -4276,7 +4682,7 @@
+@@ -4276,7 +4682,7 @@ static struct builtin builtin_terminal =
    " seconds. The option --lines specifies the maximum number of lines."
    " The option --silent is used to suppress messages."
  };
@@ -2598,7 +2585,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  
  
  #ifdef SUPPORT_SERIAL
-@@ -4795,13 +5201,20 @@
+@@ -4795,13 +5201,20 @@ static struct builtin builtin_vbeprobe =
  /* The table of builtin commands. Sorted in dictionary order.  */
  struct builtin *builtin_table[] =
  {
@@ -2619,7 +2606,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
    &builtin_cmp,
    &builtin_color,
    &builtin_configfile,
-@@ -4821,6 +5234,9 @@
+@@ -4821,6 +5234,9 @@ struct builtin *builtin_table[] =
    &builtin_embed,
    &builtin_fallback,
    &builtin_find,
@@ -2629,7 +2616,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
    &builtin_fstest,
    &builtin_geometry,
    &builtin_halt,
-@@ -4848,6 +5264,7 @@
+@@ -4848,6 +5264,7 @@ struct builtin *builtin_table[] =
    &builtin_parttype,
    &builtin_password,
    &builtin_pause,
@@ -2637,7 +2624,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  #ifdef GRUB_UTIL
    &builtin_quit,
  #endif /* GRUB_UTIL */
-@@ -4864,9 +5281,13 @@
+@@ -4864,9 +5281,13 @@ struct builtin *builtin_table[] =
  #endif /* SUPPORT_SERIAL */
    &builtin_setkey,
    &builtin_setup,
@@ -2653,7 +2640,7 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
  #ifdef SUPPORT_SERIAL
    &builtin_terminfo,
  #endif /* SUPPORT_SERIAL */
-@@ -4880,5 +5301,8 @@
+@@ -4880,5 +5301,8 @@ struct builtin *builtin_table[] =
    &builtin_unhide,
    &builtin_uppermem,
    &builtin_vbeprobe,
@@ -2662,9 +2649,8 @@ diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
 +#endif
    0
  };
-diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
---- grub-0.97.orig/stage2/char_io.c	2005-02-01 12:51:23.000000000 -0800
-+++ grub-0.97/stage2/char_io.c	2006-07-03 23:59:27.000000000 -0700
+--- a/stage2/char_io.c
++++ b/stage2/char_io.c
 @@ -29,12 +29,17 @@
  # include <serial.h>
  #endif
@@ -2683,7 +2669,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
        console_putchar,
        console_checkkey,
        console_getkey,
-@@ -43,13 +48,16 @@
+@@ -43,13 +48,16 @@ struct term_entry term_table[] =
        console_cls,
        console_setcolorstate,
        console_setcolor,
@@ -2701,7 +2687,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
        serial_putchar,
        serial_checkkey,
        serial_getkey,
-@@ -58,6 +66,8 @@
+@@ -58,6 +66,8 @@ struct term_entry term_table[] =
        serial_cls,
        serial_setcolorstate,
        0,
@@ -2710,7 +2696,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
        0
      },
  #endif /* SUPPORT_SERIAL */
-@@ -65,6 +75,7 @@
+@@ -65,6 +75,7 @@ struct term_entry term_table[] =
      {
        "hercules",
        0,
@@ -2718,7 +2704,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
        hercules_putchar,
        console_checkkey,
        console_getkey,
-@@ -73,11 +84,30 @@
+@@ -73,11 +84,30 @@ struct term_entry term_table[] =
        hercules_cls,
        hercules_setcolorstate,
        hercules_setcolor,
@@ -2751,7 +2737,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
    };
  
  /* This must be console.  */
-@@ -305,9 +335,10 @@
+@@ -305,9 +335,10 @@ real_get_cmdline (char *prompt, char *cm
  
    /* XXX: These should be defined in shared.h, but I leave these here,
       until this code is freezed.  */
@@ -2764,7 +2750,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
    int xpos, lpos, c, section;
    /* The length of PROMPT.  */
    int plen;
-@@ -338,7 +369,7 @@
+@@ -338,7 +369,7 @@ real_get_cmdline (char *prompt, char *cm
        
        /* If the cursor is in the first section, display the first section
  	 instead of the second.  */
@@ -2773,7 +2759,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	cl_refresh (1, 0);
        else if (xpos - count < 1)
  	cl_refresh (1, 0);
-@@ -354,7 +385,7 @@
+@@ -354,7 +385,7 @@ real_get_cmdline (char *prompt, char *cm
  		grub_putchar ('\b');
  	    }
  	  else
@@ -2782,7 +2768,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	}
      }
  
-@@ -364,7 +395,7 @@
+@@ -364,7 +395,7 @@ real_get_cmdline (char *prompt, char *cm
        lpos += count;
  
        /* If the cursor goes outside, scroll the screen to the right.  */
@@ -2791,7 +2777,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	cl_refresh (1, 0);
        else
  	{
-@@ -383,7 +414,7 @@
+@@ -383,7 +414,7 @@ real_get_cmdline (char *prompt, char *cm
  		}
  	    }
  	  else
@@ -2800,7 +2786,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	}
      }
  
-@@ -398,14 +429,14 @@
+@@ -398,14 +429,14 @@ real_get_cmdline (char *prompt, char *cm
        if (full)
  	{
  	  /* Recompute the section number.  */
@@ -2819,7 +2805,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	  pos = 0;
  	  grub_putchar ('\r');
  
-@@ -445,8 +476,8 @@
+@@ -445,8 +476,8 @@ real_get_cmdline (char *prompt, char *cm
  	  if (! full)
  	    offset = xpos - 1;
  	  
@@ -2830,7 +2816,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	  xpos = lpos + 1 - start;
  	  start += offset;
  	}
-@@ -471,7 +502,7 @@
+@@ -471,7 +502,7 @@ real_get_cmdline (char *prompt, char *cm
        
        /* If the cursor is at the last position, put `>' or a space,
  	 depending on if there are more characters in BUF.  */
@@ -2839,7 +2825,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	{
  	  if (start + len < llen)
  	    grub_putchar ('>');
-@@ -488,7 +519,7 @@
+@@ -488,7 +519,7 @@ real_get_cmdline (char *prompt, char *cm
  	    grub_putchar ('\b');
  	}
        else
@@ -2848,7 +2834,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
      }
  
    /* Initialize the command-line.  */
-@@ -518,10 +549,10 @@
+@@ -518,10 +549,10 @@ real_get_cmdline (char *prompt, char *cm
  	  
  	  llen += l;
  	  lpos += l;
@@ -2862,7 +2848,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  	  else
  	    cl_refresh (0, l + llen - lpos);
  	}
-@@ -533,12 +564,22 @@
+@@ -533,12 +564,22 @@ real_get_cmdline (char *prompt, char *cm
        grub_memmove (buf + lpos, buf + lpos + count, llen - count + 1);
        llen -= count;
        
@@ -2887,7 +2873,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
    plen = grub_strlen (prompt);
    llen = grub_strlen (cmdline);
  
-@@ -1006,6 +1047,48 @@
+@@ -1006,6 +1047,48 @@ checkkey (void)
  }
  #endif /* ! STAGE1_5 */
  
@@ -2936,7 +2922,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  /* Display an ASCII character.  */
  void
  grub_putchar (int c)
-@@ -1034,38 +1117,11 @@
+@@ -1034,38 +1117,11 @@ grub_putchar (int c)
  
    if (c == '\n')
      {
@@ -2979,7 +2965,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
      }
  
    current_term->putchar (c);
-@@ -1090,7 +1146,7 @@
+@@ -1090,7 +1146,7 @@ void
  cls (void)
  {
    /* If the terminal is dumb, there is no way to clean the terminal.  */
@@ -2988,7 +2974,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
      grub_putchar ('\n');
    else
      current_term->cls ();
-@@ -1175,13 +1231,13 @@
+@@ -1175,13 +1231,13 @@ grub_strlen (const char *str)
  #endif /* ! STAGE1_5 */
  
  int
@@ -3006,7 +2992,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
      {
        int ret;
  # if defined(HAVE_START_SYMBOL)
-@@ -1192,7 +1248,7 @@
+@@ -1192,7 +1248,7 @@ memcheck (int addr, int len)
        return ret;
      }
  
@@ -3015,7 +3001,7 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
      {
        int ret;
  # if defined(HAVE_END_SYMBOL)
-@@ -1217,6 +1273,16 @@
+@@ -1217,6 +1273,16 @@ memcheck (int addr, int len)
    return ! errnum;
  }
  
@@ -3032,10 +3018,9 @@ diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
  void *
  grub_memmove (void *to, const void *from, int len)
  {
-diff -Naur grub-0.97.orig/stage2/cmdline.c grub-0.97/stage2/cmdline.c
---- grub-0.97.orig/stage2/cmdline.c	2004-08-16 16:23:01.000000000 -0700
-+++ grub-0.97/stage2/cmdline.c	2006-07-03 23:58:41.000000000 -0700
-@@ -50,10 +50,11 @@
+--- a/stage2/cmdline.c
++++ b/stage2/cmdline.c
+@@ -50,10 +50,11 @@ skip_to (int after_equal, char *cmdline)
  void
  print_cmdline_message (int forever)
  {
@@ -3051,9 +3036,8 @@ diff -Naur grub-0.97.orig/stage2/cmdline.c grub-0.97/stage2/cmdline.c
  }
  
  /* Find the builtin whose command name is COMMAND and return the
-diff -Naur grub-0.97.orig/stage2/freebsd.h grub-0.97/stage2/freebsd.h
---- grub-0.97.orig/stage2/freebsd.h	2003-07-09 04:45:52.000000000 -0700
-+++ grub-0.97/stage2/freebsd.h	2006-07-03 23:59:36.000000000 -0700
+--- a/stage2/freebsd.h
++++ b/stage2/freebsd.h
 @@ -1,7 +1,7 @@
  
  /*
@@ -3131,9 +3115,8 @@ diff -Naur grub-0.97.orig/stage2/freebsd.h grub-0.97/stage2/freebsd.h
 +#define MODINFO_ARGS		0x0006		/* Parameters string */
 +#define MODINFO_METADATA	0x8000		/* Module-specfic */
 +
-diff -Naur grub-0.97.orig/stage2/graphics.c grub-0.97/stage2/graphics.c
---- grub-0.97.orig/stage2/graphics.c	1969-12-31 16:00:00.000000000 -0800
-+++ grub-0.97/stage2/graphics.c	2006-07-03 23:58:41.000000000 -0700
+--- /dev/null
++++ b/stage2/graphics.c
 @@ -0,0 +1,585 @@
 +/*
 + * graphics.c - graphics mode support for GRUB
@@ -3720,9 +3703,8 @@ diff -Naur grub-0.97.orig/stage2/graphics.c grub-0.97/stage2/graphics.c
 +}
 +
 +#endif /* SUPPORT_GRAPHICS */
-diff -Naur grub-0.97.orig/stage2/graphics.h grub-0.97/stage2/graphics.h
---- grub-0.97.orig/stage2/graphics.h	1969-12-31 16:00:00.000000000 -0800
-+++ grub-0.97/stage2/graphics.h	2006-07-03 23:58:41.000000000 -0700
+--- /dev/null
++++ b/stage2/graphics.h
 @@ -0,0 +1,44 @@
 +/* graphics.h - graphics console interface */
 +/*
@@ -3768,10 +3750,9 @@ diff -Naur grub-0.97.orig/stage2/graphics.h grub-0.97/stage2/graphics.h
 +extern int view_x0, view_y0, view_x1, view_y1;
 +
 +#endif /* GRAPHICS_H */
-diff -Naur grub-0.97.orig/stage2/Makefile.am grub-0.97/stage2/Makefile.am
---- grub-0.97.orig/stage2/Makefile.am	2005-02-02 12:37:35.000000000 -0800
-+++ grub-0.97/stage2/Makefile.am	2006-07-03 23:58:41.000000000 -0700
-@@ -7,7 +7,7 @@
+--- a/stage2/Makefile.am
++++ b/stage2/Makefile.am
+@@ -7,7 +7,7 @@ noinst_HEADERS = apic.h defs.h dir.h dis
          fat.h filesys.h freebsd.h fs.h hercules.h i386-elf.h \
  	imgact_aout.h iso9660.h jfs.h mb_header.h mb_info.h md5.h \
  	nbi.h pc_slice.h serial.h shared.h smp-imps.h term.h \
@@ -3780,7 +3761,7 @@ diff -Naur grub-0.97.orig/stage2/Makefile.am grub-0.97/stage2/Makefile.am
  EXTRA_DIST = setjmp.S apm.S $(noinst_SCRIPTS)
  
  # For <stage1.h>.
-@@ -19,7 +19,7 @@
+@@ -19,7 +19,7 @@ libgrub_a_SOURCES = boot.c builtins.c ch
  	disk_io.c fsys_ext2fs.c fsys_fat.c fsys_ffs.c fsys_iso9660.c \
  	fsys_jfs.c fsys_minix.c fsys_reiserfs.c fsys_ufs2.c \
  	fsys_vstafs.c fsys_xfs.c gunzip.c md5.c serial.c stage2.c \
@@ -3789,7 +3770,7 @@ diff -Naur grub-0.97.orig/stage2/Makefile.am grub-0.97/stage2/Makefile.am
  libgrub_a_CFLAGS = $(GRUB_CFLAGS) -I$(top_srcdir)/lib \
  	-DGRUB_UTIL=1 -DFSYS_EXT2FS=1 -DFSYS_FAT=1 -DFSYS_FFS=1 \
  	-DFSYS_ISO9660=1 -DFSYS_JFS=1 -DFSYS_MINIX=1 -DFSYS_REISERFS=1 \
-@@ -79,8 +79,14 @@
+@@ -79,8 +79,14 @@ else
  HERCULES_FLAGS =
  endif
  
@@ -3805,7 +3786,7 @@ diff -Naur grub-0.97.orig/stage2/Makefile.am grub-0.97/stage2/Makefile.am
  
  STAGE1_5_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,2000
  STAGE1_5_COMPILE = $(STAGE2_COMPILE) -DNO_DECOMPRESSION=1 -DSTAGE1_5=1
-@@ -90,7 +96,8 @@
+@@ -90,7 +96,8 @@ pre_stage2_exec_SOURCES = asm.S bios.c b
  	cmdline.c common.c console.c disk_io.c fsys_ext2fs.c \
  	fsys_fat.c fsys_ffs.c fsys_iso9660.c fsys_jfs.c fsys_minix.c \
  	fsys_reiserfs.c fsys_ufs2.c fsys_vstafs.c fsys_xfs.c gunzip.c \
@@ -3815,10 +3796,9 @@ diff -Naur grub-0.97.orig/stage2/Makefile.am grub-0.97/stage2/Makefile.am
  pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
  pre_stage2_exec_CCASFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
  pre_stage2_exec_LDFLAGS = $(PRE_STAGE2_LINK)
-diff -Naur grub-0.97.orig/stage2/shared.h grub-0.97/stage2/shared.h
---- grub-0.97.orig/stage2/shared.h	2004-06-19 09:40:09.000000000 -0700
-+++ grub-0.97/stage2/shared.h	2006-07-04 00:01:50.000000000 -0700
-@@ -499,7 +499,11 @@
+--- a/stage2/shared.h
++++ b/stage2/shared.h
+@@ -499,7 +499,11 @@ struct vbe_mode
    unsigned char linear_reserved_field_position;
    unsigned long max_pixel_clock;
  
@@ -3831,7 +3811,7 @@ diff -Naur grub-0.97.orig/stage2/shared.h grub-0.97/stage2/shared.h
  } __attribute__ ((packed));
  
  
-@@ -792,6 +796,11 @@
+@@ -792,6 +796,11 @@ int getxy (void);
  /* Set the cursor position. */
  void gotoxy (int x, int y);
  
@@ -3843,7 +3823,7 @@ diff -Naur grub-0.97.orig/stage2/shared.h grub-0.97/stage2/shared.h
  /* Displays an ASCII character.  IBM displays will translate some
     characters to special graphical ones (see the DISP_* constants). */
  void grub_putchar (int c);
-@@ -871,6 +880,7 @@
+@@ -871,6 +880,7 @@ int grub_sprintf (char *buffer, const ch
  int grub_tolower (int c);
  int grub_isspace (int c);
  int grub_strncat (char *s1, const char *s2, int n);
@@ -3851,7 +3831,7 @@ diff -Naur grub-0.97.orig/stage2/shared.h grub-0.97/stage2/shared.h
  void *grub_memmove (void *to, const void *from, int len);
  void *grub_memset (void *start, int c, int len);
  int grub_strncat (char *s1, const char *s2, int n);
-@@ -911,7 +921,7 @@
+@@ -911,7 +921,7 @@ int substring (const char *s1, const cha
  int nul_terminate (char *str);
  int get_based_digit (int c, int base);
  int safe_parse_maxint (char **str_ptr, int *myint_ptr);
@@ -3860,9 +3840,8 @@ diff -Naur grub-0.97.orig/stage2/shared.h grub-0.97/stage2/shared.h
  void grub_putstr (const char *str);
  
  #ifndef NO_DECOMPRESSION
-diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
---- grub-0.97.orig/stage2/stage2.c	2005-03-19 09:51:57.000000000 -0800
-+++ grub-0.97/stage2/stage2.c	2006-07-04 00:01:50.000000000 -0700
+--- a/stage2/stage2.c
++++ b/stage2/stage2.c
 @@ -20,6 +20,12 @@
  #include <shared.h>
  #include <term.h>
@@ -3876,7 +3855,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  grub_jmp_buf restart_env;
  
  #if defined(PRESET_MENU_STRING) || defined(SUPPORT_DISKLESS)
-@@ -105,13 +111,13 @@
+@@ -105,13 +111,13 @@ print_entry (int y, int highlight, char 
    if (highlight && current_term->setcolorstate)
      current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
  
@@ -3894,7 +3873,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  	    grub_putchar (DISP_RIGHT);
  	  else
  	    grub_putchar (*entry++);
-@@ -119,7 +125,7 @@
+@@ -119,7 +125,7 @@ print_entry (int y, int highlight, char 
        else
  	grub_putchar (' ');
      }
@@ -3903,7 +3882,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  
    if (current_term->setcolorstate)
      current_term->setcolorstate (COLOR_STATE_STANDARD);
-@@ -131,7 +137,7 @@
+@@ -131,7 +137,7 @@ print_entries (int y, int size, int firs
  {
    int i;
    
@@ -3912,7 +3891,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  
    if (first)
      grub_putchar (DISP_UP);
-@@ -151,14 +157,14 @@
+@@ -151,14 +157,14 @@ print_entries (int y, int size, int firs
  	menu_entries++;
      }
  
@@ -3929,7 +3908,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  }
  
  static void
-@@ -196,30 +202,30 @@
+@@ -196,30 +202,30 @@ print_border (int y, int size)
    if (current_term->setcolorstate)
      current_term->setcolorstate (COLOR_STATE_NORMAL);
    
@@ -3965,7 +3944,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
      grub_putchar (DISP_HORIZ);
    grub_putchar (DISP_LR);
  
-@@ -233,6 +239,7 @@
+@@ -233,6 +239,7 @@ run_menu (char *menu_entries, char *conf
  {
    int c, time1, time2 = -1, first_entry = 0;
    char *cur_entry = 0;
@@ -3973,7 +3952,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  
    /*
     *  Main loop for menu UI.
-@@ -250,6 +257,22 @@
+@@ -250,6 +257,22 @@ restart:
  	}
      }
  
@@ -3996,7 +3975,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
    /* If the timeout was expired or wasn't set, force to show the menu
       interface. */
    if (grub_timeout < 0)
-@@ -302,36 +325,36 @@
+@@ -302,36 +325,36 @@ restart:
        if (current_term->flags & TERM_DUMB)
  	print_entries_raw (num_entries, first_entry, menu_entries);
        else
@@ -4044,7 +4023,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
      }
  
    /* XX using RT clock now, need to initialize value */
-@@ -358,10 +381,10 @@
+@@ -358,10 +381,10 @@ restart:
  			   entryno, grub_timeout);
  	  else
  	    {
@@ -4058,7 +4037,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  	  }
  	  
  	  grub_timeout--;
-@@ -387,12 +410,12 @@
+@@ -387,12 +410,12 @@ restart:
  	      if (current_term->flags & TERM_DUMB)
  		grub_putchar ('\r');
  	      else
@@ -4073,7 +4052,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  	    }
  
  	  /* We told them above (at least in SUPPORT_SERIAL) to use
-@@ -408,12 +431,12 @@
+@@ -408,12 +431,12 @@ restart:
  		{
  		  if (entryno > 0)
  		    {
@@ -4088,7 +4067,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  				   get_entry (menu_entries,
  					      first_entry + entryno,
  					      0));
-@@ -421,7 +444,7 @@
+@@ -421,7 +444,7 @@ restart:
  		  else if (first_entry > 0)
  		    {
  		      first_entry--;
@@ -4097,7 +4076,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  				     menu_entries);
  		    }
  		}
-@@ -433,29 +456,29 @@
+@@ -433,29 +456,29 @@ restart:
  		entryno++;
  	      else
  		{
@@ -4133,7 +4112,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  	      if (first_entry < 0)
  		{
  		  entryno += first_entry;
-@@ -463,20 +486,20 @@
+@@ -463,20 +486,20 @@ restart:
  		  if (entryno < 0)
  		    entryno = 0;
  		}
@@ -4158,7 +4137,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  	    }
  
  	  if (config_entries)
-@@ -489,7 +512,7 @@
+@@ -489,7 +512,7 @@ restart:
  	      if ((c == 'd') || (c == 'o') || (c == 'O'))
  		{
  		  if (! (current_term->flags & TERM_DUMB))
@@ -4167,7 +4146,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  				 get_entry (menu_entries,
  					    first_entry + entryno,
  					    0));
-@@ -537,7 +560,7 @@
+@@ -537,7 +560,7 @@ restart:
  
  		      if (entryno >= num_entries)
  			entryno--;
@@ -4176,7 +4155,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  			first_entry--;
  		    }
  
-@@ -549,7 +572,7 @@
+@@ -549,7 +572,7 @@ restart:
  		      grub_printf ("\n");
  		    }
  		  else
@@ -4185,7 +4164,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  		}
  
  	      cur_entry = menu_entries;
-@@ -570,7 +593,7 @@
+@@ -570,7 +593,7 @@ restart:
  		  if (current_term->flags & TERM_DUMB)
  		    grub_printf ("\r                                    ");
  		  else
@@ -4194,7 +4173,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  
  		  /* Wipe out the previously entered password */
  		  grub_memset (entered, 0, sizeof (entered));
-@@ -651,7 +674,10 @@
+@@ -651,7 +674,10 @@ restart:
  		  *(new_heap++) = 0;
  
  		  if (config_entries)
@@ -4206,7 +4185,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  		  else
  		    {
  		      cls ();
-@@ -714,6 +740,15 @@
+@@ -714,6 +740,15 @@ restart:
    
    cls ();
    setcursor (1);
@@ -4222,7 +4201,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
    
    while (1)
      {
-@@ -727,7 +762,8 @@
+@@ -727,7 +762,8 @@ restart:
  	cur_entry = get_entry (config_entries, first_entry + entryno, 1);
  
        /* Set CURRENT_ENTRYNO for the command "savedefault".  */
@@ -4232,7 +4211,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
        
        if (run_script (cur_entry, heap))
  	{
-@@ -748,6 +784,13 @@
+@@ -748,6 +784,13 @@ restart:
  	break;
      }
  
@@ -4246,7 +4225,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
    show_menu = 1;
    goto restart;
  }
-@@ -891,8 +934,18 @@
+@@ -891,8 +934,18 @@ cmain (void)
  	      len = grub_read (buf, sizeof (buf));
  	      if (len > 0)
  		{
@@ -4266,7 +4245,7 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
  		}
  
  	      grub_close ();
-@@ -1050,6 +1103,16 @@
+@@ -1050,6 +1103,16 @@ cmain (void)
  	  while (is_preset);
  	}
  
@@ -4283,10 +4262,9 @@ diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
        if (! num_entries)
  	{
  	  /* If no acceptable config file, goto command-line, starting
-diff -Naur grub-0.97.orig/stage2/term.h grub-0.97/stage2/term.h
---- grub-0.97.orig/stage2/term.h	2003-07-09 04:45:53.000000000 -0700
-+++ grub-0.97/stage2/term.h	2006-07-03 23:58:41.000000000 -0700
-@@ -60,6 +60,8 @@
+--- a/stage2/term.h
++++ b/stage2/term.h
+@@ -60,6 +60,8 @@ struct term_entry
    const char *name;
    /* The feature flags defined above.  */
    unsigned long flags;
@@ -4295,7 +4273,7 @@ diff -Naur grub-0.97.orig/stage2/term.h grub-0.97/stage2/term.h
    /* Put a character.  */
    void (*putchar) (int c);
    /* Check if any input character is available.  */
-@@ -79,6 +81,10 @@
+@@ -79,6 +81,10 @@ struct term_entry
    void (*setcolor) (int normal_color, int highlight_color);
    /* Turn on/off the cursor.  */
    int (*setcursor) (int on);
@@ -4306,7 +4284,7 @@ diff -Naur grub-0.97.orig/stage2/term.h grub-0.97/stage2/term.h
  };
  
  /* This lists up available terminals.  */
-@@ -124,4 +130,24 @@
+@@ -124,4 +130,24 @@ void hercules_setcolor (int normal_color
  int hercules_setcursor (int on);
  #endif
  
@@ -4331,18 +4309,16 @@ diff -Naur grub-0.97.orig/stage2/term.h grub-0.97/stage2/term.h
 +#endif /* SUPPORT_GRAPHICS */
 +
  #endif /* ! GRUB_TERM_HEADER */
-diff -Naur grub-0.97.orig/THANKS grub-0.97/THANKS
---- grub-0.97.orig/THANKS	2005-05-07 19:17:43.000000000 -0700
-+++ grub-0.97/THANKS	2006-07-04 00:01:50.000000000 -0700
-@@ -121,3 +121,4 @@
+--- a/THANKS
++++ b/THANKS
+@@ -121,3 +121,4 @@ Vesa Jaaskelainen <jaaskela@tietomyrsky.
  Yedidyah Bar-David <didi@post.tau.ac.il>
  Yury V. Umanets <umka@namesys.com>
  Yuri Zaporogets <yuriz@ukr.net>
 +Vitaly Fertman <vitaly@namesys.com>
-diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
---- grub-0.97.orig/util/grub-install.in	2004-07-24 11:57:31.000000000 -0700
-+++ grub-0.97/util/grub-install.in	2006-07-04 00:01:50.000000000 -0700
-@@ -81,6 +81,50 @@
+--- a/util/grub-install.in
++++ b/util/grub-install.in
+@@ -81,6 +81,50 @@ Report bugs to <bug-grub@gnu.org>.
  EOF
  }
  
@@ -4393,7 +4369,7 @@ diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
  # Usage: convert os_device
  # Convert an OS device to the corresponding GRUB drive.
  # This part is OS-specific.
-@@ -96,6 +140,10 @@
+@@ -96,6 +140,10 @@ convert () {
      # Break the device name into the disk part and the partition part.
      case "$host_os" in
      linux*)
@@ -4404,7 +4380,7 @@ diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
  	tmp_disk=`echo "$1" | sed -e 's%\([sh]d[a-z]\)[0-9]*$%\1%' \
  				  -e 's%\(d[0-9]*\)p[0-9]*$%\1%' \
  				  -e 's%\(fd[0-9]*\)$%\1%' \
-@@ -112,8 +160,8 @@
+@@ -112,8 +160,8 @@ convert () {
  	tmp_disk=`echo "$1" | sed 's%\([sh]d[0-9]*\).*%\1%'`
  	tmp_part=`echo "$1" | sed "s%$tmp_disk%%"` ;;
      freebsd* | kfreebsd*-gnu)
@@ -4415,7 +4391,7 @@ diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
  	tmp_part=`echo "$1" \
  	    | sed "s%.*/r\{0,1\}[saw]d[0-9]\(s[0-9]*[a-h]\)%\1%" \
         	    | sed "s%.*/r\{0,1\}da[0-9]\(s[0-9]*[a-h]\)%\1%"`
-@@ -131,7 +179,7 @@
+@@ -131,7 +179,7 @@ convert () {
  
      # Get the drive name.
      tmp_drive=`grep -v '^#' $device_map | grep "$tmp_disk *$" \
@@ -4424,7 +4400,7 @@ diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
  
      # If not found, print an error message and exit.
      if test "x$tmp_drive" = x; then
-@@ -148,13 +196,13 @@
+@@ -148,13 +196,13 @@ convert () {
  	gnu*)
  	    if echo $tmp_part | grep "^s" >/dev/null; then
  		tmp_pc_slice=`echo $tmp_part \
@@ -4441,7 +4417,7 @@ diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
  		tmp_drive=`echo "$tmp_drive" \
  		    | sed "s%)%,$tmp_bsd_partition)%"`
  	    fi
-@@ -336,6 +384,10 @@
+@@ -336,6 +384,10 @@ else
      # Create a safe temporary file.
      test -n "$mklog" && log_file=`$mklog`
  
@@ -4452,7 +4428,7 @@ diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
      $grub_shell --batch $no_floppy --device-map=$device_map <<EOF >$log_file
  quit
  EOF
-@@ -450,6 +502,24 @@
+@@ -450,6 +502,24 @@ rm -f $log_file
  # Create a safe temporary file.
  test -n "$mklog" && log_file=`$mklog`
  
@@ -4477,7 +4453,7 @@ diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
  # Now perform the installation.
  $grub_shell --batch $no_floppy --device-map=$device_map <<EOF >$log_file
  root $root_drive
-@@ -457,6 +527,10 @@
+@@ -457,6 +527,10 @@ setup $force_lba --stage2=$grubdir/stage
  quit
  EOF
  
