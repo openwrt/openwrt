@@ -1,7 +1,7 @@
 /*
  *  TP-LINK TL-WR741ND board support
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -16,6 +16,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
+#include "dev-ap91-eth.h"
 #include "dev-ap91-pci.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
@@ -98,30 +99,6 @@ static void __init tl_wr741nd_setup(void)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(mac);
-	ar71xx_add_device_mdio(0x0);
-
-	/* WAN port */
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.phy_mask = 0x0;
-	ar71xx_eth0_data.speed = SPEED_100;
-	ar71xx_eth0_data.duplex = DUPLEX_FULL;
-	ar71xx_eth0_data.fifo_cfg1 = 0x0fff0000;
-	ar71xx_eth0_data.fifo_cfg2 = 0x00001fff;
-	ar71xx_eth0_data.fifo_cfg3 = 0x008001ff;
-
-	/* LAN ports */
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0x0;
-	ar71xx_eth1_data.speed = SPEED_1000;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
-	ar71xx_eth1_data.fifo_cfg1 = 0x0fff0000;
-	ar71xx_eth1_data.fifo_cfg2 = 0x00001fff;
-	ar71xx_eth1_data.fifo_cfg3 = 0x008001ff;
-
-	ar71xx_add_device_eth(1);
-	ar71xx_add_device_eth(0);
-
 	ar71xx_add_device_m25p80(&tl_wr741nd_flash_data);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_wr741nd_leds_gpio),
@@ -131,6 +108,7 @@ static void __init tl_wr741nd_setup(void)
 					ARRAY_SIZE(tl_wr741nd_gpio_buttons),
 					tl_wr741nd_gpio_buttons);
 
+	ap91_eth_init(mac);
 	ap91_pci_init(ee, NULL);
 }
 MIPS_MACHINE(AR71XX_MACH_TL_WR741ND, "TL-WR741ND", "TP-LINK TL-WR741ND",
