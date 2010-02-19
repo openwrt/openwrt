@@ -12318,7 +12318,7 @@
 +module_exit(au1550spi_exit);
 --- a/drivers/char/Config.in
 +++ b/drivers/char/Config.in
-@@ -320,14 +320,11 @@ fi
+@@ -322,14 +322,11 @@ fi
  if [ "$CONFIG_OBSOLETE" = "y" -a "$CONFIG_ALPHA_BOOK1" = "y" ]; then
     bool 'Tadpole ANA H8 Support (OBSOLETE)'  CONFIG_H8
  fi
@@ -12335,7 +12335,7 @@
  fi
  if [ "$CONFIG_TOSHIBA_RBTX4927" = "y" -o "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
     tristate 'Dallas DS1742 RTC support' CONFIG_DS1742
-@@ -390,6 +387,11 @@ if [ "$CONFIG_DRM" = "y" ]; then
+@@ -392,6 +389,11 @@ if [ "$CONFIG_DRM" = "y" ]; then
        source drivers/char/drm/Config.in
     fi
  fi
@@ -12347,7 +12347,7 @@
  endmenu
  
  if [ "$CONFIG_HOTPLUG" = "y" -a "$CONFIG_PCMCIA" != "n" ]; then
-@@ -398,6 +400,7 @@ fi
+@@ -400,6 +402,7 @@ fi
  if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
     tristate ' Alchemy Au1x00 GPIO device support' CONFIG_AU1X00_GPIO
     tristate ' Au1000/ADS7846 touchscreen support' CONFIG_TS_AU1X00_ADS7846
@@ -23800,7 +23800,7 @@
  	printk("\n");
 --- a/fs/proc/array.c
 +++ b/fs/proc/array.c
-@@ -368,15 +368,15 @@ int proc_pid_stat(struct task_struct *ta
+@@ -376,15 +376,15 @@ int proc_pid_stat(struct task_struct *ta
  		task->cmin_flt,
  		task->maj_flt,
  		task->cmaj_flt,
@@ -23821,7 +23821,7 @@
  		vsize,
  		mm ? mm->rss : 0, /* you might want to shift this left 3 */
  		task->rlim[RLIMIT_RSS].rlim_cur,
-@@ -615,14 +615,14 @@ int proc_pid_cpu(struct task_struct *tas
+@@ -629,14 +629,14 @@ int proc_pid_cpu(struct task_struct *tas
  
  	len = sprintf(buffer,
  		"cpu  %lu %lu\n",
@@ -27677,23 +27677,23 @@
  include $(TOPDIR)/drivers/bluetooth/Makefile.lib
 --- a/Makefile
 +++ b/Makefile
-@@ -472,10 +472,11 @@ mrproper: clean archmrproper
+@@ -476,10 +476,11 @@ mrproper: clean archmrproper
  	$(MAKE) -C Documentation/DocBook mrproper
  
  distclean: mrproper
 -	rm -f core `find . \( -not -type d \) -and \
 -		\( -name '*.orig' -o -name '*.rej' -o -name '*~' \
 -		-o -name '*.bak' -o -name '#*#' -o -name '.*.orig' \
--		-o -name '.*.rej' -o -name '.SUMS' -o -size 0 \) -type f -print` TAGS tags
+-		-o -name '.*.rej' -o -name '.SUMS' -o -size 0 \) -type f -print` TAGS tags cscope*
 +	find . \( -not -type d \) -and \
 +		\( -name core -o -name '*.orig' -o -name '*.rej' \
 +		-o -name '*~' -o -name '*.bak' -o -name '#*#' \
 +		-o -name '.*.rej' -o -name '.SUMS' -o -size 0 \
-+		-o -name TAGS -o -name tags \) -print | env -i xargs rm -f
++		-o -name TAGS -o -name tags -o -name 'cscope*' \) -print | env -i xargs rm -f
  
  backup: mrproper
  	cd .. && tar cf - linux/ | gzip -9 > backup.gz
-@@ -502,7 +503,7 @@ mandocs:
+@@ -506,7 +507,7 @@ mandocs:
  	$(MAKE) -C Documentation/DocBook man
  
  sums:

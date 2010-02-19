@@ -912,7 +912,7 @@
  			err = copy_to_user(iwr->u.data.pointer, extra,
  					   extra_size);
  			if (err)
-@@ -1042,9 +1128,25 @@ void wireless_send_event(struct net_devi
+@@ -1043,9 +1129,25 @@ void wireless_send_event(struct net_devi
   * One of the main advantage of centralising spy support here is that
   * it becomes much easier to improve and extend it without having to touch
   * the drivers. One example is the addition of the Spy-Threshold events.
@@ -939,7 +939,7 @@
  /*------------------------------------------------------------------*/
  /*
   * Standard Wireless Handler : set Spy List
-@@ -1054,16 +1156,26 @@ int iw_handler_set_spy(struct net_device
+@@ -1055,16 +1157,26 @@ int iw_handler_set_spy(struct net_device
  		       union iwreq_data *	wrqu,
  		       char *			extra)
  {
@@ -971,7 +971,7 @@
  	/* Are there are addresses to copy? */
  	if(wrqu->data.length > 0) {
  		int i;
-@@ -1089,13 +1201,14 @@ int iw_handler_set_spy(struct net_device
+@@ -1090,13 +1202,14 @@ int iw_handler_set_spy(struct net_device
  			       spydata->spy_address[i][5]);
  #endif	/* WE_SPY_DEBUG */
  	}
@@ -989,7 +989,7 @@
  }
  
  /*------------------------------------------------------------------*/
-@@ -1107,12 +1220,14 @@ int iw_handler_get_spy(struct net_device
+@@ -1108,12 +1221,14 @@ int iw_handler_get_spy(struct net_device
  		       union iwreq_data *	wrqu,
  		       char *			extra)
  {
@@ -1007,7 +1007,7 @@
  	wrqu->data.length = spydata->spy_number;
  
  	/* Copy addresses. */
-@@ -1129,9 +1244,6 @@ int iw_handler_get_spy(struct net_device
+@@ -1130,9 +1245,6 @@ int iw_handler_get_spy(struct net_device
  	for(i = 0; i < spydata->spy_number; i++)
  		spydata->spy_stat[i].updated = 0;
  	return 0;
@@ -1017,7 +1017,7 @@
  }
  
  /*------------------------------------------------------------------*/
-@@ -1143,11 +1255,13 @@ int iw_handler_set_thrspy(struct net_dev
+@@ -1144,11 +1256,13 @@ int iw_handler_set_thrspy(struct net_dev
  			  union iwreq_data *	wrqu,
  			  char *		extra)
  {
@@ -1034,7 +1034,7 @@
  	/* Just do it */
  	memcpy(&(spydata->spy_thr_low), &(threshold->low),
  	       2 * sizeof(struct iw_quality));
-@@ -1160,9 +1274,6 @@ int iw_handler_set_thrspy(struct net_dev
+@@ -1161,9 +1275,6 @@ int iw_handler_set_thrspy(struct net_dev
  #endif	/* WE_SPY_DEBUG */
  
  	return 0;
@@ -1044,7 +1044,7 @@
  }
  
  /*------------------------------------------------------------------*/
-@@ -1174,22 +1285,20 @@ int iw_handler_get_thrspy(struct net_dev
+@@ -1175,22 +1286,20 @@ int iw_handler_get_thrspy(struct net_dev
  			  union iwreq_data *	wrqu,
  			  char *		extra)
  {
@@ -1072,7 +1072,7 @@
  /*------------------------------------------------------------------*/
  /*
   * Prepare and send a Spy Threshold event
-@@ -1227,7 +1336,6 @@ static void iw_send_thrspy_event(struct 
+@@ -1228,7 +1337,6 @@ static void iw_send_thrspy_event(struct 
  	/* Send event to user space */
  	wireless_send_event(dev, SIOCGIWTHRSPY, &wrqu, (char *) &threshold);
  }
@@ -1080,7 +1080,7 @@
  
  /* ---------------------------------------------------------------- */
  /*
-@@ -1240,12 +1348,14 @@ void wireless_spy_update(struct net_devi
+@@ -1241,12 +1349,14 @@ void wireless_spy_update(struct net_devi
  			 unsigned char *	address,
  			 struct iw_quality *	wstats)
  {
@@ -1098,7 +1098,7 @@
  #ifdef WE_SPY_DEBUG
  	printk(KERN_DEBUG "wireless_spy_update() :  offset %ld, spydata %p, address %02X:%02X:%02X:%02X:%02X:%02X\n", dev->wireless_handlers->spy_offset, spydata, address[0], address[1], address[2], address[3], address[4], address[5]);
  #endif	/* WE_SPY_DEBUG */
-@@ -1257,7 +1367,7 @@ void wireless_spy_update(struct net_devi
+@@ -1258,7 +1368,7 @@ void wireless_spy_update(struct net_devi
  			       sizeof(struct iw_quality));
  			match = i;
  		}
@@ -1107,7 +1107,7 @@
  	/* Generate an event if we cross the spy threshold.
  	 * To avoid event storms, we have a simple hysteresis : we generate
  	 * event only when we go under the low threshold or above the
-@@ -1277,6 +1387,4 @@ void wireless_spy_update(struct net_devi
+@@ -1278,6 +1388,4 @@ void wireless_spy_update(struct net_devi
  			}
  		}
  	}
