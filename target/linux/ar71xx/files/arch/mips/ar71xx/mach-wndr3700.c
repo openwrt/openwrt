@@ -29,6 +29,7 @@
 #define WNDR3700_GPIO_LED_POWER_ORANGE	1
 #define WNDR3700_GPIO_LED_POWER_GREEN	2
 #define WNDR3700_GPIO_LED_WPS_GREEN	4
+#define WNDR3700_GPIO_LED_WAN_GREEN	6
 
 #define WNDR3700_GPIO_BTN_WPS		3
 #define WNDR3700_GPIO_BTN_RESET		8
@@ -117,6 +118,10 @@ static struct gpio_led wndr3700_leds_gpio[] __initdata = {
 	}, {
 		.name		= "wndr3700:orange:wps",
 		.gpio		= WNDR3700_GPIO_LED_WPS_ORANGE,
+		.active_low	= 1,
+	}, {
+		.name		= "wndr3700:green:wan",
+		.gpio		= WNDR3700_GPIO_LED_WAN_GREEN,
 		.active_low	= 1,
 	}
 };
