@@ -1,0 +1,707 @@
+--- a/Documentation/Configure.help
++++ b/Documentation/Configure.help
+@@ -3057,6 +3057,34 @@
+   If you want to compile it as a module, say M here and read
+   <file:Documentation/modules.txt>.  If unsure, say `N'.
+ 
++raw table support (required for NOTRACK/TRACE)
++CONFIG_IP_NF_RAW
++  This option adds a `raw' table to iptables. This table is the very
++  first in the netfilter framework and hooks in at the PREROUTING
++  and OUTPUT chains.
++
++  If you want to compile it as a module, say M here and read
++  <file:Documentation/modules.txt>.  If unsure, say `N'.
++
++NOTRACK target support
++CONFIG_IP_NF_TARGET_NOTRACK
++  The NOTRACK target allows a select rule to specify
++  which packets *not* to enter the conntrack/NAT
++  subsystem with all the consequences (no ICMP error tracking,
++  no protocol helpers for the selected packets).
++
++  If you want to compile it as a module, say M here and read
++  <file:Documentation/modules.txt>.  If unsure, say `N'.
++
++raw table support (required for TRACE)
++CONFIG_IP6_NF_RAW
++  This option adds a `raw' table to ip6tables. This table is the very
++  first in the netfilter framework and hooks in at the PREROUTING
++  and OUTPUT chains.
++
++  If you want to compile it as a module, say M here and read
++  <file:Documentation/modules.txt>.  If unsure, say `N'.
++
+ REJECT target support
+ CONFIG_IP_NF_TARGET_REJECT
+   The REJECT target allows a filtering rule to specify that an ICMP
+--- a/include/linux/netfilter_ipv4/ip_conntrack.h
++++ b/include/linux/netfilter_ipv4/ip_conntrack.h
+@@ -286,6 +286,9 @@
+ /* Call me when a conntrack is destroyed. */
+ extern void (*ip_conntrack_destroyed)(struct ip_conntrack *conntrack);
+ 
++/* Fake conntrack entry for untracked connections */
++extern struct ip_conntrack ip_conntrack_untracked;
++
+ /* Returns new sk_buff, or NULL */
+ struct sk_buff *
+ ip_ct_gather_frags(struct sk_buff *skb, u_int32_t user);
+--- a/include/linux/netfilter_ipv4/ipt_conntrack.h
++++ b/include/linux/netfilter_ipv4/ipt_conntrack.h
+@@ -10,6 +10,7 @@
+ 
+ #define IPT_CONNTRACK_STATE_SNAT (1 << (IP_CT_NUMBER + 1))
+ #define IPT_CONNTRACK_STATE_DNAT (1 << (IP_CT_NUMBER + 2))
++#define IPT_CONNTRACK_STATE_UNTRACKED (1 << (IP_CT_NUMBER + 3))
+ 
+ /* flags, invflags: */
+ #define IPT_CONNTRACK_STATE	0x01
+--- a/include/linux/netfilter_ipv4/ipt_state.h
++++ b/include/linux/netfilter_ipv4/ipt_state.h
+@@ -4,6 +4,8 @@
+ #define IPT_STATE_BIT(ctinfo) (1 << ((ctinfo)%IP_CT_IS_REPLY+1))
+ #define IPT_STATE_INVALID (1 << 0)
+ 
++#define IPT_STATE_UNTRACKED (1 << (IP_CT_NUMBER + 1))
++
+ struct ipt_state_info
+ {
+ 	unsigned int statemask;
+--- a/include/linux/netfilter_ipv4.h
++++ b/include/linux/netfilter_ipv4.h
+@@ -51,6 +51,8 @@
+ 
+ enum nf_ip_hook_priorities {
+ 	NF_IP_PRI_FIRST = INT_MIN,
++	NF_IP_PRI_CONNTRACK_DEFRAG = -400,
++	NF_IP_PRI_RAW = -300,
+ 	NF_IP_PRI_CONNTRACK = -200,
+ 	NF_IP_PRI_MANGLE = -150,
+ 	NF_IP_PRI_NAT_DST = -100,
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
+@@ -153,6 +153,15 @@
+   dep_tristate '  TTL target support' CONFIG_IP_NF_TARGET_TTL $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  TCPMSS target support' CONFIG_IP_NF_TARGET_TCPMSS $CONFIG_IP_NF_IPTABLES
++  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
++    tristate '  raw table support (required for NOTRACK/TRACE)' CONFIG_IP_NF_RAW $CONFIG_IP_NF_IPTABLES
++  fi
++  if [ "$CONFIG_IP_NF_RAW" != "n" ]; then
++    if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
++      dep_tristate '    NOTRACK target support' CONFIG_IP_NF_TARGET_NOTRACK $CONFIG_IP_NF_RAW
++    fi
++  # Marker for TRACE target
++  fi
+ fi
+ 
+ tristate 'ARP tables support' CONFIG_IP_NF_ARPTABLES
+--- a/net/ipv4/netfilter/ip_conntrack_core.c
++++ b/net/ipv4/netfilter/ip_conntrack_core.c
+@@ -64,6 +64,7 @@
+ static atomic_t ip_conntrack_count = ATOMIC_INIT(0);
+ struct list_head *ip_conntrack_hash;
+ static kmem_cache_t *ip_conntrack_cachep;
++struct ip_conntrack ip_conntrack_untracked;
+ static LIST_HEAD(unconfirmed);
+ 
+ extern struct ip_conntrack_protocol ip_conntrack_generic_protocol;
+@@ -834,6 +835,15 @@
+ 	int set_reply;
+ 	int ret;
+ 
++	/* Never happen */
++	if ((*pskb)->nh.iph->frag_off & htons(IP_OFFSET)) {
++		if (net_ratelimit()) {
++		printk(KERN_ERR "ip_conntrack_in: Frag of proto %u (hook=%u)\n",
++		       (*pskb)->nh.iph->protocol, hooknum);
++		}
++		return NF_DROP;
++	}
++
+ 	/* FIXME: Do this right please. --RR */
+ 	(*pskb)->nfcache |= NFC_UNKNOWN;
+ 
+@@ -1489,6 +1499,18 @@
+ 
+ 	/* For use by ipt_REJECT */
+ 	ip_ct_attach = ip_conntrack_attach;
++
++	/* Set up fake conntrack:
++	    - to never be deleted, not in any hashes */
++	atomic_set(&ip_conntrack_untracked.ct_general.use, 1);
++	/*  - and look it like as a confirmed connection */
++	set_bit(IPS_CONFIRMED_BIT, &ip_conntrack_untracked.status);
++	/*  - and prepare the ctinfo field for REJECT/NAT. */
++	ip_conntrack_untracked.infos[IP_CT_NEW].master = 
++	ip_conntrack_untracked.infos[IP_CT_RELATED].master = 
++	ip_conntrack_untracked.infos[IP_CT_RELATED + IP_CT_IS_REPLY].master = 
++		&ip_conntrack_untracked.ct_general;
++
+ 	return ret;
+ 
+ err_free_hash:
+--- a/net/ipv4/netfilter/ip_conntrack_standalone.c
++++ b/net/ipv4/netfilter/ip_conntrack_standalone.c
+@@ -218,6 +218,29 @@
+ 	return ip_conntrack_confirm(*pskb);
+ }
+ 
++static unsigned int ip_conntrack_defrag(unsigned int hooknum,
++				        struct sk_buff **pskb,
++				        const struct net_device *in,
++				        const struct net_device *out,
++				        int (*okfn)(struct sk_buff *))
++{
++	/* Previously seen (loopback)?  Ignore.  Do this before
++           fragment check. */
++	if ((*pskb)->nfct)
++		return NF_ACCEPT;
++
++	/* Gather fragments. */
++	if ((*pskb)->nh.iph->frag_off & htons(IP_MF|IP_OFFSET)) {
++		*pskb = ip_ct_gather_frags(*pskb,
++                                  hooknum == NF_IP_PRE_ROUTING ?
++                                  IP_DEFRAG_CONNTRACK_IN :
++                                  IP_DEFRAG_CONNTRACK_OUT);
++		if (!*pskb)
++			return NF_STOLEN;
++	}
++	return NF_ACCEPT;
++}
++
+ static unsigned int ip_refrag(unsigned int hooknum,
+ 			      struct sk_buff **pskb,
+ 			      const struct net_device *in,
+@@ -259,9 +282,15 @@
+ 
+ /* Connection tracking may drop packets, but never alters them, so
+    make it the first hook. */
++static struct nf_hook_ops ip_conntrack_defrag_ops
++= { { NULL, NULL }, ip_conntrack_defrag, PF_INET, NF_IP_PRE_ROUTING,
++	NF_IP_PRI_CONNTRACK_DEFRAG };
+ static struct nf_hook_ops ip_conntrack_in_ops
+ = { { NULL, NULL }, ip_conntrack_in, PF_INET, NF_IP_PRE_ROUTING,
+ 	NF_IP_PRI_CONNTRACK };
++static struct nf_hook_ops ip_conntrack_defrag_local_out_ops
++= { { NULL, NULL }, ip_conntrack_defrag, PF_INET, NF_IP_LOCAL_OUT,
++	NF_IP_PRI_CONNTRACK_DEFRAG };
+ static struct nf_hook_ops ip_conntrack_local_out_ops
+ = { { NULL, NULL }, ip_conntrack_local, PF_INET, NF_IP_LOCAL_OUT,
+ 	NF_IP_PRI_CONNTRACK };
+@@ -382,10 +411,20 @@
+ 	if (!proc) goto cleanup_init;
+ 	proc->owner = THIS_MODULE;
+ 
++	ret = nf_register_hook(&ip_conntrack_defrag_ops);
++	if (ret < 0) {
++		printk("ip_conntrack: can't register pre-routing defrag hook.\n");
++		goto cleanup_proc;
++	}
++	ret = nf_register_hook(&ip_conntrack_defrag_local_out_ops);
++	if (ret < 0) {
++		printk("ip_conntrack: can't register local_out defrag hook.\n");
++		goto cleanup_defragops;
++	}
+ 	ret = nf_register_hook(&ip_conntrack_in_ops);
+ 	if (ret < 0) {
+ 		printk("ip_conntrack: can't register pre-routing hook.\n");
+-		goto cleanup_proc;
++		goto cleanup_defraglocalops;
+ 	}
+ 	ret = nf_register_hook(&ip_conntrack_local_out_ops);
+ 	if (ret < 0) {
+@@ -423,6 +462,10 @@
+ 	nf_unregister_hook(&ip_conntrack_local_out_ops);
+  cleanup_inops:
+ 	nf_unregister_hook(&ip_conntrack_in_ops);
++ cleanup_defraglocalops:
++	nf_unregister_hook(&ip_conntrack_defrag_local_out_ops);
++ cleanup_defragops:
++	nf_unregister_hook(&ip_conntrack_defrag_ops);
+  cleanup_proc:
+ 	proc_net_remove("ip_conntrack");
+  cleanup_init:
+@@ -512,5 +555,6 @@
+ EXPORT_SYMBOL(ip_conntrack_expect_list);
+ EXPORT_SYMBOL(ip_conntrack_lock);
+ EXPORT_SYMBOL(ip_conntrack_hash);
++EXPORT_SYMBOL(ip_conntrack_untracked);
+ EXPORT_SYMBOL_GPL(ip_conntrack_find_get);
+ EXPORT_SYMBOL_GPL(ip_conntrack_put);
+--- a/net/ipv4/netfilter/ip_nat_core.c
++++ b/net/ipv4/netfilter/ip_nat_core.c
+@@ -1023,6 +1023,10 @@
+ 	/* FIXME: Man, this is a hack.  <SIGH> */
+ 	IP_NF_ASSERT(ip_conntrack_destroyed == NULL);
+ 	ip_conntrack_destroyed = &ip_nat_cleanup_conntrack;
++	
++	/* Initialize fake conntrack so that NAT will skip it */
++	ip_conntrack_untracked.nat.info.initialized |= 
++		(1 << IP_NAT_MANIP_SRC) | (1 << IP_NAT_MANIP_DST);
+ 
+ 	return 0;
+ }
+--- /dev/null
++++ b/net/ipv4/netfilter/iptable_raw.c
+@@ -0,0 +1,149 @@
++/* 
++ * 'raw' table, which is the very first hooked in at PRE_ROUTING and LOCAL_OUT .
++ *
++ * Copyright (C) 2003 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
++ */
++#include <linux/module.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++#define RAW_VALID_HOOKS ((1 << NF_IP_PRE_ROUTING) | (1 << NF_IP_LOCAL_OUT))
++
++/* Standard entry. */
++struct ipt_standard
++{
++	struct ipt_entry entry;
++	struct ipt_standard_target target;
++};
++
++struct ipt_error_target
++{
++	struct ipt_entry_target target;
++	char errorname[IPT_FUNCTION_MAXNAMELEN];
++};
++
++struct ipt_error
++{
++	struct ipt_entry entry;
++	struct ipt_error_target target;
++};
++
++static struct
++{
++	struct ipt_replace repl;
++	struct ipt_standard entries[2];
++	struct ipt_error term;
++} initial_table __initdata
++= { { "raw", RAW_VALID_HOOKS, 3,
++      sizeof(struct ipt_standard) * 2 + sizeof(struct ipt_error),
++      { [NF_IP_PRE_ROUTING] 0,
++	[NF_IP_LOCAL_OUT] sizeof(struct ipt_standard) },
++      { [NF_IP_PRE_ROUTING] 0,
++	[NF_IP_LOCAL_OUT] sizeof(struct ipt_standard) },
++      0, NULL, { } },
++    {
++	    /* PRE_ROUTING */
++	    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ipt_entry),
++		sizeof(struct ipt_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IPT_ALIGN(sizeof(struct ipt_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } },
++	    /* LOCAL_OUT */
++	    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ipt_entry),
++		sizeof(struct ipt_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IPT_ALIGN(sizeof(struct ipt_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } }
++    },
++    /* ERROR */
++    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++	0,
++	sizeof(struct ipt_entry),
++	sizeof(struct ipt_error),
++	0, { 0, 0 }, { } },
++      { { { { IPT_ALIGN(sizeof(struct ipt_error_target)), IPT_ERROR_TARGET } },
++	  { } },
++	"ERROR"
++      }
++    }
++};
++
++static struct ipt_table packet_raw = { 
++	.name = "raw", 
++	.table = &initial_table.repl,
++	.valid_hooks =  RAW_VALID_HOOKS, 
++	.lock = RW_LOCK_UNLOCKED, 
++	.me = THIS_MODULE
++};
++
++/* The work comes in here from netfilter.c. */
++static unsigned int
++ipt_hook(unsigned int hook,
++	 struct sk_buff **pskb,
++	 const struct net_device *in,
++	 const struct net_device *out,
++	 int (*okfn)(struct sk_buff *))
++{
++	return ipt_do_table(pskb, hook, in, out, &packet_raw, NULL);
++}
++
++/* 'raw' is the very first table. */
++static struct nf_hook_ops ipt_ops[] = {
++	{
++	  .hook = ipt_hook, 
++	  .pf = PF_INET, 
++	  .hooknum = NF_IP_PRE_ROUTING, 
++	  .priority = NF_IP_PRI_RAW
++	},
++	{
++	  .hook = ipt_hook, 
++	  .pf = PF_INET, 
++	  .hooknum = NF_IP_LOCAL_OUT, 
++	  .priority = NF_IP_PRI_RAW
++	},
++};
++
++static int __init init(void)
++{
++	int ret;
++
++	/* Register table */
++	ret = ipt_register_table(&packet_raw);
++	if (ret < 0)
++		return ret;
++
++	/* Register hooks */
++	ret = nf_register_hook(&ipt_ops[0]);
++	if (ret < 0)
++		goto cleanup_table;
++
++	ret = nf_register_hook(&ipt_ops[1]);
++	if (ret < 0)
++		goto cleanup_hook0;
++
++	return ret;
++
++ cleanup_hook0:
++	nf_unregister_hook(&ipt_ops[0]);
++ cleanup_table:
++	ipt_unregister_table(&packet_raw);
++
++	return ret;
++}
++
++static void __exit fini(void)
++{
++	unsigned int i;
++
++	for (i = 0; i < sizeof(ipt_ops)/sizeof(struct nf_hook_ops); i++)
++		nf_unregister_hook(&ipt_ops[i]);
++
++	ipt_unregister_table(&packet_raw);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");
+--- a/net/ipv4/netfilter/ipt_conntrack.c
++++ b/net/ipv4/netfilter/ipt_conntrack.c
+@@ -27,11 +27,13 @@
+ 
+ #define FWINV(bool,invflg) ((bool) ^ !!(sinfo->invflags & invflg))
+ 
+-	if (ct)
+-		statebit = IPT_CONNTRACK_STATE_BIT(ctinfo);
+-	else
+-		statebit = IPT_CONNTRACK_STATE_INVALID;
+-
++	if (skb->nfct == &ip_conntrack_untracked.infos[IP_CT_NEW])
++		statebit = IPT_CONNTRACK_STATE_UNTRACKED;
++	else if (ct)
++ 		statebit = IPT_CONNTRACK_STATE_BIT(ctinfo);
++ 	else
++ 		statebit = IPT_CONNTRACK_STATE_INVALID;
++ 
+ 	if(sinfo->flags & IPT_CONNTRACK_STATE) {
+ 		if (ct) {
+ 			if(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip !=
+--- /dev/null
++++ b/net/ipv4/netfilter/ipt_NOTRACK.c
+@@ -0,0 +1,75 @@
++/* This is a module which is used for setting up fake conntracks
++ * on packets so that they are not seen by the conntrack/NAT code.
++ */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++
++static unsigned int
++target(struct sk_buff **pskb,
++       unsigned int hooknum,
++       const struct net_device *in,
++       const struct net_device *out,
++       const void *targinfo,
++       void *userinfo)
++{
++	/* Previously seen (loopback)? Ignore. */
++	if ((*pskb)->nfct != NULL)
++		return IPT_CONTINUE;
++
++	/* Attach fake conntrack entry. 
++	   If there is a real ct entry correspondig to this packet, 
++	   it'll hang aroun till timing out. We don't deal with it
++	   for performance reasons. JK */
++	(*pskb)->nfct = &ip_conntrack_untracked.infos[IP_CT_NEW];
++	nf_conntrack_get((*pskb)->nfct);
++
++	return IPT_CONTINUE;
++}
++
++static int
++checkentry(const char *tablename,
++	   const struct ipt_entry *e,
++           void *targinfo,
++           unsigned int targinfosize,
++           unsigned int hook_mask)
++{
++	if (targinfosize != 0) {
++		printk(KERN_WARNING "NOTRACK: targinfosize %u != 0\n",
++		       targinfosize);
++		return 0;
++	}
++
++	if (strcmp(tablename, "raw") != 0) {
++		printk(KERN_WARNING "NOTRACK: can only be called from \"raw\" table, not \"%s\"\n", tablename);
++		return 0;
++	}
++
++	return 1;
++}
++
++static struct ipt_target ipt_notrack_reg = { 
++	.name = "NOTRACK", 
++	.target = target, 
++	.checkentry = checkentry, 
++	.me = THIS_MODULE 
++};
++
++static int __init init(void)
++{
++	if (ipt_register_target(&ipt_notrack_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_target(&ipt_notrack_reg);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");
+--- a/net/ipv4/netfilter/ipt_state.c
++++ b/net/ipv4/netfilter/ipt_state.c
+@@ -21,7 +21,9 @@
+ 	enum ip_conntrack_info ctinfo;
+ 	unsigned int statebit;
+ 
+-	if (!ip_conntrack_get((struct sk_buff *)skb, &ctinfo))
++	if (skb->nfct == &ip_conntrack_untracked.infos[IP_CT_NEW])
++		statebit = IPT_STATE_UNTRACKED;
++	else if (!ip_conntrack_get((struct sk_buff *)skb, &ctinfo))
+ 		statebit = IPT_STATE_INVALID;
+ 	else
+ 		statebit = IPT_STATE_BIT(ctinfo);
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
+@@ -77,6 +77,7 @@
+ obj-$(CONFIG_IP_NF_FILTER) += iptable_filter.o
+ obj-$(CONFIG_IP_NF_MANGLE) += iptable_mangle.o
+ obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
++obj-$(CONFIG_IP_NF_RAW) += iptable_raw.o
+ 
+ # matches
+ obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
+@@ -131,6 +132,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
+ obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o
+ obj-$(CONFIG_IP_NF_TARGET_TCPMSS) += ipt_TCPMSS.o
++obj-$(CONFIG_IP_NF_TARGET_NOTRACK) += ipt_NOTRACK.o
+ 
+ # generic ARP tables
+ obj-$(CONFIG_IP_NF_ARPTABLES) += arp_tables.o
+--- a/net/ipv6/netfilter/Config.in
++++ b/net/ipv6/netfilter/Config.in
+@@ -79,6 +79,10 @@
+     dep_tristate '    IMQ target support' CONFIG_IP6_NF_TARGET_IMQ $CONFIG_IP6_NF_MANGLE
+   fi
+   #dep_tristate '  LOG target support' CONFIG_IP6_NF_TARGET_LOG $CONFIG_IP6_NF_IPTABLES
++  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
++    tristate '  raw table support (required for TRACE)' CONFIG_IP6_NF_RAW $CONFIG_IP6_NF_IPTABLES
++  fi
++  # Marker for TRACE target
+ fi
+ 
+ endmenu
+--- /dev/null
++++ b/net/ipv6/netfilter/ip6table_raw.c
+@@ -0,0 +1,154 @@
++/*
++ * IPv6 raw table, a port of the IPv4 raw table to IPv6
++ *
++ * Copyright (C) 2003 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
++ */
++#include <linux/module.h>
++#include <linux/netfilter_ipv6/ip6_tables.h>
++
++#define RAW_VALID_HOOKS ((1 << NF_IP6_PRE_ROUTING) | (1 << NF_IP6_LOCAL_OUT))
++
++#if 0
++#define DEBUGP(x, args...)	printk(KERN_DEBUG x, ## args)
++#else
++#define DEBUGP(x, args...)
++#endif
++
++/* Standard entry. */
++struct ip6t_standard
++{
++	struct ip6t_entry entry;
++	struct ip6t_standard_target target;
++};
++
++struct ip6t_error_target
++{
++	struct ip6t_entry_target target;
++	char errorname[IP6T_FUNCTION_MAXNAMELEN];
++};
++
++struct ip6t_error
++{
++	struct ip6t_entry entry;
++	struct ip6t_error_target target;
++};
++
++static struct
++{
++	struct ip6t_replace repl;
++	struct ip6t_standard entries[2];
++	struct ip6t_error term;
++} initial_table __initdata 
++= { { "raw", RAW_VALID_HOOKS, 3,
++      sizeof(struct ip6t_standard) * 2 + sizeof(struct ip6t_error),
++      { [NF_IP6_PRE_ROUTING] 	0,
++	[NF_IP6_LOCAL_OUT]	sizeof(struct ip6t_standard) },
++      { [NF_IP6_PRE_ROUTING] 	0,
++	[NF_IP6_LOCAL_OUT]	sizeof(struct ip6t_standard) },
++      0, NULL, { } },
++    {
++	    /* PRE_ROUTING */
++            { { { { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ip6t_entry),
++		sizeof(struct ip6t_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IP6T_ALIGN(sizeof(struct ip6t_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } },
++	    /* LOCAL_OUT */
++            { { { { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ip6t_entry),
++		sizeof(struct ip6t_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IP6T_ALIGN(sizeof(struct ip6t_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } },
++    },
++    /* ERROR */
++    { { { { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++	0,
++	sizeof(struct ip6t_entry),
++	sizeof(struct ip6t_error),
++	0, { 0, 0 }, { } },
++      { { { { IP6T_ALIGN(sizeof(struct ip6t_error_target)), IP6T_ERROR_TARGET } },
++	  { } },
++	"ERROR"
++      }
++    }
++};
++
++static struct ip6t_table packet_raw = { 
++	.name = "raw", 
++	.table = &initial_table.repl,
++	.valid_hooks = RAW_VALID_HOOKS, 
++	.lock = RW_LOCK_UNLOCKED, 
++	.me = THIS_MODULE
++};
++
++/* The work comes in here from netfilter.c. */
++static unsigned int
++ip6t_hook(unsigned int hook,
++	 struct sk_buff **pskb,
++	 const struct net_device *in,
++	 const struct net_device *out,
++	 int (*okfn)(struct sk_buff *))
++{
++	return ip6t_do_table(pskb, hook, in, out, &packet_raw, NULL);
++}
++
++static struct nf_hook_ops ip6t_ops[] = { 
++	{
++	  .hook = ip6t_hook, 
++	  .pf = PF_INET6,
++	  .hooknum = NF_IP6_PRE_ROUTING,
++	  .priority = NF_IP6_PRI_FIRST
++	},
++	{
++	  .hook = ip6t_hook, 
++	  .pf = PF_INET6, 
++	  .hooknum = NF_IP6_LOCAL_OUT,
++	  .priority = NF_IP6_PRI_FIRST
++	},
++};
++
++static int __init init(void)
++{
++	int ret;
++
++	/* Register table */
++	ret = ip6t_register_table(&packet_raw);
++	if (ret < 0)
++		return ret;
++
++	/* Register hooks */
++	ret = nf_register_hook(&ip6t_ops[0]);
++	if (ret < 0)
++		goto cleanup_table;
++
++	ret = nf_register_hook(&ip6t_ops[1]);
++	if (ret < 0)
++		goto cleanup_hook0;
++
++	return ret;
++
++ cleanup_hook0:
++	nf_unregister_hook(&ip6t_ops[0]);
++ cleanup_table:
++	ip6t_unregister_table(&packet_raw);
++
++	return ret;
++}
++
++static void __exit fini(void)
++{
++	unsigned int i;
++
++	for (i = 0; i < sizeof(ip6t_ops)/sizeof(struct nf_hook_ops); i++)
++		nf_unregister_hook(&ip6t_ops[i]);
++
++	ip6t_unregister_table(&packet_raw);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");
+--- a/net/ipv6/netfilter/Makefile
++++ b/net/ipv6/netfilter/Makefile
+@@ -32,6 +32,7 @@
+ obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
+ obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
+ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
++obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
+ obj-$(CONFIG_IP6_NF_MATCH_RANDOM) += ip6t_random.o
+ obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
+ obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o
