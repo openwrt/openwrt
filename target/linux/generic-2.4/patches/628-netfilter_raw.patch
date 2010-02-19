@@ -1,6 +1,6 @@
 --- a/Documentation/Configure.help
 +++ b/Documentation/Configure.help
-@@ -3057,6 +3057,34 @@
+@@ -3057,6 +3057,34 @@ CONFIG_IP_NF_FILTER
    If you want to compile it as a module, say M here and read
    <file:Documentation/modules.txt>.  If unsure, say `N'.
  
@@ -37,7 +37,7 @@
    The REJECT target allows a filtering rule to specify that an ICMP
 --- a/include/linux/netfilter_ipv4/ip_conntrack.h
 +++ b/include/linux/netfilter_ipv4/ip_conntrack.h
-@@ -286,6 +286,9 @@
+@@ -286,6 +286,9 @@ extern void ip_ct_refresh_acct(struct ip
  /* Call me when a conntrack is destroyed. */
  extern void (*ip_conntrack_destroyed)(struct ip_conntrack *conntrack);
  
@@ -81,7 +81,7 @@
  	NF_IP_PRI_NAT_DST = -100,
 --- a/net/ipv4/netfilter/Config.in
 +++ b/net/ipv4/netfilter/Config.in
-@@ -153,6 +153,15 @@
+@@ -153,6 +153,15 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    dep_tristate '  TTL target support' CONFIG_IP_NF_TARGET_TTL $CONFIG_IP_NF_IPTABLES
    dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
    dep_tristate '  TCPMSS target support' CONFIG_IP_NF_TARGET_TCPMSS $CONFIG_IP_NF_IPTABLES
@@ -99,7 +99,7 @@
  tristate 'ARP tables support' CONFIG_IP_NF_ARPTABLES
 --- a/net/ipv4/netfilter/ip_conntrack_core.c
 +++ b/net/ipv4/netfilter/ip_conntrack_core.c
-@@ -64,6 +64,7 @@
+@@ -64,6 +64,7 @@ int ip_conntrack_max = 0;
  static atomic_t ip_conntrack_count = ATOMIC_INIT(0);
  struct list_head *ip_conntrack_hash;
  static kmem_cache_t *ip_conntrack_cachep;
@@ -107,7 +107,7 @@
  static LIST_HEAD(unconfirmed);
  
  extern struct ip_conntrack_protocol ip_conntrack_generic_protocol;
-@@ -834,6 +835,15 @@
+@@ -834,6 +835,15 @@ unsigned int ip_conntrack_in(unsigned in
  	int set_reply;
  	int ret;
  
@@ -123,7 +123,7 @@
  	/* FIXME: Do this right please. --RR */
  	(*pskb)->nfcache |= NFC_UNKNOWN;
  
-@@ -1489,6 +1499,18 @@
+@@ -1489,6 +1499,18 @@ int __init ip_conntrack_init(void)
  
  	/* For use by ipt_REJECT */
  	ip_ct_attach = ip_conntrack_attach;
@@ -144,7 +144,7 @@
  err_free_hash:
 --- a/net/ipv4/netfilter/ip_conntrack_standalone.c
 +++ b/net/ipv4/netfilter/ip_conntrack_standalone.c
-@@ -218,6 +218,29 @@
+@@ -218,6 +218,29 @@ static unsigned int ip_confirm(unsigned 
  	return ip_conntrack_confirm(*pskb);
  }
  
@@ -174,7 +174,7 @@
  static unsigned int ip_refrag(unsigned int hooknum,
  			      struct sk_buff **pskb,
  			      const struct net_device *in,
-@@ -259,9 +282,15 @@
+@@ -259,9 +282,15 @@ static unsigned int ip_conntrack_local(u
  
  /* Connection tracking may drop packets, but never alters them, so
     make it the first hook. */
@@ -190,7 +190,7 @@
  static struct nf_hook_ops ip_conntrack_local_out_ops
  = { { NULL, NULL }, ip_conntrack_local, PF_INET, NF_IP_LOCAL_OUT,
  	NF_IP_PRI_CONNTRACK };
-@@ -382,10 +411,20 @@
+@@ -382,10 +411,20 @@ static int init_or_cleanup(int init)
  	if (!proc) goto cleanup_init;
  	proc->owner = THIS_MODULE;
  
@@ -212,7 +212,7 @@
  	}
  	ret = nf_register_hook(&ip_conntrack_local_out_ops);
  	if (ret < 0) {
-@@ -423,6 +462,10 @@
+@@ -423,6 +462,10 @@ static int init_or_cleanup(int init)
  	nf_unregister_hook(&ip_conntrack_local_out_ops);
   cleanup_inops:
  	nf_unregister_hook(&ip_conntrack_in_ops);
@@ -223,7 +223,7 @@
   cleanup_proc:
  	proc_net_remove("ip_conntrack");
   cleanup_init:
-@@ -512,5 +555,6 @@
+@@ -512,5 +555,6 @@ EXPORT_SYMBOL(ip_conntrack_htable_size);
  EXPORT_SYMBOL(ip_conntrack_expect_list);
  EXPORT_SYMBOL(ip_conntrack_lock);
  EXPORT_SYMBOL(ip_conntrack_hash);
@@ -232,7 +232,7 @@
  EXPORT_SYMBOL_GPL(ip_conntrack_put);
 --- a/net/ipv4/netfilter/ip_nat_core.c
 +++ b/net/ipv4/netfilter/ip_nat_core.c
-@@ -1023,6 +1023,10 @@
+@@ -1023,6 +1023,10 @@ int __init ip_nat_init(void)
  	/* FIXME: Man, this is a hack.  <SIGH> */
  	IP_NF_ASSERT(ip_conntrack_destroyed == NULL);
  	ip_conntrack_destroyed = &ip_nat_cleanup_conntrack;
@@ -397,7 +397,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv4/netfilter/ipt_conntrack.c
 +++ b/net/ipv4/netfilter/ipt_conntrack.c
-@@ -27,11 +27,13 @@
+@@ -27,11 +27,13 @@ match(const struct sk_buff *skb,
  
  #define FWINV(bool,invflg) ((bool) ^ !!(sinfo->invflags & invflg))
  
@@ -496,7 +496,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv4/netfilter/ipt_state.c
 +++ b/net/ipv4/netfilter/ipt_state.c
-@@ -21,7 +21,9 @@
+@@ -21,7 +21,9 @@ match(const struct sk_buff *skb,
  	enum ip_conntrack_info ctinfo;
  	unsigned int statebit;
  
@@ -509,7 +509,7 @@
  		statebit = IPT_STATE_BIT(ctinfo);
 --- a/net/ipv4/netfilter/Makefile
 +++ b/net/ipv4/netfilter/Makefile
-@@ -77,6 +77,7 @@
+@@ -77,6 +77,7 @@ obj-$(CONFIG_IP_NF_IPTABLES) += ip_table
  obj-$(CONFIG_IP_NF_FILTER) += iptable_filter.o
  obj-$(CONFIG_IP_NF_MANGLE) += iptable_mangle.o
  obj-$(CONFIG_IP_NF_NAT) += iptable_nat.o
@@ -517,7 +517,7 @@
  
  # matches
  obj-$(CONFIG_IP_NF_MATCH_HELPER) += ipt_helper.o
-@@ -131,6 +132,7 @@
+@@ -131,6 +132,7 @@ obj-$(CONFIG_IP_NF_TARGET_CONNMARK) += i
  obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
  obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o
  obj-$(CONFIG_IP_NF_TARGET_TCPMSS) += ipt_TCPMSS.o
@@ -527,7 +527,7 @@
  obj-$(CONFIG_IP_NF_ARPTABLES) += arp_tables.o
 --- a/net/ipv6/netfilter/Config.in
 +++ b/net/ipv6/netfilter/Config.in
-@@ -79,6 +79,10 @@
+@@ -79,6 +79,10 @@ if [ "$CONFIG_IP6_NF_IPTABLES" != "n" ];
      dep_tristate '    IMQ target support' CONFIG_IP6_NF_TARGET_IMQ $CONFIG_IP6_NF_MANGLE
    fi
    #dep_tristate '  LOG target support' CONFIG_IP6_NF_TARGET_LOG $CONFIG_IP6_NF_IPTABLES
@@ -697,7 +697,7 @@
 +MODULE_LICENSE("GPL");
 --- a/net/ipv6/netfilter/Makefile
 +++ b/net/ipv6/netfilter/Makefile
-@@ -32,6 +32,7 @@
+@@ -32,6 +32,7 @@ obj-$(CONFIG_IP6_NF_TARGET_MARK) += ip6t
  obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
  obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
  obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o

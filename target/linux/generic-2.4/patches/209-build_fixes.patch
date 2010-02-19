@@ -9,7 +9,7 @@
  	  (echo KERNELRELEASE \"$(KERNELRELEASE)\" exceeds $(uts_len) characters >&2; false)
  	@echo \#define UTS_RELEASE \"$(KERNELRELEASE)\" > .ver
  	@echo \#define LINUX_VERSION_CODE `expr $(VERSION) \\* 65536 + $(PATCHLEVEL) \\* 256 + $(SUBLEVEL)` >> .ver
-@@ -503,7 +503,7 @@ dep-files: scripts/mkdep archdep include
+@@ -507,7 +507,7 @@ dep-files: scripts/mkdep archdep include
  ifdef CONFIG_MODVERSIONS
  	$(MAKE) update-modverfile
  endif
