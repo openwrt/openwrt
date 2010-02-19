@@ -196,8 +196,6 @@ int main(int argc, char **argv)
 	int err;
 	int i;
 
-	struct switch_port *ports;
-
 	int cmd = CMD_NONE;
 	char *cdev = NULL;
 	int cport = -1;
@@ -255,8 +253,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	ports = malloc(sizeof(struct switch_port) * dev->ports);
-	memset(ports, 0, sizeof(struct switch_port) * dev->ports);
 	swlib_scan(dev);
 
 	if (cmd == CMD_GET || cmd == CMD_SET) {
@@ -329,7 +325,5 @@ int main(int argc, char **argv)
 
 out:
 	swlib_free_all(dev);
-	free(ports);
-
 	return 0;
 }
