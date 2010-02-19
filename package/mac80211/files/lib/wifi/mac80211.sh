@@ -234,7 +234,6 @@ enable_mac80211() {
 		}
 		config_set "$vif" ifname "$ifname"
 
-		config_get enc "$vif" encryption
 		config_get mode "$vif" mode
 		config_get ssid "$vif" ssid
 
@@ -288,60 +287,19 @@ enable_mac80211() {
 		[ "$mode" = "ap" ] || ifconfig "$ifname" hw ether "$vif_mac"
 		config_set "$vif" macaddr "$vif_mac"
 
-		# Valid values are:
-		# wpa / wep / none
-		#
 		# !! ap !!
 		#
 		# ALL ap functionality will be passed to hostapd
 		#
-		# !! mesh / adhoc / station !!
-		# none -> NO encryption
+		# !! station !!
 		#
-		# wep + keymgmt = '' -> we use iw to connect to the
-		# network.
+		# ALL station functionality will be passed to wpa_supplicant
 		#
-		# wep + keymgmt = 'NONE' -> wpa_supplicant will be
-		# configured to handle the wep connection
 		if [ ! "$mode" = "ap" ]; then
 			# We attempt to set the channel for all interfaces, although
 			# mac80211 may not support it or the driver might not yet
 			# for ap mode this is handled by hostapd
 			[ -n "$fixed" -a -n "$channel" ] && iw dev "$ifname" set channel "$channel"
-
-			local key keystring
-
-			case "$enc" in
-				*none*)
-					config_get keymgmt "$vif" keymgmt
-				;;
-				*wep*)
-					config_get keymgmt "$vif" keymgmt
-					if [ -z "$keymgmt" ]; then
-						config_get key "$vif" key
-						key="${key:-1}"
-						case "$key" in
-							[1234])
-								for idx in 1 2 3 4; do
-									local zidx
-									zidx=$(($idx - 1))
-									config_get ckey "$vif" "key${idx}"
-									if [ -n "$ckey" ]; then
-										[ $idx -eq $key ] && zidx="d:${zidx}"
-										append keystring "${zidx}:$(prepare_key_wep "$ckey")"
-									fi
-								done
-								;;
-							*)
-								keystring="d:0:$(prepare_key_wep "$key")"
-								;;
-						esac
-					fi
-				;;
-				*psk*|*wpa*)
-					config_get key "$vif" key
-				;;
-			esac
 		fi
 
 		# txpower is not yet implemented in iw
@@ -363,60 +321,26 @@ enable_mac80211() {
 
 		ifconfig "$ifname" up
 
-		[ "$mode" = "ap" ] || mac80211_start_vif "$vif" "$ifname"
+		if [ ! "$mode" = "ap" ]; then
+			mac80211_start_vif "$vif" "$ifname"
 
-		case "$mode" in
-			adhoc)
-				config_get bssid "$vif" bssid
-				iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid
-			;;
-			sta|mesh)
-				config_get bssid "$vif" bssid
-				case "$enc" in
-					*wep*)
-						if [ -z "$keymgmt" ]; then
-							[ -n "$keystring" ] &&
-								iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid key $keystring
-						else
-							if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
-								wpa_supplicant_setup_vif "$vif" wext || {
-									echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
-									# make sure this wifi interface won't accidentally stay open without encryption
-									ifconfig "$ifname" down
-									continue
-								}
-							fi
-						fi
-					;;
-					*wpa*|*psk*)
-						config_get key "$vif" key
-						if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
-							wpa_supplicant_setup_vif "$vif" wext || {
-								echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
-								# make sure this wifi interface won't accidentally stay open without encryption
-								ifconfig "$ifname" down
-								continue
-							}
-						fi
-					;;
-					*)
-						if [ -z "$keymgmt" ]; then
-							iw dev "$ifname" connect "$ssid" ${fixed:+$freq} $bssid
-						else
-							if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
-								wpa_supplicant_setup_vif "$vif" wext || {
-									echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
-									# make sure this wifi interface won't accidentally stay open without encryption
-									ifconfig "$ifname" down
-									continue
-								}
-							fi
-						fi
-					;;
-				esac
-
-			;;
-		esac
+			case "$mode" in
+				adhoc)
+					config_get bssid "$vif" bssid
+					iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid
+				;;
+				sta)
+					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
+						wpa_supplicant_setup_vif "$vif" wext || {
+							echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
+							# make sure this wifi interface won't accidentally stay open without encryption
+							ifconfig "$ifname" down
+							continue
+						}
+					fi
+				;;
+			esac
+		fi
 	done
 
 	local start_hostapd=
