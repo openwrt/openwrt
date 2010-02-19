@@ -68,6 +68,8 @@ define Package/iptables-mod-conntrack/description
  Basic iptables extensions for connection tracking.
  Includes:
  - state
+ - raw
+ - NOTRACK 
 endef
 
 define Package/iptables-mod-conntrack-extra
@@ -210,8 +212,6 @@ define Package/iptables-mod-extra/description
  - libipt_physdev
  - libipt_pkttype
  - libipt_recent
- - iptable_raw
- - libipt_NOTRACK
 endef
 
 define Package/iptables-utils
