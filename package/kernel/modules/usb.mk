@@ -360,19 +360,19 @@ endef
 $(eval $(call KernelPackage,usb-serial-pl2303))
 
 
-define KernelPackage/usb-serial-cp2101
+define KernelPackage/usb-serial-cp210x
 $(call KernelPackage/usb-serial/Depends,)
-  TITLE:=Support for Silicon Labs cp2101 devices
-  KCONFIG:=CONFIG_USB_SERIAL_CP2101
-  FILES:=$(LINUX_DIR)/drivers/usb/serial/cp2101.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,65,cp2101)
+  TITLE:=Support for Silicon Labs cp210x devices
+  KCONFIG:=CONFIG_USB_SERIAL_CP210X
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/cp210x.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,cp210x)
 endef
 
-define KernelPackage/usb-serial-cp2101/description
- Kernel support for Silicon Labs cp2101 USB-to-Serial converters
+define KernelPackage/usb-serial-cp210x/description
+ Kernel support for Silicon Labs cp210x USB-to-Serial converters
 endef
 
-$(eval $(call KernelPackage,usb-serial-cp2101))
+$(eval $(call KernelPackage,usb-serial-cp210x))
 
 
 define KernelPackage/usb-serial-ark3116
