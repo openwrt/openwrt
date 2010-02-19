@@ -6,7 +6,10 @@ wpa_supplicant_setup_vif() {
 	# wpa_supplicant should use wext for mac80211 cards
 	[ "$driver" = "mac80211" ] && driver='wext'
 
-	# make sure we have the psk
+	# make sure we have the encryption type and the psk
+	[ -n "$enc" ] || {
+		config_get enc "$vif" encryption
+	}
 	[ -n "$key" ] || {
 		config_get key "$vif" key
 	}
