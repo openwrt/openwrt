@@ -1,0 +1,13 @@
+--- a/config.mk
++++ b/config.mk
+@@ -382,8 +382,8 @@ endif # end of SPI driver list
+ 
+ ifneq ($(CONFIG_MMC),)
+ 
+-CONFIG_SSB_SDIOHOST=y
+-CONFIG_B43_SDIO=y
++# CONFIG_SSB_SDIOHOST=y
++# CONFIG_B43_SDIO=y
+ CONFIG_WL1251_SDIO=m
+ 
+ ifdef CONFIG_COMPAT_KERNEL_27
