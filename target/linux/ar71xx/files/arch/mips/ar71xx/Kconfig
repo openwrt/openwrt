@@ -21,6 +21,7 @@ config AR71XX_MACH_AP83
 
 config AR71XX_MACH_DIR_600_A1
 	bool "D-Link DIR-600 rev. A1 support"
+	select AR71XX_DEV_AP91_ETH
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -148,6 +149,7 @@ config AR71XX_MACH_MZK_W300NH
 config AR71XX_MACH_TL_WR741ND
 	bool "TP-LINK TL-WR741ND support"
 	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_ETH
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
@@ -205,6 +207,9 @@ config AR71XX_DEV_M25P80
 	def_bool n
 
 config AR71XX_DEV_AP91_PCI
+	def_bool n
+
+config AR71XX_DEV_AP91_ETH
 	def_bool n
 
 config AR71XX_DEV_AP94_PCI
