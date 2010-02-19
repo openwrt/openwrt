@@ -182,7 +182,7 @@ endef
 
 define KernelPackage/rt2800-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-rt2x00-lib +USB_SUPPORT:rt2x00-usb
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-rt2x00-lib +USB_SUPPORT:kmod-rt2x00-usb
   TITLE+= (rt2800 LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800lib)
