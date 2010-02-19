@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+wndr3700_set_wan_led() {
+	uci batch <<EOF
+set system.wan_led=led
+set system.wan_led.sysfs='wndr3700:green:wan'
+set system.wan_led.name='WAN LED (green)'
+set system.wan_led.default='0'
+commit system
+EOF
+}
+
+if [ "${board}" == "wndr3700" ]; then
+	wndr3700_set_wan_led
+fi
