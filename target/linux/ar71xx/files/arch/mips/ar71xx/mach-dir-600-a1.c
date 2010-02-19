@@ -20,6 +20,7 @@
 #include "dev-ap91-pci.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
+#include "nvram.h"
 
 #define DIR_600_A1_GPIO_LED_WPS			0
 #define DIR_600_A1_GPIO_LED_POWER_AMBER		1
@@ -29,6 +30,9 @@
 #define DIR_600_A1_GPIO_BTN_WPS			12
 
 #define DIR_600_A1_BUTTONS_POLL_INTERVAL	20
+
+#define DIR_600_A1_NVRAM_ADDR	0x1f030000
+#define DIR_600_A1_NVRAM_SIZE	0x10000
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition dir_600_a1_partitions[] = {
@@ -108,8 +112,14 @@ static struct gpio_button dir_600_a1_gpio_buttons[] __initdata = {
 
 static void __init dir_600_a1_setup(void)
 {
-	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
+	const char *nvram = (char *) KSEG1ADDR(DIR_600_A1_NVRAM_ADDR);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 mac_buff[6];
+	u8 *mac = NULL;
+
+	if (nvram_parse_mac_addr(nvram, DIR_600_A1_NVRAM_SIZE,
+			         "lan_mac=", mac_buff) == 0)
+		mac = mac_buff;
 
 	ar71xx_add_device_m25p80(&dir_600_a1_flash_data);
 
@@ -121,7 +131,7 @@ static void __init dir_600_a1_setup(void)
 					dir_600_a1_gpio_buttons);
 
 	ap91_eth_init(mac);
-	ap91_pci_init(ee, NULL);
+	ap91_pci_init(ee, mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_DIR_600_A1, "DIR-600-A1", "D-Link DIR-600 rev. A1",
