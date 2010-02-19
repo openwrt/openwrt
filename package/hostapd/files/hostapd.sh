@@ -68,6 +68,28 @@ hostapd_set_bss_options() {
 			append "$var" "wpa_group_rekey=300" "$N"
 			append "$var" "wpa_gmk_rekey=640" "$N"
 		;;
+		*wep*)
+			config_get key "$vif" key
+			key="${key:-1}"
+			case "$key" in
+				[1234])
+					for idx in 1 2 3 4; do
+						local zidx
+						zidx=$(($idx - 1))
+						config_get ckey "$vif" "key${idx}"
+						[ -n "$ckey" ] && \
+							append "$var" "wep_key${zidx}=$(prepare_key_wep "$ckey")" "$N"
+					done
+					append "$var" "wep_default_key=$((key - 1))"  "$N"
+				;;
+				*)
+					append "$var" "wep_key0=$(prepare_key_wep "$key")" "$N"
+					append "$var" "wep_default_key=0" "$N"
+				;;
+			esac
+			wpa=0
+			crypto=
+		;;
 		*)
 			wpa=0
 			crypto=
