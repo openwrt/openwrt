@@ -1,6 +1,6 @@
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
-@@ -343,6 +343,12 @@ config MTD_CFI_FLAGADM
+@@ -327,6 +327,12 @@ config MTD_CFI_FLAGADM
  	  Mapping for the Flaga digital module. If you don't have one, ignore
  	  this setting.
  
@@ -15,7 +15,7 @@
  	depends on MTD_CFI && ( REDWOOD_4 || REDWOOD_5 || REDWOOD_6 )
 --- a/drivers/mtd/maps/Makefile
 +++ b/drivers/mtd/maps/Makefile
-@@ -29,6 +29,7 @@ obj-$(CONFIG_MTD_PMC_MSP_RAMROOT)+= pmcm
+@@ -28,6 +28,7 @@ obj-$(CONFIG_MTD_PMC_MSP_EVM)   += pmcms
  obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
  obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
  obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o
