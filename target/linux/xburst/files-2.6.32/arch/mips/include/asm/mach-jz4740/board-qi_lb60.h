@@ -20,11 +20,6 @@
 #define __ASM_JZ4740_QI_LB60_H__
 
 #include <linux/gpio.h>
-/*
- * Frequencies of on-board oscillators
- */
-#define JZ_EXTAL		12000000  /* Main extal freq: 12 MHz */
-#define JZ_EXTAL_RTC		32768     /* RTC extal freq: 32.768 KHz */
 
 /*
  * GPIO

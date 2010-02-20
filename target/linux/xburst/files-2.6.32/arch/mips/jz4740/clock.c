@@ -873,7 +873,7 @@ void jz4740_clock_udc_enable_auto_suspend(void)
 }
 EXPORT_SYMBOL_GPL(jz4740_clock_udc_enable_auto_suspend);
 
-int jz_init_clocks(unsigned long ext_rate)
+int jz_init_clocks(void)
 {
 	uint32_t val;
 
@@ -883,7 +883,8 @@ int jz_init_clocks(unsigned long ext_rate)
 
 	spin_lock_init(&jz_clock_lock);
 
-	jz_clk_ext.rate = ext_rate;
+	jz_clk_ext.rate = jz4740_clock_bdata.ext_rate;
+	jz_clk_rtc.rate = jz4740_clock_bdata.rtc_rate;
 
 	val = jz_clk_reg_read(JZ_REG_CLOCK_SPI);
 

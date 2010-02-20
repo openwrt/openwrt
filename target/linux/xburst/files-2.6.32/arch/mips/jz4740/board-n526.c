@@ -22,7 +22,6 @@
 #include <linux/mtd/jz4740_nand.h>
 #include <linux/jz4740_fb.h>
 #include <linux/power_supply.h>
-#include <linux/power/jz4740-battery.h>
 #include <linux/mmc/jz4740_mmc.h>
 
 #include <video/broadsheetfb.h>
@@ -34,6 +33,8 @@
 
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
+
+#include "clock.h"
 
 /* NAND */
 static struct nand_ecclayout n526_ecclayout = {
@@ -72,19 +73,6 @@ static struct jz_nand_platform_data n526_nand_pdata = {
 	.num_partitions = ARRAY_SIZE(n526_partitions),
 	.busy_gpio = 94,
 };
-
-
-/* Battery */
-/*static struct jz_batt_info n526_battery_pdata = {
-	.dc_dect_gpio	= GPIO_DC_DETE_N,
-	.usb_dect_gpio	= GPIO_USB_DETE,
-	.charg_stat_gpio  = GPIO_CHARG_STAT_N,
-
-	.min_voltag	= 3600000,
-	.max_voltag	= 4200000,
-	.batt_tech	= POWER_SUPPLY_TECHNOLOGY_LIPO,
-};*/
-
 
 static struct jz4740_mmc_platform_data n526_mmc_pdata = {
 	.gpio_card_detect	= JZ_GPIO_PORTD(7),
@@ -144,7 +132,6 @@ value)
 
 static int n526_eink_wait(struct broadsheetfb_par *par)
 {
-	int i = 0;
 	wait_event(par->waitq, gpio_get_value(JZ_GPIO_PORTB(17)));
 
 	return 0;
@@ -171,36 +158,35 @@ static void n526_eink_set_hdb(struct broadsheetfb_par *par, u16 value)
 
 static int n526_eink_init(struct broadsheetfb_par *par)
 {
-	int i = 0;
+	int i;
 
-	gpio_request(JZ_GPIO_PORTD(1), "display reset?");
+	gpio_request(JZ_GPIO_PORTD(1), "display reset");
 	gpio_direction_output(JZ_GPIO_PORTD(1), 1);
 	mdelay(10);
 	gpio_set_value(JZ_GPIO_PORTD(1), 0);
 
-	gpio_request(JZ_GPIO_PORTB(18), "foobar");
+	gpio_request(JZ_GPIO_PORTB(18), "eink enable");
 	gpio_direction_output(JZ_GPIO_PORTB(18), 0);
 
 	gpio_request(JZ_GPIO_PORTB(29), "foobar");
 	gpio_direction_output(JZ_GPIO_PORTB(29), 1);
 
-
 	for(i = 1; i < ARRAY_SIZE(n526_eink_ctrl_gpios); ++i) {
-		gpio_request(n526_eink_ctrl_gpios[i], "foobar");
+		gpio_request(n526_eink_ctrl_gpios[i], "eink display ctrl");
 		gpio_direction_output(n526_eink_ctrl_gpios[i], 0);
 	}
 
 	gpio_request(JZ_GPIO_PORTC(22), "foobar");
 	gpio_direction_input(JZ_GPIO_PORTC(22));
-	gpio_request(JZ_GPIO_PORTC(21), "foobar");
+	gpio_request(JZ_GPIO_PORTC(21), "eink nRD");
 	gpio_direction_output(JZ_GPIO_PORTC(21), 1);
 
 	for(i = 0; i < 16; ++i) {
-		gpio_request(JZ_GPIO_PORTC(i), "display data");
+		gpio_request(JZ_GPIO_PORTC(i), "eink display data");
 	}
 	jz_gpio_port_direction_output(JZ_GPIO_PORTC(0), 0xffff);
 
-	gpio_direction_output(JZ_GPIO_PORTB(18), 1);
+	gpio_set_value(JZ_GPIO_PORTB(18), 1);
 
 	return 0;
 }
@@ -218,12 +204,12 @@ static int n526_eink_setup_irq(struct fb_info *info)
 	int ret;
 	struct broadsheetfb_par *par = info->par;
 
-	gpio_request(JZ_GPIO_PORTB(17), "foobar");
+	gpio_request(JZ_GPIO_PORTB(17), "eink busy");
 	gpio_direction_input(JZ_GPIO_PORTB(17));
 
 	ret = request_irq(gpio_to_irq(JZ_GPIO_PORTB(17)), n526_eink_busy_irq,
 				IRQF_DISABLED | IRQF_TRIGGER_RISING,
-				"eInk busyline", par);
+				"eink busyline", par);
 	if (ret)
 		printk("n526 display: Failed to request busyline irq: %d\n", ret);
 	return 0;
@@ -294,7 +280,6 @@ static struct i2c_board_info n526_i2c_board_info = {
 	.addr = 0x54,
 };
 
-
 static struct platform_device *jz_platform_devices[] __initdata = {
 	&jz4740_usb_ohci_device,
 	&jz4740_usb_gdt_device,
@@ -314,7 +299,6 @@ static int __init n526_init_platform_devices(void)
 {
 
 	jz4740_nand_device.dev.platform_data = &n526_nand_pdata;
-/*	jz4740_battery_device.dev.platform_data = &n526_battery_pdata;*/
 	jz4740_mmc_device.dev.platform_data = &n526_mmc_pdata;
 
 	n526_i2c_board_info.irq = gpio_to_irq(JZ_GPIO_PORTD(14)),
@@ -325,16 +309,19 @@ static int __init n526_init_platform_devices(void)
 
 }
 
+struct jz4740_clock_board_data jz4740_clock_bdata = {
+	.ext_rate = 12000000,
+	.rtc_rate = 32768,
+};
 
 extern int jz_gpiolib_init(void);
-extern int jz_init_clocks(unsigned long extal);
 
 static int __init n526_board_setup(void)
 {
 	if (jz_gpiolib_init())
 		panic("Failed to initalize jz gpio\n");
-	jz_init_clocks(12000000);
 
+	jz4740_init_clocks();
 	board_gpio_setup();
 
 	if (n526_init_platform_devices())

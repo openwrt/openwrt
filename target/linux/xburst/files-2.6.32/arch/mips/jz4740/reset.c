@@ -21,12 +21,14 @@
 #include <asm/mach-jz4740/timer.h>
 #include <asm/mach-jz4740/jz4740.h>
 
+#include "clock.h"
+
 void jz_restart(char *command)
 {
 	printk(KERN_NOTICE "Restarting after 4 ms\n");
 	REG_WDT_TCSR = WDT_TCSR_PRESCALE4 | WDT_TCSR_EXT_EN;
 	REG_WDT_TCNT = 0;
-	REG_WDT_TDR = JZ_EXTAL/1000;   /* reset after 4ms */
+	REG_WDT_TDR = jz4740_clock_bdata.ext_rate / 1000;   /* reset after 4ms */
 	jz4740_timer_enable_watchdog();
 	REG_WDT_TCER = WDT_TCER_TCEN;  /* wdt start */
 	while (1);

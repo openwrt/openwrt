@@ -31,6 +31,7 @@
 #include <linux/power/gpio-charger.h>
 #include <linux/mmc/jz4740_mmc.h>
 
+#include "clock.h"
 
 /* NAND */
 static struct nand_ecclayout qi_lb60_ecclayout_1gb = {
@@ -117,7 +118,6 @@ static struct jz_nand_platform_data qi_lb60_nand_pdata = {
 	.ident_callback = qi_lb60_nand_ident,
 	.busy_gpio = 94,
 };
-
 
 /* Keyboard*/
 
@@ -387,12 +387,18 @@ static int __init qi_lb60_init_platform_devices(void)
 					ARRAY_SIZE(jz_platform_devices));
 
 }
+
+struct jz4740_clock_board_data jz4740_clock_bdata = {
+	.ext_rate = 12000000,
+	.rtc_rate = 32768,
+};
+
 extern int jz_gpiolib_init(void);
-extern int jz_init_clocks(unsigned long extal);
 
 static __init int board_avt2(char *str)
 {
 	qi_lb60_mmc_pdata.card_detect_active_low = 1;
+	qi_lb60_mmc_pdata.power_active_low	= 1;
 
 	return 1;
 }
@@ -404,8 +410,8 @@ static int __init qi_lb60_board_setup(void)
 	printk("Qi Hardware JZ4740 QI_LB60 setup\n");
 	if (jz_gpiolib_init())
 		panic("Failed to initalize jz gpio\n");
-	jz_init_clocks(12000000);
 
+	jz_init_clocks();
 	board_gpio_setup();
 
 	if (qi_lb60_init_platform_devices())

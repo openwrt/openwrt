@@ -26,9 +26,6 @@
 #include <asm/mach-jz4740/board-qi_lb60.h>
 #endif
 
-/* Add other platform definition here ... */
-
-
 /*------------------------------------------------------------------
  * Follows are related to platform definitions
  */
