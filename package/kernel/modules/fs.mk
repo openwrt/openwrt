@@ -214,13 +214,26 @@ define KernelPackage/fs-nfs-common
   AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd)
 endef
 
-define KernelPackage/fs-nfs-common/2.6
-  KCONFIG+=CONFIG_SUNRPC_GSS
+$(eval $(call KernelPackage,fs-nfs-common))
+
+
+define KernelPackage/fs-nfs-common-v4
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Common NFS V4 filesystem modules
+  KCONFIG+=\
+	CONFIG_SUNRPC_GSS\
+	CONFIG_NFS_V4=y\
+	CONFIG_NFSD_V4=y
+  DEPENDS:= @LINUX_2_6 +kmod-fs-nfs-common
   FILES+=$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD=$(call AutoLoad,30,sunrpc lockd auth_rpcgss)
+  AUTOLOAD=$(call AutoLoad,30,auth_rpcgss)
 endef
 
-$(eval $(call KernelPackage,fs-nfs-common))
+define KernelPackage/fs-nfs-common-v4/description
+ Kernel modules for NFS V4 & NFSD V4 kernel support
+endef
+
+$(eval $(call KernelPackage,fs-nfs-common-v4))
 
 
 define KernelPackage/fs-nfs
