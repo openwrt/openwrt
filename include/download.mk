@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+#
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
-define dl_method 
+define dl_method
 $(strip \
   $(if $(2),$(2), \
     $(if $(filter @GNOME/% @GNU/% @KERNEL/% @SF/% ftp://% http://% file://%,$(1)),default, \
@@ -16,9 +16,9 @@ $(strip \
         $(if $(filter svn://%,$(1)),svn, \
           $(if $(filter cvs://%,$(1)),cvs, \
             $(if $(filter hg://%,$(1)),hg, \
-	       unknown \
-	    ) \
-	  ) \
+              unknown \
+            ) \
+          ) \
         ) \
       ) \
     ) \
@@ -26,7 +26,7 @@ $(strip \
 )
 endef
 
-# code for creating tarballs from cvs/svn/git/hg checkouts - useful for mirror support
+# code for creating tarballs from cvs/svn/git/bzr/hg checkouts - useful for mirror support
 dl_pack/bz2=$(TAR) cfj $(1) $(2)
 dl_pack/gz=$(TAR) cfz $(1) $(2)
 dl_pack/unknown=echo "ERROR: Unknown pack format for file $(1)"; false
@@ -49,18 +49,17 @@ endef
 define DownloadMethod/cvs
 	$(call wrap_mirror, \
 		echo "Checking out files from the cvs repository..."; \
-                mkdir -p $(TMP_DIR)/dl && \
-                cd $(TMP_DIR)/dl && \
-                rm -rf $(SUBDIR) && \
-                [ \! -d $(SUBDIR) ] && \
-                cvs -d $(URL) co $(VERSION) $(SUBDIR) && \
-                find $(SUBDIR) -name CVS | xargs rm -rf && \
-                echo "Packing checkout..." && \
-                $(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-                mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
-        )
+		mkdir -p $(TMP_DIR)/dl && \
+		cd $(TMP_DIR)/dl && \
+		rm -rf $(SUBDIR) && \
+		[ \! -d $(SUBDIR) ] && \
+		cvs -d $(URL) co $(VERSION) $(SUBDIR) && \
+		find $(SUBDIR) -name CVS | xargs rm -rf && \
+		echo "Packing checkout..." && \
+		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+	)
 endef
-
 
 define DownloadMethod/svn
 	$(call wrap_mirror, \
@@ -93,6 +92,21 @@ define DownloadMethod/git
 	)
 endef
 
+define DownloadMethod/bzr
+	$(call wrap_mirror, \
+		echo "Checking out files from the bzr repository..."; \
+		mkdir -p $(TMP_DIR)/dl && \
+		cd $(TMP_DIR)/dl && \
+		rm -rf $(SUBDIR) && \
+		[ \! -d $(SUBDIR) ] && \
+		bzr co --lightweight -r$(VERSION) $(URL) $(SUBDIR) && \
+		find $(SUBDIR) -name .bzr | xargs rm -rf && \
+		echo "Packing checkout..." && \
+		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+	)
+endef
+
 define DownloadMethod/hg
 	$(call wrap_mirror, \
 		echo "Checking out files from the hg repository..."; \
@@ -111,6 +125,7 @@ endef
 Validate/cvs=VERSION SUBDIR
 Validate/svn=VERSION SUBDIR
 Validate/git=VERSION SUBDIR
+Validate/bzr=VERSION SUBDIR
 Validate/hg=VERSION SUBDIR
 
 define Download/Defaults
