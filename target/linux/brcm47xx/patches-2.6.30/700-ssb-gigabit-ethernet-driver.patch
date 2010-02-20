@@ -98,7 +98,7 @@
  	/* Workaround for unstable PLL clock */
 -	if ((GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_AX) ||
 -	    (GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_BX)) {
-+	if ((tp->phy_id & PHY_ID_MASK != PHY_ID_BCM5750_2) &&
++	if ((tp->phy_id & PHY_ID_MASK) != PHY_ID_BCM5750_2 &&
 +				/* !!! FIXME !!! */
 +	    ((GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_AX) ||
 +	    (GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_BX))) {
@@ -252,14 +252,6 @@
  	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -12063,7 +12133,6 @@ static int __devinit tg3_get_invariants(
- 		tp->write32 = tg3_write_flush_reg32;
- 	}
- 
--
- 	if ((tp->tg3_flags & TG3_FLAG_TXD_MBOX_HWBUG) ||
- 	    (tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER)) {
- 		tp->write32_tx_mbox = tg3_write32_tx_mbox;
 @@ -12099,6 +12168,11 @@ static int __devinit tg3_get_invariants(
  	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
  		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;

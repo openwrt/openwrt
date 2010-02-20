@@ -80,7 +80,7 @@
  	/* Workaround for unstable PLL clock */
 -	if ((GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_AX) ||
 -	    (GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_BX)) {
-+	if ((tp->phy_id & PHY_ID_MASK != PHY_ID_BCM5750_2) &&
++	if ((tp->phy_id & PHY_ID_MASK) != PHY_ID_BCM5750_2 &&
 +				/* !!! FIXME !!! */
 +	    ((GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_AX) ||
 +	    (GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_BX))) {
