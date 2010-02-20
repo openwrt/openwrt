@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -14,6 +14,8 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/linux-atm/
 PKG_MD5SUM:=84fef49cc39ff2605204246666f65864
+
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 
