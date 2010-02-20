@@ -1,6 +1,6 @@
 --- a/shell/ash.c
 +++ b/shell/ash.c
-@@ -12360,8 +12360,17 @@ exportcmd(int argc UNUSED_PARAM, char **
+@@ -12351,8 +12351,17 @@ exportcmd(int argc UNUSED_PARAM, char **
  	const char *p;
  	char **aptr;
  	int flag = argv[0][0] == 'r' ? VREADONLY : VEXPORT;
@@ -19,7 +19,7 @@
  		aptr = argptr;
  		name = *aptr;
  		if (name) {
-@@ -12373,10 +12382,12 @@ exportcmd(int argc UNUSED_PARAM, char **
+@@ -12364,10 +12373,12 @@ exportcmd(int argc UNUSED_PARAM, char **
  					vp = *findvar(hashvar(name), name);
  					if (vp) {
  						vp->flags |= flag;
