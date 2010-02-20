@@ -21,6 +21,7 @@ define Package/linux-atm
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Linux ATM library
+  DEPENDS:=+kmod-atm
   URL:=http://linux-atm.sourceforge.net/
 endef
 
