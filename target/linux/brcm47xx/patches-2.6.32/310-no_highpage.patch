@@ -1,6 +1,6 @@
 --- a/arch/mips/include/asm/page.h
 +++ b/arch/mips/include/asm/page.h
-@@ -35,6 +35,7 @@
+@@ -43,6 +43,7 @@
  #ifndef __ASSEMBLY__
  
  #include <linux/pfn.h>
@@ -8,7 +8,7 @@
  #include <asm/io.h>
  
  extern void build_clear_page(void);
-@@ -70,13 +71,16 @@ static inline void clear_user_page(void 
+@@ -78,13 +79,16 @@ static inline void clear_user_page(void 
  		flush_data_cache_page((unsigned long)addr);
  }
  
@@ -33,7 +33,7 @@
   * These are used to make use of C type-checking..
 --- a/arch/mips/mm/init.c
 +++ b/arch/mips/mm/init.c
-@@ -198,30 +198,6 @@ void kunmap_coherent(void)
+@@ -203,30 +203,6 @@ void kunmap_coherent(void)
  	preempt_check_resched();
  }
  

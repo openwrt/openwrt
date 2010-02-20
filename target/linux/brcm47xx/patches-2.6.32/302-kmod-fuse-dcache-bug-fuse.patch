@@ -1,6 +1,6 @@
 --- a/fs/fuse/dev.c
 +++ b/fs/fuse/dev.c
-@@ -527,6 +527,11 @@ static void fuse_copy_finish(struct fuse
+@@ -533,6 +533,11 @@ static void fuse_copy_finish(struct fuse
  	}
  }
  
@@ -12,7 +12,7 @@
  /*
   * Get another pagefull of userspace buffer, and map it to kernel
   * address space, and lock request
-@@ -535,6 +540,9 @@ static int fuse_copy_fill(struct fuse_co
+@@ -541,6 +546,9 @@ static int fuse_copy_fill(struct fuse_co
  {
  	unsigned long offset;
  	int err;
@@ -22,7 +22,7 @@
  
  	unlock_request(cs->fc, cs->req);
  	fuse_copy_finish(cs);
-@@ -546,14 +554,22 @@ static int fuse_copy_fill(struct fuse_co
+@@ -552,14 +560,22 @@ static int fuse_copy_fill(struct fuse_co
  		cs->nr_segs--;
  	}
  	down_read(&current->mm->mmap_sem);
@@ -45,7 +45,7 @@
  	cs->buf = cs->mapaddr + offset;
  	cs->len = min(PAGE_SIZE - offset, cs->seglen);
  	cs->seglen -= cs->len;
-@@ -567,6 +583,11 @@ static int fuse_copy_do(struct fuse_copy
+@@ -573,6 +589,11 @@ static int fuse_copy_do(struct fuse_copy
  {
  	unsigned ncpy = min(*size, cs->len);
  	if (val) {
@@ -69,7 +69,7 @@
  #include <linux/fs.h>
 --- a/fs/fuse/inode.c
 +++ b/fs/fuse/inode.c
-@@ -1055,6 +1055,10 @@ static int __init fuse_init(void)
+@@ -1201,6 +1201,10 @@ static int __init fuse_init(void)
  	printk(KERN_INFO "fuse init (API version %i.%i)\n",
  	       FUSE_KERNEL_VERSION, FUSE_KERNEL_MINOR_VERSION);
  

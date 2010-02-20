@@ -7,7 +7,7 @@
 
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -106,6 +106,19 @@ config USB_OXU210HP_HCD
+@@ -132,6 +132,19 @@ config USB_OXU210HP_HCD
  	  To compile this driver as a module, choose M here: the
  	  module will be called oxu210hp-hcd.
  
@@ -29,8 +29,8 @@
  	depends on USB
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1075,8 +1075,16 @@ MODULE_LICENSE ("GPL");
- #define	PLATFORM_DRIVER		ixp4xx_ehci_driver
+@@ -1141,8 +1141,16 @@ MODULE_LICENSE ("GPL");
+ #define	PLATFORM_DRIVER		ehci_atmel_driver
  #endif
  
 -#if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \

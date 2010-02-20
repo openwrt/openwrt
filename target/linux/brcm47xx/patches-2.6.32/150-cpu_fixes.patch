@@ -345,7 +345,7 @@
  }
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -784,6 +784,9 @@ static void __cpuinit build_r4000_tlb_re
+@@ -739,6 +739,9 @@ static void __cpuinit build_r4000_tlb_re
  		/* No need for uasm_i_nop */
  	}
  
@@ -355,7 +355,7 @@
  #ifdef CONFIG_64BIT
  	build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
-@@ -1238,6 +1241,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1193,6 +1196,9 @@ build_r4000_tlbchange_handler_head(u32 *
  				   struct uasm_reloc **r, unsigned int pte,
  				   unsigned int ptr)
  {
