@@ -355,18 +355,18 @@ fw_redirect() {
 
 	src_port_first=${src_port%-*}
 	src_port_last=${src_port#*-}
-	[ "$src_port_first" -ne "$src_port_last" ] && { \
+	[ "$src_port_first" != "$src_port_last" ] && { \
 		src_port="$src_port_first:$src_port_last"; }
 
 	src_dport_first=${src_dport%-*}
 	src_dport_last=${src_dport#*-}
-	[ "$src_dport_first" -ne "$src_dport_last" ] && { \
+	[ "$src_dport_first" != "$src_dport_last" ] && { \
 		src_dport="$src_dport_first:$src_dport_last"; }
 
 	dest_port2=${dest_port:-$src_dport}
 	dest_port_first=${dest_port2%-*}
 	dest_port_last=${dest_port2#*-}
-	[ "$dest_port_first" -ne "$dest_port_last" ] && { \
+	[ "$dest_port_first" != "$dest_port_last" ] && { \
 		dest_port2="$dest_port_first:$dest_port_last"; }
 
 	add_rule() {
