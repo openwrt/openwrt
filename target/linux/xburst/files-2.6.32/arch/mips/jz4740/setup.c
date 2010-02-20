@@ -41,12 +41,12 @@
 #include <asm/mach-jz4740/clock.h>
 #include <asm/mach-jz4740/serial.h>
 
+#include "clock.h"
+
 extern char *__init prom_getcmdline(void);
-extern void __init jz_board_setup(void);
 extern void jz_restart(char *);
 extern void jz_halt(void);
 extern void jz_power_off(void);
-extern void jz_time_init(void);
 
 static void __init jz_serial_setup(void)
 {
@@ -57,7 +57,7 @@ static void __init jz_serial_setup(void)
 	s.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST;
 	s.iotype = SERIAL_IO_MEM;
 	s.regshift = 2;
-	s.uartclk = JZ_EXTAL;
+	s.uartclk = jz4740_clock_bdata.ext_rate;
 
 	s.line = 0;
 	s.membase = (u8 *)UART0_BASE;

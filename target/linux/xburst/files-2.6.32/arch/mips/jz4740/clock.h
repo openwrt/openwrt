@@ -16,6 +16,17 @@
 #ifndef __JZ4740_CLOCK_H__
 #define __JZ4740_CLOCK_H__
 
+struct jz4740_clock_board_data {
+	unsigned long ext_rate;
+	unsigned long rtc_rate;
+};
+
+extern struct jz4740_clock_board_data jz4740_clock_bdata;
+
+int jz_init_clocks(void);
+
+struct clk;
+
 struct clk_ops {
 	unsigned long (*get_rate)(struct clk* clk);
 	unsigned long (*round_rate)(struct clk *clk, unsigned long rate);

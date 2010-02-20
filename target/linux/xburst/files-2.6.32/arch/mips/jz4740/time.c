@@ -22,6 +22,7 @@
 #include <asm/mach-jz4740/irq.h>
 #include <asm/mach-jz4740/jz4740.h>
 #include <asm/time.h>
+#include "clock.h"
 
 #define JZ_REG_TIMER_STOP		0x1C
 #define JZ_REG_TIMER_STOP_SET		0x2C
@@ -216,7 +217,6 @@ void __init plat_time_init(void)
 {
     int ret;
 	uint32_t clk_rate;
-	struct clk *ext_clk;
 
 	jz4740_timer_base = ioremap(CPHYSADDR(TCU_BASE), 0x100);
 
@@ -225,13 +225,7 @@ void __init plat_time_init(void)
 	    return;
 	}
 
-	/*ext_clk = clk_get(NULL, "ext");
-	clk_rate = clk_get_rate(ext_clk) >> 4;
-	clk_put(ext_clk);*/
-
-
-	clk_rate = JZ_EXTAL >> 4;
-
+	clk_rate = jz4740_clock_bdata.ext_rate >> 4;
     jz4740_jiffies_per_tick = DIV_ROUND_CLOSEST(clk_rate, HZ);
 
 	clockevent_set_clock(&jz4740_clockevent, clk_rate);
