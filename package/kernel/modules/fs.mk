@@ -61,7 +61,7 @@ $(eval $(call KernelPackage,fs-ntfs))
 
 define KernelPackage/fs-mbcache
   SUBMENU:=$(FS_MENU)
-  TITLE:=mbcache (used by ext2/ext3)
+  TITLE:=mbcache (used by ext2/ext3/ext4)
   KCONFIG:=CONFIG_FS_MBCACHE
   ifneq ($(CONFIG_FS_MBCACHE),)
     FILES:=$(LINUX_DIR)/fs/mbcache.$(LINUX_KMOD_SUFFIX)
@@ -115,17 +115,16 @@ define KernelPackage/fs-ext4
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT4 filesystem support
   KCONFIG:= \
-	CONFIG_EXT4DEV_COMPAT=y \
 	CONFIG_EXT4_FS_XATTR=y \
 	CONFIG_EXT4_FS_POSIX_ACL=y \
 	CONFIG_EXT4_FS_SECURITY=y \
 	CONFIG_EXT4_FS \
 	CONFIG_JBD2
-  DEPENDS:= @LINUX_2_6 +kmod-crc16 $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
+  DEPENDS:= @LINUX_2_6 +kmod-crc16 +kmod-crc32 $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:= \
 	$(LINUX_DIR)/fs/ext4/ext4.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd2/jbd2.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,jbd2 $(EXT4_NAME))
+  AUTOLOAD:=$(call AutoLoad,30,jbd2 ext4)
 endef
 
 define KernelPackage/fs-ext4/description
