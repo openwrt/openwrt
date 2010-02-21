@@ -1,0 +1,37 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1353,25 +1353,6 @@ static enum ath9k_pkt_type get_hw_packet
+ 	return htype;
+ }
+ 
+-static bool is_pae(struct sk_buff *skb)
+-{
+-	struct ieee80211_hdr *hdr;
+-	__le16 fc;
+-
+-	hdr = (struct ieee80211_hdr *)skb->data;
+-	fc = hdr->frame_control;
+-
+-	if (ieee80211_is_data(fc)) {
+-		if (ieee80211_is_nullfunc(fc) ||
+-		    /* Port Access Entity (IEEE 802.1X) */
+-		    (skb->protocol == cpu_to_be16(ETH_P_PAE))) {
+-			return true;
+-		}
+-	}
+-
+-	return false;
+-}
+-
+ static int get_hw_crypto_keytype(struct sk_buff *skb)
+ {
+ 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
+@@ -1610,7 +1591,7 @@ static int ath_tx_setup_buffer(struct ie
+ 		bf->bf_frmlen -= padsize;
+ 	}
+ 
+-	if (conf_is_ht(&hw->conf) && !is_pae(skb))
++	if (conf_is_ht(&hw->conf))
+ 		bf->bf_state.bf_type |= BUF_HT;
+ 
+ 	bf->bf_flags = setup_tx_flags(sc, skb, txctl->txq);
