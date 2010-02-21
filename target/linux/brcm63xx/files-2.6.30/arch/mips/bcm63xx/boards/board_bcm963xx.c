@@ -930,6 +930,7 @@ static struct platform_device bcm63xx_gpio_buttons_device = {
 int __init board_register_devices(void)
 {
 	u32 val;
+	int led_count = 0;
 
 	bcm63xx_uart_register();
 	bcm63xx_wdt_register();
@@ -986,7 +987,11 @@ int __init board_register_devices(void)
 	/* Register GPIODEV */
 	platform_device_register_simple("GPIODEV", 0, &gpiodev_resource, 1);
 
-	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);
+	/* count number of LEDs defined by this device */
+	while (led_count < ARRAY_SIZE(board.leds) && board.leds[led_count].name)
+		led_count++;
+
+	bcm63xx_led_data.num_leds = led_count;
 	bcm63xx_led_data.leds = board.leds;
 
 	platform_device_register(&bcm63xx_gpio_leds);
