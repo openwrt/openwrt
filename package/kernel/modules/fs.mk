@@ -120,7 +120,7 @@ define KernelPackage/fs-ext4
 	CONFIG_EXT4_FS_SECURITY=y \
 	CONFIG_EXT4_FS \
 	CONFIG_JBD2
-  DEPENDS:= @LINUX_2_6 +kmod-crc16 +kmod-crc32 $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
+  DEPENDS:= @LINUX_2_6 +kmod-crc16 $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:= \
 	$(LINUX_DIR)/fs/ext4/ext4.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd2/jbd2.$(LINUX_KMOD_SUFFIX)
