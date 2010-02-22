@@ -1,0 +1,28 @@
+--- a/arch/mips/kernel/traps.c
++++ b/arch/mips/kernel/traps.c
+@@ -1256,9 +1256,22 @@ void *set_except_vector(int n, void *add
+ 
+ 	exception_handlers[n] = handler;
+ 	if (n == 0 && cpu_has_divec) {
+-		*(u32 *)(ebase + 0x200) = 0x08000000 |
+-					  (0x03ffffff & (handler >> 2));
+-		local_flush_icache_range(ebase + 0x200, ebase + 0x204);
++		if ((handler ^ (ebase + 4)) & 0xfc000000) {
++			/* lui k0, 0x0000 */
++			*(u32 *)(ebase + 0x200) = 0x3c1a0000 | (handler >> 16);
++			/* ori k0, 0x0000 */
++			*(u32 *)(ebase + 0x204) =
++					0x375a0000 | (handler & 0xffff);
++			/* jr k0 */
++			*(u32 *)(ebase + 0x208) = 0x03400008;
++			/* nop */
++			*(u32 *)(ebase + 0x20C) = 0x00000000;
++			flush_icache_range(ebase + 0x200, ebase + 0x210);
++		} else {
++			*(u32 *)(ebase + 0x200) =
++				0x08000000 | (0x03ffffff & (handler >> 2));
++			flush_icache_range(ebase + 0x200, ebase + 0x204);
++		}
+ 	}
+ 	return (void *)old_handler;
+ }
