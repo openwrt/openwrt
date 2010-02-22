@@ -1,0 +1,12 @@
+menuconfig UBICOM_SWITCH
+	tristate "Switch devices"
+	help
+		This option provides Ethernet switch management options via proc fs
+
+if UBICOM_SWITCH
+config UBICOM_SWITCH_BCM539X
+	tristate "Broadcom BCM539X series (SPI)"
+	depends on SPI_MASTER
+	help
+		Supports Broadcom BCM539X Gigabit Ethernet Switches over SPI
+endif
