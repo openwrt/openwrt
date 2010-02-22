@@ -1,0 +1,205 @@
+config IP7145DPF
+	bool "IP7145DPF"
+	select UBICOM32_V4
+	select UBICOM_INPUT
+	select UBICOM_INPUT_I2C
+	select RTC_CLASS
+	select RTC_DRV_S35390A
+	select I2C
+	select I2C_GPIO
+	select GPIO_PCA953X
+	select FB
+	select FB_UBICOM32
+	select LCD_CLASS_DEVICE
+	select LCD_UBICOM32POWER
+	select BACKLIGHT_LCD_SUPPORT
+	select BACKLIGHT_CLASS_DEVICE
+	select BACKLIGHT_UBICOM32
+	select SND_UBI32
+	select MMC_UBICOM32
+	select MMC
+	select MMC_BLOCK
+	help
+		IP7145 Digital Picture Frame reference design, supports:
+			8007-0410 v1.0
+
+config IP7160RGW
+	bool "IP7160RGW"
+	select UBICOM32_V4
+	select UBICOM_INPUT
+	select NEW_LEDS
+	select LEDS_CLASS
+	select LEDS_GPIO
+	select SPI
+	select SPI_UBICOM32_GPIO
+	select VLAN_8021Q
+	select UBICOM_SWITCH
+	select UBICOM_SWITCH_BCM539X
+	help
+		Ubicom IP7160 RGW Eval, supports:
+			8007-0110 v1.0
+			8007-0111 v1.1
+			8007-0112 v1.2
+
+config IP7160RGWLCD
+	bool "IP7160RGWLCD"
+	select UBICOM32_V4
+	select UBICOM_INPUT
+	select NEW_LEDS
+	select LEDS_CLASS
+	select LEDS_GPIO
+	select SPI
+	select SPI_UBICOM32_GPIO
+	select VLAN_8021Q
+	select UBICOM_SWITCH
+	select UBICOM_SWITCH_BCM539X
+	select INPUT_TOUCHSCREEN
+	select TOUCHSCREEN_TSC2007
+	select FB
+	select FB_UBICOM32_VIRTUAL
+	select I2C
+	select I2C_GPIO
+	help
+		Ubicom IP7160 RGW Eval, supports:
+			8007-0112 v1.2 + 8007-1410 v1.0
+
+		With Ubicom LCD Adapter
+			8007-0920 v2.0
+			8007-0921 v2.1
+
+
+config IP7160BRINGUP
+	bool "IP7160BRINGUP"
+	select UBICOM32_V4
+	select NEW_LEDS
+	select LEDS_CLASS
+	select LEDS_GPIO
+	help
+		Ubicom IP7160 Bringup, supports:
+			8007-0010 v1.0
+
+config IP7160DPF
+	bool "IP7160DPF"
+	select UBICOM32_V4
+	select I2C
+	select I2C_GPIO
+	select FB
+	select FB_UBICOM32
+	select BACKLIGHT_LCD_SUPPORT
+	select BACKLIGHT_CLASS_DEVICE
+	select SND_UBI32
+	select SND_UBI32_AUDIO_CS4350
+	select UBICOM_HID
+	help
+		IP7160 Digital Picture Frame board, supports:
+			8007-0211 Rev 1.1
+
+config IP7500MODULE
+	bool "IP7500MODULE"
+	select UBICOM32_V4
+	help
+		Ubicom IP7500 CPU Module board, supports:
+			8007-0510  v1.0
+			8007-0510A v1.0
+
+		Please see ip7500module.c for more details.
+
+config IP7500AV
+	bool "IP7500AV"
+	select UBICOM32_V4
+	select I2C
+	select I2C_GPIO
+	select SND_UBI32
+	select SND_UBI32_AUDIO_CS4384
+	select FB
+	select FB_UBICOM32
+	help
+		Ubicom IP7500 Audio Video board, supports:
+			8007-0810  v1.0
+
+		With Ubicom IP7500 CPU Module board:
+			8007-0510  v1.0 -or-
+			8007-0510A v1.0
+
+		Please see ip7500av.c for more details.
+
+config IP7500MEDIA
+	bool "IP7500MEDIA"
+	select UBICOM32_V4
+	select UBICOM_INPUT_I2C
+	select RTC_CLASS
+	select RTC_DRV_S35390A
+	select I2C
+	select I2C_GPIO
+	select GPIO_PCA953X
+	select FB
+	select FB_UBICOM32
+	select FB_UBICOM32_VIRTUAL
+	select FB_UBICOM32_VIRTUAL_NOAUTO
+	select LCD_CLASS_DEVICE
+	select LCD_UBICOM32POWER
+	select BACKLIGHT_LCD_SUPPORT
+	select BACKLIGHT_CLASS_DEVICE
+	select BACKLIGHT_UBICOM32
+	select INPUT_TOUCHSCREEN
+	select TOUCHSCREEN_TSC2007
+	select SOUND
+	select SND
+	select SND_UBI32
+	select SND_UBI32_AUDIO_CS4350
+	select MMC_UBICOM32
+	select MMC
+	select MMC_BLOCK
+	help
+		IP7500 Media Board w/ IP7500 CPU Module board, supports:
+			8007-0610 v1.0 w/ 8007-0510 v1.0
+			8007-0610 v1.0 w/ 8007-0510 v1.0 NOPHY
+			8007-0610 v1.0 w/ 8007-0511 v1.1 NOPHY
+
+		Also supports optional LCD Adapter board:
+			8006-0920 v2.0
+			8006-0921 v2.1
+
+		Please see ip7500media.c for more details.
+
+config IP7500WSPKR
+	bool "IP7500WSPKR"
+	select UBICOM32_V4
+	select I2C
+	select I2C_GPIO
+	select SOUND
+	select SND
+	select SND_UBI32
+	select SND_UBI32_AUDIO_CS4350
+	help
+		IP7500 Wireless Speaker Board, supports:
+			8007-1210 v1.0
+
+		Please see ip7500wspkr.c for more details.
+
+config IP7500IAP
+	bool "IP7500IAP"
+	select UBICOM32_V4
+	select I2C
+	select I2C_GPIO
+	select FB
+	select FB_UBICOM32_VIRTUAL
+	select SOUND
+	select SND
+	select SND_UBI32
+	select SND_UBI32_AUDIO_CS4350
+	select RTC_CLASS
+	select RTC_DRV_S35390A
+	select INPUT_TOUCHSCREEN
+	select TOUCHSCREEN_TSC2007
+	select BACKLIGHT_LCD_SUPPORT
+	select BACKLIGHT_CLASS_DEVICE
+	select BACKLIGHT_UBICOM32
+	help
+		IP7500 Internet Audio Player, supports:
+			8007-1110 v1.0
+
+		Please see ip7500iap.c for more details.
+
+
+		Please see ip7500media.c for more details.

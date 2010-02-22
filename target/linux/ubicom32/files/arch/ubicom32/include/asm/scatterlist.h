@@ -1,0 +1,49 @@
+/*
+ * arch/ubicom32/include/asm/scatterlist.h
+ *   Definitions of struct scatterlist for Ubicom32 architecture.
+ *
+ * (C) Copyright 2009, Ubicom, Inc.
+ *
+ * This file is part of the Ubicom32 Linux Kernel Port.
+ *
+ * The Ubicom32 Linux Kernel Port is free software: you can redistribute
+ * it and/or modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation, either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * The Ubicom32 Linux Kernel Port is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+ * the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with the Ubicom32 Linux Kernel Port.  If not,
+ * see <http://www.gnu.org/licenses/>.
+ *
+ * Ubicom32 implementation derived from (with many thanks):
+ *   arch/m68knommu
+ *   arch/blackfin
+ *   arch/parisc
+ */
+#ifndef _ASM_UBICOM32_SCATTERLIST_H
+#define _ASM_UBICOM32_SCATTERLIST_H
+
+#include <linux/mm.h>
+#include <asm/types.h>
+
+struct scatterlist {
+#ifdef CONFIG_DEBUG_SG
+	unsigned long	sg_magic;
+#endif
+	unsigned long	page_link;
+	unsigned int	offset;
+	dma_addr_t	dma_address;
+	unsigned int	length;
+};
+
+#define sg_dma_address(sg)      ((sg)->dma_address)
+#define sg_dma_len(sg)          ((sg)->length)
+
+#define ISA_DMA_THRESHOLD	(0xffffffff)
+
+#endif /* _ASM_UBICOM32_SCATTERLIST_H */
