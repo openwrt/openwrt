@@ -169,7 +169,7 @@ static struct clocksource timer_device_clockbase = {
  * timer_device_alloc_event()
  * 	Allocate a timer device event.
  */
-static int timer_device_alloc_event(const char *name, int cpuid, const cpumask_t *mask)
+static int timer_device_alloc_event(const char *name, int cpuid, const struct cpumask *cpumask)
 {
 	struct clock_event_device *dev;
 	struct irqaction *action;
@@ -208,10 +208,10 @@ static int timer_device_alloc_event(const char *name, int cpuid, const cpumask_t
 	action->name = name;
 	action->flags = IRQF_DISABLED | IRQF_TIMER;
 	action->handler = timer_device_event;
-	cpumask_copy(&action->mask, mask);
+	//cpumask_copy(&action->mask, mask);
 	action->dev_id = dev;
 	setup_irq(dev->irq, action);
-	irq_set_affinity(dev->irq, mask);
+	irq_set_affinity(dev->irq, cpumask);
 	ldsr_disable_vector(dev->irq);
 
 	/*
@@ -229,7 +229,7 @@ static int timer_device_alloc_event(const char *name, int cpuid, const cpumask_t
 	dev->mult = div_sc(frequency, NSEC_PER_SEC, dev->shift);
 	dev->max_delta_ns = clockevent_delta2ns(0xffffffff, dev);
 	dev->min_delta_ns = clockevent_delta2ns(100, dev);
-	dev->cpumask = mask;
+	//dev->cpumask = mask;
 	printk(KERN_NOTICE "timer[%d]: %s - created\n", dev->irq, dev->name);
 
 	/*
@@ -246,7 +246,7 @@ static int timer_device_alloc_event(const char *name, int cpuid, const cpumask_t
  */
 int __cpuinit local_timer_setup(unsigned int cpu)
 {
-	return timer_device_alloc_event("timer-cpu", cpu, cpumask_of(cpu));
+	return timer_device_alloc_event("timer-cpu", cpu);
 }
 #endif
 
@@ -283,19 +283,19 @@ void timer_device_init(void)
 	/*
 	 * Always allocate a primary timer.
 	 */
-	timer_device_alloc_event("timer-primary", -1, CPU_MASK_ALL_PTR);
+	timer_device_alloc_event("timer-primary", -1, cpu_all_mask);
 
 #if defined(CONFIG_GENERIC_CLOCKEVENTS_BROADCAST)
 	/*
 	 * If BROADCAST is selected we need to add a broadcast timer.
 	 */
-	timer_device_alloc_event("timer-broadcast", -1, CPU_MASK_ALL_PTR);
+	timer_device_alloc_event("timer-broadcast", -1, cpu_all_mask);
 #endif
 
 	/*
 	 * Allocate extra timers that are requested.
 	 */
 	for (i = 0; i < CONFIG_TIMER_EXTRA_ALLOC; i++) {
-		timer_device_alloc_event("timer-extra", -1, CPU_MASK_ALL_PTR);
+		timer_device_alloc_event("timer-extra", -1, cpu_all_mask);
 	}
 }

@@ -28,10 +28,12 @@
 #ifndef _ASM_UBICOM32_PAGE_H
 #define _ASM_UBICOM32_PAGE_H
 
+#include <linux/const.h>
+
 /* PAGE_SHIFT determines the page size */
 
-#define PAGE_SHIFT	12
-#define PAGE_SIZE	(1 << PAGE_SHIFT)
+#define PAGE_SHIFT	(12)
+#define PAGE_SIZE	(_AC(1,UL) << PAGE_SHIFT)
 #define PAGE_MASK	(~(PAGE_SIZE-1))
 
 #include <asm/setup.h>
@@ -99,7 +101,15 @@ extern unsigned long memory_end;
 
 #endif /* __ASSEMBLY__ */
 
-#ifdef __KERNEL__
+#define VM_DATA_DEFAULT_FLAGS \
+	(VM_READ | VM_WRITE | \
+	((current->personality & READ_IMPLIES_EXEC) ? VM_EXEC : 0 ) | \
+		VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
+
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+#include <asm-generic/getorder.h>
+#else
 #include <asm-generic/page.h>
 #endif
 

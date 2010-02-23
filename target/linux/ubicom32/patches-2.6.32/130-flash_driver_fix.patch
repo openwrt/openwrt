@@ -1,0 +1,13 @@
+--- a/drivers/mtd/devices/ubi32-m25p80.c
++++ b/drivers/mtd/devices/ubi32-m25p80.c
+@@ -630,8 +630,8 @@ static int ubicom32_flash_driver_erase(s
+ 	/* sanity checks */
+ 	if (instr->addr + instr->len > flash->mtd.size)
+ 		return -EINVAL;
+-	if ((instr->addr % mtd->erasesize) != 0
+-			|| (instr->len % mtd->erasesize) != 0) {
++	if (((u32) instr->addr % mtd->erasesize) != 0
++			|| ((u32) instr->len % mtd->erasesize) != 0) {
+ 		return -EINVAL;
+ 	}
+ 

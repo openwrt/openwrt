@@ -634,6 +634,19 @@ void ubi32_eth_cleanup(void)
 	}
 }
 
+	static const struct net_device_ops ubi32_netdev_ops = {
+		.ndo_open		= ubi32_eth_open,
+		.ndo_stop		= ubi32_eth_close,
+		.ndo_start_xmit		= ubi32_eth_start_xmit,
+		.ndo_tx_timeout		= ubi32_eth_tx_timeout,
+		.ndo_do_ioctl		= ubi32_eth_ioctl,
+		.ndo_change_mtu		= ubi32_eth_change_mtu,
+		.ndo_set_config		= ubi32_eth_set_config,
+		.ndo_get_stats		= ubi32_eth_get_stats,
+		.ndo_validate_addr	= eth_validate_addr,
+		.ndo_set_mac_address	= eth_mac_addr,
+	};
+
 int ubi32_eth_init_module(void)
 {
 	struct ethtionode *eth_node;
@@ -706,16 +719,9 @@ int ubi32_eth_init_module(void)
 
 		spin_lock_init(&priv->lock);
 
-		dev->open		= ubi32_eth_open;
-		dev->stop		= ubi32_eth_close;
-		dev->hard_start_xmit	= ubi32_eth_start_xmit;
-		dev->tx_timeout		= ubi32_eth_tx_timeout;
-		dev->watchdog_timeo	= UBI32_ETH_VP_TX_TIMEOUT;
+		dev->netdev_ops = &ubi32_netdev_ops;
 
-		dev->set_config		= ubi32_eth_set_config;
-		dev->do_ioctl		= ubi32_eth_ioctl;
-		dev->get_stats		= ubi32_eth_get_stats;
-		dev->change_mtu		= ubi32_eth_change_mtu;
+		dev->watchdog_timeo	= UBI32_ETH_VP_TX_TIMEOUT;
 #ifdef UBICOM32_USE_NAPI
 		netif_napi_add(dev, &priv->napi, ubi32_eth_napi_poll, UBI32_ETH_NAPI_WEIGHT);
 #endif

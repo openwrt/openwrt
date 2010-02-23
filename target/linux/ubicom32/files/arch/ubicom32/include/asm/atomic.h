@@ -236,7 +236,12 @@ static inline int atomic_add_unless(atomic_t *v, int a, int u)
 
 #define atomic_inc_not_zero(v) atomic_add_unless((v), 1, 0)
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+#include <asm-generic/atomic-long.h>
+#else
 #include <asm-generic/atomic.h>
+#endif
 
 /*
  * The following is not a real function.  The compiler should remove the function

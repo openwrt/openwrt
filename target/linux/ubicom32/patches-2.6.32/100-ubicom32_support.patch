@@ -1,0 +1,1725 @@
+--- a/drivers/char/hw_random/Kconfig
++++ b/drivers/char/hw_random/Kconfig
+@@ -186,3 +186,16 @@ config HW_RANDOM_MXC_RNGA
+ 	  module will be called mxc-rnga.
+ 
+ 	  If unsure, say Y.
++
++config HW_RANDOM_UBICOM32
++	tristate "Ubicom32 HW Random Number Generator support"
++	depends on HW_RANDOM && UBICOM32
++	default HW_RANDOM
++	---help---
++	  This driver provides kernel-side support for the Random Number
++	  Generator hardware found on Ubicom32 processors.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called pasemi-rng.
++
++	  If unsure, say Y.
+--- a/drivers/char/hw_random/Makefile
++++ b/drivers/char/hw_random/Makefile
+@@ -18,3 +18,4 @@ obj-$(CONFIG_HW_RANDOM_VIRTIO) += virtio
+ obj-$(CONFIG_HW_RANDOM_TX4939) += tx4939-rng.o
+ obj-$(CONFIG_HW_RANDOM_MXC_RNGA) += mxc-rnga.o
+ obj-$(CONFIG_HW_RANDOM_OCTEON) += octeon-rng.o
++obj-$(CONFIG_HW_RANDOM_UBICOM32) += ubicom32-rng.o
+--- a/drivers/crypto/Kconfig
++++ b/drivers/crypto/Kconfig
+@@ -61,6 +61,40 @@ config CRYPTO_DEV_GEODE
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called geode-aes.
+ 
++config CRYPTO_UBICOM32
++        bool "Ubicom32 Security Module"
++        depends on UBICOM32
++        help
++          This is the ubicom32 hardware acceleration common code.
++
++config CRYPTO_AES_UBICOM32
++        tristate "Ubicom32 AES implementation"
++        depends on CRYPTO_UBICOM32
++        select CRYPTO_ALGAPI
++        help
++          This is the ubicom32 hardware AES implementation.
++
++config CRYPTO_DES_UBICOM32
++        tristate "Ubicom32 DES implementation"
++        depends on CRYPTO_UBICOM32
++        select CRYPTO_ALGAPI
++        help
++          This is the ubicom32 hardware DES and 3DES implementation.
++
++config CRYPTO_SHA1_UBICOM32
++        tristate "Ubicom32 SHA1 implementation"
++        depends on CRYPTO_UBICOM32
++        select CRYPTO_ALGAPI
++        help
++          This is the ubicom32 hardware SHA1 implementation.
++
++config CRYPTO_MD5_UBICOM32
++        tristate "Ubicom32 MD5 implementation"
++        depends on CRYPTO_UBICOM32
++        select CRYPTO_ALGAPI
++        help
++          This is the ubicom32 hardware MD5 implementation.
++
+ config ZCRYPT
+ 	tristate "Support for PCI-attached cryptographic adapters"
+ 	depends on S390
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -382,3 +382,10 @@ config MMC_VIA_SDMMC
+ 	  If you have a controller with this interface, say Y or M here.
+ 
+ 	  If unsure, say N.
++
++config MMC_UBICOM32
++	tristate "Ubicom32 MMC/SD host controller"
++	depends on UBICOM32
++	help
++	  This provides support for the SD/MMC hardware found on Ubicom32
++	  IP7K processors
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
+@@ -35,6 +35,7 @@ obj-$(CONFIG_MMC_TMIO)		+= tmio_mmc.o
+ obj-$(CONFIG_MMC_CB710)	+= cb710-mmc.o
+ obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc.o
+ obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
++obj-$(CONFIG_MMC_UBICOM32)	+= ubicom32sd.o
+ 
+ ifeq ($(CONFIG_CB710_DEBUG),y)
+ 	CFLAGS-cb710-mmc	+= -DDEBUG
+--- a/drivers/mtd/devices/Kconfig
++++ b/drivers/mtd/devices/Kconfig
+@@ -114,6 +114,31 @@ config MTD_SST25L
+ 	  Set up your spi devices with the right board-specific platform data,
+ 	  if you want to specify device partitioning.
+ 
++config MTD_UBI32_NAND_SPI_ER
++	tristate "UBI32_NAND SPI-ER support"
++	help
++	  This driver supports the Micron MT29F1G01 SPI-ER NAND flash chip
++	  using the built in flash controller on the Ubicom32 architecture.
++	  Partial page writes are not supported by this driver.
++
++config MTD_NAND_SPI_ER
++	tristate "NAND SPI-ER support"
++	help
++	  This driver supports the Micron MT29F1G01 SPI-ER NAND flash chip
++	  using a generic SPI bus.  Partial page writes are supported
++	  by this driver.
++
++config MTD_UBI32_M25P80
++	tristate "Ubicom processor support for most SPI Flash chips (AT26DF, M25P, W25X, ...)"
++	depends on UBICOM32
++	default y
++	help
++	  This enables access to most modern SPI flash chips, used for
++	  program and data storage.   Series supported include Atmel AT26DF,
++	  Spansion S25SL, SST 25VF, ST M25P, and Winbond W25X.  Other chips
++	  are supported as well.  See the driver source for the current list,
++	  or to add other chips.
++
+ config MTD_SLRAM
+ 	tristate "Uncached system RAM"
+ 	help
+--- a/drivers/mtd/devices/Makefile
++++ b/drivers/mtd/devices/Makefile
+@@ -17,3 +17,6 @@ obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd
+ obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
+ obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
+ obj-$(CONFIG_MTD_SST25L)	+= sst25l.o
++obj-$(CONFIG_MTD_UBI32_M25P80)	+= ubi32-m25p80.o
++obj-$(CONFIG_MTD_NAND_SPI_ER)	+= nand-spi-er.o
++obj-$(CONFIG_MTD_UBI32_NAND_SPI_ER)	+= ubi32-nand-spi-er.o
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -2608,6 +2608,19 @@ config S6GMAC
+ 
+ source "drivers/net/stmmac/Kconfig"
+ 
++config UBICOM32_GMAC
++	tristate "Ubicom Gigabit Ethernet support"
++	depends on UBICOM32
++	help
++	  Gigabit Ethernet support for ubicom32 processors
++
++config UBICOM32_OCM_FOR_SKB
++        bool  "USE OCM for SKB (EXPERIMENTAL)"
++        depends on UBICOM32_GMAC
++	default n
++        help
++          Allocate skb from OCM for Ethernet Receive when possible
++
+ endif # NETDEV_1000
+ 
+ #
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -286,3 +286,5 @@ obj-$(CONFIG_VIRTIO_NET) += virtio_net.o
+ obj-$(CONFIG_SFC) += sfc/
+ 
+ obj-$(CONFIG_WIMAX) += wimax/
++
++obj-$(CONFIG_UBICOM32_GMAC) += ubi32-eth.o
+--- a/drivers/net/usb/asix.c
++++ b/drivers/net/usb/asix.c
+@@ -319,14 +319,33 @@ static int asix_rx_fixup(struct usbnet *
+ 		/* get the packet length */
+ 		size = (u16) (header & 0x0000ffff);
+ 
+-		if ((skb->len) - ((size + 1) & 0xfffe) == 0)
++		if ((skb->len) - ((size + 1) & 0xfffe) == 0) {
++#ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
++			if (((u32)packet & 0x02) == 0) {
++				memmove(packet - 2, packet, size);
++				skb->data -= 2;
++				skb->tail -= 2;
++			}
++#endif
+ 			return 2;
++		}
++
+ 		if (size > ETH_FRAME_LEN) {
+ 			deverr(dev,"asix_rx_fixup() Bad RX Length %d", size);
+ 			return 0;
+ 		}
+ 		ax_skb = skb_clone(skb, GFP_ATOMIC);
+ 		if (ax_skb) {
++#ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
++			if (((u32)packet & 0x02) == 0) {
++				memmove(packet - 2, packet, size);
++				ax_skb->data = packet - 2;
++			} else {
++				ax_skb->data = packet;
++			}
++#else
++			ax_skb->data = packet;
++#endif
+ 			ax_skb->len = size;
+ 			ax_skb->data = packet;
+ 			skb_set_tail_pointer(ax_skb, size);
+@@ -1125,13 +1144,19 @@ static int ax88178_link_reset(struct usb
+ 	mode = AX88178_MEDIUM_DEFAULT;
+ 
+ 	if (ecmd.speed == SPEED_1000)
++#ifdef HAVE_EFFICIENT_UNALIGNED_ACCESS
+ 		mode |= AX_MEDIUM_GM;
++#else
++		mode |= AX_MEDIUM_GM | AX_MEDIUM_ENCK;
++#endif
+ 	else if (ecmd.speed == SPEED_100)
+ 		mode |= AX_MEDIUM_PS;
+ 	else
+ 		mode &= ~(AX_MEDIUM_PS | AX_MEDIUM_GM);
+ 
++#ifdef HAVE_EFFICIENT_UNALIGNED_ACCESS
+ 	mode |= AX_MEDIUM_ENCK;
++#endif
+ 
+ 	if (ecmd.duplex == DUPLEX_FULL)
+ 		mode |= AX_MEDIUM_FD;
+--- a/drivers/oprofile/cpu_buffer.c
++++ b/drivers/oprofile/cpu_buffer.c
+@@ -327,10 +327,10 @@ static inline void oprofile_end_trace(st
+ }
+ 
+ static inline void
+-__oprofile_add_ext_sample(unsigned long pc, struct pt_regs * const regs,
+-			  unsigned long event, int is_kernel)
++__oprofile_add_ext_sample_cpu(unsigned long pc, struct pt_regs * const regs,
++			      unsigned long event, int is_kernel, int cpu)
+ {
+-	struct oprofile_cpu_buffer *cpu_buf = &__get_cpu_var(cpu_buffer);
++	struct oprofile_cpu_buffer *cpu_buf = &per_cpu(cpu_buffer, cpu);
+ 	unsigned long backtrace = oprofile_backtrace_depth;
+ 
+ 	/*
+@@ -352,7 +352,8 @@ __oprofile_add_ext_sample(unsigned long 
+ void oprofile_add_ext_sample(unsigned long pc, struct pt_regs * const regs,
+ 			     unsigned long event, int is_kernel)
+ {
+-	__oprofile_add_ext_sample(pc, regs, event, is_kernel);
++	__oprofile_add_ext_sample_cpu(pc, regs, event,
++				      is_kernel, smp_processor_id());
+ }
+ 
+ void oprofile_add_sample(struct pt_regs * const regs, unsigned long event)
+@@ -360,7 +361,8 @@ void oprofile_add_sample(struct pt_regs 
+ 	int is_kernel = !user_mode(regs);
+ 	unsigned long pc = profile_pc(regs);
+ 
+-	__oprofile_add_ext_sample(pc, regs, event, is_kernel);
++	__oprofile_add_ext_sample_cpu(pc, regs, event,
++				      is_kernel, smp_processor_id());
+ }
+ 
+ /*
+--- a/drivers/pci/Makefile
++++ b/drivers/pci/Makefile
+@@ -47,8 +47,8 @@ obj-$(CONFIG_PPC) += setup-bus.o
+ obj-$(CONFIG_MIPS) += setup-bus.o setup-irq.o
+ obj-$(CONFIG_X86_VISWS) += setup-irq.o
+ obj-$(CONFIG_MN10300) += setup-bus.o
++obj-$(CONFIG_UBICOM32) += setup-bus.o setup-irq.o
+ 
+-#
+ # ACPI Related PCI FW Functions
+ #
+ obj-$(CONFIG_ACPI)    += pci-acpi.o
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
+@@ -879,6 +879,57 @@ config SERIAL_UARTLITE_CONSOLE
+ 	  console (the system console is the device which receives all kernel
+ 	  messages and warnings and which allows logins in single user mode).
+ 
++config SERIAL_UBI32_UARTTIO
++        tristate "Ubicom UARTTIO support"
++        depends on UBICOM32=y
++        select SERIAL_CORE
++	default y
++        help
++          Add support for the Ubicom virtual peripherial serial interface.
++
++config SERIAL_UBI32_UARTTIO_NR_UARTS
++	int "Maximum number of UARTTIO virtual serial ports"
++	depends on SERIAL_UBI32_UARTTIO
++	default "4"
++	help
++	  Set this to the maximum number of serial ports you want the driver to support.
++
++config SERIAL_UBI32_UARTTIO_CONSOLE
++        tristate "Ubicom UARTTIO console support"
++        depends on SERIAL_UBI32_UARTTIO=y
++        select SERIAL_CORE_CONSOLE
++	default y
++        help
++          Add support for console on the Ubicom virtual peripherial serial interface.
++
++config SERIAL_UBI32_SERDES
++        bool "Ubicom serial port support"
++        depends on UBICOM32=y
++        select SERIAL_CORE
++	default y
++        help
++          Add support for the Ubicom serial interface.
++
++config SERIAL_UBI32_SERDES_CONSOLE
++        bool "Ubicom serial console support"
++        depends on SERIAL_UBI32_SERDES=y
++        select SERIAL_CORE_CONSOLE
++	default y
++
++config SERIAL_UBI32_MAILBOX
++        bool "Ubicom mailbox support"
++        depends on UBICOM32=y
++        select SERIAL_CORE
++	default n
++        help
++          Add support for the Ubicom mailbox interface.
++
++config SERIAL_UBI32_MAILBOX_CONSOLE
++        bool "Ubicom mailbox console support"
++        depends on SERIAL_UBI32_MAILBOX=y
++        select SERIAL_CORE_CONSOLE
++	default y
++
+ config SERIAL_SUNCORE
+ 	bool
+ 	depends on SPARC
+--- a/drivers/serial/Makefile
++++ b/drivers/serial/Makefile
+@@ -81,3 +81,6 @@ obj-$(CONFIG_SERIAL_KS8695) += serial_ks
+ obj-$(CONFIG_KGDB_SERIAL_CONSOLE) += kgdboc.o
+ obj-$(CONFIG_SERIAL_QE) += ucc_uart.o
+ obj-$(CONFIG_SERIAL_TIMBERDALE)	+= timbuart.o
++obj-$(CONFIG_SERIAL_UBI32_SERDES) += ubi32_serdes.o
++obj-$(CONFIG_SERIAL_UBI32_UARTTIO) += ubi32_uarttio.o
++obj-$(CONFIG_SERIAL_UBI32_MAILBOX) += ubi32_mailbox.o
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -214,6 +214,15 @@ config SPI_S3C24XX
+ 	help
+ 	  SPI driver for Samsung S3C24XX series ARM SoCs
+ 
++config SPI_UBICOM32_GPIO
++	tristate "Ubicom32 SPI over GPIO"
++	depends on SPI_MASTER && UBICOM32 && EXPERIMENTAL
++	select SPI_BITBANG
++	select HAS_DMA
++	help
++	  SPI driver for the Ubicom32 architecture using
++	  GPIO lines to provide the SPI bus.
++
+ config SPI_S3C24XX_GPIO
+ 	tristate "Samsung S3C24XX series SPI by GPIO"
+ 	depends on ARCH_S3C2410 && EXPERIMENTAL
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_SPI_MPC52xx_PSC)		+= mpc52x
+ obj-$(CONFIG_SPI_MPC8xxx)		+= spi_mpc8xxx.o
+ obj-$(CONFIG_SPI_PPC4xx)		+= spi_ppc4xx.o
+ obj-$(CONFIG_SPI_S3C24XX_GPIO)		+= spi_s3c24xx_gpio.o
++obj-$(CONFIG_SPI_UBICOM32_GPIO)		+= spi_ubicom32_gpio.o
+ obj-$(CONFIG_SPI_S3C24XX)		+= spi_s3c24xx.o
+ obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
+ obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
+--- a/drivers/uio/Kconfig
++++ b/drivers/uio/Kconfig
+@@ -94,4 +94,12 @@ config UIO_PCI_GENERIC
+ 	  primarily, for virtualization scenarios.
+ 	  If you compile this as a module, it will be called uio_pci_generic.
+ 
++config UIO_UBICOM32RING
++	tristate "Ubicom32 Ring Buffer driver"
++	default n
++	help
++	  Userspace I/O interface for a Ubicom32 Ring Buffer.
++
++	  If you compile this as a module, it will be called uio_ubicom32ring
++
+ endif
+--- a/drivers/uio/Makefile
++++ b/drivers/uio/Makefile
+@@ -6,3 +6,4 @@ obj-$(CONFIG_UIO_SMX)	+= uio_smx.o
+ obj-$(CONFIG_UIO_AEC)	+= uio_aec.o
+ obj-$(CONFIG_UIO_SERCOS3)	+= uio_sercos3.o
+ obj-$(CONFIG_UIO_PCI_GENERIC)	+= uio_pci_generic.o
++obj-$(CONFIG_UIO_UBICOM32RING)	+= uio_ubicom32ring.o
+--- a/drivers/usb/gadget/epautoconf.c
++++ b/drivers/usb/gadget/epautoconf.c
+@@ -154,6 +154,10 @@ ep_matches (
+ 			/* configure your hardware with enough buffering!! */
+ 		}
+ 		break;
++
++	case USB_ENDPOINT_XFER_BULK:
++		if ((gadget->is_dualspeed) && (ep->maxpacket < 512))
++			return 0;
+ 	}
+ 
+ 	/* MATCH!! */
+--- a/drivers/usb/Kconfig
++++ b/drivers/usb/Kconfig
+@@ -22,6 +22,7 @@ config USB_ARCH_HAS_HCD
+ 	default y if PCMCIA && !M32R			# sl811_cs
+ 	default y if ARM				# SL-811
+ 	default y if SUPERH				# r8a66597-hcd
++	default y if UBICOM32				# Ubicom's onchip USB Duial role controller
+ 	default PCI
+ 
+ # many non-PCI SOC chips embed OHCI
+--- a/drivers/usb/musb/Kconfig
++++ b/drivers/usb/musb/Kconfig
+@@ -14,7 +14,7 @@ config USB_MUSB_HDRC
+ 	select TWL4030_USB if MACH_OMAP_3430SDP
+ 	select NOP_USB_XCEIV if MACH_OMAP3EVM
+ 	select USB_OTG_UTILS
+-	tristate 'Inventra Highspeed Dual Role Controller (TI, ADI, ...)'
++	tristate 'Inventra Highspeed Dual Role Controller (TI, ADI, Ubicom, ...)'
+ 	help
+ 	  Say Y here if your system has a dual role high speed USB
+ 	  controller based on the Mentor Graphics silicon IP.  Then
+--- a/drivers/usb/musb/Makefile
++++ b/drivers/usb/musb/Makefile
+@@ -30,6 +30,10 @@ ifeq ($(CONFIG_BF52x),y)
+ 	musb_hdrc-objs	+= blackfin.o
+ endif
+ 
++ifeq ($(CONFIG_UBICOM32), y)
++        musb_hdrc-objs  += ubi32_usb.o
++endif
++
+ ifeq ($(CONFIG_USB_GADGET_MUSB_HDRC),y)
+ 	musb_hdrc-objs		+= musb_gadget_ep0.o musb_gadget.o
+ endif
+--- a/drivers/usb/musb/musb_core.c
++++ b/drivers/usb/musb/musb_core.c
+@@ -105,6 +105,13 @@
+ #include <asm/mach-types.h>
+ #endif
+ 
++#ifdef CONFIG_UBICOM32
++#include <asm/ip5000.h>
++#include <asm/ubicom32-tio.h>
++extern void ubi32_usb_init(void);
++extern void ubi32_usb_int_clr(void);
++#endif
++
+ #include "musb_core.h"
+ 
+ 
+@@ -148,8 +155,37 @@ static inline struct musb *dev_to_musb(s
+ }
+ 
+ /*-------------------------------------------------------------------------*/
++#if defined(CONFIG_UBICOM32)
++
++/*
++ * Load an endpoint's FIFO
++ */
++void musb_write_fifo(struct musb_hw_ep *hw_ep, u16 wCount, const u8 *pSource)
++{
++	void __iomem *fifo = hw_ep->fifo;
++
++	prefetch((u8 *)pSource);
++
++	DBG(4, "%cX ep%d fifo %p count %d buf %p\n",
++			'T', hw_ep->epnum, fifo, wCount, pSource);
++
++	usb_tio_write_fifo((u32)fifo, (u32)pSource, wCount);
++
++}
++
++/*
++ * Unload an endpoint's FIFO
++ */
++void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 wCount, u8 *pDest)
++{
++
++	void __iomem *fifo = hw_ep->fifo;
++	DBG(4, "%cX ep%d fifo %p count %d buf %p\n",
++			'R', hw_ep->epnum, fifo, wCount, pDest);
++	usb_tio_read_fifo((u32)fifo, (u32)pDest, wCount);
++}
+ 
+-#if !defined(CONFIG_USB_TUSB6010) && !defined(CONFIG_BLACKFIN)
++#elif !defined(CONFIG_USB_TUSB6010) && !defined(CONFIG_BLACKFIN)
+ 
+ /*
+  * Load an endpoint's FIFO
+@@ -228,8 +264,7 @@ void musb_read_fifo(struct musb_hw_ep *h
+ 		readsb(fifo, dst, len);
+ 	}
+ }
+-
+-#endif	/* normal PIO */
++#endif /* !T6010 && !BLACKFIN */
+ 
+ 
+ /*-------------------------------------------------------------------------*/
+@@ -890,12 +925,19 @@ void musb_start(struct musb *musb)
+ 	musb_writeb(regs, MUSB_TESTMODE, 0);
+ 
+ 	/* put into basic highspeed mode and start session */
++#ifndef CONFIG_UBICOM32
+ 	musb_writeb(regs, MUSB_POWER, MUSB_POWER_ISOUPDATE
+ 						| MUSB_POWER_SOFTCONN
+ 						| MUSB_POWER_HSENAB
+ 						/* ENSUSPEND wedges tusb */
+ 						/* | MUSB_POWER_ENSUSPEND */
+ 						);
++#else
++	musb_writeb(regs, MUSB_POWER,  MUSB_POWER_HSENAB
++						/* ENSUSPEND wedges tusb */
++						/* | MUSB_POWER_ENSUSPEND */
++						);
++#endif
+ 
+ 	musb->is_active = 0;
+ 	devctl = musb_readb(regs, MUSB_DEVCTL);
+@@ -1096,6 +1138,7 @@ static struct fifo_cfg __initdata mode_4
+ };
+ 
+ 
++#ifndef CONFIG_UBICOM32
+ /*
+  * configure a fifo; for non-shared endpoints, this may be called
+  * once for a tx fifo and once for an rx fifo.
+@@ -1255,7 +1298,7 @@ static int __init ep_config_from_table(s
+ 
+ 	return 0;
+ }
+-
++#endif /* CONFIG_UBICOM32 */
+ 
+ /*
+  * ep_config_from_hw - when MUSB_C_DYNFIFO_DEF is false
+@@ -1271,6 +1314,11 @@ static int __init ep_config_from_hw(stru
+ 	DBG(2, "<== static silicon ep config\n");
+ 
+ 	/* FIXME pick up ep0 maxpacket size */
++#ifdef CONFIG_UBICOM32
++	/* set ep0 to shared_fifo, otherwise urb will be put to out_qh but ep0_irq try to get the urb from in_qh*/
++	hw_ep = musb->endpoints;
++	hw_ep->is_shared_fifo = true;
++#endif
+ 
+ 	for (epnum = 1; epnum < musb->config->num_eps; epnum++) {
+ 		musb_ep_select(mbase, epnum);
+@@ -1291,14 +1339,27 @@ static int __init ep_config_from_hw(stru
+ 		/* REVISIT:  this algorithm is lazy, we should at least
+ 		 * try to pick a double buffered endpoint.
+ 		 */
++#ifndef CONFIG_UBICOM32
+ 		if (musb->bulk_ep)
+ 			continue;
+ 		musb->bulk_ep = hw_ep;
++#else
++		if ((musb->bulk_ep_in) && (musb->bulk_ep_out))
++			continue;
++		/* Save theEP with 1024 Bytes FIFO for ISO */
++		if(hw_ep->max_packet_sz_tx == 512) {
++			if (!musb->bulk_ep_in) {
++				musb->bulk_ep_in = hw_ep;
++			} else if (!musb->bulk_ep_out) {
++				musb->bulk_ep_out = hw_ep;
++			}
++		}
++#endif /* CONFIG_UBICOM32 */
+ #endif
+ 	}
+ 
+ #ifdef CONFIG_USB_MUSB_HDRC_HCD
+-	if (!musb->bulk_ep) {
++	if ((!musb->bulk_ep_in) || (!musb->bulk_ep_out)) {
+ 		pr_debug("%s: missing bulk\n", musb_driver_name);
+ 		return -EINVAL;
+ 	}
+@@ -1407,12 +1468,16 @@ static int __init musb_core_init(u16 mus
+ 	musb->epmask = 1;
+ 
+ 	if (reg & MUSB_CONFIGDATA_DYNFIFO) {
++#ifndef CONFIG_UBICOM32
+ 		if (musb->config->dyn_fifo)
+ 			status = ep_config_from_table(musb);
+-		else {
++		else
++#endif
++		{
+ 			ERR("reconfigure software for Dynamic FIFOs\n");
+ 			status = -ENODEV;
+ 		}
++
+ 	} else {
+ 		if (!musb->config->dyn_fifo)
+ 			status = ep_config_from_hw(musb);
+@@ -1476,8 +1541,8 @@ static int __init musb_core_init(u16 mus
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+-#if defined(CONFIG_ARCH_OMAP2430) || defined(CONFIG_ARCH_OMAP3430)
+-
++#if defined(CONFIG_ARCH_OMAP2430) || defined(CONFIG_ARCH_OMAP3430) || defined(CONFIG_UBICOM32)
++static u32_t musb_int_count = 0;
+ static irqreturn_t generic_interrupt(int irq, void *__hci)
+ {
+ 	unsigned long	flags;
+@@ -1486,10 +1551,17 @@ static irqreturn_t generic_interrupt(int
+ 
+ 	spin_lock_irqsave(&musb->lock, flags);
+ 
++#ifndef CONFIG_UBICOM32
+ 	musb->int_usb = musb_readb(musb->mregs, MUSB_INTRUSB);
+ 	musb->int_tx = musb_readw(musb->mregs, MUSB_INTRTX);
+ 	musb->int_rx = musb_readw(musb->mregs, MUSB_INTRRX);
++#else
++	musb_read_int_status(&musb->int_usb, &musb->int_tx, &musb->int_rx);
++	//ubi32_usb_int_clr();
++	musb_int_count++;
++#endif
+ 
++	DBG(4, "usb %x, tx %x, rx %x", musb->int_usb, musb->int_tx, musb->int_rx);
+ 	if (musb->int_usb || musb->int_tx || musb->int_rx)
+ 		retval = musb_interrupt(musb);
+ 
+@@ -2241,6 +2313,10 @@ static struct platform_driver musb_drive
+ 
+ static int __init musb_init(void)
+ {
++#ifdef CONFIG_UBICOM32
++	ubi32_usb_init();
++#endif
++
+ #ifdef CONFIG_USB_MUSB_HDRC_HCD
+ 	if (usb_disabled())
+ 		return 0;
+--- a/drivers/usb/musb/musb_core.h
++++ b/drivers/usb/musb/musb_core.h
+@@ -339,7 +339,12 @@ struct musb {
+ 	 * queue until it completes or NAKs too much; then we try the next
+ 	 * endpoint.
+ 	 */
++#ifdef CONFIG_UBICOM32
++	struct musb_hw_ep	*bulk_ep_in;
++	struct musb_hw_ep	*bulk_ep_out;
++#else
+ 	struct musb_hw_ep	*bulk_ep;
++#endif
+ 
+ 	struct list_head	control;	/* of musb_qh */
+ 	struct list_head	in_bulk;	/* of musb_qh */
+--- a/drivers/usb/musb/musb_gadget.c
++++ b/drivers/usb/musb/musb_gadget.c
+@@ -434,7 +434,7 @@ void musb_g_tx(struct musb *musb, u8 epn
+ 		 * probably rates reporting as a host error
+ 		 */
+ 		if (csr & MUSB_TXCSR_P_SENTSTALL) {
+-			csr |= MUSB_TXCSR_P_WZC_BITS;
++			csr &= ~(MUSB_TXCSR_P_WZC_BITS);
+ 			csr &= ~MUSB_TXCSR_P_SENTSTALL;
+ 			musb_writew(epio, MUSB_TXCSR, csr);
+ 			break;
+@@ -442,7 +442,7 @@ void musb_g_tx(struct musb *musb, u8 epn
+ 
+ 		if (csr & MUSB_TXCSR_P_UNDERRUN) {
+ 			/* we NAKed, no big deal ... little reason to care */
+-			csr |= MUSB_TXCSR_P_WZC_BITS;
++			csr &= ~(MUSB_TXCSR_P_WZC_BITS);
+ 			csr &= ~(MUSB_TXCSR_P_UNDERRUN
+ 					| MUSB_TXCSR_TXPKTRDY);
+ 			musb_writew(epio, MUSB_TXCSR, csr);
+@@ -577,12 +577,18 @@ static void rxstate(struct musb *musb, s
+ {
+ 	const u8		epnum = req->epnum;
+ 	struct usb_request	*request = &req->request;
+-	struct musb_ep		*musb_ep = &musb->endpoints[epnum].ep_out;
++	struct musb_ep		*musb_ep = NULL;
+ 	void __iomem		*epio = musb->endpoints[epnum].regs;
+-	unsigned		fifo_count = 0;
+-	u16			len = musb_ep->packet_sz;
++	u16			fifo_count = 0;
++	u16			len = 0;
+ 	u16			csr = musb_readw(epio, MUSB_RXCSR);
+ 
++	if (musb->endpoints[epnum].is_shared_fifo)
++		musb_ep = &musb->endpoints[epnum].ep_in;
++	else
++		musb_ep = &musb->endpoints[epnum].ep_out;
++	len =  musb_ep->packet_sz;
++
+ 	/* We shouldn't get here while DMA is active, but we do... */
+ 	if (dma_channel_status(musb_ep->dma) == MUSB_DMA_STATUS_BUSY) {
+ 		DBG(4, "DMA pending...\n");
+@@ -730,7 +736,7 @@ static void rxstate(struct musb *musb, s
+ 			 */
+ 
+ 			/* ack the read! */
+-			csr |= MUSB_RXCSR_P_WZC_BITS;
++			csr &= ~MUSB_RXCSR_P_WZC_BITS;
+ 			csr &= ~MUSB_RXCSR_RXPKTRDY;
+ 			musb_writew(epio, MUSB_RXCSR, csr);
+ 		}
+@@ -749,10 +755,15 @@ void musb_g_rx(struct musb *musb, u8 epn
+ 	u16			csr;
+ 	struct usb_request	*request;
+ 	void __iomem		*mbase = musb->mregs;
+-	struct musb_ep		*musb_ep = &musb->endpoints[epnum].ep_out;
++	struct musb_ep		*musb_ep = NULL;
+ 	void __iomem		*epio = musb->endpoints[epnum].regs;
+ 	struct dma_channel	*dma;
+ 
++	if (musb->endpoints[epnum].is_shared_fifo)
++		musb_ep = &musb->endpoints[epnum].ep_in;
++	else
++		musb_ep = &musb->endpoints[epnum].ep_out;
++
+ 	musb_ep_select(mbase, epnum);
+ 
+ 	request = next_request(musb_ep);
+@@ -1756,7 +1767,9 @@ int usb_gadget_register_driver(struct us
+ 			}
+ 		}
+ 	}
+-
++#ifndef CONFIG_USB_MUSB_OTG
++	musb_pullup(musb, 1);
++#endif
+ 	return retval;
+ }
+ EXPORT_SYMBOL(usb_gadget_register_driver);
+--- a/drivers/usb/musb/musb_gadget_ep0.c
++++ b/drivers/usb/musb/musb_gadget_ep0.c
+@@ -241,14 +241,14 @@ __acquires(musb->lock)
+ 		case USB_REQ_SET_ADDRESS:
+ 			/* change it after the status stage */
+ 			musb->set_address = true;
+-			musb->address = (u8) (ctrlrequest->wValue & 0x7f);
++			musb->address = (u8) (le16_to_cpu(ctrlrequest->wValue) & 0x7f);
+ 			handled = 1;
+ 			break;
+ 
+ 		case USB_REQ_CLEAR_FEATURE:
+ 			switch (recip) {
+ 			case USB_RECIP_DEVICE:
+-				if (ctrlrequest->wValue
++				if (le16_to_cpu(ctrlrequest->wValue)
+ 						!= USB_DEVICE_REMOTE_WAKEUP)
+ 					break;
+ 				musb->may_wakeup = 0;
+@@ -262,8 +262,8 @@ __acquires(musb->lock)
+ 
+ 				if (num == 0
+ 						|| num >= MUSB_C_NUM_EPS
+-						|| ctrlrequest->wValue
+-							!= USB_ENDPOINT_HALT)
++						|| le16_to_cpu(ctrlrequest->wValue
++							!= USB_ENDPOINT_HALT))
+ 					break;
+ 
+ 				if (ctrlrequest->wIndex & USB_DIR_IN)
+@@ -293,7 +293,7 @@ __acquires(musb->lock)
+ 			switch (recip) {
+ 			case USB_RECIP_DEVICE:
+ 				handled = 1;
+-				switch (ctrlrequest->wValue) {
++				switch (le16_to_cpu(ctrlrequest->wValue)) {
+ 				case USB_DEVICE_REMOTE_WAKEUP:
+ 					musb->may_wakeup = 1;
+ 					break;
+@@ -375,8 +375,8 @@ stall:
+ 
+ 				if (epnum == 0
+ 						|| epnum >= MUSB_C_NUM_EPS
+-						|| ctrlrequest->wValue
+-							!= USB_ENDPOINT_HALT)
++						|| le16_to_cpu(ctrlrequest->wValue
++							!= USB_ENDPOINT_HALT))
+ 					break;
+ 
+ 				ep = musb->endpoints + epnum;
+--- a/drivers/usb/musb/musb_host.c
++++ b/drivers/usb/musb/musb_host.c
+@@ -160,7 +160,11 @@ static inline void musb_h_tx_start(struc
+ 	/* NOTE: no locks here; caller should lock and select EP */
+ 	if (ep->epnum) {
+ 		txcsr = musb_readw(ep->regs, MUSB_TXCSR);
++#ifndef CONFIG_UBICOM32
+ 		txcsr |= MUSB_TXCSR_TXPKTRDY | MUSB_TXCSR_H_WZC_BITS;
++#else
++		txcsr |= (MUSB_TXCSR_TXPKTRDY & (~MUSB_TXCSR_H_WZC_BITS));
++#endif
+ 		musb_writew(ep->regs, MUSB_TXCSR, txcsr);
+ 	} else {
+ 		txcsr = MUSB_CSR0_H_SETUPPKT | MUSB_CSR0_TXPKTRDY;
+@@ -235,6 +239,8 @@ musb_start_urb(struct musb *musb, int is
+ 		break;
+ 	default:		/* bulk, interrupt */
+ 		/* actual_length may be nonzero on retry paths */
++		if (urb->actual_length)
++			DBG(3 ,"musb_start_urb: URB %p retried, len: %d\n", urb, urb->actual_length);
+ 		buf = urb->transfer_buffer + urb->actual_length;
+ 		len = urb->transfer_buffer_length - urb->actual_length;
+ 	}
+@@ -532,7 +538,11 @@ musb_host_packet_rx(struct musb *musb, s
+ 	musb_read_fifo(hw_ep, length, buf);
+ 
+ 	csr = musb_readw(epio, MUSB_RXCSR);
++#ifndef CONFIG_UBICOM32
+ 	csr |= MUSB_RXCSR_H_WZC_BITS;
++#else
++	csr &= ~MUSB_RXCSR_H_WZC_BITS;
++#endif
+ 	if (unlikely(do_flush))
+ 		musb_h_flush_rxfifo(hw_ep, csr);
+ 	else {
+@@ -566,6 +576,7 @@ musb_rx_reinit(struct musb *musb, struct
+ 
+ 	/* if programmed for Tx, put it in RX mode */
+ 	if (ep->is_shared_fifo) {
++#ifndef  CONFIG_UBICOM32
+ 		csr = musb_readw(ep->regs, MUSB_TXCSR);
+ 		if (csr & MUSB_TXCSR_MODE) {
+ 			musb_h_tx_flush_fifo(ep);
+@@ -580,7 +591,18 @@ musb_rx_reinit(struct musb *musb, struct
+ 		 */
+ 		if (csr & MUSB_TXCSR_DMAMODE)
+ 			musb_writew(ep->regs, MUSB_TXCSR, MUSB_TXCSR_DMAMODE);
++
++#else
++		/* clear mode (and everything else) to enable Rx */
+ 		musb_writew(ep->regs, MUSB_TXCSR, 0);
++		/* scrub all previous state, clearing toggle */
++		csr = musb_readw(ep->regs, MUSB_RXCSR);
++		if (csr & MUSB_RXCSR_RXPKTRDY)
++			WARNING("rx%d, packet/%d ready?\n", ep->epnum,
++				musb_readw(ep->regs, MUSB_RXCOUNT));
++
++		musb_h_flush_rxfifo(ep, MUSB_RXCSR_CLRDATATOG);
++#endif
+ 
+ 	/* scrub all previous state, clearing toggle */
+ 	} else {
+@@ -1108,6 +1130,16 @@ void musb_host_tx(struct musb *musb, u8 
+ 	void __iomem		*mbase = musb->mregs;
+ 	struct dma_channel	*dma;
+ 
++#ifdef CONFIG_UBICOM32
++	if (hw_ep->is_shared_fifo) {
++		qh = hw_ep->in_qh;
++	}
++#ifdef CONFIG_USB_SERIAL_SIERRAWIRELESS
++	printk(KERN_DEBUG "OUT/TX%d end, csr %04x%s\n", epnum, tx_csr,
++			dma ? ", dma" : "");
++#endif
++#endif
++
+ 	musb_ep_select(mbase, epnum);
+ 	tx_csr = musb_readw(epio, MUSB_TXCSR);
+ 
+@@ -1148,9 +1180,14 @@ void musb_host_tx(struct musb *musb, u8 
+ 		 * we have a candidate... NAKing is *NOT* an error
+ 		 */
+ 		musb_ep_select(mbase, epnum);
++#ifndef CONFIG_UBICOM32
+ 		musb_writew(epio, MUSB_TXCSR,
+ 				MUSB_TXCSR_H_WZC_BITS
+ 				| MUSB_TXCSR_TXPKTRDY);
++#else
++		musb_writew(epio, MUSB_TXCSR,
++				 MUSB_TXCSR_TXPKTRDY);
++#endif
+ 		return;
+ 	}
+ 
+@@ -1324,8 +1361,14 @@ void musb_host_tx(struct musb *musb, u8 
+ 	qh->segsize = length;
+ 
+ 	musb_ep_select(mbase, epnum);
++#ifndef CONFIG_UBICOM32
++	musb_writew(epio, MUSB_TXCSR,
++		    MUSB_TXCSR_H_WZC_BITS | MUSB_TXCSR_TXPKTRDY);
++#else
+ 	musb_writew(epio, MUSB_TXCSR,
+-			MUSB_TXCSR_H_WZC_BITS | MUSB_TXCSR_TXPKTRDY);
++		    MUSB_TXCSR_MODE | MUSB_TXCSR_TXPKTRDY);
++#endif
++
+ }
+ 
+ 
+@@ -1385,7 +1428,11 @@ static void musb_bulk_rx_nak_timeout(str
+ 
+ 	/* clear nak timeout bit */
+ 	rx_csr = musb_readw(epio, MUSB_RXCSR);
++#ifndef CONFIG_UBICOM32
+ 	rx_csr |= MUSB_RXCSR_H_WZC_BITS;
++#else
++	rx_csr &= ~MUSB_RXCSR_H_WZC_BITS;
++#endif
+ 	rx_csr &= ~MUSB_RXCSR_DATAERROR;
+ 	musb_writew(epio, MUSB_RXCSR, rx_csr);
+ 
+@@ -1454,6 +1501,13 @@ void musb_host_rx(struct musb *musb, u8 
+ 
+ 	pipe = urb->pipe;
+ 
++#ifdef CONFIG_UBICOM32
++#ifdef CONFIG_USB_SERIAL_SIERRAWIRELESS
++		printk(KERN_DEBUG  "RXCSR%d %04x, reqpkt, len %zu%s\n", epnum, rx_csr,
++				xfer_len, dma ? ", dma" : "");
++#endif
++#endif
++
+ 	DBG(5, "<== hw %d rxcsr %04x, urb actual %d (+dma %zu)\n",
+ 		epnum, rx_csr, urb->actual_length,
+ 		dma ? dma->actual_len : 0);
+@@ -1492,8 +1546,15 @@ void musb_host_rx(struct musb *musb, u8 
+ 				return;
+ 			}
+ 			musb_ep_select(mbase, epnum);
++#ifndef CONFIG_UBICOM32
+ 			rx_csr |= MUSB_RXCSR_H_WZC_BITS;
+ 			rx_csr &= ~MUSB_RXCSR_DATAERROR;
++#else
++			/* NEED TO EVALUATE CHANGE */
++			rx_csr &= ~MUSB_RXCSR_H_WZC_BITS;
++			rx_csr &= ~MUSB_RXCSR_DATAERROR;
++//			musb_writew(epio, MUSB_RXCSR, (~(MUSB_RXCSR_H_WZC_BITS))| MUSB_RXCSR_H_REQPKT);
++#endif
+ 			musb_writew(epio, MUSB_RXCSR, rx_csr);
+ 
+ 			goto finish;
+@@ -1554,8 +1615,13 @@ void musb_host_rx(struct musb *musb, u8 
+ 		rx_csr &= ~MUSB_RXCSR_H_REQPKT;
+ 
+ 		musb_ep_select(mbase, epnum);
++#ifndef CONFIG_UBICOM32
+ 		musb_writew(epio, MUSB_RXCSR,
+ 				MUSB_RXCSR_H_WZC_BITS | rx_csr);
++#else
++		musb_writew(epio, MUSB_RXCSR,
++				(~MUSB_RXCSR_H_WZC_BITS) & rx_csr);
++#endif
+ 	}
+ #endif
+ 	if (dma && (rx_csr & MUSB_RXCSR_DMAENAB)) {
+@@ -1585,7 +1651,7 @@ void musb_host_rx(struct musb *musb, u8 
+ 			else
+ 				done = false;
+ 
+-		} else  {
++		} else {
+ 		/* done if urb buffer is full or short packet is recd */
+ 		done = (urb->actual_length + xfer_len >=
+ 				urb->transfer_buffer_length
+@@ -1799,7 +1865,11 @@ static int musb_schedule(
+ 		if (musb_ep_get_qh(hw_ep, is_in) != NULL)
+ 			continue;
+ 
++#ifndef CONFIG_UBICOM32
+ 		if (hw_ep == musb->bulk_ep)
++#else
++		if ((hw_ep == musb->bulk_ep_in) || (hw_ep == musb->bulk_ep_out)) /* Ubicom */
++#endif
+ 			continue;
+ 
+ 		if (is_in)
+@@ -1813,7 +1883,14 @@ static int musb_schedule(
+ 			best_end = epnum;
+ 		}
+ 	}
++
++#ifdef CONFIG_UBICOM32
++	if (((best_diff >= qh->maxpacket)) && ((qh->type == USB_ENDPOINT_XFER_BULK) && (!is_in)))
++		best_end = -1;
++#endif
++
+ 	/* use bulk reserved ep1 if no other ep is free */
++#ifndef CONFIG_UBICOM32
+ 	if (best_end < 0 && qh->type == USB_ENDPOINT_XFER_BULK) {
+ 		hw_ep = musb->bulk_ep;
+ 		if (is_in)
+@@ -1835,6 +1912,22 @@ static int musb_schedule(
+ 	} else if (best_end < 0) {
+ 		return -ENOSPC;
+ 	}
++#else
++	if (best_end < 0 && qh->type == USB_ENDPOINT_XFER_BULK) {
++		/* hw_ep = musb->bulk_ep; */
++		if (is_in) {
++			head = &musb->in_bulk;
++			hw_ep = musb->bulk_ep_in; /* UBICOM */
++		}
++		else {
++			head = &musb->out_bulk;
++			hw_ep = musb->bulk_ep_out; /* UBICOM */
++		}
++		goto success;
++	} else if (best_end < 0) {
++		return -ENOSPC;
++	}
++#endif
+ 
+ 	idle = 1;
+ 	qh->mux = 0;
+@@ -1846,6 +1939,13 @@ success:
+ 		list_add_tail(&qh->ring, head);
+ 		qh->mux = 1;
+ 	}
++	/*
++	 * It's not make sense to set NAK timeout when qh->mux = 0,
++	 * There is nothing else to schedule
++	 */
++	if ((qh->type == USB_ENDPOINT_XFER_BULK) && (qh->mux == 0))
++		qh->intv_reg = 0;
++
+ 	qh->hw_ep = hw_ep;
+ 	qh->hep->hcpriv = qh;
+ 	if (idle)
+@@ -1964,6 +2064,15 @@ static int musb_urb_enqueue(
+ 		/* ISO always uses logarithmic encoding */
+ 		interval = min_t(u8, epd->bInterval, 16);
+ 		break;
++#ifdef COMFIG_UBICOM32
++	case USB_ENDPOINT_XFER_BULK:
++		 if (epd->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
++			interval = (USB_SPEED_HIGH == urb->dev->speed) ? 16: 2;
++		 else
++			interval = 0;
++		 break;
++#endif
++
+ 	default:
+ 		/* REVISIT we actually want to use NAK limits, hinting to the
+ 		 * transfer scheduling logic to try some other qh, e.g. try
+--- a/drivers/usb/musb/musb_io.h
++++ b/drivers/usb/musb/musb_io.h
+@@ -58,6 +58,7 @@ static inline void writesb(const void __
+ 
+ #ifndef CONFIG_BLACKFIN
+ 
++#ifndef CONFIG_UBICOM32
+ /* NOTE:  these offsets are all in bytes */
+ 
+ static inline u16 musb_readw(const void __iomem *addr, unsigned offset)
+@@ -72,7 +73,37 @@ static inline void musb_writew(void __io
+ 
+ static inline void musb_writel(void __iomem *addr, unsigned offset, u32 data)
+ 	{ __raw_writel(data, addr + offset); }
++#else
++#include <asm/ubicom32-tio.h>
++static inline u16 musb_readw(const void __iomem *addr, unsigned offset)
++{
++        u16 data;
++        usb_tio_read_u16((u32)(addr + offset), &data);
++        return data;
++}
+ 
++static inline u8 musb_readb(const void __iomem *addr, unsigned offset)
++{
++        u8 data;
++        usb_tio_read_u8((u32)(addr + offset), &data);
++        return data;
++}
++
++static inline void musb_writew(void __iomem *addr, unsigned offset, u16 data)
++{
++        usb_tio_write_u16((u32)(addr + offset), data);
++}
++
++static inline void musb_writeb(void __iomem *addr, unsigned offset, u8 data)
++{
++        usb_tio_write_u8((u32)(addr + offset), data);
++}
++
++static inline void  musb_read_int_status(u8_t *int_usb, u16_t *int_tx, u16_t *int_rx)
++{
++	return usb_tio_read_int_status(int_usb, int_tx, int_rx);
++}
++#endif /* CONFIG_UBICOM32 */
+ 
+ #ifdef CONFIG_USB_TUSB6010
+ 
+@@ -106,7 +137,7 @@ static inline void musb_writeb(void __io
+ 	__raw_writew(tmp, addr + (offset & ~1));
+ }
+ 
+-#else
++#elif !defined(CONFIG_UBICOM32)
+ 
+ static inline u8 musb_readb(const void __iomem *addr, unsigned offset)
+ 	{ return __raw_readb(addr + offset); }
+--- a/drivers/usb/musb/musb_regs.h
++++ b/drivers/usb/musb/musb_regs.h
+@@ -167,6 +167,7 @@
+ 	(MUSB_TXCSR_H_NAKTIMEOUT | MUSB_TXCSR_H_RXSTALL \
+ 	| MUSB_TXCSR_H_ERROR | MUSB_TXCSR_FIFONOTEMPTY)
+ 
++
+ /* RXCSR in Peripheral and Host mode */
+ #define MUSB_RXCSR_AUTOCLEAR		0x8000
+ #define MUSB_RXCSR_DMAENAB		0x2000
+--- a/drivers/video/backlight/Kconfig
++++ b/drivers/video/backlight/Kconfig
+@@ -100,6 +100,63 @@ config LCD_HP700
+ 	  If you have an HP Jornada 700 series handheld (710/720/728)
+ 	  say Y to enable LCD control driver.
+ 
++config LCD_UBICOM32POWER
++	tristate "Ubicom LCD power Driver"
++	depends on LCD_CLASS_DEVICE && UBICOM32
++	default n
++	help
++	  If you have a Ubicom32 based system with an LCD panel that requires
++	  power control, say Y to enable the power control driver for it.
++
++config LCD_UBICOM32
++	tristate "Ubicom Backlight Driver"
++	depends on LCD_CLASS_DEVICE && UBICOM32
++	default n
++	help
++	  This driver takes care of initialization of LCD panels with
++	  built in controllers.
++
++menu "Ubicom32 LCD Panel Support"
++	depends on UBICOM32 && LCD_UBICOM32
++
++config LCD_UBICOM32_TFT2N0369E_P
++	bool "TFT2N0369E (Portrait)"
++	default n
++	help
++	  Support for TFT2N0369 in portrait mode
++
++config LCD_UBICOM32_TFT2N0369E_L
++	bool "TFT2N0369E (Landscape)"
++	default n
++	help
++	  Support for TFT2N0369 in landscape mode
++
++config LCD_UBICOM32_CFAF240320KTTS
++	bool "CFAF240320KTTS"
++	default n
++	help
++	  Support for CFAF240320KTTS
++
++config LCD_UBICOM32_CFAF240320KTTS_180
++	bool "CFAF240320KTTS (180 rotation)"
++	default n
++	help
++	  Support for CFAF240320KTTS rotated 180 degrees
++
++config LCD_UBICOM32_CFAF240320D
++	bool "CFAF240320D"
++	default n
++	help
++	  Support for CFAF240320D
++
++config LCD_UBICOM32_CFAF320240F
++	bool "CFAF320240F"
++	default n
++	help
++	  Support for CFAF320240F
++
++endmenu
++
+ #
+ # Backlight
+ #
+@@ -262,3 +319,11 @@ config BACKLIGHT_ADP5520
+ 	  To compile this driver as a module, choose M here: the module will
+ 	  be called adp5520_bl.
+ 
++config BACKLIGHT_UBICOM32
++	tristate "Ubicom Backlight Driver"
++	depends on BACKLIGHT_CLASS_DEVICE && UBICOM32
++	default n
++	help
++	  If you have a Ubicom32 based system with a backlight say Y to enable the
++	  backlight driver.
++
+--- a/drivers/video/backlight/Makefile
++++ b/drivers/video/backlight/Makefile
+@@ -10,6 +10,9 @@ obj-$(CONFIG_LCD_PLATFORM)	   += platfor
+ obj-$(CONFIG_LCD_VGG2432A4)	   += vgg2432a4.o
+ obj-$(CONFIG_LCD_TDO24M)	   += tdo24m.o
+ obj-$(CONFIG_LCD_TOSA)		   += tosa_lcd.o
++obj-$(CONFIG_LCD_LTV350QV)	   += ltv350qv.o
++obj-$(CONFIG_LCD_UBICOM32POWER)	   += ubicom32lcdpower.o
++obj-$(CONFIG_LCD_UBICOM32)	   += ubicom32lcd.o
+ 
+ obj-$(CONFIG_BACKLIGHT_CLASS_DEVICE) += backlight.o
+ obj-$(CONFIG_BACKLIGHT_ATMEL_PWM)    += atmel-pwm-bl.o
+@@ -28,4 +31,4 @@ obj-$(CONFIG_BACKLIGHT_SAHARA)	+= kb3886
+ obj-$(CONFIG_BACKLIGHT_WM831X)	+= wm831x_bl.o
+ obj-$(CONFIG_BACKLIGHT_ADX)    += adx_bl.o
+ obj-$(CONFIG_BACKLIGHT_ADP5520)	+= adp5520_bl.o
+-
++obj-$(CONFIG_BACKLIGHT_UBICOM32) += ubicom32bl.o
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -611,6 +611,50 @@ config FB_BFIN_T350MCQB
+ 	 This display is a QVGA 320x240 24-bit RGB display interfaced by an 8-bit wide PPI
+ 	 It uses PPI[0..7] PPI_FS1, PPI_FS2 and PPI_CLK.
+ 
++config FB_UBICOM32
++	tristate "Ubicom32 Frame Buffer driver"
++	depends on FB && UBICOM32
++	select FB_CFB_FILLRECT
++	select FB_CFB_COPYAREA
++	select FB_CFB_IMAGEBLIT
++	select FONT_6x11 if FRAMEBUFFER_CONSOLE
++	help
++	 This is the framebuffer device driver for the Ubicom32 architecture.
++	 You can configure video memory by using kernel command line parameters, for example:
++		video=ubicomfb:vram_size=512,init_value=0xffff
++
++config FB_UBICOM32_PLIO80
++	tristate "Ubicom32 80 Bus PLIO Frame Buffer driver"
++	depends on FB && UBICOM32
++	select FB_CFB_FILLRECT
++	select FB_CFB_COPYAREA
++	select FB_CFB_IMAGEBLIT
++	select FONT_6x11 if FRAMEBUFFER_CONSOLE
++	select UBICOM32_PLIO
++	help
++	 This is a framebuffer device driver for the Ubicom32 architecture.
++	 You can configure the xres, yres and vram size (in kilobytes) by using
++	 kernel command line parameters, for example:
++		video=ubicom32vfb:xres=320,yres=240,vram_size=512
++
++config FB_UBICOM32_VIRTUAL
++	tristate "Ubicom32 Virtual Frame Buffer driver"
++	depends on FB && UBICOM32
++	select FB_CFB_FILLRECT
++	select FB_CFB_COPYAREA
++	select FB_CFB_IMAGEBLIT
++	select FONT_6x11 if FRAMEBUFFER_CONSOLE
++	help
++	 This is a virtual framebuffer device driver for the Ubicom32 architecture.
++	 You can configure the xres, yres and vram size (in kilobytes) by using
++	 kernel command line parameters, for example:
++		video=ubicom32vfb:xres=320,yres=240,vram_size=512
++
++config FB_UBICOM32_VIRTUAL_NOAUTO
++	bool "Do not automatically load"
++	depends on FB_UBICOM32_VIRTUAL
++	help
++	 Select this option to prevent the VFB from automatically loading at boot.
+ 
+ config FB_STI
+ 	tristate "HP STI frame buffer device support"
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -140,6 +140,10 @@ obj-$(CONFIG_FB_BFIN_T350MCQB)	  += bfin
+ obj-$(CONFIG_FB_MX3)		  += mx3fb.o
+ obj-$(CONFIG_FB_DA8XX)		  += da8xx-fb.o
+ 
++obj-$(CONFIG_FB_UBICOM32)         += ubicom32fb.o
++obj-$(CONFIG_FB_UBICOM32_PLIO80)  += ubicom32plio80.o
++obj-$(CONFIG_FB_UBICOM32_VIRTUAL) += ubicom32vfb.o
++
+ # the test framebuffer is last
+ obj-$(CONFIG_FB_VIRTUAL)          += vfb.o
+ 
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -973,6 +973,19 @@ config WATCHDOG_RIO
+ 	  machines.  The watchdog timeout period is normally one minute but
+ 	  can be changed with a boot-time parameter.
+ 
++# Ubicom32
++
++config UBI32_WDT
++	tristate "Ubicom32 Hardware Watchdog support"
++	depends on UBICOM32
++	---help---
++	  If you say yes here you will get support for the Ubicom32 On-Chip
++	  Watchdog Timer. If you have one of these processors and wish to
++	  have watchdog support enabled, say Y, otherwise say N.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ubi32_wdt.
++
+ # XTENSA Architecture
+ 
+ #
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -139,6 +139,9 @@ obj-$(CONFIG_SH_WDT) += shwdt.o
+ obj-$(CONFIG_WATCHDOG_RIO)		+= riowd.o
+ obj-$(CONFIG_WATCHDOG_CP1XXX)		+= cpwd.o
+ 
++# Ubicom32 Architecture
++obj-$(CONFIG_UBI32_WDT)			+= ubi32_wdt.o
++
+ # XTENSA Architecture
+ 
+ # Architecture Independant
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -67,6 +67,11 @@
+ #define FLAT_DATA_ALIGN	(sizeof(void *))
+ #endif
+ 
++#ifndef ARCH_FLAT_ALIGN
++#undef FLAT_DATA_ALIGN
++#define FLAT_DATA_ALIGN	ARCH_FLAT_ALIGN
++#endif
++
+ #define RELOC_FAILED 0xff00ff01		/* Relocation incorrect somewhere */
+ #define UNLOADED_LIB 0x7ff000ff		/* Placeholder for unused library */
+ 
+@@ -434,6 +439,7 @@ static int load_flat_file(struct linux_b
+ 	loff_t fpos;
+ 	unsigned long start_code, end_code;
+ 	int ret;
++	int flush_happened = 0;
+ 
+ 	hdr = ((struct flat_hdr *) bprm->buf);		/* exec-header */
+ 	inode = bprm->file->f_path.dentry->d_inode;
+@@ -520,6 +526,7 @@ static int load_flat_file(struct linux_b
+ 		/* OK, This is the point of no return */
+ 		set_personality(PER_LINUX_32BIT);
+ 		setup_new_exec(bprm);
++		flush_happened = 1;
+ 	}
+ 
+ 	/*
+@@ -534,6 +541,12 @@ static int load_flat_file(struct linux_b
+ 	 * it all together.
+ 	 */
+ 	if ((flags & (FLAT_FLAG_RAM|FLAT_FLAG_GZIP)) == 0) {
++
++#ifdef ARCH_FLAT_ALIGN_TEXT
++		printk("Unable to mmap rom with ARCH alignment requirements\n");
++		ret = -ENOEXEC;
++		goto err;
++#endif
+ 		/*
+ 		 * this should give us a ROM ptr,  but if it doesn't we don't
+ 		 * really care
+@@ -552,7 +565,7 @@ static int load_flat_file(struct linux_b
+ 			goto err;
+ 		}
+ 
+-		len = data_len + extra + MAX_SHARED_LIBS * sizeof(unsigned long);
++		len = data_len + extra + ALIGN(MAX_SHARED_LIBS * sizeof(unsigned long), FLAT_DATA_ALIGN);
+ 		len = PAGE_ALIGN(len);
+ 		down_write(&current->mm->mmap_sem);
+ 		realdatastart = do_mmap(0, 0, len,
+@@ -571,6 +584,7 @@ static int load_flat_file(struct linux_b
+ 		datapos = ALIGN(realdatastart +
+ 				MAX_SHARED_LIBS * sizeof(unsigned long),
+ 				FLAT_DATA_ALIGN);
++		//datapos = realdatastart + ALIGN(MAX_SHARED_LIBS * sizeof(unsigned long), ARCH_FLAT_ALIGN);
+ 
+ 		DBG_FLT("BINFMT_FLAT: Allocated data+bss+stack (%d bytes): %x\n",
+ 				(int)(data_len + bss_len + stack_len), (int)datapos);
+@@ -599,7 +613,11 @@ static int load_flat_file(struct linux_b
+ 		memp_size = len;
+ 	} else {
+ 
+-		len = text_len + data_len + extra + MAX_SHARED_LIBS * sizeof(unsigned long);
++		len = text_len + data_len + extra + ALIGN(MAX_SHARED_LIBS * sizeof(unsigned long), FLAT_DATA_ALIGN);
++#ifdef ARCH_FLAT_ALIGN_TEXT
++		/* Reserve space for the text alignment. */
++		len += FLAT_DATA_ALIGN;
++#endif
+ 		len = PAGE_ALIGN(len);
+ 		down_write(&current->mm->mmap_sem);
+ 		textpos = do_mmap(0, 0, len,
+@@ -615,10 +633,17 @@ static int load_flat_file(struct linux_b
+ 			goto err;
+ 		}
+ 
++		memp = textpos;
++#ifdef ARCH_FLAT_ALIGN_TEXT
++		textpos = ALIGN(textpos + sizeof(struct flat_hdr), FLAT_DATA_ALIGN) - sizeof(struct flat_hdr);
++#endif
+ 		realdatastart = textpos + ntohl(hdr->data_start);
+ 		datapos = ALIGN(realdatastart +
+ 				MAX_SHARED_LIBS * sizeof(unsigned long),
+ 				FLAT_DATA_ALIGN);
++//		datapos = realdatastart + ALIGN(MAX_SHARED_LIBS * sizeof(unsigned long), ARCH_FLAT_ALIGN);
++//		reloc = (unsigned long *) (textpos + ntohl(hdr->reloc_start) +
++//					   ALIGN(MAX_SHARED_LIBS * sizeof(unsigned long), ARCH_FLAT_ALIGN));
+ 
+ 		reloc = (unsigned long *)
+ 			(datapos + (ntohl(hdr->reloc_start) - text_len));
+@@ -658,7 +683,7 @@ static int load_flat_file(struct linux_b
+ 		}
+ 		if (IS_ERR_VALUE(result)) {
+ 			printk("Unable to read code+data+bss, errno %d\n",(int)-result);
+-			do_munmap(current->mm, textpos, text_len + data_len + extra +
++			do_munmap(current->mm, memp, text_len + data_len + extra +
+ 				MAX_SHARED_LIBS * sizeof(unsigned long));
+ 			ret = result;
+ 			goto err;
+@@ -671,6 +696,9 @@ static int load_flat_file(struct linux_b
+ 
+ 	/* The main program needs a little extra setup in the task structure */
+ 	start_code = textpos + sizeof (struct flat_hdr);
++#ifdef ARCH_FLAT_ALIGN_TEXT
++	BUG_ON(ALIGN(start_code, FLAT_DATA_ALIGN) != start_code);
++#endif
+ 	end_code = textpos + text_len;
+ 	if (id == 0) {
+ 		current->mm->start_code = start_code;
+@@ -799,6 +827,13 @@ static int load_flat_file(struct linux_b
+ 
+ 	return 0;
+ err:
++	if (flush_happened) {
++		/*
++		 * The parent process has already started running. We cannot allow the child to return back to user space
++		 * as this child is still uning the parent stack and 2 will clobber each other. We are going to kill this child.
++		 */
++		do_exit(SIGTERM);
++	}
+ 	return ret;
+ }
+ 
+--- a/fs/Kconfig.binfmt
++++ b/fs/Kconfig.binfmt
+@@ -30,7 +30,7 @@ config COMPAT_BINFMT_ELF
+ config BINFMT_ELF_FDPIC
+ 	bool "Kernel support for FDPIC ELF binaries"
+ 	default y
+-	depends on (FRV || BLACKFIN || (SUPERH32 && !MMU))
++	depends on (FRV || BLACKFIN || (SUPERH32 && !MMU) || UBICOM32)
+ 	help
+ 	  ELF FDPIC binaries are based on ELF, but allow the individual load
+ 	  segments of a binary to be located in memory independently of each
+--- a/include/asm-generic/resource.h
++++ b/include/asm-generic/resource.h
+@@ -69,13 +69,16 @@
+ /*
+  * boot-time rlimit defaults for the init task:
+  */
++#ifndef	CONFIG_ELF_CORE
++#define	CONFIG_USER_ELF_CORE_SIZE	0
++#endif
+ #define INIT_RLIMITS							\
+ {									\
+ 	[RLIMIT_CPU]		= {  RLIM_INFINITY,  RLIM_INFINITY },	\
+ 	[RLIMIT_FSIZE]		= {  RLIM_INFINITY,  RLIM_INFINITY },	\
+ 	[RLIMIT_DATA]		= {  RLIM_INFINITY,  RLIM_INFINITY },	\
+ 	[RLIMIT_STACK]		= {       _STK_LIM,   _STK_LIM_MAX },	\
+-	[RLIMIT_CORE]		= {              0,  RLIM_INFINITY },	\
++	[RLIMIT_CORE]		= { CONFIG_USER_ELF_CORE_SIZE,  RLIM_INFINITY },	\
+ 	[RLIMIT_RSS]		= {  RLIM_INFINITY,  RLIM_INFINITY },	\
+ 	[RLIMIT_NPROC]		= {              0,              0 },	\
+ 	[RLIMIT_NOFILE]		= {       INR_OPEN,       INR_OPEN },	\
+--- a/include/linux/elf-em.h
++++ b/include/linux/elf-em.h
+@@ -41,6 +41,7 @@
+  * up with a final number.
+  */
+ #define EM_ALPHA	0x9026
++#define EM_UBICOM32 	        0xde3d	/* Ubicom32; no ABI */
+ 
+ /* Bogus old v850 magic number, used by old tools. */
+ #define EM_CYGNUS_V850	0x9080
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -152,6 +152,10 @@ struct dentry;
+ #define FB_ACCEL_PROSAVAGE_DDR  0x8d	/* S3 ProSavage DDR             */
+ #define FB_ACCEL_PROSAVAGE_DDRK 0x8e	/* S3 ProSavage DDR-K           */
+ 
++#define FB_ACCEL_UBICOM32		0x0100	/* Ubicom32			*/
++#define FB_ACCEL_UBICOM32_VFB		0x0101	/* Ubicom32 VFB			*/
++#define FB_ACCEL_UBICOM32_PLIO80	0x0102	/* Ubicom32 PLIO80		*/
++
+ struct fb_fix_screeninfo {
+ 	char id[16];			/* identification string eg "TT Builtin" */
+ 	unsigned long smem_start;	/* Start of frame buffer mem */
+--- a/include/linux/if_ppp.h
++++ b/include/linux/if_ppp.h
+@@ -114,14 +114,14 @@ struct pppol2tp_ioc_stats {
+ 	__u16		tunnel_id;	/* redundant */
+ 	__u16		session_id;	/* if zero, get tunnel stats */
+ 	__u32		using_ipsec:1;	/* valid only for session_id == 0 */
+-	aligned_u64	tx_packets;
+-	aligned_u64	tx_bytes;
+-	aligned_u64	tx_errors;
+-	aligned_u64	rx_packets;
+-	aligned_u64	rx_bytes;
+-	aligned_u64	rx_seq_discards;
+-	aligned_u64	rx_oos_packets;
+-	aligned_u64	rx_errors;
++	__u64	tx_packets;
++	__u64	tx_bytes;
++	__u64	tx_errors;
++	__u64	rx_packets;
++	__u64	rx_bytes;
++	__u64	rx_seq_discards;
++	__u64	rx_oos_packets;
++	__u64	rx_errors;
+ };
+ 
+ #define ifr__name       b.ifr_ifrn.ifrn_name
+--- a/include/linux/oprofile.h
++++ b/include/linux/oprofile.h
+@@ -102,6 +102,8 @@ void oprofile_add_sample(struct pt_regs 
+  */
+ void oprofile_add_ext_sample(unsigned long pc, struct pt_regs * const regs,
+ 				unsigned long event, int is_kernel);
++void oprofile_add_ext_sample_cpu(unsigned long pc, struct pt_regs * const regs,
++				unsigned long event, int is_kernel, int cpu);
+ 
+ /* Use this instead when the PC value is not from the regs. Doesn't
+  * backtrace. */
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
+@@ -179,6 +179,9 @@
+ /* BCM63xx family SoCs */
+ #define PORT_BCM63XX	89
+ 
++/* Ubicom32 */
++#define PORT_UBI32_UARTTIO	87
++
+ #ifdef __KERNEL__
+ 
+ #include <linux/compiler.h>
+--- a/include/linux/slab.h
++++ b/include/linux/slab.h
+@@ -328,4 +328,14 @@ static inline void *kzalloc_node(size_t 
+ 
+ void __init kmem_cache_init_late(void);
+ 
++struct kmem_cache_size_info {
++	unsigned short page;
++	unsigned short order;
++};
++
++/*
++ * get info on all the memory allocated by slab for this named cache
++ */
++extern int kmem_cache_block_info(char *name, struct kmem_cache_size_info *data, int max_data);
++
+ #endif	/* _LINUX_SLAB_H */
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -844,6 +844,12 @@ config ELF_CORE
+ 	help
+ 	  Enable support for generating core dumps. Disabling saves about 4k.
+ 
++config USER_ELF_CORE_SIZE
++	int "user core dump size (10MB to 32MB)"
++	range 10485760 33554432
++	default 16777216
++	depends on ELF_CORE
++
+ config PCSPKR_PLATFORM
+ 	bool "Enable PC-Speaker support" if EMBEDDED
+ 	depends on ALPHA || X86 || MIPS || PPC_PREP || PPC_CHRP || PPC_PSERIES
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -2945,6 +2945,9 @@ static int m_show(struct seq_file *m, vo
+ 	/* Used by oprofile and other similar tools. */
+ 	seq_printf(m, " 0x%p", mod->module_core);
+ 
++#ifdef ARCH_PROC_MODULES_EXTRA
++	ARCH_PROC_MODULES_EXTRA(m, mod);
++#endif
+ 	/* Taints info */
+ 	if (mod->taints)
+ 		seq_printf(m, " %s", module_flags(mod, buf));
+@@ -3097,8 +3100,12 @@ void print_modules(void)
+ 	printk(KERN_DEFAULT "Modules linked in:");
+ 	/* Most callers should already have preempt disabled, but make sure */
+ 	preempt_disable();
+-	list_for_each_entry_rcu(mod, &modules, list)
++	list_for_each_entry_rcu(mod, &modules, list) {
+ 		printk(" %s%s", mod->name, module_flags(mod, buf));
++#ifdef ARCH_OOPS_MODULE_EXTRA
++		ARCH_OOPS_MODULE_EXTRA(mod);
++#endif
++	}
+ 	preempt_enable();
+ 	if (last_unloaded_module[0])
+ 		printk(" [last unloaded: %s]", last_unloaded_module);
+--- a/kernel/sched_clock.c
++++ b/kernel/sched_clock.c
+@@ -38,8 +38,7 @@
+  */
+ unsigned long long __attribute__((weak)) sched_clock(void)
+ {
+-	return (unsigned long long)(jiffies - INITIAL_JIFFIES)
+-					* (NSEC_PER_SEC / HZ);
++	return (get_jiffies_64() - INITIAL_JIFFIES) * (NSEC_PER_SEC / HZ);
+ }
+ 
+ static __read_mostly int sched_clock_running;
+--- a/lib/Kconfig.debug
++++ b/lib/Kconfig.debug
+@@ -690,7 +690,7 @@ config FRAME_POINTER
+ 	bool "Compile the kernel with frame pointers"
+ 	depends on DEBUG_KERNEL && \
+ 		(CRIS || M68K || M68KNOMMU || FRV || UML || \
+-		 AVR32 || SUPERH || BLACKFIN || MN10300) || \
++		 AVR32 || SUPERH || BLACKFIN || MN10300 || UBICOM32) || \
+ 		ARCH_WANT_FRAME_POINTERS
+ 	default y if (DEBUG_INFO && UML) || ARCH_WANT_FRAME_POINTERS
+ 	help
+--- a/mm/Makefile
++++ b/mm/Makefile
+@@ -45,3 +45,5 @@ obj-$(CONFIG_MEMORY_FAILURE) += memory-f
+ obj-$(CONFIG_HWPOISON_INJECT) += hwpoison-inject.o
+ obj-$(CONFIG_DEBUG_KMEMLEAK) += kmemleak.o
+ obj-$(CONFIG_DEBUG_KMEMLEAK_TEST) += kmemleak-test.o
++
++CFLAGS_slab.o := $(PROFILING) -O2
+--- a/mm/slab.c
++++ b/mm/slab.c
+@@ -4086,6 +4086,68 @@ out:
+ 
+ #ifdef CONFIG_SLABINFO
+ 
++
++/*
++ * get info on all the memory allocated by slab for this named cache
++ */
++int kmem_cache_block_info(char *name, struct kmem_cache_size_info *data, int max_data)
++{
++	int res = 0;
++	int found = 0;
++	int node;
++	struct kmem_cache *cachep;
++	struct kmem_list3 *l3;
++	struct slab *slabp;
++
++	/* Find the cache in the chain of caches. */
++	mutex_lock(&cache_chain_mutex);
++	list_for_each_entry(cachep, &cache_chain, next) {
++		if (strcmp(cachep->name, name) == 0) {
++			found = 1;
++			break;
++		}
++	}
++	mutex_unlock(&cache_chain_mutex);
++	if (!found) {
++		return 0;
++	}
++	for_each_online_node(node) {
++		l3 = cachep->nodelists[node];
++		if (!l3)
++			continue;
++		if (res >= max_data)
++			break;
++		check_irq_on();
++		spin_lock_irq(&l3->list_lock);
++
++		list_for_each_entry(slabp, &l3->slabs_full, list) {
++			if (res >= max_data)
++				break;
++			data[res].page = ((unsigned int)slabp->s_mem >> PAGE_SHIFT) & 0xffff;
++			data[res].order = cachep->gfporder;
++			res++;
++		}
++		list_for_each_entry(slabp, &l3->slabs_partial, list) {
++			if (res >= max_data)
++				break;
++			data[res].page = ((unsigned int)slabp->s_mem >> PAGE_SHIFT) & 0xffff;
++			data[res].order = cachep->gfporder;
++			res++;
++		}
++		list_for_each_entry(slabp, &l3->slabs_free, list) {
++			if (res >= max_data)
++				break;
++			data[res].page = ((unsigned int)slabp->s_mem >> PAGE_SHIFT) & 0xffff;
++			data[res].order = cachep->gfporder;
++			res++;
++		}
++
++		spin_unlock_irq(&l3->list_lock);
++	}
++
++	return res;
++}
++
+ static void print_slabinfo_header(struct seq_file *m)
+ {
+ 	/*
+--- a/scripts/mod/file2alias.c
++++ b/scripts/mod/file2alias.c
+@@ -783,6 +783,15 @@ void handle_moddevtable(struct module *m
+ 			+ sym->st_value;
+ 	}
+ 
++	/*
++	 * somehow our gcc is not generating st_size correctly and set 0 for some symbols.
++	 * and 0 size will break do_table since it adjust size to (size - id_size)
++	 * this is to make sure st_size fall in range.
++	 */
++	if (sym->st_size == 0 || sym->st_size > info->sechdrs[sym->st_shndx].sh_size) {
++		sym->st_size = info->sechdrs[sym->st_shndx].sh_size;
++	}
++
+ 	if (sym_is(symname, "__mod_pci_device_table"))
+ 		do_table(symval, sym->st_size,
+ 			 sizeof(struct pci_device_id), "pci",
+--- a/sound/Kconfig
++++ b/sound/Kconfig
+@@ -110,6 +110,8 @@ source "sound/parisc/Kconfig"
+ 
+ source "sound/soc/Kconfig"
+ 
++source "sound/ubicom32/Kconfig"
++
+ endif # SND
+ 
+ menuconfig SOUND_PRIME
+--- a/sound/Makefile
++++ b/sound/Makefile
+@@ -6,7 +6,7 @@ obj-$(CONFIG_SOUND_PRIME) += sound_firmw
+ obj-$(CONFIG_SOUND_PRIME) += oss/
+ obj-$(CONFIG_DMASOUND) += oss/
+ obj-$(CONFIG_SND) += core/ i2c/ drivers/ isa/ pci/ ppc/ arm/ sh/ synth/ usb/ \
+-	sparc/ spi/ parisc/ pcmcia/ mips/ soc/ atmel/
++	sparc/ spi/ parisc/ pcmcia/ mips/ soc/ atmel/ ubicom32/
+ obj-$(CONFIG_SND_AOA) += aoa/
+ 
+ # This one must be compilable even if sound is configured out
