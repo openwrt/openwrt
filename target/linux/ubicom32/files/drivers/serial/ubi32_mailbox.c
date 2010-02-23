@@ -34,6 +34,7 @@
 #include <linux/tty.h>
 #include <linux/tty_flip.h>
 #include <linux/serial_core.h>
+#include <linux/version.h>
 
 #include <asm/ip5000.h>
 
@@ -259,8 +260,13 @@ static void ubi32_mailbox_enable_ms(struct uart_port *port)
 
 static void ubi32_mailbox_rx_chars(struct ubi32_mailbox_port *uart)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+	struct uart_state *state = uart->port.state;
+	struct tty_struct *tty = state->port.tty;
+#else
 	struct uart_info *info = uart->port.info;
 	struct tty_struct *tty = info->port.tty;
+#endif
 	unsigned int status, ch, flg;
 
 	status = 0; // XXX? UART_GET_LSR(uart);
@@ -308,7 +314,11 @@ static void ubi32_mailbox_rx_chars(struct ubi32_mailbox_port *uart)
 
 static void ubi32_mailbox_tx_chars(struct ubi32_mailbox_port *uart)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+	struct circ_buf *xmit = &uart->port.state->xmit;
+#else
 	struct circ_buf *xmit = &uart->port.info->xmit;
+#endif
 
 	if (uart->port.x_char) {
 		UART_PUT_CHAR(uart, uart->port.x_char);

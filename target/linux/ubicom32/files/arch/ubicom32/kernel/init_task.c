@@ -34,12 +34,15 @@
 #include <linux/mqueue.h>
 #include <linux/uaccess.h>
 #include <asm/pgtable.h>
+#include <linux/version.h>
 
 ///static struct fs_struct init_fs = INIT_FS;
 static struct signal_struct init_signals = INIT_SIGNALS(init_signals);
 static struct sighand_struct init_sighand = INIT_SIGHAND(init_sighand);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)
 struct mm_struct init_mm = INIT_MM(init_mm);
 EXPORT_SYMBOL(init_mm);
+#endif
 
 /*
  * Initial task structure.

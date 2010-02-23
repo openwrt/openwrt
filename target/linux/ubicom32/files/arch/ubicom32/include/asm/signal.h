@@ -124,7 +124,12 @@ typedef struct {
 #define MINSIGSTKSZ	2048
 #define SIGSTKSZ	8192
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
+#include <asm-generic/signal-defs.h>
+#else
 #include <asm-generic/signal.h>
+#endif
 
 #ifdef __KERNEL__
 struct old_sigaction {

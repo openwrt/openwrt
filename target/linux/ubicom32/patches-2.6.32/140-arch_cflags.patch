@@ -1,0 +1,13 @@
+--- a/arch/ubicom32/Makefile
++++ b/arch/ubicom32/Makefile
+@@ -54,8 +54,8 @@ CFLAGS_MODULE    += -mno-fastcall
+ #
+ # Some CFLAG additions based on specific CPU type.
+ #
+-cflags-$(CONFIG_UBICOM32_V3)		:= -march=ubicom32v3 -DIP5000
+-cflags-$(CONFIG_UBICOM32_V4)		:= -march=ubicom32v4 -DIP7000
++cflags-$(CONFIG_UBICOM32_V3)		:= -march=ubicom32v3 -mno-fdpic -DIP5000
++cflags-$(CONFIG_UBICOM32_V4)		:= -march=ubicom32v4 -mno-fdpic -DIP7000
+ 
+ ldflags-$(CONFIG_LINKER_RELAXATION)	:= --relax
+ LDFLAGS_vmlinux := $(ldflags-y)
