@@ -7,6 +7,7 @@ choice
 	default GCC_VERSION_4_3_3 if powerpc64
 	default GCC_VERSION_4_3_3 if TARGET_etrax
 	default GCC_VERSION_4_3_3 if TARGET_coldfire
+	default GCC_VERSION_4_3_4 if TARGET_gemini
 	default GCC_VERSION_4_4_1 if ubicom32
 	default GCC_VERSION_4_3_3_CS if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
 	default GCC_VERSION_4_3_3_CS if (arm || armeb) && !TARGET_gemini
