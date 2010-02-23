@@ -1,0 +1,40 @@
+--- a/arch/x86/boot/boot.h
++++ b/arch/x86/boot/boot.h
+@@ -64,7 +64,7 @@ static inline void outl(u32 v, u16 port)
+ {
+ 	asm volatile("outl %0,%1" : : "a" (v), "dN" (port));
+ }
+-static inline u32 inl(u32 port)
++static inline u32 inl(u16 port)
+ {
+ 	u32 v;
+ 	asm volatile("inl %1,%0" : "=a" (v) : "dN" (port));
+--- a/arch/x86/boot/pm.c
++++ b/arch/x86/boot/pm.c
+@@ -14,6 +14,9 @@
+ 
+ #include "boot.h"
+ #include <asm/segment.h>
++#ifdef CONFIG_X86_RDC321X
++#include <asm/rdc321x_defs.h>
++#endif
+ 
+ /*
+  * Invoke the realmode switch hook if present; otherwise
+@@ -112,6 +115,16 @@ void go_to_protected_mode(void)
+ 		die();
+ 	}
+ 
++#ifdef CONFIG_X86_RDC321X
++	{
++		u32 bootctl;
++
++		outl(0x80003840, RDC3210_CFGREG_ADDR);
++		bootctl = inl(RDC3210_CFGREG_DATA) | 0x07ff0000;
++		outl(bootctl, RDC3210_CFGREG_DATA);
++	}
++#endif
++
+ 	/* Reset coprocessor (IGNNE#) */
+ 	reset_coprocessor();
+ 

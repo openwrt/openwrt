@@ -1,0 +1,20 @@
+--- a/drivers/pcmcia/yenta_socket.c
++++ b/drivers/pcmcia/yenta_socket.c
+@@ -1174,6 +1174,17 @@ static int __devinit yenta_probe (struct
+ 
+ 	/* We must finish initialization here */
+ 
++#ifdef CONFIG_X86_RDC321X
++/* #define YO_TI1510_DATASHEET_GUY_EXPLAIN_THIS_JUNK 0x0044f044 */
++#define YO_TI1510_DATASHEET_GUY_EXPLAIN_THIS_JUNK 0x0844b060
++/* #define YO_TI1510_DATASHEET_GUY_EXPLAIN_THIS_JUNK 0x0044d044 */
++
++	config_writel(socket, 32*4, YO_TI1510_DATASHEET_GUY_EXPLAIN_THIS_JUNK);
++	config_writel(socket, 35*4, 0x00000022);
++	config_writel(socket, 36*4, 0x60200000);
++	config_writel(socket, 40*4, 0x7e020000);
++#endif
++
+ 	if (!socket->cb_irq || request_irq(socket->cb_irq, yenta_interrupt, IRQF_SHARED, "yenta", socket)) {
+ 		/* No IRQ or request_irq failed. Poll */
+ 		socket->cb_irq = 0; /* But zero is a valid IRQ number. */
