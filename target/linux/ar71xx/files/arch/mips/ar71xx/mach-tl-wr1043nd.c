@@ -117,6 +117,7 @@ static void __init tl_wr1043nd_setup(void)
 	ar71xx_eth0_data.phy_mask = 0x0;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_pll_data.pll_1000 = 0x1a000000;
 
 	ar71xx_add_device_eth(0);
 
