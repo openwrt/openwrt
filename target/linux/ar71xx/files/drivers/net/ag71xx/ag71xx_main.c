@@ -390,7 +390,12 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	mdelay(100);
 
 	/* setup MAC configuration registers */
-	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
+	if (pdata->is_ar724x)
+		ag71xx_wr(ag, AG71XX_REG_MAC_CFG1,
+			  MAC_CFG1_INIT | MAC_CFG1_TFC | MAC_CFG1_RFC);
+	else
+		ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
+
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
 		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
 
