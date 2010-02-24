@@ -53,9 +53,9 @@ if( opendir SD, "$Bin/../staging_dir" )
 
 		# Find library paths
 		my $libdirs = join ':', (
-			glob("$Bin/../build_dir/target-${arch}_${libc}/debug-*/{usr/,}lib/"),
-			glob("$Bin/../staging_dir/target-${arch}_${libc}/{usr/,}lib"),
-			glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}/lib")
+			glob("$Bin/../staging_dir/target-${arch}_${libc}/root-*/{,usr/}lib/"),
+			glob("$Bin/../staging_dir/target-${arch}_${libc}/{,usr/}lib/"),
+			glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}/lib/")
 		);
 
 		print $fh "set solib-search-path $libdirs\n";
