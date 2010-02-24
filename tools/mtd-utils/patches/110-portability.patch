@@ -92,7 +92,7 @@
  
  	if (c->default_compr != UBIFS_COMPR_NONE)
  		use_flags |= UBIFS_COMPR_FL;
-+#ifdef __linux__
++#ifndef NO_NATIVE_SUPPORT
  	if (flags & FS_COMPR_FL)
  		use_flags |= UBIFS_COMPR_FL;
  	if (flags & FS_SYNC_FL)
@@ -108,7 +108,7 @@
  		fd = dirfd(dir);
  		if (fd == -1)
  			return sys_err_msg("dirfd failed");
-+#ifdef __linux__
++#ifndef NO_NATIVE_SUPPORT
  		if (ioctl(fd, FS_IOC_GETFLAGS, &flags) == -1)
 +#endif
  			flags = 0;
@@ -118,7 +118,7 @@
  		key_write(&key, &dn->key);
  		dn->size = cpu_to_le32(bytes_read);
  		out_len = NODE_BUFFER_SIZE - UBIFS_DATA_NODE_SZ;
-+#ifdef __linux__
++#ifndef NO_NATIVE_SUPPORT
  		if (c->default_compr == UBIFS_COMPR_NONE &&
  		    (flags & FS_COMPR_FL))
  			use_compr = UBIFS_COMPR_LZO;
@@ -131,7 +131,7 @@
  		if (fd == -1)
  			return sys_err_msg("failed to open file '%s'",
  					   path_name);
-+#ifdef __linux__
++#ifndef NO_NATIVE_SUPPORT
  		if (ioctl(fd, FS_IOC_GETFLAGS, &flags) == -1)
 +#endif
  			flags = 0;
