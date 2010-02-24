@@ -1,0 +1,33 @@
+--- a/modutils/insmod.c
++++ b/modutils/insmod.c
+@@ -107,7 +107,7 @@ int insmod_main(int argc, char **argv) M
+ int insmod_main(int argc UNUSED_PARAM, char **argv)
+ {
+ 	char *filename;
+-	int rc;
++	int rc, opt;
+ 
+ 	/* Compat note:
+ 	 * 2.6 style insmod has no options and required filename
+@@ -117,10 +117,8 @@ int insmod_main(int argc UNUSED_PARAM, c
+ 	 * or in $MODPATH.
+ 	 */
+ 
+-	IF_FEATURE_2_4_MODULES(
+-		getopt32(argv, INSMOD_OPTS INSMOD_ARGS);
+-		argv += optind - 1;
+-	);
++	opt = getopt32(argv, INSMOD_OPTS, NULL, NULL);
++	argv += optind - 1;
+ 
+ 	filename = *++argv;
+ 	if (!filename)
+@@ -131,7 +129,7 @@ int insmod_main(int argc UNUSED_PARAM, c
+ 			goto done;
+ 
+ 	rc = bb_init_module(g_filename, parse_cmdline_module_options(argv));
+-	if (rc)
++	if (rc && !(opt & INSMOD_OPT_SILENT))
+ 		bb_error_msg("can't insert '%s': %s", filename, moderror(rc));
+ 	free (g_filename);
+ 
