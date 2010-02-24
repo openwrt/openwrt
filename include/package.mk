@@ -26,7 +26,6 @@ include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-ipkg.mk
-include $(INCLUDE_DIR)/package-debug.mk
 include $(INCLUDE_DIR)/package-bin.mk
 include $(INCLUDE_DIR)/autotools.mk
 
@@ -179,7 +178,7 @@ endif
     $(Dumpinfo/Package), \
     $(foreach target, \
       $(if $(Package/$(1)/targets),$(Package/$(1)/targets), \
-        $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg $(if $(CONFIG_DEBUG_DIR),debug)) \
+        $(if $(PKG_TARGETS),$(PKG_TARGETS), ipkg) \
       ), $(BuildTarget/$(target)) \
     ) \
   )
