@@ -220,6 +220,10 @@ $(call shvar,$(1))=$$(call $(1))
 export $(call shvar,$(1))
 endef
 
+define include_mk
+$(eval -include $(if $(DUMP),,$(STAGING_DIR)/mk/$(strip $(1))))
+endef
+
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
