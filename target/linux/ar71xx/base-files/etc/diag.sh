@@ -91,7 +91,7 @@ get_status_led() {
 		status_led="wp543:green:diag"
 		;;
 	wrt400n)
-		status_led="wrt400n:blue:status"
+		status_led="wrt400n:green:status"
 		;;
 	wrt160nl)
 		status_led="wrt160nl:blue:wps"
