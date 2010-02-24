@@ -206,13 +206,6 @@ config DEBUG
 	help
 		Adds -g3 to the CFLAGS
 
-config DEBUG_DIR
-	bool "Install debugging binaries into a staging directory"
-	default n
-	help
-		This will install all compiled package binaries into build_dir/target-*/debug-*/,
-		useful for cross-debugging via gdb/gdbserver
-
 config IPV6
         bool
         prompt "Enable IPv6 support in packages"
