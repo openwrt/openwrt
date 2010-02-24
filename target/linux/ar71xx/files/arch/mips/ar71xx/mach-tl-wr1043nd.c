@@ -10,7 +10,8 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-
+#include <linux/platform_device.h>
+#include <linux/rtl8366rb.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "machtype.h"
@@ -28,6 +29,9 @@
 
 #define TL_WR1043ND_GPIO_BTN_RESET      3
 #define TL_WR1043ND_GPIO_BTN_QSS        7
+
+#define TL_WR1043ND_GPIO_RTL8366_SDA	18
+#define TL_WR1043ND_GPIO_RTL8366_SCK	19
 
 #define TL_WR1043ND_BUTTONS_POLL_INTERVAL     20
 
@@ -104,6 +108,19 @@ static struct gpio_button tl_wr1043nd_gpio_buttons[] __initdata = {
 	}
 };
 
+static struct rtl8366rb_platform_data tl_wr1043nd_rtl8366rb_data = {
+	.gpio_sda        = TL_WR1043ND_GPIO_RTL8366_SDA,
+	.gpio_sck        = TL_WR1043ND_GPIO_RTL8366_SCK,
+};
+
+static struct platform_device tl_wr1043nd_rtl8366rb_device = {
+	.name		= RTL8366RB_DRIVER_NAME,
+	.id		= -1,
+	.dev = {
+		.platform_data	= &tl_wr1043nd_rtl8366rb_data,
+	}
+};
+
 static void __init tl_wr1043nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
@@ -111,8 +128,7 @@ static void __init tl_wr1043nd_setup(void)
 
 	ar71xx_set_mac_base(mac);
 
-	ar71xx_add_device_mdio(0x0);
-
+	ar71xx_eth0_data.mii_bus_dev = &tl_wr1043nd_rtl8366rb_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = 0x0;
 	ar71xx_eth0_data.speed = SPEED_1000;
@@ -128,9 +144,12 @@ static void __init tl_wr1043nd_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_wr1043nd_leds_gpio),
 					tl_wr1043nd_leds_gpio);
 
+	platform_device_register(&tl_wr1043nd_rtl8366rb_device);
+
 	ar71xx_add_device_gpio_buttons(-1, TL_WR1043ND_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(tl_wr1043nd_gpio_buttons),
 					tl_wr1043nd_gpio_buttons);
+
 	ar913x_add_device_wmac(eeprom, mac);
 }
 
