@@ -97,6 +97,10 @@ UCLIBC_MAKE = PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 	LIBGCC="$(subst libgcc.a,libgcc_initial.a,$(shell $(TARGET_CC) -print-libgcc-file-name))" \
 	DOSTRIP=""
 
+ifeq ($(CONFIG_UCLIBC_ENABLE_DEBUG),y)
+	UCLIBC_MAKE += DODEBUG=y
+endif
+
 define Host/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(HOST_BUILD_DIR)/Rules.mak
 	$(UCLIBC_MAKE) PREFIX= all

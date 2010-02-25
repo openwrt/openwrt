@@ -18,3 +18,11 @@ choice
 		depends BROKEN
 
 endchoice
+
+
+# Debug version.
+
+config UCLIBC_ENABLE_DEBUG
+	bool "Build with debug information"
+	depends on TOOLCHAINOPTS && USE_UCLIBC
+	default n
