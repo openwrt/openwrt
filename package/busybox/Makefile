@@ -70,7 +70,7 @@ define Build/Compile
 		KBUILD_HAVE_NLS=no \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
-		SKIP_STIP=y \
+		SKIP_STRIP=y \
 		all
 	rm -rf $(PKG_INSTALL_DIR)
 	$(FIND) $(PKG_BUILD_DIR) -lname "*busybox" -exec rm \{\} \;
