@@ -70,6 +70,7 @@ define Build/Compile
 		KBUILD_HAVE_NLS=no \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
+		SKIP_STIP=y \
 		all
 	rm -rf $(PKG_INSTALL_DIR)
 	$(FIND) $(PKG_BUILD_DIR) -lname "*busybox" -exec rm \{\} \;
@@ -78,7 +79,6 @@ define Build/Compile
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
-		IPKG_ARCH="$(ARCH)" \
 		CONFIG_PREFIX="$(PKG_INSTALL_DIR)" \
 		install
 endef
