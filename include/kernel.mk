@@ -70,6 +70,9 @@ define ModuleAutoLoad
 	add_module() { \
 		mkdir -p $(2)/etc/modules.d; \
 		( \
+			[ "$$$$$$$$3" = "1" ] && { \
+				echo '# May be required for rootfs' ; \
+			} ; \
 			for mod in $$$$$$$$2; do \
 				getvar mod; \
 			done \
@@ -154,7 +157,7 @@ $(call KernelPackage/$(1)/config)
 endef
 
 define AutoLoad
-  add_module $(1) "$(2)";
+  add_module $(1) "$(2)" $(3);
 endef
 
 ifdef DUMP
