@@ -13,6 +13,7 @@ BEGIN {
 	pktsize[n] = $4
 	delay[n] = $5
 	maxrate[n] = ($6 * linespeed / 100)
+	qdisc_esfq[n] = $7
 }
 
 END {
@@ -67,7 +68,11 @@ END {
 	# main qdisc
 	for (i = 1; i <= n; i++) {
 		printf "tc class add dev "device" parent 1:1 classid 1:"class[i]"0 hfsc"
-		if (rtm1[i] > 0) {
+		if (qdisc_esfq[i] != "") {
+			# user requested esfq
+			print "esfq " qdisc_esfq[i] " limit " ql
+		} else if (rtm1[i] > 0) {
+			# rt class - use sfq
 			printf " rt m1 " int(rtm1[i]) "kbit d " int(d[i] * 1000) "us m2 " int(rtm2[i])"kbit"
 		}
 		printf " ls m1 " int(lsm1[i]) "kbit d " int(d[i] * 1000) "us m2 " int(lsm2[i]) "kbit"

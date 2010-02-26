@@ -315,8 +315,10 @@ start_interface() {
 			cls_var maxrate "$class" limitrate $dir 100
 			cls_var prio "$class" priority $dir 1
 			cls_var avgrate "$class" avgrate $dir 0
+			cls_var qdisc_esfq "$class" qdisc_esfq $dir ""
+			[ "$qdisc_esfq" != "" ] && add_insmod sch_esfq
 			config_get classnr "$class" classnr
-			append cstr "$classnr:$prio:$avgrate:$pktsize:$pktdelay:$maxrate" "$N"
+			append cstr "$classnr:$prio:$avgrate:$pktsize:$pktdelay:$maxrate:$qdisc_esfq" "$N"
 		done
 		append ${prefix}q "$(tcrules)" "$N"
 		export dev_${dir}="ifconfig $dev up txqueuelen 5 >&- 2>&-
