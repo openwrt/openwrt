@@ -1,0 +1,83 @@
+#!/bin/sh
+# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+. /lib/functions/block.sh
+. /lib/functions/fsck.sh
+
+blkdev=`dirname $DEVPATH`
+
+if [ `basename $blkdev` != "block" ]; then
+
+    device=`basename $DEVPATH`
+
+    case "$ACTION" in
+	add)
+		local from_fstab
+		local anon_mount
+		local anon_swap
+		local anon_fsck		
+		local mds_mount_target
+		local mds_mount_device
+		local mds_mount_fstype
+		local mds_mount_enabled_fsck
+		local sds_swap_device
+		local use_device
+		local do_fsck=0
+		local fsck_type
+		
+		local autoswap_from_fstab
+		local automount_from_fstab
+		local hotplug_blkid_fstype_match
+
+	    mount_dev_section_cb() {
+			mds_mount_device="$3"
+			mds_mount_fstype="$4"
+			mds_mount_enabled_fsck="$7"
+	    }
+
+	    swap_dev_section_cb() { 
+			sds_swap_device="$2"
+			return 0
+	    }
+
+		config_get_automount
+		automount_from_fstab="$from_fstab"
+		
+		[ "$automount_from_fstab" -eq 1 ] && {
+			config_get_mount_section_by_device "/dev/$device"
+			use_device="$mds_mount_device"
+			[ "$mds_mount_enabled_fsck" -eq 1 ] && { 
+				do_fsck=1
+				fsck_type="$mds_mount_fstype"
+			}
+		}
+		
+		[ -z "$use_device" ] && {
+			config_get_autoswap
+			autoswap_from_fstab="$from_fstab"
+		
+			[ "$autoswap_from_fstab" -eq 1 ] && {
+				config_get_swap_section_by_device "/dev/$device"
+				use_device="$sds_swap_device" && do_fsck=0
+			}
+		}
+		
+		grep -q "/dev/$device" /proc/swaps || grep -q "/dev/$device" /proc/mounts || {
+			[ "$anon_fsck" -eq 1 ] && [ -z "$use_device" ] && {
+				use_device="/dev/$device" && do_fsck=1 && mds_mount_fstype="" && hotplug_blkid_fstype_match=0
+			}
+		}
+		
+		[ "$do_fsck" -eq 1 ] && {		
+			libmount_fsck "$use_device" "$fsck_type" "$do_fsck"
+		}
+		
+		reset_dev_section_cb
+		;;
+    esac	
+fi
+

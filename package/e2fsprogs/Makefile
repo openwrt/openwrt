@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2006-2008 OpenWrt.org
-#
+# Copyright 2010 Vertical Communications
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
@@ -156,8 +156,8 @@ define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(foreach lib,com_err e2p,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/e2fsck.init $(1)/etc/init.d/e2fsck
-
+	$(INSTALL_DIR) $(1)/lib/functions/fsck
+	$(INSTALL_DATA) ./files/e2fsck.sh $(1)/lib/functions/fsck/
 endef
 
 define Package/libuuid/install
