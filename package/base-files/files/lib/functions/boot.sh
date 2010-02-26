@@ -66,6 +66,7 @@ pivot() { # <new_root> <old_root>
 		mount -o move $2/tmp /tmp
 		mount -o move $2/sys /sys 2>&-
 		mount -o move $2/jffs /jffs 2>&-
+		mount -o move $2/overlay /overlay 2>&-
 		return 0
 	}
 }
