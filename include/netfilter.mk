@@ -73,6 +73,8 @@ $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_MATCH_MAC, $(P_V4)ipt_mac))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_MAC, $(P_XT)xt_mac))
 $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_MATCH_MULTIPORT, $(P_V4)ipt_multiport))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_MULTIPORT, $(P_XT)xt_multiport))
+$(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_MATCH_COMMENT, $(P_V4)ipt_comment))
+$(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_COMMENT, $(P_XT)xt_comment))
 
 $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_LOG, $(P_V4)ipt_LOG))
 $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_TCPMSS, $(P_V4)ipt_TCPMSS))
