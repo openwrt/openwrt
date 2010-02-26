@@ -12,10 +12,10 @@ PKG_VERSION:=$(call qstrip,$(CONFIG_UCLIBC_VERSION))
 ifeq ($(CONFIG_UCLIBC_VERSION_NPTL),y)
   PKG_SOURCE_URL:=git://git.busybox.net/uClibc
   PKG_SOURCE_PROTO:=git
-  PKG_SOURCE_VERSION:=0949826e9501e9f08767aeb476ea1464bf95f218
+  PKG_SOURCE_VERSION:=ef18cfe8ebab25f5ef92e81956f50e2dc57df602
   PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
-  LIBC_SO_VERSION:=0.9.30-svn
+  LIBC_SO_VERSION:=0.9.30-git
 else
   PKG_SOURCE_URL:=http://www.uclibc.org/downloads
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -73,6 +73,7 @@ define Host/Prepare
 		-e 's,^.*CONFIG_ARM_OABI.*,CONFIG_ARM_OABI=$(if $(CONFIG_EABI_SUPPORT),n,y),g' \
 		-e 's,^.*UCLIBC_HAS_SHADOW.*,UCLIBC_HAS_SHADOW=$(if $(CONFIG_SHADOW_PASSWORDS),y,n),g' \
 		$(HOST_BUILD_DIR)/.config
+	$(MAKE) -C $(HOST_BUILD_DIR) oldconfig KBUILD_HAVE_NLS= HOSTCFLAGS="-DKBUILD_NO_NLS"
 	$(MAKE) -C $(HOST_BUILD_DIR)/extra/config conf KBUILD_HAVE_NLS= HOSTCFLAGS="-DKBUILD_NO_NLS"
 	PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 		PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
@@ -81,6 +82,7 @@ define Host/Prepare
 		HOSTCC="$(HOSTCC)" \
 		CC="$(TARGET_CC)" \
 		CPU_CFLAGS="$(TARGET_CFLAGS)" \
+		ARCH="$(CONFIG_ARCH)" \
 		pregen \
 		install_headers
 endef
@@ -94,6 +96,7 @@ UCLIBC_MAKE = PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 	RUNTIME_PREFIX=/ \
 	HOSTCC="$(HOSTCC)" \
 	CPU_CFLAGS="$(TARGET_CFLAGS)" \
+	ARCH="$(CONFIG_ARCH)" \
 	LIBGCC="$(subst libgcc.a,libgcc_initial.a,$(shell $(TARGET_CC) -print-libgcc-file-name))" \
 	DOSTRIP=""
 
