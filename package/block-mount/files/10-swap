@@ -1,0 +1,78 @@
+#!/bin/sh
+# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+. /lib/functions/block.sh
+
+blkdev=`dirname $DEVPATH`
+
+if [ `basename $blkdev` != "block" ]; then
+
+    device=`basename $DEVPATH`
+
+
+    case "$ACTION" in
+	add)
+		local autoswap_from_fstab
+		local automount_from_fstab
+		local from_fstab
+		local anon_mount
+		local anon_swap
+		local anon_fsck
+		local mds_mount_device
+		local sds_swap_device
+		local sds_swap_enabled
+		local use_device
+		local do_swap=0
+
+	    mount_dev_section_cb() {
+			mds_mount_device="$3"
+	    }
+
+	    swap_dev_section_cb() { 
+			sds_swap_device="$2"
+			sds_swap_enabled="$3"
+			return 0
+	    }
+
+		config_get_automount
+		automount_from_fstab="$from_fstab"
+		
+		[ "$automount_from_fstab" -eq 1 ] && {
+			config_get_mount_section_by_device "/dev/$device"
+		}
+		
+		# skip trying swap if this device is defined as a mount point
+		[ -z "$mds_mount_device" ] && {		
+			config_get_autoswap
+			autoswap_from_fstab="$from_fstab"
+		
+			[ "$autoswap_from_fstab" -eq 1 ] && {
+				config_get_swap_section_by_device "/dev/$device"
+				use_device="$sds_swap_device" 
+				do_swap="$sds_swap_enabled"
+			}
+
+			[ -z "$use_device" ] && [ "$anon_swap" -eq 1 ] && {
+				use_device="/dev/$device" && do_swap=1
+			}
+		}
+
+		[ -n "$use_device" ] && [ "$do_swap" -eq 1 ] && {
+			grep -q "$use_device" /proc/swaps || grep -q "$use_device" /proc/mounts || {
+				swapon "$use_device"
+			}
+		}
+		reset_dev_section_cb
+		;;
+	remove)
+		grep -q "/dev/$device" /proc/swaps && {
+			swapoff "/dev/$device"
+		}
+		;;
+    esac	
+fi
+
