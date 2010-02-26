@@ -107,7 +107,7 @@ start() {
 			c["vlan0ports"] = ""
 			c["vlan1ports"] = ""
 		}
-		if (model == "ASUS WL-500g") {
+		if ((model == "ASUS WL-500g") || (model == "Microsoft MN-700")) {
 			c["wan_ifname"] = "eth1"
 			c["lan_ifname"] = "eth0"
 		}
