@@ -345,7 +345,7 @@ define KernelPackage/mmc
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/core/mmc_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/mmc/card/mmc_block.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block)
+  AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block,1)
 endef
 
 define KernelPackage/mmc/description
@@ -361,7 +361,7 @@ define KernelPackage/mmc-at91
   DEPENDS:=@TARGET_at91 +kmod-mmc
   KCONFIG:=CONFIG_MMC_AT91
   FILES:=$(LINUX_DIR)/drivers/mmc/host/at91_mci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,at91_mci)
+  AUTOLOAD:=$(call AutoLoad,90,at91_mci,1)
 endef
 
 define KernelPackage/mmc-at91/description
@@ -774,7 +774,7 @@ define KernelPackage/mmc-atmelmci/description
  Kernel support for  Atmel Multimedia Card Interface.
 endef
 
-$(eval $(call KernelPackage,mmc-atmelmci))
+$(eval $(call KernelPackage,mmc-atmelmci,1))
 
 
 define KernelPackage/cs5535-gpio

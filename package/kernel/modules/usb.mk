@@ -20,7 +20,7 @@ define KernelPackage/usb-core
   TITLE:=Support for USB
   DEPENDS:=@USB_SUPPORT +LINUX_2_6_31||LINUX_2_6_32:kmod-nls-base
   KCONFIG:=CONFIG_USB
-  AUTOLOAD:=$(call AutoLoad,20,usbcore)
+  AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
 endef
 
 define KernelPackage/usb-core/2.4
@@ -55,20 +55,20 @@ endef
 define KernelPackage/usb-uhci/2.4
 #  KCONFIG:=CONFIG_USB_UHCI_ALT
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci.o
-  AUTOLOAD:=$(call AutoLoad,50,uhci)
+  AUTOLOAD:=$(call AutoLoad,50,uhci,1)
 endef
 
 define KernelPackage/usb-uhci/2.6
 #  KCONFIG:=CONFIG_USB_UHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci-hcd.ko
-  AUTOLOAD:=$(call AutoLoad,50,uhci-hcd)
+  AUTOLOAD:=$(call AutoLoad,50,uhci-hcd,1)
 endef
 
 define KernelPackage/usb-uhci/description
  Kernel support for USB UHCI controllers
 endef
 
-$(eval $(call KernelPackage,usb-uhci))
+$(eval $(call KernelPackage,usb-uhci,1))
 
 
 define KernelPackage/usb-uhci-iv
@@ -76,14 +76,14 @@ $(call KernelPackage/usb/Depends,@LINUX_2_4)
   TITLE:=Support for Intel/VIA UHCI controllers
   KCONFIG:=CONFIG_USB_UHCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/usb-uhci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,usb-uhci)
+  AUTOLOAD:=$(call AutoLoad,50,usb-uhci,1)
 endef
 
 define KernelPackage/usb-uhci-iv/description
  Kernel support for Intel/VIA USB UHCI controllers
 endef
 
-$(eval $(call KernelPackage,usb-uhci-iv))
+$(eval $(call KernelPackage,usb-uhci-iv,1))
 
 
 define KernelPackage/usb-ohci
@@ -98,20 +98,20 @@ endef
 define KernelPackage/usb-ohci/2.4
 #  KCONFIG:=CONFIG_USB_OHCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/usb-ohci.o
-  AUTOLOAD:=$(call AutoLoad,50,usb-ohci)
+  AUTOLOAD:=$(call AutoLoad,50,usb-ohci,1)
 endef
 
 define KernelPackage/usb-ohci/2.6
 #  KCONFIG:=CONFIG_USB_OHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
-  AUTOLOAD:=$(call AutoLoad,50,ohci-hcd)
+  AUTOLOAD:=$(call AutoLoad,50,ohci-hcd,1)
 endef
 
 define KernelPackage/usb-ohci/description
  Kernel support for USB OHCI controllers
 endef
 
-$(eval $(call KernelPackage,usb-ohci))
+$(eval $(call KernelPackage,usb-ohci,1))
 
 
 define KernelPackage/usb-adm5120
@@ -119,7 +119,7 @@ $(call KernelPackage/usb/Depends,@TARGET_adm5120_router_be||@TARGET_adm5120_rout
   TITLE:=Support for the ADM5120 HCD controller
   KCONFIG:=CONFIG_USB_ADM5120_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/adm5120-hcd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,adm5120-hcd)
+  AUTOLOAD:=$(call AutoLoad,50,adm5120-hcd,1)
 endef
 
 define KernelPackage/usb-adm5120/description
@@ -134,7 +134,7 @@ $(call KernelPackage/usb/Depends,@TARGET_etrax)
   KCONFIG:=CONFIG_ETRAX_USB_HOST \
 	CONFIG_ETRAX_USB_HOST_PORT1=y CONFIG_ETRAX_USB_HOST_PORT2=y
   FILES:=$(LINUX_DIR)/drivers/usb/host/hc-crisv10.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hc-crisv10)
+  AUTOLOAD:=$(call AutoLoad,50,hc-crisv10,1)
 endef
 
 define KernelPackage/usb-etrax/description
@@ -164,7 +164,7 @@ $(call KernelPackage/usb/Depends,)
   KCONFIG:=CONFIG_USB_EHCI_HCD \
     CONFIG_USB_EHCI_AR71XX=y
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd)
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd,1)
 endef
 
 define KernelPackage/usb2/description
@@ -499,7 +499,7 @@ $(call KernelPackage/usb/Depends,+kmod-scsi-core)
   TITLE:=USB Storage support
   KCONFIG:=CONFIG_USB_STORAGE
   FILES:=$(LINUX_DIR)/drivers/usb/storage/usb-storage.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,60,scsi_mod sd_mod usb-storage)
+  AUTOLOAD:=$(call AutoLoad,60,scsi_mod sd_mod usb-storage,1)
 endef
 
 define KernelPackage/usb-storage/description

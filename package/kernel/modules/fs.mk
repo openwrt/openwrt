@@ -65,7 +65,7 @@ define KernelPackage/fs-mbcache
   KCONFIG:=CONFIG_FS_MBCACHE
   ifneq ($(CONFIG_FS_MBCACHE),)
     FILES:=$(LINUX_DIR)/fs/mbcache.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD:=$(call AutoLoad,20,mbcache)
+    AUTOLOAD:=$(call AutoLoad,20,mbcache,1)
   endif
 endef
 
@@ -82,14 +82,14 @@ define KernelPackage/fs-ext2
   KCONFIG:=CONFIG_EXT2_FS
   DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:=$(LINUX_DIR)/fs/ext2/ext2.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,32,ext2)
+  AUTOLOAD:=$(call AutoLoad,32,ext2,1)
 endef
 
 define KernelPackage/fs-ext2/description
  Kernel module for EXT2 filesystem support
 endef
 
-$(eval $(call KernelPackage,fs-ext2))
+$(eval $(call KernelPackage,fs-ext2,1))
 
 
 define KernelPackage/fs-ext3
@@ -102,7 +102,7 @@ define KernelPackage/fs-ext3
   FILES:= \
 	$(LINUX_DIR)/fs/ext3/ext3.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd/jbd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,31,jbd ext3)
+  AUTOLOAD:=$(call AutoLoad,31,jbd ext3,1)
 endef
 
 define KernelPackage/fs-ext3/description
@@ -124,7 +124,7 @@ define KernelPackage/fs-ext4
   FILES:= \
 	$(LINUX_DIR)/fs/ext4/ext4.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd2/jbd2.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,jbd2 ext4)
+  AUTOLOAD:=$(call AutoLoad,30,jbd2 ext4,1)
 endef
 
 define KernelPackage/fs-ext4/description
@@ -308,7 +308,7 @@ define KernelPackage/fs-reiserfs
   TITLE:=ReiserFS filesystem support
   KCONFIG:=CONFIG_REISERFS_FS
   FILES:=$(LINUX_DIR)/fs/reiserfs/reiserfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,reiserfs)
+  AUTOLOAD:=$(call AutoLoad,30,reiserfs,1)
 endef
 
 define KernelPackage/fs-reiserfs/description
@@ -349,7 +349,7 @@ define KernelPackage/fs-xfs
   KCONFIG:=CONFIG_XFS_FS
   DEPENDS:= +kmod-fs-exportfs
   FILES:=$(LINUX_DIR)/fs/xfs/xfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,xfs)
+  AUTOLOAD:=$(call AutoLoad,30,xfs,1)
 endef
 
 define KernelPackage/fs-xfs/description
@@ -372,7 +372,7 @@ define KernelPackage/fs-btrfs
 	$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/lib/libcrc32c.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/btrfs/btrfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,crc32c libcrc32c btrfs)
+  AUTOLOAD:=$(call AutoLoad,30,crc32c libcrc32c btrfs,1)
 endef
 
 define KernelPackage/fs-btrfs/description
@@ -401,7 +401,7 @@ define KernelPackage/nls-base
   TITLE:=Native Language Support
   KCONFIG:=CONFIG_NLS
   FILES:=$(LINUX_DIR)/fs/nls/nls_base.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,nls_base)
+  AUTOLOAD:=$(call AutoLoad,20,nls_base,1)
 endef
 
 define KernelPackage/nls-base/description
