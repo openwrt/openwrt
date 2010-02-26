@@ -60,6 +60,7 @@ struct jz_nand {
 	struct resource *mem;
 
 	struct jz_nand_platform_data *pdata;
+	bool is_reading;
 };
 
 static inline struct jz_nand *mtd_to_jz_nand(struct mtd_info *mtd)
@@ -115,9 +116,11 @@ static void jz_nand_hwctl(struct mtd_info *mtd, int mode)
 	switch(mode) {
 	case NAND_ECC_READ:
 		reg &= ~JZ_NAND_ECC_CTRL_ENCODING;
+		nand->is_reading = true;
 		break;
 	case NAND_ECC_WRITE:
 		reg |= JZ_NAND_ECC_CTRL_ENCODING;
+		nand->is_reading = false;
 		break;
 	default:
 		break;
@@ -126,12 +129,17 @@ static void jz_nand_hwctl(struct mtd_info *mtd, int mode)
 	writel(reg, nand->base + JZ_REG_NAND_ECC_CTRL);
 }
 
+
 static int jz_nand_calculate_ecc_rs(struct mtd_info* mtd, const uint8_t* dat,
 					uint8_t *ecc_code)
 {
 	struct jz_nand *nand = mtd_to_jz_nand(mtd);
 	uint32_t reg, status;
 	int i;
+	static uint8_t all_ff_ecc[] = {0xcd, 0x9d, 0x90, 0x58, 0xf4, 0x8b, 0xff, 0xb7, 0x6f};
+
+	if (nand->is_reading)
+		return 0;
 
 	do {
 		status = readl(nand->base + JZ_REG_NAND_IRQ_STAT);
@@ -145,27 +153,36 @@ static int jz_nand_calculate_ecc_rs(struct mtd_info* mtd, const uint8_t* dat,
 		ecc_code[i] = readb(nand->base + JZ_REG_NAND_PAR0 + i);
 	}
 
+	/* If the written data is completly 0xff, we also want to write 0xff as
+	 * ecc, otherwise we will get in trouble when doing subpage writes. */
+	if (memcmp(ecc_code, all_ff_ecc, 9) == 0) {
+		memset(ecc_code, 0xff, 9);
+	}
+
 	return 0;
 }
+
+/*#define printkd printk*/
+#define printkd(...)
 
 static void correct_data(uint8_t *dat, int index, int mask)
 {
 	int offset = index & 0x7;
 	uint16_t data;
-	printk("correct: ");
+	printkd("correct: ");
 
 	index += (index >> 3);
 
 	data = dat[index];
 	data |= dat[index+1] << 8;
 
-	printk("0x%x -> ", data);
+	printkd("0x%x -> ", data);
 
 	mask ^= (data >> offset) & 0x1ff;
 	data &= ~(0x1ff << offset);
 	data |= (mask << offset);
 
-	printk("0x%x\n", data);
+	printkd("0x%x\n", data);
 
 	dat[index] = data & 0xff;
 	dat[index+1] = (data >> 8) & 0xff;
@@ -177,18 +194,24 @@ static int jz_nand_correct_ecc_rs(struct mtd_info* mtd, uint8_t *dat,
 	struct jz_nand *nand = mtd_to_jz_nand(mtd);
 	int i, error_count, index;
 	uint32_t reg, status, error;
+	uint32_t t;
 
-	for(i = 0; i < 9; ++i) {
-		if (read_ecc[i] != 0xff)
-			break;
-	}
-	if (i == 9) {
-		for (i = 0; i < nand->chip.ecc.size; ++i) {
-			if (dat[i] != 0xff)
-				break;
+	t = read_ecc[0];
+
+	if (t == 0xff) {
+		for (i = 1; i < 9; ++i)
+			t &= read_ecc[i];
+
+		t &= dat[0];
+		t &= dat[nand->chip.ecc.size / 2];
+		t &= dat[nand->chip.ecc.size - 1];
+
+		if (t == 0xff) {
+			for (i = 1; i < nand->chip.ecc.size - 1; ++i)
+				t &= dat[i];
+			if (t == 0xff)
+				return 0;
 		}
-		if (i == nand->chip.ecc.size)
-			return 0;
 	}
 
 	for(i = 0; i < 9; ++i)
@@ -208,20 +231,20 @@ static int jz_nand_correct_ecc_rs(struct mtd_info* mtd, uint8_t *dat,
 
 	if (status & JZ_NAND_STATUS_ERROR) {
 		if (status & JZ_NAND_STATUS_UNCOR_ERROR) {
-			printk("uncorrectable ecc:");
+			printkd("uncorrectable ecc:");
 			for(i = 0; i < 9; ++i)
-				printk(" 0x%x", read_ecc[i]);
-			printk("\n");
-			printk("uncorrectable data:");
+				printkd(" 0x%x", read_ecc[i]);
+			printkd("\n");
+			printkd("uncorrectable data:");
 			for(i = 0; i < 32; ++i)
-				printk(" 0x%x", dat[i]);
-			printk("\n");
+				printkd(" 0x%x", dat[i]);
+			printkd("\n");
 			return -1;
 		}
 
 		error_count = (status & JZ_NAND_STATUS_ERR_COUNT) >> 29;
 
-		printk("error_count: %d %x\n", error_count, status);
+		printkd("error_count: %d %x\n", error_count, status);
 
 		for(i = 0; i < error_count; ++i) {
 			error = readl(nand->base + JZ_REG_NAND_ERR(i));
@@ -304,7 +327,7 @@ static int __devinit jz_nand_probe(struct platform_device *pdev)
 
 	chip->ecc.calculate	= jz_nand_calculate_ecc_rs;
 	chip->ecc.correct	= jz_nand_correct_ecc_rs;
-	chip->ecc.mode		= NAND_ECC_HW;
+	chip->ecc.mode		= NAND_ECC_HW_OOB_FIRST;
 	chip->ecc.size		= 512;
 	chip->ecc.bytes		= 9;
 	if (pdata)
