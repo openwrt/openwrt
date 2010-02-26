@@ -5,7 +5,7 @@ PPP_TTY="$2"
 PPP_SPEED="$3"
 PPP_LOCAL="$4"
 PPP_REMOTE="$5"
-PPP_IPPARAM="$6"
+PPP_IPPARAM="$(echo $6 | sed 's/\./_/g')"
 export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 [ -z "$PPP_IPPARAM" ] || {
 	env -i ACTION="ifdown" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
