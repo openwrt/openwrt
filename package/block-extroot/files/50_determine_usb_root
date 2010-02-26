@@ -1,0 +1,50 @@
+#!/bin/sh
+# Copyright (C) 2010 Vertical Communications
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+
+
+. /etc/functions.sh
+. /lib/functions/extmount.sh
+. /lib/functions/mount.sh
+
+determine_external_root() {
+	local OLD_UCI_CONFIG_DIR="$UCI_CONFIG_DIR"
+	set_jffs_mp
+	determine_root_device
+
+	# extroot requires extroot and fstab config files, therefore 
+	# we assume configuration is incomplete and not to be used if either of them
+	# is missing (for jffs versions of these files on squashfs image)
+	if [ "$jffs" = "/jffs" ] && [ -r "/jffs/etc/config/fstab" ]; then
+		UCI_CONFIG_DIR="/jffs/etc/config"
+		ER_IS_SQUASHFS=true
+	fi
+
+	# For squashfs on firstboot root_device will be tmpfs for the ramoverlay,
+	# unless there is a saved config, in which case it will be /dev/root,
+	# however in the case of a saved config, it won't be restored until after
+	# this script, so there won't be a config on the first boot after
+	# flashing a squashfs-based filesystem
+	# For ext2, ramdisk, or jffs2 root filesystems root_device is /dev/root
+	# For squashfs after firstboot, root filesystem is /dev/root	
+	# We only use the config from the root or jffs if the root_device is 
+	# /dev/root
+	[ "$root_device" = "/dev/root" ] && {
+		er_load_modules
+		[ -n "$extroot_settle_time" ] && [ "$extroot_settle_time" -gt 0 ] && {
+			sleep $extroot_settle_time
+		} 
+		config_load fstab
+		config_foreach config_mount_by_section mount 1
+		
+		[ "$rootfs_found" = "1" ] && grep -q /overlay /proc/mounts && { 
+			pi_extroot_mount_success=true
+			pi_mount_skip_next=false
+		}
+	}
+	UCI_CONFIG_DIR="$OLD_UCI_CONFIG_DIR"
+}
+
+boot_hook_add preinit_mount_root determine_external_root
+
