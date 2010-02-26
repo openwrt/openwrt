@@ -81,6 +81,14 @@ config SSP_SUPPORT
 	help
 	    Enable Stack-Smashing Protection support
 
+config TLS_SUPPORT
+	bool
+	depends !GCC_VERSION_3_4_6 && UCLIBC_VERSION_NPTL
+	prompt "Enable Thread-local storage (TLS) support" if TOOLCHAINOPTS
+	default n
+	help
+	    Enable Thread-local storage support
+
 config INSTALL_LIBSTDCPP
 	bool
 	prompt "Build/install c++ compiler and libstdc++?" if TOOLCHAINOPTS
