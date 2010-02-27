@@ -57,10 +57,11 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   LIBCV:=$(call qstrip,$(CONFIG_LIBC_VERSION))
   REAL_GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))
   GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-openwrt-linux
-  BUILD_DIR:=$(BUILD_DIR_BASE)/target-$(ARCH)_$(LIBC)-$(LIBCV)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
-  STAGING_DIR:=$(TOPDIR)/staging_dir/target-$(ARCH)_$(LIBC)-$(LIBCV)
-  BUILD_DIR_TOOLCHAIN:=$(BUILD_DIR_BASE)/toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)
-  TOOLCHAIN_DIR:=$(TOPDIR)/staging_dir/toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)
+  DIR_SUFFIX:=_$(LIBC)-$(LIBCV)
+  BUILD_DIR:=$(BUILD_DIR_BASE)/target-$(ARCH)$(DIR_SUFFIX)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
+  STAGING_DIR:=$(TOPDIR)/staging_dir/target-$(ARCH)$(DIR_SUFFIX)
+  BUILD_DIR_TOOLCHAIN:=$(BUILD_DIR_BASE)/toolchain-$(ARCH)_gcc-$(GCCV)$(DIR_SUFFIX)
+  TOOLCHAIN_DIR:=$(TOPDIR)/staging_dir/toolchain-$(ARCH)_gcc-$(GCCV)$(DIR_SUFFIX)
   PACKAGE_DIR:=$(BIN_DIR)/packages
 else
   ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
