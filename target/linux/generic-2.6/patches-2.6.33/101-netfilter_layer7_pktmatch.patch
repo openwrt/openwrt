@@ -1,0 +1,108 @@
+--- a/include/linux/netfilter/xt_layer7.h
++++ b/include/linux/netfilter/xt_layer7.h
+@@ -8,6 +8,7 @@ struct xt_layer7_info {
+     char protocol[MAX_PROTOCOL_LEN];
+     char pattern[MAX_PATTERN_LEN];
+     u_int8_t invert;
++    u_int8_t pkt;
+ };
+ 
+ #endif /* _XT_LAYER7_H */
+--- a/net/netfilter/xt_layer7.c
++++ b/net/netfilter/xt_layer7.c
+@@ -314,33 +314,35 @@ static int match_no_append(struct nf_con
+ }
+ 
+ /* add the new app data to the conntrack.  Return number of bytes added. */
+-static int add_data(struct nf_conn * master_conntrack,
+-                    char * app_data, int appdatalen)
++static int add_datastr(char *target, int offset, char *app_data, int len)
+ {
+ 	int length = 0, i;
+-	int oldlength = master_conntrack->layer7.app_data_len;
+-
+-	/* This is a fix for a race condition by Deti Fliegl. However, I'm not 
+-	   clear on whether the race condition exists or whether this really 
+-	   fixes it.  I might just be being dense... Anyway, if it's not really 
+-	   a fix, all it does is waste a very small amount of time. */
+-	if(!master_conntrack->layer7.app_data) return 0;
++	if (!target) return 0;
+ 
+ 	/* Strip nulls. Make everything lower case (our regex lib doesn't
+ 	do case insensitivity).  Add it to the end of the current data. */
+-	for(i = 0; i < maxdatalen-oldlength-1 &&
+-		   i < appdatalen; i++) {
++ 	for(i = 0; i < maxdatalen-offset-1 && i < len; i++) {
+ 		if(app_data[i] != '\0') {
+ 			/* the kernel version of tolower mungs 'upper ascii' */
+-			master_conntrack->layer7.app_data[length+oldlength] =
++			target[length+offset] =
+ 				isascii(app_data[i])? 
+ 					tolower(app_data[i]) : app_data[i];
+ 			length++;
+ 		}
+ 	}
++	target[length+offset] = '\0';
++
++	return length;
++}
++
++/* add the new app data to the conntrack.  Return number of bytes added. */
++static int add_data(struct nf_conn * master_conntrack,
++                    char * app_data, int appdatalen)
++{
++	int length;
+ 
+-	master_conntrack->layer7.app_data[length+oldlength] = '\0';
+-	master_conntrack->layer7.app_data_len = length + oldlength;
++	length = add_datastr(master_conntrack->layer7.app_data, master_conntrack->layer7.app_data_len, app_data, appdatalen);
++	master_conntrack->layer7.app_data_len += length;
+ 
+ 	return length;
+ }
+@@ -438,7 +440,7 @@ match(const struct sk_buff *skbin,
+ 
+ 	enum ip_conntrack_info master_ctinfo, ctinfo;
+ 	struct nf_conn *master_conntrack, *conntrack;
+-	unsigned char * app_data;
++	unsigned char *app_data, *tmp_data;
+ 	unsigned int pattern_result, appdatalen;
+ 	regexp * comppattern;
+ 
+@@ -466,8 +468,8 @@ match(const struct sk_buff *skbin,
+ 		master_conntrack = master_ct(master_conntrack);
+ 
+ 	/* if we've classified it or seen too many packets */
+-	if(total_acct_packets(master_conntrack) > num_packets ||
+-	   master_conntrack->layer7.app_proto) {
++	if(!info->pkt && (total_acct_packets(master_conntrack) > num_packets ||
++	   master_conntrack->layer7.app_proto)) {
+ 
+ 		pattern_result = match_no_append(conntrack, master_conntrack, 
+ 						 ctinfo, master_ctinfo, info);
+@@ -500,6 +502,25 @@ match(const struct sk_buff *skbin,
+ 	/* the return value gets checked later, when we're ready to use it */
+ 	comppattern = compile_and_cache(info->pattern, info->protocol);
+ 
++	if (info->pkt) {
++		tmp_data = kmalloc(maxdatalen, GFP_ATOMIC);
++		if(!tmp_data){
++			if (net_ratelimit())
++				printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
++			return info->invert;
++		}
++
++		tmp_data[0] = '\0';
++		add_datastr(tmp_data, 0, app_data, appdatalen);
++		pattern_result = ((comppattern && regexec(comppattern, tmp_data)) ? 1 : 0);
++
++		kfree(tmp_data);
++		tmp_data = NULL;
++		spin_unlock_bh(&l7_lock);
++
++		return (pattern_result ^ info->invert);
++	}
++
+ 	/* On the first packet of a connection, allocate space for app data */
+ 	if(total_acct_packets(master_conntrack) == 1 && !skb->cb[0] && 
+ 	   !master_conntrack->layer7.app_data){

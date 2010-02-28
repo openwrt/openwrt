@@ -1,0 +1,152 @@
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -129,6 +129,9 @@
+  *                                unsigned int value);
+  * 	void add_interrupt_randomness(int irq);
+  *
++ *      void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
++ *      int random_input_wait(void);
++ *
+  * add_input_randomness() uses the input layer interrupt timing, as well as
+  * the event type information from the hardware.
+  *
+@@ -140,6 +143,13 @@
+  * a better measure, since the timing of the disk interrupts are more
+  * unpredictable.
+  *
++ * random_input_words() just provides a raw block of entropy to the input
++ * pool, such as from a hardware entropy generator.
++ *
++ * random_input_wait() suspends the caller until such time as the
++ * entropy pool falls below the write threshold, and returns a count of how
++ * much entropy (in bits) is needed to sustain the pool.
++ *
+  * All of these routines try to estimate how many bits of randomness a
+  * particular randomness source.  They do this by keeping track of the
+  * first and second order deltas of the event timings.
+@@ -714,6 +724,61 @@ void add_disk_randomness(struct gendisk 
+ }
+ #endif
+ 
++/*
++ * random_input_words - add bulk entropy to pool
++ *
++ * @buf: buffer to add
++ * @wordcount: number of __u32 words to add
++ * @ent_count: total amount of entropy (in bits) to credit
++ *
++ * this provides bulk input of entropy to the input pool
++ *
++ */
++void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
++{
++	mix_pool_bytes(&input_pool, buf, wordcount*4);
++
++	credit_entropy_bits(&input_pool, ent_count);
++
++	DEBUG_ENT("crediting %d bits => %d\n",
++		  ent_count, input_pool.entropy_count);
++	/*
++	 * Wake up waiting processes if we have enough
++	 * entropy.
++	 */
++	if (input_pool.entropy_count >= random_read_wakeup_thresh)
++		wake_up_interruptible(&random_read_wait);
++}
++EXPORT_SYMBOL(random_input_words);
++
++/*
++ * random_input_wait - wait until random needs entropy
++ *
++ * this function sleeps until the /dev/random subsystem actually
++ * needs more entropy, and then return the amount of entropy
++ * that it would be nice to have added to the system.
++ */
++int random_input_wait(void)
++{
++	int count;
++
++	wait_event_interruptible(random_write_wait, 
++			 input_pool.entropy_count < random_write_wakeup_thresh);
++
++	count = random_write_wakeup_thresh - input_pool.entropy_count;
++
++        /* likely we got woken up due to a signal */
++	if (count <= 0) count = random_read_wakeup_thresh; 
++
++	DEBUG_ENT("requesting %d bits from input_wait()er %d<%d\n",
++		  count,
++		  input_pool.entropy_count, random_write_wakeup_thresh);
++
++	return count;
++}
++EXPORT_SYMBOL(random_input_wait);
++
++
+ #define EXTRACT_SIZE 10
+ 
+ /*********************************************************************
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -141,6 +141,7 @@ SYSCALL_DEFINE1(dup, unsigned int, filde
+ 	}
+ 	return ret;
+ }
++EXPORT_SYMBOL(sys_dup);
+ 
+ #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME)
+ 
+--- a/include/linux/miscdevice.h
++++ b/include/linux/miscdevice.h
+@@ -12,6 +12,7 @@
+ #define APOLLO_MOUSE_MINOR	7
+ #define PC110PAD_MINOR		9
+ /*#define ADB_MOUSE_MINOR	10	FIXME OBSOLETE */
++#define CRYPTODEV_MINOR		70	/* /dev/crypto */
+ #define WATCHDOG_MINOR		130	/* Watchdog timer     */
+ #define TEMP_MINOR		131	/* Temperature Sensor */
+ #define RTC_MINOR		135
+--- a/include/linux/random.h
++++ b/include/linux/random.h
+@@ -34,6 +34,30 @@
+ /* Clear the entropy pool and associated counters.  (Superuser only.) */
+ #define RNDCLEARPOOL	_IO( 'R', 0x06 )
+ 
++#ifdef CONFIG_FIPS_RNG
++
++/* Size of seed value - equal to AES blocksize */
++#define AES_BLOCK_SIZE_BYTES	16
++#define SEED_SIZE_BYTES			AES_BLOCK_SIZE_BYTES
++/* Size of AES key */
++#define KEY_SIZE_BYTES		16
++
++/* ioctl() structure used by FIPS 140-2 Tests */
++struct rand_fips_test {
++	unsigned char key[KEY_SIZE_BYTES];			/* Input */
++	unsigned char datetime[SEED_SIZE_BYTES];	/* Input */
++	unsigned char seed[SEED_SIZE_BYTES];		/* Input */
++	unsigned char result[SEED_SIZE_BYTES];		/* Output */
++};
++
++/* FIPS 140-2 RNG Variable Seed Test. (Superuser only.) */
++#define RNDFIPSVST	_IOWR('R', 0x10, struct rand_fips_test)
++
++/* FIPS 140-2 RNG Monte Carlo Test. (Superuser only.) */
++#define RNDFIPSMCT	_IOWR('R', 0x11, struct rand_fips_test)
++
++#endif /* #ifdef CONFIG_FIPS_RNG */
++
+ struct rand_pool_info {
+ 	int	entropy_count;
+ 	int	buf_size;
+@@ -50,6 +74,10 @@ extern void add_input_randomness(unsigne
+ 				 unsigned int value);
+ extern void add_interrupt_randomness(int irq);
+ 
++extern void random_input_words(__u32 *buf, size_t wordcount, int ent_count);
++extern int random_input_wait(void);
++#define HAS_RANDOM_INPUT_WAIT 1
++
+ extern void get_random_bytes(void *buf, int nbytes);
+ void generate_random_uuid(unsigned char uuid_out[16]);
+ 
