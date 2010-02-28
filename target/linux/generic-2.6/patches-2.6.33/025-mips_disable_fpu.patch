@@ -47,19 +47,43 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  EXTRA_CFLAGS += -Werror
 --- a/arch/mips/math-emu/cp1emu.c
 +++ b/arch/mips/math-emu/cp1emu.c
-@@ -57,6 +57,8 @@
- #endif
+@@ -58,7 +58,11 @@
  #define __mips 4
  
-+#ifdef CONFIG_MIPS_FPU_EMU
-+
  /* Function which emulates a floating point instruction. */
++#ifdef CONFIG_DEBUG_FS
++DEFINE_PER_CPU(struct mips_fpu_emulator_stats, fpuemustats);
++#endif
  
++#ifdef CONFIG_MIPS_FPU_EMU
  static int fpu_emu(struct pt_regs *, struct mips_fpu_struct *,
-@@ -1277,6 +1279,13 @@ int fpu_emulator_cop1Handler(struct pt_r
+ 	mips_instruction);
+ 
+@@ -69,10 +73,6 @@ static int fpux_emu(struct pt_regs *,
+ 
+ /* Further private data for which no space exists in mips_fpu_struct */
+ 
+-#ifdef CONFIG_DEBUG_FS
+-DEFINE_PER_CPU(struct mips_fpu_emulator_stats, fpuemustats);
+-#endif
+-
+ /* Control registers */
+ 
+ #define FPCREG_RID	0	/* $0  = revision id */
+@@ -1277,7 +1277,6 @@ int fpu_emulator_cop1Handler(struct pt_r
  
  	return sig;
  }
+-
+ #ifdef CONFIG_DEBUG_FS
+ 
+ static int fpuemu_stat_get(void *data, u64 *val)
+@@ -1326,4 +1325,11 @@ static int __init debugfs_fpuemu(void)
+ 	return 0;
+ }
+ __initcall(debugfs_fpuemu);
+-#endif
++#endif /* CONFIG_DEBUGFS */
 +#else
 +int fpu_emulator_cop1Handler(struct pt_regs *xcp, struct mips_fpu_struct *ctx,
 +        int has_fpu)
@@ -67,9 +91,6 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 +	return 0;
 +}
 +#endif /* CONFIG_MIPS_FPU_EMU */
- 
- #ifdef CONFIG_DEBUG_FS
- 
 --- a/arch/mips/math-emu/dsemul.c
 +++ b/arch/mips/math-emu/dsemul.c
 @@ -109,6 +109,7 @@ int mips_dsemul(struct pt_regs *regs, mi

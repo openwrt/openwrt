@@ -26,7 +26,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	unsigned int	tp_packets;
 --- a/net/packet/af_packet.c
 +++ b/net/packet/af_packet.c
-@@ -343,6 +343,7 @@ static int packet_rcv_spkt(struct sk_buf
+@@ -205,6 +205,7 @@ struct packet_sock {
+ 	unsigned int		tp_loss:1;
+ #endif
+ 	struct packet_type	prot_hook ____cacheline_aligned_in_smp;
++	__u8			pkt_type:3;
+ };
+ 
+ struct packet_skb_cb {
+@@ -343,6 +344,7 @@ static int packet_rcv_spkt(struct sk_buf
  {
  	struct sock *sk;
  	struct sockaddr_pkt *spkt;
@@ -34,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	/*
  	 *	When we registered the protocol we saved the socket in the data
-@@ -350,6 +351,7 @@ static int packet_rcv_spkt(struct sk_buf
+@@ -350,6 +352,7 @@ static int packet_rcv_spkt(struct sk_buf
  	 */
  
  	sk = pt->af_packet_priv;
@@ -42,7 +50,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	/*
  	 *	Yank back the headers [hope the device set this
-@@ -362,7 +364,7 @@ static int packet_rcv_spkt(struct sk_buf
+@@ -362,7 +365,7 @@ static int packet_rcv_spkt(struct sk_buf
  	 *	so that this procedure is noop.
  	 */
  
@@ -51,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		goto out;
  
  	if (!net_eq(dev_net(dev), sock_net(sk)))
-@@ -538,12 +540,12 @@ static int packet_rcv(struct sk_buff *sk
+@@ -538,12 +541,12 @@ static int packet_rcv(struct sk_buff *sk
  	int skb_len = skb->len;
  	unsigned int snaplen, res;
  
@@ -67,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!net_eq(dev_net(dev), sock_net(sk)))
  		goto drop;
  
-@@ -659,12 +661,12 @@ static int tpacket_rcv(struct sk_buff *s
+@@ -659,12 +662,12 @@ static int tpacket_rcv(struct sk_buff *s
  	struct timeval tv;
  	struct timespec ts;
  
@@ -83,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!net_eq(dev_net(dev), sock_net(sk)))
  		goto drop;
  
-@@ -1386,6 +1388,7 @@ static int packet_create(struct net *net
+@@ -1386,6 +1389,7 @@ static int packet_create(struct net *net
  	spin_lock_init(&po->bind_lock);
  	mutex_init(&po->pg_vec_lock);
  	po->prot_hook.func = packet_rcv;
@@ -91,7 +99,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
-@@ -1731,6 +1734,16 @@ packet_setsockopt(struct socket *sock, i
+@@ -1731,6 +1735,16 @@ packet_setsockopt(struct socket *sock, i
  			ret = packet_mc_drop(sk, &mreq);
  		return ret;
  	}
@@ -108,7 +116,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  #ifdef CONFIG_PACKET_MMAP
  	case PACKET_RX_RING:
-@@ -1876,6 +1889,13 @@ static int packet_getsockopt(struct sock
+@@ -1876,6 +1890,13 @@ static int packet_getsockopt(struct sock
  
  		data = &val;
  		break;

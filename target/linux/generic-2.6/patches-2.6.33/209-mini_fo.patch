@@ -1847,7 +1847,7 @@
 +	};
 --- /dev/null
 +++ b/fs/mini_fo/fist.h
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,254 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -1880,7 +1880,9 @@
 + */
 +#ifdef __KERNEL__
 +#include <linux/version.h>
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)
++#include <generated/autoconf.h>
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
 +#include <linux/autoconf.h>
 +#else
 +#include <linux/config.h>
