@@ -1,0 +1,92 @@
+Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
+===================================================================
+--- linux-2.6.32.9.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:37:27.000000000 +0100
++++ linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:41:36.000000000 +0100
+@@ -15,6 +15,8 @@
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/ssb/ssb.h>
++#include <linux/gpio_buttons.h>
++#include <linux/input.h>
+ #include <asm/addrspace.h>
+ #include <bcm63xx_board.h>
+ #include <bcm63xx_cpu.h>
+@@ -288,6 +290,16 @@
+ 			.active_low	= 1,
+ 		},
+ 	},
++	.reset_buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 32,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= BTN_0,
++			.threshold	= 3,
++		},
++	},
+ };
+ 
+ static struct board_info __initdata board_96348gw = {
+@@ -345,6 +357,16 @@
+ 			.active_low	= 1,
+ 		},
+ 	},
++	.reset_buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 36,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= BTN_0,
++			.threshold	= 3,
++		},
++	},
+ };
+ 
+ static struct board_info __initdata board_FAST2404 = {
+@@ -771,6 +793,16 @@
+ 	.dev.platform_data	= &bcm63xx_led_data,
+ };
+ 
++static struct gpio_buttons_platform_data bcm63xx_gpio_buttons_data = {
++	.poll_interval  = 20,
++};
++
++static struct platform_device bcm63xx_gpio_buttons_device = {
++	.name		= "gpio-buttons",
++	.id		= 0,
++	.dev.platform_data = &bcm63xx_gpio_buttons_data,
++};
++
+ /*
+  * third stage init callback, register all board devices.
+  */
+@@ -826,6 +858,13 @@
+ 
+ 	platform_device_register(&bcm63xx_gpio_leds);
+ 
++	if (board.reset_buttons) {
++		bcm63xx_gpio_buttons_data.nbuttons = ARRAY_SIZE(board.reset_buttons);
++		bcm63xx_gpio_buttons_data.buttons = board.reset_buttons;
++
++		platform_device_register(&bcm63xx_gpio_buttons_device);
++	}
++
+ 	return 0;
+ }
+ 
+Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+===================================================================
+--- linux-2.6.32.9.orig/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-02-28 18:36:33.000000000 +0100
++++ linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-02-28 18:36:58.000000000 +0100
+@@ -55,6 +55,9 @@
+ 
+ 	/* GPIO LEDs */
+ 	struct gpio_led leds[5];
++
++	/* Reset button */
++	struct gpio_button reset_buttons[1];
+ };
+ 
+ #endif /* ! BOARD_BCM963XX_H_ */
