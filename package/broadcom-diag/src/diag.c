@@ -141,6 +141,9 @@ enum {
 
 	/* OvisLink */
 	WL1600GL,
+
+	/* Microsoft */
+	MN700,
 };
 
 static void __init bcm4780_init(void) {
@@ -868,6 +871,16 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "connected",	.gpio = 1 << 0, .polarity = REVERSE },
 		},
 	},
+	/* Microsoft */
+	[MN700] = {
+		.name   = "Microsoft MN-700",
+		.buttons        = {
+			{ .name = "reset",	.gpio = 1 << 7 },
+		},
+		.leds     = {
+			{ .name = "power",	.gpio = 1 << 6, .polarity = NORMAL },
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -1027,8 +1040,13 @@ static struct platform_t __init *platform_detect(void)
 			if (simple_strtoul(boardnum, NULL, 0) == 2)
 				return &platforms[WAP54GV1];
 		}
-		if (startswith(getvar("hardware_version"), "WL500-"))
-			return &platforms[WL500G];
+		/* MN-700 has also hardware_version 'WL500-...', so use boardnum */
+		if (startswith(getvar("hardware_version"), "WL500-")) {
+			if (!strcmp(getvar("boardnum"), "mn700"))
+				return &platforms[MN700];
+			else
+				return &platforms[WL500G];
+		}
 		if (startswith(getvar("hardware_version"), "WL300-")) {
 			/* Either WL-300g or WL-HDD, do more extensive checks */
 			if ((simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 0) &&
