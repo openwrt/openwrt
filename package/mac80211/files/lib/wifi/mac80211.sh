@@ -329,20 +329,20 @@ enable_mac80211() {
 		start_hostapd=1
 	done
 
-	[ -n "$start_hostapd" ] || return 0
+	[ -n "$start_hostapd" ] && {
+		hostapd -P /var/run/wifi-$phy.pid -B /var/run/hostapd-$phy.conf || {
+			echo "Failed to start hostapd for $phy"
+			return
+		}
+		sleep 2
 
-	hostapd -P /var/run/wifi-$phy.pid -B /var/run/hostapd-$phy.conf || {
-		echo "Failed to start hostapd for $phy"
-		return
+		for vif in $vifs; do
+			config_get mode "$vif" mode
+			config_get ifname "$vif" ifname
+			[ "$mode" = "ap" ] || continue
+			mac80211_start_vif "$vif" "$ifname"
+		done
 	}
-	sleep 2
-
-	for vif in $vifs; do
-		config_get mode "$vif" mode
-		config_get ifname "$vif" ifname
-		[ "$mode" = "ap" ] || continue
-		mac80211_start_vif "$vif" "$ifname"
-	done
 
 	for vif in $vifs; do
 		config_get mode "$vif" mode
