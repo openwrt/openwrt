@@ -18,7 +18,7 @@ USBINPUT_DIR?=input/misc
 define KernelPackage/usb-core
   SUBMENU:=$(USB_MENU)
   TITLE:=Support for USB
-  DEPENDS:=@USB_SUPPORT +LINUX_2_6_31||LINUX_2_6_32:kmod-nls-base
+  DEPENDS:=@USB_SUPPORT +LINUX_2_6_31:kmod-nls-base +LINUX_2_6_32:kmod-nls-base
   KCONFIG:=CONFIG_USB
   AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
 endef
