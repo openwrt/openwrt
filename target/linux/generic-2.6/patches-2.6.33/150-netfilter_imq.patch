@@ -1183,7 +1183,7 @@
  /* return EBUSY when somebody else is registered, return EEXIST if the
   * same handler is registered, return 0 in case of success. */
  int nf_register_queue_handler(u_int8_t pf, const struct nf_queue_handler *qh)
-@@ -80,7 +100,7 @@ void nf_unregister_queue_handlers(const 
+@@ -80,7 +100,7 @@ void nf_unregister_queue_handlers(const
  }
  EXPORT_SYMBOL_GPL(nf_unregister_queue_handlers);
  

@@ -1,6 +1,14 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2620,6 +2620,16 @@ int shmem_lock(struct file *file, int lo
+@@ -29,6 +29,7 @@
+ #include <linux/mm.h>
+ #include <linux/module.h>
+ #include <linux/swap.h>
++#include <linux/ima.h>
+ 
+ static struct vfsmount *shm_mnt;
+ 
+@@ -2620,6 +2621,16 @@ int shmem_lock(struct file *file, int lo
  
  /* common code */
  
@@ -17,7 +25,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2697,9 +2707,6 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2697,9 +2708,6 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
