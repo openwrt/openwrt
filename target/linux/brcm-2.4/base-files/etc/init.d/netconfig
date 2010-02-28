@@ -83,7 +83,7 @@ start() {
 		FS="="
 		c["lan_ifname"]="eth0.0"
 		c["wan_ifname"]="eth0.1"
-		c["vlan0ports"]="1 2 3 4 5*"
+		c["vlan0ports"]="1 2 3 4 5"
 		c["vlan1ports"]="0 5"
 		getline < "/proc/diag/model"
 		model=$0
@@ -113,7 +113,7 @@ start() {
 			c["lan_ifname"] = "eth0"
 		}
 		if (model == "ASUS WL-500g Premium V2") {
-				c["vlan0ports"] = "0 1 2 3 5*"
+				c["vlan0ports"] = "0 1 2 3 5"
 				c["vlan1ports"] = "4 5"
 		}
 		if (model == "Dell TrueMobile 2300") {
@@ -123,7 +123,7 @@ start() {
 			c["vlan1ports"] = ""
 		}
 		if (model == "Dell TrueMobile 2300 v2") {
-			c["vlan0ports"] = "0 1 2 3 5*"
+			c["vlan0ports"] = "0 1 2 3 5"
 			c["vlan1ports"] = "4 5"
 		}
 		if (nvram["boardtype"] == "bcm94710r4") {
@@ -132,17 +132,17 @@ start() {
 			c["wan_ifname"] = "eth1"
 		}
 		if (nvram["boardtype"] == "wgt634u") {
-			c["vlan0ports"] = "0 1 2 3 5*"
+			c["vlan0ports"] = "0 1 2 3 5"
 			c["vlan1ports"] = "4 5"
 		}
 		if (nvram["boardtype"] == "0x0467") {
-			c["vlan0ports"] = "0 1 2 3 5*"
+			c["vlan0ports"] = "0 1 2 3 5"
 			c["vlan1ports"] = "4 5"
 		}
 		if ((nvram["boardtype"] == "0x042f") || (nvram["boardtype"] == "0x0472")) {
 			if (nvram["boardnum"] == "45") {
 				# WL-500gP
-				c["vlan0ports"] = "1 2 3 4 5*"
+				c["vlan0ports"] = "1 2 3 4 5"
 				c["vlan1ports"] = "0 5"
 			} else {
 				# Generic BCM94704
@@ -194,12 +194,12 @@ start() {
 		if (model == "ASUS WL-700gE") {
 			c["lan_ifname"]="eth0.0"
 			c["wan_ifname"]="eth0.1"
-			c["vlan0ports"]="1 2 3 4 5*"
+			c["vlan0ports"]="1 2 3 4 5"
 			c["vlan1ports"]="0 5"
 		}
 
 		if (model == "Motorola WR850G V2/V3") {
-			c["vlan0ports"]="0 1 2 3 5*"
+			c["vlan0ports"]="0 1 2 3 5"
 			c["vlan1ports"]="4 5"
 		}
 		if (model == "ASUS WL-500W") {
@@ -211,7 +211,7 @@ start() {
 		if (model == "OvisLink WL-1600GL") {
 			c["lan_ifname"] = "eth0.0"
 			c["wan_ifname"] = "eth0.1"
-			c["vlan0ports"] = "0 1 2 3 5*"
+			c["vlan0ports"] = "0 1 2 3 5"
 			c["vlan1ports"] = "4 5"
 		}
 
