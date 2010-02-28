@@ -1,0 +1,16 @@
+Some device registration (eg leds), expect subsystem initcall to be
+run first, so move board device registration to device_initcall().
+
+Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
+---
+ arch/mips/bcm63xx/setup.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/bcm63xx/setup.c
++++ b/arch/mips/bcm63xx/setup.c
+@@ -124,4 +124,4 @@ int __init bcm63xx_register_devices(void
+ 	return board_register_devices();
+ }
+ 
+-arch_initcall(bcm63xx_register_devices);
++device_initcall(bcm63xx_register_devices);
