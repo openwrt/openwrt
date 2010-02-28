@@ -31,7 +31,6 @@
  *     ports: same syntax as for nvram's vlan*ports (eg. "1 2 3 4 5*")
  */
 
-#include <linux/autoconf.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <asm/uaccess.h>
