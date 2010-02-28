@@ -1,0 +1,54 @@
+Index: linux-2.6.33/arch/mips/Makefile
+===================================================================
+--- linux-2.6.33.orig/arch/mips/Makefile	2010-02-28 16:43:15.000000000 +0100
++++ linux-2.6.33/arch/mips/Makefile	2010-02-28 16:45:56.397211344 +0100
+@@ -637,6 +637,13 @@
+ load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
+ endif
+ 
++#
++# Atheros AR71xx
++#
++core-$(CONFIG_ATHEROS_AR71XX)	+= arch/mips/ar71xx/
++cflags-$(CONFIG_ATHEROS_AR71XX)	+= -I$(srctree)/arch/mips/include/asm/mach-ar71xx
++load-$(CONFIG_ATHEROS_AR71XX)	+= 0xffffffff80060000
++
+ # temporary until string.h is fixed
+ cflags-y += -ffreestanding
+ 
+Index: linux-2.6.33/arch/mips/Kconfig
+===================================================================
+--- linux-2.6.33.orig/arch/mips/Kconfig	2010-02-28 16:43:15.000000000 +0100
++++ linux-2.6.33/arch/mips/Kconfig	2010-02-28 16:46:56.150331076 +0100
+@@ -48,6 +48,23 @@
+ 	  Support for the Texas Instruments AR7 System-on-a-Chip
+ 	  family: TNETD7100, 7200 and 7300.
+ 
++config ATHEROS_AR71XX
++	bool "Atheros AR71xx based boards"
++	select CEVT_R4K
++	select CSRC_R4K
++	select DMA_NONCOHERENT
++	select HW_HAS_PCI
++	select IRQ_CPU
++	select ARCH_REQUIRE_GPIOLIB
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_CPU_MIPS32_R2
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_HAS_EARLY_PRINTK
++	select MIPS_MACHINE
++	help
++	  Support for Atheros AR71xx based boards.
++
+ config BCM47XX
+ 	bool "BCM47XX based boards"
+ 	select CEVT_R4K
+@@ -682,6 +699,7 @@
+ endchoice
+ 
+ source "arch/mips/alchemy/Kconfig"
++source "arch/mips/ar71xx/Kconfig"
+ source "arch/mips/bcm63xx/Kconfig"
+ source "arch/mips/jazz/Kconfig"
+ source "arch/mips/lasat/Kconfig"

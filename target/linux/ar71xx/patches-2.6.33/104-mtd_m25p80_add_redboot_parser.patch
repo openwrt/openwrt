@@ -1,0 +1,18 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -877,6 +877,15 @@ static int __devinit m25p_probe(struct s
+ 		}
+ #endif
+ 
++#ifdef CONFIG_MTD_REDBOOT_PARTS
++		if (nr_parts <= 0) {
++			static const char *part_probes[]
++					= { "RedBoot", NULL, };
++
++			nr_parts = parse_mtd_partitions(&flash->mtd,
++					part_probes, &parts, 0);
++		}
++#endif
+ 		if (nr_parts <= 0 && data && data->parts) {
+ 			parts = data->parts;
+ 			nr_parts = data->nr_parts;
