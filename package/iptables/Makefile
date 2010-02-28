@@ -254,10 +254,6 @@ TARGET_CPPFLAGS := \
 	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include \
 	$(TARGET_CPPFLAGS)
 
-TARGET_CFLAGS := \
-	$(TARGET_CFLAGS) \
-	-DFORCE_MODPROBE_PROGRAM="\\\"/sbin/insmod\\\""
-
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-devel \
