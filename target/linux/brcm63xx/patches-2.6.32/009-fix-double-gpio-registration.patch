@@ -1,0 +1,86 @@
+From mbizon@freebox.fr Sat Jan 30 18:34:54 2010
+Delivered-To: f.fainelli@gmail.com
+Received: by 10.204.59.143 with SMTP id l15cs160635bkh;
+        Sat, 30 Jan 2010 09:36:50 -0800 (PST)
+Received: by 10.223.77.85 with SMTP id f21mr2160176fak.40.1264873010074;
+        Sat, 30 Jan 2010 09:36:50 -0800 (PST)
+Return-Path: <linux-mips-bounce@linux-mips.org>
+Received: from arrakis.dune.hu (arrakis.dune.hu [78.24.191.176])
+        by mx.google.com with ESMTP id 9si4978784fxm.2.2010.01.30.09.36.49;
+        Sat, 30 Jan 2010 09:36:50 -0800 (PST)
+Received-SPF: neutral (google.com: 78.24.191.176 is neither permitted nor denied by best guess record for domain of linux-mips-bounce@linux-mips.org) client-ip=78.24.191.176;
+Authentication-Results: mx.google.com; spf=neutral (google.com: 78.24.191.176 is neither permitted nor denied by best guess record for domain of linux-mips-bounce@linux-mips.org) smtp.mail=linux-mips-bounce@linux-mips.org
+Received: from localhost (localhost [127.0.0.1])
+	by arrakis.dune.hu (Postfix) with ESMTP id CA65423C0C11;
+	Sat, 30 Jan 2010 18:36:49 +0100 (CET)
+X-Virus-Scanned: at arrakis.dune.hu
+X-Spam-Flag: NO
+X-Spam-Score: -0.529
+X-Spam-Level: 
+X-Spam-Status: No, score=-0.529 required=5 tests=[AWL=-1.118, BAYES_00=-2.599,
+	FH_DATE_PAST_20XX=3.188] autolearn=no
+Received: from arrakis.dune.hu ([127.0.0.1])
+	by localhost (arrakis.dune.hu [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id QzyrvmnW4GpM; Sat, 30 Jan 2010 18:36:47 +0100 (CET)
+Received: from eddie.linux-mips.org (eddie.linux-mips.org [78.24.191.182])
+	by arrakis.dune.hu (Postfix) with ESMTP id F1E8B23C0C0B;
+	Sat, 30 Jan 2010 18:36:46 +0100 (CET)
+Received: from localhost.localdomain ([127.0.0.1]:37132 "EHLO
+        eddie.linux-mips.org" rhost-flags-OK-OK-OK-FAIL)
+        by eddie.linux-mips.org with ESMTP id S1492196Ab0A3Rgq (ORCPT
+        <rfc822;juhosg@openwrt.org> + 2 others);
+        Sat, 30 Jan 2010 18:36:46 +0100
+Received: with ECARTIS (v1.0.0; list linux-mips); Sat, 30 Jan 2010 18:36:27 +0100 (CET)
+Received: from sakura.staff.proxad.net ([213.228.1.107]:53010 "EHLO
+        sakura.staff.proxad.net" rhost-flags-OK-OK-OK-OK)
+        by eddie.linux-mips.org with ESMTP id S1492994Ab0A3RfM (ORCPT
+        <rfc822;linux-mips@linux-mips.org>); Sat, 30 Jan 2010 18:35:12 +0100
+Received: by sakura.staff.proxad.net (Postfix, from userid 1000)
+        id 30AA6551082; Sat, 30 Jan 2010 18:35:12 +0100 (CET)
+From:   Maxime Bizon <mbizon@freebox.fr>
+To: linux-mips@linux-mips.org,
+ ralf@linux-mips.org
+Cc: Maxime Bizon <mbizon@freebox.fr>
+Subject: [PATCH 3/7] MIPS: bcm63xx: fix double gpio registration.
+Date:   Sat, 30 Jan 2010 18:34:54 +0100
+Message-Id: <1264872898-28149-4-git-send-email-mbizon@freebox.fr>
+X-Mailer: git-send-email 1.6.3.3
+In-Reply-To: <1264872898-28149-1-git-send-email-mbizon@freebox.fr>
+References: <1264872898-28149-1-git-send-email-mbizon@freebox.fr>
+X-archive-position: 25760
+X-ecartis-version: Ecartis v1.0.0
+Sender: linux-mips-bounce@linux-mips.org
+Errors-to: linux-mips-bounce@linux-mips.org
+X-original-sender: mbizon@freebox.fr
+Precedence: bulk
+X-list: linux-mips
+X-UID: 7928
+X-Length: 3635
+Status: R
+X-Status: N
+X-KMail-EncryptionState:  
+X-KMail-SignatureState:  
+X-KMail-MDN-Sent:  
+
+bcm63xx_gpio_init is already called from prom_init to allow board to
+use them early, so we can remove the unneeded arch_initcall.
+
+Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
+---
+ arch/mips/bcm63xx/gpio.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/bcm63xx/gpio.c b/arch/mips/bcm63xx/gpio.c
+index 87ca390..3725345 100644
+--- a/arch/mips/bcm63xx/gpio.c
++++ b/arch/mips/bcm63xx/gpio.c
+@@ -130,5 +130,3 @@ int __init bcm63xx_gpio_init(void)
+ 
+ 	return gpiochip_add(&bcm63xx_gpio_chip);
+ }
+-
+-arch_initcall(bcm63xx_gpio_init);
+-- 
+1.6.3.3
+
+

@@ -1,0 +1,15 @@
+Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h
+===================================================================
+--- linux-2.6.32.9.orig/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h	2010-02-28 19:02:10.000000000 +0100
++++ linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_gpio.h	2010-02-28 19:02:40.000000000 +0100
+@@ -10,6 +10,10 @@
+ 	switch (bcm63xx_get_cpu_id()) {
+ 	case BCM6358_CPU_ID:
+ 		return 40;
++	case BCM6338_CPU_ID:
++		return 8;
++	case BCM6345_CPU_ID:
++		return 16;
+ 	case BCM6348_CPU_ID:
+ 	default:
+ 		return 37;
