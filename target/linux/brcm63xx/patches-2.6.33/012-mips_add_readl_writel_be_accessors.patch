@@ -1,0 +1,19 @@
+MIPS currently lacks the readl_be and writel_be accessors
+which are required by BCM63xx for OHCI and EHCI support.
+Let's define them globally for MIPS. This also fixes the
+compilation of the bcm63xx defconfig against USB.
+
+Signed-off-by: Florian Fainelli <ffainelli@freebox.fr>
+---
+--- a/arch/mips/include/asm/io.h
++++ b/arch/mips/include/asm/io.h
+@@ -447,6 +447,9 @@ __BUILDIO(q, u64)
+ #define readl_relaxed			readl
+ #define readq_relaxed			readq
+ 
++#define readl_be(addr)			be32_to_cpu(__raw_readl((__force unsigned *)(addr)))
++#define writel_be(val, addr)		__raw_writel(cpu_to_be32((val)), (__force unsigned *)(addr))
++
+ /*
+  * Some code tests for these symbols
+  */
