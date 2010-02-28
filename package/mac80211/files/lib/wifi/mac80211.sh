@@ -356,7 +356,7 @@ enable_mac80211() {
 			case "$mode" in
 				adhoc)
 					config_get bssid "$vif" bssid
-					config_get bssid "$vif" ssid
+					config_get ssid "$vif" ssid
 					iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid
 				;;
 				sta)
