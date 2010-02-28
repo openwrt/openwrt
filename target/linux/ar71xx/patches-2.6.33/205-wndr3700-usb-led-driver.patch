@@ -1,0 +1,30 @@
+Index: linux-2.6.33/drivers/leds/Kconfig
+===================================================================
+--- linux-2.6.33.orig/drivers/leds/Kconfig	2010-02-28 16:43:15.000000000 +0100
++++ linux-2.6.33/drivers/leds/Kconfig	2010-02-28 16:47:43.134713224 +0100
+@@ -269,6 +269,13 @@
+ 	  To compile this driver as a module, choose M here: the module will
+ 	  be called leds-adp5520.
+ 
++config LEDS_WNDR3700_USB
++	tristate "NETGEAR WNDR3700 USB LED driver"
++	depends on LEDS_CLASS && AR71XX_MACH_WNDR3700
++	help
++	  This option enables support for the USB LED found on the
++	  NETGEAR WNDR3700 board.
++
+ comment "LED Triggers"
+ 
+ config LEDS_TRIGGERS
+Index: linux-2.6.33/drivers/leds/Makefile
+===================================================================
+--- linux-2.6.33.orig/drivers/leds/Makefile	2010-02-28 16:43:15.000000000 +0100
++++ linux-2.6.33/drivers/leds/Makefile	2010-02-28 16:48:22.946586221 +0100
+@@ -29,6 +29,7 @@
+ obj-$(CONFIG_LEDS_WM831X_STATUS)	+= leds-wm831x-status.o
+ obj-$(CONFIG_LEDS_WM8350)		+= leds-wm8350.o
+ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
++obj-${CONFIG_LEDS_WNDR3700_USB}		+= leds-wndr3700-usb.o
+ obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
+ obj-$(CONFIG_LEDS_INTEL_SS4200)		+= leds-ss4200.o
+ obj-$(CONFIG_LEDS_LT3593)		+= leds-lt3593.o

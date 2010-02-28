@@ -1,0 +1,33 @@
+Index: linux-2.6.33/arch/mips/kernel/traps.c
+===================================================================
+--- linux-2.6.33.orig/arch/mips/kernel/traps.c	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/arch/mips/kernel/traps.c	2010-02-28 16:51:35.397204241 +0100
+@@ -50,6 +50,7 @@
+ #include <asm/types.h>
+ #include <asm/stacktrace.h>
+ #include <asm/irq.h>
++#include <asm/time.h>
+ 
+ extern void check_wait(void);
+ extern asmlinkage void r4k_wait(void);
+@@ -1496,6 +1497,8 @@
+ 	if (cpu_has_mips_r2) {
+ 		cp0_compare_irq_shift = CAUSEB_TI - CAUSEB_IP;
+ 		cp0_compare_irq = (read_c0_intctl() >> INTCTLB_IPTI) & 7;
++		if (get_c0_compare_irq)
++			cp0_compare_irq = get_c0_compare_irq();
+ 		cp0_perfcount_irq = (read_c0_intctl() >> INTCTLB_IPPCI) & 7;
+ 		if (cp0_perfcount_irq == cp0_compare_irq)
+ 			cp0_perfcount_irq = -1;
+Index: linux-2.6.33/arch/mips/include/asm/time.h
+===================================================================
+--- linux-2.6.33.orig/arch/mips/include/asm/time.h	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/arch/mips/include/asm/time.h	2010-02-28 16:49:18.925959821 +0100
+@@ -52,6 +52,7 @@
+  */
+ #ifdef CONFIG_CEVT_R4K_LIB
+ extern unsigned int __weak get_c0_compare_int(void);
++extern unsigned int __weak get_c0_compare_irq(void);
+ extern int r4k_clockevent_init(void);
+ #endif
+ 
