@@ -1,0 +1,11 @@
+--- a/arch/mips/include/asm/system.h
++++ b/arch/mips/include/asm/system.h
+@@ -194,7 +194,7 @@ extern __u64 __xchg_u64_unsupported_on_3
+ #define __xchg_u64 __xchg_u64_unsupported_on_32bit_kernels
+ #endif
+ 
+-static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
++static __always_inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
+ {
+ 	switch (size) {
+ 	case 4:

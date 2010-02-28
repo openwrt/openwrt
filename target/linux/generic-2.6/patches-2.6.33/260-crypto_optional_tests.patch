@@ -1,0 +1,63 @@
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -96,6 +96,10 @@ config CRYPTO_MANAGER2
+ 	select CRYPTO_BLKCIPHER2
+ 	select CRYPTO_PCOMP
+ 
++config CRYPTO_MANAGER_NO_TESTS
++	bool "Disable internal testsuite to save space"
++	depends on CRYPTO_MANAGER
++
+ config CRYPTO_GF128MUL
+ 	tristate "GF(2^128) multiplication functions (EXPERIMENTAL)"
+ 	depends on EXPERIMENTAL
+--- a/crypto/testmgr.c
++++ b/crypto/testmgr.c
+@@ -47,6 +47,8 @@
+ #define ENCRYPT 1
+ #define DECRYPT 0
+ 
++#ifndef CONFIG_CRYPTO_MANAGER_NO_TESTS
++
+ struct tcrypt_result {
+ 	struct completion completion;
+ 	int err;
+@@ -2359,8 +2361,11 @@ static int alg_find_test(const char *alg
+ 	return -1;
+ }
+ 
++#endif /* CONFIG_CRYPTO_MANAGER_NO_TESTS */
++
+ int alg_test(const char *driver, const char *alg, u32 type, u32 mask)
+ {
++#ifndef CONFIG_CRYPTO_MANAGER_NO_TESTS
+ 	int i;
+ 	int j;
+ 	int rc;
+@@ -2415,5 +2420,8 @@ notest:
+ 	return 0;
+ non_fips_alg:
+ 	return -EINVAL;
++#else /* CONFIG_CRYPTO_MANAGER_NO_TESTS */
++	return 0;
++#endif /* CONFIG_CRYPTO_MANAGER_NO_TESTS */
+ }
+ EXPORT_SYMBOL_GPL(alg_test);
+--- a/crypto/testmgr.h
++++ b/crypto/testmgr.h
+@@ -20,6 +20,8 @@
+ 
+ #include <crypto/compress.h>
+ 
++#ifndef CONFIG_CRYPTO_MANAGER_NO_TESTS
++
+ #define MAX_DIGEST_SIZE		64
+ #define MAX_TAP			8
+ 
+@@ -9552,4 +9554,6 @@ static struct hash_testvec crc32c_tv_tem
+ 	},
+ };
+ 
++#endif /* CONFIG_CRYPTO_MANAGER_NO_TESTS */
++
+ #endif	/* _CRYPTO_TESTMGR_H */
