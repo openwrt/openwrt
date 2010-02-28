@@ -45,6 +45,15 @@ define Image/Build/CFEAGPF
 		-v 8 -m IMAGE -k 0x20000 -n $(4) -t $(5)
 endef
 
+define Image/Build/RG100A
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
+		-o $(BIN_DIR)/openwrt-$(6)-$(1)-$(7)-cfe.bin \
+		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
+		-k 0x20000 -n $(4) -t $(5)
+endef
+
+
 define Image/Build/RedBoot
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(1)-vmlinux.elf
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
@@ -171,6 +180,10 @@ define Image/Build
 	# Pirelli A226G
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,bccfe,,bccfe)
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,ag306,DWV_96358,a226g)
+	
+	# RG100A,DB120 etc.
+	$(call Image/Build/RG100A,$(1),96358VW2,6358,0x20000,bc310,rg100a,bc310)
+
 endef
 
 $(eval $(call BuildImage))
