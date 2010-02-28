@@ -1,0 +1,41 @@
+From 83e34f03ee9b86b49bde4707a1fe03a1837e29be Mon Sep 17 00:00:00 2001
+From: Jochen Friedrich <jochen@scram.de>
+Date: Wed, 3 Feb 2010 21:28:11 +0100
+Subject: [PATCH 1/1] ssb: fix interrupt assignment
+
+Explicitely enable shared interrupt 2 for any core that didn't get a dedicated IRQ
+anymore (fallthrough case) and for EXTIF cores to make gpio interrupts work.
+Also remove a bogus comment.
+
+Signed-off-by: Jochen Friedrich <jochen@scram.de>
+Signed-off-by: John W. Linville <linville@tuxdriver.com>
+---
+ drivers/ssb/driver_mipscore.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/ssb/driver_mipscore.c b/drivers/ssb/driver_mipscore.c
+index 3c6feed..97efce1 100644
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -270,7 +270,6 @@ void ssb_mipscore_init(struct ssb_mipscore *mcore)
+ 				set_irq(dev, irq++);
+ 			}
+ 			break;
+-			/* fallthrough */
+ 		case SSB_DEV_PCI:
+ 		case SSB_DEV_ETHERNET:
+ 		case SSB_DEV_ETHERNET_GBIT:
+@@ -281,6 +280,10 @@ void ssb_mipscore_init(struct ssb_mipscore *mcore)
+ 				set_irq(dev, irq++);
+ 				break;
+ 			}
++			/* fallthrough */
++		case SSB_DEV_EXTIF:
++			set_irq(dev, 0);
++			break;
+ 		}
+ 	}
+ 	ssb_dprintk(KERN_INFO PFX "after irq reconfiguration\n");
+-- 
+1.7.0
+
