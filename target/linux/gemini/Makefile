@@ -12,7 +12,7 @@ BOARDNAME:=Cortina Systems CS351x
 FEATURES:=squashfs
 CFLAGS:=-Os -pipe -march=armv4 -mtune=arm9tdmi -funit-at-a-time
 
-LINUX_VERSION:=2.6.32.8
+LINUX_VERSION:=2.6.32.9
 
 include $(INCLUDE_DIR)/target.mk
 
