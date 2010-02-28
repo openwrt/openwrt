@@ -318,29 +318,6 @@ enable_mac80211() {
 		if [ -n "$rts" ]; then
 			iw phy "$phy" set rts "${rts%%.*}"
 		fi
-
-		ifconfig "$ifname" up
-
-		if [ ! "$mode" = "ap" ]; then
-			mac80211_start_vif "$vif" "$ifname"
-
-			case "$mode" in
-				adhoc)
-					config_get bssid "$vif" bssid
-					iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid
-				;;
-				sta)
-					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
-						wpa_supplicant_setup_vif "$vif" wext || {
-							echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
-							# make sure this wifi interface won't accidentally stay open without encryption
-							ifconfig "$ifname" down
-							continue
-						}
-					fi
-				;;
-			esac
-		fi
 	done
 
 	local start_hostapd=
@@ -366,6 +343,36 @@ enable_mac80211() {
 		[ "$mode" = "ap" ] || continue
 		mac80211_start_vif "$vif" "$ifname"
 	done
+
+	for vif in $vifs; do
+		config_get mode "$vif" mode
+		config_get ifname "$vif" ifname
+		[ ! "$mode" = "ap" ] || continue
+		ifconfig "$ifname" up
+
+		if [ ! "$mode" = "ap" ]; then
+			mac80211_start_vif "$vif" "$ifname"
+
+			case "$mode" in
+				adhoc)
+					config_get bssid "$vif" bssid
+					config_get bssid "$vif" ssid
+					iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid
+				;;
+				sta)
+					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
+						wpa_supplicant_setup_vif "$vif" wext || {
+							echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
+							# make sure this wifi interface won't accidentally stay open without encryption
+							ifconfig "$ifname" down
+							continue
+						}
+					fi
+				;;
+			esac
+		fi
+	done
+
 }
 
 
