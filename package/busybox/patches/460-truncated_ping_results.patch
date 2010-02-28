@@ -1,6 +1,16 @@
---- a/networking/ping.c
-+++ b/networking/ping.c
-@@ -91,7 +91,7 @@ static void ping4(len_and_sockaddr *lsa)
+Index: busybox-1.15.3/networking/ping.c
+===================================================================
+--- busybox-1.15.3.orig/networking/ping.c	2010-02-28 13:47:00.000000000 +0100
++++ busybox-1.15.3/networking/ping.c	2010-02-28 13:47:19.000000000 +0100
+@@ -79,6 +79,7 @@
+ /* simple version */
+ 
+ static char *hostname;
++static unsigned datalen = DEFDATALEN;
+ 
+ static void noresp(int ign UNUSED_PARAM)
+ {
+@@ -91,7 +92,7 @@
  	struct sockaddr_in pingaddr;
  	struct icmp *pkt;
  	int pingsock, c;
@@ -9,7 +19,7 @@
  
  	pingsock = create_icmp_socket();
  	pingaddr = lsa->u.sin;
-@@ -101,7 +101,7 @@ static void ping4(len_and_sockaddr *lsa)
+@@ -101,7 +102,7 @@
  	pkt->icmp_type = ICMP_ECHO;
  	pkt->icmp_cksum = in_cksum((unsigned short *) pkt, sizeof(packet));
  
@@ -18,7 +28,7 @@
  			   (struct sockaddr *) &pingaddr, sizeof(pingaddr));
  
  	/* listen for replies */
-@@ -135,7 +135,7 @@ static void ping6(len_and_sockaddr *lsa)
+@@ -135,7 +136,7 @@
  	struct icmp6_hdr *pkt;
  	int pingsock, c;
  	int sockopt;
@@ -27,7 +37,7 @@
  
  	pingsock = create_icmp6_socket();
  	pingaddr = lsa->u.sin6;
-@@ -147,7 +147,7 @@ static void ping6(len_and_sockaddr *lsa)
+@@ -147,7 +148,7 @@
  	sockopt = offsetof(struct icmp6_hdr, icmp6_cksum);
  	setsockopt(pingsock, SOL_RAW, IPV6_CHECKSUM, &sockopt, sizeof(sockopt));
  
