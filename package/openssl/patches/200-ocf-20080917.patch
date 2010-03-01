@@ -116,22 +116,7 @@
  # on Unix, "cyg" for certain forms under Cygwin...) or suffix (.a, .so,
 --- a/config
 +++ b/config
-@@ -48,10 +48,10 @@ done
- 
- # First get uname entries that we use below
- 
--MACHINE=`(uname -m) 2>/dev/null` || MACHINE="unknown"
--RELEASE=`(uname -r) 2>/dev/null` || RELEASE="unknown"
--SYSTEM=`(uname -s) 2>/dev/null`  || SYSTEM="unknown"
--VERSION=`(uname -v) 2>/dev/null` || VERSION="unknown"
-+[ "$MACHINE" ] || MACHINE=`(uname -m) 2>/dev/null` || MACHINE="unknown"
-+[ "$RELEASE" ] || RELEASE=`(uname -r) 2>/dev/null` || RELEASE="unknown"
-+[ "$SYSTEM" ]  || SYSTEM=`(uname -s) 2>/dev/null`  || SYSTEM="unknown"
-+[ "$VERSION" ] || VERSION=`(uname -v) 2>/dev/null` || VERSION="unknown"
- 
- 
- # Now test for ISC and SCO, since it is has a braindamaged uname.
-@@ -270,7 +270,7 @@ case "${SYSTEM}:${RELEASE}:${VERSION}:${
+@@ -270,7 +270,7 @@ case "${SYSTEM}:${RELEASE}:${VERSION}:${MACHINE}" in
  		echo "ppc-apple-darwin${VERSION}"
  		;;
  	    *)
@@ -140,23 +125,21 @@
  		;;
  	esac
  	exit 0
-@@ -401,9 +401,9 @@ exit 0
+@@ -399,7 +399,8 @@ exit 0
+ # this is where the translation occurs into SSLeay terms
+ # ---------------------------------------------------------------------------
  
- # figure out if gcc is available and if so we use it otherwise
- # we fallback to whatever cc does on the system
 -GCCVER=`(gcc -dumpversion) 2>/dev/null`
 +CC="${CC:-gcc}"
 +GCCVER=`(${CC} -dumpversion) 2>/dev/null`
  if [ "$GCCVER" != "" ]; then
--  CC=gcc
    # then strip off whatever prefix egcs prepends the number with...
    # Hopefully, this will work for any future prefixes as well.
-   GCCVER=`echo $GCCVER | LC_ALL=C sed 's/^[a-zA-Z]*\-//'`
-@@ -413,7 +413,7 @@ if [ "$GCCVER" != "" ]; then
+@@ -409,6 +410,8 @@ if [ "$GCCVER" != "" ]; then
+   # major and minor version numbers.
    # peak single digit before and after first dot, e.g. 2.95.1 gives 29
    GCCVER=`echo $GCCVER | sed 's/\([0-9]\)\.\([0-9]\).*/\1\2/'`
- else
--  CC=cc
++else
 +  CC="${CC:-cc}"
  fi
  
@@ -343,9 +326,9 @@
  static double results[ALGOR_NUM][SIZE_NUM];
 -static int lengths[SIZE_NUM]={16,64,256,1024,8*1024};
 +static int lengths[SIZE_NUM]={16,64,256,1024,2*1024,4*1024};
+ #ifndef OPENSSL_NO_RSA
  static double rsa_results[RSA_NUM][2];
- static double dsa_results[DSA_NUM][2];
- #ifndef OPENSSL_NO_ECDSA
+ #endif
 @@ -328,6 +328,79 @@ static SIGRETTYPE sig_done(int sig)
  #define START	0
  #define STOP	1
@@ -467,7 +450,7 @@
  		j++;
  		}
  
--#ifdef HAVE_FORK
+-#ifndef NO_FORK
 -	if(multi && do_multi(multi))
 -		goto show_res;
 -#endif
@@ -772,15 +755,6 @@
  static int get_cryptodev_ciphers(const int **cnids);
  static int get_cryptodev_digests(const int **cnids);
  static int cryptodev_usable_ciphers(const int **nids);
-@@ -100,7 +112,7 @@ static int cryptodev_asym(struct crypt_k
- static int cryptodev_bn_mod_exp(BIGNUM *r, const BIGNUM *a,
-     const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
- static int cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I,
--    RSA *rsa);
-+    RSA *rsa, BN_CTX *ctx);
- static int cryptodev_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx);
- static int cryptodev_dsa_bn_mod_exp(DSA *dsa, BIGNUM *r, BIGNUM *a,
-     const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
 @@ -130,9 +142,12 @@ static struct {
  	int	ivmax;
  	int	keylen;
@@ -1251,15 +1225,6 @@
  		*digest = NULL;
  		break;
  	}
-@@ -625,7 +942,7 @@ static int
- bn2crparam(const BIGNUM *a, struct crparam *crp)
- {
- 	int i, j, k;
--	ssize_t words, bytes, bits;
-+	ssize_t bytes, bits;
- 	u_char *b;
- 
- 	crp->crp_p = NULL;
 @@ -637,6 +954,7 @@ bn2crparam(const BIGNUM *a, struct crpar
  	b = malloc(bytes);
  	if (b == NULL)
@@ -1277,21 +1242,6 @@
  		if (kop->crk_param[i].crp_p)
  			free(kop->crk_param[i].crp_p);
  		kop->crk_param[i].crp_p = NULL;
-@@ -756,12 +1074,10 @@ err:
- }
- 
- static int
--cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa)
-+cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
- {
- 	int r;
--	BN_CTX *ctx;
--
--	ctx = BN_CTX_new();
-+	ctx = BN_CTX_new(); /* not sure why we reallocate this. DM */
- 	r = cryptodev_bn_mod_exp(r0, I, rsa->d, rsa->n, ctx, NULL);
- 	BN_CTX_free(ctx);
- 	return (r);
 --- a/crypto/engine/engine.h
 +++ b/crypto/engine/engine.h
 @@ -703,7 +703,7 @@ typedef int (*dynamic_bind_engine)(ENGIN
