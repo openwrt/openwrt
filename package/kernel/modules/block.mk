@@ -142,7 +142,7 @@ $(eval $(call KernelPackage,ata-nvidia-sata))
 
 
 define KernelPackage/ata-magicbox-cf
-$(call KernelPackage/ata/Depends,@TARGET_ppc40x @BROKEN)
+$(call KernelPackage/ata/Depends,@TARGET_ppc40x)
   TITLE:=Magicbox v2/OpenRB Compact flash support (ATA)
   KCONFIG:=CONFIG_PATA_MAGICBOX_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_magicbox_cf.$(LINUX_KMOD_SUFFIX)
