@@ -875,7 +875,7 @@ diff -u $dest/$conffile $IPKG_TMP/$pkg/data/$conffile"
 	rm -rf $IPKG_TMP/$pkg/data
 	rmdir $IPKG_TMP/$pkg
 	rm -f $info_dir/$pkg.list
-	$pkg_extract_stdout $filename ./data.tar.gz | zcat | tar tf - | sed -e 's/^\.//' > $info_dir/$pkg.list
+	$pkg_extract_stdout $filename ./data.tar.gz | zcat | tar tf - | sed -e '/\/$/d; s/^\.//' > $info_dir/$pkg.list
 
 	if [ -x "$info_dir/$pkg.postinst" ]; then
 		$info_dir/$pkg.postinst configure
