@@ -10,3 +10,7 @@ config PACKAGE_ATH9K_DEBUG
 	  modprobe ath9k debug=0x00002000
 
 	  Look in ath9k/core.h for possible debug masks
+
+config PACKAGE_ATH9K_USE_MINSTREL
+	bool "use the new minstrel_ht rate control for ath9k"
+	depends PACKAGE_kmod-ath9k
