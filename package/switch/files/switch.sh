@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 
 setup_switch_hw() {
 	local dev="$1"
@@ -13,7 +13,7 @@ setup_switch_hw() {
 	[ -d "$proc" ] && {
 		echo "$reset"  > "$proc/reset"
 		echo "$evlan"  > "$proc/enable_vlan"
-		echo "$enable" > "$proc/enable"
+		[ -f "$proc/enable" ] && echo "$enable" > "$proc/enable"
 	}
 }
 
