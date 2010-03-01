@@ -6,7 +6,7 @@
 with_fo_cleanup() {
     # try to get rid of /tmp/root
     # this will almost always fail
-    mount /tmp/root 2>&-
+    umount /tmp/root 2>&-
     exit 0
 }
 
