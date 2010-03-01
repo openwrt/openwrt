@@ -105,7 +105,11 @@ define Host/Prepare
 	ln -sf linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(HOST_BUILD_DIR)/Makefile
 	yes '' | $(KMAKE) oldconfig
+ifeq ($(CONFIG_LINUX_2_6_33),y)
+	$(KMAKE) include/linux/version.h arch/$(LINUX_KARCH)/include/asm
+else
 	$(KMAKE) include/linux/version.h include/asm
+endif
 	if [ -d $(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
 		$(CP) \
 			$(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
