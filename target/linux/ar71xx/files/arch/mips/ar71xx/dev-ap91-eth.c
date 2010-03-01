@@ -9,6 +9,20 @@
  */
 
 #include "devices.h"
+#include "dev-dsa.h"
+
+static struct dsa_chip_data ap91_dsa_chip = {
+	.port_names[0]  = "cpu",
+	.port_names[1]  = "lan1",
+	.port_names[2]  = "lan2",
+	.port_names[3]  = "lan3",
+	.port_names[4]  = "lan4",
+};
+
+static struct dsa_platform_data ap91_dsa_data = {
+	.nr_chips	= 1,
+	.chip		= &ap91_dsa_chip,
+};
 
 void __init ap91_eth_init(u8 *mac_addr)
 {
@@ -36,4 +50,6 @@ void __init ap91_eth_init(u8 *mac_addr)
 	ar71xx_add_device_mdio(0x0);
 	ar71xx_add_device_eth(1);
 	ar71xx_add_device_eth(0);
+
+	ar71xx_add_device_dsa(1, &ap91_dsa_data);
 }
