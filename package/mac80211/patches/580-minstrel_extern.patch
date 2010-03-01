@@ -1,0 +1,56 @@
+--- a/net/mac80211/rc80211_minstrel.h
++++ b/net/mac80211/rc80211_minstrel.h
+@@ -85,7 +85,13 @@ struct minstrel_debugfs_info {
+ 	char buf[];
+ };
+ 
++extern struct rate_control_ops mac80211_minstrel;
+ void minstrel_add_sta_debugfs(void *priv, void *priv_sta, struct dentry *dir);
+ void minstrel_remove_sta_debugfs(void *priv, void *priv_sta);
+ 
++/* debugfs */
++int minstrel_stats_open(struct inode *inode, struct file *file);
++ssize_t minstrel_stats_read(struct file *file, char __user *buf, size_t len, loff_t *o);
++int minstrel_stats_release(struct inode *inode, struct file *file);
++
+ #endif
+--- a/net/mac80211/rc80211_minstrel.c
++++ b/net/mac80211/rc80211_minstrel.c
+@@ -541,7 +541,7 @@ minstrel_free(void *priv)
+ 	kfree(priv);
+ }
+ 
+-static struct rate_control_ops mac80211_minstrel = {
++struct rate_control_ops mac80211_minstrel = {
+ 	.name = "minstrel",
+ 	.tx_status = minstrel_tx_status,
+ 	.get_rate = minstrel_get_rate,
+--- a/net/mac80211/rc80211_minstrel_debugfs.c
++++ b/net/mac80211/rc80211_minstrel_debugfs.c
+@@ -52,7 +52,7 @@
+ #include <net/mac80211.h>
+ #include "rc80211_minstrel.h"
+ 
+-static int
++int
+ minstrel_stats_open(struct inode *inode, struct file *file)
+ {
+ 	struct minstrel_sta_info *mi = inode->i_private;
+@@ -100,7 +100,7 @@ minstrel_stats_open(struct inode *inode,
+ 	return 0;
+ }
+ 
+-static ssize_t
++ssize_t
+ minstrel_stats_read(struct file *file, char __user *buf, size_t len, loff_t *ppos)
+ {
+ 	struct minstrel_debugfs_info *ms;
+@@ -109,7 +109,7 @@ minstrel_stats_read(struct file *file, c
+ 	return simple_read_from_buffer(buf, len, ppos, ms->buf, ms->len);
+ }
+ 
+-static int
++int
+ minstrel_stats_release(struct inode *inode, struct file *file)
+ {
+ 	kfree(file->private_data);
