@@ -36,7 +36,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -DHAVE_ISC_READER=1" \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		BINDIR="/usr/sbin" MANDIR="/usr/man" \
 		AWK="awk" \
 		all
