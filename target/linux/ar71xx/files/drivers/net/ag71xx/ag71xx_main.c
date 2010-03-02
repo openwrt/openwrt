@@ -219,7 +219,8 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 		skb->dev = ag->dev;
 		skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
 
-		dma_addr = dma_map_single(NULL, skb->data, AG71XX_RX_PKT_SIZE,
+		dma_addr = dma_map_single(&ag->dev->dev, skb->data,
+					  AG71XX_RX_PKT_SIZE,
 					  DMA_FROM_DEVICE);
 		ring->buf[i].skb = skb;
 		ring->buf[i].desc->data = (u32) dma_addr;
@@ -258,7 +259,7 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 			skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
 			skb->dev = ag->dev;
 
-			dma_addr = dma_map_single(NULL, skb->data,
+			dma_addr = dma_map_single(&ag->dev->dev, skb->data,
 						  AG71XX_RX_PKT_SIZE,
 						  DMA_FROM_DEVICE);
 
@@ -515,7 +516,8 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 		goto err_drop;
 	}
 
-	dma_addr = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
+	dma_addr = dma_map_single(&dev->dev, skb->data, skb->len,
+				  DMA_TO_DEVICE);
 
 	ring->buf[i].skb = skb;
 
