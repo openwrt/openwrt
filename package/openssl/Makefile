@@ -82,11 +82,7 @@ else
   OPENSSL_OPTIONS += no-engines
 endif
 
-ifdef CONFIG_arm
-OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
-else
 OPENSSL_OPTIONS += no-perlasm
-endif
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
