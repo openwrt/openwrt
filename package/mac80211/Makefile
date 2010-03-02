@@ -42,12 +42,21 @@ define KernelPackage/mac80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=Linux 802.11 Wireless Networking Stack
   DEPENDS+= +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +wireless-tools +iw @!LINUX_2_6_25
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1) 
+  FILES:= \
+	$(PKG_BUILD_DIR)/compat/compat.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,compat cfg80211 mac80211)
+else 
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/compat/compat_firmware_class.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,compat compat_firmware_class cfg80211 mac80211)
+endif
+
 endef
 
 define KernelPackage/mac80211/config
