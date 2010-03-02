@@ -1,0 +1,89 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -205,7 +205,6 @@ config MIPS_MALTA
+ 	select I8259
+ 	select MIPS_BOARDS_GEN
+ 	select MIPS_BONITO64
+-	select MIPS_CPU_SCACHE
+ 	select PCI_GT64XXX_PCI0
+ 	select MIPS_MSC
+ 	select SWAP_IO_SPACE
+@@ -1561,13 +1560,6 @@ config IP22_CPU_SCACHE
+ 	bool
+ 	select BOARD_SCACHE
+ 
+-#
+-# Support for a MIPS32 / MIPS64 style S-caches
+-#
+-config MIPS_CPU_SCACHE
+-	bool
+-	select BOARD_SCACHE
+-
+ config R5000_CPU_SCACHE
+ 	bool
+ 	select BOARD_SCACHE
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -759,6 +759,8 @@ static inline void cpu_probe_mips(struct
+ 	case PRID_IMP_25KF:
+ 		c->cputype = CPU_25KF;
+ 		__cpu_name[cpu] = "MIPS 25Kc";
++		/* Probe for L2 cache */
++		c->scache.flags &= ~MIPS_CACHE_NOT_PRESENT;
+ 		break;
+ 	case PRID_IMP_34K:
+ 		c->cputype = CPU_34K;
+--- a/arch/mips/mm/Makefile
++++ b/arch/mips/mm/Makefile
+@@ -33,6 +33,5 @@ obj-$(CONFIG_CPU_CAVIUM_OCTEON)	+= c-oct
+ obj-$(CONFIG_IP22_CPU_SCACHE)	+= sc-ip22.o
+ obj-$(CONFIG_R5000_CPU_SCACHE)  += sc-r5k.o
+ obj-$(CONFIG_RM7000_CPU_SCACHE)	+= sc-rm7k.o
+-obj-$(CONFIG_MIPS_CPU_SCACHE)	+= sc-mips.o
+ 
+ EXTRA_CFLAGS += -Werror
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -1148,7 +1148,6 @@ static void __init loongson2_sc_init(voi
+ 
+ extern int r5k_sc_init(void);
+ extern int rm7k_sc_init(void);
+-extern int mips_sc_init(void);
+ 
+ static void __cpuinit setup_scache(void)
+ {
+@@ -1202,29 +1201,17 @@ static void __cpuinit setup_scache(void)
+ #endif
+ 
+ 	default:
+-		if (c->isa_level == MIPS_CPU_ISA_M32R1 ||
+-		    c->isa_level == MIPS_CPU_ISA_M32R2 ||
+-		    c->isa_level == MIPS_CPU_ISA_M64R1 ||
+-		    c->isa_level == MIPS_CPU_ISA_M64R2) {
+-#ifdef CONFIG_MIPS_CPU_SCACHE
+-			if (mips_sc_init ()) {
+-				scache_size = c->scache.ways * c->scache.sets * c->scache.linesz;
+-				printk("MIPS secondary cache %ldkB, %s, linesize %d bytes.\n",
+-				       scache_size >> 10,
+-				       way_string[c->scache.ways], c->scache.linesz);
+-			}
+-#else
+-			if (!(c->scache.flags & MIPS_CACHE_NOT_PRESENT))
+-				panic("Dunno how to handle MIPS32 / MIPS64 second level cache");
+-#endif
+-			return;
+-		}
+ 		sc_present = 0;
+ 	}
+ 
+ 	if (!sc_present)
+ 		return;
+ 
++	if ((c->isa_level == MIPS_CPU_ISA_M32R1 ||
++	     c->isa_level == MIPS_CPU_ISA_M64R1) &&
++	    !(c->scache.flags & MIPS_CACHE_NOT_PRESENT))
++		panic("Dunno how to handle MIPS32 / MIPS64 second level cache");
++
+ 	/* compute a couple of other cache variables */
+ 	c->scache.waysize = scache_size / c->scache.ways;
+ 

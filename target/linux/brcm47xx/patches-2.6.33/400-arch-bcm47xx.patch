@@ -1,0 +1,319 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -62,6 +62,7 @@ config BCM47XX
+ 	select SSB_DRIVER_MIPS
+ 	select SSB_DRIVER_EXTIF
+ 	select SSB_EMBEDDED
++	select SSB_B43_PCI_BRIDGE if PCI
+ 	select SSB_PCICORE_HOSTMODE if PCI
+ 	select GENERIC_GPIO
+ 	select SYS_HAS_EARLY_PRINTK
+--- a/arch/mips/bcm47xx/Makefile
++++ b/arch/mips/bcm47xx/Makefile
+@@ -3,4 +3,4 @@
+ # under Linux.
+ #
+ 
+-obj-y := gpio.o irq.o prom.o serial.o setup.o time.o wgt634u.o
++obj-y := cfe_env.o gpio.o irq.o nvram.o prom.o serial.o setup.o time.o wgt634u.o
+--- a/arch/mips/bcm47xx/irq.c
++++ b/arch/mips/bcm47xx/irq.c
+@@ -1,5 +1,6 @@
+ /*
+  *  Copyright (C) 2004 Florian Schirmer <jolt@tuxbox.org>
++ *  Copyright (C) 2008 Michael Buesch <mb@bu3sch.de>
+  *
+  *  This program is free software; you can redistribute  it and/or modify it
+  *  under  the terms of  the GNU General  Public License as published by the
+@@ -23,10 +24,19 @@
+  */
+ 
+ #include <linux/types.h>
++#include <linux/errno.h>
++#include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pci.h>
++#include <linux/ssb/ssb.h>
++
+ #include <asm/irq_cpu.h>
+ 
++
++extern struct ssb_bus ssb_bcm47xx;
++
++
+ void plat_irq_dispatch(void)
+ {
+ 	u32 cause;
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -24,10 +24,10 @@
+ #include <asm/io.h>
+ #include <asm/uaccess.h>
+ 
+-#include <nvram.h>
++#include "include/nvram.h"
+ 
+ #define MB * 1048576
+-extern struct ssb_bus ssb;
++extern struct ssb_bus ssb_bcm47xx;
+ 
+ static char nvram_buf[NVRAM_SPACE];
+ static int cfe_env;
+@@ -36,7 +36,7 @@ extern char *cfe_env_get(char *nv_buf, c
+ /* Probe for NVRAM header */
+ static void __init early_nvram_init(void)
+ {
+-	struct ssb_mipscore *mcore = &ssb.mipscore;
++	struct ssb_mipscore *mcore = &ssb_bcm47xx.mipscore;
+ 	struct nvram_header *header;
+ 	int i;
+ 	u32 base, lim, off;
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -2,7 +2,7 @@
+  *  Copyright (C) 2004 Florian Schirmer <jolt@tuxbox.org>
+  *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
+  *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+- *  Copyright (C) 2006 Michael Buesch <mb@bu3sch.de>
++ *  Copyright (C) 2006-2008 Michael Buesch <mb@bu3sch.de>
+  *
+  *  This program is free software; you can redistribute  it and/or modify it
+  *  under  the terms of  the GNU General  Public License as published by the
+@@ -25,18 +25,28 @@
+  *  675 Mass Ave, Cambridge, MA 02139, USA.
+  */
+ 
++#include <linux/init.h>
+ #include <linux/types.h>
+ #include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb_embedded.h>
++#include <linux/tty.h>
++#include <linux/serial.h>
++#include <linux/serial_core.h>
++#include <linux/serial_reg.h>
++#include <linux/serial_8250.h>
+ #include <asm/bootinfo.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+-#include <bcm47xx.h>
+ #include <asm/fw/cfe/cfe_api.h>
++#include <linux/pm.h>
++
++#include "include/nvram.h"
+ 
+ struct ssb_bus ssb_bcm47xx;
+ EXPORT_SYMBOL(ssb_bcm47xx);
+ 
++extern void bcm47xx_pci_init(void);
++
+ static void bcm47xx_machine_restart(char *command)
+ {
+ 	printk(KERN_ALERT "Please stand by while rebooting the system...\n");
+@@ -56,7 +66,7 @@ static void bcm47xx_machine_halt(void)
+ 		cpu_relax();
+ }
+ 
+-static void str2eaddr(char *str, char *dest)
++static void e_aton(char *str, char *dest)
+ {
+ 	int i = 0;
+ 
+@@ -73,52 +83,142 @@ static void str2eaddr(char *str, char *d
+ 	}
+ }
+ 
+-static int bcm47xx_get_invariants(struct ssb_bus *bus,
+-				   struct ssb_init_invariants *iv)
++static void bcm47xx_fill_sprom(struct ssb_sprom *sprom)
+ {
+-	char buf[100];
++	char *s;
+ 
+-	/* Fill boardinfo structure */
+-	memset(&(iv->boardinfo), 0 , sizeof(struct ssb_boardinfo));
++	memset(sprom, 0xFF, sizeof(struct ssb_sprom));
+ 
+-	if (cfe_getenv("boardvendor", buf, sizeof(buf)) >= 0)
+-		iv->boardinfo.type = (u16)simple_strtoul(buf, NULL, 0);
+-	if (cfe_getenv("boardtype", buf, sizeof(buf)) >= 0)
+-		iv->boardinfo.type = (u16)simple_strtoul(buf, NULL, 0);
+-	if (cfe_getenv("boardrev", buf, sizeof(buf)) >= 0)
+-		iv->boardinfo.rev = (u16)simple_strtoul(buf, NULL, 0);
+-
+-	/* Fill sprom structure */
+-	memset(&(iv->sprom), 0, sizeof(struct ssb_sprom));
+-	iv->sprom.revision = 3;
+-
+-	if (cfe_getenv("et0macaddr", buf, sizeof(buf)) >= 0)
+-		str2eaddr(buf, iv->sprom.et0mac);
+-	if (cfe_getenv("et1macaddr", buf, sizeof(buf)) >= 0)
+-		str2eaddr(buf, iv->sprom.et1mac);
+-	if (cfe_getenv("et0phyaddr", buf, sizeof(buf)) >= 0)
+-		iv->sprom.et0phyaddr = simple_strtoul(buf, NULL, 10);
+-	if (cfe_getenv("et1phyaddr", buf, sizeof(buf)) >= 0)
+-		iv->sprom.et1phyaddr = simple_strtoul(buf, NULL, 10);
+-	if (cfe_getenv("et0mdcport", buf, sizeof(buf)) >= 0)
+-		iv->sprom.et0mdcport = simple_strtoul(buf, NULL, 10);
+-	if (cfe_getenv("et1mdcport", buf, sizeof(buf)) >= 0)
+-		iv->sprom.et1mdcport = simple_strtoul(buf, NULL, 10);
++	sprom->revision = 1;
++	if ((s = nvram_get("il0macaddr")))
++		e_aton(s, sprom->il0mac);
++	if ((s = nvram_get("et0macaddr")))
++		e_aton(s, sprom->et0mac);
++	if ((s = nvram_get("et1macaddr")))
++		e_aton(s, sprom->et1mac);
++	if ((s = nvram_get("et0phyaddr")))
++		sprom->et0phyaddr = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("et1phyaddr")))
++		sprom->et1phyaddr = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("et0mdcport")))
++		sprom->et0mdcport = !!simple_strtoul(s, NULL, 10);
++	if ((s = nvram_get("et1mdcport")))
++		sprom->et1mdcport = !!simple_strtoul(s, NULL, 10);
++	if ((s = nvram_get("pa0b0")))
++		sprom->pa0b0 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0b1")))
++		sprom->pa0b1 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0b2")))
++		sprom->pa0b2 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1b0")))
++		sprom->pa1b0 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1b1")))
++		sprom->pa1b1 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1b2")))
++		sprom->pa1b2 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio0")))
++		sprom->gpio0 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio1")))
++		sprom->gpio1 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio2")))
++		sprom->gpio2 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio3")))
++		sprom->gpio3 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0maxpwr")))
++		sprom->maxpwr_bg = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1maxpwr")))
++		sprom->maxpwr_a = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0itssit")))
++		sprom->itssi_bg = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1itssit")))
++		sprom->itssi_a = simple_strtoul(s, NULL, 0);
++	sprom->boardflags_lo = 0;
++	if ((s = nvram_get("boardflags")))
++		sprom->boardflags_lo = simple_strtoul(s, NULL, 0);
++	sprom->boardflags_hi = 0;
++	if ((s = nvram_get("boardflags2")))
++		sprom->boardflags_hi = simple_strtoul(s, NULL, 0);
++}
++
++static int bcm47xx_get_invariants(struct ssb_bus *bus, struct ssb_init_invariants *iv)
++{
++	char *s;
++
++	iv->boardinfo.vendor = SSB_BOARDVENDOR_BCM;
++	if ((s = nvram_get("boardtype")))
++		iv->boardinfo.type = (u16)simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("boardrev")))
++		iv->boardinfo.rev = (u16)simple_strtoul(s, NULL, 0);
++
++	bcm47xx_fill_sprom(&iv->sprom);
++
++	if ((s = nvram_get("cardbus")))
++		iv->has_cardbus_slot = !!simple_strtoul(s, NULL, 10);
+ 
+ 	return 0;
+ }
+ 
+ void __init plat_mem_setup(void)
+ {
+-	int err;
++	int i, err;
++	char *s;
++	struct ssb_mipscore *mcore;
++
++	err = ssb_bus_ssbbus_register(&ssb_bcm47xx, SSB_ENUM_BASE, bcm47xx_get_invariants);
++	if (err) {
++		const char *msg = "Failed to initialize SSB bus (err %d)\n";
++		printk(msg, err); /* Make sure the message gets out of the box. */
++		panic(msg, err);
++	}
++	mcore = &ssb_bcm47xx.mipscore;
+ 
+-	err = ssb_bus_ssbbus_register(&ssb_bcm47xx, SSB_ENUM_BASE,
+-				      bcm47xx_get_invariants);
+-	if (err)
+-		panic("Failed to initialize SSB bus (err %d)\n", err);
++	s = nvram_get("kernel_args");
++	if (s && !strncmp(s, "console=ttyS1", 13)) {
++		struct ssb_serial_port port;
++
++		printk("Swapping serial ports!\n");
++		/* swap serial ports */
++		memcpy(&port, &mcore->serial_ports[0], sizeof(port));
++		memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1], sizeof(port));
++		memcpy(&mcore->serial_ports[1], &port, sizeof(port));
++	}
++
++	for (i = 0; i < mcore->nr_serial_ports; i++) {
++		struct ssb_serial_port *port = &(mcore->serial_ports[i]);
++		struct uart_port s;
++
++		memset(&s, 0, sizeof(s));
++		s.line = i;
++		s.mapbase = (unsigned int) port->regs;
++		s.membase = port->regs;
++		s.irq = port->irq + 2;
++		s.uartclk = port->baud_base;
++		s.flags = UPF_BOOT_AUTOCONF | UPF_SHARE_IRQ;
++		s.iotype = SERIAL_IO_MEM;
++		s.regshift = port->reg_shift;
++
++		early_serial_setup(&s);
++	}
++	printk("Serial init done.\n");
+ 
+ 	_machine_restart = bcm47xx_machine_restart;
+ 	_machine_halt = bcm47xx_machine_halt;
+ 	pm_power_off = bcm47xx_machine_halt;
+ }
+ 
++static int __init bcm47xx_register_gpiodev(void)
++{
++	static struct resource res = {
++		.start = 0xFFFFFFFF,
++	};
++	struct platform_device *pdev;
++
++	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
++	if (!pdev) {
++		printk(KERN_ERR "bcm47xx: GPIODEV init failed\n");
++		return -ENODEV;
++	}
++
++	return 0;
++}
++device_initcall(bcm47xx_register_gpiodev);
+--- a/arch/mips/bcm47xx/time.c
++++ b/arch/mips/bcm47xx/time.c
+@@ -22,11 +22,17 @@
+  *  675 Mass Ave, Cambridge, MA 02139, USA.
+  */
+ 
+-
+ #include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/sched.h>
++#include <linux/serial_reg.h>
++#include <linux/interrupt.h>
+ #include <linux/ssb/ssb.h>
++#include <asm/addrspace.h>
++#include <asm/io.h>
+ #include <asm/time.h>
+-#include <bcm47xx.h>
++
++extern struct ssb_bus ssb_bcm47xx;
+ 
+ void __init plat_time_init(void)
+ {

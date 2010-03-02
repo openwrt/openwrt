@@ -1,0 +1,10 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -65,7 +65,6 @@ config BCM47XX
+ 	select SSB_B43_PCI_BRIDGE if PCI
+ 	select SSB_PCICORE_HOSTMODE if PCI
+ 	select GENERIC_GPIO
+-	select SYS_HAS_EARLY_PRINTK
+ 	select CFE
+ 	help
+ 	 Support for BCM47XX based boards
