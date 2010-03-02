@@ -11,7 +11,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/cache.h>
 #include "ag71xx.h"
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
@@ -209,21 +208,21 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 
 	for (i = 0; i < AG71XX_RX_RING_SIZE; i++) {
 		struct sk_buff *skb;
+		dma_addr_t dma_addr;
 
-		skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE);
+		skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + AG71XX_RX_PKT_RESERVE);
 		if (!skb) {
 			ret = -ENOMEM;
 			break;
 		}
 
-		dma_map_single(NULL, skb->data, AG71XX_RX_PKT_SIZE,
-				DMA_FROM_DEVICE);
-
 		skb->dev = ag->dev;
 		skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
 
+		dma_addr = dma_map_single(NULL, skb->data, AG71XX_RX_PKT_SIZE,
+					  DMA_FROM_DEVICE);
 		ring->buf[i].skb = skb;
-		ring->buf[i].desc->data = virt_to_phys(skb->data);
+		ring->buf[i].desc->data = (u32) dma_addr;
 		ring->buf[i].desc->ctrl = DESC_EMPTY;
 	}
 
@@ -248,20 +247,23 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 		i = ring->dirty % AG71XX_RX_RING_SIZE;
 
 		if (ring->buf[i].skb == NULL) {
+			dma_addr_t dma_addr;
 			struct sk_buff *skb;
 
-			skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE);
+			skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE +
+					    AG71XX_RX_PKT_RESERVE);
 			if (skb == NULL)
 				break;
-
-			dma_map_single(NULL, skb->data, AG71XX_RX_PKT_SIZE,
-					DMA_FROM_DEVICE);
 
 			skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
 			skb->dev = ag->dev;
 
+			dma_addr = dma_map_single(NULL, skb->data,
+						  AG71XX_RX_PKT_SIZE,
+						  DMA_FROM_DEVICE);
+
 			ring->buf[i].skb = skb;
-			ring->buf[i].desc->data = virt_to_phys(skb->data);
+			ring->buf[i].desc->data = (u32) dma_addr;
 		}
 
 		ring->buf[i].desc->ctrl = DESC_EMPTY;
@@ -497,6 +499,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	struct ag71xx *ag = netdev_priv(dev);
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	struct ag71xx_desc *desc;
+	dma_addr_t dma_addr;
 	int i;
 
 	i = ring->curr % AG71XX_TX_RING_SIZE;
@@ -512,12 +515,12 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 		goto err_drop;
 	}
 
-	dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
+	dma_addr = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
 
 	ring->buf[i].skb = skb;
 
 	/* setup descriptor fields */
-	desc->data = virt_to_phys(skb->data);
+	desc->data = (u32) dma_addr;
 	desc->ctrl = (skb->len & DESC_PKTLEN_M);
 
 	/* flush descriptor */
