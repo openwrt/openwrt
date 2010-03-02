@@ -1,0 +1,63 @@
+This patch significantly improves the reliability of high speed 
+usb writes on the bcm5354. It implements a work around for version 2
+of the usb20 core that was cribbed from the GPL sources for the 
+Asus wl500gpv2 and verified against the wl520gu sources.
+
+Reference:
+GPL/WL-520gu-NewUI/src/linux/linux/arch/mips/brcm-boards/bcm947xx/pcibios.c
+GPL/WL-500gPV2-NewUI/src/linux/linux/arch/mips/brcm-boards/bcm947xx/pcibios.c
+
+Signed-off-by: Steve Brown <sbrown@cortland.com>
+
+---
+ drivers/usb/host/ohci-ssb.c |   37 +++++++++++++++++++++++--------------
+ 1 file changed, 23 insertions(+), 14 deletions(-)
+
+--- a/drivers/usb/host/ohci-ssb.c
++++ b/drivers/usb/host/ohci-ssb.c
+@@ -141,22 +141,31 @@ static int ssb_ohci_attach(struct ssb_de
+ 		 */
+ 		ssb_device_enable(dev, 0);
+ 		ssb_write32(dev, 0x200, 0x7ff);
++
++		/* Change Flush control reg */
++		tmp = ssb_read32(dev, 0x400);
++		tmp &= ~8;
++		ssb_write32(dev, 0x400, tmp);
++		tmp = ssb_read32(dev, 0x400);
++
++		/* Change Shim control reg */
++		tmp = ssb_read32(dev, 0x304);
++		tmp &= ~0x100;
++		ssb_write32(dev, 0x304, tmp);
++		tmp = ssb_read32(dev, 0x304);
++
+ 		udelay(1);
+-		if (dev->id.revision == 1) { // bug in rev 1
+ 
+-			/* Change Flush control reg */
+-			tmp = ssb_read32(dev, 0x400);
+-			tmp &= ~8;
+-			ssb_write32(dev, 0x400, tmp);
+-			tmp = ssb_read32(dev, 0x400);
+-			printk("USB20H fcr: 0x%0x\n", tmp);
+-
+-			/* Change Shim control reg */
+-			tmp = ssb_read32(dev, 0x304);
+-			tmp &= ~0x100;
+-			ssb_write32(dev, 0x304, tmp);
+-			tmp = ssb_read32(dev, 0x304);
+-			printk("USB20H shim: 0x%0x\n", tmp);
++		/* Work around for 5354 failures */
++		if ((dev->id.revision == 2) && (dev->bus->chip_id == 0x5354)) {
++			/* Change syn01 reg */
++			tmp = 0x00fe00fe;
++			ssb_write32(dev, 0x894, tmp);
++
++			/* Change syn03 reg */
++			tmp = ssb_read32(dev, 0x89c);
++			tmp |= 0x1;
++			ssb_write32(dev, 0x89c, tmp);
+ 		}
+ 	} else
+ 		ssb_device_enable(dev, 0);
