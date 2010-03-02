@@ -491,7 +491,8 @@ static int ag71xx_stop(struct net_device *dev)
 	return 0;
 }
 
-static int ag71xx_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
+static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
+					  struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
 	struct ag71xx_ring *ring = &ag->tx_ring;
@@ -535,13 +536,13 @@ static int ag71xx_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	dev->trans_start = jiffies;
 
-	return 0;
+	return NETDEV_TX_OK;
 
  err_drop:
 	dev->stats.tx_dropped++;
 
 	dev_kfree_skb(skb);
-	return 0;
+	return NETDEV_TX_OK;
 }
 
 static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
