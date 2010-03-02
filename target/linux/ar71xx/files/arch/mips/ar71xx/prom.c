@@ -36,7 +36,7 @@ static inline int is_valid_ram_addr(void *addr)
 static void __init ar71xx_prom_append_cmdline(const char *name,
 					      const char *value)
 {
-	char buf[CL_SIZE];
+	char buf[COMMAND_LINE_SIZE];
 
 	snprintf(buf, sizeof(buf), " %s=%s", name, value);
 	strlcat(arcs_cmdline, buf, sizeof(arcs_cmdline));
