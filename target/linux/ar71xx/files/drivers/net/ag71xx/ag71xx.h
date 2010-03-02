@@ -38,7 +38,7 @@
 #define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
-#define AG71XX_DRV_VERSION	"0.5.26"
+#define AG71XX_DRV_VERSION	"0.5.27"
 
 #define AG71XX_NAPI_WEIGHT	64
 #define AG71XX_OOM_REFILL	(1 + HZ/10)
@@ -343,76 +343,56 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define MII_CTRL_SPEED_100	1
 #define MII_CTRL_SPEED_1000	2
 
-static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
+static inline void ag71xx_check_reg_offset(struct ag71xx *ag, unsigned reg)
 {
-	void __iomem *r;
-
 	switch (reg) {
 	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
 	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
-		r = ag->mac_base + reg;
-		__raw_writel(value, r);
-
-		/* flush write */
-		(void) __raw_readl(r);
 		break;
+
 	default:
 		BUG();
 	}
 }
 
+static inline void ag71xx_wr(struct ag71xx *ag, unsigned reg, u32 value)
+{
+	ag71xx_check_reg_offset(ag, reg);
+
+	__raw_writel(value, ag->mac_base + reg);
+	/* flush write */
+	(void) __raw_readl(ag->mac_base + reg);
+}
+
 static inline u32 ag71xx_rr(struct ag71xx *ag, unsigned reg)
 {
-	void __iomem *r;
-	u32 ret;
+	ag71xx_check_reg_offset(ag, reg);
 
-	switch (reg) {
-	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
-	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
-		r = ag->mac_base + reg;
-		ret = __raw_readl(r);
-		break;
-	default:
-		BUG();
-	}
-
-	return ret;
+	return __raw_readl(ag->mac_base + reg);
 }
 
 static inline void ag71xx_sb(struct ag71xx *ag, unsigned reg, u32 mask)
 {
 	void __iomem *r;
 
-	switch (reg) {
-	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
-	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
-		r = ag->mac_base + reg;
-		__raw_writel(__raw_readl(r) | mask, r);
+	ag71xx_check_reg_offset(ag, reg);
 
-		/* flush write */
-		(void)__raw_readl(r);
-		break;
-	default:
-		BUG();
-	}
+	r = ag->mac_base + reg;
+	__raw_writel(__raw_readl(r) | mask, r);
+	/* flush write */
+	(void)__raw_readl(r);
 }
 
 static inline void ag71xx_cb(struct ag71xx *ag, unsigned reg, u32 mask)
 {
 	void __iomem *r;
 
-	switch (reg) {
-	case AG71XX_REG_MAC_CFG1 ... AG71XX_REG_MAC_MFL:
-	case AG71XX_REG_MAC_IFCTL ... AG71XX_REG_INT_STATUS:
-		r = ag->mac_base + reg;
-		__raw_writel(__raw_readl(r) & ~mask, r);
+	ag71xx_check_reg_offset(ag, reg);
 
-		/* flush write */
-		(void) __raw_readl(r);
-		break;
-	default:
-		BUG();
-	}
+	r = ag->mac_base + reg;
+	__raw_writel(__raw_readl(r) & ~mask, r);
+	/* flush write */
+	(void) __raw_readl(r);
 }
 
 static inline void ag71xx_int_enable(struct ag71xx *ag, u32 ints)
