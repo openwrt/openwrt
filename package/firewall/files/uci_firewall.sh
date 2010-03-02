@@ -294,8 +294,11 @@ fw_rule() {
 	[ -n "$src" -a -z "$dest" ] && ZONE=zone_$src
 	[ -n "$src" -a -n "$dest" ] && ZONE=zone_${src}_forward
 	[ -n "$dest" ] && TARGET=zone_${dest}_$target
+
+	eval 'RULE_COUNT=$((++RULE_COUNT_'$ZONE'))'
+
 	add_rule() {
-		$IPTABLES -A $ZONE \
+		$IPTABLES -I $ZONE $RULE_COUNT \
 			${proto:+-p $proto} \
 			${icmp_type:+--icmp-type $icmp_type} \
 			${src_ip:+-s $src_ip} \
