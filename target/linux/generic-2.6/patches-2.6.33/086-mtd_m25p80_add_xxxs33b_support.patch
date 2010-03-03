@@ -1,28 +1,28 @@
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
 @@ -649,6 +649,11 @@ static const struct spi_device_id m25p_i
- 	{ "en25p32", 0x1c2016, 0, 64 * 1024,  64, },
- 	{ "en25p64", 0x1c2017, 0, 64 * 1024, 128, },
+ 	{ "en25p32", INFO(0x1c2016, 0, 64 * 1024,  64, 0) },
+ 	{ "en25p64", INFO(0x1c2017, 0, 64 * 1024, 128, 0) },
  
 +	/* Numonyx -- xxxs33b */
-+	{ "160s33b",  0x898911, 0, 64 * 1024,  64, },
-+	{ "320s33b",  0x898912, 0, 64 * 1024, 128, },
-+	{ "640s33b",  0x898913, 0, 64 * 1024, 256, },
++	{ "160s33b",  INFO(0x898911, 0, 64 * 1024,  64, 0) },
++	{ "320s33b",  INFO(0x898912, 0, 64 * 1024, 128, 0) },
++	{ "640s33b",  INFO(0x898913, 0, 64 * 1024, 256, 0) },
 +
  	/* PMC -- pm25x "blocks" are 32K, sectors are 4K */
- 	{ "pm25lv512",         0, 32 * 1024, 2, SECT_4K },
- 	{ "pm25lv010",         0, 32 * 1024, 4, SECT_4K },
+ 	{ "pm25lv512", INFO(0, 0, 32 * 1024, 2, SECT_4K) },
+ 	{ "pm25lv010", INFO(0, 0, 32 * 1024, 4, SECT_4K) },
 @@ -833,11 +838,12 @@ static int __devinit m25p_probe(struct s
  	dev_set_drvdata(&spi->dev, flash);
  
  	/*
 -	 * Atmel and SST serial flash tend to power
-+	 * Atmel, Intel/Numonyx and SST serial flash tend to power
++	 * Atmel, SST and Intel/Numonyx serial flash tend to power
  	 * up with the software protection bits set
  	 */
  
  	if (info->jedec_id >> 16 == 0x1f ||
-+	    info->jedec_id >> 16 == 0x89) {
++	    info->jedec_id >> 16 == 0x89 ||
  	    info->jedec_id >> 16 == 0xbf) {
  		write_enable(flash);
  		write_sr(flash, 0);
