@@ -1,8 +1,6 @@
-Index: linux-2.6.33/arch/mips/Makefile
-===================================================================
---- linux-2.6.33.orig/arch/mips/Makefile	2010-02-28 16:43:15.000000000 +0100
-+++ linux-2.6.33/arch/mips/Makefile	2010-02-28 16:45:56.397211344 +0100
-@@ -637,6 +637,13 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -637,6 +637,13 @@ else
  load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
  endif
  
@@ -16,11 +14,9 @@ Index: linux-2.6.33/arch/mips/Makefile
  # temporary until string.h is fixed
  cflags-y += -ffreestanding
  
-Index: linux-2.6.33/arch/mips/Kconfig
-===================================================================
---- linux-2.6.33.orig/arch/mips/Kconfig	2010-02-28 16:43:15.000000000 +0100
-+++ linux-2.6.33/arch/mips/Kconfig	2010-02-28 16:46:56.150331076 +0100
-@@ -48,6 +48,23 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -48,6 +48,23 @@ config AR7
  	  Support for the Texas Instruments AR7 System-on-a-Chip
  	  family: TNETD7100, 7200 and 7300.
  
@@ -44,7 +40,7 @@ Index: linux-2.6.33/arch/mips/Kconfig
  config BCM47XX
  	bool "BCM47XX based boards"
  	select CEVT_R4K
-@@ -682,6 +699,7 @@
+@@ -682,6 +699,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  endchoice
  
  source "arch/mips/alchemy/Kconfig"
