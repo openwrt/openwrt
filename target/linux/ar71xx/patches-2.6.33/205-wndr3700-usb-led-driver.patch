@@ -1,8 +1,6 @@
-Index: linux-2.6.33/drivers/leds/Kconfig
-===================================================================
---- linux-2.6.33.orig/drivers/leds/Kconfig	2010-02-28 16:43:15.000000000 +0100
-+++ linux-2.6.33/drivers/leds/Kconfig	2010-02-28 16:47:43.134713224 +0100
-@@ -269,6 +269,13 @@
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -269,6 +269,13 @@ config LEDS_ADP5520
  	  To compile this driver as a module, choose M here: the module will
  	  be called leds-adp5520.
  
@@ -16,11 +14,9 @@ Index: linux-2.6.33/drivers/leds/Kconfig
  comment "LED Triggers"
  
  config LEDS_TRIGGERS
-Index: linux-2.6.33/drivers/leds/Makefile
-===================================================================
---- linux-2.6.33.orig/drivers/leds/Makefile	2010-02-28 16:43:15.000000000 +0100
-+++ linux-2.6.33/drivers/leds/Makefile	2010-02-28 16:48:22.946586221 +0100
-@@ -29,6 +29,7 @@
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_LEDS_DA903X)		+= leds-da903
  obj-$(CONFIG_LEDS_WM831X_STATUS)	+= leds-wm831x-status.o
  obj-$(CONFIG_LEDS_WM8350)		+= leds-wm8350.o
  obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o

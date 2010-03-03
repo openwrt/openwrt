@@ -1,6 +1,6 @@
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -230,4 +230,12 @@ config GPIO_UCB1400
+@@ -255,4 +255,12 @@ config GPIO_UCB1400
  	  To compile this driver as a module, choose M here: the
  	  module will be called ucb1400_gpio.
  
@@ -15,7 +15,7 @@
  endif
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_GPIO_MAX7301)	+= max7301.o
+@@ -11,6 +11,7 @@ obj-$(CONFIG_GPIO_MAX7301)	+= max7301.o
  obj-$(CONFIG_GPIO_MAX732X)	+= max732x.o
  obj-$(CONFIG_GPIO_MC33880)	+= mc33880.o
  obj-$(CONFIG_GPIO_MCP23S08)	+= mcp23s08.o

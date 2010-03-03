@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -296,6 +296,11 @@ config SPI_TLE62X0
+@@ -365,6 +365,11 @@ config SPI_TLE62X0
  	  sysfs interface, with each line presented as a kind of GPIO
  	  exposing both switch control and diagnostic feedback.
  
@@ -14,7 +14,7 @@
  #
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -40,6 +40,7 @@ obj-$(CONFIG_SPI_STMP3XXX)		+= spi_stmp.
+@@ -54,6 +54,7 @@ spi_s3c24xx_hw-$(CONFIG_SPI_S3C24XX_FIQ)
  
  # SPI protocol drivers (device/link on bus)
  obj-$(CONFIG_SPI_SPIDEV)	+= spidev.o
