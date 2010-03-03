@@ -1,0 +1,536 @@
+Index: madwifi-trunk-r3314/kernelversion.c
+===================================================================
+--- madwifi-trunk-r3314.orig/kernelversion.c	2010-03-03 11:24:57.250287480 +0100
++++ madwifi-trunk-r3314/kernelversion.c	2010-03-03 11:25:30.255287207 +0100
+@@ -10,7 +10,11 @@
+ 
+ /* Linux 2.6.18+ uses <linux/utsrelease.h> */
+ #ifndef UTS_RELEASE
+-#include <linux/utsrelease.h>
++  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)
++    #include <generated/utsrelease.h>
++  #else
++    #include <linux/utsrelease.h>
++  #endif
+ #endif
+ 
+ char *uts_release = UTS_RELEASE;
+Index: madwifi-trunk-r3314/ath/if_ath.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath.c	2010-03-03 11:25:33.266287431 +0100
++++ madwifi-trunk-r3314/ath/if_ath.c	2010-03-03 12:07:39.606288303 +0100
+@@ -11580,227 +11580,231 @@
+ static int maxint = 0x7fffffff;		/* 32-bit big */
+ 
+ static const ctl_table ath_sysctl_template[] = {
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "dev_vendor",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_hwinfo,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+ 	  .strategy   = &sysctl_string,
++#endif
+ 	  .data		= "N/A",
+ 	  .maxlen   = 1,
+ 	  .extra2	= (void *)ATH_CARD_VENDOR,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "dev_name",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_hwinfo,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+ 	  .strategy   = &sysctl_string,
++#endif
+ 	  .data		= "N/A",
+ 	  .maxlen   = 1,
+ 	  .extra2	= (void *)ATH_CARD_NAME,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "slottime",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_SLOTTIME,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "acktimeout",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_ACKTIMEOUT,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "ctstimeout",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_CTSTIMEOUT,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "distance",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_DISTANCE,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "silent",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_SILENT,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "softled",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_SOFTLED,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "ledpin",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_LEDPIN,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "countrycode",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_COUNTRYCODE,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "outdoor",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_OUTDOOR,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "regdomain",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_REGDOMAIN,
+ 	},
+ #ifdef AR_DEBUG
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "debug",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_DEBUG,
+ 	},
+ #endif
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "poweroffset",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_POWEROFFSET,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "txantenna",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_TXANTENNA,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "rxantenna",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RXANTENNA,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "diversity",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_DIVERSITY,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "txintrperiod",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_TXINTRPERIOD,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "fftxqmin",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_FFTXQMIN,
+ 	},
+ #ifdef ATH_SUPERG_XR
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "xrpollperiod",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_XR_POLL_PERIOD,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "xrpollcount",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_XR_POLL_COUNT,
+ 	},
+ #endif
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "ackrate",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_ACKRATE,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "channelbw",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_CHANBW,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "rp",
+ 	  .mode         = 0200,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RP,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "radar_print",
+ 	  .mode         = 0200,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RP_PRINT,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "radar_print_all",
+ 	  .mode         = 0200,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RP_PRINT_ALL,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "radar_dump",
+ 	  .mode         = 0200,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RP_PRINT_MEM,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "radar_dump_all",
+ 	  .mode         = 0200,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RP_PRINT_MEM_ALL,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "rp_flush",
+ 	  .mode         = 0200,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RP_FLUSH,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "panic",
+ 	  .mode         = 0200,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_PANIC,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "rp_ignored",
+ 	  .mode         = 0644,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RP_IGNORED,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "radar_ignored",
+ 	  .mode         = 0644,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_RADAR_IGNORED,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "intmit",
+ 	  .mode         = 0644,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_INTMIT,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "noise_immunity",
+ 	  .mode         = 0644,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_NOISE_IMMUNITY,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "ofdm_weak_det",
+ 	  .mode         = 0644,
+ 	  .proc_handler = ath_sysctl_halparam,
+ 	  .extra2	= (void *)ATH_OFDM_WEAK_DET,
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname     = "cca_thresh",
+ 	  .mode         = 0644,
+ 	  .proc_handler = ath_sysctl_halparam,
+@@ -11838,12 +11842,16 @@
+ 
+ 	/* setup the table */
+ 	memset(sc->sc_sysctls, 0, space);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+ 	sc->sc_sysctls[0].ctl_name = CTL_DEV;
++#endif
+ 	sc->sc_sysctls[0].procname = "dev";
+ 	sc->sc_sysctls[0].mode = 0555;
+ 	sc->sc_sysctls[0].child = &sc->sc_sysctls[2];
+ 	/* [1] is NULL terminator */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+ 	sc->sc_sysctls[2].ctl_name = CTL_AUTO;
++#endif
+ 	sc->sc_sysctls[2].procname = dev_name;
+ 	sc->sc_sysctls[2].mode = 0555;
+ 	sc->sc_sysctls[2].child = &sc->sc_sysctls[4];
+@@ -11966,7 +11974,7 @@
+  */
+ static ctl_table ath_static_sysctls[] = {
+ #ifdef AR_DEBUG
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "debug",
+ 	  .mode		= 0644,
+ 	  .data		= &ath_debug,
+@@ -11974,14 +11982,14 @@
+ 	  .proc_handler	= proc_dointvec
+ 	},
+ #endif
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "xchanmode",
+ 	  .mode		= 0444,
+ 	  .data		= &ath_xchanmode,
+ 	  .maxlen	= sizeof(ath_xchanmode),
+ 	  .proc_handler	= proc_dointvec
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "calibrate",
+ 	  .mode		= 0644,
+ 	  .data		= &ath_calinterval,
+@@ -11993,14 +12001,14 @@
+ 	{ 0 }
+ };
+ static ctl_table ath_ath_table[] = {
+-	{ .ctl_name	= DEV_ATH,
++	{ CTLNAME(DEV_ATH)
+ 	  .procname	= "ath",
+ 	  .mode		= 0555,
+ 	  .child	= ath_static_sysctls
+ 	}, { 0 }
+ };
+ static ctl_table ath_root_table[] = {
+-	{ .ctl_name	= CTL_DEV,
++	{ CTLNAME(CTL_DEV)
+ 	  .procname	= "dev",
+ 	  .mode		= 0555,
+ 	  .child	= ath_ath_table
+Index: madwifi-trunk-r3314/ath/if_ath_ahb.h
+===================================================================
+--- madwifi-trunk-r3314.orig/ath/if_ath_ahb.h	2010-03-03 11:32:20.295286997 +0100
++++ madwifi-trunk-r3314/ath/if_ath_ahb.h	2010-03-03 11:32:56.782287828 +0100
+@@ -112,7 +112,11 @@
+ 	do { (void) (start); (void) (size); } while (0)
+ #endif
+ 
++#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,9)
++#define bus_dma_sync_single	dma_sync_single_for_cpu
++#else
+ #define bus_dma_sync_single	dma_sync_single
++#endif
+ #define bus_map_single		dma_map_single
+ #define bus_unmap_single	dma_unmap_single
+ #define bus_alloc_consistent(_hwdev, _sz, _hdma)		\
+Index: madwifi-trunk-r3314/ath_hal/ah_os.c
+===================================================================
+--- madwifi-trunk-r3314.orig/ath_hal/ah_os.c	2010-03-03 12:12:00.246286932 +0100
++++ madwifi-trunk-r3314/ath_hal/ah_os.c	2010-03-03 12:12:59.503287204 +0100
+@@ -518,7 +518,7 @@
+ 
+ static ctl_table ath_hal_sysctls[] = {
+ #ifdef AH_DEBUG
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "debug",
+ 	  .mode		= 0644,
+ 	  .data		= &ath_hal_debug,
+@@ -526,21 +526,21 @@
+ 	  .proc_handler	= proc_dointvec
+ 	},
+ #endif
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "dma_beacon_response_time",
+ 	  .data		= &ath_hal_dma_beacon_response_time,
+ 	  .maxlen	= sizeof(ath_hal_dma_beacon_response_time),
+ 	  .mode		= 0644,
+ 	  .proc_handler	= proc_dointvec
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "sw_beacon_response_time",
+ 	  .mode		= 0644,
+ 	  .data		= &ath_hal_sw_beacon_response_time,
+ 	  .maxlen	= sizeof(ath_hal_sw_beacon_response_time),
+ 	  .proc_handler	= proc_dointvec
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "swba_backoff",
+ 	  .mode		= 0644,
+ 	  .data		= &ath_hal_additional_swba_backoff,
+@@ -548,19 +548,19 @@
+ 	  .proc_handler	= proc_dointvec
+ 	},
+ #ifdef AH_DEBUG_ALQ
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "alq",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= sysctl_hw_ath_hal_log
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "alq_size",
+ 	  .mode		= 0644,
+ 	  .data		= &ath_hal_alq_qsize,
+ 	  .maxlen	= sizeof(ath_hal_alq_qsize),
+ 	  .proc_handler	= proc_dointvec
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "alq_lost",
+ 	  .mode		= 0644,
+ 	  .data		= &ath_hal_alq_lost,
+@@ -571,21 +571,21 @@
+ 	{ 0 }
+ };
+ static ctl_table ath_hal_table[] = {
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "hal",
+ 	  .mode		= 0555,
+ 	  .child	= ath_hal_sysctls
+ 	}, { 0 }
+ };
+ static ctl_table ath_ath_table[] = {
+-	{ .ctl_name	= DEV_ATH,
++	{ CTLNAME(DEV_ATH)
+ 	  .procname	= "ath",
+ 	  .mode		= 0555,
+ 	  .child	= ath_hal_table
+ 	}, { 0 }
+ };
+ static ctl_table ath_root_table[] = {
+-	{ .ctl_name	= CTL_DEV,
++	{ CTLNAME(CTL_DEV)
+ 	  .procname	= "dev",
+ 	  .mode		= 0555,
+ 	  .child	= ath_ath_table
+Index: madwifi-trunk-r3314/include/compat.h
+===================================================================
+--- madwifi-trunk-r3314.orig/include/compat.h	2010-03-03 11:58:09.526287574 +0100
++++ madwifi-trunk-r3314/include/compat.h	2010-03-03 12:09:53.194286975 +0100
+@@ -193,6 +193,12 @@
+ #define __skb_queue_after(_list, _old, _new)	__skb_append(_old, _new, _list)
+ #endif
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
++#define CTLNAME(x)	.ctl_name	= x,
++#else
++#define CTLNAME(x)
++#endif
++
+ #endif /* __KERNEL__ */
+ 
+ #endif /* _ATH_COMPAT_H_ */
+Index: madwifi-trunk-r3314/net80211/ieee80211_linux.c
+===================================================================
+--- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.c	2010-03-03 11:56:37.423286722 +0100
++++ madwifi-trunk-r3314/net80211/ieee80211_linux.c	2010-03-03 12:11:06.962288262 +0100
+@@ -699,39 +699,39 @@
+ 
+ static const ctl_table ieee80211_sysctl_template[] = {
+ #ifdef IEEE80211_DEBUG
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "debug",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ieee80211_sysctl_debug
+ 	},
+ #endif
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "dev_type",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ieee80211_sysctl_dev_type
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "monitor_nods_only",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ieee80211_sysctl_monitor_nods_only
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "monitor_txf_len",
+ 	  .mode		= 0644,
+ 	  .proc_handler	= ieee80211_sysctl_monitor_txf_len
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "monitor_phy_errors",
+ 	  .mode		= 0644,
+ 	  .proc_handler = ieee80211_sysctl_monitor_phy_errors
+ 	},
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "monitor_crc_errors",
+ 	  .mode		= 0644,
+ 	  .proc_handler = ieee80211_sysctl_monitor_crc_errors
+ 	},
+ 	/* NB: must be last entry before NULL */
+-	{ .ctl_name	= CTL_AUTO,
++	{ CTLNAME(CTL_AUTO)
+ 	  .procname	= "%parent",
+ 	  .maxlen	= IFNAMSIZ,
+ 	  .mode		= 0444,
+@@ -786,12 +786,16 @@
+ 
+ 	/* setup the table */
+ 	memset(vap->iv_sysctls, 0, space);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+ 	vap->iv_sysctls[0].ctl_name = CTL_NET;
++#endif
+ 	vap->iv_sysctls[0].procname = "net";
+ 	vap->iv_sysctls[0].mode = 0555;
+ 	vap->iv_sysctls[0].child = &vap->iv_sysctls[2];
+ 	/* [1] is NULL terminator */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+ 	vap->iv_sysctls[2].ctl_name = CTL_AUTO;
++#endif
+ 	vap->iv_sysctls[2].procname = devname; /* XXX bad idea? */
+ 	vap->iv_sysctls[2].mode = 0555;
+ 	vap->iv_sysctls[2].child = &vap->iv_sysctls[4];
