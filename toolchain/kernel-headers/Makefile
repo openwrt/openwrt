@@ -33,6 +33,12 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.18)),1)
   LINUX_HAS_HEADERS_INSTALL:=y
 endif
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1)
+  LINUX_ASM_INCLUDES:=arch/$(LINUX_KARCH)/include/asm
+else
+  LINUX_ASM_INCLUDES:=include/asm
+endif
+
 KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
 	ARCH=$(LINUX_KARCH) \
 	KBUILD_HAVE_NLS=no \
@@ -105,11 +111,7 @@ define Host/Prepare
 	ln -sf linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(HOST_BUILD_DIR)/Makefile
 	yes '' | $(KMAKE) oldconfig
-ifeq ($(CONFIG_LINUX_2_6_33),y)
-	$(KMAKE) include/linux/version.h arch/$(LINUX_KARCH)/include/asm
-else
-	$(KMAKE) include/linux/version.h include/asm
-endif
+	$(KMAKE) include/linux/version.h $(LINUX_ASM_INCLUDES)
 	if [ -d $(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
 		$(CP) \
 			$(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
