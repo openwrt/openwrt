@@ -51,9 +51,8 @@ EOF
 
 add_uci_conffiles() {
 	local file="$1"
-	find /etc/config/httpd /etc/config/network /etc/config/system /etc/config/wireless /etc/config/fstab \
-		/etc/firewall.user /etc/rc.local /etc/passwd /etc/group /etc/hosts -type f > "$file"
-	find `cat /usr/lib/opkg/status | grep "Conffiles:" | grep -v -e "/etc/banner" -e "/etc/opkg.conf" |cut -d':' -f2` -type f >> "$file"
+	find /etc/config /etc/passwd /etc/group /etc/dropbear \
+		/etc/firewall.user /etc/rc.local -type f > "$file"
 	return 0
 }
 
