@@ -29,14 +29,12 @@
 #include <linux/platform_device.h>
 #include <linux/version.h>
 #include <linux/leds.h>
-#include <linux/gpio_keys.h>
+#include <linux/gpio_buttons.h>
 #include <linux/input.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/physmap.h>
 #include <linux/root_dev.h>
-
-#include <asm/rdc321x_gpio.h>
 
 /* Flash */
 #ifdef CONFIG_MTD_R8610
@@ -82,6 +80,12 @@ static struct gpio_led default_leds[] = {
 	{ .name = "rdc321x:dmz", .gpio = 1, .active_low = 1},
 };
 
+static struct gpio_led sitecom_leds[] = {
+	{ .name = "rdc321x:power", .gpio = 15, .active_low = 1},
+	{ .name = "rdc321x:usb0", .gpio = 0, .active_low = 1},
+	{ .name = "rdc321x:usb1", .gpio = 1, .active_low = 1},
+};
+
 static struct gpio_led_platform_data rdc321x_led_data = {
 	.num_leds = ARRAY_SIZE(default_leds),
 	.leds = default_leds,
@@ -96,22 +100,22 @@ static struct platform_device rdc321x_leds = {
 };
 
 /* Button */
-static struct gpio_keys_button rdc321x_gpio_btn[] = {
+static struct gpio_button rdc321x_gpio_btn[] = {
 	{
-		.gpio = 0,
+		.gpio = 6,
 		.code = BTN_0,
 		.desc = "Reset",
 		.active_low = 1,
 	}
 };
 
-static struct gpio_keys_platform_data rdc321x_gpio_btn_data = {
+static struct gpio_buttons_platform_data rdc321x_gpio_btn_data = {
 	.buttons = rdc321x_gpio_btn,
 	.nbuttons = ARRAY_SIZE(rdc321x_gpio_btn),
 };
 
 static struct platform_device rdc321x_button = {
-	.name = "gpio-keys",
+	.name = "gpio-buttons",
 	.id = -1,
 	.dev = {
 		.platform_data = &rdc321x_gpio_btn_data,
@@ -203,6 +207,9 @@ static int __init rdc_board_setup(void)
 		rdc_flash_parts[5].offset = rdc_flash_parts[0].size;
 		rdc_flash_parts[5].size = 0x10000;
 		rdc_flash_data.nr_parts = 6;
+
+		rdc321x_led_data.num_leds = ARRAY_SIZE(sitecom_leds);
+		rdc321x_led_data.leds = sitecom_leds;
 	} else if (!memcmp(((u8 *)the_header) + 14, "Li", 2)) {	/* AMIT */
 		rdc_flash_parts[0].name = "kernel_parthdr";
 		rdc_flash_parts[0].offset = 0;
