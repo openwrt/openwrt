@@ -17,7 +17,8 @@ LINUX_VERSION:=2.6.30.10
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-mini kmod-rdc321x-wdt kmod-r6040
+DEFAULT_PACKAGES += wpad-mini kmod-r6040 kmod-input-core \
+		    kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
 
 define Target/Description
         Build firmware images for RDC321x based routers
