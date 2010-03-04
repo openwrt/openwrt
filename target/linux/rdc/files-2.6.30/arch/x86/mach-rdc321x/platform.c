@@ -95,13 +95,6 @@ static struct platform_device rdc321x_leds = {
 	}
 };
 
-/* Watchdog */
-static struct platform_device rdc321x_wdt = {
-	.name = "rdc321x-wdt",
-	.id = -1,
-	.num_resources = 0,
-};
-
 /* Button */
 static struct gpio_keys_button rdc321x_gpio_btn[] = {
 	{
@@ -128,7 +121,6 @@ static struct platform_device rdc321x_button = {
 static struct platform_device *rdc321x_devs[] = {
 	&rdc_flash_device,
 	&rdc321x_leds,
-	&rdc321x_wdt,
 	&rdc321x_button,
 };
 
