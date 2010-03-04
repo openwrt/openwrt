@@ -28,6 +28,7 @@
 #include <linux/watchdog.h>
 #include <linux/uaccess.h>
 #include <linux/pci.h>
+#include <linux/delay.h>
 
 #include <asm/rdc321x_defs.h>
 
@@ -123,8 +124,12 @@ static int rdc321x_wdt_open(struct inode *inode, struct file *file)
 
 static int rdc321x_wdt_release(struct inode *inode, struct file *file)
 {
-	if (rdc321x_wdt_dev.close_expected)
-		rdc321x_wdt_stop();
+	int res;
+	if (rdc321x_wdt_dev.close_expected) {
+		res = rdc321x_wdt_stop();
+		if (res)
+			return res;
+	}
 
 	rdc321x_wdt_dev.inuse = false;
 
@@ -181,7 +186,7 @@ static ssize_t rdc321x_wdt_write(struct file *file, const char __user *buf,
 				size_t count, loff_t *ppos)
 {
 	size_t i;
- 
+
 	if (!count)
 		return -EIO;
 
@@ -248,6 +253,10 @@ static int __devexit rdc321x_wdt_remove(struct platform_device *pdev)
 {
 	if (rdc321x_wdt_dev.inuse)
 		rdc321x_wdt_dev.inuse = 0;
+
+	while (timer_pending(&rdc321x_wdt_dev.timer))
+		msleep(100);
+
 	misc_deregister(&rdc321x_wdt_misc);
 	return 0;
 }
