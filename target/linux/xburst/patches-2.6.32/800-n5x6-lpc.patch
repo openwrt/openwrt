@@ -10,10 +10,18 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/800-n5
 
 --- a/drivers/i2c/chips/Kconfig
 +++ b/drivers/i2c/chips/Kconfig
-@@ -26,4 +26,13 @@ config SENSORS_TSL2550
+@@ -26,4 +26,21 @@ config SENSORS_TSL2550
  	  This driver can also be built as a module.  If so, the module
  	  will be called tsl2550.
  
++config N516_LPC
++	tristate "N516 keys & power controller"
++	depends on I2C
++	depends on INPUT
++	depends on POWER_SUPPLY
++	help
++	  N516 keyboard & power controller driver
++
 +config N526_LPC
 +	tristate "N526 LPC934 coprocessor"
 +	depends on JZ4740_N526
@@ -26,10 +34,11 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/800-n5
  endmenu
 --- a/drivers/i2c/chips/Makefile
 +++ b/drivers/i2c/chips/Makefile
-@@ -12,6 +12,7 @@
+@@ -12,6 +12,8 @@
  
  obj-$(CONFIG_DS1682)		+= ds1682.o
  obj-$(CONFIG_SENSORS_TSL2550)	+= tsl2550.o
++obj-$(CONFIG_N516_LPC)		+= n516-lpc.o
 +obj-$(CONFIG_N526_LPC)		+= n526-lpc.o
  
  ifeq ($(CONFIG_I2C_DEBUG_CHIP),y)
