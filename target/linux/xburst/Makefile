@@ -8,8 +8,9 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mipsel
 BOARD:=xburst
-BOARDNAME:=XBurst JZ47x0
+BOARDNAME:=Ingenic XBurst
 FEATURES:=jffs2 tgz ubifs audio
+SUBTARGETS:=qi_lb60 n526
 
 LINUX_VERSION:=2.6.32.9
 
@@ -18,8 +19,6 @@ DEVICE_TYPE=other
 include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=uImage
-
-DEFAULT_PACKAGES += gpioctl
 
 define Target/Description
 	Build firmware images for XBurst JZ47x0 based boards.
