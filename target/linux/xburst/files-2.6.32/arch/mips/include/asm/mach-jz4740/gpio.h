@@ -76,10 +76,10 @@ uint32_t jz_gpio_port_get_value(int port, uint32_t mask);
 
 #include <asm/mach-generic/gpio.h>
 
-#define JZ_GPIO_PORTA(x) (x + 32 * 0)
-#define JZ_GPIO_PORTB(x) (x + 32 * 1)
-#define JZ_GPIO_PORTC(x) (x + 32 * 2)
-#define JZ_GPIO_PORTD(x) (x + 32 * 3)
+#define JZ_GPIO_PORTA(x) ((x) + 32 * 0)
+#define JZ_GPIO_PORTB(x) ((x) + 32 * 1)
+#define JZ_GPIO_PORTC(x) ((x) + 32 * 2)
+#define JZ_GPIO_PORTD(x) ((x) + 32 * 3)
 
 /* Port A function pins */
 #define JZ_GPIO_MEM_DATA0		JZ_GPIO_PORTA(0)
