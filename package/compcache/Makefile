@@ -29,6 +29,8 @@ define KernelPackage/compcache
 	  $(PKG_BUILD_DIR)/sub-projects/allocators/xvmalloc-kmod/xvmalloc.$(LINUX_KMOD_SUFFIX)
 endef
 
+include $(INCLUDE_DIR)/kernel-defaults.mk
+
 XVM = sub-projects/allocators/xvmalloc-kmod
 LZO = sub-projects/compression/lzo-kmod
 
@@ -38,13 +40,7 @@ BUILDFLAGS:=-DCONFIG_BLK_DEV_RAMZSWAP_STATS \
 	    -g -Wall
 
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" \
-		CROSS_COMPILE="$(KERNEL_CROSS)" \
-		CC="$(KERNEL_CC)" \
-		ARCH="$(LINUX_KARCH)" \
-		SUBDIRS="$(PKG_BUILD_DIR)" \
-		EXTRA_CFLAGS="$(BUILDFLAGS)" \
-		modules
+	$(MAKE) $(KERNEL_MAKEOPTS) EXTRA_CFLAGS="$(BUILDFLAGS)" M="$(PKG_BUILD_DIR)" modules
 endef
 
 define KernelPackage/compcache/install
