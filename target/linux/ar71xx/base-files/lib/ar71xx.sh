@@ -46,16 +46,25 @@ ar71xx_board_name() {
 	*PB44)
 		name="pb44"
 		;;
-	*RB-411)
+	*"RouterBOARD 411/A/AH")
 		name="rb-411"
 		;;
-	*RB-433)
+	*"RouterBOARD 411U")
+		name="rb-411u"
+		;;
+	*"RouterBOARD 433/AH")
 		name="rb-433"
 		;;
-	*RB-450)
+	*"RouterBOARD 433UAH")
+		name="rb-433u"
+		;;
+	*"RouterBOARD 450")
 		name="rb-450"
 		;;
-	*RB-493)
+	*"RouterBOARD 450G")
+		name="rb-450g"
+		;;
+	*"RouterBOARD 493/AH")
 		name="rb-493"
 		;;
 	*"Rocket M")

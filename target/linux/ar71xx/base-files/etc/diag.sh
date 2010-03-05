@@ -63,6 +63,9 @@ get_status_led() {
 	pb44)
 		status_led="pb44:amber:jump1"
 		;;
+	rb-411 | rb-411u | rb-433 | rb-433u | rb-450 | rb-450g | rb-493)
+		status_led="rb4xx:yellow:user"
+		;;
 	routerstation | routerstation-pro)
 		status_led="ubnt:green:rf"
 		;;
