@@ -580,14 +580,14 @@ static int ag71xx_stop(struct net_device *dev)
 	struct ag71xx *ag = netdev_priv(dev);
 	unsigned long flags;
 
+	netif_carrier_off(dev);
+	ag71xx_phy_stop(ag);
+
 	spin_lock_irqsave(&ag->lock, flags);
 
 	netif_stop_queue(dev);
 
 	ag71xx_hw_stop(ag);
-
-	netif_carrier_off(dev);
-	ag71xx_phy_stop(ag);
 
 	napi_disable(&ag->napi);
 	del_timer_sync(&ag->oom_timer);
