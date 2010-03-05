@@ -158,7 +158,7 @@ static int jz_clk_enable_gating(struct clk *clk)
 {
 	if (clk->gate_bit == JZ4740_CLK_NOT_GATED)
 		return -EINVAL;
-	
+
 	jz_clk_reg_clear_bits(JZ_REG_CLOCK_GATE, clk->gate_bit);
 	return 0;
 }
@@ -873,7 +873,24 @@ void jz4740_clock_udc_enable_auto_suspend(void)
 }
 EXPORT_SYMBOL_GPL(jz4740_clock_udc_enable_auto_suspend);
 
-int jz_init_clocks(void)
+void jz4740_clock_suspend(void)
+{
+	jz_clk_reg_set_bits(JZ_REG_CLOCK_GATE,
+		JZ_CLOCK_GATE_TCU | JZ_CLOCK_GATE_DMAC | JZ_CLOCK_GATE_UART0);
+
+	jz_clk_reg_clear_bits(JZ_REG_CLOCK_PLL, JZ_CLOCK_PLL_ENABLED);
+}
+
+void jz4740_clock_resume(void)
+{
+	jz_clk_reg_set_bits(JZ_REG_CLOCK_PLL, JZ_CLOCK_PLL_ENABLED);
+	while ((jz_clk_reg_read(JZ_REG_CLOCK_PLL) & JZ_CLOCK_PLL_STABLE) == 0);
+
+	jz_clk_reg_clear_bits(JZ_REG_CLOCK_GATE,
+		JZ_CLOCK_GATE_TCU | JZ_CLOCK_GATE_DMAC | JZ_CLOCK_GATE_UART0);
+}
+
+int jz4740_clock_init(void)
 {
 	uint32_t val;
 
@@ -905,5 +922,3 @@ int jz_init_clocks(void)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(jz_init_clocks);
-

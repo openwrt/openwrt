@@ -412,7 +412,7 @@ static int __init qi_lb60_board_setup(void)
 	if (jz_gpiolib_init())
 		panic("Failed to initalize jz gpio\n");
 
-	jz_init_clocks();
+	jz4740_clock_init();
 	board_gpio_setup();
 
 	if (qi_lb60_init_platform_devices())

@@ -20,12 +20,18 @@
 #include <asm/mach-jz4740/regs.h>
 #include <asm/mach-jz4740/clock.h>
 
+#include "clock.h"
+
 extern void jz4740_intc_suspend(void);
 extern void jz4740_intc_resume(void);
+extern void jz_gpio_suspend(void);
+extern void jz_gpio_resume(void);
 
 static int jz_pm_enter(suspend_state_t state)
 {
+	jz_gpio_suspend();
 	jz4740_intc_suspend();
+	jz4740_clock_suspend();
 
 	jz4740_clock_set_wait_mode(JZ4740_WAIT_MODE_SLEEP);
 
@@ -35,7 +41,9 @@ static int jz_pm_enter(suspend_state_t state)
 
 	jz4740_clock_set_wait_mode(JZ4740_WAIT_MODE_IDLE);
 
+	jz4740_clock_resume();
 	jz4740_intc_resume();
+	jz_gpio_resume();
 
 	return 0;
 }
