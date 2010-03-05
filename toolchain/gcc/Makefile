@@ -250,7 +250,7 @@ define SetupExtraArch
 endef
 
 define Stage2/Install
-	$(GCC_MAKE) -C $(HOST_BUILD_DIR2) install
+	$(_SINGLE)$(GCC_MAKE) -C $(HOST_BUILD_DIR2) install
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
 	(cd $(TOOLCHAIN_DIR)/usr; \
