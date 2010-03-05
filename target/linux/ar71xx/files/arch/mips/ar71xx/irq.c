@@ -158,7 +158,14 @@ static struct irqaction ar724x_pci_irqaction = {
 
 static void __init ar724x_pci_irq_init(void)
 {
+	u32 t;
 	int i;
+
+	t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
+	if (t & (AR724X_RESET_PCIE | AR724X_RESET_PCIE_PHY |
+		 AR724X_RESET_PCIE_PHY_SERIAL)) {
+		return;
+	}
 
 	ar71xx_ip2_irq_handler = ar724x_pci_irq_dispatch;
 
