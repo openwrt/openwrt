@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,15 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.4
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
 PKG_MD5SUM:=183800762e266132218b204dfb428d29
 
 PKG_BUILD_DEPENDS:=libpcap
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -34,7 +36,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/ppp/description
- This package contains the PPP (Point-to-Point Protocol) daemon.
+This package contains the PPP (Point-to-Point Protocol) daemon.
 endef
 
 define Package/ppp-mod-pppoa
@@ -44,7 +46,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/ppp-mod-pppoa/description
- This package contains a PPPoA (PPP over ATM) plugin for ppp.
+This package contains a PPPoA (PPP over ATM) plugin for ppp.
 endef
 
 define Package/ppp-mod-pppoe
@@ -54,7 +56,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/ppp-mod-pppoe/description
- This package contains a PPPoE (PPP over Ethernet) plugin for ppp.
+This package contains a PPPoE (PPP over Ethernet) plugin for ppp.
 endef
 
 define Package/ppp-mod-radius
@@ -64,8 +66,8 @@ $(call Package/ppp/Default)
 endef
 
 define Package/ppp-mod-radius/description
- This package contains a RADIUS (Remote Authentication Dial-In User 
- Service) plugin for ppp.
+This package contains a RADIUS (Remote Authentication Dial-In User Service)
+plugin for ppp.
 endef
 
 define Package/chat
@@ -75,8 +77,8 @@ $(call Package/ppp/Default)
 endef
 
 define Package/chat/description
- This package contains an utility to establish conversation with other 
- PPP servers (via a modem).
+This package contains an utility to establish conversation with other PPP servers
+(via a modem).
 endef
 
 define Package/pppdump
@@ -86,7 +88,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/pppdump/description
- This package contains an utility to read PPP record file.
+This package contains an utility to read PPP record file.
 endef
 
 define Package/pppstats
@@ -96,7 +98,7 @@ $(call Package/ppp/Default)
 endef
 
 define Package/pppstats/description
- This package contains an utility to report PPP statistics.
+This package contains an utility to report PPP statistics.
 endef
 
 
@@ -108,27 +110,19 @@ $(call Build/Configure/Default,, \
 )
 endef
 
-define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)/usr
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		COPTS="$(TARGET_CFLAGS)" \
+MAKE_FLAGS += COPTS="$(TARGET_CFLAGS)" \
 		PRECOMPILED_FILTER=1 \
-		STAGING_DIR="$(STAGING_DIR)" \
-		DESTDIR="$(PKG_INSTALL_DIR)/usr" \
-		all install
-endef
+		STAGING_DIR="$(STAGING_DIR)"
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/pppd $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/include/pppd $(1)/usr/include/
 endef
 
 define Package/ppp/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppd $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppd $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/network/
 	$(INSTALL_DIR) $(1)/etc/ppp
@@ -146,7 +140,7 @@ endef
 	
 define Package/ppp-mod-pppoa/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/pppoatm.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pppoatm.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/pppoa.sh $(1)/lib/network/
@@ -154,7 +148,7 @@ endef
 
 define Package/ppp-mod-pppoe/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/pppoe.sh $(1)/lib/network/
@@ -162,7 +156,7 @@ endef
 
 define Package/ppp-mod-radius/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/radius.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/radius.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/etc/ppp/radius.conf $(1)/etc/ppp/
@@ -175,17 +169,17 @@ endef
 
 define Package/chat/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/chat $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/chat $(1)/usr/sbin/
 endef
 
 define Package/pppdump/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppdump $(1)/usr/sbin/
 endef
 
 define Package/pppstats/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppstats $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ppp))
