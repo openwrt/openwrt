@@ -185,9 +185,11 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 		return;
 
 	for (i = 0; i < AG71XX_RX_RING_SIZE; i++)
-		if (ring->buf[i].skb)
+		if (ring->buf[i].skb) {
+			dma_unmap_single(&ag->dev->dev, ring->buf[i].dma_addr,
+					 AG71XX_RX_PKT_SIZE, DMA_FROM_DEVICE);
 			kfree_skb(ring->buf[i].skb);
-
+		}
 }
 
 static int ag71xx_ring_rx_init(struct ag71xx *ag)
@@ -223,6 +225,7 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 					  AG71XX_RX_PKT_SIZE,
 					  DMA_FROM_DEVICE);
 		ring->buf[i].skb = skb;
+		ring->buf[i].dma_addr = dma_addr;
 		ring->buf[i].desc->data = (u32) dma_addr;
 		ring->buf[i].desc->ctrl = DESC_EMPTY;
 	}
@@ -264,6 +267,7 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 						  DMA_FROM_DEVICE);
 
 			ring->buf[i].skb = skb;
+			ring->buf[i].dma_addr = dma_addr;
 			ring->buf[i].desc->data = (u32) dma_addr;
 		}
 
@@ -683,6 +687,9 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		skb = ring->buf[i].skb;
 		pktlen = ag71xx_desc_pktlen(desc);
 		pktlen -= ETH_FCS_LEN;
+
+		dma_unmap_single(&dev->dev, ring->buf[i].dma_addr,
+				 AG71XX_RX_PKT_SIZE, DMA_FROM_DEVICE);
 
 		skb_put(skb, pktlen);
 
