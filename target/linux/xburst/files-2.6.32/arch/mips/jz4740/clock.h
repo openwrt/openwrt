@@ -23,7 +23,9 @@ struct jz4740_clock_board_data {
 
 extern struct jz4740_clock_board_data jz4740_clock_bdata;
 
-int jz_init_clocks(void);
+int jz4740_clock_init(void);
+void jz4740_clock_suspend(void);
+void jz4740_clock_resume(void);
 
 struct clk;
 

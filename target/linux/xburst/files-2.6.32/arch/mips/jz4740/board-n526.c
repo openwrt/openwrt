@@ -321,7 +321,7 @@ static int __init n526_board_setup(void)
 	if (jz_gpiolib_init())
 		panic("Failed to initalize jz gpio\n");
 
-	jz4740_init_clocks();
+	jz4740_clock_init();
 	board_gpio_setup();
 
 	if (n526_init_platform_devices())
