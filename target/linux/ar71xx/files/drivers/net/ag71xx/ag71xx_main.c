@@ -543,8 +543,6 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	/* enable TX engine */
 	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, TX_CTRL_TXE);
 
-	dev->trans_start = jiffies;
-
 	return NETDEV_TX_OK;
 
  err_drop:
