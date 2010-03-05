@@ -1,7 +1,5 @@
-Index: uboot-envtools-20080520/Makefile
-===================================================================
---- uboot-envtools-20080520.orig/Makefile	2008-08-03 15:50:27.000000000 +0200
-+++ uboot-envtools-20080520/Makefile	2008-08-03 15:51:59.000000000 +0200
+--- a/Makefile
++++ b/Makefile
 @@ -21,12 +21,10 @@
  # MA 02111-1307 USA
  #
@@ -12,11 +10,16 @@ Index: uboot-envtools-20080520/Makefile
  HEADERS	:= fw_env.h
  
 -CPPFLAGS := -Wall -DUSE_HOSTCC -I$(SRCTREE)/include
-+CPPFLAGS := -Wall -DUSE_HOSTCC -I/usr/include
++CPPFLAGS := -Wall $(CFLAGS)
  
  ifeq ($(MTD_VERSION),old)
  CPPFLAGS += -DMTD_OLD
-@@ -39,14 +37,3 @@
+@@ -35,18 +33,7 @@ endif
+ all:	$(obj)fw_printenv
+ 
+ $(obj)fw_printenv:	$(SRCS) $(HEADERS)
+-	$(CROSS_COMPILE)gcc $(CPPFLAGS) $(SRCS) -o $(obj)fw_printenv
++	$(CC) $(CPPFLAGS) $(SRCS) -o $(obj)fw_printenv
  
  clean:
  	rm -f $(obj)fw_printenv $(obj)crc32.c

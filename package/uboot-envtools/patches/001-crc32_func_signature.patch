@@ -1,13 +1,125 @@
-Index: uboot-envtools-20080520/crc32.c
-===================================================================
---- uboot-envtools-20080520.orig/crc32.c	2008-08-03 16:02:43.000000000 +0200
-+++ uboot-envtools-20080520/crc32.c	2008-08-03 16:03:25.000000000 +0200
-@@ -154,7 +154,7 @@
+--- a/crc32.c
++++ b/crc32.c
+@@ -8,11 +8,7 @@
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+ 
+-#ifndef USE_HOSTCC	/* Shut down "ANSI does not permit..." warnings */
+-#include <common.h>
+-#else
+ #include <stdint.h>
+-#endif
+ 
+ #if defined(CONFIG_HW_WATCHDOG) || defined(CONFIG_WATCHDOG)
+ #include <watchdog.h>
+@@ -136,7 +132,7 @@ local const uint32_t crc_table[256] = {
+ 
+ #if 0
+ /* =========================================================================
+- * This function can be used by asm versions of crc32()
++ * This function can be used by asm versions of uboot_crc32()
+  */
+ const uint32_t * ZEXPORT get_crc_table()
+ {
+@@ -154,7 +150,7 @@ const uint32_t * ZEXPORT get_crc_table()
  #define DO8(buf)  DO4(buf); DO4(buf);
  
  /* ========================================================================= */
 -uint32_t ZEXPORT crc32 (uint32_t crc, const Bytef *buf, uInt len)
-+uLong ZEXPORT crc32 (uLong crc, const Bytef *buf, uInt len)
++uint32_t ZEXPORT uboot_crc32 (uint32_t crc, const Bytef *buf, uInt len)
  {
  #ifdef DYNAMIC_CRC_TABLE
      if (crc_table_empty)
+@@ -217,12 +213,12 @@ uint32_t ZEXPORT crc32_wd (uint32_t crc,
+ 		chunk = end - curr;
+ 		if (chunk > chunk_sz)
+ 			chunk = chunk_sz;
+-		crc = crc32 (crc, curr, chunk);
++		crc = uboot_crc32 (crc, curr, chunk);
+ 		curr += chunk;
+ 		WATCHDOG_RESET ();
+ 	}
+ #else
+-	crc = crc32 (crc, buf, len);
++	crc = uboot_crc32 (crc, buf, len);
+ #endif
+ 
+ 	return crc;
+--- a/fw_env.c
++++ b/fw_env.c
+@@ -216,9 +216,9 @@ static int parse_config (void);
+ #if defined(CONFIG_FILE)
+ static int get_config (char *);
+ #endif
+-static inline ulong getenvsize (void)
++static inline uint32_t getenvsize (void)
+ {
+-	ulong rc = CONFIG_ENV_SIZE - sizeof (long);
++	uint32_t rc = CONFIG_ENV_SIZE - sizeof (uint32_t);
+ 
+ 	if (HaveRedundEnv)
+ 		rc -= sizeof (char);
+@@ -437,7 +437,7 @@ int fw_setenv (int argc, char *argv[])
+ 	/*
+ 	 * Update CRC
+ 	 */
+-	*environment.crc = crc32 (0, (uint8_t *) environment.data, ENV_SIZE);
++	*environment.crc = uboot_crc32 (0, (uint8_t *) environment.data, ENV_SIZE);
+ 
+ 	/* write environment back to flash */
+ 	if (flash_io (O_RDWR)) {
+@@ -627,7 +627,7 @@ static int flash_write_buf (int dev, int
+ 		data = malloc (erase_len);
+ 		if (!data) {
+ 			fprintf (stderr,
+-				 "Cannot malloc %u bytes: %s\n",
++				 "Cannot malloc %zu bytes: %s\n",
+ 				 erase_len, strerror (errno));
+ 			return -1;
+ 		}
+@@ -883,11 +883,11 @@ static char *envmatch (char * s1, char *
+ static int env_init (void)
+ {
+ 	int crc0, crc0_ok;
+-	char flag0;
++	unsigned char flag0;
+ 	void *addr0;
+ 
+ 	int crc1, crc1_ok;
+-	char flag1;
++	unsigned char flag1;
+ 	void *addr1;
+ 
+ 	struct env_image_single *single;
+@@ -923,7 +923,7 @@ static int env_init (void)
+ 	if (flash_io (O_RDONLY))
+ 		return -1;
+ 
+-	crc0 = crc32 (0, (uint8_t *) environment.data, ENV_SIZE);
++	crc0 = uboot_crc32 (0, (uint8_t *) environment.data, ENV_SIZE);
+ 	crc0_ok = (crc0 == *environment.crc);
+ 	if (!HaveRedundEnv) {
+ 		if (!crc0_ok) {
+@@ -964,7 +964,7 @@ static int env_init (void)
+ 			return -1;
+ 		}
+ 
+-		crc1 = crc32 (0, (uint8_t *) redundant->data, ENV_SIZE);
++		crc1 = uboot_crc32 (0, (uint8_t *) redundant->data, ENV_SIZE);
+ 		crc1_ok = (crc1 == redundant->crc);
+ 		flag1 = redundant->flags;
+ 
+--- a/fw_env.h
++++ b/fw_env.h
+@@ -47,8 +47,10 @@
+ 	"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}::off; "	\
+ 	"bootm"
+ 
++# include <stdint.h>
++
+ extern int   fw_printenv(int argc, char *argv[]);
+ extern char *fw_getenv  (char *name);
+ extern int fw_setenv  (int argc, char *argv[]);
+ 
+-extern unsigned	long  crc32	 (unsigned long, const unsigned char *, unsigned);
++extern uint32_t  uboot_crc32 (uint32_t, const unsigned char *, unsigned);
