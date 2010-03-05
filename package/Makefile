@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -23,6 +23,7 @@ endif
 $(curdir)/install:=$(curdir)/install-cleanup
 
 $(curdir)/cleanup: $(TMP_DIR)/.build
+	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
 	rm -rf $(TARGET_DIR) $(STAGING_DIR_ROOT)
 
 ifdef CONFIG_USE_MKLIBS
@@ -42,8 +43,9 @@ ifdef CONFIG_USE_MKLIBS
 		--sysroot $(STAGING_DIR_ROOT) \
 		-L /lib \
 		-L /usr/lib \
+		-L /usr/lib/ebtables \
 		--ldlib $(patsubst $(STAGING_DIR_ROOT)/%,/%,$(firstword $(wildcard \
-			$(foreach name,ld-uClibc.so.* ld-linux.so.*, \
+			$(foreach name,ld-uClibc.so.* ld-linux.so.* ld-*.so, \
 			  $(STAGING_DIR_ROOT)/lib/$(name) \
 			)))) \
 		--target $(REAL_GNU_TARGET_NAME) \
