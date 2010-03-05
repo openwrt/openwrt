@@ -238,7 +238,7 @@ static struct fb_videomode qi_lb60_video_modes[] = {
 		.name = "320x240",
 		.xres = 320,
 		.yres = 240,
-		.pixclock = 700000,
+		.refresh = 30,
 		.left_margin = 140,
 		.right_margin = 273,
 		.upper_margin = 20,
@@ -257,6 +257,7 @@ static struct jz4740_fb_platform_data qi_lb60_fb_pdata = {
 	.modes		= qi_lb60_video_modes,
 	.bpp		= 24,
 	.lcd_type	= JZ_LCD_TYPE_8BIT_SERIAL,
+	.pixclk_falling_edge = 1,
 };
 
 

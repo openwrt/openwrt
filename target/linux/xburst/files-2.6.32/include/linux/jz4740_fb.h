@@ -18,7 +18,8 @@
 #include <linux/fb.h>
 
 enum jz4740_fb_lcd_type {
-	JZ_LCD_TYPE_GENERIC_16_18_BIT = 0,
+	JZ_LCD_TYPE_GENERIC_16_BIT = 0,
+	JZ_LCD_TYPE_GENERIC_18_BIT = 0 | (1 << 4),
 	JZ_LCD_TYPE_SPECIAL_TFT_1 = 1,
 	JZ_LCD_TYPE_SPECIAL_TFT_2 = 2,
 	JZ_LCD_TYPE_SPECIAL_TFT_3 = 3,
@@ -27,7 +28,8 @@ enum jz4740_fb_lcd_type {
 	JZ_LCD_TYPE_SINGLE_COLOR_STN = 8,
 	JZ_LCD_TYPE_SINGLE_MONOCHROME_STN = 9,
 	JZ_LCD_TYPE_DUAL_COLOR_STN = 10,
-	JZ_LCD_TYPE_8BIT_SERIAL = 11,
+	JZ_LCD_TYPE_DUAL_MONOCHROME_STN = 11,
+	JZ_LCD_TYPE_8BIT_SERIAL = 12,
 };
 
 /*
@@ -45,8 +47,12 @@ struct jz4740_fb_platform_data {
 
 	size_t num_modes;
 	struct fb_videomode *modes;
-	int bpp;
-    enum jz4740_fb_lcd_type lcd_type;
+
+	unsigned int bpp;
+	enum jz4740_fb_lcd_type lcd_type;
+
+	unsigned pixclk_falling_edge:1;
+	unsigned date_enable_active_low:1;
 };
 
 #endif
