@@ -9,8 +9,23 @@ include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE=256k 512k
 
+ifneq ($(CONFIG_TARGET_QI_LB60),)
 UBIFS_OPTS = -m 4096 -e 516096 -c 4095
 UBINIZE_OPTS = -m 4096 -p 512KiB
+else
+UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
+UBINIZE_OPTS = -m 2048 -p 128KiB -s 512
+endif
+
+ifneq ($(CONFIG_XBURST_UBOOT),)
+  define Build/Clean
+	$(MAKE) -C u-boot clean
+  endef
+
+  define Build/Compile
+	$(MAKE) -C u-boot compile
+  endef
+endif
 
 define Image/BuildKernel
 	cp $(KDIR)/linux-$(LINUX_VERSION)/arch/mips/boot/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage.bin
@@ -21,8 +36,7 @@ define Image/Build/squashfs
 endef
 
 define Image/Build
-	$(call Image/Build/$(1))
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(SUBTARGET)-root.$(1) bs=128k conv=sync
 endef
 
 $(eval $(call BuildImage))
