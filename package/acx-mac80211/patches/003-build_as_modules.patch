@@ -1,0 +1,13 @@
+Index: acx-mac80211-20100302/Makefile
+===================================================================
+--- acx-mac80211-20100302.orig/Makefile	2010-03-06 22:13:23.000000000 +0100
++++ acx-mac80211-20100302/Makefile	2010-03-06 22:13:28.000000000 +0100
+@@ -29,7 +29,7 @@
+ 	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_PCI) += pci.o
+ 	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_USB) += usb.o
+ 	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_MEM) += mem.o
+-	acx-mac80211-objs := common.o $(acx-mac80211-obj-y)
++	acx-mac80211-objs := common.o $(acx-mac80211-obj-m)
+ 	
+ else
+ # Otherwise we were called directly from the command line: the kernel build
