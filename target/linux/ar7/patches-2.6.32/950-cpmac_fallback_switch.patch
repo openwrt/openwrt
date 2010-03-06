@@ -1,0 +1,16 @@
+Index: linux-2.6.32.9/drivers/net/cpmac.c
+===================================================================
+--- linux-2.6.32.9.orig/drivers/net/cpmac.c	2010-03-06 23:12:46.000000000 +0100
++++ linux-2.6.32.9/drivers/net/cpmac.c	2010-03-06 23:13:14.000000000 +0100
+@@ -1132,8 +1132,9 @@
+ 	}
+ 
+ 	if (phy_id == PHY_MAX_ADDR) {
+-		dev_err(&pdev->dev, "no PHY present\n");
+-		return -ENODEV;
++		dev_err(&pdev->dev, "no PHY present, falling back to switch mode\n");
++		strncpy(mdio_bus_id, "0", MII_BUS_ID_SIZE); /* fixed phys bus */
++		phy_id = pdev->id;
+ 	}
+ 
+ 	dev = alloc_etherdev_mq(sizeof(*priv), CPMAC_QUEUES);
