@@ -1,7 +1,7 @@
 Index: acx-20080210/pci.c
 ===================================================================
---- acx-20080210.orig/pci.c	2010-03-06 11:38:01.000000000 +0100
-+++ acx-20080210/pci.c	2010-03-06 11:45:02.000000000 +0100
+--- acx-20080210.orig/pci.c	2010-03-06 13:43:06.000000000 +0100
++++ acx-20080210/pci.c	2010-03-06 13:46:38.000000000 +0100
 @@ -4135,6 +4135,18 @@
         { 0, 0, 0 },
  };
@@ -21,7 +21,7 @@ Index: acx-20080210/pci.c
  static __devinit int vlynq_probe(struct vlynq_device *vdev,
  				struct vlynq_device_id *id)
  {
-@@ -4191,6 +4203,7 @@
+@@ -4191,17 +4203,24 @@
  		goto fail_alloc_netdev;
  	}
  	ether_setup(ndev);
@@ -29,13 +29,23 @@ Index: acx-20080210/pci.c
  	ndev->open = &acxpci_e_open;
  	ndev->stop = &acxpci_e_close;
  	ndev->hard_start_xmit = &acx_i_start_xmit;
-@@ -4202,6 +4215,9 @@
- 	ndev->set_multicast_list = &acxpci_i_set_multicast_list;
- 	ndev->tx_timeout = &acxpci_i_tx_timeout;
- 	ndev->change_mtu = &acx_e_change_mtu;
+ 	ndev->get_stats = &acx_e_get_stats;
++	ndev->set_multicast_list = &acxpci_i_set_multicast_list;
++	ndev->tx_timeout = &acxpci_i_tx_timeout;
++	ndev->change_mtu = &acx_e_change_mtu;
++	ndev->set_multicast_list = &acxpci_i_set_multicast_list;
++	ndev->tx_timeout = &acxpci_i_tx_timeout;
++	ndev->change_mtu = &acx_e_change_mtu;
 +#else
 +	ndev->netdev_ops = &acx_netdev_ops;
 +#endif
+ #if IW_HANDLER_VERSION <= 5
+ 	ndev->get_wireless_stats = &acx_e_get_wireless_stats;
+ #endif
+ 	ndev->wireless_handlers = (struct iw_handler_def *)&acx_ioctl_handler_def;
+-	ndev->set_multicast_list = &acxpci_i_set_multicast_list;
+-	ndev->tx_timeout = &acxpci_i_tx_timeout;
+-	ndev->change_mtu = &acx_e_change_mtu;
  	ndev->watchdog_timeo = 4 * HZ;
  
  	adev = ndev2adev(ndev);
