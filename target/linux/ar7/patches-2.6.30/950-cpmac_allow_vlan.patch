@@ -1,0 +1,11 @@
+--- a/drivers/net/cpmac.c	2010-02-11 23:52:19.000000000 +0000
++++ b/drivers/net/cpmac.c	2010-02-20 20:32:58.000000000 +0000
+@@ -57,7 +57,7 @@
+ 
+ #define CPMAC_VERSION "0.5.0"
+ /* frame size + 802.1q tag */
+-#define CPMAC_SKB_SIZE		(ETH_FRAME_LEN + 4)
++#define CPMAC_SKB_SIZE		(ETH_FRAME_LEN + ETH_FCS_LEN + 4)
+ #define CPMAC_QUEUES	8
+ 
+ /* Ethernet registers */
