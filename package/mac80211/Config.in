@@ -3,6 +3,7 @@
 config PACKAGE_MAC80211_DEBUGFS
 	bool "Export mac80211 internals in DebugFS"
 	depends on PACKAGE_kmod-mac80211
+	default y
 	---help---
 	  Select this to see extensive information about
 	  the internal state of mac80211 in debugfs.
