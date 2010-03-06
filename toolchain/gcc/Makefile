@@ -116,11 +116,6 @@ else
 		--disable-libssp
 endif
 
-ifeq ($(CONFIG_TLS_SUPPORT),)
-  GCC_CONFIGURE+= \
-		--disable-tls
-endif
-
 ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
   GCC_CONFIGURE+= \
 		--enable-biarch \
@@ -158,6 +153,14 @@ GCC_CONFIGURE_STAGE2:= \
 		--enable-shared \
 		--enable-threads \
 		--with-slibdir=$(TOOLCHAIN_DIR)/lib \
+
+ifneq ($(CONFIG_TLS_SUPPORT),)
+  GCC_CONFIGURE_STAGE2+= \
+		--enable-tls
+else
+  GCC_CONFIGURE_STAGE2+= \
+		--disable-tls
+endif
 
 ifdef CONFIG_powerpc
   TARGET_CFLAGS := $(patsubst -Os,-O2,$(TARGET_CFLAGS))
