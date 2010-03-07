@@ -1,5 +1,5 @@
---- a/arch/mips/ar7/platform.c	2009-11-18 15:47:42.000000000 +0800
-+++ b/arch/mips/ar7/platform.c	2009-11-19 00:56:05.000000000 +0800
+--- a/arch/mips/ar7/platform.c	2010-01-25 16:11:24.000000000 +0800
++++ b/arch/mips/ar7/platform.c	2010-01-13 14:46:16.000000000 +0800
 @@ -677,24 +677,32 @@
  	}
  
@@ -41,26 +41,36 @@
  	if (res)
  		return res;
  
---- a/drivers/net/cpmac.c	2009-11-18 15:47:42.000000000 +0800
-+++ b/drivers/net/cpmac.c	2009-11-19 00:58:25.000000000 +0800
-@@ -1236,6 +1236,10 @@
- 	ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
- 	ar7_device_reset(AR7_RESET_BIT_EPHY);
+--- a/drivers/net/cpmac.c	2010-01-25 16:11:24.000000000 +0800
++++ b/drivers/net/cpmac.c	2010-01-25 16:48:02.000000000 +0800
+@@ -1141,6 +1141,8 @@
+ 		goto fail;
+ 	}
  
++	ar7_device_reset(pdata->reset_bit);
++
+ 	dev->irq = platform_get_irq_byname(pdev, "irq");
+ 
+ 	dev->open               = cpmac_open;
+@@ -1221,7 +1223,7 @@
+ 	cpmac_mii->reset = cpmac_mdio_reset;
+ 	cpmac_mii->irq = mii_irqs;
+ 
+-	cpmac_mii->priv = ioremap(AR7_REGS_MDIO, 256);
++	cpmac_mii->priv = ioremap(ar7_is_titan()?TITAN_REGS_MDIO:AR7_REGS_MDIO, 256);
+ 
+ 	if (!cpmac_mii->priv) {
+ 		printk(KERN_ERR "Can't ioremap mdio registers\n");
+@@ -1232,9 +1234,10 @@
+ #warning FIXME: unhardcode gpio&reset bits
+ 	ar7_gpio_disable(26);
+ 	ar7_gpio_disable(27);
+-	ar7_device_reset(AR7_RESET_BIT_CPMAC_LO);
+-	ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
+ 	ar7_device_reset(AR7_RESET_BIT_EPHY);
 +	if (ar7_is_titan()) {
 +		ar7_device_reset(TITAN_RESET_BIT_EPHY1);
 +	}
-+
+ 
  	cpmac_mii->reset(cpmac_mii);
  
- 	for (i = 0; i < 300; i++)
-@@ -1250,7 +1254,8 @@
- 		mask = 0;
- 	}
- 
--	cpmac_mii->phy_mask = ~(mask | 0x80000000);
-+	cpmac_mii->phy_mask = ar7_is_titan()? ~(mask | 0x80000000 | 0x40000000):
-+		~(mask | 0x80000000);
- 	snprintf(cpmac_mii->id, MII_BUS_ID_SIZE, "1");
- 
- 	res = mdiobus_register(cpmac_mii);

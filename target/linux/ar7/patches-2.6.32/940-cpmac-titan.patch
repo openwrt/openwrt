@@ -1,6 +1,8 @@
---- a/arch/mips/ar7/platform.c
-+++ b/arch/mips/ar7/platform.c
-@@ -716,23 +716,35 @@ static int __init ar7_register_devices(v
+Index: linux-2.6.32.9/arch/mips/ar7/platform.c
+===================================================================
+--- linux-2.6.32.9.orig/arch/mips/ar7/platform.c	2010-03-07 13:09:00.000000000 +0100
++++ linux-2.6.32.9/arch/mips/ar7/platform.c	2010-03-07 13:09:00.000000000 +0100
+@@ -716,23 +716,35 @@
  	}
  
  	if (ar7_has_high_cpmac()) {
@@ -43,10 +45,39 @@
  	if (res)
  		return res;
  
---- a/drivers/net/cpmac.c
-+++ b/drivers/net/cpmac.c
-@@ -1243,6 +1243,10 @@ int __devinit cpmac_init(void)
- 	ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
+Index: linux-2.6.32.9/drivers/net/cpmac.c
+===================================================================
+--- linux-2.6.32.9.orig/drivers/net/cpmac.c	2010-02-23 16:38:51.000000000 +0100
++++ linux-2.6.32.9/drivers/net/cpmac.c	2010-03-07 13:24:56.000000000 +0100
+@@ -1153,6 +1153,8 @@
+ 		goto fail;
+ 	}
+ 
++	ar7_device_reset(pdata->reset_bit);
++
+ 	dev->irq = platform_get_irq_byname(pdev, "irq");
+ 
+ 	dev->netdev_ops = &cpmac_netdev_ops;
+@@ -1228,7 +1230,7 @@
+ 	cpmac_mii->reset = cpmac_mdio_reset;
+ 	cpmac_mii->irq = mii_irqs;
+ 
+-	cpmac_mii->priv = ioremap(AR7_REGS_MDIO, 256);
++	cpmac_mii->priv = ioremap(ar7_is_titan() ? TITAN_REGS_MDIO : AR7_REGS_MDIO, 256);
+ 
+ 	if (!cpmac_mii->priv) {
+ 		printk(KERN_ERR "Can't ioremap mdio registers\n");
+@@ -1239,10 +1241,17 @@
+ #warning FIXME: unhardcode gpio&reset bits
+ 	ar7_gpio_disable(26);
+ 	ar7_gpio_disable(27);
+-	ar7_device_reset(AR7_RESET_BIT_CPMAC_LO);
+-	ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
++
++	if (!ar7_is_titan()) {
++		ar7_device_reset(AR7_RESET_BIT_CPMAC_LO);
++		ar7_device_reset(AR7_RESET_BIT_CPMAC_HI);
++	}
  	ar7_device_reset(AR7_RESET_BIT_EPHY);
  
 +	if (ar7_is_titan()) {
@@ -56,7 +87,7 @@
  	cpmac_mii->reset(cpmac_mii);
  
  	for (i = 0; i < 300; i++)
-@@ -1257,7 +1261,8 @@ int __devinit cpmac_init(void)
+@@ -1257,7 +1266,8 @@
  		mask = 0;
  	}
  
@@ -66,3 +97,20 @@
  	snprintf(cpmac_mii->id, MII_BUS_ID_SIZE, "1");
  
  	res = mdiobus_register(cpmac_mii);
+Index: a/arch/mips/include/asm/mach-ar7/ar7.h
+===================================================================
+--- a/arch/mips/include/asm/mach-ar7/ar7.h	(revision 19112)
++++ b/arch/mips/include/asm/mach-ar7/ar7.h	(working copy)
+@@ -44,8 +44,10 @@
+ #define UR8_REGS_WDT	(AR7_REGS_BASE + 0x0b00)
+ #define UR8_REGS_UART1	(AR7_REGS_BASE + 0x0f00)
+ 
+-#define TITAN_REGS_MAC0		(0x08640000)
+-#define TITAN_REGS_MAC1		(TITAN_REGS_MAC0 + 0x0800)
++#define TITAN_REGS_ESWITCH_BASE	(0x08640000)
++#define TITAN_REGS_MAC0			(TITAN_REGS_ESWITCH_BASE + 0)
++#define TITAN_REGS_MAC1			(TITAN_REGS_ESWITCH_BASE + 0x0800)
++#define TITAN_REGS_MDIO			(TITAN_REGS_ESWITCH_BASE + 0x02000)
+ #define TITAN_REGS_VLYNQ0	(AR7_REGS_BASE + 0x1c00)
+ #define TITAN_REGS_VLYNQ1	(AR7_REGS_BASE + 0x1300)
+ 
