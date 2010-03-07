@@ -6,7 +6,7 @@
  
 +config MTD_NAND_RB4XX
 +	tristate "NAND flash driver for RouterBoard 4xx series"
-+	depends on MTD_NAND && ATHEROS_AR71XX
++	depends on MTD_NAND && AR71XX_MACH_RB4XX
 +
  endif # MTD_NAND
 --- a/drivers/mtd/nand/Makefile
