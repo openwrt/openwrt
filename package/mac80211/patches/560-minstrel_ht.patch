@@ -13,7 +13,7 @@
  mac80211-$(CONFIG_MAC80211_RC_MINSTREL) += $(rc80211_minstrel-y)
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -710,6 +710,10 @@ static int __init ieee80211_init(void)
+@@ -714,6 +714,10 @@ static int __init ieee80211_init(void)
  	if (ret)
  		return ret;
  
@@ -24,7 +24,7 @@
  	ret = rc80211_pid_init();
  	if (ret)
  		goto err_pid;
-@@ -722,6 +726,8 @@ static int __init ieee80211_init(void)
+@@ -726,6 +730,8 @@ static int __init ieee80211_init(void)
   err_netdev:
  	rc80211_pid_exit();
   err_pid:
@@ -33,7 +33,7 @@
  	rc80211_minstrel_exit();
  
  	return ret;
-@@ -730,6 +736,7 @@ static int __init ieee80211_init(void)
+@@ -734,6 +740,7 @@ static int __init ieee80211_init(void)
  static void __exit ieee80211_exit(void)
  {
  	rc80211_pid_exit();
@@ -43,7 +43,7 @@
  	/*
 --- a/net/mac80211/rate.h
 +++ b/net/mac80211/rate.h
-@@ -136,6 +136,8 @@ static inline void rc80211_pid_exit(void
+@@ -137,6 +137,8 @@ static inline void rc80211_pid_exit(void
  #ifdef CONFIG_MAC80211_RC_MINSTREL
  extern int rc80211_minstrel_init(void);
  extern void rc80211_minstrel_exit(void);
@@ -52,7 +52,7 @@
  #else
  static inline int rc80211_minstrel_init(void)
  {
-@@ -144,6 +146,13 @@ static inline int rc80211_minstrel_init(
+@@ -145,6 +147,13 @@ static inline int rc80211_minstrel_init(
  static inline void rc80211_minstrel_exit(void)
  {
  }
