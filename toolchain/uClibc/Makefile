@@ -58,7 +58,10 @@ define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_SO_VERSION\)=.*,\1=$(LIBC_SO_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
 
-GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n $(if $(wildcard $(CONFIG_DIR)/common),'+' $(CONFIG_DIR)/common) ./$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD))
+GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n \
+	$(if $(wildcard $(CONFIG_DIR)/common),'+' $(CONFIG_DIR)/common) \
+	$(if $(CONFIG_UCLIBC_ENABLE_DEBUG),$(if $(wildcard $(CONFIG_DIR)/debug),'+' $(CONFIG_DIR)/debug)) \
+	$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD))
 
 define Host/Prepare
 	$(call Host/SetToolchainInfo)
@@ -99,10 +102,6 @@ UCLIBC_MAKE = PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 	ARCH="$(CONFIG_ARCH)" \
 	LIBGCC="$(subst libgcc.a,libgcc_initial.a,$(shell $(TARGET_CC) -print-libgcc-file-name))" \
 	DOSTRIP=""
-
-ifeq ($(CONFIG_UCLIBC_ENABLE_DEBUG),y)
-	UCLIBC_MAKE += DODEBUG=y
-endif
 
 define Host/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(HOST_BUILD_DIR)/Rules.mak
