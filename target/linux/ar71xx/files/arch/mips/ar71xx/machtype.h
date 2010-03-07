@@ -29,6 +29,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_RB_450,	/* MikroTik RouterBOARD 450 */
 	AR71XX_MACH_RB_450G,	/* MikroTik RouterBOARD 450G */
 	AR71XX_MACH_RB_493,	/* Mikrotik RouterBOARD 493/493AH */
+	AR71XX_MACH_RB_750,	/* MikroTik RouterBOARD 750 */
 	AR71XX_MACH_PB42,	/* Atheros PB42 */
 	AR71XX_MACH_PB44,	/* Atheros PB44 */
 	AR71XX_MACH_MZK_W04NU,	/* Planex MZK-W04NU */

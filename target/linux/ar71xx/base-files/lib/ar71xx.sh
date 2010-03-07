@@ -67,6 +67,9 @@ ar71xx_board_name() {
 	*"RouterBOARD 493/AH")
 		name="rb-493"
 		;;
+	*"RouterBOARD 750")
+		name="rb-750"
+		;;
 	*"Rocket M")
 		name="rocket-m"
 		;;

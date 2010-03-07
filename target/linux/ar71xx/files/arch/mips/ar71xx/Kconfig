@@ -113,6 +113,11 @@ config AR71XX_MACH_RB4XX
 	select AR71XX_DEV_USB
 	default n
 
+config AR71XX_MACH_RB750
+	bool "MikroTik RouterBOARD 750 support"
+	select AR71XX_DEV_AP91_ETH
+	default n
+
 config AR71XX_MACH_WNDR3700
 	bool "NETGEAR WNDR3700 board support"
 	select AR71XX_DEV_M25P80
