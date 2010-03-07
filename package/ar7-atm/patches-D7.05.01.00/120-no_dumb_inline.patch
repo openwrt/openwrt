@@ -1,0 +1,13 @@
+Index: sangam_atm-D7.05.01.00/tn7api.h
+===================================================================
+--- sangam_atm-D7.05.01.00.orig/tn7api.h	2007-09-25 15:49:10.000000000 +0200
++++ sangam_atm-D7.05.01.00/tn7api.h	2010-03-07 18:09:52.000000000 +0100
+@@ -118,7 +118,7 @@
+ int tn7dsl_proc_dbgmsg_read(char* buf, char **start, off_t offset, int count,int *eof, void *data);
+ #endif
+ //UR8_MERGE_END CQ11813
+-inline int tn7dsl_handle_interrupt(void);
++int tn7dsl_handle_interrupt(void);
+ 
+ void tn7dsl_dslmod_sysctl_register(void);
+ void tn7dsl_dslmod_sysctl_unregister(void);
