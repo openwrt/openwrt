@@ -68,7 +68,7 @@
  
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -0,0 +1,803 @@
+@@ -0,0 +1,825 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -706,6 +706,39 @@
 +	}
 +}
 +
++static void
++minstrel_ht_update_cap(struct minstrel_ht_sta *mi, struct ieee80211_sta *sta,
++                       enum nl80211_channel_type oper_chan_type)
++{
++	struct ieee80211_mcs_info *mcs = &sta->ht_cap.mcs;
++	u16 sta_cap = sta->ht_cap.cap;
++	int i;
++
++	if (oper_chan_type != NL80211_CHAN_HT40MINUS &&
++	    oper_chan_type != NL80211_CHAN_HT40PLUS)
++		sta_cap &= ~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
++
++	for (i = 0; i < ARRAY_SIZE(mi->groups); i++) {
++		u16 req = 0;
++
++		mi->groups[i].supported = 0;
++		if (minstrel_mcs_groups[i].flags & IEEE80211_TX_RC_SHORT_GI) {
++			if (minstrel_mcs_groups[i].flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
++				req |= IEEE80211_HT_CAP_SGI_40;
++			else
++				req |= IEEE80211_HT_CAP_SGI_20;
++		}
++
++		if (minstrel_mcs_groups[i].flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
++			req |= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
++
++		if ((sta_cap & req) != req)
++			continue;
++
++		mi->groups[i].supported =
++			mcs->rx_mask[minstrel_mcs_groups[i].streams - 1];
++	}
++}
 +
 +static void
 +minstrel_ht_rate_init(void *priv, struct ieee80211_supported_band *sband,
@@ -714,11 +747,8 @@
 +	struct minstrel_priv *mp = priv;
 +	struct minstrel_ht_sta_priv *msp = priv_sta;
 +	struct minstrel_ht_sta *mi = &msp->ht;
-+	struct ieee80211_mcs_info *mcs = &sta->ht_cap.mcs;
 +	struct ieee80211_local *local = hw_to_local(mp->hw);
-+	int tx_streams;
 +	int ack_dur;
-+	int i;
 +
 +	/* fall back to the old minstrel for legacy stations */
 +	if (sta && !sta->ht_cap.ht_supported) {
@@ -741,28 +771,19 @@
 +	mi->overhead_rtscts = mi->overhead + 2 * ack_dur;
 +
 +	mi->avg_ampdu_len = MINSTREL_FRAC(1, 1);
-+	tx_streams = ((mcs->tx_params & IEEE80211_HT_MCS_TX_MAX_STREAMS_MASK) >>
-+			IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT) + 1;
 +
-+	for (i = 0; i < ARRAY_SIZE(mi->groups); i++) {
-+		u16 req = 0;
++	minstrel_ht_update_cap(mi, sta, mp->hw->conf.channel_type);
++}
 +
-+		if (minstrel_mcs_groups[i].flags & IEEE80211_TX_RC_SHORT_GI) {
-+			if (minstrel_mcs_groups[i].flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
-+				req |= IEEE80211_HT_CAP_SGI_40;
-+			else
-+				req |= IEEE80211_HT_CAP_SGI_20;
-+		}
++static void
++minstrel_ht_rate_update(void *priv, struct ieee80211_supported_band *sband,
++                        struct ieee80211_sta *sta, void *priv_sta,
++                        u32 changed, enum nl80211_channel_type oper_chan_type)
++{
++	struct minstrel_ht_sta_priv *msp = priv_sta;
++	struct minstrel_ht_sta *mi = &msp->ht;
 +
-+		if (minstrel_mcs_groups[i].flags & IEEE80211_TX_RC_40_MHZ_WIDTH)
-+			req |= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
-+
-+		if ((sta->ht_cap.cap & req) != req)
-+			continue;
-+
-+		mi->groups[i].supported =
-+			mcs->rx_mask[minstrel_mcs_groups[i].streams - 1];
-+	}
++	minstrel_ht_update_cap(mi, sta, oper_chan_type);
 +}
 +
 +static void *
@@ -829,6 +850,7 @@
 +	.tx_status = minstrel_ht_tx_status,
 +	.get_rate = minstrel_ht_get_rate,
 +	.rate_init = minstrel_ht_rate_init,
++	.rate_update = minstrel_ht_rate_update,
 +	.alloc_sta = minstrel_ht_alloc_sta,
 +	.free_sta = minstrel_ht_free_sta,
 +	.alloc = minstrel_ht_alloc,
