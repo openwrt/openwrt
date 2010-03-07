@@ -33,7 +33,7 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	$(MAKE) $(KERNEL_MAKEOPTS) M=$(PKG_BUILD_DIR) modules
+	$(MAKE) $(KERNEL_MAKEOPTS) SUBDIRS="$(PKG_BUILD_DIR)" modules
 endef
 
 $(eval $(call KernelPackage,siit))
