@@ -21,6 +21,8 @@ define KernelPackage/siit
   AUTOLOAD:=$(call AutoLoad,50,siit)
 endef
 
+include $(INCLUDE_DIR)/kernel-defaults.mk
+
 define KernelPackage/siit/description
  Stateless IP ICMP Translation Algorithm
 endef
@@ -31,13 +33,7 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	$(MAKE) -C $(LINUX_DIR) \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		ARCH="$(LINUX_KARCH)" \
-		SUBDIRS="$(PKG_BUILD_DIR)" \
-		KERNELDIR=$(LINUX_DIR) \
-		CC="$(TARGET_CC)" \
-		modules
+	$(MAKE) $(KERNEL_MAKEOPTS) M=$(PKG_BUILD_DIR) modules
 endef
 
 $(eval $(call KernelPackage,siit))
