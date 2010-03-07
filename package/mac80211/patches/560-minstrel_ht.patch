@@ -68,7 +68,7 @@
  
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -0,0 +1,825 @@
+@@ -0,0 +1,824 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -463,11 +463,10 @@
 +		group = minstrel_ht_get_group_idx(&ar[i]);
 +		rate = &mi->groups[group].rates[ar[i].idx % 8];
 +
-+		if (last && (info->flags & IEEE80211_TX_STAT_ACK) &&
-+		    info->status.ampdu_len == info->status.ampdu_ack_len)
-+			rate->success++;
++		if (last && (info->flags & IEEE80211_TX_STAT_ACK))
++			rate->success += info->status.ampdu_ack_len;
 +
-+		rate->attempts += ar[i].count;
++		rate->attempts += ar[i].count * info->status.ampdu_len;
 +	}
 +
 +
