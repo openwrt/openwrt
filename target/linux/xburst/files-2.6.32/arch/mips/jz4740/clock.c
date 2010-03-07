@@ -55,8 +55,8 @@
 #define JZ_CLOCK_GATE_RTC	BIT(2)
 #define JZ_CLOCK_GATE_I2C	BIT(3)
 #define JZ_CLOCK_GATE_SPI	BIT(4)
-#define JZ_CLOCK_GATE_AIC_PCLK	BIT(5)
-#define JZ_CLOCK_GATE_AIC	BIT(6)
+#define JZ_CLOCK_GATE_AIC	BIT(5)
+#define JZ_CLOCK_GATE_I2S	BIT(6)
 #define JZ_CLOCK_GATE_MMC	BIT(7)
 #define JZ_CLOCK_GATE_ADC	BIT(8)
 #define JZ_CLOCK_GATE_CIM	BIT(9)
@@ -626,7 +626,7 @@ static struct divided_clk jz4740_clock_divided_clks[] = {
 		.clk = {
 			.name = "i2s",
 			.parent = &jz_clk_ext.clk,
-			.gate_bit = JZ_CLOCK_GATE_AIC,
+			.gate_bit = JZ_CLOCK_GATE_I2S,
 			.ops = &jz_clk_i2s_ops,
 		},
 		.reg = JZ_REG_CLOCK_I2S,
@@ -719,6 +719,12 @@ static struct clk jz4740_clock_simple_clks[] = {
 		.name = "i2c",
 		.parent = &jz_clk_ext.clk,
 		.gate_bit = JZ_CLOCK_GATE_I2C,
+		.ops = &jz_clk_simple_ops,
+	},
+	{
+		.name = "aic",
+		.parent = &jz_clk_ext.clk,
+		.gate_bit = JZ_CLOCK_GATE_AIC,
 		.ops = &jz_clk_simple_ops,
 	},
 };
