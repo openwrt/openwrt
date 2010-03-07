@@ -84,7 +84,8 @@ struct jz4740_i2s {
 	void __iomem *base;
 	dma_addr_t phys_base;
 
-	struct clk *clk;
+	struct clk *clk_aic;
+	struct clk *clk_i2s;
 
 	struct jz4740_pcm_config pcm_config;
 };
@@ -141,7 +142,7 @@ static int jz4740_i2s_startup(struct snd_pcm_substream *substream, struct
 
 
 	jz4740_i2s_write(i2s, JZ_REG_AIC_CTRL, ctrl);
-	clk_enable(i2s->clk);
+	clk_enable(i2s->clk_i2s);
 	jz4740_i2s_write(i2s, JZ_REG_AIC_CONF, conf);
 
 	return 0;
@@ -153,14 +154,14 @@ static void jz4740_i2s_shutdown(struct snd_pcm_substream *substream, struct
 	struct jz4740_i2s *i2s = jz4740_dai_to_i2s(dai);
 	uint32_t conf;
 
-	if (dai->active)
+	if (!dai->active)
 		return;
 
 	conf = jz4740_i2s_read(i2s, JZ_REG_AIC_CONF);
 	conf &= ~JZ_AIC_CONF_ENABLE;
 	jz4740_i2s_write(i2s, JZ_REG_AIC_CONF, conf);
 
-	clk_disable(i2s->clk);
+	clk_disable(i2s->clk_i2s);
 }
 
 
@@ -198,7 +199,7 @@ static int jz4740_i2s_trigger(struct snd_pcm_substream *substream, int cmd,
 	    return -EINVAL;
 	}
 
-	jz4740_i2s_write(i2s, JZ_REG_AIC_CTRL,ctrl);
+	jz4740_i2s_write(i2s, JZ_REG_AIC_CTRL, ctrl);
 
 	return 0;
 }
@@ -348,12 +349,12 @@ static int jz4740_i2s_set_sysclk(struct snd_soc_dai *dai, int clk_id,
 	switch (clk_id) {
 	case JZ4740_I2S_CLKSRC_EXT:
 		parent = clk_get(NULL, "ext");
-		clk_set_parent(i2s->clk, parent);
+		clk_set_parent(i2s->clk_i2s, parent);
 		break;
 	case JZ4740_I2S_CLKSRC_PLL:
 		parent = clk_get(NULL, "pll half");
-		clk_set_parent(i2s->clk, parent);
-		ret = clk_set_rate(i2s->clk, freq);
+		clk_set_parent(i2s->clk_i2s, parent);
+		ret = clk_set_rate(i2s->clk_i2s, freq);
 		break;
 	default:
 		return -EINVAL;
@@ -368,14 +369,16 @@ static int jz4740_i2s_suspend(struct snd_soc_dai *dai)
 	struct jz4740_i2s *i2s = jz4740_dai_to_i2s(dai);
 	uint32_t conf;
 
-	if (!dai->active)
-		return 0;
+	if (dai->active) {
+		conf = jz4740_i2s_read(i2s, JZ_REG_AIC_CONF);
+		conf &= ~JZ_AIC_CONF_ENABLE;
+		jz4740_i2s_write(i2s, JZ_REG_AIC_CONF, conf);
 
-	conf = jz4740_i2s_read(i2s, JZ_REG_AIC_CONF);
-	conf &= ~JZ_AIC_CONF_ENABLE;
-	jz4740_i2s_write(i2s, JZ_REG_AIC_CONF, conf);
+		clk_disable(i2s->clk_i2s);
+	}
 
-	clk_disable(i2s->clk);
+	clk_disable(i2s->clk_aic);
+
 	return 0;
 }
 
@@ -384,14 +387,16 @@ static int jz4740_i2s_resume(struct snd_soc_dai *dai)
 	struct jz4740_i2s *i2s = jz4740_dai_to_i2s(dai);
 	uint32_t conf;
 
-	if (!dai->active)
-		return 0;
+	clk_enable(i2s->clk_aic);
 
-	clk_enable(i2s->clk);
+	if (dai->active) {
+		clk_enable(i2s->clk_i2s);
 
-	conf = jz4740_i2s_read(i2s, JZ_REG_AIC_CONF);
-	conf |= JZ_AIC_CONF_ENABLE;
-	jz4740_i2s_write(i2s, JZ_REG_AIC_CONF, conf);
+		conf = jz4740_i2s_read(i2s, JZ_REG_AIC_CONF);
+		conf |= JZ_AIC_CONF_ENABLE;
+		jz4740_i2s_write(i2s, JZ_REG_AIC_CONF, conf);
+
+	}
 
 	return 0;
 }
@@ -487,12 +492,22 @@ static int __devinit jz4740_i2s_dev_probe(struct platform_device *pdev)
 
 	ret = snd_soc_register_dai(&jz4740_i2s_dai);
 
-	i2s->clk = clk_get(&pdev->dev, "i2s");
+	i2s->clk_aic = clk_get(&pdev->dev, "aic");
 
-	if (IS_ERR(i2s->clk)) {
-		ret = PTR_ERR(i2s->clk);
+	if (IS_ERR(i2s->clk_aic)) {
+		ret = PTR_ERR(i2s->clk_aic);
 		goto err_iounmap;
 	}
+
+
+	i2s->clk_i2s = clk_get(&pdev->dev, "i2s");
+
+	if (IS_ERR(i2s->clk_i2s)) {
+		ret = PTR_ERR(i2s->clk_i2s);
+		goto err_iounmap;
+	}
+
+	clk_enable(i2s->clk_aic);
 
 	platform_set_drvdata(pdev, i2s);
 
@@ -514,7 +529,9 @@ static int __devexit jz4740_i2s_dev_remove(struct platform_device *pdev)
 
 	snd_soc_unregister_dai(&jz4740_i2s_dai);
 
-	clk_put(i2s->clk);
+	clk_disable(i2s->clk_aic);
+	clk_put(i2s->clk_i2s);
+	clk_put(i2s->clk_aic);
 
 	iounmap(i2s->base);
 	release_mem_region(i2s->mem->start, resource_size(i2s->mem));
