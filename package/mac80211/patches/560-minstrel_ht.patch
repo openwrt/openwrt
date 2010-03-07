@@ -68,7 +68,7 @@
  
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -0,0 +1,800 @@
+@@ -0,0 +1,807 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -262,6 +262,7 @@
 +	int cur_prob, cur_prob_tp, cur_tp, cur_tp2;
 +	int group, i, index;
 +
++	mi->sample_slow = 0;
 +	mi->sample_count = 0;
 +	mi->max_tp_rate = 0;
 +	mi->max_tp_rate2 = 0;
@@ -542,7 +543,9 @@
 +	if (!mr->retry_updated)
 +		minstrel_calc_retransmit(mp, mi, index);
 +
-+	if (rtscts)
++	if (mr->probability < MINSTREL_FRAC(20, 100))
++		rate->count = 2;
++	else if (rtscts)
 +		rate->count = mr->retry_count_rtscts;
 +	else
 +		rate->count = mr->retry_count;
@@ -595,9 +598,13 @@
 +	 * if the link is working perfectly.
 +	 */
 +	if (minstrel_get_duration(sample_idx) >
-+	    minstrel_get_duration(mi->max_tp_rate) &&
-+	    mr->sample_skipped < 10)
-+		goto next;
++	    minstrel_get_duration(mi->max_tp_rate)) {
++	    if (mr->sample_skipped < 10)
++			goto next;
++
++		if (mi->sample_slow++ > 2)
++			goto next;
++	}
 +
 +	return sample_idx;
 +
@@ -871,7 +878,7 @@
 +}
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.h
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,121 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -967,6 +974,7 @@
 +	u8 sample_wait;
 +	u8 sample_tries;
 +	u8 sample_count;
++	u8 sample_slow;
 +
 +	/* current MCS group to be sampled */
 +	u8 sample_group;
