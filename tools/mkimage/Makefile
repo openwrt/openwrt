@@ -19,6 +19,7 @@ HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/u-boot-$(PKG_VERSION)
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
+	rm -f $(HOST_BUILD_DIR)/tools/.depend
 	touch $(HOST_BUILD_DIR)/include/config.{h,mk} $(HOST_BUILD_DIR)/include/autoconf.mk{.dep,}
 	$(MAKE) -C $(HOST_BUILD_DIR) SUBDIRS=tools BIN_FILES-y="mkimage" tools
 endef
