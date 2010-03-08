@@ -22,6 +22,9 @@
 #include <linux/slab.h>
 #include <linux/delay.h>
 
+#include <linux/debugfs.h>
+#include <linux/seq_file.h>
+
 #include <asm/io.h>
 #include <asm/mipsregs.h>
 #include <asm/irq_cpu.h>
@@ -76,14 +79,11 @@ static struct irq_chip intc_irq_type = {
 static irqreturn_t jz4740_cascade(int irq, void *data)
 {
 	uint32_t irq_reg;
+
 	irq_reg = readl(jz_intc_base + JZ_REG_INTC_PENDING);
+	generic_handle_irq(ffs(irq_reg) - 1 + JZ_IRQ_BASE);
 
-	if (irq_reg) {
-		generic_handle_irq(ffs(irq_reg) - 1 + JZ_IRQ_BASE);
-		return IRQ_HANDLED;
-	}
-
-	return 0;
+	return IRQ_HANDLED;
 }
 
 static struct irqaction jz4740_cascade_action = {
@@ -128,3 +128,36 @@ void jz4740_intc_resume(void)
 {
 	writel(~jz_intc_saved, jz_intc_base + JZ_REG_INTC_CLEAR_MASK);
 }
+
+#ifdef CONFIG_DEBUG_FS
+
+static int intc_regs_show(struct seq_file *s, void *unused)
+{
+	seq_printf(s, "Status:\t\t%08x\n", readl(jz_intc_base + JZ_REG_INTC_STATUS));
+	seq_printf(s, "Mask\t\t%08x\n", readl(jz_intc_base + JZ_REG_INTC_MASK));
+	seq_printf(s, "Pending:\t%08x\n", readl(jz_intc_base + JZ_REG_INTC_PENDING));
+
+	return 0;
+}
+
+static int intc_regs_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, intc_regs_show, NULL);
+}
+
+static const struct file_operations intc_regs_operations = {
+	.open		= intc_regs_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= single_release,
+};
+
+static int __init intc_debugfs_init(void)
+{
+	(void) debugfs_create_file("jz_regs_intc", S_IFREG | S_IRUGO,
+				NULL, NULL, &intc_regs_operations);
+	return 0;
+}
+subsys_initcall(intc_debugfs_init);
+
+#endif
