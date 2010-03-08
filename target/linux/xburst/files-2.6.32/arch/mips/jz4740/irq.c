@@ -122,11 +122,13 @@ void jz4740_intc_suspend(void)
 {
 	jz_intc_saved = readl(jz_intc_base + JZ_REG_INTC_MASK);
 	writel(~jz_intc_wakeup, jz_intc_base + JZ_REG_INTC_SET_MASK);
+	writel(jz_intc_wakeup, jz_intc_base + JZ_REG_INTC_CLEAR_MASK);
 }
 
 void jz4740_intc_resume(void)
 {
 	writel(~jz_intc_saved, jz_intc_base + JZ_REG_INTC_CLEAR_MASK);
+	writel(jz_intc_saved, jz_intc_base + JZ_REG_INTC_SET_MASK);
 }
 
 #ifdef CONFIG_DEBUG_FS
