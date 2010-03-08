@@ -13,11 +13,9 @@ Signed-off-by: John W. Linville <linville@tuxdriver.com>
  drivers/ssb/driver_mipscore.c |    5 ++++-
  1 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/ssb/driver_mipscore.c b/drivers/ssb/driver_mipscore.c
-index 3c6feed..97efce1 100644
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
-@@ -270,7 +270,6 @@ void ssb_mipscore_init(struct ssb_mipscore *mcore)
+@@ -270,7 +270,6 @@ void ssb_mipscore_init(struct ssb_mipsco
  				set_irq(dev, irq++);
  			}
  			break;
@@ -25,7 +23,7 @@ index 3c6feed..97efce1 100644
  		case SSB_DEV_PCI:
  		case SSB_DEV_ETHERNET:
  		case SSB_DEV_ETHERNET_GBIT:
-@@ -281,6 +280,10 @@ void ssb_mipscore_init(struct ssb_mipscore *mcore)
+@@ -281,6 +280,10 @@ void ssb_mipscore_init(struct ssb_mipsco
  				set_irq(dev, irq++);
  				break;
  			}
@@ -36,6 +34,3 @@ index 3c6feed..97efce1 100644
  		}
  	}
  	ssb_dprintk(KERN_INFO PFX "after irq reconfiguration\n");
--- 
-1.7.0
-
