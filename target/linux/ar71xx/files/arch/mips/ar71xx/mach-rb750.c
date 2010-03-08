@@ -50,10 +50,14 @@ static struct rb750_led_platform_data rb750_leds_data = {
 
 static struct platform_device rb750_leds_device = {
 	.name	= "leds-rb750",
-	.id	= -1,
 	.dev	= {
 		.platform_data = &rb750_leds_data,
 	}
+};
+
+static struct platform_device rb750_nand_device = {
+	.name	= "rb750-nand",
+	.id	= -1,
 };
 
 int rb750_latch_change(u32 mask_clr, u32 mask_set)
@@ -115,6 +119,7 @@ static void __init rb750_setup(void)
 
 	ap91_eth_init(NULL);
 	platform_device_register(&rb750_leds_device);
+	platform_device_register(&rb750_nand_device);
 }
 
 MIPS_MACHINE(AR71XX_MACH_RB_750, "750i", "MikroTik RouterBOARD 750",
