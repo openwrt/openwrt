@@ -312,8 +312,8 @@ static unsigned int jz_gpio_irq_startup(unsigned int irq)
 
 	jz_gpio_set_irq_bit(irq, JZ_REG_GPIO_SELECT_SET);
 
-	jz_gpio_irq_unmask(irq);
 	desc->status &= ~IRQ_MASKED;
+	jz_gpio_irq_unmask(irq);
 
 	return 0;
 }
