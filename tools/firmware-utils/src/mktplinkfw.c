@@ -218,7 +218,8 @@ static void usage(int status)
 "  -k <file>       read kernel image from the file <file>\n"
 "  -r <file>       read rootfs image from the file <file>\n"
 "  -o <file>       write output to the file <file>\n"
-"  -v <version>    set image version to <version>\n"
+"  -N <vendor>     set image vendor to <vendor>\n"
+"  -V <version>    set image version to <version>\n"
 "  -h              show this screen\n"
 	);
 
@@ -454,7 +455,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:ck:r:o:v:h:");
+		c = getopt(argc, argv, "B:V:N:ck:r:o:h");
 		if (c == -1)
 			break;
 
@@ -479,9 +480,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'o':
 			ofname = optarg;
-			break;
-		case 'v':
-			version = optarg;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
