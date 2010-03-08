@@ -40,59 +40,6 @@ endef
 
 $(eval $(call KernelPackage,lib80211))
 
-
-define KernelPackage/net-libipw
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=libipw for ipw2100 and ipw2200
-  DEPENDS:=@PCI_SUPPORT +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211
-  KCONFIG:=CONFIG_LIBIPW
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/libipw.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,49,libipw)
-endef
-
-define KernelPackage/net-libipw/description
- Hardware independent IEEE 802.11 networking stack for ipw2100 and ipw2200.
-endef
-
-$(eval $(call KernelPackage,net-libipw))
-
-
-define KernelPackage/net-ipw2100
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=Intel IPW2100 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-net-libipw
-  KCONFIG:=CONFIG_IPW2100
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/ipw2100.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,ipw2100)
-endef
-
-define KernelPackage/net-ipw2100/description
- Kernel support for Intel IPW2100
- Includes:
- - ipw2100
-endef
-
-$(eval $(call KernelPackage,net-ipw2100))
-
-
-define KernelPackage/net-ipw2200
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=Intel IPW2200 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-net-libipw
-  KCONFIG:=CONFIG_IPW2200
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/ipw2x00/ipw2200.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,ipw2200)
-endef
-
-define KernelPackage/net-ipw2200/description
- Kernel support for Intel IPW2200
- Includes:
- - ipw2200
-endef
-
-$(eval $(call KernelPackage,net-ipw2200))
-
-
 define KernelPackage/net-airo
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Cisco Aironet driver
