@@ -205,22 +205,10 @@ define Image/Build/PB4X
 endef
 
 define Image/Build/MyLoader
-	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) \
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(3) \
 		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
-		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
-		$(call imgname,$(1),$(2))-2M.img
-	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s 0x400000 \
-		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
-		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
-		$(call imgname,$(1),$(2))-4M.img
-	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s 0x800000 \
-		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
-		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
-		$(call imgname,$(1),$(2))-8M.img
-	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s 0x1000000 \
-		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
-		-p0x100000:0:::rootfs:$(KDIR)/root.$(1) \
-		$(call imgname,$(1),$(2))-16M.img
+		-p0x110000:0:::rootfs:$(KDIR)/root.$(1) \
+		$(call imgname,$(1),$(2))-$(4)-factory.img
 endef
 
 ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6528k(rootfs),256k(cfg)ro,64k(EEPROM)ro,7552k@0x50000(firmware)
@@ -404,7 +392,10 @@ define Image/Build/Profile/PB44
 endef
 
 define Image/Build/Profile/WP543
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x200000,2M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x400000,4M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x800000,8M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x1000000,16M)
 endef
 
 define Image/Build/Profile/DIR600A1
