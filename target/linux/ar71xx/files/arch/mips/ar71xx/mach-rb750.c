@@ -8,11 +8,53 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/platform_device.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/mach-rb750.h>
 
 #include "machtype.h"
 #include "dev-ap91-eth.h"
+
+static struct rb750_led_data rb750_leds[] = {
+	{
+		.name		= "rb750:green:act",
+		.mask		= RB750_LED_ACT,
+		.active_low	= 1,
+	}, {
+		.name		= "rb750:green:port1",
+		.mask		= RB750_LED_PORT5,
+		.active_low	= 1,
+	}, {
+		.name		= "rb750:green:port2",
+		.mask		= RB750_LED_PORT4,
+		.active_low	= 1,
+	}, {
+		.name		= "rb750:green:port3",
+		.mask		= RB750_LED_PORT3,
+		.active_low	= 1,
+	}, {
+		.name		= "rb750:green:port4",
+		.mask		= RB750_LED_PORT2,
+		.active_low	= 1,
+	}, {
+		.name		= "rb750:green:port5",
+		.mask		= RB750_LED_PORT1,
+		.active_low	= 1,
+	}
+};
+
+static struct rb750_led_platform_data rb750_leds_data = {
+	.num_leds	= ARRAY_SIZE(rb750_leds),
+	.leds		= rb750_leds,
+};
+
+static struct platform_device rb750_leds_device = {
+	.name	= "leds-rb750",
+	.id	= -1,
+	.dev	= {
+		.platform_data = &rb750_leds_data,
+	}
+};
 
 int rb750_latch_change(u32 mask_clr, u32 mask_set)
 {
@@ -65,7 +107,14 @@ EXPORT_SYMBOL_GPL(rb750_latch_change);
 
 static void __init rb750_setup(void)
 {
+	ar71xx_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
+
 	ap91_eth_init(NULL);
+	platform_device_register(&rb750_leds_device);
 }
 
 MIPS_MACHINE(AR71XX_MACH_RB_750, "750i", "MikroTik RouterBOARD 750",
