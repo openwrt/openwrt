@@ -176,13 +176,18 @@ dhcp_host_add() {
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] && dhcp_option_add "$cfg" "$networkid"
 
-	config_get mac "$cfg" mac
-	[ -n "$mac" ] || return 0
+	config_get macs "$cfg" mac
+	[ -n "$macs" ] || return 0
 
 	config_get ip "$cfg" ip
 	[ -n "$ip" ] || return 0
 
-	append args "--dhcp-host=$mac,${networkid:+net:$networkid,}$ip${name:+,$name}"
+	macs=""
+	config_get mac "$cfg" mac
+	for m in $mac; do append macs "$m" ","; done
+	[ -n "$macs" ] || return 0
+
+	append args "--dhcp-host=$macs,${networkid:+net:$networkid,}$ip${name:+,$name}"
 }
 
 dhcp_mac_add() {
