@@ -49,6 +49,18 @@
 #define RB750_LED_BITS	(RB750_LED_PORT1 | RB750_LED_PORT2 | RB750_LED_PORT3 | \
 			 RB750_LED_PORT4 | RB750_LED_PORT5 | RB750_LED_ACT)
 
+struct rb750_led_data {
+	char	*name;
+	char	*default_trigger;
+	u32	mask;
+	int	active_low;
+};
+
+struct rb750_led_platform_data {
+	int			num_leds;
+	struct rb750_led_data	*leds;
+};
+
 int rb750_latch_change(u32 mask_clr, u32 mask_set);
 
 #endif /* _MACH_RB750_H */
