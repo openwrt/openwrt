@@ -252,7 +252,7 @@
  	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -12136,6 +12205,11 @@ static int __devinit tg3_get_invariants(
+@@ -12136,6 +12206,11 @@ static int __devinit tg3_get_invariants(
  	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
  		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;
  
@@ -264,7 +264,7 @@
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLG2_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -12513,6 +12587,10 @@ static int __devinit tg3_get_device_addr
+@@ -12513,6 +12588,10 @@ static int __devinit tg3_get_device_addr
  	}
  
  	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
@@ -275,7 +275,7 @@
  #ifdef CONFIG_SPARC
  		if (!tg3_get_default_macaddr_sparc(tp))
  			return 0;
-@@ -13004,6 +13082,7 @@ static char * __devinit tg3_phy_string(s
+@@ -13004,6 +13083,7 @@ static char * __devinit tg3_phy_string(s
  	case PHY_ID_BCM5704:	return "5704";
  	case PHY_ID_BCM5705:	return "5705";
  	case PHY_ID_BCM5750:	return "5750";
@@ -283,7 +283,7 @@
  	case PHY_ID_BCM5752:	return "5752";
  	case PHY_ID_BCM5714:	return "5714";
  	case PHY_ID_BCM5780:	return "5780";
-@@ -13214,6 +13293,13 @@ static int __devinit tg3_init_one(struct
+@@ -13214,6 +13294,13 @@ static int __devinit tg3_init_one(struct
  		tp->msg_enable = tg3_debug;
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;
