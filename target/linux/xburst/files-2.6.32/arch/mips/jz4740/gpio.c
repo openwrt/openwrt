@@ -446,6 +446,7 @@ int jz_gpio_suspend(void)
 		gpio = chip->gpio_chip.base;
 		chip->suspend_mask = readl(GPIO_TO_REG(gpio, JZ_REG_GPIO_MASK));
 		writel(~(chip->wakeup), GPIO_TO_REG(gpio, JZ_REG_GPIO_MASK_SET));
+		writel(chip->wakeup, GPIO_TO_REG(gpio, JZ_REG_GPIO_MASK_CLEAR));
 	}
 
 	chip = jz_gpio_chips;
@@ -459,7 +460,10 @@ int jz_gpio_resume(void)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(jz_gpio_chips); ++i, ++chip) {
-		writel(~(chip->suspend_mask), GPIO_TO_REG(chip->gpio_chip.base, JZ_REG_GPIO_MASK_CLEAR));
+		writel(~(chip->suspend_mask), GPIO_TO_REG(chip->gpio_chip.base,
+			JZ_REG_GPIO_MASK_CLEAR));
+		writel(chip->suspend_mask, GPIO_TO_REG(chip->gpio_chip.base,
+			JZ_REG_GPIO_MASK_SET));
 	}
 
 	return 0;
