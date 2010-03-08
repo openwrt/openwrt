@@ -269,6 +269,7 @@ static inline u32 ar71xx_gpio_rr(unsigned reg)
 void ar71xx_gpio_init(void) __init;
 void ar71xx_gpio_function_enable(u32 mask);
 void ar71xx_gpio_function_disable(u32 mask);
+void ar71xx_gpio_function_setup(u32 set, u32 clear);
 
 /*
  * DDR_CTRL block
