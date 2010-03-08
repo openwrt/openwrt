@@ -1,0 +1,14 @@
+
+	Copyright (C) 2006 Markus Wigge
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -55,7 +55,7 @@ SHAREDLIB=$(SOLIBRARY).$(LIBVERSION)
+ CC = @CC@
+ CCOPT = @V_CCOPT@
+ INCLS = -I. @V_INCLS@
+-DEFS = @DEFS@ @V_DEFS@
++DEFS = -D_BSD_SOURCE @DEFS@ @V_DEFS@
+ LIBS = @V_LIBS@
+ DAGLIBS = @DAGLIBS@
+ DEPLIBS = @DEPLIBS@
