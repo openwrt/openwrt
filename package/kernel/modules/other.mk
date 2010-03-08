@@ -520,6 +520,22 @@ endef
 $(eval $(call KernelPackage,leds-wndr3700-usb))
 
 
+define KernelPackage/leds-rb750
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RouterBOARD 750 LED support
+  DEPENDS:=@TARGET_ar71xx
+  KCONFIG:=CONFIG_LEDS_RB750
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-rb750.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,leds-rb750)
+endef
+
+define KernelPackage/leds-rb750/description
+ Kernel module for the LEDs on the MikroTik RouterBOARD 750.
+endef
+
+$(eval $(call KernelPackage,leds-rb750))
+
+
 define KernelPackage/ledtrig-netdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED NETDEV Trigger
