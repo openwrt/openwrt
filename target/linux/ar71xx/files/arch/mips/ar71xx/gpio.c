@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx SoC GPIO API support
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -109,6 +109,8 @@ void ar71xx_gpio_function_enable(u32 mask)
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
 	ar71xx_gpio_wr(GPIO_REG_FUNC, ar71xx_gpio_rr(GPIO_REG_FUNC) | mask);
+	/* flush write */
+	(void) ar71xx_gpio_rr(GPIO_REG_FUNC);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
@@ -120,9 +122,26 @@ void ar71xx_gpio_function_disable(u32 mask)
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
 	ar71xx_gpio_wr(GPIO_REG_FUNC, ar71xx_gpio_rr(GPIO_REG_FUNC) & ~mask);
+	/* flush write */
+	(void) ar71xx_gpio_rr(GPIO_REG_FUNC);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
+
+void ar71xx_gpio_function_setup(u32 set, u32 clear)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
+
+	ar71xx_gpio_wr(GPIO_REG_FUNC,
+		       (ar71xx_gpio_rr(GPIO_REG_FUNC) & ~clear) | set);
+	/* flush write */
+	(void) ar71xx_gpio_rr(GPIO_REG_FUNC);
+
+	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
+}
+EXPORT_SYMBOL(ar71xx_gpio_function_setup);
 
 void __init ar71xx_gpio_init(void)
 {
