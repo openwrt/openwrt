@@ -235,7 +235,7 @@ dhcp_add() {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
 	}
 
-	append_bool "$cfg" ignore "-2 $ifname" && return 0
+	append_bool "$cfg" ignore "-2 '$ifname'" && return 0
 
 	config_get proto "$net" proto
 	[ static = "$proto" ] || return 0
