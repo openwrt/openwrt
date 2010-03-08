@@ -25,6 +25,9 @@
 #include <linux/interrupt.h>
 #include <linux/bitops.h>
 
+#include <linux/debugfs.h>
+#include <linux/seq_file.h>
+
 #define JZ_GPIO_BASE_A (32*0)
 #define JZ_GPIO_BASE_B (32*1)
 #define JZ_GPIO_BASE_C (32*2)
@@ -301,6 +304,7 @@ static void jz_gpio_irq_unmask(unsigned int irq)
 	jz_gpio_set_irq_bit(irq, JZ_REG_GPIO_MASK_CLEAR);
 };
 
+
 /* TODO: Check if function is gpio */
 static unsigned int jz_gpio_irq_startup(unsigned int irq)
 {
@@ -445,18 +449,6 @@ int jz_gpio_suspend(void)
 	}
 
 	chip = jz_gpio_chips;
-#if 0
-	for (i = 0; i < ARRAY_SIZE(jz_gpio_chips); ++i, ++chip) {
-		printk("GPIO %d: \n", i);
-		printk("\tPin: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_PIN)));
-		printk("\tData: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_DATA)));
-		printk("\tPull: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_PULL)));
-		printk("\tFunc: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_FUNC)));
-		printk("\tSelect: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_SELECT)));
-		printk("\tDirection: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_DIRECTION)));
-		printk("\tTrigger: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_TRIGGER)));
-	}
-#endif
 
 	return 0;
 }
@@ -465,6 +457,7 @@ int jz_gpio_resume(void)
 {
 	struct jz_gpio_chip *chip = jz_gpio_chips;
 	int i;
+
 	for (i = 0; i < ARRAY_SIZE(jz_gpio_chips); ++i, ++chip) {
 		writel(~(chip->suspend_mask), GPIO_TO_REG(chip->gpio_chip.base, JZ_REG_GPIO_MASK_CLEAR));
 	}
@@ -495,3 +488,49 @@ int __init jz_gpiolib_init(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_DEBUG_FS
+
+static int gpio_regs_show(struct seq_file *s, void *unused)
+{
+	struct jz_gpio_chip *chip = jz_gpio_chips;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(jz_gpio_chips); ++i, ++chip) {
+		seq_printf(s, "GPIO %d: \n", i);
+		seq_printf(s, "\tPin: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_PIN)));
+		seq_printf(s, "\tData: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_DATA)));
+		seq_printf(s, "\tMask: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_MASK)));
+		seq_printf(s, "\tData: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_DATA)));
+		seq_printf(s, "\tPull: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_PULL)));
+		seq_printf(s, "\tFunc: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_FUNC)));
+		seq_printf(s, "\tSelect: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_SELECT)));
+		seq_printf(s, "\tDirection: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_DIRECTION)));
+		seq_printf(s, "\tTrigger: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_TRIGGER)));
+		seq_printf(s, "\tFlag: %.8x\n", readl(CHIP_TO_REG(&chip->gpio_chip, JZ_REG_GPIO_FLAG)));
+	}
+
+	return 0;
+}
+
+static int gpio_regs_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, gpio_regs_show, NULL);
+}
+
+static const struct file_operations gpio_regs_operations = {
+	.open		= gpio_regs_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= single_release,
+};
+
+static int __init gpio_debugfs_init(void)
+{
+	(void) debugfs_create_file("jz_regs_gpio", S_IFREG | S_IRUGO,
+				NULL, NULL, &gpio_regs_operations);
+	return 0;
+}
+subsys_initcall(gpio_debugfs_init);
+
+#endif
