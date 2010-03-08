@@ -1,0 +1,14 @@
+--- a/fw_env.c
++++ b/fw_env.c
+@@ -605,7 +605,10 @@ static int flash_write_buf (int dev, int
+ 	erase_offset = offset & ~(blocklen - 1);
+ 
+ 	/* Maximum area we may use */
+-	erase_len = top_of_range - erase_offset;
++	if (mtd_type == MTD_NANDFLASH)
++		erase_len = top_of_range - erase_offset;
++	else
++		erase_len = blocklen;
+ 
+ 	blockstart = erase_offset;
+ 	/* Offset inside a block */
