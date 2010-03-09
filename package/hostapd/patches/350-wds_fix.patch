@@ -14,3 +14,15 @@
  		linux_set_iface_flags(drv->ioctl_sock, name, 1);
  		return i802_set_sta_vlan(priv, addr, name, 0);
  	} else {
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -1559,6 +1559,9 @@ static void handle_assoc_cb(struct hosta
+ 			       "Could not add STA to kernel driver");
+ 	}
+ 
++	if (sta->flags & WLAN_STA_WDS)
++		hapd->drv.set_wds_sta(hapd, sta->addr, sta->aid, 1);
++
+ 	if (sta->eapol_sm == NULL) {
+ 		/*
+ 		 * This STA does not use RADIUS server for EAP authentication,
