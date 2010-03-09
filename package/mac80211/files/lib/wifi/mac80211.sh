@@ -353,8 +353,7 @@ enable_mac80211() {
 		ifconfig "$ifname" up
 
 		if [ ! "$mode" = "ap" ]; then
-			mac80211_start_vif "$vif" "$ifname"
-
+			ifconfig "$ifname" up
 			case "$mode" in
 				adhoc)
 					config_get bssid "$vif" bssid
@@ -372,6 +371,7 @@ enable_mac80211() {
 					fi
 				;;
 			esac
+			mac80211_start_vif "$vif" "$ifname"
 		fi
 	done
 
