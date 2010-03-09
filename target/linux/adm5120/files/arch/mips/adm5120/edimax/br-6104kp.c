@@ -13,8 +13,8 @@
 
 static struct gpio_led br6104kp_gpio_leds[] __initdata = {
 	GPIO_LED_STD(ADM5120_GPIO_PIN0, "power",	NULL),
-	GPIO_LED_STD(ADM5120_GPIO_PIN1, "usb1",		NULL),
-	GPIO_LED_INV(ADM5120_GPIO_PIN3, "usb2",		NULL),
+	GPIO_LED_INV(ADM5120_GPIO_PIN3, "usb1",		NULL),
+	GPIO_LED_INV(ADM5120_GPIO_PIN1, "usb2",		NULL),
 	GPIO_LED_INV(ADM5120_GPIO_P0L1, "wan_speed",	NULL),
 	GPIO_LED_INV(ADM5120_GPIO_P0L0, "wan_lnkact",	NULL),
 	GPIO_LED_INV(ADM5120_GPIO_P1L1, "lan1_speed",	NULL),
