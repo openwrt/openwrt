@@ -1,0 +1,16 @@
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4435,9 +4435,11 @@ static int i802_set_wds_sta(void *priv, 
+ 	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
+ 		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);
+ 	if (val) {
+-		if (nl80211_create_iface(drv, name, NL80211_IFTYPE_AP_VLAN,
++		if (!if_nametoindex(name)) {
++			if (nl80211_create_iface(drv, name, NL80211_IFTYPE_AP_VLAN,
+ 					 NULL, 1) < 0)
+-			return -1;
++				return -1;
++		}
+ 		linux_set_iface_flags(drv->ioctl_sock, name, 1);
+ 		return i802_set_sta_vlan(priv, addr, name, 0);
+ 	} else {
