@@ -108,7 +108,7 @@ static void __init tl_wr741nd_setup(void)
 					ARRAY_SIZE(tl_wr741nd_gpio_buttons),
 					tl_wr741nd_gpio_buttons);
 
-	ap91_eth_init(mac);
+	ap91_eth_init(mac, NULL);
 	ap91_pci_init(ee, mac);
 }
 MIPS_MACHINE(AR71XX_MACH_TL_WR741ND, "TL-WR741ND", "TP-LINK TL-WR741ND",
