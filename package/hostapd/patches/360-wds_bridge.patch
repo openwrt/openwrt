@@ -1,0 +1,75 @@
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -148,6 +148,7 @@ struct hostapd_wmm_ac_params {
+ struct hostapd_bss_config {
+ 	char iface[IFNAMSIZ + 1];
+ 	char bridge[IFNAMSIZ + 1];
++	char wds_bridge[IFNAMSIZ + 1];
+ 
+ 	enum hostapd_logger_level logger_syslog_level, logger_stdout_level;
+ 
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -1193,6 +1193,8 @@ struct hostapd_config * hostapd_config_r
+ 				   sizeof(conf->bss[0].iface));
+ 		} else if (os_strcmp(buf, "bridge") == 0) {
+ 			os_strlcpy(bss->bridge, pos, sizeof(bss->bridge));
++		} else if (os_strcmp(buf, "wds_bridge") == 0) {
++			os_strlcpy(bss->wds_bridge, pos, sizeof(bss->wds_bridge));
+ 		} else if (os_strcmp(buf, "driver") == 0) {
+ 			int j;
+ 			/* clear to get error below if setting is invalid */
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4425,7 +4425,8 @@ static int i802_set_sta_vlan(void *priv,
+ }
+ 
+ 
+-static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val)
++static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
++                            const char *bridge_ifname)
+ {
+ 	struct i802_bss *bss = priv;
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+@@ -4439,6 +4440,10 @@ static int i802_set_wds_sta(void *priv, 
+ 			if (nl80211_create_iface(drv, name, NL80211_IFTYPE_AP_VLAN,
+ 					 NULL, 1) < 0)
+ 				return -1;
++			if (bridge_ifname) {
++				if (linux_br_add_if(drv->ioctl_sock, bridge_ifname, name) < 0)
++					return -1;
++			}
+ 		}
+ 		linux_set_iface_flags(drv->ioctl_sock, name, 1);
+ 		return i802_set_sta_vlan(priv, addr, name, 0);
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -253,9 +253,15 @@ static int hostapd_vlan_if_remove(struct
+ static int hostapd_set_wds_sta(struct hostapd_data *hapd, const u8 *addr,
+ 			       int aid, int val)
+ {
++	const char *bridge = NULL;
++
+ 	if (hapd->driver == NULL || hapd->driver->set_wds_sta == NULL)
+ 		return 0;
+-	return hapd->driver->set_wds_sta(hapd->drv_priv, addr, aid, val);
++	if (hapd->conf->wds_bridge[0])
++		bridge = hapd->conf->wds_bridge;
++	else if (hapd->conf->bridge[0])
++		bridge = hapd->conf->bridge;
++	return hapd->driver->set_wds_sta(hapd->drv_priv, addr, aid, val, bridge);
+ }
+ 
+ 
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -1610,7 +1610,8 @@ struct wpa_driver_ops {
+ 	 * @val: 1 = bind to 4-address WDS; 0 = unbind
+ 	 * Returns: 0 on success, -1 on failure
+ 	 */
+-	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val);
++	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
++	                   const char *bridge_ifname);
+ 
+ 	/**
+ 	 * send_action - Transmit an Action frame
