@@ -31,7 +31,7 @@
 #define   AR8216_CTRL_RESET		BIT(31)
 
 #define AR8216_REG_GLOBAL_CTRL		0x0030
-#define   AR8216_GCTRL_MTU		BITS(0, 10)
+#define   AR8216_GCTRL_MTU		BITS(0, 11)
 
 #define AR8216_REG_VTU			0x0040
 #define   AR8216_VTU_OP			BITS(0, 3)
