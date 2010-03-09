@@ -88,7 +88,8 @@ static irqreturn_t jz4740_cascade(int irq, void *data)
 
 static struct irqaction jz4740_cascade_action = {
 	.handler = jz4740_cascade,
-	.name = "JZ4740 cascade interrupt"
+	.name = "JZ4740 cascade interrupt",
+	.flags = IRQF_DISABLED,
 };
 
 void __init arch_init_irq(void)
@@ -110,7 +111,7 @@ asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned int pending = read_c0_status() & read_c0_cause() & ST0_IM;
 	if (pending & STATUSF_IP2)
-		jz4740_cascade(2, NULL);
+		do_IRQ(2);
 	else if(pending & STATUSF_IP3)
 		do_IRQ(3);
 	else
