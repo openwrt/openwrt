@@ -14,6 +14,14 @@ wpa_supplicant_setup_vif() {
 		config_get key "$vif" key
 	}
 
+	local net_cfg bridge
+	config_get bridge "$vif" bridge
+	[ -z "$bridge" ] && {
+		net_cfg="$(find_net_config "$vif")"
+		[ -z "$net_cfg" ] || bridge="$(bridge_interface "$net_cfg")"
+		config_set "$vif" bridge "$bridge"
+	}
+
 	case "$enc" in
 		*none*)
 			key_mgmt='NONE'
