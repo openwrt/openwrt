@@ -10,7 +10,7 @@
  /* hostapd.c */
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -745,6 +745,9 @@ int hostapd_setup_interface_complete(str
+@@ -746,6 +746,9 @@ int hostapd_setup_interface_complete(str
  	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
  		   iface->bss[0]->conf->iface);
  
@@ -116,7 +116,7 @@
  	os_program_deinit();
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1854,6 +1854,8 @@ struct hostapd_config * hostapd_config_r
+@@ -1855,6 +1855,8 @@ struct hostapd_config * hostapd_config_r
  			}
  #endif /* CONFIG_IEEE80211W */
  #ifdef CONFIG_IEEE80211N
