@@ -176,9 +176,6 @@ dhcp_host_add() {
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] && dhcp_option_add "$cfg" "$networkid"
 
-	config_get macs "$cfg" mac
-	[ -n "$macs" ] || return 0
-
 	config_get ip "$cfg" ip
 	[ -n "$ip" ] || return 0
 
