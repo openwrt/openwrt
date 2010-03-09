@@ -42,7 +42,7 @@ struct ar8216_priv {
 
 	/* all fields below are cleared on reset */
 	bool vlan;
-	u8 vlan_id[AR8216_NUM_VLANS];
+	u16 vlan_id[AR8216_NUM_VLANS];
 	u8 vlan_table[AR8216_NUM_VLANS];
 	u8 vlan_tagged;
 	u16 pvid[AR8216_NUM_PORTS];
@@ -133,6 +133,12 @@ static int
 ar8216_set_pvid(struct switch_dev *dev, int port, int vlan)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
+
+	/* make sure no invalid PVIDs get set */
+
+	if (vlan >= AR8216_NUM_VLANS)
+		return -EINVAL;
+
 	priv->pvid[port] = vlan;
 	return 0;
 }
@@ -228,7 +234,7 @@ ar8216_mangle_rx(struct sk_buff *skb, int napi)
 		goto recv;
 
 	/* lookup port vid from local table, the switch passes an invalid vlan id */
-	vlan = priv->pvid[port];
+	vlan = priv->vlan_id[priv->pvid[port]];
 
 	buf[14 + 2] &= 0xf0;
 	buf[14 + 2] |= vlan >> 8;
@@ -282,7 +288,7 @@ static struct switch_attr ar8216_vlan[] = {
 		.description = "VLAN ID",
 		.set = ar8216_set_vid,
 		.get = ar8216_get_vid,
-		.max = 4095,
+		.max = 4094,
 	},
 };
 
@@ -396,9 +402,6 @@ ar8216_hw_apply(struct switch_dev *dev)
 					portmask[i] |= vp & ~mask;
 			}
 
-			if (!priv->vlan_table[j])
-				continue;
-
 			ar8216_vtu_op(priv,
 				AR8216_VTU_OP_LOAD |
 				(priv->vlan_id[j] << AR8216_VTU_VID_S),
@@ -432,7 +435,11 @@ ar8216_hw_apply(struct switch_dev *dev)
 		} else {
 			egress = AR8216_OUT_STRIP_VLAN;
 		}
-		ingress = AR8216_IN_SECURE;
+		if (priv->vlan) {
+			ingress = AR8216_IN_SECURE;
+		} else {
+			ingress = AR8216_IN_PORT_ONLY;
+		}
 
 		ar8216_rmw(priv, AR8216_REG_PORT_CTRL(i),
 			AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
@@ -478,7 +485,7 @@ ar8216_reset_switch(struct switch_dev *dev)
 		if (i == AR8216_PORT_CPU) {
 			priv->write(priv, AR8216_REG_PORT_STATUS(i),
 				AR8216_PORT_STATUS_LINK_UP |
-				AR8216_PORT_STATUS_SPEED |
+				AR8216_PORT_SPEED_100M |
 				AR8216_PORT_STATUS_TXMAC |
 				AR8216_PORT_STATUS_RXMAC |
 				AR8216_PORT_STATUS_DUPLEX);
@@ -554,6 +561,10 @@ ar8216_read_status(struct phy_device *phydev)
 
 	priv->write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
 
+	phydev->state = PHY_RUNNING;
+	netif_carrier_on(phydev->attached_dev);
+	phydev->adjust_link(phydev->attached_dev);
+
 	return 0;
 }
 
@@ -573,8 +584,8 @@ ar8216_probe(struct phy_device *pdev)
 
 	priv.phy = pdev;
 	val = ar8216_mii_read(&priv, AR8216_REG_CTRL);
-	rev = val & 0xff;
-	id = (val >> 8) & 0xff;
+	rev = val & AR8216_CTRL_REVISION;
+	id = (val & AR8216_CTRL_VERSION) >> AR8216_CTRL_VERSION_S;
 	if ((id != 1) || (rev != 1))
 		return -ENODEV;
 
