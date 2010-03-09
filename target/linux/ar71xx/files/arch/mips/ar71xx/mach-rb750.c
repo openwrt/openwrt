@@ -55,6 +55,13 @@ static struct platform_device rb750_leds_device = {
 	}
 };
 
+static const char *rb750_port_names[AP91_ETH_NUM_PORT_NAMES] __initdata = {
+	"port5",
+	"port4",
+	"port3",
+	"port2",
+};
+
 static struct platform_device rb750_nand_device = {
 	.name	= "rb750-nand",
 	.id	= -1,
@@ -117,7 +124,7 @@ static void __init rb750_setup(void)
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	ap91_eth_init(NULL, NULL);
+	ap91_eth_init(NULL, rb750_port_names);
 	platform_device_register(&rb750_leds_device);
 	platform_device_register(&rb750_nand_device);
 }
