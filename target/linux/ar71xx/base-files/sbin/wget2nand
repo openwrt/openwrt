@@ -8,13 +8,14 @@
 # Based on cf2nand from RB532 support
 . /etc/functions.sh
 
-[ -d /tmp/wget2nand-rootfs ] && {
-	echo "/tmp/wget2nand-rootfs already exists"
-	exit 1
-}
+wget2nand_dir=/tmp/wget2nand
+mnt_kernel=$wget2nand_dir/mnt_kernel
+mnt_rootfs=$wget2nand_dir/mnt_rootfs
+src_rootfs=$wget2nand_dir/rootfs.tgz
+src_kernel=$wget2nand_dir/kernel
 
-[ -d /tmp/wget2nand-kernel ] && {
-	echo "/tmp/wget2nand-kernel already exists"
+[ -d "$wget2nand_dir" ] && {
+	echo "$wget2nand_dir already exists"
 	exit 1
 }
 
@@ -26,14 +27,28 @@ url=$1
         exit 1
 }
 
-# first get an address for br-lan using udhcpc
-killall udhcpc
-/sbin/udhcpc -i br-lan
+url_kernel=$url/openwrt-ar71xx-vmlinux.elf
+url_rootfs=$url/openwrt-ar71xx-rootfs.tgz
 
 mtd_kernel="$(find_mtd_part 'kernel')"
 mtd_rootfs="$(find_mtd_part 'rootfs')"
 [ -z "$mtd_kernel" -o -z "$mtd_rootfs" ] && {
 	echo "Cannot find NAND Flash partitions"
+	exit 1
+}
+
+# first get an address for br-lan using udhcpc
+killall udhcpc
+/sbin/udhcpc -i br-lan
+
+mkdir "$wget2nand_dir"
+wget $url_kernel -O "$src_kernel" || {
+	echo "Unable to download $url_kernel"
+	exit 1
+}
+
+wget $url_rootfs -O "$src_rootfs" || {
+	echo "Unable to download $url_rootfs"
 	exit 1
 }
 
@@ -43,31 +58,29 @@ mtd erase rootfs 2>/dev/null >/dev/null
 
 echo "Mounting $mtd_rootfs as new root and $mtd_kernel as kernel partition"
 
-mkdir /tmp/wget2nand-rootfs
-mkdir /tmp/wget2nand-kernel
-mount -t yaffs2 "$mtd_rootfs" /tmp/wget2nand-rootfs
-mount -t yaffs2 "$mtd_kernel" /tmp/wget2nand-kernel
+mkdir "$mnt_kernel"
+mkdir "$mnt_rootfs"
+mount -t yaffs2 "$mtd_kernel" "$mnt_kernel"
+mount -t yaffs2 "$mtd_rootfs" "$mnt_rootfs"
 
-echo "Erasing existing files..."
-rm -rf /tmp/wget2nand-rootfs/*
+echo "Copying kernel..."
+cp $src_kernel $mnt_kernel/kernel
+chmod +x $mnt_kernel/kernel
 
-echo "Copying filesystem..."
-( wget -O - $url/openwrt-ar71xx-rootfs.tgz) | ( cd /tmp/wget2nand-rootfs/; tar xvz )
-# RouterBOOT is looking for a kernel named "kernel"
-wget -O /tmp/wget2nand-kernel/kernel $url/openwrt-ar71xx-vmlinux.elf
-
-chmod +x /tmp/wget2nand-kernel/kernel
+echo "Preparing filesystem..."
+( cd "$mnt_rootfs"; tar xvz -f "$src_rootfs" )
 
 # make sure everything is written before we unmount the partitions
-echo "chmod ugo+x /" > /tmp/wget2nand-rootfs/etc/uci-defaults/set_root_permission
+echo "chmod ugo+x /" > $mnt_rootfs/etc/uci-defaults/set_root_permission
 sync
-ls /tmp/wget2nand-kernel/
-ls /tmp/wget2nand-rootfs/
+ls $mnt_kernel >/dev/null
+ls $mnt_rootfs >/dev/null
+
+echo "Cleaning up..."
 # unmount the partitions and remove the directories into which they were mounted
-umount /tmp/wget2nand-kernel
-umount /tmp/wget2nand-rootfs
-rmdir /tmp/wget2nand-kernel
-rmdir /tmp/wget2nand-rootfs
+umount $mnt_kernel
+umount $mnt_rootfs
+rm -rf $wget2nand_dir
 
 # all done
 echo "Image written, you can now reboot.  Remember to change the boot source to Boot from Nand"
