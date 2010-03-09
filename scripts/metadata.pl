@@ -423,6 +423,8 @@ sub mconf_depends {
 		my $vdep;
 		my $condition = $parent_condition;
 
+		next if $seen->{$depend};
+		$seen->{$depend} = 1;
 		if ($depend =~ /^(.+):(.+)$/) {
 			if ($1 ne "PACKAGE_$pkgname") {
 				if ($condition) {
@@ -433,9 +435,7 @@ sub mconf_depends {
 			}
 			$depend = $2;
 		}
-		next if $seen->{$depend};
 		next if $package{$depend} and $package{$depend}->{buildonly};
-		$seen->{$depend} = 1;
 		if ($vdep = $package{$depend}->{vdepends}) {
 			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
 		} else {
