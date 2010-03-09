@@ -10,6 +10,7 @@
 
 #include "devices.h"
 #include "dev-dsa.h"
+#include "dev-ap91-eth.h"
 
 static struct dsa_chip_data ap91_dsa_chip = {
 	.port_names[0]  = "cpu",
@@ -24,10 +25,26 @@ static struct dsa_platform_data ap91_dsa_data = {
 	.chip		= &ap91_dsa_chip,
 };
 
-void __init ap91_eth_init(u8 *mac_addr)
+static void ap91_eth_set_port_name(unsigned port, const char *name)
+{
+	if (port < 1 || port > 5)
+		return;
+
+	if (name)
+		ap91_dsa_chip.port_names[port] = (char *) name;
+}
+
+void __init ap91_eth_init(u8 *mac_addr, const char *port_names[])
 {
 	if (mac_addr)
 		ar71xx_set_mac_base(mac_addr);
+
+	if (port_names) {
+		int i;
+
+		for (i = 0; i < AP91_ETH_NUM_PORT_NAMES; i++)
+			ap91_eth_set_port_name(i + 1, port_names[i]);
+	}
 
 	/* WAN port */
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;

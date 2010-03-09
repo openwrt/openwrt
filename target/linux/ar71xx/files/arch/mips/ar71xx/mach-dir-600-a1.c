@@ -130,7 +130,7 @@ static void __init dir_600_a1_setup(void)
 					ARRAY_SIZE(dir_600_a1_gpio_buttons),
 					dir_600_a1_gpio_buttons);
 
-	ap91_eth_init(mac);
+	ap91_eth_init(mac, NULL);
 	ap91_pci_init(ee, mac);
 }
 

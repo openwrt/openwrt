@@ -117,7 +117,7 @@ static void __init rb750_setup(void)
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	ap91_eth_init(NULL);
+	ap91_eth_init(NULL, NULL);
 	platform_device_register(&rb750_leds_device);
 	platform_device_register(&rb750_nand_device);
 }
