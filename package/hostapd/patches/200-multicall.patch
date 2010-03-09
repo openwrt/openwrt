@@ -75,18 +75,18 @@
  ifdef CONFIG_AP
 @@ -631,6 +636,12 @@ CFLAGS += -DEAP_SERVER_WSC
  OBJS += ../src/ap/wps_hostapd.o
- OBJS += ../src/eap_server/eap_wsc.o
+ OBJS += ../src/eap_server/eap_server_wsc.o
  endif
 +else
 +  ifdef MULTICALL
-+    OBJS += ../src/eap_server/eap.o
-+    OBJS += ../src/eap_server/eap_identity.o
-+    OBJS += ../src/eap_server/eap_methods.o
++    OBJS += ../src/eap_server/eap_server.o
++    OBJS += ../src/eap_server/eap_server_identity.o
++    OBJS += ../src/eap_server/eap_server_methods.o
 +  endif
  endif
  
  ifdef NEED_RSN_AUTHENTICATOR
-@@ -1260,6 +1271,12 @@ BCHECK=../src/drivers/build.wpa_supplica
+@@ -1261,6 +1272,12 @@ BCHECK=../src/drivers/build.wpa_supplica
  wpa_priv: $(BCHECK) $(OBJS_priv)
  	$(LDO) $(LDFLAGS) -o wpa_priv $(OBJS_priv) $(LIBS)
  
@@ -99,7 +99,7 @@
  wpa_supplicant: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
  	$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
  
-@@ -1319,6 +1336,12 @@ endif
+@@ -1320,6 +1337,12 @@ endif
  	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
  	@$(E) "  CC " $<
  
@@ -114,7 +114,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2384,8 +2384,8 @@ union wpa_event_data {
+@@ -2413,8 +2413,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -169,7 +169,7 @@
  	for (;;) {
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -1425,8 +1425,8 @@ static void wpa_supplicant_event_ibss_rs
+@@ -1506,8 +1506,8 @@ static void wpa_supplicant_event_ibss_rs
  #endif /* CONFIG_IBSS_RSN */
  
  

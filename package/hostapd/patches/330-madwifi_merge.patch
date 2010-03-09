@@ -145,7 +145,7 @@
  				       madwifi_raw_receive, drv, 1);
  	if (drv->sock_raw == NULL)
  		return -1;
-@@ -1017,7 +1019,7 @@ madwifi_get_we_version(struct madwifi_dr
+@@ -1016,7 +1018,7 @@ madwifi_get_we_version(struct madwifi_dr
  		return -1;
  
  	memset(&iwr, 0, sizeof(iwr));
@@ -154,7 +154,7 @@
  	iwr.u.data.pointer = (caddr_t) range;
  	iwr.u.data.length = buflen;
  
-@@ -1134,17 +1136,17 @@ madwifi_init(struct hostapd_data *hapd, 
+@@ -1133,17 +1135,17 @@ madwifi_init(struct hostapd_data *hapd, 
  		perror("socket[PF_INET,SOCK_DGRAM]");
  		goto bad;
  	}
@@ -175,7 +175,7 @@
  					handle_read, drv, 1);
  	if (drv->sock_xmit == NULL)
  		goto bad;
-@@ -1158,7 +1160,7 @@ madwifi_init(struct hostapd_data *hapd, 
+@@ -1157,7 +1159,7 @@ madwifi_init(struct hostapd_data *hapd, 
  						1);
  		if (drv->sock_recv == NULL)
  			goto bad;
@@ -184,7 +184,7 @@
  		wpa_printf(MSG_DEBUG, "Interface in bridge %s; configure for "
  			   "EAPOL receive", brname);
  		drv->sock_recv = l2_packet_init(brname, NULL, ETH_P_EAPOL,
-@@ -1169,7 +1171,7 @@ madwifi_init(struct hostapd_data *hapd, 
+@@ -1168,7 +1170,7 @@ madwifi_init(struct hostapd_data *hapd, 
  		drv->sock_recv = drv->sock_xmit;
  
  	memset(&iwr, 0, sizeof(iwr));
@@ -193,16 +193,7 @@
  
  	iwr.u.mode = IW_MODE_MASTER;
  
-@@ -1179,7 +1181,7 @@ madwifi_init(struct hostapd_data *hapd, 
- 		goto bad;
- 	}
- 
--	madwifi_set_privacy(drv->iface, drv, 0); /* default to no privacy */
-+	madwifi_set_privacy(drv->ifname, drv, 0); /* default to no privacy */
- 
- 	madwifi_receive_probe_req(drv);
- 
-@@ -1204,7 +1206,7 @@ madwifi_deinit(void *priv)
+@@ -1203,7 +1205,7 @@ madwifi_deinit(void *priv)
  	struct madwifi_driver_data *drv = priv;
  
  	netlink_deinit(drv->netlink);
@@ -211,7 +202,7 @@
  	if (drv->ioctl_sock >= 0)
  		close(drv->ioctl_sock);
  	if (drv->sock_recv != NULL && drv->sock_recv != drv->sock_xmit)
-@@ -1223,7 +1225,7 @@ madwifi_set_ssid(const char *ifname, voi
+@@ -1222,7 +1224,7 @@ madwifi_set_ssid(void *priv, const u8 *b
  	struct iwreq iwr;
  
  	memset(&iwr, 0, sizeof(iwr));
@@ -220,7 +211,7 @@
  	iwr.u.essid.flags = 1; /* SSID active */
  	iwr.u.essid.pointer = (caddr_t) buf;
  	iwr.u.essid.length = len + 1;
-@@ -1244,7 +1246,7 @@ madwifi_get_ssid(const char *ifname, voi
+@@ -1243,7 +1245,7 @@ madwifi_get_ssid(void *priv, u8 *buf, in
  	int ret = 0;
  
  	memset(&iwr, 0, sizeof(iwr));
@@ -229,7 +220,7 @@
  	iwr.u.essid.pointer = (caddr_t) buf;
  	iwr.u.essid.length = len;
  
-@@ -1271,137 +1273,16 @@ madwifi_commit(void *priv)
+@@ -1270,137 +1272,16 @@ madwifi_commit(void *priv)
  	return 0;
  }
  
@@ -370,7 +361,7 @@
  			      const u8 *wpa_ie, size_t wpa_ie_len)
  {
  	struct iwreq iwr;
-@@ -1412,7 +1293,7 @@ wpa_driver_madwifi_set_wpa_ie(struct wpa
+@@ -1411,7 +1292,7 @@ wpa_driver_madwifi_set_wpa_ie(struct wpa
  	iwr.u.data.pointer = (void *) wpa_ie;
  	iwr.u.data.length = wpa_ie_len;
  
@@ -379,7 +370,7 @@
  		perror("ioctl[IEEE80211_IOCTL_SETOPTIE]");
  		return -1;
  	}
-@@ -1420,156 +1301,51 @@ wpa_driver_madwifi_set_wpa_ie(struct wpa
+@@ -1419,156 +1300,51 @@ wpa_driver_madwifi_set_wpa_ie(struct wpa
  }
  
  static int
@@ -544,7 +535,7 @@
  		ret = -1;
  	if (wpa_driver_madwifi_set_auth_alg(drv, params->auth_alg) < 0)
  		ret = -1;
-@@ -1592,12 +1368,12 @@ wpa_driver_madwifi_associate(void *priv,
+@@ -1591,12 +1367,12 @@ wpa_driver_madwifi_associate(void *priv,
  	    params->wpa_ie_len == 0)
  		privacy = 0;
  
@@ -559,7 +550,7 @@
  		ret = -1;
  
  	if (params->bssid == NULL) {
-@@ -1605,14 +1381,14 @@ wpa_driver_madwifi_associate(void *priv,
+@@ -1604,14 +1380,14 @@ wpa_driver_madwifi_associate(void *priv,
  		 * roaming */
  		/* FIX: this does not seem to work; would probably need to
  		 * change something in the driver */
@@ -576,7 +567,7 @@
  			ret = -1;
  		if (wpa_driver_wext_set_ssid(drv->wext, params->ssid,
  					     params->ssid_len) < 0)
-@@ -1621,7 +1397,7 @@ wpa_driver_madwifi_associate(void *priv,
+@@ -1620,7 +1396,7 @@ wpa_driver_madwifi_associate(void *priv,
  		mlme.im_op = IEEE80211_MLME_ASSOC;
  		os_memcpy(mlme.im_macaddr, params->bssid, IEEE80211_ADDR_LEN);
  		if (set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme,
@@ -585,7 +576,7 @@
  			wpa_printf(MSG_DEBUG, "%s: SETMLME[ASSOC] failed",
  				   __func__);
  			ret = -1;
-@@ -1634,7 +1410,7 @@ wpa_driver_madwifi_associate(void *priv,
+@@ -1633,7 +1409,7 @@ wpa_driver_madwifi_associate(void *priv,
  static int
  wpa_driver_madwifi_set_auth_alg(void *priv, int auth_alg)
  {
@@ -594,7 +585,7 @@
  	int authmode;
  
  	if ((auth_alg & WPA_AUTH_ALG_OPEN) &&
-@@ -1645,13 +1421,13 @@ wpa_driver_madwifi_set_auth_alg(void *pr
+@@ -1644,13 +1420,13 @@ wpa_driver_madwifi_set_auth_alg(void *pr
  	else
  		authmode = IEEE80211_AUTH_OPEN;
  
@@ -610,7 +601,7 @@
  	struct iwreq iwr;
  	int ret = 0;
  	const u8 *ssid = params->ssids[0].ssid;
-@@ -1669,7 +1445,7 @@ wpa_driver_madwifi_scan(void *priv, stru
+@@ -1668,7 +1444,7 @@ wpa_driver_madwifi_scan(void *priv, stru
  	if (wpa_driver_wext_set_ssid(drv->wext, ssid, ssid_len) < 0)
  		ret = -1;
  
@@ -619,7 +610,7 @@
  		perror("ioctl[SIOCSIWSCAN]");
  		ret = -1;
  	}
-@@ -1691,14 +1467,14 @@ wpa_driver_madwifi_scan(void *priv, stru
+@@ -1690,14 +1466,14 @@ wpa_driver_madwifi_scan(void *priv, stru
  
  static int wpa_driver_madwifi_get_bssid(void *priv, u8 *bssid)
  {
@@ -636,7 +627,7 @@
  	return wpa_driver_wext_get_ssid(drv->wext, ssid);
  }
  
-@@ -1706,14 +1482,14 @@ static int wpa_driver_madwifi_get_ssid(v
+@@ -1705,14 +1481,14 @@ static int wpa_driver_madwifi_get_ssid(v
  static struct wpa_scan_results *
  wpa_driver_madwifi_get_scan_results(void *priv)
  {
@@ -653,7 +644,7 @@
  	return wpa_driver_wext_set_operstate(drv->wext, state);
  }
  
-@@ -1734,7 +1510,7 @@ static int wpa_driver_madwifi_set_probe_
+@@ -1733,7 +1509,7 @@ static int wpa_driver_madwifi_set_probe_
  
  	ret = set80211priv(priv, IEEE80211_IOCTL_SET_APPIEBUF, probe_req_ie,
  			   sizeof(struct ieee80211req_getset_appiebuf) +
@@ -662,7 +653,7 @@
  
  	os_free(probe_req_ie);
  
-@@ -1744,7 +1520,7 @@ static int wpa_driver_madwifi_set_probe_
+@@ -1743,7 +1519,7 @@ static int wpa_driver_madwifi_set_probe_
  
  static void * wpa_driver_madwifi_init(void *ctx, const char *ifname)
  {
@@ -671,7 +662,7 @@
  
  	drv = os_zalloc(sizeof(*drv));
  	if (drv == NULL)
-@@ -1755,17 +1531,17 @@ static void * wpa_driver_madwifi_init(vo
+@@ -1754,17 +1530,17 @@ static void * wpa_driver_madwifi_init(vo
  
  	drv->ctx = ctx;
  	os_strlcpy(drv->ifname, ifname, sizeof(drv->ifname));
@@ -693,7 +684,7 @@
  		wpa_printf(MSG_DEBUG, "%s: failed to enable WPA support",
  			   __FUNCTION__);
  		goto fail3;
-@@ -1774,7 +1550,7 @@ static void * wpa_driver_madwifi_init(vo
+@@ -1773,7 +1549,7 @@ static void * wpa_driver_madwifi_init(vo
  	return drv;
  
  fail3:
@@ -702,7 +693,7 @@
  fail2:
  	wpa_driver_wext_deinit(drv->wext);
  fail:
-@@ -1785,38 +1561,37 @@ fail:
+@@ -1784,38 +1560,37 @@ fail:
  
  static void wpa_driver_madwifi_deinit(void *priv)
  {
@@ -748,7 +739,7 @@
  #ifdef HOSTAPD
  	.hapd_init		= madwifi_init,
  	.hapd_deinit		= madwifi_deinit,
-@@ -1836,7 +1611,8 @@ const struct wpa_driver_ops wpa_driver_m
+@@ -1835,7 +1610,8 @@ const struct wpa_driver_ops wpa_driver_m
  	.sta_clear_stats        = madwifi_sta_clear_stats,
  	.commit			= madwifi_commit,
  	.set_ap_wps_ie		= madwifi_set_ap_wps_ie,
@@ -758,7 +749,7 @@
  	.get_bssid		= wpa_driver_madwifi_get_bssid,
  	.get_ssid		= wpa_driver_madwifi_get_ssid,
  	.init			= wpa_driver_madwifi_init,
-@@ -1848,5 +1624,5 @@ const struct wpa_driver_ops wpa_driver_m
+@@ -1847,5 +1623,5 @@ const struct wpa_driver_ops wpa_driver_m
  	.disassociate		= wpa_driver_madwifi_disassociate,
  	.associate		= wpa_driver_madwifi_associate,
  	.set_operstate		= wpa_driver_madwifi_set_operstate,

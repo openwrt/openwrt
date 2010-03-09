@@ -1,15 +1,15 @@
 --- a/src/drivers/driver_madwifi.c
 +++ b/src/drivers/driver_madwifi.c
-@@ -1170,8 +1170,6 @@ madwifi_init(struct hostapd_data *hapd, 
+@@ -1177,8 +1177,6 @@ madwifi_init(struct hostapd_data *hapd, 
  		goto bad;
  	}
  
 -	/* mark down during setup */
 -	linux_set_iface_flags(drv->ioctl_sock, drv->iface, 0);
- 	madwifi_set_privacy(drv->iface, drv, 0); /* default to no privacy */
+ 	madwifi_set_privacy(drv, 0); /* default to no privacy */
  
  	madwifi_receive_probe_req(drv);
-@@ -1261,8 +1259,7 @@ madwifi_set_countermeasures(void *priv, 
+@@ -1268,8 +1266,7 @@ madwifi_set_countermeasures(void *priv, 
  static int
  madwifi_commit(void *priv)
  {
