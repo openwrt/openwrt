@@ -523,7 +523,7 @@ static int ar7240_dsa_set_addr(struct dsa_switch *ds, u8 *addr)
 	ar7240sw_reg_write(as, AR7240_REG_MAC_ADDR0, t);
 
 	t = (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | addr[3];
-	ar7240sw_reg_write(as, AR7240_REG_MAC_ADDR0, t);
+	ar7240sw_reg_write(as, AR7240_REG_MAC_ADDR1, t);
 
 	return 0;
 }
