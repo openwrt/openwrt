@@ -10,6 +10,7 @@ mac80211_hostapd_setup_base() {
 	config_get country "$device" country
 	config_get hwmode "$device" hwmode
 	config_get channel "$device" channel
+	config_get_bool noscan "$device" noscan
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
 	[ "$channel" = auto ] && channel=
 	[ -n "$hwmode" ] && {
@@ -71,6 +72,7 @@ tx_queue_data0_burst=1.5
 ${hwmode:+hw_mode=$hwmode}
 ${channel:+channel=$channel}
 ${country:+country_code=$country}
+${noscan:+noscan=$noscan}
 $base_cfg
 
 EOF
