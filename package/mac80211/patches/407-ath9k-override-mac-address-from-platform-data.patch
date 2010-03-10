@@ -39,8 +39,8 @@
 +		}
 +
  	if (!is_valid_ether_addr(common->macaddr)) {
- 		DECLARE_MAC_BUF(macbuf);
- 
+ 		ath_print(common, ATH_DBG_EEPROM,
+ 			"eeprom contains invalid mac address: %pM\n",
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
 @@ -23,6 +23,7 @@
