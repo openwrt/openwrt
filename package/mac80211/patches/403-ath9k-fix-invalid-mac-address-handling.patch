@@ -8,23 +8,21 @@
  #include <asm/unaligned.h>
  
  #include "hw.h"
-@@ -441,8 +442,18 @@ static int ath9k_hw_init_macaddr(struct 
+@@ -441,8 +442,16 @@ static int ath9k_hw_init_macaddr(struct 
  		common->macaddr[2 * i] = eeval >> 8;
  		common->macaddr[2 * i + 1] = eeval & 0xff;
  	}
 -	if (sum == 0 || sum == 0xffff * 3)
 -		return -EADDRNOTAVAIL;
 +	if (!is_valid_ether_addr(common->macaddr)) {
-+		DECLARE_MAC_BUF(macbuf);
-+
 +		ath_print(common, ATH_DBG_EEPROM,
-+			"eeprom contains invalid mac address: %s\n",
-+			print_mac(macbuf, common->macaddr));
++			"eeprom contains invalid mac address: %pM\n",
++			common->macaddr);
 +
 +		random_ether_addr(common->macaddr);
 +		ath_print(common, ATH_DBG_EEPROM,
-+			"random mac address will be used: %s\n",
-+			print_mac(macbuf, common->macaddr));
++			"random mac address will be used: %pM\n",
++			common->macaddr);
 +	}
  
  	return 0;
