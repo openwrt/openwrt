@@ -223,7 +223,7 @@ define KernelPackage/fs-nfs-common-v4
 	CONFIG_SUNRPC_GSS\
 	CONFIG_NFS_V4=y\
 	CONFIG_NFSD_V4=y
-  DEPENDS:= @LINUX_2_6 +kmod-fs-nfs-common
+  DEPENDS:= @LINUX_2_6 @BROKEN
   FILES+=$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD=$(call AutoLoad,30,auth_rpcgss)
 endef
