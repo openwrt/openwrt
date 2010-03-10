@@ -606,6 +606,7 @@ MAKE_OPTS:= \
 	ARCH="$(LINUX_KARCH)" \
 	EXTRA_CFLAGS="$(BUILDFLAGS)" \
 	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
+	CONFIG_MAC80211=$(if $(CONFIG_PACKAGE_kmod-mac80211),m) \
 	CONFIG_MAC80211_RC_PID=y \
 	CONFIG_MAC80211_RC_MINSTREL=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
@@ -702,7 +703,7 @@ define Build/Prepare
 	rm $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
 endef
 
-ifneq ($(CONFIG_PACKAGE_kmod-mac80211),)
+ifneq ($(CONFIG_PACKAGE_kmod-cfg80211),)
  define Build/Compile/kmod
 	rm -rf $(PKG_BUILD_DIR)/modules
 	$(MAKE) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
@@ -728,7 +729,7 @@ define KernelPackage/libertas/install
 	$(INSTALL_DATA) $(DL_DIR)/$(USB8388FW_NAME)-$(USB8388FW_VERSION).bin $(1)/lib/firmware/$(USB8388FW_NAME).bin
 endef
 
-define KernelPackage/mac80211/install
+define KernelPackage/cfg80211/install
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
 endef
