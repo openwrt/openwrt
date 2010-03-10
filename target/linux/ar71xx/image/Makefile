@@ -270,7 +270,12 @@ define Image/Build/TPLINK
 		-B $(4) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.gz \
 		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-		-o $(call imgname,$(1),$(2))-universal.bin
+		-o $(call imgname,$(1),$(2))-factory.bin
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-B $(4) -N OpenWrt -V $(REVISION) -s \
+		-k $(KDIR)/vmlinux-$(2).bin.gz \
+		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-o $(call imgname,$(1),$(2))-sysupgrade.bin
 endef
 
 define Image/Build/TPLINK/initramfs
