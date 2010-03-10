@@ -95,6 +95,7 @@ static struct file_info kernel_info;
 static struct file_info rootfs_info;
 static struct file_info boot_info;
 static int combined;
+static int strip_padding;
 
 char md5salt_normal[MD5SUM_LEN] = {
 	0xdc, 0xd7, 0x3a, 0xa5, 0xc3, 0x95, 0x98, 0xfb,
@@ -218,6 +219,7 @@ static void usage(int status)
 "  -k <file>       read kernel image from the file <file>\n"
 "  -r <file>       read rootfs image from the file <file>\n"
 "  -o <file>       write output to the file <file>\n"
+"  -s              strip padding from the end of the image\n"
 "  -N <vendor>     set image vendor to <vendor>\n"
 "  -V <version>    set image version to <version>\n"
 "  -h              show this screen\n"
@@ -407,6 +409,7 @@ static int build_fw(void)
 	char *buf;
 	char *p;
 	int ret = EXIT_FAILURE;
+	int writelen = 0;
 
 	buflen = board->fw_max_len;
 
@@ -422,16 +425,22 @@ static int build_fw(void)
 	if (ret)
 		goto out_free_buf;
 
+	writelen = kernel_info.file_size;
+
 	if (!combined) {
 		p = buf + board->rootfs_ofs;
 		ret = read_to_buf(&rootfs_info, p);
 		if (ret)
 			goto out_free_buf;
+
+		writelen = board->rootfs_ofs + rootfs_info.file_size;
 	}
 
-	fill_header(buf, buflen);
+	if (!strip_padding)
+		writelen = buflen;
 
-	ret = write_fw(buf, buflen);
+	fill_header(buf, writelen);
+	ret = write_fw(buf, writelen);
 	if (ret)
 		goto out_free_buf;
 
@@ -455,7 +464,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:ck:r:o:h");
+		c = getopt(argc, argv, "B:V:N:ck:r:o:hs");
 		if (c == -1)
 			break;
 
@@ -480,6 +489,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'o':
 			ofname = optarg;
+			break;
+		case 's':
+			strip_padding = 1;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
