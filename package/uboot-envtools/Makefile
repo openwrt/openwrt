@@ -19,11 +19,12 @@ include $(INCLUDE_DIR)/package.mk
 define Package/uboot-envtools
   SECTION:=utils
   CATEGORY:=Utilities
-  TITLE:=read/modify the environment for the bootloader U-Boot
-  DEPENDS:=+zlib
+  TITLE:=read/modify U-Boot bootloader environment
+  DEPENDS:= @LINUX_2_6 +zlib
 endef
 
 define Package/uboot-envtools/description
+ This package includes tools to read and modify U-Boot bootloader environment.
 endef
 
 define Package/uboot-envtools/install
