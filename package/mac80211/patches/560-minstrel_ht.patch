@@ -100,7 +100,7 @@
 +/* Transmission time for a packet containing (syms) symbols */
 +#define MCS_SYMBOL_TIME(sgi, syms)					\
 +	(sgi ?								\
-+	  ((syms) * 18 + 4) / 6 :	/* syms * 3.6 us */		\
++	  ((syms) * 18 + 4) / 5 :	/* syms * 3.6 us */		\
 +	  (syms) << 2			/* syms * 4 us */		\
 +	)
 +
