@@ -123,7 +123,7 @@ platform_do_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
-	routerstation | routerstation-pro)
+	routerstation | routerstation-pro | ls-sr71)
 		platform_do_upgrade_combined "$ARGV"
 		;;
 	*)
