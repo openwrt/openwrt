@@ -110,7 +110,7 @@ config BUSYBOX_CONFIG_FEATURE_SETFONT_TEXTUAL_MAP
 
 config BUSYBOX_CONFIG_DEFAULT_SETFONT_DIR
 	string "Default directory for console-tools files"
-	default n
+	default ""
 	depends on BUSYBOX_CONFIG_SETFONT
 	help
 	  Directory to use if setfont's params are simple filenames
