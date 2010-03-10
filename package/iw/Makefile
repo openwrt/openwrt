@@ -23,7 +23,7 @@ define Package/iw
   CATEGORY:=Network
   TITLE:=cfg80211 interface configuration utility
   URL:=http://wireless.kernel.org/en/users/Documentation/iw
-  DEPENDS:=@!TARGET_avr32 @!TARGET_etrax +libnl-tiny
+  DEPENDS:= +libnl-tiny @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
 endef
 
 define Build/Configure
