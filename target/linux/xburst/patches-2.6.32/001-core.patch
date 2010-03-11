@@ -30,29 +30,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  config LASAT
  	bool "LASAT Networks platforms"
  	select CEVT_R4K
-@@ -677,6 +680,7 @@ source "arch/mips/alchemy/Kconfig"
- source "arch/mips/basler/excite/Kconfig"
- source "arch/mips/bcm63xx/Kconfig"
- source "arch/mips/jazz/Kconfig"
-+source "arch/mips/jz4740/Kconfig"
- source "arch/mips/lasat/Kconfig"
- source "arch/mips/pmc-sierra/Kconfig"
- source "arch/mips/sgi-ip27/Kconfig"
-@@ -1913,6 +1917,14 @@ config NR_CPUS
- 
- source "kernel/time/Kconfig"
- 
-+# the value of (max order + 1)
-+config FORCE_MAX_ZONEORDER
-+	prompt "MAX_ZONEORDER"
-+	int
-+	default "12"
-+	help
-+	 The max memory that can be allocated = 4KB * 2^(CONFIG_FORCE_MAX_ZONEORDER - 1)
-+
- #
- # Timer Interrupt Frequency Configuration
- #
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
 @@ -184,6 +184,14 @@ cflags-$(CONFIG_AR7)		+= -I$(srctree)/ar
@@ -157,7 +134,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
 +/*
 + * Valid machtype for group INGENIC
 + */
-+#define  MACH_INGENIC_JZ4720	0	/* JZ4730 SOC		*/
++#define  MACH_INGENIC_JZ4730	0	/* JZ4730 SOC		*/
 +#define  MACH_INGENIC_JZ4740	1	/* JZ4740 SOC		*/
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
@@ -199,17 +176,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  	CPU_LAST
  };
  
---- a/arch/mips/include/asm/mach-generic/irq.h
-+++ b/arch/mips/include/asm/mach-generic/irq.h
-@@ -9,7 +9,7 @@
- #define __ASM_MACH_GENERIC_IRQ_H
- 
- #ifndef NR_IRQS
--#define NR_IRQS	128
-+#define NR_IRQS	256
- #endif
- 
- #ifdef CONFIG_I8259
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
 @@ -17,6 +17,58 @@
@@ -535,18 +501,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
 +#endif /* CONFIG_JZRISC */
 +
  #endif /* _ASM_R4KCACHE_H */
---- a/arch/mips/include/asm/suspend.h
-+++ b/arch/mips/include/asm/suspend.h
-@@ -2,6 +2,9 @@
- #define __ASM_SUSPEND_H
- 
- static inline int arch_prepare_suspend(void) { return 0; }
-+#if defined(CONFIG_PM) && defined(CONFIG_JZSOC)
-+extern int jz_pm_init(void);
-+#endif
- 
- /* References to section boundaries */
- extern const void __nosave_begin, __nosave_end;
 --- a/arch/mips/kernel/cpu-probe.c
 +++ b/arch/mips/kernel/cpu-probe.c
 @@ -160,6 +160,7 @@ void __init check_wait(void)
@@ -557,7 +511,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  		cpu_wait = r4k_wait;
  		break;
  
-@@ -902,6 +903,23 @@ static inline void cpu_probe_cavium(stru
+@@ -902,6 +903,21 @@ static inline void cpu_probe_cavium(stru
  	}
  }
  
@@ -568,8 +522,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
 +	switch (c->processor_id & 0xff00) {
 +	case PRID_IMP_JZRISC:
 +		c->cputype = CPU_JZRISC;
-+		c->isa_level = MIPS_CPU_ISA_M32R1;
-+		c->tlbsize = 32;
 +		__cpu_name[cpu] = "Ingenic JZRISC";
 +		break;
 +	default:
@@ -591,56 +543,6 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  	}
  
  	BUG_ON(!__cpu_name[cpu]);
---- a/arch/mips/mm/c-r4k.c
-+++ b/arch/mips/mm/c-r4k.c
-@@ -928,6 +928,36 @@ static void __cpuinit probe_pcache(void)
- 		c->dcache.waybit = 0;
- 		break;
- 
-+	case CPU_JZRISC:
-+		config1 = read_c0_config1();
-+		config1 = (config1 >> 22) & 0x07;
-+		if (config1 == 0x07)
-+			config1 = 10;
-+		else
-+			config1 = config1 + 11;
-+		config1 += 2;
-+		icache_size = (1 << config1);
-+		c->icache.linesz = 32;
-+		c->icache.ways = 4;
-+		c->icache.waybit = __ffs(icache_size / c->icache.ways);
-+
-+		config1 = read_c0_config1();
-+		config1 = (config1 >> 13) & 0x07;
-+		if (config1 == 0x07)
-+			config1 = 10;
-+		else
-+			config1 = config1 + 11;
-+		config1 += 2;
-+		dcache_size = (1 << config1);
-+		c->dcache.linesz = 32;
-+		c->dcache.ways = 4;
-+		c->dcache.waybit = __ffs(dcache_size / c->dcache.ways);
-+
-+		c->dcache.flags = 0;
-+		c->options |= MIPS_CPU_PREFETCH;
-+
-+		break;
-+
- 	default:
- 		if (!(config & MIPS_CONF_M))
- 			panic("Don't know how to probe P-caches on this cpu.");
---- a/arch/mips/mm/cache.c
-+++ b/arch/mips/mm/cache.c
-@@ -52,6 +52,8 @@ void (*_dma_cache_wback)(unsigned long s
- void (*_dma_cache_inv)(unsigned long start, unsigned long size);
- 
- EXPORT_SYMBOL(_dma_cache_wback_inv);
-+EXPORT_SYMBOL(_dma_cache_wback);
-+EXPORT_SYMBOL(_dma_cache_inv);
- 
- #endif /* CONFIG_DMA_NONCOHERENT */
- 
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
 @@ -389,6 +389,11 @@ static void __cpuinit build_tlb_write_en
