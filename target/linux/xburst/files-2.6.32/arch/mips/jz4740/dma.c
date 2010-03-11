@@ -100,7 +100,7 @@ struct jz4740_dma_chan {
 	uint32_t transfer_shift;
 
 	jz4740_dma_complete_callback_t complete_cb;
-	
+
 	unsigned used:1;
 };
 
@@ -140,8 +140,9 @@ struct jz4740_dma_chan* jz4740_dma_request(void *dev, const char *name)
 
 	return dma;
 }
+EXPORT_SYMBOL_GPL(jz4740_dma_request);
 
-void jz4740_dma_configure(struct jz4740_dma_chan *dma, 
+void jz4740_dma_configure(struct jz4740_dma_chan *dma,
                           const struct jz4740_dma_config *config)
 {
 	uint32_t cmd;
