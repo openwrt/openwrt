@@ -17,7 +17,9 @@ struct metromem_cmd {
 	u16 opcode;
 	u16 args[((64-2)/2)];
 	u16 csum;
-} __attribute__(packed);
+} __attribute__((packed));
+
+struct epd_frame;
 
 /* struct used by metronome. board specific stuff comes from *board */
 struct metronomefb_par {
@@ -38,9 +40,13 @@ struct metronomefb_par {
 	int current_wf_temp;
 	unsigned int manual_refresh_threshold;
 	unsigned int partial_autorefresh_interval;
-	int dt;
+	const struct epd_frame *epd_frame;
 	u32 *fxbuckets;
 	u32 *fybuckets;
+
+	unsigned int partial_updates_count;
+	unsigned is_first_update:1;
+
 	struct mutex lock;
 };
 
