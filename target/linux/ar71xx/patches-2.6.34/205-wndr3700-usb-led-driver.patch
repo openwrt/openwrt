@@ -1,0 +1,26 @@
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -269,6 +269,13 @@ config LEDS_ADP5520
+ 	  To compile this driver as a module, choose M here: the module will
+ 	  be called leds-adp5520.
+ 
++config LEDS_WNDR3700_USB
++	tristate "NETGEAR WNDR3700 USB LED driver"
++	depends on LEDS_CLASS && AR71XX_MACH_WNDR3700
++	help
++	  This option enables support for the USB LED found on the
++	  NETGEAR WNDR3700 board.
++
+ comment "LED Triggers"
+ 
+ config LEDS_TRIGGERS
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_LEDS_DA903X)		+= leds-da903
+ obj-$(CONFIG_LEDS_WM831X_STATUS)	+= leds-wm831x-status.o
+ obj-$(CONFIG_LEDS_WM8350)		+= leds-wm8350.o
+ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
++obj-${CONFIG_LEDS_WNDR3700_USB}		+= leds-wndr3700-usb.o
+ obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
+ obj-$(CONFIG_LEDS_INTEL_SS4200)		+= leds-ss4200.o
+ obj-$(CONFIG_LEDS_LT3593)		+= leds-lt3593.o
