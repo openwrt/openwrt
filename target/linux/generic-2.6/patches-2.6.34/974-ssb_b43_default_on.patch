@@ -1,0 +1,11 @@
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -49,7 +49,7 @@ config SSB_PCIHOST
+ config SSB_B43_PCI_BRIDGE
+ 	bool
+ 	depends on SSB_PCIHOST
+-	default n
++	default y
+ 
+ config SSB_PCMCIAHOST_POSSIBLE
+ 	bool

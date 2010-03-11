@@ -1,0 +1,119 @@
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -52,6 +52,27 @@
+ #define LOAD_OFFSET 0
+ #endif
+ 
++#ifndef SYMTAB_KEEP_STR
++#define SYMTAB_KEEP_STR *(__ksymtab_strings.*)
++#define SYMTAB_DISCARD_STR
++#else
++#define SYMTAB_DISCARD_STR *(__ksymtab_strings.*)
++#endif
++
++#ifndef SYMTAB_KEEP
++#define SYMTAB_KEEP *(__ksymtab.*)
++#define SYMTAB_DISCARD
++#else
++#define SYMTAB_DISCARD *(__ksymtab.*)
++#endif
++
++#ifndef SYMTAB_KEEP_GPL
++#define SYMTAB_KEEP_GPL *(__ksymtab_gpl.*)
++#define SYMTAB_DISCARD_GPL
++#else
++#define SYMTAB_DISCARD_GPL *(__ksymtab_gpl.*)
++#endif
++
+ #ifndef SYMBOL_PREFIX
+ #define VMLINUX_SYMBOL(sym) sym
+ #else
+@@ -258,35 +279,35 @@
+ 	/* Kernel symbol table: Normal symbols */			\
+ 	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
+ 		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
+-		*(__ksymtab)						\
++		SYMTAB_KEEP						\
+ 		VMLINUX_SYMBOL(__stop___ksymtab) = .;			\
+ 	}								\
+ 									\
+ 	/* Kernel symbol table: GPL-only symbols */			\
+ 	__ksymtab_gpl     : AT(ADDR(__ksymtab_gpl) - LOAD_OFFSET) {	\
+ 		VMLINUX_SYMBOL(__start___ksymtab_gpl) = .;		\
+-		*(__ksymtab_gpl)					\
++		SYMTAB_KEEP_GPL						\
+ 		VMLINUX_SYMBOL(__stop___ksymtab_gpl) = .;		\
+ 	}								\
+ 									\
+ 	/* Kernel symbol table: Normal unused symbols */		\
+ 	__ksymtab_unused  : AT(ADDR(__ksymtab_unused) - LOAD_OFFSET) {	\
+ 		VMLINUX_SYMBOL(__start___ksymtab_unused) = .;		\
+-		*(__ksymtab_unused)					\
++		*(__ksymtab_unused.*)					\
+ 		VMLINUX_SYMBOL(__stop___ksymtab_unused) = .;		\
+ 	}								\
+ 									\
+ 	/* Kernel symbol table: GPL-only unused symbols */		\
+ 	__ksymtab_unused_gpl : AT(ADDR(__ksymtab_unused_gpl) - LOAD_OFFSET) { \
+ 		VMLINUX_SYMBOL(__start___ksymtab_unused_gpl) = .;	\
+-		*(__ksymtab_unused_gpl)					\
++		*(__ksymtab_unused_gpl.*)				\
+ 		VMLINUX_SYMBOL(__stop___ksymtab_unused_gpl) = .;	\
+ 	}								\
+ 									\
+ 	/* Kernel symbol table: GPL-future-only symbols */		\
+ 	__ksymtab_gpl_future : AT(ADDR(__ksymtab_gpl_future) - LOAD_OFFSET) { \
+ 		VMLINUX_SYMBOL(__start___ksymtab_gpl_future) = .;	\
+-		*(__ksymtab_gpl_future)					\
++		*(__ksymtab_gpl_future.*)				\
+ 		VMLINUX_SYMBOL(__stop___ksymtab_gpl_future) = .;	\
+ 	}								\
+ 									\
+@@ -327,7 +348,7 @@
+ 									\
+ 	/* Kernel symbol table: strings */				\
+         __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
+-		*(__ksymtab_strings)					\
++		SYMTAB_KEEP_STR						\
+ 	}								\
+ 									\
+ 	/* __*init sections */						\
+@@ -642,6 +663,9 @@
+ 	EXIT_TEXT							\
+ 	EXIT_DATA							\
+ 	EXIT_CALL							\
++	SYMTAB_DISCARD							\
++	SYMTAB_DISCARD_GPL						\
++	SYMTAB_DISCARD_STR						\
+ 	*(.discard)							\
+ 	}
+ 
+--- a/include/linux/module.h
++++ b/include/linux/module.h
+@@ -194,16 +194,24 @@ void *__symbol_get_gpl(const char *symbo
+ #define __CRC_SYMBOL(sym, sec)
+ #endif
+ 
++#ifdef MODULE
++#define __EXPORT_SUFFIX(sym)
++#else
++#define __EXPORT_SUFFIX(sym) "." #sym
++#endif
++
+ /* For every exported symbol, place a struct in the __ksymtab section */
+ #define __EXPORT_SYMBOL(sym, sec)				\
+ 	extern typeof(sym) sym;					\
+ 	__CRC_SYMBOL(sym, sec)					\
+ 	static const char __kstrtab_##sym[]			\
+-	__attribute__((section("__ksymtab_strings"), aligned(1))) \
++	__attribute__((section("__ksymtab_strings"		\
++	  __EXPORT_SUFFIX(sym)), aligned(1)))			\
+ 	= MODULE_SYMBOL_PREFIX #sym;                    	\
+ 	static const struct kernel_symbol __ksymtab_##sym	\
+ 	__used							\
+-	__attribute__((section("__ksymtab" sec), unused))	\
++	__attribute__((section("__ksymtab" sec			\
++	  __EXPORT_SUFFIX(sym)), unused))			\
+ 	= { (unsigned long)&sym, __kstrtab_##sym }
+ 
+ #define EXPORT_SYMBOL(sym)					\
