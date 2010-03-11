@@ -1,0 +1,11 @@
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -1165,7 +1165,7 @@ static unsigned long vma_dump_size(struc
+ 	if (FILTER(ELF_HEADERS) &&
+ 	    vma->vm_pgoff == 0 && (vma->vm_flags & VM_READ)) {
+ 		u32 __user *header = (u32 __user *) vma->vm_start;
+-		u32 word;
++		u32 word = 0;
+ 		mm_segment_t fs = get_fs();
+ 		/*
+ 		 * Doing it this way gets the constant folded by GCC.

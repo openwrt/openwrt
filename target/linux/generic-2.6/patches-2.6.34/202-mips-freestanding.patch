@@ -1,0 +1,12 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -637,6 +637,9 @@ else
+ load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
+ endif
+ 
++# temporary until string.h is fixed
++cflags-y += -ffreestanding
++
+ cflags-y			+= -I$(srctree)/arch/mips/include/asm/mach-generic
+ drivers-$(CONFIG_PCI)		+= arch/mips/pci/
+ 
