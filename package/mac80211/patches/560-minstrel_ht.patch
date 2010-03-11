@@ -68,7 +68,7 @@
  
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -0,0 +1,809 @@
+@@ -0,0 +1,815 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -262,6 +262,13 @@
 +	int cur_prob, cur_prob_tp, cur_tp, cur_tp2;
 +	int group, i, index;
 +
++	if (mi->ampdu_packets > 0) {
++		mi->avg_ampdu_len = minstrel_ewma(mi->avg_ampdu_len,
++			MINSTREL_FRAC(mi->ampdu_len, mi->ampdu_packets), EWMA_LEVEL);
++		mi->ampdu_len = 0;
++		mi->ampdu_packets = 0;
++	}
++
 +	mi->sample_slow = 0;
 +	mi->sample_count = 0;
 +	mi->max_tp_rate = 0;
@@ -415,6 +422,25 @@
 +	}
 +}
 +
++static void
++minstrel_aggr_check(struct minstrel_priv *mp, struct ieee80211_sta *pubsta, struct sk_buff *skb)
++{
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
++	struct sta_info *sta = container_of(pubsta, struct sta_info, sta);
++	u16 tid;
++
++	if (unlikely(!ieee80211_is_data_qos(hdr->frame_control)))
++		return;
++
++	if (unlikely(skb->protocol == cpu_to_be16(ETH_P_PAE)))
++		return;
++
++	tid = *ieee80211_get_qos_ctl(hdr) & IEEE80211_QOS_CTL_TID_MASK;
++	if (likely(sta->ampdu_mlme.tid_state_tx[tid] != HT_AGG_STATE_IDLE))
++		return;
++
++	ieee80211_start_tx_ba_session(pubsta, tid);
++}
 +
 +static void
 +minstrel_ht_tx_status(void *priv, struct ieee80211_supported_band *sband,
@@ -444,8 +470,8 @@
 +		info->status.ampdu_len = 1;
 +	}
 +
-+	mi->avg_ampdu_len = minstrel_ewma(mi->avg_ampdu_len,
-+		MINSTREL_FRAC(info->status.ampdu_len, 1), 90);
++	mi->ampdu_packets++;
++	mi->ampdu_len += info->status.ampdu_len;
 +
 +	if (!mi->sample_wait && !mi->sample_tries && mi->sample_count > 0) {
 +		mi->sample_wait = 4 + MINSTREL_TRUNC(mi->avg_ampdu_len);
@@ -490,8 +516,10 @@
 +	    MINSTREL_FRAC(20, 100))
 +		minstrel_downgrade_rate(mi, &mi->max_tp_rate2, false);
 +
-+	if (time_after(jiffies, mi->stats_update + (mp->update_interval / 2 * HZ) / 1000))
++	if (time_after(jiffies, mi->stats_update + (mp->update_interval / 2 * HZ) / 1000)) {
 +		minstrel_ht_update_stats(mp, mi);
++		minstrel_aggr_check(mp, sta, skb);
++	}
 +}
 +
 +static void
@@ -616,26 +644,6 @@
 +}
 +
 +static void
-+minstrel_aggr_check(struct minstrel_priv *mp, struct ieee80211_sta *pubsta, struct sk_buff *skb)
-+{
-+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
-+	struct sta_info *sta = container_of(pubsta, struct sta_info, sta);
-+	u16 tid;
-+
-+	if (unlikely(!ieee80211_is_data_qos(hdr->frame_control)))
-+		return;
-+
-+	if (unlikely(skb->protocol == cpu_to_be16(ETH_P_PAE)))
-+		return;
-+
-+	tid = *ieee80211_get_qos_ctl(hdr) & IEEE80211_QOS_CTL_TID_MASK;
-+	if (likely(sta->ampdu_mlme.tid_state_tx[tid] != HT_AGG_STATE_IDLE))
-+		return;
-+
-+	ieee80211_start_tx_ba_session(pubsta, tid);
-+}
-+
-+static void
 +minstrel_ht_get_rate(void *priv, struct ieee80211_sta *sta, void *priv_sta,
 +                     struct ieee80211_tx_rate_control *txrc)
 +{
@@ -651,8 +659,6 @@
 +
 +	if (!msp->is_ht)
 +		return mac80211_minstrel.get_rate(priv, sta, &msp->legacy, txrc);
-+
-+	minstrel_aggr_check(mp, sta, txrc->skb);
 +
 +	sample_idx = minstrel_get_sample_rate(mp, mi);
 +	if (sample_idx >= 0) {
@@ -880,7 +886,7 @@
 +}
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.h
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,125 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -951,7 +957,11 @@
 +};
 +
 +struct minstrel_ht_sta {
-+	/* ampdu length average (EWMA) */
++	/* ampdu length (average, per sampling interval) */
++	unsigned int ampdu_len;
++	unsigned int ampdu_packets;
++
++	/* ampdu length (EWMA) */
 +	unsigned int avg_ampdu_len;
 +
 +	/* best throughput rate */
