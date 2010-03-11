@@ -27,7 +27,7 @@ I2C_CORE_MODULES:= \
 define KernelPackage/i2c-core
   $(call i2c_defaults,$(I2C_CORE_MODULES),51)
   TITLE:=I2C support
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 @!TARGET_etrax
 endef
 
 define KernelPackage/i2c-core/description
