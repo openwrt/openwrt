@@ -81,6 +81,8 @@ static int __devinit rdc321x_sb_probe(struct pci_dev *pdev, const struct pci_dev
 		return err;
 	}
 
+	panic_on_unrecovered_nmi = 1;
+
 	err = platform_device_register(&rdc321x_gpio_device);
 	if (err) {
 		dev_err(&pdev->dev, "failed to register gpiochip\n");
