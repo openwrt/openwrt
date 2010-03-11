@@ -17,6 +17,10 @@ choice
 		depends !avr32
 		depends !ubicom32
 		bool "binutils 2.20"
+        config BINUTILS_VERSION_2_20_1
+                depends !avr32
+                depends !ubicom32
+                bool "binutils 2.20.1"
 
 	config BINUTILS_VERSION_CS
 		depends !avr32
@@ -39,5 +43,6 @@ config BINUTILS_VERSION
 	default "2.18"            if BINUTILS_VERSION_2_18
 	default "2.19.1"          if BINUTILS_VERSION_2_19_1
 	default "2.20"            if BINUTILS_VERSION_2_20
+	default "2.20.1"          if BINUTILS_VERSION_2_20_1
 	default "2.19.1+cs"       if BINUTILS_VERSION_CS
 	default "2.19.1"
