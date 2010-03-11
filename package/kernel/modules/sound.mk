@@ -133,10 +133,13 @@ endef
 
 $(eval $(call KernelPackage,sound-cs5535audio))
 
+
 define KernelPackage/sound-soc-core
 $(call KernelPackage/sound/Depends)
   TITLE:=SoC sound support
-  KCONFIG:=CONFIG_SND_SOC
+  KCONFIG:= \
+	CONFIG_SND_SOC \
+	CONFIG_SND_SOC_ALL_CODECS=n
   FILES:=$(LINUX_DIR)/sound/soc/snd-soc-core.ko
   AUTOLOAD:=$(call AutoLoad,35, snd-soc-core)
 endef
