@@ -9,22 +9,12 @@ include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE=256k 512k
 
-ifneq ($(CONFIG_TARGET_QI_LB60),)
+ifneq ($(CONFIG_TARGET_xburst_qi_lb60),)
 UBIFS_OPTS = -m 4096 -e 516096 -c 4095
 UBINIZE_OPTS = -m 4096 -p 512KiB
 else
 UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
 UBINIZE_OPTS = -m 2048 -p 128KiB -s 512
-endif
-
-ifneq ($(CONFIG_XBURST_UBOOT),)
-  define Build/Clean
-	$(MAKE) -C u-boot clean
-  endef
-
-  define Build/Compile
-	$(MAKE) -C u-boot compile
-  endef
 endif
 
 define Image/BuildKernel
