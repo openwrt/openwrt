@@ -10,7 +10,7 @@ BLOCK_MENU:=Block Devices
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT @LINUX_2_6 +kmod-scsi-core @!TARGET_ubicom32
+  DEPENDS:=@PCI_SUPPORT @LINUX_2_6 +kmod-scsi-core @(!TARGET_ubicom32||!TARGET_etrax)
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,21,libata,1)
