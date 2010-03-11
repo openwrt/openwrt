@@ -405,6 +405,8 @@ void __init arch_init_irq(void)
 
 	ar71xx_misc_irq_init();
 
+	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;
+
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
