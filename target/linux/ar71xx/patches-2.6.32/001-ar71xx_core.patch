@@ -1,7 +1,7 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -624,6 +624,13 @@ else
- load-$(CONFIG_CPU_CAVIUM_OCTEON) 	+= 0xffffffff81100000
+@@ -156,6 +156,13 @@ ifeq (,$(findstring march=octeon, $(cfla
+ cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -Wa,-march=octeon
  endif
  
 +#
@@ -11,9 +11,9 @@
 +cflags-$(CONFIG_ATHEROS_AR71XX)	+= -I$(srctree)/arch/mips/include/asm/mach-ar71xx
 +load-$(CONFIG_ATHEROS_AR71XX)	+= 0xffffffff80060000
 +
- # temporary until string.h is fixed
- cflags-y += -ffreestanding
- 
+ cflags-$(CONFIG_CPU_R4000_WORKAROUNDS)	+= $(call cc-option,-mfix-r4000,)
+ cflags-$(CONFIG_CPU_R4400_WORKAROUNDS)	+= $(call cc-option,-mfix-r4400,)
+ cflags-$(CONFIG_CPU_DADDI_WORKAROUNDS)	+= $(call cc-option,-mno-daddi,)
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -43,6 +43,23 @@ config AR7
