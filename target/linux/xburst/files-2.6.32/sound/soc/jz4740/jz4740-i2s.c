@@ -453,6 +453,7 @@ struct snd_soc_dai jz4740_i2s_dai = {
 	.suspend = jz4740_i2s_suspend,
 	.resume = jz4740_i2s_resume,
 };
+EXPORT_SYMBOL_GPL(jz4740_i2s_dai);
 
 static int __devinit jz4740_i2s_dev_probe(struct platform_device *pdev)
 {
