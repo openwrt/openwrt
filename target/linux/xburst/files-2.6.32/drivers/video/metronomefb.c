@@ -19,8 +19,6 @@
  *
  */
 
-#define DEBUG
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -44,10 +42,6 @@
 
 #include <asm/unaligned.h>
 
-/* Display specific information */
-#define DPY_W 832
-#define DPY_H 622
-
 #define WF_MODE_INIT	0 /* Initialization */
 #define WF_MODE_MU	1 /* Monochrome update */
 #define WF_MODE_GU	2 /* Grayscale update */
@@ -63,7 +57,7 @@ struct epd_frame {
 	int wfm_size;
 };
 
-static struct epd_frame epd_frame_table[] = {
+static const struct epd_frame epd_frame_table[] = {
 	{
 		.fw = 832,
 		.fh = 622,
@@ -130,22 +124,17 @@ static struct epd_frame epd_frame_table[] = {
 	},
 };
 
-static const struct fb_fix_screeninfo metronomefb_fix __devinitdata = {
+static const struct fb_fix_screeninfo metronomefb_fix __devinitconst = {
 	.id =		"metronomefb",
 	.type =		FB_TYPE_PACKED_PIXELS,
 	.visual =	FB_VISUAL_STATIC_PSEUDOCOLOR,
 	.xpanstep =	0,
 	.ypanstep =	0,
 	.ywrapstep =	0,
-	.line_length =	DPY_W,
 	.accel =	FB_ACCEL_NONE,
 };
 
-static const struct fb_var_screeninfo metronomefb_var __devinitdata = {
-	.xres		= DPY_W,
-	.yres		= DPY_H,
-	.xres_virtual	= DPY_W,
-	.yres_virtual	= DPY_H,
+static const struct fb_var_screeninfo metronomefb_var __devinitconst = {
 	.bits_per_pixel	= 8,
 	.grayscale	= 1,
 	.nonstd		= 1,
@@ -365,7 +354,6 @@ static int metronome_display_cmd(struct metronomefb_par *par)
 	int i;
 	u16 cs;
 	u16 opcode;
-	static u8 borderval;
 	int res;
 
 	res = wait_for_rdy(par);
@@ -442,8 +430,8 @@ static int __devinit metronome_config_cmd(struct metronomefb_par *par)
 	will try parse the command before we've set it all up */
 
 	dev_dbg(&par->pdev->dev, "%s: ENTER\n", __func__);
-	memcpy(par->metromem_cmd->args, epd_frame_table[par->dt].config,
-		sizeof(epd_frame_table[par->dt].config));
+	memcpy(par->metromem_cmd->args, par->epd_frame->config,
+		sizeof(par->epd_frame->config));
 	/* the rest are 0 */
 	memset((u8 *) (par->metromem_cmd->args + 4), 0, (32-4)*2);
 
@@ -520,35 +508,102 @@ static int __devinit metronome_init_regs(struct metronomefb_par *par)
 	return res;
 }
 
-static void metronomefb_dpy_update(struct metronomefb_par *par, int clear_all)
+static uint16_t metronomefb_update_img_buffer_rotated(struct metronomefb_par *par)
 {
 	int x, y;
-	int i;
-	u16 cksum = 0;
-	u32 *buf = (u32 __force *)par->info->screen_base;
-	u32 *img = (u32 *)(par->metromem_img);
-	u32 diff;
-	u32 tmp;
-	unsigned int fbsize = par->info->fix.smem_len;
-	int fx = par->info->fix.line_length;
-	int fy = fbsize / fx;
-	int fx_buf = fx / sizeof(*buf);
-	int m;
-	static int is_first_update = 1;
-	static int partial_updates_count = 0;
-	u32 *fxbuckets = par->fxbuckets;
-	u32 *fybuckets = par->fybuckets;
+	int xstep, ystep;
+	int i, j;
+	uint16_t cksum = 0;
+	uint8_t *buf = par->info->screen_base;
+	uint32_t *img = (uint32_t *)(par->metromem_img);
+	int fw = par->epd_frame->fw;
+	int fh = par->epd_frame->fh;
+	int fw_buf = fw / 4;
+	uint32_t *fxbuckets = par->fxbuckets;
+	uint32_t *fybuckets = par->fybuckets;
+	uint32_t diff;
+	uint32_t tmp;
 
-	wait_for_rdy(par);
+	switch (par->info->var.rotate) {
+	case FB_ROTATE_CW:
+		xstep = -fh;
+		ystep = fw * fh + 1;
+		j = (fw - 1) * fh;
+		break;
+	case FB_ROTATE_UD:
+		xstep = -1;
+		ystep = 0;
+		j = fw * fh - 1;
+		break;
+	case FB_ROTATE_CCW:
+		xstep = fh;
+		ystep = -fw * fh - 1;
+		j = fh - 1;
+		break;
+	default:
+		BUG();
+		break;
+	}
 
-	memset(fxbuckets, 0, fx_buf * sizeof(*fxbuckets));
-	memset(fybuckets, 0, fy * sizeof(*fybuckets));
+	memset(fxbuckets, 0, fw_buf * sizeof(*fxbuckets));
+	memset(fybuckets, 0, fh * sizeof(*fybuckets));
 
 	i = 0;
-	for (y = 0; y < fy; y++) {
-		for(x = 0; x < fx_buf; x++, i++) {
-			tmp = (buf[i] << 5) & 0xE0E0E0E0;
-			img[i] &= 0xF0F0F0F0;
+	for (y = 0; y < fh; y++) {
+		for(x = 0; x < fw_buf; x++, i++) {
+			if (j < 0 || j >= fw * fh) {
+				printk("moo: %d %d %d %d %d\n", j, x, y, fw_buf, fh);
+				return 0;
+			}
+			tmp = (buf[j] << 5);
+			j += xstep;
+			tmp |= (buf[j] << 13);
+			j += xstep;
+			tmp |= (buf[j] << 21);
+			j += xstep;
+			tmp |= (buf[j] << 29);
+			j += xstep;
+			tmp &= 0xe0e0e0e0;
+
+			img[i] &= 0xf0f0f0f0;
+			diff = img[i] ^ tmp;
+
+			fxbuckets[x] |= diff;
+			fybuckets[y] |= diff;
+
+			img[i] = (img[i] >> 4) | tmp;
+			cksum += img[i] & 0x0000ffff;
+			cksum += (img[i] >> 16);
+
+		}
+		j += ystep;
+	}
+
+	return cksum;
+}
+
+static uint16_t metronomefb_update_img_buffer_normal(struct metronomefb_par *par)
+{
+	int x, y, i;
+	uint16_t cksum = 0;
+	uint32_t *buf = (uint32_t __force *)par->info->screen_base;
+	uint32_t *img = (uint32_t *)(par->metromem_img);
+	uint32_t diff;
+	uint32_t tmp;
+	int fw = par->epd_frame->fw;
+	int fh = par->epd_frame->fh;
+	int fw_buf = fw / sizeof(*buf);
+	uint32_t *fxbuckets = par->fxbuckets;
+	uint32_t *fybuckets = par->fybuckets;
+
+	memset(fxbuckets, 0, fw_buf * sizeof(*fxbuckets));
+	memset(fybuckets, 0, fh * sizeof(*fybuckets));
+
+	i = 0;
+	for (y = 0; y < fh; y++) {
+		for(x = 0; x < fw_buf; x++, i++) {
+			tmp = (buf[i] << 5) & 0xe0e0e0e0;
+			img[i] &= 0xf0f0f0f0;
 			diff = img[i] ^ tmp;
 
 			fxbuckets[x] |= diff;
@@ -560,73 +615,92 @@ static void metronomefb_dpy_update(struct metronomefb_par *par, int clear_all)
 		}
 	}
 
-	*((u16 *)(par->metromem_img) + fbsize/2) = cksum;
+	return cksum;
+}
 
-	if (clear_all || is_first_update ||
-		(partial_updates_count == par->partial_autorefresh_interval)) {
+static unsigned int metronomefb_get_change_count(struct metronomefb_par *par)
+{
+	int min_x;
+	int max_x;
+	int min_y;
+	int max_y;
+	int fw = par->epd_frame->fw / 4;
+	int fh = par->epd_frame->fh;
+	unsigned int change_count;
+	uint32_t *fxbuckets = par->fxbuckets;
+	uint32_t *fybuckets = par->fybuckets;
+
+	for (min_x = 0; min_x < fw; ++min_x) {
+		if(fxbuckets[min_x])
+			break;
+	}
+
+	for (max_x = fw - 1; max_x >= 0; --max_x) {
+		if(fxbuckets[max_x])
+			break;
+	}
+
+	for (min_y = 0; min_y < fh; min_y++) {
+		if(fybuckets[min_y])
+			break;
+	}
+
+	for (max_y = fh - 1; max_y >= 0; --max_y) {
+		if(fybuckets[max_y])
+			break;
+	}
+
+	if ((min_x > max_x) || (min_y > max_y))
+		change_count = 0;
+	else
+		change_count = (max_x - min_x + 1) * (max_y - min_y + 1) * 4;
+
+	dev_dbg(&par->pdev->dev, "min_x = %d, max_x = %d, min_y = %d, max_y = %d\n",
+			min_x, max_x, min_y, max_y);
+
+	return change_count;
+}
+
+static void metronomefb_dpy_update(struct metronomefb_par *par, int clear_all)
+{
+	unsigned int fbsize = par->info->fix.smem_len;
+	uint16_t cksum;
+	int m;
+
+	wait_for_rdy(par);
+
+	if (par->info->var.rotate == 0)
+		cksum = metronomefb_update_img_buffer_normal(par);
+	else
+		cksum = metronomefb_update_img_buffer_rotated(par);
+
+	*par->metromem_img_csum = __cpu_to_le16(cksum);
+
+	if (clear_all || par->is_first_update ||
+		(par->partial_updates_count == par->partial_autorefresh_interval)) {
 		m = WF_MODE_GC;
-		partial_updates_count = 0;
+		par->partial_updates_count = 0;
 	} else {
-		int min_x = fx_buf;
-		int max_x = 0;
-		int min_y = fy;
-		int max_y = 0;
-		int change_count;
-
-		for (x = 0; x < fx_buf; x++)
-			if(fxbuckets[x]) {
-				min_x = x;
-				break;
-			}
-
-		for (x = fx_buf - 1; x >= 0; x--)
-			if(fxbuckets[x]) {
-				max_x = x;
-				break;
-			}
-
-		for (y = 0; y < fy; y++)
-			if(fybuckets[y]) {
-				min_y = y;
-				break;
-			}
-
-		for (y = fy - 1; y >= 0; y--)
-			if(fybuckets[y]) {
-				max_y = y;
-				break;
-			}
-
-		if ((min_x > max_x) || (min_y > max_y))
-			change_count = 0;
-		else
-			change_count = (max_x - min_x + 1) * (max_y - min_y + 1) * sizeof(*buf);
-
+		int change_count = metronomefb_get_change_count(par);
 		if (change_count < fbsize / 100 * par->manual_refresh_threshold)
 			m = WF_MODE_GU;
 		else
 			m = WF_MODE_GC;
 
-		dev_dbg(&par->pdev->dev, "min_x = %d, max_x = %d, min_y = %d, max_y = %d\n",
-				min_x, max_x, min_y, max_y);
 		dev_dbg(&par->pdev->dev, "change_count = %u, treshold = %u%% (%u pixels)\n",
 				change_count, par->manual_refresh_threshold,
 				fbsize / 100 * par->manual_refresh_threshold);
-
-		partial_updates_count++;
+		++par->partial_updates_count;
 	}
 
-	if (m != par->current_wf_mode) {
+	if (m != par->current_wf_mode)
 		load_waveform((u8 *) par->firmware->data, par->firmware->size,
 				m, par->current_wf_temp, par);
-	}
 
-	for(;;) {
-		if (likely(!check_err(par))) {
-			metronome_display_cmd(par);
-			break;
-		}
-
+again:
+	metronome_display_cmd(par);
+	wait_for_rdy(par);
+	if (unlikely(check_err(par))) {
 		par->board->set_stdby(par, 0);
 		printk("Resetting Metronome\n");
 		par->board->set_rst(par, 0);
@@ -637,12 +711,15 @@ static void metronomefb_dpy_update(struct metronomefb_par *par, int clear_all)
 		mdelay(1);
 		load_waveform((u8 *) par->firmware->data, par->firmware->size,
 				WF_MODE_GC, par->current_wf_temp, par);
+
 		if (par->board->power_ctl)
 			par->board->power_ctl(par, METRONOME_POWER_ON);
 		metronome_bootup(par);
+
+		goto again;
 	}
 
-	is_first_update = 0;
+	par->is_first_update = 0;
 }
 
 /* this is called back from the deferred io workqueue */
@@ -742,12 +819,46 @@ static ssize_t metronomefb_write(struct fb_info *info, const char __user *buf,
 	return (err) ? err : count;
 }
 
+static int metronome_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
+{
+	struct metronomefb_par *par = info->par;
+
+	if (par->epd_frame->fw == var->xres && par->epd_frame->fh == var->yres)
+		return 0;
+
+	return -EINVAL;
+}
+
+static int metronomefb_set_par(struct fb_info *info)
+{
+	struct metronomefb_par *par = info->par;
+
+	switch (info->var.rotate) {
+	case FB_ROTATE_CW:
+	case FB_ROTATE_CCW:
+		info->fix.line_length = info->var.yres;
+		break;
+	case FB_ROTATE_UD:
+	default:
+		info->fix.line_length = info->var.xres;
+		break;
+	}
+
+	mutex_lock(&par->lock);
+	metronomefb_dpy_update(info->par, 1);
+	mutex_unlock(&par->lock);
+
+	return 0;
+}
+
 static struct fb_ops metronomefb_ops = {
 	.owner		= THIS_MODULE,
 	.fb_write	= metronomefb_write,
 	.fb_fillrect	= metronomefb_fillrect,
 	.fb_copyarea	= metronomefb_copyarea,
 	.fb_imageblit	= metronomefb_imageblit,
+	.fb_check_var	= metronome_check_var,
+	.fb_set_par	= metronomefb_set_par,
 };
 
 static struct fb_deferred_io metronomefb_defio = {
@@ -979,15 +1090,13 @@ static int __devinit metronomefb_probe(struct platform_device *dev)
 	info->var.yres = fh;
 	info->var.xres_virtual = fw;
 	info->var.yres_virtual = fh;
-
 	info->fix = metronomefb_fix;
-	info->fix.smem_len = fw * fh; /* Real size of image area */
 	info->fix.line_length = fw;
-
+	info->fix.smem_len = fw * fh; /* Real size of image area */
 	par = info->par;
 	par->info = info;
 	par->board = board;
-	par->dt = epd_dt_index;
+	par->epd_frame = &epd_frame_table[epd_dt_index];
 	par->pdev = dev;
 
 	par->fxbuckets = kmalloc((fw / 4 + 1) * sizeof(*par->fxbuckets), GFP_KERNEL);
@@ -1001,6 +1110,8 @@ static int __devinit metronomefb_probe(struct platform_device *dev)
 	init_waitqueue_head(&par->waitq);
 	par->manual_refresh_threshold = 60;
 	par->partial_autorefresh_interval = 256;
+	par->partial_updates_count = 0;
+	par->is_first_update = 1;
 	mutex_init(&par->lock);
 
 	/* this table caches per page csum values. */
@@ -1025,7 +1136,7 @@ static int __devinit metronomefb_probe(struct platform_device *dev)
 		goto err_csum_table;
 	}
 
-	info->fix.smem_start = 0;
+	info->fix.smem_start = par->metromem_dma;
 
 	/* load the waveform in. assume mode 3, temp 31 for now
 		a) request the waveform file from userspace
@@ -1172,6 +1283,7 @@ static int metronomefb_suspend(struct platform_device *pdev, pm_message_t messag
 	par->board->set_rst(par, 0);
 	if (par->board->power_ctl)
 		par->board->power_ctl(par, METRONOME_POWER_OFF);
+
 
 	return 0;
 }
