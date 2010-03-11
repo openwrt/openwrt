@@ -211,7 +211,7 @@ static irqreturn_t n516_lpc_irq_thread(int irq, void *devid)
 	struct i2c_client *client = chip->i2c_client;
 	struct i2c_msg msg = {client->addr, client->flags | I2C_M_RD, 1, &raw_msg};
 
-	if (client->dev.power.status != DPM_ON)
+	if (client->dev.power.status >= DPM_OFF)
 		return IRQ_HANDLED;
 
 	ret = i2c_transfer(client->adapter, &msg, 1);
