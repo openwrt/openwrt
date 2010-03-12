@@ -1,0 +1,13 @@
+Index: linux-2.6.33/usr/Kconfig
+===================================================================
+--- linux-2.6.33.orig/usr/Kconfig	2010-03-12 15:01:06.000000000 +0100
++++ linux-2.6.33/usr/Kconfig	2010-03-12 15:01:15.000000000 +0100
+@@ -75,7 +75,7 @@
+ config RD_LZO
+ 	bool "Support initial ramdisks compressed using LZO" if EMBEDDED
+ 	default !EMBEDDED
+-	depends on BLK_DEV_INITRD
++	depends on BLK_DEV_INITRD && HAVE_KERNEL_LZO
+ 	select DECOMPRESS_LZO
+ 	help
+ 	  Support loading of a LZO encoded initial ramdisk or cpio buffer
