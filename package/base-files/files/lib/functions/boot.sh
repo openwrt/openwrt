@@ -2,6 +2,10 @@
 # Copyright (C) 2006-2010 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
+mount() {
+	/bin/busybox mount "$@"
+}
+
 boot_hook_add() {
     	local hook="${1}_hook"
 	local value="$2"
