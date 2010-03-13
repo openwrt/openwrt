@@ -7,9 +7,10 @@ define KernelPackage/sound-soc-jz4740
   DEPENDS:=kmod-sound-soc-core @TARGET_xburst
   TITLE:=JZ4740 SoC sound support
   KCONFIG:=CONFIG_SND_JZ4740_SOC CONFIG_SND_JZ4740_SOC_I2S @TARGET_xburst
-  FILES:=$(LINUX_DIR)/sound/soc/jz4740/snd-soc-jz4740.$(LINUX_KMOD_SUFFIX) \
-  $(LINUX_DIR)/sound/soc/jz4740/snd-soc-jz4740-i2s.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,snd-soc-jz4740 snd-soc-jz4740-pcm)
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/jz4740/snd-soc-jz4740.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/soc/jz4740/snd-soc-jz4740-i2s.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,snd-soc-jz4740 snd-soc-jz4740-i2s)
 endef
 
 define KernelPackage/sound-soc-jzcodec
