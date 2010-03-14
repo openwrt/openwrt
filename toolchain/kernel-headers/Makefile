@@ -26,7 +26,7 @@ include $(INCLUDE_DIR)/toolchain-build.mk
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
 ifeq ($(strip $(BOARD)),uml)
-  LINUX_KARCH:=$(ARCH)
+  LINUX_KARCH:=$(subst x86_64,x86,$(subst i386,x86,$(ARCH)))
 endif
 
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.18)),1)
