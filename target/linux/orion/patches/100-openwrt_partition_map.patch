@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-orion5x/wrt350n-v2-setup.c
 +++ b/arch/arm/mach-orion5x/wrt350n-v2-setup.c
-@@ -58,11 +58,11 @@ static struct mtd_partition wrt350n_v2_nor_flash_partitions
+@@ -135,11 +135,11 @@ static struct mtd_partition wrt350n_v2_nor_flash_partitions
  	{
  		.name		= "kernel",
  		.offset		= 0x00000000,
@@ -15,7 +15,7 @@
  	}, {
  		.name		= "lang",
  		.offset		= 0x00760000,
-@@ -75,6 +79,14 @@ static struct mtd_partition wrt350n_v2_nor_flash_partitions
+@@ -152,6 +152,14 @@ static struct mtd_partition wrt350n_v2_nor_flash_partitions
  		.name		= "u-boot",
  		.offset		= 0x007c0000,
  		.size		= 0x00040000,

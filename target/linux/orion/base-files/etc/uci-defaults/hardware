@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+#
+# This script sets system defaults for the hardware on firstboot
+#
+
+local hardware=`sed -n /Hardware/s/.*:.//p /proc/cpuinfo`
+
+wrt350nv2_default() {
+# leds
+	uci batch <<__EOF
+set system.power_led=led
+set system.power_led.name='Power LED (green)'
+set system.power_led.sysfs='wrt350nv2:green:power'
+set system.power_led.default='1'
+set system.wifi_led=led
+set system.wifi_led.name='Wireless LED (green)'
+set system.wifi_led.sysfs='wrt350nv2:green:wireless'
+set system.wifi_led.trigger='netdev'
+set system.wifi_led.dev='wlan0'
+set system.wifi_led.mode='link tx rx'
+set system.wifi_led.default='0'
+commit system
+__EOF
+}
+
+case "${hardware}" in
+ 'Linksys WRT350N v2')
+	wrt350nv2_default
+	;;
+esac

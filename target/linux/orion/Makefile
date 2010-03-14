@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,7 +13,7 @@ FEATURES:=squashfs
 SUBTARGETS=generic harddisk
 CFLAGS=-Os -pipe -march=armv5t -mtune=xscale -funit-at-a-time
 
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=2.6.32.9
 
 include $(INCLUDE_DIR)/target.mk
 
