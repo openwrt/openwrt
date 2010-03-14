@@ -1,15 +1,44 @@
 scan_ppp() {
 	config_get ifname "$1" ifname
 	pppdev="${pppdev:-0}"
-	config_get unit "$1" unit
-	[ -z "$unit" ] && {
-		unit="$pppdev"
-		if [ "${ifname%%[0-9]*}" = ppp ]; then
-			unit="${ifname##ppp}"
-			[ "$pppdev" -le "$unit" ] && pppdev="$(($unit + 1))"
-		else
-			pppdev="$(($pppdev + 1))"
-		fi
+	config_get devunit "$1" unit
+	{
+	        unit=
+	        pppif=
+	        if [ ! -d /tmp/.ppp-counter ]; then
+	       	     mkdir -p /tmp/.ppp-counter
+	        fi
+	        local maxunit
+	        maxunit="$(cat /tmp/.ppp-counter/max-unit 2>/dev/null)" 
+	        if [ -z "$maxunit" ]; then
+	            maxunit=-1
+	        fi
+	        local i
+	        i=0
+	        while [ $i -le $maxunit ]; do
+	             local unitdev
+	             unitdev="$(cat /tmp/.ppp-counter/ppp${i} 2>/dev/null)"
+	             if [ "$unitdev" = "$1" ]; then
+	                  unit="$i"
+	                  pppif="ppp${i}"
+	                  break
+	             fi
+	             i="$(($i + 1))"
+	        done 
+	        if [ -z "$unit" ] || [ -z "$pppif" ]; then
+	            maxunit="$(($maxunit + 1))"
+	            if [ -n "$devunit" ]; then
+	             	unit="$devunit"
+		    elif [ "${ifname%%[0-9]*}" = ppp ]; then
+			 unit="${ifname##ppp}"
+	            else
+	                 unit="$maxunit"
+	            fi 
+         	    [ "$maxunit" -lt "$unit" ] && maxunit="$unit"
+		    pppif="ppp${unit}"
+		    echo "$1" >/tmp/.ppp-counter/$pppif 2>/dev/null
+		    echo "$maxunit" >/tmp/.ppp-counter/max-unit 2>/dev/null
+	        fi
 		config_set "$1" ifname "ppp$unit"
 		config_set "$1" unit "$unit"
 	}
