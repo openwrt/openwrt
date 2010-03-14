@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/drivers/net/ar231x.c
-===================================================================
---- linux-2.6.32.7.orig/drivers/net/ar231x.c	2010-02-03 17:02:28.998430523 +0100
-+++ linux-2.6.32.7/drivers/net/ar231x.c	2010-02-03 17:03:01.346429245 +0100
-@@ -148,6 +148,7 @@
+--- a/drivers/net/ar231x.c
++++ b/drivers/net/ar231x.c
+@@ -148,6 +148,7 @@ static int ar231x_mdiobus_write(struct m
  static int ar231x_mdiobus_reset(struct mii_bus *bus);
  static int ar231x_mdiobus_probe (struct net_device *dev);
  static void ar231x_adjust_link(struct net_device *dev);
@@ -10,7 +8,7 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  
  #ifndef ERR
  #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
-@@ -278,6 +279,21 @@
+@@ -278,6 +279,21 @@ int __init ar231x_probe(struct platform_
  
  	mdiobus_register(sp->mii_bus);
  
@@ -32,7 +30,7 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  	if (ar231x_mdiobus_probe(dev) != 0) {
  		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
  		rx_tasklet_cleanup(dev);
-@@ -334,8 +350,10 @@
+@@ -334,8 +350,10 @@ static int __exit ar231x_remove(struct p
  	rx_tasklet_cleanup(dev);
  	ar231x_init_cleanup(dev);
  	unregister_netdev(dev);
@@ -45,7 +43,7 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  	kfree(dev);
  	return 0;
  }
-@@ -836,7 +854,12 @@
+@@ -836,7 +854,12 @@ static int ar231x_rx_int(struct net_devi
  				dev->stats.rx_bytes += skb->len;
  
  				/* pass the packet to upper layers */
@@ -59,7 +57,7 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  				skb_new->dev = dev;
  
  				/* 16 bit align */
-@@ -1123,6 +1146,9 @@
+@@ -1123,6 +1146,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  

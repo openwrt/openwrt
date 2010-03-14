@@ -1,16 +1,12 @@
-Index: linux-2.6.32.7/arch/mips/ar231x/Makefile
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/ar231x/Makefile	2010-02-03 17:00:08.814429898 +0100
-+++ linux-2.6.32.7/arch/mips/ar231x/Makefile	2010-02-03 17:00:21.031428952 +0100
+--- a/arch/mips/ar231x/Makefile
++++ b/arch/mips/ar231x/Makefile
 @@ -11,3 +11,4 @@
  obj-y += board.o prom.o devices.o
  obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
  obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
-Index: linux-2.6.32.7/arch/mips/ar231x/pci.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/pci.c	2010-02-03 17:00:21.031428952 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/pci.c
 @@ -0,0 +1,230 @@
 +/*
 + * This program is free software; you can redistribute it and/or
@@ -242,11 +238,9 @@ Index: linux-2.6.32.7/arch/mips/ar231x/pci.c
 +}
 +
 +arch_initcall(ar2315_pci_init);
-Index: linux-2.6.32.7/arch/mips/ar231x/Kconfig
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/ar231x/Kconfig	2010-02-03 17:00:08.814429898 +0100
-+++ linux-2.6.32.7/arch/mips/ar231x/Kconfig	2010-02-03 17:00:21.031428952 +0100
-@@ -15,3 +15,13 @@
+--- a/arch/mips/ar231x/Kconfig
++++ b/arch/mips/ar231x/Kconfig
+@@ -15,3 +15,13 @@ config ATHEROS_AR2315
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select GENERIC_GPIO
  	default y
@@ -260,11 +254,9 @@ Index: linux-2.6.32.7/arch/mips/ar231x/Kconfig
 +	select USB_ARCH_HAS_OHCI
 +	select USB_ARCH_HAS_EHCI
 +	default y
-Index: linux-2.6.32.7/arch/mips/ar231x/ar2315.c
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/ar231x/ar2315.c	2010-02-03 17:00:08.818431986 +0100
-+++ linux-2.6.32.7/arch/mips/ar231x/ar2315.c	2010-02-03 17:00:21.031428952 +0100
-@@ -63,6 +63,27 @@
+--- a/arch/mips/ar231x/ar2315.c
++++ b/arch/mips/ar231x/ar2315.c
+@@ -63,6 +63,27 @@ static inline void ar2315_gpio_irq(void)
  		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
  }
  
@@ -292,7 +284,7 @@ Index: linux-2.6.32.7/arch/mips/ar231x/ar2315.c
  
  /*
   * Called when an interrupt is received, this function
-@@ -81,6 +102,10 @@
+@@ -81,6 +102,10 @@ ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);

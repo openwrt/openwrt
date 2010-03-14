@@ -4,11 +4,9 @@ still works.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
-Index: linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/kernel/cevt-r4k.c	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c	2010-02-03 16:59:28.310430064 +0100
-@@ -168,20 +168,23 @@
+--- a/arch/mips/kernel/cevt-r4k.c
++++ b/arch/mips/kernel/cevt-r4k.c
+@@ -168,20 +168,23 @@ int __cpuinit r4k_clockevent_init(void)
  	struct clock_event_device *cd;
  	unsigned int irq;
  

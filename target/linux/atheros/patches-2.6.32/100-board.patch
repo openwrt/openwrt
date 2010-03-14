@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/arch/mips/Kconfig
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/Kconfig	2010-02-03 16:57:31.290430165 +0100
-+++ linux-2.6.32.7/arch/mips/Kconfig	2010-02-03 17:00:08.814429898 +0100
-@@ -96,6 +96,19 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -96,6 +96,19 @@ config BCM63XX
  	help
  	 Support for BCM63XX based boards
  
@@ -22,7 +20,7 @@ Index: linux-2.6.32.7/arch/mips/Kconfig
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-@@ -673,6 +686,7 @@
+@@ -673,6 +686,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  
  endchoice
  
@@ -30,11 +28,9 @@ Index: linux-2.6.32.7/arch/mips/Kconfig
  source "arch/mips/alchemy/Kconfig"
  source "arch/mips/basler/excite/Kconfig"
  source "arch/mips/bcm63xx/Kconfig"
-Index: linux-2.6.32.7/arch/mips/Makefile
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/Makefile	2010-02-03 16:57:31.851429682 +0100
-+++ linux-2.6.32.7/arch/mips/Makefile	2010-02-03 17:00:08.814429898 +0100
-@@ -296,6 +296,13 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -298,6 +298,13 @@ cflags-$(CONFIG_SOC_AU1X00)	+= -I$(srctr
  
  
  #
@@ -48,10 +44,8 @@ Index: linux-2.6.32.7/arch/mips/Makefile
  # Cobalt Server
  #
  core-$(CONFIG_MIPS_COBALT)	+= arch/mips/cobalt/
-Index: linux-2.6.32.7/arch/mips/ar231x/Kconfig
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/Kconfig	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/Kconfig
 @@ -0,0 +1,17 @@
 +config ATHEROS_AR5312
 +	bool "Atheros 5312/2312+ support"
@@ -70,10 +64,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/Kconfig
 +	select SYS_SUPPORTS_BIG_ENDIAN
 +	select GENERIC_GPIO
 +	default y
-Index: linux-2.6.32.7/arch/mips/ar231x/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/Makefile	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/Makefile
 @@ -0,0 +1,13 @@
 +#
 +# This file is subject to the terms and conditions of the GNU General Public
@@ -88,10 +80,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/Makefile
 +obj-y += board.o prom.o devices.o
 +obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
 +obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
-Index: linux-2.6.32.7/arch/mips/ar231x/board.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/board.c	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/board.c
 @@ -0,0 +1,251 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -344,10 +334,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/board.c
 +}
 +
 +
-Index: linux-2.6.32.7/arch/mips/ar231x/prom.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/prom.c	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/prom.c
 @@ -0,0 +1,37 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -386,10 +374,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/prom.c
 +void __init prom_free_prom_memory(void)
 +{
 +}
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar231x_platform.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar231x_platform.h	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/ar231x_platform.h
 @@ -0,0 +1,83 @@
 +#ifndef __AR531X_PLATFORM_H
 +#define __AR531X_PLATFORM_H
@@ -474,10 +460,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar231x_platform.h
 +};
 +
 +#endif /* __AR531X_PLATFORM_H */
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/cpu-feature-overrides.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/cpu-feature-overrides.h	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/cpu-feature-overrides.h
 @@ -0,0 +1,84 @@
 +/*
 + *  Atheros SoC specific CPU feature overrides
@@ -563,10 +547,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/cpu-feature-overrides.h
 +/* #define cpu_icache_line_size()	? */
 +
 +#endif /* __ASM_MACH_ATHEROS_CPU_FEATURE_OVERRIDES_H */
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/dma-coherence.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/dma-coherence.h	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
 @@ -0,0 +1,64 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -632,10 +614,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/dma-coherence.h
 +}
 +
 +#endif /* __ASM_MACH_GENERIC_DMA_COHERENCE_H */
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/gpio.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/gpio.h	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/gpio.h
 @@ -0,0 +1,79 @@
 +#ifndef _ATHEROS_GPIO_H_
 +#define _ATHEROS_GPIO_H_
@@ -716,10 +696,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/gpio.h
 +#include <asm-generic/gpio.h> /* cansleep wrappers */
 +
 +#endif
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/reset.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/reset.h	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/reset.h
 @@ -0,0 +1,6 @@
 +#ifndef __AR531X_RESET_H
 +#define __AR531X_RESET_H
@@ -727,10 +705,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/reset.h
 +void ar531x_disable_reset_button(void);
 +
 +#endif /* __AR531X_RESET_H */
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/war.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/war.h	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/war.h
 @@ -0,0 +1,25 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -757,10 +733,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/war.h
 +#define MIPS34K_MISSED_ITLB_WAR		0
 +
 +#endif /* __ASM_MIPS_MACH_ATHEROS_WAR_H */
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar2315_regs.h	2010-02-03 17:00:08.814429898 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
 @@ -0,0 +1,580 @@
 +/*
 + * Register definitions for AR2315+
@@ -1342,10 +1316,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
 +#define PCI_DEVICE_MEM_SPACE    0x800000
 +
 +#endif /* __AR2315_REG_H */
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar5312_regs.h	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
 @@ -0,0 +1,236 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -1583,10 +1555,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
 +
 +#endif
 +
-Index: linux-2.6.32.7/arch/mips/ar231x/ar5312.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/ar5312.c	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/ar5312.c
 @@ -0,0 +1,547 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -2135,10 +2105,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/ar5312.c
 +	ar231x_serial_setup(KSEG1ADDR(AR531X_UART0), ar5312_sys_frequency());
 +}
 +
-Index: linux-2.6.32.7/arch/mips/ar231x/ar2315.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/ar2315.c	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/ar2315.c
 @@ -0,0 +1,658 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -2798,10 +2766,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/ar2315.c
 +	_machine_restart = ar2315_restart;
 +	ar231x_serial_setup(KSEG1ADDR(AR2315_UART0), ar2315_apb_frequency());
 +}
-Index: linux-2.6.32.7/arch/mips/ar231x/ar2315.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/ar2315.h	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/ar2315.h
 @@ -0,0 +1,37 @@
 +#ifndef __AR2315_H
 +#define __AR2315_H
@@ -2840,10 +2806,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/ar2315.h
 +#endif
 +
 +#endif
-Index: linux-2.6.32.7/arch/mips/ar231x/ar5312.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/ar5312.h	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/ar5312.h
 @@ -0,0 +1,38 @@
 +#ifndef __AR5312_H
 +#define __AR5312_H
@@ -2883,10 +2847,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/ar5312.h
 +#endif
 +
 +#endif
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar231x.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar231x.h	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/ar231x.h
 @@ -0,0 +1,54 @@
 +#ifndef __AR531X_H
 +#define __AR531X_H
@@ -2942,10 +2904,8 @@ Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar231x.h
 +}
 +
 +#endif
-Index: linux-2.6.32.7/arch/mips/ar231x/devices.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/devices.h	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/devices.h
 @@ -0,0 +1,37 @@
 +#ifndef __AR231X_DEVICES_H
 +#define __AR231X_DEVICES_H
@@ -2984,10 +2944,8 @@ Index: linux-2.6.32.7/arch/mips/ar231x/devices.h
 +}
 +
 +#endif
-Index: linux-2.6.32.7/arch/mips/ar231x/devices.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/ar231x/devices.c	2010-02-03 17:00:08.818431986 +0100
+--- /dev/null
++++ b/arch/mips/ar231x/devices.c
 @@ -0,0 +1,175 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>

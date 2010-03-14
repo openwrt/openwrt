@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/drivers/mtd/redboot.c
-===================================================================
---- linux-2.6.32.7.orig/drivers/mtd/redboot.c	2010-02-03 16:57:31.582429139 +0100
-+++ linux-2.6.32.7/drivers/mtd/redboot.c	2010-02-03 17:01:57.067429178 +0100
-@@ -60,31 +60,32 @@
+--- a/drivers/mtd/redboot.c
++++ b/drivers/mtd/redboot.c
+@@ -60,31 +60,32 @@ static int parse_redboot_partitions(stru
  	static char nullstring[] = "unallocated";
  #endif
  
@@ -42,7 +40,7 @@ Index: linux-2.6.32.7/drivers/mtd/redboot.c
  	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
  	       master->name, offset);
  
-@@ -156,6 +157,11 @@
+@@ -156,6 +157,11 @@ static int parse_redboot_partitions(stru
  	}
  	if (i == numslots) {
  		/* Didn't find it */
