@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.4.6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_MD5SUM:=c67cf30e281a924def6426be0973df56
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -19,7 +19,7 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 
-PKG_FIXUP = libtool
+PKG_FIXUP:=libtool
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
@@ -48,15 +48,15 @@ $(call Package/iptables/Default)
 endef
 
 define Package/iptables/description
- IPv4 firewall administration tool.
- Includes support for:
- - comment
- - limit
- - LOG
- - mac
- - multiport
- - REJECT
- - TCPMSS
+IPv4 firewall administration tool.
+Includes support for:
+- comment
+- limit
+- LOG
+- mac
+- multiport
+- REJECT
+- TCPMSS
 endef
 
 define Package/iptables-mod-conntrack
@@ -65,11 +65,11 @@ $(call Package/iptables/Module, +kmod-ipt-conntrack)
 endef
 
 define Package/iptables-mod-conntrack/description
- Basic iptables extensions for connection tracking.
- Includes:
- - state
- - raw
- - NOTRACK 
+Basic iptables extensions for connection tracking.
+Includes:
+- state
+- raw
+- NOTRACK
 endef
 
 define Package/iptables-mod-conntrack-extra
@@ -78,11 +78,11 @@ $(call Package/iptables/Module, +kmod-ipt-conntrack-extra)
 endef
 
 define Package/iptables-mod-conntrack-extra/description
- Extra iptables extensions for connection tracking.
- Includes:
- - libipt_conntrack
- - libipt_helper
- - libipt_connmark/CONNMARK
+Extra iptables extensions for connection tracking.
+Includes:
+- libipt_conntrack
+- libipt_helper
+- libipt_connmark/CONNMARK
 endef
 
 define Package/iptables-mod-filter
@@ -91,10 +91,10 @@ $(call Package/iptables/Module, +kmod-ipt-filter)
 endef
 
 define Package/iptables-mod-filter/description
- iptables extensions for packet content inspection.
- Includes:
- - libipt_string
- - libipt_layer7
+iptables extensions for packet content inspection.
+Includes:
+- libipt_string
+- libipt_layer7
 endef
 
 define Package/iptables-mod-imq
@@ -103,9 +103,9 @@ $(call Package/iptables/Module, +kmod-ipt-imq)
 endef
 
 define Package/iptables-mod-imq/description
- iptables extension for IMQ support.
- Includes:
- - libipt_IMQ
+iptables extension for IMQ support.
+Includes:
+- libipt_IMQ
 endef
 
 define Package/iptables-mod-ipopt
@@ -114,19 +114,19 @@ $(call Package/iptables/Module, +kmod-ipt-ipopt)
 endef
 
 define Package/iptables-mod-ipopt/description
- iptables extensions for matching/changing IP packet options.
- Includes:
- - libipt_CLASSIFY
- - libipt_dscp/DSCP
- - libipt_ecn/ECN
- - libipt_length
- - libipt_mac
- - libipt_mark/MARK
- - libipt_statistic
- - libipt_tcpmms
- - libipt_tos/TOS
- - libipt_ttl/TTL
- - libipt_unclean
+iptables extensions for matching/changing IP packet options.
+Includes:
+- libipt_CLASSIFY
+- libipt_dscp/DSCP
+- libipt_ecn/ECN
+- libipt_length
+- libipt_mac
+- libipt_mark/MARK
+- libipt_statistic
+- libipt_tcpmms
+- libipt_tos/TOS
+- libipt_ttl/TTL
+- libipt_unclean
 endef
 
 define Package/iptables-mod-ipsec
@@ -135,11 +135,11 @@ $(call Package/iptables/Module, +kmod-ipt-ipsec)
 endef
 
 define Package/iptables-mod-ipsec/description
- iptables extensions for matching ipsec traffic.
- Includes:
- - libipt_ah
- - libipt_esp
- - libipt_policy
+iptables extensions for matching ipsec traffic.
+Includes:
+- libipt_ah
+- libipt_esp
+- libipt_policy
 endef
 
 define Package/iptables-mod-ipset
@@ -148,10 +148,10 @@ $(call Package/iptables/Module, @LINUX_2_6)
 endef
 
 define Package/iptables-mod-ipset/description
- IPset iptables extensions.
- Includes:
- - libipt_set
- - libipt_SET
+IPset iptables extensions.
+Includes:
+- libipt_set
+- libipt_SET
 endef
 
 define Package/iptables-mod-nat
@@ -160,11 +160,11 @@ $(call Package/iptables/Module, +kmod-ipt-nat)
 endef
 
 define Package/iptables-mod-nat/description
- iptables extensions for basic NAT targets.
- Includes:
- - MASQUERADE
- - SNAT
- - DNAT
+iptables extensions for basic NAT targets.
+Includes:
+- MASQUERADE
+- SNAT
+- DNAT
 endef
 
 define Package/iptables-mod-nat-extra
@@ -173,9 +173,9 @@ $(call Package/iptables/Module, +kmod-ipt-nat-extra)
 endef
 
 define Package/iptables-mod-nat-extra/description
- iptables extensions for extra NAT targets.
- Includes:
- - REDIRECT
+iptables extensions for extra NAT targets.
+Includes:
+- REDIRECT
 endef
 
 define Package/iptables-mod-ulog
@@ -184,9 +184,9 @@ $(call Package/iptables/Module, +kmod-ipt-ulog)
 endef
 
 define Package/iptables-mod-ulog/description
- iptables extensions for user-space packet logging.
- Includes:
- - libipt_ULOG
+iptables extensions for user-space packet logging.
+Includes:
+- libipt_ULOG
 endef
 
 define Package/iptables-mod-iprange
@@ -195,9 +195,9 @@ $(call Package/iptables/Module, +kmod-ipt-iprange)
 endef
 
 define Package/iptables-mod-iprange/description
- iptables extensions for matching ip ranges.
- Includes:
- - libipt_iprange
+iptables extensions for matching ip ranges.
+Includes:
+- libipt_iprange
 endef
 
 define Package/iptables-mod-extra
@@ -206,12 +206,12 @@ $(call Package/iptables/Module, +kmod-ipt-extra)
 endef
 
 define Package/iptables-mod-extra/description
- other extra iptables extensions.
- Includes:
- - libipt_owner
- - libipt_physdev
- - libipt_pkttype
- - libipt_recent
+Other extra iptables extensions.
+Includes:
+- libipt_owner
+- libipt_physdev
+- libipt_pkttype
+- libipt_recent
 endef
 
 define Package/iptables-utils
@@ -268,18 +268,20 @@ IPTABLES_MAKEOPTS = \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		KBUILD_OUTPUT="$(LINUX_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install $(MAKE_TARGETS)
+		$(MAKE_TARGETS)
 
 define Build/Compile
-	mkdir -p $(PKG_INSTALL_DIR)
+	$(INSTALL_DIR) $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) $(IPTABLES_MAKEOPTS)
+	$(MAKE) -C $(PKG_BUILD_DIR) $(IPTABLES_MAKEOPTS) install
 	$(MAKE) -C $(PKG_BUILD_DIR)/libipq $(IPTABLES_MAKEOPTS)
+	$(MAKE) -C $(PKG_BUILD_DIR)/libipq $(IPTABLES_MAKEOPTS) install
 endef
 
 define Build/InstallDev
-	mkdir -p $(1)/usr/include
-	mkdir -p $(1)/usr/include/iptables
-	mkdir -p $(1)/usr/include/net/netfilter
+	$(INSTALL_DIR) $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include/iptables
+	$(INSTALL_DIR) $(1)/usr/include/net/netfilter
 
 	# XXX: iptables header fixup, some headers are not installed by iptables anymore
 	$(CP) $(PKG_BUILD_DIR)/include/net/netfilter/*.h $(1)/usr/include/net/netfilter/
@@ -290,11 +292,11 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/include/libiptc $(1)/usr/include/
 
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
-	mkdir -p $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.{a,so*} $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libip*tc.{a,so*} $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(1)/usr/lib/
-	mkdir -p $(1)/usr/lib/pkgconfig
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/xtables.pc $(1)/usr/lib/pkgconfig/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libiptc.pc $(1)/usr/lib/pkgconfig/
 endef
