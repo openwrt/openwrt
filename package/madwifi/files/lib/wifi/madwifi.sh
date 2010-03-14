@@ -87,7 +87,7 @@ enable_atheros() {
 	config_get_bool antdiv "$device" diversity
 	config_get antrx "$device" rxantenna
 	config_get anttx "$device" txantenna
-	config_get_bool softled "$device" softled 1
+	config_get_bool softled "$device" softled
 	config_get antenna "$device" antenna
 
 	devname="$(cat /proc/sys/dev/$device/dev_name)"
