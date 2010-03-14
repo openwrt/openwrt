@@ -1,6 +1,47 @@
 --- a/iwlist.c
 +++ b/iwlist.c
-@@ -1302,7 +1302,6 @@ print_pm_info(int		skfd,
+@@ -58,7 +58,6 @@ typedef struct iw_auth_descr
+  * Maybe this should go in iwlib.c ?
+  */
+ 
+-#ifndef WE_ESSENTIAL
+ #define IW_ARRAY_LEN(x) (sizeof(x)/sizeof((x)[0]))
+ 
+ //static const struct iwmask_name iw_enc_mode_name[] = {
+@@ -161,11 +160,8 @@ static const char *	iw_ie_key_mgmt_name[
+ };
+ #define	IW_IE_KEY_MGMT_NUM	IW_ARRAY_LEN(iw_ie_key_mgmt_name)
+ 
+-#endif	/* WE_ESSENTIAL */
+-
+ /************************* WPA SUBROUTINES *************************/
+ 
+-#ifndef WE_ESSENTIAL
+ /*------------------------------------------------------------------*/
+ /*
+  * Print all names corresponding to a mask.
+@@ -431,7 +427,6 @@ iw_print_gen_ie(unsigned char *	buffer,
+       offset += buffer[offset+1] + 2;
+     }
+ }
+-#endif	/* WE_ESSENTIAL */
+ 
+ /***************************** SCANNING *****************************/
+ /*
+@@ -585,12 +580,10 @@ print_scanning_token(struct stream_descr
+ 		     &event->u.qual, iw_range, has_range);
+       printf("                    %s\n", buffer);
+       break;
+-#ifndef WE_ESSENTIAL
+     case IWEVGENIE:
+       /* Informations Elements are complex, let's do only some of them */
+       iw_print_gen_ie(event->u.data.pointer, event->u.data.length);
+       break;
+-#endif	/* WE_ESSENTIAL */
+     case IWEVCUSTOM:
+       {
+ 	char custom[IW_CUSTOM_MAX+1];
+@@ -1302,7 +1295,6 @@ print_pm_info(int		skfd,
    return(0);
  }
  
@@ -8,7 +49,7 @@
  /************************** TRANSMIT POWER **************************/
  
  /*------------------------------------------------------------------*/
-@@ -1405,6 +1404,7 @@ print_txpower_info(int		skfd,
+@@ -1405,6 +1397,7 @@ print_txpower_info(int		skfd,
    return(0);
  }
  
@@ -16,7 +57,7 @@
  /*********************** RETRY LIMIT/LIFETIME ***********************/
  
  /*------------------------------------------------------------------*/
-@@ -2060,8 +2060,8 @@ static const struct iwlist_entry iwlist_
+@@ -2060,8 +2053,8 @@ static const struct iwlist_entry iwlist_
    { "encryption",	print_keys_info,	0, NULL },
    { "keys",		print_keys_info,	0, NULL },
    { "power",		print_pm_info,		0, NULL },
