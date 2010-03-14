@@ -90,6 +90,9 @@ dnsmasq() {
 
 	config_get DOMAIN "$cfg" domain
 
+	config_get_bool readethers "$cfg" readethers
+	[ "$readethers" = "1" ] && [ -e "/etc/ethers" ] || touch /etc/ethers
+
 	config_get leasefile $cfg leasefile
 	[ -e "$leasefile" ] || touch "$leasefile"
 	config_get_bool cachelocal "$cfg" cachelocal 1
