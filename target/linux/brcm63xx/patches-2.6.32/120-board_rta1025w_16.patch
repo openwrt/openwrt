@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:45:23.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:47:09.000000000 +0100
-@@ -393,6 +393,25 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -393,6 +393,25 @@ static struct board_info __initdata boar
          .has_ehci0 = 1,
  };
  
@@ -28,7 +26,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  static struct board_info __initdata board_DV201AMR = {
  	.name				= "DV201AMR",
  	.expected_cpu_id		= 0x6348,
-@@ -577,6 +596,7 @@
+@@ -577,6 +596,7 @@ static const struct board_info __initdat
  	&board_FAST2404,
  	&board_DV201AMR,
  	&board_96348gw_a,

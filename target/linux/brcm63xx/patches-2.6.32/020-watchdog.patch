@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/drivers/watchdog/Makefile
-===================================================================
---- linux-2.6.32.9.orig/drivers/watchdog/Makefile	2010-02-23 16:38:51.000000000 +0100
-+++ linux-2.6.32.9/drivers/watchdog/Makefile	2010-02-28 18:13:51.000000000 +0100
-@@ -113,6 +113,7 @@
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -113,6 +113,7 @@ obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
@@ -10,11 +8,9 @@ Index: linux-2.6.32.9/drivers/watchdog/Makefile
  
  # PARISC Architecture
  
-Index: linux-2.6.32.9/drivers/watchdog/Kconfig
-===================================================================
---- linux-2.6.32.9.orig/drivers/watchdog/Kconfig	2010-02-23 16:38:51.000000000 +0100
-+++ linux-2.6.32.9/drivers/watchdog/Kconfig	2010-02-28 18:13:51.000000000 +0100
-@@ -850,6 +850,16 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -850,6 +850,16 @@ config TXX9_WDT
  	help
  	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
  
@@ -31,10 +27,8 @@ Index: linux-2.6.32.9/drivers/watchdog/Kconfig
  # PARISC Architecture
  
  # POWERPC Architecture
-Index: linux-2.6.32.9/drivers/watchdog/bcm63xx_wdt.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.9/drivers/watchdog/bcm63xx_wdt.c	2010-02-28 18:17:15.000000000 +0100
+--- /dev/null
++++ b/drivers/watchdog/bcm63xx_wdt.c
 @@ -0,0 +1,334 @@
 +/*
 + *  Broadcom BCM63xx SoC watchdog driver

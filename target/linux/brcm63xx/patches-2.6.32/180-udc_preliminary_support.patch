@@ -1,7 +1,5 @@
-Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 19:16:53.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 19:16:55.000000000 +0100
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
 @@ -28,6 +28,7 @@
  #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_usb_ohci.h>
@@ -10,7 +8,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -406,6 +407,7 @@
+@@ -406,6 +407,7 @@ static struct board_info __initdata boar
          .has_ohci0 = 1,
          .has_pccard = 1,
          .has_ehci0 = 1,
@@ -18,7 +16,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  };
  
  static struct board_info __initdata board_rta1025w_16 = {
-@@ -949,6 +951,9 @@
+@@ -949,6 +951,9 @@ int __init board_register_devices(void)
  	if (board.has_dsp)
  		bcm63xx_dsp_register(&board.dsp);
  
@@ -28,10 +26,8 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  	/* Generate MAC address for WLAN and
  	 * register our SPROM */
  #ifdef CONFIG_SSB_PCIHOST
-Index: linux-2.6.32.9/arch/mips/bcm63xx/dev-usb-udc.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.9/arch/mips/bcm63xx/dev-usb-udc.c	2010-02-28 19:16:55.000000000 +0100
+--- /dev/null
++++ b/arch/mips/bcm63xx/dev-usb-udc.c
 @@ -0,0 +1,58 @@
 +/*
 + * Copyright (C) 2009	Henk Vergonet <Henk.Vergonet@gmail.com>
@@ -91,11 +87,9 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/dev-usb-udc.c
 +	udc_resources[1].start = bcm63xx_get_irq_number(IRQ_UDC0);
 +	return platform_device_register(&bcm63xx_udc_device);
 +}
-Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h	2010-02-28 19:16:53.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h	2010-02-28 19:16:55.000000000 +0100
-@@ -125,7 +125,7 @@
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
+@@ -125,7 +125,7 @@ enum bcm63xx_regs_set {
  #define BCM_6338_UART0_BASE		(0xfffe0300)
  #define BCM_6338_GPIO_BASE		(0xfffe0400)
  #define BCM_6338_SPI_BASE		(0xfffe0c00)
@@ -104,7 +98,7 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
  #define BCM_6338_USBDMA_BASE		(0xfffe2400)
  #define BCM_6338_OHCI0_BASE		(0xdeadbeef)
  #define BCM_6338_OHCI_PRIV_BASE		(0xfffe3000)
-@@ -155,7 +155,7 @@
+@@ -155,7 +155,7 @@ enum bcm63xx_regs_set {
  #define BCM_6345_UART0_BASE		(0xfffe0300)
  #define BCM_6345_GPIO_BASE		(0xfffe0400)
  #define BCM_6345_SPI_BASE		(0xdeadbeef)
@@ -113,7 +107,7 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
  #define BCM_6345_USBDMA_BASE		(0xfffe2800)
  #define BCM_6345_ENET0_BASE		(0xfffe1800)
  #define BCM_6345_ENETDMA_BASE		(0xfffe2800)
-@@ -210,7 +210,7 @@
+@@ -210,7 +210,7 @@ enum bcm63xx_regs_set {
  #define BCM_6358_UART0_BASE		(0xfffe0100)
  #define BCM_6358_GPIO_BASE		(0xfffe0080)
  #define BCM_6358_SPI_BASE		(0xdeadbeef)
@@ -122,7 +116,7 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
  #define BCM_6358_OHCI0_BASE		(0xfffe1400)
  #define BCM_6358_OHCI_PRIV_BASE		(0xdeadbeef)
  #define BCM_6358_USBH_PRIV_BASE		(0xfffe1500)
-@@ -430,6 +430,7 @@
+@@ -430,6 +430,7 @@ enum bcm63xx_irq {
  	IRQ_TIMER = 0,
  	IRQ_UART0,
  	IRQ_DSL,
@@ -130,7 +124,7 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
  	IRQ_ENET0,
  	IRQ_ENET1,
  	IRQ_ENET_PHY,
-@@ -472,7 +473,7 @@
+@@ -472,7 +473,7 @@ enum bcm63xx_irq {
  #define BCM_6345_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
  #define BCM_6345_DSL_IRQ		(IRQ_INTERNAL_BASE + 3)
  #define BCM_6345_ATM_IRQ		(IRQ_INTERNAL_BASE + 4)
@@ -139,7 +133,7 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
  #define BCM_6345_ENET0_IRQ		(IRQ_INTERNAL_BASE + 8)
  #define BCM_6345_ENET_PHY_IRQ		(IRQ_INTERNAL_BASE + 12)
  #define BCM_6345_ENET0_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 13 + 1)
-@@ -494,10 +495,17 @@
+@@ -494,10 +495,17 @@ enum bcm63xx_irq {
  #define BCM_6348_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
  #define BCM_6348_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
  #define BCM_6348_DSL_IRQ		(IRQ_INTERNAL_BASE + 4)
@@ -157,10 +151,8 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
  #define BCM_6348_ENET0_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 20)
  #define BCM_6348_ENET0_TXDMA_IRQ	(IRQ_INTERNAL_BASE + 21)
  #define BCM_6348_ENET1_RXDMA_IRQ	(IRQ_INTERNAL_BASE + 22)
-Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_usb_udc.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_usb_udc.h	2010-02-28 19:16:55.000000000 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_usb_udc.h
 @@ -0,0 +1,6 @@
 +#ifndef BCM63XX_DEV_USB_UDC_H_
 +#define BCM63XX_DEV_USB_UDC_H_
@@ -168,11 +160,9 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_usb_udc.h
 +int bcm63xx_udc_register(void);
 +
 +#endif /* BCM63XX_DEV_USB_UDC_H_ */
-Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-02-28 19:16:53.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-02-28 19:17:21.000000000 +0100
-@@ -45,6 +45,7 @@
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -45,6 +45,7 @@ struct board_info {
  	unsigned int	has_ohci0:1;
  	unsigned int	has_ehci0:1;
  	unsigned int	has_dsp:1;
@@ -180,10 +170,8 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
  
  	/* ethernet config */
  	struct bcm63xx_enet_platform_data enet0;
-Index: linux-2.6.32.9/arch/mips/bcm63xx/Makefile
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/Makefile	2010-02-28 19:17:32.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/Makefile	2010-02-28 19:17:39.000000000 +0100
+--- a/arch/mips/bcm63xx/Makefile
++++ b/arch/mips/bcm63xx/Makefile
 @@ -1,6 +1,6 @@
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
  		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-uart.o dev-wdt.o \
@@ -192,11 +180,9 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/Makefile
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  
  obj-y		+= boards/
-Index: linux-2.6.32.9/arch/mips/bcm63xx/clk.c
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/clk.c	2010-02-28 19:19:22.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/clk.c	2010-02-28 19:25:39.000000000 +0100
-@@ -141,6 +141,30 @@
+--- a/arch/mips/bcm63xx/clk.c
++++ b/arch/mips/bcm63xx/clk.c
+@@ -141,6 +141,30 @@ static struct clk clk_usbh = {
  };
  
  /*
@@ -227,7 +213,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/clk.c
   * SPI clock
   */
  static void spi_set(struct clk *clk, int enable)
-@@ -208,6 +232,8 @@
+@@ -208,6 +232,8 @@ struct clk *clk_get(struct device *dev, 
  		return &clk_ephy;
  	if (!strcmp(id, "usbh"))
  		return &clk_usbh;
@@ -236,11 +222,9 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/clk.c
  	if (!strcmp(id, "spi"))
  		return &clk_spi;
  	if (!strcmp(id, "periph"))
-Index: linux-2.6.32.9/arch/mips/bcm63xx/Kconfig
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/Kconfig	2010-02-28 19:29:37.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/Kconfig	2010-02-28 19:29:51.000000000 +0100
-@@ -7,6 +7,7 @@
+--- a/arch/mips/bcm63xx/Kconfig
++++ b/arch/mips/bcm63xx/Kconfig
+@@ -7,6 +7,7 @@ config BCM63XX_CPU_6338
  	select USB_ARCH_HAS_OHCI
  	select USB_OHCI_BIG_ENDIAN_DESC
  	select USB_OHCI_BIG_ENDIAN_MMIO
@@ -248,7 +232,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/Kconfig
  
  config BCM63XX_CPU_6345
  	bool "support 6345 CPU"
-@@ -19,6 +20,7 @@
+@@ -19,6 +20,7 @@ config BCM63XX_CPU_6348
  	select USB_ARCH_HAS_OHCI
  	select USB_OHCI_BIG_ENDIAN_DESC
  	select USB_OHCI_BIG_ENDIAN_MMIO

@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/drivers/net/bcm63xx_enet.c
-===================================================================
---- linux-2.6.32.9.orig/drivers/net/bcm63xx_enet.c	2010-02-28 18:18:37.000000000 +0100
-+++ linux-2.6.32.9/drivers/net/bcm63xx_enet.c	2010-02-28 18:20:03.000000000 +0100
-@@ -1526,7 +1526,7 @@
+--- a/drivers/net/bcm63xx_enet.c
++++ b/drivers/net/bcm63xx_enet.c
+@@ -1526,7 +1526,7 @@ static int compute_hw_mtu(struct bcm_ene
  	actual_mtu = mtu;
  
  	/* add ethernet header + vlan tag size */

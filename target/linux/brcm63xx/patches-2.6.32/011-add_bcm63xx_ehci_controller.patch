@@ -5,9 +5,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  2 files changed, 159 insertions(+), 0 deletions(-)
  create mode 100644 drivers/usb/host/ehci-bcm63xx.c
 
-diff --git a/drivers/usb/host/ehci-bcm63xx.c b/drivers/usb/host/ehci-bcm63xx.c
-new file mode 100644
-index 0000000..50638f7
 --- /dev/null
 +++ b/drivers/usb/host/ehci-bcm63xx.c
 @@ -0,0 +1,154 @@
@@ -165,11 +162,9 @@ index 0000000..50638f7
 +};
 +
 +MODULE_ALIAS("platform:bcm63xx_ehci");
-diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
-index 1ec3857..8e7c61e 100644
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1158,6 +1158,11 @@ MODULE_LICENSE ("GPL");
+@@ -1141,6 +1141,11 @@ MODULE_LICENSE ("GPL");
  #define	PLATFORM_DRIVER		ehci_atmel_driver
  #endif
  
@@ -181,7 +176,3 @@ index 1ec3857..8e7c61e 100644
  #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
      !defined(PS3_SYSTEM_BUS_DRIVER) && !defined(OF_PLATFORM_DRIVER)
  #error "missing bus glue for ehci-hcd"
--- 
-1.6.3.3
-
-

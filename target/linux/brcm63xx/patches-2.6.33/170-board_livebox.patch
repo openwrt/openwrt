@@ -20,7 +20,7 @@
  EXTRA_CFLAGS += -Werror
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,227 @@
+@@ -0,0 +1,223 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -36,15 +36,14 @@
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/partitions.h>
 +#include <linux/mtd/physmap.h>
++#include <linux/input.h>
++#include <linux/gpio_buttons.h>
 +#include <asm/addrspace.h>
 +#include <bcm63xx_board.h>
 +#include <bcm63xx_cpu.h>
 +#include <bcm63xx_regs.h>
 +#include <bcm63xx_io.h>
-+#include <bcm63xx_board.h>
 +#include <bcm63xx_dev_pci.h>
-+#include <bcm63xx_dev_uart.h>
-+#include <bcm63xx_dev_wdt.h>
 +#include <bcm63xx_dev_enet.h>
 +#include <bcm63xx_dev_pcmcia.h>
 +#include <bcm63xx_dev_usb_ohci.h>
@@ -216,9 +215,6 @@
 +{
 +	u32 val;
 +
-+	bcm63xx_uart_register();
-+	bcm63xx_wdt_register();
-+
 +	if (board.has_pccard)
 +		bcm63xx_pcmcia_register();
 +
@@ -242,7 +238,7 @@
 +	val &= MPI_CSBASE_BASE_MASK;
 +	mtd_resources[0].start = val;
 +	mtd_resources[0].end = 0x1FFFFFFF;
-+	
++
 +	platform_device_register(&mtd_dev);
 +
 +	return 0;

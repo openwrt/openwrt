@@ -6,11 +6,9 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  arch/mips/bcm63xx/gpio.c |    2 ++
  1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/bcm63xx/gpio.c b/arch/mips/bcm63xx/gpio.c
-index 3725345..315bc7f 100644
 --- a/arch/mips/bcm63xx/gpio.c
 +++ b/arch/mips/bcm63xx/gpio.c
-@@ -125,6 +125,8 @@ static struct gpio_chip bcm63xx_gpio_chip = {
+@@ -125,6 +125,8 @@ static struct gpio_chip bcm63xx_gpio_chi
  
  int __init bcm63xx_gpio_init(void)
  {
@@ -19,7 +17,3 @@ index 3725345..315bc7f 100644
  	bcm63xx_gpio_chip.ngpio = bcm63xx_gpio_count();
  	pr_info("registering %d GPIOs\n", bcm63xx_gpio_chip.ngpio);
  
--- 
-1.6.3.3
-
-

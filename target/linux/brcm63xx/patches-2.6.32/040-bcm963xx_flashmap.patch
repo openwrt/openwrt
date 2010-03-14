@@ -11,11 +11,9 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  drivers/mtd/redboot.c     |   13 ++++++++++---
  3 files changed, 18 insertions(+), 3 deletions(-)
 
-Index: linux-2.6.32.9/drivers/mtd/maps/Kconfig
-===================================================================
---- linux-2.6.32.9.orig/drivers/mtd/maps/Kconfig	2010-02-28 18:16:50.000000000 +0100
-+++ linux-2.6.32.9/drivers/mtd/maps/Kconfig	2010-02-28 18:18:20.000000000 +0100
-@@ -259,6 +259,13 @@
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -259,6 +259,13 @@ config MTD_ALCHEMY
  	help
  	  Flash memory access on AMD Alchemy Pb/Db/RDK Reference Boards
  
@@ -29,11 +27,9 @@ Index: linux-2.6.32.9/drivers/mtd/maps/Kconfig
  config MTD_DILNETPC
  	tristate "CFI Flash device mapped on DIL/Net PC"
  	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT && BROKEN
-Index: linux-2.6.32.9/drivers/mtd/redboot.c
-===================================================================
---- linux-2.6.32.9.orig/drivers/mtd/redboot.c	2010-02-28 18:16:50.000000000 +0100
-+++ linux-2.6.32.9/drivers/mtd/redboot.c	2010-02-28 18:18:20.000000000 +0100
-@@ -39,7 +39,7 @@
+--- a/drivers/mtd/redboot.c
++++ b/drivers/mtd/redboot.c
+@@ -39,7 +39,7 @@ static inline int redboot_checksum(struc
  	return 1;
  }
  
@@ -42,7 +38,7 @@ Index: linux-2.6.32.9/drivers/mtd/redboot.c
                               struct mtd_partition **pparts,
                               unsigned long fis_origin)
  {
-@@ -162,6 +162,14 @@
+@@ -162,6 +162,14 @@ static int parse_redboot_partitions(stru
  		goto out;
  	}
  
@@ -57,7 +53,7 @@ Index: linux-2.6.32.9/drivers/mtd/redboot.c
  	for (i = 0; i < numslots; i++) {
  		struct fis_list *new_fl, **prev;
  
-@@ -184,9 +192,8 @@
+@@ -184,9 +192,8 @@ static int parse_redboot_partitions(stru
  		new_fl->img = &buf[i];
                  if (fis_origin) {
                          buf[i].flash_base -= fis_origin;
@@ -68,19 +64,15 @@ Index: linux-2.6.32.9/drivers/mtd/redboot.c
  
  		/* I'm sure the JFFS2 code has done me permanent damage.
  		 * I now think the following is _normal_
-Index: linux-2.6.32.9/drivers/mtd/maps/Makefile
-===================================================================
---- linux-2.6.32.9.orig/drivers/mtd/maps/Makefile	2010-02-28 18:16:50.000000000 +0100
-+++ linux-2.6.32.9/drivers/mtd/maps/Makefile	2010-02-28 18:18:20.000000000 +0100
-@@ -61,3 +61,4 @@
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -61,3 +61,4 @@ obj-$(CONFIG_MTD_BFIN_ASYNC)	+= bfin-asy
  obj-$(CONFIG_MTD_RBTX4939)	+= rbtx4939-flash.o
  obj-$(CONFIG_MTD_VMU)		+= vmu-flash.o
  obj-$(CONFIG_MTD_GPIO_ADDR)	+= gpio-addr-flash.o
 +obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
-Index: linux-2.6.32.9/drivers/mtd/maps/bcm963xx-flash.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.9/drivers/mtd/maps/bcm963xx-flash.c	2010-02-28 18:18:20.000000000 +0100
+--- /dev/null
++++ b/drivers/mtd/maps/bcm963xx-flash.c
 @@ -0,0 +1,399 @@
 +/*
 + * Copyright (C) 2006-2008  Florian Fainelli <florian@openwrt.org>
@@ -481,10 +473,8 @@ Index: linux-2.6.32.9/drivers/mtd/maps/bcm963xx-flash.c
 +MODULE_DESCRIPTION("Broadcom BCM63xx MTD partition parser/mapping for CFE and RedBoot");
 +MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
 +MODULE_AUTHOR("Mike Albon <malbon@openwrt.org>");
-Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm_tag.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm_tag.h	2010-02-28 18:18:20.000000000 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm_tag.h
 @@ -0,0 +1,178 @@
 +#ifndef __BCM63XX_TAG_H
 +#define __BCM63XX_TAG_H
@@ -664,11 +654,9 @@ Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/bcm_tag.h
 +};
 +
 +#endif /* __BCM63XX_TAG_H */
-Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:23:48.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:24:06.000000000 +0100
-@@ -722,20 +722,6 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -722,20 +722,6 @@ static int board_get_mac_address(u8 *mac
  	return 0;
  }
  
@@ -689,7 +677,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  static struct resource mtd_resources[] = {
  	{
  		.start		= 0,	/* filled at runtime */
-@@ -745,12 +731,9 @@
+@@ -745,12 +731,9 @@ static struct resource mtd_resources[] =
  };
  
  static struct platform_device mtd_dev = {
