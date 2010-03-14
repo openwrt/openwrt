@@ -337,7 +337,7 @@ unbridge() {
 	local brdev
 
 	[ -x /usr/sbin/brctl ] || return 0
-	brctl show | grep "$dev" >/dev/null && {
+	brctl show 2>/dev/null | grep "$dev" >/dev/null && {
 		# interface is still part of a bridge, correct that
 
 		for brdev in $(brctl show | awk '$2 ~ /^[0-9].*\./ { print $1 }'); do
