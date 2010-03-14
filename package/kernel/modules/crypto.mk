@@ -97,6 +97,7 @@ $(call KernelPackage/crypto/Depends,+kmod-crypto-des @!TARGET_ubicom32)
   TITLE:=HIFN 795x crypto accelerator
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
+	CONFIG_HW_RANDOM=y \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
 	CONFIG_CRYPTO_DEV_HIFN_795X_RNG=y
   FILES:=$(LINUX_DIR)/drivers/crypto/hifn_795x.$(LINUX_KMOD_SUFFIX)
