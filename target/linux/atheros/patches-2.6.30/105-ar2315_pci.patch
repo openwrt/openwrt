@@ -1,7 +1,7 @@
 --- a/arch/mips/ar231x/Makefile
 +++ b/arch/mips/ar231x/Makefile
-@@ -11,3 +11,4 @@
- obj-y += board.o prom.o devices.o
+@@ -14,3 +14,4 @@ obj-$(CONFIG_EARLY_PRINTK) += early_prin
+ 
  obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
  obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
