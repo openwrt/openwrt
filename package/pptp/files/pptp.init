@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=41
+STOP=30
+
+updown_pptp_interface () {
+	config_get proto "$1" proto
+	if [ "$proto" = "pptp" ]; then
+		if$2 "$1"	
+	fi
+}
+
+boot () {
+	start
+}
+
+start() {
+	config_load network
+	config_foreach updown_pptp_interface interface up
+}
+
+restart() {
+	config_load network
+	config_foreach updown_pptp_interface interface down
+	config_foreach updown_pptp_interface interface up
+}
+
+stop() {
+	config_load network
+	config_foreach updown_pptp_interface interface down
+}
+
