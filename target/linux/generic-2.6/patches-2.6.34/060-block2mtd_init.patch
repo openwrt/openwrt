@@ -108,3 +108,21 @@
  
  static int __init block2mtd_init(void)
  {
+diff --git a/target/linux/generic-2.6/patches-2.6.32/060-block2mtd_init.patch b/target/linux/generic-2.6/patches-2.6.32/060-block2mtd_init.patch
+index 50df4aa..3a47c85 100644
+--- a/target/linux/generic-2.6/patches-2.6.32/060-block2mtd_init.patch
++++ b/target/linux/generic-2.6/patches-2.6.32/060-block2mtd_init.patch
+@@ -108,3 +108,13 @@
+  
+  static int __init block2mtd_init(void)
+  {
+--- a/fs/partitions/check.c
++++ b/fs/partitions/check.c
+@@ -625,6 +625,7 @@ try_scan:
+ 	kfree(state);
+ 	return 0;
+ }
++EXPORT_SYMBOL(rescan_partitions);
+ 
+ unsigned char *read_dev_sector(struct block_device *bdev, sector_t n, Sector *p)
+ {
