@@ -108,3 +108,13 @@
  
  static int __init block2mtd_init(void)
  {
+--- a/fs/partitions/check.c
++++ b/fs/partitions/check.c
+@@ -625,6 +625,7 @@ try_scan:
+ 	kfree(state);
+ 	return 0;
+ }
++EXPORT_SYMBOL(rescan_partitions);
+ 
+ unsigned char *read_dev_sector(struct block_device *bdev, sector_t n, Sector *p)
+ {
