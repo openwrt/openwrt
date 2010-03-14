@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/drivers/net/ar231x.c
-===================================================================
---- linux-2.6.32.7.orig/drivers/net/ar231x.c	2010-02-03 17:00:35.874430230 +0100
-+++ linux-2.6.32.7/drivers/net/ar231x.c	2010-02-03 17:02:28.998430523 +0100
-@@ -735,6 +735,7 @@
+--- a/drivers/net/ar231x.c
++++ b/drivers/net/ar231x.c
+@@ -735,6 +735,7 @@ static void ar231x_load_rx_ring(struct n
  	for (i = 0; i < nr_bufs; i++) {
  		struct sk_buff *skb;
  		ar231x_descr_t *rd;
@@ -10,7 +8,7 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  
  		if (sp->rx_skb[idx])
  			break;
-@@ -750,7 +751,9 @@
+@@ -750,7 +751,9 @@ static void ar231x_load_rx_ring(struct n
  		 * Make sure IP header starts on a fresh cache line.
  		 */
  		skb->dev = dev;
@@ -21,7 +19,7 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  		sp->rx_skb[idx] = skb;
  
  		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
-@@ -824,20 +827,23 @@
+@@ -824,20 +827,23 @@ static int ar231x_rx_int(struct net_devi
  			/* alloc new buffer. */
  			skb_new = netdev_alloc_skb(dev, AR2313_BUFSIZE + RX_OFFSET);
  			if (skb_new != NULL) {
@@ -50,7 +48,7 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  				/* reset descriptor's curr_addr */
  				rxdesc->addr = virt_to_phys(skb_new->data);
  
-@@ -1239,6 +1245,8 @@
+@@ -1239,6 +1245,8 @@ static int ar231x_mdiobus_probe (struct 
  		return PTR_ERR(phydev);
  	}
  
@@ -59,11 +57,9 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
  	/* mask with MAC supported features */
  	phydev->supported &= (SUPPORTED_10baseT_Half
  		| SUPPORTED_10baseT_Full
-Index: linux-2.6.32.7/drivers/net/ar231x.h
-===================================================================
---- linux-2.6.32.7.orig/drivers/net/ar231x.h	2010-02-03 17:00:35.874430230 +0100
-+++ linux-2.6.32.7/drivers/net/ar231x.h	2010-02-03 17:02:28.998430523 +0100
-@@ -221,6 +221,8 @@
+--- a/drivers/net/ar231x.h
++++ b/drivers/net/ar231x.h
+@@ -221,6 +221,8 @@ typedef struct {
   */
  struct ar231x_private {
  	struct net_device *dev;

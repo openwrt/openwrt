@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/drivers/net/Kconfig
-===================================================================
---- linux-2.6.32.7.orig/drivers/net/Kconfig	2010-02-03 16:57:31.714431054 +0100
-+++ linux-2.6.32.7/drivers/net/Kconfig	2010-02-03 17:00:35.870429264 +0100
-@@ -359,6 +359,12 @@
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -359,6 +359,12 @@ config AX88796_93CX6
  	help
  	  Select this if your platform comes with an external 93CX6 eeprom.
  
@@ -15,11 +13,9 @@ Index: linux-2.6.32.7/drivers/net/Kconfig
  config MACE
  	tristate "MACE (Power Mac ethernet) support"
  	depends on PPC_PMAC && PPC32
-Index: linux-2.6.32.7/drivers/net/Makefile
-===================================================================
---- linux-2.6.32.7.orig/drivers/net/Makefile	2010-02-03 16:57:31.714431054 +0100
-+++ linux-2.6.32.7/drivers/net/Makefile	2010-02-03 17:00:35.870429264 +0100
-@@ -216,6 +216,7 @@
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -216,6 +216,7 @@ obj-$(CONFIG_EQUALIZER) += eql.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_MIPS_JAZZ_SONIC) += jazzsonic.o
  obj-$(CONFIG_MIPS_AU1X00_ENET) += au1000_eth.o
@@ -27,10 +23,8 @@ Index: linux-2.6.32.7/drivers/net/Makefile
  obj-$(CONFIG_MIPS_SIM_NET) += mipsnet.o
  obj-$(CONFIG_SGI_IOC3_ETH) += ioc3-eth.o
  obj-$(CONFIG_DECLANCE) += declance.o
-Index: linux-2.6.32.7/drivers/net/ar231x.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/drivers/net/ar231x.c	2010-02-03 17:00:35.874430230 +0100
+--- /dev/null
++++ b/drivers/net/ar231x.c
 @@ -0,0 +1,1263 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
@@ -1295,10 +1289,8 @@ Index: linux-2.6.32.7/drivers/net/ar231x.c
 +	return 0;
 +}
 +
-Index: linux-2.6.32.7/drivers/net/ar231x.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/drivers/net/ar231x.h	2010-02-03 17:00:35.874430230 +0100
+--- /dev/null
++++ b/drivers/net/ar231x.h
 @@ -0,0 +1,302 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.

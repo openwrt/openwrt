@@ -1,8 +1,6 @@
-Index: linux-2.6.32.7/drivers/mtd/devices/Kconfig
-===================================================================
---- linux-2.6.32.7.orig/drivers/mtd/devices/Kconfig	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/drivers/mtd/devices/Kconfig	2010-02-03 17:01:08.858429535 +0100
-@@ -114,6 +114,10 @@
+--- a/drivers/mtd/devices/Kconfig
++++ b/drivers/mtd/devices/Kconfig
+@@ -114,6 +114,10 @@ config MTD_SST25L
  	  Set up your spi devices with the right board-specific platform data,
  	  if you want to specify device partitioning.
  
@@ -13,19 +11,15 @@ Index: linux-2.6.32.7/drivers/mtd/devices/Kconfig
  config MTD_SLRAM
  	tristate "Uncached system RAM"
  	help
-Index: linux-2.6.32.7/drivers/mtd/devices/Makefile
-===================================================================
---- linux-2.6.32.7.orig/drivers/mtd/devices/Makefile	2010-01-29 00:06:20.000000000 +0100
-+++ linux-2.6.32.7/drivers/mtd/devices/Makefile	2010-02-03 17:01:30.282430590 +0100
-@@ -17,3 +17,4 @@
+--- a/drivers/mtd/devices/Makefile
++++ b/drivers/mtd/devices/Makefile
+@@ -17,3 +17,4 @@ obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
  obj-$(CONFIG_MTD_SST25L)	+= sst25l.o
 +obj-$(CONFIG_MTD_AR2315)	+= ar2315.o
-Index: linux-2.6.32.7/drivers/mtd/devices/ar2315.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/drivers/mtd/devices/ar2315.c	2010-02-03 17:01:08.858429535 +0100
+--- /dev/null
++++ b/drivers/mtd/devices/ar2315.c
 @@ -0,0 +1,517 @@
 +
 +/*
@@ -544,10 +538,8 @@ Index: linux-2.6.32.7/drivers/mtd/devices/ar2315.c
 +MODULE_AUTHOR("OpenWrt.org, Atheros Communications Inc");
 +MODULE_DESCRIPTION("MTD driver for SPI Flash on Atheros SOC");
 +
-Index: linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar2315_spiflash.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.7/arch/mips/include/asm/mach-ar231x/ar2315_spiflash.h	2010-02-03 17:01:08.858429535 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ar231x/ar2315_spiflash.h
 @@ -0,0 +1,116 @@
 +/*
 + * SPI Flash Memory support header file.

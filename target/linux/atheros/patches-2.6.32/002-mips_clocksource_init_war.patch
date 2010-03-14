@@ -1,7 +1,5 @@
-Index: linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c
-===================================================================
---- linux-2.6.32.7.orig/arch/mips/kernel/cevt-r4k.c	2010-02-03 16:59:28.310430064 +0100
-+++ linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c	2010-02-03 16:59:54.578430015 +0100
+--- a/arch/mips/kernel/cevt-r4k.c
++++ b/arch/mips/kernel/cevt-r4k.c
 @@ -16,6 +16,22 @@
  #include <asm/cevt-r4k.h>
  
@@ -25,7 +23,7 @@ Index: linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c
   * The SMTC Kernel for the 34K, 1004K, et. al. replaces several
   * of these routines with SMTC-specific variants.
   */
-@@ -31,6 +47,7 @@
+@@ -31,6 +47,7 @@ static int mips_next_event(unsigned long
  	cnt = read_c0_count();
  	cnt += delta;
  	write_c0_compare(cnt);
@@ -33,7 +31,7 @@ Index: linux-2.6.32.7/arch/mips/kernel/cevt-r4k.c
  	res = ((int)(read_c0_count() - cnt) > 0) ? -ETIME : 0;
  	return res;
  }
-@@ -100,22 +117,6 @@
+@@ -100,22 +117,6 @@ static int c0_compare_int_pending(void)
  	return (read_c0_cause() >> cp0_compare_irq) & 0x100;
  }
  
