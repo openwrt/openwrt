@@ -37,15 +37,20 @@ dropbear_start()
 	config_get port "${section}" Port
 	# C) banner file
 	local bannerfile
-	config_get bannerfile ${section} BannerFile
-	[ -f $bannerfile ] || bannerfile=''
+	config_get bannerfile "${section}" BannerFile
+	[ -f "$bannerfile" ] || bannerfile=''
 	# D) gatewayports
 	local gatewayports
 	config_get_bool gatewayports "${section}" GatewayPorts 0
 	[ "${gatewayports}" -eq 1 ] || gatewayports=''
+	# E) root password authentication
+	local norootpasswd
+	local rootpassauth
+	config_get_bool rootpassauth "${section}" RootPasswordAuth 1
+	[ "${rootpassauth}" -eq 0 ] && norootpasswd=1
 	# concatenate parameters
 	local args
-	args="${nopasswd:+-s }${port:+-p ${port} }${bannerfile:+-b $bannerfile }${gatewayports:+-a }-P /var/run/${NAME}.${PIDCOUNT}.pid"
+	args="${nopasswd:+-s }${norootpasswd:+-g }${port:+-p ${port} }${bannerfile:+-b $bannerfile }${gatewayports:+-a }-P /var/run/${NAME}.${PIDCOUNT}.pid"
 
 	# execute program and return its exit code
 	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
