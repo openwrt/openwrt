@@ -267,14 +267,17 @@ struct snd_soc_dai jz_codec_dai = {
 		.channels_min = 2,
 		.channels_max = 2,
 		.rates = SNDRV_PCM_RATE_8000_44100,
-		.formats = SNDRV_PCM_FORMAT_S18_3LE,
+		.formats = SNDRV_PCM_FMTBIT_S18_3LE |
+		           SNDRV_PCM_FMTBIT_S16_LE |
+		           SNDRV_PCM_FMTBIT_S8,
 	},
 	.capture = {
 		.stream_name = "Capture",
 		.channels_min = 2,
 		.channels_max = 2,
 		.rates = SNDRV_PCM_RATE_8000_44100,
-		.formats = SNDRV_PCM_FORMAT_S16_LE,
+		.formats = SNDRV_PCM_FMTBIT_S16_LE |
+		           SNDRV_PCM_FMTBIT_S8,
 	},
 	.ops = &jz_codec_dai_ops,
 	.symmetric_rates = 1,
