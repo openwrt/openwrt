@@ -16,7 +16,9 @@ $(strip \
         $(if $(filter svn://%,$(1)),svn, \
           $(if $(filter cvs://%,$(1)),cvs, \
             $(if $(filter hg://%,$(1)),hg, \
-              unknown \
+              $(if $(filter sftp://%,$(1)),bzr, \
+                unknown \
+              ) \
             ) \
           ) \
         ) \
@@ -53,11 +55,11 @@ define DownloadMethod/cvs
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		cvs -d $(URL) co $(VERSION) $(SUBDIR) && \
-		find $(SUBDIR) -name CVS | xargs rm -rf && \
+		cvs -d $(URL) export $(VERSION) $(SUBDIR) && \
 		echo "Packing checkout..." && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		rm -rf $(SUBDIR); \
 	)
 endef
 
@@ -68,11 +70,11 @@ define DownloadMethod/svn
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		svn co --non-interactive -r$(VERSION) $(URL) $(SUBDIR) && \
-		find $(SUBDIR) -name .svn | xargs rm -rf && \
+		svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) && \
 		echo "Packing checkout..." && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		rm -rf $(SUBDIR); \
 	)
 endef
 
@@ -88,7 +90,8 @@ define DownloadMethod/git
 		echo "Packing checkout..." && \
 		rm -rf $(SUBDIR)/.git && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		rm -rf $(SUBDIR); \
 	)
 endef
 
@@ -99,11 +102,11 @@ define DownloadMethod/bzr
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		bzr co --lightweight -r$(VERSION) $(URL) $(SUBDIR) && \
-		find $(SUBDIR) -name .bzr | xargs rm -rf && \
+		bzr export -r$(VERSION) $(URL) $(SUBDIR) && \
 		echo "Packing checkout..." && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ &&
+		rm -rf $(SUBDIR); \
 	)
 endef
 
@@ -118,7 +121,8 @@ define DownloadMethod/hg
 		find $(SUBDIR) -name .hg | xargs rm -rf && \
 		echo "Packing checkout..." && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/; \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		rm -rf $(SUBDIR); \
 	)
 endef
 
