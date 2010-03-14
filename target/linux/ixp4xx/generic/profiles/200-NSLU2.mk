@@ -7,7 +7,7 @@
 
 define Profile/NSLU2
   NAME:=Linksys NSLU2
-  PACKAGES:=-hostapd-mini kmod-scsi-core \
+  PACKAGES:=-wpad-mini kmod-scsi-core \
 	kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-storage \
 	kmod-fs-ext2 kmod-fs-ext3
 endef
