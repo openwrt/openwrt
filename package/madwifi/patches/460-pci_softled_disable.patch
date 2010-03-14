@@ -1,0 +1,18 @@
+--- a/ath/if_ath_pci.c
++++ b/ath/if_ath_pci.c
+@@ -264,6 +264,7 @@ ath_pci_probe(struct pci_dev *pdev, cons
+ 		}
+ 	}
+ 
++#if 0
+ 	/*
+ 	 * Auto-enable soft led processing for IBM cards and for
+ 	 * 5211 minipci cards.  Users can also manually enable/disable
+@@ -279,6 +280,7 @@ ath_pci_probe(struct pci_dev *pdev, cons
+ 		sc->aps_sc.sc_softled = 1;
+ 		sc->aps_sc.sc_ledpin = 1;
+ 	}
++#endif
+ 
+ 	if ((i = ath_attach(vdevice, dev, NULL)) != 0) {
+ 		printk(KERN_ERR "%s: ath_attach failed: %d\n", dev_info, i);
