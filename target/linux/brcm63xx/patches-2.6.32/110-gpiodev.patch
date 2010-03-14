@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:42:13.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:43:29.000000000 +0100
-@@ -785,6 +785,10 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -785,6 +785,10 @@ static struct ssb_sprom bcm63xx_sprom = 
  };
  #endif
  
@@ -13,7 +11,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  static struct gpio_led_platform_data bcm63xx_led_data;
  
  static struct platform_device bcm63xx_gpio_leds = {
-@@ -853,6 +857,8 @@
+@@ -853,6 +857,8 @@ int __init board_register_devices(void)
  
  	platform_device_register(&mtd_dev);
  

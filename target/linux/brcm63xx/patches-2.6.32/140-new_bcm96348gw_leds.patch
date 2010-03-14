@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:50:37.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-02-28 18:54:31.000000000 +0100
-@@ -336,24 +336,39 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -336,24 +336,39 @@ static struct board_info __initdata boar
  			.active_low	= 1,
  		},
  		{
@@ -50,7 +48,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  			.active_low	= 1,
  		},
  	},
-@@ -855,6 +870,7 @@
+@@ -855,6 +870,7 @@ static struct platform_device bcm63xx_gp
  int __init board_register_devices(void)
  {
  	u32 val;
@@ -58,7 +56,7 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  
  	if (board.has_pccard)
  		bcm63xx_pcmcia_register();
-@@ -901,7 +917,11 @@
+@@ -901,7 +917,11 @@ int __init board_register_devices(void)
  
  	platform_device_register_simple("GPIODEV", 0, &gpiodev_resource, 1);
  
@@ -71,11 +69,9 @@ Index: linux-2.6.32.9/arch/mips/bcm63xx/boards/board_bcm963xx.c
  	bcm63xx_led_data.leds = board.leds;
  
  	platform_device_register(&bcm63xx_gpio_leds);
-Index: linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-02-28 18:54:39.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-02-28 18:54:49.000000000 +0100
-@@ -54,7 +54,7 @@
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -54,7 +54,7 @@ struct board_info {
  	struct bcm63xx_dsp_platform_data dsp;
  
  	/* GPIO LEDs */

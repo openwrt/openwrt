@@ -6,9 +6,6 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  3 files changed, 172 insertions(+), 1 deletions(-)
  create mode 100644 drivers/usb/host/ohci-bcm63xx.c
 
-diff --git a/drivers/usb/host/ohci-bcm63xx.c b/drivers/usb/host/ohci-bcm63xx.c
-new file mode 100644
-index 0000000..c9bccec
 --- /dev/null
 +++ b/drivers/usb/host/ohci-bcm63xx.c
 @@ -0,0 +1,166 @@
@@ -178,8 +175,6 @@ index 0000000..c9bccec
 +};
 +
 +MODULE_ALIAS("platform:bcm63xx_ohci");
-diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
-index 24eb747..1c82a60 100644
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
 @@ -1051,6 +1051,11 @@ MODULE_LICENSE ("GPL");
@@ -194,11 +189,9 @@ index 24eb747..1c82a60 100644
  #if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
      defined(CONFIG_CPU_SUBTYPE_SH7721) || \
      defined(CONFIG_CPU_SUBTYPE_SH7763) || \
-diff --git a/drivers/usb/host/ohci.h b/drivers/usb/host/ohci.h
-index 5bf15fe..3c54d3e 100644
 --- a/drivers/usb/host/ohci.h
 +++ b/drivers/usb/host/ohci.h
-@@ -655,7 +655,7 @@ static inline u32 hc32_to_cpup (const struct ohci_hcd *ohci, const __hc32 *x)
+@@ -655,7 +655,7 @@ static inline u32 hc32_to_cpup (const st
   * some big-endian SOC implementations.  Same thing happens with PSW access.
   */
  
@@ -207,7 +200,3 @@ index 5bf15fe..3c54d3e 100644
  #define big_endian_frame_no_quirk(ohci)	(ohci->flags & OHCI_QUIRK_FRAME_NO)
  #else
  #define big_endian_frame_no_quirk(ohci)	0
--- 
-1.6.3.3
-
-
