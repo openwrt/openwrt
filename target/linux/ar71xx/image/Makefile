@@ -143,9 +143,13 @@ define Image/Build/Cameo
 			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
+			dd if=$(KDIR)/root.$(1) \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=2880k conv=sync; \
 			echo -n $(4); \
-		) > $(call imgname,$(1),$(2)).uni; \
+		) > $(call imgname,$(1),$(2))-factory.bin; \
 	fi; fi
 endef
 
@@ -163,9 +167,13 @@ define Image/Build/Cameo7240
 			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
+			dd if=$(KDIR)/root.$(1) \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=2752k conv=sync; \
 			echo -n $(4); \
-		) > $(call imgname,$(1),$(2))-universal.bin; \
+		) > $(call imgname,$(1),$(2))-factory.bin; \
 	fi; fi
 endef
 
