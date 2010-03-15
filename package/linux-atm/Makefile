@@ -46,7 +46,10 @@ define Build/Prepare
 endef
 
 define Build/Configure
-	$(call Build/Configure/Default)
+	(cd $(PKG_BUILD_DIR); \
+		./configure \
+	)
+	#$(call Build/Configure/Default)
 	# prevent autoheader invocation
 	touch $(PKG_BUILD_DIR)/stamp-h.in
 endef
@@ -60,22 +63,22 @@ endef
 ifneq ($(CONFIG_PACKAGE_linux-atm),)
   define Build/InstallDev
 	mkdir -p $(1)/usr/include
-	$(CP)	$(PKG_INSTALL_DIR)/usr/include/atm{,d,sap}.h \
+	$(CP)	$(PKG_BUILD_DIR)/src/include/atm{,d,sap}.h \
 		$(1)/usr/include/
 	mkdir -p $(1)/usr/lib
-	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} \
+	$(CP)	$(PKG_BUILD_DIR)/src/lib/.libs/libatm.{a,so*} \
 		$(1)/usr/lib/
   endef
 endif
 
 define Package/linux-atm/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.so.* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/src/lib/.libs/libatm.so.* $(1)/usr/lib/
 endef
 
 define Package/atm-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin/
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/atmarp{,d} $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/arpd/atmarp{,d} $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/ipoa.sh $(1)/lib/network/
 	$(INSTALL_DIR) $(1)/usr/bin/
