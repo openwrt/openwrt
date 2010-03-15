@@ -15,11 +15,6 @@ boot() {
 }
 
 start() {
-	ifup -a
-	/sbin/wifi up
-}
-
-restart() {
 	setup_switch() { return 0; }
 	
 	include /lib/network
@@ -30,4 +25,8 @@ restart() {
 
 stop() {
 	ifdown -a
+}
+
+restart() {
+	start
 }
