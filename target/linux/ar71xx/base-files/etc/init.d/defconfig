@@ -3,11 +3,11 @@
 # Copyright (C) 2009 OpenWrt.org
 #
 
-. /lib/ar71xx.sh
-
 START=05
 
 start() {
+	. /lib/ar71xx.sh
+
 	local board=$(ar71xx_board_name)
 
 	[ ! -d /etc/defconfig/$board ] && board="generic"
