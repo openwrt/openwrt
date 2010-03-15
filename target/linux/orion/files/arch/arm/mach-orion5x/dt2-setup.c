@@ -294,7 +294,6 @@ static irqreturn_t dt2_power_handler(int irq, void *dev_id)
 
 static void __init dt2_init(void)
 {
-	DECLARE_MAC_BUF(mac_buf);
 	/*
 	 * Setup basic Orion functions. Need to be called early.
 	 */
@@ -318,10 +317,10 @@ static void __init dt2_init(void)
 
 	printk(KERN_INFO "Serial: %s\n", dt2_eeprom.fc.dt2_serial_number);
 	printk(KERN_INFO "Revision: %016x\n", dt2_eeprom.fc.dt2_revision);
-	printk(KERN_INFO "DT2: Using MAC address %s for port 0\n",
-	       print_mac(mac_buf, dt2_eeprom.gw.mac_addr[0]));
-	printk(KERN_INFO "DT2: Using MAC address %s for port 1\n",
-	       print_mac(mac_buf, dt2_eeprom.gw.mac_addr[1]));
+	printk(KERN_INFO "DT2: Using MAC address %pM for port 0\n",
+	       dt2_eeprom.gw.mac_addr[0]);
+	printk(KERN_INFO "DT2: Using MAC address %pM for port 1\n",
+	       dt2_eeprom.gw.mac_addr[1]);
 
 	orion5x_eth_init(&dt2_eth_data);
 	memcpy(dt2_eth_data.mac_addr, dt2_eeprom.gw.mac_addr[0], 6);
