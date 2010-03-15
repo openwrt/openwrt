@@ -37,10 +37,6 @@ mtd_rootfs="$(find_mtd_part 'rootfs')"
 	exit 1
 }
 
-# first get an address for br-lan using udhcpc
-killall udhcpc
-/sbin/udhcpc -i br-lan
-
 mkdir "$wget2nand_dir"
 wget $url_kernel -O "$src_kernel" || {
 	echo "Unable to download $url_kernel"
