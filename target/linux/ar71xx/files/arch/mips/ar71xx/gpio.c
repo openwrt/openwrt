@@ -38,7 +38,7 @@ EXPORT_SYMBOL(__ar71xx_gpio_set_value);
 
 int __ar71xx_gpio_get_value(unsigned gpio)
 {
-	return !!(__raw_readl(ar71xx_gpio_base + GPIO_REG_IN) & (1 << gpio));
+	return (__raw_readl(ar71xx_gpio_base + GPIO_REG_IN) >> gpio) & 1;
 }
 EXPORT_SYMBOL(__ar71xx_gpio_get_value);
 
