@@ -16,7 +16,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-lc
  
 +config LCD_GPM940B0
 +	tristate "Giantplus GPM940B0 LCD and backlight driver"
-+	depends on LCD_CLASS_DEVICE && BACKLIGHT_CLASS_DEVICE && SPI
++	depends on LCD_CLASS_DEVICE && SPI
 +	default n
 +	help
 +      LCD and backlight driver for the Giantplus GPM940B0 LCD module.
