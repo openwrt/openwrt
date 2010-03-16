@@ -851,17 +851,17 @@
  
  /* Don't change this without changing skb_csum_unnecessary! */
  #define CHECKSUM_NONE 0
-@@ -330,6 +333,9 @@ struct sk_buff {
+@@ -327,6 +330,9 @@
  	 * first. This is owned by whoever has the skb queued ATM.
  	 */
- 	char			cb[48];
+ 	char			cb[48] __aligned(8);
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+	void			*cb_next;
++	void                    *cb_next;
 +#endif
  
- 	unsigned int		len,
- 				data_len;
-@@ -362,6 +368,9 @@ struct sk_buff {
+ 	unsigned long		_skb_dst;
+ #ifdef CONFIG_XFRM
+@@ -363,6 +369,9 @@
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -871,7 +871,7 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -383,6 +392,10 @@ struct sk_buff {
+@@ -384,6 +393,10 @@
  
  	/* 0/14 bit hole */
  
@@ -882,7 +882,7 @@
  #ifdef CONFIG_NET_DMA
  	dma_cookie_t		dma_cookie;
  #endif
-@@ -431,6 +444,12 @@ static inline struct rtable *skb_rtable(
+@@ -432,6 +445,12 @@
  	return (struct rtable *)skb_dst(skb);
  }
  
@@ -895,7 +895,7 @@
  extern void kfree_skb(struct sk_buff *skb);
  extern void consume_skb(struct sk_buff *skb);
  extern void	       __kfree_skb(struct sk_buff *skb);
-@@ -1975,6 +1994,10 @@ static inline void __nf_copy(struct sk_b
+@@ -1976,6 +1995,10 @@
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
