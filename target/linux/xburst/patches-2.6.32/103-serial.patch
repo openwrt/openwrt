@@ -9,7 +9,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
 
 --- a/drivers/serial/8250.c
 +++ b/drivers/serial/8250.c
-@@ -196,7 +196,7 @@ static const struct serial8250_config ua
+@@ -199,7 +199,7 @@ static const struct serial8250_config ua
  	[PORT_16550A] = {
  		.name		= "16550A",
  		.fifo_size	= 16,
@@ -18,7 +18,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
  		.flags		= UART_CAP_FIFO,
  	},
-@@ -403,6 +403,10 @@ static unsigned int mem_serial_in(struct
+@@ -406,6 +406,10 @@ static unsigned int mem_serial_in(struct
  static void mem_serial_out(struct uart_port *p, int offset, int value)
  {
  	offset = map_8250_out_reg(p, offset) << p->regshift;
@@ -29,7 +29,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  	writeb(value, p->membase + offset);
  }
  
-@@ -2213,6 +2217,83 @@ static void serial8250_shutdown(struct u
+@@ -2214,6 +2218,83 @@ static void serial8250_shutdown(struct u
  		serial_unlink_irq_chain(up);
  }
  
@@ -113,7 +113,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  static unsigned int serial8250_get_divisor(struct uart_port *port, unsigned int baud)
  {
  	unsigned int quot;
-@@ -2232,6 +2313,7 @@ static unsigned int serial8250_get_divis
+@@ -2233,6 +2314,7 @@ static unsigned int serial8250_get_divis
  
  	return quot;
  }
@@ -121,7 +121,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  
  static void
  serial8250_set_termios(struct uart_port *port, struct ktermios *termios,
-@@ -2241,6 +2323,9 @@ serial8250_set_termios(struct uart_port 
+@@ -2242,6 +2324,9 @@ serial8250_set_termios(struct uart_port 
  	unsigned char cval, fcr = 0;
  	unsigned long flags;
  	unsigned int baud, quot;
@@ -131,7 +131,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  
  	switch (termios->c_cflag & CSIZE) {
  	case CS5:
-@@ -2275,7 +2360,12 @@ serial8250_set_termios(struct uart_port 
+@@ -2276,7 +2361,12 @@ serial8250_set_termios(struct uart_port 
  	baud = uart_get_baud_rate(port, termios, old,
  				  port->uartclk / 16 / 0xffff,
  				  port->uartclk / 16);
@@ -144,7 +144,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  
  	/*
  	 * Oxford Semi 952 rev B workaround
-@@ -2353,6 +2443,10 @@ serial8250_set_termios(struct uart_port 
+@@ -2354,6 +2444,10 @@ serial8250_set_termios(struct uart_port 
  	if (up->capabilities & UART_CAP_UUE)
  		up->ier |= UART_IER_UUE | UART_IER_RTOIE;
  
@@ -155,7 +155,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/103-se
  	serial_out(up, UART_IER, up->ier);
  
  	if (up->capabilities & UART_CAP_EFR) {
-@@ -2387,7 +2481,15 @@ serial8250_set_termios(struct uart_port 
+@@ -2388,7 +2482,15 @@ serial8250_set_termios(struct uart_port 
  		serial_outp(up, UART_LCR, cval | UART_LCR_DLAB);/* set DLAB */
  	}
  

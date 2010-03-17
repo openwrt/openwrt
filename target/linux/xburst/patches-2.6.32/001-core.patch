@@ -30,9 +30,17 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  config LASAT
  	bool "LASAT Networks platforms"
  	select CEVT_R4K
+@@ -677,6 +680,7 @@ source "arch/mips/alchemy/Kconfig"
+ source "arch/mips/basler/excite/Kconfig"
+ source "arch/mips/bcm63xx/Kconfig"
+ source "arch/mips/jazz/Kconfig"
++source "arch/mips/jz4740/Kconfig"
+ source "arch/mips/lasat/Kconfig"
+ source "arch/mips/pmc-sierra/Kconfig"
+ source "arch/mips/sgi-ip27/Kconfig"
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -184,6 +184,14 @@ cflags-$(CONFIG_AR7)		+= -I$(srctree)/ar
+@@ -186,6 +186,14 @@ cflags-$(CONFIG_AR7)		+= -I$(srctree)/ar
  load-$(CONFIG_AR7)		+= 0xffffffff94100000
  
  #
@@ -47,7 +55,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
  #
  core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
-@@ -705,6 +713,12 @@ makeboot =$(Q)$(MAKE) $(build)=arch/mips
+@@ -704,6 +712,12 @@ makeboot =$(Q)$(MAKE) $(build)=arch/mips
  
  all:	$(all-y)
  
@@ -60,7 +68,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  vmlinux.bin: $(vmlinux-32)
  	+@$(call makeboot,$@)
  
-@@ -734,6 +748,7 @@ install:
+@@ -733,6 +747,7 @@ install:
  
  archclean:
  	@$(MAKE) $(clean)=arch/mips/boot
@@ -68,7 +76,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  	@$(MAKE) $(clean)=arch/mips/lasat
  
  define archhelp
-@@ -741,6 +756,9 @@ define archhelp
+@@ -740,6 +755,9 @@ define archhelp
  	echo '  vmlinux.ecoff        - ECOFF boot image'
  	echo '  vmlinux.bin          - Raw binary boot image'
  	echo '  vmlinux.srec         - SREC boot image'
@@ -533,7 +541,7 @@ Subject: [PATCH] /opt/Projects/openwrt/target/linux/xburst/patches-2.6.31/001-co
  const char *__cpu_name[NR_CPUS];
  
  __cpuinit void cpu_probe(void)
-@@ -939,6 +957,9 @@ __cpuinit void cpu_probe(void)
+@@ -939,6 +955,9 @@ __cpuinit void cpu_probe(void)
  	case PRID_COMP_CAVIUM:
  		cpu_probe_cavium(c, cpu);
  		break;

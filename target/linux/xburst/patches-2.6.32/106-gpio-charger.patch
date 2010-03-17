@@ -1,13 +1,13 @@
---- a/drivers/power/Makefile	2010-02-03 13:16:32.000000000 +0100
-+++ b/drivers/power/Makefile	2010-02-01 14:55:46.000000000 +0100
-@@ -30,3 +30,4 @@
+--- a/drivers/power/Makefile
++++ b/drivers/power/Makefile
+@@ -30,3 +30,4 @@ obj-$(CONFIG_BATTERY_DA9030)	+= da9030_b
  obj-$(CONFIG_BATTERY_MAX17040)	+= max17040_battery.o
  obj-$(CONFIG_CHARGER_PCF50633)	+= pcf50633-charger.o
  obj-$(CONFIG_BATTERY_JZ4740)	+= jz4740-battery.o
 +obj-$(CONFIG_CHARGER_GPIO)	+= gpio-charger.o
---- a/drivers/power/Kconfig	2010-02-03 13:16:32.000000000 +0100
-+++ b/drivers/power/Kconfig	2010-02-01 14:58:24.000000000 +0100
-@@ -121,4 +121,11 @@
+--- a/drivers/power/Kconfig
++++ b/drivers/power/Kconfig
+@@ -121,4 +121,11 @@ config BATTERY_JZ4740
  	  This driver can be build as a module. If so, the module will be
  	  called jz4740-battery.
  
