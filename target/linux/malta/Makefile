@@ -16,6 +16,8 @@ LINUX_VERSION:=2.6.32.8
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim
+
 define Target/Description
 	Build firmware images for MTI Malta CoreLV boards.
 endef
