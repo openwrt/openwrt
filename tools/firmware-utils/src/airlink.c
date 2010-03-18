@@ -110,7 +110,7 @@ int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 	uchar *bk, *bs;
 	int fkd, ffd, fsd;
 	fkd = open(kname, O_RDONLY);
-	ffd = creat(fname, 0x644);
+	ffd = creat(fname, 0644);
 	if ((fkd < 0) || (ffd < 0))
 		return -1;
 	if (fsname) {
