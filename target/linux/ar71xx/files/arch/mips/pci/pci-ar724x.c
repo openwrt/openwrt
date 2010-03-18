@@ -34,6 +34,36 @@ static int ar724x_pci_fixup_enable;
 
 static DEFINE_SPINLOCK(ar724x_pci_lock);
 
+static inline void ar724x_pci_wr(unsigned reg, u32 val)
+{
+	void __iomem *base;
+
+	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
+	__raw_writel(val, base + reg);
+	(void) __raw_readl(base + reg);
+	iounmap(base);
+}
+
+static inline void ar724x_pci_wr_nf(unsigned reg, u32 val)
+{
+	void __iomem *base;
+
+	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
+	__raw_writel(val, base + reg);
+	iounmap(base);
+}
+
+static inline u32 ar724x_pci_rr(unsigned reg)
+{
+	void __iomem *base;
+	u32 ret;
+
+	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
+	ret = __raw_readl(base + reg);
+	iounmap(base);
+	return ret;
+}
+
 static void ar724x_pci_read(void __iomem *base, int where, int size, u32 *value)
 {
 	unsigned long flags;
