@@ -1,12 +1,13 @@
 Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
 ===================================================================
 --- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_mei.c	2009-10-31 23:30:20.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c	2009-11-01 04:41:58.000000000 +0100
-@@ -41,18 +41,19 @@
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c	2010-01-24 14:21:32.000000000 +0100
+@@ -41,18 +41,20 @@
  #include <linux/init.h>
  #include <linux/ioport.h>
  #include <linux/delay.h>
 +#include <linux/device.h>
++#include <linux/sched.h>
  #include <asm/uaccess.h>
  #include <asm/hardirq.h>
 -#include <asm/ifx/ifx_regs.h>
@@ -29,7 +30,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
  #define IFXMIPS_RCU_RST_REQ_ARC_JTAG      IFX_RCU_RST_REQ_ARC_JTAG
  #define IFXMIPS_RCU_RST_REQ_DFE		  IFX_RCU_RST_REQ_DFE
  #define IFXMIPS_RCU_RST_REQ_AFE		  IFX_RCU_RST_REQ_AFE
-@@ -76,7 +77,7 @@
+@@ -76,7 +78,7 @@
  #define ifxmips_r32(reg)                        __raw_readl(reg)
  #define ifxmips_w32(val, reg)                   __raw_writel(val, reg)
  #define ifxmips_w32_mask(clear, set, reg)       ifxmips_w32((ifxmips_r32(reg) & ~clear) | set, reg)
@@ -38,7 +39,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
  #define IFX_MEI_EMSG(fmt, args...) printk(KERN_ERR  "[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
  #define IFX_MEI_DMSG(fmt, args...) printk(KERN_INFO "[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
  
-@@ -173,7 +174,8 @@
+@@ -173,7 +175,8 @@
  extern void ifxmips_mask_and_ack_irq(unsigned int irq_nr);
  #define MEI_MASK_AND_ACK_IRQ ifxmips_mask_and_ack_irq
  
@@ -48,7 +49,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
  
  static struct file_operations bsp_mei_operations = {
        owner:THIS_MODULE,
-@@ -2294,10 +2296,10 @@
+@@ -2294,10 +2297,10 @@
  		IFX_MEI_EMSG ("request_irq %d failed!\n", pDev->nIrq[IFX_DFEIR]);
  		return -1;
  	}
@@ -61,7 +62,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
  //	IFX_MEI_DMSG("Device %d initialized. IER %#x\n", num, bsp_get_irq_ier(pDev->nIrq[IFX_DYING_GASP]));
  	return 0;
  }
-@@ -2922,6 +2924,7 @@
+@@ -2922,6 +2925,7 @@
  IFX_MEI_ModuleInit (void)
  {
  	int i = 0;
@@ -69,7 +70,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
  
  	printk ("IFX MEI Version %ld.%02ld.%02ld", bsp_mei_version.major, bsp_mei_version.minor, bsp_mei_version.revision);
  
-@@ -2935,14 +2938,15 @@
+@@ -2935,14 +2939,15 @@
  		IFX_MEI_InitProcFS (i);
  #endif
  	}
@@ -87,7 +88,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_mei.c
  	return 0;
  }
  
-@@ -2996,3 +3000,5 @@
+@@ -2996,3 +3001,5 @@
  
  module_init (IFX_MEI_ModuleInit);
  module_exit (IFX_MEI_ModuleExit);
