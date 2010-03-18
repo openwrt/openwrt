@@ -15,6 +15,7 @@ start_daemon() {
 	config_get vci "$cfg" vci
 	config_get encaps "$cfg" encaps
 	config_get payload "$cfg" payload
+	config_get qos "$cfg" qos
 	case "$encaps" in
 		1|vc) encaps=1;;
 		*) encaps=0;;
@@ -23,7 +24,8 @@ start_daemon() {
                 0|routed) payload=0;;
                 *) payload=1;;
         esac
-	br2684ctl -b -c "$unit" -e "$encaps" -p "$payload" -a "${atmdev:+$atmdev.}${vpi:-8}.${vci:-35}"	
+	[ "$qos" ] && qos="-q $qos"
+	br2684ctl -b -c "$unit" -e "$encaps" -p "$payload" $qos -a "${atmdev:+$atmdev.}${vpi:-8}.${vci:-35}"	
 }
 
 start() {
