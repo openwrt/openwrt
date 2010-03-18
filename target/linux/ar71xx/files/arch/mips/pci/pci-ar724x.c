@@ -30,38 +30,25 @@
 
 static void __iomem *ar724x_pci_localcfg_base;
 static void __iomem *ar724x_pci_devcfg_base;
+static void __iomem *ar724x_pci_ctrl_base;
 static int ar724x_pci_fixup_enable;
 
 static DEFINE_SPINLOCK(ar724x_pci_lock);
 
 static inline void ar724x_pci_wr(unsigned reg, u32 val)
 {
-	void __iomem *base;
-
-	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
-	__raw_writel(val, base + reg);
-	(void) __raw_readl(base + reg);
-	iounmap(base);
+	__raw_writel(val, ar724x_pci_ctrl_base + reg);
+	(void) __raw_readl(ar724x_pci_ctrl_base + reg);
 }
 
 static inline void ar724x_pci_wr_nf(unsigned reg, u32 val)
 {
-	void __iomem *base;
-
-	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
-	__raw_writel(val, base + reg);
-	iounmap(base);
+	__raw_writel(val, ar724x_pci_ctrl_base + reg);
 }
 
 static inline u32 ar724x_pci_rr(unsigned reg)
 {
-	void __iomem *base;
-	u32 ret;
-
-	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
-	ret = __raw_readl(base + reg);
-	iounmap(base);
-	return ret;
+	return __raw_readl(ar724x_pci_ctrl_base + reg);
 }
 
 static void ar724x_pci_read(void __iomem *base, int where, int size, u32 *value)
@@ -368,10 +355,15 @@ int __init ar724x_pcibios_init(void)
 	if (ar724x_pci_devcfg_base == NULL)
 		goto err_unmap_localcfg;
 
+	ar724x_pci_ctrl_base = ioremap_nocache(AR724X_PCI_CTRL_BASE,
+					       AR724X_PCI_CTRL_SIZE);
+	if (ar724x_pci_ctrl_base == NULL)
+		goto err_unmap_devcfg;
+
 	ar724x_pci_reset();
 	ret = ar724x_pci_setup();
 	if (ret)
-		goto err_unmap_devcfg;
+		goto err_unmap_ctrl;
 
 	ar724x_pci_fixup_enable = 1;
 	ar724x_pci_irq_init();
@@ -379,7 +371,9 @@ int __init ar724x_pcibios_init(void)
 
 	return 0;
 
- err_unmap_devcfg:
+ err_unmap_ctrl:
+	iounmap(ar724x_pci_ctrl_base);
+  err_unmap_devcfg:
 	iounmap(ar724x_pci_devcfg_base);
  err_unmap_localcfg:
 	iounmap(ar724x_pci_localcfg_base);
