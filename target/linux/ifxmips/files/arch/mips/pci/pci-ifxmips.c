@@ -54,6 +54,10 @@ static struct pci_controller ifxmips_pci_controller =
 u32 ifxmips_pci_mapped_cfg;
 int ifxmips_pci_external_clock = 0;
 
+/* Since the PCI REQ pins can be reused for other functionality, make it possible
+   to exclude those from interpretation by the PCI controller */
+int ifxmips_pci_req_mask = 0xf;
+
 static int __init
 ifxmips_pci_set_external_clk(char *str)
 {
@@ -126,7 +130,7 @@ ifxmips_pci_startup(void)
 
 	/* enable external 2 PCI masters */
 	temp_buffer = ifxmips_r32(PCI_CR_PC_ARB);
-	temp_buffer &= (~(0xf << 16));
+	temp_buffer &= (~(ifxmips_pci_req_mask << 16));
 	/* enable internal arbiter */
 	temp_buffer |= (1 << INTERNAL_ARB_ENABLE_BIT);
 	/* enable internal PCI master reqest */
