@@ -337,9 +337,10 @@ struct ifxmips_board *ifxmips_find_board(void)
 
 int __init ifxmips_init_devices(void)
 {
-	struct ifxmips_board *board = ifxmips_find_board();
+	struct ifxmips_board *board;
 
 	chiprev = (ifxmips_r32(IFXMIPS_MPS_CHIPID) & 0x0FFFFFFF);
+	board = ifxmips_find_board();
 	ifxmips_brn = ifxmips_find_brn_block();
 
 	if (!cmdline_mac)
