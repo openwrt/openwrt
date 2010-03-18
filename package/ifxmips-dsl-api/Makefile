@@ -81,8 +81,6 @@ CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	--with-channels-per-line="$(IFX_DSL_CHANNELS_PER_LINE)" \
 	--enable-danube \
 	--enable-add-drv-cflags="-DMODULE" \
-	--enable-debug=yes \
-	--enable-debug-prints=yes \
 	--disable-dsl-delt-static \
 	--disable-adsl-led \
 	--enable-dsl-ceoc \
@@ -102,6 +100,13 @@ CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	ARCH=$(LINUX_KARCH)
 
 EXTRA_CFLAGS = -fno-pic -mno-abicalls -mlong-calls -G 0
+
+ifeq ($(CONFIG_IFXMIPS_DSL_DEBUG),y)
+CONFIGURE_ARGS += \
+	--enable-debug=yes \
+	--enable-debug-prints=yes
+EXTRA_CFLAGS += -DDEBUG
+endif
 
 define Build/Prepare
 	$(PKG_UNPACK)
