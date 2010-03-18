@@ -384,6 +384,8 @@ int __init ar71xx_pcibios_init(void)
 
 	ar71xx_pcicfg_base = ioremap_nocache(AR71XX_PCI_CFG_BASE,
 						AR71XX_PCI_CFG_SIZE);
+	if (ar71xx_pcicfg_base == NULL)
+		return -ENOMEM;
 
 	__raw_writel(PCI_WIN0_OFFS, ddr_base + AR71XX_DDR_REG_PCI_WIN0);
 	__raw_writel(PCI_WIN1_OFFS, ddr_base + AR71XX_DDR_REG_PCI_WIN1);
