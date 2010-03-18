@@ -33,13 +33,20 @@ if( opendir SD, "$Bin/../staging_dir" )
 			}
 		}
 
-		# Query arch
-		do {
-			print("Target? > ");
-			chomp($tid = <STDIN>);
-		} while( !defined($tid) || $tid !~ /^\d+$/ || $tid < 1 || $tid > @arches );
+		if( @arches > 1 )
+		{
+			# Query arch
+			do {
+				print("Target? > ");
+				chomp($tid = <STDIN>);
+			} while( !defined($tid) || $tid !~ /^\d+$/ || $tid < 1 || $tid > @arches );
 
-		($arch, $libc) = @{$arches[$tid-1]};
+			($arch, $libc) = @{$arches[$tid-1]};
+		}
+		else
+		{
+			($arch, $libc) = @{$arches[0]};
+		}
 	}
 
 	closedir SD;
@@ -47,18 +54,14 @@ if( opendir SD, "$Bin/../staging_dir" )
 	# Find gdb
 	my ($gdb) = glob("$Bin/../build_dir/toolchain-${arch}_*_${libc}/gdb-*/gdb/gdb");
 
-	if( -x $gdb )
+	if( defined($gdb) && -x $gdb )
 	{
 		my ( $fh, $fp ) = tempfile();
 
-		# Find library paths
-		my $libdirs = join ':', (
-			glob("$Bin/../staging_dir/target-${arch}_${libc}/root-*/{,usr/}lib/"),
-			glob("$Bin/../staging_dir/target-${arch}_${libc}/{,usr/}lib/"),
-			glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}/lib/")
-		);
+		# Find sysroot
+		my ($sysroot) = glob("$Bin/../staging_dir/target-${arch}_${libc}/root-*/");
 
-		print $fh "set solib-search-path $libdirs\n";
+		print $fh "set sysroot $sysroot\n" if $sysroot;
 		print $fh "target remote $ARGV[0]\n";
 
 		system($gdb, '-x', $fp, $ARGV[1]);
