@@ -35,22 +35,6 @@ static int ar724x_pci_fixup_enable;
 
 static DEFINE_SPINLOCK(ar724x_pci_lock);
 
-static inline void ar724x_pci_wr(unsigned reg, u32 val)
-{
-	__raw_writel(val, ar724x_pci_ctrl_base + reg);
-	(void) __raw_readl(ar724x_pci_ctrl_base + reg);
-}
-
-static inline void ar724x_pci_wr_nf(unsigned reg, u32 val)
-{
-	__raw_writel(val, ar724x_pci_ctrl_base + reg);
-}
-
-static inline u32 ar724x_pci_rr(unsigned reg)
-{
-	return __raw_readl(ar724x_pci_ctrl_base + reg);
-}
-
 static void ar724x_pci_read(void __iomem *base, int where, int size, u32 *value)
 {
 	unsigned long flags;
@@ -233,6 +217,7 @@ static void __init ar724x_pci_reset(void)
 
 static int __init ar724x_pci_setup(void)
 {
+	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 t;
 
 	/* setup COMMAND register */
@@ -243,19 +228,21 @@ static int __init ar724x_pci_setup(void)
 	ar724x_pci_write(ar724x_pci_localcfg_base, 0x20, 4, 0x1ff01000);
 	ar724x_pci_write(ar724x_pci_localcfg_base, 0x24, 4, 0x1ff01000);
 
-	t = ar724x_pci_rr(AR724X_PCI_REG_RESET);
+	t = __raw_readl(base + AR724X_PCI_REG_RESET);
 	if (t != 0x7) {
 		udelay(100000);
-		ar724x_pci_wr_nf(AR724X_PCI_REG_RESET, 0);
+		__raw_writel(0, base + AR724X_PCI_REG_RESET);
 		udelay(100);
-		ar724x_pci_wr_nf(AR724X_PCI_REG_RESET, 4);
+		__raw_writel(4, base + AR724X_PCI_REG_RESET);
 		udelay(100000);
 	}
 
-	ar724x_pci_wr(AR724X_PCI_REG_APP, AR724X_PCI_APP_LTSSM_ENABLE);
+	__raw_writel(AR724X_PCI_APP_LTSSM_ENABLE, base + AR724X_PCI_REG_APP);
+	/* flush write */
+	(void) __raw_readl(base + AR724X_PCI_REG_APP);
 	udelay(1000);
 
-	t = ar724x_pci_rr(AR724X_PCI_REG_APP);
+	t = __raw_readl(base + AR724X_PCI_REG_APP);
 	if ((t & AR724X_PCI_APP_LTSSM_ENABLE) == 0x0) {
 		printk(KERN_WARNING "PCI: no PCIe module found\n");
 		return -ENODEV;
@@ -266,10 +253,11 @@ static int __init ar724x_pci_setup(void)
 
 static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
 {
+	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 pending;
 
-	pending = ar724x_pci_rr(AR724X_PCI_REG_INT_STATUS) &
-		  ar724x_pci_rr(AR724X_PCI_REG_INT_MASK);
+	pending = __raw_readl(base + AR724X_PCI_REG_INT_STATUS) &
+		  __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 
 	if (pending & AR724X_PCI_INT_DEV0)
 		generic_handle_irq(AR71XX_PCI_IRQ_DEV0);
@@ -280,33 +268,43 @@ static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
 
 static void ar724x_pci_irq_unmask(unsigned int irq)
 {
+	void __iomem *base = ar724x_pci_ctrl_base;
+	u32 t;
+
 	switch (irq) {
 	case AR71XX_PCI_IRQ_DEV0:
 		irq -= AR71XX_PCI_IRQ_BASE;
-		ar724x_pci_wr(AR724X_PCI_REG_INT_MASK,
-			      ar724x_pci_rr(AR724X_PCI_REG_INT_MASK) |
-					    AR724X_PCI_INT_DEV0);
+
+		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
+		__raw_writel(t | AR724X_PCI_INT_DEV0,
+			     base + AR724X_PCI_REG_INT_MASK);
 		/* flush write */
-		ar724x_pci_rr(AR724X_PCI_REG_INT_MASK);
+		(void) __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 	}
 }
 
 static void ar724x_pci_irq_mask(unsigned int irq)
 {
+	void __iomem *base = ar724x_pci_ctrl_base;
+	u32 t;
+
 	switch (irq) {
 	case AR71XX_PCI_IRQ_DEV0:
 		irq -= AR71XX_PCI_IRQ_BASE;
-		ar724x_pci_wr(AR724X_PCI_REG_INT_MASK,
-			      ar724x_pci_rr(AR724X_PCI_REG_INT_MASK) &
-					    ~AR724X_PCI_INT_DEV0);
-		/* flush write */
-		ar724x_pci_rr(AR724X_PCI_REG_INT_MASK);
 
-		ar724x_pci_wr(AR724X_PCI_REG_INT_STATUS,
-			      ar724x_pci_rr(AR724X_PCI_REG_INT_STATUS) |
-					    AR724X_PCI_INT_DEV0);
+		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
+		__raw_writel(t & ~AR724X_PCI_INT_DEV0,
+			     base + AR724X_PCI_REG_INT_MASK);
+
 		/* flush write */
-		ar724x_pci_rr(AR724X_PCI_REG_INT_STATUS);
+		(void) __raw_readl(base + AR724X_PCI_REG_INT_MASK);
+
+		t = __raw_readl(base + AR724X_PCI_REG_INT_STATUS);
+		__raw_writel(t | AR724X_PCI_INT_DEV0,
+			     base + AR724X_PCI_REG_INT_STATUS);
+
+		/* flush write */
+		(void) __raw_readl(base + AR724X_PCI_REG_INT_STATUS);
 	}
 }
 
@@ -319,6 +317,7 @@ static struct irq_chip ar724x_pci_irq_chip = {
 
 static void __init ar724x_pci_irq_init(void)
 {
+	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 t;
 	int i;
 
@@ -328,8 +327,8 @@ static void __init ar724x_pci_irq_init(void)
 		return;
 	}
 
-	ar724x_pci_wr(AR724X_PCI_REG_INT_MASK, 0);
-	ar724x_pci_wr(AR724X_PCI_REG_INT_STATUS, 0);
+	__raw_writel(0, base + AR724X_PCI_REG_INT_MASK);
+	__raw_writel(0, base + AR724X_PCI_REG_INT_STATUS);
 
 	for (i = AR71XX_PCI_IRQ_BASE;
 	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++) {
