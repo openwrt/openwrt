@@ -263,7 +263,7 @@ dhcp_add() {
 
 	leasetime="${leasetime:-12h}"
 	start="$(dhcp_calc "${start:-100}")"
-	limit="$((${limit:-150} + 1))"
+	limit="$(${limit:-150})"
 	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
 	if [ "$dynamicdhcp" = "0" ]; then END="static"; fi
 	append args "--dhcp-range=$networkid,$START,$END,$NETMASK,$leasetime${options:+ $options}"
