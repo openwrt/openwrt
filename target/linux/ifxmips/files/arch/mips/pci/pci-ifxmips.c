@@ -89,6 +89,17 @@ pcibios_plat_dev_init(struct pci_dev *dev)
 	return 0;
 }
 
+static u32 calc_bar11mask(void)
+{
+	u32 mem, bar11mask;
+
+	/* BAR11MASK value depends on available memory on system. */
+	mem = num_physpages * PAGE_SIZE;
+	bar11mask = (0x0ffffff0 & ~((1 << (fls(mem) -1)) -1)) | 8;
+
+	return bar11mask;
+}
+
 static void __init
 ifxmips_pci_startup(void)
 {
@@ -138,7 +149,7 @@ ifxmips_pci_startup(void)
 	ifxmips_w32(0x19800000, PCI_CR_FCI_ADDR_MAP6);
 	ifxmips_w32(0x19c00000, PCI_CR_FCI_ADDR_MAP7);
 	ifxmips_w32(0x1ae00000, PCI_CR_FCI_ADDR_MAP11hg);
-	ifxmips_w32(0x0e000008, PCI_CR_BAR11MASK);
+	ifxmips_w32(calc_bar11mask(), PCI_CR_BAR11MASK);
 	ifxmips_w32(0, PCI_CR_PCI_ADDR_MAP11);
 	ifxmips_w32(0, PCI_CS_BASE_ADDR1);
 #ifdef CONFIG_SWAP_IO_SPACE
