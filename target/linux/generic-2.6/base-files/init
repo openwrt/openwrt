@@ -5,6 +5,9 @@ INITRAMFS=1
 
 . /etc/preinit
 
+set_state init
+echo "- init -"
+
 # if we have no root parameter, just go to running from ramfs
 [ -z $rootfs ] && {
   export NOMOUNT="No Root"
@@ -76,3 +79,5 @@ mount -o move /sys /mnt/sys
 mount none /tmp -t tmpfs
 killall -q hotplug2
 exec switch_root -c /dev/console /mnt /sbin/init
+
+set_state done
