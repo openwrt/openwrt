@@ -1,7 +1,7 @@
-Index: linux-2.6.30.8/drivers/serial/Kconfig
+Index: linux-2.6.30.10/drivers/serial/Kconfig
 ===================================================================
---- linux-2.6.30.8.orig/drivers/serial/Kconfig	2009-09-24 17:28:02.000000000 +0200
-+++ linux-2.6.30.8/drivers/serial/Kconfig	2009-10-19 21:31:32.000000000 +0200
+--- linux-2.6.30.10.orig/drivers/serial/Kconfig	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/drivers/serial/Kconfig	2010-03-18 12:24:20.000000000 +0100
 @@ -1365,6 +1365,14 @@
  	help
  	  Support for Console on the NWP serial ports.
@@ -17,20 +17,20 @@ Index: linux-2.6.30.8/drivers/serial/Kconfig
  config SERIAL_QE
  	tristate "Freescale QUICC Engine serial port support"
  	depends on QUICC_ENGINE
-Index: linux-2.6.30.8/drivers/serial/Makefile
+Index: linux-2.6.30.10/drivers/serial/Makefile
 ===================================================================
---- linux-2.6.30.8.orig/drivers/serial/Makefile	2009-09-24 17:28:02.000000000 +0200
-+++ linux-2.6.30.8/drivers/serial/Makefile	2009-10-19 21:31:32.000000000 +0200
+--- linux-2.6.30.10.orig/drivers/serial/Makefile	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/drivers/serial/Makefile	2010-03-18 12:24:20.000000000 +0100
 @@ -77,3 +77,4 @@
  obj-$(CONFIG_SERIAL_KS8695) += serial_ks8695.o
  obj-$(CONFIG_KGDB_SERIAL_CONSOLE) += kgdboc.o
  obj-$(CONFIG_SERIAL_QE) += ucc_uart.o
 +obj-$(CONFIG_SERIAL_IFXMIPS) += ifxmips_asc.o
-Index: linux-2.6.30.8/drivers/serial/ifxmips_asc.c
+Index: linux-2.6.30.10/drivers/serial/ifxmips_asc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30.8/drivers/serial/ifxmips_asc.c	2009-10-19 21:41:27.000000000 +0200
-@@ -0,0 +1,561 @@
++++ linux-2.6.30.10/drivers/serial/ifxmips_asc.c	2010-03-18 14:04:58.000000000 +0100
+@@ -0,0 +1,555 @@
 +/*
 + *  Based on drivers/char/serial.c, by Linus Torvalds, Theodore Ts'o.
 + *
@@ -258,7 +258,6 @@ Index: linux-2.6.30.8/drivers/serial/ifxmips_asc.c
 +
 +static int ifxmipsasc_startup(struct uart_port *port)
 +{
-+	unsigned long flags;
 +	int retval;
 +
 +	port->uartclk = ifxmips_get_fpi_hz();
@@ -270,8 +269,6 @@ Index: linux-2.6.30.8/drivers/serial/ifxmips_asc.c
 +	ifxmips_w32(((RXFIFO_FL << ASCRXFCON_RXFITLOFF) & ASCRXFCON_RXFITLMASK) | ASCRXFCON_RXFEN | ASCRXFCON_RXFFLU, port->membase + IFXMIPS_ASC_RXFCON);
 +	wmb();
 +	ifxmips_w32(ifxmips_r32(port->membase + IFXMIPS_ASC_CON) | ASCCON_M_8ASYNC | ASCCON_FEN | ASCCON_TOEN | ASCCON_ROEN, port->membase + IFXMIPS_ASC_CON);
-+
-+	local_irq_save(flags);
 +
 +	retval = request_irq(port->irq, ifxmipsasc_tx_int, IRQF_DISABLED, "asc_tx", port);
 +	if (retval) {
@@ -292,15 +289,12 @@ Index: linux-2.6.30.8/drivers/serial/ifxmips_asc.c
 +	}
 +
 +	ifxmips_w32(ASC_IRNREN_RX_BUF | ASC_IRNREN_TX_BUF | ASC_IRNREN_ERR | ASC_IRNREN_TX, port->membase + IFXMIPS_ASC_IRNREN);
-+
-+	local_irq_restore(flags);
 +	return 0;
 +
 +err2:
 +	free_irq(port->irq + 2, port);
 +err1:
 +	free_irq(port->irq, port);
-+	local_irq_restore(flags);
 +	return retval;
 +}
 +
