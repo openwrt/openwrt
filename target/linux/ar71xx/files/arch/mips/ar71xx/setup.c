@@ -13,7 +13,6 @@
 
 #include <linux/kernel.h>
 #include <linux/init.h>
-#include <linux/serial_8250.h>
 #include <linux/bootmem.h>
 
 #include <asm/bootinfo.h>
@@ -22,7 +21,6 @@
 #include <asm/mips_machine.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/pci.h>
 
 #include "machtype.h"
 #include "devices.h"
