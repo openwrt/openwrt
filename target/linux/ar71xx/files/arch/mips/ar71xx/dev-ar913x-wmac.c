@@ -31,8 +31,8 @@ static struct resource ar913x_wmac_resources[] = {
 		.end	= AR91XX_WMAC_BASE + AR91XX_WMAC_SIZE - 1,
 		.flags	= IORESOURCE_MEM,
 	}, {
-		.start	= AR71XX_CPU_IRQ_WMAC,
-		.end	= AR71XX_CPU_IRQ_WMAC,
+		.start	= AR71XX_CPU_IRQ_IP2,
+		.end	= AR71XX_CPU_IRQ_IP2,
 		.flags	= IORESOURCE_IRQ,
 	},
 };

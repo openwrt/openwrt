@@ -95,7 +95,7 @@ static void __init ar71xx_pci_irq_init(void)
 					 handle_level_irq);
 	}
 
-	setup_irq(AR71XX_CPU_IRQ_PCI, &ar71xx_pci_irqaction);
+	setup_irq(AR71XX_CPU_IRQ_IP2, &ar71xx_pci_irqaction);
 }
 
 static void ar724x_pci_irq_dispatch(void)
@@ -179,7 +179,7 @@ static void __init ar724x_pci_irq_init(void)
 					 handle_level_irq);
 	}
 
-	setup_irq(AR71XX_CPU_IRQ_PCI, &ar724x_pci_irqaction);
+	setup_irq(AR71XX_CPU_IRQ_IP2, &ar724x_pci_irqaction);
 }
 #else
 static inline void ar71xx_pci_irq_init(void) {};
@@ -368,7 +368,7 @@ static void __init ar71xx_misc_irq_init(void)
 
 static void ar913x_wmac_irq_dispatch(void)
 {
-	do_IRQ(AR71XX_CPU_IRQ_WMAC);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
 }
 
 asmlinkage void plat_irq_dispatch(void)
