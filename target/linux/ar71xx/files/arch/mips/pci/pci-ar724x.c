@@ -356,22 +356,33 @@ static void __init ar724x_pci_irq_init(void)
 
 int __init ar724x_pcibios_init(void)
 {
-	int ret;
+	int ret = -ENOMEM;
 
 	ar724x_pci_localcfg_base = ioremap_nocache(AR724X_PCI_CRP_BASE,
 						   AR724X_PCI_CRP_SIZE);
+	if (ar724x_pci_localcfg_base == NULL)
+		goto err;
 
 	ar724x_pci_devcfg_base = ioremap_nocache(AR724X_PCI_CFG_BASE,
 						 AR724X_PCI_CFG_SIZE);
+	if (ar724x_pci_devcfg_base == NULL)
+		goto err_unmap_localcfg;
 
 	ar724x_pci_reset();
 	ret = ar724x_pci_setup();
 	if (ret)
-		return ret;
+		goto err_unmap_devcfg;
 
 	ar724x_pci_fixup_enable = 1;
 	ar724x_pci_irq_init();
 	register_pci_controller(&ar724x_pci_controller);
 
 	return 0;
+
+ err_unmap_devcfg:
+	iounmap(ar724x_pci_devcfg_base);
+ err_unmap_localcfg:
+	iounmap(ar724x_pci_localcfg_base);
+ err:
+	return ret;
 }
