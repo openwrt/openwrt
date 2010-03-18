@@ -26,62 +26,20 @@ define Image/Prepare/squashfs
 endef
 
 define Image/Build/ar525w
-	touch $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
-	touch $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
-	dd if=$(KDIR)/root.$(1) of=$(KDIR)/root.tmp $(call trxalign/$(1)) conv=sync
-	mv $(KDIR)/root.tmp $(KDIR)/root.$(1)
-	$(STAGING_DIR_HOST)/bin/airlink -b 1 -j $(shell bash -c 'echo $$[$(3)]') $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
-	$(STAGING_DIR_HOST)/bin/airlink -e -b 1 -j $(shell bash -c 'echo $$[$(3)]') $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
-endef
-
-define Image/Postprocess/sitecom/squashfs
-	dd if=/dev/zero of=$(KDIR)/tmp2.img count=1 bs=32k #32k config data a start of flash
-	cat $(KDIR)/tmp.img >> $(KDIR)/tmp2.img
-	$(call prepare_generic_squashfs,$(KDIR)/tmp2.img)
-	dd if=$(KDIR)/tmp2.img of=$(KDIR)/tmp.img bs=32k skip=1
+	cp $(KDIR)/bzImage $(KDIR)/bzImage.tmp
+	$(SCRIPT_DIR)/pad_image $(1) $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) 32
+	$(STAGING_DIR_HOST)/bin/airlink -b 1 $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
+	$(STAGING_DIR_HOST)/bin/airlink -e -b 1 $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2)-web.img
 endef
 
 define Image/Build/sitecom
-	$(TOPDIR)/target/linux/rdc/image/mkimg_sitecom.pl $(KDIR)/bzImage > $(KDIR)/tmp.img
+	cp $(KDIR)/bzImage $(KDIR)/bzImage.tmp
+	#32k config data + 20 bytes header + 2 bytes checksum after kernel image
+	$(SCRIPT_DIR)/pad_image $(1) $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) 32790
+	$(TOPDIR)/target/linux/rdc/image/mkimg_sitecom.pl $(KDIR)/bzImage.tmp > $(KDIR)/tmp.img
 	cat $(KDIR)/root.$(1) >> $(KDIR)/tmp.img
-	$(call Image/Postprocess/sitecom/$(1))
 	cp $(KDIR)/tmp.img $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
-endef
-
-define Image/Build/dir450
-	touch $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).img
-	dd if=$(KDIR)/root.$(1) of=$(KDIR)/root.tmp $(call trxalign/$(1)) conv=sync
-	mv $(KDIR)/root.tmp $(KDIR)/root.$(1)
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/onlyrootfs-$(BOARD)-$(1)-$(2).img
-endef
-
-define Image/Build/g570s
-	$(call Image/Prepare/$(1))
-	mv $(KDIR)/root.$(1) $(KDIR)/root.tmp
-	dd of=$(KDIR)/root.$(1) if=$(KDIR)/root.tmp $(call trxalign/$(1)) conv=sync
-	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-tftp-$(BOARD)-$(1)-$(2).img
-	dd of=$(BIN_DIR)/openwrt-tftp-$(BOARD)-$(1)-$(2).img if=/dev/null bs=1024 seek=1024
-	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-tftp-$(BOARD)-$(1)-$(2).img
-	if [ ! -x $(STAGING_DIR_HOST)/bin/zyxel_combine ]; then echo "#ERR Please copy the ZyXEL \"combine\" tool as $(STAGING_DIR_HOST)/bin/zyxel_combine to build."; fi
-	sh -c "mkdir $(KDIR)/zyxel.tmp && cd $(KDIR)/zyxel.tmp && mv ../root.tmp initrd.bin && cp ../bzImage kernel.bin && $(STAGING_DIR_HOST)/bin/zyxel_combine -mcf kernel.bin initrd.bin && mv image $(BIN_DIR)/openwrt-$(BOARD)-$(1)-$(2).rmt" || :
-	$(RM) -r $(KDIR)/zyxel.tmp
-endef
-
-define Image/Prepare/amit/squashfs
-	echo -n "0123456789abcdef" > $(KDIR)/root.tmp
-	cat $(KDIR)/root.squashfs >> $(KDIR)/root.tmp
-	dd if=$(KDIR)/root.tmp of=$(KDIR)/root2.tmp bs=64k conv=sync
-	dd if=$(KDIR)/root2.tmp of=$(KDIR)/root.squashfs bs=1 skip=16
-	$(RM) $(KDIR)/root.tmp $(KDIR)/root2.tmp
-	$(call add_jffs2_mark,$(KDIR)/root.squashfs)
-endef
-
-define Image/Build/amit
-	$(call Image/Prepare/amit/$(1))
-	if [ ! -x $(STAGING_DIR_HOST)/bin/amit_makebin ]; then echo "#ERR Please copy the AMIT \"makebin\" tool from http://mgb111.pradnik.net/ as $(STAGING_DIR_HOST)/bin/amit_makebin to build."; fi
-	sh -c "mkdir -p $(KDIR)/amit.tmp/linux_src/arch/i386/boot $(KDIR)/amit.tmp/rom_disk && cd $(KDIR)/amit.tmp && ln -s ../../root.$(1) rom_disk/fs.img && ln -s ../../../../../bzImage linux_src/arch/i386/boot && $(STAGING_DIR_HOST)/bin/amit_makebin && mv upgrade.img $(BIN_DIR)/openwrt-$(BOARD)-$(1)-anas350.bin" || :
-	$(RM) -r $(KDIR)/amit.tmp
-	$(STAGING_DIR_HOST)/bin/makeamitbin -o $(BIN_DIR)/openwrt-$(BOARD)-$(1)-ar360w3g.bin -1 ALK_ATG001 -2 Atropos linux3g $(KDIR)/bzImage ramdisk3g $(KDIR)/root.$(1)
+	rm $(KDIR)/tmp.img $(KDIR)/bzImage.tmp
 endef
 
 define Image/Build/bifferboard
