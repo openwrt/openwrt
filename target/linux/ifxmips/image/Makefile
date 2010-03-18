@@ -27,6 +27,11 @@ define Image/Build/jffs2-64k
 	cat $(KDIR)/uImage.$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).image
 endef
 
+define Image/Build/jffs2-128k
+	dd if=$(KDIR)/uImage of=$(KDIR)/uImage.$(1) bs=128k conv=sync
+	cat $(KDIR)/uImage.$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).image
+endef
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
