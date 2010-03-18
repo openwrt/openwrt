@@ -23,10 +23,11 @@
 
 static void ar71xx_gpio_irq_dispatch(void)
 {
+	void __iomem *base = ar71xx_gpio_base;
 	u32 pending;
 
-	pending = ar71xx_gpio_rr(GPIO_REG_INT_PENDING)
-		& ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
+	pending = __raw_readl(base + GPIO_REG_INT_PENDING) &
+		  __raw_readl(base + GPIO_REG_INT_ENABLE);
 
 	if (pending)
 		do_IRQ(AR71XX_GPIO_IRQ_BASE + fls(pending) - 1);
@@ -36,22 +37,30 @@ static void ar71xx_gpio_irq_dispatch(void)
 
 static void ar71xx_gpio_irq_unmask(unsigned int irq)
 {
+	void __iomem *base = ar71xx_gpio_base;
+	u32 t;
+
 	irq -= AR71XX_GPIO_IRQ_BASE;
-	ar71xx_gpio_wr(GPIO_REG_INT_ENABLE,
-			ar71xx_gpio_rr(GPIO_REG_INT_ENABLE) | (1 << irq));
+
+	t = __raw_readl(base + GPIO_REG_INT_ENABLE);
+	__raw_writel(t | (1 << irq), base + GPIO_REG_INT_ENABLE);
 
 	/* flush write */
-	ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
+	(void) __raw_readl(base + GPIO_REG_INT_ENABLE);
 }
 
 static void ar71xx_gpio_irq_mask(unsigned int irq)
 {
+	void __iomem *base = ar71xx_gpio_base;
+	u32 t;
+
 	irq -= AR71XX_GPIO_IRQ_BASE;
-	ar71xx_gpio_wr(GPIO_REG_INT_ENABLE,
-			ar71xx_gpio_rr(GPIO_REG_INT_ENABLE) & ~(1 << irq));
+
+	t = __raw_readl(base + GPIO_REG_INT_ENABLE);
+	__raw_writel(t & ~(1 << irq), base + GPIO_REG_INT_ENABLE);
 
 	/* flush write */
-	ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
+	(void) __raw_readl(base + GPIO_REG_INT_ENABLE);
 }
 
 #if 0
@@ -82,16 +91,17 @@ static struct irqaction ar71xx_gpio_irqaction = {
 
 static void __init ar71xx_gpio_irq_init(void)
 {
+	void __iomem *base = ar71xx_gpio_base;
 	int i;
 
-	ar71xx_gpio_wr(GPIO_REG_INT_ENABLE, 0);
-	ar71xx_gpio_wr(GPIO_REG_INT_PENDING, 0);
+	__raw_writel(0, base + GPIO_REG_INT_ENABLE);
+	__raw_writel(0, base + GPIO_REG_INT_PENDING);
 
 	/* setup type of all GPIO interrupts to level sensitive */
-	ar71xx_gpio_wr(GPIO_REG_INT_TYPE, GPIO_INT_ALL);
+	__raw_writel(GPIO_INT_ALL, base + GPIO_REG_INT_TYPE);
 
 	/* setup polarity of all GPIO interrupts to active high */
-	ar71xx_gpio_wr(GPIO_REG_INT_POLARITY, GPIO_INT_ALL);
+	__raw_writel(GPIO_INT_ALL, base + GPIO_REG_INT_POLARITY);
 
 	for (i = AR71XX_GPIO_IRQ_BASE;
 	     i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++) {
@@ -140,32 +150,44 @@ static void ar71xx_misc_irq_dispatch(void)
 
 static void ar71xx_misc_irq_unmask(unsigned int irq)
 {
+	void __iomem *base = ar71xx_reset_base;
+	u32 t;
+
 	irq -= AR71XX_MISC_IRQ_BASE;
-	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE,
-		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE) | (1 << irq));
+
+	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	__raw_writel(t | (1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 
 	/* flush write */
-	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
+	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
 static void ar71xx_misc_irq_mask(unsigned int irq)
 {
+	void __iomem *base = ar71xx_reset_base;
+	u32 t;
+
 	irq -= AR71XX_MISC_IRQ_BASE;
-	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE,
-		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE) & ~(1 << irq));
+
+	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 
 	/* flush write */
-	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
+	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
 static void ar724x_misc_irq_ack(unsigned int irq)
 {
+	void __iomem *base = ar71xx_reset_base;
+	u32 t;
+
 	irq -= AR71XX_MISC_IRQ_BASE;
-	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_STATUS,
-		ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS) & ~(1 << irq));
+
+	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
+	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_STATUS);
 
 	/* flush write */
-	ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS);
+	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
 }
 
 static struct irq_chip ar71xx_misc_irq_chip = {
@@ -181,10 +203,11 @@ static struct irqaction ar71xx_misc_irqaction = {
 
 static void __init ar71xx_misc_irq_init(void)
 {
+	void __iomem *base = ar71xx_reset_base;
 	int i;
 
-	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_ENABLE, 0);
-	ar71xx_reset_wr(AR71XX_RESET_REG_MISC_INT_STATUS, 0);
+	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_STATUS);
 
 	if (ar71xx_soc == AR71XX_SOC_AR7240)
 		ar71xx_misc_irq_chip.ack = ar724x_misc_irq_ack;
