@@ -1,0 +1,287 @@
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_mei.c	2010-03-14 02:59:49.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei//ifxmips_mei.c	2010-03-14 03:02:13.000000000 +0100
+@@ -78,8 +78,8 @@
+ #define ifxmips_w32(val, reg)                   __raw_writel(val, reg)
+ #define ifxmips_w32_mask(clear, set, reg)       ifxmips_w32((ifxmips_r32(reg) & ~clear) | set, reg)
+ */
+-#define IFX_MEI_EMSG(fmt, args...) printk(KERN_ERR  "[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
+-#define IFX_MEI_DMSG(fmt, args...) printk(KERN_INFO "[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
++#define IFX_MEI_EMSG(fmt, args...) pr_err("[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
++#define IFX_MEI_DMSG(fmt, args...) pr_debug("[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
+ 
+ #ifdef CONFIG_IFXMIPS_MEI_FW_LOOPBACK
+ //#define DFE_MEM_TEST
+@@ -1300,7 +1300,7 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *
+ 			IFX_MEI_EMSG (">>> malloc fail for codeswap buff!!! <<<\n");
+ 			return DSL_DEV_MEI_ERR_FAILURE;
+ 		}
+-                printk("allocate %dKB swap buff memory at: 0x%p\n", ksize(mei_arc_swap_buff)/1024, mei_arc_swap_buff);
++                IFX_MEI_DMSG("allocate %dKB swap buff memory at: 0x%p\n", ksize(mei_arc_swap_buff)/1024, mei_arc_swap_buff);
+ 	}
+ 
+ 	DSL_DEV_PRIVATE(pDev)->img_hdr =
+@@ -1475,7 +1475,7 @@ IFX_MEI_DFEMemoryFree (DSL_DEV_Device_t 
+         }
+ 
+ 	if(mei_arc_swap_buff != NULL){
+-                printk("free %dKB swap buff memory at: 0x%p\n", ksize(mei_arc_swap_buff)/1024, mei_arc_swap_buff);
++                IFX_MEI_DMSG("free %dKB swap buff memory at: 0x%p\n", ksize(mei_arc_swap_buff)/1024, mei_arc_swap_buff);
+ 		kfree(mei_arc_swap_buff);
+ 		mei_arc_swap_buff=NULL;
+ 	}
+@@ -1495,7 +1495,7 @@ IFX_MEI_DFEMemoryAlloc (DSL_DEV_Device_t
+ //		DSL_DEV_PRIVATE(pDev)->adsl_mem_info;
+ 	int allocate_size = SDRAM_SEGMENT_SIZE;
+ 
+-	printk(KERN_INFO "[%s %d]: image_size = %ld\n", __func__, __LINE__, size);
++	IFX_MEI_DMSG("image_size = %ld\n", size);
+ 	// Alloc Swap Pages
+ 	for (idx = 0; size > 0 && idx < MAX_BAR_REGISTERS; idx++) {
+ 		// skip bar15 for XDATA usage.
+@@ -1595,7 +1595,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * p
+ 	ssize_t retval = -ENOMEM;
+ 	int idx = 0;
+ 
+-        printk("\n%s\n", __func__);
++        IFX_MEI_DMSG("\n");
+ 
+ 	if (*loff == 0) {
+ 		if (size < sizeof (img_hdr_tmp)) {
+@@ -1647,7 +1647,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * p
+ 			goto error;
+ 		}
+ 		adsl_mem_info[XDATA_REGISTER].type = FREE_RELOAD;
+-		printk(KERN_INFO "[%s %d] -> IFX_MEI_BarUpdate()\n", __func__, __LINE__);
++		IFX_MEI_DMSG("-> IFX_MEI_BarUpdate()\n");
+ 		IFX_MEI_BarUpdate (pDev, (DSL_DEV_PRIVATE(pDev)->nBar));
+ 	}
+ 	else if (DSL_DEV_PRIVATE(pDev)-> image_size == 0) {
+@@ -1926,7 +1926,7 @@ static void
+ WriteMbox (u32 * mboxarray, u32 size)
+ {
+ 	IFX_MEI_DebugWrite (&dsl_devices[0], IMBOX_BASE, mboxarray, size);
+-	printk ("write to %X\n", IMBOX_BASE);
++	IFX_MEI_DMSG("write to %X\n", IMBOX_BASE);
+ 	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_ME2ARC_INT, MEI_TO_ARC_MSGAV);
+ }
+ 
+@@ -1935,7 +1935,7 @@ static void
+ ReadMbox (u32 * mboxarray, u32 size)
+ {
+ 	IFX_MEI_DebugRead (&dsl_devices[0], OMBOX_BASE, mboxarray, size);
+-	printk ("read from %X\n", OMBOX_BASE);
++	IFX_MEI_DMSG("read from %X\n", OMBOX_BASE);
+ }
+ 
+ static void
+@@ -1965,7 +1965,7 @@ arc_code_page_download (uint32_t arc_cod
+ {
+ 	int count;
+ 
+-	printk ("try to download pages,size=%d\n", arc_code_length);
++	IFX_MEI_DMSG("try to download pages,size=%d\n", arc_code_length);
+ 	IFX_MEI_ControlModeSet (&dsl_devices[0], MEI_MASTER_MODE);
+ 	IFX_MEI_HaltArc (&dsl_devices[0]);
+ 	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_DX_AD, 0);
+@@ -2004,21 +2004,21 @@ dfe_loopback_irq_handler (DSL_DEV_Device
+ 	memset (&rd_mbox[0], 0, 10 * 4);
+ 	ReadMbox (&rd_mbox[0], 6);
+ 	if (rd_mbox[0] == 0x0) {
+-		printk ("Get ARC_ACK\n");
++		FX_MEI_DMSG("Get ARC_ACK\n");
+ 		got_int = 1;
+ 	}
+ 	else if (rd_mbox[0] == 0x5) {
+-		printk ("Get ARC_BUSY\n");
++		IFX_MEI_DMSG("Get ARC_BUSY\n");
+ 		got_int = 2;
+ 	}
+ 	else if (rd_mbox[0] == 0x3) {
+-		printk ("Get ARC_EDONE\n");
++		IFX_MEI_DMSG("Get ARC_EDONE\n");
+ 		if (rd_mbox[1] == 0x0) {
+ 			got_int = 3;
+-			printk ("Get E_MEMTEST\n");
++			IFX_MEI_DMSG("Get E_MEMTEST\n");
+ 			if (rd_mbox[2] != 0x1) {
+ 				got_int = 4;
+-				printk ("Get Result %X\n", rd_mbox[2]);
++				IFX_MEI_DMSG("Get Result %X\n", rd_mbox[2]);
+ 			}
+ 		}
+ 	}
+@@ -2036,21 +2036,21 @@ wait_mem_test_result (void)
+ 	uint32_t mbox[5];
+ 	mbox[0] = 0;
+ 
+-	printk ("Waiting Starting\n");
++	IFX_MEI_DMSG("Waiting Starting\n");
+ 	while (mbox[0] == 0) {
+ 		ReadMbox (&mbox[0], 5);
+ 	}
+-	printk ("Try to get mem test result.\n");
++	IFX_MEI_DMSG("Try to get mem test result.\n");
+ 	ReadMbox (&mbox[0], 5);
+ 	if (mbox[0] == 0xA) {
+-		printk ("Success.\n");
++		IFX_MEI_DMSG("Success.\n");
+ 	}
+ 	else if (mbox[0] == 0xA) {
+-		printk ("Fail,address %X,except data %X,receive data %X\n",
++		IFX_MEI_EMSG("Fail,address %X,except data %X,receive data %X\n",
+ 			mbox[1], mbox[2], mbox[3]);
+ 	}
+ 	else {
+-		printk ("Fail\n");
++		IFX_MEI_EMSG("Fail\n");
+ 	}
+ }
+ 
+@@ -2066,7 +2066,7 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
+ 		rd_mbox[i] = 0;
+ 	}
+ 
+-	printk ("send ping msg\n");
++	FX_MEI_DMSG("send ping msg\n");
+ 	wr_mbox[0] = MEI_PING;
+ 	WriteMbox (&wr_mbox[0], 10);
+ 
+@@ -2074,7 +2074,7 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
+ 		MEI_WAIT (100);
+ 	}
+ 
+-	printk ("send start event\n");
++	IFX_MEI_DMSG("send start event\n");
+ 	got_int = 0;
+ 
+ 	wr_mbox[0] = 0x4;
+@@ -2093,14 +2093,14 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
+ 	IFX_MEI_LongWordWriteOffset (&dsl_devices[0],
+ 					   (u32) ME_ME2ARC_INT,
+ 					   MEI_TO_ARC_MSGAV);
+-	printk ("sleeping\n");
++	IFX_MEI_DMSG("sleeping\n");
+ 	while (1) {
+ 		if (got_int > 0) {
+ 
+ 			if (got_int > 3)
+-				printk ("got_int >>>> 3\n");
++				IFX_MEI_DMSG("got_int >>>> 3\n");
+ 			else
+-				printk ("got int = %d\n", got_int);
++				IFX_MEI_DMSG("got int = %d\n", got_int);
+ 			got_int = 0;
+ 			//schedule();
+ 			DSL_ENABLE_IRQ (pDev->nIrq[IFX_DFEIR]);
+@@ -2151,7 +2151,7 @@ DFE_Loopback_Test (void)
+ 			DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].type = FREE_RELOAD;
+ 			IFX_MEI_WRITE_REGISTER_L ((((uint32_t) DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].address) & 0x0fffffff),
+ 							IFXMIPS_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  + idx * 4);
+-			printk ("bar%d(%X)=%X\n", idx,
++			IFX_MEI_DMSG("bar%d(%X)=%X\n", idx,
+ 				IFXMIPS_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  +
+ 				idx * 4, (((uint32_t)
+ 					   ((ifx_mei_device_private_t *)
+@@ -2168,20 +2168,20 @@ DFE_Loopback_Test (void)
+ 		return DSL_DEV_MEI_ERR_FAILURE;
+ 	}
+ 	//WriteARCreg(AUX_IC_CTRL,2);
+-	printk(KERN_INFO "[%s %s %d]: Setting MEI_MASTER_MODE..\n", __FILE__, __func__, __LINE__);
++	IFX_MEI_DMSG("Setting MEI_MASTER_MODE..\n");
+ 	IFX_MEI_ControlModeSet (pDev, MEI_MASTER_MODE);
+ #define AUX_IC_CTRL 0x11
+ 	_IFX_MEI_DBGLongWordWrite (pDev, MEI_DEBUG_DEC_AUX_MASK,
+ 					 AUX_IC_CTRL, 2);
+-	printk(KERN_INFO "[%s %s %d]: Setting JTAG_MASTER_MODE..\n", __FILE__, __func__, __LINE__);
++	IFX_MEI_DMSG("Setting JTAG_MASTER_MODE..\n");
+ 	IFX_MEI_ControlModeSet (pDev, JTAG_MASTER_MODE);
+ 
+-	printk(KERN_INFO "[%s %s %d]: Halting ARC...\n", __FILE__, __func__, __LINE__);
++	IFX_MEI_DMSG("Halting ARC...\n");
+ 	IFX_MEI_HaltArc (&dsl_devices[0]);
+ 
+ #ifdef DFE_PING_TEST
+ 
+-	printk ("ping test image size=%d\n", sizeof (arc_ahb_access_code));
++	IFX_MEI_DMSG("ping test image size=%d\n", sizeof (arc_ahb_access_code));
+ 	memcpy ((u8 *) (DSL_DEV_PRIVATE(pDev)->
+ 			adsl_mem_info[0].address + 0x1004),
+ 		&arc_ahb_access_code[0], sizeof (arc_ahb_access_code));
+@@ -2189,13 +2189,13 @@ DFE_Loopback_Test (void)
+ 
+ #endif //DFE_PING_TEST
+ 
+-	printk ("ARC ping test code download complete\n");
++	IFX_MEI_DMSG("ARC ping test code download complete\n");
+ #endif //defined( DFE_PING_TEST )|| defined( DFE_ATM_LOOPBACK)
+ #ifdef DFE_MEM_TEST
+ 	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_ARC2ME_MASK, MSGAV_EN);
+ 
+ 	arc_code_page_download (1537, &code_array[0]);
+-	printk ("ARC mem test code download complete\n");
++	IFX_MEI_DMSG("ARC mem test code download complete\n");
+ #endif //DFE_MEM_TEST
+ #ifdef DFE_ATM_LOOPBACK
+ 	arc_debug_data = 0xf;
+@@ -2214,7 +2214,7 @@ DFE_Loopback_Test (void)
+ 	IFX_MEI_DebugWrite (&dsl_devices[0], 0x32010, &arc_debug_data, 1);
+ #endif //DFE_ATM_LOOPBACK
+ 	IFX_MEI_IRQEnable (pDev);
+-	printk(KERN_INFO "[%s %s %d]: run ARC...\n", __FILE__, __func__, __LINE__);
++	IFX_MEI_DMSG("run ARC...\n");
+ 	IFX_MEI_RunArc (&dsl_devices[0]);
+ 
+ #ifdef DFE_PING_TEST
+@@ -2525,7 +2525,7 @@ IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev,
+ 		break;
+ 
+ 	case DSL_FIO_BSP_DSL_START:
+-		printk("\n%s: DSL_FIO_BSP_DSL_START\n",__func__);
++		IFX_MEI_DMSG("DSL_FIO_BSP_DSL_START\n");
+ 		if ((meierr = IFX_MEI_RunAdslModem (pDev)) != DSL_DEV_MEI_ERR_SUCCESS) {
+ 			IFX_MEI_EMSG ("IFX_MEI_RunAdslModem() error...");
+ 			meierr = DSL_DEV_MEI_ERR_FAILURE;
+@@ -2926,11 +2926,11 @@ IFX_MEI_ModuleInit (void)
+ 	int i = 0;
+ 	static struct class *dsl_class;
+ 
+-	printk ("IFX MEI Version %ld.%02ld.%02ld", bsp_mei_version.major, bsp_mei_version.minor, bsp_mei_version.revision);
++	pr_info("IFX MEI Version %ld.%02ld.%02ld", bsp_mei_version.major, bsp_mei_version.minor, bsp_mei_version.revision);
+ 
+ 	for (i = 0; i < BSP_MAX_DEVICES; i++) {
+ 		if (IFX_MEI_InitDevice (i) != 0) {
+-			printk ("%s: Init device fail!\n", __FUNCTION__);
++			IFX_MEI_EMSG("Init device fail!\n");
+ 			return -EIO;
+ 		}
+ 		IFX_MEI_InitDevNode (i);
+@@ -2942,7 +2942,7 @@ IFX_MEI_ModuleInit (void)
+ 		dsl_bsp_event_callback[i].function = NULL;
+ 
+ #ifdef CONFIG_IFXMIPS_MEI_FW_LOOPBACK
+-	printk(KERN_INFO "[%s %s %d]: Start loopback test...\n", __FILE__, __func__, __LINE__);
++	IFX_MEI_DMSG("Start loopback test...\n");
+ 	DFE_Loopback_Test ();
+ #endif
+ 	dsl_class = class_create(THIS_MODULE, "ifx_mei");
+--- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_core.c	2010-03-13 16:42:49.000000000 +0100
++++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c	2010-03-14 03:39:05.000000000 +0100
+@@ -2336,7 +2335,7 @@ static int atm_showtime_enter(struct por
+     IFX_REG_W32(0x0F, UTP_CFG);
+ #endif
+ 
+-    printk("enter showtime, cell rate: 0 - %d, 1 - %d, xdata addr: 0x%08x\n", g_atm_priv_data.port[0].tx_max_cell_rate, g_atm_priv_data.port[1].tx_max_cell_rate, (unsigned int)g_xdata_addr);
++    pr_debug("enter showtime, cell rate: 0 - %d, 1 - %d, xdata addr: 0x%08x\n", g_atm_priv_data.port[0].tx_max_cell_rate, g_atm_priv_data.port[1].tx_max_cell_rate, (unsigned int)g_xdata_addr);
+ 
+     return IFX_SUCCESS;
+ }
+@@ -2352,7 +2351,7 @@ static int atm_showtime_exit(void)
+     //  TODO: ReTX clean state
+     g_xdata_addr = NULL;
+ 
+-    printk("leave showtime\n");
++    pr_debug("leave showtime\n");
+ 
+     return IFX_SUCCESS;
+ }
+
