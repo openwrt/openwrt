@@ -363,6 +363,7 @@ static inline void ar724x_pci_wr(unsigned reg, u32 val)
 
 	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
 	__raw_writel(val, base + reg);
+	(void) __raw_readl(base + reg);
 	iounmap(base);
 }
 
@@ -371,6 +372,7 @@ static inline void ar724x_pci_wr_nf(unsigned reg, u32 val)
 	void __iomem *base;
 
 	base = ioremap_nocache(AR724X_PCI_CTRL_BASE, AR724X_PCI_CTRL_SIZE);
+	__raw_writel(val, base + reg);
 	iounmap(base);
 }
 
