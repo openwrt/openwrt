@@ -1,17 +1,17 @@
-Index: linux-2.6.30.8/drivers/mtd/maps/Makefile
+Index: linux-2.6.30.10/drivers/mtd/maps/Makefile
 ===================================================================
---- linux-2.6.30.8.orig/drivers/mtd/maps/Makefile	2009-09-24 17:28:02.000000000 +0200
-+++ linux-2.6.30.8/drivers/mtd/maps/Makefile	2009-10-19 21:31:32.000000000 +0200
+--- linux-2.6.30.10.orig/drivers/mtd/maps/Makefile	2010-03-18 14:27:04.000000000 +0100
++++ linux-2.6.30.10/drivers/mtd/maps/Makefile	2010-03-18 14:27:07.000000000 +0100
 @@ -62,3 +62,4 @@
  obj-$(CONFIG_MTD_BFIN_ASYNC)	+= bfin-async-flash.o
  obj-$(CONFIG_MTD_RBTX4939)	+= rbtx4939-flash.o
  obj-$(CONFIG_MTD_VMU)		+= vmu-flash.o
 +obj-$(CONFIG_MTD_IFXMIPS)  += ifxmips.o
-Index: linux-2.6.30.8/drivers/mtd/maps/ifxmips.c
+Index: linux-2.6.30.10/drivers/mtd/maps/ifxmips.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.30.8/drivers/mtd/maps/ifxmips.c	2009-10-19 21:40:44.000000000 +0200
-@@ -0,0 +1,277 @@
++++ linux-2.6.30.10/drivers/mtd/maps/ifxmips.c	2010-03-18 14:27:17.000000000 +0100
+@@ -0,0 +1,281 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -116,11 +116,11 @@ Index: linux-2.6.30.8/drivers/mtd/maps/ifxmips.c
 +	{
 +		.name = "uboot_env",
 +		.offset = 0x00020000,
-+		.size = 0x00010000,
++		.size = 0x0,
 +	},
 +	{
 +		.name = "kernel",
-+		.offset = 0x00030000,
++		.offset = 0x0,
 +		.size = 0x0,
 +	},
 +	{
@@ -222,6 +222,10 @@ Index: linux-2.6.30.8/drivers/mtd/maps/ifxmips.c
 +				rootfs_part = i;
 +		}
 +	} else {
++		/* if the flash is 64k sectors, the kernel will reside at 0xb0030000
++		   if the flash is 128k sectors, the kernel will reside at 0xb0040000 */
++		ifxmips_partitions[1].size = ifxmips_mtd->erasesize;
++		ifxmips_partitions[2].offset = ifxmips_partitions[1].offset + ifxmips_mtd->erasesize;
 +		parts = &ifxmips_partitions[0];
 +	}
 +
@@ -232,8 +236,8 @@ Index: linux-2.6.30.8/drivers/mtd/maps/ifxmips.c
 +		if (detect_squashfs_partition(parts[kernel_part].offset + uimage_size)) {
 +			printk(KERN_INFO "ifxmips_mtd: found a squashfs following the uImage\n");
 +		} else {
-+			uimage_size &= ~0xffff;
-+			uimage_size += 0x10000;
++			uimage_size &= ~(ifxmips_mtd->erasesize -1);
++			uimage_size += ifxmips_mtd->erasesize;
 +		}
 +
 +		parts[kernel_part].size = uimage_size;
