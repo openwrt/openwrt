@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=brcm47xx
 BOARDNAME:=Broadcom BCM947xx/953xx
-FEATURES:=squashfs usb
+FEATURES:=squashfs usb pcmcia
 
 LINUX_VERSION:=2.6.32.9
 
