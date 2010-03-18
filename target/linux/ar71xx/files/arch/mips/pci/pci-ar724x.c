@@ -1,7 +1,7 @@
 /*
  *  Atheros AR724x PCI host controller driver
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  Parts of this file are based on Atheros' 2.6.15 BSP
  *
@@ -16,6 +16,7 @@
 #include <linux/bitops.h>
 #include <linux/pci.h>
 #include <linux/pci_regs.h>
+#include <linux/interrupt.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
@@ -246,6 +247,83 @@ static int __init ar724x_pci_setup(void)
 	return 0;
 }
 
+static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
+{
+	u32 pending;
+
+	pending = ar724x_pci_rr(AR724X_PCI_REG_INT_STATUS) &
+		  ar724x_pci_rr(AR724X_PCI_REG_INT_MASK);
+
+	if (pending & AR724X_PCI_INT_DEV0)
+		generic_handle_irq(AR71XX_PCI_IRQ_DEV0);
+
+	else
+		spurious_interrupt();
+}
+
+static void ar724x_pci_irq_unmask(unsigned int irq)
+{
+	switch (irq) {
+	case AR71XX_PCI_IRQ_DEV0:
+		irq -= AR71XX_PCI_IRQ_BASE;
+		ar724x_pci_wr(AR724X_PCI_REG_INT_MASK,
+			      ar724x_pci_rr(AR724X_PCI_REG_INT_MASK) |
+					    AR724X_PCI_INT_DEV0);
+		/* flush write */
+		ar724x_pci_rr(AR724X_PCI_REG_INT_MASK);
+	}
+}
+
+static void ar724x_pci_irq_mask(unsigned int irq)
+{
+	switch (irq) {
+	case AR71XX_PCI_IRQ_DEV0:
+		irq -= AR71XX_PCI_IRQ_BASE;
+		ar724x_pci_wr(AR724X_PCI_REG_INT_MASK,
+			      ar724x_pci_rr(AR724X_PCI_REG_INT_MASK) &
+					    ~AR724X_PCI_INT_DEV0);
+		/* flush write */
+		ar724x_pci_rr(AR724X_PCI_REG_INT_MASK);
+
+		ar724x_pci_wr(AR724X_PCI_REG_INT_STATUS,
+			      ar724x_pci_rr(AR724X_PCI_REG_INT_STATUS) |
+					    AR724X_PCI_INT_DEV0);
+		/* flush write */
+		ar724x_pci_rr(AR724X_PCI_REG_INT_STATUS);
+	}
+}
+
+static struct irq_chip ar724x_pci_irq_chip = {
+	.name		= "AR724X PCI ",
+	.mask		= ar724x_pci_irq_mask,
+	.unmask		= ar724x_pci_irq_unmask,
+	.mask_ack	= ar724x_pci_irq_mask,
+};
+
+static void __init ar724x_pci_irq_init(void)
+{
+	u32 t;
+	int i;
+
+	t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
+	if (t & (AR724X_RESET_PCIE | AR724X_RESET_PCIE_PHY |
+		 AR724X_RESET_PCIE_PHY_SERIAL)) {
+		return;
+	}
+
+	ar724x_pci_wr(AR724X_PCI_REG_INT_MASK, 0);
+	ar724x_pci_wr(AR724X_PCI_REG_INT_STATUS, 0);
+
+	for (i = AR71XX_PCI_IRQ_BASE;
+	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++) {
+		irq_desc[i].status = IRQ_DISABLED;
+		set_irq_chip_and_handler(i, &ar724x_pci_irq_chip,
+					 handle_level_irq);
+	}
+
+	set_irq_chained_handler(AR71XX_CPU_IRQ_IP2, ar724x_pci_irq_handler);
+}
+
 int __init ar724x_pcibios_init(void)
 {
 	int ret;
@@ -262,6 +340,7 @@ int __init ar724x_pcibios_init(void)
 		return ret;
 
 	ar724x_pci_fixup_enable = 1;
+	ar724x_pci_irq_init();
 	register_pci_controller(&ar724x_pci_controller);
 
 	return 0;

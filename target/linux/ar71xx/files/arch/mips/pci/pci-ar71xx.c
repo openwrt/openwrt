@@ -17,6 +17,7 @@
 #include <linux/bitops.h>
 #include <linux/pci.h>
 #include <linux/pci_regs.h>
+#include <linux/interrupt.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
@@ -300,6 +301,73 @@ static struct pci_controller ar71xx_pci_controller = {
 	.io_resource	= &ar71xx_pci_io_resource,
 };
 
+static void ar71xx_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
+{
+	u32 pending;
+
+	pending = ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_STATUS) &
+		  ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
+
+	if (pending & PCI_INT_DEV0)
+		generic_handle_irq(AR71XX_PCI_IRQ_DEV0);
+
+	else if (pending & PCI_INT_DEV1)
+		generic_handle_irq(AR71XX_PCI_IRQ_DEV1);
+
+	else if (pending & PCI_INT_DEV2)
+		generic_handle_irq(AR71XX_PCI_IRQ_DEV2);
+
+	else if (pending & PCI_INT_CORE)
+		generic_handle_irq(AR71XX_PCI_IRQ_CORE);
+
+	else
+		spurious_interrupt();
+}
+
+static void ar71xx_pci_irq_unmask(unsigned int irq)
+{
+	irq -= AR71XX_PCI_IRQ_BASE;
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE,
+		ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE) | (1 << irq));
+
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
+}
+
+static void ar71xx_pci_irq_mask(unsigned int irq)
+{
+	irq -= AR71XX_PCI_IRQ_BASE;
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE,
+		ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE) & ~(1 << irq));
+
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_PCI_INT_ENABLE);
+}
+
+static struct irq_chip ar71xx_pci_irq_chip = {
+	.name		= "AR71XX PCI ",
+	.mask		= ar71xx_pci_irq_mask,
+	.unmask		= ar71xx_pci_irq_unmask,
+	.mask_ack	= ar71xx_pci_irq_mask,
+};
+
+static void __init ar71xx_pci_irq_init(void)
+{
+	int i;
+
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_ENABLE, 0);
+	ar71xx_reset_wr(AR71XX_RESET_REG_PCI_INT_STATUS, 0);
+
+	for (i = AR71XX_PCI_IRQ_BASE;
+	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++) {
+		irq_desc[i].status = IRQ_DISABLED;
+		set_irq_chip_and_handler(i, &ar71xx_pci_irq_chip,
+					 handle_level_irq);
+	}
+
+	set_irq_chained_handler(AR71XX_CPU_IRQ_IP2, ar71xx_pci_irq_handler);
+}
+
 int __init ar71xx_pcibios_init(void)
 {
 	ar71xx_device_stop(RESET_MODULE_PCI_BUS | RESET_MODULE_PCI_CORE);
@@ -326,6 +394,7 @@ int __init ar71xx_pcibios_init(void)
 	(void)ar71xx_pci_be_handler(1);
 
 	ar71xx_pci_fixup_enable = 1;
+	ar71xx_pci_irq_init();
 	register_pci_controller(&ar71xx_pci_controller);
 
 	return 0;
