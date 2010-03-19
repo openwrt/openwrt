@@ -18,7 +18,6 @@ load_modules() {
 				params_set="disksize_kb=$size_kbytes"
 			fi
 			if [ "`lsmod | grep 'ramzswap'`" == "" ]; then
-				insmod xvmalloc
 				insmod lzo1x
 				insmod ramzswap $params_set
 				swapon /dev/ramzswap0
@@ -34,7 +33,6 @@ remove_modules() {
 		[ "`cat /proc/swaps | grep 'ramzswap0'`" != "" ] && swapoff /dev/ramzswap0
 		[ "`lsmod | grep 'ramzswap'`" != "" ] && rmmod ramzswap &> /dev/null
 		[ "`lsmod | grep 'lzo1x'`" != "" ] && rmmod lzo1x &> /dev/null
-		[ "`lsmod | grep 'xvmalloc'`" != "" ] && rmmod xvmalloc &> /dev/null
 	fi
 }
 

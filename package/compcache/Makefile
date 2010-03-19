@@ -10,10 +10,10 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=compcache
-PKG_VERSION:=0.5.4
+PKG_VERSION:=0.6.2
 PKG_RELEASE:=$(PKG_VERSION)-1
 PKG_SOURCE_URL:=http://compcache.googlecode.com/files/
-PKG_MD5SUM:=e83535925a014ac34e1eaeb4f7a2f49a
+PKG_MD5SUM:=27aec78dc50e34fb800c74e879057743
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
@@ -25,22 +25,25 @@ define KernelPackage/compcache
   TITLE:=Driver for compressed ram swap device
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)+$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/ramzswap.$(LINUX_KMOD_SUFFIX) \
-	  $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.$(LINUX_KMOD_SUFFIX) \
-	  $(PKG_BUILD_DIR)/sub-projects/allocators/xvmalloc-kmod/xvmalloc.$(LINUX_KMOD_SUFFIX)
+	 $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.$(LINUX_KMOD_SUFFIX)
 endef
+
 
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
-XVM = sub-projects/allocators/xvmalloc-kmod
 LZO = sub-projects/compression/lzo-kmod
+RZSC = sub-projects/rzscontrol
 
-BUILDFLAGS:=-DCONFIG_BLK_DEV_RAMZSWAP_STATS \
-	    -I$(PKG_BUILD_DIR)/$(XVM) \
+BUILDFLAGS:=-DCONFIG_RAMZSWAP_STATS \
 	    -I$(PKG_BUILD_DIR)/$(LZO) \
-	    -g -Wall
+	    -Wall
+
+RZSCFLAGS:=-I$(PKG_BUILD_DIR)/$(RZSC)/../include \
+	   -I$(PKG_BUILD_DIR)/$(RZSC)/../..
 
 define Build/Compile
 	$(MAKE) $(KERNEL_MAKEOPTS) EXTRA_CFLAGS="$(BUILDFLAGS)" M="$(PKG_BUILD_DIR)" modules
+	$(TARGET_CC) $(TARGET_CFLAGS) $(RZSCFLAGS) $(PKG_BUILD_DIR)/$(RZSC)/rzscontrol.c -o $(PKG_BUILD_DIR)/rzscontrol
 endef
 
 define KernelPackage/compcache/install
@@ -52,6 +55,8 @@ define KernelPackage/compcache/install
 	      $(1)/etc/config/compcache
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/compcache.init $(1)/etc/init.d/compcache
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rzscontrol $(1)/sbin/rzscontrol
 endef
 
 define KernelPackage/compcache/config
