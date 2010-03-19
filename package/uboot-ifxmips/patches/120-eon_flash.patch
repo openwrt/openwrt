@@ -1,0 +1,28 @@
+Index: u-boot-1.1.5/board/ifx/danube/flash.c
+===================================================================
+--- u-boot-1.1.5.orig/board/ifx/danube/flash.c	2010-03-19 12:12:27.000000000 +0100
++++ u-boot-1.1.5/board/ifx/danube/flash.c	2010-03-19 12:12:30.000000000 +0100
+@@ -477,7 +477,10 @@
+ 		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
+ 		info->flash_id = FLASH_MAN_MX ;//0x00030000
+ 		break;
+-		
++	case (uchar)EON_MANUFACT:
++		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		info->flash_id = FLASH_MAN_AMD ;
++		break;
+ 	default:
+ 		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
+ 		info->flash_id = FLASH_UNKNOWN;
+Index: u-boot-1.1.5/include/flash.h
+===================================================================
+--- u-boot-1.1.5.orig/include/flash.h	2010-03-19 12:16:23.000000000 +0100
++++ u-boot-1.1.5/include/flash.h	2010-03-19 12:16:48.000000000 +0100
+@@ -130,6 +130,7 @@
+ #define TOSH_MANUFACT	0x00980098	/* TOSHIBA manuf. ID in D23..D16, D7..D0 */
+ #define MT2_MANUFACT	0x002C002C	/* alternate MICRON manufacturer ID*/
+ #define EXCEL_MANUFACT	0x004A004A	/* Excel Semiconductor			*/
++#define EON_MANUFACT	0x0000007F
+ 
+ #define	EON_ID_EN29LV320B 0x22f9
+ #define FLASH_29LV320B	0xE0
