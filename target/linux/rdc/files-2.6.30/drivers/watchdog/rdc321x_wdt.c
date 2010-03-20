@@ -243,7 +243,6 @@ static int __init rdc321x_wdt_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	panic_on_unrecovered_nmi = 1;
 	dev_info(&pdev->dev, "watchdog init success\n");
 
 	return 0;
