@@ -63,6 +63,12 @@ define DownloadMethod/cvs
 	)
 endef
 
+SVN_VERSION=$(shell svn --version | head -1 | awk '{ print $3 }' | cut -d. -f2)
+ifeq ($(SVN_VERSION),5)
+else
+SVN_OPTS:=--trust-server-cert
+endif
+
 define DownloadMethod/svn
 	$(call wrap_mirror, \
 		echo "Checking out files from the svn repository..."; \
@@ -70,7 +76,7 @@ define DownloadMethod/svn
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		svn export --non-interactive --trust-server-cert -r$(VERSION) $(URL) $(SUBDIR) && \
+		svn export --non-interactive $(SVN_OPTS) -r$(VERSION) $(URL) $(SUBDIR) && \
 		echo "Packing checkout..." && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
