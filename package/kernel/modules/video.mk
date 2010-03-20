@@ -323,6 +323,21 @@ endef
 $(eval $(call KernelPackage,video-gspca-pac7311))
 
 
+define KernelPackage/video-gspca-sn9c20x
+$(call KernelPackage/video-gspca/Depends,@LINUX_2_6 @USB_SUPPORT +kmod-usb-core)
+  TITLE:=sn9c20x webcam support
+  KCONFIG:=CONFIG_USB_GSPCA_SN9C20X
+  FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_sn9c20x.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,75,sn9c20x)
+endef
+
+define KernelPackage/video-gspca-sn9c20x/description
+ The SN9C20X USB Camera Driver (sn9c20x) kernel module.
+endef
+
+$(eval $(call KernelPackage,video-gspca-sn9c20x))
+
+
 define KernelPackage/video-gspca-sonixb
 $(call KernelPackage/video-gspca/Depends,)
   TITLE:=sonixb webcam support
