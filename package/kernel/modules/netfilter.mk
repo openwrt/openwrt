@@ -49,7 +49,12 @@ endef
 define KernelPackage/ipt-conntrack/description
  Netfilter (IPv4) kernel modules for connection tracking
  Includes:
+ - conntrack
+ - defrag
+ - iptables_raw
+ - NOTRACK
  - state
+ - xt_NOTRACK
 endef
 
 $(eval $(call KernelPackage,ipt-conntrack))
@@ -71,7 +76,6 @@ define KernelPackage/ipt-conntrack-extra/description
  - conntrack
  - helper
  - recent
- - NOTRACK
 endef
 
 $(eval $(call KernelPackage,ipt-conntrack-extra))
@@ -309,8 +313,6 @@ define KernelPackage/ipt-extra/description
  - ipt_physdev
  - ipt_pkttype
  - ipt_recent
- - iptable_raw
- - xt_NOTRACK
 endef
 
 $(eval $(call KernelPackage,ipt-extra))
