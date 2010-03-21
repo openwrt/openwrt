@@ -495,7 +495,7 @@ $(eval $(call KernelPackage,usb-serial-option))
 
 
 define KernelPackage/usb-storage
-$(call KernelPackage/usb/Depends,+kmod-scsi-core)
+$(call KernelPackage/usb/Depends,+!TARGET_x86:kmod-scsi-core)
   TITLE:=USB Storage support
   KCONFIG:=CONFIG_USB_STORAGE
   FILES:=$(LINUX_DIR)/drivers/usb/storage/usb-storage.$(LINUX_KMOD_SUFFIX)
