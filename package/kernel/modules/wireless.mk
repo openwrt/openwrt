@@ -106,6 +106,22 @@ endef
 $(eval $(call KernelPackage,net-hermes-plx))
 
 
+define KernelPackage/net-hermes-pcmcia
+  SUBMENU:=$(WIRELESS_MENU)
+  TITLE:=Hermes based PCMCIA adaptors
+  DEPENDS:=@PCMCIA_SUPPORT +kmod-net-hermes
+  KCONFIG:=CONFIG_PCMCIA_HERMES
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco_cs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,55,orinoco_cs)
+endef
+
+define KernelPackage/net-hermes-pcmcia/description
+ Kernel modules for Hermes based PCMCIA adaptors
+endef
+
+$(eval $(call KernelPackage,net-hermes-pcmcia))
+
+
 define KernelPackage/net-prism54
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intersil Prism54 support
