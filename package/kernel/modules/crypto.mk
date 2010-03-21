@@ -149,7 +149,7 @@ $(call KernelPackage/crypto/Depends,)
   AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX))
 endef
 
-define KernelPackage/crypto-aes/x86-2.6
+define KernelPackage/crypto-aes/x86
   FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX) aes-i586)
 endef
@@ -252,6 +252,7 @@ $(call KernelPackage/crypto/Depends,)
 	CONFIG_CRYPTO_TEA \
 	CONFIG_CRYPTO_TGR192 \
 	CONFIG_CRYPTO_TWOFISH \
+	CONFIG_CRYPTO_TWOFISH_COMMON \
 	CONFIG_CRYPTO_TWOFISH_586 \
 	CONFIG_CRYPTO_WP512
   FILES:= \
@@ -266,6 +267,7 @@ $(call KernelPackage/crypto/Depends,)
 	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/tea.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/twofish.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/twofish_common.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/wp512.$(LINUX_KMOD_SUFFIX)
 endef
 
@@ -275,6 +277,10 @@ define KernelPackage/crypto-misc/2.6
 	$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/fcrypt.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/tgr192.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/crypto-misc/x86
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/twofish-i586.$(LINUX_KMOD_SUFFIX)
 endef
 
 $(eval $(call KernelPackage,crypto-misc))
