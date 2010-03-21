@@ -111,7 +111,7 @@ define KernelPackage/net-hermes-pcmcia
   TITLE:=Hermes based PCMCIA adaptors
   DEPENDS:=@PCMCIA_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PCMCIA_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/$(ORINOCO_DIR)orinoco_cs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_cs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,55,orinoco_cs)
 endef
 
