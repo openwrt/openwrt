@@ -4,7 +4,7 @@
 # Copyright (C) 2010 Vertical Communications
 
 skip_if_rootfs_mounted() {
-    mount "$mtdpart" /rom/jffs -t jffs2 || exit
+    mount "$mtdpart" /rom/overlay -t jffs2 || exit
 }
 
 boot_hook_add switch2jffs skip_if_rootfs_mounted

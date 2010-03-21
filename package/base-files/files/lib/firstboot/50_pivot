@@ -9,9 +9,9 @@ with_fo_pivot() {
     pivot /rom /mnt
     mount -o move /mnt /tmp/root
 
-    # /jffs is the overlay
+    # /overlay is the overlay
     # /rom is the readonly
-    fopivot /jffs /rom
+    fopivot /overlay /rom
 }
 
 boot_hook_add switch2jffs with_fo_pivot

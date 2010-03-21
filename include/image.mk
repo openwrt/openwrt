@@ -62,14 +62,13 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		$(call Image/Build,jffs2-$(1))
     endef
     define Image/mkfs/jffs2
-		rm -rf $(TARGET_DIR)/jffs
 		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ)))
     endef
   endif
 
   ifeq ($(CONFIG_TARGET_ROOTFS_SQUASHFS),y)
     define Image/mkfs/squashfs
-		@mkdir -p $(TARGET_DIR)/jffs
+		@mkdir -p $(TARGET_DIR)/overlay
 		$(MKSQUASHFS_CMD) $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned $(SQUASHFS_OPTS)
 		$(call Image/Build,squashfs)
     endef

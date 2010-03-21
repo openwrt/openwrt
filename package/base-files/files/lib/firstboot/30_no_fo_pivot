@@ -5,7 +5,7 @@
 
 no_fo_pivot() {
     # switch to the new (empty) jffs2
-    fopivot /jffs /rom 1
+    fopivot /overlay /rom 1
 }
 
 boot_hook_add no_fo no_fo_pivot

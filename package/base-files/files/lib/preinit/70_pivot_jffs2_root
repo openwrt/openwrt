@@ -5,7 +5,8 @@
 rootfs_pivot() {
     check_skip || jffs2_not_mounted || {
 	echo "switching to jffs2"
-	fopivot /jffs /rom && pi_mount_skip_next=true
+	mount -o move /tmp/overlay /overlay 2>&-
+	fopivot /overlay /rom && pi_mount_skip_next=true
     }
 }
 
