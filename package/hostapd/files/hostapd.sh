@@ -119,7 +119,7 @@ hostapd_setup_vif() {
 	config_get channel "$device" channel
 	config_get hwmode "$device" hwmode
 	case "$hwmode" in
-		bg) hwmode=g;;
+		*bg) hwmode=g;;
 	esac
 	[ "$channel" = auto ] && channel=
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
@@ -127,7 +127,7 @@ hostapd_setup_vif() {
 ctrl_interface=/var/run/hostapd-$ifname
 driver=$driver
 interface=$ifname
-${hwmode:+hw_mode=$hwmode}
+${hwmode:+hw_mode=${hwmode#11}}
 ${channel:+channel=$channel}
 $hostapd_cfg
 EOF
