@@ -499,7 +499,7 @@ $(call KernelPackage/usb/Depends,+!TARGET_x86:kmod-scsi-core)
   TITLE:=USB Storage support
   KCONFIG:=CONFIG_USB_STORAGE
   FILES:=$(LINUX_DIR)/drivers/usb/storage/usb-storage.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,60,scsi_mod sd_mod usb-storage,1)
+  AUTOLOAD:=$(call AutoLoad,60,usb-storage,1)
 endef
 
 define KernelPackage/usb-storage/description
