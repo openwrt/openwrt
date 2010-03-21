@@ -88,11 +88,12 @@ define KernelPackage/capi
   KCONFIG:= \
 	CONFIG_ISDN_CAPI \
 	CONFIG_ISDN_CAPI_CAPI20 \
-	CONFIG_ISDN_CAPIFS
+	CONFIG_ISDN_CAPIFS \
+	CONFIG_ISDN_CAPI_CAPIFS
   FILES:= \
 	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX)
-	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,kernelcapi capifs capi)
 endef
 
@@ -108,19 +109,7 @@ define KernelPackage/misdn
   KCONFIG:= \
   	CONFIG_MISDN \
 	CONFIG_MISDN_DSP \
-	CONFIG_MISDN_L1OIP \
-	CONFIG_ISDN_AUDIO=n \
-	CONFIG_ISDN_WITH_ABC=n \
-	CONFIG_ISDN_DRV_LOOP=n \
-	CONFIG_ISDN_DIVERSION=n \
-	CONFIG_ISDN_DRV_HISAX=n \
-	CONFIG_ISDN_DRV_ICN=n \
-	CONFIG_ISDN_DRV_PCBIT=n \
-	CONFIG_ISDN_DRV_SC=n \
-	CONFIG_ISDN_DRV_ACT2000=n \
-	CONFIG_ISDN_DRV_EICON=n \
-	CONFIG_ISDN_DRV_TPAM=n \
-	CONFIG_HYSDN=n
+	CONFIG_MISDN_L1OIP
   FILES:= \
   	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_core.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_dsp.$(LINUX_KMOD_SUFFIX) \
@@ -155,19 +144,12 @@ define KernelPackage/isdn4linux
     CONFIG_ISDN_MPP=y \
     CONFIG_IPPP_FILTER=y \
     CONFIG_ISDN_PPP_BSDCOMP \
+    CONFIG_ISDN_CAPI_MIDDLEWARE=y \
+    CONFIG_ISDN_CAPI_CAPIFS_BOOL=y \
     CONFIG_ISDN_AUDIO=y \
     CONFIG_ISDN_TTY_FAX=y \
     CONFIG_ISDN_X25=y \
-    CONFIG_ISDN_DIVERSION \
-    CONFIG_ISDN_CAPI_CAPIDRV=n \
-    CONFIG_ISDN_DRV_ACT2000=n \
-    CONFIG_ISDN_DRV_GIGASET=n \
-    CONFIG_ISDN_DRV_HISAX=n \
-    CONFIG_ISDN_DRV_ICN=n \
-    CONFIG_ISDN_DRV_LOOP=n \
-    CONFIG_ISDN_DRV_PCBIT=n \
-    CONFIG_ISDN_DRV_SC=n \
-    CONFIG_HYSDN=n
+    CONFIG_ISDN_DIVERSION
   FILES:= \
     $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,isdn isdn_bsdcomp dss1_divert)
@@ -217,10 +199,12 @@ define KernelPackage/ipsec
   DEPENDS:=@LINUX_2_6 +kmod-crypto-core +kmod-crypto-des +kmod-crypto-hmac +kmod-crypto-md5 +kmod-crypto-sha1
   KCONFIG:= \
 	CONFIG_NET_KEY \
-	CONFIG_XFRM_USER
+	CONFIG_XFRM_USER \
+	CONFIG_XFRM_IPCOMP
   FILES:= \
 	$(LINUX_DIR)/net/key/af_key.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/xfrm/xfrm_user.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/xfrm/xfrm_user.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/xfrm/xfrm_ipcomp.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/ipsec/description
