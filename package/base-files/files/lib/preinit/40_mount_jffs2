@@ -3,7 +3,8 @@
 # Copyright (C) 2010 Vertical Communications
 
 find_mount_jffs2() {
-    mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2
+	mkdir -p /tmp/overlay
+    mount "$(find_mtd_part rootfs_data)" /tmp/overlay -t jffs2
 }
 
 jffs2_not_mounted() {

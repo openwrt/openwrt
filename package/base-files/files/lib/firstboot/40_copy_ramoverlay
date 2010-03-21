@@ -8,7 +8,7 @@ copy_ramoverlay() {
     mount -o remount,ro none / 2>&-
     # copy ramoverlay to jffs2
     echo -n "copying files ... "
-    cp -a /tmp/root/* /rom/jffs 2>&-
+    cp -a /tmp/root/* /rom/overlay 2>&-
     echo "done"
 }
 

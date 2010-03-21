@@ -42,7 +42,7 @@ dupe() { # <new_root> <old_root>
 	{
 		cd $2 
 		find . -xdev -type d
-		echo "./dev ./jffs ./mnt ./proc ./tmp"
+		echo "./dev ./overlay ./mnt ./proc ./tmp"
 		# xdev skips mounted directories
 		cd $1 
 	} | xargs mkdir -p
@@ -69,7 +69,6 @@ pivot() { # <new_root> <old_root>
 		mount -o move $2/dev /dev
 		mount -o move $2/tmp /tmp
 		mount -o move $2/sys /sys 2>&-
-		mount -o move $2/jffs /jffs 2>&-
 		mount -o move $2/overlay /overlay 2>&-
 		return 0
 	}

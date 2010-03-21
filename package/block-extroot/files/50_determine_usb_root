@@ -16,8 +16,8 @@ determine_external_root() {
 	# extroot requires extroot and fstab config files, therefore 
 	# we assume configuration is incomplete and not to be used if either of them
 	# is missing (for jffs versions of these files on squashfs image)
-	if [ "$jffs" = "/jffs" ] && [ -r "/jffs/etc/config/fstab" ]; then
-		UCI_CONFIG_DIR="/jffs/etc/config"
+	if [ "$jffs" = "/tmp/overlay" ] && [ -r "/tmp/overlay/etc/config/fstab" ]; then
+		UCI_CONFIG_DIR="/tmp/overlay/etc/config"
 		ER_IS_SQUASHFS=true
 	fi
 
