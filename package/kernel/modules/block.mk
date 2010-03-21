@@ -223,8 +223,14 @@ endef
 
 ifneq ($(CONFIG_arm)$(CONFIG_powerpc),y)
   define KernelPackage/ide-core/2.6
-    FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD+=$(call AutoLoad,30,ide-generic,1)
+	ifeq ($(CONFIG_PCI_SUPPORT),y)
+	  FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX) \
+		$(LINUX_DIR)/drivers/ide/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
+	  AUTOLOAD+=$(call AutoLoad,30,ide-generic ide-pci-generic,1)
+	else
+	  FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
+	  AUTOLOAD+=$(call AutoLoad,30,ide-generic,1)
+	endif
   endef
 endif
 
@@ -380,7 +386,7 @@ define KernelPackage/dm
        CONFIG_BLK_DEV_DM \
        CONFIG_DM_MIRROR
   FILES:=$(LINUX_DIR)/drivers/md/dm-*.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-region-hash dm-mirror dm-log)
+  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror)
 endef
 
 define KernelPackage/dm/description
@@ -475,7 +481,11 @@ define KernelPackage/mvsas
   TITLE:=Marvell 88SE6440 SAS/SATA driver
   DEPENDS:=@TARGET_x86 +kmod-libsas
   KCONFIG:=CONFIG_SCSI_MVSAS
-  FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.$(LINUX_KMOD_SUFFIX)
+  ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_30),)
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.$(LINUX_KMOD_SUFFIX)
+  else
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.$(LINUX_KMOD_SUFFIX)
+  endif
   AUTOLOAD:=$(call AutoLoad,40,mvsas,1)
 endef
 
