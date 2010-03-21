@@ -177,10 +177,10 @@ static void __init rb411_setup(void)
 	rb4xx_generic_setup();
 	rb4xx_add_device_spi();
 
-	ar71xx_add_device_mdio(0xfffffffe);
+	ar71xx_add_device_mdio(0xfffffffc);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0x00000001;
+	ar71xx_eth0_data.phy_mask = 0x00000003;
 
 	ar71xx_add_device_eth(0);
 
@@ -216,7 +216,6 @@ static void __init rb433_setup(void)
 	ar71xx_add_device_mdio(0xffffffe9);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0x00000006;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
@@ -249,7 +248,6 @@ static void __init rb450_generic_setup(int gige)
 	ar71xx_add_device_mdio(0xffffffe0);
 
 	ar71xx_eth0_data.phy_if_mode = (gige) ? PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0x0000000f;
 	ar71xx_eth0_data.speed = (gige) ? SPEED_1000 : SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
@@ -284,7 +282,6 @@ static void __init rb493_setup(void)
 	ar71xx_add_device_mdio(0x3fffff00);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 

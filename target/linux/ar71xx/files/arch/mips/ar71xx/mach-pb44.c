@@ -179,7 +179,6 @@ static void __init pb44_init(void)
 	ar71xx_add_device_eth(0);
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth1_data.phy_mask = PB44_LAN_PHYMASK;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_pll_data.pll_1000 = 0x110000;

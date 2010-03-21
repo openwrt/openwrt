@@ -48,7 +48,6 @@ void __init ap91_eth_init(u8 *mac_addr, const char *port_names[])
 
 	/* WAN port */
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.phy_mask = 0x0;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.fifo_cfg1 = 0x0fff0000;
@@ -57,7 +56,6 @@ void __init ap91_eth_init(u8 *mac_addr, const char *port_names[])
 
 	/* LAN ports */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0x0;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_data.fifo_cfg1 = 0x0fff0000;

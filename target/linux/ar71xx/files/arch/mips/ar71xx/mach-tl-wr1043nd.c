@@ -130,7 +130,6 @@ static void __init tl_wr1043nd_setup(void)
 
 	ar71xx_eth0_data.mii_bus_dev = &tl_wr1043nd_rtl8366rb_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth0_data.phy_mask = 0x0;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_pll_data.pll_1000 = 0x1a000000;
