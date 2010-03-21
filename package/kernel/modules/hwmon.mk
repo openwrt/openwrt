@@ -102,7 +102,7 @@ $(call KernelPackage/hwmon/Depends,@TARGET_rdc||TARGET_x86)
   FILES:= \
 	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/hwmon/w83627hf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hwmon-vid w83627h)
+  AUTOLOAD:=$(call AutoLoad,50,hwmon-vid w83627hf)
 endef
 
 define KernelPacakge/hwmon-w83627hf/description
