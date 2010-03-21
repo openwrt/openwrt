@@ -10,7 +10,7 @@ BLOCK_MENU:=Block Devices
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT @LINUX_2_6 +kmod-scsi-core @(!TARGET_ubicom32||!TARGET_etrax)
+  DEPENDS:=@PCI_SUPPORT @LINUX_2_6 +kmod-scsi-core @(!TARGET_ubicom32||!TARGET_etrax||!TARGET_x86)
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,21,libata,1)
@@ -21,7 +21,7 @@ $(eval $(call KernelPackage,ata-core))
 
 define KernelPackage/ata/Depends
   SUBMENU:=$(BLOCK_MENU)
-  DEPENDS:=kmod-ata-core $(1)
+  DEPENDS:=!TARGET_x86:kmod-ata-core $(1)
 endef
 
 
@@ -302,6 +302,7 @@ $(eval $(call KernelPackage,ide-it821x))
 define KernelPackage/scsi-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SCSI device support
+  DEPENDS:=@!TARGET_x86
   KCONFIG:= \
 	CONFIG_SCSI \
 	CONFIG_BLK_DEV_SD
@@ -451,7 +452,7 @@ $(eval $(call KernelPackage,axonram))
 define KernelPackage/libsas
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SAS Domain Transport Attributes
-  DEPENDS:=+kmod-scsi-core @TARGET_x86
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
 	CONFIG_SCSI_SAS_ATTRS \
 	CONFIG_SCSI_SAS_ATA=y \
