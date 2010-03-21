@@ -21,12 +21,18 @@ endef
 define KernelPackage/ipt-core/description
  Netfilter core kernel modules
  Includes:
- - limit
- - LOG
- - mac
- - multiport
- - TCPMSS
- - REJECT
+ - ipt_limit
+ - xt_limit
+ - ipt_mac
+ - xt_mac
+ - ipt_multiport
+ - xt_multiport
+ - ipt_comment
+ - xt_comment
+ - ipt_LOG
+ - ipt_TCPMSS
+ - xt_TCPMSS
+ - ipt_REJECT
 endef
 
 $(eval $(call KernelPackage,ipt-core))
@@ -94,6 +100,8 @@ define KernelPackage/ipt-filter/description
  Includes:
  - ipt_layer7
  - ipt_string
+ - xt_layer7
+ - xt_string
 endef
 
 $(eval $(call KernelPackage,ipt-filter))
@@ -110,14 +118,30 @@ endef
 define KernelPackage/ipt-ipopt/description
  Netfilter (IPv4) modules for matching/changing IP packet options
  Includes:
- - ipt_CLASSIFY
- - ipt_dscp/DSCP
- - ipt_ecn/ECN
+ - ipt_dscp
+ - xt_dscp
+ - xt_DSCP
+ - ipt_ecn
  - ipt_length
- - ipt_tos/TOS
- - ipt_tcpmms
- - ipt_ttl/TTL
+ - xt_length
+ - ipt_mark
+ - xt_mark
+ - xt_statistic
+ - ipt_tcpmss
+ - xt_tcpmss
+ - ipt_time
+ - xt_time
  - ipt_unclean
+ - ipt_CLASSIFY 
+ - xt_CLASSIFY
+ - ipt_DSCP
+ - ipt_ECN
+ - ipt_MARK
+ - xt_MARK
+ - xt_tos
+ - xt_TOS
+ - xt_hl
+ - xt_HL
 endef
 
 $(eval $(call KernelPackage,ipt-ipopt))
@@ -136,6 +160,8 @@ define KernelPackage/ipt-ipsec/description
  Includes:
  - ipt_ah
  - ipt_esp
+ - xt_esp
+ - xt_policy
 endef
 
 $(eval $(call KernelPackage,ipt-ipsec))
@@ -188,12 +214,17 @@ endef
 define KernelPackage/ipt-nathelper/description
  Default Netfilter (IPv4) Conntrack and NAT helpers
  Includes:
- - conntrack_ftp
- - nat_ftp
- - conntrack_irc
- - nat_irc
- - conntrack_tftp
- - nat_tftp
+ - ip_conntrack_ftp
+ - ip_nat_ftp
+ - nf_conntrack_ftp
+ - nf_nat_ftp
+ - ip_conntrack_irc
+ - ip_nat_irc
+ - nf_conntrack_irc
+ - nf_nat_irc
+ - ip_conntrack_tftp
+ - nf_conntrack_tftp
+ - nf_nat_tftp
 endef
 
 $(eval $(call KernelPackage,ipt-nathelper))
@@ -211,13 +242,32 @@ define KernelPackage/ipt-nathelper-extra/description
  Extra Netfilter (IPv4) Conntrack and NAT helpers
  Includes:
  - ip_conntrack_amanda
+ - nf_conntrack_amanda
+ - nf_nat_amanda
  - ip_conntrack_proto_gre
  - ip_nat_proto_gre
+ - nf_conntrack_proto_gre
+ - nf_nat_proto_gre
+ - ip_conntrack_h323
+ - ip_nat_h323
+ - nf_conntrack_h323
+ - nf_nat_h323
+ - ip_conntrack_mms
+ - ip_nat_mms
  - ip_conntrack_pptp
  - ip_nat_pptp
+ - nf_conntrack_pptp
+ - nf_nat_pptp
+ - ip_conntrack_rtsp
+ - ip_nat_rtsp
+ - nf_conntrack_rtsp
+ - nf_nat_rtsp
  - ip_conntrack_sip
  - ip_nat_sip
+ - nf_conntrack_sip
+ - nf_nat_sip
  - ip_nat_snmp_basic
+ - nf_nat_snmp_basic
 endef
 
 $(eval $(call KernelPackage,ipt-nathelper-extra))
@@ -309,10 +359,12 @@ endef
 define KernelPackage/ipt-extra/description
  Other Netfilter (IPv4) kernel modules
  Includes:
+ - ipt_condition
  - ipt_owner
- - ipt_physdev
+ - xt_physdev
  - ipt_pkttype
- - ipt_recent
+ - xt_pkttype
+ - xt_quota
 endef
 
 $(eval $(call KernelPackage,ipt-extra))
