@@ -136,9 +136,6 @@ static void __init ubnt_generic_setup(void)
 #define UBNT_RS_WAN_PHYMASK	(1 << 20)
 #define UBNT_RS_LAN_PHYMASK	((1 << 16) | (1 << 17) | (1 << 18) | (1 << 19))
 
-#define UBNT_RSPRO_WAN_PHYMASK	(1 << 4)
-#define UBNT_RSPRO_LAN_PHYMASK	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3))
-
 static void __init ubnt_rs_setup(void)
 {
 	ubnt_generic_setup();
@@ -149,8 +146,6 @@ static void __init ubnt_rs_setup(void)
 	ar71xx_eth0_data.phy_mask = UBNT_RS_WAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = UBNT_RS_LAN_PHYMASK;
-
 	ar71xx_eth1_data.speed = SPEED_100;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
@@ -169,6 +164,9 @@ MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "UBNT-RS", "Ubiquiti RouterStation",
 MIPS_MACHINE(AR71XX_MACH_UBNT_AR71XX, "Ubiquiti AR71xx-based board",
 	     "Ubiquiti RouterStation", ubnt_rs_setup);
 
+#define UBNT_RSPRO_WAN_PHYMASK	(1 << 4)
+#define UBNT_RSPRO_LAN_PHYMASK	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3))
+
 static void __init ubnt_rspro_setup(void)
 {
 	ubnt_generic_setup();
@@ -179,8 +177,6 @@ static void __init ubnt_rspro_setup(void)
 	ar71xx_eth0_data.phy_mask = UBNT_RSPRO_WAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth1_data.phy_mask = UBNT_RSPRO_LAN_PHYMASK;
-
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
@@ -235,7 +231,6 @@ static void __init ubnt_m_setup(void)
 	ar71xx_add_device_mdio(~0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.fifo_cfg1 = 0x0010ffff;
@@ -272,7 +267,6 @@ static void __init ubnt_nano_m_setup(void)
 	ubnt_m_setup();
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_data.fifo_cfg1 = 0x0010ffff;

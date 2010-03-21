@@ -47,10 +47,6 @@ void ag71xx_phy_start(struct ag71xx *ag)
 	if (ag->phy_dev) {
 		phy_start(ag->phy_dev);
 	} else {
-		struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-
-		ag->duplex = pdata->duplex;
-		ag->speed = pdata->speed;
 		ag->link = 1;
 		ag71xx_link_adjust(ag);
 	}
@@ -61,9 +57,7 @@ void ag71xx_phy_stop(struct ag71xx *ag)
 	if (ag->phy_dev) {
 		phy_stop(ag->phy_dev);
 	} else {
-		ag->duplex = -1;
 		ag->link = 0;
-		ag->speed = 0;
 		ag71xx_link_adjust(ag);
 	}
 }
@@ -81,11 +75,15 @@ static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
 	case SPEED_1000:
 		break;
 	default:
-		printk(KERN_ERR "%s: invalid speed specified\n",
-			dev->name);
+		printk(KERN_ERR "%s: invalid speed specified\n", dev->name);
 		ret = -EINVAL;
 		break;
 	}
+
+	printk(KERN_DEBUG "%s: using fixed link parameters\n", dev->name);
+
+	ag->duplex = pdata->duplex;
+	ag->speed = pdata->speed;
 
 	return ret;
 }
@@ -95,7 +93,6 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 	struct net_device *dev = ag->dev;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct phy_device *phydev = NULL;
-	int phy_count = 0;
 	int phy_addr;
 	int ret = 0;
 
@@ -113,50 +110,39 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 
 		if (phydev == NULL)
 			phydev = ag->mii_bus->phy_map[phy_addr];
-
-		phy_count++;
 	}
 
-	switch (phy_count) {
-	case 0:
+	if (!phydev) {
 		printk(KERN_ERR "%s: no PHY found with phy_mask=%08x\n",
 			dev->name, pdata->phy_mask);
-		ret = -ENODEV;
-		break;
-	case 1:
-		ag->phy_dev = phy_connect(dev, dev_name(&phydev->dev),
-			&ag71xx_phy_link_adjust, 0, pdata->phy_if_mode);
-
-		if (IS_ERR(ag->phy_dev)) {
-			printk(KERN_ERR "%s: could not connect to PHY at %s\n",
-				dev->name, dev_name(&phydev->dev));
-			return PTR_ERR(ag->phy_dev);
-		}
-
-		/* mask with MAC supported features */
-		if (pdata->has_gbit)
-			phydev->supported &= PHY_GBIT_FEATURES;
-		else
-			phydev->supported &= PHY_BASIC_FEATURES;
-
-		phydev->advertising = phydev->supported;
-
-		printk(KERN_DEBUG "%s: connected to PHY at %s "
-			"[uid=%08x, driver=%s]\n",
-			dev->name, dev_name(&phydev->dev),
-			phydev->phy_id, phydev->drv->name);
-
-		ag->link = 0;
-		ag->speed = 0;
-		ag->duplex = -1;
-		break;
-
-	default:
-		printk(KERN_DEBUG "%s: connected to %d PHYs\n",
-			dev->name, phy_count);
-		ret = ag71xx_phy_connect_fixed(ag);
-		break;
+		return -ENODEV;
 	}
+
+	ag->phy_dev = phy_connect(dev, dev_name(&phydev->dev),
+				  &ag71xx_phy_link_adjust, 0,
+				  pdata->phy_if_mode);
+
+	if (IS_ERR(ag->phy_dev)) {
+		printk(KERN_ERR "%s: could not connect to PHY at %s\n",
+			dev->name, dev_name(&phydev->dev));
+		return PTR_ERR(ag->phy_dev);
+	}
+
+	/* mask with MAC supported features */
+	if (pdata->has_gbit)
+		phydev->supported &= PHY_GBIT_FEATURES;
+	else
+		phydev->supported &= PHY_BASIC_FEATURES;
+
+	phydev->advertising = phydev->supported;
+
+	printk(KERN_DEBUG "%s: connected to PHY at %s [uid=%08x, driver=%s]\n",
+		dev->name, dev_name(&phydev->dev),
+		phydev->phy_id, phydev->drv->name);
+
+	ag->link = 0;
+	ag->speed = 0;
+	ag->duplex = -1;
 
 	return ret;
 }

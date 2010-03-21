@@ -55,7 +55,6 @@ static void __init pb42_init(void)
 	ar71xx_eth0_data.phy_mask = PB42_WAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = PB42_LAN_PHYMASK;
 	ar71xx_eth1_data.speed = SPEED_100;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
