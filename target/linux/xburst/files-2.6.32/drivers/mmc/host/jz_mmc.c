@@ -101,6 +101,8 @@
 
 #define JZ_MMC_CLK_RATE 24000000
 
+#define JZ4740_MMC_MAX_TIMEOUT 10000000
+
 struct jz4740_mmc_host {
 	struct mmc_host *mmc;
 	struct platform_device *pdev;
@@ -212,11 +214,11 @@ static void jz4740_mmc_write_data(struct jz4740_mmc_host *host, struct mmc_data 
 		j = i >> 3;
 		i = i & 0x7;
 		while (j) {
-			timeout = 100000;
+			timeout = JZ4740_MMC_MAX_TIMEOUT;
 			do {
 				status = readw(host->base + JZ_REG_MMC_IREG);
 			} while (!(status & JZ_MMC_IRQ_TXFIFO_WR_REQ) && --timeout);
-			if (timeout == 0)
+			if (unlikely(timeout == 0))
 				goto err_timeout;
 
 			writew(JZ_MMC_IRQ_TXFIFO_WR_REQ, host->base + JZ_REG_MMC_IREG);
@@ -233,11 +235,11 @@ static void jz4740_mmc_write_data(struct jz4740_mmc_host *host, struct mmc_data 
 			--j;
 		}
 		if (i) {
-			timeout = 100000;
+			timeout = JZ4740_MMC_MAX_TIMEOUT;
 			do {
 				status = readw(host->base + JZ_REG_MMC_IREG);
 			} while (!(status & JZ_MMC_IRQ_TXFIFO_WR_REQ) && --timeout);
-			if (timeout == 0)
+			if (unlikely(timeout == 0))
 				goto err_timeout;
 
 			writew(JZ_MMC_IRQ_TXFIFO_WR_REQ, host->base + JZ_REG_MMC_IREG);
@@ -256,11 +258,12 @@ static void jz4740_mmc_write_data(struct jz4740_mmc_host *host, struct mmc_data 
 		goto err;
 
 	writew(JZ_MMC_IRQ_TXFIFO_WR_REQ, host->base + JZ_REG_MMC_IREG);
-	timeout = 100000;
+	timeout = JZ4740_MMC_MAX_TIMEOUT;
 	do {
 		status = readl(host->base + JZ_REG_MMC_STATUS);
 	} while ((status & JZ_MMC_STATUS_DATA_TRAN_DONE) == 0 && --timeout);
-	if (timeout == 0)
+
+	if (unlikely(timeout == 0))
 		goto err_timeout;
 	writew(JZ_MMC_IRQ_DATA_TRAN_DONE, host->base + JZ_REG_MMC_IREG);
 
@@ -312,7 +315,7 @@ static void jz4740_mmc_read_data(struct jz4740_mmc_host *host, struct mmc_data *
 		j = i >> 5;
 		i = i & 0x1f;
 		while (j) {
-			timeout = 100000;
+			timeout = JZ4740_MMC_MAX_TIMEOUT;
 			do {
 				status = readw(host->base + JZ_REG_MMC_IREG);
 			} while (!(status & JZ_MMC_IRQ_RXFIFO_RD_REQ) && --timeout);
@@ -336,7 +339,7 @@ static void jz4740_mmc_read_data(struct jz4740_mmc_host *host, struct mmc_data *
 		}
 
 		while (i >= 4) {
-			timeout = 100000;
+			timeout = JZ4740_MMC_MAX_TIMEOUT;
 			do {
 				status = readl(host->base + JZ_REG_MMC_STATUS);
 			} while ((status & JZ_MMC_STATUS_DATA_FIFO_EMPTY) && --timeout);
@@ -416,6 +419,7 @@ static irqreturn_t jz_mmc_irq(int irq, void *devid)
 		writew(tmp & ~irq_reg, host->base + JZ_REG_MMC_IREG);
 	}
 
+
 	if (irq_reg & JZ_MMC_IRQ_SDIO) {
 		writew(JZ_MMC_IRQ_SDIO, host->base + JZ_REG_MMC_IREG);
 		mmc_signal_sdio_irq(host->mmc);
@@ -466,14 +470,17 @@ handled:
 
 static int jz4740_mmc_set_clock_rate(struct jz4740_mmc_host *host, int rate) {
 	int div = 0;
-	int real_rate = host->max_clock;
-	jz4740_mmc_clock_disable(host);
+	int real_rate;
 
-	while ((real_rate >> 1) >= rate && div < 7) {
+	jz4740_mmc_clock_disable(host);
+	clk_set_rate(host->clk, JZ_MMC_CLK_RATE);
+
+	real_rate = clk_get_rate(host->clk);
+
+	while (real_rate > rate && div < 7) {
 		++div;
 		real_rate >>= 1;
 	}
-	clk_set_rate(host->clk, JZ_MMC_CLK_RATE);
 
 	writew(div, host->base + JZ_REG_MMC_CLKRT);
 	return real_rate;
@@ -543,7 +550,7 @@ static void jz4740_mmc_send_command(struct jz4740_mmc_host *host, struct mmc_com
 
 	host->waiting = 1;
 	jz4740_mmc_clock_enable(host, 1);
-	mod_timer(&host->timeout_timer, 4*HZ);
+	mod_timer(&host->timeout_timer, jiffies + 5*HZ);
 }
 
 static void jz4740_mmc_cmd_done(struct jz4740_mmc_host *host)
@@ -551,8 +558,7 @@ static void jz4740_mmc_cmd_done(struct jz4740_mmc_host *host)
 	uint32_t status;
 	struct mmc_command *cmd = host->req->cmd;
 	struct mmc_request *req = host->req;
-	unsigned int timeout = 100000;
-	status = readl(host->base + JZ_REG_MMC_STATUS);
+	unsigned int timeout = JZ4740_MMC_MAX_TIMEOUT;
 
 	if (cmd->flags & MMC_RSP_PRESENT)
 		jz4740_mmc_read_response(host, cmd);
@@ -567,12 +573,12 @@ static void jz4740_mmc_cmd_done(struct jz4740_mmc_host *host)
 	if (req->stop) {
 		jz4740_mmc_send_command(host, req->stop);
 		do {
-			status = readl(host->base + JZ_REG_MMC_STATUS);
-		} while ((status & JZ_MMC_STATUS_PRG_DONE) == 0 && --timeout);
+			status = readw(host->base + JZ_REG_MMC_IREG);
+		} while ((status & JZ_MMC_IRQ_PRG_DONE) == 0 && --timeout);
 		writew(JZ_MMC_IRQ_PRG_DONE, host->base + JZ_REG_MMC_IREG);
 	}
 
-	if (timeout == 0)
+	if (unlikely(timeout == 0))
 		req->stop->error = -ETIMEDOUT;
 
 	jz4740_mmc_request_done(host);
