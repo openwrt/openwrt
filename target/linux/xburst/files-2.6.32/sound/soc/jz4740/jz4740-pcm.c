@@ -136,8 +136,10 @@ static int jz4740_pcm_hw_free(struct snd_pcm_substream *substream)
 	struct jz4740_runtime_data *prtd = substream->runtime->private_data;
 
 	snd_pcm_set_runtime_buffer(substream, NULL);
-	if (prtd->dma)
+	if (prtd->dma) {
 		jz4740_dma_free(prtd->dma);
+		prtd->dma = NULL;
+	}
 
 	return 0;
 }
