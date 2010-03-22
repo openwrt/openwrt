@@ -103,7 +103,7 @@ endef
 define KernelPackage/hostap-pci
 $(call KernelPackage/hostap/Default)
   TITLE:=Host AP driver for PCI adaptors
-  DEPENDS:=@@PCI_SUPPORT +kmod-hostap
+  DEPENDS:=@PCI_SUPPORT +kmod-hostap
   KCONFIG:=CONFIG_HOSTAP_PCI
   AUTOLOAD:=$(call AutoLoad,60,hostap_pci)
 endef
