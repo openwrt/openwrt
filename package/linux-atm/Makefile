@@ -40,11 +40,6 @@ define Package/atm-tools/description
   This package contains the Linux ATM tools.
 endef
 
-define Build/Prepare
-	$(call Build/Prepare/Default)
-	$(INSTALL_BIN) $(SCRIPT_DIR)/config.sub $(SCRIPT_DIR)/config.guess $(PKG_BUILD_DIR)/
-endef
-
 define Build/Configure
 	$(call Build/Configure/Default)
 	# prevent autoheader invocation
@@ -52,6 +47,10 @@ define Build/Configure
 endef
 
 define Build/Compile
+	# src/qgen is built with HOSTCC, which does not really like our LDFLAGS
+	$(MAKE) -C $(PKG_BUILD_DIR)/src/qgen \
+		LDFLAGS="" \
+		all 
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
