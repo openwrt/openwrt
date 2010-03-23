@@ -39,7 +39,7 @@ fs_wait_for_key () {
 	rm -f $keypress_wait
     } &
 
-    echo "Press $1<ENTER> $2"
+    echo "Press the [$1] key and hit [enter] $2"
     # if we're on the console we wait for input
     { 
 	while [ -r $keypress_wait ]; do
