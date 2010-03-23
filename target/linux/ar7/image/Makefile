@@ -80,6 +80,7 @@ define Image/Build
 	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(BOARD)-$(1).bin)
 	$(call Image/Build/CyberTAN,$(1),AG1B,AG1B,$(1))
+	$(call Image/Build/CyberTAN,$(1),AG1A,AG1A,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA21,WA21,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA22,WA22,$(1))
 	$(call Image/Build/CyberTAN,$(1),WAG2,WAG2,$(1))
