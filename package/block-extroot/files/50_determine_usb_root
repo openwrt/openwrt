@@ -38,7 +38,7 @@ determine_external_root() {
 		config_load fstab
 		config_foreach config_mount_by_section mount 1
 		
-		[ "$rootfs_found" = "1" ] && grep -q /overlay /proc/mounts && { 
+		[ "$rootfs_found" = "1" ] && grep -q ' /overlay ' /proc/mounts && { 
 			pi_extroot_mount_success=true
 			pi_mount_skip_next=false
 		}
