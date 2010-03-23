@@ -7,16 +7,19 @@
 
 include $(TOPDIR)/rules.mk
 
-UCI_VERSION=0.7
+UCI_VERSION=12012009
 UCI_RELEASE=5
 
 PKG_NAME:=uci
 PKG_VERSION:=$(UCI_VERSION)$(if $(UCI_RELEASE),.$(UCI_RELEASE))
 PKG_RELEASE:=1
+PKG_REV:=aa3ab8012bfbf793d2884c08ea924545a04e9544
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=ed34c5ef606a90da4aba03ce6d22eeb9
+PKG_SOURCE_URL:=git://nbd.name/uci.git
+PKG_SOURCE_SUBDIR:=uci-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=$(PKG_REV)
+PKG_SOURCE_PROTO:=git
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -105,7 +108,6 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libuci.so* $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libuci.a $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libucimap.a $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,uci))
