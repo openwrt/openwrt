@@ -71,7 +71,7 @@ define KernelPackage/xen-fbdev
   )
 endef
 
-define KernelPackage/xen-fs/description
+define KernelPackage/xen-fbdev/description
   Kernel module for the Xen virtual frame buffer
 endef
 
