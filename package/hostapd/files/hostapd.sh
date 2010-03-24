@@ -111,6 +111,14 @@ hostapd_set_bss_options() {
 	case "$ieee80211w" in
 		[012])
 			append "$var" "ieee80211w=$ieee80211w" "$N"
+			[ "$ieee80211w" -gt "0" ] && {
+				config_get ieee80211w_max_timeout "$vif" ieee80211w_max_timeout
+				config_get ieee80211w_retry_timeout "$vif" ieee80211w_retry_timeout
+				[ -n "$ieee80211w_max_timeout" ] && \
+					append "$var" "assoc_sa_query_max_timeout=$ieee80211w_max_timeout" "$N"
+				[ -n "$ieee80211w_retry_timeout" ] && \
+					append "$var" "assoc_sa_query_retry_timeout=$ieee80211w_retry_timeout" "$N"
+			}
 		;;
 	esac
 }
