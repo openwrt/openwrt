@@ -106,6 +106,13 @@ hostapd_set_bss_options() {
 	append "$var" "ssid=$ssid" "$N"
 	[ -n "$bridge" ] && append "$var" "bridge=$bridge" "$N"
 	[ -n "$ieee80211d" ] && append "$var" "ieee80211d=$ieee80211d" "$N"
+
+	[ "$wpa" -ge "2" ] && config_get ieee80211w "$vif" ieee80211w
+	case "$ieee80211w" in
+		[012])
+			append "$var" "ieee80211w=$ieee80211w" "$N"
+		;;
+	esac
 }
 
 hostapd_setup_vif() {
