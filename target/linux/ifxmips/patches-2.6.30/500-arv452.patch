@@ -1,7 +1,7 @@
 Index: linux-2.6.30.10/arch/mips/ifxmips/board.c
 ===================================================================
 --- linux-2.6.30.10.orig/arch/mips/ifxmips/board.c	2010-03-24 16:45:31.000000000 +0100
-+++ linux-2.6.30.10/arch/mips/ifxmips/board.c	2010-03-24 16:53:18.000000000 +0100
++++ linux-2.6.30.10/arch/mips/ifxmips/board.c	2010-03-24 17:16:53.000000000 +0100
 @@ -52,6 +52,7 @@
  	EASY50712,
  	EASY4010,
@@ -30,8 +30,8 @@ Index: linux-2.6.30.10/arch/mips/ifxmips/board.c
  #endif
  };
  
-+struct platform_device *arv542_devs[] = {
-+	/*&ifxmips_gpio,*/ &ifxmips_mii, &ifxmips_mtd,
++struct platform_device *arv452_devs[] = {
++	&ifxmips_gpio, &ifxmips_mii, &ifxmips_mtd,
 +	&ifxmips_gpio_dev, &ifxmips_wdt, &dwc_usb,
 +#ifdef CONFIG_LEDS_GPIO
 +	&ifxmips_gpio_leds,
@@ -53,7 +53,7 @@ Index: linux-2.6.30.10/arch/mips/ifxmips/board.c
 +		.type = ARV452,
 +		.name = "ARV452",
 +		.system_type = SYSTEM_DANUBE_CHIPID2,
-+		.devs = arv542_devs,
++		.devs = arv452_devs,
 +		.reset_resource = {.name = "reset", .start = 1, .end = 14},
 +		.pci_external_clock = 1,
 +#ifdef CONFIG_LEDS_GPIO
@@ -68,7 +68,7 @@ Index: linux-2.6.30.10/arch/mips/ifxmips/board.c
  		break;
 +	case ARV452:
 +		/* set some sane defaults for the gpios */
-+		board->num_devs = ARRAY_SIZE(arv542_devs);
++		board->num_devs = ARRAY_SIZE(arv452_devs);
 +		ifxmips_w32(0x8001e7ff, IFXMIPS_EBU_BUSCON1);
 +#ifdef CONFIG_LEDS_GPIO
 +		ifxmips_gpio_led_data.num_leds = ARRAY_SIZE(arv452_gpio_leds);
