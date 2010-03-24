@@ -120,7 +120,7 @@ $(call KernelPackage/video/Depends,@LINUX_2_6 @USB_SUPPORT +kmod-usb-core)
   TITLE:=SN9C102 Camera Chip support
   KCONFIG:=CONFIG_USB_SN9C102
   FILES:=$(LINUX_DIR)/drivers/media/video/sn9c102/sn9c102.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,70,sn9c102)
+  AUTOLOAD:=$(call AutoLoad,70,gspca_sn9c20x)
 endef
 
 
