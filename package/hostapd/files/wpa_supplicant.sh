@@ -50,22 +50,17 @@ wpa_supplicant_setup_vif() {
 		*psk*)
 			key_mgmt='WPA-PSK'
 			config_get_bool usepassphrase "$vif" passphrase 1
+			if [ "$usepassphrase" = "1" ]; then
+				passphrase="psk=\"${key}\""
+			else
+				passphrase="psk=${key}"
+			fi
 			case "$enc" in
 				*psk2*)
 					proto='proto=RSN'
-					if [ "$usepassphrase" = "1" ]; then
-						passphrase="psk=\"${key}\""
-					else
-						passphrase="psk=${key}"
-					fi
 				;;
 				*psk*)
 					proto='proto=WPA'
-					if [ "$usepassphrase" = "1" ]; then
-						passphrase="psk=\"${key}\""
-					else
-						passphrase="psk=${key}"
-					fi
 				;;
 			esac
 		;;
