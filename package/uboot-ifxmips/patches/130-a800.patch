@@ -1,0 +1,33 @@
+Index: u-boot-1.1.5/drivers/ifx_sw.c
+===================================================================
+--- u-boot-1.1.5.orig/drivers/ifx_sw.c	2010-03-24 19:21:19.000000000 +0100
++++ u-boot-1.1.5/drivers/ifx_sw.c	2010-03-24 19:23:09.000000000 +0100
+@@ -118,7 +118,7 @@
+ {
+ 	struct eth_device *dev;
+ 	unsigned short chipid;
+-
++	int i;
+ #if 0
+ 	printf("Entered danube_switch_initialize()\n");
+ #endif
+@@ -130,6 +130,19 @@
+ 	}
+ 	memset(dev, 0, sizeof(*dev));
+ 
++#ifdef A800_SWITCH
++	printf ("bring up a800 switch and leds\n");
++	*EBU_CON_1 = 0x1e7ff;
++	*EBU_ADDR_SEL_1 = 0x14000001;
++
++	*((volatile u16*)0xb4000000) = 0x0;
++	for(i = 0; i < 1000; i++)
++		udelay(1000);
++	*((volatile u16*)0xb4000000) = (1 << 10);
++	*EBU_CON_1 = 0x8001e7ff;
++#define CLK_OUT2_25MHZ
++#endif
++
+ 	danube_dma_init();
+ 	danube_init_switch_chip(REV_MII_MODE);
+ 

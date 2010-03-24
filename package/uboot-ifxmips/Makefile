@@ -34,6 +34,10 @@ define Build/Prepare
 	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 endef
 
+define Package/uboot-ifxmips/config
+	source "$(SOURCE)/Config.in"
+endef
+
 UBOOT_CONFIG:=danube
 
 UBOOT_MAKE_OPTS:=\
@@ -42,6 +46,11 @@ UBOOT_MAKE_OPTS:=\
 	COMPRESS=lzma \
 	PLATFORM_CPU=mips32r2 \
 	UBOOT_RAM_TEXT_BASE=0xA0400000
+
+A800_FIX:=
+ifeq ($(CONFIG_IFXMIPS_UBOOT_A800),y)
+A800_FIX += -DA800_SWITCH
+endif
 
 define Build/Configure
 	$(MAKE) -s -C $(PKG_BUILD_DIR) \
@@ -52,7 +61,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(UBOOT_MAKE_OPTS) \
-		OWRT_FLAGS="-DTEXT_BASE=0xa0400000" \
+		OWRT_FLAGS="-DTEXT_BASE=0xa0400000 ${A800_FIX}" \
 		ifx_all
 	$(CP) $(PKG_BUILD_DIR)/u-boot.srec $(PKG_BUILD_DIR)/asc.srec
 	$(PKG_BUILD_DIR)/gct \
@@ -61,7 +70,7 @@ define Build/Compile
 		$(PKG_BUILD_DIR)/u-boot.asc
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(UBOOT_MAKE_OPTS) \
-		OWRT_FLAGS="-DDANUBE_BOOT_FROM_EBU=1 -DTEXT_BASE=0xB0000000" \
+		OWRT_FLAGS="-DDANUBE_BOOT_FROM_EBU=1 -DTEXT_BASE=0xB0000000 ${A800_FIX}" \
 		clean ifx_all
 endef
 

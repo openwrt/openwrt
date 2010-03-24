@@ -83,12 +83,10 @@ unsigned long flash_init (void)
 	unsigned long size = 0;
 	int i;
 
-	printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 	/* Init: no FLASHes known */
 	for (i=0; i < CFG_MAX_FLASH_BANKS; ++i) {         // 1 bank 
 		ulong flashbase = (i == 0) ? PHYS_FLASH_1 : PHYS_FLASH_2;      // 0xb0000000,  0xb4000000
 
-       printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 	   volatile ulong * buscon = (ulong *)
 			((i == 0) ? DANUBE_EBU_BUSCON0 : DANUBE_EBU_BUSCON1);
 
@@ -96,12 +94,10 @@ unsigned long flash_init (void)
 //		*buscon &= ~AMAZON_EBU_BUSCON0_WRDIS;
 		/* Enable write protection */
 		*buscon |= DANUBE_EBU_BUSCON0_WRDIS;
-printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 
 #if 1
 		memset(&flash_info[i], 0, sizeof(flash_info_t));
 #endif
-printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 
 		flash_info[i].size = 
 			flash_get_size((FPW *)flashbase, &flash_info[i]);
@@ -463,23 +459,19 @@ ulong flash_get_size (FPWV *addr, flash_info_t *info)
 //		asm("SYNC");	 
 	switch (addr[1] & 0xff) {
 	case (uchar)AMD_MANUFACT:
-		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 		info->flash_id = FLASH_MAN_AMD;
 		break;
 
 	case (uchar)INTEL_MANUFACT:			// 0x0089
-		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 		info->flash_id = FLASH_MAN_INTEL; //0x00300000
 		break;
 		
 //joelin for MXIC		
 	case (uchar)MX_MANUFACT:		// 0x00c2
-		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 		info->flash_id = FLASH_MAN_MX ;//0x00030000
 		break;
 		
 	default:
-		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 		info->flash_id = FLASH_UNKNOWN;
 		info->sector_count = 0;
 		info->size = 0;
@@ -489,11 +481,9 @@ ulong flash_get_size (FPWV *addr, flash_info_t *info)
 		break;*/
 	}
 
-	printf("%s:%s[%d] %08lx\n", __FILE__, __func__, __LINE__, addr[0]);
 	/* Check 16 bits or 32 bits of ID so work on 32 or 16 bit bus. */
 	if (info->flash_id != FLASH_UNKNOWN) switch (addr[0]) {
 	case (FPW)EON_ID_EN29LV320B:
-		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 		info->flash_id += FLASH_29LV320B;
 		info->sector_count = 71;
 		info->size = 0x00400000 * (sizeof(FPW)/2);
