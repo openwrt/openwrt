@@ -19,5 +19,6 @@ endchoice
 
 config IFXMIPS_DSL_DEBUG
 	bool "ifxmips-dsl debugging"
+	depends on PACKAGE_kmod-ifxmips-dsl-api
 	help
 	  Say Y, if you need ifxmips-dsl to display debug messages.
