@@ -8,7 +8,7 @@ r6040_module() {
 }
 
 set_ether_mac() {
-	kernel=$(grep magic /proc/mtd | awk -F: '{print $1}')
+	kernel=$(grep firmware /proc/mtd | awk -F: '{print $1}')
 	[ -n $kernel ] && hdr=$(dd if=/dev/$kernel count=4 bs=1 2> /dev/null)
 	[ "$hdr" = "CSYS" ] && config=$(find_mtd_part config)
 	if [ -n "$config" ]; then
