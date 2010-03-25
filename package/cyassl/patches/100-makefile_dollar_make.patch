@@ -1,0 +1,22 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -4,7 +4,7 @@ EXTRA_DIST = cyassl.dsp cyassl.dsw certs
+     doc/*.pdf
+ 
+ basic:
+-	cd src; make; cd ../testsuite; make; cd ../
++	cd src; $(MAKE); cd ../testsuite; $(MAKE); cd ../
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -638,7 +638,7 @@ uninstall-am:
+ 
+ 
+ basic:
+-	cd src; make; cd ../testsuite; make; cd ../
++	cd src; $(MAKE); cd ../testsuite; $(MAKE); cd ../
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \

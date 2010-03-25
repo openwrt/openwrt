@@ -1,0 +1,53 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1,10 +1,10 @@
+-SUBDIRS = src ctaocrypt examples testsuite
++SUBDIRS = src ctaocrypt
+ EXTRA_DIST = cyassl.dsp cyassl.dsw certs/*.pem certs/*.der certs/*.txt \
+     lib/dummy cyassl.sln cyassl.vcproj cyassl-iphone.xcodeproj/project.pbxproj \
+     doc/*.pdf
+ 
+ basic:
+-	cd src; $(MAKE); cd ../testsuite; $(MAKE); cd ../
++	cd src; $(MAKE); cd ../
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -190,7 +190,7 @@ target_os = @target_os@
+ target_vendor = @target_vendor@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+-SUBDIRS = src ctaocrypt examples testsuite
++SUBDIRS = src ctaocrypt
+ EXTRA_DIST = cyassl.dsp cyassl.dsw certs/*.pem certs/*.der certs/*.txt \
+     lib/dummy cyassl.sln cyassl.vcproj cyassl-iphone.xcodeproj/project.pbxproj \
+     doc/*.pdf
+@@ -638,7 +638,7 @@ uninstall-am:
+ 
+ 
+ basic:
+-	cd src; $(MAKE); cd ../testsuite; $(MAKE); cd ../
++	cd src; $(MAKE); cd ../
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+--- a/ctaocrypt/Makefile.am
++++ b/ctaocrypt/Makefile.am
+@@ -1,3 +1,3 @@
+-SUBDIRS = src test benchmark
++SUBDIRS = src
+ EXTRA_DIST = ctaocrypt.dsw ctaocrypt.dsp ctaocrypt.sln ctaocrypt.vcproj
+ 
+--- a/ctaocrypt/Makefile.in
++++ b/ctaocrypt/Makefile.in
+@@ -174,7 +174,7 @@ target_os = @target_os@
+ target_vendor = @target_vendor@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+-SUBDIRS = src test benchmark
++SUBDIRS = src
+ EXTRA_DIST = ctaocrypt.dsw ctaocrypt.dsp ctaocrypt.sln ctaocrypt.vcproj
+ all: all-recursive
+ 
