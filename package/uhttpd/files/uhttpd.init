@@ -1,0 +1,115 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2010 Jo-Philipp Wich
+
+START=50
+UHTTPD_BIN="/usr/sbin/uhttpd"
+PX5G_BIN="/usr/sbin/px5g"
+
+
+append_listen_http() {
+	append UHTTPD_ARGS "-p $1"
+}
+
+append_listen_https() {
+	append UHTTPD_ARGS "-s $1"
+}
+
+append_arg() {
+	local cfg="$1"
+	local var="$2"
+	local opt="$3"
+	local def="$4"
+	local val
+
+	config_get val "$cfg" "$var"
+	[ -n "$val" -o -n "$def" ] && append UHTTPD_ARGS "$opt ${val:-$def}"
+}
+
+generate_keys() {
+	local cfg="$1"
+	local key="$2"
+	local crt="$3"
+	local days bits country state location commonname
+
+	config_get days       "$cfg" days
+	config_get bits       "$cfg" bits
+	config_get country    "$cfg" country
+	config_get state      "$cfg" state
+	config_get location   "$cfg" location
+	config_get commonname "$cfg" commonname
+
+	[ -x "$PX5G_BIN" ] && {
+		$PX5G_BIN selfsigned -der \
+			-days ${days:-730} -newkey rsa:${bits:-1024} -keyout "$UHTTPD_KEY" -out "$UHTTPD_CERT" \
+			-subj /C=${country:-DE}/ST=${state:-Saxony}/L=${location:-Leipzig}/CN=${commonname:-OpenWrt}
+	} || {
+		echo "WARNING: the specified certificate and key" \
+			"files do not exist and the px5g generator" \
+			"is not available, skipping SSL setup."
+	}	
+}
+
+start_instance()
+{
+	UHTTPD_ARGS=""
+	UHTTPD_CERT=""
+	UHTTPD_KEY=""
+
+	local cfg="$1"
+	local realm="$(uci get system.@system[0].hostname 2>/dev/null)"
+	local ssl
+
+	append_arg "$cfg" home "-h"
+	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
+	append_arg "$cfg" config "-c"
+	append_arg "$cfg" cgi_prefix "-x"
+	append_arg "$cfg" lua_prefix "-l"
+	append_arg "$cfg" lua_handler "-L"
+
+	config_list_foreach "$cfg" listen_http \
+		append_listen_http
+
+	config_get ssl "$cfg" listen_https
+	config_get UHTTPD_KEY  "$cfg" key  /etc/uhttpd.key
+	config_get UHTTPD_CERT "$cfg" cert /etc/uhttpd.crt
+
+	[ -n "$ssl" ] && {
+		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] || {
+			config_foreach generate_keys cert
+		}
+
+		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] && {
+			append_arg "$cfg" cert "-C"
+			append_arg "$cfg" key  "-K"
+
+			config_list_foreach "$cfg" listen_https \
+				append_listen_https
+		}
+	}
+
+	start-stop-daemon -S -x $UHTTPD_BIN \
+		-p /var/run/uhttpd_${cfg}.pid \
+		-m -b -- -f $UHTTPD_ARGS
+}
+
+stop_instance()
+{
+	local cfg="$1"
+
+	[ -f /var/run/uhttpd_${cfg}.pid ] && {
+		start-stop-daemon -K -q -n ${UHTTPD_BIN##*/} \
+			-p /var/run/uhttpd_${cfg}.pid -s TERM
+
+		rm -f /var/run/uhttpd_${cfg}.pid
+	}
+}
+
+start() {
+	config_load uhttpd
+	config_foreach start_instance uhttpd
+}
+
+stop() {
+	config_load uhttpd
+	config_foreach stop_instance uhttpd
+}
