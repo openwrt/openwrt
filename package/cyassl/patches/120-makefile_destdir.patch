@@ -1,0 +1,49 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -8,14 +8,11 @@ basic:
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+-    ln -s ../src/.libs/libcyassl.a libssl.a; \
+-    ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
++	ln -s ../src/.libs/libcyassl.a libssl.a; \
++	ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
+ 
+ install:
+-	mkdir ${prefix}/cyassl; \
+-    mkdir ${prefix}/cyassl/include; \
+-    mkdir ${prefix}/cyassl/include/openssl; \
+-    cp include/openssl/*.h ${prefix}/cyassl/include/openssl; \
+-    make openssl-links; \
+-    mkdir ${prefix}/cyassl/lib; \
+-    cp lib/*.a ${prefix}/cyassl/lib
++	$(mkinstalldirs) $(DESTDIR)$(includedir)/cyassl $(DESTDIR)$(libdir); \
++	cp -fpR include/* $(DESTDIR)$(includedir)/cyassl; \
++	make openssl-links; \
++	cp -fpR src/.libs/libcyassl.{a,so*} src/libcyassl.la $(DESTDIR)$(libdir)
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -642,17 +642,14 @@ basic:
+ 
+ openssl-links:
+ 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+-    ln -s ../src/.libs/libcyassl.a libssl.a; \
+-    ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
++	ln -s ../src/.libs/libcyassl.a libssl.a; \
++	ln -s ../src/.libs/libcyassl.a libcyassl.a; cd ../
+ 
+ install:
+-	mkdir ${prefix}/cyassl; \
+-    mkdir ${prefix}/cyassl/include; \
+-    mkdir ${prefix}/cyassl/include/openssl; \
+-    cp include/openssl/*.h ${prefix}/cyassl/include/openssl; \
+-    make openssl-links; \
+-    mkdir ${prefix}/cyassl/lib; \
+-    cp lib/*.a ${prefix}/cyassl/lib
++	$(mkinstalldirs) $(DESTDIR)$(includedir)/cyassl $(DESTDIR)$(libdir); \
++	cp -fpR include/* $(DESTDIR)$(includedir)/cyassl; \
++	make openssl-links; \
++	cp -fpR src/.libs/libcyassl.{a,so*} src/libcyassl.la $(DESTDIR)$(libdir)
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
