@@ -74,6 +74,9 @@
 #define SUPPORT_4712_CHIP      0x0001
 #define SUPPORT_INTEL_FLASH    0x0002
 #define SUPPORT_5325E_SWITCH   0x0004
+/* (from 3.00.24 firmware cyutils.h) */
+#define SUPPORT_4704_CHIP      0x0008
+#define SUPPORT_5352E_CHIP     0x0010
 
 struct code_header {			/* from cyutils.h */
 	char magic[4];
@@ -82,16 +85,21 @@ struct code_header {			/* from cyutils.h */
 	char fwvern[3];
 	char id[4];					/* U2ND */
 	char hw_ver;    			/* 0: for 4702, 1: for 4712 -- new in 2.04.3 */
-	char unused;
-	unsigned char flags[2];       /* SUPPORT_ flags new for 3.37.2 (WRT54G v2.2 and WRT54GS v1.1) */
-	unsigned char res2[10];
+
+	unsigned char  sn;		// Serial Number
+	unsigned char  flags[2];	/* SUPPORT_ flags new for 3.37.2 (WRT54G v2.2 and WRT54GS v1.1) */
+	unsigned char  stable[2];	// The image is stable (for dual image)
+	unsigned char  try1[2];		// Try to boot image first time (for dual image)
+	unsigned char  try2[2];		// Try to boot image second time (for dual image)
+	unsigned char  try3[2];		// Try to boot image third time (for dual_image)
+	unsigned char  res3[2];
 } ;
 
 struct board_info {
 	char	*id;
 	char	*pattern;
 	char	hw_ver;
-	char	unused;
+	char	sn;
 	char	flags[2];
 };
 
@@ -100,7 +108,7 @@ struct board_info boards[] = {
 		.id		= "WRT160NL",
 		.pattern	= "NL16",
 		.hw_ver		= 0x00,
-		.unused		= 0x0f,
+		.sn		= 0x0f,
 		.flags		= {0x3f, 0x00},
 	}, {
 		/* Terminating entry */
@@ -114,7 +122,7 @@ void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-B board_id] [-p pattern] [-g] [-b] [-v v#.#.#] [-r #.#] [-{0|1|2|4}] -h\n");
+	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-B board_id] [-p pattern] [-s serial] [-g] [-b] [-v v#.#.#] [-r #.#] [-{0|1|2|4|5}] -h\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -155,7 +163,7 @@ int main(int argc, char **argv)
 	hdr = (struct code_header *) buf;
 	memset(hdr, 0, sizeof(struct code_header));
 
-	while ((c = getopt(argc, argv, "i:o:p:gbv:0124hr:B:")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:s:gbv:01245hr:B:")) != -1) {
 		switch (c) {
 			case 'i':
 				ifn = optarg;
@@ -165,6 +173,9 @@ int main(int argc, char **argv)
 				break;
 			case 'p':
 				pattern = optarg;
+				break;
+			case 's':
+				hdr->sn = (unsigned char) atoi (optarg);
 				break;
 			case 'g':
 				gflag = 1;
@@ -192,6 +203,13 @@ int main(int argc, char **argv)
 				hdr->hw_ver = 0;
 				hdr->flags[0] = 0x1f;
 				break;
+			case '5':
+				/* V5 is appended to trxV2 image */
+				hdr->stable[0] = hdr->stable[1] = 0xFF;
+				hdr->try1[0]   = hdr->try1[1]   = 0xFF;
+				hdr->try2[0]   = hdr->try2[1]   = 0xFF;
+				hdr->try3[0]   = hdr->try3[1]   = 0xFF;
+				break;
                         case 'r':
                                 hdr->hw_ver = (char)(atof(optarg)*10)+0x30;
                                 break;
@@ -218,7 +236,7 @@ int main(int argc, char **argv)
 		}
 		pattern = board->pattern;
 		hdr->hw_ver = board->hw_ver;
-		hdr->unused = board->unused;
+		hdr->sn = board->sn;
 		hdr->flags[0] = board->flags[0];
 		hdr->flags[1] = board->flags[1];
 	}

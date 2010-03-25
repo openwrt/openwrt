@@ -35,6 +35,12 @@
  * February 19, 2005 - mbm
  *
  * Add -a (align offset) and -b (absolute offset)
+ *
+ * March 24, 2010 - markus
+ *
+ * extend trx header struct for new version
+ * assume v1 for as default
+ * Add option -2 to allow v2 header
  */
 
 #include <stdio.h>
@@ -59,7 +65,6 @@ uint32_t crc32buf(char *buf, size_t len);
 /* from trxhdr.h */
 
 #define TRX_MAGIC	0x30524448	/* "HDR0" */
-#define TRX_VERSION	1
 #define TRX_MAX_LEN	0x720000
 #define TRX_NO_HEADER	1		/* Do not write TRX header */	
 
@@ -68,7 +73,7 @@ struct trx_header {
 	uint32_t len;			/* Length of file including header */
 	uint32_t crc32;			/* 32-bit CRC from flag_version to end of file */
 	uint32_t flag_version;	/* 0:15 flags, 16:31 version */
-	uint32_t offsets[3];	/* Offsets of partitions from start of header */
+	uint32_t offsets[4];	/* Offsets of partitions from start of header */
 };
 
 /**********************************************************************/
@@ -77,7 +82,9 @@ void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: trx [-o outfile] [-m maxlen] [-a align] [-b offset] [-f file] [-f file [-f file]]\n");
+	fprintf(stderr, "Usage:\n");
+	fprintf(stderr, " trx [-2] [-o outfile] [-m maxlen] [-a align] [-b offset] \\\n");
+	fprintf(stderr, "     [-f file] [-f file [-f file [-f file (v2 only)]]]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -93,6 +100,7 @@ int main(int argc, char **argv)
 	uint32_t cur_len;
 	unsigned long maxlen = TRX_MAX_LEN;
 	struct trx_header *p;
+	char trx_version = 1;
 
 	fprintf(stderr, "mjn3's trx replacement - v0.81.1\n");
 
@@ -104,14 +112,24 @@ int main(int argc, char **argv)
 	p = (struct trx_header *) buf;
 
 	p->magic = STORE32_LE(TRX_MAGIC);
-	cur_len = sizeof(struct trx_header);
-	p->flag_version = STORE32_LE((TRX_VERSION << 16));
+	cur_len = sizeof(struct trx_header) - 4; /* assume v1 header */
+	p->flag_version = STORE32_LE((trx_version << 16));
 
 	in = NULL;
 	i = 0;
 
-	while ((c = getopt(argc, argv, "-:o:m:a:b:f:A:")) != -1) {
+	while ((c = getopt(argc, argv, "-:2o:m:a:b:f:A:")) != -1) {
 		switch (c) {
+			case '2':
+				/* take care that nothing was written to buf so far */
+				if (cur_len != sizeof(struct trx_header) - 4) {
+					fprintf(stderr, "-2 has to be used before any other argument!\n");
+				}
+				else {
+					trx_version = 2;
+					cur_len += 4;
+				}
+				break;
 			case 'A':
 				append = 1;
 				/* fall through */
