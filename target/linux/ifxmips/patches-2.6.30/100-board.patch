@@ -1,8 +1,8 @@
-Index: linux-2.6.30.5/arch/mips/Kconfig
+Index: linux-2.6.30.10/arch/mips/Kconfig
 ===================================================================
---- linux-2.6.30.5.orig/arch/mips/Kconfig	2009-09-02 22:12:48.000000000 +0200
-+++ linux-2.6.30.5/arch/mips/Kconfig	2009-09-03 01:18:31.000000000 +0200
-@@ -79,6 +79,24 @@
+--- linux-2.6.30.10.orig/arch/mips/Kconfig	2010-03-24 15:32:02.000000000 +0100
++++ linux-2.6.30.10/arch/mips/Kconfig	2010-03-24 21:56:29.000000000 +0100
+@@ -79,6 +79,23 @@
  	select SYS_SUPPORTS_64BIT_KERNEL
  	select SYS_SUPPORTS_LITTLE_ENDIAN
  
@@ -20,14 +20,13 @@ Index: linux-2.6.30.5/arch/mips/Kconfig
 +	select SYS_SUPPORTS_MULTITHREADING
 +	select SYS_HAS_EARLY_PRINTK
 +	select HW_HAS_PCI
-+	select GENERIC_GPIO
-+	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select ARCH_REQUIRE_GPIOLIB
 +	select SWAP_IO_SPACE
 +
  config MACH_DECSTATION
  	bool "DECstations"
  	select BOOT_ELF32
-@@ -643,6 +661,7 @@
+@@ -643,6 +660,7 @@
  source "arch/mips/txx9/Kconfig"
  source "arch/mips/vr41xx/Kconfig"
  source "arch/mips/cavium-octeon/Kconfig"
@@ -35,10 +34,10 @@ Index: linux-2.6.30.5/arch/mips/Kconfig
  
  endmenu
  
-Index: linux-2.6.30.5/arch/mips/Makefile
+Index: linux-2.6.30.10/arch/mips/Makefile
 ===================================================================
---- linux-2.6.30.5.orig/arch/mips/Makefile	2009-09-02 22:12:48.000000000 +0200
-+++ linux-2.6.30.5/arch/mips/Makefile	2009-09-02 22:12:53.000000000 +0200
+--- linux-2.6.30.10.orig/arch/mips/Makefile	2010-03-24 15:32:02.000000000 +0100
++++ linux-2.6.30.10/arch/mips/Makefile	2010-03-24 15:32:04.000000000 +0100
 @@ -290,6 +290,13 @@
  load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
  
@@ -53,10 +52,10 @@ Index: linux-2.6.30.5/arch/mips/Makefile
  # DECstation family
  #
  core-$(CONFIG_MACH_DECSTATION)	+= arch/mips/dec/
-Index: linux-2.6.30.5/arch/mips/include/asm/bootinfo.h
+Index: linux-2.6.30.10/arch/mips/include/asm/bootinfo.h
 ===================================================================
---- linux-2.6.30.5.orig/arch/mips/include/asm/bootinfo.h	2009-09-02 22:12:48.000000000 +0200
-+++ linux-2.6.30.5/arch/mips/include/asm/bootinfo.h	2009-09-02 22:13:05.000000000 +0200
+--- linux-2.6.30.10.orig/arch/mips/include/asm/bootinfo.h	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/arch/mips/include/asm/bootinfo.h	2010-03-24 15:32:04.000000000 +0100
 @@ -57,6 +57,8 @@
  #define	MACH_MIKROTIK_RB532	0	/* Mikrotik RouterBoard 532 	*/
  #define MACH_MIKROTIK_RB532A	1	/* Mikrotik RouterBoard 532A 	*/
