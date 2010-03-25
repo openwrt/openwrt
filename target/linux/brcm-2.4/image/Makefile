@@ -32,7 +32,13 @@ ifneq ($(KERNEL),2.4)
 endif
 
 define Image/Build/CyberTAN
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(5).bin
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
+endef
+define Image/Build/CyberTAN2
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx2 -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
+endef
+define Image/Build/CyberTANHead
+	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/openwrt-$(2)-header.bin $(if $(6),-s $(6))
 endef
 
 define Image/Build/Motorola
@@ -50,13 +56,21 @@ define trxalign/jffs2-64k
 -a 0x10000 -f $(KDIR)/root.$(1)
 endef
 define trxalign/squashfs
--a 1024 -f $(KDIR)/root.$(1) -a 0x10000 -A $(KDIR)/fs_mark
+-a 1024 -f $(KDIR)/root.$(1) $(if $(2),-f $(2)) -a 0x10000 -A $(KDIR)/fs_mark
 endef
 
+define Image/Build/trxV2
+	$(call Image/Build/CyberTANHead,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
+	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx2 \
+		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
+		$(call trxalign/$(1),$(1),$(KDIR)/openwrt-$(2)-header.bin)
+	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
+endef
 
 define Image/Build/jffs2-128k
 	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.08.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/trxV2,$(1),wrt54g3gv2-vf,3G2V,3.00.24,$(patsubst jffs2-%,jffs2,$(1)),6)
   ifeq ($(KERNEL),2.6)
 	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
   endif
@@ -85,7 +99,9 @@ define Image/Build/Initramfs
 endef
 
 define Image/Build
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1),$(1))
+	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx \
+		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
+		$(call trxalign/$(1),$(1))
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
 	$(call Image/Build/USR,$(1),usr5461,$(1))
