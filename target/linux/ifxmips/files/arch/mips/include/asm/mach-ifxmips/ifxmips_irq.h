@@ -66,8 +66,11 @@
 
 #define IFXMIPS_PPE_MBOX_INT		(INT_NUM_IM2_IRL0 + 24)
 
-#define IFXMIPS_USB_INT			(INT_NUM_IM4_IRL0 + 22)
-#define IFXMIPS_USB_OC_INT		(INT_NUM_IM4_IRL0 + 23)
+#define INT_NUM_IM4_IRL14			(INT_NUM_IM4_IRL0 + 14)
+#define INT_NUM_IM4_IRL18			(INT_NUM_IM4_IRL0 + 18)
+#define INT_NUM_IM4_IRL19			(INT_NUM_IM4_IRL0 + 19)
+#define IFXMIPS_USB_INT				(INT_NUM_IM4_IRL0 + 22)
+#define IFXMIPS_USB_OC_INT			(INT_NUM_IM4_IRL0 + 23)
 
 
 extern void ifxmips_mask_and_ack_irq(unsigned int irq_nr);
