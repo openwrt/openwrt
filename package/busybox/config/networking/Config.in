@@ -144,13 +144,13 @@ config BUSYBOX_CONFIG_HOSTNAME
 
 config BUSYBOX_CONFIG_HTTPD
 	bool "httpd"
-	default y
+	default n
 	help
 	  Serve web pages via an HTTP server.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_RANGES
 	bool "Support 'Ranges:' header"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  Makes httpd emit "Accept-Ranges: bytes" header and understand
@@ -177,7 +177,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_SETUID
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
 	bool "Enable Basic http Authentication"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  Utilizes password settings from /etc/httpd.conf for basic
@@ -185,7 +185,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_AUTH_MD5
 	bool "Support MD5 crypted passwords for http Authentication"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
 	help
 	  Enables basic per URL authentication from /etc/httpd.conf
@@ -193,7 +193,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_AUTH_MD5
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	bool "Support Common Gateway Interface (CGI)"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows scripts and executables to be invoked
@@ -201,7 +201,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	bool "Support for running scripts through an interpreter"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
 	  This option enables support for running scripts through an
@@ -212,7 +212,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
 	bool "Set REMOTE_PORT environment variable for CGI"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
 	  Use of this option can assist scripts in generating
@@ -220,7 +220,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_ENCODE_URL_STR
 	bool "Enable -e option (useful for CGIs written as shell scripts)"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows html encoding of arbitrary strings for display
@@ -230,7 +230,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ENCODE_URL_STR
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
 	bool "Support for custom error pages"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows you to define custom error pages in
@@ -243,7 +243,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_PROXY
 	bool "Support for reverse proxy"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows you to define URLs that will be forwarded
