@@ -267,7 +267,6 @@ $(call KernelPackage/crypto/Depends,)
 	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/tea.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/twofish.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/twofish_common.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/wp512.$(LINUX_KMOD_SUFFIX)
 endef
 
@@ -276,7 +275,8 @@ define KernelPackage/crypto-misc/2.6
 	$(LINUX_DIR)/crypto/camellia.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/fcrypt.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/tgr192.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/crypto/tgr192.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/twofish_common.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/crypto-misc/x86
