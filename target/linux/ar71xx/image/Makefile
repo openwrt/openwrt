@@ -289,7 +289,7 @@ endef
 define Image/Build/TPLINK/initramfs
 	$(call PatchKernelGzip,$(2),$(3))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
-		-B $(4) -N OpenWrt -V $(REVISION)\
+		-B $(4) -N OpenWrt -V $(REVISION) -s \
 		-k $(KDIR)/vmlinux-$(2).bin.gz \
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
