@@ -1,0 +1,23 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -202,7 +202,6 @@ ieee80211_input(struct ieee80211vap * va
+ 	struct ieee80211com *ic;
+ 	struct net_device *dev;
+ 	struct ieee80211_node *ni_wds = NULL;
+-	struct net_device_stats *stats;
+ 	struct ieee80211_frame *wh;
+ 	struct ieee80211_key *key;
+ 	struct ether_header *eh;
+@@ -685,12 +684,6 @@ ieee80211_input(struct ieee80211vap * va
+ 		if (! accept_data_frame(vap, ni, key, skb, eh))
+ 			goto out;
+ 
+-		if (ni->ni_subif && ((eh)->ether_type != __constant_htons(ETHERTYPE_PAE)))
+-			stats = &ni->ni_subif->iv_devstats;
+-		else
+-			stats = &vap->iv_devstats;
+-		stats->rx_packets++;
+-		stats->rx_bytes += skb->len;
+ 		IEEE80211_NODE_STAT(ni, rx_data);
+ 		IEEE80211_NODE_STAT_ADD(ni, rx_bytes, skb->len);
+ 		ic->ic_lastdata = jiffies;

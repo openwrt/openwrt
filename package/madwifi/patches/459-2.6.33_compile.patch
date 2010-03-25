@@ -1,7 +1,5 @@
-Index: madwifi-trunk-r3314/kernelversion.c
-===================================================================
---- madwifi-trunk-r3314.orig/kernelversion.c	2010-03-03 11:24:57.250287480 +0100
-+++ madwifi-trunk-r3314/kernelversion.c	2010-03-03 11:25:30.255287207 +0100
+--- a/kernelversion.c
++++ b/kernelversion.c
 @@ -10,7 +10,11 @@
  
  /* Linux 2.6.18+ uses <linux/utsrelease.h> */
@@ -15,11 +13,9 @@ Index: madwifi-trunk-r3314/kernelversion.c
  #endif
  
  char *uts_release = UTS_RELEASE;
-Index: madwifi-trunk-r3314/ath/if_ath.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath.c	2010-03-03 11:25:33.266287431 +0100
-+++ madwifi-trunk-r3314/ath/if_ath.c	2010-03-03 12:07:39.606288303 +0100
-@@ -11580,227 +11580,231 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -11580,227 +11580,231 @@ static int mincalibrate = 1;		/* once a 
  static int maxint = 0x7fffffff;		/* 32-bit big */
  
  static const ctl_table ath_sysctl_template[] = {
@@ -287,7 +283,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	  .procname     = "cca_thresh",
  	  .mode         = 0644,
  	  .proc_handler = ath_sysctl_halparam,
-@@ -11838,12 +11842,16 @@
+@@ -11838,12 +11842,16 @@ ath_dynamic_sysctl_register(struct ath_s
  
  	/* setup the table */
  	memset(sc->sc_sysctls, 0, space);
@@ -304,7 +300,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	sc->sc_sysctls[2].procname = dev_name;
  	sc->sc_sysctls[2].mode = 0555;
  	sc->sc_sysctls[2].child = &sc->sc_sysctls[4];
-@@ -11966,7 +11974,7 @@
+@@ -11966,7 +11974,7 @@ ath_announce(struct net_device *dev)
   */
  static ctl_table ath_static_sysctls[] = {
  #ifdef AR_DEBUG
@@ -313,7 +309,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	  .procname	= "debug",
  	  .mode		= 0644,
  	  .data		= &ath_debug,
-@@ -11974,14 +11982,14 @@
+@@ -11974,14 +11982,14 @@ static ctl_table ath_static_sysctls[] = 
  	  .proc_handler	= proc_dointvec
  	},
  #endif
@@ -330,7 +326,7 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	  .procname	= "calibrate",
  	  .mode		= 0644,
  	  .data		= &ath_calinterval,
-@@ -11993,14 +12001,14 @@
+@@ -11993,14 +12001,14 @@ static ctl_table ath_static_sysctls[] = 
  	{ 0 }
  };
  static ctl_table ath_ath_table[] = {
@@ -347,10 +343,8 @@ Index: madwifi-trunk-r3314/ath/if_ath.c
  	  .procname	= "dev",
  	  .mode		= 0555,
  	  .child	= ath_ath_table
-Index: madwifi-trunk-r3314/ath/if_ath_ahb.h
-===================================================================
---- madwifi-trunk-r3314.orig/ath/if_ath_ahb.h	2010-03-03 11:32:20.295286997 +0100
-+++ madwifi-trunk-r3314/ath/if_ath_ahb.h	2010-03-03 11:32:56.782287828 +0100
+--- a/ath/if_ath_ahb.h
++++ b/ath/if_ath_ahb.h
 @@ -112,7 +112,11 @@
  	do { (void) (start); (void) (size); } while (0)
  #endif
@@ -363,11 +357,9 @@ Index: madwifi-trunk-r3314/ath/if_ath_ahb.h
  #define bus_map_single		dma_map_single
  #define bus_unmap_single	dma_unmap_single
  #define bus_alloc_consistent(_hwdev, _sz, _hdma)		\
-Index: madwifi-trunk-r3314/ath_hal/ah_os.c
-===================================================================
---- madwifi-trunk-r3314.orig/ath_hal/ah_os.c	2010-03-03 12:12:00.246286932 +0100
-+++ madwifi-trunk-r3314/ath_hal/ah_os.c	2010-03-03 12:12:59.503287204 +0100
-@@ -518,7 +518,7 @@
+--- a/ath_hal/ah_os.c
++++ b/ath_hal/ah_os.c
+@@ -518,7 +518,7 @@ EXPORT_SYMBOL(ath_hal_memcmp);
  
  static ctl_table ath_hal_sysctls[] = {
  #ifdef AH_DEBUG
@@ -376,7 +368,7 @@ Index: madwifi-trunk-r3314/ath_hal/ah_os.c
  	  .procname	= "debug",
  	  .mode		= 0644,
  	  .data		= &ath_hal_debug,
-@@ -526,21 +526,21 @@
+@@ -526,21 +526,21 @@ static ctl_table ath_hal_sysctls[] = {
  	  .proc_handler	= proc_dointvec
  	},
  #endif
@@ -401,7 +393,7 @@ Index: madwifi-trunk-r3314/ath_hal/ah_os.c
  	  .procname	= "swba_backoff",
  	  .mode		= 0644,
  	  .data		= &ath_hal_additional_swba_backoff,
-@@ -548,19 +548,19 @@
+@@ -548,19 +548,19 @@ static ctl_table ath_hal_sysctls[] = {
  	  .proc_handler	= proc_dointvec
  	},
  #ifdef AH_DEBUG_ALQ
@@ -424,7 +416,7 @@ Index: madwifi-trunk-r3314/ath_hal/ah_os.c
  	  .procname	= "alq_lost",
  	  .mode		= 0644,
  	  .data		= &ath_hal_alq_lost,
-@@ -571,21 +571,21 @@
+@@ -571,21 +571,21 @@ static ctl_table ath_hal_sysctls[] = {
  	{ 0 }
  };
  static ctl_table ath_hal_table[] = {
@@ -449,11 +441,9 @@ Index: madwifi-trunk-r3314/ath_hal/ah_os.c
  	  .procname	= "dev",
  	  .mode		= 0555,
  	  .child	= ath_ath_table
-Index: madwifi-trunk-r3314/include/compat.h
-===================================================================
---- madwifi-trunk-r3314.orig/include/compat.h	2010-03-03 11:58:09.526287574 +0100
-+++ madwifi-trunk-r3314/include/compat.h	2010-03-03 12:09:53.194286975 +0100
-@@ -193,6 +193,12 @@
+--- a/include/compat.h
++++ b/include/compat.h
+@@ -193,6 +193,12 @@ static inline int timeval_compare(struct
  #define __skb_queue_after(_list, _old, _new)	__skb_append(_old, _new, _list)
  #endif
  
@@ -466,11 +456,9 @@ Index: madwifi-trunk-r3314/include/compat.h
  #endif /* __KERNEL__ */
  
  #endif /* _ATH_COMPAT_H_ */
-Index: madwifi-trunk-r3314/net80211/ieee80211_linux.c
-===================================================================
---- madwifi-trunk-r3314.orig/net80211/ieee80211_linux.c	2010-03-03 11:56:37.423286722 +0100
-+++ madwifi-trunk-r3314/net80211/ieee80211_linux.c	2010-03-03 12:11:06.962288262 +0100
-@@ -699,39 +699,39 @@
+--- a/net80211/ieee80211_linux.c
++++ b/net80211/ieee80211_linux.c
+@@ -699,39 +699,39 @@ IEEE80211_SYSCTL_DECL(ieee80211_sysctl_m
  
  static const ctl_table ieee80211_sysctl_template[] = {
  #ifdef IEEE80211_DEBUG
@@ -517,7 +505,7 @@ Index: madwifi-trunk-r3314/net80211/ieee80211_linux.c
  	  .procname	= "%parent",
  	  .maxlen	= IFNAMSIZ,
  	  .mode		= 0444,
-@@ -786,12 +786,16 @@
+@@ -786,12 +786,16 @@ ieee80211_virtfs_latevattach(struct ieee
  
  	/* setup the table */
  	memset(vap->iv_sysctls, 0, space);
