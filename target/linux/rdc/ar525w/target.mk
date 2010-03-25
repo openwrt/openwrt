@@ -1,2 +1,0 @@
-BOARDNAME:=Airlink AR525W
-DEFAULT_PACKAGES += kmod-rt61-pci
