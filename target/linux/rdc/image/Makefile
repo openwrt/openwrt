@@ -11,20 +11,6 @@ define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/x86/boot/bzImage $(KDIR)/bzImage
 endef
 
-define trxalign/jffs2-128k
-bs=128k
-endef
-define trxalign/jffs2-64k
-bs=64k
-endef
-define trxalign/squashfs
-bs=1024
-endef
-
-define Image/Prepare/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-endef
-
 define Image/Build/ar525w
 	cp $(KDIR)/bzImage $(KDIR)/bzImage.tmp
 	$(SCRIPT_DIR)/pad_image $(1) $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) 32
@@ -53,7 +39,7 @@ endef
 
 define Image/Build
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD).bzImage
-	$(call Image/Build/$(SUBTARGET),$(1),$(SUBTARGET),$(patsubst jffs2-%k,%,$(1)))
+	$(call Image/Build/$(PROFILE),$(1),$(PROFILE),$(patsubst jffs2-%k,%,$(1)))
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
