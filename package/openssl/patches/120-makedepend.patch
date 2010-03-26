@@ -1,6 +1,6 @@
 --- a/util/domd
 +++ b/util/domd
-@@ -22,7 +23,7 @@ if [ "$MAKEDEPEND" = "gcc" ]; then
+@@ -22,7 +22,7 @@ if expr "$MAKEDEPEND" : '.*gcc$' > /dev/
      done
      sed -e '/^# DO NOT DELETE.*/,$d' < Makefile > Makefile.tmp
      echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' >> Makefile.tmp
