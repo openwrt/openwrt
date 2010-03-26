@@ -1,7 +1,5 @@
-Index: kexec-tools-2.0.1/kexec/arch/mips/Makefile
-===================================================================
---- kexec-tools-2.0.1.orig/kexec/arch/mips/Makefile	2008-07-15 02:46:43.000000000 +0200
-+++ kexec-tools-2.0.1/kexec/arch/mips/Makefile	2009-09-27 19:07:26.000000000 +0200
+--- a/kexec/arch/mips/Makefile
++++ b/kexec/arch/mips/Makefile
 @@ -4,7 +4,7 @@
  mips_KEXEC_SRCS =  kexec/arch/mips/kexec-mips.c
  mips_KEXEC_SRCS += kexec/arch/mips/kexec-elf-mips.c
@@ -11,10 +9,8 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/Makefile
  
  mips_ADD_BUFFER =
  mips_ADD_SEGMENT =
-Index: kexec-tools-2.0.1/kexec/arch/mips/crashdump-mips.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ kexec-tools-2.0.1/kexec/arch/mips/crashdump-mips.c	2009-09-27 19:07:26.000000000 +0200
+--- /dev/null
++++ b/kexec/arch/mips/crashdump-mips.c
 @@ -0,0 +1,371 @@
 +/*
 + * kexec: Linux boots Linux
@@ -387,10 +383,8 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/crashdump-mips.c
 +      (start != end) : 0;
 +}
 +
-Index: kexec-tools-2.0.1/kexec/arch/mips/crashdump-mips.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ kexec-tools-2.0.1/kexec/arch/mips/crashdump-mips.h	2009-09-27 19:07:26.000000000 +0200
+--- /dev/null
++++ b/kexec/arch/mips/crashdump-mips.h
 @@ -0,0 +1,26 @@
 +#ifndef CRASHDUMP_MIPS_H
 +#define CRASHDUMP_MIPS_H
@@ -418,10 +412,8 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/crashdump-mips.h
 +#define BACKUP_SRC_SIZE    (BACKUP_SRC_END - BACKUP_SRC_START + 1)
 +
 +#endif /* CRASHDUMP_MIPS_H */
-Index: kexec-tools-2.0.1/kexec/arch/mips/include/arch/options.h
-===================================================================
---- kexec-tools-2.0.1.orig/kexec/arch/mips/include/arch/options.h	2008-07-15 02:46:43.000000000 +0200
-+++ kexec-tools-2.0.1/kexec/arch/mips/include/arch/options.h	2009-09-27 19:18:21.000000000 +0200
+--- a/kexec/arch/mips/include/arch/options.h
++++ b/kexec/arch/mips/include/arch/options.h
 @@ -2,10 +2,21 @@
  #define KEXEC_ARCH_MIPS_OPTIONS_H
  
@@ -444,10 +436,8 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/include/arch/options.h
 +#endif
  
  #endif /* KEXEC_ARCH_MIPS_OPTIONS_H */
-Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-elf-mips.c
-===================================================================
---- kexec-tools-2.0.1.orig/kexec/arch/mips/kexec-elf-mips.c	2008-07-15 02:46:43.000000000 +0200
-+++ kexec-tools-2.0.1/kexec/arch/mips/kexec-elf-mips.c	2009-09-27 19:16:39.000000000 +0200
+--- a/kexec/arch/mips/kexec-elf-mips.c
++++ b/kexec/arch/mips/kexec-elf-mips.c
 @@ -25,51 +25,18 @@
  #include <ip_checksum.h>
  #include "../../kexec.h"
@@ -504,7 +494,7 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-elf-mips.c
  
  int elf_mips_probe(const char *buf, off_t len)
  {
-@@ -108,16 +75,14 @@
+@@ -108,16 +75,14 @@ int elf_mips_load(int argc, char **argv,
  	struct kexec_info *info)
  {
  	struct mem_ehdr ehdr;
@@ -528,7 +518,7 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-elf-mips.c
  	static const struct option options[] = {
  		KEXEC_ARCH_OPTIONS
  		{"command-line", 1, 0, OPT_APPEND},
-@@ -144,38 +109,81 @@
+@@ -144,38 +109,81 @@ int elf_mips_load(int argc, char **argv,
  			break;
  		}
  	}
@@ -636,11 +626,9 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-elf-mips.c
  
  	return 0;
  }
-Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.c
-===================================================================
---- kexec-tools-2.0.1.orig/kexec/arch/mips/kexec-mips.c	2008-07-15 02:46:43.000000000 +0200
-+++ kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.c	2009-09-27 19:20:25.000000000 +0200
-@@ -97,8 +97,18 @@
+--- a/kexec/arch/mips/kexec-mips.c
++++ b/kexec/arch/mips/kexec-mips.c
+@@ -97,8 +97,18 @@ int file_types = sizeof(file_type) / siz
  
  void arch_usage(void)
  {
@@ -659,7 +647,7 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.c
  int arch_process_options(int argc, char **argv)
  {
  	static const struct option options[] = {
-@@ -113,6 +123,11 @@
+@@ -113,6 +123,11 @@ int arch_process_options(int argc, char 
  		switch(opt) {
  		default:
  			break;
@@ -671,7 +659,7 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.c
  		}
  	}
  	/* Reset getopt for the next pass; called in other source modules */
-@@ -126,6 +141,10 @@
+@@ -126,6 +141,10 @@ const struct arch_map_entry arches[] = {
  	 * use KEXEC_ARCH_DEFAULT instead of KEXEC_ARCH_MIPS here.
  	 */
  	{ "mips", KEXEC_ARCH_DEFAULT },
@@ -682,7 +670,7 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.c
  	{ 0 },
  };
  
-@@ -138,18 +157,9 @@
+@@ -138,18 +157,9 @@ void arch_update_purgatory(struct kexec_
  {
  }
  
@@ -702,10 +690,8 @@ Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.c
  }
  
  /*
-Index: kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.h
-===================================================================
---- kexec-tools-2.0.1.orig/kexec/arch/mips/kexec-mips.h	2008-07-15 02:46:43.000000000 +0200
-+++ kexec-tools-2.0.1/kexec/arch/mips/kexec-mips.h	2009-09-27 19:21:32.000000000 +0200
+--- a/kexec/arch/mips/kexec-mips.h
++++ b/kexec/arch/mips/kexec-mips.h
 @@ -1,17 +1,16 @@
  #ifndef KEXEC_MIPS_H
  #define KEXEC_MIPS_H
