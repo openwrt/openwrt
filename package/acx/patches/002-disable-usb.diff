@@ -1,8 +1,6 @@
-Index: acx-20070101/Makefile
-===================================================================
---- acx-20070101.orig/Makefile	2007-06-04 13:22:42.463399864 +0200
-+++ acx-20070101/Makefile	2007-06-04 13:22:42.747356696 +0200
-@@ -1,7 +1,7 @@
+--- a/Makefile
++++ b/Makefile
+@@ -4,7 +4,7 @@ KERNELDIR = /lib/modules/$(KVER)/build
  obj-m += acx.o
  
  acx-obj-y += pci.o
@@ -11,15 +9,13 @@ Index: acx-20070101/Makefile
  
  acx-objs := wlan.o conv.o ioctl.o common.o $(acx-obj-y)
  
-Index: acx-20070101/acx_config.h
-===================================================================
---- acx-20070101.orig/acx_config.h	2007-06-04 13:22:42.469398952 +0200
-+++ acx-20070101/acx_config.h	2007-06-04 13:22:42.747356696 +0200
+--- a/acx_config.h
++++ b/acx_config.h
 @@ -1,6 +1,6 @@
  /* temporary hack until proper Kconfig integration */
  #define CONFIG_ACX_PCI 1
 -#define CONFIG_ACX_USB 1
 +/*#define CONFIG_ACX_USB 1*/
  
- #define ACX_RELEASE "v0.3.36"
+ #define ACX_RELEASE "v0.3.37"
  
