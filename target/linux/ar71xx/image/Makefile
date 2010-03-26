@@ -200,6 +200,27 @@ define Image/Build/AP83
 	fi; fi
 endef
 
+define Image/Build/PB92
+	$(call PatchKernelGzip,$(2),$(3))
+	if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2818048 ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.gz \
+			$(KDIR)/vmlinux-$(2).uImage; \
+		dd if=$(KDIR)/vmlinux-$(2).uImage \
+			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
+		dd if=$(KDIR)/root.$(1) \
+			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
+			dd if=$(KDIR)/root.$(1); \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+	fi
+endef
+
 define Image/Build/PB4X
 	$(call PatchKernelLzma,$(2),$(3))
 	dd if=$(KDIR)/vmlinux-$(2).bin.lzma \
@@ -404,6 +425,10 @@ define Image/Build/Profile/PB44
 	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb44,board=PB44)
 endef
 
+define Image/Build/Profile/PB92
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB92,pb92,board=PB92)
+endef
+
 define Image/Build/Profile/WP543
 	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x200000,2M)
 	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x400000,4M)
@@ -536,6 +561,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MZKW300NH,$(1))
 	$(call Image/Build/Profile/PB42,$(1))
 	$(call Image/Build/Profile/PB44,$(1))
+	$(call Image/Build/Profile/PB92,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/TLWR741NDV1,$(1))
