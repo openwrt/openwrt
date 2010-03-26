@@ -133,7 +133,6 @@ define KernelPackage/pcmcia-core
 	CONFIG_PCMCIA \
 	CONFIG_CARDBUS \
 	CONFIG_PCCARD \
-	CONFIG_PCCARD_NONSTATIC \
 	PCMCIA_DEBUG=n
 endef
 
@@ -143,15 +142,15 @@ define KernelPackage/pcmcia-core/2.4
 #	CONFIG_CARDBUS
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core ds)
+	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core ds yenta_socket)
 endef
 
 define KernelPackage/pcmcia-core/2.6
 #  KCONFIG:= \
 #	CONFIG_PCCARD \
 #	CONFIG_PCMCIA \
-#	CONFIG_PCCARD_NONSTATIC \
 #	PCMCIA_DEBUG=n
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
@@ -169,20 +168,10 @@ $(eval $(call KernelPackage,pcmcia-core))
 define KernelPackage/pcmcia-yenta
   SUBMENU:=$(OTHER_MENU)
   TITLE:=yenta socket driver
-  DEPENDS:=kmod-pcmcia-core
+  DEPENDS:=@LINUX_2_6 kmod-pcmcia-core
   KCONFIG:= \
-	CONFIG_PCMCIA \
-	CONFIG_CARDBUS \
+	CONFIG_PCCARD_NONSTATIC \
 	CONFIG_YENTA
-endef
-
-define KernelPackage/pcmcia-yenta/2.4
-  FILES:= \
-	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,yenta_socket)
-endef
-
-define KernelPackage/pcmcia-yenta/2.6
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
