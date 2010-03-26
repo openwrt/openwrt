@@ -22,7 +22,7 @@
  static void multiport_help_v1(void)
  {
  	printf(
-@@ -71,26 +56,6 @@
+@@ -71,26 +56,6 @@ proto_to_name(u_int8_t proto)
  	}
  }
  
@@ -49,7 +49,7 @@
  static void
  parse_multi_ports_v1(const char *portstring, 
  		     struct xt_multiport_v1 *multiinfo,
-@@ -154,73 +119,6 @@
+@@ -154,73 +119,6 @@ check_proto(u_int16_t pnum, u_int8_t inv
  /* Function which parses command options; returns true if it
     ate an option */
  static int
@@ -123,7 +123,7 @@
  __multiport_parse_v1(int c, char **argv, int invert, unsigned int *flags,
                       struct xt_entry_match **match, u_int16_t pnum,
                       u_int8_t invflags)
-@@ -313,55 +211,6 @@
+@@ -313,55 +211,6 @@ print_port(u_int16_t port, u_int8_t prot
  }
  
  /* Prints out the matchinfo. */
@@ -179,7 +179,7 @@
  static void __multiport_print_v1(const struct xt_entry_match *match,
                                   int numeric, u_int16_t proto)
  {
-@@ -418,48 +267,6 @@
+@@ -418,48 +267,6 @@ static void multiport_print6_v1(const vo
  }
  
  /* Saves the union ipt_matchinfo in parsable form to stdout. */
@@ -228,7 +228,7 @@
  static void __multiport_save_v1(const struct xt_entry_match *match,
                                  u_int16_t proto)
  {
-@@ -513,34 +320,6 @@
+@@ -513,34 +320,6 @@ static struct xtables_match multiport_mt
  	{
  		.family        = NFPROTO_IPV4,
  		.name          = "multiport",
