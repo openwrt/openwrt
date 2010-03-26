@@ -209,10 +209,16 @@ static void __init ar71xx_misc_irq_init(void)
 	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_STATUS);
 
-	if (ar71xx_soc == AR71XX_SOC_AR7240)
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		ar71xx_misc_irq_chip.ack = ar724x_misc_irq_ack;
-	else
+		break;
+	default:
 		ar71xx_misc_irq_chip.mask_ack = ar71xx_misc_irq_mask;
+		break;
+	}
 
 	for (i = AR71XX_MISC_IRQ_BASE;
 	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++) {

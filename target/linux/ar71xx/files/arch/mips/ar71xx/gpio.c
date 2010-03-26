@@ -162,6 +162,8 @@ void __init ar71xx_gpio_init(void)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		ar71xx_gpio_chip.ngpio = AR724X_GPIO_COUNT;
 		break;
 

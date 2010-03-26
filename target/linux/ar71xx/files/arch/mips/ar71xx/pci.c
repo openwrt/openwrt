@@ -52,6 +52,8 @@ int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		ret = ar724x_pcibios_map_irq(dev, slot, pin);
 		break;
 
@@ -75,6 +77,8 @@ int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		ret = ar724x_pcibios_init();
 		break;
 

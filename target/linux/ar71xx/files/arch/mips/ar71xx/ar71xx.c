@@ -50,6 +50,8 @@ void ar71xx_device_stop(u32 mask)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
 		local_irq_save(flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
@@ -90,6 +92,8 @@ void ar71xx_device_start(u32 mask)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
 		local_irq_save(flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
@@ -128,6 +132,8 @@ int ar71xx_device_stopped(u32 mask)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		local_irq_save(flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
 		local_irq_restore(flags);
