@@ -1,8 +1,6 @@
-Index: pcmcia-cs-3.2.8/cardmgr/cardmgr.c
-===================================================================
---- pcmcia-cs-3.2.8.orig/cardmgr/cardmgr.c	2007-06-04 13:23:59.491689784 +0200
-+++ pcmcia-cs-3.2.8/cardmgr/cardmgr.c	2007-06-04 13:24:00.561527144 +0200
-@@ -739,10 +739,7 @@
+--- a/cardmgr/cardmgr.c
++++ b/cardmgr/cardmgr.c
+@@ -739,10 +739,7 @@ static int try_insmod(char *mod, char *o
      int ret;
  
      strcpy(cmd, "insmod ");
@@ -14,7 +12,7 @@ Index: pcmcia-cs-3.2.8/cardmgr/cardmgr.c
      if (access(cmd+7, R_OK) != 0) {
  	syslog(LOG_NOTICE, "module %s not available", cmd+7);
  	free(cmd);
-@@ -808,11 +805,13 @@
+@@ -808,11 +805,13 @@ static void install_module(char *mod, ch
      }
  
      if (do_modprobe) {
@@ -30,7 +28,7 @@ Index: pcmcia-cs-3.2.8/cardmgr/cardmgr.c
      }
  }
  
-@@ -1113,8 +1112,9 @@
+@@ -1113,8 +1112,9 @@ static void do_remove(int sn)
  
      /* remove kernel modules in inverse order */
      for (i = 0; i < card->bindings; i++) {
