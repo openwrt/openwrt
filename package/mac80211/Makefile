@@ -10,12 +10,12 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2010-03-03
+PKG_VERSION:=2010-03-24
 PKG_RELEASE:=3
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 #	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2010/11 \
 #	http://wireless.kernel.org/download/compat-wireless-2.6
-PKG_MD5SUM:=af8da65ca4c25b1b69e3d2896d2bbb2f
+PKG_MD5SUM:=73357c52b5d6888ea3228b2ca8aa5eca
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -676,9 +676,11 @@ MAKE_OPTS:= \
 	CONFIG_AT76C50X_USB= \
 	CONFIG_WL12XX= \
 	CONFIG_EEPROM_93CX6= \
+	CONFIG_HERMES= \
 	CONFIG_AR9170_USB=$(if $(CONFIG_PACKAGE_kmod-ar9170),m) \
 	CONFIG_AR9170_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	CONFIG_IWM= \
+	CONFIG_ATH9K_HTC= \
 	MADWIFI= \
 	OLD_IWL= \
 	KLIB_BUILD="$(LINUX_DIR)" \
