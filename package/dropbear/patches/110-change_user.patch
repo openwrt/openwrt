@@ -1,8 +1,6 @@
-Index: dropbear-0.52/svr-chansession.c
-===================================================================
---- dropbear-0.52.orig/svr-chansession.c	2008-04-22 17:29:49.000000000 -0700
-+++ dropbear-0.52/svr-chansession.c	2008-04-22 17:29:49.000000000 -0700
-@@ -852,12 +852,12 @@
+--- a/svr-chansession.c
++++ b/svr-chansession.c
+@@ -852,12 +852,12 @@ static void execchild(void *user_data) {
  	/* We can only change uid/gid as root ... */
  	if (getuid() == 0) {
  

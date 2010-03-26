@@ -1,8 +1,6 @@
-Index: dropbear-0.52/cli-runopts.c
-===================================================================
---- dropbear-0.52.orig/cli-runopts.c	2008-04-22 17:29:49.000000000 -0700
-+++ dropbear-0.52/cli-runopts.c	2008-04-22 17:29:50.000000000 -0700
-@@ -271,6 +271,10 @@
+--- a/cli-runopts.c
++++ b/cli-runopts.c
+@@ -271,6 +271,10 @@ void cli_getopts(int argc, char ** argv)
  					debug_trace = 1;
  					break;
  #endif
@@ -13,7 +11,7 @@ Index: dropbear-0.52/cli-runopts.c
  				case 'F':
  				case 'e':
  				case 'c':
-@@ -282,7 +286,6 @@
+@@ -282,7 +286,6 @@ void cli_getopts(int argc, char ** argv)
  #ifndef ENABLE_CLI_LOCALTCPFWD
  				case 'L':
  #endif
