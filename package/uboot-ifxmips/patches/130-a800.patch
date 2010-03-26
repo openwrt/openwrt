@@ -1,8 +1,6 @@
-Index: u-boot-1.1.5/drivers/ifx_sw.c
-===================================================================
---- u-boot-1.1.5.orig/drivers/ifx_sw.c	2010-03-24 19:21:19.000000000 +0100
-+++ u-boot-1.1.5/drivers/ifx_sw.c	2010-03-24 19:23:09.000000000 +0100
-@@ -118,7 +118,7 @@
+--- a/drivers/ifx_sw.c
++++ b/drivers/ifx_sw.c
+@@ -118,7 +118,7 @@ int danube_switch_initialize(bd_t * bis)
  {
  	struct eth_device *dev;
  	unsigned short chipid;
@@ -11,7 +9,7 @@ Index: u-boot-1.1.5/drivers/ifx_sw.c
  #if 0
  	printf("Entered danube_switch_initialize()\n");
  #endif
-@@ -130,6 +130,19 @@
+@@ -130,6 +130,19 @@ int danube_switch_initialize(bd_t * bis)
  	}
  	memset(dev, 0, sizeof(*dev));
  
