@@ -1,8 +1,6 @@
-Index: udev-106/Makefile
-===================================================================
---- udev-106.orig/Makefile	2007-06-04 13:22:17.765154568 +0200
-+++ udev-106/Makefile	2007-06-04 13:22:17.831144536 +0200
-@@ -113,7 +113,7 @@
+--- a/Makefile
++++ b/Makefile
+@@ -113,7 +113,7 @@ LD = $(CROSS_COMPILE)gcc
  AR = $(CROSS_COMPILE)ar
  RANLIB = $(CROSS_COMPILE)ranlib
  
@@ -11,7 +9,7 @@ Index: udev-106/Makefile
  WARNINGS	= -Wstrict-prototypes -Wsign-compare -Wshadow \
  		  -Wchar-subscripts -Wmissing-declarations -Wnested-externs \
  		  -Wpointer-arith -Wcast-align -Wsign-compare -Wmissing-prototypes
-@@ -130,7 +130,7 @@
+@@ -130,7 +130,7 @@ endif
  
  # if DEBUG is enabled, then we do not strip
  ifeq ($(strip $(DEBUG)),true)
