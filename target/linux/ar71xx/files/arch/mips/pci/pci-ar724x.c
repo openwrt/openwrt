@@ -242,8 +242,8 @@ static int __init ar724x_pci_setup(void)
 	(void) __raw_readl(base + AR724X_PCI_REG_APP);
 	udelay(1000);
 
-	t = __raw_readl(base + AR724X_PCI_REG_APP);
-	if ((t & AR724X_PCI_APP_LTSSM_ENABLE) == 0x0) {
+	t = __raw_readl(base + AR724X_PCI_REG_RESET);
+	if ((t & AR724X_PCI_RESET_LINK_UP) == 0x0) {
 		printk(KERN_WARNING "PCI: no PCIe module found\n");
 		return -ENODEV;
 	}

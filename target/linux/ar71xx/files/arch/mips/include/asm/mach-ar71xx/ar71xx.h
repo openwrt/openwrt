@@ -353,6 +353,7 @@ void ar71xx_ddr_flush(u32 reg);
 #define AR724X_PCI_REG_INT_MASK		0x50
 
 #define AR724X_PCI_APP_LTSSM_ENABLE	BIT(0)
+#define AR724X_PCI_RESET_LINK_UP	BIT(0)
 
 #define AR724X_PCI_INT_DEV0		BIT(14)
 
