@@ -9,7 +9,7 @@
  #
  # --test-sanity Make a number of sanity checks on the data in this file.
  #               This is a debugging tool for OpenSSL developers.
-@@ -547,6 +549,9 @@ my %table=(
+@@ -554,6 +556,9 @@ my %table=(
  ##### Compaq Non-Stop Kernel (Tandem)
  "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
  
@@ -19,7 +19,7 @@
  );
  
  my @MK1MF_Builds=qw(VC-WIN64I VC-WIN64A
-@@ -601,6 +606,8 @@ my $montasm=1;   # but "no-montasm" is d
+@@ -610,6 +615,8 @@ my $montasm=1;   # but "no-montasm" is d
  my $no_asm=0;
  my $no_dso=0;
  my $no_gmp=0;
@@ -28,9 +28,9 @@
  my @skip=();
  my $Makefile="Makefile";
  my $des_locl="crypto/des/des_locl.h";
-@@ -749,6 +756,14 @@ PROCESS_ARGS:
+@@ -762,6 +769,14 @@ PROCESS_ARGS:
  			{
- 			exit(&test_sanity());
+ 			$strict_warnings = 1;
  			}
 +		elsif (/^--with-cryptodev$/)
 +			{
@@ -43,7 +43,7 @@
  		elsif (/^reconfigure/ || /^reconf/)
  			{
  			if (open(IN,"<$Makefile"))
-@@ -1037,6 +1052,7 @@ foreach (sort (keys %disabled))
+@@ -1055,6 +1070,7 @@ foreach (sort (keys %disabled))
  			print " OPENSSL_NO_$ALGO";
  		
  			if (/^err$/)	{ $flags .= "-DOPENSSL_NO_ERR "; }
@@ -51,7 +51,7 @@
  			elsif (/^asm$/)	{ $no_asm = 1; }
  			}
  		else
-@@ -1161,6 +1177,16 @@ if (!$no_krb5)
+@@ -1184,6 +1200,16 @@ if (!$no_krb5)
  		   $withargs{"krb5-dir"} ne "";
  	}
  
@@ -85,7 +85,7 @@
   ----------------------
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -502,7 +502,7 @@ files:
+@@ -504,7 +504,7 @@ files:
  
  links:
  	@$(PERL) $(TOP)/util/mkdir-p.pl include/openssl
@@ -116,7 +116,7 @@
  # on Unix, "cyg" for certain forms under Cygwin...) or suffix (.a, .so,
 --- a/config
 +++ b/config
-@@ -270,7 +270,7 @@ case "${SYSTEM}:${RELEASE}:${VERSION}:${MACHINE}" in
+@@ -270,7 +270,7 @@ case "${SYSTEM}:${RELEASE}:${VERSION}:${
  		echo "ppc-apple-darwin${VERSION}"
  		;;
  	    *)
@@ -144,7 +144,7 @@
  fi
  
  # Only set CC if not supplied already
-@@ -493,6 +493,9 @@ echo Operating system: $GUESSOS
+@@ -488,6 +491,9 @@ echo Operating system: $GUESSOS
  # script above so we end up with values in vars but that would take
  # more time that I want to waste at the moment
  case "$GUESSOS" in
@@ -320,7 +320,7 @@
  	{FUNC_TYPE_MD,"md2",dgst_main},
 --- a/apps/speed.c
 +++ b/apps/speed.c
-@@ -292,7 +292,7 @@ static const char *names[ALGOR_NUM]={
+@@ -296,7 +296,7 @@ static const char *names[ALGOR_NUM]={
    "evp","sha256","sha512",
    "aes-128 ige","aes-192 ige","aes-256 ige"};
  static double results[ALGOR_NUM][SIZE_NUM];
@@ -329,7 +329,7 @@
  #ifndef OPENSSL_NO_RSA
  static double rsa_results[RSA_NUM][2];
  #endif
-@@ -328,6 +328,79 @@ static SIGRETTYPE sig_done(int sig)
+@@ -336,6 +336,79 @@ static SIGRETTYPE sig_done(int sig)
  #define START	0
  #define STOP	1
  
@@ -409,7 +409,7 @@
  #if defined(OPENSSL_SYS_NETWARE)
  
     /* for NetWare the best we can do is use clock() which returns the
-@@ -358,6 +431,11 @@ static double Time_F(int s)
+@@ -366,6 +439,11 @@ static double Time_F(int s)
  	{
  	double ret;
  
@@ -421,7 +421,7 @@
  #ifdef USE_TOD
  	if(usertime)
  		{
-@@ -832,6 +910,14 @@ int MAIN(int argc, char **argv)
+@@ -840,6 +918,14 @@ int MAIN(int argc, char **argv)
  			j--;	/* Otherwise, -elapsed gets confused with
  				   an algorithm. */
  			}
@@ -436,8 +436,8 @@
  		else if	((argc > 0) && (strcmp(*argv,"-evp") == 0))
  			{
  			argc--;
-@@ -1260,6 +1346,9 @@ int MAIN(int argc, char **argv)
- #ifdef HAVE_FORK
+@@ -1268,6 +1354,9 @@ int MAIN(int argc, char **argv)
+ #ifndef NO_FORK
  			BIO_printf(bio_err,"-multi n        run n benchmarks in parallel.\n");
  #endif
 +#ifdef __linux__
@@ -446,7 +446,7 @@
  			goto end;
  			}
  		argc--;
-@@ -1267,11 +1356,6 @@ int MAIN(int argc, char **argv)
+@@ -1275,11 +1364,6 @@ int MAIN(int argc, char **argv)
  		j++;
  		}
  
@@ -458,7 +458,7 @@
  	if (j == 0)
  		{
  		for (i=0; i<ALGOR_NUM; i++)
-@@ -1604,6 +1688,11 @@ int MAIN(int argc, char **argv)
+@@ -1612,6 +1696,11 @@ int MAIN(int argc, char **argv)
  	signal(SIGALRM,sig_done);
  #endif /* SIGALRM */
  
@@ -470,7 +470,7 @@
  #ifndef OPENSSL_NO_MD2
  	if (doit[D_MD2])
  		{
-@@ -2033,8 +2122,6 @@ int MAIN(int argc, char **argv)
+@@ -2041,8 +2130,6 @@ int MAIN(int argc, char **argv)
  				/* -O3 -fschedule-insns messes up an
  				 * optimization here!  names[D_EVP]
  				 * somehow becomes NULL */
@@ -479,7 +479,7 @@
  
  				EVP_CIPHER_CTX_init(&ctx);
  				if(decrypt)
-@@ -2043,6 +2130,9 @@ int MAIN(int argc, char **argv)
+@@ -2051,6 +2138,9 @@ int MAIN(int argc, char **argv)
  					EVP_EncryptInit_ex(&ctx,evp_cipher,NULL,key16,iv);
  				EVP_CIPHER_CTX_set_padding(&ctx, 0);
  
@@ -489,7 +489,7 @@
  				Time_F(START);
  				if(decrypt)
  					for (count=0,run=1; COND(save_count*4*lengths[0]/lengths[j]); count++)
-@@ -2107,6 +2197,8 @@ int MAIN(int argc, char **argv)
+@@ -2115,6 +2205,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -498,7 +498,7 @@
  			BIO_printf(bio_err,mr ? "+R1:%ld:%d:%.2f\n"
  				   : "%ld %d bit private RSA's in %.2fs\n",
  				   count,rsa_bits[j],d);
-@@ -2142,6 +2234,8 @@ int MAIN(int argc, char **argv)
+@@ -2150,6 +2242,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -507,7 +507,7 @@
  			BIO_printf(bio_err,mr ? "+R2:%ld:%d:%.2f\n"
  				   : "%ld %d bit public RSA's in %.2fs\n",
  				   count,rsa_bits[j],d);
-@@ -2201,6 +2295,8 @@ int MAIN(int argc, char **argv)
+@@ -2209,6 +2303,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -516,7 +516,7 @@
  			BIO_printf(bio_err,mr ? "+R3:%ld:%d:%.2f\n"
  				   : "%ld %d bit DSA signs in %.2fs\n",
  				   count,dsa_bits[j],d);
-@@ -2236,6 +2332,8 @@ int MAIN(int argc, char **argv)
+@@ -2244,6 +2340,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -525,7 +525,7 @@
  			BIO_printf(bio_err,mr ? "+R4:%ld:%d:%.2f\n"
  				   : "%ld %d bit DSA verify in %.2fs\n",
  				   count,dsa_bits[j],d);
-@@ -2530,14 +2628,23 @@ show_res:
+@@ -2538,14 +2636,23 @@ show_res:
  			fprintf(stdout,"The 'numbers' are in 1000s of bytes per second processed.\n"); 
  			fprintf(stdout,"type        ");
  			}
@@ -550,7 +550,7 @@
  		if(mr)
  			fprintf(stdout,"+F:%d:%s",k,names[k]);
  		else
-@@ -2548,6 +2655,8 @@ show_res:
+@@ -2556,6 +2663,8 @@ show_res:
  				fprintf(stdout," %11.2fk",results[k][j]/1e3);
  			else
  				fprintf(stdout,mr ? ":%.2f" : " %11.2f ",results[k][j]);
@@ -559,7 +559,7 @@
  			}
  		fprintf(stdout,"\n");
  		}
-@@ -2562,13 +2671,18 @@ show_res:
+@@ -2570,13 +2679,18 @@ show_res:
  			j=0;
  			}
  		if(mr)
@@ -585,7 +585,7 @@
  		}
  #endif
  #ifndef OPENSSL_NO_DSA
-@@ -2582,12 +2696,18 @@ show_res:
+@@ -2590,12 +2704,18 @@ show_res:
  			j=0;
  			}
  		if(mr)
@@ -609,7 +609,7 @@
  		}
  #endif
  #ifndef OPENSSL_NO_ECDSA
-@@ -2712,8 +2832,10 @@ static void pkey_print_message(const cha
+@@ -2720,8 +2840,10 @@ static void pkey_print_message(const cha
  
  static void print_result(int alg,int run_no,int count,double time_used)
  	{
@@ -622,7 +622,7 @@
  	results[alg][run_no]=((double)count)/time_used*lengths[run_no];
  	}
  
-@@ -2808,29 +2930,11 @@ static int do_multi(int multi)
+@@ -2816,29 +2938,11 @@ static int do_multi(int multi)
  				p=buf+3;
  				alg=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
@@ -655,7 +655,7 @@
  				}
  			else if(!strncmp(buf,"+F2:",4))
  				{
-@@ -2841,12 +2945,18 @@ static int do_multi(int multi)
+@@ -2849,12 +2953,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  
@@ -674,7 +674,7 @@
  				d=atof(sstrsep(&p,sep));
  				if(n)
  					rsa_results[k][1]=1/(1/rsa_results[k][1]+1/d);
-@@ -2862,12 +2972,18 @@ static int do_multi(int multi)
+@@ -2870,12 +2980,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  
@@ -726,7 +726,7 @@
  	if (!bsd_cryptodev_default_loaded) {
 --- a/crypto/engine/eng_cryptodev.c
 +++ b/crypto/engine/eng_cryptodev.c
-@@ -68,6 +68,16 @@ ENGINE_load_cryptodev(void)
+@@ -72,6 +72,16 @@ ENGINE_load_cryptodev(void)
  struct dev_crypto_state {
  	struct session_op d_sess;
  	int d_fd;
@@ -743,7 +743,7 @@
  };
  
  static u_int32_t cryptodev_asymfeat = 0;
-@@ -75,9 +85,11 @@ static u_int32_t cryptodev_asymfeat = 0;
+@@ -79,9 +89,11 @@ static u_int32_t cryptodev_asymfeat = 0;
  static int get_asym_dev_crypto(void);
  static int open_dev_crypto(void);
  static int get_dev_crypto(void);
@@ -753,9 +753,9 @@
  static int cipher_nid_to_cryptodev(int nid);
 +#endif
  static int get_cryptodev_ciphers(const int **cnids);
- static int get_cryptodev_digests(const int **cnids);
+ /*static int get_cryptodev_digests(const int **cnids);*/
  static int cryptodev_usable_ciphers(const int **nids);
-@@ -130,9 +142,12 @@ static struct {
+@@ -134,9 +146,12 @@ static struct {
  	int	ivmax;
  	int	keylen;
  } ciphers[] = {
@@ -768,7 +768,7 @@
  	{ CRYPTO_BLF_CBC,		NID_bf_cbc,		8,	16, },
  	{ CRYPTO_CAST_CBC,		NID_cast5_cbc,		8,	16, },
  	{ CRYPTO_SKIPJACK_CBC,		NID_undef,		0,	 0, },
-@@ -142,14 +157,15 @@ static struct {
+@@ -147,14 +162,15 @@ static struct {
  static struct {
  	int	id;
  	int	nid;
@@ -789,9 +789,9 @@
 +	{ CRYPTO_SHA1,			NID_sha1,		20},
 +	{ 0,				NID_undef,		0},
  };
+ #endif
  
- /*
-@@ -176,10 +192,17 @@ open_dev_crypto(void)
+@@ -182,10 +198,17 @@ open_dev_crypto(void)
  static int
  get_dev_crypto(void)
  {
@@ -812,7 +812,7 @@
  	if (ioctl(fd, CRIOGET, &retfd) == -1)
  		return (-1);
  
-@@ -202,6 +225,7 @@ get_asym_dev_crypto(void)
+@@ -208,6 +231,7 @@ get_asym_dev_crypto(void)
  	return fd;
  }
  
@@ -820,7 +820,7 @@
  /*
   * XXXX this needs to be set for each alg - and determined from
   * a running card.
-@@ -245,6 +269,7 @@ cipher_nid_to_cryptodev(int nid)
+@@ -251,6 +275,7 @@ cipher_nid_to_cryptodev(int nid)
  			return (ciphers[i].id);
  	return (0);
  }
@@ -828,7 +828,7 @@
  
  /*
   * Find out what ciphers /dev/crypto will let us have a session for.
-@@ -264,7 +289,7 @@ get_cryptodev_ciphers(const int **cnids)
+@@ -270,7 +295,7 @@ get_cryptodev_ciphers(const int **cnids)
  		return (0);
  	}
  	memset(&sess, 0, sizeof(sess));
@@ -837,7 +837,7 @@
  
  	for (i = 0; ciphers[i].id && count < CRYPTO_ALGORITHM_MAX; i++) {
  		if (ciphers[i].nid == NID_undef)
-@@ -303,10 +328,12 @@ get_cryptodev_digests(const int **cnids)
+@@ -310,10 +335,12 @@ get_cryptodev_digests(const int **cnids)
  		return (0);
  	}
  	memset(&sess, 0, sizeof(sess));
@@ -850,7 +850,7 @@
  		sess.cipher = 0;
  		if (ioctl(fd, CIOCGSESSION, &sess) != -1 &&
  		    ioctl(fd, CIOCFSESSION, &sess.ses) != -1)
-@@ -351,6 +378,9 @@ cryptodev_usable_ciphers(const int **nid
+@@ -360,6 +387,9 @@ cryptodev_usable_ciphers(const int **nid
  static int
  cryptodev_usable_digests(const int **nids)
  {
@@ -860,7 +860,7 @@
  	/*
  	 * XXXX just disable all digests for now, because it sucks.
  	 * we need a better way to decide this - i.e. I may not
-@@ -365,6 +395,7 @@ cryptodev_usable_digests(const int **nid
+@@ -374,6 +404,7 @@ cryptodev_usable_digests(const int **nid
  	 */
  	*nids = NULL;
  	return (0);
@@ -868,7 +868,7 @@
  }
  
  static int
-@@ -427,16 +458,20 @@ cryptodev_init_key(EVP_CIPHER_CTX *ctx, 
+@@ -436,16 +467,20 @@ cryptodev_init_key(EVP_CIPHER_CTX *ctx, 
  {
  	struct dev_crypto_state *state = ctx->cipher_data;
  	struct session_op *sess = &state->d_sess;
@@ -896,7 +896,7 @@
  
  	memset(sess, 0, sizeof(struct session_op));
  
-@@ -496,6 +531,20 @@ cryptodev_cleanup(EVP_CIPHER_CTX *ctx)
+@@ -505,6 +540,20 @@ cryptodev_cleanup(EVP_CIPHER_CTX *ctx)
   * gets called when libcrypto requests a cipher NID.
   */
  
@@ -917,7 +917,7 @@
  /* DES CBC EVP */
  const EVP_CIPHER cryptodev_des_cbc = {
  	NID_des_cbc,
-@@ -563,6 +612,32 @@ const EVP_CIPHER cryptodev_aes_cbc = {
+@@ -572,6 +621,32 @@ const EVP_CIPHER cryptodev_aes_cbc = {
  	NULL
  };
  
@@ -950,7 +950,7 @@
  /*
   * Registered by the ENGINE when used to find out how to deal with
   * a particular NID in the ENGINE. this says what we'll do at the
-@@ -576,6 +651,9 @@ cryptodev_engine_ciphers(ENGINE *e, cons
+@@ -585,6 +660,9 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  		return (cryptodev_usable_ciphers(nids));
  
  	switch (nid) {
@@ -960,7 +960,7 @@
  	case NID_des_ede3_cbc:
  		*cipher = &cryptodev_3des_cbc;
  		break;
-@@ -591,6 +669,12 @@ cryptodev_engine_ciphers(ENGINE *e, cons
+@@ -600,6 +678,12 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  	case NID_aes_128_cbc:
  		*cipher = &cryptodev_aes_cbc;
  		break;
@@ -973,7 +973,7 @@
  	default:
  		*cipher = NULL;
  		break;
-@@ -598,6 +682,234 @@ cryptodev_engine_ciphers(ENGINE *e, cons
+@@ -607,6 +691,234 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  	return (*cipher != NULL);
  }
  
@@ -1208,7 +1208,7 @@
  static int
  cryptodev_engine_digests(ENGINE *e, const EVP_MD **digest,
      const int **nids, int nid)
-@@ -606,10 +918,15 @@ cryptodev_engine_digests(ENGINE *e, cons
+@@ -615,10 +927,15 @@ cryptodev_engine_digests(ENGINE *e, cons
  		return (cryptodev_usable_digests(nids));
  
  	switch (nid) {
@@ -1225,15 +1225,15 @@
  		*digest = NULL;
  		break;
  	}
-@@ -637,6 +954,7 @@ bn2crparam(const BIGNUM *a, struct crpar
+@@ -646,6 +963,7 @@ bn2crparam(const BIGNUM *a, struct crpar
  	b = malloc(bytes);
  	if (b == NULL)
  		return (1);
 +	memset(b, 0, bytes);
  
- 	crp->crp_p = b;
+ 	crp->crp_p = (char *)b;
  	crp->crp_nbits = bits;
-@@ -681,7 +999,7 @@ zapparams(struct crypt_kop *kop)
+@@ -690,7 +1008,7 @@ zapparams(struct crypt_kop *kop)
  {
  	int i;
  
@@ -1244,7 +1244,7 @@
  		kop->crk_param[i].crp_p = NULL;
 --- a/crypto/engine/engine.h
 +++ b/crypto/engine/engine.h
-@@ -703,7 +703,7 @@ typedef int (*dynamic_bind_engine)(ENGIN
+@@ -705,7 +705,7 @@ typedef int (*dynamic_bind_engine)(ENGIN
   * values. */
  void *ENGINE_get_static_state(void);
  
@@ -1266,7 +1266,7 @@
  #endif
 --- a/crypto/evp/c_alld.c
 +++ b/crypto/evp/c_alld.c
-@@ -81,7 +81,7 @@ void OpenSSL_add_all_digests(void)
+@@ -78,7 +78,7 @@ void OpenSSL_add_all_digests(void)
  	EVP_add_digest(EVP_dss());
  #endif
  #endif
@@ -1277,7 +1277,7 @@
  	EVP_add_digest_alias(SN_sha1WithRSAEncryption,SN_sha1WithRSA);
 --- a/engines/Makefile
 +++ b/engines/Makefile
-@@ -96,6 +96,7 @@ install:
+@@ -97,6 +97,7 @@ install:
  			( echo installing $$l; \
  			  if [ "$(PLATFORM)" != "Cygwin" ]; then \
  				case "$(CFLAGS)" in \
@@ -1287,7 +1287,7 @@
  				*)		sfx="bad";;	\
 --- a/util/domd
 +++ b/util/domd
-@@ -23,13 +23,17 @@ if [ "$D" = "gcc" ]; then
+@@ -22,13 +22,17 @@ if expr "$MAKEDEPEND" : '.*gcc$' > /dev/
      done
      sed -e '/^# DO NOT DELETE.*/,$d' < Makefile > Makefile.tmp
      echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' >> Makefile.tmp

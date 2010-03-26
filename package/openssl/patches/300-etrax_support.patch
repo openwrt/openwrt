@@ -1,8 +1,8 @@
 --- a/Configure
 +++ b/Configure
-@@ -396,6 +396,10 @@ my %table=(
- "qnx4",	"cc:-DL_ENDIAN -DTERMIO::(unknown):::${x86_gcc_des} ${x86_gcc_opts}:",
- "qnx6",	"cc:-DL_ENDIAN -DTERMIOS::(unknown)::-lsocket:${x86_gcc_des} ${x86_gcc_opts}:",
+@@ -403,6 +403,10 @@ my %table=(
+ "QNX6",       "gcc:-DTERMIOS::::-lsocket::${no_asm}:dlfcn:bsd-gcc-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+ "QNX6-i386",  "gcc:-DL_ENDIAN -DTERMIOS -O2 -Wall::::-lsocket:${x86_gcc_des} ${x86_gcc_opts}:${x86_elf_asm}:dlfcn:bsd-gcc-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
  
 +# cris
 +"linux-cris",	"\$(TARGET_CC):-DL_ENDIAN -DTERMIO -fomit-frame-pointer::-D_REENTRANT::-ldl:BN_LLONG THIRTY_TWO_BIT RC4_CHAR::::::::::::dlfcn:linux-shared:-fpic::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)::",

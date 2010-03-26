@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -133,7 +133,7 @@ FIPSCANLIB=
+@@ -134,7 +134,7 @@ FIPSCANLIB=
  
  BASEADDR=0xFB00000
  
@@ -9,7 +9,7 @@
  SHLIBDIRS= crypto ssl
  
  # dirs in crypto to build
-@@ -150,7 +150,7 @@ SDIRS=  \
+@@ -151,7 +151,7 @@ SDIRS=  \
  
  # tests to perform.  "alltests" is a special word indicating that all tests
  # should be performed.
@@ -18,7 +18,7 @@
  
  MAKEFILE= Makefile
  
-@@ -162,7 +162,7 @@ SHELL=/bin/sh
+@@ -163,7 +163,7 @@ SHELL=/bin/sh
  
  TOP=    .
  ONEDIRS=out tmp
@@ -27,7 +27,7 @@
  WDIRS=  windows
  LIBS=   libcrypto.a libssl.a
  SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
-@@ -321,7 +321,7 @@ FIPS_EX_OBJ= ../crypto/aes/aes_cfb.o \
+@@ -323,7 +323,7 @@ FIPS_EX_OBJ= ../crypto/aes/aes_cfb.o \
  	../crypto/uid.o
  
  sub_all: build_all
@@ -36,7 +36,7 @@
  
  build_libs: build_crypto build_fips build_ssl build_shared build_engines
  
-@@ -613,7 +613,7 @@ dist:   
+@@ -617,7 +617,7 @@ dist:   
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -47,7 +47,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -611,7 +611,7 @@ dist:   
+@@ -615,7 +615,7 @@ dist:   
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
