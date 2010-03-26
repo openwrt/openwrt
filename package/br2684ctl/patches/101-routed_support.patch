@@ -1,6 +1,5 @@
-diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
---- br2684ctl-20040226.orig/br2684ctl.c	2008-03-25 22:26:59.000000000 +0000
-+++ br2684ctl.orig/br2684ctl.c	2008-03-31 10:11:06.000000000 +0100
+--- a/br2684ctl.c
++++ b/br2684ctl.c
 @@ -10,6 +10,10 @@
  #include <atm.h>
  #include <linux/atmdev.h>
@@ -52,7 +51,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
    exit(0);
  }
  
-@@ -58,7 +71,7 @@
+@@ -58,7 +71,7 @@ int create_pidfile(int num)
  
    if (num < 0) return -1;
  
@@ -61,7 +60,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
    pidfile = fopen(name, "w");
    if (pidfile == NULL) return -1;
    fprintf(pidfile, "%d", getpid());
-@@ -67,9 +80,9 @@
+@@ -67,9 +80,9 @@ int create_pidfile(int num)
    return 0;
  }
  
@@ -73,7 +72,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
    
    if(lastsock<0) {
      lastsock = socket(PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
-@@ -78,31 +91,36 @@
+@@ -78,31 +91,36 @@ int create_br(char *nstr)
      syslog(LOG_ERR, "socket creation failed: %s",strerror(errno));
    } else {
      /* create the device with ioctl: */
@@ -118,7 +117,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
  {
      int err;
      struct sockaddr_atmpvc addr;
-@@ -112,21 +130,17 @@
+@@ -112,21 +130,17 @@ int assign_vcc(char *astr, int encap, in
      memset(&addr, 0, sizeof(addr));
      err=text2atm(astr,(struct sockaddr *)(&addr), sizeof(addr), T2A_PVC);
      if (err!=0)
@@ -145,7 +144,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
      
      if (qos.aal == 0) {
        qos.aal                     = ATM_AAL5;
-@@ -137,7 +151,7 @@
+@@ -137,7 +151,7 @@ int assign_vcc(char *astr, int encap, in
      }
  
      if ( (err=setsockopt(fd,SOL_SOCKET,SO_SNDBUF, &bufsize ,sizeof(bufsize))) )
@@ -154,7 +153,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
      
      if (setsockopt(fd, SOL_ATM, SO_ATMQOS, &qos, sizeof(qos)) < 0)
        syslog(LOG_ERR,"setsockopt SO_ATMQOS %d", errno);
-@@ -145,7 +159,7 @@
+@@ -145,7 +159,7 @@ int assign_vcc(char *astr, int encap, in
      err = connect(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_atmpvc));
      
      if (err < 0)
@@ -163,7 +162,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
      
      /* attach the vcc to device: */
      
-@@ -169,10 +183,30 @@
+@@ -169,10 +183,30 @@ int assign_vcc(char *astr, int encap, in
      return fd ;
  }
  
@@ -195,7 +194,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
    exit(1);
  }
  
-@@ -180,47 +214,63 @@
+@@ -180,47 +214,63 @@ void usage(char *s)
  
  int main (int argc, char **argv)
  {
@@ -276,7 +275,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
        case '?':
        case 'h':
        default:
-@@ -231,6 +281,8 @@
+@@ -231,6 +281,8 @@ int main (int argc, char **argv)
  
    if (argc != optind) usage(argv[0]);
    
@@ -285,7 +284,7 @@ diff -Nu br2684ctl-20040226.orig/br2684ctl.c br2684ctl.orig/br2684ctl.c
    if(lastsock>=0) close(lastsock);
    
    if (background) {
-@@ -268,11 +275,11 @@
+@@ -268,11 +320,11 @@ int main (int argc, char **argv)
      
    }
    
