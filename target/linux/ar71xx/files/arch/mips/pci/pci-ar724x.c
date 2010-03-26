@@ -248,6 +248,12 @@ static int __init ar724x_pci_setup(void)
 		return -ENODEV;
 	}
 
+	if (ar71xx_soc == AR71XX_SOC_AR7241 || ar71xx_soc == AR71XX_SOC_AR7242) {
+		t = __raw_readl(base + AR724X_PCI_REG_APP);
+		t |= BIT(16);
+		__raw_writel(t, base + AR724X_PCI_REG_APP);
+	}
+
 	return 0;
 }
 

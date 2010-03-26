@@ -128,10 +128,16 @@ static void __init ar7240_usb_setup(void)
 	/* WAR for HW bug. Here it adjusts the duration between two SOFS */
 	ar71xx_usb_ctrl_wr(USB_CTRL_REG_FLADJ, 0x3);
 
-	ar71xx_ohci_device.resource = ar7240_ohci_resources;
-	ar71xx_ohci_device.num_resources = ARRAY_SIZE(ar7240_ohci_resources);
-
-	platform_device_register(&ar71xx_ohci_device);
+	if (ar71xx_soc == AR71XX_SOC_AR7241 || ar71xx_soc == AR71XX_SOC_AR7242) {
+		ar71xx_ehci_data.is_ar91xx = 1;
+		ar71xx_ehci_device.resource = ar7240_ohci_resources;
+		ar71xx_ehci_device.num_resources = ARRAY_SIZE(ar7240_ohci_resources);
+		platform_device_register(&ar71xx_ehci_device);
+	} else {
+		ar71xx_ohci_device.resource = ar7240_ohci_resources;
+		ar71xx_ohci_device.num_resources = ARRAY_SIZE(ar7240_ohci_resources);
+		platform_device_register(&ar71xx_ohci_device);
+	}
 }
 
 static void __init ar91xx_usb_setup(void)
@@ -153,6 +159,8 @@ void __init ar71xx_add_device_usb(void)
 {
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		ar7240_usb_setup();
 		break;
 

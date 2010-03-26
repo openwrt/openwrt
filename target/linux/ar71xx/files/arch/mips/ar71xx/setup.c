@@ -106,9 +106,21 @@ static void __init ar71xx_detect_sys_type(void)
 		}
 		break;
 
-	case REV_ID_MAJOR_AR724X:
+	case REV_ID_MAJOR_AR7240:
 		ar71xx_soc = AR71XX_SOC_AR7240;
 		chip = "7240";
+		rev = (id & AR724X_REV_ID_REVISION_MASK);
+		break;
+
+	case REV_ID_MAJOR_AR7241:
+		ar71xx_soc = AR71XX_SOC_AR7241;
+		chip = "7241";
+		rev = (id & AR724X_REV_ID_REVISION_MASK);
+		break;
+
+	case REV_ID_MAJOR_AR7242:
+		ar71xx_soc = AR71XX_SOC_AR7242;
+		chip = "7242";
 		rev = (id & AR724X_REV_ID_REVISION_MASK);
 		break;
 
@@ -210,6 +222,8 @@ static void __init detect_sys_frequency(void)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		ar724x_detect_sys_frequency();
 		break;
 

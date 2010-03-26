@@ -84,8 +84,15 @@ struct platform_device ar71xx_mdio_device = {
 
 void __init ar71xx_add_device_mdio(u32 phy_mask)
 {
-	if (ar71xx_soc == AR71XX_SOC_AR7240)
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		ar71xx_mdio_data.is_ar7240 = 1;
+		break;
+	default:
+		break;
+	}
 
 	ar71xx_mdio_data.phy_mask = phy_mask;
 
@@ -333,6 +340,8 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		pll_10 = AR724X_PLL_VAL_10;
 		pll_100 = AR724X_PLL_VAL_100;
 		pll_1000 = AR724X_PLL_VAL_1000;
@@ -428,6 +437,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		break;
 
 	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
 		pdata->ddr_flush = id ? ar724x_ddr_flush_ge1
 				      : ar724x_ddr_flush_ge0;
 		pdata->set_pll =  id ? ar724x_set_pll_ge1
