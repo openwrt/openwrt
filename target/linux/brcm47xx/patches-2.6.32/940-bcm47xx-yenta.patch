@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/drivers/pcmcia/yenta_socket.c
-===================================================================
---- linux-2.6.32.9.orig/drivers/pcmcia/yenta_socket.c	2010-03-12 09:43:45.000000000 +0100
-+++ linux-2.6.32.9/drivers/pcmcia/yenta_socket.c	2010-03-12 10:05:33.000000000 +0100
-@@ -866,6 +866,8 @@
+--- a/drivers/pcmcia/yenta_socket.c
++++ b/drivers/pcmcia/yenta_socket.c
+@@ -866,6 +866,8 @@ static unsigned int yenta_probe_irq(stru
  	 * Probe for usable interrupts using the force
  	 * register to generate bogus card status events.
  	 */
@@ -11,7 +9,7 @@ Index: linux-2.6.32.9/drivers/pcmcia/yenta_socket.c
  	cb_writel(socket, CB_SOCKET_EVENT, -1);
  	cb_writel(socket, CB_SOCKET_MASK, CB_CSTSMASK);
  	exca_writeb(socket, I365_CSCINT, 0);
-@@ -880,6 +882,7 @@
+@@ -880,6 +882,7 @@ static unsigned int yenta_probe_irq(stru
  	}
  	cb_writel(socket, CB_SOCKET_MASK, 0);
  	exca_writeb(socket, I365_CSCINT, 0);
@@ -19,7 +17,7 @@ Index: linux-2.6.32.9/drivers/pcmcia/yenta_socket.c
  
  	mask = probe_irq_mask(val) & 0xffff;
  
-@@ -960,6 +963,10 @@
+@@ -960,6 +963,10 @@ static void yenta_get_socket_capabilitie
  	else
  		socket->socket.irq_mask = 0;
  
@@ -30,7 +28,7 @@ Index: linux-2.6.32.9/drivers/pcmcia/yenta_socket.c
  	dev_printk(KERN_INFO, &socket->dev->dev,
  		   "ISA IRQ mask 0x%04x, PCI irq %d\n",
  		   socket->socket.irq_mask, socket->cb_irq);
-@@ -1198,6 +1205,15 @@
+@@ -1198,6 +1205,15 @@ static int __devinit yenta_probe (struct
  	dev_printk(KERN_INFO, &dev->dev,
  		   "Socket status: %08x\n", cb_readl(socket, CB_SOCKET_STATE));
  

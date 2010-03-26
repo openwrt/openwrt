@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/drivers/net/cpmac.c
-===================================================================
---- linux-2.6.32.9.orig/drivers/net/cpmac.c	2010-03-06 23:12:46.000000000 +0100
-+++ linux-2.6.32.9/drivers/net/cpmac.c	2010-03-06 23:13:14.000000000 +0100
-@@ -1132,8 +1132,9 @@
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
+@@ -1132,8 +1132,9 @@ static int __devinit cpmac_probe(struct 
  	}
  
  	if (phy_id == PHY_MAX_ADDR) {

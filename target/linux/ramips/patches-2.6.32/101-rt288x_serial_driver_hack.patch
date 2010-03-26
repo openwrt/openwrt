@@ -1,6 +1,6 @@
 --- a/drivers/serial/8250.c
 +++ b/drivers/serial/8250.c
-@@ -298,9 +298,9 @@ static const struct serial8250_config ua
+@@ -301,9 +301,9 @@ static const struct serial8250_config ua
  	},
  };
  
@@ -12,7 +12,7 @@
  static const u8 au_io_in_map[] = {
  	[UART_RX]  = 0,
  	[UART_IER] = 2,
-@@ -418,7 +418,7 @@ static unsigned int mem32_serial_in(stru
+@@ -421,7 +421,7 @@ static unsigned int mem32_serial_in(stru
  	return readl(p->membase + offset);
  }
  
@@ -21,7 +21,7 @@
  static unsigned int au_serial_in(struct uart_port *p, int offset)
  {
  	offset = map_8250_in_reg(p, offset) << p->regshift;
-@@ -499,7 +499,7 @@ static void set_io_from_upio(struct uart
+@@ -502,7 +502,7 @@ static void set_io_from_upio(struct uart
  		p->serial_out = mem32_serial_out;
  		break;
  
@@ -30,7 +30,7 @@
  	case UPIO_AU:
  		p->serial_in = au_serial_in;
  		p->serial_out = au_serial_out;
-@@ -531,7 +531,7 @@ serial_out_sync(struct uart_8250_port *u
+@@ -534,7 +534,7 @@ serial_out_sync(struct uart_8250_port *u
  	switch (p->iotype) {
  	case UPIO_MEM:
  	case UPIO_MEM32:
@@ -39,7 +39,7 @@
  	case UPIO_AU:
  #endif
  	case UPIO_DWAPB:
-@@ -569,8 +569,8 @@ static inline void _serial_dl_write(stru
+@@ -572,8 +572,8 @@ static inline void _serial_dl_write(stru
  	serial_outp(up, UART_DLM, value >> 8 & 0xff);
  }
  
@@ -50,7 +50,7 @@
  static int serial_dl_read(struct uart_8250_port *up)
  {
  	if (up->port.iotype == UPIO_AU)
-@@ -777,22 +777,19 @@ static int size_fifo(struct uart_8250_po
+@@ -780,22 +780,19 @@ static int size_fifo(struct uart_8250_po
   */
  static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
  {
@@ -79,7 +79,7 @@
  	serial_outp(p, UART_LCR, old_lcr);
  
  	return id;
-@@ -1214,7 +1211,7 @@ static void autoconfig(struct uart_8250_
+@@ -1217,7 +1214,7 @@ static void autoconfig(struct uart_8250_
  	}
  #endif
  

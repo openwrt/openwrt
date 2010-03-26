@@ -1,7 +1,7 @@
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
-@@ -25,6 +25,7 @@ obj-$(CONFIG_USB_UHCI_HCD)	+= uhci-hcd.o
- obj-$(CONFIG_USB_FHCI_HCD)	+= fhci.o
+@@ -28,6 +28,7 @@ obj-$(CONFIG_USB_FHCI_HCD)	+= fhci.o
+ obj-$(CONFIG_USB_XHCI_HCD)	+= xhci.o
  obj-$(CONFIG_USB_SL811_HCD)	+= sl811-hcd.o
  obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
 +obj-$(CONFIG_ETRAX_USB_HOST)	+= hc-crisv10.o
@@ -10,7 +10,7 @@
  obj-$(CONFIG_USB_ISP1760_HCD)	+= isp1760.o
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
-@@ -19,6 +19,7 @@ obj-$(CONFIG_USB_U132_HCD)	+= host/
+@@ -21,6 +21,7 @@ obj-$(CONFIG_USB_U132_HCD)	+= host/
  obj-$(CONFIG_USB_R8A66597_HCD)	+= host/
  obj-$(CONFIG_USB_HWA_HCD)	+= host/
  obj-$(CONFIG_USB_ISP1760_HCD)	+= host/

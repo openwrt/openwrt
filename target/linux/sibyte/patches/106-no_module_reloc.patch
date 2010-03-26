@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -83,7 +83,7 @@ all-$(CONFIG_BOOT_ELF64)	:= $(vmlinux-64
+@@ -85,7 +85,7 @@ all-$(CONFIG_BOOT_ELF64)	:= $(vmlinux-64
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib

@@ -49,5 +49,5 @@
 -OBJCOPYFLAGS := -O binary -R .note -R .comment -S
 +OBJCOPYFLAGS := -O binary -R .bss -R .note -R .note.gnu.build-id -R .comment -S
  
- CPPFLAGS_vmlinux.lds = -DDRAM_VIRTUAL_BASE=0x$(CONFIG_ETRAX_DRAM_VIRTUAL_BASE)
- 
+ KBUILD_AFLAGS += -mlinux -march=$(arch-y) $(inc)
+ KBUILD_CFLAGS += -mlinux -march=$(arch-y) -pipe $(inc)
