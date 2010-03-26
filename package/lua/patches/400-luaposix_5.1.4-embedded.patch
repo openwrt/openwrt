@@ -1,8 +1,6 @@
-Index: lua-5.1.4/src/Makefile
-===================================================================
---- lua-5.1.4.orig/src/Makefile	2008-09-25 12:19:44.000000000 +0200
-+++ lua-5.1.4/src/Makefile	2008-09-25 12:20:03.000000000 +0200
-@@ -12,7 +12,7 @@
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -12,7 +12,7 @@ CFLAGS= -O2 -Wall $(MYCFLAGS)
  AR= ar rcu
  RANLIB= ranlib
  RM= rm -f
@@ -11,7 +9,7 @@ Index: lua-5.1.4/src/Makefile
  
  MYCFLAGS=
  MYLDFLAGS=
-@@ -29,7 +29,7 @@
+@@ -29,7 +29,7 @@ CORE_O=	lapi.o lcode.o ldebug.o ldo.o ld
  	lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o  \
  	lundump.o lvm.o lzio.o lnum.o
  LIB_O=	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o \
@@ -20,11 +18,9 @@ Index: lua-5.1.4/src/Makefile
  
  LUA_T=	lua
  LUA_O=	lua.o
-Index: lua-5.1.4/src/linit.c
-===================================================================
---- lua-5.1.4.orig/src/linit.c	2008-09-25 12:19:02.000000000 +0200
-+++ lua-5.1.4/src/linit.c	2008-09-25 12:19:32.000000000 +0200
-@@ -23,6 +23,7 @@
+--- a/src/linit.c
++++ b/src/linit.c
+@@ -23,6 +23,7 @@ static const luaL_Reg lualibs[] = {
    {LUA_STRLIBNAME, luaopen_string},
    {LUA_MATHLIBNAME, luaopen_math},
    {LUA_DBLIBNAME, luaopen_debug},
@@ -32,10 +28,8 @@ Index: lua-5.1.4/src/linit.c
    {NULL, NULL}
  };
  
-Index: lua-5.1.4/src/lposix.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ lua-5.1.4/src/lposix.c	2008-09-25 12:16:29.000000000 +0200
+--- /dev/null
++++ b/src/lposix.c
 @@ -0,0 +1,1139 @@
 +/*
 +* lposix.c
@@ -1176,11 +1170,9 @@ Index: lua-5.1.4/src/lposix.c
 +}
 +
 +/*EOF*/
-Index: lua-5.1.4/src/lualib.h
-===================================================================
---- lua-5.1.4.orig/src/lualib.h	2008-09-25 12:18:14.000000000 +0200
-+++ lua-5.1.4/src/lualib.h	2008-09-25 12:18:53.000000000 +0200
-@@ -39,6 +39,9 @@
+--- a/src/lualib.h
++++ b/src/lualib.h
+@@ -39,6 +39,9 @@ LUALIB_API int (luaopen_debug) (lua_Stat
  #define LUA_LOADLIBNAME	"package"
  LUALIB_API int (luaopen_package) (lua_State *L);
  
@@ -1190,10 +1182,8 @@ Index: lua-5.1.4/src/lualib.h
  
  /* open all previous libraries */
  LUALIB_API void (luaL_openlibs) (lua_State *L); 
-Index: lua-5.1.4/src/modemuncher.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ lua-5.1.4/src/modemuncher.c	2008-09-25 12:16:29.000000000 +0200
+--- /dev/null
++++ b/src/modemuncher.c
 @@ -0,0 +1,261 @@
 +/* 
 +	Mode Muncher -- modemuncher.c

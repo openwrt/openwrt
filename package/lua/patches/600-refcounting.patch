@@ -205,7 +205,7 @@
    lua_unlock(L);
    return res;
  }
-@@ -1040,20 +1046,21 @@ LUA_API int lua_next (lua_State *L, int 
+@@ -1040,8 +1046,9 @@ LUA_API int lua_next (lua_State *L, int 
    if (more) {
      api_incr_top(L);
    }
@@ -217,11 +217,7 @@
    lua_unlock(L);
    return more;
  }
- 
- 
- LUA_API void lua_concat (lua_State *L, int n) {
-   lua_lock(L);
-   api_checknelems(L, n);
+@@ -1053,7 +1060,7 @@ LUA_API void lua_concat (lua_State *L, i
    if (n >= 2) {
      luaC_checkGC(L);
      luaV_concat(L, n, cast_int(L->top - L->base) - 1);
@@ -230,7 +226,7 @@
    }
    else if (n == 0) {  /* push empty string */
      setsvalue2s(L, L->top, luaS_newlstr(L, "", 0));
-@@ -1139,6 +1147,7 @@ LUA_API const char *lua_setupvalue (lua_
+@@ -1139,6 +1146,7 @@ LUA_API const char *lua_setupvalue (lua_
    if (name) {
      L->top--;
      setobj(L, val, L->top);
@@ -238,7 +234,7 @@
      luaC_barrier(L, clvalue(fi), L->top);
    }
    lua_unlock(L);
-@@ -1160,7 +1169,7 @@ LUA_API const char *lua_setupvalue (lua_
+@@ -1160,7 +1168,7 @@ LUA_API const char *lua_setupvalue (lua_
  int lua_pushvalue_as_number (lua_State *L, int idx)
  {
    const TValue *o = index2adr(L, idx);
@@ -518,7 +514,7 @@
      }
    }
    return p;
-@@ -543,7 +551,7 @@ static void atomic (lua_State *L) {
+@@ -543,7 +546,7 @@ static void atomic (lua_State *L) {
    udsize = luaC_separateudata(L, 0);  /* separate userdata to be finalized */
    marktmu(g);  /* mark `preserved' userdata */
    udsize += propagateall(g);  /* remark, to propagate `preserveness' */
@@ -527,7 +523,7 @@
    /* flip current white */
    g->currentwhite = cast_byte(otherwhite(g));
    g->sweepstrgc = 0;
-@@ -685,8 +693,11 @@ void luaC_barrierback (lua_State *L, Tab
+@@ -685,8 +688,11 @@ void luaC_barrierback (lua_State *L, Tab
  
  void luaC_link (lua_State *L, GCObject *o, lu_byte tt) {
    global_State *g = G(L);
@@ -977,7 +973,7 @@
    lua_Number d;
    lua_Integer i;
    
-@@ -384,6 +386,7 @@ void luaV_concat (lua_State *L, int tota
+@@ -384,6 +385,7 @@ void luaV_concat (lua_State *L, int tota
          size_t l = tsvalue(top-i)->len;
          memcpy(buffer+tl, svalue(top-i), l);
          tl += l;
@@ -985,7 +981,7 @@
        }
        setsvalue2s(L, top-n, luaS_newlstr(L, buffer, tl));
      }
-@@ -420,7 +423,7 @@ void luaV_concat (lua_State *L, int tota
+@@ -420,7 +422,7 @@ void luaV_concat (lua_State *L, int tota
   */
  static void Arith (lua_State *L, StkId ra, const TValue *rb,
                     const TValue *rc, TMS op) {
@@ -994,7 +990,7 @@
    const TValue *b, *c;
    lua_Number nb,nc;
  
-@@ -663,7 +666,7 @@ void luaV_execute (lua_State *L, int nex
+@@ -663,7 +665,7 @@ void luaV_execute (lua_State *L, int nex
        OPCODE_TARGET(LOADNIL) {
          TValue *rb = RB(i);
          do {
@@ -1003,7 +999,7 @@
          } while (rb >= ra);
          continue;
        }
-@@ -673,7 +676,7 @@ void luaV_execute (lua_State *L, int nex
+@@ -673,7 +675,7 @@ void luaV_execute (lua_State *L, int nex
          continue;
        }
        OPCODE_TARGET(GETGLOBAL) {
@@ -1012,7 +1008,7 @@
          TValue *rb = KBx(i);
          sethvalue(L, &g, cl->env);
          lua_assert(ttisstring(rb));
-@@ -685,7 +688,7 @@ void luaV_execute (lua_State *L, int nex
+@@ -685,7 +687,7 @@ void luaV_execute (lua_State *L, int nex
          continue;
        }
        OPCODE_TARGET(SETGLOBAL) {
@@ -1021,7 +1017,7 @@
          sethvalue(L, &g, cl->env);
          lua_assert(ttisstring(KBx(i)));
          Protect(luaV_settable(L, &g, KBx(i), ra));
-@@ -895,7 +900,7 @@ void luaV_execute (lua_State *L, int nex
+@@ -895,7 +897,7 @@ void luaV_execute (lua_State *L, int nex
          if (--nexeccalls == 0)  /* was previous function running `here'? */
            return;  /* no: return */
          else {  /* yes: continue its execution */
@@ -1030,7 +1026,7 @@
            lua_assert(isLua(L->ci));
            lua_assert(GET_OPCODE(*((L->ci)->savedpc - 1)) == OP_CALL);
            goto reentry;
-@@ -986,6 +991,7 @@ void luaV_execute (lua_State *L, int nex
+@@ -986,6 +988,7 @@ void luaV_execute (lua_State *L, int nex
          for (; n > 0; n--) {
            TValue *val = ra+n;
            setobj2t(L, luaH_setint(L, h, last--), val);
@@ -1038,7 +1034,7 @@
            luaC_barriert(L, h, val);
          }
          continue;
-@@ -1030,7 +1036,7 @@ void luaV_execute (lua_State *L, int nex
+@@ -1030,7 +1033,7 @@ void luaV_execute (lua_State *L, int nex
              setobjs2s(L, ra + j, ci->base - n + j);
            }
            else {
