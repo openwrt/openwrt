@@ -1,6 +1,6 @@
---- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_mei.c	2010-03-14 02:59:49.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei//ifxmips_mei.c	2010-03-14 03:02:13.000000000 +0100
-@@ -78,8 +78,8 @@
+--- a/src/mei/ifxmips_mei.c
++++ b/src/mei/ifxmips_mei.c
+@@ -79,8 +79,8 @@
  #define ifxmips_w32(val, reg)                   __raw_writel(val, reg)
  #define ifxmips_w32_mask(clear, set, reg)       ifxmips_w32((ifxmips_r32(reg) & ~clear) | set, reg)
  */
@@ -11,7 +11,7 @@
  
  #ifdef CONFIG_IFXMIPS_MEI_FW_LOOPBACK
  //#define DFE_MEM_TEST
-@@ -1300,7 +1300,7 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *
+@@ -1301,7 +1301,7 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *
  			IFX_MEI_EMSG (">>> malloc fail for codeswap buff!!! <<<\n");
  			return DSL_DEV_MEI_ERR_FAILURE;
  		}
@@ -20,7 +20,7 @@
  	}
  
  	DSL_DEV_PRIVATE(pDev)->img_hdr =
-@@ -1475,7 +1475,7 @@ IFX_MEI_DFEMemoryFree (DSL_DEV_Device_t 
+@@ -1476,7 +1476,7 @@ IFX_MEI_DFEMemoryFree (DSL_DEV_Device_t 
          }
  
  	if(mei_arc_swap_buff != NULL){
@@ -29,7 +29,7 @@
  		kfree(mei_arc_swap_buff);
  		mei_arc_swap_buff=NULL;
  	}
-@@ -1495,7 +1495,7 @@ IFX_MEI_DFEMemoryAlloc (DSL_DEV_Device_t
+@@ -1496,7 +1496,7 @@ IFX_MEI_DFEMemoryAlloc (DSL_DEV_Device_t
  //		DSL_DEV_PRIVATE(pDev)->adsl_mem_info;
  	int allocate_size = SDRAM_SEGMENT_SIZE;
  
@@ -38,7 +38,7 @@
  	// Alloc Swap Pages
  	for (idx = 0; size > 0 && idx < MAX_BAR_REGISTERS; idx++) {
  		// skip bar15 for XDATA usage.
-@@ -1595,7 +1595,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * p
+@@ -1596,7 +1596,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * p
  	ssize_t retval = -ENOMEM;
  	int idx = 0;
  
@@ -47,7 +47,7 @@
  
  	if (*loff == 0) {
  		if (size < sizeof (img_hdr_tmp)) {
-@@ -1647,7 +1647,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * p
+@@ -1648,7 +1648,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * p
  			goto error;
  		}
  		adsl_mem_info[XDATA_REGISTER].type = FREE_RELOAD;
@@ -56,7 +56,7 @@
  		IFX_MEI_BarUpdate (pDev, (DSL_DEV_PRIVATE(pDev)->nBar));
  	}
  	else if (DSL_DEV_PRIVATE(pDev)-> image_size == 0) {
-@@ -1926,7 +1926,7 @@ static void
+@@ -1927,7 +1927,7 @@ static void
  WriteMbox (u32 * mboxarray, u32 size)
  {
  	IFX_MEI_DebugWrite (&dsl_devices[0], IMBOX_BASE, mboxarray, size);
@@ -65,7 +65,7 @@
  	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_ME2ARC_INT, MEI_TO_ARC_MSGAV);
  }
  
-@@ -1935,7 +1935,7 @@ static void
+@@ -1936,7 +1936,7 @@ static void
  ReadMbox (u32 * mboxarray, u32 size)
  {
  	IFX_MEI_DebugRead (&dsl_devices[0], OMBOX_BASE, mboxarray, size);
@@ -74,7 +74,7 @@
  }
  
  static void
-@@ -1965,7 +1965,7 @@ arc_code_page_download (uint32_t arc_cod
+@@ -1966,7 +1966,7 @@ arc_code_page_download (uint32_t arc_cod
  {
  	int count;
  
@@ -83,7 +83,7 @@
  	IFX_MEI_ControlModeSet (&dsl_devices[0], MEI_MASTER_MODE);
  	IFX_MEI_HaltArc (&dsl_devices[0]);
  	IFX_MEI_LongWordWriteOffset (&dsl_devices[0], (u32) ME_DX_AD, 0);
-@@ -2004,21 +2004,21 @@ dfe_loopback_irq_handler (DSL_DEV_Device
+@@ -2005,21 +2005,21 @@ dfe_loopback_irq_handler (DSL_DEV_Device
  	memset (&rd_mbox[0], 0, 10 * 4);
  	ReadMbox (&rd_mbox[0], 6);
  	if (rd_mbox[0] == 0x0) {
@@ -110,7 +110,7 @@
  			}
  		}
  	}
-@@ -2036,21 +2036,21 @@ wait_mem_test_result (void)
+@@ -2037,21 +2037,21 @@ wait_mem_test_result (void)
  	uint32_t mbox[5];
  	mbox[0] = 0;
  
@@ -137,7 +137,7 @@
  	}
  }
  
-@@ -2066,7 +2066,7 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
+@@ -2067,7 +2067,7 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
  		rd_mbox[i] = 0;
  	}
  
@@ -146,7 +146,7 @@
  	wr_mbox[0] = MEI_PING;
  	WriteMbox (&wr_mbox[0], 10);
  
-@@ -2074,7 +2074,7 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
+@@ -2075,7 +2075,7 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
  		MEI_WAIT (100);
  	}
  
@@ -155,7 +155,7 @@
  	got_int = 0;
  
  	wr_mbox[0] = 0x4;
-@@ -2093,14 +2093,14 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
+@@ -2094,14 +2094,14 @@ arc_ping_testing (DSL_DEV_Device_t *pDev
  	IFX_MEI_LongWordWriteOffset (&dsl_devices[0],
  					   (u32) ME_ME2ARC_INT,
  					   MEI_TO_ARC_MSGAV);
@@ -173,7 +173,7 @@
  			got_int = 0;
  			//schedule();
  			DSL_ENABLE_IRQ (pDev->nIrq[IFX_DFEIR]);
-@@ -2151,7 +2151,7 @@ DFE_Loopback_Test (void)
+@@ -2152,7 +2152,7 @@ DFE_Loopback_Test (void)
  			DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].type = FREE_RELOAD;
  			IFX_MEI_WRITE_REGISTER_L ((((uint32_t) DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].address) & 0x0fffffff),
  							IFXMIPS_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  + idx * 4);
@@ -182,7 +182,7 @@
  				IFXMIPS_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  +
  				idx * 4, (((uint32_t)
  					   ((ifx_mei_device_private_t *)
-@@ -2168,20 +2168,20 @@ DFE_Loopback_Test (void)
+@@ -2169,20 +2169,20 @@ DFE_Loopback_Test (void)
  		return DSL_DEV_MEI_ERR_FAILURE;
  	}
  	//WriteARCreg(AUX_IC_CTRL,2);
@@ -207,7 +207,7 @@
  	memcpy ((u8 *) (DSL_DEV_PRIVATE(pDev)->
  			adsl_mem_info[0].address + 0x1004),
  		&arc_ahb_access_code[0], sizeof (arc_ahb_access_code));
-@@ -2189,13 +2189,13 @@ DFE_Loopback_Test (void)
+@@ -2190,13 +2190,13 @@ DFE_Loopback_Test (void)
  
  #endif //DFE_PING_TEST
  
@@ -223,7 +223,7 @@
  #endif //DFE_MEM_TEST
  #ifdef DFE_ATM_LOOPBACK
  	arc_debug_data = 0xf;
-@@ -2214,7 +2214,7 @@ DFE_Loopback_Test (void)
+@@ -2215,7 +2215,7 @@ DFE_Loopback_Test (void)
  	IFX_MEI_DebugWrite (&dsl_devices[0], 0x32010, &arc_debug_data, 1);
  #endif //DFE_ATM_LOOPBACK
  	IFX_MEI_IRQEnable (pDev);
@@ -232,7 +232,7 @@
  	IFX_MEI_RunArc (&dsl_devices[0]);
  
  #ifdef DFE_PING_TEST
-@@ -2525,7 +2525,7 @@ IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev,
+@@ -2526,7 +2526,7 @@ IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev,
  		break;
  
  	case DSL_FIO_BSP_DSL_START:
@@ -241,7 +241,7 @@
  		if ((meierr = IFX_MEI_RunAdslModem (pDev)) != DSL_DEV_MEI_ERR_SUCCESS) {
  			IFX_MEI_EMSG ("IFX_MEI_RunAdslModem() error...");
  			meierr = DSL_DEV_MEI_ERR_FAILURE;
-@@ -2926,11 +2926,11 @@ IFX_MEI_ModuleInit (void)
+@@ -2927,11 +2927,11 @@ IFX_MEI_ModuleInit (void)
  	int i = 0;
  	static struct class *dsl_class;
  
@@ -255,7 +255,7 @@
  			return -EIO;
  		}
  		IFX_MEI_InitDevNode (i);
-@@ -2942,7 +2942,7 @@ IFX_MEI_ModuleInit (void)
+@@ -2943,7 +2943,7 @@ IFX_MEI_ModuleInit (void)
  		dsl_bsp_event_callback[i].function = NULL;
  
  #ifdef CONFIG_IFXMIPS_MEI_FW_LOOPBACK
@@ -264,9 +264,9 @@
  	DFE_Loopback_Test ();
  #endif
  	dsl_class = class_create(THIS_MODULE, "ifx_mei");
---- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_core.c	2010-03-13 16:42:49.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c	2010-03-14 03:39:05.000000000 +0100
-@@ -2336,7 +2335,7 @@ static int atm_showtime_enter(struct por
+--- a/src/mei/ifxmips_atm_core.c
++++ b/src/mei/ifxmips_atm_core.c
+@@ -2335,7 +2335,7 @@ static int atm_showtime_enter(struct por
      IFX_REG_W32(0x0F, UTP_CFG);
  #endif
  
@@ -275,7 +275,7 @@
  
      return IFX_SUCCESS;
  }
-@@ -2352,7 +2351,7 @@ static int atm_showtime_exit(void)
+@@ -2351,7 +2351,7 @@ static int atm_showtime_exit(void)
      //  TODO: ReTX clean state
      g_xdata_addr = NULL;
  
@@ -284,4 +284,3 @@
  
      return IFX_SUCCESS;
  }
-

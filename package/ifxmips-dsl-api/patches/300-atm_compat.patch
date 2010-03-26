@@ -1,7 +1,5 @@
-Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_core.c	2009-11-01 14:29:05.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c	2009-11-01 16:07:46.000000000 +0100
+--- a/src/mei/ifxmips_atm_core.c
++++ b/src/mei/ifxmips_atm_core.c
 @@ -58,9 +58,8 @@
  /*
   *  Chip Specific Head File
@@ -14,7 +12,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c
  #include "ifxmips_atm_core.h"
  
  
-@@ -1146,7 +1145,7 @@
+@@ -1146,7 +1145,7 @@ static INLINE void mailbox_signal(unsign
  
  static void set_qsb(struct atm_vcc *vcc, struct atm_qos *qos, unsigned int queue)
  {
@@ -23,7 +21,7 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c
      unsigned int qsb_qid = queue + FIRST_QSB_QID;
      union qsb_queue_parameter_table qsb_queue_parameter_table = {{0}};
      union qsb_queue_vbr_parameter_table qsb_queue_vbr_parameter_table = {{0}};
-@@ -1318,7 +1317,7 @@
+@@ -1318,7 +1317,7 @@ static void set_qsb(struct atm_vcc *vcc,
  
  static void qsb_global_set(void)
  {
@@ -32,15 +30,13 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.c
      int i;
      unsigned int tmp1, tmp2, tmp3;
  
-@@ -2505,3 +2504,4 @@
+@@ -2505,3 +2504,4 @@ static void __exit ifx_atm_exit(void)
  
  module_init(ifx_atm_init);
  module_exit(ifx_atm_exit);
 +MODULE_LICENSE("Dual BSD/GPL");
-Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_common.h
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_ppe_common.h	2009-11-01 14:30:55.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_common.h	2009-11-01 15:58:50.000000000 +0100
+--- a/src/mei/ifxmips_atm_ppe_common.h
++++ b/src/mei/ifxmips_atm_ppe_common.h
 @@ -1,9 +1,10 @@
  #ifndef IFXMIPS_ATM_PPE_COMMON_H
  #define IFXMIPS_ATM_PPE_COMMON_H
@@ -63,10 +59,8 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_common.h
  /*
   *  Code/Data Memory (CDM) Interface Configuration Register
   */
-Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.h
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_core.h	2009-11-01 14:30:55.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.h	2009-11-01 15:58:50.000000000 +0100
+--- a/src/mei/ifxmips_atm_core.h
++++ b/src/mei/ifxmips_atm_core.h
 @@ -25,8 +25,8 @@
  #define IFXMIPS_ATM_CORE_H
  
@@ -78,10 +72,8 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_core.h
  #include "ifxmips_atm_ppe_common.h"
  #include "ifxmips_atm_fw_regs_common.h"
  
-Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_compat.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_compat.h	2009-11-01 15:58:50.000000000 +0100
+--- /dev/null
++++ b/src/mei/ifxmips_compat.h
 @@ -0,0 +1,43 @@
 +#ifndef _IFXMIPS_COMPAT_H__
 +#define _IFXMIPS_COMPAT_H__
@@ -126,10 +118,8 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_compat.h
 +#define CONFIG_IFXMIPS_DSL_CPE_MEI	y
 +
 +#endif
-Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_danube.h
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_ppe_danube.h	2009-11-01 14:30:55.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_danube.h	2009-11-01 15:58:50.000000000 +0100
+--- a/src/mei/ifxmips_atm_ppe_danube.h
++++ b/src/mei/ifxmips_atm_ppe_danube.h
 @@ -1,7 +1,7 @@
  #ifndef IFXMIPS_ATM_PPE_DANUBE_H
  #define IFXMIPS_ATM_PPE_DANUBE_H
@@ -148,10 +138,8 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_ppe_danube.h
  
  
  
-Index: drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_danube.c
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/mei/ifxmips_atm_danube.c	2009-11-01 14:29:18.000000000 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/mei/ifxmips_atm_danube.c	2009-11-01 15:58:50.000000000 +0100
+--- a/src/mei/ifxmips_atm_danube.c
++++ b/src/mei/ifxmips_atm_danube.c
 @@ -45,10 +45,9 @@
  /*
   *  Chip Specific Head File
