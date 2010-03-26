@@ -1,8 +1,6 @@
-Index: acx-mac80211-20100302/acx_func.h
-===================================================================
---- acx-mac80211-20100302.orig/acx_func.h	2010-03-06 13:01:36.000000000 +0100
-+++ acx-mac80211-20100302/acx_func.h	2010-03-06 13:01:56.000000000 +0100
-@@ -714,7 +714,6 @@
+--- a/acx_func.h
++++ b/acx_func.h
+@@ -714,7 +714,6 @@ int acx_e_op_set_key(struct ieee80211_hw
  int acx_e_op_config(struct ieee80211_hw *hw, u32 changed);
  void acx_e_op_bss_info_changed(struct ieee80211_hw *hw,
  		struct ieee80211_vif *vif, struct ieee80211_bss_conf *info, u32 changed);
@@ -10,11 +8,9 @@ Index: acx-mac80211-20100302/acx_func.h
  int acx_e_conf_tx(struct ieee80211_hw* ieee, u16 queue,
  		const struct ieee80211_tx_queue_params *params);
  //int acx_passive_scan(struct net_device *net_dev, int state, struct ieee80211_scan_conf *conf);
-Index: acx-mac80211-20100302/common.c
-===================================================================
---- acx-mac80211-20100302.orig/common.c	2010-03-06 13:01:38.000000000 +0100
-+++ acx-mac80211-20100302/common.c	2010-03-06 13:02:37.000000000 +0100
-@@ -4662,24 +4662,6 @@
+--- a/common.c
++++ b/common.c
+@@ -4662,24 +4662,6 @@ extern void acx_e_op_bss_info_changed(st
  	return;
  }
  
@@ -39,11 +35,9 @@ Index: acx-mac80211-20100302/common.c
  int acx_e_conf_tx(struct ieee80211_hw *hw,
  		u16 queue, const struct ieee80211_tx_queue_params *params)
  {
-Index: acx-mac80211-20100302/mem.c
-===================================================================
---- acx-mac80211-20100302.orig/mem.c	2010-03-06 13:01:46.000000000 +0100
-+++ acx-mac80211-20100302/mem.c	2010-03-06 13:02:28.000000000 +0100
-@@ -2321,7 +2321,6 @@
+--- a/mem.c
++++ b/mem.c
+@@ -2321,7 +2321,6 @@ static const struct ieee80211_ops acxmem
  		.bss_info_changed = acx_e_op_bss_info_changed,
  		.set_key = acx_e_op_set_key,
  		.get_stats = acx_e_op_get_stats,
@@ -51,11 +45,9 @@ Index: acx-mac80211-20100302/mem.c
  		};
  
  
-Index: acx-mac80211-20100302/pci.c
-===================================================================
---- acx-mac80211-20100302.orig/pci.c	2010-03-06 13:01:40.000000000 +0100
-+++ acx-mac80211-20100302/pci.c	2010-03-06 13:02:18.000000000 +0100
-@@ -1482,7 +1482,6 @@
+--- a/pci.c
++++ b/pci.c
+@@ -1482,7 +1482,6 @@ static const struct ieee80211_ops acxpci
  	.bss_info_changed = acx_e_op_bss_info_changed,
  	.set_key = acx_e_op_set_key,
  	.get_stats = acx_e_op_get_stats,
@@ -63,11 +55,9 @@ Index: acx-mac80211-20100302/pci.c
  };
  
  
-Index: acx-mac80211-20100302/usb.c
-===================================================================
---- acx-mac80211-20100302.orig/usb.c	2010-03-06 13:01:44.000000000 +0100
-+++ acx-mac80211-20100302/usb.c	2010-03-06 13:02:22.000000000 +0100
-@@ -757,7 +757,6 @@
+--- a/usb.c
++++ b/usb.c
+@@ -757,7 +757,6 @@ static const struct ieee80211_ops acxusb
  	.bss_info_changed = acx_e_op_bss_info_changed,
  	.set_key = acx_e_op_set_key,
  	.get_stats = acx_e_op_get_stats,
