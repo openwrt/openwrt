@@ -1,8 +1,6 @@
-Index: acx-mac80211-20100302/Makefile
-===================================================================
---- acx-mac80211-20100302.orig/Makefile	2010-03-06 22:13:23.000000000 +0100
-+++ acx-mac80211-20100302/Makefile	2010-03-06 22:13:28.000000000 +0100
-@@ -29,7 +29,7 @@
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,7 @@ ifneq ($(KERNELRELEASE),)
  	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_PCI) += pci.o
  	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_USB) += usb.o
  	acx-mac80211-obj-$(CONFIG_ACX_MAC80211_MEM) += mem.o

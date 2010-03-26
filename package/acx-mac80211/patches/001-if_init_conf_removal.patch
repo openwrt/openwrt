@@ -1,8 +1,6 @@
-Index: acx-mac80211-20100302/acx_func.h
-===================================================================
---- acx-mac80211-20100302.orig/acx_func.h	2010-03-06 12:57:25.000000000 +0100
-+++ acx-mac80211-20100302/acx_func.h	2010-03-06 12:58:10.000000000 +0100
-@@ -704,9 +704,9 @@
+--- a/acx_func.h
++++ b/acx_func.h
+@@ -704,9 +704,9 @@ int acx_setup_modes(acx_device_t *adev);
  void acx_free_modes(acx_device_t *adev);
  int acx_i_op_tx(struct ieee80211_hw *ieee,	struct sk_buff *skb);
  int acx_e_op_add_interface(struct ieee80211_hw* ieee,
@@ -14,11 +12,9 @@ Index: acx-mac80211-20100302/acx_func.h
  int acx_net_reset(struct ieee80211_hw *ieee);
  int acx_e_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
  		struct ieee80211_vif *vif, struct ieee80211_sta *sta,
-Index: acx-mac80211-20100302/common.c
-===================================================================
---- acx-mac80211-20100302.orig/common.c	2010-03-06 12:57:31.000000000 +0100
-+++ acx-mac80211-20100302/common.c	2010-03-06 12:59:51.000000000 +0100
-@@ -4402,7 +4402,7 @@
+--- a/common.c
++++ b/common.c
+@@ -4402,7 +4402,7 @@ static void acx_s_select_opmode(acx_devi
  }
  
  int acx_e_op_add_interface(struct ieee80211_hw *ieee,
@@ -27,7 +23,7 @@ Index: acx-mac80211-20100302/common.c
  {
  	acx_device_t *adev = ieee2adev(ieee);
  	unsigned long flags;
-@@ -4414,14 +4414,14 @@
+@@ -4414,14 +4414,14 @@ int acx_e_op_add_interface(struct ieee80
  	acx_sem_lock(adev);
  	acx_lock(adev, flags);
  
@@ -45,7 +41,7 @@ Index: acx-mac80211-20100302/common.c
  	}
  //	adev->mode = conf->type;
  
-@@ -4436,8 +4436,8 @@
+@@ -4436,8 +4436,8 @@ int acx_e_op_add_interface(struct ieee80
  
  	printk(KERN_INFO "acx: Virtual interface added "
  	       "(type: 0x%08X, MAC: %s)\n",
@@ -56,7 +52,7 @@ Index: acx-mac80211-20100302/common.c
  
      out_unlock:
  	acx_unlock(adev, flags);
-@@ -4448,7 +4448,7 @@
+@@ -4448,7 +4448,7 @@ int acx_e_op_add_interface(struct ieee80
  }
  
  void acx_e_op_remove_interface(struct ieee80211_hw *hw,
@@ -65,7 +61,7 @@ Index: acx-mac80211-20100302/common.c
  {
  	acx_device_t *adev = ieee2adev(hw);
  
-@@ -4457,23 +4457,23 @@
+@@ -4457,23 +4457,23 @@ void acx_e_op_remove_interface(struct ie
  	FN_ENTER;
  	acx_sem_lock(adev);
  
