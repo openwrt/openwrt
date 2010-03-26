@@ -1,7 +1,6 @@
-diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_compress.c compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_compress.c
---- compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2009-04-20 06:28:30.000000000 +0200
-+++ compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2009-04-20 06:29:21.000000000 +0200
-@@ -62,8 +62,12 @@
+--- a/sub-projects/compression/lzo-kmod/lzo1x_compress.c
++++ b/sub-projects/compression/lzo-kmod/lzo1x_compress.c
+@@ -62,8 +62,12 @@ _lzo1x_1_do_compress(const unsigned char
  		goto literal;
  
  try_match:
@@ -14,7 +13,7 @@ diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_compress.c
  			if (likely(m_pos[2] == ip[2]))
  					goto match;
  		}
-@@ -94,9 +98,14 @@
+@@ -94,9 +98,14 @@ match:
  				}
  				*op++ = tt;
  			}
@@ -32,7 +31,7 @@ diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_compress.c
  		}
  
  		ip += 3;
-@@ -208,9 +217,14 @@
+@@ -208,9 +217,14 @@ int lzo1x_1_compress(const unsigned char
  
  			*op++ = tt;
  		}
@@ -50,15 +49,14 @@ diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_compress.c
  	}
  
  	*op++ = M4_MARKER | 1;
-@@ -224,4 +238,3 @@
+@@ -224,4 +238,3 @@ EXPORT_SYMBOL_GPL(lzo1x_1_compress);
  
  MODULE_LICENSE("GPL");
  MODULE_DESCRIPTION("LZO1X-1 Compressor");
 -
-diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress.c compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
---- compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2009-04-20 06:28:30.000000000 +0200
-+++ compcache-0.5.3/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2009-04-20 06:29:21.000000000 +0200
-@@ -45,10 +45,7 @@
+--- a/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
++++ b/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
+@@ -45,10 +45,7 @@ int lzo1x_decompress_safe(const unsigned
  			goto output_overrun;
  		if (HAVE_IP(t + 1, ip_end, ip))
  			goto input_overrun;
@@ -70,7 +68,7 @@ diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress
  	}
  
  	while ((ip < ip_end)) {
-@@ -71,30 +68,27 @@
+@@ -71,30 +68,27 @@ int lzo1x_decompress_safe(const unsigned
  		if (HAVE_IP(t + 4, ip_end, ip))
  			goto input_overrun;
  
@@ -116,7 +114,7 @@ diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress
  		t = *ip++;
  		if (t >= 16)
  			goto match;
-@@ -139,8 +133,7 @@
+@@ -139,8 +133,7 @@ match:
  					t += 31 + *ip++;
  				}
  				m_pos = op - 1;
@@ -126,7 +124,7 @@ diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress
  				ip += 2;
  			} else if (t >= 16) {
  				m_pos = op;
-@@ -158,8 +151,7 @@
+@@ -158,8 +151,7 @@ match:
  					}
  					t += 7 + *ip++;
  				}
@@ -136,7 +134,7 @@ diff -uNr compcache-0.5.3-org/sub-projects/compression/lzo-kmod/lzo1x_decompress
  				ip += 2;
  				if (m_pos == op)
  					goto eof_found;
-@@ -184,21 +176,33 @@
+@@ -184,21 +176,33 @@ match:
  			if (HAVE_OP(t + 3 - 1, op_end, op))
  				goto output_overrun;
  

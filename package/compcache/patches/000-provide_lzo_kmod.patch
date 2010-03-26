@@ -1,6 +1,5 @@
-diff -uNr compcache-org/Makefile compcache-0.6.2/Makefile
---- compcache-org/Makefile	2010-01-24 17:46:50.000000000 +0100
-+++ compcache-0.6.2/Makefile	2010-03-18 16:00:41.000000000 +0100
+--- a/Makefile
++++ b/Makefile
 @@ -1,14 +1,17 @@
  KERNEL_BUILD_PATH ?= "/lib/modules/$(shell uname -r)/build"
  
@@ -20,16 +19,15 @@ diff -uNr compcache-org/Makefile compcache-0.6.2/Makefile
  	make -C sub-projects/rzscontrol
  
  doc:
-@@ -16,5 +19,6 @@
+@@ -16,5 +19,6 @@ doc:
  
  clean:
  	make -C $(KERNEL_BUILD_PATH) M=$(PWD) clean
 +	make -C $(KERNEL_BUILD_PATH) M=$(PWD)/$(LZO) clean
  	make -C sub-projects/rzscontrol clean
  	@rm -rf *.ko
-diff -uNr compcache-org/ramzswap_drv.c compcache-0.6.2/ramzswap_drv.c
---- compcache-org/ramzswap_drv.c	2010-01-24 17:52:19.000000000 +0100
-+++ compcache-0.6.2/ramzswap_drv.c	2010-03-18 16:03:23.000000000 +0100
+--- a/ramzswap_drv.c
++++ b/ramzswap_drv.c
 @@ -23,13 +23,13 @@
  #include <linux/device.h>
  #include <linux/genhd.h>
@@ -45,9 +43,8 @@ diff -uNr compcache-org/ramzswap_drv.c compcache-0.6.2/ramzswap_drv.c
  #include "compat.h"
  #include "ramzswap_drv.h"
  
-diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo1x.c compcache/sub-projects/compression/lzo-kmod/lzo1x.c
---- compcache-old/sub-projects/compression/lzo-kmod/lzo1x.c	1970-01-01 01:00:00.000000000 +0100
-+++ compcache/sub-projects/compression/lzo-kmod/lzo1x.c	2009-10-17 09:35:59.000000000 +0200
+--- /dev/null
++++ b/sub-projects/compression/lzo-kmod/lzo1x.c
 @@ -0,0 +1,7 @@
 +#include <linux/module.h>
 +
@@ -56,9 +53,8 @@ diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo1x.c compcache/sub-
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("LZO1X Lib");
-diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo1x_compress.c compcache/sub-projects/compression/lzo-kmod/lzo1x_compress.c
---- compcache-old/sub-projects/compression/lzo-kmod/lzo1x_compress.c	1970-01-01 01:00:00.000000000 +0100
-+++ compcache/sub-projects/compression/lzo-kmod/lzo1x_compress.c	2009-10-17 09:35:59.000000000 +0200
+--- /dev/null
++++ b/sub-projects/compression/lzo-kmod/lzo1x_compress.c
 @@ -0,0 +1,227 @@
 +/*
 + *  LZO1X Compressor from MiniLZO
@@ -287,9 +283,8 @@ diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo1x_compress.c compc
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("LZO1X-1 Compressor");
 +
-diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo1x_decompress.c compcache/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
---- compcache-old/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	1970-01-01 01:00:00.000000000 +0100
-+++ compcache/sub-projects/compression/lzo-kmod/lzo1x_decompress.c	2009-10-17 09:35:59.000000000 +0200
+--- /dev/null
++++ b/sub-projects/compression/lzo-kmod/lzo1x_decompress.c
 @@ -0,0 +1,255 @@
 +/*
 + *  LZO1X Decompressor from MiniLZO
@@ -546,9 +541,8 @@ diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo1x_decompress.c com
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("LZO1X Decompressor");
 +
-diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzodefs.h compcache/sub-projects/compression/lzo-kmod/lzodefs.h
---- compcache-old/sub-projects/compression/lzo-kmod/lzodefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ compcache/sub-projects/compression/lzo-kmod/lzodefs.h	2009-10-17 09:35:59.000000000 +0200
+--- /dev/null
++++ b/sub-projects/compression/lzo-kmod/lzodefs.h
 @@ -0,0 +1,43 @@
 +/*
 + *  lzodefs.h -- architecture, OS and compiler specific defines
@@ -593,9 +587,8 @@ diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzodefs.h compcache/su
 +#define DX2(p, s1, s2)	(((((size_t)((p)[2]) << (s2)) ^ (p)[1]) \
 +							<< (s1)) ^ (p)[0])
 +#define DX3(p, s1, s2, s3)	((DX2((p)+1, s2, s3) << (s1)) ^ (p)[0])
-diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo.h compcache/sub-projects/compression/lzo-kmod/lzo.h
---- compcache-old/sub-projects/compression/lzo-kmod/lzo.h	1970-01-01 01:00:00.000000000 +0100
-+++ compcache/sub-projects/compression/lzo-kmod/lzo.h	2009-10-17 09:35:59.000000000 +0200
+--- /dev/null
++++ b/sub-projects/compression/lzo-kmod/lzo.h
 @@ -0,0 +1,44 @@
 +#ifndef __LZO_H__
 +#define __LZO_H__
@@ -641,9 +634,8 @@ diff -uNr compcache-old/sub-projects/compression/lzo-kmod/lzo.h compcache/sub-pr
 +#define LZO_E_NOT_YET_IMPLEMENTED	(-9)
 +
 +#endif
-diff -uNr compcache-old/sub-projects/compression/lzo-kmod/Makefile compcache/sub-projects/compression/lzo-kmod/Makefile
---- compcache-old/sub-projects/compression/lzo-kmod/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ compcache/sub-projects/compression/lzo-kmod/Makefile	2009-10-17 09:35:59.000000000 +0200
+--- /dev/null
++++ b/sub-projects/compression/lzo-kmod/Makefile
 @@ -0,0 +1,8 @@
 +obj-m += lzo1x_compress.o lzo1x_decompress.o
 +
