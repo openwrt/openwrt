@@ -1,8 +1,6 @@
-Index: zlib-1.2.3/Makefile.in
-===================================================================
---- zlib-1.2.3.orig/Makefile.in	2005-07-18 04:25:21.000000000 +0200
-+++ zlib-1.2.3/Makefile.in	2008-07-27 14:57:32.000000000 +0200
-@@ -25,20 +25,23 @@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -25,20 +25,23 @@ CFLAGS=-O
  #           -Wstrict-prototypes -Wmissing-prototypes
  
  LDFLAGS=libz.a
@@ -29,7 +27,7 @@ Index: zlib-1.2.3/Makefile.in
  prefix = /usr/local
  exec_prefix = ${prefix}
  libdir = ${exec_prefix}/lib
-@@ -67,8 +70,8 @@
+@@ -67,8 +70,8 @@ test: all
  	  echo '		*** zlib test FAILED ***'; \
  	fi
  
@@ -40,7 +38,7 @@ Index: zlib-1.2.3/Makefile.in
  	-@ ($(RANLIB) $@ || true) >/dev/null 2>&1
  
  match.o: match.S
-@@ -77,8 +80,10 @@
+@@ -77,8 +80,10 @@ match.o: match.S
  	mv _match.o match.o
  	rm -f _match.s
  
@@ -52,7 +50,7 @@ Index: zlib-1.2.3/Makefile.in
  	rm -f $(SHAREDLIB) $(SHAREDLIBM)
  	ln -s $@ $(SHAREDLIB)
  	ln -s $@ $(SHAREDLIBM)
-@@ -90,23 +95,22 @@
+@@ -90,23 +95,22 @@ minigzip$(EXE): minigzip.o $(LIBS)
  	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
  
  install: $(LIBS)
@@ -87,12 +85,10 @@ Index: zlib-1.2.3/Makefile.in
 +	chmod 644 $(DESTDIR)$(man3dir)/zlib.3
  # The ranlib in install is needed on NeXTSTEP which checks file times
  # ldconfig is for Linux
-
-Index: zlib-1.2.3/configure
-=================================================================== 
---- zlib-1.2.3.orig/configure	2005-07-11 22:11:57.000000000 +0200
-+++ zlib-1.2.3/configure	2008-07-27 14:57:24.000000000 +0200
-@@ -23,7 +23,7 @@
+ 
+--- a/configure
++++ b/configure
+@@ -23,7 +23,7 @@ LDFLAGS="-L. ${LIBS}"
  VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
  VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
  VER1=`sed -n -e '/VERSION "/s/.*"\([0-9]*\)\\..*/\1/p' < zlib.h`
@@ -101,7 +97,7 @@ Index: zlib-1.2.3/configure
  RANLIB=${RANLIB-"ranlib"}
  prefix=${prefix-/usr/local}
  exec_prefix=${exec_prefix-'${prefix}'}
-@@ -73,32 +73,9 @@
+@@ -73,32 +73,9 @@ esac
  
  if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
    CC="$cc"
@@ -136,7 +132,7 @@ Index: zlib-1.2.3/configure
  else
    # find system name and corresponding cc options
    CC=${CC-cc}
-@@ -424,6 +401,29 @@
+@@ -424,6 +401,29 @@ else
    echo Checking for mmap support... No.
  fi
  
@@ -166,7 +162,7 @@ Index: zlib-1.2.3/configure
  CPP=${CPP-"$CC -E"}
  case $CFLAGS in
    *ASMV*)
-@@ -440,20 +440,21 @@
+@@ -440,20 +440,21 @@ rm -f $test.[co] $test $test$shared_ext
  # udpate Makefile
  sed < Makefile.in "
  /^CC *=/s#=.*#=$CC#
@@ -204,10 +200,8 @@ Index: zlib-1.2.3/configure
 +/^mandir *=/s%=.*%= $mandir%
 +/^LDFLAGS *=/s%=.*%= $LDFLAGS%
  " > Makefile
-Index: zlib-1.2.3/contrib/minizip/Makefile
-===================================================================
---- zlib-1.2.3.orig/contrib/minizip/Makefile	2005-07-12 20:08:40.000000000 +0200
-+++ zlib-1.2.3/contrib/minizip/Makefile	2008-07-27 14:57:24.000000000 +0200
+--- a/contrib/minizip/Makefile
++++ b/contrib/minizip/Makefile
 @@ -1,8 +1,8 @@
  CC=cc
 -CFLAGS=-O -I../..
@@ -220,7 +214,7 @@ Index: zlib-1.2.3/contrib/minizip/Makefile
  
  .c.o:
  	$(CC) -c $(CFLAGS) $*.c
-@@ -10,10 +10,10 @@
+@@ -10,10 +10,10 @@ ZIP_OBJS = minizip.o zip.o   ioapi.o ../
  all: miniunz minizip
  
  miniunz:  $(UNZ_OBJS)
