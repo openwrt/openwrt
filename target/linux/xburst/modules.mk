@@ -10,7 +10,7 @@ define KernelPackage/sound-soc-jz4740
   FILES:= \
 	$(LINUX_DIR)/sound/soc/jz4740/snd-soc-jz4740.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/sound/soc/jz4740/snd-soc-jz4740-i2s.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,snd-soc-jz4740 snd-soc-jz4740-i2s)
+  AUTOLOAD:=$(call AutoLoad,60,snd-soc-jz4740 snd-soc-jz4740-i2s)
 endef
 
 define KernelPackage/sound-soc-jzcodec
@@ -19,7 +19,7 @@ define KernelPackage/sound-soc-jzcodec
   TITLE:=JZ4740 SoC internal codec support
   KCONFIG:=CONFIG_SND_SOC_JZCODEC
   FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-jzcodec.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,snd-soc-jzcodec)
+  AUTOLOAD:=$(call AutoLoad,60,snd-soc-jzcodec)
 endef
 
 define KernelPackage/sound-soc-xburst/default
@@ -28,7 +28,7 @@ define KernelPackage/sound-soc-xburst/default
   TITLE:=$(1) sound support
   KCONFIG:=CONFIG_SND_JZ4740_SOC_$(2)
   FILES:=$(LINUX_DIR)/sound/soc/jz4740/snd-soc-$(3).$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,45,snd-soc-$(3))
+  AUTOLOAD:=$(call AutoLoad,65,snd-soc-$(3))
 endef
 
 define KernelPackage/sound-soc-qi_lb60
