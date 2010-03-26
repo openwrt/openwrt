@@ -1,5 +1,5 @@
---- a/arch/arm/mach-orion5x/wrt350n-v2-setup.c	2009-12-08 02:39:46.000000000 +0100
-+++ b/arch/arm/mach-orion5x/wrt350n-v2-setup.c	2010-01-13 15:25:17.000000000 +0100
+--- a/arch/arm/mach-orion5x/wrt350n-v2-setup.c
++++ b/arch/arm/mach-orion5x/wrt350n-v2-setup.c
 @@ -15,6 +15,9 @@
  #include <linux/mtd/physmap.h>
  #include <linux/mv643xx_eth.h>
@@ -91,7 +91,7 @@
  static struct orion5x_mpp_mode wrt350n_v2_mpp_modes[] __initdata = {
  	{  0, MPP_GPIO },		/* Power LED green (0=on) */
  	{  1, MPP_GPIO },		/* Security LED (0=on) */
-@@ -140,6 +217,8 @@
+@@ -140,6 +217,8 @@ static void __init wrt350n_v2_init(void)
  	orion5x_setup_dev_boot_win(WRT350N_V2_NOR_BOOT_BASE,
  				   WRT350N_V2_NOR_BOOT_SIZE);
  	platform_device_register(&wrt350n_v2_nor_flash);

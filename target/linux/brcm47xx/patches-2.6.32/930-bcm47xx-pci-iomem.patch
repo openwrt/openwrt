@@ -1,8 +1,6 @@
-Index: linux-2.6.33/drivers/ssb/driver_pcicore.c
-===================================================================
---- linux-2.6.33.orig/drivers/ssb/driver_pcicore.c	2010-03-15 14:52:55.000000000 +0100
-+++ linux-2.6.33/drivers/ssb/driver_pcicore.c	2010-03-15 15:57:38.000000000 +0100
-@@ -246,20 +246,12 @@
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -246,20 +246,12 @@ static struct pci_controller ssb_pcicore
  	.pci_ops	= &ssb_pcicore_pciops,
  	.io_resource	= &ssb_pcicore_io_resource,
  	.mem_resource	= &ssb_pcicore_mem_resource,
@@ -23,7 +21,7 @@ Index: linux-2.6.33/drivers/ssb/driver_pcicore.c
  	if (d->bus->ops != &ssb_pcicore_pciops) {
  		/* This is not a device on the PCI-core bridge. */
  		return -ENODEV;
-@@ -268,27 +260,6 @@
+@@ -268,27 +260,6 @@ int ssb_pcicore_plat_dev_init(struct pci
  	ssb_printk(KERN_INFO "PCI: Fixing up device %s\n",
  		   pci_name(d));
  

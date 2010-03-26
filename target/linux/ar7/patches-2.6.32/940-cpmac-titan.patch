@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/arch/mips/ar7/platform.c
-===================================================================
---- linux-2.6.32.9.orig/arch/mips/ar7/platform.c	2010-03-07 13:09:00.000000000 +0100
-+++ linux-2.6.32.9/arch/mips/ar7/platform.c	2010-03-07 13:09:00.000000000 +0100
-@@ -716,23 +716,35 @@
+--- a/arch/mips/ar7/platform.c
++++ b/arch/mips/ar7/platform.c
+@@ -716,23 +716,35 @@ static int __init ar7_register_devices(v
  	}
  
  	if (ar7_has_high_cpmac()) {
@@ -45,11 +43,9 @@ Index: linux-2.6.32.9/arch/mips/ar7/platform.c
  	if (res)
  		return res;
  
-Index: linux-2.6.32.9/drivers/net/cpmac.c
-===================================================================
---- linux-2.6.32.9.orig/drivers/net/cpmac.c	2010-02-23 16:38:51.000000000 +0100
-+++ linux-2.6.32.9/drivers/net/cpmac.c	2010-03-07 13:24:56.000000000 +0100
-@@ -1153,6 +1153,8 @@
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
+@@ -1153,6 +1153,8 @@ static int __devinit cpmac_probe(struct 
  		goto fail;
  	}
  
@@ -58,7 +54,7 @@ Index: linux-2.6.32.9/drivers/net/cpmac.c
  	dev->irq = platform_get_irq_byname(pdev, "irq");
  
  	dev->netdev_ops = &cpmac_netdev_ops;
-@@ -1228,7 +1230,7 @@
+@@ -1228,7 +1230,7 @@ int __devinit cpmac_init(void)
  	cpmac_mii->reset = cpmac_mdio_reset;
  	cpmac_mii->irq = mii_irqs;
  
@@ -67,7 +63,7 @@ Index: linux-2.6.32.9/drivers/net/cpmac.c
  
  	if (!cpmac_mii->priv) {
  		printk(KERN_ERR "Can't ioremap mdio registers\n");
-@@ -1239,10 +1241,17 @@
+@@ -1239,10 +1241,17 @@ int __devinit cpmac_init(void)
  #warning FIXME: unhardcode gpio&reset bits
  	ar7_gpio_disable(26);
  	ar7_gpio_disable(27);
@@ -87,7 +83,7 @@ Index: linux-2.6.32.9/drivers/net/cpmac.c
  	cpmac_mii->reset(cpmac_mii);
  
  	for (i = 0; i < 300; i++)
-@@ -1257,7 +1266,8 @@
+@@ -1257,7 +1266,8 @@ int __devinit cpmac_init(void)
  		mask = 0;
  	}
  
@@ -97,11 +93,9 @@ Index: linux-2.6.32.9/drivers/net/cpmac.c
  	snprintf(cpmac_mii->id, MII_BUS_ID_SIZE, "1");
  
  	res = mdiobus_register(cpmac_mii);
-Index: a/arch/mips/include/asm/mach-ar7/ar7.h
-===================================================================
---- a/arch/mips/include/asm/mach-ar7/ar7.h	(revision 19112)
-+++ b/arch/mips/include/asm/mach-ar7/ar7.h	(working copy)
-@@ -44,8 +44,10 @@
+--- a/arch/mips/include/asm/mach-ar7/ar7.h
++++ b/arch/mips/include/asm/mach-ar7/ar7.h
+@@ -50,8 +50,10 @@
  #define UR8_REGS_WDT	(AR7_REGS_BASE + 0x0b00)
  #define UR8_REGS_UART1	(AR7_REGS_BASE + 0x0f00)
  
