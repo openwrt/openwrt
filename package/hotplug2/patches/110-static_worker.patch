@@ -1,6 +1,5 @@
-diff -Naur a/common.mak b/common.mak
---- a/common.mak	2009-11-18 13:15:21.000000000 +0000
-+++ b/common.mak	2009-11-18 13:25:18.000000000 +0000
+--- a/common.mak
++++ b/common.mak
 @@ -1,7 +1,7 @@
  # vim:set sw=8 nosta:
  
@@ -10,10 +9,9 @@ diff -Naur a/common.mak b/common.mak
  
  CFLAGS=$(COPTS)
  FPIC=-fPIC
-diff -Naur a/Makefile b/Makefile
---- a/Makefile	2009-11-18 13:15:21.000000000 +0000
-+++ b/Makefile	2009-11-18 13:25:18.000000000 +0000
-@@ -40,5 +40,6 @@
+--- a/Makefile
++++ b/Makefile
+@@ -40,5 +40,6 @@ ifdef STATIC_WORKER
    CFLAGS += -DSTATIC_WORKER=1
  else
    CFLAGS += $(FPIC)

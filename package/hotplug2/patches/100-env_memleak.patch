@@ -1,7 +1,6 @@
-diff -Naur a/action.c b/action.c
---- a/action.c	2009-11-18 13:15:21.000000000 +0000
-+++ b/action.c	2009-11-18 13:11:19.000000000 +0000
-@@ -31,6 +31,30 @@
+--- a/action.c
++++ b/action.c
+@@ -31,6 +31,30 @@ static void action_dumb(const struct set
  }
  
  /**
@@ -32,7 +31,7 @@ diff -Naur a/action.c b/action.c
   * Choose what action should be taken according to passed settings.
   *
   * @1 Hotplug settings
-@@ -41,16 +65,25 @@
+@@ -41,16 +65,25 @@ static void action_dumb(const struct set
   */
  void action_perform(struct settings_t *settings, struct uevent_t *event) {
  	int i;
