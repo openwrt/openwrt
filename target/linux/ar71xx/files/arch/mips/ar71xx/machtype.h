@@ -32,6 +32,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_RB_750,	/* MikroTik RouterBOARD 750 */
 	AR71XX_MACH_PB42,	/* Atheros PB42 */
 	AR71XX_MACH_PB44,	/* Atheros PB44 */
+	AR71XX_MACH_PB92,	/* Atheros PB92 */
 	AR71XX_MACH_MZK_W04NU,	/* Planex MZK-W04NU */
 	AR71XX_MACH_MZK_W300NH,	/* Planex MZK-W300NH */
 	AR71XX_MACH_TEW_632BRP,	/* TRENDnet TEW-632BRP */

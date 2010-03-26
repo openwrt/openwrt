@@ -22,6 +22,7 @@ obj-$(CONFIG_AR71XX_DEV_GPIO_BUTTONS)	+= dev-gpio-buttons.o
 obj-$(CONFIG_AR71XX_DEV_LEDS_GPIO)	+= dev-leds-gpio.o
 obj-$(CONFIG_AR71XX_DEV_M25P80)		+= dev-m25p80.o
 obj-$(CONFIG_AR71XX_DEV_PB42_PCI)	+= dev-pb42-pci.o
+obj-$(CONFIG_AR71XX_DEV_PB9X_PCI)	+= dev-pb9x-pci.o
 obj-$(CONFIG_AR71XX_DEV_USB)		+= dev-usb.o
 
 obj-$(CONFIG_AR71XX_NVRAM)		+= nvram.o
@@ -36,6 +37,7 @@ obj-$(CONFIG_AR71XX_MACH_MZK_W04NU)	+= mach-mzk-w04nu.o
 obj-$(CONFIG_AR71XX_MACH_MZK_W300NH)	+= mach-mzk-w300nh.o
 obj-$(CONFIG_AR71XX_MACH_PB42)		+= mach-pb42.o
 obj-$(CONFIG_AR71XX_MACH_PB44)		+= mach-pb44.o
+obj-$(CONFIG_AR71XX_MACH_PB92)		+= mach-pb92.o
 obj-$(CONFIG_AR71XX_MACH_RB4XX)		+= mach-rb4xx.o
 obj-$(CONFIG_AR71XX_MACH_RB750)		+= mach-rb750.o
 obj-$(CONFIG_AR71XX_MACH_TEW_632BRP)	+= mach-tew-632brp.o
