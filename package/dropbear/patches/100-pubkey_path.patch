@@ -1,7 +1,6 @@
-diff -ur dropbear-0.52.orig/svr-authpubkey.c dropbear-0.52/svr-authpubkey.c
---- dropbear-0.52.orig/svr-authpubkey.c	2009-04-08 00:32:16.000000000 +0200
-+++ dropbear-0.52/svr-authpubkey.c	2009-04-08 00:44:11.000000000 +0200
-@@ -209,17 +209,21 @@
+--- a/svr-authpubkey.c
++++ b/svr-authpubkey.c
+@@ -209,17 +209,21 @@ static int checkpubkey(unsigned char* al
  		goto out;
  	}
  
@@ -34,7 +33,7 @@ diff -ur dropbear-0.52.orig/svr-authpubkey.c dropbear-0.52/svr-authpubkey.c
  	if (authfile == NULL) {
  		goto out;
  	}
-@@ -372,26 +376,35 @@
+@@ -372,26 +376,35 @@ static int checkpubkeyperms() {
  		goto out;
  	}
  
