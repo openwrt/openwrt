@@ -1,7 +1,5 @@
-Index: nozomi-060209/nozomi.c
-===================================================================
---- nozomi-060209.orig/nozomi.c	2007-06-04 13:22:47.338658712 +0200
-+++ nozomi-060209/nozomi.c	2007-06-04 13:22:47.527629984 +0200
+--- a/nozomi.c
++++ b/nozomi.c
 @@ -7,6 +7,9 @@
   *
   * Maintained by: Paul Hardwick, p.hardwick@option.com
@@ -20,7 +18,7 @@ Index: nozomi-060209/nozomi.c
  #include <asm/uaccess.h>
  
  
-@@ -133,23 +137,23 @@
+@@ -133,23 +137,23 @@ static int nzdebug = NOZOMI_DEBUG_LEVEL;
  /* TODO: rewrite to optimize macros... */
  #define SET_FCR(value__) \
    do {  \
@@ -48,7 +46,7 @@ Index: nozomi-060209/nozomi.c
  } while(0)
  
  #define GET_MEM(value__, addr__, length__) \
-@@ -265,7 +269,7 @@
+@@ -265,7 +269,7 @@ static int nzdebug = NOZOMI_DEBUG_LEVEL;
  /* There are two types of nozomi cards, one with 2048 memory and with 8192 memory */
  typedef enum {
  	F32_2 = 2048, /* Has 512 bytes downlink and uplink * 2             -> 2048 */
@@ -57,7 +55,7 @@ Index: nozomi-060209/nozomi.c
  } card_type_t;
  
  /* Two different toggle channels exist */
-@@ -438,12 +442,12 @@
+@@ -438,12 +442,12 @@ typedef struct {
  	u32				     base_addr;
  	u8				     closing;
  
@@ -75,7 +73,7 @@ Index: nozomi-060209/nozomi.c
  	card_type_t 	     card_type;
  	config_table_t 	     config_table; /* Configuration table */
  	struct pci_dev 	    *pdev;
-@@ -490,7 +494,7 @@
+@@ -490,7 +494,7 @@ static struct pci_device_id nozomi_pci_t
  
  /* Used to store interrupt variables */
  typedef struct {
@@ -84,7 +82,7 @@ Index: nozomi-060209/nozomi.c
  } irq_t;
  
  MODULE_DEVICE_TABLE(pci, nozomi_pci_tbl);
-@@ -1345,9 +1349,9 @@
+@@ -1345,9 +1349,9 @@ void nozomi_setup_private_data(dc_t *dc)
  	u32 offset = dc->base_addr + dc->card_type/2;
  	int i;
  
@@ -97,7 +95,7 @@ Index: nozomi-060209/nozomi.c
  	dc->ier_last_written = 0;
  	dc->closing = 0;
  
-@@ -1366,13 +1370,16 @@
+@@ -1366,13 +1370,16 @@ void nozomi_setup_private_data(dc_t *dc)
  static void tty_flip_queue_function(void *tmp_dc) {
  	dc_t *dc = (dc_t*) tmp_dc;
  	int i;
@@ -114,7 +112,7 @@ Index: nozomi-060209/nozomi.c
  		}
  	}
  }
-@@ -1555,7 +1562,11 @@
+@@ -1555,7 +1562,11 @@ err_disable_device:
  
  static void tty_do_close(dc_t *dc, port_t *port) {
  
@@ -127,7 +125,7 @@ Index: nozomi-060209/nozomi.c
  
  	if ( !port->tty_open_count ) {
  		goto exit;
-@@ -1569,7 +1580,9 @@
+@@ -1569,7 +1580,9 @@ static void tty_do_close(dc_t *dc, port_
  
  	if ( port->tty_open_count == 0) {
          D1("close: %d", port->token_dl );
@@ -137,7 +135,7 @@ Index: nozomi-060209/nozomi.c
  	}
  
  exit:
-@@ -1679,8 +1692,11 @@
+@@ -1679,8 +1692,11 @@ static int ntty_open(struct tty_struct *
  	s32 index = get_index(tty);
  	port_t *port = get_port_by_tty(tty);
  	dc_t *dc = get_dc_by_tty(tty);
@@ -150,7 +148,7 @@ Index: nozomi-060209/nozomi.c
  
  	tty->low_latency  = 1;
  	tty->driver_data  = port;
-@@ -1698,7 +1714,9 @@
+@@ -1698,7 +1714,9 @@ static int ntty_open(struct tty_struct *
  	if ( port->tty_open_count == 1) {
  		port->rx_data = port->tx_data = 0;
          D1("open: %d", port->token_dl );
@@ -160,7 +158,7 @@ Index: nozomi-060209/nozomi.c
  	}
  
  	up(&port->tty_sem);
-@@ -1722,6 +1740,7 @@
+@@ -1722,6 +1740,7 @@ static s32 ntty_write(struct tty_struct 
  	int                  rval = -EINVAL;
  	dc_t                *dc = get_dc_by_tty(tty);
  	port_t              *port = (port_t *) tty->driver_data;
@@ -168,7 +166,7 @@ Index: nozomi-060209/nozomi.c
  
  	/* D1( "WRITEx: %d, index = %d", count, index); */
  
-@@ -1729,7 +1748,10 @@
+@@ -1729,7 +1748,10 @@ static s32 ntty_write(struct tty_struct 
  		return -ENODEV;
  	}
  
@@ -180,7 +178,7 @@ Index: nozomi-060209/nozomi.c
  
  	if (! port->tty_open_count) {
          D1( " ");
-@@ -1752,6 +1774,7 @@
+@@ -1752,6 +1774,7 @@ static s32 ntty_write(struct tty_struct 
  		goto exit;
  	}
  
@@ -188,7 +186,7 @@ Index: nozomi-060209/nozomi.c
  	// CTS is only valid on the modem channel
  	if ( port == &(dc->port[PORT_MDM]) ) {
  		if ( port->ctrl_dl.CTS ) {
-@@ -1763,6 +1786,7 @@
+@@ -1763,6 +1786,7 @@ static s32 ntty_write(struct tty_struct 
  	} else {
  		enable_transmit_ul(port->tty_index, dc );
  	}
@@ -196,7 +194,7 @@ Index: nozomi-060209/nozomi.c
  
  exit:
  	up(&port->tty_sem);
-@@ -1782,7 +1806,9 @@
+@@ -1782,7 +1806,9 @@ static int ntty_write_room(struct tty_st
          return 0;
  	}
  
@@ -207,7 +205,7 @@ Index: nozomi-060209/nozomi.c
  
  	if (! port->tty_open_count) {
  		goto exit;
-@@ -1969,6 +1995,8 @@
+@@ -1969,6 +1995,8 @@ static int ntty_ioctl_tiocgicount(struct
  
  static int ntty_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg) {
  	port_t *port = (port_t *) tty->driver_data;
@@ -216,7 +214,7 @@ Index: nozomi-060209/nozomi.c
  	int mask;
  	int rval = -ENOIOCTLCMD;
  
-@@ -1991,7 +2019,9 @@
+@@ -1991,7 +2019,9 @@ static int ntty_ioctl(struct tty_struct 
  		rval =  ntty_ioctl_tiocgicount(tty, file, cmd, arg);
  		break;
  	case TIOCMGET:
@@ -226,7 +224,7 @@ Index: nozomi-060209/nozomi.c
  		break;
  	case TIOCMSET:
  		rval = ntty_tiocmset(tty, file, arg);
-@@ -2000,20 +2030,24 @@
+@@ -2000,20 +2030,24 @@ static int ntty_ioctl(struct tty_struct 
  		if (get_user(mask, (unsigned long *) arg))
  			return -EFAULT;
  
