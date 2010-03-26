@@ -1,7 +1,6 @@
-diff -up ncurses-5.6/misc/terminfo.src.kbs ncurses-5.6/misc/terminfo.src
---- ncurses-5.6/misc/terminfo.src.kbs	2008-07-04 14:20:05.000000000 +0200
-+++ ncurses-5.6/misc/terminfo.src	2008-07-04 14:34:12.000000000 +0200
-@@ -3023,6 +3023,7 @@ xterm-xfree86|xterm terminal emulator (X
+--- a/misc/terminfo.src
++++ b/misc/terminfo.src
+@@ -3054,6 +3054,7 @@ xterm-xfree86|xterm terminal emulator (X
  # This version reflects the current xterm features.
  xterm-new|modern xterm terminal emulator,
  	npc,
@@ -9,7 +8,7 @@ diff -up ncurses-5.6/misc/terminfo.src.kbs ncurses-5.6/misc/terminfo.src
  	indn=\E[%p1%dS, kDC=\E[3;2~, kEND=\E[1;2F, kHOM=\E[1;2H,
  	kIC=\E[2;2~, kNXT=\E[6;2~, kPRV=\E[5;2~, kb2=\EOE,
  	kcbt=\E[Z, kcub1=\EOD, kcud1=\EOB, kcuf1=\EOC, kcuu1=\EOA,
-@@ -3740,6 +3741,7 @@ mlterm+pcfkeys|fragment for PC-style fke
+@@ -3818,6 +3819,7 @@ mlterm+pcfkeys|fragment for PC-style fke
  rxvt-basic|rxvt terminal base (X Window System),
  	OTbs, am, bce, eo, mir, msgr, xenl, xon,
  	cols#80, it#8, lines#24,
@@ -17,7 +16,7 @@ diff -up ncurses-5.6/misc/terminfo.src.kbs ncurses-5.6/misc/terminfo.src
  	acsc=``aaffggjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
  	bel=^G, blink=\E[5m, bold=\E[1m, civis=\E[?25l,
  	clear=\E[H\E[2J, cnorm=\E[?25h, cr=^M,
-@@ -3750,7 +3752,7 @@ rxvt-basic|rxvt terminal base (X Window 
+@@ -3828,7 +3830,7 @@ rxvt-basic|rxvt terminal base (X Window 
  	enacs=\E(B\E)0, flash=\E[?5h\E[?5l, home=\E[H, ht=^I,
  	hts=\EH, ich=\E[%p1%d@, ich1=\E[@, il=\E[%p1%dL, il1=\E[L,
  	ind=^J, is1=\E[?47l\E=\E[?1l,
@@ -26,7 +25,7 @@ diff -up ncurses-5.6/misc/terminfo.src.kbs ncurses-5.6/misc/terminfo.src
  	kcbt=\E[Z, kmous=\E[M, rc=\E8, rev=\E[7m, ri=\EM, rmacs=^O,
  	rmcup=\E[2J\E[?47l\E8, rmir=\E[4l, rmkx=\E>, rmso=\E[27m,
  	rmul=\E[24m,
-@@ -4451,6 +4453,7 @@ eterm|gnu emacs term.el terminal emulati
+@@ -4541,6 +4543,7 @@ eterm|gnu emacs term.el terminal emulati
  screen|VT 100/ANSI X3.64 virtual terminal,
  	OTbs, OTpt, am, km, mir, msgr, xenl, G0,
  	colors#8, cols#80, it#8, lines#24, pairs#64,
@@ -34,7 +33,7 @@ diff -up ncurses-5.6/misc/terminfo.src.kbs ncurses-5.6/misc/terminfo.src
  	acsc=++\,\,--..00``aaffgghhiijjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
  	bel=^G, blink=\E[5m, bold=\E[1m, cbt=\E[Z, civis=\E[?25l,
  	clear=\E[H\E[J, cnorm=\E[34h\E[?25h, cr=^M,
-@@ -4460,7 +4463,7 @@ screen|VT 100/ANSI X3.64 virtual termina
+@@ -4550,7 +4553,7 @@ screen|VT 100/ANSI X3.64 virtual termina
  	cvvis=\E[34l, dch=\E[%p1%dP, dch1=\E[P, dl=\E[%p1%dM,
  	dl1=\E[M, ed=\E[J, el=\E[K, el1=\E[1K, enacs=\E(B\E)0,
  	flash=\Eg, home=\E[H, ht=^I, hts=\EH, ich=\E[%p1%d@,
@@ -43,7 +42,7 @@ diff -up ncurses-5.6/misc/terminfo.src.kbs ncurses-5.6/misc/terminfo.src
  	kcub1=\EOD, kcud1=\EOB, kcuf1=\EOC, kcuu1=\EOA,
  	kdch1=\E[3~, kend=\E[4~, kf1=\EOP, kf10=\E[21~,
  	kf11=\E[23~, kf12=\E[24~, kf2=\EOQ, kf3=\EOR, kf4=\EOS,
-@@ -4565,6 +4568,7 @@ screen.xterm-r6|screen customized for X1
+@@ -4655,6 +4658,7 @@ screen.xterm-r6|screen customized for X1
  # on Solaris because Sun's curses implementation gets confused.
  screen.teraterm|disable ncv in teraterm,
  	ncv#127,
