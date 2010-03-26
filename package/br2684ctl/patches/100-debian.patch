@@ -1,7 +1,5 @@
-Index: br2684ctl-20040226.orig/br2684ctl.c
-===================================================================
---- br2684ctl-20040226.orig.orig/br2684ctl.c	2007-06-04 13:22:22.142489112 +0200
-+++ br2684ctl-20040226.orig/br2684ctl.c	2007-06-04 13:22:22.213478320 +0200
+--- a/br2684ctl.c
++++ b/br2684ctl.c
 @@ -3,6 +3,8 @@
  #include <unistd.h>
  #include <errno.h>
@@ -24,7 +22,7 @@ Index: br2684ctl-20040226.orig/br2684ctl.c
  
  
  int lastsock, lastitf;
-@@ -39,10 +41,16 @@
+@@ -39,10 +41,16 @@ void fatal(const char *str, int i)
  
  void exitFunc(void)
  {
@@ -42,7 +40,7 @@ Index: br2684ctl-20040226.orig/br2684ctl.c
  int create_pidfile(int num)
  {
    FILE *pidfile = NULL;
-@@ -80,7 +88,7 @@
+@@ -80,7 +88,7 @@ int create_br(char *nstr)
        err=ioctl (lastsock, ATM_NEWBACKENDIF, &ni);
    
        if (err == 0)
@@ -51,7 +49,7 @@ Index: br2684ctl-20040226.orig/br2684ctl.c
        else
  	syslog(LOG_INFO, "Interface \"%s\" could not be created, reason: %s\n",
  	       ni.ifname,
-@@ -112,7 +120,7 @@
+@@ -112,7 +120,7 @@ int assign_vcc(char *astr, int encap, in
      addr.sap_addr.vpi = 0;
      addr.sap_addr.vci = vci;
  #endif
@@ -60,7 +58,7 @@ Index: br2684ctl-20040226.orig/br2684ctl.c
  	   addr.sap_addr.vpi,
  	   addr.sap_addr.vci,
  	   encap?"VC mux":"LLC");
-@@ -261,11 +269,13 @@
+@@ -261,11 +269,13 @@ int main (int argc, char **argv)
    }
    
    create_pidfile(itfnum);
@@ -75,10 +73,8 @@ Index: br2684ctl-20040226.orig/br2684ctl.c
    return 0;
  }
  
-Index: br2684ctl-20040226.orig/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ br2684ctl-20040226.orig/Makefile	2007-06-04 13:22:22.215478016 +0200
+--- /dev/null
++++ b/Makefile
 @@ -0,0 +1,13 @@
 +OPTS := -O2
 +CFLAGS := -Wall -g
