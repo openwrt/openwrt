@@ -1,7 +1,6 @@
-diff -urN acx-20080210/pci.c acx-20080210.new/pci.c
---- acx-20080210/pci.c	2009-08-04 00:28:37.000000000 +0200
-+++ acx-20080210.new/pci.c	2009-08-04 00:28:42.000000000 +0200
-@@ -2005,7 +2005,12 @@
+--- a/pci.c
++++ b/pci.c
+@@ -2005,7 +2005,12 @@ static void acxpci_s_down(struct net_dev
  	/* then wait until interrupts have finished executing on other CPUs */
  	acx_lock(adev, flags);
  	disable_acx_irq(adev);
@@ -14,7 +13,7 @@ diff -urN acx-20080210/pci.c acx-20080210.new/pci.c
  	acx_unlock(adev, flags);
  
  	/* we really don't want to have an asynchronous tasklet disturb us
-@@ -4164,7 +4169,11 @@
+@@ -4164,7 +4169,11 @@ static __devinit int vlynq_probe(struct 
         addr = (u32)ioremap(vdev->mem_start, 0x1000);
         if (!addr) {
  	       printk(KERN_ERR "%s: failed to remap io memory\n",
@@ -26,7 +25,7 @@ diff -urN acx-20080210/pci.c acx-20080210.new/pci.c
  	       result = -ENXIO;
  	       goto fail;
         }
-@@ -4231,7 +4240,11 @@
+@@ -4231,7 +4240,11 @@ static __devinit int vlynq_probe(struct 
  
         printk("acx: found %s-based wireless network card at %s, irq:%d, "
  	      "phymem:0x%x, mem:0x%p\n",
@@ -38,9 +37,8 @@ diff -urN acx-20080210/pci.c acx-20080210.new/pci.c
  	      vdev->mem_start, adev->iobase);
         log(L_ANY, "initial debug setting is 0x%04X\n", acx_debug);
  
-diff -urN acx-20080210/wlan_compat.h acx-20080210.new/wlan_compat.h
---- acx-20080210/wlan_compat.h	2008-02-10 21:06:42.000000000 +0100
-+++ acx-20080210.new/wlan_compat.h	2009-08-04 00:24:26.000000000 +0200
+--- a/wlan_compat.h
++++ b/wlan_compat.h
 @@ -221,8 +221,10 @@
  #ifndef IRQ_NONE
  #define IRQ_NONE

@@ -1,8 +1,6 @@
-Index: acx-20080210/pci.c
-===================================================================
---- acx-20080210.orig/pci.c	2010-03-06 13:43:06.000000000 +0100
-+++ acx-20080210/pci.c	2010-03-06 13:46:38.000000000 +0100
-@@ -4135,6 +4135,18 @@
+--- a/pci.c
++++ b/pci.c
+@@ -4135,6 +4135,18 @@ static struct vlynq_device_id acx_vlynq_
         { 0, 0, 0 },
  };
  
@@ -21,7 +19,7 @@ Index: acx-20080210/pci.c
  static __devinit int vlynq_probe(struct vlynq_device *vdev,
  				struct vlynq_device_id *id)
  {
-@@ -4191,17 +4203,24 @@
+@@ -4191,17 +4203,24 @@ static __devinit int vlynq_probe(struct 
  		goto fail_alloc_netdev;
  	}
  	ether_setup(ndev);
