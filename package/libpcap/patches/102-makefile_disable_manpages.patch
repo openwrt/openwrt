@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -461,14 +461,6 @@
+@@ -461,14 +461,6 @@ install: libpcap.a pcap-config
  	    (mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir))
  	[ -d $(DESTDIR)$(includedir)/pcap ] || \
  	    (mkdir -p $(DESTDIR)$(includedir)/pcap; chmod 755 $(DESTDIR)$(includedir)/pcap)
@@ -15,7 +15,7 @@
  	$(INSTALL_DATA) $(srcdir)/pcap/pcap.h \
  	    $(DESTDIR)$(includedir)/pcap/pcap.h
  	$(INSTALL_DATA) $(srcdir)/pcap/bpf.h \
-@@ -487,36 +479,6 @@
+@@ -487,36 +479,6 @@ install: libpcap.a pcap-config
  	[ -d $(DESTDIR)$(bindir) ] || \
  	    (mkdir -p $(DESTDIR)$(bindir); chmod 755 $(DESTDIR)$(bindir))
  	$(INSTALL_PROGRAM) pcap-config $(DESTDIR)$(bindir)/pcap-config
@@ -52,7 +52,7 @@
  
  install-shared: install-shared-$(DYEXT)
  install-shared-so: libpcap.so
-@@ -536,23 +498,6 @@
+@@ -536,23 +498,6 @@ uninstall:
  	rm -f $(DESTDIR)$(includedir)/pcap.h
  	rm -f $(DESTDIR)$(includedir)/pcap-bpf.h
  	rm -f $(DESTDIR)$(includedir)/pcap-namedb.h
