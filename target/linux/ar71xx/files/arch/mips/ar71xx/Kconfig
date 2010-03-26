@@ -62,6 +62,14 @@ config AR71XX_MACH_PB44
 	select AR71XX_DEV_USB
 	default n
 
+config AR71XX_MACH_PB92
+	bool "Atheros PB92 board support"
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_PB9X_PCI if PCI
+	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
+	default n
+
 config AR71XX_MACH_AW_NR580
 	bool "AzureWave AW-NR580 board support"
 	select AR71XX_DEV_M25P80
@@ -234,6 +242,9 @@ config AR71XX_DEV_LEDS_GPIO
 	def_bool n
 
 config AR71XX_DEV_PB42_PCI
+	def_bool n
+
+config AR71XX_DEV_PB9X_PCI
 	def_bool n
 
 config AR71XX_DEV_USB
