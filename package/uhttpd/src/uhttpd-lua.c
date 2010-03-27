@@ -439,6 +439,9 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 
 			data_sent = 0;
 
+			timeout.tv_sec = cl->server->conf->script_timeout;
+			timeout.tv_usec = 0;
+
 			/* I/O loop, watch our pipe ends and dispatch child reads/writes from/to socket */
 			while( 1 )
 			{
@@ -448,12 +451,11 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 				FD_SET(rfd[0], &reader);
 				FD_SET(wfd[1], &writer);
 
-				timeout.tv_sec = cl->server->conf->script_timeout;
-				timeout.tv_usec = 0;
-
 				/* wait until we can read or write or both */
-				if( select(fd_max, &reader, (content_length > -1) ? &writer : NULL, NULL, &timeout) > 0 )
-				{
+				if( select(fd_max, &reader,
+				    (content_length > -1) ? &writer : NULL, NULL,
+					(data_sent < 1) ? &timeout : NULL) > 0
+				) {
 					/* ready to write to Lua child */
 					if( FD_ISSET(wfd[1], &writer) )
 					{
