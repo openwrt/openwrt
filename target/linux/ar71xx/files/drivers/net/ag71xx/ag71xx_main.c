@@ -772,6 +772,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		struct ag71xx_desc *desc = ring->buf[i].desc;
 		struct sk_buff *skb;
 		int pktlen;
+		int err;
 
 		if (ag71xx_desc_empty(desc))
 			break;
@@ -790,19 +791,19 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		dma_unmap_single(&dev->dev, ring->buf[i].dma_addr,
 				 AG71XX_RX_PKT_SIZE, DMA_FROM_DEVICE);
 
-		skb_put(skb, pktlen);
-
-		skb->dev = dev;
-		skb->ip_summed = CHECKSUM_NONE;
-
 		dev->last_rx = jiffies;
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
 
-		if (ag71xx_remove_ar8216_header(ag, skb) != 0) {
+		err = ag71xx_remove_ar8216_header(ag, skb);
+		if (err) {
 			dev->stats.rx_dropped++;
 			kfree_skb(skb);
 		} else {
+			skb_put(skb, pktlen);
+
+			skb->dev = dev;
+			skb->ip_summed = CHECKSUM_NONE;
 			skb->protocol = eth_type_trans(skb, dev);
 			netif_receive_skb(skb);
 		}
