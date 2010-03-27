@@ -1,7 +1,7 @@
 /*
  * trx.c
  *
- * Copyright (C) 2005 Mike Baker 
+ * Copyright (C) 2005 Mike Baker
  * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
@@ -75,7 +75,6 @@ trx_fixup(int fd, const char *name)
 		goto err;
 	}
 
-	init_crc32();
 	scan = ptr + offsetof(struct trx_header, flag_version);
 	trx->crc32 = crc32buf(scan, trx->len - (scan - ptr));
 	msync(ptr, sizeof(struct trx_header), MS_SYNC|MS_INVALIDATE);
