@@ -31,6 +31,7 @@
 #include <sys/ioctl.h>
 #include "mtd-api.h"
 #include "mtd.h"
+#include "crc32.h"
 
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
 struct trx_header {
@@ -40,39 +41,6 @@ struct trx_header {
 	unsigned flag_version;	/* 0:15 flags, 16:31 version */
 	unsigned offsets[3];	/* Offsets of partitions from start of header */
 };
-
-static unsigned long *crc32 = NULL;
-
-static void init_crc32()
-{
-	unsigned long crc;
-	unsigned long poly = 0xEDB88320L;
-	int n, bit;
-
-	if (crc32)
-		return;
-
-	crc32 = (unsigned long *) malloc(256 * sizeof(unsigned long));
-	if (!crc32) {
-		perror("malloc");
-		exit(1);
-	}
-
-	for (n = 0; n < 256; n++) {
-		crc = (unsigned long) n;
-		for (bit = 0; bit < 8; bit++)
-			crc = (crc & 1) ? (poly ^ (crc >> 1)) : (crc >> 1);
-		crc32[n] = crc;
-	}
-}
-
-static unsigned int crc32buf(char *buf, size_t len)
-{
-	unsigned int crc = 0xFFFFFFFF;
-	for (; len; len--, buf++)
-		crc = crc32[(crc ^ *buf) & 0xff] ^ (crc >> 8);
-	return crc;
-}
 
 int
 trx_fixup(int fd, const char *name)
