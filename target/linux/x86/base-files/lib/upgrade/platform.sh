@@ -14,7 +14,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	sync
-	get_image "$1" > /dev/hda
+	get_image "$1" > /dev/sda
 }
 
 x86_prepare_ext2() {
