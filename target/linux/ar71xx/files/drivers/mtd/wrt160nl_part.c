@@ -123,12 +123,7 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 		goto free_hdr;
 	}
 
-	kernel_len = uheader->ih_size / master->erasesize;
-	if (uheader->ih_size % master->erasesize)
-		kernel_len++;
-
-	kernel_len++;
-	kernel_len *= master->erasesize;
+	kernel_len = le32_to_cpu(theader->offsets[1]) + sizeof(struct cybertan_header);
 
 	trx_parts[0].name = "u-boot";
 	trx_parts[0].offset = 0;
