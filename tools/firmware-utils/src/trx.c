@@ -83,7 +83,7 @@ void usage(void) __attribute__ (( __noreturn__ ));
 void usage(void)
 {
 	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, " trx [-2] [-o outfile] [-m maxlen] [-a align] [-b offset] \\\n");
+	fprintf(stderr, " trx [-2] [-o outfile] [-m maxlen] [-a align] [-b absolute offset] [-x relative offset]\n");
 	fprintf(stderr, "     [-f file] [-f file [-f file [-f file (v2 only)]]]\n");
 	exit(EXIT_FAILURE);
 }
@@ -97,6 +97,7 @@ int main(int argc, char **argv)
 	char *e;
 	int c, i, append = 0;
 	size_t n;
+	ssize_t n2;
 	uint32_t cur_len;
 	unsigned long maxlen = TRX_MAX_LEN;
 	struct trx_header *p;
@@ -118,7 +119,7 @@ int main(int argc, char **argv)
 	in = NULL;
 	i = 0;
 
-	while ((c = getopt(argc, argv, "-:2o:m:a:b:f:A:")) != -1) {
+	while ((c = getopt(argc, argv, "-:2o:m:a:x:b:f:A:")) != -1) {
 		switch (c) {
 			case '2':
 				/* take care that nothing was written to buf so far */
@@ -218,6 +219,25 @@ int main(int argc, char **argv)
 					memset(buf + cur_len, 0, n - cur_len);
 					cur_len = n;
 				}
+				break;
+			case 'x':
+				errno = 0;
+				n2 = strtol(optarg, &e, 0);
+				if (errno || (e == optarg) || *e) {
+					fprintf(stderr, "illegal numeric string\n");
+					usage();
+				}
+				if (n2 < 0) {
+					if (-n2 > cur_len) {
+						fprintf(stderr, "WARNING: current length smaller then -x %d offset\n",n2);
+						cur_len = 0;
+					} else
+						cur_len += n2;
+				} else {
+					memset(buf + cur_len, 0, n2);
+					cur_len += n2;
+				}
+
 				break;
 			default:
 				usage();
