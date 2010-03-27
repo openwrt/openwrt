@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+wrt160nl_fixtrx() {
+	mtd -o 32 fixtrx firmware
+}
+
+if [ "${board}" == "wrt160nl" ]; then
+	wrt160nl_fixtrx
+fi
