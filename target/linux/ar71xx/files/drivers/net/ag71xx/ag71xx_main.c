@@ -926,6 +926,20 @@ static void ag71xx_set_multicast_list(struct net_device *dev)
 	/* TODO */
 }
 
+#ifdef CONFIG_NET_POLL_CONTROLLER
+/*
+ * Polling 'interrupt' - used by things like netconsole to send skbs
+ * without having to re-enable interrupts. It's not called while
+ * the interrupt routine is executing.
+ */
+static void ag71xx_netpoll(struct net_device *dev)
+{
+	disable_irq(dev->irq);
+	ag71xx_interrupt(dev->irq, dev);
+	enable_irq(dev->irq);
+}
+#endif
+
 static const struct net_device_ops ag71xx_netdev_ops = {
 	.ndo_open		= ag71xx_open,
 	.ndo_stop		= ag71xx_stop,
@@ -936,6 +950,9 @@ static const struct net_device_ops ag71xx_netdev_ops = {
 	.ndo_change_mtu		= eth_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
+#ifdef CONFIG_NET_POLL_CONTROLLER
+	.ndo_poll_controller	= ag71xx_netpoll,
+#endif
 };
 
 static int __init ag71xx_probe(struct platform_device *pdev)
