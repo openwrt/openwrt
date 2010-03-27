@@ -410,6 +410,9 @@ int main (int argc, char **argv)
 	struct sigaction sa;
 	struct config conf;
 
+	/* signal mask */
+	sigset_t ss;
+
 	/* maximum file descriptor number */
 	int new_fd, cur_fd, max_fd = 0;
 
@@ -432,7 +435,7 @@ int main (int argc, char **argv)
 	FD_ZERO(&serv_fds);
 	FD_ZERO(&read_fds);
 
-	/* handle SIGPIPE, SIGCHILD */
+	/* handle SIGPIPE, SIGINT, SIGTERM, SIGCHLD */
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
 
@@ -445,6 +448,11 @@ int main (int argc, char **argv)
 	sa.sa_handler = uh_sigterm;
 	sigaction(SIGINT,  &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
+
+	/* defer SIGCHLD */
+	sigemptyset(&ss);
+	sigaddset(&ss, SIGCHLD);
+	sigprocmask(SIG_BLOCK, &ss, NULL);
 
 	/* prepare addrinfo hints */
 	memset(&hints, 0, sizeof(hints));
