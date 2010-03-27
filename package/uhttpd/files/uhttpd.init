@@ -65,6 +65,7 @@ start_instance()
 	append_arg "$cfg" cgi_prefix "-x"
 	append_arg "$cfg" lua_prefix "-l"
 	append_arg "$cfg" lua_handler "-L"
+	append_arg "$cfg" script_timeout "-t"
 
 	config_list_foreach "$cfg" listen_http \
 		append_listen_http

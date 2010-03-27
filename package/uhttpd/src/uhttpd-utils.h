@@ -33,6 +33,9 @@
 #define foreach_header(i, h) \
 	for( i = 0; (i + 1) < (sizeof(h) / sizeof(h[0])) && h[i]; i += 2 )
 
+#define fd_cloexec(fd) \
+	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC)
+
 struct path_info {
 	char *root;
 	char *phys;
