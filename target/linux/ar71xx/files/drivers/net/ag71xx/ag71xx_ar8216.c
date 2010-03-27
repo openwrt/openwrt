@@ -20,27 +20,17 @@
 
 void ag71xx_add_ar8216_header(struct ag71xx *ag, struct sk_buff *skb)
 {
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-
-	if (!pdata->has_ar8216)
-		return;
-
-        skb_push(skb, AR8216_HEADER_LEN);
-        skb->data[0] = 0x10;
-        skb->data[1] = 0x80;
+	skb_push(skb, AR8216_HEADER_LEN);
+	skb->data[0] = 0x10;
+	skb->data[1] = 0x80;
 }
 
 int ag71xx_remove_ar8216_header(struct ag71xx *ag,
 				struct sk_buff *skb)
 {
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	u8 type;
 
-	if (!pdata->has_ar8216)
-		return 0;
-
 	type = skb->data[1] & AR8216_PACKET_TYPE_MASK;
-
 	switch (type) {
 	case AR8216_PACKET_TYPE_NORMAL:
 		skb_pull(skb, AR8216_HEADER_LEN);

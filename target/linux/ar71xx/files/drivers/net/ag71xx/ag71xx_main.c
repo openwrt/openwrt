@@ -614,7 +614,8 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	if (!ag71xx_desc_empty(desc))
 		goto err_drop;
 
-	ag71xx_add_ar8216_header(ag, skb);
+	if (ag71xx_has_ar8216(ag))
+		ag71xx_add_ar8216_header(ag, skb);
 
 	if (skb->len <= 0) {
 		DBG("%s: packet len is too small\n", ag->dev->name);
@@ -772,7 +773,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		struct ag71xx_desc *desc = ring->buf[i].desc;
 		struct sk_buff *skb;
 		int pktlen;
-		int err;
+		int err = 0;
 
 		if (ag71xx_desc_empty(desc))
 			break;
@@ -795,7 +796,9 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
 
-		err = ag71xx_remove_ar8216_header(ag, skb);
+		if (ag71xx_has_ar8216(ag))
+			err = ag71xx_remove_ar8216_header(ag, skb);
+
 		if (err) {
 			dev->stats.rx_dropped++;
 			kfree_skb(skb);
