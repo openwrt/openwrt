@@ -318,16 +318,12 @@ endef
 define Image/Build/CyberTAN
 	$(call PatchKernelGzip,$(2),$(3))
 	$(call MkImageGzip,$(KDIR)/vmlinux-$(2).bin.gz,$(KDIR)/vmlinux-$(2).uImage)
-	( \
-		dd if=$(KDIR)/vmlinux-$(2).uImage bs=64k conv=sync; \
-		dd if=/dev/zero bs=1 count=65476; \
-		dd if=$(KDIR)/root.$(1) bs=64k; \
-	) > $(KDIR)/vmlinux-$(2).image
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/vmlinux-$(2).trx \
-		-f $(KDIR)/vmlinux-$(2).image
-	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) -g \
-		-i $(KDIR)/vmlinux-$(2).trx \
+	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR)/vmlinux-$(2).uImage \
+		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
+	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) \
+		-i $(KDIR)/image.tmp \
 		-o $(call imgname,$(1),$(2)).bin
+	rm $(KDIR)/image.tmp
 endef
 
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
