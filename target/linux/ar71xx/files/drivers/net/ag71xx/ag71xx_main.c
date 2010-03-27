@@ -759,6 +759,23 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 	return sent;
 }
 
+static int ag71xx_rx_copy_skb(struct ag71xx *ag, struct sk_buff **pskb,
+			      int pktlen)
+{
+	struct sk_buff *copy_skb;
+
+	copy_skb = netdev_alloc_skb(ag->dev, pktlen + NET_IP_ALIGN);
+	if (!copy_skb)
+		return -ENOMEM;
+
+	skb_reserve(copy_skb, NET_IP_ALIGN);
+	skb_copy_from_linear_data(*pskb, copy_skb->data, pktlen);
+	dev_kfree_skb_any(*pskb);
+	*pskb = copy_skb;
+
+	return 0;
+}
+
 static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 {
 	struct net_device *dev = ag->dev;
@@ -798,6 +815,8 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 
 		if (ag71xx_has_ar8216(ag))
 			err = ag71xx_remove_ar8216_header(ag, skb);
+		else
+			err = ag71xx_rx_copy_skb(ag, &skb, pktlen);
 
 		if (err) {
 			dev->stats.rx_dropped++;
