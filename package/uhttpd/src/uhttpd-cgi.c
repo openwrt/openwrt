@@ -360,6 +360,9 @@ void uh_cgi_request(struct client *cl, struct http_request *req, struct path_inf
 
 			memset(hdr, 0, sizeof(hdr));
 
+			timeout.tv_sec = cl->server->conf->script_timeout;
+			timeout.tv_usec = 0;
+
 #define ensure(x) \
 	do { if( x < 0 ) goto out; } while(0)
 
@@ -372,12 +375,11 @@ void uh_cgi_request(struct client *cl, struct http_request *req, struct path_inf
 				FD_SET(rfd[0], &reader);
 				FD_SET(wfd[1], &writer);
 
-				timeout.tv_sec = cl->server->conf->script_timeout;
-				timeout.tv_usec = 0;
-
 				/* wait until we can read or write or both */
-				if( select(fd_max, &reader, (content_length > -1) ? &writer : NULL, NULL, &timeout) > 0 )
-				{
+				if( select(fd_max, &reader,
+					(content_length > -1) ? &writer : NULL, NULL,
+					(header_sent < 1) ? &timeout : NULL) > 0
+				) {
 					/* ready to write to cgi program */
 					if( FD_ISSET(wfd[1], &writer) )
 					{
