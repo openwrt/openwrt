@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <linux/limits.h>
@@ -72,6 +73,9 @@ struct config {
 	lua_State * (*lua_init) (const char *handler);
 	void (*lua_close) (lua_State *L);
 	void (*lua_request) (struct client *cl, struct http_request *req, lua_State *L);
+#endif
+#if defined(HAVE_CGI) || defined(HAVE_LUA)
+	int script_timeout;
 #endif
 #ifdef HAVE_TLS
 	char *cert;

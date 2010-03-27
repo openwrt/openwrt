@@ -42,6 +42,11 @@ static void uh_sigterm(int sig)
 	run = 0;
 }
 
+static void uh_sigchld(int sig)
+{
+	while( waitpid(-1, NULL, WNOHANG) > 0 ) { }
+}
+
 static void uh_config_parse(const char *path)
 {
 	FILE *c;
@@ -155,6 +160,7 @@ static int uh_socket_bind(
 
 		/* add socket to server fd set */
 		FD_SET(sock, serv_fds);
+		fd_cloexec(sock);
 		*max_fd = max(*max_fd, sock);
 
 		bound++;
@@ -432,6 +438,8 @@ int main (int argc, char **argv)
 
 	sa.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sa, NULL);
+
+	sa.sa_handler = uh_sigchld;
 	sigaction(SIGCHLD, &sa, NULL);
 
 	sa.sa_handler = uh_sigterm;
@@ -485,7 +493,7 @@ int main (int argc, char **argv)
 	}
 #endif
 
-	while( (opt = getopt(argc, argv, "fC:K:p:s:h:c:l:L:d:r:m:x:")) > 0 )
+	while( (opt = getopt(argc, argv, "fC:K:p:s:h:c:l:L:d:r:m:x:t:")) > 0 )
 	{
 		switch(opt)
 		{
@@ -593,6 +601,13 @@ int main (int argc, char **argv)
 				break;
 #endif
 
+#if defined(HAVE_CGI) || defined(HAVE_LUA)
+			/* script timeout */
+			case 't':
+				conf.script_timeout = atoi(optarg);
+				break;
+#endif
+
 			/* no fork */
 			case 'f':
 				nofork = 1;
@@ -645,6 +660,9 @@ int main (int argc, char **argv)
 #ifdef HAVE_CGI
 					"	-x string       URL prefix for CGI handler, default is '/cgi-bin'\n"
 #endif
+#if defined(HAVE_CGI) || defined(HAVE_LUA)
+					"	-t seconds      CGI and Lua script timeout in seconds, default is 60\n"
+#endif
 					"	-d string       URL decode given string\n"
 					"	-r string       Specify basic auth realm\n"
 					"	-m string       MD5 crypt given string\n"
@@ -683,6 +701,12 @@ int main (int argc, char **argv)
 
 	/* config file */
 	uh_config_parse(conf.file);
+
+#if defined(HAVE_CGI) || defined(HAVE_LUA)
+	/* default script timeout */
+	if( conf.script_timeout <= 0 )
+		conf.script_timeout = 60;
+#endif
 
 #ifdef HAVE_CGI
 	/* default cgi prefix */
@@ -794,6 +818,7 @@ int main (int argc, char **argv)
 
 							/* add client socket to global fdset */
 							FD_SET(new_fd, &used_fds);
+							fd_cloexec(new_fd);
 							max_fd = max(max_fd, new_fd);
 						}
 
