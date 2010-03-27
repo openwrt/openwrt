@@ -452,7 +452,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 				FD_SET(wfd[1], &writer);
 
 				/* wait until we can read or write or both */
-				if( select(fd_max, &reader,
+				if( select_intr(fd_max, &reader,
 				    (content_length > -1) ? &writer : NULL, NULL,
 					(data_sent < 1) ? &timeout : NULL) > 0
 				) {

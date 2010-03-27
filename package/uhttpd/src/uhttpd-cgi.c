@@ -376,7 +376,7 @@ void uh_cgi_request(struct client *cl, struct http_request *req, struct path_inf
 				FD_SET(wfd[1], &writer);
 
 				/* wait until we can read or write or both */
-				if( select(fd_max, &reader,
+				if( select_intr(fd_max, &reader,
 					(content_length > -1) ? &writer : NULL, NULL,
 					(header_sent < 1) ? &timeout : NULL) > 0
 				) {

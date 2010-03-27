@@ -88,6 +88,25 @@ char *strfind(char *haystack, int hslen, const char *needle, int ndlen)
 	return NULL;
 }
 
+/* interruptable select() */
+int select_intr(int n, fd_set *r, fd_set *w, fd_set *e, struct timeval *t)
+{
+	int rv;
+	sigset_t ssn, sso;
+
+	/* unblock SIGCHLD */
+	sigemptyset(&ssn);
+	sigaddset(&ssn, SIGCHLD);
+	sigprocmask(SIG_UNBLOCK, &ssn, &sso);
+
+	rv = select(n, r, w, e, t);
+
+	/* restore signal mask */
+	sigprocmask(SIG_SETMASK, &sso, NULL);
+
+	return rv;
+}
+
 
 int uh_tcp_send(struct client *cl, const char *buf, int len)
 {
