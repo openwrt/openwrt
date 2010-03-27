@@ -456,6 +456,10 @@ static void inline ag71xx_mii_ctrl_set_speed(struct ag71xx *ag,
 #ifdef CONFIG_AG71XX_AR8216_SUPPORT
 void ag71xx_add_ar8216_header(struct ag71xx *ag, struct sk_buff *skb);
 int ag71xx_remove_ar8216_header(struct ag71xx *ag, struct sk_buff *skb);
+static inline int ag71xx_has_ar8216(struct ag71xx *ag)
+{
+	return ag71xx_get_pdata(ag)->has_ar8216;
+}
 #else
 static inline void ag71xx_add_ar8216_header(struct ag71xx *ag,
 					   struct sk_buff *skb)
@@ -464,6 +468,10 @@ static inline void ag71xx_add_ar8216_header(struct ag71xx *ag,
 
 static inline int ag71xx_remove_ar8216_header(struct ag71xx *ag,
 					      struct sk_buff *skb)
+{
+	return 0;
+}
+static inline int ag71xx_has_ar8216(struct ag71xx *ag)
 {
 	return 0;
 }
