@@ -25,7 +25,7 @@ define Package/uboot-lantiq
   CATEGORY:=Boot Loaders
   DEPENDS:=@TARGET_ifxmips
   TITLE:=U-Boot for Lantiq reference boards
-  URL:=http://www.denx.de/wiki/UBoot/WebHome
+  URL:=http://www.denx.de/wiki/U-Boot
 endef
 
 define Build/Prepare
