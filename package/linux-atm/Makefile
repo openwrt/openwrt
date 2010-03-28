@@ -56,20 +56,17 @@ define Build/Compile
 		all install
 endef
 
-ifneq ($(CONFIG_PACKAGE_linux-atm),)
-  define Build/InstallDev
-	mkdir -p $(1)/usr/include
-	$(CP)	$(PKG_BUILD_DIR)/src/include/atm{,d,sap}.h \
-		$(1)/usr/include/
-	mkdir -p $(1)/usr/lib
-	$(CP)	$(PKG_BUILD_DIR)/src/lib/.libs/libatm.{a,so*} \
-		$(1)/usr/lib/
-  endef
-endif
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/include \
+		$(PKG_INSTALL_DIR)/usr/lib \
+		$(1)/usr/
+endef
 
 define Package/linux-atm/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/src/lib/.libs/libatm.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.so* $(1)/usr/lib/
 endef
 
 define Package/atm-tools/install
