@@ -57,13 +57,13 @@ DRIVER_MAKEOPTS= \
 	CONFIG_IEEE80211N=$(CONFIG_PACKAGE_kmod-ath9k) \
 	CONFIG_IEEE80211W=$(CONFIG_PACKAGE_kmod-ath9k)
 
-ifeq ($(LOCAL_TYPE),supplicant)
-  ifeq ($(LOCAL_VARIANT),full)
-    DRIVER_MAKEOPTS += $(if $(CONFIG_WPA_SUPPLICANT_OPENSSL),CONFIG_TLS=openssl)
-  endif
-endif
-
 ifneq ($(LOCAL_TYPE),hostapd)
+  ifdef CONFIG_WPA_SUPPLICANT_OPENSSL
+    ifeq ($(LOCAL_VARIANT),full)
+      DRIVER_MAKEOPTS += CONFIG_TLS=openssl
+      TARGET_LDFLAGS += -lcrypto -lssl
+    endif
+  endif
   ifdef CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
     TARGET_CFLAGS += -DNO_TIMESTAMP_CHECK
   endif
@@ -71,12 +71,14 @@ ifneq ($(LOCAL_TYPE),hostapd)
 	CONFIG_DRIVER_ROBOSWITCH=$(CONFIG_PACKAGE_kmod-switch)
 endif
 
+DRV_DEPENDS:=+PACKAGE_kmod-mac80211:libnl-tiny +PACKAGE_kmod-mac80211:crda @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
+
 define Package/hostapd/Default
   SECTION:=net
   CATEGORY:=Network
   TITLE:=IEEE 802.1x Authenticator
   URL:=http://hostap.epitest.fi/
-  DEPENDS:= +PACKAGE_kmod-mac80211:libnl-tiny +PACKAGE_kmod-mac80211:crda @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
+  DEPENDS:=$(DRV_DEPENDS)
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
@@ -117,13 +119,13 @@ define Package/wpad/Default
   CATEGORY:=Network
   TITLE:=IEEE 802.1x Authenticator/Supplicant
   URL:=http://hostap.epitest.fi/
-  DEPENDS:= +PACKAGE_kmod-mac80211:libnl-tiny +PACKAGE_kmod-mac80211:crda @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
 
 define Package/wpad
 $(call Package/wpad/Default)
   TITLE+= (full)
+  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
   VARIANT:=wpad-full
 endef
 
@@ -135,6 +137,7 @@ endef
 define Package/wpad-mini
 $(call Package/wpad/Default)
   TITLE+= (WPA-PSK only)
+  DEPENDS:=$(DRV_DEPENDS)
   VARIANT:=wpad-mini
 endef
 
@@ -147,7 +150,7 @@ define Package/wpa-supplicant
   CATEGORY:=Network
   TITLE:=WPA Supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
-  DEPENDS:= +PACKAGE_kmod-mac80211:libnl-tiny +PACKAGE_kmod-mac80211:crda @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
+  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
   VARIANT:=supplicant-full
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
@@ -163,7 +166,7 @@ endef
 define Package/wpa-supplicant-mini
   $(Package/wpa-supplicant)
   TITLE:=WPA Supplicant (minimal version)
-  DEPENDS:=$(if $(CONFIG_WPA_SUPPLICANT_OPENSSL),+libopenssl)
+  DEPENDS:=$(DRV_DEPENDS)
   VARIANT:=supplicant-mini
 endef
 
