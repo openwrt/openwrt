@@ -1,0 +1,10 @@
+--- a/ath_rate/minstrel/minstrel.c
++++ b/ath_rate/minstrel/minstrel.c
+@@ -728,6 +728,7 @@ ath_rate_statistics(struct ieee80211_nod
+ 		rn->max_tp_rate2  = index_max_tp2;
+ 		rn->max_prob_rate = index_max_prob;
+ 		rn->current_rate  = index_max_tp;
++		ni->ni_txrate = index_max_tp;
+ }
+ 
+ static struct ath_ratectrl *
