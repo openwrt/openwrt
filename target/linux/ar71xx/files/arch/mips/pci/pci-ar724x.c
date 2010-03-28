@@ -110,8 +110,12 @@ static int ar724x_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	 * WAR for BAR issue - We are unable to access the PCI device space
 	 * if we set the BAR with proper base address
 	 */
-	if ((where == 0x10) && (size == 4))
-		ar724x_pci_write(ar724x_pci_devcfg_base, where, size, 0xffff);
+	if ((where == 0x10) && (size == 4)) {
+		if (ar71xx_soc == AR71XX_SOC_AR7240)
+			ar724x_pci_write(ar724x_pci_devcfg_base, where, size, 0xffff);
+		else
+			ar724x_pci_write(ar724x_pci_devcfg_base, where, size, 0x1000ffff);
+	}
 
 	return PCIBIOS_SUCCESSFUL;
 }
@@ -237,7 +241,11 @@ static int __init ar724x_pci_setup(void)
 		udelay(100000);
 	}
 
-	__raw_writel(AR724X_PCI_APP_LTSSM_ENABLE, base + AR724X_PCI_REG_APP);
+	if (ar71xx_soc == AR71XX_SOC_AR7240)
+		t = AR724X_PCI_APP_LTSSM_ENABLE;
+	else
+		t = 0x1ffc1;
+	__raw_writel(t, base + AR724X_PCI_REG_APP);
 	/* flush write */
 	(void) __raw_readl(base + AR724X_PCI_REG_APP);
 	udelay(1000);
