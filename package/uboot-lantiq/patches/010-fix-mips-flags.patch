@@ -1,0 +1,23 @@
+--- a/cpu/mips/config.mk
++++ b/cpu/mips/config.mk
+@@ -23,16 +23,18 @@
+ v=$(shell $(AS) --version | grep 'GNU assembler' | egrep -o '2\.[0-9\.]+' | cut -d. -f2)
+ MIPSFLAGS:=$(shell \
+ if [ "$v" -lt "14" ]; then \
+-	echo "-mcpu=4kc"; \
++	echo "-mcpu=mips32"; \
+ else \
+-	echo "-march=4kc -mtune=4kc"; \
++	echo "-mips32 -march=mips32 -mtune=mips32"; \
+ fi)
+ 
++ifndef ENDIANNESS
+ ifneq (,$(findstring 4KCle,$(CROSS_COMPILE)))
+ ENDIANNESS = -EL
+ else
+ ENDIANNESS = -EB
+ endif
++endif
+ 
+ MIPSFLAGS += $(ENDIANNESS)
+ 

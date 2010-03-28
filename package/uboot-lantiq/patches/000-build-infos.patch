@@ -1,0 +1,54 @@
+Add output like in linux kernel for current compiled file
+Used normaly in combination with make option -s
+
+Like in following example:
+
+$ make -s V=1
+[CC] tools/img2srec.c
+[CC] tools/bmp_logo.c
+[CC] examples/hello_world.c
+--- a/config.mk
++++ b/config.mk
+@@ -206,17 +206,42 @@ export	TEXT_BASE PLATFORM_CPPFLAGS PLATF
+ 
+ #########################################################################
+ 
++ifndef KBUILD_VERBOSE
++  KBUILD_VERBOSE:=0
++endif
++ifeq ("$(origin V)", "command line")
++  KBUILD_VERBOSE:=$(V)
++endif
++ifeq (,$(findstring s,$(MAKEFLAGS)))
++  KBUILD_VERBOSE:=0
++endif
++
++ifneq ($(KBUILD_VERBOSE),0)
++  define MESSAGE
++    @printf " %s %s/%s\n" $(1) $(2) $(3)
++  endef
++else
++  define MESSAGE
++  endef
++endif
++
+ # Allow boards to use custom optimize flags on a per dir/file basis
+ BCURDIR := $(notdir $(CURDIR))
++
+ $(obj)%.s:	%.S
++	$(call MESSAGE, [CPP],$(subst $(SRCTREE)/,,$(CURDIR)),$<)
+ 	$(CPP) $(AFLAGS) $(AFLAGS_$(@F)) $(AFLAGS_$(BCURDIR)) -o $@ $<
+ $(obj)%.o:	%.S
++	$(call MESSAGE, [AS], $(subst $(SRCTREE)/,,$(CURDIR)),$<)
+ 	$(CC)  $(AFLAGS) $(AFLAGS_$(@F)) $(AFLAGS_$(BCURDIR)) -o $@ $< -c
+ $(obj)%.o:	%.c
++	$(call MESSAGE, [CC], $(subst $(SRCTREE)/,,$(CURDIR)),$<)
+ 	$(CC)  $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c
+ $(obj)%.i:	%.c
++	$(call MESSAGE, [CPP],$(subst $(SRCTREE)/,,$(CURDIR)),$<)
+ 	$(CPP) $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c
+ $(obj)%.s:	%.c
++	$(call MESSAGE, [CC], $(subst $(SRCTREE)/,,$(CURDIR)),$<)
+ 	$(CC)  $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c -S
+ 
+ #########################################################################
