@@ -6,6 +6,7 @@
 #
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.4
@@ -20,7 +21,6 @@ PKG_BUILD_DEPENDS:=libpcap
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 define Package/ppp/Default
   SECTION:=net
@@ -108,6 +108,11 @@ $(call Build/Configure/Default,, \
 	UNAME_R="$(LINUX_VERSION)" \
 	UNAME_M="$(ARCH)" \
 )
+	mkdir -p $(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux
+	cp \
+		$(LINUX_DIR)/include/linux/compiler.h \
+		$(LINUX_DIR)/include/linux/atm*.h \
+		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
 endef
 
 MAKE_FLAGS += COPTS="$(TARGET_CFLAGS)" \
