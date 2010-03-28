@@ -1,0 +1,124 @@
+--- a/cpu/mips/start.S
++++ b/cpu/mips/start.S
+@@ -69,6 +69,9 @@ _start:
+ #elif defined(CONFIG_PURPLE)
+ 	.word INFINEON_EBU_BOOTCFG /* EBU init code, fetched during booting */
+ 	.word INFINEON_EBU_BOOTCFG /* EBU init code, fetched during booting */
++#elif defined(CONFIG_SYS_EBU_BOOT)
++	.word INFINEON_EBU_BOOTCFG /* EBU init code, fetched during booting */
++	.word 0x00000000           /* phase of the flash                    */
+ #else
+ 	RVECENT(romReserved,2)
+ #endif
+@@ -202,7 +205,25 @@ _start:
+ 	 * 128 * 8 == 1024 == 0x400
+ 	 * so this is address R_VEC+0x400 == 0xbfc00400
+ 	 */
+-#ifdef CONFIG_PURPLE
++#ifndef CONFIG_PURPLE
++	XVECENT(romExcHandle,0x400);	/* bfc00400: Int, CauseIV=1 */
++	RVECENT(romReserved,129);
++	RVECENT(romReserved,130);
++	RVECENT(romReserved,131);
++	RVECENT(romReserved,132);
++	RVECENT(romReserved,133);
++	RVECENT(romReserved,134);
++	RVECENT(romReserved,135);
++	RVECENT(romReserved,136);
++	RVECENT(romReserved,137);
++	RVECENT(romReserved,138);
++	RVECENT(romReserved,139);
++	RVECENT(romReserved,140);
++	RVECENT(romReserved,141);
++	RVECENT(romReserved,142);
++	RVECENT(romReserved,143);
++	XVECENT(romExcHandle,0x480);	/* bfc00480: EJTAG debug exception */
++#else /* CONFIG_PURPLE */
+ /* 0xbfc00400 */
+ 	.word	0xdc870000
+ 	.word	0xfca70000
+@@ -228,6 +249,12 @@ _start:
+ #endif /* CONFIG_PURPLE */
+ 	.align 4
+ reset:
++#ifdef CONFIG_SYS_MIPS_MULTI_CPU
++	mfc0	k0, CP0_EBASE
++	and	k0, EBASEF_CPUNUM
++	bne	k0, zero, ifx_mips_handler_cpux
++	nop
++#endif
+ 
+ 	/* Clear watch registers.
+ 	 */
+@@ -239,6 +266,16 @@ reset:
+ 
+ 	setup_c0_status_reset
+ 
++#if defined(CONFIG_MIPS24KEC) || defined(CONFIG_MIPS34KC)
++	/* CONFIG7 register */
++	/* Erratum "RPS May Cause Incorrect Instruction Execution"
++	 * for 24KEC and 34KC */
++	mfc0	k0, CP0_CONFIG, 7
++	li	k1, MIPS_CONF7_RPS
++	or	k0, k1
++	mtc0	k0, CP0_CONFIG, 7
++#endif
++
+ 	/* Init Timer */
+ 	mtc0	zero, CP0_COUNT
+ 	mtc0	zero, CP0_COMPARE
+@@ -270,9 +307,12 @@ reset:
+ 	jalr	t9
+ 	nop
+ 
++#ifndef CONFIG_SYS_MIPS_CACHE_OPER_MODE
++#define CONFIG_SYS_MIPS_CACHE_OPER_MODE CONF_CM_CACHABLE_NONCOHERENT
++#endif
+ 	/* ... and enable them.
+ 	 */
+-	li	t0, CONF_CM_CACHABLE_NONCOHERENT
++	li	t0, CONFIG_SYS_MIPS_CACHE_OPER_MODE
+ 	mtc0	t0, CP0_CONFIG
+ #endif /* !CONFIG_SKIP_LOWLEVEL_INIT */
+ 
+@@ -419,3 +459,15 @@ romReserved:
+ 
+ romExcHandle:
+ 	b	romExcHandle
++
++	/* Additional handlers.
++	 */
++#ifdef CONFIG_SYS_MIPS_MULTI_CPU
++/*
++ * Stop Slave CPUs
++ */
++ifx_mips_handler_cpux:
++	wait;
++	b ifx_mips_handler_cpux;
++	nop;
++#endif
+--- a/include/asm-mips/mipsregs.h
++++ b/include/asm-mips/mipsregs.h
+@@ -57,6 +57,7 @@
+ #define CP0_CAUSE $13
+ #define CP0_EPC $14
+ #define CP0_PRID $15
++#define CP0_EBASE $15,1
+ #define CP0_CONFIG $16
+ #define CP0_LLADDR $17
+ #define CP0_WATCHLO $18
+@@ -395,6 +396,14 @@
+ #define  CAUSEF_BD		(_ULCAST_(1)   << 31)
+ 
+ /*
++ * Bits in the coprocessor 0 EBase register
++ */
++#define EBASEB_CPUNUM		0
++#define EBASEF_CPUNUM		(0x3ff << EBASEB_CPUNUM)
++#define EBASEB_EXPBASE		12
++#define EBASEF_EXPBASE		(0x3ffff << EBASEB_EXPBASE)
++
++/*
+  * Bits in the coprocessor 0 config register.
+  */
+ /* Generic bits.  */

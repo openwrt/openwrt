@@ -1,0 +1,31 @@
+--- a/tools/kwbimage.c
++++ b/tools/kwbimage.c
+@@ -206,6 +206,28 @@ INVL_DATA:
+ 	exit (EXIT_FAILURE);
+ }
+ 
++#ifndef __GLIBC__
++static ssize_t
++getline(char **line, size_t *len, FILE *fd)
++{
++	char *tmp;
++	int tmplen;
++
++	tmp = fgetln(fd, &tmplen);
++	if (!tmp)
++		return -1;
++
++	if (!*line || tmplen > *len) {
++		*len = tmplen + 1;
++		*line = realloc(*line, *len);
++	}
++
++	strncpy(*line, tmp, tmplen);
++	line[tmplen] = 0;
++	return tmplen;
++}
++#endif
++
+ /*
+  * this function sets the kwbimage header by-
+  * 	1. Abstracting input command line arguments data

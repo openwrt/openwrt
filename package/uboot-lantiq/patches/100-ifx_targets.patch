@@ -1,0 +1,112 @@
+--- a/MAKEALL
++++ b/MAKEALL
+@@ -709,6 +709,12 @@ LIST_arm="			\
+ ## MIPS Systems		(default = big endian)
+ #########################################################################
+ 
++LIST_ifxcpe="		\
++	easy50712	\
++	easy50712_DDR166M	\
++	easy50712_DDR166M_ramboot	\
++"
++
+ LIST_mips4kc="		\
+ 	incaip		\
+ 	qemu_mips	\
+@@ -740,6 +746,7 @@ LIST_au1xx0="		\
+ "
+ 
+ LIST_mips="		\
++	${LIST_ifxcpe}	\
+ 	${LIST_mips4kc}	\
+ 	${LIST_mips5kc}	\
+ 	${LIST_au1xx0}	\
+--- a/Makefile
++++ b/Makefile
+@@ -474,7 +475,7 @@ $(obj)include/autoconf.mk: $(obj)include
+ 	set -e ; \
+ 	: Extract the config macros ; \
+ 	$(CPP) $(CFLAGS) -DDO_DEPS_ONLY -dM include/common.h | \
+-		sed -n -f tools/scripts/define2mk.sed > $@.tmp && \
++		sed -n -f tools/scripts/define2mk.sed |sort > $@.tmp && \
+ 	mv $@.tmp $@
+ 
+ #########################################################################
+@@ -3354,7 +3355,7 @@ incaip_config: unconfig
+ 		{ echo "#define CPU_CLOCK_RATE 150000000" >>$(obj)include/config.h ; \
+ 		  $(XECHO) "... with 150MHz system clock" ; \
+ 		}
+-	@$(MKCONFIG) -a $(call xtract_incaip,$@) mips mips incaip
++	@$(MKCONFIG) -a $(call xtract_incaip,$@) mips mips incaip infineon
+ 
+ tb0229_config: unconfig
+ 	@$(MKCONFIG) $(@:_config=) mips mips tb0229
+@@ -3395,6 +3396,30 @@ vct_platinumavc_onenand_small_config: un
+ 	@$(MKCONFIG) -a vct mips mips vct micronas
+ 
+ #########################################################################
++## MIPS32 ifxcpe
++#########################################################################
++
++easy50712%config	: unconfig
++	@mkdir -p $(obj)include
++	@mkdir -p $(obj)board/infineon/easy50712
++	@[ -z "$(findstring ramboot,$@)" ] || \
++		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/infineon/easy50712/config.tmp ; \
++			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
++			$(XECHO) "... with ramboot configuration" ; \
++		}
++	@if [ "$(findstring _DDR,$@)" ] ; then \
++		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
++		DDR=$(subst DDR,,$(filter DDR%,$(subst _, ,$@))); \
++		case "$${DDR}" in \
++		111M|166M|e111M|e166M|promos400|samsung166|psc166) \
++			$(XECHO) "... with DDR RAM config $${DDR}" ; \
++			echo "#define CONFIG_USE_DDR_RAM_CFG_$${DDR}" >>$(obj)include/config.h ;; \
++		*)	$(XECHO) "... DDR RAM config \\\"$${DDR}\\\" unknown, use default"; \
++		esac; \
++	fi
++	@$(MKCONFIG) -a $(word 1,$(subst _, ,$@)) mips mips easy50712 infineon danube
++
++#########################################################################
+ ## MIPS32 AU1X00
+ #########################################################################
+ 
+--- a/drivers/serial/Makefile
++++ b/drivers/serial/Makefile
+@@ -28,6 +28,7 @@ LIB	:= $(obj)libserial.a
+ COBJS-$(CONFIG_ARM_DCC) += arm_dcc.o
+ COBJS-$(CONFIG_AT91RM9200_USART) += at91rm9200_usart.o
+ COBJS-$(CONFIG_ATMEL_USART) += atmel_usart.o
++COBJS-$(CONFIG_IFX_ASC) += ifx_asc.o
+ COBJS-$(CONFIG_MCFUART) += mcfuart.o
+ COBJS-$(CONFIG_NS9750_UART) += ns9750_serial.o
+ COBJS-$(CONFIG_SYS_NS16550) += ns16550.o
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -41,6 +41,7 @@ COBJS-$(CONFIG_FEC_MXC) += fec_mxc.o
+ COBJS-$(CONFIG_FSLDMAFEC) += fsl_mcdmafec.o mcfmii.o
+ COBJS-$(CONFIG_FTMAC100) += ftmac100.o
+ COBJS-$(CONFIG_GRETH) += greth.o
++COBJS-$(CONFIG_IFX_ETOP) += ifx_etop.o
+ COBJS-$(CONFIG_INCA_IP_SWITCH) += inca-ip_sw.o
+ COBJS-$(CONFIG_KIRKWOOD_EGIGA) += kirkwood_egiga.o
+ COBJS-$(CONFIG_DRIVER_KS8695ETH) += ks8695eth.o
+--- a/include/netdev.h
++++ b/include/netdev.h
+@@ -55,6 +55,7 @@ int fecmxc_initialize (bd_t *bis);
+ int ftmac100_initialize(bd_t *bits);
+ int greth_initialize(bd_t *bis);
+ void gt6426x_eth_initialize(bd_t *bis);
++int ifx_etop_initialize(bd_t *bis);
+ int inca_switch_initialize(bd_t *bis);
+ int kirkwood_egiga_initialize(bd_t *bis);
+ int macb_eth_initialize(int id, void *regs, unsigned int phy_addr);
+@@ -82,6 +83,7 @@ int uec_standard_init(bd_t *bis);
+ int uli526x_initialize(bd_t *bis);
+ int sh_eth_initialize(bd_t *bis);
+ int dm9000_initialize(bd_t *bis);
++int lq_eth_initialize(bd_t * bis);
+ 
+ /* Boards with PCI network controllers can call this from their board_eth_init()
+  * function to initialize whatever's on board.
