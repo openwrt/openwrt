@@ -117,6 +117,11 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(FW_BASE_NAME)_b-$(FW_B_VER).tar.gz
 endef
 
+define Build/Configure
+	(cd $(PKG_BUILD_DIR); aclocal && autoconf && automake)
+	$(call Build/Configure/Default)
+endef
+
 define Build/Compile
 	cd $(LINUX_DIR); \
 		ARCH=mips CROSS_COMPILE="$(KERNEL_CROSS)" \
