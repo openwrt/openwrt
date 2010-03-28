@@ -422,7 +422,7 @@ int main (int argc, char **argv)
 	int nofork = 0;
 
 	/* args */
-	char opt;
+	int opt;
 	char bind[128];
 	char *port = NULL;
 

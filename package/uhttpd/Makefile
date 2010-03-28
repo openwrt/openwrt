@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -56,6 +56,7 @@ endef
 
 # hack to use CyASSL headers
 TARGET_CFLAGS += -I$(firstword $(wildcard $(BUILD_DIR)/cyassl-*/include))
+TARGET_LDFLAGS += -lm
 MAKE_VARS += FPIC="$(FPIC)"
 
 define Build/Prepare
