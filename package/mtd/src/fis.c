@@ -146,7 +146,7 @@ fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 	struct fis_image_desc *desc;
 	struct fis_part *part;
 	uint32_t offset = 0, size = 0;
-	char *end, *tmp;
+	char *start, *end, *tmp;
 	int i;
 
 	desc = fis_open();
@@ -156,6 +156,7 @@ fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 	if (!quiet)
 		fprintf(stderr, "Updating FIS table... \n");
 
+	start = (char *) desc;
 	end = (char *) desc + fis_erasesize;
 	while ((char *) desc < end) {
 		if (!desc->hdr.name[0] || (desc->hdr.name[0] == 0xff))
@@ -167,9 +168,12 @@ fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 		if (!strcmp((char *) desc->hdr.name, "RedBoot"))
 			redboot = desc;
 
+		/* update max offset */
+		if (offset < desc->hdr.flash_base)
+			offset = desc->hdr.flash_base;
+
 		for (i = 0; i < n_old; i++) {
 			if (!strncmp((char *) desc->hdr.name, (char *) old[i].name, sizeof(desc->hdr.name))) {
-				size += desc->hdr.size;
 				last = desc;
 				if (!first)
 					first = desc;
@@ -180,13 +184,21 @@ fis_remap(struct fis_part *old, int n_old, struct fis_part *new, int n_new)
 	}
 	desc--;
 
-	if (desc == last) {
-		desc = fisdir;
-	}
+	/* determine size of available space */
+	desc = (struct fis_image_desc *) start;
+	while ((char *) desc < end) {
+		if (!desc->hdr.name[0] || (desc->hdr.name[0] == 0xff))
+			break;
 
-	/* size fixup */
-	if (desc && (last->hdr.flash_base < desc->hdr.flash_base - last->hdr.size))
-			size += (desc->hdr.flash_base - last->hdr.flash_base) - last->hdr.size;
+		if (desc->hdr.flash_base > last->hdr.flash_base &&
+		    desc->hdr.flash_base < offset)
+			offset = desc->hdr.flash_base;
+
+		desc++;
+	}
+	desc--;
+
+	size = offset - first->hdr.flash_base;
 
 #ifdef notyet
 	desc = first - 1;
