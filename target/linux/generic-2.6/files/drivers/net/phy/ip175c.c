@@ -195,20 +195,23 @@ static const struct register_mappings IP175A = {
 
 	.ADD_TAG_REG = {0,23},
 	.REMOVE_TAG_REG = {0,23},
-	.ADD_TAG_BIT = {11,12,13,14,15,1,-1,-1,-1},
-	.REMOVE_TAG_BIT = {6,7,8,9,10,0,-1,-1,-1},
+	.ADD_TAG_BIT = {11,12,13,14,15,-1,-1,-1,-1},
+	.REMOVE_TAG_BIT = {6,7,8,9,10,-1,-1,-1,-1},
 
-	.SIMPLE_VLAN_REGISTERS = 1,
+	.SIMPLE_VLAN_REGISTERS = 0,
 
-	// Only programmable via. EEPROM
-	.VLAN_LOOKUP_REG = NOTSUPPORTED,// +N/2
+	// Register 19-21 documentation is missing/contradictory.
+	// For registers 19-21 ports need to be: even numbers to MSB, odd to LSB.
+	// This contradicts text for ROM registers, but follows logic of CoS bits.
+
+	.VLAN_LOOKUP_REG = {0,19},// +N/2
 	.VLAN_LOOKUP_REG_5 = NOTSUPPORTED,
-	.VLAN_LOOKUP_EVEN_BIT = {8,9,10,11,12,15,-1,-1,-1},
-	.VLAN_LOOKUP_ODD_BIT = {0,1,2,3,4,7,-1,-1,-1},
+	.VLAN_LOOKUP_EVEN_BIT = {8,9,10,11,12,-1,-1,-1,-1},
+	.VLAN_LOOKUP_ODD_BIT = {0,1,2,3,4,-1,-1,-1,-1},
 
-	.TAG_VLAN_MASK_REG = NOTSUPPORTED, // +N/2
-	.TAG_VLAN_MASK_EVEN_BIT = {0,1,2,3,4,5,-1,-1,-1},
-	.TAG_VLAN_MASK_ODD_BIT = {8,9,10,11,12,13,-1,-1,-1},
+	.TAG_VLAN_MASK_REG = NOTSUPPORTED, // +N/2,
+	.TAG_VLAN_MASK_EVEN_BIT = {-1,-1,-1,-1,-1,-1,-1,-1,-1},
+	.TAG_VLAN_MASK_ODD_BIT = {-1,-1,-1,-1,-1,-1,-1,-1,-1},
 
 	.RESET_VAL = -1,
 	.RESET_REG = NOTSUPPORTED,
@@ -222,12 +225,13 @@ static const struct register_mappings IP175A = {
 	.NUMLAN_GROUPS_MAX = -1,
 	.NUMLAN_GROUPS_BIT = -1, // {0-2}
 
-	.NUM_PORTS = 6,
-	.CPU_PORT = 5,
+	.NUM_PORTS = 5,
+	.CPU_PORT = 4,
 
-	.MII_REGISTER_EN = {0, 12},
+	.MII_REGISTER_EN = {0, 18},
 	.MII_REGISTER_EN_BIT = 7,
 };
+
 
 struct ip175c_state {
 	struct switch_dev dev;
@@ -435,7 +439,7 @@ static int get_state(struct ip175c_state *state)
 
 	if (state->vlan_enabled == -1) {
 		// not sure how to get this...
-		state->vlan_enabled = (!state->remove_tag && !state->add_tag);
+		state->vlan_enabled = (state->remove_tag || state->add_tag);
 	}
 
 	if (REG_SUPP(state->regs->VLAN_LOOKUP_REG)) {
@@ -829,12 +833,14 @@ static int ip175c_reset(struct switch_dev *dev)
 		err = getPhy(state, state->regs->MODE_REG);
 	}
 
-	/* reset switch ports */
-	for (i = 0; i < 5; i++) {
-		err = state->mii_bus->write(state->mii_bus, i,
-					 MII_BMCR, BMCR_RESET);
-		if (err < 0)
-			return err;
+	if (REG_SUPP(state->regs->RESET_REG)) {
+		/* reset external phy ports, except on IP175A */
+		for (i = 0; i < state->regs->NUM_PORTS-1; i++) {
+			err = state->mii_bus->write(state->mii_bus, i,
+						 MII_BMCR, BMCR_RESET);
+			if (err < 0)
+				return err;
+		}
 	}
 
 	return 0;
@@ -1300,15 +1306,35 @@ static struct phy_driver ip175c_driver = {
 	.driver		= { .owner = THIS_MODULE },
 };
 
+static struct phy_driver ip175a_driver = {
+	.name		= "IC+ IP175A",
+	.phy_id		= 0x02430c50,
+	.phy_id_mask	= 0x0ffffff0,
+	.features	= PHY_BASIC_FEATURES,
+	.probe		= ip175c_probe,
+	.remove		= ip175c_remove,
+	.config_init	= ip175c_config_init,
+	.config_aneg	= ip175c_config_aneg,
+	.read_status	= ip175c_read_status,
+	.driver		= { .owner = THIS_MODULE },
+};
+
 
 int __init ip175c_init(void)
 {
+	int ret;
+
+	ret = phy_driver_register(&ip175a_driver);
+	if (ret < 0)
+		return ret;
+
 	return phy_driver_register(&ip175c_driver);
 }
 
 void __exit ip175c_exit(void)
 {
 	phy_driver_unregister(&ip175c_driver);
+	phy_driver_unregister(&ip175a_driver);
 }
 
 MODULE_AUTHOR("Patrick Horn <patrick.horn@gmail.com>");
