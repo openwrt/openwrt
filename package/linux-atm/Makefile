@@ -6,6 +6,7 @@
 #
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux-atm
 PKG_VERSION:=2.5.1
@@ -45,6 +46,8 @@ define Build/Configure
 	# prevent autoheader invocation
 	touch $(PKG_BUILD_DIR)/stamp-h.in
 endef
+
+TARGET_CFLAGS += -I$(LINUX_DIR)/include
 
 define Build/Compile
 	# src/qgen is built with HOSTCC, which does not really like our LDFLAGS
