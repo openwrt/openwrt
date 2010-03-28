@@ -436,9 +436,12 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		pdata->has_gbit = 1;
 		break;
 
-	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
+		ar71xx_eth0_data.reset_bit |= AR724X_RESET_GE0_MDIO;
+		ar71xx_eth1_data.reset_bit |= AR724X_RESET_GE1_MDIO;
+		/* fall through */
+	case AR71XX_SOC_AR7240:
 		pdata->ddr_flush = id ? ar724x_ddr_flush_ge1
 				      : ar724x_ddr_flush_ge0;
 		pdata->set_pll =  id ? ar724x_set_pll_ge1
