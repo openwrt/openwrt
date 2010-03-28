@@ -7,6 +7,7 @@
 # ralph / blogic
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_BASE_NAME:=dsl_cpe_control_danube
 PKG_VERSION:=3.24.4.4
@@ -72,6 +73,8 @@ CONFIGURE_ARGS += \
 	--enable-cli-support \
 	--enable-soap-support
 endif
+
+TARGET_CFLAGS += -I$(LINUX_DIR)/include
 
 define Package/ifxmips-dsl-control/install
 	$(INSTALL_DIR) $(1)/etc/init.d
