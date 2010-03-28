@@ -24,11 +24,18 @@ define BuildIPKGVariable
   $(1)_COMMANDS += var2file "$(call shvar,Package/$(1)/$(2))" $(2);
 endef
 
+PARENL :=(
+PARENR :=)
+
 dep_split=$(subst :,$(space),$(1))
-dep_confvar=CONFIG_$(word 1,$(call dep_split,$(1)))
+dep_rem=$(subst !,,$(subst $(strip $(PARENL)),,$(subst $(strip $(PARENR)),,$(word 1,$(call dep_split,$(1))))))
+dep_confvar=$(strip $(foreach cond,$(subst ||, ,$(call dep_rem,$(1))),$(CONFIG_$(cond))))
+dep_pos=$(if $(call dep_confvar,$(1)),$(call dep_val,$(1)))
+dep_neg=$(if $(call dep_confvar,$(1)),,$(call dep_val,$(1)))
+dep_if=$(if $(findstring !,$(1)),$(call dep_neg,$(1)),$(call dep_pos,$(1)))
 dep_val=$(word 2,$(call dep_split,$(1)))
 strip_deps=$(strip $(subst +,,$(filter-out @%,$(1))))
-filter_deps=$(foreach dep,$(call strip_deps,$(1)),$(if $(findstring :,$(dep)),$(if $($(call dep_confvar,$(dep))),$(call dep_val,$(dep))),$(dep)))
+filter_deps=$(foreach dep,$(call strip_deps,$(1)),$(if $(findstring :,$(dep)),$(call dep_if,$(dep)),$(dep)))
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
