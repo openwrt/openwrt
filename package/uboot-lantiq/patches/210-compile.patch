@@ -1,0 +1,24 @@
+Index: u-boot-2009.11.1/common/env_common.c
+===================================================================
+--- u-boot-2009.11.1.orig/common/env_common.c	2010-01-25 09:35:12.000000000 +0100
++++ u-boot-2009.11.1/common/env_common.c	2010-03-29 13:20:50.000000000 +0200
+@@ -26,6 +26,7 @@
+ 
+ #include <common.h>
+ #include <command.h>
++#include <configs/ifx-common.h>
+ #include <environment.h>
+ #include <linux/stddef.h>
+ #include <malloc.h>
+Index: u-boot-2009.11.1/common/env_embedded.c
+===================================================================
+--- u-boot-2009.11.1.orig/common/env_embedded.c	2010-03-29 13:22:19.000000000 +0200
++++ u-boot-2009.11.1/common/env_embedded.c	2010-03-29 13:22:29.000000000 +0200
+@@ -27,6 +27,7 @@
+ #define	__ASM_STUB_PROCESSOR_H__	/* don't include asm/processor.		*/
+ #include <config.h>
+ #undef	__ASSEMBLY__
++#include <configs/ifx-common.h>
+ #include <environment.h>
+ 
+ /*
