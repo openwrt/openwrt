@@ -533,7 +533,10 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 			close(wfd[1]);
 
 			if( !kill(child, 0) )
+			{
 				kill(child, SIGTERM);
+				waitpid(child, NULL, 0);
+			}
 
 			break;
 	}
@@ -543,5 +546,3 @@ void uh_lua_close(lua_State *L)
 {
 	lua_close(L);
 }
-
-

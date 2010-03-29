@@ -562,7 +562,10 @@ void uh_cgi_request(struct client *cl, struct http_request *req, struct path_inf
 			close(wfd[1]);
 
 			if( !kill(child, 0) )
+			{
 				kill(child, SIGTERM);
+				waitpid(child, NULL, 0);
+			}
 
 			break;
 	}
