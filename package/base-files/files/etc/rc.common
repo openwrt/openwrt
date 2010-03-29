@@ -74,5 +74,5 @@ EOF
 
 ALL_COMMANDS="start stop reload restart boot shutdown enable disable enabled depends ${EXTRA_COMMANDS}"
 list_contains ALL_COMMANDS "$action" || action=help
-[ "$action" == reload ] && action='eval reload "$@" || restart "$@" && :'
+[ "$action" = "reload" ] && action='eval reload "$@" || restart "$@" && :'
 $action "$@"
