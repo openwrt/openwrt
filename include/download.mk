@@ -104,10 +104,10 @@ define DownloadMethod/bzr
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		bzr export -r$(VERSION) $(URL) $(SUBDIR) && \
+		bzr export -r$(VERSION) $(SUBDIR) $(URL) && \
 		echo "Packing checkout..." && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ &&
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
 	)
 endef
