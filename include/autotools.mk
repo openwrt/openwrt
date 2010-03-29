@@ -32,6 +32,7 @@ update_libtool_ucxx = \
 	) \
 	$(call update_libtool_common)
 
+autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 
 # prevent libtool from linking against host development libraries
 define libtool_fixup_libdir
