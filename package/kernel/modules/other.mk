@@ -261,7 +261,7 @@ $(eval $(call KernelPackage,ssb))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-hid
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +!TARGET_x86:kmod-hid
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -651,7 +651,7 @@ $(eval $(call KernelPackage,sc520-wdt))
 define KernelPackage/input-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Input device core
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 @!TARGET_x86
   KCONFIG:=CONFIG_INPUT
   FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,19,input-core)
@@ -667,7 +667,7 @@ $(eval $(call KernelPackage,input-core))
 define KernelPackage/input-evdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Input event device
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=+!TARGET_x86:kmod-input-core
   KCONFIG:=CONFIG_INPUT_EVDEV
   FILES:=$(LINUX_DIR)/drivers/input/evdev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,evdev)
@@ -683,7 +683,7 @@ $(eval $(call KernelPackage,input-evdev))
 define KernelPackage/hid
   SUBMENU:=$(OTHER_MENU)
   TITLE:=HID Devices
-  DEPENDS:=+kmod-input-core +kmod-input-evdev
+  DEPENDS:=+kmod-input-core +kmod-input-evdev @!TARGET_x86
   KCONFIG:=CONFIG_HID
   FILES:=$(LINUX_DIR)/drivers/hid/hid.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,hid)
@@ -699,7 +699,7 @@ $(eval $(call KernelPackage,hid))
 define KernelPackage/input-polldev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Polled Input device support
-  DEPENDS:=+kmod-input-core @LINUX_2_6
+  DEPENDS:=+!TARGET_x86:kmod-input-core @LINUX_2_6
   KCONFIG:=CONFIG_INPUT_POLLDEV
   FILES:=$(LINUX_DIR)/drivers/input/input-polldev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,input-polldev)
@@ -715,7 +715,7 @@ $(eval $(call KernelPackage,input-polldev))
 define KernelPackage/input-gpio-keys
   SUBMENU:=$(OTHER_MENU)
   TITLE:=GPIO key support
-  DEPENDS:= @GPIO_SUPPORT +kmod-input-core
+  DEPENDS:= @GPIO_SUPPORT +!TARGET_x86:kmod-input-core
   KCONFIG:=CONFIG_KEYBOARD_GPIO
   FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,gpio_keys)
@@ -749,7 +749,7 @@ $(eval $(call KernelPackage,input-gpio-buttons))
 define KernelPackage/input-joydev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Joystick device support
-  DEPENDS:=+kmod-input-core
+  DEPENDS:=+!TARGET_x86:kmod-input-core
   KCONFIG:=CONFIG_INPUT_JOYDEV
   FILES:=$(LINUX_DIR)/drivers/input/joydev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,62,joydev)
