@@ -1,0 +1,45 @@
+From 181ce6f71d907f42ab73376ce154015a835a6d8a Mon Sep 17 00:00:00 2001
+From: Javier Cardona <javier@cozybit.com>
+Date: Mon, 29 Mar 2010 11:00:20 -0700
+Subject: [PATCH] mac80211: Handle mesh action frames in ieee80211_rx_h_action
+
+This fixes the problem introduced in commit
+8404080568613d93ad7cf0a16dfb68 which broke mesh peer link establishment.
+
+changes:
+v2 	Added missing break (Johannes)
+v3 	Broke original patch into two (Johannes)
+
+Signed-off-by: Javier Cardona <javier@cozybit.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ net/mac80211/mesh.c |    3 ---
+ net/mac80211/rx.c   |    5 +++++
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -749,9 +749,6 @@ ieee80211_mesh_rx_mgmt(struct ieee80211_
+ 
+ 	switch (fc & IEEE80211_FCTL_STYPE) {
+ 	case IEEE80211_STYPE_ACTION:
+-		if (skb->len < IEEE80211_MIN_ACTION_SIZE)
+-			return RX_DROP_MONITOR;
+-		/* fall through */
+ 	case IEEE80211_STYPE_PROBE_RESP:
+ 	case IEEE80211_STYPE_BEACON:
+ 		skb_queue_tail(&ifmsh->skb_queue, skb);
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1964,6 +1964,11 @@ ieee80211_rx_h_action(struct ieee80211_r
+ 			goto handled;
+ 		}
+ 		break;
++	case MESH_PLINK_CATEGORY:
++	case MESH_PATH_SEL_CATEGORY:
++		if (ieee80211_vif_is_mesh(&sdata->vif))
++			return ieee80211_mesh_rx_mgmt(sdata, rx->skb);
++		break;
+ 	}
+ 
+ 	/*
