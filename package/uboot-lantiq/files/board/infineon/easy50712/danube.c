@@ -340,69 +340,22 @@ int board_eth_init(bd_t *bis)
 }
 
 #if defined(CONFIG_CMD_HTTPD)
-static int image_info (ulong addr)
-{
-   void *hdr = (void *)addr;
-
-   printf ("\n## Checking Image at %08lx ...\n", addr);
-
-   switch (genimg_get_format (hdr)) {
-   case IMAGE_FORMAT_LEGACY:
-      puts ("   Legacy image found\n");
-      if (!image_check_magic (hdr)) {
-         puts ("   Bad Magic Number\n");
-         return 1;
-      }
-
-      if (!image_check_hcrc (hdr)) {
-         puts ("   Bad Header Checksum\n");
-         return 1;
-      }
-
-      image_print_contents (hdr);
-
-      puts ("   Verifying Checksum ... ");
-      if (!image_check_dcrc (hdr)) {
-         puts ("   Bad Data CRC\n");
-         return 1;
-      }
-      puts ("OK\n");
-      return 0;
-#if defined(CONFIG_FIT)
-   case IMAGE_FORMAT_FIT:
-      puts ("   FIT image found\n");
-
-      if (!fit_check_format (hdr)) {
-         puts ("Bad FIT image format!\n");
-         return 1;
-      }
-
-      fit_print_contents (hdr);
-
-      if (!fit_all_image_check_hashes (hdr)) {
-         puts ("Bad hash in FIT image!\n");
-         return 1;
-      }
-
-      return 0;
-#endif
-   default:
-      puts ("Unknown image format!\n");
-      break;
-   }
-
-   return 1;
-}
-
 int do_http_upgrade(const unsigned char *data, const ulong size)
 {
+	char buf[128];
+
+	if(getenv ("ram_addr") == NULL)
+		return -1;
+	if(getenv ("kernel_addr") == NULL)
+		return -1;
 	/* check the image */
-	if(image_info(data)) {
+	if(run_command("imi ${ram_addr}", 0) < 0) {
 		return -1;
 	}
 	/* write the image to the flash */
 	puts("http ugrade ...\n");
-	return 0;
+	sprintf(buf, "era ${kernel_addr} +0x%x; cp.b ${ram_addr} ${kernel_addr} 0x%x", size, size);
+	return run_command(buf, 0);
 }
 
 int do_http_progress(const int state)
@@ -413,6 +366,7 @@ int do_http_progress(const int state)
 		puts("http start\n");
 		break;
 		case HTTP_PROGRESS_TIMEOUT:
+		puts(".");
 		break;
 		case HTTP_PROGRESS_UPLOAD_READY:
 		puts("http upload ready\n");

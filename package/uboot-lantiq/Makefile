@@ -84,7 +84,7 @@ define Package/uboot-lantiq/install
 		of=$(1)/$(UBOOT_CONFIG)/u-boot.bin \
 		bs=64k conv=sync
 ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
-	if [ -e $(UBOOT_CONFIG).conf ]; then \
+	if [ -e $(UBOOT_DDR_CONFIG) ]; then \
 		perl ./gct \
 			$(UBOOT_DDR_CONFIG) \
 			$(PKG_BUILD_DIR)/$(UBOOT_CONFIG)_ramboot/u-boot.srec \
