@@ -32,6 +32,9 @@
 #include <asm/danube.h>
 #include <asm/reboot.h>
 #include <asm/io.h>
+#if defined(CONFIG_CMD_HTTPD)
+#include <httpd.h>
+#endif
 
 extern ulong ifx_get_ddr_hz(void);
 extern ulong ifx_get_cpuclk(void);
@@ -336,3 +339,102 @@ int board_eth_init(bd_t *bis)
 	return 0;
 }
 
+#if defined(CONFIG_CMD_HTTPD)
+static int image_info (ulong addr)
+{
+   void *hdr = (void *)addr;
+
+   printf ("\n## Checking Image at %08lx ...\n", addr);
+
+   switch (genimg_get_format (hdr)) {
+   case IMAGE_FORMAT_LEGACY:
+      puts ("   Legacy image found\n");
+      if (!image_check_magic (hdr)) {
+         puts ("   Bad Magic Number\n");
+         return 1;
+      }
+
+      if (!image_check_hcrc (hdr)) {
+         puts ("   Bad Header Checksum\n");
+         return 1;
+      }
+
+      image_print_contents (hdr);
+
+      puts ("   Verifying Checksum ... ");
+      if (!image_check_dcrc (hdr)) {
+         puts ("   Bad Data CRC\n");
+         return 1;
+      }
+      puts ("OK\n");
+      return 0;
+#if defined(CONFIG_FIT)
+   case IMAGE_FORMAT_FIT:
+      puts ("   FIT image found\n");
+
+      if (!fit_check_format (hdr)) {
+         puts ("Bad FIT image format!\n");
+         return 1;
+      }
+
+      fit_print_contents (hdr);
+
+      if (!fit_all_image_check_hashes (hdr)) {
+         puts ("Bad hash in FIT image!\n");
+         return 1;
+      }
+
+      return 0;
+#endif
+   default:
+      puts ("Unknown image format!\n");
+      break;
+   }
+
+   return 1;
+}
+
+int do_http_upgrade(const unsigned char *data, const ulong size)
+{
+	/* check the image */
+	if(image_info(data)) {
+		return -1;
+	}
+	/* write the image to the flash */
+	puts("http ugrade ...\n");
+	return 0;
+}
+
+int do_http_progress(const int state)
+{
+	/* toggle LED's here */
+	switch(state) {
+		case HTTP_PROGRESS_START:
+		puts("http start\n");
+		break;
+		case HTTP_PROGRESS_TIMEOUT:
+		break;
+		case HTTP_PROGRESS_UPLOAD_READY:
+		puts("http upload ready\n");
+		break;
+		case HTTP_PROGRESS_UGRADE_READY:
+		puts("http ugrade ready\n");
+		break;
+		case HTTP_PROGRESS_UGRADE_FAILED:
+		puts("http ugrade failed\n");
+		break;
+	}
+	return 0;
+}
+
+unsigned long do_http_tmp_address(void)
+{
+	char *s = getenv ("ram_addr");
+	if (s) {
+		ulong tmp = simple_strtoul (s, NULL, 16);
+		return tmp;
+	}
+	return 0 /*0x80a00000*/;
+}
+
+#endif

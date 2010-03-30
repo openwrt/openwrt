@@ -35,11 +35,19 @@ define Build/Prepare
 	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 endef
 
-UBOOT_CONFIG:=easy50712_DDR166M
+UBOOT_CONFIG:=$(call qstrip,$(CONFIG_UBOOT_CONFIG))
+UBOOT_DDR_CONFIG:=$(call qstrip,$(CONFIG_UBOOT_DDR_CONFIG))
+
 UBOOT_MAKE_OPTS:= \
 	CROSS_COMPILE=$(TARGET_CROSS) \
 	ENDIANNESS= \
 	V=1
+
+define Package/uboot-lantiq/config
+	menu "configuration"
+		source "$(SOURCE)/Config.in"
+	endmenu
+endef
 
 define Build/Configure/Target
 	$(MAKE) -s -C $(PKG_BUILD_DIR) \
@@ -50,7 +58,9 @@ endef
 
 define Build/Configure
 	$(call Build/Configure/Target,$(UBOOT_CONFIG))
+ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
 	$(call Build/Configure/Target,$(UBOOT_CONFIG)_ramboot)
+endif
 endef
 
 define Build/Compile/Target
@@ -62,7 +72,9 @@ endef
 
 define Build/Compile
 	$(call Build/Compile/Target,$(UBOOT_CONFIG))
+ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
 	$(call Build/Compile/Target,$(UBOOT_CONFIG)_ramboot)
+endif
 endef
 
 define Package/uboot-lantiq/install
@@ -71,12 +83,14 @@ define Package/uboot-lantiq/install
 		if=$(PKG_BUILD_DIR)/$(UBOOT_CONFIG)/u-boot.bin \
 		of=$(1)/$(UBOOT_CONFIG)/u-boot.bin \
 		bs=64k conv=sync
+ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
 	if [ -e $(UBOOT_CONFIG).conf ]; then \
 		perl ./gct \
-			$(UBOOT_CONFIG).conf \
+			$(UBOOT_DDR_CONFIG) \
 			$(PKG_BUILD_DIR)/$(UBOOT_CONFIG)_ramboot/u-boot.srec \
 			$(1)/$(UBOOT_CONFIG)/u-boot.asc; \
 	fi
+endif
 endef
 
 $(eval $(call BuildPackage,uboot-lantiq))
