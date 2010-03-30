@@ -31,17 +31,15 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(TMP_DIR)/.packageinfo \
 		$(PKG_BUILD_DIR)/
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
-	$(CP) $(TOOLCHAIN_DIR)/bin $(PKG_BUILD_DIR)/staging_dir/host/
-	$(CP) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
+	$(CP) $(STAGING_DIR_HOST)/bin $(PKG_BUILD_DIR)/staging_dir/host/
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	rm -rf \
-		$(PKG_BUILD_DIR)/target/linux/*/patches \
-		$(PKG_BUILD_DIR)/target/linux/*/*/patches
+		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \
+		$(PKG_BUILD_DIR)/target/linux/*/patches{,-*}
 	-cp $(KERNEL_BUILD_DIR)/* $(IB_KDIR)/ # don't copy subdirectories here
 	echo REVISION:="$(REVISION)" > $(PKG_BUILD_DIR)/include/version.mk
-	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
-	find $(PKG_BUILD_DIR) -name CVS | $(XARGS) rm -rf
-	find $(PKG_BUILD_DIR) -name .git | $(XARGS) rm -rf
+	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
+	  | $(XARGS) rm -rf
 	$(TAR) c -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
 
 download:
