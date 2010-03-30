@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2010-03-24
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 #	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2010/11 \
 #	http://wireless.kernel.org/download/compat-wireless-2.6
@@ -42,12 +42,12 @@ define KernelPackage/cfg80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=cfg80211 - wireless configuration API
   DEPENDS+= +wireless-tools +iw @!LINUX_2_6_25
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1) 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1)
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,compat cfg80211)
-else 
+else
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/compat/compat_firmware_class.$(LINUX_KMOD_SUFFIX) \
@@ -170,6 +170,11 @@ define Download/ar9170
 endef
 $(eval $(call Download,ar9170))
 
+NEED_RT2X00_LIB_CRYPTO:=y
+NEED_RT2X00_LIB_FIRMWARE:=y
+NEED_RT2X00_LIB_HT:=y
+NEED_RT2X00_LIB_LEDS:=y
+
 define KernelPackage/rt2x00/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Ralink Drivers for RT2x00 cards
@@ -177,15 +182,19 @@ endef
 
 define KernelPackage/rt2x00-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +kmod-crc-itu-t
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-mac80211 +kmod-crc-itu-t
   TITLE+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,rt2x00lib)
 endef
 
+define KernelPackage/rt2x00-lib/config
+	source "$(SOURCE)/Config.in.rt2x00"
+endef
+
 define KernelPackage/rt2x00-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-lib +kmod-eeprom-93cx6
+  DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-eeprom-93cx6
   TITLE+= (PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,26,rt2x00pci)
@@ -199,9 +208,17 @@ $(call KernelPackage/rt2x00/Default)
   AUTOLOAD:=$(call AutoLoad,26,rt2x00usb)
 endef
 
+define KernelPackage/rt2x00-soc
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @TARGET_ramips +kmod-rt2x00-lib
+  TITLE+= (SoC)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00soc.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,26,rt2x00soc)
+endef
+
 define KernelPackage/rt2800-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-rt2x00-lib +USB_SUPPORT:kmod-rt2x00-usb
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +USB_SUPPORT:kmod-rt2x00-usb +TARGET_ramips:kmod-rt2x00-soc
   TITLE+= (rt2800 LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,rt2800lib)
@@ -249,7 +266,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-crc-ccitt
+  DEPENDS+= +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-crc-ccitt +TARGET_ramips:kmod-rt2x00-soc
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,28,rt2800pci)
@@ -599,7 +616,17 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PACKAGE_ATH_DEBUG),-DCONFIG_ATH_DEBUG) \
 	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
 	$(if $(CONFIG_ATH_USER_REGD),-DATH_USER_REGD=1) \
-	$(if $(CONFIG_PACKAGE_ATH9K_USE_MINSTREL),-DATH9K_USE_MINSTREL)
+	$(if $(CONFIG_PACKAGE_ATH9K_USE_MINSTREL),-DATH9K_USE_MINSTREL) \
+	$(if $(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS),-DCONFIG_RT2X00_LIB_DEBUGFS) \
+	$(if $(NEED_RT2X00_LIB_HT),-DCONFIG_RT2X00_LIB_HT) \
+	$(if $(NEED_RT2X00_LIB_CRYPTO),-DCONFIG_RT2X00_LIB_CRYPTO) \
+	$(if $(NEED_RT2X00_LIB_FIRMWARE),-DCONFIG_RT2X00_LIB_FIRMWARE) \
+	$(if $(NEED_RT2X00_LIB_LEDS),-DCONFIG_RT2X00_LIB_LEDS) \
+	$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),-DCONFIG_RT2X00_LIB_PCI) \
+	$(if $(CONFIG_PACKAGE_kmod-rt2x00-usb),-DCONFIG_RT2X00_LIB_USB) \
+	$(if $(CONFIG_PACKAGE_kmod-rt2x00-soc),-DCONFIG_RT2X00_LIB_SOC) \
+	$(if $(CONFIG_PCI_SUPPORT),-DCONFIG_RT2800PCI_PCI) \
+	$(if $(CONFIG_TARGET_ramips),-DCONFIG_RT2800PCI_SOC) \
 
 MAKE_OPTS:= \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
@@ -638,6 +665,12 @@ MAKE_OPTS:= \
 	CONFIG_RT2X00_LIB=$(if $(CONFIG_PACKAGE_kmod-rt2x00-lib),m) \
 	CONFIG_RT2X00_LIB_PCI=$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),m) \
 	CONFIG_RT2X00_LIB_USB=$(if $(CONFIG_PACKAGE_kmod-rt2x00-usb),m) \
+	CONFIG_RT2X00_LIB_SOC=$(if $(CONFIG_PACKAGE_kmod-rt2x00-soc),m) \
+	CONFIG_RT2X00_LIB_DEBUGFS=$(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS) \
+	CONFIG_RT2X00_LIB_CRYPTO=$(NEED_RT2X00_LIB_CRYPTO) \
+	CONFIG_RT2X00_LIB_FIRMWARE=$(NEED_RT2X00_LIB_FIRMWARE) \
+	CONFIG_RT2X00_LIB_HT=$(NEED_RT2X00_LIB_HT) \
+	CONFIG_RT2X00_LIB_LEDS=$(NEED_RT2X00_LIB_LEDS) \
 	CONFIG_RT2400PCI=$(if $(CONFIG_PACKAGE_kmod-rt2400-pci),m) \
 	CONFIG_RT2500PCI=$(if $(CONFIG_PACKAGE_kmod-rt2500-pci),m) \
 	CONFIG_RT2500USB=$(if $(CONFIG_PACKAGE_kmod-rt2500-usb),m) \
@@ -645,6 +678,8 @@ MAKE_OPTS:= \
 	CONFIG_RT73USB=$(if $(CONFIG_PACKAGE_kmod-rt73-usb),m) \
 	CONFIG_RT2800_LIB=$(if $(CONFIG_PACKAGE_kmod-rt2800-lib),m) \
 	CONFIG_RT2800PCI=$(if $(CONFIG_PACKAGE_kmod-rt2800-pci),m) \
+	CONFIG_RT2800PCI_PCI=$(if $(CONFIG_PCI_SUPPORT),y) \
+	CONFIG_RT2800PCI_SOC=$(if $(CONFIG_TARGET_ramips),y) \
 	CONFIG_RT2800USB=$(if $(CONFIG_PACKAGE_kmod-rt2800-usb),m) \
 	CONFIG_RTL8180=$(if $(CONFIG_PACKAGE_kmod-rtl8180),m) \
 	CONFIG_RTL8187=$(if $(CONFIG_PACKAGE_kmod-rtl8187),m) \
@@ -843,6 +878,7 @@ $(eval $(call KernelPackage,p54-usb))
 $(eval $(call KernelPackage,rt2x00-lib))
 $(eval $(call KernelPackage,rt2x00-pci))
 $(eval $(call KernelPackage,rt2x00-usb))
+$(eval $(call KernelPackage,rt2x00-soc))
 $(eval $(call KernelPackage,rt2800-lib))
 $(eval $(call KernelPackage,rt2400-pci))
 $(eval $(call KernelPackage,rt2500-pci))

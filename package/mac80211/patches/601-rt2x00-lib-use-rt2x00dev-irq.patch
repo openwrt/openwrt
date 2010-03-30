@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/rt2x00/rt2x00pci.c
++++ b/drivers/net/wireless/rt2x00/rt2x00pci.c
+@@ -213,7 +213,7 @@ void rt2x00pci_uninitialize(struct rt2x0
+ 	/*
+ 	 * Free irq line.
+ 	 */
+-	free_irq(to_pci_dev(rt2x00dev->dev)->irq, rt2x00dev);
++	free_irq(rt2x00dev->irq, rt2x00dev);
+ 
+ 	/*
+ 	 * Free DMA
