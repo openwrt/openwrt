@@ -23,7 +23,7 @@
  	${LIST_au1xx0}	\
 --- a/Makefile
 +++ b/Makefile
-@@ -474,7 +475,7 @@ $(obj)include/autoconf.mk: $(obj)include
+@@ -474,7 +474,7 @@ $(obj)include/autoconf.mk: $(obj)include
  	set -e ; \
  	: Extract the config macros ; \
  	$(CPP) $(CFLAGS) -DDO_DEPS_ONLY -dM include/common.h | \
@@ -32,7 +32,7 @@
  	mv $@.tmp $@
  
  #########################################################################
-@@ -3354,7 +3355,7 @@ incaip_config: unconfig
+@@ -3354,7 +3354,7 @@ incaip_config: unconfig
  		{ echo "#define CPU_CLOCK_RATE 150000000" >>$(obj)include/config.h ; \
  		  $(XECHO) "... with 150MHz system clock" ; \
  		}
@@ -41,7 +41,7 @@
  
  tb0229_config: unconfig
  	@$(MKCONFIG) $(@:_config=) mips mips tb0229
-@@ -3395,6 +3396,30 @@ vct_platinumavc_onenand_small_config: un
+@@ -3395,6 +3395,50 @@ vct_platinumavc_onenand_small_config: un
  	@$(MKCONFIG) -a vct mips mips vct micronas
  
  #########################################################################
@@ -67,6 +67,26 @@
 +		esac; \
 +	fi
 +	@$(MKCONFIG) -a $(word 1,$(subst _, ,$@)) mips mips easy50712 infineon danube
++
++easy50812%config	: unconfig
++	@mkdir -p $(obj)include
++	@mkdir -p $(obj)board/infineon/easy50812
++	@[ -z "$(findstring ramboot,$@)" ] || \
++		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/infineon/easy50812/config.tmp ; \
++			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
++			$(XECHO) "... with ramboot configuration" ; \
++		}
++	@if [ "$(findstring _DDR,$@)" ] ; then \
++		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
++		DDR=$(subst DDR,,$(filter DDR%,$(subst _, ,$@))); \
++		case "$${DDR}" in \
++		111M|166M|e111M|e166M|promos400|samsung166|psc166) \
++			$(XECHO) "... with DDR RAM config $${DDR}" ; \
++			echo "#define CONFIG_USE_DDR_RAM_CFG_$${DDR}" >>$(obj)include/config.h ;; \
++		*)	$(XECHO) "... DDR RAM config \\\"$${DDR}\\\" unknown, use default"; \
++		esac; \
++	fi
++	@$(MKCONFIG) -a $(word 1,$(subst _, ,$@)) mips mips easy50812 infineon ar9
 +
 +#########################################################################
  ## MIPS32 AU1X00
