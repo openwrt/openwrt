@@ -36,11 +36,17 @@
 #include <asm/types.h>
 #include <asm/io.h>
 #include <asm/addrspace.h>
+#include <config.h>
 
 #include "ifx_etop.h"
 
+#if defined(CONFIG_AR9)
+#define TX_CHAN_NO   1
+#define RX_CHAN_NO   0
+#else
 #define TX_CHAN_NO   7
 #define RX_CHAN_NO   6
+#endif
 
 #define NUM_RX_DESC	PKTBUFSRX
 #define NUM_TX_DESC	8
@@ -245,7 +251,19 @@ static void lq_eth_halt(struct eth_device *dev)
 	}
 }
 
-static int lq_eth_send(struct eth_device *dev, volatile void *packet,int length)
+#ifdef DEBUG
+static void lq_dump(const u8 *data, const u32 length)
+{
+	u32 i;
+	debug("\n");
+	for(i=0;i<length;i++) {
+		debug("%02x ", data[i]);
+	}
+	debug("\n");
+}
+#endif
+
+static int lq_eth_send(struct eth_device *dev, volatile void *packet, int length)
 {
 	int i;
 	int res = -1;
@@ -273,11 +291,16 @@ static int lq_eth_send(struct eth_device *dev, volatile void *packet,int length)
 		tx_desc->status.field.DataLen = (u32)length;
 
 	flush_cache((u32)packet, tx_desc->status.field.DataLen);
+	asm("SYNC");
 	tx_desc->status.field.OWN=1;
 
 	res=length;
 	tx_num++;
 	if (tx_num==NUM_TX_DESC) tx_num=0;
+
+#ifdef DEBUG
+	lq_dump(tx_desc->DataPtr, tx_desc->status.field.DataLen);
+#endif
 
 	dma_writel(dma_cs, TX_CHAN_NO);
 	if (!(dma_readl(dma_cctrl) & 1)) {
@@ -298,6 +321,10 @@ static int lq_eth_recv(struct eth_device *dev)
 	if ((rx_desc->status.field.C == 0) || (rx_desc->status.field.OWN == 1)) {
 		return 0;
 	}
+	debug("rx");
+#ifdef DEBUG
+	lq_dump(rx_desc->DataPtr, rx_desc->status.field.DataLen);
+#endif
 	length = rx_desc->status.field.DataLen;
 	if (length > 4) {
 		invalidate_dcache_range((u32)CKSEG0ADDR(rx_desc->DataPtr), (u32) CKSEG0ADDR(rx_desc->DataPtr) + length);
