@@ -136,6 +136,7 @@ static void __init whr_g300n_init(void)
 	ramips_register_gpio_buttons(-1, WHR_G300N_BUTTONS_POLL_INTERVAL,
 				     ARRAY_SIZE(whr_g300n_gpio_buttons),
 				     whr_g300n_gpio_buttons);
+	rt305x_register_wifi();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_WHR_G300N, "WHR-G300N", "Buffalo WHR-G300N",
