@@ -13,11 +13,11 @@
 #include <asm/irq.h>
 #include <asm/div64.h>
 
-#include <asm/ifxmips/ifxmips.h>
-#include <asm/ifxmips/ifxmips_irq.h>
-#include <asm/mach-ifxmips/cgu.h>
-#include <asm/ifxmips/ifxmips_gptu.h>
-#include <asm/ifxmips/ifxmips_pmu.h>
+#include <ifxmips.h>
+#include <ifxmips_irq.h>
+#include <ifxmips_cgu.h>
+#include <ifxmips_gptu.h>
+#include <ifxmips_pmu.h>
 
 #define MAX_NUM_OF_32BIT_TIMER_BLOCKS	6
 
