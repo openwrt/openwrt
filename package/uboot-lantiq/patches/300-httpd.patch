@@ -165,7 +165,7 @@
  	NetRxPacket = inpkt;
  	NetRxPacketLen = len;
  	et = (Ethernet_t *)inpkt;
-@@ -1952,3 +1972,161 @@ ushort getenv_VLAN(char *var)
+@@ -1952,3 +1972,162 @@ ushort getenv_VLAN(char *var)
  {
  	return (string_to_VLAN(getenv(var)));
  }
@@ -249,6 +249,8 @@
 +		NetArpWaitTxPacketSize = 0;
 +	}
 +
++restart:
++
 +	eth_halt();
 +#ifdef CONFIG_NET_MULTI
 +	eth_set_current();
@@ -258,7 +260,6 @@
 +		return(-1);
 +	}
 +
-+restart:
 +#ifdef CONFIG_NET_MULTI
 +	memcpy (NetOurEther, eth_get_dev()->enetaddr, 6);
 +#else

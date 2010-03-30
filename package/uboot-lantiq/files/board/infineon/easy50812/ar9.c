@@ -48,10 +48,10 @@ extern ulong ifx_get_cpuclk(void);
 #define ID_SAMURAI_1			0x0007
 #define SAMURAI_ID_REG0			0xA0
 #define SAMURAI_ID_REG1			0xA1
-#define ID_TANTOS				0x2599
+#define ID_TANTOS			0x2599
 
-#define RGMII_MODE				0
-#define MII_MODE				1
+#define RGMII_MODE			0
+#define MII_MODE			1
 #define REV_MII_MODE			2
 #define RED_MII_MODE_IC			3		/*Input clock */
 #define RGMII_MODE_100MB		4
@@ -565,70 +565,22 @@ static int external_switch_init(void)
 #endif /* CONFIG_EXTRA_SWITCH */
 
 #if defined(CONFIG_CMD_HTTPD)
-
-static int image_info (ulong addr)
-{
-   void *hdr = (void *)addr;
-
-   printf ("\n## Checking Image at %08lx ...\n", addr);
-
-   switch (genimg_get_format (hdr)) {
-   case IMAGE_FORMAT_LEGACY:
-      puts ("   Legacy image found\n");
-      if (!image_check_magic (hdr)) {
-         puts ("   Bad Magic Number\n");
-         return 1;
-      }
-
-      if (!image_check_hcrc (hdr)) {
-         puts ("   Bad Header Checksum\n");
-         return 1;
-      }
-
-      image_print_contents (hdr);
-
-      puts ("   Verifying Checksum ... ");
-      if (!image_check_dcrc (hdr)) {
-         puts ("   Bad Data CRC\n");
-         return 1;
-      }
-      puts ("OK\n");
-      return 0;
-#if defined(CONFIG_FIT)
-   case IMAGE_FORMAT_FIT:
-      puts ("   FIT image found\n");
-
-      if (!fit_check_format (hdr)) {
-         puts ("Bad FIT image format!\n");
-         return 1;
-      }
-
-      fit_print_contents (hdr);
-
-      if (!fit_all_image_check_hashes (hdr)) {
-         puts ("Bad hash in FIT image!\n");
-         return 1;
-      }
-
-      return 0;
-#endif
-   default:
-      puts ("Unknown image format!\n");
-      break;
-   }
-
-   return 1;
-}
-
 int do_http_upgrade(const unsigned char *data, const ulong size)
 {
+	char buf[128];
+
+	if(getenv ("ram_addr") == NULL)
+		return -1;
+	if(getenv ("kernel_addr") == NULL)
+		return -1;
 	/* check the image */
-	if(image_info(data)) {
+	if(run_command("imi ${ram_addr}", 0) < 0) {
 		return -1;
 	}
 	/* write the image to the flash */
 	puts("http ugrade ...\n");
-	return 0;
+	sprintf(buf, "era ${kernel_addr} +0x%x; cp.b ${ram_addr} ${kernel_addr} 0x%x", size, size);
+	return run_command(buf, 0);
 }
 
 int do_http_progress(const int state)
@@ -639,6 +591,7 @@ int do_http_progress(const int state)
 		puts("http start\n");
 		break;
 		case HTTP_PROGRESS_TIMEOUT:
+		puts(".");
 		break;
 		case HTTP_PROGRESS_UPLOAD_READY:
 		puts("http upload ready\n");
