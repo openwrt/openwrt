@@ -16,7 +16,8 @@ LINUX_VERSION:=2.6.30.10
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES+=kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl ifxmips-dsl-api ifxmips-dsl-control
+DEFAULT_PACKAGES+=uboot-lantiq
+#kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl ifxmips-dsl-api ifxmips-dsl-control ifx-tapidemo
 
 define Target/Description
 	Build firmware images for Infineon Mips Controllers
