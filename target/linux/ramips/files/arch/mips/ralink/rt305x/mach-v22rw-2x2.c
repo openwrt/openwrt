@@ -110,6 +110,7 @@ static void __init v22rw_2x2_init(void)
 	ramips_register_gpio_buttons(-1, V22RW_2X2_BUTTONS_POLL_INTERVAL,
 				     ARRAY_SIZE(v22rw_2x2_gpio_buttons),
 				     v22rw_2x2_gpio_buttons);
+	rt305x_register_wifi();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_V22RW_2X2, "V22RW-2X2", "Ralink AP-RT3052-V22RW-2X2",

@@ -116,6 +116,7 @@ static void __init dir_300b_init(void)
 	ramips_register_gpio_buttons(-1, DIR_300B_BUTTONS_POLL_INTERVAL,
 				     ARRAY_SIZE(dir_300b_gpio_buttons),
 				     dir_300b_gpio_buttons);
+	rt305x_register_wifi();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_DIR_300_REVB, "DIR-300-revB", "D-Link DIR-300 revB",
