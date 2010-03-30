@@ -136,3 +136,29 @@ void __init rt305x_register_ethernet(void)
 
 	platform_device_register(&rt305x_eth_device);
 }
+
+static struct resource rt305x_wifi_resources[] = {
+	{
+		.start	= RT305X_WMAC_BASE,
+		.end	= RT305X_WMAC_BASE + 0x3FFFF,
+		.flags	= IORESOURCE_MEM,
+	}, {
+		.start	= RT305X_CPU_IRQ_WNIC,
+		.end	= RT305X_CPU_IRQ_WNIC,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device rt305x_wifi_device = {
+	.name			= "rt2800_wmac",
+	.resource		= rt305x_wifi_resources,
+	.num_resources	= ARRAY_SIZE(rt305x_wifi_resources),
+	.dev = {
+		.platform_data = NULL,
+	}
+};
+
+void __init rt305x_register_wifi(void)
+{
+	platform_device_register(&rt305x_wifi_device);
+}
