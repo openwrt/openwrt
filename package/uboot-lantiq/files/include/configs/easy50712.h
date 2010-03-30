@@ -112,4 +112,6 @@
 #	define CONFIG_EBU_BUSCON0		0x0001D7FF
 #endif
 
+#define CONFIG_CMD_HTTPD		/* enable upgrade via HTTPD */
+
 #endif	/* __CONFIG_H */
