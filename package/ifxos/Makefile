@@ -10,16 +10,16 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lib_ifxos
-PKG_VERSION:=1.5.10
+PKG_VERSION:=1.5.12
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=3602797b0f531f37546c6beb748d50cf
+#PKG_MD5SUM:=3602797b0f531f37546c6beb748d50cf
 
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ifxos
-  SUBMENU:=Lantiq
+  SUBMENU:=Other modules
   TITLE:=Lantiq OS abstraction library
   URL:=http://www.lantiq.com/
   MAINTAINER:=Lantiq

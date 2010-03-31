@@ -1,23 +1,8 @@
---- a/configure.in
-+++ b/configure.in
-@@ -149,12 +149,12 @@ AC_ARG_ENABLE(targetincl,
-        echo Set the target image include path $enableval
-        AC_SUBST([TARGET_INCL_PATH],[$enableval])
-     else
--       echo -e Set the default target image include path $DEFAULT_TARGET_INCL_PATH
-+       echo Set the default target image include path $DEFAULT_TARGET_INCL_PATH
-        AC_SUBST([TARGET_INCL_PATH],[$DEFAULT_TARGET_INCL_PATH])
-     fi
-    ],
-    [
--      echo -e Set the default target image include path $DEFAULT_TARGET_INCL_PATH
-+      echo Set the default target image include path $DEFAULT_TARGET_INCL_PATH
-       AC_SUBST([TARGET_INCL_PATH],[$DEFAULT_TARGET_INCL_PATH])
-    ]
- )
---- a/src/Makefile.am
-+++ b/src/Makefile.am
-@@ -610,7 +610,7 @@ if KERNEL_2_6
+Index: lib_ifxos-1.5.12/src/Makefile.am
+===================================================================
+--- lib_ifxos-1.5.12.orig/src/Makefile.am	2010-01-08 18:12:15.000000000 +0100
++++ lib_ifxos-1.5.12/src/Makefile.am	2010-03-31 18:56:12.000000000 +0200
+@@ -639,7 +639,7 @@
  drv_ifxos_OBJS = "$(subst .c,.o,$(filter %.c,$(drv_ifxos_SOURCES)))"
  
  drv_ifxos.ko: $(drv_ifxos_SOURCES)
@@ -26,7 +11,7 @@
  	if test ! -e common/ifxos_debug.c ; then \
  		echo "copy source files (as links only!)"; \
  		for f in $(filter %.c,$(drv_ifxos_SOURCES)); do \
-@@ -618,10 +618,10 @@ drv_ifxos.ko: $(drv_ifxos_SOURCES)
+@@ -647,10 +647,10 @@
  			cp -s $(addprefix @abs_srcdir@/,$$f) $(PWD)/`dirname $$f`/ ; \
  		done \
  	fi
