@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+#
+# Activate Voice CPE TAPI subsystem LL driver for VMMC
+
+START=31
+
+start() {
+	# TODO: clean up this mess
+	[ `cat /proc/cpuinfo | grep system | cut -f 3 -d ' '` =  "Twinpass-VE" ] && {
+		[ ! -e /dev/danube-port ] && mknod /dev/danube-port c 254 0
+		return;
+	}
+	[ `cat /proc/cpuinfo | grep system | cut -f 3 -d ' '` !=  "Danube" ] && {
+		[ ! -e /dev/amazon_s-port ] && mknod /dev/amazon_s-port c 240 1
+		echo "INFO configuring HW scheduling 33/66"
+		echo "t0 0x0" > /proc/mips/mtsched
+		echo "t1 0x1" > /proc/mips/mtsched
+		echo "v0 0x0" > /proc/mips/mtsched
+	}
+	[ `cat /proc/cpuinfo | grep system | cut -f 3 -d ' '` =  "Danube" ] && {
+		[ ! -e /dev/danube-port ] && mknod /dev/danube-port c 240 1
+		# switch life-line relais
+		echo 1 > /sys/class/leds/fxs_relay/brightness
+	}
+}

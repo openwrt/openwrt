@@ -1,0 +1,26 @@
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -149,7 +149,7 @@ if KERNEL_2_6
+ drv_tapi_OBJS = "$(subst .c,.o, $(drv_tapi_SOURCES))"
+ 
+ drv_tapi.ko: $(drv_tapi_SOURCES) $(EXTRA_DIST)
+-	@echo -e "Making Linux 2.6.x kernel object"
++	@echo "Making Linux 2.6.x kernel object"
+ 	@for f in $(drv_tapi_SOURCES) ; do \
+ 		if test ! -e $(PWD)/$$f; then \
+ 			echo "  LN      $$f" ; \
+@@ -157,10 +157,10 @@ drv_tapi.ko: $(drv_tapi_SOURCES) $(EXTRA
+ 			ln -s @abs_srcdir@/$$f $(PWD)/$$f; \
+ 		fi; \
+ 	done;
+-	@echo -e "# drv_tapi: Generated to build Linux 2.6.x kernel object" > $(PWD)/Kbuild
+-	@echo -e "obj-m := $(subst .ko,.o,$@)"			>> $(PWD)/Kbuild
+-	@echo -e "$(subst .ko,,$@)-y := $(drv_tapi_OBJS)"	>> $(PWD)/Kbuild
+-	@echo -e "EXTRA_CFLAGS := -DHAVE_CONFIG_H  $(CFLAGS) $(drv_tapi_CFLAGS) $(INCLUDES)"	>> $(PWD)/Kbuild
++	@echo "# drv_tapi: Generated to build Linux 2.6.x kernel object" > $(PWD)/Kbuild
++	@echo "obj-m := $(subst .ko,.o,$@)"			>> $(PWD)/Kbuild
++	@echo "$(subst .ko,,$@)-y := $(drv_tapi_OBJS)"	>> $(PWD)/Kbuild
++	@echo "EXTRA_CFLAGS := -DHAVE_CONFIG_H  $(CFLAGS) $(drv_tapi_CFLAGS) $(INCLUDES)"	>> $(PWD)/Kbuild
+ 	$(MAKE) ARCH=@KERNEL_ARCH@ -C @KERNEL_BUILD_PATH@ O=@KERNEL_BUILD_PATH@ M=$(PWD) modules
+ 
+ clean-generic:

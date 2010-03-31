@@ -1,0 +1,49 @@
+choice
+	prompt "device selection"
+	default VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract
+	help
+		Select the target device.
+
+	config VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract
+		bool "Danube, Twinpass, Vinax - extract binaries"
+
+	config VOICE_CPE_VMMC_WITH_DEVICE_DANUBE
+		bool "Danube, Twinpass, Vinax"
+
+	config VOICE_CPE_VMMC_WITH_DEVICE_AR9
+		bool "AR9 family"
+
+	config VOICE_CPE_VMMC_WITH_DEVICE_VR9
+		bool "VR9 family"
+
+endchoice
+
+config VOICE_CPE_VMMC_PMC
+	depends on (VOICE_CPE_VMMC_WITH_DEVICE_AR9 || VOICE_CPE_VMMC_WITH_DEVICE_VR9)
+	bool "Power Management Control support"
+	default n
+	help
+		Option to enable Power Management Control on AR9, VR9. Not supported for Danube.
+
+config VOICE_CPE_VMMC_DISABLE_DECT_NIBBLE_SWAP
+	bool "Disable DECT nibble swap"
+	default n
+	help
+		Option to disable DECT nibble swap for COSIC modem (for backward compatibility only).
+
+config VOICE_CPE_VMMC_EVENT_LOGGER
+	depends on BROKEN
+	bool "Event logger support"
+	default n
+	help
+		Option to enable details traces between drv_vmmc and the voice FW
+		- for debugging only
+		- requires package ifx-evtlog
+
+config VOICE_CPE_VMMC_MPS_HISTORY_SIZE
+	int "MPS history buffer in words (0<=size<=512)"
+	default "128"
+	help
+		MPS history buffer (default=128 words, maximum=512 words, 0=disable)
+		To opimize the memory footprint in RAM, you might want to set the
+		buffer size to 0.

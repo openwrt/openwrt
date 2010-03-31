@@ -1,0 +1,78 @@
+--- a/src/board_easy50712.c	Mon Mar 15 14:47:53 2010 +0300
++++ b/src/board_easy50712.c	Tue Mar 16 17:25:55 2010 +0300
+@@ -40,7 +40,9 @@
+    #endif /* DUSLIC_FXO */
+ #endif /* EASY50712_V3 */
+ 
+-#include "asm/ifx/ifx_gpio.h"
++#ifdef FXO
++#  include "asm/ifx/ifx_gpio.h"
++#endif
+ 
+ /* ============================= */
+ /* Defines                       */
+@@ -896,6 +898,7 @@
+ /* Global function definition    */
+ /* ============================= */
+ 
++#ifdef FXO
+ /**
+    Set direction of GPIO pin to out which is used for set/clear reset.
+ 
+@@ -944,7 +947,7 @@
+          return IFX_SUCCESS;
+       }
+       break;
+-      
++
+       case GPIO_DUSLIC_EASY50510:
+       {
+          TRACE(TAPIDEMO, DBG_LEVEL_LOW,
+@@ -982,8 +985,9 @@
+ 
+    return IFX_SUCCESS;
+ };
++#endif
+ 
+-
++#ifdef FXO
+ /*
+    Set/Clear reset of device by using GPIO port.
+ 
+@@ -1086,7 +1090,9 @@
+    /* usleep(100000); karol - workaround, */
+    return ret;
+ }
++#endif
+ 
++#ifdef EASY50510
+ /**
+    Set PCM master mode.
+ 
+@@ -1178,15 +1184,16 @@
+ 
+    return ret;
+ }
++#endif
+ 
+ /**
+    Register board.
+ 
+    \param pBoard - pointer to board
+- 
++
+    \return IFX_SUCCESS if successful, otherwise IFX_ERROR.
+ 
+-   \remarks 
++   \remarks
+ */
+ IFX_return_t BOARD_Easy50712_Register(BOARD_t* pBoard)
+ {
+@@ -1204,7 +1211,3 @@
+    pBoard->RemoveBoard = BOARD_Easy50712_RemoveBoard;
+    return IFX_SUCCESS;
+ }
+-
+-
+-
+-
