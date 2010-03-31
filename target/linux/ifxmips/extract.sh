@@ -11,10 +11,16 @@ echo "Please only do so if it is legal in your country"
 	exit 1
 }
 
-[ ! -f ${DIR}bbd.crypt ] && {
-	dd if=${FILE} of=${DIR}bbd.crypt bs=1 skip=104 count=1472302
+[ -f ${DIR}/ifxmips_fw_decode.tar.bz2 -a ! -f ${DIR}voip_coef.bin ] && {
+	[ ! -f ${DIR}decode_ifx_fw ] && {
+		tar xjf ${DIR}ifxmips_fw_decode.tar.bz2 ifxmips_fw_decode/decode.c -O > ${DIR}decode.c
+		gcc -o ${DIR}decode_ifx_fw ${DIR}decode.c
+	}
+	[ ! -f ${DIR}voip_coef.lzma ] && {
+		${DIR}decode_ifx_fw $FILE ${DIR}voip_coef.lzma
+	}
+	lzma d ${DIR}voip_coef.lzma ${DIR}voip_coef.bin
 }
-
 [ ! -f ${DIR}dsl_a.bin ] && {
 	dd if=${FILE} of=${DIR}dsl1.lzma bs=1 skip=2168832 count=150724
 	lzma d ${DIR}dsl2.lzma ${DIR}dsl_a.bin
