@@ -125,6 +125,8 @@ static void __init rt_n15_init(void)
 				     rt_n15_gpio_buttons);
 
 	platform_device_register(&rt_n15_rtl8366s_device);
+
+	rt288x_register_wifi();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_RT_N15, "RT-N15", "Asus RT-N15", rt_n15_init);
