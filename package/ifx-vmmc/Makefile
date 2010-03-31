@@ -67,7 +67,7 @@ FW_FILE:=fw_voip_ifx.tar.gz
 COEF_TARGET:=ifx_bbd_fxs.bin
 COEF_FILE:=coef_voip_ifx.tar.gz
 
-FW_DIR:=opt/lantiq/downloads
+FW_DIR:=lib/firmware
 ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
   CONFIGURE_ARGS += --with-device=DANUBE
   FW_TARGET:=danube_firmware.bin
@@ -99,6 +99,15 @@ ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_VR9),y)
   # TODO: add fw/coef
 endif
 
+ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
+define Download/decode
+  FILE:=ifxmips_fw_decode.tar.bz2
+  URL:=http://downloads.openwrt.org/sources/
+  MD5SUM:=1197ff6cace6a7c86492a468f5fbfe07
+endef
+$(eval $(call Download,decode))
+endif
+
 define Download/firmware
   FILE:=$(FW_FILE)
   URL:=$(FW_URL)
@@ -123,7 +132,7 @@ define Build/Configure
 ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
 	$(PLATFORM_DIR)/extract.sh $(DL_DIR) '$(FW_FILE)' 
 	$(CP) $(DL_DIR)/voip.bin $(PKG_BUILD_DIR)/firmware/$(FW_TARGET)
-	#$(CP) $(DL_DIR)/voip_bbd.bin $(PKG_BUILD_DIR)/firmware/$(COEF_TARGET)
+	$(CP) $(DL_DIR)/voip_coef.bin $(PKG_BUILD_DIR)/coef/$(COEF_TARGET)
 else
 	$(TAR) -C $(PKG_BUILD_DIR)/firmware -xvzf $(DL_DIR)/$(FW_FILE)
 	$(TAR) -C $(PKG_BUILD_DIR)/coef -xvzf $(DL_DIR)/$(COEF_FILE)
@@ -142,10 +151,8 @@ endef
 define KernelPackage/ifx-vmmc/install
 	$(INSTALL_DIR) $(1)/etc/init.d $(1)/$(FW_DIR)
 	$(INSTALL_BIN) ./files/vmmc.init $(1)/etc/init.d/vmmc
-	$(CP) $(PKG_BUILD_DIR)/firmware/*.bin $(1)/$(FW_DIR)/$(FW_TARGET)
-ifneq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
+	$(CP) $(PKG_BUILD_DIR)/firmware/$(FW_TARGET) $(1)/$(FW_DIR)/$(FW_TARGET)
 	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_TARGET) $(1)/$(FW_DIR)/$(COEF_TARGET)
-endif
 endef
 
 $(eval $(call KernelPackage,ifx-vmmc))
