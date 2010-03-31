@@ -1,0 +1,15 @@
+# rt2x00 configuration
+
+config PACKAGE_RT2X00_LIB_DEBUGFS
+	bool "Enable rt2x00 debugfs support"
+	depends PACKAGE_kmod-rt2x00-lib && PACKAGE_MAC80211_DEBUGFS
+	---help---
+	  Enable creation of debugfs files for the rt2x00 drivers.
+	  These debugfs files support both reading and writing of the
+	  most important register types of the rt2x00 hardware.
+
+config PACKAGE_RT2X00_DEBUG
+	bool "Enavle rt2x00 debug output"
+	depends PACKAGE_kmod-rt2x00-lib
+	---help---
+	  Enable debugging output for all rt2x00 modules
