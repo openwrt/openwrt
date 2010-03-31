@@ -20,6 +20,10 @@ PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk
 
+ifeq ($(DUMP),)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_UBOOT_' $(TOPDIR)/.config | md5s)
+endif
+
 define Package/uboot-lantiq
   SECTION:=boot
   CATEGORY:=Boot Loaders
@@ -35,8 +39,8 @@ define Build/Prepare
 	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 endef
 
-UBOOT_CONFIG:=$(call qstrip,$(CONFIG_UBOOT_CONFIG))
-UBOOT_DDR_CONFIG:=$(call qstrip,$(CONFIG_UBOOT_DDR_CONFIG))
+UBOOT_TARGET:=$(call qstrip,$(CONFIG_UBOOT_TARGET))
+UBOOT_RAMBOOT_DDR_CONFIG:=$(call qstrip,$(CONFIG_UBOOT_RAMBOOT_DDR_CONFIG))
 
 UBOOT_MAKE_OPTS:= \
 	CROSS_COMPILE=$(TARGET_CROSS) \
@@ -44,9 +48,7 @@ UBOOT_MAKE_OPTS:= \
 	V=1
 
 define Package/uboot-lantiq/config
-	menu "configuration"
-		source "$(SOURCE)/Config.in"
-	endmenu
+	source "$(SOURCE)/Config.in"
 endef
 
 define Build/Configure/Target
@@ -57,9 +59,9 @@ define Build/Configure/Target
 endef
 
 define Build/Configure
-	$(call Build/Configure/Target,$(UBOOT_CONFIG))
+	$(call Build/Configure/Target,$(UBOOT_TARGET))
 ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
-	$(call Build/Configure/Target,$(UBOOT_CONFIG)_ramboot)
+	$(call Build/Configure/Target,$(UBOOT_TARGET)_ramboot)
 endif
 endef
 
@@ -71,24 +73,24 @@ define Build/Compile/Target
 endef
 
 define Build/Compile
-	$(call Build/Compile/Target,$(UBOOT_CONFIG))
+	$(call Build/Compile/Target,$(UBOOT_TARGET))
 ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
-	$(call Build/Compile/Target,$(UBOOT_CONFIG)_ramboot)
+	$(call Build/Compile/Target,$(UBOOT_TARGET)_ramboot)
 endif
 endef
 
 define Package/uboot-lantiq/install
-	mkdir -p $(1)/$(UBOOT_CONFIG)
+	mkdir -p $(1)/$(UBOOT_TARGET)
 	dd \
-		if=$(PKG_BUILD_DIR)/$(UBOOT_CONFIG)/u-boot.bin \
-		of=$(1)/$(UBOOT_CONFIG)/u-boot.bin \
+		if=$(PKG_BUILD_DIR)/$(UBOOT_TARGET)/u-boot.bin \
+		of=$(1)/$(UBOOT_TARGET)/u-boot.bin \
 		bs=64k conv=sync
 ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
-	if [ -e $(UBOOT_DDR_CONFIG) ]; then \
+	if [ -e $(UBOOT_RAMBOOT_DDR_CONFIG) ]; then \
 		perl ./gct \
-			$(UBOOT_DDR_CONFIG) \
-			$(PKG_BUILD_DIR)/$(UBOOT_CONFIG)_ramboot/u-boot.srec \
-			$(1)/$(UBOOT_CONFIG)/u-boot.asc; \
+			$(UBOOT_RAMBOOT_DDR_CONFIG) \
+			$(PKG_BUILD_DIR)/$(UBOOT_TARGET)_ramboot/u-boot.srec \
+			$(1)/$(UBOOT_TARGET)/u-boot.asc; \
 	fi
 endif
 endef
