@@ -34,7 +34,7 @@ define KernelPackage/ifxmips-dsl-api
   TITLE:=DSL CPE API driver
   URL:=http://www.infineon.com/
   MAINTAINER:=Infineon Technologies AG / Lantiq / blogic@openwrt.org
-  DEPENDS:=@TARGET_ifxmips
+  DEPENDS:=@TARGET_ifxmips @BROKEN
   FILES:=$(PKG_BUILD_DIR)/src/mei/ifxmips_mei.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/src/mei/ifxmips_atm.$(LINUX_KMOD_SUFFIX)
@@ -57,6 +57,17 @@ define KernelPackage/ifxmips-dsl-api/config
 	source "$(SOURCE)/Config.in"
 endef
 
+ifeq ($(CONFIG_IFXMIPS_DSL_FIRMWARE),y)
+FW_FILE:=arcor_A800_452CPW_FW_1.02.206(20081201).bin
+define Download/firmware
+  URL:=http://www.arcor.de/hilfe/files/pdf/
+  FILE=$(FW_FILE)
+  MD5SUM:=19d9af4e369287a0f0abaed415cdac10
+endef
+$(eval $(call Download,firmware))
+
+else
+
 define Download/annex-a
 	FILE:=$(FW_BASE_NAME)_a-$(FW_A_VER).tar.gz
 	URL:=http://mirror2.openwrt.org/sources/
@@ -70,6 +81,7 @@ define Download/annex-b
 	MD5SUM:=$(FW_B_MD5)
 endef
 $(eval $(call Download,annex-b))
+endif
 
 IFX_DSL_MAX_DEVICE=1
 IFX_DSL_LINES_PER_DEVICE=1
@@ -145,7 +157,12 @@ endef
 
 define KernelPackage/ifxmips-dsl-api/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
+ifeq ($(CONFIG_IFXMIPS_DSL_FIRMWARE),y)
+	$(PLATFORM_DIR)/extract.sh $(DL_DIR) '$(FW_FILE)' 
+	$(CP) $(DL_DIR)/dsl_$(if $(CONFIG_IFXMIPS_ANNEX_A),a,b).bin $(1)/lib/firmware/ModemHWE.bin
+else
 	$(CP) $(PKG_BUILD_DIR)/$(FW_BASE_NAME)_$(if $(CONFIG_IFXMIPS_ANNEX_A),a_$(FW_A_FILE_VER),b_$(FW_B_FILE_VER)).bin $(1)/lib/firmware/ModemHWE.bin
+endif
 endef
 
 $(eval $(call KernelPackage,ifxmips-dsl-api))
