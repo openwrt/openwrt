@@ -96,3 +96,29 @@ void __init rt288x_register_flash(unsigned int id,
 	platform_device_register(pdev);
 	rt288x_flash_instance++;
 }
+
+static struct resource rt288x_wifi_resources[] = {
+	{
+		.start	= RT2880_WMAC_BASE,
+		.end	= RT2880_WMAC_BASE + 0x3FFFF,
+		.flags	= IORESOURCE_MEM,
+	}, {
+		.start	= RT288X_CPU_IRQ_WNIC,
+		.end	= RT288X_CPU_IRQ_WNIC,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device rt288x_wifi_device = {
+	.name			= "rt2800_wmac",
+	.resource		= rt288x_wifi_resources,
+	.num_resources	= ARRAY_SIZE(rt288x_wifi_resources),
+	.dev = {
+		.platform_data = NULL,
+	}
+};
+
+void __init rt288x_register_wifi(void)
+{
+	platform_device_register(&rt288x_wifi_device);
+}
