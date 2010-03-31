@@ -16,7 +16,7 @@ FEATURES:=squashfs broken
 LINUX_VERSION:=2.6.32.10
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES+=kmod-leds-gpio
+DEFAULT_PACKAGES+=kmod-leds-gpio wpad-mini
 
 define Target/Description
 	Build firmware images for Ralink RT288x/RT305x based boards.
