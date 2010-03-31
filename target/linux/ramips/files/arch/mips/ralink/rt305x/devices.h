@@ -15,8 +15,8 @@ struct physmap_flash_data;
 
 extern void rt305x_register_flash(unsigned int id,
 				  struct physmap_flash_data *pdata) __init;
-extern void rt305x_register_ethernet(void);
-extern void rt305x_register_wifi(void);
+extern void rt305x_register_ethernet(void) __init;
+extern void rt305x_register_wifi(void) __init;
 
 #endif  /* __RT305X_DEVICES_H */
 
