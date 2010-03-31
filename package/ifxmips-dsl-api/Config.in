@@ -17,6 +17,13 @@ config IFXMIPS_ANNEX_B
 
 endchoice
 
+config IFXMIPS_DSL_FIRMWARE
+	bool "ifxmips-dsl firmware extractor"
+	default y
+	depends on PACKAGE_kmod-ifxmips-dsl-api
+	help
+	  Say Y, if you need ifxmips-dsl to auto extract the firmware for you from the a800 firmware image
+
 config IFXMIPS_DSL_DEBUG
 	bool "ifxmips-dsl debugging"
 	depends on PACKAGE_kmod-ifxmips-dsl-api
