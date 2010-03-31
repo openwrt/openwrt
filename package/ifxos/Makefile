@@ -23,7 +23,7 @@ define KernelPackage/ifxos
   TITLE:=Lantiq OS abstraction library
   URL:=http://www.lantiq.com/
   MAINTAINER:=Lantiq
-  DEPENDS:=@TARGET_ifxmips
+  DEPENDS:=@TARGET_ifxmips @BROKEN
   FILES:=$(PKG_BUILD_DIR)/src/drv_ifxos.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,10,drv_ifxos)
 endef

@@ -1,0 +1,151 @@
+#
+# Copyright (C) 2008 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
+
+PKG_NAME:=drv_vmmc
+PKG_VERSION:=1.7.0
+PKG_RELEASE:=1
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_MD5SUM:=3f1b44e79408a3320aa9f8b21a260fd0
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
+
+include $(INCLUDE_DIR)/package.mk
+
+define KernelPackage/ifx-vmmc
+  SUBMENU:=Voice over IP
+  TITLE:=TAPI LL driver for Voice Macro
+  URL:=http://www.lantiq.com/
+  MAINTAINER:=Lantiq
+  DEPENDS:=+kmod-ifx-tapi @BROKEN
+  FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,drv_vmmc)
+endef
+
+define KernelPackage/ifx-vmmc/description
+	Voice Subsystem Low Level Driver for Danube, AR9, VR9 device families
+endef
+
+define KernelPackage/ifx-vmmc/config
+	if PACKAGE_kmod-ifx-vmmc
+		source "$(SOURCE)/Config.in"
+	endif
+endef
+
+CONFIGURE_ARGS += \
+	ARCH=$(LINUX_KARCH) \
+	--enable-linux-26 \
+	--enable-kernelbuild="$(LINUX_DIR)" \
+	--enable-kernelincl="$(LINUX_DIR)/include" \
+	--enable-tapiincl="$(STAGING_DIR)/usr/include/drv_tapi" \
+	--with-ifxos-incl=$(STAGING_DIR)/usr/include/ifxos \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_VMMC_EVENT_LOGGER,el-debug) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_VMMC_PMC,pmc) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_VMMC_DISABLE_DECT_NIBBLE_SWAP,dect-nibble-swap) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_FAX,fax t38) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_CID,cid) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_DECT,dect) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_KPI,kpi) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_LT_GR909,lt calibration) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_HDLC,hdlc) \
+	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_TRACES,trace)
+
+ifneq ($(CONFIG_VOICE_CPE_VMMC_MPS_HISTORY_SIZE),128)
+  CONFIGURE_ARGS += --enable-history-buf=$(CONFIG_VOICE_CPE_VMMC_MPS_HISTORY_SIZE)
+endif
+
+#defaults 
+FW_URL:=http://localhost/
+FW_TARGET:=ifx_firmware.bin
+FW_FILE:=fw_voip_ifx.tar.gz
+COEF_TARGET:=ifx_bbd_fxs.bin
+COEF_FILE:=coef_voip_ifx.tar.gz
+
+FW_DIR:=opt/lantiq/downloads
+ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
+  CONFIGURE_ARGS += --with-device=DANUBE
+  FW_TARGET:=danube_firmware.bin
+  FW_URL:=http://www.arcor.de/hilfe/files/pdf/
+  FW_FILE=arcor_A800_452CPW_FW_1.02.206(20081201).bin
+  FW_MD5SUM:=19d9af4e369287a0f0abaed415cdac10
+  COEF_TARGET:=danube_bbd_fxs.bin
+  COEF_FILE:=arcor_A800_452CPW_FW_1.02.206(20081201).bin
+  COEF_MD5SUM:=19d9af4e369287a0f0abaed415cdac10
+endif
+
+ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE),y)
+  CONFIGURE_ARGS += --with-device=DANUBE
+  FW_TARGET:=danube_firmware.bin
+  FW_FILE=fw_voip_danube-12.1.0.1.0.tar.gz
+  FW_MD5SUM:=51868b88dee9dbc65d3dbba355ded91c
+  COEF_TARGET:=danube_bbd_fxs.bin
+  COEF_FILE:=coef_voip_danube-0.9.0.tar.gz
+  COEF_MD5SUM:=c8ac6592b304b03829a8123560e15710
+endif
+
+ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_AR9),y)
+  CONFIGURE_ARGS += --with-device=AR9
+  # TODO: add fw/coef
+endif
+
+ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_VR9),y)
+  CONFIGURE_ARGS += --with-device=VR9
+  # TODO: add fw/coef
+endif
+
+define Download/firmware
+  FILE:=$(FW_FILE)
+  URL:=$(FW_URL)
+  MD5SUM:=$(FW_MD5SUM)
+endef
+$(eval $(call Download,firmware))
+
+define Download/coef
+  FILE:=$(COEF_FILE)
+  URL:=$(FW_URL)
+  MD5SUM:=$(COEF_MD5SUM)
+endef
+$(eval $(call Download,coef))
+
+define Build/Configure
+	rm -rf \
+		$(PKG_BUILD_DIR)/coef \
+		$(PKG_BUILD_DIR)/firmware
+	mkdir -p \
+		$(PKG_BUILD_DIR)/coef \
+		$(PKG_BUILD_DIR)/firmware
+ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
+	$(PLATFORM_DIR)/extract.sh $(DL_DIR) '$(FW_FILE)' 
+	$(CP) $(DL_DIR)/voip.bin $(PKG_BUILD_DIR)/firmware/$(FW_TARGET)
+	#$(CP) $(DL_DIR)/voip_bbd.bin $(PKG_BUILD_DIR)/firmware/$(COEF_TARGET)
+else
+	$(TAR) -C $(PKG_BUILD_DIR)/firmware -xvzf $(DL_DIR)/$(FW_FILE)
+	$(TAR) -C $(PKG_BUILD_DIR)/coef -xvzf $(DL_DIR)/$(COEF_FILE)
+endif
+	(cd $(PKG_BUILD_DIR); aclocal && autoconf && automake)
+	$(call Build/Configure/Default)
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	mkdir -p $(1)/usr/include/drv_vmmc
+	$(CP) -v --dereference $(PKG_BUILD_DIR)/include/* $(1)/usr/include/drv_vmmc
+	(cd $(1)/usr/include/drv_vmmc && ln -snf . include)
+endef
+
+define KernelPackage/ifx-vmmc/install
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/$(FW_DIR)
+	$(INSTALL_BIN) ./files/vmmc.init $(1)/etc/init.d/vmmc
+	$(CP) $(PKG_BUILD_DIR)/firmware/*.bin $(1)/$(FW_DIR)/$(FW_TARGET)
+ifneq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
+	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_TARGET) $(1)/$(FW_DIR)/$(COEF_TARGET)
+endif
+endef
+
+$(eval $(call KernelPackage,ifx-vmmc))
