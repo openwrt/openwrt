@@ -1,32 +1,35 @@
-config UBOOT_CONFIG
-   string "configuration file"
-   default "easy50712_DDR166M"
-   help
-     The configuration reflects the settings for a dedicated board hardware.
-     Select for Danube evaluation board easy50712_DDR166M .
-     Select for AR9 evaluation board easy50812_DDR166M .
-
-config UBOOT_DDR_CONFIG
-   string "DDR configuration file"
-   default "danube_ref_ddr166.conf"
-   depends on UBOOT_RAMBOOT
-   help
-     The DDR configuration file should reflect the DDR memory device configuration .
-     It will be used to create a RAM boot image
-     Select for Danube evalution board danube_ref_ddr166.conf .
-     Select for AR9 evalution board easy50812.conf .
+config UBOOT_TARGET
+	string "target"
+	default "easy50712_DDR166M"
+	depends on PACKAGE_uboot-lantiq
+	help
+	  The configuration reflects the settings for a dedicated board hardware.
+	  Select for Danube evaluation board easy50712_DDR166M .
+	  Select for AR9 evaluation board easy50812_DDR166M .
 
 config UBOOT_RAMBOOT
-   bool "Enable RAM boot image"
-   help
-     Using the UART boot mode of the ROM code this image could be loaded to the RAM.
-     Executing the image in the RAM the functionality of the uboot image can be 
-     tested first without touching the original flash.
-     Note: Be carefull, by saving the environment the flash will be modified.
-     The OWRT flash layout differs from the layout provided by Lantiq / Infineon.
+	bool "Enable RAM boot image"
+	depends on PACKAGE_uboot-lantiq
+	help
+	  Using the UART boot mode of the ROM code this image could be loaded to the RAM.
+	  While executing the image in the RAM the functionality of the uboot image can be 
+	  tested first without touching the original flash.
+	  Note: Be carefull, by saving the environment the flash will be modified.
+	  The OWRT flash layout differs from the layout provided by Lantiq / Infineon.
 
-config IFXMIPS_UBOOT_A800
+config UBOOT_RAMBOOT_DDR_CONFIG
+	string "DDR configuration file"
+	default "easy50712_DDR166M.conf"
+	depends on UBOOT_RAMBOOT
+	help
+	  The DDR configuration file should reflect the DDR memory device configuration .
+	  It will be used to create a RAM boot image
+	  Select for Danube evalution board easy50712_DDR166M.conf .
+	  Select for AR9 evalution board easy50812.conf .
+
+
+config UBOOT_A800
 	bool "add ARV452 Switch bringup hack"
-	depends on PACKAGE_uboot-ifxmips
+	depends on PACKAGE_uboot-lantiq
 	help
 	  Say Y, if you have a arv452 board (wav-281, A800, ..)
