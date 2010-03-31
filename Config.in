@@ -25,6 +25,7 @@ menu "Target Images"
 		depends TARGET_ROOTFS_INITRAMFS
 		depends !LINUX_2_6_25
 		default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ar71xx
+		default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
 		default TARGET_INITRAMFS_COMPRESSION_NONE
 		help
 		  Select ramdisk compression.
