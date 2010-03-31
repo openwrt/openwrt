@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/uboot-ifxmips
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_ifxmips
+  DEPENDS:=@TARGET_ifxmips @BROKEN
   TITLE:=U-Boot for Infineon MIPS boards
   URL:=http://www.denx.de/wiki/U-Boot
 endef
