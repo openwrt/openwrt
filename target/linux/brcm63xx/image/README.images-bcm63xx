@@ -16,6 +16,11 @@ Images flashable using cfe are labelled openwrt-<board>-<filesystem>-cfe.bin
 The imagetags for tftp/ftp flashing is based on Broadcom 3.00-3.04 imagetags
 and is known to be correct as the source code GPL and is available for reading.
 
+Broadcom code 2.21 is based on the BT Voyager firmware image I looked at.  It
+may in fact be BT Voyager-specific.  2.21 is actually more difficult to deal
+with the imagetag from 3.00 as it has three different CRC calculations in
+addtition to the header CRC.
+
 Broadcom 3.00-3.02 flashing has been tested on Comtrend CT-5261, CT-536 and 
 Tecom GW6000, and is the version of the flashing that was present before the
 imagetags were split by broadcom code version (early June 2009)
@@ -27,16 +32,11 @@ this author (Daniel Dickinson) has seen is the Alice Gate (Pirelli) firmware
 which is known to be different due to vendor (Pirelli) modifications to the
 Broadcom code.
 
-Broadcom 3.08 introduced changes to the imagetag to deal with TR69 (a remote
-router management system developed by the DSL Forum).  The version we are
-using as 3.08 is based on the BT Voyager firmware image I looked at.  It may
-in fact be BT Voyager-specific, and may in fact not be 3.08, but modified 3.06
-and not apply to all 3.08 versions.
-
 Broadcom 3.10 uses an imagetag that is believed to apply to all 3.10 and 3.12
-versions, and has been tested on the Tecom GW6200.  It is similar to 3.08.  
-There is a field for vendor-specific information, that at least in some cases
-is not optional.  It is based on the hexedit of a neufbox4 firmware image, the
+versions, and has been tested on the Tecom GW6200.  This version introdec changes to
+the imagetag to deal with TR69 (a remote rouer management system developed by the
+DSL forum).  There is a field for vendor-specific information, that at least in some
+cases is not optional.  It is based on the hexedit of a neufbox4 firmware image, the
 information in https://dev.openwrt.org/ticket/4987, and the hexedit of a Tecom
 GW6200 image.
 
@@ -44,43 +44,41 @@ Some boards share the same tag format, but require vendor-specific fields in
 the board.  In that case the tagid is shared, but the filename of the generated
 image reflects the router for which the image was created.
 
-router        |method| codever |tagid |filename
-+-------------+------+---------+------+----------------------------------------
-|any          |cfe   |   any   |bccfe |openwrt-<board>-<fs>-bccfe-cfe.bin
-|any          |t/ftp |   any   |bc300 |openwrt-<board>-<fs>-bc300-cfe.bin
-|             |web   |3.00-3.06|bc300 |openwrt-<board>-<fs>-bc300-cfe.bin
-|             |web   |3.10-3.12|bc310 |openwrt-<board>-<fs>-bc310-cfe.bin
-|AGVoIP2+WiFi |web   |alice3.06|ag306 |openwrt-AGPF-S0-<fs>-agv2+w-cfe.bin
-|CT536        |web   |3.02     |bc300 |openwrt-96348GW-11-<fs>-bc300-cfe.bin
-|CT5621       |web   |3.02     |bc300 |openwrt-96348GW-11-<fs>-bc300-cfe.bin
-|DG834GT      |web   |3.02     |bc300 |openwrt-96348GW-10-<fs>-bc300-cfe.bin
-|DG834PN      |web   |3.02     |bc300 |openwrt-96348GW-10-<fs>-bc300-cfe.bin
-|DSL-2640B    |web   |3.10     |bc310 |openwrt-D-4P-W-<fs>-bc310-cfe.bin
-|DSL-2740B    |web   |3.10     |bc310 |openwrt-96358GW-<fs>-dsl2740b-cfe.bin
-|F5D7633      |web   |3.10     |bc310 |openwrt-96348GW-10-<fs>-bc310-cfe.bin
-|F@ST2404     |web   |?        |bc300 |openwrt-F@ST2404-<fs>-bc300-cfe.bin
-|F@ST2404     |web   |?        |bc310 |openwrt-F@ST2404-<fs>-bc310-cfe.bin
-|GW6000       |web   |3.00     |bc300 |openwrt-96348GW-<fs>-bc300-cfe.bin
-|GW6200       |web   |3.10     |bc310 |openwrt-96348GW-<fs>-gw6200-cfe.bin
-|Neufbox4     |web   |3.12     |bc310 |openwrt-96358VW-<fs>-nb4-cfe.bin
-|TD8810A      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
-|TD8810B      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
-|TD8811A      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
-|TD8811B      |web   |3.06     |bc300 |openwrt-8L-2M-8M-<fs>-bc306-cfe.bin
-|TD8900GB     |web   |3.06     |bc300 |openwrt-96348GW-11-<fs>-td8900gb-cfe.bin
-|USR9108      |web   |?        |bc300 |openwrt-96348GW-A-<fs>-bc300-cfe.bin
-|V2091_BTR    |web   |2.21     |bc221 |openwrt-V2091_BB-<fs>-btvgr-cfe.bin
-|V2091_ROI    |web   |2.21     |bc221 |openwrt-V2091-<fs>-btvgr-cfe.bin
-|V2091_WB     |web   |2.21     |bc221 |openwrt-V2091-<fs>-btvgr-cfe.bin
-|V210_BTR     |web   |2.21     |bc221 |openwrt-V210_BB-<fs>-btvgr-cfe.bin
-|V210_ROI     |web   |2.21     |bc221 |openwrt-V210-<fs>-btvgr-cfe.bin
-|V210_WB      |web   |2.21     |bc221 |openwrt-V210-<fs>-btvgr-cfe.bin
-|V2110        |web   |2.21     |bc221 |openwrt-V2110-<fs>-btvgr-cfe.bin
-|V2110_AA     |web   |2.21     |bc221 |openwrt-V2110-<fs>-btvgr-cfe.bin
-|V2110_ROI    |web   |2.21     |bc221 |openwrt-V2110-<fs>-btvgr-cfe.bin
-|V2500V       |web   |2.21     |bc221 |openwrt-V2500V_BB-<fs>-btvgr-cfe.bin
-|V2500V_AA    |web   |2.21     |bc221 |openwrt-V2500V_BB-<fs>-btvgr-cfe.bin
-|V2500V_SIP_CLUB |web|2.21     |bc221 |openwrt-V2500V_BB-<fs>-btvgr-cfe.bin
+router        |method       | codever |filename
++-------------+-------------+---------+---------------------------------------
+|any          |cfe+most web |   any   |openwrt-<board>-<fs>-cfe.bin
+|AGVoIP2+WiFi |cfe          |alice3.06|openwrt-AGV2+W-cfe-<fs>-cfe.bin
+|AGVoIP2+WiFi |web          |alice3.06|openwrt-AGV2+W-cfe-<fs>-cfe.bin
+|CT536        |web          |3.02     |openwrt-CT536_CT5621-<fs>-cfe.bin
+|CT5621       |web          |3.02     |openwrt-CT536_CT5621-<fs>-cfe.bin
+|DG834GT      |web          |3.02     |openwrt-DG834GT_DG834PN-<fs>-cfe.bin
+|DG834PN      |web          |3.02     |openwrt-DG834GT_DG834PN-<fs>-cfe.bin
+|DSL-2640B    |web          |3.10     |openwrt-DSL2640B-<fs>-cfe.bin
+|DSL-2740B    |web          |3.10     |openwrt-DSL2670B-<fs>-cfe.bin
+|F5D7633      |web          |3.10     |openwrt-F5D7633-<fs>-cfe.bin
+|F@ST2404     |web          |3.0X?    |openwrt-F@ST2404-cfe-<fs>-cfe.bin
+|F@ST2404     |web          |3.1X?    |openwrt-F@ST2404-<fs>-cfe.bin
+|GW6000       |web          |3.00     |openwrt-GW6000-<fs>-cfe.bin
+|GW6200       |web          |3.10     |openwrt-GW6200-<fs>-cfe.bin
+|Neufbox4     |web          |3.12     |openwrt-NEUFBOX4-<fs>-cfe.bin
+|TD8810A      |web          |3.06     |openwrt-TD8810-<fs>-cfe.bin
+|TD8810B      |web          |3.06     |openwrt-TD8810-<fs>-cfe.bin
+|TD8811A      |web          |3.06     |openwrt-TD8811-<fs>-cfe.bin
+|TD8811B      |web          |3.06     |openwrt-TD881-<fs>-cfe.bin
+|TD8900GB     |web          |3.06     |openwrt-TD8900DB<fs>-cfe.bin
+|USR9108      |web          |3.0X?    |openwrt-USR9108-<fs>-cfe.bin
+|V2091_BTR    |web          |2.21     |openwrt-V2091_BTR-<fs>-cfe.bin
+|V2091_ROI    |web          |2.21     |openwrt-V2091-<fs>-cfe.bin
+|V2091_WB     |web          |2.21     |openwrt-V2091-<fs>-cfe.bin
+|V210_BTR     |web          |2.21     |openwrt-V210_BTR-<fs>-cfe.bin
+|V210_ROI     |web          |2.21     |openwrt-V210-ROI_WB<fs>-cfe.bin
+|V210_WB      |web          |2.21     |openwrt-V210-ROI_WB<fs>-cfe.bin
+|V2110        |web          |2.21     |openwrt-V2110-<fs>-cfe.bin
+|V2110_AA     |web          |2.21     |openwrt-V2110-<fs>-cfe.bin
+|V2110_ROI    |web          |2.21     |openwrt-V2110-<fs>-cfe.bin
+|V2500V       |web          |2.21     |openwrt-V2500V<fs>-cfe.bin
+|V2500V_AA    |web          |2.21     |openwrt-V2500V-<fs>-cfe.bin
+|V2500V_SIP_CLUB |web       |2.21     |openwrt-V2500V-<fs>-cfe.bin
 
 Old imagetag routers
 --------------------
@@ -126,3 +124,4 @@ TP-Link			   |TD-W8900GB				      |3.06
 Tecom                      |GW6000                                    |3.00
 Tecom                      |GW6200                                    |3.10
 USR			   |9108				      |?
+

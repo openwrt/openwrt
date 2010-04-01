@@ -29,7 +29,7 @@
 
 union int2char {
   uint32_t input;
-  unsigned char output[4];
+  char output[4];
 };
 
 /* This appears to be necessary due to alignment issues */
@@ -43,7 +43,7 @@ struct kernelhdr {
 	uint32_t		lzmalen;	/* Compressed length of the LZMA data that follows */
 };
 
-static struct tagiddesc_t tagidtab[NUM_TAGID] = TAGID_DEFINITIONS;
+static char pirellitab[NUM_PIRELLI][BOARDID_LEN] = PIRELLI_BOARDS;
 
 static uint32_t crc32tab[256] = {
 	0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -130,9 +130,9 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	    const char *boardid, const char *chipid, const uint32_t fwaddr,
 	    const uint32_t loadaddr, const uint32_t entry,
 	    const char *ver, const char *magic2, const uint32_t flash_bs,
-	    const char *tagid, const char *information, const char *layoutver)
+	    const char *rsignature, const char *layoutver)
 {
-	union bcm_tag tag;
+	struct bcm_tag tag;
 	struct kernelhdr khdr;
 	FILE *kernelfile = NULL, *rootfsfile = NULL, *binfile;
 	size_t kerneloff, kernellen, rootfsoff, rootfslen, read, imagelen, rootfsoffpadlen, kernelfslen;
@@ -143,21 +143,24 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	uint32_t kernelfscrc = IMAGETAG_CRC_START;
 	const uint32_t deadcode = htonl(DEADCODE);
         union int2char intchar;
+        int i;
+        int is_pirelli = 0;
 
-	memset(&tag, 0, sizeof(union bcm_tag));
+	memset(&tag, 0, sizeof(struct bcm_tag));
 
-	/* All imagetags have boardid in the same location and of the same
-         * size, so we just use the bccfe one
-         */
-	if (strlen(boardid) >= sizeof(tag.bccfe.boardid)) {
+	if (strlen(boardid) >= sizeof(tag.boardid)) {
 		fprintf(stderr, "Board id is too long!\n");
 		return 1;
 	}
 
 	/* Likewise chipid */
-	if (strlen(chipid) >= sizeof(tag.bccfe.chipid)) {
+	if (strlen(chipid) >= sizeof(tag.chipid)) {
 		fprintf(stderr, "Chip id is too long!\n");
 		return 1;
+	}
+
+	if (!kernel || !rootfs) {
+		fprintf(stderr, "imagetag can't create an image without both kernel and rootfs\n");
 	}
 
 	if (kernel && !(kernelfile = fopen(kernel, "rb"))) {
@@ -224,202 +227,69 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	 */
 	fflush(binfile);
 
-	/* Choose and compute the CRC32 that should be inserted in the tag */
-        if ( tagid && ( (strncmp(tagid, "bccfe", TAGID_LEN) == 0)) || ( strncmp(tagid, "bc300", TAGID_LEN) == 0)) {
-		/* Compute the crc32 of the entire image (deadC0de included) */
-		imagecrc = compute_crc32(imagecrc, binfile, kerneloff - fwaddr, imagelen);
-	} else if ( tagid && (strncmp(tagid, "ag306", TAGID_LEN) == 0)) {
-	        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
-		kernelcrc = compute_crc32(kernelcrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen);
-	} else if ( tagid && ( (strncmp(tagid, "bc221", TAGID_LEN) == 0))) {
-		/* Compute the crc32 of the entire image (deadC0de included) */
-		imagecrc = compute_crc32(imagecrc, binfile, kerneloff - fwaddr, imagelen);
-	        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
-		kernelfscrc = compute_crc32(kernelfscrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen + rootfslen + sizeof(deadcode));
-	} else if ( tagid && (strncmp(tagid, "bc310", TAGID_LEN) == 0) ) {
-		/* Compute the crc32 of the entire image (deadC0de included) */
-		imagecrc = compute_crc32(imagecrc, binfile, kerneloff - fwaddr, imagelen);
-	        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
-		kernelcrc = compute_crc32(kernelcrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen);
-		/* Compute the crc32 of the flashImageStart to rootLength. 
-                 * The broadcom firmware assumes the rootfs starts the image,
-                 * therefore uses the rootfs start to determine where to flash
-                 * the image.  Since we have the kernel first we have to give
-                 * it the kernel address, but the crc uses the length
-                 * associated with this address, which is added to the kernel
-                 * length to determine the length of image to flash and thus
-                 * needs to be rootfs + deadcode
-                 */
-		rootfscrc = compute_crc32(rootfscrc, binfile, kerneloff - fwaddr, rootfslen + sizeof(deadcode));
-        }
+	/* Compute the crc32 of the entire image (deadC0de included) */
+	imagecrc = compute_crc32(imagecrc, binfile, kerneloff - fwaddr, imagelen);
+        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
+	kernelcrc = compute_crc32(kernelcrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen);
+        /* Compute the crc32 of the kernel and padding between kernel and rootfs) */
+	kernelfscrc = compute_crc32(kernelfscrc, binfile, kerneloff - fwaddr, kernellen + rootfsoffpadlen + rootfslen + sizeof(deadcode));
+	/* Compute the crc32 of the flashImageStart to rootLength.
+         * The broadcom firmware assumes the rootfs starts the image,
+         * therefore uses the rootfs start to determine where to flash
+         * the image.  Since we have the kernel first we have to give
+         * it the kernel address, but the crc uses the length
+         * associated with this address, which is added to the kernel
+         * length to determine the length of image to flash and thus
+         * needs to be rootfs + deadcode
+         */
+	rootfscrc = compute_crc32(rootfscrc, binfile, kerneloff - fwaddr, rootfslen + sizeof(deadcode));
 	
 	/* Close the files */
 	fclose(kernelfile);
 	fclose(rootfsfile);
 
-	if ( tagid && (strcmp(tagid, "bccfe") == 0)) {
-	  /* Build the tag */
-	  strncpy(tag.bccfe.tagVersion, ver, TAGVER_LEN);
-	  strncpy(tag.bccfe.sig_1, IMAGETAG_MAGIC1, sizeof(tag.bccfe.sig_1) - 1);
-	  strncpy(tag.bccfe.sig_2, magic2, sizeof(tag.bccfe.sig_2) - 1);
-	  strcpy(tag.bccfe.chipid, chipid);
-	  strcpy(tag.bccfe.boardid, boardid);
-	  strcpy(tag.bccfe.big_endian, "1");
-	  sprintf(tag.bccfe.totalLength, "%lu", imagelen);
+	/* Build the tag */
+	strncpy(tag.tagVersion, ver, TAGVER_LEN);
+	strncpy(tag.sig_1, IMAGETAG_MAGIC1, sizeof(tag.sig_1) - 1);
+	strncpy(tag.sig_2, magic2, sizeof(tag.sig_2) - 1);
+	strcpy(tag.chipid, chipid);
+	strcpy(tag.boardid, boardid);
+	strcpy(tag.big_endian, "1");
+	sprintf(tag.totalLength, "%lu", imagelen);
 
-	  /* We don't include CFE */
-	  strcpy(tag.bccfe.cfeAddress, "0");
-	  strcpy(tag.bccfe.cfeLength, "0");
+	/* We don't include CFE */
+	strcpy(tag.cfeAddress, "0");
+	strcpy(tag.cfeLength, "0");
 
-	  if (kernelfile) {
-	    sprintf(tag.bccfe.kernelAddress, "%lu", kerneloff);
-	    sprintf(tag.bccfe.kernelLength, "%lu", kernellen + rootfsoffpadlen);
-	  }
+        sprintf(tag.kernelAddress, "%lu", kerneloff);
+	sprintf(tag.kernelLength, "%lu", kernellen + rootfsoffpadlen);
+        sprintf(tag.flashImageStart, "%lu", kerneloff);
+	sprintf(tag.rootLength, "%lu", rootfslen + sizeof(deadcode));
 
-	  if (rootfsfile) {
-	    sprintf(tag.bccfe.rootAddress, "%lu", rootfsoff);
-	    sprintf(tag.bccfe.rootLength, "%lu", rootfslen);
-	  }
-
-	  strncpy(tag.bccfe.tagId, "bccfe", TAGID_LEN);
-
-	  int2tag(tag.bccfe.tagIdCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&(tag.bccfe.tagId[0]), TAGID_LEN));
-	  int2tag(tag.bccfe.imageCRC, imagecrc);
-	  int2tag(tag.bccfe.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
-	} else if ( tagid && (strcmp(tagid, "bc300") == 0)) {
-	  /* Build the tag */
-	  strncpy(tag.bc300.tagVersion, ver, TAGVER_LEN);
-	  strncpy(tag.bc300.sig_1, IMAGETAG_MAGIC1, sizeof(tag.bc300.sig_1) - 1);
-	  strncpy(tag.bc300.sig_2, magic2, sizeof(tag.bc300.sig_2) - 1);
-	  strcpy(tag.bc300.chipid, chipid);
-	  strcpy(tag.bc300.boardid, boardid);
-	  strcpy(tag.bc300.big_endian, "1");
-	  sprintf(tag.bc300.totalLength, "%lu", imagelen);
-
-	  /* We don't include CFE */
-	  strcpy(tag.bc300.cfeAddress, "0");
-	  strcpy(tag.bc300.cfeLength, "0");
-
-	  if (kernelfile) {
-	    sprintf(tag.bc300.kernelAddress, "%lu", kerneloff);
-	    sprintf(tag.bc300.kernelLength, "%lu", kernellen + rootfsoffpadlen);
-	  }
-
-	  if (rootfsfile) {
-	    sprintf(tag.bc300.flashImageStart, "%lu", kerneloff);
-	    sprintf(tag.bc300.flashRootLength, "%lu", rootfslen + sizeof(deadcode));
-	    sprintf(tag.bc300.rootAddress, "%lu", rootfsoff);
-	    sprintf(tag.bc300.rootLength, "%lu", rootfslen);
-	  }
-
-	  strncpy(tag.bc300.tagId, "bc300", TAGID_LEN);
-
-	  int2tag(tag.bc300.tagIdCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&(tag.bc300.tagId[0]), TAGID_LEN));
-	  int2tag(tag.bc300.imageCRC, imagecrc);
-	  int2tag(tag.bc300.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
-	} else if ( tagid && (strcmp(tagid, "ag306") == 0)) {
-	  /* Build the tag */
-	  strncpy(tag.ag306.tagVersion, ver, TAGVER_LEN);
-	  strncpy(tag.ag306.sig_1, IMAGETAG_MAGIC1, sizeof(tag.ag306.sig_1) - 1);
-	  strncpy(tag.ag306.sig_2, magic2, sizeof(tag.ag306.sig_2) - 1);
-	  strcpy(tag.ag306.chipid, chipid);
-	  strcpy(tag.ag306.boardid, boardid);
-	  strcpy(tag.ag306.big_endian, "1");
-	  sprintf(tag.ag306.totalLength, "%lu", imagelen);
-
-	  /* We don't include CFE */
-	  strcpy(tag.ag306.cfeAddress, "0");
-	  strcpy(tag.ag306.cfeLength, "0");
-
-	  if (kernelfile) {
-	    sprintf(tag.ag306.kernelAddress, "%lu", kerneloff);
-	    sprintf(tag.ag306.kernelLength, "%lu", kernellen + rootfsoffpadlen);
-	  }
-
-	  if (rootfsfile) {
-	    sprintf(tag.ag306.flashImageStart, "%lu", kerneloff);
-	    sprintf(tag.ag306.flashRootLength, "%lu", rootfslen + sizeof(deadcode));
-	    sprintf(tag.ag306.rootAddress, "%lu", rootfsoff);
-	    sprintf(tag.ag306.rootLength, "%lu", rootfslen);
-	  }
-
-	  strncpy(tag.ag306.tagId, "ag306", TAGID_LEN);
-
-	  int2tag(tag.ag306.tagIdCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&(tag.ag306.tagId[0]), TAGID_LEN));
-	  int2tag(tag.ag306.kernelCRC, kernelcrc);
-	  int2tag(tag.ag306.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
-	} else if ( tagid && (strcmp(tagid, "bc221") == 0)) {
-	  /* Build the tag */
-	  strncpy(tag.bc221.tagVersion, ver, TAGVER_LEN);
-	  strncpy(tag.bc221.sig_1, IMAGETAG_MAGIC1, sizeof(tag.bc221.sig_1) - 1);
-	  strncpy(tag.bc221.sig_2, magic2, sizeof(tag.bc221.sig_2) - 1);
-	  strcpy(tag.bc221.chipid, chipid);
-	  strcpy(tag.bc221.boardid, boardid);
-	  strcpy(tag.bc221.big_endian, "1");
-	  sprintf(tag.bc221.totalLength, "%lu", imagelen);
-
-	  /* We don't include CFE */
-	  strcpy(tag.bc221.cfeAddress, "0");
-	  strcpy(tag.bc221.cfeLength, "0");
-
-	  if (kernelfile) {
-	    sprintf(tag.bc221.kernelAddress, "%lu", kerneloff);
-	    sprintf(tag.bc221.kernelLength, "%lu", kernellen + rootfsoffpadlen);
-	  }
-
-	  if (rootfsfile) {
-	    sprintf(tag.bc221.flashImageStart, "%lu", kerneloff);
-	    sprintf(tag.bc221.flashRootLength, "%lu", rootfslen + sizeof(deadcode));
-	    sprintf(tag.bc221.rootAddress, "%lu", rootfsoff);
-	    sprintf(tag.bc221.rootLength, "%lu", rootfslen);
-	  }
-
-	  strncpy(tag.bc221.tagId, "bc221", TAGID_LEN);
-	  if (layoutver) {
-	    strncpy(tag.bc221.flashLayoutVer, layoutver, TAGLAYOUT_LEN);
-	  }
-
-	  int2tag(tag.bc221.tagIdCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&(tag.bc221.tagId[0]), TAGID_LEN));
-	  int2tag(tag.bc221.imageCRC, imagecrc);
-	  int2tag(tag.bc221.fskernelCRC, kernelfscrc);
-	  int2tag(tag.bc221.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
-	} else if ( tagid && (strcmp(tagid, "bc310") == 0)) {
-	  /* Build the tag */
-	  strncpy(tag.bc310.tagVersion, ver, TAGVER_LEN);
-	  strncpy(tag.bc310.sig_1, IMAGETAG_MAGIC1, sizeof(tag.bc310.sig_1) - 1);
-	  strncpy(tag.bc310.sig_2, magic2, sizeof(tag.bc310.sig_2) - 1);
-	  strcpy(tag.bc310.chipid, chipid);
-	  strcpy(tag.bc310.boardid, boardid);
-	  strcpy(tag.bc310.big_endian, "1");
-	  sprintf(tag.bc310.totalLength, "%lu", imagelen);
-
-	  /* We don't include CFE */
-	  strcpy(tag.bc310.cfeAddress, "0");
-	  strcpy(tag.bc310.cfeLength, "0");
-
-	  if (kernelfile) {
-	    sprintf(tag.bc310.kernelAddress, "%lu", kerneloff);
-	    sprintf(tag.bc310.kernelLength, "%lu", kernellen + rootfsoffpadlen);
-	  }
-
-	  if (rootfsfile) {
-	    sprintf(tag.bc310.flashImageStart, "%lu", kerneloff);
-	    sprintf(tag.bc310.flashRootLength, "%lu", rootfslen + sizeof(deadcode));
-	    sprintf(tag.bc310.rootAddress, "%lu", rootfsoff);
-	    sprintf(tag.bc310.rootLength, "%lu", rootfslen);
-	  }
-
-	  strncpy(tag.bc310.tagId, "bc310", TAGID_LEN);
-	  if (information) {
-	    strncpy(tag.bc310.information1, information, TAGINFO_LEN);
-	  }
-
-	  int2tag(tag.bc310.tagIdCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&(tag.bc310.tagId[0]), TAGID_LEN));
-	  int2tag(tag.bc310.imageCRC, imagecrc);
-	  int2tag(tag.bc310.kernelCRC, kernelcrc);
-	  int2tag(tag.bc310.rootfsCRC, rootfscrc);
-	  int2tag(tag.bc310.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
+	if (rsignature) {
+	    strncpy(tag.rsa_signature, rsignature, RSASIG_LEN);
 	}
+
+        if (layoutver) {
+	    strncpy(tag.flashLayoutVer, layoutver, TAGLAYOUT_LEN);
+	}
+
+	for (i = 0; i < NUM_PIRELLI; i++) {
+		if (strncmp(boardid, pirellitab[i], BOARDID_LEN) == 0) {
+			is_pirelli = 1;
+			break;
+		}
+	}
+
+	if ( !is_pirelli ) {
+		int2tag(tag.imageCRC, imagecrc);
+	} else {
+	        int2tag(tag.imageCRC, kernelcrc);
+	}
+        int2tag(tag.kernelCRC, kernelcrc);
+        int2tag(tag.rootfsCRC, rootfscrc);
+	int2tag(tag.fskernelCRC, kernelfscrc);
+	int2tag(tag.headerCRC, crc32(IMAGETAG_CRC_START, (uint8_t*)&tag, sizeof(tag) - 20));
 
 	fseek(binfile, 0L, SEEK_SET);
 	fwrite(&tag, sizeof(uint8_t), sizeof(tag), binfile);
@@ -432,12 +302,12 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 int main(int argc, char **argv)
 {
         int c, i;
-	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver, *tagid, *information, *layoutver;
+	char *kernel, *rootfs, *bin, *boardid, *chipid, *magic2, *ver, *tagid, *rsignature, *layoutver;
 	uint32_t flashstart, fwoffset, loadaddr, entry;
 	uint32_t fwaddr, flash_bs;
 	int tagidfound = 0;
 	
-	kernel = rootfs = bin = boardid = chipid = magic2 = ver = tagid = information = layoutver = NULL;
+	kernel = rootfs = bin = boardid = chipid = magic2 = ver = rsignature = layoutver = NULL;
 	entry = 0;
 
 	flashstart = DEFAULT_FLASH_START;
@@ -445,11 +315,11 @@ int main(int argc, char **argv)
 	loadaddr = IMAGETAG_DEFAULT_LOADADDR;
 	flash_bs = DEFAULT_FLASH_BS;
 
-	printf("Broadcom image tagger - v0.2.0\n");
+	printf("Broadcom image tagger - v1.0.0\n");
 	printf("Copyright (C) 2008 Axel Gembe\n");
-	printf("Copyright (C) 2009 Daniel Dickinson\n");
+	printf("Copyright (C) 2009-2010 Daniel Dickinson\n");
 
-	while ((c = getopt(argc, argv, "i:f:o:b:c:s:n:v:m:k:l:e:h:t:d:y:")) != -1) {
+	while ((c = getopt(argc, argv, "i:f:o:b:c:s:n:v:m:k:l:e:h:r:y:")) != -1) {
 		switch (c) {
 			case 'i':
 				kernel = optarg;
@@ -487,11 +357,8 @@ int main(int argc, char **argv)
 			case 'e':
 				entry = strtoul(optarg, NULL, 16);
 				break;
-			case 't':
-				tagid = optarg;
-				break;
-		        case 'd':
-			        information = optarg;
+		        case 'r':
+			        rsignature = optarg;
 				break;
 		        case 'y':
 			        layoutver = optarg;
@@ -511,9 +378,8 @@ int main(int argc, char **argv)
 				fprintf(stderr, "	-k <flash_bs>		- flash erase block size\n");
 				fprintf(stderr, "	-l <loadaddr>		- Address where the kernel expects to be loaded (defaults to 0x80010000)\n");
 				fprintf(stderr, "	-e <entry>		- Address where the kernel entry point will end up\n");
-				fprintf(stderr, "       -t <tagid> - type if imagetag to create, use 'list' to see available choices");
-				fprintf(stderr, "       -d <information> - vendor specific information, for those that need it");
-				fprintf(stderr, "       -y <layoutver> - Flash Layout Version (2.2x code versions need this)");
+				fprintf(stderr, "       -r <signature>          - vendor specific signature, for those that need it");
+				fprintf(stderr, "       -y <layoutver>          - Flash Layout Version (2.2x code versions need this)");
 				fprintf(stderr, "	-h			- Displays this text\n\n");
 				return 1;
 		}
@@ -529,38 +395,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
-        tagidfound = 0;
-	if (!tagid) {
-	  fprintf(stderr, "You must specify a tagid (-t)\n");
-	} else {
-	  if (strncmp(tagid, "list", 4) == 0) {
-	    fprintf(stderr, "\n----------------------------------------\n");
-	    fprintf(stderr, "\tAvailable tagId:");
-	    fprintf(stderr, "\n\n");
-	    for (i = 0; i < NUM_TAGID; i++) {
-	      fprintf(stderr, "\t%s\t%s", tagidtab[i].tagid, tagidtab[i].tagiddesc);	
-	    }
-	    fprintf(stderr, "\n----------------------------------------\n");
-	    return 0;	    
-	  }
-	}
-
-        if (tagid) {
-	  for(i = 0; i < NUM_TAGID; i++) {
-	    if (strncmp(tagid, tagidtab[i].tagid, TAGID_LEN) == 0) {
-	      tagidfound = 1;
-	      break;
-	    }
-	  }
-	  if (!tagidfound) {
-	    if (tagid) {
-	      fprintf(stderr, "The tagid you selected '%s' does't exist.\n", tagid);
-	    }
-	    fprintf(stderr, "Use -t list to see the list of available ids");  
-	    return 1;
-          }
-        }
-
 	/* Fallback to defaults */
 
 	fwaddr = flashstart + fwoffset;
@@ -584,5 +418,5 @@ int main(int argc, char **argv)
 	}
 		
 
-	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry, ver, magic2, flash_bs, tagid, information, layoutver);
+	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry, ver, magic2, flash_bs, rsignature, layoutver);
 }
