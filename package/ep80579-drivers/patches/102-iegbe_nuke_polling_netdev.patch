@@ -1,0 +1,103 @@
+--- a/Embedded/src/GbE/iegbe.h
++++ b/Embedded/src/GbE/iegbe.h
+@@ -316,7 +316,6 @@ struct iegbe_adapter {
+ 				int cleaned_count);
+ 	struct iegbe_rx_ring *rx_ring;      /* One per active queue */
+ 	struct napi_struct napi;
+-	struct net_device *polling_netdev;  /* One per active queue */
+ 
+ 	int num_tx_queues;
+ 	int num_rx_queues;
+--- a/Embedded/src/GbE/iegbe_main.c
++++ b/Embedded/src/GbE/iegbe_main.c
+@@ -763,7 +763,7 @@ static int __devinit iegbe_probe(struct 
+ 	struct iegbe_hw *hw;
+ 
+ 	static int cards_found = 0;
+-    int i, err, pci_using_dac;
++	int err, pci_using_dac;
+ 	u16 eeprom_data = 0;
+ 	u16 eeprom_apme_mask = E1000_EEPROM_APME;
+ 	int bars; 
+@@ -984,11 +984,8 @@ err_eeprom:
+ 		iegbe_phy_hw_reset(hw);
+ 	if (hw->flash_address)
+ 		iounmap(hw->flash_address);
+-	for (i = 0; i < adapter->num_rx_queues; i++)
+-		dev_put(&adapter->polling_netdev[i]);
+ 	kfree(adapter->tx_ring);
+ 	kfree(adapter->rx_ring);
+-	kfree(adapter->polling_netdev);
+ err_sw_init:
+ 	iounmap(hw->hw_addr);
+ err_ioremap:
+@@ -1017,7 +1014,6 @@ iegbe_remove(struct pci_dev *pdev)
+     struct net_device *netdev = pci_get_drvdata(pdev);
+     struct iegbe_adapter *adapter = netdev_priv(netdev);
+     uint32_t manc;
+-    int i;
+ 
+     if(adapter->hw.mac_type >= iegbe_82540
+        && adapter->hw.mac_type != iegbe_icp_xxxx
+@@ -1030,15 +1026,11 @@ iegbe_remove(struct pci_dev *pdev)
+     }
+ 
+     unregister_netdev(netdev);
+-    for (i = 0x0; i < adapter->num_rx_queues; i++)
+-		dev_put(&adapter->polling_netdev[i]);
+-
+     if(!iegbe_check_phy_reset_block(&adapter->hw)) {
+         iegbe_phy_hw_reset(&adapter->hw);
+     }
+     kfree(adapter->tx_ring);
+     kfree(adapter->rx_ring);
+-    kfree(adapter->polling_netdev);
+ 
+     iounmap(adapter->hw.hw_addr);
+     pci_release_regions(pdev);
+@@ -1061,7 +1053,6 @@ iegbe_sw_init(struct iegbe_adapter *adap
+     struct iegbe_hw *hw = &adapter->hw;
+     struct net_device *netdev = adapter->netdev;
+     struct pci_dev *pdev = adapter->pdev;
+-    int i;
+ 
+     /* PCI config space info */
+ 
+@@ -1111,11 +1102,6 @@ iegbe_sw_init(struct iegbe_adapter *adap
+ 		return -ENOMEM;
+ 	}
+ 
+-	for (i = 0; i < adapter->num_rx_queues; i++) {
+-		adapter->polling_netdev[i].priv = adapter;
+-		dev_hold(&adapter->polling_netdev[i]);
+-		set_bit(__LINK_STATE_START, &adapter->polling_netdev[i].state);
+-	}
+ 	spin_lock_init(&adapter->tx_queue_lock);
+ 
+         /*
+@@ -1137,8 +1123,7 @@ iegbe_sw_init(struct iegbe_adapter *adap
+  * @adapter: board private structure to initialize
+  *
+  * We allocate one ring per queue at run-time since we don't know the
+- * number of queues at compile-time.  The polling_netdev array is
+- * intended for Multiqueue, but should work fine with a single queue.
++ * number of queues at compile-time.
+  **/
+ 
+ static int __devinit
+@@ -1158,15 +1143,6 @@ iegbe_alloc_queues(struct iegbe_adapter 
+ 		return -ENOMEM;
+ 	}
+ 
+-	adapter->polling_netdev = kcalloc(adapter->num_rx_queues,
+-	                                  sizeof(struct net_device),
+-	                                  GFP_KERNEL);
+-	if (!adapter->polling_netdev) {
+-		kfree(adapter->tx_ring);
+-		kfree(adapter->rx_ring);
+-		return -ENOMEM;
+-	}
+-
+     return E1000_SUCCESS;
+ }
+ 

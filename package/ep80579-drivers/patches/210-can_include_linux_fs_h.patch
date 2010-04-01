@@ -1,0 +1,11 @@
+--- a/Embedded/src/CAN/can_main.c
++++ b/Embedded/src/CAN/can_main.c
+@@ -70,6 +70,8 @@
+ 
+ #include "can_main.h"
+ #include "can_ioctl.h"
++#include <linux/fs.h>
++
+ 
+ MODULE_AUTHOR("Intel(R) Corporation");
+ MODULE_DESCRIPTION("Controller Area Network Driver");

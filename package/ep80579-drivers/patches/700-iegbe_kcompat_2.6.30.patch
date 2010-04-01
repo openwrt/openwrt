@@ -1,0 +1,31 @@
+--- a/Embedded/src/GbE/kcompat.h
++++ b/Embedded/src/GbE/kcompat.h
+@@ -46,12 +46,6 @@ GPL LICENSE SUMMARY
+ #include <linux/sched.h>
+ #include <asm/io.h>
+ 
+-#ifndef IRQ_HANDLED
+-#define irqreturn_t void
+-#define IRQ_HANDLED
+-#define IRQ_NONE
+-#endif
+-
+ #ifndef SET_NETDEV_DEV
+ #define SET_NETDEV_DEV(net, pdev)
+ #endif
+@@ -748,6 +742,15 @@ extern void dump_stack(void);
+ 
+ #endif /* 2.4.24 */
+ 
++/*****************************************************************************/
++#if ( LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30) )
++#ifndef IRQ_HANDLED
++#define irqreturn_t void
++#define IRQ_HANDLED
++#define IRQ_NONE
++#endif
++#endif /* < 2.6.30 */
++
+ #endif /* _KCOMPAT_H_ */
+ 
+  

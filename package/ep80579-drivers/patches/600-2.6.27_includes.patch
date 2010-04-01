@@ -1,0 +1,22 @@
+--- a/Embedded/src/CAN/can_main.h
++++ b/Embedded/src/CAN/can_main.h
+@@ -65,7 +65,7 @@
+ 
+ #include <linux/interrupt.h>
+ #include <linux/pci.h>
+-#include <asm/semaphore.h>
++#include <linux/semaphore.h>
+ #include <linux/spinlock.h>
+ #include <linux/cdev.h>
+ #include <asm/uaccess.h>
+--- a/Embedded/src/EDMA/dma_linux.c
++++ b/Embedded/src/EDMA/dma_linux.c
+@@ -87,7 +87,7 @@
+ #include <linux/fcntl.h>   /* O_ACCMODE */
+ #include <asm/system.h>    /* cli, *_flags */
+ #include <asm/uaccess.h>   /* copy_to_user */
+-#include <asm/semaphore.h>
++#include <linux/semaphore.h>
+ #include <asm/io.h>        /* inb(), outb() */
+ #include <linux/kmod.h>
+ #include <linux/ioport.h>  /* request_region */
