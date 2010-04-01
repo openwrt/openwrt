@@ -21,24 +21,31 @@ void __init
 prom_init(int argc, const char **argv)
 {
 	unsigned long mem;
+	unsigned long max;
 
         mips_machgroup = MACH_GROUP_BRCM;
         mips_machtype = MACH_BCM947XX;
 
-	/* Figure out memory size by finding aliases */
+	/* Figure out memory size by finding aliases
+	 * 
+	 * BCM47XX uses 128MB for addressing the ram, if the system contains
+	 * less that that amount of ram it remaps the ram more often into the
+	 * available space.
+	 * Accessing memory after 128MB will cause an exception.
+	 * max contains the biggest possible address supported by the platform.
+	 * If the method wants to try something above we assume 128MB ram.
+ 	 */
+	max = ((unsigned long)(prom_init) | ((128 << 20) - 1));
 	for (mem = (1 << 20); mem < (128 << 20); mem += (1 << 20)) {
+		if (((unsigned long)(prom_init) + mem) > max) {
+			mem = (128 << 20);
+			printk("assume 128MB RAM\n");
+			break;
+		}
 		if (*(unsigned long *)((unsigned long)(prom_init) + mem) == 
 		    *(unsigned long *)(prom_init))
 			break;
 	}
-
-	/* Ignoring the last page when ddr size is 128M. Cached
-	 * accesses to last page is causing the processor to prefetch
-	 * using address above 128M stepping out of the ddr address
-	 * space.
-	 */
-	if (mem == 0x8000000)
-		mem -= 0x1000;
 
 	add_memory_region(0, mem, BOOT_MEM_RAM);
 }
