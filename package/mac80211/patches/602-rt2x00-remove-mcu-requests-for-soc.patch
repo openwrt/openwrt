@@ -1,0 +1,59 @@
+The ralink SoC platforms do not have an MCU.
+
+Signed-off-by: Luis Correia <luis.f.correia@gmail.com>
+---
+
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -221,9 +221,9 @@ void rt2800_mcu_request(struct rt2x00_de
+ 	u32 reg;
+ 
+ 	/*
+-	 * SOC devices don't support MCU requests.
++	 * some devices don't support MCU requests.
+ 	 */
+-	if (rt2x00_is_soc(rt2x00dev))
++	if (!test_bit(DRIVER_REQUIRE_MCU, &rt2x00dev->flags))
+ 		return;
+ 
+ 	mutex_lock(&rt2x00dev->csr_mutex);
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -60,6 +60,12 @@ static void rt2800pci_mcu_status(struct 
+ 	unsigned int i;
+ 	u32 reg;
+ 
++	/*
++	 * some devices don't support MCU requests.
++	 */
++	if (!test_bit(DRIVER_REQUIRE_MCU, &rt2x00dev->flags))
++		return;
++
+ 	for (i = 0; i < 200; i++) {
+ 		rt2800_register_read(rt2x00dev, H2M_MAILBOX_CID, &reg);
+ 
+@@ -1098,10 +1104,12 @@ static int rt2800pci_probe_hw(struct rt2
+ 	__set_bit(DRIVER_SUPPORT_CONTROL_FILTER_PSPOLL, &rt2x00dev->flags);
+ 
+ 	/*
+-	 * This device requires firmware.
++	 * This device requires firmware and MCU access.
+ 	 */
+-	if (!rt2x00_is_soc(rt2x00dev))
++	if (!rt2x00_is_soc(rt2x00dev)){
+ 		__set_bit(DRIVER_REQUIRE_FIRMWARE, &rt2x00dev->flags);
++		__set_bit(DRIVER_REQUIRE_MCU, &rt2x00dev->flags);
++	}
+ 	__set_bit(DRIVER_REQUIRE_DMA, &rt2x00dev->flags);
+ 	__set_bit(DRIVER_REQUIRE_L2PAD, &rt2x00dev->flags);
+ 	if (!modparam_nohwcrypt)
+--- a/drivers/net/wireless/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/rt2x00/rt2x00.h
+@@ -631,6 +631,7 @@ enum rt2x00_flags {
+ 	 * Driver requirements
+ 	 */
+ 	DRIVER_REQUIRE_FIRMWARE,
++	DRIVER_REQUIRE_MCU,
+ 	DRIVER_REQUIRE_BEACON_GUARD,
+ 	DRIVER_REQUIRE_ATIM_QUEUE,
+ 	DRIVER_REQUIRE_DMA,
