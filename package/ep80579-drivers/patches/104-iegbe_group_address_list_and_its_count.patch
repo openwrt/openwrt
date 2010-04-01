@@ -1,0 +1,20 @@
+--- a/Embedded/src/GbE/iegbe_main.c
++++ b/Embedded/src/GbE/iegbe_main.c
+@@ -2188,7 +2188,7 @@ int mta_reg_count = E1000_NUM_MTA_REGIST
+ 		}
+ 	}
+ 
+-	if (netdev->uc_count > rar_entries - 1) {
++	if (netdev->uc.count > rar_entries - 1) {
+ 		rctl |= E1000_RCTL_UPE;
+ 	} else if (!(netdev->flags & IFF_PROMISC)) {
+ 		rctl &= ~E1000_RCTL_UPE;
+@@ -2212,7 +2212,7 @@ int mta_reg_count = E1000_NUM_MTA_REGIST
+ 	 */
+ 	i = 1;
+ 	if (use_uc)
+-		list_for_each_entry(ha, &netdev->uc_list, list) {
++		list_for_each_entry(ha, &netdev->uc.list, list) {
+ 			if (i == rar_entries)
+ 				break;
+ 			iegbe_rar_set(hw, ha->addr, i++);

@@ -1,0 +1,53 @@
+--- a/Embedded/src/1588/1588.c
++++ b/Embedded/src/1588/1588.c
+@@ -291,7 +291,7 @@ int pci_probe(struct pci_dev *dev, const
+ 
+     }
+ 
+-    if ( request_irq(dev->irq, &timesync_isr, SA_SHIRQ, DRIVERNAME,
++    if ( request_irq(dev->irq, &timesync_isr, IRQF_SHARED, DRIVERNAME,
+          &g_drvr_data) )
+     {
+       printk("%s-pci_probe: irq\n", DRIVERNAME);
+--- a/Embedded/src/CAN/can_main.c
++++ b/Embedded/src/CAN/can_main.c
+@@ -424,7 +424,7 @@ int can_open(struct inode *inode, struct
+     err = request_irq(
+         can_os->irq,
+         can_irq_handler,
+-        SA_SHIRQ,
++        IRQF_SHARED,
+         iminor(can_os->inode) ? CAN_PROC_1 : CAN_PROC_0,
+         &(g_can_os[iminor(can_os->inode)])
+         );
+--- a/Embedded/src/EDMA/dma_linux.c
++++ b/Embedded/src/EDMA/dma_linux.c
+@@ -367,7 +367,7 @@ int32_t edma_resume(struct pci_dev *dev)
+         return -ENODEV;
+     }
+ 
+-    if (request_irq(dev->irq, &edma_irq_handler, SA_SHIRQ,
++    if (request_irq(dev->irq, &edma_irq_handler, IRQF_SHARED,
+                         g_char_drvr_name, dev) )
+     {
+ 
+@@ -829,7 +829,7 @@ int32_t edma_probe(struct pci_dev * dev,
+     /*
+     * Obtain a (shared) Interrupt Request (IRQ) Line from the OS.
+     */
+-    if (request_irq(dev->irq, &edma_irq_handler, SA_SHIRQ,
++    if (request_irq(dev->irq, &edma_irq_handler, IRQF_SHARED,
+                         g_char_drvr_name, dev) )
+     {
+ 
+--- a/Embedded/src/WDT/iwdt.c
++++ b/Embedded/src/WDT/iwdt.c
+@@ -1461,7 +1461,7 @@ static int __init wdt_init_one(struct pc
+ 
+      /* Request irq only if wdt_irq is other than 0 */
+      if (wdt_irq) {
+-        if (request_irq(wdt_irq, wdt_isr, SA_INTERRUPT | SA_SHIRQ,
++        if (request_irq(wdt_irq, wdt_isr, IRQF_DISABLED | IRQF_SHARED,
+            "iwdt", &wdt_miscdev)) {
+            printk("IRQ %d is not free.\n", wdt_irq);
+            return -EIO;

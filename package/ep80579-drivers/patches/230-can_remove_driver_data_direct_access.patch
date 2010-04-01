@@ -1,0 +1,41 @@
+diff -Nur a/Embedded/src/CAN/can_main.c b/Embedded/src/CAN/can_main.c
+--- a/Embedded/src/CAN/can_main.c	2009-11-30 10:44:39.044269751 +0100
++++ b/Embedded/src/CAN/can_main.c	2009-11-30 10:54:41.434355642 +0100
+@@ -213,8 +213,8 @@
+     spin_lock_init(&(g_can_os[can_num].int_spinlock));
+     spin_lock_init(&(g_can_os[can_num].open_spinlock));
+ 
+-    dev->dev.driver_data = (void *) &(g_can_os[can_num]);
+-    if (!dev->dev.driver_data)
++    dev_set_drvdata(&dev->dev, (void *) &(g_can_os[can_num]));
++    if (!dev_get_drvdata(&dev->dev))
+     {
+         printk("Couldn't create CAN device %d. Exiting.\n",
+             dev->device);
+@@ -236,7 +236,7 @@
+  *****************************************************************************/
+ void can_pci_remove(struct pci_dev *dev)
+ {
+-    can_os_t *can_os = dev->dev.driver_data;
++    can_os_t *can_os = dev_get_drvdata(&dev->dev);
+ 
+     iounmap(can_os->pci_remap);
+     icp_can_destroy(can_os->can);
+@@ -250,7 +250,7 @@
+ {
+     unsigned int i;
+     unsigned int int_status;
+-    can_os_t *can_os = dev->dev.driver_data;
++    can_os_t *can_os = dev_get_drvdata(&dev->dev);
+     int err;
+ 
+ 	/* Indicate that we are suspending */
+@@ -321,7 +321,7 @@
+ int can_pci_resume(struct pci_dev *dev)
+ {
+     unsigned int i;
+-    can_os_t *can_os = dev->dev.driver_data;
++    can_os_t *can_os = dev_get_drvdata(&dev->dev);
+ 
+ 	/* Restore PCI CFG space */
+ 	pci_restore_state(dev);
