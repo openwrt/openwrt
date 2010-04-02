@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -30,6 +30,7 @@ init-$(CONFIG_BUSYBOX_CONFIG_TELNETD) += telnet
 define Package/busybox
   SECTION:=base
   CATEGORY:=Base system
+  MAINTAINER:=Nicolas Thill <nico@openwrt.org>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
   MENU:=1
