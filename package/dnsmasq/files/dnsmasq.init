@@ -284,16 +284,22 @@ dhcp_option_add() {
 
 dhcp_domain_add() {
 	local cfg="$1"
+	local ip name names
 
-	config_get name "$cfg" name
-	[ -n "$name" ] || return 0
+	config_get names "$cfg" name
+	[ -n "$names" ] || return 0
 
 	config_get ip "$cfg" ip
 	[ -n "$ip" ] || return 0
 
 	local oIFS="$IFS"; IFS="."; set -- $ip; IFS="$oIFS"
-	append args "-A /$name${DOMAIN:+.$DOMAIN}/$ip"
-	append args "--ptr-record=$4.$3.$2.$1.in-addr.arpa,$name${DOMAIN:+.$DOMAIN}"
+	local raddr="${4:+$4.$3.$2.$1.in-addr.arpa}"
+
+	for name in $names; do
+		append args "-A /$name${DOMAIN:+.$DOMAIN}/$ip"
+		[ -n "$raddr" ] && \
+			append args "--ptr-record=$raddr,$name${DOMAIN:+.$DOMAIN}"
+	done
 }
 
 start() {
