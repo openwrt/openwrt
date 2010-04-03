@@ -9,9 +9,12 @@ boot() {
 
 	include /lib/network
 	setup_switch
-	[ -s /etc/config/wireless ] || \
+	grep -qs config /etc/config/wireless && {
+		/sbin/wifi up
+	} || {
+		rm -f /etc/config/wireless
 		/sbin/wifi detect > /etc/config/wireless
-	/sbin/wifi up
+	}
 }
 
 start() {
