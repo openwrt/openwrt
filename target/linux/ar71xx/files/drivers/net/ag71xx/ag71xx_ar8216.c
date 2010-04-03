@@ -25,19 +25,21 @@ void ag71xx_add_ar8216_header(struct ag71xx *ag, struct sk_buff *skb)
 	skb->data[1] = 0x80;
 }
 
-int ag71xx_remove_ar8216_header(struct ag71xx *ag,
-				struct sk_buff *skb)
+int ag71xx_remove_ar8216_header(struct ag71xx *ag, struct sk_buff *skb,
+				int pktlen)
 {
 	u8 type;
 
 	type = skb->data[1] & AR8216_PACKET_TYPE_MASK;
 	switch (type) {
 	case AR8216_PACKET_TYPE_NORMAL:
-		skb_pull(skb, AR8216_HEADER_LEN);
 		break;
+
 	default:
 		return -EINVAL;
 	}
 
+	skb_put(skb, pktlen);
+	skb_pull(skb, AR8216_HEADER_LEN);
 	return 0;
 }
