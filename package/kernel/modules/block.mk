@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -193,8 +193,6 @@ define KernelPackage/ide-core
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:= \
 	CONFIG_IDE \
-	CONFIG_IDE_GENERIC \
-	CONFIG_BLK_DEV_GENERIC \
 	CONFIG_BLK_DEV_IDE \
 	CONFIG_BLK_DEV_IDEDISK \
 	CONFIG_IDE_GD \
@@ -203,36 +201,26 @@ define KernelPackage/ide-core
 	CONFIG_BLK_DEV_IDEDMA_PCI=y \
 	CONFIG_BLK_DEV_IDEPCI=y
   FILES:= \
-  	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:= \
-	$(call AutoLoad,20,ide-core,1) \
-	$(call AutoLoad,40,ide-gd_mod,1)
+	$(call AutoLoad,20,ide-core,1)
 endef
 
 define KernelPackage/ide-core/2.4
-  FILES:= \
-  	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX) \
+  FILES+= \
 	$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX) \
   	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:= \
-	$(call AutoLoad,20,ide-core,1) \
+  AUTOLOAD+= \
 	$(call AutoLoad,35,ide-detect,1) \
 	$(call AutoLoad,40,ide-disk,1)
 endef
 
-ifneq ($(CONFIG_arm)$(CONFIG_powerpc),y)
-  define KernelPackage/ide-core/2.6
-	ifeq ($(CONFIG_PCI_SUPPORT),y)
-	  FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX) \
-		$(LINUX_DIR)/drivers/ide/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
-	  AUTOLOAD+=$(call AutoLoad,30,ide-generic ide-pci-generic,1)
-	else
-	  FILES+=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
-	  AUTOLOAD+=$(call AutoLoad,30,ide-generic,1)
-	endif
-  endef
-endif
+define KernelPackage/ide-core/2.6
+  FILES+= \
+  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+= \
+	$(call AutoLoad,40,ide-gd_mod,1)
+endef
 
 define KernelPackage/ide-core/description
  Kernel support for IDE, useful for usb mass storage devices (e.g. on WL-HDD)
@@ -249,6 +237,42 @@ define KernelPackage/ide/Depends
   SUBMENU:=$(BLOCK_MENU)
   DEPENDS:=kmod-ide-core $(1)
 endef
+
+
+define KernelPackage/ide-generic
+$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for generic PCI IDE chipsets
+  KCONFIG:=CONFIG_BLK_DEV_GENERIC
+endef
+
+define KernelPackage/ide-generic/2.4
+  FILES+= \
+	$(LINUX_DIR)/drivers/ide/pci/generic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+= \
+	$(call AutoLoad,30,generic,1)
+endef
+
+define KernelPackage/ide-generic/2.6
+  FILES+= \
+	$(LINUX_DIR)/drivers/ide/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD+= \
+	$(call AutoLoad,30,ide-pci-generic,1)
+endef
+
+$(eval $(call KernelPackage,ide-generic))
+
+
+define KernelPackage/ide-generic-old
+$(call KernelPackage/ide/Depends,@LINUX_2_6)
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for generic (legacy) IDE chipsets
+  KCONFIG:=CONFIG_IDE_GENERIC
+  FILES:=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ide-generic,1)
+endef
+
+$(eval $(call KernelPackage,ide-generic-old))
 
 
 define KernelPackage/ide-aec62xx
