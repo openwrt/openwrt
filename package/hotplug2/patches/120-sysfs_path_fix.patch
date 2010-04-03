@@ -1,0 +1,15 @@
+diff -x '*~' -Naur hotplug2-201/rules/command.c hotplug2-201.patched/rules/command.c
+--- hotplug2-201/rules/command.c	2009-12-09 20:44:13.000000000 +0200
++++ hotplug2-201.patched/rules/command.c	2010-03-31 17:24:09.000000000 +0300
+@@ -374,9 +374,9 @@
+ 	if (firmware == NULL)
+ 		return -1;
+ 
+-	if (snprintf(sysfs_path_loading, PATH_MAX, "/sysfs%s/loading", devpath) >= PATH_MAX)
++	if (snprintf(sysfs_path_loading, PATH_MAX, "/sys%s/loading", devpath) >= PATH_MAX)
+ 		return -1;
+-	if (snprintf(sysfs_path_data, PATH_MAX, "/sysfs%s/data", devpath) >= PATH_MAX)
++	if (snprintf(sysfs_path_data, PATH_MAX, "/sys%s/data", devpath) >= PATH_MAX)
+ 		return -1;
+ 	if (snprintf(firmware_path, PATH_MAX, "%s/%s", argv[0], firmware) >= PATH_MAX)
+ 		return -1;
