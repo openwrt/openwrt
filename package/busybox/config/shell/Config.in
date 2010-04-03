@@ -15,6 +15,7 @@ choice
 config BUSYBOX_CONFIG_FEATURE_SH_IS_ASH
 	select BUSYBOX_CONFIG_ASH
 	bool "ash"
+	depends on !BUSYBOX_CONFIG_NOMMU
 
 config BUSYBOX_CONFIG_FEATURE_SH_IS_HUSH
 	select BUSYBOX_CONFIG_HUSH
@@ -36,6 +37,7 @@ endchoice
 config BUSYBOX_CONFIG_ASH
 	bool "ash"
 	default y
+	depends on !BUSYBOX_CONFIG_NOMMU
 	help
 	  Tha 'ash' shell adds about 60k in the default configuration and is
 	  the most complete and most pedantically correct shell included with
@@ -56,23 +58,6 @@ config BUSYBOX_CONFIG_ASH_JOB_CONTROL
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable job control in the ash shell.
-
-config BUSYBOX_CONFIG_ASH_READ_NCHARS
-	bool "'read -n N' and 'read -s' support"
-	default n
-	depends on BUSYBOX_CONFIG_ASH
-	help
-	  'read -n N' will return a value after N characters have been read.
-	  'read -s' will read without echoing the user's input.
-
-config BUSYBOX_CONFIG_ASH_READ_TIMEOUT
-	bool "'read -t S' support"
-	default y
-	depends on BUSYBOX_CONFIG_ASH
-	help
-	  'read -t S' will return a value after S seconds have passed.
-	  This implementation will allow fractional seconds, expressed
-	  as a decimal fraction, e.g. 'read -t 2.5 foo'.
 
 config BUSYBOX_CONFIG_ASH_ALIAS
 	bool "alias support"
@@ -187,7 +172,7 @@ config BUSYBOX_CONFIG_HUSH_INTERACTIVE
 	help
 	  Enable interactive mode (prompt and command editing).
 	  Without this, hush simply reads and executes commands
-	  from stdin just like a shell script from the file.
+	  from stdin just like a shell script from a file.
 	  No prompt, no PS1/PS2 magic shell variables.
 
 config BUSYBOX_CONFIG_HUSH_JOB
@@ -249,6 +234,14 @@ config BUSYBOX_CONFIG_HUSH_EXPORT_N
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable support for export '-n' option in hush. It is a bash extension.
+
+config BUSYBOX_CONFIG_HUSH_RANDOM_SUPPORT
+	bool "Pseudorandom generator and $RANDOM variable"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  Enable pseudorandom generator and dynamic variable "$RANDOM".
+	  Each read of "$RANDOM" will generate a new pseudorandom value.
 
 config BUSYBOX_CONFIG_LASH
 	bool "lash (deprecated: aliased to hush)"

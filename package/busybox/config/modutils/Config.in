@@ -121,6 +121,22 @@ config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	  This increases size considerably. Say N unless you plan
 	  to run ancient kernels.
 
+config BUSYBOX_CONFIG_FEATURE_INSMOD_TRY_MMAP
+	bool "Try to load module from a mmap'ed area"
+	default n
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_MODPROBE_SMALL
+	help
+	  This option causes module loading code to try to mmap
+	  module first. If it does not work (for example,
+	  it does not work for compressed modules), module will be read
+	  (and unpacked if needed) into a memory block allocated by malloc.
+
+	  The only case when mmap works but malloc does not is when
+	  you are trying to load a big module on a very memory-constrained
+	  machine. Malloc will momentarily need 2x as much memory as mmap.
+
+	  Choosing N saves about 250 bytes of code (on 32-bit x86).
+
 config BUSYBOX_CONFIG_FEATURE_INSMOD_VERSION_CHECKING
 	bool "Enable module version checking"
 	default n

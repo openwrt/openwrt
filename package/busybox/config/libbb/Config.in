@@ -111,7 +111,7 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_ASK_TERMINAL
 	  current cursor position. This information is used to make line
 	  editing more robust in some cases.
 	  If you are not sure whether your terminals respond to this code
-	  correctly, or want to save on code size (about 300 bytes),
+	  correctly, or want to save on code size (about 400 bytes),
 	  then do not turn this option on.
 
 config BUSYBOX_CONFIG_FEATURE_NON_POSIX_CP
@@ -134,9 +134,8 @@ config BUSYBOX_CONFIG_FEATURE_VERBOSE_CP_MESSAGE
 	    $ cp file /vmlinuz/file
 	    cp: cannot stat '/vmlinuz/file': Path has non-directory component
 	  If this feature is not enabled, they will be, respectively:
-	    cp: cannot remove '/does_not_exist/file': No such file or directory
+	    cp: cannot create '/does_not_exist/file': No such file or directory
 	    cp: cannot stat '/vmlinuz/file': Not a directory
-	  respectively.
 	  This will cost you ~60 bytes.
 
 config BUSYBOX_CONFIG_FEATURE_COPYBUF_KB

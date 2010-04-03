@@ -137,11 +137,11 @@ config BUSYBOX_CONFIG_FEATURE_CROND_D
 	  -d sets loglevel to 0 (most verbose) and directs all output to stderr.
 
 config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
-	bool "Using /usr/sbin/sendmail?"
+	bool "Report command output via email (using sendmail)"
 	default n
 	depends on BUSYBOX_CONFIG_CROND
 	help
-	  Support calling /usr/sbin/sendmail for send cmd outputs.
+	  Command output will be sent to corresponding user via email.
 
 config BUSYBOX_CONFIG_FEATURE_CROND_DIR
 	string "crond spool directory"
@@ -271,6 +271,13 @@ config BUSYBOX_CONFIG_FBSPLASH
 	  - commands for fifo:
 	    "NN" (ASCII decimal number) - percentage to show on progress bar
 	    "exit" - well you guessed it
+
+config BUSYBOX_CONFIG_FLASHCP
+	bool "flashcp"
+	default n
+	help
+	  The flashcp binary, inspired by mtd-utils as of git head 5eceb74f7.
+	  This utility is used to copy images into a MTD device.
 
 config BUSYBOX_CONFIG_FLASH_LOCK
 	bool "flash_lock"
@@ -617,6 +624,12 @@ config BUSYBOX_CONFIG_VOLNAME
 	default n
 	help
 	  Prints a CD-ROM volume name.
+
+config BUSYBOX_CONFIG_WALL
+	bool "wall"
+	default n
+	help
+	  Write a message to all users that are logged in.
 
 config BUSYBOX_CONFIG_WATCHDOG
 	bool "watchdog"

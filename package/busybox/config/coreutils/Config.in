@@ -52,6 +52,13 @@ config BUSYBOX_CONFIG_CHOWN
 	  chown is used to change the user and/or group ownership
 	  of files.
 
+config BUSYBOX_CONFIG_FEATURE_CHOWN_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_CHOWN && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Enable use of long options
+
 config BUSYBOX_CONFIG_CHROOT
 	bool "chroot"
 	default y
@@ -78,6 +85,14 @@ config BUSYBOX_CONFIG_CP
 	help
 	  cp is used to copy files and directories.
 
+config BUSYBOX_CONFIG_FEATURE_CP_LONG_OPTIONS
+	bool "Enable long options for cp"
+	default n
+	depends on BUSYBOX_CONFIG_CP && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Enable long options for cp.
+	  Also add support for --parents option.
+
 config BUSYBOX_CONFIG_CUT
 	bool "cut"
 	default y
@@ -100,6 +115,22 @@ config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
 	  Enable option (-I) to output an ISO-8601 compliant
 	  date/time string.
 
+config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
+	bool "Support weird 'date MMDDhhmm[[YY]YY][.ss]' format"
+	default n
+	depends on BUSYBOX_CONFIG_DATE
+	help
+	  System time can be set by 'date -s DATE' and simply 'date DATE',
+	  but formats of DATE string are different. 'date DATE' accepts
+	  a rather weird MMDDhhmm[[YY]YY][.ss] format with completely
+	  unnatural placement of year between minutes and seconds.
+	  date -s (and other commands like touch -d) use more sensible
+	  formats (for one, ISO format YYYY-MM-DD hh:mm:ss.ssssss).
+
+	  With this option off, 'date DATE' is 'date -s DATE' support
+	  the same format. With it on, 'date DATE' additionally supports
+	  MMDDhhmm[[YY]YY][.ss] format.
+
 config BUSYBOX_CONFIG_DD
 	bool "dd"
 	default y
@@ -113,13 +144,22 @@ config BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
 	default y
 	depends on BUSYBOX_CONFIG_DD
 	help
-	  sending a SIGUSR1 signal to a running `dd' process makes it
+	  Sending a SIGUSR1 signal to a running `dd' process makes it
 	  print to standard error the number of records read and written
 	  so far, then to resume copying.
 
 	  $ dd if=/dev/zero of=/dev/null&
 	  $ pid=$! kill -USR1 $pid; sleep 1; kill $pid
-	  10899206+0 records in 10899206+0 records out
+	  10899206+0 records in
+	  10899206+0 records out
+
+config BUSYBOX_CONFIG_FEATURE_DD_THIRD_STATUS_LINE
+	bool "Enable the third status line upon signal"
+	default n
+	depends on BUSYBOX_CONFIG_DD && BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
+	help
+	  Displays a coreutils-like third status line with transferred bytes,
+	  elapsed time and speed.
 
 config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
 	bool "Enable ibs, obs and conv options"
@@ -829,13 +869,13 @@ config BUSYBOX_CONFIG_FEATURE_HUMAN_READABLE
 	help
 	  Allow df, du, and ls to have human readable output.
 
-comment "Common options for md5sum, sha1sum"
-	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM
+comment "Common options for md5sum, sha1sum, sha256sum, sha512sum"
+	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM
 
 config BUSYBOX_CONFIG_FEATURE_MD5_SHA1_SUM_CHECK
 	bool "Enable -c, -s and -w options"
 	default y
-	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM
+	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM || BUSYBOX_CONFIG_SHA256SUM || BUSYBOX_CONFIG_SHA512SUM
 	help
 	  Enabling the -c options allows files to be checked
 	  against pre-calculated hash values.

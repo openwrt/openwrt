@@ -213,6 +213,12 @@ config BUSYBOX_CONFIG_FSCK_MINIX
 	  check for and attempt to repair any corruption that occurs to a minix
 	  filesystem.
 
+config BUSYBOX_CONFIG_MKFS_EXT2
+	bool "mkfs_ext2"
+	default n
+	help
+	  Utility to create EXT2 filesystems.
+
 config BUSYBOX_CONFIG_MKFS_MINIX
 	bool "mkfs_minix"
 	default n
@@ -232,6 +238,12 @@ config BUSYBOX_CONFIG_FEATURE_MINIX2
 	  If you wish to be able to create version 2 minix filesystems, enable
 	  this. If you enabled 'mkfs_minix' then you almost certainly want to
 	  be using the version 2 filesystem support.
+
+config BUSYBOX_CONFIG_MKFS_REISER
+	bool "mkfs_reiser"
+	default n
+	help
+	  Utility to create ReiserFS filesystems.
 
 config BUSYBOX_CONFIG_MKFS_VFAT
 	bool "mkfs_vfat"
@@ -335,6 +347,24 @@ config BUSYBOX_CONFIG_LOSETUP
 	  losetup is used to associate or detach a loop device with a regular
 	  file or block device, and to query the status of a loop device. This
 	  version does not currently support enabling data encryption.
+
+config BUSYBOX_CONFIG_LSPCI
+	bool "lspci"
+	default n
+	help
+	  lspci is a utility for displaying information about PCI buses in the
+	  system and devices connected to them.
+
+	  This version uses sysfs (/sys/bus/pci/devices) only.
+
+config BUSYBOX_CONFIG_LSUSB
+	bool "lsusb"
+	default n
+	help
+	  lsusb is a utility for displaying information about USB buses in the
+	  system and devices connected to them.
+
+	  This version uses sysfs (/sys/bus/usb/devices) only.
 
 config BUSYBOX_CONFIG_MDEV
 	bool "mdev"
@@ -440,6 +470,13 @@ config BUSYBOX_CONFIG_VOLUMEID
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
 	bool "Ext filesystem"
+	default n
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_BTRFS
+	bool "btrfs filesystem"
 	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
@@ -689,6 +726,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
 	help
 	  This allows for specifying a device by label or uuid, rather than by
 	  name. This feature utilizes the same functionality as blkid/findfs.
+	  This also enables label or uuid support for swapon.
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
 	bool "Support mounting NFS file systems"

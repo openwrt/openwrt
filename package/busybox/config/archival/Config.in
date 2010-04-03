@@ -165,6 +165,13 @@ config BUSYBOX_CONFIG_GZIP
 	  gzip is used to compress files.
 	  It's probably the most widely used UNIX compression program.
 
+config BUSYBOX_CONFIG_FEATURE_GZIP_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_GZIP && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Enable use of long options, increases size by about 106 Bytes
+
 config BUSYBOX_CONFIG_LZOP
 	bool "lzop"
 	default n
@@ -268,6 +275,14 @@ config BUSYBOX_CONFIG_FEATURE_TAR_UNAME_GNAME
 	  Enables use of user and group names in tar. This affects contents
 	  listings (-t) and preserving permissions when unpacking (-p).
 	  +200 bytes.
+
+config BUSYBOX_CONFIG_FEATURE_TAR_NOPRESERVE_TIME
+	bool "Enable -m (do not preserve time) option"
+	default n
+	depends on BUSYBOX_CONFIG_TAR
+	help
+	  With this option busybox supports GNU tar -m
+	  (do not preserve time) option.
 
 endif #tar
 
