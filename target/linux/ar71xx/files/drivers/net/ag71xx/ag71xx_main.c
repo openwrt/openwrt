@@ -770,6 +770,8 @@ static int ag71xx_rx_copy_skb(struct ag71xx *ag, struct sk_buff **pskb,
 
 	skb_reserve(copy_skb, NET_IP_ALIGN);
 	skb_copy_from_linear_data(*pskb, copy_skb->data, pktlen);
+	skb_put(copy_skb, pktlen);
+
 	dev_kfree_skb_any(*pskb);
 	*pskb = copy_skb;
 
@@ -814,7 +816,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		dev->stats.rx_bytes += pktlen;
 
 		if (ag71xx_has_ar8216(ag))
-			err = ag71xx_remove_ar8216_header(ag, skb);
+			err = ag71xx_remove_ar8216_header(ag, skb, pktlen);
 		else
 			err = ag71xx_rx_copy_skb(ag, &skb, pktlen);
 
@@ -822,8 +824,6 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 			dev->stats.rx_dropped++;
 			kfree_skb(skb);
 		} else {
-			skb_put(skb, pktlen);
-
 			skb->dev = dev;
 			skb->ip_summed = CHECKSUM_NONE;
 			skb->protocol = eth_type_trans(skb, dev);
