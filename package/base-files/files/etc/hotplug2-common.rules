@@ -35,8 +35,8 @@ DEVPATH is set, SUBSYSTEM ~~ (input) {
 }
 
 DEVICENAME == device-mapper {
-       nothrottle
-       makedev /dev/mapper/control 0600
+	nothrottle
+	makedev /dev/mapper/control 0600
 }
 
 
@@ -45,8 +45,8 @@ DEVPATH is set {
 	makedev /dev/%DEVICENAME% 0644
 }
 
-FIRMWARE is set {
+FIRMWARE is set, ACTION == add {
 	nothrottle
-	exec /sbin/hotplug-call firmware
+	load-firmware /lib/firmware
 	next
 }
