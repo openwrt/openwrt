@@ -171,6 +171,13 @@ config BUSYBOX_CONFIG_FEATURE_FIND_CONTEXT
 	help
 	  Support the 'find -context' option for matching security context.
 
+config BUSYBOX_CONFIG_FEATURE_FIND_LINKS
+	bool "Enable -links: link count matching"
+	default n
+	depends on BUSYBOX_CONFIG_FIND
+	help
+	  Support the 'find -links' option for matching number of links.
+
 config BUSYBOX_CONFIG_GREP
 	bool "grep"
 	default y

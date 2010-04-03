@@ -117,6 +117,17 @@ config BUSYBOX_CONFIG_FEATURE_FTP_WRITE
 	help
 	  Enable all kinds of FTP upload commands (-w option)
 
+config BUSYBOX_CONFIG_FEATURE_FTPD_ACCEPT_BROKEN_LIST
+	bool "Enable workaround for RFC-violating clients"
+	default n
+	depends on BUSYBOX_CONFIG_FTPD
+	help
+	  Some ftp-clients (among them KDE's Konqueror) issue illegal
+	  "LIST -la" requests. This option works around those problems.
+	  It might prevent you from listing files starting with "-" and
+	  it increases the code size by ~40 bytes.
+	  Most other ftp servers seem to behave similar to this.
+
 config BUSYBOX_CONFIG_FTPGET
 	bool "ftpget"
 	default n
@@ -667,6 +678,20 @@ config BUSYBOX_CONFIG_NSLOOKUP
 	help
 	  nslookup is a tool to query Internet name servers.
 
+config BUSYBOX_CONFIG_NTPD
+	bool "ntpd"
+	default n
+	help
+	  The NTP client/server daemon.
+
+config BUSYBOX_CONFIG_FEATURE_NTPD_SERVER
+	bool "Make ntpd usable as a NTP server"
+	default n
+	depends on BUSYBOX_CONFIG_NTPD
+	help
+	  Make ntpd usable as a NTP server. If you disable this option
+	  ntpd will be usable only as a NTP client.
+
 config BUSYBOX_CONFIG_PING
 	bool "ping"
 	default y
@@ -794,6 +819,27 @@ config BUSYBOX_CONFIG_FEATURE_TELNETD_STANDALONE
 	help
 	  Selecting this will make telnetd able to run standalone.
 
+config BUSYBOX_CONFIG_FEATURE_TELNETD_INETD_WAIT
+	bool "Support -w SEC option (inetd wait mode)"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_TELNETD_STANDALONE
+	help
+	  This option allows you to run telnetd in "inet wait" mode.
+	  Example inetd.conf line (note "wait", not usual "nowait"):
+
+	  telnet stream tcp wait root /bin/telnetd telnetd -w10
+
+	  In this example, inetd passes _listening_ socket_ as fd 0
+	  to telnetd when connection appears.
+	  telnetd will wait for connections until all existing
+	  connections are closed, and no new connections
+	  appear during 10 seconds. Then it exits, and inetd continues
+	  to listen for new connections.
+
+	  This option is rarely used. "tcp nowait" is much more usual
+	  way of running tcp services, including telnetd.
+	  You most probably want to say N here.
+
 config BUSYBOX_CONFIG_TFTP
 	bool "tftp"
 	default n
@@ -831,12 +877,19 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_PUT
 	  Also enable download support in tftpd, if tftpd is selected.
 
 config BUSYBOX_CONFIG_FEATURE_TFTP_BLOCKSIZE
-	bool "Enable \"blksize\" protocol option"
+	bool "Enable 'blksize' and 'tsize' protocol options"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
 	  Allow tftp to specify block size, and tftpd to understand
-	  "blksize" option.
+	  "blksize" and "tsize" options.
+
+config BUSYBOX_CONFIG_FEATURE_TFTP_PROGRESS_BAR
+	bool "Enable tftp progress meter"
+	default n
+	depends on BUSYBOX_CONFIG_TFTP && BUSYBOX_CONFIG_FEATURE_TFTP_BLOCKSIZE
+	help
+	  Show progress bar.
 
 config BUSYBOX_CONFIG_TFTP_DEBUG
 	bool "Enable debug"
@@ -851,6 +904,13 @@ config BUSYBOX_CONFIG_TRACEROUTE
 	default y
 	help
 	  Utility to trace the route of IP packets.
+
+config BUSYBOX_CONFIG_TRACEROUTE6
+	bool "traceroute6"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_IPV6 && BUSYBOX_CONFIG_TRACEROUTE
+	help
+	  Utility to trace the route of IPv6 packets.
 
 config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_VERBOSE
 	bool "Enable verbose output"
@@ -880,7 +940,7 @@ source package/busybox/config/networking/udhcp/Config.in
 config BUSYBOX_CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS
 	string "ifup udhcpc command line options"
 	default "-R -n"
-	depends on BUSYBOX_CONFIG_IFUPDOWN && BUSYBOX_CONFIG_APP_UDHCPC
+	depends on BUSYBOX_CONFIG_IFUPDOWN && BUSYBOX_CONFIG_UDHCPC
 	help
 	  Command line options to pass to udhcpc from ifup.
 	  Intended to alter options not available in /etc/network/interfaces.

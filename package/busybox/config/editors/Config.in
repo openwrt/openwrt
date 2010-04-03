@@ -35,13 +35,12 @@ config BUSYBOX_CONFIG_DIFF
 	  differences between them in a form that can be given to
 	  the patch command.
 
-config BUSYBOX_CONFIG_FEATURE_DIFF_BINARY
-	bool "Enable checks for binary files"
+config BUSYBOX_CONFIG_FEATURE_DIFF_LONG_OPTIONS
+	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_DIFF
+	depends on BUSYBOX_CONFIG_DIFF && BUSYBOX_CONFIG_LONG_OPTS
 	help
-	  This option enables support for checking for binary files
-	  before a comparison is carried out.
+	  Enable use of long options.
 
 config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
 	bool "Enable directory support"
@@ -50,14 +49,6 @@ config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
 	help
 	  This option enables support for directory and subdirectory
 	  comparison.
-
-config BUSYBOX_CONFIG_FEATURE_DIFF_MINIMAL
-	bool "Enable -d option to find smaller sets of changes"
-	default n
-	depends on BUSYBOX_CONFIG_DIFF
-	help
-	  Enabling this option allows the use of -d to make diff
-	  try hard to find the smallest possible set of changes.
 
 config BUSYBOX_CONFIG_ED
 	bool "ed"

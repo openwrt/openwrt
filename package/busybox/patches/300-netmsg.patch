@@ -1,6 +1,6 @@
 --- a/include/applets.h
 +++ b/include/applets.h
-@@ -278,6 +278,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_D
+@@ -282,6 +282,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_D
  IF_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_DROP))
  IF_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_DROP))
@@ -10,7 +10,7 @@
  IF_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_DROP))
 --- a/include/usage.h
 +++ b/include/usage.h
-@@ -3101,6 +3101,9 @@
+@@ -3166,6 +3166,9 @@
  
  #endif
  
@@ -22,7 +22,7 @@
  #define netstat_full_usage "\n\n" \
 --- a/networking/Config.in
 +++ b/networking/Config.in
-@@ -617,6 +617,12 @@ config NC
+@@ -628,6 +628,12 @@ config NC
  	  A simple Unix utility which reads and writes data across network
  	  connections.
  
@@ -44,7 +44,7 @@
 +lib-$(CONFIG_NETMSG)       += netmsg.o
  lib-$(CONFIG_NETSTAT)      += netstat.o
  lib-$(CONFIG_NSLOOKUP)     += nslookup.o
- lib-$(CONFIG_PING)         += ping.o
+ lib-$(CONFIG_NTPD)         += ntpd.o
 --- /dev/null
 +++ b/networking/netmsg.c
 @@ -0,0 +1,63 @@

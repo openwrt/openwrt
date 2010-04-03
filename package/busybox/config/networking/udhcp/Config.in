@@ -3,26 +3,26 @@
 # see scripts/kbuild/config-language.txt.
 #
 
-config BUSYBOX_CONFIG_APP_UDHCPD
+config BUSYBOX_CONFIG_UDHCPD
 	bool "udhcp server (udhcpd)"
 	default n
 	help
 	  udhcpd is a DHCP server geared primarily toward embedded systems,
 	  while striving to be fully functional and RFC compliant.
 
-config BUSYBOX_CONFIG_APP_DHCPRELAY
+config BUSYBOX_CONFIG_DHCPRELAY
 	bool "dhcprelay"
 	default n
-	depends on BUSYBOX_CONFIG_APP_UDHCPD
+	depends on BUSYBOX_CONFIG_UDHCPD
 	help
 	  dhcprelay listens for dhcp requests on one or more interfaces
 	  and forwards these requests to a different interface or dhcp
 	  server.
 
-config BUSYBOX_CONFIG_APP_DUMPLEASES
+config BUSYBOX_CONFIG_DUMPLEASES
 	bool "Lease display utility (dumpleases)"
 	default n
-	depends on BUSYBOX_CONFIG_APP_UDHCPD
+	depends on BUSYBOX_CONFIG_UDHCPD
 	help
 	  dumpleases displays the leases written out by the udhcpd server.
 	  Lease times are stored in the file by time remaining in lease, or
@@ -31,7 +31,7 @@ config BUSYBOX_CONFIG_APP_DUMPLEASES
 config BUSYBOX_CONFIG_FEATURE_UDHCPD_WRITE_LEASES_EARLY
 	bool "Rewrite the lease file at every new acknowledge"
 	default n
-	depends on BUSYBOX_CONFIG_APP_UDHCPD
+	depends on BUSYBOX_CONFIG_UDHCPD
 	help
 	  If selected, udhcpd will write a new file with leases every
 	  time a new lease has been accepted, thus eliminating the need
@@ -41,12 +41,12 @@ config BUSYBOX_CONFIG_FEATURE_UDHCPD_WRITE_LEASES_EARLY
 config BUSYBOX_CONFIG_DHCPD_LEASES_FILE
 	string "Absolute path to lease file"
 	default "/var/run/udhcpd.leases"
-	depends on BUSYBOX_CONFIG_APP_UDHCPD
+	depends on BUSYBOX_CONFIG_UDHCPD
 	help
 	  udhcpd stores addresses in a lease file. This is the absolute path
 	  of the file. Normally it is safe to leave it untouched.
 
-config BUSYBOX_CONFIG_APP_UDHCPC
+config BUSYBOX_CONFIG_UDHCPC
 	bool "udhcp client (udhcpc)"
 	default y
 	help
@@ -59,7 +59,7 @@ config BUSYBOX_CONFIG_APP_UDHCPC
 config BUSYBOX_CONFIG_FEATURE_UDHCPC_ARPING
 	bool "Verify that the offered address is free, using ARP ping"
 	default n
-	depends on BUSYBOX_CONFIG_APP_UDHCPC
+	depends on BUSYBOX_CONFIG_UDHCPC
 	help
 	  If selected, udhcpc will send ARP probes and make sure
 	  the offered address is really not in use by anyone. The client
@@ -69,7 +69,7 @@ config BUSYBOX_CONFIG_FEATURE_UDHCPC_ARPING
 config BUSYBOX_CONFIG_FEATURE_UDHCP_PORT
 	bool "Enable '-P port' option for udhcpd and udhcpc"
 	default n
-	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
+	depends on BUSYBOX_CONFIG_UDHCPD || BUSYBOX_CONFIG_UDHCPC
 	help
 	  At the cost of ~300 bytes, enables -P port option.
 	  This feature is typically not needed.
@@ -78,7 +78,7 @@ config BUSYBOX_CONFIG_UDHCP_DEBUG
 	int "Maximum verbosity level for udhcp applets (0..9)"
 	default 0
 	range 0 9
-	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC || BUSYBOX_CONFIG_APP_DHCPRELAY
+	depends on BUSYBOX_CONFIG_UDHCPD || BUSYBOX_CONFIG_UDHCPC || BUSYBOX_CONFIG_DHCPRELAY
 	help
 	  Verbosity can be increased with multiple -v options.
 	  This options controls how high it can be cranked up.
@@ -89,7 +89,7 @@ config BUSYBOX_CONFIG_UDHCP_DEBUG
 config BUSYBOX_CONFIG_FEATURE_UDHCP_RFC3397
 	bool "Support for RFC3397 domain search (experimental)"
 	default y
-	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
+	depends on BUSYBOX_CONFIG_UDHCPD || BUSYBOX_CONFIG_UDHCPC
 	help
 	  If selected, both client and server will support passing of domain
 	  search lists via option 119, specified in RFC3397.
@@ -97,7 +97,7 @@ config BUSYBOX_CONFIG_FEATURE_UDHCP_RFC3397
 config BUSYBOX_CONFIG_UDHCPC_DEFAULT_SCRIPT
 	string "Absolute path to config script"
 	default "/usr/share/udhcpc/default.script"
-	depends on BUSYBOX_CONFIG_APP_UDHCPC
+	depends on BUSYBOX_CONFIG_UDHCPC
 	help
 	  This script is called after udhcpc receives an answer. See
 	  examples/udhcp for a working example. Normally it is safe
@@ -107,7 +107,7 @@ config BUSYBOX_CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS
 	int "DHCP options slack buffer size"
 	default 80
 	range 0 924
-	depends on BUSYBOX_CONFIG_APP_UDHCPD || BUSYBOX_CONFIG_APP_UDHCPC
+	depends on BUSYBOX_CONFIG_UDHCPD || BUSYBOX_CONFIG_UDHCPC
 	help
 	  Some buggy DHCP servers send DHCP offer packets with option
 	  field larger than we expect (which might also be considered a
