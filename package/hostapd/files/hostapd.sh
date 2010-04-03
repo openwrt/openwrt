@@ -134,7 +134,8 @@ hostapd_setup_vif() {
 	config_get channel "$device" channel
 	config_get hwmode "$device" hwmode
 	case "$hwmode" in
-		*bg) hwmode=g;;
+		*bg|*gdt|*gst|*fh) hwmode=g;;
+		*adt|*ast) hwmode=a;;
 	esac
 	[ "$channel" = auto ] && channel=
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
