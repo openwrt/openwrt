@@ -1,0 +1,59 @@
+diff -x '*~' -Naur hotplug2-201/action.c hotplug2-201.patched/action.c
+--- hotplug2-201/action.c	2010-04-01 04:48:10.000000000 +0300
++++ hotplug2-201.patched/action.c	2010-04-01 04:53:49.000000000 +0300
+@@ -39,7 +39,7 @@
+  * Returns: Newly allocated string in "key=value" form
+  *
+  */
+-static char* alloc_env(const char *key, const char *value) {
++char* alloc_env(const char *key, const char *value) {
+ 	size_t keylen, vallen;
+ 	char *combined;
+ 
+diff -x '*~' -Naur hotplug2-201/action.h hotplug2-201.patched/action.h
+--- hotplug2-201/action.h	2009-12-09 20:44:14.000000000 +0200
++++ hotplug2-201.patched/action.h	2010-04-01 04:54:14.000000000 +0300
+@@ -12,5 +12,6 @@
+ #include "settings.h"
+ 
+ void action_perform(struct settings_t *, struct uevent_t *);
++char* alloc_env(const char *, const char *);
+ #endif /* ifndef ACTION_H */
+ 
+diff -x '*~' -Naur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers/worker_fork.c
+--- hotplug2-201/workers/worker_fork.c	2010-04-01 04:52:26.000000000 +0300
++++ hotplug2-201.patched/workers/worker_fork.c	2010-04-01 04:51:49.000000000 +0300
+@@ -380,6 +380,7 @@
+ 
+ 
+ static int worker_fork_process(void *in_ctx, struct uevent_t *uevent) {
++	char **env;
+ 	int i;
+ 	struct worker_fork_child_t *child;
+ 	struct worker_fork_ctx_t *ctx = in_ctx;
+@@ -406,6 +407,12 @@
+ 		 * No child process is currently available.
+ 		 */
+ 		if (child == NULL) {
++			env = xmalloc(sizeof(char *) * uevent->env_vars_c);
++			for (i = 0; i < uevent->env_vars_c; i++) {
++				env[i] = alloc_env(uevent->env_vars[i].key, uevent->env_vars[i].value);
++				putenv(env[i]);
++			}
++
+ 			/*
+ 			 * Are the matching rules trivial enough that we
+ 			 * can execute them in the main process?
+@@ -421,6 +428,12 @@
+ 			 */
+ 			if (ctx->children_count < ctx->max_children)
+ 				child = worker_fork_spawn(ctx);
++
++			for (i = 0; i < uevent->env_vars_c; i++) {
++				unsetenv(uevent->env_vars[i].key);
++				free(env[i]);
++			}
++			free(env);
+ 		}
+ 
+ 		/*
