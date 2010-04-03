@@ -524,6 +524,7 @@ int main (int argc, char **argv)
 					port = optarg;
 				}
 
+#ifdef HAVE_TLS
 				if( opt == 's' )
 				{
 					if( !conf.tls )
@@ -537,6 +538,7 @@ int main (int argc, char **argv)
 
 					tls = 1;
 				}
+#endif
 
 				/* bind sockets */
 				bound += uh_socket_bind(

@@ -6,14 +6,6 @@ UHTTPD_BIN="/usr/sbin/uhttpd"
 PX5G_BIN="/usr/sbin/px5g"
 
 
-append_listen_http() {
-	append UHTTPD_ARGS "-p $1"
-}
-
-append_listen_https() {
-	append UHTTPD_ARGS "-s $1"
-}
-
 append_arg() {
 	local cfg="$1"
 	local var="$2"
@@ -57,7 +49,7 @@ start_instance()
 
 	local cfg="$1"
 	local realm="$(uci get system.@system[0].hostname 2>/dev/null)"
-	local ssl
+	local listen http https
 
 	append_arg "$cfg" home "-h"
 	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
@@ -67,14 +59,16 @@ start_instance()
 	append_arg "$cfg" lua_handler "-L"
 	append_arg "$cfg" script_timeout "-t"
 
-	config_list_foreach "$cfg" listen_http \
-		append_listen_http
+	config_get http "$cfg" listen_http
+	for listen in $http; do
+		append UHTTPD_ARGS "-p $listen"
+	done
 
-	config_get ssl "$cfg" listen_https
+	config_get https "$cfg" listen_https
 	config_get UHTTPD_KEY  "$cfg" key  /etc/uhttpd.key
 	config_get UHTTPD_CERT "$cfg" cert /etc/uhttpd.crt
 
-	[ -n "$ssl" ] && {
+	[ -n "$https" ] && {
 		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] || {
 			config_foreach generate_keys cert
 		}
@@ -83,8 +77,9 @@ start_instance()
 			append_arg "$cfg" cert "-C"
 			append_arg "$cfg" key  "-K"
 
-			config_list_foreach "$cfg" listen_https \
-				append_listen_https
+			for listen in $https; do
+				append UHTTPD_ARGS "-s $listen"
+			done
 		}
 	}
 
