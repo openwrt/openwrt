@@ -1,7 +1,6 @@
-diff -x '*~' -ur hotplug2-201/uevent.c hotplug2-201.patched/uevent.c
---- hotplug2-201/uevent.c	2009-12-09 20:44:14.000000000 +0200
-+++ hotplug2-201.patched/uevent.c	2010-04-02 23:03:11.000000000 +0300
-@@ -132,6 +132,8 @@
+--- a/uevent.c
++++ b/uevent.c
+@@ -132,6 +132,8 @@ struct uevent_t *uevent_dup(const struct
  	
  	dest = xmalloc(sizeof(struct uevent_t));
  	dest->action = src->action;
@@ -10,9 +9,8 @@ diff -x '*~' -ur hotplug2-201/uevent.c hotplug2-201.patched/uevent.c
  	dest->env_vars_c = src->env_vars_c;
  	dest->env_vars = xmalloc(sizeof(struct env_var_t) * dest->env_vars_c);
  	dest->plain_s = src->plain_s;
-diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers/worker_fork.c
---- hotplug2-201/workers/worker_fork.c	2010-04-03 17:02:15.000000000 +0300
-+++ hotplug2-201.patched/workers/worker_fork.c	2010-04-03 17:04:27.000000000 +0300
+--- a/workers/worker_fork.c
++++ b/workers/worker_fork.c
 @@ -1,6 +1,69 @@
  #include "worker_fork.h"
  
@@ -83,7 +81,7 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  
  /**
   * Destroys data structures related to the given child ID (not PID).
-@@ -315,6 +378,8 @@
+@@ -315,6 +378,8 @@ static void *worker_fork_init(struct set
  	struct worker_fork_ctx_t *ctx;
  	PRINTFUNC();
  
@@ -92,7 +90,7 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  	ctx = malloc(sizeof(struct worker_fork_ctx_t));
  	ctx->children = NULL;
  	ctx->children_count = 0;
-@@ -376,6 +441,7 @@
+@@ -376,6 +441,7 @@ static void worker_fork_deinit(void *in_
  	free(ctx->children);
  	free(ctx);
  	global_ctx = NULL;
@@ -100,7 +98,7 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  }
  
  
-@@ -384,15 +450,26 @@
+@@ -384,15 +450,26 @@ static int worker_fork_process(void *in_
  	int i;
  	struct worker_fork_child_t *child;
  	struct worker_fork_ctx_t *ctx = in_ctx;
@@ -128,7 +126,7 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  		worker_fork_update_children(ctx);
  
  		child = NULL;
-@@ -407,9 +484,9 @@
+@@ -407,9 +484,9 @@ static int worker_fork_process(void *in_
  		 * No child process is currently available.
  		 */
  		if (child == NULL) {
@@ -141,7 +139,7 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  				putenv(env[i]);
  			}
  
-@@ -418,8 +495,11 @@
+@@ -418,8 +495,11 @@ static int worker_fork_process(void *in_
  			 * can execute them in the main process?
  			 */
  			if (ctx->always_fork == 0 && ctx->settings->dumb == 0 && 
@@ -155,7 +153,7 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  				break;
  			}
  			
-@@ -427,11 +507,11 @@
+@@ -427,11 +507,11 @@ static int worker_fork_process(void *in_
  			 * We have to fork off a new child.
  			 */
  			if (ctx->children_count < ctx->max_children || 
@@ -170,7 +168,7 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  				free(env[i]);
  			}
  			free(env);
-@@ -442,9 +522,14 @@
+@@ -442,9 +522,14 @@ static int worker_fork_process(void *in_
  		 */
  		if (child != NULL) {
  			child->busy = 1;
@@ -188,10 +186,9 @@ diff -x '*~' -ur hotplug2-201/workers/worker_fork.c hotplug2-201.patched/workers
  		}
  
  		/* 
-diff -x '*~' -ur hotplug2-201/workers/worker_fork.h hotplug2-201.patched/workers/worker_fork.h
---- hotplug2-201/workers/worker_fork.h	2009-12-09 20:44:13.000000000 +0200
-+++ hotplug2-201.patched/workers/worker_fork.h	2010-04-03 01:00:24.000000000 +0300
-@@ -35,4 +35,9 @@
+--- a/workers/worker_fork.h
++++ b/workers/worker_fork.h
+@@ -35,4 +35,9 @@ struct worker_fork_ctx_t {
  	struct settings_t			*settings;
  };
  
