@@ -1,0 +1,19 @@
+diff -x '*~' -Naur hotplug2-201/rules/command.c hotplug2-201.patched/rules/command.c
+--- hotplug2-201/rules/command.c	2010-03-31 17:14:44.000000000 +0300
++++ hotplug2-201.patched/rules/command.c	2010-03-31 17:14:51.000000000 +0300
+@@ -385,13 +385,13 @@
+ 
+ 	infp = fopen(firmware_path, "r");
+ 	if (infp == NULL) {
+-		echo_to_file(sysfs_path_loading, "0\n", 2);
++		echo_to_file(sysfs_path_loading, "-1\n", 2);
+ 		return -1;
+ 	}
+ 	outfp = fopen(sysfs_path_data, "w");
+ 	if (outfp == NULL) {
+ 		fclose(infp);
+-		echo_to_file(sysfs_path_loading, "0\n", 2);
++		echo_to_file(sysfs_path_loading, "-1\n", 2);
+ 		return -1;
+ 	}
+ 
