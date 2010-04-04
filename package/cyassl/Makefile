@@ -24,7 +24,6 @@ define Package/libcyassl
   SECTION:=libs
   SUBMENU:=SSL
   CATEGORY:=Libraries
-  DEPENDS:=+zlib
   TITLE:=CyaSSL library
   URL:=http://www.yassl.com/
 endef
