@@ -17,7 +17,7 @@ platform_do_upgrade() {
 	sync
 	grep -q -e "jffs2" -e "squashfs" /proc/cmdline \
 		&& ROOTFS="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "block2mtd.block2mtd") { print substr($2,1,index($2, ",")-1) }' < /proc/cmdline)" \
-		|| ROOTFS="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "root") { print $2 ) }' < /proc/cmdline)"
+		|| ROOTFS="$(awk 'BEGIN { RS=" "; FS="="; } ($1 == "root") { print $2 }' < /proc/cmdline)"
 	[ -b ${ROOTFS%[0-9]} ] && get_image "$1" > ${ROOTFS%[0-9]}
 }
 
