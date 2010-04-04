@@ -85,10 +85,11 @@ $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_TARGET_CONNMARK, $(
 
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_MATCH_CONDITION, $(P_V4)ipt_condition))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_MATCH_OWNER, $(P_V4)ipt_owner))
+$(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_OWNER, $(P_XT)xt_owner))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_PHYSDEV, $(P_XT)xt_physdev))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_MATCH_PKTTYPE, $(P_V4)ipt_pkttype))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_PKTTYPE, $(P_XT)xt_pkttype))
-#$(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_MATCH_QUOTA, $(P_V4)ipt_quota))
+$(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_MATCH_QUOTA, $(P_V4)ipt_quota))
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_QUOTA, $(P_XT)xt_quota))
 
 #$(eval $(call nf_add,IPT_EXTRA,CONFIG_IP_NF_TARGET_ROUTE, $(P_V4)ipt_ROUTE))
@@ -222,6 +223,7 @@ $(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_NAT_IRC, $(P_V4)ip_nat_irc))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_IRC, $(P_XT)nf_conntrack_irc))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_V4)nf_nat_irc))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_TFTP, $(P_V4)ip_conntrack_tftp))
+$(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_NAT_TFTP, $(P_V4)ip_nat_tftp))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_TFTP, $(P_XT)nf_conntrack_tftp))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_TFTP, $(P_V4)nf_nat_tftp))
 
@@ -229,6 +231,7 @@ $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_TFTP, $(P_V4)nf_nat_tftp))
 # nathelper-extra
 
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_IP_NF_AMANDA, $(P_V4)ip_conntrack_amanda))
+$(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_IP_NF_NAT_AMANDA, $(P_V4)ip_nat_amanda))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_AMANDA, $(P_XT)nf_conntrack_amanda))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_NAT_AMANDA, $(P_V4)nf_nat_amanda))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_IP_NF_CT_PROTO_GRE, $(P_V4)ip_conntrack_proto_gre))
