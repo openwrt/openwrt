@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -28,41 +28,6 @@ $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XTABLES, $(P_XT)x
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_IP_NF_IPTABLES, $(P_V4)ip_tables),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_IP_NF_FILTER, $(P_V4)iptable_filter),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_IP_NF_MANGLE, $(P_V4)iptable_mangle),))
-
-#
-# ebtables
-#
-
-$(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES, $(P_EBT)ebtables),))
-
-# ebtables: tables
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_BROUTE, $(P_EBT)ebtable_broute))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_T_FILTER, $(P_EBT)ebtable_filter))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_T_NAT, $(P_EBT)ebtable_nat))
-
-# ebtables: matches
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_802_3, $(P_EBT)ebt_802_3))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_AMONG, $(P_EBT)ebt_among))
-$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_ARP, $(P_EBT)ebt_arp))
-$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_IP, $(P_EBT)ebt_ip))
-$(eval $(call nf_add,EBTABLES_IP6,CONFIG_BRIDGE_EBT_IP6, $(P_EBT)ebt_ip6))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_LIMIT, $(P_EBT)ebt_limit))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_MARK, $(P_EBT)ebt_mark_m))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_PKTTYPE, $(P_EBT)ebt_pkttype))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_STP, $(P_EBT)ebt_stp))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_VLAN, $(P_EBT)ebt_vlan))
-
-# targets
-$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_ARPREPLY, $(P_EBT)ebt_arpreply))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_MARK_T, $(P_EBT)ebt_mark))
-$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_DNAT, $(P_EBT)ebt_dnat))
-$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_REDIRECT, $(P_EBT)ebt_redirect))
-$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_SNAT, $(P_EBT)ebt_snat))
-
-# watchers
-$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_LOG, $(P_EBT)ebt_log))
-$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_ULOG, $(P_EBT)ebt_ulog))
-$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_NFLOG, $(P_EBT)ebt_nflog))
 
 # userland only
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CORE,CONFIG_IP_NF_IPTABLES, xt_standard ipt_icmp xt_tcp xt_udp xt_comment)))
@@ -300,6 +265,42 @@ $(eval $(call nf_add,IPT_QUEUE,CONFIG_IP_NF_QUEUE, $(P_V4)ip_queue))
 # ulog
 
 $(eval $(call nf_add,IPT_ULOG,CONFIG_IP_NF_TARGET_ULOG, $(P_V4)ipt_ULOG))
+
+
+#
+# ebtables
+#
+
+$(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES, $(P_EBT)ebtables),))
+
+# ebtables: tables
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_BROUTE, $(P_EBT)ebtable_broute))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_T_FILTER, $(P_EBT)ebtable_filter))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_T_NAT, $(P_EBT)ebtable_nat))
+
+# ebtables: matches
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_802_3, $(P_EBT)ebt_802_3))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_AMONG, $(P_EBT)ebt_among))
+$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_ARP, $(P_EBT)ebt_arp))
+$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_IP, $(P_EBT)ebt_ip))
+$(eval $(call nf_add,EBTABLES_IP6,CONFIG_BRIDGE_EBT_IP6, $(P_EBT)ebt_ip6))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_LIMIT, $(P_EBT)ebt_limit))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_MARK, $(P_EBT)ebt_mark_m))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_PKTTYPE, $(P_EBT)ebt_pkttype))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_STP, $(P_EBT)ebt_stp))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_VLAN, $(P_EBT)ebt_vlan))
+
+# targets
+$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_ARPREPLY, $(P_EBT)ebt_arpreply))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_MARK_T, $(P_EBT)ebt_mark))
+$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_DNAT, $(P_EBT)ebt_dnat))
+$(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_REDIRECT, $(P_EBT)ebt_redirect))
+$(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_SNAT, $(P_EBT)ebt_snat))
+
+# watchers
+$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_LOG, $(P_EBT)ebt_log))
+$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_ULOG, $(P_EBT)ebt_ulog))
+$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_NFLOG, $(P_EBT)ebt_nflog))
 
 
 # userland only
