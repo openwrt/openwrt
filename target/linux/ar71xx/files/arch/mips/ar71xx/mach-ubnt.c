@@ -177,6 +177,7 @@ static void __init ubnt_rspro_setup(void)
 	ar71xx_eth0_data.phy_mask = UBNT_RSPRO_WAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth1_data.phy_mask = UBNT_RSPRO_LAN_PHYMASK;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
