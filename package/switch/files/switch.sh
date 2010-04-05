@@ -15,6 +15,12 @@ setup_switch_hw() {
 		echo "$evlan"  > "$proc/enable_vlan"
 		[ -f "$proc/enable" ] && echo "$enable" > "$proc/enable"
 	}
+
+	local vlan
+	for vlan in `seq 0 15`; do
+		proc="/proc/switch/$dev/vlan/$vlan/ports"
+		[ -f "$proc" ] && echo "" > "$proc"
+	done
 }
 
 setup_switch_vlan() {
