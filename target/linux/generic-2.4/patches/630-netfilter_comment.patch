@@ -1,0 +1,95 @@
+--- /dev/null
++++ b/include/linux/netfilter_ipv4/ipt_comment.h
+@@ -0,0 +1,10 @@
++#ifndef _IPT_COMMENT_H
++#define _IPT_COMMENT_H
++
++#define IPT_MAX_COMMENT_LEN 256
++
++struct ipt_comment_info {
++	char comment[IPT_MAX_COMMENT_LEN];
++};
++
++#endif /* _IPT_COMMENT_H */
+--- /dev/null
++++ b/net/ipv4/netfilter/ipt_comment.c
+@@ -0,0 +1,59 @@
++/*
++ * Implements a dummy match to allow attaching comments to rules
++ *
++ * 2003-05-13 Brad Fisher (brad@info-link.net)
++ */
++
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_comment.h>
++
++MODULE_AUTHOR("Brad Fisher <brad@info-link.net>");
++MODULE_DESCRIPTION("iptables comment match module");
++MODULE_LICENSE("GPL");
++
++static int
++match(const struct sk_buff *skb,
++      const struct net_device *in,
++      const struct net_device *out,
++      const void *matchinfo,
++      int offset,
++      int *hotdrop)
++{
++	/* We always match */
++	return 1;
++}
++
++static int
++checkentry(const char *tablename,
++           const struct ipt_ip *ip,
++           void *matchinfo,
++           unsigned int matchsize,
++           unsigned int hook_mask)
++{
++	/* Check the size */
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_comment_info)))
++		return 0;
++	return 1;
++}
++
++static struct ipt_match comment_match = {
++	.name		= "comment",
++	.match		= match,
++	.checkentry	= checkentry,
++	.me		= THIS_MODULE
++};
++
++static int __init init(void)
++{
++	return ipt_register_match(&comment_match);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&comment_match);
++}
++
++module_init(init);
++module_exit(fini);
+--- a/net/ipv4/netfilter/Makefile
++++ b/net/ipv4/netfilter/Makefile
+@@ -113,6 +113,7 @@ obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt
+ obj-$(CONFIG_IP_NF_MATCH_STRING) += ipt_string.o
+ obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
+ obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_layer7.o
++obj-$(CONFIG_IP_NF_MATCH_COMMENT) += ipt_comment.o
+ 
+ # targets
+ obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
+--- a/net/ipv4/netfilter/Config.in
++++ b/net/ipv4/netfilter/Config.in
+@@ -44,6 +44,7 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
+   dep_tristate '  LENGTH match support' CONFIG_IP_NF_MATCH_LENGTH $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  TTL match support' CONFIG_IP_NF_MATCH_TTL $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  tcpmss match support' CONFIG_IP_NF_MATCH_TCPMSS $CONFIG_IP_NF_IPTABLES
++  dep_tristate '  comment match support' CONFIG_IP_NF_MATCH_COMMENT $CONFIG_IP_NF_IPTABLES
+   if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
+     dep_tristate '  Helper match support' CONFIG_IP_NF_MATCH_HELPER $CONFIG_IP_NF_IPTABLES
+   fi
