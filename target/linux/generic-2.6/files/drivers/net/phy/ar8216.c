@@ -31,6 +31,8 @@
 #include <linux/etherdevice.h>
 #include "ar8216.h"
 
+/* size of the vlan table */
+#define AR8X16_MAX_VLANS	128
 
 struct ar8216_priv {
 	struct switch_dev dev;
@@ -39,11 +41,13 @@ struct ar8216_priv {
 	void (*write)(struct ar8216_priv *priv, int reg, u32 val);
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
+	struct mutex reg_mutex;
+	int chip;
 
 	/* all fields below are cleared on reset */
 	bool vlan;
-	u16 vlan_id[AR8216_NUM_VLANS];
-	u8 vlan_table[AR8216_NUM_VLANS];
+	u16 vlan_id[AR8X16_MAX_VLANS];
+	u8 vlan_table[AR8X16_MAX_VLANS];
 	u8 vlan_tagged;
 	u16 pvid[AR8216_NUM_PORTS];
 };
@@ -110,6 +114,30 @@ ar8216_rmw(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 	return v;
 }
 
+static inline int
+ar8216_id_chip(struct ar8216_priv *priv)
+{
+	u32 val;
+	u16 id;
+	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+	id = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+	switch (id) {
+	case 0x0101:
+		return AR8216;
+	case 0x1001:
+		return AR8316;
+	default:
+		printk(KERN_ERR
+			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
+			(int)(val >> AR8216_CTRL_VERSION_S),
+			(int)(val & AR8216_CTRL_REVISION),
+			priv->phy->bus->read(priv->phy->bus, priv->phy->addr, 2),
+			priv->phy->bus->read(priv->phy->bus, priv->phy->addr, 3));
+
+		return UNKNOWN;
+	}
+}
+
 static int
 ar8216_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
                 struct switch_val *val)
@@ -136,7 +164,7 @@ ar8216_set_pvid(struct switch_dev *dev, int port, int vlan)
 
 	/* make sure no invalid PVIDs get set */
 
-	if (vlan >= AR8216_NUM_VLANS)
+	if (vlan >= dev->vlans)
 		return -EINVAL;
 
 	priv->pvid[port] = vlan;
@@ -336,7 +364,7 @@ ar8216_set_ports(struct switch_dev *dev, struct switch_val *val)
 
 			/* make sure that an untagged port does not
 			 * appear in other vlans */
-			for (j = 0; j < AR8216_NUM_VLANS; j++) {
+			for (j = 0; j < AR8X16_MAX_VLANS; j++) {
 				if (j == val->port_vlan)
 					continue;
 				priv->vlan_table[j] &= ~(1 << p->id);
@@ -383,6 +411,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 	u8 portmask[AR8216_NUM_PORTS];
 	int i, j;
 
+	mutex_lock(&priv->reg_mutex);
 	/* flush all vlan translation unit entries */
 	ar8216_vtu_op(priv, AR8216_VTU_OP_FLUSH, 0);
 
@@ -390,7 +419,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 	if (priv->vlan) {
 		/* calculate the port destination masks and load vlans
 		 * into the vlan translation unit */
-		for (j = 0; j < AR8216_NUM_VLANS; j++) {
+		for (j = 0; j < AR8X16_MAX_VLANS; j++) {
 			u8 vp = priv->vlan_table[j];
 
 			if (!vp)
@@ -446,7 +475,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 			AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
 			AR8216_PORT_CTRL_HEADER | AR8216_PORT_CTRL_LEARN_LOCK,
 			AR8216_PORT_CTRL_LEARN |
-			  (priv->vlan && i == AR8216_PORT_CPU ?
+			  (priv->vlan && i == AR8216_PORT_CPU && (priv->chip == AR8216) ?
 			   AR8216_PORT_CTRL_HEADER : 0) |
 			  (egress << AR8216_PORT_CTRL_VLAN_MODE_S) |
 			  (AR8216_PORT_STATE_FORWARD << AR8216_PORT_CTRL_STATE_S));
@@ -458,7 +487,73 @@ ar8216_hw_apply(struct switch_dev *dev)
 			  (ingress << AR8216_PORT_VLAN_MODE_S) |
 			  (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
 	}
+	mutex_unlock(&priv->reg_mutex);
+	return 0;
+}
 
+static int
+ar8316_hw_init(struct ar8216_priv *priv) {
+	static int initialized;
+	int i;
+	u32 val;
+	struct mii_bus *bus;
+
+	if (initialized)
+		return 0;
+
+	val = priv->read(priv, 0x8);
+
+	if (priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
+		/* value taken from Ubiquiti RouterStation Pro */
+		if (val == 0x81461bea) {
+			/* switch already intialized by bootloader */
+			initialized = true;
+			return 0;
+		}
+		priv->write(priv, 0x8, 0x81461bea);
+	} else if (priv->phy->interface == PHY_INTERFACE_MODE_GMII) {
+		/* value taken from AVM Fritz!Box 7390 sources */
+		if (val == 0x010e5b71) {
+			/* switch already initialized by bootloader */
+			initialized = true;
+			return 0;
+		}
+		priv->write(priv, 0x8, 0x010e5b71);
+	} else {
+		/* no known value for phy interface */
+		printk(KERN_ERR "ar8316: unsupported mii mode: %d.\n",
+			priv->phy->interface);
+		return -EINVAL;
+	}
+
+	/* standard atheros magic */
+	priv->write(priv, 0x38, 0xc000050e);
+
+	/* Initialize the ports */
+	bus = priv->phy->bus;
+	for (i = 0; i < 5; i++) {
+		if ((i == 4) &&
+			priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
+			/* work around for phy4 rgmii mode */
+			bus->write(bus, i, MII_ATH_DBG_ADDR, 0x12);
+			bus->write(bus, i, MII_ATH_DBG_DATA, 0x480c);
+			/* rx delay */
+			bus->write(bus, i, MII_ATH_DBG_ADDR, 0x0);
+			bus->write(bus, i, MII_ATH_DBG_DATA, 0x824e);
+			/* tx delay */
+			bus->write(bus, i, MII_ATH_DBG_ADDR, 0x5);
+			bus->write(bus, i, MII_ATH_DBG_DATA, 0x3d47);
+			msleep(1000);
+		}
+
+		/* initialize the port itself */
+		bus->write(bus, i, MII_ADVERTISE,
+			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
+		bus->write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
+		bus->write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+		msleep(1000);
+	}
+	initialized = true;
 	return 0;
 }
 
@@ -468,9 +563,10 @@ ar8216_reset_switch(struct switch_dev *dev)
 	struct ar8216_priv *priv = to_ar8216(dev);
 	int i;
 
+	mutex_lock(&priv->reg_mutex);
 	memset(&priv->vlan, 0, sizeof(struct ar8216_priv) -
 		offsetof(struct ar8216_priv, vlan));
-	for (i = 0; i < AR8216_NUM_VLANS; i++) {
+	for (i = 0; i < AR8X16_MAX_VLANS; i++) {
 		priv->vlan_id[i] = i;
 	}
 	for (i = 0; i < AR8216_NUM_PORTS; i++) {
@@ -485,9 +581,12 @@ ar8216_reset_switch(struct switch_dev *dev)
 		if (i == AR8216_PORT_CPU) {
 			priv->write(priv, AR8216_REG_PORT_STATUS(i),
 				AR8216_PORT_STATUS_LINK_UP |
-				AR8216_PORT_SPEED_100M |
+				((priv->chip == AR8316) ?
+					AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
 				AR8216_PORT_STATUS_TXMAC |
 				AR8216_PORT_STATUS_RXMAC |
+				((priv->chip == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
+				((priv->chip == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
 				AR8216_PORT_STATUS_DUPLEX);
 		} else {
 			priv->write(priv, AR8216_REG_PORT_STATUS(i),
@@ -497,9 +596,20 @@ ar8216_reset_switch(struct switch_dev *dev)
 	/* XXX: undocumented magic from atheros, required! */
 	priv->write(priv, 0x38, 0xc000050e);
 
-	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-		AR8216_GCTRL_MTU, 1518 + 8 + 2);
+	if (priv->chip == AR8216) {
+		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+			AR8216_GCTRL_MTU, 1518 + 8 + 2);
+	} else if (priv->chip == AR8316) {
+		/* enable jumbo frames */
+		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+			AR8316_GCTRL_MTU, 9018 + 8 + 2);
+	}
 
+	if (priv->chip == AR8316) {
+		/* enable cpu port to receive multicast and broadcast frames */
+		priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
+	}
+	mutex_unlock(&priv->reg_mutex);
 	return ar8216_hw_apply(dev);
 }
 
@@ -510,37 +620,74 @@ ar8216_config_init(struct phy_device *pdev)
 	struct net_device *dev = pdev->attached_dev;
 	int ret;
 
-	printk("%s: AR8216 PHY driver attached.\n", pdev->attached_dev->name);
-	pdev->supported = ADVERTISED_100baseT_Full;
-	pdev->advertising = ADVERTISED_100baseT_Full;
-
 	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
 	if (priv == NULL)
 		return -ENOMEM;
 
 	priv->phy = pdev;
+
+	priv->chip = ar8216_id_chip(priv);
+
+	printk(KERN_INFO "%s: AR%d PHY driver attached.\n",
+		pdev->attached_dev->name, priv->chip);
+
+	if (pdev->addr != 0) {
+		if (priv->chip == AR8316) {
+			pdev->supported |= SUPPORTED_1000baseT_Full;
+			pdev->advertising |= ADVERTISED_1000baseT_Full;
+		}
+		kfree(priv);
+		return 0;
+	}
+
+	pdev->supported = priv->chip == AR8316 ?
+		SUPPORTED_1000baseT_Full : SUPPORTED_100baseT_Full;
+	pdev->advertising = pdev->supported;
+
+	mutex_init(&priv->reg_mutex);
 	priv->read = ar8216_mii_read;
 	priv->write = ar8216_mii_write;
 	memcpy(&priv->dev, &athdev, sizeof(struct switch_dev));
 	pdev->priv = priv;
+
+	if (priv->chip == AR8316) {
+		priv->dev.name = "Atheros AR8316";
+		priv->dev.vlans = AR8X16_MAX_VLANS;
+		/* port 5 connected to the other mac, therefore unusable */
+		priv->dev.ports = (AR8216_NUM_PORTS - 1);
+	}
+
 	if ((ret = register_switch(&priv->dev, pdev->attached_dev)) < 0) {
 		kfree(priv);
 		goto done;
 	}
 
+	if (priv->chip == AR8316) {
+		ret = ar8316_hw_init(priv);
+		if (ret) {
+			kfree(priv);
+			goto done;
+		}
+	}
+
 	ret = ar8216_reset_switch(&priv->dev);
-	if (ret)
+	if (ret) {
+		kfree(priv);
 		goto done;
+	}
 
 	dev->phy_ptr = priv;
-	pdev->pkt_align = 2;
-	pdev->netif_receive_skb = ar8216_netif_receive_skb;
-	pdev->netif_rx = ar8216_netif_rx;
 
-	priv->ndo_old = dev->netdev_ops;
-	memcpy(&priv->ndo, priv->ndo_old, sizeof(struct net_device_ops));
-	priv->ndo.ndo_start_xmit = ar8216_mangle_tx;
-	dev->netdev_ops = &priv->ndo;
+	/* VID fixup only needed on ar8216 */
+	if (pdev->addr == 0 && priv->chip == AR8216) {
+		pdev->pkt_align = 2;
+		pdev->netif_receive_skb = ar8216_netif_receive_skb;
+		pdev->netif_rx = ar8216_netif_rx;
+		priv->ndo_old = dev->netdev_ops;
+		memcpy(&priv->ndo, priv->ndo_old, sizeof(struct net_device_ops));
+		priv->ndo.ndo_start_xmit = ar8216_mangle_tx;
+		dev->netdev_ops = &priv->ndo;
+	}
 
 done:
 	return ret;
@@ -550,28 +697,39 @@ static int
 ar8216_read_status(struct phy_device *phydev)
 {
 	struct ar8216_priv *priv = phydev->priv;
+	int ret;
+	if (phydev->addr != 0) {
+		return genphy_read_status(phydev);
+	}
 
-	phydev->speed = SPEED_100;
+	phydev->speed = priv->chip == AR8316 ? SPEED_1000 : SPEED_100;
 	phydev->duplex = DUPLEX_FULL;
 	phydev->link = 1;
 
 	/* flush the address translation unit */
-	if (ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0))
-		return -ETIMEDOUT;
+	mutex_lock(&priv->reg_mutex);
+	ret = ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0);
 
-	priv->write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
+	if (!ret)
+		priv->write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
+	else
+		ret = -ETIMEDOUT;
+	mutex_unlock(&priv->reg_mutex);
 
 	phydev->state = PHY_RUNNING;
 	netif_carrier_on(phydev->attached_dev);
 	phydev->adjust_link(phydev->attached_dev);
 
-	return 0;
+	return ret;
 }
 
 static int
 ar8216_config_aneg(struct phy_device *phydev)
 {
-	return 0;
+	if (phydev->addr == 0)
+		return 0;
+
+	return genphy_config_aneg(phydev);
 }
 
 static int
@@ -579,16 +737,10 @@ ar8216_probe(struct phy_device *pdev)
 {
 	struct ar8216_priv priv;
 
-	u8 id, rev;
-	u32 val;
-
 	priv.phy = pdev;
-	val = ar8216_mii_read(&priv, AR8216_REG_CTRL);
-	rev = val & AR8216_CTRL_REVISION;
-	id = (val & AR8216_CTRL_VERSION) >> AR8216_CTRL_VERSION_S;
-	if ((id != 1) || (rev != 1))
+	if (ar8216_id_chip(&priv) == UNKNOWN) {
 		return -ENODEV;
-
+	}
 	return 0;
 }
 
@@ -603,7 +755,8 @@ ar8216_remove(struct phy_device *pdev)
 
 	if (priv->ndo_old && dev)
 		dev->netdev_ops = priv->ndo_old;
-	unregister_switch(&priv->dev);
+	if (pdev->addr == 0)
+		unregister_switch(&priv->dev);
 	kfree(priv);
 }
 
@@ -634,7 +787,9 @@ static struct switch_dev athdev = {
 };
 
 static struct phy_driver ar8216_driver = {
-	.name		= "Atheros AR8216",
+	.phy_id		= 0x004d0000,
+	.name		= "Atheros AR8216/AR8316",
+	.phy_id_mask	= 0xffff0000,
 	.features	= PHY_BASIC_FEATURES,
 	.probe		= ar8216_probe,
 	.remove		= ar8216_remove,
