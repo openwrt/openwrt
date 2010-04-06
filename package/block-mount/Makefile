@@ -11,8 +11,6 @@ PKG_NAME:=block-mount
 PKG_VERSION:=0.1.0
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/block-mount/Default
@@ -25,27 +23,6 @@ define Package/block-mount
   TITLE:=Block device mounting and checking
 endef
 
-define Package/block-mount/config
-  select BUSYBOX_CONFIG_MKSWAP
-  select BUSYBOX_CONFIG_FEATURE_MKSWAP_UUID
-  select BUSYBOX_CONFIG_SWAPONOFF
-  select BUSYBOX_CONFIG_BLKID
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_REISERFS
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_FAT
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_HFS
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_XFS
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_NTFS
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_SYSV
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_OCFS2
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_ISO9660
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_CRAMFS
-  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_ROMFS
-endef
-
 define Package/block-mount/description
   Scripts used to mount and check block devices (filesystems and swap)
 endef
@@ -53,7 +30,7 @@ endef
 define Package/block-hotplug
   $(call Package/block-mount/Default)
   TITLE:=Automount and autocheck block devices
-  DEPENDS:=block-mount hotplug2
+  DEPENDS:=+block-mount +hotplug2
 endef
 
 define Package/block-hotplug/description
