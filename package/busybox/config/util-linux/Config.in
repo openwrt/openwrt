@@ -29,7 +29,7 @@ config BUSYBOX_CONFIG_FEATURE_ACPID_COMPAT
 
 config BUSYBOX_CONFIG_BLKID
 	bool "blkid"
-	default n
+	default y
 	select BUSYBOX_CONFIG_VOLUMEID
 	help
 	  Lists labels and UUIDs of all filesystems.
@@ -425,7 +425,7 @@ config BUSYBOX_CONFIG_FEATURE_MDEV_LOAD_FIRMWARE
 
 config BUSYBOX_CONFIG_MKSWAP
 	bool "mkswap"
-	default n
+	default y
 	help
 	  The mkswap utility is used to configure a file or disk partition as
 	  Linux swap space. This allows Linux to use the entire file or
@@ -438,7 +438,7 @@ config BUSYBOX_CONFIG_MKSWAP
 
 config BUSYBOX_CONFIG_FEATURE_MKSWAP_UUID
 	bool "UUID support"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_MKSWAP
 	help
 	  Generate swap spaces with universally unique identifiers.
@@ -470,35 +470,35 @@ config BUSYBOX_CONFIG_VOLUMEID
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
 	bool "Ext filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_BTRFS
 	bool "btrfs filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_REISERFS
 	bool "Reiser filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_FAT
 	bool "fat filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_HFS
 	bool "hfs filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
@@ -519,28 +519,28 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_XFS
 	bool "xfs filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_NTFS
 	bool "ntfs filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ISO9660
 	bool "iso9660 filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
 	bool "udf filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
@@ -554,7 +554,7 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LUKS
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
 	bool "linux swap filesystem"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
@@ -674,7 +674,7 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_OCFS2
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXRAID
 	bool "linuxraid"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
@@ -824,7 +824,7 @@ config BUSYBOX_CONFIG_SETARCH
 
 config BUSYBOX_CONFIG_SWAPONOFF
 	bool "swaponoff"
-	default n
+	default y
 	help
 	  This option enables both the 'swapon' and the 'swapoff' utilities.
 	  Once you have created some swap space using 'mkswap', you also need
