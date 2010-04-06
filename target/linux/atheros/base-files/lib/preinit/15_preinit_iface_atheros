@@ -29,5 +29,7 @@ preinit_ip_deconfig() {
 	        -e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" ]; then
 		vconfig rem eth0.1 2>/dev/null
 		ifconfig $pi_ifname down
+	elif [ -n "$pi_ifname" ]; then
+		ifconfig $pi_ifname 0.0.0.0
 	fi
 }
