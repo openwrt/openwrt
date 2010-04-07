@@ -31,20 +31,10 @@ define Package/grub
   URL:=http://www.gnu.org/software/grub/
 endef
 
-ifeq ($(HOST_OS),Linux)
-  NATIVEGRUB-i386:=1
-  NATIVEGRUB-i686:=1
-  NATIVEGRUB:=$(NATIVEGRUB-$(HOST_ARCH))
-endif
-
-ifeq ($(NATIVEGRUB),)
 CONFIGURE_FLAGS:= \
 	--target=$(GNU_TARGET_NAME) \
 	--host=$(GNU_TARGET_NAME) \
 	--build=$(GNU_HOST_NAME)
-else
-CONFIGURE_FLAGS:=
-endif
 
 ifneq ($(HOST_OS),Darwin)
 define Build/Configure
