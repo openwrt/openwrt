@@ -60,6 +60,7 @@ enum {
 	WRT54G,
 	WRTSL54GS,
 	WRT54G3G,
+	WRT54G3GV2_VF,
 	WRT160N,
 	WRT300NV11,
 	WRT350N,
@@ -269,6 +270,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "3g_green",	.gpio = 1 << 2, .polarity = NORMAL },
 			{ .name = "3g_blue",	.gpio = 1 << 3, .polarity = NORMAL },
 			{ .name = "3g_blink",	.gpio = 1 << 5, .polarity = NORMAL },
+		},
+	},
+	[WRT54G3GV2_VF] = {
+		.name		= "Linksys WRT54G3GV2-VF",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "3g",		.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "3g_green",	.gpio = 1 << 2, .polarity = NORMAL },
+			{ .name = "3g_blue",	.gpio = 1 << 3, .polarity = NORMAL },
 		},
 	},
 	[WRT160N] = {
@@ -982,6 +995,9 @@ static struct platform_t __init *platform_detect(void)
 
 			if (!strcmp(boardtype, "0x0101") && !strcmp(getvar("boot_ver"), "v3.6"))
 				return &platforms[WRT54G3G];
+
+			if (!strcmp(boardtype, "0x042f") && !strcmp(getvar("model_name"), "WRT54G3GV2-VF"))
+				return &platforms[WRT54G3GV2_VF];
 
 			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
 				return &platforms[WRTSL54GS];
