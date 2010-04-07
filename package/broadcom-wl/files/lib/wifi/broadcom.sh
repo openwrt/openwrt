@@ -128,6 +128,7 @@ enable_broadcom() {
 	config_get txpower "$device" txpower
 	config_get frag "$device" frag
 	config_get rts "$device" rts
+	config_get hwmode "$device" hwmode
 	local vif_pre_up vif_post_up vif_do_up vif_txpower
 	local doth=0
 	local wmm=0
@@ -157,6 +158,13 @@ enable_broadcom() {
 		disable|none|0)
 			macfilter=0;
 		;;
+	esac
+
+	case "$hwmode" in
+		*b)   hwmode=0;;
+		*g)   hwmode=2;;
+		*gst) hwmode=4;;
+		*)    hwmode=1;;
 	esac
 
 	for vif in $vifs; do
@@ -290,6 +298,7 @@ enable_broadcom() {
 	wlc ifname "$device" stdin <<EOF
 $ifdown
 
+gmode ${hwmode:-1}
 apsta $apsta
 ap $ap
 ${mssid:+mssid $mssid}

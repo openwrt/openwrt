@@ -919,6 +919,13 @@ static const struct wlc_call wlc_calls[] = {
 		.handler = wlc_maclist,
 		.desc = "MACs of associated stations"
 	},
+	{
+		.name = "gmode",
+		.param = INT,
+		.data.num = ((WLC_GET_GMODE << 16) | WLC_SET_GMODE),
+		.handler = wlc_ioctl,
+		.desc = "G Mode"
+	},
 };
 #define wlc_calls_size (sizeof(wlc_calls) / sizeof(struct wlc_call))
 
