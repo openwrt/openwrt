@@ -1,0 +1,11 @@
+--- a/arch/mips/kernel/machine_kexec.c	2010-03-15 15:52:04.000000000 +0000
++++ b/arch/mips/kernel/machine_kexec.c	2010-03-29 12:10:37.000000000 +0100
+@@ -52,7 +52,7 @@
+ 	reboot_code_buffer =
+ 	  (unsigned long)page_address(image->control_code_page);
+ 
+-	kexec_start_address = image->start;
++	kexec_start_address = (unsigned long) phys_to_virt(image->start);
+ 	kexec_indirection_page =
+ 		(unsigned long) phys_to_virt(image->head & PAGE_MASK);
+ 
