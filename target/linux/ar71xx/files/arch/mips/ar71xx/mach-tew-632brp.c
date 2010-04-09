@@ -104,6 +104,11 @@ static struct gpio_button tew_632brp_gpio_buttons[] __initdata = {
 	}
 };
 
+#define TEW_632BRP_LAN_PHYMASK	BIT(0)
+#define TEW_632BRP_WAN_PHYMASK	BIT(4)
+#define TEW_632BRP_MDIO_MASK	(~(TEW_632BRP_LAN_PHYMASK | \
+				   TEW_632BRP_WAN_PHYMASK))
+
 static void __init tew_632brp_setup(void)
 {
 	const char *config = (char *) KSEG1ADDR(TEW_632BRP_CONFIG_ADDR);
@@ -117,14 +122,13 @@ static void __init tew_632brp_setup(void)
 		wlan_mac = mac;
 	}
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(TEW_632BRP_MDIO_MASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.speed = SPEED_100;
-	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = TEW_632BRP_LAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0x10;
+	ar71xx_eth1_data.phy_mask = TEW_632BRP_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
