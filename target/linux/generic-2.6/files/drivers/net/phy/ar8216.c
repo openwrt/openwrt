@@ -33,6 +33,7 @@
 
 /* size of the vlan table */
 #define AR8X16_MAX_VLANS	128
+#define AR8X16_PROBE_RETRIES	10
 
 struct ar8216_priv {
 	struct switch_dev dev;
@@ -119,8 +120,25 @@ ar8216_id_chip(struct ar8216_priv *priv)
 {
 	u32 val;
 	u16 id;
+	int i;
+
 	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+	if (val == ~0)
+		return UNKNOWN;
+
 	id = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+	for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
+		u16 t;
+
+		val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+		if (val == ~0)
+			return UNKNOWN;
+
+		t = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+		if (t != id)
+			return UNKNOWN;
+	}
+
 	switch (id) {
 	case 0x0101:
 		return AR8216;
@@ -736,11 +754,13 @@ static int
 ar8216_probe(struct phy_device *pdev)
 {
 	struct ar8216_priv priv;
+	u16 chip;
 
 	priv.phy = pdev;
-	if (ar8216_id_chip(&priv) == UNKNOWN) {
+	chip = ar8216_id_chip(&priv);
+	if (chip == UNKNOWN)
 		return -ENODEV;
-	}
+
 	return 0;
 }
 
