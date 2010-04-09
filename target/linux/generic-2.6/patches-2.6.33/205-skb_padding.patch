@@ -1,6 +1,6 @@
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -1377,11 +1377,18 @@ static inline int skb_network_offset(con
+@@ -1378,11 +1378,18 @@ static inline int skb_network_offset(con
   *
   * Various parts of the networking layer expect at least 32 bytes of
   * headroom, you should not reduce this.
@@ -19,7 +19,7 @@
  extern int ___pskb_trim(struct sk_buff *skb, unsigned int len);
  
  static inline void __skb_trim(struct sk_buff *skb, unsigned int len)
-@@ -1471,9 +1478,9 @@ static inline void __skb_queue_purge(str
+@@ -1472,9 +1479,9 @@ static inline void __skb_queue_purge(str
  static inline struct sk_buff *__dev_alloc_skb(unsigned int length,
  					      gfp_t gfp_mask)
  {
@@ -31,7 +31,7 @@
  	return skb;
  }
  
-@@ -1556,7 +1563,7 @@ static inline int __skb_cow(struct sk_bu
+@@ -1557,7 +1564,7 @@ static inline int __skb_cow(struct sk_bu
  		delta = headroom - skb_headroom(skb);
  
  	if (delta || cloned)

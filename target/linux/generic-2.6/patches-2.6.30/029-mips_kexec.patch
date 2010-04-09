@@ -349,18 +349,7 @@ create mode 100644 arch/mips/kernel/crash_dump.c
  typedef void (*noretfun_t)(void) __attribute__((noreturn));
  
  void
-@@ -52,7 +73,9 @@ machine_kexec(struct kimage *image)
- 	reboot_code_buffer =
- 	  (unsigned long)page_address(image->control_code_page);
- 
--	kexec_start_address = image->start;
-+     kexec_start_address =
-+        (unsigned long) phys_to_virt(image->start);
-+
- 	kexec_indirection_page =
- 		(unsigned long) phys_to_virt(image->head & PAGE_MASK);
- 
-@@ -63,7 +86,7 @@ machine_kexec(struct kimage *image)
+@@ -63,7 +84,7 @@ machine_kexec(struct kimage *image)
  	 * The generic kexec code builds a page list with physical
  	 * addresses. they are directly accessible through KSEG0 (or
  	 * CKSEG0 or XPHYS if on 64bit system), hence the
@@ -369,7 +358,7 @@ create mode 100644 arch/mips/kernel/crash_dump.c
  	 */
  	for (ptr = &image->head; (entry = *ptr) && !(entry &IND_DONE);
  	     ptr = (entry & IND_INDIRECTION) ?
-@@ -78,8 +101,39 @@ machine_kexec(struct kimage *image)
+@@ -78,8 +99,39 @@ machine_kexec(struct kimage *image)
  	 */
  	local_irq_disable();
  
