@@ -19,6 +19,26 @@
  int do_tftpb (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
  {
  	return netboot_common (TFTP, cmdtp, argc, argv);
+--- /dev/null
++++ b/include/httpd.h
+@@ -0,0 +1,17 @@
++#ifndef _UIP_HTTPD_H__
++#define _UIP_HTTPD_H__
++
++void HttpdStart (void);
++void HttpdHandler (void);
++
++/* board specific implementation */
++extern int do_http_upgrade(const unsigned char *data, const ulong size);
++
++#define HTTP_PROGRESS_START		0
++#define HTTP_PROGRESS_TIMEOUT		1
++#define HTTP_PROGRESS_UPLOAD_READY	2
++#define HTTP_PROGRESS_UGRADE_READY	3
++#define HTTP_PROGRESS_UGRADE_FAILED	4
++extern int do_http_progress(const int state);
++
++#endif
 --- a/include/net.h
 +++ b/include/net.h
 @@ -383,7 +383,8 @@ extern int NetTimeOffset;			/* offset ti
@@ -31,6 +51,29 @@
  /* Shutdown adapters and cleanup */
  extern void	NetStop(void);
  
+--- a/net/Makefile
++++ b/net/Makefile
+@@ -26,6 +26,10 @@ include $(TOPDIR)/config.mk
+ # CFLAGS += -DDEBUG
+ 
+ LIB	= $(obj)libnet.a
++UIPDIR  = uip-0.9
++RSADIR  = uip-0.9
++$(shell mkdir -p $(obj)$(UIPDIR)) 
++$(shell mkdir -p $(obj)$(RSADIR)) 
+ 
+ COBJS-$(CONFIG_CMD_NET)  += bootp.o
+ COBJS-$(CONFIG_CMD_DNS)  += dns.o
+@@ -36,6 +40,9 @@ COBJS-$(CONFIG_CMD_NET)  += rarp.o
+ COBJS-$(CONFIG_CMD_SNTP) += sntp.o
+ COBJS-$(CONFIG_CMD_NET)  += tftp.o
+ 
++COBJS-$(CONFIG_CMD_HTTPD) += httpd.o $(UIPDIR)/fs.o $(UIPDIR)/httpd.o $(UIPDIR)/uip_arp.o $(UIPDIR)/uip_arch.o $(UIPDIR)/uip.o
++COBJS-$(CONFIG_CMD_RSA) += $(RSADIR)/bigint.o $(RSADIR)/base64.o $(RSADIR)/rmd160.o $(RSADIR)/rsa.o
++
+ COBJS	:= $(COBJS-y)
+ SRCS	:= $(COBJS:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(COBJS))
 --- /dev/null
 +++ b/net/httpd.c
 @@ -0,0 +1,52 @@
@@ -86,49 +129,6 @@
 +}
 +
 +#endif
---- /dev/null
-+++ b/include/httpd.h
-@@ -0,0 +1,17 @@
-+#ifndef _UIP_HTTPD_H__
-+#define _UIP_HTTPD_H__
-+
-+void HttpdStart (void);
-+void HttpdHandler (void);
-+
-+/* board specific implementation */
-+extern int do_http_upgrade(const unsigned char *data, const ulong size);
-+
-+#define HTTP_PROGRESS_START		0
-+#define HTTP_PROGRESS_TIMEOUT		1
-+#define HTTP_PROGRESS_UPLOAD_READY	2
-+#define HTTP_PROGRESS_UGRADE_READY	3
-+#define HTTP_PROGRESS_UGRADE_FAILED	4
-+extern int do_http_progress(const int state);
-+
-+#endif
---- a/net/Makefile
-+++ b/net/Makefile
-@@ -26,6 +26,10 @@ include $(TOPDIR)/config.mk
- # CFLAGS += -DDEBUG
- 
- LIB	= $(obj)libnet.a
-+UIPDIR  = uip-0.9
-+RSADIR  = uip-0.9
-+$(shell mkdir -p $(obj)$(UIPDIR)) 
-+$(shell mkdir -p $(obj)$(RSADIR)) 
- 
- COBJS-y += bootp.o
- COBJS-$(CONFIG_CMD_DNS)  += dns.o
-@@ -36,6 +40,9 @@ COBJS-y += rarp.o
- COBJS-$(CONFIG_CMD_SNTP) += sntp.o
- COBJS-y += tftp.o
- 
-+COBJS-$(CONFIG_CMD_HTTPD) += httpd.o $(UIPDIR)/fs.o $(UIPDIR)/httpd.o $(UIPDIR)/uip_arp.o $(UIPDIR)/uip_arch.o $(UIPDIR)/uip.o
-+COBJS-$(CONFIG_CMD_RSA) += $(RSADIR)/bigint.o $(RSADIR)/base64.o $(RSADIR)/rmd160.o $(RSADIR)/rsa.o
-+
- COBJS	:= $(COBJS-y)
- SRCS	:= $(COBJS:.o=.c)
- OBJS	:= $(addprefix $(obj),$(COBJS))
 --- a/net/net.c
 +++ b/net/net.c
 @@ -95,6 +95,19 @@
@@ -149,9 +149,9 @@
 +extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]); 
 +#endif
  
- #if defined(CONFIG_CMD_NET)
+ DECLARE_GLOBAL_DATA_PTR;
  
-@@ -1310,6 +1323,13 @@ NetReceive(volatile uchar * inpkt, int l
+@@ -1308,6 +1321,13 @@ NetReceive(volatile uchar * inpkt, int l
  
  	debug("packet received\n");
  
@@ -165,7 +165,7 @@
  	NetRxPacket = inpkt;
  	NetRxPacketLen = len;
  	et = (Ethernet_t *)inpkt;
-@@ -1952,3 +1972,162 @@ ushort getenv_VLAN(char *var)
+@@ -1922,3 +1942,162 @@ ushort getenv_VLAN(char *var)
  {
  	return (string_to_VLAN(getenv(var)));
  }
@@ -328,6 +328,40 @@
 +}
 +
 +#endif
+--- /dev/null
++++ b/net/rsa/Makefile
+@@ -0,0 +1,31 @@
++#
++# FONRSA & FONSIGN libraries unit testing
++# 
++# This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
++#
++# Execute in this directory
++#
++# Created: 20070422 Pablo Martin Medrano <pablo@fon.com>
++#
++# $Id: Makefile 389 2007-06-11 08:29:56Z pablo.martin $
++#
++# FIXME: Put this in the main Makefile.am
++# 
++all: fonsign dump_key
++
++fonsign:
++	gcc -g sign_openssl.c -D__MAINTEST__ -o fonsign -lssl
++
++dump_key:
++	gcc -o dump_key dump_key.c
++	./dump_key > public_key.h
++
++foncheckrsa:
++	gcc -g bigint.c  fonrsa.c  rmd160.c foncheckrsa.c base64.c log.c  -o foncheckrsa 
++
++#private_fon_rsa_key.pem:
++#	openssl genrsa -out private_fon_rsa_key.pem 4096
++#	openssl rsa -in private_fon_rsa_key.pem -pubout -out public_fon_rsa_key.pem
++
++clean:
++	rm fonsign dump_key 
 --- /dev/null
 +++ b/net/rsa/base64.c
 @@ -0,0 +1,137 @@
@@ -2674,40 +2708,6 @@
 +#endif
 +
 --- /dev/null
-+++ b/net/rsa/Makefile
-@@ -0,0 +1,31 @@
-+#
-+# FONRSA & FONSIGN libraries unit testing
-+# 
-+# This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+#
-+# Execute in this directory
-+#
-+# Created: 20070422 Pablo Martin Medrano <pablo@fon.com>
-+#
-+# $Id: Makefile 389 2007-06-11 08:29:56Z pablo.martin $
-+#
-+# FIXME: Put this in the main Makefile.am
-+# 
-+all: fonsign dump_key
-+
-+fonsign:
-+	gcc -g sign_openssl.c -D__MAINTEST__ -o fonsign -lssl
-+
-+dump_key:
-+	gcc -o dump_key dump_key.c
-+	./dump_key > public_key.h
-+
-+foncheckrsa:
-+	gcc -g bigint.c  fonrsa.c  rmd160.c foncheckrsa.c base64.c log.c  -o foncheckrsa 
-+
-+#private_fon_rsa_key.pem:
-+#	openssl genrsa -out private_fon_rsa_key.pem 4096
-+#	openssl rsa -in private_fon_rsa_key.pem -pubout -out public_fon_rsa_key.pem
-+
-+clean:
-+	rm fonsign dump_key 
---- /dev/null
 +++ b/net/rsa/public_key.h
 @@ -0,0 +1,52 @@
 +unsigned char public_key[] = {
@@ -4040,6 +4040,63 @@
 +#endif
 +
 --- /dev/null
++++ b/net/uip-0.9/Makefile
+@@ -0,0 +1,54 @@
++# Copyright (c) 2001, Adam Dunkels.
++# All rights reserved. 
++#
++# Redistribution and use in source and binary forms, with or without 
++# modification, are permitted provided that the following conditions 
++# are met: 
++# 1. Redistributions of source code must retain the above copyright 
++#    notice, this list of conditions and the following disclaimer. 
++# 2. Redistributions in binary form must reproduce the above copyright 
++#    notice, this list of conditions and the following disclaimer in the 
++#    documentation and/or other materials provided with the distribution. 
++# 3. All advertising materials mentioning features or use of this software
++#    must display the following acknowledgement:
++#      This product includes software developed by Adam Dunkels.
++# 4. The name of the author may not be used to endorse or promote
++#    products derived from this software without specific prior
++#    written permission.  
++#
++# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
++# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
++# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
++#
++# This file is part of the uIP TCP/IP stack.
++#
++# $Id: Makefile,v 1.8.2.2 2003/10/04 22:54:17 adam Exp $
++#
++
++CC=gcc
++CFLAGS=-Wall -fpack-struct -DDUMP=0
++
++all: uip
++
++uip: uip.o uip_arch.o tapdev.o httpd.o main.o fs.o uip_arp.o
++	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c  $^ -o $@
++
++clean:
++	rm -f *.o *~ *core uip
++
++
++
++
++
++
+--- /dev/null
 +++ b/net/uip-0.9/fs.c
 @@ -0,0 +1,154 @@
 +/**
@@ -4196,6 +4253,89 @@
 +#endif /* FS_STATISTICS */
 +#endif /* FS_STATISTICS */
 +/*-----------------------------------------------------------------------------------*/
+--- /dev/null
++++ b/net/uip-0.9/fs.h
+@@ -0,0 +1,80 @@
++/**
++ * \addtogroup httpd
++ * @{
++ */
++
++/**
++ * \file
++ * HTTP server read-only file system header file.
++ * \author Adam Dunkels <adam@dunkels.com>
++ */
++ 
++/*
++ * Copyright (c) 2001, Swedish Institute of Computer Science.
++ * All rights reserved. 
++ *
++ * Redistribution and use in source and binary forms, with or without 
++ * modification, are permitted provided that the following conditions 
++ * are met: 
++ * 1. Redistributions of source code must retain the above copyright 
++ *    notice, this list of conditions and the following disclaimer. 
++ * 2. Redistributions in binary form must reproduce the above copyright 
++ *    notice, this list of conditions and the following disclaimer in the 
++ *    documentation and/or other materials provided with the distribution. 
++ * 3. Neither the name of the Institute nor the names of its contributors 
++ *    may be used to endorse or promote products derived from this software 
++ *    without specific prior written permission. 
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND 
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE 
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS 
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
++ * SUCH DAMAGE. 
++ *
++ * This file is part of the lwIP TCP/IP stack.
++ * 
++ * Author: Adam Dunkels <adam@sics.se>
++ *
++ * $Id: fs.h,v 1.6.2.3 2003/10/07 13:22:27 adam Exp $
++ */
++#ifndef __FS_H__
++#define __FS_H__
++
++#include "uip.h"
++
++/**
++ * An open file in the read-only file system.
++ */
++struct fs_file {
++  char *data;  /**< The actual file data. */
++  int len;     /**< The length of the file data. */
++};
++
++/**
++ * Open a file in the read-only file system.
++ *
++ * \param name The name of the file.
++ *
++ * \param file The file pointer, which must be allocated by caller and
++ * will be filled in by the function.
++ */
++int fs_open(const char *name, struct fs_file *file);
++
++#ifdef FS_STATISTICS
++#if FS_STATISTICS == 1  
++u16_t fs_count(char *name);
++#endif /* FS_STATISTICS */
++#endif /* FS_STATISTICS */
++
++/**
++ * Initialize the read-only file system.
++ */
++void fs_init(void);
++
++#endif /* __FS_H__ */
 --- /dev/null
 +++ b/net/uip-0.9/fsdata.c
 @@ -0,0 +1,199 @@
@@ -4466,89 +4606,6 @@
 +};
 +
 +#endif /* __FSDATA_H__ */
---- /dev/null
-+++ b/net/uip-0.9/fs.h
-@@ -0,0 +1,80 @@
-+/**
-+ * \addtogroup httpd
-+ * @{
-+ */
-+
-+/**
-+ * \file
-+ * HTTP server read-only file system header file.
-+ * \author Adam Dunkels <adam@dunkels.com>
-+ */
-+ 
-+/*
-+ * Copyright (c) 2001, Swedish Institute of Computer Science.
-+ * All rights reserved. 
-+ *
-+ * Redistribution and use in source and binary forms, with or without 
-+ * modification, are permitted provided that the following conditions 
-+ * are met: 
-+ * 1. Redistributions of source code must retain the above copyright 
-+ *    notice, this list of conditions and the following disclaimer. 
-+ * 2. Redistributions in binary form must reproduce the above copyright 
-+ *    notice, this list of conditions and the following disclaimer in the 
-+ *    documentation and/or other materials provided with the distribution. 
-+ * 3. Neither the name of the Institute nor the names of its contributors 
-+ *    may be used to endorse or promote products derived from this software 
-+ *    without specific prior written permission. 
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND 
-+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE 
-+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS 
-+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
-+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
-+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
-+ * SUCH DAMAGE. 
-+ *
-+ * This file is part of the lwIP TCP/IP stack.
-+ * 
-+ * Author: Adam Dunkels <adam@sics.se>
-+ *
-+ * $Id: fs.h,v 1.6.2.3 2003/10/07 13:22:27 adam Exp $
-+ */
-+#ifndef __FS_H__
-+#define __FS_H__
-+
-+#include "uip.h"
-+
-+/**
-+ * An open file in the read-only file system.
-+ */
-+struct fs_file {
-+  char *data;  /**< The actual file data. */
-+  int len;     /**< The length of the file data. */
-+};
-+
-+/**
-+ * Open a file in the read-only file system.
-+ *
-+ * \param name The name of the file.
-+ *
-+ * \param file The file pointer, which must be allocated by caller and
-+ * will be filled in by the function.
-+ */
-+int fs_open(const char *name, struct fs_file *file);
-+
-+#ifdef FS_STATISTICS
-+#if FS_STATISTICS == 1  
-+u16_t fs_count(char *name);
-+#endif /* FS_STATISTICS */
-+#endif /* FS_STATISTICS */
-+
-+/**
-+ * Initialize the read-only file system.
-+ */
-+void fs_init(void);
-+
-+#endif /* __FS_H__ */
 --- /dev/null
 +++ b/net/uip-0.9/httpd.c
 @@ -0,0 +1,278 @@
@@ -5008,63 +5065,6 @@
 +	return 0;
 +}
 --- /dev/null
-+++ b/net/uip-0.9/Makefile
-@@ -0,0 +1,54 @@
-+# Copyright (c) 2001, Adam Dunkels.
-+# All rights reserved. 
-+#
-+# Redistribution and use in source and binary forms, with or without 
-+# modification, are permitted provided that the following conditions 
-+# are met: 
-+# 1. Redistributions of source code must retain the above copyright 
-+#    notice, this list of conditions and the following disclaimer. 
-+# 2. Redistributions in binary form must reproduce the above copyright 
-+#    notice, this list of conditions and the following disclaimer in the 
-+#    documentation and/or other materials provided with the distribution. 
-+# 3. All advertising materials mentioning features or use of this software
-+#    must display the following acknowledgement:
-+#      This product includes software developed by Adam Dunkels.
-+# 4. The name of the author may not be used to endorse or promote
-+#    products derived from this software without specific prior
-+#    written permission.  
-+#
-+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
-+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
-+#
-+# This file is part of the uIP TCP/IP stack.
-+#
-+# $Id: Makefile,v 1.8.2.2 2003/10/04 22:54:17 adam Exp $
-+#
-+
-+CC=gcc
-+CFLAGS=-Wall -fpack-struct -DDUMP=0
-+
-+all: uip
-+
-+uip: uip.o uip_arch.o tapdev.o httpd.o main.o fs.o uip_arp.o
-+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
-+
-+%.o: %.c
-+	$(CC) $(CFLAGS) -c  $^ -o $@
-+
-+clean:
-+	rm -f *.o *~ *core uip
-+
-+
-+
-+
-+
-+
---- /dev/null
 +++ b/net/uip-0.9/tapdev.c
 @@ -0,0 +1,192 @@
 +/*
@@ -5304,915 +5304,6 @@
 +void tapdev_send(void);
 +
 +#endif /* __TAPDEV_H__ */
---- /dev/null
-+++ b/net/uip-0.9/uip_arch.c
-@@ -0,0 +1,145 @@
-+/*
-+ * Copyright (c) 2001, Adam Dunkels.
-+ * All rights reserved. 
-+ *
-+ * Redistribution and use in source and binary forms, with or without 
-+ * modification, are permitted provided that the following conditions 
-+ * are met: 
-+ * 1. Redistributions of source code must retain the above copyright 
-+ *    notice, this list of conditions and the following disclaimer. 
-+ * 2. Redistributions in binary form must reproduce the above copyright 
-+ *    notice, this list of conditions and the following disclaimer in the 
-+ *    documentation and/or other materials provided with the distribution. 
-+ * 3. The name of the author may not be used to endorse or promote
-+ *    products derived from this software without specific prior
-+ *    written permission.  
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
-+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
-+ *
-+ * This file is part of the uIP TCP/IP stack.
-+ *
-+ * $Id: uip_arch.c,v 1.2.2.1 2003/10/04 22:54:17 adam Exp $
-+ *
-+ */
-+
-+
-+#include "uip.h"
-+#include "uip_arch.h"
-+
-+#define BUF ((uip_tcpip_hdr *)&uip_buf[UIP_LLH_LEN])
-+#define IP_PROTO_TCP    6
-+
-+/*-----------------------------------------------------------------------------------*/
-+void
-+uip_add32(u8_t *op32, u16_t op16)
-+{
-+  
-+  uip_acc32[3] = op32[3] + (op16 & 0xff);
-+  uip_acc32[2] = op32[2] + (op16 >> 8);
-+  uip_acc32[1] = op32[1];
-+  uip_acc32[0] = op32[0];
-+  
-+  if(uip_acc32[2] < (op16 >> 8)) {
-+    ++uip_acc32[1];    
-+    if(uip_acc32[1] == 0) {
-+      ++uip_acc32[0];
-+    }
-+  }
-+  
-+  
-+  if(uip_acc32[3] < (op16 & 0xff)) {
-+    ++uip_acc32[2];  
-+    if(uip_acc32[2] == 0) {
-+      ++uip_acc32[1];    
-+      if(uip_acc32[1] == 0) {
-+	++uip_acc32[0];
-+      }
-+    }
-+  }
-+}
-+/*-----------------------------------------------------------------------------------*/
-+u16_t
-+uip_chksum(u16_t *sdata, u16_t len)
-+{
-+  u16_t acc;
-+  
-+  for(acc = 0; len > 1; len -= 2) {
-+    acc += *sdata;
-+    if(acc < *sdata) {
-+      /* Overflow, so we add the carry to acc (i.e., increase by
-+         one). */
-+      ++acc;
-+    }
-+    ++sdata;
-+  }
-+
-+  /* add up any odd byte */
-+  if(len == 1) {
-+    acc += htons(((u16_t)(*(u8_t *)sdata)) << 8);
-+    if(acc < htons(((u16_t)(*(u8_t *)sdata)) << 8)) {
-+      ++acc;
-+    }
-+  }
-+
-+  return acc;
-+}
-+/*-----------------------------------------------------------------------------------*/
-+u16_t
-+uip_ipchksum(void)
-+{
-+  return uip_chksum((u16_t *)&uip_buf[UIP_LLH_LEN], 20);
-+}
-+/*-----------------------------------------------------------------------------------*/
-+u16_t
-+uip_tcpchksum(void)
-+{
-+  u16_t hsum, sum;
-+
-+  
-+  /* Compute the checksum of the TCP header. */
-+  hsum = uip_chksum((u16_t *)&uip_buf[20 + UIP_LLH_LEN], 20);
-+
-+  /* Compute the checksum of the data in the TCP packet and add it to
-+     the TCP header checksum. */
-+  sum = uip_chksum((u16_t *)uip_appdata,
-+		   (u16_t)(((((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - 40)));
-+
-+  if((sum += hsum) < hsum) {
-+    ++sum;
-+  }
-+  
-+  if((sum += BUF->srcipaddr[0]) < BUF->srcipaddr[0]) {
-+    ++sum;
-+  }
-+  if((sum += BUF->srcipaddr[1]) < BUF->srcipaddr[1]) {
-+    ++sum;
-+  }
-+  if((sum += BUF->destipaddr[0]) < BUF->destipaddr[0]) {
-+    ++sum;
-+  }
-+  if((sum += BUF->destipaddr[1]) < BUF->destipaddr[1]) {
-+    ++sum;
-+  }
-+  if((sum += (u16_t)htons((u16_t)IP_PROTO_TCP)) < (u16_t)htons((u16_t)IP_PROTO_TCP)) {
-+    ++sum;
-+  }
-+
-+  hsum = (u16_t)htons((((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - 20);
-+  
-+  if((sum += hsum) < hsum) {
-+    ++sum;
-+  }
-+  
-+  return sum;
-+}
-+/*-----------------------------------------------------------------------------------*/
---- /dev/null
-+++ b/net/uip-0.9/uip_arch.h
-@@ -0,0 +1,130 @@
-+/**
-+ * \defgroup uiparch Architecture specific uIP functions
-+ * @{
-+ *
-+ * The functions in the architecture specific module implement the IP
-+ * check sum and 32-bit additions.
-+ *
-+ * The IP checksum calculation is the most computationally expensive
-+ * operation in the TCP/IP stack and it therefore pays off to
-+ * implement this in efficient assembler. The purpose of the uip-arch
-+ * module is to let the checksum functions to be implemented in
-+ * architecture specific assembler.
-+ *
-+ */
-+
-+/**
-+ * \file
-+ * Declarations of architecture specific functions.
-+ * \author Adam Dunkels <adam@dunkels.com>
-+ */
-+
-+/*
-+ * Copyright (c) 2001, Adam Dunkels.
-+ * All rights reserved. 
-+ *
-+ * Redistribution and use in source and binary forms, with or without 
-+ * modification, are permitted provided that the following conditions 
-+ * are met: 
-+ * 1. Redistributions of source code must retain the above copyright 
-+ *    notice, this list of conditions and the following disclaimer. 
-+ * 2. Redistributions in binary form must reproduce the above copyright 
-+ *    notice, this list of conditions and the following disclaimer in the 
-+ *    documentation and/or other materials provided with the distribution. 
-+ * 3. The name of the author may not be used to endorse or promote
-+ *    products derived from this software without specific prior
-+ *    written permission.  
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
-+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
-+ *
-+ * This file is part of the uIP TCP/IP stack.
-+ *
-+ * $Id: uip_arch.h,v 1.1.2.2 2003/10/06 15:10:22 adam Exp $
-+ *
-+ */
-+
-+#ifndef __UIP_ARCH_H__
-+#define __UIP_ARCH_H__
-+
-+#include "uip.h"
-+
-+/**
-+ * Carry out a 32-bit addition.
-+ *
-+ * Because not all architectures for which uIP is intended has native
-+ * 32-bit arithmetic, uIP uses an external C function for doing the
-+ * required 32-bit additions in the TCP protocol processing. This
-+ * function should add the two arguments and place the result in the
-+ * global variable uip_acc32.
-+ *
-+ * \note The 32-bit integer pointed to by the op32 parameter and the
-+ * result in the uip_acc32 variable are in network byte order (big
-+ * endian).
-+ *
-+ * \param op32 A pointer to a 4-byte array representing a 32-bit
-+ * integer in network byte order (big endian).
-+ *
-+ * \param op16 A 16-bit integer in host byte order.
-+ */
-+void uip_add32(u8_t *op32, u16_t op16);
-+
-+/**
-+ * Calculate the Internet checksum over a buffer.
-+ *
-+ * The Internet checksum is the one's complement of the one's
-+ * complement sum of all 16-bit words in the buffer.
-+ *
-+ * See RFC1071.
-+ *
-+ * \note This function is not called in the current version of uIP,
-+ * but future versions might make use of it.
-+ *
-+ * \param buf A pointer to the buffer over which the checksum is to be
-+ * computed.
-+ *
-+ * \param len The length of the buffer over which the checksum is to
-+ * be computed.
-+ *
-+ * \return The Internet checksum of the buffer.
-+ */
-+u16_t uip_chksum(u16_t *buf, u16_t len);
-+
-+/**
-+ * Calculate the IP header checksum of the packet header in uip_buf.
-+ *
-+ * The IP header checksum is the Internet checksum of the 20 bytes of
-+ * the IP header.
-+ *
-+ * \return The IP header checksum of the IP header in the uip_buf
-+ * buffer.
-+ */
-+u16_t uip_ipchksum(void);
-+
-+/**
-+ * Calculate the TCP checksum of the packet in uip_buf and uip_appdata.
-+ *
-+ * The TCP checksum is the Internet checksum of data contents of the
-+ * TCP segment, and a pseudo-header as defined in RFC793.
-+ *
-+ * \note The uip_appdata pointer that points to the packet data may
-+ * point anywhere in memory, so it is not possible to simply calculate
-+ * the Internet checksum of the contents of the uip_buf buffer.
-+ *
-+ * \return The TCP checksum of the TCP segment in uip_buf and pointed
-+ * to by uip_appdata.
-+ */
-+u16_t uip_tcpchksum(void);
-+
-+/** @} */
-+
-+#endif /* __UIP_ARCH_H__ */
---- /dev/null
-+++ b/net/uip-0.9/uip_arp.c
-@@ -0,0 +1,421 @@
-+/**
-+ * \addtogroup uip
-+ * @{
-+ */
-+
-+/**
-+ * \defgroup uiparp uIP Address Resolution Protocol
-+ * @{
-+ * 
-+ * The Address Resolution Protocol ARP is used for mapping between IP
-+ * addresses and link level addresses such as the Ethernet MAC
-+ * addresses. ARP uses broadcast queries to ask for the link level
-+ * address of a known IP address and the host which is configured with
-+ * the IP address for which the query was meant, will respond with its
-+ * link level address.
-+ *
-+ * \note This ARP implementation only supports Ethernet.
-+ */
-+ 
-+/**
-+ * \file
-+ * Implementation of the ARP Address Resolution Protocol.
-+ * \author Adam Dunkels <adam@dunkels.com>
-+ *
-+ */
-+
-+/*
-+ * Copyright (c) 2001-2003, Adam Dunkels.
-+ * All rights reserved. 
-+ *
-+ * Redistribution and use in source and binary forms, with or without 
-+ * modification, are permitted provided that the following conditions 
-+ * are met: 
-+ * 1. Redistributions of source code must retain the above copyright 
-+ *    notice, this list of conditions and the following disclaimer. 
-+ * 2. Redistributions in binary form must reproduce the above copyright 
-+ *    notice, this list of conditions and the following disclaimer in the 
-+ *    documentation and/or other materials provided with the distribution. 
-+ * 3. The name of the author may not be used to endorse or promote
-+ *    products derived from this software without specific prior
-+ *    written permission.  
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
-+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
-+ *
-+ * This file is part of the uIP TCP/IP stack.
-+ *
-+ * $Id: uip_arp.c,v 1.7.2.3 2003/10/06 22:42:30 adam Exp $
-+ *
-+ */
-+
-+
-+#include "uip_arp.h"
-+
-+struct arp_hdr {
-+  struct uip_eth_hdr ethhdr;
-+  u16_t hwtype;
-+  u16_t protocol;
-+  u8_t hwlen;
-+  u8_t protolen;
-+  u16_t opcode;
-+  struct uip_eth_addr shwaddr;
-+  u16_t sipaddr[2];
-+  struct uip_eth_addr dhwaddr;
-+  u16_t dipaddr[2]; 
-+};
-+
-+struct ethip_hdr {
-+  struct uip_eth_hdr ethhdr;
-+  /* IP header. */
-+  u8_t vhl,
-+    tos,          
-+    len[2],       
-+    ipid[2],        
-+    ipoffset[2],  
-+    ttl,          
-+    proto;     
-+  u16_t ipchksum;
-+  u16_t srcipaddr[2], 
-+    destipaddr[2];
-+};
-+
-+#define ARP_REQUEST 1
-+#define ARP_REPLY   2
-+
-+#define ARP_HWTYPE_ETH 1
-+
-+struct arp_entry {
-+  u16_t ipaddr[2];
-+  struct uip_eth_addr ethaddr;
-+  u8_t time;
-+};
-+
-+struct uip_eth_addr uip_ethaddr = {{UIP_ETHADDR0,
-+				    UIP_ETHADDR1,
-+				    UIP_ETHADDR2,
-+				    UIP_ETHADDR3,
-+				    UIP_ETHADDR4,
-+				    UIP_ETHADDR5}};
-+
-+static struct arp_entry arp_table[UIP_ARPTAB_SIZE];
-+static u16_t ipaddr[2];
-+static u8_t i, c;
-+
-+static u8_t arptime;
-+static u8_t tmpage;
-+
-+#define BUF   ((struct arp_hdr *)&uip_buf[0])
-+#define IPBUF ((struct ethip_hdr *)&uip_buf[0])
-+/*-----------------------------------------------------------------------------------*/
-+/**
-+ * Initialize the ARP module.
-+ *
-+ */
-+/*-----------------------------------------------------------------------------------*/
-+void
-+uip_arp_init(void)
-+{
-+  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
-+    memset(arp_table[i].ipaddr, 0, 4);
-+  }
-+}
-+/*-----------------------------------------------------------------------------------*/
-+/**
-+ * Periodic ARP processing function.
-+ *
-+ * This function performs periodic timer processing in the ARP module
-+ * and should be called at regular intervals. The recommended interval
-+ * is 10 seconds between the calls.
-+ *
-+ */
-+/*-----------------------------------------------------------------------------------*/
-+void
-+uip_arp_timer(void)
-+{
-+  struct arp_entry *tabptr;
-+  
-+  ++arptime;
-+  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
-+    tabptr = &arp_table[i];
-+    if((tabptr->ipaddr[0] | tabptr->ipaddr[1]) != 0 &&
-+       arptime - tabptr->time >= UIP_ARP_MAXAGE) {
-+      memset(tabptr->ipaddr, 0, 4);
-+    }
-+  }
-+
-+}
-+/*-----------------------------------------------------------------------------------*/
-+static void
-+uip_arp_update(u16_t *ipaddr, struct uip_eth_addr *ethaddr)
-+{
-+  register struct arp_entry *tabptr;
-+  /* Walk through the ARP mapping table and try to find an entry to
-+     update. If none is found, the IP -> MAC address mapping is
-+     inserted in the ARP table. */
-+  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
-+
-+    tabptr = &arp_table[i];
-+    /* Only check those entries that are actually in use. */
-+    if(tabptr->ipaddr[0] != 0 &&
-+       tabptr->ipaddr[1] != 0) {
-+
-+      /* Check if the source IP address of the incoming packet matches
-+         the IP address in this ARP table entry. */
-+      if(ipaddr[0] == tabptr->ipaddr[0] &&
-+	 ipaddr[1] == tabptr->ipaddr[1]) {
-+	 
-+	/* An old entry found, update this and return. */
-+	memcpy(tabptr->ethaddr.addr, ethaddr->addr, 6);
-+	tabptr->time = arptime;
-+
-+	return;
-+      }
-+    }
-+  }
-+
-+  /* If we get here, no existing ARP table entry was found, so we
-+     create one. */
-+
-+  /* First, we try to find an unused entry in the ARP table. */
-+  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
-+    tabptr = &arp_table[i];
-+    if(tabptr->ipaddr[0] == 0 &&
-+       tabptr->ipaddr[1] == 0) {
-+      break;
-+    }
-+  }
-+
-+  /* If no unused entry is found, we try to find the oldest entry and
-+     throw it away. */
-+  if(i == UIP_ARPTAB_SIZE) {
-+    tmpage = 0;
-+    c = 0;
-+    for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
-+      tabptr = &arp_table[i];
-+      if(arptime - tabptr->time > tmpage) {
-+	tmpage = arptime - tabptr->time;
-+	c = i;
-+      }
-+    }
-+    i = c;
-+  }
-+
-+  /* Now, i is the ARP table entry which we will fill with the new
-+     information. */
-+  memcpy(tabptr->ipaddr, ipaddr, 4);
-+  memcpy(tabptr->ethaddr.addr, ethaddr->addr, 6);
-+  tabptr->time = arptime;
-+}
-+/*-----------------------------------------------------------------------------------*/
-+/**
-+ * ARP processing for incoming IP packets
-+ *
-+ * This function should be called by the device driver when an IP
-+ * packet has been received. The function will check if the address is
-+ * in the ARP cache, and if so the ARP cache entry will be
-+ * refreshed. If no ARP cache entry was found, a new one is created.
-+ *
-+ * This function expects an IP packet with a prepended Ethernet header
-+ * in the uip_buf[] buffer, and the length of the packet in the global
-+ * variable uip_len.
-+ */
-+/*-----------------------------------------------------------------------------------*/
-+void
-+uip_arp_ipin(void)
-+{
-+  uip_len -= sizeof(struct uip_eth_hdr);
-+	
-+  /* Only insert/update an entry if the source IP address of the
-+     incoming IP packet comes from a host on the local network. */
-+  if((IPBUF->srcipaddr[0] & uip_arp_netmask[0]) !=
-+     (uip_hostaddr[0] & uip_arp_netmask[0])) {
-+    return;
-+  }
-+  if((IPBUF->srcipaddr[1] & uip_arp_netmask[1]) !=
-+     (uip_hostaddr[1] & uip_arp_netmask[1])) {
-+    return;
-+  }
-+  uip_arp_update(IPBUF->srcipaddr, &(IPBUF->ethhdr.src));
-+  
-+  return;
-+}
-+/*-----------------------------------------------------------------------------------*/
-+/**
-+ * ARP processing for incoming ARP packets.
-+ *
-+ * This function should be called by the device driver when an ARP
-+ * packet has been received. The function will act differently
-+ * depending on the ARP packet type: if it is a reply for a request
-+ * that we previously sent out, the ARP cache will be filled in with
-+ * the values from the ARP reply. If the incoming ARP packet is an ARP
-+ * request for our IP address, an ARP reply packet is created and put
-+ * into the uip_buf[] buffer.
-+ *
-+ * When the function returns, the value of the global variable uip_len
-+ * indicates whether the device driver should send out a packet or
-+ * not. If uip_len is zero, no packet should be sent. If uip_len is
-+ * non-zero, it contains the length of the outbound packet that is
-+ * present in the uip_buf[] buffer.
-+ *
-+ * This function expects an ARP packet with a prepended Ethernet
-+ * header in the uip_buf[] buffer, and the length of the packet in the
-+ * global variable uip_len.
-+ */
-+/*-----------------------------------------------------------------------------------*/
-+void
-+uip_arp_arpin(void)
-+{
-+
-+  if(uip_len < sizeof(struct arp_hdr)) {
-+    uip_len = 0;
-+    return;
-+  }
-+
-+  uip_len = 0;
-+
-+  switch(BUF->opcode) {
-+  case HTONS(ARP_REQUEST):
-+    /* ARP request. If it asked for our address, we send out a
-+       reply. */
-+    if(BUF->dipaddr[0] == uip_hostaddr[0] &&
-+       BUF->dipaddr[1] == uip_hostaddr[1]) {
-+      /* The reply opcode is 2. */
-+      BUF->opcode = HTONS(2);
-+
-+      memcpy(BUF->dhwaddr.addr, BUF->shwaddr.addr, 6);
-+      memcpy(BUF->shwaddr.addr, uip_ethaddr.addr, 6);
-+      memcpy(BUF->ethhdr.src.addr, uip_ethaddr.addr, 6);
-+      memcpy(BUF->ethhdr.dest.addr, BUF->dhwaddr.addr, 6);
-+      
-+      BUF->dipaddr[0] = BUF->sipaddr[0];
-+      BUF->dipaddr[1] = BUF->sipaddr[1];
-+      BUF->sipaddr[0] = uip_hostaddr[0];
-+      BUF->sipaddr[1] = uip_hostaddr[1];
-+
-+      BUF->ethhdr.type = HTONS(UIP_ETHTYPE_ARP);      
-+      uip_len = sizeof(struct arp_hdr);
-+    }      
-+    break;
-+  case HTONS(ARP_REPLY):
-+    /* ARP reply. We insert or update the ARP table if it was meant
-+       for us. */
-+    if(BUF->dipaddr[0] == uip_hostaddr[0] &&
-+       BUF->dipaddr[1] == uip_hostaddr[1]) {
-+
-+      uip_arp_update(BUF->sipaddr, &BUF->shwaddr);
-+    }
-+    break;
-+  }
-+
-+  return;
-+}
-+/*-----------------------------------------------------------------------------------*/
-+/**
-+ * Prepend Ethernet header to an outbound IP packet and see if we need
-+ * to send out an ARP request.
-+ *
-+ * This function should be called before sending out an IP packet. The
-+ * function checks the destination IP address of the IP packet to see
-+ * what Ethernet MAC address that should be used as a destination MAC
-+ * address on the Ethernet.
-+ *
-+ * If the destination IP address is in the local network (determined
-+ * by logical ANDing of netmask and our IP address), the function
-+ * checks the ARP cache to see if an entry for the destination IP
-+ * address is found. If so, an Ethernet header is prepended and the
-+ * function returns. If no ARP cache entry is found for the
-+ * destination IP address, the packet in the uip_buf[] is replaced by
-+ * an ARP request packet for the IP address. The IP packet is dropped
-+ * and it is assumed that they higher level protocols (e.g., TCP)
-+ * eventually will retransmit the dropped packet.
-+ *
-+ * If the destination IP address is not on the local network, the IP
-+ * address of the default router is used instead.
-+ *
-+ * When the function returns, a packet is present in the uip_buf[]
-+ * buffer, and the length of the packet is in the global variable
-+ * uip_len.
-+ */
-+/*-----------------------------------------------------------------------------------*/
-+void
-+uip_arp_out(void)
-+{
-+  struct arp_entry *tabptr;
-+  /* Find the destination IP address in the ARP table and construct
-+     the Ethernet header. If the destination IP addres isn't on the
-+     local network, we use the default router's IP address instead.
-+
-+     If not ARP table entry is found, we overwrite the original IP
-+     packet with an ARP request for the IP address. */
-+
-+  /* Check if the destination address is on the local network. */
-+  if((IPBUF->destipaddr[0] & uip_arp_netmask[0]) !=
-+     (uip_hostaddr[0] & uip_arp_netmask[0]) ||
-+     (IPBUF->destipaddr[1] & uip_arp_netmask[1]) !=
-+     (uip_hostaddr[1] & uip_arp_netmask[1])) {
-+    /* Destination address was not on the local network, so we need to
-+       use the default router's IP address instead of the destination
-+       address when determining the MAC address. */
-+    ipaddr[0] = uip_arp_draddr[0];
-+    ipaddr[1] = uip_arp_draddr[1];
-+  } else {
-+    /* Else, we use the destination IP address. */
-+    ipaddr[0] = IPBUF->destipaddr[0];
-+    ipaddr[1] = IPBUF->destipaddr[1];
-+  }
-+      
-+  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
-+    tabptr = &arp_table[i];
-+    if(ipaddr[0] == tabptr->ipaddr[0] &&
-+       ipaddr[1] == tabptr->ipaddr[1])
-+      break;
-+  }
-+
-+  if(i == UIP_ARPTAB_SIZE) {
-+    /* The destination address was not in our ARP table, so we
-+       overwrite the IP packet with an ARP request. */
-+
-+    memset(BUF->ethhdr.dest.addr, 0xff, 6);
-+    memset(BUF->dhwaddr.addr, 0x00, 6);
-+    memcpy(BUF->ethhdr.src.addr, uip_ethaddr.addr, 6);
-+    memcpy(BUF->shwaddr.addr, uip_ethaddr.addr, 6);
-+    
-+    BUF->dipaddr[0] = ipaddr[0];
-+    BUF->dipaddr[1] = ipaddr[1];
-+    BUF->sipaddr[0] = uip_hostaddr[0];
-+    BUF->sipaddr[1] = uip_hostaddr[1];
-+    BUF->opcode = HTONS(ARP_REQUEST); /* ARP request. */
-+    BUF->hwtype = HTONS(ARP_HWTYPE_ETH);
-+    BUF->protocol = HTONS(UIP_ETHTYPE_IP);
-+    BUF->hwlen = 6;
-+    BUF->protolen = 4;
-+    BUF->ethhdr.type = HTONS(UIP_ETHTYPE_ARP);
-+
-+    uip_appdata = &uip_buf[40 + UIP_LLH_LEN];
-+    
-+    uip_len = sizeof(struct arp_hdr);
-+    return;
-+  }
-+
-+  /* Build an ethernet header. */
-+  memcpy(IPBUF->ethhdr.dest.addr, tabptr->ethaddr.addr, 6);
-+  memcpy(IPBUF->ethhdr.src.addr, uip_ethaddr.addr, 6);
-+  
-+  IPBUF->ethhdr.type = HTONS(UIP_ETHTYPE_IP);
-+
-+  uip_len += sizeof(struct uip_eth_hdr);
-+}
-+/*-----------------------------------------------------------------------------------*/
-+
-+/** @} */
-+/** @} */
---- /dev/null
-+++ b/net/uip-0.9/uip_arp.h
-@@ -0,0 +1,201 @@
-+/**
-+ * \addtogroup uip
-+ * @{
-+ */
-+
-+/**
-+ * \addtogroup uiparp 
-+ * @{
-+ */
-+ 
-+/**
-+ * \file
-+ * Macros and definitions for the ARP module.
-+ * \author Adam Dunkels <adam@dunkels.com>
-+ */
-+  
-+
-+/*
-+ * Copyright (c) 2001-2003, Adam Dunkels.
-+ * All rights reserved. 
-+ *
-+ * Redistribution and use in source and binary forms, with or without 
-+ * modification, are permitted provided that the following conditions 
-+ * are met: 
-+ * 1. Redistributions of source code must retain the above copyright 
-+ *    notice, this list of conditions and the following disclaimer. 
-+ * 2. Redistributions in binary form must reproduce the above copyright 
-+ *    notice, this list of conditions and the following disclaimer in the 
-+ *    documentation and/or other materials provided with the distribution. 
-+ * 3. The name of the author may not be used to endorse or promote
-+ *    products derived from this software without specific prior
-+ *    written permission.  
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
-+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
-+ *
-+ * This file is part of the uIP TCP/IP stack.
-+ *
-+ * $Id: uip_arp.h,v 1.3.2.2 2003/10/06 15:10:22 adam Exp $
-+ *
-+ */
-+
-+#ifndef __UIP_ARP_H__
-+#define __UIP_ARP_H__
-+
-+#include "uip.h"
-+
-+
-+/**
-+ * Representation of a 48-bit Ethernet address.
-+ */
-+struct uip_eth_addr {
-+  u8_t addr[6];
-+};
-+
-+extern struct uip_eth_addr uip_ethaddr;
-+
-+/**
-+ * The Ethernet header. 
-+ */
-+struct uip_eth_hdr {
-+  struct uip_eth_addr dest;
-+  struct uip_eth_addr src;
-+  u16_t type;
-+};
-+
-+#define UIP_ETHTYPE_ARP 0x0806
-+#define UIP_ETHTYPE_IP  0x0800
-+#define UIP_ETHTYPE_IP6 0x86dd 
-+
-+
-+/* The uip_arp_init() function must be called before any of the other
-+   ARP functions. */
-+void uip_arp_init(void);
-+
-+/* The uip_arp_ipin() function should be called whenever an IP packet
-+   arrives from the Ethernet. This function refreshes the ARP table or
-+   inserts a new mapping if none exists. The function assumes that an
-+   IP packet with an Ethernet header is present in the uip_buf buffer
-+   and that the length of the packet is in the uip_len variable. */
-+void uip_arp_ipin(void);
-+
-+/* The uip_arp_arpin() should be called when an ARP packet is received
-+   by the Ethernet driver. This function also assumes that the
-+   Ethernet frame is present in the uip_buf buffer. When the
-+   uip_arp_arpin() function returns, the contents of the uip_buf
-+   buffer should be sent out on the Ethernet if the uip_len variable
-+   is > 0. */
-+void uip_arp_arpin(void);
-+
-+/* The uip_arp_out() function should be called when an IP packet
-+   should be sent out on the Ethernet. This function creates an
-+   Ethernet header before the IP header in the uip_buf buffer. The
-+   Ethernet header will have the correct Ethernet MAC destination
-+   address filled in if an ARP table entry for the destination IP
-+   address (or the IP address of the default router) is present. If no
-+   such table entry is found, the IP packet is overwritten with an ARP
-+   request and we rely on TCP to retransmit the packet that was
-+   overwritten. In any case, the uip_len variable holds the length of
-+   the Ethernet frame that should be transmitted. */
-+void uip_arp_out(void);
-+
-+/* The uip_arp_timer() function should be called every ten seconds. It
-+   is responsible for flushing old entries in the ARP table. */
-+void uip_arp_timer(void);
-+
-+/** @} */
-+
-+/**
-+ * \addtogroup uipconffunc
-+ * @{
-+ */
-+
-+/**
-+ * Set the default router's IP address.
-+ *
-+ * \param addr A pointer to a 4-byte array containing the IP address
-+ * of the default router.
-+ *
-+ * \hideinitializer
-+ */
-+#define uip_setdraddr(addr) do { uip_arp_draddr[0] = addr[0]; \
-+                                 uip_arp_draddr[1] = addr[1]; } while(0)
-+
-+/**
-+ * Set the netmask.
-+ *
-+ * \param addr A pointer to a 4-byte array containing the IP address
-+ * of the netmask.
-+ *
-+ * \hideinitializer
-+ */
-+#define uip_setnetmask(addr) do { uip_arp_netmask[0] = addr[0]; \
-+                                  uip_arp_netmask[1] = addr[1]; } while(0)
-+
-+
-+/**
-+ * Get the default router's IP address.
-+ *
-+ * \param addr A pointer to a 4-byte array that will be filled in with
-+ * the IP address of the default router.
-+ *
-+ * \hideinitializer
-+ */
-+#define uip_getdraddr(addr) do { addr[0] = uip_arp_draddr[0]; \
-+                                 addr[1] = uip_arp_draddr[1]; } while(0)
-+
-+/**
-+ * Get the netmask.
-+ *
-+ * \param addr A pointer to a 4-byte array that will be filled in with
-+ * the value of the netmask.
-+ *
-+ * \hideinitializer
-+ */
-+#define uip_getnetmask(addr) do { addr[0] = uip_arp_netmask[0]; \
-+                                  addr[1] = uip_arp_netmask[1]; } while(0)
-+
-+
-+/**
-+ * Specifiy the Ethernet MAC address.
-+ *
-+ * The ARP code needs to know the MAC address of the Ethernet card in
-+ * order to be able to respond to ARP queries and to generate working
-+ * Ethernet headers.
-+ *
-+ * \note This macro only specifies the Ethernet MAC address to the ARP
-+ * code. It cannot be used to change the MAC address of the Ethernet
-+ * card.
-+ *
-+ * \param eaddr A pointer to a struct uip_eth_addr containing the
-+ * Ethernet MAC address of the Ethernet card.
-+ *
-+ * \hideinitializer
-+ */
-+#define uip_setethaddr(eaddr) do {uip_ethaddr.addr[0] = eaddr.addr[0]; \
-+                              uip_ethaddr.addr[1] = eaddr.addr[1];\
-+                              uip_ethaddr.addr[2] = eaddr.addr[2];\
-+                              uip_ethaddr.addr[3] = eaddr.addr[3];\
-+                              uip_ethaddr.addr[4] = eaddr.addr[4];\
-+                              uip_ethaddr.addr[5] = eaddr.addr[5];} while(0)
-+
-+/** @} */
-+
-+/**
-+ * \internal Internal variables that are set using the macros
-+ * uip_setdraddr and uip_setnetmask.
-+ */
-+extern u16_t uip_arp_draddr[2], uip_arp_netmask[2];
-+#endif /* __UIP_ARP_H__ */
-+
-+
 --- /dev/null
 +++ b/net/uip-0.9/uip.c
 @@ -0,0 +1,1503 @@
@@ -8787,6 +7878,915 @@
 +
 +
 +/** @} */
++
+--- /dev/null
++++ b/net/uip-0.9/uip_arch.c
+@@ -0,0 +1,145 @@
++/*
++ * Copyright (c) 2001, Adam Dunkels.
++ * All rights reserved. 
++ *
++ * Redistribution and use in source and binary forms, with or without 
++ * modification, are permitted provided that the following conditions 
++ * are met: 
++ * 1. Redistributions of source code must retain the above copyright 
++ *    notice, this list of conditions and the following disclaimer. 
++ * 2. Redistributions in binary form must reproduce the above copyright 
++ *    notice, this list of conditions and the following disclaimer in the 
++ *    documentation and/or other materials provided with the distribution. 
++ * 3. The name of the author may not be used to endorse or promote
++ *    products derived from this software without specific prior
++ *    written permission.  
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
++ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
++ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
++ *
++ * This file is part of the uIP TCP/IP stack.
++ *
++ * $Id: uip_arch.c,v 1.2.2.1 2003/10/04 22:54:17 adam Exp $
++ *
++ */
++
++
++#include "uip.h"
++#include "uip_arch.h"
++
++#define BUF ((uip_tcpip_hdr *)&uip_buf[UIP_LLH_LEN])
++#define IP_PROTO_TCP    6
++
++/*-----------------------------------------------------------------------------------*/
++void
++uip_add32(u8_t *op32, u16_t op16)
++{
++  
++  uip_acc32[3] = op32[3] + (op16 & 0xff);
++  uip_acc32[2] = op32[2] + (op16 >> 8);
++  uip_acc32[1] = op32[1];
++  uip_acc32[0] = op32[0];
++  
++  if(uip_acc32[2] < (op16 >> 8)) {
++    ++uip_acc32[1];    
++    if(uip_acc32[1] == 0) {
++      ++uip_acc32[0];
++    }
++  }
++  
++  
++  if(uip_acc32[3] < (op16 & 0xff)) {
++    ++uip_acc32[2];  
++    if(uip_acc32[2] == 0) {
++      ++uip_acc32[1];    
++      if(uip_acc32[1] == 0) {
++	++uip_acc32[0];
++      }
++    }
++  }
++}
++/*-----------------------------------------------------------------------------------*/
++u16_t
++uip_chksum(u16_t *sdata, u16_t len)
++{
++  u16_t acc;
++  
++  for(acc = 0; len > 1; len -= 2) {
++    acc += *sdata;
++    if(acc < *sdata) {
++      /* Overflow, so we add the carry to acc (i.e., increase by
++         one). */
++      ++acc;
++    }
++    ++sdata;
++  }
++
++  /* add up any odd byte */
++  if(len == 1) {
++    acc += htons(((u16_t)(*(u8_t *)sdata)) << 8);
++    if(acc < htons(((u16_t)(*(u8_t *)sdata)) << 8)) {
++      ++acc;
++    }
++  }
++
++  return acc;
++}
++/*-----------------------------------------------------------------------------------*/
++u16_t
++uip_ipchksum(void)
++{
++  return uip_chksum((u16_t *)&uip_buf[UIP_LLH_LEN], 20);
++}
++/*-----------------------------------------------------------------------------------*/
++u16_t
++uip_tcpchksum(void)
++{
++  u16_t hsum, sum;
++
++  
++  /* Compute the checksum of the TCP header. */
++  hsum = uip_chksum((u16_t *)&uip_buf[20 + UIP_LLH_LEN], 20);
++
++  /* Compute the checksum of the data in the TCP packet and add it to
++     the TCP header checksum. */
++  sum = uip_chksum((u16_t *)uip_appdata,
++		   (u16_t)(((((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - 40)));
++
++  if((sum += hsum) < hsum) {
++    ++sum;
++  }
++  
++  if((sum += BUF->srcipaddr[0]) < BUF->srcipaddr[0]) {
++    ++sum;
++  }
++  if((sum += BUF->srcipaddr[1]) < BUF->srcipaddr[1]) {
++    ++sum;
++  }
++  if((sum += BUF->destipaddr[0]) < BUF->destipaddr[0]) {
++    ++sum;
++  }
++  if((sum += BUF->destipaddr[1]) < BUF->destipaddr[1]) {
++    ++sum;
++  }
++  if((sum += (u16_t)htons((u16_t)IP_PROTO_TCP)) < (u16_t)htons((u16_t)IP_PROTO_TCP)) {
++    ++sum;
++  }
++
++  hsum = (u16_t)htons((((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - 20);
++  
++  if((sum += hsum) < hsum) {
++    ++sum;
++  }
++  
++  return sum;
++}
++/*-----------------------------------------------------------------------------------*/
+--- /dev/null
++++ b/net/uip-0.9/uip_arch.h
+@@ -0,0 +1,130 @@
++/**
++ * \defgroup uiparch Architecture specific uIP functions
++ * @{
++ *
++ * The functions in the architecture specific module implement the IP
++ * check sum and 32-bit additions.
++ *
++ * The IP checksum calculation is the most computationally expensive
++ * operation in the TCP/IP stack and it therefore pays off to
++ * implement this in efficient assembler. The purpose of the uip-arch
++ * module is to let the checksum functions to be implemented in
++ * architecture specific assembler.
++ *
++ */
++
++/**
++ * \file
++ * Declarations of architecture specific functions.
++ * \author Adam Dunkels <adam@dunkels.com>
++ */
++
++/*
++ * Copyright (c) 2001, Adam Dunkels.
++ * All rights reserved. 
++ *
++ * Redistribution and use in source and binary forms, with or without 
++ * modification, are permitted provided that the following conditions 
++ * are met: 
++ * 1. Redistributions of source code must retain the above copyright 
++ *    notice, this list of conditions and the following disclaimer. 
++ * 2. Redistributions in binary form must reproduce the above copyright 
++ *    notice, this list of conditions and the following disclaimer in the 
++ *    documentation and/or other materials provided with the distribution. 
++ * 3. The name of the author may not be used to endorse or promote
++ *    products derived from this software without specific prior
++ *    written permission.  
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
++ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
++ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
++ *
++ * This file is part of the uIP TCP/IP stack.
++ *
++ * $Id: uip_arch.h,v 1.1.2.2 2003/10/06 15:10:22 adam Exp $
++ *
++ */
++
++#ifndef __UIP_ARCH_H__
++#define __UIP_ARCH_H__
++
++#include "uip.h"
++
++/**
++ * Carry out a 32-bit addition.
++ *
++ * Because not all architectures for which uIP is intended has native
++ * 32-bit arithmetic, uIP uses an external C function for doing the
++ * required 32-bit additions in the TCP protocol processing. This
++ * function should add the two arguments and place the result in the
++ * global variable uip_acc32.
++ *
++ * \note The 32-bit integer pointed to by the op32 parameter and the
++ * result in the uip_acc32 variable are in network byte order (big
++ * endian).
++ *
++ * \param op32 A pointer to a 4-byte array representing a 32-bit
++ * integer in network byte order (big endian).
++ *
++ * \param op16 A 16-bit integer in host byte order.
++ */
++void uip_add32(u8_t *op32, u16_t op16);
++
++/**
++ * Calculate the Internet checksum over a buffer.
++ *
++ * The Internet checksum is the one's complement of the one's
++ * complement sum of all 16-bit words in the buffer.
++ *
++ * See RFC1071.
++ *
++ * \note This function is not called in the current version of uIP,
++ * but future versions might make use of it.
++ *
++ * \param buf A pointer to the buffer over which the checksum is to be
++ * computed.
++ *
++ * \param len The length of the buffer over which the checksum is to
++ * be computed.
++ *
++ * \return The Internet checksum of the buffer.
++ */
++u16_t uip_chksum(u16_t *buf, u16_t len);
++
++/**
++ * Calculate the IP header checksum of the packet header in uip_buf.
++ *
++ * The IP header checksum is the Internet checksum of the 20 bytes of
++ * the IP header.
++ *
++ * \return The IP header checksum of the IP header in the uip_buf
++ * buffer.
++ */
++u16_t uip_ipchksum(void);
++
++/**
++ * Calculate the TCP checksum of the packet in uip_buf and uip_appdata.
++ *
++ * The TCP checksum is the Internet checksum of data contents of the
++ * TCP segment, and a pseudo-header as defined in RFC793.
++ *
++ * \note The uip_appdata pointer that points to the packet data may
++ * point anywhere in memory, so it is not possible to simply calculate
++ * the Internet checksum of the contents of the uip_buf buffer.
++ *
++ * \return The TCP checksum of the TCP segment in uip_buf and pointed
++ * to by uip_appdata.
++ */
++u16_t uip_tcpchksum(void);
++
++/** @} */
++
++#endif /* __UIP_ARCH_H__ */
+--- /dev/null
++++ b/net/uip-0.9/uip_arp.c
+@@ -0,0 +1,421 @@
++/**
++ * \addtogroup uip
++ * @{
++ */
++
++/**
++ * \defgroup uiparp uIP Address Resolution Protocol
++ * @{
++ * 
++ * The Address Resolution Protocol ARP is used for mapping between IP
++ * addresses and link level addresses such as the Ethernet MAC
++ * addresses. ARP uses broadcast queries to ask for the link level
++ * address of a known IP address and the host which is configured with
++ * the IP address for which the query was meant, will respond with its
++ * link level address.
++ *
++ * \note This ARP implementation only supports Ethernet.
++ */
++ 
++/**
++ * \file
++ * Implementation of the ARP Address Resolution Protocol.
++ * \author Adam Dunkels <adam@dunkels.com>
++ *
++ */
++
++/*
++ * Copyright (c) 2001-2003, Adam Dunkels.
++ * All rights reserved. 
++ *
++ * Redistribution and use in source and binary forms, with or without 
++ * modification, are permitted provided that the following conditions 
++ * are met: 
++ * 1. Redistributions of source code must retain the above copyright 
++ *    notice, this list of conditions and the following disclaimer. 
++ * 2. Redistributions in binary form must reproduce the above copyright 
++ *    notice, this list of conditions and the following disclaimer in the 
++ *    documentation and/or other materials provided with the distribution. 
++ * 3. The name of the author may not be used to endorse or promote
++ *    products derived from this software without specific prior
++ *    written permission.  
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
++ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
++ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
++ *
++ * This file is part of the uIP TCP/IP stack.
++ *
++ * $Id: uip_arp.c,v 1.7.2.3 2003/10/06 22:42:30 adam Exp $
++ *
++ */
++
++
++#include "uip_arp.h"
++
++struct arp_hdr {
++  struct uip_eth_hdr ethhdr;
++  u16_t hwtype;
++  u16_t protocol;
++  u8_t hwlen;
++  u8_t protolen;
++  u16_t opcode;
++  struct uip_eth_addr shwaddr;
++  u16_t sipaddr[2];
++  struct uip_eth_addr dhwaddr;
++  u16_t dipaddr[2]; 
++};
++
++struct ethip_hdr {
++  struct uip_eth_hdr ethhdr;
++  /* IP header. */
++  u8_t vhl,
++    tos,          
++    len[2],       
++    ipid[2],        
++    ipoffset[2],  
++    ttl,          
++    proto;     
++  u16_t ipchksum;
++  u16_t srcipaddr[2], 
++    destipaddr[2];
++};
++
++#define ARP_REQUEST 1
++#define ARP_REPLY   2
++
++#define ARP_HWTYPE_ETH 1
++
++struct arp_entry {
++  u16_t ipaddr[2];
++  struct uip_eth_addr ethaddr;
++  u8_t time;
++};
++
++struct uip_eth_addr uip_ethaddr = {{UIP_ETHADDR0,
++				    UIP_ETHADDR1,
++				    UIP_ETHADDR2,
++				    UIP_ETHADDR3,
++				    UIP_ETHADDR4,
++				    UIP_ETHADDR5}};
++
++static struct arp_entry arp_table[UIP_ARPTAB_SIZE];
++static u16_t ipaddr[2];
++static u8_t i, c;
++
++static u8_t arptime;
++static u8_t tmpage;
++
++#define BUF   ((struct arp_hdr *)&uip_buf[0])
++#define IPBUF ((struct ethip_hdr *)&uip_buf[0])
++/*-----------------------------------------------------------------------------------*/
++/**
++ * Initialize the ARP module.
++ *
++ */
++/*-----------------------------------------------------------------------------------*/
++void
++uip_arp_init(void)
++{
++  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
++    memset(arp_table[i].ipaddr, 0, 4);
++  }
++}
++/*-----------------------------------------------------------------------------------*/
++/**
++ * Periodic ARP processing function.
++ *
++ * This function performs periodic timer processing in the ARP module
++ * and should be called at regular intervals. The recommended interval
++ * is 10 seconds between the calls.
++ *
++ */
++/*-----------------------------------------------------------------------------------*/
++void
++uip_arp_timer(void)
++{
++  struct arp_entry *tabptr;
++  
++  ++arptime;
++  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
++    tabptr = &arp_table[i];
++    if((tabptr->ipaddr[0] | tabptr->ipaddr[1]) != 0 &&
++       arptime - tabptr->time >= UIP_ARP_MAXAGE) {
++      memset(tabptr->ipaddr, 0, 4);
++    }
++  }
++
++}
++/*-----------------------------------------------------------------------------------*/
++static void
++uip_arp_update(u16_t *ipaddr, struct uip_eth_addr *ethaddr)
++{
++  register struct arp_entry *tabptr;
++  /* Walk through the ARP mapping table and try to find an entry to
++     update. If none is found, the IP -> MAC address mapping is
++     inserted in the ARP table. */
++  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
++
++    tabptr = &arp_table[i];
++    /* Only check those entries that are actually in use. */
++    if(tabptr->ipaddr[0] != 0 &&
++       tabptr->ipaddr[1] != 0) {
++
++      /* Check if the source IP address of the incoming packet matches
++         the IP address in this ARP table entry. */
++      if(ipaddr[0] == tabptr->ipaddr[0] &&
++	 ipaddr[1] == tabptr->ipaddr[1]) {
++	 
++	/* An old entry found, update this and return. */
++	memcpy(tabptr->ethaddr.addr, ethaddr->addr, 6);
++	tabptr->time = arptime;
++
++	return;
++      }
++    }
++  }
++
++  /* If we get here, no existing ARP table entry was found, so we
++     create one. */
++
++  /* First, we try to find an unused entry in the ARP table. */
++  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
++    tabptr = &arp_table[i];
++    if(tabptr->ipaddr[0] == 0 &&
++       tabptr->ipaddr[1] == 0) {
++      break;
++    }
++  }
++
++  /* If no unused entry is found, we try to find the oldest entry and
++     throw it away. */
++  if(i == UIP_ARPTAB_SIZE) {
++    tmpage = 0;
++    c = 0;
++    for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
++      tabptr = &arp_table[i];
++      if(arptime - tabptr->time > tmpage) {
++	tmpage = arptime - tabptr->time;
++	c = i;
++      }
++    }
++    i = c;
++  }
++
++  /* Now, i is the ARP table entry which we will fill with the new
++     information. */
++  memcpy(tabptr->ipaddr, ipaddr, 4);
++  memcpy(tabptr->ethaddr.addr, ethaddr->addr, 6);
++  tabptr->time = arptime;
++}
++/*-----------------------------------------------------------------------------------*/
++/**
++ * ARP processing for incoming IP packets
++ *
++ * This function should be called by the device driver when an IP
++ * packet has been received. The function will check if the address is
++ * in the ARP cache, and if so the ARP cache entry will be
++ * refreshed. If no ARP cache entry was found, a new one is created.
++ *
++ * This function expects an IP packet with a prepended Ethernet header
++ * in the uip_buf[] buffer, and the length of the packet in the global
++ * variable uip_len.
++ */
++/*-----------------------------------------------------------------------------------*/
++void
++uip_arp_ipin(void)
++{
++  uip_len -= sizeof(struct uip_eth_hdr);
++	
++  /* Only insert/update an entry if the source IP address of the
++     incoming IP packet comes from a host on the local network. */
++  if((IPBUF->srcipaddr[0] & uip_arp_netmask[0]) !=
++     (uip_hostaddr[0] & uip_arp_netmask[0])) {
++    return;
++  }
++  if((IPBUF->srcipaddr[1] & uip_arp_netmask[1]) !=
++     (uip_hostaddr[1] & uip_arp_netmask[1])) {
++    return;
++  }
++  uip_arp_update(IPBUF->srcipaddr, &(IPBUF->ethhdr.src));
++  
++  return;
++}
++/*-----------------------------------------------------------------------------------*/
++/**
++ * ARP processing for incoming ARP packets.
++ *
++ * This function should be called by the device driver when an ARP
++ * packet has been received. The function will act differently
++ * depending on the ARP packet type: if it is a reply for a request
++ * that we previously sent out, the ARP cache will be filled in with
++ * the values from the ARP reply. If the incoming ARP packet is an ARP
++ * request for our IP address, an ARP reply packet is created and put
++ * into the uip_buf[] buffer.
++ *
++ * When the function returns, the value of the global variable uip_len
++ * indicates whether the device driver should send out a packet or
++ * not. If uip_len is zero, no packet should be sent. If uip_len is
++ * non-zero, it contains the length of the outbound packet that is
++ * present in the uip_buf[] buffer.
++ *
++ * This function expects an ARP packet with a prepended Ethernet
++ * header in the uip_buf[] buffer, and the length of the packet in the
++ * global variable uip_len.
++ */
++/*-----------------------------------------------------------------------------------*/
++void
++uip_arp_arpin(void)
++{
++
++  if(uip_len < sizeof(struct arp_hdr)) {
++    uip_len = 0;
++    return;
++  }
++
++  uip_len = 0;
++
++  switch(BUF->opcode) {
++  case HTONS(ARP_REQUEST):
++    /* ARP request. If it asked for our address, we send out a
++       reply. */
++    if(BUF->dipaddr[0] == uip_hostaddr[0] &&
++       BUF->dipaddr[1] == uip_hostaddr[1]) {
++      /* The reply opcode is 2. */
++      BUF->opcode = HTONS(2);
++
++      memcpy(BUF->dhwaddr.addr, BUF->shwaddr.addr, 6);
++      memcpy(BUF->shwaddr.addr, uip_ethaddr.addr, 6);
++      memcpy(BUF->ethhdr.src.addr, uip_ethaddr.addr, 6);
++      memcpy(BUF->ethhdr.dest.addr, BUF->dhwaddr.addr, 6);
++      
++      BUF->dipaddr[0] = BUF->sipaddr[0];
++      BUF->dipaddr[1] = BUF->sipaddr[1];
++      BUF->sipaddr[0] = uip_hostaddr[0];
++      BUF->sipaddr[1] = uip_hostaddr[1];
++
++      BUF->ethhdr.type = HTONS(UIP_ETHTYPE_ARP);      
++      uip_len = sizeof(struct arp_hdr);
++    }      
++    break;
++  case HTONS(ARP_REPLY):
++    /* ARP reply. We insert or update the ARP table if it was meant
++       for us. */
++    if(BUF->dipaddr[0] == uip_hostaddr[0] &&
++       BUF->dipaddr[1] == uip_hostaddr[1]) {
++
++      uip_arp_update(BUF->sipaddr, &BUF->shwaddr);
++    }
++    break;
++  }
++
++  return;
++}
++/*-----------------------------------------------------------------------------------*/
++/**
++ * Prepend Ethernet header to an outbound IP packet and see if we need
++ * to send out an ARP request.
++ *
++ * This function should be called before sending out an IP packet. The
++ * function checks the destination IP address of the IP packet to see
++ * what Ethernet MAC address that should be used as a destination MAC
++ * address on the Ethernet.
++ *
++ * If the destination IP address is in the local network (determined
++ * by logical ANDing of netmask and our IP address), the function
++ * checks the ARP cache to see if an entry for the destination IP
++ * address is found. If so, an Ethernet header is prepended and the
++ * function returns. If no ARP cache entry is found for the
++ * destination IP address, the packet in the uip_buf[] is replaced by
++ * an ARP request packet for the IP address. The IP packet is dropped
++ * and it is assumed that they higher level protocols (e.g., TCP)
++ * eventually will retransmit the dropped packet.
++ *
++ * If the destination IP address is not on the local network, the IP
++ * address of the default router is used instead.
++ *
++ * When the function returns, a packet is present in the uip_buf[]
++ * buffer, and the length of the packet is in the global variable
++ * uip_len.
++ */
++/*-----------------------------------------------------------------------------------*/
++void
++uip_arp_out(void)
++{
++  struct arp_entry *tabptr;
++  /* Find the destination IP address in the ARP table and construct
++     the Ethernet header. If the destination IP addres isn't on the
++     local network, we use the default router's IP address instead.
++
++     If not ARP table entry is found, we overwrite the original IP
++     packet with an ARP request for the IP address. */
++
++  /* Check if the destination address is on the local network. */
++  if((IPBUF->destipaddr[0] & uip_arp_netmask[0]) !=
++     (uip_hostaddr[0] & uip_arp_netmask[0]) ||
++     (IPBUF->destipaddr[1] & uip_arp_netmask[1]) !=
++     (uip_hostaddr[1] & uip_arp_netmask[1])) {
++    /* Destination address was not on the local network, so we need to
++       use the default router's IP address instead of the destination
++       address when determining the MAC address. */
++    ipaddr[0] = uip_arp_draddr[0];
++    ipaddr[1] = uip_arp_draddr[1];
++  } else {
++    /* Else, we use the destination IP address. */
++    ipaddr[0] = IPBUF->destipaddr[0];
++    ipaddr[1] = IPBUF->destipaddr[1];
++  }
++      
++  for(i = 0; i < UIP_ARPTAB_SIZE; ++i) {
++    tabptr = &arp_table[i];
++    if(ipaddr[0] == tabptr->ipaddr[0] &&
++       ipaddr[1] == tabptr->ipaddr[1])
++      break;
++  }
++
++  if(i == UIP_ARPTAB_SIZE) {
++    /* The destination address was not in our ARP table, so we
++       overwrite the IP packet with an ARP request. */
++
++    memset(BUF->ethhdr.dest.addr, 0xff, 6);
++    memset(BUF->dhwaddr.addr, 0x00, 6);
++    memcpy(BUF->ethhdr.src.addr, uip_ethaddr.addr, 6);
++    memcpy(BUF->shwaddr.addr, uip_ethaddr.addr, 6);
++    
++    BUF->dipaddr[0] = ipaddr[0];
++    BUF->dipaddr[1] = ipaddr[1];
++    BUF->sipaddr[0] = uip_hostaddr[0];
++    BUF->sipaddr[1] = uip_hostaddr[1];
++    BUF->opcode = HTONS(ARP_REQUEST); /* ARP request. */
++    BUF->hwtype = HTONS(ARP_HWTYPE_ETH);
++    BUF->protocol = HTONS(UIP_ETHTYPE_IP);
++    BUF->hwlen = 6;
++    BUF->protolen = 4;
++    BUF->ethhdr.type = HTONS(UIP_ETHTYPE_ARP);
++
++    uip_appdata = &uip_buf[40 + UIP_LLH_LEN];
++    
++    uip_len = sizeof(struct arp_hdr);
++    return;
++  }
++
++  /* Build an ethernet header. */
++  memcpy(IPBUF->ethhdr.dest.addr, tabptr->ethaddr.addr, 6);
++  memcpy(IPBUF->ethhdr.src.addr, uip_ethaddr.addr, 6);
++  
++  IPBUF->ethhdr.type = HTONS(UIP_ETHTYPE_IP);
++
++  uip_len += sizeof(struct uip_eth_hdr);
++}
++/*-----------------------------------------------------------------------------------*/
++
++/** @} */
++/** @} */
+--- /dev/null
++++ b/net/uip-0.9/uip_arp.h
+@@ -0,0 +1,201 @@
++/**
++ * \addtogroup uip
++ * @{
++ */
++
++/**
++ * \addtogroup uiparp 
++ * @{
++ */
++ 
++/**
++ * \file
++ * Macros and definitions for the ARP module.
++ * \author Adam Dunkels <adam@dunkels.com>
++ */
++  
++
++/*
++ * Copyright (c) 2001-2003, Adam Dunkels.
++ * All rights reserved. 
++ *
++ * Redistribution and use in source and binary forms, with or without 
++ * modification, are permitted provided that the following conditions 
++ * are met: 
++ * 1. Redistributions of source code must retain the above copyright 
++ *    notice, this list of conditions and the following disclaimer. 
++ * 2. Redistributions in binary form must reproduce the above copyright 
++ *    notice, this list of conditions and the following disclaimer in the 
++ *    documentation and/or other materials provided with the distribution. 
++ * 3. The name of the author may not be used to endorse or promote
++ *    products derived from this software without specific prior
++ *    written permission.  
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
++ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
++ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
++ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  
++ *
++ * This file is part of the uIP TCP/IP stack.
++ *
++ * $Id: uip_arp.h,v 1.3.2.2 2003/10/06 15:10:22 adam Exp $
++ *
++ */
++
++#ifndef __UIP_ARP_H__
++#define __UIP_ARP_H__
++
++#include "uip.h"
++
++
++/**
++ * Representation of a 48-bit Ethernet address.
++ */
++struct uip_eth_addr {
++  u8_t addr[6];
++};
++
++extern struct uip_eth_addr uip_ethaddr;
++
++/**
++ * The Ethernet header. 
++ */
++struct uip_eth_hdr {
++  struct uip_eth_addr dest;
++  struct uip_eth_addr src;
++  u16_t type;
++};
++
++#define UIP_ETHTYPE_ARP 0x0806
++#define UIP_ETHTYPE_IP  0x0800
++#define UIP_ETHTYPE_IP6 0x86dd 
++
++
++/* The uip_arp_init() function must be called before any of the other
++   ARP functions. */
++void uip_arp_init(void);
++
++/* The uip_arp_ipin() function should be called whenever an IP packet
++   arrives from the Ethernet. This function refreshes the ARP table or
++   inserts a new mapping if none exists. The function assumes that an
++   IP packet with an Ethernet header is present in the uip_buf buffer
++   and that the length of the packet is in the uip_len variable. */
++void uip_arp_ipin(void);
++
++/* The uip_arp_arpin() should be called when an ARP packet is received
++   by the Ethernet driver. This function also assumes that the
++   Ethernet frame is present in the uip_buf buffer. When the
++   uip_arp_arpin() function returns, the contents of the uip_buf
++   buffer should be sent out on the Ethernet if the uip_len variable
++   is > 0. */
++void uip_arp_arpin(void);
++
++/* The uip_arp_out() function should be called when an IP packet
++   should be sent out on the Ethernet. This function creates an
++   Ethernet header before the IP header in the uip_buf buffer. The
++   Ethernet header will have the correct Ethernet MAC destination
++   address filled in if an ARP table entry for the destination IP
++   address (or the IP address of the default router) is present. If no
++   such table entry is found, the IP packet is overwritten with an ARP
++   request and we rely on TCP to retransmit the packet that was
++   overwritten. In any case, the uip_len variable holds the length of
++   the Ethernet frame that should be transmitted. */
++void uip_arp_out(void);
++
++/* The uip_arp_timer() function should be called every ten seconds. It
++   is responsible for flushing old entries in the ARP table. */
++void uip_arp_timer(void);
++
++/** @} */
++
++/**
++ * \addtogroup uipconffunc
++ * @{
++ */
++
++/**
++ * Set the default router's IP address.
++ *
++ * \param addr A pointer to a 4-byte array containing the IP address
++ * of the default router.
++ *
++ * \hideinitializer
++ */
++#define uip_setdraddr(addr) do { uip_arp_draddr[0] = addr[0]; \
++                                 uip_arp_draddr[1] = addr[1]; } while(0)
++
++/**
++ * Set the netmask.
++ *
++ * \param addr A pointer to a 4-byte array containing the IP address
++ * of the netmask.
++ *
++ * \hideinitializer
++ */
++#define uip_setnetmask(addr) do { uip_arp_netmask[0] = addr[0]; \
++                                  uip_arp_netmask[1] = addr[1]; } while(0)
++
++
++/**
++ * Get the default router's IP address.
++ *
++ * \param addr A pointer to a 4-byte array that will be filled in with
++ * the IP address of the default router.
++ *
++ * \hideinitializer
++ */
++#define uip_getdraddr(addr) do { addr[0] = uip_arp_draddr[0]; \
++                                 addr[1] = uip_arp_draddr[1]; } while(0)
++
++/**
++ * Get the netmask.
++ *
++ * \param addr A pointer to a 4-byte array that will be filled in with
++ * the value of the netmask.
++ *
++ * \hideinitializer
++ */
++#define uip_getnetmask(addr) do { addr[0] = uip_arp_netmask[0]; \
++                                  addr[1] = uip_arp_netmask[1]; } while(0)
++
++
++/**
++ * Specifiy the Ethernet MAC address.
++ *
++ * The ARP code needs to know the MAC address of the Ethernet card in
++ * order to be able to respond to ARP queries and to generate working
++ * Ethernet headers.
++ *
++ * \note This macro only specifies the Ethernet MAC address to the ARP
++ * code. It cannot be used to change the MAC address of the Ethernet
++ * card.
++ *
++ * \param eaddr A pointer to a struct uip_eth_addr containing the
++ * Ethernet MAC address of the Ethernet card.
++ *
++ * \hideinitializer
++ */
++#define uip_setethaddr(eaddr) do {uip_ethaddr.addr[0] = eaddr.addr[0]; \
++                              uip_ethaddr.addr[1] = eaddr.addr[1];\
++                              uip_ethaddr.addr[2] = eaddr.addr[2];\
++                              uip_ethaddr.addr[3] = eaddr.addr[3];\
++                              uip_ethaddr.addr[4] = eaddr.addr[4];\
++                              uip_ethaddr.addr[5] = eaddr.addr[5];} while(0)
++
++/** @} */
++
++/**
++ * \internal Internal variables that are set using the macros
++ * uip_setdraddr and uip_setnetmask.
++ */
++extern u16_t uip_arp_draddr[2], uip_arp_netmask[2];
++#endif /* __UIP_ARP_H__ */
++
 +
 --- /dev/null
 +++ b/net/uip-0.9/uipopt.h
