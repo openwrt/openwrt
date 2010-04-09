@@ -1,0 +1,13 @@
+--- linux-2.6.32.10.orig/drivers/net/bcm63xx_enet.c	2010-04-06 19:25:52.612158288 +0100
++++ linux-2.6.32.10/drivers/net/bcm63xx_enet.c	2010-04-07 21:40:26.991801424 +0100
+@@ -965,7 +965,9 @@
+ 	/* all set, enable mac and interrupts, start dma engine and
+ 	 * kick rx dma channel */
+ 	wmb();
+-	enet_writel(priv, ENET_CTL_ENABLE_MASK, ENET_CTL_REG);
++	val = enet_readl(priv, ENET_CTL_REG);
++	val |= ENET_CTL_ENABLE_MASK;
++	enet_writel(priv, val, ENET_CTL_REG);
+ 	enet_dma_writel(priv, ENETDMA_CFG_EN_MASK, ENETDMA_CFG_REG);
+ 	enet_dma_writel(priv, ENETDMA_CHANCFG_EN_MASK,
+ 			ENETDMA_CHANCFG_REG(priv->rx_chan));
