@@ -128,6 +128,11 @@ static struct gpio_button dir_615c1_gpio_buttons[] __initdata = {
 	}
 };
 
+#define DIR_615C1_LAN_PHYMASK	BIT(0)
+#define DIR_615C1_WAN_PHYMASK	BIT(4)
+#define DIR_615C1_MDIO_MASK	(~(DIR_615C1_LAN_PHYMASK | \
+				   DIR_615C1_WAN_PHYMASK))
+
 static void __init dir_615c1_setup(void)
 {
 	const char *config = (char *) KSEG1ADDR(DIR_615C1_CONFIG_ADDR);
@@ -141,14 +146,13 @@ static void __init dir_615c1_setup(void)
 		wlan_mac = mac;
 	}
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(DIR_615C1_MDIO_MASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.speed = SPEED_100;
-	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = DIR_615C1_LAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0x10;
+	ar71xx_eth1_data.phy_mask = DIR_615C1_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
