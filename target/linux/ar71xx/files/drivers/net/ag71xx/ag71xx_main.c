@@ -764,6 +764,9 @@ static int ag71xx_rx_copy_skb(struct ag71xx *ag, struct sk_buff **pskb,
 {
 	struct sk_buff *copy_skb;
 
+	if (ag->phy_dev && (ag->phy_dev->pkt_align % 4) == 2)
+		goto keep;
+
 	copy_skb = netdev_alloc_skb(ag->dev, pktlen + NET_IP_ALIGN);
 	if (!copy_skb)
 		return -ENOMEM;
@@ -775,6 +778,10 @@ static int ag71xx_rx_copy_skb(struct ag71xx *ag, struct sk_buff **pskb,
 	dev_kfree_skb_any(*pskb);
 	*pskb = copy_skb;
 
+	return 0;
+
+ keep:
+	skb_put(*pskb, pktlen);
 	return 0;
 }
 
