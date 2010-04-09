@@ -125,8 +125,10 @@ define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/src/mei/ 
 	$(CP) ./src/* $(PKG_BUILD_DIR)/src/mei/
 	$(Build/Patch)
+ifeq ($(CONFIG_IFXMIPS_DSL_FIRMWARE),)
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(FW_BASE_NAME)_a-$(FW_A_VER).tar.gz
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(FW_BASE_NAME)_b-$(FW_B_VER).tar.gz
+endif
 endef
 
 define Build/Configure
