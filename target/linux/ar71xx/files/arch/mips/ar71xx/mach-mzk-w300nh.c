@@ -125,13 +125,16 @@ static struct gpio_button mzk_w300nh_gpio_buttons[] __initdata = {
 	}
 };
 
+#define MZK_W300NH_WAN_PHYMASK	BIT(4)
+#define MZK_W300NH_MDIO_MASK	(~MZK_W300NH_WAN_PHYMASK)
+
 static void __init mzk_w300nh_setup(void)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	ar71xx_set_mac_base(eeprom);
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(MZK_W300NH_MDIO_MASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.speed = SPEED_100;
@@ -139,7 +142,7 @@ static void __init mzk_w300nh_setup(void)
 	ar71xx_eth0_data.has_ar8216 = 1;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0x10;
+	ar71xx_eth1_data.phy_mask = MZK_W300NH_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
