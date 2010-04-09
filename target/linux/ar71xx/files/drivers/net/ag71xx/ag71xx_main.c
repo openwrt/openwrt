@@ -826,8 +826,12 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		} else {
 			skb->dev = dev;
 			skb->ip_summed = CHECKSUM_NONE;
-			skb->protocol = eth_type_trans(skb, dev);
-			netif_receive_skb(skb);
+			if (ag->phy_dev) {
+				ag->phy_dev->netif_receive_skb(skb);
+			} else {
+				skb->protocol = eth_type_trans(skb, dev);
+				netif_receive_skb(skb);
+			}
 		}
 
 		ring->buf[i].skb = NULL;
