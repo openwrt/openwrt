@@ -162,8 +162,10 @@ enable_broadcom() {
 
 	case "$hwmode" in
 		*b)   hwmode=0;;
+		*bg)  hwmode=1;;
 		*g)   hwmode=2;;
 		*gst) hwmode=4;;
+		*lrs) hwmode=5;;
 		*)    hwmode=1;;
 	esac
 
@@ -246,7 +248,7 @@ enable_broadcom() {
 		append vif_do_up "wpa_auth $auth" "$N"
 		append vif_do_up "wsec_restrict $wsec_r" "$N"
 		append vif_do_up "eap_restrict $eap_r" "$N"
-		
+
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0" "$N"
 		append vif_post_up "ssid $ssid" "$N"
@@ -264,9 +266,9 @@ enable_broadcom() {
 				append vif_pre_up "allow_mode 1" "$N"
 			}
 		} || append vif_pre_up "allow_mode 0" "$N"
-		
+
 		append vif_post_up "enabled 1" "$N"
-		
+
 		config_get ifname "$vif" ifname
 		#append if_up "ifconfig $ifname up" ";$N"
 
@@ -286,7 +288,7 @@ enable_broadcom() {
 				[ -z "$bridge" ] || {
 					append vif_post_up "supplicant 1" "$N"
 					append vif_post_up "passphrase $key" "$N"
-					
+
 					use_nas=0
 				}
 			}
