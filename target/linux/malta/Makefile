@@ -6,20 +6,16 @@
 #
 include $(TOPDIR)/rules.mk
 
-ARCH:=mipsel
 BOARD:=malta
 BOARDNAME:=MIPS Malta CoreLV board (qemu)
-FEATURES:=ramdisk
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+SUBTARGETS:=le be
+INITRAMFS_EXTRA_FILES:=
 
 LINUX_VERSION:=2.6.32.10
 
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim
-
-define Target/Description
-	Build firmware images for MTI Malta CoreLV boards.
-endef
 
 $(eval $(call BuildTarget))
