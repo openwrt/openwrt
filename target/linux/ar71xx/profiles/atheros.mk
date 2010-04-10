@@ -50,3 +50,14 @@ define Profile/PB44/Description
 endef
 
 $(eval $(call Profile,PB44))
+
+define Profile/PB92
+	NAME:=Atheros PB92 reference board
+	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2
+endef
+
+define Profile/PB92/Description
+	Package set optimized for the Atheros PB92 reference board.
+endef
+
+$(eval $(call Profile,PB92))
