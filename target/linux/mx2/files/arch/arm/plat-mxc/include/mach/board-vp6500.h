@@ -1,0 +1,9 @@
+
+#ifndef __BOARD_VP6500__
+#define __BOARD_VP6500__
+
+#define VP6500_GPIO_CAMERA_DIRECTION 45
+#define VP6500_GPIO_KEYPAD_LEDS 82
+#define VP6500_GPIO_AMP_ENABLE 89
+
+#endif
