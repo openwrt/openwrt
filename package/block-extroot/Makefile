@@ -26,7 +26,7 @@ endef
 define Package/block-extroot
   $(call Package/block-extroot/Default)
   MENU:=1
-  DEPENDS:=+block-mount @PACKAGE_kmod-ide-core||PACKAGE_kmod-usb-storage||PACKAGE_kmod-mmc||PACKAGE_kmod-broadcom-sdhc
+  DEPENDS:=+block-mount @PACKAGE_kmod-ide-core||PACKAGE_kmod-ata-core||PACKAGE_kmod-usb-storage||PACKAGE_kmod-mmc
 endef
 
 define Package/block-extroot/config
