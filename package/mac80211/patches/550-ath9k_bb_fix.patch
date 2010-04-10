@@ -1,7 +1,7 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1911,6 +1911,34 @@ static void ath9k_enable_rfkill(struct a
- 	REG_SET_BIT(ah, AR_PHY_TEST, RFSILENT_BB);
+@@ -1134,6 +1134,34 @@ static bool ath9k_hw_channel_change(stru
+ 	return true;
  }
  
 +bool ath9k_hw_check_alive(struct ath_hw *ah)
@@ -37,7 +37,7 @@
  {
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -679,6 +679,7 @@ void ath9k_hw_set11nmac2040(struct ath_h
+@@ -848,6 +848,7 @@ void ath9k_hw_set11nmac2040(struct ath_h
  void ath9k_hw_beaconinit(struct ath_hw *ah, u32 next_beacon, u32 beacon_period);
  void ath9k_hw_set_sta_beacon_timers(struct ath_hw *ah,
  				    const struct ath9k_beacon_state *bs);
@@ -47,7 +47,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -405,7 +405,8 @@ void ath9k_tasklet(unsigned long data)
+@@ -406,7 +406,8 @@ void ath9k_tasklet(unsigned long data)
  
  	ath9k_ps_wakeup(sc);
  

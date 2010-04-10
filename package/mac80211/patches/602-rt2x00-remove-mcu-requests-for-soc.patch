@@ -14,9 +14,9 @@ Signed-off-by: Gertjan van Wingerde <gwingerde@gmail.com>
 
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -60,6 +60,12 @@ static void rt2800pci_mcu_status(struct 
- 	unsigned int i;
- 	u32 reg;
+@@ -66,6 +66,12 @@ static void rt2800pci_mcu_status(struct 
+ 	if (rt2x00_is_soc(rt2x00dev))
+ 		return;
  
 +	/*
 +	 * SOC devices don't support MCU requests.
