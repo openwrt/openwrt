@@ -145,10 +145,10 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	case 0x1001:
 		return AR8316;
 	default:
-		printk(KERN_ERR
+		printk(KERN_DEBUG
 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
-			(int)(val >> AR8216_CTRL_VERSION_S),
-			(int)(val & AR8216_CTRL_REVISION),
+			(int)(id >> AR8216_CTRL_VERSION_S),
+			(int)(id & AR8216_CTRL_REVISION),
 			priv->phy->bus->read(priv->phy->bus, priv->phy->addr, 2),
 			priv->phy->bus->read(priv->phy->bus, priv->phy->addr, 3));
 
@@ -297,7 +297,7 @@ recv:
 error:
 	/* no vlan? eat the packet! */
 	dev_kfree_skb_any(skb);
-	return 0;
+	return NET_RX_DROP;
 }
 
 static int
@@ -646,8 +646,10 @@ ar8216_config_init(struct phy_device *pdev)
 
 	priv->chip = ar8216_id_chip(priv);
 
-	printk(KERN_INFO "%s: AR%d PHY driver attached.\n",
-		pdev->attached_dev->name, priv->chip);
+	if (pdev->addr == 0)
+		printk(KERN_INFO "%s: AR%d switch driver attached.\n",
+			pdev->attached_dev->name, priv->chip);
+
 
 	if (pdev->addr != 0) {
 		if (priv->chip == AR8316) {
