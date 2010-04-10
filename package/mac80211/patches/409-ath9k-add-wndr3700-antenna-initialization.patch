@@ -8,7 +8,7 @@
  #include "ath9k.h"
  
  static char *dev_info = "ath9k";
-@@ -546,6 +547,8 @@ static int ath9k_init_softc(u16 devid, s
+@@ -555,6 +556,8 @@ static int ath9k_init_softc(u16 devid, s
  	pdata = (struct ath9k_platform_data *) sc->dev->platform_data;
  	if (!pdata)
  		ah->ah_flags |= AH_USE_EEPROM;
@@ -17,7 +17,7 @@
  
  	common = ath9k_hw_common(ah);
  	common->ops = &ath9k_common_ops;
-@@ -671,6 +674,24 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -677,6 +680,24 @@ void ath9k_set_hw_capab(struct ath_softc
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
  }
  
@@ -42,7 +42,7 @@
  int ath9k_init_device(u16 devid, struct ath_softc *sc, u16 subsysid,
  		    const struct ath_bus_ops *bus_ops)
  {
-@@ -689,6 +710,9 @@ int ath9k_init_device(u16 devid, struct 
+@@ -695,6 +716,9 @@ int ath9k_init_device(u16 devid, struct 
  	common = ath9k_hw_common(ah);
  	ath9k_set_hw_capab(sc, hw);
  
@@ -54,15 +54,15 @@
  			      ath9k_reg_notifier);
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -511,6 +511,8 @@ struct ath_softc {
- 	struct ath_beacon_config cur_beacon_conf;
- 	struct delayed_work tx_complete_work;
- 	struct ath_btcoex btcoex;
-+
-+	unsigned long quirk_wndr3700:1;
- };
+@@ -516,6 +516,8 @@ struct ath_softc {
  
- struct ath_wiphy {
+ 	int beacon_interval;
+ 
++	bool quirk_wndr3700;
++
+ #ifdef CONFIG_ATH9K_DEBUGFS
+ 	struct ath9k_debug debug;
+ #endif
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
 @@ -24,6 +24,8 @@
@@ -70,7 +70,7 @@
  	u16 eeprom_data[ATH9K_PLAT_EEP_MAX_WORDS];
  	u8 *macaddr;
 +
-+	unsigned long quirk_wndr3700:1;
++	bool quirk_wndr3700;
  };
  
  #endif /* _LINUX_ATH9K_PLATFORM_H */
