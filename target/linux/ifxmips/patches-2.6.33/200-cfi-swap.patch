@@ -1,0 +1,42 @@
+Index: linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0001.c
+===================================================================
+--- linux-2.6.33.2.orig/drivers/mtd/chips/cfi_cmdset_0001.c	2010-04-02 01:02:33.000000000 +0200
++++ linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0001.c	2010-04-02 23:47:32.000000000 +0200
+@@ -41,7 +41,11 @@
+ /* #define CMDSET0001_DISABLE_WRITE_SUSPEND */
+ 
+ // debugging, turns off buffer write mode if set to 1
+-#define FORCE_WORD_WRITE 0
++#ifdef CONFIG_IFXMIPS
++#  define FORCE_WORD_WRITE 1
++#else
++#  define FORCE_WORD_WRITE 0
++#endif
+ 
+ /* Intel chips */
+ #define I82802AB	0x00ad
+@@ -1494,6 +1498,9 @@
+ 	int ret=0;
+ 
+ 	adr += chip->start;
++#ifdef CONFIG_IFXMIPS
++	adr ^= 2;
++#endif
+ 
+ 	switch (mode) {
+ 	case FL_WRITING:
+Index: linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0002.c
+===================================================================
+--- linux-2.6.33.2.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2010-04-02 23:31:00.000000000 +0200
++++ linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0002.c	2010-04-02 23:47:32.000000000 +0200
+@@ -1068,7 +1068,9 @@
+ 	int retry_cnt = 0;
+ 
+ 	adr += chip->start;
+-
++#ifdef CONFIG_IFXMIPS
++	adr ^= 2;
++#endif
+ 	spin_lock(chip->mutex);
+ 	ret = get_chip(map, chip, adr, FL_WRITING);
+ 	if (ret) {

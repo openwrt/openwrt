@@ -1,0 +1,39 @@
+Index: linux-2.6.33.2/arch/mips/kernel/traps.c
+===================================================================
+--- linux-2.6.33.2.orig/arch/mips/kernel/traps.c	2010-04-02 01:02:33.000000000 +0200
++++ linux-2.6.33.2/arch/mips/kernel/traps.c	2010-04-02 23:36:16.000000000 +0200
+@@ -1496,7 +1496,18 @@
+ 	if (cpu_has_mips_r2) {
+ 		cp0_compare_irq_shift = CAUSEB_TI - CAUSEB_IP;
+ 		cp0_compare_irq = (read_c0_intctl() >> INTCTLB_IPTI) & 7;
++
++		if (!cp0_compare_irq)
++			cp0_compare_irq = CP0_LEGACY_COMPARE_IRQ;
++
+ 		cp0_perfcount_irq = (read_c0_intctl() >> INTCTLB_IPPCI) & 7;
++
++		if (!cp0_perfcount_irq)
++			cp0_perfcount_irq = CP0_LEGACY_PERFCNT_IRQ;
++
++		if (arch_fixup_c0_irqs)
++			arch_fixup_c0_irqs();
++
+ 		if (cp0_perfcount_irq == cp0_compare_irq)
+ 			cp0_perfcount_irq = -1;
+ 	} else {
+Index: linux-2.6.33.2/arch/mips/include/asm/irq.h
+===================================================================
+--- linux-2.6.33.2.orig/arch/mips/include/asm/irq.h	2010-04-02 01:02:33.000000000 +0200
++++ linux-2.6.33.2/arch/mips/include/asm/irq.h	2010-04-02 23:37:14.000000000 +0200
+@@ -133,9 +133,11 @@
+  * IE7.  Since R2 their number has to be read from the c0_intctl register.
+  */
+ #define CP0_LEGACY_COMPARE_IRQ 7
++#define CP0_LEGACY_PERFCNT_IRQ 7
+ 
+ extern int cp0_compare_irq;
+ extern int cp0_compare_irq_shift;
+ extern int cp0_perfcount_irq;
++extern void __weak arch_fixup_c0_irqs(void);
+ 
+ #endif /* _ASM_IRQ_H */
