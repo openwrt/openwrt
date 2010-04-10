@@ -1,4 +1,10 @@
 
+# uncomment me to log hotplug events
+# DEVPATH is set {
+# 	nothrottle
+# 	exec logger -s -t hotplug -p daemon.info "name=%DEVICENAME%, path=%DEVPATH%"
+# }
+
 DEVICENAME ~~ (null|full|ptmx|tty|zero|gpio|hvc) {
 	nothrottle
 	makedev /dev/%DEVICENAME% 0666
