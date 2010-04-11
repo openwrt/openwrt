@@ -801,7 +801,7 @@ define KernelPackage/cs5535-gpio
   DEPENDS:=@TARGET_x86||@TARGET_olpc
   KCONFIG:=CONFIG_CS5535_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/cs5535_gpio.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,cs5535_gpio)
+  AUTOLOAD:=$(call AutoLoad,50,cs5535_gpio)
 endef
 
 define KernelPackage/cs5535-gpio/description
@@ -874,3 +874,34 @@ define KernelPackage/rfkill/description
 endef
 
 $(eval $(call KernelPackage,rfkill))
+
+define KernelPackage/geodewdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Geode/LX Watchdog timer
+  DEPENDS:=@TARGET_x86 @LINUX_2_6
+  KCONFIG:=CONFIG_GEODE_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/geodewdt.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,geodewdt)
+endef
+
+define KernelPackage/geodewdt/description
+  Kernel module for Geode watchdog timer.
+endef
+
+$(eval $(call KernelPackage,geodewdt))
+
+define KernelPackage/pc8736x-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PC8736x GPIO support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_PC8736x_GPIO
+  FILES:=$(LINUX_DIR)/drivers/char/pc8736x_gpio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pc8736x_gpio)
+endef
+
+define KernelPackage/pc8736x-gpio/description
+ Kernel module for PC8736x GPIO
+endef
+
+$(eval $(call KernelPackage,pc8736x-gpio))
+

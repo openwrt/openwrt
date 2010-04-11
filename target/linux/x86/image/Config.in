@@ -13,8 +13,8 @@ config X86_GRUB_CONSOLE
     bool
     depends X86_GRUB_IMAGES
     prompt "Use Console Terminal (in addition to Serial)"
-    default n if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx
-    default y if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx)
+    default n if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501
+    default y if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501)
 
 config X86_GRUB_SERIAL
     string
@@ -26,8 +26,8 @@ config X86_GRUB_SERIAL
 config X86_GRUB_BAUDRATE
     int "Serial port baud rate"
     depends X86_GRUB_IMAGES
-    default 19200 if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx
-    default 38400 if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx)
+    default 19200 if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501
+    default 38400 if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501)
 
 config X86_GRUB_KERNELPART
     int "Kernel partition size (in MB)"
