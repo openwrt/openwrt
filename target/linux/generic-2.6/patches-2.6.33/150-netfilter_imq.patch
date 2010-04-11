@@ -851,8 +851,8 @@
  
  /* Don't change this without changing skb_csum_unnecessary! */
  #define CHECKSUM_NONE 0
-@@ -320,6 +323,10 @@ struct sk_buff {
- 	struct net_device	*dev;
+@@ -323,6 +326,10 @@ struct sk_buff {
+ 	char			cb[48] __aligned(8);
  
  	unsigned long		_skb_dst;
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
@@ -862,7 +862,7 @@
  #ifdef CONFIG_XFRM
  	struct	sec_path	*sp;
  #endif
-@@ -362,6 +369,9 @@ struct sk_buff {
+@@ -357,6 +364,9 @@ struct sk_buff {
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -872,7 +872,7 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -383,6 +393,10 @@ struct sk_buff {
+@@ -378,6 +388,10 @@ struct sk_buff {
  
  	/* 0/14 bit hole */
  
@@ -883,7 +883,7 @@
  #ifdef CONFIG_NET_DMA
  	dma_cookie_t		dma_cookie;
  #endif
-@@ -431,6 +445,12 @@ static inline struct rtable *skb_rtable(
+@@ -426,6 +440,12 @@ static inline struct rtable *skb_rtable(
  	return (struct rtable *)skb_dst(skb);
  }
  
@@ -896,7 +896,7 @@
  extern void kfree_skb(struct sk_buff *skb);
  extern void consume_skb(struct sk_buff *skb);
  extern void	       __kfree_skb(struct sk_buff *skb);
-@@ -1975,6 +1995,10 @@ static inline void __nf_copy(struct sk_b
+@@ -1970,6 +1990,10 @@ static inline void __nf_copy(struct sk_b
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -1184,7 +1184,7 @@
  /* return EBUSY when somebody else is registered, return EEXIST if the
   * same handler is registered, return 0 in case of success. */
  int nf_register_queue_handler(u_int8_t pf, const struct nf_queue_handler *qh)
-@@ -80,7 +100,7 @@ void nf_unregister_queue_handlers(const 
+@@ -80,7 +100,7 @@ void nf_unregister_queue_handlers(const
  }
  EXPORT_SYMBOL_GPL(nf_unregister_queue_handlers);
  
