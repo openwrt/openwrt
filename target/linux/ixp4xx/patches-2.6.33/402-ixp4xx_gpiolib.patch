@@ -1,0 +1,125 @@
+--- a/arch/arm/mach-ixp4xx/common.c
++++ b/arch/arm/mach-ixp4xx/common.c
+@@ -36,6 +36,7 @@
+ #include <asm/pgtable.h>
+ #include <asm/page.h>
+ #include <asm/irq.h>
++#include <asm/gpio.h>
+ 
+ #include <asm/mach/map.h>
+ #include <asm/mach/irq.h>
+@@ -375,12 +376,39 @@ static struct platform_device *ixp46x_de
+ unsigned long ixp4xx_exp_bus_size;
+ EXPORT_SYMBOL(ixp4xx_exp_bus_size);
+ 
++static int ixp4xx_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
++{
++	gpio_line_config(gpio, IXP4XX_GPIO_IN);
++	return 0;
++}
++EXPORT_SYMBOL(ixp4xx_gpio_direction_input);
++
++static int ixp4xx_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int level)
++{
++	gpio_line_set(gpio, level);
++	gpio_line_config(gpio, IXP4XX_GPIO_OUT);
++	return 0;
++}
++EXPORT_SYMBOL(ixp4xx_gpio_direction_output);
++
++static struct gpio_chip ixp4xx_gpio_chip = {
++	.label			= "IXP4XX_GPIO_CHIP",
++	.direction_input	= ixp4xx_gpio_direction_input,
++	.direction_output	= ixp4xx_gpio_direction_output,
++	.get			= gpio_get_value,
++	.set			= gpio_set_value,
++	.base			= 0,
++	.ngpio			= 16,
++};
++
+ void __init ixp4xx_sys_init(void)
+ {
+ 	ixp4xx_exp_bus_size = SZ_16M;
+ 
+ 	platform_add_devices(ixp4xx_devices, ARRAY_SIZE(ixp4xx_devices));
+ 
++	gpiochip_add(&ixp4xx_gpio_chip);
++
+ 	if (cpu_is_ixp46x()) {
+ 		int region;
+ 
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -418,6 +418,7 @@ config ARCH_IXP4XX
+ 	select GENERIC_GPIO
+ 	select GENERIC_TIME
+ 	select GENERIC_CLOCKEVENTS
++	select ARCH_REQUIRE_GPIOLIB
+ 	help
+ 	  Support for Intel's IXP4XX (XScale) family of processors.
+ 
+--- a/arch/arm/mach-ixp4xx/include/mach/gpio.h
++++ b/arch/arm/mach-ixp4xx/include/mach/gpio.h
+@@ -27,47 +27,31 @@
+ 
+ #include <linux/kernel.h>
+ #include <mach/hardware.h>
++#include <asm-generic/gpio.h>			/* cansleep wrappers */
+ 
+-static inline int gpio_request(unsigned gpio, const char *label)
+-{
+-	return 0;
+-}
+-
+-static inline void gpio_free(unsigned gpio)
+-{
+-	might_sleep();
+-
+-	return;
+-}
+-
+-static inline int gpio_direction_input(unsigned gpio)
+-{
+-	gpio_line_config(gpio, IXP4XX_GPIO_IN);
+-	return 0;
+-}
+-
+-static inline int gpio_direction_output(unsigned gpio, int level)
+-{
+-	gpio_line_set(gpio, level);
+-	gpio_line_config(gpio, IXP4XX_GPIO_OUT);
+-	return 0;
+-}
++#define NR_BUILTIN_GPIO 16
+ 
+ static inline int gpio_get_value(unsigned gpio)
+ {
+-	int value;
+-
+-	gpio_line_get(gpio, &value);
+-
+-	return value;
++	if (gpio < NR_BUILTIN_GPIO)
++	{
++		int value;
++		gpio_line_get(gpio, &value);
++		return value;
++	}
++	else
++		return __gpio_get_value(gpio);
+ }
+ 
+ static inline void gpio_set_value(unsigned gpio, int value)
+ {
+-	gpio_line_set(gpio, value);
++	if (gpio < NR_BUILTIN_GPIO)
++		gpio_line_set(gpio, value);
++	else
++		__gpio_set_value(gpio, value);
+ }
+ 
+-#include <asm-generic/gpio.h>			/* cansleep wrappers */
++#define gpio_cansleep __gpio_cansleep
+ 
+ extern int gpio_to_irq(int gpio);
+ extern int irq_to_gpio(int gpio);
