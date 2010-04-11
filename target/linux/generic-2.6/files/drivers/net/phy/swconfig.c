@@ -463,6 +463,8 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		if (!info->attrs[SWITCH_ATTR_OP_VLAN])
 			goto done;
 		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_VLAN]);
+		if (val->port_vlan >= dev->vlans)
+			goto done;
 		break;
 	case SWITCH_CMD_SET_PORT:
 	case SWITCH_CMD_GET_PORT:
@@ -473,6 +475,8 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		if (!info->attrs[SWITCH_ATTR_OP_PORT])
 			goto done;
 		val->port_vlan = nla_get_u32(info->attrs[SWITCH_ATTR_OP_PORT]);
+		if (val->port_vlan >= dev->ports)
+			goto done;
 		break;
 	default:
 		WARN_ON(1);
