@@ -156,6 +156,25 @@ endef
 $(eval $(call KernelPackage,ata-magicbox-cf))
 
 
+define KernelPackage/ata-pdc202xx-old
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Older Promise PATA controller support
+  DEPENDS:=kmod-ata-core
+  KCONFIG:= \
+       CONFIG_ATA_SFF=y \
+       CONFIG_PATA_PDC_OLD
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,pata_pdc202xx_old,1)
+endef
+
+define KernelPackage/ata-pdc202xx-old/description
+ This option enables support for the Promise 20246, 20262, 20263,
+ 20265 and 20267 adapters.
+endef
+
+$(eval $(call KernelPackage,ata-pdc202xx-old))
+
+
 define KernelPackage/ata-piix
 $(call KernelPackage/ata/Depends,)
   TITLE:=Intel PIIX PATA/SATA support
