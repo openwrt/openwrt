@@ -98,12 +98,12 @@ static void jz4740_init_timer(void)
 static void jz4740_timer_enable(unsigned int timer)
 {
 	writel(BIT(timer), jz4740_timer_base + JZ_REG_TIMER_STOP_CLEAR);
-	writel(BIT(timer), jz4740_timer_base + JZ_REG_TIMER_ENABLE_SET);
+	writeb(BIT(timer), jz4740_timer_base + JZ_REG_TIMER_ENABLE_SET);
 }
 
 static void jz4740_timer_disable(unsigned int timer)
 {
-	writel(BIT(timer), jz4740_timer_base + JZ_REG_TIMER_ENABLE_CLEAR);
+	writeb(BIT(timer), jz4740_timer_base + JZ_REG_TIMER_ENABLE_CLEAR);
 	writel(BIT(timer), jz4740_timer_base + JZ_REG_TIMER_STOP_SET);
 }
 
