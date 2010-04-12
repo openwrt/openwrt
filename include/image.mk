@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,6 +14,8 @@ include $(INCLUDE_DIR)/host.mk
 override MAKEFLAGS=
 override MAKE:=$(SUBMAKE)
 KDIR=$(KERNEL_BUILD_DIR)
+
+IMG_PREFIX:=openwrt-$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
 ifneq ($(CONFIG_BIG_ENDIAN),y)
 JFFS2OPTS     :=  --pad --little-endian --squash
@@ -76,13 +78,13 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 
   ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
     define Image/mkfs/tgz
-		$(TAR) -zcf $(BIN_DIR)/openwrt-$(BOARD)-rootfs.tgz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+		$(TAR) -zcf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tgz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
     endef
   endif
 
   ifeq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),y)
     define Image/mkfs/cpiogz
-		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/openwrt-$(BOARD)-rootfs.cpio.gz )
+		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
     endef
   endif
   ifeq ($(CONFIG_TARGET_ROOTFS_UBIFS),y)
@@ -96,7 +98,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   endif
 else
   define Image/BuildKernel
-	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
 	$(call Image/Build/Initramfs)
   endef
 endif

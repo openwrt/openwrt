@@ -1,10 +1,9 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -30,14 +29,14 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 endef
 
 define Image/Build
 	dd if=$(KDIR)/uImage of=$(KDIR)/uImage.block bs=8448 conv=sync
 	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.block bs=8448 conv=sync
 	cat $(KDIR)/uImage.block $(KDIR)/root.block > $(KDIR)/knlroot.bin
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD).trx -f $(KDIR)/dfboot.bin -f$(KDIR)/u-boot.full -f$(KDIR)/knlroot.bin
+	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX).trx -f $(KDIR)/dfboot.bin -f$(KDIR)/u-boot.full -f$(KDIR)/knlroot.bin
 	cp $(KDIR)/dfbptest.bin $(BIN_DIR)
 	$(call Image/Build/$(1),$(1))
 endef

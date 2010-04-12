@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2009 OpenWrt.org
+# Copyright (C) 2007-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,7 +15,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 endef
 
 define Image/Build
@@ -26,7 +26,7 @@ define Image/Build/jffs2-256k
 	( \
 		dd if=$(KDIR)/uImage bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-jffs2.img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-jffs2.img
 endef
 
 define Image/Build/squashfs
@@ -34,12 +34,12 @@ define Image/Build/squashfs
 	( \
 		dd if=$(KDIR)/uImage bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-taishan-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-taishan-$(1).img
 	( \
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
 		dd if=$(KDIR)/openwrt-canyonlands.dtb bs=128k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-canyonlands-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-canyonlands-$(1).img
 endef
 
 $(eval $(call BuildImage))

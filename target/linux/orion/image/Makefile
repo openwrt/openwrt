@@ -4,7 +4,6 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -101,7 +100,7 @@ define Image/Build/squashfs
 	( \
 		dd if=$(KDIR)/uImage bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
 endef
 
 $(eval $(call BuildImage))

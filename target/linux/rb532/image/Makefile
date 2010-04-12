@@ -1,12 +1,11 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 LOADADDR = 0x81000000		# RAM start + 16M 
 KERNEL_ENTRY = 0x80101000
@@ -30,7 +29,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
+	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 endef
 
 define Image/cmdline/jffs2-64k
@@ -54,9 +53,9 @@ root=/dev/mtdblock1 rootfstype=yaffs2
 endef
 
 define Image/Build
-	$(CP) $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(1).kernel
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/openwrt-$(BOARD)-$(1).kernel '$(strip $(call Image/cmdline/$(1))) '
-	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(1).bin 4 $(BIN_DIR)/openwrt-$(BOARD)-$(1).kernel $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+	$(CP) $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel '$(strip $(call Image/cmdline/$(1))) '
+	./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin 4 $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
@@ -66,7 +65,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile	
   endef
   define Image/BuildKernel
-	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux
+	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux
   endef
 endif
 

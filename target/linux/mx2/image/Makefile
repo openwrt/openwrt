@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -7,7 +13,7 @@ JFFS2OPTS += -n
 
 define Image/BuildKernel
 	mkdir -p $(BIN_DIR)
-	cp $(KDIR)/vmlinuz $(BIN_DIR)/openwrt-$(BOARD)-zImage
+	cp $(KDIR)/vmlinuz $(BIN_DIR)/$(IMG_PREFIX)-zImage
 endef
 
 define Image/Prepare
@@ -16,7 +22,7 @@ endef
 
 
 define Image/Build/squashfs
-    $(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-root.$(1))
+    $(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-root.$(1))
 endef
 
 $(eval $(call BuildImage))

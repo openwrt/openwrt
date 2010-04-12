@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006,2007 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,13 +8,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
-IMGNAME := $(BIN_DIR)/openwrt-$(BOARD)
 JFFS2BLOCK := $(KDIR)/jffs2.block
 JFFS2MARK := $(KDIR)/jffs2.mark
-
-define imgname
-$(IMGNAME)-$(2)-$(patsubst jffs2-%,jffs2,$(1))
-endef
 
 define Build/Clean
 	$(LOADER_MAKE) clean
@@ -39,7 +34,7 @@ endef
 
 define Image/Build/LZMAKernel
 	$(LOADER_MAKE) TARGET_DIR=$(BIN_DIR) \
-		LOADER=openwrt-$(BOARD)-$(1)-ramfs.$(2) \
+		LOADER=$(BIN_DIR)/$(IMG_PREFIX)-$(1)-ramfs.$(2) \
 		LOADER_DATA=$(KDIR)/vmlinux.lzma \
 		LZMA_TEXT_START=$(3) LZMA_STARTUP_ORG=$(4) \
 		CONFIG_PASS_KARGS=$(5) CONFIG_BOARD=$(6) \
