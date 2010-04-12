@@ -1,0 +1,1669 @@
+this patch include the u-boot2009.11 change files
+
+From: Xiangfu Liu <xiangfu@sharism.cc>
+
+
+---
+
+ Makefile                       |   10 +
+ common/env_common.c            |    2 
+ common/lcd.c                   |   45 ++++
+ common/main.c                  |    4 
+ cpu/mips/Makefile              |    4 
+ cpu/mips/cache.S               |  280 ++++++++++----------------
+ cpu/mips/config.mk             |    6 -
+ cpu/mips/cpu.c                 |   75 +++++++
+ cpu/mips/start.S               |  432 ++++++++++++++++++++++++++++++++--------
+ drivers/mtd/nand/nand_base.c   |   88 ++++++++
+ examples/standalone/mips.lds   |    2 
+ include/asm-mips/addrspace.h   |    2 
+ include/asm-mips/global_data.h |   11 +
+ include/lcd.h                  |   56 +++++
+ lib_mips/board.c               |   18 +-
+ lib_mips/bootm.c               |    7 +
+ lib_mips/time.c                |    4 
+ 20 files changed, 800 insertions(+), 333 deletions(-)
+
+
+diff --git a/Makefile b/Makefile
+index f06a97c..a318eb4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3439,6 +3439,22 @@ qemu_mips_config	: unconfig
+ 	@$(MKCONFIG) -a qemu-mips mips mips qemu-mips
+ 
+ #########################################################################
++## MIPS32 Jz47XX
++#########################################################################
++qi_lb60_config	: unconfig
++	@echo "#define CONFIG_NAND_U_BOOT" > $(obj)include/config.h
++	@echo "Compile NAND boot image for QI LB60"
++	@$(MKCONFIG) -a qi_lb60 mips mips nanonote
++	@echo "TEXT_BASE = 0x80100000" > $(obj)board/nanonote/config.tmp
++	@echo "CONFIG_NAND_U_BOOT = y" >> $(obj)include/config.mk
++
++avt2_config	: unconfig
++	@echo "#define CONFIG_NAND_U_BOOT" > $(obj)include/config.h
++	@echo "Compile NAND boot image for AVT2"
++	@$(MKCONFIG) -a avt2 mips mips nanonote
++	@echo "TEXT_BASE = 0x80100000" > $(obj)board/nanonote/config.tmp
++	@echo "CONFIG_NAND_U_BOOT = y" >> $(obj)include/config.mk
++#########################################################################
+ ## MIPS64 5Kc
+ #########################################################################
+ 
+diff --git a/common/env_common.c b/common/env_common.c
+index 439a4a9..6cfe30b 100644
+--- a/common/env_common.c
++++ b/common/env_common.c
+@@ -134,7 +134,10 @@ uchar default_environment[] = {
+ 	"pcidelay="	MK_STR(CONFIG_PCI_BOOTDELAY)	"\0"
+ #endif
+-#ifdef  CONFIG_EXTRA_ENV_SETTINGS
+-	CONFIG_EXTRA_ENV_SETTINGS
++#ifdef CONFIG_BOOTARGSFROMSD
++	"bootargsfromsd=" CONFIG_BOOTARGSFROMSD "\0"
++#endif
++#ifdef CONFIG_BOOTCOMMANDFROMSD
++	"bootcmdfromsd=" CONFIG_BOOTCOMMANDFROMSD "\0"
+ #endif
+ 	"\0"
+ };
+diff --git a/common/lcd.c b/common/lcd.c
+index 4e31618..ddd5aa8 100644
+--- a/common/lcd.c
++++ b/common/lcd.c
+@@ -64,7 +64,9 @@
+ #ifdef CONFIG_LCD_LOGO
+ # include <bmp_logo.h>		/* Get logo data, width and height	*/
+ # if (CONSOLE_COLOR_WHITE >= BMP_LOGO_OFFSET)
+-#  error Default Color Map overlaps with Logo Color Map
++#  ifndef CONFIG_JzRISC		  /* JzRISC core */ 
++#   error Default Color Map overlaps with Logo Color Map
++#  endif
+ # endif
+ #endif
+ 
+@@ -249,6 +251,14 @@ static void lcd_drawchars (ushort x, ushort y, uchar *str, int count)
+ 						lcd_color_fg : lcd_color_bg;
+ 				bits <<= 1;
+ 			}
++#elif LCD_BPP == LCD_COLOR32
++			uint *m = (uint *)d;
++			for (c=0; c<32; ++c) {
++				*m++ = (bits & 0x80) ?
++						lcd_color_fg : lcd_color_bg;
++				//d+=4;
++				bits <<= 1;
++			}
+ #endif
+ 		}
+ #if LCD_BPP == LCD_MONOCHROME
+@@ -315,6 +325,9 @@ static void test_pattern (void)
+ }
+ #endif /* LCD_TEST_PATTERN */
+ 
++#ifdef CONFIG_JzRISC		  /* JzRISC core */ 
++extern int flush_cache_all(void);
++#endif
+ 
+ /************************************************************************/
+ /* ** GENERIC Initialization Routines					*/
+@@ -381,6 +394,7 @@ static int lcd_clear (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+ 		COLOR_MASK(lcd_getbgcolor()),
+ 		lcd_line_length*panel_info.vl_row);
+ #endif
++
+ 	/* Paint the logo and retrieve LCD base address */
+ 	debug ("[LCD] Drawing the logo...\n");
+ 	lcd_console_address = lcd_logo ();
+@@ -458,6 +472,8 @@ static void lcd_setfgcolor (int color)
+ {
+ #ifdef CONFIG_ATMEL_LCD
+ 	lcd_color_fg = color;
++#elif LCD_BPP == LCD_COLOR32
++	lcd_color_fg = color & 0xFFFFFFFF;
+ #else
+ 	lcd_color_fg = color & 0x0F;
+ #endif
+@@ -469,6 +485,8 @@ static void lcd_setbgcolor (int color)
+ {
+ #ifdef CONFIG_ATMEL_LCD
+ 	lcd_color_bg = color;
++#elif LCD_BPP == LCD_COLOR32
++	lcd_color_bg = color & 0xFFFFFFFF;
+ #else
+ 	lcd_color_bg = color & 0x0F;
+ #endif
+@@ -507,6 +525,7 @@ void bitmap_plot (int x, int y)
+ 	uchar *bmap;
+ 	uchar *fb;
+ 	ushort *fb16;
++	uint *fb32;
+ #if defined(CONFIG_PXA250)
+ 	struct pxafb_info *fbi = &panel_info.pxa;
+ #elif defined(CONFIG_MPC823)
+@@ -567,13 +586,25 @@ void bitmap_plot (int x, int y)
+ 		}
+ 	}
+ 	else { /* true color mode */
+-		fb16 = (ushort *)(lcd_base + y * lcd_line_length + x);
+-		for (i=0; i<BMP_LOGO_HEIGHT; ++i) {
+-			for (j=0; j<BMP_LOGO_WIDTH; j++) {
+-				fb16[j] = bmp_logo_palette[(bmap[j])];
++		if(NBITS(panel_info.vl_bpix) == 16){
++			fb16 = (ushort *)(lcd_base + y * lcd_line_length + x);
++			for (i=0; i<BMP_LOGO_HEIGHT; ++i) {
++				for (j=0; j<BMP_LOGO_WIDTH; j++) {
++					fb16[j] = bmp_logo_palette[(bmap[j])];
+ 				}
+-			bmap += BMP_LOGO_WIDTH;
+-			fb16 += panel_info.vl_col;
++				bmap += BMP_LOGO_WIDTH;
++				fb16 += panel_info.vl_col;
++			}
++		}
++		else{
++			fb32 = (uint *)(lcd_base + y * lcd_line_length + x);
++			for (i=0; i<BMP_LOGO_HEIGHT; ++i) {
++				for (j=0; j<BMP_LOGO_WIDTH; j++) {
++					fb32[j] = bmp_logo_palette[(bmap[j])];
++				}
++				bmap += BMP_LOGO_WIDTH;
++				fb32 += panel_info.vl_col;
++			}
+ 		}
+ 	}
+ 
+diff --git a/common/main.c b/common/main.c
+index 10d8904..ff11ad7 100644
+--- a/common/main.c
++++ b/common/main.c
+@@ -372,7 +372,9 @@ void main_loop (void)
+ #if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
+ 	s = getenv ("bootdelay");
+ 	bootdelay = s ? (int)simple_strtol(s, NULL, 10) : CONFIG_BOOTDELAY;
+-
++	DECLARE_GLOBAL_DATA_PTR;
++	if (gd->boot_option == 5)
++		bootdelay = gd->boot_option;
+ 	debug ("### main_loop entered: bootdelay=%d\n\n", bootdelay);
+ 
+ # ifdef CONFIG_BOOT_RETRY_TIME
+@@ -393,7 +395,9 @@ void main_loop (void)
+ 	}
+ 	else
+ #endif /* CONFIG_BOOTCOUNT_LIMIT */
+-		s = getenv ("bootcmd");
++		s = gd->boot_option == 1 ?
++			getenv ("bootcmdfromsd"):
++			getenv ("bootcmd") ;
+ 
+ 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
+ 
+diff --git a/cpu/mips/Makefile b/cpu/mips/Makefile
+index 28a1cbb..5207bc5 100644
+--- a/cpu/mips/Makefile
++++ b/cpu/mips/Makefile
+@@ -33,6 +33,9 @@ SOBJS-$(CONFIG_INCA_IP)	+= incaip_wdt.o
+ COBJS-$(CONFIG_INCA_IP)	+= asc_serial.o incaip_clock.o
+ COBJS-$(CONFIG_PURPLE)	+= asc_serial.o
+ COBJS-$(CONFIG_SOC_AU1X00) += au1x00_eth.o au1x00_serial.o au1x00_usb_ohci.o
++COBJS-$(CONFIG_JZSOC) += jz4740.o jz_serial.o jz_mmc.o jz4740_nand.o
++COBJS-$(CONFIG_NANONOTE) += nanonote_gpm940b0.o
++
+ 
+ SRCS	:= $(START:.o=.S) $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
+diff --git a/cpu/mips/cache.S b/cpu/mips/cache.S
+index ff4f11c..cb3baff 100644
+--- a/cpu/mips/cache.S
++++ b/cpu/mips/cache.S
+@@ -23,32 +23,19 @@
+  */
+ 
+ #include <config.h>
+-#include <asm/asm.h>
++#include <version.h>
+ #include <asm/regdef.h>
+ #include <asm/mipsregs.h>
+ #include <asm/addrspace.h>
+ #include <asm/cacheops.h>
+ 
+-#define RA		t8
++#ifndef CONFIG_JzRISC
+ 
+-/*
+- * 16kB is the maximum size of instruction and data caches on MIPS 4K,
+- * 64kB is on 4KE, 24K, 5K, etc. Set bigger size for convenience.
+- *
+- * Note that the above size is the maximum size of primary cache. U-Boot
+- * doesn't have L2 cache support for now.
+- */
+-#define MIPS_MAX_CACHE_SIZE	0x10000
+-
+-#define INDEX_BASE	CKSEG0
++	/* 16KB is the maximum size of instruction and data caches on
++	 * MIPS 4K.
++	 */
++#define MIPS_MAX_CACHE_SIZE	0x4000
+ 
+-	.macro	cache_op op addr
+-	.set	push
+-	.set	noreorder
+-	.set	mips3
+-	cache	\op, 0(\addr)
+-	.set	pop
+-	.endm
+ 
+ /*
+  * cacheop macro to automate cache operations
+@@ -119,79 +106,7 @@
+ #define icacheop(kva, n, cacheSize, cacheLineSize, op) \
+    icacheopn(kva, n, cacheSize, cacheLineSize, 1, (op))
+ 
+-	.macro	f_fill64 dst, offset, val
+-	LONG_S	\val, (\offset +  0 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  1 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  2 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  3 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  4 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  5 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  6 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  7 * LONGSIZE)(\dst)
+-#if LONGSIZE == 4
+-	LONG_S	\val, (\offset +  8 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset +  9 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset + 10 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset + 11 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset + 12 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset + 13 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset + 14 * LONGSIZE)(\dst)
+-	LONG_S	\val, (\offset + 15 * LONGSIZE)(\dst)
+-#endif
+-	.endm
+-
+-/*
+- * mips_init_icache(uint PRId, ulong icache_size, unchar icache_linesz)
+- */
+-LEAF(mips_init_icache)
+-	blez	a1, 9f
+-	mtc0	zero, CP0_TAGLO
+-	/* clear tag to invalidate */
+-	PTR_LI		t0, INDEX_BASE
+-	PTR_ADDU	t1, t0, a1
+-1:	cache_op	Index_Store_Tag_I t0
+-	PTR_ADDU	t0, a2
+-	bne		t0, t1, 1b
+-	/* fill once, so data field parity is correct */
+-	PTR_LI		t0, INDEX_BASE
+-2:	cache_op	Fill t0
+-	PTR_ADDU	t0, a2
+-	bne		t0, t1, 2b
+-	/* invalidate again - prudent but not strictly neccessary */
+-	PTR_LI		t0, INDEX_BASE
+-1:	cache_op	Index_Store_Tag_I t0
+-	PTR_ADDU	t0, a2
+-	bne		t0, t1, 1b
+-9:	jr	ra
+-	END(mips_init_icache)
+-
+ /*
+- * mips_init_dcache(uint PRId, ulong dcache_size, unchar dcache_linesz)
+- */
+-LEAF(mips_init_dcache)
+-	blez	a1, 9f
+-	mtc0	zero, CP0_TAGLO
+-	/* clear all tags */
+-	PTR_LI		t0, INDEX_BASE
+-	PTR_ADDU	t1, t0, a1
+-1:	cache_op	Index_Store_Tag_D t0
+-	PTR_ADDU	t0, a2
+-	bne		t0, t1, 1b
+-	/* load from each line (in cached space) */
+-	PTR_LI		t0, INDEX_BASE
+-2:	LONG_L		zero, 0(t0)
+-	PTR_ADDU	t0, a2
+-	bne		t0, t1, 2b
+-	/* clear all tags */
+-	PTR_LI		t0, INDEX_BASE
+-1:	cache_op	Index_Store_Tag_D t0
+-	PTR_ADDU	t0, a2
+-	bne		t0, t1, 1b
+-9:	jr	ra
+-	END(mips_init_dcache)
+-
+-/*******************************************************************************
+-*
+ * mips_cache_reset - low level initialisation of the primary caches
+ *
+ * This routine initialises the primary caches to ensure that they
+@@ -204,112 +119,129 @@ LEAF(mips_init_dcache)
+ * a source of parity.
+ *
+ * RETURNS: N/A
+-*
+ */
+-NESTED(mips_cache_reset, 0, ra)
+-	move	RA, ra
++	.globl	mips_cache_reset
++	.ent	mips_cache_reset
++mips_cache_reset:
++
+ 	li	t2, CONFIG_SYS_ICACHE_SIZE
+ 	li	t3, CONFIG_SYS_DCACHE_SIZE
+ 	li	t4, CONFIG_SYS_CACHELINE_SIZE
+ 	move	t5, t4
+ 
++
+ 	li	v0, MIPS_MAX_CACHE_SIZE
+ 
+-	/*
+-	 * Now clear that much memory starting from zero.
++	/* Now clear that much memory starting from zero.
+ 	 */
+-	PTR_LI		a0, CKSEG1
+-	PTR_ADDU	a1, a0, v0
+-2:	PTR_ADDIU	a0, 64
+-	f_fill64	a0, -64, zero
+-	bne		a0, a1, 2b
+-
+-	/*
+-	 * The caches are probably in an indeterminate state,
+-	 * so we force good parity into them by doing an
+-	 * invalidate, load/fill, invalidate for each line.
++
++	li	a0, KSEG1
++	addu	a1, a0, v0
++
++2:	sw	zero, 0(a0)
++	sw	zero, 4(a0)
++	sw	zero, 8(a0)
++	sw	zero, 12(a0)
++	sw	zero, 16(a0)
++	sw	zero, 20(a0)
++	sw	zero, 24(a0)
++	sw	zero, 28(a0)
++	addu	a0, 32
++	bltu	a0, a1, 2b
++
++	/* Set invalid tag.
+ 	 */
+ 
+-	/*
+-	 * Assume bottom of RAM will generate good parity for the cache.
++	mtc0	zero, CP0_TAGLO
++
++   /*
++    * The caches are probably in an indeterminate state,
++    * so we force good parity into them by doing an
++    * invalidate, load/fill, invalidate for each line.
++    */
++
++	/* Assume bottom of RAM will generate good parity for the cache.
+ 	 */
+ 
+-	/*
+-	 * Initialize the I-cache first,
++	li	a0, K0BASE
++	move	a2, t2		# icacheSize
++	move	a3, t4		# icacheLineSize
++	move	a1, a2
++	icacheopn(a0,a1,a2,a3,121,(Index_Store_Tag_I,Fill))
++
++	/* To support Orion/R4600, we initialise the data cache in 3 passes.
+ 	 */
+-	move	a1, t2
+-	move	a2, t4
+-	PTR_LA	t7, mips_init_icache
+-	jalr	t7
+ 
+-	/*
+-	 * then initialize D-cache.
++	/* 1: initialise dcache tags.
+ 	 */
+-	move	a1, t3
+-	move	a2, t5
+-	PTR_LA	t7, mips_init_dcache
+-	jalr	t7
+ 
+-	jr	RA
+-	END(mips_cache_reset)
++	li	a0, K0BASE
++	move	a2, t3		# dcacheSize
++	move	a3, t5		# dcacheLineSize
++	move	a1, a2
++	icacheop(a0,a1,a2,a3,Index_Store_Tag_D)
+ 
+-/*******************************************************************************
+-*
+-* dcache_status - get cache status
+-*
+-* RETURNS: 0 - cache disabled; 1 - cache enabled
+-*
+-*/
+-LEAF(dcache_status)
+-	mfc0	t0, CP0_CONFIG
+-	li	t1, CONF_CM_UNCACHED
+-	andi	t0, t0, CONF_CM_CMASK
+-	move	v0, zero
+-	beq	t0, t1, 2f
+-	li	v0, 1
+-2:	jr	ra
+-	END(dcache_status)
+-
+-/*******************************************************************************
+-*
++	/* 2: fill dcache.
++	 */
++
++	li	a0, K0BASE
++	move	a2, t3		# dcacheSize
++	move	a3, t5		# dcacheLineSize
++	move	a1, a2
++	icacheopn(a0,a1,a2,a3,1lw,(dummy))
++
++	/* 3: clear dcache tags.
++	 */
++
++	li	a0, K0BASE
++	move	a2, t3		# dcacheSize
++	move	a3, t5		# dcacheLineSize
++	move	a1, a2
++	icacheop(a0,a1,a2,a3,Index_Store_Tag_D)
++
++	j  ra
++	.end  mips_cache_reset
++
++
++/*
++ * dcache_status - get cache status
++ *
++ * RETURNS: 0 - cache disabled; 1 - cache enabled
++ */
++	.globl	dcache_status
++	.ent	dcache_status
++dcache_status:
++
++	mfc0	v0, CP0_CONFIG
++	andi	v0, v0, 1
++	j	ra
++
++	.end  dcache_status
++
++/*
+ * dcache_disable - disable cache
+ *
+ * RETURNS: N/A
+-*
+ */
+-LEAF(dcache_disable)
++	.globl	dcache_disable
++	.ent	dcache_disable
++dcache_disable:
++
+ 	mfc0	t0, CP0_CONFIG
+ 	li	t1, -8
+ 	and	t0, t0, t1
+ 	ori	t0, t0, CONF_CM_UNCACHED
+-	mtc0	t0, CP0_CONFIG
+-	jr	ra
+-	END(dcache_disable)
++	mtc0    t0, CP0_CONFIG
++	j	ra
+ 
+-/*******************************************************************************
+-*
+-* dcache_enable - enable cache
+-*
+-* RETURNS: N/A
+-*
+-*/
+-LEAF(dcache_enable)
+-	mfc0	t0, CP0_CONFIG
+-	ori	t0, CONF_CM_CMASK
+-	xori	t0, CONF_CM_CMASK
+-	ori	t0, CONF_CM_CACHABLE_NONCOHERENT
+-	mtc0	t0, CP0_CONFIG
+-	jr	ra
+-	END(dcache_enable)
+-
+-#ifdef CONFIG_SYS_INIT_RAM_LOCK_MIPS
+-/*******************************************************************************
+-*
+-* mips_cache_lock - lock RAM area pointed to by a0 in cache.
+-*
+-* RETURNS: N/A
+-*
+-*/
++	.end  dcache_disable
++
++
++/*
++ * mips_cache_lock - lock RAM area pointed to by a0 in cache.
++ *
++ * RETURNS: N/A
++ */
+ #if defined(CONFIG_PURPLE)
+ # define	CACHE_LOCK_SIZE	(CONFIG_SYS_DCACHE_SIZE/2)
+ #else
+@@ -318,14 +250,14 @@ LEAF(dcache_enable)
+ 	.globl	mips_cache_lock
+ 	.ent	mips_cache_lock
+ mips_cache_lock:
+-	li	a1, CKSEG0 - CACHE_LOCK_SIZE
++	li	a1, K0BASE - CACHE_LOCK_SIZE
+ 	addu	a0, a1
+ 	li	a2, CACHE_LOCK_SIZE
+ 	li	a3, CONFIG_SYS_CACHELINE_SIZE
+ 	move	a1, a2
+ 	icacheop(a0,a1,a2,a3,0x1d)
+ 
+-	jr	ra
+-
++	j	ra
+ 	.end	mips_cache_lock
+-#endif /* CONFIG_SYS_INIT_RAM_LOCK_MIPS */
++
++#endif /* CONFIG_JzRISC */
+diff --git a/cpu/mips/config.mk b/cpu/mips/config.mk
+index a173c54..8d27e52 100644
+--- a/cpu/mips/config.mk
++++ b/cpu/mips/config.mk
+@@ -25,15 +25,15 @@ MIPSFLAGS:=$(shell \
+ if [ "$v" -lt "14" ]; then \
+ 	echo "-mcpu=4kc"; \
+ else \
+-	echo "-march=4kc -mtune=4kc"; \
++	echo "-march=4kc -mtune=r4600"; \
+ fi)
+ 
+ ifneq (,$(findstring 4KCle,$(CROSS_COMPILE)))
+ ENDIANNESS = -EL
+ else
+-ENDIANNESS = -EB
++#ENDIANNESS = -EB
+ endif
+ 
+-MIPSFLAGS += $(ENDIANNESS)
++MIPSFLAGS += $(ENDIANNESS) -mabicalls -mips32 -O2
+ 
+ PLATFORM_CPPFLAGS += $(MIPSFLAGS)
+diff --git a/cpu/mips/cpu.c b/cpu/mips/cpu.c
+index d5a1604..48e1cea 100644
+--- a/cpu/mips/cpu.c
++++ b/cpu/mips/cpu.c
+@@ -28,6 +28,12 @@
+ #include <asm/cacheops.h>
+ #include <asm/reboot.h>
+ 
++#ifdef CONFIG_JZ4740
++#include <asm/jz4740.h>
++#endif
++
++#if !defined (CONFIG_NAND_SPL) && !defined (CONFIG_MSC_SPL) 
++
+ #define cache_op(op,addr)						\
+ 	__asm__ __volatile__(						\
+ 	"	.set	push					\n"	\
+@@ -40,6 +46,19 @@
+ 
+ void __attribute__((weak)) _machine_restart(void)
+ {
++#ifdef CONFIG_JZ4740
++	__wdt_select_extalclk();
++	__wdt_select_clk_div64();
++	__wdt_set_data(100);
++	__wdt_set_count(0);
++	__tcu_start_wdt_clock();
++	__wdt_start();
++	while(1);
++#endif
++#if defined(CONFIG_JzRISC)
++	void (*f)(void) = (void *) 0xbfc00000;
++	f();
++#endif
+ }
+ 
+ int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+@@ -110,3 +129,59 @@ int cpu_eth_init(bd_t *bis)
+ #endif
+ 	return 0;
+ }
++
++#endif /* !CONFIG_NAND_SPL  !CONFIG_MSC_SPL */
++
++#ifdef CONFIG_JzRISC
++void flush_icache_all(void)
++{
++	u32 addr, t = 0;
++
++	asm volatile ("mtc0 $0, $28"); /* Clear Taglo */
++	asm volatile ("mtc0 $0, $29"); /* Clear TagHi */
++
++	for (addr = KSEG0; addr < KSEG0 + CONFIG_SYS_ICACHE_SIZE;
++	     addr += CONFIG_SYS_CACHELINE_SIZE) {
++		asm volatile (
++			".set mips3\n\t"
++			" cache %0, 0(%1)\n\t"
++			".set mips2\n\t"
++			:
++			: "I" (Index_Store_Tag_I), "r"(addr));
++	}
++
++	/* invalicate btb */
++	asm volatile (
++		".set mips32\n\t"
++		"mfc0 %0, $16, 7\n\t"
++		"nop\n\t"
++		"ori %0,2\n\t"
++		"mtc0 %0, $16, 7\n\t"
++		".set mips2\n\t"
++		:
++		: "r" (t));
++}
++
++void flush_dcache_all(void)
++{
++	u32 addr;
++
++	for (addr = KSEG0; addr < KSEG0 + CONFIG_SYS_DCACHE_SIZE; 
++	     addr += CONFIG_SYS_CACHELINE_SIZE) {
++		asm volatile (
++			".set mips3\n\t"
++			" cache %0, 0(%1)\n\t"
++			".set mips2\n\t"
++			:
++			: "I" (Index_Writeback_Inv_D), "r"(addr));
++	}
++
++	asm volatile ("sync");
++}
++
++void flush_cache_all(void)
++{
++	flush_dcache_all();
++	flush_icache_all();
++}
++#endif	/* CONFIG_JzRISC */
+diff --git a/cpu/mips/start.S b/cpu/mips/start.S
+index 57db589..fa6e352 100644
+--- a/cpu/mips/start.S
++++ b/cpu/mips/start.S
+@@ -23,32 +23,33 @@
+  */
+ 
+ #include <config.h>
++#include <version.h>
+ #include <asm/regdef.h>
+ #include <asm/mipsregs.h>
++#include <asm/addrspace.h>
++#include <asm/cacheops.h>
+ 
+-	/*
+-	 * For the moment disable interrupts, mark the kernel mode and
+-	 * set ST0_KX so that the CPU does not spit fire when using
+-	 * 64-bit addresses.
+-	 */
+-	.macro	setup_c0_status set clr
+-	.set	push
+-	mfc0	t0, CP0_STATUS
+-	or	t0, ST0_CU0 | \set | 0x1f | \clr
+-	xor	t0, 0x1f | \clr
+-	mtc0	t0, CP0_STATUS
+-	.set	noreorder
+-	sll	zero, 3				# ehb
+-	.set	pop
+-	.endm
+-
+-	.macro	setup_c0_status_reset
+-#ifdef CONFIG_64BIT
+-	setup_c0_status ST0_KX 0
+-#else
+-	setup_c0_status 0 0
++#ifdef CONFIG_JZ4730
++#include <asm/jz4730.h>
++#endif
++
++#ifdef CONFIG_JZ4740
++#include <asm/jz4740.h>
++#endif
++
++#ifdef CONFIG_JZ4750
++#include <asm/jz4750.h>
++#endif
++
++#ifdef CONFIG_JZ4750D
++#include <asm/jz4750d.h>
++#endif
++
++#if defined(CONFIG_JZ4750) || defined(CONFIG_JZ4750D)
++#define JZ4750_NANDBOOT_CFG0 (0x55555500 | (CFG_NAND_BW8*0xff))
++#define JZ4750_NANDBOOT_CFG1 0x55555555
++#define JZ4750_NANDBOOT_CFG2 ((CFG_NAND_PAGE_SIZE==2048)&0xff0000) | ((CFG_NAND_PAGE_SIZE!=512)&0xff00) | ((CFG_NAND_ROW_CYCLE==3)&0xff)
+ #endif
+-	.endm
+ 
+ #define RVECENT(f,n) \
+    b f; nop
+@@ -61,6 +62,28 @@
+ 	.globl _start
+ 	.text
+ _start:
++#if defined(CONFIG_JZ4740)
++#if !defined(CONFIG_NAND_SPL) && !defined(CONFIG_NAND_U_BOOT)
++	.word JZ4740_NORBOOT_CFG	/* fetched during NOR Boot */
++#else
++#if defined(CONFIG_NAND_SPL)
++	.word JZ4740_NANDBOOT_CFG	/* fetched during NAND Boot */
++#endif
++#endif
++#endif /* CONFIG_JZ4740 */
++#if defined(CONFIG_JZ4750) || defined(CONFIG_JZ4750D)
++#if !defined(CONFIG_NAND_SPL) && !defined(CONFIG_NAND_U_BOOT)
++	.word JZ4750_NORBOOT_CFG	/* fetched during NOR Boot */
++#else
++#if defined(CONFIG_NAND_SPL) && !defined(CONFIG_MSC_SPL)
++	/* First three words fetched by CPU during NAND Boot */
++	.word JZ4750_NANDBOOT_CFG0
++	.word JZ4750_NANDBOOT_CFG1
++	.word JZ4750_NANDBOOT_CFG2
++#endif
++#endif
++#endif /* CONFIG_JZ4750 || CONFIG_JZ4750D */
++#if !defined(CONFIG_JzRISC)
+ 	RVECENT(reset,0)	/* U-boot entry point */
+ 	RVECENT(reset,1)	/* software reboot */
+ #if defined(CONFIG_INCA_IP)
+@@ -213,7 +236,7 @@ _start:
+ 	.word	0x00000000
+ 	.word	0x03e00008
+ 	.word	0x00000000
+-	.word	0x00000000
++	.word   0x00000000
+ /* 0xbfc00428 */
+ 	.word	0xdc870000
+ 	.word	0xfca70000
+@@ -224,74 +247,192 @@ _start:
+ 	.word	0x00000000
+ 	.word	0x03e00008
+ 	.word	0x00000000
+-	.word	0x00000000
++	.word   0x00000000
+ #endif /* CONFIG_PURPLE */
+ 	.align 4
++#endif /* CONFIG_JzRISC */
++
+ reset:
+ 
++#if !defined(CONFIG_NAND_U_BOOT) || defined(CONFIG_NAND_SPL)
++
++#ifdef CONFIG_JZ4730
++
++	/* Disable interrupts */
++	la	t0, INTC_IMR
++	li	t1, 0xffffffff
++	sw	t1, 0(t0)
++
++	/*
++	 * Clear SCR.HGP
++	 */
++	la	t0, CPM_SCR
++	lw	t1, 0(t0)
++	ori	t1, 0x8
++	xori	t1, 0x8
++	sw	t1, 0(t0)
++
++	/*
++	 * Set usb port0 as host
++	 */
++	la	t0, HARB_HAPOR
++	lw	t1, 0(t0)
++	ori	t1, HARB_HAPOR_UCHSEL
++	sw	t1, 0(t0)
++
++	/*
++	 * Check reset status
++	 */
++	la	t0, CPM_RSTR
++	lw	t1, 0(t0)
++	andi	t1, 0x4
++	bnez	t1, resume_from_hibernate
++	nop
++#endif /* CONFIG_JZ4730 */
++
++#ifndef CONFIG_NAND_SPL
+ 	/* Clear watch registers.
+ 	 */
+ 	mtc0	zero, CP0_WATCHLO
+ 	mtc0	zero, CP0_WATCHHI
++#endif
+ 
+-	/* WP(Watch Pending), SW0/1 should be cleared. */
+-	mtc0	zero, CP0_CAUSE
++	/* STATUS register */
++#ifdef CONFIG_JzRISC
++	/* 
++	 * CU0=UM=EXL=IE=0, BEV=ERL=1, IP2~7=1
++	 */
++	li	t0, 0x0040FC04
++	mtc0	t0, CP0_STATUS
++#else
++#ifdef  CONFIG_TB0229
++	li	k0, ST0_CU0
++#else
++	mfc0	k0, CP0_STATUS
++#endif
++	li	k1, ~ST0_IE
++	and	k0, k1
++	mtc0	k0, CP0_STATUS
++#endif
+ 
+-	setup_c0_status_reset
++	/* CAUSE register */
++#ifdef CONFIG_JzRISC
++	/* IV=1, use the specical interrupt vector (0x200) */
++	li	t1, 0x00800000
++	mtc0	t1, CP0_CAUSE
++#else
++	mtc0	zero, CP0_CAUSE
++#endif
+ 
++#ifndef CONFIG_JzRISC
+ 	/* Init Timer */
+ 	mtc0	zero, CP0_COUNT
+ 	mtc0	zero, CP0_COMPARE
++#endif
+ 
+-#if !defined(CONFIG_SKIP_LOWLEVEL_INIT)
++#endif /* !defined(CONFIG_NAND_U_BOOT) || defined(CONFIG_NAND_SPL) */
++
++#if !defined(CONFIG_NAND_SPL) && !defined(CONFIG_NAND_U_BOOT)
+ 	/* CONFIG0 register */
+ 	li	t0, CONF_CM_UNCACHED
+ 	mtc0	t0, CP0_CONFIG
+-#endif /* !CONFIG_SKIP_LOWLEVEL_INIT */
++#endif
+ 
+-	/* Initialize $gp.
++	/* Initialize GOT pointer.
++	*/
++	bal     1f
++	nop
++	.word   _GLOBAL_OFFSET_TABLE_
++	1:
++	move    gp, ra
++	lw      t1, 0(ra)
++	move	gp, t1
++
++#ifdef CONFIG_INCA_IP
++	/* Disable INCA-IP Watchdog.
+ 	 */
+-	bal	1f
++	la      t9, disable_incaip_wdt
++	jalr    t9
+ 	nop
+-	.word	_gp
+-1:
+-	lw	gp, 0(ra)
++#endif
+ 
+-#if !defined(CONFIG_SKIP_LOWLEVEL_INIT)
++/* JzRISC will init external memory in board_init_f,
++   which uses cache as stack and calls into C code. */
++#ifndef CONFIG_JzRISC
+ 	/* Initialize any external memory.
+ 	 */
+-	la	t9, lowlevel_init
+-	jalr	t9
++	la      t9, lowlevel_init
++	jalr    t9
+ 	nop
++#endif
+ 
++#if !defined(CONFIG_NAND_SPL) && !defined(CONFIG_NAND_U_BOOT)
+ 	/* Initialize caches...
+ 	 */
+-	la	t9, mips_cache_reset
+-	jalr	t9
++#ifdef CONFIG_JzRISC
++	.set	mips32
++	mtc0	zero, CP0_TAGLO
++	mtc0	zero, CP0_TAGHI
++
++	li	t0, K0BASE
++	ori	t1, t0, CONFIG_SYS_DCACHE_SIZE
++1:
++	cache	Index_Store_Tag_D, 0(t0)
++	bne	t0, t1, 1b
++	addiu	t0, t0, CONFIG_SYS_CACHELINE_SIZE
++
++	li	t0, K0BASE
++	ori	t1, t0, CONFIG_SYS_ICACHE_SIZE
++2:
++	cache	Index_Store_Tag_I, 0(t0)
++	bne	t0, t1, 2b
++	addiu	t0, t0, CONFIG_SYS_CACHELINE_SIZE
++
++	/* Invalidate BTB */
++	mfc0	t0, CP0_CONFIG, 7
++	nop
++	ori	t0, 2
++	mtc0	t0, CP0_CONFIG, 7
+ 	nop
+ 
++	.set	mips2
++#else
++	la      t9, mips_cache_reset
++	jalr    t9
++	nop
++#endif
++
+ 	/* ... and enable them.
+ 	 */
+ 	li	t0, CONF_CM_CACHABLE_NONCOHERENT
+ 	mtc0	t0, CP0_CONFIG
+-#endif /* !CONFIG_SKIP_LOWLEVEL_INIT */
++	nop
++
++#endif /* !defined(CONFIG_NAND_SPL) && !defined(CONFIG_NAND_U_BOOT) */
+ 
+ 	/* Set up temporary stack.
+ 	 */
+-#ifdef CONFIG_SYS_INIT_RAM_LOCK_MIPS
++#ifndef CONFIG_JzRISC
+ 	li	a0, CONFIG_SYS_INIT_SP_OFFSET
+-	la	t9, mips_cache_lock
+-	jalr	t9
++	la      t9, mips_cache_lock
++	jalr    t9
+ 	nop
+ #endif
+ 
++#ifdef CONFIG_NAND_SPL
++	la	sp, 0x80004000
++	la	t9, nand_boot
++	j	t9
++	nop
++#else
+ 	li	t0, CONFIG_SYS_SDRAM_BASE + CONFIG_SYS_INIT_SP_OFFSET
+ 	la	sp, 0(t0)
+ 
+ 	la	t9, board_init_f
+-	jr	t9
++	j	t9
+ 	nop
+ 
++
+ /*
+  * void relocate_code (addr_sp, gd, addr_moni)
+  *
+@@ -305,37 +446,28 @@ reset:
+ 	.globl	relocate_code
+ 	.ent	relocate_code
+ relocate_code:
+-	move	sp, a0		/* Set new stack pointer	*/
++	move	sp, a0		/* Set new stack pointer		*/
+ 
+-	li	t0, CONFIG_SYS_MONITOR_BASE
++	li	t0, TEXT_BASE
+ 	la	t3, in_ram
+ 	lw	t2, -12(t3)	/* t2 <-- uboot_end_data	*/
+ 	move	t1, a2
+-	move	s2, a2		/* s2 <-- destination address	*/
+ 
+ 	/*
+-	 * Fix $gp:
++	 * Fix GOT pointer:
+ 	 *
+-	 * New $gp = (Old $gp - CONFIG_SYS_MONITOR_BASE) + Destination Address
++	 * New GOT-PTR = (old GOT-PTR - TEXT_BASE) + Destination Address
+ 	 */
+ 	move	t6, gp
+-	sub	gp, CONFIG_SYS_MONITOR_BASE
+-	add	gp, a2		/* gp now adjusted		*/
+-	sub	s1, gp, t6	/* s1 <-- relocation offset	*/
++	sub	gp, TEXT_BASE
++	add	gp, a2			/* gp now adjusted		*/
++	sub	t6, gp, t6		/* t6 <-- relocation offset	*/
+ 
+ 	/*
+ 	 * t0 = source address
+ 	 * t1 = target address
+ 	 * t2 = source end address
+ 	 */
+-
+-	/*
+-	 * Save destination address and size for later usage in flush_cache()
+-	 */
+-	move	s0, a1		/* save gd in s0		*/
+-	move	a0, t1		/* a0 <-- destination addr	*/
+-	sub	a1, t2, t0	/* a1 <-- size			*/
+-
+ 	/* On the purple board we copy the code earlier in a special way
+ 	 * in order to solve flash problems
+ 	 */
+@@ -345,47 +477,61 @@ relocate_code:
+ 	sw	t3, 0(t1)
+ 	addu	t0, 4
+ 	ble	t0, t2, 1b
+-	addu	t1, 4		/* delay slot			*/
++	addu	t1, 4			/* delay slot			*/
+ #endif
+ 
+ 	/* If caches were enabled, we would have to flush them here.
+ 	 */
+-
+-	/* a0 & a1 are already set up for flush_cache(start, size) */
+-	la	t9, flush_cache
+-	jalr	t9
++#ifdef CONFIG_JzRISC
++	/* flush d-cache */
++	.set	mips32
++	li	t0, KSEG0
++	addi	t1, t0, CONFIG_SYS_DCACHE_SIZE
++2:
++	cache	Index_Writeback_Inv_D, 0(t0)
++	bne	t0, t1, 2b
++	addi	t0, CONFIG_SYS_CACHELINE_SIZE
++
++	sync
++
++	/* flush i-cache */
++	li	t0, KSEG0
++	addi	t1, t0, CONFIG_SYS_ICACHE_SIZE
++3:
++	cache	Index_Invalidate_I, 0(t0)
++	bne	t0, t1, 3b
++	addi	t0, CONFIG_SYS_CACHELINE_SIZE
++
++	/* Invalidate BTB */
++	mfc0	t0, CP0_CONFIG, 7
++	nop
++	ori	t0, 2
++	mtc0	t0, CP0_CONFIG, 7
+ 	nop
+ 
++	.set	mips0
++#endif
++
+ 	/* Jump to where we've relocated ourselves.
+ 	 */
+-	addi	t0, s2, in_ram - _start
+-	jr	t0
++	addi	t0, a2, in_ram - _start
++	j	t0
+ 	nop
+ 
+-	.word	_gp
+-	.word	_GLOBAL_OFFSET_TABLE_
+ 	.word	uboot_end_data
+ 	.word	uboot_end
+ 	.word	num_got_entries
+ 
+ in_ram:
+-	/*
+-	 * Now we want to update GOT.
+-	 *
+-	 * GOT[0] is reserved. GOT[1] is also reserved for the dynamic object
+-	 * generated by GNU ld. Skip these reserved entries from relocation.
++	/* Now we want to update GOT.
+ 	 */
+ 	lw	t3, -4(t0)	/* t3 <-- num_got_entries	*/
+-	lw	t4, -16(t0)	/* t4 <-- _GLOBAL_OFFSET_TABLE_	*/
+-	lw	t5, -20(t0)	/* t5 <-- _gp	*/
+-	sub	t4, t5		/* compute offset*/
+-	add	t4, t4, gp	/* t4 now holds relocated _GLOBAL_OFFSET_TABLE_	*/
+-	addi	t4, t4, 8	/* Skipping first two entries.	*/
++	addi	t4, gp, 8	/* Skipping first two entries.	*/
+ 	li	t2, 2
+ 1:
+ 	lw	t1, 0(t4)
+ 	beqz	t1, 2f
+-	add	t1, s1
++	add	t1, t6
+ 	sw	t1, 0(t4)
+ 2:
+ 	addi	t2, 1
+@@ -396,26 +542,134 @@ in_ram:
+ 	 */
+ 	lw	t1, -12(t0)	/* t1 <-- uboot_end_data	*/
+ 	lw	t2, -8(t0)	/* t2 <-- uboot_end		*/
+-	add	t1, s1		/* adjust pointers		*/
+-	add	t2, s1
++	add	t1, t6		/* adjust pointers		*/
++	add	t2, t6
+ 
+ 	sub	t1, 4
+-1:
+-	addi	t1, 4
++1:	addi	t1, 4
+ 	bltl	t1, t2, 1b
+ 	sw	zero, 0(t1)	/* delay slot			*/
+ 
+-	move	a0, s0		/* a0 <-- gd			*/
++	move	a0, a1
+ 	la	t9, board_init_r
+-	jr	t9
+-	move	a1, s2		/* delay slot			*/
++	j	t9
++	move	a1, a2		/* delay slot			*/
+ 
+ 	.end	relocate_code
+ 
++#endif /* CONFIG_NAND_SPL */
++
++#if !defined(CONFIG_JzRISC)
+ 	/* Exception handlers.
+ 	 */
+ romReserved:
+-	b	romReserved
++	b romReserved
+ 
+ romExcHandle:
+-	b	romExcHandle
++	b romExcHandle
++#endif
++
++#ifdef CONFIG_JZ4730
++
++/* These are the runtime values, modify them according to your platform. */
++#define PLCR1_VAL     0x1b000520
++#define CFCR_VAL      0x0c526220
++
++#define DMCR_VAL0     0x042a3211
++#define DMCR_VAL1     0x05aa3211 /*(DMCR_VAL0|EMC_DMCR_RFSH|EMC_DMCR_MRSET)*/
++
++#define RTCOR_VAL     0x10
++#define RTCSR_VAL     0x83
++
++	/*
++	 * cpu was reset from hibernate mode
++	 */
++resume_from_hibernate:
++	/*
++	 * Init PLL
++	 */
++	la	t0, 0xB0000000	/* CFCR */
++	li	t1, CFCR_VAL
++	sw	t1, 0(t0)
++
++	la	t0, 0xB0000010	/* PLCR1 */
++	li	t1, PLCR1_VAL
++	sw	t1, 0(t0)
++	nop;nop;nop;nop
++
++	/* Init caches */
++	.set	mips32
++	mtc0	zero, CP0_TAGLO
++	mtc0	zero, CP0_TAGHI
++
++	li	t0, K0BASE
++	ori	t1, t0, CONFIG_SYS_DCACHE_SIZE
++1:
++	cache	Index_Store_Tag_D, 0(t0)
++	cache	Index_Store_Tag_I, 0(t0)
++	bne	t0, t1, 1b
++	addiu	t0, t0, CONFIG_SYS_CACHELINE_SIZE
++
++	/*
++	 * Init SDRAM
++	 */
++	la	t0, 0xB0010070	/* GPALR2 */
++	lw	t1, 0(t0)
++	li	t2, 0x3FFFFFFF
++	and	t1, t2
++	li	t2, 0x40000000
++	or	t1, t2
++	sw	t1, 0(t0)
++
++	la	t0, 0xB0010074	/* GPAUR2 */
++	lw	t1, 0(t0)
++	li	t2, 0xFFFF0000
++	and	t1, t2
++	li	t2, 0x00005555
++	or	t1, t2
++	sw	t1, 0(t0)
++
++	la	t0, 0xB3010000	/* EMC base address */
++
++	li	t1, DMCR_VAL0	/* DMCR */
++	sw	t1, 0x80(t0)
++
++	li	t1, RTCOR_VAL
++	sh	t1, 0x8c(t0)	/* RTCOR */
++
++	li	t1, RTCSR_VAL
++	sh	t1, 0x84(t0)	/* RTCSR */
++
++	/* precharge all chip-selects */
++	ori	t1, t0, 0xa088
++	sb	$0, 0(t1)
++	ori	t1, t0, 0xb088
++	sb	$0, 0(t1)
++
++	/* delay about 200us */
++	li	t1, 0x20000
++1:
++	bnez	t1, 1b
++	sub	t1, 1
++
++	la	t1, DMCR_VAL1	/* DMCR */
++	sw	t1, 0x80(t0)
++
++	/* write sdram mode register for each chip-select */
++	ori	t1, t0, 0xa088
++	sb	$0, 0(t1)
++	ori	t1, t0, 0xb088
++	sb	$0, 0(t1)
++
++	/*
++	 * jump to resume entry point
++	 */
++	la	t0, CPM_SPR
++	lw	t1, 0(t0)
++	li	t0, 0x80000000
++	or	t0, t1
++
++	j	t0
++	nop
++
++#endif /* CONFIG_JZ4730 */
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index 426bb95..6e5fbd3 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -109,6 +109,22 @@ static struct nand_ecclayout nand_oob_16 = {
+ 		 . length = 8}}
+ };
+ 
++#if defined(CONFIG_JZ4740)
++static struct nand_ecclayout nand_oob_64 = {
++	.eccbytes = 36,
++	.eccpos = {
++		6,  7,  8,  9,  10, 11, 12, 13,
++		14, 15, 16, 17, 18, 19, 20, 21,
++		22, 23, 24, 25, 26, 27, 28, 29,
++		30, 31, 32, 33, 34, 35, 36, 37,
++		38, 39, 40, 41},
++	.oobfree ={
++		{.offset = 2,
++		 .length = 4},
++		{.offset = 42,
++		 .length = 22}}
++};
++#else
+ static struct nand_ecclayout nand_oob_64 = {
+ 	.eccbytes = 24,
+ 	.eccpos = {
+@@ -119,6 +135,7 @@ static struct nand_ecclayout nand_oob_64 = {
+ 		{.offset = 2,
+ 		 .length = 38}}
+ };
++#endif
+ 
+ static struct nand_ecclayout nand_oob_128 = {
+ 	.eccbytes = 48,
+@@ -1116,6 +1133,60 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
+ }
+ 
+ /**
++ * nand_read_page_hwecc_rs - [REPLACABLE] hardware rs ecc based page read function
++ * @mtd:	mtd info structure
++ * @chip:	nand chip info structure
++ * @buf:	buffer to store read data
++ *
++ * Not for syndrome calculating ecc controllers which need a special oob layout
++ */
++static int nand_read_page_hwecc_rs(struct mtd_info *mtd, struct nand_chip *chip,
++				   uint8_t *buf)
++{
++	int i, eccsize = chip->ecc.size;
++	int eccbytes = chip->ecc.bytes;
++	int eccsteps = chip->ecc.steps;
++	uint8_t *p = buf;
++	uint8_t *ecc_calc = chip->buffers->ecccalc;
++	uint8_t *ecc_code = chip->buffers->ecccode;
++	uint32_t *eccpos = chip->ecc.layout->eccpos;
++	uint32_t page;
++	uint8_t flag = 0;
++
++	page = (buf[3]<<24) + (buf[2]<<16) + (buf[1]<<8) + buf[0];
++
++	chip->cmdfunc(mtd, NAND_CMD_READOOB, 0, page);
++	chip->read_buf(mtd, chip->oob_poi, mtd->oobsize);
++
++	for (i = 0; i < chip->ecc.total; i++) {
++		ecc_code[i] = chip->oob_poi[CONFIG_SYS_NAND_ECC_POS + i];
++		if (ecc_code[i] != 0xff)
++			flag = 1;
++	}
++
++	eccsteps = chip->ecc.steps;
++	p = buf;
++
++	chip->cmdfunc(mtd, NAND_CMD_RNDOUT, 0x00, -1);
++	for (i = 0 ; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
++		int stat;
++		if (flag) {
++			chip->ecc.hwctl(mtd, NAND_ECC_READ);
++			chip->read_buf(mtd, p, eccsize);
++			stat = chip->ecc.correct(mtd, p, &ecc_code[i], &ecc_calc[i]);
++			if (stat < 0)
++				mtd->ecc_stats.failed++;
++			else
++				mtd->ecc_stats.corrected += stat;
++		}
++		else {
++			chip->ecc.hwctl(mtd, NAND_ECC_READ);
++			chip->read_buf(mtd, p, eccsize);
++		}
++	}
++	return 0;
++}
++/**
+  * nand_read_page_syndrome - [REPLACABLE] hardware ecc syndrom based page read
+  * @mtd:	mtd info structure
+  * @chip:	nand chip info structure
+@@ -1271,9 +1342,17 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+ 						bufpoi, page);
+ 			else if (!aligned && NAND_SUBPAGE_READ(chip) && !oob)
+ 				ret = chip->ecc.read_subpage(mtd, chip, col, bytes, bufpoi);
+-			else
++ 			else {
++#if defined(CONFIG_JZ4740)
++				bufpoi[0] = (uint8_t)page;
++				bufpoi[1] = (uint8_t)(page >> 8);
++				bufpoi[2] = (uint8_t)(page >> 16);
++				bufpoi[3] = (uint8_t)(page >> 24);
++#endif
++
+ 				ret = chip->ecc.read_page(mtd, chip, bufpoi,
+ 						page);
++			}
+ 			if (ret < 0)
+ 				break;
+ 
+@@ -2791,8 +2870,13 @@ int nand_scan_tail(struct mtd_info *mtd)
+ 
+ 	case NAND_ECC_HW:
+ 		/* Use standard hwecc read page function ? */
+-		if (!chip->ecc.read_page)
++		if (!chip->ecc.read_page) {
++#if defined(CONFIG_JZ4740)
++			chip->ecc.read_page = nand_read_page_hwecc_rs;
++#else
+ 			chip->ecc.read_page = nand_read_page_hwecc;
++#endif
++		}
+ 		if (!chip->ecc.write_page)
+ 			chip->ecc.write_page = nand_write_page_hwecc;
+ 		if (!chip->ecc.read_oob)
+diff --git a/examples/standalone/mips.lds b/examples/standalone/mips.lds
+index 717b201..d4a45f8 100644
+--- a/examples/standalone/mips.lds
++++ b/examples/standalone/mips.lds
+@@ -23,8 +23,8 @@
+ 
+ /*
+ OUTPUT_FORMAT("elf32-bigmips", "elf32-bigmips", "elf32-bigmips")
+-*/
+ OUTPUT_FORMAT("elf32-tradbigmips", "elf32-tradbigmips", "elf32-tradbigmips")
++*/
+ OUTPUT_ARCH(mips)
+ SECTIONS
+ {
+diff --git a/include/asm-mips/addrspace.h b/include/asm-mips/addrspace.h
+index 3a1e6d6..2ee6920 100644
+--- a/include/asm-mips/addrspace.h
++++ b/include/asm-mips/addrspace.h
+@@ -131,7 +131,7 @@
+  * Returns the uncached address of a sdram address
+  */
+ #ifndef __ASSEMBLY__
+-#if defined(CONFIG_SOC_AU1X00) || defined(CONFIG_TB0229)
++#if defined(CONFIG_SOC_AU1X00) || defined(CONFIG_TB0229) || defined(CONFIG_JzRISC)
+ /* We use a 36 bit physical address map here and
+    cannot access physical memory directly from core */
+ #define UNCACHED_SDRAM(a) (((unsigned long)(a)) | 0x20000000)
+diff --git a/include/asm-mips/global_data.h b/include/asm-mips/global_data.h
+index b2c4891..23f597e 100644
+--- a/include/asm-mips/global_data.h
++++ b/include/asm-mips/global_data.h
+@@ -39,6 +39,17 @@
+ typedef	struct	global_data {
+ 	bd_t		*bd;
+ 	unsigned long	flags;
++#if defined(CONFIG_JZSOC)
++        /* There are other clocks in the Jz47xx or Jz5730*/
++        unsigned long   cpu_clk;        /* CPU core clock */
++        unsigned long   sys_clk;        /* System bus clock */
++        unsigned long   per_clk;        /* Peripheral bus clock */
++        unsigned long   mem_clk;        /* Memory bus clock */
++        unsigned long   dev_clk;        /* Device clock */
++        unsigned long   fb_base;        /* base address of framebuffer */
++        unsigned long   boot_option;	/* 1: boot from sd
++					 * 5: boot delay for 5 secs*/
++#endif
+ 	unsigned long	baudrate;
+ 	unsigned long	have_console;	/* serial_init() was called */
+ 	phys_size_t	ram_size;	/* RAM size */
+diff --git a/include/lcd.h b/include/lcd.h
+index 1f85daa..997e246 100644
+--- a/include/lcd.h
++++ b/include/lcd.h
+@@ -181,8 +181,44 @@ typedef struct vidinfo {
+ 	u_long	mmio;		/* Memory mapped registers */
+ } vidinfo_t;
+ 
+-#else
++#elif defined(CONFIG_JZSOC)
++/*
++ * LCD controller stucture for JZSOC: JZ4730 JZ4740
++ */
++struct jz_fb_dma_descriptor {
++	u_long	fdadr;		/* Frame descriptor address register */
++	u_long	fsadr;		/* Frame source address register */
++	u_long	fidr;		/* Frame ID register */
++	u_long	ldcmd;		/* Command register */
++};
+ 
++/*
++ * Jz LCD info
++ */
++struct jz_fb_info {
++
++	u_long	fdadr0;	/* physical address of frame/palette descriptor */
++	u_long	fdadr1;	/* physical address of frame descriptor */
++
++	/* DMA descriptors */
++	struct	jz_fb_dma_descriptor *	dmadesc_fblow;
++	struct	jz_fb_dma_descriptor *	dmadesc_fbhigh;
++	struct	jz_fb_dma_descriptor *	dmadesc_palette;
++	u_long	screen;		/* address of frame buffer */
++	u_long	palette;	/* address of palette memory */
++	u_int	palette_size;
++};
++typedef struct vidinfo {
++	ushort	vl_col;		/* Number of columns (i.e. 640) */
++	ushort	vl_row;		/* Number of rows (i.e. 480) */
++	u_char	vl_bpix;	/* Bits per pixel, 0 = 1, 1 = 2, 2 = 4, 3 = 8 */
++
++	struct jz_fb_info jz_fb;
++} vidinfo_t;
++
++extern vidinfo_t panel_info;
++
++#else
+ typedef struct vidinfo {
+ 	ushort	vl_col;		/* Number of columns (i.e. 160) */
+ 	ushort	vl_row;		/* Number of rows (i.e. 100) */
+@@ -194,7 +230,7 @@ typedef struct vidinfo {
+ 	void	*priv;		/* Pointer to driver-specific data */
+ } vidinfo_t;
+ 
+-#endif /* CONFIG_MPC823, CONFIG_PXA250 or CONFIG_MCC200 or CONFIG_ATMEL_LCD */
++#endif /* CONFIG_MPC823, CONFIG_PXA250, CONFIG_MCC200 or CONFIG_JZ4740 */
+ 
+ extern vidinfo_t panel_info;
+ 
+@@ -234,6 +270,7 @@ void lcd_show_board_info(void);
+ #define LCD_COLOR4	2
+ #define LCD_COLOR8	3
+ #define LCD_COLOR16	4
++#define LCD_COLOR32     5
+ 
+ /*----------------------------------------------------------------------*/
+ #if defined(CONFIG_LCD_INFO_BELOW_LOGO)
+@@ -285,13 +322,22 @@ void lcd_show_board_info(void);
+ # define CONSOLE_COLOR_GREY	14
+ # define CONSOLE_COLOR_WHITE	15	/* Must remain last / highest	*/
+ 
+-#else
++#elif LCD_BPP == LCD_COLOR16
+ 
+ /*
+  * 16bpp color definitions
+  */
+ # define CONSOLE_COLOR_BLACK	0x0000
+-# define CONSOLE_COLOR_WHITE	0xffff	/* Must remain last / highest	*/
++# define CONSOLE_COLOR_WHITE	0xffff	/* Must remain last / highest */
++
++#elif LCD_BPP == LCD_COLOR32
++/*
++ * 18,24,32 bpp color definitions
++ */
++# define CONSOLE_COLOR_BLACK	0x00000000
++# define CONSOLE_COLOR_WHITE	0xffffffff /* Must remain last / highest */
++
++#else
+ 
+ #endif /* color definitions */
+ 
+@@ -322,7 +368,7 @@ void lcd_show_board_info(void);
+ #if LCD_BPP == LCD_MONOCHROME
+ # define COLOR_MASK(c)		((c)	  | (c) << 1 | (c) << 2 | (c) << 3 | \
+ 				 (c) << 4 | (c) << 5 | (c) << 6 | (c) << 7)
+-#elif (LCD_BPP == LCD_COLOR8) || (LCD_BPP == LCD_COLOR16)
++#elif (LCD_BPP == LCD_COLOR8) || (LCD_BPP == LCD_COLOR16) || (LCD_BPP == LCD_COLOR32)
+ # define COLOR_MASK(c)		(c)
+ #else
+ # error Unsupported LCD BPP.
+diff --git a/lib_mips/board.c b/lib_mips/board.c
+index b2d113e..87cb12d 100644
+--- a/lib_mips/board.c
++++ b/lib_mips/board.c
+@@ -49,6 +49,10 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ #undef DEBUG
+ 
++#if defined(CONFIG_JZSOC)
++extern int jz_board_init(void);
++#endif
++
+ extern int timer_init(void);
+ 
+ extern int incaip_set_cpuclk(void);
+@@ -78,7 +82,6 @@ int __board_early_init_f(void)
+ }
+ int board_early_init_f(void) __attribute__((weak, alias("__board_early_init_f")));
+ 
+-
+ static int init_func_ram (void)
+ {
+ #ifdef	CONFIG_BOARD_TYPES
+@@ -98,7 +101,6 @@ static int init_func_ram (void)
+ 
+ static int display_banner(void)
+ {
+-
+ 	printf ("\n\n%s\n\n", version_string);
+ 	return (0);
+ }
+@@ -147,6 +149,9 @@ static int init_baudrate (void)
+ typedef int (init_fnc_t) (void);
+ 
+ init_fnc_t *init_sequence[] = {
++#if defined(CONFIG_JZSOC)
++	jz_board_init,		/* init gpio/clocks/dram etc. */
++#endif
+ 	board_early_init_f,
+ 	timer_init,
+ 	env_init,		/* initialize environment */
+@@ -162,7 +167,6 @@ init_fnc_t *init_sequence[] = {
+ 	NULL,
+ };
+ 
+-
+ void board_init_f(ulong bootflag)
+ {
+ 	gd_t gd_data, *id;
+@@ -202,6 +206,12 @@ void board_init_f(ulong bootflag)
+ 	addr &= ~(4096 - 1);
+ 	debug ("Top of RAM usable for U-Boot at: %08lx\n", addr);
+ 
++#ifdef CONFIG_LCD
++        /* reserve memory for LCD display (always full pages) */
++        addr = lcd_setmem (addr);
++        gd->fb_base = addr;
++#endif /* CONFIG_LCD */
++
+ 	/* Reserve memory for U-Boot code, data & bss
+ 	 * round down to next 16 kB limit
+ 	 */
+@@ -349,9 +359,9 @@ void board_init_r (gd_t *id, ulong dest_addr)
+ 	size = flash_init();
+ 	display_flash_config (size);
+ 	bd->bi_flashsize = size;
++	bd->bi_flashstart = CONFIG_SYS_FLASH_BASE;
+ #endif
+ 
+-	bd->bi_flashstart = CONFIG_SYS_FLASH_BASE;
+ #if CONFIG_SYS_MONITOR_BASE == CONFIG_SYS_FLASH_BASE
+ 	bd->bi_flashoffset = monitor_flash_len;	/* reserved area for U-Boot */
+ #else
+diff --git a/lib_mips/bootm.c b/lib_mips/bootm.c
+index 54af24c..64bcad9 100644
+--- a/lib_mips/bootm.c
++++ b/lib_mips/bootm.c
+@@ -46,7 +46,9 @@ static void linux_env_set (char * env_name, char * env_val);
+ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
+ {
+ 	void	(*theKernel) (int, char **, char **, int *);
+-	char	*commandline = getenv ("bootargs");
++	char	*commandline = gd->boot_option == 1 ? 
++		getenv ("bootargsfromsd") :
++		getenv ("bootargs");
+ 	char	env_buf[12];
+ 	char	*cp;
+ 
+@@ -98,6 +100,9 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
+ 	}
+ 
+ 	/* we assume that the kernel is in place */
++	if (gd->boot_option == 1)
++		printf ("\n *** Booting from mircoSD ***\n");
++
+ 	printf ("\nStarting kernel ...\n\n");
+ 
+ 	theKernel (linux_argc, linux_argv, linux_env, 0);
+diff --git a/lib_mips/time.c b/lib_mips/time.c
+index 07e356d..4654bf4 100644
+--- a/lib_mips/time.c
++++ b/lib_mips/time.c
+@@ -24,6 +24,8 @@
+ #include <common.h>
+ #include <asm/mipsregs.h>
+ 
++#ifndef CONFIG_JzRISC
++
+ static unsigned long timestamp;
+ 
+ /* how many counter cycles in a jiffy */
+@@ -96,3 +98,5 @@ ulong get_tbclk(void)
+ {
+ 	return CONFIG_SYS_HZ;
+ }
++
++#endif /* !CONFIG_JzRISC */
+
