@@ -47,13 +47,13 @@ define Build/Configure
 	touch $(PKG_BUILD_DIR)/stamp-h.in
 endef
 
-TARGET_CFLAGS += -I$(LINUX_DIR)/include
+TARGET_CFLAGS += -I$(LINUX_DIR)/include -I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include
 
 define Build/Compile
 	# src/qgen is built with HOSTCC, which does not really like our LDFLAGS
 	$(MAKE) -C $(PKG_BUILD_DIR)/src/qgen \
 		LDFLAGS="" \
-		all 
+		all
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
