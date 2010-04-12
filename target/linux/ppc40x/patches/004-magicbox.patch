@@ -93,7 +93,7 @@
 +}
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/magicbox.dts
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,285 @@
 +/*
 + * Device Tree Source for Magicbox boards
 + *
@@ -316,18 +316,22 @@
 +				reg = <0x00000000 0xffc00000 0x00400000>;
 +				#address-cells = <1>;
 +				#size-cells = <1>;
-+				partition@0 {
++				partition0@0 {
 +					label = "linux";
 +					reg = <0x0 0x140000>;
 +				};
-+				partition@120000 {
++				partition1@120000 {
 +					label = "rootfs";
 +					reg = <0x140000 0x680000>;
 +				};
-+				partition@7c0000 {
++				partition2@7c0000 {
 +					label = "u-boot";
 +					reg = <0x7c0000 0x30000>;
 +					read-only;
++				};
++				partition3@0 {
++					label = "firmware";
++					reg = <0x0 0x7c0000>;
 +				};
 +			};
 +		};
