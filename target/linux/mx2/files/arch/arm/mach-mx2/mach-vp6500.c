@@ -19,6 +19,7 @@
 
 #include <linux/input.h>
 #include <linux/input/matrix_keypad.h>
+#include <linux/gpio_keys.h>
 
 static unsigned int vp6500_pins[] = {
 
@@ -76,7 +77,21 @@ static struct platform_device vp6500_nor_mtd_device = {
 static struct gpio_led vp6500_leds[] = {
 	{
 		.name = "vp6500:orange:keypad",
-		.gpio = VP6500_GPIO_KEYPAD_LEDS,
+		.gpio = VP6500_GPIO_LED_KEYPAD,
+	},
+	{
+		.name = "vp6500:green:",
+		.gpio = VP6500_GPIO_LED_GREEN,
+		.active_low = 1,
+		.default_state = LEDS_GPIO_DEFSTATE_ON,
+	},
+	{
+		.name = "vp6500:red:",
+		.gpio = VP6500_GPIO_LED_RED,
+	},
+	{
+		.name = "vp6500:red:camera",
+		.gpio = VP6500_GPIO_LED_CAMERA,
 	},
 };
 
@@ -93,9 +108,83 @@ static struct platform_device vp6500_leds_device = {
 	},
 };
 
+static const uint32_t vp6500_keypad_keys[] = {
+	KEY(0, 3, KEY_F2),
+	KEY(0, 4, KEY_RIGHT),
+	KEY(1, 0, KEY_ZOOM),
+	KEY(1, 1, KEY_NUMERIC_POUND),
+	KEY(1, 2, KEY_0),
+	KEY(1, 3, KEY_ENTER),
+	KEY(1, 4, KEY_8),
+	KEY(2, 0, KEY_5),
+	KEY(2, 1, KEY_2),
+	KEY(2, 2, KEY_DOWN),
+	KEY(2, 3, KEY_OK),
+	KEY(2, 4, KEY_UP),
+	KEY(3, 0, KEY_CAMERA),
+	KEY(3, 1, KEY_NUMERIC_STAR),
+	KEY(3, 2, KEY_9),
+	KEY(3, 3, KEY_LEFT),
+	KEY(3, 4, KEY_6),
+	KEY(4, 0, KEY_7),
+	KEY(4, 1, KEY_4),
+	KEY(4, 2, KEY_1),
+	KEY(4, 3, KEY_3),
+	KEY(4, 4, KEY_F1),
+};
+
+static struct matrix_keymap_data vp6500_keypad_data = {
+	.keymap = vp6500_keypad_keys,
+	.keymap_size = ARRAY_SIZE(vp6500_keypad_keys),
+};
+
+static struct resource vp6500_keypad_resources[] = {
+	{
+		.start = MX21_KPP_BASE_ADDR,
+		.end = MX21_KPP_BASE_ADDR + 0x10 - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.start = MX21_INT_KPP,
+		.flags = IORESOURCE_IRQ,
+	}
+};
+
+static struct platform_device vp6500_keypad_device = {
+	.name = "imx-keypad",
+	.id = 0,
+	.dev = {
+		.platform_data = &vp6500_keypad_data,
+	},
+	.resource = vp6500_keypad_resources,
+	.num_resources = ARRAY_SIZE(vp6500_keypad_resources),
+};
+
+static struct gpio_keys_button vp6500_keys = {
+	.gpio = VP6500_GPIO_POWER_KEY,
+	.code = KEY_POWER,
+	.desc = "Power button",
+	.active_low = 1,
+};
+
+static struct gpio_keys_platform_data vp6500_key_data = {
+	.buttons = &vp6500_keys,
+	.nbuttons = 1,
+};
+
+static struct platform_device vp6500_key_device = {
+	.name = "gpio-keys",
+	.id = -1,
+	.dev = {
+		.platform_data = &vp6500_key_data,
+	},
+};
+
 static struct platform_device *platform_devices[] __initdata = {
 	&vp6500_nor_mtd_device,
 	&vp6500_leds_device,
+	&vp6500_keypad_device,
+	&vp6500_key_device,
 };
 
 static void __init vp6500_board_init(void)
