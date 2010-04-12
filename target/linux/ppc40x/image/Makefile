@@ -36,11 +36,11 @@ endef
 
 define Image/Build/jffs2-64k
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-magicbox-jffs2.img
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-jffs2.img
 endef
@@ -53,11 +53,11 @@ define Image/Build/squashfs
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-kilauea-$(1).img
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-magicbox-$(1).img
 	( \
-		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1152k conv=sync; \
+		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-$(1).img
 endef
