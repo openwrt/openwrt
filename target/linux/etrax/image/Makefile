@@ -1,15 +1,14 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/BuildKernel
-	cp $(KDIR)/vmlinuz $(BIN_DIR)/openwrt-$(BOARD)-zImage
+	cp $(KDIR)/vmlinuz $(BIN_DIR)/$(IMG_PREFIX)-zImage
 endef
 
 define Image/Prepare
@@ -23,7 +22,7 @@ define Image/Build/generic
 	mkfimage $(KDIR)/vmlinuz $(KDIR)/vmlinuz.tmp
 	cat $(KDIR)/vmlinuz.tmp $(KDIR)/root.$(1) > $(KDIR)/fimage.$(1).tmp
 	dd if=$(KDIR)/fimage.$(1).tmp of=$(KDIR)/fimage.$(1) bs=$(2) conv=sync
-	cp $(KDIR)/fimage.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1)-fimage
+	cp $(KDIR)/fimage.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fimage
 endef
 
 define Image/Build/jffs2-64k

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -17,7 +17,7 @@ define Image/BuildKernel
 		-R .note.gnu.build-id -S $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux.bin
 	mkimage -A m68k -O linux -T kernel -a 0x00020000 -e 0x00020000 \
 		-C none -n 'M68K OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux.bin $(BIN_DIR)/openwrt-$(BOARD)-uImage
+		-d $(KDIR)/vmlinux.bin $(BIN_DIR)/$(IMG_PREFIX)-uImage
 endef
 
 define Image/Build

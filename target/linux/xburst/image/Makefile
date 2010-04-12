@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -18,7 +18,7 @@ UBINIZE_OPTS = -m 2048 -p 128KiB -s 512
 endif
 
 define Image/BuildKernel
-	cp $(KDIR)/linux-$(LINUX_VERSION)/arch/mips/boot/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage.bin
+	cp $(LINUX_DIR)/arch/mips/boot/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage.bin
 endef
 
 define Image/Build/squashfs
@@ -26,7 +26,7 @@ define Image/Build/squashfs
 endef
 
 define Image/Build
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(SUBTARGET)-root.$(1) bs=128k conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
 
 $(eval $(call BuildImage))

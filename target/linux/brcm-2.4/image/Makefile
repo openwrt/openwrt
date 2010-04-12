@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -27,26 +27,26 @@ endef
 ifneq ($(KERNEL),2.4)
   define Image/Build/wgt634u
 	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/openwrt-wgt634u-$(2).bin bs=131072 conv=sync
-	cat $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx >> $(BIN_DIR)/openwrt-wgt634u-$(2).bin
+	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx >> $(BIN_DIR)/openwrt-wgt634u-$(2).bin
   endef
 endif
 
 define Image/Build/CyberTAN
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
 endef
 define Image/Build/CyberTAN2
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx2 -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx2 -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
 endef
 define Image/Build/CyberTANHead
 	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/openwrt-$(2)-header.bin $(if $(6),-s $(6))
 endef
 
 define Image/Build/Motorola
-	$(STAGING_DIR_HOST)/bin/motorola-bin -$(3) $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(4).bin
+	$(STAGING_DIR_HOST)/bin/motorola-bin -$(3) $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(4).bin
 endef
 
 define Image/Build/USR
-	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
+	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
 endef
 
 define trxalign/jffs2-128k
@@ -61,7 +61,7 @@ endef
 
 define Image/Build/trxV2
 	$(call Image/Build/CyberTANHead,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
-	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx2 \
+	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx2 \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(1),$(1),$(KDIR)/openwrt-$(2)-header.bin)
 	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
@@ -95,11 +95,11 @@ define Image/Build/squashfs
 endef
 
 define Image/Build/Initramfs
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-initramfs.trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma
+	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-initramfs.trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma
 endef
 
 define Image/Build
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(1).trx \
+	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(1),$(1))
 	$(call Image/Build/$(1),$(1))

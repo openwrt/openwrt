@@ -7,17 +7,15 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-IMGNAME:=$(BIN_DIR)/openwrt-$(BOARD)
-
 define imgname
-$(IMGNAME)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
+$($BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 endef
 
-VMLINUX:=$(IMGNAME)-vmlinux
-UIMAGE:=$(IMGNAME)-uImage
+VMLINUX:=$(IMG_PREFIX)-vmlinux
+UIMAGE:=$(IMG_PREFIX)-uImage
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	VMLINUX:=$(IMGNAME)-vmlinux-initramfs
-	UIMAGE:=$(IMGNAME)-uImage-initramfs
+	VMLINUX:=$(IMG_PREFIX)-vmlinux-initramfs
+	UIMAGE:=$(IMG_PREFIX)-uImage-initramfs
 endif
 
 ifeq ($(CONFIG_RALINK_RT305X),y)
@@ -47,11 +45,11 @@ define MkImage
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
-	cp $(KDIR)/vmlinux $(VMLINUX).bin
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(VMLINUX).elf
+	cp $(KDIR)/vmlinux $(BIN_DIR)/$(VMLINUX).bin
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	$(call MkImage,lzma,$(KDIR)/vmlinux.bin.lzma,$(KDIR)/uImage.lzma)
-	cp $(KDIR)/uImage.lzma $(UIMAGE).bin
+	cp $(KDIR)/uImage.lzma $(BIN_DIR)/$(UIMAGE).bin
 endef
 
 define BuildFirmware/Generic
@@ -113,7 +111,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
-	dd if=$(KDIR)/root.$(1) of=$(IMGNAME)-root.$(1) bs=128k conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
 

@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -51,17 +51,17 @@ define Image/Prepare
 endef
 
 define Image/Build/Initramfs
-	$(OBJCOPY_SREC) $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.srec
+	$(OBJCOPY_SREC) $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.srec
 endef
 
 define Image/Build
 	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma $(FLASH_FS) $(KDIR)/root.$(1) $(KDIR)/root.$(1).srec
-	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/openwrt-$(BOARD)-$(1).srec
-	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(1).srec
-	$(INSTALL_BIN) $(KDIR)/kernel.flash.bin $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.bin
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(1).fs
-	$(CP) $(KDIR)/kernel.flash.srec $(BIN_DIR)/openwrt-$(BOARD)-vmlinux-flash.srec
-	$(CP) $(KDIR)/kernel.ram.srec $(BIN_DIR)/openwrt-$(BOARD)-vmlinux-ram.srec
+	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/$(IMG_PREFIX)-$(1).srec
+	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/$(IMG_PREFIX)-$(1).srec
+	$(INSTALL_BIN) $(KDIR)/kernel.flash.bin $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.bin
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).fs
+	$(CP) $(KDIR)/kernel.flash.srec $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-flash.srec
+	$(CP) $(KDIR)/kernel.ram.srec $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-ram.srec
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif

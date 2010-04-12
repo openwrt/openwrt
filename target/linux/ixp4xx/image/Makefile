@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,12 +12,12 @@ ifdef CONFIG_PACKAGE_apex
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
 		-L $(BIN_DIR)/apex/apex-$(2)-armeb.bin \
 		-k $(BIN_DIR)/openwrt-$(2)-zImage \
-		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
+		-r rootfs:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-$(2)-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
 		-F -L $(BIN_DIR)/apex/apex-$(2)-16mb-armeb.bin \
 		-k $(BIN_DIR)/openwrt-$(2)-zImage \
-		-r rootfs:$(BIN_DIR)/openwrt-$(BOARD)-$(1).img \
+		-r rootfs:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-$(2)-$(1)-16mb.bin
   endef
 endif
@@ -36,7 +36,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
+	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh
 endef
 
@@ -45,18 +45,18 @@ define Image/Build
 endef
 
 define Image/Build/jffs2-64k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=65536 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=65536 conv=sync
 endef
 
 define Image/Build/jffs2-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=131072 conv=sync
 	$(call Image/Build/Linksys,$(1))
 	$(call Image/Build/Freecom,$(1),fsg3,$(1))
 endef
 
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=131072 conv=sync
 	$(call Image/Build/Linksys,$(1),nslu2,$(1))
 	$(call Image/Build/Freecom,$(1),fsg3,$(1))
 endef

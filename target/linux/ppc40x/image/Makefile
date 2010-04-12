@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2009 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,7 +15,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-uImage
+	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 endef
 
 define Image/Build
@@ -23,7 +23,7 @@ define Image/Build
 endef
 
 define Image/Build/ext2
-	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-ext2.img
+	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-ext2.img
 endef
 
 define Image/Build/jffs2-128k
@@ -31,18 +31,18 @@ define Image/Build/jffs2-128k
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
 		dd if=$(KDIR)/openwrt-kilauea.dtb bs=128k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-kilauea-jffs2.img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-kilauea-jffs2.img
 endef
 
 define Image/Build/jffs2-64k
 	( \
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-magicbox-jffs2.img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-magicbox-jffs2.img
 	( \
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-jffs2.img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-openrb-jffs2.img
 endef
 
 define Image/Build/squashfs
@@ -51,15 +51,15 @@ define Image/Build/squashfs
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=1920k conv=sync; \
 		dd if=$(KDIR)/openwrt-kilauea.dtb bs=128k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-kilauea-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-kilauea-$(1).img
 	( \
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-magicbox-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-magicbox-$(1).img
 	( \
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb bs=1280k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-openrb-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-openrb-$(1).img
 endef
 
 $(eval $(call BuildImage))

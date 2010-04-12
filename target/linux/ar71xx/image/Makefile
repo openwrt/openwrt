@@ -7,14 +7,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-IMGNAME:=$(BIN_DIR)/openwrt-$(BOARD)
-
 define imgname
-$(IMGNAME)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
+$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 endef
 
-VMLINUX:=$(IMGNAME)-vmlinux
-UIMAGE:=$(IMGNAME)-uImage
+VMLINUX:=$(IMG_PREFIX)-vmlinux
+UIMAGE:=$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
 fs_all:=all
 fs_4k:=4k
@@ -26,8 +24,8 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	fs_4k:=initramfs
 	fs_64k:=initramfs
 	fs_128k:=initramfs
-	VMLINUX:=$(IMGNAME)-vmlinux-initramfs
-	UIMAGE:=$(IMGNAME)-uImage-initramfs
+	VMLINUX:=$(IMG_PREFIX)-vmlinux-initramfs
+	UIMAGE:=$(IMG_PREFIX)-uImage-initramfs
 endif
 
 define CompressLzma
@@ -248,11 +246,11 @@ define Image/Build/UBNTXM
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).uImage \
-		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 	( \
 		dd if=$(KDIR)/vmlinux-$(2).uImage; \
-		dd if=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1); \
+		dd if=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1); \
 	) > $(call imgname,$(1),$(2))-sysupgrade.bin
 endef
 
@@ -262,11 +260,11 @@ define Image/Build/UBNT
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).lzma \
-		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 	-sh $(TOPDIR)/scripts/combined-image.sh \
 		"$(KDIR)/vmlinux-$(2).lzma" \
-		"$(BIN_DIR)/openwrt-$(BOARD)-root.$(1)" \
+		"$(BIN_DIR)/$(IMG_PREFIX)-root.$(1)" \
 		$(call imgname,$(1),$(2))-sysupgrade.bin
 endef
 
@@ -298,12 +296,12 @@ define Image/Build/TPLINK
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.gz \
-		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION) -s \
 		-k $(KDIR)/vmlinux-$(2).bin.gz \
-		-r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call imgname,$(1),$(2))-sysupgrade.bin
 endef
 
@@ -586,8 +584,8 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.squashfs-4k.tmp0 bs=4k conv=sync
 	$(call add_jffs2_mark,$(KDIR)/root.squashfs-4k.tmp0)
-	dd if=$(KDIR)/root.squashfs-4k.tmp0 of=$(IMGNAME)-root.squashfs-4k bs=4k conv=sync
-	$(call add_jffs2_mark,$(IMGNAME)-root.squashfs-4k)
+	dd if=$(KDIR)/root.squashfs-4k.tmp0 of=$(IMG_PREFIX)-root.squashfs-4k bs=4k conv=sync
+	$(call add_jffs2_mark,$(IMG_PREFIX)-root.squashfs-4k)
 	rm -f $(KDIR)/root.squashfs-4k.tmp0
 endef
 
@@ -597,7 +595,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
-	dd if=$(KDIR)/root.$(1) of=$(IMGNAME)-root.$(1) bs=128k conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 
 	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
