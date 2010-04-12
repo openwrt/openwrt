@@ -94,8 +94,12 @@
  
  		return r;
  	}
-@@ -2123,11 +2121,8 @@ static void ath_tx_processq(struct ath_s
+@@ -2121,13 +2119,12 @@ static void ath_tx_processq(struct ath_s
+ 		txq->axq_depth--;
+ 		txok = !(ts.ts_status & ATH9K_TXERR_MASK);
  		txq->axq_tx_inprogress = false;
++		if (bf_held)
++			list_del(&bf_held->list);
  		spin_unlock_bh(&txq->axq_lock);
  
 -		if (bf_held) {

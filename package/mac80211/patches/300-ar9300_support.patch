@@ -36567,7 +36567,7 @@ index 3c4b5d2..f10bd06 100644
  		/* set one try for probe rates. For the
  		 * probes don't enable rts */
 diff --git a/drivers/net/wireless/ath/ath9k/recv.c b/drivers/net/wireless/ath/ath9k/recv.c
-index 94560e2..9c01c0b 100644
+index 94560e2..f84fcf0 100644
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
 @@ -16,6 +16,8 @@
@@ -36612,7 +36612,7 @@ index 94560e2..9c01c0b 100644
 +
 +	ATH_RXBUF_RESET(bf);
 +	memset(skb->data, 0, ah->caps.rx_status_len);
-+	dma_sync_single_for_cpu(sc->dev, bf->bf_buf_addr,
++	dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
 +				ah->caps.rx_status_len, DMA_TO_DEVICE);
  
 -	/* Initialize rx descriptors */
@@ -37061,7 +37061,7 @@ index 94560e2..9c01c0b 100644
 +	 * 1. accessing the frame
 +	 * 2. requeueing the same buffer to h/w
 +	 */
-+	dma_sync_single_for_cpu(sc->dev, bf->bf_buf_addr,
++	dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
 +			common->rx_bufsize,
 +			DMA_FROM_DEVICE);
 +
