@@ -1,0 +1,15 @@
+--- a/drivers/ata/Kconfig	
++++ b/drivers/ata/Kconfig	
+@@ -734,5 +734,12 @@ config PATA_BF54X
+ 
+ 	  If unsure, say N.
+ 
++config PATA_RB_PPC
++	tristate "MikroTik RB600 PATA support"
++	depends on RB_PPC
++	help
++	  This option enables support for PATA devices on MikroTik RouterBOARD
++	  600 series boards.
++
+ endif # ATA_SFF
+ endif # ATA

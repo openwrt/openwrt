@@ -1,0 +1,319 @@
+--- a/arch/powerpc/platforms/83xx/rbppc.c	
++++ b/arch/powerpc/platforms/83xx/rbppc.c	
+@@ -0,0 +1,316 @@
++/*
++ * Copyright (C) 2008-2009 Noah Fontes <nfontes@transtruct.org>
++ * Copyright (C) 2009 Michael Guntsche <mike@it-loops.com>
++ * Copyright (C) Mikrotik 2007
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ */
++
++#include <linux/delay.h>
++#include <linux/root_dev.h>
++#include <linux/initrd.h>
++#include <linux/interrupt.h>
++#include <linux/of_platform.h>
++#include <linux/of_device.h>
++#include <linux/of_platform.h>
++#include <asm/time.h>
++#include <asm/ipic.h>
++#include <asm/udbg.h>
++#include <asm/qe.h>
++#include <asm/qe_ic.h>
++#include <sysdev/fsl_soc.h>
++#include <sysdev/fsl_pci.h>
++#include "mpc83xx.h"
++
++#define SYSCTL		0x100
++#define SICRL		0x014
++
++#define GTCFR2		0x04
++#define GTMDR4		0x22
++#define GTRFR4		0x26
++#define GTCNR4		0x2e
++#define GTVER4		0x36
++#define GTPSR4		0x3e
++
++#define GTCFR_BCM	0x40
++#define GTCFR_STP4	0x20
++#define GTCFR_RST4	0x10
++#define GTCFR_STP3	0x02
++#define GTCFR_RST3	0x01
++
++#define GTMDR_ORI	0x10
++#define GTMDR_FRR	0x08
++#define GTMDR_ICLK16	0x04
++
++extern int par_io_data_set(u8 port, u8 pin, u8 val);
++extern int par_io_config_pin(u8 port, u8 pin, int dir, int open_drain,
++			     int assignment, int has_irq);
++
++static unsigned timer_freq;
++static void *gtm;
++
++static int beeper_irq;
++static unsigned beeper_gpio_pin[2];
++
++irqreturn_t rbppc_timer_irq(int irq, void *ptr)
++{
++	static int toggle = 0;
++
++	par_io_data_set(beeper_gpio_pin[0], beeper_gpio_pin[1], toggle);
++	toggle = !toggle;
++
++	/* ack interrupt */
++	out_be16(gtm + GTVER4, 3);
++
++	return IRQ_HANDLED;
++}
++
++void rbppc_beep(unsigned freq)
++{
++	unsigned gtmdr;
++
++	if (freq > 5000) freq = 5000;
++
++	if (!gtm)
++		return;
++	if (!freq) {
++		out_8(gtm + GTCFR2, GTCFR_STP4 | GTCFR_STP3);
++		return;
++	}
++
++	out_8(gtm + GTCFR2, GTCFR_RST4 | GTCFR_STP3);
++	out_be16(gtm + GTPSR4, 255);
++	gtmdr = GTMDR_FRR | GTMDR_ICLK16;
++	if (beeper_irq != NO_IRQ) gtmdr |= GTMDR_ORI;
++	out_be16(gtm + GTMDR4, gtmdr);
++	out_be16(gtm + GTVER4, 3);
++
++	out_be16(gtm + GTRFR4, timer_freq / 16 / 256 / freq / 2);
++	out_be16(gtm + GTCNR4, 0);
++}
++EXPORT_SYMBOL(rbppc_beep);
++
++static void __init rbppc_setup_arch(void)
++{
++	struct device_node *np;
++
++	np = of_find_node_by_type(NULL, "cpu");
++	if (np) {
++		const unsigned *fp = of_get_property(np, "clock-frequency", NULL);
++		loops_per_jiffy = fp ? *fp / HZ : 0;
++
++		of_node_put(np);
++	}
++
++	np = of_find_node_by_name(NULL, "serial");
++	if (np) {
++		timer_freq =
++		    *(unsigned *) of_get_property(np, "clock-frequency", NULL);
++		of_node_put(np);
++	}
++
++#ifdef CONFIG_PCI
++	np = of_find_node_by_type(NULL, "pci");
++	if (np) {
++		mpc83xx_add_bridge(np);
++	}
++#endif
++
++#ifdef CONFIG_QUICC_ENGINE
++	np = of_find_node_by_name(np, "par_io");
++	if (np) {
++		qe_reset();
++		par_io_init(np);
++		of_node_put(np);
++
++		np = NULL;
++		while (1) {
++			np = of_find_node_by_name(np, "ucc");
++			if (!np) break;
++
++			par_io_of_config(np);
++		}
++	}
++#endif
++
++}
++
++void __init rbppc_init_IRQ(void)
++{
++	struct device_node *np;
++
++	np = of_find_node_by_type(NULL, "ipic");
++	if (np) {
++		ipic_init(np, 0);
++		ipic_set_default_priority();
++		of_node_put(np);
++	}
++
++#ifdef CONFIG_QUICC_ENGINE
++	np = of_find_node_by_type(NULL, "qeic");
++	if (np) {
++		qe_ic_init(np, 0, qe_ic_cascade_low_ipic, qe_ic_cascade_high_ipic);
++		of_node_put(np);
++	}
++#endif
++}
++
++static int __init rbppc_probe(void)
++{
++	char *model;
++
++	model = of_get_flat_dt_prop(of_get_flat_dt_root(), "model", NULL);
++
++	if (!model)
++		return 0;
++
++	if (strcmp(model, "RB600") == 0)
++		return 1;
++
++	return 0;
++}
++
++static void __init rbppc_beeper_init(struct device_node *beeper)
++{
++	struct resource res;
++	struct device_node *gpio;
++	const unsigned *pin;
++	const unsigned *gpio_id;
++
++	if (of_address_to_resource(beeper, 0, &res)) {
++		printk(KERN_ERR "rbppc_beeper_init(%s): Beeper error: No region specified\n", beeper->full_name);
++		return;
++	}
++
++	pin = of_get_property(beeper, "gpio", NULL);
++	if (pin) {
++		gpio = of_find_node_by_phandle(pin[0]);
++
++		if (!gpio) {
++			printk(KERN_ERR "rbppc_beeper_init(%s): Beeper error: GPIO handle %x not found\n", beeper->full_name, pin[0]);
++			return;
++		}
++
++		gpio_id = of_get_property(gpio, "device-id", NULL);
++		if (!gpio_id) {
++			printk(KERN_ERR "rbppc_beeper_init(%s): Beeper error: No device-id specified in GPIO\n", beeper->full_name);
++			return;
++		}
++
++		beeper_gpio_pin[0] = *gpio_id;
++		beeper_gpio_pin[1] = pin[1];
++
++		par_io_config_pin(*gpio_id, pin[1], 1, 0, 0, 0);
++	} else {
++		void *sysctl;
++
++		sysctl = ioremap_nocache(get_immrbase() + SYSCTL, 0x100);
++		out_be32(sysctl + SICRL,
++			 in_be32(sysctl + SICRL) | (1 << (31 - 19)));
++		iounmap(sysctl);
++	}
++
++	gtm = ioremap_nocache(res.start, res.end - res.start + 1);
++
++	beeper_irq = irq_of_parse_and_map(beeper, 0);
++	if (beeper_irq != NO_IRQ) {
++		int e = request_irq(beeper_irq, rbppc_timer_irq, 0, "beeper", NULL);
++		if (e) {
++			printk(KERN_ERR "rbppc_beeper_init(%s): Request of beeper irq failed!\n", beeper->full_name);
++		}
++	}
++}
++
++#define SBIT(x) (0x80000000 >> (x))
++#define DBIT(x, y) ((y) << (32 - (((x % 16) + 1) * 2)))
++
++#define SICRL_RB600(x) ((x) + (0x114 >> 2))
++#define GPIO_DIR_RB600(x) ((x) + (0xc00 >> 2))
++#define GPIO_DATA_RB600(x) ((x) + (0xc08 >> 2))
++
++static void rbppc_restart(char *cmd)
++{
++	__be32 __iomem *reg;
++
++	reg = ioremap(get_immrbase(), 0x1000);
++	local_irq_disable();
++	out_be32(SICRL_RB600(reg), in_be32(SICRL_RB600(reg)) & ~0x00800000);
++	out_be32(GPIO_DIR_RB600(reg), in_be32(GPIO_DIR_RB600(reg)) | SBIT(2));
++	out_be32(GPIO_DATA_RB600(reg), in_be32(GPIO_DATA_RB600(reg)) & ~SBIT(2));
++
++	while (1);
++}
++
++static void rbppc_halt(void)
++{
++	while (1);
++}
++
++static struct of_device_id rbppc_ids[] = {
++	{ .type = "soc", },
++	{ .compatible = "soc", },
++	{ .compatible = "simple-bus", },
++	{ .compatible = "gianfar", },
++	{ },
++};
++
++static int __init rbppc_declare_of_platform_devices(void)
++{
++	struct device_node *np;
++	unsigned idx;
++
++	of_platform_bus_probe(NULL, rbppc_ids, NULL);
++
++	np = of_find_node_by_type(NULL, "mdio");
++	if (np) {
++		unsigned len;
++		unsigned *res;
++		const unsigned *eres;
++		struct device_node *ep;
++
++		ep = of_find_compatible_node(NULL, "network", "ucc_geth");
++		if (ep) {
++			eres = of_get_property(ep, "reg", &len);
++			res = (unsigned *) of_get_property(np, "reg", &len);
++			if (res && eres) {
++				res[0] = eres[0] + 0x120;
++			}
++		}
++	}
++
++	np = of_find_node_by_name(NULL, "nand");
++	if (np) {
++		of_platform_device_create(np, "nand", NULL);
++	}
++
++	idx = 0;
++	for_each_node_by_type(np, "rb,cf") {
++		char dev_name[12];
++		snprintf(dev_name, sizeof(dev_name), "cf.%u", idx);
++		of_platform_device_create(np, dev_name, NULL);
++		++idx;
++	}
++
++	np = of_find_node_by_name(NULL, "beeper");
++	if (np) {
++		rbppc_beeper_init(np);
++	}
++
++	return 0;
++}
++device_initcall(rbppc_declare_of_platform_devices);
++
++define_machine(rb600) {
++	.name 				= "MikroTik RouterBOARD 600 series",
++	.probe 				= rbppc_probe,
++	.setup_arch 			= rbppc_setup_arch,
++	.init_IRQ 			= rbppc_init_IRQ,
++	.get_irq 			= ipic_get_irq,
++	.restart 			= rbppc_restart,
++	.halt				= rbppc_halt,
++	.time_init 			= mpc83xx_time_init,
++	.calibrate_decr			= generic_calibrate_decr,
++};
