@@ -11,8 +11,8 @@ define imgname
 $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 endef
 
-VMLINUX:=$(IMG_PREFIX)-vmlinux
-UIMAGE:=$(IMG_PREFIX)-uImage
+VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
+UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
 fs_all:=all
 fs_4k:=4k
@@ -24,8 +24,8 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	fs_4k:=initramfs
 	fs_64k:=initramfs
 	fs_128k:=initramfs
-	VMLINUX:=$(IMG_PREFIX)-vmlinux-initramfs
-	UIMAGE:=$(IMG_PREFIX)-uImage-initramfs
+	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
+	UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs
 endif
 
 define CompressLzma
@@ -584,8 +584,8 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.squashfs-4k.tmp0 bs=4k conv=sync
 	$(call add_jffs2_mark,$(KDIR)/root.squashfs-4k.tmp0)
-	dd if=$(KDIR)/root.squashfs-4k.tmp0 of=$(IMG_PREFIX)-root.squashfs-4k bs=4k conv=sync
-	$(call add_jffs2_mark,$(IMG_PREFIX)-root.squashfs-4k)
+	dd if=$(KDIR)/root.squashfs-4k.tmp0 of=$(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k bs=4k conv=sync
+	$(call add_jffs2_mark,$(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k)
 	rm -f $(KDIR)/root.squashfs-4k.tmp0
 endef
 
@@ -595,7 +595,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
-	dd if=$(KDIR)/root.$(1) of=$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 
 	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
