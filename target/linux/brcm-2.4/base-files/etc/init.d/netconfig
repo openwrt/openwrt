@@ -112,9 +112,9 @@ start() {
 			c["wan_ifname"] = "eth1"
 			c["lan_ifname"] = "eth0"
 		}
-		if (model == "ASUS WL-500g Premium V2") {
-				c["vlan0ports"] = "0 1 2 3 5"
-				c["vlan1ports"] = "4 5"
+		if ((model == "ASUS WL-500g Premium V2") || (model == "Dell TrueMobile 2300 v2") || (model == "Buffalo WHR-G125")) {
+			c["vlan0ports"] = "0 1 2 3 5"
+			c["vlan1ports"] = "4 5"
 		}
 		if (model == "Dell TrueMobile 2300") {
 			c["lan_ifname"] = "eth0"
@@ -122,20 +122,12 @@ start() {
 			c["vlan0ports"] = "0 1 2 3 4 5u"
 			c["vlan1ports"] = ""
 		}
-		if (model == "Dell TrueMobile 2300 v2") {
-			c["vlan0ports"] = "0 1 2 3 5"
-			c["vlan1ports"] = "4 5"
-		}
 		if (nvram["boardtype"] == "bcm94710r4") {
 			# Toshiba WRC-1000
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
 		}
-		if (nvram["boardtype"] == "wgt634u") {
-			c["vlan0ports"] = "0 1 2 3 5"
-			c["vlan1ports"] = "4 5"
-		}
-		if (nvram["boardtype"] == "0x0467") {
+		if ((nvram["boardtype"] == "wgt634u") || (nvram["boardtype"] == "0x0467")) {
 			c["vlan0ports"] = "0 1 2 3 5"
 			c["vlan1ports"] = "4 5"
 		}
