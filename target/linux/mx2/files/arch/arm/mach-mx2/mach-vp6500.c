@@ -20,9 +20,9 @@
 #include <linux/input.h>
 #include <linux/input/matrix_keypad.h>
 #include <linux/gpio_keys.h>
+#include <linux/pwm_backlight.h>
 
 static unsigned int vp6500_pins[] = {
-
 	/* UART1 */
 	PE12_PF_UART1_TXD,
 	PE13_PF_UART1_RXD,
@@ -52,7 +52,13 @@ static unsigned int vp6500_pins[] = {
 	PA30_PF_CONTRAST,
 	PA31_PF_OE_ACD,
 #endif
+
+	/* LCD Backlight */
+	PE5_PF_PWMO,
+	VP6500_GPIO_BACKLIGHT_EN | GPIO_GPIO | GPIO_OUT,
 };
+
+/* Flash */
 
 static struct physmap_flash_data vp6500_flash_data = {
 	.width = 2,
@@ -73,6 +79,8 @@ static struct platform_device vp6500_nor_mtd_device = {
 	.num_resources = 1,
 	.resource = &vp6500_flash_resource,
 };
+
+/* LEDs */
 
 static struct gpio_led vp6500_leds[] = {
 	{
@@ -107,6 +115,8 @@ static struct platform_device vp6500_leds_device = {
 		.platform_data = &vp6500_leds_data,
 	},
 };
+
+/* Keypad */
 
 static const uint32_t vp6500_keypad_keys[] = {
 	KEY(0, 3, KEY_F2),
@@ -180,11 +190,38 @@ static struct platform_device vp6500_key_device = {
 	},
 };
 
+/* LCD backlight */
+
+static int vp6500_backlight_notify(struct device *dev, int brightness)
+{
+	gpio_set_value(VP6500_GPIO_BACKLIGHT_EN, !!brightness);
+
+	return brightness;
+}
+
+static struct platform_pwm_backlight_data vp6500_backlight_data = {
+	.max_brightness = 255,
+	.dft_brightness = 100,
+	.pwm_period_ns = 15000000,
+	.notify = vp6500_backlight_notify,
+};
+
+static struct platform_device vp6500_backlight_device = {
+	.name = "pwm-backlight",
+	.id = -1,
+	.dev = {
+		.parent = &mxc_pwm_device.dev,
+		.platform_data = &vp6500_backlight_data,
+	},
+};
+
+
 static struct platform_device *platform_devices[] __initdata = {
 	&vp6500_nor_mtd_device,
 	&vp6500_leds_device,
 	&vp6500_keypad_device,
 	&vp6500_key_device,
+	&vp6500_backlight_device,
 };
 
 static void __init vp6500_board_init(void)
@@ -193,6 +230,7 @@ static void __init vp6500_board_init(void)
 			"vp6500");
 
 	mxc_register_device(&mxc_uart_device0, NULL);
+	mxc_register_device(&mxc_pwm_device, NULL);
 
 	platform_add_devices(platform_devices, ARRAY_SIZE(platform_devices));
 }
