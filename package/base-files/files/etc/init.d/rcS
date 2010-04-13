@@ -10,7 +10,12 @@ run_scripts() {
 LOGGER="cat"
 [ -x /usr/bin/logger ] && LOGGER="logger -s -p 6 -t sysinit"
 
-if [ "$1" = "S" ]; then
+. /etc/functions.sh
+
+config_load system
+config_get_bool foreground system foreground no
+
+if [ "$1" = "S" -a "$foreground" != "yes" ]; then
 	run_scripts "$1" "$2" &
 else
 	run_scripts "$1" "$2"
