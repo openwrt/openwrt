@@ -97,9 +97,8 @@ define Kernel/Configure/2.6
 endef
 define Kernel/Configure/Default
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config.target
-	echo "$(if $(CONFIG_KERNEL_KALLSYMS),CONFIG_KALLSYMS=y,# CONFIG_KALLSYMS is not set)" >> $(LINUX_DIR)/.config.target
-	echo "$(if $(CONFIG_KERNEL_PROFILING),CONFIG_PROFILING=y,# CONFIG_PROFILING is not set)" >> $(LINUX_DIR)/.config.target
-	echo "$(if $(CONFIG_KERNEL_DEBUG_FS),CONFIG_DEBUG_FS=y,# CONFIG_DEBUG_FS is not set)" >> $(LINUX_DIR)/.config.target
+# copy CONFIG_KERNEL_* settings over to .config.target
+	awk '/^(#[[:space:]]+)?CONFIG_KERNEL/{sub("CONFIG_KERNEL_","CONFIG_");print}' $(TOPDIR)/.config >> $(LINUX_DIR)/.config.target
 	echo "# CONFIG_KALLSYMS_EXTRA_PASS is not set" >> $(LINUX_DIR)/.config.target
 	echo "# CONFIG_KALLSYMS_ALL is not set" >> $(LINUX_DIR)/.config.target
 	echo "# CONFIG_KPROBES is not set" >> $(LINUX_DIR)/.config.target

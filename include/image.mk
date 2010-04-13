@@ -25,6 +25,11 @@ JFFS2OPTS     :=  --pad --big-endian --squash
 SQUASHFS_OPTS :=  -be
 endif
 
+JFFS2OPTS+= $(if $(CONFIG_KERNEL_JFFS2_RTIME)$(LINUX_2_4),-X,-x) rtime
+JFFS2OPTS+= $(if $(CONFIG_KERNEL_JFFS2_ZLIB),-X,-x) zlib
+JFFS2OPTS+= $(if $(CONFIG_KERNEL_JFFS2_LZMA)$(LINUX_2_4),-X,-x) lzma
+JFFS2OPTS+= $(JFFS2COMPR) --compression-mode=size
+
 ifneq ($(CONFIG_LINUX_2_4)$(CONFIG_LINUX_2_6_25),)
 USE_SQUASHFS3 := y
 endif
@@ -59,7 +64,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   ifeq ($(CONFIG_TARGET_ROOTFS_JFFS2),y)
     define Image/mkfs/jffs2/sub
 		# FIXME: removing this line will cause strange behaviour in the foreach loop below
-		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(JFFS2OPTS) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(1) -d $(TARGET_DIR)
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(JFFS2OPTS) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(1) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(1))
 		$(call Image/Build,jffs2-$(1))
     endef
