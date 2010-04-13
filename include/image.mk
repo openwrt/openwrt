@@ -18,17 +18,31 @@ KDIR=$(KERNEL_BUILD_DIR)
 IMG_PREFIX:=openwrt-$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
 ifneq ($(CONFIG_BIG_ENDIAN),y)
-JFFS2OPTS     :=  --pad --little-endian --squash
+JFFS2OPTS     :=  --pad --little-endian --squash -v
 SQUASHFS_OPTS :=  -le
 else
-JFFS2OPTS     :=  --pad --big-endian --squash
+JFFS2OPTS     :=  --pad --big-endian --squash -v
 SQUASHFS_OPTS :=  -be
 endif
 
-JFFS2OPTS+= $(if $(CONFIG_KERNEL_JFFS2_RTIME)$(LINUX_2_4),-X,-x) rtime
-JFFS2OPTS+= $(if $(CONFIG_KERNEL_JFFS2_ZLIB),-X,-x) zlib
-JFFS2OPTS+= $(if $(CONFIG_KERNEL_JFFS2_LZMA)$(LINUX_2_4),-X,-x) lzma
-JFFS2OPTS+= $(JFFS2COMPR) --compression-mode=size
+ifeq ($(CONFIG_JFFS2_RTIME),y)
+JFFS2OPTS+= -X rtime
+endif
+ifeq ($(CONFIG_JFFS2_ZLIB),y) 
+JFFS2OPTS+= -X zlib
+endif
+ifeq ($(CONFIG_JFFS2_LZMA),y)
+JFFS2OPTS+= -X lzma --compression-mode=size
+endif
+ifneq ($(CONFIG_JFFS2_RTIME),y)
+JFFS2OPTS+=  -x rtime
+endif
+ifneq ($(CONFIG_JFFS2_ZLIB),y)
+JFFS2OPTS+= -x zlib
+endif
+ifneq ($(CONFIG_JFFS2_LZMA),y)
+JFFS2OPTS+= -x lzma
+endif
 
 ifneq ($(CONFIG_LINUX_2_4)$(CONFIG_LINUX_2_6_25),)
 USE_SQUASHFS3 := y
