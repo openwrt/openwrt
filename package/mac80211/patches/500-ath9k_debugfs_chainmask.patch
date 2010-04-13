@@ -91,7 +91,7 @@
  static ssize_t read_file_dma(struct file *file, char __user *user_buf,
  			     size_t count, loff_t *ppos)
  {
-@@ -724,6 +808,16 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -730,6 +814,16 @@ int ath9k_init_debug(struct ath_hw *ah)
  		goto err;
  #endif
  
@@ -108,7 +108,7 @@
  	sc->debug.debugfs_dma = debugfs_create_file("dma", S_IRUSR,
  				       sc->debug.debugfs_phy, sc, &fops_dma);
  	if (!sc->debug.debugfs_dma)
-@@ -774,6 +868,8 @@ void ath9k_exit_debug(struct ath_hw *ah)
+@@ -780,6 +874,8 @@ void ath9k_exit_debug(struct ath_hw *ah)
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath_softc *sc = (struct ath_softc *) common->priv;
  
