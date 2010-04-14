@@ -34,5 +34,5 @@ do
     printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-zImage
   fi
     # generate the image
-    cat $BIN_DIR/openwrt-ixp4xx-zImage >> $BIN_DIR/openwrt-$1-zImage
+    cat $BIN_DIR/$IMG_PREFIX-zImage >> $BIN_DIR/openwrt-$1-zImage
 done
