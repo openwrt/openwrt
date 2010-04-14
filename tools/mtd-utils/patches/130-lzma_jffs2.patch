@@ -214,7 +214,7 @@
  #define JFFS2_NODE_ACCURATE 0x2000
 --- a/include/linux/lzma.h	1970-01-01 01:00:00.000000000 +0100
 +++ b/include/linux/lzma.h	2010-03-20 23:16:16.380508712 +0100
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,61 @@
 +#ifndef __LZMA_H__
 +#define __LZMA_H__
 +
@@ -235,7 +235,6 @@
 +	#include <stdio.h>
 +	#include <unistd.h>
 +	#include <string.h>
-+	#include <asm/types.h>
 +	#include <errno.h>
 +	#include <linux/jffs2.h>
 +	#ifndef PAGE_SIZE
