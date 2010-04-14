@@ -46,7 +46,7 @@
  	ATH_TXBUF_RESET(tbf);
  
  	tbf->aphy = bf->aphy;
-@@ -1083,9 +1104,7 @@ void ath_draintxq(struct ath_softc *sc, 
+@@ -1084,9 +1105,7 @@ void ath_draintxq(struct ath_softc *sc, 
  				list_del(&bf->list);
  				spin_unlock_bh(&txq->axq_lock);
  
@@ -57,7 +57,7 @@
  				continue;
  			}
  		}
-@@ -1305,25 +1324,6 @@ static void ath_tx_txqaddbuf(struct ath_
+@@ -1306,25 +1325,6 @@ static void ath_tx_txqaddbuf(struct ath_
  	txq->axq_depth++;
  }
  
@@ -83,7 +83,7 @@
  static void ath_tx_send_ampdu(struct ath_softc *sc, struct ath_atx_tid *tid,
  			      struct list_head *bf_head,
  			      struct ath_tx_control *txctl)
-@@ -1805,9 +1805,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1806,9 +1806,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  		}
  		spin_unlock_bh(&txq->axq_lock);
  
@@ -94,7 +94,7 @@
  
  		return r;
  	}
-@@ -2121,13 +2119,12 @@ static void ath_tx_processq(struct ath_s
+@@ -2122,13 +2120,12 @@ static void ath_tx_processq(struct ath_s
  		txq->axq_depth--;
  		txok = !(ts.ts_status & ATH9K_TXERR_MASK);
  		txq->axq_tx_inprogress = false;
