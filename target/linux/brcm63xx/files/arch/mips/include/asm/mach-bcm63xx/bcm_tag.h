@@ -23,8 +23,8 @@
 #define IMAGETAG_CRC_START		0xFFFFFFFF
 
 #define PIRELLI_BOARDS { \
-  "AGPF_S0", \
-  "DWV_SO", \
+  "AGPF-S0", \
+  "DWV-S0", \
 }
 
 /*
