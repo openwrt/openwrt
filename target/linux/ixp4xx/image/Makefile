@@ -37,7 +37,7 @@ endef
 
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
-	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh
+	BIN_DIR=$(BIN_DIR) IMG_PREFIX="$(IMG_PREFIX)" $(TOPDIR)/scripts/arm-magic.sh
 endef
 
 define Image/Build
