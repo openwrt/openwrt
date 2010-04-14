@@ -11,6 +11,10 @@ LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 JFFS2BLOCK := $(KDIR)/jffs2.block
 JFFS2MARK := $(KDIR)/jffs2.mark
 
+define imgname
+$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(1))
+endef
+
 define Build/Clean
 	$(LOADER_MAKE) clean
 endef
