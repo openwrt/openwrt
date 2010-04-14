@@ -1,8 +1,8 @@
 --- a/include/linux/compat-2.6.34.h
 +++ b/include/linux/compat-2.6.34.h
-@@ -162,6 +162,8 @@ static inline void device_unlock(struct 
- 	.prod_id_hash = { 0, 0, (vh3), 0 }, }
- #endif
+@@ -164,6 +164,8 @@ static inline void device_unlock(struct 
+ 
+ #define rcu_dereference_check(p, c) rcu_dereference(p)
  
 +#define rcu_dereference_check(p, c) rcu_dereference(p)
 +

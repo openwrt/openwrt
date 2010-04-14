@@ -1,17 +1,3 @@
---- a/drivers/net/wireless/ath/ath9k/hw.c
-+++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -402,11 +402,8 @@ static void ath9k_hw_init_defaults(struc
- 	ah->hw_version.magic = AR5416_MAGIC;
- 	ah->hw_version.subvendorid = 0;
- 
--	ah->ah_flags = 0;
- 	if (ah->hw_version.devid == AR5416_AR9100_DEVID)
- 		ah->hw_version.macVersion = AR_SREV_VERSION_9100;
--	if (!AR_SREV_9100(ah))
--		ah->ah_flags = AH_USE_EEPROM;
- 
- 	ah->atim_window = 0;
- 	ah->sta_id1_defaults = AR_STA_ID1_CRPT_MIC_ENABLE;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
 @@ -15,6 +15,7 @@
@@ -24,7 +10,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -540,6 +540,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -542,6 +542,7 @@ static int ath9k_init_softc(u16 devid, s
  {
  	struct ath_hw *ah = NULL;
  	struct ath_common *common;
@@ -32,7 +18,7 @@
  	int ret = 0, i;
  	int csz = 0;
  
-@@ -551,6 +552,10 @@ static int ath9k_init_softc(u16 devid, s
+@@ -553,6 +554,10 @@ static int ath9k_init_softc(u16 devid, s
  	ah->hw_version.subsysid = subsysid;
  	sc->sc_ah = ah;
  
@@ -43,3 +29,16 @@
  	common = ath9k_hw_common(ah);
  	common->ops = &ath9k_common_ops;
  	common->bus_ops = bus_ops;
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -404,10 +404,6 @@ static void ath9k_hw_init_defaults(struc
+ 	ah->hw_version.magic = AR5416_MAGIC;
+ 	ah->hw_version.subvendorid = 0;
+ 
+-	ah->ah_flags = 0;
+-	if (!AR_SREV_9100(ah))
+-		ah->ah_flags = AH_USE_EEPROM;
+-
+ 	ah->atim_window = 0;
+ 	ah->sta_id1_defaults = AR_STA_ID1_CRPT_MIC_ENABLE;
+ 	ah->beacon_interval = 100;

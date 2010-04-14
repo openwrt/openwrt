@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1125,6 +1125,34 @@ static bool ath9k_hw_channel_change(stru
+@@ -1131,6 +1131,34 @@ static bool ath9k_hw_channel_change(stru
  	return true;
  }
  
@@ -37,7 +37,7 @@
  {
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -847,6 +847,7 @@ void ath9k_hw_set11nmac2040(struct ath_h
+@@ -846,6 +846,7 @@ void ath9k_hw_set11nmac2040(struct ath_h
  void ath9k_hw_beaconinit(struct ath_hw *ah, u32 next_beacon, u32 beacon_period);
  void ath9k_hw_set_sta_beacon_timers(struct ath_hw *ah,
  				    const struct ath9k_beacon_state *bs);

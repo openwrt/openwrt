@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -77,6 +77,90 @@ static const struct file_operations fops
+@@ -78,6 +78,90 @@ static const struct file_operations fops
  
  #define DMA_BUF_LEN 1024
  
@@ -91,7 +91,7 @@
  static ssize_t read_file_dma(struct file *file, char __user *user_buf,
  			     size_t count, loff_t *ppos)
  {
-@@ -730,6 +814,16 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -731,6 +815,16 @@ int ath9k_init_debug(struct ath_hw *ah)
  		goto err;
  #endif
  
@@ -108,7 +108,7 @@
  	sc->debug.debugfs_dma = debugfs_create_file("dma", S_IRUSR,
  				       sc->debug.debugfs_phy, sc, &fops_dma);
  	if (!sc->debug.debugfs_dma)
-@@ -780,6 +874,8 @@ void ath9k_exit_debug(struct ath_hw *ah)
+@@ -781,6 +875,8 @@ void ath9k_exit_debug(struct ath_hw *ah)
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath_softc *sc = (struct ath_softc *) common->priv;
  
