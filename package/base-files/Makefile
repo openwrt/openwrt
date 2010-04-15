@@ -414,11 +414,15 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/glibc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/ld*.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so $(1)/lib/
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
+		$(CP) $(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so \
+		$(1)/lib/
 	for file in libanl libc libcidn libcrypt libdl libm $(use_libnsl) $(use_nsswitch) libresolv $(use_libutil); do \
-		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
-		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
+		$(CP) \
+			$(TOOLCHAIN_DIR)/lib/$$$$file.so.* \
+			$(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so \
+			$(1)/lib/; \
 	done
   endef
 
@@ -429,8 +433,10 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/uClibc/install
 	$(INSTALL_DIR) $(1)/lib
 	for file in ld$(LIB_SUFFIX)-uClibc libc libcrypt libdl libm libnsl libresolv libuClibc libutil; do \
-		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(1)/lib/; \
-		$(CP) $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so $(1)/lib/; \
+		$(CP) \
+			$(TOOLCHAIN_DIR)/lib/$$$$file.so.* \
+			$(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so \
+			$(1)/lib/; \
 	done
   endef
 
@@ -449,8 +455,10 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so $(1)/lib/
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/libpthread.so.* \
+		$(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so \
+		$(1)/lib/
   endef
 
   define Package/libpthread/install_lib
@@ -459,8 +467,10 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/librt/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/librt.so.* $(1)/lib/
-	$(CP) $(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so $(1)/lib/
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/librt.so.* \
+		$(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so \
+		$(1)/lib/
   endef
 
   define Package/ldd/install
