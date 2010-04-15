@@ -416,7 +416,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
-		$(CP) $(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so \
+		$(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so \
 		$(1)/lib/
 	for file in libanl libc libcidn libcrypt libdl libm $(use_libnsl) $(use_nsswitch) libresolv $(use_libutil); do \
 		$(CP) \
