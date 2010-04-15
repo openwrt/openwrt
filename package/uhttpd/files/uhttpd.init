@@ -58,6 +58,7 @@ start_instance()
 	append_arg "$cfg" lua_prefix "-l"
 	append_arg "$cfg" lua_handler "-L"
 	append_arg "$cfg" script_timeout "-t"
+	append_arg "$cfg" network_timeout "-T"
 
 	config_get http "$cfg" listen_http
 	for listen in $http; do

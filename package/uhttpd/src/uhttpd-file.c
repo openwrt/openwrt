@@ -29,23 +29,21 @@
 static const char * uh_file_mime_lookup(const char *path)
 {
 	struct mimetype *m = &uh_mime_types[0];
-	char *p, *pd, *ps;
+	char *e;
 
-	ps = strrchr(path, '/');
-	pd = strrchr(path, '.');
-
-	/* use either slash or dot as separator, whatever comes last */
-	p = (ps && pd && (ps > pd)) ? ps : pd;
-
-	if( (p != NULL) && (*(++p) != 0) )
+	while( m->extn )
 	{
-		while( m->extn )
+		e = &path[strlen(path)-1];
+
+		while( e >= path )
 		{
-			if( ! strcasecmp(p, m->extn) )
+			if( (*e == '.') && !strcasecmp(&e[1], m->extn) )
 				return m->mime;
 
-			m++;
+			e--;
 		}
+
+		m++;
 	}
 
 	return "application/octet-stream";

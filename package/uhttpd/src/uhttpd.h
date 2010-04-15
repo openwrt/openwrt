@@ -32,7 +32,7 @@
 #include <linux/limits.h>
 #include <netdb.h>
 #include <ctype.h>
-
+#include <errno.h>
 #include <dlfcn.h>
 
 
@@ -64,6 +64,8 @@ struct config {
 	char docroot[PATH_MAX];
 	char *realm;
 	char *file;
+	int no_symlinks;
+	int network_timeout;
 #ifdef HAVE_CGI
 	char *cgi_prefix;
 #endif
