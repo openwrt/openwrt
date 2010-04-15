@@ -377,7 +377,7 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
-			{ .name = "usb",	.gpio = 1 << 2, .polarity = NORMAL },
+			{ .name = "usb",	.gpio = 1 << 2, .polarity = REVERSE },
 		},
 	},
 	[WL300G] = {
