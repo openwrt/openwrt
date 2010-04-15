@@ -420,8 +420,9 @@ static char * canonpath(const char *path, char *path_resolved)
 				}
 
 				/* collapse /x/../ */
-				else if( path_cpy[2] == '.' )
-				{
+				else if( (path_cpy[2] == '.') &&
+				         ((path_cpy[3] == '/') || (path_cpy[3] == '\0'))
+				) {
 					while( (path_res > path_resolved) && (*--path_res != '/') )
 						;
 
