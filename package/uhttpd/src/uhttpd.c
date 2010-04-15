@@ -416,8 +416,11 @@ int main (int argc, char **argv)
 	/* maximum file descriptor number */
 	int new_fd, cur_fd, max_fd = 0;
 
+#ifdef HAVE_TLS
 	int tls = 0;
 	int keys = 0;
+#endif
+
 	int bound = 0;
 	int nofork = 0;
 
@@ -426,9 +429,10 @@ int main (int argc, char **argv)
 	char bind[128];
 	char *port = NULL;
 
-	/* library handles */
-	void *tls_lib;
-	void *lua_lib;
+#if defined(HAVE_TLS) || defined(HAVE_LUA)
+	/* library handle */
+	void *lib;
+#endif
 
 	/* clear the master and temp sets */
 	FD_ZERO(&used_fds);
@@ -466,7 +470,7 @@ int main (int argc, char **argv)
 
 #ifdef HAVE_TLS
 	/* load TLS plugin */
-	if( ! (tls_lib = dlopen("uhttpd_tls.so", RTLD_LAZY | RTLD_GLOBAL)) )
+	if( ! (lib = dlopen("uhttpd_tls.so", RTLD_LAZY | RTLD_GLOBAL)) )
 	{
 		fprintf(stderr,
 			"Notice: Unable to load TLS plugin - disabling SSL support! "
@@ -476,14 +480,14 @@ int main (int argc, char **argv)
 	else
 	{
 		/* resolve functions */
-		if( !(conf.tls_init   = dlsym(tls_lib, "uh_tls_ctx_init"))      ||
-		    !(conf.tls_cert   = dlsym(tls_lib, "uh_tls_ctx_cert"))      ||
-		    !(conf.tls_key    = dlsym(tls_lib, "uh_tls_ctx_key"))       ||
-		    !(conf.tls_free   = dlsym(tls_lib, "uh_tls_ctx_free"))      ||
-			!(conf.tls_accept = dlsym(tls_lib, "uh_tls_client_accept")) ||
-			!(conf.tls_close  = dlsym(tls_lib, "uh_tls_client_close"))  ||
-			!(conf.tls_recv   = dlsym(tls_lib, "uh_tls_client_recv"))   ||
-			!(conf.tls_send   = dlsym(tls_lib, "uh_tls_client_send"))
+		if( !(conf.tls_init   = dlsym(lib, "uh_tls_ctx_init"))      ||
+		    !(conf.tls_cert   = dlsym(lib, "uh_tls_ctx_cert"))      ||
+		    !(conf.tls_key    = dlsym(lib, "uh_tls_ctx_key"))       ||
+		    !(conf.tls_free   = dlsym(lib, "uh_tls_ctx_free"))      ||
+			!(conf.tls_accept = dlsym(lib, "uh_tls_client_accept")) ||
+			!(conf.tls_close  = dlsym(lib, "uh_tls_client_close"))  ||
+			!(conf.tls_recv   = dlsym(lib, "uh_tls_client_recv"))   ||
+			!(conf.tls_send   = dlsym(lib, "uh_tls_client_send"))
 		) {
 			fprintf(stderr,
 				"Error: Failed to lookup required symbols "
@@ -501,7 +505,7 @@ int main (int argc, char **argv)
 	}
 #endif
 
-	while( (opt = getopt(argc, argv, "fC:K:p:s:h:c:l:L:d:r:m:x:t:")) > 0 )
+	while( (opt = getopt(argc, argv, "fSC:K:p:s:h:c:l:L:d:r:m:x:t:T:")) > 0 )
 	{
 		switch(opt)
 		{
@@ -592,6 +596,11 @@ int main (int argc, char **argv)
 				}
 				break;
 
+			/* don't follow symlinks */
+			case 'S':
+				conf.no_symlinks = 1;
+				break;
+
 #ifdef HAVE_CGI
 			/* cgi prefix */
 			case 'x':
@@ -617,6 +626,11 @@ int main (int argc, char **argv)
 				conf.script_timeout = atoi(optarg);
 				break;
 #endif
+
+			/* network timeout */
+			case 'T':
+				conf.network_timeout = atoi(optarg);
+				break;
 
 			/* no fork */
 			case 'f':
@@ -663,6 +677,7 @@ int main (int argc, char **argv)
 					"	-K file         ASN.1 server private key file\n"
 #endif
 					"	-h directory    Specify the document root, default is '.'\n"
+					"	-S              Do not follow symbolic links outside of the docroot\n"
 #ifdef HAVE_LUA
 					"	-l string       URL prefix for Lua handler, default is '/lua'\n"
 					"	-L file         Lua handler script, omit to disable Lua\n"
@@ -673,6 +688,7 @@ int main (int argc, char **argv)
 #if defined(HAVE_CGI) || defined(HAVE_LUA)
 					"	-t seconds      CGI and Lua script timeout in seconds, default is 60\n"
 #endif
+					"	-T seconds      Network timeout in seconds, default is 30\n"
 					"	-d string       URL decode given string\n"
 					"	-r string       Specify basic auth realm\n"
 					"	-m string       MD5 crypt given string\n"
@@ -712,6 +728,10 @@ int main (int argc, char **argv)
 	/* config file */
 	uh_config_parse(conf.file);
 
+	/* default network timeout */
+	if( conf.network_timeout <= 0 )
+		conf.network_timeout = 30;
+
 #if defined(HAVE_CGI) || defined(HAVE_LUA)
 	/* default script timeout */
 	if( conf.script_timeout <= 0 )
@@ -726,7 +746,7 @@ int main (int argc, char **argv)
 
 #ifdef HAVE_LUA
 	/* load Lua plugin */
-	if( ! (lua_lib = dlopen("uhttpd_lua.so", RTLD_LAZY | RTLD_GLOBAL)) )
+	if( ! (lib = dlopen("uhttpd_lua.so", RTLD_LAZY | RTLD_GLOBAL)) )
 	{
 		fprintf(stderr,
 			"Notice: Unable to load Lua plugin - disabling Lua support! "
@@ -736,9 +756,9 @@ int main (int argc, char **argv)
 	else
 	{
 		/* resolve functions */
-		if( !(conf.lua_init    = dlsym(lua_lib, "uh_lua_init"))    ||
-		    !(conf.lua_close   = dlsym(lua_lib, "uh_lua_close"))   ||
-		    !(conf.lua_request = dlsym(lua_lib, "uh_lua_request"))
+		if( !(conf.lua_init    = dlsym(lib, "uh_lua_init"))    ||
+		    !(conf.lua_close   = dlsym(lib, "uh_lua_close"))   ||
+		    !(conf.lua_request = dlsym(lib, "uh_lua_request"))
 		) {
 			fprintf(stderr,
 				"Error: Failed to lookup required symbols "
