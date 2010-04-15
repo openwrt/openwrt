@@ -39,7 +39,6 @@ int ag71xx_remove_ar8216_header(struct ag71xx *ag, struct sk_buff *skb,
 		return -EINVAL;
 	}
 
-	skb_put(skb, pktlen);
 	skb_pull(skb, AR8216_HEADER_LEN);
 	return 0;
 }

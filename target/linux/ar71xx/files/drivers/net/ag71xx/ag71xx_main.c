@@ -192,9 +192,28 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 		}
 }
 
+static int ag71xx_rx_reserve(struct ag71xx *ag)
+{
+	int reserve = 0;
+
+	if (ag71xx_get_pdata(ag)->is_ar724x) {
+		if (!ag71xx_has_ar8216(ag))
+			reserve = 2;
+
+		if (ag->phy_dev)
+			reserve += 4 - (ag->phy_dev->pkt_align % 4);
+
+		reserve %= 4;
+	}
+
+	return reserve + AG71XX_RX_PKT_RESERVE;
+}
+
+
 static int ag71xx_ring_rx_init(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->rx_ring;
+	unsigned int reserve = ag71xx_rx_reserve(ag);
 	unsigned int i;
 	int ret;
 
@@ -212,14 +231,14 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 		struct sk_buff *skb;
 		dma_addr_t dma_addr;
 
-		skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + AG71XX_RX_PKT_RESERVE);
+		skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + reserve);
 		if (!skb) {
 			ret = -ENOMEM;
 			break;
 		}
 
 		skb->dev = ag->dev;
-		skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
+		skb_reserve(skb, reserve);
 
 		dma_addr = dma_map_single(&ag->dev->dev, skb->data,
 					  AG71XX_RX_PKT_SIZE,
@@ -242,6 +261,7 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->rx_ring;
+	unsigned int reserve = ag71xx_rx_reserve(ag);
 	unsigned int count;
 
 	count = 0;
@@ -254,12 +274,11 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 			dma_addr_t dma_addr;
 			struct sk_buff *skb;
 
-			skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE +
-					    AG71XX_RX_PKT_RESERVE);
+			skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + reserve);
 			if (skb == NULL)
 				break;
 
-			skb_reserve(skb, AG71XX_RX_PKT_RESERVE);
+			skb_reserve(skb, reserve);
 			skb->dev = ag->dev;
 
 			dma_addr = dma_map_single(&ag->dev->dev, skb->data,
@@ -759,30 +778,26 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 	return sent;
 }
 
-static int ag71xx_rx_copy_skb(struct ag71xx *ag, struct sk_buff **pskb,
-			      int pktlen)
+static void ag71xx_rx_align_skb(struct ag71xx *ag, struct sk_buff *skb, int len)
 {
-	struct sk_buff *copy_skb;
+	int offset = ((unsigned long) skb->data) % 4;
+	void *data;
 
-	if (ag->phy_dev && (ag->phy_dev->pkt_align % 4) == 2)
-		goto keep;
+	if (offset == 2)
+		return;
 
-	copy_skb = netdev_alloc_skb(ag->dev, pktlen + NET_IP_ALIGN);
-	if (!copy_skb)
-		return -ENOMEM;
+	if (ag->phy_dev && ag->phy_dev->pkt_align != 0)
+		return;
 
-	skb_reserve(copy_skb, NET_IP_ALIGN);
-	skb_copy_from_linear_data(*pskb, copy_skb->data, pktlen);
-	skb_put(copy_skb, pktlen);
+	if (len > 128)
+		return;
 
-	dev_kfree_skb_any(*pskb);
-	*pskb = copy_skb;
+	if (WARN_ON(skb_headroom(skb) < 2))
+		return;
 
-	return 0;
-
- keep:
-	skb_put(*pskb, pktlen);
-	return 0;
+	data = skb->data;
+	skb->data -= 2;
+	memmove(skb->data, data, len);
 }
 
 static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
@@ -822,10 +837,11 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
 
+		skb_put(skb, pktlen);
 		if (ag71xx_has_ar8216(ag))
 			err = ag71xx_remove_ar8216_header(ag, skb, pktlen);
-		else
-			err = ag71xx_rx_copy_skb(ag, &skb, pktlen);
+
+		ag71xx_rx_align_skb(ag, skb, pktlen);
 
 		if (err) {
 			dev->stats.rx_dropped++;
