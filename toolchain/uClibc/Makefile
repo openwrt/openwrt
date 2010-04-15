@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -27,6 +27,7 @@ CONFIG_DIR:=./config-$(PKG_VERSION)
 PKG_MD5SUM_0.9.30.1 = 1a4b84e5536ad8170563ffa88c34679c
 PKG_MD5SUM_0.9.30.2 = e759ec855500082ac3e671dd6cacfdb0
 PKG_MD5SUM_0.9.30.3 = 73a4bf4a0fa508b01a7a3143574e3d21
+PKG_MD5SUM_0.9.31   = 52fb8a494758630c8d3ddd7f1e0daafd
 PKG_MD5SUM=$(PKG_MD5SUM_$(PKG_VERSION))
 
 HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)-$(PKG_VERSION)
