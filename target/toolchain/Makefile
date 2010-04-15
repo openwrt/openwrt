@@ -16,7 +16,7 @@ override MAKEFLAGS=
 PKG_OS:=$(shell uname -s)
 PKG_CPU:=$(shell uname -m)
 
-TOOLCHAIN_NAME:=OpenWrt-Toolchain-$(BOARD)-for-$(ARCH)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
+TOOLCHAIN_NAME:=OpenWrt-Toolchain-$(BOARD)-for-$(ARCH)$(ARCH_SUFFIX)-gcc-$(GCCV)$(DIR_SUFFIX)
 TOOLCHAIN_BUILD_DIR:=$(BUILD_DIR)/$(TOOLCHAIN_NAME)
 EXCLUDE_DIRS:=*/ccache \
 	*/stamp \
@@ -26,13 +26,13 @@ EXCLUDE_DIRS:=*/ccache \
 
 all: compile
 
-TOOLCHAIN_PREFIX:=$(TOOLCHAIN_BUILD_DIR)/toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)
+TOOLCHAIN_PREFIX:=$(TOOLCHAIN_BUILD_DIR)/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)$(DIR_SUFFIX)
 
 $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
 	$(TAR) -cf - -C $(TOPDIR)/staging_dir/  \
 	       $(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
-	       toolchain-$(ARCH)_gcc-$(GCCV)_$(LIBC)-$(LIBCV) | \
+	       toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)$(DIR_SUFFIX) | \
 	       $(TAR) -xf - -C $(TOOLCHAIN_BUILD_DIR)
 
 	$(CP)  $(TOPDIR)/LICENSE ./files/README.TOOLCHAIN \
