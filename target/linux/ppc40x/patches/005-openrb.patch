@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/powerpc/boot/cuboot-openrb.c
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,94 @@
 +/*
 + * Old U-boot compatibility for OpenRB boards
 + *
@@ -60,6 +60,20 @@
 +#undef CF_CS1_BASE
 +}
 +
++static void fixup_isp116x(void)
++{
++#define ISP116X_CS_BASE		0xf0000000
++
++	/* PerCS3 (ISP1160's CS): base 0xf0000000, size 32MB, 16-bit, rw */
++	mtdcr(DCRN_EBC0_CFGADDR, EBC_B3CR);
++	mtdcr(DCRN_EBC0_CFGDATA, ISP116X_CS_BASE | EBC_BXCR_BS_32M |
++				 EBC_BXCR_BU_RW | EBC_BXCR_BW_16);
++	mtdcr(DCRN_EBC0_CFGADDR, EBC_B3AP);
++	mtdcr(DCRN_EBC0_CFGDATA, 0x03016600);
++
++#undef ISP116X_CS_BASE
++}
++
 +static void openrb_fixups(void)
 +{
 +	ibm405ep_fixup_clocks(bd.bi_procfreq / 8);
@@ -67,6 +81,7 @@
 +
 +	fixup_perwe();
 +	fixup_cf_card();
++	fixup_isp116x();
 +
 +	dt_fixup_mac_addresses(&bd.bi_enetaddr, &bd.bi_enet1addr);
 +}
@@ -82,7 +97,7 @@
 +}
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/openrb.dts
-@@ -0,0 +1,280 @@
+@@ -0,0 +1,291 @@
 +/*
 + * Device Tree Source for OpenRB boards
 + *
@@ -285,6 +300,17 @@
 +			 * EBC bridge
 +			 */
 +			clock-frequency = <0>; /* Filled in by zImage */
++
++			isp116x@f0000000 {
++				compatible = "isp116x-hcd";
++				oc_enable;
++				int_act_high;
++				int_edge_triggered;
++				reg = <0x00000000 0xf0000000 0x00000002 /* data */
++				       0x00000000 0xf1000000 0x00000002 /* addr */ >;
++				interrupt-parent = <&UIC0>;
++				interrupts = <0x1b 0x1 /* IRQ_TYPE_EDGE_RISING */ >;
++			};
 +
 +			cf_card@ff100000 {
 +				compatible = "magicbox-cf", "pata-magicbox-cf";
