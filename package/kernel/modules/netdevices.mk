@@ -273,7 +273,7 @@ $(eval $(call KernelPackage,3c59x))
 define KernelPackage/pcnet32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=AMD PCnet32 PCI support
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@(TARGET_x86||TARGET_malta)
   KCONFIG:=CONFIG_PCNET32
   FILES:=$(LINUX_DIR)/drivers/net/pcnet32.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,pcnet32)
