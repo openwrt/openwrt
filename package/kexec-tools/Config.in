@@ -1,7 +1,9 @@
+menu "Configuration"
+	depends on PACKAGE_kexec-tools
 
 config KEXEC_TOOLS_TARGET_NAME
 	string
-	prompt "Target name for kexec kernel" if PACKAGE_kexec-tools
+	prompt "Target name for kexec kernel"
 	default EXTRA_TARGET_ARCH_NAME	if powerpc64
 	default ARCH
 	help
@@ -12,8 +14,8 @@ config KEXEC_TOOLS_TARGET_NAME
 config KEXEC_TOOLS_kdump
 	bool
 	prompt "kdump support"
-	depends on PACKAGE_kexec-tools
 	default n
 	help
 	  Include the kdump utility.
 
+endmenu
