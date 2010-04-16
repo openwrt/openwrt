@@ -26,6 +26,7 @@ define Package/uboot-ifxmips
   DEPENDS:=@TARGET_ifxmips @BROKEN
   TITLE:=U-Boot for Infineon MIPS boards
   URL:=http://www.denx.de/wiki/U-Boot
+  MENU:=1
 endef
 
 define Build/Prepare
