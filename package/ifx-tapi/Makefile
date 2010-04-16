@@ -26,6 +26,7 @@ define KernelPackage/ifx-tapi
   DEPENDS:=+kmod-ifxos @BROKEN
   FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,drv_tapi)
+  MENU:=1
 endef
 
 define KernelPackage/ifx-tapi/description
@@ -33,9 +34,7 @@ define KernelPackage/ifx-tapi/description
 endef
 
 define KernelPackage/ifx-tapi/config
-	if PACKAGE_kmod-ifx-tapi
-		source "$(SOURCE)/Config.in"
-	endif
+	source "$(SOURCE)/Config.in"
 endef
 
 CONFIGURE_ARGS += \

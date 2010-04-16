@@ -1,3 +1,6 @@
+menu "Configuration"
+	depends on PACKAGE_kmod-ifx-tapi
+
 config VOICE_CPE_TAPI_FAX
 	bool "fax relay and modem support"
 	default n
@@ -69,3 +72,5 @@ config VOICE_CPE_TAPI_TRACES
 	help
 		enable driver traces with different trace levels to be
 		configured dynamically from the application or during insmod
+
+endmenu
