@@ -26,6 +26,7 @@ define KernelPackage/ifx-vmmc
   DEPENDS:=+kmod-ifx-tapi @BROKEN
   FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,drv_vmmc)
+  MENU:=1
 endef
 
 define KernelPackage/ifx-vmmc/description
@@ -33,9 +34,7 @@ define KernelPackage/ifx-vmmc/description
 endef
 
 define KernelPackage/ifx-vmmc/config
-	if PACKAGE_kmod-ifx-vmmc
-		source "$(SOURCE)/Config.in"
-	endif
+	source "$(SOURCE)/Config.in"
 endef
 
 CONFIGURE_ARGS += \

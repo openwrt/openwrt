@@ -1,3 +1,5 @@
+menu "Configuration"
+	depends on PACKAGE_kmod-ifx-vmmc
 choice
 	prompt "device selection"
 	default VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract
@@ -47,3 +49,5 @@ config VOICE_CPE_VMMC_MPS_HISTORY_SIZE
 		MPS history buffer (default=128 words, maximum=512 words, 0=disable)
 		To opimize the memory footprint in RAM, you might want to set the
 		buffer size to 0.
+
+endmenu
