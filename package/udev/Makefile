@@ -26,6 +26,7 @@ define Package/udev
   TITLE:=Dynamic device management subsystem
   URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
   MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
+  MENU:=1
 endef
 
 define Package/udev/description
@@ -34,7 +35,7 @@ define Package/udev/description
 endef
 
 define Package/udev/config
-	source "$(SOURCE)/udev-config.in"
+	source "$(SOURCE)/Config.in"
 endef
 
 udev-args-$(CONFIG_UDEV_DISABLE_LOGGING) += --disable-logging
