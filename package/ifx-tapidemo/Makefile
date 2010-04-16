@@ -26,6 +26,7 @@ define Package/ifx-tapidemo
   URL:=http://www.lantiq.com/
   MAINTAINER:=Lantiq
   DEPENDS:=+kmod-ifx-tapi +kmod-ifx-vmmc @BROKEN
+  MENU:=1
 endef
 
 define Package/ifx-tapidemo/description
@@ -33,9 +34,7 @@ define Package/ifx-tapidemo/description
 endef
 
 define Package/ifx-tapidemo/config
-	if PACKAGE_ifx-tapidemo
-		source "$(SOURCE)/Config.in"
-	endif
+	source "$(SOURCE)/Config.in"
 endef
 
 CONFIGURE_ARGS += \
