@@ -16,6 +16,6 @@ LINUX_VERSION:=2.6.32.10
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim
+DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim kmod-pcnet32
 
 $(eval $(call BuildTarget))
