@@ -761,6 +761,7 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 	NLA_PUT_STRING(msg, SWITCH_ATTR_DEV_NAME, dev->devname);
 	NLA_PUT_U32(msg, SWITCH_ATTR_VLANS, dev->vlans);
 	NLA_PUT_U32(msg, SWITCH_ATTR_PORTS, dev->ports);
+	NLA_PUT_U32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port);
 
 	return genlmsg_end(msg, hdr);
 nla_put_failure:

@@ -586,6 +586,8 @@ add_switch(struct nl_msg *msg, void *arg)
 		dev->ports = nla_get_u32(tb[SWITCH_ATTR_PORTS]);
 	if (tb[SWITCH_ATTR_VLANS])
 		dev->vlans = nla_get_u32(tb[SWITCH_ATTR_VLANS]);
+	if (tb[SWITCH_ATTR_CPU_PORT])
+		dev->cpu_port = nla_get_u32(tb[SWITCH_ATTR_CPU_PORT]);
 
 	if (!sa->head) {
 		sa->head = dev;
