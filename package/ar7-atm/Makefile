@@ -42,6 +42,7 @@ define KernelPackage/sangam-atm/Default
   TITLE:=AR7 ADSL driver
   FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,tiatm)
+  MENU:=1
 endef
 
 define KernelPackage/sangam-atm/config
