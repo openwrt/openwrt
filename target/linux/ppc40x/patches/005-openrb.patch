@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/powerpc/boot/cuboot-openrb.c
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,79 @@
 +/*
 + * Old U-boot compatibility for OpenRB boards
 + *
@@ -44,13 +44,15 @@
 +
 +	/* PerCS1 (CF's CS0): base 0xff100000, 16-bit, rw */
 +	mtdcr(DCRN_EBC0_CFGADDR, EBC_B1CR);
-+	mtdcr(DCRN_EBC0_CFGDATA, CF_CS0_BASE | EBC_BXCR_BU_RW | EBC_BXCR_BW_16);
++	mtdcr(DCRN_EBC0_CFGDATA, CF_CS0_BASE | EBC_BXCR_BS_1M |
++				 EBC_BXCR_BU_RW | EBC_BXCR_BW_16);
 +	mtdcr(DCRN_EBC0_CFGADDR, EBC_B1AP);
 +	mtdcr(DCRN_EBC0_CFGDATA, 0x080bd800);
 +
 +	/* PerCS2 (CF's CS1): base 0xff200000, 16-bit, rw */
 +	mtdcr(DCRN_EBC0_CFGADDR, EBC_B2CR);
-+	mtdcr(DCRN_EBC0_CFGDATA, CF_CS1_BASE | EBC_BXCR_BU_RW | EBC_BXCR_BW_16);
++	mtdcr(DCRN_EBC0_CFGDATA, CF_CS1_BASE | EBC_BXCR_BS_1M |
++				 EBC_BXCR_BU_RW | EBC_BXCR_BW_16);
 +	mtdcr(DCRN_EBC0_CFGADDR, EBC_B2AP);
 +	mtdcr(DCRN_EBC0_CFGDATA, 0x080bd800);
 +
