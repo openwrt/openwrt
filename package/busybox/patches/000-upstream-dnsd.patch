@@ -1,0 +1,27 @@
+--- a/include/platform.h
++++ b/include/platform.h
+@@ -291,10 +291,12 @@ typedef unsigned smalluint;
+ #if 1 /* if needed: !defined(arch1) && !defined(arch2) */
+ # define ALIGN1 __attribute__((aligned(1)))
+ # define ALIGN2 __attribute__((aligned(2)))
++# define ALIGN4 __attribute__((aligned(4)))
+ #else
+ /* Arches which MUST have 2 or 4 byte alignment for everything are here */
+ # define ALIGN1
+ # define ALIGN2
++# define ALIGN4
+ #endif
+ 
+ 
+--- a/networking/dnsd.c
++++ b/networking/dnsd.c
+@@ -459,7 +459,8 @@ int dnsd_main(int argc UNUSED_PARAM, cha
+ 	unsigned lsa_size;
+ 	int udps, opts;
+ 	uint16_t port = 53;
+-	uint8_t buf[MAX_PACK_LEN + 1];
++	/* Ensure buf is 32bit aligned (we need 16bit, but 32bit can't hurt) */
++	uint8_t buf[MAX_PACK_LEN + 1] ALIGN4;
+ 
+ 	opts = getopt32(argv, "vi:c:t:p:d", &listen_interface, &fileconf, &sttl, &sport);
+ 	//if (opts & 0x1) // -v

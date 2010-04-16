@@ -1,0 +1,151 @@
+--- a/util-linux/hwclock.c
++++ b/util-linux/hwclock.c
+@@ -109,10 +109,53 @@ static void to_sys_clock(const char **pp
+ 
+ static void from_sys_clock(const char **pp_rtcname, int utc)
+ {
+-#define TWEAK_USEC 200
+-	struct tm tm_time;
++#if 1
+ 	struct timeval tv;
++	struct tm tm_time;
++	int rtc;
++
++	rtc = rtc_xopen(pp_rtcname, O_WRONLY);
++	gettimeofday(&tv, NULL);
++	/* Prepare tm_time */
++	if (sizeof(time_t) == sizeof(tv.tv_sec)) {
++		if (utc)
++			gmtime_r((time_t*)&tv.tv_sec, &tm_time);
++		else
++			localtime_r((time_t*)&tv.tv_sec, &tm_time);
++	} else {
++		time_t t = tv.tv_sec;
++		if (utc)
++			gmtime_r(&t, &tm_time);
++		else
++			localtime_r(&t, &tm_time);
++	}
++#else
++/* Bloated code which tries to set hw clock with better precision.
++ * On x86, even though code does set hw clock within <1ms of exact
++ * whole seconds, apparently hw clock (at least on some machines)
++ * doesn't reset internal fractional seconds to 0,
++ * making all this a pointless excercise.
++ */
++	/* If we see that we are N usec away from whole second,
++	 * we'll sleep for N-ADJ usecs. ADJ corrects for the fact
++	 * that CPU is not infinitely fast.
++	 * On infinitely fast CPU, next wakeup would be
++	 * on (exactly_next_whole_second - ADJ). On real CPUs,
++	 * this difference between current time and whole second
++	 * is less than ADJ (assuming system isn't heavily loaded).
++	 */
++	/* Small value of 256us gives very precise sync for 2+ GHz CPUs.
++	 * Slower CPUs will fail to sync and will go to bigger
++	 * ADJ values. qemu-emulated armv4tl with ~100 MHz
++	 * performance ends up using ADJ ~= 4*1024 and it takes
++	 * 2+ secs (2 tries with successively larger ADJ)
++	 * to sync. Even straced one on the same qemu (very slow)
++	 * takes only 4 tries.
++	 */
++#define TWEAK_USEC 256
+ 	unsigned adj = TWEAK_USEC;
++	struct tm tm_time;
++	struct timeval tv;
+ 	int rtc = rtc_xopen(pp_rtcname, O_WRONLY);
+ 
+ 	/* Try to catch the moment when whole second is close */
+@@ -124,55 +167,64 @@ static void from_sys_clock(const char **
+ 
+ 		t = tv.tv_sec;
+ 		rem_usec = 1000000 - tv.tv_usec;
+-		if (rem_usec < 1024) {
+-			/* Less than 1ms to next second. Good enough */
++		if (rem_usec < adj) {
++			/* Close enough */
+  small_rem:
+ 			t++;
+ 		}
+ 
+-		/* Prepare tm */
++		/* Prepare tm_time from t */
+ 		if (utc)
+ 			gmtime_r(&t, &tm_time); /* may read /etc/xxx (it takes time) */
+ 		else
+ 			localtime_r(&t, &tm_time); /* same */
+-		tm_time.tm_isdst = 0;
++
++		if (adj >= 32*1024) {
++			break; /* 32 ms diff and still no luck?? give up trying to sync */
++		}
+ 
+ 		/* gmtime/localtime took some time, re-get cur time */
+ 		gettimeofday(&tv, NULL);
+ 
+-		if (tv.tv_sec < t /* may happen if rem_usec was < 1024 */
+-		 || (tv.tv_sec == t && tv.tv_usec < 1024)
++		if (tv.tv_sec < t /* we are still in old second */
++		 || (tv.tv_sec == t && tv.tv_usec < adj) /* not too far into next second */
+ 		) {
+-			/* We are not too far into next second. Good. */
+-			break;
+-		}
+-		adj += 32; /* 2^(10-5) = 2^5 = 32 iterations max */
+-		if (adj >= 1024) {
+-			/* Give up trying to sync */
+-			break;
++			break; /* good, we are in sync! */
+ 		}
+ 
+-		/* Try to sync up by sleeping */
+ 		rem_usec = 1000000 - tv.tv_usec;
+-		if (rem_usec < 1024) {
+-			goto small_rem; /* already close, don't sleep */
++		if (rem_usec < adj) {
++			t = tv.tv_sec;
++			goto small_rem; /* already close to next sec, don't sleep */
+ 		}
+-		/* Need to sleep.
+-		 * Note that small adj on slow processors can make us
+-		 * to always overshoot tv.tv_usec < 1024 check on next
+-		 * iteration. That's why adj is increased on each iteration.
+-		 * This also allows it to be reused as a loop limiter.
+-		 */
+-		usleep(rem_usec - adj);
+-	}
+ 
+-	xioctl(rtc, RTC_SET_TIME, &tm_time);
++		/* Try to sync up by sleeping */
++		usleep(rem_usec - adj);
+ 
+-	/* Debug aid to find "good" TWEAK_USEC.
++		/* Jump to 1ms diff, then increase fast (x2): EVERY loop
++		 * takes ~1 sec, people won't like slowly converging code here!
++		 */
++	//bb_error_msg("adj:%d tv.tv_usec:%d", adj, (int)tv.tv_usec);
++		if (adj < 512)
++			adj = 512;
++		/* ... and if last "overshoot" does not look insanely big,
++		 * just use it as adj increment. This makes convergence faster.
++		 */
++		if (tv.tv_usec < adj * 8) {
++			adj += tv.tv_usec;
++			continue;
++		}
++		adj *= 2;
++	}
++	/* Debug aid to find "optimal" TWEAK_USEC with nearly exact sync.
+ 	 * Look for a value which makes tv_usec close to 999999 or 0.
+-	 * for 2.20GHz Intel Core 2: TWEAK_USEC ~= 200
++	 * For 2.20GHz Intel Core 2: optimal TWEAK_USEC ~= 200
+ 	 */
+-	//bb_error_msg("tv.tv_usec:%d adj:%d", (int)tv.tv_usec, adj);
++	//bb_error_msg("tv.tv_usec:%d", (int)tv.tv_usec);
++#endif
++
++	tm_time.tm_isdst = 0;
++	xioctl(rtc, RTC_SET_TIME, &tm_time);
+ 
+ 	if (ENABLE_FEATURE_CLEAN_UP)
+ 		close(rtc);
