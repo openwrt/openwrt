@@ -66,10 +66,23 @@ define KernelPackage/mac80211
   DEPENDS+= +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-cfg80211
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,21,mac80211)
+  MENU:=1
 endef
 
 define KernelPackage/mac80211/config
-	source "$(SOURCE)/Config.in"
+	menu "Configuration"
+		depends on PACKAGE_kmod-mac80211
+
+	config PACKAGE_MAC80211_DEBUGFS
+		bool "Export mac80211 internals in DebugFS"
+		default y
+		help
+		  Select this to see extensive information about
+		  the internal state of mac80211 in debugfs.
+
+		  Say N unless you know you need this.
+
+	endmenu
 endef
 
 define KernelPackage/mac80211/description
@@ -186,10 +199,27 @@ $(call KernelPackage/rt2x00/Default)
   TITLE+= (LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00lib.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,rt2x00lib)
+  MENU:=1
 endef
 
 define KernelPackage/rt2x00-lib/config
-	source "$(SOURCE)/Config.in.rt2x00"
+	menu "Configuration"
+		depends PACKAGE_kmod-rt2x00-lib
+
+	config PACKAGE_RT2X00_LIB_DEBUGFS
+		bool "Enable rt2x00 debugfs support"
+		depends PACKAGE_MAC80211_DEBUGFS
+		help
+		  Enable creation of debugfs files for the rt2x00 drivers.
+		  These debugfs files support both reading and writing of the
+		  most important register types of the rt2x00 hardware.
+
+	config PACKAGE_RT2X00_DEBUG
+		bool "Enable rt2x00 debug output"
+		help
+		  Enable debugging output for all rt2x00 modules
+
+	endmenu
 endef
 
 define KernelPackage/rt2x00-pci
@@ -321,24 +351,27 @@ define KernelPackage/zd1211rw
 endef
 
 define KernelPackage/ath/config
+	menu "Configuration"
+		depends on PACKAGE_kmod-ath
 
-config ATH_USER_REGD
-	bool "Force Atheros drivers to respect the user's regdomain settings"
-	depends on PACKAGE_kmod-ath
-	help
-		Atheros' idea of regulatory handling is that the EEPROM of the card defines
-		the regulatory limits and the user is only allowed to restrict the settings
-		even further, even if the country allows frequencies or power levels that
-		are forbidden by the EEPROM settings.
-		Select this option if you want the driver to respect the user's decision about
-		regulatory settings.
+	config ATH_USER_REGD
+		bool "Force Atheros drivers to respect the user's regdomain settings"
+		help
+		  Atheros' idea of regulatory handling is that the EEPROM of the card defines
+		  the regulatory limits and the user is only allowed to restrict the settings
+		  even further, even if the country allows frequencies or power levels that
+		  are forbidden by the EEPROM settings.
 
-config PACKAGE_ATH_DEBUG
-	bool "Atheros wireless debugging"
-	depends on PACKAGE_kmod-ath
-	help
-		Say Y, if you want to debug atheros wireless drivers.
-		Right now only ath9k makes use of this.
+		  Select this option if you want the driver to respect the user's decision about
+		  regulatory settings.
+
+	config PACKAGE_ATH_DEBUG
+		bool "Atheros wireless debugging"
+		help
+		  Say Y, if you want to debug atheros wireless drivers.
+		  Right now only ath9k makes use of this.
+
+	endmenu
 endef
 
 define KernelPackage/ath
@@ -347,6 +380,7 @@ define KernelPackage/ath
   DEPENDS+= @PCI_SUPPORT +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,26,ath)
+  MENU:=1
 endef
 
 define KernelPackage/ath/description
@@ -377,6 +411,7 @@ define KernelPackage/ath9k
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_hw.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,27,ath9k_hw ath9k_common ath9k)
+  MENU:=1
 endef
 
 define KernelPackage/ath9k/description
@@ -385,7 +420,24 @@ Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
 
 define KernelPackage/ath9k/config
-	source "$(SOURCE)/Config.in.ath9k"
+	menu "Configuration"
+		depends PACKAGE_kmod-ath9k
+
+	config PACKAGE_ATH9K_DEBUG
+		bool "ath9k debugging"
+		depends KERNEL_DEBUG_FS
+		help
+		  Say Y, if you need ath9k to display debug messages.
+		  Pass the debug mask as a module parameter:
+
+		  modprobe ath9k debug=0x00002000
+
+		  Look in ath9k/core.h for possible debug masks
+
+	config PACKAGE_ATH9K_USE_MINSTREL
+		bool "use the new minstrel_ht rate control for ath9k"
+
+	endmenu
 endef
 
 USB8388FW_NAME:=usb8388
@@ -579,10 +631,93 @@ $(call KernelPackage/b43-common)
   TITLE:=Broadcom 43xx wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43/b43.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,b43)
+  MENU:=1
 endef
 
 define KernelPackage/b43/config
-	source "$(SOURCE)/Config.in.b43"
+	menu "Configuration"
+		depends on PACKAGE_kmod-b43
+
+	choice
+		prompt "b43 firmware version"
+		default B43_EXPERIMENTAL
+		help
+		  This option allows you to select the version of the b43 firmware.
+
+	config B43_STABLE
+		bool "4.150.10.5 (stable)"
+		help
+		  Stable firmware for BCM43xx devices.
+
+		  If unsure, select this.
+
+	config B43_EXPERIMENTAL
+		bool "4.178.10.4 (experimental)"
+		help
+		  Experimental firmware for BCM43xx devices.
+
+		  This firmware is not tested as much as the "stable" firmware.
+
+		  If unsure, select the "stable" firmware.
+
+	config B43_OPENFIRMWARE
+		bool "Open FirmWare for WiFi networks"
+		help
+		  Opensource firmware for BCM43xx devices.
+
+		  Do _not_ select this, unless you know what you are doing.
+		  The Opensource firmware is not suitable for embedded devices, yet.
+		  It does not support QoS, which is bad for AccessPoints.
+		  It does not support hardware crypto acceleration, which is a showstopper
+		  for embedded devices with low CPU resources.
+
+		  If unsure, select the "stable" firmware.
+
+	endchoice
+
+	config B43_FW_SQUASH
+		bool "Remove unnecessary firmware files"
+		depends on !B43_OPENFIRMWARE
+		default y
+		help
+		  This options allows you to remove unnecessary b43 firmware files
+		  from the final rootfs image. This can reduce the rootfs size by
+		  up to 200k.
+
+		  If unsure, say Y.
+
+	config B43_FW_SQUASH_COREREVS
+		string "Core revisions to include"
+		depends on B43_FW_SQUASH
+		default "5,6,7,8,9,10,13,14,15"
+		help
+		  This is a comma seperated list of core revision numbers.
+
+		  Example (keep files for rev5 only):
+		    5
+
+		  Example (keep files for rev5 and rev11):
+		    5,11
+
+	config B43_FW_SQUASH_PHYTYPES
+		string "PHY types to include"
+		depends on B43_FW_SQUASH
+		default "G,LP"
+		help
+		  This is a comma seperated list of PHY types:
+		    A  => A-PHY
+		    AG => Dual A-PHY G-PHY
+		    G  => G-PHY
+		    LP => LP-PHY
+		    N  => N-PHY
+
+		  Example (keep files for G-PHY only):
+		    G
+
+		  Example (keep files for G-PHY and N-PHY):
+		    G,N
+
+	endmenu
 endef
 
 define KernelPackage/b43/description
@@ -594,10 +729,37 @@ $(call KernelPackage/b43-common)
   TITLE:=Broadcom 43xx-legacy wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43legacy/b43legacy.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,b43legacy)
+  MENU:=1
 endef
 
 define KernelPackage/b43legacy/config
-	source "$(SOURCE)/Config.in.b43legacy"
+	menu "Configuration"
+		depends on PACKAGE_kmod-b43legacy
+
+	config B43LEGACY_FW_SQUASH
+		bool "Remove unnecessary firmware files"
+		default y
+		help
+		  This options allows you to remove unnecessary b43legacy firmware files
+		  from the final rootfs image. This can reduce the rootfs size by
+		  up to 50k.
+
+		  If unsure, say Y.
+
+	config B43LEGACY_FW_SQUASH_COREREVS
+		string "Core revisions to include"
+		depends on B43LEGACY_FW_SQUASH
+		default "1,2,3,4"
+		help
+		  This is a comma seperated list of core revision numbers.
+
+		  Example (keep files for rev4 only):
+		    4
+
+		  Example (keep files for rev2 and rev4):
+		    2,4
+
+	endmenu
 endef
 
 define KernelPackage/b43legacy/description
