@@ -46,6 +46,7 @@ $(call Package/openssl/Default)
   CATEGORY:=Libraries
   DEPENDS:=+zlib
   TITLE+= (libraries)
+  MENU:=1
 endef
 
 define Package/libopenssl/description
