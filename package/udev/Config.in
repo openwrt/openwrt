@@ -1,11 +1,10 @@
 # udev package config
 
-menu "udev configuration"
-depends on PACKAGE_udev
+menu "Configuration"
+	depends on PACKAGE_udev
 
 config UDEV_DISABLE_LOGGING
 	bool "Disable udev logging to syslog"
-	depends on PACKAGE_udev
 	default n
 	help
 	 Disable logging of udev messages to the syslog.  If
@@ -13,7 +12,6 @@ config UDEV_DISABLE_LOGGING
 
 config UDEV_ENABLE_DEBUG
 	bool "Enable debug build of the udev package"
-	depends on PACKAGE_udev
 	default n
 	help
 	 Compile in udev debug messages.  If unsure, choose
