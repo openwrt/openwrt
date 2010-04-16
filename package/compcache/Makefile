@@ -26,6 +26,7 @@ define KernelPackage/compcache
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)+$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/ramzswap.$(LINUX_KMOD_SUFFIX) \
 	 $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.$(LINUX_KMOD_SUFFIX)
+  MENU:=1
 endef
 
 

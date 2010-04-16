@@ -1,15 +1,14 @@
-# compcache configuration
+menu "Configuration"
+	depends on PACKAGE_kmod-compcache
 
 config COMPCACHE_ENABLE
 	bool "enabled on boot"
 	default n
-	depends on PACKAGE_kmod-compcache
 	help
 	  Enables compressed ram swap devices.
 
 config COMPCACHE_RAM_REPORTED
 	string "swap space reported to kernel in kb"
-	depends on PACKAGE_kmod-compcache
 	default "2048"
 	help
 	  This is the amount of memory that will be reported 
@@ -21,10 +20,10 @@ config COMPCACHE_RAM_REPORTED
 
 config COMPCACHE_BACKUP_DEV
 	string "Backup device for compcache"
-	depends on PACKAGE_kmod-compcache
 	default ""
 	help
 	  Compcache will use this as a backup device for swap.
 	  Example:
 	         /dev/sda5
 
+endmenu
