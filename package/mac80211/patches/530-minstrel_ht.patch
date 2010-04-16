@@ -389,9 +389,9 @@
 +		if (!mg->supported)
 +			continue;
 +
-+		if (++mg->index > MCS_GROUP_RATES) {
++		if (++mg->index >= MCS_GROUP_RATES) {
 +			mg->index = 0;
-+			if (++mg->column > ARRAY_SIZE(sample_table))
++			if (++mg->column >= ARRAY_SIZE(sample_table))
 +				mg->column = 0;
 +		}
 +		break;
