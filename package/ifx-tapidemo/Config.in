@@ -1,3 +1,5 @@
+menu "Configuration"
+	depends on PACKAGE_ifx-tapidemo
 choice
 	prompt "board selection"
 	default VOICE_CPE_TAPIDEMO_BOARD_EASY50712_V3  if TARGET_ifxmips_platform_danube
@@ -34,3 +36,4 @@ config  VOICE_CPE_TAPIDEMO_FAX_T.38_FW
 	help
 		enable T.38 fax relay demo.
 
+endmenu
