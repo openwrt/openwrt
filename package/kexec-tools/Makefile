@@ -34,7 +34,7 @@ define Package/kexec-tools/description
 endef
 
 define Package/kexec-tools/config
-	source "$(SOURCE)/kexec-config.in"
+	source "$(SOURCE)/Config.in"
 endef
 
 KEXEC_TARGET_NAME:=$(call qstrip,$(CONFIG_KEXEC_TOOLS_TARGET_NAME))-linux-$(TARGET_SUFFIX)
