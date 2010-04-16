@@ -118,6 +118,7 @@ struct switch_dev {
 	const char *dev_name;
 	int ports;
 	int vlans;
+	int cpu_port;
 	struct switch_attr *ops;
 	struct switch_attr *port_ops;
 	struct switch_attr *vlan_ops;
