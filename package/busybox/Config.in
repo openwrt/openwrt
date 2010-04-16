@@ -1,3 +1,6 @@
+menu "Configuration"
+	depends on PACKAGE_busybox
+
 config BUSYBOX_CONFIG_FEATURE_DEVFS
 	bool
 	default y if LINUX_2_4
@@ -31,3 +34,6 @@ config BUSYBOX_CONFIG_HUSH
 	default y if NOMMU
 	default n if !NOMMU
 
+source "package/busybox/config/Config.in"
+
+endmenu
