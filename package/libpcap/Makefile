@@ -25,6 +25,7 @@ define Package/libpcap
   CATEGORY:=Libraries
   TITLE:=Low-level packet capture library
   URL:=http://www.tcpdump.org/
+  MENU:=1
 endef
 
 define Package/libpcap/description
@@ -33,7 +34,7 @@ capture.
 endef
 
 define Package/libpcap/config
-source "$(SOURCE)/Config.in"
+	source "$(SOURCE)/Config.in"
 endef
 
 TARGET_CFLAGS += \
