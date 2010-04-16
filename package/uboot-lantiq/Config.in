@@ -1,7 +1,9 @@
+menu "Configuration"
+	depends on PACKAGE_uboot-lantiq
+
 config UBOOT_TARGET
 	string "target"
 	default "easy50712_DDR166M"
-	depends on PACKAGE_uboot-lantiq
 	help
 	  The configuration reflects the settings for a dedicated board hardware.
 	  Select for Danube evaluation board easy50712_DDR166M .
@@ -9,7 +11,6 @@ config UBOOT_TARGET
 
 config UBOOT_RAMBOOT
 	bool "Enable RAM boot image"
-	depends on PACKAGE_uboot-lantiq
 	help
 	  Using the UART boot mode of the ROM code this image could be loaded to the RAM.
 	  While executing the image in the RAM the functionality of the uboot image can be 
@@ -30,6 +31,7 @@ config UBOOT_RAMBOOT_DDR_CONFIG
 
 config UBOOT_A800
 	bool "add ARV452 Switch bringup hack"
-	depends on PACKAGE_uboot-lantiq
 	help
 	  Say Y, if you have a arv452 board (wav-281, A800, ..)
+
+endmenu
