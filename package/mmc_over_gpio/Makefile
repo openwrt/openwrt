@@ -21,28 +21,30 @@ define KernelPackage/mmc-over-gpio
   TITLE:=MMC/SD card over GPIO support
   FILES:=$(LINUX_DIR)/drivers/mmc/host/gpiommc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,93,gpiommc)
+  MENU:=1
 endef
 
 define Package/kmod-mmc-over-gpio/config
-config KMOD_MMC_OVER_GPIO_DI_PIN
-	int "GPIO DI PIN"
-	depends PACKAGE_kmod-mmc-over-gpio
-	default 1
+	menu "Configuration"
+		depends PACKAGE_kmod-mmc-over-gpio
 
-config KMOD_MMC_OVER_GPIO_DO_PIN
-	int "GPIO DO PIN"
-	depends PACKAGE_kmod-mmc-over-gpio
-	default 3
+	config KMOD_MMC_OVER_GPIO_DI_PIN
+		int "GPIO DI (Data-In) pin"
+		default 1
 
-config KMOD_MMC_OVER_GPIO_CLK_PIN
-	int "GPIO CLK PIN"
-	depends PACKAGE_kmod-mmc-over-gpio
-	default 4
+	config KMOD_MMC_OVER_GPIO_DO_PIN
+		int "GPIO DO (Data-Out) pin"
+		default 3
 
-config KMOD_MMC_OVER_GPIO_CS_PIN
-	int "GPIO CS PIN"
-	depends PACKAGE_kmod-mmc-over-gpio
-	default 7
+	config KMOD_MMC_OVER_GPIO_CLK_PIN
+		int "GPIO CLK (Clock) pin"
+		default 4
+
+	config KMOD_MMC_OVER_GPIO_CS_PIN
+		int "GPIO CS (Chip-Select) pin"
+		default 7
+
+	endmenu
 endef
 
 define KernelPackage/mmc-over-gpio/description
