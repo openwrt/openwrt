@@ -165,6 +165,7 @@ define KernelPackage/madwifi
   DEPENDS:=+wireless-tools @LINUX_2_6 @PCI_SUPPORT @(!(TARGET_avr32||TARGET_cobalt||TARGET_ep93xx||TARGET_etrax||TARGET_octeon||TARGET_pxcab||TARGET_sibyte)||BROKEN)
   FILES:=$(MADWIFI_FILES)
   AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))
+  MENU:=1
 endef
 
 define KernelPackage/madwifi/description

@@ -1,13 +1,13 @@
-# MadWifi configuration
+menu "Configuration"
+	depends on PACKAGE_kmod-madwifi
 
 config MADWIFI_DEBUG
 	bool "Enable compilation of debugging features"
-	depends on DEVEL && PACKAGE_kmod-madwifi
+	depends on DEVEL
 	default n
 
 config MADWIFI_COMPRESSION
 	bool "Enable Atheros Super A/G Compression"
-	depends on PACKAGE_kmod-madwifi
 	depends !TARGET_ar71xx
 	default n
 	help
@@ -15,7 +15,6 @@ config MADWIFI_COMPRESSION
 
 config MADWIFI_SINGLE_MODULE
 	bool "Combine driver and net80211 into a single module"
-	depends on PACKAGE_kmod-madwifi
 	default y
 	help
 	  This option combines all driver and stack related code (except for HAL)
@@ -24,7 +23,6 @@ config MADWIFI_SINGLE_MODULE
 
 choice
 	prompt "Rate control algorithm selection"
-	depends on PACKAGE_kmod-madwifi
 	default MADWIFI_RCA_MINSTREL
 	help
 	  This option controls how MadWifi chooses its bitrate.
@@ -53,3 +51,5 @@ config MADWIFI_RCA_SAMPLERATE
 	  average transmission time.
 
 endchoice
+
+endmenu
