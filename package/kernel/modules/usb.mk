@@ -158,6 +158,24 @@ endef
 $(eval $(call KernelPackage,usb-octeon))
 
 
+define KernelPackage/usb-isp116x-hcd
+$(call KernelPackage/usb/Depends,@TARGET_ppc40x)
+  TITLE:=Support for the ISP116x USB Host Controller
+  KCONFIG:= \
+	CONFIG_USB_ISP116X_HCD \
+	CONFIG_USB_ISP116X_HCD_OF=y \
+	CONFIG_USB_ISP116X_HCD_PLATFORM=n
+  FILES:=$(LINUX_DIR)/drivers/usb/host/isp116x-hcd.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,isp116x-hcd)
+endef
+
+define KernelPackage/usb-isp116x-hcd/description
+  Kernel support for the ISP116X USB Host Controller
+endef
+
+$(eval $(call KernelPackage,usb-isp116x-hcd))
+
+
 define KernelPackage/usb2
 $(call KernelPackage/usb/Depends,)
   TITLE:=Support for USB2 controllers
@@ -764,7 +782,7 @@ $(eval $(call KernelPackage,usb-net-cdc-ether))
 define KernelPackage/usb-net-rndis
 $(call KernelPackage/usb-net/Depends,@LINUX_2_6 +kmod-usb-net-cdc-ether)
   TITLE:=Support for RNDIS connections
-  KCONFIG:=CONFIG_USB_NET_RNDIS_HOST 
+  KCONFIG:=CONFIG_USB_NET_RNDIS_HOST
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/rndis_host.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,62,rndis_host)
 endef
