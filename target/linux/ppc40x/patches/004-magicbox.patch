@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/powerpc/boot/cuboot-magicbox.c
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,96 @@
 +/*
 + * Old U-boot compatibility for Magicbox boards
 + *
@@ -26,15 +26,21 @@
 +
 +static bd_t bd;
 +
-+static void fixup_cf_card(void)
++static void fixup_perwe(void)
 +{
 +#define DCRN_CPC0_PCI_BASE	0xf9
-+#define CF_CS0_BASE	0xff100000
-+#define CF_CS1_BASE	0xff200000
 +
-+	/* Turn on PerWE instead of PCIsomething */
++	/* Turn on PerWE instead of PCIINT */
 +	mtdcr(DCRN_CPC0_PCI_BASE,
 +	      mfdcr(DCRN_CPC0_PCI_BASE) | (0x80000000L >> 27));
++
++#undef DCRN_CPC0_PCI_BASE
++}
++
++static void fixup_cf_card(void)
++{
++#define CF_CS0_BASE	0xff100000
++#define CF_CS1_BASE	0xff200000
 +
 +	/* PerCS1 (CF's CS0): base 0xff100000, 16-bit, rw */
 +	mtdcr(DCRN_EBC0_CFGADDR, EBC_B1CR);
@@ -48,7 +54,6 @@
 +	mtdcr(DCRN_EBC0_CFGADDR, EBC_B2AP);
 +	mtdcr(DCRN_EBC0_CFGDATA, 0x080bd800);
 +
-+#undef DCRN_CPC0_PCI_BASE
 +#undef CF_CS0_BASE
 +#undef CF_CS1_BASE
 +}
@@ -76,6 +81,7 @@
 +		devp = finddevice("/plb/ebc/cf_card@ff100000");
 +		del_node(devp);
 +	} else {
++		fixup_perwe();
 +		fixup_cf_card();
 +	}
 +
