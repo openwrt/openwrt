@@ -39,6 +39,7 @@ define KernelPackage/ifxmips-dsl-api
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/src/mei/ifxmips_atm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ifxmips_mei drv_dsl_cpe_api ifxmips_atm)
+  MENU:=1
 endef
 
 define KernelPackage/ifxmips-dsl-api/description
