@@ -1,0 +1,61 @@
+http://gcc.gnu.org/PR16276
+
+2004-07-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR c++/16276
+	* final.c (PUT_JUMP_TABLES_IN_TEXT_SECTION): New.
+	(shorten_branches): Replace JUMP_TABLES_IN_TEXT_SECTION with
+	PUT_JUMP_TABLES_IN_TEXT_SECTION.
+	(final_scan_insn): Likewise.
+
+--- a/gcc/final.c	2003-12-03 09:42:25.000000000 -0800
++++ b/gcc/final.c	2004-07-08 14:45:07.900366938 -0700
+@@ -100,6 +100,9 @@ Software Foundation, 59 Temple Place - S
+ #define JUMP_TABLES_IN_TEXT_SECTION 0
+ #endif
+ 
++#define PUT_JUMP_TABLES_IN_TEXT_SECTION \
++  (JUMP_TABLES_IN_TEXT_SECTION || DECL_ONE_ONLY (current_function_decl))
++
+ #if defined(READONLY_DATA_SECTION) || defined(READONLY_DATA_SECTION_ASM_OP)
+ #define HAVE_READONLY_DATA_SECTION 1
+ #else
+@@ -1119,7 +1122,8 @@ shorten_branches (first)
+ 	  next = NEXT_INSN (insn);
+ 	  /* ADDR_VECs only take room if read-only data goes into the text
+ 	     section.  */
+-	  if (JUMP_TABLES_IN_TEXT_SECTION || !HAVE_READONLY_DATA_SECTION)
++	  if (PUT_JUMP_TABLES_IN_TEXT_SECTION
++	      || !HAVE_READONLY_DATA_SECTION)
+ 	    if (next && GET_CODE (next) == JUMP_INSN)
+ 	      {
+ 		rtx nextbody = PATTERN (next);
+@@ -1282,7 +1286,8 @@ shorten_branches (first)
+ 	{
+ 	  /* This only takes room if read-only data goes into the text
+ 	     section.  */
+-	  if (JUMP_TABLES_IN_TEXT_SECTION || !HAVE_READONLY_DATA_SECTION)
++	  if (PUT_JUMP_TABLES_IN_TEXT_SECTION
++	      || !HAVE_READONLY_DATA_SECTION)
+ 	    insn_lengths[uid] = (XVECLEN (body,
+ 					  GET_CODE (body) == ADDR_DIFF_VEC)
+ 				 * GET_MODE_SIZE (GET_MODE (body)));
+@@ -1483,7 +1488,8 @@ shorten_branches (first)
+ 	      PUT_MODE (body, CASE_VECTOR_SHORTEN_MODE (min_addr - rel_addr,
+ 							max_addr - rel_addr,
+ 							body));
+-	      if (JUMP_TABLES_IN_TEXT_SECTION || !HAVE_READONLY_DATA_SECTION)
++	      if (PUT_JUMP_TABLES_IN_TEXT_SECTION
++		  || !HAVE_READONLY_DATA_SECTION)
+ 		{
+ 		  insn_lengths[uid]
+ 		    = (XVECLEN (body, 1) * GET_MODE_SIZE (GET_MODE (body)));
+@@ -2254,7 +2260,7 @@ final_scan_insn (insn, file, optimize, p
+ 		 target, so don't output the label at all.  Leave that
+ 		 to the back end macros.  */
+ #else
+-	      if (! JUMP_TABLES_IN_TEXT_SECTION)
++	      if (! PUT_JUMP_TABLES_IN_TEXT_SECTION)
+ 		{
+ 		  int log_align;
+ 
