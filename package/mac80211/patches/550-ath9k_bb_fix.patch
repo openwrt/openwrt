@@ -15,8 +15,8 @@
 +	do {
 +		reg = REG_READ(ah, AR_OBS_BUS_1);
 +
-+		if ((reg & 0x7E7FFFEF) != 0x00702400)
-+			return true;
++		if ((reg & 0x7E7FFFEF) == 0x00702400)
++			continue;
 +
 +		switch (reg & 0x7E000B00) {
 +		case 0x1E000000:
