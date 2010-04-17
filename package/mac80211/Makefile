@@ -436,6 +436,7 @@ define KernelPackage/ath9k/config
 
 	config PACKAGE_ATH9K_USE_MINSTREL
 		bool "use the new minstrel_ht rate control for ath9k"
+		default y
 
 	endmenu
 endef
