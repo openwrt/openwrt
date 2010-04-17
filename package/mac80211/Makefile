@@ -423,17 +423,6 @@ define KernelPackage/ath9k/config
 	menu "Configuration"
 		depends PACKAGE_kmod-ath9k
 
-	config PACKAGE_ATH9K_DEBUG
-		bool "ath9k debugging"
-		depends KERNEL_DEBUG_FS
-		help
-		  Say Y, if you need ath9k to display debug messages.
-		  Pass the debug mask as a module parameter:
-
-		  modprobe ath9k debug=0x00002000
-
-		  Look in ath9k/core.h for possible debug masks
-
 	config PACKAGE_ATH9K_USE_MINSTREL
 		bool "use the new minstrel_ht rate control for ath9k"
 		default y
