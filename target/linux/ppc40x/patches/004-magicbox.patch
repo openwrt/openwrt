@@ -330,16 +330,16 @@
 +				};
 +				partition1@120000 {
 +					label = "rootfs";
-+					reg = <0x140000 0x680000>;
++					reg = <0x140000 0x280000>;
 +				};
-+				partition2@7c0000 {
++				partition2@3c0000 {
 +					label = "u-boot";
-+					reg = <0x7c0000 0x30000>;
++					reg = <0x3c0000 0x30000>;
 +					read-only;
 +				};
 +				partition3@0 {
 +					label = "firmware";
-+					reg = <0x0 0x7c0000>;
++					reg = <0x0 0x3c0000>;
 +				};
 +			};
 +		};
