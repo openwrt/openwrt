@@ -899,10 +899,10 @@
 +#define __RC_MINSTREL_HT_H
 +
 +/*
-+ * maximum number of spatial streams to make use of
-+ * set this value to 3 once we have drivers that support it
++ * The number of streams can be changed to 2 to reduce code
++ * size and memory footprint.
 + */
-+#define MINSTREL_MAX_STREAMS	2
++#define MINSTREL_MAX_STREAMS	3
 +#define MINSTREL_STREAM_GROUPS	4
 +
 +/* scaled fraction values */
