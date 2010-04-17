@@ -32,9 +32,14 @@ dropbear_start()
 	local passauth
 	config_get_bool passauth "${section}" PasswordAuth 1
 	[ "${passauth}" -eq 0 ] && nopasswd=1
-	# B) listen port
+	# B) listen interface and port
 	local port
+	local interface
+	local address
 	config_get port "${section}" Port
+	config_get interface "${section}" Interface
+	config_get address "${interface}" ipaddr
+	port="${address:+${address}:}${port}"
 	# C) banner file
 	local bannerfile
 	config_get bannerfile "${section}" BannerFile
@@ -86,6 +91,8 @@ start()
 	[ -s /etc/dropbear/dropbear_rsa_host_key -a \
 	  -s /etc/dropbear/dropbear_dss_host_key ] || keygen
 
+	include /lib/network
+	scan_interfaces
 	config_load "${NAME}"
 	config_foreach dropbear_start dropbear
 }
