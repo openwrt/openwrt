@@ -341,7 +341,8 @@ define KernelPackage/gigaset
     CONFIG_GIGASET_BASE \
     CONFIG_GIGASET_M101 \
     CONFIG_GIGASET_M105 \
-    CONFIG_GIGASET_UNDOCREQ=y
+    CONFIG_GIGASET_UNDOCREQ=y \
+    CONFIG_GIGASET_I4L=y
   FILES:= \
     $(LINUX_DIR)/drivers/isdn/gigaset/gigaset.$(LINUX_KMOD_SUFFIX) \
     $(LINUX_DIR)/drivers/isdn/gigaset/bas_gigaset.$(LINUX_KMOD_SUFFIX) \
