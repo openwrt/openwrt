@@ -30,6 +30,7 @@
 #include <linux/timer.h>
 #include <linux/ctype.h>
 #include <linux/leds.h>
+#include <linux/slab.h>
 
 #include "leds.h"
 
