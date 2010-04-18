@@ -8,7 +8,7 @@
  #include <linux/buffer_head.h>
  #include <linux/mutex.h>
  #include <linux/mount.h>
-@@ -232,10 +233,11 @@ static void block2mtd_free_device(struct
+@@ -233,10 +234,11 @@ static void block2mtd_free_device(struct
  
  
  /* FIXME: ensure that mtd->size % erase_size == 0 */
@@ -21,7 +21,7 @@
  	char *name;
  
  	if (!devname)
-@@ -273,17 +275,17 @@ static struct block2mtd_dev *add_device(
+@@ -274,17 +276,17 @@ static struct block2mtd_dev *add_device(
  
  	mutex_init(&dev->write_mutex);
  
@@ -45,7 +45,7 @@
  	dev->mtd.erasesize = erase_size;
  	dev->mtd.writesize = 1;
  	dev->mtd.type = MTD_RAM;
-@@ -296,14 +298,17 @@ static struct block2mtd_dev *add_device(
+@@ -297,14 +299,17 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
  
@@ -66,7 +66,7 @@
  	return dev;
  
  devinit_err:
-@@ -376,9 +381,9 @@ static char block2mtd_paramline[80 + 12]
+@@ -377,9 +382,9 @@ static char block2mtd_paramline[80 + 12]
  
  static int block2mtd_setup2(const char *val)
  {
@@ -78,7 +78,7 @@
  	char *name;
  	size_t erase_size = PAGE_SIZE;
  	int i, ret;
-@@ -389,7 +394,7 @@ static int block2mtd_setup2(const char *
+@@ -390,7 +395,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -87,7 +87,7 @@
  		token[i] = strsep(&str, ",");
  
  	if (str)
-@@ -408,8 +413,10 @@ static int block2mtd_setup2(const char *
+@@ -409,8 +414,10 @@ static int block2mtd_setup2(const char *
  			parse_err("illegal erase size");
  		}
  	}
@@ -99,7 +99,7 @@
  
  	return 0;
  }
-@@ -443,7 +450,7 @@ static int block2mtd_setup(const char *v
+@@ -444,7 +451,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);
@@ -110,7 +110,7 @@
  {
 --- a/fs/partitions/check.c
 +++ b/fs/partitions/check.c
-@@ -625,6 +625,7 @@ try_scan:
+@@ -639,6 +639,7 @@ try_scan:
  	kfree(state);
  	return 0;
  }

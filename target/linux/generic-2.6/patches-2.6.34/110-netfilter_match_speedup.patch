@@ -10,7 +10,7 @@
  #define IPT_INV_VIA_IN		0x01	/* Invert the sense of IN IFACE. */
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
-@@ -88,6 +88,9 @@ ip_packet_match(const struct iphdr *ip,
+@@ -95,6 +95,9 @@ ip_packet_match(const struct iphdr *ip,
  
  #define FWINV(bool, invflg) ((bool) ^ !!(ipinfo->invflags & (invflg)))
  
@@ -20,7 +20,7 @@
  	if (FWINV((ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
  		  IPT_INV_SRCIP) ||
  	    FWINV((ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
-@@ -138,13 +141,35 @@ ip_packet_match(const struct iphdr *ip,
+@@ -145,13 +148,35 @@ ip_packet_match(const struct iphdr *ip,
  		return false;
  	}
  
@@ -58,7 +58,7 @@
  		duprintf("Unknown flag bits set: %08X\n",
  			 ip->flags & ~IPT_F_MASK);
  		return false;
-@@ -154,6 +179,8 @@ ip_checkentry(const struct ipt_ip *ip)
+@@ -161,6 +186,8 @@ ip_checkentry(const struct ipt_ip *ip)
  			 ip->invflags & ~IPT_INV_MASK);
  		return false;
  	}
@@ -67,15 +67,15 @@
  	return true;
  }
  
-@@ -196,7 +223,6 @@ static inline bool unconditional(const s
+@@ -203,7 +230,6 @@ static inline bool unconditional(const s
  	static const struct ipt_ip uncond;
  
  	return memcmp(ip, &uncond, sizeof(uncond)) == 0;
 -#undef FWINV
  }
  
- #if defined(CONFIG_NETFILTER_XT_TARGET_TRACE) || \
-@@ -321,8 +347,28 @@ ipt_do_table(struct sk_buff *skb,
+ /* for const-correctness */
+@@ -336,8 +362,28 @@ ipt_do_table(struct sk_buff *skb,
  	struct xt_match_param mtpar;
  	struct xt_target_param tgpar;
  
@@ -105,7 +105,7 @@
  	indev = in ? in->name : nulldevname;
  	outdev = out ? out->name : nulldevname;
  	/* We handle fragments by dealing with the first fragment as
-@@ -339,13 +385,6 @@ ipt_do_table(struct sk_buff *skb,
+@@ -354,13 +400,6 @@ ipt_do_table(struct sk_buff *skb,
  	mtpar.family  = tgpar.family = NFPROTO_IPV4;
  	mtpar.hooknum = tgpar.hooknum = hook;
  
@@ -119,7 +119,7 @@
  	/* For return from builtin chain */
  	back = get_entry(table_base, private->underflow[hook]);
  
-@@ -992,6 +1031,7 @@ copy_entries_to_user(unsigned int total_
+@@ -991,6 +1030,7 @@ copy_entries_to_user(unsigned int total_
  		unsigned int i;
  		const struct ipt_entry_match *m;
  		const struct ipt_entry_target *t;
@@ -127,7 +127,7 @@
  
  		e = (struct ipt_entry *)(loc_cpu_entry + off);
  		if (copy_to_user(userptr + off
-@@ -1002,6 +1042,14 @@ copy_entries_to_user(unsigned int total_
+@@ -1001,6 +1041,14 @@ copy_entries_to_user(unsigned int total_
  			goto free_counters;
  		}
  

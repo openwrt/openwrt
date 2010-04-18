@@ -635,7 +635,7 @@
 +
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -109,6 +109,129 @@ config EQUALIZER
+@@ -121,6 +121,129 @@ config EQUALIZER
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
  
@@ -767,14 +767,14 @@
  	select CRC32
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -165,6 +165,7 @@ obj-$(CONFIG_SLHC) += slhc.o
+@@ -169,6 +169,7 @@ obj-$(CONFIG_SLHC) += slhc.o
  obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
 +obj-$(CONFIG_IMQ) += imq.o
  obj-$(CONFIG_IFB) += ifb.o
  obj-$(CONFIG_MACVLAN) += macvlan.o
- obj-$(CONFIG_DE600) += de600.o
+ obj-$(CONFIG_MACVTAP) += macvtap.o
 --- /dev/null
 +++ b/include/linux/imq.h
 @@ -0,0 +1,13 @@
@@ -793,7 +793,7 @@
 +
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1168,6 +1168,7 @@ extern int		dev_alloc_name(struct net_de
+@@ -1203,6 +1203,7 @@ extern int		dev_alloc_name(struct net_de
  extern int		dev_open(struct net_device *dev);
  extern int		dev_close(struct net_device *dev);
  extern void		dev_disable_lro(struct net_device *dev);
@@ -851,7 +851,7 @@
  
  /* Don't change this without changing skb_csum_unnecessary! */
  #define CHECKSUM_NONE 0
-@@ -327,6 +330,9 @@
+@@ -321,6 +324,9 @@ struct sk_buff {
  	 * first. This is owned by whoever has the skb queued ATM.
  	 */
  	char			cb[48] __aligned(8);
@@ -861,7 +861,7 @@
  
  	unsigned long		_skb_dst;
  #ifdef CONFIG_XFRM
-@@ -363,6 +369,9 @@
+@@ -357,6 +363,9 @@ struct sk_buff {
  	struct nf_conntrack	*nfct;
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -871,7 +871,7 @@
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-@@ -384,6 +393,10 @@
+@@ -378,6 +387,10 @@ struct sk_buff {
  
  	/* 0/14 bit hole */
  
@@ -882,7 +882,7 @@
  #ifdef CONFIG_NET_DMA
  	dma_cookie_t		dma_cookie;
  #endif
-@@ -432,6 +445,12 @@
+@@ -426,6 +439,12 @@ static inline struct rtable *skb_rtable(
  	return (struct rtable *)skb_dst(skb);
  }
  
@@ -895,7 +895,7 @@
  extern void kfree_skb(struct sk_buff *skb);
  extern void consume_skb(struct sk_buff *skb);
  extern void	       __kfree_skb(struct sk_buff *skb);
-@@ -1976,6 +1995,10 @@
+@@ -1970,6 +1989,10 @@ static inline void __nf_copy(struct sk_b
  	dst->nfct_reasm = src->nfct_reasm;
  	nf_conntrack_get_reasm(src->nfct_reasm);
  #endif
@@ -935,7 +935,7 @@
  #endif /* _NF_QUEUE_H */
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -97,6 +97,9 @@
+@@ -98,6 +98,9 @@
  #include <net/net_namespace.h>
  #include <net/sock.h>
  #include <linux/rtnetlink.h>
@@ -945,7 +945,7 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1810,7 +1813,11 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -1860,7 +1863,11 @@ int dev_hard_start_xmit(struct sk_buff *
  	int rc = NETDEV_TX_OK;
  
  	if (likely(!skb->next)) {
@@ -958,7 +958,7 @@
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-@@ -1912,8 +1919,7 @@ static inline u16 dev_cap_txqueue(struct
+@@ -1970,8 +1977,7 @@ static inline u16 dev_cap_txqueue(struct
  	return queue_index;
  }
  
@@ -968,7 +968,7 @@
  {
  	u16 queue_index;
  	struct sock *sk = skb->sk;
-@@ -1939,6 +1945,7 @@ static struct netdev_queue *dev_pick_tx(
+@@ -1997,6 +2003,7 @@ static struct netdev_queue *dev_pick_tx(
  	skb_set_queue_mapping(skb, queue_index);
  	return netdev_get_tx_queue(dev, queue_index);
  }
@@ -1125,7 +1125,7 @@
  /**
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -396,6 +396,18 @@ config NETFILTER_XT_TARGET_LED
+@@ -421,6 +421,18 @@ config NETFILTER_XT_TARGET_LED
  	  For more information on the LEDs available on your system, see
  	  Documentation/leds-class.txt
  
@@ -1146,8 +1146,8 @@
  	default m if NETFILTER_ADVANCED=n
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CONNMAR
- obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSECMARK) += xt_CONNSECMARK.o
+@@ -47,6 +47,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSEC
+ obj-$(CONFIG_NETFILTER_XT_TARGET_CT) += xt_CT.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_DSCP) += xt_DSCP.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_HL) += xt_HL.o
 +obj-$(CONFIG_NETFILTER_XT_TARGET_IMQ) += xt_IMQ.o
@@ -1156,7 +1156,7 @@
  obj-$(CONFIG_NETFILTER_XT_TARGET_NFLOG) += xt_NFLOG.o
 --- a/net/netfilter/nf_queue.c
 +++ b/net/netfilter/nf_queue.c
-@@ -20,6 +20,26 @@ static const struct nf_queue_handler *qu
+@@ -21,6 +21,26 @@ static const struct nf_queue_handler *qu
  
  static DEFINE_MUTEX(queue_handler_mutex);
  
@@ -1183,7 +1183,7 @@
  /* return EBUSY when somebody else is registered, return EEXIST if the
   * same handler is registered, return 0 in case of success. */
  int nf_register_queue_handler(u_int8_t pf, const struct nf_queue_handler *qh)
-@@ -80,7 +100,7 @@ void nf_unregister_queue_handlers(const 
+@@ -81,7 +101,7 @@ void nf_unregister_queue_handlers(const 
  }
  EXPORT_SYMBOL_GPL(nf_unregister_queue_handlers);
  
@@ -1192,7 +1192,7 @@
  {
  	/* Release those devices we held, or Alexey will kill me. */
  	if (entry->indev)
-@@ -100,6 +120,7 @@ static void nf_queue_entry_release_refs(
+@@ -101,6 +121,7 @@ static void nf_queue_entry_release_refs(
  	/* Drop reference to owner of hook which queued us. */
  	module_put(entry->elem->owner);
  }
@@ -1200,7 +1200,7 @@
  
  /*
   * Any packet that leaves via this function must come back
-@@ -121,12 +142,26 @@ static int __nf_queue(struct sk_buff *sk
+@@ -122,12 +143,26 @@ static int __nf_queue(struct sk_buff *sk
  #endif
  	const struct nf_afinfo *afinfo;
  	const struct nf_queue_handler *qh;
@@ -1227,7 +1227,7 @@
  		goto err_unlock;
  
  	afinfo = nf_get_afinfo(pf);
-@@ -145,6 +180,10 @@ static int __nf_queue(struct sk_buff *sk
+@@ -146,6 +181,10 @@ static int __nf_queue(struct sk_buff *sk
  		.indev	= indev,
  		.outdev	= outdev,
  		.okfn	= okfn,
@@ -1238,7 +1238,7 @@
  	};
  
  	/* If it's going away, ignore hook. */
-@@ -170,8 +209,19 @@ static int __nf_queue(struct sk_buff *sk
+@@ -171,8 +210,19 @@ static int __nf_queue(struct sk_buff *sk
  	}
  #endif
  	afinfo->saveroute(skb, entry);

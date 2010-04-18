@@ -8,7 +8,7 @@
  static int debug;
  /* initially all NULL */
  static struct usb_serial *serial_table[SERIAL_TTY_MINORS];
-@@ -914,7 +915,7 @@ int usb_serial_probe(struct usb_interfac
+@@ -901,7 +902,7 @@ int usb_serial_probe(struct usb_interfac
  			dev_err(&interface->dev, "No free urbs available\n");
  			goto probe_error;
  		}
@@ -17,7 +17,7 @@
  		port->bulk_in_size = buffer_size;
  		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
  		port->bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
-@@ -1356,3 +1357,5 @@ MODULE_LICENSE("GPL");
+@@ -1343,3 +1344,5 @@ MODULE_LICENSE("GPL");
  
  module_param(debug, bool, S_IRUGO | S_IWUSR);
  MODULE_PARM_DESC(debug, "Debug enabled or not");
