@@ -220,7 +220,7 @@
  #endif /* _ASM_R4KCACHE_H */
 --- a/arch/mips/include/asm/stackframe.h
 +++ b/arch/mips/include/asm/stackframe.h
-@@ -430,6 +430,10 @@
+@@ -449,6 +449,10 @@
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)
  		.set	mips3
@@ -345,7 +345,7 @@
  }
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -749,6 +749,9 @@ static void __cpuinit build_r4000_tlb_re
+@@ -801,6 +801,9 @@ static void __cpuinit build_r4000_tlb_re
  		/* No need for uasm_i_nop */
  	}
  
@@ -355,7 +355,7 @@
  #ifdef CONFIG_64BIT
  	build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
-@@ -1203,6 +1206,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1260,6 +1263,9 @@ build_r4000_tlbchange_handler_head(u32 *
  				   struct uasm_reloc **r, unsigned int pte,
  				   unsigned int ptr)
  {

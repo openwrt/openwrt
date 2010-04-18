@@ -8,7 +8,7 @@
  	select PCI_GT64XXX_PCI0
  	select MIPS_MSC
  	select SWAP_IO_SPACE
-@@ -1561,13 +1560,6 @@ config IP22_CPU_SCACHE
+@@ -1560,13 +1559,6 @@ config IP22_CPU_SCACHE
  	bool
  	select BOARD_SCACHE
  
@@ -24,7 +24,7 @@
  	select BOARD_SCACHE
 --- a/arch/mips/kernel/cpu-probe.c
 +++ b/arch/mips/kernel/cpu-probe.c
-@@ -759,6 +759,8 @@ static inline void cpu_probe_mips(struct
+@@ -772,6 +772,8 @@ static inline void cpu_probe_mips(struct
  	case PRID_IMP_25KF:
  		c->cputype = CPU_25KF;
  		__cpu_name[cpu] = "MIPS 25Kc";

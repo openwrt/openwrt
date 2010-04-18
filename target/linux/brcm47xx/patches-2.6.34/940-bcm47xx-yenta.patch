@@ -1,6 +1,6 @@
---- a/drivers/pcmcia/yenta_socket.c	
-+++ b/drivers/pcmcia/yenta_socket.c	
-@@ -924,6 +924,8 @@
+--- a/drivers/pcmcia/yenta_socket.c
++++ b/drivers/pcmcia/yenta_socket.c
+@@ -924,6 +924,8 @@ static unsigned int yenta_probe_irq(stru
  	 * Probe for usable interrupts using the force
  	 * register to generate bogus card status events.
  	 */
@@ -9,7 +9,7 @@
  	cb_writel(socket, CB_SOCKET_EVENT, -1);
  	cb_writel(socket, CB_SOCKET_MASK, CB_CSTSMASK);
  	reg = exca_readb(socket, I365_CSCINT);
-@@ -939,6 +941,7 @@
+@@ -939,6 +941,7 @@ static unsigned int yenta_probe_irq(stru
  	}
  	cb_writel(socket, CB_SOCKET_MASK, 0);
  	exca_writeb(socket, I365_CSCINT, reg);
@@ -17,7 +17,7 @@
  
  	mask = probe_irq_mask(val) & 0xffff;
  
-@@ -1022,6 +1025,10 @@
+@@ -1022,6 +1025,10 @@ static void yenta_get_socket_capabilitie
  	else
  		socket->socket.irq_mask = 0;
  
@@ -28,7 +28,7 @@
  	dev_printk(KERN_INFO, &socket->dev->dev,
  		   "ISA IRQ mask 0x%04x, PCI irq %d\n",
  		   socket->socket.irq_mask, socket->cb_irq);
-@@ -1260,6 +1267,15 @@
+@@ -1260,6 +1267,15 @@ static int __devinit yenta_probe(struct 
  	dev_printk(KERN_INFO, &dev->dev,
  		   "Socket status: %08x\n", cb_readl(socket, CB_SOCKET_STATE));
  
