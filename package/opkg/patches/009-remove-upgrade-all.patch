@@ -1,6 +1,6 @@
 --- a/libopkg/opkg_cmd.c
 +++ b/libopkg/opkg_cmd.c
-@@ -498,17 +498,6 @@ opkg_upgrade_cmd(int argc, char **argv)
+@@ -500,17 +500,6 @@ opkg_upgrade_cmd(int argc, char **argv)
  		    opkg_install_by_name(arg);
                 }
  	  }
@@ -17,8 +17,8 @@
 -	  pkg_vec_free(installed);
       }
  
-      opkg_configure_packages(NULL);
-@@ -1166,7 +1155,7 @@ opkg_print_architecture_cmd(int argc, ch
+      r = opkg_configure_packages(NULL);
+@@ -1173,7 +1162,7 @@ opkg_print_architecture_cmd(int argc, ch
     array for easier maintenance */
  static opkg_cmd_t cmds[] = {
       {"update", 0, (opkg_cmd_fun_t)opkg_update_cmd, PFM_DESCRIPTION|PFM_SOURCE},

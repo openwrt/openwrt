@@ -1,6 +1,6 @@
 --- a/libopkg/opkg_cmd.c
 +++ b/libopkg/opkg_cmd.c
-@@ -738,49 +738,6 @@ opkg_remove_cmd(int argc, char **argv)
+@@ -745,49 +745,6 @@ opkg_remove_cmd(int argc, char **argv)
  }
  
  static int
@@ -50,7 +50,7 @@
  opkg_files_cmd(int argc, char **argv)
  {
       pkg_t *pkg;
-@@ -1162,7 +1119,6 @@ static opkg_cmd_t cmds[] = {
+@@ -1169,7 +1126,6 @@ static opkg_cmd_t cmds[] = {
       {"list_upgradable", 0, (opkg_cmd_fun_t)opkg_list_upgradable_cmd, PFM_SOURCE},
       {"list-upgradable", 0, (opkg_cmd_fun_t)opkg_list_upgradable_cmd, PFM_SOURCE},
       {"info", 0, (opkg_cmd_fun_t)opkg_info_cmd, 0},
