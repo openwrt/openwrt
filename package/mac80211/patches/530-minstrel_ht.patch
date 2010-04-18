@@ -68,7 +68,7 @@
  
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -0,0 +1,815 @@
+@@ -0,0 +1,822 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -660,6 +660,7 @@
 +	if (!msp->is_ht)
 +		return mac80211_minstrel.get_rate(priv, sta, &msp->legacy, txrc);
 +
++	info->flags |= mi->tx_flags;
 +	sample_idx = minstrel_get_sample_rate(mp, mi);
 +	if (sample_idx >= 0) {
 +		minstrel_ht_set_rate(mp, mi, &ar[0], sample_idx,
@@ -732,6 +733,12 @@
 +		mi->sample_wait = 8;
 +	}
 +	mi->sample_tries = 4;
++
++	if (sta_cap & IEEE80211_HT_CAP_TX_STBC)
++		mi->tx_flags |= IEEE80211_TX_CTL_STBC;
++
++	if (sta_cap & IEEE80211_HT_CAP_LDPC_CODING)
++		mi->tx_flags |= IEEE80211_TX_CTL_LDPC;
 +
 +	if (oper_chan_type != NL80211_CHAN_HT40MINUS &&
 +	    oper_chan_type != NL80211_CHAN_HT40PLUS)
@@ -886,7 +893,7 @@
 +}
 --- /dev/null
 +++ b/net/mac80211/rc80211_minstrel_ht.h
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,128 @@
 +/*
 + * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -982,6 +989,9 @@
 +
 +	unsigned int total_packets;
 +	unsigned int sample_packets;
++
++	/* tx flags to add for frames for this sta */
++	u32 tx_flags;
 +
 +	u8 sample_wait;
 +	u8 sample_tries;
