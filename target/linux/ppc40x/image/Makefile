@@ -16,6 +16,7 @@ endef
 
 define Image/BuildKernel
 	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
+	$(call Image/Build/Initramfs)
 endef
 
 define Image/Build
@@ -61,5 +62,12 @@ define Image/Build/squashfs
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-openrb-$(1).img
 endef
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+define Image/Build/Initramfs
+	cp $(LINUX_DIR)/arch/powerpc/boot/cuImage.magicbox $(BIN_DIR)/openwrt-$(BOARD)-magicbox-initramfs.bin
+	cp $(LINUX_DIR)/arch/powerpc/boot/cuImage.openrb $(BIN_DIR)/openwrt-$(BOARD)-openrb-initramfs.bin
+endef
+endif
 
 $(eval $(call BuildImage))
