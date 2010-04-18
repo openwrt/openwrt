@@ -18,7 +18,7 @@ Signed-off-by: Nicolas Thill <nico@openwrt.org>
 +++ b/libopkg/opkg_conf.h
 @@ -76,6 +76,7 @@ struct opkg_conf
       int check_signature;
-      int nodeps; /* do not follow dependences */
+      int nodeps; /* do not follow dependencies */
       char *offline_root;
 +     char *overlay_root;
       int query_all;
