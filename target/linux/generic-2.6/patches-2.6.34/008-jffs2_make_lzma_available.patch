@@ -1,6 +1,6 @@
---- a/fs/jffs2/Kconfig	
-+++ b/fs/jffs2/Kconfig	
-@@ -139,6 +139,15 @@
+--- a/fs/jffs2/Kconfig
++++ b/fs/jffs2/Kconfig
+@@ -139,6 +139,15 @@ config JFFS2_LZO
  	  This feature was added in July, 2007. Say 'N' if you need
  	  compatibility with older bootloaders or kernels.
  
@@ -16,9 +16,9 @@
  config JFFS2_RTIME
  	bool "JFFS2 RTIME compression support" if JFFS2_COMPRESSION_OPTIONS
  	depends on JFFS2_FS
---- a/fs/jffs2/Makefile	
-+++ b/fs/jffs2/Makefile	
-@@ -18,4 +18,7 @@
+--- a/fs/jffs2/Makefile
++++ b/fs/jffs2/Makefile
+@@ -18,4 +18,7 @@ jffs2-$(CONFIG_JFFS2_RUBIN)	+= compr_rub
  jffs2-$(CONFIG_JFFS2_RTIME)	+= compr_rtime.o
  jffs2-$(CONFIG_JFFS2_ZLIB)	+= compr_zlib.o
  jffs2-$(CONFIG_JFFS2_LZO)	+= compr_lzo.o
@@ -26,9 +26,9 @@
  jffs2-$(CONFIG_JFFS2_SUMMARY)   += summary.o
 +
 +CFLAGS_compr_lzma.o += -Iinclude/linux -Ilib/lzma
---- a/fs/jffs2/compr.c	
-+++ b/fs/jffs2/compr.c	
-@@ -319,6 +319,9 @@
+--- a/fs/jffs2/compr.c
++++ b/fs/jffs2/compr.c
+@@ -319,6 +319,9 @@ int __init jffs2_compressors_init(void)
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_init();
  #endif
@@ -38,7 +38,7 @@
  /* Setting default compression mode */
  #ifdef CONFIG_JFFS2_CMODE_NONE
  	jffs2_compression_mode = JFFS2_COMPR_MODE_NONE;
-@@ -342,6 +345,9 @@
+@@ -342,6 +345,9 @@ int __init jffs2_compressors_init(void)
  int jffs2_compressors_exit(void)
  {
  /* Unregistering compressors */
@@ -48,8 +48,8 @@
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_exit();
  #endif
---- a/fs/jffs2/compr.h	
-+++ b/fs/jffs2/compr.h	
+--- a/fs/jffs2/compr.h
++++ b/fs/jffs2/compr.h
 @@ -28,9 +28,9 @@
  #define JFFS2_DYNRUBIN_PRIORITY  20
  #define JFFS2_LZARI_PRIORITY     30
@@ -63,7 +63,7 @@
  
  #define JFFS2_RUBINMIPS_DISABLED /* RUBINs will be used only */
  #define JFFS2_DYNRUBIN_DISABLED  /*	   for decompression */
-@@ -98,5 +98,9 @@
+@@ -98,5 +98,9 @@ void jffs2_zlib_exit(void);
  int jffs2_lzo_init(void);
  void jffs2_lzo_exit(void);
  #endif
@@ -73,8 +73,8 @@
 +#endif
  
  #endif /* __JFFS2_COMPR_H__ */
---- a/fs/jffs2/compr_lzma.c	
-+++ b/fs/jffs2/compr_lzma.c	
+--- /dev/null
++++ b/fs/jffs2/compr_lzma.c
 @@ -0,0 +1,128 @@
 +/*
 + * JFFS2 -- Journalling Flash File System, Version 2.
@@ -204,9 +204,9 @@
 +	jffs2_unregister_compressor(&jffs2_lzma_comp);
 +	lzma_free_workspace();
 +}
---- a/fs/jffs2/super.c	
-+++ b/fs/jffs2/super.c	
-@@ -254,14 +254,41 @@
+--- a/fs/jffs2/super.c
++++ b/fs/jffs2/super.c
+@@ -254,14 +254,41 @@ static int __init init_jffs2_fs(void)
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_inode) != 68);
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_summary) != 32);
  
@@ -251,8 +251,8 @@
  
  	jffs2_inode_cachep = kmem_cache_create("jffs2_i",
  					     sizeof(struct jffs2_inode_info),
---- a/include/linux/jffs2.h	
-+++ b/include/linux/jffs2.h	
+--- a/include/linux/jffs2.h
++++ b/include/linux/jffs2.h
 @@ -45,6 +45,7 @@
  #define JFFS2_COMPR_DYNRUBIN	0x05
  #define JFFS2_COMPR_ZLIB	0x06
@@ -261,8 +261,8 @@
  /* Compatibility flags. */
  #define JFFS2_COMPAT_MASK 0xc000      /* What do to if an unknown nodetype is found */
  #define JFFS2_NODE_ACCURATE 0x2000
---- a/include/linux/lzma.h	
-+++ b/include/linux/lzma.h	
+--- /dev/null
++++ b/include/linux/lzma.h
 @@ -0,0 +1,62 @@
 +#ifndef __LZMA_H__
 +#define __LZMA_H__
@@ -326,8 +326,8 @@
 +static ISzAlloc lzma_alloc = {p_lzma_malloc, p_lzma_free};
 +
 +#endif
---- a/include/linux/lzma/LzFind.h	
-+++ b/include/linux/lzma/LzFind.h	
+--- /dev/null
++++ b/include/linux/lzma/LzFind.h
 @@ -0,0 +1,115 @@
 +/* LzFind.h -- Match finder for LZ algorithms
 +2009-04-22 : Igor Pavlov : Public domain */
@@ -444,8 +444,8 @@
 +#endif
 +
 +#endif
---- a/include/linux/lzma/LzHash.h	
-+++ b/include/linux/lzma/LzHash.h	
+--- /dev/null
++++ b/include/linux/lzma/LzHash.h
 @@ -0,0 +1,54 @@
 +/* LzHash.h -- HASH functions for LZ algorithms
 +2009-02-07 : Igor Pavlov : Public domain */
@@ -501,8 +501,8 @@
 +  hash4Value = (temp ^ ((UInt32)cur[2] << 8) ^ (p->crc[cur[3]] << 5)) & (kHash4Size - 1); }
 +
 +#endif
---- a/include/linux/lzma/LzmaDec.h	
-+++ b/include/linux/lzma/LzmaDec.h	
+--- /dev/null
++++ b/include/linux/lzma/LzmaDec.h
 @@ -0,0 +1,231 @@
 +/* LzmaDec.h -- LZMA Decoder
 +2009-02-07 : Igor Pavlov : Public domain */
@@ -735,8 +735,8 @@
 +#endif
 +
 +#endif
---- a/include/linux/lzma/LzmaEnc.h	
-+++ b/include/linux/lzma/LzmaEnc.h	
+--- /dev/null
++++ b/include/linux/lzma/LzmaEnc.h
 @@ -0,0 +1,80 @@
 +/*  LzmaEnc.h -- LZMA Encoder
 +2009-02-07 : Igor Pavlov : Public domain */
@@ -818,8 +818,8 @@
 +#endif
 +
 +#endif
---- a/include/linux/lzma/Types.h	
-+++ b/include/linux/lzma/Types.h	
+--- /dev/null
++++ b/include/linux/lzma/Types.h
 @@ -0,0 +1,226 @@
 +/* Types.h -- Basic types
 +2009-11-23 : Igor Pavlov : Public domain */
@@ -1047,9 +1047,9 @@
 +EXTERN_C_END
 +
 +#endif
---- a/lib/Kconfig	
-+++ b/lib/Kconfig	
-@@ -103,6 +103,12 @@
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -103,6 +103,12 @@ config LZO_COMPRESS
  config LZO_DECOMPRESS
  	tristate
  
@@ -1062,8 +1062,8 @@
  #
  # These all provide a common interface (hence the apparent duplication with
  # ZLIB_INFLATE; DECOMPRESS_GZIP is just a wrapper.)
---- a/lib/Makefile	
-+++ b/lib/Makefile	
+--- a/lib/Makefile
++++ b/lib/Makefile
 @@ -2,6 +2,16 @@
  # Makefile for some libs needed in the kernel.
  #
@@ -1081,7 +1081,7 @@
  ifdef CONFIG_FUNCTION_TRACER
  ORIG_CFLAGS := $(KBUILD_CFLAGS)
  KBUILD_CFLAGS = $(subst -pg,,$(ORIG_CFLAGS))
-@@ -65,6 +75,8 @@
+@@ -66,6 +76,8 @@ obj-$(CONFIG_ZLIB_DEFLATE) += zlib_defla
  obj-$(CONFIG_REED_SOLOMON) += reed_solomon/
  obj-$(CONFIG_LZO_COMPRESS) += lzo/
  obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
@@ -1090,8 +1090,8 @@
  
  lib-$(CONFIG_DECOMPRESS_GZIP) += decompress_inflate.o
  lib-$(CONFIG_DECOMPRESS_BZIP2) += decompress_bunzip2.o
---- a/lib/lzma/LzFind.c	
-+++ b/lib/lzma/LzFind.c	
+--- /dev/null
++++ b/lib/lzma/LzFind.c
 @@ -0,0 +1,761 @@
 +/* LzFind.c -- Match finder for LZ algorithms
 +2009-04-22 : Igor Pavlov : Public domain */
@@ -1854,8 +1854,8 @@
 +    vTable->Skip = (Mf_Skip_Func)Bt4_MatchFinder_Skip;
 +  }
 +}
---- a/lib/lzma/LzmaDec.c	
-+++ b/lib/lzma/LzmaDec.c	
+--- /dev/null
++++ b/lib/lzma/LzmaDec.c
 @@ -0,0 +1,999 @@
 +/* LzmaDec.c -- LZMA Decoder
 +2009-09-20 : Igor Pavlov : Public domain */
@@ -2856,8 +2856,8 @@
 +  LzmaDec_FreeProbs(&p, alloc);
 +  return res;
 +}
---- a/lib/lzma/LzmaEnc.c	
-+++ b/lib/lzma/LzmaEnc.c	
+--- /dev/null
++++ b/lib/lzma/LzmaEnc.c
 @@ -0,0 +1,2271 @@
 +/* LzmaEnc.c -- LZMA Encoder
 +2009-11-24 : Igor Pavlov : Public domain */
@@ -5130,8 +5130,8 @@
 +  LzmaEnc_Destroy(p, alloc, allocBig);
 +  return res;
 +}
---- a/lib/lzma/Makefile	
-+++ b/lib/lzma/Makefile	
+--- /dev/null
++++ b/lib/lzma/Makefile
 @@ -0,0 +1,7 @@
 +lzma_compress-objs := LzFind.o LzmaEnc.o
 +lzma_decompress-objs := LzmaDec.o

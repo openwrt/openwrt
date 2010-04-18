@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/hostap/hostap_ap.c
 +++ b/drivers/net/wireless/hostap/hostap_ap.c
-@@ -2335,13 +2335,13 @@ int prism2_ap_get_sta_qual(local_info_t 
+@@ -2336,13 +2336,13 @@ int prism2_ap_get_sta_qual(local_info_t 
  		addr[count].sa_family = ARPHRD_ETHER;
  		memcpy(addr[count].sa_data, sta->addr, ETH_ALEN);
  		if (sta->last_rx_silence == 0)
@@ -20,7 +20,7 @@
  		qual[count].updated = sta->last_rx_updated;
  
  		sta->last_rx_updated = IW_QUAL_DBM;
-@@ -2407,13 +2407,13 @@ int prism2_ap_translate_scan(struct net_
+@@ -2408,13 +2408,13 @@ int prism2_ap_translate_scan(struct net_
  		memset(&iwe, 0, sizeof(iwe));
  		iwe.cmd = IWEVQUAL;
  		if (sta->last_rx_silence == 0)
@@ -74,7 +74,7 @@
  
 --- a/drivers/net/wireless/hostap/hostap_info.c
 +++ b/drivers/net/wireless/hostap/hostap_info.c
-@@ -432,6 +432,11 @@ static void handle_info_queue_linkstatus
+@@ -433,6 +433,11 @@ static void handle_info_queue_linkstatus
  	}
  
  	/* Get BSSID if we have a valid AP address */
@@ -88,7 +88,7 @@
  		netif_carrier_on(local->ddev);
 --- a/drivers/net/wireless/hostap/hostap_ioctl.c
 +++ b/drivers/net/wireless/hostap/hostap_ioctl.c
-@@ -1476,23 +1476,20 @@ static int prism2_txpower_hfa386x_to_dBm
+@@ -1477,23 +1477,20 @@ static int prism2_txpower_hfa386x_to_dBm
  		val = 255;
  
  	tmp = val;
@@ -116,7 +116,7 @@
  
  	return (unsigned char) tmp;
  }
-@@ -4056,3 +4053,35 @@ int hostap_ioctl(struct net_device *dev,
+@@ -4057,3 +4054,35 @@ int hostap_ioctl(struct net_device *dev,
  
  	return ret;
  }

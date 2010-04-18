@@ -254,7 +254,7 @@
  
 --- a/drivers/mtd/devices/block2mtd.c
 +++ b/drivers/mtd/devices/block2mtd.c
-@@ -29,6 +29,8 @@ struct block2mtd_dev {
+@@ -30,6 +30,8 @@ struct block2mtd_dev {
  	struct block_device *blkdev;
  	struct mtd_info mtd;
  	struct mutex write_mutex;
@@ -263,7 +263,7 @@
  };
  
  
-@@ -81,6 +83,12 @@ static int block2mtd_erase(struct mtd_in
+@@ -82,6 +84,12 @@ static int block2mtd_erase(struct mtd_in
  	size_t len = instr->len;
  	int err;
  
@@ -276,7 +276,7 @@
  	instr->state = MTD_ERASING;
  	mutex_lock(&dev->write_mutex);
  	err = _block2mtd_erase(dev, from, len);
-@@ -93,6 +101,10 @@ static int block2mtd_erase(struct mtd_in
+@@ -94,6 +102,10 @@ static int block2mtd_erase(struct mtd_in
  
  	instr->state = MTD_ERASE_DONE;
  	mtd_erase_callback(instr);
@@ -287,7 +287,7 @@
  	return err;
  }
  
-@@ -104,10 +116,14 @@ static int block2mtd_read(struct mtd_inf
+@@ -105,10 +117,14 @@ static int block2mtd_read(struct mtd_inf
  	struct page *page;
  	int index = from >> PAGE_SHIFT;
  	int offset = from & (PAGE_SIZE-1);
@@ -305,7 +305,7 @@
  	if (from + len > mtd->size)
  		len = mtd->size - from;
  
-@@ -122,10 +138,14 @@ static int block2mtd_read(struct mtd_inf
+@@ -123,10 +139,14 @@ static int block2mtd_read(struct mtd_inf
  		len = len - cpylen;
  
  		page = page_read(dev->blkdev->bd_inode->i_mapping, index);
@@ -324,7 +324,7 @@
  
  		memcpy(buf, page_address(page) + offset, cpylen);
  		page_cache_release(page);
-@@ -136,7 +156,10 @@ static int block2mtd_read(struct mtd_inf
+@@ -137,7 +157,10 @@ static int block2mtd_read(struct mtd_inf
  		offset = 0;
  		index++;
  	}
@@ -336,7 +336,7 @@
  }
  
  
-@@ -188,12 +211,22 @@ static int block2mtd_write(struct mtd_in
+@@ -189,12 +212,22 @@ static int block2mtd_write(struct mtd_in
  		size_t *retlen, const u_char *buf)
  {
  	struct block2mtd_dev *dev = mtd->priv;
@@ -363,7 +363,7 @@
  	if (to + len > mtd->size)
  		len = mtd->size - to;
  
-@@ -202,6 +235,9 @@ static int block2mtd_write(struct mtd_in
+@@ -203,6 +236,9 @@ static int block2mtd_write(struct mtd_in
  	mutex_unlock(&dev->write_mutex);
  	if (err > 0)
  		err = 0;
@@ -373,7 +373,7 @@
  	return err;
  }
  
-@@ -210,52 +246,29 @@ static int block2mtd_write(struct mtd_in
+@@ -211,52 +247,29 @@ static int block2mtd_write(struct mtd_in
  static void block2mtd_sync(struct mtd_info *mtd)
  {
  	struct block2mtd_dev *dev = mtd->priv;
@@ -434,7 +434,7 @@
  		if (devt) {
  			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
  		}
-@@ -263,17 +276,98 @@ static struct block2mtd_dev *add_device(
+@@ -264,17 +277,98 @@ static struct block2mtd_dev *add_device(
  #endif
  
  	if (IS_ERR(bdev)) {
@@ -536,7 +536,7 @@
  
  	if (!mtdname)
  		mtdname = devname;
-@@ -297,6 +391,7 @@ static struct block2mtd_dev *add_device(
+@@ -298,6 +392,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
