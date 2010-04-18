@@ -1,0 +1,13 @@
+--- a/drivers/net/wireless/ath/ath9k/rc.c
++++ b/drivers/net/wireless/ath/ath9k/rc.c
+@@ -700,6 +700,10 @@ static void ath_get_rate(void *priv, str
+ 	    (sta->ht_cap.cap & IEEE80211_HT_CAP_LDPC_CODING))
+ 		tx_info->flags |= IEEE80211_TX_CTL_LDPC;
+ 
++	if (conf_is_ht(&sc->hw->conf) &&
++	    (sta->ht_cap.cap & IEEE80211_HT_CAP_TX_STBC))
++		tx_info->flags |= IEEE80211_TX_CTL_STBC;
++
+ 	if (is_probe) {
+ 		/* set one try for probe rates. For the
+ 		 * probes don't enable rts */
