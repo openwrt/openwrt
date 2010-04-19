@@ -63,6 +63,9 @@ else
   ifeq ($(PKG_VERSION),4.4.3)
     PKG_MD5SUM:=fe1ca818fc6d2caeffc9051fe67ff103
   endif
+  ifeq ($(PKG_VERSION),4.5.0)
+  PKG_MD5SUM:=ff27b7c4a5d5060c8a8543a44abca31f
+  endif
 endif
 
 PATCH_DIR=./patches/$(GCC_VERSION)
@@ -106,6 +109,15 @@ ifneq ($(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),)
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--disable-decimal-float
+endif
+
+ifneq ($(CONFIG_GCC_VERSION_4_5),)
+  GCC_BUILD_TARGET_LIBGCC:=y
+  GCC_CONFIGURE+= \
+                --with-gmp=$(TOPDIR)/staging_dir/host \
+                --with-mpc=$(TOPDIR)/staging_dir/host \
+                --with-mpfr=$(TOPDIR)/staging_dir/host \
+                --disable-decimal-float
 endif
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
