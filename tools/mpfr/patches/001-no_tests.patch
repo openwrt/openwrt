@@ -7,18 +7,18 @@ diff -urN mpfr-2.4.1/Makefile.am mpfr-2.4.1.new/Makefile.am
  
 -SUBDIRS = tests
 +SUBDIRS =
- EXTRA_DIST = BUGS FAQ.html PATCHES VERSION get_patches.sh round_raw_generic.c gen_inverse.h jyn_asympt.c
  
- include_HEADERS = mpfr.h mpf2mpfr.h
+ nobase_dist_doc_DATA = AUTHORS BUGS COPYING COPYING.LIB FAQ.html NEWS TODO \
+   examples/ReadMe examples/divworst.c examples/rndo-add.c examples/sample.c
 diff -urN mpfr-2.4.1/Makefile.in mpfr-2.4.1.new/Makefile.in
 --- mpfr-2.4.1/Makefile.in	2009-02-25 17:18:06.000000000 +0100
 +++ mpfr-2.4.1.new/Makefile.in	2009-08-20 14:58:32.000000000 +0200
-@@ -295,7 +295,7 @@
+@@ -344,7 +344,7 @@
  top_srcdir = @top_srcdir@
  AUTOMAKE_OPTIONS = gnu ansi2knr
  ACLOCAL_AMFLAGS = -I m4
 -SUBDIRS = tests
 +SUBDIRS =
- EXTRA_DIST = BUGS FAQ.html PATCHES VERSION get_patches.sh round_raw_generic.c gen_inverse.h jyn_asympt.c
- include_HEADERS = mpfr.h mpf2mpfr.h
- lib_LTLIBRARIES = libmpfr.la
+ nobase_dist_doc_DATA = AUTHORS BUGS COPYING COPYING.LIB FAQ.html NEWS TODO \
+   examples/ReadMe examples/divworst.c examples/rndo-add.c examples/sample.c
+ 

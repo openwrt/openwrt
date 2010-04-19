@@ -11,7 +11,11 @@ curdir:=tools
 # subdirectories to descend into
 tools-y :=
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+ifeq ($(CONFIG_GCC_VERSION_4_5),y)
+tools-$(CONFIG_GCC_VERSION_4_5) += gmp mpfr mpc
+else
 tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
+endif
 endif
 tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
@@ -40,6 +44,7 @@ $(curdir)/quilt/compile := $(curdir)/sed/install
 $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
 $(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install
+$(curdir)/mpc/compile := $(curdir)/gmp/install
 $(curdir)/mpfr/compile := $(curdir)/gmp/install
 $(curdir)/mtd-utils/compile := $(curdir)/libuuid/install
 
