@@ -29,6 +29,16 @@
  static void set_Wimplicit (int);
  static void handle_OPT_d (const char *);
  static void set_std_cxx98 (int);
+@@ -454,6 +457,9 @@
+       enable_warning_as_error ("implicit-function-declaration", value, CL_C | CL_ObjC); 
+       break;
+ 
++    case OPT_Werror_maybe_reset:
++      break;
++
+     case OPT_Wformat:
+       set_Wformat (value);
+       break;
 @@ -690,6 +701,12 @@
        flag_exceptions = value;
        break;
@@ -138,7 +148,7 @@
  ; On SVR4 targets, it also controls whether or not to emit a
 --- a/gcc/opts.c
 +++ b/gcc/opts.c
-@@ -891,8 +891,6 @@
+@@ -896,8 +896,6 @@
    flag_schedule_insns_after_reload = opt2;
  #endif
    flag_regmove = opt2;
@@ -147,25 +157,24 @@
    flag_reorder_blocks = opt2;
    flag_reorder_functions = opt2;
    flag_tree_vrp = opt2;
-@@ -912,6 +910,9 @@
+@@ -922,6 +919,8 @@
  
    /* -O3 optimizations.  */
    opt3 = (optimize >= 3);
 +  flag_strict_aliasing = opt3;
 +  flag_strict_overflow = opt3;
-+  flag_delete_null_pointer_checks = opt3;
    flag_predictive_commoning = opt3;
    flag_inline_functions = opt3;
    flag_unswitch_loops = opt3;
-@@ -1638,6 +1639,17 @@
+@@ -1601,6 +1601,17 @@
        enable_warning_as_error (arg, value, lang_mask);
        break;
  
 +    case OPT_Werror_maybe_reset:
 +      {
-+       char *ev = getenv ("GCC_NO_WERROR");
-+       if ((ev != NULL) && (*ev != '0'))
-+         warnings_are_errors = 0;
++	char *ev = getenv ("GCC_NO_WERROR");
++	if ((ev != NULL) && (*ev != '0'))
++	  warnings_are_errors = 0;
 +      }
 +      break;
 +
@@ -173,8 +182,8 @@
 +      break;
 +
      case OPT_Wlarger_than_:
-       /* This form corresponds to -Wlarger-than-.
- 	 Kept for backward compatibility.
+       /* This form corresponds to -Wlarger-than-. 
+          Kept for backward compatibility.
 --- a/gcc/doc/cppopts.texi
 +++ b/gcc/doc/cppopts.texi
 @@ -164,6 +164,11 @@
@@ -232,15 +241,6 @@
  
  @item -fsplit-wide-types
  @opindex fsplit-wide-types
-@@ -5844,7 +5860,7 @@
- @option{-fno-delete-null-pointer-checks} to disable this optimization
- for programs which depend on that behavior.
- 
--Enabled at levels @option{-O2}, @option{-O3}, @option{-Os}.
-+Enabled at levels @option{-O3}.
- 
- @item -fexpensive-optimizations
- @opindex fexpensive-optimizations
 --- a/gcc/java/jvspec.c
 +++ b/gcc/java/jvspec.c
 @@ -670,6 +670,7 @@
