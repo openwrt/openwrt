@@ -170,8 +170,15 @@ choice
 		depends !USE_EGLIBC
 		help
 		  This will install binaries stripped using sstrip
-
 endchoice
+
+config BUILD_PATENTED
+	default y
+	bool "Compile with support for patented functionality"
+	help
+	  When this option is disabled, software which provides patented functionality will not be built.
+	  In case software provides optional support for patented functionality,
+	  this optional support will get disabled for this package.
 
 config STRIP_ARGS
 	string
