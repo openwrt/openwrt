@@ -30,7 +30,7 @@
  	if (ar231x_mdiobus_probe(dev) != 0) {
  		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
  		rx_tasklet_cleanup(dev);
-@@ -334,8 +350,10 @@ static int __exit ar231x_remove(struct p
+@@ -334,8 +350,10 @@ static int __devexit ar231x_remove(struc
  	rx_tasklet_cleanup(dev);
  	ar231x_init_cleanup(dev);
  	unregister_netdev(dev);
