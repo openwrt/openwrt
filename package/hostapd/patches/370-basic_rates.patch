@@ -1,0 +1,68 @@
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -707,6 +707,14 @@ int hostapd_setup_interface_complete(str
+ 		}
+ 	}
+ 
++	if (hostapd_prepare_rates(hapd, iface->current_mode)) {
++		wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
++		hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
++					   HOSTAPD_LEVEL_WARNING,
++					   "Failed to prepare rates table.");
++		return -1;
++	}
++
+ 	if (hapd->iconf->rts_threshold > -1 &&
+ 	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
+ 		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
+--- a/src/ap/hw_features.c
++++ b/src/ap/hw_features.c
+@@ -101,8 +101,8 @@ int hostapd_get_hw_features(struct hosta
+ }
+ 
+ 
+-static int hostapd_prepare_rates(struct hostapd_data *hapd,
+-				 struct hostapd_hw_modes *mode)
++int hostapd_prepare_rates(struct hostapd_data *hapd,
++			  struct hostapd_hw_modes *mode)
+ {
+ 	int i, num_basic_rates = 0;
+ 	int basic_rates_a[] = { 60, 120, 240, -1 };
+@@ -668,14 +668,6 @@ int hostapd_select_hw_mode(struct hostap
+ 		return -1;
+ 	}
+ 
+-	if (hostapd_prepare_rates(iface->bss[0], iface->current_mode)) {
+-		wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
+-		hostapd_logger(iface->bss[0], NULL, HOSTAPD_MODULE_IEEE80211,
+-					   HOSTAPD_LEVEL_WARNING,
+-					   "Failed to prepare rates table.");
+-		return -1;
+-	}
+-
+ 	return 0;
+ }
+ 
+--- a/src/ap/hw_features.h
++++ b/src/ap/hw_features.h
+@@ -25,6 +25,8 @@ const char * hostapd_hw_mode_txt(int mod
+ int hostapd_hw_get_freq(struct hostapd_data *hapd, int chan);
+ int hostapd_hw_get_channel(struct hostapd_data *hapd, int freq);
+ int hostapd_check_ht_capab(struct hostapd_iface *iface);
++int hostapd_prepare_rates(struct hostapd_data *hapd,
++			  struct hostapd_hw_modes *mode);
+ #else /* NEED_AP_MLME */
+ static inline void
+ hostapd_free_hw_features(struct hostapd_hw_modes *hw_features,
+@@ -56,6 +58,11 @@ static inline int hostapd_check_ht_capab
+ {
+ 	return 0;
+ }
++static inline int hostapd_prepare_rates(struct hostapd_data *hapd,
++					struct hostapd_hw_modes *mode)
++{
++	return 0;
++}
+ 
+ #endif /* NEED_AP_MLME */
+ 
