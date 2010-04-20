@@ -1555,7 +1555,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,547 @@
+@@ -0,0 +1,549 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1938,7 +1938,8 @@
 +		if (!ar231x_board.radio)
 +			return 0;
 +
-+		if (*((u32 *) radio) & AR531X_RADIO0_MASK)
++		if ((*((u32 *) radio) & AR531X_RADIO0_MASK) &&
++		    (config->flags & BD_WLAN0))
 +			ar231x_add_wmac(0, AR531X_WLAN0,
 +				AR5312_IRQ_WLAN0_INTRS);
 +
@@ -1962,7 +1963,8 @@
 +		break;
 +	}
 +
-+	if (*((u32 *) radio) & AR531X_RADIO1_MASK)
++	if ((*((u32 *) radio) & AR531X_RADIO1_MASK) &&
++	    (config->flags & BD_WLAN1))
 +		ar231x_add_wmac(1, AR531X_WLAN1,
 +			AR5312_IRQ_WLAN1_INTRS);
 +
