@@ -254,6 +254,10 @@ TARGET_CPPFLAGS := \
 	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include \
 	$(TARGET_CPPFLAGS)
 
+TARGET_CFLAGS += \
+	-I$(PKG_BUILD_DIR)/include \
+	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include
+
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-devel \
