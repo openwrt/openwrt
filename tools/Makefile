@@ -11,11 +11,8 @@ curdir:=tools
 # subdirectories to descend into
 tools-y :=
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-ifeq ($(CONFIG_GCC_VERSION_4_5),y)
-tools-$(CONFIG_GCC_VERSION_4_5) += gmp mpfr mpc
-else
-tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4) += gmp mpfr
-endif
+tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5) += gmp mpfr
+tools-$(CONFIG_GCC_VERSION_4_5) += mpc libelf
 endif
 tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
@@ -32,8 +29,10 @@ endif
 tools-$(CONFIG_CCACHE) += ccache
 
 ifdef CONFIG_GCC_USE_GRAPHITE
-  tools-y += ppl cloog
-  $(curdir)/cloog/compile := $(curdir)/ppl/install
+  ifeq ($(CONFIG_GCC_USE_SYSTEM_PPL_CLOOG),)
+	tools-y += ppl cloog
+	$(curdir)/cloog/compile := $(curdir)/ppl/install
+  endif
 endif
 
 # builddir dependencies

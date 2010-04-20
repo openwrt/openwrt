@@ -96,6 +96,7 @@ GCC_CONFIGURE:= \
 		--disable-libmudflap \
 		--disable-multilib \
 		--disable-nls \
+		$(GRAPHITE_CONFIGURE) \
 		$(if $(CONFIG_GCC_USE_GRAPHITE),--with-host-libstdcxx=-lstdc++) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
@@ -103,7 +104,7 @@ GCC_CONFIGURE:= \
 		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
 		$(if $(CONFIG_GCC_VERSION_4_3_3_CS)$(CONFIG_GCC_VERSION_4_4_1_CS)$(CONFIG_GCC_VERSION_4_4_3_CS),--enable-poison-system-directories)
 
-ifneq ($(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4),)
+ifneq ($(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),)
   GCC_BUILD_TARGET_LIBGCC:=y
   GCC_CONFIGURE+= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
@@ -164,7 +165,13 @@ GCC_CONFIGURE_STAGE2:= \
 		--enable-languages=$(TARGET_LANGUAGES) \
 		--enable-shared \
 		--enable-threads \
-		--with-slibdir=$(TOOLCHAIN_DIR)/lib \
+		--with-slibdir=$(TOOLCHAIN_DIR)/lib
+
+ifneq ($(CONFIG_GCC_VERSION_4_5),)
+  GCC_CONFIGURE_STAGE2+= \
+		--enable-lto \
+		--with-libelf=$(TOPDIR)/staging_dir/host
+endif
 
 ifneq ($(CONFIG_TLS_SUPPORT),)
   GCC_CONFIGURE_STAGE2+= \
@@ -225,7 +232,7 @@ define Stage1/Install
 	$(GCC_MAKE) -C $(HOST_BUILD_DIR1) \
 		install-gcc \
 		$(if $(GCC_BUILD_TARGET_LIBGCC),install-target-libgcc)
-	
+
 	# XXX: glibc insists on linking against libgcc_eh
 	( cd $(TOOLCHAIN_DIR)/usr/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
 		[ -e libgcc_eh.a ] || ln -sf libgcc.a libgcc_eh.a ; \
