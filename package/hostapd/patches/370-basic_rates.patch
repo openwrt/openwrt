@@ -1,15 +1,17 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -707,6 +707,14 @@ int hostapd_setup_interface_complete(str
+@@ -707,6 +707,16 @@ int hostapd_setup_interface_complete(str
  		}
  	}
  
-+	if (hostapd_prepare_rates(hapd, iface->current_mode)) {
-+		wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
-+		hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
++	if (iface->current_mode) {
++		if (hostapd_prepare_rates(hapd, iface->current_mode)) {
++			wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
++			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
 +					   HOSTAPD_LEVEL_WARNING,
 +					   "Failed to prepare rates table.");
-+		return -1;
++			return -1;
++		}
 +	}
 +
  	if (hapd->iconf->rts_threshold > -1 &&
