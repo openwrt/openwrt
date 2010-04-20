@@ -127,7 +127,7 @@ define Image/Build/WZRHPG300NH
 	fi; fi
 endef
 
-cameo_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,896k(kernel),2880k(rootfs),64k(art)ro,3776k@0x30000(firmware)
+cameo_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,896k(kernel),2944k(rootfs),64k(art)ro,3840k@0x30000(firmware)
 define Image/Build/Cameo
 	$(call PatchKernelLzma,$(2),$(3) $(cameo_mtdlayout))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 917504 ]; then \
