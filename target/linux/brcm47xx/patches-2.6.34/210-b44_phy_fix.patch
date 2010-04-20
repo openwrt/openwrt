@@ -1,6 +1,6 @@
---- drivers/net/b44.c.orig	2010-04-18 08:40:30.000000000 +0300
-+++ drivers/net/b44.c	2010-04-18 10:53:47.000000000 +0300
-@@ -384,7 +384,7 @@
+--- a/drivers/net/b44.c
++++ b/drivers/net/b44.c	
+@@ -384,7 +384,7 @@ static void b44_set_flow_ctrl(struct b44
  	__b44_set_flow_ctrl(bp, pause_enab);
  }
  
@@ -9,44 +9,27 @@
  extern char *nvram_get(char *name);
  static void b44_wap54g10_workaround(struct b44 *bp)
  {
-@@ -397,6 +397,7 @@
- 	 * see https://dev.openwrt.org/ticket/146
- 	 * check and reset bit "isolate"
- 	 */
-+
- 	str = nvram_get("boardnum");
- 	if (!str)
- 		return;
-@@ -421,12 +422,49 @@
+@@ -421,12 +421,40 @@ static inline void b44_wap54g10_workarou
  }
  #endif
  
 +#ifdef CONFIG_SSB_DRIVER_MIPS
 +static inline int startswith (const char *source, const char *cmp) 
 +{ 
-+	return !strncmp(source,cmp,strlen(cmp)); 
++       return !strncmp(source,cmp,strlen(cmp)); 
 +}
 +
 +#define getvar(str) (nvram_get(str) ? : "")
 +
 +static inline void b44_bcm47xx_workarounds(struct b44 *bp)
 +{
-+	/*
-+	 * workaround for physical wiring in Linksys WRSL54GS
-+	 * see https://dev.openwrt.org/ticket/2662 and 3903
-+	 * eth1 PHY is probably on BCM5325 switch accessed via eth0
-+	 */
-+
-+	if (simple_strtoul(getvar("boardnum"), NULL, 0) == 42) {
-+		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
-+	} else {
-+		/* WL-HDD */
-+		struct ssb_device *sdev = bp->sdev;
-+		if (startswith(getvar("hardware_version"), "WL300-")) {
-+			if (sdev->bus->sprom.et0phyaddr == 0 &&
-+			    sdev->bus->sprom.et1phyaddr == 1)
-+				bp->phy_addr = B44_PHY_ADDR_NO_PHY;
-+		}
++	/* WL-HDD */
++	struct ssb_device *sdev = bp->sdev;
++	if (startswith(getvar("hardware_version"), "WL300-")) 
++	{
++		if (sdev->bus->sprom.et0phyaddr == 0 &&
++		    sdev->bus->sprom.et1phyaddr == 1)
++			bp->phy_addr = B44_PHY_ADDR_NO_PHY;
 +	}
 +	return;
 +}
@@ -67,7 +50,7 @@
  
  	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
  		return 0;
-@@ -2089,6 +2127,8 @@
+@@ -2089,6 +2117,8 @@ static int __devinit b44_get_invariants(
  	 * valid PHY address. */
  	bp->phy_addr &= 0x1F;
  
