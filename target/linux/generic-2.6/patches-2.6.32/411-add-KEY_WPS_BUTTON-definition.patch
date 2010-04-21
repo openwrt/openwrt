@@ -1,0 +1,26 @@
+From 492d4f25416528ffb900e6edf0fd70eafd098cfc Mon Sep 17 00:00:00 2001
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Fri, 26 Feb 2010 00:16:05 -0800
+Subject: [PATCH] Input: add KEY_WPS_BUTTON definition
+
+The new key definition is supposed to be used for buttons that initiate
+WiFi Protected setup sequence:
+
+	http://en.wikipedia.org/wiki/Wi-Fi_Protected_Setup
+
+Signed-off-by: Dmitry Torokhov <dtor@mail.ru>
+---
+ include/linux/input.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+--- a/include/linux/input.h
++++ b/include/linux/input.h
+@@ -595,6 +595,8 @@ struct input_absinfo {
+ #define KEY_NUMERIC_STAR	0x20a
+ #define KEY_NUMERIC_POUND	0x20b
+ 
++#define KEY_WPS_BUTTON		0x211	/* WiFi Protected Setup key */
++
+ /* We avoid low common keys in module aliases so they don't get huge. */
+ #define KEY_MIN_INTERESTING	KEY_MUTE
+ #define KEY_MAX			0x2ff
