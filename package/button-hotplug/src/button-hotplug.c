@@ -1,7 +1,7 @@
 /*
  *  Button Hotplug driver
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  Based on the diag.c - GPIO interface driver for Broadcom boards
  *    Copyright (C) 2006 Mike Baker <mbm@openwrt.org>,
@@ -24,15 +24,10 @@
 #include <net/sock.h>
 
 #define DRV_NAME	"button-hotplug"
-#define DRV_VERSION	"0.3.1"
+#define DRV_VERSION	"0.4.0"
 #define DRV_DESC	"Button Hotplug driver"
 
 #define BH_SKB_SIZE	2048
-
-#define BH_BTN_MIN	BTN_0
-#define BH_BTN_MAX	BTN_9
-
-#define BH_BTN_COUNT	(BH_BTN_MAX - BH_BTN_MIN + 1)
 
 #define PFX	DRV_NAME ": "
 
@@ -51,12 +46,12 @@
 #endif
 
 struct bh_priv {
-	unsigned long		seen[BH_BTN_COUNT];
+	unsigned long		*seen;
 	struct input_handle	handle;
 };
 
 struct bh_event {
-	char			*name;
+	const char		*name;
 	char			*action;
 	unsigned long		seen;
 
@@ -64,12 +59,35 @@ struct bh_event {
 	struct work_struct	work;
 };
 
+struct bh_map {
+	unsigned int	code;
+	const char	*name;
+};
+
 extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
 
-static char *button_names[BH_BTN_COUNT] = {
-	"BTN_0", "BTN_1", "BTN_2", "BTN_3", "BTN_4",
-	"BTN_5", "BTN_6", "BTN_7", "BTN_8", "BTN_9"
+#define BH_MAP(_code, _name)		\
+	{				\
+		.code = (_code),	\
+		.name = (_name),	\
+	}
+
+static struct bh_map button_map[] = {
+	BH_MAP(BTN_0,		"BTN_0"),
+	BH_MAP(BTN_1,		"BTN_1"),
+	BH_MAP(BTN_2,		"BTN_2"),
+	BH_MAP(BTN_3,		"BTN_3"),
+	BH_MAP(BTN_4,		"BTN_4"),
+	BH_MAP(BTN_5,		"BTN_5"),
+	BH_MAP(BTN_6,		"BTN_6"),
+	BH_MAP(BTN_7,		"BTN_7"),
+	BH_MAP(BTN_8,		"BTN_8"),
+	BH_MAP(BTN_9,		"BTN_9"),
+	BH_MAP(KEY_RESTART,	"reset"),
+#ifdef KEY_WPS_BUTTON
+	BH_MAP(KEY_WPS_BUTTON,	"wps"),
+#endif /* KEY_WPS_BUTTON */
 };
 
 /* -------------------------------------------------------------------------*/
@@ -169,7 +187,7 @@ static void button_hotplug_work(struct work_struct *work)
 	kfree(event);
 }
 
-static int button_hotplug_create_event(char *name, unsigned long seen,
+static int button_hotplug_create_event(const char *name, unsigned long seen,
 		int pressed)
 {
 	struct bh_event *event;
@@ -194,23 +212,33 @@ static int button_hotplug_create_event(char *name, unsigned long seen,
 /* -------------------------------------------------------------------------*/
 
 #ifdef	CONFIG_HOTPLUG
+static int button_get_index(unsigned int code)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(button_map); i++)
+		if (button_map[i].code == code)
+			return i;
+
+	return -1;
+}
 static void button_hotplug_event(struct input_handle *handle,
 			   unsigned int type, unsigned int code, int value)
 {
 	struct bh_priv *priv = handle->private;
 	unsigned long seen = jiffies;
-	unsigned int btn;
+	int btn;
 
 	BH_DBG("event type=%u, code=%u, value=%d\n", type, code, value);
 
 	if (type != EV_KEY)
 		return;
 
-	if (code < BH_BTN_MIN || code > BH_BTN_MAX)
+	btn = button_get_index(code);
+	if (btn < 0)
 		return;
 
-	btn = code - BH_BTN_MIN;
-	button_hotplug_create_event(button_names[btn],
+	button_hotplug_create_event(button_map[btn].name,
 			(seen - priv->seen[btn]) / HZ, value);
 	priv->seen[btn] = seen;
 }
@@ -228,17 +256,20 @@ static int button_hotplug_connect(struct input_handler *handler,
 	int ret;
 	int i;
 
-	for (i = BH_BTN_MIN; i <= BH_BTN_MAX; i++)
-		if (test_bit(i, dev->keybit))
+	for (i = 0; i < ARRAY_SIZE(button_map); i++)
+		if (test_bit(button_map[i].code, dev->keybit))
 			break;
 
-	if (i > BH_BTN_MAX)
+	if (i == ARRAY_SIZE(button_map))
 		return -ENODEV;
 
-	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+	priv = kzalloc(sizeof(*priv) +
+		       (sizeof(unsigned long) * ARRAY_SIZE(button_map)),
+		       GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
+	priv->seen = (unsigned long *) &priv[1];
 	priv->handle.private = priv;
 	priv->handle.dev = dev;
 	priv->handle.handler = handler;
