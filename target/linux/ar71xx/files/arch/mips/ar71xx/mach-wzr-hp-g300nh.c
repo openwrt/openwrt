@@ -147,14 +147,14 @@ static struct gpio_button wzrhpg300nh_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= WZRHPG300NH_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "aoss",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_WPS_BUTTON,
 		.threshold	= 3,
 		.gpio		= WZRHPG300NH_GPIO_BTN_AOSS,
 		.active_low	= 1,

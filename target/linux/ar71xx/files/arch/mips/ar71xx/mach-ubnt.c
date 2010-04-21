@@ -104,7 +104,7 @@ static struct gpio_button ubnt_gpio_buttons[] __initdata = {
 	{
 		.desc		= "sw4",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= UBNT_RS_GPIO_SW4,
 		.active_low	= 1,
@@ -115,7 +115,7 @@ static struct gpio_button ubnt_m_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= UBNT_M_GPIO_BTN_RESET,
 		.active_low	= 1,

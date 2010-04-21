@@ -102,13 +102,13 @@ static struct gpio_button wnr2000_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= WNR2000_GPIO_BTN_RESET,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_WPS_BUTTON,
 		.threshold	= 3,
 		.gpio		= WNR2000_GPIO_BTN_WPS,
 	}
