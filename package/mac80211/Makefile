@@ -532,6 +532,20 @@ define KernelPackage/net-ipw2200/description
  - ipw2200
 endef
 
+
+define KernelPackage/mwl8k
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for Marvell TOPDOG 802.11 Wireless cards
+  URL:=http://wireless.kernel.org/en/users/Drivers/mwl8k
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mwl8k.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,mwl8k)
+endef
+
+define KernelPackage/mwl8k/description
+ Kernel modules for Marvell TOPDOG 802.11 Wireless cards
+endef
+
 #Broadcom firmware
 ifneq ($(CONFIG_B43_EXPERIMENTAL),)
   PKG_B43_FWV4_NAME:=broadcom-wl
@@ -853,7 +867,7 @@ MAKE_OPTS:= \
 	CONFIG_LIB80211_CRYPT_TKIP= \
 	CONFIG_IWLWIFI= \
 	CONFIG_IWLAGN= \
-	CONFIG_MWL8K= \
+	CONFIG_MWL8K=$(if $(CONFIG_PACKAGE_kmod-mwl8k),m) \
 	CONFIG_ATMEL= \
 	CONFIG_PCMCIA_ATMEL= \
 	CONFIG_ADM8211= \
@@ -1052,3 +1066,4 @@ $(eval $(call KernelPackage,b43legacy))
 $(eval $(call KernelPackage,net-libipw))
 $(eval $(call KernelPackage,net-ipw2100))
 $(eval $(call KernelPackage,net-ipw2200))
+$(eval $(call KernelPackage,mwl8k))
