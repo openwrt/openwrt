@@ -134,7 +134,7 @@ $(eval $(call RequireCommand,svn, \
 ))
 
 define Require/gnu-find
-	$(FIND) $(TMP_DIR) -lname foo
+	$(FIND) --version 2>/dev/null
 endef
 
 $(eval $(call Require,gnu-find, \
