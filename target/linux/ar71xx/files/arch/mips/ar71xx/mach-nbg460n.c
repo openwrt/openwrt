@@ -112,14 +112,14 @@ static struct gpio_button nbg460n_gpio_buttons[] __initdata = {
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= NBG460N_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 5,
+		.threshold	= 3,
 		.gpio		= NBG460N_GPIO_BTN_WPS,
 		.active_low	= 1,
 	}
