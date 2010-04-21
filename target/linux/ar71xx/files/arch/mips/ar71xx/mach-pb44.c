@@ -94,14 +94,14 @@ static struct gpio_button pb44_gpio_buttons[] __initdata = {
 	{
 		.desc		= "soft_reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= PB44_GPIO_SW_RESET,
 		.active_low	= 1,
 	} , {
 		.desc		= "jumpstart",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_WPS_BUTTON,
 		.threshold	= 3,
 		.gpio		= PB44_GPIO_SW_JUMP,
 		.active_low	= 1,

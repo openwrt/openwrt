@@ -116,7 +116,7 @@ static struct gpio_button dir825b1_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= DIR825B1_GPIO_BTN_RESET,
 		.active_low	= 1,

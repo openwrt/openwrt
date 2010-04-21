@@ -42,7 +42,7 @@ static struct gpio_button rb4xx_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset_switch",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= RB4XX_GPIO_RESET_SWITCH,
 		.active_low	= 1,
