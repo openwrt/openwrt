@@ -148,7 +148,7 @@ Index: linux-2.6.32.10/drivers/mtd/maps/bcm963xx-flash.c
 +		return -ENOMEM;
 +
 +	/* Get the tag */
-+	ret = master->read(master,master->erasesize,sizeof(struct bcm_tag), &retlen, (void *)buf);
++	ret = master->read(master,0x10000,sizeof(struct bcm_tag), &retlen, (void *)buf);
 +	if (retlen != sizeof(struct bcm_tag)){
 +		vfree(buf);
 +		return -EIO;
