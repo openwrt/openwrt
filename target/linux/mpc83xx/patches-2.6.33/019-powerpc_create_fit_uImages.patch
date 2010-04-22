@@ -30,7 +30,7 @@
  treeImage.*
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -308,6 +308,9 @@ $(obj)/zImage.iseries: vmlinux
+@@ -311,6 +311,9 @@ $(obj)/zImage.iseries: vmlinux
  $(obj)/uImage: vmlinux $(wrapperbits)
  	$(call if_changed,wrap,uboot)
  
@@ -40,7 +40,7 @@
  $(obj)/cuImage.initrd.%: vmlinux $(obj)/%.dtb $(wrapperbits)
  	$(call if_changed,wrap,cuboot-$*,,$(obj)/$*.dtb,$(obj)/ramdisk.image.gz)
  
-@@ -347,7 +350,7 @@ install: $(CONFIGURE) $(addprefix $(obj)
+@@ -350,7 +353,7 @@ install: $(CONFIGURE) $(addprefix $(obj)
  
  # anything not in $(targets)
  clean-files += $(image-) $(initrd-) cuImage.* dtbImage.* treeImage.* \
@@ -70,7 +70,7 @@
      # miboot and U-boot want just the bare bits, not an ELF binary
      ext=bin
      objflags="-O binary"
-@@ -273,6 +276,21 @@ uboot)
+@@ -277,6 +280,21 @@ uboot)
      fi
      exit 0
      ;;

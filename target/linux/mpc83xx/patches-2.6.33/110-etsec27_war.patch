@@ -1,6 +1,6 @@
 --- a/drivers/net/gianfar.c
 +++ b/drivers/net/gianfar.c
-@@ -908,6 +908,14 @@
+@@ -908,6 +908,14 @@ static int gfar_probe(struct of_device *
  	udelay(2);
  
  	tempval = (MACCFG1_TX_FLOW | MACCFG1_RX_FLOW);

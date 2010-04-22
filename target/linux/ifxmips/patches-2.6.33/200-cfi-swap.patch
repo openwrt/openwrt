@@ -1,7 +1,5 @@
-Index: linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0001.c
-===================================================================
---- linux-2.6.33.2.orig/drivers/mtd/chips/cfi_cmdset_0001.c	2010-04-02 01:02:33.000000000 +0200
-+++ linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0001.c	2010-04-02 23:47:32.000000000 +0200
+--- a/drivers/mtd/chips/cfi_cmdset_0001.c
++++ b/drivers/mtd/chips/cfi_cmdset_0001.c
 @@ -41,7 +41,11 @@
  /* #define CMDSET0001_DISABLE_WRITE_SUSPEND */
  
@@ -15,7 +13,7 @@ Index: linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0001.c
  
  /* Intel chips */
  #define I82802AB	0x00ad
-@@ -1494,6 +1498,9 @@
+@@ -1494,6 +1498,9 @@ static int __xipram do_write_oneword(str
  	int ret=0;
  
  	adr += chip->start;
@@ -25,11 +23,9 @@ Index: linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0001.c
  
  	switch (mode) {
  	case FL_WRITING:
-Index: linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0002.c
-===================================================================
---- linux-2.6.33.2.orig/drivers/mtd/chips/cfi_cmdset_0002.c	2010-04-02 23:31:00.000000000 +0200
-+++ linux-2.6.33.2/drivers/mtd/chips/cfi_cmdset_0002.c	2010-04-02 23:47:32.000000000 +0200
-@@ -1068,7 +1068,9 @@
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -1068,7 +1068,9 @@ static int __xipram do_write_oneword(str
  	int retry_cnt = 0;
  
  	adr += chip->start;

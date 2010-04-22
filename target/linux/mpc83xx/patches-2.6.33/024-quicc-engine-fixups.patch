@@ -1,7 +1,7 @@
 
---- a/arch/powerpc/platforms/83xx/rbppc.c	
-+++ b/arch/powerpc/platforms/83xx/rbppc.c	
-@@ -121,21 +121,16 @@
+--- a/arch/powerpc/platforms/83xx/rbppc.c
++++ b/arch/powerpc/platforms/83xx/rbppc.c
+@@ -121,21 +121,16 @@ static void __init rbppc_setup_arch(void
  #endif
  
  #ifdef CONFIG_QUICC_ENGINE
@@ -32,7 +32,7 @@
  
  }
  
-@@ -151,12 +146,16 @@
+@@ -151,12 +146,16 @@ void __init rbppc_init_IRQ(void)
  	}
  
  #ifdef CONFIG_QUICC_ENGINE
@@ -55,7 +55,7 @@
  }
  
  static int __init rbppc_probe(void)
-@@ -284,6 +283,8 @@
+@@ -284,6 +283,8 @@ static struct of_device_id rbppc_ids[] =
  	{ .type = "soc", },
  	{ .compatible = "soc", },
  	{ .compatible = "simple-bus", },
@@ -64,7 +64,7 @@
  	{ .compatible = "gianfar", },
  	{ },
  };
-@@ -372,4 +373,3 @@
+@@ -372,4 +373,3 @@ static void fixup_rb604(struct pci_dev *
  
  DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, fixup_pcibridge)
  DECLARE_PCI_FIXUP_HEADER(0x3388, 0x0021, fixup_rb604)

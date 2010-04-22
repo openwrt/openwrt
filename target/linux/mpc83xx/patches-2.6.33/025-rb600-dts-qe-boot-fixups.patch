@@ -1,5 +1,5 @@
---- a/arch/powerpc/boot/dts/rb600.dts	
-+++ b/arch/powerpc/boot/dts/rb600.dts	
+--- a/arch/powerpc/boot/dts/rb600.dts
++++ b/arch/powerpc/boot/dts/rb600.dts
 @@ -20,9 +20,11 @@
  	aliases {
  		ethernet0 = &enet0;
@@ -58,9 +58,9 @@
  		enet0: ethernet@25000 {
  			#address-cells = <1>;
  			#size-cells = <1>;
---- a/arch/powerpc/boot/rb600.c	2010-04-01 07:46:37.000000000 +0300
-+++ b/arch/powerpc/boot/rb600.c	2010-04-01 08:04:03.000000000 +0300
-@@ -45,14 +45,6 @@
+--- a/arch/powerpc/boot/rb600.c
++++ b/arch/powerpc/boot/rb600.c
+@@ -45,14 +45,6 @@ static void rb600_fixups(void)
  	clock = fdt_getprop(fw_dtb, node, "clock-frequency", &size);
  	dt_fixup_cpu_clocks(*clock, *timebase, 0);
  
@@ -75,9 +75,9 @@
  }
  
  void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
---- a/arch/powerpc/platforms/83xx/rbppc.c	2010-04-01 09:04:09.000000000 +0300
-+++ b/arch/powerpc/platforms/83xx/rbppc.c	2010-04-01 09:02:00.000000000 +0300
-@@ -56,6 +56,8 @@
+--- a/arch/powerpc/platforms/83xx/rbppc.c
++++ b/arch/powerpc/platforms/83xx/rbppc.c
+@@ -56,6 +56,8 @@ static void *gtm;
  static int beeper_irq;
  static unsigned beeper_gpio_pin[2];
  
@@ -86,7 +86,7 @@
  irqreturn_t rbppc_timer_irq(int irq, void *ptr)
  {
  	static int toggle = 0;
-@@ -120,6 +122,8 @@
+@@ -120,6 +122,8 @@ static void __init rbppc_setup_arch(void
  	}
  #endif
  
@@ -95,7 +95,7 @@
  #ifdef CONFIG_QUICC_ENGINE
          qe_reset();
  
-@@ -132,6 +136,8 @@
+@@ -132,6 +136,8 @@ static void __init rbppc_setup_arch(void
          }
  #endif 
  
@@ -104,7 +104,7 @@
  }
  
  void __init rbppc_init_IRQ(void)
-@@ -145,6 +151,8 @@
+@@ -145,6 +151,8 @@ void __init rbppc_init_IRQ(void)
  		of_node_put(np);
  	}
  
@@ -113,7 +113,7 @@
  #ifdef CONFIG_QUICC_ENGINE
          np = of_find_compatible_node(NULL, NULL, "fsl,qe-ic");
          if (!np) {
-@@ -156,6 +164,8 @@
+@@ -156,6 +164,8 @@ void __init rbppc_init_IRQ(void)
          of_node_put(np);
  #endif                          /* CONFIG_QUICC_ENGINE */
  
@@ -122,7 +122,7 @@
  }
  
  static int __init rbppc_probe(void)
-@@ -167,8 +177,10 @@
+@@ -167,8 +177,10 @@ static int __init rbppc_probe(void)
  	if (!model)
  		return 0;
  

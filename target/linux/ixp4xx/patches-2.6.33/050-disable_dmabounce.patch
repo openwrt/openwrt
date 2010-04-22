@@ -1,6 +1,6 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -418,7 +418,6 @@ config ARCH_IXP4XX
+@@ -417,7 +417,6 @@ config ARCH_IXP4XX
  	select GENERIC_GPIO
  	select GENERIC_TIME
  	select GENERIC_CLOCKEVENTS
@@ -109,7 +109,7 @@
  
  void __init ixp4xx_pci_preinit(void)
  {
-@@ -517,19 +529,35 @@ struct pci_bus * __devinit ixp4xx_scan_b
+@@ -513,19 +525,35 @@ struct pci_bus * __devinit ixp4xx_scan_b
  int
  pci_set_dma_mask(struct pci_dev *dev, u64 mask)
  {

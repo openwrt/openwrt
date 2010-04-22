@@ -189,7 +189,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +MACHINE_END
 --- a/arch/arm/mach-ixp4xx/ixdp425-pci.c
 +++ b/arch/arm/mach-ixp4xx/ixdp425-pci.c
-@@ -66,7 +66,8 @@ struct hw_pci ixdp425_pci __initdata = {
+@@ -70,7 +70,8 @@ struct hw_pci ixdp425_pci __initdata = {
  int __init ixdp425_pci_init(void)
  {
  	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
