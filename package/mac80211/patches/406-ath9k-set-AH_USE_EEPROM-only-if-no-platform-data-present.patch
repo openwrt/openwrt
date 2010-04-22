@@ -10,7 +10,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -542,6 +542,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -565,6 +565,7 @@ static int ath9k_init_softc(u16 devid, s
  {
  	struct ath_hw *ah = NULL;
  	struct ath_common *common;
@@ -18,7 +18,7 @@
  	int ret = 0, i;
  	int csz = 0;
  
-@@ -553,6 +554,10 @@ static int ath9k_init_softc(u16 devid, s
+@@ -576,6 +577,10 @@ static int ath9k_init_softc(u16 devid, s
  	ah->hw_version.subsysid = subsysid;
  	sc->sc_ah = ah;
  
