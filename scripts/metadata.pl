@@ -423,8 +423,9 @@ sub mconf_depends {
 		my $vdep;
 		my $condition = $parent_condition;
 
-		next if $seen->{$depend};
-		$seen->{$depend} = 1;
+		next if $condition eq $depend;
+		next if $seen->{"$parent_condition:$depend"};
+		$seen->{"$parent_condition:$depend"} = 1;
 		if ($depend =~ /^(.+):(.+)$/) {
 			if ($1 ne "PACKAGE_$pkgname") {
 				if ($condition) {
