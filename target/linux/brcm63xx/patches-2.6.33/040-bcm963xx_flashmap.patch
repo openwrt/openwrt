@@ -189,7 +189,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +		return -ENOMEM;
 +
 +	/* Get the tag */
-+	ret = master->read(master,master->erasesize,sizeof(union bcm_tag), &retlen, (void *)buf);
++	ret = master->read(master,0x10000,sizeof(union bcm_tag), &retlen, (void *)buf);
 +	if (retlen != sizeof(union bcm_tag)){
 +		vfree(buf);
 +		return -EIO;
