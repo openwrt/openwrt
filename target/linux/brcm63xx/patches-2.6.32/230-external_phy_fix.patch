@@ -1,6 +1,6 @@
---- linux-2.6.32.10.orig/drivers/net/bcm63xx_enet.c	2010-04-06 19:25:52.612158288 +0100
-+++ linux-2.6.32.10/drivers/net/bcm63xx_enet.c	2010-04-07 21:40:26.991801424 +0100
-@@ -965,7 +965,9 @@
+--- a/drivers/net/bcm63xx_enet.c
++++ b/drivers/net/bcm63xx_enet.c
+@@ -965,7 +965,9 @@ static int bcm_enet_open(struct net_devi
  	/* all set, enable mac and interrupts, start dma engine and
  	 * kick rx dma channel */
  	wmb();
