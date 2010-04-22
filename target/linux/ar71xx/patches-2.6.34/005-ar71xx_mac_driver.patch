@@ -1,6 +1,6 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -2128,6 +2128,8 @@ config ACENIC_OMIT_TIGON_I
+@@ -2161,6 +2161,8 @@ config ACENIC_OMIT_TIGON_I
  
  	  The safe and default value for this is N.
  
@@ -11,7 +11,7 @@
  	depends on PCI
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -106,6 +106,7 @@ obj-$(CONFIG_STMMAC_ETH) += stmmac/
+@@ -109,6 +109,7 @@ obj-$(CONFIG_STMMAC_ETH) += stmmac/
  # end link order section
  #
  

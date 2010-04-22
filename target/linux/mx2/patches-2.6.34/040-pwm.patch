@@ -1,5 +1,3 @@
-diff --git a/arch/arm/plat-mxc/pwm.c b/arch/arm/plat-mxc/pwm.c
-index c36f263..acc5dc1 100644
 --- a/arch/arm/plat-mxc/pwm.c
 +++ b/arch/arm/plat-mxc/pwm.c
 @@ -25,6 +25,11 @@
@@ -14,7 +12,7 @@ index c36f263..acc5dc1 100644
  
  /* i.MX27, i.MX31, i.MX35 share the same PWM function block: */
  
-@@ -54,25 +59,32 @@ struct pwm_device {
+@@ -54,26 +59,33 @@ struct pwm_device {
  
  int pwm_config(struct pwm_device *pwm, int duty_ns, int period_ns)
  {
@@ -24,43 +22,45 @@ index c36f263..acc5dc1 100644
  	if (pwm == NULL || period_ns == 0 || duty_ns > period_ns)
  		return -EINVAL;
  
--	if (cpu_is_mx27() || cpu_is_mx3() || cpu_is_mx25()) {
--		unsigned long long c;
--		unsigned long period_cycles, duty_cycles, prescale;
--		u32 cr;
 +	c = clk_get_rate(pwm->clk);
 +
 +	c = c * period_ns;
 +
 +	if (cpu_is_mx1() || cpu_is_mx2())
 +		c >>= 1;
- 
--		c = clk_get_rate(pwm->clk);
--		c = c * period_ns;
--		do_div(c, 1000000000);
--		period_cycles = c;
++
 +	do_div(c, 1000000000);
 +	period_cycles = c;
- 
--		prescale = period_cycles / 0x10000 + 1;
++
 +	prescale = period_cycles / 0x10000 + 1;
- 
--		period_cycles /= prescale;
--		c = (unsigned long long)period_cycles * duty_ns;
--		do_div(c, period_ns);
--		duty_cycles = c;
++
 +	period_cycles /= prescale;
 +	c = (unsigned long long)period_cycles * duty_ns;
 +	do_div(c, period_ns);
 +	duty_cycles = c;
 +
 +
-+	if (cpu_is_mx27() || cpu_is_mx3() || cpu_is_mx25()) {
-+		u32 cr;
+ 	if (cpu_is_mx27() || cpu_is_mx3() || cpu_is_mx25()) {
+-		unsigned long long c;
+-		unsigned long period_cycles, duty_cycles, prescale;
+ 		u32 cr;
  
+-		c = clk_get_rate(pwm->clk);
+-		c = c * period_ns;
+-		do_div(c, 1000000000);
+-		period_cycles = c;
+-
+-		prescale = period_cycles / 0x10000 + 1;
+-
+-		period_cycles /= prescale;
+-		c = (unsigned long long)period_cycles * duty_ns;
+-		do_div(c, period_ns);
+-		duty_cycles = c;
+-
  		writel(duty_cycles, pwm->mmio_base + MX3_PWMSAR);
  		writel(period_cycles, pwm->mmio_base + MX3_PWMPR);
-@@ -86,25 +98,28 @@ int pwm_config(struct pwm_device *pwm, int duty_ns, int period_ns)
+ 
+@@ -86,25 +98,28 @@ int pwm_config(struct pwm_device *pwm, i
  
  		writel(cr, pwm->mmio_base + MX3_PWMCR);
  	} else if (cpu_is_mx1() || cpu_is_mx21()) {
@@ -108,7 +108,7 @@ index c36f263..acc5dc1 100644
  	} else {
  		BUG();
  	}
-@@ -116,6 +130,11 @@ EXPORT_SYMBOL(pwm_config);
+@@ -116,6 +131,11 @@ EXPORT_SYMBOL(pwm_config);
  int pwm_enable(struct pwm_device *pwm)
  {
  	int rc = 0;
@@ -120,7 +120,7 @@ index c36f263..acc5dc1 100644
  
  	if (!pwm->clk_enabled) {
  		rc = clk_enable(pwm->clk);
-@@ -128,7 +147,13 @@ EXPORT_SYMBOL(pwm_enable);
+@@ -128,7 +148,13 @@ EXPORT_SYMBOL(pwm_enable);
  
  void pwm_disable(struct pwm_device *pwm)
  {

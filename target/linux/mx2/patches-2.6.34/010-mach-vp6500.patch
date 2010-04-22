@@ -1,6 +1,6 @@
---- a/arch/arm/mach-mx2/Kconfig	2010-04-10 13:56:17.000000000 +0200
-+++ b/arch/arm/mach-mx2/Kconfig	2010-04-10 13:42:38.000000000 +0200
-@@ -27,6 +27,12 @@
+--- a/arch/arm/mach-mx2/Kconfig
++++ b/arch/arm/mach-mx2/Kconfig
+@@ -27,6 +27,12 @@ config MACH_MX21ADS
  	  Include support for MX21ADS platform. This includes specific
  	  configurations for the board and its peripherals.
  
@@ -13,9 +13,9 @@
  config MACH_MX27ADS
  	bool "MX27ADS platform"
  	depends on MACH_MX27
---- a/arch/arm/mach-mx2/Makefile	2010-04-10 13:56:17.000000000 +0200
-+++ b/arch/arm/mach-mx2/Makefile	2010-04-10 13:49:32.000000000 +0200
-@@ -21,3 +21,4 @@
+--- a/arch/arm/mach-mx2/Makefile
++++ b/arch/arm/mach-mx2/Makefile
+@@ -21,3 +21,4 @@ obj-$(CONFIG_MACH_CPUIMX27) += mach-cpui
  obj-$(CONFIG_MACH_EUKREA_MBIMX27_BASEBOARD) += eukrea_mbimx27-baseboard.o
  obj-$(CONFIG_MACH_PCA100) += mach-pca100.o
  obj-$(CONFIG_MACH_MXT_TD60) += mach-mxt_td60.o
