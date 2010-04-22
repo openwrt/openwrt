@@ -85,14 +85,14 @@ static struct gpio_button v22rw_2x2_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= V22RW_2X2_GPIO_BUTTON_SWRST,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_WPS_BUTTON,
 		.threshold	= 3,
 		.gpio		= V22RW_2X2_GPIO_BUTTON_WPS,
 		.active_low	= 1,

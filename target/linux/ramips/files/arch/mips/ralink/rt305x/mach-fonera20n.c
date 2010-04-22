@@ -91,7 +91,7 @@ static struct gpio_button fonera20n_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RESTART,
 		.threshold	= 3,
 		.gpio		= FONERA20N_GPIO_BUTTON_RESET,
 		.active_low	= 1,
