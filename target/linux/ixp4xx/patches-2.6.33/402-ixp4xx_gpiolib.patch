@@ -50,7 +50,7 @@
  
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -418,6 +418,7 @@ config ARCH_IXP4XX
+@@ -417,6 +417,7 @@ config ARCH_IXP4XX
  	select GENERIC_GPIO
  	select GENERIC_TIME
  	select GENERIC_CLOCKEVENTS
@@ -122,4 +122,4 @@
 +#define gpio_cansleep __gpio_cansleep
  
  extern int gpio_to_irq(int gpio);
- extern int irq_to_gpio(int gpio);
+ extern int irq_to_gpio(unsigned int irq);

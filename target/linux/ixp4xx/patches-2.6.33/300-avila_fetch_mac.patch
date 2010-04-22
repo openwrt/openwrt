@@ -15,11 +15,11 @@
 +#include <linux/i2c/at24.h>
 +
  #include <linux/i2c-gpio.h>
- 
  #include <asm/types.h>
-@@ -29,6 +35,13 @@
- #include <asm/mach/arch.h>
- #include <asm/mach/flash.h>
+ #include <asm/setup.h>
+@@ -31,6 +37,13 @@
+ #define AVILA_SDA_PIN	7
+ #define AVILA_SCL_PIN	6
  
 +struct avila_board_info {
 +	unsigned char	*model;
@@ -31,7 +31,7 @@
  static struct flash_platform_data avila_flash_data = {
  	.map_name	= "cfi_probe",
  	.width		= 2,
-@@ -132,16 +145,181 @@ static struct platform_device avila_pata
+@@ -134,16 +147,181 @@ static struct platform_device avila_pata
  	.resource		= avila_pata_resources,
  };
  
@@ -213,7 +213,7 @@
  	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
  	avila_flash_resource.end =
  		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
-@@ -159,7 +337,28 @@ static void __init avila_init(void)
+@@ -161,7 +339,28 @@ static void __init avila_init(void)
  
  	platform_device_register(&avila_pata);
  

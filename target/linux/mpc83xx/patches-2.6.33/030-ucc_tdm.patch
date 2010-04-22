@@ -1,4 +1,4 @@
---- a/drivers/misc/ucc_tdm.h
+--- /dev/null
 +++ b/drivers/misc/ucc_tdm.h
 @@ -0,0 +1,221 @@
 +/*
@@ -1242,9 +1242,9 @@
 +MODULE_AUTHOR("Freescale Semiconductor, Inc");
 +MODULE_DESCRIPTION(DRV_DESC);
 +MODULE_LICENSE("GPL");
---- a/drivers/misc/Makefile	2010-03-15 18:09:39.000000000 +0200
-+++ b/drivers/misc/Makefile	2010-03-30 18:37:12.000000000 +0300
-@@ -8,6 +8,7 @@
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_AD525X_DPOT)	+= ad525x_dpot
  obj-$(CONFIG_ATMEL_PWM)		+= atmel_pwm.o
  obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
  obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib.o
@@ -1252,9 +1252,9 @@
  obj-$(CONFIG_ICS932S401)	+= ics932s401.o
  obj-$(CONFIG_LKDTM)		+= lkdtm.o
  obj-$(CONFIG_TIFM_CORE)       	+= tifm_core.o
---- a/drivers/misc/Kconfig	2010-03-15 18:09:39.000000000 +0200
-+++ b/drivers/misc/Kconfig	2010-03-30 18:40:46.000000000 +0300
-@@ -164,6 +164,20 @@
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -164,6 +164,20 @@ config ATMEL_SSC
  
  	  If unsure, say N.
  
@@ -1275,9 +1275,9 @@
  config ENCLOSURE_SERVICES
  	tristate "Enclosure Services"
  	default n
---- a/arch/powerpc/include/asm/ucc_fast.h	2010-03-15 18:09:39.000000000 +0200
-+++ b/arch/powerpc/include/asm/ucc_fast.h	2010-03-30 19:13:29.000000000 +0300
-@@ -150,6 +150,10 @@
+--- a/arch/powerpc/include/asm/ucc_fast.h
++++ b/arch/powerpc/include/asm/ucc_fast.h
+@@ -150,6 +150,10 @@ struct ucc_fast_info {
  	enum ucc_fast_rx_decoding_method renc;
  	enum ucc_fast_transparent_tcrc tcrc;
  	enum ucc_fast_sync_len synl;
@@ -1288,9 +1288,9 @@
  };
  
  struct ucc_fast_private {
---- a/arch/powerpc/include/asm/qe.h	2010-03-15 18:09:39.000000000 +0200
-+++ b/arch/powerpc/include/asm/qe.h	2010-03-30 19:17:33.000000000 +0300
-@@ -669,6 +669,14 @@
+--- a/arch/powerpc/include/asm/qe.h
++++ b/arch/powerpc/include/asm/qe.h
+@@ -669,6 +669,14 @@ struct ucc_slow_pram {
  #define UCC_GETH_UCCE_RXF1      0x00000002
  #define UCC_GETH_UCCE_RXF0      0x00000001
  

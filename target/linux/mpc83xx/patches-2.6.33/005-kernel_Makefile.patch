@@ -1,6 +1,6 @@
---- a/arch/powerpc/kernel/Makefile	
-+++ b/arch/powerpc/kernel/Makefile	
-@@ -97,9 +97,11 @@ obj-$(CONFIG_FUNCTION_GRAPH_TRACER)	+= f
+--- a/arch/powerpc/kernel/Makefile
++++ b/arch/powerpc/kernel/Makefile
+@@ -105,9 +105,11 @@ obj32-$(CONFIG_PPC_PERF_CTRS)	+= mpc7450
  
  obj-$(CONFIG_8XX_MINIMAL_FPEMU) += softemu8xx.o
  
@@ -11,4 +11,4 @@
 +endif
  
  obj-$(CONFIG_PPC64)		+= $(obj64-y)
- 
+ obj-$(CONFIG_PPC32)		+= $(obj32-y)

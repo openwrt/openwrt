@@ -214,7 +214,7 @@
   * SPI clock
   */
  static void spi_set(struct clk *clk, int enable)
-@@ -208,6 +232,8 @@ struct clk *clk_get(struct device *dev,
+@@ -208,6 +232,8 @@ struct clk *clk_get(struct device *dev, 
  		return &clk_ephy;
  	if (!strcmp(id, "usbh"))
  		return &clk_usbh;

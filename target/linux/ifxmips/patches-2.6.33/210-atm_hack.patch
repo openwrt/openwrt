@@ -1,8 +1,6 @@
-Index: linux-2.6.32.10/arch/mips/mm/cache.c
-===================================================================
---- linux-2.6.32.10.orig/arch/mips/mm/cache.c	2010-03-15 16:52:04.000000000 +0100
-+++ linux-2.6.32.10/arch/mips/mm/cache.c	2010-04-02 21:18:51.000000000 +0200
-@@ -52,6 +52,8 @@
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -52,6 +52,8 @@ void (*_dma_cache_wback)(unsigned long s
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  
  EXPORT_SYMBOL(_dma_cache_wback_inv);
@@ -11,11 +9,9 @@ Index: linux-2.6.32.10/arch/mips/mm/cache.c
  
  #endif /* CONFIG_DMA_NONCOHERENT */
  
-Index: linux-2.6.32.10/net/atm/proc.c
-===================================================================
---- linux-2.6.32.10.orig/net/atm/proc.c	2010-03-15 16:52:04.000000000 +0100
-+++ linux-2.6.32.10/net/atm/proc.c	2010-04-02 21:19:46.000000000 +0200
-@@ -152,7 +152,7 @@
+--- a/net/atm/proc.c
++++ b/net/atm/proc.c
+@@ -152,7 +152,7 @@ static void *vcc_seq_next(struct seq_fil
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] =
@@ -24,11 +20,9 @@ Index: linux-2.6.32.10/net/atm/proc.c
  	static const char *const aal_name[] = {
  		"---",	"1",	"2",	"3/4",	/*  0- 3 */
  		"???",	"5",	"???",	"???",	/*  4- 7 */
-Index: linux-2.6.32.10/net/atm/common.c
-===================================================================
---- linux-2.6.32.10.orig/net/atm/common.c	2010-03-15 16:52:04.000000000 +0100
-+++ linux-2.6.32.10/net/atm/common.c	2010-04-02 21:21:46.000000000 +0200
-@@ -56,12 +56,17 @@
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -56,12 +56,17 @@ static void vcc_remove_socket(struct soc
  	write_unlock_irq(&vcc_sklist_lock);
  }
  

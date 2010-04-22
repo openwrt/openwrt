@@ -1,8 +1,6 @@
-Index: linux-2.6.33.2/arch/mips/Kconfig
-===================================================================
---- linux-2.6.33.2.orig/arch/mips/Kconfig	2010-04-02 23:31:00.000000000 +0200
-+++ linux-2.6.33.2/arch/mips/Kconfig	2010-04-02 23:38:38.000000000 +0200
-@@ -139,6 +139,9 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -139,6 +139,9 @@ config MACH_DECSTATION
  
  	  otherwise choose R3000.
  
@@ -12,7 +10,7 @@ Index: linux-2.6.33.2/arch/mips/Kconfig
  config MACH_JAZZ
  	bool "Jazz family of machines"
  	select ARC
-@@ -693,6 +696,7 @@
+@@ -693,6 +696,7 @@ source "arch/mips/txx9/Kconfig"
  source "arch/mips/vr41xx/Kconfig"
  source "arch/mips/cavium-octeon/Kconfig"
  source "arch/mips/loongson/Kconfig"
@@ -20,11 +18,9 @@ Index: linux-2.6.33.2/arch/mips/Kconfig
  
  endmenu
  
-Index: linux-2.6.33.2/arch/mips/Makefile
-===================================================================
---- linux-2.6.33.2.orig/arch/mips/Makefile	2010-04-02 23:31:01.000000000 +0200
-+++ linux-2.6.33.2/arch/mips/Makefile	2010-04-02 23:38:38.000000000 +0200
-@@ -317,6 +317,18 @@
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -317,6 +317,18 @@ cflags-$(CONFIG_MIPS_COBALT)	+= -I$(srct
  load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
  
  #
@@ -43,11 +39,9 @@ Index: linux-2.6.33.2/arch/mips/Makefile
  # DECstation family
  #
  core-$(CONFIG_MACH_DECSTATION)	+= arch/mips/dec/
-Index: linux-2.6.33.2/arch/mips/pci/Makefile
-===================================================================
---- linux-2.6.33.2.orig/arch/mips/pci/Makefile	2010-04-02 01:02:33.000000000 +0200
-+++ linux-2.6.33.2/arch/mips/pci/Makefile	2010-04-02 23:38:38.000000000 +0200
-@@ -55,7 +55,7 @@
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -55,7 +55,7 @@ obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capc
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
  obj-$(CONFIG_MIKROTIK_RB532)	+= pci-rc32434.o ops-rc32434.o fixup-rc32434.o
  obj-$(CONFIG_CPU_CAVIUM_OCTEON)	+= pci-octeon.o pcie-octeon.o

@@ -6,9 +6,9 @@
  
 +#include <linux/leds.h>
  #include <linux/i2c-gpio.h>
- 
  #include <asm/types.h>
-@@ -170,6 +171,72 @@ static struct platform_device avila_npec
+ #include <asm/setup.h>
+@@ -172,6 +173,72 @@ static struct platform_device avila_npec
  	.dev.platform_data	= &avila_npec_data,
  };
  
@@ -81,7 +81,7 @@
  static struct platform_device *avila_devices[] __initdata = {
  	&avila_i2c_gpio,
  	&avila_flash,
-@@ -180,12 +247,16 @@ static void __init avila_gw23xx_setup(vo
+@@ -182,12 +249,16 @@ static void __init avila_gw23xx_setup(vo
  {
  	platform_device_register(&avila_npeb_device);
  	platform_device_register(&avila_npec_device);
@@ -98,7 +98,7 @@
  }
  
  static void __init avila_gw2345_setup(void)
-@@ -196,22 +267,30 @@ static void __init avila_gw2345_setup(vo
+@@ -198,22 +269,30 @@ static void __init avila_gw2345_setup(vo
  
  	avila_npec_data.phy = 5; /* port 5 of the KS8995 switch */
  	platform_device_register(&avila_npec_device);
@@ -129,7 +129,7 @@
  }
  
  static void __init avila_gw2355_setup(void)
-@@ -222,11 +301,29 @@ static void __init avila_gw2355_setup(vo
+@@ -224,11 +303,29 @@ static void __init avila_gw2355_setup(vo
  
  	avila_npec_data.phy = 16;
  	platform_device_register(&avila_npec_device);
