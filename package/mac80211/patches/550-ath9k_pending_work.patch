@@ -1,24 +1,49 @@
 --- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -852,7 +852,8 @@ static int ar5008_hw_process_ini(struct 
+@@ -852,7 +852,7 @@ static int ar5008_hw_process_ini(struct 
  
  	REG_WRITE_ARRAY(&ah->iniBB_RfGain, freqIndex, regWrites);
  
 -	if (AR_SREV_9280_20(ah) && IS_CHAN_A_5MHZ_SPACED(chan)) {
-+	if (AR_SREV_9280_20(ah) &&
-+	    (ah->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK)) {
++	if (IS_CHAN_A_FAST_CLOCK(ah, chan)) {
  		REG_WRITE_ARRAY(&ah->iniModesAdditional, modesIndex,
  				regWrites);
  	}
-@@ -895,7 +896,7 @@ static void ar5008_hw_set_rfmode(struct 
+@@ -894,8 +894,7 @@ static void ar5008_hw_set_rfmode(struct 
+ 		rfMode |= (IS_CHAN_5GHZ(chan)) ?
  			AR_PHY_MODE_RF5GHZ : AR_PHY_MODE_RF2GHZ;
  
- 	if ((AR_SREV_9280_20(ah) || AR_SREV_9300_20_OR_LATER(ah))
+-	if ((AR_SREV_9280_20(ah) || AR_SREV_9300_20_OR_LATER(ah))
 -	    && IS_CHAN_A_5MHZ_SPACED(chan))
-+	    && (ah->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK))
++	if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		rfMode |= (AR_PHY_MODE_DYNAMIC | AR_PHY_MODE_DYN_CCK_DISABLE);
  
  	REG_WRITE(ah, AR_PHY_MODE, rfMode);
+--- a/drivers/net/wireless/ath/ath9k/ar9002_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.c
+@@ -455,16 +455,12 @@ static u32 ar9002_hw_compute_pll_control
+ 		pll |= SM(0x2, AR_RTC_9160_PLL_CLKSEL);
+ 
+ 	if (chan && IS_CHAN_5GHZ(chan)) {
+-		pll |= SM(0x28, AR_RTC_9160_PLL_DIV);
+-
+-
+-		if (AR_SREV_9280_20(ah)) {
+-			if (((chan->channel % 20) == 0)
+-			    || ((chan->channel % 10) == 0))
+-				pll = 0x2850;
+-			else
+-				pll = 0x142c;
+-		}
++		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
++			pll = 0x142c;
++		else if (AR_SREV_9280_20(ah))
++			pll = 0x2850;
++		else
++			pll |= SM(0x28, AR_RTC_9160_PLL_DIV);
+ 	} else {
+ 		pll |= SM(0x2c, AR_RTC_9160_PLL_DIV);
+ 	}
 --- a/drivers/net/wireless/ath/ath9k/ar9003_calib.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_calib.c
 @@ -755,7 +755,8 @@ static bool ar9003_hw_init_cal(struct at
@@ -397,7 +422,7 @@
  	 * different modal values.
  	 */
 -	if (IS_CHAN_A_5MHZ_SPACED(chan))
-+	if (ah->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK)
++	if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		REG_WRITE_ARRAY(&ah->iniModesAdditional,
  				modesIndex, regWrites);
  
@@ -406,10 +431,33 @@
  		? AR_PHY_MODE_DYNAMIC : AR_PHY_MODE_OFDM;
  
 -	if (IS_CHAN_A_5MHZ_SPACED(chan))
-+	if (ah->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK)
++	if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		rfMode |= (AR_PHY_MODE_DYNAMIC | AR_PHY_MODE_DYN_CCK_DISABLE);
  
  	REG_WRITE(ah, AR_PHY_MODE, rfMode);
+--- a/drivers/net/wireless/ath/ath9k/eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/eeprom.h
+@@ -300,7 +300,8 @@ struct base_eep_header {
+ 	u32 binBuildNumber;
+ 	u8 deviceType;
+ 	u8 pwdclkind;
+-	u8 futureBase_1[2];
++	u8 fastClk5g;
++	u8 divChain;
+ 	u8 rxGainType;
+ 	u8 dacHiPwrMode_5G;
+ 	u8 openLoopPwrCntl;
+--- a/drivers/net/wireless/ath/ath9k/eeprom_def.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_def.c
+@@ -274,6 +274,8 @@ static u32 ath9k_hw_def_get_eeprom(struc
+ 		return pBase->txMask;
+ 	case EEP_RX_MASK:
+ 		return pBase->rxMask;
++	case EEP_FSTCLK_5G:
++		return pBase->fastClk5g;
+ 	case EEP_RXGAIN_TYPE:
+ 		return pBase->rxGainType;
+ 	case EEP_TXGAIN_TYPE:
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
 @@ -29,6 +29,7 @@
@@ -446,7 +494,17 @@
  	 * We need this for PCI devices only (Cardbus, PCI, miniPCI)
  	 * _and_ if on non-uniprocessor systems (Multiprocessor/HT).
  	 * This means we use it for all AR5416 devices, and the few
-@@ -2198,7 +2209,8 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+@@ -1233,8 +1244,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 	    (chan->channel != ah->curchan->channel) &&
+ 	    ((chan->channelFlags & CHANNEL_ALL) ==
+ 	     (ah->curchan->channelFlags & CHANNEL_ALL)) &&
+-	     !(AR_SREV_9280(ah) || IS_CHAN_A_5MHZ_SPACED(chan) ||
+-	     IS_CHAN_A_5MHZ_SPACED(ah->curchan))) {
++	    !AR_SREV_9280(ah)) {
+ 
+ 		if (ath9k_hw_channel_change(ah, chan)) {
+ 			ath9k_hw_loadnf(ah, ah->curchan);
+@@ -2198,7 +2208,8 @@ int ath9k_hw_fill_cap_info(struct ath_hw
  	}
  
  	if (AR_SREV_9300_20_OR_LATER(ah)) {
@@ -456,6 +514,18 @@
  		pCap->rx_hp_qdepth = ATH9K_HW_RX_HP_QDEPTH;
  		pCap->rx_lp_qdepth = ATH9K_HW_RX_LP_QDEPTH;
  		pCap->rx_status_len = sizeof(struct ar9003_rxs);
+@@ -2206,6 +2217,11 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 		pCap->txs_len = sizeof(struct ar9003_txs);
+ 	} else {
+ 		pCap->tx_desc_len = sizeof(struct ath_desc);
++		if (AR_SREV_9280_20(ah) &&
++		    ((ah->eep_ops->get_eeprom(ah, EEP_MINOR_REV) <=
++		      AR5416_EEP_MINOR_VER_16) ||
++		     ah->eep_ops->get_eeprom(ah, EEP_FSTCLK_5G)))
++			pCap->hw_caps |= ATH9K_HW_CAP_FASTCLOCK;
+ 	}
+ 
+ 	if (AR_SREV_9300_20_OR_LATER(ah))
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
 @@ -198,6 +198,7 @@ enum ath9k_hw_caps {
@@ -474,3 +544,16 @@
  	int spurmode;
  	u16 spurchans[AR_EEPROM_MODAL_SPURS][2];
  	u8 max_txtrig_level;
+@@ -367,10 +369,9 @@ struct ath9k_channel {
+ #define IS_CHAN_2GHZ(_c) (((_c)->channelFlags & CHANNEL_2GHZ) != 0)
+ #define IS_CHAN_HALF_RATE(_c) (((_c)->channelFlags & CHANNEL_HALF) != 0)
+ #define IS_CHAN_QUARTER_RATE(_c) (((_c)->channelFlags & CHANNEL_QUARTER) != 0)
+-#define IS_CHAN_A_5MHZ_SPACED(_c)			\
++#define IS_CHAN_A_FAST_CLOCK(_ah, _c)			\
+ 	((((_c)->channelFlags & CHANNEL_5GHZ) != 0) &&	\
+-	 (((_c)->channel % 20) != 0) &&			\
+-	 (((_c)->channel % 10) != 0))
++	 ((_ah)->caps.hw_caps & ATH9K_HW_CAP_FASTCLOCK))
+ 
+ /* These macros check chanmode and not channelFlags */
+ #define IS_CHAN_B(_c) ((_c)->chanmode == CHANNEL_B)
