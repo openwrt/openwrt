@@ -1,6 +1,8 @@
---- a/arch/mips/bcm63xx/cpu.c
-+++ b/arch/mips/bcm63xx/cpu.c
-@@ -55,6 +55,7 @@ static const unsigned long bcm96338_regs
+Index: linux-2.6.32.10/arch/mips/bcm63xx/cpu.c
+===================================================================
+--- linux-2.6.32.10.orig/arch/mips/bcm63xx/cpu.c	2010-03-15 16:52:04.000000000 +0100
++++ linux-2.6.32.10/arch/mips/bcm63xx/cpu.c	2010-04-22 17:35:21.000000000 +0200
+@@ -55,6 +55,7 @@
  
  static const int bcm96338_irqs[] = {
  	[IRQ_TIMER]		= BCM_6338_TIMER_IRQ,
@@ -8,7 +10,7 @@
  	[IRQ_UART0]		= BCM_6338_UART0_IRQ,
  	[IRQ_DSL]		= BCM_6338_DSL_IRQ,
  	[IRQ_ENET0]		= BCM_6338_ENET0_IRQ,
-@@ -127,6 +128,7 @@ static const unsigned long bcm96348_regs
+@@ -127,6 +128,7 @@
  
  static const int bcm96348_irqs[] = {
  	[IRQ_TIMER]		= BCM_6348_TIMER_IRQ,
@@ -16,7 +18,7 @@
  	[IRQ_UART0]		= BCM_6348_UART0_IRQ,
  	[IRQ_DSL]		= BCM_6348_DSL_IRQ,
  	[IRQ_ENET0]		= BCM_6348_ENET0_IRQ,
-@@ -169,6 +171,7 @@ static const unsigned long bcm96358_regs
+@@ -169,6 +171,7 @@
  
  static const int bcm96358_irqs[] = {
  	[IRQ_TIMER]		= BCM_6358_TIMER_IRQ,
@@ -24,15 +26,17 @@
  	[IRQ_UART0]		= BCM_6358_UART0_IRQ,
  	[IRQ_DSL]		= BCM_6358_DSL_IRQ,
  	[IRQ_ENET0]		= BCM_6358_ENET0_IRQ,
---- /dev/null
-+++ b/arch/mips/bcm63xx/dev-spi.c
+Index: linux-2.6.32.10/arch/mips/bcm63xx/dev-spi.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.10/arch/mips/bcm63xx/dev-spi.c	2010-04-22 17:35:21.000000000 +0200
 @@ -0,0 +1,60 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
 + * for more details.
 + *
-+ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org> 
++ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
 + */
 +
 +#include <linux/init.h>
@@ -84,12 +88,22 @@
 +
 +	if (BCMCPU_IS_6358())
 +		spi_pdata.fifo_size = SPI_BCM_6358_SPI_MSG_DATA_SIZE;
-+	
++
 +	return platform_device_register(&bcm63xx_spi_device);
 +}
---- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-+++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-@@ -428,6 +428,7 @@ static inline unsigned long bcm63xx_regs
+Index: linux-2.6.32.10/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
+===================================================================
+--- linux-2.6.32.10.orig/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h	2010-04-22 17:35:21.000000000 +0200
++++ linux-2.6.32.10/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h	2010-04-22 17:43:33.000000000 +0200
+@@ -108,6 +108,7 @@
+ #define RSET_WDT_SIZE			12
+ #define RSET_ENET_SIZE			2048
+ #define RSET_ENETDMA_SIZE		2048
++#define RSET_SPI_SIZE			256
+ #define RSET_UART_SIZE			24
+ #define RSET_UDC_SIZE			256
+ #define RSET_OHCI_SIZE			256
+@@ -428,6 +429,7 @@
   */
  enum bcm63xx_irq {
  	IRQ_TIMER = 0,
@@ -97,7 +111,7 @@
  	IRQ_UART0,
  	IRQ_DSL,
  	IRQ_UDC0,
-@@ -493,6 +494,7 @@ enum bcm63xx_irq {
+@@ -493,6 +495,7 @@
   * 6348 irqs
   */
  #define BCM_6348_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
@@ -105,7 +119,7 @@
  #define BCM_6348_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
  #define BCM_6348_DSL_IRQ		(IRQ_INTERNAL_BASE + 4)
  #define BCM_6348_UDC0_IRQ		(IRQ_INTERNAL_BASE + 6)
-@@ -517,6 +519,7 @@ enum bcm63xx_irq {
+@@ -517,6 +520,7 @@
   * 6358 irqs
   */
  #define BCM_6358_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
@@ -113,8 +127,10 @@
  #define BCM_6358_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
  #define BCM_6358_OHCI0_IRQ		(IRQ_INTERNAL_BASE + 5)
  #define BCM_6358_ENET1_IRQ		(IRQ_INTERNAL_BASE + 6)
---- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-+++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+Index: linux-2.6.32.10/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+===================================================================
+--- linux-2.6.32.10.orig/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h	2010-03-15 16:52:04.000000000 +0100
++++ linux-2.6.32.10/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h	2010-04-22 17:35:21.000000000 +0200
 @@ -769,5 +769,117 @@
  #define DMIPSPLLCFG_N2_SHIFT		29
  #define DMIPSPLLCFG_N2_MASK		(0x7 << DMIPSPLLCFG_N2_SHIFT)
@@ -233,8 +249,10 @@
 +
  #endif /* BCM63XX_REGS_H_ */
  
---- /dev/null
-+++ b/drivers/spi/bcm63xx_spi.c
+Index: linux-2.6.32.10/drivers/spi/bcm63xx_spi.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.10/drivers/spi/bcm63xx_spi.c	2010-04-22 17:35:21.000000000 +0200
 @@ -0,0 +1,628 @@
 +/*
 + * Broadcom BCM63xx SPI controller support
@@ -597,7 +615,7 @@
 +                if (bs->tx_ptr)
 +                        bcm_spi_writeb(*bs->tx_ptr++, bs->regs, SPI_MSG_DATA);
 +		else
-+			bcm_spi_writeb(0, bs->regs, SPI_MSG_DATA); 
++			bcm_spi_writeb(0, bs->regs, SPI_MSG_DATA);
 +                bs->remaining_bytes--;
 +		tail = bcm_spi_readb(bs->regs, SPI_MSG_TAIL);
 +        }
@@ -636,7 +654,7 @@
 +	cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
 +	bcm_spi_writeb(cmd, bs->regs, SPI_CMD);
 +
-+	wait_for_completion(&bs->done);	
++	wait_for_completion(&bs->done);
 +
 +	/* Disable the CMD_DONE interrupt */
 +	bcm_spi_writeb(~(SPI_INTR_CMD_DONE), bs->regs, SPI_INT_MASK);
@@ -644,7 +662,7 @@
 +	return t->len - bs->remaining_bytes;
 +}
 +
-+/* This driver supports single master mode only. Hence 
++/* This driver supports single master mode only. Hence
 + * CMD_DONE is the only interrupt we care about
 + */
 +static irqreturn_t bcm63xx_spi_interrupt(int irq, void *dev_id)
@@ -864,9 +882,11 @@
 +MODULE_DESCRIPTION("Broadcom BCM63xx SPI Controller driver");
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(DRV_VER);
---- a/drivers/spi/Kconfig
-+++ b/drivers/spi/Kconfig
-@@ -60,6 +60,13 @@ config SPI_ATMEL
+Index: linux-2.6.32.10/drivers/spi/Kconfig
+===================================================================
+--- linux-2.6.32.10.orig/drivers/spi/Kconfig	2010-04-22 17:35:20.000000000 +0200
++++ linux-2.6.32.10/drivers/spi/Kconfig	2010-04-22 17:35:21.000000000 +0200
+@@ -60,6 +60,13 @@
  	  This selects a driver for the Atmel SPI Controller, present on
  	  many AT32 (AVR32) and AT91 (ARM) chips.
  
@@ -880,9 +900,11 @@
  config SPI_BFIN
  	tristate "SPI controller driver for ADI Blackfin5xx"
  	depends on BLACKFIN
---- a/drivers/spi/Makefile
-+++ b/drivers/spi/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
+Index: linux-2.6.32.10/drivers/spi/Makefile
+===================================================================
+--- linux-2.6.32.10.orig/drivers/spi/Makefile	2010-04-22 17:35:20.000000000 +0200
++++ linux-2.6.32.10/drivers/spi/Makefile	2010-04-22 17:35:21.000000000 +0200
+@@ -34,6 +34,7 @@
  obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
  obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.o
  obj-$(CONFIG_SPI_STMP3XXX)		+= spi_stmp.o
@@ -890,8 +912,10 @@
  # 	... add above this line ...
  
  # SPI protocol drivers (device/link on bus)
---- /dev/null
-+++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
+Index: linux-2.6.32.10/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.10/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h	2010-04-22 17:35:21.000000000 +0200
 @@ -0,0 +1,15 @@
 +#ifndef BCM63XX_DEV_SPI_H
 +#define BCM63XX_DEV_SPI_H
@@ -908,3 +932,37 @@
 +};
 +
 +#endif /* BCM63XX_DEV_SPI_H */
+Index: linux-2.6.32.10/arch/mips/bcm63xx/Makefile
+===================================================================
+--- linux-2.6.32.10.orig/arch/mips/bcm63xx/Makefile	2010-04-22 17:35:21.000000000 +0200
++++ linux-2.6.32.10/arch/mips/bcm63xx/Makefile	2010-04-22 17:35:21.000000000 +0200
+@@ -1,6 +1,6 @@
+ obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
+ 		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-uart.o dev-wdt.o \
+-		   dev-usb-ohci.o dev-usb-ehci.o dev-usb-udc.o
++		   dev-usb-ohci.o dev-usb-ehci.o dev-usb-udc.o dev-spi.o
+ obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ 
+ obj-y		+= boards/
+Index: linux-2.6.32.10/arch/mips/bcm63xx/boards/board_bcm963xx.c
+===================================================================
+--- linux-2.6.32.10.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-04-22 17:35:21.000000000 +0200
++++ linux-2.6.32.10/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-04-22 17:35:21.000000000 +0200
+@@ -29,6 +29,7 @@
+ #include <bcm63xx_dev_usb_ohci.h>
+ #include <bcm63xx_dev_usb_ehci.h>
+ #include <bcm63xx_dev_usb_udc.h>
++#include <bcm63xx_dev_spi.h>
+ #include <board_bcm963xx.h>
+ 
+ #define PFX	"board_bcm963xx: "
+@@ -998,6 +999,9 @@
+ 	if (board.has_udc0)
+ 		bcm63xx_udc_register();
+ 
++	if (!BCMCPU_IS_6345())
++		bcm63xx_spi_register();
++
+ 	/* Generate MAC address for WLAN and
+ 	 * register our SPROM */
+ #ifdef CONFIG_SSB_PCIHOST
