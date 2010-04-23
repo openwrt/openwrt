@@ -469,6 +469,24 @@ endef
 $(eval $(call KernelPackage,usb-serial-visor))
 
 
+define KernelPackage/usb-serial-cypress-m8
+$(call KernelPackage/usb-serial/Depends,)
+  TITLE:=Support for CypressM8 USB-Serial
+  KCONFIG:=CONFIG_USB_SERIAL_CYPRESS_M8
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/cypress_m8.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,cypress_m8)
+endef
+
+define KernelPackage/usb-serial-cypress-m8/description
+ Kernel support for devices with Cypress M8 USB to Serial chip
+ (for example, the Delorme Earthmate LT-20 GPS)
+ Supported microcontrollers in the CY4601 family are:
+       CY7C63741 CY7C63742 CY7C63743 CY7C64013
+endef
+
+$(eval $(call KernelPackage,usb-serial-cypress-m8))
+
+
 define KernelPackage/usb-serial-keyspan
 $(call KernelPackage/usb-serial/Depends,)
   TITLE:=Support for Keyspan USB-to-Serial devices
