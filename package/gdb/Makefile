@@ -21,6 +21,7 @@ define Package/gdb/Default
   SECTION:=utils
   CATEGORY:=Utilities
   DEPENDS:=@!(avr32||cris)
+  URL:=http://www.gnu.org/software/gdb/
 endef
 
 define Package/gdb

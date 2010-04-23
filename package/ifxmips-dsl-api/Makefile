@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -33,7 +33,7 @@ define KernelPackage/ifxmips-dsl-api
   SUBMENU:=Network Devices
   TITLE:=DSL CPE API driver
   URL:=http://www.infineon.com/
-  MAINTAINER:=Infineon Technologies AG / Lantiq / blogic@openwrt.org
+  MAINTAINER:=Infineon Technologies AG / Lantiq / John Crispin <blogic@openwrt.org>
   DEPENDS:=@TARGET_ifxmips @BROKEN
   FILES:=$(PKG_BUILD_DIR)/src/mei/ifxmips_mei.$(LINUX_KMOD_SUFFIX) \
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.$(LINUX_KMOD_SUFFIX) \
