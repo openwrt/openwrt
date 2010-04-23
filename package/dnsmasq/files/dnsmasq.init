@@ -296,9 +296,17 @@ dhcp_domain_add() {
 	local raddr="${4:+$4.$3.$2.$1.in-addr.arpa}"
 
 	for name in $names; do
-		append args "-A /$name/$ip"
-		[ -n "$raddr" ] && \
-			append args "--ptr-record=$raddr,$name"
+		local fqdn="$name"
+
+		[ "${fqdn%.*}" == "$fqdn" ] && \
+			fqdn="$fqdn${DOMAIN:+.$DOMAIN}"
+
+		append args "-A /$fqdn/$ip"
+		
+		[ -n "$raddr" ] && {
+			append args "--ptr-record=$raddr,$fqdn"
+			raddr=""
+		}
 	done
 }
 
