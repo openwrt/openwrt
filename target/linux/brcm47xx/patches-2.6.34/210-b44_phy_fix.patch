@@ -9,7 +9,7 @@
  extern char *nvram_get(char *name);
  static void b44_wap54g10_workaround(struct b44 *bp)
  {
-@@ -421,12 +421,40 @@ static inline void b44_wap54g10_workarou
+@@ -421,12 +421,45 @@ static inline void b44_wap54g10_workarou
  }
  #endif
  
@@ -23,13 +23,18 @@
 +
 +static inline void b44_bcm47xx_workarounds(struct b44 *bp)
 +{
-+	/* WL-HDD */
-+	struct ssb_device *sdev = bp->sdev;
-+	if (startswith(getvar("hardware_version"), "WL300-")) 
-+	{
-+		if (sdev->bus->sprom.et0phyaddr == 0 &&
-+		    sdev->bus->sprom.et1phyaddr == 1)
-+			bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++	/* Toshiba WRC-1000, Siemens SE505 v1, Askey RT-210W, RT-220W */
++	if (simple_strtoul(getvar("boardnum"), NULL, 0) == 100) {
++		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++	} else {
++		/* WL-HDD */
++		struct ssb_device *sdev = bp->sdev;
++		if (startswith(getvar("hardware_version"), "WL300-")) 
++		{
++			if (sdev->bus->sprom.et0phyaddr == 0 &&
++			    sdev->bus->sprom.et1phyaddr == 1)
++				bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++		}
 +	}
 +	return;
 +}
@@ -50,7 +55,7 @@
  
  	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
  		return 0;
-@@ -2089,6 +2117,8 @@ static int __devinit b44_get_invariants(
+@@ -2089,6 +2122,8 @@ static int __devinit b44_get_invariants(
  	 * valid PHY address. */
  	bp->phy_addr &= 0x1F;
  
