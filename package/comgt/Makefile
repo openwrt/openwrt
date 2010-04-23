@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -24,7 +24,7 @@ define Package/comgt
   CATEGORY:=Utilities
   TITLE:=Option/Vodafone 3G/GPRS control tool
   DEPENDS:=+chat
-  URL:= http://www.pharscape.org/content/view/46/70/
+  URL:=http://www.pharscape.org/comgt.html
 endef
 
 define Package/comgt/description

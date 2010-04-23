@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -51,7 +51,7 @@ define Package/uboot-xburst-$(1)
   CATEGORY:=Boot Loaders
   DEPENDS:=@TARGET_xburst
   TITLE:=$(2)
-  URL:=http://www.denx.de/wiki/UBoot/WebHome
+  URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
 endef
 endef

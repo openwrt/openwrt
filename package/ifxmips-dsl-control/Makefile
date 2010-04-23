@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -23,7 +23,7 @@ define Package/ifxmips-dsl-control
   CATEGORY:=Network
   TITLE:=DSL CPE control application
   URL:=http://www.infineon.com/
-  MAINTAINER:=Infineon Technologies AG / Lantiq / blogic@openwrt.org
+  MAINTAINER:=Infineon Technologies AG / Lantiq / John Crispin <blogic@openwrt.org>
   DEPENDS:=+kmod-ifxmips-dsl-api +libpthread @BROKEN
 endef
 
