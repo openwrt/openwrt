@@ -9,7 +9,71 @@
  }
  
  static void __b44_set_flow_ctrl(struct b44 *bp, u32 pause_flags)
-@@ -2223,6 +2223,10 @@ static int __devinit b44_init_one(struct
+@@ -384,7 +384,7 @@ static void b44_set_flow_ctrl(struct b44
+ 	__b44_set_flow_ctrl(bp, pause_enab);
+ }
+ 
+-#ifdef SSB_DRIVER_MIPS
++#ifdef CONFIG_SSB_DRIVER_MIPS
+ extern char *nvram_get(char *name);
+ static void b44_wap54g10_workaround(struct b44 *bp)
+ {
+@@ -421,12 +421,45 @@ static inline void b44_wap54g10_workarou
+ }
+ #endif
+ 
++#ifdef CONFIG_SSB_DRIVER_MIPS
++static inline int startswith (const char *source, const char *cmp) 
++{ 
++       return !strncmp(source,cmp,strlen(cmp)); 
++}
++
++#define getvar(str) (nvram_get(str) ? : "")
++
++static inline void b44_bcm47xx_workarounds(struct b44 *bp)
++{
++       /* Toshiba WRC-1000, Siemens SE505 v1, Askey RT-210W, RT-220W */
++       if (simple_strtoul(getvar("boardnum"), NULL, 0) == 100) {
++               bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++       } else {
++               /* WL-HDD */
++               struct ssb_device *sdev = bp->sdev;
++               if (startswith(getvar("hardware_version"), "WL300-")) 
++               {
++                       if (sdev->bus->sprom.et0phyaddr == 0 &&
++                           sdev->bus->sprom.et1phyaddr == 1)
++                               bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++               }
++       }
++       return;
++}
++
++#else
++static inline void b44_bcm47xx_workarounds(struct b44 *bp) 
++{ 
++}
++#endif
++
+ static int b44_setup_phy(struct b44 *bp)
+ {
+ 	u32 val;
+ 	int err;
+ 
+ 	b44_wap54g10_workaround(bp);
++	b44_bcm47xx_workarounds(bp);
+ 
+ 	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
+ 		return 0;
+@@ -2094,6 +2127,8 @@ static int __devinit b44_get_invariants(
+ 	 * valid PHY address. */
+ 	bp->phy_addr &= 0x1F;
+ 
++	b44_bcm47xx_workarounds(bp);
++
+ 	memcpy(bp->dev->dev_addr, addr, 6);
+ 
+ 	if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
+@@ -2223,6 +2258,10 @@ static int __devinit b44_init_one(struct
  	 */
  	b44_chip_reset(bp, B44_CHIP_RESET_FULL);
  
