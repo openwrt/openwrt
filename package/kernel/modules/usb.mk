@@ -690,12 +690,13 @@ $(eval $(call KernelPackage,usb-net-asix))
 
 
 define KernelPackage/usb-net-hso
-$(call KernelPackage/usb-net/Depends,@LINUX_2_6 +!TARGET_rb532||!TARGET_avr32||!TARGET_brcm47xx||!TARGET_s3c24xx||!TARGET_ifxmips||!TARGET_atheros||!TARGET_adm5120||!TARGET_ar7||!TARGET_ppc40x||!TARGET_ixp4xx||!TARGET_rdc:kmod-rfkill)
+$(call KernelPackage/usb-net/Depends,@LINUX_2_6)
   TITLE:=Kernel module for Option USB High Speed Mobile Devices
   KCONFIG:=CONFIG_USB_HSO
   FILES:= \
 	$(LINUX_DIR)/drivers/$(USBNET_DIR)/hso.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,hso)
+  $(call AddDepends/rfkill)
 endef
 
 define KernelPackage/usb-net-hso/description

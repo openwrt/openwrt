@@ -262,8 +262,7 @@ $(eval $(call KernelPackage,ssb))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +!TARGET_x86:kmod-hid \
-	+(TARGET_x86||TARGET_s3c24xx||TARGET_brcm47xx||TARGET_ar71xx):kmod-rfkill
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +!TARGET_x86:kmod-hid
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -283,6 +282,7 @@ define KernelPackage/bluetooth
 	CONFIG_BT_HCIUART \
 	CONFIG_BT_HIDP
   $(call AddDepends/crc16)
+  $(call AddDepends/rfkill)
 endef
 
 define KernelPackage/bluetooth/2.4
@@ -854,7 +854,6 @@ $(eval $(call KernelPackage,textsearch))
 define KernelPackage/rfkill
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RF switch subsystem support
-  DEPENDS:=@TARGET_x86||TARGET_s3c24xx||TARGET_brcm47xx||TARGET_ar71xx
   KCONFIG:= \
     CONFIG_RFKILL \
     CONFIG_RFKILL_INPUT=y \
@@ -869,6 +868,7 @@ else
     $(LINUX_DIR)/net/rfkill/rfkill-input.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,rfkill rfkill-input)
 endif
+  $(call SetDepends/rfkill)
 endef
 
 define KernelPackage/rfkill/description
