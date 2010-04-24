@@ -270,7 +270,7 @@ $(eval $(call KernelPackage,leds-gpio))
 define KernelPackage/leds-net48xx
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Soekris Net48xx LED support
-  DEPENDS:=@TARGET_x86 +kmod-scx200-gpio
+  DEPENDS:=@TARGET_x86 +kmod-gpio-scx200
   KCONFIG:=CONFIG_LEDS_NET48XX
   FILES:=$(LINUX_DIR)/drivers/leds/leds-net48xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,leds-net48xx)
@@ -286,7 +286,7 @@ $(eval $(call KernelPackage,leds-net48xx))
 define KernelPackage/leds-wrap
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PCengines WRAP LED support
-  DEPENDS:=@TARGET_x86 +kmod-scx200-gpio
+  DEPENDS:=@TARGET_x86 +kmod-gpio-scx200
   KCONFIG:=CONFIG_LEDS_WRAP
   FILES:=$(LINUX_DIR)/drivers/leds/leds-wrap.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,leds-wrap)
@@ -412,7 +412,7 @@ $(eval $(call KernelPackage,gpio-nsc))
 define KernelPackage/gpio-scx200
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SCX200 GPIO support
-  DEPENDS:=@TARGET_x86 +kmod-nsc-gpio
+  DEPENDS:=@TARGET_x86 +kmod-gpio-nsc
   KCONFIG:=CONFIG_SCx200_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/scx200_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,scx200_gpio)
