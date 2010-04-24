@@ -21,7 +21,7 @@
  			/* clear to get error below if setting is invalid */
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4425,7 +4425,8 @@ static int i802_set_sta_vlan(void *priv,
+@@ -4566,7 +4566,8 @@ static int i802_set_sta_vlan(void *priv,
  }
  
  
@@ -31,7 +31,7 @@
  {
  	struct i802_bss *bss = priv;
  	struct wpa_driver_nl80211_data *drv = bss->drv;
-@@ -4439,6 +4440,10 @@ static int i802_set_wds_sta(void *priv, 
+@@ -4580,6 +4581,10 @@ static int i802_set_wds_sta(void *priv, 
  			if (nl80211_create_iface(drv, name, NL80211_IFTYPE_AP_VLAN,
  					 NULL, 1) < 0)
  				return -1;
@@ -44,7 +44,7 @@
  		return i802_set_sta_vlan(priv, addr, name, 0);
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -253,9 +253,15 @@ static int hostapd_vlan_if_remove(struct
+@@ -265,9 +265,15 @@ static int hostapd_vlan_if_remove(struct
  static int hostapd_set_wds_sta(struct hostapd_data *hapd, const u8 *addr,
  			       int aid, int val)
  {
@@ -63,7 +63,7 @@
  
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -1610,7 +1610,8 @@ struct wpa_driver_ops {
+@@ -1622,7 +1622,8 @@ struct wpa_driver_ops {
  	 * @val: 1 = bind to 4-address WDS; 0 = unbind
  	 * Returns: 0 on success, -1 on failure
  	 */

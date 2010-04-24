@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -238,6 +238,7 @@ struct hostapd_iface {
+@@ -245,6 +245,7 @@ struct hostapd_iface {
  	int (*for_each_interface)(struct hapd_interfaces *interfaces,
  				  int (*cb)(struct hostapd_iface *iface,
  					    void *ctx), void *ctx);
@@ -10,7 +10,7 @@
  /* hostapd.c */
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -746,6 +746,9 @@ int hostapd_setup_interface_complete(str
+@@ -754,6 +754,9 @@ int hostapd_setup_interface_complete(str
  	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
  		   iface->bss[0]->conf->iface);
  
@@ -55,7 +55,7 @@
  	hapd_iface->reload_config = hostapd_reload_config;
  	hapd_iface->config_read_cb = hostapd_config_read;
  	hapd_iface->config_fname = os_strdup(config_file);
-@@ -390,7 +402,7 @@ static int hostapd_global_init(struct ha
+@@ -391,7 +403,7 @@ static int hostapd_global_init(struct ha
  }
  
  
@@ -64,7 +64,7 @@
  {
  #ifdef EAP_SERVER_TNC
  	tncs_global_deinit();
-@@ -408,8 +420,7 @@ static void hostapd_global_deinit(const 
+@@ -409,8 +421,7 @@ static void hostapd_global_deinit(const 
  }
  
  
@@ -74,7 +74,7 @@
  {
  #ifdef EAP_SERVER_TNC
  	int tnc = 0;
-@@ -430,11 +441,6 @@ static int hostapd_global_run(struct hap
+@@ -431,11 +442,6 @@ static int hostapd_global_run(struct hap
  	}
  #endif /* EAP_SERVER_TNC */
  
@@ -86,7 +86,7 @@
  	eloop_run();
  
  	return 0;
-@@ -478,8 +484,7 @@ int main(int argc, char *argv[])
+@@ -479,8 +485,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
  	size_t i;
@@ -96,7 +96,7 @@
  
  	if (os_program_init())
  		return -1;
-@@ -544,7 +549,7 @@ int main(int argc, char *argv[])
+@@ -545,7 +550,7 @@ int main(int argc, char *argv[])
  			goto out;
  	}
  
@@ -105,7 +105,7 @@
  		goto out;
  
  	ret = 0;
-@@ -555,7 +560,7 @@ int main(int argc, char *argv[])
+@@ -556,7 +561,7 @@ int main(int argc, char *argv[])
  		hostapd_interface_deinit_free(interfaces.iface[i]);
  	os_free(interfaces.iface);
  
@@ -116,7 +116,7 @@
  	os_program_deinit();
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1855,6 +1855,8 @@ struct hostapd_config * hostapd_config_r
+@@ -1857,6 +1857,8 @@ struct hostapd_config * hostapd_config_r
  			}
  #endif /* CONFIG_IEEE80211W */
  #ifdef CONFIG_IEEE80211N
@@ -127,7 +127,7 @@
  		} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -366,6 +366,7 @@ struct hostapd_config {
+@@ -369,6 +369,7 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;
