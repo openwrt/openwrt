@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009 -2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gmp
-PKG_VERSION:=4.3.1
+PKG_VERSION:=4.3.2
 
 PKG_SOURCE_URL:=@GNU/gmp/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=26cec15a90885042dd4a15c4003b08ae
+PKG_MD5SUM:=dd60683d7057917e34630b4a787932e8
 
 include $(INCLUDE_DIR)/host-build.mk
 
