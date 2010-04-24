@@ -68,7 +68,7 @@ static struct http_response * uh_cgi_header_parse(char *buf, int len, int *off)
 				if( (pos < len) && (buf[pos] == '\n') )
 					pos++;
 
-				if( pos < len )
+				if( pos <= len )
 				{
 					if( (hdrcount + 1) < array_size(res.headers) )
 					{

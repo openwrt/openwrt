@@ -71,8 +71,8 @@ static void uh_config_parse(const char *path)
 				if( !uh_auth_add(line, user, pass) )
 				{
 					fprintf(stderr,
-						"Can not manage more than %i basic auth realms, "
-						"will skip the rest\n", UH_LIMIT_AUTHREALMS
+						"Notice: No password set for user %s, ignoring "
+						"authentication on %s\n", user, line
 					);
 
 					break;

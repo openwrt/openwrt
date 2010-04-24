@@ -622,10 +622,14 @@ struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 				min(strlen(pass), sizeof(new->pass) - 1));
 		}
 
-		uh_realm_count++;
+		if( new->pass[0] )
+		{
+			uh_realm_count++;
+			return new;
+		}
 	}
 
-	return new;
+	return NULL;
 }
 
 int uh_auth_check(
