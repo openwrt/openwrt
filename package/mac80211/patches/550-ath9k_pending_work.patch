@@ -56,6 +56,44 @@
  
  	/* Revert chainmasks to their original values before NF cal */
  	ar9003_hw_set_chain_masks(ah, ah->rxchainmask, ah->txchainmask);
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -659,6 +659,9 @@ static void ar9300_swap_eeprom(struct ar
+ 	word = swab16(eep->baseEepHeader.regDmn[1]);
+ 	eep->baseEepHeader.regDmn[1] = word;
+ 
++	dword = swab32(eep->baseEepHeader.swreg);
++	eep->baseEepHeader.swreg = dword;
++
+ 	dword = swab32(eep->modalHeader2G.antCtrlCommon);
+ 	eep->modalHeader2G.antCtrlCommon = dword;
+ 
+@@ -1200,7 +1203,7 @@ static u8 ar9003_hw_eeprom_get_tgt_pwr(s
+ 	u8 *pFreqBin;
+ 
+ 	if (is2GHz) {
+-		numPiers = AR9300_NUM_5G_20_TARGET_POWERS;
++		numPiers = AR9300_NUM_2G_20_TARGET_POWERS;
+ 		pEepromTargetPwr = eep->calTargetPower2G;
+ 		pFreqBin = eep->calTarget_freqbin_2G;
+ 	} else {
+@@ -1236,7 +1239,7 @@ static u8 ar9003_hw_eeprom_get_ht20_tgt_
+ 	u8 *pFreqBin;
+ 
+ 	if (is2GHz) {
+-		numPiers = AR9300_NUM_5G_20_TARGET_POWERS;
++		numPiers = AR9300_NUM_2G_20_TARGET_POWERS;
+ 		pEepromTargetPwr = eep->calTargetPower2GHT20;
+ 		pFreqBin = eep->calTarget_freqbin_2GHT20;
+ 	} else {
+@@ -1817,6 +1820,7 @@ static void ath9k_hw_ar9300_set_txpower(
+ 					u8 twiceMaxRegulatoryPower,
+ 					u8 powerLimit)
+ {
++	ah->txpower_limit = powerLimit;
+ 	ar9003_hw_set_target_power_eeprom(ah, chan->channel);
+ 	ar9003_hw_calibration_apply(ah, chan->channel);
+ }
 --- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
 @@ -265,7 +265,7 @@ struct cal_ctl_edge_pwr {
@@ -397,6 +435,18 @@
  	{0x00004040, 0x08213e5e},
  	{0x00004040, 0x0008003b},
  	{0x00004044, 0x00000000},
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+@@ -311,6 +311,9 @@ static void ar9003_hw_set11n_txdesc(stru
+ {
+ 	struct ar9003_txc *ads = (struct ar9003_txc *) ds;
+ 
++	if (txpower > ah->txpower_limit)
++		txpower = ah->txpower_limit;
++
+ 	txpower += ah->txpower_indexoffset;
+ 	if (txpower > 63)
+ 		txpower = 63;
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 @@ -375,16 +375,7 @@ static u32 ar9003_hw_compute_pll_control
@@ -435,6 +485,14 @@
  		rfMode |= (AR_PHY_MODE_DYNAMIC | AR_PHY_MODE_DYN_CCK_DISABLE);
  
  	REG_WRITE(ah, AR_PHY_MODE, rfMode);
+@@ -1102,6 +1093,7 @@ static void ar9003_hw_loadnf(struct ath_
+ 		ath_print(common, ATH_DBG_ANY, "Timeout while waiting for nf "
+ 			  "to load: AR_PHY_AGC_CONTROL=0x%x\n",
+ 			  REG_READ(ah, AR_PHY_AGC_CONTROL));
++		return;
+ 	}
+ 
+ 	/*
 --- a/drivers/net/wireless/ath/ath9k/eeprom.h
 +++ b/drivers/net/wireless/ath/ath9k/eeprom.h
 @@ -300,7 +300,8 @@ struct base_eep_header {
@@ -486,8 +544,8 @@
  
  	/*
 +	 * Tx IQ Calibration (ah->config.tx_iq_calibration) is only
-+	 * used by AR9003 but it is busted right now, it will take a
-+	 * while to fix so this is currently disabled.
++	 * used by AR9003, but it is showing reliability issues.
++	 * It will take a while to fix so this is currently disabled.
 +	 */
 +
 +	/*
@@ -557,3 +615,41 @@
  
  /* These macros check chanmode and not channelFlags */
  #define IS_CHAN_B(_c) ((_c)->chanmode == CHANNEL_B)
+@@ -718,6 +719,7 @@ struct ath_hw {
+ 	u32 *addac5416_21;
+ 	u32 *bank6Temp;
+ 
++	u8 txpower_limit;
+ 	int16_t txpower_indexoffset;
+ 	int coverage_class;
+ 	u32 beacon_interval;
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -878,10 +878,12 @@ enum ath9k_int ath9k_hw_set_interrupts(s
+ 	if (ints & ATH9K_INT_TX) {
+ 		if (ah->config.tx_intr_mitigation)
+ 			mask |= AR_IMR_TXMINTR | AR_IMR_TXINTM;
+-		if (ah->txok_interrupt_mask)
+-			mask |= AR_IMR_TXOK;
+-		if (ah->txdesc_interrupt_mask)
+-			mask |= AR_IMR_TXDESC;
++		else {
++			if (ah->txok_interrupt_mask)
++				mask |= AR_IMR_TXOK;
++			if (ah->txdesc_interrupt_mask)
++				mask |= AR_IMR_TXDESC;
++		}
+ 		if (ah->txerr_interrupt_mask)
+ 			mask |= AR_IMR_TXERR;
+ 		if (ah->txeol_interrupt_mask)
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -2291,6 +2291,8 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 			ath_tx_complete_buf(sc, bf, txq, &bf_head,
+ 					    &txs, txok, 0);
+ 
++		ath_wake_mac80211_queue(sc, txq);
++
+ 		spin_lock_bh(&txq->axq_lock);
+ 		if (!list_empty(&txq->txq_fifo_pending)) {
+ 			INIT_LIST_HEAD(&bf_head);
