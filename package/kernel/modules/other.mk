@@ -402,11 +402,11 @@ define KernelPackage/gpio-nsc
   AUTOLOAD:=$(call AutoLoad,40,nsc_gpio)
 endef
 
-define KernelPackage/nsc-gpio/description
+define KernelPackage/gpio-nsc/description
  Kernel module for Natsemi GPIO
 endef
 
-$(eval $(call KernelPackage,nsc-gpio))
+$(eval $(call KernelPackage,gpio-nsc))
 
 
 define KernelPackage/gpio-scx200
@@ -418,11 +418,11 @@ define KernelPackage/gpio-scx200
   AUTOLOAD:=$(call AutoLoad,50,scx200_gpio)
 endef
 
-define KernelPackage/scx200-gpio/description
+define KernelPackage/gpio-scx200/description
  Kernel module for SCX200 GPIO
 endef
 
-$(eval $(call KernelPackage,scx200-gpio))
+$(eval $(call KernelPackage,gpio-scx200))
 
 
 define KernelPackage/wdt-scx200
@@ -434,11 +434,11 @@ define KernelPackage/wdt-scx200
   AUTOLOAD:=$(call AutoLoad,50,scx200_wdt)
 endef
 
-define KernelPackage/scx200-wdt/description
+define KernelPackage/wdt-scx200/description
  Kernel module for SCX200 Watchdog
 endef
 
-$(eval $(call KernelPackage,scx200-wdt))
+$(eval $(call KernelPackage,wdt-scx200))
 
 
 define KernelPackage/wdt-sc520
@@ -450,11 +450,11 @@ define KernelPackage/wdt-sc520
   AUTOLOAD:=$(call AutoLoad,50,sc520_wdt)
 endef
 
-define KernelPackage/sc520-wdt/description
+define KernelPackage/wdt-sc520/description
   Kernel module for SC520 Watchdog
 endef
 
-$(eval $(call KernelPackage,sc520-wdt))
+$(eval $(call KernelPackage,wdt-sc520))
 
 
 define KernelPackage/input-core
@@ -600,11 +600,11 @@ define KernelPackage/gpio-cs5535
   AUTOLOAD:=$(call AutoLoad,50,cs5535_gpio)
 endef
 
-define KernelPackage/cs5535-gpio/description
+define KernelPackage/gpio-cs5535/description
  This package contains the AMD CS5535/CS5536 GPIO driver
 endef
 
-$(eval $(call KernelPackage,cs5535-gpio))
+$(eval $(call KernelPackage,gpio-cs5535))
 
 
 define KernelPackage/textsearch
@@ -662,11 +662,11 @@ define KernelPackage/wdt-geode
   AUTOLOAD:=$(call AutoLoad,50,geodewdt)
 endef
 
-define KernelPackage/geodewdt/description
+define KernelPackage/wdt-geode/description
   Kernel module for Geode watchdog timer.
 endef
 
-$(eval $(call KernelPackage,geodewdt))
+$(eval $(call KernelPackage,wdt-geode))
 
 define KernelPackage/gpio-pc8736x
   SUBMENU:=$(OTHER_MENU)
@@ -677,9 +677,9 @@ define KernelPackage/gpio-pc8736x
   AUTOLOAD:=$(call AutoLoad,40,pc8736x_gpio)
 endef
 
-define KernelPackage/pc8736x-gpio/description
+define KernelPackage/gpio-pc8736x/description
  Kernel module for PC8736x GPIO
 endef
 
-$(eval $(call KernelPackage,pc8736x-gpio))
+$(eval $(call KernelPackage,gpio-pc8736x))
 
