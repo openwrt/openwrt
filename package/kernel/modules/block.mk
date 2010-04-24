@@ -7,6 +7,21 @@
 
 BLOCK_MENU:=Block Devices
 
+define KernelPackage/aoe
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=ATA over Ethernet support
+  KCONFIG:=CONFIG_ATA_OVER_ETH
+  FILES:=$(LINUX_DIR)/drivers/block/aoe/aoe.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,aoe)
+endef
+
+define KernelPackage/aoe/description
+  Kernel support for ATA over Ethernet
+endef
+
+$(eval $(call KernelPackage,aoe))
+
+
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
@@ -38,35 +53,6 @@ define KernelPackage/ata-ahci/description
 endef
 
 $(eval $(call KernelPackage,ata-ahci))
-
-define KernelPackage/ata-sil
-$(call AddDepends/ata,)
-  TITLE:=Silicon Image SATA support
-  KCONFIG:=CONFIG_SATA_SIL
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,sata_sil,1)
-endef
-
-define KernelPackage/ata-sil/description
- Support for Silicon Image Serial ATA controllers.
-endef
-
-$(eval $(call KernelPackage,ata-sil))
-
-
-define KernelPackage/ata-sil24
-$(call AddDepends/ata,)
-  TITLE:=Silicon Image 3124/3132 SATA support
-  KCONFIG:=CONFIG_SATA_SIL24
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,sata_sil24,1)
-endef
-
-define KernelPackage/ata-sil24/description
- Support for Silicon Image 3124/3132 Serial ATA controllers.
-endef
-
-$(eval $(call KernelPackage,ata-sil24))
 
 
 define KernelPackage/ata-artop
@@ -130,6 +116,36 @@ endef
 $(eval $(call KernelPackage,ata-piix))
 
 
+define KernelPackage/ata-sil
+$(call AddDepends/ata,)
+  TITLE:=Silicon Image SATA support
+  KCONFIG:=CONFIG_SATA_SIL
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,sata_sil,1)
+endef
+
+define KernelPackage/ata-sil/description
+ Support for Silicon Image Serial ATA controllers.
+endef
+
+$(eval $(call KernelPackage,ata-sil))
+
+
+define KernelPackage/ata-sil24
+$(call AddDepends/ata,)
+  TITLE:=Silicon Image 3124/3132 SATA support
+  KCONFIG:=CONFIG_SATA_SIL24
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,sata_sil24,1)
+endef
+
+define KernelPackage/ata-sil24/description
+ Support for Silicon Image 3124/3132 Serial ATA controllers.
+endef
+
+$(eval $(call KernelPackage,ata-sil24))
+
+
 define KernelPackage/ata-via-sata
 $(call AddDepends/ata,)
   TITLE:=VIA SATA support
@@ -143,6 +159,36 @@ define KernelPackage/ata-via-sata/description
 endef
 
 $(eval $(call KernelPackage,ata-via-sata))
+
+
+define KernelPackage/dm
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Device Mapper
+  # All the "=n" are unnecessary, they're only there
+  # to stop the config from asking the question.
+  # MIRROR is M because I've needed it for pvmove.
+  KCONFIG:= \
+       CONFIG_BLK_DEV_MD=n \
+       CONFIG_DM_DEBUG=n \
+       CONFIG_DM_CRYPT=n \
+       CONFIG_DM_UEVENT=n \
+       CONFIG_DM_DELAY=n \
+       CONFIG_DM_MULTIPATH=n \
+       CONFIG_DM_ZERO=n \
+       CONFIG_DM_SNAPSHOT=n \
+       CONFIG_DM_LOG_USERSPACE=n \
+       CONFIG_MD=y \
+       CONFIG_BLK_DEV_DM \
+       CONFIG_DM_MIRROR
+  FILES:=$(LINUX_DIR)/drivers/md/dm-*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror)
+endef
+
+define KernelPackage/dm/description
+ Kernel module necessary for LVM2 support
+endef
+
+$(eval $(call KernelPackage,dm))
 
 
 define KernelPackage/ide-core
@@ -287,6 +333,80 @@ endef
 $(eval $(call KernelPackage,ide-it821x))
 
 
+define KernelPackage/libsas
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=SAS Domain Transport Attributes
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
+	CONFIG_SCSI_SAS_ATTRS \
+	CONFIG_SCSI_SAS_ATA=y \
+	CONFIG_SCSI_SAS_HOST_SMP=y \
+	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/scsi/scsi_transport_sas.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/scsi/libsas/libsas.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,29,scsi_transport_sas libsas,1)
+endef
+
+define KernelPackage/libsas/description
+  SAS Domain Transport Attributes support.
+endef
+
+$(eval $(call KernelPackage,libsas,1))
+
+
+define KernelPackage/loop
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Loopback device support
+  KCONFIG:= \
+	CONFIG_BLK_DEV_LOOP \
+	CONFIG_BLK_DEV_CRYPTOLOOP=n
+  FILES:=$(LINUX_DIR)/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,loop)
+endef
+
+define KernelPackage/loop/description
+ Kernel module for loopback device support
+endef
+
+$(eval $(call KernelPackage,loop))
+
+
+define KernelPackage/mvsas
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Marvell 88SE6440 SAS/SATA driver
+  DEPENDS:=@TARGET_x86 +kmod-libsas
+  KCONFIG:=CONFIG_SCSI_MVSAS
+  ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_30),)
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.$(LINUX_KMOD_SUFFIX)
+  else
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.$(LINUX_KMOD_SUFFIX)
+  endif
+  AUTOLOAD:=$(call AutoLoad,40,mvsas,1)
+endef
+
+define KernelPackage/mvsas/description
+  Kernel support for the Marvell SAS SCSI adapters
+endef
+
+$(eval $(call KernelPackage,mvsas))
+
+
+define KernelPackage/nbd
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Network block device support
+  KCONFIG:=CONFIG_BLK_DEV_NBD
+  FILES:=$(LINUX_DIR)/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,nbd)
+endef
+
+define KernelPackage/nbd/description
+ Kernel module for network block device support
+endef
+
+$(eval $(call KernelPackage,nbd))
+
+
 define KernelPackage/scsi-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SCSI device support
@@ -314,121 +434,3 @@ define KernelPackage/scsi-generic
 endef
 
 $(eval $(call KernelPackage,scsi-generic))
-
-
-define KernelPackage/loop
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Loopback device support
-  KCONFIG:= \
-	CONFIG_BLK_DEV_LOOP \
-	CONFIG_BLK_DEV_CRYPTOLOOP=n
-  FILES:=$(LINUX_DIR)/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,loop)
-endef
-
-define KernelPackage/loop/description
- Kernel module for loopback device support
-endef
-
-$(eval $(call KernelPackage,loop))
-
-
-define KernelPackage/nbd
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Network block device support
-  KCONFIG:=CONFIG_BLK_DEV_NBD
-  FILES:=$(LINUX_DIR)/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,nbd)
-endef
-
-define KernelPackage/nbd/description
- Kernel module for network block device support
-endef
-
-$(eval $(call KernelPackage,nbd))
-
-
-define KernelPackage/dm
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Device Mapper
-  # All the "=n" are unnecessary, they're only there
-  # to stop the config from asking the question.
-  # MIRROR is M because I've needed it for pvmove.
-  KCONFIG:= \
-       CONFIG_BLK_DEV_MD=n \
-       CONFIG_DM_DEBUG=n \
-       CONFIG_DM_CRYPT=n \
-       CONFIG_DM_UEVENT=n \
-       CONFIG_DM_DELAY=n \
-       CONFIG_DM_MULTIPATH=n \
-       CONFIG_DM_ZERO=n \
-       CONFIG_DM_SNAPSHOT=n \
-       CONFIG_DM_LOG_USERSPACE=n \
-       CONFIG_MD=y \
-       CONFIG_BLK_DEV_DM \
-       CONFIG_DM_MIRROR
-  FILES:=$(LINUX_DIR)/drivers/md/dm-*.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror)
-endef
-
-define KernelPackage/dm/description
- Kernel module necessary for LVM2 support
-endef
-
-$(eval $(call KernelPackage,dm))
-
-
-define KernelPackage/aoe
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=ATA over Ethernet support
-  KCONFIG:=CONFIG_ATA_OVER_ETH
-  FILES:=$(LINUX_DIR)/drivers/block/aoe/aoe.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,aoe)
-endef
-
-define KernelPackage/aoe/description
-  Kernel support for ATA over Ethernet
-endef
-
-$(eval $(call KernelPackage,aoe))
-
-
-define KernelPackage/libsas
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=SAS Domain Transport Attributes
-  DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_SCSI_SAS_LIBSAS \
-	CONFIG_SCSI_SAS_ATTRS \
-	CONFIG_SCSI_SAS_ATA=y \
-	CONFIG_SCSI_SAS_HOST_SMP=y \
-	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
-  FILES:= \
-	$(LINUX_DIR)/drivers/scsi/scsi_transport_sas.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/scsi/libsas/libsas.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,29,scsi_transport_sas libsas,1)
-endef
-
-define KernelPackage/libsas/description
-  SAS Domain Transport Attributes support.
-endef
-
-$(eval $(call KernelPackage,libsas,1))
-
-define KernelPackage/mvsas
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Marvell 88SE6440 SAS/SATA driver
-  DEPENDS:=@TARGET_x86 +kmod-libsas
-  KCONFIG:=CONFIG_SCSI_MVSAS
-  ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_30),)
-	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.$(LINUX_KMOD_SUFFIX)
-  else
-	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.$(LINUX_KMOD_SUFFIX)
-  endif
-  AUTOLOAD:=$(call AutoLoad,40,mvsas,1)
-endef
-
-define KernelPackage/mvsas/description
-  Kernel support for the Marvell SAS SCSI adapters
-endef
-
-$(eval $(call KernelPackage,mvsas))
