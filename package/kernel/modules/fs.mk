@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,7 +7,7 @@
 
 FS_MENU:=Filesystems
 
-define KernelPackage/nls/Depends
+define AddDepends/nls
   DEPENDS:= +!LINUX_2_4:kmod-nls-base
 endef
 
@@ -17,7 +17,7 @@ define KernelPackage/fs-cifs
   KCONFIG:=CONFIG_CIFS
   FILES:=$(LINUX_DIR)/fs/cifs/cifs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,cifs)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -49,7 +49,7 @@ define KernelPackage/fs-ntfs
   KCONFIG:=CONFIG_NTFS_FS
   FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ntfs)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 define KernelPackage/fs-ntfs/description
@@ -142,7 +142,7 @@ define KernelPackage/fs-hfs
   KCONFIG:=CONFIG_HFS_FS
   FILES:=$(LINUX_DIR)/fs/hfs/hfs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,hfs)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 define KernelPackage/fs-hfs/description
@@ -158,7 +158,7 @@ define KernelPackage/fs-hfsplus
   KCONFIG:=CONFIG_HFSPLUS_FS
   FILES:=$(LINUX_DIR)/fs/hfsplus/hfsplus.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,hfsplus)
-$(call KernelPackage/nls/Depends,utf8)
+$(call AddDepends/nls,utf8)
 endef
 
 
@@ -175,7 +175,7 @@ define KernelPackage/fs-isofs
   KCONFIG:=CONFIG_ISO9660_FS CONFIG_JOLIET=y CONFIG_ZISOFS=n
   FILES:=$(LINUX_DIR)/fs/isofs/isofs.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,isofs)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -192,7 +192,7 @@ define KernelPackage/fs-udf
   KCONFIG:=CONFIG_UDF_FS
   FILES:=$(LINUX_DIR)/fs/udf/udf.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,udf)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -290,7 +290,7 @@ define KernelPackage/fs-msdos
   KCONFIG:=CONFIG_MSDOS_FS
   FILES:=$(LINUX_DIR)/fs/fat/msdos.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,msdos)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 define KernelPackage/fs-msdos/2.4
@@ -328,7 +328,7 @@ define KernelPackage/fs-vfat
 	$(LINUX_DIR)/fs/fat/fat.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/fat/vfat.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 define KernelPackage/fs-vfat/2.4
@@ -416,7 +416,7 @@ define KernelPackage/nls-cp437
   KCONFIG:=CONFIG_NLS_CODEPAGE_437
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp437.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp437)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -433,7 +433,7 @@ define KernelPackage/nls-cp850
   KCONFIG:=CONFIG_NLS_CODEPAGE_850
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp850.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp850)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -450,7 +450,7 @@ define KernelPackage/nls-cp852
   KCONFIG:=CONFIG_NLS_CODEPAGE_852
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp852.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp852)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -467,7 +467,7 @@ define KernelPackage/nls-cp866
   KCONFIG:=CONFIG_NLS_CODEPAGE_866
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp866.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp866)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -484,7 +484,7 @@ define KernelPackage/nls-cp1250
   KCONFIG:=CONFIG_NLS_CODEPAGE_1250
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp1250.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp1250)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -501,7 +501,7 @@ define KernelPackage/nls-cp1251
   KCONFIG:=CONFIG_NLS_CODEPAGE_1251
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp1251.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp1251)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -518,7 +518,7 @@ define KernelPackage/nls-iso8859-1
   KCONFIG:=CONFIG_NLS_ISO8859_1
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-1.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-1)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -535,7 +535,7 @@ define KernelPackage/nls-iso8859-2
   KCONFIG:=CONFIG_NLS_ISO8859_2
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-2.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-2)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -552,7 +552,7 @@ define KernelPackage/nls-iso8859-15
   KCONFIG:=CONFIG_NLS_ISO8859_15
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-15.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-15)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -569,7 +569,7 @@ define KernelPackage/nls-koi8r
   KCONFIG:=CONFIG_NLS_KOI8_R
   FILES:=$(LINUX_DIR)/fs/nls/nls_koi8-r.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_koi8-r)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -586,7 +586,7 @@ define KernelPackage/nls-utf8
   KCONFIG:=CONFIG_NLS_UTF8
   FILES:=$(LINUX_DIR)/fs/nls/nls_utf8.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_utf8)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 define KernelPackage/nls-utf8/description
@@ -602,7 +602,7 @@ define KernelPackage/nls-iso8859-13
   KCONFIG:=CONFIG_NLS_ISO8859_13
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-13.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-13)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 
@@ -618,7 +618,7 @@ define KernelPackage/nls-cp775
   KCONFIG:=CONFIG_NLS_CODEPAGE_775
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp775.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp775)
-$(call KernelPackage/nls/Depends)
+$(call AddDepends/nls)
 endef
 
 

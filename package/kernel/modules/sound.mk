@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -78,14 +78,14 @@ endef
 $(eval $(call KernelPackage,sound-core))
 
 
-define KernelPackage/sound/Depends
+define AddDepends/sound
   SUBMENU:=$(SOUND_MENU)
   DEPENDS:=kmod-sound-core $(1)
 endef
 
 
 define KernelPackage/sound-i8x0
-$(call KernelPackage/sound/Depends,@!TARGET_uml)
+$(call AddDepends/sound,@!TARGET_uml)
   TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
   KCONFIG:=CONFIG_SND_INTEL8X0
   FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.$(LINUX_KMOD_SUFFIX)
@@ -102,7 +102,7 @@ $(eval $(call KernelPackage,sound-i8x0))
 
 
 define KernelPackage/sound-ps3
-$(call KernelPackage/sound/Depends,@TARGET_ps3||TARGET_ps3chk)
+$(call AddDepends/sound,@TARGET_ps3||TARGET_ps3chk)
   TITLE:=PS3 Audio
   KCONFIG:=CONFIG_SND_PS3 \
 		CONFIG_SND_PPC=y \
@@ -119,7 +119,7 @@ $(eval $(call KernelPackage,sound-ps3))
 
 
 define KernelPackage/sound-cs5535audio
-$(call KernelPackage/sound/Depends,@!TARGET_uml)
+$(call AddDepends/sound,@!TARGET_uml)
   TITLE:=CS5535 PCI Controller
   KCONFIG:=CONFIG_SND_CS5535AUDIO
   FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.$(LINUX_KMOD_SUFFIX) \
@@ -136,7 +136,7 @@ $(eval $(call KernelPackage,sound-cs5535audio))
 
 
 define KernelPackage/sound-soc-core
-$(call KernelPackage/sound/Depends)
+$(call AddDepends/sound)
   TITLE:=SoC sound support
   KCONFIG:= \
 	CONFIG_SND_SOC \
