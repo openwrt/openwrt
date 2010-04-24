@@ -114,50 +114,6 @@ endef
 $(eval $(call KernelPackage,usb-ohci,1))
 
 
-define KernelPackage/usb-adm5120
-$(call AddDepends/usb,@TARGET_adm5120_router_be||@TARGET_adm5120_router_le)
-  TITLE:=Support for the ADM5120 HCD controller
-  KCONFIG:=CONFIG_USB_ADM5120_HCD
-  FILES:=$(LINUX_DIR)/drivers/usb/host/adm5120-hcd.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,adm5120-hcd,1)
-endef
-
-define KernelPackage/usb-adm5120/description
- Kernel support for the ADM5120 HCD USB controller
-endef
-
-$(eval $(call KernelPackage,usb-adm5120))
-
-define KernelPackage/usb-etrax
-$(call AddDepends/usb,@TARGET_etrax)
-  TITLE:=Support for the ETRAX USB host controller
-  KCONFIG:=CONFIG_ETRAX_USB_HOST \
-	CONFIG_ETRAX_USB_HOST_PORT1=y CONFIG_ETRAX_USB_HOST_PORT2=y
-  FILES:=$(LINUX_DIR)/drivers/usb/host/hc-crisv10.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,hc-crisv10,1)
-endef
-
-define KernelPackage/usb-etrax/description
- Kernel support for the ETRAX USB host controller
-endef
-
-$(eval $(call KernelPackage,usb-etrax))
-
-define KernelPackage/usb-octeon
-$(call AddDepends/usb,@TARGET_octeon)
-  TITLE:=Support for the Octeon USB OTG controller
-  KCONFIG:=CONFIG_USB_DWC_OTG
-  FILES:=$(LINUX_DIR)/drivers/usb/host/dwc_otg/dwc_otg.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,dwc_otg)
-endef
-
-define KernelPackage/usb-octeon/description
-  Kernel support for the Octeon USB host controller
-endef
-
-$(eval $(call KernelPackage,usb-octeon))
-
-
 define KernelPackage/usb-isp116x-hcd
 $(call AddDepends/usb,@TARGET_ppc40x)
   TITLE:=Support for the ISP116x USB Host Controller

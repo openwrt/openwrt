@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -89,21 +89,6 @@ define KernelPackage/spi-dev/description
 endef
 
 $(eval $(call KernelPackage,spi-dev))
-
-define KernelPackage/bcm63xx-spi
-  SUBMENU:=$(SPI_MENU)
-  TITLE:=Broadcom BCM63xx SPI driver
-  DEPENDS:=@TARGET_brcm63xx +kmod-spi-bitbang
-  KCONFIG:=CONFIG_SPI_BCM63XX
-  FILES:=$(LINUX_DIR)/drivers/spi/bcm63xx_spi.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,92,bcm63xx_spi)
-endef
-
-define KernelPackage/bcm63xx-spi/description
-  This package contains the Broadcom BCM63xx SPI Master driver
-endef
-
-$(eval $(call KernelPackage,bcm63xx-spi))
 
 
 define KernelPackage/spi-vsc7385

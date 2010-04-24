@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -182,31 +182,6 @@ endef
 $(eval $(call KernelPackage,pcmcia-yenta))
 
 
-define KernelPackage/pcmcia-au1000
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=RMI/AMD Au1000 PCMCIA support
-  DEPENDS:=kmod-pcmcia-core @TARGET_au1000
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/au1x00_ss.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,au1x00_ss)
-endef
-
-$(eval $(call KernelPackage,pcmcia-au1000))
-
-define KernelPackage/pcmcia-bcm63xx
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Broadcom BCM63xx PCMCIA support
-  DEPENDS:=kmod-pcmcia-core @TARGET_brcm63xx
-  KCONFIG:=CONFIG_PCMCIA_BCM63XX
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/bcm63xx_pcmcia.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,bcm63xx_pcmcia)
-endef
-
-define KernelPackage/pcmcia-bcm63xx/description
-  Kernel support for PCMCIA/CardBus controller on the BCM63xx SoC
-endef
-
-$(eval $(call KernelPackage,pcmcia-bcm63xx))
-
 define KernelPackage/pcmcia-serial
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Serial devices support
@@ -361,42 +336,11 @@ endef
 $(eval $(call KernelPackage,mmc))
 
 
-define KernelPackage/mmc-at91
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=MMC/SD Card Support on AT91
-  DEPENDS:=@TARGET_at91 +kmod-mmc
-  KCONFIG:=CONFIG_MMC_AT91
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/at91_mci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,at91_mci,1)
-endef
-
-define KernelPackage/mmc-at91/description
- Kernel support for MMC/SD cards on the AT91 target
-endef
-
-$(eval $(call KernelPackage,mmc-at91))
-
-
 # XXX: added a workaround for watchdog path changes
 ifeq ($(KERNEL),2.4)
   WATCHDOG_DIR=char
 endif
 WATCHDOG_DIR?=watchdog
-
-define KernelPackage/atmel-wdt
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=AT32AP700x watchdog
-  DEPENDS:=@TARGET_avr32
-  KCONFIG:=CONFIG_AT32AP700X_WDT
-  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/at32ap700x_wdt.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,at32ap700x_wdt)
-endef
-
-define KernelPackage/atmel-wdt/description
- AT32AP700x watchdog
-endef
-
-$(eval $(call KernelPackage,atmel-wdt))
 
 
 define KernelPackage/softdog
@@ -413,21 +357,6 @@ endef
 
 $(eval $(call KernelPackage,softdog))
 
-define KernelPackage/rdc321x-wdt
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=RDC321x watchdog
-  DEPENDS:=@TARGET_rdc
-  KCONFIG:=CONFIG_RDC321X_WDT
-  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/rdc321x_wdt.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,rdc321x_wdt)
-endef
-
-define KernelPackage/rdc321x-wdt/description
-  RDC-321x watchdog driver
-endef
-
-$(eval $(call KernelPackage,rdc321x-wdt))
-
 
 define KernelPackage/leds-gpio
   SUBMENU:=$(OTHER_MENU)
@@ -443,23 +372,6 @@ define KernelPackage/leds-gpio/description
 endef
 
 $(eval $(call KernelPackage,leds-gpio))
-
-
-define KernelPackage/ledtrig-adm5120-switch
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=LED ADM5120 Switch Port Status Trigger
-  DEPENDS:=@TARGET_adm5120
-  KCONFIG:=CONFIG_LEDS_TRIGGER_ADM5120_SWITCH
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-adm5120-switch.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-adm5120-switch)
-endef
-
-define KernelPackage/ledtrig-adm5120-switch/description
- Kernel module to allow LEDs to be controlled by the port states
- of the ADM5120 built-in ethernet switch.
-endef
-
-$(eval $(call KernelPackage,ledtrig-adm5120-switch))
 
 
 define KernelPackage/leds-net48xx
@@ -513,7 +425,7 @@ $(eval $(call KernelPackage,leds-alix))
 define KernelPackage/leds-wndr3700-usb
   SUBMENU:=$(OTHER_MENU)
   TITLE:=WNDR3700 USB LED support
-  DEPENDS:= @TARGET_ar71xx
+  DEPENDS:=@TARGET_ar71xx
   KCONFIG:=CONFIG_LEDS_WNDR3700_USB
   FILES:=$(LINUX_DIR)/drivers/leds/leds-wndr3700-usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,leds-wndr3700-usb)
@@ -770,24 +682,6 @@ endef
 
 $(eval $(call KernelPackage,input-joydev))
 
-define KernelPackage/input-rb532
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=RB532 button device support
-  DEPENDS:=+kmod-input-core @TARGET_rb532
-  KCONFIG:= \
-	CONFIG_INPUT_MISC=y \
-	CONFIG_INPUT_RB532_BUTTON
-  FILES:=$(LINUX_DIR)/drivers/input/misc/rb532_button.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,62,rb532_button)
-endef
-
-define KernelPackage/input-rb532/description
-  Kernel module for RB532 button
-endef
-
-$(eval $(call KernelPackage,input-rb532))
-
-
 define KernelPackage/mmc-atmelmci
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Amtel MMC Support
@@ -818,24 +712,6 @@ define KernelPackage/cs5535-gpio/description
 endef
 
 $(eval $(call KernelPackage,cs5535-gpio))
-
-
-define KernelPackage/ixp4xx-beeper
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=IXP4XX Beeper support
-  DEPENDS:=@TARGET_ixp4xx +kmod-input-core
-  KCONFIG:= \
-	CONFIG_INPUT_MISC=y \
-	CONFIG_INPUT_IXP4XX_BEEPER
-  FILES:=$(LINUX_DIR)/drivers/input/misc/ixp4xx-beeper.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,ixp4xx-beeper)
-endef
-
-define KernelPackage/ixp4xx-beeper/description
- IXP4XX Beeper support
-endef
-
-$(eval $(call KernelPackage,ixp4xx-beeper))
 
 
 define KernelPackage/textsearch
