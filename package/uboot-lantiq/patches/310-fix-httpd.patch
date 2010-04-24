@@ -35,7 +35,7 @@
  # endif
  
 +# ifdef CONFIG_CMD_HTTPD
-+		if (ret < 0) {
++		if (ret != 0) {
 +			printf("Failed to execute bootcmd "
 +					"(maybe invalid u-boot environment?), "
 +					"starting httpd to update firmware...\n");

@@ -48,7 +48,7 @@
 		"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}"	\
 		":${hostname}:${netdev}:off\0"				\
 	"addmisc=setenv bootargs ${bootargs} init=/etc/preinit "	\
-		"console=ttyS1,115200 ethaddr=${ethaddr} ${mtdparts}"		\
+		"console=ttyS1,115200 ethaddr=${ethaddr} "		\
 		"${mtdparts}\0"						\
 	"flash_flash=run flashargs addip addmisc;"			\
 		"bootm ${kernel_addr}\0"				\
@@ -113,7 +113,7 @@
 #ifndef CONFIG_SYS_PROMPT
 #define CONFIG_SYS_PROMPT		"=> "		/* Monitor Command Prompt */
 #endif
-#define CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size */
+#define CONFIG_SYS_CBSIZE		512		/* Console I/O Buffer Size */
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS		16		/* max number of command args */
 
