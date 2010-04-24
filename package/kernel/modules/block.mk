@@ -161,6 +161,16 @@ endef
 $(eval $(call KernelPackage,ata-via-sata))
 
 
+define KernelPackage/block2mtd
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Block device MTD emulation
+  KCONFIG:=CONFIG_MTD_BLOCK2MTD
+  FILES:=$(LINUX_DIR)/drivers/mtd/devices/block2mtd.$(LINUX_KMOD_SUFFIX)
+endef
+
+$(eval $(call KernelPackage,block2mtd))
+
+
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
