@@ -1,0 +1,38 @@
+--- a/drivers/mtd/chips/cfi_cmdset_0001.c
++++ b/drivers/mtd/chips/cfi_cmdset_0001.c
+@@ -41,7 +41,11 @@
+ /* #define CMDSET0001_DISABLE_WRITE_SUSPEND */
+ 
+ // debugging, turns off buffer write mode if set to 1
+-#define FORCE_WORD_WRITE 0
++#ifdef CONFIG_IFXMIPS
++#  define FORCE_WORD_WRITE 1
++#else
++#  define FORCE_WORD_WRITE 0
++#endif
+ 
+ #define MANUFACTURER_INTEL	0x0089
+ #define I82802AB	0x00ad
+@@ -1480,6 +1484,9 @@ static int __xipram do_write_oneword(str
+ 	int ret=0;
+ 
+ 	adr += chip->start;
++#ifdef CONFIG_IFXMIPS
++	adr ^= 2;
++#endif
+ 
+ 	switch (mode) {
+ 	case FL_WRITING:
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -1079,7 +1079,9 @@ static int __xipram do_write_oneword(str
+ 	int retry_cnt = 0;
+ 
+ 	adr += chip->start;
+-
++#ifdef CONFIG_IFXMIPS
++	adr ^= 2;
++#endif
+ 	spin_lock(chip->mutex);
+ 	ret = get_chip(map, chip, adr, FL_WRITING);
+ 	if (ret) {

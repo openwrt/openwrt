@@ -12,7 +12,8 @@ BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2 atm
 SUBTARGETS:=danube #ar9
 
-LINUX_VERSION:=2.6.30.10
+#LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=2.6.32.10
 #LINUX_VERSION:=2.6.33.2
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
