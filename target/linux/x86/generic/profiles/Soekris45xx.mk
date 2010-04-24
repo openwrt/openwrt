@@ -7,7 +7,7 @@
 
 define Profile/Soekris45xx
   NAME:=Soekris Net45xx
-  PACKAGES:=kmod-natsemi kmod-leds-net48xx kmod-sc520-wdt
+  PACKAGES:=kmod-natsemi kmod-leds-net48xx kmod-wdt-sc520
 endef
 
 define Profile/Soekris45xx/Description
