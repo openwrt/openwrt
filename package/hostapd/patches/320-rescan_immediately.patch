@@ -1,11 +1,11 @@
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -924,7 +924,7 @@ static void wpa_supplicant_event_scan_re
+@@ -958,7 +958,7 @@ static void wpa_supplicant_event_scan_re
  			wpa_printf(MSG_DEBUG, "Setup a new network");
  			wpa_supplicant_associate(wpa_s, NULL, ssid);
- 		} else
--			wpa_supplicant_req_new_scan(wpa_s, 5);
-+			wpa_supplicant_req_new_scan(wpa_s, 0);
- 	}
- }
- #endif /* CONFIG_NO_SCAN_PROCESSING */
+ 		} else {
+-			int timeout_sec = 5;
++			int timeout_sec = 0;
+ 			int timeout_usec = 0;
+ 			wpa_supplicant_req_new_scan(wpa_s, timeout_sec,
+ 						    timeout_usec);
