@@ -21,6 +21,8 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
+static int ip2_flush_reg;
+
 static void ar71xx_gpio_irq_dispatch(void)
 {
 	void __iomem *base = ar71xx_gpio_base;
@@ -239,8 +241,17 @@ asmlinkage void plat_irq_dispatch(void)
 	if (pending & STATUSF_IP7)
 		do_IRQ(AR71XX_CPU_IRQ_TIMER);
 
-	else if (pending & STATUSF_IP2)
+	else if (pending & STATUSF_IP2) {
+		/*
+		 * This IRQ is meant for a PCI device. Drivers for PCI devices
+		 * typically allocate coherent DMA memory for the descriptor
+		 * ring, however the DMA controller may still have some
+		 * unsynchronized data in the FIFO.
+		 * Issue a flush here to ensure that the driver sees the update.
+		 */
+		ar71xx_ddr_flush(ip2_flush_reg);
 		do_IRQ(AR71XX_CPU_IRQ_IP2);
+	}
 
 	else if (pending & STATUSF_IP4)
 		do_IRQ(AR71XX_CPU_IRQ_GE0);
@@ -260,6 +271,20 @@ asmlinkage void plat_irq_dispatch(void)
 
 void __init arch_init_irq(void)
 {
+	switch(ar71xx_soc) {
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
+		ip2_flush_reg = AR724X_DDR_REG_FLUSH_PCIE;
+		break;
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		ip2_flush_reg = AR91XX_DDR_REG_FLUSH_WMAC;
+		break;
+	default:
+		ip2_flush_reg = AR71XX_DDR_REG_FLUSH_PCI;
+		break;
+	}
 	mips_cpu_irq_init();
 
 	ar71xx_misc_irq_init();
