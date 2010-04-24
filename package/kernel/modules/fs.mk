@@ -7,6 +7,43 @@
 
 FS_MENU:=Filesystems
 
+define KernelPackage/fs-autofs4
+  SUBMENU:=$(FS_MENU)
+  TITLE:=AUTOFS4 filesystem support
+  KCONFIG:=CONFIG_AUTOFS4_FS 
+  FILES:=$(LINUX_DIR)/fs/autofs4/autofs4.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,autofs4)
+endef
+
+define KernelPackage/fs-autofs4/description
+  Kernel module for AutoFS4 support
+endef
+
+$(eval $(call KernelPackage,fs-autofs4))
+
+
+define KernelPackage/fs-btrfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=BTRFS filesystem support
+  KCONFIG:=\
+	CONFIG_LIBCRC32C \
+	CONFIG_BTRFS_FS \
+	CONFIG_BTRFS_FS_POSIX_ACL=n
+  # for crc32c
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc
+  FILES:=\
+	$(LINUX_DIR)/lib/libcrc32c.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/btrfs/btrfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,crc32c libcrc32c btrfs,1)
+endef
+
+define KernelPackage/fs-btrfs/description
+  Kernel module for BTRFS support
+endef
+
+$(eval $(call KernelPackage,fs-btrfs))
+
+
 define KernelPackage/fs-cifs
   SUBMENU:=$(FS_MENU)
   TITLE:=CIFS support
@@ -16,7 +53,6 @@ define KernelPackage/fs-cifs
 $(call AddDepends/nls)
 endef
 
-
 define KernelPackage/fs-cifs/description
  Kernel module for CIFS support
 endef
@@ -24,53 +60,20 @@ endef
 $(eval $(call KernelPackage,fs-cifs))
 
 
-define KernelPackage/fs-minix
+define KernelPackage/fs-exportfs
   SUBMENU:=$(FS_MENU)
-  TITLE:=Minix filesystem support
-  KCONFIG:=CONFIG_MINIX_FS
-  FILES:=$(LINUX_DIR)/fs/minix/minix.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,minix)
+  TITLE:=exportfs kernel server support
+  KCONFIG:=CONFIG_EXPORTFS
+  FILES=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,exportfs)
 endef
 
-define KernelPackage/fs-minix/description
- Kernel module for Minix filesystem support
+define KernelPackage/fs-exportfs/description
+ Kernel module for exportfs. Needed for some other modules.
 endef
 
-$(eval $(call KernelPackage,fs-minix))
+$(eval $(call KernelPackage,fs-exportfs))
 
-
-define KernelPackage/fs-ntfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=NTFS filesystem support
-  KCONFIG:=CONFIG_NTFS_FS
-  FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,ntfs)
-$(call AddDepends/nls)
-endef
-
-define KernelPackage/fs-ntfs/description
- Kernel module for NTFS filesystem support
-endef
-
-$(eval $(call KernelPackage,fs-ntfs))
-
-
-define KernelPackage/fs-mbcache
-  SUBMENU:=$(FS_MENU)
-  TITLE:=mbcache (used by ext2/ext3/ext4)
-  KCONFIG:=CONFIG_FS_MBCACHE
-  ifneq ($(CONFIG_FS_MBCACHE),)
-    FILES:=$(LINUX_DIR)/fs/mbcache.$(LINUX_KMOD_SUFFIX)
-    AUTOLOAD:=$(call AutoLoad,20,mbcache,1)
-  endif
-endef
-
-define KernelPackage/fs-ext2/description
- Meta Block cache used by ext2/ext3
- This package will only be installed if extended attributes 
- are enabled for ext2/ext3
-endef
-$(eval $(call KernelPackage,fs-mbcache))
 
 define KernelPackage/fs-ext2
   SUBMENU:=$(FS_MENU)
@@ -107,6 +110,7 @@ endef
 
 $(eval $(call KernelPackage,fs-ext3))
 
+
 define KernelPackage/fs-ext4
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT4 filesystem support
@@ -129,7 +133,6 @@ define KernelPackage/fs-ext4/description
 endef
 
 $(eval $(call KernelPackage,fs-ext4))
-
 
 
 define KernelPackage/fs-hfs
@@ -157,7 +160,6 @@ define KernelPackage/fs-hfsplus
 $(call AddDepends/nls,utf8)
 endef
 
-
 define KernelPackage/fs-hfsplus/description
  Kernel module for HFS+ filesystem support
 endef
@@ -174,7 +176,6 @@ define KernelPackage/fs-isofs
 $(call AddDepends/nls)
 endef
 
-
 define KernelPackage/fs-isofs/description
  Kernel module for ISO9660 filesystem support
 endef
@@ -182,21 +183,77 @@ endef
 $(eval $(call KernelPackage,fs-isofs))
 
 
-define KernelPackage/fs-udf
+define KernelPackage/fs-mbcache
   SUBMENU:=$(FS_MENU)
-  TITLE:=UDF filesystem support
-  KCONFIG:=CONFIG_UDF_FS
-  FILES:=$(LINUX_DIR)/fs/udf/udf.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,udf)
+  TITLE:=mbcache (used by ext2/ext3/ext4)
+  KCONFIG:=CONFIG_FS_MBCACHE
+  ifneq ($(CONFIG_FS_MBCACHE),)
+    FILES:=$(LINUX_DIR)/fs/mbcache.$(LINUX_KMOD_SUFFIX)
+    AUTOLOAD:=$(call AutoLoad,20,mbcache,1)
+  endif
+endef
+
+define KernelPackage/fs-mbcache/description
+ Meta Block cache used by ext2/ext3
+ This package will only be installed if extended attributes 
+ are enabled for ext2/ext3
+endef
+
+$(eval $(call KernelPackage,fs-mbcache))
+
+
+define KernelPackage/fs-minix
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Minix filesystem support
+  KCONFIG:=CONFIG_MINIX_FS
+  FILES:=$(LINUX_DIR)/fs/minix/minix.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,minix)
+endef
+
+define KernelPackage/fs-minix/description
+ Kernel module for Minix filesystem support
+endef
+
+$(eval $(call KernelPackage,fs-minix))
+
+
+define KernelPackage/fs-msdos
+  SUBMENU:=$(FS_MENU)
+  TITLE:=MSDOS filesystem support
+  KCONFIG:=CONFIG_MSDOS_FS
+  FILES:=$(LINUX_DIR)/fs/fat/msdos.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,msdos)
 $(call AddDepends/nls)
 endef
 
-
-define KernelPackage/fs-udf/description
- Kernel module for UDF filesystem support
+define KernelPackage/fs-msdos/2.4
+  FILES:=$(LINUX_DIR)/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
 endef
 
-$(eval $(call KernelPackage,fs-udf))
+define KernelPackage/fs-msdos/description
+ Kernel module for MSDOS filesystem support
+endef
+
+$(eval $(call KernelPackage,fs-msdos))
+
+
+define KernelPackage/fs-nfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=NFS filesystem support
+  DEPENDS:=+kmod-fs-nfs-common
+  KCONFIG:= \
+	CONFIG_NFS_FS
+  FILES:= \
+	$(LINUX_DIR)/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,nfs)
+endef
+
+define KernelPackage/fs-nfs/description
+ Kernel module for NFS support
+endef
+
+$(eval $(call KernelPackage,fs-nfs))
+
 
 define KernelPackage/fs-nfs-common
   SUBMENU:=$(FS_MENU)
@@ -232,39 +289,6 @@ endef
 $(eval $(call KernelPackage,fs-nfs-common-v4))
 
 
-define KernelPackage/fs-nfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=NFS filesystem support
-  DEPENDS:=+kmod-fs-nfs-common
-  KCONFIG:= \
-	CONFIG_NFS_FS
-  FILES:= \
-	$(LINUX_DIR)/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,nfs)
-endef
-
-define KernelPackage/fs-nfs/description
- Kernel module for NFS support
-endef
-
-$(eval $(call KernelPackage,fs-nfs))
-
-
-define KernelPackage/fs-exportfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=exportfs kernel server support
-  KCONFIG:=CONFIG_EXPORTFS
-  FILES=$(LINUX_DIR)/fs/exportfs/exportfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,20,exportfs)
-endef
-
-define KernelPackage/fs-exportfs/description
- Kernel module for exportfs. Needed for some other modules.
-endef
-
-$(eval $(call KernelPackage,fs-exportfs))
-
-
 define KernelPackage/fs-nfsd
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS kernel server support
@@ -280,24 +304,21 @@ endef
 
 $(eval $(call KernelPackage,fs-nfsd))
 
-define KernelPackage/fs-msdos
+
+define KernelPackage/fs-ntfs
   SUBMENU:=$(FS_MENU)
-  TITLE:=MSDOS filesystem support
-  KCONFIG:=CONFIG_MSDOS_FS
-  FILES:=$(LINUX_DIR)/fs/fat/msdos.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,msdos)
+  TITLE:=NTFS filesystem support
+  KCONFIG:=CONFIG_NTFS_FS
+  FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ntfs)
 $(call AddDepends/nls)
 endef
 
-define KernelPackage/fs-msdos/2.4
-  FILES:=$(LINUX_DIR)/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
+define KernelPackage/fs-ntfs/description
+ Kernel module for NTFS filesystem support
 endef
 
-define KernelPackage/fs-msdos/description
- Kernel module for MSDOS filesystem support
-endef
-
-$(eval $(call KernelPackage,fs-msdos))
+$(eval $(call KernelPackage,fs-ntfs))
 
 
 define KernelPackage/fs-reiserfs
@@ -313,6 +334,23 @@ define KernelPackage/fs-reiserfs/description
 endef
 
 $(eval $(call KernelPackage,fs-reiserfs))
+
+
+define KernelPackage/fs-udf
+  SUBMENU:=$(FS_MENU)
+  TITLE:=UDF filesystem support
+  KCONFIG:=CONFIG_UDF_FS
+  FILES:=$(LINUX_DIR)/fs/udf/udf.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,udf)
+$(call AddDepends/nls)
+endef
+
+define KernelPackage/fs-udf/description
+ Kernel module for UDF filesystem support
+endef
+
+$(eval $(call KernelPackage,fs-udf))
+
 
 define KernelPackage/fs-vfat
   SUBMENU:=$(FS_MENU)
@@ -354,38 +392,3 @@ define KernelPackage/fs-xfs/description
 endef
 
 $(eval $(call KernelPackage,fs-xfs))
-
-define KernelPackage/fs-btrfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=BTRFS filesystem support
-  KCONFIG:=\
-	CONFIG_LIBCRC32C \
-	CONFIG_BTRFS_FS \
-	CONFIG_BTRFS_FS_POSIX_ACL=n
-  # for crc32c
-  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc
-  FILES:=\
-	$(LINUX_DIR)/lib/libcrc32c.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/fs/btrfs/btrfs.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,crc32c libcrc32c btrfs,1)
-endef
-
-define KernelPackage/fs-btrfs/description
-  Kernel module for BTRFS support
-endef
-
-$(eval $(call KernelPackage,fs-btrfs))
-
-define KernelPackage/fs-autofs4
-  SUBMENU:=$(FS_MENU)
-  TITLE:=AUTOFS4 filesystem support
-  KCONFIG:=CONFIG_AUTOFS4_FS 
-  FILES:=$(LINUX_DIR)/fs/autofs4/autofs4.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,autofs4)
-endef
-
-define KernelPackage/fs-autofs4/description
-  Kernel module for AutoFS4 support
-endef
-
-$(eval $(call KernelPackage,fs-autofs4))
