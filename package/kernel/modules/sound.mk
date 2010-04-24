@@ -10,7 +10,7 @@ SOUND_MENU:=Sound Support
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@AUDIO_SUPPORT +!TARGET_x86:kmod-input-core
+  DEPENDS:=@AUDIO_SUPPORT
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
@@ -26,6 +26,7 @@ define KernelPackage/sound-core
 	CONFIG_SND_PCM_OSS \
 	CONFIG_SND_MIXER_OSS \
 	CONFIG_SOUND_OSS_CORE_PRECLAIM=y
+  $(call AddDepends/input)
 endef
 
 define KernelPackage/sound-core/2.4

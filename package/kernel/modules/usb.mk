@@ -814,11 +814,13 @@ $(eval $(call KernelPackage,usb-net-rndis))
 
 
 define KernelPackage/usb-hid
-$(call KernelPackage/usb/Depends,@LINUX_2_6 +!TARGET_x86:kmod-input-core +kmod-input-evdev +!TARGET_x86:kmod-hid)
+$(call KernelPackage/usb/Depends,@LINUX_2_6 +kmod-input-evdev)
   TITLE:=Support for USB Human Input Devices
   KCONFIG:=CONFIG_HID_SUPPORT=y CONFIG_USB_HID
   FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
   AUTOLOAD:=$(call AutoLoad,70,usbhid)
+  $(call AddDepends/hid)
+  $(call AddDepends/input)
 endef
 
 
@@ -830,11 +832,12 @@ $(eval $(call KernelPackage,usb-hid))
 
 
 define KernelPackage/usb-yealink
-$(call KernelPackage/usb/Depends,@LINUX_2_6 +!TARGET_x86:kmod-input-core +kmod-input-evdev)
+$(call KernelPackage/usb/Depends,@LINUX_2_6 +kmod-input-evdev)
   TITLE:=USB Yealink VOIP phone
   KCONFIG:=CONFIG_USB_YEALINK CONFIG_INPUT_YEALINK CONFIG_INPUT=m CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/yealink.ko
   AUTOLOAD:=$(call AutoLoad,70,yealink)
+  $(call AddDepends/input)
 endef
 
 define KernelPackage/usb-yealink/description
@@ -845,11 +848,12 @@ $(eval $(call KernelPackage,usb-yealink))
 
 
 define KernelPackage/usb-cm109
-$(call KernelPackage/usb/Depends,@LINUX_2_6 +!TARGET_x86:kmod-input-core +kmod-input-evdev)
+$(call KernelPackage/usb/Depends,@LINUX_2_6 +kmod-input-evdev)
   TITLE:=Support for CM109 device
   KCONFIG:=CONFIG_USB_CM109 CONFIG_INPUT_CM109 CONFIG_INPUT=m CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/cm109.ko
   AUTOLOAD:=$(call AutoLoad,70,cm109)
+  $(call AddDepends/input)
 endef
 
 define KernelPackage/usb-cm109/description

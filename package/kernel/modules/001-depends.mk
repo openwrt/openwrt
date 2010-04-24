@@ -16,6 +16,25 @@ define AddDepends/crc16
 endef
 
 
+define SetDepends/hid
+  DEPENDS:= @!TARGET_x86
+endef
+
+define AddDepends/hid
+  DEPENDS+= +!TARGET_x86:kmod-hid
+
+endef
+
+
+define SetDepends/input
+  DEPENDS:= @!TARGET_x86
+endef
+
+define AddDepends/input
+  DEPENDS+= +!TARGET_x86:kmod-input-core
+endef
+
+
 define SetDepends/rfkill
   DEPENDS:= @(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86)
 endef
