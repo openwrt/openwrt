@@ -22,7 +22,7 @@ $(eval $(call KernelPackage,bcm63xx-spi))
 
 
 define KernelPackage/pcmcia-bcm63xx
-  SUBMENU:=$(OTHER_MENU)
+  SUBMENU:=$(PCMCIA_MENU)
   TITLE:=Broadcom BCM63xx PCMCIA support
   DEPENDS:=@TARGET_brcm63xx kmod-pcmcia-core
   KCONFIG:=CONFIG_PCMCIA_BCM63XX

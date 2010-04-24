@@ -6,7 +6,7 @@
 #
 
 define KernelPackage/pcmcia-au1000
-  SUBMENU:=$(OTHER_MENU)
+  SUBMENU:=$(PCMCIA_MENU)
   TITLE:=RMI/AMD Au1000 PCMCIA support
   DEPENDS:=@TARGET_au1000 kmod-pcmcia-core
   FILES:=$(LINUX_DIR)/drivers/pcmcia/au1x00_ss.$(LINUX_KMOD_SUFFIX)
