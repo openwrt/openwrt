@@ -19,14 +19,14 @@ endef
 $(eval $(call KernelPackage,ata-core))
 
 
-define KernelPackage/ata/Depends
+define AddDepends/ata
   SUBMENU:=$(BLOCK_MENU)
-  DEPENDS:=!TARGET_x86:kmod-ata-core $(1)
+  DEPENDS+=!TARGET_x86:kmod-ata-core $(1)
 endef
 
 
 define KernelPackage/ata-ahci
-$(call KernelPackage/ata/Depends,)
+$(call AddDepends/ata)
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:=$(LINUX_DIR)/drivers/ata/ahci.$(LINUX_KMOD_SUFFIX)
@@ -40,7 +40,7 @@ endef
 $(eval $(call KernelPackage,ata-ahci))
 
 define KernelPackage/ata-sil
-$(call KernelPackage/ata/Depends,)
+$(call AddDepends/ata,)
   TITLE:=Silicon Image SATA support
   KCONFIG:=CONFIG_SATA_SIL
   FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.$(LINUX_KMOD_SUFFIX)
@@ -55,7 +55,7 @@ $(eval $(call KernelPackage,ata-sil))
 
 
 define KernelPackage/ata-sil24
-$(call KernelPackage/ata/Depends,)
+$(call AddDepends/ata,)
   TITLE:=Silicon Image 3124/3132 SATA support
   KCONFIG:=CONFIG_SATA_SIL24
   FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
@@ -70,7 +70,7 @@ $(eval $(call KernelPackage,ata-sil24))
 
 
 define KernelPackage/ata-artop
-$(call KernelPackage/ata/Depends,)
+$(call AddDepends/ata,)
   TITLE:=ARTOP 6210/6260 PATA support
   KCONFIG:=CONFIG_PATA_ARTOP
   FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
@@ -84,7 +84,7 @@ endef
 $(eval $(call KernelPackage,ata-artop))
 
 define KernelPackage/ata-octeon-cf
-$(call KernelPackage/ata/Depends,@TARGET_octeon)
+$(call AddDepends/ata,@TARGET_octeon)
   TITLE:=Octeon Compact Flash support
   KCONFIG:=CONFIG_PATA_OCTEON_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_octeon_cf.$(LINUX_KMOD_SUFFIX)
@@ -99,7 +99,7 @@ $(eval $(call KernelPackage,ata-octeon-cf))
 
 
 define KernelPackage/ata-ixp4xx-cf
-$(call KernelPackage/ata/Depends,@TARGET_ixp4xx)
+$(call AddDepends/ata,@TARGET_ixp4xx)
   TITLE:=IXP4XX Compact Flash support
   KCONFIG:=CONFIG_PATA_IXP4XX_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_ixp4xx_cf.$(LINUX_KMOD_SUFFIX)
@@ -113,7 +113,7 @@ endef
 $(eval $(call KernelPackage,ata-ixp4xx-cf))
 
 define KernelPackage/ata-rb532-cf
-$(call KernelPackage/ata/Depends,@TARGET_rb532 @BROKEN)
+$(call AddDepends/ata,@TARGET_rb532 @BROKEN)
   TITLE:=RB532 Compact Flash support
   KCONFIG:= \
   	CONFIG_PATA_PLATFORM \
@@ -131,7 +131,7 @@ endef
 $(eval $(call KernelPackage,ata-rb532-cf))
 
 define KernelPackage/ata-nvidia-sata
-$(call KernelPackage/ata/Depends,)
+$(call AddDepends/ata,)
   TITLE:=Nvidia Serial ATA support
   KCONFIG:=CONFIG_SATA_NV
   FILES:=$(LINUX_DIR)/drivers/ata/sata_nv.$(LINUX_KMOD_SUFFIX)
@@ -142,7 +142,7 @@ $(eval $(call KernelPackage,ata-nvidia-sata))
 
 
 define KernelPackage/ata-magicbox-cf
-$(call KernelPackage/ata/Depends,@TARGET_ppc40x)
+$(call AddDepends/ata,@TARGET_ppc40x)
   TITLE:=Magicbox v2/OpenRB Compact flash support
   KCONFIG:=CONFIG_PATA_MAGICBOX_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_magicbox_cf.$(LINUX_KMOD_SUFFIX)
@@ -176,7 +176,7 @@ $(eval $(call KernelPackage,ata-pdc202xx-old))
 
 
 define KernelPackage/ata-piix
-$(call KernelPackage/ata/Depends,)
+$(call AddDepends/ata,)
   TITLE:=Intel PIIX PATA/SATA support
   KCONFIG:=CONFIG_ATA_PIIX
   FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
@@ -192,7 +192,7 @@ $(eval $(call KernelPackage,ata-piix))
 
 
 define KernelPackage/ata-via-sata
-$(call KernelPackage/ata/Depends,)
+$(call AddDepends/ata,)
   TITLE:=VIA SATA support
   KCONFIG:=CONFIG_SATA_VIA
   FILES:=$(LINUX_DIR)/drivers/ata/sata_via.$(LINUX_KMOD_SUFFIX)
@@ -252,14 +252,14 @@ endef
 $(eval $(call KernelPackage,ide-core))
 
 
-define KernelPackage/ide/Depends
+define AddDepends/ide
   SUBMENU:=$(BLOCK_MENU)
   DEPENDS:=kmod-ide-core $(1)
 endef
 
 
 define KernelPackage/ide-generic
-$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
+$(call AddDepends/ide,@PCI_SUPPORT)
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for generic PCI IDE chipsets
   KCONFIG:=CONFIG_BLK_DEV_GENERIC
@@ -283,7 +283,7 @@ $(eval $(call KernelPackage,ide-generic))
 
 
 define KernelPackage/ide-generic-old
-$(call KernelPackage/ide/Depends,@LINUX_2_6)
+$(call AddDepends/ide,@LINUX_2_6)
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for generic (legacy) IDE chipsets
   KCONFIG:=CONFIG_IDE_GENERIC
@@ -295,7 +295,7 @@ $(eval $(call KernelPackage,ide-generic-old))
 
 
 define KernelPackage/ide-aec62xx
-$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
+$(call AddDepends/ide,@PCI_SUPPORT)
   TITLE:=Acard AEC62xx IDE driver
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
   FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.$(LINUX_KMOD_SUFFIX)
@@ -314,7 +314,7 @@ $(eval $(call KernelPackage,ide-aec62xx,1))
 
 
 define KernelPackage/ide-pdc202xx
-$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
+$(call AddDepends/ide,@PCI_SUPPORT)
   TITLE:=Promise PDC202xx IDE driver
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
   FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
@@ -334,7 +334,7 @@ $(eval $(call KernelPackage,ide-pdc202xx))
 
 
 define KernelPackage/ide-it821x
-$(call KernelPackage/ide/Depends,@PCI_SUPPORT)
+$(call AddDepends/ide,@PCI_SUPPORT)
   TITLE:=ITE IT821x IDE driver
   KCONFIG:=CONFIG_BLK_DEV_IT821X
   FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
@@ -440,7 +440,7 @@ $(eval $(call KernelPackage,dm))
 
 
 define KernelPackage/pata-rb153-cf
-$(call KernelPackage/ata/Depends,@TARGET_adm5120_router_le)
+$(call AddDepends/ata,@TARGET_adm5120_router_le)
   TITLE:=RouterBOARD 153 CF Slot support
   KCONFIG:=CONFIG_PATA_RB153_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_rb153_cf.$(LINUX_KMOD_SUFFIX)

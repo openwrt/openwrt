@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -25,7 +25,7 @@ endef
 $(eval $(call KernelPackage,w1))
 
 
-define KernelPackage/w1/Depends
+define AddDepends/w1
   SUBMENU:=$(W1_MENU)
   DEPENDS+=kmod-w1 $(1)
 endef
@@ -35,7 +35,7 @@ endef
 # 1-wire masters
 #
 define KernelPackage/w1-master-gpio
-$(call KernelPackage/w1/Depends,@GPIO_SUPPORT)
+$(call AddDepends/w1,@GPIO_SUPPORT)
   TITLE:=GPIO 1-wire bus master driver
   KCONFIG:=CONFIG_W1_MASTER_GPIO
   FILES:=$(W1_MASTERS_DIR)/w1-gpio.$(LINUX_KMOD_SUFFIX)
@@ -53,7 +53,7 @@ $(eval $(call KernelPackage,w1-master-gpio))
 # 1-wire slaves
 #
 define KernelPackage/w1-slave-therm
-$(call KernelPackage/w1/Depends,)
+$(call AddDepends/w1,)
   TITLE:=Thermal family implementation
   KCONFIG:=CONFIG_W1_SLAVE_THERM
   FILES:=$(W1_SLAVES_DIR)/w1_therm.$(LINUX_KMOD_SUFFIX)
@@ -68,7 +68,7 @@ $(eval $(call KernelPackage,w1-slave-therm))
 
 
 define KernelPackage/w1-slave-smem
-$(call KernelPackage/w1/Depends,)
+$(call AddDepends/w1,)
   TITLE:=Simple 64bit memory family implementation
   KCONFIG:=CONFIG_W1_SLAVE_SMEM
   FILES:=$(W1_SLAVES_DIR)/w1_smem.$(LINUX_KMOD_SUFFIX)
@@ -82,7 +82,7 @@ endef
 $(eval $(call KernelPackage,w1-slave-smem))
 
 define KernelPackage/w1-slave-ds2433
-$(call KernelPackage/w1/Depends,)
+$(call AddDepends/w1,)
   TITLE:=Simple 64bit memory family implementation
   KCONFIG:= \
 	CONFIG_W1_SLAVE_DS2433 \
@@ -99,7 +99,7 @@ $(eval $(call KernelPackage,w1-slave-ds2433))
 
 
 define KernelPackage/w1-slave-ds2760
-$(call KernelPackage/w1/Depends,)
+$(call AddDepends/w1,)
   TITLE:=Dallas 2760 battery monitor chip (HP iPAQ & others)
   KCONFIG:= \
 	CONFIG_W1_SLAVE_DS2760 \

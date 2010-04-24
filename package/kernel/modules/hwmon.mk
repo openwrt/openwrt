@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006,2007 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -26,14 +26,14 @@ endef
 $(eval $(call KernelPackage,hwmon-core))
 
 
-define KernelPackage/hwmon/Depends
+define AddDepends/hwmon
   SUBMENU:=$(HWMON_MENU)
   DEPENDS:=kmod-hwmon-core $(1)
 endef
 
 
 define KernelPackage/hwmon-lm75
-$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
+$(call AddDepends/hwmon,+kmod-i2c-core)
   TITLE:=LM75 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM75
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.$(LINUX_KMOD_SUFFIX)
@@ -48,7 +48,7 @@ $(eval $(call KernelPackage,hwmon-lm75))
 
 
 define KernelPackage/hwmon-lm77
-$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
+$(call AddDepends/hwmon,+kmod-i2c-core)
   TITLE:=LM77 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM77
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.$(LINUX_KMOD_SUFFIX)
@@ -62,7 +62,7 @@ endef
 $(eval $(call KernelPackage,hwmon-lm77))
 
 define KernelPackage/hwmon-lm90
-$(call KernelPackage/hwmon/Depends,+kmod-i2c-core)
+$(call AddDepends/hwmon,+kmod-i2c-core)
   TITLE:=LM90 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM90
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm90.$(LINUX_KMOD_SUFFIX)
@@ -76,7 +76,7 @@ endef
 $(eval $(call KernelPackage,hwmon-lm90))
 
 define KernelPackage/hwmon-pc87360
-$(call KernelPackage/hwmon/Depends,@TARGET_x86)
+$(call AddDepends/hwmon,@TARGET_x86)
   TITLE:=PC87360 monitoring support
   KCONFIG:= \
 	CONFIG_SENSORS_PC87360 \
@@ -94,7 +94,7 @@ endef
 $(eval $(call KernelPackage,hwmon-pc87360))
 
 define KernelPackage/hwmon-w83627hf
-$(call KernelPackage/hwmon/Depends,@TARGET_rdc||TARGET_x86)
+$(call AddDepends/hwmon,@TARGET_rdc||TARGET_x86)
   TITLE:=Winbond W83627HF monitoring support
   KCONFIG:= \
 	CONFIG_SENSORS_W83627HF \
