@@ -6,8 +6,7 @@
 #
 
 define AddDepends/nls
-  SUBMENU:=Native Language Support
-  DEPENDS:= +!LINUX_2_4:kmod-nls-base
+  DEPENDS+= +!LINUX_2_4:kmod-nls-base
 endef
 
 define KernelPackage/nls-base
@@ -26,7 +25,7 @@ $(eval $(call KernelPackage,nls-base))
 
 
 define KernelPackage/nls-cp437
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=Codepage 437 (United States, Canada)
   KCONFIG:=CONFIG_NLS_CODEPAGE_437
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp437.$(LINUX_KMOD_SUFFIX)
@@ -42,7 +41,7 @@ $(eval $(call KernelPackage,nls-cp437))
 
 
 define KernelPackage/nls-cp775
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=Codepage 775 (Baltic Rim)
   KCONFIG:=CONFIG_NLS_CODEPAGE_775
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp775.$(LINUX_KMOD_SUFFIX)
@@ -58,7 +57,7 @@ $(eval $(call KernelPackage,nls-cp775))
 
 
 define KernelPackage/nls-cp850
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=Codepage 850 (Europe)
   KCONFIG:=CONFIG_NLS_CODEPAGE_850
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp850.$(LINUX_KMOD_SUFFIX)
@@ -74,7 +73,7 @@ $(eval $(call KernelPackage,nls-cp850))
 
 
 define KernelPackage/nls-cp852
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=Codepage 852 (Europe)
   KCONFIG:=CONFIG_NLS_CODEPAGE_852
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp852.$(LINUX_KMOD_SUFFIX)
@@ -90,7 +89,7 @@ $(eval $(call KernelPackage,nls-cp852))
 
 
 define KernelPackage/nls-cp866
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=Codepage 866 (Cyrillic)
   KCONFIG:=CONFIG_NLS_CODEPAGE_866
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp866.$(LINUX_KMOD_SUFFIX)
@@ -106,7 +105,7 @@ $(eval $(call KernelPackage,nls-cp866))
 
 
 define KernelPackage/nls-cp1250
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=Codepage 1250 (Eastern Europe)
   KCONFIG:=CONFIG_NLS_CODEPAGE_1250
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp1250.$(LINUX_KMOD_SUFFIX)
@@ -122,7 +121,7 @@ $(eval $(call KernelPackage,nls-cp1250))
 
 
 define KernelPackage/nls-cp1251
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=Codepage 1251 (Russian)
   KCONFIG:=CONFIG_NLS_CODEPAGE_1251
   FILES:=$(LINUX_DIR)/fs/nls/nls_cp1251.$(LINUX_KMOD_SUFFIX)
@@ -138,7 +137,7 @@ $(eval $(call KernelPackage,nls-cp1251))
 
 
 define KernelPackage/nls-iso8859-1
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=ISO 8859-1 (Latin 1; Western European Languages)
   KCONFIG:=CONFIG_NLS_ISO8859_1
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-1.$(LINUX_KMOD_SUFFIX)
@@ -154,7 +153,7 @@ $(eval $(call KernelPackage,nls-iso8859-1))
 
 
 define KernelPackage/nls-iso8859-2
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=ISO 8859-2 (Latin 2; Central European Languages)
   KCONFIG:=CONFIG_NLS_ISO8859_2
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-2.$(LINUX_KMOD_SUFFIX)
@@ -170,7 +169,7 @@ $(eval $(call KernelPackage,nls-iso8859-2))
 
 
 define KernelPackage/nls-iso8859-13
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=ISO 8859-13 (Latin 7; Baltic)
   KCONFIG:=CONFIG_NLS_ISO8859_13
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-13.$(LINUX_KMOD_SUFFIX)
@@ -186,7 +185,7 @@ $(eval $(call KernelPackage,nls-iso8859-13))
 
 
 define KernelPackage/nls-iso8859-15
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=ISO 8859-15 (Latin 9; Western, with Euro symbol)
   KCONFIG:=CONFIG_NLS_ISO8859_15
   FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-15.$(LINUX_KMOD_SUFFIX)
@@ -202,7 +201,7 @@ $(eval $(call KernelPackage,nls-iso8859-15))
 
 
 define KernelPackage/nls-koi8r
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=KOI8-R (Russian)
   KCONFIG:=CONFIG_NLS_KOI8_R
   FILES:=$(LINUX_DIR)/fs/nls/nls_koi8-r.$(LINUX_KMOD_SUFFIX)
@@ -218,7 +217,7 @@ $(eval $(call KernelPackage,nls-koi8r))
 
 
 define KernelPackage/nls-utf8
-  SUBMENU:=$(FS_MENU)
+  SUBMENU:=Native Language Support
   TITLE:=UTF-8
   KCONFIG:=CONFIG_NLS_UTF8
   FILES:=$(LINUX_DIR)/fs/nls/nls_utf8.$(LINUX_KMOD_SUFFIX)
