@@ -12,7 +12,7 @@ define SetDepends/crc16
 endef
 
 define AddDepends/crc16
-  DEPENDS+= +!TARGET_xburst:kmod-crc16
+  DEPENDS+= +!TARGET_xburst:kmod-crc16 $(1)
 endef
 
 
@@ -21,7 +21,7 @@ define SetDepends/hid
 endef
 
 define AddDepends/hid
-  DEPENDS+= +!TARGET_x86:kmod-hid
+  DEPENDS+= +!TARGET_x86:kmod-hid $(1)
 
 endef
 
@@ -31,7 +31,7 @@ define SetDepends/input
 endef
 
 define AddDepends/input
-  DEPENDS+= +!TARGET_x86:kmod-input-core
+  DEPENDS+= +!TARGET_x86:kmod-input-core $(1)
 endef
 
 
@@ -40,6 +40,5 @@ define SetDepends/rfkill
 endef
 
 define AddDepends/rfkill
-  DEPENDS+= +(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86):kmod-rfkill
-
+  DEPENDS+= +(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86):kmod-rfkill $(1)
 endef
