@@ -11,7 +11,7 @@ BOARD:=ramips
 BOARDNAME:=Ralink RT288x/RT305x
 SUBTARGETS:=rt288x rt305x
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
-FEATURES:=squashfs broken
+FEATURES:=squashfs
 
 LINUX_VERSION:=2.6.32.10
 

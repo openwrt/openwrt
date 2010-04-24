@@ -393,7 +393,7 @@ endef
 $(eval $(call KernelPackage,gpio-dev))
 
 
-define KernelPackage/nsc-gpio
+define KernelPackage/gpio-nsc
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi GPIO support
   DEPENDS:=@TARGET_x86
@@ -409,7 +409,7 @@ endef
 $(eval $(call KernelPackage,nsc-gpio))
 
 
-define KernelPackage/scx200-gpio
+define KernelPackage/gpio-scx200
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SCX200 GPIO support
   DEPENDS:=@TARGET_x86 +kmod-nsc-gpio
@@ -425,7 +425,7 @@ endef
 $(eval $(call KernelPackage,scx200-gpio))
 
 
-define KernelPackage/scx200-wdt
+define KernelPackage/wdt-scx200
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SCX200 Watchdog support
   DEPENDS:=@TARGET_x86
@@ -441,7 +441,7 @@ endef
 $(eval $(call KernelPackage,scx200-wdt))
 
 
-define KernelPackage/sc520-wdt
+define KernelPackage/wdt-sc520
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SC520 Watchdog support
   DEPENDS:=@TARGET_x86
@@ -591,7 +591,7 @@ endef
 $(eval $(call KernelPackage,mmc-atmelmci,1))
 
 
-define KernelPackage/cs5535-gpio
+define KernelPackage/gpio-cs5535
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver
   DEPENDS:=@TARGET_x86
@@ -653,7 +653,7 @@ endef
 
 $(eval $(call KernelPackage,rfkill))
 
-define KernelPackage/geodewdt
+define KernelPackage/wdt-geode
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Geode/LX Watchdog timer
   DEPENDS:=@TARGET_x86 @LINUX_2_6
@@ -668,7 +668,7 @@ endef
 
 $(eval $(call KernelPackage,geodewdt))
 
-define KernelPackage/pc8736x-gpio
+define KernelPackage/gpio-pc8736x
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PC8736x GPIO support
   DEPENDS:=@TARGET_x86

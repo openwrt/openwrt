@@ -7,7 +7,7 @@
 
 define Profile/Soekris48xx
   NAME:=Soekris Net48xx
-  PACKAGES:=kmod-i2c-scx200 kmod-natsemi kmod-leds-net48xx kmod-scx200-gpio kmod-scx200-wdt kmod-hwmon-pc87360
+  PACKAGES:=kmod-i2c-scx200 kmod-natsemi kmod-leds-net48xx kmod-gpio-scx200 kmod-wdt-scx200 kmod-hwmon-pc87360
 endef
 
 define Profile/Soekris48xx/Description
