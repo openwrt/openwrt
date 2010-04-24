@@ -44,5 +44,5 @@ endef
 
 $(eval $(if $(DUMP),,$(call BuildPackage,kernel)))
 
--include $(TOPDIR)/target/linux/*/modules.mk
 include ./modules/*.mk
+-include $(TOPDIR)/target/linux/*/modules.mk
