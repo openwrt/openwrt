@@ -101,23 +101,6 @@ endef
 $(eval $(call KernelPackage,sound-i8x0))
 
 
-define KernelPackage/sound-ps3
-$(call AddDepends/sound,@TARGET_ps3||TARGET_ps3chk)
-  TITLE:=PS3 Audio
-  KCONFIG:=CONFIG_SND_PS3 \
-		CONFIG_SND_PPC=y \
-		CONFIG_SND_PS3_DEFAULT_START_DELAY=2000
-  FILES:=$(LINUX_DIR)/sound/ppc/snd_ps3.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,35, snd_ps3)
-endef
-
-define KernelPackage/sound-ps3/description
- support for the integrated PS3 audio device
-endef
-
-$(eval $(call KernelPackage,sound-ps3))
-
-
 define KernelPackage/sound-cs5535audio
 $(call AddDepends/sound,@!TARGET_uml)
   TITLE:=CS5535 PCI Controller
