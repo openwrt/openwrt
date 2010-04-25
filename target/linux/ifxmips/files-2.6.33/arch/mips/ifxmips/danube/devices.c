@@ -75,7 +75,7 @@ static struct resource danube_ethernet_resources =
 
 static struct platform_device danube_ethernet =
 {
-	.name			= "danube_ethernet",
+	.name			= "ifxmips_mii0",
 	.resource		= &danube_ethernet_resources,
 	.num_resources	= 1,
 	.dev = {

@@ -1,11 +1,21 @@
 #include <asm/mips_machine.h>
 
-enum ramips_mach_type {
+enum ifxmips_mach_type {
 	IFXMIPS_MACH_GENERIC,
 
-	/* Danube based machines */
-	IFXMIPS_MACH_EASY50712,		/* danube evalkit */
+	/* Danube/Twinpass based machines */
+	IFXMIPS_MACH_EASY50712,		/* Danube evalkit */
+	IFXMIPS_MACH_EASY4010,		/* Twinpass evalkit */
 	IFXMIPS_MACH_ARV4519,		/* Airties WAV-221 */
 	IFXMIPS_MACH_ARV452,		/* Airties WAV-281, Arcor EasyboxA800 */
+
+	/* ASE based machines */
+	IFXMIPS_MACH_EASY50601,		/* ASE wave board */
+
+	/* AR9 based machines */
+	IFXMIPS_MACH_EASY50822,		/* AR9 eval board */
+
+	/* VR9 based machines */
+	IFXMIPS_MACH_EASY80920,		/* VRX200 eval board */
 };
 

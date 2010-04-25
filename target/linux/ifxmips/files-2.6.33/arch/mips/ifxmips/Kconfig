@@ -10,11 +10,77 @@ choice
 		bool "Danube/Twinpass"
 		select SOC_DANUBE
 
+	config IFXMIPS_ASE
+		bool "Amazon-SE"
+		select SOC_ASE
+
+	config IFXMIPS_AR9
+		bool "AR9"
+		select SOC_AR9
+
+	config IFXMIPS_VR9
+		bool "VR9"
+		select SOC_VR9
+
 endchoice
 
 source "arch/mips/ifxmips/danube/Kconfig"
 
 config SOC_DANUBE
+	bool
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select CEVT_R4K
+	select CSRC_R4K
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select HAVE_STD_PC_SERIAL_PORT
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_MULTITHREADING
+	select SYS_HAS_EARLY_PRINTK
+	select HW_HAS_PCI
+	select ARCH_REQUIRE_GPIOLIB
+	select SWAP_IO_SPACE
+	select MIPS_MACHINE
+
+config SOC_ASE
+	bool
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select CEVT_R4K
+	select CSRC_R4K
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select HAVE_STD_PC_SERIAL_PORT
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_MULTITHREADING
+	select SYS_HAS_EARLY_PRINTK
+	select HW_HAS_PCI
+	select ARCH_REQUIRE_GPIOLIB
+	select SWAP_IO_SPACE
+	select MIPS_MACHINE
+
+config SOC_AR9
+	bool
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select CEVT_R4K
+	select CSRC_R4K
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select HAVE_STD_PC_SERIAL_PORT
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_MULTITHREADING
+	select SYS_HAS_EARLY_PRINTK
+	select HW_HAS_PCI
+	select ARCH_REQUIRE_GPIOLIB
+	select SWAP_IO_SPACE
+	select MIPS_MACHINE
+
+config SOC_VR9
 	bool
 	select DMA_NONCOHERENT
 	select IRQ_CPU

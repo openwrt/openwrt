@@ -4,6 +4,7 @@
 #include <linux/etherdevice.h>
 
 #include <asm/bootinfo.h>
+#include <machine.h>
 
 #include <ifxmips.h>
 #include <ifxmips_prom.h>
@@ -65,8 +66,12 @@ out:
 }
 __setup("ethaddr", ifxmips_set_ethaddr);
 
-void __init
-prom_init(void)
+static void __init prom_detect_machtype(void)
+{
+	mips_machtype = IFXMIPS_MACH_EASY50712;
+}
+
+static void __init prom_init_cmdline(void)
 {
 	int argc = fw_arg0;
 	char **argv = (char **) fw_arg1;
@@ -128,4 +133,11 @@ prom_init(void)
 	}
 
 	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
+}
+
+void __init
+prom_init(void)
+{
+	prom_detect_machtype();
+	prom_init_cmdline();
 }
