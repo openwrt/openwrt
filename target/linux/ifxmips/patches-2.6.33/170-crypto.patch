@@ -1,0 +1,76 @@
+--- a/drivers/crypto/Kconfig
++++ b/drivers/crypto/Kconfig
+@@ -222,4 +222,66 @@ config CRYPTO_DEV_PPC4XX
+ 	help
+ 	  This option allows you to have support for AMCC crypto acceleration.
+ 
++config CRYPTO_DEV_IFXMIPS
++	bool "Support for IFXMIPS crypto engine"
++	select CRYPTO_ALGAPI
++	default y
++	help
++	Will support IFXMIPS crypto hardware
++	  If you are unsure, say M.
++
++menuconfig CRYPTO_DEV_IFXMIPS_DES
++	bool "IFXMIPS crypto hardware for DES algorithm"
++	depends on CRYPTO_DEV_IFXMIPS
++	select CRYPTO_BLKCIPHER
++	default y
++	help
++	Use crypto hardware for DES/3DES algorithm.
++	  If unsure say N.
++
++menuconfig CRYPTO_DEV_IFXMIPS_AES
++	bool "IFXMIPS crypto hardware for AES algorithm"
++	depends on CRYPTO_DEV_IFXMIPS
++	select CRYPTO_BLKCIPHER
++	default y
++	help
++	Use crypto hardware for AES algorithm.
++	  If unsure say N.
++
++menuconfig CRYPTO_DEV_IFXMIPS_ARC4
++	bool "IFXMIPS crypto hardware for ARC4 algorithm"
++	depends on (CRYPTO_DEV_IFXMIPS && !DANUBE)
++	select CRYPTO_BLKCIPHER
++	default y
++	help
++	Use crypto hardware for ARC4 algorithm.
++	  If unsure say N.
++
++menuconfig CRYPTO_DEV_IFXMIPS_SHA1
++	bool "IFXMIPS crypto hardware for SHA1 algorithm"
++	depends on CRYPTO_DEV_IFXMIPS
++	select CRYPTO_BLKCIPHER
++	default y
++	help
++	Use crypto hardware for SHA1 algorithm.
++	  If unsure say N.
++
++menuconfig CRYPTO_DEV_IFXMIPS_SHA1_HMAC
++	bool "IFXMIPS crypto hardware for SHA1_HMAC algorithm"
++	depends on (CRYPTO_DEV_IFXMIPS && !DANUBE)
++	select CRYPTO_BLKCIPHER
++	default y
++	help
++	Use crypto hardware for SHA1_HMAC algorithm.
++	  If unsure say N.
++
++menuconfig CRYPTO_DEV_IFXMIPS_MD5_HMAC
++	bool "IFXMIPS crypto hardware for MD5_HMAC algorithms"
++	depends on (CRYPTO_DEV_IFXMIPS && !DANUBE)
++	select CRYPTO_BLKCIPHER
++	default y
++	help
++	  Use crypto hardware for MD5_HMAC algorithm.
++	  If unsure say N.
++
+ endif # CRYPTO_HW
+--- a/drivers/crypto/Makefile
++++ b/drivers/crypto/Makefile
+@@ -6,3 +6,4 @@ obj-$(CONFIG_CRYPTO_DEV_MV_CESA) += mv_c
+ obj-$(CONFIG_CRYPTO_DEV_TALITOS) += talitos.o
+ obj-$(CONFIG_CRYPTO_DEV_IXP4XX) += ixp4xx_crypto.o
+ obj-$(CONFIG_CRYPTO_DEV_PPC4XX) += amcc/
++obj-$(CONFIG_CRYPTO_DEV_IFXMIPS) += ifxmips/

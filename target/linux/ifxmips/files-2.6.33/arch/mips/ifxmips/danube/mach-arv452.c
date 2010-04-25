@@ -167,4 +167,4 @@ arv452_init(void)
 MIPS_MACHINE(IFXMIPS_MACH_ARV452,
 			"ARV452",
 			"Airties WAV-281, Arcor A800",
-		     arv452_init);
+			arv452_init);
