@@ -31,7 +31,7 @@
  	AS_HELP_STRING(--enable-kernelbuild=x,Set the target kernel build path (only for kernel 2.6.x)),
  	[
 -		if test -e $enableval/include/linux/autoconf.h; then
-+		if test -e $enableval/include/{linux,generated}/autoconf.h; then
++		if test -e $enableval/include/linux/autoconf.h -o -e $enableval/include/generated/autoconf.h; then
  			AC_SUBST([KERNEL_BUILD_PATH],[$enableval])
  		else
  			AC_MSG_ERROR([The kernel build directory is not valid or not configured!])
