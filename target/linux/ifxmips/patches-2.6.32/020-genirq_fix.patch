@@ -1,8 +1,6 @@
-Index: linux-2.6.33.2/kernel/irq/chip.c
-===================================================================
---- linux-2.6.33.2.orig/kernel/irq/chip.c	2010-04-02 01:02:33.000000000 +0200
-+++ linux-2.6.33.2/kernel/irq/chip.c	2010-04-02 23:37:40.000000000 +0200
-@@ -650,6 +650,9 @@
+--- a/kernel/irq/chip.c
++++ b/kernel/irq/chip.c
+@@ -637,6 +637,9 @@ handle_percpu_irq(unsigned int irq, stru
  
  	kstat_incr_irqs_this_cpu(irq, desc);
  
