@@ -1,6 +1,6 @@
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -209,4 +209,66 @@ config CRYPTO_DEV_PPC4XX
+@@ -222,4 +222,66 @@ config CRYPTO_DEV_PPC4XX
  	help
  	  This option allows you to have support for AMCC crypto acceleration.
  
@@ -69,7 +69,7 @@
  endif # CRYPTO_HW
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -5,3 +5,4 @@ obj-$(CONFIG_CRYPTO_DEV_HIFN_795X) += hi
+@@ -6,3 +6,4 @@ obj-$(CONFIG_CRYPTO_DEV_MV_CESA) += mv_c
  obj-$(CONFIG_CRYPTO_DEV_TALITOS) += talitos.o
  obj-$(CONFIG_CRYPTO_DEV_IXP4XX) += ixp4xx_crypto.o
  obj-$(CONFIG_CRYPTO_DEV_PPC4XX) += amcc/
