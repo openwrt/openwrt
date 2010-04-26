@@ -778,28 +778,6 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 	return sent;
 }
 
-static void ag71xx_rx_align_skb(struct ag71xx *ag, struct sk_buff *skb, int len)
-{
-	int offset = ((unsigned long) skb->data) % 4;
-	void *data;
-
-	if (offset == 2)
-		return;
-
-	if (ag->phy_dev && ag->phy_dev->pkt_align != 0)
-		return;
-
-	if (len > 128)
-		return;
-
-	if (WARN_ON(skb_headroom(skb) < 2))
-		return;
-
-	data = skb->data;
-	skb->data -= 2;
-	memmove(skb->data, data, len);
-}
-
 static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 {
 	struct net_device *dev = ag->dev;
@@ -840,8 +818,6 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		skb_put(skb, pktlen);
 		if (ag71xx_has_ar8216(ag))
 			err = ag71xx_remove_ar8216_header(ag, skb, pktlen);
-
-		ag71xx_rx_align_skb(ag, skb, pktlen);
 
 		if (err) {
 			dev->stats.rx_dropped++;
