@@ -90,17 +90,31 @@ endef
 dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,1600k(unknown)ro,6208k@0x50000(firmware)
 define Image/Build/DIR825B1
 	$(call PatchKernelLzma,$(2),$(3) $(dir825b1_mtdlayout))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(call imgname,$(1),$(2)).bin)
-	if [ `stat -c%s "$(call imgname,$(1),$(2)).bin"` -gt 1048576 ]; then \
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1048576 ]; then \
 	        echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-		rm -f $(call imgname,$(1),$(2)).bin; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 5308416 ]; then \
 	        echo "Warning: $(KDIR)/root.$(1) is too big"; \
-		rm -f $(call imgname,$(1),$(2)).bin; \
 	else \
-		dd if=$(KDIR)/root.$(1) of=$(call imgname,$(1),$(2)).bin bs=1k seek=1024; \
-		cp $(call imgname,$(1),$(2)).bin $(call imgname,$(1),$(2))-backup-loader.bin; \
-		echo -n "01AP94-AR7161-RT-080619-00" >> $(call imgname,$(1),$(2))-backup-loader.bin; \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync; \
+			dd if=$(KDIR)/root.$(1) \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+		( \
+			dd if=$(call imgname,$(1),$(2))-sysupgrade.bin; \
+			echo -n "01AP94-AR7161-RT-080619-00"; \
+		) > $(call imgname,$(1),$(2))-backup-loader.bin; \
+		if [ `stat -c%s $(call imgname,$(1),$(2))-sysupgrade.bin` -gt 4194304 ]; then \
+			echo "Warning: $(call imgname,$(1),$(2))-sysupgrade.bin is too big"; \
+		else \
+			( \
+				dd if=$(call imgname,$(1),$(2))-sysupgrade.bin bs=4096k conv=sync; \
+				echo -n "00AP94-AR7161-RT-080619-00"; \
+			) > $(call imgname,$(1),$(2))-factory.bin; \
+		fi; \
 	fi; fi
 endef
 
