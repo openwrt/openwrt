@@ -40,6 +40,7 @@ struct board_info {
 	char		*id;
 	uint32_t	seed;
 	uint8_t		unk[2];
+	uint32_t	datalen;
 };
 
 /*
@@ -58,10 +59,12 @@ static struct board_info boards[] = {
 		.id		= "MZK-W04NU",
 		.seed		= 2,
 		.unk		= {0x04, 0x08},
+		.datalen	= 0x770000,
 	}, {
 		.id		= "MZK-W300NH",
 		.seed		= 4,
 		.unk		= {0x00, 0x00},
+		.datalen	= 0x770000,
 	}, {
 		/* terminating entry */
 	}
@@ -189,9 +192,13 @@ int main(int argc, char *argv[])
 		goto err;
 	}
 
-	buflen = (st.st_size + 3) & ~3;
-	buflen += sizeof(*hdr);
+	if (st.st_size > board->datalen) {
+		ERR("file '%s' is too big - max size: 0x%08X (exceeds %lu bytes)\n",
+		    ifname, board->datalen, st.st_size - board->datalen);
+		goto err;
+	}
 
+	buflen = board->datalen + 0x10000;
 	buf = malloc(buflen);
 	if (!buf) {
 		ERR("no memory for buffer\n");
@@ -201,7 +208,7 @@ int main(int argc, char *argv[])
 	memset(buf, 0xff, buflen);
 	hdr = (struct planex_hdr *)buf;
 
-	hdr->datalen = HOST_TO_BE32(buflen - sizeof(*hdr));
+	hdr->datalen = HOST_TO_BE32(board->datalen);
 	hdr->unk1[0] = board->unk[0];
 	hdr->unk1[1] = board->unk[1];
 
@@ -223,7 +230,7 @@ int main(int argc, char *argv[])
 	seed = HOST_TO_BE32(board->seed);
 	sha1_starts(&ctx);
 	sha1_update(&ctx, (uchar *) &seed, sizeof(seed));
-	sha1_update(&ctx, buf + sizeof(*hdr), buflen - sizeof(*hdr));
+	sha1_update(&ctx, buf + sizeof(*hdr), board->datalen);
 	sha1_finish(&ctx, hdr->sha1sum);
 
 	outfile = fopen(ofname, "w");
