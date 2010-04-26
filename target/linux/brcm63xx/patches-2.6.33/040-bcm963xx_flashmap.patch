@@ -13,7 +13,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
-@@ -259,6 +259,13 @@ config MTD_ALCHEMY
+@@ -257,6 +257,13 @@ config MTD_ALCHEMY
  	help
  	  Flash memory access on AMD Alchemy Pb/Db/RDK Reference Boards
  
@@ -342,7 +342,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +MODULE_AUTHOR("Mike Albon <malbon@openwrt.org>");
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -722,20 +722,6 @@ static int board_get_mac_address(u8 *mac
+@@ -721,20 +721,6 @@ static int board_get_mac_address(u8 *mac
  	return 0;
  }
  
@@ -363,7 +363,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  static struct resource mtd_resources[] = {
  	{
  		.start		= 0,	/* filled at runtime */
-@@ -745,12 +731,9 @@ static struct resource mtd_resources[] =
+@@ -744,12 +730,9 @@ static struct resource mtd_resources[] =
  };
  
  static struct platform_device mtd_dev = {
