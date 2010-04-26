@@ -61,7 +61,7 @@ static struct mtd_partition mzk_w04nu_partitions[] = {
 	} , {
 		.name		= "firmware",
 		.offset		= 0x050000,
-		.size		= 0x770000,
+		.size		= 0x790000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
