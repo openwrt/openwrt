@@ -1,0 +1,108 @@
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -1266,6 +1266,8 @@ struct hostapd_config * hostapd_config_r
+ 			}
+ 		} else if (os_strcmp(buf, "wds_sta") == 0) {
+ 			bss->wds_sta = atoi(pos);
++		} else if (os_strcmp(buf, "ap_isolate") == 0) {
++			bss->isolate = atoi(pos);
+ 		} else if (os_strcmp(buf, "ap_max_inactivity") == 0) {
+ 			bss->ap_max_inactivity = atoi(pos);
+ 		} else if (os_strcmp(buf, "country_code") == 0) {
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -199,6 +199,7 @@ struct hostapd_bss_config {
+ 	struct mac_acl_entry *deny_mac;
+ 	int num_deny_mac;
+ 	int wds_sta;
++	int isolate;
+ 
+ 	int auth_algs; /* bitfield of allowed IEEE 802.11 authentication
+ 			* algorithms, WPA_AUTH_ALG_{OPEN,SHARED,LEAP} */
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -1626,6 +1626,14 @@ struct wpa_driver_ops {
+ 	                   const char *bridge_ifname);
+ 
+ 	/**
++	 * set_ap_isolate - Enable/disable AP isolation
++	 * @priv: private driver interface data
++	 * @val: 1 = enabled; 0 = disabled
++	 * Returns: 0 on success, -1 on failure
++	 */
++	int (*set_ap_isolate)(void *priv, int val);
++
++	/**
+ 	 * send_action - Transmit an Action frame
+ 	 * @priv: Private driver interface data
+ 	 * @freq: Frequency (in MHz) of the channel
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4263,6 +4263,29 @@ static int i802_set_rate_sets(void *priv
+ 	return -ENOBUFS;
+ }
+ 
++static int i802_set_ap_isolate(void *priv, int val)
++{
++	struct i802_bss *bss = priv;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct nl_msg *msg;
++	int i;
++
++	msg = nlmsg_alloc();
++	if (!msg)
++		return -ENOMEM;
++
++	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0, 0,
++		    NL80211_CMD_SET_BSS, 0);
++
++	NLA_PUT_U8(msg, NL80211_ATTR_AP_ISOLATE, !!val);
++
++	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(bss->ifname));
++
++	return send_and_recv_msgs(drv, msg, NULL, NULL);
++ nla_put_failure:
++	return -ENOBUFS;
++}
++
+ #endif /* HOSTAPD */
+ 
+ 
+@@ -5372,6 +5395,7 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.set_tx_queue_params = i802_set_tx_queue_params,
+ 	.set_sta_vlan = i802_set_sta_vlan,
+ 	.set_wds_sta = i802_set_wds_sta,
++	.set_ap_isolate = i802_set_ap_isolate,
+ #endif /* HOSTAPD */
+ 	.set_freq = i802_set_freq,
+ 	.send_action = wpa_driver_nl80211_send_action,
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -180,6 +180,14 @@ static int hostapd_set_radius_acl_expire
+ }
+ 
+ 
++static int hostapd_set_ap_isolate(struct hostapd_data *hapd, int value)
++{
++	if (hapd->driver == NULL || hapd->driver->set_ap_isolate == NULL)
++		return 0;
++	hapd->driver->set_ap_isolate(hapd->drv_priv, value);
++}
++
++
+ static int hostapd_set_bss_params(struct hostapd_data *hapd,
+ 				  int use_protection)
+ {
+@@ -229,6 +237,12 @@ static int hostapd_set_bss_params(struct
+ 			   "driver");
+ 		ret = -1;
+ 	}
++	if (hostapd_set_ap_isolate(hapd, hapd->conf->isolate) &&
++	    !hapd->conf->isolate) {
++		wpa_printf(MSG_ERROR, "Could not enable AP isolation in "
++			   "kernel driver");
++		ret = -1;
++	}
+ 
+ 	return ret;
+ }
