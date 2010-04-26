@@ -294,13 +294,13 @@ define Image/Build/Planex
 			-d $(KDIR)/vmlinux-$(2).bin.gz $(KDIR)/vmlinux-$(2).uImage; \
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1408k conv=sync; \
-			dd if=$(KDIR)/root.$(1) bs=6208k conv=sync; \
-		) > $(call imgname,$(1),$(2)).bin; \
+			dd if=$(KDIR)/root.$(1); \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
 			-B $(2) \
 			-v 2.00.00 \
-			-i $(call imgname,$(1),$(2)).bin \
-			-o $(call imgname,$(1),$(2)).webui; \
+			-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+			-o $(call imgname,$(1),$(2))-factory.bin; \
 	fi; fi
 endef
 
