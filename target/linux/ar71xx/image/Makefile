@@ -320,7 +320,10 @@ define Image/Build/CyberTAN
 		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) \
 		-i $(KDIR)/image.tmp \
-		-o $(call imgname,$(1),$(2)).bin
+		-o $(call imgname,$(1),$(2))-sysupgrade.bin
+	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) -g \
+		-i $(KDIR)/image.tmp \
+		-o $(call imgname,$(1),$(2))-factory.bin
 	rm $(KDIR)/image.tmp
 endef
 
