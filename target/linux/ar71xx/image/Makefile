@@ -81,10 +81,9 @@ define Image/Build/WRT400N
 			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1280k conv=sync; \
-			dd if=$(KDIR)/root.$(1) bs=6336k conv=sync; \
-			echo -n $(4); \
-		) > $(call imgname,$(1),$(2)).bin; \
-		wrt400n $(KDIR)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call imgname,$(1),$(2)).webui; \
+			dd if=$(KDIR)/root.$(1) \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+		wrt400n $(KDIR)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call imgname,$(1),$(2))-factory.bin; \
 	fi; fi
 endef
 
