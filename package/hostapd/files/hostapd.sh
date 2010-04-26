@@ -5,6 +5,11 @@ hostapd_set_bss_options() {
 
 	config_get enc "$vif" encryption
 	config_get wpa_group_rekey "$vif" wpa_group_rekey
+	config_get_bool ap_isolate "$vif" isolate 0
+
+	if [ "$ap_isolate" -gt 0 ]; then
+		append "$var" "ap_isolate=$ap_isolate" "$N"
+	fi
 
 	# Examples:
 	# psk-mixed/tkip 	=> WPA1+2 PSK, TKIP
