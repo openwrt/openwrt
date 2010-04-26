@@ -505,7 +505,7 @@
 +	if (is_on == BITBANG_CS_INACTIVE)
 +		val |= SPI_CMD_NOOP;
 +	else if (is_on == BITBANG_CS_ACTIVE)
-+		val |= (1 << spi->chip_select << SPI_CMD_DEVICE_ID_SHIFT);
++		val |= (spi->chip_select << SPI_CMD_DEVICE_ID_SHIFT);
 +
 +	bcm_spi_writew(val, bs->regs, SPI_CMD);
 +}
