@@ -649,10 +649,10 @@ Index: linux-2.6.32.10/drivers/spi/bcm63xx_spi.c
 +	bcm_spi_writeb(msg_ctl, bs->regs, SPI_MSG_CTL);
 +
 +	/* Issue the transfer */
-+	cmd = bcm_spi_readb(bs->regs, SPI_CMD);
++	cmd = bcm_spi_readw(bs->regs, SPI_CMD);
 +	cmd |= SPI_CMD_START_IMMEDIATE;
 +	cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
-+	bcm_spi_writeb(cmd, bs->regs, SPI_CMD);
++	bcm_spi_writew(cmd, bs->regs, SPI_CMD);
 +
 +	wait_for_completion(&bs->done);
 +
@@ -697,10 +697,10 @@ Index: linux-2.6.32.10/drivers/spi/bcm63xx_spi.c
 +			bcm63xx_spi_fill_tx_fifo(bs);
 +
 +			/* Start the transfer */
-+			cmd = bcm_spi_readb(bs->regs, SPI_CMD);
++			cmd = bcm_spi_readw(bs->regs, SPI_CMD);
 +			cmd |= SPI_CMD_START_IMMEDIATE;
 +			cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
-+			bcm_spi_writeb(cmd, bs->regs, SPI_CMD);
++			bcm_spi_writew(cmd, bs->regs, SPI_CMD);
 +		} else
 +			complete(&bs->done);
 +	}
