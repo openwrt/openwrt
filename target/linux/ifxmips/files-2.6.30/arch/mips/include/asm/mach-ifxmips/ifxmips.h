@@ -203,6 +203,23 @@
 
 #define IFXMIPS_ICU_OFFSET		(IFXMIPS_ICU_IM1_ISR - IFXMIPS_ICU_IM0_ISR)
 
+/* EIU - external interrupt controller */
+
+/** EIU - base address */
+#define IFXMIPS_EIU_BASE_ADDR		0xBF101000
+/** EIU - control register */
+#define IFXMIPS_EIU_EXIN_C			((u32 *)(IFXMIPS_EIU_BASE_ADDR + 0x0000))
+/** EIU - interrupt node interrupt capture */
+#define IFXMIPS_EIU_INIC			((u32 *)(IFXMIPS_EIU_BASE_ADDR + 0x0004))
+/** EIU - interrupt node control */
+#define IFXMIPS_EIU_INC				((u32 *)(IFXMIPS_EIU_BASE_ADDR + 0x0008))
+/** EIU - interrupt node enable */
+#define IFXMIPS_EIU_INEN			((u32 *)(IFXMIPS_EIU_BASE_ADDR + 0x000C))
+/** NMI - control */
+#define IFXMIPS_NMI_CR				((u32 *)(IFXMIPS_EIU_BASE_ADDR + 0x00F0))
+/** NMI - status */
+#define IFXMIPS_NMI_SR				(( u32 *)(IFXMIPS_EIU_BASE_ADDR + 0x00F4))
+
 
 /*------------ ETOP */
 
