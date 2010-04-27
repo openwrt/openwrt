@@ -1,0 +1,95 @@
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -227,7 +227,7 @@ drv_vmmc_CFLAGS += -fno-common
+ drv_vmmc_OBJS = "$(subst .c,.o, $(drv_vmmc_SOURCES) $(nodist_drv_vmmc_SOURCES))"
+ 
+ drv_vmmc.ko: $(drv_vmmc_SOURCES) $(EXTRA_DIST)
+-	@echo -e "Making Linux 2.6.x kernel object"
++	@echo "Making Linux 2.6.x kernel object"
+ 	@for f in $(drv_vmmc_SOURCES) $(nodist_drv_vmmc_SOURCES) ; do \
+ 		if test ! -e $(PWD)/$$f; then \
+ 			echo "  LN      $$f" ; \
+@@ -235,10 +235,10 @@ drv_vmmc.ko: $(drv_vmmc_SOURCES) $(EXTRA
+ 			ln -s @abs_srcdir@/$$f $(PWD)/$$f; \
+ 		fi; \
+ 	done;
+-	@echo -e "# drv_vmmc: Generated to build Linux 2.6.x kernel object" > $(PWD)/Kbuild
+-	@echo -e "obj-m := $(subst .ko,.o,$@)"			>> $(PWD)/Kbuild
+-	@echo -e "$(subst .ko,,$@)-y := $(drv_vmmc_OBJS)"	>> $(PWD)/Kbuild
+-	@echo -e "EXTRA_CFLAGS := -DHAVE_CONFIG_H  $(CFLAGS) $(drv_vmmc_CFLAGS) $(INCLUDES)"	>> $(PWD)/Kbuild
++	@echo "# drv_vmmc: Generated to build Linux 2.6.x kernel object" > $(PWD)/Kbuild
++	@echo "obj-m := $(subst .ko,.o,$@)"			>> $(PWD)/Kbuild
++	@echo "$(subst .ko,,$@)-y := $(drv_vmmc_OBJS)"	>> $(PWD)/Kbuild
++	@echo "EXTRA_CFLAGS := -DHAVE_CONFIG_H  $(CFLAGS) $(drv_vmmc_CFLAGS) $(INCLUDES)"	>> $(PWD)/Kbuild
+ 	$(MAKE) ARCH=@KERNEL_ARCH@ -C @KERNEL_BUILD_PATH@ O=@KERNEL_BUILD_PATH@ M=$(PWD) modules
+ 
+ clean-generic:
+--- a/src/drv_vmmc_linux.c
++++ b/src/drv_vmmc_linux.c
+@@ -27,11 +27,12 @@
+ #include <linux/proc_fs.h>
+ #include <linux/wait.h>
+ #include <linux/vmalloc.h>
++#include <linux/sched.h>
+ 
+ #ifdef LINUX_2_6
+ #include <linux/version.h>
+ #ifndef UTS_RELEASE
+-#include <linux/utsrelease.h>
++#include <generated/utsrelease.h>
+ #endif /* UTC_RELEASE */
+ #undef CONFIG_DEVFS_FS
+ #endif /* LINUX_2_6 */
+--- a/src/mps/drv_mps_vmmc_linux.c
++++ b/src/mps/drv_mps_vmmc_linux.c
+@@ -23,7 +23,7 @@
+ #ifdef CONFIG_DEBUG_MINI_BOOT
+ #define IKOS_MINI_BOOT
+ #endif /* */
+-#include <linux/autoconf.h>
++#include <generated/autoconf.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/poll.h>
+@@ -34,7 +34,7 @@
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
+ #ifdef LINUX_2_6
+-#include <linux/utsrelease.h>
++#include <generated/utsrelease.h>
+ #else /* */
+ #include <linux/uts.h>
+ #include <linux/moduleparam.h>
+--- a/src/mps/drv_mps_vmmc_common.c
++++ b/src/mps/drv_mps_vmmc_common.c
+@@ -21,7 +21,7 @@
+ #undef USE_PLAIN_VOICE_FIRMWARE
+ #undef PRINT_ON_ERR_INTERRUPT
+ #undef FAIL_ON_ERR_INTERRUPT
+-#include <linux/autoconf.h>
++#include <generated/autoconf.h>
+ #include <linux/interrupt.h>
+ #include <linux/delay.h>
+ 
+--- a/src/mps/drv_mps_vmmc_danube.c
++++ b/src/mps/drv_mps_vmmc_danube.c
+@@ -20,7 +20,7 @@
+ 
+ #ifdef SYSTEM_DANUBE            /* defined in drv_mps_vmmc_config.h */
+ 
+-#include <linux/autoconf.h>
++#include <generated/autoconf.h>
+ 
+ /* lib_ifxos headers */
+ #include "ifx_types.h"
+--- a/configure.in
++++ b/configure.in
+@@ -112,7 +112,7 @@ dnl Set kernel build path
+ AC_ARG_ENABLE(kernelbuild,
+         AS_HELP_STRING(--enable-kernelbuild=x,Set the target kernel build path),
+         [
+-                if test -r $enableval/include/linux/autoconf.h; then
++                if test -e $enableval/include/linux/autoconf.h -o -e $enableval/include/generated/autoconf.h; then
+                         AC_SUBST([KERNEL_BUILD_PATH],[$enableval])
+                 else
+                         AC_MSG_ERROR([The kernel build directory is not valid or not configured!])
