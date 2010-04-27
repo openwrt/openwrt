@@ -35,8 +35,8 @@ endef
 define Package/mountd/install
 	$(INSTALL_DIR) $(1)/sbin/ $(1)/etc/config/ $(1)/etc/init.d/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mountd $(1)/sbin/
-	$(INSTALL_BIN) ./files/mountd.config $(1)/etc/config/mountd
-	$(INSTALL_DATA) ./files/mountd.init $(1)/etc/init.d/mountd
+	$(INSTALL_DATA) ./files/mountd.config $(1)/etc/config/mountd
+	$(INSTALL_BIN) ./files/mountd.init $(1)/etc/init.d/mountd
 endef
 
 $(eval $(call BuildPackage,mountd))
