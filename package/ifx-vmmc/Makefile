@@ -16,6 +16,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_MD5SUM:=3f1b44e79408a3320aa9f8b21a260fd0
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 
+PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ifx-vmmc

@@ -24,3 +24,13 @@
  	$(MAKE) ARCH=@KERNEL_ARCH@ -C @KERNEL_BUILD_PATH@ O=@KERNEL_BUILD_PATH@ M=$(PWD) modules
  
  clean-generic:
+--- a/src/drv_vmmc_linux.c
++++ b/src/drv_vmmc_linux.c
+@@ -27,6 +27,7 @@
+ #include <linux/proc_fs.h>
+ #include <linux/wait.h>
+ #include <linux/vmalloc.h>
++#include <linux/sched.h>
+ 
+ #ifdef LINUX_2_6
+ #include <linux/version.h>
