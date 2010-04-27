@@ -12,7 +12,7 @@ BOARDNAME:=Ingenic XBurst
 FEATURES:=jffs2 tgz ubifs audio
 SUBTARGETS:=qi_lb60 n516 n526
 
-LINUX_VERSION:=2.6.32.10
+LINUX_VERSION:=2.6.32.12
 
 DEVICE_TYPE=other
 
