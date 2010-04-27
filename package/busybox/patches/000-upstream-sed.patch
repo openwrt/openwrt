@@ -1,6 +1,5 @@
-diff -urpN busybox-1.16.1/editors/sed.c busybox-1.16.1-sed/editors/sed.c
---- busybox-1.16.1/editors/sed.c	2010-03-28 13:43:35.000000000 -0400
-+++ busybox-1.16.1-sed/editors/sed.c	2010-04-20 13:33:26.301975462 -0400
+--- a/editors/sed.c
++++ b/editors/sed.c
 @@ -936,7 +936,15 @@ static void process_files(void)
  		/* Skip blocks of commands we didn't match */
  		if (sed_cmd->cmd == '{') {
@@ -27,9 +26,8 @@ diff -urpN busybox-1.16.1/editors/sed.c busybox-1.16.1-sed/editors/sed.c
  			goto discard_line;
  
  		/* Read file, append contents to output */
-diff -urpN busybox-1.16.1/testsuite/sed.tests busybox-1.16.1-sed/testsuite/sed.tests
---- busybox-1.16.1/testsuite/sed.tests	2010-03-19 22:58:07.000000000 -0400
-+++ busybox-1.16.1-sed/testsuite/sed.tests	2010-04-20 13:33:26.301975462 -0400
+--- a/testsuite/sed.tests
++++ b/testsuite/sed.tests
 @@ -248,4 +248,14 @@ testing "sed beginning (^) matches only 
  	">/usr</>lib<\n" "" \
  	"/usr/lib\n"
