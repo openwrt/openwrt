@@ -62,8 +62,8 @@ IPKG:= \
 define Profile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
-  ifeq ($(PROFILE),)
-    PROFILE:=$(1)
+  ifeq ($(USER_PROFILE),)
+    USER_PROFILE:=$(1)
   endif
   $(1)_NAME:=$(NAME)
   $(1)_PACKAGES:=$(PACKAGES)
@@ -73,7 +73,7 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-info: FORCE
+_call_info: FORCE
 	echo 'Current Target: "$(BOARD)$(if $(SUBTARGET), ($(BOARDNAME)))"'
 	echo 'Default Packages: $(DEFAULT_PACKAGES)'
 	echo 'Available Profiles:'
@@ -84,19 +84,19 @@ $(TOPDIR)/tmp/ipkg.conf: FORCE
 	@echo 'dest root /' > $@
 	@echo 'src packages file:$(PACKAGE_DIR)' >> $@
 
-BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(PACKAGES) $($(PROFILE)_PACKAGES) kernel)
+BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(USER_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 
-image:
-	echo 'Building images for $(BOARD)$(if $($(PROFILE)_NAME), - $($(PROFILE)_NAME))'
+_call_image:
+	echo 'Building images for $(BOARD)$(if $($(USER_PROFILE)_NAME), - $($(USER_PROFILE)_NAME))'
 	echo 'Packages: $(BUILD_PACKAGES)'
 	echo
 	rm -rf $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR)
 	$(MAKE) package_index
 	$(MAKE) package_install
-ifneq ($(FILES),)
+ifneq ($(USER_FILES),)
 	$(MAKE) copy_files
 endif
 	$(MAKE) package_postinst
@@ -118,7 +118,7 @@ package_install: FORCE
 copy_files: FORCE
 	@echo
 	@echo Copying extra files
-	$(CP) $(FILES)/* $(TARGET_DIR)/
+	$(CP) $(USER_FILES)/* $(TARGET_DIR)/
 
 package_postinst: FORCE
 	@echo
@@ -139,6 +139,16 @@ build_image: FORCE
 clean:
 	rm -rf tmp $(TARGET_DIR) $(BIN_DIR)
 
+
+info:
+	(unset PROFILE FILES PACKAGES MAKEFLAGS; $(MAKE) -s _call_info)
+
+image:
+	(unset PROFILE FILES PACKAGES MAKEFLAGS; \
+	$(MAKE) _call_image \
+		$(if $(PROFILE),USER_PROFILE="$(PROFILE)") \
+		$(if $(FILES),USER_FILES="$(FILES)") \
+		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)"))
 
 .SILENT: help info image
 

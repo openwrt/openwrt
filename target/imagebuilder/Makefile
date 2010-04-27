@@ -23,9 +23,10 @@ all: compile
 $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(IB_KDIR) $(PKG_BUILD_DIR)/staging_dir/host $(PKG_BUILD_DIR)/target
+	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
 	$(CP) \
 		$(INCLUDE_DIR) $(SCRIPT_DIR) \
-		$(TOPDIR)/rules.mk $(TOPDIR)/.config \
+		$(TOPDIR)/rules.mk \
 		./files/Makefile \
 		$(TMP_DIR)/.targetinfo \
 		$(TMP_DIR)/.packageinfo \
