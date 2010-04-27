@@ -9,12 +9,9 @@
 #include <ifxmips.h>
 #include <ifxmips_cgu.h>
 
-#define SYSTEM_DANUBE			"Danube"
-#define SYSTEM_DANUBE_CHIPID1	0x00129083
-#define SYSTEM_DANUBE_CHIPID2	0x0012B083
-
-#define SYSTEM_TWINPASS			"Twinpass"
-#define SYSTEM_TWINPASS_CHIPID	0x0012D083
+#define SYSTEM_AR9			"AR9"
+#define SYSTEM_AR9_CHIPID1		0x00129083
+#define SYSTEM_AR9_CHIPID2		0x0012B083
 
 static unsigned int chiprev = 0;
 unsigned char ifxmips_sys_type[IFXMIPS_SYS_TYPE_LEN];
@@ -58,10 +55,15 @@ ifxmips_machine_power_off(void)
 	for(;;);
 }
 
+static inline u16 get_chip_partnum(void)
+{
+	return (ifxmips_r32(IFXMIPS_MPS_CHIPID) & 0x0FFFF000) >> 12;
+}
+
 void __init
 ifxmips_soc_setup(void)
 {
-	char *name = SYSTEM_DANUBE;
+	char *name = SYSTEM_AR9;
 	ioport_resource.start = IOPORT_RESOURCE_START;
 	ioport_resource.end = IOPORT_RESOURCE_END;
 	iomem_resource.start = IOMEM_RESOURCE_START;
@@ -71,24 +73,29 @@ ifxmips_soc_setup(void)
 	_machine_halt = ifxmips_machine_halt;
 	pm_power_off = ifxmips_machine_power_off;
 
-	chiprev = (ifxmips_r32(IFXMIPS_MPS_CHIPID) & 0x0FFFFFFF);
-
-	switch (chiprev)
+	switch (get_chip_partnum())
 	{
-	case SYSTEM_DANUBE_CHIPID1:
-	case SYSTEM_DANUBE_CHIPID2:
-		name = SYSTEM_DANUBE;
+	case 0x16C,
+		name = = "ARX188",
 		break;
-
-	case SYSTEM_TWINPASS_CHIPID:
-		name = SYSTEM_TWINPASS;
+	case 0x16D,
+		name = = "ARX168",
 		break;
-
+	case 0x16F,
+		name = = "ARX182",
+		break;
+	case 0x170,
+		name = = "GRX188",
+		break;
+	case 0x171,
+		name = = "GRX168",
+		break;
 	default:
-		printk(KERN_ERR "This is not a danube chiprev : 0x%08X\n", chiprev);
+		printk(KERN_ERR "This is not a AR9 chiprev : 0x%08X\n", get_chip_partnum());
 		BUG();
 		break;
 	}
+
 	snprintf(ifxmips_sys_type, IFXMIPS_SYS_TYPE_LEN - 1, "%s rev1.%d %dMhz",
 		name, ifxmips_get_cpu_ver(),
 		ifxmips_get_cpu_hz() / 1000000);
