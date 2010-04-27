@@ -17,6 +17,10 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=c45bc531c1ed2ac80f68fb986b63bb87
 
+ifeq ($(DUMP),)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_IFXMIPS_DSL_' $(TOPDIR)/.config | md5s)
+endif
+
 FW_BASE_NAME:=dsl_danube_firmware_adsl
 FW_A_VER:=02.04.04.00.00.01
 FW_B_VER:=02.04.01.07.00.02
@@ -24,6 +28,8 @@ FW_A_FILE_VER:=244001
 FW_B_FILE_VER:=241702
 FW_A_MD5:=f717db3067a0049a26e233ab11238710
 FW_B_MD5:=349de7cd20368f4ac9b7e8322114a512
+
+PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 
 include $(INCLUDE_DIR)/package.mk
 
