@@ -16,6 +16,8 @@ PKG_SOURCE:=drv_tapi-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=1ffee83ce69f55915468c309d8ae2138
 
+PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ifx-tapi
