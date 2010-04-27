@@ -31,10 +31,7 @@ define Package/grub
   URL:=http://www.gnu.org/software/grub/
 endef
 
-CONFIGURE_FLAGS:= \
-	--target=$(GNU_TARGET_NAME) \
-	--host=$(GNU_TARGET_NAME) \
-	--build=$(GNU_HOST_NAME)
+CONFIGURE_FLAGS:= 
 
 ifneq ($(HOST_OS),Darwin)
 define Build/Configure
