@@ -149,19 +149,19 @@ arv452_init(void)
 
 	ifxmips_register_gpio();
 
-	danube_register_ebu_gpio(&arv452_ebu_resource, ARV452_LATCH_SWITCH);
+	ar9_register_ebu_gpio(&arv452_ebu_resource, ARV452_LATCH_SWITCH);
 
 	ifxmips_register_mtd(&arv452_flash_data);
 
-	danube_register_pci(PCI_CLOCK_EXT, 0);
+	ar9_register_pci(PCI_CLOCK_EXT, 0);
 
 	ifxmips_register_wdt();
 
 	ifxmips_register_gpio_leds(arv452_leds_gpio, ARRAY_SIZE(arv452_leds_gpio));
 
-	danube_register_ethernet(mac);
+	ar9_register_ethernet(mac);
 
-	danube_register_usb();
+	ar9_register_usb();
 }
 
 MIPS_MACHINE(IFXMIPS_MACH_ARV452,

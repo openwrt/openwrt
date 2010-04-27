@@ -8,9 +8,9 @@ enum {
 	PCI_CLOCK_EXT
 };
 
-void __init danube_register_usb(void);
-void __init danube_register_ebu_gpio(struct resource *resource, u32 value);
-void __init danube_register_ethernet(unsigned char *mac);
-void __init danube_register_pci(int clock, int irq_mask);
+void __init ar9_register_usb(void);
+void __init ar9_register_ebu_gpio(struct resource *resource, u32 value);
+void __init ar9_register_ethernet(unsigned char *mac);
+void __init ar9_register_pci(int clock, int irq_mask);
 
 #endif
