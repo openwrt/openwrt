@@ -72,6 +72,10 @@
 #define IFXMIPS_USB_INT				(INT_NUM_IM4_IRL0 + 22)
 #define IFXMIPS_USB_OC_INT			(INT_NUM_IM4_IRL0 + 23)
 
+#define IFXMIPS_EIU_IR0				(INT_NUM_IM4_IRL0 + 30)
+#define IFXMIPS_EIU_IR1				(INT_NUM_IM3_IRL0 + 31)
+#define IFXMIPS_EIU_IR2				(INT_NUM_IM1_IRL0 + 26)
+
 
 extern void ifxmips_mask_and_ack_irq(unsigned int irq_nr);
 
