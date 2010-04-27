@@ -29,7 +29,7 @@
  # POWERPC Architecture
 --- /dev/null
 +++ b/drivers/watchdog/bcm63xx_wdt.c
-@@ -0,0 +1,334 @@
+@@ -0,0 +1,354 @@
 +/*
 + *  Broadcom BCM63xx SoC watchdog driver
 + *
@@ -56,12 +56,15 @@
 +#include <linux/watchdog.h>
 +#include <linux/timer.h>
 +#include <linux/jiffies.h>
++#include <linux/interrupt.h>
++#include <linux/ptrace.h>
 +#include <linux/resource.h>
 +#include <linux/platform_device.h>
 +
 +#include <bcm63xx_cpu.h>
 +#include <bcm63xx_io.h>
 +#include <bcm63xx_regs.h>
++#include <bcm63xx_timer.h>
 +
 +#define PFX KBUILD_MODNAME
 +
@@ -78,7 +81,6 @@
 +} bcm63xx_wdt_device;
 +
 +static int expect_close;
-+static int timeout;
 +
 +static int wdt_time = WDT_DEFAULT_TIME;
 +static int nowayout = WATCHDOG_NOWAYOUT;
@@ -98,6 +100,13 @@
 +{
 +	bcm_writel(WDT_STOP_1, bcm63xx_wdt_device.regs + WDT_CTL_REG);
 +	bcm_writel(WDT_STOP_2, bcm63xx_wdt_device.regs + WDT_CTL_REG);
++}
++
++static void bcm63xx_wdt_isr(void *data)
++{
++	struct pt_regs *regs = get_irq_regs();
++
++	die(PFX " fire", regs);
 +}
 +
 +static void bcm63xx_timer_tick(unsigned long unused)
@@ -292,6 +301,13 @@
 +		return -ENXIO;
 +	}
 +
++	ret = bcm63xx_timer_register(TIMER_WDT_ID, bcm63xx_wdt_isr, NULL);
++	if (ret < 0) {
++		printk(KERN_ERR PFX
++			"failed to register wdt timer isr\n");
++		goto unmap;
++	}
++
 +	if (bcm63xx_wdt_settimeout(wdt_time)) {
 +		bcm63xx_wdt_settimeout(WDT_DEFAULT_TIME);
 +		printk(KERN_INFO PFX
@@ -303,22 +319,25 @@
 +	if (ret) {
 +		printk(KERN_ERR PFX
 +			"failed to register reboot_notifier\n");
-+		return ret;
++		goto unregister_timer;
 +	}
 +
 +	ret = misc_register(&bcm63xx_wdt_miscdev);
 +	if (ret < 0) {
 +		printk(KERN_ERR PFX
 +			"failed to register watchdog device\n");
-+		goto unmap;
++		goto unregister_reboot_notifier;
 +	}
 +
 +	printk(KERN_INFO PFX " started, timer margin: %d sec\n", WDT_DEFAULT_TIME);
 +
 +	return 0;
 +
-+unmap:
++unregister_reboot_notifier:
 +	unregister_reboot_notifier(&bcm63xx_wdt_notifier);
++unregister_timer:
++	bcm63xx_timer_unregister(TIMER_WDT_ID);
++unmap:
 +	iounmap(bcm63xx_wdt_device.regs);
 +	return ret;
 +}
@@ -333,6 +352,7 @@
 +	iounmap(bcm63xx_wdt_device.regs);
 +
 +	unregister_reboot_notifier(&bcm63xx_wdt_notifier);
++	bcm63xx_timer_unregister(TIMER_WDT_ID);
 +
 +	return 0;
 +}
