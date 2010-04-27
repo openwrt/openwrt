@@ -4,6 +4,6 @@ BOARDNAME:=Danube
 FEATURES:=squashfs jffs2
 
 define Target/Description
-	Infineon Danube
+	Lantiq Danube
 endef
 
