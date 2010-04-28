@@ -48,7 +48,7 @@
  				/* reset descriptor's curr_addr */
  				rxdesc->addr = virt_to_phys(skb_new->data);
  
-@@ -1239,6 +1245,8 @@ static int ar231x_mdiobus_probe (struct 
+@@ -1239,6 +1245,8 @@ static int ar231x_mdiobus_probe (struct
  		return PTR_ERR(phydev);
  	}
  
