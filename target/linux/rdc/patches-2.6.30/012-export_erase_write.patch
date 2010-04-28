@@ -1,8 +1,6 @@
-Index: linux-2.6.30.10/drivers/mtd/mtdblock.c
-===================================================================
---- linux-2.6.30.10.orig/drivers/mtd/mtdblock.c	2010-03-19 00:17:37.000000000 +0100
-+++ linux-2.6.30.10/drivers/mtd/mtdblock.c	2010-03-19 00:17:54.000000000 +0100
-@@ -45,7 +45,7 @@
+--- a/drivers/mtd/mtdblock.c
++++ b/drivers/mtd/mtdblock.c
+@@ -45,7 +45,7 @@ static void erase_callback(struct erase_
  	wake_up(wait_q);
  }
  
@@ -11,11 +9,9 @@ Index: linux-2.6.30.10/drivers/mtd/mtdblock.c
  			int len, const char *buf)
  {
  	struct erase_info erase;
-Index: linux-2.6.30.10/include/linux/mtd/mtd.h
-===================================================================
---- linux-2.6.30.10.orig/include/linux/mtd/mtd.h	2010-03-19 00:17:42.000000000 +0100
-+++ linux-2.6.30.10/include/linux/mtd/mtd.h	2010-03-19 00:21:22.000000000 +0100
-@@ -319,6 +319,10 @@
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
+@@ -319,6 +319,10 @@ int default_mtd_writev(struct mtd_info *
  int default_mtd_readv(struct mtd_info *mtd, struct kvec *vecs,
  		      unsigned long count, loff_t from, size_t *retlen);
  
