@@ -2811,6 +2811,16 @@ do {						\
 } while (0)
 
 /*
+ * LCD_D0~LCD_D7, LCD_PCLK, LCD_HSYNC, LCD_VSYNC, LCD_DE
+ */
+#define __gpio_as_lcd_8bit()			\
+do {						\
+	REG_GPIO_PXFUNS(2) = 0x003c00ff;	\
+	REG_GPIO_PXSELC(2) = 0x003c00ff;	\
+	REG_GPIO_PXPES(2) = 0x003c00ff;		\
+} while (0)
+
+/*
  * LCD_D0~LCD_D15, LCD_PCLK, LCD_HSYNC, LCD_VSYNC, LCD_DE
  */
 #define __gpio_as_lcd_16bit()			\

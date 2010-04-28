@@ -29,7 +29,7 @@ static void gpio_init(void)
 	/*
 	 * Initialize LCD pins
 	 */
-	__gpio_as_lcd_18bit();
+	__gpio_as_lcd_8bit();
 
 	/*
 	 * Initialize MSC pins
