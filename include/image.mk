@@ -95,17 +95,6 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     endef
   endif
 
-  ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
-    define Image/mkfs/tgz
-		$(TAR) -zcf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tgz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
-    endef
-  endif
-
-  ifeq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),y)
-    define Image/mkfs/cpiogz
-		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
-    endef
-  endif
   ifeq ($(CONFIG_TARGET_ROOTFS_UBIFS),y)
     define Image/mkfs/ubifs
 		$(CP) ./ubinize.cfg $(KDIR)
@@ -129,6 +118,18 @@ define Image/Checksum
 	)
 endef
 
+
+ifeq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),y)
+  define Image/mkfs/cpiogz
+		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
+  endef
+endif
+
+ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
+  define Image/mkfs/tgz
+		$(TAR) -zcf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tgz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+  endef
+endif
 
 ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
   E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_FSPART)*1024)))

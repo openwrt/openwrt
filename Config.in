@@ -63,14 +63,12 @@ menu "Target Images"
 	config TARGET_ROOTFS_TGZ
 		bool "tgz"
 		default y if USES_TGZ
-		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a compressed tar archive of the the root filesystem
 
 	config TARGET_ROOTFS_CPIOGZ
 		bool "cpiogz"
 		default y if USES_CPIOGZ
-		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a compressed cpio archive of the the root filesystem
 
