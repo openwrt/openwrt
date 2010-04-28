@@ -125,9 +125,9 @@ ifeq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),y)
   endef
 endif
 
-ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
-  define Image/mkfs/tgz
-		$(TAR) -zcf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tgz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+ifeq ($(CONFIG_TARGET_ROOTFS_TARGZ),y)
+  define Image/mkfs/targz
+		$(TAR) -zcf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
   endef
 endif
 
@@ -176,7 +176,7 @@ ifneq ($(IB),1)
 	$(call Image/BuildKernel)
 	$(call Image/mkfs/jffs2)
 	$(call Image/mkfs/squashfs)
-	$(call Image/mkfs/tgz)
+	$(call Image/mkfs/targz)
 	$(call Image/mkfs/cpiogz)
 	$(call Image/mkfs/ext2)
 	$(call Image/mkfs/iso)
@@ -187,7 +187,7 @@ else
 	$(call Image/BuildKernel)
 	$(call Image/mkfs/jffs2)
 	$(call Image/mkfs/squashfs)
-	$(call Image/mkfs/tgz)
+	$(call Image/mkfs/targz)
 	$(call Image/mkfs/cpiogz)
 	$(call Image/mkfs/ext2)
 	$(call Image/mkfs/iso)

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=mpc52xx
 BOARDNAME:=Freescale MPC52xx
-FEATURES:=tgz ext2
+FEATURES:=targz ext2
 
 LINUX_VERSION:=2.6.30.10
 

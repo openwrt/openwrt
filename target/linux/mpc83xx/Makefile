@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=mpc83xx
 BOARDNAME:=Freescale MPC83xx
-FEATURES:=squashfs tgz broken
+FEATURES:=squashfs targz broken
 
 LINUX_VERSION:=2.6.31.12
 
