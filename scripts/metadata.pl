@@ -162,7 +162,7 @@ sub target_config_features(@) {
 		/squashfs/ and $ret .= "\tselect USES_SQUASHFS\n";
 		/jffs2/ and $ret .= "\tselect USES_JFFS2\n";
 		/ext2/ and $ret .= "\tselect USES_EXT2\n";
-		/tgz/ and $ret .= "\tselect USES_TGZ\n";
+		/targz/ and $ret .= "\tselect USES_TARGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
 		/ubifs/ and $ret .= "\tselect USES_UBIFS\n";
 		/fpu/ and $ret .= "\tselect HAS_FPU\n";

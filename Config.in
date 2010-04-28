@@ -60,14 +60,14 @@ menu "Target Images"
 		help
 		  Build a squashfs-lzma root filesystem
 
-	config TARGET_ROOTFS_TGZ
-		bool "tgz"
-		default y if USES_TGZ
+	config TARGET_ROOTFS_TARGZ
+		bool "tar.gz"
+		default y if USES_TARGZ
 		help
 		  Build a compressed tar archive of the the root filesystem
 
 	config TARGET_ROOTFS_CPIOGZ
-		bool "cpiogz"
+		bool "cpio.gz"
 		default y if USES_CPIOGZ
 		help
 		  Build a compressed cpio archive of the the root filesystem

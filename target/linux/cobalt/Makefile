@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=cobalt
 BOARDNAME:=Cobalt Microservers
-FEATURES:=tgz pci ext2
+FEATURES:=targz pci ext2
 CFLAGS:=-O2 -pipe -mtune=r5000 -funit-at-a-time
 
 LINUX_VERSION:=2.6.32.12

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
-FEATURES:=jffs2 pci tgz
+FEATURES:=jffs2 pci targz
 
 LINUX_VERSION:=2.6.32.12
 
