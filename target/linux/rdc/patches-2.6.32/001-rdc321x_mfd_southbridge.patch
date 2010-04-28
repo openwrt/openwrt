@@ -1,0 +1,202 @@
+This patch adds a new MFD driver for the RDC321x southbridge. This southbridge
+is always present in the RDC321x System-on-a-Chip and provides access to some
+GPIOs as well as a watchdog. Access to these two functions is done using the
+southbridge PCI device configuration space.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+Changes from v2:
+- pass the pci_dev pointer to MFD cell drivers as platform_data
+- remove the printk(KERN_ERR and use dev_err instead
+- removed pci_dev accessors
+- use DEFINE_PCI_DEVICE_TABLE
+
+Index: linux-2.6.32.10/drivers/mfd/Kconfig
+===================================================================
+--- linux-2.6.32.10.orig/drivers/mfd/Kconfig	2010-03-15 16:52:04.000000000 +0100
++++ linux-2.6.32.10/drivers/mfd/Kconfig	2010-04-28 11:38:27.000000000 +0200
+@@ -305,6 +305,15 @@
+ 	  This enables the PCAP ASIC present on EZX Phones. This is
+ 	  needed for MMC, TouchScreen, Sound, USB, etc..
+ 
++config MFD_RDC321X
++	tristate "Support for RDC-R321x southbridge"
++	select MFD_CORE
++	depends on PCI
++	help
++	  Say yes here if you want to have support for the RDC R-321x SoC
++	  southbridge which provides access to GPIOs and Watchdog using the
++	  southbridge PCI device configuration space.
++
+ endmenu
+ 
+ menu "Multimedia Capabilities Port drivers"
+Index: linux-2.6.32.10/drivers/mfd/Makefile
+===================================================================
+--- linux-2.6.32.10.orig/drivers/mfd/Makefile	2010-03-15 16:52:04.000000000 +0100
++++ linux-2.6.32.10/drivers/mfd/Makefile	2010-04-28 11:38:53.000000000 +0200
+@@ -50,3 +50,5 @@
+ obj-$(CONFIG_PCF50633_GPIO)	+= pcf50633-gpio.o
+ obj-$(CONFIG_AB3100_CORE)	+= ab3100-core.o
+ obj-$(CONFIG_AB3100_OTP)	+= ab3100-otp.o
++
++obj-$(CONFIG_MFD_RDC321X)	+= rdc321x-southbridge.o
+Index: linux-2.6.32.10/drivers/mfd/rdc321x-southbridge.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.10/drivers/mfd/rdc321x-southbridge.c	2010-04-28 11:38:27.000000000 +0200
+@@ -0,0 +1,123 @@
++/*
++ * RDC321x MFD southbrige driver
++ *
++ * Copyright (C) 2007-2010 Florian Fainelli <florian@openwrt.org>
++ * Copyright (C) 2010 Bernhard Loos <bernhardloos@googlemail.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <linux/pci.h>
++#include <linux/mfd/core.h>
++#include <linux/mfd/rdc321x.h>
++
++static struct rdc321x_wdt_pdata rdc321x_wdt_pdata;
++
++static struct resource rdc321x_wdt_resource[] = {
++	{
++		.name	= "wdt-reg",
++		.start	= RDC321X_WDT_CTRL,
++		.end	= RDC321X_WDT_CTRL + 0x3,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
++static struct rdc321x_gpio_pdata rdc321x_gpio_pdata = {
++	.max_gpios	= RDC321X_MAX_GPIO,
++};
++
++static struct resource rdc321x_gpio_resources[] = {
++	{
++		.name	= "gpio-reg1",
++		.start	= RDC321X_GPIO_CTRL_REG1,
++		.end	= RDC321X_GPIO_CTRL_REG1 + 0x7,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.name	= "gpio-reg2",
++		.start	= RDC321X_GPIO_CTRL_REG2,
++		.end	= RDC321X_GPIO_CTRL_REG2 + 0x7,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
++static struct mfd_cell rdc321x_sb_cells[] = {
++	{
++		.name		= "rdc321x-wdt",
++		.resources	= rdc321x_wdt_resource,
++		.num_resources	= ARRAY_SIZE(rdc321x_wdt_resource),
++		.driver_data	= &rdc321x_wdt_pdata,
++	}, {
++		.name		= "rdc321x-gpio",
++		.resources	= rdc321x_gpio_resources,
++		.num_resources	= ARRAY_SIZE(rdc321x_gpio_resources),
++		.driver_data	= &rdc321x_gpio_pdata,
++	},
++};
++
++static int __devinit rdc321x_sb_probe(struct pci_dev *pdev,
++					const struct pci_device_id *ent)
++{
++	int err;
++
++	err = pci_enable_device(pdev);
++	if (err) {
++		dev_err(&pdev->dev, "failed to enable device\n");
++		return err;
++	}
++
++	rdc321x_gpio_pdata.sb_pdev = pdev;
++	rdc321x_wdt_pdata.sb_pdev = pdev;
++
++	return mfd_add_devices(&pdev->dev, -1,
++		rdc321x_sb_cells, ARRAY_SIZE(rdc321x_sb_cells), NULL, 0);
++}
++
++static void __devexit rdc321x_sb_remove(struct pci_dev *pdev)
++{
++	mfd_remove_devices(&pdev->dev);
++}
++
++static DEFINE_PCI_DEVICE_TABLE(rdc321x_sb_table) = {
++	{ PCI_DEVICE(PCI_VENDOR_ID_RDC, PCI_DEVICE_ID_RDC_R6030) },
++	{}
++};
++
++static struct pci_driver rdc321x_sb_driver = {
++	.name		= "RDC321x Southbridge",
++	.id_table	= rdc321x_sb_table,
++	.probe		= rdc321x_sb_probe,
++	.remove		= __devexit_p(rdc321x_sb_remove),
++};
++
++static int __init rdc321x_sb_init(void)
++{
++	return pci_register_driver(&rdc321x_sb_driver);
++}
++
++static void __exit rdc321x_sb_exit(void)
++{
++	pci_unregister_driver(&rdc321x_sb_driver);
++}
++
++module_init(rdc321x_sb_init);
++module_exit(rdc321x_sb_exit);
++
++MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("RDC R-321x MFD southbridge driver");
+Index: linux-2.6.32.10/include/linux/mfd/rdc321x.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.10/include/linux/mfd/rdc321x.h	2010-04-28 11:38:27.000000000 +0200
+@@ -0,0 +1,26 @@
++#ifndef __RDC321X_MFD_H
++#define __RDC321X_MFD_H
++
++#include <linux/types.h>
++#include <linux/pci.h>
++
++/* Offsets to be accessed in the southbridge PCI
++ * device configuration register */
++#define RDC321X_WDT_CTRL	0x44
++#define RDC321X_GPIO_CTRL_REG1	0x48
++#define RDC321X_GPIO_DATA_REG1	0x4c
++#define RDC321X_GPIO_CTRL_REG2	0x84
++#define RDC321X_GPIO_DATA_REG2	0x88
++
++#define RDC321X_MAX_GPIO	58
++
++struct rdc321x_gpio_pdata {
++	struct pci_dev *sb_pdev;
++	unsigned max_gpios;
++};
++
++struct rdc321x_wdt_pdata {
++	struct pci_dev *sb_pdev;
++};
++
++#endif /* __RDC321X_MFD_H */
