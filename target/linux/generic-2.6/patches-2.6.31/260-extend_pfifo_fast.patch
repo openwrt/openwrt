@@ -85,7 +85,7 @@
  
  	for (prio = 0; prio < PFIFO_FAST_BANDS; prio++)
  		skb_queue_head_init(list + prio);
-@@ -473,9 +510,36 @@ static int pfifo_fast_init(struct Qdisc 
+@@ -473,9 +510,36 @@ static int pfifo_fast_init(struct Qdisc
  	return 0;
  }
  
