@@ -68,7 +68,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6105,6 +6105,7 @@ int can_nice(const struct task_struct *p
+@@ -6113,6 +6113,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
