@@ -11,11 +11,9 @@ Changes from v2:
 - removed pci_dev accessors
 - use DEFINE_PCI_DEVICE_TABLE
 
-Index: linux-2.6.32.10/drivers/mfd/Kconfig
-===================================================================
---- linux-2.6.32.10.orig/drivers/mfd/Kconfig	2010-03-15 16:52:04.000000000 +0100
-+++ linux-2.6.32.10/drivers/mfd/Kconfig	2010-04-28 11:38:27.000000000 +0200
-@@ -305,6 +305,15 @@
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -305,6 +305,15 @@ config EZX_PCAP
  	  This enables the PCAP ASIC present on EZX Phones. This is
  	  needed for MMC, TouchScreen, Sound, USB, etc..
  
@@ -31,20 +29,16 @@ Index: linux-2.6.32.10/drivers/mfd/Kconfig
  endmenu
  
  menu "Multimedia Capabilities Port drivers"
-Index: linux-2.6.32.10/drivers/mfd/Makefile
-===================================================================
---- linux-2.6.32.10.orig/drivers/mfd/Makefile	2010-03-15 16:52:04.000000000 +0100
-+++ linux-2.6.32.10/drivers/mfd/Makefile	2010-04-28 11:38:53.000000000 +0200
-@@ -50,3 +50,5 @@
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -50,3 +50,5 @@ obj-$(CONFIG_PCF50633_ADC)	+= pcf50633-a
  obj-$(CONFIG_PCF50633_GPIO)	+= pcf50633-gpio.o
  obj-$(CONFIG_AB3100_CORE)	+= ab3100-core.o
  obj-$(CONFIG_AB3100_OTP)	+= ab3100-otp.o
 +
 +obj-$(CONFIG_MFD_RDC321X)	+= rdc321x-southbridge.o
-Index: linux-2.6.32.10/drivers/mfd/rdc321x-southbridge.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.10/drivers/mfd/rdc321x-southbridge.c	2010-04-28 11:38:27.000000000 +0200
+--- /dev/null
++++ b/drivers/mfd/rdc321x-southbridge.c
 @@ -0,0 +1,123 @@
 +/*
 + * RDC321x MFD southbrige driver
@@ -169,10 +163,8 @@ Index: linux-2.6.32.10/drivers/mfd/rdc321x-southbridge.c
 +MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("RDC R-321x MFD southbridge driver");
-Index: linux-2.6.32.10/include/linux/mfd/rdc321x.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.32.10/include/linux/mfd/rdc321x.h	2010-04-28 11:38:27.000000000 +0200
+--- /dev/null
++++ b/include/linux/mfd/rdc321x.h
 @@ -0,0 +1,26 @@
 +#ifndef __RDC321X_MFD_H
 +#define __RDC321X_MFD_H

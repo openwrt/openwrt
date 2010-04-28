@@ -1,0 +1,13 @@
+Index: linux-2.6.30.10/drivers/mfd/rdc321x-southbridge.c
+===================================================================
+--- linux-2.6.30.10.orig/drivers/mfd/rdc321x-southbridge.c	2010-04-28 13:05:17.000000000 +0200
++++ linux-2.6.30.10/drivers/mfd/rdc321x-southbridge.c	2010-04-28 13:05:27.000000000 +0200
+@@ -84,6 +84,8 @@
+ 	rdc321x_gpio_pdata.sb_pdev = pdev;
+ 	rdc321x_wdt_pdata.sb_pdev = pdev;
+ 
++	panic_on_unrecovered_nmi = 1;
++
+ 	return mfd_add_devices(&pdev->dev, -1,
+ 		rdc321x_sb_cells, ARRAY_SIZE(rdc321x_sb_cells), NULL, 0);
+ }

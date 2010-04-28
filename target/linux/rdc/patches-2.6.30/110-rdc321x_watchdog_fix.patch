@@ -1,7 +1,5 @@
-Index: linux-2.6.30.10/drivers/watchdog/rdc321x_wdt.c
-===================================================================
---- linux-2.6.30.10.orig/drivers/watchdog/rdc321x_wdt.c	2010-04-28 11:11:44.000000000 +0200
-+++ linux-2.6.30.10/drivers/watchdog/rdc321x_wdt.c	2010-04-28 11:20:51.000000000 +0200
+--- a/drivers/watchdog/rdc321x_wdt.c
++++ b/drivers/watchdog/rdc321x_wdt.c
 @@ -36,111 +36,99 @@
  #include <linux/watchdog.h>
  #include <linux/io.h>
@@ -164,7 +162,7 @@ Index: linux-2.6.30.10/drivers/watchdog/rdc321x_wdt.c
  		return -EBUSY;
  
  	return nonseekable_open(inode, file);
-@@ -148,7 +136,16 @@
+@@ -148,7 +136,16 @@ static int rdc321x_wdt_open(struct inode
  
  static int rdc321x_wdt_release(struct inode *inode, struct file *file)
  {
@@ -182,7 +180,7 @@ Index: linux-2.6.30.10/drivers/watchdog/rdc321x_wdt.c
  	return 0;
  }
  
-@@ -156,30 +153,29 @@
+@@ -156,30 +153,29 @@ static long rdc321x_wdt_ioctl(struct fil
  				unsigned long arg)
  {
  	void __user *argp = (void __user *)arg;
@@ -227,7 +225,7 @@ Index: linux-2.6.30.10/drivers/watchdog/rdc321x_wdt.c
  	case WDIOC_SETOPTIONS:
  		if (copy_from_user(&value, argp, sizeof(int)))
  			return -EFAULT;
-@@ -194,17 +190,34 @@
+@@ -194,17 +190,34 @@ static long rdc321x_wdt_ioctl(struct fil
  		}
  		break;
  	default:
@@ -263,7 +261,7 @@ Index: linux-2.6.30.10/drivers/watchdog/rdc321x_wdt.c
  	rdc321x_wdt_reset();
  
  	return count;
-@@ -246,27 +259,18 @@
+@@ -246,27 +259,18 @@ static int __devinit rdc321x_wdt_probe(s
  	rdc321x_wdt_device.sb_pdev = pdata->sb_pdev;
  	rdc321x_wdt_device.base_reg = r->start;
  
@@ -297,7 +295,7 @@ Index: linux-2.6.30.10/drivers/watchdog/rdc321x_wdt.c
  	dev_info(&pdev->dev, "watchdog init success\n");
  
  	return 0;
-@@ -274,10 +278,11 @@
+@@ -274,10 +278,11 @@ static int __devinit rdc321x_wdt_probe(s
  
  static int rdc321x_wdt_remove(struct platform_device *pdev)
  {
