@@ -26,7 +26,7 @@
  
  	spin_lock_irqsave(&ahcd->lock, flags);
  	temp = show_list(ahcd, buf->page, PAGE_SIZE, ahcd->ed_head);
-@@ -516,8 +512,6 @@ static ssize_t fill_async_buffer(struct 
+@@ -516,8 +512,6 @@ static ssize_t fill_async_buffer(struct
  
  static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
  {

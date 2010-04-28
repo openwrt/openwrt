@@ -1,8 +1,8 @@
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
-@@ -557,4 +557,8 @@ config MTD_VMU
- 	  To build this as a module select M here, the module will be called
- 	  vmu-flash.
+@@ -551,4 +551,8 @@ config MTD_PISMO
+ 
+ 	  When built as a module, it will be called pismo.ko
  
 +config MTD_ADM5120
 +	tristate "Map driver for ADM5120 based boards"
@@ -11,7 +11,7 @@
  endmenu
 --- a/drivers/mtd/maps/Makefile
 +++ b/drivers/mtd/maps/Makefile
-@@ -40,6 +40,7 @@
+@@ -40,6 +40,7 @@ obj-$(CONFIG_MTD_SCx200_DOCFLASH)+= scx2
  obj-$(CONFIG_MTD_DBOX2)		+= dbox2-flash.o
  obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
  obj-$(CONFIG_MTD_PCI)		+= pci.o

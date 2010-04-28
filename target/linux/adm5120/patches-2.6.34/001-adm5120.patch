@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -20,6 +20,21 @@ choice
+@@ -23,6 +23,21 @@ choice
  	prompt "System type"
  	default SGI_IP22
  
@@ -21,18 +21,18 @@
 +
  config MACH_ALCHEMY
  	bool "Alchemy processor based machines"
- 
-@@ -673,6 +688,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+ 	select SYS_SUPPORTS_ZBOOT
+@@ -681,6 +696,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  
  endchoice
  
 +source "arch/mips/adm5120/Kconfig"
  source "arch/mips/alchemy/Kconfig"
- source "arch/mips/basler/excite/Kconfig"
  source "arch/mips/bcm63xx/Kconfig"
+ source "arch/mips/jazz/Kconfig"
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -191,6 +191,22 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -I$(srctre
+@@ -214,6 +214,22 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -I$(srctre
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
  #
