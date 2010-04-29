@@ -43,7 +43,7 @@
  };
  
  static struct board_info __initdata board_FAST2404 = {
-@@ -771,6 +793,16 @@ static struct platform_device bcm63xx_gp
+@@ -771,12 +793,23 @@ static struct platform_device bcm63xx_gp
  	.dev.platform_data	= &bcm63xx_led_data,
  };
  
@@ -60,12 +60,23 @@
  /*
   * third stage init callback, register all board devices.
   */
-@@ -826,6 +858,13 @@ int __init board_register_devices(void)
+ int __init board_register_devices(void)
+ {
+ 	u32 val;
++	int button_count = 0;
+ 
+ 	if (board.has_pccard)
+ 		bcm63xx_pcmcia_register();
+@@ -826,6 +859,17 @@ int __init board_register_devices(void)
  
  	platform_device_register(&bcm63xx_gpio_leds);
  
-+	if (board.reset_buttons) {
-+		bcm63xx_gpio_buttons_data.nbuttons = ARRAY_SIZE(board.reset_buttons);
++	/* count number of BUTTONs defined by this device */
++	while (button_count < ARRAY_SIZE(board.reset_buttons) && board.reset_buttons[button_count].desc)
++		button_count++;
++
++	if (button_count) {
++		bcm63xx_gpio_buttons_data.nbuttons = button_count;
 +		bcm63xx_gpio_buttons_data.buttons = board.reset_buttons;
 +
 +		platform_device_register(&bcm63xx_gpio_buttons_device);
