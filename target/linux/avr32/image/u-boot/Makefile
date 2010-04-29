@@ -20,7 +20,7 @@ PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 
-UBOOT_CONFIG=$(strip $(subst ",, $(CONFIG_AVR32_UBOOT_TARGET)))
+UBOOT_CONFIG=$(call qstrip,$(CONFIG_AVR32_UBOOT_TARGET))
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIG)_config
