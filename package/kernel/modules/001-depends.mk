@@ -8,11 +8,11 @@
 # XXX: xburst has CONFIG_CRC16=y because of CONFIG_UBIFS_FS=y
 
 define SetDepends/crc16
-  DEPENDS:= @!TARGET_xburst
+  DEPENDS:= @!(LINUX_2_4||TARGET_xburst)
 endef
 
 define AddDepends/crc16
-  DEPENDS+= +!TARGET_xburst:kmod-crc16 $(1)
+  DEPENDS+= +!(LINUX_2_4||TARGET_xburst):kmod-crc16 $(1)
 endef
 
 
