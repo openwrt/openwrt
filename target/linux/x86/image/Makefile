@@ -10,15 +10,13 @@ include $(INCLUDE_DIR)/image.mk
 export PATH=$(TARGET_PATH):/sbin
 
 ifneq ($(CONFIG_TARGET_x86_olpc),y)
-BOOTOPTS=$(strip $(subst ",, $(CONFIG_X86_GRUB_BOOTOPTS)))
-ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
-#"))")) # fix vim's broken syntax highlighting
+BOOTOPTS=$(call qstrip,$(CONFIG_X86_GRUB_BOOTOPTS))
+ROOTPART=$(call qstrip,$(CONFIG_X86_GRUB_ROOTPART))
 endif
 
 ifeq ($(CONFIG_TARGET_x86_olpc),y)
-ROOTPART=$(strip $(subst ",, $(CONFIG_OLPC_BOOTSCRIPT_ROOTPART)))
+ROOTPART=$(call qstrip,$(CONFIG_OLPC_BOOTSCRIPT_ROOTPART))
 endif
-#"))")) # fix vim's broken syntax highlighting
 
 GRUB_TERMINALS =
 GRUB_SERIAL_CONFIG =
@@ -31,7 +29,7 @@ GRUB_TERMINALS += console
 endif
 
 ifneq ($(CONFIG_X86_GRUB_SERIAL),)
-GRUB_CONSOLE_CMDLINE += console=$(strip $(subst ",, $(CONFIG_X86_GRUB_SERIAL))),$(CONFIG_X86_GRUB_BAUDRATE)n8
+GRUB_CONSOLE_CMDLINE += console=$(call qstrip,$(CONFIG_X86_GRUB_SERIAL)),$(CONFIG_X86_GRUB_BAUDRATE)n8
 GRUB_SERIAL_CONFIG = serial --unit=0 --speed=$(CONFIG_X86_GRUB_BAUDRATE) --word=8 --parity=no --stop=1
 GRUB_TERMINALS += serial
 endif

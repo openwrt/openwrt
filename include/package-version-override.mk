@@ -3,7 +3,7 @@ PKG_VERSION_ORGINAL:=$(PKG_VERSION)
 
 # in case that another version is provided, overwrite the original
 ifeq ($(CONFIG_$(PKG_NAME)_USE_CUSTOM_VERSION),y)
-PKG_VERSION:= $(strip $(subst ",, $(CONFIG_$(PKG_NAME)_CUSTOM_VERSION)))
+PKG_VERSION:=$(call qstrip,$(CONFIG_$(PKG_NAME)_CUSTOM_VERSION))
 PKG_SOURCE:=$(subst $(PKG_VERSION_ORGINAL),$(PKG_VERSION),$(PKG_SOURCE))
 PKG_MD5SUM:=
 endif
@@ -26,7 +26,7 @@ endef
 
 # in case that an customer source path is provided, set the acc. default variable
 ifeq ($(CONFIG_$(PKG_NAME)_USE_CUSTOM_SOURCE_DIR),y)
-PKG_DEFAULT_CUSTOM_SOURCE_DIR:= $(strip $(subst ",, $(CONFIG_$(PKG_NAME)_CUSTOM_SOURCE_DIR)))
+PKG_DEFAULT_CUSTOM_SOURCE_DIR:= $(call qstrip,$(CONFIG_$(PKG_NAME)_CUSTOM_SOURCE_DIR))
 endif
 
 # package specific configuration

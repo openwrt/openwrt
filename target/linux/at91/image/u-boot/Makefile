@@ -20,9 +20,9 @@ PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 
-UBOOT_CONFIG=$(strip $(subst ",, $(CONFIG_UBOOT_TARGET)))
-LAN_IP=$(strip $(CONFIG_UBOOT_IPADDR))
-LAN_SERVERIP=$(strip $(subst ",, $(CONFIG_UBOOT_SERVERIP)))
+UBOOT_CONFIG=$(call qstrip,$(CONFIG_UBOOT_TARGET))
+LAN_IP=$(call qstrip,$(CONFIG_UBOOT_IPADDR))
+LAN_SERVERIP=$(call qstrip,$(CONFIG_UBOOT_SERVERIP))
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIG)_config
