@@ -270,15 +270,22 @@ $(eval $(call KernelPackage,hid))
 define KernelPackage/input-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Input device core
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_INPUT
-  FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,19,input-core)
   $(call SetDepends/input)
 endef
 
 define KernelPackage/input-core/description
  Kernel modules for support of input device
+endef
+
+define KernelPackage/input-core/2.4
+  FILES:=$(LINUX_DIR)/drivers/input/input.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,19,input)
+endef
+
+define KernelPackage/input-core/2.6
+  FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,19,input-core)
 endef
 
 $(eval $(call KernelPackage,input-core))
