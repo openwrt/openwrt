@@ -341,6 +341,7 @@ $(eval $(call KernelPackage,usb-serial-pl2303))
 
 define KernelPackage/usb-serial-cp210x
   TITLE:=Support for Silicon Labs cp210x devices
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_CP210X
   FILES:=$(LINUX_DIR)/drivers/usb/serial/cp210x.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,cp210x)
@@ -403,6 +404,7 @@ $(eval $(call KernelPackage,usb-serial-sierrawireless))
 
 define KernelPackage/usb-serial-motorola-phone
   TITLE:=Support for Motorola usb phone
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_MOTOROLA
   FILES:=$(LINUX_DIR)/drivers/usb/serial/moto_modem.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,moto_modem)
@@ -433,6 +435,7 @@ $(eval $(call KernelPackage,usb-serial-visor))
 
 define KernelPackage/usb-serial-cypress-m8
   TITLE:=Support for CypressM8 USB-Serial
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_CYPRESS_M8
   FILES:=$(LINUX_DIR)/drivers/usb/serial/cypress_m8.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,cypress_m8)

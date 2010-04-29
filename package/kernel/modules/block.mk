@@ -10,6 +10,7 @@ BLOCK_MENU:=Block Devices
 define KernelPackage/aoe
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=ATA over Ethernet support
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_ATA_OVER_ETH
   FILES:=$(LINUX_DIR)/drivers/block/aoe/aoe.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,aoe)
@@ -164,6 +165,7 @@ $(eval $(call KernelPackage,ata-via-sata))
 define KernelPackage/block2mtd
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Block device MTD emulation
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_MTD_BLOCK2MTD
   FILES:=$(LINUX_DIR)/drivers/mtd/devices/block2mtd.$(LINUX_KMOD_SUFFIX)
 endef
@@ -174,6 +176,7 @@ $(eval $(call KernelPackage,block2mtd))
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
+  DEPENDS:=@LINUX_2_6
   # All the "=n" are unnecessary, they're only there
   # to stop the config from asking the question.
   # MIRROR is M because I've needed it for pvmove.
@@ -334,7 +337,7 @@ $(eval $(call KernelPackage,ide-pdc202xx))
 
 define KernelPackage/ide-it821x
   TITLE:=ITE IT821x IDE driver
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_IT821X
   FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,it821x,1)

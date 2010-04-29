@@ -10,6 +10,7 @@ NETWORK_DEVICES_MENU:=Network Devices
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_PHYLIB
   FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,libphy)
@@ -318,7 +319,7 @@ $(eval $(call KernelPackage,ssb-gige))
 define KernelPackage/hfcmulti
   TITLE:=HFC multiport cards (HFC-4S/8S/E1)
   KCONFIG:=CONFIG_MISDN_HFCMULTI
-  DEPENDS:=+kmod-misdn
+  DEPENDS:=@LINUX_2_6 +kmod-misdn
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/isdn/hardware/mISDN/hfcmulti.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,hfcmulti)

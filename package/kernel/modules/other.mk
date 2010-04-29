@@ -92,6 +92,7 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/crc-ccitt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC-CCITT support
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_CRC_CCITT
   FILES:=$(LINUX_DIR)/lib/crc-ccitt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,crc-ccitt)
@@ -107,6 +108,7 @@ $(eval $(call KernelPackage,crc-ccitt))
 define KernelPackage/crc-itu-t
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC ITU-T V.41 support
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_CRC_ITU_T
   FILES:=$(LINUX_DIR)/lib/crc-itu-t.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,crc-itu-t)
@@ -122,6 +124,7 @@ $(eval $(call KernelPackage,crc-itu-t))
 define KernelPackage/crc7
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC7 support
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_CRC7
   FILES:=$(LINUX_DIR)/lib/crc7.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,crc7)
@@ -465,6 +468,7 @@ $(eval $(call KernelPackage,leds-wrap))
 define KernelPackage/ledtrig-morse
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED Morse Trigger
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_LEDS_TRIGGER_MORSE
   FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-morse.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-morse)
@@ -480,6 +484,7 @@ $(eval $(call KernelPackage,ledtrig-morse))
 define KernelPackage/ledtrig-netdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED NETDEV Trigger
+  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_LEDS_TRIGGER_NETDEV
   FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-netdev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-netdev)
