@@ -70,10 +70,12 @@
      # miboot and U-boot want just the bare bits, not an ELF binary
      ext=bin
      objflags="-O binary"
-@@ -277,6 +280,21 @@ uboot)
+@@ -275,6 +278,21 @@ uboot)
+     if [ -z "$cacheit" ]; then
+ 	rm -f "$vmz"
      fi
-     exit 0
-     ;;
++    exit 0
++    ;;
 +uboot.fit)
 +    rm -f "$ofile"
 +    ${MKITS} -A ppc -C gzip -a $membase -e $membase -v $version \
@@ -87,8 +89,6 @@
 +    if [ -z "$cacheit" ]; then
 +	rm -f "$vmz"
 +    fi
-+    exit 0
-+    ;;
+     exit 0
+     ;;
  esac
- 
- addsec() {
