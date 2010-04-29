@@ -53,10 +53,10 @@
  {
  	u32 val;
 +	int led_count = 0;
+ 	int button_count = 0;
  
  	if (board.has_pccard)
- 		bcm63xx_pcmcia_register();
-@@ -901,7 +917,11 @@ int __init board_register_devices(void)
+@@ -902,7 +918,11 @@ int __init board_register_devices(void)
  
  	platform_device_register_simple("GPIODEV", 0, &gpiodev_resource, 1);
  
