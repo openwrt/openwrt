@@ -13,7 +13,7 @@
  			.active_low	= 1,
  		},
  	},
-+	.reset_buttons = {
++	.buttons = {
 +		{
 +			.desc		= "reset",
 +			.gpio		= 32,
@@ -30,7 +30,7 @@
  			.active_low	= 1,
  		},
  	},
-+	.reset_buttons = {
++	.buttons = {
 +		{
 +			.desc		= "reset",
 +			.gpio		= 36,
@@ -72,12 +72,12 @@
  	platform_device_register(&bcm63xx_gpio_leds);
  
 +	/* count number of BUTTONs defined by this device */
-+	while (button_count < ARRAY_SIZE(board.reset_buttons) && board.reset_buttons[button_count].desc)
++	while (button_count < ARRAY_SIZE(board.buttons) && board.buttons[button_count].desc)
 +		button_count++;
 +
 +	if (button_count) {
 +		bcm63xx_gpio_buttons_data.nbuttons = button_count;
-+		bcm63xx_gpio_buttons_data.buttons = board.reset_buttons;
++		bcm63xx_gpio_buttons_data.buttons = board.buttons;
 +
 +		platform_device_register(&bcm63xx_gpio_buttons_device);
 +	}
@@ -92,8 +92,8 @@
  	/* GPIO LEDs */
  	struct gpio_led leds[5];
 +
-+	/* Reset button */
-+	struct gpio_button reset_buttons[2];
++	/* Buttons */
++	struct gpio_button buttons[2];
  };
  
  #endif /* ! BOARD_BCM963XX_H_ */
