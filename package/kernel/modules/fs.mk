@@ -25,12 +25,12 @@ $(eval $(call KernelPackage,fs-autofs4))
 define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
+  # for crc32c
+  DEPENDS:=@LINUX_2_6 +kmod-crypto-core +kmod-crypto-misc
   KCONFIG:=\
 	CONFIG_LIBCRC32C \
 	CONFIG_BTRFS_FS \
 	CONFIG_BTRFS_FS_POSIX_ACL=n
-  # for crc32c
-  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc
   FILES:=\
 	$(LINUX_DIR)/lib/libcrc32c.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/btrfs/btrfs.$(LINUX_KMOD_SUFFIX)

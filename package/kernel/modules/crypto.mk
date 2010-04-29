@@ -64,6 +64,7 @@ endef
 
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
+  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PADLOCK \
@@ -81,6 +82,7 @@ $(eval $(call KernelPackage,crypto-hw-padlock))
 
 define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
+  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
@@ -94,7 +96,7 @@ $(eval $(call KernelPackage,crypto-hw-geode))
 
 define KernelPackage/crypto-hw-hifn-795x
   TITLE:=HIFN 795x crypto accelerator
-  DEPENDS:=@!TARGET_ubicom32
+  DEPENDS:=@LINUX_2_6 @!TARGET_ubicom32
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_HW_RANDOM=y \
@@ -291,7 +293,7 @@ $(eval $(call KernelPackage,crypto-misc))
 
 define KernelPackage/crypto-ocf
   TITLE:=OCF modules
-  DEPENDS:=+@OPENSSL_ENGINE @!TARGET_uml
+  DEPENDS:=@LINUX_2_6 +@OPENSSL_ENGINE @!TARGET_uml
   KCONFIG:= \
 	CONFIG_OCF_OCF \
 	CONFIG_OCF_CRYPTODEV \

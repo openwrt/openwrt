@@ -106,6 +106,7 @@ $(eval $(call KernelPackage,capi))
 define KernelPackage/misdn
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=mISDN (ISDN) Support
+  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
   	CONFIG_MISDN \
 	CONFIG_MISDN_DSP \
@@ -137,6 +138,7 @@ $(eval $(call KernelPackage,misdn))
 define KernelPackage/isdn4linux
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Old ISDN4Linux (deprecated)
+  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
     CONFIG_ISDN_I4L \
     CONFIG_ISDN_PPP=y \
@@ -496,7 +498,7 @@ $(eval $(call KernelPackage,pppoa))
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoL2TP support
-  DEPENDS:=kmod-ppp +kmod-pppoe
+  DEPENDS:=@LINUX_2_6 kmod-ppp +kmod-pppoe
   KCONFIG:=CONFIG_PPPOL2TP
   FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pppol2tp)
