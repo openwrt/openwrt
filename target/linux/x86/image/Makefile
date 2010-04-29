@@ -65,7 +65,7 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
 		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1).image \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 		$(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub \
 		$(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 	$(call Image/Build/grub/$(1))
@@ -84,7 +84,7 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 
   define Image/Build/grub
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image_x86.sh 
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1).image \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 		$(CONFIG_X86_GRUB_KERNELPART) "" \
 		$(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
   endef
@@ -121,7 +121,7 @@ ifneq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),)
 	sed -e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
 		./olpc.fth > $(KDIR)/root.bootscript/boot/olpc.fth
 	PADDING="$(CONFIG_OLPC_BOOTSCRIPT_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_olpc.sh \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1).image \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 		$(CONFIG_OLPC_BOOTSCRIPT_KERNELPART) $(KDIR)/root.bootscript \
 		$(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
   endef
@@ -154,8 +154,10 @@ ifneq ($(CONFIG_X86_VDI_IMAGES),)
     ifeq ($(1),ext2)
 		rm $(BIN_DIR)/$(IMG_PREFIX)-ext2.vdi || true
 		VBoxManage convertfromraw -format VDI \
-			$(BIN_DIR)/$(IMG_PREFIX)-ext2.image \
-			$(BIN_DIR)/$(IMG_PREFIX)-ext2.vdi
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
+		# XXX: VBoxManage insists on setting perms to 0600
+		chmod 0644 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
     endif
   endef
 endif
@@ -165,8 +167,9 @@ ifneq ($(CONFIG_X86_VMDK_IMAGES),)
     # left here because the image builder doesnt need these
     ifeq ($(1),ext2)
 		rm $(BIN_DIR)/$(IMG_PREFIX)-ext2.vmdk || true
-		qemu-img convert -f raw $(BIN_DIR)/$(IMG_PREFIX)-ext2.image \
-			-O vmdk $(BIN_DIR)/$(IMG_PREFIX)-ext2.vmdk
+		qemu-img convert -f raw -O vmdk \
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
     endif
   endef
 endif
@@ -189,10 +192,11 @@ define Image/Build
 	$(call Image/Build/vdi,$(1))
 	$(call Image/Build/vmdk,$(1))
   endif
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).fs
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
   ifeq ($(1),ext2)
-	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-$(1).image
+	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
+	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
   endif
 endef
 
