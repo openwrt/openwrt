@@ -27,7 +27,7 @@ define Image/Build/squashfs
 	( \
 		dd if=$(LINUX_DIR)/arch/powerpc/boot/uImage bs=3072k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-mpc8377_wlan-$(1).img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-mpc8377_wlan-$(1).img
 endef
 
 $(eval $(call BuildImage))
