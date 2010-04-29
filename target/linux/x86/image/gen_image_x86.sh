@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 set -x 
 [ $# == 5 ] || {
     echo "SYNTAX: $0 <file> <kernel size> <kernel directory> <rootfs size> <rootfs image>"
@@ -35,7 +35,7 @@ dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 
 genext2fs -d "$KERNELDIR" -b "$BLOCKS" "$OUTPUT.kernel"
 dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
-#rm -f "$OUTPUT.kernel"
+rm -f "$OUTPUT.kernel"
 
 which chpax >/dev/null && chpax -zp $(which grub)
 grub --batch --no-curses --no-floppy --device-map=/dev/null <<EOF
