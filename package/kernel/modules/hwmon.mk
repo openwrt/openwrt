@@ -33,11 +33,11 @@ endef
 
 
 define KernelPackage/hwmon-lm75
-$(call AddDepends/hwmon,+kmod-i2c-core)
   TITLE:=LM75 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM75
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,lm75)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-lm75/description
@@ -48,11 +48,11 @@ $(eval $(call KernelPackage,hwmon-lm75))
 
 
 define KernelPackage/hwmon-lm77
-$(call AddDepends/hwmon,+kmod-i2c-core)
   TITLE:=LM77 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM77
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,lm77)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-lm77/description
@@ -61,12 +61,13 @@ endef
 
 $(eval $(call KernelPackage,hwmon-lm77))
 
+
 define KernelPackage/hwmon-lm90
-$(call AddDepends/hwmon,+kmod-i2c-core)
   TITLE:=LM90 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM90
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm90.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,lm90)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-lm90/description
@@ -75,9 +76,10 @@ endef
 
 $(eval $(call KernelPackage,hwmon-lm90))
 
+
 define KernelPackage/hwmon-pc87360
-$(call AddDepends/hwmon,@TARGET_x86)
   TITLE:=PC87360 monitoring support
+  DEPENDS:=@TARGET_x86
   KCONFIG:= \
 	CONFIG_SENSORS_PC87360 \
 	CONFIG_HWMON_VID
@@ -85,6 +87,7 @@ $(call AddDepends/hwmon,@TARGET_x86)
 	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,hwmon-vid pc87360)
+  $(call AddDepends/hwmon)
 endef
 
 define KernelPackage/hwmon-pc87360/description
@@ -93,9 +96,10 @@ endef
 
 $(eval $(call KernelPackage,hwmon-pc87360))
 
+
 define KernelPackage/hwmon-w83627hf
-$(call AddDepends/hwmon,@TARGET_rdc||TARGET_x86)
   TITLE:=Winbond W83627HF monitoring support
+  DEPENDS:=@TARGET_rdc||TARGET_x86
   KCONFIG:= \
 	CONFIG_SENSORS_W83627HF \
 	CONFIG_HWMON_VID
@@ -103,6 +107,7 @@ $(call AddDepends/hwmon,@TARGET_rdc||TARGET_x86)
 	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/hwmon/w83627hf.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,hwmon-vid w83627hf)
+$(call AddDepends/hwmon)
 endef
 
 define KernelPacakge/hwmon-w83627hf/description

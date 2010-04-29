@@ -41,11 +41,11 @@ endef
 
 
 define KernelPackage/ata-ahci
-$(call AddDepends/ata)
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:=$(LINUX_DIR)/drivers/ata/ahci.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,ahci,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-ahci/description
@@ -56,11 +56,11 @@ $(eval $(call KernelPackage,ata-ahci))
 
 
 define KernelPackage/ata-artop
-$(call AddDepends/ata,)
   TITLE:=ARTOP 6210/6260 PATA support
   KCONFIG:=CONFIG_PATA_ARTOP
   FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,pata_artop,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-artop/description
@@ -71,11 +71,11 @@ $(eval $(call KernelPackage,ata-artop))
 
 
 define KernelPackage/ata-nvidia-sata
-$(call AddDepends/ata,)
   TITLE:=Nvidia Serial ATA support
   KCONFIG:=CONFIG_SATA_NV
   FILES:=$(LINUX_DIR)/drivers/ata/sata_nv.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,sata_nv,1)
+  $(call AddDepends/ata)
 endef
 
 $(eval $(call KernelPackage,ata-nvidia-sata))
@@ -101,11 +101,11 @@ $(eval $(call KernelPackage,ata-pdc202xx-old))
 
 
 define KernelPackage/ata-piix
-$(call AddDepends/ata,)
   TITLE:=Intel PIIX PATA/SATA support
   KCONFIG:=CONFIG_ATA_PIIX
   FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,ata_piix,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-piix/description
@@ -117,11 +117,11 @@ $(eval $(call KernelPackage,ata-piix))
 
 
 define KernelPackage/ata-sil
-$(call AddDepends/ata,)
   TITLE:=Silicon Image SATA support
   KCONFIG:=CONFIG_SATA_SIL
   FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,sata_sil,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-sil/description
@@ -132,11 +132,11 @@ $(eval $(call KernelPackage,ata-sil))
 
 
 define KernelPackage/ata-sil24
-$(call AddDepends/ata,)
   TITLE:=Silicon Image 3124/3132 SATA support
   KCONFIG:=CONFIG_SATA_SIL24
   FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,sata_sil24,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-sil24/description
@@ -147,11 +147,11 @@ $(eval $(call KernelPackage,ata-sil24))
 
 
 define KernelPackage/ata-via-sata
-$(call AddDepends/ata,)
   TITLE:=VIA SATA support
   KCONFIG:=CONFIG_SATA_VIA
   FILES:=$(LINUX_DIR)/drivers/ata/sata_via.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,sata_via,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-via-sata/description
@@ -249,15 +249,16 @@ $(eval $(call KernelPackage,ide-core))
 
 define AddDepends/ide
   SUBMENU:=$(BLOCK_MENU)
-  DEPENDS:=kmod-ide-core $(1)
+  DEPENDS+=kmod-ide-core $(1)
 endef
 
 
 define KernelPackage/ide-generic
-$(call AddDepends/ide,@PCI_SUPPORT)
   SUBMENU:=$(BLOCK_MENU)
+  DEPENDS:=@PCI_SUPPORT
   TITLE:=Kernel support for generic PCI IDE chipsets
   KCONFIG:=CONFIG_BLK_DEV_GENERIC
+  $(call AddDepends/ide)
 endef
 
 define KernelPackage/ide-generic/2.4
@@ -278,23 +279,25 @@ $(eval $(call KernelPackage,ide-generic))
 
 
 define KernelPackage/ide-generic-old
-$(call AddDepends/ide,@LINUX_2_6)
   SUBMENU:=$(BLOCK_MENU)
+  DEPENDS:=@LINUX_2_6
   TITLE:=Kernel support for generic (legacy) IDE chipsets
   KCONFIG:=CONFIG_IDE_GENERIC
   FILES:=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ide-generic,1)
+  $(call AddDepends/ide)
 endef
 
 $(eval $(call KernelPackage,ide-generic-old))
 
 
 define KernelPackage/ide-aec62xx
-$(call AddDepends/ide,@PCI_SUPPORT)
   TITLE:=Acard AEC62xx IDE driver
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
   FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,aec62xx,1)
+  $(call AddDepends/ide)
 endef
 
 define KernelPackage/ide-aec62xx/2.4
@@ -309,11 +312,12 @@ $(eval $(call KernelPackage,ide-aec62xx,1))
 
 
 define KernelPackage/ide-pdc202xx
-$(call AddDepends/ide,@PCI_SUPPORT)
   TITLE:=Promise PDC202xx IDE driver
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
   FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old,1)
+  $(call AddDepends/ide)
 endef
 
 define KernelPackage/ide-pdc202xx/2.4
@@ -329,11 +333,12 @@ $(eval $(call KernelPackage,ide-pdc202xx))
 
 
 define KernelPackage/ide-it821x
-$(call AddDepends/ide,@PCI_SUPPORT)
   TITLE:=ITE IT821x IDE driver
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_IT821X
   FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,it821x,1)
+  $(call AddDepends/ide)
 endef
 
 define KernelPackage/ide-it821x/description

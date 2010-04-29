@@ -35,11 +35,12 @@ endef
 # 1-wire masters
 #
 define KernelPackage/w1-master-gpio
-$(call AddDepends/w1,@GPIO_SUPPORT)
   TITLE:=GPIO 1-wire bus master driver
+  DEPENDS:=@GPIO_SUPPORT
   KCONFIG:=CONFIG_W1_MASTER_GPIO
   FILES:=$(W1_MASTERS_DIR)/w1-gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,w1-gpio)
+  $(call AddDepends/w1)
 endef
 
 define KernelPackage/w1-master-gpio/description
@@ -53,11 +54,11 @@ $(eval $(call KernelPackage,w1-master-gpio))
 # 1-wire slaves
 #
 define KernelPackage/w1-slave-therm
-$(call AddDepends/w1,)
   TITLE:=Thermal family implementation
   KCONFIG:=CONFIG_W1_SLAVE_THERM
   FILES:=$(W1_SLAVES_DIR)/w1_therm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,w1_therm)
+  $(call AddDepends/w1)
 endef
 
 define KernelPackage/w1-slave-therm/description
@@ -68,11 +69,11 @@ $(eval $(call KernelPackage,w1-slave-therm))
 
 
 define KernelPackage/w1-slave-smem
-$(call AddDepends/w1,)
   TITLE:=Simple 64bit memory family implementation
   KCONFIG:=CONFIG_W1_SLAVE_SMEM
   FILES:=$(W1_SLAVES_DIR)/w1_smem.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,w1_smem)
+  $(call AddDepends/w1)
 endef
 
 define KernelPackage/w1-slave-smem/description
@@ -81,14 +82,15 @@ endef
 
 $(eval $(call KernelPackage,w1-slave-smem))
 
+
 define KernelPackage/w1-slave-ds2433
-$(call AddDepends/w1,)
   TITLE:=Simple 64bit memory family implementation
   KCONFIG:= \
 	CONFIG_W1_SLAVE_DS2433 \
 	CONFIG_W1_SLAVE_DS2433_CRC=n
   FILES:=$(W1_SLAVES_DIR)/w1_ds2433.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,w1_ds2433)
+  $(call AddDepends/w1)
 endef
 
 define KernelPackage/w1-slave-ds2433/description
@@ -99,13 +101,13 @@ $(eval $(call KernelPackage,w1-slave-ds2433))
 
 
 define KernelPackage/w1-slave-ds2760
-$(call AddDepends/w1,)
   TITLE:=Dallas 2760 battery monitor chip (HP iPAQ & others)
   KCONFIG:= \
 	CONFIG_W1_SLAVE_DS2760 \
 	CONFIG_W1_SLAVE_DS2433_CRC=n
   FILES:=$(W1_SLAVES_DIR)/w1_ds2760.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,w1_ds2760)
+  $(call AddDepends/w1)
 endef
 
 define KernelPackage/w1-slave-ds2760/description
