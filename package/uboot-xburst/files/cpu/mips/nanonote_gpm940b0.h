@@ -142,16 +142,19 @@ do { \
 
 #define __lcd_special_on() \
 do { \
+	__spi_write_reg1(0x05, 0x1e); \
 	udelay(50);\
-	__spi_write_reg1(0x05, 0x16); \
-	__spi_write_reg1(0x04, 0x0b); \
-	__spi_write_reg1(0x07, 0x8d); \
+	__spi_write_reg1(0x05, 0x5d); \
+	__spi_write_reg1(0x0B, 0x81); \
 	__spi_write_reg1(0x01, 0x95); \
-	__spi_write_reg1(0x08, 0xc0); \
-	__spi_write_reg1(0x03, 0x40); \
-	__spi_write_reg1(0x06, 0x75); \
-	__spi_write_reg1(0x13, 0x01); \
-	__spi_write_reg1(0x05, 0x57); \
+	__spi_write_reg1(0x00, 0x07); \
+	__spi_write_reg1(0x06, 0x15); \
+	__spi_write_reg1(0x07, 0x8d); \
+	__spi_write_reg1(0x04, 0x0f); \
+	__spi_write_reg1(0x0d, 0x3d); \
+	__spi_write_reg1(0x10, 0x42); \
+	__spi_write_reg1(0x11, 0x3a); \
+	__spi_write_reg1(0x05, 0x5f); \
 } while (0)
 
 #define __lcd_special_off() \
