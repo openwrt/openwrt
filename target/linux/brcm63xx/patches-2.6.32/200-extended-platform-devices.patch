@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -995,6 +995,10 @@ int __init board_register_devices(void)
+@@ -1000,6 +1000,10 @@ int __init board_register_devices(void)
  		platform_device_register(&bcm63xx_gpio_buttons_device);
  	}
  
@@ -16,7 +16,7 @@
 @@ -59,6 +59,10 @@ struct board_info {
  
  	/* Reset button */
- 	struct gpio_button reset_buttons[1];
+ 	struct gpio_button reset_buttons[2];
 +
 +	/* Additional platform devices */
 +	struct platform_device **devs;

@@ -21,7 +21,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -713,6 +720,441 @@ static struct board_info __initdata boar
+@@ -713,6 +720,471 @@ static struct board_info __initdata boar
  
  	.has_ohci0 = 1,
  };
@@ -121,9 +121,15 @@
 +		{
 +			.desc		= "reset",
 +			.gpio		= 34,
-+			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
++			.threshold	= 3,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 37,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
 +			.threshold	= 3,
 +		},
 +	},
@@ -207,9 +213,15 @@
 +		{
 +			.desc		= "reset",
 +			.gpio		= 34,
-+			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
++			.threshold	= 3,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 37,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
 +			.threshold	= 3,
 +		},
 +	},
@@ -291,9 +303,15 @@
 +		{
 +			.desc		= "reset",
 +			.gpio		= 34,
-+			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
++			.threshold	= 3,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 37,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
 +			.threshold	= 3,
 +		},
 +	},
@@ -372,9 +390,15 @@
 +		{
 +			.desc		= "reset",
 +			.gpio		= 34,
-+			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
++			.threshold	= 3,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 37,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
 +			.threshold	= 3,
 +		},
 +	},
@@ -451,9 +475,15 @@
 +		{
 +			.desc		= "reset",
 +			.gpio		= 34,
-+			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
++			.threshold	= 3,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 37,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
 +			.threshold	= 3,
 +		},
 +	},
@@ -463,7 +493,7 @@
  #endif
  
  /*
-@@ -743,9 +1185,30 @@ static const struct board_info __initdat
+@@ -743,9 +1215,30 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -494,7 +524,7 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -793,6 +1256,9 @@ void __init board_prom_init(void)
+@@ -793,6 +1286,9 @@ void __init board_prom_init(void)
  		return;
  	}
  
@@ -514,4 +544,4 @@
 +	struct gpio_led leds[9];
  
  	/* Reset button */
- 	struct gpio_button reset_buttons[1];
+ 	struct gpio_button reset_buttons[2];
