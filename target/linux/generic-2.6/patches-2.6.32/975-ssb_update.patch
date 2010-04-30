@@ -1,28 +1,25 @@
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -233,6 +233,8 @@ void ssb_chipcommon_init(struct ssb_chip
+ {
+ 	if (!cc->dev)
+ 		return; /* We don't have a ChipCommon */
++	if (cc->dev->id.revision >= 11)
++		cc->status = chipco_read32(cc, SSB_CHIPCO_CHIPSTAT);
+ 	ssb_pmu_init(cc);
+ 	chipco_powercontrol_init(cc);
+ 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
+@@ -370,6 +372,7 @@ u32 ssb_chipco_gpio_control(struct ssb_c
+ {
+ 	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOCTL, mask, value);
+ }
++EXPORT_SYMBOL(ssb_chipco_gpio_control);
+ 
+ u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc, u32 mask, u32 value)
+ {
 --- a/drivers/ssb/driver_chipcommon_pmu.c
 +++ b/drivers/ssb/driver_chipcommon_pmu.c
-@@ -28,6 +28,21 @@ static void ssb_chipco_pll_write(struct 
- 	chipco_write32(cc, SSB_CHIPCO_PLLCTL_DATA, value);
- }
- 
-+static void ssb_chipco_regctl_maskset(struct ssb_chipcommon *cc,
-+				   u32 offset, u32 mask, u32 set)
-+{
-+	u32 value;
-+
-+	chipco_read32(cc, SSB_CHIPCO_REGCTL_ADDR);
-+	chipco_write32(cc, SSB_CHIPCO_REGCTL_ADDR, offset);
-+	chipco_read32(cc, SSB_CHIPCO_REGCTL_ADDR);
-+	value = chipco_read32(cc, SSB_CHIPCO_REGCTL_DATA);
-+	value &= mask;
-+	value |= set;
-+	chipco_write32(cc, SSB_CHIPCO_REGCTL_DATA, value);
-+	chipco_read32(cc, SSB_CHIPCO_REGCTL_DATA);
-+}
-+
- struct pmu0_plltab_entry {
- 	u16 freq;	/* Crystal frequency in kHz.*/
- 	u8 xf;		/* Crystal frequency value for PMU control */
-@@ -317,6 +332,12 @@ static void ssb_pmu_pll_init(struct ssb_
+@@ -332,6 +332,12 @@ static void ssb_pmu_pll_init(struct ssb_
  	case 0x5354:
  		ssb_pmu0_pllinit_r0(cc, crystalfreq);
  		break;
@@ -35,7 +32,7 @@
  	default:
  		ssb_printk(KERN_ERR PFX
  			   "ERROR: PLL init unknown for device %04X\n",
-@@ -402,6 +423,7 @@ static void ssb_pmu_resources_init(struc
+@@ -417,6 +423,7 @@ static void ssb_pmu_resources_init(struc
  
  	switch (bus->chip_id) {
  	case 0x4312:
@@ -43,143 +40,317 @@
  		/* We keep the default settings:
  		 * min_msk = 0xCBB
  		 * max_msk = 0x7FFFF
-@@ -506,3 +528,82 @@ void ssb_pmu_init(struct ssb_chipcommon 
- 	ssb_pmu_pll_init(cc);
- 	ssb_pmu_resources_init(cc);
- }
-+
-+void ssb_pmu_set_ldo_voltage(struct ssb_chipcommon *cc,
-+			     enum ssb_pmu_ldo_volt_id id, u32 voltage)
-+{
-+	struct ssb_bus *bus = cc->dev->bus;
-+	u32 addr, shift, mask;
-+
-+	switch (bus->chip_id) {
-+	case 0x4328:
-+	case 0x5354:
-+		switch (id) {
-+		case LDO_VOLT1:
-+			addr = 2;
-+			shift = 25;
-+			mask = 0xF;
-+			break;
-+		case LDO_VOLT2:
-+			addr = 3;
-+			shift = 1;
-+			mask = 0xF;
-+			break;
-+		case LDO_VOLT3:
-+			addr = 3;
-+			shift = 9;
-+			mask = 0xF;
-+			break;
-+		case LDO_PAREF:
-+			addr = 3;
-+			shift = 17;
-+			mask = 0x3F;
-+			break;
-+		default:
-+			SSB_WARN_ON(1);
-+			return;
-+		}
-+		break;
-+	case 0x4312:
-+		if (SSB_WARN_ON(id != LDO_PAREF))
-+			return;
-+		addr = 0;
-+		shift = 21;
-+		mask = 0x3F;
-+		break;
-+	default:
-+		return;
-+	}
-+
-+	ssb_chipco_regctl_maskset(cc, addr, ~(mask << shift),
-+				  (voltage & mask) << shift);
-+}
-+
-+void ssb_pmu_set_ldo_paref(struct ssb_chipcommon *cc, bool on)
-+{
-+	struct ssb_bus *bus = cc->dev->bus;
-+	int ldo;
-+
-+	switch (bus->chip_id) {
-+	case 0x4312:
-+		ldo = SSB_PMURES_4312_PA_REF_LDO;
-+		break;
-+	case 0x4328:
-+		ldo = SSB_PMURES_4328_PA_REF_LDO;
-+		break;
-+	case 0x5354:
-+		ldo = SSB_PMURES_5354_PA_REF_LDO;
-+		break;
-+	default:
-+		return;
-+	}
-+
-+	if (on)
-+		chipco_set32(cc, SSB_CHIPCO_PMU_MINRES_MSK, 1 << ldo);
-+	else
-+		chipco_mask32(cc, SSB_CHIPCO_PMU_MINRES_MSK, ~(1 << ldo));
-+	chipco_read32(cc, SSB_CHIPCO_PMU_MINRES_MSK); //SPEC FIXME found via mmiotrace - dummy read?
-+}
-+
-+EXPORT_SYMBOL(ssb_pmu_set_ldo_voltage);
-+EXPORT_SYMBOL(ssb_pmu_set_ldo_paref);
---- a/drivers/ssb/main.c
-+++ b/drivers/ssb/main.c
-@@ -472,6 +472,8 @@ static int ssb_devices_register(struct s
- 		case SSB_BUSTYPE_SSB:
- 			dev->dma_mask = &dev->coherent_dma_mask;
+--- a/drivers/ssb/driver_gige.c
++++ b/drivers/ssb/driver_gige.c
+@@ -12,6 +12,7 @@
+ #include <linux/ssb/ssb_driver_gige.h>
+ #include <linux/pci.h>
+ #include <linux/pci_regs.h>
++#include <linux/slab.h>
+ 
+ 
+ /*
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -270,7 +270,6 @@ void ssb_mipscore_init(struct ssb_mipsco
+ 				set_irq(dev, irq++);
+ 			}
  			break;
-+		default:
+-			/* fallthrough */
+ 		case SSB_DEV_PCI:
+ 		case SSB_DEV_ETHERNET:
+ 		case SSB_DEV_ETHERNET_GBIT:
+@@ -281,6 +280,10 @@ void ssb_mipscore_init(struct ssb_mipsco
+ 				set_irq(dev, irq++);
+ 				break;
+ 			}
++			/* fallthrough */
++		case SSB_DEV_EXTIF:
++			set_irq(dev, 0);
 +			break;
  		}
- 
- 		sdev->dev = dev;
-@@ -1358,8 +1360,10 @@ static int __init ssb_modinit(void)
- 	ssb_buses_lock();
- 	err = ssb_attach_queued_buses();
- 	ssb_buses_unlock();
--	if (err)
-+	if (err) {
- 		bus_unregister(&ssb_bustype);
-+		goto out;
-+	}
- 
- 	err = b43_pci_ssb_bridge_init();
- 	if (err) {
-@@ -1375,7 +1379,7 @@ static int __init ssb_modinit(void)
- 		/* don't fail SSB init because of this */
- 		err = 0;
  	}
+ 	ssb_dprintk(KERN_INFO PFX "after irq reconfiguration\n");
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -246,20 +246,12 @@ static struct pci_controller ssb_pcicore
+ 	.pci_ops	= &ssb_pcicore_pciops,
+ 	.io_resource	= &ssb_pcicore_io_resource,
+ 	.mem_resource	= &ssb_pcicore_mem_resource,
+-	.mem_offset	= 0x24000000,
+ };
+ 
+-static u32 ssb_pcicore_pcibus_iobase = 0x100;
+-static u32 ssb_pcicore_pcibus_membase = SSB_PCI_DMA;
 -
-+out:
- 	return err;
+ /* This function is called when doing a pci_enable_device().
+  * We must first check if the device is a device on the PCI-core bridge. */
+ int ssb_pcicore_plat_dev_init(struct pci_dev *d)
+ {
+-	struct resource *res;
+-	int pos, size;
+-	u32 *base;
+-
+ 	if (d->bus->ops != &ssb_pcicore_pciops) {
+ 		/* This is not a device on the PCI-core bridge. */
+ 		return -ENODEV;
+@@ -268,27 +260,6 @@ int ssb_pcicore_plat_dev_init(struct pci
+ 	ssb_printk(KERN_INFO "PCI: Fixing up device %s\n",
+ 		   pci_name(d));
+ 
+-	/* Fix up resource bases */
+-	for (pos = 0; pos < 6; pos++) {
+-		res = &d->resource[pos];
+-		if (res->flags & IORESOURCE_IO)
+-			base = &ssb_pcicore_pcibus_iobase;
+-		else
+-			base = &ssb_pcicore_pcibus_membase;
+-		res->flags |= IORESOURCE_PCI_FIXED;
+-		if (res->end) {
+-			size = res->end - res->start + 1;
+-			if (*base & (size - 1))
+-				*base = (*base + size) & ~(size - 1);
+-			res->start = *base;
+-			res->end = res->start + size - 1;
+-			*base += size;
+-			pci_write_config_dword(d, PCI_BASE_ADDRESS_0 + (pos << 2), res->start);
+-		}
+-		/* Fix up PCI bridge BAR0 only */
+-		if (d->bus->number == 0 && PCI_SLOT(d->devfn) == 0)
+-			break;
+-	}
+ 	/* Fix up interrupt lines */
+ 	d->irq = ssb_mips_irq(extpci_core->dev) + 2;
+ 	pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
+@@ -551,13 +522,13 @@ int ssb_pcicore_dev_irqvecs_enable(struc
+ 	might_sleep_if(pdev->id.coreid != SSB_DEV_PCI);
+ 
+ 	/* Enable interrupts for this device. */
+-	if (bus->host_pci &&
+-	    ((pdev->id.revision >= 6) || (pdev->id.coreid == SSB_DEV_PCIE))) {
++	if ((pdev->id.revision >= 6) || (pdev->id.coreid == SSB_DEV_PCIE)) {
+ 		u32 coremask;
+ 
+ 		/* Calculate the "coremask" for the device. */
+ 		coremask = (1 << dev->core_index);
+ 
++		SSB_WARN_ON(bus->bustype != SSB_BUSTYPE_PCI);
+ 		err = pci_read_config_dword(bus->host_pci, SSB_PCI_IRQMASK, &tmp);
+ 		if (err)
+ 			goto out;
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -18,6 +18,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/pci.h>
+ #include <linux/mmc/sdio_func.h>
++#include <linux/slab.h>
+ 
+ #include <pcmcia/cs_types.h>
+ #include <pcmcia/cs.h>
+@@ -140,6 +141,19 @@ static void ssb_device_put(struct ssb_de
+ 		put_device(dev->dev);
  }
- /* ssb must be initialized after PCI but before the ssb drivers.
+ 
++static inline struct ssb_driver *ssb_driver_get(struct ssb_driver *drv)
++{
++	if (drv)
++		get_driver(&drv->drv);
++	return drv;
++}
++
++static inline void ssb_driver_put(struct ssb_driver *drv)
++{
++	if (drv)
++		put_driver(&drv->drv);
++}
++
+ static int ssb_device_resume(struct device *dev)
+ {
+ 	struct ssb_device *ssb_dev = dev_to_ssb_dev(dev);
+@@ -210,90 +224,81 @@ int ssb_bus_suspend(struct ssb_bus *bus)
+ EXPORT_SYMBOL(ssb_bus_suspend);
+ 
+ #ifdef CONFIG_SSB_SPROM
+-int ssb_devices_freeze(struct ssb_bus *bus)
++/** ssb_devices_freeze - Freeze all devices on the bus.
++ *
++ * After freezing no device driver will be handling a device
++ * on this bus anymore. ssb_devices_thaw() must be called after
++ * a successful freeze to reactivate the devices.
++ *
++ * @bus: The bus.
++ * @ctx: Context structure. Pass this to ssb_devices_thaw().
++ */
++int ssb_devices_freeze(struct ssb_bus *bus, struct ssb_freeze_context *ctx)
+ {
+-	struct ssb_device *dev;
+-	struct ssb_driver *drv;
+-	int err = 0;
+-	int i;
+-	pm_message_t state = PMSG_FREEZE;
++	struct ssb_device *sdev;
++	struct ssb_driver *sdrv;
++	unsigned int i;
++
++	memset(ctx, 0, sizeof(*ctx));
++	ctx->bus = bus;
++	SSB_WARN_ON(bus->nr_devices > ARRAY_SIZE(ctx->device_frozen));
+ 
+-	/* First check that we are capable to freeze all devices. */
+ 	for (i = 0; i < bus->nr_devices; i++) {
+-		dev = &(bus->devices[i]);
+-		if (!dev->dev ||
+-		    !dev->dev->driver ||
+-		    !device_is_registered(dev->dev))
+-			continue;
+-		drv = drv_to_ssb_drv(dev->dev->driver);
+-		if (!drv)
++		sdev = ssb_device_get(&bus->devices[i]);
++
++		if (!sdev->dev || !sdev->dev->driver ||
++		    !device_is_registered(sdev->dev)) {
++			ssb_device_put(sdev);
+ 			continue;
+-		if (!drv->suspend) {
+-			/* Nope, can't suspend this one. */
+-			return -EOPNOTSUPP;
+ 		}
+-	}
+-	/* Now suspend all devices */
+-	for (i = 0; i < bus->nr_devices; i++) {
+-		dev = &(bus->devices[i]);
+-		if (!dev->dev ||
+-		    !dev->dev->driver ||
+-		    !device_is_registered(dev->dev))
++		sdrv = ssb_driver_get(drv_to_ssb_drv(sdev->dev->driver));
++		if (!sdrv || SSB_WARN_ON(!sdrv->remove)) {
++			ssb_device_put(sdev);
+ 			continue;
+-		drv = drv_to_ssb_drv(dev->dev->driver);
+-		if (!drv)
+-			continue;
+-		err = drv->suspend(dev, state);
+-		if (err) {
+-			ssb_printk(KERN_ERR PFX "Failed to freeze device %s\n",
+-				   dev_name(dev->dev));
+-			goto err_unwind;
+ 		}
++		sdrv->remove(sdev);
++		ctx->device_frozen[i] = 1;
+ 	}
+ 
+ 	return 0;
+-err_unwind:
+-	for (i--; i >= 0; i--) {
+-		dev = &(bus->devices[i]);
+-		if (!dev->dev ||
+-		    !dev->dev->driver ||
+-		    !device_is_registered(dev->dev))
+-			continue;
+-		drv = drv_to_ssb_drv(dev->dev->driver);
+-		if (!drv)
+-			continue;
+-		if (drv->resume)
+-			drv->resume(dev);
+-	}
+-	return err;
+ }
+ 
+-int ssb_devices_thaw(struct ssb_bus *bus)
++/** ssb_devices_thaw - Unfreeze all devices on the bus.
++ *
++ * This will re-attach the device drivers and re-init the devices.
++ *
++ * @ctx: The context structure from ssb_devices_freeze()
++ */
++int ssb_devices_thaw(struct ssb_freeze_context *ctx)
+ {
+-	struct ssb_device *dev;
+-	struct ssb_driver *drv;
+-	int err;
+-	int i;
++	struct ssb_bus *bus = ctx->bus;
++	struct ssb_device *sdev;
++	struct ssb_driver *sdrv;
++	unsigned int i;
++	int err, result = 0;
+ 
+ 	for (i = 0; i < bus->nr_devices; i++) {
+-		dev = &(bus->devices[i]);
+-		if (!dev->dev ||
+-		    !dev->dev->driver ||
+-		    !device_is_registered(dev->dev))
++		if (!ctx->device_frozen[i])
+ 			continue;
+-		drv = drv_to_ssb_drv(dev->dev->driver);
+-		if (!drv)
++		sdev = &bus->devices[i];
++
++		if (SSB_WARN_ON(!sdev->dev || !sdev->dev->driver))
+ 			continue;
+-		if (SSB_WARN_ON(!drv->resume))
++		sdrv = drv_to_ssb_drv(sdev->dev->driver);
++		if (SSB_WARN_ON(!sdrv || !sdrv->probe))
+ 			continue;
+-		err = drv->resume(dev);
++
++		err = sdrv->probe(sdev, &sdev->id);
+ 		if (err) {
+ 			ssb_printk(KERN_ERR PFX "Failed to thaw device %s\n",
+-				   dev_name(dev->dev));
++				   dev_name(sdev->dev));
++			result = err;
+ 		}
++		ssb_driver_put(sdrv);
++		ssb_device_put(sdev);
+ 	}
+ 
+-	return 0;
++	return result;
+ }
+ #endif /* CONFIG_SSB_SPROM */
+ 
+@@ -490,8 +495,7 @@ static int ssb_devices_register(struct s
+ #endif
+ 			break;
+ 		case SSB_BUSTYPE_SDIO:
+-#ifdef CONFIG_SSB_SDIO
+-			sdev->irq = bus->host_sdio->dev.irq;
++#ifdef CONFIG_SSB_SDIOHOST
+ 			dev->parent = &bus->host_sdio->dev;
+ #endif
+ 			break;
+@@ -830,6 +834,9 @@ int ssb_bus_pcibus_register(struct ssb_b
+ 	if (!err) {
+ 		ssb_printk(KERN_INFO PFX "Sonics Silicon Backplane found on "
+ 			   "PCI device %s\n", dev_name(&host_pci->dev));
++	} else {
++		ssb_printk(KERN_ERR PFX "Failed to register PCI version"
++			   " of SSB with error %d\n", err);
+ 	}
+ 
+ 	return err;
 --- a/drivers/ssb/pci.c
 +++ b/drivers/ssb/pci.c
-@@ -167,10 +167,16 @@ err_pci:
+@@ -17,6 +17,7 @@
+ 
+ #include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb_regs.h>
++#include <linux/slab.h>
+ #include <linux/pci.h>
+ #include <linux/delay.h>
+ 
+@@ -167,7 +168,7 @@ err_pci:
  }
  
  /* Get the word-offset for a SSB_SPROM_XXX define. */
 -#define SPOFF(offset)	(((offset) - SSB_SPROM_BASE) / sizeof(u16))
 +#define SPOFF(offset)	((offset) / sizeof(u16))
  /* Helper to extract some _offset, which is one of the SSB_SPROM_XXX defines. */
--#define SPEX(_outvar, _offset, _mask, _shift)	\
-+#define SPEX16(_outvar, _offset, _mask, _shift)	\
+ #define SPEX16(_outvar, _offset, _mask, _shift)	\
  	out->_outvar = ((in[SPOFF(_offset)] & (_mask)) >> (_shift))
-+#define SPEX32(_outvar, _offset, _mask, _shift)	\
-+	out->_outvar = ((((u32)in[SPOFF((_offset)+2)] << 16 | \
-+			   in[SPOFF(_offset)]) & (_mask)) >> (_shift))
-+#define SPEX(_outvar, _offset, _mask, _shift) \
-+	SPEX16(_outvar, _offset, _mask, _shift)
-+
- 
- static inline u8 ssb_crc8(u8 crc, u8 data)
- {
-@@ -247,7 +253,7 @@ static int sprom_do_read(struct ssb_bus 
+@@ -253,7 +254,7 @@ static int sprom_do_read(struct ssb_bus 
  	int i;
  
  	for (i = 0; i < bus->sprom_size; i++)
@@ -188,7 +359,7 @@
  
  	return 0;
  }
-@@ -278,7 +284,7 @@ static int sprom_do_write(struct ssb_bus
+@@ -284,7 +285,7 @@ static int sprom_do_write(struct ssb_bus
  			ssb_printk("75%%");
  		else if (i % 2)
  			ssb_printk(".");
@@ -197,87 +368,7 @@
  		mmiowb();
  		msleep(20);
  	}
-@@ -474,12 +480,14 @@ static void sprom_extract_r8(struct ssb_
- 
- 	/* extract the MAC address */
- 	for (i = 0; i < 3; i++) {
--		v = in[SPOFF(SSB_SPROM1_IL0MAC) + i];
-+		v = in[SPOFF(SSB_SPROM8_IL0MAC) + i];
- 		*(((__be16 *)out->il0mac) + i) = cpu_to_be16(v);
- 	}
- 	SPEX(country_code, SSB_SPROM8_CCODE, 0xFFFF, 0);
- 	SPEX(boardflags_lo, SSB_SPROM8_BFLLO, 0xFFFF, 0);
- 	SPEX(boardflags_hi, SSB_SPROM8_BFLHI, 0xFFFF, 0);
-+	SPEX(boardflags2_lo, SSB_SPROM8_BFL2LO, 0xFFFF, 0);
-+	SPEX(boardflags2_hi, SSB_SPROM8_BFL2HI, 0xFFFF, 0);
- 	SPEX(ant_available_a, SSB_SPROM8_ANTAVAIL, SSB_SPROM8_ANTAVAIL_A,
- 	     SSB_SPROM8_ANTAVAIL_A_SHIFT);
- 	SPEX(ant_available_bg, SSB_SPROM8_ANTAVAIL, SSB_SPROM8_ANTAVAIL_BG,
-@@ -490,12 +498,55 @@ static void sprom_extract_r8(struct ssb_
- 	SPEX(maxpwr_a, SSB_SPROM8_MAXP_A, SSB_SPROM8_MAXP_A_MASK, 0);
- 	SPEX(itssi_a, SSB_SPROM8_MAXP_A, SSB_SPROM8_ITSSI_A,
- 	     SSB_SPROM8_ITSSI_A_SHIFT);
-+	SPEX(maxpwr_ah, SSB_SPROM8_MAXP_AHL, SSB_SPROM8_MAXP_AH_MASK, 0);
-+	SPEX(maxpwr_al, SSB_SPROM8_MAXP_AHL, SSB_SPROM8_MAXP_AL_MASK,
-+	     SSB_SPROM8_MAXP_AL_SHIFT);
- 	SPEX(gpio0, SSB_SPROM8_GPIOA, SSB_SPROM8_GPIOA_P0, 0);
- 	SPEX(gpio1, SSB_SPROM8_GPIOA, SSB_SPROM8_GPIOA_P1,
- 	     SSB_SPROM8_GPIOA_P1_SHIFT);
- 	SPEX(gpio2, SSB_SPROM8_GPIOB, SSB_SPROM8_GPIOB_P2, 0);
- 	SPEX(gpio3, SSB_SPROM8_GPIOB, SSB_SPROM8_GPIOB_P3,
- 	     SSB_SPROM8_GPIOB_P3_SHIFT);
-+	SPEX(tri2g, SSB_SPROM8_TRI25G, SSB_SPROM8_TRI2G, 0);
-+	SPEX(tri5g, SSB_SPROM8_TRI25G, SSB_SPROM8_TRI5G,
-+	     SSB_SPROM8_TRI5G_SHIFT);
-+	SPEX(tri5gl, SSB_SPROM8_TRI5GHL, SSB_SPROM8_TRI5GL, 0);
-+	SPEX(tri5gh, SSB_SPROM8_TRI5GHL, SSB_SPROM8_TRI5GH,
-+	     SSB_SPROM8_TRI5GH_SHIFT);
-+	SPEX(rxpo2g, SSB_SPROM8_RXPO, SSB_SPROM8_RXPO2G, 0);
-+	SPEX(rxpo5g, SSB_SPROM8_RXPO, SSB_SPROM8_RXPO5G,
-+	     SSB_SPROM8_RXPO5G_SHIFT);
-+	SPEX(rssismf2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_RSSISMF2G, 0);
-+	SPEX(rssismc2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_RSSISMC2G,
-+	     SSB_SPROM8_RSSISMC2G_SHIFT);
-+	SPEX(rssisav2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_RSSISAV2G,
-+	     SSB_SPROM8_RSSISAV2G_SHIFT);
-+	SPEX(bxa2g, SSB_SPROM8_RSSIPARM2G, SSB_SPROM8_BXA2G,
-+	     SSB_SPROM8_BXA2G_SHIFT);
-+	SPEX(rssismf5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_RSSISMF5G, 0);
-+	SPEX(rssismc5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_RSSISMC5G,
-+	     SSB_SPROM8_RSSISMC5G_SHIFT);
-+	SPEX(rssisav5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_RSSISAV5G,
-+	     SSB_SPROM8_RSSISAV5G_SHIFT);
-+	SPEX(bxa5g, SSB_SPROM8_RSSIPARM5G, SSB_SPROM8_BXA5G,
-+	     SSB_SPROM8_BXA5G_SHIFT);
-+	SPEX(pa0b0, SSB_SPROM8_PA0B0, 0xFFFF, 0);
-+	SPEX(pa0b1, SSB_SPROM8_PA0B1, 0xFFFF, 0);
-+	SPEX(pa0b2, SSB_SPROM8_PA0B2, 0xFFFF, 0);
-+	SPEX(pa1b0, SSB_SPROM8_PA1B0, 0xFFFF, 0);
-+	SPEX(pa1b1, SSB_SPROM8_PA1B1, 0xFFFF, 0);
-+	SPEX(pa1b2, SSB_SPROM8_PA1B2, 0xFFFF, 0);
-+	SPEX(pa1lob0, SSB_SPROM8_PA1LOB0, 0xFFFF, 0);
-+	SPEX(pa1lob1, SSB_SPROM8_PA1LOB1, 0xFFFF, 0);
-+	SPEX(pa1lob2, SSB_SPROM8_PA1LOB2, 0xFFFF, 0);
-+	SPEX(pa1hib0, SSB_SPROM8_PA1HIB0, 0xFFFF, 0);
-+	SPEX(pa1hib1, SSB_SPROM8_PA1HIB1, 0xFFFF, 0);
-+	SPEX(pa1hib2, SSB_SPROM8_PA1HIB2, 0xFFFF, 0);
-+	SPEX(cck2gpo, SSB_SPROM8_CCK2GPO, 0xFFFF, 0);
-+	SPEX32(ofdm2gpo, SSB_SPROM8_OFDM2GPO, 0xFFFFFFFF, 0);
-+	SPEX32(ofdm5glpo, SSB_SPROM8_OFDM5GLPO, 0xFFFFFFFF, 0);
-+	SPEX32(ofdm5gpo, SSB_SPROM8_OFDM5GPO, 0xFFFFFFFF, 0);
-+	SPEX32(ofdm5ghpo, SSB_SPROM8_OFDM5GHPO, 0xFFFFFFFF, 0);
- 
- 	/* Extract the antenna gain values. */
- 	SPEX(antenna_gain.ghz24.a0, SSB_SPROM8_AGAIN01,
-@@ -549,6 +600,7 @@ static int sprom_extract(struct ssb_bus 
- 			ssb_printk(KERN_WARNING PFX "Unsupported SPROM"
- 				   "  revision %d detected. Will extract"
- 				   " v1\n", out->revision);
-+			out->revision = 1;
- 			sprom_extract_r123(out, in);
- 		}
- 	}
-@@ -568,6 +620,14 @@ static int ssb_pci_sprom_get(struct ssb_
+@@ -620,6 +621,14 @@ static int ssb_pci_sprom_get(struct ssb_
  	int err = -ENOMEM;
  	u16 *buf;
  
@@ -292,27 +383,19 @@
  	buf = kcalloc(SSB_SPROMSIZE_WORDS_R123, sizeof(u16), GFP_KERNEL);
  	if (!buf)
  		goto out;
+--- a/drivers/ssb/pcihost_wrapper.c
++++ b/drivers/ssb/pcihost_wrapper.c
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include <linux/pci.h>
++#include <linux/slab.h>
+ #include <linux/ssb/ssb.h>
+ 
+ 
 --- a/drivers/ssb/pcmcia.c
 +++ b/drivers/ssb/pcmcia.c
-@@ -583,7 +583,7 @@ static int ssb_pcmcia_sprom_write_all(st
- 			ssb_printk(".");
- 		err = ssb_pcmcia_sprom_write(bus, i, sprom[i]);
- 		if (err) {
--			ssb_printk("\n" KERN_NOTICE PFX
-+			ssb_printk(KERN_NOTICE PFX
- 				   "Failed to write to SPROM.\n");
- 			failed = 1;
- 			break;
-@@ -591,7 +591,7 @@ static int ssb_pcmcia_sprom_write_all(st
- 	}
- 	err = ssb_pcmcia_sprom_command(bus, SSB_PCMCIA_SPROMCTL_WRITEDIS);
- 	if (err) {
--		ssb_printk("\n" KERN_NOTICE PFX
-+		ssb_printk(KERN_NOTICE PFX
- 			   "Could not disable SPROM write access.\n");
- 		failed = 1;
- 	}
-@@ -617,134 +617,140 @@ static int ssb_pcmcia_sprom_check_crc(co
+@@ -617,136 +617,140 @@ static int ssb_pcmcia_sprom_check_crc(co
  	}						\
    } while (0)
  
@@ -321,10 +404,7 @@
 +static int ssb_pcmcia_get_mac(struct pcmcia_device *p_dev,
 +			tuple_t *tuple,
 +			void *priv)
- {
--	tuple_t tuple;
--	int res;
--	unsigned char buf[32];
++{
 +	struct ssb_sprom *sprom = priv;
 +
 +	if (tuple->TupleData[0] != CISTPL_FUNCE_LAN_NODE_ID)
@@ -340,7 +420,10 @@
 +static int ssb_pcmcia_do_get_invariants(struct pcmcia_device *p_dev,
 +					tuple_t *tuple,
 +					void *priv)
-+{
+ {
+-	tuple_t tuple;
+-	int res;
+-	unsigned char buf[32];
 +	struct ssb_init_invariants *iv = priv;
  	struct ssb_sprom *sprom = &iv->sprom;
  	struct ssb_boardinfo *bi = &iv->boardinfo;
@@ -490,7 +573,8 @@
 -			sprom->board_rev = tuple.TupleData[1];
 -			break;
 -		case SSB_PCMCIA_CIS_PA:
--			GOTO_ERROR_ON(tuple.TupleDataLen != 9,
+-			GOTO_ERROR_ON((tuple.TupleDataLen != 9) &&
+-				      (tuple.TupleDataLen != 10),
 -				      "pa tpl size");
 -			sprom->pa0b0 = tuple.TupleData[1] |
 -				 ((u16)tuple.TupleData[2] << 8);
@@ -530,7 +614,8 @@
 -			sprom->antenna_gain.ghz5.a3 = tuple.TupleData[1];
 -			break;
 -		case SSB_PCMCIA_CIS_BFLAGS:
--			GOTO_ERROR_ON(tuple.TupleDataLen != 3,
+-			GOTO_ERROR_ON((tuple.TupleDataLen != 3) &&
+-				      (tuple.TupleDataLen != 5),
 -				      "bfl tpl size");
 -			sprom->boardflags_lo = tuple.TupleData[1] |
 -					 ((u16)tuple.TupleData[2] << 8);
@@ -565,87 +650,118 @@
  	return -ENODEV;
  }
  
+--- a/drivers/ssb/scan.c
++++ b/drivers/ssb/scan.c
+@@ -354,7 +354,7 @@ int ssb_bus_scan(struct ssb_bus *bus,
+ 		dev->bus = bus;
+ 		dev->ops = bus->ops;
+ 
+-		ssb_dprintk(KERN_INFO PFX
++		printk(KERN_DEBUG PFX
+ 			    "Core %d found: %s "
+ 			    "(cc 0x%03X, rev 0x%02X, vendor 0x%04X)\n",
+ 			    i, ssb_core_name(dev->id.coreid),
+--- a/drivers/ssb/sprom.c
++++ b/drivers/ssb/sprom.c
+@@ -14,6 +14,7 @@
+ #include "ssb_private.h"
+ 
+ #include <linux/ctype.h>
++#include <linux/slab.h>
+ 
+ 
+ static const struct ssb_sprom *fallback_sprom;
+@@ -102,6 +103,7 @@ ssize_t ssb_attr_sprom_store(struct ssb_
+ 	u16 *sprom;
+ 	int res = 0, err = -ENOMEM;
+ 	size_t sprom_size_words = bus->sprom_size;
++	struct ssb_freeze_context freeze;
+ 
+ 	sprom = kcalloc(bus->sprom_size, sizeof(u16), GFP_KERNEL);
+ 	if (!sprom)
+@@ -123,18 +125,13 @@ ssize_t ssb_attr_sprom_store(struct ssb_
+ 	err = -ERESTARTSYS;
+ 	if (mutex_lock_interruptible(&bus->sprom_mutex))
+ 		goto out_kfree;
+-	err = ssb_devices_freeze(bus);
+-	if (err == -EOPNOTSUPP) {
+-		ssb_printk(KERN_ERR PFX "SPROM write: Could not freeze devices. "
+-			   "No suspend support. Is CONFIG_PM enabled?\n");
+-		goto out_unlock;
+-	}
++	err = ssb_devices_freeze(bus, &freeze);
+ 	if (err) {
+ 		ssb_printk(KERN_ERR PFX "SPROM write: Could not freeze all devices\n");
+ 		goto out_unlock;
+ 	}
+ 	res = sprom_write(bus, sprom);
+-	err = ssb_devices_thaw(bus);
++	err = ssb_devices_thaw(&freeze);
+ 	if (err)
+ 		ssb_printk(KERN_ERR PFX "SPROM write: Could not thaw all devices\n");
+ out_unlock:
+@@ -179,3 +176,17 @@ const struct ssb_sprom *ssb_get_fallback
+ {
+ 	return fallback_sprom;
+ }
++
++/* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
++bool ssb_is_sprom_available(struct ssb_bus *bus)
++{
++	/* status register only exists on chipcomon rev >= 11 and we need check
++	   for >= 31 only */
++	/* this routine differs from specs as we do not access SPROM directly
++	   on PCMCIA */
++	if (bus->bustype == SSB_BUSTYPE_PCI &&
++	    bus->chipco.dev->id.revision >= 31)
++		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
++
++	return true;
++}
+--- a/drivers/ssb/ssb_private.h
++++ b/drivers/ssb/ssb_private.h
+@@ -176,19 +176,27 @@ extern const struct ssb_sprom *ssb_get_f
+ 
+ /* core.c */
+ extern u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m);
+-extern int ssb_devices_freeze(struct ssb_bus *bus);
+-extern int ssb_devices_thaw(struct ssb_bus *bus);
+ extern struct ssb_bus *ssb_pci_dev_to_bus(struct pci_dev *pdev);
+ int ssb_for_each_bus_call(unsigned long data,
+ 			  int (*func)(struct ssb_bus *bus, unsigned long data));
+ extern struct ssb_bus *ssb_pcmcia_dev_to_bus(struct pcmcia_device *pdev);
+ 
++struct ssb_freeze_context {
++	/* Pointer to the bus */
++	struct ssb_bus *bus;
++	/* Boolean list to indicate whether a device is frozen on this bus. */
++	bool device_frozen[SSB_MAX_NR_CORES];
++};
++extern int ssb_devices_freeze(struct ssb_bus *bus, struct ssb_freeze_context *ctx);
++extern int ssb_devices_thaw(struct ssb_freeze_context *ctx);
++
++
+ 
+ /* b43_pci_bridge.c */
+ #ifdef CONFIG_SSB_B43_PCI_BRIDGE
+ extern int __init b43_pci_ssb_bridge_init(void);
+ extern void __exit b43_pci_ssb_bridge_exit(void);
+-#else /* CONFIG_SSB_B43_PCI_BRIDGR */
++#else /* CONFIG_SSB_B43_PCI_BRIDGE */
+ static inline int b43_pci_ssb_bridge_init(void)
+ {
+ 	return 0;
+@@ -196,6 +204,6 @@ static inline int b43_pci_ssb_bridge_ini
+ static inline void b43_pci_ssb_bridge_exit(void)
+ {
+ }
+-#endif /* CONFIG_SSB_PCIHOST */
++#endif /* CONFIG_SSB_B43_PCI_BRIDGE */
+ 
+ #endif /* LINUX_SSB_PRIVATE_H_ */
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -27,24 +27,54 @@ struct ssb_sprom {
- 	u8 et1mdcport;		/* MDIO for enet1 */
- 	u8 board_rev;		/* Board revision number from SPROM. */
- 	u8 country_code;	/* Country Code */
--	u8 ant_available_a;	/* A-PHY antenna available bits (up to 4) */
--	u8 ant_available_bg;	/* B/G-PHY antenna available bits (up to 4) */
-+	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
-+	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
- 	u16 pa0b0;
- 	u16 pa0b1;
- 	u16 pa0b2;
- 	u16 pa1b0;
- 	u16 pa1b1;
- 	u16 pa1b2;
-+	u16 pa1lob0;
-+	u16 pa1lob1;
-+	u16 pa1lob2;
-+	u16 pa1hib0;
-+	u16 pa1hib1;
-+	u16 pa1hib2;
- 	u8 gpio0;		/* GPIO pin 0 */
- 	u8 gpio1;		/* GPIO pin 1 */
- 	u8 gpio2;		/* GPIO pin 2 */
- 	u8 gpio3;		/* GPIO pin 3 */
--	u16 maxpwr_a;		/* A-PHY Amplifier Max Power (in dBm Q5.2) */
--	u16 maxpwr_bg;		/* B/G-PHY Amplifier Max Power (in dBm Q5.2) */
-+	u16 maxpwr_bg;		/* 2.4GHz Amplifier Max Power (in dBm Q5.2) */
-+	u16 maxpwr_al;		/* 5.2GHz Amplifier Max Power (in dBm Q5.2) */
-+	u16 maxpwr_a;		/* 5.3GHz Amplifier Max Power (in dBm Q5.2) */
-+	u16 maxpwr_ah;		/* 5.8GHz Amplifier Max Power (in dBm Q5.2) */
- 	u8 itssi_a;		/* Idle TSSI Target for A-PHY */
- 	u8 itssi_bg;		/* Idle TSSI Target for B/G-PHY */
--	u16 boardflags_lo;	/* Boardflags (low 16 bits) */
--	u16 boardflags_hi;	/* Boardflags (high 16 bits) */
-+	u8 tri2g;		/* 2.4GHz TX isolation */
-+	u8 tri5gl;		/* 5.2GHz TX isolation */
-+	u8 tri5g;		/* 5.3GHz TX isolation */
-+	u8 tri5gh;		/* 5.8GHz TX isolation */
-+	u8 rxpo2g;		/* 2GHz RX power offset */
-+	u8 rxpo5g;		/* 5GHz RX power offset */
-+	u8 rssisav2g;		/* 2GHz RSSI params */
-+	u8 rssismc2g;
-+	u8 rssismf2g;
-+	u8 bxa2g;		/* 2GHz BX arch */
-+	u8 rssisav5g;		/* 5GHz RSSI params */
-+	u8 rssismc5g;
-+	u8 rssismf5g;
-+	u8 bxa5g;		/* 5GHz BX arch */
-+	u16 cck2gpo;		/* CCK power offset */
-+	u32 ofdm2gpo;		/* 2.4GHz OFDM power offset */
-+	u32 ofdm5glpo;		/* 5.2GHz OFDM power offset */
-+	u32 ofdm5gpo;		/* 5.3GHz OFDM power offset */
-+	u32 ofdm5ghpo;		/* 5.8GHz OFDM power offset */
-+	u16 boardflags_lo;	/* Board flags (bits 0-15) */
-+	u16 boardflags_hi;	/* Board flags (bits 16-31) */
-+	u16 boardflags2_lo;	/* Board flags (bits 32-47) */
-+	u16 boardflags2_hi;	/* Board flags (bits 48-63) */
-+	/* TODO store board flags in a single u64 */
- 
- 	/* Antenna gain values for up to 4 antennas
- 	 * on each band. Values in dBm/4 (Q5.2). Negative gain means the
-@@ -58,7 +88,7 @@ struct ssb_sprom {
- 		} ghz5;		/* 5GHz band */
- 	} antenna_gain;
- 
--	/* TODO - add any parameters needed from rev 2, 3, or 4 SPROMs */
-+	/* TODO - add any parameters needed from rev 2, 3, 4, 5 or 8 SPROMs */
- };
- 
- /* Information about the PCB the circuitry is soldered on. */
-@@ -208,6 +238,7 @@ enum ssb_bustype {
- 	SSB_BUSTYPE_SSB,	/* This SSB bus is the system bus */
- 	SSB_BUSTYPE_PCI,	/* SSB is connected to PCI bus */
- 	SSB_BUSTYPE_PCMCIA,	/* SSB is connected to PCMCIA bus */
-+	SSB_BUSTYPE_SDIO,	/* SSB is connected to SDIO bus */
- };
- 
- /* board_vendor */
-@@ -238,20 +269,33 @@ struct ssb_bus {
+@@ -269,7 +269,8 @@ struct ssb_bus {
  
  	const struct ssb_bus_ops *ops;
  
@@ -653,15 +769,9 @@
 +	/* The core currently mapped into the MMIO window.
 +	 * Not valid on all host-buses. So don't use outside of SSB. */
  	struct ssb_device *mapped_device;
--	/* Currently mapped PCMCIA segment. (bustype == SSB_BUSTYPE_PCMCIA only) */
--	u8 mapped_pcmcia_seg;
-+	union {
-+		/* Currently mapped PCMCIA segment. (bustype == SSB_BUSTYPE_PCMCIA only) */
-+		u8 mapped_pcmcia_seg;
-+		/* Current SSB base address window for SDIO. */
-+		u32 sdio_sbaddr;
-+	};
- 	/* Lock for core and segment switching.
+ 	union {
+ 		/* Currently mapped PCMCIA segment. (bustype == SSB_BUSTYPE_PCMCIA only) */
+@@ -281,14 +282,17 @@ struct ssb_bus {
  	 * On PCMCIA-host busses this is used to protect the whole MMIO access. */
  	spinlock_t bar_lock;
  
@@ -672,6 +782,8 @@
 -	struct pci_dev *host_pci;
 -	/* Pointer to the PCMCIA device (only if bustype == SSB_BUSTYPE_PCMCIA). */
 -	struct pcmcia_device *host_pcmcia;
+-	/* Pointer to the SDIO device (only if bustype == SSB_BUSTYPE_SDIO). */
+-	struct sdio_func *host_sdio;
 +	/* Pointers to the host-bus. Check bustype before using any of these pointers. */
 +	union {
 +		/* Pointer to the PCI bus (only valid if bustype == SSB_BUSTYPE_PCI). */
@@ -681,13 +793,10 @@
 +		/* Pointer to the SDIO device (only if bustype == SSB_BUSTYPE_SDIO). */
 +		struct sdio_func *host_sdio;
 +	};
-+
-+	/* See enum ssb_quirks */
-+	unsigned int quirks;
  
- #ifdef CONFIG_SSB_SPROM
- 	/* Mutex to protect the SPROM writing. */
-@@ -261,6 +305,7 @@ struct ssb_bus {
+ 	/* See enum ssb_quirks */
+ 	unsigned int quirks;
+@@ -301,6 +305,7 @@ struct ssb_bus {
  	/* ID information about the Chip. */
  	u16 chip_id;
  	u16 chip_rev;
@@ -695,28 +804,7 @@
  	u16 sprom_size;		/* number of words in sprom */
  	u8 chip_package;
  
-@@ -306,6 +351,11 @@ struct ssb_bus {
- #endif /* DEBUG */
- };
- 
-+enum ssb_quirks {
-+	/* SDIO connected card requires performing a read after writing a 32-bit value */
-+	SSB_QUIRK_SDIO_READ_AFTER_WRITE32	= (1 << 0),
-+};
-+
- /* The initialization-invariants. */
- struct ssb_init_invariants {
- 	/* Versioning information about the PCB. */
-@@ -336,9 +386,18 @@ extern int ssb_bus_pcmciabus_register(st
- 				      struct pcmcia_device *pcmcia_dev,
- 				      unsigned long baseaddr);
- #endif /* CONFIG_SSB_PCMCIAHOST */
-+#ifdef CONFIG_SSB_SDIOHOST
-+extern int ssb_bus_sdiobus_register(struct ssb_bus *bus,
-+				    struct sdio_func *sdio_func,
-+				    unsigned int quirks);
-+#endif /* CONFIG_SSB_SDIOHOST */
-+
+@@ -390,6 +395,9 @@ extern int ssb_bus_sdiobus_register(stru
  
  extern void ssb_bus_unregister(struct ssb_bus *bus);
  
@@ -771,33 +859,8 @@
  	/* Fast Powerup Delay constant */
  	u16 fast_pwrup_delay;
  	struct ssb_chipcommon_pmu pmu;
-@@ -629,5 +644,15 @@ extern int ssb_chipco_serial_init(struct
- /* PMU support */
- extern void ssb_pmu_init(struct ssb_chipcommon *cc);
- 
-+enum ssb_pmu_ldo_volt_id {
-+	LDO_PAREF = 0,
-+	LDO_VOLT1,
-+	LDO_VOLT2,
-+	LDO_VOLT3,
-+};
-+
-+void ssb_pmu_set_ldo_voltage(struct ssb_chipcommon *cc,
-+			     enum ssb_pmu_ldo_volt_id id, u32 voltage);
-+void ssb_pmu_set_ldo_paref(struct ssb_chipcommon *cc, bool on);
- 
- #endif /* LINUX_SSB_CHIPCO_H_ */
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
-@@ -162,7 +162,7 @@
- 
- /* SPROM shadow area. If not otherwise noted, fields are
-  * two bytes wide. Note that the SPROM can _only_ be read
-- * in two-byte quantinies.
-+ * in two-byte quantities.
-  */
- #define SSB_SPROMSIZE_WORDS		64
- #define SSB_SPROMSIZE_BYTES		(SSB_SPROMSIZE_WORDS * sizeof(u16))
 @@ -170,26 +170,27 @@
  #define SSB_SPROMSIZE_WORDS_R4		220
  #define SSB_SPROMSIZE_BYTES_R123	(SSB_SPROMSIZE_WORDS_R123 * sizeof(u16))
@@ -928,7 +991,7 @@
  #define  SSB_SPROM3_CCKPO_1M		0x000F	/* 1M Rate PO */
  #define  SSB_SPROM3_CCKPO_2M		0x00F0	/* 2M Rate PO */
  #define  SSB_SPROM3_CCKPO_2M_SHIFT	4
-@@ -264,104 +265,156 @@
+@@ -264,100 +265,100 @@
  #define  SSB_SPROM3_OFDMGPO		0x107A	/* G-PHY OFDM Power Offset (4 bytes, BigEndian) */
  
  /* SPROM Revision 4 */
@@ -1029,8 +1092,11 @@
  #define  SSB_SPROM5_GPIOB_P3_SHIFT	8
  
  /* SPROM Revision 8 */
--#define SSB_SPROM8_BFLLO		0x1084	/* Boardflags (low 16 bits) */
--#define SSB_SPROM8_BFLHI		0x1086	/* Boardflags Hi */
+-#define SSB_SPROM8_BOARDREV		0x1082	/* Board revision */
+-#define SSB_SPROM8_BFLLO		0x1084	/* Board flags (bits 0-15) */
+-#define SSB_SPROM8_BFLHI		0x1086	/* Board flags (bits 16-31) */
+-#define SSB_SPROM8_BFL2LO		0x1088	/* Board flags (bits 32-47) */
+-#define SSB_SPROM8_BFL2HI		0x108A	/* Board flags (bits 48-63) */
 -#define SSB_SPROM8_IL0MAC		0x108C	/* 6 byte MAC address */
 -#define SSB_SPROM8_CCODE		0x1092	/* 2 byte country code */
 -#define SSB_SPROM8_ANTAVAIL		0x109C  /* Antenna available bitfields*/
@@ -1078,53 +1144,74 @@
 -#define  SSB_SPROM8_GPIOB_P2		0x00FF	/* Pin 2 */
 -#define  SSB_SPROM8_GPIOB_P3		0xFF00	/* Pin 3 */
 -#define  SSB_SPROM8_GPIOB_P3_SHIFT	8
--#define SSB_SPROM8_MAXP_BG		0x10C0  /* Max Power BG in path 1 */
--#define  SSB_SPROM8_MAXP_BG_MASK	0x00FF  /* Mask for Max Power BG */
+-#define SSB_SPROM8_RSSIPARM2G		0x10A4	/* RSSI params for 2GHz */
 +#define SSB_SPROM8_RSSIPARM2G		0x00A4	/* RSSI params for 2GHz */
-+#define  SSB_SPROM8_RSSISMF2G		0x000F
-+#define  SSB_SPROM8_RSSISMC2G		0x00F0
-+#define  SSB_SPROM8_RSSISMC2G_SHIFT	4
-+#define  SSB_SPROM8_RSSISAV2G		0x0700
-+#define  SSB_SPROM8_RSSISAV2G_SHIFT	8
-+#define  SSB_SPROM8_BXA2G		0x1800
-+#define  SSB_SPROM8_BXA2G_SHIFT		11
+ #define  SSB_SPROM8_RSSISMF2G		0x000F
+ #define  SSB_SPROM8_RSSISMC2G		0x00F0
+ #define  SSB_SPROM8_RSSISMC2G_SHIFT	4
+@@ -365,7 +366,7 @@
+ #define  SSB_SPROM8_RSSISAV2G_SHIFT	8
+ #define  SSB_SPROM8_BXA2G		0x1800
+ #define  SSB_SPROM8_BXA2G_SHIFT		11
+-#define SSB_SPROM8_RSSIPARM5G		0x10A6	/* RSSI params for 5GHz */
 +#define SSB_SPROM8_RSSIPARM5G		0x00A6	/* RSSI params for 5GHz */
-+#define  SSB_SPROM8_RSSISMF5G		0x000F
-+#define  SSB_SPROM8_RSSISMC5G		0x00F0
-+#define  SSB_SPROM8_RSSISMC5G_SHIFT	4
-+#define  SSB_SPROM8_RSSISAV5G		0x0700
-+#define  SSB_SPROM8_RSSISAV5G_SHIFT	8
-+#define  SSB_SPROM8_BXA5G		0x1800
-+#define  SSB_SPROM8_BXA5G_SHIFT		11
+ #define  SSB_SPROM8_RSSISMF5G		0x000F
+ #define  SSB_SPROM8_RSSISMC5G		0x00F0
+ #define  SSB_SPROM8_RSSISMC5G_SHIFT	4
+@@ -373,47 +374,47 @@
+ #define  SSB_SPROM8_RSSISAV5G_SHIFT	8
+ #define  SSB_SPROM8_BXA5G		0x1800
+ #define  SSB_SPROM8_BXA5G_SHIFT		11
+-#define SSB_SPROM8_TRI25G		0x10A8	/* TX isolation 2.4&5.3GHz */
 +#define SSB_SPROM8_TRI25G		0x00A8	/* TX isolation 2.4&5.3GHz */
-+#define  SSB_SPROM8_TRI2G		0x00FF	/* TX isolation 2.4GHz */
-+#define  SSB_SPROM8_TRI5G		0xFF00	/* TX isolation 5.3GHz */
-+#define  SSB_SPROM8_TRI5G_SHIFT		8
+ #define  SSB_SPROM8_TRI2G		0x00FF	/* TX isolation 2.4GHz */
+ #define  SSB_SPROM8_TRI5G		0xFF00	/* TX isolation 5.3GHz */
+ #define  SSB_SPROM8_TRI5G_SHIFT		8
+-#define SSB_SPROM8_TRI5GHL		0x10AA	/* TX isolation 5.2/5.8GHz */
 +#define SSB_SPROM8_TRI5GHL		0x00AA	/* TX isolation 5.2/5.8GHz */
-+#define  SSB_SPROM8_TRI5GL		0x00FF	/* TX isolation 5.2GHz */
-+#define  SSB_SPROM8_TRI5GH		0xFF00	/* TX isolation 5.8GHz */
-+#define  SSB_SPROM8_TRI5GH_SHIFT	8
+ #define  SSB_SPROM8_TRI5GL		0x00FF	/* TX isolation 5.2GHz */
+ #define  SSB_SPROM8_TRI5GH		0xFF00	/* TX isolation 5.8GHz */
+ #define  SSB_SPROM8_TRI5GH_SHIFT	8
+-#define SSB_SPROM8_RXPO			0x10AC  /* RX power offsets */
 +#define SSB_SPROM8_RXPO			0x00AC  /* RX power offsets */
-+#define  SSB_SPROM8_RXPO2G		0x00FF	/* 2GHz RX power offset */
-+#define  SSB_SPROM8_RXPO5G		0xFF00	/* 5GHz RX power offset */
-+#define  SSB_SPROM8_RXPO5G_SHIFT	8
+ #define  SSB_SPROM8_RXPO2G		0x00FF	/* 2GHz RX power offset */
+ #define  SSB_SPROM8_RXPO5G		0xFF00	/* 5GHz RX power offset */
+ #define  SSB_SPROM8_RXPO5G_SHIFT	8
+-#define SSB_SPROM8_MAXP_BG		0x10C0  /* Max Power 2GHz in path 1 */
 +#define SSB_SPROM8_MAXP_BG		0x00C0  /* Max Power 2GHz in path 1 */
-+#define  SSB_SPROM8_MAXP_BG_MASK	0x00FF  /* Mask for Max Power 2GHz */
+ #define  SSB_SPROM8_MAXP_BG_MASK	0x00FF  /* Mask for Max Power 2GHz */
  #define  SSB_SPROM8_ITSSI_BG		0xFF00	/* Mask for path 1 itssi_bg */
  #define  SSB_SPROM8_ITSSI_BG_SHIFT	8
--#define SSB_SPROM8_MAXP_A		0x10C8  /* Max Power A in path 1 */
--#define  SSB_SPROM8_MAXP_A_MASK		0x00FF  /* Mask for Max Power A */
+-#define SSB_SPROM8_PA0B0		0x10C2	/* 2GHz power amp settings */
+-#define SSB_SPROM8_PA0B1		0x10C4
+-#define SSB_SPROM8_PA0B2		0x10C6
+-#define SSB_SPROM8_MAXP_A		0x10C8  /* Max Power 5.3GHz */
 +#define SSB_SPROM8_PA0B0		0x00C2	/* 2GHz power amp settings */
 +#define SSB_SPROM8_PA0B1		0x00C4
 +#define SSB_SPROM8_PA0B2		0x00C6
 +#define SSB_SPROM8_MAXP_A		0x00C8  /* Max Power 5.3GHz */
-+#define  SSB_SPROM8_MAXP_A_MASK		0x00FF  /* Mask for Max Power 5.3GHz */
+ #define  SSB_SPROM8_MAXP_A_MASK		0x00FF  /* Mask for Max Power 5.3GHz */
  #define  SSB_SPROM8_ITSSI_A		0xFF00	/* Mask for path 1 itssi_a */
  #define  SSB_SPROM8_ITSSI_A_SHIFT	8
+-#define SSB_SPROM8_MAXP_AHL		0x10CA  /* Max Power 5.2/5.8GHz */
 +#define SSB_SPROM8_MAXP_AHL		0x00CA  /* Max Power 5.2/5.8GHz */
-+#define  SSB_SPROM8_MAXP_AH_MASK	0x00FF  /* Mask for Max Power 5.8GHz */
-+#define  SSB_SPROM8_MAXP_AL_MASK	0xFF00  /* Mask for Max Power 5.2GHz */
-+#define  SSB_SPROM8_MAXP_AL_SHIFT	8
+ #define  SSB_SPROM8_MAXP_AH_MASK	0x00FF  /* Mask for Max Power 5.8GHz */
+ #define  SSB_SPROM8_MAXP_AL_MASK	0xFF00  /* Mask for Max Power 5.2GHz */
+ #define  SSB_SPROM8_MAXP_AL_SHIFT	8
+-#define SSB_SPROM8_PA1B0		0x10CC	/* 5.3GHz power amp settings */
+-#define SSB_SPROM8_PA1B1		0x10CE
+-#define SSB_SPROM8_PA1B2		0x10D0
+-#define SSB_SPROM8_PA1LOB0		0x10D2	/* 5.2GHz power amp settings */
+-#define SSB_SPROM8_PA1LOB1		0x10D4
+-#define SSB_SPROM8_PA1LOB2		0x10D6
+-#define SSB_SPROM8_PA1HIB0		0x10D8	/* 5.8GHz power amp settings */
+-#define SSB_SPROM8_PA1HIB1		0x10DA
+-#define SSB_SPROM8_PA1HIB2		0x10DC
+-#define SSB_SPROM8_CCK2GPO		0x1140	/* CCK power offset */
+-#define SSB_SPROM8_OFDM2GPO		0x1142	/* 2.4GHz OFDM power offset */
+-#define SSB_SPROM8_OFDM5GPO		0x1146	/* 5.3GHz OFDM power offset */
+-#define SSB_SPROM8_OFDM5GLPO		0x114A	/* 5.2GHz OFDM power offset */
+-#define SSB_SPROM8_OFDM5GHPO		0x114E	/* 5.8GHz OFDM power offset */
 +#define SSB_SPROM8_PA1B0		0x00CC	/* 5.3GHz power amp settings */
 +#define SSB_SPROM8_PA1B1		0x00CE
 +#define SSB_SPROM8_PA1B2		0x00D0
@@ -1142,376 +1229,3 @@
  
  /* Values for SSB_SPROM1_BINF_CCODE */
  enum {
---- a/drivers/ssb/scan.c
-+++ b/drivers/ssb/scan.c
-@@ -162,6 +162,8 @@ static u8 chipid_to_nrcores(u16 chipid)
- static u32 scan_read32(struct ssb_bus *bus, u8 current_coreidx,
- 		       u16 offset)
- {
-+	u32 lo, hi;
-+
- 	switch (bus->bustype) {
- 	case SSB_BUSTYPE_SSB:
- 		offset += current_coreidx * SSB_CORE_SIZE;
-@@ -174,6 +176,10 @@ static u32 scan_read32(struct ssb_bus *b
- 			offset -= 0x800;
- 		} else
- 			ssb_pcmcia_switch_segment(bus, 0);
-+		lo = readw(bus->mmio + offset);
-+		hi = readw(bus->mmio + offset + 2);
-+		return lo | (hi << 16);
-+	default:
- 		break;
- 	}
- 	return readl(bus->mmio + offset);
-@@ -188,6 +194,8 @@ static int scan_switchcore(struct ssb_bu
- 		return ssb_pci_switch_coreidx(bus, coreidx);
- 	case SSB_BUSTYPE_PCMCIA:
- 		return ssb_pcmcia_switch_coreidx(bus, coreidx);
-+	default:
-+		break;
- 	}
- 	return 0;
- }
-@@ -206,6 +214,8 @@ void ssb_iounmap(struct ssb_bus *bus)
- 		SSB_BUG_ON(1); /* Can't reach this code. */
- #endif
- 		break;
-+	default:
-+		break;
- 	}
- 	bus->mmio = NULL;
- 	bus->mapped_device = NULL;
-@@ -230,6 +240,8 @@ static void __iomem *ssb_ioremap(struct 
- 		SSB_BUG_ON(1); /* Can't reach this code. */
- #endif
- 		break;
-+	default:
-+		break;
- 	}
- 
- 	return mmio;
-@@ -339,7 +351,7 @@ int ssb_bus_scan(struct ssb_bus *bus,
- 		dev->bus = bus;
- 		dev->ops = bus->ops;
- 
--		ssb_dprintk(KERN_INFO PFX
-+		printk(KERN_DEBUG PFX
- 			    "Core %d found: %s "
- 			    "(cc 0x%03X, rev 0x%02X, vendor 0x%04X)\n",
- 			    i, ssb_core_name(dev->id.coreid),
---- a/drivers/ssb/driver_chipcommon.c
-+++ b/drivers/ssb/driver_chipcommon.c
-@@ -233,6 +233,8 @@ void ssb_chipcommon_init(struct ssb_chip
- {
- 	if (!cc->dev)
- 		return; /* We don't have a ChipCommon */
-+	if (cc->dev->id.revision >= 11)
-+		cc->status = chipco_read32(cc, SSB_CHIPCO_CHIPSTAT);
- 	ssb_pmu_init(cc);
- 	chipco_powercontrol_init(cc);
- 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
-@@ -370,6 +372,7 @@ u32 ssb_chipco_gpio_control(struct ssb_c
- {
- 	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOCTL, mask, value);
- }
-+EXPORT_SYMBOL(ssb_chipco_gpio_control);
- 
- u32 ssb_chipco_gpio_intmask(struct ssb_chipcommon *cc, u32 mask, u32 value)
- {
---- a/drivers/ssb/driver_mipscore.c
-+++ b/drivers/ssb/driver_mipscore.c
-@@ -49,29 +49,54 @@ static const u32 ipsflag_irq_shift[] = {
- 
- static inline u32 ssb_irqflag(struct ssb_device *dev)
- {
--	return ssb_read32(dev, SSB_TPSFLAG) & SSB_TPSFLAG_BPFLAG;
-+	u32 tpsflag = ssb_read32(dev, SSB_TPSFLAG);
-+	if (tpsflag)
-+		return ssb_read32(dev, SSB_TPSFLAG) & SSB_TPSFLAG_BPFLAG;
-+	else
-+		/* not irq supported */
-+		return 0x3f;
-+}
-+
-+static struct ssb_device *find_device(struct ssb_device *rdev, int irqflag)
-+{
-+	struct ssb_bus *bus = rdev->bus;
-+	int i;
-+	for (i = 0; i < bus->nr_devices; i++) {
-+		struct ssb_device *dev;
-+		dev = &(bus->devices[i]);
-+		if (ssb_irqflag(dev) == irqflag)
-+			return dev;
-+	}
-+	return NULL;
- }
- 
- /* Get the MIPS IRQ assignment for a specified device.
-  * If unassigned, 0 is returned.
-+ * If disabled, 5 is returned.
-+ * If not supported, 6 is returned.
-  */
- unsigned int ssb_mips_irq(struct ssb_device *dev)
- {
- 	struct ssb_bus *bus = dev->bus;
-+	struct ssb_device *mdev = bus->mipscore.dev;
- 	u32 irqflag;
- 	u32 ipsflag;
- 	u32 tmp;
- 	unsigned int irq;
- 
- 	irqflag = ssb_irqflag(dev);
-+	if (irqflag == 0x3f)
-+		return 6;
- 	ipsflag = ssb_read32(bus->mipscore.dev, SSB_IPSFLAG);
- 	for (irq = 1; irq <= 4; irq++) {
- 		tmp = ((ipsflag & ipsflag_irq_mask[irq]) >> ipsflag_irq_shift[irq]);
- 		if (tmp == irqflag)
- 			break;
- 	}
--	if (irq	== 5)
--		irq = 0;
-+	if (irq	== 5) {
-+		if ((1 << irqflag) & ssb_read32(mdev, SSB_INTVEC))
-+			irq = 0;
-+	}
- 
- 	return irq;
- }
-@@ -97,25 +122,56 @@ static void set_irq(struct ssb_device *d
- 	struct ssb_device *mdev = bus->mipscore.dev;
- 	u32 irqflag = ssb_irqflag(dev);
- 
-+	BUG_ON(oldirq == 6);
-+
- 	dev->irq = irq + 2;
- 
--	ssb_dprintk(KERN_INFO PFX
--		    "set_irq: core 0x%04x, irq %d => %d\n",
--		    dev->id.coreid, oldirq, irq);
- 	/* clear the old irq */
- 	if (oldirq == 0)
- 		ssb_write32(mdev, SSB_INTVEC, (~(1 << irqflag) & ssb_read32(mdev, SSB_INTVEC)));
--	else
-+	else if (oldirq != 5)
- 		clear_irq(bus, oldirq);
- 
- 	/* assign the new one */
- 	if (irq == 0) {
- 		ssb_write32(mdev, SSB_INTVEC, ((1 << irqflag) | ssb_read32(mdev, SSB_INTVEC)));
- 	} else {
-+		u32 ipsflag = ssb_read32(mdev, SSB_IPSFLAG);
-+		if ((ipsflag & ipsflag_irq_mask[irq]) != ipsflag_irq_mask[irq]) {
-+			u32 oldipsflag = (ipsflag & ipsflag_irq_mask[irq]) >> ipsflag_irq_shift[irq];
-+			struct ssb_device *olddev = find_device(dev, oldipsflag);
-+			if (olddev)
-+				set_irq(olddev, 0);
-+		}
- 		irqflag <<= ipsflag_irq_shift[irq];
--		irqflag |= (ssb_read32(mdev, SSB_IPSFLAG) & ~ipsflag_irq_mask[irq]);
-+		irqflag |= (ipsflag & ~ipsflag_irq_mask[irq]);
- 		ssb_write32(mdev, SSB_IPSFLAG, irqflag);
- 	}
-+	ssb_dprintk(KERN_INFO PFX
-+		    "set_irq: core 0x%04x, irq %d => %d\n",
-+		    dev->id.coreid, oldirq+2, irq+2);
-+}
-+
-+static void print_irq(struct ssb_device *dev, unsigned int irq)
-+{
-+	int i;
-+	static const char *irq_name[] = {"2(S)", "3", "4", "5", "6", "D", "I"};
-+	ssb_dprintk(KERN_INFO PFX
-+		"core 0x%04x, irq :", dev->id.coreid);
-+	for (i = 0; i <= 6; i++) {
-+		ssb_dprintk(" %s%s", irq_name[i], i==irq?"*":" ");
-+	}
-+	ssb_dprintk("\n");
-+}
-+
-+static void dump_irq(struct ssb_bus *bus)
-+{
-+	int i;
-+	for (i = 0; i < bus->nr_devices; i++) {
-+		struct ssb_device *dev;
-+		dev = &(bus->devices[i]);
-+		print_irq(dev, ssb_mips_irq(dev));
-+	}
- }
- 
- static void ssb_mips_serial_init(struct ssb_mipscore *mcore)
-@@ -197,17 +253,23 @@ void ssb_mipscore_init(struct ssb_mipsco
- 
- 	/* Assign IRQs to all cores on the bus, start with irq line 2, because serial usually takes 1 */
- 	for (irq = 2, i = 0; i < bus->nr_devices; i++) {
-+		int mips_irq;
- 		dev = &(bus->devices[i]);
--		dev->irq = ssb_mips_irq(dev) + 2;
-+		mips_irq = ssb_mips_irq(dev);
-+		if (mips_irq > 4)
-+			dev->irq = 0;
-+		else
-+			dev->irq = mips_irq + 2;
-+		if (dev->irq > 5)
-+			continue;
- 		switch (dev->id.coreid) {
- 		case SSB_DEV_USB11_HOST:
- 			/* shouldn't need a separate irq line for non-4710, most of them have a proper
- 			 * external usb controller on the pci */
- 			if ((bus->chip_id == 0x4710) && (irq <= 4)) {
- 				set_irq(dev, irq++);
--				break;
- 			}
--			/* fallthrough */
-+			break;
- 		case SSB_DEV_PCI:
- 		case SSB_DEV_ETHERNET:
- 		case SSB_DEV_ETHERNET_GBIT:
-@@ -218,8 +280,14 @@ void ssb_mipscore_init(struct ssb_mipsco
- 				set_irq(dev, irq++);
- 				break;
- 			}
-+			/* fallthrough */
-+		case SSB_DEV_EXTIF:
-+			set_irq(dev, 0);
-+			break;
- 		}
- 	}
-+	ssb_dprintk(KERN_INFO PFX "after irq reconfiguration\n");
-+	dump_irq(bus);
- 
- 	ssb_mips_serial_init(mcore);
- 	ssb_mips_flash_detect(mcore);
---- a/drivers/ssb/sprom.c
-+++ b/drivers/ssb/sprom.c
-@@ -13,6 +13,9 @@
- 
- #include "ssb_private.h"
- 
-+#include <linux/ctype.h>
-+#include <linux/slab.h>
-+
- 
- static const struct ssb_sprom *fallback_sprom;
- 
-@@ -33,17 +36,27 @@ static int sprom2hex(const u16 *sprom, c
- static int hex2sprom(u16 *sprom, const char *dump, size_t len,
- 		     size_t sprom_size_words)
- {
--	char tmp[5] = { 0 };
--	int cnt = 0;
-+	char c, tmp[5] = { 0 };
-+	int err, cnt = 0;
- 	unsigned long parsed;
- 
--	if (len < sprom_size_words * 2)
-+	/* Strip whitespace at the end. */
-+	while (len) {
-+		c = dump[len - 1];
-+		if (!isspace(c) && c != '\0')
-+			break;
-+		len--;
-+	}
-+	/* Length must match exactly. */
-+	if (len != sprom_size_words * 4)
- 		return -EINVAL;
- 
- 	while (cnt < sprom_size_words) {
- 		memcpy(tmp, dump, 4);
- 		dump += 4;
--		parsed = simple_strtoul(tmp, NULL, 16);
-+		err = strict_strtoul(tmp, 16, &parsed);
-+		if (err)
-+			return err;
- 		sprom[cnt++] = swab16((u16)parsed);
- 	}
- 
-@@ -90,6 +103,7 @@ ssize_t ssb_attr_sprom_store(struct ssb_
- 	u16 *sprom;
- 	int res = 0, err = -ENOMEM;
- 	size_t sprom_size_words = bus->sprom_size;
-+	struct ssb_freeze_context freeze;
- 
- 	sprom = kcalloc(bus->sprom_size, sizeof(u16), GFP_KERNEL);
- 	if (!sprom)
-@@ -111,18 +125,13 @@ ssize_t ssb_attr_sprom_store(struct ssb_
- 	err = -ERESTARTSYS;
- 	if (mutex_lock_interruptible(&bus->sprom_mutex))
- 		goto out_kfree;
--	err = ssb_devices_freeze(bus);
--	if (err == -EOPNOTSUPP) {
--		ssb_printk(KERN_ERR PFX "SPROM write: Could not freeze devices. "
--			   "No suspend support. Is CONFIG_PM enabled?\n");
--		goto out_unlock;
--	}
-+	err = ssb_devices_freeze(bus, &freeze);
- 	if (err) {
- 		ssb_printk(KERN_ERR PFX "SPROM write: Could not freeze all devices\n");
- 		goto out_unlock;
- 	}
- 	res = sprom_write(bus, sprom);
--	err = ssb_devices_thaw(bus);
-+	err = ssb_devices_thaw(&freeze);
- 	if (err)
- 		ssb_printk(KERN_ERR PFX "SPROM write: Could not thaw all devices\n");
- out_unlock:
-@@ -167,3 +176,17 @@ const struct ssb_sprom *ssb_get_fallback
- {
- 	return fallback_sprom;
- }
-+
-+/* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
-+bool ssb_is_sprom_available(struct ssb_bus *bus)
-+{
-+	/* status register only exists on chipcomon rev >= 11 and we need check
-+	   for >= 31 only */
-+	/* this routine differs from specs as we do not access SPROM directly
-+	   on PCMCIA */
-+	if (bus->bustype == SSB_BUSTYPE_PCI &&
-+	    bus->chipco.dev->id.revision >= 31)
-+		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
-+
-+	return true;
-+}
---- a/drivers/ssb/ssb_private.h
-+++ b/drivers/ssb/ssb_private.h
-@@ -136,19 +136,27 @@ extern const struct ssb_sprom *ssb_get_f
- 
- /* core.c */
- extern u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m);
--extern int ssb_devices_freeze(struct ssb_bus *bus);
--extern int ssb_devices_thaw(struct ssb_bus *bus);
- extern struct ssb_bus *ssb_pci_dev_to_bus(struct pci_dev *pdev);
- int ssb_for_each_bus_call(unsigned long data,
- 			  int (*func)(struct ssb_bus *bus, unsigned long data));
- extern struct ssb_bus *ssb_pcmcia_dev_to_bus(struct pcmcia_device *pdev);
- 
-+struct ssb_freeze_context {
-+	/* Pointer to the bus */
-+	struct ssb_bus *bus;
-+	/* Boolean list to indicate whether a device is frozen on this bus. */
-+	bool device_frozen[SSB_MAX_NR_CORES];
-+};
-+extern int ssb_devices_freeze(struct ssb_bus *bus, struct ssb_freeze_context *ctx);
-+extern int ssb_devices_thaw(struct ssb_freeze_context *ctx);
-+
-+
- 
- /* b43_pci_bridge.c */
- #ifdef CONFIG_SSB_B43_PCI_BRIDGE
- extern int __init b43_pci_ssb_bridge_init(void);
- extern void __exit b43_pci_ssb_bridge_exit(void);
--#else /* CONFIG_SSB_B43_PCI_BRIDGR */
-+#else /* CONFIG_SSB_B43_PCI_BRIDGE */
- static inline int b43_pci_ssb_bridge_init(void)
- {
- 	return 0;
-@@ -156,6 +164,6 @@ static inline int b43_pci_ssb_bridge_ini
- static inline void b43_pci_ssb_bridge_exit(void)
- {
- }
--#endif /* CONFIG_SSB_PCIHOST */
-+#endif /* CONFIG_SSB_B43_PCI_BRIDGE */
- 
- #endif /* LINUX_SSB_PRIVATE_H_ */
