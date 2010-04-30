@@ -152,7 +152,7 @@ ifneq ($(CONFIG_X86_VDI_IMAGES),)
   define Image/Build/vdi
     # left here because the image builder doesnt need these
     ifeq ($(1),ext2)
-		rm $(BIN_DIR)/$(IMG_PREFIX)-ext2.vdi || true
+		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi || true
 		VBoxManage convertfromraw -format VDI \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
@@ -166,7 +166,7 @@ ifneq ($(CONFIG_X86_VMDK_IMAGES),)
   define Image/Build/vmdk
     # left here because the image builder doesnt need these
     ifeq ($(1),ext2)
-		rm $(BIN_DIR)/$(IMG_PREFIX)-ext2.vmdk || true
+		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
 		qemu-img convert -f raw -O vmdk \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
