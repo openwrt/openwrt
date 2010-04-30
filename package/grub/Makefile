@@ -36,9 +36,12 @@ CONFIGURE_FLAGS:=
 ifneq ($(HOST_OS),Darwin)
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
+		CFLAGS="-march=i486 -m32" \
 		LDFLAGS="-static" \
 		./configure \
 		$(CONFIGURE_FLAGS) \
+		--build=i386-linux-gnu \
+		--host=i386-linux-gnu \
 		--program-prefix="" \
 		--program-suffix="" \
 		--prefix=/usr \
