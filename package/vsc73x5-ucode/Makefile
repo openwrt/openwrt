@@ -10,15 +10,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=vsc73x5-ucode
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=http://www.tp-link.com/GPL
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 
-PKG_SOURCE:=WirelessNRouer_AP.tar.gz
+PKG_SOURCE:=vsc73x5-ucode.tar.bz2
 PKG_BUILD_DIR:=$(BUILD_DIR)/vsc73x5-ucode
 
-PKG_MD5SUM:=7dd6069a5f0e44cc9965fc7b43eb3046
-
-UCODE_SRC_DIR:=u-boot/board/ar7100/common
-UCODE_BUILD_DIR:=$(PKG_BUILD_DIR)/$(UCODE_SRC_DIR)
+PKG_MD5SUM:=b32e3debcd118f263c79199a7b5afa68
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,7 +29,7 @@ endef
 
 define Package/vsc73x5/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(UCODE_BUILD_DIR)/$(2) $(1)/lib/firmware/$(3)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(2) $(1)/lib/firmware/$(3)
 endef
 
 define Package/vsc7385-ucode-ap83
@@ -87,13 +84,8 @@ define Package/vsc7395-ucode-pb44/install
   $(call Package/vsc73x5/install,$(1),g5e_Plus1_2_29a_unmanaged_Atheros_v3.bin,vsc7395_ucode_pb44.bin)
 endef
 
-define Build/Prepare
-	tar -xzf "$(DL_DIR)/$(PKG_SOURCE)" ap-9x-gpl/ap93-u-boot.tar.bz2 -O | tar -C "$(PKG_BUILD_DIR)" -xj $(UCODE_SRC_DIR)
-	cp files/Makefile $(UCODE_BUILD_DIR)
-endef
-
 define Build/Compile
-	$(MAKE) -C $(UCODE_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) all
+
 endef
 
 $(eval $(call BuildPackage,vsc7385-ucode-ap83))
