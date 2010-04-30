@@ -1,6 +1,6 @@
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -385,6 +385,34 @@ static int ssb_device_uevent(struct devi
+@@ -384,6 +384,34 @@ static int ssb_device_uevent(struct devi
  			     ssb_dev->id.revision);
  }
  
@@ -35,7 +35,7 @@
  static struct bus_type ssb_bustype = {
  	.name		= "ssb",
  	.match		= ssb_bus_match,
-@@ -394,6 +422,7 @@ static struct bus_type ssb_bustype = {
+@@ -393,6 +421,7 @@ static struct bus_type ssb_bustype = {
  	.suspend	= ssb_device_suspend,
  	.resume		= ssb_device_resume,
  	.uevent		= ssb_device_uevent,
