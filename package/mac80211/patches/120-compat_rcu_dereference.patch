@@ -1,8 +1,8 @@
 --- a/include/linux/compat-2.6.34.h
 +++ b/include/linux/compat-2.6.34.h
-@@ -164,6 +164,8 @@ static inline void device_unlock(struct 
- 
- #define rcu_dereference_check(p, c) rcu_dereference(p)
+@@ -197,6 +197,8 @@ do {							\
+  */
+ #define sysfs_bin_attr_init(bin_attr) sysfs_attr_init(&(bin_attr)->attr)
  
 +#define rcu_dereference_check(p, c) rcu_dereference(p)
 +
