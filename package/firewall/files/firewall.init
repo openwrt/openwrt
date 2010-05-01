@@ -3,12 +3,25 @@
 
 START=45
 
+FW_LIBDIR=/lib/firewall
+
+fw() {
+	. $FW_LIBDIR/core.sh
+	fw_$1
+}
+
 start() {
-	. /lib/firewall/uci_firewall.sh
-	fw_init
+	fw start
 }
 
 stop() {
-	. /lib/firewall/uci_firewall.sh
-	fw_stop	
+	fw stop
+}
+
+restart() {
+	fw restart
+}
+
+reload() {
+	fw reload
 }
