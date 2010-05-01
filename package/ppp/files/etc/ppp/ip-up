@@ -6,11 +6,10 @@ PPP_SPEED="$3"
 PPP_LOCAL="$4"
 PPP_REMOTE="$5"
 PPP_IPPARAM="$(echo $6 | sed 's/\./_/g')"
-PPP_UNIT="${PPP_IFACE##ppp}"
 
 export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 [ -z "$PPP_IPPARAM" -o -z "$PPP_LOCAL" ] || {
-	uci_set_state network "$PPP_IPPARAM" unit "$PPP_UNIT"
+	uci_set_state network "$PPP_IPPARAM" ifname "$PPP_IFACE"
 	uci_set_state network "$PPP_IPPARAM" ipaddr "$PPP_LOCAL"
 	uci_set_state network "$PPP_IPPARAM" gateway "$PPP_REMOTE"
 

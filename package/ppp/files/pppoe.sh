@@ -1,5 +1,5 @@
-scan_pppoe() {
-	scan_ppp "$@"
+stop_interface_pppoe() {
+	stop_interface_ppp "$1"
 }
 
 setup_interface_pppoe() {
