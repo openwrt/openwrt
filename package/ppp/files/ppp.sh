@@ -65,40 +65,80 @@ start_pppd() {
 	# /dev/ppp fast enough to be used here
 	[ -e /dev/ppp ] || mknod /dev/ppp c 108 0
 
+	local device
 	config_get device "$cfg" device
+
+	local unit
 	config_get unit "$cfg" unit
+
+	local username
 	config_get username "$cfg" username
+
+	local password
 	config_get password "$cfg" password
+
+	local keepalive
 	config_get keepalive "$cfg" keepalive
 
+	local connect
 	config_get connect "$cfg" connect
+
+	local disconnect
 	config_get disconnect "$cfg" disconnect
+
+	local pppd_options
 	config_get pppd_options "$cfg" pppd_options
+
+	local defaultroute
 	config_get_bool defaultroute "$cfg" defaultroute 1
 	[ "$defaultroute" -eq 1 ] && defaultroute="defaultroute replacedefaultroute" || defaultroute=""
 
-	interval="${keepalive##*[, ]}"
+	local interval="${keepalive##*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
 
-	config_get_bool peerdns "$cfg" peerdns 1
-	[ "$peerdns" -eq 1 ] && peerdns="usepeerdns" || {
+	local dns
+	config_get dns "$config" dns
+
+	local has_dns=0
+	local peer_default=1
+	[ -n "$dns" ] && {
+		has_dns=1
+		peer_default=0
+	}
+
+	local peerdns
+	config_get_bool peerdns "$cfg" peerdns $peer_default
+
+	echo -n "" > /tmp/resolv.conf.auto
+
+	[ "$peerdns" -eq 1 ] && {
+		peerdns="usepeerdns"
+	} || {
 		peerdns=""
-		config_get dns "$config" dns
 		for dns in $dns; do
-			grep -q "$dns" /tmp/resolv.conf.auto 2>/dev/null || \
-				echo "nameserver $dns" >> /tmp/resolv.conf.auto
+			echo "nameserver $dns" >> /tmp/resolv.conf.auto
 		done
 	}
 
-	config_get demand "$cfg" demand
-	[ -n "$demand" ] && echo "nameserver 1.1.1.1" > /tmp/resolv.conf.auto
+	local demand
+	config_get_bool demand "$cfg" demand 0
 
+	local demandargs
+	[ "$demand" -eq 1 ] && {
+		demandargs="precompiled-active-filter /etc/ppp/filter demand idle"
+		[ "$has_dns" -eq 0 ] && \
+			echo "nameserver 1.1.1.1" > /tmp/resolv.conf.auto
+	} || {
+		demandargs="persist"
+	}
+
+	local ipv6
 	config_get_bool ipv6 "$cfg" ipv6 0
 	[ "$ipv6" -eq 1 ] && ipv6="+ipv6" || ipv6=""
 
 	/usr/sbin/pppd "$@" \
 		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive%%[, ]*}} \
-		${demand:+precompiled-active-filter /etc/ppp/filter demand idle }${demand:-persist} \
+		$demandargs \
 		$peerdns \
 		$defaultroute \
 		${username:+user "$username" password "$password"} \
@@ -117,9 +157,12 @@ setup_interface_ppp() {
 	local iface="$1"
 	local config="$2"
 
+	local device
 	config_get device "$config" device
 
+	local mtu
 	config_get mtu "$config" mtu
+
 	mtu=${mtu:-1492}
 	start_pppd "$config" \
 		mtu $mtu mru $mtu \
