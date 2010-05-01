@@ -1,5 +1,0 @@
-. /lib/firewall/uci_firewall.sh
-unset ZONE
-config_get ifname $INTERFACE ifname
-[ "$ifname" == "lo" ] && exit 0
-fw_event "$ACTION" "$INTERFACE"

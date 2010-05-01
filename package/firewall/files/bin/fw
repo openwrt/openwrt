@@ -1,0 +1,49 @@
+#!/bin/sh
+FW_LIBDIR=/lib/firewall
+
+. /etc/functions.sh
+. ${FW_LIBDIR}/fw.sh
+
+case "$(type fw)" in
+	*function) ;;
+	*) exit 255;;
+esac
+
+usage() {
+	echo $0 "<command>" "<family>" "<table>" "<chain>" "<target>" "{" "<rules>" "}"
+	exit 0
+}
+
+cmd=$1
+shift
+case "$cmd" in
+	--help|help) usage ;;
+	start|stop|reload|restart)
+		. ${FW_LIBDIR}/core.sh
+		fw_$cmd
+		exit $?
+	;;
+esac
+
+fam=$1
+shift
+case "$fam" in
+	ip)
+		fam=i
+		if [ $# -gt 2 ]; then
+			for p in $(seq 2 $(($# - 1))); do
+				if eval "[ \$$p == '}' ]"; then
+					fam=I
+					break
+				fi
+			done
+		fi ;;
+	ip4) fam=4 ;;
+	ip6) fam=6 ;;
+	arp) fam=a ;;
+	eth) fam=e ;;
+	-*) exec $0 $cmd ${fam##*-} "$@" ;;
+esac
+
+fw "$cmd" "$fam" "$@"
+exit $?
