@@ -9,8 +9,6 @@ set_3g_led() {
 
 scan_3g() {
 	local device
-
-	scan_ppp "$@"
 	config_get device "$1" device
 
 	# try to figure out the device if it's invalid
@@ -24,6 +22,7 @@ scan_3g() {
 	}
 
 	# enable 3G with the 3G button by default
+	local button
 	config_get button "$1" button
 	[ -z "$button" ] && {
 		config_set "$1" button 1
@@ -31,6 +30,7 @@ scan_3g() {
 }
 
 stop_interface_3g() {
+	stop_interface_ppp "$1"
 	set_3g_led 0 0 0
 	killall gcom >/dev/null 2>/dev/null
 }
@@ -39,8 +39,11 @@ setup_interface_3g() {
 	local iface="$1"
 	local config="$2"
 	local chat="/etc/chatscripts/3g.chat"
-	
+
+	local device
 	config_get device "$config" device
+
+	local maxwait
 	config_get maxwait "$config" maxwait
 	maxwait=${maxwait:-20}
 	while [ ! -e "$device" -a $maxwait -gt 0 ];do # wait for driver loading to catch up
@@ -52,9 +55,16 @@ setup_interface_3g() {
 		/sbin/insmod $module 2>&- >&-
 	done
 
+	local apn
 	config_get apn "$config" apn
+
+	local service
 	config_get service "$config" service
+
+	local pincode
 	config_get pincode "$config" pincode
+
+	local mtu
 	config_get mtu "$config" mtu
 
 	set_3g_led 1 0 1
@@ -80,7 +90,7 @@ setup_interface_3g() {
 			mode="AT_OPSYS=${CODE}"
 		fi
 		# Don't assume Option to be default as it breaks with Huawei Cards/Sticks
-		
+
 		PINCODE="$pincode" gcom -d "$device" -s /etc/gcom/setpin.gcom || {
 			echo "$config(3g): Failed to set the PIN code."
 			set_3g_led 0 0 0
