@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ "$ACTION" = "add" ]; then
+	include /lib/network
+	scan_interfaces
+
+	local found=0
+	local ifc
+	for ifc in $interfaces; do
+		local up
+		config_get_bool up "$ifc" up 0
+
+		local proto
+		config_get proto "$ifc" proto
+
+		if [ "$proto" = "pppoa" ] && [ "$up" != 1 ]; then
+			found=1
+			( sleep 1; ifup "$ifc" ) &
+		fi
+	done
+
+	if [ "$found" != 1 ]; then
+		logger "Found no matching interface for DSL device $DEVICENAME"
+	fi
+fi
