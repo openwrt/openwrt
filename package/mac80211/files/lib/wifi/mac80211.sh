@@ -362,7 +362,7 @@ enable_mac80211() {
 				;;
 				sta)
 					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
-						wpa_supplicant_setup_vif "$vif" wext || {
+						wpa_supplicant_setup_vif "$vif" nl80211 || {
 							echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
 							# make sure this wifi interface won't accidentally stay open without encryption
 							ifconfig "$ifname" down
