@@ -165,20 +165,32 @@ int main( int argc, const char *argv[] )
 				stat = do_info(nvram);
 				done++;
 			}
-			else if( !strcmp(argv[i], "get") && ++i < argc )
+			else if( !strcmp(argv[i], "get") || !strcmp(argv[i], "unset") || !strcmp(argv[i], "set") )
 			{
-				stat = do_get(nvram, argv[i]);
-				done++;
-			}
-			else if( !strcmp(argv[i], "unset") && ++i < argc )
-			{
-				stat = do_unset(nvram, argv[i]);
-				done++;
-			}
-			else if( !strcmp(argv[i], "set") && ++i < argc )
-			{
-				stat = do_set(nvram, argv[i]);
-				done++;
+				if( (i+1) < argc )
+				{
+					switch(argv[i++][0])
+					{
+						case 'g':
+							stat = do_get(nvram, argv[i]);
+							break;
+
+						case 'u':
+							stat = do_unset(nvram, argv[i]);
+							break;
+
+						case 's':
+							stat = do_set(nvram, argv[i]);
+							break;
+					}
+					done++;
+				}
+				else
+				{
+					fprintf(stderr, "Command '%s' requires an argument!\n", argv[i]);
+					done = 0;
+					break;
+				}
 			}
 			else if( !strcmp(argv[i], "commit") )
 			{
