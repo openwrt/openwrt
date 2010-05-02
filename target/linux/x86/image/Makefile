@@ -56,7 +56,9 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 	# left here because the image builder doesnt need these
 	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub
 	$(CP) \
-		$(KDIR)/*stage* \
+		$(KDIR)/stage1 \
+		$(KDIR)/stage2 \
+		$(KDIR)/e2fs_stage1_5 \
 		$(KDIR)/root.grub/boot/grub/
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
 	sed \
@@ -74,9 +76,10 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
   define Image/Prepare/grub
 	# for the image builder
 	$(CP) \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-*/stage1 \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-*/stage2 \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-*/e2fs_stage1_5 \
+		$(STAGING_DIR)/usr/lib/grub/i386-openwrt/stage1 \
+		$(STAGING_DIR)/usr/lib/grub/i386-openwrt/stage2 \
+		$(STAGING_DIR)/usr/lib/grub/i386-openwrt/stage2_eltorito \
+		$(STAGING_DIR)/usr/lib/grub/i386-openwrt/e2fs_stage1_5 \
 		$(KDIR)/
   endef
 
@@ -135,8 +138,8 @@ endef
 define Image/Build/iso 
 	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub
 	$(CP) \
-		$(STAGING_DIR_HOST)/usr/lib/grub/i386-openwrt/stage2_eltorito \
-		$(KDIR)/root.grub/boot/grub/stage2_eltorito 
+		$(KDIR)/stage2_eltorito \
+		$(KDIR)/root.grub/boot/grub/ 
 	sed \
 		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
 		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
