@@ -1,0 +1,18 @@
+Index: linux-2.6.32.12/drivers/usb/host/ehci-hub.c
+===================================================================
+--- linux-2.6.32.12.orig/drivers/usb/host/ehci-hub.c	2010-05-02 21:06:45.000000000 +0200
++++ linux-2.6.32.12/drivers/usb/host/ehci-hub.c	2010-05-02 21:07:08.000000000 +0200
+@@ -741,11 +741,13 @@
+ 			 * power switching; they're allowed to just limit the
+ 			 * current.  khubd will turn the power back on.
+ 			 */
++#ifndef CONFIG_BCM63XX
+ 			if (HCS_PPC (ehci->hcs_params)){
+ 				ehci_writel(ehci,
+ 					temp & ~(PORT_RWC_BITS | PORT_POWER),
+ 					status_reg);
+ 			}
++#endif
+ 		}
+ 
+ 		/* whoever resumes must GetPortStatus to complete it!! */
