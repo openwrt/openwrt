@@ -612,7 +612,7 @@
 +
 +	rdc_flash_parts[0].name = "firmware";
 +	rdc_flash_parts[0].offset = 0x8000;
-+	rdc_flash_parts[0].size = 0x3F0000;
++	rdc_flash_parts[0].size = 0x3F0000 - 0x8000;
 +	rdc_flash_parts[1].name = "config";
 +	rdc_flash_parts[1].offset = 0;
 +	rdc_flash_parts[1].size = 0x8000;
