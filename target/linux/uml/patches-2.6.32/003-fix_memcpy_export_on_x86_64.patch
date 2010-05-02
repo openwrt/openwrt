@@ -1,0 +1,11 @@
+--- a/arch/um/os-Linux/user_syms.c
++++ b/arch/um/os-Linux/user_syms.c
+@@ -23,7 +23,7 @@ extern int printf(const char *, ...);
+ EXPORT_SYMBOL(strstr);
+ #endif
+ 
+-#ifndef __x86_64__
++#if !defined(__x86_64) || (__GNUC__ == 4 && __GNUC_MINOR__ < 3) || (__GNUC__ < 4)
+ extern void *memcpy(void *, const void *, size_t);
+ EXPORT_SYMBOL(memcpy);
+ #endif
