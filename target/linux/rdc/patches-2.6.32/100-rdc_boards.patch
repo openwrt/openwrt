@@ -340,7 +340,7 @@
 +
 +	rdc_flash_parts[0].name = "firmware";
 +	rdc_flash_parts[0].offset = 0x0;
-+	rdc_flash_parts[0].size = 0x3E0000;
++	rdc_flash_parts[0].size = 0x3E0000 - 0x8000;
 +	rdc_flash_parts[1].name = "rootfs";
 +	rdc_flash_parts[1].offset = header.kernelsz + sizeof(header);
 +	rdc_flash_parts[1].size = rdc_flash_parts[0].size - rdc_flash_parts[1].offset;
