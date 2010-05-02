@@ -1,0 +1,19 @@
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -543,10 +543,16 @@ void wpa_supplicant_set_state(struct wpa
+ 		wpa_s->reassociated_connection = 1;
+ 		wpa_drv_set_operstate(wpa_s, 1);
+ 		wpa_s->after_wps = 0;
++#ifndef IEEE8021X_EAPOL
++		wpa_drv_set_supp_port(wpa_s, 1);
++#endif
+ 	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
+ 		   state == WPA_ASSOCIATED) {
+ 		wpa_s->new_connection = 1;
+ 		wpa_drv_set_operstate(wpa_s, 0);
++#ifndef IEEE8021X_EAPOL
++		wpa_drv_set_supp_port(wpa_s, 0);
++#endif
+ 	}
+ 	wpa_s->wpa_state = state;
+ 
