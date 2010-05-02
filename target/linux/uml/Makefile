@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -23,7 +23,7 @@ BOARDNAME:=User Mode Linux
 FEATURES:=ext2 audio
 LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=2.6.32.12
 
 include $(INCLUDE_DIR)/target.mk
 
