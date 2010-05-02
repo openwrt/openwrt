@@ -99,11 +99,11 @@
  #endif /* HOSTAPD */
  
  	if (addr && iftype != NL80211_IFTYPE_MONITOR &&
-@@ -4765,6 +4761,7 @@ static void *i802_init(struct hostapd_da
- 	if (bss == NULL)
+@@ -4766,6 +4762,7 @@ static void *i802_init(struct hostapd_da
  		return NULL;
  
-+	drv->nlmode = NL80211_IFTYPE_AP;
  	drv = bss->drv;
++	drv->nlmode = NL80211_IFTYPE_AP;
  	if (linux_br_get(brname, params->ifname) == 0) {
  		wpa_printf(MSG_DEBUG, "nl80211: Interface %s is in bridge %s",
+ 			   params->ifname, brname);
