@@ -1,0 +1,12 @@
+Index: linux-2.6.32.12/drivers/mtd/chips/gen_probe.c
+===================================================================
+--- linux-2.6.32.12.orig/drivers/mtd/chips/gen_probe.c	2010-05-03 10:48:00.000000000 +0200
++++ linux-2.6.32.12/drivers/mtd/chips/gen_probe.c	2010-05-03 10:48:16.000000000 +0200
+@@ -249,6 +249,7 @@
+ #endif
+ #ifdef CONFIG_MTD_CFI_AMDSTD
+ 	case 0x0002:
++	case 0x0006:
+ 		return cfi_cmdset_0002(map, primary);
+ #endif
+ #ifdef CONFIG_MTD_CFI_STAA
