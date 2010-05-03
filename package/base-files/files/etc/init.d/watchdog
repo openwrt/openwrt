@@ -9,5 +9,4 @@ start() {
 
 stop() {
 	killall -q watchdog
-	[ -c /dev/watchdog ] && echo "V" > /dev/watchdog
 }
