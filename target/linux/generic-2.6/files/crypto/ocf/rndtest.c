@@ -1,8 +1,8 @@
 /*	$OpenBSD$	*/
 
 /*
- * OCF/Linux port done by David McCullough <david_mccullough@securecomputing.com>
- * Copyright (C) 2006-2007 David McCullough
+ * OCF/Linux port done by David McCullough <david_mccullough@mcafee.com>
+ * Copyright (C) 2006-2010 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *

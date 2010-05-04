@@ -98,6 +98,10 @@ int hifn_maxbatch = 1;
 module_param(hifn_maxbatch, int, 0644);
 MODULE_PARM_DESC(hifn_maxbatch, "max ops to batch w/o interrupt");
 
+int hifn_cache_linesize = 0x10;
+module_param(hifn_cache_linesize, int, 0444);
+MODULE_PARM_DESC(hifn_cache_linesize, "PCI config cache line size");
+
 #ifdef MODULE_PARM
 char *hifn_pllconfig = NULL;
 MODULE_PARM(hifn_pllconfig, "s");
@@ -865,6 +869,8 @@ hifn_set_retry(struct hifn_softc *sc)
 	/* NB: RETRY only responds to 8-bit reads/writes */
 	pci_write_config_byte(sc->sc_pcidev, HIFN_RETRY_TIMEOUT, 0);
 	pci_write_config_dword(sc->sc_pcidev, HIFN_TRDY_TIMEOUT, 0);
+	/* piggy back the cache line setting here */
+	pci_write_config_byte(sc->sc_pcidev, PCI_CACHE_LINE_SIZE, hifn_cache_linesize);
 }
 
 /*
@@ -2966,5 +2972,5 @@ module_init(hifn_init);
 module_exit(hifn_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("OCF driver for hifn PCI crypto devices");

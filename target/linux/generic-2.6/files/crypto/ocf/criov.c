@@ -1,8 +1,8 @@
 /*      $OpenBSD: criov.c,v 1.9 2002/01/29 15:48:29 jason Exp $	*/
 
 /*
- * Linux port done by David McCullough <david_mccullough@securecomputing.com>
- * Copyright (C) 2006-2007 David McCullough
+ * Linux port done by David McCullough <david_mccullough@mcafee.com>
+ * Copyright (C) 2006-2010 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *

@@ -3,8 +3,8 @@
  * This driver requires the IXP400 Access Library that is available
  * from Intel in order to operate (or compile).
  *
- * Written by David McCullough <david_mccullough@securecomputing.com>
- * Copyright (C) 2006-2007 David McCullough
+ * Written by David McCullough <david_mccullough@mcafee.com>
+ * Copyright (C) 2006-2010 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
@@ -373,9 +373,6 @@ ixp_freesession(device_t dev, u_int64_t tid)
 			ixCryptoAccCtxUnregister(ixp_sessions[sid]->ixp_ctx_id);
 			ixp_sessions[sid]->ixp_ctx_id = -1;
 		}
-
-		flush_scheduled_work();
-
 		kfree(ixp_sessions[sid]);
 	}
 	ixp_sessions[sid] = NULL;
@@ -595,8 +592,7 @@ ixp_process_pending(void *arg)
 static void
 ixp_process_pending_wq(struct work_struct *work)
 {
-	struct ixp_data *ixp = container_of(work, struct ixp_data,
-								ixp_pending_work);
+	struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_pending_work);
 	ixp_process_pending(ixp);
 }
 #endif

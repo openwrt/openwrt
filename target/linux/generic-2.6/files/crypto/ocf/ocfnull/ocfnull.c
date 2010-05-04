@@ -4,8 +4,8 @@
  * zero cost encryption,  of course you will need to run it at both ends
  * since it does no crypto at all.
  *
- * Written by David McCullough <david_mccullough@securecomputing.com>
- * Copyright (C) 2006-2007 David McCullough 
+ * Written by David McCullough <david_mccullough@mcafee.com>
+ * Copyright (C) 2006-2010 David McCullough 
  *
  * LICENSE TERMS
  *
@@ -199,5 +199,5 @@ module_init(null_init);
 module_exit(null_exit);
 
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("ocfnull - claims a lot but does nothing");

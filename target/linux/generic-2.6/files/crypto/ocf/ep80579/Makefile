@@ -13,7 +13,7 @@
 # 
 #   GPL LICENSE SUMMARY
 # 
-#   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
+#   Copyright(c) 2007,2008,2009 Intel Corporation. All rights reserved.
 # 
 #   This program is free software; you can redistribute it and/or modify 
 #   it under the terms of version 2 of the GNU General Public License as
@@ -35,7 +35,7 @@
 # 
 #   BSD LICENSE 
 # 
-#   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
+#   Copyright(c) 2007,2008,2009 Intel Corporation. All rights reserved.
 #   All rights reserved.
 # 
 #   Redistribution and use in source and binary forms, with or without 
@@ -65,43 +65,55 @@
 #   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 # 
-#  version: Security.L.1.0.130
+#  version: Security.L.1.0.2-229
 ############################################################################
 
 
 ####################Common variables and definitions########################
 
+ifndef ICP_ROOT
+$(warning ICP_ROOT is undefined. Please set the path to EP80579 release package directory \
+        "-> setenv ICP_ROOT <path>")
+all fastdep:
+	:
+else
+
+ifndef KERNEL_SOURCE_ROOT
+$(error KERNEL_SOURCE_ROOT is undefined. Please set the path to the kernel source directory \
+        "-> setenv KERNEL_SOURCE_ROOT <path>")
+endif
+
 # Ensure The ENV_DIR environmental var is defined.
 ifndef ICP_ENV_DIR
-$(error ICP_ENV_DIR is undefined. Please set the path to your environment makefile \
+$(error ICP_ENV_DIR is undefined. Please set the path to EP80579 driver environment.mk file \
         "-> setenv ICP_ENV_DIR <path>")
 endif
 
 #Add your project environment Makefile
-include $(ICP_ENV_DIR)/environment.mk
+include ${ICP_ENV_DIR}/environment.mk
 
 #include the makefile with all the default and common Make variable definitions
-include $(ICP_BUILDSYSTEM_PATH)/build_files/common.mk
+include ${ICP_BUILDSYSTEM_PATH}/build_files/common.mk
 
 #Add the name for the executable, Library or Module output definitions
 OUTPUT_NAME= icp_ocf
 
 # List of Source Files to be compiled 
-SOURCES= icp_common.c icp_sym.c icp_asym.c
+SOURCES= icp_common.c icp_sym.c icp_asym.c icp_ocf_linux.c
 
 #common includes between all supported OSes
-INCLUDES= -I $(ICP_API_DIR) -I$(ICP_LAC_API) \
--I$(ICP_OCF_SRC_DIR)
+INCLUDES= -I ${ICP_API_DIR} -I${ICP_LAC_API} \
+-I${ICP_OCF_SRC_DIR}
 
 # The location of the os level makefile needs to be changed.
-include $(ICP_ENV_DIR)/$(ICP_OS)_$(ICP_OS_LEVEL).mk
+include ${ICP_ENV_DIR}/${ICP_OS}_${ICP_OS_LEVEL}.mk
 
 # On the line directly below list the outputs you wish to build for,
-# e.g "lib_static lib_shared exe module" as show below
+# e.g "lib_static lib_shared exe module" as shown below
 install: module
 
 ###################Include rules makefiles########################
-include $(ICP_BUILDSYSTEM_PATH)/build_files/rules.mk
+include ${ICP_BUILDSYSTEM_PATH}/build_files/rules.mk
 ###################End of Rules inclusion#########################
 
-
+endif

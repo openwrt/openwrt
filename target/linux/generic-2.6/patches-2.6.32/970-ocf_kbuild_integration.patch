@@ -1,25 +1,20 @@
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -814,6 +814,8 @@ config CRYPTO_ANSI_CPRNG
- 	  ANSI X9.31 A.2.4. Not this option must be enabled if CRYPTO_FIPS 
- 	  is selected
- 
-+source "crypto/ocf/Kconfig"
-+
+@@ -817,3 +817,6 @@ config CRYPTO_ANSI_CPRNG
  source "drivers/crypto/Kconfig"
  
  endif	# if CRYPTO
++
++source "crypto/ocf/Kconfig"
++
 --- a/crypto/Makefile
 +++ b/crypto/Makefile
-@@ -86,6 +86,11 @@ obj-$(CONFIG_CRYPTO_TEST) += tcrypt.o
+@@ -85,6 +85,8 @@ obj-$(CONFIG_CRYPTO_ANSI_CPRNG) += ansi_
+ obj-$(CONFIG_CRYPTO_TEST) += tcrypt.o
  obj-$(CONFIG_CRYPTO_GHASH) += ghash-generic.o
  
- #
-+# OCF
-+#
 +obj-$(CONFIG_OCF_OCF) += ocf/
 +
-+#
+ #
  # generic algorithms and the async_tx api
  #
- obj-$(CONFIG_XOR_BLOCKS) += xor.o
