@@ -1,0 +1,36 @@
+#############################################################################
+
+mainmenu_option next_comment
+comment 'OCF Configuration'
+tristate 'OCF (Open Cryptograhic Framework)' CONFIG_OCF_OCF
+dep_mbool '  enable fips RNG checks (fips check on RNG data before use)' \
+				CONFIG_OCF_FIPS $CONFIG_OCF_OCF
+dep_mbool '  enable harvesting entropy for /dev/random' \
+				CONFIG_OCF_RANDOMHARVEST $CONFIG_OCF_OCF
+dep_tristate '  cryptodev (user space support)' \
+				CONFIG_OCF_CRYPTODEV $CONFIG_OCF_OCF
+dep_tristate '  cryptosoft (software crypto engine)' \
+				CONFIG_OCF_CRYPTOSOFT $CONFIG_OCF_OCF
+dep_tristate '  safenet (HW crypto engine)' \
+				CONFIG_OCF_SAFE $CONFIG_OCF_OCF
+dep_tristate '  IXP4xx (HW crypto engine)' \
+				CONFIG_OCF_IXP4XX $CONFIG_OCF_OCF
+dep_mbool    '  Enable IXP4xx HW to perform SHA1 and MD5 hashing (very slow)' \
+				CONFIG_OCF_IXP4XX_SHA1_MD5 $CONFIG_OCF_IXP4XX
+dep_tristate '  hifn (HW crypto engine)' \
+				CONFIG_OCF_HIFN $CONFIG_OCF_OCF
+dep_tristate '  talitos (HW crypto engine)' \
+				CONFIG_OCF_TALITOS $CONFIG_OCF_OCF
+dep_tristate '  pasemi (HW crypto engine)' \
+				CONFIG_OCF_PASEMI $CONFIG_OCF_OCF
+dep_tristate '  ep80579 (HW crypto engine)' \
+				CONFIG_OCF_EP80579 $CONFIG_OCF_OCF
+dep_tristate '  Micronas c7108 (HW crypto engine)' \
+				CONFIG_OCF_C7108 $CONFIG_OCF_OCF
+dep_tristate '  ocfnull (does no crypto)' \
+				CONFIG_OCF_OCFNULL $CONFIG_OCF_OCF
+dep_tristate '  ocf-bench (HW crypto in-kernel benchmark)' \
+				CONFIG_OCF_BENCH $CONFIG_OCF_OCF
+endmenu
+
+#############################################################################

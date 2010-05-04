@@ -1,0 +1,120 @@
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -901,6 +901,65 @@ void add_blkdev_randomness(int major)
+ #define subRound(a, b, c, d, e, f, k, data) \
+     ( e += ROTL( 5, a ) + f( b, c, d ) + k + data, b = ROTL( 30, b ) )
+ 
++/*
++ * random_input_words - add bulk entropy to pool
++ *
++ * @buf: buffer to add
++ * @wordcount: number of __u32 words to add
++ * @ent_count: total amount of entropy (in bits) to credit
++ *
++ * this provides bulk input of entropy to the input pool
++ *
++ */
++void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
++{
++	if (!random_state)
++		return;
++	add_entropy_words(random_state, buf, wordcount);
++
++	credit_entropy_store(random_state, ent_count);
++
++	DEBUG_ENT("credited %d bits => %d\n",
++		  ent_count, random_state->entropy_count);
++	/*
++	 * Wake up waiting processes if we have enough
++	 * entropy.
++	 */
++	if (random_state->entropy_count >= random_read_wakeup_thresh)
++		wake_up_interruptible(&random_read_wait);
++}
++EXPORT_SYMBOL(random_input_words);
++
++/*
++ * random_input_wait - wait until random needs entropy
++ *
++ * this function sleeps until the /dev/random subsystem actually
++ * needs more entropy, and then return the amount of entropy
++ * that it would be nice to have added to the system.
++ */
++int random_input_wait(void)
++{
++	int count;
++
++	if (!random_state)
++		return -1;
++
++	wait_event_interruptible(random_write_wait, 
++			 random_state->entropy_count < random_write_wakeup_thresh);
++
++	count = random_write_wakeup_thresh - random_state->entropy_count;
++
++	/* likely we got woken up due to a signal */
++	if (count <= 0) count = random_read_wakeup_thresh; 
++
++	DEBUG_ENT("requesting %d bits from input_wait()er %d<%d\n",
++		  count,
++		  random_state->entropy_count, random_write_wakeup_thresh);
++
++	return count;
++}
++EXPORT_SYMBOL(random_input_wait);
++
+ 
+ static void SHATransform(__u32 digest[85], __u32 const data[16])
+ {
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -10,6 +10,8 @@ O_TARGET := fs.o
+ export-objs :=	filesystems.o open.o dcache.o buffer.o dquot.o
+ mod-subdirs :=	nls
+ 
++export-objs +=	fcntl.o
++
+ obj-y :=	open.o read_write.o devices.o file_table.o buffer.o \
+ 		super.o block_dev.o char_dev.o stat.o exec.o pipe.o namei.o \
+ 		fcntl.o ioctl.o readdir.o select.o fifo.o locks.o \
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -12,6 +12,7 @@
+ #include <linux/slab.h>
+ #include <linux/iobuf.h>
+ #include <linux/ptrace.h>
++#include <linux/module.h>
+ 
+ #include <asm/poll.h>
+ #include <asm/siginfo.h>
+@@ -199,6 +200,7 @@ asmlinkage long sys_dup(unsigned int fil
+ 		ret = dupfd(file, 0);
+ 	return ret;
+ }
++EXPORT_SYMBOL(sys_dup);
+ 
+ #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT)
+ 
+--- a/include/linux/miscdevice.h
++++ b/include/linux/miscdevice.h
+@@ -15,6 +15,7 @@
+ #define ADB_MOUSE_MINOR		10
+ #define MK712_MINOR 		15	/* MK712 touch screen */
+ #define SYNTH_MINOR    		25
++#define	CRYPTODEV_MINOR		70	/* OpenBSD cryptographic framework */
+ #define WATCHDOG_MINOR		130	/* Watchdog timer     */
+ #define TEMP_MINOR		131	/* Temperature Sensor */
+ #define RTC_MINOR		135
+--- a/include/linux/random.h
++++ b/include/linux/random.h
+@@ -53,6 +53,10 @@ extern void add_mouse_randomness(__u32 m
+ extern void add_interrupt_randomness(int irq);
+ extern void add_blkdev_randomness(int major);
+ 
++extern void random_input_words(__u32 *buf, size_t wordcount, int ent_count);
++extern int random_input_wait(void);
++#define HAS_RANDOM_INPUT_WAIT 1
++
+ extern void get_random_bytes(void *buf, int nbytes);
+ void generate_random_uuid(unsigned char uuid_out[16]);
+ 
