@@ -84,6 +84,24 @@ config OCF_EP80579
 	help
 	  OCF driver for the Intel EP80579 Integrated Processor Product Line.
 
+config OCF_CRYPTOCTEON
+	tristate "cryptocteon (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for the Cavium OCTEON Processors.
+
+config OCF_KIRKWOOD
+	tristate "kirkwood (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for the Marvell Kirkwood (88F6xxx) Processors.
+
+config OCF_C7108
+	tristate "Micronas 7108 (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for the Microna 7108 Cipher processors.
+
 config OCF_OCFNULL
 	tristate "ocfnull (fake crypto engine)"
 	depends on OCF_OCF

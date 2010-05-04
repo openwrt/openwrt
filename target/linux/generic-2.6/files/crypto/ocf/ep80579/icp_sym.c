@@ -5,7 +5,7 @@
  * 
  *   GPL LICENSE SUMMARY
  * 
- *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
+ *   Copyright(c) 2007,2008,2009 Intel Corporation. All rights reserved.
  * 
  *   This program is free software; you can redistribute it and/or modify 
  *   it under the terms of version 2 of the GNU General Public License as
@@ -27,7 +27,7 @@
  * 
  *   BSD LICENSE 
  * 
- *   Copyright(c) 2007,2008 Intel Corporation. All rights reserved.
+ *   Copyright(c) 2007,2008,2009 Intel Corporation. All rights reserved.
  *   All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without 
@@ -57,7 +57,7 @@
  *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * 
- *  version: Security.L.1.0.130
+ *  version: Security.L.1.0.2-229
  *
  ***************************************************************************/
 /*
@@ -96,38 +96,6 @@ static int
 icp_ocfDrvAlgorithmSetup(struct cryptoini *cri,
 			 CpaCySymSessionSetupData * lacSessCtx);
 
-/*This top level function is used to find a pointer to where a digest is 
-  stored/needs to be inserted. */
-static uint8_t *icp_ocfDrvDigestPointerFind(struct icp_drvOpData *drvOpData,
-					    struct cryptodesc *crp_desc);
-
-/*This function is called when a digest pointer has to be found within a
-  SKBUFF.*/
-static inline uint8_t *icp_ocfDrvSkbuffDigestPointerFind(struct icp_drvOpData
-							 *drvOpData,
-							 int offsetInBytes,
-							 uint32_t
-							 digestSizeInBytes);
-
-/*The following two functions are called if the SKBUFF digest pointer is not 
-  positioned in the linear portion of the buffer (i.e. it is in a linked SKBUFF
-   or page fragment).*/
-/*This function takes care of the page fragment case.*/
-static inline uint8_t *icp_ocfDrvDigestSkbNRFragsCheck(struct sk_buff *skb,
-						       struct skb_shared_info
-						       *skb_shared,
-						       int offsetInBytes,
-						       uint32_t
-						       digestSizeInBytes);
-
-/*This function takes care of the linked list case.*/
-static inline uint8_t *icp_ocfDrvDigestSkbFragListCheck(struct sk_buff *skb,
-							struct skb_shared_info
-							*skb_shared,
-							int offsetInBytes,
-							uint32_t
-							digestSizeInBytes);
-
 /*This function is used to free an OCF->OCF_DRV session object*/
 static void icp_ocfDrvFreeOCFSession(struct icp_drvSessionData *sessionData);
 
@@ -142,7 +110,7 @@ static void icp_ocfDrvFreeOCFSession(struct icp_drvSessionData *sessionData);
  * Notes : The callbackTag is a pointer to an icp_drvOpData. This memory
  * object was passed to LAC for the cryptographic processing and contains all
  * the relevant information for cleaning up buffer handles etc. so that the
- * OCF Tolapai Driver portion of this crypto operation can be fully completed.
+ * OCF EP80579 Driver portion of this crypto operation can be fully completed.
  */
 static void
 icp_ocfDrvSymCallBack(void *callbackTag,
@@ -188,11 +156,12 @@ icp_ocfDrvSymCallBack(void *callbackTag,
 
 	if (CPA_STATUS_SUCCESS == status) {
 
-		if (temp_drvOpData->bufferType == CRYPTO_F_SKBUF) {
+		if (temp_drvOpData->bufferType == ICP_CRYPTO_F_PACKET_BUF) {
 			if (ICP_OCF_DRV_STATUS_SUCCESS !=
-			    icp_ocfDrvBufferListToSkBuff(pDstBuffer,
-							 (struct sk_buff **)
-							 &(crp->crp_buf))) {
+			    icp_ocfDrvBufferListToPacketBuff(pDstBuffer,
+							     (icp_packet_buffer_t
+							      **)
+							     & (crp->crp_buf))) {
 				EPRINTK("%s(): BufferList to SkBuff "
 					"conversion error.\n", __FUNCTION__);
 				crp->crp_etype = EPERM;
@@ -213,10 +182,10 @@ icp_ocfDrvSymCallBack(void *callbackTag,
 
 	if (temp_drvOpData->numBufferListArray >
 	    ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS) {
-		kfree(pDstBuffer->pBuffers);
+		icp_kfree(pDstBuffer->pBuffers);
 	}
 	icp_ocfDrvFreeMetaData(pDstBuffer);
-	kmem_cache_free(drvOpData_zone, temp_drvOpData);
+	ICP_CACHE_FREE(drvOpData_zone, temp_drvOpData);
 
 	/* Invoke the OCF callback function */
 	crypto_done(crp);
@@ -231,7 +200,8 @@ icp_ocfDrvSymCallBack(void *callbackTag,
  * Notes : LAC session registration happens during the first perform call.
  * That is the first time we know all information about a given session.
  */
-int icp_ocfDrvNewSession(device_t dev, uint32_t * sid, struct cryptoini *cri)
+int icp_ocfDrvNewSession(icp_device_t dev, uint32_t * sid,
+			 struct cryptoini *cri)
 {
 	struct icp_drvSessionData *sessionData = NULL;
 	uint32_t delete_session = 0;
@@ -258,44 +228,44 @@ int icp_ocfDrvNewSession(device_t dev, uint32_t * sid, struct cryptoini *cri)
 		return EINVAL;
 	}
 
-	sessionData = kmem_cache_zalloc(drvSessionData_zone, GFP_ATOMIC);
+	sessionData = icp_kmem_cache_zalloc(drvSessionData_zone, ICP_M_NOWAIT);
 	if (NULL == sessionData) {
 		DPRINTK("%s():No memory for Session Data\n", __FUNCTION__);
 		return ENOMEM;
 	}
 
 	/*ENTER CRITICAL SECTION */
-	spin_lock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
+	icp_spin_lockbh_lock(&icp_ocfDrvSymSessInfoListSpinlock);
 	/*put this check in the spinlock so no new sessions can be added to the
 	   linked list when we are exiting */
-	if (CPA_TRUE == atomic_read(&icp_ocfDrvIsExiting)) {
+	if (CPA_TRUE == icp_atomic_read(&icp_ocfDrvIsExiting)) {
 		delete_session++;
 
 	} else if (NO_OCF_TO_DRV_MAX_SESSIONS != max_sessions) {
-		if (atomic_read(&num_ocf_to_drv_registered_sessions) >=
+		if (icp_atomic_read(&num_ocf_to_drv_registered_sessions) >=
 		    (max_sessions -
-		     atomic_read(&lac_session_failed_dereg_count))) {
+		     icp_atomic_read(&lac_session_failed_dereg_count))) {
 			delete_session++;
 		} else {
-			atomic_inc(&num_ocf_to_drv_registered_sessions);
+			icp_atomic_inc(&num_ocf_to_drv_registered_sessions);
 			/* Add to session data linked list */
-			list_add(&(sessionData->listNode),
-				 &icp_ocfDrvGlobalSymListHead);
+			ICP_LIST_ADD(sessionData, &icp_ocfDrvGlobalSymListHead,
+				     listNode);
 		}
 
 	} else if (NO_OCF_TO_DRV_MAX_SESSIONS == max_sessions) {
-		list_add(&(sessionData->listNode),
-			 &icp_ocfDrvGlobalSymListHead);
+		ICP_LIST_ADD(sessionData, &icp_ocfDrvGlobalSymListHead,
+			     listNode);
 	}
 
 	sessionData->inUse = ICP_SESSION_INITIALISED;
 
 	/*EXIT CRITICAL SECTION */
-	spin_unlock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
+	icp_spin_lockbh_unlock(&icp_ocfDrvSymSessInfoListSpinlock);
 
 	if (delete_session) {
 		DPRINTK("%s():No Session handles available\n", __FUNCTION__);
-		kmem_cache_free(drvSessionData_zone, sessionData);
+		ICP_CACHE_FREE(drvSessionData_zone, sessionData);
 		return EPERM;
 	}
 
@@ -560,27 +530,27 @@ static void icp_ocfDrvFreeOCFSession(struct icp_drvSessionData *sessionData)
 	sessionData->inUse = ICP_SESSION_DEREGISTERED;
 
 	/*ENTER CRITICAL SECTION */
-	spin_lock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
+	icp_spin_lockbh_lock(&icp_ocfDrvSymSessInfoListSpinlock);
 
-	if (CPA_TRUE == atomic_read(&icp_ocfDrvIsExiting)) {
+	if (CPA_TRUE == icp_atomic_read(&icp_ocfDrvIsExiting)) {
 		/*If the Driver is exiting, allow that process to
 		   handle any deletions */
 		/*EXIT CRITICAL SECTION */
-		spin_unlock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
+		icp_spin_lockbh_unlock(&icp_ocfDrvSymSessInfoListSpinlock);
 		return;
 	}
 
-	atomic_dec(&num_ocf_to_drv_registered_sessions);
+	icp_atomic_dec(&num_ocf_to_drv_registered_sessions);
 
-	list_del(&(sessionData->listNode));
+	ICP_LIST_DEL(sessionData, listNode);
 
 	/*EXIT CRITICAL SECTION */
-	spin_unlock_bh(&icp_ocfDrvSymSessInfoListSpinlock);
+	icp_spin_lockbh_unlock(&icp_ocfDrvSymSessInfoListSpinlock);
 
 	if (NULL != sessionData->sessHandle) {
-		kfree(sessionData->sessHandle);
+		icp_kfree(sessionData->sessHandle);
 	}
-	kmem_cache_free(drvSessionData_zone, sessionData);
+	ICP_CACHE_FREE(drvSessionData_zone, sessionData);
 }
 
 /* Name        : icp_ocfDrvFreeLACSession
@@ -588,7 +558,7 @@ static void icp_ocfDrvFreeOCFSession(struct icp_drvSessionData *sessionData)
  * Description : This attempts to deregister a LAC session. If it fails, the
  * deregistation retry function is called.
  */
-int icp_ocfDrvFreeLACSession(device_t dev, uint64_t sid)
+int icp_ocfDrvFreeLACSession(icp_device_t dev, uint64_t sid)
 {
 	CpaCySymSessionCtx sessionToDeregister = NULL;
 	struct icp_drvSessionData *sessionData = NULL;
@@ -604,14 +574,14 @@ int icp_ocfDrvFreeLACSession(device_t dev, uint64_t sid)
 
 	sessionToDeregister = sessionData->sessHandle;
 
-	if (ICP_SESSION_INITIALISED == sessionData->inUse) {
-		DPRINTK("%s() Session not registered with LAC\n", __FUNCTION__);
-	} else if (NULL == sessionData->sessHandle) {
-		EPRINTK
-		    ("%s(): OCF Free session called with Null Session Handle.\n",
-		     __FUNCTION__);
+	if ((ICP_SESSION_INITIALISED != sessionData->inUse) &&
+	    (ICP_SESSION_RUNNING != sessionData->inUse) &&
+	    (ICP_SESSION_DEREGISTERED != sessionData->inUse)) {
+		DPRINTK("%s() Session not initialised.\n", __FUNCTION__);
 		return EINVAL;
-	} else {
+	}
+
+	if (ICP_SESSION_RUNNING == sessionData->inUse) {
 		lacStatus = cpaCySymRemoveSession(CPA_INSTANCE_HANDLE_SINGLE,
 						  sessionToDeregister);
 		if (CPA_STATUS_RETRY == lacStatus) {
@@ -629,9 +599,12 @@ int icp_ocfDrvFreeLACSession(device_t dev, uint64_t sid)
 			DPRINTK("%s(): LAC failed to deregister the session. "
 				"localSessionId= %p, lacStatus = %d\n",
 				__FUNCTION__, sessionToDeregister, lacStatus);
-			atomic_inc(&lac_session_failed_dereg_count);
+			icp_atomic_inc(&lac_session_failed_dereg_count);
 			retval = EPERM;
 		}
+	} else {
+		DPRINTK("%s() Session not registered with LAC.\n",
+			__FUNCTION__);
 	}
 
 	icp_ocfDrvFreeOCFSession(sessionData);
@@ -668,13 +641,12 @@ static int icp_ocfDrvAlgCheck(struct cryptodesc *crp_desc)
  * to whether session paramaters have changed (e.g. alg chain order) are
  * done.
  */
-int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
+int icp_ocfDrvSymProcess(icp_device_t dev, struct cryptop *crp, int hint)
 {
 	struct icp_drvSessionData *sessionData = NULL;
 	struct icp_drvOpData *drvOpData = NULL;
 	CpaStatus lacStatus = CPA_STATUS_SUCCESS;
 	Cpa32U sessionCtxSizeInBytes = 0;
-	uint16_t numBufferListArray = 0;
 
 	if (NULL == crp) {
 		DPRINTK("%s(): Invalid input parameters, cryptop is NULL\n",
@@ -696,7 +668,7 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 		return EINVAL;
 	}
 
-	if (CPA_TRUE == atomic_read(&icp_ocfDrvIsExiting)) {
+	if (CPA_TRUE == icp_atomic_read(&icp_ocfDrvIsExiting)) {
 		crp->crp_etype = EFAULT;
 		return EFAULT;
 	}
@@ -793,14 +765,16 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 		if (CPA_STATUS_SUCCESS != lacStatus) {
 			EPRINTK("%s(): cpaCySymSessionCtxGetSize failed - %d\n",
 				__FUNCTION__, lacStatus);
+			crp->crp_etype = EINVAL;
 			return EINVAL;
 		}
 		sessionData->sessHandle =
-		    kmalloc(sessionCtxSizeInBytes, GFP_ATOMIC);
+		    icp_kmalloc(sessionCtxSizeInBytes, ICP_M_NOWAIT);
 		if (NULL == sessionData->sessHandle) {
 			EPRINTK
 			    ("%s(): Failed to get memory for SymSessionCtx\n",
 			     __FUNCTION__);
+			crp->crp_etype = ENOMEM;
 			return ENOMEM;
 		}
 
@@ -812,13 +786,14 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 		if (CPA_STATUS_SUCCESS != lacStatus) {
 			EPRINTK("%s(): cpaCySymInitSession failed -%d \n",
 				__FUNCTION__, lacStatus);
+			crp->crp_etype = EFAULT;
 			return EFAULT;
 		}
 
 		sessionData->inUse = ICP_SESSION_RUNNING;
 	}
 
-	drvOpData = kmem_cache_zalloc(drvOpData_zone, GFP_ATOMIC);
+	drvOpData = icp_kmem_cache_zalloc(drvOpData_zone, ICP_M_NOWAIT);
 	if (NULL == drvOpData) {
 		EPRINTK("%s():Failed to get memory for drvOpData\n",
 			__FUNCTION__);
@@ -835,28 +810,48 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 	drvOpData->srcBuffer.pBuffers = drvOpData->bufferListArray;
 	drvOpData->numBufferListArray = ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS;
 
+	if (ICP_OCF_DRV_STATUS_SUCCESS !=
+	    icp_ocfDrvProcessDataSetup(drvOpData, drvOpData->crp->crp_desc)) {
+		crp->crp_etype = EINVAL;
+		goto err;
+	}
+
+	if (drvOpData->crp->crp_desc->crd_next != NULL) {
+		if (icp_ocfDrvProcessDataSetup(drvOpData, drvOpData->crp->
+					       crp_desc->crd_next)) {
+			crp->crp_etype = EINVAL;
+			goto err;
+		}
+
+	}
+
 	/* 
-	 * Allocate buffer list array memory allocation if the
-	 * data fragment is more than the default allocation
+	 * Allocate buffer list array memory if the data fragment is more than
+	 * the default number (ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS) and not 
+	 * calculated already
 	 */
-	if (crp->crp_flags & CRYPTO_F_SKBUF) {
-		numBufferListArray = icp_ocfDrvGetSkBuffFrags((struct sk_buff *)
-							      crp->crp_buf);
-		if (ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS < numBufferListArray) {
+	if (crp->crp_flags & ICP_CRYPTO_F_PACKET_BUF) {
+		if (NULL == drvOpData->lacOpData.pDigestResult) {
+			drvOpData->numBufferListArray =
+			    icp_ocfDrvGetPacketBuffFrags((icp_packet_buffer_t *)
+							 crp->crp_buf);
+		}
+
+		if (ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS <
+		    drvOpData->numBufferListArray) {
 			DPRINTK("%s() numBufferListArray more than default\n",
 				__FUNCTION__);
 			drvOpData->srcBuffer.pBuffers = NULL;
 			drvOpData->srcBuffer.pBuffers =
-			    kmalloc(numBufferListArray *
-				    sizeof(CpaFlatBuffer), GFP_ATOMIC);
+			    icp_kmalloc(drvOpData->numBufferListArray *
+					sizeof(CpaFlatBuffer), ICP_M_NOWAIT);
 			if (NULL == drvOpData->srcBuffer.pBuffers) {
 				EPRINTK("%s() Failed to get memory for "
 					"pBuffers\n", __FUNCTION__);
-				kmem_cache_free(drvOpData_zone, drvOpData);
+				ICP_CACHE_FREE(drvOpData_zone, drvOpData);
 				crp->crp_etype = ENOMEM;
 				return ENOMEM;
 			}
-			drvOpData->numBufferListArray = numBufferListArray;
 		}
 	}
 
@@ -864,17 +859,18 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 	 * Check the type of buffer structure we got and convert it into
 	 * CpaBufferList format.
 	 */
-	if (crp->crp_flags & CRYPTO_F_SKBUF) {
+	if (crp->crp_flags & ICP_CRYPTO_F_PACKET_BUF) {
 		if (ICP_OCF_DRV_STATUS_SUCCESS !=
-		    icp_ocfDrvSkBuffToBufferList((struct sk_buff *)crp->crp_buf,
-						 &(drvOpData->srcBuffer))) {
-			EPRINTK("%s():Failed to translate from SK_BUF "
+		    icp_ocfDrvPacketBuffToBufferList((icp_packet_buffer_t *)
+						     crp->crp_buf,
+						     &(drvOpData->srcBuffer))) {
+			EPRINTK("%s():Failed to translate from packet buffer "
 				"to bufferlist\n", __FUNCTION__);
 			crp->crp_etype = EINVAL;
 			goto err;
 		}
 
-		drvOpData->bufferType = CRYPTO_F_SKBUF;
+		drvOpData->bufferType = ICP_CRYPTO_F_PACKET_BUF;
 	} else if (crp->crp_flags & CRYPTO_F_IOV) {
 		/* OCF only supports IOV of one entry. */
 		if (NUM_IOV_SUPPORTED ==
@@ -906,21 +902,6 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 		drvOpData->bufferType = CRYPTO_BUF_CONTIG;
 	}
 
-	if (ICP_OCF_DRV_STATUS_SUCCESS !=
-	    icp_ocfDrvProcessDataSetup(drvOpData, drvOpData->crp->crp_desc)) {
-		crp->crp_etype = EINVAL;
-		goto err;
-	}
-
-	if (drvOpData->crp->crp_desc->crd_next != NULL) {
-		if (icp_ocfDrvProcessDataSetup(drvOpData, drvOpData->crp->
-					       crp_desc->crd_next)) {
-			crp->crp_etype = EINVAL;
-			goto err;
-		}
-
-	}
-
 	/* Allocate srcBuffer's private meta data */
 	if (ICP_OCF_DRV_STATUS_SUCCESS !=
 	    icp_ocfDrvAllocMetaData(&(drvOpData->srcBuffer), drvOpData)) {
@@ -941,7 +922,7 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 		DPRINTK("%s(): cpaCySymPerformOp retry, lacStatus = %d\n",
 			__FUNCTION__, lacStatus);
 		memset(&(drvOpData->lacOpData), 0, sizeof(CpaCySymOpData));
-		crp->crp_etype = EINVAL;
+		crp->crp_etype = ERESTART;
 		goto err;
 	}
 	if (CPA_STATUS_SUCCESS != lacStatus) {
@@ -956,10 +937,10 @@ int icp_ocfDrvSymProcess(device_t dev, struct cryptop *crp, int hint)
 
       err:
 	if (drvOpData->numBufferListArray > ICP_OCF_DRV_DEFAULT_BUFFLIST_ARRAYS) {
-		kfree(drvOpData->srcBuffer.pBuffers);
+		icp_kfree(drvOpData->srcBuffer.pBuffers);
 	}
 	icp_ocfDrvFreeMetaData(&(drvOpData->srcBuffer));
-	kmem_cache_free(drvOpData_zone, drvOpData);
+	ICP_CACHE_FREE(drvOpData_zone, drvOpData);
 
 	return crp->crp_etype;
 }
@@ -1129,32 +1110,20 @@ static int icp_ocfDrvProcessDataSetup(struct icp_drvOpData *drvOpData,
  * must be traversed by the data length offset in order to find the digest start
  * address. Whether there is enough space for the digest must also be checked.
  */
-
-static uint8_t *icp_ocfDrvDigestPointerFind(struct icp_drvOpData *drvOpData,
-					    struct cryptodesc *crp_desc)
+uint8_t *icp_ocfDrvDigestPointerFind(struct icp_drvOpData * drvOpData,
+				     struct cryptodesc * crp_desc)
 {
 
 	int offsetInBytes = crp_desc->crd_inject;
 	uint32_t digestSizeInBytes = drvOpData->digestSizeInBytes;
 	uint8_t *flat_buffer_base = NULL;
 	int flat_buffer_length = 0;
-	struct sk_buff *skb;
 
-	if (drvOpData->crp->crp_flags & CRYPTO_F_SKBUF) {
-		/*check if enough overall space to store hash */
-		skb = (struct sk_buff *)(drvOpData->crp->crp_buf);
+	if (drvOpData->crp->crp_flags & ICP_CRYPTO_F_PACKET_BUF) {
 
-		if (skb->len < (offsetInBytes + digestSizeInBytes)) {
-			DPRINTK("%s() Not enough space for Digest"
-				" payload after the offset (%d), "
-				"digest size (%d) \n", __FUNCTION__,
-				offsetInBytes, digestSizeInBytes);
-			return NULL;
-		}
-
-		return icp_ocfDrvSkbuffDigestPointerFind(drvOpData,
-							 offsetInBytes,
-							 digestSizeInBytes);
+		return icp_ocfDrvPacketBufferDigestPointerFind(drvOpData,
+							       offsetInBytes,
+							       digestSizeInBytes);
 
 	} else {
 		/* IOV or flat buffer */
@@ -1180,203 +1149,5 @@ static uint8_t *icp_ocfDrvDigestPointerFind(struct icp_drvOpData *drvOpData,
 		}
 	}
 	DPRINTK("%s() Should not reach this point\n", __FUNCTION__);
-	return NULL;
-}
-
-/* Name        : icp_ocfDrvSkbuffDigestPointerFind
- *
- * Description : This function is used by icp_ocfDrvDigestPointerFind to process
- * the non-linear portion of the skbuff if the fragmentation type is a linked
- * list (frag_list is not NULL in the skb_shared_info structure)
- */
-static inline uint8_t *icp_ocfDrvSkbuffDigestPointerFind(struct icp_drvOpData
-							 *drvOpData,
-							 int offsetInBytes,
-							 uint32_t
-							 digestSizeInBytes)
-{
-
-	struct sk_buff *skb = NULL;
-	struct skb_shared_info *skb_shared = NULL;
-
-	uint32_t skbuffisnonlinear = 0;
-
-	uint32_t skbheadlen = 0;
-
-	skb = (struct sk_buff *)(drvOpData->crp->crp_buf);
-	skbuffisnonlinear = skb_is_nonlinear(skb);
-
-	skbheadlen = skb_headlen(skb);
-
-	/*Linear skb checks */
-	if (skbheadlen > offsetInBytes) {
-
-		if (skbheadlen >= (offsetInBytes + digestSizeInBytes)) {
-			return (uint8_t *) (skb->data + offsetInBytes);
-		} else {
-			DPRINTK("%s() Auth payload stretches "
-				"accross contiguous memory\n", __FUNCTION__);
-			return NULL;
-		}
-	} else {
-		if (skbuffisnonlinear) {
-			offsetInBytes -= skbheadlen;
-		} else {
-			DPRINTK("%s() Offset outside of buffer boundaries\n",
-				__FUNCTION__);
-			return NULL;
-		}
-	}
-
-	/*Non Linear checks */
-	skb_shared = (struct skb_shared_info *)(skb->end);
-	if (unlikely(NULL == skb_shared)) {
-		DPRINTK("%s() skbuff shared info stucture is NULL! \n",
-			__FUNCTION__);
-		return NULL;
-	} else if ((0 != skb_shared->nr_frags) &&
-		   (skb_shared->frag_list != NULL)) {
-		DPRINTK("%s() skbuff nr_frags AND "
-			"frag_list not supported \n", __FUNCTION__);
-		return NULL;
-	}
-
-	/*TCP segmentation more likely than IP fragmentation */
-	if (likely(0 != skb_shared->nr_frags)) {
-		return icp_ocfDrvDigestSkbNRFragsCheck(skb, skb_shared,
-						       offsetInBytes,
-						       digestSizeInBytes);
-	} else if (skb_shared->frag_list != NULL) {
-		return icp_ocfDrvDigestSkbFragListCheck(skb, skb_shared,
-							offsetInBytes,
-							digestSizeInBytes);
-	} else {
-		DPRINTK("%s() skbuff is non-linear but does not show any "
-			"linked data\n", __FUNCTION__);
-		return NULL;
-	}
-
-}
-
-/* Name        : icp_ocfDrvDigestSkbNRFragsCheck
- *
- * Description : This function is used by icp_ocfDrvSkbuffDigestPointerFind to
- * process the non-linear portion of the skbuff, if the fragmentation type is
- * page fragments
- */
-static inline uint8_t *icp_ocfDrvDigestSkbNRFragsCheck(struct sk_buff *skb,
-						       struct skb_shared_info
-						       *skb_shared,
-						       int offsetInBytes,
-						       uint32_t
-						       digestSizeInBytes)
-{
-	int i = 0;
-	/*nr_frags starts from 1 */
-	if (MAX_SKB_FRAGS < skb_shared->nr_frags) {
-		DPRINTK("%s error processing skbuff "
-			"page frame -- MAX FRAGS exceeded \n", __FUNCTION__);
-		return NULL;
-	}
-
-	for (i = 0; i < skb_shared->nr_frags; i++) {
-
-		if (offsetInBytes >= skb_shared->frags[i].size) {
-			/*offset still greater than data position */
-			offsetInBytes -= skb_shared->frags[i].size;
-		} else {
-			/* found the page containing start of hash */
-
-			if (NULL == skb_shared->frags[i].page) {
-				DPRINTK("%s() Linked page is NULL!\n",
-					__FUNCTION__);
-				return NULL;
-			}
-
-			if (offsetInBytes + digestSizeInBytes >
-			    skb_shared->frags[i].size) {
-				DPRINTK("%s() Auth payload stretches accross "
-					"contiguous memory\n", __FUNCTION__);
-				return NULL;
-			} else {
-				return (uint8_t *) (skb_shared->frags[i].page +
-						    skb_shared->frags[i].
-						    page_offset +
-						    offsetInBytes);
-			}
-		}
-		/*only possible if internal page sizes are set wrong */
-		if (offsetInBytes < 0) {
-			DPRINTK("%s error processing skbuff page frame "
-				"-- offset calculation \n", __FUNCTION__);
-			return NULL;
-		}
-	}
-	/*only possible if internal page sizes are set wrong */
-	DPRINTK("%s error processing skbuff page frame "
-		"-- ran out of page fragments, remaining offset = %d \n",
-		__FUNCTION__, offsetInBytes);
-	return NULL;
-
-}
-
-/* Name        : icp_ocfDrvDigestSkbFragListCheck
- *
- * Description : This function is used by icp_ocfDrvSkbuffDigestPointerFind to 
- * process the non-linear portion of the skbuff, if the fragmentation type is 
- * a linked list
- * 
- */
-static inline uint8_t *icp_ocfDrvDigestSkbFragListCheck(struct sk_buff *skb,
-							struct skb_shared_info
-							*skb_shared,
-							int offsetInBytes,
-							uint32_t
-							digestSizeInBytes)
-{
-
-	struct sk_buff *skb_list = skb_shared->frag_list;
-	/*check added for readability */
-	if (NULL == skb_list) {
-		DPRINTK("%s error processing skbuff "
-			"-- no more list! \n", __FUNCTION__);
-		return NULL;
-	}
-
-	for (; skb_list; skb_list = skb_list->next) {
-		if (NULL == skb_list) {
-			DPRINTK("%s error processing skbuff "
-				"-- no more list! \n", __FUNCTION__);
-			return NULL;
-		}
-
-		if (offsetInBytes >= skb_list->len) {
-			offsetInBytes -= skb_list->len;
-
-		} else {
-			if (offsetInBytes + digestSizeInBytes > skb_list->len) {
-				DPRINTK("%s() Auth payload stretches accross "
-					"contiguous memory\n", __FUNCTION__);
-				return NULL;
-			} else {
-				return (uint8_t *)
-				    (skb_list->data + offsetInBytes);
-			}
-
-		}
-
-		/*This check is only needed if internal skb_list length values
-		   are set wrong. */
-		if (0 > offsetInBytes) {
-			DPRINTK("%s() error processing skbuff object -- offset "
-				"calculation \n", __FUNCTION__);
-			return NULL;
-		}
-
-	}
-
-	/*catch all for unusual for-loop exit. 
-	   This code should never be reached */
-	DPRINTK("%s() Catch-All hit! Process error.\n", __FUNCTION__);
 	return NULL;
 }

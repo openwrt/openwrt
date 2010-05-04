@@ -4,8 +4,8 @@
 /*
  * Provide compat routines for older linux kernels and BSD kernels
  *
- * Written by David McCullough <david_mccullough@securecomputing.com>
- * Copyright (C) 2007 David McCullough <david_mccullough@securecomputing.com>
+ * Written by David McCullough <david_mccullough@mcafee.com>
+ * Copyright (C) 2010 David McCullough <david_mccullough@mcafee.com>
  *
  * LICENSE TERMS
  *
@@ -184,17 +184,29 @@ struct ocf_device {
 #define DMA_32BIT_MASK  0x00000000ffffffffULL
 #endif
 
+#ifndef htole32
 #define htole32(x)	cpu_to_le32(x)
+#endif
+#ifndef htobe32
 #define htobe32(x)	cpu_to_be32(x)
+#endif
+#ifndef htole16
 #define htole16(x)	cpu_to_le16(x)
+#endif
+#ifndef htobe16
 #define htobe16(x)	cpu_to_be16(x)
+#endif
 
 /* older kernels don't have these */
 
-#ifndef IRQ_NONE
+#include <asm/irq.h>
+#if !defined(IRQ_NONE) && !defined(IRQ_RETVAL)
 #define IRQ_NONE
 #define IRQ_HANDLED
+#define IRQ_WAKE_THREAD
+#define IRQ_RETVAL
 #define irqreturn_t void
+typedef irqreturn_t (*irq_handler_t)(int irq, void *arg, struct pt_regs *regs);
 #endif
 #ifndef IRQF_SHARED
 #define IRQF_SHARED	SA_SHIRQ
@@ -209,7 +221,12 @@ struct ocf_device {
 #define MAX_ERRNO	4095
 #endif
 #ifndef IS_ERR_VALUE
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,5)
+#include <linux/err.h>
+#endif
+#ifndef IS_ERR_VALUE
 #define IS_ERR_VALUE(x) ((unsigned long)(x) >= (unsigned long)-MAX_ERRNO)
+#endif
 #endif
 
 /*
@@ -247,6 +264,7 @@ struct ocf_device {
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 
+#include <linux/mm.h>
 #include <asm/scatterlist.h>
 
 static inline void sg_set_page(struct scatterlist *sg,  struct page *page,
@@ -262,6 +280,12 @@ static inline void *sg_virt(struct scatterlist *sg)
 	return page_address(sg->page) + sg->offset;
 }
 
+#define sg_init_table(sg, n)
+
+#endif
+
+#ifndef late_initcall
+#define late_initcall(init) module_init(init)
 #endif
 
 #endif /* __KERNEL__ */

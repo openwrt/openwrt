@@ -1,6 +1,6 @@
 /*-
- * Linux port done by David McCullough <david_mccullough@securecomputing.com>
- * Copyright (C) 2004-2007 David McCullough
+ * Linux port done by David McCullough <david_mccullough@mcafee.com>
+ * Copyright (C) 2004-2010 David McCullough
  * The license and original author are listed below.
  *
  * Copyright (c) 2003 Sam Leffler, Errno Consulting
@@ -2284,5 +2284,5 @@ module_init(safe_init);
 module_exit(safe_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("OCF driver for safenet PCI crypto devices");

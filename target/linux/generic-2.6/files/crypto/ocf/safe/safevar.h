@@ -1,6 +1,6 @@
 /*-
  * The linux port of this code done by David McCullough
- * Copyright (C) 2004-2007 David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2004-2010 David McCullough <david_mccullough@mcafee.com>
  * The license and original author are listed below.
  *
  * Copyright (c) 2003 Sam Leffler, Errno Consulting

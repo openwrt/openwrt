@@ -8,7 +8,7 @@
  *
  * This code written by Kim A. B. Phillips <kim.phillips@freescale.com>
  * some code copied from files with the following:
- * Copyright (C) 2004-2007 David McCullough <david_mccullough@securecomputing.com
+ * Copyright (C) 2004-2007 David McCullough <david_mccullough@mcafee.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

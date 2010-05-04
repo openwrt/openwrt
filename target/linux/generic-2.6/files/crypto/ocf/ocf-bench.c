@@ -1,7 +1,7 @@
 /*
  * A loadable module that benchmarks the OCF crypto speed from kernel space.
  *
- * Copyright (C) 2004-2007 David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2004-2010 David McCullough <david_mccullough@mcafee.com>
  *
  * LICENSE TERMS
  *
@@ -432,5 +432,5 @@ module_init(ocfbench_init);
 module_exit(ocfbench_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("Benchmark various in-kernel crypto speeds");

@@ -1,0 +1,167 @@
+README - ocf-linux-20100325
+---------------------------
+
+This README provides instructions for getting ocf-linux compiled and
+operating in a generic linux environment.  For other information you
+might like to visit the home page for this project:
+
+    http://ocf-linux.sourceforge.net/
+
+Adding OCF to linux
+-------------------
+
+    Not much in this file for now,  just some notes.  I usually build
+    the ocf support as modules but it can be built into the kernel as
+    well.  To use it:
+
+    * mknod /dev/crypto c 10 70
+
+    * to add OCF to your kernel source,  you have two options.  Apply
+      the kernel specific patch:
+
+          cd linux-2.4*; gunzip < ocf-linux-24-XXXXXXXX.patch.gz | patch -p1
+          cd linux-2.6*; gunzip < ocf-linux-26-XXXXXXXX.patch.gz | patch -p1
+    
+      if you do one of the above,  then you can proceed to the next step,
+      or you can do the above process by hand with using the patches against
+      linux-2.4.35 and 2.6.33 to include the ocf code under crypto/ocf.
+      Here's how to add it:
+
+      for 2.4.35 (and later)
+
+          cd linux-2.4.35/crypto
+          tar xvzf ocf-linux.tar.gz
+          cd ..
+          patch -p1 < crypto/ocf/patches/linux-2.4.35-ocf.patch
+
+      for 2.6.23 (and later),  find the kernel patch specific (or nearest)
+      to your kernel versions and then:
+
+          cd linux-2.6.NN/crypto
+          tar xvzf ocf-linux.tar.gz
+          cd ..
+          patch -p1 < crypto/ocf/patches/linux-2.6.NN-ocf.patch
+
+      It should be easy to take this patch and apply it to other more
+      recent versions of the kernels.  The same patches should also work
+      relatively easily on kernels as old as 2.6.11 and 2.4.18.
+      
+    * under 2.4 if you are on a non-x86 platform,  you may need to:
+
+        cp linux-2.X.x/include/asm-i386/kmap_types.h linux-2.X.x/include/asm-YYY
+
+      so that you can build the kernel crypto support needed for the cryptosoft
+      driver.
+
+    * For simplicity you should enable all the crypto support in your kernel
+      except for the test driver.  Likewise for the OCF options.  Do not
+      enable OCF crypto drivers for HW that you do not have (for example
+      ixp4xx will not compile on non-Xscale systems).
+
+    * make sure that cryptodev.h (from ocf-linux.tar.gz) is installed as
+      crypto/cryptodev.h in an include directory that is used for building
+      applications for your platform.  For example on a host system that
+      might be:
+
+              /usr/include/crypto/cryptodev.h
+
+    * patch your openssl-0.9.8n code with the openssl-0.9.8n.patch.
+      (NOTE: there is no longer a need to patch ssh). The patch is against:
+      openssl-0_9_8e
+
+      If you need a patch for an older version of openssl,  you should look
+      to older OCF releases.  This patch is unlikely to work on older
+      openssl versions.
+
+      openssl-0.9.8n.patch
+                - enables --with-cryptodev for non BSD systems
+                - adds -cpu option to openssl speed for calculating CPU load
+                  under linux
+                - fixes null pointer in openssl speed multi thread output.
+                - fixes test keys to work with linux crypto's more stringent
+                  key checking.
+                - adds MD5/SHA acceleration (Ronen Shitrit), only enabled
+                  with the --with-cryptodev-digests option
+                - fixes bug in engine code caching.
+
+    * build crypto-tools-XXXXXXXX.tar.gz if you want to try some of the BSD
+      tools for testing OCF (ie., cryptotest).
+
+How to load the OCF drivers
+---------------------------
+
+    First insert the base modules:
+
+        insmod ocf
+        insmod cryptodev
+
+    You can then install the software OCF driver with:
+
+        insmod cryptosoft
+
+    and one or more of the OCF HW drivers with:
+
+        insmod safe
+        insmod hifn7751
+        insmod ixp4xx
+        ...
+
+    all the drivers take a debug option to enable verbose debug so that
+    you can see what is going on.  For debug you load them as:
+
+        insmod ocf crypto_debug=1
+        insmod cryptodev cryptodev_debug=1
+        insmod cryptosoft swcr_debug=1
+
+    You may load more than one OCF crypto driver but then there is no guarantee
+    as to which will be used.
+
+    You can also enable debug at run time on 2.6 systems with the following:
+
+        echo 1 > /sys/module/ocf/parameters/crypto_debug
+        echo 1 > /sys/module/cryptodev/parameters/cryptodev_debug
+        echo 1 > /sys/module/cryptosoft/parameters/swcr_debug
+        echo 1 > /sys/module/hifn7751/parameters/hifn_debug
+        echo 1 > /sys/module/safe/parameters/safe_debug
+        echo 1 > /sys/module/ixp4xx/parameters/ixp_debug
+        ...
+
+Testing the OCF support
+-----------------------
+
+    run "cryptotest",  it should do a short test for a couple of
+    des packets.  If it does everything is working.
+
+    If this works,  then ssh will use the driver when invoked as:
+
+        ssh -c 3des username@host
+
+    to see for sure that it is operating, enable debug as defined above.
+
+    To get a better idea of performance run:
+
+        cryptotest 100 4096
+
+    There are more options to cryptotest,  see the help.
+
+    It is also possible to use openssl to test the speed of the crypto
+    drivers.
+
+        openssl speed -evp des -engine cryptodev -elapsed
+        openssl speed -evp des3 -engine cryptodev -elapsed
+        openssl speed -evp aes128 -engine cryptodev -elapsed
+
+    and multiple threads (10) with:
+
+        openssl speed -evp des -engine cryptodev -elapsed -multi 10
+        openssl speed -evp des3 -engine cryptodev -elapsed -multi 10
+        openssl speed -evp aes128 -engine cryptodev -elapsed -multi 10
+
+    for public key testing you can try:
+
+        cryptokeytest
+        openssl speed -engine cryptodev rsa -elapsed
+        openssl speed -engine cryptodev dsa -elapsed
+
+David McCullough
+david_mccullough@mcafee.com
