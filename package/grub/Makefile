@@ -34,7 +34,6 @@ endef
 
 MY_CONFIGURE_ARGS += \
 	--disable-auto-linux-mem-opt \
-	--disable-graphics \
 	--disable-hercules \
 	--without-curses \
 
@@ -50,6 +49,7 @@ HOST_CFLAGS += $(call host-cc-option,-U_FORTIFY_SOURCE)
 
 HOST_CONFIGURE_ARGS += $(MY_CONFIGURE_ARGS) \
 	--sbindir="$(STAGING_DIR_HOST)/bin" \
+	--disable-graphics \
 
 HOST_CONFIGURE_VARS += $(MY_CONFIGURE_VARS)
 
