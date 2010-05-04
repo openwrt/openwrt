@@ -9,17 +9,18 @@
  #
  # --test-sanity Make a number of sanity checks on the data in this file.
  #               This is a debugging tool for OpenSSL developers.
-@@ -554,6 +556,9 @@ my %table=(
+@@ -554,6 +556,10 @@ my %table=(
  ##### Compaq Non-Stop Kernel (Tandem)
  "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
  
 +# uClinux
 +"uClinux-dist","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):BN_LLONG::::::::::::\$(LIBSSL_dlfcn):linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}",
++"uClinux-dist64","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):SIXTY_FOUR_BIT_LONG::::::::::::\$(LIBSSL_dlfcn):linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}",
 +
  );
  
  my @MK1MF_Builds=qw(VC-WIN64I VC-WIN64A
-@@ -610,6 +615,8 @@ my $montasm=1;   # but "no-montasm" is d
+@@ -610,6 +616,8 @@ my $montasm=1;   # but "no-montasm" is d
  my $no_asm=0;
  my $no_dso=0;
  my $no_gmp=0;
@@ -28,9 +29,9 @@
  my @skip=();
  my $Makefile="Makefile";
  my $des_locl="crypto/des/des_locl.h";
-@@ -762,6 +769,14 @@ PROCESS_ARGS:
+@@ -758,6 +766,14 @@ PROCESS_ARGS:
  			{
- 			$strict_warnings = 1;
+ 			exit(&test_sanity());
  			}
 +		elsif (/^--with-cryptodev$/)
 +			{
@@ -40,10 +41,10 @@
 +			{
 +				$use_cryptodev_digests = 1;
 +			}
- 		elsif (/^reconfigure/ || /^reconf/)
+ 		elsif (/^--strict-warnings/)
  			{
- 			if (open(IN,"<$Makefile"))
-@@ -1055,6 +1070,7 @@ foreach (sort (keys %disabled))
+ 			$strict_warnings = 1;
+@@ -1055,6 +1071,7 @@ foreach (sort (keys %disabled))
  			print " OPENSSL_NO_$ALGO";
  		
  			if (/^err$/)	{ $flags .= "-DOPENSSL_NO_ERR "; }
@@ -51,7 +52,7 @@
  			elsif (/^asm$/)	{ $no_asm = 1; }
  			}
  		else
-@@ -1184,6 +1200,16 @@ if (!$no_krb5)
+@@ -1184,6 +1201,16 @@ if (!$no_krb5)
  		   $withargs{"krb5-dir"} ne "";
  	}
  
@@ -85,7 +86,7 @@
   ----------------------
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -504,7 +504,7 @@ files:
+@@ -499,7 +499,7 @@ files:
  
  links:
  	@$(PERL) $(TOP)/util/mkdir-p.pl include/openssl
@@ -125,176 +126,28 @@
  		;;
  	esac
  	exit 0
-@@ -399,7 +399,8 @@ exit 0
+@@ -399,7 +399,7 @@ exit 0
  # this is where the translation occurs into SSLeay terms
  # ---------------------------------------------------------------------------
  
 -GCCVER=`(gcc -dumpversion) 2>/dev/null`
-+CC="${CC:-gcc}"
-+GCCVER=`(${CC} -dumpversion) 2>/dev/null`
++GCCVER=`(${CC:-gcc} -dumpversion) 2>/dev/null`
  if [ "$GCCVER" != "" ]; then
    # then strip off whatever prefix egcs prepends the number with...
    # Hopefully, this will work for any future prefixes as well.
-@@ -409,6 +410,8 @@ if [ "$GCCVER" != "" ]; then
-   # major and minor version numbers.
-   # peak single digit before and after first dot, e.g. 2.95.1 gives 29
-   GCCVER=`echo $GCCVER | sed 's/\([0-9]\)\.\([0-9]\).*/\1\2/'`
-+else
-+  CC="${CC:-cc}"
- fi
- 
- # Only set CC if not supplied already
-@@ -488,6 +491,9 @@ echo Operating system: $GUESSOS
+@@ -488,6 +488,12 @@ echo Operating system: $GUESSOS
  # script above so we end up with values in vars but that would take
  # more time that I want to waste at the moment
  case "$GUESSOS" in
++  uClinux*64*)
++    OUT=uClinux-dist64
++	;;
 +  uClinux*)
 +    OUT=uClinux-dist
 +	;;
    mips2-sgi-irix)
  	CPU=`(hinv -t cpu) 2>/dev/null | head -1 | sed 's/^CPU:[^R]*R\([0-9]*\).*/\1/'`
  	CPU=${CPU:-0}
---- /dev/null
-+++ b/makefile-uclinuxdist
-@@ -0,0 +1,138 @@
-+#
-+# this makefile gets recursed through by various bits of the build
-+# so we need to only setup some things when invoked from outside
-+# this directory.
-+#
-+# davidm@snapgear.com
-+#
-+
-+IN_LIBSSL := true
-+export IN_LIBSSL
-+
-+CONFIG_OPTS  := --prefix=// --install_prefix=$(shell pwd)/build/install
-+
-+ifdef CONFIG_USER_FLATFSD_FLATFSD
-+CONFIG_OPTS += --openssldir=/etc/config
-+else
-+CONFIG_OPTS += --openssldir=/etc
-+endif
-+ifdef DISABLE_SHARED_SSL
-+CONFIG_OPTS += no-shared
-+else
-+CONFIG_OPTS += shared
-+endif
-+
-+CONFIG_OPTS += no-rc2
-+CONFIG_OPTS += no-krb5
-+CONFIG_OPTS += no-rc5
-+CONFIG_OPTS += no-md2
-+CONFIG_OPTS += no-idea
-+#CONFIG_OPTS += no-pem
-+#CONFIG_OPTS += no-md5
-+#CONFIG_OPTS += no-sha
-+#CONFIG_OPTS += no-hmac
-+#CONFIG_OPTS += no-des
-+#CONFIG_OPTS += no-aes
-+#CONFIG_OPTS += no-bn
-+CONFIG_OPTS += no-ec
-+#CONFIG_OPTS += no-rsa
-+#CONFIG_OPTS += no-dsa
-+CONFIG_OPTS += no-ecdsa
-+#CONFIG_OPTS += no-dh
-+CONFIG_OPTS += no-ecdh
-+CONFIG_OPTS += no-dso
-+#CONFIG_OPTS += no-engine
-+#CONFIG_OPTS += no-buffer
-+#CONFIG_OPTS += no-bio
-+#CONFIG_OPTS += no-stack
-+#CONFIG_OPTS += no-lhash
-+#CONFIG_OPTS += no-rand
-+CONFIG_OPTS += no-err
-+#CONFIG_OPTS += no-evp
-+#CONFIG_OPTS += no-asn1
-+#CONFIG_OPTS += no-x509
-+#CONFIG_OPTS += no-x509v3
-+#CONFIG_OPTS += no-txt_db
-+#CONFIG_OPTS += no-pkcs7
-+#CONFIG_OPTS += no-pkcs12
-+#CONFIG_OPTS += no-comp
-+#CONFIG_OPTS += no-ocsp
-+#CONFIG_OPTS += no-ui
-+#CONFIG_OPTS += no-store
-+CONFIG_OPTS += no-pqueue
-+
-+# REVISIT: It would be better to have OPENSSL config options
-+# which turn on this support as needed
-+ifeq ($(CONFIG_USER_NESSUS_NASL)$(CONFIG_USER_SSH_SSH),)
-+CONFIG_OPTS += no-ripemd
-+CONFIG_OPTS += no-cast
-+CONFIG_OPTS += no-rc4
-+endif
-+
-+ifeq ($(CONFIG_USER_NESSUS_NASL)$(CONFIG_USER_SSH_SSH)$(CONFIG_PROP_SSCEP_SSCEP),)
-+CONFIG_OPTS += no-bf
-+endif
-+
-+ifeq ($(CONFIG_USER_OPENVPN_OPENVPN)$(CONFIG_USER_WGET),)
-+CONFIG_OPTS += no-md4
-+endif
-+
-+ifdef CONFIG_OCF_OCF
-+CONFIG_OPTS += --with-cryptodev
-+#CONFIG_OPTS += --with-cryptodev-digests
-+endif
-+
-+#
-+# if you want engines (they are dl loaded),  a few things
-+# need to be setup,  you will also need to mod everything
-+# to link against -ldl if it uses libcrypto.  By default we
-+# disable it (cryptodev suport is still included).
-+#
-+ifdef YOU_WANT_DYNAMIC_HW_ENGINES_ENABLED
-+LIBSSL_dlfcn = dlfcn
-+else
-+CONFIG_OPTS += no-hw
-+LIBSSL_dlfcn =
-+endif
-+
-+#
-+# our libs aren't in the default location yet
-+#
-+LDFLAGS += -L$(ROOTDIR)/lib/libssl/build
-+export LDFLAGS
-+
-+all: build/configured
-+	$(MAKE) -C build
-+	$(MAKE) -C build install_sw
-+
-+build/configured: makefile config Configure
-+	rm -rf build
-+	find . -type d > .dirs
-+	find . ! -type d | grep -v ./makefile > .files
-+	while read t; do mkdir -p build/$$t; done < .dirs
-+	while read t; do ln -s `pwd`/$$t build/$$t; done < .files
-+	rm -f .dirs .files
-+	chmod +x build/config
-+	cd build; MACHINE=uClinux-dist ./config $(CONFIG_OPTS)
-+	$(MAKE) -C build depend
-+	$(MAKE) -C build links
-+	touch build/configured
-+
-+clean:
-+	-rm -rf build
-+
-+romfs:
-+	cd build/install/lib; \
-+	for i in *.so*; do \
-+		if [ -L $$i ]; then \
-+			$(ROMFSINST) -s `find $$i -printf %l` /lib/$$i; \
-+		elif [ -f $$i ]; then \
-+			$(ROMFSINST) /lib/$$i; \
-+		fi; \
-+	done
-+
-+romfs_user:
-+	$(ROMFSINST) -e CONFIG_USER_OPENSSL_APPS build/install/bin/openssl /bin/openssl
-+	# $(ROMFSINST) -e CONFIG_USER_OPENSSL_APPS build/install/bin/c_rehash /bin/c_rehash
-+
-+
 --- a/apps/apps.h
 +++ b/apps/apps.h
 @@ -112,7 +112,7 @@
@@ -329,16 +182,19 @@
  #ifndef OPENSSL_NO_RSA
  static double rsa_results[RSA_NUM][2];
  #endif
-@@ -336,6 +336,79 @@ static SIGRETTYPE sig_done(int sig)
+@@ -336,6 +336,82 @@ static SIGRETTYPE sig_done(int sig)
  #define START	0
  #define STOP	1
  
++static int do_cpu = 0;
++
 +#ifdef __linux__
++
++#define HAVE_CPU_USAGE	1
++
 +/*
 + * record CPU usage as well
 + */
-+
-+static int do_cpu = 0;
 +
 +struct cpu_stat {
 +	unsigned int	user;
@@ -409,23 +265,21 @@
  #if defined(OPENSSL_SYS_NETWARE)
  
     /* for NetWare the best we can do is use clock() which returns the
-@@ -366,6 +439,11 @@ static double Time_F(int s)
+@@ -366,6 +442,9 @@ static double Time_F(int s)
  	{
  	double ret;
  
-+#ifdef __linux__
 +	if (do_cpu)
 +		get_cpu(s);
-+#endif
 +
  #ifdef USE_TOD
  	if(usertime)
  		{
-@@ -840,6 +918,14 @@ int MAIN(int argc, char **argv)
+@@ -840,6 +919,14 @@ int MAIN(int argc, char **argv)
  			j--;	/* Otherwise, -elapsed gets confused with
  				   an algorithm. */
  			}
-+#ifdef __linux__
++#ifdef HAVE_CPU_USAGE
 +		else if	((argc > 0) && (strcmp(*argv,"-cpu") == 0))
 +			{
 +			do_cpu = 1;
@@ -436,17 +290,17 @@
  		else if	((argc > 0) && (strcmp(*argv,"-evp") == 0))
  			{
  			argc--;
-@@ -1268,6 +1354,9 @@ int MAIN(int argc, char **argv)
+@@ -1268,6 +1355,9 @@ int MAIN(int argc, char **argv)
  #ifndef NO_FORK
  			BIO_printf(bio_err,"-multi n        run n benchmarks in parallel.\n");
  #endif
-+#ifdef __linux__
++#ifdef HAVE_CPU_USAGE
 +			BIO_printf(bio_err,"-cpu            calculate cpu utilisation.\n");
 +#endif
  			goto end;
  			}
  		argc--;
-@@ -1275,11 +1364,6 @@ int MAIN(int argc, char **argv)
+@@ -1275,11 +1365,6 @@ int MAIN(int argc, char **argv)
  		j++;
  		}
  
@@ -458,11 +312,11 @@
  	if (j == 0)
  		{
  		for (i=0; i<ALGOR_NUM; i++)
-@@ -1612,6 +1696,11 @@ int MAIN(int argc, char **argv)
+@@ -1612,6 +1697,11 @@ int MAIN(int argc, char **argv)
  	signal(SIGALRM,sig_done);
  #endif /* SIGALRM */
  
-+#ifdef HAVE_FORK /* DM */
++#ifndef NO_FORK /* Do this a late as possible to give better CPU readings */
 +	if(multi && do_multi(multi))
 +		goto show_res;
 +#endif
@@ -470,7 +324,7 @@
  #ifndef OPENSSL_NO_MD2
  	if (doit[D_MD2])
  		{
-@@ -2041,8 +2130,6 @@ int MAIN(int argc, char **argv)
+@@ -2041,8 +2131,6 @@ int MAIN(int argc, char **argv)
  				/* -O3 -fschedule-insns messes up an
  				 * optimization here!  names[D_EVP]
  				 * somehow becomes NULL */
@@ -479,7 +333,7 @@
  
  				EVP_CIPHER_CTX_init(&ctx);
  				if(decrypt)
-@@ -2051,6 +2138,9 @@ int MAIN(int argc, char **argv)
+@@ -2051,6 +2139,9 @@ int MAIN(int argc, char **argv)
  					EVP_EncryptInit_ex(&ctx,evp_cipher,NULL,key16,iv);
  				EVP_CIPHER_CTX_set_padding(&ctx, 0);
  
@@ -489,7 +343,7 @@
  				Time_F(START);
  				if(decrypt)
  					for (count=0,run=1; COND(save_count*4*lengths[0]/lengths[j]); count++)
-@@ -2115,6 +2205,8 @@ int MAIN(int argc, char **argv)
+@@ -2115,6 +2206,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -498,7 +352,7 @@
  			BIO_printf(bio_err,mr ? "+R1:%ld:%d:%.2f\n"
  				   : "%ld %d bit private RSA's in %.2fs\n",
  				   count,rsa_bits[j],d);
-@@ -2150,6 +2242,8 @@ int MAIN(int argc, char **argv)
+@@ -2150,6 +2243,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -507,7 +361,7 @@
  			BIO_printf(bio_err,mr ? "+R2:%ld:%d:%.2f\n"
  				   : "%ld %d bit public RSA's in %.2fs\n",
  				   count,rsa_bits[j],d);
-@@ -2209,6 +2303,8 @@ int MAIN(int argc, char **argv)
+@@ -2209,6 +2304,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -516,7 +370,7 @@
  			BIO_printf(bio_err,mr ? "+R3:%ld:%d:%.2f\n"
  				   : "%ld %d bit DSA signs in %.2fs\n",
  				   count,dsa_bits[j],d);
-@@ -2244,6 +2340,8 @@ int MAIN(int argc, char **argv)
+@@ -2244,6 +2341,8 @@ int MAIN(int argc, char **argv)
  					}
  				}
  			d=Time_F(STOP);
@@ -525,7 +379,7 @@
  			BIO_printf(bio_err,mr ? "+R4:%ld:%d:%.2f\n"
  				   : "%ld %d bit DSA verify in %.2fs\n",
  				   count,dsa_bits[j],d);
-@@ -2538,14 +2636,23 @@ show_res:
+@@ -2538,14 +2637,23 @@ show_res:
  			fprintf(stdout,"The 'numbers' are in 1000s of bytes per second processed.\n"); 
  			fprintf(stdout,"type        ");
  			}
@@ -550,7 +404,7 @@
  		if(mr)
  			fprintf(stdout,"+F:%d:%s",k,names[k]);
  		else
-@@ -2556,6 +2663,8 @@ show_res:
+@@ -2556,6 +2664,8 @@ show_res:
  				fprintf(stdout," %11.2fk",results[k][j]/1e3);
  			else
  				fprintf(stdout,mr ? ":%.2f" : " %11.2f ",results[k][j]);
@@ -559,7 +413,7 @@
  			}
  		fprintf(stdout,"\n");
  		}
-@@ -2570,13 +2679,18 @@ show_res:
+@@ -2570,13 +2680,18 @@ show_res:
  			j=0;
  			}
  		if(mr)
@@ -585,7 +439,7 @@
  		}
  #endif
  #ifndef OPENSSL_NO_DSA
-@@ -2590,12 +2704,18 @@ show_res:
+@@ -2590,12 +2705,18 @@ show_res:
  			j=0;
  			}
  		if(mr)
@@ -609,7 +463,7 @@
  		}
  #endif
  #ifndef OPENSSL_NO_ECDSA
-@@ -2720,8 +2840,10 @@ static void pkey_print_message(const cha
+@@ -2720,8 +2841,10 @@ static void pkey_print_message(const cha
  
  static void print_result(int alg,int run_no,int count,double time_used)
  	{
@@ -622,7 +476,7 @@
  	results[alg][run_no]=((double)count)/time_used*lengths[run_no];
  	}
  
-@@ -2816,29 +2938,11 @@ static int do_multi(int multi)
+@@ -2816,29 +2939,11 @@ static int do_multi(int multi)
  				p=buf+3;
  				alg=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
@@ -655,7 +509,7 @@
  				}
  			else if(!strncmp(buf,"+F2:",4))
  				{
-@@ -2849,12 +2953,18 @@ static int do_multi(int multi)
+@@ -2849,12 +2954,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  
@@ -674,7 +528,7 @@
  				d=atof(sstrsep(&p,sep));
  				if(n)
  					rsa_results[k][1]=1/(1/rsa_results[k][1]+1/d);
-@@ -2870,12 +2980,18 @@ static int do_multi(int multi)
+@@ -2870,12 +2981,18 @@ static int do_multi(int multi)
  				k=atoi(sstrsep(&p,sep));
  				sstrsep(&p,sep);
  
@@ -706,15 +560,6 @@
  #define BIO_FLAGS_UPLINK 0x8000
 --- a/crypto/engine/eng_all.c
 +++ b/crypto/engine/eng_all.c
-@@ -104,7 +104,7 @@ void ENGINE_load_builtin_engines(void)
- #endif
- #endif
- #ifndef OPENSSL_NO_HW
--#if defined(__OpenBSD__) || defined(__FreeBSD__)
-+#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(HAVE_CRYPTODEV)
- 	ENGINE_load_cryptodev();
- #endif
- #if defined(OPENSSL_SYS_WIN32) && !defined(OPENSSL_NO_CAPIENG)
 @@ -113,7 +113,7 @@ void ENGINE_load_builtin_engines(void)
  #endif
  	}
@@ -743,19 +588,17 @@
  };
  
  static u_int32_t cryptodev_asymfeat = 0;
-@@ -79,9 +89,11 @@ static u_int32_t cryptodev_asymfeat = 0;
+@@ -79,9 +89,6 @@ static u_int32_t cryptodev_asymfeat = 0;
  static int get_asym_dev_crypto(void);
  static int open_dev_crypto(void);
  static int get_dev_crypto(void);
-+#if 0
- static int cryptodev_max_iv(int cipher);
- static int cryptodev_key_length_valid(int cipher, int len);
- static int cipher_nid_to_cryptodev(int nid);
-+#endif
+-static int cryptodev_max_iv(int cipher);
+-static int cryptodev_key_length_valid(int cipher, int len);
+-static int cipher_nid_to_cryptodev(int nid);
  static int get_cryptodev_ciphers(const int **cnids);
  /*static int get_cryptodev_digests(const int **cnids);*/
  static int cryptodev_usable_ciphers(const int **nids);
-@@ -134,9 +146,12 @@ static struct {
+@@ -134,9 +141,12 @@ static struct {
  	int	ivmax;
  	int	keylen;
  } ciphers[] = {
@@ -768,7 +611,7 @@
  	{ CRYPTO_BLF_CBC,		NID_bf_cbc,		8,	16, },
  	{ CRYPTO_CAST_CBC,		NID_cast5_cbc,		8,	16, },
  	{ CRYPTO_SKIPJACK_CBC,		NID_undef,		0,	 0, },
-@@ -147,14 +162,15 @@ static struct {
+@@ -147,14 +157,16 @@ static struct {
  static struct {
  	int	id;
  	int	nid;
@@ -781,6 +624,7 @@
 -	{ CRYPTO_MD5,			NID_md5,		},
 -	{ CRYPTO_SHA1,			NID_undef,		},
 -	{ 0,				NID_undef,		},
++	{ CRYPTO_MD5_HMAC,		NID_hmacWithMD5,	16},
 +	{ CRYPTO_SHA1_HMAC,		NID_hmacWithSHA1,	20},
 +	{ CRYPTO_RIPEMD160_HMAC,	NID_ripemd160,		16/*?*/},
 +	{ CRYPTO_MD5_KPDK,		NID_undef,		0},
@@ -791,7 +635,7 @@
  };
  #endif
  
-@@ -182,10 +198,17 @@ open_dev_crypto(void)
+@@ -182,10 +194,17 @@ open_dev_crypto(void)
  static int
  get_dev_crypto(void)
  {
@@ -812,23 +656,58 @@
  	if (ioctl(fd, CRIOGET, &retfd) == -1)
  		return (-1);
  
-@@ -208,6 +231,7 @@ get_asym_dev_crypto(void)
- 	return fd;
+@@ -209,50 +228,6 @@ get_asym_dev_crypto(void)
  }
  
-+#if 0
  /*
-  * XXXX this needs to be set for each alg - and determined from
-  * a running card.
-@@ -251,6 +275,7 @@ cipher_nid_to_cryptodev(int nid)
- 			return (ciphers[i].id);
- 	return (0);
- }
-+#endif
- 
- /*
+- * XXXX this needs to be set for each alg - and determined from
+- * a running card.
+- */
+-static int
+-cryptodev_max_iv(int cipher)
+-{
+-	int i;
+-
+-	for (i = 0; ciphers[i].id; i++)
+-		if (ciphers[i].id == cipher)
+-			return (ciphers[i].ivmax);
+-	return (0);
+-}
+-
+-/*
+- * XXXX this needs to be set for each alg - and determined from
+- * a running card. For now, fake it out - but most of these
+- * for real devices should return 1 for the supported key
+- * sizes the device can handle.
+- */
+-static int
+-cryptodev_key_length_valid(int cipher, int len)
+-{
+-	int i;
+-
+-	for (i = 0; ciphers[i].id; i++)
+-		if (ciphers[i].id == cipher)
+-			return (ciphers[i].keylen == len);
+-	return (0);
+-}
+-
+-/* convert libcrypto nids to cryptodev */
+-static int
+-cipher_nid_to_cryptodev(int nid)
+-{
+-	int i;
+-
+-	for (i = 0; ciphers[i].id; i++)
+-		if (ciphers[i].nid == nid)
+-			return (ciphers[i].id);
+-	return (0);
+-}
+-
+-/*
   * Find out what ciphers /dev/crypto will let us have a session for.
-@@ -270,7 +295,7 @@ get_cryptodev_ciphers(const int **cnids)
+  * XXX note, that some of these openssl doesn't deal with yet!
+  * returning them here is harmless, as long as we return NULL
+@@ -270,7 +245,7 @@ get_cryptodev_ciphers(const int **cnids)
  		return (0);
  	}
  	memset(&sess, 0, sizeof(sess));
@@ -837,7 +716,7 @@
  
  	for (i = 0; ciphers[i].id && count < CRYPTO_ALGORITHM_MAX; i++) {
  		if (ciphers[i].nid == NID_undef)
-@@ -310,10 +335,12 @@ get_cryptodev_digests(const int **cnids)
+@@ -310,10 +285,12 @@ get_cryptodev_digests(const int **cnids)
  		return (0);
  	}
  	memset(&sess, 0, sizeof(sess));
@@ -850,7 +729,7 @@
  		sess.cipher = 0;
  		if (ioctl(fd, CIOCGSESSION, &sess) != -1 &&
  		    ioctl(fd, CIOCFSESSION, &sess.ses) != -1)
-@@ -360,6 +387,9 @@ cryptodev_usable_ciphers(const int **nid
+@@ -360,6 +337,9 @@ cryptodev_usable_ciphers(const int **nid
  static int
  cryptodev_usable_digests(const int **nids)
  {
@@ -860,7 +739,7 @@
  	/*
  	 * XXXX just disable all digests for now, because it sucks.
  	 * we need a better way to decide this - i.e. I may not
-@@ -374,6 +404,7 @@ cryptodev_usable_digests(const int **nid
+@@ -374,6 +354,7 @@ cryptodev_usable_digests(const int **nid
  	 */
  	*nids = NULL;
  	return (0);
@@ -868,16 +747,16 @@
  }
  
  static int
-@@ -436,16 +467,20 @@ cryptodev_init_key(EVP_CIPHER_CTX *ctx, 
+@@ -436,16 +417,20 @@ cryptodev_init_key(EVP_CIPHER_CTX *ctx, 
  {
  	struct dev_crypto_state *state = ctx->cipher_data;
  	struct session_op *sess = &state->d_sess;
 -	int cipher;
-+	int cipher, i;
- 
+-
 -	if ((cipher = cipher_nid_to_cryptodev(ctx->cipher->nid)) == NID_undef)
 -		return (0);
--
++	int cipher, i;
+ 
 -	if (ctx->cipher->iv_len > cryptodev_max_iv(cipher))
 -		return (0);
 +	for (i = 0; ciphers[i].id; i++)
@@ -896,7 +775,7 @@
  
  	memset(sess, 0, sizeof(struct session_op));
  
-@@ -505,6 +540,20 @@ cryptodev_cleanup(EVP_CIPHER_CTX *ctx)
+@@ -505,6 +490,20 @@ cryptodev_cleanup(EVP_CIPHER_CTX *ctx)
   * gets called when libcrypto requests a cipher NID.
   */
  
@@ -917,7 +796,7 @@
  /* DES CBC EVP */
  const EVP_CIPHER cryptodev_des_cbc = {
  	NID_des_cbc,
-@@ -572,6 +621,32 @@ const EVP_CIPHER cryptodev_aes_cbc = {
+@@ -572,6 +571,32 @@ const EVP_CIPHER cryptodev_aes_cbc = {
  	NULL
  };
  
@@ -950,7 +829,7 @@
  /*
   * Registered by the ENGINE when used to find out how to deal with
   * a particular NID in the ENGINE. this says what we'll do at the
-@@ -585,6 +660,9 @@ cryptodev_engine_ciphers(ENGINE *e, cons
+@@ -585,6 +610,9 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  		return (cryptodev_usable_ciphers(nids));
  
  	switch (nid) {
@@ -960,7 +839,7 @@
  	case NID_des_ede3_cbc:
  		*cipher = &cryptodev_3des_cbc;
  		break;
-@@ -600,6 +678,12 @@ cryptodev_engine_ciphers(ENGINE *e, cons
+@@ -600,6 +628,12 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  	case NID_aes_128_cbc:
  		*cipher = &cryptodev_aes_cbc;
  		break;
@@ -973,7 +852,7 @@
  	default:
  		*cipher = NULL;
  		break;
-@@ -607,6 +691,234 @@ cryptodev_engine_ciphers(ENGINE *e, cons
+@@ -607,6 +641,234 @@ cryptodev_engine_ciphers(ENGINE *e, cons
  	return (*cipher != NULL);
  }
  
@@ -1012,14 +891,14 @@
 +	int digest;
 +
 +	if ((digest = digest_nid_to_cryptodev(ctx->digest->type)) == NID_undef){
-+		printf("cryptodev_digest_init: Can't get digest \n");
++		fprintf(stderr, "cryptodev_digest_init: Can't get digest \n");
 +		return (0);
 +	}
 +
 +	memset(state, 0, sizeof(struct dev_crypto_state));
 +
 +	if ((state->d_fd = get_dev_crypto()) < 0) {
-+		printf("cryptodev_digest_init: Can't get Dev \n");
++		fprintf(stderr, "cryptodev_digest_init: Can't get Dev \n");
 +		return (0);
 +	}
 +
@@ -1030,7 +909,7 @@
 +	if (ioctl(state->d_fd, CIOCGSESSION, sess) < 0) {
 +		close(state->d_fd);
 +		state->d_fd = -1;
-+		printf("cryptodev_digest_init: Open session failed\n");
++		fprintf(stderr, "cryptodev_digest_init: Open session failed\n");
 +		return (0);
 +	}
 +
@@ -1045,7 +924,7 @@
 +	struct session_op *sess = &state->d_sess;
 +
 +	if (!data || state->d_fd < 0) {
-+		printf("cryptodev_digest_update: illegal inputs \n");
++		fprintf(stderr, "cryptodev_digest_update: illegal inputs \n");
 +		return (0);
 +	}
 +
@@ -1058,7 +937,7 @@
 +		state->mac_data = OPENSSL_realloc(state->mac_data, state->mac_len + count);
 +
 +		if (!state->mac_data) {
-+			printf("cryptodev_digest_update: realloc failed\n");
++			fprintf(stderr, "cryptodev_digest_update: realloc failed\n");
 +			return (0);
 +		}
 +
@@ -1077,7 +956,7 @@
 +	cryp.dst = NULL;
 +	cryp.mac = state->digest_res;
 +	if (ioctl(state->d_fd, CIOCCRYPT, &cryp) < 0) {
-+		printf("cryptodev_digest_update: digest failed\n");
++		fprintf(stderr, "cryptodev_digest_update: digest failed\n");
 +		return (0);
 +	}
 +	return (1);
@@ -1093,7 +972,7 @@
 +	int ret = 1;
 +
 +	if (!md || state->d_fd < 0) {
-+		printf("cryptodev_digest_final: illegal input\n");
++		fprintf(stderr, "cryptodev_digest_final: illegal input\n");
 +		return(0);
 +	}
 +
@@ -1109,7 +988,7 @@
 +		cryp.mac = md;
 +
 +		if (ioctl(state->d_fd, CIOCCRYPT, &cryp) < 0) {
-+			printf("cryptodev_digest_final: digest failed\n");
++			fprintf(stderr, "cryptodev_digest_final: digest failed\n");
 +			return (0);
 +		}
 +
@@ -1129,7 +1008,7 @@
 +	struct session_op *sess = &state->d_sess;
 +
 +	if (state->d_fd < 0) {
-+		printf("cryptodev_digest_cleanup: illegal input\n");
++		fprintf(stderr, "cryptodev_digest_cleanup: illegal input\n");
 +		return (0);
 +	}
 +
@@ -1143,7 +1022,7 @@
 +		return 1;
 +
 +	if (ioctl(state->d_fd, CIOCFSESSION, &sess->ses) < 0) {
-+		printf("cryptodev_digest_cleanup: failed to close session\n");
++		fprintf(stderr, "cryptodev_digest_cleanup: failed to close session\n");
 +		ret = 0;
 +	} else {
 +		ret = 1;
@@ -1208,7 +1087,7 @@
  static int
  cryptodev_engine_digests(ENGINE *e, const EVP_MD **digest,
      const int **nids, int nid)
-@@ -615,10 +927,15 @@ cryptodev_engine_digests(ENGINE *e, cons
+@@ -615,10 +877,15 @@ cryptodev_engine_digests(ENGINE *e, cons
  		return (cryptodev_usable_digests(nids));
  
  	switch (nid) {
@@ -1225,7 +1104,7 @@
  		*digest = NULL;
  		break;
  	}
-@@ -646,6 +963,7 @@ bn2crparam(const BIGNUM *a, struct crpar
+@@ -646,6 +913,7 @@ bn2crparam(const BIGNUM *a, struct crpar
  	b = malloc(bytes);
  	if (b == NULL)
  		return (1);
@@ -1233,7 +1112,7 @@
  
  	crp->crp_p = (char *)b;
  	crp->crp_nbits = bits;
-@@ -690,7 +1008,7 @@ zapparams(struct crypt_kop *kop)
+@@ -690,7 +958,7 @@ zapparams(struct crypt_kop *kop)
  {
  	int i;
  
@@ -1242,6 +1121,95 @@
  		if (kop->crk_param[i].crp_p)
  			free(kop->crk_param[i].crp_p);
  		kop->crk_param[i].crp_p = NULL;
+@@ -757,6 +1025,9 @@ cryptodev_bn_mod_exp(BIGNUM *r, const BI
+ 
+ 	if (cryptodev_asym(&kop, BN_num_bytes(m), r, 0, NULL) == -1) {
+ 		const RSA_METHOD *meth = RSA_PKCS1_SSLeay();
++		fprintf(stderr, "cryptodev_asym: CRK_MOD_EXP %s failed, "
++			"Running in software\n", errno==kop.crk_status ?
++			"hardware operation" : "asym process");
+ 		ret = meth->bn_mod_exp(r, a, p, m, ctx, in_mont);
+ 	}
+ err:
+@@ -768,7 +1039,6 @@ static int
+ cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
+ {
+ 	int r;
+-
+ 	r = cryptodev_bn_mod_exp(r0, I, rsa->d, rsa->n, ctx, NULL);
+ 	return (r);
+ }
+@@ -803,6 +1073,9 @@ cryptodev_rsa_mod_exp(BIGNUM *r0, const 
+ 
+ 	if (cryptodev_asym(&kop, BN_num_bytes(rsa->n), r0, 0, NULL) == -1) {
+ 		const RSA_METHOD *meth = RSA_PKCS1_SSLeay();
++		fprintf(stderr, "cryptodev_asym: CRK_MOD_EXP_CRT %s failed, "
++			"Running in software\n", errno==kop.crk_status ?
++			"hardware operation" : "asym process");
+ 		ret = (*meth->rsa_mod_exp)(r0, I, rsa, ctx);
+ 	}
+ err:
+@@ -904,6 +1177,9 @@ cryptodev_dsa_do_sign(const unsigned cha
+ 		const DSA_METHOD *meth = DSA_OpenSSL();
+ 		BN_free(r);
+ 		BN_free(s);
++		fprintf(stderr, "cryptodev_asym: CRK_DSA_SIGN %s failed, "
++			"Running in software\n", errno==kop.crk_status ?
++			"hardware operation" : "asym process");
+ 		dsaret = (meth->dsa_do_sign)(dgst, dlen, dsa);
+ 	}
+ err:
+@@ -944,6 +1220,9 @@ cryptodev_dsa_verify(const unsigned char
+ 	} else {
+ 		const DSA_METHOD *meth = DSA_OpenSSL();
+ 
++		fprintf(stderr, "cryptodev_asym: CRK_DSA_VERIFY %s failed, "
++			"Running in software\n", errno==kop.crk_status ?
++			"hardware operation" : "asym process");
+ 		dsaret = (meth->dsa_do_verify)(dgst, dlen, sig, dsa);
+ 	}
+ err:
+@@ -977,8 +1256,8 @@ static int
+ cryptodev_dh_compute_key(unsigned char *key, const BIGNUM *pub_key, DH *dh)
+ {
+ 	struct crypt_kop kop;
+-	int dhret = 1;
+-	int fd, keylen;
++	int dhret = -1;
++	int fd, keybits;
+ 
+ 	if ((fd = get_asym_dev_crypto()) < 0) {
+ 		const DH_METHOD *meth = DH_OpenSSL();
+@@ -986,7 +1265,7 @@ cryptodev_dh_compute_key(unsigned char *
+ 		return ((meth->compute_key)(key, pub_key, dh));
+ 	}
+ 
+-	keylen = BN_num_bits(dh->p);
++	keybits = BN_num_bits(dh->p);
+ 
+ 	memset(&kop, 0, sizeof kop);
+ 	kop.crk_op = CRK_DH_COMPUTE_KEY;
+@@ -1001,14 +1280,18 @@ cryptodev_dh_compute_key(unsigned char *
+ 	kop.crk_iparams = 3;
+ 
+ 	kop.crk_param[3].crp_p = (char *)key;
+-	kop.crk_param[3].crp_nbits = keylen * 8;
++	kop.crk_param[3].crp_nbits = keybits;
+ 	kop.crk_oparams = 1;
+ 
+ 	if (ioctl(fd, CIOCKEY, &kop) == -1) {
+ 		const DH_METHOD *meth = DH_OpenSSL();
+ 
++		fprintf(stderr, "cryptodev_asym: CRK_DH_COMPUTE_KEY %s failed, "
++			"Running in software\n", errno==kop.crk_status ?
++			"hardware operation" : "asym process");
+ 		dhret = (meth->compute_key)(key, pub_key, dh);
+-	}
++	} else
++		dhret = (keybits + 7) / 8;
+ err:
+ 	kop.crk_param[3].crp_p = NULL;
+ 	zapparams(&kop);
 --- a/crypto/engine/engine.h
 +++ b/crypto/engine/engine.h
 @@ -705,7 +705,7 @@ typedef int (*dynamic_bind_engine)(ENGIN
@@ -1285,25 +1253,3 @@
  				*DSO_DLFCN*)	sfx="so";;	\
  				*DSO_DL*)	sfx="sl";;	\
  				*)		sfx="bad";;	\
---- a/util/domd
-+++ b/util/domd
-@@ -22,13 +22,17 @@ if expr "$MAKEDEPEND" : '.*gcc$' > /dev/
-     done
-     sed -e '/^# DO NOT DELETE.*/,$d' < Makefile > Makefile.tmp
-     echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' >> Makefile.tmp
--    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp
-+    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND -M $args >> Makefile.tmp && \
-     ${PERL} $TOP/util/clean-depend.pl < Makefile.tmp > Makefile.new
-+      RC=$?
-     rm -f Makefile.tmp
- else
--    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND $@
-+    ${MAKEDEPEND} -D OPENSSL_DOING_MAKEDEPEND $@ && \
-     ${PERL} $TOP/util/clean-depend.pl < Makefile > Makefile.new
-+      RC=$?
- fi
- mv Makefile.new Makefile
- # unfake the presence of Kerberos
- rm $TOP/krb5.h
-+
-+exit $RC
