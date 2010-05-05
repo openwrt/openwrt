@@ -1121,16 +1121,6 @@
  		if (kop->crk_param[i].crp_p)
  			free(kop->crk_param[i].crp_p);
  		kop->crk_param[i].crp_p = NULL;
-@@ -757,6 +1025,9 @@ cryptodev_bn_mod_exp(BIGNUM *r, const BI
- 
- 	if (cryptodev_asym(&kop, BN_num_bytes(m), r, 0, NULL) == -1) {
- 		const RSA_METHOD *meth = RSA_PKCS1_SSLeay();
-+		fprintf(stderr, "cryptodev_asym: CRK_MOD_EXP %s failed, "
-+			"Running in software\n", errno==kop.crk_status ?
-+			"hardware operation" : "asym process");
- 		ret = meth->bn_mod_exp(r, a, p, m, ctx, in_mont);
- 	}
- err:
 @@ -768,7 +1039,6 @@ static int
  cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
  {
@@ -1139,16 +1129,6 @@
  	r = cryptodev_bn_mod_exp(r0, I, rsa->d, rsa->n, ctx, NULL);
  	return (r);
  }
-@@ -803,6 +1073,9 @@ cryptodev_rsa_mod_exp(BIGNUM *r0, const 
- 
- 	if (cryptodev_asym(&kop, BN_num_bytes(rsa->n), r0, 0, NULL) == -1) {
- 		const RSA_METHOD *meth = RSA_PKCS1_SSLeay();
-+		fprintf(stderr, "cryptodev_asym: CRK_MOD_EXP_CRT %s failed, "
-+			"Running in software\n", errno==kop.crk_status ?
-+			"hardware operation" : "asym process");
- 		ret = (*meth->rsa_mod_exp)(r0, I, rsa, ctx);
- 	}
- err:
 @@ -904,6 +1177,9 @@ cryptodev_dsa_do_sign(const unsigned cha
  		const DSA_METHOD *meth = DSA_OpenSSL();
  		BN_free(r);
