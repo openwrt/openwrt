@@ -150,8 +150,8 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 
 	if [ $# -gt 0 ]; then
 		shift
-		if [ $cmd == del ]; then
-			pos=-
+		if [ $cmd == delete ]; then
+			pos=
 		fi
 	fi
 	while [ $# -gt 1 ]; do
