@@ -317,7 +317,7 @@ $(eval $(call KernelPackage,crypto-ocf))
 
 define KernelPackage/crypto-ocf-hifn7751
   TITLE:=OCF support for Hifn 6500/7751/7811/795x, Invertex AEON and NetSec 7751 devices
-  DEPENDS:=+@OPENSSL_ENGINE @!TARGET_uml kmod-crypto-ocf
+  DEPENDS:=+@OPENSSL_ENGINE @PCI_SUPPORT @!TARGET_uml kmod-crypto-ocf
   KCONFIG:=CONFIG_OCF_HIFN
   FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifn7751.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,10,hifn7751)
