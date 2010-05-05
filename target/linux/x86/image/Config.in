@@ -1,58 +1,58 @@
 config X86_GRUB_IMAGES
-    bool "Build GRUB images (Linux x86 or x86_64 host only)"
-    depends TARGET_x86 && !TARGET_x86_olpc
-    depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
-    select PACKAGE_grub
-    default y
+	bool "Build GRUB images (Linux x86 or x86_64 host only)"
+	depends TARGET_x86 && !TARGET_x86_olpc
+	depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+	select PACKAGE_grub
+	default y
 
 config X86_GRUB_CONSOLE
-    bool
-    depends X86_GRUB_IMAGES
-    prompt "Use Console Terminal (in addition to Serial)"
-    default n if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501
-    default y if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501)
+	bool "Use Console Terminal (in addition to Serial)"
+	depends X86_GRUB_IMAGES
+	default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501)
+	default y
 
 config X86_GRUB_SERIAL
-    string
-    prompt "Serial port device"
-    depends X86_GRUB_IMAGES
-    default "hvc0" if TARGET_x86_xen_domu
-    default "ttyS0" if ! TARGET_x86_xen_domu
+	string "Serial port device"
+	depends X86_GRUB_IMAGES
+	default "hvc0" if TARGET_x86_xen_domu
+	default "ttyS0"
 
 config X86_GRUB_BAUDRATE
-    int "Serial port baud rate"
-    depends X86_GRUB_IMAGES
-    default 19200 if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501
-    default 38400 if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501)
+	int "Serial port baud rate"
+	depends X86_GRUB_IMAGES
+	default 19200 if TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501
+	default 38400
 
 config X86_GRUB_BOOTOPTS
-    string
-    prompt "Extra kernel boot options" if X86_GRUB_IMAGES
-    default "xencons=hvc" if TARGET_x86_xen_domu
-    default "" if ! TARGET_x86_xen_domu
-    help
-        If you don't know, just leave it blank.
-
+	string "Extra kernel boot options"
+	depends X86_GRUB_IMAGES
+	default "xencons=hvc" if TARGET_x86_xen_domu
+	help
+	  If you don't know, just leave it blank.
 
 config X86_VDI_IMAGES
-    bool "Build VirtualBox image files (VDI). Requires VBoxManage"
-    depends TARGET_x86_generic
-    depends TARGET_ROOTFS_EXT2FS
-    depends X86_GRUB_IMAGES
-    select PACKAGE_kmod-pcnet32
+	bool "Build VirtualBox image files (VDI)"
+	depends X86_GRUB_IMAGES
+	depends TARGET_x86_generic
+	depends TARGET_ROOTFS_EXT2FS
+	select PACKAGE_kmod-pcnet32
+	help
+	  Requires VBoxManage installed on the build system.
 
 config X86_VMDK_IMAGES
-    bool "Build VMware image files (VMDK). Requires qemu-img"
-    depends TARGET_x86_generic
-    depends TARGET_ROOTFS_EXT2FS
-    depends X86_GRUB_IMAGES
-    select PACKAGE_kmod-e1000
+	bool "Build VMware image files (VMDK)"
+	depends X86_GRUB_IMAGES
+	depends TARGET_x86_generic
+	depends TARGET_ROOTFS_EXT2FS
+	select PACKAGE_kmod-e1000
+	help
+	  Requires qemu-img installed on the build system.
+
 
 config OLPC_BOOTSCRIPT_IMAGES
-    bool "Build images with bootscript"
-    depends TARGET_x86_olpc
-    depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
-    default y
+	bool "Build images with bootscript"
+	depends TARGET_x86_olpc
+	depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 
 
 config TARGET_IMAGES_PAD
