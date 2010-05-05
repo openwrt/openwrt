@@ -5,10 +5,6 @@ config X86_GRUB_IMAGES
     select PACKAGE_grub
     default y
 
-config X86_GRUB_IMAGES_PAD
-    bool "Pad GRUB images to filesystem size (for JFFS2)"
-    depends X86_GRUB_IMAGES
-
 config X86_GRUB_CONSOLE
     bool
     depends X86_GRUB_IMAGES
@@ -28,20 +24,6 @@ config X86_GRUB_BAUDRATE
     depends X86_GRUB_IMAGES
     default 19200 if TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501
     default 38400 if ! (TARGET_x86_generic_Soekris48xx || TARGET_x86_generic_Soekris45xx || TARGET_x86_net5501)
-
-config X86_GRUB_KERNELPART
-    int "Kernel partition size (in MB)"
-    depends X86_GRUB_IMAGES
-    default 4
-
-config X86_GRUB_ROOTPART
-    string
-    prompt "Root partition on target device" if X86_GRUB_IMAGES
-    default "/dev/xvda2" if TARGET_x86_xen_domu
-    default "/dev/sda2" if ! TARGET_x86_xen_domu
-    help
-        The root partition on the final device.  If you don't know,
-        you probably want the default (/dev/sda2).
 
 config X86_GRUB_BOOTOPTS
     string
@@ -72,20 +54,21 @@ config OLPC_BOOTSCRIPT_IMAGES
     depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_ISO
     default y
 
-config OLPC_BOOTSCRIPT_IMAGES_PAD
-	bool "Pad bootscript images to filesystem size (for JFFS2)"
-	depends OLPC_BOOTSCRIPT_IMAGES
 
-config OLPC_BOOTSCRIPT_KERNELPART
-    int "Kernel partition size (in MB)"
-    depends OLPC_BOOTSCRIPT_IMAGES
-    default 4
+config TARGET_IMAGES_PAD
+	bool "Pad images to filesystem size (for JFFS2)"
+	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
 
-config OLPC_BOOTSCRIPT_ROOTPART
-    string
-    prompt "Root partition on target device" if OLPC_BOOTSCRIPT_IMAGES
-    default "/dev/sda2"
-    help
-        The root partition on the final device.  If you don't know,
-        you probably want the default (/dev/sda2).
+config TARGET_KERNEL_PARTSIZE
+	int "Kernel partition size (in MB)"
+	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
+	default 4
 
+config TARGET_ROOTFS_PARTNAME
+	string "Root partition on target device"
+	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
+	default "/dev/xvda2" if TARGET_x86_xen_domu
+	default "/dev/sda2"
+	help
+	  The root partition on the final device.  If you don't know,
+	  you probably want the default (/dev/sda2).
