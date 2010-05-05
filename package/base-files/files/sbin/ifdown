@@ -29,28 +29,6 @@ config_get iface "$cfg" device
 # call interface stop handler
 ( type "stop_interface_$proto" ) >/dev/null 2>/dev/null && eval "stop_interface_$proto '$cfg'"
 
-# make sure all locks are removed
-for lock in "/var/lock/dhcp-$iface" "/var/lock/ppp-$iface"; do
-	[ -f "$lock" ] && {
-		lock -u "$lock"
-		sleep 1
-	}
-done
-
-# kill active ppp daemon and other processes
-config_get ifname "$cfg" ifname
-pids="$(head -n1 -q /var/run/${ifname}.pid /var/run/ppp-${cfg}.pid 2>/dev/null)"
-for pid in $pids; do 
-	[ -d "/proc/$pid" ] && {
-		kill $pid
-		[ -d "/proc/$pid" ] && {
-			sleep 1
-			kill -9 $pid 2>/dev/null >/dev/null
-		}
-	}
-done
-rm -f /var/run/${ifname}.pid /var/run/ppp-${cfg}.pid
-
 config_get ifname "$cfg" ifname
 config_get device "$cfg" device
 

@@ -264,7 +264,6 @@ setup_interface() {
 	}
 	set_interface_ifname "$config" "$iface_main"
 
-	pidfile="/var/run/$iface_main.pid"
 	[ -n "$proto" ] || config_get proto "$config" proto
 	case "$proto" in
 		static)
@@ -272,11 +271,14 @@ setup_interface() {
 			setup_interface_static "$iface_main" "$config"
 		;;
 		dhcp)
+			local lockfile="/var/lock/dhcp-$iface_main"
+			lock "$lockfile"
+
 			# prevent udhcpc from starting more than once
-			lock "/var/lock/dhcp-$iface_main"
+			local pidfile="/var/run/dhcp-${iface_main}.pid"
 			local pid="$(cat "$pidfile" 2>/dev/null)"
-			if [ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null; then
-				lock -u "/var/lock/dhcp-$iface_main"
+			if [ -d "/proc/$pid" ] && grep -qs udhcpc "/proc/${pid}/cmdline"; then
+				lock -u "$lockfile"
 			else
 				local ipaddr netmask hostname proto1 clientid
 				config_get ipaddr "$config" ipaddr
@@ -292,7 +294,7 @@ setup_interface() {
 				local dhcpopts
 				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
 				$DEBUG eval udhcpc -t 0 -i "$iface_main" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -O rootpath -R &}
-				lock -u "/var/lock/dhcp-$iface_main"
+				lock -u "$lockfile"
 			fi
 		;;
 		none)
@@ -329,6 +331,21 @@ setup_interface() {
 
 stop_interface_dhcp() {
 	local config="$1"
+
+	local iface
+	config_get iface "$config" iface
+
+	local lock="/var/lock/dhcp-${iface}"
+	[ -f "$lock" ] && lock -u "$lock"
+
+	local pidfile="/var/run/dhcp-${iface}.pid"
+	local pid="$(cat "$pidfile" 2>/dev/null)"
+	[ -d "/proc/$pid" ] && {
+		grep -qs udhcpc "/proc/$pid/cmdline" && kill -TERM $pid && \
+			while grep -qs udhcpc "/proc/$pid/cmdline"; do sleep 1; done
+		rm -f "$pidfile"
+	}
+
 	uci -P /var/state revert "network.$config"
 }
 
