@@ -1,23 +1,20 @@
-Index: linux-2.6.32.9/scripts/Makefile.lib
+Index: linux-2.6.30.10/scripts/Makefile.lib
 ===================================================================
---- linux-2.6.32.9.orig/scripts/Makefile.lib	2010-04-13 07:55:06.543296524 +0200
-+++ linux-2.6.32.9/scripts/Makefile.lib	2010-04-13 07:55:06.814268461 +0200
-@@ -228,7 +228,7 @@
+--- linux-2.6.30.10.orig/scripts/Makefile.lib	2010-05-05 10:55:06.000000000 +0200
++++ linux-2.6.30.10/scripts/Makefile.lib	2010-05-05 10:55:55.000000000 +0200
+@@ -204,4 +204,4 @@
+ # ---------------------------------------------------------------------------
  
  quiet_cmd_lzma = LZMA    $@
- cmd_lzma = (cat $(filter-out FORCE,$^) | \
--	lzma e -d20 -lc1 -lp2 -pb2 -eos -si -so && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
-+	lzma e -lc8 -eos -si -so && $(call size_append, $(filter-out FORCE,$^))) > $@ || \
- 	(rm -f $@ ; false)
- 
- quiet_cmd_lzo = LZO    $@
-Index: linux-2.6.32.9/arch/x86/include/asm/boot.h
+-cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 -eos
++cmd_lzma = lzma e $< $@ -lc8 -eos
+Index: linux-2.6.30.10/arch/x86/include/asm/boot.h
 ===================================================================
---- linux-2.6.32.9.orig/arch/x86/include/asm/boot.h	2010-02-23 16:38:51.000000000 +0100
-+++ linux-2.6.32.9/arch/x86/include/asm/boot.h	2010-04-13 08:00:14.474369306 +0200
-@@ -28,7 +28,7 @@
- #error "Invalid value for CONFIG_PHYSICAL_ALIGN"
- #endif
+--- linux-2.6.30.10.orig/arch/x86/include/asm/boot.h	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/arch/x86/include/asm/boot.h	2010-05-05 10:55:23.000000000 +0200
+@@ -13,7 +13,7 @@
+ 				+ (CONFIG_PHYSICAL_ALIGN - 1)) \
+ 				& ~(CONFIG_PHYSICAL_ALIGN - 1))
  
 -#ifdef CONFIG_KERNEL_BZIP2
 +#if defined(CONFIG_KERNEL_BZIP2) || defined(CONFIG_KERNEL_LZMA)
