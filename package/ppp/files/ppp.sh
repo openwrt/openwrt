@@ -59,7 +59,7 @@ start_pppd() {
 	local defaultroute
 	config_get_bool defaultroute "$cfg" defaultroute 1
 	[ "$defaultroute" -eq 1 ] && \
-		defaultroute="defaultroute replacedefaultroute" || defaultroute=""
+		defaultroute="defaultroute replacedefaultroute" || defaultroute="nodefaultroute"
 
 	local interval="${keepalive##*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
@@ -77,7 +77,9 @@ start_pppd() {
 	local peerdns
 	config_get_bool peerdns "$cfg" peerdns $peer_default
 
-	echo -n "" > /tmp/resolv.conf.auto
+	if [ "$peerdns" -eq 1 ] || [ ! -e /tmp/resolv.conf.auto ]; then
+		echo -n "" > /tmp/resolv.conf.auto
+	fi
 
 	[ "$peerdns" -eq 1 ] && {
 		peerdns="usepeerdns"
