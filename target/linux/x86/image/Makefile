@@ -29,12 +29,12 @@ ifneq ($(GRUB_TERMINALS),)
   GRUB_TERMINAL_CONFIG := terminal --timeout=2 $(GRUB_TERMINALS)
 endif
 
+ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
 
 ifneq ($(CONFIG_X86_GRUB_IMAGES),)
  ifneq ($(HOST_OS),Darwin)
 
   BOOTOPTS:=$(call qstrip,$(CONFIG_X86_GRUB_BOOTOPTS))
-  ROOTPART:=$(call qstrip,$(CONFIG_X86_GRUB_ROOTPART))
 
   define Image/cmdline/ext2
     root=$(ROOTPART) rootfstype=ext2 rootwait
@@ -66,9 +66,9 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
 		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
-	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh \
+	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-		$(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(KDIR)/root.grub \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
 	$(call Image/Build/grub/$(1))
   endef
@@ -86,9 +86,9 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
  else
 
   define Image/Build/grub
-	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image_x86.sh 
+	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image_x86.sh 
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-		$(CONFIG_X86_GRUB_KERNELPART) "" \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) "" \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
   endef
 
@@ -98,8 +98,6 @@ endif
 ROOTDELAY=10
 
 ifneq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),)
-
-  ROOTPART:=$(call qstrip,$(CONFIG_OLPC_BOOTSCRIPT_ROOTPART))
 
   define Image/cmdline/ext2
     root=$(ROOTPART) rootfstype=ext2 rootwait
@@ -123,9 +121,9 @@ ifneq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),)
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.bootscript/boot/vmlinuz
 	sed -e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
 		./olpc.fth > $(KDIR)/root.bootscript/boot/olpc.fth
-	PADDING="$(CONFIG_OLPC_BOOTSCRIPT_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_olpc.sh \
+	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_olpc.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-		$(CONFIG_OLPC_BOOTSCRIPT_KERNELPART) $(KDIR)/root.bootscript \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(KDIR)/root.bootscript \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
   endef
 
