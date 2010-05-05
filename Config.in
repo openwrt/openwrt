@@ -102,7 +102,7 @@ menu "Target Images"
 
 	source "target/linux/*/image/Config.in"
 
-	config TARGET_ROOTFS_FSPART
+	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
 		depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT2FS || TARGET_rb532
 		default 48

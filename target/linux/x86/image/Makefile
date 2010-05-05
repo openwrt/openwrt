@@ -69,7 +69,7 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 		$(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub \
-		$(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
 	$(call Image/Build/grub/$(1))
   endef
 
@@ -89,7 +89,7 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image_x86.sh 
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 		$(CONFIG_X86_GRUB_KERNELPART) "" \
-		$(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
   endef
 
  endif
@@ -126,7 +126,7 @@ ifneq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),)
 	PADDING="$(CONFIG_OLPC_BOOTSCRIPT_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_olpc.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
 		$(CONFIG_OLPC_BOOTSCRIPT_KERNELPART) $(KDIR)/root.bootscript \
-		$(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
   endef
 
 endif
