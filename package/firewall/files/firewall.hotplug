@@ -8,8 +8,8 @@
 [ "$DEVICE" == "lo" ] && exit 0
 
 . /lib/firewall/core.sh
-fw_is_loaded || exit 0
 fw_init
+fw_is_loaded || exit 0
 
 case "$ACTION" in
 	ifup)
