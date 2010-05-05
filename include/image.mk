@@ -129,7 +129,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_TARGZ),)
 endif
 
 ifneq ($(CONFIG_TARGET_ROOTFS_EXT2FS),)
-  E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_FSPART)*1024)))
+  E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024)))
 
   define Image/mkfs/ext2
 		$(STAGING_DIR_HOST)/bin/genext2fs -U -b $(E2SIZE) -N $(CONFIG_TARGET_ROOTFS_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext2
