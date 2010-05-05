@@ -383,6 +383,7 @@ static struct pci_device_id hipp_pci_tbl[] = {
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
 	{ PCI_VENDOR_HIFN, PCI_PRODUCT_HIFN_8155,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
+	{ 0 }
 };
 MODULE_DEVICE_TABLE(pci, hipp_pci_tbl);
 
