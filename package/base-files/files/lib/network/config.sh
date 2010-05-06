@@ -333,12 +333,12 @@ stop_interface_dhcp() {
 	local config="$1"
 
 	local iface
-	config_get iface "$config" iface
+	config_get ifname "$config" ifname
 
-	local lock="/var/lock/dhcp-${iface}"
+	local lock="/var/lock/dhcp-${ifname}"
 	[ -f "$lock" ] && lock -u "$lock"
 
-	local pidfile="/var/run/dhcp-${iface}.pid"
+	local pidfile="/var/run/dhcp-${ifname}.pid"
 	local pid="$(cat "$pidfile" 2>/dev/null)"
 	[ -d "/proc/$pid" ] && {
 		grep -qs udhcpc "/proc/$pid/cmdline" && kill -TERM $pid && \
