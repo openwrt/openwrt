@@ -7,14 +7,18 @@ stop_interface_ppp() {
 	local ifname
 	config_get ifname "$cfg" ifname
 
-	[ -f "/var/run/ppp-${ifname}.pid" ] && {
-		local pid="$(head -n1 /var/run/ppp-${ifname}.pid 2>/dev/null)"
+	local link="$proto-${ifname#$proto-}"
+	[ -f "/var/run/ppp-${link}.pid" ] && {
+		local pid="$(head -n1 /var/run/ppp-${link}.pid 2>/dev/null)"
+		local try=0
 		grep -qs pppd "/proc/$pid/cmdline" && kill -TERM $pid && \
+			while grep -qs pppd "/proc/$pid/cmdline" && [ $((try++)) -lt 5 ]; do sleep 1; done
+		grep -qs pppd "/proc/$pid/cmdline" && kill -KILL $pid && \
 			while grep -qs pppd "/proc/$pid/cmdline"; do sleep 1; done
-		rm -f "/var/run/ppp-${ifname}.pid"
+		rm -f "/var/run/ppp-${link}.pid"
 	}
 
-	local lock="/var/lock/ppp-$ifname"
+	local lock="/var/lock/ppp-$link"
 	[ -f "$lock" ] && lock -u "$lock"
 }
 
@@ -110,19 +114,19 @@ start_pppd() {
 	config_get_bool ipv6 "$cfg" ipv6 0
 	[ "$ipv6" -eq 1 ] && ipv6="+ipv6" || ipv6=""
 
-	/usr/sbin/pppd "$@" \
+	start-stop-daemon -S -b -x /usr/sbin/pppd -m -p /var/run/ppp-$link.pid -- "$@" \
 		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive%%[, ]*}} \
 		$demandargs \
 		$peerdns \
 		$defaultroute \
 		${username:+user "$username" password "$password"} \
-		linkname "$link" \
 		ipparam "$cfg" \
 		ifname "$link" \
 		${connect:+connect "$connect"} \
 		${disconnect:+disconnect "$disconnect"} \
 		${ipv6} \
-		${pppd_options}
+		${pppd_options} \
+		nodetach
 
 	lock -u "/var/lock/ppp-${link}"
 }
