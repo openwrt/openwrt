@@ -6,10 +6,14 @@ stop_interface_pptp() {
 	stop_interface_ppp "$1"
 }
 
+coldplug_interface_pptp() {
+	setup_interface_pptp "pptp-$1" "$1"
+}
+
 setup_interface_pptp() {
 	local config="$2"
 	local ifname
-	
+
 	config_get device "$config" device
 	config_get ipproto "$config" ipproto
 	config_get server "$config" server
