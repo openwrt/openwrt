@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pptp
-PKG_VERSION:=1.6.0
-PKG_RELEASE:=7
+PKG_VERSION:=1.7.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/pptpclient
-PKG_MD5SUM:=9a706327fb9827541d7c86d48ceb9631
+PKG_MD5SUM:=b47735ba5d6d37dfdbccb85afc044ede
 
 include $(INCLUDE_DIR)/package.mk
 
