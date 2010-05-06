@@ -15,6 +15,17 @@ boot() {
 		rm -f /etc/config/wireless
 		/sbin/wifi detect > /etc/config/wireless
 	}
+
+	scan_interfaces
+
+	local ifc
+	for ifc in $interfaces; do
+		local proto
+		config_get proto "$ifc" proto
+
+		type "coldplug_interface_$proto" >/dev/null && \
+			coldplug_interface_$proto "$ifc"
+	done
 }
 
 start() {
