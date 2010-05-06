@@ -7,15 +7,14 @@ stop_interface_ppp() {
 	local ifname
 	config_get ifname "$cfg" ifname
 
-	local link="${proto:-ppp}-$ifname"
-	[ -f "/var/run/ppp-${link}.pid" ] && {
-		local pid="$(head -n1 /var/run/ppp-${link}.pid 2>/dev/null)"
+	[ -f "/var/run/ppp-${ifname}.pid" ] && {
+		local pid="$(head -n1 /var/run/ppp-${ifname}.pid 2>/dev/null)"
 		grep -qs pppd "/proc/$pid/cmdline" && kill -TERM $pid && \
 			while grep -qs pppd "/proc/$pid/cmdline"; do sleep 1; done
-		rm -f "/var/run/ppp-${link}.pid"
+		rm -f "/var/run/ppp-${ifname}.pid"
 	}
 
-	local lock="/var/lock/ppp-$link"
+	local lock="/var/lock/ppp-$ifname"
 	[ -f "$lock" ] && lock -u "$lock"
 }
 
