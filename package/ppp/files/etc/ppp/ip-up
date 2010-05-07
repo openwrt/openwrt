@@ -1,5 +1,8 @@
 #!/bin/sh
+
 . /etc/functions.sh
+. /lib/network/config.sh
+
 PPP_IFACE="$1"
 PPP_TTY="$2"
 PPP_SPEED="$3"
@@ -14,8 +17,9 @@ export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 	uci_set_state network "$PPP_IPPARAM" gateway "$PPP_REMOTE"
 
 	local dns="$DNS1${DNS2:+ $DNS2}"
-	[ -n "$dns" ] && uci_set_state network "$PPP_IPPARAM" dns "$dns"
+	[ -n "$dns" ] && add_dns "$PPP_IPPARAM" $dns
 }
+
 [ -z "$PPP_IPPARAM" ] || env -i ACTION="ifup" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
 
 [ -d /etc/ppp/ip-up.d ] && {
