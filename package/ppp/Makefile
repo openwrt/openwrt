@@ -140,7 +140,7 @@ define Package/ppp/install
 	$(INSTALL_BIN) ./files/etc/ppp/ipv6-up $(1)/etc/ppp/
 	$(INSTALL_BIN) ./files/etc/ppp/ipv6-down $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
-	ln -sf /tmp/resolv.conf.auto $(1)/etc/ppp/resolv.conf
+	ln -sf /tmp/resolv.conf.ppp $(1)/etc/ppp/resolv.conf
 endef
 	
 define Package/ppp-mod-pppoa/install

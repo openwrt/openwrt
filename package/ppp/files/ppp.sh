@@ -4,10 +4,7 @@ stop_interface_ppp() {
 	local proto
 	config_get proto "$cfg" proto
 
-	local ifname
-	config_get ifname "$cfg" ifname
-
-	local link="$proto-${ifname#$proto-}"
+	local link="$proto-$cfg"
 	[ -f "/var/run/ppp-${link}.pid" ] && {
 		local pid="$(head -n1 /var/run/ppp-${link}.pid 2>/dev/null)"
 		local try=0
@@ -17,6 +14,8 @@ stop_interface_ppp() {
 			while grep -qs pppd "/proc/$pid/cmdline"; do sleep 1; done
 		rm -f "/var/run/ppp-${link}.pid"
 	}
+
+	remove_dns "$cfg"
 
 	local lock="/var/lock/ppp-$link"
 	[ -f "$lock" ] && lock -u "$lock"
@@ -85,17 +84,11 @@ start_pppd() {
 	local peerdns
 	config_get_bool peerdns "$cfg" peerdns $peer_default
 
-	if [ "$peerdns" -eq 1 ] || [ ! -e /tmp/resolv.conf.auto ]; then
-		echo -n "" > /tmp/resolv.conf.auto
-	fi
-
 	[ "$peerdns" -eq 1 ] && {
 		peerdns="usepeerdns"
 	} || {
 		peerdns=""
-		for dns in $dns; do
-			echo "nameserver $dns" >> /tmp/resolv.conf.auto
-		done
+		add_dns "$cfg" $dns
 	}
 
 	local demand
@@ -104,8 +97,7 @@ start_pppd() {
 	local demandargs
 	[ "$demand" -eq 1 ] && {
 		demandargs="precompiled-active-filter /etc/ppp/filter demand idle"
-		[ "$has_dns" -eq 0 ] && \
-			echo "nameserver 1.1.1.1" > /tmp/resolv.conf.auto
+		[ "$has_dns" -eq 0 ] && add_dns "$cfg" 1.1.1.1
 	} || {
 		demandargs="persist"
 	}
