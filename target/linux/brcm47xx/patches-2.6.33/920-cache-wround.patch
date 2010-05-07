@@ -4,11 +4,11 @@
  #ifdef CONFIG_BCM47XX
  #include <asm/paccess.h>
  #include <linux/ssb/ssb.h>
--#define BCM4710_DUMMY_RREG() ((void) *((u8 *) KSEG1ADDR(SSB_ENUM_BASE + SSB_IMSTATE)))
+-#define BCM4710_DUMMY_RREG() ((void) *((u8 *) KSEG1ADDR(SSB_ENUM_BASE)))
 +#define BCM4710_DUMMY_RREG() bcm4710_dummy_rreg()
 +
 +static inline unsigned long bcm4710_dummy_rreg(void) {
-+      return (*(volatile unsigned long *)(KSEG1ADDR(SSB_ENUM_BASE + SSB_IMSTATE)));
++      return (*(volatile unsigned long *)(KSEG1ADDR(SSB_ENUM_BASE)));
 +}
 +
 +#define BCM4710_FILL_TLB(addr) bcm4710_fill_tlb((void*)(addr))
