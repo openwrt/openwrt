@@ -26,7 +26,7 @@ setup_interface_pptp() {
 	setup_interface "$device" "$config" "${ipproto:-dhcp}"
 	local gw="$(find_gw)"
 	[ -n "$gw" ] && {
-		route delete "$server" 2>/dev/null >/dev/null
+		[ "$gw" != 0.0.0.0 ] && route delete "$server" 2>/dev/null >/dev/null
 		route add "$server" gw "$gw"
 	}
 
