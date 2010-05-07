@@ -135,7 +135,6 @@ enable_broadcom() {
 
 	_c=0
 	nas="$(which nas)"
-	[ -n "$nas" ] && nas="start-stop-daemon -S -b -x $nas -- "
 	nas_cmd=
 	if_up=
 
@@ -292,7 +291,9 @@ enable_broadcom() {
 					use_nas=0
 				}
 			}
-			[ -z "$nas" -o "$use_nas" = "0" ] || nas_cmd="${nas_cmd:+$nas_cmd$N}$nas -P /var/run/nas.$ifname.pid -H 34954 ${bridge:+ -l $bridge} -i $ifname $nas_mode -m $auth -w $wsec -s \"\$${vif}_ssid\" -g 3600 $nasopts &"
+			[ -z "$nas" -o "$use_nas" = "0" ] || {
+				nas_cmd="${nas_cmd:+$nas_cmd$N}start-stop-daemon -S -b -p /var/run/nas.$ifname.pid -x $nas -- -P /var/run/nas.$ifname.pid -H 34954 ${bridge:+ -l $bridge} -i $ifname $nas_mode -m $auth -w $wsec -s \"\$${vif}_ssid\" -g 3600 $nasopts"
+			}
 		}
 		_c=$(($_c + 1))
 	done
