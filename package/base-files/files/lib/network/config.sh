@@ -66,6 +66,35 @@ add_vlan() {
 	return 1
 }
 
+# add dns entries if they are not in resolv.conf yet
+add_dns() {
+	local cfg="$1"; shift
+
+	local dns
+	local add
+	for dns in "$@"; do
+		grep -qsF "nameserver $dns" /tmp/resolv.conf.auto || {
+			add="${add:+$add }$dns"
+			echo "nameserver $dns" >> /tmp/resolv.conf.auto
+		}
+	done
+
+	uci_set_state network "$cfg" dns "$add"
+}
+
+# remove dns entries of the given iface
+remove_dns() {
+	local cfg="$1"
+
+	local dns
+	config_get dns "$cfg" dns
+	for dns in $dns; do
+		sed -i -e "/^nameserver $dns$/d" /tmp/resolv.conf.auto
+	done
+
+	uci_revert_state network "$cfg" dns
+}
+
 # sort the device list, drop duplicates
 sort_list() {
 	local arg="$*"
