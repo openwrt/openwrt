@@ -310,6 +310,23 @@ dhcp_domain_add() {
 	done
 }
 
+dhcp_srv_add() {
+	local cfg="$1"
+
+	config_get srv "$cfg" srv
+	[ -n "$srv" ] || return 0
+
+	config_get target "$cfg" target
+	[ -n "$target" ] || return 0
+
+	config_get port "$cfg" port
+
+	local service="$srv,$target"
+	[ -n "$port" ] && service="$service,$port"
+
+	append args "-W $service"
+}
+
 start() {
 	include /lib/network
 	scan_interfaces
@@ -326,6 +343,7 @@ start() {
 	config_foreach dhcp_remoteid_add remoteid
 	config_foreach dhcp_subscrid_add subscrid
 	config_foreach dhcp_domain_add domain
+	config_foreach dhcp_srv_add srvhost
 	config_foreach dhcp_add dhcp
 
 	/usr/sbin/dnsmasq $args && {
