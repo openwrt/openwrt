@@ -212,14 +212,16 @@ define Image/Build/AP83
 endef
 
 define Image/Build/PB92
-	$(call PatchKernelGzip,$(2),$(3))
-	if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2818048 ]; then \
+	$(call PatchKernelLzma,$(2),$(3))
+	if [ `stat -c%s $(KDIR)/vmlinux-$(2).bin.lzma` -gt 917504 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	elif [ `stat -c%s $(KDIR)/root.$(1)` -gt 2818048 ]; then \
 		echo "Warning: $(KDIR)/root.$(1) is too big"; \
 	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
 			0x80060000 \
 			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.gz \
+			-d $(KDIR)/vmlinux-$(2).bin.lzma \
 			$(KDIR)/vmlinux-$(2).uImage; \
 		dd if=$(KDIR)/vmlinux-$(2).uImage \
 			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
