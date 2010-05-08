@@ -7,7 +7,7 @@
 
 define Profile/Default
 	NAME:=Default Profile (all drivers)
-	PACKAGES:=kmod-ath9k kmod-madwifi kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig vsc7385-ucode-ap83 vsc7385-ucode-pb44 vsc7395-ucode-ap83 vsc7395-ucode-pb44 wpad-mini
+	PACKAGES:=kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig vsc7385-ucode-ap83 vsc7385-ucode-pb44 vsc7395-ucode-ap83 vsc7395-ucode-pb44 wpad-mini
 endef
 
 define Profile/Default/Description
