@@ -31,7 +31,7 @@ define KernelPackage/sound-soc-xburst/default
   AUTOLOAD:=$(call AutoLoad,65,snd-soc-$(3))
 endef
 
-define KernelPackage/sound-soc-qi_lb60
+define KernelPackage/sound-soc-qilb60
 $(call KernelPackage/sound-soc-xburst/default,QI NanoNote,QI_LB60,qi-lb60,qi_lb60)
 endef
 
@@ -45,6 +45,6 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-jz4740))
 $(eval $(call KernelPackage,sound-soc-jzcodec))
-$(eval $(call KernelPackage,sound-soc-qi_lb60))
+$(eval $(call KernelPackage,sound-soc-qilb60))
 $(eval $(call KernelPackage,sound-soc-n516))
 $(eval $(call KernelPackage,sound-soc-n526))

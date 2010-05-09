@@ -4,5 +4,5 @@ DEFAULT_PACKAGES += \
 	kmod-sound-soc-core \
 	kmod-sound-soc-jz4740 \
 	kmod-sound-soc-jzcodec \
-	kmod-sound-soc-qi_lb60 \
+	kmod-sound-soc-qilb60 \
 
