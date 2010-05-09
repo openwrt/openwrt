@@ -1,27 +1,8 @@
-commit e09dd7ae2076782c47a8b729b989e20af882415f
-Author: Florian Fainelli <florian@openwrt.org>
-Date:   Sat May 8 16:03:34 2010 +0200
-
-    AR7: prevent race between clocks and devices initialization
-    
-    ar7_clocks_init and ar7_register_devices are both called at arch_initcall
-    however, ar7_register_devices relies on clocks to be initialized, and clock.o
-    is to be linked later. Fix this by making clock.o be linked earlier.
-    
-    Reported-by: Michael J. Evans <mjevans1983@gmail.com>
-    Signed-off-by: Florian Fainelli <florian@openwrt.org>
-
-diff --git a/arch/mips/ar7/Makefile b/arch/mips/ar7/Makefile
-index 26bc5da..2df8910 100644
---- a/arch/mips/ar7/Makefile
-+++ b/arch/mips/ar7/Makefile
-@@ -5,7 +5,7 @@ obj-y := \
- 	memory.o \
- 	irq.o \
- 	time.o \
-+	clock.o \
- 	platform.o \
--	gpio.o \
--	clock.o
-+	gpio.o
- EXTRA_CFLAGS += -Werror
+--- a/arch/mips/ar7/platform.c
++++ b/arch/mips/ar7/platform.c
+@@ -606,4 +606,4 @@ static int __init ar7_register_devices(v
+ 
+ 	return res;
+ }
+-arch_initcall(ar7_register_devices);
++device_initcall(ar7_register_devices);
