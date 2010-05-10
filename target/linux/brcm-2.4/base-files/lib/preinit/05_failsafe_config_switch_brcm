@@ -1,0 +1,10 @@
+#!/bin/sh
+
+failsafe_config_switch() {
+	[ -d /proc/switch/eth0 ] && [ "$ifname" = "eth0" ] && {
+		echo "0 1 2 3 4 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
+	}
+}
+
+boot_hook_add failsafe failsafe_config_switch
+

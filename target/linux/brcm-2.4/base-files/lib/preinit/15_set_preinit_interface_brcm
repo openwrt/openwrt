@@ -30,9 +30,10 @@ preinit_net_echo() {
 			echo "$port ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
 			port_net_echo $1
 		}; done
+		
+		echo "0 ${cpu_port:-5u*}" > /proc/switch/eth0/vlan/0/ports
+		
 	} || port_net_echo $1
-
-	preinit_ip_deconfig
 }
 
 
