@@ -329,7 +329,7 @@ $(eval $(call KernelPackage,crypto-ocf-hifn7751))
 
 define KernelPackage/crypto-ocf-hifnhipp
   TITLE:=OCF support for Hifn 7855/8155 devices
-  DEPENDS:=+@OPENSSL_ENGINE @!TARGET_uml kmod-crypto-ocf
+  DEPENDS:=+@OPENSSL_ENGINE @PCI_SUPPORT @!TARGET_uml kmod-crypto-ocf
   KCONFIG:=CONFIG_OCF_HIFNHIPP
   FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifnHIPP.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,10,hifnhipp)
