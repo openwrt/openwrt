@@ -32,20 +32,20 @@
 +
 +static inline void b44_bcm47xx_workarounds(struct b44 *bp)
 +{
-+       /* Toshiba WRC-1000, Siemens SE505 v1, Askey RT-210W, RT-220W */
-+       if (simple_strtoul(getvar("boardnum"), NULL, 0) == 100) {
-+               bp->phy_addr = B44_PHY_ADDR_NO_PHY;
-+       } else {
-+               /* WL-HDD */
-+               struct ssb_device *sdev = bp->sdev;
-+               if (startswith(getvar("hardware_version"), "WL300-")) 
-+               {
-+                       if (sdev->bus->sprom.et0phyaddr == 0 &&
-+                           sdev->bus->sprom.et1phyaddr == 1)
-+                               bp->phy_addr = B44_PHY_ADDR_NO_PHY;
-+               }
-+       }
-+       return;
++	/* Toshiba WRC-1000, Siemens SE505 v1, Askey RT-210W, RT-220W */
++	if (simple_strtoul(getvar("boardnum"), NULL, 0) == 100) {
++		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++	} else {
++		/* WL-HDD */
++		struct ssb_device *sdev = bp->sdev;
++		if (startswith(getvar("hardware_version"), "WL300-")) 
++		{
++			if (sdev->bus->sprom.et0phyaddr == 0 &&
++			    sdev->bus->sprom.et1phyaddr == 1)
++				bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++		}
++	}
++	return;
 +}
 +
 +#else

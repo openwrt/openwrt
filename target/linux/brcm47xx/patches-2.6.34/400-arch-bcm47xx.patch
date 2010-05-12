@@ -119,81 +119,83 @@
  {
  	int i = 0;
  
-@@ -73,51 +83,143 @@ static void str2eaddr(char *str, char *d
+@@ -73,51 +83,142 @@ static void str2eaddr(char *str, char *d
  	}
  }
  
 -static int bcm47xx_get_invariants(struct ssb_bus *bus,
 -				   struct ssb_init_invariants *iv)
 +static void bcm47xx_fill_sprom(struct ssb_sprom *sprom)
- {
- 	char buf[100];
++{
 +	char *s;
 +
 +	memset(sprom, 0xFF, sizeof(struct ssb_sprom));
 +
-+        sprom->revision = 1;
-+        if ((s = nvram_get("il0macaddr")))
-+                e_aton(s, sprom->il0mac);
-+        if ((s = nvram_get("et0macaddr")))
-+                e_aton(s, sprom->et0mac);
-+        if ((s = nvram_get("et1macaddr")))
-+                e_aton(s, sprom->et1mac);
-+        if ((s = nvram_get("et0phyaddr")))
-+                sprom->et0phyaddr = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("et1phyaddr")))
-+                sprom->et1phyaddr = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("et0mdcport")))
-+                sprom->et0mdcport = !!simple_strtoul(s, NULL, 10);
-+        if ((s = nvram_get("et1mdcport")))
-+                sprom->et1mdcport = !!simple_strtoul(s, NULL, 10);
-+        if ((s = nvram_get("pa0b0")))
-+                sprom->pa0b0 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa0b1")))
-+                sprom->pa0b1 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa0b2")))
-+                sprom->pa0b2 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa1b0")))
-+                sprom->pa1b0 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa1b1")))
-+                sprom->pa1b1 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa1b2")))
-+                sprom->pa1b2 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("wl0gpio0")))
-+                sprom->gpio0 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("wl0gpio1")))
-+                sprom->gpio1 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("wl0gpio2")))
-+                sprom->gpio2 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("wl0gpio3")))
-+                sprom->gpio3 = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa0maxpwr")))
-+                sprom->maxpwr_bg = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa1maxpwr")))
-+                sprom->maxpwr_a = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa0itssit")))
-+                sprom->itssi_bg = simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("pa1itssit")))
-+                sprom->itssi_a = simple_strtoul(s, NULL, 0);
-+        sprom->boardflags_lo = 0;
-+        if ((s = nvram_get("boardflags")))
-+                sprom->boardflags_lo = simple_strtoul(s, NULL, 0);
-+        sprom->boardflags_hi = 0;
-+        if ((s = nvram_get("boardflags2")))
-+                sprom->boardflags_hi = simple_strtoul(s, NULL, 0);
++	sprom->revision = 1;
++	if ((s = nvram_get("il0macaddr")))
++		e_aton(s, sprom->il0mac);
++	if ((s = nvram_get("et0macaddr")))
++		e_aton(s, sprom->et0mac);
++	if ((s = nvram_get("et1macaddr")))
++		e_aton(s, sprom->et1mac);
++	if ((s = nvram_get("et0phyaddr")))
++		sprom->et0phyaddr = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("et1phyaddr")))
++		sprom->et1phyaddr = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("et0mdcport")))
++		sprom->et0mdcport = !!simple_strtoul(s, NULL, 10);
++	if ((s = nvram_get("et1mdcport")))
++		sprom->et1mdcport = !!simple_strtoul(s, NULL, 10);
++	if ((s = nvram_get("pa0b0")))
++		sprom->pa0b0 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0b1")))
++		sprom->pa0b1 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0b2")))
++		sprom->pa0b2 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1b0")))
++		sprom->pa1b0 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1b1")))
++		sprom->pa1b1 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1b2")))
++		sprom->pa1b2 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio0")))
++		sprom->gpio0 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio1")))
++		sprom->gpio1 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio2")))
++		sprom->gpio2 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("wl0gpio3")))
++		sprom->gpio3 = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0maxpwr")))
++		sprom->maxpwr_bg = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1maxpwr")))
++		sprom->maxpwr_a = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa0itssit")))
++		sprom->itssi_bg = simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("pa1itssit")))
++		sprom->itssi_a = simple_strtoul(s, NULL, 0);
++	sprom->boardflags_lo = 0;
++	if ((s = nvram_get("boardflags")))
++		sprom->boardflags_lo = simple_strtoul(s, NULL, 0);
++	sprom->boardflags_hi = 0;
++	if ((s = nvram_get("boardflags2")))
++		sprom->boardflags_hi = simple_strtoul(s, NULL, 0);
 +}
 +
 +static int bcm47xx_get_invariants(struct ssb_bus *bus, struct ssb_init_invariants *iv)
-+{
-+        char *s;
+ {
+-	char buf[100];
++	char *s;
++
++	iv->boardinfo.vendor = SSB_BOARDVENDOR_BCM;
++	if ((s = nvram_get("boardtype")))
++		iv->boardinfo.type = (u16)simple_strtoul(s, NULL, 0);
++	if ((s = nvram_get("boardrev")))
++		iv->boardinfo.rev = (u16)simple_strtoul(s, NULL, 0);
  
 -	/* Fill boardinfo structure */
 -	memset(&(iv->boardinfo), 0 , sizeof(struct ssb_boardinfo));
-+        iv->boardinfo.vendor = SSB_BOARDVENDOR_BCM;
-+        if ((s = nvram_get("boardtype")))
-+                iv->boardinfo.type = (u16)simple_strtoul(s, NULL, 0);
-+        if ((s = nvram_get("boardrev")))
-+                iv->boardinfo.rev = (u16)simple_strtoul(s, NULL, 0);
++	bcm47xx_fill_sprom(&iv->sprom);
  
 -	if (cfe_getenv("boardvendor", buf, sizeof(buf)) >= 0)
 -		iv->boardinfo.type = (u16)simple_strtoul(buf, NULL, 0);
@@ -218,10 +220,8 @@
 -		iv->sprom.et0mdcport = simple_strtoul(buf, NULL, 10);
 -	if (cfe_getenv("et1mdcport", buf, sizeof(buf)) >= 0)
 -		iv->sprom.et1mdcport = simple_strtoul(buf, NULL, 10);
-+        bcm47xx_fill_sprom(&iv->sprom);
-+
-+        if ((s = nvram_get("cardbus")))
-+                iv->has_cardbus_slot = !!simple_strtoul(s, NULL, 10);
++	if ((s = nvram_get("cardbus")))
++		iv->has_cardbus_slot = !!simple_strtoul(s, NULL, 10);
  
  	return 0;
  }
@@ -229,51 +229,50 @@
  void __init plat_mem_setup(void)
  {
 -	int err;
--
++	int i, err;
++	char *s;
++	struct ssb_mipscore *mcore;
++
++	err = ssb_bus_ssbbus_register(&ssb_bcm47xx, SSB_ENUM_BASE, bcm47xx_get_invariants);
++	if (err) {
++		const char *msg = "Failed to initialize SSB bus (err %d)\n";
++		printk(msg, err); /* Make sure the message gets out of the box. */
++		panic(msg, err);
++	}
++	mcore = &ssb_bcm47xx.mipscore;
+ 
 -	err = ssb_bus_ssbbus_register(&ssb_bcm47xx, SSB_ENUM_BASE,
 -				      bcm47xx_get_invariants);
 -	if (err)
 -		panic("Failed to initialize SSB bus (err %d)\n", err);
-+        int i, err;
-+        char *s;
-+        struct ssb_mipscore *mcore;
++	s = nvram_get("kernel_args");
++	if (s && !strncmp(s, "console=ttyS1", 13)) {
++		struct ssb_serial_port port;
 +
-+        err = ssb_bus_ssbbus_register(&ssb_bcm47xx, SSB_ENUM_BASE, bcm47xx_get_invariants);
-+        if (err) {
-+                const char *msg = "Failed to initialize SSB bus (err %d)\n";
-+                printk(msg, err); /* Make sure the message gets out of the box. */
-+                panic(msg, err);
-+        }
-+        mcore = &ssb_bcm47xx.mipscore;
++		printk("Swapping serial ports!\n");
++		/* swap serial ports */
++		memcpy(&port, &mcore->serial_ports[0], sizeof(port));
++		memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1], sizeof(port));
++		memcpy(&mcore->serial_ports[1], &port, sizeof(port));
++	}
 +
-+        s = nvram_get("kernel_args");
-+        if (s && !strncmp(s, "console=ttyS1", 13)) {
-+                struct ssb_serial_port port;
++	for (i = 0; i < mcore->nr_serial_ports; i++) {
++		struct ssb_serial_port *port = &(mcore->serial_ports[i]);
++		struct uart_port s;
 +
-+                printk("Swapping serial ports!\n");
-+                /* swap serial ports */
-+                memcpy(&port, &mcore->serial_ports[0], sizeof(port));
-+                memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1], sizeof(port));
-+                memcpy(&mcore->serial_ports[1], &port, sizeof(port));
-+        }
++		memset(&s, 0, sizeof(s));
++		s.line = i;
++		s.mapbase = (unsigned int) port->regs;
++		s.membase = port->regs;
++		s.irq = port->irq + 2;
++		s.uartclk = port->baud_base;
++		s.flags = UPF_BOOT_AUTOCONF | UPF_SHARE_IRQ;
++		s.iotype = SERIAL_IO_MEM;
++		s.regshift = port->reg_shift;
 +
-+        for (i = 0; i < mcore->nr_serial_ports; i++) {
-+                struct ssb_serial_port *port = &(mcore->serial_ports[i]);
-+                struct uart_port s;
-+
-+                memset(&s, 0, sizeof(s));
-+                s.line = i;
-+                s.mapbase = (unsigned int) port->regs;
-+                s.membase = port->regs;
-+                s.irq = port->irq + 2;
-+                s.uartclk = port->baud_base;
-+                s.flags = UPF_BOOT_AUTOCONF | UPF_SHARE_IRQ;
-+                s.iotype = SERIAL_IO_MEM;
-+                s.regshift = port->reg_shift;
-+
-+                early_serial_setup(&s);
-+        }
-+        printk("Serial init done.\n");
++		early_serial_setup(&s);
++	}
++	printk("Serial init done.\n");
  
  	_machine_restart = bcm47xx_machine_restart;
  	_machine_halt = bcm47xx_machine_halt;
@@ -282,18 +281,18 @@
 +
 +static int __init bcm47xx_register_gpiodev(void)
 +{
-+        static struct resource res = {
-+                .start = 0xFFFFFFFF,
-+        };
-+        struct platform_device *pdev;
++	static struct resource res = {
++		.start = 0xFFFFFFFF,
++	};
++	struct platform_device *pdev;
 +
-+        pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
-+        if (!pdev) {
-+                printk(KERN_ERR "bcm47xx: GPIODEV init failed\n");
-+                return -ENODEV;
-+        }
++	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
++	if (!pdev) {
++		printk(KERN_ERR "bcm47xx: GPIODEV init failed\n");
++		return -ENODEV;
++	}
 +
-+        return 0;
++	return 0;
 +}
 +device_initcall(bcm47xx_register_gpiodev);
 --- a/arch/mips/bcm47xx/time.c

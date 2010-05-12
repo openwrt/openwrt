@@ -41,18 +41,19 @@ Signed-off-by: Steve Brown <sbrown@cortland.com>
 -			ssb_write32(dev, 0x400, tmp);
 -			tmp = ssb_read32(dev, 0x400);
 -			printk("USB20H fcr: 0x%0x\n", tmp);
-+		/* Work around for 5354 failures */
-+		if ((dev->id.revision == 2) && (dev->bus->chip_id == 0x5354)) {
-+			/* Change syn01 reg */
-+			tmp = 0x00fe00fe;
-+			ssb_write32(dev, 0x894, tmp);
- 
+-
 -			/* Change Shim control reg */
 -			tmp = ssb_read32(dev, 0x304);
 -			tmp &= ~0x100;
 -			ssb_write32(dev, 0x304, tmp);
 -			tmp = ssb_read32(dev, 0x304);
 -			printk("USB20H shim: 0x%0x\n", tmp);
++		/* Work around for 5354 failures */
++		if ((dev->id.revision == 2) && (dev->bus->chip_id == 0x5354)) {
++			/* Change syn01 reg */
++			tmp = 0x00fe00fe;
++			ssb_write32(dev, 0x894, tmp);
++
 +			/* Change syn03 reg */
 +			tmp = ssb_read32(dev, 0x89c);
 +			tmp |= 0x1;
