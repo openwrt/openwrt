@@ -17,8 +17,22 @@ UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
 UBINIZE_OPTS = -m 2048 -p 128KiB -s 512
 endif
 
+UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage.bin
+
+define kernel_entry
+0x$(shell $(TARGET_CROSS)nm $(1) 2>/dev/null | grep " kernel_entry" | cut -f1 -d ' ')
+endef
+
+
+define MkImageGzip
+	gzip -9 -c $(1) > $(1).gz
+	mkimage -A mips -O linux -T kernel -a 0x80010000 -C gzip \
+		-e $(call kernel_entry,$(LINUX_DIR)/vmlinux) -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $(1).gz $(2)
+endef
+
 define Image/BuildKernel
-	cp $(LINUX_DIR)/arch/mips/boot/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage.bin
+	$(call MkImageGzip,$(KDIR)/vmlinux,$(UIMAGE))
 endef
 
 define Image/Build/squashfs
