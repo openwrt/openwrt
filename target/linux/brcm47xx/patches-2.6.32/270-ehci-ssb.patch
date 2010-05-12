@@ -50,7 +50,7 @@
  
 --- /dev/null
 +++ b/drivers/usb/host/ehci-ssb.c
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,158 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom USB-core EHCI driver (SSB bus glue)
@@ -90,7 +90,6 @@
 +	return (struct ssb_ehci_device *)(hcd->hcd_priv);
 +}
 +
-+
 +static int ssb_ehci_reset(struct usb_hcd *hcd)
 +{
 +	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
@@ -115,54 +114,10 @@
 +	if (err)
 +		return err;
 +
-+	ehci_port_power(ehci, 0);
++	ehci_reset(ehci);
 +
 +	return err;
 +}
-+
-+static int ssb_ehci_start(struct usb_hcd *hcd)
-+{
-+	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
-+	int err;
-+
-+	err = ehci_run(hcd);
-+	if (err < 0) {
-+		ehci_err(ehci, "can't start\n");
-+		ehci_stop(hcd);
-+	}
-+
-+	return err;
-+}
-+
-+#ifdef CONFIG_PM
-+static int ssb_ehci_hcd_suspend(struct usb_hcd *hcd, pm_message_t message)
-+{
-+	struct ssb_ehci_device *ehcidev = hcd_to_ssb_ehci(hcd);
-+	struct ehci_hcd *ehci = &ehcidev->ehci;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&ehci->lock, flags);
-+
-+	ehci_writel(ehci, EHCI_INTR_MIE, &ehci->regs->intrdisable);
-+	ehci_readl(ehci, &ehci->regs->intrdisable); /* commit write */
-+
-+	/* make sure snapshot being resumed re-enumerates everything */
-+	if (message.event == PM_EVENT_PRETHAW)
-+		ehci_usb_reset(ehci);
-+
-+	clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
-+
-+	spin_unlock_irqrestore(&ehci->lock, flags);
-+	return 0;
-+}
-+
-+static int ssb_ehci_hcd_resume(struct usb_hcd *hcd)
-+{
-+	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
-+	usb_hcd_resume_root_hub(hcd);
-+	return 0;
-+}
-+#endif /* CONFIG_PM */
 +
 +static const struct hc_driver ssb_ehci_hc_driver = {
 +	.description		= "ssb-usb-ehci",
@@ -173,35 +128,37 @@
 +	.flags			= HCD_MEMORY | HCD_USB2,
 +
 +	.reset			= ssb_ehci_reset,
-+	.start			= ssb_ehci_start,
++	.start			= ehci_run,
 +	.stop			= ehci_stop,
 +	.shutdown		= ehci_shutdown,
-+
-+#ifdef CONFIG_PM
-+	.suspend		= ssb_ehci_hcd_suspend,
-+	.resume			= ssb_ehci_hcd_resume,
-+#endif
 +
 +	.urb_enqueue		= ehci_urb_enqueue,
 +	.urb_dequeue		= ehci_urb_dequeue,
 +	.endpoint_disable	= ehci_endpoint_disable,
++	.endpoint_reset		= ehci_endpoint_reset,
 +
 +	.get_frame_number	= ehci_get_frame,
 +
 +	.hub_status_data	= ehci_hub_status_data,
 +	.hub_control		= ehci_hub_control,
-+#ifdef CONFIG_PM
 +	.bus_suspend		= ehci_bus_suspend,
 +	.bus_resume		= ehci_bus_resume,
-+#endif
++	.relinquish_port	= ehci_relinquish_port,
++	.port_handed_over	= ehci_port_handed_over,
 +
++	.clear_tt_buffer_complete = ehci_clear_tt_buffer_complete,
 +};
 +
 +static void ssb_ehci_detach(struct ssb_device *dev, struct usb_hcd *hcd)
 +{
++	if (hcd->driver->shutdown)
++		hcd->driver->shutdown(hcd);
 +
 +	usb_remove_hcd(hcd);
++
 +	iounmap(hcd->regs);
++	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
++
 +	usb_put_hcd(hcd);
 +}
 +EXPORT_SYMBOL_GPL(ssb_ehci_detach);
