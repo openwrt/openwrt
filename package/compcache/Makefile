@@ -18,7 +18,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/compcache
+define KernelPackage/ramzswap
   SUBMENU:=Other modules
   DEPENDS:=@LINUX_2_6 @BUSYBOX_CONFIG_SWAPONOFF
   TITLE:=Driver for compressed ram swap device
@@ -26,9 +26,16 @@ define KernelPackage/compcache
   FILES:=$(PKG_BUILD_DIR)/ramzswap.$(LINUX_KMOD_SUFFIX) \
 	 $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.$(LINUX_KMOD_SUFFIX)
   URL:=http://code.google.com/p/compcache/
-  MENU:=1
 endef
 
+define Package/compcache
+  SECTION:=util
+  CATEGORY:=Utilities
+  DEPENDS:=+kmod-ramzswap
+  TITLE:=Compressed ram swap device
+  URL:=http://code.google.com/p/compcache/
+  MENU:=1
+endef
 
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
@@ -47,7 +54,7 @@ define Build/Compile
 	$(TARGET_CC) $(TARGET_CFLAGS) $(RZSCFLAGS) $(PKG_BUILD_DIR)/$(RZSC)/rzscontrol.c -o $(PKG_BUILD_DIR)/rzscontrol
 endef
 
-define KernelPackage/compcache/install
+define Package/compcache/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/compcache.config $(1)/etc/config/compcache
 	$(SED) 's,%ENABLED%,$(if $(CONFIG_COMPCACHE_ENABLE),1,0),g' \
@@ -60,8 +67,9 @@ define KernelPackage/compcache/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rzscontrol $(1)/sbin/rzscontrol
 endef
 
-define KernelPackage/compcache/config
+define Package/compcache/config
 	source "$(SOURCE)/Config.in"
 endef
 
-$(eval $(call KernelPackage,compcache))
+$(eval $(call BuildPackage,compcache))
+$(eval $(call KernelPackage,ramzswap))
