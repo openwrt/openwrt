@@ -12,7 +12,7 @@ PKG_VERSION:=1.2.3
 PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.zlib.net @SF/zlib
+PKG_SOURCE_URL:=http://www.zlib.net @SF/libpng
 PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
 
 include $(INCLUDE_DIR)/package.mk
