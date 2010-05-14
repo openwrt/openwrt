@@ -54,25 +54,32 @@ static struct mtd_partition nbg460n_partitions[] = {
 		.name		= "Bootbase",
 		.offset		= 0,
 		.size		= 0x010000,
+		.mask_flags	= MTD_WRITEABLE,
 	} , {
 		.name		= "U-Boot Config",
 		.offset		= 0x010000,
 		.size		= 0x030000,
-		.mask_flags	= MTD_WRITEABLE,
 	} , {
 		.name		= "U-Boot",
 		.offset		= 0x040000,
 		.size		= 0x030000,
+	} , {
+		.name		= "linux",
+		.offset		= 0x070000,
+		.size		= 0x0e0000,
+	} , {
+		.name		= "rootfs",
+		.offset		= 0x150000,
+		.size		= 0x2a0000,
+	} , {
+		.name		= "CalibData",
+		.offset		= 0x3f0000,
+		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
 	} , {
 		.name		= "firmware",
 		.offset		= 0x070000,
 		.size		= 0x380000,
-		.mask_flags	= MTD_WRITEABLE,
-	} , {
-		.name		= "CalibData",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
