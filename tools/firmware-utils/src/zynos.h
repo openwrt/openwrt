@@ -219,4 +219,7 @@ struct zyn_mmt_item {
 /* Atheros AR2318 based boards */
 #define ZYNOS_MODEL_NBG_318S		MID(59392)
 
+/* Atheros AR71xx based boards */
+#define ZYNOS_MODEL_NBG_460N		MID(61441)
+
 #endif /* _ZYNOS_H */
