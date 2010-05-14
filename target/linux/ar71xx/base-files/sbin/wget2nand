@@ -28,7 +28,7 @@ url=$1
 }
 
 url_kernel=$url/openwrt-ar71xx-vmlinux.elf
-url_rootfs=$url/openwrt-ar71xx-rootfs.tgz
+url_rootfs=$url/openwrt-ar71xx-rootfs.tar.gz
 
 mtd_kernel="$(find_mtd_part 'kernel')"
 mtd_rootfs="$(find_mtd_part 'rootfs')"
@@ -60,7 +60,10 @@ mount -t yaffs2 "$mtd_kernel" "$mnt_kernel"
 mount -t yaffs2 "$mtd_rootfs" "$mnt_rootfs"
 
 echo "Copying kernel..."
-cp $src_kernel $mnt_kernel/kernel
+cp $src_kernel $mnt_kernel/kernel || {
+       echo "Error occured while copying the kernel"
+       exit 1
+}
 chmod +x $mnt_kernel/kernel
 
 echo "Preparing filesystem..."
