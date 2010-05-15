@@ -1,5 +1,7 @@
---- a/drivers/char/random.c
-+++ b/drivers/char/random.c
+Index: linux-2.6.30.10/drivers/char/random.c
+===================================================================
+--- linux-2.6.30.10.orig/drivers/char/random.c	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/drivers/char/random.c	2010-05-15 15:44:19.000000000 +0200
 @@ -129,6 +129,9 @@
   *                                unsigned int value);
   * 	void add_interrupt_randomness(int irq);
@@ -24,7 +26,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -712,6 +722,61 @@ void add_disk_randomness(struct gendisk 
+@@ -712,6 +722,61 @@
  }
  #endif
  
@@ -86,9 +88,11 @@
  #define EXTRACT_SIZE 10
  
  /*********************************************************************
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -142,6 +142,7 @@ SYSCALL_DEFINE1(dup, unsigned int, filde
+Index: linux-2.6.30.10/fs/fcntl.c
+===================================================================
+--- linux-2.6.30.10.orig/fs/fcntl.c	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/fs/fcntl.c	2010-05-15 15:44:19.000000000 +0200
+@@ -142,6 +142,7 @@
  	}
  	return ret;
  }
@@ -96,8 +100,10 @@
  
  #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME)
  
---- a/include/linux/miscdevice.h
-+++ b/include/linux/miscdevice.h
+Index: linux-2.6.30.10/include/linux/miscdevice.h
+===================================================================
+--- linux-2.6.30.10.orig/include/linux/miscdevice.h	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/include/linux/miscdevice.h	2010-05-15 15:44:19.000000000 +0200
 @@ -12,6 +12,7 @@
  #define APOLLO_MOUSE_MINOR	7
  #define PC110PAD_MINOR		9
@@ -106,8 +112,10 @@
  #define WATCHDOG_MINOR		130	/* Watchdog timer     */
  #define TEMP_MINOR		131	/* Temperature Sensor */
  #define RTC_MINOR		135
---- a/include/linux/random.h
-+++ b/include/linux/random.h
+Index: linux-2.6.30.10/include/linux/random.h
+===================================================================
+--- linux-2.6.30.10.orig/include/linux/random.h	2009-12-04 07:00:07.000000000 +0100
++++ linux-2.6.30.10/include/linux/random.h	2010-05-15 15:44:19.000000000 +0200
 @@ -9,6 +9,7 @@
  
  #include <linux/types.h>
@@ -147,7 +155,7 @@
  struct rand_pool_info {
  	int	entropy_count;
  	int	buf_size;
-@@ -50,6 +75,10 @@ extern void add_input_randomness(unsigne
+@@ -50,6 +75,10 @@
  				 unsigned int value);
  extern void add_interrupt_randomness(int irq);
  
@@ -157,14 +165,4 @@
 +
  extern void get_random_bytes(void *buf, int nbytes);
  void generate_random_uuid(unsigned char uuid_out[16]);
- 
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -383,6 +383,7 @@ struct task_struct *find_task_by_pid_typ
- {
- 	return pid_task(find_pid_ns(nr, ns), type);
- }
-+EXPORT_SYMBOL(find_task_by_vpid);
- 
- EXPORT_SYMBOL(find_task_by_pid_type_ns);
  
