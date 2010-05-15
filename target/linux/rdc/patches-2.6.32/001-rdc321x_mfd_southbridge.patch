@@ -11,9 +11,11 @@ Changes from v2:
 - removed pci_dev accessors
 - use DEFINE_PCI_DEVICE_TABLE
 
---- a/drivers/mfd/Kconfig
-+++ b/drivers/mfd/Kconfig
-@@ -305,6 +305,15 @@ config EZX_PCAP
+Index: linux-2.6.32.10/drivers/mfd/Kconfig
+===================================================================
+--- linux-2.6.32.10.orig/drivers/mfd/Kconfig	2010-03-15 16:52:04.000000000 +0100
++++ linux-2.6.32.10/drivers/mfd/Kconfig	2010-05-15 21:48:27.000000000 +0200
+@@ -305,6 +305,15 @@
  	  This enables the PCAP ASIC present on EZX Phones. This is
  	  needed for MMC, TouchScreen, Sound, USB, etc..
  
@@ -29,16 +31,20 @@ Changes from v2:
  endmenu
  
  menu "Multimedia Capabilities Port drivers"
---- a/drivers/mfd/Makefile
-+++ b/drivers/mfd/Makefile
-@@ -50,3 +50,5 @@ obj-$(CONFIG_PCF50633_ADC)	+= pcf50633-a
+Index: linux-2.6.32.10/drivers/mfd/Makefile
+===================================================================
+--- linux-2.6.32.10.orig/drivers/mfd/Makefile	2010-03-15 16:52:04.000000000 +0100
++++ linux-2.6.32.10/drivers/mfd/Makefile	2010-05-15 21:48:27.000000000 +0200
+@@ -50,3 +50,5 @@
  obj-$(CONFIG_PCF50633_GPIO)	+= pcf50633-gpio.o
  obj-$(CONFIG_AB3100_CORE)	+= ab3100-core.o
  obj-$(CONFIG_AB3100_OTP)	+= ab3100-otp.o
 +
 +obj-$(CONFIG_MFD_RDC321X)	+= rdc321x-southbridge.o
---- /dev/null
-+++ b/drivers/mfd/rdc321x-southbridge.c
+Index: linux-2.6.32.10/drivers/mfd/rdc321x-southbridge.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.10/drivers/mfd/rdc321x-southbridge.c	2010-05-15 22:53:39.000000000 +0200
 @@ -0,0 +1,123 @@
 +/*
 + * RDC321x MFD southbrige driver
@@ -76,7 +82,7 @@ Changes from v2:
 +		.name	= "wdt-reg",
 +		.start	= RDC321X_WDT_CTRL,
 +		.end	= RDC321X_WDT_CTRL + 0x3,
-+		.flags	= IORESOURCE_MEM,
++		.flags	= IORESOURCE_IO,
 +	}
 +};
 +
@@ -89,12 +95,12 @@ Changes from v2:
 +		.name	= "gpio-reg1",
 +		.start	= RDC321X_GPIO_CTRL_REG1,
 +		.end	= RDC321X_GPIO_CTRL_REG1 + 0x7,
-+		.flags	= IORESOURCE_MEM,
++		.flags	= IORESOURCE_IO,
 +	}, {
 +		.name	= "gpio-reg2",
 +		.start	= RDC321X_GPIO_CTRL_REG2,
 +		.end	= RDC321X_GPIO_CTRL_REG2 + 0x7,
-+		.flags	= IORESOURCE_MEM,
++		.flags	= IORESOURCE_IO,
 +	}
 +};
 +
@@ -163,8 +169,10 @@ Changes from v2:
 +MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("RDC R-321x MFD southbridge driver");
---- /dev/null
-+++ b/include/linux/mfd/rdc321x.h
+Index: linux-2.6.32.10/include/linux/mfd/rdc321x.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.10/include/linux/mfd/rdc321x.h	2010-05-15 21:48:27.000000000 +0200
 @@ -0,0 +1,26 @@
 +#ifndef __RDC321X_MFD_H
 +#define __RDC321X_MFD_H
