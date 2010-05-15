@@ -1,0 +1,30 @@
+    AR7: use correct UART port type
+
+    PORT_AR7 has the correct TRIG flag (UART_FCR_R_TRIG_00) as well as UART_CAP_AFE
+    being set. This fixes kernel console on TNETD7300 revision 0x02 and has no side
+    effects on other revisions of the chip.
+
+    Signed-off-by: Florian Fainelli <florian@openwrt.org>
+
+Index: linux-2.6.32.12/arch/mips/ar7/platform.c
+===================================================================
+--- linux-2.6.32.12.orig/arch/mips/ar7/platform.c	2010-05-15 18:01:11.000000000 +0200
++++ linux-2.6.32.12/arch/mips/ar7/platform.c	2010-05-15 18:02:44.000000000 +0200
+@@ -509,7 +509,7 @@
+ 
+ 	memset(uart_port, 0, sizeof(struct uart_port) * 2);
+ 
+-	uart_port[0].type = PORT_16550A;
++	uart_port[0].type = PORT_AR7;
+ 	uart_port[0].line = 0;
+ 	uart_port[0].irq = AR7_IRQ_UART0;
+ 	uart_port[0].uartclk = ar7_bus_freq() / 2;
+@@ -524,7 +524,7 @@
+ 
+ 	/* Only TNETD73xx have a second serial port */
+ 	if (ar7_has_second_uart()) {
+-		uart_port[1].type = PORT_16550A;
++		uart_port[1].type = PORT_AR7;
+ 		uart_port[1].line = 1;
+ 		uart_port[1].irq = AR7_IRQ_UART1;
+ 		uart_port[1].uartclk = ar7_bus_freq() / 2;
