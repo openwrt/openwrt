@@ -9,3 +9,43 @@
  endif
  
  obj-$(CONFIG_COMPAT_BLUETOOTH) += net/bluetooth/
+--- a/config.mk
++++ b/config.mk
+@@ -9,7 +9,6 @@ ifeq ($(wildcard $(KLIB_BUILD)/.config),
+  CONFIG_PCI=y
+  CONFIG_USB=y
+  CONFIG_PCMCIA=y
+- CONFIG_SSB=m
+ else
+ include $(KLIB_BUILD)/.config
+ endif
+@@ -239,21 +238,6 @@ CONFIG_IPW2200_QOS=y
+ #
+ # % echo 1 > /sys/bus/pci/drivers/ipw2200/*/rtap_iface
+ 
+-ifneq ($(CONFIG_SSB),)
+-# Sonics Silicon Backplane
+-CONFIG_SSB_SPROM=y
+-# CONFIG_SSB_DEBUG=y
+-
+-CONFIG_SSB_BLOCKIO=y
+-CONFIG_SSB_PCIHOST=y
+-CONFIG_SSB_B43_PCI_BRIDGE=y
+-ifneq ($(CONFIG_PCMCIA),)
+-CONFIG_SSB_PCMCIAHOST=y
+-endif
+-# CONFIG_SSB_DEBUG=y
+-CONFIG_SSB_DRIVER_PCICORE=y
+-endif
+-
+ CONFIG_P54_PCI=m
+ 
+ # CONFIG_B44=m
+@@ -411,7 +395,6 @@ endif # end of SPI driver list
+ 
+ ifneq ($(CONFIG_MMC),)
+ 
+-CONFIG_SSB_SDIOHOST=y
+ CONFIG_B43_SDIO=y
+ CONFIG_WL1251_SDIO=m
+ 
