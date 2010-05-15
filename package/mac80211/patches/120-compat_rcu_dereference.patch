@@ -1,8 +1,8 @@
 --- a/include/linux/compat-2.6.34.h
 +++ b/include/linux/compat-2.6.34.h
-@@ -197,6 +197,8 @@ do {							\
-  */
- #define sysfs_bin_attr_init(bin_attr) sysfs_attr_init(&(bin_attr)->attr)
+@@ -200,6 +200,8 @@ do {							\
+ #define usb_alloc_coherent(dev, size, mem_flags, dma) usb_buffer_alloc(dev, size, mem_flags, dma)
+ #define usb_free_coherent(dev, size, addr, dma) usb_buffer_free(dev, size, addr, dma)
  
 +#define rcu_dereference_check(p, c) rcu_dereference(p)
 +
