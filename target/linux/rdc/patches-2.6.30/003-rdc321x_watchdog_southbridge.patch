@@ -106,13 +106,13 @@ Changes from v2:
 +	struct resource *r;
 +	struct rdc321x_wdt_pdata *pdata;
 +
-+	pdata = pdev->dev.platform_data;
++	pdata = pdev->dev.driver_data;
 +	if (!pdata) {
 +		dev_err(&pdev->dev, "no platform data supplied\n");
 +		return -ENODEV;
 +	}
 +
-+	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "wdt-reg");
++	r = platform_get_resource_byname(pdev, IORESOURCE_IO, "wdt-reg");
 +	if (!r) {
 +		dev_err(&pdev->dev, "failed to get wdt-reg resource\n");
 +		return -ENODEV;

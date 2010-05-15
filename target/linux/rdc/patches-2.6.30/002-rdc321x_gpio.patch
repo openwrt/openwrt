@@ -109,7 +109,7 @@ Changes from v2:
 +		gpch->data_reg[reg] &= ~(1 << (gpio & 0x1f));
 +
 +	pci_write_config_dword(gpch->sb_pdev,
-+			reg ? gpch->reg1_data_base : gpch->reg2_data_base,
++			reg ? gpch->reg2_data_base : gpch->reg1_data_base,
 +			gpch->data_reg[reg]);
 +}
 +
@@ -171,7 +171,7 @@ Changes from v2:
 +	struct rdc321x_gpio *rdc321x_gpio_dev;
 +	struct rdc321x_gpio_pdata *pdata;
 +
-+	pdata = pdev->dev.platform_data;
++	pdata = pdev->dev.driver_data;
 +	if (!pdata) {
 +		dev_err(&pdev->dev, "no platform data supplied\n");
 +		return -ENODEV;
@@ -183,7 +183,7 @@ Changes from v2:
 +		return -ENOMEM;
 +	}
 +
-+	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "gpio-reg1");
++	r = platform_get_resource_byname(pdev, IORESOURCE_IO, "gpio-reg1");
 +	if (!r) {
 +		dev_err(&pdev->dev, "failed to get gpio-reg1 resource\n");
 +		err = -ENODEV;
@@ -195,7 +195,7 @@ Changes from v2:
 +	rdc321x_gpio_dev->reg1_ctrl_base = r->start;
 +	rdc321x_gpio_dev->reg1_data_base = r->start + 0x4;
 +
-+	r = platform_get_resource_byname(pdev, IORESOURCE_MEM, "gpio-reg2");
++	r = platform_get_resource_byname(pdev, IORESOURCE_IO, "gpio-reg2");
 +	if (!r) {
 +		dev_err(&pdev->dev, "failed to get gpio-reg2 resource\n");
 +		err = -ENODEV;
