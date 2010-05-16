@@ -79,7 +79,6 @@ $(eval $(call KernelPackage,hwmon-lm90))
 
 define KernelPackage/hwmon-pc87360
   TITLE:=PC87360 monitoring support
-  DEPENDS:=@TARGET_x86
   KCONFIG:= \
 	CONFIG_SENSORS_PC87360 \
 	CONFIG_HWMON_VID
@@ -87,7 +86,7 @@ define KernelPackage/hwmon-pc87360
 	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,hwmon-vid pc87360)
-  $(call AddDepends/hwmon)
+  $(call AddDepends/hwmon,@TARGET_x86)
 endef
 
 define KernelPackage/hwmon-pc87360/description
@@ -99,7 +98,6 @@ $(eval $(call KernelPackage,hwmon-pc87360))
 
 define KernelPackage/hwmon-w83627hf
   TITLE:=Winbond W83627HF monitoring support
-  DEPENDS:=@TARGET_rdc||TARGET_x86
   KCONFIG:= \
 	CONFIG_SENSORS_W83627HF \
 	CONFIG_HWMON_VID
@@ -107,7 +105,7 @@ define KernelPackage/hwmon-w83627hf
 	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/hwmon/w83627hf.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,hwmon-vid w83627hf)
-$(call AddDepends/hwmon)
+$(call AddDepends/hwmon,@TARGET_rdc||TARGET_x86)
 endef
 
 define KernelPacakge/hwmon-w83627hf/description
