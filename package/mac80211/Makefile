@@ -644,7 +644,7 @@ define KernelPackage/b43/config
 
 	choice
 		prompt "b43 firmware version"
-		default B43_EXPERIMENTAL
+		default B43_STABLE
 		help
 		  This option allows you to select the version of the b43 firmware.
 
