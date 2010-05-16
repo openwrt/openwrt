@@ -159,7 +159,7 @@
 +		break;
 +	default:
 +		pr_info("RDC CPU: Unrecognised Customer ID (0x%x) please report to linux-kernel@vger.kernel.org\n", customer_id);
-+		return;
++		break;
 +	}
 +
 +	strcpy(c->x86_vendor_id, "RDC");
