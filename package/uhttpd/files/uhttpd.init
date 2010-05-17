@@ -48,7 +48,7 @@ start_instance()
 	UHTTPD_KEY=""
 
 	local cfg="$1"
-	local realm="$(uci get system.@system[0].hostname 2>/dev/null)"
+	local realm="$(uci_get system.@system[0].hostname)"
 	local listen http https
 
 	append_arg "$cfg" home "-h"
