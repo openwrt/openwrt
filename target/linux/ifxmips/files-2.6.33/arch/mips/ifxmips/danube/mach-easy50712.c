@@ -9,6 +9,7 @@
 #include <linux/input.h>
 
 #include <machine.h>
+#include <ifxmips.h>
 #include <ifxmips_prom.h>
 
 #include "devices.h"
@@ -60,8 +61,7 @@ easy50712_init(void)
 {
 	ifxmips_register_gpio();
 
-	//printk("ifxmips_register_gpio_dev\n");
-	//ifxmips_register_gpio_dev();
+	ifxmips_register_gpio_dev();
 
 	ifxmips_register_mtd(&easy50712_flash_data);
 
@@ -69,7 +69,7 @@ easy50712_init(void)
 
 	ifxmips_register_wdt();
 
-	danube_register_ethernet(ifxmips_ethaddr);
+	danube_register_ethernet(ifxmips_ethaddr, REV_MII_MODE);
 
 	danube_register_usb();
 }

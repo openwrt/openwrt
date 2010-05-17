@@ -78,8 +78,11 @@ ifxmips_get_cpu_hz(void)
 		return CLOCK_333M;
 	case 4:
 		return DDR_HZ;
+	case 8:
+		return DDR_HZ << 1;
+	default:
+		return DDR_HZ >> 1;
 	}
-	return DDR_HZ >> 1;
 }
 EXPORT_SYMBOL(ifxmips_get_cpu_hz);
 

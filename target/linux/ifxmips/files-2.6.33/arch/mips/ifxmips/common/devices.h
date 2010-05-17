@@ -1,6 +1,8 @@
 #ifndef _IFXMIPS_DEVICES_H__
 #define _IFXMIPS_DEVICES_H__
 
+#include <ifxmips_platform.h>
+
 void __init ifxmips_register_gpio_dev(void);
 void __init ifxmips_register_gpio_leds(struct gpio_led *leds, int cnt);
 void __init ifxmips_register_leds(struct gpio_led *leds, int cnt);
