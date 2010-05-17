@@ -46,7 +46,7 @@ delif() {
 	for ifc in $interfaces; do
 		config_get iftype "$ifc" type
 		config_get ifs "$ifc" device
-		confdevs="$(uci get network.$ifc.ifname)"
+		confdevs="$(uci_get network.$ifc.ifname)"
 		for dev in $ifs; do
 			[ "${dev%%\.*}" = "$INTERFACE" ] && {
 				list_contains confdevs "$dev" || list_remove ifs "$dev"
