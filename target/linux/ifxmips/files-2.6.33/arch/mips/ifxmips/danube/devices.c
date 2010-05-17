@@ -20,6 +20,8 @@
 #include <ifxmips.h>
 #include <ifxmips_irq.h>
 
+#include "devices.h"
+
 /* usb */
 static struct resource dwc_usb_res[] =
 {
@@ -84,10 +86,16 @@ static struct platform_device danube_ethernet =
 };
 
 void __init
-danube_register_ethernet(unsigned char *mac)
+danube_register_ethernet(unsigned char *mac, int mii_mode)
 {
+	struct ifxmips_eth_data *eth = kmalloc(sizeof(struct ifxmips_eth_data), GFP_KERNEL);
+	memset(eth, 0, sizeof(struct ifxmips_eth_data));
 	if(mac)
-		danube_ethernet.dev.platform_data = mac;
+		eth->mac = mac;
+	else
+		eth->mac = ifxmips_ethaddr;
+	eth->mii_mode = mii_mode;
+	danube_ethernet.dev.platform_data = eth;
 	platform_device_register(&danube_ethernet);
 }
 

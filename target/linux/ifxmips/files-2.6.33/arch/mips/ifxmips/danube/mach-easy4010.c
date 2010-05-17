@@ -9,6 +9,7 @@
 #include <linux/input.h>
 
 #include <machine.h>
+#include <ifxmips.h>
 #include <ifxmips_prom.h>
 
 #include "devices.h"
@@ -68,7 +69,7 @@ easy4010_init(void)
 
 	ifxmips_register_wdt();
 
-	danube_register_ethernet(ifxmips_ethaddr);
+	danube_register_ethernet(ifxmips_ethaddr, REV_MII_MODE);
 
 	danube_register_usb();
 }

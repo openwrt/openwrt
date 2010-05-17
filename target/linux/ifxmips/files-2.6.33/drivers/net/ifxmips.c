@@ -41,6 +41,7 @@
 #include <ifxmips.h>
 #include <ifxmips_dma.h>
 #include <ifxmips_pmu.h>
+#include <ifxmips_platform.h>
 
 struct ifxmips_mii_priv {
 	struct net_device_stats stats;
@@ -267,11 +268,6 @@ void ifxmips_etop_dma_buffer_free(unsigned char *dataptr, void *opt)
 	}
 }
 
-static struct net_device_stats *ifxmips_get_stats(struct net_device *dev)
-{
-	return &((struct ifxmips_mii_priv *)netdev_priv(dev))->stats;
-}
-
 static void
 ifxmips_adjust_link(struct net_device *dev)
 {
@@ -436,12 +432,12 @@ static int
 ifxmips_mii_probe(struct platform_device *dev)
 {
 	int result = 0;
-	unsigned char *mac = (unsigned char *)dev->dev.platform_data;
+	struct ifxmips_eth_data *eth = (struct ifxmips_eth_data*)dev->dev.platform_data;
 	ifxmips_mii0_dev = alloc_etherdev(sizeof(struct ifxmips_mii_priv));
 	ifxmips_mii0_dev->netdev_ops = &ifxmips_eth_netdev_ops;
-	memcpy(mac_addr, mac, 6);
+	memcpy(mac_addr, eth->mac, 6);
 	strcpy(ifxmips_mii0_dev->name, "eth%d");
-	ifxmips_mii_chip_init(REV_MII_MODE);
+	ifxmips_mii_chip_init(eth->mii_mode);
 	result = register_netdev(ifxmips_mii0_dev);
 	if (result) {
 		printk(KERN_INFO "ifxmips_mii0: error %i registering device \"%s\"\n", result, ifxmips_mii0_dev->name);
