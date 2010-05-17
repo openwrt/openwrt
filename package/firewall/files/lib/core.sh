@@ -66,6 +66,11 @@ fw_stop() {
 
 	uci_revert_state firewall
 	config_clear
+
+	local h
+	for h in $FW_HOOKS; do unset $h; done
+
+	unset FW_HOOKS
 	unset FW_INITIALIZED
 }
 
@@ -126,8 +131,10 @@ fw_init() {
 		. $file
 		for hk in $hooks; do
 			for pp in pre post; do
-				type ${lib}_${pp}_${hk}_cb >/dev/null &&
+				type ${lib}_${pp}_${hk}_cb >/dev/null && {
 					append FW_CB_${pp}_${hk} ${lib}
+					append FW_HOOKS FW_CB_${pp}_${hk}
+				}
 			done
 		done
 	done
