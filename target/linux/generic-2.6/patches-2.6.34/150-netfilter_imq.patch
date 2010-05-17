@@ -945,7 +945,7 @@
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
  #include <linux/stat.h>
-@@ -1860,7 +1863,11 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -1859,7 +1862,11 @@ int dev_hard_start_xmit(struct sk_buff *
  	int rc = NETDEV_TX_OK;
  
  	if (likely(!skb->next)) {
@@ -958,7 +958,7 @@
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-@@ -1970,8 +1977,7 @@ static inline u16 dev_cap_txqueue(struct
+@@ -1969,8 +1976,7 @@ static inline u16 dev_cap_txqueue(struct
  	return queue_index;
  }
  
@@ -968,7 +968,7 @@
  {
  	u16 queue_index;
  	struct sock *sk = skb->sk;
-@@ -2001,6 +2007,7 @@ static struct netdev_queue *dev_pick_tx(
+@@ -2000,6 +2006,7 @@ static struct netdev_queue *dev_pick_tx(
  	skb_set_queue_mapping(skb, queue_index);
  	return netdev_get_tx_queue(dev, queue_index);
  }
@@ -1183,7 +1183,7 @@
  /* return EBUSY when somebody else is registered, return EEXIST if the
   * same handler is registered, return 0 in case of success. */
  int nf_register_queue_handler(u_int8_t pf, const struct nf_queue_handler *qh)
-@@ -81,7 +101,7 @@ void nf_unregister_queue_handlers(const
+@@ -81,7 +101,7 @@ void nf_unregister_queue_handlers(const 
  }
  EXPORT_SYMBOL_GPL(nf_unregister_queue_handlers);
  
