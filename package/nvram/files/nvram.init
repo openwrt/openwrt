@@ -52,7 +52,13 @@ fixup_linksys() {
 			}
 		;;
 		"1071") #0x042f
-			nvram_set sdram_init "$(printf 0x%04x $(( $(/usr/sbin/nvram get sdram_init) | 0x0009 )))"
+			# do sanity check first! max 0x0011 = 128mb
+			SDRAM_INIT=$(printf %d $(/usr/sbin/nvram get sdram_init))
+			[ "$SDRAM_INIT" -lt "9" -o "$SDRAM_INIT" -gt "17" ] && {
+				# set this to default: 0x09 only if value is invaild like 16MB on Asus WL-500GP
+				echo "sdram_init is invaild: $(printf 0x%04x $SDRAM_INIT), force to default!"
+				$(/usr/sbin/nvram_set sdram_init "0x0009")
+			}
 			[ "$COMMIT" = 1 ] && {
 				nvram_set sdram_ncdl 0x0
 			}
