@@ -9,11 +9,20 @@
 
 . /lib/firewall/core.sh
 fw_init
-fw_is_loaded || exit 0
+
+# Wait for firewall if startup is in progress
+lock -w /var/lock/firewall.start
 
 case "$ACTION" in
 	ifup)
-		fw_configure_interface "$INTERFACE" add "$DEVICE" ;;
+		fw_is_loaded && {
+			fw_configure_interface "$INTERFACE" add "$DEVICE" &
+		} || {
+			/etc/init.d/firewall enabled && fw_start &
+		}
+	;;
 	ifdown)
-		fw_configure_interface "$INTERFACE" del "$DEVICE" ;;
+		fw_is_loaded && fw_configure_interface "$INTERFACE" del "$DEVICE" &
+	;;
 esac
+

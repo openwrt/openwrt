@@ -8,6 +8,8 @@ include /lib/network
 fw_start() {
 	fw_init
 
+	lock /var/lock/firewall.start
+
 	FW_DEFAULTS_APPLIED=
 
 	fw_is_loaded && {
@@ -49,6 +51,8 @@ fw_start() {
 	fw_callback post core
 
 	uci_set_state firewall core loaded 1
+
+	lock -u /var/lock/firewall.start
 }
 
 fw_stop() {
@@ -75,9 +79,8 @@ fw_reload() {
 }
 
 fw_is_loaded() {
-	local bool
-	config_get_bool bool core loaded 0
-	return $((! $bool))
+	local bool=$(uci -q -P /var/state get firewall.core.loaded)
+	return $((! ${bool:-0}))
 }
 
 
