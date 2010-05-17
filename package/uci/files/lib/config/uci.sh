@@ -1,6 +1,7 @@
 #!/bin/sh
 # Shell script compatibility wrappers for /sbin/uci
 #
+# Copyright (C) 2008-2010  OpenWrt.org
 # Copyright (C) 2008  Felix Fietkau <nbd@openwrt.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -41,9 +42,9 @@ uci_load() {
 
 uci_set_default() {
 	local PACKAGE="$1"
-	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -q show "$1" > /dev/null && return 0
-	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} import "$1"
-	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} commit "$1"
+	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -q show "$PACKAGE" > /dev/null && return 0
+	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} import "$PACKAGE"
+	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} commit "$PACKAGE"
 }
 
 uci_revert_state() {
@@ -71,6 +72,23 @@ uci_set() {
 	local VALUE="$4"
 
 	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} set "$PACKAGE.$CONFIG.$OPTION=$VALUE"
+}
+
+uci_get_state() {
+	uci_get "$1" "$2" "$3" "$4" "/var/state"
+}
+
+uci_get() {
+	local PACKAGE="$1"
+	local CONFIG="$2"
+	local OPTION="$3"
+	local DEFAULT="$4"
+	local STATE="$5"
+
+	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} ${STATE:+-P $STATE} -q get "$PACKAGE${CONFIG:+.$CONFIG}${OPTION:+.$OPTION}"
+	RET="$?"
+	[ "$RET" -ne 0 ] && [ -n "$DEFAULT" ] && echo "$DEFAULT"
+	return "$RET"
 }
 
 uci_add() {
