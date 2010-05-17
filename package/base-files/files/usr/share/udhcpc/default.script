@@ -11,11 +11,6 @@ change_state () {
 	uci_set_state "$1" "$2" "$3" "$4"
 }
 
-uci_get() {
-	[ -n "$ifc" ] || return
-	uci -P /dev/null get "$1" 2>/dev/null
-}
-
 setup_interface () {
 	local old_ip
 	local old_broadcast
