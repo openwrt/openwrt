@@ -84,7 +84,7 @@ fw_reload() {
 }
 
 fw_is_loaded() {
-	local bool=$(uci -q -P /var/state get firewall.core.loaded)
+	local bool=$(uci_get_state firewall.core.loaded)
 	return $((! ${bool:-0}))
 }
 
