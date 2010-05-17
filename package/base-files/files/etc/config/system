@@ -3,10 +3,4 @@ config system
 	option timezone	UTC
 
 config rdate
-	list server ac-ntp0.net.cmu.edu
-	list server ptbtime1.ptb.de
-	list server ac-ntp1.net.cmu.edu
-	list server ntp.xs4all.nl
-	list server ptbtime2.ptb.de
-	list server cudns.cit.cornell.edu
-	list server ptbtime3.ptb.de
+	option interface	wan

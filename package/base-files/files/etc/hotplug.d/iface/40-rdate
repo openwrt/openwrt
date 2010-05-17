@@ -1,46 +1,63 @@
-uci_get_one()
+IFACE_GLOBAL=$(uci_get "system.@rdate[0].interface")
+SERVERS=
+MAX=0
+SYNCED=
+
+do_rdate()
 {
-	for var in "$@"; do
-		uci -P /var/state get "$var" 2>/dev/null && break
-	done
+	local server="$1"
+
+	rdate -s "$server" >/dev/null 2>/dev/null && {
+		logger -t rdate "Synced with $server"
+		SYNCED="$server"
+	} || {
+		logger -t rdate "Failed to sync with $server"
+	}
 }
 
-rand()
+add_server()
 {
-	random=$(awk 'BEGIN { srand(); print int(rand() * 10 + 1); }')
+	local section="$1"
+
+	local server
+	config_get server "$section" hostname
+	[ -z "$server" ] && return
+
+	local iface
+	config_get iface "$section" interface
+	[ -z "$iface" ] && iface=$IFACE_GLOBAL
+	[ -n "$iface" ] && {
+		[ "$iface" = "$INTERFACE" ] || return
+	}
+
+	SERVERS="${SERVERS} $server"; : $((MAX++))
 }
 
-sync_rdate()
+sync_time()
 {
-	local servers=$(uci_get_one "network.$INTERFACE.lease_timesrv" \
-		"system.@rdate[0].server")
+	local server
+	server=$(uci_get_state "network.$INTERFACE.lease_timesrv")
+	[ -n "$server" ] && do_rdate "$server"
+	[ -n "$SYNCED" ] && return
 
-	if [ -n "$servers" ]; then
-		match=0
-		tries=3
-		rand
+	config_load timeserver
+	config_foreach add_server timeserver
 
-		while [ $match = 0 ] && [ $tries != 0 ]; do
-			for server in $servers; do
-				if [ $((--random)) = 0 ]; then
-					rdate -s $server >/dev/null 2>/dev/null && {
-						logger -t rdate "Synced with $server"
-						match=1
-					} || {
-						logger -t rdate "Failed to sync with $server"
-						let tries="$tries - 1"
-						rand
-					}
-
-					break
-				fi
-			done
+	local servers
+	while [ $MAX -gt 0 ] && [ -z "$SYNCED" ]; do
+		unset servers; random=$(awk "BEGIN { srand(); print int(rand() * $MAX + 1); }")
+		for server in $SERVERS; do
+			[ $((--random)) -eq 0 ] && { do_rdate "$server"; continue; }
+			servers="${servers} $server"
 		done
-	else
-		logger -t rdate "No usable time server found"
-	fi
+		SERVERS="${servers}"; : $((MAX--))
+	done
+
+	[ -z "$SYNCED" ] && logger -t rdate "No usable time server for $INTERFACE found"
 }
 
-case "$ACTION" in
-	ifup) route -n | grep -q ^0.0.0.0 && sync_rdate;;
+case "${ACTION:-ifup}" in
+	ifup)
+		sync_time
+	;;
 esac
