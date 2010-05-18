@@ -8,14 +8,15 @@ include /lib/network
 fw_start() {
 	fw_init
 
-	lock /var/lock/firewall.start
-
 	FW_DEFAULTS_APPLIED=
 
 	fw_is_loaded && {
 		echo "firewall already loaded" >&2
 		exit 1
 	}
+
+	lock /var/lock/firewall.start
+
 	uci_set_state firewall core "" firewall_state
 
 	fw_clear DROP
@@ -93,6 +94,7 @@ fw_die() {
 	echo "Error:" "$@" >&2
 	fw_log error "$@"
 	fw_stop
+	lock -u /var/lock/firewall.start
 	exit 1
 }
 
