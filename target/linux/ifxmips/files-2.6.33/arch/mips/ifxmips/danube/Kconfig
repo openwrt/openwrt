@@ -4,7 +4,7 @@ config IFXMIPS_ARCAYDIAN_BRNBOOT
 	bool
 	default n
 
-menu "infineon SoC machine selection"
+menu "Infineon SoC machine selection"
 
 config DANUBE_MACH_EASY50712
 	bool "Easy50712"
@@ -19,8 +19,13 @@ config DANUBE_MACH_ARV4519
 	default y
 	select DANUBE_ARCAYDIAN_BRNBOOT
 
-config DANUBE_MACH_ARV452
-	bool "ARV452"
+config DANUBE_MACH_ARV4520
+	bool "ARV4520"
+	default y
+	select IFXMIPS_ARCAYDIAN_BRNBOOT
+
+config DANUBE_MACH_ARV4525
+	bool "ARV4525"
 	default y
 	select IFXMIPS_ARCAYDIAN_BRNBOOT
 
