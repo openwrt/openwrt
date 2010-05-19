@@ -15,8 +15,6 @@ fw_start() {
 		exit 1
 	}
 
-	lock /var/lock/firewall.start
-
 	uci_set_state firewall core "" firewall_state
 
 	fw_clear DROP
@@ -52,8 +50,6 @@ fw_start() {
 	fw_callback post core
 
 	uci_set_state firewall core loaded 1
-
-	lock -u /var/lock/firewall.start
 }
 
 fw_stop() {
@@ -94,7 +90,6 @@ fw_die() {
 	echo "Error:" "$@" >&2
 	fw_log error "$@"
 	fw_stop
-	lock -u /var/lock/firewall.start
 	exit 1
 }
 
