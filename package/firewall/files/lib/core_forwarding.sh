@@ -7,6 +7,7 @@ fw_config_get_forwarding() {
 		string name "" \
 		string src "" \
 		string dest "" \
+		string family "" \
 	} || return
 	[ -n "$forwarding_name" ] || forwarding_name=$forwarding__name
 }
@@ -26,7 +27,9 @@ fw_load_forwarding() {
 		target=zone_${forwarding_dest}_ACCEPT
 	}
 
-	fw add i f $chain $target ^
+	local mode=$(fw_get_family_mode ${forwarding_family:-x} ${forwarding_dest:-${forwarding_src:--}} i)
+
+	fw add $mode f $chain $target ^
 
 	# propagate masq zone flag
 	[ -n "$forwarding_src" ] && list_contains CONNTRACK_ZONES $forwarding_src && {
