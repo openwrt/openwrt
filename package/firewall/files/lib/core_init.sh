@@ -16,6 +16,9 @@ FW_DEFAULT_INPUT_POLICY=REJECT
 FW_DEFAULT_OUTPUT_POLICY=REJECT
 FW_DEFAULT_FORWARD_POLICY=REJECT
 
+FW_DISABLE_IPV4=0
+FW_DISABLE_IPV6=0
+
 
 fw_load_defaults() {
 	fw_config_get_section "$1" defaults { \
@@ -34,6 +37,7 @@ fw_load_defaults() {
 		boolean accept_redirects 0 \
 		boolean accept_source_route 0 \
 		boolean custom_chains 1 \
+		boolean disable_ipv6 0 \
 	} || return
 	[ -n "$FW_DEFAULTS_APPLIED" ] && {
 		echo "Error: multiple defaults sections detected"
@@ -49,6 +53,8 @@ fw_load_defaults() {
 
 	FW_ACCEPT_REDIRECTS=$defaults_accept_redirects
 	FW_ACCEPT_SRC_ROUTE=$defaults_accept_source_route
+
+	FW_DISABLE_IPV6=$defaults_disable_ipv6
 
 	fw_callback pre defaults
 
@@ -96,7 +102,7 @@ fw_load_defaults() {
 		fw add i f forwarding_rule
 		fw add i n prerouting_rule
 		fw add i n postrouting_rule
-			
+
 		fw add i f INPUT       input_rule
 		fw add i f OUTPUT      output_rule
 		fw add i f FORWARD     forwarding_rule
