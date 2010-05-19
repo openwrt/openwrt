@@ -155,7 +155,14 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 		fi
 	fi
 	while [ $# -gt 1 ]; do
-		echo -n  "$1"
+		case "$app:$1" in
+			ip6tables:--icmp-type) echo -n "--icmpv6-type" ;;
+			ip6tables:icmp|ip6tables:ICMP) echo -n "icmpv6" ;;
+			iptables:--icmpv6-type) echo -n "--icmp-type" ;;
+			iptables:icmpv6) echo -n "icmp" ;;
+			*:}|*:{) shift; continue ;;
+			*) echo -n "$1" ;;
+		esac
 		echo -ne "\0"
 		shift
 	done | xargs -0 ${FW_TRACE:+-t} \
@@ -178,5 +185,26 @@ fw_get_port_range() {
 	else
 		echo "$first"
 	fi
+}
+
+fw_get_family_mode() {
+	local hint="$1"
+	local zone="$2"
+	local mode="$3"
+
+	local ipv4 ipv6
+	[ -n "$FW_ZONES4$FW_ZONES6" ] && {
+		list_contains FW_ZONES4 $zone && ipv4=1 || ipv4=0
+		list_contains FW_ZONES6 $zone && ipv6=1 || ipv6=0
+	} || {
+		ipv4=$(uci_get_state firewall core ${zone}_ipv4 0)
+		ipv6=$(uci_get_state firewall core ${zone}_ipv6 0)
+	}
+
+	case "$hint:$ipv4:$ipv6" in
+		*4:1:*|*:1:0) echo 4 ;;
+		*6:*:1|*:0:1) echo 6 ;;
+		*) echo $mode ;;
+	esac
 }
 

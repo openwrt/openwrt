@@ -16,6 +16,7 @@ fw_config_get_redirect() {
 		string dest_mac "" \
 		string dest_port "" \
 		string proto "tcpudp" \
+		string family "" \
 	} || return
 	[ -n "$redirect_name" ] || redirect_name=$redirect__name
 }
@@ -29,6 +30,8 @@ fw_load_redirect() {
 		fw_die "redirect ${redirect_name}: needs src and dest_ip"
 	}
 
+	local mode=$(fw_get_family_mode ${redirect_family:-x} $redirect_src I)
+
 	local nat_dest_port=$redirect_dest_port
 	redirect_dest_port=$(fw_get_port_range $redirect_dest_port)
 	redirect_src_port=$(fw_get_port_range $redirect_src_port)
@@ -37,7 +40,7 @@ fw_load_redirect() {
 
 	[ "$redirect_proto" == "tcpudp" ] && redirect_proto="tcp udp"
 	for redirect_proto in $redirect_proto; do
-		fw add I n zone_${redirect_src}_prerouting DNAT $ { $redirect_src_ip $redirect_dest_ip } { \
+		fw add $mode n zone_${redirect_src}_prerouting DNAT $ { $redirect_src_ip $redirect_dest_ip } { \
 			${redirect_proto:+-p $redirect_proto} \
 			${redirect_src_ip:+-s $redirect_src_ip} \
 			${redirect_src_dip:+-d $redirect_src_dip} \
@@ -47,7 +50,7 @@ fw_load_redirect() {
 			--to-destination ${redirect_dest_ip}${redirect_dest_port:+:$nat_dest_port} \
 		}
 
-		fw add I f zone_${redirect_src}_forward ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
+		fw add $mode f zone_${redirect_src}_forward ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
 			-d $redirect_dest_ip \
 			${redirect_proto:+-p $redirect_proto} \
 			${redirect_src_ip:+-s $redirect_src_ip} \

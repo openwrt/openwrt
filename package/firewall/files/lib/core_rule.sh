@@ -16,6 +16,7 @@ fw_config_get_rule() {
 		string icmp_type "" \
 		string proto "tcpudp" \
 		string target "" \
+		string family "" \
 	} || return
 	[ -n "$rule_name" ] || rule_name=$rule__name
 	[ "$rule_proto" == "icmp" ] || rule_icmp_type=
@@ -49,9 +50,11 @@ fw_load_rule() {
 	local rule_pos
 	eval 'rule_pos=$((++FW__RULE_COUNT_'$chain'))'
 
+	local mode=$(fw_get_family_mode ${rule_family:-x} $rule_src I)
+
 	[ "$rule_proto" == "tcpudp" ] && rule_proto="tcp udp"
 	for rule_proto in $rule_proto; do
-		fw add I f $chain $target $rule_pos { $rule_src_ip $rule_dest_ip } { \
+		fw add $mode f $chain $target $rule_pos { $rule_src_ip $rule_dest_ip } { \
 			${rule_proto:+-p $rule_proto} \
 			${rule_src_ip:+-s $rule_src_ip} \
 			${rule_src_port:+--sport $rule_src_port} \

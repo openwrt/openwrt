@@ -17,23 +17,26 @@ fw_configure_interface() {
 
 	fw__do_rules() {
 		local action=$1
-		local chain=$2
+		local zone=$2
+		local chain=zone_${zone}
 		local ifname=$3
 
-		fw $action i f ${chain}_ACCEPT ACCEPT ^ { -o "$ifname" }
-		fw $action i f ${chain}_ACCEPT ACCEPT ^ { -i "$ifname" }
-		fw $action i f ${chain}_DROP   DROP   ^ { -o "$ifname" }
-		fw $action i f ${chain}_DROP   DROP   ^ { -i "$ifname" }
-		fw $action i f ${chain}_REJECT reject ^ { -o "$ifname" }
-		fw $action i f ${chain}_REJECT reject ^ { -i "$ifname" }
+		local mode=$(fw_get_family_mode x $zone i)
 
-		fw $action i n ${chain}_nat MASQUERADE ^ { -o "$ifname" }
-		fw $action i f ${chain}_MSSFIX TCPMSS  ^ { -o "$ifname" -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu }
+		fw $action $mode f ${chain}_ACCEPT ACCEPT ^ { -o "$ifname" }
+		fw $action $mode f ${chain}_ACCEPT ACCEPT ^ { -i "$ifname" }
+		fw $action $mode f ${chain}_DROP   DROP   ^ { -o "$ifname" }
+		fw $action $mode f ${chain}_DROP   DROP   ^ { -i "$ifname" }
+		fw $action $mode f ${chain}_REJECT reject ^ { -o "$ifname" }
+		fw $action $mode f ${chain}_REJECT reject ^ { -i "$ifname" }
 
-		fw $action i f input   ${chain}         $ { -i "$ifname" }
-		fw $action i f forward ${chain}_forward $ { -i "$ifname" }
-		fw $action i n PREROUTING ${chain}_prerouting ^ { -i "$ifname" }
-		fw $action i r PREROUTING ${chain}_notrack    ^ { -i "$ifname" }
+		fw $action $mode n ${chain}_nat MASQUERADE ^ { -o "$ifname" }
+		fw $action $mode f ${chain}_MSSFIX TCPMSS  ^ { -o "$ifname" -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu }
+
+		fw $action $mode f input   ${chain}         $ { -i "$ifname" }
+		fw $action $mode f forward ${chain}_forward $ { -i "$ifname" }
+		fw $action $mode n PREROUTING ${chain}_prerouting ^ { -i "$ifname" }
+		fw $action $mode r PREROUTING ${chain}_notrack    ^ { -i "$ifname" }
 	}
 
 	local old_zones old_ifname
@@ -42,7 +45,7 @@ fw_configure_interface() {
 		config_get old_ifname core "${iface}_ifname"
 		for z in $old_zones; do
 			fw_log info "removing $iface ($old_ifname) from zone $z"
-			fw__do_rules del zone_$z $old_ifname
+			fw__do_rules del $z $old_ifname
 
 			ACTION=remove ZONE="$z" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
 		done
@@ -57,7 +60,7 @@ fw_configure_interface() {
 		list_contains zone_network "$iface" || return
 
 		fw_log info "adding $iface ($ifname) to zone $zone_name"
-		fw__do_rules add zone_${zone_name} "$ifname"
+		fw__do_rules add ${zone_name} "$ifname"
 		append new_zones $zone_name
 
 		ACTION=add ZONE="$zone_name" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall

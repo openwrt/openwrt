@@ -4,6 +4,8 @@
 FW_INITIALIZED=
 
 FW_ZONES=
+FW_ZONES4=
+FW_ZONES6=
 FW_CONNTRACK_ZONES=
 FW_NOTRACK_DISABLED=
 
@@ -140,6 +142,7 @@ fw_config_get_zone() {
 		boolean conntrack 0 \
 		boolean mtu_fix 0 \
 		boolean custom_chains "$FW_ADD_CUSTOM_CHAINS" \
+		string family "" \
 	} || return
 	[ -n "$zone_name" ] || zone_name=$zone_NAME
 	[ -n "$zone_network" ] || zone_network=$zone_name
@@ -158,46 +161,67 @@ fw_load_zone() {
 	[ $zone_conntrack = 1 -o $zone_masq = 1 ] && \
 		append FW_CONNTRACK_ZONES "$zone_NAME"
 
+	local mode
+	case "$zone_family" in
+		*4)
+			mode=4
+			append FW_ZONES4 $zone_name
+			uci_set_state firewall core ${zone_name}_ipv4 1
+		;;
+		*6)
+			mode=6
+			append FW_ZONES6 $zone_name
+			uci_set_state firewall core ${zone_name}_ipv6 1
+		;;
+		*)
+			mode=i
+			append FW_ZONES4 $zone_name
+			append FW_ZONES6 $zone_name
+			uci_set_state firewall core ${zone_name}_ipv4 1
+			uci_set_state firewall core ${zone_name}_ipv6 1
+		;;
+	esac
+
 	local chain=zone_${zone_name}
 
-	fw add i f ${chain}_ACCEPT
-	fw add i f ${chain}_DROP
-	fw add i f ${chain}_REJECT
-	fw add i f ${chain}_MSSFIX
+	fw add $mode f ${chain}_ACCEPT
+	fw add $mode f ${chain}_DROP
+	fw add $mode f ${chain}_REJECT
+	fw add $mode f ${chain}_MSSFIX
 
 	# TODO: Rename to ${chain}_input
-	fw add i f ${chain}
-	fw add i f ${chain} ${chain}_${zone_input} $
+	fw add $mode f ${chain}
+	fw add $mode f ${chain} ${chain}_${zone_input} $
 
-	fw add i f ${chain}_forward
-	fw add i f ${chain}_forward ${chain}_${zone_forward} $
+	fw add $mode f ${chain}_forward
+	fw add $mode f ${chain}_forward ${chain}_${zone_forward} $
 
 	# TODO: add ${chain}_output
-	fw add i f output ${chain}_${zone_output} $
+	fw add $mode f output ${chain}_${zone_output} $
 
 	# TODO: Rename to ${chain}_MASQUERADE
-	fw add i n ${chain}_nat
-	fw add i n ${chain}_prerouting
+	fw add $mode n ${chain}_nat
+	fw add $mode n ${chain}_prerouting
 
-	fw add i r ${chain}_notrack
+	fw add $mode r ${chain}_notrack
 	[ $zone_masq == 1 ] && \
-		fw add i n POSTROUTING ${chain}_nat $
+		fw add $mode n POSTROUTING ${chain}_nat $
 
 	[ $zone_mtu_fix == 1 ] && \
-		fw add i f FORWARD ${chain}_MSSFIX ^
+		fw add $mode f FORWARD ${chain}_MSSFIX ^
 
 	[ $zone_custom_chains == 1 ] && {
 		[ $FW_ADD_CUSTOM_CHAINS == 1 ] || \
 			fw_die "zone ${zone_name}: custom_chains globally disabled"
 
-		fw add i f input_${zone_name}
-		fw add i f ${chain} input_${zone_name} ^
+		fw add $mode f input_${zone_name}
+		fw add $mode f ${chain} input_${zone_name} ^
 
-		fw add i f forwarding_${zone_name}
-		fw add i f ${chain}_forward forwarding_${zone_name} ^
+		fw add $mode f forwarding_${zone_name}
+		fw add $mode f ${chain}_forward forwarding_${zone_name} ^
 
-		fw add i n prerouting_${zone_name}
-		fw add i n ${chain}_prerouting prerouting_${zone_name} ^
+		fw add $mode n prerouting_${zone_name}
+		fw add $mode n ${chain}_prerouting prerouting_${zone_name} ^
 	}
 
 	fw_callback post zone
