@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 
 START=45
 
@@ -9,8 +9,6 @@ fw() {
 	. $FW_LIBDIR/core.sh
 	fw_$1
 }
-
-boot() { :; }
 
 start() {
 	fw start

@@ -5,14 +5,12 @@ fw_configure_interface() {
 	local action=$2
 	local ifname=$3
 
-	local status;
-	config_get_bool status "$iface" up "0"
-	[ "$status" == 1 ] || return 0
-
-	[ -n "$ifname" ] || {
-		config_get ifname "$iface" ifname
-		ifname=${ifname:-$iface}
+	[ "$action" == "add" ] && {
+		local status=$(uci_get_state network "$iface" up 0)
+		[ "$status" == 1 ] || return 0
 	}
+
+	[ -n "$ifname" ] || ifname=$(uci_get_state network "$iface" ifname "$iface")
 	[ "$ifname" == "lo" ] && return 0
 
 	fw_callback pre interface
