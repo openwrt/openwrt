@@ -72,7 +72,7 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 		if [ $tab == '-' ]; then
 			type $app > /dev/null 2> /dev/null
 			fw__rc $(($? & 1))
-			return 
+			return
 		fi
 		local mod
 		eval "mod=\$FW_${fam}_${tab}"
@@ -85,7 +85,7 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 			6) mod=ip6table_${tab} ;;
 			*) mod=. ;;
 		esac
-		grep "^${mod} " /proc/modules > /dev/null
+		grep -q "^${mod} " /proc/modules
 		mod=$?
 		export FW_${fam}_${tab}=$mod
 		fw__rc $mod
@@ -100,8 +100,8 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 	local app=
 	local pol=
 	case "$fam" in
-		4) app=iptables ;;
-		6) app=ip6tables ;;
+		4) [ $FW_DISABLE_IPV4 == 0 ] && app=iptables  || return ;;
+		6) [ $FW_DISABLE_IPV6 == 0 ] && app=ip6tables || return ;;
 		i) fw__dualip "$@"; return ;;
 		I) fw__autoip "$@"; return ;;
 		e) app=ebtables ;;
