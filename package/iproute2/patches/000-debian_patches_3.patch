@@ -1,8 +1,8 @@
 --- a/doc/ip-cref.tex
 +++ b/doc/ip-cref.tex
-@@ -1324,6 +1324,19 @@ peers are allowed to send to us.
-     If it is not given, Linux uses the value selected with \verb|sysctl|
-     variable \verb|net/ipv4/tcp_reordering|.
+@@ -1307,6 +1307,19 @@ peers are allowed to send to us.
+ --- \threeonly the clamp for congestion window. It is ignored if the \verb|lock|
+     flag is not used.
  
 +\item \verb|hoplimit NUMBER|
 +
@@ -18,11 +18,11 @@
 +    window size. If it is not given (or set to zero), Linux uses the
 +    values specified in~\cite{RFC2414}.
  
+ \item \verb|advmss NUMBER|
  
- \item \verb|nexthop NEXTHOP|
-@@ -2653,6 +2666,9 @@ http://www.cisco.com/univercd/cc/td/doc/
- \bibitem{RFC-DHCP} R.~Droms.
- ``Dynamic Host Configuration Protocol.'', RFC-2131
+@@ -2666,6 +2679,9 @@ http://www.cisco.com/univercd/cc/td/doc/
+ \bibitem{RFC2414}  M.~Allman, S.~Floyd, C.~Partridge.
+ ``Increasing TCP's Initial Window'', RFC-2414.
  
 +\bibitem{RFC2414}  M.~Allman, S.~Floyd, C.~Partridge.
 +``Increasing TCP's Initial Window'', RFC-2414.
@@ -592,51 +592,9 @@
 +};
 +
  #endif
---- a/ip/iproute.c
-+++ b/ip/iproute.c
-@@ -73,7 +73,7 @@ static void usage(void)
- 	fprintf(stderr, "           [ rtt TIME ] [ rttvar TIME ]\n");
- 	fprintf(stderr, "           [ window NUMBER] [ cwnd NUMBER ] [ initcwnd NUMBER ]\n");
- 	fprintf(stderr, "           [ ssthresh NUMBER ] [ realms REALM ] [ src ADDRESS ]\n");
--	fprintf(stderr, "           [ rto_min TIME ]\n");
-+	fprintf(stderr, "           [ rto_min TIME ] [ hoplimit NUMBER ]\n");
- 	fprintf(stderr, "TYPE := [ unicast | local | broadcast | multicast | throw |\n");
- 	fprintf(stderr, "          unreachable | prohibit | blackhole | nat ]\n");
- 	fprintf(stderr, "TABLE_ID := [ local | main | default | all | NUMBER ]\n");
-@@ -792,6 +792,30 @@ int iproute_modify(int cmd, unsigned fla
- 				invarg("\"reordering\" value is invalid\n", *argv);
- 			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_REORDERING, reord);
- #endif
-+#ifdef RTAX_HOPLIMIT
-+		} else if (strcmp(*argv, "hoplimit") == 0) {
-+			unsigned hoplim;
-+			NEXT_ARG();
-+			if (strcmp(*argv, "lock") == 0) {
-+				mxlock |= (1<<RTAX_HOPLIMIT);
-+				NEXT_ARG();
-+			}
-+			if (get_unsigned(&hoplim, *argv, 0))
-+				invarg("\"hoplimit\" value is invalid\n", *argv);
-+			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_HOPLIMIT, hoplim);
-+#endif
-+#ifdef RTAX_INITCWND
-+		} else if (strcmp(*argv, "initcwnd") == 0) {
-+			unsigned initcwnd;
-+			NEXT_ARG();
-+			if (strcmp(*argv, "lock") == 0) {
-+				mxlock |= (1<<RTAX_HOPLIMIT);
-+				NEXT_ARG();
-+			}
-+			if (get_unsigned(&initcwnd, *argv, 0))
-+				invarg("\"initcwnd\" value is invalid\n", *argv);
-+			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_INITCWND, initcwnd);
-+#endif
- 		} else if (strcmp(*argv, "rtt") == 0) {
- 			unsigned rtt;
- 			NEXT_ARG();
 --- a/ip/iptunnel.c
 +++ b/ip/iptunnel.c
-@@ -134,7 +134,7 @@ static int parse_args(int argc, char **a
+@@ -129,7 +129,7 @@ static int parse_args(int argc, char **a
  			NEXT_ARG();
  			p->o_flags |= GRE_KEY;
  			if (strchr(*argv, '.'))
@@ -647,7 +605,7 @@
  					fprintf(stderr, "invalid value of \"okey\"\n");
 --- a/Makefile
 +++ b/Makefile
-@@ -49,7 +49,7 @@ install: all
+@@ -57,7 +57,7 @@ install: all
  		$(DESTDIR)$(DOCDIR)/examples
  	install -m 0644 $(shell find examples/diffserv -maxdepth 1 -type f) \
  		$(DESTDIR)$(DOCDIR)/examples/diffserv
@@ -656,7 +614,7 @@
  	install -m 0644 $(shell find etc/iproute2 -maxdepth 1 -type f) $(DESTDIR)$(CONFDIR)
  	install -m 0755 -d $(DESTDIR)$(MANDIR)/man8
  	install -m 0644 $(shell find man/man8 -maxdepth 1 -type f) $(DESTDIR)$(MANDIR)/man8
-@@ -67,7 +67,7 @@ snapshot:
+@@ -75,7 +75,7 @@ snapshot:
  
  clean:
  	rm -f cscope.*
@@ -679,7 +637,7 @@
  
 --- a/tc/Makefile
 +++ b/tc/Makefile
-@@ -14,6 +14,7 @@ TCMODULES += q_cbq.o
+@@ -15,6 +15,7 @@ TCMODULES += q_cbq.o
  TCMODULES += q_rr.o
  TCMODULES += q_multiq.o
  TCMODULES += q_netem.o
