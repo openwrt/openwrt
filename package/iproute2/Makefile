@@ -8,13 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-#PKG_VERSION:=2.6.29-1
 PKG_VERSION:=2.6.31
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://devresources.linux-foundation.org/dev/iproute2/download/
-#PKG_MD5SUM:=c1bc258a6c345905e79935ac7a3cc582
 PKG_MD5SUM:=230f35282a95451622f3e8394f9cd80a
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-$(PKG_VERSION)
