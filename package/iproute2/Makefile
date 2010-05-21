@@ -8,7 +8,6 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-#PKG_VERSION:=2.6.29-1
 PKG_VERSION:=2.6.31
 PKG_RELEASE:=2
 
