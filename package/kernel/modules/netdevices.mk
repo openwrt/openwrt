@@ -28,7 +28,7 @@ define KernelPackage/swconfig
   DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_SWCONFIG
   FILES:=$(LINUX_DIR)/drivers/net/phy/swconfig.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,41,libphy)
+  AUTOLOAD:=$(call AutoLoad,41,swconfig)
 endef
 
 define KernelPackage/swconfig/description
