@@ -22,6 +22,36 @@ endef
 
 $(eval $(call KernelPackage,libphy))
 
+define KernelPackage/swconfig
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=switch configuration API
+  DEPENDS:=+kmod-libphy
+  KCONFIG:=CONFIG_SWCONFIG
+  FILES:=$(LINUX_DIR)/drivers/net/phy/swconfig.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,libphy)
+endef
+
+define KernelPackage/swconfig/description
+  Switch configuration API module
+endef
+
+$(eval $(call KernelPackage,swconfig))
+
+define KernelPackage/switch-ip175c
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=IC+ IP175C/IP178C switch support
+  DEPENDS:=+kmod-swconfig
+  KCONFIG:=CONFIG_IP175C_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/ip175c.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,42,ip175c)
+endef
+
+define KernelPackage/switch-ip175c/description
+  IC+ IP175C/IP178C switch support
+endef
+
+$(eval $(call KernelPackage,switch-ip175c))
+
 define KernelPackage/natsemi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=National Semiconductor DP8381x series
