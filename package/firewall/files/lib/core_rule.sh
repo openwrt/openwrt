@@ -29,7 +29,7 @@ fw_load_rule() {
 
 	rule_src_port=$(fw_get_port_range $rule_src_port)
 	rule_dest_port=$(fw_get_port_range $rule_dest_port)
-	
+
 	local chain=input
 	[ -n "$rule_src" ] && {
 		[ -z "$rule_dest" ] && {
@@ -47,10 +47,10 @@ fw_load_rule() {
 		target=zone_${rule_dest}_${target}
 	}
 
-	local rule_pos
-	eval 'rule_pos=$((++FW__RULE_COUNT_'$chain'))'
-
 	local mode=$(fw_get_family_mode ${rule_family:-x} $rule_src I)
+
+	local rule_pos
+	eval 'rule_pos=$((++FW__RULE_COUNT_'$mode'_'$chain'))'
 
 	[ "$rule_proto" == "tcpudp" ] && rule_proto="tcp udp"
 	for rule_proto in $rule_proto; do
