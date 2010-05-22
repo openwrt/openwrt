@@ -12,7 +12,7 @@ PKG_NAME:=iptables
 PKG_VERSION:=1.4.8
 PKG_RELEASE:=1
 
-PKG_MD5SUM:=6b407c1b2e34233cdc3882b26a8dccb3
+PKG_MD5SUM:=697ed89f37af4473a5f6349ba2700f2d
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.be.netfilter.org/pub/netfilter/iptables/ \
