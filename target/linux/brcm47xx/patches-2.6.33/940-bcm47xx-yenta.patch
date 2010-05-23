@@ -28,7 +28,7 @@
  	dev_printk(KERN_INFO, &socket->dev->dev,
  		   "ISA IRQ mask 0x%04x, PCI irq %d\n",
  		   socket->socket.irq_mask, socket->cb_irq);
-@@ -1243,6 +1250,15 @@ static int __devinit yenta_probe(struct
+@@ -1243,6 +1250,15 @@ static int __devinit yenta_probe(struct 
  	dev_printk(KERN_INFO, &dev->dev,
  		   "Socket status: %08x\n", cb_readl(socket, CB_SOCKET_STATE));
  

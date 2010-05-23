@@ -8,7 +8,7 @@
  
  #include <net/checksum.h>
  #include <net/ip.h>
-@@ -466,8 +467,9 @@ static void _tw32_flush(struct tg3 *tp,
+@@ -466,8 +467,9 @@ static void _tw32_flush(struct tg3 *tp, 
  static inline void tw32_mailbox_flush(struct tg3 *tp, u32 off, u32 val)
  {
  	tp->write32_mbox(tp, off, val);
@@ -61,7 +61,7 @@
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -842,7 +849,7 @@ static int tg3_writephy(struct tg3 *tp,
+@@ -842,7 +849,7 @@ static int tg3_writephy(struct tg3 *tp, 
  		udelay(80);
  	}
  
@@ -70,7 +70,7 @@
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -875,6 +882,11 @@ static int tg3_writephy(struct tg3 *tp,
+@@ -875,6 +882,11 @@ static int tg3_writephy(struct tg3 *tp, 
  	return ret;
  }
  
@@ -147,7 +147,7 @@
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -7089,9 +7127,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
+@@ -7089,9 +7127,12 @@ static int tg3_halt_cpu(struct tg3 *tp, 
  		return -ENODEV;
  	}
  
@@ -175,7 +175,7 @@
  	fw_data = (void *)tp->fw->data;
  
  	/* Firmware blob starts with version numbers, followed by
-@@ -7213,6 +7259,11 @@ static int tg3_load_tso_firmware(struct
+@@ -7213,6 +7259,11 @@ static int tg3_load_tso_firmware(struct 
  	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
  	int err, i;
  
@@ -199,7 +199,7 @@
  	if (!(tp->tg3_flags & TG3_FLAG_TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -10214,6 +10270,11 @@ static int tg3_test_nvram(struct tg3 *tp
+@@ -10215,6 +10271,11 @@ static int tg3_test_nvram(struct tg3 *tp
  	if (tp->tg3_flags3 & TG3_FLG3_NO_NVRAM)
  		return 0;
  
@@ -211,7 +211,7 @@
  	if (tg3_nvram_read(tp, 0, &magic) != 0)
  		return -EIO;
  
-@@ -11014,7 +11075,7 @@ static int tg3_ioctl(struct net_device *
+@@ -11015,7 +11076,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -220,7 +220,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -11030,7 +11091,7 @@ static int tg3_ioctl(struct net_device *
+@@ -11031,7 +11092,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -229,7 +229,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -11675,6 +11736,12 @@ static void __devinit tg3_get_5717_nvram
+@@ -11676,6 +11737,12 @@ static void __devinit tg3_get_5717_nvram
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -242,7 +242,7 @@
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -11936,6 +12003,9 @@ static int tg3_nvram_write_block(struct
+@@ -11937,6 +12004,9 @@ static int tg3_nvram_write_block(struct 
  {
  	int ret;
  
@@ -252,7 +252,7 @@
  	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -13246,6 +13316,11 @@ static int __devinit tg3_get_invariants(
+@@ -13247,6 +13317,11 @@ static int __devinit tg3_get_invariants(
  	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
  		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;
  
@@ -264,7 +264,7 @@
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLG2_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -13637,6 +13712,10 @@ static int __devinit tg3_get_device_addr
+@@ -13638,6 +13713,10 @@ static int __devinit tg3_get_device_addr
  	}
  
  	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
@@ -275,7 +275,7 @@
  #ifdef CONFIG_SPARC
  		if (!tg3_get_default_macaddr_sparc(tp))
  			return 0;
-@@ -14139,6 +14218,7 @@ static char * __devinit tg3_phy_string(s
+@@ -14140,6 +14219,7 @@ static char * __devinit tg3_phy_string(s
  	case PHY_ID_BCM5704:	return "5704";
  	case PHY_ID_BCM5705:	return "5705";
  	case PHY_ID_BCM5750:	return "5750";
@@ -283,7 +283,7 @@
  	case PHY_ID_BCM5752:	return "5752";
  	case PHY_ID_BCM5714:	return "5714";
  	case PHY_ID_BCM5780:	return "5780";
-@@ -14351,6 +14431,13 @@ static int __devinit tg3_init_one(struct
+@@ -14352,6 +14432,13 @@ static int __devinit tg3_init_one(struct
  		tp->msg_enable = tg3_debug;
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;

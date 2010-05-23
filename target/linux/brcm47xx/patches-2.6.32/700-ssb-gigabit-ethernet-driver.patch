@@ -181,7 +181,7 @@
  	if (!(tp->tg3_flags & TG3_FLAG_TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -9800,6 +9856,11 @@ static int tg3_test_nvram(struct tg3 *tp
+@@ -9801,6 +9857,11 @@ static int tg3_test_nvram(struct tg3 *tp
  	if (tp->tg3_flags3 & TG3_FLG3_NO_NVRAM)
  		return 0;
  
@@ -193,7 +193,7 @@
  	if (tg3_nvram_read(tp, 0, &magic) != 0)
  		return -EIO;
  
-@@ -10594,7 +10655,7 @@ static int tg3_ioctl(struct net_device *
+@@ -10595,7 +10656,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -202,7 +202,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -10610,7 +10671,7 @@ static int tg3_ioctl(struct net_device *
+@@ -10611,7 +10672,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -211,7 +211,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -11255,6 +11316,12 @@ static void __devinit tg3_get_5717_nvram
+@@ -11256,6 +11317,12 @@ static void __devinit tg3_get_5717_nvram
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -224,7 +224,7 @@
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -11515,6 +11582,9 @@ static int tg3_nvram_write_block(struct 
+@@ -11516,6 +11583,9 @@ static int tg3_nvram_write_block(struct 
  {
  	int ret;
  
@@ -234,7 +234,7 @@
  	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -12800,6 +12870,11 @@ static int __devinit tg3_get_invariants(
+@@ -12801,6 +12871,11 @@ static int __devinit tg3_get_invariants(
  	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
  		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;
  
@@ -246,7 +246,7 @@
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLG2_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -13189,6 +13264,10 @@ static int __devinit tg3_get_device_addr
+@@ -13190,6 +13265,10 @@ static int __devinit tg3_get_device_addr
  	}
  
  	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
@@ -257,7 +257,7 @@
  #ifdef CONFIG_SPARC
  		if (!tg3_get_default_macaddr_sparc(tp))
  			return 0;
-@@ -13681,6 +13760,7 @@ static char * __devinit tg3_phy_string(s
+@@ -13682,6 +13761,7 @@ static char * __devinit tg3_phy_string(s
  	case PHY_ID_BCM5704:	return "5704";
  	case PHY_ID_BCM5705:	return "5705";
  	case PHY_ID_BCM5750:	return "5750";
@@ -265,7 +265,7 @@
  	case PHY_ID_BCM5752:	return "5752";
  	case PHY_ID_BCM5714:	return "5714";
  	case PHY_ID_BCM5780:	return "5780";
-@@ -13892,6 +13972,13 @@ static int __devinit tg3_init_one(struct
+@@ -13893,6 +13973,13 @@ static int __devinit tg3_init_one(struct
  		tp->msg_enable = tg3_debug;
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;
