@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=compcache
 PKG_VERSION:=0.6.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE_URL:=http://compcache.googlecode.com/files/
 PKG_MD5SUM:=27aec78dc50e34fb800c74e879057743
 

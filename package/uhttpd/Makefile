@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=9
+PKG_RELEASE:=10
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
