@@ -12,6 +12,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=ifxmips-dsl-api
 PKG_BASE_NAME:=drv_dsl_cpe_api_danube
 PKG_VERSION:=3.24.4.4
+PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/

@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,6 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=siit
 PKG_VERSION:=1.1
+PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
 
