@@ -31,7 +31,7 @@
  
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -640,6 +640,9 @@ build_get_pgde32(u32 **p, unsigned int t
+@@ -707,6 +707,9 @@ build_get_pgde32(u32 **p, unsigned int t
  #endif
  	uasm_i_addu(p, ptr, tmp, ptr);
  #else
@@ -41,7 +41,7 @@
  	UASM_i_LA_mostly(p, ptr, pgdc);
  #endif
  	uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
-@@ -801,12 +804,12 @@ static void __cpuinit build_r4000_tlb_re
+@@ -868,12 +871,12 @@ static void __cpuinit build_r4000_tlb_re
  		/* No need for uasm_i_nop */
  	}
  
@@ -57,7 +57,7 @@
  	build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
  #endif
  
-@@ -818,6 +821,9 @@ static void __cpuinit build_r4000_tlb_re
+@@ -885,6 +888,9 @@ static void __cpuinit build_r4000_tlb_re
  	build_update_entries(&p, K0, K1);
  	build_tlb_write_entry(&p, &l, &r, tlb_random);
  	uasm_l_leave(&l, p);
@@ -67,7 +67,7 @@
  	uasm_i_eret(&p); /* return from trap */
  
  #ifdef CONFIG_HUGETLB_PAGE
-@@ -1263,12 +1269,12 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1321,12 +1327,12 @@ build_r4000_tlbchange_handler_head(u32 *
  				   struct uasm_reloc **r, unsigned int pte,
  				   unsigned int ptr)
  {
@@ -83,7 +83,7 @@
  	build_get_pgde32(p, pte, ptr); /* get pgd in ptr */
  #endif
  
-@@ -1305,6 +1311,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+@@ -1363,6 +1369,9 @@ build_r4000_tlbchange_handler_tail(u32 *
  	build_update_entries(p, tmp, ptr);
  	build_tlb_write_entry(p, l, r, tlb_indexed);
  	uasm_l_leave(l, *p);
