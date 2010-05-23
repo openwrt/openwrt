@@ -1,0 +1,11 @@
+--- a/shell/hush.c
++++ b/shell/hush.c
+@@ -6944,7 +6944,7 @@ int hush_main(int argc, char **argv)
+ 				/* -c 'script' (no params): prevent empty $0 */
+ 				G.global_argv--; /* points to argv[i] of 'script' */
+ 				G.global_argv[0] = argv[0];
+-				G.global_argc--;
++				G.global_argc++;
+ 			} /* else -c 'script' ARG0 [ARG1...]: $0 is ARG0 */
+ 			init_sigmasks();
+ 			parse_and_run_string(optarg);
