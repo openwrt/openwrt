@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 Jo-Philipp Wich <xm@subsignal.org>
+# Copyright (C) 2009-2010 Jo-Philipp Wich <xm@subsignal.org>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nvram
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
