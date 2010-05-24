@@ -1,8 +1,6 @@
-Index: linux-2.6.32.9/scripts/Makefile.lib
-===================================================================
---- linux-2.6.32.9.orig/scripts/Makefile.lib	2010-04-13 07:55:06.543296524 +0200
-+++ linux-2.6.32.9/scripts/Makefile.lib	2010-04-13 07:55:06.814268461 +0200
-@@ -228,7 +228,7 @@
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -228,7 +228,7 @@ cmd_bzip2 = (cat $(filter-out FORCE,$^) 
  
  quiet_cmd_lzma = LZMA    $@
  cmd_lzma = (cat $(filter-out FORCE,$^) | \
@@ -11,10 +9,8 @@ Index: linux-2.6.32.9/scripts/Makefile.lib
  	(rm -f $@ ; false)
  
  quiet_cmd_lzo = LZO    $@
-Index: linux-2.6.32.9/arch/x86/include/asm/boot.h
-===================================================================
---- linux-2.6.32.9.orig/arch/x86/include/asm/boot.h	2010-02-23 16:38:51.000000000 +0100
-+++ linux-2.6.32.9/arch/x86/include/asm/boot.h	2010-04-13 08:00:14.474369306 +0200
+--- a/arch/x86/include/asm/boot.h
++++ b/arch/x86/include/asm/boot.h
 @@ -28,7 +28,7 @@
  #error "Invalid value for CONFIG_PHYSICAL_ALIGN"
  #endif

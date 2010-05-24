@@ -10,10 +10,8 @@ Changes from v2:
 - replaced rdc321x_pci_{read,write}
 - use the pci_dev pointer passed as platform_data
 
-Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
-===================================================================
---- linux-2.6.32.10.orig/drivers/watchdog/rdc321x_wdt.c	2010-05-15 22:14:28.000000000 +0200
-+++ linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c	2010-05-15 22:15:24.000000000 +0200
+--- a/drivers/watchdog/rdc321x_wdt.c
++++ b/drivers/watchdog/rdc321x_wdt.c
 @@ -1,7 +1,7 @@
  /*
   * RDC321x watchdog driver
@@ -33,7 +31,7 @@ Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
  
  #define RDC_WDT_MASK	0x80000000 /* Mask */
  #define RDC_WDT_EN	0x00800000 /* Enable bit */
-@@ -63,6 +62,8 @@
+@@ -63,6 +62,8 @@ static struct {
  	int default_ticks;
  	unsigned long inuse;
  	spinlock_t lock;
@@ -42,7 +40,7 @@ Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
  } rdc321x_wdt_device;
  
  /* generic helper functions */
-@@ -70,14 +71,18 @@
+@@ -70,14 +71,18 @@ static struct {
  static void rdc321x_wdt_trigger(unsigned long unused)
  {
  	unsigned long flags;
@@ -63,7 +61,7 @@ Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
  	spin_unlock_irqrestore(&rdc321x_wdt_device.lock, flags);
  
  	/* requeue?? */
-@@ -105,10 +110,13 @@
+@@ -105,10 +110,13 @@ static void rdc321x_wdt_start(void)
  
  		/* Clear the timer */
  		spin_lock_irqsave(&rdc321x_wdt_device.lock, flags);
@@ -79,7 +77,7 @@ Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
  		spin_unlock_irqrestore(&rdc321x_wdt_device.lock, flags);
  
  		mod_timer(&rdc321x_wdt_device.timer,
-@@ -148,7 +156,7 @@
+@@ -148,7 +156,7 @@ static long rdc321x_wdt_ioctl(struct fil
  				unsigned long arg)
  {
  	void __user *argp = (void __user *)arg;
@@ -88,7 +86,7 @@ Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
  	static struct watchdog_info ident = {
  		.options = WDIOF_CARDRESET,
  		.identity = "RDC321x WDT",
-@@ -162,9 +170,10 @@
+@@ -162,9 +170,10 @@ static long rdc321x_wdt_ioctl(struct fil
  	case WDIOC_GETSTATUS:
  		/* Read the value from the DATA register */
  		spin_lock_irqsave(&rdc321x_wdt_device.lock, flags);
@@ -101,7 +99,7 @@ Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
  			return -EFAULT;
  		break;
  	case WDIOC_GETSUPPORT:
-@@ -219,17 +228,35 @@
+@@ -219,17 +228,35 @@ static struct miscdevice rdc321x_wdt_mis
  static int __devinit rdc321x_wdt_probe(struct platform_device *pdev)
  {
  	int err;
@@ -139,7 +137,7 @@ Index: linux-2.6.32.10/drivers/watchdog/rdc321x_wdt.c
  
  	init_completion(&rdc321x_wdt_device.stop);
  	rdc321x_wdt_device.queue = 0;
-@@ -240,7 +267,7 @@
+@@ -240,7 +267,7 @@ static int __devinit rdc321x_wdt_probe(s
  
  	rdc321x_wdt_device.default_ticks = ticks;
  

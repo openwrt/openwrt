@@ -1,7 +1,5 @@
-Index: linux-2.6.32.12/drivers/net/r6040.c
-===================================================================
---- linux-2.6.32.12.orig/drivers/net/r6040.c	2010-05-20 10:19:41.000000000 +0200
-+++ linux-2.6.32.12/drivers/net/r6040.c	2010-05-20 10:28:48.000000000 +0200
+--- a/drivers/net/r6040.c
++++ b/drivers/net/r6040.c
 @@ -45,6 +45,7 @@
  #include <linux/io.h>
  #include <linux/irq.h>
@@ -10,7 +8,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  
  #include <asm/processor.h>
  
-@@ -180,7 +181,6 @@
+@@ -180,7 +181,6 @@ struct r6040_descriptor {
  
  struct r6040_private {
  	spinlock_t lock;		/* driver lock */
@@ -18,7 +16,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  	struct pci_dev *pdev;
  	struct r6040_descriptor *rx_insert_ptr;
  	struct r6040_descriptor *rx_remove_ptr;
-@@ -190,13 +190,15 @@
+@@ -190,13 +190,15 @@ struct r6040_private {
  	struct r6040_descriptor *tx_ring;
  	dma_addr_t rx_ring_dma;
  	dma_addr_t tx_ring_dma;
@@ -37,7 +35,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  };
  
  static char version[] __devinitdata = KERN_INFO DRV_NAME
-@@ -239,20 +241,29 @@
+@@ -239,20 +241,29 @@ static void r6040_phy_write(void __iomem
  	}
  }
  
@@ -71,7 +69,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  }
  
  static void r6040_free_txbufs(struct net_device *dev)
-@@ -409,10 +420,9 @@
+@@ -409,10 +420,9 @@ static void r6040_tx_timeout(struct net_
  	void __iomem *ioaddr = priv->base;
  
  	printk(KERN_WARNING "%s: transmit timed out, int enable %4.4x "
@@ -84,7 +82,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  
  	dev->stats.tx_errors++;
  
-@@ -464,9 +474,6 @@
+@@ -464,9 +474,6 @@ static int r6040_close(struct net_device
  	struct r6040_private *lp = netdev_priv(dev);
  	struct pci_dev *pdev = lp->pdev;
  
@@ -94,7 +92,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  	spin_lock_irq(&lp->lock);
  	napi_disable(&lp->napi);
  	netif_stop_queue(dev);
-@@ -496,64 +503,14 @@
+@@ -496,64 +503,14 @@ static int r6040_close(struct net_device
  	return 0;
  }
  
@@ -162,7 +160,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  }
  
  static int r6040_rx(struct net_device *dev, int limit)
-@@ -752,26 +709,6 @@
+@@ -752,26 +709,6 @@ static int r6040_up(struct net_device *d
  	if (ret)
  		return ret;
  
@@ -189,7 +187,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  	/* improve performance (by RDC guys) */
  	r6040_phy_write(ioaddr, 30, 17, (r6040_phy_read(ioaddr, 30, 17) | 0x4000));
  	r6040_phy_write(ioaddr, 30, 17, ~((~r6040_phy_read(ioaddr, 30, 17)) | 0x2000));
-@@ -784,35 +721,6 @@
+@@ -784,35 +721,6 @@ static int r6040_up(struct net_device *d
  	return 0;
  }
  
@@ -225,7 +223,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  
  /* Read/set MAC address routines */
  static void r6040_mac_address(struct net_device *dev)
-@@ -874,10 +782,6 @@
+@@ -874,10 +782,6 @@ static int r6040_open(struct net_device 
  	napi_enable(&lp->napi);
  	netif_start_queue(dev);
  
@@ -236,7 +234,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  	return 0;
  }
  
-@@ -1020,40 +924,22 @@
+@@ -1020,40 +924,22 @@ static void netdev_get_drvinfo(struct ne
  static int netdev_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct r6040_private *rp = netdev_priv(dev);
@@ -280,7 +278,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  };
  
  static const struct net_device_ops r6040_netdev_ops = {
-@@ -1072,6 +958,86 @@
+@@ -1072,6 +958,86 @@ static const struct net_device_ops r6040
  #endif
  };
  
@@ -367,7 +365,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  static int __devinit r6040_init_one(struct pci_dev *pdev,
  					 const struct pci_device_id *ent)
  {
-@@ -1082,6 +1048,7 @@
+@@ -1082,6 +1048,7 @@ static int __devinit r6040_init_one(stru
  	static int card_idx = -1;
  	int bar = 0;
  	u16 *adrp;
@@ -375,7 +373,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  
  	printk("%s\n", version);
  
-@@ -1169,7 +1136,6 @@
+@@ -1169,7 +1136,6 @@ static int __devinit r6040_init_one(stru
  	/* Init RDC private data */
  	lp->mcr0 = 0x1002;
  	lp->phy_addr = phy_table[card_idx];
@@ -383,7 +381,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  
  	/* The RDC-specific entries in the device structure. */
  	dev->netdev_ops = &r6040_netdev_ops;
-@@ -1177,28 +1143,61 @@
+@@ -1177,28 +1143,61 @@ static int __devinit r6040_init_one(stru
  	dev->watchdog_timeo = TX_TIMEOUT;
  
  	netif_napi_add(dev, &lp->napi, r6040_poll, 64);
@@ -453,7 +451,7 @@ Index: linux-2.6.32.12/drivers/net/r6040.c
  err_out_unmap:
  	pci_iounmap(pdev, ioaddr);
  err_out_free_res:
-@@ -1212,8 +1211,12 @@
+@@ -1212,8 +1211,12 @@ err_out:
  static void __devexit r6040_remove_one(struct pci_dev *pdev)
  {
  	struct net_device *dev = pci_get_drvdata(pdev);
