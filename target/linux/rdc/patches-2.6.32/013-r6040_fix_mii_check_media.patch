@@ -1,8 +1,6 @@
-diff --git a/drivers/net/r6040.c b/drivers/net/r6040.c
-index 4122916..eeee379 100644
 --- a/drivers/net/r6040.c
 +++ b/drivers/net/r6040.c
-@@ -400,9 +400,6 @@ static void r6040_init_mac_regs(struct net_device *dev)
+@@ -401,9 +401,6 @@ static void r6040_init_mac_regs(struct n
  	 * we may got called by r6040_tx_timeout which has left
  	 * some unsent tx buffers */
  	iowrite16(0x01, ioaddr + MTPR);
@@ -12,7 +10,7 @@ index 4122916..eeee379 100644
  }
  
  static void r6040_tx_timeout(struct net_device *dev)
-@@ -530,8 +527,6 @@ static int r6040_phy_mode_chk(struct net_device *dev)
+@@ -531,8 +528,6 @@ static int r6040_phy_mode_chk(struct net
  			phy_dat = 0x0000;
  	}
  
@@ -21,7 +19,7 @@ index 4122916..eeee379 100644
  	return phy_dat;
  };
  
-@@ -813,6 +808,9 @@ static void r6040_timer(unsigned long data)
+@@ -814,6 +809,9 @@ static void r6040_timer(unsigned long da
  
  	/* Timer active again */
  	mod_timer(&lp->timer, round_jiffies(jiffies + HZ));

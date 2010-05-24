@@ -26,7 +26,7 @@
  1:		mcr	p15, 0, r0, c1, c0, 0	@ load control register
  		mrc	p15, 0, r0, c1, c0, 0	@ and read it back to
  		sub	pc, lr, r0, lsr #32	@ properly flush pipeline
-@@ -539,7 +540,7 @@ __common_mmu_cache_on:
+@@ -538,7 +539,7 @@ __common_mmu_cache_on:
   * r8     = atags pointer
   * r9-r12,r14 = corrupted
   */
@@ -35,8 +35,8 @@
  reloc_start:	add	r9, r5, r0
  		sub	r9, r9, #128		@ do not copy the stack
  		debug_reloc_start
-@@ -768,7 +769,7 @@ proc_types:
-  * On exit,   r0, r1, r2, r3, r12 corrupted
+@@ -766,7 +767,7 @@ proc_types:
+  * On exit, r0, r1, r2, r3, r9, r12 corrupted
   * This routine must preserve: r4, r6, r7
   */
 -		.align	5
@@ -44,7 +44,7 @@
  cache_off:	mov	r3, #12			@ cache_off function
  		b	call_cache_fn
  
-@@ -845,7 +846,7 @@ __armv3_mmu_cache_off:
+@@ -841,7 +842,7 @@ __armv3_mmu_cache_off:
   * This routine must preserve:
   *  r0, r4, r5, r6, r7
   */
@@ -4640,7 +4640,7 @@
  }
  
  /* ehci_shutdown kick in for silicon on any bus (not just pci, etc).
-@@ -653,7 +656,9 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -654,7 +657,9 @@ static int ehci_run (struct usb_hcd *hcd
  	// Philips, Intel, and maybe others need CMD_RUN before the
  	// root hub will detect new devices (why?); NEC doesn't
  	ehci->command &= ~(CMD_LRESET|CMD_IAAD|CMD_PSE|CMD_ASE|CMD_RESET);
@@ -4650,7 +4650,7 @@
  	ehci_writel(ehci, ehci->command, &ehci->regs->command);
  	dbg_cmd (ehci, "init", ehci->command);
  
-@@ -673,9 +678,11 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -674,9 +679,11 @@ static int ehci_run (struct usb_hcd *hcd
  	 */
  	down_write(&ehci_cf_port_reset_rwsem);
  	hcd->state = HC_STATE_RUNNING;
@@ -4662,7 +4662,7 @@
  	up_write(&ehci_cf_port_reset_rwsem);
  	ehci->last_periodic_enable = ktime_get_real();
  
-@@ -767,9 +774,10 @@ static irqreturn_t ehci_irq (struct usb_
+@@ -768,9 +775,10 @@ static irqreturn_t ehci_irq (struct usb_
  		pcd_status = status;
  
  		/* resume root hub? */
@@ -4674,7 +4674,7 @@
  		while (i--) {
  			int pstatus = ehci_readl(ehci,
  						 &ehci->regs->port_status [i]);
-@@ -802,7 +810,9 @@ static irqreturn_t ehci_irq (struct usb_
+@@ -803,7 +811,9 @@ static irqreturn_t ehci_irq (struct usb_
  		ehci_halt(ehci);
  dead:
  		ehci_reset(ehci);
@@ -4684,7 +4684,7 @@
  		/* generic layer kills/unlinks all urbs, then
  		 * uses ehci_stop to clean up the rest
  		 */
-@@ -1101,6 +1111,11 @@ MODULE_LICENSE ("GPL");
+@@ -1102,6 +1112,11 @@ MODULE_LICENSE ("GPL");
  #define	PCI_DRIVER		ehci_pci_driver
  #endif
  

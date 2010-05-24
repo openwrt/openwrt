@@ -55,7 +55,7 @@
  static struct cfi_fixup cfi_fixup_table[] = {
  	{ CFI_MFR_ATMEL, CFI_ID_ANY, fixup_convert_atmel_pri, NULL },
  #ifdef AMD_BOOTLOC_BUG
-@@ -319,6 +360,9 @@ static struct cfi_fixup fixup_table[] =
+@@ -319,6 +360,9 @@ static struct cfi_fixup fixup_table[] = 
  	 */
  	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_erase_chip, NULL },
  	{ CFI_MFR_ATMEL, AT49BV6416, fixup_use_atmel_lock, NULL },

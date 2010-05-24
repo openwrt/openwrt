@@ -1,8 +1,6 @@
-Index: linux-2.6.32.12/drivers/usb/host/ehci-hub.c
-===================================================================
---- linux-2.6.32.12.orig/drivers/usb/host/ehci-hub.c	2010-05-02 21:06:45.000000000 +0200
-+++ linux-2.6.32.12/drivers/usb/host/ehci-hub.c	2010-05-02 21:07:08.000000000 +0200
-@@ -741,11 +741,13 @@
+--- a/drivers/usb/host/ehci-hub.c
++++ b/drivers/usb/host/ehci-hub.c
+@@ -741,11 +741,13 @@ static int ehci_hub_control (
  			 * power switching; they're allowed to just limit the
  			 * current.  khubd will turn the power back on.
  			 */

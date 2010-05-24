@@ -6,11 +6,9 @@
 
     Signed-off-by: Florian Fainelli <florian@openwrt.org>
 
-Index: linux-2.6.32.12/arch/mips/ar7/platform.c
-===================================================================
---- linux-2.6.32.12.orig/arch/mips/ar7/platform.c	2010-05-15 18:01:11.000000000 +0200
-+++ linux-2.6.32.12/arch/mips/ar7/platform.c	2010-05-15 18:02:44.000000000 +0200
-@@ -509,7 +509,7 @@
+--- a/arch/mips/ar7/platform.c
++++ b/arch/mips/ar7/platform.c
+@@ -509,7 +509,7 @@ static int __init ar7_register_devices(v
  
  	memset(uart_port, 0, sizeof(struct uart_port) * 2);
  
@@ -19,7 +17,7 @@ Index: linux-2.6.32.12/arch/mips/ar7/platform.c
  	uart_port[0].line = 0;
  	uart_port[0].irq = AR7_IRQ_UART0;
  	uart_port[0].uartclk = ar7_bus_freq() / 2;
-@@ -524,7 +524,7 @@
+@@ -524,7 +524,7 @@ static int __init ar7_register_devices(v
  
  	/* Only TNETD73xx have a second serial port */
  	if (ar7_has_second_uart()) {
